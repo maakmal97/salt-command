@@ -77,6 +77,14 @@ const PWA_BLOCK = [
   '    }',
   '  });',
   '}',
+  '/* Cloud privacy: on the phone names show only after the password and auto-hide the',
+  '   moment the app leaves the foreground. lockVault() drops the passphrase and the',
+  '   decrypted names, so returning shows codes until the password is re-entered. */',
+  "document.addEventListener('visibilitychange',function(){",
+  "  if(window.SALT_CLOUD&&document.visibilityState==='hidden'&&typeof lockVault==='function'){",
+  '    try{lockVault();if(typeof renderReveal==="function")renderReveal();if(typeof render==="function")render();}catch(e){}',
+  '  }',
+  '});',
   '</' + 'script>',
   '<!-- END cloud/PWA -->'
 ].join(EOL);
@@ -91,7 +99,7 @@ replaceOnce("P2 head PWA block",
 
 replaceOnce("P3 qInit cloud branch",
   "    if(r.ok&&(await r.json()).ok){qSyncState='server';renderQueue();qStatus(qNote());renderRole();await vaultLoad();await bioLoad();qHeartbeat();}",
-  "    const j=r.ok?await r.json():{}; if(j.ok){qSyncState='server';window.SALT_CLOUD=!!j.cloud;renderQueue();qStatus(qNote());renderRole(); if(j.cloud){ if(queue&&queue.length){qPost();} } else { await vaultLoad();await bioLoad();qHeartbeat(); } }");
+  "    const j=r.ok?await r.json():{}; if(j.ok){qSyncState='server';window.SALT_CLOUD=!!j.cloud;renderQueue();qStatus(qNote());renderRole(); if(j.cloud){ await vaultLoad(); if(queue&&queue.length){qPost();} } else { await vaultLoad();await bioLoad();qHeartbeat(); } }");
 
 replaceOnce("P4a renderRole cloud tooltip",
   '      +\'title="Served by serve_desk.py, so this copy writes salt_queue.json and salt_vault.json to disk.">\'',

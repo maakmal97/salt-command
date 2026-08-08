@@ -15,10 +15,12 @@ transactions push to a KV-backed queue; the daily run folds them into the source
    `public/index.html` is a **build output** of it (`npm run build`), committed so the data
    lives in the repo. A hand-edit here is overwritten on the next build and lost. If a change
    to the desk is needed, edit the master, then build.
-2. **Names never reach the cloud.** The desk ships codes only. The Worker answers `/vault`
-   and `/bio` so the page stays happy but **drops** any name posted to them; the plaintext
-   directory (`salt_bio.json`) and the encrypted vault (`salt_vault.json`) live only on the
-   laptop and are git-ignored here. On the phone the desk shows codes, which is the point.
+2. **Plaintext names never reach the cloud; the encrypted vault may.** `/bio` (the plaintext
+   directory) is answered but **dropped**, so `salt_bio.json` never ships. `/vault` DOES sync,
+   but only the AES-GCM envelope `{v,salt,iv,ct}` (`tools/seed-vault.mjs` puts it there); the
+   passphrase never leaves the browser and the Worker refuses anything that is not that
+   ciphertext shape. So the phone can show names after a password and code-only otherwise.
+   See "Names on the phone" below for what is built and what is still a master change.
 3. **This repo is private.** It carries the real trading ledger. It must never be public, and
    no real name may ever be committed.
 4. **No third-party loads at runtime.** The desk is self-contained: inline CSS and JS, no CDN,
@@ -63,11 +65,40 @@ device-local and skip the laptop-only 3-second heartbeat.
 Offline on the phone: an entry is held in `localStorage` and the desk says so; it pushes on the
 next open with a connection (the built desk auto-pushes any held queue when the ping succeeds).
 
+## Names on the phone
+
+The desk shows **codes by default**. Real names are synced only as ciphertext and shown only
+after a password.
+
+**What is built and proven (cloud side):**
+- The Worker stores and returns the encrypted vault at `/vault` (ciphertext only; a plaintext
+  POST is refused). `/bio` is always dropped.
+- `tools/seed-vault.mjs` reads the current directory (`salt_bio.json`), encrypts it with your
+  passphrase into the exact envelope the desk's `vaultDecrypt` expects, and pushes only that
+  ciphertext to KV. Verified end to end: the phone loads the ciphertext and the desk's own
+  `vaultDecrypt` returns the names. Run it with the passphrase in the environment, never a file:
+
+  ```
+  # PowerShell, from this repo, after deploy:
+  $env:SALT_VAULT_PASS="your passphrase"; npm run build; node tools/seed-vault.mjs
+  ```
+
+- In cloud mode the built desk fetches the vault (`vaultLoad`) and **auto-hides names when the
+  app leaves the foreground** (`visibilitychange` -> `lockVault`).
+
+**What is still a master change (not doable from this repo):** a proper phone-facing
+"Show names" control that asks for the passphrase inline and reveals, with the right copy.
+The desk's current Names panel treats the vault as a *legacy one-time import into plaintext*
+and carries "kept in the clear" copy that is wrong for the phone. And `NAME_VAULT` is a lexical
+`let`, so the build cannot re-wire the reveal from injected code. That UI belongs in the
+Cow-Crm01 master (a Cowork/master session); once it lands, the sync above already feeds it.
+
 ## Files
 
 | Path | What it is |
 |---|---|
-| `src/worker.js` | The Worker. Cloud stand-in for `serve_desk.py`: `/queue`, `/vault`, `/bio`, static assets. KV-backed, names dropped. |
+| `src/worker.js` | The Worker. Cloud stand-in for `serve_desk.py`: `/queue`, `/vault` (ciphertext), `/bio` (dropped), static assets. KV-backed. |
+| `tools/seed-vault.mjs` | Encrypt the current names with your passphrase and push the ciphertext to KV. Never writes plaintext anywhere. |
 | `public/index.html` | The built desk. **Derived from the master, do not hand-edit.** Committed on purpose. |
 | `public/sw.js` | Service worker. Shell network-first; the `/queue` API is never cached. |
 | `public/manifest.webmanifest`, `public/icon-*.png` | Home-screen install. Icons from `tools/make_icons.py`. |

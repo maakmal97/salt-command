@@ -79,19 +79,40 @@ section("Worker — queue contract");
   ok(j.ok && j.device === "anon", "invalid device id falls back to 'anon'");
 }
 
-/* ---- 2. Worker: names never persist -------------------------------------------- */
-section("Worker — names never touch the cloud");
+/* ---- 2. Worker: vault syncs ciphertext, plaintext never does -------------------- */
+section("Worker — vault syncs ciphertext, plaintext never does");
 {
   const kv = new KV(), env = mkEnv(kv);
   let r = await worker.fetch(req("/vault"), env); let j = await r.json();
-  ok(j.ok && j.vault === null && !("ids" in j), "GET /vault → {vault:null} with no ids (won't clobber device)");
-  r = await worker.fetch(req("/bio"), env); j = await r.json();
-  ok(j.ok && JSON.stringify(j.bio) === "{}", "GET /bio → empty bio");
+  ok(j.ok && j.vault === null && !("ids" in j), "GET /vault empty → {vault:null}, no ids key");
 
-  await worker.fetch(req("/vault", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ vault: { salt: "s", iv: "i", ct: "c" } }) }), env);
+  const envelope = { updated: "t", vault: { v: 1, salt: "c2FsdA==", iv: "aXY=", ct: "Y2lwaGVy" }, ids: { A26: "A26" } };
+  r = await worker.fetch(req("/vault", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(envelope) }), env);
+  ok((await r.json()).ok, "POST /vault with a valid envelope → ok");
+  r = await worker.fetch(req("/vault"), env); j = await r.json();
+  ok(j.ok && j.vault && j.vault.ct === "Y2lwaGVy" && j.ids && j.ids.A26 === "A26", "GET /vault returns the stored ciphertext + ids");
+
+  r = await worker.fetch(req("/vault", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ vault: { names: { A26: "a real name" } } }) }), env);
+  ok(r.status === 400, "POST /vault with a plaintext map → 400 (refused)");
+  ok(![...kv.m.values()].join("").includes("a real name"), "the refused plaintext name is nowhere in KV");
+
+  r = await worker.fetch(req("/bio"), env); j = await r.json();
+  ok(j.ok && JSON.stringify(j.bio) === "{}", "GET /bio → empty (plaintext directory never ships)");
   await worker.fetch(req("/bio", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ bio: { A26: { raw: "a real name" } } }) }), env);
-  ok([...kv.m.keys()].every(k => k.startsWith("q:")), "no vault/bio key ever written to KV");
-  ok(![...kv.m.values()].join("").includes("a real name"), "a posted name is not stored anywhere in KV");
+  ok(!kv.m.has("bio") && ![...kv.m.values()].join("").includes("a real name"), "POST /bio drops the name; nothing in KV");
+}
+
+/* ---- 2b. Vault crypto — the seed tool round-trips with the desk ------------------ */
+section("Vault crypto — desk-compatible round trip");
+{
+  const { vaultEncrypt, vaultDecrypt } = await import("../tools/seed-vault.mjs");
+  const map = { A26: "Alvin (Sentul)", G01: "Gavin (Sg Besi)" };
+  const e1 = await vaultEncrypt("correct horse", map);
+  ok(e1.v === 1 && e1.salt && e1.iv && e1.ct && !JSON.stringify(e1).includes("Alvin"), "encrypt → envelope with no plaintext name");
+  const back = await vaultDecrypt("correct horse", e1);
+  ok(JSON.stringify(back) === JSON.stringify(map), "decrypt with the right pass → the exact map");
+  let threw = false; try { await vaultDecrypt("wrong pass", e1); } catch (e) { threw = true; }
+  ok(threw, "decrypt with the wrong pass → throws");
 }
 
 /* ---- 3. Worker: access gate + routing ------------------------------------------ */
@@ -143,6 +164,8 @@ section("Build — patches, scripts, no externals");
     ok(html.includes("function saltDeviceId"), "device id helper present");
     ok(html.includes("cloud &middot; pushes to source"), "cloud badge present");
     ok(html.includes("device:(typeof saltDeviceId"), "qPayload carries the device id");
+    ok(html.includes("if(j.cloud){ await vaultLoad();"), "cloud loads the encrypted vault");
+    ok(html.includes("SALT_CLOUD&&document.visibilityState==='hidden'"), "cloud auto-hides names on background");
     ok(!/\bsrc\s*=\s*["']https?:\/\//i.test(html) && !/url\(\s*["']?https?:\/\//i.test(html), "no external resource loads");
 
     // every inline script must parse

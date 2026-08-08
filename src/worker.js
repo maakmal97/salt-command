@@ -5,9 +5,11 @@
  * mode, and POSTs its queue to /queue. Here that queue lands in KV instead of on disk,
  * one key per device, and the daily run drains it into the source (tools/drain.mjs).
  *
- * Names never touch the cloud. /vault and /bio are answered so the desk stays happy,
- * but a POST to either is dropped: the plaintext directory and the encrypted vault
- * live only on the laptop. On the phone the desk shows codes, which is the point.
+ * Plaintext names never touch the cloud. /bio (the plaintext directory) is answered but
+ * dropped. /vault DOES sync, but only the encrypted envelope: {v,salt,iv,ct} ciphertext,
+ * AES-GCM, the passphrase never leaving the browser. So the phone can show names after a
+ * password, and auto-hide them, while the server only ever holds ciphertext. A POST that
+ * is not that envelope shape is rejected, so a stray plaintext name cannot land here.
  *
  * The real gate is Cloudflare Access in front of the whole origin. REQUIRE_ACCESS,
  * when set to "1", additionally refuses any write that did not arrive with the header
@@ -21,7 +23,14 @@ const json = (obj, status = 200) =>
   new Response(JSON.stringify(obj), { status, headers: JSON_HEADERS });
 
 const QKEY = (device) => "q:" + device;
+const VKEY = "vault";                 // the encrypted name vault, ciphertext only
 const DEVICE_RE = /^[A-Za-z0-9._-]{1,80}$/;
+
+// The only shape /vault will store: the desk's AES-GCM envelope. Anything else (a plain
+// name map, say) is refused, so plaintext can never reach the cloud through this door.
+const isEnvelope = (v) =>
+  v && typeof v === "object" &&
+  typeof v.salt === "string" && typeof v.iv === "string" && typeof v.ct === "string";
 
 /* Cloudflare injects Cf-Access-Jwt-Assertion on every request that passed Access, and
  * strips any client-supplied copy. Presence is a sound signal that Access ran. Full JWT
@@ -80,6 +89,37 @@ async function handleQueueGet(env) {
   return json({ ok: true, entries: queue.length, queue });
 }
 
+/* The encrypted vault. GET hands back the ciphertext so the phone can decrypt it with the
+ * password; POST stores it, but only if it is the envelope shape (never plaintext). */
+async function handleVaultGet(env) {
+  if (!env.SALT_QUEUE) return json({ ok: true, vault: null });
+  const raw = await env.SALT_QUEUE.get(VKEY);
+  if (!raw) return json({ ok: true, vault: null });
+  try {
+    const v = JSON.parse(raw);
+    // ids/locs are code maps, never names, so they are safe to return; keys omitted when
+    // absent so the desk's loader does not wipe a device's own id state.
+    const out = { ok: true, vault: v.vault || null, updated: v.updated || null };
+    if (v.ids) out.ids = v.ids;
+    if (v.locs) out.locs = v.locs;
+    return json(out);
+  } catch (e) { return json({ ok: true, vault: null }); }
+}
+async function handleVaultPost(request, env) {
+  if (!env.SALT_QUEUE) return json({ ok: false, error: "no KV binding" }, 500);
+  if (!accessOk(request, env)) return json({ ok: false, error: "not authenticated" }, 401);
+  let body;
+  try { body = await request.json(); } catch (e) { return json({ ok: false, error: "bad json" }, 400); }
+  const v = body && body.vault;
+  if (v !== null && !isEnvelope(v)) {
+    return json({ ok: false, error: "vault must be the encrypted {v,salt,iv,ct} envelope" }, 400);
+  }
+  await env.SALT_QUEUE.put(VKEY, JSON.stringify({
+    updated: body.updated || null, vault: v, ids: body.ids || null, locs: body.locs || null
+  }));
+  return json({ ok: true });
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -99,12 +139,12 @@ export default {
     }
     if (p === "/bye") return json({ ok: true });            // no server to stop; answer so the beacon is quiet
     if (p === "/vault") {
-      if (m === "GET") return json({ ok: true, vault: null });   // no ids/locs keys: never clobber device state
-      if (m === "POST") return json({ ok: true });               // dropped: names never persist to the cloud
+      if (m === "GET") return handleVaultGet(env);               // ciphertext only
+      if (m === "POST") return handleVaultPost(request, env);    // stores the envelope, rejects plaintext
       return json({ ok: false }, 405);
     }
     if (p === "/bio") {
-      if (m === "GET") return json({ ok: true, bio: {} });
+      if (m === "GET") return json({ ok: true, bio: {} });       // plaintext directory never ships
       if (m === "POST") return json({ ok: true });               // dropped
       return json({ ok: false }, 405);
     }
