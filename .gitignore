@@ -1,0 +1,23 @@
+node_modules/
+.wrangler/
+.dev.vars
+.DS_Store
+*.log
+
+# public/index.html IS committed on purpose: the ledger data is meant to live in this
+# repo ("the data lives here, at github"). It is a BUILD OUTPUT of the Cow-Crm01 master
+# (see CLAUDE.md), so never hand-edit it; `npm run build` regenerates it and the daily
+# run rebuilds and commits it. This repo is PRIVATE because that data is real.
+
+# Never commit real names. The desk ships codes only; the plaintext directory and the
+# encrypted vault live on the laptop, never here. These are a safety net.
+salt_bio.json
+salt_vault.json
+*.vault
+
+# Test scratch
+shot-*.png
+test/tmp/
+
+# Local Claude Code settings, personal to this machine
+.claude/settings.local.json

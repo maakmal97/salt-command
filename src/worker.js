@@ -1,0 +1,126 @@
+/* Salt Command Worker: the cloud stand-in for serve_desk.py.
+ *
+ * It speaks the exact HTTP contract the desk already uses, so the ported desk needs
+ * almost no change: it pings /queue/ping, gets {ok:true, cloud:true}, enters "server"
+ * mode, and POSTs its queue to /queue. Here that queue lands in KV instead of on disk,
+ * one key per device, and the daily run drains it into the source (tools/drain.mjs).
+ *
+ * Names never touch the cloud. /vault and /bio are answered so the desk stays happy,
+ * but a POST to either is dropped: the plaintext directory and the encrypted vault
+ * live only on the laptop. On the phone the desk shows codes, which is the point.
+ *
+ * The real gate is Cloudflare Access in front of the whole origin. REQUIRE_ACCESS,
+ * when set to "1", additionally refuses any write that did not arrive with the header
+ * Cloudflare injects for an authenticated session, so a misconfigured Access cannot
+ * silently leave the queue world-writable.
+ */
+
+const JSON_HEADERS = { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" };
+
+const json = (obj, status = 200) =>
+  new Response(JSON.stringify(obj), { status, headers: JSON_HEADERS });
+
+const QKEY = (device) => "q:" + device;
+const DEVICE_RE = /^[A-Za-z0-9._-]{1,80}$/;
+
+/* Cloudflare injects Cf-Access-Jwt-Assertion on every request that passed Access, and
+ * strips any client-supplied copy. Presence is a sound signal that Access ran. Full JWT
+ * verification against the team's public keys is the next hardening step; presence is
+ * enough to stop the queue being writable with Access misconfigured. */
+function accessOk(request, env) {
+  if (String(env.REQUIRE_ACCESS || "0") !== "1") return true;
+  return !!request.headers.get("Cf-Access-Jwt-Assertion");
+}
+
+async function readQueuePost(request) {
+  const body = await request.json();
+  if (!body || typeof body !== "object") throw new Error("expected an object");
+  if (!Array.isArray(body.queue)) throw new Error("expected {queue:[...]}");
+  if (body.queue.length > 5000) throw new Error("queue too large");
+  let device = typeof body.device === "string" && DEVICE_RE.test(body.device) ? body.device : "anon";
+  return { device, updated: body.updated || null, queue: body.queue };
+}
+
+async function handleQueuePost(request, env) {
+  if (!env.SALT_QUEUE) return json({ ok: false, error: "no KV binding" }, 500);
+  if (!accessOk(request, env)) return json({ ok: false, error: "not authenticated" }, 401);
+  let payload;
+  try { payload = await readQueuePost(request); }
+  catch (e) { return json({ ok: false, error: String(e && e.message || e) }, 400); }
+  // Per-device replace: this device's key holds its whole current queue, so an undo on
+  // the device (which re-posts the shortened queue) is reflected rather than merged away.
+  await env.SALT_QUEUE.put(QKEY(payload.device), JSON.stringify({
+    updated: payload.updated, device: payload.device, queue: payload.queue
+  }));
+  return json({ ok: true, entries: payload.queue.length, device: payload.device });
+}
+
+/* Union of every device's queue, for the drain and for eyeballing behind Access. */
+async function handleQueueGet(env) {
+  if (!env.SALT_QUEUE) return json({ ok: false, error: "no KV binding" }, 500);
+  const out = [];
+  let cursor;
+  do {
+    const list = await env.SALT_QUEUE.list({ prefix: "q:", cursor });
+    for (const k of list.keys) {
+      const raw = await env.SALT_QUEUE.get(k.name);
+      if (!raw) continue;
+      try {
+        const v = JSON.parse(raw);
+        for (const entry of (v.queue || [])) out.push(entry);
+      } catch (e) { /* skip a corrupt key rather than fail the whole read */ }
+    }
+    cursor = list.list_complete ? null : list.cursor;
+  } while (cursor);
+  // Dedupe by the entry's own stamp, newest wins, so two devices holding the same entry
+  // (or a device that re-posted) never double it.
+  const byAt = new Map();
+  for (const e of out) byAt.set(e && e.at ? e.at : JSON.stringify(e), e);
+  const queue = [...byAt.values()].sort((a, b) => ((a && a.at) || "") < ((b && b.at) || "") ? -1 : 1);
+  return json({ ok: true, entries: queue.length, queue });
+}
+
+export default {
+  async fetch(request, env) {
+    const url = new URL(request.url);
+    const p = (url.pathname.replace(/\/+$/, "") || "/");
+    const m = request.method;
+
+    // --- the desk's HTTP contract -------------------------------------------------
+    if (p === "/queue/ping") {
+      // cloud:true tells the ported desk to skip the 3s heartbeat and the /bye beacon,
+      // and to keep names device-local. writes:['queue'] mirrors serve_desk.py's shape.
+      return json({ ok: true, cloud: true, writes: ["queue"] });
+    }
+    if (p === "/queue") {
+      if (m === "POST") return handleQueuePost(request, env);
+      if (m === "GET") return handleQueueGet(env);
+      return json({ ok: false, error: "method not allowed" }, 405);
+    }
+    if (p === "/bye") return json({ ok: true });            // no server to stop; answer so the beacon is quiet
+    if (p === "/vault") {
+      if (m === "GET") return json({ ok: true, vault: null });   // no ids/locs keys: never clobber device state
+      if (m === "POST") return json({ ok: true });               // dropped: names never persist to the cloud
+      return json({ ok: false }, 405);
+    }
+    if (p === "/bio") {
+      if (m === "GET") return json({ ok: true, bio: {} });
+      if (m === "POST") return json({ ok: true });               // dropped
+      return json({ ok: false }, 405);
+    }
+    // The reseller menu needs the LAN signing secret; it stays a laptop-only feature.
+    if (p === "/menu/publish" || p === "/menu/mint" || p === "/qr") {
+      return json({ ok: false, error: "the reseller menu is laptop-only" }, 501);
+    }
+
+    // --- static assets, with SPA fallback the Worker owns ------------------------
+    if (m === "GET" || m === "HEAD") {
+      const res = await env.ASSETS.fetch(request);
+      if (res.status === 404) {
+        return env.ASSETS.fetch(new Request(new URL("/", url), request));
+      }
+      return res;
+    }
+    return json({ ok: false, error: "not found" }, 404);
+  }
+};

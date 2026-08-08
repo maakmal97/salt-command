@@ -1,0 +1,37 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "salt-command",
+  "main": "src/worker.js",
+  "compatibility_date": "2026-08-08",
+
+  // A Worker WITH static assets. The desk and its shell live in public/; the
+  // Worker code is the cloud stand-in for serve_desk.py, backed by KV. The Worker
+  // runs first on every request (run_worker_first), handles the /queue, /vault and
+  // /bio contract the desk already speaks, and hands everything else to the assets.
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": true
+  },
+
+  // The cloud queue. One key per device (q:<deviceId>) holding that device's
+  // current queue, so an entry added on the phone reaches the daily commit run.
+  // Names are NEVER stored here: /vault and /bio are accepted and dropped.
+  // Create with:  npx wrangler kv namespace create salt_queue
+  // then paste the printed id below (and delete this line).
+  "kv_namespaces": [
+    { "binding": "SALT_QUEUE", "id": "PLACEHOLDER_KV_ID" }
+  ],
+
+  // Off by default so the very first deploy works before Access is configured.
+  // Turn on (in the dashboard or with `wrangler secret`/vars) AFTER Access is live,
+  // so the Worker rejects any write that did not pass Cloudflare Access.
+  "vars": {
+    "REQUIRE_ACCESS": "0"
+  },
+
+  "observability": {
+    "enabled": true
+  }
+}
