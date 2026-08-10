@@ -27,12 +27,20 @@
 		}
 	],
 	// The Worker-side gate. "1" makes the Worker refuse EVERY request, reads and
-	// writes both, that did not arrive through Cloudflare Access, so Access being
-	// off at the dashboard reads as an outage rather than an open ledger. Set "0"
-	// only for the very first deploy, before Access exists; never to test locally
-	// (the v280 session flipped it for that and shipped the ledger world-readable).
+	// writes both, that did not arrive through Cloudflare Access.
+	//
+	// SET TO "0" ON 11 AUG 2026 ON THE OWNER'S EXPLICIT INSTRUCTION ("I want no zero
+	// trust requirements right now"), alongside removing the Access application.
+	// BE CLEAR WHAT THAT MEANS: with both off this Worker serves the real trading
+	// ledger to anyone who knows the URL, with no sign-in of any kind. It is now a
+	// deliberate choice; it is also the exact state the site was found in on 10-11
+	// Aug, when it was NOT deliberate, so do not read this value as evidence that
+	// someone decided. Only this comment is that evidence.
+	//
+	// Nothing is deleted, only switched off: restoring protection is this var back
+	// to "1" plus an Access application, per CLAUDE.md "Deploying" step 3.
 	"vars": {
-		"REQUIRE_ACCESS": "1"
+		"REQUIRE_ACCESS": "0"
 	},
 	"observability": {
 		"enabled": true

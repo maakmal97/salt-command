@@ -1,6 +1,8 @@
 # Response headers for the Salt Command cloud desk. Cloudflare applies these to the
-# static assets. The real gate on the data is Cloudflare Access in front of the whole
-# site; these headers are the second layer.
+# static assets. SINCE 11 AUG 2026 THESE ARE THE ONLY LAYER: Cloudflare Access was
+# removed on the owner's instruction and REQUIRE_ACCESS is "0", so nothing authenticates
+# anyone. X-Robots-Tag below is therefore load-bearing rather than belt-and-braces: it is
+# all that keeps a public ledger out of a search index. Do not weaken it.
 
 /*
   Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; manifest-src 'self'; form-action 'none'; base-uri 'none'; object-src 'none'; frame-ancestors 'none'

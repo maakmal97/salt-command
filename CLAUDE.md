@@ -4,7 +4,8 @@ The Obsidian Salt Desk, ported to a real cloud app so the ledger and the pricing
 are reachable on the go and a transaction can be added from the phone. It is the same desk
 as the laptop master; this repo is a deploy surface, not a second source.
 
-Deployed as a Cloudflare Worker with static assets, gated by Cloudflare Access. New
+Deployed as a Cloudflare Worker with static assets. **It is PUBLIC by the owner's decision of
+11 Aug 2026, with no sign-in of any kind** (see "Access, and why it is off" below). New
 transactions push to a KV-backed queue; the daily run folds them into the source.
 
 ## Hard rules
@@ -182,25 +183,46 @@ First-time Cloudflare setup, in order:
 1. **KV namespace.** `npx wrangler kv namespace create salt_queue`, then paste the printed id
    into `wrangler.jsonc` in place of `PLACEHOLDER_KV_ID`.
 2. **Deploy.** `npm run deploy`. Note the `*.workers.dev` URL it prints.
-3. **Cloudflare Access** (this is the gate on the data; do it before sharing the URL):
-   - Cloudflare dashboard → **Zero Trust** → **Access** → **Applications** → **Add an
-     application** → **Self-hosted**.
-   - Application domain: the Worker's `*.workers.dev` hostname (or a custom domain if bound).
-   - Add a **policy**: Action **Allow**, Include → **Emails** → your Google address
-     (`maakmal97@icloud.com` / `maakmal1997@gmail.com`), identity provider Google.
-   - Session duration to taste (e.g. 30 days so the phone rarely re-logs-in).
-   - Save. Now the site prompts for Google sign-in before it serves anything.
-4. **Harden the origin** (after Access is live): set `REQUIRE_ACCESS` to `"1"` in
-   `wrangler.jsonc` `vars` and redeploy. Since v281 the Worker then refuses EVERY request,
-   reads and writes both, that did not arrive through Access: assets get a small locked
-   page, the API paths get 401 JSON, so Access being off at the dashboard reads as an
-   outage rather than an open ledger (which is exactly what happened on 10-11 Aug: Access
-   was off, the v280 session had flipped the var to "0" to test locally, and the whole
-   ledger was world-readable). Leave it `"0"` only for the very first deploy; never flip
-   it to test.
+3. **Access, and why it is off.** See the section below. There is no step 3 to perform for
+   the current posture; the site is deliberately open.
 
-The phone's PWA is same-origin with the Worker, so once you are signed in through Access the
-`POST /queue` carries the Access cookie automatically and just works.
+## Access, and why it is off
+
+**DO NOT "FIX" `REQUIRE_ACCESS` BACK TO `"1"`.** Finding it at `"0"` is not the 10-11 Aug
+accident recurring. It is the owner's explicit instruction of 11 Aug 2026, "I want no zero
+trust requirements right now", and the Access application was removed to match. Re-enabling
+the var without also recreating the Access application locks the owner out completely: the
+Worker would refuse every request for want of a `Cf-Access-Jwt-Assertion` header that nothing
+is issuing any more, and the locked page would tell him to re-enable an application that does
+not exist.
+
+**What that means, stated plainly.** Anyone with the URL reads the whole ledger. Anyone with
+the URL can also `POST /queue`, which `tools/drain.mjs` unions into `salt_queue_cloud.json`
+and the daily run folds into the master as real rows, with no review step between. `GET /queue`
+likewise returns every device's queue to any caller. The exposure is therefore WRITE as well
+as read. Real names are not exposed: the built desk ships codes only, and the KV vault is null.
+
+**The cheap defence while it is open**, and it is worth running before each commit:
+
+```
+node tools/drain.mjs --status          # list every pending entry, read-only
+node tools/drain.mjs --forget <at>     # withdraw one entry, from the file and from KV
+```
+
+**To restore protection** (both halves, in this order, or you lock yourself out):
+
+1. Recreate the Access application FIRST. Zero Trust → Access controls → Applications → Add an
+   application → Self-hosted. Destination: **Workers**, scope `salt-command`, Type "a Worker's
+   production and preview URLs" (the preview URLs are the bypass a hostname-only rule misses).
+   Attach a policy: Action **Allow**, Include → **Emails** → `maakmal97@icloud.com` and
+   `maakmal1997@gmail.com`. **The application MUST have a policy attached.** Access is
+   default-deny and account ownership grants nothing; an application saved with no policy
+   denies everyone including the owner, which is exactly what happened on 11 Aug.
+2. Then set `REQUIRE_ACCESS` to `"1"` and `npm run deploy`.
+
+Note that a var-only edit does not change `public/rev.json`'s id, and `salt_sync.ps1` decides
+whether to deploy by comparing that id against `.deployed.json`. So a `wrangler.jsonc`-only
+change is NEVER shipped by the auto-sync leg. It must be deployed by hand.
 
 ## Daily-run integration
 

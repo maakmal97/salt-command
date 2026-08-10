@@ -11,13 +11,26 @@
  * password, and auto-hide them, while the server only ever holds ciphertext. A POST that
  * is not that envelope shape is rejected, so a stray plaintext name cannot land here.
  *
- * The real gate is Cloudflare Access in front of the whole origin. REQUIRE_ACCESS,
- * when set to "1", additionally refuses any write that did not arrive with the header
- * Cloudflare injects for an authenticated session, so a misconfigured Access cannot
- * silently leave the queue world-writable.
+ * AUTHENTICATION, AS AT 11 AUG 2026: THERE IS NONE, BY DECISION. Cloudflare Access was
+ * removed and REQUIRE_ACCESS is "0" on the owner's instruction ("I want no zero trust
+ * requirements right now"), so accessOk() below returns true unconditionally and every
+ * path serves, read and write alike. That means POST /queue accepts an unauthenticated
+ * body from anyone, and the daily run folds it into the real ledger. See CLAUDE.md,
+ * "Access, and why it is off", before changing REQUIRE_ACCESS back: doing so WITHOUT
+ * first recreating the Access application locks the owner out of his own desk, because
+ * nothing would be issuing the header this then demands.
  */
 
-const JSON_HEADERS = { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" };
+/* X-Robots-Tag matches public/_headers, which sets it on the static assets. It was missing
+   here, so GET /queue and GET /rev carried no noindex at all. That mattered little behind
+   Access and matters a great deal now the origin is public: GET /queue returns the union of
+   every device's queue, which is ledger data, and it is the one endpoint a crawler could
+   reach and index without a link ever existing to the desk itself. */
+const JSON_HEADERS = {
+  "content-type": "application/json; charset=utf-8",
+  "cache-control": "no-store",
+  "x-robots-tag": "noindex, nofollow, noarchive"
+};
 
 const json = (obj, status = 200) =>
   new Response(JSON.stringify(obj), { status, headers: JSON_HEADERS });
