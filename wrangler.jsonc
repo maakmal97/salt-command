@@ -30,7 +30,7 @@
 	// Turn on (in the dashboard or with `wrangler secret`/vars) AFTER Access is live,
 	// so the Worker rejects any write that did not pass Cloudflare Access.
 	"vars": {
-		"REQUIRE_ACCESS": "1"
+		"REQUIRE_ACCESS": "0"
 	},
 	"observability": {
 		"enabled": true

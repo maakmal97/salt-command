@@ -14,6 +14,9 @@
  *                                      'at' <= <ISO> (the QUEUE_COMMITTED watermark the run
  *                                      just set), leaving only still-uncommitted entries.
  *   node tools/drain.mjs --status      read-only: print the KV union and the file, no writes.
+ *   node tools/drain.mjs --forget <at> withdraw ONE entry, from the file and from KV, by
+ *                                      its own `at`. For testing the phone leg without
+ *                                      leaving a fake sale for the daily run to commit.
  *
  * Env:  SALT_DATA overrides the 06_Data folder. Uses the machine's existing wrangler auth;
  *       an unattended run may need CLOUDFLARE_API_TOKEN set.
@@ -87,6 +90,16 @@ export function unionByAt(...lists) {
 export function pruneCommitted(queue, iso) {
   return (queue || []).filter(e => !(e && e.at && e.at <= iso));
 }
+/* WITHDRAW EXACTLY ONE ENTRY, BY ITS OWN `at`. Added for testing the phone leg, which
+   has a trap in it: the daily run is told, correctly, to treat every queued row as REAL
+   and never as demo content. So a test transaction tapped out on the phone would be
+   committed into the ledger as a genuine sale unless it could be taken back.
+   --committed CANNOT do this job: it prunes everything at or before a timestamp, so
+   withdrawing a test would also silently swallow any real entry that happened to be
+   older. This removes one entry and nothing else. */
+export function forgetOne(queue, at) {
+  return (queue || []).filter(e => !(e && e.at === at));
+}
 
 /* ---- modes ---------------------------------------------------------------------- */
 function runCommitted() {
@@ -109,7 +122,22 @@ function runStatus() {
   const file = readFile();
   console.log(`KV: ${keys.length} device key(s), ${kv.length} entr${kv.length === 1 ? "y" : "ies"}.`);
   console.log(`File ${FILE}: ${file.queue.length} entr${file.queue.length === 1 ? "y" : "ies"}.`);
-  console.log(`Union (dedup by at): ${unionByAt(file.queue, kv).length}.`);
+  const all = unionByAt(file.queue, kv);
+  console.log(`Union (dedup by at): ${all.length}.`);
+  /* LIST THEM, because a count cannot be acted on. --forget needs an entry's own `at`,
+     and without this the only way to read one was to drain first, which is the very thing
+     you do not want to do while deciding whether an entry should reach the ledger.
+     Codes only, never names: this output gets pasted around. */
+  if (all.length) {
+    console.log("");
+    for (const e of all) {
+      const where = kv.some(k => k && k.at === e.at) ? "KV " : "file";
+      console.log(`  ${where}  ${e.at}  ${String(e.raw || "(no description)").slice(0, 96)}`);
+    }
+    console.log("");
+    console.log("  To take one back out before it reaches the ledger:");
+    console.log("    node tools/drain.mjs --forget <at>");
+  }
 }
 
 function runDrain() {
@@ -145,8 +173,41 @@ function runDrain() {
   if (merged.length) console.log(`  the daily run should commit ${FILE}, then: node tools/drain.mjs --committed <QUEUE_COMMITTED>`);
 }
 
+/* --forget <at>: take one entry back out of BOTH the file and KV. */
+function runForget() {
+  const at = process.argv[3];
+  if (!at) { console.error("usage: drain.mjs --forget <the entry's own at, e.g. 2026-08-09T04:12:33.123Z>"); process.exit(2); }
+
+  const f = readFile();
+  const before = f.queue.length;
+  f.queue = forgetOne(f.queue, at);
+  const fromFile = before - f.queue.length;
+  if (fromFile) { f.updated = nowISO(); writeAtomic(f); }
+
+  /* and out of KV, or the next drain would simply bring it back */
+  let fromKv = 0, keys = [];
+  try { keys = kvList(); }
+  catch (e) { console.error("KV unreachable, so only the file was cleaned: " + e.message.split("\n")[0]); }
+  for (const name of keys) {
+    const raw = kvGet(name); if (!raw) continue;
+    const j = jsonSlice(raw, "{", "}"); if (!j || !Array.isArray(j.queue)) continue;
+    if (!j.queue.some(e => e && e.at === at)) continue;
+    const kept = forgetOne(j.queue, at);
+    fromKv += j.queue.length - kept.length;
+    if (kept.length) {
+      try { wr(["kv", "key", "put", name, JSON.stringify({ updated: nowISO(), desk: j.desk || "cloud", queue: kept })]); }
+      catch (e) { console.error("  could not rewrite " + name + ": " + e.message.split("\n")[0]); }
+    } else { kvDelete(name); }
+  }
+  console.log(`FORGOT ${at}`);
+  console.log(`  removed from the file: ${fromFile}   removed from KV: ${fromKv}`);
+  if (!fromFile && !fromKv) console.log("  nothing carried that timestamp; check it against --status.");
+  else console.log("  it will not reach the ledger.");
+}
+
 function main() {
   const arg = process.argv[2];
+  if (arg === "--forget") return runForget();
   if (arg === "--committed") return runCommitted();
   if (arg === "--status") return runStatus();
   return runDrain();

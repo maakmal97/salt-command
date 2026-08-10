@@ -63,7 +63,33 @@ of disk. `/queue/ping` returns `cloud:true`, which tells the built desk to keep 
 device-local and skip the laptop-only 3-second heartbeat.
 
 Offline on the phone: an entry is held in `localStorage` and the desk says so; it pushes on the
-next open with a connection (the built desk auto-pushes any held queue when the ping succeeds).
+next open with a connection (the built desk auto-pushes any held queue when the ping succeeds),
+and from v279 the ten-second tick retries a held entry rather than waiting for that next open.
+
+## Continuous sync (v279)
+
+The ledger is baked into `public/index.html` at build time, so a phone is only ever as current
+as its last load. Three things close that gap, and none of them commits anything:
+
+1. **The phone polls `/rev` every ten seconds** while it is on screen, and compares the returned
+   `id` against the `SALT_BUILD_ID` baked into the page it is running. Different means a newer
+   build is live: it reloads if the desk is idle, and offers a chip if it is not, because
+   reloading over a half-typed entry would throw the entry away. The Worker serves `/rev` from
+   `public/rev.json` with `no-store`, and `sw.js` never caches it.
+2. **`serve_desk.py` ships the laptop** for as long as it is on. It watches the master, waits
+   90 seconds for it to settle, runs `npm test` and deploys ANY change, not only a version bump.
+   Separately it drains the phone queue to disk every 60 seconds. `SALT_NO_CLOUD=1` turns the
+   leg off; `SALT_DEBOUNCE` and `SALT_DRAIN_SECS` tune it.
+3. **`salt_daily.ps1` holds the server open around the daily run**, so phone entries are on disk
+   before the run reads a figure and the commit reaches the phone in seconds.
+
+**A deploy is decided by `rev.json.id` against `.deployed.json.id`, never by hashing the build
+output before and after.** The old test asked "did my build change anything", which is a
+different question from "is the phone behind", and the two part company the moment anything else
+builds the repo. It happened on 10 Aug: a session built, a sync pass rebuilt identical bytes ten
+seconds later, saw no difference and reported the phone current while a new bundle sat
+undeployed. Two recorded facts cannot drift like that, and a failed deploy leaves them unequal
+so the next pass retries by itself.
 
 ## Names on the phone
 
@@ -104,7 +130,9 @@ Cow-Crm01 master (a Cowork/master session); once it lands, the sync above alread
 | `public/manifest.webmanifest`, `public/icon-*.png` | Home-screen install. Icons from `tools/make_icons.py`. |
 | `public/_headers` | CSP and security headers, applied by Cloudflare to the assets. |
 | `wrangler.jsonc` | Worker + assets + the `SALT_QUEUE` KV binding. |
-| `tools/build.mjs` | Master → `public/index.html`, with fail-loud patch anchors. |
+| `tools/build.mjs` | Master → `public/index.html`, with fail-loud patch anchors. Also writes `public/rev.json`. |
+| `public/rev.json` | `{v,id,built}` for the build on disk. `id` is a hash of the built file. **Written by the build, never by hand.** |
+| `.deployed.json` | `{id,v,at}` for the build that last DEPLOYED successfully. Written by `salt_sync.ps1` on a reported success and nowhere else. |
 | `tools/drain.mjs` | KV → `06_Data\salt_queue_cloud.json`; `--committed <ISO>` prunes; `--status` inspects. |
 | `tools/make_icons.py` | Regenerate the crystal icons. |
 | `test/verify.mjs` | Smoke suite: Worker contract, name-drop, access gate, drain helpers, build integrity. |

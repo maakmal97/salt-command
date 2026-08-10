@@ -11,13 +11,20 @@
  *   SALT_MASTER   env override for the master path (absolute).
  */
 
-import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync, copyFileSync, existsSync } from "node:fs";
+import { createHash } from "node:crypto";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO = resolve(HERE, "..");
 const OUT = resolve(REPO, "public", "index.html");
+const REV = resolve(REPO, "public", "rev.json");
+
+/* The token the build id is written into. It is a placeholder while the hash is taken,
+   so the id covers the whole built file except the three places it is stamped, which is
+   the only way a file can carry a hash of itself. */
+const IDTOKEN = "__SALT_BUILD_ID__";
 
 const DEFAULT_MASTER =
   "C:/Users/maakm/Claude/Projects/Personal/Cow-Crm01_Salt Business/01_Dashboard/salt_command.html";
@@ -44,6 +51,18 @@ function replaceOnce(name, anchor, repl) {
   }
   src = parts[0] + repl + parts[1];
   applied.push(name);
+}
+
+/* An assertion rather than a patch: the MASTER owns this now, and the build's job is to
+   prove it still does. Same fail-loud contract as replaceOnce, opposite direction. */
+function requireOnce(name, needle, why) {
+  const n = src.split(needle).length - 1;
+  if (n !== 1) {
+    console.error(`BUILD FAILED: check "${name}" expected ${JSON.stringify(needle.slice(0, 70))} exactly once in the master, found ${n}.`);
+    console.error("  " + why);
+    process.exit(1);
+  }
+  applied.push(name + " (checked)");
 }
 
 /* ---- P2 head block: PWA + a per-device id + service-worker registration ---------- */
@@ -85,13 +104,59 @@ const PWA_BLOCK = [
   '    try{lockVault();if(typeof renderReveal==="function")renderReveal();if(typeof render==="function")render();}catch(e){}',
   '  }',
   '});',
+  '/* FRESHNESS. The ledger is baked into this file at build time, so the phone is only',
+  '   as current as its last load. This asks the Worker every ten seconds whether a newer',
+  '   build has been deployed, and loads it when one has. It is a poll and not a push',
+  '   because KV cannot reach a phone; ten seconds is the interval that was asked for.',
+  '   IT WILL NOT INTERRUPT YOU. Reloading mid-entry would throw away typed input and any',
+  '   held queue, so it reloads only when the desk is idle: nothing unsent, no field',
+  '   focused, no dialog open. Otherwise it offers a chip and waits to be tapped.',
+  '   The same tick retries a held entry, which is what gets a phone write to the cloud',
+  '   without waiting for the next open. */',
+  'var SALT_BUILD_ID=' + JSON.stringify(IDTOKEN) + ';',
+  'var SALT_REV_MS=10000;',
+  '(function(){',
+  '  var chip=null,timer=null;',
+  '  function idle(){try{',
+  "    if(typeof queue!=='undefined'&&queue&&queue.length)return false;",
+  '    var a=document.activeElement;',
+  '    if(a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))return false;',
+  "    if(document.querySelector('dialog[open]'))return false;",
+  '    return true;',
+  '  }catch(e){return false;}}',
+  '  function offer(v){',
+  '    if(chip||!document.body)return;',
+  "    chip=document.createElement('button');chip.type='button';",
+  "    chip.textContent='New ledger '+(v||'')+' \\u00b7 tap to load';",
+  "    chip.setAttribute('style','position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom));z-index:99999;font:600 13px/1.2 inherit;padding:10px 15px;border-radius:999px;border:1px solid rgba(255,255,255,.28);background:rgba(24,15,44,.94);color:#fff;box-shadow:0 6px 24px rgba(0,0,0,.45)');",
+  '    chip.onclick=function(){location.reload();};',
+  '    document.body.appendChild(chip);',
+  '  }',
+  '  function tick(){',
+  "    if(!window.SALT_CLOUD||document.visibilityState!=='visible')return;",
+  "    try{if(typeof queue!=='undefined'&&queue&&queue.length&&typeof qSyncState!=='undefined'&&qSyncState==='server'&&typeof qPost==='function')qPost();}catch(e){}",
+  "    fetch('rev',{cache:'no-store'}).then(function(r){return r.ok?r.json():null;}).then(function(j){",
+  '      if(!j||!j.id||j.id===SALT_BUILD_ID)return;',
+  '      if(idle())location.reload(); else offer(j.v);',
+  '    }).catch(function(){});',
+  '  }',
+  "  window.addEventListener('load',function(){if(!timer){timer=setInterval(tick,SALT_REV_MS);tick();}});",
+  "  document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible')tick();});",
+  '})();',
   '</' + 'script>',
   '<!-- END cloud/PWA -->'
 ].join(EOL);
 
-replaceOnce("P1 viewport-fit",
-  '<meta name="viewport" content="width=device-width, initial-scale=1">',
-  '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">');
+/* P1 WAS A PATCH AND IS NOW A CHECK, at master v276. The build used to add viewport-fit
+   because only the phone needed it. The master added it for itself in the portrait pass, so
+   the anchor this patch looked for no longer exists and the build failed loudly, which is
+   exactly what the anchors are for: it caught a master change that would otherwise have
+   shipped a phone build with no safe-area handling, or none at all.
+   Keeping it as an assertion rather than deleting it means the phone cannot silently lose
+   viewport-fit if someone ever trims that meta tag back on the master. */
+requireOnce("P1 viewport-fit (master-owned since v276)",
+  'content="width=device-width, initial-scale=1, viewport-fit=cover"',
+  'The master must carry viewport-fit=cover on its viewport meta. Without it the phone is letterboxed on a notched screen and the safe-area padding added at v276 resolves to zero.');
 
 replaceOnce("P2 head PWA block",
   '<title>Salt Command</title>',
@@ -103,7 +168,7 @@ replaceOnce("P3 qInit cloud branch",
 
 replaceOnce("P4a renderRole cloud tooltip",
   '      +\'title="Served by serve_desk.py, so this copy writes salt_queue.json and salt_vault.json to disk.">\'',
-  "      +(window.SALT_CLOUD?'title=\"Cloud desk, behind Cloudflare Access. New transactions push to the queue and reach the source at the next daily run.\">':'title=\"Served by serve_desk.py, so this copy writes salt_queue.json and salt_vault.json to disk.\">')");
+  "      +(window.SALT_CLOUD?'title=\"Cloud desk. New transactions push to the queue and reach the source at the next daily run. Names arrive sealed and need the passphrase.\">':'title=\"Served by serve_desk.py, so this copy writes salt_queue.json and salt_vault.json to disk.\">')");
 
 replaceOnce("P4b renderRole cloud label",
   "      +'&#9679; master &middot; writes to disk</span>';",
@@ -111,7 +176,7 @@ replaceOnce("P4b renderRole cloud label",
 
 replaceOnce("P5 qNote cloud line",
   "  if(qSyncState==='server')return 'Record saves straight to <b>'+QFILE+'</b> in this folder, which the daily run reads. Nothing else to do. <b>Save queue file</b> writes it again on demand and <b>Copy queue</b> puts the lines on the clipboard.';",
-  "  if(qSyncState==='server'&&window.SALT_CLOUD)return 'Record pushes each entry to the cloud queue, behind Cloudflare Access. The daily run folds it into the source; nothing else to do. <b>Copy queue</b> still puts the lines on the clipboard.';" + EOL +
+  "  if(qSyncState==='server'&&window.SALT_CLOUD)return 'Record pushes each entry to the cloud queue. The daily run folds it into the source; nothing else to do. <b>Copy queue</b> still puts the lines on the clipboard.';" + EOL +
   "  if(qSyncState==='server')return 'Record saves straight to <b>'+QFILE+'</b> in this folder, which the daily run reads. Nothing else to do. <b>Save queue file</b> writes it again on demand and <b>Copy queue</b> puts the lines on the clipboard.';");
 
 replaceOnce("P6a qPost success line",
@@ -137,10 +202,44 @@ if (externals.length) {
   process.exit(1);
 }
 
+/* ---- the build id, and the manifest the phone polls -------------------------------
+   The id is a hash of the built file with the id itself still a placeholder, so it
+   changes whenever anything else does and never chases its own tail. rev.json is the
+   only thing the ten-second poll fetches: a few dozen bytes, served no-store, so the
+   cost of being current is a rounding error against the 800 KB desk. */
+const BUILD_ID = createHash("sha256").update(src).digest("hex").slice(0, 16);
+if (src.split(IDTOKEN).length - 1 !== 1) {
+  console.error(`BUILD FAILED: expected the build-id token exactly once, found ${src.split(IDTOKEN).length - 1}.`);
+  console.error("  The freshness patch in PWA_BLOCK is the only thing that may carry it.");
+  process.exit(1);
+}
+src = src.split(IDTOKEN).join(BUILD_ID);
+
+/* the version the desk is stamped with, read from the master's one-entry evolution */
+let VER = "";
+try { VER = (src.match(/const evolution=\[\{v:'(v\d+)'/) || [])[1] || ""; } catch (e) { }
+
 mkdirSync(dirname(OUT), { recursive: true });
 writeFileSync(OUT, src);
+writeFileSync(REV, JSON.stringify({ ok: true, v: VER, id: BUILD_ID, built: new Date().toISOString() }) + "\n");
 const kb = (Buffer.byteLength(src) / 1024).toFixed(0);
+/* THE DESK'S ONE RUNTIME ASSET, AND THE REASON THE PHONE HAD NO CHARTS.
+   ensureChart() loads `assets/chart.umd.js` from the same origin rather than a CDN, which is
+   what keeps the desk self-contained. The build copied the HTML and nothing beside it, so on
+   the phone that request 404'd, ensureChart called back false, and every chart on every tab
+   fell through to "Chart unavailable". It looked like a rendering fault and was a missing file.
+   The CSP needs no change: script-src is 'self' and this is same-origin. */
+const ASSET_SRC = resolve(dirname(MASTER), "assets", "chart.umd.js");
+const ASSET_OUT = resolve(REPO, "public", "assets", "chart.umd.js");
+if (existsSync(ASSET_SRC)) {
+  mkdirSync(dirname(ASSET_OUT), { recursive: true });
+  copyFileSync(ASSET_SRC, ASSET_OUT);
+  console.log(`  asset:   chart.umd.js -> public/assets/`);
+} else {
+  console.log(`  asset:   WARNING chart.umd.js not found beside the master, so the phone will have no charts`);
+}
 console.log(`BUILD OK: ${OUT}`);
 console.log(`  master:  ${MASTER}`);
 console.log(`  size:    ${kb} KB   eol: ${EOL === "\r\n" ? "CRLF" : "LF"}`);
 console.log(`  patches: ${applied.length} applied — ${applied.join(", ")}`);
+console.log(`  rev:     ${VER || "(no version found)"}  id ${BUILD_ID}  -> public/rev.json`);

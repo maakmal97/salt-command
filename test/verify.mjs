@@ -6,6 +6,7 @@
  * No network, no browser: `npm test` runs it in a couple of seconds.
  */
 import { execFileSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { readFileSync, writeFileSync, mkdirSync, rmSync } from "node:fs";
 import { dirname, resolve, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -180,6 +181,61 @@ section("Build — patches, scripts, no externals");
     }
     ok(bad === 0, `all ${i} inline scripts parse`);
     rmSync(join(REPO, "test", "tmp"), { recursive: true, force: true });
+
+    /* ---- 6. Freshness: the ten-second poll and its manifest --------------------- */
+    section("Freshness — build id, manifest, poll");
+    let rev = null;
+    try { rev = JSON.parse(readFileSync(join(REPO, "public", "rev.json"), "utf8")); } catch (e) { }
+    ok(!!rev, "rev.json written by the build");
+    ok(rev && /^[0-9a-f]{16}$/.test(rev.id || ""), "rev.json carries a 16-hex build id");
+    ok(rev && /^v\d+$/.test(rev.v || ""), "rev.json carries the desk version");
+    ok(html.includes("var SALT_BUILD_ID="), "the built desk carries its own build id");
+    ok(rev && html.includes('var SALT_BUILD_ID="' + rev.id + '"'), "the baked id matches rev.json");
+    ok(!html.includes("__SALT_BUILD_ID__"), "no unreplaced build-id placeholder shipped");
+    ok(html.includes("var SALT_REV_MS=10000"), "the poll interval is ten seconds");
+    ok(html.includes("fetch('rev',{cache:'no-store'})"), "the poll bypasses the HTTP cache");
+    ok(html.includes("if(!window.SALT_CLOUD||document.visibilityState!=='visible')return"),
+      "the poll is cloud-only and pauses when the app is not on screen");
+    ok(html.includes("if(idle())location.reload(); else offer(j.v)"),
+      "a reload only happens when the desk is idle, otherwise it offers");
+
+    /* the id must actually move when the master does, or the poll can never fire */
+    const bumped = html.replace("</body>", "<!-- x --></body>");
+    ok(createHash("sha256").update(bumped).digest("hex").slice(0, 16) !== rev.id,
+      "a changed build produces a different id");
+  }
+}
+
+/* ---- 7. Worker: /rev serves the manifest, uncached ------------------------------- */
+section("Worker — /rev");
+{
+  const kv = new KV();
+  const revAssets = {
+    async fetch(request) {
+      const p = new URL(request.url).pathname;
+      if (p === "/rev.json") return new Response('{"ok":true,"v":"v277","id":"abc0123456789def"}', { status: 200 });
+      return new Response("nope", { status: 404 });
+    }
+  };
+  const env = { SALT_QUEUE: kv, ASSETS: revAssets, REQUIRE_ACCESS: "0" };
+  const r = await worker.fetch(req("/rev"), env);
+  ok(r.status === 200, "/rev answers 200");
+  const j = await r.json();
+  ok(j.id === "abc0123456789def", "/rev returns the build id from the manifest");
+  ok(/no-store/.test(r.headers.get("cache-control") || ""), "/rev is served no-store");
+
+  const missing = { async fetch() { return new Response("nope", { status: 404 }); } };
+  const r2 = await worker.fetch(req("/rev"), { ...env, ASSETS: missing });
+  ok(r2.status === 404, "/rev answers 404 when no manifest is built, rather than throwing");
+
+  /* the service worker must never cache it */
+  const sw = readFileSync(join(REPO, "public", "sw.js"), "utf8");
+  const apiLine = (sw.match(/const API = (\/.*\/);/) || [])[1];
+  ok(!!apiLine, "sw.js has an API pattern");
+  if (apiLine) {
+    const rx = new RegExp(apiLine.slice(1, apiLine.lastIndexOf("/")));
+    ok(rx.test("/rev"), "sw.js never caches /rev");
+    ok(rx.test("/rev.json"), "sw.js never caches /rev.json");
   }
 }
 

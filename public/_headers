@@ -16,3 +16,8 @@
 # The shell must never go stale, or a fresh build will not reach the phone.
 /sw.js
   Cache-Control: no-cache
+
+# The freshness manifest. A cached copy would answer the ten-second poll with the build
+# it was cached against, which is the one failure this whole mechanism exists to avoid.
+/rev.json
+  Cache-Control: no-store

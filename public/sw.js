@@ -15,8 +15,11 @@ const SHELL = [
   "./icon-512.png"
 ];
 
-/* The desk's own HTTP contract. These are answered by the Worker, never the cache. */
-const API = /^\/(queue|vault|bio|bye|menu|qr)(\/|$)/;
+/* The desk's own HTTP contract. These are answered by the Worker, never the cache.
+   /rev and its manifest are here for the same reason and it is the sharpest case: a
+   cached freshness check would report the build it was cached with for ever, so the
+   poll would prove the phone current at the exact moment it went stale. */
+const API = /^\/(queue|vault|bio|bye|menu|qr|rev|rev\.json)(\/|$)/;
 
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));

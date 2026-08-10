@@ -138,6 +138,21 @@ export default {
       return json({ ok: false, error: "method not allowed" }, 405);
     }
     if (p === "/bye") return json({ ok: true });            // no server to stop; answer so the beacon is quiet
+
+    /* What build is live. The phone polls this every ten seconds and reloads when the id
+     * differs from the one baked into the page it is running, which is how a deploy from
+     * the laptop reaches a phone already sitting open. It is deliberately the smallest
+     * thing that answers the question: the id, the version and when it was built.
+     * Served with no-store, and read through ASSETS so it is written by the build alone. */
+    if (p === "/rev") {
+      try {
+        const res = await env.ASSETS.fetch(new Request(new URL("/rev.json", url), { method: "GET" }));
+        if (!res || !res.ok) return json({ ok: false, error: "no build manifest" }, 404);
+        return new Response(await res.text(), { status: 200, headers: JSON_HEADERS });
+      } catch (e) {
+        return json({ ok: false, error: "no build manifest" }, 404);
+      }
+    }
     if (p === "/vault") {
       if (m === "GET") return handleVaultGet(env);               // ciphertext only
       if (m === "POST") return handleVaultPost(request, env);    // stores the envelope, rejects plaintext
