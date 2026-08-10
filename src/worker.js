@@ -22,6 +22,29 @@ const JSON_HEADERS = { "content-type": "application/json; charset=utf-8", "cache
 const json = (obj, status = 200) =>
   new Response(JSON.stringify(obj), { status, headers: JSON_HEADERS });
 
+/* Served in place of every asset when the gate is on and the Access header is absent.
+ * Deliberately tiny, self-contained and dataless: no figure from the desk appears here.
+ * The service worker shows it rather than a cached desk (a 401 is a resolved response,
+ * not a fetch failure), so Access being off is loud on the phone, never silent. */
+const LOCKED_HTML = '<!doctype html><html lang="en"><meta charset="utf-8">'
+  + '<meta name="viewport" content="width=device-width,initial-scale=1">'
+  + '<title>Salt Command locked</title>'
+  + '<body style="margin:0;min-height:100vh;display:grid;place-items:center;background:#0b0f14;color:#dbe4ee;font:15px/1.6 system-ui,sans-serif">'
+  + '<div style="max-width:26em;padding:2em;text-align:center">'
+  + '<div style="font-size:2em">&#128274;</div>'
+  + '<h1 style="font-size:1.1em;margin:.5em 0">Salt Command is locked</h1>'
+  + '<p style="color:#8b98a9;margin:0">This deployment expects Cloudflare Access in front of it, and this request arrived without it. Re-enable Access for salt-command in Zero Trust, then reload.</p>'
+  + '</div></body></html>';
+const locked = () => new Response(LOCKED_HTML, {
+  status: 401,
+  headers: {
+    "content-type": "text/html; charset=utf-8",
+    "cache-control": "no-store",
+    "x-robots-tag": "noindex, nofollow",
+    "content-security-policy": "default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
+  }
+});
+
 const QKEY = (device) => "q:" + device;
 const VKEY = "vault";                 // the encrypted name vault, ciphertext only
 const DEVICE_RE = /^[A-Za-z0-9._-]{1,80}$/;
@@ -125,6 +148,16 @@ export default {
     const url = new URL(request.url);
     const p = (url.pathname.replace(/\/+$/, "") || "/");
     const m = request.method;
+
+    /* Fail closed. With REQUIRE_ACCESS on, a request that did not pass Cloudflare
+     * Access gets nothing: not the ledger, not the queue, not the build id. Access
+     * being off at the dashboard must read as an outage, never as an open desk.
+     * The API paths answer JSON so the desk's ping-fail path degrades cleanly. */
+    if (!accessOk(request, env)) {
+      if (p === "/queue" || p === "/queue/ping" || p === "/vault" || p === "/bio" || p === "/bye" || p === "/rev")
+        return json({ ok: false, error: "not authenticated" }, 401);
+      return locked();
+    }
 
     // --- the desk's HTTP contract -------------------------------------------------
     if (p === "/queue/ping") {

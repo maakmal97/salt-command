@@ -26,11 +26,13 @@
 			"remote": true
 		}
 	],
-	// Off by default so the very first deploy works before Access is configured.
-	// Turn on (in the dashboard or with `wrangler secret`/vars) AFTER Access is live,
-	// so the Worker rejects any write that did not pass Cloudflare Access.
+	// The Worker-side gate. "1" makes the Worker refuse EVERY request, reads and
+	// writes both, that did not arrive through Cloudflare Access, so Access being
+	// off at the dashboard reads as an outage rather than an open ledger. Set "0"
+	// only for the very first deploy, before Access exists; never to test locally
+	// (the v280 session flipped it for that and shipped the ledger world-readable).
 	"vars": {
-		"REQUIRE_ACCESS": "0"
+		"REQUIRE_ACCESS": "1"
 	},
 	"observability": {
 		"enabled": true

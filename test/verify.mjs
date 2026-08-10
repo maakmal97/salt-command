@@ -7,7 +7,7 @@
  */
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { readFileSync, writeFileSync, mkdirSync, rmSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync, rmSync, existsSync } from "node:fs";
 import { dirname, resolve, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import worker from "../src/worker.js";
@@ -125,6 +125,22 @@ section("Worker — access gate and routing");
   r = await worker.fetch(postQ({ device: "d1", queue: [] }, { "Cf-Access-Jwt-Assertion": "jwt" }), mkEnv(kv, "1"));
   ok(r.status === 200, "REQUIRE_ACCESS=1 with Access header → 200");
 
+  /* The gate fails closed on reads too. Access off at the dashboard must mean an
+   * outage, not a world-readable ledger; the desk saw exactly that on 10-11 Aug. */
+  r = await worker.fetch(req("/"), mkEnv(kv, "1"));
+  ok(r.status === 401 && (await r.text()).includes("locked"), "REQUIRE_ACCESS=1: GET / → 401 locked page, never the desk");
+  r = await worker.fetch(req("/queue"), mkEnv(kv, "1"));
+  ok(r.status === 401, "REQUIRE_ACCESS=1: GET /queue → 401");
+  r = await worker.fetch(req("/vault"), mkEnv(kv, "1"));
+  ok(r.status === 401, "REQUIRE_ACCESS=1: GET /vault → 401");
+  r = await worker.fetch(req("/rev"), mkEnv(kv, "1"));
+  ok(r.status === 401, "REQUIRE_ACCESS=1: GET /rev → 401");
+  r = await worker.fetch(req("/queue/ping"), mkEnv(kv, "1"));
+  const pj = await r.json();
+  ok(r.status === 401 && pj.ok === false, "REQUIRE_ACCESS=1: ping answers JSON {ok:false} so the desk degrades to held-locally");
+  r = await worker.fetch(req("/some/page", { headers: { "Cf-Access-Jwt-Assertion": "jwt" } }), mkEnv(kv, "1"));
+  ok(r.status === 200 && (await r.text()) === "ASSET:/some/page", "REQUIRE_ACCESS=1 with Access header: assets served as normal");
+
   const env = mkEnv(new KV());
   r = await worker.fetch(req("/menu/publish", { method: "POST", body: "{}" }), env);
   ok(r.status === 501, "menu endpoint is 501 (laptop-only)");
@@ -163,6 +179,17 @@ section("Build — patches, scripts, no externals");
     ok(html.includes('<link rel="manifest"'), "manifest linked");
     ok(html.includes("serviceWorker") && html.includes("register('sw.js')"), "service worker registered");
     ok(html.includes("function saltDeviceId"), "device id helper present");
+
+    /* THE CHART ASSET, AND WHY THIS TEST EXISTS. ensureChart() loads assets/chart.umd.js
+       from the same origin rather than a CDN, which is what keeps the desk self-contained
+       and satisfies the CSP. The build copied index.html and nothing beside it, so on the
+       phone that request 404'd, ensureChart called back false, and every chart on every tab
+       fell through to "Chart unavailable". It read as a rendering fault for weeks and was a
+       missing file. Nothing else in this suite would have caught it. */
+    ok(existsSync(join(REPO, "public", "assets", "chart.umd.js")),
+       "chart.umd.js copied into public/assets, without which the phone has no charts");
+    ok(html.includes("assets/chart.umd.js"),
+       "the desk still loads the chart library from its own origin, never a CDN");
     ok(html.includes("cloud &middot; pushes to source"), "cloud badge present");
     ok(html.includes("device:(typeof saltDeviceId"), "qPayload carries the device id");
     ok(html.includes("if(j.cloud){ await vaultLoad();"), "cloud loads the encrypted vault");

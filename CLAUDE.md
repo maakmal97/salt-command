@@ -29,6 +29,31 @@ transactions push to a KV-backed queue; the daily run folds them into the source
 5. **British English, no em-dashes,** in code, docs and UI copy alike. RM and **unit** only;
    the desk retired the mass symbol at v161.
 
+## NEVER RUN GIT AGAINST THIS REPO FROM A MOUNTED SANDBOX
+
+A Cowork or agent session sees this repo through a mount that **permits writes but denies
+unlink**. Git needs to delete its own lock files, so every invocation leaves them behind:
+`.git/index.lock`, `.git/HEAD.lock`, `.git/objects/maintenance.lock` and a `tmp_obj_*` for
+every object written. `git status` alone recreates `index.lock`.
+
+The lock then blocks every later `git add` and `git commit`, including the ones
+`salt_sync.ps1` runs on the way out, which report `commit did not take` and carry on. That
+failure is silent: `git push` still exits 0 with nothing to push and logs `pushed off-site`,
+so the log reads healthy while the ledger goes unversioned. It ran that way from 09 to 11 Aug.
+
+**So: no `git add`, `commit`, `push`, `status` or `log` from a session. Read files, edit
+files, build, and leave git to Windows.** If a session must report repo state, read
+`.git/HEAD` and `public/rev.json` directly.
+
+Clearing up after one that did, in PowerShell:
+
+```
+cd C:\Users\maakm\Claude\Code\salt-command
+Get-ChildItem .git -Recurse -Include *.lock,tmp_obj_* -Force | Remove-Item -Force
+git status
+git push
+```
+
 ## The three surfaces, and how they stay coherent
 
 | Surface | Path | Role |
@@ -165,9 +190,14 @@ First-time Cloudflare setup, in order:
      (`maakmal97@icloud.com` / `maakmal1997@gmail.com`), identity provider Google.
    - Session duration to taste (e.g. 30 days so the phone rarely re-logs-in).
    - Save. Now the site prompts for Google sign-in before it serves anything.
-4. **Harden the queue** (after Access is live): set `REQUIRE_ACCESS` to `"1"` in
-   `wrangler.jsonc` `vars` and redeploy. The Worker then refuses any write that did not arrive
-   through Access. Leave it `"0"` only until Access is configured.
+4. **Harden the origin** (after Access is live): set `REQUIRE_ACCESS` to `"1"` in
+   `wrangler.jsonc` `vars` and redeploy. Since v281 the Worker then refuses EVERY request,
+   reads and writes both, that did not arrive through Access: assets get a small locked
+   page, the API paths get 401 JSON, so Access being off at the dashboard reads as an
+   outage rather than an open ledger (which is exactly what happened on 10-11 Aug: Access
+   was off, the v280 session had flipped the var to "0" to test locally, and the whole
+   ledger was world-readable). Leave it `"0"` only for the very first deploy; never flip
+   it to test.
 
 The phone's PWA is same-origin with the Worker, so once you are signed in through Access the
 `POST /queue` carries the Access cookie automatically and just works.
@@ -191,6 +221,6 @@ deduped by the entry's own `at`, so nothing is committed twice.
 
 ## Tests
 
-`npm test` runs `test/verify.mjs`: 32 assertions with no network or browser. Add one for every
+`npm test` runs `test/verify.mjs`: 66 assertions with no network or browser. Add one for every
 behavioural change to the Worker, the build patches or the drain. The desk's own rendering is
 covered by the daily run's jsdom pass against the master, not here.

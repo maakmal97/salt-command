@@ -59,7 +59,7 @@ document.addEventListener('visibilitychange',function(){
    focused, no dialog open. Otherwise it offers a chip and waits to be tapped.
    The same tick retries a held entry, which is what gets a phone write to the cloud
    without waiting for the next open. */
-var SALT_BUILD_ID="0e5e0a6af8a172ed";
+var SALT_BUILD_ID="cef30f56f1f97c0b";
 var SALT_REV_MS=10000;
 (function(){
   var chip=null,timer=null;
@@ -1021,6 +1021,109 @@ details.obshush:hover{opacity:.85;}
   .kpi,.card,.chartbox,.lcard,.pend{background:#fff!important;border:1px solid #dfe3ec!important;
     box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;}
   details>*{display:revert;}}
+/* ============ v281 - THE INTERACTION PASS ============================================
+   A last-wins layer, as v213 was. Nothing below renames a class or moves markup; it
+   completes the accent map, gives the desk its motion grammar, and makes the phone's
+   navigation permanent. Reduced motion is honoured by the global kill above.
+   ------------------------------------------------------------------------------ */
+/* EVERY TAB OWNS AN ACCENT. Six tabs had none and fell back to gold, so Today, Forward,
+   Sourcing, Analysis, Map and Pricing all wore the same chrome and the rail said nothing
+   about where you were. Hues sit in the desk's own families; semantic colours untouched. */
+body[data-sec="today"]{--acc:#f5c451;--accB:#f0932b;}
+body[data-sec="forward"]{--acc:#8ab8ff;--accB:#5f86e8;}
+body[data-sec="sourcing"]{--acc:#ffb454;--accB:#f0932b;}
+body[data-sec="analysis"]{--acc:#c7a4ff;--accB:#9a6fe8;}
+body[data-sec="map"]{--acc:#5ad1c8;--accB:#379e96;}
+body[data-sec="pricing"]{--acc:#e8c66b;--accB:#caa53f;}
+body[data-sec="changelog"]{--acc:#9d8cc4;--accB:#7c6aa0;}   /* brightened: 7c6aa0 sat under 4.5:1 as text */
+/* the headline and the table headers carry the tab's accent, so a tab reads as one place */
+h1{background:linear-gradient(92deg,#fff,var(--acc) 58%,var(--ice));-webkit-background-clip:text;background-clip:text;}
+thead th{color:var(--acc);}
+/* THE LIGHT FOLLOWS YOU: the third orb takes the tab's accent, so switching tabs moves
+   the aurora a little without repainting the page. */
+.orb.c{background:var(--acc);transition:background .8s ease;}
+/* MOTION GRAMMAR. One easing family; the section settles, its first cards follow. The
+   .switching class is set only on a tab CHANGE, so a mid-tab re-render never replays it. */
+.sec.on{animation:secin .26s cubic-bezier(.22,.8,.36,1);}
+@keyframes secin{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
+.sec.on.switching>*{animation:childin .32s cubic-bezier(.22,.8,.36,1) both;}
+.sec.on.switching>*:nth-child(2){animation-delay:.03s}
+.sec.on.switching>*:nth-child(3){animation-delay:.06s}
+.sec.on.switching>*:nth-child(4){animation-delay:.09s}
+.sec.on.switching>*:nth-child(5){animation-delay:.12s}
+.sec.on.switching>*:nth-child(6){animation-delay:.15s}
+.sec.on.switching>*:nth-child(7){animation-delay:.18s}
+.sec.on.switching>*:nth-child(8){animation-delay:.21s}
+.sec.on.switching>*:nth-child(n+9){animation:none;}   /* below the fold; never held invisible */
+@keyframes childin{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:none}}
+/* buttons press; the primary lifts. transform is additive to the hover rules above. */
+.tab,.navlink,.vbtn,.ubtn,.lqb,.obsbtn,.viewsw button,.prodsw button,.exitbtn{
+  transition:background .16s ease,background-color .16s ease,border-color .16s ease,
+             color .16s ease,transform .12s ease,box-shadow .16s ease;}
+.navlink:hover,.vbtn:hover,.ubtn:hover{transform:translateY(-1px);}
+.vbtn{box-shadow:0 6px 16px -9px var(--gold);}
+.vbtn:hover{box-shadow:0 10px 22px -9px var(--gold);}
+.tab:active,.navlink:active,.vbtn:active,.ubtn:active,.lqb:active,.viewsw button:active,
+.prodsw button:active,.obsbtn:active{transform:translateY(0) scale(.98);}
+.tab.on{box-shadow:0 6px 18px -9px var(--acc);}
+/* panes acknowledge the pointer without jumping */
+.kpi,.lcard{transition:border-color .18s ease,box-shadow .18s ease;}
+.kpi:hover,.lcard:hover{border-color:var(--brd-2);}
+.kpi .v{font-variant-numeric:tabular-nums;}
+/* wide tables: the row under the pointer lifts, except the sticky label cell, whose
+   solid backing is what stops scrolled content bleeding through it */
+tbody tr:hover td:not(.l){background:rgba(255,255,255,.03);}
+/* METERS. A bar is a figure, so it gets the same care: a well-inset track, a lit fill,
+   and a fill-from-zero settle. scaleX, not width, so nothing reflows. */
+.mbar{height:10px;border-radius:999px;background:var(--wellbg);
+  box-shadow:inset 0 1px 3px rgba(0,0,0,.5),inset 0 0 0 1px rgba(255,255,255,.05);}
+.mbar>span{border-radius:999px;box-shadow:0 0 10px -2px var(--ice);
+  transform-origin:left;animation:barin .6s cubic-bezier(.22,1,.36,1);}
+.actbar{height:4px;}
+.actbar i{transform-origin:left;animation:barin .6s cubic-bezier(.22,1,.36,1);
+  box-shadow:0 0 8px -2px var(--sev,var(--dim));}
+@keyframes barin{from{transform:scaleX(0)}}
+/* SCROLL HINTS, BOTH SIDES: .more (right) has said so since v276; .morel says there is
+   hidden content BEHIND you once a table is mid-scroll. */
+.tscroll.morel{position:relative;}
+.tscroll.morel::before{content:"";position:absolute;top:0;left:0;bottom:6px;width:26px;
+  pointer-events:none;z-index:1;background:linear-gradient(270deg,transparent,rgba(10,13,20,.85));}
+/* in-page jumps glide (the eref links, the product jump); tab switches stay instant
+   because switchTab passes behavior:auto explicitly */
+@media (prefers-reduced-motion:no-preference){html{scroll-behavior:smooth;}}
+/* focus and fields take the tab's accent where colour-mix exists; the gold ring above
+   remains the fallback */
+.qfield select:focus,.qfield input:focus,.ledbar input:focus,.ledbar select:focus{
+  border-color:var(--acc);
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--acc) 20%,transparent);}
+/* ============ v281 PHONE: THE RAIL STAYS WITH YOU ============
+   One row, sticky, on the Veil. Fifteen tabs were reachable only by scrolling back to
+   the top; now the way around the desk is always on screen. Sticky only at the one-row
+   width: at tablet widths the rail wraps to three rows and pinning that would cost a
+   third of the viewport. */
+@media(max-width:560px){
+  .rail{position:sticky;top:0;z-index:55;
+    margin:0 -11px;width:auto;border-radius:0 0 16px 16px;border-top:none;
+    background:var(--veil);
+    -webkit-backdrop-filter:blur(20px) saturate(1.5);backdrop-filter:blur(20px) saturate(1.5);
+    box-shadow:0 12px 30px -18px rgba(0,0,0,.85);
+    padding-top:max(9px,env(safe-area-inset-top));
+    padding-left:max(10px,env(safe-area-inset-left));
+    padding-right:max(10px,env(safe-area-inset-right));}
+  /* jumped-to headings clear the pinned rail */
+  h2,.prodhd{scroll-margin-top:70px;}
+  /* the Close button moves off the rail's corner to the quiet bottom-left, clear of
+     the back-to-top button on the right */
+  .exitfix{top:auto;left:12px;bottom:max(12px,env(safe-area-inset-bottom));}
+  /* the product switcher joins the row as two compact pills, or the pinned rail is
+     129px tall: its label and revenue figures are desktop furniture at this width */
+  .prodsw{flex-direction:row;align-items:center;gap:4px;margin:0 6px 0 0;}
+  .prodsw .plbl,.prodsw button .pv,.prodsw .pall{display:none;}
+  .prodsw button{width:auto;padding:6px 10px;border-radius:999px;}
+}
+@media (prefers-reduced-transparency:reduce) and (max-width:560px){
+  .rail{background:rgba(24,29,41,.97);-webkit-backdrop-filter:none;backdrop-filter:none;}
+}
 </style>
 </head>
 <body>
@@ -1190,7 +1293,7 @@ const sales=[
       30 Jul accrue on top. Without this split the walk re-added the RM200 and overstated
       cash on hand by exactly that amount from v166 to v169. */
    paidSplit:[{date:'2026-07-14',amount:200},{date:'2026-07-30',amount:420}],mod:'repriced from 12.5 unit / RM750 to 6.25 unit / RM490 on partial closure, then restated 30 Jul to 7.25 unit / RM620 when one further unit went out against the amendment',
-   amend:[{date:'2026-07-14',kind:'Fulfilment',cash:200,kg:6.25},{date:'2026-07-17',kind:'Modification',cash:0,kg:0,note:'repriced to 6.25 unit / RM490; chasing RM290 to close'},{date:'2026-07-30',kind:'Fulfilment',cash:290,kg:0,note:'the RM290 lands on 30 Jul, 16 days out and 6 days past the 10-day term; the order COMPLETES and the receivable clears'},{date:'2026-07-30',kind:'Modification',cash:130,kg:1,note:'restated to 7.25 unit / RM620: one further unit handed over at RM130, paid in full on the spot. HE IS BANNED FROM SALE. The Transaction tab refuses a new order to him, and this went through as an amendment to the old one, which is a route around the ban rather than an exception to it. Booked because it happened and the desk records what happened; flagged in Boundaries because the ban was breached, not lifted. RM130 clears every floor (walk-away RM85, R card RM120) and nothing is owed, so the breach is the standing, not the money.'}],
+   amend:[{date:'2026-07-14',kind:'Fulfilment',cash:200,kg:6.25},{date:'2026-07-17',kind:'Modification',cash:0,kg:0,note:'repriced to 6.25 unit / RM490; chasing RM290 to close'},{date:'2026-07-30',kind:'Fulfilment',cash:290,kg:0,note:'the RM290 lands on 30 Jul, 16 days out and 6 days past the 10-day term; the order COMPLETES and the receivable clears'},{date:'2026-07-30',kind:'Modification',cash:130,kg:1,note:'restated to 7.25 unit / RM620: one further unit handed over at RM130, paid in full on the spot. HE IS BANNED FROM SALE. The Transaction tab refuses a new order to him, and this went through as an amendment to the old one, which is a route around the ban rather than an exception to it. Booked because it happened and the desk records what happened; flagged in Boundaries because the ban was breached, not lifted. RM130 clears its floor and nothing is owed, so the breach is the standing, not the money.'}],
    note:'Movement 3, repriced to the 6.25 unit he keeps. COMPLETED on 30 Jul when the RM290 finally landed, 16 days after delivery against a 10-day term. It was the oldest live debt on the desk and 75% provisioned, so collecting it releases RM217.50 of provision that had already been charged against margin. The ban stands: it ended the trade, not the debt, and the debt is now settled while the ban is not time-limited.'},
   {date:'2026-07-15',customer:'CR3-DAM',qty:1,total:80,cost:64,cash:80,deliveredQty:1,note:'1 unit at the RM80 floor, delivered on credit and paid same day'},
   {date:'2026-07-15',customer:'CJ4-BJ',qty:10.4412,total:710,cost:47.60,cash:710,paidOn:'2026-08-01',deliveredQty:10.4412,deliveredOn:'2026-08-01',
@@ -1246,45 +1349,45 @@ const sales=[
    ref:'CS6-PER',refKg:1,
    amend:[
           {date:'2026-08-03',kind:'Fulfilment',cash:120,kg:1,note:'E52: RM120 and the 1 unit move together on 03 Aug, six days after it was agreed, which CLOSES the order'}],
-   note:'A new buyer, 1 unit agreed at RM120 on 28 Jul. It sat PENDING for six days and COMPLETED on 03 Aug, paid and delivered together, so it now counts everywhere: RM120 in revenue and in cash, 1 unit off the shelf and no receivable. He arrived on a provisional code and was named on 28 Jul, so the desk re-keyed him to CA5-KER and purged the placeholder. The price remains the weak part. RM120 clears the RM90 walk-away on a unit but sits RM30 under the RM150 the R board quotes and under the RM150/unit the desk has actually been paid for one, so it earns RM73 against the RM47 lot rather than the RM103 the board would have. Drawn from the 28 Jul RM47/unit lot.'},
+   note:'A new buyer, 1 unit agreed at RM120 on 28 Jul. It sat PENDING for six days and COMPLETED on 03 Aug, paid and delivered together, so it now counts everywhere: RM120 in revenue and in cash, 1 unit off the shelf and no receivable. He arrived on a provisional code and was named on 28 Jul, so the desk re-keyed him to CA5-KER and purged the placeholder. The price remains the weak part. RM120 clears its floor on a unit but sits RM30 under the RM150 the retired R board quotes and under the RM150/unit the desk has actually been paid for one, so it earns RM73 against the RM47 lot rather than the RM103 the board would have. Drawn from the 28 Jul RM47/unit lot.'},
   {date:'2026-07-28',customer:'CE4-AD',qty:5,total:400,cost:47,cash:400,deliveredQty:5,deliveredOn:'2026-07-29',paidOn:'2026-07-29',
    amend:[{date:'2026-07-28',kind:'Fulfilment',cash:400,kg:0,note:'paid in full ahead of delivery, so the 5 unit sat on the shelf as deferred'},
           {date:'2026-07-29',kind:'Modification',cash:-400,kg:0,note:'RM400 returned in full on 29 Jul with nothing ever handed over, so the order reverts to PENDING and counts nowhere'},
           {date:'2026-07-29',kind:'Fulfilment',cash:400,kg:5,note:'came back the same day, paid again and collected: RM400 in and the 5 unit handed over, so the order COMPLETES'}],
-   note:'New buyer, 5 unit at RM80/unit. The order went paid, then refunded, then paid and collected, all inside two days: RM400 on 28 Jul against nothing delivered, the RM400 returned on 29 Jul which reverted it to pending, and then on 29 Jul he came back, paid again and took the salt. Net of the three steps it is RM400 in and 5 unit out, so it is now COMPLETED and counts everywhere. The trail is kept in all three steps rather than tidied to a single payment, because the refund is the only record that the desk once wrote a price under its own walk-away and nearly lost the sale over it. He arrived on a provisional code and was named on 29 Jul, so the desk re-keyed him to CE4-AD and purged the placeholder. The price is the thing to keep in view: RM80/unit sat UNDER the walk-away, since the board quotes RM470 for this size and will not go below RM415, so RM400 was RM15 light. It earns RM33/unit against the RM47 lot it came off, but only RM17.86/unit against the RM62.14 it costs to replace.'},
+   note:'New buyer, 5 unit at RM80/unit. The order went paid, then refunded, then paid and collected, all inside two days: RM400 on 28 Jul against nothing delivered, the RM400 returned on 29 Jul which reverted it to pending, and then on 29 Jul he came back, paid again and took the salt. Net of the three steps it is RM400 in and 5 unit out, so it is now COMPLETED and counts everywhere. The trail is kept in all three steps rather than tidied to a single payment, because the refund is the only record that the desk once wrote a price under its own floor and nearly lost the sale over it. He arrived on a provisional code and was named on 29 Jul, so the desk re-keyed him to CE4-AD and purged the placeholder. The price is the thing to keep in view: RM80/unit sat UNDER the floor, since the board quotes RM470 for this size and will not go below RM415, so RM400 was RM15 light. It earns RM33/unit against the RM47 lot it came off, but only RM17.86/unit against the RM62.14 it costs to replace.'},
   {date:'2026-07-25',customer:'CD4-CS',qty:1,total:150,cost:56,cash:150,deliveredQty:1,deliveredOn:'2026-07-25',paidOn:'2026-08-06',
    note:'<b>SETTLED IN FULL on 06 Aug, and it was the last open position on the book.</b> The RM150 lands 12 days after delivery against a 10-day term, so it was 2 days over and 50% provisioned when it came in; that RM75 of provision is released, and the desk now carries no bad-debt discount at all. Nothing on this book is owed either way: everything delivered is paid and everything paid is delivered. The original terms stand as written. New customer at Cheras Selatan, advance delivery: 1 unit handed over at RM150/unit with nothing paid on the day, so the whole RM150 was a receivable. Sat exactly ON the 1 unit retail credit cap, not under it, and the cap is now clear again. <b>RM150/unit is still the highest price the desk has ever achieved.</b> Drawn from the 23 Jul RM64/unit lot, so 57.3% margin. At the time it took free-to-sell negative against the 3.46 unit then owed to CJ4-BJ; that debt has since been settled and the shelf is unencumbered.'},
   {date:'2026-07-29',customer:'CS6-BS',qty:1,total:110,cost:47,cash:0,settledRM:110,rebate:true,deliveredQty:1,deliveredOn:'2026-07-29',
-   note:'Advance delivery to the associate: 1 unit handed over at RM110/unit with nothing paid, so the whole RM110 is a receivable. Inside his 2 unit associate cap, and the 10-day clock starts on 29 Jul. Drawn from the RM47 lot, so it earns RM63/unit on lot cost and a margin over replacement that the desk computes live, because a figure typed here goes stale the moment the buying rate moves. RM110 sits under the RM130 the board quotes for a single unit but clears the RM85 walk-away, and it is his own associate rate rather than a retail price.'},
+   note:'Advance delivery to the associate: 1 unit handed over at RM110/unit with nothing paid, so the whole RM110 is a receivable. Inside his 2 unit associate cap, and the 10-day clock starts on 29 Jul. Drawn from the RM47 lot, so it earns RM63/unit on lot cost and a margin over replacement that the desk computes live, because a figure typed here goes stale the moment the buying rate moves. RM110 sits under the RM130 the board quotes for a single unit but clears its floor, and it is his own associate rate rather than a retail price.'},
   {date:'2026-07-30',customer:'CR3-DAM',qty:1,total:80,cost:47,cash:80,deliveredQty:1,deliveredOn:'2026-07-30',paidOn:'2026-07-30',
-   note:'Paid and collected the same day, so it folds straight through: RM80 in, 1 unit out. The price is the problem. RM80 for a single unit is BELOW the RM85 walk-away the board will not go under, and RM50 below the RM130 it quotes, which makes it the first order since the 08 Jul package to breach the floor outright. It still earns RM33/unit against the RM47 lot it came off, but only RM17.06/unit against replacement, so it is profitable on the salt in hand and thin on the salt that replaces it. He has been the desk&rsquo;s steadiest repeat buyer at around RM85/unit, so this is a continuation of an established discount rather than a one-off concession, which is what makes it worth pricing against rather than forgiving.'},
+   note:'Paid and collected the same day, so it folds straight through: RM80 in, 1 unit out. The price is the problem. RM80 for a single unit is BELOW the floor the desk will not go under, and RM50 below the RM130 it quotes, which makes it the first order since the 08 Jul package to breach the floor outright. It still earns RM33/unit against the RM47 lot it came off, but only RM17.06/unit against replacement, so it is profitable on the salt in hand and thin on the salt that replaces it. He has been the desk&rsquo;s steadiest repeat buyer at around RM85/unit, so this is a continuation of an established discount rather than a one-off concession, which is what makes it worth pricing against rather than forgiving.'},
   {date:'2026-07-30',customer:'CM4-MK',qty:2.2,total:210,cost:47,cash:210,deliveredQty:2.2,deliveredOn:'2026-07-30',paidOn:'2026-07-30',
-   note:'Direct sale to the associate&rsquo;s Melaka downstream, paid and collected the same day: RM210 for 2.2 unit, RM95.45/unit. Between the R card&rsquo;s RM220 for 2 and RM270 for 2.5, so the odd size prices consistently with his tier. Drawn from the RM47 lot, RM48.45/unit over lot cost and RM32.51/unit over replacement.'},
+   note:'Direct sale to the associate&rsquo;s Melaka downstream, paid and collected the same day: RM210 for 2.2 unit, RM95.45/unit. Between the retired R card for the size and RM270 for 2.5, so the odd size prices consistently with his tier. Drawn from the RM47 lot, RM48.45/unit over lot cost and RM32.51/unit over replacement.'},
   {date:'2026-07-30',customer:'CZ4-TBC',qty:5,total:435,cost:47,cash:435,deliveredQty:5,deliveredOn:'2026-07-30',paidOn:'2026-07-30',ref:'CI4-OKR',refKg:5,
    note:'Agreed and completed on 30 Jul: RM435 for 5 unit, which is exactly what the board quotes, so the price is right. Paid in full and collected on the day, so it counts everywhere: RM435 in revenue, RM435 in cash, 5 unit off the shelf and no receivable. It carried a one-step amendment trail dated on the order date, which folded into the opening at v191: a settlement on the order date is the opening line, not a movement against it. Drawn from the RM47 lot, so it earns RM40/unit on lot cost and a margin over replacement that the desk computes live, because a figure typed here goes stale the moment the buying rate moves. He arrived on a provisional code and was named on 30 Jul, so the desk re-keyed him to CZ4-TBC and purged the placeholder outright, per the standing one-identifier rule. The encrypted vault cannot be re-keyed from here, since it opens only on your passphrase, so the name needs typing once against CZ4-TBC in Names and IDs.'},
   {date:'2026-07-31',customer:'CE4-CHE',qty:2.5,total:230,cost:47,cash:230,deliveredQty:2.5,deliveredOn:'2026-07-31',paidOn:'2026-07-31',
-   note:'His second order, and an exact repeat of his first: 2.5 unit at RM230, RM92/unit, paid and delivered the same day. The instruction of 31 Jul wrote CE4-CER, which he confirmed the same day as a typo for CE4-CHE, so the booking stands and no phantom party was minted. Clears the RM84/unit walk-away but sits under the R card&rsquo;s RM270 for the size, exactly as his first order did: a repeat customer holding a repeat price. Drawn from the RM47 lot, so RM45/unit on lot cost.'},
+   note:'His second order, and an exact repeat of his first: 2.5 unit at RM230, RM92/unit, paid and delivered the same day. The instruction of 31 Jul wrote CE4-CER, which he confirmed the same day as a typo for CE4-CHE, so the booking stands and no phantom party was minted. Clears the floor but sits under the retired R card for the size, exactly as his first order did: a repeat customer holding a repeat price. Drawn from the RM47 lot, so RM45/unit on lot cost.'},
   {date:'2026-07-31',customer:'CA5-SEN',qty:2.5,total:270,cost:47,cash:270,deliveredQty:2.5,deliveredOn:'2026-07-31',paidOn:'2026-07-31',
-   note:'A new buyer, created through the new + Add ID route rather than as a placeholder: he arrived already carrying CA5-SEN, so there is nothing to re-key. 2.5 unit at RM270, paid and collected the same day. RM108/unit is EXACTLY the R card for the size, the first order on the book to take a card price without negotiation. Drawn from the RM47 lot, so RM61/unit on lot cost and RM45.06/unit against replacement.'},
+   note:'A new buyer, created through the new + Add ID route rather than as a placeholder: he arrived already carrying CA5-SEN, so there is nothing to re-key. 2.5 unit at RM270, paid and collected the same day. RM108/unit is EXACTLY the retired R card for the size, the first order on the book to take a card price without negotiation. Drawn from the RM47 lot, so RM61/unit on lot cost and RM45.06/unit against replacement.'},
   {date:'2026-08-01',customer:'CJ4-BJ',qty:0.5588,total:26.26,cost:47,cash:0,settledRM:26.26,rebate:true,goodwill:true,deliveredQty:0.5588,deliveredOn:'2026-08-01',
    note:'GOODWILL, not a sale and not a correction. The reconciliation stands at 4.1912 unit and he was owed exactly that; this 0.5588 unit is given on top, taking him to the 4.75 unit he had asked for, because he is among the most loyal names on the book. It is booked IN-KIND <b>at cost, RM26.26, not at his RM68 selling rate</b>. Recording it matters because salt that leaves the shelf with no line against it books as shrinkage, and a deliberate gift is not a loss. Valuing it at COST matters just as much: at the selling rate it would have carried RM11.74 of margin, so a giveaway would have IMPROVED gross margin, which is plainly wrong. At cost the revenue and the expense are the same figure and margin is untouched; what the gift actually costs shows where it should, in the salt no longer on the shelf. <b>Stated plainly for the record: the desk was not shown to be wrong.</b> The 25 Jul offset of 2.0588 unit was agreed and is evidenced in the trail; conceding the difference is a commercial choice about a relationship, not an accounting correction, and the next reconciliation starts from the ledger rather than from this.'},
   {date:'2026-07-31',customer:'CH5-KLC',qty:0.5,total:80,cash:0,deliveredQty:0,cancelled:true,cancelledOn:'2026-08-05',
-   note:'His second order, agreed 31 Jul: 0.5 unit at RM80. Nothing paid and nothing delivered, so it is PENDING and counts nowhere. RM160/unit is the M card exactly for this size, so it is a card price rather than a concession below the ladder. It is still worth looking at twice: <b>his first order paid RM210/unit</b>, the best rate this desk has ever achieved and the reference the lot outlook uses as its ceiling at this size. Agreeing RM160 with the one buyer who proved RM210 gives away RM25 on a half unit, on the most profitable size the desk sells. He may simply not pay RM210 again; that is worth finding out before it becomes his standing rate.'},
+   note:'His second order, agreed 31 Jul: 0.5 unit at RM80. Nothing paid and nothing delivered, so it is PENDING and counts nowhere. RM160/unit is the retired M card exactly for this size, so it is a card price rather than a concession below the ladder. It is still worth looking at twice: <b>his first order paid RM210/unit</b>, the best rate this desk has ever achieved and the reference the lot outlook uses as its ceiling at this size. Agreeing RM160 with the one buyer who proved RM210 gives away RM25 on a half unit, on the most profitable size the desk sells. He may simply not pay RM210 again; that is worth finding out before it becomes his standing rate.'},
   {date:'2026-08-01',customer:'CA4-DAM',qty:1,total:100,cost:47,cash:100,deliveredQty:1,deliveredOn:'2026-08-01',paidOn:'2026-08-01',
    mod:'opened at RM110, restated to RM100 on 01 Aug, then paid and collected in full on the same day',
-   note:'Agreed at RM110, repriced to RM100 and then paid and collected in full, all on 01 Aug. Both steps fall on the order date, so they fold into the opening line rather than showing as separate movements: RM100 in, 1 unit out, nothing owed. The price is what matters here. RM100 for a single unit is exactly the S card, clears the RM85 walk-away and the RM84 floor, and sits RM20 under the R card&rsquo;s RM120. <b>The RM10 concession crossed a line the RM110 did not.</b> He always collects, and delivery is assumed at RM17.50 a lot, so the R card&rsquo;s RM120 delivered nets RM102.50: at RM110 collected he was RM7.50 ahead of the card, at RM100 collected he is RM2.50 behind it. Five orders in, he has now paid exactly RM100/unit four times, so this is his standing rate rather than a concession, and it is worth deciding before the sixth order whether it is a rate the desk wants to keep. Drawn from the RM47 lot, so RM53/unit on lot cost and a margin over replacement that the desk computes live, because a figure typed here goes stale the moment the buying rate moves.'},
+   note:'Agreed at RM110, repriced to RM100 and then paid and collected in full, all on 01 Aug. Both steps fall on the order date, so they fold into the opening line rather than showing as separate movements: RM100 in, 1 unit out, nothing owed. The price is what matters here. RM100 for a single unit is exactly the retired S card, clears its floor and the RM84 floor, and sits RM20 under the retired R card&rsquo;s RM120. <b>The RM10 concession crossed a line the RM110 did not.</b> He always collects, and delivery is assumed at RM17.50 a lot, so the retired R card&rsquo;s RM120 delivered nets RM102.50: at RM110 collected he was RM7.50 ahead of the card, at RM100 collected he is RM2.50 behind it. Five orders in, he has now paid exactly RM100/unit four times, so this is his standing rate rather than a concession, and it is worth deciding before the sixth order whether it is a rate the desk wants to keep. Drawn from the RM47 lot, so RM53/unit on lot cost and a margin over replacement that the desk computes live, because a figure typed here goes stale the moment the buying rate moves.'},
   {date:'2026-08-04',customer:'CN6-WM',qty:0.5,total:50,cost:47,cash:0,settledRM:50,rebate:true,deliveredQty:0.5,deliveredOn:'2026-08-04',
    note:'Rebate redeemed as salt, valued at the Tier I ask of RM50 for a half unit and settled in kind. It carried RM0 before, which is what put a single order at MINUS 100% margin on the revenue-against-margin chart: the salt left the shelf at RM47 and nothing at all came back against it, so the arithmetic was right and the reading was wrong. A reward is not a gift of nothing; it is a price the desk chose to settle another way, and every other rebate row on this book already carries one. Where a redemption has no price basis of its own, TIER I is the basis, per his instruction on 07 Aug.'},
   {date:'2026-08-04',customer:'CS6-BS-R',qty:0.5,total:60,cost:47,cash:60,paidOn:'2026-08-04',deliveredQty:0.5,deliveredOn:'2026-08-05',rev:'R2',
    amend:[{date:'2026-08-04',kind:'Fulfilment',cash:60,kg:0,note:'paid in full on the day it was agreed, nothing handed over, so it sat deferred overnight'},
           {date:'2026-08-05',kind:'Fulfilment',cash:0,kg:0.5,note:'the half unit is collected, which closes the order and clears the last deferred salt on the book'}],
-   note:'Resale agreed through the associate, 0.5 unit at RM60, which is RM120/unit. PAID IN FULL on the day it was agreed and not yet handed over, so it is DEFERRED: the money counts, the salt is still on the shelf and 0.5 unit is owed out. RM60 is exactly the S card at a half unit, the reseller ladder, and clears the RM38 floor and the RM40 walk-away. The end buyer is not known, so it sits in the -Gen bucket rather than being given a code; a code needs a name and a location. First row booked to the new resell account rather than to his own code.'},
+   note:'Resale agreed through the associate, 0.5 unit at RM60, which is RM120/unit. PAID IN FULL on the day it was agreed and not yet handed over, so it is DEFERRED: the money counts, the salt is still on the shelf and 0.5 unit is owed out. RM60 is exactly the retired S card at a half unit, the reseller ladder, and clears the RM38 floor and the floor. The end buyer is not known, so it sits in the -Gen bucket rather than being given a code; a code needs a name and a location. First row booked to the new resell account rather than to his own code.'},
   {date:'2026-08-03',customer:'CI4-OKR',qty:2,total:180,cost:47,cash:90,paidOn:'2026-08-05',settledRM:90,rebate:true,rebateKg:1,deliveredQty:2,deliveredOn:'2026-08-04',
    amend:[{date:'2026-08-03',kind:'Fulfilment',cash:0,kg:0,note:'agreed at RM185 for 2 unit, nothing moved on the day'},
           {date:'2026-08-04',kind:'Fulfilment',cash:0,kg:2,note:'E64: both units handed over with no cash. One is the free unit he earned on the CZ4-TBC referral, redeemed here in kind, and it settles RM95 of the price. The second is priced at RM90 and unpaid, so that much is an advance.'},
           {date:'2026-08-05',kind:'Fulfilment',cash:90,kg:0,note:'the RM90 lands, two days out and well inside his 10-day term, so the order is settled in full: RM95 in kind and RM90 in cash against RM185.'}],
    amend:[{date:'2026-07-31',kind:'Modification',cash:0,kg:0,newQty:2,newTotal:185,wasQty:5,wasTotal:440,note:'CLERICAL CORRECTION, not a renegotiation and not a delivery: the order was written down as 5 unit / RM440 and was always 2 unit / RM185. This step fixes the terms and moves NOTHING, so the order stays PENDING for 03 Aug.'}],
-   note:'His second order, agreed for Monday 03 Aug. It was RECORDED as 5 unit at RM440 and that was a clerical error: the order was always 2 unit at RM185. Corrected on 31 Jul by an amendment that changes the terms and moves nothing, so it remains PENDING and counts nowhere until Monday. RM92.50/unit is exactly the rate of his first order, so this is his established price rather than the RM88 the mis-recorded larger lot implied. The price is RM90/unit, which is RM180 over 2 unit and exactly the good price on today&rsquo;s ladder. The RM88, the RM420 walk-away and the RM460 card in the sentence this replaces were all figures from the 5 unit order that never existed. His first order paid RM92.50/unit, so he has moved down the curve RM4.50 a unit while more than doubling the size, which is roughly how a ladder is supposed to be used. The desk booked it twice wrongly before this: first as a part-fulfilment of a 5 unit order, then as a completed 2 unit sale. Both came from the same input fault, since the Modification fields were labelled Cash moved and Salt moved, so a corrected QUANTITY and TOTAL were read as money and salt changing hands. Fixed at v177; this row is the correction against the 15 unit reorder trigger.'},
+   note:'His second order, agreed for Monday 03 Aug. It was RECORDED as 5 unit at RM440 and that was a clerical error: the order was always 2 unit at RM185. Corrected on 31 Jul by an amendment that changes the terms and moves nothing, so it remains PENDING and counts nowhere until Monday. RM92.50/unit is exactly the rate of his first order, so this is his established price rather than the RM88 the mis-recorded larger lot implied. The price is RM90/unit, which is RM180 over 2 unit and exactly the good price on today&rsquo;s ladder. The RM88, the floor and the RM460 card in the sentence this replaces were all figures from the 5 unit order that never existed. His first order paid RM92.50/unit, so he has moved down the curve RM4.50 a unit while more than doubling the size, which is roughly how a ladder is supposed to be used. The desk booked it twice wrongly before this: first as a part-fulfilment of a 5 unit order, then as a completed 2 unit sale. Both came from the same input fault, since the Modification fields were labelled Cash moved and Salt moved, so a corrected QUANTITY and TOTAL were read as money and salt changing hands. Fixed at v177; this row is the correction against the 15 unit reorder trigger.'},
   /* BOOKED AS A DOWNSELL, NOT AS A NEW CUSTOMER. The Transaction tab queued this as a
      direct sale to a party called CS6-BS-R with no associate ticked, which would have
      minted a general-downsell BUCKET as a customer in its own right: a counterparty with
@@ -1298,15 +1401,15 @@ const sales=[
           {date:'2026-08-03',kind:'Cancellation',cash:0,kg:0,note:'cancelled before any cash or salt moved, and superseded the same day by a 2.5 unit booking at RM270 to the same bucket'}],
    note:'R2 onward sale through CS6-BS to a buyer the desk never met, agreed 02 Aug at RM120 for 1 unit. CANCELLED 03 Aug with nothing paid and nothing delivered either way, so it counts nowhere and never did: a pending order is an intention, so withdrawing it moves no revenue, no cost, no stock and no receivable. Superseded the same day by E65, 2.5 unit at RM270 to the same CS6-BS-R bucket. Row kept rather than deleted, because a withdrawn order is a fact about the book. <b>This is the second time this cancellation has been booked.</b> It was first applied at v196 alongside a delivery back-dated to 30 Jul, both were reverted at v197 on instruction, and it is reapplied here on its own terms with the Cancellation dated after the order rather than three days before it.'},
   {date:'2026-08-03',customer:'CS6-BS-R',qty:2.5,total:270,cost:47,cash:270,deliveredQty:2.5,deliveredOn:'2026-08-03',paidOn:'2026-08-03',rev:'R2',
-   note:'R2 onward sale through reseller CS6-BS to a general downsell buyer with no name and no location, so it books to the CS6-BS-R bucket with CS6-BS as the counterparty, exactly as the 17 Jul and 21 Jul downsells do. The bucket is not a customer and is never issued a statement. Replaces the withdrawn 1 unit order of 02 Aug, cancelled the same day. Paid and collected together on the day it was agreed, so the settlement folds into the opening line and the row carries no amendment trail: RM270 in revenue, RM270 in cash, 2.5 unit off the shelf and no receivable. <b>RM270 for 2.5 unit is EXACTLY the R card</b>, RM108/unit, the same rate CA5-SEN paid without negotiation on 31 Jul, and it clears the RM210 walk-away for the size with RM60 to spare. Drawn from the RM47 lot, so RM61/unit on lot cost and a margin over replacement that the desk computes live, because a figure typed here goes stale the moment the buying rate moves. It also more than doubles the size of the order it replaces while lifting the rate from RM120/unit at 1 unit to the card at 2.5, which is the ladder working the way it should.'},
+   note:'R2 onward sale through reseller CS6-BS to a general downsell buyer with no name and no location, so it books to the CS6-BS-R bucket with CS6-BS as the counterparty, exactly as the 17 Jul and 21 Jul downsells do. The bucket is not a customer and is never issued a statement. Replaces the withdrawn 1 unit order of 02 Aug, cancelled the same day. Paid and collected together on the day it was agreed, so the settlement folds into the opening line and the row carries no amendment trail: RM270 in revenue, RM270 in cash, 2.5 unit off the shelf and no receivable. <b>RM270 for 2.5 unit is EXACTLY the retired R card</b>, RM108/unit, the same rate CA5-SEN paid without negotiation on 31 Jul, and it clears its floor for the size with RM60 to spare. Drawn from the RM47 lot, so RM61/unit on lot cost and a margin over replacement that the desk computes live, because a figure typed here goes stale the moment the buying rate moves. It also more than doubles the size of the order it replaces while lifting the rate from RM120/unit at 1 unit to the card at 2.5, which is the ladder working the way it should.'},
   {date:'2026-08-03',customer:'CN6-WM-R',qty:6.5,total:440,cost:47,cash:440,deliveredQty:6.5,deliveredOn:'2026-08-03',paidOn:'2026-08-03',rev:'R2',
-   note:'CN6-WM&rsquo;s FIRST sale as an associate, appointed the same day. The end buyer is a stranger, so it books to his GENERAL BUCKET, CN6-WM-R, and not to a code of his own: a named downstream is earned only where you delivered to the person yourself and so know who he is. <b>The queue asked for a named code, CN6-WM-1-TBC, and that was wrong at source</b>: the location read TBC, which is an admission that the place was not known, and a place is exactly what earns a code under the split rule. Corrected at v201 and the named code PURGED outright rather than kept as an alias, per the standing one-identifier rule. It was queued as a DIRECT sale and is booked as an R2 downsell, so the counterparty is CN6-WM and the bucket is the downstream. Both corrections point the same way: assocOf() resolves a -Gen code back to its reseller, so the credit now reaches him by construction rather than by my having noticed. Paid and collected on the day, so it folds into the opening line and carries no amendment trail. <b>THE PRICE IS THE THING TO LOOK AT.</b> 6.5 unit for RM440 is RM67.69/unit. It breaches nothing: the floor is RM417.48 and the walk-away RM420, so it clears them by RM22.52 and RM20. But it clears them only because 6.5 unit is a QUARTER OF A UNIT over the 6.25 retail boundary, and that quarter-unit drops the floor from 25% to 2%. The last carded size below it, 6.25 unit, quotes RM540 on the R card against a RM524.53 floor. So a customer taking 0.25 unit MORE salt paid RM100 LESS money, and the ladder permitted it. It is RM125 under the engine&rsquo;s own RM565 quote and earns 7.0% on the RM62.94 effective cost, RM20.69/unit over the RM47 lot for RM134.50 gross. This is plan P11&rsquo;s argument in a single order, and it is the first one on the book to cross that boundary since the cap was proposed.'},
+   note:'CN6-WM&rsquo;s FIRST sale as an associate, appointed the same day. The end buyer is a stranger, so it books to his GENERAL BUCKET, CN6-WM-R, and not to a code of his own: a named downstream is earned only where you delivered to the person yourself and so know who he is. <b>The queue asked for a named code, CN6-WM-1-TBC, and that was wrong at source</b>: the location read TBC, which is an admission that the place was not known, and a place is exactly what earns a code under the split rule. Corrected at v201 and the named code PURGED outright rather than kept as an alias, per the standing one-identifier rule. It was queued as a DIRECT sale and is booked as an R2 downsell, so the counterparty is CN6-WM and the bucket is the downstream. Both corrections point the same way: assocOf() resolves a -Gen code back to its reseller, so the credit now reaches him by construction rather than by my having noticed. Paid and collected on the day, so it folds into the opening line and carries no amendment trail. <b>THE PRICE IS THE THING TO LOOK AT.</b> 6.5 unit for RM440 is RM67.69/unit. It breaches nothing: the floor is RM417.48 and the floor RM420, so it clears them by RM22.52 and RM20. But it clears them only because 6.5 unit is a QUARTER OF A UNIT over the 6.25 retail boundary, and that quarter-unit drops the floor from 25% to 2%. The last carded size below it, 6.25 unit, quotes RM540 on the retired R card against a RM524.53 floor. So a customer taking 0.25 unit MORE salt paid RM100 LESS money, and the ladder permitted it. It is RM125 under the engine&rsquo;s own RM565 quote and earns 7.0% on the RM62.94 effective cost, RM20.69/unit over the RM47 lot for RM134.50 gross. This is plan P11&rsquo;s argument in a single order, and it is the first one on the book to cross that boundary since the cap was proposed.'},
   {date:'2026-08-05',customer:'CM4-MK',qty:2,total:220,cost:47,cash:220,deliveredQty:2,deliveredOn:'2026-08-05',paidOn:'2026-08-05',
-   note:'Direct repeat, and an exact one: 2 unit for RM220 is the SAME size at the SAME price as his 23 Jul order, RM110/unit. <b>RM220 at 2 unit IS the R card</b>, to the ringgit, against a RM152.33 floor and a RM155 walk-away, so it clears both with RM67.67 to spare and needed no negotiation to get there. Paid and collected on the day it was agreed, so the settlement folds into the opening line and the row carries no amendment trail. Drawn from the RM47 lot, so RM126/unit on lot cost and a margin over replacement that the desk computes live, because a figure typed here goes stale the moment the buying rate moves. <b>Booked DIRECT, deliberately, and the attribution still reaches CS6-BS.</b> He is a named buyer under that reseller, but both earlier orders to him, 23 Jul and 30 Jul, were booked direct with no assoc field, and this follows them rather than inventing a third treatment. The credit is not lost by doing so: assocOf() finds the 15 Jul R2 row that carries him as its downstream and resolves the owner from there, so the Network tab reads him under CS6-BS by construction. That is the standing trap with named associate codes, and it does not bite here because the earlier row already anchors him.'},
+   note:'Direct repeat, and an exact one: 2 unit for RM220 is the SAME size at the SAME price as his 23 Jul order, RM110/unit. <b>RM220 at 2 unit IS the retired R card</b>, to the ringgit, against a RM152.33 floor and a the floor, so it clears both with RM67.67 to spare and needed no negotiation to get there. Paid and collected on the day it was agreed, so the settlement folds into the opening line and the row carries no amendment trail. Drawn from the RM47 lot, so RM126/unit on lot cost and a margin over replacement that the desk computes live, because a figure typed here goes stale the moment the buying rate moves. <b>Booked DIRECT, deliberately, and the attribution still reaches CS6-BS.</b> He is a named buyer under that reseller, but both earlier orders to him, 23 Jul and 30 Jul, were booked direct with no assoc field, and this follows them rather than inventing a third treatment. The credit is not lost by doing so: assocOf() finds the 15 Jul R2 row that carries him as its downstream and resolves the owner from there, so the Network tab reads him under CS6-BS by construction. That is the standing trap with named associate codes, and it does not bite here because the earlier row already anchors him.'},
   {date:'2026-08-05',customer:'CS6-PER-R',qty:3,total:240,cost:47,cash:240,deliveredQty:3,deliveredOn:'2026-08-05',paidOn:'2026-08-05',rev:'R2',
    note:'RE-BOOKED 07 Aug: this was written as CS6-PER buying for himself and it is an R2 RESELL, so it belongs to CS6-PER-R with his 07 Aug one. RM80 a unit. It moves RM240 out of his own buying and into his R2 turnover, which now stands at RM400 against a RM500 rebate step, so he is RM100 of resell away from a free unit rather than RM340.'},
   {date:'2026-08-06',customer:'CN6-WM-R',qty:2,total:250,cost:47,cash:250,deliveredQty:2,deliveredOn:'2026-08-06',paidOn:'2026-08-06',rev:'R2',
-   note:'His second resell as an associate. The end buyer is a stranger, so it books to his GENERAL BUCKET, CN6-WM-R, with CN6-WM-R as the counterparty, exactly as his 03 Aug downsell and the CS6-BS ones do. The bucket is not a customer and is never issued a statement. Paid and collected on the day, so it folds into the opening line and carries no amendment trail. <b>THE RATE IS THE BEST THIS DESK HAS EVER TAKEN ON A RESELL, AND IT IS NOT CLOSE.</b> RM250 for 2 unit is RM125/unit to the desk, against RM67.69/unit on his own 6.5 unit resell three days ago: the same reseller, the same bucket, nearly double the rate. It is also <b>RM15/unit ABOVE the R card</b>, which quotes RM220 at 2 unit, and RM95 above the RM155 walk-away. A reseller paying over the retail card has to clear more than retail downstream to earn anything, which is worth understanding before it is treated as the new normal: either he is selling into a pocket that bears more than this book has tested, or the 03 Aug rate was the anomaly and this is the correction. Drawn from the RM47 lot, so RM78/unit on lot cost for RM156 gross, and a margin over replacement that the desk computes live, because a figure typed here goes stale the moment the buying rate moves. <b>IT ALSO EARNS HIM A FREE UNIT.</b> His R2 turnover goes from RM440 to RM690 and crosses the RM500 rebate step, so a second free unit is earned against one already redeemed. Nothing is handed over here: he has no advance outstanding for it to offset, so it stands as owed until he asks, exactly as the first one did.'},
+   note:'His second resell as an associate. The end buyer is a stranger, so it books to his GENERAL BUCKET, CN6-WM-R, with CN6-WM-R as the counterparty, exactly as his 03 Aug downsell and the CS6-BS ones do. The bucket is not a customer and is never issued a statement. Paid and collected on the day, so it folds into the opening line and carries no amendment trail. <b>THE RATE IS THE BEST THIS DESK HAS EVER TAKEN ON A RESELL, AND IT IS NOT CLOSE.</b> RM250 for 2 unit is RM125/unit to the desk, against RM67.69/unit on his own 6.5 unit resell three days ago: the same reseller, the same bucket, nearly double the rate. It is also <b>RM15/unit ABOVE the retired R card</b>, which quotes RM220 at 2 unit, and RM95 above the floor. A reseller paying over the retail card has to clear more than retail downstream to earn anything, which is worth understanding before it is treated as the new normal: either he is selling into a pocket that bears more than this book has tested, or the 03 Aug rate was the anomaly and this is the correction. Drawn from the RM47 lot, so RM78/unit on lot cost for RM156 gross, and a margin over replacement that the desk computes live, because a figure typed here goes stale the moment the buying rate moves. <b>IT ALSO EARNS HIM A FREE UNIT.</b> His R2 turnover goes from RM440 to RM690 and crosses the RM500 rebate step, so a second free unit is earned against one already redeemed. Nothing is handed over here: he has no advance outstanding for it to offset, so it stands as owed until he asks, exactly as the first one did.'},
   {date:'2026-08-06',customer:'CN6-WM',qty:1,total:80,cost:47,cash:0,settledRM:80,rebate:true,deliveredQty:1,deliveredOn:'2026-08-06',paidOn:'2026-08-06',
    note:'Redeems the free unit earned when his R2 turnover crossed RM500 on the RM250 resell. No advance outstanding to offset, so it goes out as salt. Valued at the Tier I ask of RM80 for a unit and settled in kind, per his rule of 07 Aug that a redemption with no price basis of its own uses Tier I. It carried RM0 until v263, which is the same fault as his 04 Aug half unit: 1 unit off the shelf at RM47 against nothing at all, so the ledger read a 100% loss on a reward he had earned. Earned 2, applied 2, nothing owed either way.'},
   {date:'2026-08-06',product:'oil',customer:'CS6-BS-R',qty:10,total:130,cost:(5*(230/30)+5*7)/10,cash:130,deliveredQty:10,
@@ -1336,7 +1439,7 @@ const sales=[
   {date:'2026-08-07',customer:'CZ6-WM',qty:1,total:100,cost:47,cash:100,paidOn:'2026-08-08',deliveredQty:1,deliveredOn:'2026-08-08',
    note:'RM100 for a unit, Tier II where his single order puts him in Tier III at RM120: a RM20 concession he did not ask for, stated by him. Paid and collected on the 8th. It is his SECOND order, so he leaves Tier III with it: from the next quote he is Tier II by the ledger rather than by concession.'},
   {customer:'CJ4-BJ',qty:12.5,total:850,cash:0,deliveredQty:0,
-   note:'PENDING, and PLANNED FOR 07 AUG rather than agreed on it: the date is the intention, not a movement. Nothing paid and nothing delivered, so it counts nowhere and the 12.5 unit stays free to sell until it moves. <b>An exact repeat of his 15 Jul order</b>, same 12.5 unit, same RM850, same RM68/unit. <b>AND IT IS NO LONGER THE PROBLEM IT WAS.</b> This note said for days that RM850 sat RM102 UNDER FLOOR against a floor of RM952.06. Both figures were captured when the leak was worse and the cost basis was frozen; the floor at 12.5 unit is now <b>RM824.95</b>, so <b>RM850 clears it by RM25.05</b> and sits RM110 under the good price of RM960. The order never got worse; the cost base moved twice under it, first against it and then back. The leak now stands at 17.18% after four units were traced to the founding member on 10 Aug, and the cost is unlocked, so this figure follows the book rather than a snapshot. What it still does: at RM68/unit against the RM47 lot actually on the shelf it makes RM21/unit, RM262.50 on the lot, so it is cash-positive and comfortably above what the salt cost. What it does now do: cover the RM56.99 a unit it costs to REPLACE that salt, plus the 15% markup the single floor asks. There is no wholesale band any more, and no separate walk-away. <b>Left visible rather than suppressed, and left pending rather than repriced.</b> He is the second largest customer on the book at RM1,566 and this lot is 31% of the free shelf, so it is a real decision and not an arithmetic one: hold the relationship at RM850, or take it to RM955 and find out. Nothing is booked either way until it moves.'},
+   note:'PENDING, and PLANNED FOR 07 AUG rather than agreed on it: the date is the intention, not a movement. Nothing paid and nothing delivered, so it counts nowhere and the 12.5 unit stays free to sell until it moves. <b>An exact repeat of his 15 Jul order</b>, same 12.5 unit, same RM850, same RM68/unit. <b>AND IT IS NO LONGER THE PROBLEM IT WAS.</b> This note said for days that RM850 sat RM102 UNDER FLOOR against a floor of RM952.06. Both figures were captured when the leak was worse and the cost basis was frozen; the floor at 12.5 unit is now <b>RM824.95</b>, so <b>RM850 clears it by RM25.05</b> and sits RM110 under the good price of RM960. The order never got worse; the cost base moved twice under it, first against it and then back. The leak now stands at 17.18% after four units were traced to the founding member on 10 Aug, and the cost is unlocked, so this figure follows the book rather than a snapshot. What it still does: at RM68/unit against the RM47 lot actually on the shelf it makes RM21/unit, RM262.50 on the lot, so it is cash-positive and comfortably above what the salt cost. What it does now do: cover the RM56.99 a unit it costs to REPLACE that salt, plus the 15% markup the single floor asks. There is no wholesale band any more, and no separate floor. <b>Left visible rather than suppressed, and left pending rather than repriced.</b> He is the second largest customer on the book at RM1,566 and this lot is 31% of the free shelf, so it is a real decision and not an arithmetic one: hold the relationship at RM850, or take it to RM955 and find out. Nothing is booked either way until it moves.'},
   {date:'2026-08-08',customer:'CC5-OKR',qty:1,total:90,cost:47,cash:0,deliveredQty:1,deliveredOn:'2026-08-08',
    note:'ADVANCE: the unit went out and the money did not. Queued from the Transaction tab on the 8th at RM90, the Tier II ask, and committed at v275. It creates the only receivable on the book, RM90 gross at nought days, and it puts him at the 1 unit retail credit cap exactly, so Boundaries reads it as at-the-line rather than over it. Worth noting against his own words: he told the desk on 06 Aug he is reducing his salt intake and to expect smaller, less frequent orders, and 1 unit is smaller than the 1 unit he took on the 6th at the same price, so the size is consistent with what he said. It books to SALT, which is what the entry said: the Transaction tab could not name a product until this same version, so this is the last row on the book whose product was implied rather than chosen.'},
   {date:'2026-08-08',customer:'CA4-DAM',qty:0.5,total:50,cost:47,cash:50,deliveredQty:0.5,deliveredOn:'2026-08-08',paidOn:'2026-08-08',
@@ -1983,7 +2086,7 @@ const whiteboard=[
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{v:'v280',d:'10 Aug 2026',t:'THE AUGUST AUDIT, AND THE FOUR THINGS IT CHANGED',n:['Twenty-six August rows walked one by one and confirmed.','FIFO throughout, and everything delivered from 28 Jul costs RM47.','Goodwill is an expense: no revenue, no cost of goods, and the salt still leaves the shelf.','The identifier is back on the old convention, C or S plus initial plus name length plus location.','One reward scheme: base lot times cheapest cost times 20 for a customer and 10 for an associate, scaled by four margin bands.','The printed board is gone. A derived ladder of floor, good, great and ceiling replaces it, at 15, 33.33, 66.67 and 100 per cent markup on cost.','One floor across every size, so it can no longer fall as the quantity rises.','Headroom now walks the prices actually being charged, and says whether each is under floor, under replacement or under cost.']}];
+const evolution=[{v:'v281',d:'11 Aug 2026',t:'THE INTERACTION PASS: OIL DRAWS, AND THE DESK MOVES',n:['Per-product charts draw per product at last. Every canvas now resolves inside its own product block with the book state set to match, so the oil analysis, sourcing outlook, inventory walk, monthly financials and pricing board charts exist for the first time; they had drawn into the salt canvas, or nowhere, since two books arrived at v262.','A chart is keyed to its canvas, never to a shared variable: a shared variable can only remember one book, so drawing the second used to destroy and blank the first.','One chart language, set once on the library: desk type, glass tooltips, round caps, and animation that switches itself off under reduced motion.','The pricing overrides no longer collapse the tab. A keystroke re-renders through the same per-product path as the first paint, and the controls in the second book respond too; they had never been wired.','The rail answers the keyboard (arrows, Home, End), tells assistive tech which tab you are on, and on a phone stays pinned to the top of the screen, so navigation is never a scroll away.','The address carries the tab, so a reload, including the cloud ten-second refresh, reopens where you were; the back gesture still leaves the desk in one step.','Every tab owns an accent now: Forward azure, Sourcing amber, Analysis violet, Map teal, and the six that had fallen back to gold are named. The headline, the table headers, the active tab and the third orb carry it, so the light follows where you are.','Sections settle in with a short stagger, buttons press, bars fill from zero, and tables hint at hidden columns behind you as well as ahead. All of it obeys reduced motion.']},{v:'v280',d:'10 Aug 2026',t:'THE AUGUST AUDIT, AND THE FOUR THINGS IT CHANGED',n:['Twenty-six August rows walked one by one and confirmed.','FIFO throughout, and everything delivered from 28 Jul costs RM47.','Goodwill is an expense: no revenue, no cost of goods, and the salt still leaves the shelf.','The identifier is back on the old convention, C or S plus initial plus name length plus location.','One reward scheme: base lot times cheapest cost times 20 for a customer and 10 for an associate, scaled by four margin bands.','The printed board is gone. A derived ladder of floor, good, great and ceiling replaces it, at 15, 33.33, 66.67 and 100 per cent markup on cost.','One floor across every size, so it can no longer fall as the quantity rises.','Headroom now walks the prices actually being charged, and says whether each is under floor, under replacement or under cost.']}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -2046,7 +2149,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='11 Aug 2026, 00:09 KL';
+const LAST_UPDATED='11 Aug 2026, 01:25 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -2360,7 +2463,7 @@ const PRICE={
 /* ONE FLOOR, 20%, EVERY SIZE (v204). Set to 30% at v203 and lowered to 20% the same
    morning after seeing what 30% did to the printed cards: it put R under its own floor
    at 5 and 6.25 unit, and R is the card that actually goes to customers. 20% keeps the
-   single-floor principle, which is the part that mattered, while leaving the R card
+   single-floor principle, which is the part that mattered, while leaving the retired R card
    whole at every size it runs to. The history is kept because the reasoning is the
    asset: the number moved, the principle did not.
    THE PRINCIPLE, restated: it was 25% retail and 2%
@@ -2417,7 +2520,7 @@ function incentiveNow(){
    hand-solved ladders, every price a multiple of RM10 by his own hard rule.
 
    WHAT THE ENGINE IS NOW FOR. It no longer sets the ask. It sets the FLOOR: the
-   effective cost, the walk-away, and the 25%/2% band floors are all still computed
+   effective cost, the floor, and the 25%/2% band floors are all still computed
    live, and every tier cell is tested against them. Where a tier prices under the
    floor the desk says so and does not silence it -- SS is deliberately below it at
    every size above a half unit, because it is a collect-only tier with no delivery in
@@ -3531,7 +3634,7 @@ function boundaryScan(){
      row's own lot cost, which is right for salt already drawn. A pending order has drawn
      nothing, so there is no lot to charge it to and the only honest comparison is what
      the salt would cost to REPLACE: floorTotal() over effective cost, which is the same
-     floor the quote board and the walk-away are built on. Judging it against a cheap old
+     floor the quote board and the floor are built on. Judging it against a cheap old
      lot would pass a price the board would refuse. */
   /* v228: THIS PRODUCT'S pending rows only. floorTotal() is built on the ACTIVE product's
      effective cost, so judging a salt order while oil is selected compared a salt price
@@ -4470,14 +4573,13 @@ function tabAnalysis(){
   <div class="chartbox tall"><canvas id="anCadence"></canvas></div>
   <div class="dsc" style="margin-top:14px;padding-top:13px;border-top:1px solid var(--line)"><b>Nothing on this tab books anything.</b> Every figure is read from the ledger as it stands, including uncommitted entries, exactly as the rest of the desk reads it.</div>`;
 }
-let anCharts=[];
+/* v281: the anCharts registry is gone; a chart is keyed to its canvas via freshChart. */
 function drawAnalysis(){
-  if(!document.getElementById('anBridge'))return;
+  if(!blkEl('anBridge'))return;
   ensureChart(ok=>{
-    if(!ok){['anBridge','anScatter','anStock','anPareto','anBuys','anCadence'].forEach(id=>{const e=document.getElementById(id);
+    if(!ok){['anBridge','anScatter','anStock','anPareto','anBuys','anCadence'].forEach(id=>{const e=blkEl(id);
       chartEmpty(e,'Chart unavailable. Every figure it draws is in the tables on this tab.');});return;}
     try{
-      anCharts.forEach(ch=>{try{ch.destroy();}catch(e){}});anCharts=[];
       const GRID='rgba(255,255,255,0.07)',TICK='rgba(244,245,247,0.66)',INK='#f4f5f7';
       const base=t=>({responsive:true,maintainAspectRatio:false,
         plugins:{legend:{display:false},title:{display:true,text:t,color:INK,font:{size:12}}},
@@ -4486,14 +4588,14 @@ function drawAnalysis(){
 
       // 1. margin bridge. Floating bars, so each step starts where the last one ended.
       const cogsV=+cogs.toFixed(2), gm=+grossMargin.toFixed(2), shrinkRM=+(selfUse*wavgBuy).toFixed(2);
-      anCharts.push(new Chart(document.getElementById('anBridge'),{type:'bar',
+      freshChart(blkEl('anBridge'),{type:'bar',
         data:{labels:['Revenue','Cost of goods','Gross margin','Shrinkage, if recovered'],
           datasets:[{data:[[0,revTotal],[gm,revTotal],[0,gm],[gm,gm+shrinkRM]],
             backgroundColor:['#7fd7e8','#ff7a8a','#e8c66b','rgba(176,124,255,.45)'],
             borderColor:['#7fd7e8','#ff7a8a','#e8c66b','#b3a6f5'],borderWidth:1,borderRadius:6}]},
         options:Object.assign(base('Revenue to margin (RM)'),{plugins:{legend:{display:false},
           title:{display:true,text:'Revenue to margin (RM)',color:INK,font:{size:12}},
-          tooltip:{callbacks:{label:i=>{const v=i.raw;return 'RM '+Math.abs(v[1]-v[0]).toLocaleString('en-MY',{maximumFractionDigits:0});}}}}})}));
+          tooltip:{callbacks:{label:i=>{const v=i.raw;return 'RM '+Math.abs(v[1]-v[0]).toLocaleString('en-MY',{maximumFractionDigits:0});}}}}})});
 
       // 2. price vs size, with the live board through it
       const dots=pricedSales.filter(s=>s.qty>0&&s.total>0&&!s.cancelled)
@@ -4501,7 +4603,7 @@ function drawAnalysis(){
       const qs=[];for(let q=0.5;q<=13;q+=0.25)qs.push(+q.toFixed(2));
       const line=qs.map(q=>({x:q,y:+pxQuote(q,sg.net,0).perKg.toFixed(2)}));
       const floor=qs.map(q=>({x:q,y:+(floorTotal(q,c.eff)/q).toFixed(2)}));
-      anCharts.push(new Chart(document.getElementById('anScatter'),{type:'scatter',
+      freshChart(blkEl('anScatter'),{type:'scatter',
         data:{datasets:[
           {label:'Orders',data:dots,backgroundColor:'rgba(99,230,224,.55)',borderColor:'#7fd7e8',pointRadius:5},
           {label:'Board today',data:line,type:'line',borderColor:'#e8c66b',backgroundColor:'transparent',pointRadius:0,borderWidth:2,tension:.25},
@@ -4512,11 +4614,11 @@ function drawAnalysis(){
             tooltip:{callbacks:{label:i=>i.dataset.label==='Orders'
               ?`${i.raw.d} ${i.raw.x} unit at RM ${i.raw.y}/unit`:`${i.raw.x} kg: RM ${i.raw.y}/unit`}}},
           scales:{x:{type:'logarithmic',grid:{color:GRID},ticks:{color:TICK,callback:v=>v+' unit'},title:{display:true,text:'lot size, log scale',color:TICK}},
-                  y:{grid:{color:GRID},ticks:{color:TICK,callback:v=>'RM '+v}}}}}));
+                  y:{grid:{color:GRID},ticks:{color:TICK,callback:v=>'RM '+v}}}}});
 
       // 3. reconstructed shelf
       const sh=stockHistory();
-      anCharts.push(new Chart(document.getElementById('anStock'),{type:'line',
+      freshChart(blkEl('anStock'),{type:'line',
         data:{labels:sh.map(r=>r.iso.slice(5)),datasets:[
           {label:'On hand',data:sh.map(r=>r.lvl),borderColor:'#7fd7e8',backgroundColor:'rgba(99,230,224,.10)',fill:true,pointRadius:0,borderWidth:2,tension:.15},
           {label:'Reorder trigger',data:sh.map(()=>RULES.reorderKg),borderColor:'#e8c66b',backgroundColor:'transparent',pointRadius:0,borderWidth:1.5,borderDash:[5,4]},
@@ -4525,12 +4627,12 @@ function drawAnalysis(){
           plugins:{legend:{display:true,labels:{color:TICK,boxWidth:12,font:{size:11}}},
             title:{display:true,text:'Units on the shelf, reconstructed daily',color:INK,font:{size:12}}},
           scales:{x:{grid:{color:GRID},ticks:{color:TICK,maxTicksLimit:14}},
-                  y:{grid:{color:GRID},ticks:{color:TICK,callback:v=>v+' unit'}}}}}));
+                  y:{grid:{color:GRID},ticks:{color:TICK,callback:v=>v+' unit'}}}}});
 
       // 4. pareto
       const bc=byCustomer().slice().sort((a,b)=>b.rev-a.rev),tot=bc.reduce((a,x)=>a+x.rev,0)||1;
       let run=0;const cum=bc.map(x=>{run+=x.rev;return +(run/tot*100).toFixed(1);});
-      anCharts.push(new Chart(document.getElementById('anPareto'),{
+      freshChart(blkEl('anPareto'),{
         data:{labels:bc.map(x=>codeOf(x.id)),datasets:[
           {type:'bar',label:'Revenue',data:bc.map(x=>+x.rev.toFixed(2)),backgroundColor:'#b3a6f5',borderRadius:5,yAxisID:'y'},
           {type:'line',label:'Cumulative share',data:cum,borderColor:'#e8c66b',backgroundColor:'transparent',pointRadius:2,borderWidth:2,yAxisID:'y1',tension:.2}]},
@@ -4539,13 +4641,13 @@ function drawAnalysis(){
             title:{display:true,text:'Revenue by buyer, with cumulative share',color:INK,font:{size:12}}},
           scales:{x:{grid:{color:GRID},ticks:{color:TICK,maxRotation:70,minRotation:45,font:{size:9}}},
                   y:{grid:{color:GRID},ticks:{color:TICK,callback:v=>'RM '+v},position:'left'},
-                  y1:{grid:{display:false},ticks:{color:'#e8c66b',callback:v=>v+'%'},position:'right',min:0,max:100}}}}));
+                  y1:{grid:{display:false},ticks:{color:'#e8c66b',callback:v=>v+'%'},position:'right',min:0,max:100}}}});
 
       // 5. buy rate against lot size
       const buys=purchases.filter(p=>!p.pending&&p.qty>0).map(p=>({x:p.qty,y:+(p.total/p.qty).toFixed(2),
         r:6+Math.sqrt(p.total/Math.max(1,Math.max.apply(null,purchases.map(z=>z.total))))*14,
         d:p.date,who:p.supplier,def:!!p.defaulted}));
-      anCharts.push(new Chart(document.getElementById('anBuys'),{type:'bubble',
+      freshChart(blkEl('anBuys'),{type:'bubble',
         data:{datasets:[
           {label:'Lots received',data:buys.filter(b=>!b.def),backgroundColor:'rgba(95,214,160,.35)',borderColor:'#6ee7a8',borderWidth:1.5},
           {label:'Defaulted',data:buys.filter(b=>b.def),backgroundColor:'rgba(255,93,115,.35)',borderColor:'#ff7a8a',borderWidth:1.5}]},
@@ -4554,21 +4656,21 @@ function drawAnalysis(){
             title:{display:true,text:'Buying rate against lot size',color:INK,font:{size:12}},
             tooltip:{callbacks:{label:i=>`${i.raw.d} ${i.raw.x} unit at RM ${i.raw.y}/unit`}}},
           scales:{x:{grid:{color:GRID},ticks:{color:TICK,callback:v=>v+' unit'}},
-                  y:{grid:{color:GRID},ticks:{color:TICK,callback:v=>'RM '+v}}}}}));
+                  y:{grid:{color:GRID},ticks:{color:TICK,callback:v=>'RM '+v}}}}});
 
       // 6. cadence: one row per buyer, one dot per order
       const ids=bc.map(x=>x.id);
       const maxT=Math.max.apply(null,pricedSales.map(s=>s.total||0))||1;
       const cad=pricedSales.filter(s=>!s.cancelled&&s.date&&ids.indexOf(s.customer)>=0)
         .map(s=>({x:s.date,y:codeOf(s.customer),r:5+Math.sqrt((s.total||0)/maxT)*13,t:s.total,q:s.qty}));
-      anCharts.push(new Chart(document.getElementById('anCadence'),{type:'bubble',
+      freshChart(blkEl('anCadence'),{type:'bubble',
         data:{datasets:[{label:'Orders',data:cad,backgroundColor:'rgba(99,230,224,.35)',borderColor:'#7fd7e8',borderWidth:1.4}]},
         options:{responsive:true,maintainAspectRatio:false,
           plugins:{legend:{display:false},title:{display:true,text:'Order dates by buyer, sized by value',color:INK,font:{size:12}},
             tooltip:{callbacks:{label:i=>`${i.raw.y} on ${i.raw.x}: ${i.raw.q} unit, RM ${i.raw.t}`}}},
           scales:{x:{type:'category',labels:[...new Set(pricedSales.map(s=>s.date).filter(Boolean))].sort(),
                      grid:{color:GRID},ticks:{color:TICK,maxRotation:70,minRotation:45,font:{size:9}}},
-                  y:{type:'category',labels:ids.map(codeOf).reverse(),grid:{color:GRID},ticks:{color:TICK,font:{size:10}}}}}}));
+                  y:{type:'category',labels:ids.map(codeOf).reverse(),grid:{color:GRID},ticks:{color:TICK,font:{size:10}}}}}});
     }catch(e){}
   });
 }
@@ -5639,18 +5741,16 @@ function finRows(){
 /* ---- v170 charts: Order book, Sourcing, Network, Ledger --------------------
    Same discipline as every chart on this desk: each draws only what a table on its own
    tab already states, so a chart failing to load never hides a figure. */
-let rcAgeObj=null,srcLotObj=null,nwPartnerObj=null,lgTimeObj=null;
-let srcOutlookObj=null;
+let nwPartnerObj=null,lgTimeObj=null;   /* v281: single-book tabs only; per-product charts key to their canvas */
 function drawOutlookChart(){
-  const el=document.getElementById('srcOutlookChart');
+  const el=blkEl('srcOutlookChart');
   if(!el)return;
   ensureChart(ok=>{
     if(!ok){chartEmpty(el,'Chart unavailable. Every figure it draws is in the tables on this tab.');return;}
     try{
       const L=lotOutlook(), rows=L.rows.filter(r=>r.left>0.009);
       if(!rows.length){chartEmpty(el,'Nothing left on any lot to draw.');return;}
-      if(srcOutlookObj){try{srcOutlookObj.destroy();}catch(e){}}
-      srcOutlookObj=new Chart(el,{type:'bar',data:{labels:rows.map(r=>r.date.slice(5)+' · '+kg(r.left)),
+      freshChart(el,{type:'bar',data:{labels:rows.map(r=>r.date.slice(5)+' · '+kg(r.left)),
         datasets:[
           {label:'What the salt cost',data:rows.map(r=>r.costLeft),backgroundColor:'rgba(244,245,247,0.40)',borderWidth:0},
           {label:'Margin, expected',data:rows.map(r=>Math.max(0,r.expMar)),backgroundColor:'#6ee7a8',borderWidth:0},
@@ -5666,7 +5766,7 @@ function drawOutlookChart(){
 
 const CHART_INK={grid:'rgba(255,255,255,0.07)',tick:'rgba(244,245,247,0.66)'};
 function drawRecvCharts(){
-  const el=document.getElementById('rcAgeChart');
+  const el=blkEl('rcAgeChart');
   if(!el)return;
   ensureChart(ok=>{
     if(!ok){chartEmpty(el,'Chart unavailable. Every figure it draws is in the tables on this tab.');return;}
@@ -5677,8 +5777,7 @@ function drawRecvCharts(){
         rows.push({who:codeOf(supplierReceivable.party)+' (supplier)',g:supplierReceivable.amount,age:dbet(supplierReceivable.since)});
       if(!rows.length){chartEmpty(el,'Nothing is owed either way. A rare and correct emptiness.');return;}
       rows.sort((a,b)=>b.g-a.g);
-      if(rcAgeObj){try{rcAgeObj.destroy();}catch(e){}}
-      rcAgeObj=new Chart(el,{type:'bar',data:{labels:rows.map(x=>x.who+' · '+x.age+'d'),datasets:[
+      freshChart(el,{type:'bar',data:{labels:rows.map(x=>x.who+' · '+x.age+'d'),datasets:[
         {label:'Gross',data:rows.map(x=>+x.g.toFixed(2)),backgroundColor:'rgba(255,93,115,.35)',borderColor:'#ff7a8a',borderWidth:1,borderRadius:3},
         {label:'Net of ladder',data:rows.map(x=>+(x.g*(1-provRate(x.age))).toFixed(2)),backgroundColor:'#7fd7e8',borderWidth:0,borderRadius:3}]},
         options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
@@ -5689,7 +5788,7 @@ function drawRecvCharts(){
   });
 }
 function drawSourcingCharts(){
-  const el=document.getElementById('srcLotChart');
+  const el=blkEl('srcLotChart');
   if(!el)return;
   ensureChart(ok=>{
     if(!ok){chartEmpty(el,'Chart unavailable. Every figure it draws is in the tables on this tab.');return;}
@@ -5699,8 +5798,7 @@ function drawSourcingCharts(){
                   sup:codeOf(p.supplier||''),def:!!p.defaulted}))
         .sort((a,b)=>a.d<b.d?-1:1);
       if(lgOrEmpty(el,lots.length))return;
-      if(srcLotObj){try{srcLotObj.destroy();}catch(e){}}
-      srcLotObj=new Chart(el,{type:'bar',data:{labels:lots.map(x=>x.d.slice(5)+' · '+x.q),datasets:[
+      freshChart(el,{type:'bar',data:{labels:lots.map(x=>x.d.slice(5)+' · '+x.q),datasets:[
         {data:lots.map(x=>x.rate),
          backgroundColor:lots.map(x=>x.def?'transparent':(x.sup.startsWith('SF')?'rgba(255,93,115,.55)':'rgba(99,230,224,.55)')),
          borderColor:lots.map(x=>x.def?'#ff7a8a':(x.sup.startsWith('SF')?'#ff7a8a':'#7fd7e8')),
@@ -5775,9 +5873,8 @@ function drawLedgerCharts(){
     }catch(e){}
   });
 }
-let finMonthObj=null;
 function drawFinCharts(){
-  const el=document.getElementById('finMonthChart');
+  const el=blkEl('finMonthChart');
   if(!el)return;
   ensureChart(ok=>{
     if(!ok){chartEmpty(el,'Chart unavailable. Every figure it draws is in the tables on this tab.');return;}
@@ -5788,8 +5885,7 @@ function drawFinCharts(){
         mo[k].mar+=x.total-costOf(x)*x.qty;});
       const keys=Object.keys(mo).sort();
       const lab=keys.map(k=>new Date(k+'-01').toLocaleString('en-GB',{month:'short'}));
-      if(finMonthObj){try{finMonthObj.destroy();}catch(e){}}
-      finMonthObj=new Chart(el,{type:'bar',data:{labels:lab,datasets:[
+      freshChart(el,{type:'bar',data:{labels:lab,datasets:[
         {label:'Revenue',data:keys.map(k=>+mo[k].rev.toFixed(2)),backgroundColor:'#7fd7e8',borderWidth:0,borderRadius:4},
         {label:'Gross margin',data:keys.map(k=>+mo[k].mar.toFixed(2)),backgroundColor:'#e8c66b',borderWidth:0,borderRadius:4}]},
         options:{responsive:true,maintainAspectRatio:false,
@@ -7543,7 +7639,7 @@ function pxShrinkRate(){const h=buyKg+openingFor(PROD).qty;return h>0?selfUse/h:
    when prices should not be moving. His instruction is to ATTRIBUTE HALF and ABSORB HALF.
    Half the leak is carried in the price; the other half comes out of margin, deliberately,
    as the cost of not having fixed it yet. It is a standing lever, not a one-off: change
-   this one number and the board, the ladder, the floors and the walk-aways all move with
+   this one number and the board, the ladder, the floors and the floor all move with
    it. At 1 the desk is back to passing the whole leak on; at 0 it absorbs all of it. */
 /* v244: HIS INSTRUCTION REVERSED, ON HIS INSTRUCTION. The paragraph above is the v205
    reasoning for attributing half, and it still reads correctly: passing the whole leak on
@@ -7816,7 +7912,7 @@ function pxSignals(){
   return {rows:out,raw:+raw.toFixed(2),net:+Math.max(-PX.signalCap,Math.min(PX.signalCap,raw)).toFixed(2),capped:Math.abs(raw)>PX.signalCap,cost:c};
 }
 /* a decision about a person, not a reading of the book, so it is kept apart and
-   can never take a quote below the walk-away line */
+   can never take a quote below the floor line */
 function pxParty(id){
   const rows=[];if(!id)return {rows,net:0,none:true};
   const cs=custStats().find(x=>x.id===id);
@@ -7846,7 +7942,7 @@ function pxSnap(total,walkTotal){
    This function WAS the other quote. It anchored on ladderRate(), a curve that predates the
    tier board, then multiplied by a demand signal and a party adjustment, and it fed nine
    surfaces: the revive cards, the reseller table, the cover analysis, the earnings chart,
-   the 12.5 commentary and the walk-away column. The board said RM95 for a unit to Tier I
+   the 12.5 commentary and the floor column. The board said RM95 for a unit to Tier I
    and this said RM130. Every rule added since v245, the ringgit floor, the cover guard, the
    strict ordering, bound one of the two and not the other.
    IT IS NOW A THIN WRAPPER ON THE BOARD and computes no price of its own. On a carded size
@@ -8186,7 +8282,7 @@ function nextBest(id){
      against RM95 on the board at 1 unit, and RM1,010 against RM1,105 at 12.5. Every rule
      added since v245, the ringgit floor, the cover guard, the strict ordering, applied to
      one of the two and not the other. The board is the policy, so the board is the quote.
-     pxQuote is kept for the walk-away figure, which the board does not carry. */
+     pxQuote is kept for the floor figure, which the board does not carry. */
   const tr=custTier(id);
   const r=pxQuote(q,0,0,tr?tr.code:'T2');   // v248: the customer's own tier, off the one board
   const cad=custCadence(id),since=dbet(rows.map(s=>s.date).sort().slice(-1)[0]);
@@ -8212,30 +8308,82 @@ function renderQueue(){const b=document.getElementById('queueBox');if(!b)return;
    of the tab renders, which it did not before. */
 let chartTried=false;
 function ensureChart(cb){
-  if(window.Chart)return cb(true);
+  if(window.Chart){chartTheme();return cb(true);}
   if(chartTried)return cb(false);
   chartTried=true;
   const s=document.createElement('script');
   s.src='assets/chart.umd.js';
-  s.onload=()=>cb(!!window.Chart);
+  s.onload=()=>{chartTheme();cb(!!window.Chart);};
   s.onerror=()=>cb(false);
   document.head.appendChild(s);
 }
+/* v281: ONE LOOK FOR EVERY CHART. Set once on the loaded library so all of the desk's
+   charts inherit its type, a glass tooltip and the reduced-motion setting, instead of
+   each options block half-repeating it. Anything a chart states locally still wins. */
+function chartTheme(){
+  if(!window.Chart||Chart.__salted)return; Chart.__salted=true;
+  try{
+    const D=Chart.defaults;
+    D.font.family=getComputedStyle(document.body).fontFamily||"'Segoe UI',system-ui,sans-serif";
+    D.font.size=11;
+    D.color='rgba(244,245,247,0.66)';
+    D.borderColor='rgba(255,255,255,0.07)';
+    if(window.matchMedia&&matchMedia('(prefers-reduced-motion:reduce)').matches)D.animation=false;
+    else{D.animation.duration=420;D.animation.easing='easeOutQuart';}
+    const T=D.plugins.tooltip;
+    T.backgroundColor='rgba(15,18,26,0.92)';T.borderColor='rgba(255,255,255,0.24)';T.borderWidth=1;
+    T.cornerRadius=10;T.padding=10;T.caretSize=5;T.boxPadding=4;
+    T.titleColor='#f4f5f7';T.bodyColor='rgba(244,245,247,0.85)';
+    T.titleFont={weight:'700',size:11};T.bodyFont={size:11};
+    const L=D.plugins.legend.labels;
+    L.usePointStyle=true;L.pointStyle='circle';L.boxWidth=7;L.boxHeight=7;
+    D.elements.line.borderCapStyle='round';D.elements.line.borderJoinStyle='round';
+    D.elements.point.hoverRadius=5;
+  }catch(e){}
+}
+/* v281: PER-PRODUCT CHARTS ACTUALLY DRAW PER PRODUCT. perProduct() emits a tab's markup
+   once per book, so every canvas id inside it appears once PER PRODUCT; getElementById
+   always found the FIRST, which is why the oil book's charts never drew and salt's canvas
+   showed whichever book happened to be active. Three parts fix it structurally:
+     - each .prodblock carries data-prod, so a canvas knows which book it belongs to;
+     - blkEl() resolves an id INSIDE the block being drawn, falling back to the document
+       for the single-book tabs, which are untouched;
+     - drawPerProduct() runs a tab's draw functions once per block with PROD set to that
+       block's book and the globals recomputed, restoring the active book afterwards.
+   A chart object is keyed to its canvas (freshChart), never to a shared variable: a
+   shared variable can only remember one book, so drawing the second would destroy and
+   blank the first. */
+let DRAW_BLK=null;
+function blkEl(id){return (DRAW_BLK||document).querySelector('[id="'+id+'"]');}
+function freshChart(el,cfg){
+  if(!el||!window.Chart)return null;
+  try{const old=Chart.getChart?Chart.getChart(el):null;if(old)old.destroy();}catch(e){}
+  return new Chart(el,cfg);
+}
+function drawPerProduct(fns){
+  ensureChart(()=>{   /* load once here, so the fns' own ensureChart calls resolve synchronously */
+    const keep=PROD;
+    document.querySelectorAll('.sec.on .prodblock[data-prod]').forEach(b=>{
+      const p=b.dataset.prod; if(!PRODUCTS[p])return;
+      PROD=p; recompute(); DRAW_BLK=b;
+      fns.forEach(f=>{try{f();}catch(e){}});
+    });
+    DRAW_BLK=null; PROD=keep; recompute();
+  });
+}
 function trackCharts(){
-  const ic=document.getElementById('invChart');
+  const ic=blkEl('invChart');
   if(!ic)return;
   ensureChart(ok=>{
     if(!ok){ const h=ic.parentNode; if(h)h.innerHTML='<div class="dsc">Chart unavailable. Every figure it draws is in the tables on this tab.</div>'; return; }
     try{ drawInvChart(ic); }catch(e){ const h=ic.parentNode; if(h)h.innerHTML='<div class="dsc">The movement chart could not be drawn: '+(e&&e.message||e)+'</div>'; }
   });
 }
-let invChartObj=null;
 function drawInvChart(ic){
-  if(invChartObj){try{invChartObj.destroy();}catch(e){}invChartObj=null;}   // Chart.js registry leaks without this
   const loanOut=loanDrawKg();
   const labs=['Opening','Received','Sold','Self-use','On hand'],vals=[opening.qty,buyKg,-(soldKg-loanOut),-selfUse,currentStock],cols=['#e8c66b','#7fd7e8','#ff7a8a','#f0932b','#6ee7a8'];
   if(loanOut>0){labs.splice(3,0,'Loan out');vals.splice(3,0,-loanOut);cols.splice(3,0,'#b3a6f5');}  // the walk splits it; the chart should too
-  invChartObj=new Chart(ic,{type:'bar',data:{labels:labs,datasets:[{data:vals,backgroundColor:cols,borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},title:{display:true,text:'Inventory movement (unit)',color:'#f4f5f7',font:{size:12}}},scales:{x:{grid:{color:'rgba(255,255,255,0.07)'},ticks:{color:'rgba(244,245,247,0.66)'}},y:{grid:{color:'rgba(255,255,255,0.07)'},ticks:{color:'rgba(244,245,247,0.66)'}}}}});
+  freshChart(ic,{type:'bar',data:{labels:labs,datasets:[{data:vals,backgroundColor:cols,borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},title:{display:true,text:'Inventory movement (unit)',color:'#f4f5f7',font:{size:12}}},scales:{x:{grid:{color:'rgba(255,255,255,0.07)'},ticks:{color:'rgba(244,245,247,0.66)'}},y:{grid:{color:'rgba(255,255,255,0.07)'},ticks:{color:'rgba(244,245,247,0.66)'}}}}});
 }
 
 /* ============ TAB SWITCH + RENDER ============ */
@@ -9140,7 +9288,7 @@ function tabWorkbench(){
     <div class="note" style="margin-top:10px" id="wbSync">${qNote()}</div>
   </div>
   <div id="queueBox" style="margin-top:8px"></div>
-  <div class="dsc" style="margin-top:18px">Pricing now has <b>its own tab</b>. The two what-if simulators are retired: the quote board answers both of their questions at once, for every size the desk sells, and answers them against the walk-away floor rather than against a figure typed in hopefully.</div>`;
+  <div class="dsc" style="margin-top:18px">Pricing now has <b>its own tab</b>. The two what-if simulators are retired: the quote board answers both of their questions at once, for every size the desk sells, and answers them against the floor floor rather than against a figure typed in hopefully.</div>`;
 }
 /* ============ TAB: PRICING ============ */
 function pxMarket(){
@@ -9158,7 +9306,7 @@ function pxMarket(){
     const rm=+r.reduce((a,s)=>a+(s.total-txPendKgRaw(s)*txPrice(s)),0).toFixed(2);
     const p=k>0?rm/k:0;return {k,rm,p:+p.toFixed(2),m:p>0?+((p-c.eff)/p*100).toFixed(1):0,n:r.length};})();
   const excluded=rows.filter(s=>s.qty>=PX.bulkFrom&&isOneOff(s.customer));
-  /* the buying rate at which the realised bulk price would clear the walk-away
+  /* the buying rate at which the realised bulk price would clear the floor
      unchanged: back out the effective cost the floor allows, then strip the shrink load */
   const needEff=bulk.p*(1-PRICE.floorPct.wholesale/100);
   const needRate=+(needEff*(1-c.shrink)).toFixed(2);
@@ -9226,7 +9374,7 @@ function tabPricing(){
   const mk=pxMarket();
   const chip=(lbl,val)=>`<button class="vbtn" onclick="pxSet('cost',${val})" style="margin-right:5px">${lbl}</button>`;
   /* LADDER CHECK (v150). Per-unit must never rise as the lot grows. It can, in one
-     narrow case: when several sizes all sit ON the walk-away floor, the price is flat
+     narrow case: when several sizes all sit ON the floor floor, the price is flat
      per unit and the only thing left moving is the RM5 snap on the total, which costs
      a different fraction of a unit at each size. At a RM64 replacement cost that puts
      6.25 unit twenty sen a unit above 5 unit. It is a rounding artefact rather than a
@@ -9348,7 +9496,7 @@ function tabPricing(){
     </div></div>`;})()}
 
   <!-- v255: SIZES OFF THE BOARD IS GONE. It was a whole section re-deciding a price the
-       board already sets: a quote, a rate, a margin, a profit and a walk-away for five sizes
+       board already sets: a quote, a rate, a margin, a profit and a floor for five sizes
        nobody has ordered, on a tab whose first control already quotes ANY size against the
        same engine. Every surface on this desk deciding what a price should be was the
        complaint; this was the clearest instance of it. The quote panel at the top answers
@@ -9410,9 +9558,12 @@ function tabPricing(){
       ${targets.map(t=>`<tr><td class="l">${t.m}%</td><td>${fmt(t.rate)}/unit</td><td><b>${fmt0(t.total)}</b></td>
         <td style="color:${t.vsMed==null?'var(--dim)':t.vsMed>25?'var(--crim)':'var(--gold)'}">${t.vsMed==null?'&mdash;':'+'+t.vsMed+'%'}</td></tr>`).join('')}
     </tbody></table>
-    <div class="dsc" style="margin-top:8px">The board currently quotes <b>${fmt0(pxQuote(12.5,net,pn).total)}</b> for ${kg(12.5)}. The median that size has actually cleared at is <b>${h.med?fmt(h.med):'&mdash;'}/unit</b> across ${h.n||0} orders, and the best ever paid is <b>${h.best?fmt(h.best):'&mdash;'}/unit</b>, which was the one-off. <b>A 20% margin needs a rate no buyer except that one-off has ever paid.</b> That is the honest reading: at this cost structure wholesale is not a pricing problem you can reprice your way out of, because the market has already shown what it pays.</div></div>
-    </div>
-    </div>`;})()}
+    <div class="dsc" style="margin-top:8px">The board currently quotes <b>${fmt0(pxQuote(12.5,net,pn).total)}</b> for ${kg(12.5)}. The median that size has actually cleared at is <b>${h.med?fmt(h.med):'&mdash;'}/unit</b> across ${h.n||0} orders, and the best ever paid is <b>${h.best?fmt(h.best):'&mdash;'}/unit</b>, which was the one-off. <b>A 20% margin needs a rate no buyer except that one-off has ever paid.</b> That is the honest reading: at this cost structure wholesale is not a pricing problem you can reprice your way out of, because the market has already shown what it pays.</div></div>`;})()}
+    <!-- v281: two stray closing divs removed here. They closed nothing in this template;
+         the HTML parser answered them by popping the open <details> AND the .prodblock
+         wrapper, so everything from Shrinkage onwards rendered OUTSIDE the product block
+         and the four board charts below could never be found by a block-scoped lookup. -->
+
 
   </details>
   <details class="obsec"><summary>If shrinkage comes down <span class="q">what the leak costs the board</span></summary>
@@ -9917,7 +10068,7 @@ function pxReset(){pxOver={cost:null,shrink:null,party:'',anyQ:pxOver.anyQ,tier:
 /* re-render only the derived panes, never the control inputs, so a half-typed figure
    is not wiped from under the cursor */
 function wirePricing(){
-  const bind=(id,key,num)=>{const e=document.getElementById(id);if(!e)return;
+  const bind=(id,key,num)=>{const e=blkEl(id);if(!e)return;
     e.oninput=()=>{const raw=e.value;
       pxOver[key]=(raw===''||raw==null)?(num?null:''):(num?+raw:raw);
       pxRedraw();};
@@ -9925,22 +10076,23 @@ function wirePricing(){
   bind('pxAnyIn','anyQ',false);bind('pxTierIn','tier',false);
   bind('pxCapIn','cap',false);
 }
+/* v281: the binder resolves inside the product block being wired, so the controls in the
+   second book's block respond too; they had only ever been wired in the first. The
+   overrides themselves stay shared across books, which is the existing semantic. */
 /* profit per unit across the board, with every order actually written laid over it.
    The zero line is the point of the chart: anything under it is stock sold for less
    than it costs to put back on the shelf. */
-let pxEarnObj=null;
 function drawEarnChart(){
-  const el=document.getElementById('pxEarnChart');if(!el)return;
+  const el=blkEl('pxEarnChart');if(!el)return;
   ensureChart(ok=>{
     if(!ok){chartEmpty(el,'Chart unavailable. Every figure it draws is in the tables on this tab.');return;}
     try{
-      if(pxEarnObj){try{pxEarnObj.destroy();}catch(e){}pxEarnObj=null;}
       const c=pxCost(),sg=pxSignals(),pt=pxParty(pxOver.party),E=earnedPerKg();
       const GRID='rgba(255,255,255,0.07)',TICK='rgba(244,245,247,0.66)',INK='#f4f5f7';
       const line=PX.sizes.map(q=>({x:q,y:+(pxQuote(q,sg.net,pt.net).perKg-c.eff).toFixed(2)}));
       const dots=E.rows.filter(r=>!r.oneOff).map(r=>({x:r.q,y:r.pkEff,id:codeOf(r.id),d:r.date}));
       const off=E.rows.filter(r=>r.oneOff).map(r=>({x:r.q,y:r.pkEff,id:codeOf(r.id),d:r.date}));
-      pxEarnObj=new Chart(el,{data:{datasets:[
+      freshChart(el,{data:{datasets:[
         {type:'line',label:'Board today',data:line,borderColor:'#e8c66b',backgroundColor:'transparent',pointRadius:0,borderWidth:2,tension:.25},
         {type:'scatter',label:'Orders written',data:dots,backgroundColor:'rgba(99,230,224,.55)',borderColor:'#7fd7e8',pointRadius:5},
         {type:'scatter',label:'One-off',data:off,backgroundColor:'rgba(245,196,81,.5)',borderColor:'#e8c66b',pointRadius:6,pointStyle:'triangle'},
@@ -9959,10 +10111,12 @@ function drawEarnChart(){
 function pxRedraw(){
   const host=document.getElementById('sec-pricing');if(!host)return;
   const keep={};['pxCostIn','pxShrinkIn','pxPartyIn','pxAnyIn','pxCapIn'].forEach(id=>{const e=document.getElementById(id);if(e)keep[id]={v:e.value,s:e.selectionStart};});
-  host.innerHTML=tabPricing();
+  /* v281: through perProduct, as builders.pricing is. Rebuilt bare, the first keystroke
+     in an override collapsed the tab to a single unbanded book. */
+  host.innerHTML=perProduct(tabPricing);
   Object.keys(keep).forEach(id=>{const e=document.getElementById(id);if(!e)return;e.value=keep[id].v;
     if(document.activeElement!==e&&keep[id].s!=null&&e.setSelectionRange&&e.type!=='number'){try{e.setSelectionRange(keep[id].s,keep[id].s);}catch(_){}}});
-  wirePricing();drawPriceCharts();drawEarnChart();drawBoardCharts();
+  drawPerProduct([wirePricing,drawPriceCharts,drawEarnChart,drawBoardCharts]);
 }
 /* ---- price response: observed volume and revenue at each price ----
    Ported from the Salt Trading Register. Two deliberate choices kept from it: only
@@ -9992,7 +10146,6 @@ function priceNote(){
    +`Across ${pts.length} distinct prices, <b>${(underKg/totKg*100).toFixed(0)}% of your volume</b> has gone below ${fmt0(floorPrice(12))}/unit, the total that clears even the ${flB}% wholesale floor against today's ${fmt(rc)}/unit replacement cost. Retail is held to ${PRICE.floorPct.retail}%. `
    +`That is the gap between what you have been charging and what the shelf now costs.`;
 }
-let priceQtyObj=null,priceRevObj=null;
 /* ============ THE BOARD, DRAWN (v246) ============
    Two questions the tables answer badly. FIRST, the SHAPE: a table of thirty prices does not
    show that the ladder has gone flat, and flat is the whole finding once the ringgit floor
@@ -10003,12 +10156,11 @@ let priceQtyObj=null,priceRevObj=null;
    banded by lot size, with today's ask as a reference. NOTHING IS FITTED: these are the
    observed points and one horizontal line, because 44 orders cannot support a demand curve
    and pretending otherwise is how a desk talks itself into a price nobody will pay. */
-let pxShapeObj=null,pxTimeObj=null;
 const PXBANDS=[{k:'small',lab:'under 2 unit',lo:0,hi:1.99,q:1,col:'#8fe9ff'},
                {k:'mid',  lab:'2 to 5 unit', lo:2,hi:5.01,q:2.5,col:'#e8dcae'},
                {k:'big',  lab:'over 5 unit', lo:5.02,hi:1e9,q:12.5,col:'#e8c66b'}];
 function drawBoardCharts(){
-  const a=document.getElementById('pxShapeChart'),b=document.getElementById('pxTimeChart');
+  const a=blkEl('pxShapeChart'),b=blkEl('pxTimeChart');
   if(!a&&!b)return;
   ensureChart(ok=>{
     if(!ok){[a,b].forEach(c=>{if(c)chartEmpty(c,'Chart unavailable. Every figure it draws is in the tables on this tab.');});return;}
@@ -10027,8 +10179,7 @@ function drawBoardCharts(){
           data:tb.map(r=>+(r.floor/r.q).toFixed(2))});
         ds.push({label:'effective cost',borderColor:'rgba(244,245,247,0.45)',borderDash:[2,3],borderWidth:1.5,pointRadius:0,
           data:tb.map(()=>+c.eff.toFixed(2))});
-        if(pxShapeObj){try{pxShapeObj.destroy();}catch(e){}}
-        pxShapeObj=new Chart(a,{type:'line',data:{labels:tb.map(r=>kg(r.q)),datasets:ds},
+        freshChart(a,{type:'line',data:{labels:tb.map(r=>kg(r.q)),datasets:ds},
           options:Object.assign(base('What a unit costs at each size (RM/unit)'),{})});
       }
       if(b){
@@ -10042,15 +10193,14 @@ function drawBoardCharts(){
         PXBANDS.forEach(bd=>{const p=tierPrice('T2',bd.q);
           if(p!=null)ds.push({label:'ask now, '+bd.lab,type:'line',borderColor:bd.col,borderDash:[6,4],
             borderWidth:1.5,pointRadius:0,data:labs.map(x=>({x:x,y:+(p/bd.q).toFixed(2)}))});});
-        if(pxTimeObj){try{pxTimeObj.destroy();}catch(e){}}
-        pxTimeObj=new Chart(b,{data:{labels:labs,datasets:ds},
+        freshChart(b,{data:{labels:labs,datasets:ds},
           options:Object.assign(base('Rate actually paid, by order date (RM/unit)'),{})});
       }
     }catch(e){}
   });
 }
 function drawPriceCharts(){
-  const q=document.getElementById('priceQtyChart'),r=document.getElementById('priceRevChart');
+  const q=blkEl('priceQtyChart'),r=blkEl('priceRevChart');
   if(!q||!r)return;
   ensureChart(ok=>{
     if(!ok){[q,r].forEach(c=>{chartEmpty(c,'Chart unavailable. Every figure it draws is in the tables on this tab.');});return;}
@@ -10059,10 +10209,8 @@ function drawPriceCharts(){
       const opt=t=>({responsive:true,maintainAspectRatio:false,
         plugins:{legend:{display:false},title:{display:true,text:t,color:'#f4f5f7',font:{size:12}}},
         scales:{x:{grid:{color:'rgba(255,255,255,0.07)'},ticks:{color:'rgba(244,245,247,0.66)'}},y:{grid:{color:'rgba(255,255,255,0.07)'},ticks:{color:'rgba(244,245,247,0.66)'}}}});
-      if(priceQtyObj){try{priceQtyObj.destroy();}catch(e){}}
-      if(priceRevObj){try{priceRevObj.destroy();}catch(e){}}
-      priceQtyObj=new Chart(q,{type:'bar',data:{labels:labs,datasets:[{data:pts.map(x=>+x.kg.toFixed(2)),backgroundColor:'#7fd7e8',borderRadius:6}]},options:opt('Volume sold at each price (unit)')});
-      priceRevObj=new Chart(r,{type:'bar',data:{labels:labs,datasets:[{data:pts.map(x=>+x.rm.toFixed(2)),backgroundColor:'#b3a6f5',borderRadius:6}]},options:opt('Revenue at each price (RM)')});
+      freshChart(q,{type:'bar',data:{labels:labs,datasets:[{data:pts.map(x=>+x.kg.toFixed(2)),backgroundColor:'#7fd7e8',borderRadius:6}]},options:opt('Volume sold at each price (unit)')});
+      freshChart(r,{type:'bar',data:{labels:labs,datasets:[{data:pts.map(x=>+x.rm.toFixed(2)),backgroundColor:'#b3a6f5',borderRadius:6}]},options:opt('Revenue at each price (RM)')});
     }catch(e){}
   });
 }
@@ -10642,7 +10790,7 @@ function perProduct(builder,opts){
     if(opts.skipEmpty){const S=pSales(pr),B=pPurch(pr);if(!S.length&&!B.length)return;}
     PROD=pr; recompute();
     const P=PRODUCTS[pr];
-    out.push(`<div class="prodblock"><div class="prodhd">`
+    out.push(`<div class="prodblock" data-prod="${pr}"><div class="prodhd">`
       +`<span class="pd" style="background:${P.accent}"></span>${esc(P.name)}`
       +(opts.sub?`<span class="sub">${opts.sub()}</span>`:'')
       +`<span class="rule"></span></div>${builder()}</div>`);
@@ -10716,7 +10864,7 @@ function render(){recompute();
       el.innerHTML=builders[k]();
       window.__wbSnap=snap;
     }else el.innerHTML=builders[k]();}
-  if(curTab==='inventory')trackCharts();
+  if(curTab==='inventory')drawPerProduct([trackCharts]);
   if(curTab==='add'){wireWorkbench();
     const snap=window.__wbSnap||{};window.__wbSnap=null;
     Object.keys(snap).forEach(id=>{const e=document.getElementById(id);if(!e)return;
@@ -10726,16 +10874,16 @@ function render(){recompute();
     const nb=document.getElementById('wbNewBox'),ps=document.getElementById('wbParty');
     if(nb&&ps)nb.style.display=ps.value==='__new__'?'':'none';
     wbApply();wbPreview();}
-  if(curTab==='pricing'){wirePricing();drawPriceCharts();drawEarnChart();drawBoardCharts();}
+  if(curTab==='pricing')drawPerProduct([wirePricing,drawPriceCharts,drawEarnChart,drawBoardCharts]);
   if(curTab==='today')drawTodayCharts();
   if(curTab==='concentration')drawConcCharts();
-  if(curTab==='receivables')drawRecvCharts();
-  if(curTab==='financials')drawFinCharts();
+  if(curTab==='receivables')drawPerProduct([drawRecvCharts]);
+  if(curTab==='financials')drawPerProduct([drawFinCharts]);
   if(curTab==='network')drawNetworkCharts();
   if(curTab==='ledger')drawLedgerCharts();
-  if(curTab==='sourcing'){drawSourcingCharts();drawOutlookChart();}
+  if(curTab==='sourcing')drawPerProduct([drawSourcingCharts,drawOutlookChart]);
   if(curTab==='forward')drawFwdCharts();
-  if(curTab==='analysis')drawAnalysis();
+  if(curTab==='analysis')drawPerProduct([drawAnalysis]);
   if(curTab==='ledger')wireLedger();
   renderQueue();renderProvBar();navCounts();applyNotes();
   /* v276: AFTER applyNotes, because that rewrites innerHTML on the lead and the notes and
@@ -10804,6 +10952,16 @@ function applyNotes(){
   if(bar&&!n)bar.remove();
 }
 function switchTab(s){curTab=s;document.body.setAttribute('data-sec',s);[...document.querySelectorAll('.tab')].forEach(t=>t.classList.toggle('on',t.dataset.s===s));[...document.querySelectorAll('.sec')].forEach(x=>x.classList.toggle('on',x.id==='sec-'+s));render();
+  /* v281: the cards of the incoming tab settle in with a short stagger. The class is
+     transient so a re-render mid-tab (a queue post, a name toggle) never replays it. */
+  try{const el=document.getElementById('sec-'+s);
+    if(el){el.classList.add('switching');clearTimeout(window.__swT);
+      window.__swT=setTimeout(()=>el.classList.remove('switching'),700);}}catch(e){}
+  /* v281: the address carries the tab, so a reload (including the cloud ten-second
+     refresh) reopens where you were. replaceState, never push: the phone's back
+     gesture should leave the desk, not unwind every tab visited. */
+  try{if(location.hash!=='#'+s)history.replaceState(null,'','#'+s);}catch(e){}
+  try{if(window.__railMark)window.__railMark();}catch(e){}
   /* a tab is a new page, so it opens at the top. Without this you land halfway down
      the next tab because the window keeps the scroll offset of the one you left. */
   try{window.scrollTo({top:0,left:0,behavior:'auto'});}catch(e){window.scrollTo(0,0);}
@@ -10823,14 +10981,18 @@ function wrapTables(){
     w.className='tscroll';
     p.insertBefore(w,t); w.appendChild(t);
   });
-  /* the fade only earns its place where there is actually something hidden */
+  /* the fade only earns its place where there is actually something hidden; v281 adds
+     the LEFT edge, because once scrolled there is hidden content on both sides and a
+     touch screen says nothing about either */
   document.querySelectorAll('.sec.on .tscroll').forEach(w=>{
-    const more=w.scrollWidth>w.clientWidth+2;
-    w.classList.toggle('more',more);
-    if(more&&!w.dataset.wired){w.dataset.wired='1';
-      w.addEventListener('scroll',()=>{
-        w.classList.toggle('more',w.scrollLeft+w.clientWidth<w.scrollWidth-2);
-      },{passive:true});}
+    const upd=()=>{
+      w.classList.toggle('more',w.scrollLeft+w.clientWidth<w.scrollWidth-2);
+      w.classList.toggle('morel',w.scrollLeft>2);
+    };
+    w.classList.toggle('more',w.scrollWidth>w.clientWidth+2);
+    w.classList.toggle('morel',w.scrollLeft>2);
+    if(w.scrollWidth>w.clientWidth+2&&!w.dataset.wired){w.dataset.wired='1';
+      w.addEventListener('scroll',upd,{passive:true});}
   });
 }
 /* on a phone the rail is one scrolling row, so the tab you just chose can sit off-screen */
@@ -10840,6 +11002,30 @@ function railIntoView(){
   try{on.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});}catch(e){}
 }
 document.getElementById('tabs').onclick=e=>{const s=e.target.dataset.s;if(s)switchTab(s);};
+/* v281: THE RAIL ANSWERS THE KEYBOARD. Arrows move and activate, Home and End jump,
+   and the active tab is the one tab stop (roving tabindex), so keyboard users are one
+   Tab press from the content instead of fifteen. aria-current names the page; a full
+   tablist role is deliberately not claimed, because the rail also carries the brand,
+   the product switcher and the group bands, which a tablist must not. */
+(function(){
+  const rail=document.getElementById('tabs'); if(!rail)return;
+  const tabs=()=>[...rail.querySelectorAll('.tab')];
+  function mark(){tabs().forEach(t=>{const on=t.classList.contains('on');
+    if(on)t.setAttribute('aria-current','page');else t.removeAttribute('aria-current');
+    t.tabIndex=on?0:-1;});}
+  rail.addEventListener('keydown',e=>{
+    const ts=tabs(),i=ts.indexOf(document.activeElement); if(i<0)return;
+    let j=null;
+    if(e.key==='ArrowDown'||e.key==='ArrowRight')j=(i+1)%ts.length;
+    else if(e.key==='ArrowUp'||e.key==='ArrowLeft')j=(i-1+ts.length)%ts.length;
+    else if(e.key==='Home')j=0;
+    else if(e.key==='End')j=ts.length-1;
+    if(j==null)return;
+    e.preventDefault(); ts[j].focus();
+    const s=ts[j].dataset.s; if(s)switchTab(s);
+  });
+  window.__railMark=mark; mark();
+})();
 /* built once and never re-rendered: every other header control lives inside #meta, which is
    rewritten whenever the stamp or the role changes, and a button that vanishes mid-click is
    worse than no button */
@@ -10937,7 +11123,14 @@ if(QUEUE_COMMITTED&&queue.length){
 }
 try{qInit().then(()=>{if(queueCleared&&qSyncState==='server')qPost();});}catch(e){}   // ask the server for the queue route, then sync any self-clearing
 applyOverlay();                            // uncommitted entries fold in before anything is drawn
-recompute();drawProdSw();switchTab('today');
+/* v281: a fresh open still lands on Today (v147: the desk opens on what to do), but an
+   address that names a tab is honoured, which is what lets a reload resume in place. */
+recompute();drawProdSw();
+(function(){const h=(location.hash||'').slice(1);switchTab(builders[h]?h:'today');})();
+window.addEventListener('hashchange',()=>{
+  const h=(location.hash||'').slice(1);
+  if(builders[h]&&h!==curTab)switchTab(h);
+});
 /* ===== v132: ONE palette. The v108 time-of-day bands (dawn/day/dusk/night) and their
    rail switcher are retired at your call; the desk is pinned to Register (classic), the
    palette of the original Salt Trading Register. Nothing selects a theme any more, so
