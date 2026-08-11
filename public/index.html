@@ -59,7 +59,7 @@ document.addEventListener('visibilitychange',function(){
    focused, no dialog open. Otherwise it offers a chip and waits to be tapped.
    The same tick retries a held entry, which is what gets a phone write to the cloud
    without waiting for the next open. */
-var SALT_BUILD_ID="cef30f56f1f97c0b";
+var SALT_BUILD_ID="9b8c9d45a43006d3";
 var SALT_REV_MS=10000;
 (function(){
   var chip=null,timer=null;
@@ -621,9 +621,21 @@ select{width:100%;border:1px solid var(--line);border-radius:8px;padding:8px 9px
   .act>div:nth-child(2){grid-column:1/3;}
   .actb{grid-column:1/3;justify-self:start;margin-top:4px;}
 }
-@media(max-width:860px){.kpis,.kpis.k3,.kpis.k4,.kpis.k5,.kpis.k6{grid-template-columns:1fr 1fr;}.two,.qrow{grid-template-columns:1fr;}
+@media(max-width:860px){.kpis,.kpis.k3,.kpis.k4,.kpis.k5,.kpis.k6{grid-template-columns:repeat(2,minmax(0,1fr));}.two,.qrow{grid-template-columns:minmax(0,1fr);}
   .chartbox{height:260px;}.chartbox.tall{height:340px;}
   .shell{flex-direction:column;gap:12px;}
+  /* THE STRUCTURAL CAP, and it belongs HERE rather than at 560 because this is the line
+     where .shell becomes a column and .main and .rail become flex items that grow to
+     their own content. Without it the desk scrolled sideways to 1649px inside a 375px
+     screen, and every heading and paragraph below merely filled the width it was handed,
+     which is why they all measured wide and none of them was the cause. */
+  .main,.rail{min-width:0;max-width:100%;}
+  .sec,.prodblock,.card,.chartbox{max-width:100%;}
+  .kpis>*,.two>*,.qrow>*{min-width:0;}
+  .chartbox{overflow:hidden;}
+  .chartbox canvas{max-width:100%!important;}
+  input,select,textarea{max-width:100%;min-width:0;}
+  svg{max-width:100%;height:auto;}
   /* v273: the rail lies flat and wraps on a narrow screen, so its own scroller must come
      off or the tab strip gets a second scrollbar inside the page's. */
   .rail{width:100%;flex:none;position:static;display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:12px;
@@ -1120,6 +1132,58 @@ tbody tr:hover td:not(.l){background:rgba(255,255,255,.03);}
   .prodsw{flex-direction:row;align-items:center;gap:4px;margin:0 6px 0 0;}
   .prodsw .plbl,.prodsw button .pv,.prodsw .pall{display:none;}
   .prodsw button{width:auto;padding:6px 10px;border-radius:999px;}
+
+  /* ============ THE SHRINK FIX (v283) ============
+     The desk overflowed sideways to 1649px inside a 375px screen, and it was one CSS
+     gotcha repeated everywhere rather than fifteen separate faults. A `1fr` grid track
+     will not shrink below the MIN-CONTENT of what sits in it, so a KPI tile holding a
+     nowrap figure pushed its column to 274px, two of those to 548px, and the section
+     it lived in to 796px. Everything downstream -- h1, prose, cards -- then merely
+     filled the width it had been given, which is why they all measured wide and none of
+     them was the cause.
+     minmax(0,1fr) is the fix: it lets a track go narrower than its content, and the
+     content then wraps or scrolls inside it instead of forcing the page open. The same
+     reasoning gives flex and grid children min-width:0, and takes the intrinsic width
+     off the two controls that carry one. */
+  /* THIS IS THE ONE. .shell turns into a column flex at 860px and .main is its child; a
+     flex item defaults to min-width:auto, which refuses to go narrower than its own
+     content. So .main sat at 796px inside a 353px shell and every section, heading and
+     paragraph below simply filled the width it had been handed. That is why they all
+     measured wide and why nothing downstream was ever the cause. */
+  /* min-width:0 is not enough. .shell is a COLUMN flex at this width, so the automatic
+     minimum size applies to its main axis (height), not to width, and a wide child still
+     grows its own box. max-width:100% resolves against the container and caps it, which
+     is what actually holds .rail to the screen and lets its overflow-x:auto scroller
+     engage instead of the whole page sliding sideways. */
+  .main{min-width:0;max-width:100%;}
+  .rail{min-width:0;max-width:100%;}
+  .sec,.prodblock,.card,.chartbox{max-width:100%;}
+  /* the ledger row is a flex of no-shrink columns, one of them a fixed 126px state
+     column, and together they came to 470px. Let the row wrap and let the state find
+     its own width; a taller card beats a row that hangs 95px off the screen. */
+  .lrow,.lhead{flex-wrap:wrap;gap:6px 9px;}
+  .lstate{width:auto;flex:1 0 auto;text-align:left;}
+  .lcol{flex:0 1 auto;}
+  .kpis,.kpis.k3,.kpis.k4,.kpis.k5,.kpis.k6{grid-template-columns:repeat(2,minmax(0,1fr));}
+  .two,.qrow{grid-template-columns:minmax(0,1fr);}
+  .kpis>*,.two>*,.qrow>*,.act>*,.prodblock>*{min-width:0;}
+  .kpi,.card,.chartbox,.insight,.dsc,.prodblock{max-width:100%;}
+  /* a figure may shrink its box, but it must never be cut in half */
+  .kpi .v{overflow-wrap:anywhere;}
+  /* date and text inputs carry an intrinsic size that ignores the column */
+  input,select,textarea{max-width:100%;min-width:0;}
+  /* the map is a fixed viewBox; let it scale rather than set the page width */
+  svg{max-width:100%;height:auto;}
+
+  /* A Chart.js canvas writes its own pixel width inline. Sized once while its tab was
+     hidden or while perProduct had emitted the id twice, it keeps that width for ever
+     and drags the page open behind it: 756px of canvas inside a 324px box. Clipping the
+     box and capping the canvas means a mis-sized chart can look wrong but can no longer
+     set the width of the document. */
+  .chartbox{overflow:hidden;}
+  .chartbox canvas{max-width:100%!important;}
+  /* same reasoning one level up: a card must never be wider than the column it sits in */
+  .card{overflow-x:auto;}
 }
 @media (prefers-reduced-transparency:reduce) and (max-width:560px){
   .rail{background:rgba(24,29,41,.97);-webkit-backdrop-filter:none;backdrop-filter:none;}
@@ -2086,7 +2150,7 @@ const whiteboard=[
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{v:'v281',d:'11 Aug 2026',t:'THE INTERACTION PASS: OIL DRAWS, AND THE DESK MOVES',n:['Per-product charts draw per product at last. Every canvas now resolves inside its own product block with the book state set to match, so the oil analysis, sourcing outlook, inventory walk, monthly financials and pricing board charts exist for the first time; they had drawn into the salt canvas, or nowhere, since two books arrived at v262.','A chart is keyed to its canvas, never to a shared variable: a shared variable can only remember one book, so drawing the second used to destroy and blank the first.','One chart language, set once on the library: desk type, glass tooltips, round caps, and animation that switches itself off under reduced motion.','The pricing overrides no longer collapse the tab. A keystroke re-renders through the same per-product path as the first paint, and the controls in the second book respond too; they had never been wired.','The rail answers the keyboard (arrows, Home, End), tells assistive tech which tab you are on, and on a phone stays pinned to the top of the screen, so navigation is never a scroll away.','The address carries the tab, so a reload, including the cloud ten-second refresh, reopens where you were; the back gesture still leaves the desk in one step.','Every tab owns an accent now: Forward azure, Sourcing amber, Analysis violet, Map teal, and the six that had fallen back to gold are named. The headline, the table headers, the active tab and the third orb carry it, so the light follows where you are.','Sections settle in with a short stagger, buttons press, bars fill from zero, and tables hint at hidden columns behind you as well as ahead. All of it obeys reduced motion.']},{v:'v280',d:'10 Aug 2026',t:'THE AUGUST AUDIT, AND THE FOUR THINGS IT CHANGED',n:['Twenty-six August rows walked one by one and confirmed.','FIFO throughout, and everything delivered from 28 Jul costs RM47.','Goodwill is an expense: no revenue, no cost of goods, and the salt still leaves the shelf.','The identifier is back on the old convention, C or S plus initial plus name length plus location.','One reward scheme: base lot times cheapest cost times 20 for a customer and 10 for an associate, scaled by four margin bands.','The printed board is gone. A derived ladder of floor, good, great and ceiling replaces it, at 15, 33.33, 66.67 and 100 per cent markup on cost.','One floor across every size, so it can no longer fall as the quantity rises.','Headroom now walks the prices actually being charged, and says whether each is under floor, under replacement or under cost.']}];
+const evolution=[{v:'v283',d:'11 Aug 2026',t:'THE INTERACTION PASS: OIL DRAWS, AND THE DESK MOVES',n:['Per-product charts draw per product at last. Every canvas now resolves inside its own product block with the book state set to match, so the oil analysis, sourcing outlook, inventory walk, monthly financials and pricing board charts exist for the first time; they had drawn into the salt canvas, or nowhere, since two books arrived at v262.','A chart is keyed to its canvas, never to a shared variable: a shared variable can only remember one book, so drawing the second used to destroy and blank the first.','One chart language, set once on the library: desk type, glass tooltips, round caps, and animation that switches itself off under reduced motion.','The pricing overrides no longer collapse the tab. A keystroke re-renders through the same per-product path as the first paint, and the controls in the second book respond too; they had never been wired.','The rail answers the keyboard (arrows, Home, End), tells assistive tech which tab you are on, and on a phone stays pinned to the top of the screen, so navigation is never a scroll away.','The address carries the tab, so a reload, including the cloud ten-second refresh, reopens where you were; the back gesture still leaves the desk in one step.','Every tab owns an accent now: Forward azure, Sourcing amber, Analysis violet, Map teal, and the six that had fallen back to gold are named. The headline, the table headers, the active tab and the third orb carry it, so the light follows where you are.','Sections settle in with a short stagger, buttons press, bars fill from zero, and tables hint at hidden columns behind you as well as ahead. All of it obeys reduced motion.']}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -2149,7 +2213,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='11 Aug 2026, 01:25 KL';
+const LAST_UPDATED='11 Aug 2026, 16:24 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -2171,7 +2235,7 @@ const LAST_UPDATED='11 Aug 2026, 01:25 KL';
    watermark and is the price of entries not replaying for ever. It is stated rather than
    waved away. What must never happen is moving this to the clock, which would also silently
    drop everything written since the last snapshot. */
-const QUEUE_COMMITTED='2026-08-10T10:51:24.618Z';
+const QUEUE_COMMITTED='2026-08-10T17:51:03.071Z';
 
 var goodwillRM,receivedPO,defaultPO,pricedSales,buyKg,buyRM,wavgBuy,soldKg,ledgerStock,currentStock,selfUse,revTotal,outstandingOf,revCollected,arList,ar,arGross,cogs,grossMargin,marginPct,advTotal,defKg,supRecovNet,supRecovGross;
 /* ---- three-axis status engine (R1) ---- */
@@ -3222,7 +3286,11 @@ const COST_BOOK={
   },
   /* what an hour of his time is worth. Null on purpose: it is the single figure that
      most changes whether small orders are worth taking, and it is his to state. */
-  hourRM:null,
+  /* RM150,000 a year over 2,080 contracted hours (8 x 5 x 52). Stated 11 Aug 2026.
+     It is a CONVENTION, not a measurement: the salt hours are evenings and weekends, so
+     the true opportunity cost of one of them may sit either side of the salary rate.
+     It is the standard basis and it is defensible; it is not a fact about a Tuesday night. */
+  hourRM:72.12,
   minutesPerOrder:null
 };
 /* Risk read off the book rather than assumed. Two different risks, deliberately apart:
@@ -5026,7 +5094,10 @@ function ledQuick(what,type,who,date,total,qty){
   const today=TODAY.toISOString().slice(0,10);
   const lab=what==='paid'?'paid in full':what==='deliv'?'delivered in full':'paid and delivered in full';
   const raw='Fulfilment on '+codeOf(who)+' — '+(type==='BUY'?'lot ':'order ')+kg(qty)+' of '+fmt0(total)
-    +' agreed '+date+' marked '+lab+' on '+today;
+    /* an undated row is PLANNED rather than agreed, and its key really does contain the
+       string "undefined" on both sides, so it matches and the button works. Only the
+       human-readable line needs to stop saying "agreed undefined". */
+    +(date&&date!=='undefined'?' agreed '+date:' planned, undated')+' marked '+lab+' on '+today;
   queue.push({at:new Date().toISOString(),type:'AMEND',party:codeOf(who),qty:moved,total:cash,
     status:what==='deliv'?'unpaid':(what==='paid'?'paid':'paid'),raw:raw,
     payload:{mode:'amend',direction:type,party:who,orderKey:key,date:today,
@@ -6004,11 +6075,16 @@ function costPanel(){
     const price=tier.prices[i]; if(price==null)return '';
     const cs=costToServe(q);
     const contrib=price-cs.total, perUnit=contrib/q;
+    /* THE MINUTE THE ORDER STOPS PAYING. Contribution divided by what an hour of his own
+       time is worth: past this many minutes, end to end, the order earns him nothing. It
+       is the only figure on the desk that prices HIS time rather than the salt. */
+    const mins=COST_BOOK.hourRM?contrib/COST_BOOK.hourRM*60:null;
     return `<tr><td class="l">${kg(q)}</td><td>${fmt0(price)}</td>
       <td style="color:var(--dim)">${fmt0(cs.goods)}</td>
       <td style="color:var(--dim)">${cs.perOrder>0?fmt0(cs.perOrder):'&mdash;'}</td>
       <td><b>${fmt0(contrib)}</b></td>
-      <td style="color:${perUnit<0?'var(--crim)':'var(--ink)'}">${fmt(perUnit)}</td></tr>`;}).join('');
+      <td style="color:${perUnit<0?'var(--crim)':'var(--ink)'}">${fmt(perUnit)}</td>
+      <td style="color:${mins==null?'var(--dim)':mins<20?'var(--crim)':mins<45?'var(--warn,#ffcf7a)':'var(--ink)'}"><b>${mins==null?'&mdash;':Math.round(mins)+' min'}</b></td></tr>`;}).join('');
 
   const stack=s0.perOrderParts.map(p=>`<tr><td class="l">${p.k}</td>
     <td>${p.rm!=null?fmt(p.rm):'<span style="color:var(--crim)">not measured</span>'}</td>
@@ -6045,7 +6121,7 @@ function costPanel(){
   </div>
 
   <h3 style="margin-top:18px;font-size:14px">What an order is worth, once the trip is in it</h3>
-  <div class="card" style="margin-top:8px"><table><thead><tr><th class="l">Size</th><th>${esc(tier.code)} price</th><th>Goods</th><th>Per order</th><th>Order earns</th><th>Per unit</th></tr></thead><tbody>${rows}</tbody></table>
+  <div class="card" style="margin-top:8px"><table><thead><tr><th class="l">Size</th><th>${esc(tier.code)} price</th><th>Goods</th><th>Per order</th><th>Order earns</th><th>Per unit</th><th>Pays your time to</th></tr></thead><tbody>${rows}</tbody></table>
   <div class="insight" style="margin-top:10px"><b>Read the last two columns against each other.</b> Per unit falls as the order grows, which is the taper working as designed. Per order <b>rises steeply</b>, because the trip, the bag and the conversation cost the same either way.
   <br><br>Which one matters depends on what you are short of. When the shelf was empty, a unit was the scarce thing and the per-unit column was the right one to read. You now hold <b>${kg(currentStock)}</b>, so units are not scarce; <b>trips and hours are</b>, and that makes the per-order column the one that decides.
   <br><br>The sensitivity says it plainly: <b>one more ringgit</b> of per-order cost takes <b>${shareS.toFixed(1)}%</b> off what a ${kg(small)} order earns and <b>${shareB.toFixed(1)}%</b> off a ${kg(big)} one. Every line you have not measured hurts the small end ${shareB>0?(shareS/shareB).toFixed(0):'many'} times harder.</div></div>
