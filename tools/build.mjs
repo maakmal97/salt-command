@@ -243,3 +243,27 @@ console.log(`  master:  ${MASTER}`);
 console.log(`  size:    ${kb} KB   eol: ${EOL === "\r\n" ? "CRLF" : "LF"}`);
 console.log(`  patches: ${applied.length} applied — ${applied.join(", ")}`);
 console.log(`  rev:     ${VER || "(no version found)"}  id ${BUILD_ID}  -> public/rev.json`);
+
+/* THE PHONE PAYLOAD. A separate phone app renders the desk's own figures rather than
+   loading 900 KB of laptop to show three of them, and it computes nothing itself, so the
+   two can never disagree about a price. This runs the master in jsdom, calls its
+   phonePayload(), and REFUSES to write anything that trips phonePayloadLeaks(): the
+   leak_test vocabulary, any per-unit cost, or any real name. The app is public by
+   decision, so that gate is the difference between a code and a name on the open web. */
+try {
+  const { buildPayload } = await import("./payload.mjs");
+  const { payload, leaks } = await buildPayload(MASTER);
+  if (leaks.length) {
+    console.error("BUILD FAILED: the phone payload carries things that must never leave the desk.");
+    leaks.forEach((l) => console.error("  - " + l));
+    process.exit(1);
+  }
+  const dataOut = resolve(REPO, "public", "data.json");
+  const json = JSON.stringify(payload);
+  writeFileSync(dataOut, json + "\n");
+  console.log(`  payload: ${(Buffer.byteLength(json) / 1024).toFixed(1)} KB -> public/data.json  (clean)`);
+} catch (e) {
+  console.error("BUILD FAILED: the phone payload could not be built.");
+  console.error("  " + (e && e.message ? e.message : e));
+  process.exit(1);
+}

@@ -59,7 +59,7 @@ document.addEventListener('visibilitychange',function(){
    focused, no dialog open. Otherwise it offers a chip and waits to be tapped.
    The same tick retries a held entry, which is what gets a phone write to the cloud
    without waiting for the next open. */
-var SALT_BUILD_ID="9b8c9d45a43006d3";
+var SALT_BUILD_ID="c6ca15b713211a09";
 var SALT_REV_MS=10000;
 (function(){
   var chip=null,timer=null;
@@ -2024,7 +2024,15 @@ const PRODUCTS={
   oil: {id:'oil',  name:'Oil',   unit:'unit', accent:'var(--gold)', since:'2026-08-06',
         note:'Second product. Two suppliers named 06 Aug, one live quote, one sale.'}
 };
-const PROD_IDS=Object.keys(PRODUCTS);
+/* SALT FIRST, THEN OIL. Standing instruction of 11 Aug 2026, and it is stated here rather
+   than left to chance: the order was previously correct only because that is the order
+   PRODUCTS happens to be keyed in, and any alphabetical sort anywhere would have put oil
+   first. Every one of the eighteen readers of PROD_IDS inherits this, so the rule is kept
+   in one place. A product not named in PROD_ORDER is appended rather than dropped, so a
+   third book still appears; give it a position here when it earns one. */
+const PROD_ORDER=['salt','oil'];
+const PROD_IDS=PROD_ORDER.filter(p=>PRODUCTS[p])
+  .concat(Object.keys(PRODUCTS).filter(p=>PROD_ORDER.indexOf(p)<0));
 const DEFAULT_PROD='salt';
 /* the active product. A row that does not say is salt: see the note above. */
 let PROD=DEFAULT_PROD;
@@ -2150,7 +2158,7 @@ const whiteboard=[
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{v:'v283',d:'11 Aug 2026',t:'THE INTERACTION PASS: OIL DRAWS, AND THE DESK MOVES',n:['Per-product charts draw per product at last. Every canvas now resolves inside its own product block with the book state set to match, so the oil analysis, sourcing outlook, inventory walk, monthly financials and pricing board charts exist for the first time; they had drawn into the salt canvas, or nowhere, since two books arrived at v262.','A chart is keyed to its canvas, never to a shared variable: a shared variable can only remember one book, so drawing the second used to destroy and blank the first.','One chart language, set once on the library: desk type, glass tooltips, round caps, and animation that switches itself off under reduced motion.','The pricing overrides no longer collapse the tab. A keystroke re-renders through the same per-product path as the first paint, and the controls in the second book respond too; they had never been wired.','The rail answers the keyboard (arrows, Home, End), tells assistive tech which tab you are on, and on a phone stays pinned to the top of the screen, so navigation is never a scroll away.','The address carries the tab, so a reload, including the cloud ten-second refresh, reopens where you were; the back gesture still leaves the desk in one step.','Every tab owns an accent now: Forward azure, Sourcing amber, Analysis violet, Map teal, and the six that had fallen back to gold are named. The headline, the table headers, the active tab and the third orb carry it, so the light follows where you are.','Sections settle in with a short stagger, buttons press, bars fill from zero, and tables hint at hidden columns behind you as well as ahead. All of it obeys reduced motion.']}];
+const evolution=[{v:'v285',d:'11 Aug 2026',t:'THE INTERACTION PASS: OIL DRAWS, AND THE DESK MOVES',n:['Per-product charts draw per product at last. Every canvas now resolves inside its own product block with the book state set to match, so the oil analysis, sourcing outlook, inventory walk, monthly financials and pricing board charts exist for the first time; they had drawn into the salt canvas, or nowhere, since two books arrived at v262.','A chart is keyed to its canvas, never to a shared variable: a shared variable can only remember one book, so drawing the second used to destroy and blank the first.','One chart language, set once on the library: desk type, glass tooltips, round caps, and animation that switches itself off under reduced motion.','The pricing overrides no longer collapse the tab. A keystroke re-renders through the same per-product path as the first paint, and the controls in the second book respond too; they had never been wired.','The rail answers the keyboard (arrows, Home, End), tells assistive tech which tab you are on, and on a phone stays pinned to the top of the screen, so navigation is never a scroll away.','The address carries the tab, so a reload, including the cloud ten-second refresh, reopens where you were; the back gesture still leaves the desk in one step.','Every tab owns an accent now: Forward azure, Sourcing amber, Analysis violet, Map teal, and the six that had fallen back to gold are named. The headline, the table headers, the active tab and the third orb carry it, so the light follows where you are.','Sections settle in with a short stagger, buttons press, bars fill from zero, and tables hint at hidden columns behind you as well as ahead. All of it obeys reduced motion.']}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -2213,7 +2221,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='11 Aug 2026, 16:24 KL';
+const LAST_UPDATED='11 Aug 2026, 19:05 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -6064,6 +6072,111 @@ function tabFinancials(){
    The point of this panel is the SHAPE, not the total: a per-order cost lands whole on
    a half-unit order and whole again on a six-unit one, so it decides small against bulk
    in a way a per-unit figure never shows. */
+/* ============ THE PHONE PAYLOAD (v284) ============
+   ONE function, and it is the entire contract between this desk and the phone app.
+
+   The phone is a separate application. It does not load this desk, reflow it, or
+   reimplement any of its arithmetic: it fetches what this function returns and renders
+   it. That is the whole point. A price shown on a phone is therefore the price THIS
+   engine computed, and the two cannot drift, because there is only one of them.
+
+   Two rules it must never break:
+     NO REAL NAMES. Codes only. The repo that serves this is private but the app is
+     public by decision, so a name here would be a name on the open internet.
+     NO COST, MARGIN OR LEAK. Everything the leak test bans from a statement is banned
+     here for the same reason and by the same list.
+   What it carries is what a seller needs standing in front of a buyer: the board, the
+   parties, and the position. */
+function phonePayload(){
+  /* NAMES OFF, ALWAYS, WHATEVER THE SCREEN IS DOING. `revealed` defaults to TRUE since
+     v217 so the directory opens readable, and ID() therefore returns a real name whenever
+     the directory is loaded. The first payload built this way carried "Chase Chris for
+     RM 90" and "Chase Ron for RM 80" straight out of actions(), bound for a URL this
+     repo documents as public with no sign-in. Forcing the lock for the duration of the
+     build is the only thing that makes the guarantee hold no matter who calls it. */
+  const _reveal=revealed;
+  revealed=false;
+  try{ return phonePayloadBuild(); } finally { revealed=_reveal; }
+}
+function phonePayloadBuild(){
+  const prods=PROD_IDS.slice();   // salt first, then oil
+  const board=PRICE_TIERS.tiers.map(t=>({
+    code:t.code, name:t.name, who:t.who||'',
+    prices:PRICE_TIERS.sizes.map((q,i)=>t.prices[i]!=null?+t.prices[i]:null)
+  }));
+  /* position per product, read from the desk's own recompute rather than re-derived */
+  const pos={};
+  const keep=(typeof PROD!=='undefined')?PROD:prods[0];
+  prods.forEach(pid=>{
+    try{
+      if(typeof setProd==='function')setProd(pid,true); else if(typeof PROD!=='undefined')PROD=pid;
+      recompute();
+      const cv=coverStats(), f=forecast();
+      pos[pid]={
+        name:PRODUCTS[pid].name,
+        onHand:+currentStock.toFixed(2),
+        free:+(currentStock-defKg).toFixed(2),
+        owedOut:+defKg.toFixed(2),
+        coverDays:cv.days==null?null:+cv.days,
+        rate:+(cv.rate||0).toFixed(2),
+        owedToYou:+(typeof arGross!=='undefined'?arGross:0).toFixed(2),
+        promised:+(f.commitKg||0).toFixed(2),
+        short:+(f.shortKg||0).toFixed(2)
+      };
+    }catch(e){ pos[pid]={name:PRODUCTS[pid].name,error:true}; }
+  });
+  try{ if(typeof setProd==='function')setProd(keep,true); else if(typeof PROD!=='undefined')PROD=keep; recompute(); }catch(e){}
+  /* the action list, trimmed to what fits a phone and stripped of its markup */
+  const strip=h=>String(h==null?'':h).replace(/<[^>]+>/g,'').replace(/&[a-z]+;/g,' ').replace(/\s+/g,' ').trim();
+  /* TITLES AND MONEY ONLY. The `why` prose is written for him at his own desk and carries
+     the effective cost and the provisioning language verbatim: the first payload built
+     shipped "RM 58.88/unit effective" and tripped the leak test's own banned list. The app
+     this feeds is public by decision, so the reasoning stays on the laptop and the phone
+     gets the instruction. */
+  let acts=[];
+  try{ acts=actions().slice(0,12).map(a=>({sev:a.sev,kind:a.kind,title:strip(a.title),rm:+(a.rm||0).toFixed(2)})); }catch(e){}
+  return {
+    ok:true,
+    v:(evolution[0]?evolution[0].v:''), stamped:LAST_UPDATED,
+    generated:new Date().toISOString(),
+    unit:'unit', currency:'RM',
+    sizes:PRICE_TIERS.sizes.slice(),
+    tiers:board,
+    products:prods.map(id=>({id:id,name:PRODUCTS[id].name})),
+    parties:roster.slice().filter(c=>!/^S/.test(c)),   // customers only; codes, never names
+    suppliers:roster.slice().filter(c=>/^S/.test(c)),
+    position:pos,
+    actions:acts
+  };
+}
+/* The leak test, turned on the payload itself. Same banned vocabulary as
+   05_Pricing/leak_test.js, plus every per-unit cost in the book in its money form. The
+   build calls this and refuses to write data.json if it returns anything. */
+function phonePayloadLeaks(){
+  /* the generated timestamp is scrubbed before scanning. An ISO stamp carries digits and
+     a dot, so ":17.00Z" reads as the money form of a RM7 cost and the check failed on one
+     run in sixty for no reason at all. leak_test.js learned the same lesson about dates
+     and font sizes: a test that cries wolf teaches you to skim past the real one. */
+  const p=JSON.stringify(phonePayload()).replace(/"generated":"[^"]*"/,'').toLowerCase();
+  const TERMS=['markup','mark-up','cost per','unit cost','per-unit cost','wavg','weighted average',
+    'shrinkage','walk-away','walkaway','floor price','breakeven','break-even','gross profit',
+    'gross margin','bad debt','provision','free-to-sell','effective cost','/unit effective'];
+  const hits=TERMS.filter(t=>p.indexOf(t)>=0);
+  /* every real name the desk can currently see, checked against the payload. This is the
+     check that would have caught Chris and Ron, and it only works while the directory is
+     loaded, which is exactly when the risk exists. */
+  try{
+    Object.keys(vaultNames||{}).forEach(code=>{
+      const nm=nameOnly(String(vaultNames[code]||'')).trim();
+      if(nm.length>2 && p.indexOf(nm.toLowerCase())>=0) hits.push('REAL NAME '+nm);
+    });
+  }catch(e){}
+  const money=v=>Number(v).toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2});
+  const costs=new Set();
+  sales.forEach(s=>{if(s.cost!=null&&+s.cost>0)costs.add(money(+s.cost));});
+  costs.forEach(c=>{if(p.indexOf(c.toLowerCase())>=0)hits.push('cost figure '+c);});
+  return hits;
+}
 function costPanel(){
   const c=pxCost(), R=riskRates(), dl=deliveryCost();
   const tier=PRICE_TIERS.tiers.find(t=>t.code==='M')||PRICE_TIERS.tiers[0];
