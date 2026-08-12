@@ -217,6 +217,18 @@ async function liveRev() {
   try { return await (await fetch(SITE + "/rev", { cache: "no-store" })).json(); }
   catch (e) { return null; }
 }
+/* WAIT FOR THE EDGE, do not race it. `wrangler deploy` returns once Cloudflare has accepted
+   the upload, which is a moment before every colo serves it, so reading /rev immediately can
+   still return the PREVIOUS build. That is not a failed deploy and must not be reported as
+   one: on 12 Aug it read the old id here and the correct one seconds later in step 8. */
+async function waitForRev(id, tries = 8, gapMs = 2000) {
+  for (let i = 0; i < tries; i++) {
+    const r = await liveRev();
+    if (r && r.id === id) return r;
+    if (i < tries - 1) await new Promise(res => setTimeout(res, gapMs));
+  }
+  return await liveRev();
+}
 /* The deploy is RECORDED HERE, before step 7 commits, and only after the live id has been
    read back. Written after the commit instead (which is where it was first put) it is
    correct but forever uncommitted, so every run left a dirty tree. Caught 12 Aug by running
@@ -236,9 +248,9 @@ if (NO_DEPLOY) {
   if (sh("npx", ["wrangler", "deploy"]).code !== 0) fail("wrangler deploy failed");
   else {
     deployedNow = true;
-    const live = await liveRev();
+    const live = await waitForRev(rev.id);
     if (!live) warn("deployed, but /rev could not be read back, so the deploy is NOT recorded");
-    else if (live.id !== rev.id) fail(`deployed, but /rev still reads ${live.v} ${live.id}`);
+    else if (live.id !== rev.id) fail(`deployed, but /rev still reads ${live.v} ${live.id} after waiting`);
     else { recordDeploy(rev); ok(`live confirms ${live.v} ${live.id}, recorded in .deployed.json`); }
   }
 }
