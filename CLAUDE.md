@@ -10,12 +10,18 @@ transactions push to a KV-backed queue; the daily run folds them into the source
 
 ## Hard rules
 
-1. **The master is elsewhere. Never hand-edit `public/index.html`.** The one place the desk
+1. **The master is elsewhere. Never hand-edit `public/desk.html`.** The one place the desk
    is edited is the Cow-Crm01 master:
    `C:\Users\maakm\Claude\Projects\Personal\Cow-Crm01_Salt Business\01_Dashboard\salt_command.html`.
-   `public/index.html` is a **build output** of it (`npm run build`), committed so the data
-   lives in the repo. A hand-edit here is overwritten on the next build and lost. If a change
+   `public/desk.html` is a **build output** of it (`npm run build`), committed so the data
+   lives in the repo. A hand-edit there is overwritten on the next build and lost. If a change
    to the desk is needed, edit the master, then build.
+
+   **`public/index.html` is the opposite: it is SOURCE.** Since v291 the root is the phone app,
+   hand-written and owned by this repo, and the built desk moved to `public/desk.html` (served
+   at `/desk`). Edit the app here freely. It reads every figure from `data.json` and computes
+   nothing, and that is not a style preference: the moment it prices anything itself there are
+   two engines and they drift, which is the fault v205 and v284 exist to prevent.
 2. **Plaintext names never reach the cloud; the encrypted vault may.** `/bio` (the plaintext
    directory) is answered but **dropped**, so `salt_bio.json` never ships. `/vault` DOES sync,
    but only the AES-GCM envelope `{v,salt,iv,ct}` (`tools/seed-vault.mjs` puts it there); the
@@ -163,7 +169,9 @@ Cow-Crm01 master (a Cowork/master session); once it lands, the sync above alread
 |---|---|
 | `src/worker.js` | The Worker. Cloud stand-in for `serve_desk.py`: `/queue`, `/vault` (ciphertext), `/bio` (dropped), static assets. KV-backed. |
 | `tools/seed-vault.mjs` | Encrypt the current names with your passphrase and push the ciphertext to KV. Never writes plaintext anywhere. |
-| `public/index.html` | The built desk. **Derived from the master, do not hand-edit.** Committed on purpose. |
+| `public/index.html` | **The phone app (v291). SOURCE, hand-written, edit it here.** 28 KB. Reads `data.json`, computes nothing, writes queue entries. Liquid Glass, Ledger tuning. |
+| `public/desk.html` | The built desk, served at `/desk`. **Derived from the master, do not hand-edit.** Committed on purpose. |
+| `public/data.json` | The phone payload: position, actions, party lists, the queue watermark and the build id. Written by the build via `payload.mjs`, which runs the master in jsdom. |
 | `public/sw.js` | Service worker. Shell network-first; the `/queue` API is never cached. |
 | `public/manifest.webmanifest`, `public/icon-*.png` | Home-screen install. Icons from `tools/make_icons.py`. |
 | `public/_headers` | CSP and security headers, applied by Cloudflare to the assets. |
