@@ -213,6 +213,20 @@ const rev = readJson(resolve(REPO, "public", "rev.json"), {});
 const deployed = readJson(resolve(REPO, ".deployed.json"), {});
 let deployedNow = false;
 
+async function liveRev() {
+  try { return await (await fetch(SITE + "/rev", { cache: "no-store" })).json(); }
+  catch (e) { return null; }
+}
+/* The deploy is RECORDED HERE, before step 7 commits, and only after the live id has been
+   read back. Written after the commit instead (which is where it was first put) it is
+   correct but forever uncommitted, so every run left a dirty tree. Caught 12 Aug by running
+   the thing. Two writers own this file, salt_sync.ps1 and this, and the rule both obey is
+   the same: never record a deploy you have not seen live. */
+function recordDeploy(r) {
+  writeFileSync(resolve(REPO, ".deployed.json"),
+    JSON.stringify({ id: r.id, v: r.v, at: new Date().toISOString() }, null, 4) + "\n");
+}
+
 if (NO_DEPLOY) {
   ok("skipped" + (DRY ? " (dry run)" : ""));
 } else if (rev.id && deployed.id === rev.id) {
@@ -220,7 +234,13 @@ if (NO_DEPLOY) {
 } else {
   console.log(`        built ${rev.v} ${rev.id}, last deployed ${deployed.v || "(none)"} ${deployed.id || "(none)"}`);
   if (sh("npx", ["wrangler", "deploy"]).code !== 0) fail("wrangler deploy failed");
-  else deployedNow = true;
+  else {
+    deployedNow = true;
+    const live = await liveRev();
+    if (!live) warn("deployed, but /rev could not be read back, so the deploy is NOT recorded");
+    else if (live.id !== rev.id) fail(`deployed, but /rev still reads ${live.v} ${live.id}`);
+    else { recordDeploy(rev); ok(`live confirms ${live.v} ${live.id}, recorded in .deployed.json`); }
+  }
 }
 
 /* ---- 7. version ------------------------------------------------------------------- */
@@ -252,25 +272,17 @@ const revNow = readJson(resolve(REPO, "public", "rev.json"), {});
 if (VER && revNow.v && VER !== revNow.v) fail(`master is ${VER} but the build on disk is ${revNow.v}`);
 else ok(`master and build agree at ${revNow.v || VER}`);
 
-let live = null;
-try {
-  const res = await fetch(SITE + "/rev", { cache: "no-store" });
-  live = await res.json();
-} catch (e) { warn("could not reach " + SITE + "/rev (" + e.message + ")"); }
+const live = await liveRev();
+if (!live) warn("could not reach " + SITE + "/rev");
+else if (live.id !== revNow.id) fail(`the phone is BEHIND: live ${live.v} ${live.id}, built ${revNow.v} ${revNow.id}`);
+else ok(`live matches the build (${live.v} ${live.id})`);
 
-if (live) {
-  if (live.id !== revNow.id) fail(`the phone is BEHIND: live ${live.v} ${live.id}, built ${revNow.v} ${revNow.id}`);
-  else {
-    ok(`live matches the build (${live.v} ${live.id})`);
-    /* .deployed.json is written HERE and by salt_sync.ps1, and in both cases only after a
-       deploy that was verified live. Two writers, one rule: never record a deploy you have
-       not confirmed, because the whole point of this file is that the two cannot drift. */
-    if (!DRY && (deployedNow || deployed.id !== revNow.id)) {
-      writeFileSync(resolve(REPO, ".deployed.json"),
-        JSON.stringify({ id: revNow.id, v: revNow.v, at: new Date().toISOString() }, null, 4) + "\n");
-      ok("recorded the deploy in .deployed.json");
-    }
-  }
+/* The catch-up case: the build was already live so step 6 had nothing to do, but the record
+   is stale (a hand deploy, or a run that died between deploying and recording). Correct it,
+   or the next run redeploys for no reason. */
+if (!DRY && live && live.id === revNow.id && readJson(resolve(REPO, ".deployed.json"), {}).id !== revNow.id) {
+  recordDeploy(revNow);
+  warn(".deployed.json was stale and has been corrected; commit it");
 }
 
 if (!NO_PUSH) {
