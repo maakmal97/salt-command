@@ -33,7 +33,12 @@ const DEFAULT_MASTER =
 const MASTER = process.env.SALT_MASTER || DEFAULT_MASTER;
 const OUT = resolve(REPO, "public", "data.json");
 
-export async function buildPayload(masterPath = MASTER) {
+/* OPEN THE MASTER IN A BROWSER THAT IS NOT A BROWSER. Exported because more than one tool
+   now needs the desk's own runtime: this file calls phonePayload(), and tools/ledger.mjs
+   reads the ledger declarations straight out of the global scope. Two copies of this
+   harness would drift, and a build that priced a lot against a subtly different DOM is
+   exactly the class of fault this repo keeps writing tests about. */
+export async function openMaster(masterPath = MASTER) {
   const html = readFileSync(masterPath, "utf8");
 
   /* The desk expects a real document and a few browser APIs. Storage is stubbed rather
@@ -68,6 +73,11 @@ export async function buildPayload(masterPath = MASTER) {
     w.addEventListener("load", r);
     setTimeout(r, 8000);                                  // never hang a build on a stray listener
   });
+  return { dom, w };
+}
+
+export async function buildPayload(masterPath = MASTER) {
+  const { dom, w } = await openMaster(masterPath);
 
   if (typeof w.phonePayload !== "function") {
     throw new Error("the master has no phonePayload(); it is the contract this build depends on");

@@ -134,6 +134,36 @@ section("Worker — the write gate");
   ok(r.status === 200, "armed: GET /vault is still open (ciphertext only)");
 }
 
+/* ---- 1d. The ledger extract, the first step toward one source of truth ----------- */
+section("Ledger extract");
+{
+  let out = "";
+  try { out = execFileSync("node", ["tools/ledger.mjs", "--check"], { cwd: REPO, encoding: "utf8", stdio: "pipe" }); }
+  catch (e) { out = (e.stdout || "") + (e.stderr || ""); }
+
+  /* The two proofs that make the extract trustworthy. They are asserted on the tool's own
+     report rather than re-implemented here, because a second copy of the logic would be a
+     second thing to keep true. */
+  ok(/every data-shaped declaration is accounted for/.test(out),
+     "the extract accounts for every data-shaped declaration in the master");
+  ok(/every value survives JSON/.test(out),
+     "every ledger value survives JSON (no function, undefined, NaN, Infinity or Date)");
+  ok(/round-trips through JSON unchanged/.test(out), "the extract round-trips through JSON");
+
+  /* THE COMMITTED BOOK, NOT THE OVERLAID VIEW. `sales` is BASE_SALES with the uncommitted
+     queue folded over it, so an extract that read `sales` would write provisional rows into
+     the store as committed the moment anything was queued. */
+  const tool = readFileSync(join(REPO, "tools", "ledger.mjs"), "utf8");
+  ok(tool.includes('sales: "BASE_SALES"'), "the extract reads the COMMITTED sales, not the overlaid array");
+  ok(tool.includes('purchases: "BASE_PURCHASES"'), "and the committed purchases");
+  ok(/const\|let\|var/.test(tool), "declaration discovery covers let and var, not const alone");
+
+  /* The name gate must exist and must be capable of failing. Nothing may be committed to
+     this repo carrying a real name, and the extract is a committed artefact. */
+  ok(/salt_bio\.json/.test(tool), "the extract checks itself against the real directory for names");
+  ok(/no real name or place|carries \$\{|carries .* real name/.test(tool), "the name gate reports a verdict either way");
+}
+
 /* ---- 1c. The phone app at the root, the desk at /desk (v290) --------------------- */
 section("The phone app, and the desk at /desk");
 {
