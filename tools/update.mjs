@@ -1,0 +1,298 @@
+/* update.mjs — "update" as one command, so no surface is left behind.
+ *
+ * Written 12 Aug 2026, after two runs in a row shipped the master but not the cloud, and
+ * one of them left QUEUE_COMMITTED behind so the phone booked three committed orders a
+ * second time. Both failures were silent. Neither would have survived this file, because
+ * the chain now ends by PROVING every surface is level rather than assuming it.
+ *
+ * The chain:
+ *   1  preflight   git locks, the master, its version and its watermark
+ *   2  drain       KV -> 06_Data/salt_queue_cloud.json          (skip with --no-drain)
+ *   3  queues      what is still pending, on BOTH queues, and the replay check
+ *   4  build       master -> public/index.html
+ *   5  test        the smoke suite
+ *   6  deploy      only when rev.json's id differs from .deployed.json's
+ *   7  version     git add, commit, push                        (skip with --no-push)
+ *   8  verify      master == rev.json == live /rev, origin level, no locks left
+ *
+ * WHAT IT DELIBERATELY WILL NOT DO: fold a queued entry into the ledger. Writing a
+ * transaction row is a judgement (which product, whose bucket, what cost, what the note
+ * should say), and a script that guessed would be worse than one that refuses. So step 3
+ * REPORTS what is pending and, if anything pending already looks committed, says so loudly
+ * and exits non-zero. The folding stays with the daily run and with you.
+ *
+ * Modes:
+ *   node tools/update.mjs                the whole chain
+ *   node tools/update.mjs --dry          report only, change nothing anywhere
+ *   node tools/update.mjs --no-push      build, test and deploy, but do not touch git
+ *   node tools/update.mjs --no-deploy    build and test only
+ *   node tools/update.mjs --no-drain     leave KV alone (use when offline)
+ *   node tools/update.mjs -m "message"   commit message (defaults to the version)
+ */
+
+import { readFileSync, existsSync, writeFileSync, readdirSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import { resolve, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const DEFAULT_MASTER =
+  "C:/Users/maakm/Claude/Projects/Personal/Cow-Crm01_Salt Business/01_Dashboard/salt_command.html";
+const MASTER = process.env.SALT_MASTER || DEFAULT_MASTER;
+const DATA = resolve(dirname(MASTER), "..", "06_Data");
+const SITE = (process.env.SALT_URL || "https://salt-command.maakmal97.workers.dev").replace(/\/+$/, "");
+
+const argv = process.argv.slice(2);
+const has = (f) => argv.includes(f);
+const DRY = has("--dry");
+const NO_PUSH = has("--no-push") || DRY;
+const NO_DEPLOY = has("--no-deploy") || DRY;
+const NO_DRAIN = has("--no-drain") || DRY;
+const MSG = (() => { const i = argv.indexOf("-m"); return i >= 0 ? argv[i + 1] : null; })();
+
+/* ---- plumbing -------------------------------------------------------------------- */
+const problems = [];
+const fail = (m) => { problems.push(m); console.log("  FAIL  " + m); };
+const warn = (m) => { problems.push(m); console.log("  WARN  " + m); };
+const ok = (m) => console.log("  ok    " + m);
+const step = (n, t) => console.log("\n" + n + "  " + t.toUpperCase());
+
+function sh(cmd, args, { quiet = false } = {}) {
+  const r = spawnSync(cmd, args, { cwd: REPO, shell: true, encoding: "utf8" });
+  const out = ((r.stdout || "") + (r.stderr || "")).trim();
+  if (!quiet && out) console.log(out.split("\n").map(l => "        " + l).join("\n"));
+  return { code: r.status === null ? 1 : r.status, out };
+}
+const git = (...args) => sh("git", args, { quiet: true }).out.trim();
+
+/* STRIP THE BOM. salt_sync.ps1 writes .deployed.json from PowerShell, which stamps a UTF-8
+   byte order mark, and JSON.parse throws on it. Without this the deploy check silently read
+   "no record of any deploy" every run and redeployed every time, which is precisely the kind
+   of quiet drift this file exists to catch. Caught 12 Aug on the first real run. */
+function readJson(p, fallback = null) {
+  try { return JSON.parse(readFileSync(p, "utf8").replace(/^\uFEFF/, "")); }
+  catch (e) { return fallback; }
+}
+
+/* ---- 1. preflight ---------------------------------------------------------------- */
+step(1, "preflight");
+
+if (!existsSync(MASTER)) {
+  console.error("  the master is not readable at\n    " + MASTER);
+  process.exit(2);
+}
+const masterSrc = readFileSync(MASTER, "utf8");
+const VER = (masterSrc.match(/const evolution=\[\{v:'(v\d+)'/) || [])[1] || null;
+const MARK = (masterSrc.match(/const QUEUE_COMMITTED='([^']*)'/) || [])[1] || null;
+if (!VER) fail("no version found in the master (evolution[0].v)");
+if (!MARK) fail("no QUEUE_COMMITTED found in the master");
+ok(`master ${VER}, watermark ${MARK}`);
+
+/* The lock scan is done in-process rather than by shelling out, because the whole hazard
+   this guards against is git leaving files behind, and a fragile quoted one-liner is the
+   last thing that should stand between you and noticing. */
+function gitStrays() {
+  const root = resolve(REPO, ".git");
+  const found = [];
+  (function walk(d) {
+    let entries;
+    try { entries = readdirSync(d, { withFileTypes: true }); } catch (e) { return; }
+    for (const e of entries) {
+      const p = resolve(d, e.name);
+      if (e.isDirectory()) walk(p);
+      else if (/\.lock$/.test(e.name) || /^tmp_obj_/.test(e.name)) found.push(p);
+    }
+  })(root);
+  return found;
+}
+
+const strays = gitStrays();
+if (strays.length) fail("stale git locks present:\n        " + strays.join("\n        "));
+else ok("no stale git locks");
+
+/* ---- 2. drain -------------------------------------------------------------------- */
+step(2, "drain the phone queue");
+if (NO_DRAIN) {
+  ok("skipped" + (DRY ? " (dry run)" : ""));
+} else {
+  const r = sh("node", ["tools/drain.mjs"]);
+  if (r.code !== 0) fail("drain failed, so phone entries may not be on disk");
+  else ok("KV drained into 06_Data");
+}
+
+/* ---- 3. queues, and the replay check --------------------------------------------- */
+step(3, "queues");
+
+const qFiles = [
+  ["laptop", resolve(DATA, "salt_queue.json")],
+  ["cloud ", resolve(DATA, "salt_queue_cloud.json")]
+];
+/* NOT A CHECK WORTH HAVING, and it was tried: "the file's `updated` is ahead of the
+   watermark" fires on every HEALTHY run, because --committed stamps the file with the
+   time it pruned. A check that cries wolf teaches you to skim past the real one, so the
+   only guard here is the replay check below, which asks the question that actually
+   matters: is something still queued that the ledger already carries? */
+let pending = [];
+for (const [label, path] of qFiles) {
+  const j = readJson(path, null);
+  if (!j) { warn(`${label} queue unreadable at ${path}`); continue; }
+  const all = Array.isArray(j.queue) ? j.queue : [];
+  const above = all.filter(e => e && e.at && MARK && e.at > MARK);
+  ok(`${label}: ${all.length} held, ${above.length} above the watermark, updated ${j.updated || "(none)"}`);
+  pending.push(...above.map(e => ({ ...e, from: label.trim() })));
+}
+
+/* dedupe by at, since a drained entry can sit in both files briefly */
+pending = [...new Map(pending.map(e => [e.at, e])).values()].sort((a, b) => a.at < b.at ? -1 : 1);
+
+if (NO_DRAIN) {
+  const note = "the drain was skipped, so this is what is on DISK, not what the phone has posted."
+    + "\n        Run `node tools/drain.mjs --status` for the live picture.";
+  /* In a dry run the skip was asked for, so it is a note. Asked for with --no-drain on a
+     real run it is a gap in the very thing "update" promises, so it counts. */
+  if (DRY) ok(note); else warn(note);
+}
+
+if (!pending.length) {
+  ok("nothing pending on disk: every queued entry on disk is committed");
+} else {
+  console.log("");
+  console.log(`        ${pending.length} entr${pending.length === 1 ? "y is" : "ies are"} PENDING and not yet in the ledger:`);
+  for (const e of pending) console.log(`          ${e.at}  ${String(e.raw || "(no description)").slice(0, 96)}`);
+  console.log("");
+  console.log("        These are folded by the daily run, not by this script.");
+}
+
+/* THE REPLAY CHECK. For each pending entry, look for a ledger row in the master carrying
+   the same date and the same total. A hit means the entry is probably ALREADY committed
+   and the watermark was not moved, so the desk would book it twice. It is a heuristic on
+   purpose and it says so: it points at a line for you to read, it does not judge. */
+let suspect = 0;
+for (const e of pending) {
+  const raw = String(e.raw || "");
+  const date = (raw.match(/\b(20\d\d-\d\d-\d\d)\b/) || [])[1];
+  const total = (raw.match(/for RM\s?([\d,]+(?:\.\d+)?)/i) || [])[1];
+  if (!date || !total) continue;
+  const t = total.replace(/,/g, "");
+  const hit = masterSrc.split("\n").find(l =>
+    l.includes("date:'" + date + "'") && new RegExp("total:" + t + "\\b").test(l));
+  if (hit) {
+    suspect++;
+    fail(`pending entry ${e.at} already looks COMMITTED (date ${date}, total RM${t}). The ledger has:\n        ${hit.trim().slice(0, 140)}`);
+  }
+}
+if (suspect) {
+  console.log("");
+  console.log("        If those really are committed, advance the watermark to the queue");
+  console.log("        file's own `updated` (never the clock), then prune:");
+  console.log("          node tools/drain.mjs --committed <that updated>");
+  console.log("");
+  if (has("--force-ship")) {
+    console.log("        --force-ship given, so carrying on. You have read the rows above and");
+    console.log("        judged them a false match. Nothing else about this run is different.");
+  } else {
+    console.log("        Refusing to go on: shipping now would put a double count on the phone.");
+    console.log("        A date and a total CAN collide innocently. If you have read the rows");
+    console.log("        and they are genuinely different trades, re-run with --force-ship.");
+    process.exit(1);
+  }
+}
+
+/* ---- 4 and 5. build and test ------------------------------------------------------ */
+step(4, "build");
+if (DRY) ok("skipped (dry run)");
+else if (sh("npm", ["run", "build"]).code !== 0) { fail("build failed"); process.exit(1); }
+
+step(5, "test");
+if (DRY) ok("skipped (dry run)");
+else if (sh("npm", ["test"]).code !== 0) { fail("tests failed"); process.exit(1); }
+
+/* ---- 6. deploy -------------------------------------------------------------------- */
+step(6, "deploy");
+const rev = readJson(resolve(REPO, "public", "rev.json"), {});
+const deployed = readJson(resolve(REPO, ".deployed.json"), {});
+let deployedNow = false;
+
+if (NO_DEPLOY) {
+  ok("skipped" + (DRY ? " (dry run)" : ""));
+} else if (rev.id && deployed.id === rev.id) {
+  ok(`already deployed (${rev.v} ${rev.id})`);
+} else {
+  console.log(`        built ${rev.v} ${rev.id}, last deployed ${deployed.v || "(none)"} ${deployed.id || "(none)"}`);
+  if (sh("npx", ["wrangler", "deploy"]).code !== 0) fail("wrangler deploy failed");
+  else deployedNow = true;
+}
+
+/* ---- 7. version ------------------------------------------------------------------- */
+step(7, "version");
+if (NO_PUSH) {
+  ok("skipped" + (DRY ? " (dry run)" : ""));
+} else {
+  const dirty = git("status", "--porcelain");
+  if (dirty) {
+    sh("git", ["add", "-A"], { quiet: true });
+    const message = MSG || `${rev.v || VER}: build, deploy and version the desk`;
+    const c = sh("git", ["commit", "-m", JSON.stringify(message)], { quiet: true });
+    if (c.code !== 0) fail("commit did not take:\n        " + c.out);
+    else ok("committed " + git("rev-parse", "--short", "HEAD"));
+  } else {
+    ok("working tree already clean");
+  }
+  const ahead = git("rev-list", "--count", "origin/master..HEAD");
+  if (ahead !== "0") {
+    const p = sh("git", ["push"], { quiet: true });
+    if (p.code !== 0) fail("push failed:\n        " + p.out);
+  }
+}
+
+/* ---- 8. verify. THE POINT OF THE WHOLE FILE. -------------------------------------- */
+step(8, "verify every surface is level");
+
+const revNow = readJson(resolve(REPO, "public", "rev.json"), {});
+if (VER && revNow.v && VER !== revNow.v) fail(`master is ${VER} but the build on disk is ${revNow.v}`);
+else ok(`master and build agree at ${revNow.v || VER}`);
+
+let live = null;
+try {
+  const res = await fetch(SITE + "/rev", { cache: "no-store" });
+  live = await res.json();
+} catch (e) { warn("could not reach " + SITE + "/rev (" + e.message + ")"); }
+
+if (live) {
+  if (live.id !== revNow.id) fail(`the phone is BEHIND: live ${live.v} ${live.id}, built ${revNow.v} ${revNow.id}`);
+  else {
+    ok(`live matches the build (${live.v} ${live.id})`);
+    /* .deployed.json is written HERE and by salt_sync.ps1, and in both cases only after a
+       deploy that was verified live. Two writers, one rule: never record a deploy you have
+       not confirmed, because the whole point of this file is that the two cannot drift. */
+    if (!DRY && (deployedNow || deployed.id !== revNow.id)) {
+      writeFileSync(resolve(REPO, ".deployed.json"),
+        JSON.stringify({ id: revNow.id, v: revNow.v, at: new Date().toISOString() }, null, 4) + "\n");
+      ok("recorded the deploy in .deployed.json");
+    }
+  }
+}
+
+if (!NO_PUSH) {
+  const ahead = git("rev-list", "--count", "origin/master..HEAD");
+  if (ahead !== "0") fail(`${ahead} commit(s) not pushed`);
+  else ok("origin is level at " + git("rev-parse", "--short", "HEAD"));
+}
+
+const straysAfter = gitStrays();
+if (straysAfter.length) fail("git left lock files behind:\n        " + straysAfter.join("\n        "));
+else ok("no git locks left behind");
+
+/* ---- the verdict ------------------------------------------------------------------ */
+console.log("");
+if (problems.length) {
+  console.log(`UPDATE INCOMPLETE: ${problems.length} problem${problems.length === 1 ? "" : "s"} above.`);
+  /* exitCode, not exit(). Calling process.exit() here aborts node on Windows with a libuv
+     assertion, because the keep-alive socket from the /rev fetch above is still closing.
+     Setting the code and falling off the end lets it shut down properly. */
+  process.exitCode = 1;
+} else {
+  console.log(`UPDATE COMPLETE${DRY ? " (dry run)" : ""}: ${revNow.v || VER} on the master, in the build, live on the phone`
+    + (NO_PUSH ? "" : " and on origin") + ".");
+  if (pending.length) console.log(`  ${pending.length} entr${pending.length === 1 ? "y" : "ies"} still queued for the daily run to fold.`);
+}

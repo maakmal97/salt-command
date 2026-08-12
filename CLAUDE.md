@@ -42,9 +42,21 @@ The lock then blocks every later `git add` and `git commit`, including the ones
 failure is silent: `git push` still exits 0 with nothing to push and logs `pushed off-site`,
 so the log reads healthy while the ledger goes unversioned. It ran that way from 09 to 11 Aug.
 
-**So: no `git add`, `commit`, `push`, `status` or `log` from a session. Read files, edit
-files, build, and leave git to Windows.** If a session must report repo state, read
-`.git/HEAD` and `public/rev.json` directly.
+**So: no `git add`, `commit`, `push`, `status` or `log` FROM A MOUNTED SANDBOX. Read files,
+edit files, build, and leave git to a session running natively on Windows.** If a mounted
+session must report repo state, read `.git/HEAD` and `public/rev.json` directly.
+
+**A native Claude Code session on Windows is NOT a mounted sandbox, and it may run git.**
+Narrowed 12 Aug 2026, because the old blanket wording forbade the auto-push the owner has
+since asked for. Tested on 11 and 12 Aug: `status`, `log`, `diff`, `add -A`, a full
+multi-line `commit` and `push` each left **zero** lock files. The hazard is the mount that
+denies unlink, not the fact that an agent is driving. Two conditions come with the licence,
+because the failure above is silent and an exit code will not show it:
+
+- **Verify, never trust the exit code.** After committing, check
+  `git rev-list --count origin/master..HEAD` and confirm no `*.lock` or `tmp_obj_*` remain.
+  `node tools/update.mjs` does both at the end of every run.
+- **Still no git from Cowork**, which is where the mount lives.
 
 Clearing up after one that did, in PowerShell:
 
