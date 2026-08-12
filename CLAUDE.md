@@ -172,6 +172,7 @@ Cow-Crm01 master (a Cowork/master session); once it lands, the sync above alread
 | `public/rev.json` | `{v,id,built}` for the build on disk. `id` is a hash of the built file. **Written by the build, never by hand.** |
 | `.deployed.json` | `{id,v,at}` for the build that last DEPLOYED successfully. Written by `salt_sync.ps1` on a reported success and nowhere else. |
 | `tools/drain.mjs` | KV → `06_Data\salt_queue_cloud.json`; `--committed <ISO>` prunes; `--status` inspects. |
+| `tools/update.mjs` | **The whole "update" chain in one command**, ending in proof that every surface is level. See below. |
 | `tools/make_icons.py` | Regenerate the crystal icons. |
 | `test/verify.mjs` | Smoke suite: Worker contract, name-drop, access gate, drain helpers, build integrity. |
 
@@ -183,6 +184,32 @@ npm run build               # master -> public/index.html (run after any master 
 npm run dev                 # build, then wrangler dev on a local port
 npm test                    # the smoke suite, ~2s, no network
 ```
+
+## "Update" is one command
+
+```bash
+node tools/update.mjs
+```
+
+Drain the phone queue, report what is still pending on **both** queues, build, test, deploy
+only when the built id differs from the deployed one, commit, push, and then **prove** the
+master, `rev.json`, the live `/rev` and origin all agree. It exits non-zero if any of that
+fails, which is the point: two runs in a row had shipped the master but not the cloud, and
+both failures were silent.
+
+`--dry` reports and changes nothing. `--no-push`, `--no-deploy`, `--no-drain` skip a leg.
+`-m "..."` sets the commit message.
+
+**It will not fold a queued entry into the ledger, by design.** Writing a transaction row is
+a judgement (which product, whose bucket, what cost, what the note says) and a script that
+guessed would be worse than one that refuses. Step 3 reports what is pending and leaves it
+for the daily run.
+
+**The replay check** is the guard for the v287 fault. For every entry still above
+`QUEUE_COMMITTED` it looks for a ledger row with the same date and total, and refuses to ship
+if it finds one, because that means the entry was committed and the watermark was not moved,
+which puts a double count on the phone. A date and a total can collide innocently, so
+`--force-ship` overrides once you have read the rows.
 
 ## Deploying
 
@@ -213,6 +240,28 @@ the URL can also `POST /queue`, which `tools/drain.mjs` unions into `salt_queue_
 and the daily run folds into the master as real rows, with no review step between. `GET /queue`
 likewise returns every device's queue to any caller. The exposure is therefore WRITE as well
 as read. Real names are not exposed: the built desk ships codes only, and the KV vault is null.
+
+## The write gate (v288), and how to arm it
+
+**Reads stay open. Writes need a key.** `POST /queue` and `POST /vault` require `X-Salt-Key`
+matching the `SALT_WRITE_KEY` secret. That closes the half of the exposure above that was
+easy to miss: a stranger with the URL writing rows into the ledger. It is not Zero Trust, it
+is not protection from anyone holding the key, and it does not touch reads.
+
+**IT IS DORMANT UNTIL THE SECRET EXISTS, and that ordering is not optional.** With
+`SALT_WRITE_KEY` unset the Worker accepts writes exactly as before. The desk that can send the
+header must be live on the phone BEFORE the gate demands it, or you lock yourself out of your
+own queue exactly as the policy-less Access application did on 11 Aug. v288 is deployed, so
+the desk half is already out there. To arm it:
+
+```bash
+npx wrangler secret put SALT_WRITE_KEY
+```
+
+Paste a passphrase you can type on a phone. The phone asks for it once on the next entry and
+keeps it in `localStorage`; a wrong key is refused, asked again, and retried once. To change
+it later, run the same command and clear `saltWriteKey` from the phone's storage. `drain.mjs`
+and `seed-vault.mjs` go through wrangler rather than HTTP, so neither is affected.
 
 **The cheap defence while it is open**, and it is worth running before each commit:
 
