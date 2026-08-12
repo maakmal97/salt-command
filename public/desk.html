@@ -59,7 +59,7 @@ document.addEventListener('visibilitychange',function(){
    focused, no dialog open. Otherwise it offers a chip and waits to be tapped.
    The same tick retries a held entry, which is what gets a phone write to the cloud
    without waiting for the next open. */
-var SALT_BUILD_ID="23f53b336e5063ab";
+var SALT_BUILD_ID="ffdc0c9c3640f26e";
 var SALT_REV_MS=10000;
 (function(){
   var chip=null,timer=null;
@@ -1405,7 +1405,7 @@ const sales=[
    note:'half a unit at his RM100 anchor. Agreed 20 Jul, paid and handed over 21 Jul from the RM56/unit lot.'},
   {date:'2026-07-20',customer:'CE4-CHE',qty:2.5,total:250,cost:56,cash:250,deliveredQty:2.5,note:'2.5 unit at the RM100 anchor, paid and delivered together. Entered as a new party but it is the existing CE4-CHE, so it books as his second order. From the 20 Jul RM56/unit lot.'},
   {date:'2026-07-21',customer:'CI4-OKR',qty:2,total:185,cost:56,cash:185,deliveredQty:2,
-   note:'New customer at Old Klang Road. 2 unit at RM92.50/unit, paid and delivered together, so it folds into the opening as one line. Drawn from the 20 Jul RM56/unit lot.'},
+   note:'New customer at postcode 581. 2 unit at RM92.50/unit, paid and delivered together, so it folds into the opening as one line. Drawn from the 20 Jul RM56/unit lot.'},
   {date:'2026-07-21',customer:'CN6-WM',qty:0.5,total:50,cost:56,cash:0,settledRM:50,rebate:true,deliveredQty:0.5,
    note:'New customer at Sepang, appointed an associate on 03 Aug. Advance delivery: 0.5 unit handed over at RM100/unit with nothing paid, so the whole RM50 was a receivable and, at 13 days, the desk&rsquo;s only open breach. SETTLED 03 Aug BY A PRE-EARNED REBATE, not by cash and not by waiver. He had resold RM440 against the RM500 milestone, so the half unit is drawn EARLY, and the standing rule is that an earned free unit offsets an outstanding advance before it is ever handed over as salt. <b>Nothing physical moves and nothing is forgiven</b>: the 0.5 unit he already holds is what the rebate pays for, RM50 against RM50, so the receivable clears exactly and the credit-age breach with it. <b>The next award is smaller by exactly what was taken here, and the desk enforces that on its own.</b> freeKg is earned minus applied, so when his resold total crosses RM500 the milestone earns 1 unit, 0.5 is already applied, and he receives 0.5. No adjustment is typed anywhere; the arithmetic does it. Drawn originally from the 20 Jul RM56/unit lot.'},
   {date:'2026-07-21',customer:'CH6-TBC',qty:2,total:230,cost:56,cash:230,deliveredQty:2,ref:'CS6-PER',refKg:2,
@@ -1838,7 +1838,7 @@ const associates=['CS6-BS','CJ4-OKR','CS6-PER','CN6-WM','CI4-OKR'];   /* CI4-OKR
 /* ============ GAZETTEER (v149) ============
    A code carries a location suffix, which is a hint and not an address. Only the
    suffixes the LEDGER itself explains are placed here: each one below is traceable to a
-   note on a real order ("new direct customer at KLCC", "New customer at Petaling Jaya").
+   note on a real order ("new direct customer at postcode 504", "New customer at postcode 460").
    Every other suffix is left UNPLACED on purpose. SB, BJ, DAM, PER, TAI, CHE, SK, BS,
    BTR and KER are all guessable and none is recorded anywhere, so guessing would put a
    pin on a map that looks like knowledge and is not. They appear on the Map tab as an
@@ -1860,15 +1860,15 @@ const associates=['CS6-BS','CJ4-OKR','CS6-PER','CN6-WM','CI4-OKR'];   /* CI4-OKR
    in src. Both are approximate by construction. exact:false everywhere is not modesty,
    it is the truth: a neighbourhood centroid is not a doorstep and the map says so. */
 const PLACES={
-  KLC:{name:'KLCC',              lat:3.1578, lng:101.7117, exact:false, src:'17 Jul order: "new direct customer at KLCC"'},
-  OKR:{name:'Old Klang Road',    lat:3.0930, lng:101.6720, exact:false, src:'21 Jul order: "New customer at Old Klang Road"'},
-  PJ: {name:'Petaling Jaya',     lat:3.1073, lng:101.6067, exact:false, src:'22 Jul order: "New customer at Petaling Jaya"'},
-  CS: {name:'Cheras Selatan',    lat:3.0560, lng:101.7480, exact:false, src:'25 Jul order: "New customer at Cheras Selatan"'},
+  KLC:{name:'KLCC',              lat:3.1578, lng:101.7117, exact:false, src:'17 Jul order: "new direct customer at postcode 504"'},
+  OKR:{name:'Old Klang Road',    lat:3.0930, lng:101.6720, exact:false, src:'21 Jul order: "New customer at postcode 581"'},
+  PJ: {name:'Petaling Jaya',     lat:3.1073, lng:101.6067, exact:false, src:'22 Jul order: "New customer at postcode 460"'},
+  CS: {name:'Cheras Selatan',    lat:3.0560, lng:101.7480, exact:false, src:'25 Jul order: "New customer at postcode 432"'},
   MK: {name:'Mont Kiara',        lat:3.1725, lng:101.6510, exact:false, src:'split rule: "CM4-MK at Mont Kiara"'},
   BK: {name:'Bandar Kinrara',    lat:3.0450, lng:101.6420, exact:false, src:'split rule, v199: a located onward buyer under CS6-BS at Bandar Kinrara. That buyer\'s own code went with the general buckets at v265; the place stays because the trade happened here.'},
   WM: {name:'Wangsa Maju',       lat:3.2050, lng:101.7370, exact:false, src:'v146 rename: both WM parties relocated to Wangsa Maju'},
   /* --- filled from the directory at v222 --- */
-  KLS:{name:'KL Sentral',       lat:3.1339, lng:101.6869, exact:false, src:'07 Aug order: new customer at KL Sentral. Published centroid of the transport hub; NOT the same place as KLCC, which the desk already carries as KLC.'},
+  KLS:{name:'KL Sentral',       lat:3.1339, lng:101.6869, exact:false, src:'07 Aug order: new customer at postcode 504. Published centroid of the transport hub; NOT the same place as KLCC, which the desk already carries as KLC.'},
   SEN:{name:'Sentul',            lat:3.1833, lng:101.6833, exact:false, src:'directory: "(Sentul)". Centroid of the Sentul township; the wider Batu constituency reads about 3.21, which is the same name over a larger area'},
   SB: {name:'Sungai Besi',       lat:3.0500, lng:101.7100, exact:false, src:'directory: "(Sg Besi)". Centroid of the Sungai Besi township, south-east of Bukit Jalil; the least firmly fixed of the metro points'},
   BJ: {name:'Bukit Jalil',       lat:3.0586, lng:101.6919, exact:false, src:'directory: "(Bkt Jalil)". Published centroid 3°03′31″N 101°41′31″E'},
