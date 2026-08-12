@@ -284,7 +284,11 @@ if (existsSync(BIO)) {
       if (m) { if (m[1]) names.push(m[1].trim()); if (m[2]) names.push(m[2].trim()); }
     }
   } catch (e) { fail("salt_bio.json could not be read, so the name check did not run"); }
-  names = [...new Set(names.filter((n) => n.length >= 3))];
+  /* "TBC" IS NOT A PLACE. Two parties carry it in the directory as an admission that the
+     location was never known, and the desk says so in its own notes. Treating it as a name
+     makes the gate cry wolf on the one row that is honest about not having one. */
+  const PLACEHOLDER = new Set(["tbc", "unknown", "n/a", "na", "none", "-"]);
+  names = [...new Set(names.filter((n) => n.length >= 3 && !PLACEHOLDER.has(n.toLowerCase())))];
   /* THE CODES COME OUT FIRST. A party code embeds its own place abbreviation by design, so
      CH6-TBC contains "TBC" and CS6-BS contains "BS". Searching the raw text therefore reports
      every code as a leak, which is the fastest way to teach someone to ignore this check.
