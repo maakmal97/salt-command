@@ -164,6 +164,49 @@ section("Ledger extract");
   ok(/no real name or place|carries \$\{|carries .* real name/.test(tool), "the name gate reports a verdict either way");
 }
 
+/* ---- 1e. No directory name or place may reach the public desk (v293) ------------- */
+section("The public desk carries no name and no place");
+{
+  const BIO = "C:/Users/maakm/Claude/Projects/Personal/Cow-Crm01_Salt Business/06_Data/salt_bio.json";
+  if (!existsSync(BIO)) {
+    ok(true, "salt_bio.json is not on this machine, so the name scan is skipped");
+  } else {
+    /* HARD RULE 3, ENFORCED RATHER THAN TRUSTED. public/desk.html is committed AND served
+       publicly, so a customer's name or neighbourhood appearing anywhere in it, including
+       inside an explanatory comment, is a live disclosure. This caught ten on 12 Aug: five
+       in comments written over many versions, two real first names quoted inside the very
+       comment that explains the leak gate, and three in a changelog note that named the
+       places while describing their removal. */
+    const desk = readFileSync(join(REPO, "public", "desk.html"), "utf8");
+    const bio = JSON.parse(readFileSync(BIO, "utf8"));
+    const words = new Set();
+    for (const v of Object.values(bio.bio || {})) {
+      const raw = String(v.raw || ""), o = raw.lastIndexOf("(");
+      if (o > 0) { words.add(raw.slice(0, o).trim()); words.add(raw.slice(o + 1, raw.lastIndexOf(")")).trim()); }
+    }
+    for (const p of Object.values(bio.places || {})) if (p.name) words.add(p.name);
+    /* Party codes embed their own place abbreviation by design, so they come out first or
+       every code reads as a leak and the check gets ignored. */
+    const codes = Object.keys(bio.ids || {}).concat(Object.keys(bio.bio || {})).sort((a, b) => b.length - a.length);
+    let hay = desk;
+    for (const c of codes) hay = hay.split(c).join("~");
+    const skip = new Set(["tbc", "unknown"]);
+    const word = (c) => /[A-Za-z0-9]/.test(c || "");
+    const hits = [...words].filter((x) => x && x.length >= 3 && !skip.has(x.toLowerCase())).filter((x) => {
+      let f = 0;
+      for (;;) { const i = hay.indexOf(x, f); if (i < 0) return false; f = i + x.length;
+        if (!word(hay[i - 1]) && !word(hay[i + x.length])) return true; }
+    });
+    ok(hits.length === 0, `no directory name or place appears in the public desk (${words.size} checked, ${hits.length} found)`);
+
+    /* The map is a heatmap and must stay one: no per-party label, no coordinates on screen. */
+    ok(desk.includes("url(#heat"), "the map draws heat blobs");
+    ok(desk.includes("mix-blend-mode:screen"), "overlapping localities brighten rather than stack");
+    ok(!desk.includes("place.name"), "nothing on the map reads a place name");
+    ok(!/PLACES\[[^\]]*\]\.(name|src)/.test(desk), "the gazetteer table carries neither name nor provenance");
+  }
+}
+
 /* ---- 1c. The phone app at the root, the desk at /desk (v290) --------------------- */
 section("The phone app, and the desk at /desk");
 {

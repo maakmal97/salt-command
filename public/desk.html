@@ -59,7 +59,7 @@ document.addEventListener('visibilitychange',function(){
    focused, no dialog open. Otherwise it offers a chip and waits to be tapped.
    The same tick retries a held entry, which is what gets a phone write to the cloud
    without waiting for the next open. */
-var SALT_BUILD_ID="ffdc0c9c3640f26e";
+var SALT_BUILD_ID="cc80585d3ab33c3d";
 var SALT_REV_MS=10000;
 (function(){
   var chip=null,timer=null;
@@ -1813,7 +1813,7 @@ const contactsDue=()=>contacts.filter(c=>c.next&&dbet(c.next)>=0&&c.outcome!=='n
    passphrase you set in your browser; they never appear in this source. */
 const roster=['CA5-SEN','CG5-SB','CJ4-BJ','CR3-DAM','CS6-PER','CN5-TAI','CJ4-OKR','CC5-OKR','CA4-DAM','CE4-CHE','CM6-HCM','CM4-SK','CS6-BS','CS6-BS-R','CM4-MK','CH5-KLC','CI4-OKR','CN6-WM','CN6-WM-R','CH6-TBC','CZ6-WM','CR4-PJ','CD4-CS','CA5-KER','CE4-AD','CZ4-TBC','SF6-KLC','SA5-BTR','SM4-KEP','SP7-PUD','CH4-KS','CS6-PER-R','CY2-NIL'];
 /* SPLIT RULE (rewritten v265). A reseller's onward sale earns its own end-customer code ONLY
-   where you delivered to that person yourself and so know who they are: CM4-MK at Mont Kiara.
+   where you delivered to that person yourself and so know who they are: CM4-MK, delivered to in person.
    Every OTHER onward sale, the ordinary case where the reseller sells on to someone you never
    meet, books to the reseller's own RESELL ACCOUNT, <reseller>-R. There is no general bucket
    any more: it was a second code for a party that was never a person, never placed, never
@@ -1859,34 +1859,18 @@ const associates=['CS6-BS','CJ4-OKR','CS6-PER','CN6-WM','CI4-OKR'];   /* CI4-OKR
    will, so each one is a published centroid for the named locality, looked up and cited
    in src. Both are approximate by construction. exact:false everywhere is not modesty,
    it is the truth: a neighbourhood centroid is not a doorstep and the map says so. */
-const PLACES={
-  KLC:{name:'KLCC',              lat:3.1578, lng:101.7117, exact:false, src:'17 Jul order: "new direct customer at postcode 504"'},
-  OKR:{name:'Old Klang Road',    lat:3.0930, lng:101.6720, exact:false, src:'21 Jul order: "New customer at postcode 581"'},
-  PJ: {name:'Petaling Jaya',     lat:3.1073, lng:101.6067, exact:false, src:'22 Jul order: "New customer at postcode 460"'},
-  CS: {name:'Cheras Selatan',    lat:3.0560, lng:101.7480, exact:false, src:'25 Jul order: "New customer at postcode 432"'},
-  MK: {name:'Mont Kiara',        lat:3.1725, lng:101.6510, exact:false, src:'split rule: "CM4-MK at Mont Kiara"'},
-  BK: {name:'Bandar Kinrara',    lat:3.0450, lng:101.6420, exact:false, src:'split rule, v199: a located onward buyer under CS6-BS at Bandar Kinrara. That buyer\'s own code went with the general buckets at v265; the place stays because the trade happened here.'},
-  WM: {name:'Wangsa Maju',       lat:3.2050, lng:101.7370, exact:false, src:'v146 rename: both WM parties relocated to Wangsa Maju'},
-  /* --- filled from the directory at v222 --- */
-  KLS:{name:'KL Sentral',       lat:3.1339, lng:101.6869, exact:false, src:'07 Aug order: new customer at postcode 504. Published centroid of the transport hub; NOT the same place as KLCC, which the desk already carries as KLC.'},
-  SEN:{name:'Sentul',            lat:3.1833, lng:101.6833, exact:false, src:'directory: "(Sentul)". Centroid of the Sentul township; the wider Batu constituency reads about 3.21, which is the same name over a larger area'},
-  SB: {name:'Sungai Besi',       lat:3.0500, lng:101.7100, exact:false, src:'directory: "(Sg Besi)". Centroid of the Sungai Besi township, south-east of Bukit Jalil; the least firmly fixed of the metro points'},
-  BJ: {name:'Bukit Jalil',       lat:3.0586, lng:101.6919, exact:false, src:'directory: "(Bkt Jalil)". Published centroid 3°03′31″N 101°41′31″E'},
-  DAM:{name:'Damansara',         lat:3.1480, lng:101.6570, exact:false, src:'directory: "(Damansara)" for TWO parties. AMBIGUOUS AND KNOWINGLY SO: the name covers Damansara Heights in KL, Damansara Utama in PJ and Kota Damansara in Petaling, which are up to 12km apart. Sited at Damansara Heights as the nearest reading to the rest of the book. Ask them which, and this becomes the only guess left on the map'},
-  PER:{name:'Bandar Sri Permaisuri', lat:3.0960, lng:101.7197, exact:false, src:'directory: "(Permaisuri)". Published centroid of Bandar Sri Permaisuri, within Bandar Tun Razak'},
-  CHE:{name:'Cheras',            lat:3.1072, lng:101.7165, exact:false, src:'directory: "(Cheras)". Inner Cheras centroid. Cheras is large and stretches south-east; CS and AD below are named parts of it and sit apart'},
-  SK: {name:'Seri Kembangan',    lat:3.0158, lng:101.7006, exact:false, src:'directory: "(Seri Kembangan)". Published centroid 3°00′57″N 101°42′02″E. In Selangor, not KL'},
-  BS: {name:'Bangsar South',     lat:3.1106, lng:101.6663, exact:false, src:'directory: "(Bangsar South)". Published centroid 3°06′38″N 101°39′59″E'},
-  KER:{name:'Kerinchi',          lat:3.1140, lng:101.6690, exact:false, src:'directory: "(Kerinchi)". THE SAME LOCALITY AS BANGSAR SOUTH, which is Kampung Kerinchi renamed by its developer. Kept as a separate entry because the directory keeps the names apart, and offset slightly north so the two do not sit on top of each other; the ~400m between them is presentational, not surveyed'},
-  AD: {name:'Alam Damai',        lat:3.0642, lng:101.7428, exact:false, src:'directory: "(Alam Damai)". Published centroid 3°03′51″N 101°44′34″E, a suburb of Bandar Tun Razak'},
-  BTR:{name:'Bandar Tun Razak',  lat:3.0897, lng:101.7122, exact:false, src:'directory: "(Bdr Tun Razak)". Published centroid 3°05′23″N 101°42′44″E. PER and AD are both inside this district and are drawn separately because the directory names them separately'},
-  /* --- v228, the two oil suppliers, same directory-then-centroid rule --- */
-  KEP:{name:'Kepong',            lat:3.2100, lng:101.6350, exact:false, src:'oil supplier SM4-KEP, stated "(Kepong)". Centroid of the Kepong township, north-west KL'},
-  PUD:{name:'Pudu',              lat:3.1350, lng:101.7100, exact:false, src:'oil supplier SP7-PUD, stated "(Pudu)". Centroid of Pudu, immediately south-east of the city centre'},
-  /* --- outside the metro frame, deliberately kept out of the drawn map --- */
-  TAI:{name:'Taiping',           lat:4.8500, lng:100.7400, exact:false, src:'directory: "(Taiping)". Perak, roughly 200km north-west of the frame'},
-  HCM:{name:'Ho Chi Minh City',  lat:10.7769,lng:106.7009, exact:false, src:'directory: "(Ho Chi Minh)". Vietnam, roughly 1,000km away and the only party outside Malaysia'}
-};
+/* THE GAZETTEER IS COORDINATES ONLY, AND DELIBERATELY BLUNT (v293).
+   It used to carry each locality NAME, its provenance and four decimal places of latitude,
+   which is about eleven metres. This file is committed and PUBLICLY SERVED, so all of that
+   was readable by anyone holding the URL, and a named neighbourhood beside a party code
+   identifies a customer far better than the code alone ever did.
+   What the map is FOR is density: where the book sits, not who sits where. A heatmap needs
+   position and nothing else, so that is all this holds. Coordinates are rounded to TWO
+   decimal places, about 1.1km, which a heatmap blurs over anyway and which no longer points
+   at a street. The names, the provenance and the original precision are not lost: they are in
+   06_Data/salt_bio.json under "places", on the laptop, gitignored, beside the real names.
+   Read them there when siting a new suffix. */
+const PLACES={KLC:{lat:3.16,lng:101.71},OKR:{lat:3.09,lng:101.67},PJ:{lat:3.11,lng:101.61},CS:{lat:3.06,lng:101.75},MK:{lat:3.17,lng:101.65},BK:{lat:3.05,lng:101.64},WM:{lat:3.21,lng:101.74},KLS:{lat:3.13,lng:101.69},SEN:{lat:3.18,lng:101.68},SB:{lat:3.05,lng:101.71},BJ:{lat:3.06,lng:101.69},DAM:{lat:3.15,lng:101.66},PER:{lat:3.1,lng:101.72},CHE:{lat:3.11,lng:101.72},SK:{lat:3.02,lng:101.7},BS:{lat:3.11,lng:101.67},KER:{lat:3.11,lng:101.67},AD:{lat:3.06,lng:101.74},BTR:{lat:3.09,lng:101.71},KEP:{lat:3.21,lng:101.64},PUD:{lat:3.14,lng:101.71},TAI:{lat:4.85,lng:100.74},HCM:{lat:10.78,lng:106.7}};
 /* The drawn map is a KLANG VALLEY schematic and stays one. Two parties sit far outside
    it, and forcing them onto the same canvas would collapse every metro pin into a blob
    to make room for a thousand kilometres of empty sea: the map would be arithmetically
@@ -1912,7 +1896,7 @@ function farFrom(pl){
 /* suffixes that are explicitly NOT places, so they are never offered for siting */
 /* ============ IDENTITY, REBUILT (v237) ============
    The old code was C or S, the first initial, the LENGTH of the name, then the location:
-   CS6-BS was a customer whose name began with S, had six letters, in Bangsar South. It
+   CS6-BS was a customer whose name began with S, had six letters, and a locality. It
    made sense while the vault was locked and the code was the only readable handle anyone
    had. v217 unlocked the directory, and from that moment the code was carrying two mutable
    attributes for no reason: correct a spelling and the length changes, move house and the
@@ -2208,7 +2192,7 @@ const whiteboard=[
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{v:'v292',d:'12 Aug 2026',t:'THREE LOCATIONS COME OUT OF THE NOTES, AND THE BOOK IS EXTRACTED FOR THE FIRST TIME',n:['<b>THREE CUSTOMER LOCATIONS COME OUT OF THE LEDGER NOTES.</b> Three rows spelled a real place into their prose (an order at KLCC, one at Petaling Jaya, one at Cheras Selatan) and desk.html is committed AND publicly served, so those were readable by anyone with the URL. Each is now the first three digits of the postcode: <b>504</b>, <b>460</b> and <b>432</b>. The area survives, the neighbourhood does not, and a 3 digit prefix is coarser than the name it replaces. The prefixes are DERIVED, not recorded; correct any that is wrong and nothing else moves.','Found by a new gate rather than by reading eighty notes. <b>tools/ledger.mjs</b> extracts the book from this desk and refuses to write if the extract carries any name or place from the directory, checked against salt_bio.json on the laptop with the party codes stripped out first, since a code embeds its own place by design.','<b>THE REMAINING EXPOSURE IS PLACES, and it is larger than these three notes were.</b> The desk carries a map of every party&rsquo;s locality with latitude and longitude. It is configuration rather than ledger, so the extract never touches it, but it ships inside the public desk. It is left alone here because thinning it is a decision about the map, not a scrub.','The extract itself is the first step toward one source of truth: the book read out of this desk&rsquo;s own runtime, proven complete, proven to survive JSON, and written to ledger/ledger.json. It changes nothing here. This desk stays the source until a store is proven against it.']}];
+const evolution=[{v:'v293',d:'12 Aug 2026',t:'THE MAP BECOMES A HEATMAP, AND TEN NAMES COME OUT OF THE FILE',n:['<b>THE MAP KEEPS ITS GEOGRAPHY AND LOSES ITS LABELS.</b> It was a pin map: one circle per party, fanned around its locality, the place name printed underneath and repeated in the tooltip, over a table giving every locality with coordinates to four decimal places and a provenance note. That is a customer directory drawn as a picture, on a desk served publicly. It is now a <b>heatmap</b>: parties summed to their locality, one blob each, size and heat being its share of the book, overlapping blobs brightening so the shape reads as concentration. <b>No text on the canvas at all</b> beyond the scale bar and the compass.','<b>The gazetteer holds coordinates and nothing else</b>, rounded to two decimal places, about 1.1km, which a heatmap blurs over anyway and which no longer points at a street. It was four decimals, about eleven metres. The names, the original precision and the provenance are not lost: they moved to 06_Data/salt_bio.json under "places", on the laptop, gitignored, beside the real names, and that is where to read them when siting a new suffix.','<b>TEN NAMES WERE STILL IN THE FILE, and a scan found them rather than a reading.</b> Five sat in explanatory comments written over many versions. Two were real first names quoted inside the very comment that explains the payload leak gate. Three were in the v292 note, which named the places while describing their removal, which is the sharpest possible argument for checking a file rather than trusting the person who just edited it.','The scan is now a test, run on every build: every name and place in the directory is searched for in the built desk with the party codes stripped out first, since a code embeds its own place by design. <b>It reads zero</b>, and hard rule 3 is enforced rather than trusted.']}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -2271,7 +2255,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='12 Aug 2026, 23:21 KL';
+const LAST_UPDATED='12 Aug 2026, 23:39 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -4053,7 +4037,7 @@ function tabOverview(){
   const marginOf={};bc.forEach(c=>marginOf[c.id]=c.margin);
   const vip=cs.filter(c=>{const b=bm[c.id]||{};return (b.tier&&b.tier.l==='Loyal')||b.hi;})
              .sort((a,b)=>(marginOf[b.id]||0)-(marginOf[a.id]||0));
-  /* v243: OUT OF AREA IS NOT LAPSED. Reconnect listed a customer in Ho Chi Minh and one
+  /* v243: OUT OF AREA IS NOT LAPSED. Reconnect listed a customer overseas and one
      up-country beside metro customers who had simply gone quiet, so the desk was asking him
      to chase two people whose silence is geography rather than neglect. A party whose place
      is KNOWN and sits outside the Klang Valley frame now drops off the list. An UNKNOWN place
@@ -4846,50 +4830,64 @@ function tabMap(){
   /* equirectangular is fine three degrees off the equator: a degree of longitude is
      within 0.2% of a degree of latitude here, so the aspect is not visibly wrong */
   const X=l=>((l-ln0)/(ln1-ln0))*W, Y=l=>H-((l-la0)/(la1-la0))*H;
-  const maxV=Math.max.apply(null,pts.map(p=>p.value))||1;
-  const R=v=>6+Math.sqrt(Math.max(0,v)/maxV)*20;
-  const COL={customer:'#7fd7e8',associate:'#e8c66b',supplier:'#b3a6f5'};
-  /* several parties share a suffix, so a single centroid would stack them. They are
-     fanned around the point, which is honest: none of them is AT the centroid anyway. */
+  /* A HEATMAP, NOT A PIN MAP (v293). It used to draw one labelled circle per party, fanned
+     around its locality, with the place name under it and the name again in the tooltip.
+     That is a directory drawn as a picture: a named neighbourhood next to a party code
+     identifies a customer far better than the code alone, and this page is public.
+     Density is what the map was ever for, so density is all it draws now. Parties are
+     summed to their locality and each locality becomes one blob whose size and heat are its
+     share of the book. No text, no per-party mark, and nothing to read off but the shape.
+     There is no fan-out either: fanning existed to separate individuals, and a heatmap has
+     no individuals in it. */
   const byT={};pts.forEach(p=>{(byT[p.t]=byT[p.t]||[]).push(p);});
-  const nodes=[];
-  Object.keys(byT).forEach(t=>{const g=byT[t],n=g.length;
-    g.forEach((p,i)=>{let dx=0,dy=0;
-      if(n>1){const ang=(2*Math.PI*i)/n-Math.PI/2, rad=16+n*2.2;dx=Math.cos(ang)*rad;dy=Math.sin(ang)*rad;}
-      nodes.push(Object.assign({},p,{x:X(p.place.lng)+dx,y:Y(p.place.lat)+dy,cx:X(p.place.lng),cy:Y(p.place.lat),fan:n>1}));});});
+  const heat=Object.keys(byT).map(t=>{const g=byT[t];
+    return {t,n:g.length,value:g.reduce((a,p)=>a+(p.value||0),0),
+      x:X(g[0].place.lng),y:Y(g[0].place.lat)};});
+  const maxV=Math.max.apply(null,heat.map(h=>h.value))||1;
   const kmPerDeg=111.32, spanKm=(ln1-ln0)*kmPerDeg*Math.cos(3.1*Math.PI/180);
   const barKm=spanKm>30?10:spanKm>15?5:2, barPx=(barKm/spanKm)*W;
   const gridV=[0.25,0.5,0.75].map(f=>`<line x1="${W*f}" y1="0" x2="${W*f}" y2="${H}" stroke="#271b45" stroke-width="1"/>`).join('')
     +[0.25,0.5,0.75].map(f=>`<line x1="0" y1="${H*f}" x2="${W}" y2="${H*f}" stroke="#271b45" stroke-width="1"/>`).join('');
-  const halos=Object.keys(byT).map(t=>{const g=byT[t];const x=X(g[0].place.lng),y=Y(g[0].place.lat);
-    return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${g.length>1?(16+g.length*2.2+9).toFixed(0):16}" fill="rgba(99,230,224,.05)" stroke="#382a58" stroke-width="1" stroke-dasharray="3 3"/>`
-      +`<text x="${x.toFixed(1)}" y="${(y+ (g.length>1?(16+g.length*2.2+22):30)).toFixed(1)}" text-anchor="middle" font-size="10.5" fill="#7c6aa0" letter-spacing=".4">${esc(g[0].place.name)}</text>`;}).join('');
-  const marks=nodes.map(n=>`<g>
-    ${n.fan?`<line x1="${n.cx.toFixed(1)}" y1="${n.cy.toFixed(1)}" x2="${n.x.toFixed(1)}" y2="${n.y.toFixed(1)}" stroke="#382a58" stroke-width="1"/>`:''}
-    <circle cx="${n.x.toFixed(1)}" cy="${n.y.toFixed(1)}" r="${R(n.value).toFixed(1)}" fill="${COL[n.role]}" fill-opacity=".18" stroke="${COL[n.role]}" stroke-width="1.6"/>
-    <text x="${n.x.toFixed(1)}" y="${(n.y+3.5).toFixed(1)}" text-anchor="middle" font-size="9.5" font-weight="700" fill="${COL[n.role]}" font-family="ui-monospace,Consolas,monospace">${esc(codeOf(n.id))}</text>
-    <title>${esc(codeOf(n.id))} &middot; ${n.role} &middot; ${fmt0(n.value)} &middot; ${esc(n.place.name)} (approximate)</title></g>`).join('');
-  const legend=Object.keys(COL).map(k=>`<span style="display:inline-flex;align-items:center;gap:6px;margin-right:15px;font-size:12px;color:var(--mut)"><span style="width:11px;height:11px;border-radius:50%;background:${COL[k]}33;border:1.5px solid ${COL[k]}"></span>${k}</span>`).join('');
+  /* Each locality is one blob on a radial gradient that fades to nothing, composited with
+     screen blending so two nearby localities BRIGHTEN where they overlap. That is what makes
+     it read as concentration rather than as a set of discs, and it is the whole reason a
+     heatmap can afford to carry no labels: the shape is the information. Heat band and
+     radius both track the locality's share of the book, saying the same thing twice, which
+     is what keeps it legible at a glance on a phone. */
+  const band=f=>f<0.34?0:f<0.67?1:2;
+  const HEATC=['#5ad1c8','#e8c66b','#ff7a5a'], HEATL=['quieter','steady','concentrated'];
+  const defs=HEATC.map((c,i)=>`<radialGradient id="heat${i}" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="${c}" stop-opacity=".55"/>
+      <stop offset="55%" stop-color="${c}" stop-opacity=".18"/>
+      <stop offset="100%" stop-color="${c}" stop-opacity="0"/></radialGradient>`).join('');
+  /* smallest first, so a quiet locality is never painted out by a loud neighbour */
+  const blobs=heat.slice().sort((a,b)=>a.value-b.value).map(h=>{
+    const f=maxV?h.value/maxV:0, r=30+Math.sqrt(Math.max(0,f))*78;
+    return `<circle cx="${h.x.toFixed(1)}" cy="${h.y.toFixed(1)}" r="${r.toFixed(1)}" fill="url(#heat${band(f)})" style="mix-blend-mode:screen"/>`;}).join('');
+  const legend=HEATC.map((c,i)=>`<span style="display:inline-flex;align-items:center;gap:6px;margin-right:15px;font-size:12px;color:var(--mut)"><span style="width:11px;height:11px;border-radius:50%;background:${c}66;border:1.5px solid ${c}"></span>${HEATL[i]}</span>`).join('');
+  /* The gazetteer keeps the SUFFIX and the count and loses everything else. The suffix is
+     already inside every party code, so it discloses nothing the codes do not; the name, the
+     coordinates and the provenance now live in the directory on the laptop. */
   const placedRows=Object.keys(PLACES).map(t=>{const n=pts.concat(far).filter(p=>p.t===t);
-    return `<tr><td class="l mono">${t}</td><td class="l">${esc(PLACES[t].name)}</td><td>${n.length}</td>
-      <td class="mono" style="color:var(--dim)">${PLACES[t].lat.toFixed(4)}, ${PLACES[t].lng.toFixed(4)}</td>
-      <td>${PLACES[t].exact?'<span class="tag paid">exact</span>':'<span class="tag prov">approximate</span>'}</td>
-      <td class="l" style="color:var(--mut)">${esc(PLACES[t].src)}</td></tr>`;}).join('');
+    const h=heat.find(x=>x.t===t), f=(h&&maxV)?h.value/maxV:0;
+    return `<tr><td class="l mono">${t}</td><td>${n.length}</td>
+      <td class="mono" style="color:var(--dim)">${h?fmt0(h.value):'&mdash;'}</td>
+      <td>${h?`<span class="tag prov">${HEATL[band(f)]}</span>`:'<span class="tag">not drawn</span>'}</td></tr>`;}).join('');
   return `<h1>Map</h1>
-  <div class="dsc dsclead" style="margin-bottom:12px">Where the book actually sits, and as of v222 it sits <b>everywhere it can</b>: the gazetteer is filled from the location each party carries in the Names &amp; IDs directory, so the only codes off the map are the ones that are not places. This is still a <b>schematic, not a street map</b>. Each pin is the published centroid of a named neighbourhood, never a doorstep, so relative position is meaningful and exact position is not. Circle size is what the party has been worth, and parties sharing a place are fanned around it because none of them is at the centroid anyway.</div>
+  <div class="dsc dsclead" style="margin-bottom:12px"><b>Where the book is concentrated, drawn as heat and deliberately unlabelled (v293).</b> It was a pin map: one circle per party, fanned around its locality, with the place name printed underneath and repeated in the tooltip. That is a customer directory drawn as a picture, and this desk is public. So the parties are summed to their locality and each one is a single blob whose size and heat are its share of the book, with no text on the canvas at all. Overlapping blobs brighten, so the shape reads as concentration. <b>Position is rounded to about 1.1km</b> and it was never a doorstep to begin with: relative position is meaningful here, exact position is not, and now it is not even available.</div>
   <div class="kpis k4">
     <div class="kpi"><div class="l">Sited</div><div class="v">${pts.length+far.length}</div><div class="n">of ${roster.length} on the roster${far.length?`, ${far.length} beyond the frame`:''}</div></div>
     <div class="kpi ${miss.some(m=>!NON_PLACE[m.id.split('-').pop()])?'r':'g'}"><div class="l">Without a place</div><div class="v">${miss.length}</div><div class="n">${miss.filter(m=>NON_PLACE[m.id.split('-').pop()]).length} by rule, ${miss.filter(m=>!NON_PLACE[m.id.split('-').pop()]).length} genuinely unknown</div></div>
     <div class="kpi gold"><div class="l">Places known</div><div class="v">${Object.keys(PLACES).length}</div><div class="n">all approximate, none exact yet</div></div>
     <div class="kpi p"><div class="l">Spread</div><div class="v">${spanKm.toFixed(0)}<span style="font-size:12px;color:var(--mut)">km</span></div><div class="n">east to west across the drawn frame</div></div>
   </div>
-  ${far.length?`<div class="dsc" style="margin-top:11px"><b>${far.length} part${far.length===1?'y is':'ies are'} sited but not drawn.</b> ${far.map(f=>`<b>${esc(codeOf(f.id))}</b> at ${esc(f.place.name)}, about ${f.geo.km.toLocaleString('en-MY')}km ${f.geo.compass} of the frame centre, worth ${fmt0(f.value)}`).join('; ')}. They are outside ${METRO.name} and are listed rather than plotted: a canvas wide enough to hold ${far.length===1?'it':'them'} would compress every metro pin into a single smudge, which would be arithmetically honest and visually useless. Distance and bearing say more than a dot pinned to a corner.</div>`:''}
+  ${far.length?`<div class="dsc" style="margin-top:11px"><b>${far.length} part${far.length===1?'y is':'ies are'} sited but not drawn.</b> ${far.map(f=>`<b>${esc(codeOf(f.id))}</b> about ${f.geo.km.toLocaleString('en-MY')}km ${f.geo.compass} of the frame centre, worth ${fmt0(f.value)}`).join('; ')}. They are outside ${METRO.name} and are listed rather than plotted: a canvas wide enough to hold ${far.length===1?'it':'them'} would compress every metro pin into a single smudge, which would be arithmetically honest and visually useless. Distance and bearing say more than a dot pinned to a corner.</div>`:''}
   <div class="card" style="margin-top:13px">
     <div style="margin-bottom:9px">${legend}</div>
-    <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block;background:linear-gradient(160deg,#160e2a,#1c1434);border:1px solid var(--line);border-radius:12px" role="img" aria-label="Approximate positions of customers and suppliers">
+    <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block;background:linear-gradient(160deg,#160e2a,#1c1434);border:1px solid var(--line);border-radius:12px" role="img" aria-label="Heatmap of where the book is concentrated across ${esc(METRO.name)}. Unlabelled by design.">
+      <defs>${defs}</defs>
       ${gridV}
-      ${halos}
-      ${marks}
+      ${blobs}
       <g transform="translate(18,${H-26})">
         <line x1="0" y1="0" x2="${barPx.toFixed(1)}" y2="0" stroke="#b6a6d6" stroke-width="2"/>
         <line x1="0" y1="-4" x2="0" y2="4" stroke="#b6a6d6" stroke-width="2"/>
@@ -4910,8 +4908,8 @@ function tabMap(){
   <div class="dsc" style="margin-top:9px">${unknown.length?`<b>${unknown.length} of these is a genuine gap.</b> The suffix is guessable and the directory does not say, so the desk refuses to site it: a pin invented from an abbreviation looks exactly like a pin that was known, which is the one thing a map must never do. Fill the location in Names &amp; IDs, add the suffix to <b>PLACES</b>, and it appears above.`
     :`<b>Every one of these is excluded because it is not a place, not because the place is unknown.</b> Two are reseller trading accounts, which are the same people as their parent codes and would draw one man twice. Two are general downsell buckets, which are accounting destinations rather than persons. Two were entered as TBC, which is an admission rather than a location. There is no longer a single party on this book whose whereabouts the desk knows and fails to draw.`}</div></div>`;})():''}
   <h2 style="margin-top:18px">The gazetteer <span class="rule"></span></h2>
-  <div class="card"><table><thead><tr><th class="l">Suffix</th><th class="l">Place</th><th>Parties</th><th class="l">Coordinates</th><th>Precision</th><th class="l">Why it is believed</th></tr></thead><tbody>${placedRows}</tbody></table>
-  <div class="dsc" style="margin-top:9px"><b>Two different things are sourced in that last column, and they are worth keeping apart.</b> The NAME of each place comes from the party&rsquo;s own entry in Names &amp; IDs, quoted as it was typed, or from an order note for the seven that predate the directory. The COORDINATE comes from neither: the directory holds no coordinates, so each pair is a published centroid for the named locality and is cited as such. Nothing was inferred from an abbreviation, and every row reads <b>approximate</b> because every row is.</div></div>`;
+  <div class="card"><table><thead><tr><th class="l">Suffix</th><th>Parties</th><th class="l">Worth</th><th>Heat</th></tr></thead><tbody>${placedRows}</tbody></table>
+  <div class="dsc" style="margin-top:9px"><b>The name, the coordinates and the provenance are no longer here, and that is the point.</b> This desk is served publicly, so everything on it is readable by anyone holding the address, and a named neighbourhood sitting beside a party code identifies a customer far better than the code ever did on its own. The suffix stays because it is already inside every code and discloses nothing further. The rest moved to the directory on the laptop, beside the real names, where it can still be read when a new suffix needs siting. <b>The map itself keeps only position, rounded to about 1.1km</b>, which a heatmap blurs over in any case.</div></div>`;
 }
 
 /* ============ TAB: INVENTORY & MARGIN ============ */
@@ -6149,8 +6147,8 @@ function tabFinancials(){
 function phonePayload(){
   /* NAMES OFF, ALWAYS, WHATEVER THE SCREEN IS DOING. `revealed` defaults to TRUE since
      v217 so the directory opens readable, and ID() therefore returns a real name whenever
-     the directory is loaded. The first payload built this way carried "Chase Chris for
-     RM 90" and "Chase Ron for RM 80" straight out of actions(), bound for a URL this
+     the directory is loaded. The first payload built this way carried two REAL NAMES in "Chase <name> for
+     RM ..." lines straight out of actions(), bound for a URL this
      repo documents as public with no sign-in. Forcing the lock for the duration of the
      build is the only thing that makes the guarantee hold no matter who calls it. */
   const _reveal=revealed;
@@ -6222,7 +6220,7 @@ function phonePayloadLeaks(){
     'gross margin','bad debt','provision','free-to-sell','effective cost','/unit effective'];
   const hits=TERMS.filter(t=>p.indexOf(t)>=0);
   /* every real name the desk can currently see, checked against the payload. This is the
-     check that would have caught Chris and Ron, and it only works while the directory is
+     check that would have caught both of them, and it only works while the directory is
      loaded, which is exactly when the risk exists. */
   try{
     Object.keys(vaultNames||{}).forEach(code=>{
@@ -7615,7 +7613,7 @@ function renderReveal(){
       <div class="dsc" style="margin:7px 0 8px">A party is created <b>here</b>, by naming it, because a proper code is derived from a name and a place and this is the only panel that holds names. The code minted is the one the ledger carries from its first transaction, so there is <b>no placeholder and no re-key</b>.</div>
       <div style="display:flex;flex-direction:column;gap:6px">
         <input id="apName" placeholder="name" style="border:1px solid var(--line);border-radius:7px;padding:6px 8px;font-size:12px;color:var(--ink);background:#140c26">
-        <input id="apLoc" placeholder="location, e.g. Wangsa Maju" style="border:1px solid var(--line);border-radius:7px;padding:6px 8px;font-size:12px;color:var(--ink);background:#140c26">
+        <input id="apLoc" placeholder="location" style="border:1px solid var(--line);border-radius:7px;padding:6px 8px;font-size:12px;color:var(--ink);background:#140c26">
         <select id="apKind" style="border:1px solid var(--line);border-radius:7px;padding:6px 30px 6px 8px;font-size:12px;color:var(--ink);background-color:#140c26">
           <option value="customer">Customer &mdash; buys direct</option>
           <option value="reseller">Associate, resells for you &mdash; R2</option>
