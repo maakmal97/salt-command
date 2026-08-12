@@ -59,7 +59,7 @@ document.addEventListener('visibilitychange',function(){
    focused, no dialog open. Otherwise it offers a chip and waits to be tapped.
    The same tick retries a held entry, which is what gets a phone write to the cloud
    without waiting for the next open. */
-var SALT_BUILD_ID="401808db8e0051e9";
+var SALT_BUILD_ID="748199c798bc4951";
 var SALT_REV_MS=10000;
 (function(){
   var chip=null,timer=null;
@@ -2190,7 +2190,7 @@ const whiteboard=[
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{v:'v287',d:'12 Aug 2026',t:'THE v286 COMMIT LEFT THE WATERMARK BEHIND, AND THE PHONE COUNTED THREE ORDERS TWICE',n:['v286 folded four phone entries into the ledger and never moved QUEUE_COMMITTED, so three of them stayed above the mark and the overlay booked them a SECOND time on top of the rows that already carried them. <b>50 unit out and RM450 of cash counted twice</b>, and CE4-CHE&rsquo;s 2.5 unit drawn twice. Oil read minus 65 unit on the phone against the minus 15 the ledger states, and the ledger was right.','The mark moves to <b>2026-08-11T21:33:18.232Z</b>, which is salt_queue_cloud.json&rsquo;s own updated. That is the v274 rule applied to the cloud file rather than the laptop one, and it is not the clock: it sits after all four entries that file held and before the SP7-PUD buy queued at 08:47 today, so the four clear and <b>the buy survives</b> to be committed on its own run.','Nothing sits in the gap on the laptop side. salt_queue.json still reads updated 2026-08-11T11:20:59.607Z with zero rows, and an entry queued there since would have moved that stamp. The residual risk is unchanged and is stated rather than waved away: a second browser holding entries stamped before this instant that has never posted loses them.','The cloud build had never shipped either. The master went to v286 at 10:18 and public/index.html was still the v285 build seven hours later, so the phone was reading yesterday&rsquo;s ledger while the laptop read today&rsquo;s. Built, 66 of 66 assertions passed, deployed and pushed.']}];
+const evolution=[{v:'v288',d:'12 Aug 2026',t:'WRITES ARE GATED BY A KEY, READS STAY OPEN',n:['The desk is public to READ by decision, and that was never the whole exposure. Anyone with the URL could <b>POST</b> into the cloud queue, drain unions it into salt_queue_cloud.json and the daily run folds it in as real ledger rows, with no review step between. So a stranger could write into the book, not merely read it.','A write now carries <b>X-Salt-Key</b>, asked for once and kept on that device. Reads stay open, so nothing about reading the desk changes and Zero Trust stays off, which was the standing instruction. The key is not a password on the ledger: it closes writes and nothing else.','<b>It is dormant until the secret exists.</b> With SALT_WRITE_KEY unset the Worker accepts writes exactly as before, which is deliberate: a desk that can send the header has to reach the phone BEFORE the gate starts demanding it, or the lockout of 11 Aug repeats in a new costume. Ship first, arm second.','The laptop server never sees the header and does not care, so the desk behaves identically on the laptop. seed-vault and drain push through wrangler rather than HTTP, so neither is touched by the gate.']}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -2253,7 +2253,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='12 Aug 2026, 17:02 KL';
+const LAST_UPDATED='12 Aug 2026, 17:38 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -10960,13 +10960,35 @@ async function vaultLoad(){
 }
 async function vaultSave(){
   if(qSyncState!=='server')return false;               // double-clicked: localStorage only, export by hand
-  try{ const r=await fetch('vault',{method:'POST',headers:{'Content-Type':'application/json'},
+  try{ const r=await fetch('vault',{method:'POST',headers:qHeaders(),
       body:JSON.stringify({updated:(vaultLocalStamp=new Date().toISOString()),vault:NAME_VAULT,ids:newIds,locs:newLocs})});
     return r.ok&&(await r.json()).ok;
   }catch(e){ return false; }
 }
+/* THE WRITE KEY (v288). The cloud desk is public to read by decision, but a stranger with
+   the URL could POST into the queue and the daily run would fold it in as real rows. So a
+   write carries X-Salt-Key, held on this device only and asked for once. The laptop server
+   ignores the header entirely, and the Worker ignores it until its secret is set, so this
+   is inert on both until the day it is armed. The key is NOT a password on the ledger: it
+   stops writes, and anyone with the URL can still read the book. */
+function saltWriteKey(){ try{ return localStorage.getItem('saltWriteKey')||''; }catch(e){ return ''; } }
+function saltAskWriteKey(){
+  try{ const k=prompt('This desk needs its write key before it can save an entry.\n\nIt is asked for once and kept on this device.');
+    if(k){ localStorage.setItem('saltWriteKey',k); return k; }
+  }catch(e){}
+  return '';
+}
+function qHeaders(){
+  const h={'Content-Type':'application/json'}, k=saltWriteKey();
+  if(k)h['X-Salt-Key']=k;
+  return h;
+}
 async function qPost(){
-  try{ const r=await fetch('queue',{method:'POST',headers:{'Content-Type':'application/json'},body:qPayload()});
+  try{ let r=await fetch('queue',{method:'POST',headers:qHeaders(),body:qPayload()});
+    /* 401 means the gate is armed and this device has no key, or the wrong one. Ask, then
+       try once more. Once only: a wrong key looping would just ask for ever. */
+    if(r.status===401&&saltAskWriteKey()){ r=await fetch('queue',{method:'POST',headers:qHeaders(),body:qPayload()}); }
+    if(r.status===401){ qStatus('<b style="color:var(--crim)">The write key was not accepted</b> &mdash; the entry is held on this device. Reopen the desk to try again.'); return false; }
     if(!r.ok)throw new Error('server replied '+r.status);
     const j=await r.json();
     qStatus(window.SALT_CLOUD?('Pushed to the cloud queue &mdash; '+j.entries+' waiting for the daily run.'):('Saved <b>'+QFILE+'</b> to this folder &mdash; '+j.entries+' queued.'));

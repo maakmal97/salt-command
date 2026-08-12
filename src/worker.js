@@ -11,7 +11,12 @@
  * password, and auto-hide them, while the server only ever holds ciphertext. A POST that
  * is not that envelope shape is rejected, so a stray plaintext name cannot land here.
  *
- * AUTHENTICATION, AS AT 11 AUG 2026: THERE IS NONE, BY DECISION. Cloudflare Access was
+ * AUTHENTICATION, AS AT 12 AUG 2026: READS ARE OPEN, WRITES ARE GATED BY A SHARED KEY.
+ * See writeOk() below. The key lives in the SALT_WRITE_KEY secret and the phone holds it in
+ * localStorage after being asked once; with the secret unset the gate is dormant and the
+ * behaviour is exactly the 11 Aug posture described next. Zero Trust stays off either way.
+ *
+ * READS, AS AT 11 AUG 2026: THERE IS NO AUTHENTICATION, BY DECISION. Cloudflare Access was
  * removed and REQUIRE_ACCESS is "0" on the owner's instruction ("I want no zero trust
  * requirements right now"), so accessOk() below returns true unconditionally and every
  * path serves, read and write alike. That means POST /queue accepts an unauthenticated
@@ -77,6 +82,34 @@ function accessOk(request, env) {
   return !!request.headers.get("Cf-Access-Jwt-Assertion");
 }
 
+/* THE WRITE GATE (12 Aug 2026). Reads stay open, by the owner's standing decision; writes
+ * do not have to. A caller must present X-Salt-Key matching the SALT_WRITE_KEY secret, and
+ * the phone holds that key in localStorage after being asked for it once.
+ *
+ * IT IS DORMANT UNTIL THE SECRET EXISTS. With SALT_WRITE_KEY unset this returns true and
+ * nothing changes, which is deliberate: the desk that can send the header has to be live on
+ * the phone BEFORE the gate starts demanding it, or the owner locks himself out of his own
+ * queue exactly as the Access application did on 11 Aug. Ship the desk, then set the secret.
+ *
+ * WHAT IT IS AND IS NOT. It is a shared secret, so it stops a stranger with the URL writing
+ * into the ledger, which is the exposure that mattered: drain.mjs unions any POST into the
+ * queue and the daily run folds it in as real rows. It is NOT protection against someone who
+ * already has the key, and it is not Zero Trust. Reads are still world-readable on purpose.
+ *
+ * Compared over the whole string rather than with ===, so a wrong key cannot be found one
+ * character at a time by timing. The length is not hidden; that is not worth the complexity
+ * here, and a passphrase's length is not the secret. */
+function writeOk(request, env) {
+  const key = String(env.SALT_WRITE_KEY || "");
+  if (!key) return true;
+  const got = String(request.headers.get("X-Salt-Key") || "");
+  if (got.length !== key.length) return false;
+  let diff = 0;
+  for (let i = 0; i < key.length; i++) diff |= got.charCodeAt(i) ^ key.charCodeAt(i);
+  return diff === 0;
+}
+const needsKey = () => json({ ok: false, error: "write key required", writeKey: true }, 401);
+
 async function readQueuePost(request) {
   const body = await request.json();
   if (!body || typeof body !== "object") throw new Error("expected an object");
@@ -89,6 +122,7 @@ async function readQueuePost(request) {
 async function handleQueuePost(request, env) {
   if (!env.SALT_QUEUE) return json({ ok: false, error: "no KV binding" }, 500);
   if (!accessOk(request, env)) return json({ ok: false, error: "not authenticated" }, 401);
+  if (!writeOk(request, env)) return needsKey();
   let payload;
   try { payload = await readQueuePost(request); }
   catch (e) { return json({ ok: false, error: String(e && e.message || e) }, 400); }
@@ -144,6 +178,7 @@ async function handleVaultGet(env) {
 async function handleVaultPost(request, env) {
   if (!env.SALT_QUEUE) return json({ ok: false, error: "no KV binding" }, 500);
   if (!accessOk(request, env)) return json({ ok: false, error: "not authenticated" }, 401);
+  if (!writeOk(request, env)) return needsKey();
   let body;
   try { body = await request.json(); } catch (e) { return json({ ok: false, error: "bad json" }, 400); }
   const v = body && body.vault;

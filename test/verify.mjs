@@ -80,6 +80,60 @@ section("Worker — queue contract");
   ok(j.ok && j.device === "anon", "invalid device id falls back to 'anon'");
 }
 
+/* ---- 1b. Worker: the write gate ------------------------------------------------- */
+section("Worker — the write gate");
+{
+  const KEY = "a-passphrase-of-some-length";
+  const armed = (kv) => ({ ...mkEnv(kv), SALT_WRITE_KEY: KEY });
+  const one = [{ at: "2026-08-12T01:00:00Z", raw: "e1" }];
+
+  /* DORMANT is the state that must never regress. If the secret is unset the gate has to
+     be invisible, because arming it before the desk can send the header is the lockout. */
+  let kv = new KV();
+  let r = await worker.fetch(postQ({ device: "d1", queue: one }), mkEnv(kv));
+  ok(r.status === 200, "no SALT_WRITE_KEY: the gate is dormant and a POST is accepted");
+
+  kv = new KV();
+  r = await worker.fetch(postQ({ device: "d1", queue: one }), armed(kv));
+  let j = await r.json();
+  ok(r.status === 401 && j.writeKey === true, "armed, no header → 401 with writeKey:true");
+  ok(kv.m.size === 0, "a refused POST writes nothing to KV");
+
+  r = await worker.fetch(postQ({ device: "d1", queue: one }, { "X-Salt-Key": "wrong-but-same-length!!" }), armed(kv));
+  ok(r.status === 401, "armed, wrong key of another length → 401");
+
+  r = await worker.fetch(postQ({ device: "d1", queue: one }, { "X-Salt-Key": "a-passphrase-of-some-lengtX" }), armed(kv));
+  ok(r.status === 401, "armed, wrong key of the SAME length → 401");
+
+  r = await worker.fetch(postQ({ device: "d1", queue: one }, { "X-Salt-Key": KEY }), armed(kv));
+  j = await r.json();
+  ok(r.status === 200 && j.ok && j.entries === 1, "armed, correct key → accepted");
+  ok(kv.m.has("q:d1"), "and it reached KV");
+
+  /* Reads stay open. This is the owner's standing decision and the gate must not creep. */
+  r = await worker.fetch(req("/queue"), armed(kv));
+  ok(r.status === 200, "armed: GET /queue is still open");
+  r = await worker.fetch(req("/queue/ping"), armed(kv));
+  ok(r.status === 200, "armed: the ping is still open");
+  r = await worker.fetch(req("/index.html"), armed(kv));
+  ok(r.status === 200, "armed: assets are still open");
+
+  /* The vault write is gated too, or the one door left open is the one holding names. */
+  const envelope = { v: 1, salt: "s", iv: "i", ct: "c" };
+  r = await worker.fetch(req("/vault", {
+    method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ vault: envelope })
+  }), armed(kv));
+  ok(r.status === 401, "armed: POST /vault without the key → 401");
+
+  r = await worker.fetch(req("/vault", {
+    method: "POST", headers: { "content-type": "application/json", "X-Salt-Key": KEY }, body: JSON.stringify({ vault: envelope })
+  }), armed(kv));
+  ok(r.status === 200, "armed: POST /vault with the key → accepted");
+
+  r = await worker.fetch(req("/vault"), armed(kv));
+  ok(r.status === 200, "armed: GET /vault is still open (ciphertext only)");
+}
+
 /* ---- 2. Worker: vault syncs ciphertext, plaintext never does -------------------- */
 section("Worker — vault syncs ciphertext, plaintext never does");
 {
