@@ -134,6 +134,54 @@ section("Worker — the write gate");
   ok(r.status === 200, "armed: GET /vault is still open (ciphertext only)");
 }
 
+/* ---- 1c. The phone app at the root, the desk at /desk (v290) --------------------- */
+section("The phone app, and the desk at /desk");
+{
+  const kv = new KV(), env = mkEnv(kv);
+
+  let r = await worker.fetch(req("/desk"), env);
+  ok(r.status === 200, "GET /desk answers");
+  ok((await r.text()) === "ASSET:/desk.html", "and it serves desk.html, not the root");
+
+  const app = readFileSync(join(REPO, "public", "index.html"), "utf8");
+
+  /* The root must be the APP. If a stray build ever writes the desk here again, every
+     one of these fails at once rather than the phone quietly loading 900 KB. */
+  ok(!app.includes("BEGIN cloud/PWA"), "the root is the app, not the built desk");
+  ok(app.length < 60 * 1024, `the app is small (${(app.length / 1024).toFixed(0)} KB, the desk is ~900 KB)`);
+  ok(app.includes("fetch('data.json'"), "the app reads its figures from data.json");
+  ok(app.includes("X-Salt-Key"), "the app sends the write key");
+  ok(app.includes("queueCommitted"), "the app self-clears against the watermark");
+  ok(app.includes('href="./desk"'), "the app links to the full desk");
+  ok(!/\bsrc\s*=\s*["']https?:\/\//i.test(app) && !/url\(\s*["']?https?:\/\//i.test(app),
+     "the app loads nothing off a third-party origin");
+  ok(/lang="en-GB"/.test(app), "the app declares en-GB");
+  ok(app.indexOf("—") < 0, "the app carries no em-dash");
+
+  /* THE PAYLOAD CONTRACT. The app holds an entry until the watermark passes it, so a
+     data.json without queueCommitted would make it re-post committed rows for ever. */
+  const data = JSON.parse(readFileSync(join(REPO, "public", "data.json"), "utf8"));
+  ok("queueCommitted" in data, "data.json carries the queue watermark");
+  ok(typeof data.rev === "string" && data.rev.length === 16, "data.json carries the build id");
+  ok(Array.isArray(data.parties) && Array.isArray(data.suppliers), "data.json carries both party lists");
+  ok(data.position && data.position.salt && data.position.oil, "data.json carries both books");
+
+  /* The service worker must never cache the figures or mistake /desk for the shell. */
+  const sw = readFileSync(join(REPO, "public", "sw.js"), "utf8");
+  ok(/data\\?\.json/.test(sw), "sw.js never caches data.json");
+  ok(sw.includes('url.pathname === "/"'), "sw.js caches only the root as the offline shell");
+
+  // the app's inline script must parse
+  mkdirSync(join(REPO, "test", "tmp"), { recursive: true });
+  const m = /<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/i.exec(app);
+  const f = join(REPO, "test", "tmp", "app.js");
+  writeFileSync(f, m ? m[1] : "");
+  let appOk = true;
+  try { execFileSync("node", ["--check", f], { stdio: "pipe" }); } catch (e) { appOk = false; }
+  ok(appOk, "the app's inline script parses");
+  rmSync(join(REPO, "test", "tmp"), { recursive: true, force: true });
+}
+
 /* ---- 2. Worker: vault syncs ciphertext, plaintext never does -------------------- */
 section("Worker — vault syncs ciphertext, plaintext never does");
 {
@@ -228,7 +276,10 @@ section("Build — patches, scripts, no externals");
   ok(built, "build.mjs exits 0");
 
   if (built) {
-    const html = readFileSync(join(REPO, "public", "index.html"), "utf8");
+    /* THE BUILT DESK MOVED TO desk.html AT v290, because the root is the phone app now.
+       This read is the whole reason the move is safe to make: point it at the wrong file
+       and every assertion below silently passes against the app instead. */
+    const html = readFileSync(join(REPO, "public", "desk.html"), "utf8");
     ok(html.includes("BEGIN cloud/PWA"), "PWA head block injected");
     ok(html.includes('<link rel="manifest"'), "manifest linked");
     ok(html.includes("serviceWorker") && html.includes("register('sw.js')"), "service worker registered");

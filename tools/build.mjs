@@ -18,7 +18,12 @@ import { fileURLToPath } from "node:url";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO = resolve(HERE, "..");
-const OUT = resolve(REPO, "public", "index.html");
+/* THE BUILT DESK IS NO LONGER THE ROOT (v290). public/index.html is now the hand-written
+   phone app and is SOURCE, not output; the 900 KB desk built from the master lands here and
+   the Worker serves it at /desk. Editing public/desk.html by hand is still pointless, for
+   exactly the old reason: the next build overwrites it. */
+const OUT = resolve(REPO, "public", "desk.html");
+const APP = resolve(REPO, "public", "index.html");
 const REV = resolve(REPO, "public", "rev.json");
 
 /* The token the build id is written into. It is a placeholder while the hash is taken,
@@ -207,7 +212,13 @@ if (externals.length) {
    changes whenever anything else does and never chases its own tail. rev.json is the
    only thing the ten-second poll fetches: a few dozen bytes, served no-store, so the
    cost of being current is a rounding error against the 800 KB desk. */
-const BUILD_ID = createHash("sha256").update(src).digest("hex").slice(0, 16);
+/* THE ID COVERS BOTH SURFACES. The phone polls /rev and reloads when this changes, and
+   since v290 there are two things it could be running: the app at / and the desk at /desk.
+   Hashing the desk alone would leave an app-only change invisible to the poll, so a phone
+   would sit on the old app until something in the master happened to move. */
+let appSrc = "";
+try { appSrc = readFileSync(APP, "utf8"); } catch (e) { /* first build, before the app exists */ }
+const BUILD_ID = createHash("sha256").update(src).update(" app ").update(appSrc).digest("hex").slice(0, 16);
 if (src.split(IDTOKEN).length - 1 !== 1) {
   console.error(`BUILD FAILED: expected the build-id token exactly once, found ${src.split(IDTOKEN).length - 1}.`);
   console.error("  The freshness patch in PWA_BLOCK is the only thing that may carry it.");
@@ -258,6 +269,15 @@ try {
     leaks.forEach((l) => console.error("  - " + l));
     process.exit(1);
   }
+  /* THE WATERMARK AND THE BUILD ID RIDE ALONG (v290). The phone app holds an entry locally
+     until it has been committed, exactly as the desk does, and it needs the same mark to
+     know when to let one go; without it the app would re-post committed entries for ever,
+     because a device's KV key is a REPLACE of its whole queue. Added after the leak scan
+     deliberately and safely: both are read from the build itself, so one is an ISO stamp
+     and the other a hex hash by construction, and neither can carry a name or a cost. */
+  payload.queueCommitted = (src.match(/const QUEUE_COMMITTED='([^']*)'/) || [])[1] || null;
+  payload.rev = BUILD_ID;
+
   const dataOut = resolve(REPO, "public", "data.json");
   const json = JSON.stringify(payload);
   writeFileSync(dataOut, json + "\n");

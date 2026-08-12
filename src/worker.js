@@ -220,6 +220,15 @@ export default {
     }
     if (p === "/bye") return json({ ok: true });            // no server to stop; answer so the beacon is quiet
 
+    /* THE FULL DESK, at a path (v290). The root is the phone app now; the 900 KB desk built
+     * from the master stays reachable here so nothing the app has not rebuilt becomes
+     * laptop-only. Served through ASSETS by its real filename, so the app keeps the root. */
+    if (p === "/desk") {
+      const res = await env.ASSETS.fetch(new Request(new URL("/desk.html", url), { method: "GET" }));
+      if (res && res.ok) return new Response(res.body, { status: 200, headers: res.headers });
+      return json({ ok: false, error: "the desk is not built" }, 404);
+    }
+
     /* What build is live. The phone polls this every ten seconds and reloads when the id
      * differs from the one baked into the page it is running, which is how a deploy from
      * the laptop reaches a phone already sitting open. It is deliberately the smallest
