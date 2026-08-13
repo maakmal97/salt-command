@@ -1,6 +1,6 @@
 {
- "v": "v296",
- "stamped": "13 Aug 2026, 18:49 KL",
+ "v": "v297",
+ "stamped": "13 Aug 2026, 19:06 KL",
  "source": "Cow-Crm01 salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -41,7 +41,7 @@
     "stated": 20
    }
   },
-  "STATED_STOCK": 0.3,
+  "STATED_STOCK": 1.3,
   "purchases": [
    {
     "date": "2026-06-27",
@@ -1329,7 +1329,7 @@
     "total": 850,
     "cash": 0,
     "deliveredQty": 0,
-    "note": "PENDING, and PLANNED FOR 07 AUG rather than agreed on it: the date is the intention, not a movement. Nothing paid and nothing delivered, so it counts nowhere and the 12.5 unit stays free to sell until it moves. <b>An exact repeat of his 15 Jul order</b>, same 12.5 unit, same RM850, same RM68/unit. <b>AND IT IS NO LONGER THE PROBLEM IT WAS.</b> This note said for days that RM850 sat RM102 UNDER FLOOR against a floor of RM952.06. Both figures were captured when the leak was worse and the cost basis was frozen; the floor at 12.5 unit is now <b>RM824.95</b>, so <b>RM850 clears it by RM25.05</b> and sits RM110 under the good price of RM960. The order never got worse; the cost base moved twice under it, first against it and then back. The leak now stands at 17.18% after four units were traced to the founding member on 10 Aug, and the cost is unlocked, so this figure follows the book rather than a snapshot. What it still does: at RM68/unit against the RM47 lot actually on the shelf it makes RM21/unit, RM262.50 on the lot, so it is cash-positive and comfortably above what the salt cost. What it does now do: cover the RM56.99 a unit it costs to REPLACE that salt, plus the 15% markup the single floor asks. There is no wholesale band any more, and no separate floor. <b>Left visible rather than suppressed, and left pending rather than repriced.</b> He is the second largest customer on the book at RM1,566 and this lot is 31% of the free shelf, so it is a real decision and not an arithmetic one: hold the relationship at RM850, or take it to RM955 and find out. Nothing is booked either way until it moves."
+    "note": "PENDING, and PLANNED FOR 07 AUG rather than agreed on it: the date is the intention, not a movement. Nothing paid and nothing delivered, so it counts nowhere and the 12.5 unit stays free to sell until it moves. <b>An exact repeat of his 15 Jul order</b>, same 12.5 unit, same RM850, same RM68/unit. <b>AND IT IS NO LONGER THE PROBLEM IT WAS.</b> This note said for days that RM850 sat RM102 UNDER FLOOR against a floor of RM952.06, then that it cleared a RM824.95 floor by RM25.05. <b>BOTH ARE STALE, AND IT IS BACK UNDER.</b> The 12 Aug hand count of 1.30 took the leak from 17.18% to 20.28%, the CR3-PUD unit gave 0.42% of that back, and the floor at 12.5 unit now stands at <b>RM852.40</b>, so <b>RM850 is RM2.40 SHORT of it</b>. Read live off floorTotal(12.5) on 13 Aug, not computed by hand. The figure has now crossed the order twice in a fortnight without a single thing changing in the order itself, which is the whole argument for never printing a floor. The order never got worse; the cost base moved twice under it, first against it and then back. The leak now stands at 17.18% after four units were traced to the founding member on 10 Aug, and the cost is unlocked, so this figure follows the book rather than a snapshot. What it still does: at RM68/unit against the RM47 lot actually on the shelf it makes RM21/unit, RM262.50 on the lot, so it is cash-positive and comfortably above what the salt cost. What it does now do: cover the RM56.99 a unit it costs to REPLACE that salt, plus the 15% markup the single floor asks. There is no wholesale band any more, and no separate floor. <b>Left visible rather than suppressed, and left pending rather than repriced.</b> He is the second largest customer on the book at RM1,566 and this lot is 31% of the free shelf, so it is a real decision and not an arithmetic one: hold the relationship at RM850, or take it to RM955 and find out. Nothing is booked either way until it moves."
    },
    {
     "date": "2026-08-08",
@@ -1489,18 +1489,18 @@
     "note": "Half a unit at RM100 a unit, paid and collected on the day. His SEVENTH order at exactly RM100 a unit, which makes it the steadiest rate on the book by some distance. Drawn from the RM47 lot, so RM26.50 on RM50 at 53%. <b>THE DATE IS ASSUMED:</b> the instruction gave no date and reported the order completed, so it is booked today, 12 Aug. Correct it and the FIFO lot follows, though every salt lot since 28 Jul is RM47 so the cost does not move."
    },
    {
-    "date": "2026-08-13",
+    "date": "2026-08-11",
     "customer": "CR3-PUD",
     "qty": 1,
     "total": 110,
     "cost": 47,
     "cash": 110,
     "deliveredQty": 1,
-    "deliveredOn": "2026-08-13",
-    "paidOn": "2026-08-13",
+    "deliveredOn": "2026-08-11",
+    "paidOn": "2026-08-11",
     "ref": "CN6-WM",
     "refKg": 1,
-    "note": "<b>A NEW CUSTOMER, OPENED AT CR3-PUD, AND CN6-WM BROUGHT HIM.</b> 1 unit for RM110, paid and delivered on the day with nothing owed. <b>The introduction is tagged R3 to CN6-WM in full</b>, which is what a first order from a referred customer carries and what no later order of his will: the credit is for bringing him, not for his continued trade, and he buys on his own line from here. RM110 is a strong opening rate. It sits RM10 under the RM120 a T3 buyer with no history is asked and RM10 over the RM100 anchor, so an introductory concession was given and it was a small one; CY2-NIL opened at RM115 a unit on the 11th, so two new names in three days have both taken above-anchor rates. On the RM47 lot it returns RM63 a unit, RM63 on the order at 57.3%. He is an ordinary retail customer and not an associate, so he carries the 1 unit credit cap; nothing is owed, so the cap is untouched. <b>THE DATE IS ASSUMED:</b> the instruction gave no date and reported the order paid and delivered, so it is booked today, 13 Aug. <b>It also takes the shelf to 0.30 unit</b>, against 12.5 promised. The name and the location are in the directory and never in this file."
+    "note": "<b>A NEW CUSTOMER, OPENED AT CR3-PUD, AND CN6-WM BROUGHT HIM.</b> 1 unit for RM110, paid and delivered on the day with nothing owed. <b>The introduction is tagged R3 to CN6-WM in full</b>, which is what a first order from a referred customer carries and what no later order of his will: the credit is for bringing him, not for his continued trade, and he buys on his own line from here. RM110 is a strong opening rate. It sits RM10 under the RM120 a T3 buyer with no history is asked and RM10 over the RM100 anchor, so an introductory concession was given and it was a small one; CY2-NIL opened at RM115 a unit on the same day, so two new names on one day both took above-anchor rates. On the RM47 lot it returns RM63 a unit, RM63 on the order at 57.3%. He is an ordinary retail customer and not an associate, so he carries the 1 unit credit cap; nothing is owed, so the cap is untouched. <b>THE DATE IS ASSUMED, AND THE ASSUMPTION CHANGED ONCE.</b> The instruction gave no date, so it was first booked on 13 Aug, the day it was reported. He then corrected it: the unit moved BEFORE the 12 Aug count of 1.30. A count is read as at the START of its date on this desk, so the latest date that sits INSIDE that count is the 11th, and that is where it is booked. Correct it to any earlier day and nothing moves but the row: every salt lot since 28 Jul is RM47, so the cost does not follow. <b>THE SHELF DOES NOT MOVE AND THE PLUG DOES.</b> The count already absorbed this unit, so 1.30 stands; what changes is that a unit the plug was carrying as unexplained loss is now explained as a sale, and the leak falls with it. The name and the location are in the directory and never in this file."
    }
   ],
   "contacts": [
