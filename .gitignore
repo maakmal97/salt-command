@@ -21,3 +21,5 @@ test/tmp/
 
 # Local Claude Code settings, personal to this machine
 .claude/settings.local.json
+migrations/.seed.generated.sql
+migrations/.query.sql

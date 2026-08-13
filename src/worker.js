@@ -191,6 +191,55 @@ async function handleVaultPost(request, env) {
   return json({ ok: true });
 }
 
+/* THE LEDGER STORE, READ ONLY (v294).
+ *
+ * The book now also lives in D1, seeded from the master by tools/d1.mjs. This serves it.
+ *
+ * IT IS A MIRROR AND IT SAYS SO IN EVERY RESPONSE. The Cow-Crm01 master is still the source
+ * of truth: the desk computes from its own arrays, the daily run still folds the queue into
+ * the master, and nothing here writes. The direction flips only once the store is proven to
+ * reproduce the desk's figures exactly, and until then a reader that quietly preferred this
+ * endpoint would be reading a copy that can silently fall behind. `snapshot` carries the
+ * desk version and the seed time so a caller can tell how far behind it is.
+ *
+ * There is no write path on purpose. Adding one before the proof would create exactly the
+ * second source of truth this whole exercise exists to remove.
+ */
+async function handleLedger(env, url) {
+  if (!env.SALT_LEDGER) return json({ ok: false, error: "no ledger binding" }, 503);
+  const rest = url.pathname.replace(/^\/ledger\/?/, "").replace(/\/+$/, "");
+  try {
+    if (!rest) {
+      const snap = await env.SALT_LEDGER.prepare("SELECT v,stamped,sha,rows,at FROM snapshot WHERE one=1").first();
+      if (!snap) return json({ ok: true, seeded: false, note: "the store is empty; seed it with tools/d1.mjs --seed" });
+      const counts = await env.SALT_LEDGER.prepare("SELECT collection, COUNT(*) n FROM entry GROUP BY collection ORDER BY collection").all();
+      const by = {};
+      for (const r of (counts.results || [])) by[r.collection] = r.n;
+      return json({ ok: true, seeded: true, snapshot: snap, counts: by,
+        source: "mirror of the Cow-Crm01 master; that desk is still authoritative" });
+    }
+    if (rest === "state") {
+      const rs = await env.SALT_LEDGER.prepare("SELECT key,doc FROM state ORDER BY key").all();
+      const out = {};
+      for (const r of (rs.results || [])) { if (String(r.key).startsWith("__")) continue; out[r.key] = JSON.parse(r.doc); }
+      return json({ ok: true, state: out });
+    }
+    if (!/^[A-Za-z_]{1,32}$/.test(rest)) return json({ ok: false, error: "not a collection" }, 404);
+    const rs = await env.SALT_LEDGER.prepare("SELECT doc FROM entry WHERE collection=?1 ORDER BY seq").bind(rest).all();
+    const rows = (rs.results || []).map((r) => JSON.parse(r.doc));
+    if (!rows.length) {
+      /* AN EMPTY COLLECTION IS NOT A MISSING ONE. selfUseLog and lostDemand are both empty
+         today; answering 404 for them would report the book as not having the concept. */
+      const known = await env.SALT_LEDGER.prepare("SELECT doc FROM state WHERE key='__collections'").first();
+      const list = known ? JSON.parse(known.doc) : [];
+      if (!list.includes(rest)) return json({ ok: false, error: "unknown collection: " + rest }, 404);
+    }
+    return json({ ok: true, collection: rest, entries: rows.length, rows });
+  } catch (e) {
+    return json({ ok: false, error: String((e && e.message) || e) }, 500);
+  }
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -202,7 +251,8 @@ export default {
      * being off at the dashboard must read as an outage, never as an open desk.
      * The API paths answer JSON so the desk's ping-fail path degrades cleanly. */
     if (!accessOk(request, env)) {
-      if (p === "/queue" || p === "/queue/ping" || p === "/vault" || p === "/bio" || p === "/bye" || p === "/rev")
+      if (p === "/queue" || p === "/queue/ping" || p === "/vault" || p === "/bio" || p === "/bye"
+        || p === "/rev" || p === "/ledger" || p.startsWith("/ledger/"))
         return json({ ok: false, error: "not authenticated" }, 401);
       return locked();
     }
@@ -242,6 +292,11 @@ export default {
       } catch (e) {
         return json({ ok: false, error: "no build manifest" }, 404);
       }
+    }
+    /* The ledger store. READ ONLY, and no POST branch exists on purpose: see handleLedger. */
+    if (p === "/ledger" || p.startsWith("/ledger/")) {
+      if (m === "GET") return handleLedger(env, url);
+      return json({ ok: false, error: "the ledger store is read-only; the master is still the source" }, 405);
     }
     if (p === "/vault") {
       if (m === "GET") return handleVaultGet(env);               // ciphertext only

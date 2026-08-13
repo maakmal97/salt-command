@@ -26,6 +26,22 @@
 			"remote": true
 		}
 	],
+	// THE LEDGER STORE (v294). The first step of moving the book out of the desk file
+	// and into something that can be read and written without a rebuild. It is D1 and
+	// not KV on purpose: KV rewrites a whole blob and last write wins, so two devices
+	// posting at once silently lose a row, which a ledger must never do.
+	//
+	// IT IS A MIRROR, NOT THE SOURCE. The Cow-Crm01 master is still authoritative and
+	// remains so until the store is proven to reproduce its figures exactly. Seed it
+	// with `node tools/d1.mjs --seed`; nothing writes to it from the Worker yet.
+	"d1_databases":
+	[
+		{
+			"binding": "SALT_LEDGER",
+			"database_name": "salt_ledger",
+			"database_id": "ba9dbf0f-00dc-497f-9a86-82194af595c7"
+		}
+	],
 	// The Worker-side gate. "1" makes the Worker refuse EVERY request, reads and
 	// writes both, that did not arrive through Cloudflare Access.
 	//

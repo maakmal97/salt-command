@@ -134,6 +134,88 @@ section("Worker — the write gate");
   ok(r.status === 200, "armed: GET /vault is still open (ciphertext only)");
 }
 
+/* ---- 1f. The ledger store at /ledger, read only (v294) --------------------------- */
+section("The ledger store at /ledger");
+{
+  /* A D1 stand-in that answers the five statements handleLedger actually issues. Enough to
+     prove the routing, the shapes and the refusals without a network or a database. */
+  const mkD1 = (data) => ({
+    prepare(sql) {
+      const st = {
+        _b: [],
+        bind(...a) { st._b = a; return st; },
+        async first() {
+          if (sql.includes("FROM snapshot")) return data.snapshot || null;
+          if (sql.includes("__collections")) return data.collections ? { doc: JSON.stringify(data.collections) } : null;
+          return null;
+        },
+        async all() {
+          if (sql.includes("GROUP BY collection")) {
+            const by = {};
+            for (const e of data.entry || []) by[e.collection] = (by[e.collection] || 0) + 1;
+            return { results: Object.keys(by).sort().map((k) => ({ collection: k, n: by[k] })) };
+          }
+          if (sql.includes("FROM state")) {
+            return { results: Object.entries(data.state || {}).map(([key, v]) => ({ key, doc: JSON.stringify(v) })) };
+          }
+          if (sql.includes("FROM entry WHERE collection")) {
+            return { results: (data.entry || []).filter((e) => e.collection === st._b[0]).map((e) => ({ doc: JSON.stringify(e.doc) })) };
+          }
+          return { results: [] };
+        },
+      };
+      return st;
+    },
+  });
+  const seeded = {
+    snapshot: { v: "v294", stamped: "13 Aug 2026, 00:30 KL", sha: "abc123", rows: 99, at: "2026-08-13T10:00:00Z" },
+    collections: ["sales", "purchases", "selfUseLog"],
+    entry: [
+      { collection: "sales", doc: { date: "2026-08-11", customer: "CY2-NIL", qty: 2, total: 230 } },
+      { collection: "purchases", doc: { date: "2026-08-11", supplier: "SP7-PUD", qty: 50, total: 350 } },
+    ],
+    state: { STATED_STOCK: 1.3, roster: ["CY2-NIL"], __collections: ["sales", "purchases", "selfUseLog"] },
+  };
+  const withDb = (d) => ({ ...mkEnv(new KV()), SALT_LEDGER: mkD1(d) });
+
+  let r = await worker.fetch(req("/ledger"), mkEnv(new KV()));
+  ok(r.status === 503, "no D1 binding → 503 rather than a confident empty answer");
+
+  r = await worker.fetch(req("/ledger"), withDb({}));
+  let j = await r.json();
+  ok(r.status === 200 && j.seeded === false, "an unseeded store says so instead of pretending");
+
+  r = await worker.fetch(req("/ledger"), withDb(seeded));
+  j = await r.json();
+  ok(j.ok && j.seeded && j.snapshot.v === "v294", "GET /ledger returns the snapshot it was seeded from");
+  ok(j.counts.sales === 1 && j.counts.purchases === 1, "and a count per collection");
+  ok(/still authoritative/.test(j.source || ""), "and says in every response that the master is the source");
+
+  r = await worker.fetch(req("/ledger/sales"), withDb(seeded));
+  j = await r.json();
+  ok(j.ok && j.entries === 1 && j.rows[0].customer === "CY2-NIL", "GET /ledger/sales returns the rows");
+
+  /* An empty collection is not a missing one. */
+  r = await worker.fetch(req("/ledger/selfUseLog"), withDb(seeded));
+  j = await r.json();
+  ok(r.status === 200 && j.ok && j.entries === 0, "a known but empty collection answers 200 with no rows");
+
+  r = await worker.fetch(req("/ledger/nonsense"), withDb(seeded));
+  ok(r.status === 404, "an unknown collection is a 404");
+
+  r = await worker.fetch(req("/ledger/state"), withDb(seeded));
+  j = await r.json();
+  ok(j.ok && j.state.STATED_STOCK === 1.3, "GET /ledger/state returns the singletons");
+  ok(!("__collections" in j.state), "and hides the bookkeeping key");
+
+  /* NO WRITE PATH. Adding one before the store is proven would create the second source of
+     truth this whole exercise exists to remove. */
+  r = await worker.fetch(req("/ledger", { method: "POST", body: "{}" }), withDb(seeded));
+  ok(r.status === 405, "POST /ledger is refused: the store is read-only");
+  ok(!readFileSync(join(REPO, "src", "worker.js"), "utf8").includes("INSERT INTO entry"),
+     "and the Worker carries no insert of any kind");
+}
+
 /* ---- 1d. The ledger extract, the first step toward one source of truth ----------- */
 section("Ledger extract");
 {
