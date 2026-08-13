@@ -1,6 +1,6 @@
 {
- "v": "v297",
- "stamped": "13 Aug 2026, 19:06 KL",
+ "v": "v298",
+ "stamped": "13 Aug 2026, 19:22 KL",
  "source": "Cow-Crm01 salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -1489,18 +1489,18 @@
     "note": "Half a unit at RM100 a unit, paid and collected on the day. His SEVENTH order at exactly RM100 a unit, which makes it the steadiest rate on the book by some distance. Drawn from the RM47 lot, so RM26.50 on RM50 at 53%. <b>THE DATE IS ASSUMED:</b> the instruction gave no date and reported the order completed, so it is booked today, 12 Aug. Correct it and the FIFO lot follows, though every salt lot since 28 Jul is RM47 so the cost does not move."
    },
    {
-    "date": "2026-08-11",
+    "date": "2026-08-12",
     "customer": "CR3-PUD",
     "qty": 1,
     "total": 110,
     "cost": 47,
     "cash": 110,
     "deliveredQty": 1,
-    "deliveredOn": "2026-08-11",
-    "paidOn": "2026-08-11",
+    "deliveredOn": "2026-08-12",
+    "paidOn": "2026-08-12",
     "ref": "CN6-WM",
     "refKg": 1,
-    "note": "<b>A NEW CUSTOMER, OPENED AT CR3-PUD, AND CN6-WM BROUGHT HIM.</b> 1 unit for RM110, paid and delivered on the day with nothing owed. <b>The introduction is tagged R3 to CN6-WM in full</b>, which is what a first order from a referred customer carries and what no later order of his will: the credit is for bringing him, not for his continued trade, and he buys on his own line from here. RM110 is a strong opening rate. It sits RM10 under the RM120 a T3 buyer with no history is asked and RM10 over the RM100 anchor, so an introductory concession was given and it was a small one; CY2-NIL opened at RM115 a unit on the same day, so two new names on one day both took above-anchor rates. On the RM47 lot it returns RM63 a unit, RM63 on the order at 57.3%. He is an ordinary retail customer and not an associate, so he carries the 1 unit credit cap; nothing is owed, so the cap is untouched. <b>THE DATE IS ASSUMED, AND THE ASSUMPTION CHANGED ONCE.</b> The instruction gave no date, so it was first booked on 13 Aug, the day it was reported. He then corrected it: the unit moved BEFORE the 12 Aug count of 1.30. A count is read as at the START of its date on this desk, so the latest date that sits INSIDE that count is the 11th, and that is where it is booked. Correct it to any earlier day and nothing moves but the row: every salt lot since 28 Jul is RM47, so the cost does not follow. <b>THE SHELF DOES NOT MOVE AND THE PLUG DOES.</b> The count already absorbed this unit, so 1.30 stands; what changes is that a unit the plug was carrying as unexplained loss is now explained as a sale, and the leak falls with it. The name and the location are in the directory and never in this file."
+    "note": "<b>A NEW CUSTOMER, OPENED AT CR3-PUD, AND CN6-WM BROUGHT HIM.</b> 1 unit for RM110, paid and delivered on the day with nothing owed. <b>The introduction is tagged R3 to CN6-WM in full</b>, which is what a first order from a referred customer carries and what no later order of his will: the credit is for bringing him, not for his continued trade, and he buys on his own line from here. RM110 is a strong opening rate. It sits RM10 under the RM120 a T3 buyer with no history is asked and RM10 over the RM100 anchor, so an introductory concession was given and it was a small one; CY2-NIL opened at RM115 a unit the day before, so two new names in two days both took above-anchor rates. On the RM47 lot it returns RM63 a unit, RM63 on the order at 57.3%. He is an ordinary retail customer and not an associate, so he carries the 1 unit credit cap; nothing is owed, so the cap is untouched. <b>THE DATE IS STATED: 12 AUG, AND IT SITS INSIDE THAT DAY&rsquo;S COUNT.</b> It was first booked on the 13th, the day it was reported, then moved to the 11th on his word that it preceded the count, then fixed at the 12th when he gave the day. <b>SO THIS COUNT IS AN EXCEPTION TO THE START-OF-DATE RULE, AND THAT IS THE POINT OF SAYING SO.</b> This desk reads a count as at the START of its date, which is why deliveries dated the same day normally come OFF it. Not here: the 1.30 was counted at the END of the 12th, after this unit had gone, and he has said so plainly. Anyone applying the usual rule to these two rows would take the unit off the shelf a second time and put the shelf at 0.30, which is exactly the mistake v296 made and v297 undid. <b>THE SHELF DOES NOT MOVE AND THE PLUG DOES.</b> The count already absorbed this unit, so 1.30 stands; what changes is that a unit the plug was carrying as unexplained loss is now explained as a sale, and the leak falls with it. The FIFO lot does not follow the date either way: every salt lot since 28 Jul is RM47. The name and the location are in the directory and never in this file."
    }
   ],
   "contacts": [
