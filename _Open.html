@@ -46,9 +46,9 @@ code{ font-family:Consolas,monospace; font-size:11.5px; background:#EEF1F5;
 </header>
 <a class="row master" href="file:///C:/Users/maakm/Claude/_MasterOpen.html"><span class="nm">All workstreams</span><span class="ds">every project, on tabs</span><span class="tag">master</span></a>
 <h2>Most recent</h2>
-<a class="row primary" href="file:///C:/Users/maakm/Claude/Code/salt-command/public/data.json" data-f="data.json"><span class="nm">data.json</span><span class="ds">12 Aug 2026, 23:39 &middot; 2 KB</span><span class="tag">json</span></a>
-<a class="row primary" href="file:///C:/Users/maakm/Claude/Code/salt-command/public/rev.json" data-f="rev.json"><span class="nm">rev.json</span><span class="ds">12 Aug 2026, 23:39 &middot; 82 B</span><span class="tag">json</span></a>
-<a class="row primary" href="file:///C:/Users/maakm/Claude/Code/salt-command/public/desk.html" data-f="desk.html"><span class="nm">desk.html</span><span class="ds">12 Aug 2026, 23:39 &middot; 932 KB</span><span class="tag">html</span></a>
+<a class="row primary" href="file:///C:/Users/maakm/Claude/Code/salt-command/public/data.json" data-f="data.json"><span class="nm">data.json</span><span class="ds">12 Aug 2026, 23:40 &middot; 2 KB</span><span class="tag">json</span></a>
+<a class="row primary" href="file:///C:/Users/maakm/Claude/Code/salt-command/public/rev.json" data-f="rev.json"><span class="nm">rev.json</span><span class="ds">12 Aug 2026, 23:40 &middot; 82 B</span><span class="tag">json</span></a>
+<a class="row primary" href="file:///C:/Users/maakm/Claude/Code/salt-command/public/desk.html" data-f="desk.html"><span class="nm">desk.html</span><span class="ds">12 Aug 2026, 23:40 &middot; 933 KB</span><span class="tag">html</span></a>
 <a class="row primary" href="file:///C:/Users/maakm/Claude/Code/salt-command/ledger/ledger.json" data-f="ledger.json"><span class="nm">ledger.json</span><span class="ds">12 Aug 2026, 23:20 &middot; 77 KB</span><span class="tag">json</span></a>
 <a class="row primary" href="file:///C:/Users/maakm/Claude/Code/salt-command/ledger/schema.json" data-f="schema.json"><span class="nm">schema.json</span><span class="ds">12 Aug 2026, 23:20 &middot; 8 KB</span><span class="tag">json</span></a>
 <a class="row primary" href="file:///C:/Users/maakm/Claude/Code/salt-command/CLAUDE.md" data-f="claude.md"><span class="nm">CLAUDE.md</span><span class="ds">12 Aug 2026, 20:12 &middot; 19 KB</span><span class="tag">md</span></a>
@@ -56,8 +56,52 @@ code{ font-family:Consolas,monospace; font-size:11.5px; background:#EEF1F5;
 <a class="row folder" href="file:///C:/Users/maakm/Claude/Code/salt-command" data-f="this folder"><span class="nm">This folder</span><span class="ds">salt-command</span><span class="tag">folder</span></a>
 
 <footer>
-  Rebuilt 12 Aug 2026, 23:39. Regenerate any time with
+  Rebuilt 13 Aug 2026, 09:06. Regenerate any time with
   <code>python "C:\Users\maakm\Claude\Setup\launcher.py" . --open</code>.
-  Local links work because this page is itself a local file.
+  Local links work because this page is itself a local file. Refreshes itself.
 </footer>
 </div>
+
+<script>
+/* Keeps an open tab current.  A session rebuilds this file underneath the
+   browser, so the page reloads itself and puts back where you were: the tab you
+   were on, what you had typed in the filter, and how far down you had scrolled.
+   Reloading is the only way to re-read a local file; Chrome blocks fetch() on
+   file:// URLs.  A reload never lands mid-read, because it only happens while
+   the tab is in the background or you have been idle for a minute and a half. */
+(function(){
+  var KEY = 'skyeLauncher:' + location.pathname;
+  var LOADED = Date.now(), IDLE = Date.now();
+  function save(){
+    try{
+      var t = document.querySelector('input[name=tb]:checked');
+      var q = document.getElementById('q');
+      sessionStorage.setItem(KEY, JSON.stringify({
+        tab: t ? t.id : null, q: q ? q.value : '', y: window.scrollY }));
+    }catch(e){}
+  }
+  function restore(){
+    try{
+      var s = JSON.parse(sessionStorage.getItem(KEY) || '{}');
+      if(s.tab){ var el = document.getElementById(s.tab); if(el) el.checked = true; }
+      var q = document.getElementById('q');
+      if(q && s.q){ q.value = s.q; q.dispatchEvent(new Event('input')); }
+      if(s.y) window.scrollTo(0, s.y);
+    }catch(e){}
+  }
+  function stale(ms){ return Date.now() - LOADED > ms; }
+  function refresh(){ save(); location.reload(); }
+  restore();
+  ['mousemove','keydown','scroll','click'].forEach(function(ev){
+    window.addEventListener(ev, function(){ IDLE = Date.now(); }, {passive:true});
+  });
+  window.addEventListener('beforeunload', save);
+  document.addEventListener('visibilitychange', function(){
+    if(!document.hidden && stale(30000)) refresh();
+  });
+  setInterval(function(){
+    if(document.hidden){ if(stale(300000)) refresh(); }
+    else if(Date.now() - IDLE > 90000 && stale(30000)) refresh();
+  }, 10000);
+})();
+</script>
