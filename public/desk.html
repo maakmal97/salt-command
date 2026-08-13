@@ -59,7 +59,7 @@ document.addEventListener('visibilitychange',function(){
    focused, no dialog open. Otherwise it offers a chip and waits to be tapped.
    The same tick retries a held entry, which is what gets a phone write to the cloud
    without waiting for the next open. */
-var SALT_BUILD_ID="b6fb367c8a484bf0";
+var SALT_BUILD_ID="1933ad44de6f2134";
 var SALT_REV_MS=10000;
 (function(){
   var chip=null,timer=null;
@@ -1523,8 +1523,10 @@ const sales=[
    note:'ADVANCE, NOW SETTLED. The unit went out on the 8th and the money did not; RM90 landed on the 11th, three days later, and the order completes. It was the only receivable on the book while it stood and it also held him exactly at the 1 unit retail credit cap, so both readings clear with it: the cap is free again and the sole open advance is now CR3-DAM&rsquo;s. Worth noting against his own words: he told the desk on 06 Aug he is reducing his salt intake and to expect smaller, less frequent orders, and this is the same 1 unit at the same RM90 he took on the 6th, so the size is consistent with what he said and the account is now square. It books to SALT, which is what the entry said: the Transaction tab could not name a product until v275, so this is the last row on the book whose product was implied rather than chosen.'},
   {date:'2026-08-08',customer:'CA4-DAM',qty:0.5,total:50,cost:47,cash:50,deliveredQty:0.5,deliveredOn:'2026-08-08',paidOn:'2026-08-08',
    note:'Half a unit at RM100/unit, paid and collected on the day. His SIXTH order at exactly RM100/unit, which makes it the steadiest rate on the book rather than a quote. Drawn from the RM47 lot.'},
-  {date:'2026-08-08',customer:'CR3-DAM',qty:1,total:80,cost:47,cash:0,deliveredQty:1,deliveredOn:'2026-08-08',
-   note:'ADVANCE, NOW PAST DUE. 1 unit handed over at RM80 with nothing paid, against a settlement promised for Wednesday 12 Aug that did not arrive. The promise has passed and the RM80 is the ONLY receivable on the book. It holds him EXACTLY on the 1 unit retail credit cap, so Boundaries reads it as at-the-line rather than over it, and being late does not widen the cap: a second unit on credit breaches it. It is also the only open advance, CC5-OKR&rsquo;s RM90 having been paid on the 11th.'},
+  {date:'2026-08-08',customer:'CR3-DAM',qty:1,total:80,cost:47,cash:80,deliveredQty:1,deliveredOn:'2026-08-08',paidOn:'2026-08-12',
+   amend:[{date:'2026-08-08',kind:'Fulfilment',cash:0,kg:1,note:'1 unit handed over at RM80 with nothing paid'},
+          {date:'2026-08-12',kind:'Fulfilment',cash:80,kg:0,note:'the RM80 lands on Wednesday 12 Aug, the day it was promised for, four days out and inside his term. Reported on the 13th, which is why the desk was still calling it past due.'}],
+   note:'<b>ADVANCE, SETTLED ON THE DAY IT WAS PROMISED.</b> 1 unit handed over at RM80 on the 8th with nothing paid, and the RM80 paid on Wednesday 12 Aug, four days out. <b>THE DESK WAS WRONG ABOUT HIM, AND THE RECORD SHOULD SAY SO.</b> Until this entry the row read PAST DUE and named him the only receivable on the book, on the reasoning that the promised Wednesday had passed with no money. The money had in fact arrived on that Wednesday; what had not arrived was the report of it, on the 13th. A promise kept looked identical to a promise broken because the desk only ever sees what is queued, and the gap between a movement and its recording is the one thing it cannot observe. With this the book carries NO receivable and NO open advance at all, CC5-OKR&rsquo;s RM90 having cleared on the 11th, and his 1 unit retail credit cap is free again rather than sitting at the line.'},
   {date:'2026-08-10',customer:'CM4-MK',qty:4,total:360,cost:47,cash:360,deliveredQty:4,deliveredOn:'2026-08-10',paidOn:'2026-08-10',
    note:'His LARGEST order, 4 unit at RM90/unit, paid and collected on the day. The rate is cut from his standing RM110 as the reward for taking his cumulative buying past RM1,000: RM650 before this order, RM1,010 with it. Booked DIRECT and NOT tagged to his associate, because only a referred customer&rsquo;s FIRST order carries the introduction.'},
   {date:'2026-08-10',customer:'CJ4-OKR',qty:4,total:188,cost:47,cash:0,settledRM:188,rebate:true,rebateKg:4,deliveredQty:4,deliveredOn:'2026-08-10',
@@ -1555,6 +1557,8 @@ const sales=[
    note:'<b>A NEW CUSTOMER, OPENED AT CY2-NIL.</b> 2 unit for RM230 is RM115 a unit, paid and delivered on the day with nothing owed. It is a strong opening rate: above CA4-DAM&rsquo;s RM100 anchor and CE4-CHE&rsquo;s RM92 standing price, and just under the RM116.67 a unit CA4-DAM paid on 26 Jul, so a first order took a full rate and no introductory discount was given. On the RM47 lot it returns RM68 a unit, RM136 on the order at 59.1%, which is the best margin any retail order has returned. He is added to the roster as an ordinary retail customer, not an associate, so he carries the 1 unit credit cap; nothing is owed, so the cap is untouched. The name and the location are in the directory and never in this file.'},
   {date:'2026-08-12',customer:'CA4-DAM',qty:0.5,total:50,cost:47,cash:50,deliveredQty:0.5,deliveredOn:'2026-08-12',paidOn:'2026-08-12',
    note:'Half a unit at RM100 a unit, paid and collected on the day. His SEVENTH order at exactly RM100 a unit, which makes it the steadiest rate on the book by some distance. Drawn from the RM47 lot, so RM26.50 on RM50 at 53%. <b>THE DATE IS ASSUMED:</b> the instruction gave no date and reported the order completed, so it is booked today, 12 Aug. Correct it and the FIFO lot follows, though every salt lot since 28 Jul is RM47 so the cost does not move.'},
+  {date:'2026-08-13',customer:'CR3-PUD',qty:1,total:110,cost:47,cash:110,deliveredQty:1,deliveredOn:'2026-08-13',paidOn:'2026-08-13',ref:'CN6-WM',refKg:1,
+   note:'<b>A NEW CUSTOMER, OPENED AT CR3-PUD, AND CN6-WM BROUGHT HIM.</b> 1 unit for RM110, paid and delivered on the day with nothing owed. <b>The introduction is tagged R3 to CN6-WM in full</b>, which is what a first order from a referred customer carries and what no later order of his will: the credit is for bringing him, not for his continued trade, and he buys on his own line from here. RM110 is a strong opening rate. It sits RM10 under the RM120 a T3 buyer with no history is asked and RM10 over the RM100 anchor, so an introductory concession was given and it was a small one; CY2-NIL opened at RM115 a unit on the 11th, so two new names in three days have both taken above-anchor rates. On the RM47 lot it returns RM63 a unit, RM63 on the order at 57.3%. He is an ordinary retail customer and not an associate, so he carries the 1 unit credit cap; nothing is owed, so the cap is untouched. <b>THE DATE IS ASSUMED:</b> the instruction gave no date and reported the order paid and delivered, so it is booked today, 13 Aug. <b>It also takes the shelf to 0.30 unit</b>, against 12.5 promised. The name and the location are in the directory and never in this file.'},
 ];
 /* Loan (not a sale): CS6-PER borrowed cash+salt on 12 May valued at RM650 / 6 unit.
    Settled 14 Jul by offset against the deferred delivery on the 08 Jul package sale. */
@@ -1584,7 +1588,12 @@ const supplierReceivable={
   party:'SF6-KLC', amount:750, since:'2026-07-08', status:'writtenOff', writtenOffOn:'2026-07-31',
   note:'Paid for 12.5 unit that never arrived. 12 Jul: he was found to have had an accident and an in-person meeting was requested. He has since gone unresponsive, so on 31 Jul, 23 days out and already 100% provisioned, the desk WROTE IT OFF. The provision stays charged; what changes is that the desk no longer counts it as expected cash. Any recovery is upside against a book that has already taken the hit.',
 };
-const STATED_STOCK=1.30;   /* COUNTED 12 Aug 2026, by hand. Not a roll: the shelf was counted
+const STATED_STOCK=0.30;   /* ROLLED, NOT COUNTED, to 0.30: the 12 Aug hand count of 1.30 less
+   the 1 unit sold to the new CR3-PUD on this commit. Nobody has looked at the shelf since the
+   12th, so this is the count carried forward by a movement the desk can see, and the plug and
+   the leak do not move with it. 0.30 unit against 12.5 promised is the shelf at its emptiest
+   this book has recorded.
+   COUNTED 12 Aug 2026, by hand, at 1.30. Not a roll: the shelf was counted
    and it holds 1.30. The ledger implied 49.20, so the plug widens from 40.56 to 47.90 and the
    leak from 17.18% to 20.28%. A count always wins on this desk and this one costs 7.34 unit. */   /* ROLLED AT v289 to 8.64, being 13.64 less the 5 unit that moved on
    this commit: 2 unit to the new CY2-NIL and 2.5 unit to CE4-CHE on the 11th, and half a unit
@@ -1811,7 +1820,7 @@ const contactsDue=()=>contacts.filter(c=>c.next&&dbet(c.next)>=0&&c.outcome!=='n
 /* PDPA: real names are NOT stored here. Transactions carry SLT IDs directly.
    Real names live only inside NAME_VAULT below, AES-GCM encrypted under a
    passphrase you set in your browser; they never appear in this source. */
-const roster=['CA5-SEN','CG5-SB','CJ4-BJ','CR3-DAM','CS6-PER','CN5-TAI','CJ4-OKR','CC5-OKR','CA4-DAM','CE4-CHE','CM6-HCM','CM4-SK','CS6-BS','CS6-BS-R','CM4-MK','CH5-KLC','CI4-OKR','CN6-WM','CN6-WM-R','CH6-TBC','CZ6-WM','CR4-PJ','CD4-CS','CA5-KER','CE4-AD','CZ4-TBC','SF6-KLC','SA5-BTR','SM4-KEP','SP7-PUD','CH4-KS','CS6-PER-R','CY2-NIL'];
+const roster=['CA5-SEN','CG5-SB','CJ4-BJ','CR3-DAM','CS6-PER','CN5-TAI','CJ4-OKR','CC5-OKR','CA4-DAM','CE4-CHE','CM6-HCM','CM4-SK','CS6-BS','CS6-BS-R','CM4-MK','CH5-KLC','CI4-OKR','CN6-WM','CN6-WM-R','CH6-TBC','CZ6-WM','CR4-PJ','CD4-CS','CA5-KER','CE4-AD','CZ4-TBC','SF6-KLC','SA5-BTR','SM4-KEP','SP7-PUD','CH4-KS','CS6-PER-R','CY2-NIL','CR3-PUD'];
 /* SPLIT RULE (rewritten v265). A reseller's onward sale earns its own end-customer code ONLY
    where you delivered to that person yourself and so know who they are: CM4-MK, delivered to in person.
    Every OTHER onward sale, the ordinary case where the reseller sells on to someone you never
@@ -1917,7 +1926,7 @@ const NON_PLACE={GEN:'a reseller general bucket, not a person or a place',
 /* WHERE A PARTY IS, now that the code does not say. Read from the directory and baked here
    so the map works with no server and no fetch. A party absent from this map is unplaced,
    which is an honest answer rather than a guess from an abbreviation. */
-const LOCS={"CG5-SB": "SB","CJ4-OKR": "OKR","SF6-KLC": "KLC","CJ4-BJ": "BJ","CR3-DAM": "DAM","CN5-TAI": "TAI","CS6-PER": "PER","SA5-BTR": "BTR","CC5-OKR": "OKR","CA4-DAM": "DAM","CS6-BS": "BS","CM4-SK": "SK","CM6-HCM": "HCM","CM4-MK": "MK","CH5-KLC": "KLC","CE4-CHE": "CHE","CI4-OKR": "OKR","CN6-WM": "WM","CZ6-WM": "WM","CR4-PJ": "PJ","CD4-CS": "CS","CA5-KER": "KER","CE4-AD": "AD","CA5-SEN": "SEN","SP7-PUD": "PUD","SM4-KEP": "KEP","CH4-KS": "KLS"};
+const LOCS={"CG5-SB": "SB","CJ4-OKR": "OKR","SF6-KLC": "KLC","CJ4-BJ": "BJ","CR3-DAM": "DAM","CN5-TAI": "TAI","CS6-PER": "PER","SA5-BTR": "BTR","CC5-OKR": "OKR","CA4-DAM": "DAM","CS6-BS": "BS","CM4-SK": "SK","CM6-HCM": "HCM","CM4-MK": "MK","CH5-KLC": "KLC","CE4-CHE": "CHE","CI4-OKR": "OKR","CN6-WM": "WM","CZ6-WM": "WM","CR4-PJ": "PJ","CD4-CS": "CS","CA5-KER": "KER","CE4-AD": "AD","CA5-SEN": "SEN","SP7-PUD": "PUD","SM4-KEP": "KEP","CH4-KS": "KLS","CR3-PUD": "PUD"};
 function locOf(id){
   if(!id)return '';
   const last=String(id).split('-').pop();
@@ -2192,7 +2201,7 @@ const whiteboard=[
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{v:'v295',d:'13 Aug 2026',t:'THE BOOK GOES INTO A DATABASE, READ ONLY, AND COMES BACK BYTE FOR BYTE',n:['<b>THE BOOK IS NOW ALSO IN A DATABASE, AND IT IS A MIRROR.</b> D1 in APAC holds 99 records and 17 state keys, seeded from this desk and served read-only at <b>/ledger</b>. THIS DESK IS STILL THE SOURCE: it computes from its own arrays, the daily run still folds the queue into it, and the Worker has no insert of any kind. The direction flips only when the store is proven to reproduce these figures exactly, which is a later gate than the one just passed.','<b>The shape came from the rows, not from a guess.</b> The census said sales carries 26 distinct fields of which only five appear on every row, plus a nested array on 19, and three fields that appear exactly once. So each record is stored as its own JSON document with only the columns worth querying lifted out beside it: date, party, product, status, qty, total. A 26 column table would have been mostly empty and would have needed altering every time the book recorded something new, which it keeps doing.','Proven rather than assumed: the whole book is read back out of D1 and compared to what went in, and <b>all 25 keys and 139 records come back byte for byte</b>. Two faults were caught doing it. Wrangler given a FILE returns an execution summary rather than rows, so a SELECT run that way looks healthy and carries no data. And an EMPTY collection vanished entirely, so selfUseLog and lostDemand could not be told apart from a book with no such concept; the collection names are now written down so an empty list comes back empty.','<b>Why D1 and not KV.</b> KV rewrites a whole blob and last write wins, so two devices posting at once silently lose a row. A queue can survive that. A ledger cannot.']}];
+const evolution=[{v:'v296',d:'13 Aug 2026',t:'A NAME BROUGHT IN BY AN ASSOCIATE, A DEBT THAT WAS NEVER LATE, AND THE SHELF AT 0.30',n:['<b>A NEW CUSTOMER AT CR3-PUD, AND CN6-WM IS CREDITED WITH BRINGING HIM.</b> 1 unit for RM110, paid and delivered on the day, tagged R3 to CN6-WM in full. The introduction rides on the FIRST order and on no later one, which is the rule the CM4-MK row of 10 Aug was booked direct to observe. RM110 sits RM10 under the T3 ask and RM10 over the RM100 anchor, so a small introductory concession was given; CY2-NIL took RM115 on the 11th, so two new names in three days have both opened above the anchor. On the RM47 lot it returns RM63 at 57.3%. The date is assumed to be today, because the instruction gave none.','<b>CR3-DAM WAS NEVER LATE, AND THE DESK SAID HE WAS.</b> The RM80 advance of 08 Aug was settled on Wednesday 12 Aug, the day it was promised for. The row had read PAST DUE and named him the only receivable on the book, because the Wednesday had passed with nothing queued. A promise kept and a promise broken look identical to a desk that can only see what has been reported, and the gap here was one day of reporting, not four days of silence. <b>The book now carries no receivable and no open advance at all</b>, CC5-OKR having cleared on the 11th, and his 1 unit credit cap is free rather than at the line.','<b>THE SHELF IS AT 0.30 UNIT AGAINST 12.5 PROMISED.</b> STATED_STOCK is ROLLED from the 12 Aug hand count of 1.30, not recounted: one unit moved on this commit and nobody has looked since the 12th, so the plug and the 20.28% leak do not move with it. Cover is a matter of hours at 4.48 unit a day. <b>The buy is no longer a judgement about price, it is the constraint on every order taken from here</b>, and the sale above was made off the last unit but one.']}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -2255,7 +2264,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='13 Aug 2026, 18:06 KL';
+const LAST_UPDATED='13 Aug 2026, 18:49 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */

@@ -28,11 +28,7 @@ const DB = "salt_ledger";
 const LEDGER = resolve(REPO, "ledger", "ledger.json");
 const WHERE = process.argv.includes("--local") ? "--local" : "--remote";
 
-/* Which keys are LISTS OF RECORDS and which are single values. Anything array-shaped in the
-   extract becomes rows in `entry`; everything else is one row in `state`. Written out rather
-   than inferred so a new key is a decision, the same rule the extractor follows. */
-const COLLECTIONS = ["sales", "purchases", "loans", "contacts", "selfUseLog", "lostDemand",
-  "customerRefunds", "ONE_OFFS"];
+import { COLLECTIONS, readBook, bySalt, PROD_ORDER } from "./book.mjs";
 
 const problems = [];
 const fail = (m) => { problems.push(m); console.log("  FAIL  " + m); };
@@ -171,6 +167,84 @@ function verify() {
   return !problems.length;
 }
 
+/* ---- prove ---------------------------------------------------------------------------
+   THE GATE THAT DECIDES WHEN THE DIRECTION CAN FLIP, and it is a stronger claim than
+   --verify makes. --verify compares the store against ledger/ledger.json, which proves the
+   store did not mangle the file it was given. This compares the store against THE DESK
+   ITSELF, read live out of its own runtime, which closes the whole loop:
+
+       master -> extract -> D1 -> read back -> master
+
+   Why data equality is the right proof and not a weaker stand-in for comparing figures: the
+   desk's figures are computed by one engine from this data alone. Same pure function, same
+   input, same output. So if every ledger value in the store is identical to every ledger
+   value in the desk, the desk cannot compute a different figure from one than the other.
+   Comparing rendered figures instead would prove less and break on the clock.
+
+   A FAILURE HERE IS NOT ALWAYS A FAULT. If the desk has moved since the seed, this says so,
+   which is exactly what a mirror ought to tell you. It reports the two versions so the
+   difference between "stale" and "wrong" is never left to be guessed at. */
+async function prove() {
+  console.log("\nPROVE: the store against the desk itself");
+  const body = existsSync(LEDGER) ? loadLedger() : null;
+  const book = await readBook();
+  const { dom, ledger, version, stamped, missing } = book;
+  try {
+    if (missing.length) { fail("these could not be read from the desk: " + missing.join(", ")); return false; }
+
+    const rows = query("SELECT collection,seq,doc FROM entry ORDER BY collection,seq;");
+    const states = query("SELECT key,doc FROM state ORDER BY key;");
+    const snap = query("SELECT v,stamped FROM snapshot WHERE one=1;");
+    if (!rows || !states) return false;
+    const flat = (res) => res.flatMap((r) => r.results || []);
+    const s = snap && flat(snap)[0];
+
+    if (s && s.v !== version) {
+      fail(`the store is a mirror of ${s.v} and the desk is now ${version}. `
+        + `That is STALE, not wrong: re-seed with --seed and run this again.`);
+    } else if (s) {
+      ok(`the store and the desk are both ${version}, stamped ${stamped}`);
+    }
+
+    const back = {};
+    for (const r of flat(rows)) (back[r.collection] = back[r.collection] || [])[r.seq] = JSON.parse(r.doc);
+    for (const r of flat(states)) back[r.key] = JSON.parse(r.doc);
+    for (const c of (back.__collections || [])) if (!(c in back)) back[c] = [];
+    delete back.__collections;
+
+    let bad = 0, checked = 0, records = 0;
+    for (const key of Object.keys(ledger)) {
+      checked++;
+      if (Array.isArray(ledger[key])) records += ledger[key].length;
+      const a = JSON.stringify(ledger[key]), b = JSON.stringify(back[key]);
+      if (a === b) continue;
+      bad++;
+      if (bad <= 3) {
+        const i = [...a].findIndex((ch, n) => ch !== (b || "")[n]);
+        fail(`${key} differs from the desk at character ${i}:\n        desk : ${a.slice(Math.max(0, i - 40), i + 40)}\n        store: ${(b || "(absent)").slice(Math.max(0, i - 40), i + 40)}`);
+      }
+    }
+    const extra = Object.keys(back).filter((k) => !(k in ledger));
+    if (extra.length) fail("the store carries keys the desk does not: " + extra.join(", "));
+    if (!bad && !extra.length) ok(`all ${checked} ledger values match the desk exactly, ${records} records included`);
+    else if (bad) fail(`${bad} of ${checked} values differ from the desk`);
+
+    /* SALT LEADS, and it is checked here because this is the file that will one day serve
+       the figures. Standing instruction: salt before oil wherever the two appear apart. */
+    const order = ledger.PROD_ORDER;
+    if (!Array.isArray(order) || order[0] !== "salt") fail(`PROD_ORDER leads with ${JSON.stringify(order && order[0])}, not salt`);
+    else ok("PROD_ORDER leads with salt");
+    for (const key of ["PRODUCTS", "PROD_OPENING"]) {
+      const k = Object.keys(ledger[key] || {});
+      if (k.length > 1 && k.slice().sort(bySalt).join() !== k.join()) fail(`${key} is not in salt-first order: ${k.join(", ")}`);
+    }
+    if (body && body.ledger && JSON.stringify(body.ledger.PROD_ORDER) !== JSON.stringify(PROD_ORDER)) {
+      fail("the desk's PROD_ORDER and the tools' own no longer agree");
+    }
+    return !problems.length;
+  } finally { dom.window.close(); }
+}
+
 function status() {
   console.log("\nSTORE");
   const snap = query("SELECT v,stamped,sha,rows,at FROM snapshot WHERE one=1;");
@@ -187,8 +261,9 @@ const arg = process.argv[2];
 if (arg === "--status") status();
 else if (arg === "--schema") applySchema();
 else if (arg === "--verify") verify();
+else if (arg === "--prove") await prove();
 else if (arg === "--seed") { if (applySchema() && seed()) verify(); }
-else { console.log("usage: node tools/d1.mjs --schema | --seed | --verify | --status  [--local]"); process.exit(2); }
+else { console.log("usage: node tools/d1.mjs --schema | --seed | --verify | --prove | --status  [--local]"); process.exit(2); }
 
 console.log("");
 if (problems.length) { console.log(`D1 INCOMPLETE: ${problems.length} problem${problems.length === 1 ? "" : "s"} above.`); process.exitCode = 1; }
