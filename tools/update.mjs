@@ -255,6 +255,36 @@ if (NO_DEPLOY) {
   }
 }
 
+/* ---- 6b. the ledger mirror ----------------------------------------------------------
+   The D1 store is a mirror of the desk, and a mirror that falls behind quietly is the same
+   class of fault as a build that never shipped. Comparing the desk's version against the
+   one the store reports costs a single HTTP GET, so it is checked every run and re-seeded
+   when it differs, before the commit, so the refreshed extract is versioned with everything
+   else. Skip with --no-mirror. */
+step("6b", "the ledger mirror");
+if (DRY || has("--no-mirror")) {
+  ok("skipped" + (DRY ? " (dry run)" : ""));
+} else {
+  let store = null;
+  try { store = await (await fetch(SITE + "/ledger", { cache: "no-store" })).json(); }
+  catch (e) { warn("could not reach " + SITE + "/ledger, so the mirror was not checked"); }
+  if (store && store.ok === false) warn("the ledger endpoint answered: " + (store.error || "not ok"));
+  else if (store && !store.seeded) {
+    warn("the store has never been seeded. Run: node tools/ledger.mjs && node tools/d1.mjs --seed");
+  } else if (store && store.snapshot && store.snapshot.v === VER) {
+    ok(`the mirror is level at ${VER} (${store.snapshot.rows} records)`);
+  } else if (store && store.snapshot) {
+    console.log(`        the mirror is ${store.snapshot.v}, the desk is ${VER}. Re-seeding.`);
+    const a = sh("node", ["tools/ledger.mjs"], { quiet: true });
+    if (a.code !== 0) fail("the extract failed, so the mirror was NOT refreshed:\n        " + a.out.split("\n").filter(l => /FAIL/.test(l)).join("\n        "));
+    else {
+      const b = sh("node", ["tools/d1.mjs", "--seed"], { quiet: true });
+      if (b.code !== 0) fail("the re-seed failed:\n        " + b.out.split("\n").slice(-4).join("\n        "));
+      else ok(`the mirror was re-seeded from ${store.snapshot.v} to ${VER}`);
+    }
+  }
+}
+
 /* ---- 7. version ------------------------------------------------------------------- */
 step(7, "version");
 if (NO_PUSH) {

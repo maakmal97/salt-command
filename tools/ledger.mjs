@@ -35,6 +35,7 @@ import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
 import { openMaster } from "./payload.mjs";
+import { LEDGER, LEDGER_KEYS, META_KEYS, reader } from "./book.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO = resolve(HERE, "..");
@@ -44,41 +45,10 @@ const DEFAULT_MASTER =
 const MASTER = process.env.SALT_MASTER || DEFAULT_MASTER;
 const CHECK = process.argv.includes("--check");
 
-/* WHAT THE LEDGER IS, and WHICH COPY OF IT TO TAKE.
- *
- * THE COMMITTED BOOK IS `BASE_*`, NOT `sales`. The desk keeps two copies of the moving
- * parts: `BASE_SALES` and friends are deep copies taken at load, and `sales` is that copy
- * with the uncommitted queue folded over it by applyOverlay(). They are equal only while
- * the queue is empty. Extracting `sales` would therefore write PROVISIONAL rows into the
- * store as though they were committed, the moment anything is queued, and the store would
- * then disagree with the master about what has actually happened. So every overlaid array
- * is read from its BASE copy, and the mapping is written out rather than implied.
- *
- * Left of the arrow is the name in the store; right is the declaration to read. */
-const LEDGER = {
-  PRODUCTS: "PRODUCTS", PROD_ORDER: "PROD_ORDER",
-  opening: "opening", PROD_OPENING: "PROD_OPENING", STATED_STOCK: "STATED_STOCK",
-  purchases: "BASE_PURCHASES",     // overlaid: committed copy
-  sales: "BASE_SALES",             // overlaid: committed copy
-  contacts: "BASE_CONTACTS",       // overlaid: committed copy
-  selfUseLog: "BASE_SELFUSE",      // overlaid: committed copy
-  lostDemand: "BASE_LOST",         // overlaid: committed copy
-  loans: "loans",
-  supplierReceivable: "supplierReceivable",
-  customerRefunds: "customerRefunds",
-  roster: "roster", associates: "associates", PEOPLE: "PEOPLE",
-  REWARD_OPENING: "REWARD_OPENING", CUSTOMER_REWARD_OPENING: "CUSTOMER_REWARD_OPENING",
-  AWARDS: "AWARDS",
-  supplierQuote: "supplierQuote", oilQuote: "oilQuote",
-  SOURCING_PLAN: "SOURCING_PLAN",
-  CASH_COUNT_RETIRED: "CASH_COUNT_RETIRED",
-  ONE_OFFS: "ONE_OFFS",
-  QUEUE_COMMITTED: "QUEUE_COMMITTED",
-};
-const LEDGER_KEYS = Object.keys(LEDGER);
-/* Version metadata. It travels with the extract so a stored ledger can say which desk it
-   came from, but it is NOT ledger and must never be treated as a figure. */
-const META_KEYS = ["LAST_UPDATED", "evolution"];
+/* WHAT THE LEDGER IS and WHICH COPY TO TAKE now live in book.mjs, because d1.mjs needs
+   the same answers and two copies of "which declarations are the book" would be two
+   things to keep true, with the one that drifted doing so in silence. */
+/* Version metadata travels with the extract but is NOT ledger; see book.mjs. */
 
 /* Declarations that are data-shaped but are CONFIGURATION, not the book: pricing ladders,
    thresholds, vocabulary. They are listed rather than pattern-matched so that adding one
@@ -171,18 +141,7 @@ if (!existsSync(MASTER)) { console.error("  the master is not readable at\n    "
 const src = readFileSync(MASTER, "utf8");
 const { dom, w } = await openMaster(MASTER);
 
-/* Read a global by name. The desk's data is declared with `const` at the top level of a
-   classic script, so it lives in the global LEXICAL environment and is not a property of
-   window; `window.eval` reaches it, a property lookup does not. */
-function read(name) {
-  try {
-    const v = w.eval(name);
-    return { ok: true, value: v };
-  } catch (e) {
-    if (name in w) return { ok: true, value: w[name] };
-    return { ok: false, why: String(e && e.message || e) };
-  }
-}
+const read = reader(w);
 
 /* ---- 1. read the ledger ------------------------------------------------------------- */
 const ledger = {};

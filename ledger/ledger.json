@@ -1,6 +1,6 @@
 {
- "v": "v295",
- "stamped": "13 Aug 2026, 18:06 KL",
+ "v": "v296",
+ "stamped": "13 Aug 2026, 18:49 KL",
  "source": "Cow-Crm01 salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -41,7 +41,7 @@
     "stated": 20
    }
   },
-  "STATED_STOCK": 1.3,
+  "STATED_STOCK": 0.3,
   "purchases": [
    {
     "date": "2026-06-27",
@@ -1377,10 +1377,27 @@
     "qty": 1,
     "total": 80,
     "cost": 47,
-    "cash": 0,
+    "cash": 80,
     "deliveredQty": 1,
     "deliveredOn": "2026-08-08",
-    "note": "ADVANCE, NOW PAST DUE. 1 unit handed over at RM80 with nothing paid, against a settlement promised for Wednesday 12 Aug that did not arrive. The promise has passed and the RM80 is the ONLY receivable on the book. It holds him EXACTLY on the 1 unit retail credit cap, so Boundaries reads it as at-the-line rather than over it, and being late does not widen the cap: a second unit on credit breaches it. It is also the only open advance, CC5-OKR&rsquo;s RM90 having been paid on the 11th."
+    "paidOn": "2026-08-12",
+    "amend": [
+     {
+      "date": "2026-08-08",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 1,
+      "note": "1 unit handed over at RM80 with nothing paid"
+     },
+     {
+      "date": "2026-08-12",
+      "kind": "Fulfilment",
+      "cash": 80,
+      "kg": 0,
+      "note": "the RM80 lands on Wednesday 12 Aug, the day it was promised for, four days out and inside his term. Reported on the 13th, which is why the desk was still calling it past due."
+     }
+    ],
+    "note": "<b>ADVANCE, SETTLED ON THE DAY IT WAS PROMISED.</b> 1 unit handed over at RM80 on the 8th with nothing paid, and the RM80 paid on Wednesday 12 Aug, four days out. <b>THE DESK WAS WRONG ABOUT HIM, AND THE RECORD SHOULD SAY SO.</b> Until this entry the row read PAST DUE and named him the only receivable on the book, on the reasoning that the promised Wednesday had passed with no money. The money had in fact arrived on that Wednesday; what had not arrived was the report of it, on the 13th. A promise kept looked identical to a promise broken because the desk only ever sees what is queued, and the gap between a movement and its recording is the one thing it cannot observe. With this the book carries NO receivable and NO open advance at all, CC5-OKR&rsquo;s RM90 having cleared on the 11th, and his 1 unit retail credit cap is free again rather than sitting at the line."
    },
    {
     "date": "2026-08-10",
@@ -1470,6 +1487,20 @@
     "deliveredOn": "2026-08-12",
     "paidOn": "2026-08-12",
     "note": "Half a unit at RM100 a unit, paid and collected on the day. His SEVENTH order at exactly RM100 a unit, which makes it the steadiest rate on the book by some distance. Drawn from the RM47 lot, so RM26.50 on RM50 at 53%. <b>THE DATE IS ASSUMED:</b> the instruction gave no date and reported the order completed, so it is booked today, 12 Aug. Correct it and the FIFO lot follows, though every salt lot since 28 Jul is RM47 so the cost does not move."
+   },
+   {
+    "date": "2026-08-13",
+    "customer": "CR3-PUD",
+    "qty": 1,
+    "total": 110,
+    "cost": 47,
+    "cash": 110,
+    "deliveredQty": 1,
+    "deliveredOn": "2026-08-13",
+    "paidOn": "2026-08-13",
+    "ref": "CN6-WM",
+    "refKg": 1,
+    "note": "<b>A NEW CUSTOMER, OPENED AT CR3-PUD, AND CN6-WM BROUGHT HIM.</b> 1 unit for RM110, paid and delivered on the day with nothing owed. <b>The introduction is tagged R3 to CN6-WM in full</b>, which is what a first order from a referred customer carries and what no later order of his will: the credit is for bringing him, not for his continued trade, and he buys on his own line from here. RM110 is a strong opening rate. It sits RM10 under the RM120 a T3 buyer with no history is asked and RM10 over the RM100 anchor, so an introductory concession was given and it was a small one; CY2-NIL opened at RM115 a unit on the 11th, so two new names in three days have both taken above-anchor rates. On the RM47 lot it returns RM63 a unit, RM63 on the order at 57.3%. He is an ordinary retail customer and not an associate, so he carries the 1 unit credit cap; nothing is owed, so the cap is untouched. <b>THE DATE IS ASSUMED:</b> the instruction gave no date and reported the order paid and delivered, so it is booked today, 13 Aug. <b>It also takes the shelf to 0.30 unit</b>, against 12.5 promised. The name and the location are in the directory and never in this file."
    }
   ],
   "contacts": [
@@ -1562,7 +1593,8 @@
    "SP7-PUD",
    "CH4-KS",
    "CS6-PER-R",
-   "CY2-NIL"
+   "CY2-NIL",
+   "CR3-PUD"
   ],
   "associates": [
    "CS6-BS",

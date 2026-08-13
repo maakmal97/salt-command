@@ -236,9 +236,26 @@ section("Ledger extract");
      queue folded over it, so an extract that read `sales` would write provisional rows into
      the store as committed the moment anything was queued. */
   const tool = readFileSync(join(REPO, "tools", "ledger.mjs"), "utf8");
-  ok(tool.includes('sales: "BASE_SALES"'), "the extract reads the COMMITTED sales, not the overlaid array");
-  ok(tool.includes('purchases: "BASE_PURCHASES"'), "and the committed purchases");
+  const book = readFileSync(join(REPO, "tools", "book.mjs"), "utf8");
+  ok(book.includes('sales: "BASE_SALES"'), "the extract reads the COMMITTED sales, not the overlaid array");
+  ok(book.includes('purchases: "BASE_PURCHASES"'), "and the committed purchases");
   ok(/const\|let\|var/.test(tool), "declaration discovery covers let and var, not const alone");
+
+  /* ONE definition of what the book is. Two would be two things to keep true, and the one
+     that drifted would do it silently: an extract carrying a row the store never checked. */
+  ok(!/^const LEDGER = \{/m.test(tool), "ledger.mjs does not keep its own copy of the map");
+  ok(readFileSync(join(REPO, "tools", "d1.mjs"), "utf8").includes('from "./book.mjs"'),
+     "and d1.mjs reads the same one");
+
+  /* SALT LEADS, wherever the two products appear apart. Standing instruction of 11 Aug,
+     restated 13 Aug. It holds today; this is what stops it quietly ceasing to. */
+  ok(/PROD_ORDER = \["salt", "oil"\]/.test(book), "the tools agree salt leads oil");
+  const data = JSON.parse(readFileSync(join(REPO, "public", "data.json"), "utf8"));
+  ok(data.products[0].id === "salt", "the phone payload lists salt first");
+  ok(Object.keys(data.position)[0] === "salt", "and reports the salt position first");
+  const app = readFileSync(join(REPO, "public", "index.html"), "utf8");
+  ok(app.includes("(D.products||[]).map") || app.includes("(D.products || []).map"),
+     "the app renders products in the payload's order rather than choosing its own");
 
   /* The name gate must exist and must be capable of failing. Nothing may be committed to
      this repo carrying a real name, and the extract is a committed artefact. */
