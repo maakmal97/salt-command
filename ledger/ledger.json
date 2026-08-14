@@ -1,6 +1,6 @@
 {
- "v": "v298",
- "stamped": "13 Aug 2026, 19:22 KL",
+ "v": "v299",
+ "stamped": "14 Aug 2026, 23:10 KL",
  "source": "Cow-Crm01 salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -41,7 +41,7 @@
     "stated": 20
    }
   },
-  "STATED_STOCK": 1.3,
+  "STATED_STOCK": 11.3,
   "purchases": [
    {
     "date": "2026-06-27",
@@ -170,6 +170,18 @@
     "receivedOn": "2026-08-11",
     "receivedQty": 50,
     "note": "<b>THE MISSING OIL LOT, AND THE SHELF CLOSES.</b> This is the purchase v286 said the book had to be carrying and could not see: 50 unit for RM350 on the 11th, queued from the phone on the 12th and committed here. Oil now walks 5 unit of opening, plus 50 on the 6th and 50 on the 11th, less 20 sold on the 6th and 7th and 50 on the 11th, which leaves <b>35 unit on the shelf and no longer minus 15</b>. It is the same RM7 a unit as the first lot, the top tier of SP7-PUD&rsquo;s ladder, so nothing in the cost basis moves and the two orders of 11 Aug keep the RM7 they were costed at, including the 15 unit that had no lot behind them. ASSUMPTION, STATED: the entry reported a completed purchase, so it is taken as paid and received in full on the 11th. <b>The stated count stays NULL.</b> Recording a purchase is not the same as counting a shelf, and nobody has looked since the 7th."
+   },
+   {
+    "date": "2026-08-13",
+    "qty": 12.5,
+    "total": 700,
+    "supplier": "SA5-BTR",
+    "status": "paid",
+    "cash": 700,
+    "paidOn": "2026-08-13",
+    "receivedOn": "2026-08-13",
+    "receivedQty": 12.5,
+    "note": "<b>THE FIRST SALT RESTOCK SINCE 28 JUL, AND IT COSTS RM56 A UNIT RATHER THAN RM47.</b> 12.5 unit for RM700, paid and received in full on the 13th. It arrives on a shelf of 1.30 unit, sixteen days after the 100 unit lot, so the desk restocked at the bottom rather than on a plan. <b>RM56 is the small-lot tier and there is nothing wrong with it.</b> It is the same rate every 12.5 unit lot has carried since 08 Jul, and the RM47 that the book has quoted on every row since 28 Jul was the BULK rate, which needs 100 unit to reach. Buying an eighth of the size at a fifth more a unit is the ladder working as quoted, not a concession lost. <b>WHAT IT MOVES IS THE FLOOR, NOT THE LEDGER.</b> Replacement cost is read off the newest received lot, so from this row every floor on the desk is built on RM56 instead of RM47, roughly a fifth higher, and the pending rows should be re-read against it rather than against the figures written beside them last week. STOCK_COST follows it to 56 on the same reasoning: the 1.30 unit remnant is fully drawn by the two sales of the 14th, so the shelf is now this lot and nothing else. ASSUMPTION, STATED: the entry was queued as completed with the full RM700 in cash and 12.5 unit moved, so it is taken as paid and received in full on the 13th."
    }
   ],
   "sales": [
@@ -1501,6 +1513,38 @@
     "ref": "CN6-WM",
     "refKg": 1,
     "note": "<b>A NEW CUSTOMER, OPENED AT CR3-PUD, AND CN6-WM BROUGHT HIM.</b> 1 unit for RM110, paid and delivered on the day with nothing owed. <b>The introduction is tagged R3 to CN6-WM in full</b>, which is what a first order from a referred customer carries and what no later order of his will: the credit is for bringing him, not for his continued trade, and he buys on his own line from here. RM110 is a strong opening rate. It sits RM10 under the RM120 a T3 buyer with no history is asked and RM10 over the RM100 anchor, so an introductory concession was given and it was a small one; CY2-NIL opened at RM115 a unit the day before, so two new names in two days both took above-anchor rates. On the RM47 lot it returns RM63 a unit, RM63 on the order at 57.3%. He is an ordinary retail customer and not an associate, so he carries the 1 unit credit cap; nothing is owed, so the cap is untouched. <b>THE DATE IS STATED: 12 AUG, AND IT SITS INSIDE THAT DAY&rsquo;S COUNT.</b> It was first booked on the 13th, the day it was reported, then moved to the 11th on his word that it preceded the count, then fixed at the 12th when he gave the day. <b>SO THIS COUNT IS AN EXCEPTION TO THE START-OF-DATE RULE, AND THAT IS THE POINT OF SAYING SO.</b> This desk reads a count as at the START of its date, which is why deliveries dated the same day normally come OFF it. Not here: the 1.30 was counted at the END of the 12th, after this unit had gone, and he has said so plainly. Anyone applying the usual rule to these two rows would take the unit off the shelf a second time and put the shelf at 0.30, which is exactly the mistake v296 made and v297 undid. <b>THE SHELF DOES NOT MOVE AND THE PLUG DOES.</b> The count already absorbed this unit, so 1.30 stands; what changes is that a unit the plug was carrying as unexplained loss is now explained as a sale, and the leak falls with it. The FIFO lot does not follow the date either way: every salt lot since 28 Jul is RM47. The name and the location are in the directory and never in this file."
+   },
+   {
+    "date": "2026-08-14",
+    "customer": "CR3-DAM",
+    "qty": 1,
+    "total": 80,
+    "cost": 47,
+    "cash": 0,
+    "deliveredQty": 1,
+    "deliveredOn": "2026-08-14",
+    "note": "<b>AN ADVANCE, AND HIS FIFTH CONSECUTIVE ORDER AT EXACTLY RM80.</b> 1 unit handed over on the 14th with nothing paid. RM80 on 15 Jul, 20 Jul, 30 Jul, 08 Aug and now, after RM85 on 29 Jun and RM90 on 03 Jul, so RM80 stopped being a quote some weeks ago and is his price. <b>The shape is his last order repeated exactly</b>, 1 unit at RM80 on credit, and that one was paid four days out on the Wednesday he promised. It is the only receivable on the book, CC5-OKR&rsquo;s RM90 having cleared on the 11th, and it puts him back at his 1 unit retail credit cap, so nothing further goes out to him until this is paid. <b>The desk should not read a delay as a broken promise this time either.</b> The 08 Aug row spent four days marked past due when the money had in fact arrived on the day agreed and only the report of it was late; the gap the desk cannot see is between a movement and its queueing, not between a promise and its keeping. FIFO takes the unit off the 1.30 unit remnant at RM47, so RM33 on RM80 at 41.3%. It is the last unit on the book to be costed at RM47."
+   },
+   {
+    "date": "2026-08-14",
+    "customer": "CN6-WM-R",
+    "qty": 1.5,
+    "total": 175,
+    "cost": 54.2,
+    "cash": 175,
+    "deliveredQty": 1.5,
+    "deliveredOn": "2026-08-14",
+    "rev": "R2",
+    "paidOn": "2026-08-14",
+    "note": "<b>THE FIRST ROW ON THIS BOOK WHOSE COST IS A BLEND OF TWO LOTS.</b> 1.5 unit for RM175 is RM116.67 a unit, paid and delivered on the day, CN6-WM&rsquo;s third resell as an associate and an R2 through his general bucket, the end buyer being a stranger with no code of their own, exactly as his 03 Aug and 06 Aug downsells were booked. <b>The cost is RM54.20 a unit and it is not a lot rate.</b> The 1.30 unit remnant had 0.30 left after CR3-DAM took a unit that morning, so 0.30 comes off it at RM47 and the other 1.20 off the 13 Aug lot at RM56: RM81.30 on the order, RM54.20 a unit. Every row since 28 Jul has read a single RM47, which is why this one is worth pointing at. The 0.30 is carried at the RM47 the rows use rather than the RM47.47 STOCK_COST blends to; the difference is RM0.14 on the order and the honest caveat about where the plug fell already sits at STOCK_COST. On that basis it returns RM62.47 a unit, RM93.70 on the order at 53.5%. <b>The rate is holding as the size falls.</b> He resold 6.5 unit at RM67.69 on the 3rd, 2 unit at RM125 on the 6th and 1.5 at RM116.67 now, so the small-parcel rate has printed twice above RM115 and the RM67.69 looks like the outlier rather than the trend."
+   },
+   {
+    "customer": "CC5-OKR",
+    "qty": 1,
+    "total": 80,
+    "cash": 0,
+    "deliveredQty": 0,
+    "note": "PENDING, and therefore carrying NO DATE: nothing paid, nothing delivered, so it counts nowhere, draws no stock and the unit stays free to sell until it moves. <b>THE THING TO LOOK AT IS THE PRICE, WHICH IS RM10 UNDER HIS OWN STANDING RATE.</b> He has paid RM90 a unit every time he has traded: the 09 Jul barter, the 15 Jul cash sale and the 08 Aug advance that settled on the 11th, with a fourth at RM90 cancelled on 20 Jul before anything moved. RM80 would be the first time he is asked for less, and nothing in the entry says why. <b>It also lands on the wrong side of the restock.</b> The 13 Aug lot puts replacement cost at RM56 rather than RM47, so the single-unit floor rises with it and RM80 needs reading against the floor the desk computes live, not against the RM47-era arithmetic on the rows above. He said on 06 Aug he was reducing his intake and to expect smaller, less frequent orders, and 1 unit is consistent with that; a smaller order at a cut rate is not. <b>Left pending and left visible rather than repriced</b>, because whether RM80 was a decision or a slip is his to say and the desk cannot tell from the entry."
    }
   ],
   "contacts": [
@@ -1730,6 +1774,6 @@
     "note": "Judged a rare one-off. Treat the RM104/unit it paid as an outlier, not as evidence of what wholesale will bear."
    }
   ],
-  "QUEUE_COMMITTED": "2026-08-12T11:26:11.395Z"
+  "QUEUE_COMMITTED": "2026-08-14T12:42:33.844Z"
  }
 }
