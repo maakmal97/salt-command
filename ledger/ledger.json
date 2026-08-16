@@ -1,6 +1,6 @@
 {
- "v": "v299",
- "stamped": "14 Aug 2026, 23:10 KL",
+ "v": "v300",
+ "stamped": "14 Aug 2026, 23:55 KL",
  "source": "Cow-Crm01 salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -38,10 +38,10 @@
    "oil": {
     "qty": 5,
     "costPerKg": 7.666666666666667,
-    "stated": 20
+    "stated": 19
    }
   },
-  "STATED_STOCK": 11.3,
+  "STATED_STOCK": 10.3,
   "purchases": [
    {
     "date": "2026-06-27",
@@ -1545,6 +1545,31 @@
     "cash": 0,
     "deliveredQty": 0,
     "note": "PENDING, and therefore carrying NO DATE: nothing paid, nothing delivered, so it counts nowhere, draws no stock and the unit stays free to sell until it moves. <b>THE THING TO LOOK AT IS THE PRICE, WHICH IS RM10 UNDER HIS OWN STANDING RATE.</b> He has paid RM90 a unit every time he has traded: the 09 Jul barter, the 15 Jul cash sale and the 08 Aug advance that settled on the 11th, with a fourth at RM90 cancelled on 20 Jul before anything moved. RM80 would be the first time he is asked for less, and nothing in the entry says why. <b>It also lands on the wrong side of the restock.</b> The 13 Aug lot puts replacement cost at RM56 rather than RM47, so the single-unit floor rises with it and RM80 needs reading against the floor the desk computes live, not against the RM47-era arithmetic on the rows above. He said on 06 Aug he was reducing his intake and to expect smaller, less frequent orders, and 1 unit is consistent with that; a smaller order at a cut rate is not. <b>Left pending and left visible rather than repriced</b>, because whether RM80 was a decision or a slip is his to say and the desk cannot tell from the entry."
+   },
+   {
+    "date": "2026-08-14",
+    "customer": "CH4-MLR",
+    "qty": 1,
+    "total": 110,
+    "cost": 56,
+    "cash": 110,
+    "deliveredQty": 1,
+    "deliveredOn": "2026-08-14",
+    "paidOn": "2026-08-14",
+    "note": "<b>A NEW CUSTOMER, OPENED AT CH4-MLR, AND THE FIRST NAME TAKEN STRAIGHT OFF THE DESK.</b> 1 unit for RM110, paid and delivered on the day with nothing owed, and an oil unit alongside it on its own row. He came in with no associate behind him, so nothing is tagged and no introduction credit arises. <b>RM110 IS THE SAME OPENING RATE CR3-PUD TOOK, AND IT IS NO LONGER THE SAME SALE.</b> That one was written against a RM47 shelf and returned RM63 a unit at 57.3%; this one draws the 13 Aug RM56 lot, so the same RM110 returns RM54 a unit, RM54 on the order at 49.1%. Eight points of margin went to the restock and not to the customer, which is the clearest illustration on the book of why this desk refuses to print a floor. It still sits above the RM100 anchor and RM10 under the RM120 a T3 buyer with no history is asked, so a small introductory concession was given, the same one CR3-PUD got. He is an ordinary retail customer and not an associate, so he carries the 1 unit credit cap; nothing is owed, so the cap is untouched. <b>ASSUMPTION, STATED: the date and the settlement.</b> It was reported as a completed sale with no date given and no terms mentioned, so it is booked today, 14 Aug, as paid and delivered in full, the same reading the CA4-DAM row of 12 Aug took. Correct either and the FIFO lot follows. The name and the location are in the directory and never in this file."
+   },
+   {
+    "date": "2026-08-14",
+    "product": "oil",
+    "customer": "CH4-MLR",
+    "qty": 1,
+    "total": 115,
+    "cost": 7,
+    "cash": 115,
+    "deliveredQty": 1,
+    "deliveredOn": "2026-08-14",
+    "paidOn": "2026-08-14",
+    "note": "<b>RM115 A UNIT IS TEN TIMES ANY OIL RATE THIS BOOK HAS EVER SEEN, AND IT IS BOOKED AS IT WAS GIVEN.</b> Every oil order before it: RM13 a unit on the CS6-BS downsell of 06 Aug, RM11 on his own 30 unit direct buy of the 11th, RM6 on the CS6-BS-R resell the same day. SP7-PUD&rsquo;s quoted ladder tops out at RM10 a unit and the lot on the shelf cost RM7. So RM115 is not a strong price, it is a price from a different ladder, and it returns RM108 on RM115 at 93.9%, which would be the best margin any row on this book has ever carried by a distance. <b>THAT IS WHY IT IS FLAGGED RATHER THAN CELEBRATED.</b> The desk records what it is told and does not quietly correct a figure into the range it expected, which is the same rule that booked the RM6 below-cost resell without argument. But a single digit separates RM115 from RM11.50, and RM11.50 would sit exactly between the RM11 and RM13 the book already knows. <b>If it is RM11.50 the oil book is overstated by RM103.50 and the pricing engine is reading a 93.9% margin that never happened.</b> Correct it and this row and the oil basis both follow; leave it and the desk needs to know what was actually sold, because it was not the RM7 oil at the rate the RM7 oil goes for. ASSUMPTION, STATED, as on the salt row: no date and no terms were given, so it is booked today as paid and delivered in full."
    }
   ],
   "contacts": [
@@ -1638,7 +1663,8 @@
    "CH4-KS",
    "CS6-PER-R",
    "CY2-NIL",
-   "CR3-PUD"
+   "CR3-PUD",
+   "CH4-MLR"
   ],
   "associates": [
    "CS6-BS",
