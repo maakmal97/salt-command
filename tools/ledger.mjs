@@ -35,7 +35,7 @@ import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
 import { openMaster } from "./payload.mjs";
-import { LEDGER, LEDGER_KEYS, META_KEYS, reader } from "./book.mjs";
+import { LEDGER, LEDGER_KEYS, META_KEYS, reader, pricingSnapshot } from "./book.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO = resolve(HERE, "..");
@@ -169,6 +169,18 @@ for (const key of META_KEYS) {
   if (r.ok && typeof r.value !== "undefined") meta[key] = r.value;
 }
 if (Object.keys(ledger).length === LEDGER_KEYS.length) ok(`read all ${LEDGER_KEYS.length} ledger declarations from the desk's own runtime`);
+
+/* THE PRICING SNAPSHOT, taken after every declaration above has been read. It is DERIVED
+   rather than declared, which is why it is not in LEDGER_KEYS: nothing in the master is named
+   PRICING, and the completeness sweep above would rightly refuse to find it. It exists so the
+   cloud drafter reads the desk's own cost and floors instead of recomputing them. See the
+   long note in book.mjs. Taken last because it moves PROD while it runs. */
+ledger.PRICING = { ...pricingSnapshot(w), v: (Array.isArray(meta.evolution) && meta.evolution[0] && meta.evolution[0].v) || null };
+{
+  const P = ledger.PRICING, salt = P.byProduct && P.byProduct.salt;
+  if (!salt || salt.stockCost == null || !salt.floors) fail("the pricing snapshot came back without a salt cost or floors; the drafter cannot price a row without it");
+  else ok(`pricing snapshot taken: salt at ${salt.stockCost}/unit, floor at 1 unit ${salt.floors["1"] && salt.floors["1"].delivered}, ${Object.keys(P.byProduct).length} product(s)`);
+}
 
 /* ---- 2. prove it is complete -------------------------------------------------------- */
 /* `let` AND `var` COUNT. Scanning only `const` is how selfUseLog and lostDemand were missed

@@ -725,6 +725,159 @@ section("App — the approval panel");
   ok(!/floorTotal|replCost|STOCK_COST/.test(app), "the app computes no floor of its own");
 }
 
+/* ---- 10. the cloud drafter ------------------------------------------------------ */
+/* The cases worth testing are the REFUSALS and the FLAGS. A row that is merely correct tells
+   nobody anything; the value is in what the drafter declines to write and what it insists on
+   pointing at. The RM115 oil unit is the fixture, because it is the one that happened. */
+section("Drafter — rows, refusals and flags");
+{
+  const { draftRow, costFor, floorFor, flagsFor } = await import("../src/drafter.js");
+
+  /* a small book with the shape the real one has: two products, a lot each, some history */
+  const book = {
+    version: "v302",
+    pricing: {
+      v: "v302",
+      byProduct: {
+        salt: { stockCost: 56, replCost: 56, floors: { "1": { delivered: 85.75, collected: 79.5 }, "2.5": { delivered: 204.99, collected: 198.74 } } },
+        oil: { stockCost: 7, replCost: 7, floors: { "1": { delivered: 14.75, collected: 8.5 } } }
+      }
+    },
+    purchases: [
+      { date: "2026-07-28", qty: 100, total: 4700 },
+      { date: "2026-08-13", qty: 12.5, total: 700, receivedOn: "2026-08-13" },
+      { date: "2026-08-11", product: "oil", qty: 50, total: 350, receivedOn: "2026-08-11" }
+    ],
+    sales: [
+      { date: "2026-08-08", customer: "CC5-OKR", qty: 1, total: 90 },
+      { date: "2026-07-15", customer: "CC5-OKR", qty: 1, total: 90 },
+      { date: "2026-08-11", product: "oil", customer: "CS6-BS", qty: 30, total: 330 },
+      { date: "2026-08-11", product: "oil", customer: "CS6-BS-R", qty: 20, total: 120 },
+      { date: "2026-08-06", product: "oil", customer: "CN6-WM-R", qty: 10, total: 130 }
+    ],
+    state: { roster: ["CC5-OKR", "CH4-MLR", "CS6-BS", "CN6-WM-R"], QUEUE_COMMITTED: "2026-08-14T00:00:00.000Z" }
+  };
+  const entry = (payload, at = "2026-08-16T01:00:00.000Z") => ({ at, payload: { mode: "new", ...payload } });
+
+  /* the desk's own cost wins over anything recomputed */
+  ok(costFor(book, "salt").cost === 56, "cost comes from the desk's shelf cost, not a recomputation");
+  ok(/desk/.test(costFor(book, "salt").source), "and it says so");
+  ok(costFor(book, "oil").cost === 7, "per product");
+  /* one lot or a blend, answered by the desk's two numbers rather than by purchase history */
+  ok(costFor(book, "salt").mayBlend === false, "shelf cost equal to the newest lot rate means one lot, so no blend flag");
+  const blended = { ...book, pricing: { ...book.pricing, byProduct: { ...book.pricing.byProduct, salt: { ...book.pricing.byProduct.salt, stockCost: 47.47 } } } };
+  ok(costFor(blended, "salt").mayBlend === true, "shelf cost differing from the newest lot rate means a blend, and is flagged");
+  const blendRow = draftRow(entry({ direction: "SELL", party: "CC5-OKR", qty: 1, total: 90, cash: 90, kg: 1, date: "2026-08-16" }), blended);
+  ok(blendRow.flags.some(f => /shelf average/.test(f)), "a blended shelf is named on the row");
+  const singleRow = draftRow(entry({ direction: "SELL", party: "CC5-OKR", qty: 1, total: 90, cash: 90, kg: 1, date: "2026-08-16" }), book);
+  ok(!singleRow.flags.some(f => /shelf average/.test(f)), "a single-lot shelf does not raise it, so the flag stays worth reading");
+
+  /* the floor lookup falls to the nearest carded size BELOW, never above */
+  ok(floorFor(book, "salt", 1).exact === true, "an exact carded size is exact");
+  const near = floorFor(book, "salt", 2);
+  ok(near && near.at === 1 && near.exact === false, "an odd size reads the carded size below it, and says it is not exact");
+
+  /* ---- the refusals ---- */
+  ok(/no payload/.test(draftRow({ at: "x" }, book).skip || ""), "an entry with no payload is refused");
+  ok(/amends/.test(draftRow({ at: "x", payload: { mode: "amend", direction: "SELL", party: "CC5-OKR" } }, book).skip || ""), "an amendment is left for a person");
+  ok(/bucket/.test(draftRow(entry({ direction: "SELL", party: "CN6-WM-R", qty: 1, total: 100, assoc: "CN6-WM" }), book).skip || ""),
+    "an entry carrying associate or stream fields is left for a person");
+  ok(/counterparty/.test(draftRow(entry({ direction: "SELL", qty: 1, total: 100 }), book).skip || ""), "no party, no row");
+  ok(/quantity or no total/.test(draftRow(entry({ direction: "SELL", party: "CC5-OKR", qty: 1 }), book).skip || ""), "no total, no row");
+  ok(/no date/.test(draftRow(entry({ direction: "SELL", party: "CC5-OKR", qty: 1, total: 90, cash: 90, kg: 1 }), book).skip || ""),
+    "something moved but no date given: refused rather than dated by guess");
+
+  /* ---- a pending row carries NO DATE ---- */
+  const pend = draftRow(entry({ direction: "SELL", party: "CC5-OKR", qty: 1, total: 80, cash: 0, kg: 0, date: "2026-08-16" }), book);
+  ok(!pend.skip && pend.row.date === undefined, "nothing moved, so the row is pending and carries NO date even though one was given");
+  ok(pend.row.deliveredQty === 0, "and it draws no stock");
+  ok(/PENDING/.test(pend.reasoning), "the reasoning says so");
+
+  /* ---- THE RM115 OIL UNIT, the fixture this whole path exists for ---- */
+  const oil = draftRow(entry({ direction: "SELL", party: "CH4-MLR", product: "oil", qty: 1, total: 115, cash: 115, kg: 1, date: "2026-08-14" }), book);
+  ok(!oil.skip, "the oil row drafts");
+  ok(oil.row.cost === 7 && oil.row.product === "oil", "costed off the oil lot, and tagged oil");
+  ok(oil.flags.some(f => /more than double/.test(f)), "RM115 is flagged as more than double any oil rate on the book");
+  ok(oil.flags.length >= 1, "the row that caused this feature does not pass silently");
+
+  /* the corrected figure passes that check */
+  const oilOk = draftRow(entry({ direction: "SELL", party: "CH4-MLR", product: "oil", qty: 1, total: 11.5, cash: 11.5, kg: 1, date: "2026-08-14" }), book);
+  ok(!oilOk.flags.some(f => /more than double/.test(f)), "RM11.50 does not trip the range flag");
+
+  /* ---- a purchase is not measured with a seller's ruler ---- */
+  const buyNoFloor = draftRow(entry({ direction: "BUY", party: "SA5-BTR", qty: 12.5, total: 700, cash: 700, kg: 12.5, date: "2026-08-16" }),
+    { ...book, purchases: [...book.purchases, { date: "2026-07-28", supplier: "SA5-BTR", qty: 100, total: 4700 }] });
+  ok(buyNoFloor.flags.every(f => !/loses money/.test(f)), "a purchase is never called a loss-making sale");
+  ok(buyNoFloor.flags.every(f => !/no committed/.test(f)), "a supplier is not judged by their absent BUYING history");
+  const buyStranger = draftRow(entry({ direction: "BUY", party: "SZ9-NEW", qty: 1, total: 60, cash: 60, kg: 1, date: "2026-08-16" }), book);
+  ok(buyStranger.flags.some(f => /never supplied/.test(f)), "an unknown SUPPLIER is flagged as never having supplied, not as off-roster");
+
+  /* ---- the party's own standing rate ---- */
+  const cut = draftRow(entry({ direction: "SELL", party: "CC5-OKR", qty: 1, total: 80, cash: 80, kg: 1, date: "2026-08-16" }), book);
+  ok(cut.flags.some(f => /has paid RM 90/.test(f)), "a party who has always paid RM90 being charged RM80 is flagged");
+  ok(buyNoFloor.flags.every(f => !/floor/.test(f)), "a PURCHASE is never measured against a selling floor");
+  ok(cut.flags.some(f => /under the delivered floor/.test(f)), "and RM80 is flagged as under the RM85.75 delivered floor");
+  ok(cut.flags.some(f => /clears the collected floor/.test(f)), "with the collected floor reported, because it does clear that");
+
+  /* ---- below cost ---- */
+  const loss = draftRow(entry({ direction: "SELL", party: "CS6-BS-R", product: "oil", qty: 20, total: 120, cash: 120, kg: 20, date: "2026-08-16" }), book);
+  ok(loss.flags.some(f => /loses money/.test(f)), "a sale under cost is named as one");
+
+  /* ---- an unknown party ---- */
+  const stranger = draftRow(entry({ direction: "SELL", party: "CX9-NEW", qty: 1, total: 110, cash: 110, kg: 1, date: "2026-08-16" }), book);
+  ok(stranger.flags.some(f => /not on the roster/.test(f)), "a party that is not on the roster is flagged, not silently accepted");
+
+  /* ---- an advance ---- */
+  const adv = draftRow(entry({ direction: "SELL", party: "CC5-OKR", qty: 1, total: 90, cash: 0, kg: 1, date: "2026-08-16" }), book);
+  ok(adv.flags.some(f => /ADVANCE/.test(f)), "a delivery with nothing paid is named an advance");
+  ok(adv.row.deliveredOn === "2026-08-16" && adv.row.paidOn === undefined, "delivered but not paid, and the row says exactly that");
+
+  /* ---- a purchase ---- */
+  const buy = draftRow(entry({ direction: "BUY", party: "SA5-BTR", qty: 12.5, total: 700, cash: 700, kg: 12.5, date: "2026-08-13" }), book);
+  ok(!buy.skip && buy.collection === "purchases", "a BUY drafts into purchases");
+  ok(buy.row.supplier === "SA5-BTR" && buy.row.customer === undefined, "a purchase names a supplier, never a customer");
+  ok(buy.row.status === "paid" && buy.row.receivedQty === 12.5, "paid and received in full");
+  ok(buy.row.cost === undefined, "a purchase carries no per-unit cost field; it IS the cost");
+
+  /* ---- history counts only what MOVED ---- */
+  /* A pending row is an intention. Counting one as history is what stopped CC5-OKR's four
+     RM90 orders reading as a standing rate on the real book. */
+  const withPending = { ...book, sales: [...book.sales, { customer: "CC5-OKR", qty: 1, total: 80 }] };
+  const stillFlagged = draftRow(entry({ direction: "SELL", party: "CC5-OKR", qty: 1, total: 80, cash: 80, kg: 1, date: "2026-08-16" }), withPending);
+  ok(stillFlagged.flags.some(f => /RM 90/.test(f)), "an undated pending row does not count as history, so the standing rate still reads RM90");
+
+  /* ---- one odd order must not switch the check off for ever ---- */
+  const mixed = { ...book, sales: [...book.sales, { date: "2026-08-01", customer: "CC5-OKR", qty: 1, total: 70 }] };
+  const vsMedian = draftRow(entry({ direction: "SELL", party: "CC5-OKR", qty: 1, total: 130, cash: 130, kg: 1, date: "2026-08-16" }), mixed);
+  ok(vsMedian.flags.some(f => /typically pays/.test(f)), "a party with a mixed history is measured against the median, not against perfect uniformity");
+  const inBand = draftRow(entry({ direction: "SELL", party: "CC5-OKR", qty: 1, total: 88, cash: 88, kg: 1, date: "2026-08-16" }), book);
+  ok(!inBand.flags.some(f => /RM 90/.test(f) || /typically pays/.test(f)), "a rate within tolerance of the median does not nag");
+
+  /* ---- a stale pricing snapshot ---- */
+  const stale = draftRow(entry({ direction: "SELL", party: "CC5-OKR", qty: 1, total: 90, cash: 90, kg: 1, date: "2026-08-16" }),
+    { ...book, version: "v305", pricing: { ...book.pricing, v: "v302" } });
+  ok(stale.flags.some(f => /stale/.test(f)), "pricing taken at an older version than the mirror is flagged as stale");
+
+  /* the drafter must never write to `entry`, the mirrored book */
+  const src = readFileSync(join(REPO, "src", "drafter.js"), "utf8");
+  ok(!/INSERT[\s\S]{0,40}INTO\s+entry|UPDATE\s+entry|DELETE\s+FROM\s+entry/i.test(src), "the drafter never writes to the mirrored `entry` table");
+  ok(/INSERT OR IGNORE INTO draft/.test(src), "it inserts drafts idempotently, so a double tick cannot double a row");
+}
+
+/* ---- 11. the drafter is wired to a schedule ------------------------------------- */
+section("Drafter — wiring");
+{
+  const w = readFileSync(join(REPO, "src", "worker.js"), "utf8");
+  ok(/async scheduled\s*\(/.test(w), "the Worker exports a scheduled() handler");
+  ok(/runDrafter/.test(w), "the cron runs the drafter");
+  ok(/\/draft-now/.test(w), "there is a manual trigger for it");
+  const cfg = readFileSync(join(REPO, "wrangler.jsonc"), "utf8");
+  ok(/"crons"\s*:\s*\[/.test(cfg), "wrangler.jsonc declares a cron trigger");
+  /* the manual trigger writes rows, so it must be gated like every other write */
+  const seg = w.slice(w.indexOf('p === "/draft-now"'), w.indexOf('p === "/draft-now"') + 700);
+  ok(/writeOk\(request, env\)/.test(seg) && /needsKey\(\)/.test(seg), "/draft-now is write-gated");
+}
+
 /* ---- done ----------------------------------------------------------------------- */
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

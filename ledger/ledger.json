@@ -1,6 +1,6 @@
 {
- "v": "v302",
- "stamped": "16 Aug 2026, 18:40 KL",
+ "v": "v303",
+ "stamped": "16 Aug 2026, 20:15 KL",
  "source": "Cow-Crm01 salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -1800,6 +1800,127 @@
     "note": "Judged a rare one-off. Treat the RM104/unit it paid as an outlier, not as evidence of what wholesale will bear."
    }
   ],
-  "QUEUE_COMMITTED": "2026-08-14T12:42:33.844Z"
+  "QUEUE_COMMITTED": "2026-08-14T12:42:33.844Z",
+  "PRICING": {
+   "takenAt": "2026-08-16T14:32:22.559Z",
+   "sizes": [
+    0.5,
+    1,
+    1.5,
+    2,
+    2.5,
+    3,
+    4,
+    5,
+    6.25,
+    12.5
+   ],
+   "ref": {
+    "floor": 0.25,
+    "good": 0.5,
+    "great": 0.75,
+    "ceiling": 1
+   },
+   "floorPct": {
+    "retail": 20,
+    "wholesale": 20
+   },
+   "shrinkAttrib": 0.5,
+   "byProduct": {
+    "salt": {
+     "stockCost": 56,
+     "replCost": 56,
+     "floors": {
+      "1": {
+       "delivered": 85.75,
+       "collected": 79.5
+      },
+      "2": {
+       "delivered": 165.24,
+       "collected": 158.99
+      },
+      "3": {
+       "delivered": 244.74,
+       "collected": 238.49
+      },
+      "4": {
+       "delivered": 324.24,
+       "collected": 317.99
+      },
+      "5": {
+       "delivered": 403.74,
+       "collected": 397.49
+      },
+      "0.5": {
+       "delivered": 46,
+       "collected": 39.75
+      },
+      "1.5": {
+       "delivered": 125.5,
+       "collected": 119.25
+      },
+      "2.5": {
+       "delivered": 204.99,
+       "collected": 198.74
+      },
+      "6.25": {
+       "delivered": 503.11,
+       "collected": 496.86
+      },
+      "12.5": {
+       "delivered": 999.97,
+       "collected": 993.72
+      }
+     }
+    },
+    "oil": {
+     "stockCost": 7,
+     "replCost": 7,
+     "floors": {
+      "1": {
+       "delivered": 16.46,
+       "collected": 10.21
+      },
+      "2": {
+       "delivered": 26.68,
+       "collected": 20.43
+      },
+      "3": {
+       "delivered": 36.89,
+       "collected": 30.64
+      },
+      "4": {
+       "delivered": 47.1,
+       "collected": 40.85
+      },
+      "5": {
+       "delivered": 57.31,
+       "collected": 51.06
+      },
+      "0.5": {
+       "delivered": 11.36,
+       "collected": 5.11
+      },
+      "1.5": {
+       "delivered": 21.57,
+       "collected": 15.32
+      },
+      "2.5": {
+       "delivered": 31.78,
+       "collected": 25.53
+      },
+      "6.25": {
+       "delivered": 70.08,
+       "collected": 63.83
+      },
+      "12.5": {
+       "delivered": 133.91,
+       "collected": 127.66
+      }
+     }
+    }
+   },
+   "v": "v303"
+  }
  }
 }

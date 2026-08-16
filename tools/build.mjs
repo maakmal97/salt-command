@@ -11,7 +11,7 @@
  *   SALT_MASTER   env override for the master path (absolute).
  */
 
-import { readFileSync, writeFileSync, mkdirSync, copyFileSync, existsSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync, copyFileSync, existsSync, readdirSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -225,11 +225,22 @@ if (externals.length) {
    THE SEPARATORS ARE NUL BYTES, not spaces, and that is not decoration: a byte that cannot
    occur in any of these sources is the only separator that makes the concatenation
    unambiguous, so no edit to one file can ever forge the hash of another. */
+/* AND THE WORKER ITSELF, added the same day for the same reason. src/worker.js and
+   src/drafter.js ship on every deploy and decide what the phone is served and what the cron
+   writes; a change to either that did not move this id would sit undeployed while update.mjs
+   reported the phone current. Read as a sorted directory rather than a list of filenames, so
+   a new module added to src/ is covered the day it is written and nobody has to remember. */
+let workerSrc = "";
+try {
+  const dir = resolve(REPO, "src");
+  for (const f of readdirSync(dir).filter((n) => n.endsWith(".js")).sort())
+    workerSrc += f + " " + readFileSync(resolve(dir, f), "utf8") + " ";
+} catch (e) { /* no src is not a build failure; the assets still deploy */ }
 let appSrc = "", swSrc = "";
 try { appSrc = readFileSync(APP, "utf8"); } catch (e) { /* first build, before the app exists */ }
 try { swSrc = readFileSync(resolve(REPO, "public", "sw.js"), "utf8"); } catch (e) { /* likewise */ }
 const BUILD_ID = createHash("sha256")
-  .update(src).update(" app ").update(appSrc).update(" sw ").update(swSrc)
+  .update(src).update(" app ").update(appSrc).update(" sw ").update(swSrc).update(" worker ").update(workerSrc)
   .digest("hex").slice(0, 16);
 if (src.split(IDTOKEN).length - 1 !== 1) {
   console.error(`BUILD FAILED: expected the build-id token exactly once, found ${src.split(IDTOKEN).length - 1}.`);

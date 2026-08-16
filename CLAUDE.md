@@ -119,7 +119,7 @@ rows are offered to the commit run.
 ```
 phone: add transaction ──POST /queue──▶ KV
                                          │
-   drafter (the daily run today, a cloud agent later) reads the entry and WRITES A ROW
+   drafter (the v303 cloud cron, every 15 min) reads the entry and WRITES A ROW
                                          │  POST /drafts   (write-gated)
                                          ▼
                               D1 `draft`, status pending
@@ -154,6 +154,44 @@ Endpoints: `GET /drafts?status=pending|approved|rejected|all[&uncommitted=1]`,
 master and it stays authoritative for them; a draft has no counterpart there. Writing here
 therefore does not flip the direction `0001` reserves, and nothing in this path may write to
 `entry`.
+
+## The cloud drafter (v303)
+
+**The laptop is out of the loop for drafting.** A Worker cron (`*/15 * * * *`, declared in
+`wrangler.jsonc`) reads the queue from KV, reads the book from the D1 mirror, writes the
+proposed row into `draft`, and stops. `src/drafter.js`. Run it by hand with a write key:
+
+```bash
+curl -X POST -H "X-Salt-Key: <key>" "https://salt-command.maakmal97.workers.dev/draft-now?dry=1"
+```
+
+`?dry=1` reports what it would draft and stores nothing, which is how to prove it against the
+real book without putting a row in front of anyone.
+
+**It is arithmetic, not a language model, and that is a decision rather than a limit.**
+Everything an approval screen is read for is a number. A model on that path would put
+nondeterminism on precisely the figures that must be right. What a model could usefully write
+is the row NOTE, which is prose and which nobody approves; that is deliberately off this path.
+
+**It never prices anything itself.** `tools/book.mjs` `pricingSnapshot()` runs the desk's own
+`floorTotal`, `replCost` and `stockCostFor` during the extract and stores the answers as the
+`PRICING` state key. The drafter reads those. This is the same rule as `data.json` and it is
+the reason both exist: two engines drift. `PRICING` is **derived, not declared**, which is why
+it is not in `LEDGER_KEYS`; nothing in the master is named `PRICING`.
+
+**What it refuses to draft** matters as much as what it drafts: an amendment (which row?), an
+entry carrying associate, stream or link fields (whose bucket?), a movement with no date, a
+product with no cost on the book. Each is recorded with a reason and left for a person.
+
+**The flags are the product.** They are the comparisons an entry cannot make against itself:
+the rate against the product's whole observed range (this catches the RM115 oil unit), against
+that party's own median, against the live floor delivered and collected, below cost, a blended
+shelf, an unknown party, an advance, and a stale pricing snapshot.
+
+Three faults in them were found by pointing it at the real book, all the same shape: a
+purchase was being measured with a seller's ruler (floor, below-cost, buying history), and a
+party's own pending row was counted as evidence of what they pay. **A flag that fires when
+nothing is wrong is worse than no flag**, because it teaches the reader to tap through.
 
 ## Continuous sync (v279)
 
@@ -222,9 +260,10 @@ Cow-Crm01 master (a Cowork/master session); once it lands, the sync above alread
 | `public/_headers` | CSP and security headers, applied by Cloudflare to the assets. |
 | `wrangler.jsonc` | Worker + assets + the `SALT_QUEUE` KV binding. |
 | `tools/build.mjs` | Master → `public/index.html`, with fail-loud patch anchors. Also writes `public/rev.json`. |
-| `public/rev.json` | `{v,id,built}` for the build on disk. `id` hashes the master, `public/index.html` AND `public/sw.js`, NUL-separated. **Written by the build, never by hand.** Anything that ships and changes behaviour must be in that hash: a change outside it does not move the id, so `update.mjs` compares equal, skips the deploy and reports the phone current while the old file is still served. That is exactly what happened to the v302 sw.js fix before sw.js was added. It is still true of `wrangler.jsonc`, which must be deployed by hand. |
+| `public/rev.json` | `{v,id,built}` for the build on disk. `id` hashes the master, `public/index.html`, `public/sw.js` AND every `src/*.js`, NUL-separated. **Written by the build, never by hand.** Anything that ships and changes behaviour must be in that hash: a change outside it does not move the id, so `update.mjs` compares equal, skips the deploy and reports the phone current while the old file is still served. That is exactly what happened to the v302 sw.js fix before sw.js was added. It is still true of `wrangler.jsonc`, which must be deployed by hand. |
 | `.deployed.json` | `{id,v,at}` for the build that last DEPLOYED successfully. Written by `salt_sync.ps1` on a reported success and nowhere else. |
 | `tools/drain.mjs` | KV → `06_Data\salt_queue_cloud.json`; `--committed <ISO>` prunes; `--status` inspects. |
+| `src/drafter.js` | The cloud drafter: queue + mirror -> a proposed row in `draft`. Runs on the cron and at `POST /draft-now`. Never writes to `entry`. |
 | `tools/drafts.mjs` | The approval step from the laptop: `--schema`, `--list`, `--draft <file>`, `--approved`, `--committed <id>`. Goes through wrangler, so no write key needed. |
 | `migrations/0002_draft.sql` | The `draft` table. The first thing in the store the cloud owns rather than mirrors. |
 | `tools/update.mjs` | **The whole "update" chain in one command**, ending in proof that every surface is level. See below. |
@@ -372,6 +411,6 @@ deduped by the entry's own `at`, so nothing is committed twice.
 
 ## Tests
 
-`npm test` runs `test/verify.mjs`: 163 assertions with no network or browser. Add one for every
+`npm test` runs `test/verify.mjs`: 212 assertions with no network or browser. Add one for every
 behavioural change to the Worker, the build patches or the drain. The desk's own rendering is
 covered by the daily run's jsdom pass against the master, not here.

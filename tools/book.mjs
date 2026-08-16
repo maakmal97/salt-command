@@ -65,6 +65,62 @@ export function reader(w) {
   };
 }
 
+/* THE PRICING SNAPSHOT (v303), and it exists so the cloud drafter is never a second engine.
+ *
+ * A drafter has to answer two things about a proposed row: what the salt cost, and whether the
+ * price clears the floor. Both are the desk's own arithmetic. Recomputing them in a Worker is
+ * exactly the drift `data.json` was built to prevent, and the drift would land on the two
+ * figures an approval screen is read for. So the desk computes them, through its own
+ * functions, and the cloud reads the answers.
+ *
+ * IT IS ASSEMBLED HERE RATHER THAN ADDED TO THE MASTER. The master is the trading desk and it
+ * should not grow a function for the cloud's convenience; every call below is one the desk
+ * already makes for itself. Anything missing comes back null, because a drafter that knows it
+ * cannot price a row is useful and one that guesses is not.
+ *
+ * IT IS A SNAPSHOT AND GOES STALE like every other mirrored value: it is re-taken on the same
+ * pass that re-seeds the store, and it carries the version it was taken at so a reader can
+ * tell. A drafter comparing it against a newer master should flag rather than proceed. */
+export function pricingSnapshot(w) {
+  const read = reader(w);
+  const call = (expr) => { const r = read(expr); return r.ok && typeof r.value !== "undefined" ? r.value : null; };
+  const numOrNull = (v) => (typeof v === "number" && Number.isFinite(v)) ? +v.toFixed(4) : null;
+  const products = call("PROD_ORDER") || ["salt"];
+  const sizes = call("PRICE_TIERS && PRICE_TIERS.sizes") || [0.5, 1, 1.5, 2, 2.5, 3, 4, 5, 6.25, 12.5];
+
+  const byProduct = {};
+  for (const p of products) {
+    /* PROD is the desk's own active-product global and every pricing function reads it, so it
+       is set, read, and put back. Restoring it matters: this runs inside the extract, and
+       leaving the desk on the wrong book would silently change what is extracted next. */
+    const before = call("PROD");
+    let floors = null, repl = null, stockCost = null;
+    try {
+      w.eval("PROD=" + JSON.stringify(p));
+      stockCost = numOrNull(call("stockCostFor(" + JSON.stringify(p) + ")"));
+      repl = numOrNull(call("replCost()"));
+      floors = {};
+      for (const q of sizes) {
+        floors[q] = {
+          delivered: numOrNull(call("floorTotal(" + q + ")")),
+          collected: numOrNull(call("floorTotal(" + q + ",null,{collects:true})"))
+        };
+      }
+    } catch (e) { /* a product the desk cannot price yields nulls, which the drafter must handle */ }
+    finally { if (before != null) { try { w.eval("PROD=" + JSON.stringify(before)); } catch (e) { } } }
+    byProduct[p] = { stockCost, replCost: repl, floors };
+  }
+
+  return {
+    takenAt: new Date().toISOString(),
+    sizes,
+    ref: call("REF"),                       // the markup-on-cost ladder: floor, good, great, ceiling
+    floorPct: call("PRICE && PRICE.floorPct"),   // the OTHER floor, a margin on price. See v300.
+    shrinkAttrib: call("SHRINK_ATTRIB"),
+    byProduct
+  };
+}
+
 /* One default, shared with payload.mjs by matching it, and overridable the same way. */
 export const MASTER = process.env.SALT_MASTER ||
   "C:/Users/maakm/Claude/Projects/Personal/Cow-Crm01_Salt Business/01_Dashboard/salt_command.html";
@@ -85,6 +141,9 @@ export async function readBook(masterPath = MASTER) {
     if (r.ok && typeof r.value !== "undefined") meta[key] = r.value;
   }
   const version = (Array.isArray(meta.evolution) && meta.evolution[0] && meta.evolution[0].v) || null;
+  /* Taken LAST, after every value above has been read, because it sets and restores the desk's
+     active product and nothing else should be reading while it does. */
+  ledger.PRICING = { ...pricingSnapshot(w), v: version };
   return { dom, w, read, ledger, meta, missing, version, stamped: meta.LAST_UPDATED || null,
     src: readFileSync(masterPath, "utf8") };
 }

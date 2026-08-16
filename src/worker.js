@@ -26,6 +26,8 @@
  * nothing would be issuing the header this then demands.
  */
 
+import { runDrafter, dryRunDrafter } from "./drafter.js";
+
 /* X-Robots-Tag matches public/_headers, which sets it on the static assets. It was missing
    here, so GET /queue and GET /rev carried no noindex at all. That mattered little behind
    Access and matters a great deal now the origin is public: GET /queue returns the union of
@@ -370,6 +372,27 @@ async function handleDrafts(request, env, url, p, m) {
 }
 
 export default {
+  /* THE CLOUD DRAFTER (v303), on a cron. This is what takes the laptop out of the loop: a
+   * queued entry becomes a proposed row here, in the cloud, and waits on the phone.
+   *
+   * It drafts and stops. It does not approve, does not write to `entry`, and does not touch
+   * the master. Everything it needs is already in the store: the book from the mirror, the
+   * cost and floors from the pricing snapshot the extract takes with the desk's own functions.
+   *
+   * A failure here must be loud in the logs and must NOT retry blindly: the insert is
+   * INSERT OR IGNORE keyed on the entry's own `at`, so a re-run is harmless, and the next
+   * tick is a better retry than a loop. */
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil((async () => {
+      try {
+        const r = await runDrafter(env);
+        console.log("drafter: " + JSON.stringify(r));
+      } catch (e) {
+        console.log("drafter FAILED: " + String((e && e.stack) || e));
+      }
+    })());
+  },
+
   async fetch(request, env) {
     const url = new URL(request.url);
     const p = (url.pathname.replace(/\/+$/, "") || "/");
@@ -430,6 +453,20 @@ export default {
     }
     /* The approval step. Reads open, decisions write-gated, same posture as everything else. */
     if (p === "/drafts" || p.startsWith("/drafts/")) return handleDrafts(request, env, url, p, m);
+    /* Run the drafter on demand rather than waiting for the cron: needed to prove it from
+       outside, and needed the moment an entry is queued and you want the row now. Write-gated,
+       because it writes rows into `draft`. `?dry=1` reports what it would draft and stores
+       nothing. */
+    if (p === "/draft-now") {
+      if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+      if (!writeOk(request, env)) return needsKey();
+      try {
+        if (url.searchParams.get("dry") === "1") return json(await dryRunDrafter(env));
+        return json(await runDrafter(env));
+      } catch (e) {
+        return json({ ok: false, error: String((e && e.message) || e) }, 500);
+      }
+    }
     if (p === "/vault") {
       if (m === "GET") return handleVaultGet(env);               // ciphertext only
       if (m === "POST") return handleVaultPost(request, env);    // stores the envelope, rejects plaintext

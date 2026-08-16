@@ -55,6 +55,22 @@
 	//
 	// Nothing is deleted, only switched off: restoring protection is this var back
 	// to "1" plus an Access application, per CLAUDE.md "Deploying" step 3.
+	// THE CLOUD DRAFTER (v303). Every fifteen minutes it reads the queue from KV, reads the
+	// book from the D1 mirror, and writes a proposed ROW into `draft` for anything new. It
+	// drafts and stops: the phone approves, and only approved rows reach the master.
+	//
+	// FIFTEEN MINUTES IS CHOSEN, not a default. An entry is queued from the phone at the point
+	// of sale and the row is worth reading while the trade is still in mind; anything slower
+	// and the drafter is no better than the daily run it replaces. It is cheap because it is
+	// idempotent by construction (the draft id IS the entry's `at`, and the insert is INSERT OR
+	// IGNORE), so a tick with nothing to do costs one KV list and one D1 read.
+	//
+	// A CRON EDIT IS NOT SHIPPED BY THE AUTO-SYNC LEG, same as every other wrangler.jsonc
+	// change: it does not move rev.json's id, so update.mjs compares equal and skips the
+	// deploy. Deploy this by hand.
+	"triggers": {
+		"crons": ["*/15 * * * *"]
+	},
 	"vars": {
 		"REQUIRE_ACCESS": "0"
 	},
