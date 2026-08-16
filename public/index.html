@@ -112,6 +112,31 @@ h2{font-size:17px;font-weight:600;letter-spacing:-.2px;margin:0 0 12px}
 .empty{background:rgba(110,231,168,.09);border:1px solid rgba(110,231,168,.28);
   border-radius:var(--r-sm);padding:14px 16px;font-size:14px;color:var(--good)}
 
+/* ---- Approve: the drafted row -------------------------------------------- */
+/* The count rides on the tab itself, because a row waiting on a tap is the one thing
+   here that goes stale by being ignored. */
+.cnt{display:inline-block;min-width:17px;padding:1px 5px;margin-left:5px;font-size:10px;
+  font-weight:800;line-height:15px;text-align:center;border-radius:var(--pill);
+  background:var(--lead);color:#2a2008}
+.drf{background:rgba(255,255,255,.05);border:1px solid var(--brd);
+  border-radius:var(--r-sm);padding:14px 15px;margin:0 0 11px}
+.drf-top{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:0 0 9px}
+.drf-w{font-size:15px;font-weight:700;color:var(--ink)}
+.drf-rm{font-size:15px;font-weight:700;color:var(--lead);white-space:nowrap}
+/* The row, laid out as figures rather than prose. This is the half a typed entry cannot show. */
+.drf-g{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:0 0 10px}
+.drf-c{background:var(--well);border:1px solid var(--brd);border-radius:10px;padding:8px 10px}
+.drf-c .k{font-size:9.5px;text-transform:uppercase;letter-spacing:.9px;font-weight:700;
+  color:var(--ink-3);margin:0 0 2px}
+.drf-c .v{font-size:14px;font-weight:700;font-family:var(--mono)}
+.drf-c.good .v{color:var(--good)} .drf-c.warn .v{color:var(--warn)} .drf-c.bad .v{color:var(--bad)}
+.drf-why{font-size:12.5px;color:var(--ink-2);margin:0 0 10px;overflow-wrap:break-word}
+.drf-f{background:rgba(255,207,122,.10);border:1px solid rgba(255,207,122,.30);
+  border-radius:10px;padding:9px 11px;margin:0 0 10px;font-size:12.5px;color:var(--warn)}
+.drf-b{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.btn.rej{background:rgba(255,138,138,.10);border-color:rgba(255,138,138,.32);color:var(--bad)}
+.btn.rej:hover{background:rgba(255,138,138,.20)}
+
 /* ---- Watch: stat cards --------------------------------------------------- */
 .stats{display:grid;grid-template-columns:1fr 1fr;gap:9px}
 .stat{background:rgba(255,255,255,.05);border:1px solid var(--brd);
@@ -190,6 +215,7 @@ option:checked{background-color:var(--menu-2);font-weight:600}
     <button class="tab" role="tab" id="tab-today" aria-controls="p-today" aria-selected="true">Today</button>
     <button class="tab" role="tab" id="tab-pos" aria-controls="p-pos" aria-selected="false">Position</button>
     <button class="tab" role="tab" id="tab-add" aria-controls="p-add" aria-selected="false">Add</button>
+    <button class="tab" role="tab" id="tab-appr" aria-controls="p-appr" aria-selected="false">Approve <span class="cnt" id="apprN" hidden>0</span></button>
   </div></nav>
 
   <header class="glass" style="padding:17px;margin:0 0 14px">
@@ -209,6 +235,14 @@ option:checked{background-color:var(--menu-2);font-weight:600}
       <p class="lbl">Where the book stands</p>
       <div id="pos"></div>
       <p class="basis" id="basis"></p>
+    </section>
+
+    <section class="glass" id="p-appr" role="tabpanel" aria-labelledby="tab-appr" hidden>
+      <p class="lbl">Rows waiting on you</p>
+      <p class="stand">What you approve is the ROW, not the entry you typed: the cost it draws
+        and the margin it makes are the things an entry cannot show.</p>
+      <div id="appr"><p class="stand">Loading.</p></div>
+      <div id="apprMsg"></div>
     </section>
 
     <section class="glass" id="p-add" role="tabpanel" aria-labelledby="tab-add" hidden>
@@ -433,6 +467,10 @@ function drawHeld(){
   }).join('');
 }
 function msg(kind,text){ $('msg').innerHTML='<div class="msg '+kind+'">'+text+'</div>'; }
+/* The Approve panel needs its own target: msg() writes into the Add panel, which is
+   hidden while you are approving, so a decision would report itself where nobody is
+   looking. Same shape, different box. */
+function amsg(kind,text){ $('apprMsg').innerHTML='<div class="msg '+kind+'">'+text+'</div>'; }
 
 function record(){
   if(busy)return;
@@ -504,8 +542,85 @@ function poll(){
     }).catch(function(){});
 }
 
+/* ---- Approve: the drafted row --------------------------------------------
+   THE ROW IS WHAT IS APPROVED, NOT THE ENTRY. On 14 Aug an oil unit was queued at
+   RM115. As an entry it was faultless: a product, a party, a quantity, a price. As a
+   ROW, sitting next to RM7 of cost and a 93.9% margin, it was obviously wrong, and
+   the real figure was RM11.50. So this panel leads with cost and margin and puts the
+   price beside them; showing the entry back would show nothing that could be checked.
+
+   IT COMPUTES NOTHING. Same rule as the rest of this app: cost, margin and the flags
+   are read from the draft exactly as the drafter wrote them. A second opinion computed
+   here would be a second pricing engine, and two engines drift. */
+var DRAFTS=[],apprBusy={};
+function money(n){ if(n==null||isNaN(n))return '-';
+  return 'RM '+Number(n).toLocaleString('en-MY',{maximumFractionDigits:2}); }
+function loadDrafts(){
+  return fetch('drafts?status=pending',{cache:'no-store'}).then(function(r){ return r.ok?r.json():null; })
+    .then(function(j){ DRAFTS=(j&&j.drafts)||[]; drawDrafts(); })
+    .catch(function(){ DRAFTS=[]; drawDrafts(); });
+}
+function drawDrafts(){
+  var box=$('appr'),n=$('apprN');
+  n.hidden=!DRAFTS.length; n.textContent=String(DRAFTS.length);
+  if(!DRAFTS.length){ box.innerHTML='<div class="empty">Nothing waiting. Every drafted row has been decided.</div>'; return; }
+  box.innerHTML=DRAFTS.map(function(d){
+    var r=d.row||{},qty=r.qty,total=r.total,cost=r.cost;
+    var per=(total!=null&&qty)?money(total/qty)+'/unit':'-';
+    var mar=(total>0&&cost!=null&&qty)?((total-cost*qty)/total*100):null;
+    /* Banded against the v300 ladder, converted to margin on price so it is compared
+       like with like: a 25% markup on cost is a 20% margin, 50% is 33.3%, 75% is 42.9%. */
+    var cls=mar==null?'':(mar<20?'bad':(mar<33.3?'warn':'good'));
+    var buy=d.collection==='purchases';
+    return '<div class="drf" data-id="'+esc(d.id)+'">'
+      +'<div class="drf-top"><span class="drf-w">'+(buy?'Buy from ':'Sell to ')+esc(r.customer||r.supplier||'?')+'</span>'
+      +'<span class="drf-rm">'+money(total)+'</span></div>'
+      +'<div class="drf-g">'
+      +'<div class="drf-c"><p class="k">Quantity</p><p class="v">'+esc(String(qty==null?'-':qty))+' unit '+esc(r.product||'salt')+'</p></div>'
+      +'<div class="drf-c"><p class="k">Rate</p><p class="v">'+esc(per)+'</p></div>'
+      +'<div class="drf-c"><p class="k">Cost drawn</p><p class="v">'+esc(money(cost))+'/unit</p></div>'
+      +'<div class="drf-c '+cls+'"><p class="k">Margin</p><p class="v">'+(mar==null?'-':mar.toFixed(1)+'%')+'</p></div>'
+      +'<div class="drf-c"><p class="k">Date</p><p class="v">'+esc(r.date||'none')+'</p></div>'
+      +'<div class="drf-c"><p class="k">Cash in</p><p class="v">'+esc(money(r.cash))+'</p></div>'
+      +'</div>'
+      +(d.flags||[]).map(function(f){ return '<div class="drf-f">'+esc(f)+'</div>'; }).join('')
+      +'<p class="drf-why">'+esc(d.reasoning||'')+'</p>'
+      +'<div class="drf-b"><button class="btn rej" data-a="reject">Reject</button>'
+      +'<button class="btn primary" data-a="approve">Approve</button></div></div>';
+  }).join('');
+  Array.prototype.forEach.call(box.querySelectorAll('button[data-a]'),function(b){
+    b.addEventListener('click',function(){
+      decide(b.parentNode.parentNode.getAttribute('data-id'),b.getAttribute('data-a'),b);
+    });
+  });
+}
+/* A decision is a write, so it carries the key and retries once after asking for it,
+   exactly as an entry does. Buttons are disabled while it is in flight because a
+   double tap on a phone is the normal case, not the odd one. */
+function decide(id,action,btn){
+  if(!id||apprBusy[id])return;
+  apprBusy[id]=1;
+  var row=btn.parentNode.parentNode;
+  Array.prototype.forEach.call(row.querySelectorAll('button'),function(b){ b.disabled=true; });
+  var url='drafts/'+encodeURIComponent(id)+'/'+action;
+  var body=JSON.stringify({by:'phone'});
+  fetch(url,{method:'POST',headers:headers(),body:body}).then(function(r){
+    if(r.status===401&&askWriteKey())return fetch(url,{method:'POST',headers:headers(),body:body});
+    return r;
+  }).then(function(r){
+    if(r.status===401){ amsg('bad','That write key was refused. The row is still waiting.'); return; }
+    if(r.status===409){ amsg('warn','That row was already decided somewhere else.'); return; }
+    if(!r.ok){ amsg('bad','The desk refused the decision (http '+r.status+'). The row is still waiting.'); return; }
+    amsg('ok',action==='approve'
+      ?'Approved. It goes into the ledger on the next commit run; nothing is written yet.'
+      :'Rejected. It will not reach the ledger.');
+  }).catch(function(){
+    amsg('bad','No connection, so the decision was not recorded. The row is still waiting.');
+  }).then(function(){ delete apprBusy[id]; return loadDrafts(); });
+}
+
 /* ---- tabs ---------------------------------------------------------------- */
-var TABS=[['tab-today','p-today','Today'],['tab-pos','p-pos','Position'],['tab-add','p-add','Record']];
+var TABS=[['tab-today','p-today','Today'],['tab-pos','p-pos','Position'],['tab-add','p-add','Record'],['tab-appr','p-appr','Approve']];
 function show(i){
   TABS.forEach(function(t,k){
     $(t[0]).setAttribute('aria-selected',String(k===i));
@@ -529,13 +644,14 @@ $('d-buy').addEventListener('click',function(){ dir='BUY';
 $('rec').addEventListener('click',record);
 window.addEventListener('online',function(){ paint(); if(held.length)push().then(paint); });
 window.addEventListener('offline',paint);
-document.addEventListener('visibilitychange',function(){ if(document.visibilityState==='visible')poll(); });
+document.addEventListener('visibilitychange',function(){ if(document.visibilityState==='visible'){ poll(); loadDrafts(); } });
 
 /* ---- start --------------------------------------------------------------- */
 $('f-date').value=today();
 loadHeld();
 try{ var t=parseInt(localStorage.getItem('saltAppTab')||'0',10); show(isNaN(t)?0:t); }catch(e){ show(0); }
 loadData().then(function(){ if(held.length)push().then(paint); });
+loadDrafts();
 setInterval(poll,10000);
 if('serviceWorker' in navigator){
   window.addEventListener('load',function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); });

@@ -543,6 +543,179 @@ section("Worker — /rev");
   }
 }
 
+/* ---- 8. Worker: the approval step ----------------------------------------------- */
+/* The behaviour worth guarding is the REFUSALS, not the happy path: a draft with no row,
+   a decision without the key, and a second decision on a row already decided. Each of
+   those, if it slipped, would put an unreviewed row into the ledger or undo a decision. */
+section("Worker — drafts and approval");
+{
+  /* A D1 mock small enough to be honest about what it does: it understands only the
+     statements the Worker actually issues, and throws on anything else rather than
+     quietly returning nothing, which is how a mock hides a broken query. */
+  class D1 {
+    constructor() { this.rows = new Map(); }
+    prepare(sql) {
+      const self = this, s = sql.replace(/\s+/g, " ").trim();
+      let binds = [];
+      const api = {
+        bind(...a) { binds = a; return api; },
+        async first() {
+          if (/^SELECT status FROM draft WHERE id=/.test(s) || /^SELECT status,committed_at FROM draft WHERE id=/.test(s)) {
+            return self.rows.get(binds[0]) || null;
+          }
+          if (/^SELECT .* FROM draft WHERE id=/.test(s)) return self.rows.get(binds[0]) || null;
+          throw new Error("unmocked first(): " + s);
+        },
+        async all() {
+          if (!/^SELECT .* FROM draft/.test(s)) throw new Error("unmocked all(): " + s);
+          let out = [...self.rows.values()];
+          if (/status=\?/.test(s)) out = out.filter(r => r.status === binds[0]);
+          if (/committed_at IS NULL/.test(s)) out = out.filter(r => !r.committed_at);
+          return { results: out };
+        },
+        async run() {
+          if (/^INSERT OR IGNORE INTO draft/.test(s)) {
+            const id = binds[0];
+            if (self.rows.has(id)) return { meta: { changes: 0 } };
+            self.rows.set(id, {
+              id, status: "pending", collection: binds[1], entry: binds[2], row: binds[3],
+              reasoning: binds[4], flags: binds[5], party: binds[6], product: binds[7],
+              date: binds[8], qty: binds[9], total: binds[10], cost: binds[11],
+              drafter: binds[12], drafted_at: binds[13], decided_at: null, decided_by: null, committed_at: null
+            });
+            return { meta: { changes: 1 } };
+          }
+          if (/^UPDATE draft SET status=/.test(s)) {
+            const r = self.rows.get(binds[3]);
+            if (r && r.status === "pending") { r.status = binds[0]; r.decided_at = binds[1]; r.decided_by = binds[2]; }
+            return { meta: { changes: 1 } };
+          }
+          if (/^UPDATE draft SET committed_at=/.test(s)) {
+            const r = self.rows.get(binds[1]);
+            if (r && !r.committed_at) r.committed_at = binds[0];
+            return { meta: { changes: 1 } };
+          }
+          throw new Error("unmocked run(): " + s);
+        }
+      };
+      return api;
+    }
+  }
+
+  const KEY = "open-sesame";
+  const d1 = new D1();
+  const env = { SALT_QUEUE: new KV(), SALT_LEDGER: d1, ASSETS: assets, REQUIRE_ACCESS: "0", SALT_WRITE_KEY: KEY };
+  const body = (o) => JSON.stringify(o);
+  const post = (p, o, key) => req(p, {
+    method: "POST",
+    headers: { "content-type": "application/json", ...(key ? { "X-Salt-Key": key } : {}) },
+    body: body(o)
+  });
+  const goodDraft = {
+    id: "2026-08-14T12:16:00.151Z", collection: "sales",
+    entry: { at: "2026-08-14T12:16:00.151Z", raw: "Sell 1 unit to CH4-MLR for RM 110" },
+    row: { date: "2026-08-14", customer: "CH4-MLR", qty: 1, total: 110, cost: 56, cash: 110 },
+    reasoning: "FIFO off the 13 Aug RM56 lot.", flags: ["a first order from this party"],
+    drafter: "test"
+  };
+
+  /* a draft needs a proposed ROW and a reason; neither is optional */
+  let r = await worker.fetch(post("/drafts", { ...goodDraft, row: undefined }, KEY), env);
+  ok(r.status === 400, "POST /drafts with no row is refused");
+  r = await worker.fetch(post("/drafts", { ...goodDraft, reasoning: "  " }, KEY), env);
+  ok(r.status === 400, "POST /drafts with no reasoning is refused");
+
+  /* writing a draft is a write */
+  r = await worker.fetch(post("/drafts", goodDraft, null), env);
+  ok(r.status === 401, "POST /drafts without the write key is refused");
+  r = await worker.fetch(post("/drafts", goodDraft, "wrong-key-x"), env);
+  ok(r.status === 401, "POST /drafts with a wrong key is refused");
+
+  r = await worker.fetch(post("/drafts", goodDraft, KEY), env);
+  let j = await r.json();
+  ok(r.status === 200 && j.ok && j.created === true, "POST /drafts with the key creates the draft");
+
+  /* re-drafting the same id must not reopen it */
+  r = await worker.fetch(post("/drafts", goodDraft, KEY), env);
+  j = await r.json();
+  ok(j.created === false && j.existed === true, "re-posting the same id does not create a second draft");
+
+  /* reads are open, matching the rest of the Worker */
+  r = await worker.fetch(req("/drafts"), env);
+  j = await r.json();
+  ok(r.status === 200 && j.count === 1, "GET /drafts is open and lists the pending draft");
+  ok(j.drafts[0].row.cost === 56 && j.drafts[0].row.total === 110, "the drafted ROW comes back intact");
+  ok(Array.isArray(j.drafts[0].flags) && j.drafts[0].flags.length === 1, "flags come back parsed");
+  ok(j.drafts[0].entry && j.drafts[0].entry.raw, "the original entry comes back beside the row");
+
+  /* a decision is a write */
+  r = await worker.fetch(post("/drafts/" + encodeURIComponent(goodDraft.id) + "/approve", {}, null), env);
+  ok(r.status === 401, "approving without the write key is refused");
+
+  r = await worker.fetch(post("/drafts/" + encodeURIComponent(goodDraft.id) + "/approve", { by: "phone" }, KEY), env);
+  j = await r.json();
+  ok(r.status === 200 && j.draft.status === "approved", "approving with the key sets status approved");
+  ok(j.draft.decidedAt && j.draft.decidedBy === "phone", "the decision records when and by whom");
+
+  /* the double tap */
+  r = await worker.fetch(post("/drafts/" + encodeURIComponent(goodDraft.id) + "/reject", {}, KEY), env);
+  ok(r.status === 409, "a second decision on a decided row is refused, not applied");
+  r = await worker.fetch(req("/drafts?status=approved"), env);
+  j = await r.json();
+  ok(j.drafts[0].status === "approved", "the first decision stands after the second is refused");
+
+  /* what the commit run asks for */
+  r = await worker.fetch(req("/drafts?status=approved&uncommitted=1"), env);
+  j = await r.json();
+  ok(j.count === 1, "approved and uncommitted is what the commit run reads");
+  r = await worker.fetch(post("/drafts/" + encodeURIComponent(goodDraft.id) + "/committed", {}, KEY), env);
+  ok(r.status === 200, "the run can mark a row committed");
+  r = await worker.fetch(req("/drafts?status=approved&uncommitted=1"), env);
+  j = await r.json();
+  ok(j.count === 0, "a committed row is no longer offered to the run");
+
+  /* a rejected row is never offered */
+  const second = { ...goodDraft, id: "2026-08-14T12:42:33.844Z" };
+  await worker.fetch(post("/drafts", second, KEY), env);
+  await worker.fetch(post("/drafts/" + encodeURIComponent(second.id) + "/reject", {}, KEY), env);
+  r = await worker.fetch(req("/drafts?status=approved&uncommitted=1"), env);
+  j = await r.json();
+  ok(j.count === 0, "a rejected row never reaches the commit run");
+  r = await worker.fetch(post("/drafts/" + encodeURIComponent(second.id) + "/committed", {}, KEY), env);
+  ok(r.status === 409, "a rejected row cannot be marked committed");
+
+  /* unknown ids and methods */
+  r = await worker.fetch(post("/drafts/nope/approve", {}, KEY), env);
+  ok(r.status === 404, "deciding an unknown id is a 404");
+  r = await worker.fetch(req("/drafts", { method: "DELETE" }), env);
+  ok(r.status === 405, "DELETE /drafts is not allowed");
+
+  /* Access still gates the whole surface when it is on */
+  const gated = { ...env, REQUIRE_ACCESS: "1" };
+  r = await worker.fetch(req("/drafts"), gated);
+  j = await r.json();
+  ok(r.status === 401 && j.ok === false, "with Access on, /drafts answers 401 JSON rather than the locked page");
+}
+
+/* ---- 9. The phone app's approval panel ------------------------------------------ */
+section("App — the approval panel");
+{
+  const app = readFileSync(join(REPO, "public", "index.html"), "utf8");
+  ok(/id="tab-appr"/.test(app), "the app has an Approve tab");
+  ok(/id="p-appr"/.test(app), "the app has an Approve panel");
+  ok(/'tab-appr','p-appr'/.test(app), "the Approve tab is wired into TABS");
+  ok(/function decide\(/.test(app), "the app can post a decision");
+  ok(/drafts\/'\+encodeURIComponent\(id\)/.test(app), "the decision url encodes the id");
+  /* the bug this caught in review: msg() writes into the Add panel, which is hidden
+     while approving, so the Approve panel needs its own target */
+  ok(/function amsg\(/.test(app) && /id="apprMsg"/.test(app), "the Approve panel reports into its own box");
+  const decideBody = app.slice(app.indexOf("function decide("), app.indexOf("/* ---- tabs"));
+  ok(!/(^|[^a-z])msg\('/.test(decideBody.replace(/amsg\('/g, "")), "decide() never reports into the hidden Add panel");
+  ok(/X-Salt-Key/.test(app), "the app sends the write key");
+  /* it must not price anything itself: the whole reason data.json exists */
+  ok(!/floorTotal|replCost|STOCK_COST/.test(app), "the app computes no floor of its own");
+}
+
 /* ---- done ----------------------------------------------------------------------- */
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

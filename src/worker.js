@@ -240,6 +240,135 @@ async function handleLedger(env, url) {
   }
 }
 
+/* THE APPROVAL STEP (v302).
+ *
+ * A queued entry does not become a ledger row unattended. A drafter writes the proposed ROW,
+ * this stores it as `pending`, the phone shows it with its cost and margin beside the price,
+ * and a tap approves or rejects it. Only approved rows are read back by the commit run.
+ *
+ * WHAT IS APPROVED IS THE ROW, and migrations/0002_draft.sql explains why at length: the
+ * RM115 oil entry of 14 Aug was well-formed and wrong, and only the row showed it.
+ *
+ * READS ARE OPEN, DECISIONS ARE NOT. That matches the posture of the rest of this Worker
+ * since 11 Aug: anyone with the URL reads the book, nobody without the key writes to it. A
+ * decision is a write in the fullest sense, since an approved row reaches the master.
+ */
+const DRAFT_COLS = "id,status,collection,entry,row,reasoning,flags,party,product,date,qty,total,cost,drafter,drafted_at,decided_at,decided_by,committed_at";
+
+function draftOut(r) {
+  const parse = (s, fallback) => { try { return s == null ? fallback : JSON.parse(s); } catch (e) { return fallback; } };
+  return {
+    id: r.id, status: r.status, collection: r.collection,
+    entry: parse(r.entry, null), row: parse(r.row, null),
+    reasoning: r.reasoning, flags: parse(r.flags, []),
+    party: r.party, product: r.product, date: r.date,
+    qty: r.qty, total: r.total, cost: r.cost,
+    drafter: r.drafter, draftedAt: r.drafted_at,
+    decidedAt: r.decided_at, decidedBy: r.decided_by, committedAt: r.committed_at
+  };
+}
+
+async function handleDraftsGet(env, url) {
+  if (!env.SALT_LEDGER) return json({ ok: false, error: "no ledger binding" }, 503);
+  const want = url.searchParams.get("status") || "pending";
+  const all = want === "all";
+  if (!all && !["pending", "approved", "rejected"].includes(want)) {
+    return json({ ok: false, error: "status must be pending, approved, rejected or all" }, 400);
+  }
+  /* `uncommitted` is what the commit run asks for: approved and not yet in the master. It is
+     a separate question from `approved`, because an approved row stays approved forever. */
+  const uncommitted = url.searchParams.get("uncommitted") === "1";
+  let sql = `SELECT ${DRAFT_COLS} FROM draft`;
+  const binds = [];
+  const where = [];
+  if (!all) { where.push("status=?"); binds.push(want); }
+  if (uncommitted) where.push("committed_at IS NULL");
+  if (where.length) sql += " WHERE " + where.join(" AND ");
+  sql += " ORDER BY drafted_at";
+  const rs = await env.SALT_LEDGER.prepare(sql).bind(...binds).all();
+  const drafts = (rs.results || []).map(draftOut);
+  return json({ ok: true, count: drafts.length, drafts });
+}
+
+async function handleDraftPost(request, env) {
+  if (!env.SALT_LEDGER) return json({ ok: false, error: "no ledger binding" }, 503);
+  if (!writeOk(request, env)) return needsKey();
+  let b;
+  try { b = await request.json(); } catch (e) { return json({ ok: false, error: "bad json" }, 400); }
+  const id = b && typeof b.id === "string" ? b.id.trim() : "";
+  if (!id) return json({ ok: false, error: "id is required and is the queue entry's own 'at'" }, 400);
+  if (!b.row || typeof b.row !== "object") return json({ ok: false, error: "row is required: a draft with no proposed row is just a queue entry" }, 400);
+  if (!b.entry || typeof b.entry !== "object") return json({ ok: false, error: "entry is required" }, 400);
+  const reasoning = typeof b.reasoning === "string" ? b.reasoning.trim() : "";
+  if (!reasoning) return json({ ok: false, error: "reasoning is required: an unexplained row cannot be reviewed" }, 400);
+  const collection = b.collection === "purchases" ? "purchases" : "sales";
+  const drafter = (typeof b.drafter === "string" && b.drafter.trim()) || "unknown";
+  const num = v => (typeof v === "number" && isFinite(v)) ? v : null;
+  /* INSERT OR IGNORE, never REPLACE. Re-drafting an id that has already been decided must not
+     quietly reopen it, or a decision could be undone by whatever runs next. */
+  const res = await env.SALT_LEDGER.prepare(
+    `INSERT OR IGNORE INTO draft
+       (id,status,collection,entry,row,reasoning,flags,party,product,date,qty,total,cost,drafter,drafted_at)
+     VALUES (?1,'pending',?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14)`
+  ).bind(
+    id, collection, JSON.stringify(b.entry), JSON.stringify(b.row), reasoning,
+    JSON.stringify(Array.isArray(b.flags) ? b.flags : []),
+    b.row.customer || b.row.supplier || null,
+    b.row.product || (collection === "sales" ? "salt" : null),
+    b.row.date || null, num(b.row.qty), num(b.row.total), num(b.row.cost),
+    drafter, new Date().toISOString()
+  ).run();
+  const created = !!(res.meta && res.meta.changes);
+  return json({ ok: true, id, created, existed: !created });
+}
+
+async function handleDraftDecide(request, env, id, decision) {
+  if (!env.SALT_LEDGER) return json({ ok: false, error: "no ledger binding" }, 503);
+  if (!writeOk(request, env)) return needsKey();
+  let by = "phone";
+  try { const b = await request.json(); if (b && typeof b.by === "string" && b.by.trim()) by = b.by.trim(); } catch (e) { /* body is optional */ }
+  const cur = await env.SALT_LEDGER.prepare("SELECT status FROM draft WHERE id=?1").bind(id).first();
+  if (!cur) return json({ ok: false, error: "no such draft" }, 404);
+  /* Only a pending draft may be decided. Deciding twice is reported rather than applied, so a
+     double tap on a phone cannot flip an approval into a rejection. */
+  if (cur.status !== "pending") {
+    return json({ ok: false, error: "already " + cur.status, status: cur.status }, 409);
+  }
+  await env.SALT_LEDGER.prepare(
+    "UPDATE draft SET status=?1, decided_at=?2, decided_by=?3 WHERE id=?4 AND status='pending'"
+  ).bind(decision, new Date().toISOString(), by, id).run();
+  const row = await env.SALT_LEDGER.prepare(`SELECT ${DRAFT_COLS} FROM draft WHERE id=?1`).bind(id).first();
+  return json({ ok: true, draft: row ? draftOut(row) : null });
+}
+
+/* Marked by the commit run once the row is actually in the master, so an approved row is not
+   offered to it twice. Only an approved draft can be committed. */
+async function handleDraftCommitted(request, env, id) {
+  if (!env.SALT_LEDGER) return json({ ok: false, error: "no ledger binding" }, 503);
+  if (!writeOk(request, env)) return needsKey();
+  const cur = await env.SALT_LEDGER.prepare("SELECT status,committed_at FROM draft WHERE id=?1").bind(id).first();
+  if (!cur) return json({ ok: false, error: "no such draft" }, 404);
+  if (cur.status !== "approved") return json({ ok: false, error: "only an approved draft may be committed; this one is " + cur.status }, 409);
+  if (cur.committed_at) return json({ ok: true, id, alreadyCommitted: true, committedAt: cur.committed_at });
+  const at = new Date().toISOString();
+  await env.SALT_LEDGER.prepare("UPDATE draft SET committed_at=?1 WHERE id=?2 AND committed_at IS NULL").bind(at, id).run();
+  return json({ ok: true, id, committedAt: at });
+}
+
+async function handleDrafts(request, env, url, p, m) {
+  if (p === "/drafts") {
+    if (m === "GET") return handleDraftsGet(env, url);
+    if (m === "POST") return handleDraftPost(request, env);
+    return json({ ok: false, error: "method not allowed" }, 405);
+  }
+  const mm = p.match(/^\/drafts\/(.+?)\/(approve|reject|committed)$/);
+  if (!mm) return json({ ok: false, error: "not found" }, 404);
+  if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+  const id = decodeURIComponent(mm[1]);
+  if (mm[2] === "committed") return handleDraftCommitted(request, env, id);
+  return handleDraftDecide(request, env, id, mm[2] === "approve" ? "approved" : "rejected");
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -252,7 +381,8 @@ export default {
      * The API paths answer JSON so the desk's ping-fail path degrades cleanly. */
     if (!accessOk(request, env)) {
       if (p === "/queue" || p === "/queue/ping" || p === "/vault" || p === "/bio" || p === "/bye"
-        || p === "/rev" || p === "/ledger" || p.startsWith("/ledger/"))
+        || p === "/rev" || p === "/ledger" || p.startsWith("/ledger/")
+        || p === "/drafts" || p.startsWith("/drafts/"))
         return json({ ok: false, error: "not authenticated" }, 401);
       return locked();
     }
@@ -298,6 +428,8 @@ export default {
       if (m === "GET") return handleLedger(env, url);
       return json({ ok: false, error: "the ledger store is read-only; the master is still the source" }, 405);
     }
+    /* The approval step. Reads open, decisions write-gated, same posture as everything else. */
+    if (p === "/drafts" || p.startsWith("/drafts/")) return handleDrafts(request, env, url, p, m);
     if (p === "/vault") {
       if (m === "GET") return handleVaultGet(env);               // ciphertext only
       if (m === "POST") return handleVaultPost(request, env);    // stores the envelope, rejects plaintext

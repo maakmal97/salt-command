@@ -1,6 +1,6 @@
 {
- "v": "v301",
- "stamped": "16 Aug 2026, 17:30 KL",
+ "v": "v302",
+ "stamped": "16 Aug 2026, 18:40 KL",
  "source": "Cow-Crm01 salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -1569,7 +1569,7 @@
     "deliveredQty": 1,
     "deliveredOn": "2026-08-14",
     "paidOn": "2026-08-14",
-    "note": "<b>RM11.50, CORRECTED FROM RM115 ON HIS WORD, AND THE CATCH IS THE POINT OF THE ROW.</b> 1 unit for RM11.50, paid and delivered on the day, opening CH4-MLR on oil the same day he opened on salt. On the RM7 lot it returns RM4.50, <b>39.1%</b>, which clears the new 25% floor and sits under the 50% good mark. <b>THE RATE NOW READS CORRECTLY AGAINST EVERY OTHER OIL ROW.</b> It lands between the RM11 CS6-BS paid buying 30 unit direct and the RM13 his downsell fetched, which is the right ordering: one unit should cost more per unit than thirty, and at RM115 it did not sit on the ladder at all. <b>WHAT v300 DID WITH IT IS WORTH KEEPING.</b> The figure came in at RM115 and was booked at RM115, because this desk records what it is told and does not quietly move a number into the range it expected; the same rule booked the RM6 below-cost resell of 11 Aug without argument. What it did instead was say plainly that RM115 was ten times any rate on the book, name RM11.50 as the one-digit alternative, and put a figure on being wrong: RM103.50 of overstated oil revenue and a 93.9% margin that never happened. He read it and corrected it inside a day. <b>THAT IS THE WHOLE ARGUMENT FOR DRAFTING A ROW AND HAVING IT APPROVED</b> rather than committing a queued entry straight to the ledger: the entry looked ordinary, and it was the ROW, with its cost and its margin beside it, that showed the fault."
+    "note": "<b>RM11.50, CORRECTED FROM RM115 ON HIS WORD, AND THE CATCH IS THE POINT OF THE ROW.</b> 1 unit for RM11.50, paid and delivered on the day, opening CH4-MLR on oil the same day he opened on salt. On the RM7 lot it returns RM4.50, <b>39.1% margin on the price</b>, which is a <b>64.3% markup on cost</b> and therefore sits between the good rung at 50% and the great one at 75%. The two figures are the same sale said two ways and this row states both on purpose: the ledger quotes margin on price, the v300 ladder is markup on cost, and reading 39.1% against a 25% floor would compare the wrong pair. <b>THE RATE NOW READS CORRECTLY AGAINST EVERY OTHER OIL ROW.</b> It lands between the RM11 CS6-BS paid buying 30 unit direct and the RM13 his downsell fetched, which is the right ordering: one unit should cost more per unit than thirty, and at RM115 it did not sit on the ladder at all. <b>WHAT v300 DID WITH IT IS WORTH KEEPING.</b> The figure came in at RM115 and was booked at RM115, because this desk records what it is told and does not quietly move a number into the range it expected; the same rule booked the RM6 below-cost resell of 11 Aug without argument. What it did instead was say plainly that RM115 was ten times any rate on the book, name RM11.50 as the one-digit alternative, and put a figure on being wrong: RM103.50 of overstated oil revenue and a 93.9% margin that never happened. He read it and corrected it inside a day. <b>THAT IS THE WHOLE ARGUMENT FOR DRAFTING A ROW AND HAVING IT APPROVED</b> rather than committing a queued entry straight to the ledger: the entry looked ordinary, and it was the ROW, with its cost and its margin beside it, that showed the fault."
    }
   ],
   "contacts": [
