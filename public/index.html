@@ -569,8 +569,15 @@ function drawDrafts(){
     var per=(total!=null&&qty)?money(total/qty)+'/unit':'-';
     var mar=(total>0&&cost!=null&&qty)?((total-cost*qty)/total*100):null;
     /* Banded against the v300 ladder, converted to margin on price so it is compared
-       like with like: a 25% markup on cost is a 20% margin, 50% is 33.3%, 75% is 42.9%. */
-    var cls=mar==null?'':(mar<20?'bad':(mar<33.3?'warn':'good'));
+       like with like: a 25% markup on cost is a 20% margin, 50% is 33.3%, 75% is 42.9%.
+       A FLAGGED ROW NEVER GETS A GREEN MARGIN, and this was worth catching. The test entry
+       of 16 Aug was RM900 for a unit that normally goes for RM90: the drafter flagged it
+       twice, and the margin cell painted 93.8% in green directly underneath, because a fat
+       margin bands as good. That is the RM115 oil failure again in colour form, telling the
+       eye "excellent" on the exact row the words are saying to check. Green means nothing
+       needs looking at, so a row with a flag on it cannot have one. */
+    var band=mar==null?'':(mar<20?'bad':(mar<33.3?'warn':'good'));
+    var cls=(d.flags&&d.flags.length&&band==='good')?'warn':band;
     var buy=d.collection==='purchases';
     return '<div class="drf" data-id="'+esc(d.id)+'">'
       +'<div class="drf-top"><span class="drf-w">'+(buy?'Buy from ':'Sell to ')+esc(r.customer||r.supplier||'?')+'</span>'

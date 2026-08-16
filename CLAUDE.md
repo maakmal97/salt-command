@@ -157,9 +157,26 @@ therefore does not flip the direction `0001` reserves, and nothing in this path 
 
 ## The cloud drafter (v303)
 
-**The laptop is out of the loop for drafting.** A Worker cron (`*/15 * * * *`, declared in
-`wrangler.jsonc`) reads the queue from KV, reads the book from the D1 mirror, writes the
-proposed row into `draft`, and stops. `src/drafter.js`. Run it by hand with a write key:
+**The laptop is out of the loop for drafting.** `src/drafter.js` reads the queue from KV, reads
+the book from the D1 mirror, writes the proposed row into `draft`, and stops. It runs in TWO
+places and the first is the one that matters:
+
+1. **On arrival**, from `POST /queue`, via `waitUntil`. The row is written within a second of
+   the entry landing.
+2. **On a cron** (`*/15 * * * *`, declared in `wrangler.jsonc`), as the safety net for anything
+   posted while D1 was unreachable.
+
+**The cron alone LOSES A RACE and this was found by running it, not by reasoning.**
+`serve_desk.py` drains the cloud queue to disk every 60 seconds while the laptop is on, and
+`drain.mjs` is a DESTRUCTIVE read: it unions KV into `salt_queue_cloud.json` and clears the
+keys. An entry posted at 14:41 on 16 Aug was on disk and gone from KV by 14:52, with nothing
+left for the cron to draft. Drafting on arrival closes it.
+
+**A WARNING THAT IS NOT FIXED HERE.** That same drain still feeds `salt_queue_cloud.json`
+straight to the daily run, which folds it into the master. So while `serve_desk.py` is running,
+the OLD path still reaches the ledger WITHOUT passing the approval step. Closing that means
+changing `serve_desk.py` and the `salt-daily-price-brief` skill, both outside this repo, so the
+approval step is not yet the only road in. Run it by hand with a write key:
 
 ```bash
 curl -X POST -H "X-Salt-Key: <key>" "https://salt-command.maakmal97.workers.dev/draft-now?dry=1"

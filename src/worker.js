@@ -121,7 +121,35 @@ async function readQueuePost(request) {
   return { device, updated: body.updated || null, queue: body.queue };
 }
 
-async function handleQueuePost(request, env) {
+/* DRAFT ON ARRIVAL (v304), and it exists because the cron alone loses the race.
+ *
+ * serve_desk.py drains the cloud queue to disk EVERY 60 SECONDS while the laptop is on, and
+ * drain.mjs is a destructive read: it unions KV into salt_queue_cloud.json and CLEARS the keys.
+ * So a fifteen-minute cron would almost never see an entry. Tested on 16 Aug rather than
+ * reasoned about: an entry posted at 14:41 was on disk and gone from KV by 14:52, and the cron
+ * had nothing left to draft.
+ *
+ * Drafting here closes it. The row is written within a second of the entry arriving, long
+ * inside the drain window, and the cron drops back to being the safety net it should have been
+ * from the start: it catches anything posted while D1 was unreachable.
+ *
+ * waitUntil, not await: the phone must get its 200 for the ENTRY immediately. A draft that
+ * takes a second longer costs nothing, because the Approve tab polls; an entry that takes a
+ * second longer is felt at the point of sale. And a drafter fault must never fail the queue
+ * write, which is why this cannot throw into the response path. */
+function draftOnArrival(env, ctx) {
+  if (!ctx || typeof ctx.waitUntil !== "function" || !env.SALT_LEDGER) return;
+  ctx.waitUntil((async () => {
+    try {
+      const r = await runDrafter(env);
+      console.log("drafter (on arrival): " + JSON.stringify(r));
+    } catch (e) {
+      console.log("drafter (on arrival) FAILED, the cron will retry: " + String((e && e.stack) || e));
+    }
+  })());
+}
+
+async function handleQueuePost(request, env, ctx) {
   if (!env.SALT_QUEUE) return json({ ok: false, error: "no KV binding" }, 500);
   if (!accessOk(request, env)) return json({ ok: false, error: "not authenticated" }, 401);
   if (!writeOk(request, env)) return needsKey();
@@ -133,6 +161,7 @@ async function handleQueuePost(request, env) {
   await env.SALT_QUEUE.put(QKEY(payload.device), JSON.stringify({
     updated: payload.updated, device: payload.device, queue: payload.queue
   }));
+  draftOnArrival(env, ctx);
   return json({ ok: true, entries: payload.queue.length, device: payload.device });
 }
 
@@ -393,7 +422,7 @@ export default {
     })());
   },
 
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
     const p = (url.pathname.replace(/\/+$/, "") || "/");
     const m = request.method;
@@ -417,7 +446,7 @@ export default {
       return json({ ok: true, cloud: true, writes: ["queue"] });
     }
     if (p === "/queue") {
-      if (m === "POST") return handleQueuePost(request, env);
+      if (m === "POST") return handleQueuePost(request, env, ctx);
       if (m === "GET") return handleQueueGet(env);
       return json({ ok: false, error: "method not allowed" }, 405);
     }

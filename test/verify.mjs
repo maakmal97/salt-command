@@ -723,6 +723,10 @@ section("App — the approval panel");
   }
   /* it must not price anything itself: the whole reason data.json exists */
   ok(!/floorTotal|replCost|STOCK_COST/.test(app), "the app computes no floor of its own");
+  /* a flagged row must never show a green margin: green says nothing needs looking at */
+  ok(/d\.flags&&d\.flags\.length&&band==='good'\)\?'warn':band/.test(app.replace(/\s/g, "")) ||
+     /flags\.length&&band==='good'/.test(app.replace(/\s/g, "")),
+    "a flagged row's margin is never painted green");
 }
 
 /* ---- 10. the cloud drafter ------------------------------------------------------ */
@@ -876,6 +880,22 @@ section("Drafter — wiring");
   /* the manual trigger writes rows, so it must be gated like every other write */
   const seg = w.slice(w.indexOf('p === "/draft-now"'), w.indexOf('p === "/draft-now"') + 700);
   ok(/writeOk\(request, env\)/.test(seg) && /needsKey\(\)/.test(seg), "/draft-now is write-gated");
+
+  /* DRAFT ON ARRIVAL. The cron alone loses the race against serve_desk.py's 60-second
+     destructive drain, which was found by running it rather than by reasoning about it. */
+  ok(/function draftOnArrival/.test(w), "the Worker drafts on arrival, not only on the cron");
+  ok(/draftOnArrival\(env, ctx\)/.test(w), "and the queue POST calls it");
+  ok(/async fetch\(request, env, ctx\)/.test(w), "fetch takes ctx so waitUntil is available");
+  const arr = w.slice(w.indexOf("function draftOnArrival"), w.indexOf("async function handleQueuePost"));
+  ok(/waitUntil/.test(arr) && !/await runDrafter/.test(arr.split("waitUntil")[0]),
+    "it is deferred, so the phone's 200 for the ENTRY is never delayed by drafting");
+  ok(/catch/.test(arr), "a drafter fault cannot fail the queue write");
+
+  /* the queue POST must still succeed with no ctx and no D1 binding at all */
+  const kv = new KV();
+  const r = await worker.fetch(postQ({ device: "d1", queue: [{ at: "2026-08-16T01:00:00Z", raw: "e" }] }), mkEnv(kv));
+  ok(r.status === 200, "a queue POST with no ctx and no ledger binding still succeeds");
+  ok(kv.m.has("q:d1"), "and the entry still reached KV");
 }
 
 /* ---- done ----------------------------------------------------------------------- */
