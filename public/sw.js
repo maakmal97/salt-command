@@ -3,7 +3,7 @@
    API: /queue, /vault, /bio and /bye must always hit the Worker, or a stale ping
    would strand the desk in read-only mode and a cached POST is meaningless. */
 
-const CACHE = "salt-shell-v2";   /* bumped at v290: the root is the app now, not the desk */
+const CACHE = "salt-shell-v3";   /* bumped at v302 so a phone holding a v2 shell drops it */
 
 /* "./index.html" is deliberately absent: the host serves "./" and a navigation
    cannot be answered from a redirected response. The manifest starts at "./" too. */
@@ -23,7 +23,12 @@ const SHELL = [
    whole position and action list from it, and it is not a navigation, so without this line
    it would fall into the cache-first branch below and the phone would show one build's
    figures for ever while cheerfully reporting itself up to date. */
-const API = /^\/(queue|vault|bio|bye|menu|qr|rev|rev\.json|data\.json)(\/|$)/;
+/* /drafts joins at v302 and it is the sharpest case yet. A cached draft list would show a
+   row that has already been approved, and tapping it again would be refused as a 409 with
+   no way for the phone to know why; worse, an approved row would keep asking to be approved
+   while the one actually waiting stayed invisible. It was left out of this list at first and
+   the self-test caught it: a deleted draft was still on screen after a reload. */
+const API = /^\/(queue|vault|bio|bye|menu|qr|rev|rev\.json|data\.json|drafts)(\/|$)/;
 
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));

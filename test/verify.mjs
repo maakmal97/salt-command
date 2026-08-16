@@ -712,6 +712,15 @@ section("App — the approval panel");
   const decideBody = app.slice(app.indexOf("function decide("), app.indexOf("/* ---- tabs"));
   ok(!/(^|[^a-z])msg\('/.test(decideBody.replace(/amsg\('/g, "")), "decide() never reports into the hidden Add panel");
   ok(/X-Salt-Key/.test(app), "the app sends the write key");
+  /* the self-test caught this one: a cached /drafts shows rows that are already decided */
+  const sw2 = readFileSync(join(REPO, "public", "sw.js"), "utf8");
+  const api2 = (sw2.match(/const API = (\/.*\/);/) || [])[1];
+  ok(!!api2, "sw.js still has an API pattern");
+  if (api2) {
+    const rx2 = new RegExp(api2.slice(1, api2.lastIndexOf("/")));
+    ok(rx2.test("/drafts"), "sw.js never caches /drafts");
+    ok(rx2.test("/drafts/abc/approve"), "sw.js never caches a decision");
+  }
   /* it must not price anything itself: the whole reason data.json exists */
   ok(!/floorTotal|replCost|STOCK_COST/.test(app), "the app computes no floor of its own");
 }
