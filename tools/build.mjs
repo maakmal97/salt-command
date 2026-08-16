@@ -216,9 +216,21 @@ if (externals.length) {
    since v290 there are two things it could be running: the app at / and the desk at /desk.
    Hashing the desk alone would leave an app-only change invisible to the poll, so a phone
    would sit on the old app until something in the master happened to move. */
-let appSrc = "";
+/* AND THE SERVICE WORKER, added v302. It was left out and the fault showed at once: the
+   sw.js fix that stops /drafts being cached did not move this id, so update.mjs compared
+   equal ids, skipped the deploy and reported the phone current while the broken worker was
+   still the one being served. Same shape as the wrangler.jsonc gap CLAUDE.md documents, and
+   worse here, because sw.js decides what the phone is allowed to see at all. Anything that
+   ships and changes behaviour belongs in this hash.
+   THE SEPARATORS ARE NUL BYTES, not spaces, and that is not decoration: a byte that cannot
+   occur in any of these sources is the only separator that makes the concatenation
+   unambiguous, so no edit to one file can ever forge the hash of another. */
+let appSrc = "", swSrc = "";
 try { appSrc = readFileSync(APP, "utf8"); } catch (e) { /* first build, before the app exists */ }
-const BUILD_ID = createHash("sha256").update(src).update(" app ").update(appSrc).digest("hex").slice(0, 16);
+try { swSrc = readFileSync(resolve(REPO, "public", "sw.js"), "utf8"); } catch (e) { /* likewise */ }
+const BUILD_ID = createHash("sha256")
+  .update(src).update(" app ").update(appSrc).update(" sw ").update(swSrc)
+  .digest("hex").slice(0, 16);
 if (src.split(IDTOKEN).length - 1 !== 1) {
   console.error(`BUILD FAILED: expected the build-id token exactly once, found ${src.split(IDTOKEN).length - 1}.`);
   console.error("  The freshness patch in PWA_BLOCK is the only thing that may carry it.");
