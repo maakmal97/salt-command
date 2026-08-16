@@ -15,6 +15,7 @@
  *   node tools/drafts.mjs --schema             apply migrations/0002_draft.sql
  *   node tools/drafts.mjs --list [--all]       what is waiting, read-only (default: pending)
  *   node tools/drafts.mjs --draft <file.json>  stage a proposed row for approval
+ *   node tools/drafts.mjs --from-queue         draft the LAPTOP queue too, so it passes the same gate
  *   node tools/drafts.mjs --approved           the approved, uncommitted rows the run should fold in
  *   node tools/drafts.mjs --committed <id>...  mark rows as folded into the master
  *   --local                                    act on the local D1 rather than the remote one
@@ -27,6 +28,10 @@ import { fileURLToPath } from "node:url";
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const DB = "salt_ledger";
 const WHERE = process.argv.includes("--local") ? "--local" : "--remote";
+const DATA = process.env.SALT_DATA ||
+  "C:/Users/maakm/Claude/Projects/Personal/Cow-Crm01_Salt Business/06_Data";
+const LAPTOP_QUEUE = resolve(DATA, "salt_queue.json");
+const CLOUD_QUEUE  = resolve(DATA, "salt_queue_cloud.json");
 const argv = process.argv.slice(2);
 const has = (f) => argv.includes(f);
 const valOf = (f) => { const i = argv.indexOf(f); return i >= 0 ? argv[i + 1] : null; };
@@ -121,6 +126,86 @@ function draft() {
   ok("staged " + d.id + " for approval. It is PENDING until it is approved on the phone.");
 }
 
+/* ---- from-queue ---------------------------------------------------------------------- */
+/* THE LAPTOP'S OWN ROAD, routed through the same gate (v305).
+ *
+ * The phone's entries are drafted in the cloud the moment they arrive. The desk's own queue,
+ * 06_Data\salt_queue.json, never goes near the cloud at all: it is written by serve_desk.py
+ * when a transaction is entered on the laptop, and until now the daily run folded it straight
+ * into the master. That was the second ungated road, and leaving it open would have made the
+ * approval step something you could walk around without noticing.
+ *
+ * It uses the SAME draftRow as the Worker, imported rather than reimplemented, because two
+ * drafters would disagree the first time either was touched. The book comes from the live
+ * /ledger endpoints, which are open reads, and the insert goes through wrangler, so this needs
+ * no write key.
+ */
+async function fromQueue() {
+  const { draftRow } = await import("../src/drafter.js");
+  const files = [];
+  const arg = valOf("--from-queue");
+  if (arg && !arg.startsWith("--")) files.push(arg);
+  else {
+    for (const f of [LAPTOP_QUEUE, CLOUD_QUEUE]) if (existsSync(f)) files.push(f);
+  }
+  if (!files.length) { ok("no queue file on disk, so there is nothing to draft"); return; }
+
+  const base = (process.env.SALT_BASE || "https://salt-command.maakmal97.workers.dev").replace(/\/+$/, "");
+  const get = async (p) => {
+    const r = await fetch(base + p);
+    if (!r.ok) throw new Error("GET " + p + " -> " + r.status);
+    return r.json();
+  };
+  let book;
+  try {
+    const snap = await get("/ledger");
+    const st = await get("/ledger/state");
+    book = {
+      version: snap.snapshot && snap.snapshot.v,
+      sales: (await get("/ledger/sales")).rows || [],
+      purchases: (await get("/ledger/purchases")).rows || [],
+      state: st.state || {},
+      pricing: (st.state || {}).PRICING || null
+    };
+  } catch (e) { fail("could not read the book from the mirror: " + e.message); return; }
+  if (!book.pricing) { fail("the mirror carries no PRICING snapshot; run `node tools/ledger.mjs && node tools/d1.mjs --seed` first"); return; }
+
+  const existing = query("SELECT id FROM draft");
+  if (!existing) return;
+  const already = new Set(existing.map((r) => r.id));
+  const mark = book.state.QUEUE_COMMITTED;
+
+  let drafted = 0, skipped = 0, seen = 0;
+  for (const f of files) {
+    let doc;
+    try { doc = JSON.parse(readFileSync(f, "utf8")); }
+    catch (e) { fail("could not read " + f + ": " + e.message); continue; }
+    for (const entry of (doc.queue || [])) {
+      if (!entry || !entry.at) continue;
+      seen++;
+      if (mark && entry.at <= mark) continue;         // already in the master
+      if (already.has(entry.at)) continue;            // already drafted, here or in the cloud
+      const d = draftRow(entry, book);
+      if (d.skip) { skipped++; console.log("  skip  " + entry.at + "  " + d.skip); continue; }
+      const row = d.row;
+      const sql = "INSERT OR IGNORE INTO draft (id,status,collection,entry,row,reasoning,flags,party,product,date,qty,total,cost,drafter,drafted_at) VALUES ("
+        + [q(entry.at), "'pending'", q(d.collection), q(JSON.stringify(entry)), q(JSON.stringify(row)), q(d.reasoning),
+           q(JSON.stringify(d.flags)), q(row.customer || row.supplier || null),
+           q(row.product || (d.collection === "sales" ? "salt" : null)), q(row.date || null),
+           num(row.qty), num(row.total), num(row.cost), q("laptop-queue"), q(new Date().toISOString())].join(",")
+        + ")";
+      const r = wrangler(["d1", "execute", DB, WHERE, "--json", "--command", JSON.stringify(sql)], { quiet: true });
+      if (r.code !== 0) { fail("could not stage " + entry.at); continue; }
+      already.add(entry.at);
+      drafted++;
+      console.log("  draft " + entry.at + "  " + (row.customer || row.supplier) + "  " + (row.qty ?? "?") + " unit  RM " + (row.total ?? "?")
+        + (d.flags.length ? "   " + d.flags.length + " flag(s)" : ""));
+    }
+  }
+  ok(`${seen} entry(ies) on disk: ${drafted} newly drafted, ${skipped} left for a person, the rest already committed or drafted`);
+  if (drafted) console.log("  They are PENDING. Approve them on the phone; nothing reaches the ledger until you do.");
+}
+
 /* ---- approved ------------------------------------------------------------------------ */
 /* What the commit run asks for: approved and not yet folded into the master. Approved and
    committed are different questions, because an approved row stays approved forever. */
@@ -157,6 +242,7 @@ function committed() {
 /* ---- main ---------------------------------------------------------------------------- */
 if (has("--schema")) schema();
 else if (has("--draft")) draft();
+else if (has("--from-queue")) await fromQueue();
 else if (has("--approved")) approved();
 else if (has("--committed")) committed();
 else if (has("--list") || argv.filter((a) => a !== "--local" && a !== "--all").length === 0) list();

@@ -6,7 +6,8 @@ as the laptop master; this repo is a deploy surface, not a second source.
 
 Deployed as a Cloudflare Worker with static assets. **It is PUBLIC by the owner's decision of
 11 Aug 2026, with no sign-in of any kind** (see "Access, and why it is off" below). New
-transactions push to a KV-backed queue; the daily run folds them into the source.
+transactions push to a KV-backed queue, are drafted into a proposed ledger row in the cloud, and
+reach the source only after the row is approved on the phone.
 
 ## Hard rules
 
@@ -91,14 +92,17 @@ anchor moves, so a master edit that would silently break a patch fails loudly in
 ```
 phone: add transaction ──POST /queue──▶ Worker ──▶ KV  (key q:<deviceId>, this device's queue)
                                                     │
-   daily run:  node tools/drain.mjs  ◀─────────────┘   (union all devices, dedupe by 'at')
-        │  writes 06_Data\salt_queue_cloud.json  (same shape as salt_queue.json)
-        ▼
-   salt-daily-price-brief commits it into the master, sets QUEUE_COMMITTED, bumps the version
+   drafter (on arrival, + a cron net) ◀───────────┘   writes a proposed ROW into D1 `draft`
         │
-        ├─ node tools/drain.mjs --committed <QUEUE_COMMITTED>   (prune the file)
-        ├─ npm run build                                        (refresh public/index.html)
+        ▼   phone: Approve tab, a tap            ** THIS STEP IS NOT OPTIONAL, v305 **
+        │
+   salt-daily-price-brief folds ONLY approved rows, sets QUEUE_COMMITTED, bumps the version
+        │
+        ├─ node tools/drafts.mjs --committed <id>...            (mark them folded)
+        ├─ npm run build                                        (refresh public/desk.html)
         └─ npm run deploy   +   git commit/push                 (phone gets the new ledger)
+
+   The laptop's own queue joins the same road:  node tools/drafts.mjs --from-queue
 ```
 
 The desk needed almost no change because it already speaks this HTTP contract to
@@ -172,11 +176,19 @@ places and the first is the one that matters:
 keys. An entry posted at 14:41 on 16 Aug was on disk and gone from KV by 14:52, with nothing
 left for the cron to draft. Drafting on arrival closes it.
 
-**A WARNING THAT IS NOT FIXED HERE.** That same drain still feeds `salt_queue_cloud.json`
-straight to the daily run, which folds it into the master. So while `serve_desk.py` is running,
-the OLD path still reaches the ledger WITHOUT passing the approval step. Closing that means
-changing `serve_desk.py` and the `salt-daily-price-brief` skill, both outside this repo, so the
-approval step is not yet the only road in. Run it by hand with a write key:
+**CLOSED AT v305: THE APPROVAL STEP IS NOW THE ONLY ROAD IN.** Two went round it and both are
+shut. `serve_desk.py`&#39;s timed drain is REMOVED (it fed a file the daily run folded, so a phone
+entry reached the ledger unread), and the laptop&#39;s own queue now goes through
+`node tools/drafts.mjs --from-queue`, which drafts it PENDING using the same `draftRow` rather
+than a second copy. The `salt-daily-price-brief` SKILL is rewritten to fold `--approved` rows
+only and mark each id committed after.
+
+**THE SKILL EDIT IS ON DISK BUT NOT PUSHED.** Editing `SKILL.md` changes the file, not what
+fires: the stored prompt needs `update_scheduled_task` from Cowork. Until that is done the
+running task still holds the old fold-every-queue-file instruction.
+
+**What is deliberately NOT gated:** editing the master by hand. That is the desk itself. The
+gate governs QUEUED transactions, the ones typed in a hurry at the point of sale. Run it by hand with a write key:
 
 ```bash
 curl -X POST -H "X-Salt-Key: <key>" "https://salt-command.maakmal97.workers.dev/draft-now?dry=1"
@@ -428,6 +440,6 @@ deduped by the entry's own `at`, so nothing is committed twice.
 
 ## Tests
 
-`npm test` runs `test/verify.mjs`: 212 assertions with no network or browser. Add one for every
+`npm test` runs `test/verify.mjs`: 227 assertions with no network or browser. Add one for every
 behavioural change to the Worker, the build patches or the drain. The desk's own rendering is
 covered by the daily run's jsdom pass against the master, not here.

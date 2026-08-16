@@ -270,7 +270,7 @@ export function draftRow(entry, book) {
     nothingMoved
       ? "Nothing was paid and nothing moved, so the row is PENDING and carries NO DATE: it draws no stock and books no revenue until it does."
       : `${paidInFull ? "Paid in full" : `RM ${round(cash)} of RM ${round(total)} paid`} and ${deliveredInFull ? "delivered in full" : `${moved} of ${qty} unit moved`} on ${row.date}.`,
-    "Drafted from the queued entry by the cloud drafter; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved."
+    "Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved."
   ].filter(Boolean);
 
   return {

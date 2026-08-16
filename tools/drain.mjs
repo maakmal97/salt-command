@@ -1,10 +1,22 @@
-/* drain.mjs — move the cloud queue from KV into a file the daily run already reads.
+/* drain.mjs — pull the cloud queue from KV onto disk. A HAND TOOL, NOT A COMMIT SOURCE.
+ *
+ * ITS ROLE CHANGED AT v305 AND THE OLD ONE MUST NOT COME BACK. It used to be the road a
+ * phone entry took into the ledger: serve_desk.py ran it every sixty seconds and the daily
+ * run folded 06_Data/salt_queue_cloud.json into the master. That road bypassed the approval
+ * step of v302, so a phone entry became a real ledger row with nobody having read the row.
+ * It was also a DESTRUCTIVE read racing the cloud drafter, and winning: an entry posted at
+ * 14:41 on 16 Aug was on disk and gone from KV by 14:52, with nothing left to draft.
+ *
+ * WHAT REPLACED IT. The Worker drafts an entry into the `draft` table on arrival, the phone
+ * approves it, and the run folds ONLY approved drafts (`node tools/drafts.mjs --approved`).
+ *
+ * WHAT THIS IS FOR NOW: reading the cloud queue by hand (`--status`), withdrawing an entry
+ * (`--forget`), and recovering entries if the cloud drafter is ever broken. If you drain
+ * to disk in that case, put the entries through `node tools/drafts.mjs --from-queue` so
+ * they still pass the gate. DO NOT FOLD salt_queue_cloud.json STRAIGHT INTO THE MASTER.
  *
  * The phone POSTs its queue to the Worker, which stores it in KV, one key per device
- * (q:<deviceId>). This drains those keys into 06_Data/salt_queue_cloud.json in the same
- * {updated, desk, queue:[...]} shape as salt_queue.json, so salt-daily-price-brief folds
- * it into the source exactly as it folds the laptop's own queue. Names are never in KV,
- * so nothing sensitive is drained.
+ * (q:<deviceId>). Names are never in KV, so nothing sensitive is drained.
  *
  * Modes:
  *   node tools/drain.mjs               pull KV -> file (union by 'at'), then clear the

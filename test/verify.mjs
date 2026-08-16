@@ -868,6 +868,33 @@ section("Drafter — rows, refusals and flags");
   ok(/INSERT OR IGNORE INTO draft/.test(src), "it inserts drafts idempotently, so a double tick cannot double a row");
 }
 
+/* ---- 10b. the approval step is the ONLY road in --------------------------------- */
+/* v305 closed two roads that walked around it: serve_desk.py's 60-second drain, which fed a
+   file the daily run folded, and the laptop's own queue, which never went near the cloud.
+   Both now converge on `draft`. These assertions are cheap and they guard a property that is
+   invisible at runtime: nothing errors when a gate quietly stops being a gate. */
+section("The gate is the only road in");
+{
+  const d = readFileSync(join(REPO, "tools", "drafts.mjs"), "utf8");
+  ok(/--from-queue/.test(d), "the laptop queue can be routed through the same gate");
+  ok(/import\("\.\.\/src\/drafter\.js"\)/.test(d), "and it imports the SAME draftRow, rather than a second copy of the logic");
+  ok(/'pending'/.test(d.slice(d.indexOf("async function fromQueue"))), "a laptop entry arrives PENDING, never pre-approved");
+  ok(/status='approved' AND committed_at IS NULL/.test(d), "the run is offered only approved, uncommitted rows");
+
+  const drain = readFileSync(join(REPO, "tools", "drain.mjs"), "utf8");
+  ok(/NOT A COMMIT SOURCE/.test(drain), "drain.mjs says plainly that it is no longer a commit source");
+
+  /* serve_desk.py lives outside this repo; check it only if it is on this machine */
+  const desk = "C:/Users/maakm/Claude/Projects/Personal/Cow-Crm01_Salt Business/01_Dashboard/serve_desk.py";
+  if (existsSync(desk)) {
+    const py = readFileSync(desk, "utf8");
+    ok(!/_run_sync\("-PullOnly"/.test(py), "serve_desk.py no longer drains the cloud queue on a timer");
+    ok(!/next_drain/.test(py), "and the drain timer is gone rather than merely unused");
+  } else {
+    ok(true, "serve_desk.py is not on this machine, so its drain could not be checked");
+  }
+}
+
 /* ---- 11. the drafter is wired to a schedule ------------------------------------- */
 section("Drafter — wiring");
 {
