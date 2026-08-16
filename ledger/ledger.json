@@ -1,6 +1,6 @@
 {
- "v": "v300",
- "stamped": "14 Aug 2026, 23:55 KL",
+ "v": "v301",
+ "stamped": "16 Aug 2026, 17:30 KL",
  "source": "Cow-Crm01 salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -1563,13 +1563,13 @@
     "product": "oil",
     "customer": "CH4-MLR",
     "qty": 1,
-    "total": 115,
+    "total": 11.5,
     "cost": 7,
-    "cash": 115,
+    "cash": 11.5,
     "deliveredQty": 1,
     "deliveredOn": "2026-08-14",
     "paidOn": "2026-08-14",
-    "note": "<b>RM115 A UNIT IS TEN TIMES ANY OIL RATE THIS BOOK HAS EVER SEEN, AND IT IS BOOKED AS IT WAS GIVEN.</b> Every oil order before it: RM13 a unit on the CS6-BS downsell of 06 Aug, RM11 on his own 30 unit direct buy of the 11th, RM6 on the CS6-BS-R resell the same day. SP7-PUD&rsquo;s quoted ladder tops out at RM10 a unit and the lot on the shelf cost RM7. So RM115 is not a strong price, it is a price from a different ladder, and it returns RM108 on RM115 at 93.9%, which would be the best margin any row on this book has ever carried by a distance. <b>THAT IS WHY IT IS FLAGGED RATHER THAN CELEBRATED.</b> The desk records what it is told and does not quietly correct a figure into the range it expected, which is the same rule that booked the RM6 below-cost resell without argument. But a single digit separates RM115 from RM11.50, and RM11.50 would sit exactly between the RM11 and RM13 the book already knows. <b>If it is RM11.50 the oil book is overstated by RM103.50 and the pricing engine is reading a 93.9% margin that never happened.</b> Correct it and this row and the oil basis both follow; leave it and the desk needs to know what was actually sold, because it was not the RM7 oil at the rate the RM7 oil goes for. ASSUMPTION, STATED, as on the salt row: no date and no terms were given, so it is booked today as paid and delivered in full."
+    "note": "<b>RM11.50, CORRECTED FROM RM115 ON HIS WORD, AND THE CATCH IS THE POINT OF THE ROW.</b> 1 unit for RM11.50, paid and delivered on the day, opening CH4-MLR on oil the same day he opened on salt. On the RM7 lot it returns RM4.50, <b>39.1%</b>, which clears the new 25% floor and sits under the 50% good mark. <b>THE RATE NOW READS CORRECTLY AGAINST EVERY OTHER OIL ROW.</b> It lands between the RM11 CS6-BS paid buying 30 unit direct and the RM13 his downsell fetched, which is the right ordering: one unit should cost more per unit than thirty, and at RM115 it did not sit on the ladder at all. <b>WHAT v300 DID WITH IT IS WORTH KEEPING.</b> The figure came in at RM115 and was booked at RM115, because this desk records what it is told and does not quietly move a number into the range it expected; the same rule booked the RM6 below-cost resell of 11 Aug without argument. What it did instead was say plainly that RM115 was ten times any rate on the book, name RM11.50 as the one-digit alternative, and put a figure on being wrong: RM103.50 of overstated oil revenue and a 93.9% margin that never happened. He read it and corrected it inside a day. <b>THAT IS THE WHOLE ARGUMENT FOR DRAFTING A ROW AND HAVING IT APPROVED</b> rather than committing a queued entry straight to the ledger: the entry looked ordinary, and it was the ROW, with its cost and its margin beside it, that showed the fault."
    }
   ],
   "contacts": [
