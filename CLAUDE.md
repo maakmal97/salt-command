@@ -243,35 +243,48 @@ Worker would refuse every request for want of a `Cf-Access-Jwt-Assertion` header
 is issuing any more, and the locked page would tell him to re-enable an application that does
 not exist.
 
-**What that means, stated plainly.** Anyone with the URL reads the whole ledger. Anyone with
-the URL can also `POST /queue`, which `tools/drain.mjs` unions into `salt_queue_cloud.json`
-and the daily run folds into the master as real rows, with no review step between. `GET /queue`
-likewise returns every device's queue to any caller. The exposure is therefore WRITE as well
-as read. Real names are not exposed: the built desk ships codes only, and the KV vault is null.
+**What that means, stated plainly.** Anyone with the URL reads the whole ledger. `GET /queue`
+likewise returns every device's queue to any caller. **The exposure is READ ONLY, as at 16 Aug
+2026.** It used to be write as well, because `POST /queue` accepted an unauthenticated body
+that `tools/drain.mjs` unions into `salt_queue_cloud.json` and the daily run folds into the
+master as real rows with no review step between. The write gate below is armed, so that half
+is closed; an unkeyed `POST /queue` is refused 401 `write key required`.
 
-## The write gate (v288), and how to arm it
+**Real names are still not exposed**, but not because nothing is synced. The KV vault is
+populated: `GET /vault` returns a real AES-GCM envelope `{v,salt,iv,ct}`, verified 16 Aug 2026.
+It is ciphertext and nothing else. The passphrase never leaves the browser, so a stranger with
+the URL gets an undecryptable blob, and the built desk ships codes only in any case.
 
-**Reads stay open. Writes need a key.** `POST /queue` and `POST /vault` require `X-Salt-Key`
-matching the `SALT_WRITE_KEY` secret. That closes the half of the exposure above that was
+## The write gate (v288), and it is ARMED
+
+**IT IS LIVE AS AT 16 AUG 2026. The arming step is done, not pending.** The
+`SALT_WRITE_KEY` secret exists (`npx wrangler secret list` returns it, type `secret_text`), so
+`POST /queue` and `POST /vault` require `X-Salt-Key` matching it. Verified against the live
+Worker on 16 Aug 2026: an unkeyed POST returns 401 `{"ok":false,"error":"write key
+required","writeKey":true}`. Nothing below needs doing to turn it on.
+
+**Reads stay open. Writes need the key.** That closes the half of the old exposure that was
 easy to miss: a stranger with the URL writing rows into the ledger. It is not Zero Trust, it
 is not protection from anyone holding the key, and it does not touch reads.
 
-**IT IS DORMANT UNTIL THE SECRET EXISTS, and that ordering is not optional.** With
-`SALT_WRITE_KEY` unset the Worker accepts writes exactly as before. The desk that can send the
-header must be live on the phone BEFORE the gate demands it, or you lock yourself out of your
-own queue exactly as the policy-less Access application did on 11 Aug. v288 is deployed, so
-the desk half is already out there. To arm it:
+**Why the secret came second, kept as history.** The gate is dormant while `SALT_WRITE_KEY` is
+unset, and that was deliberate. The desk that can send the header had to be live on the phone
+BEFORE the gate demanded it, or the owner locks himself out of his own queue exactly as the
+policy-less Access application did on 11 Aug. v288 shipped the desk half first, then the secret
+was set. The ordering matters again only if the secret is ever cleared and reinstated.
+
+**To change the key** (not to enable it, which is already done):
 
 ```bash
 npx wrangler secret put SALT_WRITE_KEY
 ```
 
-Paste a passphrase you can type on a phone. The phone asks for it once on the next entry and
-keeps it in `localStorage`; a wrong key is refused, asked again, and retried once. To change
-it later, run the same command and clear `saltWriteKey` from the phone's storage. `drain.mjs`
-and `seed-vault.mjs` go through wrangler rather than HTTP, so neither is affected.
+Paste a passphrase you can type on a phone, then clear `saltWriteKey` from the phone's storage
+so it asks again. The phone asks once on the next entry and keeps the key in `localStorage`; a
+wrong key is refused, asked again, and retried once. `drain.mjs` and `seed-vault.mjs` go
+through wrangler rather than HTTP, so neither is affected.
 
-**The cheap defence while it is open**, and it is worth running before each commit:
+**Withdrawing a queued entry**, still worth running before each commit:
 
 ```
 node tools/drain.mjs --status          # list every pending entry, read-only
