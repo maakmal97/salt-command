@@ -110,6 +110,51 @@ Offline on the phone: an entry is held in `localStorage` and the desk says so; i
 next open with a connection (the built desk auto-pushes any held queue when the ping succeeds),
 and from v279 the ten-second tick retries a held entry rather than waiting for that next open.
 
+## The approval step (v302), and what is actually approved
+
+**A queued entry no longer becomes a ledger row unattended.** Something drafts the proposed
+ROW, it is stored pending, the phone shows it, and a tap approves or rejects. Only approved
+rows are offered to the commit run.
+
+```
+phone: add transaction ──POST /queue──▶ KV
+                                         │
+   drafter (the daily run today, a cloud agent later) reads the entry and WRITES A ROW
+                                         │  POST /drafts   (write-gated)
+                                         ▼
+                              D1 `draft`, status pending
+                                         │
+   phone: Approve tab ──POST /drafts/<id>/approve──▶ status approved
+                                         │
+   commit run: node tools/drafts.mjs --approved   → folds them into the master
+               node tools/drafts.mjs --committed <id>...
+```
+
+**What is approved is the ROW, not the entry, and that distinction is the whole point.** On
+14 Aug an oil unit was queued at RM115. As an entry it was faultless: a product, a party, a
+quantity, a price, nothing in it that could be checked against anything. As a row, sitting
+next to RM7 of cost and a 93.9% margin, it was obviously wrong; the real figure was RM11.50
+and the book carried RM103.50 of revenue that never existed until it was corrected. An
+approval screen showing the entry back would have caught nothing, so the phone leads with
+cost and margin and puts the price beside them.
+
+**The app computes neither.** Cost, margin and flags are read from the draft exactly as the
+drafter wrote them, for the same reason `data.json` exists: a second opinion computed on the
+phone would be a second pricing engine, and two engines drift.
+
+**Reads open, decisions write-gated**, matching the rest of the Worker. An approval reaches
+the master, so it is a write in the fullest sense. A row already decided cannot be decided
+again (409), because a double tap on a phone is the normal case, not the odd one.
+
+Endpoints: `GET /drafts?status=pending|approved|rejected|all[&uncommitted=1]`,
+`POST /drafts`, `POST /drafts/<id>/approve|reject|committed`. Schema in
+`migrations/0002_draft.sql`, which explains at length why `row` and `reasoning` are NOT NULL.
+
+**`draft` is the first table in the store the cloud OWNS.** `entry` and `state` mirror the
+master and it stays authoritative for them; a draft has no counterpart there. Writing here
+therefore does not flip the direction `0001` reserves, and nothing in this path may write to
+`entry`.
+
 ## Continuous sync (v279)
 
 The ledger is baked into `public/index.html` at build time, so a phone is only ever as current
@@ -177,9 +222,11 @@ Cow-Crm01 master (a Cowork/master session); once it lands, the sync above alread
 | `public/_headers` | CSP and security headers, applied by Cloudflare to the assets. |
 | `wrangler.jsonc` | Worker + assets + the `SALT_QUEUE` KV binding. |
 | `tools/build.mjs` | Master → `public/index.html`, with fail-loud patch anchors. Also writes `public/rev.json`. |
-| `public/rev.json` | `{v,id,built}` for the build on disk. `id` is a hash of the built file. **Written by the build, never by hand.** |
+| `public/rev.json` | `{v,id,built}` for the build on disk. `id` hashes the master, `public/index.html` AND `public/sw.js`, NUL-separated. **Written by the build, never by hand.** Anything that ships and changes behaviour must be in that hash: a change outside it does not move the id, so `update.mjs` compares equal, skips the deploy and reports the phone current while the old file is still served. That is exactly what happened to the v302 sw.js fix before sw.js was added. It is still true of `wrangler.jsonc`, which must be deployed by hand. |
 | `.deployed.json` | `{id,v,at}` for the build that last DEPLOYED successfully. Written by `salt_sync.ps1` on a reported success and nowhere else. |
 | `tools/drain.mjs` | KV → `06_Data\salt_queue_cloud.json`; `--committed <ISO>` prunes; `--status` inspects. |
+| `tools/drafts.mjs` | The approval step from the laptop: `--schema`, `--list`, `--draft <file>`, `--approved`, `--committed <id>`. Goes through wrangler, so no write key needed. |
+| `migrations/0002_draft.sql` | The `draft` table. The first thing in the store the cloud owns rather than mirrors. |
 | `tools/update.mjs` | **The whole "update" chain in one command**, ending in proof that every surface is level. See below. |
 | `tools/make_icons.py` | Regenerate the crystal icons. |
 | `test/verify.mjs` | Smoke suite: Worker contract, name-drop, access gate, drain helpers, build integrity. |
@@ -325,6 +372,6 @@ deduped by the entry's own `at`, so nothing is committed twice.
 
 ## Tests
 
-`npm test` runs `test/verify.mjs`: 66 assertions with no network or browser. Add one for every
+`npm test` runs `test/verify.mjs`: 163 assertions with no network or browser. Add one for every
 behavioural change to the Worker, the build patches or the drain. The desk's own rendering is
 covered by the daily run's jsdom pass against the master, not here.
