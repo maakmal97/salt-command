@@ -1,6 +1,6 @@
 {
- "v": "v311",
- "stamped": "17 Aug 2026, 23:05 KL",
+ "v": "v312",
+ "stamped": "17 Aug 2026, 23:40 KL",
  "source": "Cow-Crm01 salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -1726,7 +1726,8 @@
    "CY2-NIL",
    "CR3-PUD",
    "CH4-MLR",
-   "CM3-OKR"
+   "CM3-OKR",
+   "CA11-SEN"
   ],
   "associates": [
    "CS6-BS",
@@ -1862,9 +1863,9 @@
     "note": "Judged a rare one-off. Treat the RM104/unit it paid as an outlier, not as evidence of what wholesale will bear."
    }
   ],
-  "QUEUE_COMMITTED": "2026-08-17T12:25:00.418Z",
+  "QUEUE_COMMITTED": "2026-08-17T13:17:09.116Z",
   "PRICING": {
-   "takenAt": "2026-08-17T13:50:53.629Z",
+   "takenAt": "2026-08-17T14:00:52.265Z",
    "sizes": [
     0.5,
     1,
@@ -1982,7 +1983,7 @@
      }
     }
    },
-   "v": "v311"
+   "v": "v312"
   }
  }
 }
