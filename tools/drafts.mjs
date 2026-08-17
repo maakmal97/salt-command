@@ -16,6 +16,7 @@
  *   node tools/drafts.mjs --list [--all]       what is waiting, read-only (default: pending)
  *   node tools/drafts.mjs --draft <file.json>  stage a proposed row for approval
  *   node tools/drafts.mjs --from-queue         draft the LAPTOP queue too, so it passes the same gate
+ *   node tools/drafts.mjs --approve <id>... --by "..."   record a decision taken away from the phone
  *   node tools/drafts.mjs --approved           the approved, uncommitted rows the run should fold in
  *   node tools/drafts.mjs --committed <id>...  mark rows as folded into the master
  *   --local                                    act on the local D1 rather than the remote one
@@ -221,6 +222,46 @@ async function fromQueue() {
   if (drafted) console.log("  They are PENDING. Approve them on the phone; nothing reaches the ledger until you do.");
 }
 
+/* ---- approve --------------------------------------------------------------------------
+ * RECORDING A DECISION TAKEN AWAY FROM THE PHONE (v311).
+ *
+ * The phone is the normal road and should stay so: it is the surface that shows the cost,
+ * the margin and the flags beside the price, which is the whole reason the row is drafted
+ * rather than the entry. But the decision belongs to the owner, not to the handset, and he
+ * takes it wherever he is. Before this there was no way to record one from here at all, so
+ * the choice was to leave his instruction unrecorded or to fold a row the table still called
+ * pending, and the second leaves the ledger and the store disagreeing about what happened.
+ *
+ * --by IS REQUIRED AND MUST SAY WHO AND ON WHAT BASIS. Nothing here may be called blind by a
+ * later script: a decision with no stated author is exactly what the approval step exists to
+ * prevent, and an empty reason is refused. It writes the same columns a phone tap writes, so
+ * the audit trail reads the same and says where the decision actually came from.
+ */
+function approve() {
+  const i = argv.indexOf("--approve");
+  const by = (valOf("--by") || "").trim();
+  /* The VALUE of --by is not a flag, so a naive "everything after --approve that does not
+     start with --" swallows it and then reports it as a missing draft. Anything that follows
+     a valued flag is excluded by position rather than by shape. */
+  const byAt = argv.indexOf("--by");
+  const ids = argv.slice(i + 1)
+    .filter((a, k) => !a.startsWith("--") && (byAt < 0 || (i + 1 + k) !== byAt + 1));
+  if (!ids.length) { fail("--approve needs at least one draft id"); return; }
+  if (!by) { fail("--by is required: say who decided and on what basis. A decision with no author is not one."); return; }
+  const at = new Date().toISOString();
+  for (const id of ids) {
+    const cur = query("SELECT status FROM draft WHERE id=" + q(id));
+    if (!cur) return;
+    if (!cur.length) { fail("no such draft: " + id); continue; }
+    if (cur[0].status !== "pending") { fail(id + " is already " + cur[0].status + "; refusing to decide it twice"); continue; }
+    const sql = "UPDATE draft SET status='approved', decided_at=" + q(at) + ", decided_by=" + q(by)
+      + " WHERE id=" + q(id) + " AND status='pending'";
+    const r = wrangler(["d1", "execute", DB, WHERE, "--json", "--command", JSON.stringify(sql)], { quiet: true });
+    if (r.code !== 0) { fail("could not approve " + id); continue; }
+    ok(id + " approved (" + by + ")");
+  }
+}
+
 /* ---- approved ------------------------------------------------------------------------ */
 /* What the commit run asks for: approved and not yet folded into the master. Approved and
    committed are different questions, because an approved row stays approved forever. */
@@ -258,6 +299,7 @@ function committed() {
 if (has("--schema")) schema();
 else if (has("--draft")) draft();
 else if (has("--from-queue")) await fromQueue();
+else if (has("--approve")) approve();
 else if (has("--approved")) approved();
 else if (has("--committed")) committed();
 else if (has("--list") || argv.filter((a) => a !== "--local" && a !== "--all").length === 0) list();
