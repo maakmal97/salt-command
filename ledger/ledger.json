@@ -1,6 +1,6 @@
 {
- "v": "v307",
- "stamped": "17 Aug 2026, 18:40 KL",
+ "v": "v308",
+ "stamped": "17 Aug 2026, 20:05 KL",
  "source": "Cow-Crm01 salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -41,7 +41,7 @@
     "stated": 19
    }
   },
-  "STATED_STOCK": 10.3,
+  "STATED_STOCK": 8.8,
   "purchases": [
    {
     "date": "2026-06-27",
@@ -1520,10 +1520,11 @@
     "qty": 1,
     "total": 80,
     "cost": 47,
-    "cash": 0,
+    "cash": 80,
     "deliveredQty": 1,
     "deliveredOn": "2026-08-14",
-    "note": "<b>AN ADVANCE, AND HIS FIFTH CONSECUTIVE ORDER AT EXACTLY RM80.</b> 1 unit handed over on the 14th with nothing paid. RM80 on 15 Jul, 20 Jul, 30 Jul, 08 Aug and now, after RM85 on 29 Jun and RM90 on 03 Jul, so RM80 stopped being a quote some weeks ago and is his price. <b>The shape is his last order repeated exactly</b>, 1 unit at RM80 on credit, and that one was paid four days out on the Wednesday he promised. It is the only receivable on the book, CC5-OKR&rsquo;s RM90 having cleared on the 11th, and it puts him back at his 1 unit retail credit cap, so nothing further goes out to him until this is paid. <b>The desk should not read a delay as a broken promise this time either.</b> The 08 Aug row spent four days marked past due when the money had in fact arrived on the day agreed and only the report of it was late; the gap the desk cannot see is between a movement and its queueing, not between a promise and its keeping. FIFO takes the unit off the 1.30 unit remnant at RM47, so RM33 on RM80 at 41.3%. It is the last unit on the book to be costed at RM47."
+    "paidOn": "2026-08-14",
+    "note": "<b>PAID ON THE DAY, AND IT WAS NEVER AN ADVANCE. HIS FIFTH CONSECUTIVE ORDER AT EXACTLY RM80.</b> 1 unit out and RM80 in, both on the 14th, reported on the 17th. RM80 on 15 Jul, 20 Jul, 30 Jul, 08 Aug and now, after RM85 on 29 Jun and RM90 on 03 Jul, so RM80 stopped being a quote some weeks ago and is his price. <b>THE DESK CALLED THIS AN ADVANCE FOR THREE DAYS AND THE DESK WAS WRONG, FOR THE SECOND TIME ABOUT THE SAME MAN.</b> It was booked at v299 as delivered and unpaid, named the only receivable on the book and said to be sitting at his 1 unit credit cap. None of that was ever true: the money moved with the salt. Exactly the same thing happened to his 08 Aug row, which spent four days marked past due when the RM80 had arrived on the Wednesday promised. <b>The lesson is not about him, it is about the instrument.</b> This desk sees what has been QUEUED, never what has HAPPENED, and the gap between a movement and its recording is the one thing it cannot observe. Where the two are three days apart it will invent a receivable every time, and the right reading of an unpaid row on a trusted account is \"not yet reported\", not \"not yet paid\". FIFO takes the unit off the 1.30 unit remnant at RM47, so RM33 on RM80 at 41.3%. It is the last unit on the book costed at RM47, and the book now carries no receivable at all."
    },
    {
     "date": "2026-08-14",
@@ -1539,12 +1540,16 @@
     "note": "<b>THE FIRST ROW ON THIS BOOK WHOSE COST IS A BLEND OF TWO LOTS.</b> 1.5 unit for RM175 is RM116.67 a unit, paid and delivered on the day, CN6-WM&rsquo;s third resell as an associate and an R2 through his general bucket, the end buyer being a stranger with no code of their own, exactly as his 03 Aug and 06 Aug downsells were booked. <b>The cost is RM54.20 a unit and it is not a lot rate.</b> The 1.30 unit remnant had 0.30 left after CR3-DAM took a unit that morning, so 0.30 comes off it at RM47 and the other 1.20 off the 13 Aug lot at RM56: RM81.30 on the order, RM54.20 a unit. Every row since 28 Jul has read a single RM47, which is why this one is worth pointing at. The 0.30 is carried at the RM47 the rows use rather than the RM47.47 STOCK_COST blends to; the difference is RM0.14 on the order and the honest caveat about where the plug fell already sits at STOCK_COST. On that basis it returns RM62.47 a unit, RM93.70 on the order at 53.5%. <b>The rate is holding as the size falls.</b> He resold 6.5 unit at RM67.69 on the 3rd, 2 unit at RM125 on the 6th and 1.5 at RM116.67 now, so the small-parcel rate has printed twice above RM115 and the RM67.69 looks like the outlier rather than the trend."
    },
    {
+    "date": "2026-08-17",
     "customer": "CC5-OKR",
     "qty": 1,
     "total": 80,
-    "cash": 0,
-    "deliveredQty": 0,
-    "note": "PENDING, and therefore carrying NO DATE: nothing paid, nothing delivered, so it counts nowhere, draws no stock and the unit stays free to sell until it moves. <b>THE THING TO LOOK AT IS THE PRICE, WHICH IS RM10 UNDER HIS OWN STANDING RATE.</b> He has paid RM90 a unit every time he has traded: the 09 Jul barter, the 15 Jul cash sale and the 08 Aug advance that settled on the 11th, with a fourth at RM90 cancelled on 20 Jul before anything moved. RM80 would be the first time he is asked for less, and nothing in the entry says why. <b>It also lands on the wrong side of the restock.</b> The 13 Aug lot puts replacement cost at RM56 rather than RM47, so the single-unit floor rises with it and RM80 needs reading against the floor the desk computes live, not against the RM47-era arithmetic on the rows above. He said on 06 Aug he was reducing his intake and to expect smaller, less frequent orders, and 1 unit is consistent with that; a smaller order at a cut rate is not. <b>Left pending and left visible rather than repriced</b>, because whether RM80 was a decision or a slip is his to say and the desk cannot tell from the entry."
+    "cost": 56,
+    "cash": 80,
+    "deliveredQty": 1,
+    "deliveredOn": "2026-08-17",
+    "paidOn": "2026-08-17",
+    "note": "<b>IT MOVED, AND IT MOVED AT THE RM80 THE DESK QUESTIONED.</b> 1 unit paid and delivered in full on the 17th, so the row that stood pending and undated since the 14th now dates from the 17th and draws its stock there. <b>THE QUESTION WAS PUT BEFORE IT MOVED AND HE ANSWERED IT BY MOVING IT</b>, which is the whole point of leaving a pending row visible rather than repricing it. What was said, and it still stands as the record: he has paid RM90 a unit on every trade he ever made, the 09 Jul barter, the 15 Jul cash sale and the 08 Aug advance that cleared on the 11th, with a fourth at RM90 cancelled on 20 Jul before anything moved. RM80 is the first time he has been asked for less. <b>AND IT IS UNDER FLOOR, WHICH IS NOW A FACT RATHER THAN A WARNING.</b> The 13 Aug lot put the shelf at RM56, so the delivered floor at 1 unit is RM85.75 and the collected floor RM79.50: this clears the collected line by RM0.50 and misses the delivered one by RM5.75. On the RM56 lot it returns RM24 on RM80, <b>30.0%</b>, against the 44% and 49% the other two orders of this run made. It is the thinnest retail margin the book has carried since the restock. <b>Recorded, not corrected.</b> He was shown the figure and traded anyway, which is a decision and not a slip, and a desk that quietly repriced it would be destroying the only evidence that the question was ever asked."
    },
    {
     "date": "2026-08-14",
@@ -1570,6 +1575,18 @@
     "deliveredOn": "2026-08-14",
     "paidOn": "2026-08-14",
     "note": "<b>RM11.50, CORRECTED FROM RM115 ON HIS WORD, AND THE CATCH IS THE POINT OF THE ROW.</b> 1 unit for RM11.50, paid and delivered on the day, opening CH4-MLR on oil the same day he opened on salt. On the RM7 lot it returns RM4.50, <b>39.1% margin on the price</b>, which is a <b>64.3% markup on cost</b> and therefore sits between the good rung at 50% and the great one at 75%. The two figures are the same sale said two ways and this row states both on purpose: the ledger quotes margin on price, the v300 ladder is markup on cost, and reading 39.1% against a 25% floor would compare the wrong pair. <b>THE RATE NOW READS CORRECTLY AGAINST EVERY OTHER OIL ROW.</b> It lands between the RM11 CS6-BS paid buying 30 unit direct and the RM13 his downsell fetched, which is the right ordering: one unit should cost more per unit than thirty, and at RM115 it did not sit on the ladder at all. <b>WHAT v300 DID WITH IT IS WORTH KEEPING.</b> The figure came in at RM115 and was booked at RM115, because this desk records what it is told and does not quietly move a number into the range it expected; the same rule booked the RM6 below-cost resell of 11 Aug without argument. What it did instead was say plainly that RM115 was ten times any rate on the book, name RM11.50 as the one-digit alternative, and put a figure on being wrong: RM103.50 of overstated oil revenue and a 93.9% margin that never happened. He read it and corrected it inside a day. <b>THAT IS THE WHOLE ARGUMENT FOR DRAFTING A ROW AND HAVING IT APPROVED</b> rather than committing a queued entry straight to the ledger: the entry looked ordinary, and it was the ROW, with its cost and its margin beside it, that showed the fault."
+   },
+   {
+    "date": "2026-08-15",
+    "customer": "CA4-DAM",
+    "qty": 0.5,
+    "total": 50,
+    "cost": 56,
+    "cash": 50,
+    "deliveredQty": 0.5,
+    "deliveredOn": "2026-08-15",
+    "paidOn": "2026-08-15",
+    "note": "<b>HIS EIGHTH ORDER AT EXACTLY RM100 A UNIT, AND THE FIRST ROW ON THIS BOOK THAT A TAP PUT HERE.</b> Half a unit for RM50, paid and collected on the day. Eight orders at one rate makes RM100 the steadiest price on the desk by a distance, and it did not move when the shelf did: the 13 Aug lot took cost from RM47 to RM56, so the same RM50 that returned RM26.50 at 53% on 12 Aug returns RM22 at 44.0% now. Nine points went to the restock. <b>IT CLEARS ITS FLOOR, WHICH IS NOT TRUE OF EVERY ROW IN THIS RUN.</b> Half a unit reads the 1 unit carded floor, RM85.75 delivered against RM100 a unit here, so it is comfortably clear on either basis. <b>THE ROUTE IS THE THING TO RECORD.</b> It was typed on the laptop, drafted into a proposed row by the same drafter the phone entries use, shown with its cost and its margin, and approved on the phone before it reached this file. Every figure above was in front of him before the row existed. That is the v302 to v305 arrangement working end to end on real trade for the first time, and the two amendments in the same queue took the older road, because an amendment is a judgement about WHICH row and the drafter refuses them by design."
    }
   ],
   "contacts": [
@@ -1800,9 +1817,9 @@
     "note": "Judged a rare one-off. Treat the RM104/unit it paid as an outlier, not as evidence of what wholesale will bear."
    }
   ],
-  "QUEUE_COMMITTED": "2026-08-14T12:42:33.844Z",
+  "QUEUE_COMMITTED": "2026-08-17T08:56:10.915Z",
   "PRICING": {
-   "takenAt": "2026-08-17T11:25:01.833Z",
+   "takenAt": "2026-08-17T11:39:20.078Z",
    "sizes": [
     0.5,
     1,
@@ -1920,7 +1937,7 @@
      }
     }
    },
-   "v": "v307"
+   "v": "v308"
   }
  }
 }
