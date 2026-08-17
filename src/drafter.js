@@ -253,7 +253,19 @@ export function draftRow(entry, book) {
   const nothingMoved = cash < 0.005 && moved < 0.005;
 
   const row = { customer: party, qty, total, cost: round(priced.cost), cash: round(cash) };
-  if (dir === "BUY") { delete row.customer; delete row.cost; row.supplier = party; row.status = paidInFull ? "paid" : "part"; }
+  if (dir === "BUY") {
+    delete row.customer; delete row.cost;
+    row.supplier = party;
+    row.status = paidInFull ? "paid" : (cash > 0.005 ? "part" : "unpaid");
+    /* PENDING PURCHASES MUST CARRY pending:true, and this was found by folding one.
+       poLive() excludes a lot by THIS FLAG, not by any status string, so a purchase written
+       without it counts as live the moment it exists. It adds no stock, because received
+       quantity is read from receivedOn, but it is eligible to become the NEWEST LOT, and the
+       newest lot sets the replacement cost the whole floor is built on. An order that had not
+       arrived would have been pricing the book. The first version emitted status:"part" for a
+       purchase with nothing paid and nothing received, which is wrong twice over. */
+    if (nothingMoved) row.pending = true;
+  }
   if (product !== "salt") row.product = product;
 
   /* THE DATE, and the rule it follows. Nothing moved means nothing happened, so the row is
@@ -270,6 +282,12 @@ export function draftRow(entry, book) {
       if (paidInFull) row.paidOn = row.date;
     }
   } else if (dir === "SELL") {
+    /* A PENDING SALE CARRIES NO COST, which is the v266 rule: nothing has been paid and
+       nothing delivered, so there is no cost of goods against it, and printing one states a
+       profit on a trade that has not happened. The desk suppresses the margin for a Pending
+       order anyway, so a stray cost was inert rather than wrong; it is dropped so a drafted
+       row has the same shape as every pending row already on the book. */
+    delete row.cost;
     row.deliveredQty = 0;
   }
   if (pay.note) row.note = String(pay.note);

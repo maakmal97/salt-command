@@ -1,6 +1,6 @@
 {
- "v": "v310",
- "stamped": "17 Aug 2026, 22:15 KL",
+ "v": "v311",
+ "stamped": "17 Aug 2026, 23:05 KL",
  "source": "Cow-Crm01 salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -182,6 +182,14 @@
     "receivedOn": "2026-08-13",
     "receivedQty": 12.5,
     "note": "<b>THE FIRST SALT RESTOCK SINCE 28 JUL, AND IT COSTS RM56 A UNIT RATHER THAN RM47.</b> 12.5 unit for RM700, paid and received in full on the 13th. It arrives on a shelf of 1.30 unit, sixteen days after the 100 unit lot, so the desk restocked at the bottom rather than on a plan. <b>RM56 is the small-lot tier and there is nothing wrong with it.</b> It is the same rate every 12.5 unit lot has carried since 08 Jul, and the RM47 that the book has quoted on every row since 28 Jul was the BULK rate, which needs 100 unit to reach. Buying an eighth of the size at a fifth more a unit is the ladder working as quoted, not a concession lost. <b>WHAT IT MOVES IS THE FLOOR, NOT THE LEDGER.</b> Replacement cost is read off the newest received lot, so from this row every floor on the desk is built on RM56 instead of RM47, roughly a fifth higher, and the pending rows should be re-read against it rather than against the figures written beside them last week. STOCK_COST follows it to 56 on the same reasoning: the 1.30 unit remnant is fully drawn by the two sales of the 14th, so the shelf is now this lot and nothing else. ASSUMPTION, STATED: the entry was queued as completed with the full RM700 in cash and 12.5 unit moved, so it is taken as paid and received in full on the 13th."
+   },
+   {
+    "qty": 12.5,
+    "total": 700,
+    "supplier": "SA5-BTR",
+    "status": "unpaid",
+    "pending": true,
+    "note": "<b>AGREED, NOT ARRIVED. IT CARRIES pending:true AND THAT FLAG IS DOING REAL WORK.</b> 12.5 unit at RM700, RM56 a unit, the small-lot tier and the same rate as the 13 Aug lot. Nothing is paid and nothing is received, so it takes NO DATE and stays out of the shelf, out of the weighted average and out of replacement cost. <b>poLive() excludes a lot by the pending flag, not by its status</b>, so a row like this written without it would be treated as a live lot: not adding stock, since received quantity is read from receivedOn, but eligible to become the NEWEST LOT and therefore to set the replacement cost the entire floor is built on. An order that has not arrived would have been pricing the book. <b>The drafter wrote this row without the flag and the fault is fixed there too</b>, so the next pending purchase cannot arrive mispriced. <b>It is well timed.</b> The shelf stands at 4.80 unit, the tightest since the restock, and this doubles it back to 17.30 when it lands."
    }
   ],
   "sales": [
@@ -1599,6 +1607,30 @@
     "deliveredOn": "2026-08-15",
     "paidOn": "2026-08-15",
     "note": "<b>HIS EIGHTH ORDER AT EXACTLY RM100 A UNIT, AND THE FIRST ROW ON THIS BOOK THAT A TAP PUT HERE.</b> Half a unit for RM50, paid and collected on the day. Eight orders at one rate makes RM100 the steadiest price on the desk by a distance, and it did not move when the shelf did: the 13 Aug lot took cost from RM47 to RM56, so the same RM50 that returned RM26.50 at 53% on 12 Aug returns RM22 at 44.0% now. Nine points went to the restock. <b>IT CLEARS ITS FLOOR, WHICH IS NOT TRUE OF EVERY ROW IN THIS RUN.</b> Half a unit reads the 1 unit carded floor, RM85.75 delivered against RM100 a unit here, so it is comfortably clear on either basis. <b>THE ROUTE IS THE THING TO RECORD.</b> It was typed on the laptop, drafted into a proposed row by the same drafter the phone entries use, shown with its cost and its margin, and approved on the phone before it reached this file. Every figure above was in front of him before the row existed. That is the v302 to v305 arrangement working end to end on real trade for the first time, and the two amendments in the same queue took the older road, because an amendment is a judgement about WHICH row and the drafter refuses them by design."
+   },
+   {
+    "customer": "CA4-DAM",
+    "qty": 0.5,
+    "total": 50,
+    "cash": 0,
+    "deliveredQty": 0,
+    "note": "PENDING, and carrying NO DATE: nothing paid, nothing delivered, so it counts nowhere and the half unit stays free to sell. Half a unit at RM100 a unit, his standing rate on seven of his nine orders, and it clears its floor comfortably at that price. Nothing here is a decision waiting to be made; it is an order that has not moved yet."
+   },
+   {
+    "customer": "CY2-NIL",
+    "qty": 2.5,
+    "total": 230,
+    "cash": 0,
+    "deliveredQty": 0,
+    "note": "PENDING, and carrying NO DATE. <b>RM92 A UNIT AGAINST THE RM115 HE OPENED AT, A 20% CUT, AND NOTHING FLAGGED IT.</b> His only previous order was 2 unit for RM230 on 11 Aug, RM115 a unit, described at the time as the best margin any retail order had returned. This is the same RM230 for 2.5 unit. <b>The drafter could not see it, and that is a limit rather than an oversight.</b> Its party check measures a rate against the MEDIAN of that party&rsquo;s history and requires at least two prior orders before it will speak, so a SECOND order can move as far as it likes from the first without a word. Caution with one data point is right; silence about it is not, and the check should say which parties it cannot judge. Recorded here so the cut sits on the row and not only in a conversation. At RM92 against the RM56 shelf it would return RM90 on the order, 39.1%, which still clears the floor: the point is the direction, not the level."
+   },
+   {
+    "customer": "CR3-DAM",
+    "qty": 2,
+    "total": 160,
+    "cash": 0,
+    "deliveredQty": 0,
+    "note": "PENDING, and carrying NO DATE. RM80 a unit, his standing rate on his last five orders, at DOUBLE his usual size: every order since 15 Jul has been exactly 1 unit. <b>The drafter flagged it and the flag belongs on the row.</b> RM160 sits RM5.24 under the delivered floor of RM165.24 and clears the collected floor of RM158.99 by RM1.01, so how it is handed over decides whether it clears at all. That is a live decision rather than a booked fault, because nothing has moved: if he collects it clears, if it is delivered it does not. The same RM80 cleared comfortably before the 13 Aug restock took the shelf from RM47 to RM56, which is exactly why a floor is computed live and never printed."
    }
   ],
   "contacts": [
@@ -1830,9 +1862,9 @@
     "note": "Judged a rare one-off. Treat the RM104/unit it paid as an outlier, not as evidence of what wholesale will bear."
    }
   ],
-  "QUEUE_COMMITTED": "2026-08-17T11:47:09.772Z",
+  "QUEUE_COMMITTED": "2026-08-17T12:25:00.418Z",
   "PRICING": {
-   "takenAt": "2026-08-17T12:32:36.801Z",
+   "takenAt": "2026-08-17T13:50:53.629Z",
    "sizes": [
     0.5,
     1,
@@ -1950,7 +1982,7 @@
      }
     }
    },
-   "v": "v310"
+   "v": "v311"
   }
  }
 }
