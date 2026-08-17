@@ -216,7 +216,19 @@ export function flagsFor(entry, row, book, priced) {
 export function draftRow(entry, book) {
   const pay = entry && entry.payload;
   if (!pay || typeof pay !== "object") return { skip: "the entry carries no payload the desk can read" };
-  if (pay.mode && pay.mode !== "new") return { skip: `this entry amends an existing row (mode "${pay.mode}"), which is a judgement about WHICH row and is left for a person` };
+  /* THE REASON HAS TO NAME THE ACTUAL CASE. This once answered "amends an existing row" for
+     every mode that was not `new`, so an ADDID, which registers a party and amends nothing,
+     was reported as an amendment. That reads as a bug in the entry rather than a category the
+     drafter does not handle, and it is the reason a person reads before deciding what to do. */
+  if (pay.mode === "amend") {
+    return { skip: "this entry AMENDS an existing row, and which row it amends is a judgement, so it is left for a person" };
+  }
+  if (pay.mode === "addid") {
+    return { skip: "this entry REGISTERS A PARTY rather than recording a trade. It has no row to draft, and the roster and the directory are edited on the laptop" };
+  }
+  if (pay.mode && pay.mode !== "new") {
+    return { skip: `this entry carries mode "${pay.mode}", which the drafter has no row shape for, so it is left for a person` };
+  }
 
   const dir = String(pay.direction || "").toUpperCase();
   if (dir !== "SELL" && dir !== "BUY") return { skip: "the entry names no direction" };
@@ -335,6 +347,12 @@ export async function runDrafter(env, { now = () => new Date().toISOString() } =
   const seen = await env.SALT_LEDGER.prepare("SELECT id FROM draft").all();
   const already = new Set((seen.results || []).map((r) => r.id));
 
+  /* SELF-CLEANING, and it runs before anything else. An entry the drafter refused may since
+     have been folded by a person, or withdrawn; either way it is at or below the watermark
+     now and must stop being listed. Doing it here means nobody has to tidy up, and a stale
+     refusal cannot accumulate into a list people learn to ignore. */
+  if (mark) await env.SALT_LEDGER.prepare("DELETE FROM refused WHERE id<=?1").bind(mark).run();
+
   const out = { ok: true, at: now(), considered: 0, drafted: 0, skipped: [], already: 0, committed: 0 };
   for (const at of [...byAt.keys()].sort()) {
     const entry = byAt.get(at);
@@ -342,7 +360,16 @@ export async function runDrafter(env, { now = () => new Date().toISOString() } =
     out.considered++;
     if (already.has(at)) { out.already++; continue; }
     const d = draftRow(entry, book);
-    if (d.skip) { out.skipped.push({ at, why: d.skip }); continue; }
+    if (d.skip) {
+      out.skipped.push({ at, why: d.skip });
+      /* RECORDED SO IT CAN BE SEEN, never so it can be approved. See migrations/0003. */
+      await env.SALT_LEDGER.prepare(
+        `INSERT OR REPLACE INTO refused (id,entry,why,party,source,seen_at)
+         VALUES (?1,?2,?3,?4,?5,?6)`
+      ).bind(at, JSON.stringify(entry), d.skip,
+        (entry && entry.party) || null, "cloud-drafter", now()).run();
+      continue;
+    }
     await env.SALT_LEDGER.prepare(
       `INSERT OR IGNORE INTO draft
          (id,status,collection,entry,row,reasoning,flags,party,product,date,qty,total,cost,drafter,drafted_at)
@@ -354,6 +381,9 @@ export async function runDrafter(env, { now = () => new Date().toISOString() } =
       d.row.date || null, d.row.qty ?? null, d.row.total ?? null, d.row.cost ?? null,
       "cloud-drafter", now()
     ).run();
+    /* If this id was refused on an earlier pass and now drafts, the refusal is stale the
+       moment the row exists. Clearing it here keeps one entry from appearing in both lists. */
+    await env.SALT_LEDGER.prepare("DELETE FROM refused WHERE id=?1").bind(at).run();
     out.drafted++;
   }
   return out;

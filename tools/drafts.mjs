@@ -12,7 +12,7 @@
  * is that the judgement is now written down BEFORE it is applied, and looked at.
  *
  * Modes:
- *   node tools/drafts.mjs --schema             apply migrations/0002_draft.sql
+ *   node tools/drafts.mjs --schema             apply migrations/0002_draft.sql and 0003_refused.sql
  *   node tools/drafts.mjs --list [--all]       what is waiting, read-only (default: pending)
  *   node tools/drafts.mjs --draft <file.json>  stage a proposed row for approval
  *   node tools/drafts.mjs --from-queue         draft the LAPTOP queue too, so it passes the same gate
@@ -64,11 +64,13 @@ const money = (v) => v == null ? "-" : "RM " + Number(v).toLocaleString("en-MY",
 
 /* ---- schema -------------------------------------------------------------------------- */
 function schema() {
-  const f = resolve(REPO, "migrations", "0002_draft.sql");
-  if (!existsSync(f)) { fail("migrations/0002_draft.sql is not there"); return; }
-  const r = wrangler(["d1", "execute", DB, WHERE, "--file=migrations/0002_draft.sql"], { quiet: true });
-  if (r.code !== 0) { fail("could not apply the migration:\n        " + r.out.split("\n").slice(0, 6).join("\n        ")); return; }
-  ok("migrations/0002_draft.sql applied to " + DB + " (" + WHERE.replace("--", "") + ")");
+  /* Both migrations, in order, and each is CREATE TABLE IF NOT EXISTS so re-running is safe. */
+  for (const name of ["0002_draft.sql", "0003_refused.sql"]) {
+    if (!existsSync(resolve(REPO, "migrations", name))) { fail("migrations/" + name + " is not there"); continue; }
+    const r = wrangler(["d1", "execute", DB, WHERE, "--file=migrations/" + name], { quiet: true });
+    if (r.code !== 0) { fail("could not apply " + name + ":\n        " + r.out.split("\n").slice(0, 6).join("\n        ")); continue; }
+    ok("migrations/" + name + " applied to " + DB + " (" + WHERE.replace("--", "") + ")");
+  }
 }
 
 /* ---- list ---------------------------------------------------------------------------- */
@@ -186,7 +188,20 @@ async function fromQueue() {
       if (mark && entry.at <= mark) continue;         // already in the master
       if (already.has(entry.at)) continue;            // already drafted, here or in the cloud
       const d = draftRow(entry, book);
-      if (d.skip) { skipped++; console.log("  skip  " + entry.at + "  " + d.skip); continue; }
+      if (d.skip) {
+        skipped++;
+        console.log("  skip  " + entry.at + "  " + d.skip);
+        /* RECORDED SO THE PHONE CAN SEE IT. This is the half that matters for the laptop
+           queue: an amendment typed here is refused by the drafter and would otherwise be
+           invisible from the phone, which is how the same CC5-OKR fulfilment came to be
+           queued twice on 17 Aug. It cannot be approved from there; it can only be seen. */
+        const rsql = "INSERT OR REPLACE INTO refused (id,entry,why,party,source,seen_at) VALUES ("
+          + [q(entry.at), q(JSON.stringify(entry)), q(d.skip), q(entry.party || null),
+             q("laptop-queue"), q(new Date().toISOString())].join(",") + ")";
+        const rr = wrangler(["d1", "execute", DB, WHERE, "--json", "--command", JSON.stringify(rsql)], { quiet: true });
+        if (rr.code !== 0) fail("could not record the refusal of " + entry.at + "; it will not show on the phone");
+        continue;
+      }
       const row = d.row;
       const sql = "INSERT OR IGNORE INTO draft (id,status,collection,entry,row,reasoning,flags,party,product,date,qty,total,cost,drafter,drafted_at) VALUES ("
         + [q(entry.at), "'pending'", q(d.collection), q(JSON.stringify(entry)), q(JSON.stringify(row)), q(d.reasoning),

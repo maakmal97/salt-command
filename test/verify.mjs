@@ -12,6 +12,7 @@ import { dirname, resolve, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import worker from "../src/worker.js";
 import { unionByAt, pruneCommitted } from "../tools/drain.mjs";
+import { NAME_STOPWORDS, NAME_COLLISIONS } from "../tools/book.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO = resolve(HERE, "..");
@@ -289,7 +290,9 @@ section("The public desk carries no name and no place");
     const codes = Object.keys(bio.ids || {}).concat(Object.keys(bio.bio || {})).sort((a, b) => b.length - a.length);
     let hay = desk;
     for (const c of codes) hay = hay.split(c).join("~");
-    const skip = new Set(["tbc", "unknown"]);
+    /* One definition, in book.mjs; a private copy here drifted once already. NAME_COLLISIONS
+       are names the desk also uses as words, skipped and reported rather than silently. */
+    const skip = new Set([...NAME_STOPWORDS, ...NAME_COLLISIONS]);
     const word = (c) => /[A-Za-z0-9]/.test(c || "");
     const hits = [...words].filter((x) => x && x.length >= 3 && !skip.has(x.toLowerCase())).filter((x) => {
       let f = 0;
@@ -783,7 +786,10 @@ section("Drafter — rows, refusals and flags");
 
   /* ---- the refusals ---- */
   ok(/no payload/.test(draftRow({ at: "x" }, book).skip || ""), "an entry with no payload is refused");
-  ok(/amends/.test(draftRow({ at: "x", payload: { mode: "amend", direction: "SELL", party: "CC5-OKR" } }, book).skip || ""), "an amendment is left for a person");
+  ok(/AMENDS/.test(draftRow({ at: "x", payload: { mode: "amend", direction: "SELL", party: "CC5-OKR" } }, book).skip || ""), "an amendment is left for a person");
+  /* the reason must name the real case: an addid registers a party and amends nothing */
+  ok(/REGISTERS A PARTY/.test(draftRow({ at: "x", payload: { mode: "addid", code: "CX1-NEW" } }, book).skip || ""), "an addid is reported as a party registration, not as an amendment");
+  ok(!/amend/i.test(draftRow({ at: "x", payload: { mode: "addid", code: "CX1-NEW" } }, book).skip || ""), "and never as an amendment");
   ok(/bucket/.test(draftRow(entry({ direction: "SELL", party: "CN6-WM-R", qty: 1, total: 100, assoc: "CN6-WM" }), book).skip || ""),
     "an entry carrying associate or stream fields is left for a person");
   ok(/counterparty/.test(draftRow(entry({ direction: "SELL", qty: 1, total: 100 }), book).skip || ""), "no party, no row");
@@ -906,6 +912,54 @@ section("The gate is the only road in");
   } else {
     ok(true, "serve_desk.py is not on this machine, so its drain could not be checked");
   }
+}
+
+/* ---- 10c. refused entries are visible, never approvable ------------------------- */
+/* Built after the same CC5-OKR fulfilment was queued twice on 17 Aug, once per device. An
+   amendment is refused by the drafter, so it never reached the Approve tab, so there was no
+   way to see from the phone that it was already in hand. These assertions guard the two
+   properties that matter: it shows up, and it cannot be decided. */
+section("Refused entries — seen, not approvable");
+{
+  const sql = readFileSync(join(REPO, "migrations", "0003_refused.sql"), "utf8");
+  ok(/CREATE TABLE IF NOT EXISTS refused/.test(sql), "there is a refused table");
+  ok(!/status/i.test(sql.replace(/--[^\n]*/g, "")), "it carries NO status column, so nothing here can be decided");
+  ok(!/approve|committed_at|decided/i.test(sql.replace(/--[^\n]*/g, "")), "and no decision columns at all");
+
+  const d = readFileSync(join(REPO, "src", "drafter.js"), "utf8");
+  ok(/INSERT OR REPLACE INTO refused/.test(d), "the cloud drafter records what it refuses");
+  ok(/DELETE FROM refused WHERE id<=\?1/.test(d), "and clears refusals the watermark has passed, so the list cannot go stale");
+  ok(/DELETE FROM refused WHERE id=\?1/.test(d), "a refusal that later drafts is cleared, so one entry is never in both lists");
+
+  const t = readFileSync(join(REPO, "tools", "drafts.mjs"), "utf8");
+  ok(/INSERT OR REPLACE INTO refused/.test(t), "--from-queue records laptop refusals too, which is the case that caused this");
+  ok(/0003_refused\.sql/.test(t), "--schema applies the migration");
+
+  /* ONE STOP-LIST, NOT TWO. ledger.mjs and this file each carried their own copy; "general"
+     was added to one and the other went on failing, which is the exact silent divergence
+     book.mjs exists to prevent. Asserted so it cannot quietly happen again. */
+  const led = readFileSync(join(REPO, "tools", "ledger.mjs"), "utf8");
+  const self = readFileSync(join(REPO, "test", "verify.mjs"), "utf8");
+  ok(NAME_STOPWORDS.has("general") && NAME_STOPWORDS.has("tbc"), "book.mjs defines the name stop-list");
+  ok(/NAME_STOPWORDS/.test(led) && !/new Set\(\["tbc"/.test(led), "ledger.mjs imports it and keeps no private copy");
+  /* Tests that the list is IMPORTED, not that it is spelled a particular way: the check is
+     "no literal stop-word spelled out here", since composing the two imported sets is fine. */
+  ok(/NAME_STOPWORDS/.test(self) && !/skip\s*=\s*new Set\(\[\s*"/.test(self),
+    "and neither does this suite: it composes the imported sets rather than listing words");
+  ok(NAME_COLLISIONS.has("max"), "the collision list is separate from the stop-list, because skipping a real name is a hole and not a tidy-up");
+
+  const w = readFileSync(join(REPO, "src", "worker.js"), "utf8");
+  ok(/FROM refused/.test(w), "the Worker serves them");
+  ok(/refusedCount/.test(w), "and counts them");
+  /* the decision routes must not have grown a refused case */
+  ok(!/refused\/.+\/(approve|reject)/.test(w), "there is no route to approve a refused entry");
+
+  const app = readFileSync(join(REPO, "public", "index.html"), "utf8");
+  ok(/function drawRefused/.test(app), "the app draws them");
+  ok(/id="refbox"/.test(app), "in their own panel");
+  const seg = app.slice(app.indexOf("function drawRefused"), app.indexOf("function drawDrafts"));
+  ok(!/data-a=|Approve|Reject/.test(seg), "the refused panel renders no decision buttons");
+  ok(/n\.hidden=!DRAFTS\.length/.test(app), "the tab badge counts only what a tap can clear");
 }
 
 /* ---- 11. the drafter is wired to a schedule ------------------------------------- */

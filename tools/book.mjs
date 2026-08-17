@@ -65,6 +65,36 @@ export function reader(w) {
   };
 }
 
+/* WORDS THAT ARE IN THE DIRECTORY BUT ARE NOT NAMES.
+ *
+ * The leak check searches the built desk for every name in salt_bio.json, case-insensitively.
+ * That is right for a person and wrong for the entries which are admissions rather than
+ * names: "TBC" where a location was never known, and "General" on a downsell buyer, which is
+ * what this desk calls an unnamed buyer rather than anybody's name. Left in, every ordinary
+ * use of the word is reported as a leak, including the note reading "to a general downsell
+ * buyer" on the very row explaining there is no name to leak. A gate that cries wolf on its
+ * own vocabulary is one people learn to wave through.
+ *
+ * IT LIVES HERE BECAUSE THERE WERE TWO COPIES AND THEY DRIFTED. tools/ledger.mjs and
+ * test/verify.mjs each carried their own list; "general" was added to the first and the
+ * second went on failing, which is precisely the silent divergence book.mjs exists to stop.
+ * One definition, both importers, and a test that asserts neither keeps a private copy. */
+export const NAME_STOPWORDS = new Set(["tbc", "unknown", "n/a", "na", "none", "-", "general"]);
+
+/* AND A SECOND LIST, WHICH IS A DIFFERENT AND WORSE PROBLEM, SO IT IS KEPT APART.
+ *
+ * The words above are not names at all. These ARE names, and are also ordinary words the
+ * desk uses in its own furniture: a party called Max against a column headed "Max revenue".
+ * Skipping them means a real party is NOT being checked for, which is a genuine hole, not a
+ * tidy-up. It is accepted only because the alternative is worse: the gate fails on every
+ * build, and a gate that always fails is a gate that gets commented out.
+ *
+ * THE PRICE IS PAID OUT LOUD. Both callers print what they skipped on every run, so nobody
+ * can read a pass as "no name appears" when it means "no name appears except these". Keep
+ * this list as short as it can possibly be, and prefer renaming the column to adding a word.
+ * A three-letter name is the worst case; anything longer should be argued about first. */
+export const NAME_COLLISIONS = new Set(["max", "min"]);
+
 /* THE PRICING SNAPSHOT (v303), and it exists so the cloud drafter is never a second engine.
  *
  * A drafter has to answer two things about a proposed row: what the salt cost, and whether the

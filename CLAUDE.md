@@ -199,6 +199,15 @@ It does NOT cover:
   with no cost on the book. Same road: refused, listed, left for a person.
 - **Editing the master by hand.** That is the desk itself and needs no tap.
 
+**REFUSED ENTRIES ARE VISIBLE ON THE PHONE (v309), which is not the same as approvable.**
+Everything the drafter declines is recorded in the `refused` table and shown in its own panel
+under the Approve tab, with the reason and which drafter saw it. It has **no decision column**,
+the panel renders **no buttons**, and the tab badge counts only drafts, so nothing there can be
+approved even by accident. It self-cleans: the drafter deletes anything the watermark has
+passed. It exists because on 17 Aug the same CC5-OKR fulfilment was queued from the laptop and
+then from the phone, byte for byte, since nothing on the phone said it was already in hand.
+Only the watermark stopped the double count.
+
 Run the drafter by hand with a write key:
 
 ```bash
@@ -306,6 +315,7 @@ Cow-Crm01 master (a Cowork/master session); once it lands, the sync above alread
 | `src/drafter.js` | The cloud drafter: queue + mirror -> a proposed row in `draft`. Runs on the cron and at `POST /draft-now`. Never writes to `entry`. |
 | `tools/drafts.mjs` | The approval step from the laptop: `--schema`, `--list`, `--draft <file>`, `--approved`, `--committed <id>`. Goes through wrangler, so no write key needed. |
 | `migrations/0002_draft.sql` | The `draft` table. The first thing in the store the cloud owns rather than mirrors. |
+| `migrations/0003_refused.sql` | The `refused` table: entries the drafter declined, kept so they can be SEEN. No decision column, by design. |
 | `tools/update.mjs` | **The whole "update" chain in one command**, ending in proof that every surface is level. See below. |
 | `tools/make_icons.py` | Regenerate the crystal icons. |
 | `test/verify.mjs` | Smoke suite: Worker contract, name-drop, access gate, drain helpers, build integrity. |
@@ -451,6 +461,6 @@ deduped by the entry's own `at`, so nothing is committed twice.
 
 ## Tests
 
-`npm test` runs `test/verify.mjs`: 227 assertions with no network or browser. Add one for every
+`npm test` runs `test/verify.mjs`: 250 assertions with no network or browser. Add one for every
 behavioural change to the Worker, the build patches or the drain. The desk's own rendering is
 covered by the daily run's jsdom pass against the master, not here.

@@ -318,7 +318,26 @@ async function handleDraftsGet(env, url) {
   sql += " ORDER BY drafted_at";
   const rs = await env.SALT_LEDGER.prepare(sql).bind(...binds).all();
   const drafts = (rs.results || []).map(draftOut);
-  return json({ ok: true, count: drafts.length, drafts });
+
+  /* THE REFUSED LIST RIDES ALONG, and it is a separate key rather than a fourth status for
+     the reason migrations/0003 gives: these carry no proposed row and can never be approved.
+     It is returned on the same response because the phone wants both at the same moment and
+     a second round trip on a phone is a second chance to be offline. Only on the default
+     pending view: asking for approved or rejected rows is a different question. */
+  let refused = [];
+  if (want === "pending" && !uncommitted) {
+    try {
+      const rr = await env.SALT_LEDGER.prepare(
+        "SELECT id,entry,why,party,source,seen_at FROM refused ORDER BY id"
+      ).all();
+      refused = (rr.results || []).map((r) => {
+        let entry = null;
+        try { entry = JSON.parse(r.entry); } catch (e) { /* show the reason even if the entry is unreadable */ }
+        return { id: r.id, entry, why: r.why, party: r.party, source: r.source, seenAt: r.seen_at };
+      });
+    } catch (e) { /* an older store has no `refused` table; the drafts still answer */ }
+  }
+  return json({ ok: true, count: drafts.length, drafts, refused, refusedCount: refused.length });
 }
 
 async function handleDraftPost(request, env) {

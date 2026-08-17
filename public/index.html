@@ -136,6 +136,16 @@ h2{font-size:17px;font-weight:600;letter-spacing:-.2px;margin:0 0 12px}
 .drf-b{display:grid;grid-template-columns:1fr 1fr;gap:9px}
 .btn.rej{background:rgba(255,138,138,.10);border-color:rgba(255,138,138,.32);color:var(--bad)}
 .btn.rej:hover{background:rgba(255,138,138,.20)}
+/* An entry the drafter refused. Deliberately quieter than a draft and carrying no buttons:
+   it exists to be seen, never to be decided. The violet rail marks it as the bridge case,
+   something in hand elsewhere rather than something waiting on you. */
+.rfz{background:rgba(255,255,255,.035);border:1px solid var(--brd);border-radius:var(--r-sm);
+  padding:12px 14px;margin:0 0 9px;position:relative;overflow:hidden}
+.rfz::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--bridge)}
+.rfz .w{font-size:13.5px;font-weight:700;color:var(--ink-2);margin:0 0 3px}
+.rfz .r{font-size:12.5px;color:var(--ink-3);margin:0;overflow-wrap:break-word}
+.rfz .src{display:inline-block;font-size:9.5px;text-transform:uppercase;letter-spacing:.8px;
+  font-weight:700;color:var(--bridge);margin:6px 0 0}
 
 /* ---- Watch: stat cards --------------------------------------------------- */
 .stats{display:grid;grid-template-columns:1fr 1fr;gap:9px}
@@ -243,6 +253,12 @@ option:checked{background-color:var(--menu-2);font-weight:600}
         and the margin it makes are the things an entry cannot show.</p>
       <div id="appr"><p class="stand">Loading.</p></div>
       <div id="apprMsg"></div>
+      <div id="refbox" hidden>
+        <p class="lbl" style="margin-top:20px">Already queued, and not yours to approve</p>
+        <p class="stand" style="margin-bottom:10px">These are on the laptop and need a person
+          there. They are shown so you know they are already in hand and do not enter them twice.</p>
+        <div id="ref"></div>
+      </div>
     </section>
 
     <section class="glass" id="p-add" role="tabpanel" aria-labelledby="tab-add" hidden>
@@ -552,17 +568,34 @@ function poll(){
    IT COMPUTES NOTHING. Same rule as the rest of this app: cost, margin and the flags
    are read from the draft exactly as the drafter wrote them. A second opinion computed
    here would be a second pricing engine, and two engines drift. */
-var DRAFTS=[],apprBusy={};
+var DRAFTS=[],REFUSED=[],apprBusy={};
 function money(n){ if(n==null||isNaN(n))return '-';
   return 'RM '+Number(n).toLocaleString('en-MY',{maximumFractionDigits:2}); }
 function loadDrafts(){
   return fetch('drafts?status=pending',{cache:'no-store'}).then(function(r){ return r.ok?r.json():null; })
-    .then(function(j){ DRAFTS=(j&&j.drafts)||[]; drawDrafts(); })
-    .catch(function(){ DRAFTS=[]; drawDrafts(); });
+    .then(function(j){ DRAFTS=(j&&j.drafts)||[]; REFUSED=(j&&j.refused)||[]; drawDrafts(); })
+    .catch(function(){ DRAFTS=[]; REFUSED=[]; drawDrafts(); });
+}
+/* The refused list. It is drawn on every pass, including the one where there is nothing to
+   approve, because "nothing waiting" and "nothing waiting but two are in hand on the laptop"
+   are different states and only one of them means you should stop thinking about it. */
+function drawRefused(){
+  var wrap=$('refbox'), box=$('ref');
+  if(!REFUSED.length){ wrap.hidden=true; box.innerHTML=''; return; }
+  wrap.hidden=false;
+  box.innerHTML=REFUSED.map(function(r){
+    var e=r.entry||{}, line=e.raw||((e.type||'Entry')+' '+(r.party||''));
+    return '<div class="rfz"><p class="w">'+esc(line)+'</p>'
+      +'<p class="r">'+esc(r.why||'')+'</p>'
+      +'<p class="src">seen by the '+esc(r.source||'drafter')+'</p></div>';
+  }).join('');
 }
 function drawDrafts(){
   var box=$('appr'),n=$('apprN');
+  /* The badge counts only what a tap can clear. A refused entry needs nothing from you here,
+     so counting it would send you to a tab with no button on it. */
   n.hidden=!DRAFTS.length; n.textContent=String(DRAFTS.length);
+  drawRefused();
   if(!DRAFTS.length){ box.innerHTML='<div class="empty">Nothing waiting. Every drafted row has been decided.</div>'; return; }
   box.innerHTML=DRAFTS.map(function(d){
     var r=d.row||{},qty=r.qty,total=r.total,cost=r.cost;

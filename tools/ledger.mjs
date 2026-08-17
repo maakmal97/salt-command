@@ -35,7 +35,7 @@ import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
 import { openMaster } from "./payload.mjs";
-import { LEDGER, LEDGER_KEYS, META_KEYS, reader, pricingSnapshot } from "./book.mjs";
+import { LEDGER, LEDGER_KEYS, META_KEYS, reader, pricingSnapshot, NAME_STOPWORDS, NAME_COLLISIONS } from "./book.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO = resolve(HERE, "..");
@@ -268,8 +268,10 @@ if (existsSync(BIO)) {
      THE ENTRY ITSELF IS THE REAL ODDITY and it is left alone deliberately: by the v199 rule a
      buyer with no name takes a `-Gen` bucket and NO directory entry at all, so this one is
      probably a placeholder somebody typed. Renaming a party is his call, not this tool's. */
-  const PLACEHOLDER = new Set(["tbc", "unknown", "n/a", "na", "none", "-", "general"]);
-  names = [...new Set(names.filter((n) => n.length >= 3 && !PLACEHOLDER.has(n.toLowerCase())))];
+  const PLACEHOLDER = NAME_STOPWORDS;   // one definition, in book.mjs
+  /* Names that collide with the desk's own vocabulary are skipped and SAID SO. See book.mjs. */
+  const collided = [...new Set(names.filter((n) => NAME_COLLISIONS.has(n.toLowerCase())))];
+  names = [...new Set(names.filter((n) => n.length >= 3 && !PLACEHOLDER.has(n.toLowerCase()) && !NAME_COLLISIONS.has(n.toLowerCase())))];
   /* THE CODES COME OUT FIRST. A party code embeds its own place abbreviation by design, so
      CH6-TBC contains "TBC" and CS6-BS contains "BS". Searching the raw text therefore reports
      every code as a leak, which is the fastest way to teach someone to ignore this check.
@@ -291,6 +293,13 @@ if (existsSync(BIO)) {
     fail(`the extract carries ${hits.length} real name(s) or place(s) from the directory. It must not be committed.`);
     hits.forEach((h) => { console.log(`          ${h.masked} (${h.len} chars) near: ...${h.near}...`); });
   } else ok(`no real name or place from the directory appears in the extract (${names.length} checked, ${codes.length} codes excluded)`);
+  /* Said on every run, pass or fail. A skipped name is a party this gate is NOT checking for,
+     and that has to be visible or a pass reads as more than it is. */
+  if (collided.length) {
+    console.log(`  note  ${collided.length} name(s) NOT checked, because they collide with the desk's own`
+      + ` vocabulary: ${collided.map((n) => n[0] + "*".repeat(n.length - 1)).join(", ")}.`
+      + ` Rename the column rather than lengthening that list. See NAME_COLLISIONS in book.mjs.`);
+  }
 } else {
   console.log("  note  salt_bio.json is not on this machine, so the name check did not run");
 }
