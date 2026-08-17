@@ -11,16 +11,19 @@
  * password, and auto-hide them, while the server only ever holds ciphertext. A POST that
  * is not that envelope shape is rejected, so a stray plaintext name cannot land here.
  *
- * AUTHENTICATION, AS AT 12 AUG 2026: READS ARE OPEN, WRITES ARE GATED BY A SHARED KEY.
- * See writeOk() below. The key lives in the SALT_WRITE_KEY secret and the phone holds it in
- * localStorage after being asked once; with the secret unset the gate is dormant and the
- * behaviour is exactly the 11 Aug posture described next. Zero Trust stays off either way.
+ * AUTHENTICATION, AS AT 16 AUG 2026: READS ARE OPEN, WRITES ARE GATED BY A SHARED KEY, AND
+ * THE GATE IS ARMED. See writeOk() below. The key lives in the SALT_WRITE_KEY secret, which
+ * is set (wrangler secret list returns it) and was verified on 16 Aug 2026 refusing an
+ * unkeyed POST /queue with 401 "write key required"; the phone holds it in localStorage
+ * after being asked once. Zero Trust stays off either way.
  *
  * READS, AS AT 11 AUG 2026: THERE IS NO AUTHENTICATION, BY DECISION. Cloudflare Access was
  * removed and REQUIRE_ACCESS is "0" on the owner's instruction ("I want no zero trust
  * requirements right now"), so accessOk() below returns true unconditionally and every
- * path serves, read and write alike. That means POST /queue accepts an unauthenticated
- * body from anyone, and the daily run folds it into the real ledger. See CLAUDE.md,
+ * path serves. That used to mean write as well: POST /queue accepted an unauthenticated
+ * body from anyone and the daily run folded it into the real ledger as real rows. The write
+ * gate closes that half, so the open surface is READS ONLY as at 16 Aug 2026, which is still
+ * the whole ledger to anyone with the URL. See CLAUDE.md,
  * "Access, and why it is off", before changing REQUIRE_ACCESS back: doing so WITHOUT
  * first recreating the Access application locks the owner out of his own desk, because
  * nothing would be issuing the header this then demands.
@@ -88,10 +91,12 @@ function accessOk(request, env) {
  * do not have to. A caller must present X-Salt-Key matching the SALT_WRITE_KEY secret, and
  * the phone holds that key in localStorage after being asked for it once.
  *
- * IT IS DORMANT UNTIL THE SECRET EXISTS. With SALT_WRITE_KEY unset this returns true and
- * nothing changes, which is deliberate: the desk that can send the header has to be live on
- * the phone BEFORE the gate starts demanding it, or the owner locks himself out of his own
- * queue exactly as the Access application did on 11 Aug. Ship the desk, then set the secret.
+ * THE SECRET IS SET, SO THE GATE IS ARMED (verified against the live Worker, 16 Aug 2026).
+ * The dormant branch below stays, and must: with SALT_WRITE_KEY unset this returns true and
+ * nothing changes, which is deliberate, because the desk that can send the header has to be
+ * live on the phone BEFORE the gate starts demanding it, or the owner locks himself out of
+ * his own queue exactly as the Access application did on 11 Aug. That ordering was followed.
+ * It binds again only if the secret is ever cleared and reinstated.
  *
  * WHAT IT IS AND IS NOT. It is a shared secret, so it stops a stranger with the URL writing
  * into the ledger, which is the exposure that mattered: drain.mjs unions any POST into the

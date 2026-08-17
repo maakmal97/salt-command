@@ -1,6 +1,6 @@
 {
- "v": "v312",
- "stamped": "17 Aug 2026, 23:40 KL",
+ "v": "v313",
+ "stamped": "18 Aug 2026, 00:30 KL",
  "source": "Cow-Crm01 salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -1487,14 +1487,14 @@
    {
     "date": "2026-08-11",
     "customer": "CY2-NIL",
-    "qty": 2,
+    "qty": 2.5,
     "total": 230,
     "cost": 47,
     "cash": 230,
-    "deliveredQty": 2,
+    "deliveredQty": 2.5,
     "deliveredOn": "2026-08-11",
     "paidOn": "2026-08-11",
-    "note": "<b>A NEW CUSTOMER, OPENED AT CY2-NIL.</b> 2 unit for RM230 is RM115 a unit, paid and delivered on the day with nothing owed. It is a strong opening rate: above CA4-DAM&rsquo;s RM100 anchor and CE4-CHE&rsquo;s RM92 standing price, and just under the RM116.67 a unit CA4-DAM paid on 26 Jul, so a first order took a full rate and no introductory discount was given. On the RM47 lot it returns RM68 a unit, RM136 on the order at 59.1%, which is the best margin any retail order has returned. He is added to the roster as an ordinary retail customer, not an associate, so he carries the 1 unit credit cap; nothing is owed, so the cap is untouched. The name and the location are in the directory and never in this file."
+    "note": "<b>2.5 UNIT FOR RM230, RM92 A UNIT, AND THAT IS WHAT IT HAS ALWAYS BEEN.</b> A NEW CUSTOMER OPENED AT CY2-NIL, paid and delivered on the day with nothing owed. <b>THE QUANTITY WAS WRONG ON THIS ROW FROM THE DAY IT WAS WRITTEN, AND IT WAS CORRECTED ON HIS WORD.</b> It was booked as 2 unit, which made the rate read RM115 and the margin RM136 at 59.1%, and this note called that the best margin any retail order had returned. None of that was real: 2.5 unit for RM230 is his rate and always was. Restated on the RM47 lot, it returns RM45 a unit, <b>RM112.50 on the order at 48.9%</b>, which is a good opening and an ordinary one. <b>THE SHELF DOES NOT MOVE AND THE PLUG DOES</b>, exactly as it did for the CR3-PUD unit at v298. Half a unit more left on the 11th than the book recorded, but the hand count of 1.30 was taken on the 12th, AFTER it had gone, and a count always wins on this desk. So the counted shelf stands and the half unit moves out of the unexplained plug and into an explained sale, which narrows the leak rather than the stock. <b>WHAT IT COST TO CARRY THE ERROR</b> is worth naming: for six days this row overstated the best retail margin on the book by ten points, and v311 then read his second order at the correct RM92 as a 20% CUT from a rate he had never charged. A wrong quantity does not stay a quantity error; it becomes a pricing story. The name and the location are in the directory and never in this file."
    },
    {
     "date": "2026-08-12",
@@ -1622,7 +1622,7 @@
     "total": 230,
     "cash": 0,
     "deliveredQty": 0,
-    "note": "PENDING, and carrying NO DATE. <b>RM92 A UNIT AGAINST THE RM115 HE OPENED AT, A 20% CUT, AND NOTHING FLAGGED IT.</b> His only previous order was 2 unit for RM230 on 11 Aug, RM115 a unit, described at the time as the best margin any retail order had returned. This is the same RM230 for 2.5 unit. <b>The drafter could not see it, and that is a limit rather than an oversight.</b> Its party check measures a rate against the MEDIAN of that party&rsquo;s history and requires at least two prior orders before it will speak, so a SECOND order can move as far as it likes from the first without a word. Caution with one data point is right; silence about it is not, and the check should say which parties it cannot judge. Recorded here so the cut sits on the row and not only in a conversation. At RM92 against the RM56 shelf it would return RM90 on the order, 39.1%, which still clears the floor: the point is the direction, not the level."
+    "note": "PENDING, and carrying NO DATE: nothing paid, nothing delivered, so it counts nowhere and the 2.5 unit stay free to sell. <b>RM92 A UNIT, WHICH IS HIS RATE AND HAS ALWAYS BEEN HIS RATE.</b> His opening order of 11 Aug is the same 2.5 unit for the same RM230. <b>v311 CALLED THIS A 20% CUT AND IT WAS NOT ONE.</b> That reading came from the opening row, which had been booked as 2 unit rather than 2.5 and so made his rate look like RM115; the quantity was corrected on his word at v313 and the whole comparison went with it. Nothing about this order was ever unusual. <b>The drafter said nothing and was right to.</b> Its party check needs two prior orders before it measures a rate against a median, and with one order on the book there was nothing sound to compare against. The limit is real, and this is the case that shows it cuts both ways: a check that had spoken here would have been wrong, and the reader who spoke instead of it WAS wrong. At RM92 on the RM56 shelf it would return RM90 on the order, 39.1%, which clears the floor comfortably."
    },
    {
     "customer": "CR3-DAM",
@@ -1865,7 +1865,7 @@
   ],
   "QUEUE_COMMITTED": "2026-08-17T13:17:09.116Z",
   "PRICING": {
-   "takenAt": "2026-08-17T14:00:52.265Z",
+   "takenAt": "2026-08-17T23:20:38.636Z",
    "sizes": [
     0.5,
     1,
@@ -1895,44 +1895,44 @@
      "replCost": 56,
      "floors": {
       "1": {
-       "delivered": 85.75,
-       "collected": 79.5
+       "delivered": 85.66,
+       "collected": 79.41
       },
       "2": {
-       "delivered": 165.24,
-       "collected": 158.99
+       "delivered": 165.07,
+       "collected": 158.82
       },
       "3": {
-       "delivered": 244.74,
-       "collected": 238.49
+       "delivered": 244.48,
+       "collected": 238.23
       },
       "4": {
-       "delivered": 324.24,
-       "collected": 317.99
+       "delivered": 323.89,
+       "collected": 317.64
       },
       "5": {
-       "delivered": 403.74,
-       "collected": 397.49
+       "delivered": 403.3,
+       "collected": 397.05
       },
       "0.5": {
-       "delivered": 46,
-       "collected": 39.75
+       "delivered": 45.95,
+       "collected": 39.7
       },
       "1.5": {
-       "delivered": 125.5,
-       "collected": 119.25
+       "delivered": 125.36,
+       "collected": 119.11
       },
       "2.5": {
-       "delivered": 204.99,
-       "collected": 198.74
+       "delivered": 204.77,
+       "collected": 198.52
       },
       "6.25": {
-       "delivered": 503.11,
-       "collected": 496.86
+       "delivered": 502.56,
+       "collected": 496.31
       },
       "12.5": {
-       "delivered": 999.97,
-       "collected": 993.72
+       "delivered": 998.86,
+       "collected": 992.61
       }
      }
     },
@@ -1941,49 +1941,49 @@
      "replCost": 7,
      "floors": {
       "1": {
-       "delivered": 16.46,
-       "collected": 10.21
+       "delivered": 16.45,
+       "collected": 10.2
       },
       "2": {
-       "delivered": 26.68,
-       "collected": 20.43
+       "delivered": 26.65,
+       "collected": 20.4
       },
       "3": {
-       "delivered": 36.89,
-       "collected": 30.64
+       "delivered": 36.85,
+       "collected": 30.6
       },
       "4": {
-       "delivered": 47.1,
-       "collected": 40.85
+       "delivered": 47.06,
+       "collected": 40.81
       },
       "5": {
-       "delivered": 57.31,
-       "collected": 51.06
+       "delivered": 57.26,
+       "collected": 51.01
       },
       "0.5": {
-       "delivered": 11.36,
-       "collected": 5.11
+       "delivered": 11.35,
+       "collected": 5.1
       },
       "1.5": {
-       "delivered": 21.57,
-       "collected": 15.32
+       "delivered": 21.55,
+       "collected": 15.3
       },
       "2.5": {
-       "delivered": 31.78,
-       "collected": 25.53
+       "delivered": 31.75,
+       "collected": 25.5
       },
       "6.25": {
-       "delivered": 70.08,
-       "collected": 63.83
+       "delivered": 70.01,
+       "collected": 63.76
       },
       "12.5": {
-       "delivered": 133.91,
-       "collected": 127.66
+       "delivered": 133.77,
+       "collected": 127.52
       }
      }
     }
    },
-   "v": "v312"
+   "v": "v313"
   }
  }
 }
