@@ -890,6 +890,19 @@ section("The gate is the only road in");
     const py = readFileSync(desk, "utf8");
     ok(!/_run_sync\("-PullOnly"/.test(py), "serve_desk.py no longer drains the cloud queue on a timer");
     ok(!/next_drain/.test(py), "and the drain timer is gone rather than merely unused");
+    /* AND THE DRAIN INSIDE THE SYNC PASS, which the first removal missed entirely: the
+       timer went but salt_sync.ps1 still ran the drain on every pass, so the log kept
+       printing "drained the phone queue" and the road stayed open. */
+    const ps1 = "C:/Users/maakm/Claude/Projects/Personal/Cow-Crm01_Salt Business/01_Dashboard/salt_sync.ps1";
+    if (existsSync(ps1)) {
+      const sync = readFileSync(ps1, "utf8");
+      /* the EXECUTABLE form, not the word: the comment explaining the removal names the
+         command, so a naive substring search would fail on the very text that documents it */
+      ok(!/&\s*node\s+'tools\/drain\.mjs'/.test(sync), "salt_sync.ps1 does not invoke the drain on a sync pass");
+      ok(!/Say\s*\(\s*"drained the phone queue"/.test(sync), "and it can no longer report having drained one");
+    } else {
+      ok(true, "salt_sync.ps1 is not on this machine, so its pull could not be checked");
+    }
   } else {
     ok(true, "serve_desk.py is not on this machine, so its drain could not be checked");
   }
