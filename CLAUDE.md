@@ -187,8 +187,19 @@ only and mark each id committed after.
 fires: the stored prompt needs `update_scheduled_task` from Cowork. Until that is done the
 running task still holds the old fold-every-queue-file instruction.
 
-**What is deliberately NOT gated:** editing the master by hand. That is the desk itself. The
-gate governs QUEUED transactions, the ones typed in a hurry at the point of sale. Run it by hand with a write key:
+**WHAT THE GATE ACTUALLY COVERS, stated narrowly because the first wording overclaimed.** It
+governs NEW ROWS from queued transactions, the ones typed in a hurry at the point of sale.
+It does NOT cover:
+
+- **Amendments.** The drafter refuses them (which row does it amend?), so they are never drafted
+  and never approved. `--from-queue` prints a `skip` line for each, and the daily run reads them
+  from the queue file and folds them against the row they amend, exactly as before. Found by
+  running it: two of the three entries queued on 17 Aug were amendments.
+- **Entries carrying associate, stream or link fields**, a movement with no date, or a product
+  with no cost on the book. Same road: refused, listed, left for a person.
+- **Editing the master by hand.** That is the desk itself and needs no tap.
+
+Run the drafter by hand with a write key:
 
 ```bash
 curl -X POST -H "X-Salt-Key: <key>" "https://salt-command.maakmal97.workers.dev/draft-now?dry=1"
