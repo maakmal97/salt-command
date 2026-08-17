@@ -1,6 +1,6 @@
 {
- "v": "v309",
- "stamped": "17 Aug 2026, 21:40 KL",
+ "v": "v310",
+ "stamped": "17 Aug 2026, 22:15 KL",
  "source": "Cow-Crm01 salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -41,7 +41,7 @@
     "stated": 19
    }
   },
-  "STATED_STOCK": 8.8,
+  "STATED_STOCK": 4.8,
   "purchases": [
    {
     "date": "2026-06-27",
@@ -1578,6 +1578,18 @@
    },
    {
     "date": "2026-08-15",
+    "customer": "CM3-OKR",
+    "qty": 4,
+    "total": 260,
+    "cost": 56,
+    "cash": 260,
+    "deliveredQty": 4,
+    "deliveredOn": "2026-08-15",
+    "paidOn": "2026-08-15",
+    "note": "<b>A NEW CUSTOMER OPENED AT CM3-OKR, AND HE OPENED RM64 UNDER FLOOR.</b> 4 unit for RM260, RM65 a unit, paid and collected on the 15th. On the RM56 shelf it returns RM36 on RM260, <b>13.8% on the price and a 16.1% markup on cost</b>, which is beneath the 25% the floor asks: the delivered floor at this size is RM324.24 and the collected one RM317.99, so it misses both by about RM64. <b>It is the thinnest salt margin this book has ever carried.</b> The next thinnest is CC5-OKR&rsquo;s RM80 unit two days later at 30.0%, and every other retail row since the restock sits between 44% and 49%. <b>THE FLAG WAS RAISED BEFORE IT WAS APPROVED, WHICH IS THE WHOLE POINT.</b> The drafter said in terms that RM260 was under both floors and that the party was not yet on the roster, and both statements were in front of him on the phone when he tapped approve. So this is a priced decision and not an accident, and the desk records it as one. A four unit opening at a keen rate is a recognisable trade: CM4-MK took 4 unit at RM90 once his cumulative buying passed RM1,000, so size has bought a discount here before. What is different is that this buyer has no history at all to price against, so the concession is being made on expectation rather than on record. <b>Worth watching rather than repeating.</b> If his second order comes in at RM65 too, RM65 is his price and the book should say so; if it comes in higher, this was an opening. <b>The party was registered separately and the two entries were coupled.</b> The ADDID adding CM3-OKR to the roster was queued a minute before the sale, refused by the drafter because registering a party is not a trade, and shown on the phone under the refused panel that v309 built. That coupling, a sale that cannot be committed until a registration is folded, is exactly what was invisible before that panel existed. The name and the location are in the directory and never in this file."
+   },
+   {
+    "date": "2026-08-15",
     "customer": "CA4-DAM",
     "qty": 0.5,
     "total": 50,
@@ -1681,7 +1693,8 @@
    "CS6-PER-R",
    "CY2-NIL",
    "CR3-PUD",
-   "CH4-MLR"
+   "CH4-MLR",
+   "CM3-OKR"
   ],
   "associates": [
    "CS6-BS",
@@ -1817,9 +1830,9 @@
     "note": "Judged a rare one-off. Treat the RM104/unit it paid as an outlier, not as evidence of what wholesale will bear."
    }
   ],
-  "QUEUE_COMMITTED": "2026-08-17T08:56:10.915Z",
+  "QUEUE_COMMITTED": "2026-08-17T11:47:09.772Z",
   "PRICING": {
-   "takenAt": "2026-08-17T12:06:46.999Z",
+   "takenAt": "2026-08-17T12:32:36.801Z",
    "sizes": [
     0.5,
     1,
@@ -1937,7 +1950,7 @@
      }
     }
    },
-   "v": "v309"
+   "v": "v310"
   }
  }
 }
