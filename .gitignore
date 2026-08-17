@@ -23,3 +23,6 @@ test/tmp/
 .claude/settings.local.json
 migrations/.seed.generated.sql
 migrations/.query.sql
+
+# Scratch: scoping notes and drafts, never part of the deploy.
+.scratch/

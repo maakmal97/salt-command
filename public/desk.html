@@ -59,7 +59,7 @@ document.addEventListener('visibilitychange',function(){
    focused, no dialog open. Otherwise it offers a chip and waits to be tapped.
    The same tick retries a held entry, which is what gets a phone write to the cloud
    without waiting for the next open. */
-var SALT_BUILD_ID="19902f9a599f771d";
+var SALT_BUILD_ID="eb4f6b2c6a5e0f8e";
 var SALT_REV_MS=10000;
 (function(){
   var chip=null,timer=null;
@@ -326,6 +326,32 @@ tr.tot td{font-weight:800;background:#150e2b;}
 .etype.erewarded{background:rgba(245,196,81,.16);color:var(--gold);}
 .etype.elinked{background:rgba(99,230,224,.16);color:var(--ice);}
 .pnil{color:var(--dim);}
+/* ============ LEDGER ON A PHONE (v307) ============
+   The first tab taken to the lite treatment, and the job turned out to be a quarter of what
+   was scoped. It is CSS ONLY: no figure, render function or class name is touched, so
+   nothing here can change what the ledger says. Delete the block and the tab is as it was.
+
+   THE MATERIAL WAS ALREADY DONE, WHICH IS THE FINDING. This started as a plan to restyle
+   the desk into the phone app's language, and the desk has been in that language since
+   v213: the same Liquid Glass Ledger tuning, the same tokens to the hex, --glass at white
+   10%, --brd at white 13%, --r-sm 14px, gold #e8c66b, ice #7fd7e8, violet #b3a6f5. The
+   `register` ground is the app's ground, three washes over near-black. A first attempt here
+   restated all of that and was correctly overridden by the v213 last-wins layer, which is
+   how the redundancy was found. It was removed rather than made to win.
+
+   SO THE ONLY REAL GAP IS WIDTH, and it is not a small one. A ledger row is a flex line
+   carrying 74 + 84 + 118 + 126 pixels of FIXED numeric columns: 402px committed before the
+   party, the date and the badges are laid out at all. On a 375px screen that cannot reflow,
+   only scroll. Below 640px the row therefore stops being a row. The identity takes the full
+   width and the four figures become a labelled two-by-two grid, which is the pattern the
+   app's Approve card already uses. The labels are drawn in CSS rather than added to the
+   markup, so the wide layout carries no dead elements and the DOM is unchanged. */
+   THE RULES THEMSELVES LIVE AT THE 560px BLOCK further down, not here, and that was the
+   second thing learned. A 640px block written here was silently beaten at 375px by an
+   existing `@media(max-width:560px)` rule that already wrapped the row: same specificity,
+   later in the file, so it won. The desk already treats 560px as its phone breakpoint,
+   which is where the rail goes sticky, so the treatment belongs there and there is now one
+   breakpoint for the ledger rather than two fighting. */
 .open{background:rgba(240,147,43,.16);color:var(--amber);}
 .pendingt{background:rgba(176,124,255,.16);color:#cdb6f6;border:1px solid rgba(176,124,255,.35);}
 /* v123: Ledger card state colour spine, cancelled dimming, collapsible interim steps */
@@ -1161,9 +1187,45 @@ tbody tr:hover td:not(.l){background:rgba(255,255,255,.03);}
   /* the ledger row is a flex of no-shrink columns, one of them a fixed 126px state
      column, and together they came to 470px. Let the row wrap and let the state find
      its own width; a taller card beats a row that hangs 95px off the screen. */
-  .lrow,.lhead{flex-wrap:wrap;gap:6px 9px;}
-  .lstate{width:auto;flex:1 0 auto;text-align:left;}
-  .lcol{flex:0 1 auto;}
+  /* ---- THE LEDGER ROW STOPS BEING A ROW (v307) --------------------------------------
+     What stood here wrapped the row and let the four numeric columns shrink, which cleared
+     the overflow and left the figures running together as bare numbers: 12.5, RM 56, RM 700
+     with nothing to say which was which, because the column headings that named them are
+     off the top of a wrapped row. Below this width the row therefore stacks properly. The
+     identity takes the full width, then the four figures sit in a labelled two-by-two grid,
+     the pattern the phone app's Approve card already uses. The labels are drawn in CSS, so
+     the desktop layout gains no dead elements and the DOM is untouched. */
+  .lhead{display:none;}                    /* headings mean nothing once the row has stacked */
+  .lrow,.lmove{flex-wrap:wrap;gap:8px 10px;padding:12px 13px;align-items:flex-start;}
+  .lgroup{flex:1 1 100%;gap:8px;}
+  .lrow .lparty{font-size:14px;}
+  /* LONGHAND, and not for tidiness. `flex:1 1 calc(50% - 5px)` is rejected as a shorthand
+     here, which invalidates that one declaration and leaves the rest of the rule applying:
+     the boxes and their labels drew correctly while the widths silently kept the desktop
+     values. Set as three properties it is accepted. Worth remembering, because the failure
+     mode is a rule that looks half-applied rather than one that looks broken. */
+  .lcol,.lstate{
+    flex-grow:1;flex-shrink:1;flex-basis:calc(50% - 5px);
+    width:auto;min-width:0;text-align:left;
+    background:var(--wellbg,rgba(0,0,0,.30));border:1px solid var(--brd,rgba(255,255,255,.13));
+    border-radius:10px;padding:7px 9px;white-space:normal;
+  }
+  .lcol.cqty,.lcol.cprc,.lcol.ctot{width:auto;}
+  .lcol.ctot{align-items:flex-start;}
+  .lcol::before,.lstate::before{
+    display:block;font-size:9.5px;text-transform:uppercase;letter-spacing:.9px;
+    font-weight:700;color:var(--dim);margin:0 0 2px;
+  }
+  .lcol.cqty::before{content:"Quantity";}
+  .lcol.cprc::before{content:"Rate";}
+  .lcol.ctot::before{content:"Total";}
+  .lstate::before{content:"State";}
+  /* a rate is blank on a movement step; a labelled empty box would be worse than nothing */
+  .lcol.cprc:empty{display:none;}
+  /* the movement rail is drawn at a desktop indent, so bring it in with the steps */
+  .lmoves::before{left:16px;}
+  .lmove{padding-left:30px;}
+  .lmove .lmnote{flex:1 1 100%;}
   .kpis,.kpis.k3,.kpis.k4,.kpis.k5,.kpis.k6{grid-template-columns:repeat(2,minmax(0,1fr));}
   .two,.qrow{grid-template-columns:minmax(0,1fr);}
   .kpis>*,.two>*,.qrow>*,.act>*,.prodblock>*{min-width:0;}
@@ -2244,7 +2306,8 @@ const whiteboard=[
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{v:'v306',d:'17 Aug 2026',t:'ADDING A CUSTOMER WAS BROKEN IN TWO PLACES AT ONCE, AND BOTH WERE INVISIBLE',n:['<b>THE BUTTON REFUSED, AND IT REFUSED FOR A REASON THAT STOPPED BEING TRUE.</b> Add ID would not mint a code unless the passphrase was held in memory, which was right when the encrypted vault WAS the directory. It is not any more: names live in BIO and Save writes them to salt_bio.json, and the vault is seeded from that file afterwards. Worse, the two ways of opening the directory disagree. The Names panel&rsquo;s own Unlock keeps the passphrase; <b>vaultReveal(), the ordinary show-me-the-names path, deletes it on purpose</b> because it is not needed again. So after the reveal anyone would actually use, the button answered <b>Unlock the vault first</b> to a man staring at the unlocked directory. Nothing in there needs a passphrase, so nothing in there asks for one now.','<b>AND HAD THE GUARD PASSED, THE NAME WOULD STILL HAVE BEEN THROWN AWAY.</b> addParty wrote the name into vaultNames alone. The box beside each code renders from BIO, and Save reads those boxes back into BIO and DELETES any entry left empty. So a name typed into Add ID appeared nowhere and was discarded by the very next Save: the code survived, the person did not. It writes BIO now and lets vaultNames follow, which is the direction the rest of the panel already runs in.','<b>PROVEN ON A COPY, NOT ON THE BOOK.</b> The desk, both servers and a 06_Data holding the real directory were copied to a scratch folder and served there, because a POST to /bio on the real folder writes for real. Two parties were created through the actual panel, CT5-CHE and CB2-SET: both minted, both filled the name box, both survived Save into salt_bio.json, both queued an ADDID. The live directory was checked afterwards and carries neither. One false alarm is worth recording: the Save button looked unbound after a party was created, which turned out to be renderReveal returning early while the panel is CLOSED, exactly as it should. The test was wrong, not the desk.']},
+const evolution=[{v:'v307',d:'17 Aug 2026',t:'THE LEDGER READS ON A PHONE, AND THE RESTYLE IT WAS SCOPED FOR TURNED OUT TO BE DONE ALREADY',n:['<b>THE DESK HAS BEEN IN THE PHONE APP&rsquo;S LANGUAGE SINCE v213, WHICH CHANGES WHAT THE WHOLE PORT COSTS.</b> This began as the first tab of a restyle: take the Ledger and put it in the lite language the app uses. There was nothing to restyle. The tokens are already identical to the hex, glass at white 10%, hairlines at white 13%, the 14px radius, gold #e8c66b, ice #7fd7e8, violet #b3a6f5; the register ground is the app&rsquo;s ground, three washes over near-black. A first attempt restated all of it and was correctly beaten by the v213 last-wins layer, which is how the redundancy was found. It was deleted rather than made to win. <b>The two surfaces never disagreed about colour or material. They disagree about WIDTH.</b>','<b>AND THE WIDTH IS A REAL GAP, NOT A TIDYING JOB.</b> A ledger row is a flex line carrying 74 + 84 + 118 + 126 pixels of FIXED numeric columns: 402px committed before the party, the date and the badges are placed at all. On a 375px screen that cannot reflow, only scroll. What stood there wrapped the row and let the columns shrink, which cleared the overflow and left the figures running together as bare numbers, because the headings that named them are off the top of a wrapped row. Below 560px the row now stops being a row: the identity takes the full width and the four figures sit in a labelled two-by-two grid, the pattern the app&rsquo;s Approve card already uses. <b>It is CSS only.</b> No figure, render function or class name is touched, the labels are drawn in CSS so the desktop DOM gains nothing, and the wide layout is unchanged to the pixel: 74, 84, 118, 126, right-aligned, headings on.','<b>TWO CASCADE TRAPS, BOTH SILENT, BOTH WORTH THE NOTE.</b> The rules were first written as a new 640px block and were beaten at 375px by an existing 560px rule of equal specificity sitting later in the file, so they simply never applied; they now live in that 560px block and the ledger has one breakpoint rather than two fighting. Then <b>flex:1 1 calc(50% - 5px) was rejected as a shorthand</b>, which invalidated that one declaration and left the rest of the rule applying: the boxes and their labels drew correctly while the widths quietly kept their desktop values. Set as three longhand properties it is accepted. Both failures look like a rule half-applied rather than one broken, which is the kind that survives a glance.']},
+{v:'v306',d:'17 Aug 2026',t:'ADDING A CUSTOMER WAS BROKEN IN TWO PLACES AT ONCE, AND BOTH WERE INVISIBLE',n:['<b>THE BUTTON REFUSED, AND IT REFUSED FOR A REASON THAT STOPPED BEING TRUE.</b> Add ID would not mint a code unless the passphrase was held in memory, which was right when the encrypted vault WAS the directory. It is not any more: names live in BIO and Save writes them to salt_bio.json, and the vault is seeded from that file afterwards. Worse, the two ways of opening the directory disagree. The Names panel&rsquo;s own Unlock keeps the passphrase; <b>vaultReveal(), the ordinary show-me-the-names path, deletes it on purpose</b> because it is not needed again. So after the reveal anyone would actually use, the button answered <b>Unlock the vault first</b> to a man staring at the unlocked directory. Nothing in there needs a passphrase, so nothing in there asks for one now.','<b>AND HAD THE GUARD PASSED, THE NAME WOULD STILL HAVE BEEN THROWN AWAY.</b> addParty wrote the name into vaultNames alone. The box beside each code renders from BIO, and Save reads those boxes back into BIO and DELETES any entry left empty. So a name typed into Add ID appeared nowhere and was discarded by the very next Save: the code survived, the person did not. It writes BIO now and lets vaultNames follow, which is the direction the rest of the panel already runs in.','<b>PROVEN ON A COPY, NOT ON THE BOOK.</b> The desk, both servers and a 06_Data holding the real directory were copied to a scratch folder and served there, because a POST to /bio on the real folder writes for real. Two parties were created through the actual panel, CT5-CHE and CB2-SET: both minted, both filled the name box, both survived Save into salt_bio.json, both queued an ADDID. The live directory was checked afterwards and carries neither. One false alarm is worth recording: the Save button looked unbound after a party was created, which turned out to be renderReveal returning early while the panel is CLOSED, exactly as it should. The test was wrong, not the desk.']},
 {v:'v305',d:'16 Aug 2026',t:'THE APPROVAL STEP IS THE ONLY ROAD INTO THE LEDGER NOW, BECAUSE THE TWO THAT WENT ROUND IT ARE SHUT',n:['<b>TWO ROADS WERE STILL OPEN AND BOTH ARE CLOSED.</b> The first was serve_desk.py&rsquo;s sixty-second drain, which pulled the phone&rsquo;s queue onto disk and left it in a file the daily run folded straight into this book; while the laptop was on, a phone entry reached the ledger without anyone reading the row. That pull is removed outright, not made optional, and the environment variable that tuned it is left unused rather than repurposed so an old setting is inert. The second was the desk&rsquo;s OWN queue, which never went near the cloud at all: <b>node tools/drafts.mjs --from-queue</b> now puts those entries through the same table the phone reads, PENDING, using the same drafter rather than a second copy of it.','<b>THE DAILY RUN NOW FOLDS APPROVED ROWS AND NOTHING ELSE.</b> Its instruction used to be read every queue file and fold it, which is the behaviour that made the gate optional; it is rewritten to run --approved, fold the row AS WRITTEN, and mark each id committed afterwards. A row that looks wrong is reported rather than quietly corrected, because what he approved was that row and not somebody&rsquo;s improvement of it. <b>The watermark rule gets simpler as a side effect:</b> a draft&rsquo;s id IS the entry&rsquo;s own at, so the mark is the newest id folded, which cannot sit before anything committed nor after anything left pending.','<b>WHAT IS STILL NOT GATED, SAID PLAINLY.</b> Editing this file by hand. That is not a hole to close, it is the desk itself, and the whole arrangement rests on it: the gate governs QUEUED transactions, which are the ones typed in a hurry at the point of sale and the ones that produced the RM115 oil unit. A row written deliberately into the master by someone reading the book is a different act and needs no tap.']},
 {v:'v304',d:'16 Aug 2026',t:'THE DRAFTER DRAFTS ON ARRIVAL, BECAUSE THE CRON LOST A RACE IT WAS NEVER GOING TO WIN',n:['<b>A TEST ENTRY WAS PUT THROUGH THE QUEUE AND THE CRON NEVER SAW IT.</b> serve_desk.py drains the cloud queue to disk every sixty seconds while the laptop is on, and that drain is a DESTRUCTIVE read: it moves the entries into the file and clears the cloud keys. So a fifteen-minute cron was competing with a sixty-second sweep and lost every time. An entry posted at 14:41 was on disk and gone from the cloud by 14:52, with nothing left to draft. The row is now written the moment the entry arrives, deferred so the phone still gets its acknowledgement immediately, and the cron drops back to being the safety net it should always have been.','<b>THE TEST ROW ALSO CAUGHT A FAULT IN THE APPROVAL SCREEN ITSELF, AND IT IS THE RM115 MISTAKE IN COLOUR.</b> The entry was 1 unit at RM900, a fat-fingered RM90, and the drafter flagged it twice: more than double the highest salt rate this book has ever carried, and RM900 from a party who has paid RM90 on every order he has made. Directly underneath those two warnings the margin cell painted <b>93.8% in green</b>, because a fat margin bands as good. The eye was being told &rsquo;excellent&rsquo; on the exact row the words were telling it to check. Green means nothing needs looking at, so a flagged row cannot have one.','<b>AND ONE HOLE IS NAMED RATHER THAN CLOSED.</b> That same sixty-second drain still writes into the queue file the daily run folds into this book, so while the laptop server is running the OLD path still reaches the ledger WITHOUT passing the approval step. Shutting it means changing serve_desk.py and the daily-run task, neither of which lives in the cloud repo, so the approval step is not yet the only road in. It is written down rather than left to be discovered, because a guard everyone believes is total is worse than one whose gap is known.']},
 {v:'v303',d:'16 Aug 2026',t:'THE DRAFTER RUNS IN THE CLOUD NOW, SO A ROW IS WAITING ON THE PHONE BEFORE THE LAPTOP IS OPENED',n:['<b>THE LAPTOP IS OUT OF THE LOOP FOR DRAFTING.</b> A Worker cron reads the queue every fifteen minutes, reads the book from the D1 mirror, writes the proposed ROW into the draft table and stops. Nothing is approved, nothing is committed, nothing touches this file: an entry queued at the point of sale is a row waiting on the phone a few minutes later rather than the next morning. The commit itself is still a person and still the laptop, which is the correct division: writing a row is arithmetic, folding it into the book is a judgement.','<b>IT IS ARITHMETIC AND NOT A LANGUAGE MODEL, WHICH IS A DECISION RATHER THAN A LIMIT.</b> Everything an approval screen is read for is a number: the cost the row draws, the margin it makes, whether the rate sits on the party&rsquo;s own ladder. A model on that path would put nondeterminism on exactly the figures that must be right, in a desk whose whole discipline is one engine and no drift. So the desk computes and the cloud reads: a PRICING SNAPSHOT is taken by the extract, through this desk&rsquo;s own floorTotal, replCost and stockCostFor, and the drafter prices from it rather than recomputing anything. What a model could usefully write is the note, which is prose and which nobody approves; that is left off this path on purpose.','<b>THE FLAGS ARE THE PRODUCT, AND THREE FAULTS IN THEM WERE FOUND BY POINTING IT AT THE REAL BOOK.</b> Run against the RM115 oil unit it says, correctly, that the rate is more than double the highest oil rate this book has ever carried. But it also called a RM700 restock &ldquo;RM300 under floor&rdquo;, a floor being a SELLING line that means nothing on a purchase; it judged SA5-BTR, who has supplied nearly everything on the shelf, for having no BUYING history; and it went quiet on CC5-OKR&rsquo;s RM80 because his own pending RM80 row was being counted as evidence of what he pays. All three are fixed: a purchase is not measured with a seller&rsquo;s ruler, a supplier is known by having supplied, and only rows that actually MOVED count as history. <b>A flag that fires when nothing is wrong is worse than no flag</b>, because it teaches the reader to tap through.']},
@@ -2315,7 +2378,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='17 Aug 2026, 16:05 KL';
+const LAST_UPDATED='17 Aug 2026, 18:40 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
