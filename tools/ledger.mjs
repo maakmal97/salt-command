@@ -258,7 +258,17 @@ if (existsSync(BIO)) {
   /* "TBC" IS NOT A PLACE. Two parties carry it in the directory as an admission that the
      location was never known, and the desk says so in its own notes. Treating it as a name
      makes the gate cry wolf on the one row that is honest about not having one. */
-  const PLACEHOLDER = new Set(["tbc", "unknown", "n/a", "na", "none", "-"]);
+  /* "GENERAL" JOINS THEM, and the case is worth writing down because the gate failed closed
+     on it. A downstream buyer in the directory carries the name "General", which is what the
+     desk calls an unnamed downsell buyer rather than anybody's name. The scan is
+     case-insensitive, so from then on every ordinary use of the word tripped it: the note
+     reading "to a general downsell buyer" was reported as a leaked name, on the very row
+     explaining that there is no name to leak. A gate that cries wolf on its own vocabulary
+     is a gate people learn to wave through, which is worse than not having one.
+     THE ENTRY ITSELF IS THE REAL ODDITY and it is left alone deliberately: by the v199 rule a
+     buyer with no name takes a `-Gen` bucket and NO directory entry at all, so this one is
+     probably a placeholder somebody typed. Renaming a party is his call, not this tool's. */
+  const PLACEHOLDER = new Set(["tbc", "unknown", "n/a", "na", "none", "-", "general"]);
   names = [...new Set(names.filter((n) => n.length >= 3 && !PLACEHOLDER.has(n.toLowerCase())))];
   /* THE CODES COME OUT FIRST. A party code embeds its own place abbreviation by design, so
      CH6-TBC contains "TBC" and CS6-BS contains "BS". Searching the raw text therefore reports

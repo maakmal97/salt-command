@@ -1,6 +1,6 @@
 {
- "v": "v305",
- "stamped": "17 Aug 2026, 00:20 KL",
+ "v": "v307",
+ "stamped": "17 Aug 2026, 18:40 KL",
  "source": "Cow-Crm01 salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -1802,7 +1802,7 @@
   ],
   "QUEUE_COMMITTED": "2026-08-14T12:42:33.844Z",
   "PRICING": {
-   "takenAt": "2026-08-16T16:33:00.190Z",
+   "takenAt": "2026-08-17T11:25:01.833Z",
    "sizes": [
     0.5,
     1,
@@ -1920,7 +1920,7 @@
      }
     }
    },
-   "v": "v305"
+   "v": "v307"
   }
  }
 }
