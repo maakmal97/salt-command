@@ -992,6 +992,36 @@ section("Drafter — wiring");
   ok(kv.m.has("q:d1"), "and the entry still reached KV");
 }
 
+/* ---- 15. The book is in date order, and stays that way (20 Aug 2026) ------------- */
+section("Ledger — the date is superior to the position");
+{
+  const MASTER = process.env.SALT_MASTER ||
+    "C:/Users/maakm/Claude/Projects/Personal/Cow-Crm01_Salt Business/30_Published/salt_command.html";
+  if (!existsSync(MASTER)) {
+    ok(true, "the master is not on this machine, so the order check is skipped");
+  } else {
+    /* ROWS ARE APPENDED IN THE ORDER THEY WERE FOLDED, WHICH IS NOT THE ORDER THINGS HAPPENED.
+       A row agreed on the 17th and fulfilled on the 18th lands after rows dated the 18th, and
+       an amendment can date a row into the middle of the book long after its neighbours were
+       written. The desk sorts by date wherever the order matters, so this never moved a figure;
+       it made the FILE unreadable, and the file is what a person audits. 37 sales rows and one
+       purchase were out of order when this check was first run. */
+    const { splitRecords, outOfOrder } = await import("../tools/sort-ledger.mjs");
+    const lines = readFileSync(MASTER, "utf8").split(/\r?\n/);
+    for (const name of ["purchases", "sales"]) {
+      const open = lines.findIndex((l) => l.startsWith(`const ${name}=[`));
+      ok(open >= 0, `the master declares ${name}`);
+      if (open < 0) continue;
+      let close = open + 1;
+      while (close < lines.length && lines[close].trimEnd() !== "];") close++;
+      const bad = outOfOrder(splitRecords(lines.slice(open + 1, close)));
+      ok(bad.length === 0, bad.length
+        ? `${name} has ${bad.length} row(s) out of date order (row ${bad[0].i + 1}: ${bad[0].why}). Run: node tools/sort-ledger.mjs`
+        : `${name} is in date order, undated pending rows last`);
+    }
+  }
+}
+
 /* ---- done ----------------------------------------------------------------------- */
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

@@ -1,0 +1,50 @@
+#!/usr/bin/env node
+/* changelog.mjs — keep 00_Config/changelog.json in step with the master's evolution[0].
+ *
+ * `evolution` in the master is a ONE-ENTRY array and has to stay that way, because several
+ * places read evolution[0].v for the version chip, the menu payload and the downloaded price
+ * sheets. So every entry it has ever held lives in changelog.json instead, and the two are
+ * kept in step by hand. That is the drift: the current entry is ~6 KB of prose and copying it
+ * across by hand on every bump is exactly how a version ends up recorded in one place and not
+ * the other.
+ *
+ * This reads evolution[0] out of the master and prepends it to changelog.json if that version
+ * is not already there. It NEVER rewrites an entry that exists: a changelog whose past can be
+ * edited is not a record.
+ *
+ *   node tools/changelog.mjs           sync, report
+ *   node tools/changelog.mjs --check   report only, exit 1 if the current version is missing
+ */
+import { readFileSync, writeFileSync, existsSync } from "node:fs";
+import { resolve, dirname } from "node:path";
+
+const DEFAULT_MASTER =
+  "C:/Users/maakm/Claude/Projects/Personal/Cow-Crm01_Salt Business/30_Published/salt_command.html";
+const MASTER = process.env.SALT_MASTER || DEFAULT_MASTER;
+const LOG = resolve(dirname(MASTER), "..", "00_Config", "changelog.json");
+const CHECK = process.argv.includes("--check");
+
+const src = readFileSync(MASTER, "utf8");
+const open = src.indexOf("const evolution=[");
+if (open < 0) { console.log("  FAIL  no evolution array in the master"); process.exit(1); }
+const end = src.indexOf("}];", open);
+if (end < 0) { console.log("  FAIL  the evolution array is never closed"); process.exit(1); }
+
+/* The master is local, hand-written and already executed by the build in jsdom, so evaluating
+   its own literal is no wider a trust than the build already takes. */
+const entry = new Function("return " + src.slice(open + "const evolution=".length, end + 2))()[0];
+if (!entry || !entry.v) { console.log("  FAIL  evolution[0] carries no version"); process.exit(1); }
+
+if (!existsSync(LOG)) { console.log(`  FAIL  no changelog at ${LOG}`); process.exit(1); }
+const log = JSON.parse(readFileSync(LOG, "utf8"));
+if (log.some((e) => e.v === entry.v)) {
+  console.log(`  ok    ${entry.v} is already in changelog.json (${log.length} entries)`);
+  process.exit(0);
+}
+if (CHECK) {
+  console.log(`  FAIL  ${entry.v} is in the master but not in changelog.json. Run: node tools/changelog.mjs`);
+  process.exit(1);
+}
+log.unshift(entry);
+writeFileSync(LOG, JSON.stringify(log, null, 1) + "\n", "utf8");
+console.log(`  ok    ${entry.v} prepended to changelog.json (${log.length} entries)`);
