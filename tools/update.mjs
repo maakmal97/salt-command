@@ -7,7 +7,7 @@
  *
  * The chain:
  *   1  preflight   git locks, the master, its version and its watermark
- *   2  drain       KV -> 06_Data/salt_queue_cloud.json          (skip with --no-drain)
+ *   2  drain       KV -> 10_Data/salt_queue_cloud.json          (skip with --no-drain)
  *   3  queues      what is still pending, on BOTH queues, and the replay check
  *   4  build       master -> public/index.html
  *   5  test        the smoke suite
@@ -37,9 +37,9 @@ import { fileURLToPath } from "node:url";
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const DEFAULT_MASTER =
-  "C:/Users/maakm/Claude/Projects/Personal/Cow-Crm01_Salt Business/01_Dashboard/salt_command.html";
+  "C:/Users/maakm/Claude/Projects/Personal/Cow-Crm01_Salt Business/30_Published/salt_command.html";
 const MASTER = process.env.SALT_MASTER || DEFAULT_MASTER;
-const DATA = resolve(dirname(MASTER), "..", "06_Data");
+const DATA = resolve(dirname(MASTER), "..", "10_Data");
 const SITE = (process.env.SALT_URL || "https://salt-command.maakmal97.workers.dev").replace(/\/+$/, "");
 
 const argv = process.argv.slice(2);
@@ -117,7 +117,7 @@ if (NO_DRAIN) {
 } else {
   const r = sh("node", ["tools/drain.mjs"]);
   if (r.code !== 0) fail("drain failed, so phone entries may not be on disk");
-  else ok("KV drained into 06_Data");
+  else ok("KV drained into 10_Data");
 }
 
 /* ---- 3. queues, and the replay check --------------------------------------------- */

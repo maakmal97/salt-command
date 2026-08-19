@@ -30,7 +30,7 @@ const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const DB = "salt_ledger";
 const WHERE = process.argv.includes("--local") ? "--local" : "--remote";
 const DATA = process.env.SALT_DATA ||
-  "C:/Users/maakm/Claude/Projects/Personal/Cow-Crm01_Salt Business/06_Data";
+  "C:/Users/maakm/Claude/Projects/Personal/Cow-Crm01_Salt Business/10_Data";
 const LAPTOP_QUEUE = resolve(DATA, "salt_queue.json");
 const CLOUD_QUEUE  = resolve(DATA, "salt_queue_cloud.json");
 const argv = process.argv.slice(2);
@@ -133,7 +133,7 @@ function draft() {
 /* THE LAPTOP'S OWN ROAD, routed through the same gate (v305).
  *
  * The phone's entries are drafted in the cloud the moment they arrive. The desk's own queue,
- * 06_Data\salt_queue.json, never goes near the cloud at all: it is written by serve_desk.py
+ * 10_Data\salt_queue.json, never goes near the cloud at all: it is written by serve_desk.py
  * when a transaction is entered on the laptop, and until now the daily run folded it straight
  * into the master. That was the second ungated road, and leaving it open would have made the
  * approval step something you could walk around without noticing.

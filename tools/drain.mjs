@@ -2,7 +2,7 @@
  *
  * ITS ROLE CHANGED AT v305 AND THE OLD ONE MUST NOT COME BACK. It used to be the road a
  * phone entry took into the ledger: serve_desk.py ran it every sixty seconds and the daily
- * run folded 06_Data/salt_queue_cloud.json into the master. That road bypassed the approval
+ * run folded 10_Data/salt_queue_cloud.json into the master. That road bypassed the approval
  * step of v302, so a phone entry became a real ledger row with nobody having read the row.
  * It was also a DESTRUCTIVE read racing the cloud drafter, and winning: an entry posted at
  * 14:41 on 16 Aug was on disk and gone from KV by 14:52, with nothing left to draft.
@@ -30,7 +30,7 @@
  *                                      its own `at`. For testing the phone leg without
  *                                      leaving a fake sale for the daily run to commit.
  *
- * Env:  SALT_DATA overrides the 06_Data folder. Uses the machine's existing wrangler auth;
+ * Env:  SALT_DATA overrides the 10_Data folder. Uses the machine's existing wrangler auth;
  *       an unattended run may need CLOUDFLARE_API_TOKEN set.
  */
 
@@ -45,7 +45,7 @@ const BINDING = "SALT_QUEUE";
 const FILE = "salt_queue_cloud.json";
 
 const DEFAULT_DATA =
-  "C:/Users/maakm/Claude/Projects/Personal/Cow-Crm01_Salt Business/06_Data";
+  "C:/Users/maakm/Claude/Projects/Personal/Cow-Crm01_Salt Business/10_Data";
 const DATA = process.env.SALT_DATA || DEFAULT_DATA;
 const OUT = join(DATA, FILE);
 

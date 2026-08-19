@@ -41,7 +41,7 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO = resolve(HERE, "..");
 const OUT_DIR = resolve(REPO, "ledger");
 const DEFAULT_MASTER =
-  "C:/Users/maakm/Claude/Projects/Personal/Cow-Crm01_Salt Business/01_Dashboard/salt_command.html";
+  "C:/Users/maakm/Claude/Projects/Personal/Cow-Crm01_Salt Business/30_Published/salt_command.html";
 const MASTER = process.env.SALT_MASTER || DEFAULT_MASTER;
 const CHECK = process.argv.includes("--check");
 
@@ -243,7 +243,7 @@ for (const key of ["sales", "purchases", "loans", "contacts"]) {
    checked rather than assumed, against the actual directory on this machine: every name and
    place in salt_bio.json is searched for as a whole word. The directory is gitignored and
    never leaves the laptop, which is exactly why it is the right thing to check against. */
-const BIO = resolve(dirname(MASTER), "..", "06_Data", "salt_bio.json");
+const BIO = resolve(dirname(MASTER), "..", "10_Data", "salt_bio.json");
 if (existsSync(BIO)) {
   let names = [], bioCodes = {};
   try {

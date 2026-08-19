@@ -32,7 +32,7 @@ const REV = resolve(REPO, "public", "rev.json");
 const IDTOKEN = "__SALT_BUILD_ID__";
 
 const DEFAULT_MASTER =
-  "C:/Users/maakm/Claude/Projects/Personal/Cow-Crm01_Salt Business/01_Dashboard/salt_command.html";
+  "C:/Users/maakm/Claude/Projects/Personal/Cow-Crm01_Salt Business/30_Published/salt_command.html";
 const MASTER = process.env.SALT_MASTER || DEFAULT_MASTER;
 
 let src;

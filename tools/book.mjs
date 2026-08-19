@@ -153,7 +153,7 @@ export function pricingSnapshot(w) {
 
 /* One default, shared with payload.mjs by matching it, and overridable the same way. */
 export const MASTER = process.env.SALT_MASTER ||
-  "C:/Users/maakm/Claude/Projects/Personal/Cow-Crm01_Salt Business/01_Dashboard/salt_command.html";
+  "C:/Users/maakm/Claude/Projects/Personal/Cow-Crm01_Salt Business/30_Published/salt_command.html";
 
 /* Open the desk and hand back the book as the engine sees it. `close()` is the caller's. */
 export async function readBook(masterPath = MASTER) {

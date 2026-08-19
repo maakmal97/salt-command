@@ -11,7 +11,7 @@
  *
  *   SALT_VAULT_PASS   your passphrase. Required. Never commit it, never pass it on a shared
  *                     command line where history is logged; prefer setting it for the one call.
- *   SALT_DATA         override the 06_Data folder holding salt_bio.json.
+ *   SALT_DATA         override the 10_Data folder holding salt_bio.json.
  *
  *   node tools/seed-vault.mjs             encrypt the current names and push to KV
  *   node tools/seed-vault.mjs --dry-run   encrypt only; write the envelope (ciphertext) to
@@ -27,7 +27,7 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO = resolve(HERE, "..");
 const BINDING = "SALT_QUEUE";
 const VKEY = "vault";
-const DEFAULT_DATA = "C:/Users/maakm/Claude/Projects/Personal/Cow-Crm01_Salt Business/06_Data";
+const DEFAULT_DATA = "C:/Users/maakm/Claude/Projects/Personal/Cow-Crm01_Salt Business/10_Data";
 const DATA = process.env.SALT_DATA || DEFAULT_DATA;
 
 const b64e = (buf) => Buffer.from(buf).toString("base64");
