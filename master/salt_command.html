@@ -973,6 +973,76 @@ details.obshush:hover{opacity:.85;}
   .pscope{gap:5px;}
   .totop{right:max(12px,env(safe-area-inset-right));bottom:max(12px,env(safe-area-inset-bottom));}
 }
+
+/* ============================================================================
+   THE RAIL ON A PHONE, REWORKED 20 Aug 2026, because it was the first thing on
+   the screen and the worst.
+
+   THE ONE-ROW DECISION ABOVE STANDS. Wrapping fifteen tabs really does cost about
+   150px of vertical before any content, and on a 812px screen that is a fifth of
+   it. What was wrong was never the row; it was WHAT CAME FIRST IN IT.
+
+   Measured at 375px before this change: the rail scrolled 1769px inside a 353px
+   box, and the first 380px of that scroll were the logo, the product switcher and
+   two status bands. So reaching Pricing, which is the tab you want while standing
+   in front of a customer, meant scrolling past a third of a screen of chrome. The
+   group headings (Command, Position, Trading, Relationships, Actions) are
+   display:contents and vanish entirely, so what remained read as fifteen
+   undifferentiated buttons with no way to tell where you were among them.
+
+   THE FIX IS ORDERING, NOT LAYOUT. Flex `order` puts the tabs first and the
+   chrome after, so the rail opens on the thing it is for. The logo goes: the
+   page title already says what this is, and 30px of a 375px screen is not free.
+   ============================================================================ */
+@media(max-width:560px){
+  /* tabs first, chrome after. Anything not given an order defaults to 0, so the
+     tabs are pulled ahead explicitly rather than everything else being pushed. */
+  .rail .tab{order:1;}
+  .prodsw{order:2;}
+  .band{order:3;}
+  .railbrand{order:4;}
+  .railfoot{order:5;}
+
+  /* THE LOGO GOES. .railtitle was already hidden above, which left a 30px mark
+     sitting in the most expensive position on the screen and identifying nothing
+     the title bar does not. */
+  .railbrand{display:none;}
+
+  /* WHERE YOU ARE, WITHOUT SCROLLING TO FIND OUT. In a scroller the active tab
+     can be entirely off-screen, so it is marked hard rather than tinted: fifteen
+     tabs of which one is subtly lighter is not readable at arm's length. */
+  .rail .tab[aria-selected="true"],.rail .tab.on,.rail .tab.active{
+    box-shadow:inset 0 -2px 0 var(--gold);font-weight:600;}
+
+  /* NOTHING BELOW 11px. The desk carried labels at 9px, which is legible on a
+     laptop at 60cm and not on a phone at 30cm held in one hand at a market. */
+  .kpi .l,.kpi .n,.apdow,.apday .apdn,.apchip,.kick{font-size:11px !important;}
+  th{font-size:11px !important;}
+  /* the last of the 9s: rail chrome and the action-row keys */
+  .plbl,.bandnm,.grouplbl,.actk,.navct{font-size:11px !important;}
+
+  /* A FOUR-COLUMN ACTION ROW CANNOT BE FOUR COLUMNS HERE. It was resolving to
+     297px and 7px, which is a column crushed to nothing rather than a layout. */
+  .act{grid-template-columns:1fr auto;gap:8px 10px;}
+  .act>*:nth-child(1){grid-column:1 / -1;}
+
+  /* THE GROUP LABELS COME BACK, AS DIVIDERS RATHER THAN HEADINGS. They were
+     display:none here, which left fifteen buttons in a row with nothing to say
+     that Pricing sits under Trading and Ledger under Relationships. On a laptop
+     the rail is vertical and the grouping is free; in a scroller it has to be
+     earned, and a 60px divider every few tabs earns it. `order:1` matches the
+     tabs so the DOM interleaving survives: flex sorts by order first and by
+     document position second, and putting both on the same rung is what keeps
+     Command next to Today rather than all five labels bunched at the front. */
+  .rail .grouplbl{display:flex !important;align-items:center;order:1;flex:0 0 auto;
+    font-size:11px;letter-spacing:1.1px;text-transform:uppercase;font-weight:700;
+    color:var(--dim);padding:0 4px 0 10px;margin-left:4px;
+    border-left:1px solid var(--line);}
+  .rail .grouplbl:first-of-type{border-left:0;margin-left:0;padding-left:2px;}
+
+  /* Wide content scrolls in its own box, never the page. */
+  .tscroll,.chartbox{max-width:100%;overflow-x:auto;}
+}
 /* MOTION */
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;}}
 /* PRINT: no aurora, no frost, no orbs, and details forced open. */
@@ -11671,6 +11741,64 @@ window.addEventListener('hashchange',()=>{
   try{localStorage.removeItem('saltTod');}catch(e){}
 })();
 
+
+/* ============================================================================
+   THE RAIL FOLLOWS YOU (20 Aug 2026).
+
+   On a phone the rail is one scrolling row about 1600px long inside a 353px
+   window, so the tab you are ON is usually off-screen. You could be looking at
+   Pricing with Today showing in the rail and nothing to tell you otherwise.
+   Marking the active tab is necessary and not sufficient: a mark you cannot see
+   marks nothing.
+
+   So the rail scrolls the active tab into view, centred, whenever the tab
+   changes. `block:'nearest'` matters: without it the browser scrolls the PAGE
+   vertically to bring the rail into view, which throws you back to the top every
+   time you switch tab.
+
+   Narrow screens only. On a laptop the rail is a vertical column with every tab
+   already visible and scrolling it would be motion for its own sake.
+   ============================================================================ */
+(function(){
+  var narrow=function(){ return window.matchMedia('(max-width:560px)').matches; };
+  function follow(){
+    if(!narrow())return;
+    var rail=document.querySelector('.rail');
+    if(!rail)return;
+    var on=rail.querySelector('.tab.on')||rail.querySelector('.tab[aria-selected="true"]');
+    if(!on)return;
+    centre(on);
+  }
+  /* SCROLL TO THE TAB THAT WAS CLICKED, NOT TO WHICHEVER ONE IS MARKED ACTIVE.
+     The first version waited 60ms and then looked for `.tab.on`, which is a race it
+     lost every time: the desk had not re-rendered yet, so it found the PREVIOUS
+     active tab and dutifully scrolled back to it. Clicking Pricing sent the rail to
+     Today. The clicked element is known for certain at that instant and needs no
+     delay and no guess. */
+  /* scrollLeft ARITHMETIC, NOT scrollIntoView, AND NOT SMOOTH.
+     Two things were wrong with the obvious version. It waited 60ms and then looked
+     for `.tab.on`, which is a race it lost every time: the desk had not re-rendered,
+     so it found the PREVIOUS active tab and scrolled back to it, sending a click on
+     Pricing to Today. And a SMOOTH scroll is cancelled by any competing scroll, which
+     the desk's own re-render performs, so even the corrected version did nothing at
+     all: measured at scrollLeft 600 before a click on Ledger and 600 after.
+     Setting scrollLeft directly cannot be raced or cancelled. It runs twice, once now
+     and once after the render, because the tab's offsetLeft can move when the panel
+     below it changes height and takes the rail with it. */
+  function centre(t){
+    var rail=t&&t.closest('.rail');
+    if(!rail)return;
+    var x=t.offsetLeft-(rail.clientWidth/2)+(t.offsetWidth/2);
+    rail.scrollLeft=Math.max(0,Math.min(x,rail.scrollWidth-rail.clientWidth));
+  }
+  document.addEventListener('click',function(e){
+    var t=e.target&&e.target.closest&&e.target.closest('.rail .tab');
+    if(!t||!narrow())return;
+    centre(t);
+    setTimeout(function(){ centre(t); },250);
+  },true);
+  window.addEventListener('load',function(){ setTimeout(follow,120); });
+})();
 </script>
 </body>
 </html>
