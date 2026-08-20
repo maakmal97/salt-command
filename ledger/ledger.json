@@ -1,6 +1,6 @@
 {
- "v": "v313",
- "stamped": "18 Aug 2026, 00:30 KL",
+ "v": "v316",
+ "stamped": "20 Aug 2026, 02:34 KL",
  "source": "Cow-Crm01 salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -41,7 +41,7 @@
     "stated": 19
    }
   },
-  "STATED_STOCK": 4.8,
+  "STATED_STOCK": 8.05,
   "purchases": [
    {
     "date": "2026-06-27",
@@ -75,6 +75,15 @@
     "note": "RM56/unit — cheapest sourcing to date. Bought from the fourth supplier (the third supplier’s own supplier) after the RM750 default. Received. He may be testing the price; a better rate is expected."
    },
    {
+    "date": "2026-07-14",
+    "qty": 50,
+    "total": 2400,
+    "supplier": "SA5-BTR",
+    "status": "paid",
+    "receivedOn": "2026-07-14",
+    "note": "50 unit at RM48/unit, the bulk tier. RECEIVED 14 Jul and the RM800 balance PAID IN FULL (RM2,400 total settled). Now in stock and in the weighted-average cost, which drops from RM61.33 to RM53.71 across 87.5 unit received. This lot supplies the deferred deliveries (CM6-HCM 12.5 unit) and the CS6-PER part-delivery."
+   },
+   {
     "date": "2026-07-20",
     "qty": 12.5,
     "total": 700,
@@ -103,15 +112,6 @@
     "cash": 350,
     "receivedOn": "2026-07-23",
     "note": "RM56/unit. The other half of that 12.5 unit lot, paid 22 Jul and received 23 Jul; supplied part of the 7 unit delivered to CS6-BS."
-   },
-   {
-    "date": "2026-07-14",
-    "qty": 50,
-    "total": 2400,
-    "supplier": "SA5-BTR",
-    "status": "paid",
-    "receivedOn": "2026-07-14",
-    "note": "50 unit at RM48/unit, the bulk tier. RECEIVED 14 Jul and the RM800 balance PAID IN FULL (RM2,400 total settled). Now in stock and in the weighted-average cost, which drops from RM61.33 to RM53.71 across 87.5 unit received. This lot supplies the deferred deliveries (CM6-HCM 12.5 unit) and the CS6-PER part-delivery."
    },
    {
     "date": "2026-07-22",
@@ -184,12 +184,16 @@
     "note": "<b>THE FIRST SALT RESTOCK SINCE 28 JUL, AND IT COSTS RM56 A UNIT RATHER THAN RM47.</b> 12.5 unit for RM700, paid and received in full on the 13th. It arrives on a shelf of 1.30 unit, sixteen days after the 100 unit lot, so the desk restocked at the bottom rather than on a plan. <b>RM56 is the small-lot tier and there is nothing wrong with it.</b> It is the same rate every 12.5 unit lot has carried since 08 Jul, and the RM47 that the book has quoted on every row since 28 Jul was the BULK rate, which needs 100 unit to reach. Buying an eighth of the size at a fifth more a unit is the ladder working as quoted, not a concession lost. <b>WHAT IT MOVES IS THE FLOOR, NOT THE LEDGER.</b> Replacement cost is read off the newest received lot, so from this row every floor on the desk is built on RM56 instead of RM47, roughly a fifth higher, and the pending rows should be re-read against it rather than against the figures written beside them last week. STOCK_COST follows it to 56 on the same reasoning: the 1.30 unit remnant is fully drawn by the two sales of the 14th, so the shelf is now this lot and nothing else. ASSUMPTION, STATED: the entry was queued as completed with the full RM700 in cash and 12.5 unit moved, so it is taken as paid and received in full on the 13th."
    },
    {
+    "date": "2026-08-18",
     "qty": 12.5,
     "total": 700,
     "supplier": "SA5-BTR",
-    "status": "unpaid",
-    "pending": true,
-    "note": "<b>AGREED, NOT ARRIVED. IT CARRIES pending:true AND THAT FLAG IS DOING REAL WORK.</b> 12.5 unit at RM700, RM56 a unit, the small-lot tier and the same rate as the 13 Aug lot. Nothing is paid and nothing is received, so it takes NO DATE and stays out of the shelf, out of the weighted average and out of replacement cost. <b>poLive() excludes a lot by the pending flag, not by its status</b>, so a row like this written without it would be treated as a live lot: not adding stock, since received quantity is read from receivedOn, but eligible to become the NEWEST LOT and therefore to set the replacement cost the entire floor is built on. An order that has not arrived would have been pricing the book. <b>The drafter wrote this row without the flag and the fault is fixed there too</b>, so the next pending purchase cannot arrive mispriced. <b>It is well timed.</b> The shelf stands at 4.80 unit, the tightest since the restock, and this doubles it back to 17.30 when it lands."
+    "status": "paid",
+    "cash": 700,
+    "paidOn": "2026-08-18",
+    "receivedOn": "2026-08-18",
+    "receivedQty": 12.5,
+    "note": "<b>THE LOT LANDED, AND IT LANDED AT THE SAME RM56, SO NOT ONE FLOOR ON THIS DESK MOVES.</b> 12.5 unit for RM700, paid and received in full on the 18th, settling the row agreed pending at v311. It is now the NEWEST RECEIVED LOT and therefore the one replacement cost is read off, which is exactly the job <b>pending:true</b> was holding it out of; because it carries the same small-lot rate as the 13 Aug lot, taking that job over moves nothing. <b>THE TIMING IS THE FIGURE WORTH READING.</b> The shelf stood at 4.80 unit and 5 unit went out the same day, 2.5 to CY2-NIL, 0.5 to CA4-DAM and 2 to CR3-DAM, so without this lot the book would have been 0.20 unit short of its own promises. It arrives on the day it is needed rather than a day after it, which is the first time the restock has run that way since 28 Jul. <b>The shelf rolls to 12.30 and STOCK_COST holds at 56</b>, one lot again and no blend to solve. ASSUMPTION, STATED: the amendment reported a fulfilment with the full RM700 in cash and 12.5 unit moved, so it is taken as paid and received in full on the 18th."
    }
   ],
   "sales": [
@@ -320,6 +324,40 @@
     "note": "Weekend unit delivered on credit 05 Jul. Per the 25 Jul audit it was never paid in cash; the RM90 is offset against the 15 Jul order instead."
    },
    {
+    "date": "2026-07-08",
+    "customer": "CS6-PER",
+    "qty": 12.5,
+    "total": 750,
+    "cost": 60,
+    "cash": 750,
+    "deliveredQty": 6,
+    "settledKg": 6.5,
+    "mod": "package sale; 6.5 unit deferred offset 6 unit loan advance + 0.5 unit netted for the delay",
+    "amend": [
+     {
+      "date": "2026-07-08",
+      "kind": "Fulfilment",
+      "cash": 750,
+      "kg": 0
+     },
+     {
+      "date": "2026-07-09",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 6
+     },
+     {
+      "date": "2026-07-14",
+      "kind": "Linked",
+      "cash": 0,
+      "kg": 6.5,
+      "ref": "12 May loan",
+      "note": "6 unit offsets the loan, 0.5 unit netted for delay"
+     }
+    ],
+    "note": "Movement 2: the RM750 package booked as a 12.5 unit sale, squared against the 12 May 6 unit loan."
+   },
+   {
     "date": "2026-07-09",
     "customer": "CJ4-OKR",
     "qty": 1,
@@ -378,40 +416,6 @@
     "cash": 100,
     "deliveredQty": 1,
     "note": "1 unit at the RM100 anchor, paid"
-   },
-   {
-    "date": "2026-07-08",
-    "customer": "CS6-PER",
-    "qty": 12.5,
-    "total": 750,
-    "cost": 60,
-    "cash": 750,
-    "deliveredQty": 6,
-    "settledKg": 6.5,
-    "mod": "package sale; 6.5 unit deferred offset 6 unit loan advance + 0.5 unit netted for the delay",
-    "amend": [
-     {
-      "date": "2026-07-08",
-      "kind": "Fulfilment",
-      "cash": 750,
-      "kg": 0
-     },
-     {
-      "date": "2026-07-09",
-      "kind": "Fulfilment",
-      "cash": 0,
-      "kg": 6
-     },
-     {
-      "date": "2026-07-14",
-      "kind": "Linked",
-      "cash": 0,
-      "kg": 6.5,
-      "ref": "12 May loan",
-      "note": "6 unit offsets the loan, 0.5 unit netted for delay"
-     }
-    ],
-    "note": "Movement 2: the RM750 package booked as a 12.5 unit sale, squared against the 12 May 6 unit loan."
    },
    {
     "date": "2026-07-14",
@@ -854,6 +858,18 @@
     "note": "2.5 unit at RM92/unit, paid and delivered together (queued 24 Jul). His next order, drawn from the RM64/unit lot, so 30.4% margin."
    },
    {
+    "date": "2026-07-25",
+    "customer": "CD4-CS",
+    "qty": 1,
+    "total": 150,
+    "cost": 56,
+    "cash": 150,
+    "deliveredQty": 1,
+    "deliveredOn": "2026-07-25",
+    "paidOn": "2026-08-06",
+    "note": "<b>SETTLED IN FULL on 06 Aug, and it was the last open position on the book.</b> The RM150 lands 12 days after delivery against a 10-day term, so it was 2 days over and 50% provisioned when it came in; that RM75 of provision is released, and the desk now carries no bad-debt discount at all. Nothing on this book is owed either way: everything delivered is paid and everything paid is delivered. The original terms stand as written. New customer at postcode 432, advance delivery: 1 unit handed over at RM150/unit with nothing paid on the day, so the whole RM150 was a receivable. Sat exactly ON the 1 unit retail credit cap, not under it, and the cap is now clear again. <b>RM150/unit is still the highest price the desk has ever achieved.</b> Drawn from the 23 Jul RM64/unit lot, so 57.3% margin. At the time it took free-to-sell negative against the 3.46 unit then owed to CJ4-BJ; that debt has since been settled and the shelf is unencumbered."
+   },
+   {
     "date": "2026-07-26",
     "customer": "CA4-DAM",
     "qty": 1.5,
@@ -940,18 +956,6 @@
     "note": "New buyer, 5 unit at RM80/unit. The order went paid, then refunded, then paid and collected, all inside two days: RM400 on 28 Jul against nothing delivered, the RM400 returned on 29 Jul which reverted it to pending, and then on 29 Jul he came back, paid again and took the salt. Net of the three steps it is RM400 in and 5 unit out, so it is now COMPLETED and counts everywhere. The trail is kept in all three steps rather than tidied to a single payment, because the refund is the only record that the desk once wrote a price under its own floor and nearly lost the sale over it. He arrived on a provisional code and was named on 29 Jul, so the desk re-keyed him to CE4-AD and purged the placeholder. The price is the thing to keep in view: RM80/unit sat UNDER the floor, since the board quotes RM470 for this size and will not go below RM415, so RM400 was RM15 light. It earns RM33/unit against the RM47 lot it came off, but only RM17.86/unit against the RM62.14 it costs to replace."
    },
    {
-    "date": "2026-07-25",
-    "customer": "CD4-CS",
-    "qty": 1,
-    "total": 150,
-    "cost": 56,
-    "cash": 150,
-    "deliveredQty": 1,
-    "deliveredOn": "2026-07-25",
-    "paidOn": "2026-08-06",
-    "note": "<b>SETTLED IN FULL on 06 Aug, and it was the last open position on the book.</b> The RM150 lands 12 days after delivery against a 10-day term, so it was 2 days over and 50% provisioned when it came in; that RM75 of provision is released, and the desk now carries no bad-debt discount at all. Nothing on this book is owed either way: everything delivered is paid and everything paid is delivered. The original terms stand as written. New customer at postcode 432, advance delivery: 1 unit handed over at RM150/unit with nothing paid on the day, so the whole RM150 was a receivable. Sat exactly ON the 1 unit retail credit cap, not under it, and the cap is now clear again. <b>RM150/unit is still the highest price the desk has ever achieved.</b> Drawn from the 23 Jul RM64/unit lot, so 57.3% margin. At the time it took free-to-sell negative against the 3.46 unit then owed to CJ4-BJ; that debt has since been settled and the shelf is unencumbered."
-   },
-   {
     "date": "2026-07-29",
     "customer": "CS6-BS",
     "qty": 1,
@@ -1027,6 +1031,17 @@
     "note": "A new buyer, created through the new + Add ID route rather than as a placeholder: he arrived already carrying CA5-SEN, so there is nothing to re-key. 2.5 unit at RM270, paid and collected the same day. RM108/unit is EXACTLY the retired R card for the size, the first order on the book to take a card price without negotiation. Drawn from the RM47 lot, so RM61/unit on lot cost and RM45.06/unit against replacement."
    },
    {
+    "date": "2026-07-31",
+    "customer": "CH5-KLC",
+    "qty": 0.5,
+    "total": 80,
+    "cash": 0,
+    "deliveredQty": 0,
+    "cancelled": true,
+    "cancelledOn": "2026-08-05",
+    "note": "His second order, agreed 31 Jul: 0.5 unit at RM80. Nothing paid and nothing delivered, so it is PENDING and counts nowhere. RM160/unit is the retired M card exactly for this size, so it is a card price rather than a concession below the ladder. It is still worth looking at twice: <b>his first order paid RM210/unit</b>, the best rate this desk has ever achieved and the reference the lot outlook uses as its ceiling at this size. Agreeing RM160 with the one buyer who proved RM210 gives away RM25 on a half unit, on the most profitable size the desk sells. He may simply not pay RM210 again; that is worth finding out before it becomes his standing rate."
+   },
+   {
     "date": "2026-08-01",
     "customer": "CJ4-BJ",
     "qty": 0.5588,
@@ -1041,17 +1056,6 @@
     "note": "GOODWILL, not a sale and not a correction. The reconciliation stands at 4.1912 unit and he was owed exactly that; this 0.5588 unit is given on top, taking him to the 4.75 unit he had asked for, because he is among the most loyal names on the book. It is booked IN-KIND <b>at cost, RM26.26, not at his RM68 selling rate</b>. Recording it matters because salt that leaves the shelf with no line against it books as shrinkage, and a deliberate gift is not a loss. Valuing it at COST matters just as much: at the selling rate it would have carried RM11.74 of margin, so a giveaway would have IMPROVED gross margin, which is plainly wrong. At cost the revenue and the expense are the same figure and margin is untouched; what the gift actually costs shows where it should, in the salt no longer on the shelf. <b>Stated plainly for the record: the desk was not shown to be wrong.</b> The 25 Jul offset of 2.0588 unit was agreed and is evidenced in the trail; conceding the difference is a commercial choice about a relationship, not an accounting correction, and the next reconciliation starts from the ledger rather than from this."
    },
    {
-    "date": "2026-07-31",
-    "customer": "CH5-KLC",
-    "qty": 0.5,
-    "total": 80,
-    "cash": 0,
-    "deliveredQty": 0,
-    "cancelled": true,
-    "cancelledOn": "2026-08-05",
-    "note": "His second order, agreed 31 Jul: 0.5 unit at RM80. Nothing paid and nothing delivered, so it is PENDING and counts nowhere. RM160/unit is the retired M card exactly for this size, so it is a card price rather than a concession below the ladder. It is still worth looking at twice: <b>his first order paid RM210/unit</b>, the best rate this desk has ever achieved and the reference the lot outlook uses as its ceiling at this size. Agreeing RM160 with the one buyer who proved RM210 gives away RM25 on a half unit, on the most profitable size the desk sells. He may simply not pay RM210 again; that is worth finding out before it becomes his standing rate."
-   },
-   {
     "date": "2026-08-01",
     "customer": "CA4-DAM",
     "qty": 1,
@@ -1063,6 +1067,87 @@
     "paidOn": "2026-08-01",
     "mod": "opened at RM110, restated to RM100 on 01 Aug, then paid and collected in full on the same day",
     "note": "Agreed at RM110, repriced to RM100 and then paid and collected in full, all on 01 Aug. Both steps fall on the order date, so they fold into the opening line rather than showing as separate movements: RM100 in, 1 unit out, nothing owed. The price is what matters here. RM100 for a single unit is exactly the retired S card, clears its floor and the RM84 floor, and sits RM20 under the retired R card&rsquo;s RM120. <b>The RM10 concession crossed a line the RM110 did not.</b> He always collects, and delivery is assumed at RM17.50 a lot, so the retired R card&rsquo;s RM120 delivered nets RM102.50: at RM110 collected he was RM7.50 ahead of the card, at RM100 collected he is RM2.50 behind it. Five orders in, he has now paid exactly RM100/unit four times, so this is his standing rate rather than a concession, and it is worth deciding before the sixth order whether it is a rate the desk wants to keep. Drawn from the RM47 lot, so RM53/unit on lot cost and a margin over replacement that the desk computes live, because a figure typed here goes stale the moment the buying rate moves."
+   },
+   {
+    "date": "2026-08-02",
+    "customer": "CS6-BS-R",
+    "qty": 1,
+    "total": 120,
+    "cash": 0,
+    "deliveredQty": 0,
+    "cancelled": true,
+    "rev": "R2",
+    "amend": [
+     {
+      "date": "2026-08-02",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 0,
+      "note": "1 unit agreed at RM120, his established downsell rate; nothing moved on the day"
+     },
+     {
+      "date": "2026-08-03",
+      "kind": "Cancellation",
+      "cash": 0,
+      "kg": 0,
+      "note": "cancelled before any cash or salt moved, and superseded the same day by a 2.5 unit booking at RM270 to the same bucket"
+     }
+    ],
+    "note": "R2 onward sale through CS6-BS to a buyer the desk never met, agreed 02 Aug at RM120 for 1 unit. CANCELLED 03 Aug with nothing paid and nothing delivered either way, so it counts nowhere and never did: a pending order is an intention, so withdrawing it moves no revenue, no cost, no stock and no receivable. Superseded the same day by E65, 2.5 unit at RM270 to the same CS6-BS-R bucket. Row kept rather than deleted, because a withdrawn order is a fact about the book. <b>This is the second time this cancellation has been booked.</b> It was first applied at v196 alongside a delivery back-dated to 30 Jul, both were reverted at v197 on instruction, and it is reapplied here on its own terms with the Cancellation dated after the order rather than three days before it."
+   },
+   {
+    "date": "2026-08-03",
+    "customer": "CI4-OKR",
+    "qty": 2,
+    "total": 180,
+    "cost": 47,
+    "cash": 90,
+    "paidOn": "2026-08-05",
+    "settledRM": 90,
+    "rebate": true,
+    "rebateKg": 1,
+    "deliveredQty": 2,
+    "deliveredOn": "2026-08-04",
+    "amend": [
+     {
+      "date": "2026-07-31",
+      "kind": "Modification",
+      "cash": 0,
+      "kg": 0,
+      "newQty": 2,
+      "newTotal": 185,
+      "wasQty": 5,
+      "wasTotal": 440,
+      "note": "CLERICAL CORRECTION, not a renegotiation and not a delivery: the order was written down as 5 unit / RM440 and was always 2 unit / RM185. This step fixes the terms and moves NOTHING, so the order stays PENDING for 03 Aug."
+     }
+    ],
+    "note": "His second order, agreed for Monday 03 Aug. It was RECORDED as 5 unit at RM440 and that was a clerical error: the order was always 2 unit at RM185. Corrected on 31 Jul by an amendment that changed the terms and moved nothing. It did NOT stay pending: both units went out on 04 Aug and the RM90 landed on 05 Aug, so the order is delivered and settled and both the money and the quantity count. <b>THE TRAIL ON SCREEN IS SHORT BY THREE STEPS.</b> This row carries two amend keys and JavaScript keeps only the last, so the three Fulfilment steps are discarded and the clerical Modification alone survives, which is why the Order book still reads the order as open. NO FIGURE MOVES: the stated deliveredOn, paidOn and cash carry the movements, and txPaid reads the full RM180. The merge is HELD FOR INSTRUCTION rather than done quietly, because the discarded trail values the redeemed unit at RM95 and the row values it at RM90, a RM5 difference that is his call and not the desk&rsquo;s. RM92.50/unit is exactly the rate of his first order, so this is his established price rather than the RM88 the mis-recorded larger lot implied. The price is RM90/unit, which is RM180 over 2 unit and exactly the good price on today&rsquo;s ladder. The RM88, the floor and the RM460 card in the sentence this replaces were all figures from the 5 unit order that never existed. His first order paid RM92.50/unit, so he has moved down the curve RM4.50 a unit while more than doubling the size, which is roughly how a ladder is supposed to be used. The desk booked it twice wrongly before this: first as a part-fulfilment of a 5 unit order, then as a completed 2 unit sale. Both came from the same input fault, since the Modification fields were labelled Cash moved and Salt moved, so a corrected QUANTITY and TOTAL were read as money and salt changing hands. Fixed at v177; this row is the correction against the 15 unit reorder trigger."
+   },
+   {
+    "date": "2026-08-03",
+    "customer": "CS6-BS-R",
+    "qty": 2.5,
+    "total": 270,
+    "cost": 47,
+    "cash": 270,
+    "deliveredQty": 2.5,
+    "deliveredOn": "2026-08-03",
+    "paidOn": "2026-08-03",
+    "rev": "R2",
+    "note": "R2 onward sale through reseller CS6-BS to a general downsell buyer with no name and no location, so it books to the CS6-BS-R bucket with CS6-BS as the counterparty, exactly as the 17 Jul and 21 Jul downsells do. The bucket is not a customer and is never issued a statement. Replaces the withdrawn 1 unit order of 02 Aug, cancelled the same day. Paid and collected together on the day it was agreed, so the settlement folds into the opening line and the row carries no amendment trail: RM270 in revenue, RM270 in cash, 2.5 unit off the shelf and no receivable. <b>RM270 for 2.5 unit is EXACTLY the retired R card</b>, RM108/unit, the same rate CA5-SEN paid without negotiation on 31 Jul, and it clears its floor for the size with RM60 to spare. Drawn from the RM47 lot, so RM61/unit on lot cost and a margin over replacement that the desk computes live, because a figure typed here goes stale the moment the buying rate moves. It also more than doubles the size of the order it replaces while lifting the rate from RM120/unit at 1 unit to the card at 2.5, which is the ladder working the way it should."
+   },
+   {
+    "date": "2026-08-03",
+    "customer": "CN6-WM-R",
+    "qty": 6.5,
+    "total": 440,
+    "cost": 47,
+    "cash": 440,
+    "deliveredQty": 6.5,
+    "deliveredOn": "2026-08-03",
+    "paidOn": "2026-08-03",
+    "rev": "R2",
+    "note": "CN6-WM&rsquo;s FIRST sale as an associate, appointed the same day. The end buyer is a stranger, so it books to his GENERAL BUCKET, CN6-WM-R, and not to a code of his own: a named downstream is earned only where you delivered to the person yourself and so know who he is. <b>The queue asked for a named code, CN6-WM-1-TBC, and that was wrong at source</b>: the location read TBC, which is an admission that the place was not known, and a place is exactly what earns a code under the split rule. Corrected at v201 and the named code PURGED outright rather than kept as an alias, per the standing one-identifier rule. It was queued as a DIRECT sale and is booked as an R2 downsell, so the counterparty is CN6-WM and the bucket is the downstream. Both corrections point the same way: assocOf() resolves a -Gen code back to its reseller, so the credit now reaches him by construction rather than by my having noticed. Paid and collected on the day, so it folds into the opening line and carries no amendment trail. <b>THE PRICE IS THE THING TO LOOK AT.</b> 6.5 unit for RM440 is RM67.69/unit. It breaches nothing: the floor is RM417.48 and the floor RM420, so it clears them by RM22.52 and RM20. But it clears them only because 6.5 unit is a QUARTER OF A UNIT over the 6.25 retail boundary, and that quarter-unit drops the floor from 25% to 2%. The last carded size below it, 6.25 unit, quotes RM540 on the retired R card against a RM524.53 floor. So a customer taking 0.25 unit MORE salt paid RM100 LESS money, and the ladder permitted it. It is RM125 under the engine&rsquo;s own RM565 quote and earns 7.0% on the RM62.94 effective cost, RM20.69/unit over the RM47 lot for RM134.50 gross. This is plan P11&rsquo;s argument in a single order, and it is the first one on the book to cross that boundary since the cap was proposed."
    },
    {
     "date": "2026-08-04",
@@ -1105,87 +1190,6 @@
      }
     ],
     "note": "Resale agreed through the associate, 0.5 unit at RM60, which is RM120/unit. PAID IN FULL on the day it was agreed and not yet handed over, so it is DEFERRED: the money counts, the salt is still on the shelf and 0.5 unit is owed out. RM60 is exactly the retired S card at a half unit, the reseller ladder, and clears the RM38 floor and the floor. The end buyer is not known, so it sits in the -Gen bucket rather than being given a code; a code needs a name and a location. First row booked to the new resell account rather than to his own code."
-   },
-   {
-    "date": "2026-08-03",
-    "customer": "CI4-OKR",
-    "qty": 2,
-    "total": 180,
-    "cost": 47,
-    "cash": 90,
-    "paidOn": "2026-08-05",
-    "settledRM": 90,
-    "rebate": true,
-    "rebateKg": 1,
-    "deliveredQty": 2,
-    "deliveredOn": "2026-08-04",
-    "amend": [
-     {
-      "date": "2026-07-31",
-      "kind": "Modification",
-      "cash": 0,
-      "kg": 0,
-      "newQty": 2,
-      "newTotal": 185,
-      "wasQty": 5,
-      "wasTotal": 440,
-      "note": "CLERICAL CORRECTION, not a renegotiation and not a delivery: the order was written down as 5 unit / RM440 and was always 2 unit / RM185. This step fixes the terms and moves NOTHING, so the order stays PENDING for 03 Aug."
-     }
-    ],
-    "note": "His second order, agreed for Monday 03 Aug. It was RECORDED as 5 unit at RM440 and that was a clerical error: the order was always 2 unit at RM185. Corrected on 31 Jul by an amendment that changed the terms and moved nothing. It did NOT stay pending: both units went out on 04 Aug and the RM90 landed on 05 Aug, so the order is delivered and settled and both the money and the quantity count. <b>THE TRAIL ON SCREEN IS SHORT BY THREE STEPS.</b> This row carries two amend keys and JavaScript keeps only the last, so the three Fulfilment steps are discarded and the clerical Modification alone survives, which is why the Order book still reads the order as open. NO FIGURE MOVES: the stated deliveredOn, paidOn and cash carry the movements, and txPaid reads the full RM180. The merge is HELD FOR INSTRUCTION rather than done quietly, because the discarded trail values the redeemed unit at RM95 and the row values it at RM90, a RM5 difference that is his call and not the desk&rsquo;s. RM92.50/unit is exactly the rate of his first order, so this is his established price rather than the RM88 the mis-recorded larger lot implied. The price is RM90/unit, which is RM180 over 2 unit and exactly the good price on today&rsquo;s ladder. The RM88, the floor and the RM460 card in the sentence this replaces were all figures from the 5 unit order that never existed. His first order paid RM92.50/unit, so he has moved down the curve RM4.50 a unit while more than doubling the size, which is roughly how a ladder is supposed to be used. The desk booked it twice wrongly before this: first as a part-fulfilment of a 5 unit order, then as a completed 2 unit sale. Both came from the same input fault, since the Modification fields were labelled Cash moved and Salt moved, so a corrected QUANTITY and TOTAL were read as money and salt changing hands. Fixed at v177; this row is the correction against the 15 unit reorder trigger."
-   },
-   {
-    "date": "2026-08-02",
-    "customer": "CS6-BS-R",
-    "qty": 1,
-    "total": 120,
-    "cash": 0,
-    "deliveredQty": 0,
-    "cancelled": true,
-    "rev": "R2",
-    "amend": [
-     {
-      "date": "2026-08-02",
-      "kind": "Fulfilment",
-      "cash": 0,
-      "kg": 0,
-      "note": "1 unit agreed at RM120, his established downsell rate; nothing moved on the day"
-     },
-     {
-      "date": "2026-08-03",
-      "kind": "Cancellation",
-      "cash": 0,
-      "kg": 0,
-      "note": "cancelled before any cash or salt moved, and superseded the same day by a 2.5 unit booking at RM270 to the same bucket"
-     }
-    ],
-    "note": "R2 onward sale through CS6-BS to a buyer the desk never met, agreed 02 Aug at RM120 for 1 unit. CANCELLED 03 Aug with nothing paid and nothing delivered either way, so it counts nowhere and never did: a pending order is an intention, so withdrawing it moves no revenue, no cost, no stock and no receivable. Superseded the same day by E65, 2.5 unit at RM270 to the same CS6-BS-R bucket. Row kept rather than deleted, because a withdrawn order is a fact about the book. <b>This is the second time this cancellation has been booked.</b> It was first applied at v196 alongside a delivery back-dated to 30 Jul, both were reverted at v197 on instruction, and it is reapplied here on its own terms with the Cancellation dated after the order rather than three days before it."
-   },
-   {
-    "date": "2026-08-03",
-    "customer": "CS6-BS-R",
-    "qty": 2.5,
-    "total": 270,
-    "cost": 47,
-    "cash": 270,
-    "deliveredQty": 2.5,
-    "deliveredOn": "2026-08-03",
-    "paidOn": "2026-08-03",
-    "rev": "R2",
-    "note": "R2 onward sale through reseller CS6-BS to a general downsell buyer with no name and no location, so it books to the CS6-BS-R bucket with CS6-BS as the counterparty, exactly as the 17 Jul and 21 Jul downsells do. The bucket is not a customer and is never issued a statement. Replaces the withdrawn 1 unit order of 02 Aug, cancelled the same day. Paid and collected together on the day it was agreed, so the settlement folds into the opening line and the row carries no amendment trail: RM270 in revenue, RM270 in cash, 2.5 unit off the shelf and no receivable. <b>RM270 for 2.5 unit is EXACTLY the retired R card</b>, RM108/unit, the same rate CA5-SEN paid without negotiation on 31 Jul, and it clears its floor for the size with RM60 to spare. Drawn from the RM47 lot, so RM61/unit on lot cost and a margin over replacement that the desk computes live, because a figure typed here goes stale the moment the buying rate moves. It also more than doubles the size of the order it replaces while lifting the rate from RM120/unit at 1 unit to the card at 2.5, which is the ladder working the way it should."
-   },
-   {
-    "date": "2026-08-03",
-    "customer": "CN6-WM-R",
-    "qty": 6.5,
-    "total": 440,
-    "cost": 47,
-    "cash": 440,
-    "deliveredQty": 6.5,
-    "deliveredOn": "2026-08-03",
-    "paidOn": "2026-08-03",
-    "rev": "R2",
-    "note": "CN6-WM&rsquo;s FIRST sale as an associate, appointed the same day. The end buyer is a stranger, so it books to his GENERAL BUCKET, CN6-WM-R, and not to a code of his own: a named downstream is earned only where you delivered to the person yourself and so know who he is. <b>The queue asked for a named code, CN6-WM-1-TBC, and that was wrong at source</b>: the location read TBC, which is an admission that the place was not known, and a place is exactly what earns a code under the split rule. Corrected at v201 and the named code PURGED outright rather than kept as an alias, per the standing one-identifier rule. It was queued as a DIRECT sale and is booked as an R2 downsell, so the counterparty is CN6-WM and the bucket is the downstream. Both corrections point the same way: assocOf() resolves a -Gen code back to its reseller, so the credit now reaches him by construction rather than by my having noticed. Paid and collected on the day, so it folds into the opening line and carries no amendment trail. <b>THE PRICE IS THE THING TO LOOK AT.</b> 6.5 unit for RM440 is RM67.69/unit. It breaches nothing: the floor is RM417.48 and the floor RM420, so it clears them by RM22.52 and RM20. But it clears them only because 6.5 unit is a QUARTER OF A UNIT over the 6.25 retail boundary, and that quarter-unit drops the floor from 25% to 2%. The last carded size below it, 6.25 unit, quotes RM540 on the retired R card against a RM524.53 floor. So a customer taking 0.25 unit MORE salt paid RM100 LESS money, and the ladder permitted it. It is RM125 under the engine&rsquo;s own RM565 quote and earns 7.0% on the RM62.94 effective cost, RM20.69/unit over the RM47 lot for RM134.50 gross. This is plan P11&rsquo;s argument in a single order, and it is the first one on the book to cross that boundary since the cap was proposed."
    },
    {
     "date": "2026-08-05",
@@ -1342,14 +1346,6 @@
     "deliveredQty": 1,
     "deliveredOn": "2026-08-08",
     "note": "RM100 for a unit, Tier II where his single order puts him in Tier III at RM120: a RM20 concession he did not ask for, stated by him. Paid and collected on the 8th. It is his SECOND order, so he leaves Tier III with it: from the next quote he is Tier II by the ledger rather than by concession."
-   },
-   {
-    "customer": "CJ4-BJ",
-    "qty": 12.5,
-    "total": 850,
-    "cash": 0,
-    "deliveredQty": 0,
-    "note": "PENDING, and PLANNED FOR 07 AUG rather than agreed on it: the date is the intention, not a movement. Nothing paid and nothing delivered, so it counts nowhere and the 12.5 unit stays free to sell until it moves. <b>An exact repeat of his 15 Jul order</b>, same 12.5 unit, same RM850, same RM68/unit. <b>AND IT IS NO LONGER THE PROBLEM IT WAS.</b> This note said for days that RM850 sat RM102 UNDER FLOOR against a floor of RM952.06, then that it cleared a RM824.95 floor by RM25.05. <b>BOTH ARE STALE, AND IT IS BACK UNDER.</b> The 12 Aug hand count of 1.30 took the leak from 17.18% to 20.28%, the CR3-PUD unit gave 0.42% of that back, and the floor at 12.5 unit now stands at <b>RM852.40</b>, so <b>RM850 is RM2.40 SHORT of it</b>. Read live off floorTotal(12.5) on 13 Aug, not computed by hand. The figure has now crossed the order twice in a fortnight without a single thing changing in the order itself, which is the whole argument for never printing a floor. The order never got worse; the cost base moved twice under it, first against it and then back. The leak now stands at 17.18% after four units were traced to the founding member on 10 Aug, and the cost is unlocked, so this figure follows the book rather than a snapshot. What it still does: at RM68/unit against the RM47 lot actually on the shelf it makes RM21/unit, RM262.50 on the lot, so it is cash-positive and comfortably above what the salt cost. What it does now do: cover the RM56.99 a unit it costs to REPLACE that salt, plus the 15% markup the single floor asks. There is no wholesale band any more, and no separate floor. <b>Left visible rather than suppressed, and left pending rather than repriced.</b> He is the second largest customer on the book at RM1,566 and this lot is 31% of the free shelf, so it is a real decision and not an arithmetic one: hold the relationship at RM850, or take it to RM955 and find out. Nothing is booked either way until it moves."
    },
    {
     "date": "2026-08-08",
@@ -1548,18 +1544,6 @@
     "note": "<b>THE FIRST ROW ON THIS BOOK WHOSE COST IS A BLEND OF TWO LOTS.</b> 1.5 unit for RM175 is RM116.67 a unit, paid and delivered on the day, CN6-WM&rsquo;s third resell as an associate and an R2 through his general bucket, the end buyer being a stranger with no code of their own, exactly as his 03 Aug and 06 Aug downsells were booked. <b>The cost is RM54.20 a unit and it is not a lot rate.</b> The 1.30 unit remnant had 0.30 left after CR3-DAM took a unit that morning, so 0.30 comes off it at RM47 and the other 1.20 off the 13 Aug lot at RM56: RM81.30 on the order, RM54.20 a unit. Every row since 28 Jul has read a single RM47, which is why this one is worth pointing at. The 0.30 is carried at the RM47 the rows use rather than the RM47.47 STOCK_COST blends to; the difference is RM0.14 on the order and the honest caveat about where the plug fell already sits at STOCK_COST. On that basis it returns RM62.47 a unit, RM93.70 on the order at 53.5%. <b>The rate is holding as the size falls.</b> He resold 6.5 unit at RM67.69 on the 3rd, 2 unit at RM125 on the 6th and 1.5 at RM116.67 now, so the small-parcel rate has printed twice above RM115 and the RM67.69 looks like the outlier rather than the trend."
    },
    {
-    "date": "2026-08-17",
-    "customer": "CC5-OKR",
-    "qty": 1,
-    "total": 80,
-    "cost": 56,
-    "cash": 80,
-    "deliveredQty": 1,
-    "deliveredOn": "2026-08-17",
-    "paidOn": "2026-08-17",
-    "note": "<b>IT MOVED, AND IT MOVED AT THE RM80 THE DESK QUESTIONED.</b> 1 unit paid and delivered in full on the 17th, so the row that stood pending and undated since the 14th now dates from the 17th and draws its stock there. <b>THE QUESTION WAS PUT BEFORE IT MOVED AND HE ANSWERED IT BY MOVING IT</b>, which is the whole point of leaving a pending row visible rather than repricing it. What was said, and it still stands as the record: he has paid RM90 a unit on every trade he ever made, the 09 Jul barter, the 15 Jul cash sale and the 08 Aug advance that cleared on the 11th, with a fourth at RM90 cancelled on 20 Jul before anything moved. RM80 is the first time he has been asked for less. <b>AND IT IS UNDER FLOOR, WHICH IS NOW A FACT RATHER THAN A WARNING.</b> The 13 Aug lot put the shelf at RM56, so the delivered floor at 1 unit is RM85.75 and the collected floor RM79.50: this clears the collected line by RM0.50 and misses the delivered one by RM5.75. On the RM56 lot it returns RM24 on RM80, <b>30.0%</b>, against the 44% and 49% the other two orders of this run made. It is the thinnest retail margin the book has carried since the restock. <b>Recorded, not corrected.</b> He was shown the figure and traded anyway, which is a decision and not a slip, and a desk that quietly repriced it would be destroying the only evidence that the question was ever asked."
-   },
-   {
     "date": "2026-08-14",
     "customer": "CH4-MLR",
     "qty": 1,
@@ -1609,28 +1593,111 @@
     "note": "<b>HIS EIGHTH ORDER AT EXACTLY RM100 A UNIT, AND THE FIRST ROW ON THIS BOOK THAT A TAP PUT HERE.</b> Half a unit for RM50, paid and collected on the day. Eight orders at one rate makes RM100 the steadiest price on the desk by a distance, and it did not move when the shelf did: the 13 Aug lot took cost from RM47 to RM56, so the same RM50 that returned RM26.50 at 53% on 12 Aug returns RM22 at 44.0% now. Nine points went to the restock. <b>IT CLEARS ITS FLOOR, WHICH IS NOT TRUE OF EVERY ROW IN THIS RUN.</b> Half a unit reads the 1 unit carded floor, RM85.75 delivered against RM100 a unit here, so it is comfortably clear on either basis. <b>THE ROUTE IS THE THING TO RECORD.</b> It was typed on the laptop, drafted into a proposed row by the same drafter the phone entries use, shown with its cost and its margin, and approved on the phone before it reached this file. Every figure above was in front of him before the row existed. That is the v302 to v305 arrangement working end to end on real trade for the first time, and the two amendments in the same queue took the older road, because an amendment is a judgement about WHICH row and the drafter refuses them by design."
    },
    {
+    "date": "2026-08-17",
+    "customer": "CC5-OKR",
+    "qty": 1,
+    "total": 80,
+    "cost": 56,
+    "cash": 80,
+    "deliveredQty": 1,
+    "deliveredOn": "2026-08-17",
+    "paidOn": "2026-08-17",
+    "note": "<b>IT MOVED, AND IT MOVED AT THE RM80 THE DESK QUESTIONED.</b> 1 unit paid and delivered in full on the 17th, so the row that stood pending and undated since the 14th now dates from the 17th and draws its stock there. <b>THE QUESTION WAS PUT BEFORE IT MOVED AND HE ANSWERED IT BY MOVING IT</b>, which is the whole point of leaving a pending row visible rather than repricing it. What was said, and it still stands as the record: he has paid RM90 a unit on every trade he ever made, the 09 Jul barter, the 15 Jul cash sale and the 08 Aug advance that cleared on the 11th, with a fourth at RM90 cancelled on 20 Jul before anything moved. RM80 is the first time he has been asked for less. <b>AND IT IS UNDER FLOOR, WHICH IS NOW A FACT RATHER THAN A WARNING.</b> The 13 Aug lot put the shelf at RM56, so the delivered floor at 1 unit is RM85.75 and the collected floor RM79.50: this clears the collected line by RM0.50 and misses the delivered one by RM5.75. On the RM56 lot it returns RM24 on RM80, <b>30.0%</b>, against the 44% and 49% the other two orders of this run made. It is the thinnest retail margin the book has carried since the restock. <b>Recorded, not corrected.</b> He was shown the figure and traded anyway, which is a decision and not a slip, and a desk that quietly repriced it would be destroying the only evidence that the question was ever asked."
+   },
+   {
+    "date": "2026-08-17",
+    "customer": "CA11-SEN",
+    "qty": 3,
+    "total": 180,
+    "cost": 56,
+    "cash": 180,
+    "deliveredQty": 3,
+    "deliveredOn": "2026-08-17",
+    "paidOn": "2026-08-17",
+    "note": "<b>A NEW CUSTOMER OPENED AT CA11-SEN, AND HE OPENED THINNER THAN ANY SALT ORDER THIS BOOK HAS EVER CARRIED.</b> 3 unit for RM180, RM60 a unit, paid and collected on the 17th. On the RM56 shelf it returns RM4 a unit, <b>RM12 on the order at 6.7% on the price and a 7.1% markup on cost</b>, against the 15% the floor asks. The previous thinnest was CM3-OKR two days earlier at 13.8%, so the record has been broken twice in three days and both times by a new name. <b>THE FLAG WAS IN FRONT OF HIM AND HE APPROVED IT.</b> The drafter said the total sat under both the delivered and the collected floor and that the party had no committed salt order to price against; read the current gap off the Pricing tab rather than off this sentence, because both floors are derived live from cost. It earns nothing under the reward scheme, a margin under 30% sitting in the bottom band. <b>IT IS UNDER FLOOR, UNDER REPLACEMENT AND NOT UNDER COST, AND THE THREE ARE DIFFERENT FINDINGS.</b> RM60 a unit is above the RM56 lot it drew, so it made money; it is below what replacing that unit now costs the desk once freight, shrinkage and delivery are in, which is why boardHeadroom counts it under replacement alongside CS6-PER. <b>It is now the worst live price on the book by proportion</b>, short of its floor by more than any other, and it leaves four ringgit between the trade and the shelf, so the next rise in the buying rate takes it under cost outright without anything else changing. If his second order comes in at RM60 too, RM60 is his price and the book should say so. The name and the location are in the directory and never in this file."
+   },
+   {
+    "date": "2026-08-17",
+    "customer": "CM4-MK",
+    "qty": 2,
+    "total": 220,
+    "cost": 56,
+    "cash": 220,
+    "deliveredQty": 2,
+    "deliveredOn": "2026-08-17",
+    "paidOn": "2026-08-17",
+    "note": "<b>HIS STANDING RM110 A UNIT, AND THE FIRST ORDER OF HIS THE RESTOCK HAS TOUCHED.</b> 2 unit for RM220, paid and collected on the 17th, nothing owed. It is the same size at the same total he took on 05 Aug, and that is what makes it useful: that one drew the RM47 lot and returned RM63 a unit at 57.3%, this one draws RM56 and returns RM54 a unit, <b>RM108 on the order at 49.1%</b>. Eight points went to the supplier at an unchanged price, the third customer this week to tell the same story after CA4-DAM and CY2-NIL. <b>The RM90 he paid on 10 Aug was the concession and RM110 is the price.</b> That order was 4 unit, cut as the reward for taking his cumulative buying past RM1,000; this is half the size and back at his own rate, so nothing about the reward carried into it. It clears its floor on either basis and the drafter raised no flag against it."
+   },
+   {
+    "date": "2026-08-18",
     "customer": "CA4-DAM",
     "qty": 0.5,
     "total": 50,
-    "cash": 0,
-    "deliveredQty": 0,
-    "note": "PENDING, and carrying NO DATE: nothing paid, nothing delivered, so it counts nowhere and the half unit stays free to sell. Half a unit at RM100 a unit, his standing rate on seven of his nine orders, and it clears its floor comfortably at that price. Nothing here is a decision waiting to be made; it is an order that has not moved yet."
+    "cost": 56,
+    "cash": 50,
+    "deliveredQty": 0.5,
+    "deliveredOn": "2026-08-18",
+    "paidOn": "2026-08-18",
+    "note": "<b>FULFILLED ON THE 18TH, AT EXACTLY RM100 A UNIT AGAIN.</b> Half a unit for RM50, agreed pending at v311 and now paid and collected in full, so it leaves the order book and counts everywhere. On the RM56 shelf it returns RM22, <b>44% on the price</b>. <b>THE RATE HAS NOT MOVED THROUGH A COST BASIS THAT WENT FROM RM47 TO RM56, AND THAT IS THE ONLY THING ON THIS ROW WORTH A SECOND LOOK.</b> The identical RM50 returned RM26.50 at 53% on 12 Aug. He has absorbed none of the restock and the desk has absorbed all of it, nine points of it, at an unchanged price. It still clears its floor comfortably at this size, so nothing needs saying to him now; what it means is that the next rise in the buying rate is the one that starts to bite, and this is the steadiest price on the book to be holding when it does."
    },
    {
+    "date": "2026-08-18",
     "customer": "CY2-NIL",
     "qty": 2.5,
     "total": 230,
-    "cash": 0,
-    "deliveredQty": 0,
-    "note": "PENDING, and carrying NO DATE: nothing paid, nothing delivered, so it counts nowhere and the 2.5 unit stay free to sell. <b>RM92 A UNIT, WHICH IS HIS RATE AND HAS ALWAYS BEEN HIS RATE.</b> His opening order of 11 Aug is the same 2.5 unit for the same RM230. <b>v311 CALLED THIS A 20% CUT AND IT WAS NOT ONE.</b> That reading came from the opening row, which had been booked as 2 unit rather than 2.5 and so made his rate look like RM115; the quantity was corrected on his word at v313 and the whole comparison went with it. Nothing about this order was ever unusual. <b>The drafter said nothing and was right to.</b> Its party check needs two prior orders before it measures a rate against a median, and with one order on the book there was nothing sound to compare against. The limit is real, and this is the case that shows it cuts both ways: a check that had spoken here would have been wrong, and the reader who spoke instead of it WAS wrong. At RM92 on the RM56 shelf it would return RM90 on the order, 39.1%, which clears the floor comfortably."
+    "cost": 56,
+    "cash": 230,
+    "deliveredQty": 2.5,
+    "deliveredOn": "2026-08-18",
+    "paidOn": "2026-08-18",
+    "note": "<b>FULFILLED ON THE 18TH: 2.5 UNIT FOR RM230, PAID AND COLLECTED IN FULL.</b> His second order, agreed pending at v311, and the same quantity at the same total as his opening order of 11 Aug. <b>RM92 A UNIT IS HIS RATE ON BOTH, AND v311 READ A 20% CUT ONLY BECAUSE THE OPENING ROW HELD A WRONG QUANTITY.</b> That was corrected at v313 and there was never a cut to explain. <b>WHAT ACTUALLY MOVED BETWEEN HIS TWO ORDERS IS THE COST, NOT THE PRICE.</b> The opening order was drawn off the RM47 lot and returned RM112.50 at 48.9%; this one is drawn off RM56 and returns RM90, <b>39.1% on the price</b>. Ten points went to the supplier at an unchanged rate, which is the same story CA4-DAM tells two rows up and is now visible on two customers rather than one. Nothing is owed on either order."
    },
    {
+    "date": "2026-08-18",
     "customer": "CR3-DAM",
-    "qty": 2,
-    "total": 160,
+    "qty": 1,
+    "total": 80,
+    "cost": 56,
+    "cash": 0,
+    "deliveredQty": 1,
+    "deliveredOn": "2026-08-18",
+    "note": "<b>AMENDED AT v316 FROM 2 UNIT TO 1, ON HIS WORD, SO HALF THE RECEIVABLE AND HALF THE STOCK COME BACK.</b> 1 unit at RM80, delivered in full on the 18th and not paid, so RM80 sits in receivables rather than RM160. <b>THE AMENDMENT MOVES THE SIZE AND NOTHING ELSE.</b> RM80 a unit is his standing rate on both readings, and the margin on the price is untouched at <b>30.0%</b>: on the RM56 shelf a unit returns RM24, so the order returns RM24 where it returned RM48. What changed is that the row is now the size every order of his since 15 Jul has been. The 2 unit reading was the anomaly, and it is gone. <b>THE FLOOR ANSWER DOES NOT CHANGE, AND IT IS STILL THE UNFAVOURABLE ONE.</b> It was DELIVERED rather than collected, so it is measured against the delivered floor and sits under it; the collected floor it would have cleared does not apply. Both are derived live by floorTotal, so read the gap off the Pricing tab rather than off this sentence. <b>UNDER FLOOR IS NOT UNDER COST.</b> RM80 a unit is above the RM56 lot it drew, so it made money; it is short of what replacing that unit now costs once freight, shrinkage and delivery are in. Reported and not repriced; the price is his to set. <b>THE CREDIT READING IS WHERE THE AMENDMENT ACTUALLY BITES.</b> 2 unit out against a 1 unit retail cap was a breach; 1 unit out sits exactly AT the cap. Nothing further is handed over until it clears, but the book is no longer carrying a breach, and Boundaries should now read as at the line rather than over it. It remains the only balance on the book. <b>A UNIT RETURNS TO THE SHELF.</b> STATED_STOCK rolls from 7.05 to 8.05 and free to sell from 1.05 to 2.05, and the v314 walk is superseded with it: the three sales of the 18th draw 4 unit rather than 5, so the 4.80 unit standing that morning covered them and the SA5-BTR lot was not needed on the day to close the walk. That the lot landed anyway is unchanged and still the right thing to have done."
+   },
+   {
+    "date": "2026-08-18",
+    "customer": "CE4-CHE",
+    "qty": 6.25,
+    "total": 500,
+    "cost": 56,
+    "cash": 500,
+    "deliveredQty": 0.25,
+    "deliveredOn": "2026-08-18",
+    "paidOn": "2026-08-18",
+    "note": "<b>PAID IN FULL WITH A QUARTER UNIT HANDED OVER, SO 6 UNIT ARE OWED IN SALT RATHER THAN IN CASH.</b> 6.25 unit for RM500, RM80 a unit, the whole RM500 collected on the 18th. The money is in and the obligation is out: this is the only deferred delivery on the book, and it is the mirror image of CR3-DAM, who has the salt and owes the money. <b>THE RATE IS RM12 UNDER HIS OWN STANDING PRICE, AND THAT WAS THE FIRST FLAG HE APPROVED.</b> Five orders at about RM92 a unit, this one at RM80, 13% below. <b>The second flag was the floor, and it is not settled yet:</b> RM500 clears the collected line and misses the delivered one, so how the remaining 6 unit are handed over is what decides which floor this row is measured against. The same question CR3-DAM left open at v311 was answered the unfavourable way on the 18th. On the RM56 shelf it returns RM24 a unit, <b>RM150 on the order at 30% on the price</b>, the same margin CC5-OKR took on his RM80 unit the day before: RM80 a unit now buys thirty points where his RM92 bought forty-nine. Size explains some of it, 6.25 unit against the 2.5 he has taken four times, and it is his largest order by a distance. <b>THE SIX UNIT ARE THE THING TO WATCH, NOT THE PRICE.</b> They are paid for at a rate struck on the 18th and they come off whatever the shelf costs when they move, so every day they sit there is a day the desk carries the cost risk on them."
+   },
+   {
+    "customer": "CJ4-BJ",
+    "qty": 12.5,
+    "total": 850,
     "cash": 0,
     "deliveredQty": 0,
-    "note": "PENDING, and carrying NO DATE. RM80 a unit, his standing rate on his last five orders, at DOUBLE his usual size: every order since 15 Jul has been exactly 1 unit. <b>The drafter flagged it and the flag belongs on the row.</b> RM160 sits RM5.24 under the delivered floor of RM165.24 and clears the collected floor of RM158.99 by RM1.01, so how it is handed over decides whether it clears at all. That is a live decision rather than a booked fault, because nothing has moved: if he collects it clears, if it is delivered it does not. The same RM80 cleared comfortably before the 13 Aug restock took the shelf from RM47 to RM56, which is exactly why a floor is computed live and never printed."
+    "note": "PENDING, and PLANNED FOR 07 AUG rather than agreed on it: the date is the intention, not a movement. Nothing paid and nothing delivered, so it counts nowhere and the 12.5 unit stays free to sell until it moves. <b>An exact repeat of his 15 Jul order</b>, same 12.5 unit, same RM850, same RM68/unit. <b>AND IT IS NO LONGER THE PROBLEM IT WAS.</b> This note said for days that RM850 sat RM102 UNDER FLOOR against a floor of RM952.06, then that it cleared a RM824.95 floor by RM25.05. <b>BOTH ARE STALE, AND IT IS BACK UNDER.</b> The 12 Aug hand count of 1.30 took the leak from 17.18% to 20.28%, the CR3-PUD unit gave 0.42% of that back, and the floor at 12.5 unit now stands at <b>RM852.40</b>, so <b>RM850 is RM2.40 SHORT of it</b>. Read live off floorTotal(12.5) on 13 Aug, not computed by hand. The figure has now crossed the order twice in a fortnight without a single thing changing in the order itself, which is the whole argument for never printing a floor. The order never got worse; the cost base moved twice under it, first against it and then back. The leak now stands at 17.18% after four units were traced to the founding member on 10 Aug, and the cost is unlocked, so this figure follows the book rather than a snapshot. What it still does: at RM68/unit against the RM47 lot actually on the shelf it makes RM21/unit, RM262.50 on the lot, so it is cash-positive and comfortably above what the salt cost. What it does now do: cover the RM56.99 a unit it costs to REPLACE that salt, plus the 15% markup the single floor asks. There is no wholesale band any more, and no separate floor. <b>Left visible rather than suppressed, and left pending rather than repriced.</b> He is the second largest customer on the book at RM1,566 and this lot is 31% of the free shelf, so it is a real decision and not an arithmetic one: hold the relationship at RM850, or take it to RM955 and find out. Nothing is booked either way until it moves."
+   },
+   {
+    "customer": "CA4-DAM",
+    "qty": 1,
+    "total": 100,
+    "cash": 0,
+    "deliveredQty": 0,
+    "note": "<b>PENDING, AGREED ON 20 AUG RATHER THAN DATED TO IT.</b> Nothing paid and nothing moved, so the row carries no date, counts nowhere, and the unit stays free to sell until it does. <b>RM100 A UNIT IS THE STEADIEST PRICE ON THIS BOOK AND THIS IS THE NINTH ORDER AT IT.</b> The rate has not moved through a cost basis that went from RM64 to RM47 to RM56, which is the point worth holding on to: the desk has absorbed every move and he has absorbed none. <b>IT CLEARS BOTH FLOORS COMFORTABLY.</b> At 1 unit the delivered floor stands at RM85.66 and the collected at RM79.41 on the current snapshot, so RM100 is RM14.34 clear on the harder of the two. Both are derived live from cost, so read the Pricing tab for the figure of the day rather than this sentence. <b>NO COST AND NO MARGIN ARE PRINTED, BECAUSE NOTHING HAS HAPPENED.</b> Were it to move against the RM56 shelf it would return RM44 at 44.0%, the same as his halves of the 15th and the 18th; that is a projection and not a figure on the book. <b>IT IS A FULL UNIT, WHICH IS HIS LARGEST SINCE 06 AUG</b>, after four halves in a row. If it moves at a unit rather than a half, the size is the news and the rate is not."
+   },
+   {
+    "customer": "CE4-AD",
+    "qty": 5,
+    "total": 435,
+    "cash": 0,
+    "deliveredQty": 0,
+    "note": "<b>PENDING, AGREED ON 20 AUG, AND HIS FIRST ORDER SINCE 28 JUL.</b> 5 unit for RM435, RM87 a unit. Nothing paid and nothing moved, so it carries no date and counts nowhere until it does. <b>HE IS PAYING RM7 A UNIT MORE THAN LAST TIME AND THE DESK STILL EARNS LESS ON IT.</b> The 28 Jul order was the same 5 unit at RM80, drawn off the RM47 lot, and it returned RM165 at 41.3%. This one is RM87, 8.75% up, but against the RM56 shelf it would return RM155 at <b>35.6%</b>: the rate rose RM7 and the cost rose RM9, so about six points still went to the supplier. <b>That is the clearest statement of the restock on this book</b>, because CA4-DAM, CY2-NIL and CM4-MK each tell it at an unchanged rate and this one tells it through a rise. <b>IT CLEARS BOTH FLOORS.</b> At 5 unit the delivered floor stands at RM403.30 and the collected at RM397.05 on the current snapshot, so RM435 is RM31.70 clear delivered. Derived live, so read the Pricing tab for the figure of the day. <b>THE SHELF IS THE PROBLEM, NOT THE PRICE.</b> Free to sell stands at 2.05 unit after the CR3-DAM amendment, and the two pending orders on this book now ask for 6 unit between them. Neither can be met as things stand: this needs a restock before it moves, and it is the first pending row in weeks whose obstacle is stock rather than rate."
    }
   ],
   "contacts": [
@@ -1863,9 +1930,9 @@
     "note": "Judged a rare one-off. Treat the RM104/unit it paid as an outlier, not as evidence of what wholesale will bear."
    }
   ],
-  "QUEUE_COMMITTED": "2026-08-17T13:17:09.116Z",
+  "QUEUE_COMMITTED": "2026-08-18T22:26:37.778Z",
   "PRICING": {
-   "takenAt": "2026-08-17T23:20:38.636Z",
+   "takenAt": "2026-08-20T00:43:19.933Z",
    "sizes": [
     0.5,
     1,
@@ -1895,44 +1962,44 @@
      "replCost": 56,
      "floors": {
       "1": {
-       "delivered": 85.66,
-       "collected": 79.41
+       "delivered": 85.27,
+       "collected": 79.02
       },
       "2": {
-       "delivered": 165.07,
-       "collected": 158.82
+       "delivered": 164.29,
+       "collected": 158.04
       },
       "3": {
-       "delivered": 244.48,
-       "collected": 238.23
+       "delivered": 243.31,
+       "collected": 237.06
       },
       "4": {
-       "delivered": 323.89,
-       "collected": 317.64
+       "delivered": 322.33,
+       "collected": 316.08
       },
       "5": {
-       "delivered": 403.3,
-       "collected": 397.05
+       "delivered": 401.35,
+       "collected": 395.1
       },
       "0.5": {
-       "delivered": 45.95,
-       "collected": 39.7
+       "delivered": 45.76,
+       "collected": 39.51
       },
       "1.5": {
-       "delivered": 125.36,
-       "collected": 119.11
+       "delivered": 124.78,
+       "collected": 118.53
       },
       "2.5": {
-       "delivered": 204.77,
-       "collected": 198.52
+       "delivered": 203.8,
+       "collected": 197.55
       },
       "6.25": {
-       "delivered": 502.56,
-       "collected": 496.31
+       "delivered": 500.12,
+       "collected": 493.87
       },
       "12.5": {
-       "delivered": 998.86,
-       "collected": 992.61
+       "delivered": 994,
+       "collected": 987.75
       }
      }
     },
@@ -1941,49 +2008,49 @@
      "replCost": 7,
      "floors": {
       "1": {
-       "delivered": 16.45,
-       "collected": 10.2
+       "delivered": 16.4,
+       "collected": 10.15
       },
       "2": {
-       "delivered": 26.65,
-       "collected": 20.4
+       "delivered": 26.55,
+       "collected": 20.3
       },
       "3": {
-       "delivered": 36.85,
-       "collected": 30.6
+       "delivered": 36.7,
+       "collected": 30.45
       },
       "4": {
-       "delivered": 47.06,
-       "collected": 40.81
+       "delivered": 46.86,
+       "collected": 40.61
       },
       "5": {
-       "delivered": 57.26,
-       "collected": 51.01
+       "delivered": 57.01,
+       "collected": 50.76
       },
       "0.5": {
-       "delivered": 11.35,
-       "collected": 5.1
+       "delivered": 11.33,
+       "collected": 5.08
       },
       "1.5": {
-       "delivered": 21.55,
-       "collected": 15.3
+       "delivered": 21.48,
+       "collected": 15.23
       },
       "2.5": {
-       "delivered": 31.75,
-       "collected": 25.5
+       "delivered": 31.63,
+       "collected": 25.38
       },
       "6.25": {
-       "delivered": 70.01,
-       "collected": 63.76
+       "delivered": 69.7,
+       "collected": 63.45
       },
       "12.5": {
-       "delivered": 133.77,
-       "collected": 127.52
+       "delivered": 133.14,
+       "collected": 126.89
       }
      }
     }
    },
-   "v": "v313"
+   "v": "v316"
   }
  }
 }

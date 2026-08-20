@@ -1006,7 +1006,27 @@ section("Ledger — the date is superior to the position");
        written. The desk sorts by date wherever the order matters, so this never moved a figure;
        it made the FILE unreadable, and the file is what a person audits. 37 sales rows and one
        purchase were out of order when this check was first run. */
-    const { splitRecords, outOfOrder } = await import("../tools/sort-ledger.mjs");
+    const { splitRecords, outOfOrder, sortRecords } = await import("../tools/sort-ledger.mjs");
+
+    /* THE REGRESSION THAT DESTROYED RM 8,981 OF THE BOOK, AS A UNIT TEST. The first splitter
+       started a record at ANY line whose trimmed content began with "{", so a row carrying a
+       nested `amend:[{date:...}]` was torn in half and the halves sorted apart by the
+       AMENDMENT's date. 96 sales rows became 49 and it built, tested and deployed clean. */
+    const nested = [
+      "  {date:'2026-08-02',customer:'A',qty:1,total:10,",
+      "   amend:[",
+      "          {date:'2026-07-01',kind:'Fulfilment',cash:10,kg:1}],",
+      "   note:'x'},",
+      "  {date:'2026-08-01',customer:'B',qty:1,total:20,note:'y'},",
+    ];
+    const recs = splitRecords(nested);
+    ok(recs.length === 2, "a nested amendment line does not open a new record");
+    ok(recs[0].length === 4, "the row keeps all four of its own lines");
+    const flat = sortRecords(recs).flat();
+    ok(flat.length === nested.length, "sorting is a permutation: no line is dropped");
+    ok(flat[0] === nested[4] && flat[1] === nested[0],
+      "the rows swap by their OWN date, not by the nested amendment's");
+
     const lines = readFileSync(MASTER, "utf8").split(/\r?\n/);
     for (const name of ["purchases", "sales"]) {
       const open = lines.findIndex((l) => l.startsWith(`const ${name}=[`));

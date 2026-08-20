@@ -32,12 +32,28 @@ const CHECK = process.argv.includes("--check");
 const ARRAYS = ["purchases", "sales"];
 
 /* A record is one row object: the line that opens it plus every continuation line up to the
-   next opening line or the array's close. Rows open at column 2 or 3 depending on who wrote
-   them, so the test is "trimmed line starts with {", not a fixed indent. */
+ * next opening line or the array's close.
+ *
+ * THE INDENT IS THE BOUNDARY, AND THE FIRST VERSION OF THIS FUNCTION GOT IT WRONG IN A WAY
+ * THAT DESTROYED RM 8,981 OF THE BOOK. It started a new record at any line whose trimmed
+ * content began with "{". Rows carry NESTED amendment records (`amend:[{date:...,kind:
+ * 'Fulfilment',...}]`), 19 of them across the sales array, each on its own line beginning
+ * with "{" at an indent of ten. The sort therefore tore those rows in half and reordered the
+ * halves by the AMENDMENT's date, which merged 96 sales rows into 49 and took revenue from
+ * RM 21,167.76 to RM 12,186.50. It parsed, it built, it passed 254 tests and it deployed.
+ *
+ * So: a record opens only at the ARRAY's own indent, two or three spaces. Anything deeper
+ * belongs to the row above it. Brace counting was considered and rejected: 128 note lines
+ * carry a brace inside their prose, so a depth counter fires on the text rather than the
+ * structure, and a check that cries wolf is worse than no check.
+ *
+ * AND THE COUNT IS ASSERTED, because the failure above was silent. `sortArray` refuses to
+ * write unless the records it split reassemble to exactly the lines it was given. */
+const TOP = /^ {2,3}\{/;
 export function splitRecords(lines) {
   const recs = [];
   for (const line of lines) {
-    if (line.trimStart().startsWith("{") || !recs.length) recs.push([line]);
+    if (TOP.test(line) || !recs.length) recs.push([line]);
     else recs[recs.length - 1].push(line);
   }
   return recs;
@@ -104,7 +120,16 @@ for (const name of ARRAYS) {
     for (const b of bad.slice(0, 8)) console.log(`          row ${b.i + 1}: ${b.why}`);
     continue;
   }
-  lines.splice(open + 1, close - open - 1, ...sortRecords(recs).flat());
+  const sorted = sortRecords(recs).flat();
+  /* THE PERMUTATION CHECK. The sort may only REORDER whole records: same lines, same count,
+     nothing dropped and nothing invented. This is the assertion the first version did not
+     have, and it is the one that would have caught it before the book went out. */
+  const before = body.slice().sort(), after = sorted.slice().sort();
+  if (sorted.length !== body.length || before.some((l, i) => l !== after[i])) {
+    console.log(`  FAIL  ${name}: the sort would not be a permutation of the input. Nothing written.`);
+    faults++; continue;
+  }
+  lines.splice(open + 1, close - open - 1, ...sorted);
   changed += bad.length;
   console.log(`  ok    ${name}: ${recs.length} rows, ${bad.length} moved into date order`);
 }
