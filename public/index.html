@@ -920,6 +920,11 @@ function fillAmend(){
   var o=openRow(); if(!o)return;
   $('a-cash').value=(AKIND==='deliv')?'0':n2(o.oweRM||0);
   $('a-kg').value=(AKIND==='paid')?'0':n2(o.oweKg||0);
+  /* greyed as well as zeroed, so the form SHOWS what the kind means rather than only
+     enforcing it at submit. The trade form has done this with its paid and delivered
+     boxes since v291; the amend form was written without it. */
+  $('a-cash').disabled=(AKIND==='deliv');
+  $('a-kg').disabled=(AKIND==='paid');
   if(!$('a-date').value)$('a-date').value=today();
 }
 /* THE COUNT RECONCILER. The one subtraction this app performs, and it is not a price:
@@ -1030,7 +1035,18 @@ function buildEntry(){
   if(MODE==='amend'){
     var o=openRow();
     if(!o)return {why:'Choose the order this amends.'};
-    var cash=Number($('a-cash').value||0), kg=Number($('a-kg').value||0);
+    /* THE KIND DECIDES, NOT THE FIELDS, AND THIS COST A WRONG LEDGER ROW ON 20 Aug.
+       The human-readable line was built from AKIND ("marked paid in full") and the payload was
+       read straight off the inputs, so the two were computed from different sources and could
+       disagree. They did: an entry that said PAID IN FULL carried 6.25 unit of delivery, the
+       fold took it at its word, and the shelf went to minus 6.25 with a long note explaining a
+       contradiction that did not exist.
+       Now one source. "Paid" moves no salt and "Handed over" moves no cash, whatever is left
+       sitting in the other box, so the sentence a person reads and the figures the ledger gets
+       are the same statement. The fields are disabled too, but the enforcement is here: a
+       disabled field is a courtesy and this is the guarantee. */
+    var cash=(AKIND==='deliv')?0:Number($('a-cash').value||0);
+    var kg=(AKIND==='paid')?0:Number($('a-kg').value||0);
     if(cash<=0.001&&kg<=0.001)return {why:'An amendment has to move cash or stock.'};
     var d=$('a-date').value||today(), note=$('a-note').value.trim();
     var lab=AKIND==='paid'?'paid in full':AKIND==='deliv'?'delivered in full':'paid and delivered in full';

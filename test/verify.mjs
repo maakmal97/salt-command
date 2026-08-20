@@ -1178,6 +1178,23 @@ section("Payload — what the phone is given, and what it is not");
   }
 }
 
+/* ---- 17. The amend form's kind decides its figures (20 Aug 2026) ---------------- */
+section("App — an amendment says one thing, not two");
+{
+  const app = readFileSync(join(REPO, "public", "index.html"), "utf8");
+  /* THE FAULT THIS GUARDS. The line a person reads was built from the selected kind and the
+     payload was read straight off the inputs. An entry that said "marked paid in full"
+     carried 6.25 unit of delivery, the fold believed it, and the shelf went to minus 6.25
+     with a long note explaining a contradiction that never existed. */
+  ok(/var cash=\(AKIND==='deliv'\)\?0:/.test(app),
+    "a delivery-only amendment sends no cash, whatever the cash box holds");
+  ok(/var kg=\(AKIND==='paid'\)\?0:/.test(app),
+    "a payment-only amendment sends no units, whatever the units box holds");
+  ok(/\$\('a-cash'\)\.disabled=\(AKIND==='deliv'\)/.test(app) &&
+     /\$\('a-kg'\)\.disabled=\(AKIND==='paid'\)/.test(app),
+    "and the irrelevant field is greyed, so the form shows what the kind means");
+}
+
 /* ---- done ----------------------------------------------------------------------- */
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
