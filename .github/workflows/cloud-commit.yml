@@ -1,0 +1,162 @@
+# THE TWO HALVES OF THE CLOUD COMMIT THAT NEED A CREDENTIAL, added 20 Aug 2026.
+#
+# WHY THIS EXISTS, AND WHY THE EARLIER CLAIM THAT CI NEEDS NO SECRETS WAS WRONG.
+# ci.yml holds nothing and should stay that way. But once the laptop is off the critical path,
+# two steps of the daily commit still need Cloudflare credentials and nothing else can hold
+# them: reading the APPROVED rows out of D1, and running `wrangler deploy`. A scheduled cloud
+# agent gets a git checkout and no secrets, so it cannot do either. The deploy has to live
+# somewhere, and with the laptop retired that somewhere is here.
+#
+# THE SPLIT, AND THE RULE BEHIND IT. The credential does the two mechanical things. The
+# JUDGEMENT stays with the agent, because rolling STATED_STOCK, writing a row's note, writing
+# the evolution entry and deciding what an amendment amends are not arithmetic, and a job that
+# folded rows and dropped the prose would be a worse ledger.
+#
+#   09:30 MYT  stage    this file    D1 -> master/_to_fold.json, committed
+#   10:00 MYT  fold     the agent    reads that file, folds, bumps, builds, tests, pushes
+#   on push    deploy   this file    wrangler deploy, then mark those ids committed
+#   11:00 MYT  prove    ship-check.yml
+#
+# SETUP, AND IT IS THE ONE THING ONLY HE CAN DO:
+#   gh secret set CLOUDFLARE_API_TOKEN
+# The token needs Workers Scripts:Edit, Workers KV:Edit and D1:Edit on the account. Nothing
+# here runs until it exists; both jobs check for it and say so rather than failing obscurely.
+name: Cloud commit
+
+on:
+  schedule:
+    # 01:30 UTC is 09:30 in Kuala Lumpur, half an hour before the fold.
+    - cron: '30 1 * * *'
+  push:
+    branches: [master]
+    paths:
+      - 'public/rev.json'
+  workflow_dispatch:
+
+concurrency:
+  group: cloud-commit
+  cancel-in-progress: false
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # STAGE: put the approved, uncommitted rows where an agent with no secrets can
+  # read them. It writes nothing to the ledger and decides nothing.
+  # ---------------------------------------------------------------------------
+  stage:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '22', cache: npm }
+      - run: npm ci
+
+      - name: The credential exists
+        env:
+          TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          if [ -z "${TOKEN:-}" ]; then
+            echo "::error::CLOUDFLARE_API_TOKEN is not set. Run: gh secret set CLOUDFLARE_API_TOKEN"
+            exit 1
+          fi
+
+      - name: Read the approved rows out of D1
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          set -euo pipefail
+          node tools/drafts.mjs --approved > master/_to_fold.json
+          node -e "
+            const j=require('./master/_to_fold.json');
+            if(!j.ok) { console.error('::error::drafts.mjs did not report ok'); process.exit(1); }
+            console.log('approved and uncommitted: '+j.count);
+          "
+
+      - name: Commit it, if it changed
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- master/_to_fold.json; then
+            echo "Nothing new to stage."
+            exit 0
+          fi
+          git config user.name  "salt-command CI"
+          git config user.email "noreply@github.com"
+          git add master/_to_fold.json
+          git commit -m "Stage $(node -p "require('./master/_to_fold.json').count") approved row(s) for the fold"
+          git push
+
+  # ---------------------------------------------------------------------------
+  # DEPLOY: the phone gets what was just pushed, and only then are the folded
+  # rows marked committed. THAT ORDER MATTERS. Marking first and failing to
+  # deploy would leave a row recorded as shipped while the phone still shows the
+  # old book, which is the exact silent failure of 10 and 19 Aug.
+  # ---------------------------------------------------------------------------
+  deploy:
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '22', cache: npm }
+      - run: npm ci
+
+      - name: The credential exists
+        env:
+          TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          if [ -z "${TOKEN:-}" ]; then
+            echo "::error::CLOUDFLARE_API_TOKEN is not set. Run: gh secret set CLOUDFLARE_API_TOKEN"
+            exit 1
+          fi
+
+      - run: npm test
+
+      - name: Deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: npx wrangler deploy
+
+      - name: The phone is serving it
+        run: |
+          set -euo pipefail
+          want=$(node -p "require('./public/rev.json').id")
+          for i in 1 2 3 4 5 6; do
+            got=$(curl -fsS --max-time 20 https://salt-command.maakmal97.workers.dev/rev | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).id")
+            [ "$got" = "$want" ] && { echo "live at $got"; exit 0; }
+            echo "attempt $i: live=$got want=$want"
+            sleep 10
+          done
+          echo "::error::the Worker is not serving $want after the deploy reported success"
+          exit 1
+
+      # ONLY NOW. A draft marked committed is a draft the commit run will never offer again,
+      # so it must not be marked until the row it became is demonstrably on the phone.
+      - name: Mark the folded rows committed
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ ! -f master/_folded.json ]; then
+            echo "No _folded.json, so nothing to mark. This is normal for a build with no fold in it."
+            exit 0
+          fi
+          ids=$(node -p "(require('./master/_folded.json').ids||[]).join(' ')")
+          if [ -z "$ids" ]; then echo "_folded.json names no ids."; exit 0; fi
+          node tools/drafts.mjs --committed $ids
+
+      - name: Clear the handoff files
+        run: |
+          set -euo pipefail
+          changed=0
+          for f in master/_to_fold.json master/_folded.json; do
+            if [ -f "$f" ]; then git rm -q "$f"; changed=1; fi
+          done
+          [ "$changed" = "0" ] && exit 0
+          git config user.name  "salt-command CI"
+          git config user.email "noreply@github.com"
+          git commit -m "Clear the fold handoff: the rows are on the phone and marked committed"
+          git push
