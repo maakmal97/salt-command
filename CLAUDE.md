@@ -113,13 +113,26 @@ desk and is the only mirror now.
 Cowork scheduled task because the master lived on the laptop. With the master here, the whole
 chain is cloud-reachable and the laptop is off the critical path.
 
-| Step | Where |
-|---|---|
-| Queue an entry | KV, from the phone |
-| Draft the row | Worker, on arrival and on a 15-minute cron |
-| Approve | D1, from the phone |
-| **Fold, bump, build, deploy, push** | **a scheduled cloud agent, following `Scheduled\salt-daily-price-brief\SKILL.md`** |
-| Prove it landed | GitHub Actions, `.github/workflows/` |
+| Step | Where | When |
+|---|---|---|
+| Queue an entry | KV, from the phone | on tap |
+| Draft the row | Worker | on arrival, 15-min cron as the net |
+| Approve | D1, from the phone | on tap |
+| Stage the approved rows | Actions, `cloud-commit.yml` | :05 and :35 |
+| **Fold, bump, build, test, push** | **cloud routine, `docs/CLOUD_FOLD.md`** | hourly |
+| Deploy, prove, mark committed | Actions, `cloud-commit.yml` | on push |
+| Prove repo and live agree | Actions, `ship-check.yml` | 11:00 MYT |
+| Monthly statements | cloud routine, `docs/STATEMENTS.md` | Sundays, gated to the first |
+
+**HOURLY IS THE FLOOR, NOT A CHOICE.** The routine API rejects any cron under an hour, so a
+true 30-minute fold is not available to an agent. Staging twice an hour is what closes the gap:
+the average wait between a tap and a row in the ledger is about half an hour.
+
+**THE STAGE STANDS DOWN RATHER THAN TRAMPLING AN UNFOLDED BATCH,** and the clock is not what
+makes that safe. The stage was first offset to clear the fold, and the routine API then jittered
+the fold's minute of its own accord. A schedule whose safety depends on another scheduler
+keeping the minute you asked for is not safe, so the guard lives in the job: if
+`master/_to_fold.json` is still in HEAD, the last batch is unfolded and this tick stands down.
 
 **The fold stays a judgement and therefore stays with an agent.** Folding an approved row is
 mechanical, but rolling `STATED_STOCK`, writing the row's NOTE, writing the `evolution` entry
