@@ -1,0 +1,22 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-08-20T02:02:17.323Z",
+   "collection": "purchases",
+   "row": {
+    "qty": 25,
+    "total": 1300,
+    "cash": 0,
+    "supplier": "SA5-BTR",
+    "status": "unpaid",
+    "pending": true
+   },
+   "reasoning": "Bought 25 unit of salt from SA5-BTR for RM 1300, RM 52/unit. Nothing was paid and nothing moved, so the row is PENDING and carries NO DATE: it draws no stock and books no revenue until it does. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [],
+   "decidedAt": "2026-08-20T02:21:06.066Z",
+   "decidedBy": "phone"
+  }
+ ]
+}
