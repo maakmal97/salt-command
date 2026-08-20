@@ -12,7 +12,7 @@
  * is that the judgement is now written down BEFORE it is applied, and looked at.
  *
  * Modes:
- *   node tools/drafts.mjs --schema             apply migrations/0002_draft.sql and 0003_refused.sql
+ *   node tools/drafts.mjs --schema             apply every migration in migrations/
  *   node tools/drafts.mjs --list [--all]       what is waiting, read-only (default: pending)
  *   node tools/drafts.mjs --draft <file.json>  stage a proposed row for approval
  *   node tools/drafts.mjs --from-queue         draft the LAPTOP queue too, so it passes the same gate
@@ -66,7 +66,7 @@ const money = (v) => v == null ? "-" : "RM " + Number(v).toLocaleString("en-MY",
 /* ---- schema -------------------------------------------------------------------------- */
 function schema() {
   /* Both migrations, in order, and each is CREATE TABLE IF NOT EXISTS so re-running is safe. */
-  for (const name of ["0002_draft.sql", "0003_refused.sql"]) {
+  for (const name of ["0002_draft.sql", "0003_refused.sql", "0004_amend.sql"]) {
     if (!existsSync(resolve(REPO, "migrations", name))) { fail("migrations/" + name + " is not there"); continue; }
     const r = wrangler(["d1", "execute", DB, WHERE, "--file=migrations/" + name], { quiet: true });
     if (r.code !== 0) { fail("could not apply " + name + ":\n        " + r.out.split("\n").slice(0, 6).join("\n        ")); continue; }
@@ -266,13 +266,19 @@ function approve() {
 /* What the commit run asks for: approved and not yet folded into the master. Approved and
    committed are different questions, because an approved row stays approved forever. */
 function approved() {
-  const rows = query("SELECT id,collection,row,reasoning,flags,decided_at,decided_by FROM draft"
+  const rows = query("SELECT id,collection,row,reasoning,flags,amends,amend_kind,entry,decided_at,decided_by FROM draft"
     + " WHERE status='approved' AND committed_at IS NULL ORDER BY drafted_at");
   if (!rows) return;
   const out = rows.map((r) => {
     const parse = (s, d) => { try { return s == null ? d : JSON.parse(s); } catch (e) { return d; } };
+    /* amends/amendKind are NULL on a new row and set on an amendment. The fold reads them to
+       know whether to APPEND `row` or apply a change to the row `amends` names. Carrying them
+       here rather than leaving the fold to re-query is what lets the cloud agent, which has no
+       credentials, do the whole job from the staged file. */
     return { id: r.id, collection: r.collection, row: parse(r.row, null), reasoning: r.reasoning,
-             flags: parse(r.flags, []), decidedAt: r.decided_at, decidedBy: r.decided_by };
+             flags: parse(r.flags, []), amends: r.amends || null, amendKind: r.amend_kind || null,
+             entry: parse(r.entry, null),
+             decidedAt: r.decided_at, decidedBy: r.decided_by };
   });
   console.log(JSON.stringify({ ok: true, count: out.length, approved: out }, null, 1));
 }

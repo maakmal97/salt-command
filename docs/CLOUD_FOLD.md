@@ -35,38 +35,62 @@ deploy.** GitHub Actions holds the credential and does those three things around
    it again.** Report it and leave it; a double count is the most expensive fault this book can
    carry, and it has happened.
 
-3. **Fold each approved row into `sales` or `purchases`**, in the shape the arrays already use.
+3. **Look at `amends` on every row before you fold anything.** It is NULL on a new row and set
+   on an amendment, and the two are folded completely differently.
+
+   **An amendment does NOT append.** `amends` holds the desk's own `ovKey`, `party|date|total`,
+   naming an EXISTING row. `row` is that target as it stood when the draft was written, not a
+   row to add. Find it in `master/salt_command.html` and change it.
+
+   **Apply it exactly as `ovAmend` in the master would**, and read that function before you do:
+   it is layered, careful logic and the drafter deliberately does not duplicate it. A pending
+   lot stops being pending the moment real money or real salt moves against it; a purchase that
+   loses `pending` must gain `receivedQty:0` and `inTransit:true` or `poRecvKg` walks the whole
+   lot into stock and the cost basis, which is the v146 failure that flag exists to prevent;
+   partial receipts accumulate rather than replace. `amendKind` is `Fulfilment` or
+   `Cancellation` and nothing else reaches you.
+
+   **Record the tranche in the row's `amend` trail** as `{date,kind,cash,kg}`, because `txDates`
+   treats the trail as authoritative and prefers it over `deliveredOn`.
+
+   **The note still matters.** Amend the row's existing note or add to it: what moved, when, and
+   what it leaves outstanding.
+
+4. **Fold each approved NEW row into `sales` or `purchases`**, in the shape the arrays already use.
    The drafter wrote the row and he approved it, so the figures are not yours to change. What
    IS yours is the **note**: read the row against the book and write what a person auditing it
    would need. Every row on this book carries one. A fold that drops the prose is the reason
    this step is not a script.
 
-4. **Roll `STATED_STOCK`** for anything that actually moved, and say in the comment what it
+5. **Roll `STATED_STOCK`** for anything that actually moved, and say in the comment what it
    rolled from, what came off, and that it is a ROLL and not a count. Never move `COUNT_ON`:
    only a physical count does that.
 
-5. **Bump the version.** Replace `evolution[0]` with a new entry: `v`, `d`, `t` and an `n`
+6. **Bump the version.** Replace `evolution[0]` with a new entry: `v`, `d`, `t` and an `n`
    array of notes. Then `node tools/changelog.mjs` to put it into `master/changelog.json`.
 
-6. **Put the book back in date order:** `node tools/sort-ledger.mjs`.
+7. **Put the book back in date order:** `node tools/sort-ledger.mjs`.
 
-7. **Build and test:** `npm run build && npm test`. Both must pass. The build writes
+8. **Build and test:** `npm run build && npm test`. Both must pass. The build writes
    `public/desk.html`, `public/data.json` and `public/rev.json`, and all three are committed.
 
-8. **Write `master/_folded.json`** as `{"ids":["<id>", ...]}` naming every draft id you folded.
+9. **Write `master/_folded.json`** as `{"ids":["<id>", ...]}` naming every draft id you folded.
    The deploy job marks exactly these committed, and only after the phone is proven to be
    serving the new build. Get this list wrong and a row is either offered twice or lost.
 
-9. **Move `QUEUE_COMMITTED`** in the master to the NEWEST id you folded, to the millisecond. It
+10. **Move `QUEUE_COMMITTED`** in the master to the NEWEST id you folded, to the millisecond. It
    must sit at or after every id folded and before anything left pending. Never the clock.
 
-10. **Commit and push.** That push is what triggers the deploy.
+11. **Commit and push.** That push is what triggers the deploy.
 
 ## What the agent must never do
 
-- **Never fold an amendment.** Which row an amendment amends is a judgement about an existing
-  row, and the drafter refuses them for that reason. If `_to_fold.json` contains one, something
-  upstream is wrong: report it and fold nothing.
+- **Never fold an amendment whose `amends` key matches no row, or matches more than one.** The
+  drafter checked against the open-order snapshot when it drafted, but the book may have moved
+  since. A near miss is not a match: report it and fold nothing.
+- **Never fold a `Modification`, `Linked` or `Rewarded` amendment.** They never reach you: the
+  drafter refuses them because what changed is a judgement rather than which row. If one
+  appears in `_to_fold.json`, something upstream is wrong.
 - **Never invent a row to explain a shortfall.** On 20 Aug the shelf counted zero against a
   book that said 8.05, and the right answer was to record the count and leave the hole visible,
   not to write rows that would close it. A row written from a hypothesis is worse than a gap.

@@ -1137,6 +1137,32 @@ function drawDrafts(){
     var r=d.row||{},qty=r.qty,total=r.total,cost=r.cost;
     var per=(total!=null&&qty)?money(total/qty)+'/unit':'-';
     var mar=(total>0&&cost!=null&&qty)?((total-cost*qty)/total*100):null;
+
+    /* AN AMENDMENT IS A DIFFERENT QUESTION AND GETS A DIFFERENT CARD.
+       On a new row what you check is the price against the cost, so the panel leads with
+       margin. On an amendment the row already exists and its margin was settled when it was
+       written; what you check is whether this is the RIGHT ORDER and whether that is what
+       happened to it. Showing a margin here would be answering a question nobody asked, and
+       worse, it would be the target row's margin dressed up as a decision. */
+    if(d.amends){
+      var e=(d.entry&&d.entry.payload)||{};
+      var buyA=d.collection==='purchases';
+      return '<div class="drf" data-id="'+esc(d.id)+'">'
+        +'<div class="drf-top"><span class="drf-w">'+esc(d.amendKind||'Amendment')+' on '+esc(r.customer||r.supplier||'?')+'</span>'
+        +'<span class="drf-rm">'+esc(money(e.cash||0))+'</span></div>'
+        +'<div class="drf-g">'
+        +'<div class="drf-c"><p class="k">The order</p><p class="v">'+esc(n2(qty))+' unit for '+esc(money(total))+'</p></div>'
+        +'<div class="drf-c"><p class="k">Agreed</p><p class="v">'+esc(r.date||'undated')+'</p></div>'
+        +'<div class="drf-c"><p class="k">Cash moving</p><p class="v">'+esc(money(e.cash||0))+'</p></div>'
+        +'<div class="drf-c"><p class="k">Units moving</p><p class="v">'+esc(n2(e.kg||0))+'</p></div>'
+        +'<div class="drf-c"><p class="k">On</p><p class="v">'+esc(e.date||'-')+'</p></div>'
+        +'<div class="drf-c"><p class="k">Already in</p><p class="v">'+esc(money(r.cash||0))+'</p></div>'
+        +'</div>'
+        +(d.flags||[]).map(function(f){ return '<div class="drf-f">'+esc(f)+'</div>'; }).join('')
+        +'<p class="drf-why">'+esc(d.reasoning||'')+'</p>'
+        +'<div class="drf-b"><button class="btn rej" data-a="reject">Reject</button>'
+        +'<button class="btn primary" data-a="approve">Approve</button></div></div>';
+    }
     /* Banded against the v300 ladder, converted to margin on price so it is compared
        like with like: a 25% markup on cost is a 20% margin, 50% is 33.3%, 75% is 42.9%.
        A FLAGGED ROW NEVER GETS A GREEN MARGIN. The test entry of 16 Aug was RM900 for a

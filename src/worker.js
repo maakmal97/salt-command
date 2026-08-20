@@ -324,7 +324,7 @@ async function handleLedger(env, url) {
  * since 11 Aug: anyone with the URL reads the book, nobody without the key writes to it. A
  * decision is a write in the fullest sense, since an approved row reaches the master.
  */
-const DRAFT_COLS = "id,status,collection,entry,row,reasoning,flags,party,product,date,qty,total,cost,drafter,drafted_at,decided_at,decided_by,committed_at";
+const DRAFT_COLS = "id,status,collection,entry,row,reasoning,flags,party,product,date,qty,total,cost,amends,amend_kind,drafter,drafted_at,decided_at,decided_by,committed_at";
 
 function draftOut(r) {
   const parse = (s, fallback) => { try { return s == null ? fallback : JSON.parse(s); } catch (e) { return fallback; } };
@@ -334,6 +334,9 @@ function draftOut(r) {
     reasoning: r.reasoning, flags: parse(r.flags, []),
     party: r.party, product: r.product, date: r.date,
     qty: r.qty, total: r.total, cost: r.cost,
+    /* NULL on a new row. Present on an amendment, and then `row` is the TARGET as it stands
+       rather than a row to append: see migrations/0004_amend.sql. */
+    amends: r.amends || null, amendKind: r.amend_kind || null,
     drafter: r.drafter, draftedAt: r.drafted_at,
     decidedAt: r.decided_at, decidedBy: r.decided_by, committedAt: r.committed_at
   };

@@ -1,6 +1,6 @@
 {
- "v": "v316",
- "stamped": "20 Aug 2026, 02:34 KL",
+ "v": "v320",
+ "stamped": "20 Aug 2026, 10:30 KL",
  "source": "Cow-Crm01 salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -38,10 +38,14 @@
    "oil": {
     "qty": 5,
     "costPerKg": 7.666666666666667,
-    "stated": 19
+    "stated": 0
    }
   },
-  "STATED_STOCK": 8.05,
+  "STATED_STOCK": 0,
+  "COUNT_ON": {
+   "salt": "2026-08-20",
+   "oil": "2026-08-20"
+  },
   "purchases": [
    {
     "date": "2026-06-27",
@@ -194,6 +198,15 @@
     "receivedOn": "2026-08-18",
     "receivedQty": 12.5,
     "note": "<b>THE LOT LANDED, AND IT LANDED AT THE SAME RM56, SO NOT ONE FLOOR ON THIS DESK MOVES.</b> 12.5 unit for RM700, paid and received in full on the 18th, settling the row agreed pending at v311. It is now the NEWEST RECEIVED LOT and therefore the one replacement cost is read off, which is exactly the job <b>pending:true</b> was holding it out of; because it carries the same small-lot rate as the 13 Aug lot, taking that job over moves nothing. <b>THE TIMING IS THE FIGURE WORTH READING.</b> The shelf stood at 4.80 unit and 5 unit went out the same day, 2.5 to CY2-NIL, 0.5 to CA4-DAM and 2 to CR3-DAM, so without this lot the book would have been 0.20 unit short of its own promises. It arrives on the day it is needed rather than a day after it, which is the first time the restock has run that way since 28 Jul. <b>The shelf rolls to 12.30 and STOCK_COST holds at 56</b>, one lot again and no blend to solve. ASSUMPTION, STATED: the amendment reported a fulfilment with the full RM700 in cash and 12.5 unit moved, so it is taken as paid and received in full on the 18th."
+   },
+   {
+    "qty": 25,
+    "total": 1300,
+    "supplier": "SA5-BTR",
+    "status": "unpaid",
+    "cash": 0,
+    "pending": true,
+    "note": "<b>THE 25 UNIT TIER, TAKEN FOR THE FIRST TIME, AND IT BOOKS NOTHING YET.</b> 25 unit for RM1,300 agreed with SA5-BTR, RM52 a unit. Nothing has been paid and nothing has moved, so the row is PENDING and carries NO DATE: it draws no stock, raises no payable, moves no cash and stays out of the cost basis until it settles. <b>IT IS THE QUOTED 25 UNIT TIER TO THE RINGGIT</b>, the RM1,300 step standing on the 14 Jul ladder, and it is the first time that step has ever been taken: every lot on this book since 08 Jul has been 6.25, 12.5, 50 or 100. <b>RM52 IS THE MIDDLE OF THE LADDER AND IT IS THE RIGHT MIDDLE.</b> The same 25 unit bought as two 12.5 unit lots costs RM1,400 at the RM56 both August lots carried, so the tier saves RM100, RM4 a unit. It stays dearer than the RM48 fifty unit tier and the RM47 hundred, which is the ladder working as quoted rather than a concession lost. <b>WHAT IT DOES NOT DO IS MOVE A FLOOR.</b> Replacement cost is read off the newest RECEIVED lot and that is still the 18 Aug lot at RM56, which is exactly the job <b>pending:true</b> is doing here; STOCK_COST is untouched. When this lands it becomes the newest received lot and every floor on the desk falls with it, so re-read the pending sales against the Pricing tab on that commit and not before. <b>THE SHELF IT IS COMING TO IS EMPTY.</b> Salt was counted at zero on the 20th and the book owes 3 unit to CE4-CHE, paid for on the 18th with nothing behind it; the desk reads 21.5 unit of promises with no stock against them at this commit, so 25 unit clears them with room over. That figure moves with every sale, so read it off the Forward tab rather than off this sentence. <b>NO ARRIVAL DATE WAS QUEUED AND NONE IS INVENTED HERE.</b> When money or salt first moves against it, set receivedQty, receivedOn and paidOn and clear pending, the same shape as the lot agreed at v311 and settled on the 18th."
    }
   ],
   "sales": [
@@ -1670,10 +1683,25 @@
     "total": 500,
     "cost": 56,
     "cash": 500,
-    "deliveredQty": 0.25,
+    "deliveredQty": 3.25,
     "deliveredOn": "2026-08-18",
     "paidOn": "2026-08-18",
-    "note": "<b>PAID IN FULL WITH A QUARTER UNIT HANDED OVER, SO 6 UNIT ARE OWED IN SALT RATHER THAN IN CASH.</b> 6.25 unit for RM500, RM80 a unit, the whole RM500 collected on the 18th. The money is in and the obligation is out: this is the only deferred delivery on the book, and it is the mirror image of CR3-DAM, who has the salt and owes the money. <b>THE RATE IS RM12 UNDER HIS OWN STANDING PRICE, AND THAT WAS THE FIRST FLAG HE APPROVED.</b> Five orders at about RM92 a unit, this one at RM80, 13% below. <b>The second flag was the floor, and it is not settled yet:</b> RM500 clears the collected line and misses the delivered one, so how the remaining 6 unit are handed over is what decides which floor this row is measured against. The same question CR3-DAM left open at v311 was answered the unfavourable way on the 18th. On the RM56 shelf it returns RM24 a unit, <b>RM150 on the order at 30% on the price</b>, the same margin CC5-OKR took on his RM80 unit the day before: RM80 a unit now buys thirty points where his RM92 bought forty-nine. Size explains some of it, 6.25 unit against the 2.5 he has taken four times, and it is his largest order by a distance. <b>THE SIX UNIT ARE THE THING TO WATCH, NOT THE PRICE.</b> They are paid for at a rate struck on the 18th and they come off whatever the shelf costs when they move, so every day they sit there is a day the desk carries the cost risk on them."
+    "amend": [
+     {
+      "date": "2026-08-18",
+      "kind": "Fulfilment",
+      "cash": 500,
+      "kg": 0.25
+     },
+     {
+      "date": "2026-08-20",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 3,
+      "note": "three further unit handed over, found by the 20 Aug count rather than reported at the time. ASSUMPTION, STATED: no date was given, so they are booked on the 20th, the day the shelf was counted and the delivery came to light. Correct the date and the FIFO draw follows."
+     }
+    ],
+    "note": "<b>PAID IN FULL WITH A QUARTER UNIT HANDED OVER, SO 6 UNIT ARE OWED IN SALT RATHER THAN IN CASH.</b> 6.25 unit for RM500, RM80 a unit, the whole RM500 collected on the 18th. The money is in and the obligation is out: this is the only deferred delivery on the book, and it is the mirror image of CR3-DAM, who has the salt and owes the money. <b>THE RATE IS RM12 UNDER HIS OWN STANDING PRICE, AND THAT WAS THE FIRST FLAG HE APPROVED.</b> Five orders at about RM92 a unit, this one at RM80, 13% below. <b>The second flag was the floor, and it is not settled yet:</b> RM500 clears the collected line and misses the delivered one, so how the remaining 6 unit are handed over is what decides which floor this row is measured against. The same question CR3-DAM left open at v311 was answered the unfavourable way on the 18th. On the RM56 shelf it returns RM24 a unit, <b>RM150 on the order at 30% on the price</b>, the same margin CC5-OKR took on his RM80 unit the day before: RM80 a unit now buys thirty points where his RM92 bought forty-nine. Size explains some of it, 6.25 unit against the 2.5 he has taken four times, and it is his largest order by a distance. <b>AMENDED AT v318: HE HAS TAKEN 3.25 OF THE 6.25, NOT 0.25, AND THREE UNIT ARE STILL OWED.</b> The further three were found by the 20 Aug count rather than reported when they moved, which is the whole reason the count was worth taking. <b>THREE UNIT ARE PAID FOR AND ARE NOT ON THE SHELF</b>, because the shelf counted zero: they are owed to a man who has settled in full, and the desk has no stock behind the obligation. That is the sharpest single line on this book today. They come off whatever the shelf costs when they move, so every day they sit unbought is a day the desk carries the cost risk on them, and it now carries that risk with nothing in hand."
    },
    {
     "customer": "CJ4-BJ",
@@ -1930,9 +1958,9 @@
     "note": "Judged a rare one-off. Treat the RM104/unit it paid as an outlier, not as evidence of what wholesale will bear."
    }
   ],
-  "QUEUE_COMMITTED": "2026-08-18T22:26:37.778Z",
+  "QUEUE_COMMITTED": "2026-08-20T02:02:17.323Z",
   "PRICING": {
-   "takenAt": "2026-08-20T00:43:19.933Z",
+   "takenAt": "2026-08-20T03:53:27.476Z",
    "sizes": [
     0.5,
     1,
@@ -1962,44 +1990,44 @@
      "replCost": 56,
      "floors": {
       "1": {
-       "delivered": 85.27,
-       "collected": 79.02
+       "delivered": 86.12,
+       "collected": 79.87
       },
       "2": {
-       "delivered": 164.29,
-       "collected": 158.04
+       "delivered": 165.98,
+       "collected": 159.73
       },
       "3": {
-       "delivered": 243.31,
-       "collected": 237.06
+       "delivered": 245.85,
+       "collected": 239.6
       },
       "4": {
-       "delivered": 322.33,
-       "collected": 316.08
+       "delivered": 325.72,
+       "collected": 319.47
       },
       "5": {
-       "delivered": 401.35,
-       "collected": 395.1
+       "delivered": 405.59,
+       "collected": 399.34
       },
       "0.5": {
-       "delivered": 45.76,
-       "collected": 39.51
+       "delivered": 46.18,
+       "collected": 39.93
       },
       "1.5": {
-       "delivered": 124.78,
-       "collected": 118.53
+       "delivered": 126.05,
+       "collected": 119.8
       },
       "2.5": {
-       "delivered": 203.8,
-       "collected": 197.55
+       "delivered": 205.92,
+       "collected": 199.67
       },
       "6.25": {
-       "delivered": 500.12,
-       "collected": 493.87
+       "delivered": 505.42,
+       "collected": 499.17
       },
       "12.5": {
-       "delivered": 994,
-       "collected": 987.75
+       "delivered": 1004.59,
+       "collected": 998.34
       }
      }
     },
@@ -2008,49 +2036,144 @@
      "replCost": 7,
      "floors": {
       "1": {
-       "delivered": 16.4,
-       "collected": 10.15
+       "delivered": 16.51,
+       "collected": 10.26
       },
       "2": {
-       "delivered": 26.55,
-       "collected": 20.3
+       "delivered": 26.77,
+       "collected": 20.52
       },
       "3": {
-       "delivered": 36.7,
-       "collected": 30.45
+       "delivered": 37.03,
+       "collected": 30.78
       },
       "4": {
-       "delivered": 46.86,
-       "collected": 40.61
+       "delivered": 47.29,
+       "collected": 41.04
       },
       "5": {
-       "delivered": 57.01,
-       "collected": 50.76
+       "delivered": 57.55,
+       "collected": 51.3
       },
       "0.5": {
-       "delivered": 11.33,
-       "collected": 5.08
+       "delivered": 11.38,
+       "collected": 5.13
       },
       "1.5": {
-       "delivered": 21.48,
-       "collected": 15.23
+       "delivered": 21.64,
+       "collected": 15.39
       },
       "2.5": {
-       "delivered": 31.63,
-       "collected": 25.38
+       "delivered": 31.9,
+       "collected": 25.65
       },
       "6.25": {
-       "delivered": 69.7,
-       "collected": 63.45
+       "delivered": 70.38,
+       "collected": 64.13
       },
       "12.5": {
-       "delivered": 133.14,
-       "collected": 126.89
+       "delivered": 134.5,
+       "collected": 128.25
       }
      }
     }
    },
-   "v": "v316"
+   "v": "v320"
+  },
+  "OPEN": {
+   "at": "2026-08-20T03:53:27.481Z",
+   "count": 7,
+   "byKey": {
+    "CJ4-BJ|undefined|850": {
+     "d": null,
+     "p": "CJ4-BJ",
+     "dir": "S",
+     "q": 12.5,
+     "t": 850,
+     "cash": 0,
+     "mv": 0,
+     "st": "pend",
+     "oweRM": 850,
+     "oweKg": 12.5,
+     "key": "CJ4-BJ|undefined|850"
+    },
+    "CA4-DAM|undefined|100": {
+     "d": null,
+     "p": "CA4-DAM",
+     "dir": "S",
+     "q": 1,
+     "t": 100,
+     "cash": 0,
+     "mv": 0,
+     "st": "pend",
+     "oweRM": 100,
+     "oweKg": 1,
+     "key": "CA4-DAM|undefined|100"
+    },
+    "CE4-AD|undefined|435": {
+     "d": null,
+     "p": "CE4-AD",
+     "dir": "S",
+     "q": 5,
+     "t": 435,
+     "cash": 0,
+     "mv": 0,
+     "st": "pend",
+     "oweRM": 435,
+     "oweKg": 5,
+     "key": "CE4-AD|undefined|435"
+    },
+    "SA5-BTR|undefined|1300": {
+     "d": null,
+     "p": "SA5-BTR",
+     "dir": "B",
+     "q": 25,
+     "t": 1300,
+     "cash": 0,
+     "mv": 0,
+     "st": "pend",
+     "oweRM": 1300,
+     "oweKg": 25,
+     "key": "SA5-BTR|undefined|1300"
+    },
+    "CR3-DAM|2026-08-18|80": {
+     "d": "2026-08-18",
+     "p": "CR3-DAM",
+     "dir": "S",
+     "q": 1,
+     "t": 80,
+     "cash": 0,
+     "mv": 1,
+     "st": "dueMoney",
+     "oweRM": 80,
+     "key": "CR3-DAM|2026-08-18|80"
+    },
+    "CE4-CHE|2026-08-18|500": {
+     "d": "2026-08-18",
+     "p": "CE4-CHE",
+     "dir": "S",
+     "q": 6.25,
+     "t": 500,
+     "cash": 500,
+     "mv": 3.25,
+     "st": "oweStock",
+     "oweKg": 3,
+     "key": "CE4-CHE|2026-08-18|500"
+    },
+    "SF6-KLC|2026-07-08|750": {
+     "d": "2026-07-08",
+     "p": "SF6-KLC",
+     "dir": "B",
+     "q": 12.5,
+     "t": 750,
+     "cash": 750,
+     "mv": 0,
+     "st": "dueStock",
+     "oweKg": 12.5,
+     "key": "SF6-KLC|2026-07-08|750"
+    }
+   },
+   "v": "v320"
   }
  }
 }

@@ -808,7 +808,39 @@ section("Drafter — rows, refusals and flags");
 
   /* ---- the refusals ---- */
   ok(/no payload/.test(draftRow({ at: "x" }, book).skip || ""), "an entry with no payload is refused");
-  ok(/AMENDS/.test(draftRow({ at: "x", payload: { mode: "amend", direction: "SELL", party: "CC5-OKR" } }, book).skip || ""), "an amendment is left for a person");
+  /* AMENDMENTS: THE RULE CHANGED ON 20 Aug 2026 AND THE OLD ASSERTION WENT WITH IT.
+     It used to be "every amendment is left for a person", on the ground that which row it
+     amends is a judgement. That was true of an amendment arriving with nothing identifying its
+     target, and it is still true of one. It stopped being true of an amendment carrying the
+     desk's own ovKey, which the phone now sends because it makes you tap a specific order. */
+  ok(/names no order/.test(draftRow({ at: "x", payload: { mode: "amend", kind: "Fulfilment", direction: "SELL", party: "CC5-OKR" } }, book).skip || ""),
+    "an amendment with NO order key is still left for a person");
+  ok(/judgement rather than which row/.test(draftRow({ at: "x", payload: { mode: "amend", kind: "Modification", direction: "SELL", party: "CC5-OKR", orderKey: "CC5-OKR|2026-08-01|90" } }, book).skip || ""),
+    "a Modification is left for a person even WITH a key: what changed is the judgement");
+
+  /* With a key, a Fulfilment kind and a matching OPEN snapshot, it drafts. */
+  const openBook = { ...book, version: "vTEST", state: { ...(book.state || {}), OPEN: { v: "vTEST", byKey: {
+    "CC5-OKR|2026-08-01|90": { p: "CC5-OKR", dir: "S", q: 1, t: 90, cash: 0, mv: 0, d: "2026-08-01", st: "dueMoney", oweRM: 90, oweKg: 1 },
+  } } } };
+  const amend = draftRow({ at: "x", payload: { mode: "amend", kind: "Fulfilment", direction: "SELL",
+    party: "CC5-OKR", orderKey: "CC5-OKR|2026-08-01|90", date: "2026-08-20", cash: 90, kg: 1 } }, openBook);
+  ok(!amend.skip, "a Fulfilment with a key against an OPEN order is drafted, not refused");
+  ok(amend.amends === "CC5-OKR|2026-08-01|90" && amend.amendKind === "Fulfilment", "and it records which row it amends, and how");
+  ok(amend.row && amend.row.customer === "CC5-OKR" && amend.row.total === 90,
+    "the row it carries is the TARGET as it stands, not a row to append");
+  ok(/SETTLES the order in full/.test(amend.flags.join(" ")), "settling the whole order is flagged as such");
+  ok(/ovAmend/.test(amend.reasoning), "and the reasoning says plainly that the desk applies it, not the drafter");
+
+  /* overpaying and overdelivering are the comparisons an amendment cannot make against itself */
+  const over = draftRow({ at: "x", payload: { mode: "amend", kind: "Fulfilment", direction: "SELL",
+    party: "CC5-OKR", orderKey: "CC5-OKR|2026-08-01|90", date: "2026-08-20", cash: 200, kg: 5 } }, openBook);
+  ok(over.flags.some(f => /more than the order is owed/.test(f)), "paying more than is outstanding is flagged");
+  ok(over.flags.some(f => /more than the order calls for/.test(f)), "moving more than is outstanding is flagged");
+
+  /* a key that matches nothing OPEN is refused rather than guessed at */
+  const noSuchOrder = draftRow({ at: "x", payload: { mode: "amend", kind: "Fulfilment", direction: "SELL",
+    party: "CC5-OKR", orderKey: "CC5-OKR|1999-01-01|1", date: "2026-08-20", cash: 1, kg: 1 } }, openBook);
+  ok(/no OPEN order/.test(noSuchOrder.skip || ""), "a key matching no open order is refused, never applied to a near miss");
   /* the reason must name the real case: an addid registers a party and amends nothing */
   ok(/REGISTERS A PARTY/.test(draftRow({ at: "x", payload: { mode: "addid", code: "CX1-NEW" } }, book).skip || ""), "an addid is reported as a party registration, not as an amendment");
   ok(!/amend/i.test(draftRow({ at: "x", payload: { mode: "addid", code: "CX1-NEW" } }, book).skip || ""), "and never as an amendment");

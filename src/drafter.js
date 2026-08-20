@@ -220,8 +220,98 @@ export function draftRow(entry, book) {
      every mode that was not `new`, so an ADDID, which registers a party and amends nothing,
      was reported as an amendment. That reads as a bug in the entry rather than a category the
      drafter does not handle, and it is the reason a person reads before deciding what to do. */
+  /* AMENDMENTS ARE DRAFTED FROM 20 Aug 2026, AND THE RULE THEY REPLACE WAS RIGHT WHEN WRITTEN.
+   * It said "which row it amends is a judgement", and that was true of an amendment arriving as
+   * free text with nothing identifying its target. It stopped being true when the phone's Amend
+   * tab started making you TAP a specific open order and sending the desk's own ovKey for it:
+   * the judgement is now made by the person making it, before the entry is ever queued.
+   *
+   * ONLY FULFILMENT AND CANCELLATION. Those are mechanical once the row is named. Modification,
+   * Linked and Rewarded are judgements about WHAT changed rather than WHICH row, and they stay
+   * with a person.
+   *
+   * IT DOES NOT COMPUTE THE RESULT, and that is the important restraint. ovAmend in the master
+   * is layered, careful logic: a pending lot that stops being pending, a partial receipt, the
+   * inTransit flag that exists so a deposit cannot walk a whole lot into the cost basis. A
+   * second copy of it here would drift from the first the day either changed. So what is
+   * drafted, and therefore what is approved, is the IDENTIFICATION and the FIGURES: is this the
+   * right row, and is that what happened to it. The fold applies it where the desk is. */
   if (pay.mode === "amend") {
-    return { skip: "this entry AMENDS an existing row, and which row it amends is a judgement, so it is left for a person" };
+    const kind = String(pay.kind || "");
+    if (kind !== "Fulfilment" && kind !== "Cancellation") {
+      return { skip: `this is a ${kind || "nameless"} amendment, and what changed is a judgement rather than which row, so it is left for a person` };
+    }
+    const key = pay.orderKey;
+    if (!key) return { skip: "this amendment names no order, so which row it amends is still a judgement" };
+    const open = book.state && book.state.OPEN;
+    if (!open || !open.byKey) {
+      return { skip: "the mirror carries no open-order snapshot, so the target row cannot be confirmed. Reseed the mirror and it will draft" };
+    }
+    const t = open.byKey[key];
+    if (!t) {
+      return { skip: `no OPEN order on the book matches ${key}. It has been settled or cancelled since the phone listed it, or it was folded already` };
+    }
+    const dir2 = t.dir === "B" ? "BUY" : "SELL";
+    const cash = isNum(pay.cash) ? +pay.cash : 0;
+    const moved = isNum(pay.kg) ? +pay.kg : 0;
+    const when = pay.date || null;
+    if (kind === "Fulfilment") {
+      if (cash < 0.005 && moved < 0.005) {
+        return { skip: "this fulfilment moves neither cash nor stock, so there is nothing to apply" };
+      }
+      if (!when) return { skip: "something moved on this amendment but it carries no date, and dating it is a judgement" };
+    }
+
+    /* Shaped like a row so the Approve panel needs no special case: it is the TARGET as it
+       stands today, which is what has to be recognised before the change is agreed to. */
+    const row = { qty: t.q, total: t.t, cash: t.cash, date: t.d || null };
+    row[dir2 === "BUY" ? "supplier" : "customer"] = t.p;
+    if (t.pr) row.product = t.pr;
+
+    const oweRM = +(t.oweRM || 0), oweKg = +(t.oweKg || 0);
+    const flags = [];
+    /* THE COMPARISONS AN AMENDMENT CANNOT MAKE AGAINST ITSELF, which is the same idea as the
+       flags on a new row: everything here is the entry measured against the order it targets. */
+    if (kind === "Fulfilment") {
+      if (cash > oweRM + 0.005) {
+        flags.push(`This pays RM ${round(cash)} against RM ${round(oweRM)} outstanding, so RM ${round(cash - oweRM)} more than the order is owed.`);
+      }
+      if (moved > oweKg + 0.005) {
+        flags.push(`This hands over ${round(moved)} unit against ${round(oweKg)} still to move, so ${round(moved - oweKg)} unit more than the order calls for.`);
+      }
+      if (t.d && when && when < t.d) {
+        flags.push(`Dated ${when}, which is before the order's own date of ${t.d}.`);
+      }
+      if (cash >= oweRM - 0.005 && moved >= oweKg - 0.005) {
+        flags.push(`This SETTLES the order in full: nothing is left outstanding after it.`);
+      }
+    } else {
+      if (t.cash > 0.005 || t.mv > 0.005) {
+        flags.push(`This order has already had RM ${round(t.cash)} and ${round(t.mv)} unit against it. Cancelling a row that has moved is not the same as cancelling one that has not.`);
+      }
+    }
+    if (open.v && book.version && open.v !== book.version) {
+      flags.push(`The open-order snapshot was taken at ${open.v} but the mirror is at ${book.version}, so what is outstanding here may be stale.`);
+    }
+
+    const left = kind === "Fulfilment"
+      ? `Leaves RM ${round(Math.max(0, oweRM - cash))} and ${round(Math.max(0, oweKg - moved))} unit outstanding.`
+      : "The order is withdrawn and counts nowhere.";
+    const reasoning = [
+      `${kind} against ${t.p}'s ${dir2 === "BUY" ? "lot" : "order"} of ${round(t.q)} unit for RM ${round(t.t)}`,
+      t.d ? `agreed ${t.d}.` : "which is pending and undated.",
+      kind === "Fulfilment"
+        ? `RM ${round(cash)} and ${round(moved)} unit move on ${when}, against RM ${round(oweRM)} and ${round(oweKg)} unit outstanding. ${left}`
+        : left,
+      "The row itself is NOT recomputed here: ovAmend in the master applies it, so there is one definition of what a fulfilment does rather than two.",
+    ].join(" ");
+
+    return {
+      collection: dir2 === "BUY" ? "purchases" : "sales",
+      row, reasoning, flags,
+      amends: key,
+      amendKind: kind,
+    };
   }
   if (pay.mode === "addid") {
     return { skip: "this entry REGISTERS A PARTY rather than recording a trade. It has no row to draft, and the roster and the directory are edited on the laptop" };
@@ -390,13 +480,17 @@ export async function runDrafter(env, { now = () => new Date().toISOString() } =
     }
     await env.SALT_LEDGER.prepare(
       `INSERT OR IGNORE INTO draft
-         (id,status,collection,entry,row,reasoning,flags,party,product,date,qty,total,cost,drafter,drafted_at)
-       VALUES (?1,'pending',?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14)`
+         (id,status,collection,entry,row,reasoning,flags,party,product,date,qty,total,cost,
+          amends,amend_kind,drafter,drafted_at)
+       VALUES (?1,'pending',?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16)`
     ).bind(
       at, d.collection, JSON.stringify(entry), JSON.stringify(d.row), d.reasoning,
       JSON.stringify(d.flags), d.row.customer || d.row.supplier || null,
       d.row.product || (d.collection === "sales" ? "salt" : null),
       d.row.date || null, d.row.qty ?? null, d.row.total ?? null, d.row.cost ?? null,
+      /* NULL on a new row, set on an amendment. The commit run reads these to know whether to
+         APPEND the row or apply a change to the one `amends` names. */
+      d.amends || null, d.amendKind || null,
       "cloud-drafter", now()
     ).run();
     /* If this id was refused on an earlier pass and now drafts, the refusal is stale the

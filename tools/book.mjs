@@ -118,6 +118,30 @@ export const NAME_COLLISIONS = new Set(["max", "min"]);
  * IT IS A SNAPSHOT AND GOES STALE like every other mirrored value: it is re-taken on the same
  * pass that re-seeds the store, and it carries the version it was taken at so a reader can
  * tell. A drafter comparing it against a newer master should flag rather than proceed. */
+/* THE OPEN ORDERS, AS THE DESK ITSELF SEES THEM (v322).
+ *
+ * Same rule and same reason as pricingSnapshot above: the drafter needs to know what is still
+ * outstanding against a row before it can describe an amendment to it, and working that out in
+ * a Worker would put a second copy of txPaid, txEffDeliv, poCash and poRecvKg in a second file.
+ * Three separate attempts at exactly that arithmetic were wrong on the first real rows on 20
+ * Aug, all in the same way: raw fields read with the wrong ruler. So it is not recomputed. The
+ * desk answers, during the extract, and the answer is stored.
+ *
+ * DERIVED, NOT DECLARED, which is why it is not in LEDGER_KEYS: nothing in the master is named
+ * OPEN, exactly as nothing in it is named PRICING. */
+export function openSnapshot(w) {
+  const read = reader(w);
+  const call = (expr) => { const r = read(expr); return r.ok && typeof r.value !== "undefined" ? r.value : null; };
+  /* phonePayload already builds this list, keyed by the desk's own ovKey and carrying the
+     desk's own outstanding figures. Reusing it means there is one definition of "open" on this
+     desk rather than two that agree until they do not. */
+  const payload = call("(typeof phonePayload==='function')?phonePayload():null");
+  const open = (payload && Array.isArray(payload.open)) ? payload.open : [];
+  const byKey = {};
+  for (const o of open) if (o && o.key) byKey[o.key] = o;
+  return { at: new Date().toISOString(), count: open.length, byKey };
+}
+
 export function pricingSnapshot(w) {
   const read = reader(w);
   const call = (expr) => { const r = read(expr); return r.ok && typeof r.value !== "undefined" ? r.value : null; };
@@ -181,6 +205,7 @@ export async function readBook(masterPath = MASTER) {
   /* Taken LAST, after every value above has been read, because it sets and restores the desk's
      active product and nothing else should be reading while it does. */
   ledger.PRICING = { ...pricingSnapshot(w), v: version };
+  ledger.OPEN = { ...openSnapshot(w), v: version };
   return { dom, w, read, ledger, meta, missing, version, stamped: meta.LAST_UPDATED || null,
     src: readFileSync(masterPath, "utf8") };
 }

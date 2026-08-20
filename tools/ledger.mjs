@@ -35,7 +35,7 @@ import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
 import { openMaster } from "./payload.mjs";
-import { LEDGER, LEDGER_KEYS, META_KEYS, reader, pricingSnapshot, NAME_STOPWORDS, NAME_COLLISIONS } from "./book.mjs";
+import { LEDGER, LEDGER_KEYS, META_KEYS, reader, pricingSnapshot, openSnapshot, NAME_STOPWORDS, NAME_COLLISIONS } from "./book.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO = resolve(HERE, "..");
@@ -176,6 +176,10 @@ if (Object.keys(ledger).length === LEDGER_KEYS.length) ok(`read all ${LEDGER_KEY
    cloud drafter reads the desk's own cost and floors instead of recomputing them. See the
    long note in book.mjs. Taken last because it moves PROD while it runs. */
 ledger.PRICING = { ...pricingSnapshot(w), v: (Array.isArray(meta.evolution) && meta.evolution[0] && meta.evolution[0].v) || null };
+/* The open orders as the desk sees them, for the drafter to describe an amendment against.
+   Derived like PRICING and for the same reason: three attempts at this arithmetic in a
+   Worker were wrong on real rows before it was moved here. */
+ledger.OPEN = { ...openSnapshot(w), v: (Array.isArray(meta.evolution) && meta.evolution[0] && meta.evolution[0].v) || null };
 {
   const P = ledger.PRICING, salt = P.byProduct && P.byProduct.salt;
   if (!salt || salt.stockCost == null || !salt.floors) fail("the pricing snapshot came back without a salt cost or floors; the drafter cannot price a row without it");
