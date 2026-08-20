@@ -31,6 +31,11 @@ jobs:
 
       - run: npm ci
 
+      # FIRST, because a workflow that cannot parse runs nothing and CI stayed green while
+      # cloud-commit.yml was dead for seven minutes on 20 Aug.
+      - name: The workflows themselves parse
+        run: node tools/lint-workflows.mjs
+
       - name: The book is in date order
         run: node tools/sort-ledger.mjs --check
 

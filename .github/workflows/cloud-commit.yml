@@ -221,15 +221,26 @@ jobs:
       # A FOLD IS ALSO NOT THE MOST USEFUL BANNER. The phone reloads itself within ten seconds
       # of a new build anyway, so this mostly tells him something he is about to see. It earns
       # its place only when he is away from the app.
+      # THE SECRET IS TESTED IN THE SHELL, NOT IN `if:`. The first version wrote
+      # `if: ${{ secrets.SALT_WRITE_KEY != '' }}` and GitHub REJECTED THE WHOLE FILE, because
+      # the `secrets` context is not available in an if condition. The run had ZERO jobs, no
+      # logs, and was named by its file path rather than "Cloud commit", which is the tell that
+      # a workflow failed to PARSE rather than failed to run.
+      #
+      # It was loud, which is the only good thing about it: it emailed. But between adding it
+      # and fixing it, the stage and deploy jobs were dead, and a workflow that cannot parse
+      # does not run its cron either. A broken optional step took the whole file with it.
       - name: Wake the phone
-        if: ${{ secrets.SALT_WRITE_KEY != '' }}
         continue-on-error: true
+        env:
+          SALT_KEY: ${{ secrets.SALT_WRITE_KEY }}
         run: |
           set -euo pipefail
+          if [ -z "${SALT_KEY:-}" ]; then echo "No SALT_WRITE_KEY secret; nothing is woken. This step is optional."; exit 0; fi
           if [ ! -f master/_folded.json ]; then echo "No fold in this build; not waking anyone."; exit 0; fi
           n=$(node -p "(require('./master/_folded.json').ids||[]).length")
           [ "$n" = "0" ] && { echo "Nothing folded."; exit 0; }
-          code=$(curl -s -o /dev/null -w "%{http_code}" -X POST             -H "X-Salt-Key: ${{ secrets.SALT_WRITE_KEY }}"             -H "content-type: application/json"             -d '{"tag":"folded"}'             https://salt-command.maakmal97.workers.dev/push/send)
+          code=$(curl -s -o /dev/null -w "%{http_code}" -X POST -H "X-Salt-Key: $SALT_KEY" -H "content-type: application/json" -d '{"tag":"folded"}' https://salt-command.maakmal97.workers.dev/push/send)
           echo "push/send -> $code for $n folded row(s)"
 
       - name: Clear the handoff files
