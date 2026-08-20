@@ -1,5 +1,16 @@
 [
  {
+  "v": "v330",
+  "d": "20 Aug 2026",
+  "t": "THE BOARD FITS THE PHONE, AND THE FLOOR IT PRINTS IS THE ONE THE PHONE PRINTS",
+  "n": [
+   "<b>THE BOARD DID NOT FIT ON THE PHONE, AND THE COLUMN BEING CUT OFF WAS THE ASK.</b> Measured in Chromium at 375px, the five columns came to 406px inside the 325px a card gives, so the ASK sat half past the edge and the FLOOR was entirely off it. The ask is the number he reads to a customer standing in front of him, so it is the last thing on this desk that should need a sideways scroll. Two changes, both small: the rate and the margin under the ask go on separate lines rather than one, which takes that column from 160px to 84px, and the board alone gets 5px gutters instead of 8px. The table is now 325px in a 325px box, <b>nothing off the edge on either book</b>.",
+   "<b>IT WAS ALREADY MUCH BETTER THAN WHAT IT REPLACED, WHICH IS WORTH RECORDING.</b> The four-rung board of v324 was 801px in the same 325px box, 476px off the edge. Collapsing it to one ladder at v326 cut that to 81px without anybody aiming at the phone, and this closes the rest. The other tables on the tab still scroll in their own boxes at 342px to 638px over, and that stays deliberate: they are genuinely wide and nobody prices off them at a market stall.",
+   "<b>AND THE SCREENSHOT SHOWED A SECOND FLOOR, WHICH IS THE MORE SERIOUS OF THE TWO FINDINGS.</b> priceLadder struck its own floor as cogs times the policy markup. That agreed with floorTotal from 1.5 unit up and disagreed below it, because floorTotal ALSO lifts the floor to what serving the lot costs, and at 0.5 and 1 unit that bites. So the desk board printed RM30.59 at half a unit while the phone, which reads floorTotal through the payload, printed RM40.99 for the same size. Two floors for one lot. floorTotal answers now and the markup beside it is derived back from that answer rather than assumed, so a floor lifted by the cost of serving reports the markup it actually represents.",
+   "<b>NOTHING ELSE MOVED, AND THE SWEEP SAYS SO.</b> All fifteen tabs measured at 375px before and after: page overflow ZERO on every one, no clipped text anywhere, and the count of text under 11px unchanged at 174 against 171 before this session began, the three extra being the product chips on the three rows folded at v329. That sub-11px text is a standing gap against the rule set when the desk was tuned for portrait, it is almost all on Ledger at 9px, and it predates this work rather than arriving with it."
+  ]
+ },
+ {
   "v": "v329",
   "d": "20 Aug 2026",
   "t": "THREE ROWS FOLDED, AND THE CHEAPEST SALT THIS BOOK HAS EVER SOLD COST RM44 RATHER THAN RM56",
