@@ -118,6 +118,28 @@ function writeOk(request, env) {
 }
 const needsKey = () => json({ ok: false, error: "write key required", writeKey: true }, 401);
 
+/* THE PUSH KEY (20 Aug 2026): A CAPABILITY, NOT A CREDENTIAL, AND IT OPENS ONE DOOR.
+ *
+ * CI needs to wake the phone after a fold and nothing else. Handing it SALT_WRITE_KEY would
+ * have given a notification step the right to write the queue, replace the vault and approve
+ * drafts, which is the whole ledger, to save minting one more secret. A GitHub Actions secret
+ * is readable by anyone who can land a workflow in the repo, so the blast radius of the wrong
+ * key here is not theoretical.
+ *
+ * So /push/send accepts EITHER the write key, which the phone already holds, OR this one,
+ * which can do nothing else at all. Everything else under /push still needs the write key.
+ * If SALT_PUSH_KEY is unset this returns false and the write key remains the only way in,
+ * which is the same fail-safe shape writeOk has. */
+function pushKeyOk(request, env) {
+  const key = String(env.SALT_PUSH_KEY || "");
+  if (!key) return false;
+  const got = String(request.headers.get("X-Push-Key") || "");
+  if (got.length !== key.length) return false;
+  let diff = 0;
+  for (let i = 0; i < key.length; i++) diff |= got.charCodeAt(i) ^ key.charCodeAt(i);
+  return diff === 0;
+}
+
 async function readQueuePost(request) {
   const body = await request.json();
   if (!body || typeof body !== "object") throw new Error("expected an object");
@@ -519,7 +541,10 @@ export default {
          key is public by definition: a browser cannot create a subscription without
          it, and it authorises nothing on its own. Everything else under /push either
          stores a subscription, reads the book, or sends. */
-      || (p.startsWith("/push") && p !== "/push/key")) && !writeOk(request, env)) return needsKey();
+      || (p.startsWith("/push") && p !== "/push/key")) && !writeOk(request, env)
+      /* the one narrowing: a caller holding only the push key may send, and may do nothing
+         else. It cannot subscribe, cannot read the summary and cannot list subscribers. */
+      && !(p === "/push/send" && pushKeyOk(request, env))) return needsKey();
 
     // --- the desk's HTTP contract -------------------------------------------------
     if (p === "/queue/ping") {

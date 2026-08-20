@@ -41,6 +41,11 @@ on:
     paths:
       - 'public/rev.json'
   workflow_dispatch:
+    inputs:
+      test_push:
+        description: 'Send a test push, even with no fold in this build'
+        type: boolean
+        default: false
 
 concurrency:
   group: cloud-commit
@@ -221,6 +226,11 @@ jobs:
       # A FOLD IS ALSO NOT THE MOST USEFUL BANNER. The phone reloads itself within ten seconds
       # of a new build anyway, so this mostly tells him something he is about to see. It earns
       # its place only when he is away from the app.
+      # IT USES SALT_PUSH_KEY, NOT THE WRITE KEY. The write key authorises the queue, the
+      # vault and draft approvals, which is the whole ledger, and a GitHub Actions secret is
+      # readable by anyone who can land a workflow here. A notification step gets a key that
+      # opens POST /push/send and nothing else. See pushKeyOk() in src/worker.js.
+      #
       # THE SECRET IS TESTED IN THE SHELL, NOT IN `if:`. The first version wrote
       # `if: ${{ secrets.SALT_WRITE_KEY != '' }}` and GitHub REJECTED THE WHOLE FILE, because
       # the `secrets` context is not available in an if condition. The run had ZERO jobs, no
@@ -233,14 +243,19 @@ jobs:
       - name: Wake the phone
         continue-on-error: true
         env:
-          SALT_KEY: ${{ secrets.SALT_WRITE_KEY }}
+          PUSH_KEY: ${{ secrets.SALT_PUSH_KEY }}
         run: |
           set -euo pipefail
-          if [ -z "${SALT_KEY:-}" ]; then echo "No SALT_WRITE_KEY secret; nothing is woken. This step is optional."; exit 0; fi
-          if [ ! -f master/_folded.json ]; then echo "No fold in this build; not waking anyone."; exit 0; fi
-          n=$(node -p "(require('./master/_folded.json').ids||[]).length")
-          [ "$n" = "0" ] && { echo "Nothing folded."; exit 0; }
-          code=$(curl -s -o /dev/null -w "%{http_code}" -X POST -H "X-Salt-Key: $SALT_KEY" -H "content-type: application/json" -d '{"tag":"folded"}' https://salt-command.maakmal97.workers.dev/push/send)
+          if [ -z "${PUSH_KEY:-}" ]; then echo "No SALT_PUSH_KEY secret; nothing is woken. This step is optional."; exit 0; fi
+          TEST="${{ inputs.test_push }}"
+          if [ "$TEST" = "true" ]; then
+            n="test"
+          else
+            if [ ! -f master/_folded.json ]; then echo "No fold in this build; not waking anyone."; exit 0; fi
+            n=$(node -p "(require('./master/_folded.json').ids||[]).length")
+            [ "$n" = "0" ] && { echo "Nothing folded."; exit 0; }
+          fi
+          code=$(curl -s -o /dev/null -w "%{http_code}" -X POST -H "X-Push-Key: $PUSH_KEY" -H "content-type: application/json" -d '{"tag":"folded"}' https://salt-command.maakmal97.workers.dev/push/send)
           echo "push/send -> $code for $n folded row(s)"
 
       - name: Clear the handoff files
