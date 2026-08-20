@@ -1364,7 +1364,7 @@ const purchases=[
   {date:'2026-08-18',qty:12.5,total:700,supplier:'SA5-BTR',status:'paid',cash:700,paidOn:'2026-08-18',receivedOn:'2026-08-18',receivedQty:12.5,
    note:'<b>THE LOT LANDED, AND IT LANDED AT THE SAME RM56, SO NOT ONE FLOOR ON THIS DESK MOVES.</b> 12.5 unit for RM700, paid and received in full on the 18th, settling the row agreed pending at v311. It is now the NEWEST RECEIVED LOT and therefore the one replacement cost is read off, which is exactly the job <b>pending:true</b> was holding it out of; because it carries the same small-lot rate as the 13 Aug lot, taking that job over moves nothing. <b>THE TIMING IS THE FIGURE WORTH READING.</b> The shelf stood at 4.80 unit and 5 unit went out the same day, 2.5 to CY2-NIL, 0.5 to CA4-DAM and 2 to CR3-DAM, so without this lot the book would have been 0.20 unit short of its own promises. It arrives on the day it is needed rather than a day after it, which is the first time the restock has run that way since 28 Jul. <b>The shelf rolls to 12.30 and STOCK_COST holds at 56</b>, one lot again and no blend to solve. ASSUMPTION, STATED: the amendment reported a fulfilment with the full RM700 in cash and 12.5 unit moved, so it is taken as paid and received in full on the 18th.'},
   {qty:25,total:1300,supplier:'SA5-BTR',status:'unpaid',cash:0,pending:true,
-   note:'<b>THE 25 UNIT TIER, TAKEN FOR THE FIRST TIME, AND IT BOOKS NOTHING YET.</b> 25 unit for RM1,300 agreed with SA5-BTR, RM52 a unit. Nothing has been paid and nothing has moved, so the row is PENDING and carries NO DATE: it draws no stock, raises no payable, moves no cash and stays out of the cost basis until it settles. <b>IT IS THE QUOTED 25 UNIT TIER TO THE RINGGIT</b>, the RM1,300 step standing on the 14 Jul ladder, and it is the first time that step has ever been taken: every lot on this book since 08 Jul has been 6.25, 12.5, 50 or 100. <b>RM52 IS THE MIDDLE OF THE LADDER AND IT IS THE RIGHT MIDDLE.</b> The same 25 unit bought as two 12.5 unit lots costs RM1,400 at the RM56 both August lots carried, so the tier saves RM100, RM4 a unit. It stays dearer than the RM48 fifty unit tier and the RM47 hundred, which is the ladder working as quoted rather than a concession lost. <b>WHAT IT DOES NOT DO IS MOVE A FLOOR.</b> Replacement cost is read off the newest RECEIVED lot and that is still the 18 Aug lot at RM56, which is exactly the job <b>pending:true</b> is doing here; STOCK_COST is untouched. When this lands it becomes the newest received lot and every floor on the desk falls with it, so re-read the pending sales against the Pricing tab on that commit and not before. <b>THE SHELF IT IS COMING TO IS EMPTY.</b> Salt was counted at zero on the 20th and the book owes 3 unit to CE4-CHE, paid for on the 18th with nothing behind it; the desk reads 21.5 unit of promises with no stock against them at this commit, so 25 unit clears them with room over. That figure moves with every sale, so read it off the Forward tab rather than off this sentence. <b>NO ARRIVAL DATE WAS QUEUED AND NONE IS INVENTED HERE.</b> When money or salt first moves against it, set receivedQty, receivedOn and paidOn and clear pending, the same shape as the lot agreed at v311 and settled on the 18th.'},
+   note:'<b>THE 25 UNIT TIER, TAKEN FOR THE FIRST TIME, AND IT BOOKS NOTHING YET.</b> 25 unit for RM1,300 agreed with SA5-BTR, RM52 a unit. Nothing has been paid and nothing has moved, so the row is PENDING and carries NO DATE: it draws no stock, raises no payable, moves no cash and stays out of the cost basis until it settles. <b>IT IS THE QUOTED 25 UNIT TIER TO THE RINGGIT</b>, the RM1,300 step standing on the 14 Jul ladder, and it is the first time that step has ever been taken: every lot on this book since 08 Jul has been 6.25, 12.5, 50 or 100. <b>RM52 IS THE MIDDLE OF THE LADDER AND IT IS THE RIGHT MIDDLE.</b> The same 25 unit bought as two 12.5 unit lots costs RM1,400 at the RM56 both August lots carried, so the tier saves RM100, RM4 a unit. It stays dearer than the RM48 fifty unit tier and the RM47 hundred STANDING THAT MORNING, which is the ladder working as quoted rather than a concession lost. <b>Those two rates are the 14 Jul ladder and they were superseded the same afternoon</b>, so read them as what this lot was struck against and not as what salt costs; the addendum below has the rest. <b>WHAT IT DOES NOT DO IS MOVE A FLOOR.</b> Replacement cost is read off the newest RECEIVED lot and that is still the 18 Aug lot at RM56, which is exactly the job <b>pending:true</b> is doing here; STOCK_COST is untouched. When this lands it becomes the newest received lot and every floor on the desk falls with it, so re-read the pending sales against the Pricing tab on that commit and not before. <b>THE SHELF IT IS COMING TO IS EMPTY.</b> Salt was counted at zero on the 20th and the book owes 3 unit to CE4-CHE, paid for on the 18th with nothing behind it; the desk reads 21.5 unit of promises with no stock against them at this commit, so 25 unit clears them with room over. That figure moves with every sale, so read it off the Forward tab rather than off this sentence. <b>NO ARRIVAL DATE WAS QUEUED AND NONE IS INVENTED HERE.</b> When money or salt first moves against it, set receivedQty, receivedOn and paidOn and clear pending, the same shape as the lot agreed at v311 and settled on the 18th. <b>ADDED AT v321, AND NO FIGURE ON THIS ROW WAS TOUCHED TO SAY IT: SA5-BTR RE-QUOTED THE SAME AFTERNOON AND THIS LOT IS NOW RM50 ABOVE HIS OWN LADDER.</b> 25 unit is quoted at RM1,250 from the 20th, against the RM1,300 agreed here that morning against the 14 Jul ladder. <b>The row keeps RM1,300 because that is what was agreed and approved</b>, and a quote that arrives after a handshake does not rewrite it; what it does is make this lot worth re-opening before any money moves, which nothing has. <b>NOTHING IS LOST BY ASKING.</b> The lot is PENDING, so there is no payment to claw back and no stock to return, and the same salt at the new 50 unit tier is RM44 a unit against the RM52 on this row. Re-agree it, replace it, or let it stand: all three are his call and none of them is this note.'},
 ];
 const opening={qty:4.90,costPerKg:64};
 /* v228: THE PER-PRODUCT OPENING AND COUNT. Salt keeps exactly the figures it has always
@@ -2146,13 +2146,34 @@ const placeOf=id=>{const t=locOf(id);return t?(PLACES[t]||null):null;};
    base64; null = nothing loaded yet. Opened by double-clicking instead, the desk
    falls back to the copy your browser holds in localStorage. */
 let NAME_VAULT=null;
+/* ============ THE LIVE QUOTE, RE-QUOTED 20 AUG 2026 ============
+   HIS WORD, AND IT REPLACES THE 14 JUL LADDER OUTRIGHT. Every tier fell and a 6.25 unit tier
+   appears for the first time, so this is a cheaper ladder at every size the desk actually buys.
+
+   WHAT IT DOES NOT DO IS MOVE A SINGLE FLOOR, AND THAT IS WORTH STATING BECAUSE IT LOOKS AS
+   IF IT SHOULD. Replacement cost is read off the newest lot actually RECEIVED (pxCost falls
+   back to pxQuoteRate only when no lot exists), and the newest received lot is still the
+   12.5 unit that landed on 18 Aug at RM56. A quote is what salt WOULD cost; a floor is built
+   on what the shelf DID cost. Nothing here is booked until a lot is recorded as a buy.
+
+   AND pxQuoteRate() DOES NOT MOVE EITHER, which is a coincidence worth writing down rather
+   than a bug. It takes the DEAREST tier, because restocking in the size usually bought is the
+   honest read, and the dearest tier is RM56 on both ladders: it was the 12.5 unit step and it
+   is now the 6.25 unit step. The ladder got cheaper everywhere while its ceiling stood still.
+
+   THE RATE FALLS AT EVERY STEP AND NO TIER IS BEATEN BY SPLITTING IT: 56, 52, 50, 44, 43.
+   Checked with the desk's own ladderCheck, which returns no rising step and nothing beaten on
+   either ladder, so this is not a fault repaired. What changed is where the discount sits. The
+   old ladder gave RM4 a unit at the 25 step and RM4 again at the 50; this one gives RM2 at the
+   25 and RM6 at the 50, so 50 unit is where it pays and 25 has stopped paying much. */
 const supplierQuote={
-  supplier:'SA5-BTR', quotedOn:'2026-07-14', kind:'live quote',
+  supplier:'SA5-BTR', quotedOn:'2026-08-20', kind:'live quote',
   tiers:[
-    {qty:12.5, total:700,  note:'unchanged from the 10 Jul quote'},
-    {qty:25,   total:1300, note:'RM52/unit, now the sharpest value (was RM1,350)'},
-    {qty:50,   total:2400, note:'RM48/unit; moved dearer (was RM2,200 at RM44/unit)'},
-    {qty:100,  total:4700, note:'RM47/unit'},
+    {qty:6.25, total:350,  note:'RM56/unit. The smallest lot has never been quoted as its own tier before, and it comes in at the rate the 12.5 unit step used to cost.'},
+    {qty:12.5, total:650,  note:'RM52/unit, RM50 off the RM700 this size has cost on every lot since 08 Jul.'},
+    {qty:25,   total:1250, note:'RM50/unit. The 25 unit agreed on the 20th was struck at RM1,300 against the old ladder and is RM50 above this.'},
+    {qty:50,   total:2200, note:'RM44/unit, back to exactly the RM2,200 quoted on 10 Jul before this tier moved dearer.'},
+    {qty:100,  total:4300, note:'RM43/unit, cheaper than any rate this desk has ever been quoted or has ever paid.'},
   ],
 };
 /* ============ THE NEXT LOT, AS STATED (v220) ============
@@ -2175,9 +2196,15 @@ const SOURCING_PLAN={
      stops at 100 unit; there has never been a 150 unit tier and there has never been a
      150 unit lot. Using the 100 unit rate is the least flattering honest assumption
      available, because a bigger lot should not be dearer, and it is labelled an
-     assumption everywhere it appears rather than presented as a price. */
-  assumedRate:47,
-  rateBasis:'the 100 unit tier, the largest quoted and the rate actually paid on 28 Jul. There is no 150 unit tier: this is an assumption, not a quote.',
+     assumption everywhere it appears rather than presented as a price.
+     FOLLOWED TO RM43 ON 20 AUG, because the RULE did not change and the figure it points at
+     did. The rule is "the largest tier quoted"; the re-quote moved that tier from RM47 to
+     RM43, so leaving 47 here would have kept a number the ladder no longer carries and made
+     the plan look dearer than the quote it is measured against. The second half of the old
+     wording had to go with it: RM47 was ALSO the rate paid on 28 Jul, and those two facts have
+     now parted company. RM43 has been quoted and never paid. */
+  assumedRate:43,
+  rateBasis:'the 100 unit tier, the largest on the 20 Aug ladder. It has been quoted and never paid, so it is a rate on offer rather than a rate achieved, and there is no 150 unit tier at all: this is an assumption, not a quote.',
 };
 /* What the stated plan implies, derived rather than typed. Returns nulls rather than
    guesses where the sell rate is zero, because a cover figure divided by nothing is
@@ -2405,9 +2432,7 @@ const whiteboard=[
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{v:'v320',d:'20 Aug 2026',t:'THE 25 UNIT TIER IS AGREED AND THE BOOK MOVES BY NOTHING, FOLDED BY THE FIRST RUN WITH NO LAPTOP ON IT',n:['<b>25 UNIT AGREED WITH SA5-BTR AT RM52, AND NOT ONE FIGURE ON THE DESK MOVES.</b> RM1,300 for 25 unit, approved on the phone and folded here as a PENDING purchase with no date, because nothing has been paid and nothing has arrived. <b>PENDING COUNTS NOWHERE AND THAT IS THE POINT:</b> poCash and poRecvKg both return nought for it, so it raises no payable, moves no cash, adds no stock and stays out of the weighted average. Stock, cost, margin, receivables and every floor read exactly as they did at v319. <b>IT IS THE QUOTED 25 UNIT TIER, TAKEN FOR THE FIRST TIME.</b> RM1,300 is the step standing on the 14 Jul ladder to the ringgit, RM100 cheaper than the same salt bought as two 12.5 unit lots at the RM56 both August lots carried, and dearer per unit than the 50 and 100 unit tiers beneath it.',
-'<b>NOTHING ROLLED, AND A DAY ON WHICH NOTHING MOVED SHOULD LOOK LIKE ONE.</b> STATED_STOCK stays at the ZERO counted by hand on the 20th, COUNT_ON stays at that date because a fold never moves it, and STOCK_COST holds at 56 on the 18 Aug lot. <b>An agreed lot is not a receipt</b>, so replacement cost is still read off the newest lot actually RECEIVED; when this one lands it takes that job over at RM52 and every floor on the desk falls with it, which is a change to watch for rather than one to write early. The shelf it is coming to is empty and still owes 3 unit to CE4-CHE, paid for on the 18th with nothing behind the obligation.',
-'<b>THE FIRST FOLD RUN WITH NO LAPTOP ANYWHERE ON THE PATH.</b> The row was drafted by the Worker on arrival, approved on the phone, and folded here by the scheduled cloud agent reading master/_to_fold.json. <b>The agent holds no credential, by design:</b> it cannot reach D1, the queue or Cloudflare, so GitHub Actions stages the approved rows in front of it and deploys, verifies and marks them committed behind it. What stays with a person is the half that is a judgement, which is this prose and the note on the row.']}];
+const evolution=[{v:'v321',d:'20 Aug 2026',t:'SA5-BTR RE-QUOTES EVERY TIER DOWN, AND THE LOT AGREED THIS MORNING IS ALREADY RM50 ABOVE HIS OWN LADDER',n:['<b>A NEW LADDER FROM SA5-BTR, AUTHORITATIVE FROM THE 20TH, AND IT IS CHEAPER AT EVERY SIZE THIS DESK BUYS.</b> 6.25 unit at RM350, 12.5 at RM650, 25 at RM1,250, 50 at RM2,200 and 100 at RM4,300, which is RM56, RM52, RM50, RM44 and RM43 a unit. <b>A 6.25 UNIT TIER APPEARS FOR THE FIRST TIME</b>, at the RM56 the 12.5 unit step used to cost, and the 50 unit tier goes back to exactly the RM2,200 quoted on 10 Jul before it moved dearer. RM43 at 100 unit is cheaper than any rate this desk has ever been quoted or has ever paid. <b>WHERE THE DISCOUNT SITS HAS MOVED, AND THAT IS THE PART THAT CHANGES A DECISION.</b> The old ladder gave RM4 a unit at the 25 step and RM4 again at the 50. This one gives RM2 at the 25 step and RM6 at the 50, so 50 unit is where it pays and 25 has stopped paying much.','<b>NOT ONE FLOOR ON THIS DESK MOVES, AND IT LOOKS AS THOUGH IT SHOULD.</b> Replacement cost is read off the newest lot actually RECEIVED, which is still the 12.5 unit that landed on 18 Aug at RM56; pxCost falls back to the quote only when no lot exists. <b>A quote is what salt WOULD cost and a floor is built on what the shelf DID cost</b>, so nothing here reaches a price until a lot is recorded as a buy. <b>pxQuoteRate DOES NOT MOVE EITHER, and that is a coincidence rather than a bug:</b> it takes the DEAREST tier, which was RM56 at 12.5 unit and is now RM56 at 6.25. The ladder got cheaper everywhere while its ceiling stood still. Proved rather than asserted: replacement cost, effective cost, every floor, boardHeadroom at 17 under floor and 0 under cost, and parityScan at no rows all read identical before and after.','<b>THE 25 UNIT LOT AGREED THIS MORNING IS NOW RM50 ABOVE HIS OWN QUOTE, AND ITS FIGURES WERE LEFT ALONE.</b> v320 folded 25 unit at RM1,300 against the 14 Jul ladder, approved on the phone; the re-quote prices that size at RM1,250. <b>The row keeps RM1,300, because that is what was agreed and approved, and a quote arriving after a handshake does not rewrite it.</b> What is added is a flag on the row saying so, and the clause in the v320 note that read the old ladder as a live fact is now dated to that morning. <b>NOTHING IS LOST BY RE-OPENING IT:</b> the lot is PENDING, so there is no payment to claw back and no stock to return, and the same salt at the new 50 unit tier is RM44 against the RM52 on the row. Re-agree, replace or let it stand: his call, and the desk states the gap rather than closing it.','<b>THE 150 UNIT PLAN FOLLOWS THE RULE, NOT THE OLD NUMBER.</b> SOURCING_PLAN is costed at the largest tier quoted, and that tier fell from RM47 to RM43, so the assumed rate follows it down and the stated lot goes from RM7,050 to RM6,450. <b>The second half of the old wording had to go with it:</b> RM47 was also the rate actually paid on 28 Jul, and those two facts have now parted company. RM43 has been quoted and never paid, so the plan now says a rate on offer rather than a rate achieved.']}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -2470,7 +2495,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='20 Aug 2026, 10:30 KL';
+const LAST_UPDATED='20 Aug 2026, 13:54 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */

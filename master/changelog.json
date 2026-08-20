@@ -1,5 +1,16 @@
 [
  {
+  "v": "v321",
+  "d": "20 Aug 2026",
+  "t": "SA5-BTR RE-QUOTES EVERY TIER DOWN, AND THE LOT AGREED THIS MORNING IS ALREADY RM50 ABOVE HIS OWN LADDER",
+  "n": [
+   "<b>A NEW LADDER FROM SA5-BTR, AUTHORITATIVE FROM THE 20TH, AND IT IS CHEAPER AT EVERY SIZE THIS DESK BUYS.</b> 6.25 unit at RM350, 12.5 at RM650, 25 at RM1,250, 50 at RM2,200 and 100 at RM4,300, which is RM56, RM52, RM50, RM44 and RM43 a unit. <b>A 6.25 UNIT TIER APPEARS FOR THE FIRST TIME</b>, at the RM56 the 12.5 unit step used to cost, and the 50 unit tier goes back to exactly the RM2,200 quoted on 10 Jul before it moved dearer. RM43 at 100 unit is cheaper than any rate this desk has ever been quoted or has ever paid. <b>WHERE THE DISCOUNT SITS HAS MOVED, AND THAT IS THE PART THAT CHANGES A DECISION.</b> The old ladder gave RM4 a unit at the 25 step and RM4 again at the 50. This one gives RM2 at the 25 step and RM6 at the 50, so 50 unit is where it pays and 25 has stopped paying much.",
+   "<b>NOT ONE FLOOR ON THIS DESK MOVES, AND IT LOOKS AS THOUGH IT SHOULD.</b> Replacement cost is read off the newest lot actually RECEIVED, which is still the 12.5 unit that landed on 18 Aug at RM56; pxCost falls back to the quote only when no lot exists. <b>A quote is what salt WOULD cost and a floor is built on what the shelf DID cost</b>, so nothing here reaches a price until a lot is recorded as a buy. <b>pxQuoteRate DOES NOT MOVE EITHER, and that is a coincidence rather than a bug:</b> it takes the DEAREST tier, which was RM56 at 12.5 unit and is now RM56 at 6.25. The ladder got cheaper everywhere while its ceiling stood still. Proved rather than asserted: replacement cost, effective cost, every floor, boardHeadroom at 17 under floor and 0 under cost, and parityScan at no rows all read identical before and after.",
+   "<b>THE 25 UNIT LOT AGREED THIS MORNING IS NOW RM50 ABOVE HIS OWN QUOTE, AND ITS FIGURES WERE LEFT ALONE.</b> v320 folded 25 unit at RM1,300 against the 14 Jul ladder, approved on the phone; the re-quote prices that size at RM1,250. <b>The row keeps RM1,300, because that is what was agreed and approved, and a quote arriving after a handshake does not rewrite it.</b> What is added is a flag on the row saying so, and the clause in the v320 note that read the old ladder as a live fact is now dated to that morning. <b>NOTHING IS LOST BY RE-OPENING IT:</b> the lot is PENDING, so there is no payment to claw back and no stock to return, and the same salt at the new 50 unit tier is RM44 against the RM52 on the row. Re-agree, replace or let it stand: his call, and the desk states the gap rather than closing it.",
+   "<b>THE 150 UNIT PLAN FOLLOWS THE RULE, NOT THE OLD NUMBER.</b> SOURCING_PLAN is costed at the largest tier quoted, and that tier fell from RM47 to RM43, so the assumed rate follows it down and the stated lot goes from RM7,050 to RM6,450. <b>The second half of the old wording had to go with it:</b> RM47 was also the rate actually paid on 28 Jul, and those two facts have now parted company. RM43 has been quoted and never paid, so the plan now says a rate on offer rather than a rate achieved."
+  ]
+ },
+ {
   "v": "v320",
   "d": "20 Aug 2026",
   "t": "THE 25 UNIT TIER IS AGREED AND THE BOOK MOVES BY NOTHING, FOLDED BY THE FIRST RUN WITH NO LAPTOP ON IT",
