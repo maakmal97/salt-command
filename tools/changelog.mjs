@@ -17,11 +17,13 @@
  */
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { resolve, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
 const DEFAULT_MASTER =
-  "C:/Users/maakm/Claude/Projects/Personal/Cow-Crm01_Salt Business/30_Published/salt_command.html";
+  resolve(REPO, "master", "salt_command.html");
 const MASTER = process.env.SALT_MASTER || DEFAULT_MASTER;
-const LOG = resolve(dirname(MASTER), "..", "00_Config", "changelog.json");
+const LOG = resolve(dirname(MASTER), "changelog.json");
 const CHECK = process.argv.includes("--check");
 
 const src = readFileSync(MASTER, "utf8");

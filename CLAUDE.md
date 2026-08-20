@@ -1,22 +1,37 @@
 # Salt Command, on the phone
 
 The Obsidian Salt Desk, ported to a real cloud app so the ledger and the pricing engine
-are reachable on the go and a transaction can be added from the phone. It is the same desk
-as the laptop master; this repo is a deploy surface, not a second source.
+are reachable on the go and a transaction can be added from the phone. **Since 20 Aug 2026 this
+repo also HOLDS the master**, so it is the source as well as the deploy surface.
 
 Deployed as a Cloudflare Worker with static assets. **It is PUBLIC by the owner's decision of
-11 Aug 2026, with no sign-in of any kind** (see "Access, and why it is off" below). New
-transactions push to a KV-backed queue, are drafted into a proposed ledger row in the cloud, and
-reach the source only after the row is approved on the phone.
+11 Aug 2026, with no sign-in of any kind**, though the reads that carry the book are keyed (see
+"Access, and why it is off" and "The write gate" below). New transactions push to a KV-backed
+queue, are drafted into a proposed ledger row in the cloud, and reach the source only after the
+row is approved on the phone.
 
 ## Hard rules
 
-1. **The master is elsewhere. Never hand-edit `public/desk.html`.** The one place the desk
-   is edited is the Cow-Crm01 master:
-   `C:\Users\maakm\Claude\Projects\Personal\Cow-Crm01_Salt Business\01_Dashboard\salt_command.html`.
-   `public/desk.html` is a **build output** of it (`npm run build`), committed so the data
-   lives in the repo. A hand-edit there is overwritten on the next build and lost. If a change
-   to the desk is needed, edit the master, then build.
+1. **The master is `master/salt_command.html`, in this repo. Never hand-edit
+   `public/desk.html`.** It is the one place the desk is edited, and `public/desk.html` is a
+   **build output** of it (`npm run build`), committed so the data lives in the repo. A
+   hand-edit there is overwritten on the next build and lost. If a change to the desk is
+   needed, edit the master, then build.
+
+   **IT MOVED HERE ON 20 Aug 2026, from `Cow-Crm01\30_Published\`, and the reason is the whole
+   point.** The daily commit needed the laptop, because the fold writes to the master and
+   nothing in the cloud can write a file on that machine. Every other step was already
+   cloud-reachable: the queue is in KV, the drafter runs on a Worker cron, approvals are in D1,
+   the deploy is wrangler and the repo is on GitHub. Moving the one file that was not reachable
+   puts the whole chain in the cloud and takes the laptop off the critical path. The old copy is
+   retired beside `WHERE_THE_MASTER_WENT.md` in `30_Published`, renamed rather than deleted so
+   the move is reversible and cannot be read as the master by accident.
+
+   **`master/changelog.json` moved with it**, because `tools/changelog.mjs` writes it on every
+   version bump and a cloud fold has to be able to.
+
+   **What did NOT move, and must never:** `10_Data\salt_bio.json` (the plaintext directory),
+   `salt_vault.json`, `menu_secret.txt` and the queue files. They stay in the project folder.
 
    **`public/index.html` is the opposite: it is SOURCE.** Since v291 the root is the phone app,
    hand-written and owned by this repo, and the built desk moved to `public/desk.html` (served
@@ -74,18 +89,61 @@ git status
 git push
 ```
 
-## The three surfaces, and how they stay coherent
+## The surfaces, and how they stay coherent
 
 | Surface | Path | Role |
 |---|---|---|
-| **Master** | Cow-Crm01 `...\01_Dashboard\salt_command.html` | The only editable source. No cloud or PWA code in it. |
-| **claude.ai mirror** | `...\Artifacts\salt-command\index.html` | Published from the master by Cowork. Unchanged by this repo. |
-| **Cloud deploy** | this repo's `public/index.html` | Built from the master by `tools/build.mjs`, then `wrangler deploy`. |
+| **Master** | `master/salt_command.html` | The only editable source. No cloud or PWA code in it. |
+| **Built desk** | `public/desk.html`, served at `/desk` | Built from the master by `tools/build.mjs`. Never a source. |
+| **Phone app** | `public/index.html` | Hand-written SOURCE. Reads `data.json`, computes nothing. |
+| **Payload** | `public/data.json` | The master's own `phonePayload()`, run in jsdom by `tools/payload.mjs`. |
 
-The master feeds both the mirror (via Cowork `update_artifact`) and this repo (via the build).
 The build **only adds**: a PWA head, a service worker, a per-device id, and cloud-mode copy.
 It changes no ledger figure. Every patch anchors on one unique line and the build aborts if an
 anchor moves, so a master edit that would silently break a patch fails loudly instead.
+
+**The claude.ai mirror is retired.** It was published from the master by Cowork
+(`update_artifact`) into `Artifacts\salt-command\index.html`, and it went when the master moved
+here on 20 Aug 2026, because Cowork is being retired for this project. `/desk` serves the same
+desk and is the only mirror now.
+
+## Retiring Cowork, and what runs the commit instead
+
+**The decision of 20 Aug 2026: Salt leaves Cowork entirely.** The daily fold used to be a
+Cowork scheduled task because the master lived on the laptop. With the master here, the whole
+chain is cloud-reachable and the laptop is off the critical path.
+
+| Step | Where |
+|---|---|
+| Queue an entry | KV, from the phone |
+| Draft the row | Worker, on arrival and on a 15-minute cron |
+| Approve | D1, from the phone |
+| **Fold, bump, build, deploy, push** | **a scheduled cloud agent, following `Scheduled\salt-daily-price-brief\SKILL.md`** |
+| Prove it landed | GitHub Actions, `.github/workflows/` |
+
+**The fold stays a judgement and therefore stays with an agent.** Folding an approved row is
+mechanical, but rolling `STATED_STOCK`, writing the row's NOTE, writing the `evolution` entry
+and deciding what an amendment amends are not, and the notes are most of what makes this book
+worth auditing. A deterministic job that folded rows and dropped the prose would be a worse
+ledger, so CI deliberately does not fold.
+
+**What CI does instead is prove the mechanical facts afterwards, and it holds NO secrets.**
+A workflow that can deploy is a workflow that can deploy by accident, and the deploy already
+has an owner.
+
+- `ci.yml`, on push: the book is in date order, the master's version is in the changelog, the
+  tests pass, and `public/` is what this master builds. That last check compares the build
+  **id**, never the bytes: `rev.json` carries `built` and `data.json` carries `generated`, so
+  two builds of an identical master differ a second apart. Same lesson the deploy side learned
+  on 10 Aug.
+- `ship-check.yml`, daily at 11:00 MYT: the id in `public/rev.json` against the id the live
+  Worker serves at `/rev`. This is the check that was missing when a build was committed and
+  never deployed on 10 Aug, and when the master shipped but the cloud did not on 19 Aug. Both
+  failures were silent and every exit code was zero.
+
+**Still on the laptop, and not Cowork's:** `secretary-desk` sweeps `Core\`, which has not
+moved, so it cannot go to the cloud yet. `serve_desk.py` and `salt_sync.ps1` still exist for
+local work; `npm run dev` does the preview half better.
 
 ## The queue loop (how a phone entry reaches the ledger)
 
@@ -316,6 +374,11 @@ Cow-Crm01 master (a Cowork/master session); once it lands, the sync above alread
 | `tools/drafts.mjs` | The approval step from the laptop: `--schema`, `--list`, `--draft <file>`, `--approved`, `--committed <id>`. Goes through wrangler, so no write key needed. |
 | `migrations/0002_draft.sql` | The `draft` table. The first thing in the store the cloud owns rather than mirrors. |
 | `migrations/0003_refused.sql` | The `refused` table: entries the drafter declined, kept so they can be SEEN. No decision column, by design. |
+| `master/salt_command.html` | **THE MASTER.** The only editable source. Moved here 20 Aug 2026 so the fold can run in the cloud. |
+| `master/changelog.json` | Every `evolution` entry ever written. `tools/changelog.mjs` keeps it in step with the master's one-entry array. |
+| `tools/sort-ledger.mjs` | Puts `sales` and `purchases` back in date order, undated pending rows last. Asserts its output is a permutation of its input. |
+| `tools/changelog.mjs` | Prepends the master's current `evolution[0]` to `master/changelog.json`. Never rewrites an entry that exists. |
+| `.github/workflows/` | CI with no secrets: date order, changelog, tests, build-matches-master, and a daily check that the live Worker serves what the repo committed. |
 | `tools/update.mjs` | **The whole "update" chain in one command**, ending in proof that every surface is level. See below. |
 | `tools/make_icons.py` | Regenerate the crystal icons. |
 | `test/verify.mjs` | Smoke suite: Worker contract, name-drop, access gate, drain helpers, build integrity. |

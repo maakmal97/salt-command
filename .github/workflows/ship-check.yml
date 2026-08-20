@@ -1,0 +1,58 @@
+# SHIP CHECK, added 20 Aug 2026.
+#
+# THE ONE QUESTION IT ASKS: is the thing on his phone the thing in this repo?
+#
+# This is the check the repo has been missing, and the absence has cost twice. On 10 Aug a
+# session built, a sync pass rebuilt identical bytes, saw no difference and reported the phone
+# current while a new bundle sat undeployed. On 19 Aug a run shipped the master but not the
+# cloud. Both failures were SILENT: every exit code was zero and every log read healthy.
+#
+# So it compares two recorded facts that cannot drift innocently: the build id committed in
+# public/rev.json, and the id the live Worker serves at /rev. If they differ, something was
+# committed and never deployed, or deployed and never committed, and either way somebody
+# should be told rather than finding out from a stale figure on a phone.
+#
+# It needs NO SECRETS: /rev is deliberately open, being a build id that carries no trade.
+name: Ship check
+
+on:
+  schedule:
+    # 03:00 UTC is 11:00 in Kuala Lumpur, an hour after the daily fold at 10:00 MYT.
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+
+jobs:
+  level:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: The live Worker serves what this repo committed
+        run: |
+          set -euo pipefail
+          repo_id=$(node -p "require('./public/rev.json').id")
+          repo_v=$(node -p "require('./public/rev.json').v")
+          live=$(curl -fsS --max-time 20 https://salt-command.maakmal97.workers.dev/rev)
+          live_id=$(node -p "JSON.parse(process.argv[1]).id" "$live")
+          live_v=$(node -p "JSON.parse(process.argv[1]).v" "$live")
+          echo "repo  $repo_v  $repo_id"
+          echo "live  $live_v  $live_id"
+          if [ "$repo_id" != "$live_id" ]; then
+            echo "::error::The phone is not running what this repo committed. repo=$repo_id live=$live_id. Something was committed and not deployed, or deployed and not committed."
+            exit 1
+          fi
+          echo "Level."
+
+      # A BUILD ID THAT NEVER MOVES IS ITS OWN KIND OF FAULT. The book is traded most days, so
+      # a week of an unchanged id means the fold stopped running and nobody noticed. Reported
+      # as a warning rather than a failure, because a quiet week is possible and a red cross
+      # nobody believes is worse than no cross at all.
+      - name: The fold is still running
+        run: |
+          set -euo pipefail
+          built=$(node -p "require('./public/rev.json').built")
+          age=$(( ( $(date -u +%s) - $(date -u -d "$built" +%s) ) / 86400 ))
+          echo "last build: $built ($age days ago)"
+          if [ "$age" -gt 7 ]; then
+            echo "::warning::Nothing has been built for $age days. If the book has traded in that time, the fold is not running."
+          fi

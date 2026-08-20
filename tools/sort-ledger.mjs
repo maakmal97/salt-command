@@ -23,10 +23,12 @@
  * `npm test` runs the --check logic against the master, so an out-of-order book cannot ship.
  */
 import { readFileSync, writeFileSync } from "node:fs";
-import { pathToFileURL } from "node:url";
+import { pathToFileURL, fileURLToPath } from "node:url";
+import { resolve, dirname } from "node:path";
+const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
 const DEFAULT_MASTER =
-  "C:/Users/maakm/Claude/Projects/Personal/Cow-Crm01_Salt Business/30_Published/salt_command.html";
+  resolve(REPO, "master", "salt_command.html");
 const MASTER = process.env.SALT_MASTER || DEFAULT_MASTER;
 const CHECK = process.argv.includes("--check");
 const ARRAYS = ["purchases", "sales"];

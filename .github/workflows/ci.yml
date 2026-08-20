@@ -1,0 +1,71 @@
+# CI, added 20 Aug 2026 when the master moved into this repo.
+#
+# WHAT THIS IS FOR, STATED NARROWLY. It does not fold anything and it does not deploy. It is
+# the deterministic half of the arrangement: the cloud agent does the judgement, and this
+# proves afterwards that the mechanical facts still hold. The failures it is aimed at are the
+# ones this repo has actually hit, both of them silent:
+#
+#   - a build that ships but does not match the master it claims to come from
+#   - a ledger left out of date order, or a version in the master with no changelog entry
+#
+# It runs with NO SECRETS by design. A workflow that can deploy is a workflow that can deploy
+# by accident, and the deploy already has an owner.
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - run: npm ci
+
+      - name: The book is in date order
+        run: node tools/sort-ledger.mjs --check
+
+      - name: The master's version is in the changelog
+        run: node tools/changelog.mjs --check
+
+      - name: Tests
+        run: npm test
+
+      # THE COMMITTED BUILD MATCHES THE MASTER, JUDGED BY THE ID AND NOT BY THE BYTES.
+      # public/desk.html, public/data.json and public/rev.json are committed on purpose so the
+      # data lives in the repo, and that is only worth anything if they correspond to the
+      # master beside them.
+      #
+      # BUT A PLAIN `git diff -- public/` IS THE WRONG TEST AND FAILS EVERY TIME. rev.json
+      # carries `built` and data.json carries `generated`, both wall-clock stamps, so two
+      # builds of an identical master differ in bytes a second apart. The repo already learned
+      # this on the deploy side on 10 Aug: "a deploy is decided by rev.json.id against
+      # .deployed.json.id, NEVER by hashing the build output before and after". Same fault,
+      # same fix. The id hashes the master, the app, the service worker and every src/*.js,
+      # which is the question actually being asked.
+      - name: The committed build matches the master
+        run: |
+          set -euo pipefail
+          before=$(node -p "require('./public/rev.json').id")
+          npm run build
+          after=$(node -p "require('./public/rev.json').id")
+          if [ "$before" != "$after" ]; then
+            echo "::error::public/ is not what this master builds (committed $before, rebuilt $after). Run 'npm run build' and commit the result."
+            exit 1
+          fi
+          # Everything except the two timestamps must be byte-identical.
+          if ! git diff --quiet -- public/desk.html public/sw.js; then
+            echo "::error::the built desk differs from the committed one. Run 'npm run build' and commit."
+            git --no-pager diff --stat -- public/desk.html public/sw.js
+            exit 1
+          fi
+          echo "public/ matches the master at $after."

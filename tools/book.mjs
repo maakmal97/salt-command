@@ -7,6 +7,9 @@
  */
 import { readFileSync } from "node:fs";
 import { openMaster } from "./payload.mjs";
+import { resolve, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
 /* THE COMMITTED BOOK IS `BASE_*`, NOT `sales`. The desk keeps two copies of the moving
  * parts: `BASE_SALES` and friends are deep copies taken at load, and `sales` is that copy
@@ -157,7 +160,7 @@ export function pricingSnapshot(w) {
 
 /* One default, shared with payload.mjs by matching it, and overridable the same way. */
 export const MASTER = process.env.SALT_MASTER ||
-  "C:/Users/maakm/Claude/Projects/Personal/Cow-Crm01_Salt Business/30_Published/salt_command.html";
+  resolve(REPO, "master", "salt_command.html");
 
 /* Open the desk and hand back the book as the engine sees it. `close()` is the caller's. */
 export async function readBook(masterPath = MASTER) {

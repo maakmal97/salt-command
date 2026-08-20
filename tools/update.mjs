@@ -37,7 +37,7 @@ import { fileURLToPath } from "node:url";
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const DEFAULT_MASTER =
-  "C:/Users/maakm/Claude/Projects/Personal/Cow-Crm01_Salt Business/30_Published/salt_command.html";
+  resolve(REPO, "master", "salt_command.html");
 const MASTER = process.env.SALT_MASTER || DEFAULT_MASTER;
 const DATA = resolve(dirname(MASTER), "..", "10_Data");
 const SITE = (process.env.SALT_URL || "https://salt-command.maakmal97.workers.dev").replace(/\/+$/, "");

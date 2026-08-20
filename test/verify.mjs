@@ -1018,7 +1018,7 @@ section("Drafter — wiring");
 section("Ledger — the date is superior to the position");
 {
   const MASTER = process.env.SALT_MASTER ||
-    "C:/Users/maakm/Claude/Projects/Personal/Cow-Crm01_Salt Business/30_Published/salt_command.html";
+    join(REPO, "master", "salt_command.html");
   if (!existsSync(MASTER)) {
     ok(true, "the master is not on this machine, so the order check is skipped");
   } else {

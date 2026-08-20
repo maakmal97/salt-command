@@ -41,7 +41,7 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO = resolve(HERE, "..");
 const OUT_DIR = resolve(REPO, "ledger");
 const DEFAULT_MASTER =
-  "C:/Users/maakm/Claude/Projects/Personal/Cow-Crm01_Salt Business/30_Published/salt_command.html";
+  resolve(REPO, "master", "salt_command.html");
 const MASTER = process.env.SALT_MASTER || DEFAULT_MASTER;
 const CHECK = process.argv.includes("--check");
 
