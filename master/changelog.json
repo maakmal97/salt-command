@@ -1,5 +1,17 @@
 [
  {
+  "v": "v328",
+  "d": "20 Aug 2026",
+  "t": "THE PHONE WAS QUOTING THE RETIRED TIER BOARD, AND UNDER THE DESK AT EVERY SIZE THAT MATTERED",
+  "n": [
+   "<b>THE PHONE WAS STILL QUOTING THE RETIRED TIER BOARD, AND IT WAS QUOTING IT UNDER THE DESK.</b> phonePayload built its board out of PRICE_TIERS, which cappedBoard() solves with its own anchors, its own grid and its own interpolation. v326 made the desk quote one derived ladder and v327 gave that ladder the supplier&rsquo;s taper; neither touched that line. So for two commits the desk and the phone were two engines again, which is the exact fault this payload exists to prevent, and it was introduced by the commit that removed the first engine rather than by anything the phone does.",
+   "<b>THE GAP, MEASURED, AND IT RAN ONE WAY.</b> Salt disagreed at eight of ten sizes and the phone was always the cheaper: RM140 against RM150 at 1.5 unit, RM410 against RM430 at 5, and <b>RM900 against RM960 at 12.5</b>. Oil disagreed at every size and by more: RM440 against RM750 at 50 unit, where the tier price also sat RM158 BELOW oil&rsquo;s own floor, so the phone was showing an ask it would have flagged as under floor in the same panel.",
+   "<b>ONE LADDER MEANS ONE ROW.</b> The board the phone carries is now priceLadder() per size, per product, priced with that product&rsquo;s own book selected. It stays an ARRAY because that is the shape the app maps over, and because a future second row should have to be a real second thing rather than a tier that is no longer one. The app reads row zero rather than hunting for the tier coded T2 and falling back: the fallback is what kept the panel alive and wrong through two commits, and a fallback that quietly carries a panel hides a fault instead of showing it.",
+   "<b>AND THE SAME CHECK CAUGHT A SECOND FAULT, ON THE OIL BOARD, THAT NOBODY HAD LOOKED FOR.</b> The desk asserts that the rate per unit may never RISE with size, and rounding the ask UP to the ten broke it: at about RM15 a unit the grid is a twentieth of an order, so 20 unit landed on RM300 at RM15.00 while 25 unit rounded RM375 up to RM380 at RM15.20, and a customer taking a quarter more oil paid more for every unit of it. Salt never showed it because its rates are seven times larger and the same step is a much smaller share, and the v326 and v327 checks only ever walked salt. ladderWalk() now walks the board forward and, where rounding up would lift the rate above the size below, steps the ask down one ten and no further, and only while it still clears the floor. Oil moves at six sizes, RM750 to RM720 at 50 unit; SALT DOES NOT MOVE AT ALL. The test added with this commit walks both books, which is the part that stops it coming back.",
+   "<b>AND A CLAIM IN v327 IS CORRECTED RATHER THAN LEFT TO AGE.</b> That entry said the collected and delivered floors are now the same number because cogs carries no delivery. True above 1 unit and not below it: floorTotal still lifts the floor to what SERVING the lot costs where that bites, so at 0.5 and 1 unit the delivered floor is RM40.99 and RM65.32 against a collected RM30.59 and RM61.18. The delivery saving survives at exactly the sizes where a delivery is the largest share of the order."
+  ]
+ },
+ {
   "v": "v327",
   "d": "20 Aug 2026",
   "t": "THE VOLUME DISCOUNT GIVEN IS NOW PROPORTIONATE TO THE VOLUME DISCOUNT RECEIVED",
