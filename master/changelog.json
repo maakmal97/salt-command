@@ -1,5 +1,15 @@
 [
  {
+  "v": "v320",
+  "d": "20 Aug 2026",
+  "t": "THE 25 UNIT TIER IS AGREED AND THE BOOK MOVES BY NOTHING, FOLDED BY THE FIRST RUN WITH NO LAPTOP ON IT",
+  "n": [
+   "<b>25 UNIT AGREED WITH SA5-BTR AT RM52, AND NOT ONE FIGURE ON THE DESK MOVES.</b> RM1,300 for 25 unit, approved on the phone and folded here as a PENDING purchase with no date, because nothing has been paid and nothing has arrived. <b>PENDING COUNTS NOWHERE AND THAT IS THE POINT:</b> poCash and poRecvKg both return nought for it, so it raises no payable, moves no cash, adds no stock and stays out of the weighted average. Stock, cost, margin, receivables and every floor read exactly as they did at v319. <b>IT IS THE QUOTED 25 UNIT TIER, TAKEN FOR THE FIRST TIME.</b> RM1,300 is the step standing on the 14 Jul ladder to the ringgit, RM100 cheaper than the same salt bought as two 12.5 unit lots at the RM56 both August lots carried, and dearer per unit than the 50 and 100 unit tiers beneath it.",
+   "<b>NOTHING ROLLED, AND A DAY ON WHICH NOTHING MOVED SHOULD LOOK LIKE ONE.</b> STATED_STOCK stays at the ZERO counted by hand on the 20th, COUNT_ON stays at that date because a fold never moves it, and STOCK_COST holds at 56 on the 18 Aug lot. <b>An agreed lot is not a receipt</b>, so replacement cost is still read off the newest lot actually RECEIVED; when this one lands it takes that job over at RM52 and every floor on the desk falls with it, which is a change to watch for rather than one to write early. The shelf it is coming to is empty and still owes 3 unit to CE4-CHE, paid for on the 18th with nothing behind the obligation.",
+   "<b>THE FIRST FOLD RUN WITH NO LAPTOP ANYWHERE ON THE PATH.</b> The row was drafted by the Worker on arrival, approved on the phone, and folded here by the scheduled cloud agent reading master/_to_fold.json. <b>The agent holds no credential, by design:</b> it cannot reach D1, the queue or Cloudflare, so GitHub Actions stages the approved rows in front of it and deploys, verifies and marks them committed behind it. What stays with a person is the half that is a judgement, which is this prose and the note on the row."
+  ]
+ },
+ {
   "v": "v319",
   "d": "20 Aug 2026",
   "t": "THE PHONE STOPS BEING A NOTEPAD: EVERY ENTRY THAT BELONGS ON IT, THE LEDGER TO READ, AND THE COUNT LEADING THE PAGE",
