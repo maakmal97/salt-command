@@ -1,5 +1,17 @@
 [
  {
+  "v": "v324",
+  "d": "20 Aug 2026",
+  "t": "A RATE IS NOW CHECKED WHERE EVERY ENTRY PASSES, AND THE PHONE CAN RESTATE OR CANCEL AN ORDER",
+  "n": [
+   "<b>THE CHECK MOVED TO THE ONE PLACE EVERY ENTRY PASSES: THE MOMENT IT IS TYPED.</b> Two rate faults reached this book on the same day and only one was caught. The RM115 oil unit was stopped by the approval screen, which is what that screen is for. <b>The Modification that restated an order to 5 unit for RM50 was not</b>, because a Modification does not go through the gate: no drafter put a rate beside it, no approval screen showed RM10 a unit next to RM56 of cost, and the only thing between it and the ledger was a person reading it. It got as far as the fold. So the check now runs on the phone, before anything is queued, whatever road the entry takes afterwards.",
+   "<b>IT SAYS WHAT IT SEES AND DECIDES NOTHING.</b> It divides a total just typed by a quantity just typed, and compares that against rates already in data.json which the desk computed. It sets no price, writes nothing into the entry, and blocks nothing: an unusual rate is often a real decision and this book has deliberately sold below cost before. <b>It is also SILENT almost always</b>, which is the harder half. A check that speaks on every entry is a check that gets tapped through, so it says nothing unless the rate is outside everything the book has ever seen for that product, or a quarter off what that party actually pays.",
+   "<b>PROVED AGAINST BOTH FAULTS AND AGAINST AN ORDINARY SALE.</b> Half a unit to CA4-DAM for RM50, his standing RM100, passes in silence. The same order typed as 5 unit for RM50 reads \"RM10/unit. Salt on this book has never gone below RM46.99. CA4-DAM averages RM103.33/unit; this is 90.32% below that.\" A unit of oil at RM115 reads \"against a high of RM13 anywhere on this book\". <b>Both of today&rsquo;s faults, caught before they leave the phone.</b>",
+   "<b>THE PHONE CAN NOW RESTATE AND CANCEL AN ORDER, WHICH COMPLETES THE AMENDMENT SET.</b> The CA4-DAM restatement had to be made at the desk because the app offered only the three fulfilment kinds. Restate seeds its fields with the order as it stands, so a change is a change from something visible rather than from a blank, and Cancel takes no figures at all. Neither touches the cash and unit boxes, which are hidden rather than merely ignored.",
+   "<b>AND THE FORM TELLS THE TRUTH ABOUT WHICH ROAD EACH ONE TAKES.</b> A Fulfilment and a Cancellation are drafted and come back for a tap. A Modification is refused by the drafter BY DESIGN, because what changed is a judgement rather than which row, and is folded by a person. The road note changes with the kind and says so in terms, including the part that matters: <b>nothing will put a rate beside a restatement before it is folded, so read the figures before sending it.</b> Saying \"goes through the gate\" over a Modification would have been the more comfortable copy and the more dangerous one."
+  ]
+ },
+ {
   "v": "v323",
   "d": "20 Aug 2026",
   "t": "THREE CORRECTIONS ON HIS WORD, AND THE IMPOSSIBLE FIGURE WAS THE FOLD RATHER THAN THE SHELF",

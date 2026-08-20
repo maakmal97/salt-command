@@ -1195,6 +1195,32 @@ section("App — an amendment says one thing, not two");
     "and the irrelevant field is greyed, so the form shows what the kind means");
 }
 
+/* ---- 18. The entry-time rate check, and the amendment kinds (v324) --------------- */
+section("App — a rate is checked where every entry passes");
+{
+  const app = readFileSync(join(REPO, "public", "index.html"), "utf8");
+  /* WHY IT SITS AT ENTRY TIME. The RM115 oil unit was caught by the approval screen. The
+     Modification that restated an order to 5 unit for RM50, RM10 a unit against salt that
+     has never gone below RM46, was NOT: a Modification does not go through the gate, so
+     nothing put a rate beside it. The check moved to the one place every entry passes. */
+  ok(/function rateVerdict/.test(app), "the app checks a typed rate before anything is queued");
+  ok(/function seenRates/.test(app), "against the rates the desk has actually recorded");
+  ok(/rateVerdict\(/.test(app) && /MODE==='amend'&&AKIND==='restate'/.test(app),
+    "and it runs on a RESTATE too, which is the road the gate does not cover");
+  /* it must stay a reader: no price of its own, and nothing it says reaches the entry */
+  ok(!/rateVerdict[\s\S]{0,400}payload:/.test(app),
+    "the verdict never reaches the payload; it is shown, not recorded");
+
+  /* the amendment kinds, and the two roads they take */
+  for (const k of ["done", "paid", "deliv", "restate", "cancel"]) {
+    ok(app.includes(`data-k="${k}"`), `the amend form offers ${k}`);
+  }
+  ok(/kind:'Cancellation'/.test(app) && /kind:'Modification'/.test(app),
+    "a cancel sends Cancellation and a restate sends Modification");
+  ok(/A restatement changes WHAT the/.test(app),
+    "and the form says a restatement is left for a person rather than pretending it is gated");
+}
+
 /* ---- done ----------------------------------------------------------------------- */
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

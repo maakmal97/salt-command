@@ -489,6 +489,8 @@ option:checked{background-color:var(--menu-2);font-weight:600}
               <button type="button" data-k="done" aria-pressed="true">Paid and out</button>
               <button type="button" data-k="paid" aria-pressed="false">Paid</button>
               <button type="button" data-k="deliv" aria-pressed="false">Handed over</button>
+              <button type="button" data-k="restate" aria-pressed="false">Restate</button>
+              <button type="button" data-k="cancel" aria-pressed="false">Cancel</button>
             </div>
           </div>
           <div class="row">
@@ -496,6 +498,12 @@ option:checked{background-color:var(--menu-2);font-weight:600}
               <input id="a-cash" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0"></div>
             <div class="field"><label for="a-kg">Moved (unit)</label>
               <input id="a-kg" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0"></div>
+          </div>
+          <div class="row" id="w-restate" hidden>
+            <div class="field"><label for="a-qty">New quantity (unit)</label>
+              <input id="a-qty" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0"></div>
+            <div class="field"><label for="a-total">New total (RM)</label>
+              <input id="a-total" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0"></div>
           </div>
           <div class="field"><label for="a-date">Date it happened</label><input id="a-date" type="date"></div>
           <div class="field"><label for="a-note">Note (optional)</label>
@@ -551,6 +559,7 @@ option:checked{background-color:var(--menu-2);font-weight:600}
           <textarea id="p-note" rows="2" placeholder="The name and the place go in the directory, never here"></textarea></div>
       </div>
 
+      <div id="rateChk"></div>
       <p class="lbl" style="margin-top:16px">How it will be queued</p>
       <div class="prev" id="prev">Choose a counterparty.</div>
       <button class="btn primary" id="rec">Record</button>
@@ -925,6 +934,16 @@ function fillAmend(){
      boxes since v291; the amend form was written without it. */
   $('a-cash').disabled=(AKIND==='deliv');
   $('a-kg').disabled=(AKIND==='paid');
+  /* Cancel and Restate move nothing, so the cash and unit boxes are not theirs to fill.
+     Restate gets its own pair, seeded with the order as it stands so a change is a change
+     from something visible rather than from a blank. */
+  var moves=(AKIND==='done'||AKIND==='paid'||AKIND==='deliv');
+  $('a-cash').closest('.row').hidden=!moves;
+  $('w-restate').hidden=(AKIND!=='restate');
+  if(AKIND==='restate'){
+    if(!$('a-qty').value)$('a-qty').value=n2(o.q);
+    if(!$('a-total').value)$('a-total').value=n2(o.t);
+  }
   if(!$('a-date').value)$('a-date').value=today();
 }
 /* THE COUNT RECONCILER. The one subtraction this app performs, and it is not a price:
@@ -959,6 +978,27 @@ var ROADS={
 };
 function drawRoad(){
   var r=ROADS[MODE]||ROADS.trade;
+  /* AN AMENDMENT TAKES TWO DIFFERENT ROADS AND THE FORM MUST NOT PRETEND OTHERWISE.
+     Fulfilment and Cancellation are drafted and come back for a tap; a Modification is
+     refused by the drafter by design, because what changed is a judgement rather than
+     which row, and it is folded by a person. Saying "left for a person" over a Fulfilment
+     would be wrong, and saying "goes through the gate" over a Modification would be worse. */
+  if(MODE==='amend'){
+    if(AKIND==='restate'){
+      $('road').className='road person';
+      $('road').innerHTML='<b>This one is left for a person.</b> A restatement changes WHAT the '
+        +'order is, which is a judgement rather than a question of which row, so the drafter '
+        +'refuses it by design. It is queued, shown under Approve as already in hand, and folded '
+        +'at the laptop. <b>Nothing will put a rate beside it before then</b>, so read the figures '
+        +'above before you send it.';
+      return;
+    }
+    $('road').className='road gate';
+    $('road').innerHTML='<b>This goes through the gate.</b> The drafter names the order it targets '
+      +'and what it leaves outstanding, and it comes back to the Approve tab for a tap. Nothing '
+      +'reaches the ledger until you decide.';
+    return;
+  }
   $('road').className='road '+r[0];
   $('road').innerHTML=r[1];
 }
@@ -969,7 +1009,7 @@ function drawModes(){
   ['trade','amend','stock','party'].forEach(function(m){ $('m-'+m).hidden=(m!==MODE); });
   drawRoad();
   $('rec').textContent=MODE==='trade'?'Record'
-    :MODE==='amend'?'Record the amendment'
+    :MODE==='amend'?(AKIND==='cancel'?'Cancel the order':AKIND==='restate'?'Restate the order':'Record the fulfilment')
     :MODE==='stock'?(SKIND==='count'?'Record the count':SKIND==='loss'?'Record the loss':'Record the lost sale')
     :'Register the code';
 }
@@ -995,6 +1035,78 @@ function drawPKind(){
     b.setAttribute('aria-pressed',String(b.getAttribute('data-k')===PKIND));
   });
   $('w-pparent').hidden=(PKIND!=='bucket');
+}
+
+/* ---- THE RATE CHECK, AT ENTRY TIME (v324) ---------------------------------
+   WHY IT EXISTS, AND BOTH REASONS HAPPENED ON THE SAME DAY. An oil unit was queued at
+   RM115 against a book whose oil had never left RM6 to RM13, and a Modification restated an
+   order to 5 unit for RM50, which is RM10 a unit against salt that has never gone below
+   RM46. The first was caught by the approval screen. The SECOND WAS NOT, because a
+   Modification does not go through the gate: nothing put a rate beside it and it reached
+   the fold with only a person reading it standing in the way.
+
+   So the check moves to where every entry passes, whatever road it takes afterwards: the
+   moment the figures are typed, on the phone, before anything is queued.
+
+   IT IS NOT A SECOND PRICING ENGINE AND DOES NOT DECIDE ANYTHING. It divides a total the
+   user just typed by a quantity the user just typed, and compares that to rates already
+   sitting in data.json, which the desk computed. It sets no price, writes nothing to the
+   entry, and blocks nothing: an unusual rate is often a real decision, and this desk has
+   deliberately booked below cost before. It says what it sees and lets him decide. */
+function seenRates(prodId){
+  var out=[];
+  ((D&&D.ledger)||[]).forEach(function(r){
+    if(r.dir!=='S'||r.canc||!r.d)return;                 /* sells that actually happened */
+    if((r.pr||'salt')!==prodId)return;
+    if(!(r.q>0)||!(r.t>0))return;
+    out.push(r.t/r.q);
+  });
+  return out.sort(function(a,b){return a-b;});
+}
+function partyRate(id){
+  var c=((D&&D.customers)||[]).find(function(x){return x.id===id;});
+  return (c&&c.rate!=null)?c.rate:null;
+}
+/* Returns null when there is nothing worth saying, which is most of the time. A check that
+   speaks on every entry is a check that gets tapped through. */
+function rateVerdict(prodId,party,qty,total){
+  if(!(qty>0)||!(total>0))return null;
+  var rate=total/qty, seen=seenRates(prodId), bits=[], sev='';
+  if(seen.length>=3){
+    var lo=seen[0], hi=seen[seen.length-1];
+    if(rate>hi*1.5){ sev='bad';
+      bits.push('That is '+rm(rate)+'/unit against a high of '+rm(hi)+' anywhere on this book.'); }
+    else if(rate<lo*0.75){ sev='bad';
+      var nm=(((D&&D.products)||[]).find(function(x){return x.id===prodId;})||{}).name||prodId;
+      bits.push('That is '+rm(rate)+'/unit. '+esc(nm)+' on this book has never gone below '+rm(lo)+'.'); }
+  }
+  var pr=partyRate(party);
+  if(pr&&pr>0){
+    var off=(rate-pr)/pr;
+    if(Math.abs(off)>=0.25){
+      if(!sev)sev='warn';
+      bits.push(esc(party)+' averages '+rm(pr)+'/unit across everything taken; this is '+rm(rate)
+        +', '+n2(Math.abs(off*100))+'% '+(off>0?'above':'below')+' that.');
+    }
+  }
+  if(!bits.length)return null;
+  return {sev:sev||'warn', rate:rate, text:bits.join(' ')};
+}
+function drawRateCheck(){
+  var box=$('rateChk'); if(!box)return;
+  var v=null;
+  try{
+    if(MODE==='trade'){
+      var f=tradeForm();
+      if(dir==='SELL')v=rateVerdict(prod,f.party,f.qty,f.total);
+    } else if(MODE==='amend'&&AKIND==='restate'){
+      var o=openRow();
+      if(o&&o.dir==='S')v=rateVerdict(o.pr||'salt',o.p,
+        Number($('a-qty').value||0),Number($('a-total').value||0));
+    }
+  }catch(e){ v=null; }
+  box.innerHTML=v?('<div class="msg '+(v.sev==='bad'?'bad':'warn')+'" style="margin-top:14px">'
+    +'<b>Worth a second look.</b> '+v.text+'</div>'):'';
 }
 
 /* ---- the entries --------------------------------------------------------- */
@@ -1045,17 +1157,49 @@ function buildEntry(){
        sitting in the other box, so the sentence a person reads and the figures the ledger gets
        are the same statement. The fields are disabled too, but the enforcement is here: a
        disabled field is a courtesy and this is the guarantee. */
+    var d=$('a-date').value||today(), note=$('a-note').value.trim();
+    var dirW=o.dir==='B'?'BUY':'SELL', what=(o.dir==='B'?'lot ':'order ');
+
+    /* CANCEL AND RESTATE MOVE NOTHING, so they never touch the cash and unit boxes. Both
+       reach the ledger by a different road from a Fulfilment: Cancellation is drafted and
+       approved like one, Modification is refused by the drafter by design and folded by a
+       person, because what changed is a judgement rather than which row. The form says so
+       rather than letting him find out from the refused panel. */
+    if(AKIND==='cancel'){
+      return {at:at,type:'AMEND',party:o.p,qty:0,total:0,status:'cancelled',
+        raw:'Cancellation on '+o.p+' - '+what+n2(o.q)+' of RM '+n2(o.t)
+          +(o.d?' agreed '+o.d:' planned, undated')+' withdrawn on '+d+(note?' ('+note+')':''),
+        payload:{mode:'amend',direction:dirW,party:o.p,orderKey:o.key,date:d,
+          assoc:null,downstream:null,kind:'Cancellation',orderCode:null,linkTo:null,sameDay:false,
+          note:note||null,qty:0,total:0,cash:0,kg:0}};
+    }
+    if(AKIND==='restate'){
+      var nq=Number($('a-qty').value||0), nt=Number($('a-total').value||0);
+      if(!(nq>0))return {why:'A restated order needs its new quantity.'};
+      if(!(nt>0))return {why:'A restated order needs its new total.'};
+      if(Math.abs(nq-o.q)<0.005&&Math.abs(nt-o.t)<0.005)
+        return {why:'That is the order as it already stands, so there is nothing to restate.'};
+      return {at:at,type:'AMEND',party:o.p,qty:nq,total:nt,status:'restated',
+        raw:'Modification on '+o.p+' - '+what+'restated to '+n2(nq)+' unit for RM '+n2(nt)
+          +' on '+d+' (was '+n2(o.q)+' unit for RM '+n2(o.t)+')'+(note?' ('+note+')':''),
+        payload:{mode:'amend',direction:dirW,party:o.p,orderKey:o.key,date:d,
+          assoc:null,downstream:null,kind:'Modification',orderCode:null,linkTo:null,sameDay:false,
+          note:note||null,newQty:nq,newTotal:nt,wasQty:o.q,wasTotal:o.t,
+          qty:null,total:null,cash:null,kg:null}};
+    }
+
+    /* THE KIND DECIDES, NOT THE FIELDS, AND THIS COST A WRONG LEDGER ROW ON 20 Aug.
+       See the note above the disabled-field wiring in fillAmend. */
     var cash=(AKIND==='deliv')?0:Number($('a-cash').value||0);
     var kg=(AKIND==='paid')?0:Number($('a-kg').value||0);
-    if(cash<=0.001&&kg<=0.001)return {why:'An amendment has to move cash or stock.'};
-    var d=$('a-date').value||today(), note=$('a-note').value.trim();
+    if(cash<=0.001&&kg<=0.001)return {why:'A fulfilment has to move cash or stock.'};
     var lab=AKIND==='paid'?'paid in full':AKIND==='deliv'?'delivered in full':'paid and delivered in full';
-    var rawA='Fulfilment on '+o.p+' - '+(o.dir==='B'?'lot ':'order ')+n2(o.q)+' of RM '+n2(o.t)
+    var rawA='Fulfilment on '+o.p+' - '+what+n2(o.q)+' of RM '+n2(o.t)
       +(o.d?' agreed '+o.d:' planned, undated')+' marked '+lab+' on '+d
       +(note?' ('+note+')':'');
     return {at:at,type:'AMEND',party:o.p,qty:kg,total:cash,
       status:AKIND==='deliv'?'unpaid':'paid',raw:rawA,
-      payload:{mode:'amend',direction:o.dir==='B'?'BUY':'SELL',party:o.p,orderKey:o.key,date:d,
+      payload:{mode:'amend',direction:dirW,party:o.p,orderKey:o.key,date:d,
         assoc:null,downstream:null,kind:'Fulfilment',orderCode:null,linkTo:null,sameDay:false,
         note:note||null,qty:kg,total:cash,cash:cash,kg:kg}};
   }
@@ -1110,6 +1254,7 @@ function preview(){
     if($('f-deliv').checked)$('f-kg').value=t.qty?n2(t.qty):'';
   }
   if(MODE==='stock')drawRecon();
+  drawRateCheck();
   var e=buildEntry();
   $('prev').textContent=e.why?e.why:e.raw;
 }
@@ -1206,7 +1351,7 @@ function loadData(){
    nothing is half-typed, because reloading over an unsaved entry would throw it
    away. The idle test covers EVERY mode's fields, not just the trade form: a
    half-typed count is exactly as easy to lose as a half-typed sale. */
-var TYPED=['f-party','f-qty','f-total','f-note','a-cash','a-kg','a-note',
+var TYPED=['f-party','f-qty','f-total','f-note','a-cash','a-kg','a-qty','a-total','a-note',
   's-qty','s-rm','s-why','p-code','p-note'];
 function idle(){
   if(OPENSEL!==null)return false;
@@ -1573,7 +1718,7 @@ Array.prototype.forEach.call($('skinds').querySelectorAll('button'),function(b){
     SKIND=b.getAttribute('data-s'); drawSKind(); preview(); });
 });
 Array.prototype.forEach.call($('akinds').querySelectorAll('button'),function(b){
-  b.addEventListener('click',function(){ AKIND=b.getAttribute('data-k'); drawAKind(); preview(); });
+  b.addEventListener('click',function(){ AKIND=b.getAttribute('data-k'); drawAKind(); drawRoad(); drawModes(); preview(); });
 });
 Array.prototype.forEach.call($('pkinds').querySelectorAll('button'),function(b){
   b.addEventListener('click',function(){ PKIND=b.getAttribute('data-k'); drawPKind(); preview(); });
