@@ -1,5 +1,17 @@
 [
  {
+  "v": "v331",
+  "d": "21 Aug 2026",
+  "t": "A SALE THAT BEAT THE BOARD, AND A COUNT THAT CONFIRMED THE SHELF RATHER THAN THE WALK",
+  "n": [
+   "<b>TWO ENTRIES FOLDED: A SALE THAT BEAT THE BOARD, AND A COUNT THAT CHANGED NOTHING.</b> CS6-BS took 1 unit at RM120, paid and delivered on the 21st, and the oil shelf was counted by hand at ZERO for the second time. Both were approved on the phone under the gate.",
+   "<b>RM120 IS THE FIRST ROW IN WEEKS TO CLEAR THE ASK RATHER THAN THE FLOOR.</b> The ladder asks RM100 at 1 unit and the floor stands at RM65.32, so this is RM20 above the ask and RM54.68 above the floor. It matches his own high of 15 Jul rather than setting a new one, and it is 10.6% above the RM108 he averages across four salt orders. The drafter flagged it as unusually HIGH, which is a more useful thing for a flag to say than a warning about a cut: a customer has agreed to more than his habit and the next quote should know it.",
+   "<b>THE COST WAS DRAFTED AT RM56 AGAIN AND IS FOLDED AT RM44, WHICH MAKES IT A PATTERN RATHER THAN A SLIP.</b> The whole shelf is the 20 Aug lot at RM44 and no RM56 salt remains on it, so the unit returns RM76 at 63.3% rather than the RM64 at 53.3% the approval screen implied. That is the second draft in two days carrying a shelf rate that had already moved. A draft costs against STOCK_COST as it stood when it was written; the fold has to re-read it, and from here that is a standing step rather than a correction.",
+   "<b>THE OIL COUNT MOVES NO FIGURE, AND ITS REASONING NEEDED CORRECTING RATHER THAN COPYING.</b> Stated was already 0 and COUNT_ON.oil was already 20 Aug, so a second zero moves neither. The approval screen said nothing is unaccounted for, which is true against the STATED figure and false against the LEDGER: oil walks 5 unit of opening plus 100 bought less 71 sold, so <b>34 unit are still missing from a shelf now looked at twice and found empty</b>. Counting again confirms the shelf, not the walk. The gap is the finding and it is unchanged.",
+   "<b>THE SHELF ROLLS 37.5 TO 36.5</b> on the one unit that left. A roll and not a count, so salt&rsquo;s COUNT_ON stays at the 20th. 13.88 unit are owed out, leaving 22.62 free to sell. QUEUE_COMMITTED moves to 2026-08-20T18:12:16.478Z, the newer of the two ids folded."
+  ]
+ },
+ {
   "v": "v330",
   "d": "20 Aug 2026",
   "t": "THE BOARD FITS THE PHONE, AND THE FLOOR IT PRINTS IS THE ONE THE PHONE PRINTS",
