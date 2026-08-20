@@ -59,7 +59,7 @@ document.addEventListener('visibilitychange',function(){
    focused, no dialog open. Otherwise it offers a chip and waits to be tapped.
    The same tick retries a held entry, which is what gets a phone write to the cloud
    without waiting for the next open. */
-var SALT_BUILD_ID="ca361ba9c7f17aaa";
+var SALT_BUILD_ID="702c5172f376b260";
 var SALT_REV_MS=10000;
 (function(){
   var chip=null,timer=null;
@@ -1096,8 +1096,33 @@ details.obshush:hover{opacity:.85;}
      laptop at 60cm and not on a phone at 30cm held in one hand at a market. */
   .kpi .l,.kpi .n,.apdow,.apday .apdn,.apchip,.kick{font-size:11px !important;}
   th{font-size:11px !important;}
-  /* the last of the 9s: rail chrome and the action-row keys */
-  .plbl,.bandnm,.grouplbl,.actk,.navct{font-size:11px !important;}
+  /* THE LAST OF THE 9s AND 10s. Enumerated rather than blanket, because CSS has no
+     minimum-font-size and raising everything would inflate a design that is mostly fine.
+     These are the classes measured under 10.5px across Today, Overview, Financials,
+     Pricing, Customers, Ledger, Sourcing and Network at 375px. */
+  .plbl,.bandnm,.grouplbl,.actk,.navct,.sbadge,.iref,.notesbar,.sub,.sub2,.rchip,
+  .vbtn,.tag,.rtag,.finpct,.label,.apm,.lqlab{font-size:11px !important;}
+
+  /* CUSTOMERS OVERFLOWED THE PAGE BY 77px, and it was the one tab that did. The approach
+     calendar's side panel is 158px in a three-column grid; the grid collapses to one column
+     here, but the panel kept sizing to its content and came out at 441px on a 375px screen.
+     A grid or flex child defaults to min-width:auto, which refuses to shrink below its
+     content, and that is what carried the page sideways. */
+  .apwrap,.apside,.apcal{min-width:0;}
+  .apside{overflow-wrap:break-word;}
+  /* THE WEEK GRID SCROLLS RATHER THAN SQUEEZES. Seven columns on a 375px screen leave about
+     43px a day once the wrap and card padding are off, and the day chips do not read at that
+     width. A week view is only useful WHOLE, so it keeps its size and scrolls in its own box,
+     which is the same rule the tables here already follow. It was the only tab still carrying
+     the page sideways: 63px of it. */
+  .apcal{overflow-x:auto;}
+  .apgrid{min-width:322px;}
+
+  /* A SECONDARY LINE INSIDE A TABLE CELL, which is where the rest of the 10px lived: the
+     pricing ladder puts "RM 92.36 - 25% on cost" under each rung in an unclassed div, and
+     there were 96 of them on that tab alone. Reached through the cell rather than by class,
+     because they have none. */
+  td > div,.qfield > label,.obsk,.obsc,.obsevh{font-size:11px !important;}
 
   /* A FOUR-COLUMN ACTION ROW CANNOT BE FOUR COLUMNS HERE. It was resolving to
      297px and 7px, which is a column crushed to nothing rather than a layout. */

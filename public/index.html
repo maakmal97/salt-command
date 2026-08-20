@@ -229,9 +229,16 @@ h2{font-size:17px;font-weight:600;letter-spacing:-.2px;margin:0 0 12px}
 .field{margin:0 0 12px}
 .field label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:1px;
   font-weight:700;color:var(--ink-3);margin:0 0 5px}
-input,select,textarea{width:100%;background-color:var(--well);border:1px solid var(--brd);
-  color:var(--ink);border-radius:var(--r-sm);padding:11px 13px;font:inherit;font-size:15px;
-  min-height:var(--tap)}
+/* 16px EXACTLY, AND IT IS NOT A TYPE CHOICE. Below 16px iOS Safari zooms the page when a
+   field takes focus, and it does NOT zoom back: tap the date and the whole app is left
+   overshooting the screen until you pinch it back by hand. The desk's own CSS carries the
+   same note against the same trap; the app was written at 15px and inherited the bug.
+   The date input gets the extra guard because Safari gives it an intrinsic width from its
+   native picker, which can exceed the field it sits in whatever the box model says. */
+input,select,textarea{width:100%;max-width:100%;background-color:var(--well);
+  border:1px solid var(--brd);color:var(--ink);border-radius:var(--r-sm);padding:11px 13px;
+  font:inherit;font-size:16px;min-height:var(--tap)}
+input[type=date]{min-width:0;-webkit-appearance:none;appearance:none;}
 input::placeholder{color:var(--ink-3)}
 input:focus,select:focus,textarea:focus{border-color:var(--counter)}
 input[type=number]{font-variant-numeric:tabular-nums}
