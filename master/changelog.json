@@ -1,5 +1,17 @@
 [
  {
+  "v": "v325",
+  "d": "20 Aug 2026",
+  "t": "THE CHEAPEST LOT ON THE BOOK LANDS, AND THE COST BASIS IS REBUILT ON THREE STATED ASSUMPTIONS",
+  "n": [
+   "<b>50 UNIT AT RM44 LANDED, PAID AND RECEIVED, AND IT IS THE CHEAPEST SALT THIS BOOK HAS EVER BOUGHT.</b> RM2,200 for 50 unit settles the row that stood pending since the morning, RM3 under the RM47 hundred-unit lot of 28 Jul that held the record. It is now the newest received lot, so replacement cost falls RM56 to RM44. STOCK_COST rolls to 44 and STATED_STOCK from 0 to 50, because the shelf was counted at ZERO that morning and the lot arrived after the count. A roll is not a count: COUNT_ON is untouched and nobody has looked at the shelf since. 13.88 unit are owed already, 3 to CE4-CHE, 5 to CE4-AD and 5.88 to CJ4-BJ, so free to sell is 36.12.",
+   "<b>THREE COST ASSUMPTIONS WERE STATED AND ALL THREE ARE NOW IN THE BOOK, WHICH IS THE PART TO READ TWICE.</b> Freight goes from RM20 a lot to RM100. Delivery goes from RM5 an order to RM50 for every three orders, RM16.67 each. SHRINK_ATTRIB goes from a half to 0.33, so the cost basis carries a third of the observed leak and margin absorbs the other two thirds. None of these was measured here; each is his stated figure, and each is one constant that can be moved back.",
+   "<b>THE NET IS A COST BASIS DOWN RM10.51 A UNIT, AND IT IS NOT ONE MOVE.</b> Effective cost goes RM65.92 to RM55.41. Goods alone go RM63.89 to RM48.65: the rate fell RM12, the 50 unit lot spreads freight four times thinner than a 12.5 lot does even at five times the cost, and the leak charged into the price falls from 9.85% to 5.46% on the lower attribution. Pulling the other way, delivery goes RM2.03 to RM6.76 a unit. A ladder is not a single lever and this commit moved four of them.",
+   "<b>THE FREIGHT ASSUMPTION RESTATES HISTORY AND IS THE ONE TO CHALLENGE FIRST.</b> freightPerLot is spread over every lot ever received rather than traced to one, so cost of sales freight goes from RM194.86 to RM974.30 across the whole book and reported gross profit falls RM779.44 with it. Nothing about the past changed; an assumption about it did. If RM100 was the cost of collecting THIS lot rather than the standing rate, this is the line to move and the figure to put back to 20.",
+   "<b>WHAT THE BOARD NOW ASKS, AND WHAT IT WILL NOT REACH.</b> A 2 unit Tier II order goes from RM180 to RM170. Asked what average rate returns 1.5x on cost of goods, the answer is RM115 a unit against RM46 landed, and the book has averaged RM93.51. It is above the desk&rsquo;s own ceiling, which is double the lot cost, at every size from 2 unit up: RM113.98 at 2 unit and RM99.98 at 12.5. Small orders can carry it and bulk cannot, and 48% of the volume on this book has gone out in lots over 5 unit at RM75.56 a unit."
+  ]
+ },
+ {
   "v": "v324",
   "d": "20 Aug 2026",
   "t": "A RATE IS NOW CHECKED WHERE EVERY ENTRY PASSES, AND THE PHONE CAN RESTATE OR CANCEL AN ORDER",
