@@ -387,7 +387,7 @@ option:checked{background-color:var(--menu-2);font-weight:600}
     <!-- ===================== PRICE ===================== -->
     <section class="glass" id="p-price" role="tabpanel" aria-labelledby="tab-price" hidden>
       <p class="lbl">What to charge</p>
-      <p class="stand" style="margin-bottom:12px">Pick a size. The ask is what the board says;
+      <p class="stand" style="margin-bottom:12px">Pick a size. The ask is what the ladder says;
         the floor is where the money stops. Both come from the desk, not from here.</p>
       <div class="filters" style="grid-template-columns:1fr 1fr">
         <div class="field" style="margin:0"><label for="pr-prod">Product</label>
@@ -809,8 +809,12 @@ function drawPrice(){
   if(!b){ box.innerHTML='<p class="stand">Loading.</p>'; return; }
   var q=Number($('pr-size').value||b.sizes[0]);
   var i=(b.sizes||[]).indexOf(q);
-  var t2=(b.tiers||[]).find(function(t){return t.code==='T2';})||b.tiers[0];
-  var ask=(t2&&i>=0)?t2.prices[i]:null;
+  /* v328: ONE LADDER, SO TAKE THE ONE ROW. This looked for the tier coded T2 and fell back to
+     the first row. The fallback is what kept the panel alive when the desk retired the tiers, and
+     a fallback quietly carrying a panel is the thing that hides a fault rather than shows it, so
+     the lookup is now simply the row the desk sent. */
+  var row=(b.tiers||[])[0]||null;
+  var ask=(row&&i>=0)?row.prices[i]:null;
   var fl=(b.floors||{})[String(q)]||null;
   var head=(ask!=null&&fl&&fl.delivered!=null)?+(ask-fl.delivered).toFixed(2):null;
   /* THE HEADROOM IS THE POINT, and it is a subtraction of two figures the desk supplied,
@@ -818,7 +822,7 @@ function drawPrice(){
      that decides whether to hold the line. */
   var thin=(head!=null&&head<0)?' thin':'';
   box.innerHTML='<div class="ask">'
-    +'<div class="c head'+thin+'"><p class="k">Ask (T2)</p><p class="v">'+(ask==null?'&mdash;':esc(rm(ask)))+'</p>'
+    +'<div class="c head'+thin+'"><p class="k">Ask</p><p class="v">'+(ask==null?'&mdash;':esc(rm(ask)))+'</p>'
       +'<p class="n">'+(ask!=null&&q?esc(rm(ask/q))+'/unit':'&nbsp;')+'</p></div>'
     +'<div class="c floor"><p class="k">Floor, delivered</p><p class="v">'+(fl&&fl.delivered!=null?esc(rm(fl.delivered)):'&mdash;')+'</p>'
       +'<p class="n">collected '+(fl&&fl.collected!=null?esc(rm(fl.collected)):'&mdash;')+'</p></div>'

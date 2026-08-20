@@ -1151,6 +1151,47 @@ section("Payload — what the phone is given, and what it is not");
     ok(Array.isArray(d.open), `and the open orders an amendment can target (${(d.open||[]).length})`);
     ok(d.countedOn && typeof d.countedOn === "object", "and the date each shelf was last counted");
 
+    /* ============ THE PHONE QUOTES THE DESK'S LADDER, NOT A SECOND BOARD (v328) ============
+       For two commits it did not. v326 retired the four-rung reference board and v327 gave the
+       ladder the supplier's taper, but phonePayload went on publishing PRICE_TIERS, which
+       cappedBoard() solves with its own anchors and its own grid. The phone quoted UNDER the desk
+       at eight of ten salt sizes and at every oil size, worst at RM900 against RM960 for 12.5 unit
+       of salt and RM440 against RM750 for 50 unit of oil, where the tier price also sat below its
+       own floor. Nothing failed: two engines simply disagreed, quietly, on the surface a seller
+       actually reads standing in front of a buyer.
+       So this asserts the SHAPE that makes a second engine impossible to publish by accident: one
+       row per board, and every ask at or above the floor the same payload states for that size. */
+    for (const [pid, b] of Object.entries(d.board || {})) {
+      ok(Array.isArray(b.tiers) && b.tiers.length === 1,
+         `${pid}: the phone carries one ladder, not a board of tiers (${(b.tiers||[]).length} row(s))`);
+      const row = (b.tiers || [])[0] || { prices: [] };
+      const priced = (b.sizes || []).filter((q, i) => row.prices[i] != null);
+      ok(priced.length === (b.sizes || []).length,
+         `${pid}: every size on the board has an ask (${priced.length} of ${(b.sizes||[]).length})`);
+      const under = (b.sizes || []).filter((q, i) => {
+        const p = row.prices[i], fl = (b.floors || {})[String(q)];
+        return p != null && fl && fl.delivered != null && p < fl.delivered - 0.009;
+      });
+      ok(under.length === 0, under.length
+        ? `${pid}: the ask is under its own delivered floor at ${under.join(", ")} unit`
+        : `${pid}: every ask clears the delivered floor this payload states`);
+      /* the rate may not RISE with size, which is the one law a customer can check by hand */
+      let prev = Infinity, inverted = [];
+      (b.sizes || []).forEach((q, i) => {
+        const p = row.prices[i]; if (p == null || !(q > 0)) return;
+        const r = p / q; if (r > prev + 1e-9) inverted.push(q); prev = r;
+      });
+      ok(inverted.length === 0, inverted.length
+        ? `${pid}: the rate per unit RISES with size at ${inverted.join(", ")} unit`
+        : `${pid}: the rate per unit never rises with size`);
+    }
+    /* and the app must read that row rather than hunt for a tier code that no longer exists */
+    {
+      const app = readFileSync(join(REPO, "public", "index.html"), "utf8");
+      ok(!/code\s*===\s*['"]T2['"]/.test(app),
+         "the app no longer looks for the retired tier code T2");
+    }
+
     /* NO COST AND NO MARGIN REACH THE PHONE. phonePayloadLeaks() bans every per-unit cost
        from this payload because the page is public by the owner's decision of 11 Aug, and a
        margin is a cost stated backwards. The leak gate checks the money FORM of each cost;
