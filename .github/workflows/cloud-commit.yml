@@ -25,17 +25,17 @@ name: Cloud commit
 
 on:
   schedule:
-    # TWICE AN HOUR. The fold used to be daily and is now hourly, which is the floor a cloud
-    # routine allows: the API rejects anything under an hour. Staging twice an hour puts the
-    # average wait between a tap on the phone and a row in the ledger at about half an hour
-    # rather than most of a day.
+    # HOURLY, against a fold that runs every SIX hours (his instruction of 20 Aug). Staging
+    # more often than the fold costs nothing and means a batch is always ready and recent when
+    # the fold comes round; staging twice an hour, as this briefly did, was 48 runs a day for
+    # four folds and would have eaten the Actions allowance for no gain.
     #
     # THE CLOCK IS NOT THE GUARD, AND THAT WAS THE FIRST DESIGN'S MISTAKE. This was offset to
-    # :25 and :55 to clear a fold at :00, and then the routine API JITTERED the fold's minute
-    # to :41 of its own accord. A schedule whose safety depends on another scheduler keeping
-    # the minute you asked for is not safe. The real guard is in the job: it refuses to
+    # clear a fold at :00, and the routine API then JITTERED the fold's minute of its own
+    # accord, twice: to :41, then to :52. A schedule whose safety depends on another scheduler
+    # keeping the minute you asked for is not safe. The real guard is in the job: it refuses to
     # overwrite a batch that has not been folded yet. See "Do not trample an unfolded batch".
-    - cron: '5,35 * * * *'
+    - cron: '5 * * * *'
   push:
     branches: [master]
     paths:
