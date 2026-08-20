@@ -463,6 +463,24 @@ export default {
       return locked();
     }
 
+    /* --- READS THAT CARRY THE BOOK ARE KEYED TOO (20 Aug 2026) ---------------------
+     * The posture used to be "reads open, writes gated", and the gap in it was found by
+     * reading the responses rather than the policy. `GET /drafts` returns each proposed row
+     * WITH ITS COST AND MARGIN; `GET /ledger` returns the mirror; `GET /queue` returns every
+     * device's pending entries. So the three figures the desk works hardest to keep off the
+     * public payload -- phonePayloadLeaks() bans every per-unit cost from data.json for
+     * exactly this reason -- were being served in full to anyone with the URL.
+     *
+     * These three now need the same X-Salt-Key as a write. `/rev`, `/queue/ping` and the
+     * static assets stay open: a build id and a liveness probe carry no trade. The site is
+     * still PUBLIC in the sense the owner asked for on 11 Aug, and this is not Access coming
+     * back; it is the write key covering the reads that are as sensitive as a write.
+     *
+     * Ordered before the routes rather than added to each handler, so a route added later
+     * cannot quietly miss it. */
+    if ((p === "/queue" || p === "/ledger" || p.startsWith("/ledger/")
+      || p === "/drafts" || p.startsWith("/drafts/")) && !writeOk(request, env)) return needsKey();
+
     // --- the desk's HTTP contract -------------------------------------------------
     if (p === "/queue/ping") {
       // cloud:true tells the ported desk to skip the 3s heartbeat and the /bye beacon,

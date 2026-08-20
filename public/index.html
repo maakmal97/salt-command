@@ -571,8 +571,20 @@ function poll(){
 var DRAFTS=[],REFUSED=[],apprBusy={};
 function money(n){ if(n==null||isNaN(n))return '-';
   return 'RM '+Number(n).toLocaleString('en-MY',{maximumFractionDigits:2}); }
+/* READING THE DRAFTS NEEDS THE KEY SINCE 20 Aug 2026, because a draft carries the row's COST
+   and MARGIN and the endpoint was answering anyone with the URL. Same retry-once shape the
+   queue POST has used since v288: send what we hold, and if the Worker refuses, ask and go
+   again. A refusal on the second attempt leaves the panel empty rather than looping. */
+var draftsNeedKey=false;
 function loadDrafts(){
-  return fetch('drafts?status=pending',{cache:'no-store'}).then(function(r){ return r.ok?r.json():null; })
+  var go=function(){ return fetch('drafts?status=pending',{cache:'no-store',headers:headers()}); };
+  return go().then(function(r){
+      if(r.status===401&&askWriteKey())return go();
+      return r;
+    }).then(function(r){
+      draftsNeedKey=(r&&r.status===401);
+      return (r&&r.ok)?r.json():null;
+    })
     .then(function(j){ DRAFTS=(j&&j.drafts)||[]; REFUSED=(j&&j.refused)||[]; drawDrafts(); })
     .catch(function(){ DRAFTS=[]; REFUSED=[]; drawDrafts(); });
 }
@@ -596,6 +608,11 @@ function drawDrafts(){
      so counting it would send you to a tab with no button on it. */
   n.hidden=!DRAFTS.length; n.textContent=String(DRAFTS.length);
   drawRefused();
+  /* "NOTHING WAITING" AND "I CANNOT SEE" ARE DIFFERENT STATES, and only one of them means
+     you can stop thinking about it. Without the key this panel would read as an empty queue
+     while rows sat pending, which is the same class of quiet lie as a deploy that reports
+     success and ships nothing. */
+  if(draftsNeedKey){ box.innerHTML='<div class="empty">The write key is needed to read drafts, and it was not accepted. Add an entry to be asked for it again, or clear <code>saltWriteKey</code> on this device. <b>This is not an empty queue: rows may be waiting.</b></div>'; return; }
   if(!DRAFTS.length){ box.innerHTML='<div class="empty">Nothing waiting. Every drafted row has been decided.</div>'; return; }
   box.innerHTML=DRAFTS.map(function(d){
     var r=d.row||{},qty=r.qty,total=r.total,cost=r.cost;

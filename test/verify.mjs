@@ -111,9 +111,20 @@ section("Worker — the write gate");
   ok(r.status === 200 && j.ok && j.entries === 1, "armed, correct key → accepted");
   ok(kv.m.has("q:d1"), "and it reached KV");
 
-  /* Reads stay open. This is the owner's standing decision and the gate must not creep. */
+  /* THE GATE NOW COVERS THE READS THAT CARRY THE BOOK (20 Aug 2026). GET /queue returned
+     every device's pending entries to anyone with the URL; /drafts returned cost and margin;
+     /ledger returned the mirror. The build id and the ping stay open, and so do the assets:
+     the site is still public in the sense asked for on 11 Aug. */
   r = await worker.fetch(req("/queue"), armed(kv));
-  ok(r.status === 200, "armed: GET /queue is still open");
+  ok(r.status === 401, "armed: GET /queue needs the key, it lists every pending entry");
+  r = await worker.fetch(req("/queue", { headers: { "X-Salt-Key": KEY } }), armed(kv));
+  ok(r.status === 200, "armed: GET /queue with the key is served");
+  r = await worker.fetch(req("/ledger"), armed(kv));
+  ok(r.status === 401, "armed: GET /ledger needs the key");
+  r = await worker.fetch(req("/drafts"), armed(kv));
+  ok(r.status === 401, "armed: GET /drafts needs the key");
+  r = await worker.fetch(req("/rev"), armed(kv));
+  ok(r.status !== 401, "armed: /rev stays open, a build id carries no trade");
   r = await worker.fetch(req("/queue/ping"), armed(kv));
   ok(r.status === 200, "armed: the ping is still open");
   r = await worker.fetch(req("/index.html"), armed(kv));
@@ -614,6 +625,9 @@ section("Worker — drafts and approval");
     headers: { "content-type": "application/json", ...(key ? { "X-Salt-Key": key } : {}) },
     body: body(o)
   });
+  /* READING A DRAFT NEEDS THE KEY SINCE 20 Aug 2026: the row carries its cost and its margin,
+     which is exactly what phonePayloadLeaks() keeps out of the public payload. */
+  const get = (p, key) => req(p, { headers: key ? { "X-Salt-Key": key } : {} });
   const goodDraft = {
     id: "2026-08-14T12:16:00.151Z", collection: "sales",
     entry: { at: "2026-08-14T12:16:00.151Z", raw: "Sell 1 unit to CH4-MLR for RM 110" },
@@ -643,10 +657,12 @@ section("Worker — drafts and approval");
   j = await r.json();
   ok(j.created === false && j.existed === true, "re-posting the same id does not create a second draft");
 
-  /* reads are open, matching the rest of the Worker */
+  /* reads that carry the book are keyed too (20 Aug 2026) */
   r = await worker.fetch(req("/drafts"), env);
+  ok(r.status === 401, "GET /drafts without the key is refused: a draft carries cost and margin");
+  r = await worker.fetch(get("/drafts", KEY), env);
   j = await r.json();
-  ok(r.status === 200 && j.count === 1, "GET /drafts is open and lists the pending draft");
+  ok(r.status === 200 && j.count === 1, "GET /drafts with the key lists the pending draft");
   ok(j.drafts[0].row.cost === 56 && j.drafts[0].row.total === 110, "the drafted ROW comes back intact");
   ok(Array.isArray(j.drafts[0].flags) && j.drafts[0].flags.length === 1, "flags come back parsed");
   ok(j.drafts[0].entry && j.drafts[0].entry.raw, "the original entry comes back beside the row");
@@ -663,17 +679,17 @@ section("Worker — drafts and approval");
   /* the double tap */
   r = await worker.fetch(post("/drafts/" + encodeURIComponent(goodDraft.id) + "/reject", {}, KEY), env);
   ok(r.status === 409, "a second decision on a decided row is refused, not applied");
-  r = await worker.fetch(req("/drafts?status=approved"), env);
+  r = await worker.fetch(get("/drafts?status=approved", KEY), env);
   j = await r.json();
   ok(j.drafts[0].status === "approved", "the first decision stands after the second is refused");
 
   /* what the commit run asks for */
-  r = await worker.fetch(req("/drafts?status=approved&uncommitted=1"), env);
+  r = await worker.fetch(get("/drafts?status=approved&uncommitted=1", KEY), env);
   j = await r.json();
   ok(j.count === 1, "approved and uncommitted is what the commit run reads");
   r = await worker.fetch(post("/drafts/" + encodeURIComponent(goodDraft.id) + "/committed", {}, KEY), env);
   ok(r.status === 200, "the run can mark a row committed");
-  r = await worker.fetch(req("/drafts?status=approved&uncommitted=1"), env);
+  r = await worker.fetch(get("/drafts?status=approved&uncommitted=1", KEY), env);
   j = await r.json();
   ok(j.count === 0, "a committed row is no longer offered to the run");
 
@@ -681,7 +697,7 @@ section("Worker — drafts and approval");
   const second = { ...goodDraft, id: "2026-08-14T12:42:33.844Z" };
   await worker.fetch(post("/drafts", second, KEY), env);
   await worker.fetch(post("/drafts/" + encodeURIComponent(second.id) + "/reject", {}, KEY), env);
-  r = await worker.fetch(req("/drafts?status=approved&uncommitted=1"), env);
+  r = await worker.fetch(get("/drafts?status=approved&uncommitted=1", KEY), env);
   j = await r.json();
   ok(j.count === 0, "a rejected row never reaches the commit run");
   r = await worker.fetch(post("/drafts/" + encodeURIComponent(second.id) + "/committed", {}, KEY), env);
@@ -691,11 +707,13 @@ section("Worker — drafts and approval");
   r = await worker.fetch(post("/drafts/nope/approve", {}, KEY), env);
   ok(r.status === 404, "deciding an unknown id is a 404");
   r = await worker.fetch(req("/drafts", { method: "DELETE" }), env);
+  ok(r.status === 401, "DELETE /drafts without the key is refused before the method is even read");
+  r = await worker.fetch(req("/drafts", { method: "DELETE", headers: { "X-Salt-Key": KEY } }), env);
   ok(r.status === 405, "DELETE /drafts is not allowed");
 
   /* Access still gates the whole surface when it is on */
   const gated = { ...env, REQUIRE_ACCESS: "1" };
-  r = await worker.fetch(req("/drafts"), gated);
+  r = await worker.fetch(get("/drafts", KEY), gated);
   j = await r.json();
   ok(r.status === 401 && j.ok === false, "with Access on, /drafts answers 401 JSON rather than the locked page");
 }
