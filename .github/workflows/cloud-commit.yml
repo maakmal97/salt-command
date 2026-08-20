@@ -75,18 +75,45 @@ jobs:
             console.log('approved and uncommitted: '+j.count);
           "
 
-      - name: Commit it, if it changed
+      # COMMIT IT, AND PROVE IT WAS COMMITTED.
+      #
+      # THE FIRST VERSION OF THIS STEP WAS SILENTLY BROKEN AND THE FIRST RUN CAUGHT IT ONLY
+      # BECAUSE THE COUNT WAS ZERO. It asked `git diff --quiet -- master/_to_fold.json`, and
+      # git diff does not see an UNTRACKED file: on the first real run the file would have been
+      # written, reported as "nothing new", and never committed. The agent would then have
+      # found no _to_fold.json, correctly concluded there was nothing to fold, and stopped.
+      # Approved rows would have sat unfolded indefinitely with every job green. That is the
+      # same shape as the 10 Aug deploy and the 19 Aug ship: a healthy log over a dead leg.
+      #
+      # So: `git status --porcelain`, which sees untracked files, and then an ASSERTION that
+      # the file is actually in HEAD when there was anything to stage. A step that reports
+      # success without checking its own effect is the fault this repo keeps writing tests for.
+      - name: Commit it, and prove it
         run: |
           set -euo pipefail
-          if git diff --quiet -- master/_to_fold.json; then
-            echo "Nothing new to stage."
+          count=$(node -p "require('./master/_to_fold.json').count")
+          if [ "$count" = "0" ]; then
+            # Deliberately NOT committed. Its absence is the signal the agent stops on, and a
+            # daily commit of an empty file would be noise that hides the days that matter.
+            echo "Nothing approved is waiting, so nothing is staged."
+            rm -f master/_to_fold.json
             exit 0
           fi
           git config user.name  "salt-command CI"
           git config user.email "noreply@github.com"
-          git add master/_to_fold.json
-          git commit -m "Stage $(node -p "require('./master/_to_fold.json').count") approved row(s) for the fold"
-          git push
+          git add -f master/_to_fold.json
+          if [ -n "$(git status --porcelain -- master/_to_fold.json)" ]; then
+            git commit -m "Stage $count approved row(s) for the fold"
+            git push
+          else
+            echo "The staged file is unchanged from the last run."
+          fi
+          # THE ASSERTION. Whatever path was taken above, the file must now be in HEAD.
+          if ! git cat-file -e HEAD:master/_to_fold.json 2>/dev/null; then
+            echo "::error::$count row(s) were staged but master/_to_fold.json is not in HEAD. The fold would find nothing and stop, and the rows would sit unfolded."
+            exit 1
+          fi
+          echo "Staged $count row(s) and confirmed the file is in HEAD."
 
   # ---------------------------------------------------------------------------
   # DEPLOY: the phone gets what was just pushed, and only then are the folded
