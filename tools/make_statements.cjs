@@ -22,8 +22,30 @@ if(!desk||!outDir){console.error('usage: node make_statements.js <deskHtml> <out
 
 const vc=new VirtualConsole(); const errs=[];
 vc.on('jsdomError',e=>{if(!/scrollTo|Not implemented|getContext/.test(e.message))errs.push(e.message);});
+/* THE SAME STUBS tools/payload.mjs INSTALLS, and for the same reason: jsdom is not a
+   browser and the desk is written for one. matchMedia is the one that bit. The desk
+   started asking for it when the rail learned about portrait, and with no stub the whole
+   run died on "window.matchMedia is not a function" before a single statement was written.
+   Nothing here changes what a statement SAYS: these are the browser's furniture, not the
+   desk's rules, and the rules are still read from the desk itself below. */
 const dom=new JSDOM(fs.readFileSync(desk,'utf8'),
-  {runScripts:'dangerously',pretendToBeVisual:true,url:'http://localhost/',virtualConsole:vc});
+  {runScripts:'dangerously',pretendToBeVisual:true,url:'http://localhost/',virtualConsole:vc,
+   beforeParse(w){
+     const store=new Map();
+     const stub={getItem:k=>store.has(k)?store.get(k):null,setItem:(k,v)=>store.set(k,String(v)),
+       removeItem:k=>store.delete(k),clear:()=>store.clear(),
+       key:i=>[...store.keys()][i]??null,get length(){return store.size;}};
+     Object.defineProperty(w,'localStorage',{value:stub,configurable:true});
+     Object.defineProperty(w,'sessionStorage',{value:stub,configurable:true});
+     /* A statement is a document, never a fetch: the desk must not reach the network to
+        write one, and if it tries, that is a fault worth failing on rather than hiding. */
+     w.fetch=()=>Promise.reject(new Error('no network while writing a statement'));
+     w.matchMedia=w.matchMedia||(()=>({matches:false,media:'',onchange:null,
+       addListener(){},removeListener(){},addEventListener(){},removeEventListener(){},
+       dispatchEvent(){return false;}}));
+     w.scrollTo=()=>{};
+     w.HTMLCanvasElement.prototype.getContext=()=>null;   // no chart belongs on a statement
+   }});
 
 setTimeout(()=>{
   const w=dom.window;

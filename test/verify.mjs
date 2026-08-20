@@ -1178,6 +1178,116 @@ section("Payload — what the phone is given, and what it is not");
   }
 }
 
+/* ---- The monthly statements, and how they reach the phone ----------------------- */
+section("Statements — mirrored, indexed, and carrying no figure");
+{
+  const idxPath = join(REPO, "public", "statements", "index.json");
+  if (!existsSync(idxPath)) {
+    ok(false, "public/statements/index.json exists (run npm run build)");
+  } else {
+    const idx = JSON.parse(readFileSync(idxPath, "utf8"));
+    ok(idx.ok === true && Array.isArray(idx.months), "the statements index parses and lists months");
+
+    /* NO TIMESTAMP, AND THIS IS THE LOAD-BEARING ONE. build.mjs folds this file into the
+       build id, and update.mjs deploys only when that id moves. A `generated` field would
+       move it on every build, so every build would deploy and every phone would reload:
+       the same trap CI avoids by comparing ids and never bytes. */
+    const stamped = JSON.stringify(idx).match(/"(generated|built|at|now|stamped)"\s*:/);
+    ok(!stamped, stamped ? `the index carries ${stamped[1]}, which would move the build id every build`
+                         : "the index carries no timestamp, so an unchanged set rebuilds to the same id");
+
+    /* NOT A SECOND ENGINE. The index says which statements exist; every figure is inside
+       the statement, computed once by the desk's own stmtDoc. An index that carried a total
+       would be a number the phone could show while the document said otherwise. */
+    const money = JSON.stringify(idx).match(/"(total|paid|owed|qty|cost|margin|balance|outstanding)"\s*:/i);
+    ok(!money, money ? `the index carries ${money[1]}, which is a figure the phone must read from the statement`
+                     : "the index carries no figure, so it cannot disagree with a statement");
+
+    let files = 0; const missing = [], empty = [];
+    for (const m of idx.months) {
+      ok(/^\d{4}-\d{2}$/.test(m.month), `${m.month} is a month folder`);
+      ok(typeof m.digest === "string" && m.digest.length === 16, `${m.month} carries a content digest`);
+      ok(!!m.review, `${m.month} has its review sheet, which is how a whole run is checked in one pass`);
+      for (const a of m.accounts.concat(m.review ? [m.review] : [])) {
+        files++;
+        const f = join(REPO, "public", a.file);
+        if (!existsSync(f)) { missing.push(a.file); continue; }
+        if (!readFileSync(f, "utf8").trim()) empty.push(a.file);
+      }
+    }
+    ok(missing.length === 0, missing.length ? `${missing.length} indexed statement(s) are not in public/: ${missing[0]}`
+                                            : `all ${files} indexed statements are mirrored into public/`);
+    ok(empty.length === 0, empty.length ? `${empty.length} mirrored statement(s) are empty` : "no mirrored statement is empty");
+
+    /* CODES ONLY, AND CHECKED RATHER THAN ASSUMED. A statement is named by its account, so
+       the file names are the one place a real name could reach the open web through this
+       path. Every code here must already be a code data.json publishes, which the payload's
+       own leak gate has passed; anything else is a name or a typo and both should fail. */
+    if (existsSync(join(REPO, "public", "data.json"))) {
+      const data = JSON.parse(readFileSync(join(REPO, "public", "data.json"), "utf8"));
+      const known = new Set([].concat(data.parties || [], data.suppliers || []));
+      const strangers = idx.months.flatMap((m) => m.accounts.map((a) => a.code)).filter((c) => !known.has(c));
+      ok(strangers.length === 0, strangers.length
+        ? `${strangers.length} statement(s) are named by something data.json does not publish: ${strangers[0]}`
+        : "every statement is named by a code the public payload already carries");
+    }
+
+    /* SELF-CONTAINED, same rule as the desk. The CSP is connect-src 'self' and self-only
+       otherwise, so a statement that reached for a font or a script would render broken on
+       the phone and only there. */
+    const external = [];
+    for (const m of idx.months) for (const a of m.accounts.concat(m.review ? [m.review] : [])) {
+      const f = join(REPO, "public", a.file);
+      if (!existsSync(f)) continue;
+      const html = readFileSync(f, "utf8");
+      if (/\bsrc\s*=\s*["']https?:\/\//i.test(html) || /url\(\s*["']?https?:\/\//i.test(html)) external.push(a.file);
+    }
+    ok(external.length === 0, external.length ? `${external.length} statement(s) load off a third-party origin: ${external[0]}`
+                                              : "no statement loads anything off a third-party origin");
+  }
+
+  /* THE MIRROR SWEEPS, it does not only add. A statement withdrawn from the source that
+     kept being served is a customer reading a document that was pulled. */
+  const { mirrorStatements } = await import("../tools/statements.mjs");
+  const tmp = join(REPO, "test", "tmp-stmt");
+  rmSync(tmp, { recursive: true, force: true });
+  mkdirSync(join(tmp, "statements", "2099-01"), { recursive: true });
+  writeFileSync(join(tmp, "statements", "2099-01", "statement_CX9-TST_2099-01-03.html"), "<html>a</html>");
+  writeFileSync(join(tmp, "statements", "2099-01", "_review_2099-01-03.html"), "<html>r</html>");
+  let t = mirrorStatements(tmp);
+  ok(t.months.length === 1 && t.months[0].accounts.length === 1, "the mirror finds a month and its account");
+  ok(t.months[0].issued === "2099-01-03" && !!t.months[0].review, "and reads the issue date and the review sheet from the names");
+  const gone = join(tmp, "public", "statements", "2099-01", "statement_CX9-TST_2099-01-03.html");
+  ok(existsSync(gone), "the statement is copied into public/");
+  const before = t.months[0].digest;
+  rmSync(join(tmp, "statements", "2099-01", "statement_CX9-TST_2099-01-03.html"), { force: true });
+  t = mirrorStatements(tmp);
+  ok(!existsSync(gone), "a statement withdrawn from the source is swept out of public/");
+  ok(t.months[0].digest !== before, "and the digest moves, so the build id moves and the deploy happens");
+  rmSync(join(tmp, "statements"), { recursive: true, force: true });
+  t = mirrorStatements(tmp);
+  ok(t.months.length === 0 && !existsSync(join(tmp, "public", "statements", "2099-01")),
+    "a month withdrawn entirely is swept out too");
+  rmSync(tmp, { recursive: true, force: true });
+
+  /* THE THREE PLACES THIS COULD SILENTLY STOP REACHING THE PHONE. */
+  const build = readFileSync(join(REPO, "tools", "build.mjs"), "utf8");
+  ok(/statements/.test(build) && /\.update\(stmtIndex\)/.test(build),
+    "the build id covers the statements index, so a new month is deployed rather than skipped");
+  const sw = readFileSync(join(REPO, "public", "sw.js"), "utf8");
+  ok(/\|statements\)/.test(sw), "sw.js never caches a statement or its index");
+  const app = readFileSync(join(REPO, "public", "index.html"), "utf8");
+  ok(app.includes("fetch('statements/index.json'"), "the app reads the set from the index and computes nothing");
+  ok(app.includes('id="p-stmt"') && app.includes('id="tab-stmt"'), "the app has a Statements tab");
+
+  /* THE GENERATOR STILL RUNS AGAINST THIS MASTER. jsdom is not a browser, and the desk is
+     written for one: the run died outright on window.matchMedia the day the rail learned
+     about portrait, with no statement written and nothing but a stack to say why. */
+  const gen = readFileSync(join(REPO, "tools", "make_statements.cjs"), "utf8");
+  ok(gen.includes("matchMedia") && gen.includes("beforeParse"),
+    "make_statements.cjs stubs the browser furniture the desk expects");
+}
+
 /* ---- done ----------------------------------------------------------------------- */
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

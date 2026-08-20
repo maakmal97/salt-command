@@ -28,7 +28,14 @@ const SHELL = [
    no way for the phone to know why; worse, an approved row would keep asking to be approved
    while the one actually waiting stayed invisible. It was left out of this list at first and
    the self-test caught it: a deleted draft was still on screen after a reload. */
-const API = /^\/(queue|vault|bio|bye|menu|qr|rev|rev\.json|data\.json|drafts|push)(\/|$)/;
+/* statements join at v324, and they are here rather than in the cache-first branch below
+   for two reasons. The index would be cached on the first open and a month issued after
+   that would be invisible for ever, which is the data.json fault above with a slower fuse.
+   And a statement is a NAVIGATION that is not the root, so the branch below would answer an
+   offline tap with the app itself: the wrong surface, silently, exactly what the v290 note
+   warns about for /desk. Passing straight through means a statement needs a connection and
+   says so in the browser's own words rather than in a lie. */
+const API = /^\/(queue|vault|bio|bye|menu|qr|rev|rev\.json|data\.json|drafts|push|statements)(\/|$)/;
 
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));

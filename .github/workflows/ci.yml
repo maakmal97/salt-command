@@ -67,10 +67,13 @@ jobs:
             echo "::error::public/ is not what this master builds (committed $before, rebuilt $after). Run 'npm run build' and commit the result."
             exit 1
           fi
-          # Everything except the two timestamps must be byte-identical.
-          if ! git diff --quiet -- public/desk.html public/sw.js; then
+          # Everything except the two timestamps must be byte-identical. public/statements is
+          # in the list because it is a build output like public/desk.html: it is mirrored from
+          # statements/ on every build, so a hand-edit there is silently overwritten, and a
+          # statement that differs from the one issued is the worst kind of file to serve.
+          if ! git diff --quiet -- public/desk.html public/sw.js public/statements; then
             echo "::error::the built desk differs from the committed one. Run 'npm run build' and commit."
-            git --no-pager diff --stat -- public/desk.html public/sw.js
+            git --no-pager diff --stat -- public/desk.html public/sw.js public/statements
             exit 1
           fi
           echo "public/ matches the master at $after."

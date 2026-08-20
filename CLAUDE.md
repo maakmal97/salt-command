@@ -97,6 +97,7 @@ git push
 | **Built desk** | `public/desk.html`, served at `/desk` | Built from the master by `tools/build.mjs`. Never a source. |
 | **Phone app** | `public/index.html` | Hand-written SOURCE. Reads `data.json`, computes nothing. |
 | **Payload** | `public/data.json` | The master's own `phonePayload()`, run in jsdom by `tools/payload.mjs`. |
+| **Statements** | `statements/<YYYY-MM>/`, mirrored to `public/statements/` | The master's own `stmtDoc()`, run in jsdom by `tools/make_statements.cjs`. Read only on the phone. |
 
 The build **only adds**: a PWA head, a service worker, a per-device id, and cloud-mode copy.
 It changes no ledger figure. Every patch anchors on one unique line and the build aborts if an
@@ -375,12 +376,14 @@ Cow-Crm01 master (a Cowork/master session); once it lands, the sync above alread
 | `public/index.html` | **The phone app (v291). SOURCE, hand-written, edit it here.** 28 KB. Reads `data.json`, computes nothing, writes queue entries. Liquid Glass, Ledger tuning. |
 | `public/desk.html` | The built desk, served at `/desk`. **Derived from the master, do not hand-edit.** Committed on purpose. |
 | `public/data.json` | The phone payload: position, actions, party lists, the queue watermark and the build id. Written by the build via `payload.mjs`, which runs the master in jsdom. |
+| `statements/<YYYY-MM>/` | The monthly statements of account, one per customer plus a review sheet. Written by `tools/make_statements.cjs`, which drives the desk's own `stmtDoc`. See `docs/STATEMENTS.md`. |
+| `tools/statements.mjs` | Mirrors `statements/` into `public/statements/` and writes the index the phone's Statements tab reads. Lists files, computes nothing. Run by the build, and the index is in the build-id hash so a new month is actually deployed. |
 | `public/sw.js` | Service worker. Shell network-first; the `/queue` API is never cached. |
 | `public/manifest.webmanifest`, `public/icon-*.png` | Home-screen install. Icons from `tools/make_icons.py`. |
 | `public/_headers` | CSP and security headers, applied by Cloudflare to the assets. |
 | `wrangler.jsonc` | Worker + assets + the `SALT_QUEUE` KV binding. |
 | `tools/build.mjs` | Master → `public/index.html`, with fail-loud patch anchors. Also writes `public/rev.json`. |
-| `public/rev.json` | `{v,id,built}` for the build on disk. `id` hashes the master, `public/index.html`, `public/sw.js` AND every `src/*.js`, NUL-separated. **Written by the build, never by hand.** Anything that ships and changes behaviour must be in that hash: a change outside it does not move the id, so `update.mjs` compares equal, skips the deploy and reports the phone current while the old file is still served. That is exactly what happened to the v302 sw.js fix before sw.js was added. It is still true of `wrangler.jsonc`, which must be deployed by hand. |
+| `public/rev.json` | `{v,id,built}` for the build on disk. `id` hashes the master, `public/index.html`, `public/sw.js`, every `src/*.js` AND the statements index, NUL-separated. **Written by the build, never by hand.** Anything that ships and changes behaviour must be in that hash: a change outside it does not move the id, so `update.mjs` compares equal, skips the deploy and reports the phone current while the old file is still served. That is exactly what happened to the v302 sw.js fix before sw.js was added. It is still true of `wrangler.jsonc`, which must be deployed by hand. |
 | `.deployed.json` | `{id,v,at}` for the build that last DEPLOYED successfully. Written by `salt_sync.ps1` on a reported success and nowhere else. |
 | `tools/drain.mjs` | KV → `06_Data\salt_queue_cloud.json`; `--committed <ISO>` prunes; `--status` inspects. |
 | `src/drafter.js` | The cloud drafter: queue + mirror -> a proposed row in `draft`. Runs on the cron and at `POST /draft-now`. Never writes to `entry`. |

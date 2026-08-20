@@ -55,6 +55,33 @@ node tools/make_statements.cjs master/salt_command.html statements/<YYYY-MM> <YY
 
 jsdom is already a devDependency, so `npm ci` is all the setup there is.
 
+## Getting them onto the phone
+
+`statements/` is not served: only `public/` is. So `tools/statements.mjs` mirrors the folder
+into `public/statements/` and writes `public/statements/index.json`, and the app's Statements
+tab reads that index. It runs as part of `npm run build`, so there is no separate step.
+
+**It lists, it does not compute.** The index carries codes, issue dates, file names and a
+per-month digest of the bytes. Every figure a customer sees is inside the statement, put there
+once by the desk's own `stmtDoc`. That is the `data.json` rule again: a total on the index and
+a total in the document are two engines, and two engines drift.
+
+**The build id covers the index, and that is load-bearing.** `update.mjs` deploys only when
+`rev.json`'s id differs from `.deployed.json`'s, and a new month adds files the old id knew
+nothing about. Without the index in that hash a fresh set would sit committed and undeployed
+while every check reported the phone current, which is the 10 Aug fault and the v302 `sw.js`
+fault in a third costume. The index carries **no timestamp** for the mirror image of that
+reason: a `generated` field would move the id on every build, so every build would deploy.
+
+**The mirror sweeps.** A statement removed from `statements/` is removed from `public/` on the
+next build. A mirror that only ever added would keep serving a document that was withdrawn.
+
+**They are served open, like `/desk` and `data.json`, and unlike `/ledger` and `/drafts`.**
+A statement carries no cost and no margin, which is what the 20 Aug keying was for; it carries
+codes and never a name, which is what rule 2 is for. But it is still the book, and anyone with
+the URL can read the whole set. If that is not wanted, the gate is one line beside the other
+keyed reads in `src/worker.js`, and the tab would then need the write key to fetch the index.
+
 ## Before committing
 
 **Statements carry desk CODES and never a real name.** That is checked, not assumed: the
@@ -62,8 +89,11 @@ generator reads only the desk, and the desk holds no names. A scan of a full run
 plaintext directory on 20 Aug found nothing, once `sans-serif` in the font stack was excluded
 from the crude substring test that first flagged it.
 
-Commit the folder and push. Nothing deploys and nothing touches the ledger: this task reads the
-desk and writes files beside it.
+Commit the folder and push. Nothing touches the ledger: this task reads the desk and writes
+files beside it. Since the mirror above, `npm run build` must be run as well, so
+`public/statements/` and the build id move with the set; the deploy that puts it on the phone
+is the ordinary one (`npm run deploy`, or `node tools/update.mjs`), not a step this task
+invents.
 
 ## What this task must never do
 

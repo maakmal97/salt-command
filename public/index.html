@@ -81,12 +81,22 @@ section.glass{padding:17px 17px 19px;margin:0 0 14px}
 /* ---- top bar and tabs ---------------------------------------------------- */
 .bar{position:sticky;top:0;z-index:20;padding:calc(8px + env(safe-area-inset-top)) 15px 8px;
   margin:0 -15px 14px}
+/* THE BAR SCROLLS WHEN IT HAS TO, and only then. Six tabs is more than 360 px of phone
+   holds at this size, and the two ways out were both worse: shrinking the type until
+   "Statements" fits makes every tab hard to read for the sake of the longest word, and
+   letting it wrap turns a one-line bar into two and pushes the header down the page.
+   flex:1 1 auto shares the slack while there is any, so on a wide screen this looks exactly
+   as it did with four; past that it becomes a swipe, and show() brings the selected tab
+   into view so nothing is ever selected off-screen. The scrollbar is hidden because a
+   phone has no pointer to grab it with. */
 .bar-in{background:var(--veil);
   -webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);
   border:1px solid var(--brd-2);border-radius:var(--pill);padding:4px;
-  display:flex;gap:3px}
-.tab{flex:1;border:1px solid transparent;border-radius:var(--pill);
-  padding:8px 4px;font:inherit;font-size:13px;font-weight:600;color:var(--ink-2);
+  display:flex;gap:3px;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;
+  scroll-behavior:smooth;overscroll-behavior-x:contain}
+.bar-in::-webkit-scrollbar{display:none}
+.tab{flex:1 1 auto;white-space:nowrap;border:1px solid transparent;border-radius:var(--pill);
+  padding:8px 9px;font:inherit;font-size:13px;font-weight:600;color:var(--ink-2);
   background:none;cursor:pointer;min-height:var(--tap)}
 .tab[aria-selected="true"]{background:var(--glass-2);border-color:var(--brd-2);color:var(--ink)}
 
@@ -211,6 +221,28 @@ h2{font-size:17px;font-weight:600;letter-spacing:-.2px;margin:0 0 12px}
 .pill.oweMoney,.pill.oweStock{background:rgba(255,122,138,.16);color:var(--bad)}
 .pill.pend{background:rgba(179,166,245,.16);color:var(--bridge)}
 .pill.done{background:rgba(110,231,168,.14);color:var(--good)}
+
+/* ---- THE STATEMENTS TAB --------------------------------------------------
+   A month, its review sheet, then its accounts as a grid of codes. The codes are
+   set monospaced and wide because they are read, compared and typed rather than
+   scanned as prose, and because a thumb needs the target. */
+.stm-m{margin:16px 0 20px}
+.stm-h{display:flex;align-items:baseline;justify-content:space-between;gap:9px;margin:0 0 3px}
+.stm-t{font-size:15px;font-weight:800;letter-spacing:-.01em}
+.stm-n{font-size:11.5px;color:var(--ink-3);white-space:nowrap}
+.stm-s{font-size:12.5px;color:var(--ink-2);margin:0 0 10px}
+.stm-g{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:7px}
+.stm-a{display:block;text-decoration:none;background:rgba(255,255,255,.05);
+  border:1px solid var(--brd);border-radius:var(--r-sm);padding:10px 11px;
+  font-family:var(--mono);font-size:12px;font-weight:700;color:var(--ink);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.stm-a:active{background:rgba(255,255,255,.11)}
+/* The review sheet is not a statement and must never be tapped as one, so it does not
+   sit in the grid with them and says on its face who it is for. */
+.stm-r{display:block;text-decoration:none;background:rgba(179,166,245,.12);
+  border:1px solid rgba(179,166,245,.3);border-radius:var(--r-sm);padding:11px 13px;
+  margin:0 0 9px;font-size:13px;font-weight:700;color:var(--bridge)}
+.stm-r small{display:block;font-weight:600;font-size:11.5px;color:var(--ink-2);margin-top:2px}
 .filters{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 12px}
 .more{margin:9px 0 0}
 
@@ -331,6 +363,7 @@ option:checked{background-color:var(--menu-2);font-weight:600}
     <button class="tab" role="tab" id="tab-price" aria-controls="p-price" aria-selected="false">Price</button>
     <button class="tab" role="tab" id="tab-add" aria-controls="p-add" aria-selected="false">Record</button>
     <button class="tab" role="tab" id="tab-appr" aria-controls="p-appr" aria-selected="false">Approve <span class="cnt" id="apprN" hidden>0</span></button>
+    <button class="tab" role="tab" id="tab-stmt" aria-controls="p-stmt" aria-selected="false">Statements</button>
   </div></nav>
 
   <header class="glass" style="padding:17px;margin:0 0 14px">
@@ -421,6 +454,20 @@ option:checked{background-color:var(--menu-2);font-weight:600}
           laptop. They are shown so you know they are already recorded and do not enter them twice.</p>
         <div id="ref"></div>
       </div>
+    </section>
+
+    <!-- ===================== STATEMENTS ================ -->
+    <!-- THE MONTHLY SET, READ ONLY. These files are produced by the monthly run from the
+         desk's own stmtDoc, mirrored into public/ by the build, and listed here from
+         public/statements/index.json. NOTHING IS ADDED UP ON THIS PAGE: the index carries
+         codes, dates and file names and no figure at all, so this tab cannot disagree with
+         the document it opens, which is the same rule data.json obeys.
+         Sending is still his, from the phone's own share sheet or from the laptop. -->
+    <section class="glass" id="p-stmt" role="tabpanel" aria-labelledby="tab-stmt" hidden>
+      <p class="lbl">Statements of account</p>
+      <p class="stand">One per account, everything to date rather than a slice of the month.
+        Open one to read it exactly as the customer would. Nothing here sends anything.</p>
+      <div id="stmt"><p class="stand" style="margin-top:12px">Loading.</p></div>
     </section>
 
     <!-- ===================== RECORD ==================== -->
@@ -1530,16 +1577,72 @@ async function toggleAlerts(){
   }
 }
 
+/* ---- statements ----------------------------------------------------------
+   Read from public/statements/index.json, which the build writes from the folder the
+   monthly run fills. It carries codes, issue dates and file names: no figure, no total,
+   nothing this page could get wrong. Every number a statement shows is inside the
+   statement, computed once by the desk's own stmtDoc, which is why this tab renders
+   links and not a summary. */
+var STMT=null, stmtAsked=false;
+function loadStatements(){
+  if(stmtAsked)return Promise.resolve(STMT);
+  stmtAsked=true;
+  return fetch('statements/index.json',{cache:'no-store'})
+    .then(function(r){ return r.ok?r.json():null; })
+    .catch(function(){ return null; })
+    .then(function(j){ STMT=j; drawStatements(); return j; });
+}
+function drawStatements(){
+  var box=$('stmt');
+  if(!STMT||!STMT.months){ stmtAsked=false;
+    box.innerHTML='<p class="stand" style="margin-top:12px">The statements could not be read. '
+      +'They need a connection, because they are not held on this device.</p>'; return; }
+  if(!STMT.months.length){
+    box.innerHTML='<div class="empty">No statements have been issued yet. They are produced on '
+      +'the first Sunday of the month.</div>'; return; }
+  box.innerHTML=STMT.months.map(function(m){
+    var n=m.accounts.length;
+    return '<div class="stm-m"><div class="stm-h"><span class="stm-t">'+esc(monthName(m.month))+'</span>'
+      +'<span class="stm-n">'+n+' account'+(n===1?'':'s')+'</span></div>'
+      +'<p class="stm-s">Issued '+esc(dmy(m.issued))+'.</p>'
+      +(m.review?'<a class="stm-r" href="'+esc(m.review.file)+'" target="_blank" rel="noopener">'
+        +'Read the whole run in one pass<small>For review, not for sending</small></a>':'')
+      +'<div class="stm-g">'+m.accounts.map(function(a){
+        return '<a class="stm-a" href="'+esc(a.file)+'" target="_blank" rel="noopener">'+esc(a.code)+'</a>';
+      }).join('')+'</div></div>';
+  }).join('');
+}
+var MONTHS=['January','February','March','April','May','June',
+            'July','August','September','October','November','December'];
+function monthName(m){
+  var p=String(m||'').split('-'), y=Number(p[0]), i=Number(p[1]);
+  return (MONTHS[i-1]&&y)?(MONTHS[i-1]+' '+y):String(m||'');
+}
+/* The statement says "Issued 20 Aug 2026" on its own face, so the tab that opens it says
+   the same thing rather than an ISO date the desk shows nowhere else. */
+function dmy(iso){
+  var p=String(iso||'').split('-');
+  if(p.length!==3||!MONTHS[Number(p[1])-1])return String(iso||'');
+  return String(Number(p[2])).padStart(2,'0')+' '+MONTHS[Number(p[1])-1].slice(0,3)+' '+p[0];
+}
+
 /* ---- tabs ---------------------------------------------------------------- */
 var TABS=[['tab-today','p-today','Today'],['tab-book','p-book','The book'],
   ['tab-price','p-price','What to charge'],
-  ['tab-add','p-add','Record'],['tab-appr','p-appr','Approve']];
+  ['tab-add','p-add','Record'],['tab-appr','p-appr','Approve'],
+  ['tab-stmt','p-stmt','Statements']];
 function show(i){
   TABS.forEach(function(t,k){
     $(t[0]).setAttribute('aria-selected',String(k===i));
     $(t[1]).hidden=(k!==i);
   });
   $('head').textContent=TABS[i][2];
+  /* The bar scrolls now that there are six, so a tab restored from storage could be
+     selected off the side of the screen with nothing to say which one is lit. */
+  try{ $(TABS[i][0]).scrollIntoView({block:'nearest',inline:'nearest'}); }catch(e){}
+  /* Fetched on first sight rather than at start-up: the set changes monthly and most opens
+     of this app never look at it, so it is not worth a request on every cold start. */
+  if(TABS[i][0]==='tab-stmt')loadStatements();
   try{ localStorage.setItem('saltAppTab',String(i)); }catch(e){}
 }
 TABS.forEach(function(t,i){ $(t[0]).addEventListener('click',function(){ show(i); }); });

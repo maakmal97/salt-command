@@ -239,8 +239,29 @@ try {
 let appSrc = "", swSrc = "";
 try { appSrc = readFileSync(APP, "utf8"); } catch (e) { /* first build, before the app exists */ }
 try { swSrc = readFileSync(resolve(REPO, "public", "sw.js"), "utf8"); } catch (e) { /* likewise */ }
+/* AND THE STATEMENTS, added 20 Aug 2026, the day the monthly set became reachable from the
+   app. THE MIRROR RUNS BEFORE THE HASH ON PURPOSE. A new month adds files under public/ and
+   changes nothing this id already covered, so without this line update.mjs would compare
+   equal, skip the deploy and report the phone current while the Statements tab still showed
+   the month before: the identical shape as the sw.js gap above and the wrangler.jsonc gap
+   CLAUDE.md documents. It is the INDEX that is hashed and not the statements themselves,
+   because the index carries a digest of each month's bytes, so it moves when they move and
+   stays still when they do not, and a rebuild of an unchanged set still compares equal. */
+let stmtIndex = "";
+try {
+  const { mirrorStatements } = await import("./statements.mjs");
+  const idx = mirrorStatements(REPO);
+  stmtIndex = JSON.stringify(idx);
+  const n = idx.months.reduce((a, m) => a + m.accounts.length, 0);
+  console.log(`  stmts:   ${idx.months.length} month${idx.months.length === 1 ? "" : "s"}, ${n} statement${n === 1 ? "" : "s"} -> public/statements/`);
+} catch (e) {
+  console.error("BUILD FAILED: the statements could not be mirrored into public/.");
+  console.error("  " + (e && e.message ? e.message : e));
+  process.exit(1);
+}
 const BUILD_ID = createHash("sha256")
   .update(src).update(" app ").update(appSrc).update(" sw ").update(swSrc).update(" worker ").update(workerSrc)
+  .update(" statements ").update(stmtIndex)
   .digest("hex").slice(0, 16);
 if (src.split(IDTOKEN).length - 1 !== 1) {
   console.error(`BUILD FAILED: expected the build-id token exactly once, found ${src.split(IDTOKEN).length - 1}.`);

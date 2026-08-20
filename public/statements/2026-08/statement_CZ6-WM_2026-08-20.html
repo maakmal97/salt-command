@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Statement of account</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;padding:44px 20px 60px;background:#0f1115;color:#eef1f6;
+font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Lato,Roboto,Helvetica,Arial,sans-serif;
+font-size:15px;line-height:1.55;-webkit-text-size-adjust:100%}
+.w{max-width:600px;margin:0 auto}
+.eyebrow{font-size:11px;letter-spacing:.34em;color:#7fd7e8;font-weight:700;margin:0 0 8px}
+h1{margin:0;font-size:30px;font-weight:900;letter-spacing:-.015em;line-height:1.1}
+.meta{color:#6b7688;font-size:13px;margin:10px 0 0}
+.who{margin:26px 0 4px;font-size:19px;font-weight:700;color:#eef1f6}
+.whol{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#6b7688;font-weight:700}
+.rule{height:1px;background:#2a3140;margin:26px 0 4px}
+table{width:100%;border-collapse:collapse}
+th{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:#6b7688;font-weight:700;
+padding:0 0 10px;text-align:right}th.l{text-align:left}
+td{padding:15px 0;border-bottom:1px solid rgba(42,49,64,.55);text-align:right;
+font-variant-numeric:tabular-nums;vertical-align:top}
+td.l{text-align:left}
+.dt{font-size:15px;color:#eef1f6}
+.sub2{font-size:12px;color:#6b7688;margin-top:3px}
+.q{font-size:15px;color:#b9c2d0}.u{font-size:11px;color:#6b7688;margin-left:4px}
+.amt{font-size:16px;font-weight:700}
+.ok{font-size:12px;color:#5fd6a0;letter-spacing:.02em}
+.due{font-size:13px;font-weight:700;color:#ffc75a;white-space:nowrap}
+.tot{margin-top:30px}
+.tr{display:flex;justify-content:space-between;align-items:baseline;padding:7px 0;
+font-size:14px;color:#b9c2d0}
+.tr span:last-child{font-variant-numeric:tabular-nums;color:#eef1f6}
+.tr.big{margin-top:10px;padding-top:16px;border-top:1px solid #2a3140;font-size:19px;font-weight:800}
+.tr.big span:last-child{color:#ffc75a}
+.tr.big.clear span:last-child{color:#5fd6a0}
+.tr.sub{color:#9aa4b6;font-size:13px}
+.cxn{color:#7f8a9c;font-weight:600}
+.cx{color:#7f8a9c;font-weight:800;font-size:13px;letter-spacing:.02em}
+.cxr{text-decoration:line-through;text-decoration-thickness:1px;opacity:.5}
+.pend{color:#c8b6ff;font-weight:800;font-size:13px;letter-spacing:.02em}
+.owedkg{font-size:12px;color:#7fd7e8;margin-top:4px;font-weight:600;white-space:nowrap}
+.gift{font-size:12px;color:#b07cff;letter-spacing:.02em;white-space:nowrap}
+.nilamt{color:#6b7688;font-weight:400}
+.owed{margin-top:26px;border:1px solid #2a5560;border-radius:12px;padding:20px 22px;
+background:linear-gradient(180deg,rgba(18,40,46,.75),rgba(15,26,30,.75))}
+.owedl{margin:0;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#7fd7e8;font-weight:700}
+.owedv{margin:6px 0 0;font-size:34px;font-weight:900;color:#7fd7e8;letter-spacing:-.02em;
+font-variant-numeric:tabular-nums}
+.owedv span{font-size:15px;font-weight:600;margin-left:5px;color:#9fc9d4}
+.owedn{margin:12px 0 0;font-size:12px;color:#8fb3bd;line-height:1.6}
+.rec{margin-top:26px;border:1px solid #2a3140;border-radius:12px;padding:22px 22px 8px}
+.recl{margin:0 0 18px;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#7d879a;font-weight:700}
+.stp{display:flex;gap:14px;margin-bottom:20px}
+.stpn{flex:0 0 22px;height:22px;border-radius:50%;border:1px solid #3a4356;color:#7fd7e8;
+font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;line-height:1}
+.stpb{flex:1 1 auto;min-width:0}
+.stpt{margin:0;font-size:14px;font-weight:700;color:#eef1f6;line-height:1.45}
+.stpd{margin:7px 0 0;font-size:13px;color:#8a93a3;line-height:1.6}
+table.mini{width:100%;border-collapse:collapse;margin-top:10px}
+table.mini th{font-size:10px;letter-spacing:.14em;padding:0 0 6px;color:#6b7688}
+table.mini td{padding:7px 0;font-size:13px;border-bottom:1px solid rgba(42,49,64,.45);color:#b9c2d0}
+table.mini tr.tot td{border-bottom:0;border-top:1px solid #2a3140;font-weight:800;color:#eef1f6;padding-top:9px}
+table.mini tr.sub td{border-bottom:0;color:#eef1f6;font-weight:700}
+table.mini.calc td{font-size:13px}
+b.short{color:#ffc75a}
+.recn{margin:2px 0 16px;font-size:12px;color:#8a93a3;line-height:1.6;border-top:1px solid rgba(42,49,64,.5);padding-top:14px}
+.note{margin-top:34px;font-size:12px;color:#6b7688;line-height:1.65}
+@media print{body{background:#fff;color:#111;padding:24px}
+.eyebrow{color:#0b5f70}.q{color:#444}.ok{color:#186b45}.due{color:#8a5b00}
+.tr span:last-child{color:#111}.tr.big span:last-child{color:#8a5b00}
+.tr.big.clear span:last-child{color:#186b45}td{border-color:#ddd}.rule{background:#ccc}
+.owed{background:#f2f8fa;border-color:#9dc4cf}.owedl,.owedv{color:#0b5f70}
+.owedv span,.owedn{color:#3d6d78}.owedkg{color:#0b5f70}.gift{color:#5a3d8a}}
+</style></head><body><div class="w">
+<p class="eyebrow">Obsidian Salt</p>
+<h1>Statement of account</h1>
+<p class="meta">Issued 20 Aug 2026 &middot; from the beginning to 20 Aug 2026</p>
+<p class="whol" style="margin:26px 0 0">Account</p>
+<div class="who">CZ6-WM</div>
+<div class="rule"></div>
+<table><thead><tr><th class="l">Date</th><th>Quantity</th><th>Amount</th><th class="r">Status</th></tr></thead><tbody><tr><td class="l dt">21 Jul 2026</td><td class="q">1<span class="u">unit</span></td><td class="amt">100.00</td><td class="r"><span class="ok">settled</span></td></tr><tr><td class="l dt">07 Aug 2026<div class="sub2">paid 08 Aug 2026</div></td><td class="q">1<span class="u">unit</span></td><td class="amt">100.00</td><td class="r"><span class="ok">settled</span></td></tr></tbody></table>
+<p class="whol" style="margin:30px 0 0">Refunds</p><table style="margin-top:10px"><thead><tr><th class="l">Date</th><th class="l">Reason</th><th>Amount</th><th class="r">Status</th></tr></thead><tbody><tr><td class="l dt">24 Jul 2026</td><td class="l" style="font-size:13px;color:#b9c2d0">Overpayment returned to you</td><td class="amt">80.00</td><td class="r"><span class="ok">paid 31 Jul 2026</span></td></tr></tbody></table>
+<div class="tot">
+<div class="tr"><span>2 orders, 2 unit</span><span>200.00</span></div>
+<div class="tr"><span>Paid</span><span>200.00</span></div>
+
+<div class="tr big clear"><span>Balance</span><span>nil</span></div>
+</div>
+
+
+<p class="note">Amounts in ringgit. This statement covers your own orders only, taken from the seller&rsquo;s records as at the issue date. If anything differs from your own, say so and it will be checked.</p>
+</div></body></html>
