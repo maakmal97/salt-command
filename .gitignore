@@ -26,3 +26,6 @@ migrations/.query.sql
 
 # Scratch: scoping notes and drafts, never part of the deploy.
 .scratch/
+
+# zero-byte leftovers from the ledger extract tooling
+.scratch_v*.mjs

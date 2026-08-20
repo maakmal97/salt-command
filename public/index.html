@@ -986,10 +986,17 @@ function record(){
     busy=false; $('rec').disabled=false;
     if(r.ok){
       msg('ok',gated
-        ? 'Queued. The drafter turns it into a row within the minute and it comes back to <b>Approve</b> for a tap.'
+        ? 'Queued. The drafter turns it into a row in a second or two and it comes back to <b>Approve</b> for a tap.'
         : 'Queued. It is <b>not drafted and not approvable</b>, by design: it shows under Approve as already in hand and is folded at the laptop.');
       clearForm();
-      loadDrafts();
+      /* WAIT FOR THE DRAFTER, DO NOT RACE IT. The first version called loadDrafts() once,
+         right here, and that is too early every time: the Worker answers the queue POST and
+         drafts the row afterwards in waitUntil, so the row does not exist yet when the 200
+         arrives. The panel then said "nothing waiting" and there was nothing to tap, which
+         is exactly what happened on the first real entry, on 20 Aug. Nothing re-fetched
+         until the app was backgrounded and brought back, so the row sat pending and looked
+         like a failure. Poll instead, and stop as soon as something appears. */
+      chaseDraft();
     } else if(r.why==='key'){
       msg('bad','The write key was not accepted. The entry is held on this device and will go up when the key is right.');
     } else {
@@ -1040,6 +1047,9 @@ function idle(){
 }
 function poll(){
   if(document.visibilityState!=='visible')return;
+  /* A ROW WAITING ON A TAP GOES STALE BY BEING IGNORED, so refresh it on the same tick that
+     watches the build id, but only while the Approve tab is the one being looked at. */
+  if(!$('p-appr').hidden)loadDrafts();
   fetch('rev',{cache:'no-store'}).then(function(r){ return r.ok?r.json():null; })
     .then(function(j){
       if(!j||!j.id)return;
@@ -1066,6 +1076,19 @@ function money(n){ if(n==null||isNaN(n))return '-';
    queue POST has used since v288. A refusal on the second attempt leaves the panel saying so
    rather than looping. */
 var draftsNeedKey=false;
+/* Re-read the drafts a few times over the next ten seconds, stopping the moment one shows
+   up. Cheap: /drafts is a few hundred bytes and this runs only after a trade is queued. */
+var chaseT=[];
+function chaseDraft(){
+  chaseT.forEach(clearTimeout); chaseT=[];
+  var before=DRAFTS.length;
+  [1200,3000,6000,10000].forEach(function(ms){
+    chaseT.push(setTimeout(function(){
+      if(DRAFTS.length>before)return;          // it arrived, stop asking
+      loadDrafts();
+    },ms));
+  });
+}
 function loadDrafts(){
   var go=function(){ return fetch('drafts?status=pending',{cache:'no-store',headers:headers()}); };
   return go().then(function(r){
