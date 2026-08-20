@@ -139,7 +139,14 @@ export function openSnapshot(w) {
   const open = (payload && Array.isArray(payload.open)) ? payload.open : [];
   const byKey = {};
   for (const o of open) if (o && o.key) byKey[o.key] = o;
-  return { at: new Date().toISOString(), count: open.length, byKey };
+  /* THE POSITION TRAVELS WITH IT, for the same one-engine reason. A count needs to be shown
+     against what the book says is on the shelf, and how much of that is already owed to
+     somebody: on 20 Aug a count of zero against a roll of 8.05 was six unit that CE4-CHE had
+     already paid for, and reading it as ordinary shrinkage would have missed the only part
+     that mattered. The desk works that out; nothing downstream should work it out again. */
+  const position = (payload && payload.position) || {};
+  const countedOn = (payload && payload.countedOn) || {};
+  return { at: new Date().toISOString(), count: open.length, byKey, position, countedOn };
 }
 
 export function pricingSnapshot(w) {

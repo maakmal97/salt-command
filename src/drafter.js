@@ -313,8 +313,139 @@ export function draftRow(entry, book) {
       amendKind: kind,
     };
   }
+  /* ---- THE BOOKKEEPING ENTRIES (20 Aug 2026) ------------------------------------------
+   * A count, a loss, a lost sale and a party registration. None of them is a row in sales or
+   * purchases, which is why migrations/0005 had to widen `collection` before any of this could
+   * be stored. The desk's own applyOverlay already applies the first three exactly as the fold
+   * will, so nothing here is invented: it is the same treatment, made permanent.
+   *
+   * WHAT IS BEING APPROVED IS NOT THE FACT, IT IS WHAT THE FACT MEANS. He looked at the shelf;
+   * that is not in dispute. What the tap is for is seeing the drift with the part that matters
+   * attached, which on 20 Aug was that a count of zero against a roll of 8.05 included SIX UNIT
+   * somebody had already paid for. Read as ordinary shrinkage it would have missed that. */
+  if (pay.mode === "count") {
+    const prod = pay.product || "salt";
+    const q = isNum(pay.qty) ? +pay.qty : (isNum(pay.kg) ? +pay.kg : null);
+    if (q == null || q < 0) return { skip: "a count needs a quantity. Zero is a valid count; nothing is not" };
+    const when = pay.date || null;
+    if (!when) return { skip: "a count needs the date it was taken, and dating it is a judgement" };
+
+    const snap = (book.state && book.state.OPEN) || null;
+    const pos = (snap && snap.position && snap.position[prod]) || null;
+    const flags = [];
+    let drift = null;
+    if (pos && isNum(pos.onHand)) {
+      drift = round(q - pos.onHand);
+      if (Math.abs(drift) < 0.005) {
+        flags.push(`The book says ${round(pos.onHand)} and you counted the same. Nothing is unaccounted for, which is the first time that can be said since the last count.`);
+      } else {
+        flags.push(`The book says ${round(pos.onHand)} and you counted ${round(q)}: ${drift > 0 ? "+" : ""}${drift} unit unaccounted for. A COUNT ALWAYS WINS, so this becomes the shelf and the gap books as shrinkage across every unit sold.`);
+      }
+      /* THE PART THAT IS NOT SHRINKAGE. Stock owed out is paid for and belongs to somebody. */
+      if (drift != null && drift < -0.005 && isNum(pos.owedOut) && pos.owedOut > 0.005) {
+        flags.push(`${round(pos.owedOut)} unit of this shelf is OWED OUT and already paid for. If the count is right, that stock is not there to deliver, which is a different problem from shrinkage and a worse one.`);
+      }
+      if (q < 0.005 && isNum(pos.promised) && pos.promised > 0.005) {
+        flags.push(`Counting zero against ${round(pos.promised)} unit of promises means every open order on the book is unmeetable until a lot lands.`);
+      }
+    } else {
+      flags.push("The mirror carries no position for this product, so the drift could not be worked out. The count still stands; the comparison does not.");
+    }
+    const since = snap && snap.countedOn && snap.countedOn[prod];
+    return {
+      collection: "count",
+      row: { product: prod, qty: q, date: when, was: pos ? pos.onHand : null, drift },
+      flags,
+      reasoning: `Counted ${round(q)} unit of ${prod} by hand on ${when}`
+        + (pos ? `, against ${round(pos.onHand)} on the book: a drift of ${drift > 0 ? "+" : ""}${drift}.` : ".")
+        + (since ? ` The last count was ${since}.` : "")
+        + " A count wins over the ledger, and the fold sets the stated stock and moves COUNT_ON to this date.",
+    };
+  }
+
+  if (pay.mode === "loss") {
+    const prod = pay.product || "salt";
+    const q = isNum(pay.kg) ? +pay.kg : (isNum(pay.qty) ? +pay.qty : null);
+    if (q == null || !(q > 0)) return { skip: "a loss needs a quantity that actually left the shelf" };
+    const when = pay.date || null;
+    if (!when) return { skip: "a loss needs a date, and dating it is a judgement" };
+    const why = String(pay.why || "").trim();
+    if (!why) return { skip: "a loss needs a reason. Without one it is indistinguishable from shrinkage, which the plug already carries" };
+
+    const pos = ((book.state && book.state.OPEN && book.state.OPEN.position) || {})[prod] || null;
+    const flags = [];
+    if (pos && isNum(pos.onHand)) {
+      if (q > pos.onHand + 0.005) {
+        flags.push(`This is ${round(q)} unit against a shelf the book puts at ${round(pos.onHand)}. Losing more than you hold means the shelf figure is already wrong, and a COUNT would say more than this entry can.`);
+      } else if (pos.onHand > 0.005 && q / pos.onHand >= 0.25) {
+        flags.push(`That is ${round(q / pos.onHand * 100, 1)}% of the shelf.`);
+      }
+    }
+    return {
+      collection: "loss",
+      row: { date: when, product: prod, kg: q, why, note: pay.note || null },
+      flags,
+      reasoning: `${round(q)} unit of ${prod} left the shelf without a sale on ${when}: ${why}.`
+        + " It draws stock and books no revenue, so it lands in selfUseLog and raises the effective cost of everything else.",
+    };
+  }
+
+  if (pay.mode === "lost") {
+    const prod = pay.product || "salt";
+    const q = isNum(pay.kg) ? +pay.kg : (isNum(pay.qty) ? +pay.qty : null);
+    if (q == null || !(q > 0)) return { skip: "a lost sale needs the quantity that was wanted" };
+    const when = pay.date || null;
+    if (!when) return { skip: "a lost sale needs a date" };
+    const why = String(pay.why || "").trim();
+    if (!why) return { skip: "a lost sale needs a reason, or it teaches nothing about why it was lost" };
+
+    const pos = ((book.state && book.state.OPEN && book.state.OPEN.position) || {})[prod] || null;
+    const flags = [];
+    /* THE ONE COMPARISON WORTH MAKING: was it lost for want of stock, which is a buying
+       decision, or for some other reason, which is a pricing or a relationship one. */
+    if (pos && isNum(pos.onHand) && pos.onHand < q) {
+      flags.push(`The shelf held ${round(pos.onHand)} against ${round(q)} wanted, so this was lost for want of stock rather than on price. That is a restock signal, not a pricing one.`);
+    }
+    return {
+      collection: "lostDemand",
+      row: { date: when, product: prod, party: pay.party || null, kg: q, rm: isNum(pay.total) ? +pay.total : 0, why, note: pay.note || null },
+      flags,
+      reasoning: `${round(q)} unit of ${prod} was wanted on ${when}`
+        + (pay.party ? ` by ${pay.party}` : " by a walk-up")
+        + (isNum(pay.total) && pay.total > 0 ? ` at RM ${round(pay.total)}` : "")
+        + ` and not supplied: ${why}.`
+        + " It moves no stock and no cash; it is evidence for restock sizing and for what the price is doing.",
+    };
+  }
+
   if (pay.mode === "addid") {
-    return { skip: "this entry REGISTERS A PARTY rather than recording a trade. It has no row to draft, and the roster and the directory are edited on the laptop" };
+    const code = String(pay.code || "").trim().toUpperCase();
+    if (!code) return { skip: "a registration needs a code" };
+    if (!/^[A-Z]{1,3}\d{0,2}[A-Z0-9-]*$/.test(code)) {
+      return { skip: `"${code}" does not look like a desk code. They run like CA4-DAM or SP7-PUD` };
+    }
+    const kind = String(pay.kind || "customer");
+    const parent = pay.parent || null;
+    if (kind === "bucket" && !parent) return { skip: "a bucket sits under a party, and which party is a judgement" };
+
+    const roster = (book.state && book.state.roster) || [];
+    const flags = [];
+    /* THE ONE THAT MATTERS. A duplicate registration is silent: the fold would append a second
+       copy and every roster walk would see the party twice. */
+    if (roster.includes(code)) {
+      flags.push(`${code} is ALREADY on the roster. Folding this would list the party twice, and the desk walks the roster to build its own tables.`);
+    }
+    if (parent && !roster.includes(parent)) {
+      flags.push(`The parent ${parent} is not on the roster either, so this bucket would hang off nothing.`);
+    }
+    return {
+      collection: "roster",
+      row: { code, kind, parent, note: pay.note || null },
+      flags,
+      reasoning: `Registers ${code} as a ${kind}${parent ? ` under ${parent}` : ""}.`
+        + " It touches no figure: the fold appends the code to the roster."
+        + " THE NAME AND THE PLACE ARE NOT HERE AND MUST NOT BE: the directory is typed at the laptop and never travels.",
+    };
   }
   if (pay.mode && pay.mode !== "new") {
     return { skip: `this entry carries mode "${pay.mode}", which the drafter has no row shape for, so it is left for a person` };

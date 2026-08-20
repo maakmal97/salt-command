@@ -66,7 +66,7 @@ const money = (v) => v == null ? "-" : "RM " + Number(v).toLocaleString("en-MY",
 /* ---- schema -------------------------------------------------------------------------- */
 function schema() {
   /* Both migrations, in order, and each is CREATE TABLE IF NOT EXISTS so re-running is safe. */
-  for (const name of ["0002_draft.sql", "0003_refused.sql", "0004_amend.sql"]) {
+  for (const name of ["0002_draft.sql", "0003_refused.sql", "0004_amend.sql", "0005_bookkeeping.sql"]) {
     if (!existsSync(resolve(REPO, "migrations", name))) { fail("migrations/" + name + " is not there"); continue; }
     const r = wrangler(["d1", "execute", DB, WHERE, "--file=migrations/" + name], { quiet: true });
     if (r.code !== 0) { fail("could not apply " + name + ":\n        " + r.out.split("\n").slice(0, 6).join("\n        ")); continue; }

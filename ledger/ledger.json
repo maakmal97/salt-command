@@ -1960,7 +1960,7 @@
   ],
   "QUEUE_COMMITTED": "2026-08-20T02:02:17.323Z",
   "PRICING": {
-   "takenAt": "2026-08-20T03:53:27.476Z",
+   "takenAt": "2026-08-20T04:05:27.666Z",
    "sizes": [
     0.5,
     1,
@@ -2081,7 +2081,7 @@
    "v": "v320"
   },
   "OPEN": {
-   "at": "2026-08-20T03:53:27.481Z",
+   "at": "2026-08-20T04:05:27.672Z",
    "count": 7,
    "byKey": {
     "CJ4-BJ|undefined|850": {
@@ -2172,6 +2172,34 @@
      "oweKg": 12.5,
      "key": "SF6-KLC|2026-07-08|750"
     }
+   },
+   "position": {
+    "salt": {
+     "name": "Salt",
+     "onHand": 0,
+     "free": -3,
+     "owedOut": 3,
+     "coverDays": 0,
+     "rate": 3.88,
+     "owedToYou": 80,
+     "promised": 21.5,
+     "short": 21.5
+    },
+    "oil": {
+     "name": "Oil",
+     "onHand": 0,
+     "free": 0,
+     "owedOut": 0,
+     "coverDays": 0,
+     "rate": 5.07,
+     "owedToYou": 0,
+     "promised": 0,
+     "short": 0
+    }
+   },
+   "countedOn": {
+    "salt": "2026-08-20",
+    "oil": "2026-08-20"
    },
    "v": "v320"
   }

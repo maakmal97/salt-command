@@ -1144,6 +1144,58 @@ function drawDrafts(){
        written; what you check is whether this is the RIGHT ORDER and whether that is what
        happened to it. Showing a margin here would be answering a question nobody asked, and
        worse, it would be the target row's margin dressed up as a decision. */
+    /* THE BOOKKEEPING CARDS. None of these is a trade, so none of them gets a rate, a cost or
+       a margin: printing one would be inventing a figure for a fact that has none. What each
+       shows is the fact and what it does to the book, which is the only thing there is to
+       agree to. */
+    if(d.collection==='count'){
+      var dr=r.drift;
+      var drCls=dr==null?'':(Math.abs(dr)<0.005?'good':'bad');
+      return '<div class="drf" data-id="'+esc(d.id)+'">'
+        +'<div class="drf-top"><span class="drf-w">Count of '+esc(r.product||'salt')+'</span>'
+        +'<span class="drf-rm">'+esc(n2(r.qty))+' unit</span></div>'
+        +'<div class="drf-g">'
+        +'<div class="drf-c"><p class="k">Book says</p><p class="v">'+(r.was==null?'&mdash;':esc(n2(r.was)))+'</p></div>'
+        +'<div class="drf-c"><p class="k">You counted</p><p class="v">'+esc(n2(r.qty))+'</p></div>'
+        +'<div class="drf-c '+drCls+'"><p class="k">Drift</p><p class="v">'+(dr==null?'&mdash;':(dr>0?'+':'')+esc(n2(dr)))+'</p></div>'
+        +'<div class="drf-c"><p class="k">Counted on</p><p class="v">'+esc(r.date||'-')+'</p></div>'
+        +'</div>'
+        +(d.flags||[]).map(function(f){ return '<div class="drf-f">'+esc(f)+'</div>'; }).join('')
+        +'<p class="drf-why">'+esc(d.reasoning||'')+'</p>'
+        +'<div class="drf-b"><button class="btn rej" data-a="reject">Reject</button>'
+        +'<button class="btn primary" data-a="approve">Approve</button></div></div>';
+    }
+    if(d.collection==='loss'||d.collection==='lostDemand'){
+      var isLost=d.collection==='lostDemand';
+      return '<div class="drf" data-id="'+esc(d.id)+'">'
+        +'<div class="drf-top"><span class="drf-w">'+(isLost?'Lost sale':'Loss')+' of '+esc(r.product||'salt')+'</span>'
+        +'<span class="drf-rm">'+esc(n2(r.kg))+' unit</span></div>'
+        +'<div class="drf-g">'
+        +'<div class="drf-c"><p class="k">'+(isLost?'Wanted':'Left the shelf')+'</p><p class="v">'+esc(n2(r.kg))+' unit</p></div>'
+        +'<div class="drf-c"><p class="k">Date</p><p class="v">'+esc(r.date||'-')+'</p></div>'
+        +(isLost?'<div class="drf-c"><p class="k">Who</p><p class="v">'+esc(r.party||'walk-up')+'</p></div>'
+                 +'<div class="drf-c"><p class="k">Asked</p><p class="v">'+(r.rm?esc(money(r.rm)):'&mdash;')+'</p></div>'
+               :'<div class="drf-c" style="grid-column:1 / -1"><p class="k">Why</p><p class="v">'+esc(r.why||'-')+'</p></div>')
+        +'</div>'
+        +(isLost?'<p class="drf-why"><b>Why:</b> '+esc(r.why||'-')+'</p>':'')
+        +(d.flags||[]).map(function(f){ return '<div class="drf-f">'+esc(f)+'</div>'; }).join('')
+        +'<p class="drf-why">'+esc(d.reasoning||'')+'</p>'
+        +'<div class="drf-b"><button class="btn rej" data-a="reject">Reject</button>'
+        +'<button class="btn primary" data-a="approve">Approve</button></div></div>';
+    }
+    if(d.collection==='roster'){
+      return '<div class="drf" data-id="'+esc(d.id)+'">'
+        +'<div class="drf-top"><span class="drf-w">Register '+esc(r.code||'?')+'</span>'
+        +'<span class="drf-rm">'+esc(r.kind||'customer')+'</span></div>'
+        +'<div class="drf-g">'
+        +'<div class="drf-c"><p class="k">Code</p><p class="v">'+esc(r.code||'-')+'</p></div>'
+        +'<div class="drf-c"><p class="k">'+(r.parent?'Under':'Kind')+'</p><p class="v">'+esc(r.parent||r.kind||'-')+'</p></div>'
+        +'</div>'
+        +(d.flags||[]).map(function(f){ return '<div class="drf-f">'+esc(f)+'</div>'; }).join('')
+        +'<p class="drf-why">'+esc(d.reasoning||'')+'</p>'
+        +'<div class="drf-b"><button class="btn rej" data-a="reject">Reject</button>'
+        +'<button class="btn primary" data-a="approve">Approve</button></div></div>';
+    }
     if(d.amends){
       var e=(d.entry&&d.entry.payload)||{};
       var buyA=d.collection==='purchases';

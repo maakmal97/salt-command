@@ -841,9 +841,50 @@ section("Drafter — rows, refusals and flags");
   const noSuchOrder = draftRow({ at: "x", payload: { mode: "amend", kind: "Fulfilment", direction: "SELL",
     party: "CC5-OKR", orderKey: "CC5-OKR|1999-01-01|1", date: "2026-08-20", cash: 1, kg: 1 } }, openBook);
   ok(/no OPEN order/.test(noSuchOrder.skip || ""), "a key matching no open order is refused, never applied to a near miss");
-  /* the reason must name the real case: an addid registers a party and amends nothing */
-  ok(/REGISTERS A PARTY/.test(draftRow({ at: "x", payload: { mode: "addid", code: "CX1-NEW" } }, book).skip || ""), "an addid is reported as a party registration, not as an amendment");
-  ok(!/amend/i.test(draftRow({ at: "x", payload: { mode: "addid", code: "CX1-NEW" } }, book).skip || ""), "and never as an amendment");
+  /* ---- THE BOOKKEEPING ENTRIES, DRAFTED FROM 20 Aug 2026 ----------------------------
+     A count, a loss, a lost sale and a registration. None is a row in sales or purchases, and
+     the point of putting them through the gate is that the approval screen shows what the fact
+     MEANS: a count of zero against a roll that includes stock somebody has already paid for is
+     not ordinary shrinkage, and reading it as such is what nearly happened on 20 Aug. */
+  const shelf = { ...book, state: { ...(book.state || {}),
+    roster: ["CC5-OKR", "CA4-DAM"],
+    OPEN: { v: "vTEST", byKey: {},
+      position: { salt: { onHand: 8.05, owedOut: 6, promised: 24.5, free: 2.05 } },
+      countedOn: { salt: "2026-08-12" } } } };
+
+  const cnt = draftRow({ at: "x", payload: { mode: "count", product: "salt", qty: 0, date: "2026-08-20" } }, shelf);
+  ok(!cnt.skip && cnt.collection === "count", "a count is drafted, not refused");
+  ok(cnt.row.drift === -8.05, "the drift is what was counted less what the desk says is there");
+  ok(cnt.flags.some(f => /OWED OUT and already paid for/.test(f)),
+    "the part of the shortfall somebody has PAID FOR is called out separately from shrinkage");
+  ok(cnt.flags.some(f => /unmeetable/.test(f)), "counting zero against open promises says so");
+  ok(/needs a quantity/.test(draftRow({ at: "x", payload: { mode: "count", product: "salt", date: "2026-08-20" } }, shelf).skip || ""),
+    "a count with no quantity is refused: zero is a count, nothing is not");
+  const matched = draftRow({ at: "x", payload: { mode: "count", product: "salt", qty: 8.05, date: "2026-08-20" } }, shelf);
+  ok(matched.flags.some(f => /Nothing is unaccounted for/.test(f)), "a count that matches the book says so plainly");
+
+  const spill = draftRow({ at: "x", payload: { mode: "loss", product: "salt", kg: 3, why: "spillage", date: "2026-08-20" } }, shelf);
+  ok(!spill.skip && spill.collection === "loss", "a loss with a reason is drafted");
+  ok(spill.flags.some(f => /% of the shelf/.test(f)), "a loss of a quarter of the shelf or more is sized against it");
+  ok(/needs a reason/.test(draftRow({ at: "x", payload: { mode: "loss", product: "salt", kg: 1, date: "2026-08-20" } }, shelf).skip || ""),
+    "a loss with no reason is refused: without one it is indistinguishable from shrinkage");
+  ok(draftRow({ at: "x", payload: { mode: "loss", product: "salt", kg: 99, why: "x", date: "2026-08-20" } }, shelf)
+    .flags.some(f => /Losing more than you hold/.test(f)), "losing more than the shelf holds is flagged as a count problem");
+
+  const lostSale = draftRow({ at: "x", payload: { mode: "lost", product: "salt", kg: 20, total: 1800, why: "no stock", date: "2026-08-20" } }, shelf);
+  ok(!lostSale.skip && lostSale.collection === "lostDemand", "a lost sale is drafted");
+  ok(lostSale.flags.some(f => /restock signal, not a pricing one/.test(f)),
+    "one lost for want of stock is named as a buying signal rather than a pricing one");
+
+  const reg = draftRow({ at: "x", payload: { mode: "addid", code: "CX1-NEW", kind: "customer" } }, shelf);
+  ok(!reg.skip && reg.collection === "roster", "a registration is drafted");
+  ok(/never travels/.test(reg.reasoning), "and it says the name and the place do not travel with it");
+  ok(draftRow({ at: "x", payload: { mode: "addid", code: "CA4-DAM", kind: "customer" } }, shelf)
+    .flags.some(f => /ALREADY on the roster/.test(f)), "registering a code twice is flagged: the desk walks the roster");
+  ok(/does not look like a desk code/.test(draftRow({ at: "x", payload: { mode: "addid", code: "!!!" } }, shelf).skip || ""),
+    "a code that is not a desk code is refused");
+  ok(/bucket sits under a party/.test(draftRow({ at: "x", payload: { mode: "addid", code: "CX2-B", kind: "bucket" } }, shelf).skip || ""),
+    "a bucket with no parent is refused: whose bucket is a judgement");
   ok(/bucket/.test(draftRow(entry({ direction: "SELL", party: "CN6-WM-R", qty: 1, total: 100, assoc: "CN6-WM" }), book).skip || ""),
     "an entry carrying associate or stream fields is left for a person");
   ok(/counterparty/.test(draftRow(entry({ direction: "SELL", qty: 1, total: 100 }), book).skip || ""), "no party, no row");
