@@ -1,5 +1,18 @@
 [
  {
+  "v": "v329",
+  "d": "20 Aug 2026",
+  "t": "THREE ROWS FOLDED, AND THE CHEAPEST SALT THIS BOOK HAS EVER SOLD COST RM44 RATHER THAN RM56",
+  "n": [
+   "<b>THREE APPROVED ROWS FOLDED, AND ALL THREE WERE APPROVED WITH FLAGS SHOWING.</b> CM3-OKR took 12.5 unit for RM600, paid and delivered on the day. CN6-WM agreed 2 unit for RM150 and CS6-PER 6.25 unit for RM350, both with nothing paid and nothing moved, so both are PENDING, carry no date and count nowhere. Every one of the three was drafted under the gate, put in front of him with what was wrong with it, and taken anyway. That is the gate working: it is there to make a decision informed, not to make it for him.",
+   "<b>THE CM3-OKR ROW IS BOOKED AT RM44 OF COST AND THE APPROVAL SCREEN SAID RM56, WHICH IS THE ONE FIGURE CHANGED IN THIS FOLD.</b> The drafter costed it at 10:42 against STOCK_COST as it then stood and told him it lost money on every unit. It did not. The shelf was COUNTED AT ZERO that morning and the 50 unit lot landed at RM44 the same day, so no RM56 salt existed for the order to draw. At RM44 it returns RM50 at 8.3% rather than losing RM100 at minus 16.7%. He took the trade on the WORSE number, so this corrects the drafter and not his judgement. THE GENERAL LESSON IS TIMING: a draft carries the shelf as it was when it was written, and this one sat four hours while the shelf underneath it changed completely.",
+   "<b>RM48 A UNIT IS THE CHEAPEST SALT THIS BOOK HAS EVER SOLD.</b> The previous low on an ordinary sale was RM60, set on 08 Jul and matched on the 17th; the only rates below it anywhere are two REBATE rows at RM46.99 and RM47, and a rebate is goods at cost rather than a price. It is also under floor by RM164.75 and RM360 under the ladder ask. Reported and not repriced, as every under-floor row on this book is.",
+   "<b>BOTH PENDING ROWS ARE TO ASSOCIATES, WHICH CHANGES HOW THEY SHOULD BE READ.</b> CN6-WM at RM75 and CS6-PER at RM56 are wholesale rates to people who resell, not retail concessions. CN6-WM has fallen RM25 a unit across three direct orders while doubling his size, and his downstream bucket clears RM67.69 to RM125. CS6-PER at RM56 would be RM4 under his own previous floor. Judge either against what they can get for it rather than against what a retail buyer pays.",
+   "<b>ONE OF THE FLAGS HAS ALREADY EXPIRED, WHICH IS WORTH KNOWING ABOUT FLAGS.</b> The drafter told him RM150 was under the delivered floor of RM165.98. That was the v326 board; on the ladder as it now stands the 2 unit floor is RM122.36 and the row CLEARS it by RM27.64. A flag is a reading taken at a moment, and this book changed its pricing basis twice between the draft and the fold. The row note says so rather than repeating a figure that has moved.",
+   "<b>THE SHELF ROLLS 50 TO 37.5</b> on the 12.5 unit that actually left. A ROLL AND NOT A COUNT, so COUNT_ON stays at the 20th: nobody has looked at the shelf since the morning. 13.88 unit are still owed out to CE4-CHE, CE4-AD and CJ4-BJ, leaving 23.62 free to sell. If both pending rows move, 8.25 unit go with them and both are covered. QUEUE_COMMITTED moves to 2026-08-20T11:14:56.780Z, the newest of the three ids folded."
+  ]
+ },
+ {
   "v": "v328",
   "d": "20 Aug 2026",
   "t": "THE PHONE WAS QUOTING THE RETIRED TIER BOARD, AND UNDER THE DESK AT EVERY SIZE THAT MATTERED",
