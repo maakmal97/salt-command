@@ -69,10 +69,17 @@
 	// change: it does not move rev.json's id, so update.mjs compares equal and skips the
 	// deploy. Deploy this by hand.
 	"triggers": {
-		"crons": ["*/15 * * * *"]
+		// */15 is the drafter's safety net. 0 1 is 09:00 in Kuala Lumpur: the morning nudge,
+		// which pushes ONLY when something is actually waiting. See scheduled() in src/worker.js.
+		"crons": ["*/15 * * * *", "0 1 * * *"]
 	},
 	"vars": {
-		"REQUIRE_ACCESS": "0"
+		"REQUIRE_ACCESS": "0",
+		// The VAPID PUBLIC key. Public by definition: a browser cannot create a push
+		// subscription without it and it authorises nothing. The private half is the
+		// VAPID_PRIVATE_JWK secret, set by tools/vapid.mjs and never printed.
+		"VAPID_PUBLIC_KEY": "BB7ReK5C7NBB6KMo7tNGmd43SKePl8qQi_DnbGnEmsrLevWIM8sn4zJ7ICp5Hs_nnz1A4ZH9TtSJij4Z71HFC0k",
+		"VAPID_SUBJECT": "mailto:maakmal97@icloud.com"
 	},
 	"observability": {
 		"enabled": true

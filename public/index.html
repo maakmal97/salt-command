@@ -315,6 +315,11 @@ option:checked{background-color:var(--menu-2);font-weight:600}
       <div id="counts"></div>
       <p class="lbl" style="margin-top:18px">What needs doing</p>
       <div id="acts"><p class="stand">Loading.</p></div>
+
+      <p class="lbl" style="margin-top:20px">Alerts</p>
+      <p class="stand" id="alertWhy" style="margin-bottom:10px">Checking whether this device can take them.</p>
+      <button class="btn" id="alertBtn" hidden>Turn alerts on</button>
+      <div id="alertMsg"></div>
     </section>
 
     <!-- ===================== BOOK ====================== -->
@@ -1188,6 +1193,97 @@ function decide(id,action,btn){
   }).then(function(){ delete apprBusy[id]; return loadDrafts(); });
 }
 
+/* ---- WEB PUSH (v321) ------------------------------------------------------
+   IT ONLY WORKS FROM THE HOME SCREEN ON AN IPHONE, and that is Apple's rule rather than a
+   choice made here: iOS grants Web Push to an installed PWA and to nothing else, so the same
+   page in a Safari tab has no Notification at all. Detected and said plainly, because "the
+   button does nothing" is the worst possible way to learn it.
+
+   THE WRITE KEY IS COPIED INTO IndexedDB when alerts are turned on. A service worker cannot
+   read localStorage, and the woken worker has to authenticate to read the summary it builds
+   the banner from. Same key, second home, written only on this device. */
+function b64ToBytes(b64){
+  var pad='='.repeat((4-b64.length%4)%4);
+  var raw=atob((b64+pad).replace(/-/g,'+').replace(/_/g,'/'));
+  var out=new Uint8Array(raw.length);
+  for(var i=0;i<raw.length;i++)out[i]=raw.charCodeAt(i);
+  return out;
+}
+function idbPutKey(v){
+  return new Promise(function(res){
+    var r; try{ r=indexedDB.open('salt-push',1); }catch(e){ return res(false); }
+    r.onupgradeneeded=function(){ try{ r.result.createObjectStore('kv'); }catch(e){} };
+    r.onerror=function(){ res(false); };
+    r.onsuccess=function(){
+      try{ var tx=r.result.transaction('kv','readwrite'); tx.objectStore('kv').put(v,'writeKey');
+        tx.oncomplete=function(){ res(true); }; tx.onerror=function(){ res(false); };
+      }catch(e){ res(false); }
+    };
+  });
+}
+function amsgAlert(kind,text){ $('alertMsg').innerHTML='<div class="msg '+kind+'">'+text+'</div>'; }
+
+var pushSub=null;
+async function alertsState(){
+  var why=$('alertWhy'), btn=$('alertBtn');
+  if(!('serviceWorker' in navigator)||!('PushManager' in window)||typeof Notification==='undefined'){
+    /* The iPhone case, and the one worth naming: in a Safari TAB none of these exist. */
+    why.innerHTML='This device cannot take alerts. On an iPhone that almost always means the '
+      +'app is open in a Safari tab rather than from the Home Screen: <b>Share, then Add to '
+      +'Home Screen</b>, and open it from there.';
+    btn.hidden=true; return;
+  }
+  var reg=null; try{ reg=await navigator.serviceWorker.ready; }catch(e){}
+  if(!reg){ why.textContent='The service worker has not started yet. Reload and try again.'; btn.hidden=true; return; }
+  pushSub=await reg.pushManager.getSubscription();
+  if(pushSub){
+    why.innerHTML='<b>On.</b> This device is woken when a row is waiting, when a shelf has not '
+      +'been counted, and when something needs a person. The alert carries no figures: it wakes '
+      +'the app, which then reads the live state and says what is true now.';
+    btn.hidden=false; btn.textContent='Turn alerts off';
+  } else if(Notification.permission==='denied'){
+    why.innerHTML='Alerts are blocked for this app in your device settings. Allow notifications '
+      +'for Salt Command there, then come back.';
+    btn.hidden=true;
+  } else {
+    why.textContent='Off. Turn them on to be told when a row is waiting for approval, when a '
+      +'shelf has not been counted today, and when something needs a person.';
+    btn.hidden=false; btn.textContent='Turn alerts on';
+  }
+}
+async function toggleAlerts(){
+  var btn=$('alertBtn'); btn.disabled=true;
+  try{
+    var reg=await navigator.serviceWorker.ready;
+    if(pushSub){
+      var ep=pushSub.endpoint;
+      await pushSub.unsubscribe();
+      await fetch('push/unsubscribe',{method:'POST',headers:headers(),body:JSON.stringify({endpoint:ep})});
+      pushSub=null; amsgAlert('','Alerts off. Nothing will wake this device.');
+    } else {
+      var perm=await Notification.requestPermission();
+      if(perm!=='granted'){ amsgAlert('warn','Permission was not granted, so nothing can be sent.'); return; }
+      var kr=await fetch('push/key',{cache:'no-store'});
+      var kj=kr.ok?await kr.json():null;
+      if(!kj||!kj.key){ amsgAlert('bad','This desk has no push key set up yet, so there is nothing to subscribe to.'); return; }
+      pushSub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64ToBytes(kj.key)});
+      var res=await fetch('push/subscribe',{method:'POST',headers:headers(),
+        body:JSON.stringify({endpoint:pushSub.endpoint})});
+      if(res.status===401&&askWriteKey()){
+        res=await fetch('push/subscribe',{method:'POST',headers:headers(),
+          body:JSON.stringify({endpoint:pushSub.endpoint})});
+      }
+      if(!res.ok){ amsgAlert('bad','The desk refused the subscription (http '+res.status+').'); return; }
+      await idbPutKey(writeKey());
+      amsgAlert('ok','Alerts on. The next thing that needs you will reach this device.');
+    }
+  }catch(e){
+    amsgAlert('bad','That did not work: '+esc(String(e&&e.message||e)));
+  }finally{
+    btn.disabled=false; alertsState();
+  }
+}
+
 /* ---- tabs ---------------------------------------------------------------- */
 var TABS=[['tab-today','p-today','Today'],['tab-book','p-book','The book'],
   ['tab-add','p-add','Record'],['tab-appr','p-appr','Approve']];
@@ -1235,6 +1331,7 @@ $('p-parent').addEventListener('change',preview);
   $(id).addEventListener('change',function(){ LEDN=25; drawLedger(); }); });
 $('ledmore').addEventListener('click',function(){ LEDN+=50; drawLedger(); });
 $('rec').addEventListener('click',record);
+$('alertBtn').addEventListener('click',toggleAlerts);
 window.addEventListener('online',function(){ paint(); if(held.length)push().then(paint); });
 window.addEventListener('offline',paint);
 document.addEventListener('visibilitychange',function(){ if(document.visibilityState==='visible'){ poll(); loadDrafts(); } });
@@ -1246,6 +1343,7 @@ drawModes(); drawSKind(); drawAKind(); drawPKind();
 try{ var t=parseInt(localStorage.getItem('saltAppTab')||'0',10); show(isNaN(t)?0:t); }catch(e){ show(0); }
 loadData().then(function(){ if(held.length)push().then(paint); });
 loadDrafts();
+alertsState();
 setInterval(poll,10000);
 if('serviceWorker' in navigator){
   window.addEventListener('load',function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); });

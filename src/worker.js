@@ -30,6 +30,7 @@
  */
 
 import { runDrafter, dryRunDrafter } from "./drafter.js";
+import { sendPush, listSubs } from "./push.js";
 
 /* X-Robots-Tag matches public/_headers, which sets it on the static assets. It was missing
    here, so GET /queue and GET /rev carried no noindex at all. That mattered little behind
@@ -142,12 +143,24 @@ async function readQueuePost(request) {
  * takes a second longer costs nothing, because the Approve tab polls; an entry that takes a
  * second longer is felt at the point of sale. And a drafter fault must never fail the queue
  * write, which is why this cannot throw into the response path. */
+/* WAKE THE PHONE WHEN A ROW LANDS. The drafter reports how many it wrote; only a non-zero
+   count is worth a banner. A refusal is NOT pushed: it needs a person at the laptop, not an
+   interruption on a phone that cannot act on it, and it will be there in the panel when he
+   next looks. Failures here are swallowed for the same reason the drafting is: a push service
+   having a bad minute must never fail the queue write that triggered it. */
+async function pushIfDrafted(env, result) {
+  try {
+    if (result && result.drafted > 0) await sendPush(env, { tag: "approve", urgency: "high" });
+  } catch { /* a banner is not worth an error path */ }
+}
+
 function draftOnArrival(env, ctx) {
   if (!ctx || typeof ctx.waitUntil !== "function" || !env.SALT_LEDGER) return;
   ctx.waitUntil((async () => {
     try {
       const r = await runDrafter(env);
       console.log("drafter (on arrival): " + JSON.stringify(r));
+      await pushIfDrafted(env, r);
     } catch (e) {
       console.log("drafter (on arrival) FAILED, the cron will retry: " + String((e && e.stack) || e));
     }
@@ -436,12 +449,34 @@ export default {
    * INSERT OR IGNORE keyed on the entry's own `at`, so a re-run is harmless, and the next
    * tick is a better retry than a loop. */
   async scheduled(event, env, ctx) {
+    /* TWO SCHEDULES, AND THEY DO DIFFERENT JOBS. The quarter-hourly one is the drafter's
+       safety net and pushes only when it actually wrote a row. The daily one at 01:00 UTC,
+       which is 09:00 in Kuala Lumpur, is the morning nudge.
+       THE NUDGE ONLY FIRES IF THERE IS SOMETHING. A banner every morning saying the book is
+       square is a banner that gets swiped away unread, and then so does the one that mattered. */
+    const daily = String(event && event.cron || "").startsWith("0 1 ");
     ctx.waitUntil((async () => {
       try {
+        if (daily) {
+          let worth = false;
+          try {
+            const d = await env.SALT_LEDGER.prepare("SELECT COUNT(*) AS n FROM draft WHERE status='pending'").first();
+            if ((d && d.n) > 0) worth = true;
+            const c = await env.SALT_LEDGER.prepare("SELECT doc FROM state WHERE key='COUNT_ON'").first();
+            if (c && c.doc) {
+              const on = JSON.parse(c.doc), today = new Date().toISOString().slice(0, 10);
+              if (Object.keys(on).some((k) => on[k] !== today)) worth = true;
+            }
+          } catch (e) { console.log("nudge check failed: " + String(e)); }
+          console.log("morning nudge: " + (worth ? "sending" : "nothing worth saying"));
+          if (worth) await sendPush(env, { tag: "salt", urgency: "normal" });
+          return;
+        }
         const r = await runDrafter(env);
         console.log("drafter: " + JSON.stringify(r));
+        await pushIfDrafted(env, r);
       } catch (e) {
-        console.log("drafter FAILED: " + String((e && e.stack) || e));
+        console.log("scheduled FAILED: " + String((e && e.stack) || e));
       }
     })());
   },
@@ -479,7 +514,12 @@ export default {
      * Ordered before the routes rather than added to each handler, so a route added later
      * cannot quietly miss it. */
     if ((p === "/queue" || p === "/ledger" || p.startsWith("/ledger/")
-      || p === "/drafts" || p.startsWith("/drafts/")) && !writeOk(request, env)) return needsKey();
+      || p === "/drafts" || p.startsWith("/drafts/")
+      /* /push/key is the ONE push route left open, and only because the VAPID public
+         key is public by definition: a browser cannot create a subscription without
+         it, and it authorises nothing on its own. Everything else under /push either
+         stores a subscription, reads the book, or sends. */
+      || (p.startsWith("/push") && p !== "/push/key")) && !writeOk(request, env)) return needsKey();
 
     // --- the desk's HTTP contract -------------------------------------------------
     if (p === "/queue/ping") {
@@ -528,6 +568,72 @@ export default {
        outside, and needed the moment an entry is queued and you want the row now. Write-gated,
        because it writes rows into `draft`. `?dry=1` reports what it would draft and stores
        nothing. */
+    /* ---- WEB PUSH -------------------------------------------------------------------
+     * The phone asks for the public key, subscribes, and from then on the Worker can WAKE its
+     * service worker. Nothing is ever sent IN the push: see src/push.js for why. The worker
+     * wakes, reads /push/summary, and writes the banner from live state.
+     */
+    if (p === "/push/key") {
+      return json({ ok: true, key: env.VAPID_PUBLIC_KEY || null,
+        configured: !!(env.VAPID_PUBLIC_KEY && env.VAPID_PRIVATE_JWK) });
+    }
+    if (p === "/push/subscribe") {
+      if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+      if (!env.SALT_QUEUE) return json({ ok: false, error: "no KV binding" }, 500);
+      let b;
+      try { b = await request.json(); } catch { return json({ ok: false, error: "bad JSON" }, 400); }
+      const ep = b && b.endpoint;
+      if (typeof ep !== "string" || !/^https:\/\//.test(ep)) {
+        return json({ ok: false, error: "a subscription needs an https endpoint" }, 400);
+      }
+      /* KEYED BY A HASH OF THE ENDPOINT, not by device id. The same phone resubscribing with a
+         new endpoint is a new record and the old one dies on its next 410; two devices never
+         collide; and the raw endpoint, which is a capability URL, is not in the key name. */
+      const h = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(ep));
+      const id = [...new Uint8Array(h)].slice(0, 12).map((x) => x.toString(16).padStart(2, "0")).join("");
+      await env.SALT_QUEUE.put("push:" + id, JSON.stringify({ endpoint: ep, at: new Date().toISOString() }));
+      return json({ ok: true, id });
+    }
+    if (p === "/push/unsubscribe") {
+      if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+      let b;
+      try { b = await request.json(); } catch { return json({ ok: false, error: "bad JSON" }, 400); }
+      if (!b || !b.endpoint) return json({ ok: false, error: "no endpoint" }, 400);
+      const h = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(String(b.endpoint)));
+      const id = [...new Uint8Array(h)].slice(0, 12).map((x) => x.toString(16).padStart(2, "0")).join("");
+      await env.SALT_QUEUE.delete("push:" + id);
+      return json({ ok: true, id, removed: true });
+    }
+    /* WHAT THE WOKEN SERVICE WORKER READS. Counts and states only: no money, no party code, no
+       date. It is still keyed, because the rule set on 20 Aug is that a read carrying the book
+       needs the key, and a rule with a convenient exception stops being a rule. */
+    if (p === "/push/summary") {
+      const out = { ok: true, pending: 0, refused: 0, countDue: [], now: 0 };
+      try {
+        if (env.SALT_LEDGER) {
+          const d = await env.SALT_LEDGER.prepare("SELECT COUNT(*) AS n FROM draft WHERE status='pending'").first();
+          out.pending = (d && d.n) || 0;
+          const r = await env.SALT_LEDGER.prepare("SELECT COUNT(*) AS n FROM refused").first();
+          out.refused = (r && r.n) || 0;
+          const c = await env.SALT_LEDGER.prepare("SELECT doc FROM state WHERE key='COUNT_ON'").first();
+          if (c && c.doc) {
+            const on = JSON.parse(c.doc), today = new Date().toISOString().slice(0, 10);
+            for (const k of Object.keys(on)) if (on[k] !== today) out.countDue.push(k);
+          }
+        }
+      } catch (e) { out.warn = String((e && e.message) || e); }
+      return json(out);
+    }
+    if (p === "/push/send") {
+      if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+      let b = {};
+      try { b = await request.json(); } catch { /* a bare POST is fine: it is a wake, not a message */ }
+      return json(await sendPush(env, { tag: (b && b.tag) || "salt", urgency: (b && b.urgency) || "normal" }));
+    }
+    if (p === "/push/subscribers") {
+      return json({ ok: true, count: (await listSubs(env)).length });
+    }
+
     if (p === "/draft-now") {
       if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
       if (!writeOk(request, env)) return needsKey();

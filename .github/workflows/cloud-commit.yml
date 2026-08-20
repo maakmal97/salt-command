@@ -211,6 +211,27 @@ jobs:
           if [ -z "$ids" ]; then echo "_folded.json names no ids."; exit 0; fi
           node tools/drafts.mjs --committed $ids
 
+      # TELL THE PHONE, IF THERE IS A KEY TO DO IT WITH.
+      #
+      # OPTIONAL BY DESIGN. /push/send is write-gated like everything else that carries the
+      # book, so this needs SALT_WRITE_KEY as a second repo secret. It is skipped silently
+      # without one, because the two pushes that matter most (a row waiting, and the morning
+      # nudge) come from the Worker itself and need nothing here.
+      #
+      # A FOLD IS ALSO NOT THE MOST USEFUL BANNER. The phone reloads itself within ten seconds
+      # of a new build anyway, so this mostly tells him something he is about to see. It earns
+      # its place only when he is away from the app.
+      - name: Wake the phone
+        if: ${{ secrets.SALT_WRITE_KEY != '' }}
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          if [ ! -f master/_folded.json ]; then echo "No fold in this build; not waking anyone."; exit 0; fi
+          n=$(node -p "(require('./master/_folded.json').ids||[]).length")
+          [ "$n" = "0" ] && { echo "Nothing folded."; exit 0; }
+          code=$(curl -s -o /dev/null -w "%{http_code}" -X POST             -H "X-Salt-Key: ${{ secrets.SALT_WRITE_KEY }}"             -H "content-type: application/json"             -d '{"tag":"folded"}'             https://salt-command.maakmal97.workers.dev/push/send)
+          echo "push/send -> $code for $n folded row(s)"
+
       - name: Clear the handoff files
         run: |
           set -euo pipefail

@@ -3,7 +3,7 @@
    API: /queue, /vault, /bio and /bye must always hit the Worker, or a stale ping
    would strand the desk in read-only mode and a cached POST is meaningless. */
 
-const CACHE = "salt-shell-v3";   /* bumped at v302 so a phone holding a v2 shell drops it */
+const CACHE = "salt-shell-v4";   /* bumped at v321: the shell now carries push handlers */
 
 /* "./index.html" is deliberately absent: the host serves "./" and a navigation
    cannot be answered from a redirected response. The manifest starts at "./" too. */
@@ -28,7 +28,7 @@ const SHELL = [
    no way for the phone to know why; worse, an approved row would keep asking to be approved
    while the one actually waiting stayed invisible. It was left out of this list at first and
    the self-test caught it: a deleted draft was still on screen after a reload. */
-const API = /^\/(queue|vault|bio|bye|menu|qr|rev|rev\.json|data\.json|drafts)(\/|$)/;
+const API = /^\/(queue|vault|bio|bye|menu|qr|rev|rev\.json|data\.json|drafts|push)(\/|$)/;
 
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
@@ -87,4 +87,89 @@ self.addEventListener("fetch", (e) => {
         .catch(() => caches.match("./"));
     })
   );
+});
+
+
+/* ============================================================================
+   WEB PUSH (v321)
+
+   THE PUSH CARRIES NO PAYLOAD, ON PURPOSE. Encrypting one per RFC 8291 is a lot of fiddly
+   crypto to get exactly right in a Worker, and the text would go stale between being sent
+   and being read. So the push is a WAKE: this worker comes to life, reads the live state,
+   and writes the banner from what is true now.
+
+   THE KEY LIVES IN IndexedDB, not localStorage, because a service worker cannot see
+   localStorage at all. The app writes it there when you turn alerts on. Without it the
+   summary read is refused, and rather than lie about the count we show a banner that says
+   only that something needs a look.
+   ============================================================================ */
+const KEYDB = "salt-push", KEYSTORE = "kv";
+
+function idb(mode, fn) {
+  return new Promise((resolve) => {
+    let req;
+    try { req = indexedDB.open(KEYDB, 1); } catch { return resolve(null); }
+    req.onupgradeneeded = () => { try { req.result.createObjectStore(KEYSTORE); } catch {} };
+    req.onerror = () => resolve(null);
+    req.onsuccess = () => {
+      try {
+        const tx = req.result.transaction(KEYSTORE, mode);
+        const r = fn(tx.objectStore(KEYSTORE));
+        r.onsuccess = () => resolve(r.result === undefined ? true : r.result);
+        r.onerror = () => resolve(null);
+      } catch { resolve(null); }
+    };
+  });
+}
+const getKey = () => idb("readonly", (st) => st.get("writeKey"));
+
+/* ONE BANNER, NOT A PILE. Every notification shares a tag so a second wake REPLACES the first
+   rather than stacking behind it. Four a day that each replace the last is a glance; four that
+   queue up is a chore, and a chore gets swiped away unread. */
+async function banner() {
+  const key = await getKey();
+  let s = null;
+  try {
+    const r = await fetch("push/summary", { cache: "no-store", headers: key ? { "X-Salt-Key": key } : {} });
+    if (r.ok) s = await r.json();
+  } catch { /* offline, or the desk is down: fall through to the generic banner */ }
+
+  if (!s) {
+    return { title: "Salt Command", body: "Something needs a look. Open the desk.", tag: "salt" };
+  }
+  const bits = [];
+  if (s.pending) bits.push(s.pending === 1 ? "1 row waiting for approval" : s.pending + " rows waiting for approval");
+  if (s.countDue && s.countDue.length) {
+    bits.push(s.countDue.length === 1 ? s.countDue[0] + " not counted today" : "neither shelf counted today");
+  }
+  if (s.refused) bits.push(s.refused === 1 ? "1 entry the drafter refused" : s.refused + " entries the drafter refused");
+
+  return {
+    title: bits.length ? "Salt Command" : "Salt Command is square",
+    body: bits.length ? bits.join(" \u00b7 ") : "Nothing waiting. Nothing owed a decision.",
+    tag: "salt",
+  };
+}
+
+self.addEventListener("push", (e) => {
+  e.waitUntil(banner().then((b) => self.registration.showNotification(b.title, {
+    body: b.body,
+    tag: b.tag,
+    renotify: true,
+    icon: "./icon-192.png",
+    badge: "./icon-192.png",
+    data: { url: "./" },
+  })));
+});
+
+/* Focus the desk if it is already open rather than opening a second copy of it. */
+self.addEventListener("notificationclick", (e) => {
+  e.notification.close();
+  const want = (e.notification.data && e.notification.data.url) || "./";
+  e.waitUntil(clients.matchAll({ type: "window", includeUncontrolled: true }).then((list) => {
+    for (const c of list) {
+      if (c.url.indexOf(self.registration.scope) === 0 && "focus" in c) return c.focus();
+    }
+    return clients.openWindow(want);
+  }));
 });
