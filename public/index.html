@@ -319,6 +319,7 @@ option:checked{background-color:var(--menu-2);font-weight:600}
       <p class="lbl" style="margin-top:20px">Alerts</p>
       <p class="stand" id="alertWhy" style="margin-bottom:10px">Checking whether this device can take them.</p>
       <button class="btn" id="alertBtn" hidden>Turn alerts on</button>
+      <button class="btn" id="alertTest" hidden style="margin-top:9px">Send a test alert</button>
       <div id="alertMsg"></div>
     </section>
 
@@ -1231,26 +1232,48 @@ async function alertsState(){
     why.innerHTML='This device cannot take alerts. On an iPhone that almost always means the '
       +'app is open in a Safari tab rather than from the Home Screen: <b>Share, then Add to '
       +'Home Screen</b>, and open it from there.';
-    btn.hidden=true; return;
+    btn.hidden=true; $('alertTest').hidden=true; return;
   }
   var reg=null; try{ reg=await navigator.serviceWorker.ready; }catch(e){}
-  if(!reg){ why.textContent='The service worker has not started yet. Reload and try again.'; btn.hidden=true; return; }
+  if(!reg){ why.textContent='The service worker has not started yet. Reload and try again.'; btn.hidden=true; $('alertTest').hidden=true; return; }
   pushSub=await reg.pushManager.getSubscription();
   if(pushSub){
     why.innerHTML='<b>On.</b> This device is woken when a row is waiting, when a shelf has not '
       +'been counted, and when something needs a person. The alert carries no figures: it wakes '
       +'the app, which then reads the live state and says what is true now.';
-    btn.hidden=false; btn.textContent='Turn alerts off';
+    btn.hidden=false; btn.textContent='Turn alerts off'; $('alertTest').hidden=false;
   } else if(Notification.permission==='denied'){
     why.innerHTML='Alerts are blocked for this app in your device settings. Allow notifications '
       +'for Salt Command there, then come back.';
-    btn.hidden=true;
+    btn.hidden=true; $('alertTest').hidden=true;
   } else {
     why.textContent='Off. Turn them on to be told when a row is waiting for approval, when a '
       +'shelf has not been counted today, and when something needs a person.';
-    btn.hidden=false; btn.textContent='Turn alerts on';
+    btn.hidden=false; btn.textContent='Turn alerts on'; $('alertTest').hidden=true;
   }
 }
+/* THE SELF-TEST, AND IT BELONGS ON THE DEVICE THAT OWNS THE SUBSCRIPTION. Sending a push is
+   a write, so it needs the key, and the key lives here rather than anywhere a session can
+   reach it. It also tests the whole path in the direction that matters: this phone asks the
+   Worker to wake this phone. If a banner appears, every part of it works. */
+async function testAlert(){
+  var b=$('alertTest'); b.disabled=true;
+  amsgAlert('','Asking the desk to wake this phone.');
+  try{
+    var r=await fetch('push/send',{method:'POST',headers:headers(),body:JSON.stringify({tag:'test'})});
+    if(r.status===401&&askWriteKey()){
+      r=await fetch('push/send',{method:'POST',headers:headers(),body:JSON.stringify({tag:'test'})});
+    }
+    var j=r.ok?await r.json():null;
+    if(!j||!j.ok){ amsgAlert('bad','The desk refused to send (http '+r.status+').'); return; }
+    if(!j.sent){ amsgAlert('warn','Nothing was sent: '+esc(j.note||j.error||'no subscriber on file')+'. Turn alerts off and on again.'); return; }
+    amsgAlert('ok','Sent to '+j.sent+' device'+(j.sent===1?'':'s')+'. A banner should appear within a few seconds, '
+      +'even with the app open. If none comes, the subscription is fine and the phone is refusing to show it.');
+  }catch(e){
+    amsgAlert('bad','That did not work: '+esc(String(e&&e.message||e)));
+  }finally{ b.disabled=false; }
+}
+
 async function toggleAlerts(){
   var btn=$('alertBtn'); btn.disabled=true;
   try{
@@ -1332,6 +1355,7 @@ $('p-parent').addEventListener('change',preview);
 $('ledmore').addEventListener('click',function(){ LEDN+=50; drawLedger(); });
 $('rec').addEventListener('click',record);
 $('alertBtn').addEventListener('click',toggleAlerts);
+$('alertTest').addEventListener('click',testAlert);
 window.addEventListener('online',function(){ paint(); if(held.length)push().then(paint); });
 window.addEventListener('offline',paint);
 document.addEventListener('visibilitychange',function(){ if(document.visibilityState==='visible'){ poll(); loadDrafts(); } });
