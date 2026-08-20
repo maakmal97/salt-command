@@ -10,15 +10,24 @@
 <title>Salt Command</title>
 <style>
 /* ============================================================================
-   SALT COMMAND, THE PHONE APP (v290). Liquid Glass, Ledger tuning: a trading
+   SALT COMMAND, THE PHONE APP (v319). Liquid Glass, Ledger tuning: a trading
    book is cold, calm and formal, so the light runs steel, violet and abyss and
    the lead is gold rather than coral.
 
-   THIS APP COMPUTES NOTHING. Every figure on it is read from data.json, which
+   THIS APP COMPUTES NO PRICE. Every figure on it is read from data.json, which
    the build produces by running the master desk in jsdom and calling its own
    phonePayload(). That is the whole point: a price on a phone is the price the
    one engine computed, and the two can never drift. The only arithmetic here is
-   formatting, and the only thing it originates is a queued entry.
+   formatting and one subtraction, the count drift, which is what you counted
+   less what the book says and is shown so you see it BEFORE you send it. The
+   desk still decides what that drift means when the count is folded.
+
+   v319 REDESIGN. It used to record one kind of thing, a new trade, and read
+   three figures. It now covers every entry the desk can take that belongs on a
+   phone: a trade, an amendment to an order already on the book, a party, and
+   the three stock entries. It carries the ledger. And it leads with the COUNT,
+   because reconciliation is a daily discipline from 20 Aug 2026 and the week
+   before it cost 5.05 unit of salt and 19 of oil.
    ============================================================================ */
 :root{
   color-scheme:dark;
@@ -77,7 +86,7 @@ section.glass{padding:17px 17px 19px;margin:0 0 14px}
   border:1px solid var(--brd-2);border-radius:var(--pill);padding:4px;
   display:flex;gap:3px}
 .tab{flex:1;border:1px solid transparent;border-radius:var(--pill);
-  padding:8px 6px;font:inherit;font-size:13px;font-weight:600;color:var(--ink-2);
+  padding:8px 4px;font:inherit;font-size:13px;font-weight:600;color:var(--ink-2);
   background:none;cursor:pointer;min-height:var(--tap)}
 .tab[aria-selected="true"]{background:var(--glass-2);border-color:var(--brd-2);color:var(--ink)}
 
@@ -100,8 +109,7 @@ h2{font-size:17px;font-weight:600;letter-spacing:-.2px;margin:0 0 12px}
 
 /* ---- Do: the action list ------------------------------------------------- */
 .act{position:relative;background:rgba(255,255,255,.05);border:1px solid var(--brd);
-  border-radius:var(--r-sm);padding:13px 15px 13px 19px;margin:0 0 9px;
-  overflow:hidden}
+  border-radius:var(--r-sm);padding:13px 15px 13px 19px;margin:0 0 9px;overflow:hidden}
 .act::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--ink-3)}
 .act.now::before{background:var(--bad)} .act.watch::before{background:var(--warn)}
 .act-top{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
@@ -112,10 +120,34 @@ h2{font-size:17px;font-weight:600;letter-spacing:-.2px;margin:0 0 12px}
 .empty{background:rgba(110,231,168,.09);border:1px solid rgba(110,231,168,.28);
   border-radius:var(--r-sm);padding:14px 16px;font-size:14px;color:var(--good)}
 
+/* ---- THE COUNT BANNER, the daily reconciliation ---------------------------
+   It leads the app, above the action list, because it is the only thing here that
+   goes wrong by being ignored rather than by being done badly. A shelf nobody looks
+   at reports whatever the arithmetic last said, and both products proved that in the
+   same week. */
+.cw{position:relative;border-radius:var(--r-sm);padding:13px 15px 13px 19px;margin:0 0 10px;
+  overflow:hidden;border:1px solid var(--brd);background:rgba(255,255,255,.05)}
+.cw::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--good)}
+.cw.due{background:rgba(255,207,122,.10);border-color:rgba(255,207,122,.30)}
+.cw.due::before{background:var(--warn)}
+.cw.stale{background:rgba(255,122,138,.10);border-color:rgba(255,122,138,.30)}
+.cw.stale::before{background:var(--bad)}
+.cw-t{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.cw-p{font-size:14px;font-weight:700}
+.cw-age{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--ink-3)}
+.cw.due .cw-age{color:var(--warn)} .cw.stale .cw-age{color:var(--bad)}
+.cw-n{font-size:12.5px;color:var(--ink-2);margin:4px 0 0}
+
+/* ---- the count reconciler ------------------------------------------------- */
+.rec3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:0 0 12px}
+.rec3 .c{background:var(--well);border:1px solid var(--brd);border-radius:10px;padding:9px 10px;text-align:center}
+.rec3 .k{font-size:9.5px;text-transform:uppercase;letter-spacing:.9px;font-weight:700;
+  color:var(--ink-3);margin:0 0 3px}
+.rec3 .v{font-size:19px;font-weight:700;font-family:var(--mono);line-height:1.15}
+.rec3 .c.d.up .v{color:var(--good)} .rec3 .c.d.dn .v{color:var(--bad)} .rec3 .c.d.nil .v{color:var(--ink-2)}
+
 /* ---- Approve: the drafted row -------------------------------------------- */
-/* The count rides on the tab itself, because a row waiting on a tap is the one thing
-   here that goes stale by being ignored. */
-.cnt{display:inline-block;min-width:17px;padding:1px 5px;margin-left:5px;font-size:10px;
+.cnt{display:inline-block;min-width:17px;padding:1px 5px;margin-left:4px;font-size:10px;
   font-weight:800;line-height:15px;text-align:center;border-radius:var(--pill);
   background:var(--lead);color:#2a2008}
 .drf{background:rgba(255,255,255,.05);border:1px solid var(--brd);
@@ -123,7 +155,6 @@ h2{font-size:17px;font-weight:600;letter-spacing:-.2px;margin:0 0 12px}
 .drf-top{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:0 0 9px}
 .drf-w{font-size:15px;font-weight:700;color:var(--ink)}
 .drf-rm{font-size:15px;font-weight:700;color:var(--lead);white-space:nowrap}
-/* The row, laid out as figures rather than prose. This is the half a typed entry cannot show. */
 .drf-g{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:0 0 10px}
 .drf-c{background:var(--well);border:1px solid var(--brd);border-radius:10px;padding:8px 10px}
 .drf-c .k{font-size:9.5px;text-transform:uppercase;letter-spacing:.9px;font-weight:700;
@@ -136,9 +167,6 @@ h2{font-size:17px;font-weight:600;letter-spacing:-.2px;margin:0 0 12px}
 .drf-b{display:grid;grid-template-columns:1fr 1fr;gap:9px}
 .btn.rej{background:rgba(255,138,138,.10);border-color:rgba(255,138,138,.32);color:var(--bad)}
 .btn.rej:hover{background:rgba(255,138,138,.20)}
-/* An entry the drafter refused. Deliberately quieter than a draft and carrying no buttons:
-   it exists to be seen, never to be decided. The violet rail marks it as the bridge case,
-   something in hand elsewhere rather than something waiting on you. */
 .rfz{background:rgba(255,255,255,.035);border:1px solid var(--brd);border-radius:var(--r-sm);
   padding:12px 14px;margin:0 0 9px;position:relative;overflow:hidden}
 .rfz::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--bridge)}
@@ -155,10 +183,47 @@ h2{font-size:17px;font-weight:600;letter-spacing:-.2px;margin:0 0 12px}
   color:var(--ink-3);margin:0 0 3px}
 .stat .v{font-size:25px;font-weight:700;letter-spacing:-.5px;line-height:1.1}
 .stat .n{font-size:11.5px;color:var(--ink-2);margin:3px 0 0}
-.stat.wide{grid-column:1 / -1}
 .stat .v.good{color:var(--good)} .stat .v.bad{color:var(--bad)} .stat .v.warn{color:var(--warn)}
 .basis{font-family:var(--mono);font-size:11px;font-weight:700;color:var(--ink-3);
   margin:11px 0 0;overflow-wrap:break-word}
+
+/* ---- THE LEDGER ----------------------------------------------------------
+   NO COST AND NO MARGIN HERE, and that is not an oversight. The payload bans every
+   per-unit cost by name because this app is public by the owner's decision of 11 Aug,
+   and a margin is a cost stated backwards. So the phone answers what was traded and
+   what is owed; the laptop answers what it earned. */
+.led{background:rgba(255,255,255,.05);border:1px solid var(--brd);border-radius:var(--r-sm);
+  padding:11px 13px;margin:0 0 7px;position:relative;overflow:hidden}
+.led::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--ink-3)}
+.led.dueMoney::before,.led.dueStock::before{background:var(--warn)}
+.led.oweMoney::before,.led.oweStock::before{background:var(--bad)}
+.led.part::before{background:var(--warn)}
+.led.pend::before{background:var(--bridge)} .led.done::before{background:var(--good)}
+.led.canc{opacity:.55}
+.led-t{display:flex;align-items:baseline;justify-content:space-between;gap:9px}
+.led-p{font-size:14px;font-weight:700}
+.led-rm{font-size:14px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.led-n{font-size:12px;color:var(--ink-2);margin:3px 0 0;display:flex;flex-wrap:wrap;gap:8px}
+.led-d{font-family:var(--mono);font-size:10.5px;font-weight:700;color:var(--ink-3)}
+.pill{font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;
+  padding:2px 8px;border-radius:var(--pill);background:rgba(255,255,255,.07);color:var(--ink-2)}
+.pill.dueMoney,.pill.dueStock,.pill.part{background:rgba(255,207,122,.16);color:var(--warn)}
+.pill.oweMoney,.pill.oweStock{background:rgba(255,122,138,.16);color:var(--bad)}
+.pill.pend{background:rgba(179,166,245,.16);color:var(--bridge)}
+.pill.done{background:rgba(110,231,168,.14);color:var(--good)}
+.filters{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 12px}
+.more{margin:9px 0 0}
+
+/* ---- the open-order picker (amendments) ---------------------------------- */
+.op{width:100%;text-align:left;font:inherit;background:rgba(255,255,255,.05);
+  border:1px solid var(--brd);border-radius:var(--r-sm);padding:11px 13px;margin:0 0 7px;
+  color:var(--ink);cursor:pointer;min-height:var(--tap);position:relative;overflow:hidden}
+.op:hover{background:rgba(255,255,255,.09);border-color:var(--brd-2)}
+.op[aria-pressed="true"]{background:rgba(232,198,107,.12);border-color:rgba(232,198,107,.40)}
+.op-t{display:flex;align-items:baseline;justify-content:space-between;gap:9px}
+.op-p{font-size:14px;font-weight:700}
+.op-rm{font-size:13.5px;font-weight:700;font-variant-numeric:tabular-nums}
+.op-n{font-size:12px;color:var(--ink-2);margin:3px 0 0}
 
 /* ---- Do: the entry form -------------------------------------------------- */
 .field{margin:0 0 12px}
@@ -178,8 +243,8 @@ option:checked{background-color:var(--menu-2);font-weight:600}
 @media (forced-colors:active){select{background-image:none;padding-right:13px}}
 .row{display:grid;grid-template-columns:1fr 1fr;gap:9px}
 .seg{display:flex;gap:3px;background:var(--well);border-radius:var(--pill);padding:3px}
-.seg button{flex:1;border:1px solid transparent;border-radius:var(--pill);padding:8px 6px;
-  font:inherit;font-size:13.5px;font-weight:600;color:var(--ink-2);background:none;
+.seg button{flex:1;border:1px solid transparent;border-radius:var(--pill);padding:8px 4px;
+  font:inherit;font-size:13px;font-weight:600;color:var(--ink-2);background:none;
   cursor:pointer;min-height:var(--tap)}
 .seg button[aria-pressed="true"]{background:var(--glass-2);border-color:var(--brd-2);color:var(--ink)}
 .checks{display:flex;flex-wrap:wrap;gap:9px}
@@ -192,7 +257,6 @@ option:checked{background-color:var(--menu-2);font-weight:600}
   padding:12px 16px;border-radius:13px;border:1px solid var(--brd-2);
   background:rgba(255,255,255,.08);transition:var(--t);width:100%;min-height:var(--tap)}
 .btn:hover{background:rgba(255,255,255,.16)}
-/* Dark ink on the solid lead: this tuning's lead is gold, and white on gold fails. */
 .btn.primary{background:linear-gradient(135deg,var(--lead),#cda751);border-color:transparent;
   color:#2a2008;font-weight:700}
 .btn.primary:hover{filter:brightness(1.06)}
@@ -200,6 +264,15 @@ option:checked{background-color:var(--menu-2);font-weight:600}
 .prev{background:var(--well);border:1px solid var(--brd);border-radius:var(--r-sm);
   padding:11px 13px;font-family:var(--mono);font-size:11.5px;color:var(--ink-2);
   margin:0 0 12px;overflow-wrap:break-word}
+/* WHICH ROAD THE ENTRY TAKES. A trade is drafted and comes back for a tap; everything
+   else is refused by the drafter by design and waits for a person at the laptop. Saying
+   so on the form is the difference between a queue that looks broken and one you
+   understand. */
+.road{border-radius:var(--r-sm);padding:10px 13px;font-size:12.5px;margin:0 0 12px;
+  border:1px solid var(--brd);background:rgba(255,255,255,.05);color:var(--ink-2)}
+.road b{color:var(--ink)}
+.road.gate{background:rgba(110,231,168,.09);border-color:rgba(110,231,168,.26)}
+.road.person{background:rgba(179,166,245,.10);border-color:rgba(179,166,245,.28)}
 .msg{border-radius:var(--r-sm);padding:11px 14px;font-size:13.5px;margin:11px 0 0;
   border:1px solid var(--brd);background:rgba(255,255,255,.05)}
 .msg.ok{background:rgba(110,231,168,.10);border-color:rgba(110,231,168,.28);color:var(--good)}
@@ -215,7 +288,7 @@ option:checked{background-color:var(--menu-2);font-weight:600}
 :where(a,button,summary,input,select,textarea,[tabindex]):focus-visible{
   outline:2px solid var(--counter);outline-offset:2px;border-radius:6px}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
-@media (max-width:400px){.stats{grid-template-columns:1fr}.row{grid-template-columns:1fr}}
+@media (max-width:400px){.stats,.filters{grid-template-columns:1fr}.row{grid-template-columns:1fr}}
 </style></head>
 <body>
 <div class="orb a"></div><div class="orb b"></div>
@@ -223,8 +296,8 @@ option:checked{background-color:var(--menu-2);font-weight:600}
 <div class="wrap">
   <nav class="bar" aria-label="Sections"><div class="bar-in" role="tablist">
     <button class="tab" role="tab" id="tab-today" aria-controls="p-today" aria-selected="true">Today</button>
-    <button class="tab" role="tab" id="tab-pos" aria-controls="p-pos" aria-selected="false">Position</button>
-    <button class="tab" role="tab" id="tab-add" aria-controls="p-add" aria-selected="false">Add</button>
+    <button class="tab" role="tab" id="tab-book" aria-controls="p-book" aria-selected="false">Book</button>
+    <button class="tab" role="tab" id="tab-add" aria-controls="p-add" aria-selected="false">Record</button>
     <button class="tab" role="tab" id="tab-appr" aria-controls="p-appr" aria-selected="false">Approve <span class="cnt" id="apprN" hidden>0</span></button>
   </div></nav>
 
@@ -236,17 +309,44 @@ option:checked{background-color:var(--menu-2);font-weight:600}
   </header>
 
   <main>
+    <!-- ===================== TODAY ===================== -->
     <section class="glass" id="p-today" role="tabpanel" aria-labelledby="tab-today">
-      <p class="lbl">What needs doing</p>
+      <p class="lbl">Reconciliation</p>
+      <div id="counts"></div>
+      <p class="lbl" style="margin-top:18px">What needs doing</p>
       <div id="acts"><p class="stand">Loading.</p></div>
     </section>
 
-    <section class="glass" id="p-pos" role="tabpanel" aria-labelledby="tab-pos" hidden>
+    <!-- ===================== BOOK ====================== -->
+    <section class="glass" id="p-book" role="tabpanel" aria-labelledby="tab-book" hidden>
       <p class="lbl">Where the book stands</p>
       <div id="pos"></div>
       <p class="basis" id="basis"></p>
+
+      <p class="lbl" style="margin-top:22px">The ledger</p>
+      <p class="stand" style="margin-bottom:11px">What was traded and what is owed. Cost and
+        margin stay on the laptop, because this page is public.</p>
+      <div class="filters">
+        <div class="field" style="margin:0"><label for="lf-prod">Product</label>
+          <select id="lf-prod"><option value="">All</option></select></div>
+        <div class="field" style="margin:0"><label for="lf-state">State</label>
+          <select id="lf-state">
+            <option value="">All</option>
+            <option value="open">Anything open</option>
+            <option value="due">They owe you</option>
+            <option value="owed">You owe them</option>
+            <option value="pend">Pending</option>
+            <option value="part">Part done</option>
+            <option value="done">Settled</option>
+          </select></div>
+        <div class="field" style="margin:0;grid-column:1 / -1"><label for="lf-party">Party</label>
+          <select id="lf-party"><option value="">All</option></select></div>
+      </div>
+      <div id="ledbox"></div>
+      <button class="btn more" id="ledmore" hidden>Show more</button>
     </section>
 
+    <!-- ===================== APPROVE =================== -->
     <section class="glass" id="p-appr" role="tabpanel" aria-labelledby="tab-appr" hidden>
       <p class="lbl">Rows waiting on you</p>
       <p class="stand">What you approve is the ROW, not the entry you typed: the cost it draws
@@ -255,50 +355,140 @@ option:checked{background-color:var(--menu-2);font-weight:600}
       <div id="apprMsg"></div>
       <div id="refbox" hidden>
         <p class="lbl" style="margin-top:20px">Already queued, and not yours to approve</p>
-        <p class="stand" style="margin-bottom:10px">These are on the laptop and need a person
-          there. They are shown so you know they are already in hand and do not enter them twice.</p>
+        <p class="stand" style="margin-bottom:10px">These are in hand and need a person at the
+          laptop. They are shown so you know they are already recorded and do not enter them twice.</p>
         <div id="ref"></div>
       </div>
     </section>
 
+    <!-- ===================== RECORD ==================== -->
     <section class="glass" id="p-add" role="tabpanel" aria-labelledby="tab-add" hidden>
-      <h2>Record a transaction</h2>
       <div class="field">
-        <label id="l-dir">Direction</label>
-        <div class="seg" role="group" aria-labelledby="l-dir">
-          <button type="button" id="d-sell" aria-pressed="true">Sell</button>
-          <button type="button" id="d-buy" aria-pressed="false">Buy</button>
+        <label id="l-mode">What are you recording</label>
+        <div class="seg" role="group" aria-labelledby="l-mode" id="modes">
+          <button type="button" data-m="trade" aria-pressed="true">Trade</button>
+          <button type="button" data-m="amend" aria-pressed="false">Amend</button>
+          <button type="button" data-m="stock" aria-pressed="false">Stock</button>
+          <button type="button" data-m="party" aria-pressed="false">Party</button>
         </div>
       </div>
-      <div class="field">
-        <label id="l-prod">Product</label>
-        <div class="seg" role="group" aria-labelledby="l-prod" id="prods"></div>
+      <div class="road" id="road"></div>
+
+      <!-- ---- TRADE ---- -->
+      <div id="m-trade">
+        <div class="field">
+          <label id="l-dir">Direction</label>
+          <div class="seg" role="group" aria-labelledby="l-dir">
+            <button type="button" id="d-sell" aria-pressed="true">Sell</button>
+            <button type="button" id="d-buy" aria-pressed="false">Buy</button>
+          </div>
+        </div>
+        <div class="field">
+          <label id="l-prod">Product</label>
+          <div class="seg" role="group" aria-labelledby="l-prod" id="prods"></div>
+        </div>
+        <div class="field">
+          <label for="f-party">Counterparty</label>
+          <select id="f-party"><option value="">Choose</option></select>
+        </div>
+        <div class="row">
+          <div class="field"><label for="f-qty">Quantity (unit)</label>
+            <input id="f-qty" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0"></div>
+          <div class="field"><label for="f-total">Total (RM)</label>
+            <input id="f-total" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0"></div>
+        </div>
+        <div class="field"><label for="f-date">Date</label><input id="f-date" type="date"></div>
+        <div class="field">
+          <div class="checks">
+            <label class="check on" id="w-paid"><input type="checkbox" id="f-paid" checked> Paid in full</label>
+            <label class="check on" id="w-deliv"><input type="checkbox" id="f-deliv" checked> Delivered in full</label>
+          </div>
+        </div>
+        <div class="row">
+          <div class="field"><label for="f-cash">Cash received (RM)</label>
+            <input id="f-cash" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0"></div>
+          <div class="field"><label for="f-kg">Moved (unit)</label>
+            <input id="f-kg" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0"></div>
+        </div>
+        <div class="field"><label for="f-note">Note (optional)</label>
+          <textarea id="f-note" rows="2" placeholder="Anything the ledger should know"></textarea></div>
       </div>
-      <div class="field">
-        <label for="f-party">Counterparty</label>
-        <select id="f-party"><option value="">Choose</option></select>
-      </div>
-      <div class="row">
-        <div class="field"><label for="f-qty">Quantity (unit)</label>
-          <input id="f-qty" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0"></div>
-        <div class="field"><label for="f-total">Total (RM)</label>
-          <input id="f-total" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0"></div>
-      </div>
-      <div class="field"><label for="f-date">Date</label><input id="f-date" type="date"></div>
-      <div class="field">
-        <div class="checks">
-          <label class="check on" id="w-paid"><input type="checkbox" id="f-paid" checked> Paid in full</label>
-          <label class="check on" id="w-deliv"><input type="checkbox" id="f-deliv" checked> Delivered in full</label>
+
+      <!-- ---- AMEND ---- -->
+      <div id="m-amend" hidden>
+        <p class="lbl">Which order</p>
+        <p class="stand" style="margin-bottom:10px">Every order still open, newest first. Undated
+          ones are pending and have not happened yet.</p>
+        <div id="opens"></div>
+        <div id="amendform" hidden>
+          <div class="field" style="margin-top:14px">
+            <label id="l-akind">What happened</label>
+            <div class="seg" role="group" aria-labelledby="l-akind" id="akinds">
+              <button type="button" data-k="done" aria-pressed="true">Paid and out</button>
+              <button type="button" data-k="paid" aria-pressed="false">Paid</button>
+              <button type="button" data-k="deliv" aria-pressed="false">Handed over</button>
+            </div>
+          </div>
+          <div class="row">
+            <div class="field"><label for="a-cash">Cash (RM)</label>
+              <input id="a-cash" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0"></div>
+            <div class="field"><label for="a-kg">Moved (unit)</label>
+              <input id="a-kg" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0"></div>
+          </div>
+          <div class="field"><label for="a-date">Date it happened</label><input id="a-date" type="date"></div>
+          <div class="field"><label for="a-note">Note (optional)</label>
+            <textarea id="a-note" rows="2" placeholder="Anything the ledger should know"></textarea></div>
         </div>
       </div>
-      <div class="row">
-        <div class="field"><label for="f-cash">Cash received (RM)</label>
-          <input id="f-cash" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0"></div>
-        <div class="field"><label for="f-kg">Moved (unit)</label>
-          <input id="f-kg" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0"></div>
+
+      <!-- ---- STOCK ---- -->
+      <div id="m-stock" hidden>
+        <div class="field">
+          <label id="l-skind">Which entry</label>
+          <div class="seg" role="group" aria-labelledby="l-skind" id="skinds">
+            <button type="button" data-s="count" aria-pressed="true">Count</button>
+            <button type="button" data-s="loss" aria-pressed="false">Loss</button>
+            <button type="button" data-s="lost" aria-pressed="false">Lost sale</button>
+          </div>
+        </div>
+        <div class="field">
+          <label for="s-prod">Product</label>
+          <select id="s-prod"></select>
+        </div>
+        <div id="s-recon">
+          <p class="lbl">The reconciliation</p>
+          <div class="rec3" id="rec3"></div>
+        </div>
+        <div class="field"><label for="s-qty" id="l-sqty">Counted (unit)</label>
+          <input id="s-qty" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0"></div>
+        <div class="field" id="w-srm" hidden><label for="s-rm">Price asked (RM)</label>
+          <input id="s-rm" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0"></div>
+        <div class="field" id="w-sparty" hidden><label for="s-party">Who asked</label>
+          <select id="s-party"><option value="">A walk-up</option></select></div>
+        <div class="field" id="w-swhy" hidden><label for="s-why">Why</label>
+          <input id="s-why" type="text" placeholder="Spillage, damage, own use, no stock"></div>
+        <div class="field"><label for="s-date">Date</label><input id="s-date" type="date"></div>
       </div>
-      <div class="field"><label for="f-note">Note (optional)</label>
-        <textarea id="f-note" rows="2" placeholder="Anything the ledger should know"></textarea></div>
+
+      <!-- ---- PARTY ---- -->
+      <div id="m-party" hidden>
+        <div class="field"><label for="p-code">Code</label>
+          <input id="p-code" type="text" inputmode="verbatim" autocapitalize="characters"
+            placeholder="CA4-DAM" maxlength="16"></div>
+        <div class="field">
+          <label id="l-pkind">Kind</label>
+          <div class="seg" role="group" aria-labelledby="l-pkind" id="pkinds">
+            <button type="button" data-k="customer" aria-pressed="true">Customer</button>
+            <button type="button" data-k="supplier" aria-pressed="false">Supplier</button>
+            <button type="button" data-k="bucket" aria-pressed="false">Bucket</button>
+          </div>
+        </div>
+        <div class="field" id="w-pparent" hidden><label for="p-parent">Under which party</label>
+          <select id="p-parent"><option value="">Choose</option></select></div>
+        <div class="field"><label for="p-note">Note (optional)</label>
+          <textarea id="p-note" rows="2" placeholder="The name and the place go in the directory, never here"></textarea></div>
+      </div>
+
       <p class="lbl" style="margin-top:16px">How it will be queued</p>
       <div class="prev" id="prev">Choose a counterparty.</div>
       <button class="btn primary" id="rec">Record</button>
@@ -320,6 +510,8 @@ option:checked{background-color:var(--menu-2);font-weight:600}
    computes a price, a cost or a position; it formats what the desk computed.
    ============================================================================ */
 var D=null, REV=null, dir='SELL', prod='salt', held=[], busy=false;
+var MODE='trade', SKIND='count', AKIND='done', PKIND='customer';
+var OPENSEL=null, LEDN=25;
 var $=function(id){return document.getElementById(id);};
 var esc=function(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){
   return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});};
@@ -329,6 +521,10 @@ var rm=function(v){ return 'RM ' + Number(v||0).toLocaleString('en-GB',
   {minimumFractionDigits:0,maximumFractionDigits:2}); };
 var today=function(){ var d=new Date();
   return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
+var days=function(iso){ if(!iso)return null;
+  var a=Date.parse(iso+'T00:00:00Z'), b=Date.parse(today()+'T00:00:00Z');
+  if(isNaN(a)||isNaN(b))return null;
+  return Math.round((b-a)/86400000); };
 
 /* ---- this device --------------------------------------------------------- */
 function deviceId(){
@@ -356,8 +552,7 @@ function headers(){
    A device's KV key holds its WHOLE queue and a POST replaces it, so every push
    must send the entire outstanding set or an earlier entry is erased by a later
    one. Entries are dropped once the payload's watermark passes them, which is
-   the same self-clearing rule the desk uses, and the reason data.json carries
-   queueCommitted at all. */
+   the same self-clearing rule the desk uses. */
 function loadHeld(){
   try{ held=JSON.parse(localStorage.getItem('saltAppQueue')||'[]')||[]; }catch(e){ held=[]; }
   if(!Array.isArray(held))held=[];
@@ -390,6 +585,30 @@ function push(){
   }).catch(function(){ return {ok:false,why:'offline'}; });
 }
 
+/* ---- rendering: the count banner ------------------------------------------
+   THE ONLY THING ON THIS APP THAT GOES WRONG BY BEING IGNORED. Every other panel
+   is wrong only if a figure is wrong. A shelf is wrong the moment nobody looks,
+   and it stays wrong quietly: the roll reports whatever the arithmetic last said.
+   Twelve days of that cost 5.05 unit of salt and 19 of oil in the week to 20 Aug. */
+function drawCounts(){
+  var box=$('counts'); if(!box)return;
+  if(!D){ box.innerHTML='<p class="stand">Loading.</p>'; return; }
+  var co=D.countedOn||{};
+  box.innerHTML=(D.products||[]).map(function(p){
+    var age=days(co[p.id]);
+    var pos=(D.position&&D.position[p.id])||{};
+    var cls=age===null?'stale':age<=0?'':age===1?'due':'stale';
+    var word=age===null?'never counted':age<=0?'counted today':age===1?'counted yesterday':age+' days old';
+    var note=age<=0&&age!==null
+      ? 'The shelf reads '+n2(pos.onHand)+' unit and it was looked at. Nothing to do.'
+      : 'The shelf reads '+n2(pos.onHand)+' unit on the roll, which is arithmetic and not a look. '
+        +'Count it under Record, Stock.';
+    return '<div class="cw '+cls+'"><div class="cw-t">'
+      +'<span class="cw-p">'+esc(p.name)+'</span>'
+      +'<span class="cw-age">'+esc(word)+'</span></div>'
+      +'<p class="cw-n">'+esc(note)+'</p></div>';
+  }).join('');
+}
 /* ---- rendering: Do ------------------------------------------------------- */
 function drawActs(){
   var box=$('acts');
@@ -410,21 +629,83 @@ function drawPos(){
   var box=$('pos');
   if(!D){ box.innerHTML=''; return; }
   var order=(D.products||[]).map(function(p){return p.id;});
-  var html=order.map(function(id){
+  box.innerHTML=order.map(function(id){
     var p=D.position&&D.position[id]; if(!p)return '';
     var shortCls=p.short>0?'bad':'good';
+    var freeCls=p.free<0?'bad':'';
     var covCls=p.coverDays==null?'':(p.coverDays<2?'bad':p.coverDays<5?'warn':'good');
     return '<p class="lbl" style="margin-top:14px">'+esc(p.name||id)+'</p><div class="stats">'
-      +'<div class="stat"><p class="k">On hand</p><p class="v num">'+esc(n2(p.onHand))+'</p><p class="n">unit, free '+esc(n2(p.free))+'</p></div>'
+      +'<div class="stat"><p class="k">On hand</p><p class="v num">'+esc(n2(p.onHand))+'</p><p class="n">unit, free <span class="'+freeCls+'">'+esc(n2(p.free))+'</span></p></div>'
       +'<div class="stat"><p class="k">Cover</p><p class="v num '+covCls+'">'+(p.coverDays==null?'&mdash;':esc(n2(p.coverDays))+'d')+'</p><p class="n">at '+esc(n2(p.rate))+' a day</p></div>'
       +'<div class="stat"><p class="k">Short</p><p class="v num '+shortCls+'">'+esc(n2(p.short))+'</p><p class="n">unit against '+esc(n2(p.promised))+' promised</p></div>'
       +'<div class="stat"><p class="k">Owed to you</p><p class="v num'+(p.owedToYou>0?' warn':'')+'">'+esc(rm(p.owedToYou))+'</p><p class="n">'+(p.owedToYou>0?'to collect':'nothing outstanding')+'</p></div>'
       +'</div>';
   }).join('');
-  box.innerHTML=html;
   $('basis').textContent='Computed by the desk at '+(D.stamped||'')+'. Build '+(D.v||'')+'.';
 }
-/* ---- rendering: the form ------------------------------------------------- */
+
+/* ---- rendering: the ledger ------------------------------------------------
+   THE STATE COMES FROM THE DESK, in r.st, and the app only puts a word to it. The
+   first version worked it out here from r.paid and r.deliv and was wrong twice on
+   the first look at real rows: it read a PURCHASE with a seller's ruler, so a lot
+   paid for and not yet landed said "you owe stock" when they owe it to you; and it
+   read receivedQty raw, which is absent on most purchases and means fully received,
+   so 68 unit of July lots showed as outstanding. Both are the desk's own helpers'
+   job and both are now done there. Same rule as every price on this page. */
+var STATEW={canc:'Cancelled',pend:'Pending',done:'Settled',part:'Part done',
+  oweStock:'You owe stock', dueMoney:'They owe money',
+  dueStock:'They owe stock', oweMoney:'You owe money'};
+function ledMatch(r){
+  var fp=$('lf-prod').value, fs=$('lf-state').value, fa=$('lf-party').value;
+  if(fp&&(r.pr||'salt')!==fp)return false;
+  if(fa&&r.p!==fa)return false;
+  if(!fs)return true;
+  if(fs==='open')return r.st!=='done'&&r.st!=='canc';
+  if(fs==='owed')return r.st==='oweStock'||r.st==='oweMoney';
+  if(fs==='due')return r.st==='dueStock'||r.st==='dueMoney';
+  return r.st===fs;
+}
+function drawLedger(){
+  var box=$('ledbox'), more=$('ledmore');
+  if(!D||!D.ledger){ box.innerHTML='<p class="stand">Loading.</p>'; more.hidden=true; return; }
+  var rows=D.ledger.filter(ledMatch);
+  if(!rows.length){
+    box.innerHTML='<div class="empty">No rows match. Clear a filter to see more.</div>';
+    more.hidden=true; return;
+  }
+  var shown=rows.slice(0,LEDN);
+  box.innerHTML=shown.map(function(r){
+    var st=r.st, buy=r.dir==='B';
+    var rate=(r.q>0)?rm(r.t/r.q)+'/unit':'';
+    var bits=[];
+    if(rate)bits.push(esc(rate));
+    bits.push(esc(n2(r.q))+' unit'+(r.pr?' '+esc(r.pr):''));
+    if(r.oweRM)bits.push(esc(rm(r.oweRM))+(buy?' still to pay':' outstanding'));
+    if(r.oweKg)bits.push(esc(n2(r.oweKg))+' unit'+(buy?' still to arrive':' to hand over'));
+    return '<div class="led '+esc(st)+(st==='canc'?' canc':'')+'">'
+      +'<div class="led-t"><span class="led-p">'+(buy?'Bought from ':'Sold to ')+esc(r.p)+'</span>'
+      +'<span class="led-rm">'+esc(rm(r.t))+'</span></div>'
+      +'<p class="led-n"><span class="led-d">'+esc(r.d||'undated')+'</span>'
+      +'<span class="pill '+esc(st)+'">'+esc(STATEW[st]||st)+'</span>'
+      +'<span>'+bits.join(' &middot; ')+'</span></p></div>';
+  }).join('');
+  more.hidden=rows.length<=LEDN;
+  more.textContent='Show more ('+(rows.length-shown.length)+' of '+rows.length+' left)';
+}
+function drawLedFilters(){
+  if(!D)return;
+  var sp=$('lf-prod'), sa=$('lf-party');
+  var cp=sp.value, ca=sa.value;
+  sp.innerHTML='<option value="">All</option>'+(D.products||[]).map(function(p){
+    return '<option value="'+esc(p.id)+'">'+esc(p.name)+'</option>'; }).join('');
+  var parties={};
+  (D.ledger||[]).forEach(function(r){ if(r.p)parties[r.p]=1; });
+  sa.innerHTML='<option value="">All</option>'+Object.keys(parties).sort().map(function(c){
+    return '<option value="'+esc(c)+'">'+esc(c)+'</option>'; }).join('');
+  sp.value=cp; sa.value=ca;
+}
+
+/* ---- rendering: the record forms ----------------------------------------- */
 function drawProds(){
   var box=$('prods'); if(!box||!D)return;
   box.innerHTML=(D.products||[]).map(function(p){
@@ -435,20 +716,140 @@ function drawProds(){
   });
 }
 function drawParties(){
-  var sel=$('f-party'); if(!sel||!D)return;
+  if(!D)return;
   var list=dir==='BUY'?(D.suppliers||[]):(D.parties||[]);
-  var cur=sel.value;
-  sel.innerHTML='<option value="">Choose</option>'+list.map(function(c){
-    return '<option value="'+esc(c)+'">'+esc(c)+'</option>'; }).join('');
-  if(list.indexOf(cur)>=0)sel.value=cur;
+  var all=(D.parties||[]).concat(D.suppliers||[]);
+  [['f-party',list,'Choose'],['s-party',D.parties||[],'A walk-up'],['p-parent',all,'Choose']]
+    .forEach(function(spec){
+      var sel=$(spec[0]); if(!sel)return;
+      var cur=sel.value;
+      sel.innerHTML='<option value="">'+spec[2]+'</option>'+spec[1].map(function(c){
+        return '<option value="'+esc(c)+'">'+esc(c)+'</option>'; }).join('');
+      if(spec[1].indexOf(cur)>=0)sel.value=cur;
+    });
+  var sp=$('s-prod');
+  if(sp&&D.products){
+    var c=sp.value;
+    sp.innerHTML=(D.products||[]).map(function(p){
+      return '<option value="'+esc(p.id)+'">'+esc(p.name)+'</option>'; }).join('');
+    sp.value=c||prod||'salt';
+  }
 }
+/* THE OPEN ORDERS AN AMENDMENT CAN TARGET, keyed exactly as the desk's own ovKey
+   builds them, so the phone sends a key the desk already matches. An undated order's
+   key really does carry the string "undefined" on both sides; it is built by the
+   desk and passed through untouched rather than composed here. */
+function drawOpens(){
+  var box=$('opens'); if(!box)return;
+  if(!D||!D.open||!D.open.length){
+    box.innerHTML='<div class="empty">Nothing is open. Every order on the book is settled.</div>';
+    $('amendform').hidden=true; return;
+  }
+  box.innerHTML=D.open.map(function(o,i){
+    var bits=[];
+    if(o.oweRM)bits.push(esc(rm(o.oweRM))+' unpaid');
+    if(o.oweKg)bits.push(esc(n2(o.oweKg))+' unit still to move');
+    return '<button type="button" class="op" data-i="'+i+'" aria-pressed="'+(OPENSEL===i)+'">'
+      +'<span class="op-t"><span class="op-p">'+(o.dir==='B'?'From ':'To ')+esc(o.p)+'</span>'
+      +'<span class="op-rm">'+esc(rm(o.t))+'</span></span>'
+      +'<span class="op-n">'+esc(o.d||'undated, pending')+' &middot; '+esc(n2(o.q))+' unit'
+      +(o.pr?' '+esc(o.pr):'')+(bits.length?' &middot; '+bits.join(', '):'')+'</span></button>';
+  }).join('');
+  Array.prototype.forEach.call(box.querySelectorAll('.op'),function(b){
+    b.addEventListener('click',function(){
+      OPENSEL=Number(b.getAttribute('data-i'));
+      drawOpens(); fillAmend(); preview();
+    });
+  });
+  $('amendform').hidden=(OPENSEL===null);
+}
+function openRow(){ return (OPENSEL!==null&&D&&D.open)?D.open[OPENSEL]:null; }
+/* The outstanding amounts are the sensible defaults, because a fulfilment usually
+   settles what is left. They stay editable: a part payment is ordinary. */
+function fillAmend(){
+  var o=openRow(); if(!o)return;
+  $('a-cash').value=(AKIND==='deliv')?'0':n2(o.oweRM||0);
+  $('a-kg').value=(AKIND==='paid')?'0':n2(o.oweKg||0);
+  if(!$('a-date').value)$('a-date').value=today();
+}
+/* THE COUNT RECONCILER. The one subtraction this app performs, and it is not a price:
+   it is what you counted less what the book says, shown BEFORE you send it so the drift
+   is a thing you saw rather than a thing you discover. The desk recomputes what the
+   drift means when the count is folded, and a count always wins there. */
+function drawRecon(){
+  var box=$('rec3'), wrap=$('s-recon');
+  if(!box)return;
+  wrap.hidden=(SKIND!=='count');
+  if(SKIND!=='count'){ box.innerHTML=''; return; }
+  var p=(D&&D.position&&D.position[$('s-prod').value])||null;
+  var book=p?Number(p.onHand):null;
+  var got=$('s-qty').value===''?null:Number($('s-qty').value);
+  var drift=(book==null||got==null)?null:+(got-book).toFixed(2);
+  var cls=drift==null?'nil':drift>0.005?'up':drift<-0.005?'dn':'nil';
+  box.innerHTML='<div class="c"><p class="k">Book says</p><p class="v">'+(book==null?'&mdash;':esc(n2(book)))+'</p></div>'
+    +'<div class="c"><p class="k">You counted</p><p class="v">'+(got==null?'&mdash;':esc(n2(got)))+'</p></div>'
+    +'<div class="c d '+cls+'"><p class="k">Drift</p><p class="v">'
+    +(drift==null?'&mdash;':(drift>0?'+':'')+esc(n2(drift)))+'</p></div>';
+}
+/* WHICH ROAD THE ENTRY TAKES. Only a new trade is drafted into a row and comes back
+   here for a tap. Every other mode is refused by the drafter BY DESIGN, because which
+   row an amendment amends, whose bucket a party belongs in and what a count means are
+   judgements, and it is left for a person at the laptop. Saying so on the form is the
+   difference between a queue that looks broken and one you understand. */
+var ROADS={
+  trade:['gate','<b>This goes through the gate.</b> The drafter turns it into a proposed row with its cost and margin, and it comes back to the Approve tab for a tap. Nothing reaches the ledger until you decide.'],
+  amend:['person','<b>This is left for a person.</b> The drafter refuses amendments by design, because which row it amends is a judgement. It is queued, shown under Approve as already in hand, and folded at the laptop on the daily run.'],
+  stock:['person','<b>This is left for a person.</b> A count, a loss and a lost sale move stock without being trades, so the drafter refuses them. It is queued and folded at the laptop. A count always wins over the ledger when it is.'],
+  party:['person','<b>This is left for a person.</b> Registering a party is not a trade and has no row to draft. The code goes up now; the name and the place are typed into the directory at the laptop and never travel.']
+};
+function drawRoad(){
+  var r=ROADS[MODE]||ROADS.trade;
+  $('road').className='road '+r[0];
+  $('road').innerHTML=r[1];
+}
+function drawModes(){
+  Array.prototype.forEach.call($('modes').querySelectorAll('button'),function(b){
+    b.setAttribute('aria-pressed',String(b.getAttribute('data-m')===MODE));
+  });
+  ['trade','amend','stock','party'].forEach(function(m){ $('m-'+m).hidden=(m!==MODE); });
+  drawRoad();
+  $('rec').textContent=MODE==='trade'?'Record'
+    :MODE==='amend'?'Record the amendment'
+    :MODE==='stock'?(SKIND==='count'?'Record the count':SKIND==='loss'?'Record the loss':'Record the lost sale')
+    :'Register the code';
+}
+function drawSKind(){
+  Array.prototype.forEach.call($('skinds').querySelectorAll('button'),function(b){
+    b.setAttribute('aria-pressed',String(b.getAttribute('data-s')===SKIND));
+  });
+  $('l-sqty').textContent=SKIND==='count'?'Counted (unit)':SKIND==='loss'?'Lost (unit)':'Wanted (unit)';
+  $('w-srm').hidden=(SKIND!=='lost');
+  $('w-sparty').hidden=(SKIND!=='lost');
+  $('w-swhy').hidden=(SKIND==='count');
+  $('s-why').placeholder=SKIND==='loss'?'Spillage, damage, own use':'No stock, price, went elsewhere';
+  drawRecon(); drawModes();
+}
+function drawAKind(){
+  Array.prototype.forEach.call($('akinds').querySelectorAll('button'),function(b){
+    b.setAttribute('aria-pressed',String(b.getAttribute('data-k')===AKIND));
+  });
+  fillAmend();
+}
+function drawPKind(){
+  Array.prototype.forEach.call($('pkinds').querySelectorAll('button'),function(b){
+    b.setAttribute('aria-pressed',String(b.getAttribute('data-k')===PKIND));
+  });
+  $('w-pparent').hidden=(PKIND!=='bucket');
+}
+
+/* ---- the entries --------------------------------------------------------- */
 function stateWord(total,qty,cash,kg){
   var paid=cash>=total-0.001, moved=kg>=qty-0.001;
   if(paid&&moved)return 'Completed';
   if(cash<=0.001&&kg<=0.001)return 'Pending';
   return 'Partial';
 }
-function form(){
+function tradeForm(){
   var qty=Number($('f-qty').value||0), total=Number($('f-total').value||0);
   var paid=$('f-paid').checked, deliv=$('f-deliv').checked;
   var cash=paid?total:Number($('f-cash').value||0);
@@ -456,23 +857,95 @@ function form(){
   return {party:$('f-party').value,qty:qty,total:total,cash:cash,kg:kg,
     date:$('f-date').value||today(),note:$('f-note').value.trim()};
 }
-function rawLine(f){
-  var st=stateWord(f.total,f.qty,f.cash,f.kg);
-  return (dir==='SELL'?'Sell ':'Buy ')+n2(f.qty)+' unit '+(dir==='SELL'?'to ':'from ')+f.party
-    +' for RM '+n2(f.total)+' on '+f.date
-    +' - RM '+n2(f.cash)+' cash, '+n2(f.kg)+' unit moved -> '+st
-    +(f.note?' ('+f.note+')':'');
+/* Every mode returns the same shape: an `at`, a human line the laptop reads, and the
+   payload the desk's own applyOverlay understands. A null means the form is not ready
+   and carries the reason to show instead. */
+function buildEntry(){
+  var at=new Date().toISOString();
+  if(MODE==='trade'){
+    var f=tradeForm();
+    if(!f.party)return {why:'Choose a counterparty first.'};
+    if(!(f.qty>0))return {why:'A quantity is needed.'};
+    if(!(f.total>0))return {why:'A total is needed.'};
+    var st=stateWord(f.total,f.qty,f.cash,f.kg);
+    var raw=(dir==='SELL'?'Sell ':'Buy ')+n2(f.qty)+' unit '+(dir==='SELL'?'to ':'from ')+f.party
+      +' for RM '+n2(f.total)+' on '+f.date+' - RM '+n2(f.cash)+' cash, '+n2(f.kg)
+      +' unit moved -> '+st+(f.note?' ('+f.note+')':'');
+    return {at:at,type:dir,party:f.party,qty:f.qty,total:f.total,
+      status:(f.cash>=f.total-0.001)?'paid':(f.cash<=0.001?'unpaid':'partial'),raw:raw,
+      payload:{mode:'new',product:prod,direction:dir,party:f.party,newId:null,date:f.date,
+        qty:f.qty,total:f.total,cash:f.cash,kg:f.kg,assoc:null,stream:null,downstream:null,
+        kind:null,orderCode:null,linkTo:null,note:f.note||null}};
+  }
+  if(MODE==='amend'){
+    var o=openRow();
+    if(!o)return {why:'Choose the order this amends.'};
+    var cash=Number($('a-cash').value||0), kg=Number($('a-kg').value||0);
+    if(cash<=0.001&&kg<=0.001)return {why:'An amendment has to move cash or stock.'};
+    var d=$('a-date').value||today(), note=$('a-note').value.trim();
+    var lab=AKIND==='paid'?'paid in full':AKIND==='deliv'?'delivered in full':'paid and delivered in full';
+    var rawA='Fulfilment on '+o.p+' - '+(o.dir==='B'?'lot ':'order ')+n2(o.q)+' of RM '+n2(o.t)
+      +(o.d?' agreed '+o.d:' planned, undated')+' marked '+lab+' on '+d
+      +(note?' ('+note+')':'');
+    return {at:at,type:'AMEND',party:o.p,qty:kg,total:cash,
+      status:AKIND==='deliv'?'unpaid':'paid',raw:rawA,
+      payload:{mode:'amend',direction:o.dir==='B'?'BUY':'SELL',party:o.p,orderKey:o.key,date:d,
+        assoc:null,downstream:null,kind:'Fulfilment',orderCode:null,linkTo:null,sameDay:false,
+        note:note||null,qty:kg,total:cash,cash:cash,kg:kg}};
+  }
+  if(MODE==='stock'){
+    var sp=$('s-prod').value||'salt';
+    var q=$('s-qty').value===''?null:Number($('s-qty').value);
+    if(q==null||isNaN(q)||q<0)return {why:'A quantity is needed. Zero is a valid count.'};
+    var sd=$('s-date').value||today(), why=$('s-why').value.trim();
+    if(SKIND==='count'){
+      var p=(D&&D.position&&D.position[sp])||{};
+      var drift=(p.onHand==null)?null:+(q-Number(p.onHand)).toFixed(2);
+      var rawC='Count of '+sp+' on '+sd+': '+n2(q)+' unit on the shelf'
+        +(drift==null?'':', against '+n2(p.onHand)+' on the book, drift '+(drift>0?'+':'')+n2(drift));
+      return {at:at,type:'COUNT',party:null,qty:q,total:null,status:'count',raw:rawC,
+        payload:{mode:'count',product:sp,direction:null,party:null,date:sd,qty:q,total:null,
+          cash:null,kg:q,assoc:null,downstream:null,kind:null,orderCode:null,linkTo:null,note:null}};
+    }
+    if(SKIND==='loss'){
+      if(!why)return {why:'A loss needs a reason. That is the whole value of the line.'};
+      return {at:at,type:'LOSS',party:null,qty:q,total:null,status:'loss',
+        raw:'Loss of '+n2(q)+' unit '+sp+' on '+sd+': '+why,
+        payload:{mode:'loss',product:sp,direction:null,party:null,date:sd,qty:q,total:null,
+          cash:null,kg:q,why:why,note:null}};
+    }
+    var askRM=Number($('s-rm').value||0), who=$('s-party').value||null;
+    if(!why)return {why:'A lost sale needs a reason, or it teaches nothing.'};
+    return {at:at,type:'LOST',party:who,qty:q,total:askRM||null,status:'lost',
+      raw:'Lost demand: '+n2(q)+' unit '+sp+(askRM?' at RM '+n2(askRM):'')+' to '
+        +(who||'a walk-up')+' on '+sd+': '+why,
+      payload:{mode:'lost',product:sp,direction:null,party:who,date:sd,qty:q,
+        total:askRM||null,cash:null,kg:q,why:why,note:null}};
+  }
+  /* party */
+  var code=($('p-code').value||'').trim().toUpperCase();
+  if(!code)return {why:'A code is needed.'};
+  if(!/^[A-Z]{1,3}\d{0,2}[A-Z0-9-]*$/.test(code))return {why:'That does not look like a desk code. They run like CA4-DAM or SP7-PUD.'};
+  var parent=(PKIND==='bucket')?($('p-parent').value||null):null;
+  if(PKIND==='bucket'&&!parent)return {why:'A bucket sits under a party. Choose which.'};
+  var pnote=$('p-note').value.trim();
+  return {at:at,type:'ADDID',party:code,qty:null,total:null,status:'addid',
+    raw:'Register '+code+' as a '+PKIND+(parent?' under '+parent:'')+(pnote?' ('+pnote+')':''),
+    payload:{mode:'addid',code:code,kind:PKIND,parent:parent,rev:null,note:pnote||null}};
 }
 function preview(){
-  var f=form();
-  $('w-paid').className='check'+($('f-paid').checked?' on':'');
-  $('w-deliv').className='check'+($('f-deliv').checked?' on':'');
-  $('f-cash').disabled=$('f-paid').checked;
-  $('f-kg').disabled=$('f-deliv').checked;
-  if($('f-paid').checked)$('f-cash').value=f.total?n2(f.total):'';
-  if($('f-deliv').checked)$('f-kg').value=f.qty?n2(f.qty):'';
-  $('prev').textContent=(!f.party)?'Choose a counterparty.'
-    :(!f.qty&&!f.total)?'Enter a quantity and a total.':rawLine(f);
+  if(MODE==='trade'){
+    $('w-paid').className='check'+($('f-paid').checked?' on':'');
+    $('w-deliv').className='check'+($('f-deliv').checked?' on':'');
+    $('f-cash').disabled=$('f-paid').checked;
+    $('f-kg').disabled=$('f-deliv').checked;
+    var t=tradeForm();
+    if($('f-paid').checked)$('f-cash').value=t.total?n2(t.total):'';
+    if($('f-deliv').checked)$('f-kg').value=t.qty?n2(t.qty):'';
+  }
+  if(MODE==='stock')drawRecon();
+  var e=buildEntry();
+  $('prev').textContent=e.why?e.why:e.raw;
 }
 function drawHeld(){
   var box=$('held'), wrap=$('heldbox');
@@ -483,32 +956,40 @@ function drawHeld(){
   }).join('');
 }
 function msg(kind,text){ $('msg').innerHTML='<div class="msg '+kind+'">'+text+'</div>'; }
-/* The Approve panel needs its own target: msg() writes into the Add panel, which is
+/* The Approve panel needs its own target: msg() writes into the Record panel, which is
    hidden while you are approving, so a decision would report itself where nobody is
    looking. Same shape, different box. */
 function amsg(kind,text){ $('apprMsg').innerHTML='<div class="msg '+kind+'">'+text+'</div>'; }
 
+function clearForm(){
+  if(MODE==='trade'){
+    ['f-qty','f-total','f-cash','f-kg','f-note'].forEach(function(id){ $(id).value=''; });
+    $('f-party').value='';
+  } else if(MODE==='amend'){
+    OPENSEL=null; ['a-cash','a-kg','a-note'].forEach(function(id){ $(id).value=''; });
+    drawOpens();
+  } else if(MODE==='stock'){
+    ['s-qty','s-rm','s-why'].forEach(function(id){ $(id).value=''; });
+  } else {
+    ['p-code','p-note'].forEach(function(id){ $(id).value=''; });
+  }
+  preview();
+}
 function record(){
   if(busy)return;
-  var f=form();
-  if(!f.party)return msg('bad','Choose a counterparty first.');
-  if(!(f.qty>0))return msg('bad','A quantity is needed.');
-  if(!(f.total>0))return msg('bad','A total is needed.');
-  var st=stateWord(f.total,f.qty,f.cash,f.kg);
-  var status=(f.cash>=f.total-0.001)?'paid':(f.cash<=0.001?'unpaid':'partial');
-  held.push({at:new Date().toISOString(),type:dir,party:f.party,qty:f.qty,total:f.total,
-    status:status,raw:rawLine(f),
-    payload:{mode:'new',product:prod,direction:dir,party:f.party,newId:null,date:f.date,
-      qty:f.qty,total:f.total,cash:f.cash,kg:f.kg,assoc:null,stream:null,downstream:null,
-      kind:null,orderCode:null,linkTo:null,note:f.note||null}});
-  saveHeld(); drawHeld();
+  var e=buildEntry();
+  if(e.why)return msg('bad',esc(e.why));
+  held.push(e); saveHeld(); drawHeld();
   busy=true; $('rec').disabled=true; msg('','Recording.');
+  var gated=(MODE==='trade');
   push().then(function(r){
     busy=false; $('rec').disabled=false;
     if(r.ok){
-      msg('ok','Queued as <b>'+esc(st)+'</b>. The daily run folds it into the ledger.');
-      ['f-qty','f-total','f-cash','f-kg','f-note'].forEach(function(id){ $(id).value=''; });
-      $('f-party').value=''; preview();
+      msg('ok',gated
+        ? 'Queued. The drafter turns it into a row within the minute and it comes back to <b>Approve</b> for a tap.'
+        : 'Queued. It is <b>not drafted and not approvable</b>, by design: it shows under Approve as already in hand and is folded at the laptop.');
+      clearForm();
+      loadDrafts();
     } else if(r.why==='key'){
       msg('bad','The write key was not accepted. The entry is held on this device and will go up when the key is right.');
     } else {
@@ -519,10 +1000,15 @@ function record(){
 
 /* ---- data ---------------------------------------------------------------- */
 function paint(){
-  drawActs(); drawPos(); drawProds(); drawParties(); drawHeld(); preview();
+  drawCounts(); drawActs(); drawPos(); drawProds(); drawParties();
+  drawLedFilters(); drawLedger(); drawOpens(); drawHeld(); preview();
   var a=(D&&D.actions)||[];
   var now=a.filter(function(x){return x.sev==='now';}).length;
+  var co=(D&&D.countedOn)||{};
+  var due=(D&&D.products||[]).filter(function(p){ var g=days(co[p.id]); return g===null||g>0; }).length;
   $('stand').textContent=!D?'The desk could not be read.'
+    :due?(due===1?'One shelf has not been counted today.':due+' shelves have not been counted today.')
+      +(now?' '+now+(now===1?' thing needs':' things need')+' doing now.':'')
     :now?(now+(now===1?' thing needs':' things need')+' doing now.')
     :'Nothing urgent. '+(a.length?a.length+' to watch.':'The book is square.');
   $('chips').innerHTML=(D?'<span class="chip">'+esc(D.v||'')+'</span>'
@@ -544,9 +1030,13 @@ function loadData(){
 /* THE FRESHNESS POLL. /rev is a few dozen bytes served no-store. A changed id
    means a new build: re-read the figures always, and reload the page only when
    nothing is half-typed, because reloading over an unsaved entry would throw it
-   away. Same rule the desk uses, same reason. */
+   away. The idle test covers EVERY mode's fields, not just the trade form: a
+   half-typed count is exactly as easy to lose as a half-typed sale. */
+var TYPED=['f-party','f-qty','f-total','f-note','a-cash','a-kg','a-note',
+  's-qty','s-rm','s-why','p-code','p-note'];
 function idle(){
-  return !$('f-party').value && !$('f-qty').value && !$('f-total').value && !$('f-note').value;
+  if(OPENSEL!==null)return false;
+  return TYPED.every(function(id){ var el=$(id); return !el||!el.value; });
 }
 function poll(){
   if(document.visibilityState!=='visible')return;
@@ -565,16 +1055,16 @@ function poll(){
    the real figure was RM11.50. So this panel leads with cost and margin and puts the
    price beside them; showing the entry back would show nothing that could be checked.
 
-   IT COMPUTES NOTHING. Same rule as the rest of this app: cost, margin and the flags
-   are read from the draft exactly as the drafter wrote them. A second opinion computed
-   here would be a second pricing engine, and two engines drift. */
+   IT COMPUTES NOTHING. Cost, margin and the flags are read from the draft exactly as
+   the drafter wrote them. A second opinion computed here would be a second pricing
+   engine, and two engines drift. */
 var DRAFTS=[],REFUSED=[],apprBusy={};
 function money(n){ if(n==null||isNaN(n))return '-';
   return 'RM '+Number(n).toLocaleString('en-MY',{maximumFractionDigits:2}); }
 /* READING THE DRAFTS NEEDS THE KEY SINCE 20 Aug 2026, because a draft carries the row's COST
    and MARGIN and the endpoint was answering anyone with the URL. Same retry-once shape the
-   queue POST has used since v288: send what we hold, and if the Worker refuses, ask and go
-   again. A refusal on the second attempt leaves the panel empty rather than looping. */
+   queue POST has used since v288. A refusal on the second attempt leaves the panel saying so
+   rather than looping. */
 var draftsNeedKey=false;
 function loadDrafts(){
   var go=function(){ return fetch('drafts?status=pending',{cache:'no-store',headers:headers()}); };
@@ -588,9 +1078,9 @@ function loadDrafts(){
     .then(function(j){ DRAFTS=(j&&j.drafts)||[]; REFUSED=(j&&j.refused)||[]; drawDrafts(); })
     .catch(function(){ DRAFTS=[]; REFUSED=[]; drawDrafts(); });
 }
-/* The refused list. It is drawn on every pass, including the one where there is nothing to
-   approve, because "nothing waiting" and "nothing waiting but two are in hand on the laptop"
-   are different states and only one of them means you should stop thinking about it. */
+/* The refused list. Drawn on every pass, including the one where there is nothing to
+   approve, because "nothing waiting" and "nothing waiting but three are in hand on the
+   laptop" are different states and only one means you should stop thinking about it. */
 function drawRefused(){
   var wrap=$('refbox'), box=$('ref');
   if(!REFUSED.length){ wrap.hidden=true; box.innerHTML=''; return; }
@@ -612,7 +1102,7 @@ function drawDrafts(){
      you can stop thinking about it. Without the key this panel would read as an empty queue
      while rows sat pending, which is the same class of quiet lie as a deploy that reports
      success and ships nothing. */
-  if(draftsNeedKey){ box.innerHTML='<div class="empty">The write key is needed to read drafts, and it was not accepted. Add an entry to be asked for it again, or clear <code>saltWriteKey</code> on this device. <b>This is not an empty queue: rows may be waiting.</b></div>'; return; }
+  if(draftsNeedKey){ box.innerHTML='<div class="empty">The write key is needed to read drafts, and it was not accepted. Record an entry to be asked for it again, or clear <code>saltWriteKey</code> on this device. <b>This is not an empty queue: rows may be waiting.</b></div>'; return; }
   if(!DRAFTS.length){ box.innerHTML='<div class="empty">Nothing waiting. Every drafted row has been decided.</div>'; return; }
   box.innerHTML=DRAFTS.map(function(d){
     var r=d.row||{},qty=r.qty,total=r.total,cost=r.cost;
@@ -620,12 +1110,11 @@ function drawDrafts(){
     var mar=(total>0&&cost!=null&&qty)?((total-cost*qty)/total*100):null;
     /* Banded against the v300 ladder, converted to margin on price so it is compared
        like with like: a 25% markup on cost is a 20% margin, 50% is 33.3%, 75% is 42.9%.
-       A FLAGGED ROW NEVER GETS A GREEN MARGIN, and this was worth catching. The test entry
-       of 16 Aug was RM900 for a unit that normally goes for RM90: the drafter flagged it
-       twice, and the margin cell painted 93.8% in green directly underneath, because a fat
-       margin bands as good. That is the RM115 oil failure again in colour form, telling the
-       eye "excellent" on the exact row the words are saying to check. Green means nothing
-       needs looking at, so a row with a flag on it cannot have one. */
+       A FLAGGED ROW NEVER GETS A GREEN MARGIN. The test entry of 16 Aug was RM900 for a
+       unit that normally goes for RM90: the drafter flagged it twice, and the margin cell
+       painted 93.8% in green directly underneath, because a fat margin bands as good. That
+       is the RM115 oil failure again in colour form, telling the eye "excellent" on the
+       exact row the words are saying to check. */
     var band=mar==null?'':(mar<20?'bad':(mar<33.3?'warn':'good'));
     var cls=(d.flags&&d.flags.length&&band==='good')?'warn':band;
     var buy=d.collection==='purchases';
@@ -677,7 +1166,8 @@ function decide(id,action,btn){
 }
 
 /* ---- tabs ---------------------------------------------------------------- */
-var TABS=[['tab-today','p-today','Today'],['tab-pos','p-pos','Position'],['tab-add','p-add','Record'],['tab-appr','p-appr','Approve']];
+var TABS=[['tab-today','p-today','Today'],['tab-book','p-book','The book'],
+  ['tab-add','p-add','Record'],['tab-appr','p-appr','Approve']];
 function show(i){
   TABS.forEach(function(t,k){
     $(t[0]).setAttribute('aria-selected',String(k===i));
@@ -689,23 +1179,47 @@ function show(i){
 TABS.forEach(function(t,i){ $(t[0]).addEventListener('click',function(){ show(i); }); });
 
 /* ---- wiring -------------------------------------------------------------- */
+Array.prototype.forEach.call($('modes').querySelectorAll('button'),function(b){
+  b.addEventListener('click',function(){ MODE=b.getAttribute('data-m'); drawModes(); preview(); });
+});
+Array.prototype.forEach.call($('skinds').querySelectorAll('button'),function(b){
+  /* THE REASON IS CLEARED WHEN THE KIND CHANGES. "Spillage" is a reason for a loss and
+     nonsense for a lost sale, and a field that carries over quietly puts the wrong word on
+     the wrong entry. The quantity stays, because it usually does not change. */
+  b.addEventListener('click',function(){
+    if(SKIND!==b.getAttribute('data-s'))$('s-why').value='';
+    SKIND=b.getAttribute('data-s'); drawSKind(); preview(); });
+});
+Array.prototype.forEach.call($('akinds').querySelectorAll('button'),function(b){
+  b.addEventListener('click',function(){ AKIND=b.getAttribute('data-k'); drawAKind(); preview(); });
+});
+Array.prototype.forEach.call($('pkinds').querySelectorAll('button'),function(b){
+  b.addEventListener('click',function(){ PKIND=b.getAttribute('data-k'); drawPKind(); preview(); });
+});
 $('d-sell').addEventListener('click',function(){ dir='SELL';
   $('d-sell').setAttribute('aria-pressed','true'); $('d-buy').setAttribute('aria-pressed','false');
   drawParties(); preview(); });
 $('d-buy').addEventListener('click',function(){ dir='BUY';
   $('d-buy').setAttribute('aria-pressed','true'); $('d-sell').setAttribute('aria-pressed','false');
   drawParties(); preview(); });
-['f-qty','f-total','f-cash','f-kg','f-note','f-party','f-date'].forEach(function(id){
-  $(id).addEventListener('input',preview); });
+TYPED.concat(['f-date','a-date','s-date']).forEach(function(id){
+  var el=$(id); if(el)el.addEventListener('input',preview); });
 ['f-paid','f-deliv'].forEach(function(id){ $(id).addEventListener('change',preview); });
+$('s-prod').addEventListener('change',function(){ drawRecon(); preview(); });
+$('s-party').addEventListener('change',preview);
+$('p-parent').addEventListener('change',preview);
+['lf-prod','lf-state','lf-party'].forEach(function(id){
+  $(id).addEventListener('change',function(){ LEDN=25; drawLedger(); }); });
+$('ledmore').addEventListener('click',function(){ LEDN+=50; drawLedger(); });
 $('rec').addEventListener('click',record);
 window.addEventListener('online',function(){ paint(); if(held.length)push().then(paint); });
 window.addEventListener('offline',paint);
 document.addEventListener('visibilitychange',function(){ if(document.visibilityState==='visible'){ poll(); loadDrafts(); } });
 
 /* ---- start --------------------------------------------------------------- */
-$('f-date').value=today();
+['f-date','a-date','s-date'].forEach(function(id){ $(id).value=today(); });
 loadHeld();
+drawModes(); drawSKind(); drawAKind(); drawPKind();
 try{ var t=parseInt(localStorage.getItem('saltAppTab')||'0',10); show(isNaN(t)?0:t); }catch(e){ show(0); }
 loadData().then(function(){ if(held.length)push().then(paint); });
 loadDrafts();

@@ -334,7 +334,11 @@ section("The phone app, and the desk at /desk");
   /* The root must be the APP. If a stray build ever writes the desk here again, every
      one of these fails at once rather than the phone quietly loading 900 KB. */
   ok(!app.includes("BEGIN cloud/PWA"), "the root is the app, not the built desk");
-  ok(app.length < 60 * 1024, `the app is small (${(app.length / 1024).toFixed(0)} KB, the desk is ~900 KB)`);
+  /* RAISED FROM 60 KB AT v319, when the app stopped recording one kind of thing and started
+     covering every entry that belongs on a phone: the ledger, the count reconciler, the four
+     record modes. The bound is not ceremony. It exists so a stray build writing the 900 KB
+     desk to the root fails loudly, and 90 KB still catches that by a factor of ten. */
+  ok(app.length < 90 * 1024, `the app is small (${(app.length / 1024).toFixed(0)} KB, the desk is ~900 KB)`);
   ok(app.includes("fetch('data.json'"), "the app reads its figures from data.json");
   ok(app.includes("X-Salt-Key"), "the app sends the write key");
   ok(app.includes("queueCommitted"), "the app self-clears against the watermark");
@@ -1057,6 +1061,45 @@ section("Ledger — the date is superior to the position");
         ? `${name} has ${bad.length} row(s) out of date order (row ${bad[0].i + 1}: ${bad[0].why}). Run: node tools/sort-ledger.mjs`
         : `${name} is in date order, undated pending rows last`);
     }
+  }
+}
+
+/* ---- 16. The phone payload: the ledger, the open orders, the count dates (v319) -- */
+section("Payload — what the phone is given, and what it is not");
+{
+  const f = join(REPO, "public", "data.json");
+  if (!existsSync(f)) {
+    ok(true, "no data.json on this machine, so the payload check is skipped");
+  } else {
+    const d = JSON.parse(readFileSync(f, "utf8"));
+    ok(Array.isArray(d.ledger) && d.ledger.length > 0, `the payload carries the ledger (${(d.ledger||[]).length} rows)`);
+    ok(Array.isArray(d.open), `and the open orders an amendment can target (${(d.open||[]).length})`);
+    ok(d.countedOn && typeof d.countedOn === "object", "and the date each shelf was last counted");
+
+    /* NO COST AND NO MARGIN REACH THE PHONE. phonePayloadLeaks() bans every per-unit cost
+       from this payload because the page is public by the owner's decision of 11 Aug, and a
+       margin is a cost stated backwards. The leak gate checks the money FORM of each cost;
+       this checks the SHAPE, so a numeric cost field cannot slip past it. */
+    const banned = ["cost", "margin", "eff", "repl", "floor"];
+    const bad = [];
+    for (const r of d.ledger) for (const k of Object.keys(r)) {
+      if (banned.some((b) => k.toLowerCase().includes(b))) bad.push(k);
+    }
+    ok(bad.length === 0, bad.length ? `a ledger row carries ${[...new Set(bad)].join(", ")}` : "no ledger row carries a cost or a margin field");
+
+    /* EVERY ROW CARRIES A STATE, DECIDED BY THE DESK. The app only puts a word to it; when
+       it worked the state out itself it read a purchase with a seller's ruler and invented
+       obligations from lots that had landed. */
+    const states = new Set(["canc", "pend", "done", "part", "oweStock", "oweMoney", "dueStock", "dueMoney"]);
+    const odd = d.ledger.filter((r) => !states.has(r.st));
+    ok(odd.length === 0, odd.length ? `${odd.length} row(s) carry an unknown state` : "every row carries a state the desk decided");
+
+    /* DIRECTION IS NOT DECORATIVE. A purchase settled and received is `done`, never a debt;
+       and the open list must agree with the ledger about what is open. */
+    const openIds = d.ledger.filter((r) => r.st !== "done" && r.st !== "canc").length;
+    ok(openIds === d.open.length, `the open list matches the ledger's open rows (${d.open.length} vs ${openIds})`);
+    ok(d.open.every((o) => typeof o.key === "string" && o.key.length > 0),
+      "every open order carries the desk's own ovKey, so an amendment matches a real row");
   }
 }
 

@@ -59,7 +59,7 @@ document.addEventListener('visibilitychange',function(){
    focused, no dialog open. Otherwise it offers a chip and waits to be tapped.
    The same tick retries a held entry, which is what gets a phone write to the cloud
    without waiting for the next open. */
-var SALT_BUILD_ID="9af1c5c1418ba70f";
+var SALT_BUILD_ID="b65639aa59dd7979";
 var SALT_REV_MS=10000;
 (function(){
   var chip=null,timer=null;
@@ -1694,6 +1694,17 @@ const supplierReceivable={
   party:'SF6-KLC', amount:750, since:'2026-07-08', status:'writtenOff', writtenOffOn:'2026-07-31',
   note:'Paid for 12.5 unit that never arrived. 12 Jul: he was found to have had an accident and an in-person meeting was requested. He has since gone unresponsive, so on 31 Jul, 23 days out and already 100% provisioned, the desk WROTE IT OFF. The provision stays charged; what changes is that the desk no longer counts it as expected cash. Any recovery is upside against a book that has already taken the hit.',
 };
+/* ============ WHEN EACH SHELF WAS LAST COUNTED (v319) ============
+   MACHINE-READABLE, because a count date that lives only in a comment cannot be acted on.
+   Every count on this book has been written up in prose beside the figure it set, which is
+   right for the record and useless for the question that matters day to day: is this figure
+   a count or a guess, and how old is it? Twelve days and six roll-forwards went by before
+   anyone asked, and the answer cost 5.05 unit of salt and 19 of oil.
+   RECONCILIATION IS A DAILY DISCIPLINE from 20 Aug 2026, at his instruction. The phone reads
+   these dates, says how stale each shelf is, and leads with the count when one is due.
+   A ROLL NEVER MOVES THESE DATES. Only a count does, and that distinction is the whole value
+   of the field: STATED_STOCK changes on most commits, this changes when somebody looks. */
+const COUNT_ON={salt:'2026-08-20', oil:'2026-08-20'};
 const STATED_STOCK=0;   /* COUNTED 20 Aug 2026, by hand, at ZERO. Not a roll: he looked at the
    shelf and it is empty. A COUNT ALWAYS WINS ON THIS DESK.
    THE COUNT PAID FOR ITSELF IMMEDIATELY, and this is the argument for taking one. Asked what
@@ -2375,11 +2386,11 @@ const whiteboard=[
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{v:'v318',d:'20 Aug 2026',t:'BOTH SHELVES COUNTED AT ZERO, THE COUNT FOUND THREE UNIT THE LEDGER HAD LOST, AND THE THIN MARGIN IS THE LEAK AND NOT THE TRADING',n:['<b>THE COUNT PAID FOR ITSELF THE MOMENT IT WAS TAKEN, WHICH IS THE ARGUMENT FOR TAKING ONE.</b> Asked what had become of the 8.05 unit the roll claimed, he said CE4-CHE had taken <b>3.25 of his 6.25</b> rather than the 0.25 the book carried. Three unit had moved and nothing had recorded it. <b>IT IS WRITTEN UP AS AN AMENDMENT TO HIS ROW, WHICH IS WHAT IT IS.</b> A new row would have double-counted the RM500 he settled in full on the 18th, and that distinction is the whole reason the drafter refuses amendments rather than guessing at them. The trail now carries both tranches, a quarter unit on the 18th and three on the 20th. ASSUMPTION, STATED: no date was given for the three, so they are booked on the 20th, the day the shelf was counted and the delivery came to light.',
-'<b>SO THE SALT HOLE IS 5.05 UNIT AND NOT 8.05, AND THREE OF THOSE FIVE ARE SOMEBODY ELSE&rsquo;S.</b> Once his three come off, the roll should have read 5.05 and the shelf holds nothing. <b>THREE UNIT ARE PAID FOR, UNDELIVERED, AND NOT THERE TO DELIVER.</b> The desk owes them to a man who has settled in full and has nothing behind the obligation; that is the sharpest single line on this book today. The remaining 2.05 is the ordinary gap and it is what the plug is for. Twelve days and six roll-forwards since the 12 Aug count, flagged on each of the last two commits. The flag was right.',
-'<b>OIL IS COUNTED AT ZERO TOO, ON THE SAME LOOK, AND IT COSTS 19 UNIT.</b> The roll said 19 and the shelf holds nothing. <b>OIL&rsquo;S HOLE IS CLEANER THAN SALT&rsquo;S AND WORSE.</b> Cleaner because nothing is owed on oil, no order is pending on it and nobody has paid for a unit of it that is not there. Worse because there is nothing to explain it with: the last count was 12 Aug and the last oil row was 14 Aug, so nineteen unit left in six days without a single line recording any of it. <b>A SHELF NOBODY LOOKS AT REPORTS WHATEVER THE ARITHMETIC LAST SAID</b>, and both products have now proved that in the same week.',
-'<b>THE THIN MARGIN IS THE LEAK, NOT THE TRADING, AND THE TWO COUNTS ARE ABOUT TO MAKE THAT PLAIN.</b> He asked why the margin is so little when the next lot is 25 unit for RM1300. That is <b>RM52 a unit</b>, and it is a good buy: RM4 under the RM56 every 12.5 unit lot has cost since 08 Jul, seven per cent cheaper, and it covers the 21.5 unit of promises with 3.5 to spare. <b>ON LOT COST THE TRADING IS HEALTHY.</b> At RM52 the standing rates return 48.0% to CA4-DAM&rsquo;s RM100, 52.7% to CM4-MK&rsquo;s RM110, 43.5% to CE4-CHE&rsquo;s RM92 and 35.0% to CR3-DAM&rsquo;s RM80, each about four points better than the same rate on the RM56 shelf. <b>THE BOARD DOES NOT MEASURE AGAINST LOT COST, IT MEASURES AGAINST EFFECTIVE COST</b>, which is the lot loaded with the shrinkage plug, and that is why the desk names RM1417.29 to refill 21.5 unit: <b>RM65.92 a unit</b>, RM13.92 above what he is actually about to pay. <b>THAT RM13.92 IS THE LEAK, PRICED.</b> Twenty-four unit went missing across the two shelves today and the cost of them does not disappear; it is spread across every unit sold. Buying better will not fix it, because the loss is happening after the buying. <b>The margin question and the empty shelf are the same question.</b>',
-'<b>WHAT THE BOOK NOW SAYS, PLAINLY.</b> Salt: nothing on hand, three unit owed out and paid for, so free to sell is <b>minus three</b>; 21.5 unit of promises against zero; RM80 owed in by CR3-DAM. Oil: nothing on hand and nothing owed either way. <b>Every pending order on the book is now unmeetable</b>, CJ4-BJ&rsquo;s 12.5, CE4-AD&rsquo;s 5 and CA4-DAM&rsquo;s 1, and so is the deferred delivery that is already paid for. The 25 unit lot clears the salt side of that at a stroke. Nothing on order clears the oil side, and no oil restock is on the book at all.']}];
+const evolution=[{v:'v319',d:'20 Aug 2026',t:'THE PHONE STOPS BEING A NOTEPAD: EVERY ENTRY THAT BELONGS ON IT, THE LEDGER TO READ, AND THE COUNT LEADING THE PAGE',n:['<b>RECONCILIATION IS A DAILY DISCIPLINE FROM TODAY, AND THE APP LEADS WITH IT.</b> The count banner sits above the action list on the first screen, one line per product, and says whether the shelf was looked at or merely rolled forward. <b>IT IS THE ONLY THING ON THAT PAGE THAT GOES WRONG BY BEING IGNORED.</b> Every other panel is wrong only when a figure is wrong; a shelf is wrong the moment nobody looks, and it stays wrong QUIETLY, because the roll reports whatever the arithmetic last said. Twelve days of exactly that cost 5.05 unit of salt and 19 of oil in the week to the 20th. <b>COUNT_ON IS NOW MACHINE-READABLE</b>, one date per product, and a roll never moves it: only a count does. That distinction is the whole value of the field, because STATED_STOCK changes on most commits and this changes when somebody looks.',
+'<b>THE COUNT FORM RECONCILES BEFORE IT SENDS.</b> Three cells: what the book says, what you counted, and the drift between them. <b>The drift is the one subtraction this app performs and it is deliberately not a price</b>, so it breaks no rule that matters: it exists so the gap is a thing you SAW rather than a thing you discover a week later. The desk still decides what the drift means when the count is folded, and a count still always wins there.',
+'<b>FOUR RECORD MODES INSTEAD OF ONE.</b> A trade, an amendment against any open order, a party registration, and the three stock entries: count, loss and lost demand. <b>THE AMENDMENT IS THE ONE THAT WAS MOST MISSING.</b> Fulfilment is the commonest entry this desk makes, thirty-nine on the book, and until today it needed the laptop; that is why two of the three entries queued on 17 Aug took the old road. The phone now lists every open order with what is unpaid and what is still to move, pre-fills the outstanding amounts, and sends the desk&rsquo;s own orderKey untouched rather than composing one. <b>EVERY FORM SAYS WHICH ROAD ITS ENTRY TAKES.</b> A trade is drafted and comes back for a tap; the other three are refused by the drafter BY DESIGN and folded by a person. Saying so on the form is the difference between a queue that looks broken and one you understand.',
+'<b>THE LEDGER IS READABLE ON THE PHONE, AND IT CARRIES NO COST AND NO MARGIN.</b> All 111 rows, newest first, filterable by product, party and state, with pending rows at the top because a phone is read from the top. <b>The omission is deliberate and it is the leak gate&rsquo;s doing:</b> phonePayloadLeaks() bans every per-unit cost from this payload because the page is public by decision, and a margin is a cost stated backwards. So the phone answers what was traded and what is owed, and the laptop answers what it earned. <b>/desk STAYS</b>, and the reason is the same one data.json exists for: the moment the phone prices anything itself there are two engines and they drift.',
+'<b>THE STATE OF EACH ROW IS DECIDED BY THE DESK, AND THE FIRST VERSION PROVED WHY.</b> Written in the app from raw fields, it was wrong three times on the first look at real rows. It read a PURCHASE with a seller&rsquo;s ruler, so a lot paid for and not yet landed said "you owe stock" when they owe it to you. It read receivedQty raw, which is ABSENT on most lots and means fully received, inventing 68 unit of obligations from lots that landed in July. Then it read cash raw, which is absent on the older lots where status:&rsquo;paid&rsquo; is what says they were settled, reporting RM4,650 of supplier debt paid off in June. <b>Three goes at one mistake in an afternoon</b>, and all three are the same mistake: looking at the desk&rsquo;s fields instead of calling the desk&rsquo;s helpers. txPaid, txEffDeliv, txDeferKg, txAdvance, poCash and poRecvKg now decide it, in the master, and the phone only puts a word to the answer.']}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -6409,15 +6420,44 @@ function phonePayloadBuild(){
      NOTHING HERE IS COMPUTED THAT THE DESK DOES NOT ALREADY HOLD. Every field is a row
      field read off, not re-derived, which is the same rule data.json has obeyed since v291
      and the reason there is one pricing engine on this desk rather than two. */
+  /* THE STATE IS DECIDED HERE, BY THE DESK'S OWN HELPERS, AND NOT ON THE PHONE. The first
+     version read t.cash and t.deliveredQty raw and worked the state out in the app, and it
+     was wrong twice over on the first look at real rows.
+     ONE: A PURCHASE IS NOT A SALE. Paid-and-not-received on a lot means THEY owe YOU salt;
+     the app labelled it "you owe stock". That is the seller's-ruler fault the drafter's own
+     flags section already documents, made again in a different file.
+     TWO: THE RAW FIELDS ARE NOT THE FIGURES, ON EITHER SIDE OF A PURCHASE. receivedQty is
+     absent on most lots and its absence means FULLY RECEIVED, which poRecvKg knows and a raw
+     read does not; reading it raw showed 68 unit of phantom obligations from lots that landed
+     in July. cash is absent on the older lots too, where status:'paid' is what says they were
+     settled, which poCash knows; reading THAT raw then reported RM4,650 of supplier debt that
+     was paid in June and July. Two goes at the same mistake in one afternoon, which is the
+     argument for calling the desk's helpers rather than looking at its fields.
+     So: txPaid counts non-cash settlement, txEffDeliv counts offsets, txDeferKg is salt owed
+     out and txAdvance is money owed in. Every one of them is the desk's, and the phone
+     renders the answer rather than reaching its own. */
   const rowOf=(t,dir)=>{
-    const mv=dir==='B'?(+t.receivedQty||0):(+t.deliveredQty||0);
-    const cash=+t.cash||0, tot=+t.total||0, q=+t.qty||0;
+    const q=+t.qty||0, tot=+t.total||0;
+    const buy=(dir==='B');
+    const paidRM=buy?poCash(t):txPaid(t);
+    const mv=buy?poRecvKg(t):txEffDeliv(t);
+    const oweRM=+Math.max(0,tot-paidRM).toFixed(2);      // money still to be handed over
+    const oweKg=+Math.max(0,q-mv).toFixed(2);            // goods still to be handed over
+    let st;
+    if(t.cancelled) st='canc';
+    else if(!t.date||t.pending) st='pend';
+    else if(oweRM<0.005&&oweKg<0.005) st='done';
+    /* WHO OWES WHOM, and the direction is the whole point. On a SALE the money is owed TO
+       you and the goods BY you; on a PURCHASE it is the other way round. */
+    else if(oweKg>=0.005&&oweRM>=0.005) st='part';
+    else if(oweKg>=0.005) st=buy?'dueStock':'oweStock';
+    else st=buy?'oweMoney':'dueMoney';
     const r={ d:t.date||null, p:t.customer||t.supplier||'', dir:dir,
-      q:q, t:tot, cash:cash, mv:mv, paid:cash>=tot-0.005, deliv:mv>=q-0.005 };
+      q:q, t:tot, cash:+paidRM.toFixed(2), mv:+mv.toFixed(2), st:st };
+    if(oweRM>=0.005) r.oweRM=oweRM;
+    if(oweKg>=0.005) r.oweKg=oweKg;
     const pr=t.product||DEFAULT_PROD;
     if(pr!==DEFAULT_PROD) r.pr=pr;
-    if(t.cancelled) r.canc=true;
-    if(!t.date) r.pend=true;
     return r;
   };
   let led=[], open=[];
@@ -6428,14 +6468,13 @@ function phonePayloadBuild(){
        order, where undated rows sort LAST because they have not happened yet; both are
        right for what they are, a record and a screen. */
     led.sort((a,b)=>(a.d===b.d)?0:a.d==null?-1:b.d==null?1:(a.d<b.d?1:-1));
-    /* WHAT AN AMENDMENT CAN TARGET: anything not cancelled and not already both settled and
-       handed over, keyed exactly as ovKey builds it so the phone sends a key the desk
-       already matches. An undated row's key really does carry the string "undefined", which
-       is why it is built by calling ovKey rather than composed here. */
-    const openable=t=>!t.cancelled&&!((+t.cash||0)>=(+t.total||0)-0.005 &&
-      ((t.supplier?(+t.receivedQty||0):(+t.deliveredQty||0))>=(+t.qty||0)-0.005));
-    open=sales.filter(openable).map(s=>Object.assign(rowOf(s,'S'),{key:ovKey(s)}))
-      .concat(purchases.filter(openable).map(p=>Object.assign(rowOf(p,'B'),{key:ovKey(p)})));
+    /* WHAT AN AMENDMENT CAN TARGET: anything still open, which is now read off the state the
+       desk just decided rather than worked out a second time. Keyed exactly as ovKey builds
+       it, so the phone sends a key the desk already matches; an undated row's key really does
+       carry the string "undefined", which is why it calls ovKey rather than composing one. */
+    const openable=r=>r.st!=='done'&&r.st!=='canc';
+    open=sales.map(s=>Object.assign(rowOf(s,'S'),{key:ovKey(s)})).filter(openable)
+      .concat(purchases.map(p=>Object.assign(rowOf(p,'B'),{key:ovKey(p)})).filter(openable));
     open.sort((a,b)=>(a.d===b.d)?0:a.d==null?-1:b.d==null?1:(a.d<b.d?1:-1));
   }catch(e){ led=[]; open=[]; }
 
@@ -6453,6 +6492,9 @@ function phonePayloadBuild(){
     actions:acts,
     ledger:led,
     open:open,
+    /* THE COUNT DATES, so the phone can say how stale each shelf is and put the
+       reconciliation in front of him when it is due. A roll never moves these. */
+    countedOn:Object.assign({},COUNT_ON),
     today:TODAY.toISOString().slice(0,10)
   };
 }

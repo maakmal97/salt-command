@@ -17,6 +17,10 @@ import { openMaster } from "./payload.mjs";
 export const LEDGER = {
   PRODUCTS: "PRODUCTS", PROD_ORDER: "PROD_ORDER",
   opening: "opening", PROD_OPENING: "PROD_OPENING", STATED_STOCK: "STATED_STOCK",
+  /* WHEN EACH SHELF WAS LAST COUNTED (v319). Part of the book, not metadata: it is the
+     difference between a figure somebody looked at and a figure the arithmetic produced,
+     and the week to 20 Aug proved that distinction is worth 24 unit. A roll never moves it. */
+  COUNT_ON: "COUNT_ON",
   purchases: "BASE_PURCHASES",
   sales: "BASE_SALES",
   contacts: "BASE_CONTACTS",
