@@ -25,17 +25,17 @@ name: Cloud commit
 
 on:
   schedule:
-    # TWICE AN HOUR, AT :25 AND :55 UTC, deliberately offset from the fold at :00.
+    # TWICE AN HOUR. The fold used to be daily and is now hourly, which is the floor a cloud
+    # routine allows: the API rejects anything under an hour. Staging twice an hour puts the
+    # average wait between a tap on the phone and a row in the ledger at about half an hour
+    # rather than most of a day.
     #
-    # The fold used to be daily and is now hourly, which is the floor a cloud routine allows.
-    # Staging twice an hour puts the average wait between a tap on the phone and a row in the
-    # ledger at about half an hour rather than most of a day.
-    #
-    # THE OFFSET IS NOT COSMETIC. Staging at :00 would race the fold: this job commits a new
-    # _to_fold.json while the agent is part way through the previous one, and the deploy job
-    # then clears a file that has content the agent never read. Five minutes of clearance
-    # either side is enough, and cheap.
-    - cron: '25,55 * * * *'
+    # THE CLOCK IS NOT THE GUARD, AND THAT WAS THE FIRST DESIGN'S MISTAKE. This was offset to
+    # :25 and :55 to clear a fold at :00, and then the routine API JITTERED the fold's minute
+    # to :41 of its own accord. A schedule whose safety depends on another scheduler keeping
+    # the minute you asked for is not safe. The real guard is in the job: it refuses to
+    # overwrite a batch that has not been folded yet. See "Do not trample an unfolded batch".
+    - cron: '5,35 * * * *'
   push:
     branches: [master]
     paths:
@@ -71,7 +71,30 @@ jobs:
             exit 1
           fi
 
+      # DO NOT TRAMPLE AN UNFOLDED BATCH.
+      #
+      # If master/_to_fold.json is still in HEAD, the agent has not folded the last batch yet:
+      # either it is running right now, or its run failed. Writing a fresh batch over it would
+      # hand the agent a file it has already partly read, and the deploy job would afterwards
+      # clear a file carrying rows nobody folded. Those rows would still be approved and
+      # uncommitted in D1, so nothing is LOST, but they would be silently deferred and the
+      # logs would all read green.
+      #
+      # So the stage stands down and says so. The next tick, half an hour later, picks it up.
+      - name: Stand down if the last batch is still unfolded
+        id: guard
+        run: |
+          set -euo pipefail
+          if git cat-file -e HEAD:master/_to_fold.json 2>/dev/null; then
+            n=$(git show HEAD:master/_to_fold.json | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).count")
+            echo "::notice::A batch of $n row(s) is staged and not yet folded. Standing down rather than overwriting it."
+            echo "skip=1" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=0" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Read the approved rows out of D1
+        if: steps.guard.outputs.skip == '0'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
@@ -98,6 +121,7 @@ jobs:
       # the file is actually in HEAD when there was anything to stage. A step that reports
       # success without checking its own effect is the fault this repo keeps writing tests for.
       - name: Commit it, and prove it
+        if: steps.guard.outputs.skip == '0'
         run: |
           set -euo pipefail
           count=$(node -p "require('./master/_to_fold.json').count")
