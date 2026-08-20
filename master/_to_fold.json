@@ -1,0 +1,154 @@
+{
+ "ok": true,
+ "count": 3,
+ "approved": [
+  {
+   "id": "2026-08-20T10:42:43.585Z",
+   "collection": "sales",
+   "row": {
+    "customer": "CM3-OKR",
+    "qty": 12.5,
+    "total": 600,
+    "cost": 56,
+    "cash": 600,
+    "date": "2026-08-20",
+    "deliveredQty": 12.5,
+    "deliveredOn": "2026-08-20",
+    "paidOn": "2026-08-20"
+   },
+   "reasoning": "Sold 12.5 unit of salt to CM3-OKR for RM 600, RM 48/unit. Costed at RM 56/unit from the desk's own shelf cost, so RM -100 on the order at -16.7%. Paid in full and delivered in full on 2026-08-20. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [
+    "RM 600 is under the delivered floor of RM 1004.59, and under the collected floor of RM 998.34 too.",
+    "This sells at RM 48/unit against a lot that cost RM 56: it loses money on every unit."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-08-20T10:42:43.585Z",
+    "type": "SELL",
+    "party": "CM3-OKR",
+    "qty": 12.5,
+    "total": 600,
+    "status": "paid",
+    "raw": "Sell 12.5 unit to CM3-OKR for RM 600 on 2026-08-20 - RM 600 cash, 12.5 unit moved -> Completed",
+    "payload": {
+     "mode": "new",
+     "product": "salt",
+     "direction": "SELL",
+     "party": "CM3-OKR",
+     "newId": null,
+     "date": "2026-08-20",
+     "qty": 12.5,
+     "total": 600,
+     "cash": 600,
+     "kg": 12.5,
+     "assoc": null,
+     "stream": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": null
+    }
+   },
+   "decidedAt": "2026-08-20T10:42:56.598Z",
+   "decidedBy": "phone"
+  },
+  {
+   "id": "2026-08-20T11:14:42.058Z",
+   "collection": "sales",
+   "row": {
+    "customer": "CN6-WM",
+    "qty": 2,
+    "total": 150,
+    "cash": 0,
+    "deliveredQty": 0
+   },
+   "reasoning": "Sold 2 unit of salt to CN6-WM for RM 150, RM 75/unit. Costed at RM 56/unit from the desk's own shelf cost, so RM 38 on the order at 25.3%. Nothing was paid and nothing moved, so the row is PENDING and carries NO DATE: it draws no stock and books no revenue until it does. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [
+    "CN6-WM typically pays about RM 100/unit for salt across 3 orders; this one is RM 75, 25% below that.",
+    "RM 150 is under the delivered floor of RM 165.98, and under the collected floor of RM 159.73 too."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-08-20T11:14:42.058Z",
+    "type": "SELL",
+    "party": "CN6-WM",
+    "qty": 2,
+    "total": 150,
+    "status": "unpaid",
+    "raw": "Sell 2 unit to CN6-WM for RM 150 on 2026-08-20 - RM 0 cash, 0 unit moved -> Pending",
+    "payload": {
+     "mode": "new",
+     "product": "salt",
+     "direction": "SELL",
+     "party": "CN6-WM",
+     "newId": null,
+     "date": "2026-08-20",
+     "qty": 2,
+     "total": 150,
+     "cash": 0,
+     "kg": 0,
+     "assoc": null,
+     "stream": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": null
+    }
+   },
+   "decidedAt": "2026-08-20T11:18:24.807Z",
+   "decidedBy": "phone"
+  },
+  {
+   "id": "2026-08-20T11:14:56.780Z",
+   "collection": "sales",
+   "row": {
+    "customer": "CS6-PER",
+    "qty": 6.25,
+    "total": 350,
+    "cash": 0,
+    "deliveredQty": 0
+   },
+   "reasoning": "Sold 6.25 unit of salt to CS6-PER for RM 350, RM 56/unit. Costed at RM 56/unit from the desk's own shelf cost, so RM 0 on the order at 0%. Nothing was paid and nothing moved, so the row is PENDING and carries NO DATE: it draws no stock and books no revenue until it does. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [
+    "CS6-PER typically pays about RM 80/unit for salt across 3 orders; this one is RM 56, 30% below that.",
+    "RM 350 is under the delivered floor of RM 505.42, and under the collected floor of RM 499.17 too."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-08-20T11:14:56.780Z",
+    "type": "SELL",
+    "party": "CS6-PER",
+    "qty": 6.25,
+    "total": 350,
+    "status": "unpaid",
+    "raw": "Sell 6.25 unit to CS6-PER for RM 350 on 2026-08-20 - RM 0 cash, 0 unit moved -> Pending",
+    "payload": {
+     "mode": "new",
+     "product": "salt",
+     "direction": "SELL",
+     "party": "CS6-PER",
+     "newId": null,
+     "date": "2026-08-20",
+     "qty": 6.25,
+     "total": 350,
+     "cash": 0,
+     "kg": 0,
+     "assoc": null,
+     "stream": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": null
+    }
+   },
+   "decidedAt": "2026-08-20T11:18:23.813Z",
+   "decidedBy": "phone"
+  }
+ ]
+}
