@@ -59,7 +59,7 @@ document.addEventListener('visibilitychange',function(){
    focused, no dialog open. Otherwise it offers a chip and waits to be tapped.
    The same tick retries a held entry, which is what gets a phone write to the cloud
    without waiting for the next open. */
-var SALT_BUILD_ID="702c5172f376b260";
+var SALT_BUILD_ID="3e3c08e283da269e";
 var SALT_REV_MS=10000;
 (function(){
   var chip=null,timer=null;
@@ -6596,6 +6596,65 @@ function phonePayloadBuild(){
     /* THE COUNT DATES, so the phone can say how stale each shelf is and put the
        reconciliation in front of him when it is due. A roll never moves these. */
     countedOn:Object.assign({},COUNT_ON),
+    /* ---- THE BOARD AND THE FLOORS, for quoting at the point of sale (v324) --------
+       WHAT HE ACTUALLY NEEDS STANDING IN FRONT OF A CUSTOMER is what to charge for four
+       unit and how far down he can go. The tiers were already here; the floor was not, so
+       the phone could show the ask and not the limit, which is the half that matters when
+       somebody is haggling.
+       ON THE FLOOR BEING COST-DERIVED, stated plainly rather than waved past: a floor
+       implies roughly what a unit cost. It does NOT widen anything, because /desk serves
+       the same figures from the same public URL and has since the port. If /desk is ever
+       put behind the key, this must follow it in the same commit.
+       It is read from floorTotal, the desk's own function, never re-derived. */
+    board:(function(){
+      const out={};
+      const keepP=(typeof PROD!=='undefined')?PROD:prods[0];
+      prods.forEach(pid=>{
+        /* floorTotal prices the ACTIVE product, so PROD is set, read and put back, exactly
+           as pricingSnapshot does during the extract. Leaving the desk on the wrong book
+           would silently change every figure computed after this. */
+        try{ if(typeof setProd==='function')setProd(pid,true); else PROD=pid; recompute(); }catch(e){}
+        const f={};
+        PRICE_TIERS.sizes.forEach(q=>{
+          try{
+            /* THE SIGNATURE IS (q, eff, opts), NOT (q, delivered, product), and getting it
+               wrong put RM7.50 on the phone where the floor at 1 unit is RM86.12: the second
+               argument is an effective cost override, so passing `true` for "delivered" made
+               the whole floor from a unit cost of 1. Read off pricingSnapshot's own calls in
+               tools/book.mjs rather than guessed a second time. */
+            const d=floorTotal(q), c=floorTotal(q,null,{collects:true});
+            f[q]={delivered:(typeof d==='number')?+d.toFixed(2):null,
+                  collected:(typeof c==='number')?+c.toFixed(2):null};
+          }catch(e){ f[q]=null; }
+        });
+        /* EACH PRODUCT CARRIES ITS OWN SIZES AND ITS OWN BOARD. PRICE_TIERS follows the
+           active product, so salt ladders 0.5 to 12.5 and oil ladders 10 to 100; the
+           top-level `sizes` is salt's and would mislabel every oil column. */
+        out[pid]={floors:f, sizes:PRICE_TIERS.sizes.slice(),
+          tiers:PRICE_TIERS.tiers.map(t=>({code:t.code,name:t.name,who:t.who||'',
+            prices:PRICE_TIERS.sizes.map((q,i)=>t.prices[i]!=null?+t.prices[i]:null)}))};
+      });
+      try{ if(typeof setProd==='function')setProd(keepP,true); else PROD=keepP; recompute(); }catch(e){}
+      return out;
+    })(),
+    /* ---- THE PARTIES, so a rate can be checked without opening the desk -----------
+       custStats() is the desk's own per-customer roll-up and is used verbatim: orders,
+       units, revenue, first and last. The rate is revenue over units, which is a SELLING
+       price and already derivable from the ledger rows the phone carries, so it adds no
+       disclosure. NO COST AND NO MARGIN, same rule as the ledger. */
+    customers:(function(){
+      let stats=[];
+      try{ stats=Object.values(custStats()||{}); }catch(e){ return []; }
+      const owed={};
+      try{ (arList||[]).forEach(s=>{ const g=outstandingOf(s);
+        if(g>0.009) owed[s.customer]=+((owed[s.customer]||0)+g).toFixed(2); }); }catch(e){}
+      return stats.map(o=>({
+        id:o.id, n:o.n, kg:+(o.kg||0).toFixed(2), rev:+(o.rev||0).toFixed(2),
+        rate:(o.kg>0)?+((o.rev||0)/o.kg).toFixed(2):null,
+        first:o.first||null, last:o.last||null,
+        owed:owed[o.id]||0
+      })).sort((a,b)=>(a.last===b.last)?0:(a.last<b.last?1:-1));
+    })(),
     today:TODAY.toISOString().slice(0,10)
   };
 }

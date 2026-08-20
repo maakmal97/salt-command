@@ -337,8 +337,10 @@ section("The phone app, and the desk at /desk");
   /* RAISED FROM 60 KB AT v319, when the app stopped recording one kind of thing and started
      covering every entry that belongs on a phone: the ledger, the count reconciler, the four
      record modes. The bound is not ceremony. It exists so a stray build writing the 900 KB
-     desk to the root fails loudly, and 90 KB still catches that by a factor of ten. */
-  ok(app.length < 90 * 1024, `the app is small (${(app.length / 1024).toFixed(0)} KB, the desk is ~900 KB)`);
+     desk to the root fails loudly, and 120 KB still catches that by a factor of seven and a
+     half. Raised again at v324 when the Price tab landed: the board, the floors and the party
+     list are rendering, not logic, but rendering is not free either. */
+  ok(app.length < 120 * 1024, `the app is small (${(app.length / 1024).toFixed(0)} KB, the desk is ~900 KB)`);
   ok(app.includes("fetch('data.json'"), "the app reads its figures from data.json");
   ok(app.includes("X-Salt-Key"), "the app sends the write key");
   ok(app.includes("queueCommitted"), "the app self-clears against the watermark");
