@@ -1,5 +1,19 @@
 [
  {
+  "v": "v326",
+  "d": "20 Aug 2026",
+  "t": "ONE LADDER, GRADED BY SIZE: 2.00x AT HALF A UNIT DOWN TO 1.33x AT TWELVE AND A HALF",
+  "n": [
+   "<b>FOUR RUNGS BECOME ONE, AND THE ONE IS GRADED BY SIZE.</b> His instruction of 20 Aug: a floor of 1.33x, an average of 1.67x and a ceiling of 2.00x, with the ask sliding from the ceiling at the smallest size to the floor at the largest. Floor, Good, Great and Ceiling are gone from the board. What prints now is the size, the cogs, the markup that size is asked, the ask, and the floor underneath it. These are markups on cost the way he states the measure, (sales less cogs) over cogs, so 2.00x is THREE times cogs and 1.33x is 2.33 times.",
+   "<b>IT IS INTERPOLATED IN THE LOG OF SIZE, AND THAT IS NOT A PRESENTATION CHOICE.</b> Log spacing puts the stated 1.67 average exactly at 2.5 unit, the geometric middle of the range, and it holds gross margin between 50% and 55% from 1 unit all the way to 12.5. A linear gradient does neither: it lands 1.67 at 6.5 unit and lets margin sag in the middle. Outside the two anchors the markup is CLAMPED rather than extrapolated, so a 50 unit lot is asked the 12.5 markup and not a markup the policy never stated.",
+   "<b>THE BASIS MOVED FROM LOT COST TO COGS, AND THE FLOOR HAD TO MOVE WITH IT.</b> The old rungs were struck on the lot cost, the salt after the leak plus one delivery. The ladder is struck on cogs, the landed RM46. Leaving floorTotal on the old basis put the 12.5 floor at RM1,455.90 against an ask of RM1,340, which is a board that refuses its own price. One basis, one ladder. The collected floor is the same number as the delivered one now, because cogs carries no delivery; the saving shows up in the margin instead.",
+   "<b>ASKS ROUND UP TO THE TEN, ON HIS INSTRUCTION, AND THE FLOOR IS NEVER ROUNDED.</b> Up rather than down, so the ladder is never quoted under itself: 1 unit solves at RM131.36 and asks RM140. The floor stays exact, because rounding a refusal line down puts the floor under itself and rounding it up makes it dearer than the policy states.",
+   "<b>59 OF 76 LIVE ROWS NOW SIT UNDER FLOOR, AGAINST 16 BEFORE, AND NOTHING WAS REPRICED TO SAY SO.</b> That is what a floor at 2.33 times landed cost means on a book that has averaged RM93.51 a unit. The desk reports and does not clamp, so every one of those rows stands exactly as it was traded. Read it as a statement about the new policy rather than about the trades: they were struck against a floor a quarter of this one.",
+   "<b>THE STATED 1.67 AVERAGE IS NOT WHAT THIS BOOK WOULD REALISE, AND THE DESK SAYS SO ON THE TAB.</b> ladderRealised() weights the curve by the salt actually traded and returns 1.54, because the average sits at 2.5 unit and roughly half the volume here goes out in lots over 5 unit where the gradient is thinnest. It is computed rather than asserted so it follows the mix instead of going stale. Re-anchor the curve if 1.67 is wanted as the realised figure rather than as a point on it.",
+   "<b>EVERYTHING THAT QUOTES NOW QUOTES THE LADDER, WHICH IS THE POINT OF DOING IT THIS WAY.</b> enginePrice returns the ladder ask, so pxQuote, the board, the charts, the any-size panel and the saved sheet all follow one definition. The frozen tier cards no longer win in pxQuote and the sheet no longer prints them: three tier buttons became one Save the ladder, because a printed card and a derived ladder are two prices for the same lot and the card is the one the customer keeps. The tier multiplier is not applied and the tier select is gone from the panel. The ask the retired engine would have made is still returned and shown beside the ladder, so the day the two disagree is visible rather than argued about."
+  ]
+ },
+ {
   "v": "v325",
   "d": "20 Aug 2026",
   "t": "THE CHEAPEST LOT ON THE BOOK LANDS, AND THE COST BASIS IS REBUILT ON THREE STATED ASSUMPTIONS",
