@@ -1,6 +1,6 @@
 {
  "v": "v338",
- "stamped": "23 Aug 2026, 00:15 KL",
+ "stamped": "22 Aug 2026, 23:59 KL",
  "source": "Cow-Crm01 salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -2186,7 +2186,7 @@
   ],
   "QUEUE_COMMITTED": "2026-08-22T11:00:24.409Z",
   "PRICING": {
-   "takenAt": "2026-08-22T23:58:14.981Z",
+   "takenAt": "2026-08-22T23:59:11.780Z",
    "sizes": [
     0.5,
     1,
@@ -2597,7 +2597,7 @@
    "v": "v338"
   },
   "OPEN": {
-   "at": "2026-08-22T23:58:14.989Z",
+   "at": "2026-08-22T23:59:11.791Z",
    "count": 7,
    "byKey": {
     "CJ4-BJ|undefined|450": {
