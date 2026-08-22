@@ -42,6 +42,12 @@ jobs:
       - name: The master's version is in the changelog
         run: node tools/changelog.mjs --check
 
+      # THE ENGINE IN THE MASTER IS THE MODULE (v337). The desk carries engine/pricing.mjs inlined
+      # between markers because it must load nothing; this proves the copy is the file, so there
+      # is one pricing engine and not one plus a copy drifting from it.
+      - name: The engine in the master is the module
+        run: node tools/engine.mjs --check
+
       - name: Tests
         run: npm test
 

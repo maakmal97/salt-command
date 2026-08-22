@@ -32,6 +32,8 @@ const prodOf = (r) => (r && r.product) || "salt";
  * pass that commits, so a snapshot older than the master means the run should flag, not
  * proceed: pricing off a stale shelf is how a wrong cost reaches an approval screen looking
  * authoritative. */
+import PRICING_ENGINE from "../engine/pricing.mjs";
+
 export async function readBook(db) {
   const rows = async (c) => {
     const rs = await db.prepare("SELECT doc FROM entry WHERE collection=?1 ORDER BY seq").bind(c).all();
@@ -94,6 +96,18 @@ export function costFor(book, product) {
 export function floorFor(book, product, qty) {
   const snap = book.pricing && book.pricing.byProduct && book.pricing.byProduct[product || "salt"];
   if (!snap || !snap.floors) return null;
+  /* v337: THE ENGINE ANSWERS THE EXACT SIZE when the snapshot carries its inputs, which it does
+     from v337. It is the same module the desk runs, fed the same inputs, so the figure is the
+     desk's figure at that size and not an interpolation of it. An older snapshot without
+     inputs still takes the carded-size road below. */
+  if (snap.inputs && snap.inputs.cost && snap.inputs.policy && isNum(qty) && qty > 0) {
+    try {
+      const C = PRICING_ENGINE.costStack(snap.inputs.cost);
+      const d = PRICING_ENGINE.floorTotal(qty, C, snap.inputs.policy);
+      const c = PRICING_ENGINE.floorTotal(qty, C, snap.inputs.policy, null, { collects: true });
+      if (isNum(d) && isNum(c)) return { delivered: +d.toFixed(2), collected: +c.toFixed(2), at: qty, exact: true };
+    } catch (e) { /* fall through to the carded sizes */ }
+  }
   /* the carded sizes are what the snapshot holds; an odd size takes the nearest carded one
      BELOW it, because rounding up would report a floor the desk never quoted */
   const sizes = Object.keys(snap.floors).map(Number).filter((n) => Number.isFinite(n)).sort((a, b) => a - b);

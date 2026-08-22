@@ -1262,6 +1262,60 @@ section("App — a rate is checked where every entry passes");
     "and the form says a restatement is left for a person rather than pretending it is gated");
 }
 
+/* ---- the engine ------------------------------------------------------------------ */
+section("Engine — one definition, out of the desk (v337)");
+{
+  const { default: E } = await import("../engine/pricing.mjs");
+  /* 1. the copy in the master is the module, to the byte */
+  let chk = "";
+  try { chk = execFileSync("node", [join(REPO, "tools", "engine.mjs"), "--check"], { encoding: "utf8" }); }
+  catch (e) { chk = String((e && e.stdout) || e); }
+  ok(/ok\s+pricing/.test(chk), "tools/engine.mjs --check: the master's inlined engine is the module");
+
+  /* 2. it prices without a browser, and the ladder holds its own laws */
+  const I = { prod: "salt", lockOn: false, lockState: { state: "none", lock: null }, lockBase: null,
+    over: { cost: null, shrink: null }, lot: { qty: 50, total: 2200, rate: 44, date: "2026-08-20" },
+    quoteRate: 44, costBasis: { freightPerLot: { rm: 100 }, txnPerDelivery: { rm: 50 / 3 } },
+    attrib: 0.33, shrinkRate: 0.1, avgDel: { n: 20, mean: 2.5 } };
+  const P = { LADDER: { floor: 0.33, ceiling: 2.0, anchorQ: 2.5, anchorX: 0.958, at: { lo: 0.5, hi: 12.5 },
+      basis: "cogs", round: { to: 10, up: true }, taper: "supplier" },
+    minPerUnit: 0, lotFloor: {}, tiers: [{ qty: 12.5, total: 700 }, { qty: 25, total: 1300 }, { qty: 50, total: 2200 }],
+    boardSizes: [0.5, 1, 1.5, 2, 2.5, 3, 4, 5, 6.25, 12.5] };
+  const C = E.costStack(I);
+  ok(Math.abs(C.landed - 46) < 1e-9, "landed cost is the lot rate plus freight spread over the lot");
+  ok(C.effEx > C.landed && C.eff > C.effEx, "the leak divides and delivery adds, in that order");
+  const B = E.board(P.boardSizes, C, P);
+  const asks = B.tiers[0].prices;
+  ok(asks.length === 10 && asks.every((p) => Number.isFinite(p) && p % 10 === 0), "every ask is a multiple of ten");
+  let law = true;
+  for (let i = 1; i < asks.length; i++) if (asks[i] / P.boardSizes[i] > asks[i - 1] / P.boardSizes[i - 1] + 1e-9) law = false;
+  ok(law, "the rate never rises with size");
+  ok(P.boardSizes.every((q, i) => B.floors[q].delivered <= asks[i] + 1e-9), "no ask sits under its own floor");
+  ok(E.floorTotal(1, C, P, null, { collects: true }) <= E.floorTotal(1, C, P), "collecting never raises the floor");
+  ok(E.buyTaper(P.tiers).b < 0 && E.buyTaper([]).b === null, "the taper is fitted from the quote and absent without one");
+
+  /* 3. THE GATE FOR MOVE 1. Fed the desk's own inputs, the module reproduces the desk's asks and
+     floors at every size on both books. The desk is running the inlined copy of the same code, so
+     this proves the wrappers and the input record, which is where a drift could now hide. */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  const read = (expr) => JSON.parse(w.eval("JSON.stringify(" + expr + ")"));
+  for (const p of ["salt", "oil"]) {
+    w.eval(`setProd(${JSON.stringify(p)});recompute();`);
+    const sizes = read("PRICE_TIERS.sizes");
+    const mine = E.board(sizes, E.costStack(read("pxInputs()")), read("pxPolicy()"));
+    const deskAsks = read("PRICE_TIERS.sizes.map(q=>priceLadder(q).ask.total)");
+    const deskFloors = read("PRICE_TIERS.sizes.map(q=>[floorTotal(q),floorTotal(q,null,{collects:true})])");
+    ok(JSON.stringify(mine.tiers[0].prices) === JSON.stringify(deskAsks), `${p}: the module's asks are the desk's asks at every size`);
+    ok(sizes.every((q, i) => mine.floors[q].delivered === +deskFloors[i][0].toFixed(2)
+      && mine.floors[q].collected === +deskFloors[i][1].toFixed(2)), `${p}: the module's floors are the desk's floors at every size`);
+    const off = 7;
+    ok(Math.abs(E.floorTotal(off, E.costStack(read("pxInputs()")), read("pxPolicy()")) - read(`floorTotal(${off})`)) < 1e-9,
+      `${p}: an off-board size prices the same in both`);
+  }
+  try { w.close(); } catch (e) { }
+}
+
 /* ---- done ----------------------------------------------------------------------- */
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

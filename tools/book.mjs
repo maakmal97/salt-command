@@ -162,11 +162,14 @@ export function pricingSnapshot(w) {
        is set, read, and put back. Restoring it matters: this runs inside the extract, and
        leaving the desk on the wrong book would silently change what is extracted next. */
     const before = call("PROD");
-    let floors = null, repl = null, stockCost = null;
+    let floors = null, repl = null, stockCost = null, inputs = null;
     try {
       w.eval("PROD=" + JSON.stringify(p));
       stockCost = numOrNull(call("stockCostFor(" + JSON.stringify(p) + ")"));
       repl = numOrNull(call("replCost()"));
+      /* v337: THE ENGINE'S OWN INPUTS, so the drafter can price any size with the module rather
+         than read the nearest carded floor. Read as JSON so nothing from the window leaks through. */
+      inputs = { cost: JSON.parse(w.eval("JSON.stringify(pxInputs())")), policy: JSON.parse(w.eval("JSON.stringify(pxPolicy())")) };
       floors = {};
       for (const q of sizes) {
         floors[q] = {
@@ -176,7 +179,7 @@ export function pricingSnapshot(w) {
       }
     } catch (e) { /* a product the desk cannot price yields nulls, which the drafter must handle */ }
     finally { if (before != null) { try { w.eval("PROD=" + JSON.stringify(before)); } catch (e) { } } }
-    byProduct[p] = { stockCost, replCost: repl, floors };
+    byProduct[p] = { stockCost, replCost: repl, floors, inputs };
   }
 
   return {

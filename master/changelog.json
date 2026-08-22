@@ -1,5 +1,16 @@
 [
  {
+  "v": "v337",
+  "d": "22 Aug 2026",
+  "t": "THE PRICING ENGINE LEAVES THE DESK",
+  "n": [
+   "<b>MOVE 1 OF THE REBUILD: THE ENGINE IS A MODULE.</b> The cost stack, the supplier taper, the markup curve, cogs, the rounding, the walk that holds the rate law, the ask at any size, the lot cost, the floor, the reference ladder and the board, eleven functions, are ported verbatim into engine/pricing.mjs as pure functions of explicit inputs. The desk keeps every name as a one-line wrapper and gains two functions, pxInputs() and pxPolicy(), which gather the book&rsquo;s facts and the policy into the records the engine takes. Nothing prices on the desk any more.",
+   "<b>ONE DEFINITION, PROVED RATHER THAN TRUSTED.</b> The desk cannot import a file, because it is one page that opens from disk and loads nothing, so the module is inlined between two markers by tools/engine.mjs and CI fails if the block is not the file to the byte. The tests import the module directly, with no browser, and then feed it the desk&rsquo;s own inputs and compare: the asks and the floors at every size on both books are the desk&rsquo;s exactly, and the committed data.json board is byte for byte what it was before the move.",
+   "<b>THE DRAFTER PRICES THE EXACT SIZE FROM HERE.</b> The pricing snapshot in the mirror now carries the inputs as well as the carded floors, so a fulfilment or a sale of 1.5 or 7 unit is judged against the floor at that size rather than the nearest carded size below it. An older snapshot still takes the old road.",
+   "<b>NO FIGURE MOVED.</b> This is a layout change to the code, not to the book: the shelf, the watermark and every row stand as v336 left them."
+  ]
+ },
+ {
   "v": "v336",
   "d": "22 Aug 2026",
   "t": "THE PHONE PRICE TAB, REBUILT AS ONE QUESTION AND ONE ANSWER",

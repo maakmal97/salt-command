@@ -27,6 +27,11 @@ row is approved on the phone.
    retired beside `WHERE_THE_MASTER_WENT.md` in `30_Published`, renamed rather than deleted so
    the move is reversible and cannot be read as the master by accident.
 
+   **From v337 the block between the `ENGINE pricing` markers inside the master is GENERATED**
+   from `engine/pricing.mjs` by `node tools/engine.mjs --sync`, and CI fails if it differs. Edit
+   the module, sync, build. The desk's `floorTotal`, `priceLadder`, `pxCost` and the rest are
+   one-line wrappers over it; `pxInputs()` and `pxPolicy()` are what the desk contributes.
+
    **`master/changelog.json` moved with it**, because `tools/changelog.mjs` writes it on every
    version bump and a cloud fold has to be able to.
 
@@ -394,6 +399,8 @@ Cow-Crm01 master (a Cowork/master session); once it lands, the sync above alread
 | `master/salt_command.html` | **THE MASTER.** The only editable source. Moved here 20 Aug 2026 so the fold can run in the cloud. |
 | `master/changelog.json` | Every `evolution` entry ever written. `tools/changelog.mjs` keeps it in step with the master's one-entry array. |
 | `tools/sort-ledger.mjs` | Puts `sales` and `purchases` back in date order, undated pending rows last. Asserts its output is a permutation of its input. |
+| `engine/pricing.mjs` | **THE PRICING ENGINE** (v337, move 1 of the rebuild): the cost stack, the taper, the ladder, the floors and the board as pure functions of explicit inputs. The desk, the payload build and the drafter all price from it. Inlined into the master by `tools/engine.mjs --sync`; CI proves the copy is the file. |
+| `tools/engine.mjs` | `--sync` writes `engine/*.mjs` into the master between its markers; `--check` fails if the block is not the module. |
 | `tools/changelog.mjs` | Prepends the master's current `evolution[0]` to `master/changelog.json`. Never rewrites an entry that exists. |
 | `.github/workflows/` | CI with no secrets: date order, changelog, tests, build-matches-master, and a daily check that the live Worker serves what the repo committed. |
 | `tools/update.mjs` | **The whole "update" chain in one command**, ending in proof that every surface is level. See below. |
