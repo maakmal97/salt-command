@@ -1,6 +1,6 @@
 {
- "v": "v333",
- "stamped": "22 Aug 2026, 17:45 KL",
+ "v": "v334",
+ "stamped": "22 Aug 2026, 18:20 KL",
  "source": "Cow-Crm01 salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -1824,18 +1824,6 @@
    {
     "date": "2026-08-21",
     "customer": "CS6-BS",
-    "qty": 1,
-    "total": 120,
-    "cost": 44,
-    "cash": 120,
-    "deliveredQty": 1,
-    "deliveredOn": "2026-08-21",
-    "paidOn": "2026-08-21",
-    "note": "<b>ONE UNIT AT RM120, PAID AND DELIVERED, AND IT IS THE FIRST ROW IN WEEKS TO BEAT THE BOARD.</b> The ladder asks RM100 at this size and the floor stands at RM65.32, so RM120 clears the ask by RM20 and the floor by RM54.68. After a run of rows recorded as under floor and left there, this one is simply above it. <b>IT IS HIS DEAREST SALT RATE AND HE HAS PAID IT BEFORE.</b> His four salt orders ran RM95 on 12 Jul, RM120 on the 15th, RM107 on the 20th and RM110 on the 29th, so RM120 matches his own high rather than setting a new one, and it is 10.6% above the RM108 he averages. The drafter flagged it as unusually HIGH, which is the flag doing something more useful than warning about a cut: it says a customer has agreed to more than his habit, and that is worth knowing before the next quote. <b>THE COST IS RM44 AND THE DRAFT SAID RM56, THE SAME STALE SHELF RATE CORRECTED AT v329.</b> The whole shelf is the 20 Aug lot at RM44 and there is no RM56 salt left on it. Booked there the unit returns <b>RM76 on RM120, 63.3%</b>, against the RM64 at 53.3% the approval screen implied. This is the second draft in two days to carry a shelf rate that had already moved, so it is a pattern rather than a slip: a draft costs against STOCK_COST as it stood when it was written, and a fold has to re-read it. <b>HE IS AN ASSOCIATE AND THIS IS A DIRECT SALE, NOT A DOWNSELL.</b> It books to CS6-BS rather than to his CS6-BS-R bucket, which is right: the bucket is for salt he resells to somebody this desk never met. <b>THE SHELF ROLLS 37.5 TO 36.5</b>, and free to sell falls to 22.62 behind the 13.88 unit still owed out."
-   },
-   {
-    "date": "2026-08-21",
-    "customer": "CS6-BS",
     "qty": 1.5,
     "total": 190,
     "cost": 44,
@@ -1843,7 +1831,23 @@
     "deliveredQty": 1.5,
     "deliveredOn": "2026-08-21",
     "paidOn": "2026-08-21",
-    "note": "<b>1.5 UNIT AT RM190, RM126.67 A UNIT, PAID AND DELIVERED ON THE 21ST, AND IT IS HIS DEAREST RATE BY RM6.67.</b> His second row dated the 21st, after the single unit at RM120 queued the night before; between them 2.5 unit and RM310 on the day. It is 16.7% above the RM108.50 he averages across four salt orders, which is the flag the drafter raised, and the flag is the right way round: a customer agreeing to more than his habit. <b>THE COST IS RM44 AND THE DRAFT SAID RM56</b>, the same frozen shelf rate corrected at v329 and v331; the whole shelf is the 20 Aug lot. Booked there it returns <b>RM124 on RM190, 65.3%</b>, against the RM106 at 55.8% the approval screen implied. <b>APPROVED BY INSTRUCTION RATHER THAN BY A TAP.</b> It sat pending for a day and was folded on his instruction of 22 Aug to commit the whole queue, with the row, the cost and the flag put in front of him in the same session; the decision is recorded against the draft in those words. If it was meant to replace the RM120 unit rather than follow it, it is an amendment and not a second sale, and should be said so."
+    "amend": [
+     {
+      "date": "2026-08-21",
+      "kind": "Fulfilment",
+      "cash": 120,
+      "kg": 1,
+      "note": "as booked at v331 from the first queue entry: 1 unit for RM120, paid and delivered"
+     },
+     {
+      "date": "2026-08-21",
+      "kind": "Modification",
+      "cash": 70,
+      "kg": 0.5,
+      "note": "restated to 1.5 unit for RM190 on his word of 22 Aug. The RM190 entry queued on the 22nd REPLACED the RM120 one rather than following it; v332 had folded it as a second sale, and that row is removed here"
+     }
+    ],
+    "note": "<b>1.5 UNIT AT RM190, RM126.67 A UNIT, PAID AND DELIVERED ON THE 21ST: ONE SALE, RESTATED AT v334.</b> It was booked at v331 as 1 unit for RM120 from the entry queued that night, and the RM190 entry of the 22nd was folded at v332 as a second sale beside it, with the question asked. He has said the second entry replaced the first, so the book now carries one row at the corrected figures and the trail records both readings. <b>IT IS HIS DEAREST RATE BY RM6.67</b>, about 17% above the RM108 he averages across four earlier salt orders, and the drafter flagged it as unusually high, which is the flag the right way round: a customer agreeing to more than his habit. The ladder asks RM150 at 1.5 unit and the delivered floor stands at RM91.77, so RM190 clears the ask by RM40. <b>THE COST IS RM44</b>, the 20 Aug lot, not the RM56 the draft carried; it returns <b>RM124 on RM190, 65.3%</b>. Read the Pricing tab for the floor of the day rather than this sentence."
    },
    {
     "date": "2026-08-21",
@@ -1878,6 +1882,34 @@
      }
     ],
     "note": "<b>COMPLETED, FOLDED AT v332: 0.5 UNIT ON 21 AUG, THE OTHER 1.5 AND RM150 ON 22 AUG, NOTHING OUTSTANDING.</b> Against the RM44 shelf the 2 unit return RM62 at 41.3%. Both fulfilments were refused by the drafter against a mirror that did not yet carry this order, so the second was typed as a whole; the trail says how the two reconcile. What follows is the note as it stood while the order was pending. <b>PENDING, AND IT COUNTS NOWHERE UNTIL IT MOVES.</b> 2 unit for RM150, RM75 a unit, agreed on the 20th with nothing paid and nothing handed over, so the row carries no date, draws no stock, raises no receivable and stays out of the cost basis. <b>RM75 IS HIS CHEAPEST DIRECT RATE AND HIS LARGEST DIRECT ORDER, BOTH AT ONCE.</b> He has bought direct three times: half a unit at RM100 on 21 Jul, half a unit at RM100 on 04 Aug and a unit at RM80 on the 6th. The rate has fallen at every order while the size has doubled, which is a ladder being used the way a ladder is meant to be used. <b>HE IS AN ASSOCIATE, WHICH IS THE READING THAT MATTERS.</b> What he takes direct he mostly resells, and his downstream bucket CN6-WM-R has cleared RM67.69, RM125 and RM116.67 a unit across three orders. A rate to him is a wholesale rate to a reseller rather than a retail concession, and it should be judged against what he can get for it. <b>THE FLAG HE APPROVED IT AGAINST HAS SINCE MOVED, AND IN HIS FAVOUR.</b> The drafter said RM150 was under both the delivered floor of RM165.98 and the collected floor of RM159.73, which were the floors of the v326 board. On the ladder as it now stands the delivered floor at 2 unit is RM122.36, so this CLEARS it by RM27.64; what it does not clear is the ask, which is RM190. Both are derived live from cost, so read the Pricing tab for the figure of the day rather than this sentence."
+   },
+   {
+    "date": "2026-08-22",
+    "customer": "CM6-PJ",
+    "qty": 1,
+    "total": 120,
+    "cost": 44,
+    "cash": 120,
+    "deliveredQty": 1,
+    "deliveredOn": "2026-08-22",
+    "paidOn": "2026-08-22",
+    "note": "<b>NEW CUSTOMER AT POSTCODE 460, THE SECOND ON THE BOOK THERE AFTER CR4-PJ.</b> 1 unit for RM120, paid and delivered in full, entered by him in the 22 Aug session and dated to it because no other day was given. The ladder asks RM100 at 1 unit and the delivered floor stands at RM65.32, so RM120 clears the ask by RM20 and matches the dearest single-unit rate this book records, shared with CS6-BS on 15 Jul and CA5-KER on 28 Jul. Against the RM44 shelf it returns <b>RM76 at 63.3%</b>. Added to the roster at v334; the name and the place are in the directory on the laptop and nowhere else."
+   },
+   {
+    "customer": "CA5-KER",
+    "qty": 1,
+    "total": 120,
+    "cash": 0,
+    "deliveredQty": 0,
+    "note": "<b>PENDING, AGREED ON 22 AUG, AND IT COUNTS NOWHERE UNTIL IT MOVES.</b> 1 unit for RM120 with nothing paid and nothing handed over, so the row carries no date, draws no stock and raises no receivable. <b>AN EXACT REPEAT OF HIS ONLY OTHER ORDER</b>, the unit at RM120 agreed on 28 Jul and settled on 03 Aug, so the rate holds through a cost basis that has since gone from RM47 to RM44. The ladder asks RM100 at this size and the delivered floor stands at RM65.32, so it clears both; read the Pricing tab for the figure of the day. Entered by him in the 22 Aug session, not queued from the phone, so no draft stands behind it."
+   },
+   {
+    "customer": "CN6-WM",
+    "qty": 1.5,
+    "total": 185,
+    "cash": 0,
+    "deliveredQty": 0,
+    "note": "<b>PENDING, AGREED ON 22 AUG, AND IT COUNTS NOWHERE UNTIL IT MOVES.</b> 1.5 unit for RM185, RM123.33 a unit, with nothing paid and nothing handed over, so the row carries no date, draws no stock and raises no receivable. <b>IT IS HIS DEAREST DIRECT RATE BY SOME WAY</b>: his four direct orders ran RM100 a unit at half a unit on 21 Jul and 04 Aug, RM80 on the 6th and RM75 on the 2 unit completed on the 22nd, so this reverses a rate that had fallen at every order. He is an associate who resells, and his downstream bucket has cleared RM67.69 to RM125 a unit, so RM123.33 sits at the top of what his own customers pay. The ladder asks RM150 at 1.5 unit and the delivered floor stands at RM91.77, so it clears both. Entered by him in the 22 Aug session, not queued from the phone, so no draft stands behind it."
    },
    {
     "customer": "CS6-PER",
@@ -1982,7 +2014,8 @@
    "CR3-PUD",
    "CH4-MLR",
    "CM3-OKR",
-   "CA11-SEN"
+   "CA11-SEN",
+   "CM6-PJ"
   ],
   "associates": [
    "CS6-BS",
@@ -2125,7 +2158,7 @@
   ],
   "QUEUE_COMMITTED": "2026-08-22T08:09:04.893Z",
   "PRICING": {
-   "takenAt": "2026-08-22T09:35:50.069Z",
+   "takenAt": "2026-08-22T10:15:10.040Z",
    "sizes": [
     0.5,
     1,
@@ -2241,12 +2274,38 @@
      }
     }
    },
-   "v": "v333"
+   "v": "v334"
   },
   "OPEN": {
-   "at": "2026-08-22T09:35:50.082Z",
-   "count": 6,
+   "at": "2026-08-22T10:15:10.051Z",
+   "count": 8,
    "byKey": {
+    "CA5-KER|undefined|120": {
+     "d": null,
+     "p": "CA5-KER",
+     "dir": "S",
+     "q": 1,
+     "t": 120,
+     "cash": 0,
+     "mv": 0,
+     "st": "pend",
+     "oweRM": 120,
+     "oweKg": 1,
+     "key": "CA5-KER|undefined|120"
+    },
+    "CN6-WM|undefined|185": {
+     "d": null,
+     "p": "CN6-WM",
+     "dir": "S",
+     "q": 1.5,
+     "t": 185,
+     "cash": 0,
+     "mv": 0,
+     "st": "pend",
+     "oweRM": 185,
+     "oweKg": 1.5,
+     "key": "CN6-WM|undefined|185"
+    },
     "CS6-PER|undefined|350": {
      "d": null,
      "p": "CS6-PER",
@@ -2331,7 +2390,7 @@
      "coverDays": 4.1,
      "rate": 4.43,
      "owedToYou": 105,
-     "promised": 20.5,
+     "promised": 23,
      "short": 0
     },
     "oil": {
@@ -2350,7 +2409,7 @@
     "salt": "2026-08-20",
     "oil": "2026-08-20"
    },
-   "v": "v333"
+   "v": "v334"
   }
  }
 }
