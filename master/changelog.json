@@ -1,5 +1,16 @@
 [
  {
+  "v": "v338",
+  "d": "23 Aug 2026",
+  "t": "THE POSITION LEAVES THE DESK",
+  "n": [
+   "<b>MOVE 1, SECOND SESSION: THE TRANSACTION MODEL AND THE LEDGER WALK ARE A MODULE.</b> Eighteen row helpers, what a row has paid, delivered, deferred and pending, its state and its dates, what a lot has received and paid, and the ageing ladder, are lifted out of the desk verbatim into engine/position.mjs. recompute() becomes walk(): the same pass over a product&rsquo;s rows, with the globals it set turned into the fields of a record and the facts it read gathered by posInputs(). Cover, the commitments the forecast and the phone read, and the phone&rsquo;s own row shape and open-order key go with it.",
+   "<b>THE DESK KEEPS EVERY NAME.</b> Two hundred and fifty call sites are untouched because each helper is now a one-line wrapper; the walk assigns the same twenty-four globals from the record. Inlined by tools/engine.mjs beside the pricing engine, and CI proves both copies are their files.",
+   "<b>THE GATE HELD AGAIN.</b> The committed data.json, every field but the two stamps, is byte for byte what v337 produced: position, ledger, open orders, customers, actions and the board. The tests feed the module the desk&rsquo;s own inputs on both books and the walk, the cover and the commitments come back equal.",
+   "<b>NO FIGURE MOVED.</b> A layout change to the code, not to the book."
+  ]
+ },
+ {
   "v": "v337",
   "d": "22 Aug 2026",
   "t": "THE PRICING ENGINE LEAVES THE DESK",

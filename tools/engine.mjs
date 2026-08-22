@@ -19,7 +19,10 @@ import { fileURLToPath } from "node:url";
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const MASTER = resolve(REPO, "master", "salt_command.html");
-const ENGINES = [{ name: "pricing", file: resolve(REPO, "engine", "pricing.mjs") }];
+const ENGINES = [
+  { name: "pricing", file: resolve(REPO, "engine", "pricing.mjs") },
+  { name: "position", file: resolve(REPO, "engine", "position.mjs") },
+];
 
 const BEGIN = (n) => `/* ==== ENGINE ${n}: generated from engine/${n}.mjs by tools/engine.mjs. Edit the module, never this block. ==== */`;
 const END = (n) => `/* ==== END ENGINE ${n} ==== */`;

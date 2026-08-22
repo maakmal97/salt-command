@@ -27,10 +27,11 @@ row is approved on the phone.
    retired beside `WHERE_THE_MASTER_WENT.md` in `30_Published`, renamed rather than deleted so
    the move is reversible and cannot be read as the master by accident.
 
-   **From v337 the block between the `ENGINE pricing` markers inside the master is GENERATED**
-   from `engine/pricing.mjs` by `node tools/engine.mjs --sync`, and CI fails if it differs. Edit
-   the module, sync, build. The desk's `floorTotal`, `priceLadder`, `pxCost` and the rest are
-   one-line wrappers over it; `pxInputs()` and `pxPolicy()` are what the desk contributes.
+   **From v337 the blocks between the `ENGINE` markers inside the master are GENERATED** from
+   `engine/pricing.mjs` and, from v338, `engine/position.mjs`, by `node tools/engine.mjs --sync`,
+   and CI fails if either differs. Edit the module, sync, build. The desk's `floorTotal`,
+   `priceLadder`, `pxCost`, `recompute`, `txPaid` and the rest are one-line wrappers over them;
+   `pxInputs()`, `pxPolicy()` and `posInputs()` are what the desk contributes.
 
    **`master/changelog.json` moved with it**, because `tools/changelog.mjs` writes it on every
    version bump and a cloud fold has to be able to.
@@ -400,6 +401,7 @@ Cow-Crm01 master (a Cowork/master session); once it lands, the sync above alread
 | `master/changelog.json` | Every `evolution` entry ever written. `tools/changelog.mjs` keeps it in step with the master's one-entry array. |
 | `tools/sort-ledger.mjs` | Puts `sales` and `purchases` back in date order, undated pending rows last. Asserts its output is a permutation of its input. |
 | `engine/pricing.mjs` | **THE PRICING ENGINE** (v337, move 1 of the rebuild): the cost stack, the taper, the ladder, the floors and the board as pure functions of explicit inputs. The desk, the payload build and the drafter all price from it. Inlined into the master by `tools/engine.mjs --sync`; CI proves the copy is the file. |
+| `engine/position.mjs` | **THE POSITION ENGINE** (v338): the transaction model (what a row has paid, delivered, deferred, pending; its state and dates; what a lot received and paid; the ageing ladder), the ledger walk that was `recompute()`, cover, the commitments and the phone's row shape. Same rules as the pricing engine. |
 | `tools/engine.mjs` | `--sync` writes `engine/*.mjs` into the master between its markers; `--check` fails if the block is not the module. |
 | `tools/changelog.mjs` | Prepends the master's current `evolution[0]` to `master/changelog.json`. Never rewrites an entry that exists. |
 | `.github/workflows/` | CI with no secrets: date order, changelog, tests, build-matches-master, and a daily check that the live Worker serves what the repo committed. |

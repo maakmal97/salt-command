@@ -1316,6 +1316,66 @@ section("Engine — one definition, out of the desk (v337)");
   try { w.close(); } catch (e) { }
 }
 
+/* ---- the position engine ----------------------------------------------------------- */
+section("Engine — the position, out of the desk (v338)");
+{
+  const { default: X } = await import("../engine/position.mjs");
+  let chk = "";
+  try { chk = execFileSync("node", [join(REPO, "tools", "engine.mjs"), "--check"], { encoding: "utf8" }); }
+  catch (e) { chk = String((e && e.stdout) || e); }
+  ok(/ok\s+position/.test(chk), "tools/engine.mjs --check: the master's inlined position engine is the module");
+
+  /* the transaction model, on rows built to hit each branch */
+  ok(X.txStat({ qty: 1, total: 100, cash: 100, deliveredQty: 1 }).order === "Completed", "paid and delivered is Completed");
+  ok(X.txStat({ qty: 1, total: 100, cash: 0, deliveredQty: 0 }).order === "Pending", "nothing moved is Pending");
+  ok(/Advance/.test(X.txStat({ qty: 2, total: 200, cash: 100, deliveredQty: 2 }).order), "delivered ahead of payment is an advance");
+  ok(/Deferred/.test(X.txStat({ qty: 2, total: 200, cash: 200, deliveredQty: 1 }).order), "paid ahead of delivery is deferred");
+  ok(X.txStat({ qty: 1, total: 100, cash: 0, settledRM: 100, rebate: true, deliveredQty: 1 }).order === "In-Kind", "a settled rebate is In-Kind");
+  ok(X.txAdvance({ qty: 2, total: 200, cash: 100, deliveredQty: 2 }) === 100, "the advance is what has been delivered and not paid for");
+  ok(X.txDeferKg({ qty: 2, total: 200, cash: 200, deliveredQty: 1 }) === 1, "the deferral is what has been paid for and not delivered");
+  ok(X.poRecvKg({ qty: 10, pending: true }) === 0 && X.poRecvKg({ qty: 10, defaulted: true }) === 0
+     && X.poRecvKg({ qty: 10, inTransit: true }) === 0 && X.poRecvKg({ qty: 10, receivedQty: 14 }) === 10 && X.poRecvKg({ qty: 10 }) === 10,
+     "a lot receives nothing while pending, defaulted or in transit, a stated receipt capped at the lot, else the whole lot");
+  ok(X.provRate(0) === 0 && X.provRate(4) === 0.25 && X.provRate(8) === 0.5 && X.provRate(14) === 0.75 && X.provRate(21) === 1, "the ageing ladder");
+
+  /* the walk on a book small enough to check by hand */
+  const W = X.walk({ sales: [
+      { date: "2026-08-10", customer: "CA", qty: 2, total: 200, cash: 200, deliveredQty: 2 },
+      { customer: "CB", qty: 3, total: 300, cash: 0, deliveredQty: 0 },
+      { date: "2026-08-15", customer: "CC", qty: 1, total: 100, cash: 0, deliveredQty: 1 } ],
+    purchases: [ { date: "2026-08-01", qty: 50, total: 2200, supplier: "SA", status: "paid", cash: 2200 } ],
+    opening: { qty: 10, costPerKg: 50, stated: null }, isSalt: true, loanKg: 0, counted: null,
+    supplierReceivable: null, today: new Date("2026-08-22"), wavgBuyPrev: 0 });
+  ok(W.buyKg === 50 && Math.abs(W.wavgBuy - 45) < 1e-9, "50 at RM44 over an opening 10 at RM50 averages RM45");
+  ok(W.ledgerStock === 57 && W.currentStock === 57 && W.stockCounted === false, "uncounted, the ledger stands: 60 in, 3 out");
+  ok(W.pricedSales.length === 2 && W.revTotal === 300, "the pending order counts nowhere; revenue is the two that moved");
+  ok(Math.abs(W.cogs - 135) < 1e-9 && Math.abs(W.grossMargin - 165) < 1e-9, "cost of goods at the average for rows with no cost of their own");
+  ok(W.arList.length === 1 && W.arGross === 100 && Math.abs(W.ar - 75) < 1e-9, "one advance of RM100, seven days old, provisioned a quarter");
+  ok(W.defKg === 0, "nothing paid ahead of delivery");
+  const cm = X.commitments([{ customer: "CB", qty: 3, total: 300, cash: 0, deliveredQty: 0 }, { customer: "CD", qty: 2, total: 200, cash: 200, deliveredQty: 0 }], 4);
+  ok(cm.owedKg === 2 && cm.promKg === 3 && cm.commitKg === 5 && cm.shortKg === 1 && !cm.coverable, "owed, promised, and one short of the shelf");
+
+  /* THE GATE: the desk's own inputs, both books, and the record comes back equal */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  const read = (expr) => JSON.parse(w.eval("JSON.stringify(" + expr + ")"));
+  const NUMS = ["buyKg", "buyRM", "wavgBuy", "soldKg", "ledgerStock", "stockCounted", "currentStock", "selfUse", "revTotal", "revCollected",
+    "arGross", "ar", "advTotal", "defKg", "supRecovGross", "supRecovNet", "cogs", "grossMargin", "marginPct", "goodwillRM"];
+  for (const p of ["salt", "oil"]) {
+    w.eval(`setProd(${JSON.stringify(p)});`);
+    const mine = X.walk(read("posInputs()"));
+    const desk = read("({" + NUMS.join(",") + ",nPriced:pricedSales.length,nAR:arList.length,nRecv:receivedPO.length})");
+    ok(NUMS.every((k) => mine[k] === desk[k]) && mine.pricedSales.length === desk.nPriced && mine.arList.length === desk.nAR && mine.receivedPO.length === desk.nRecv,
+      `${p}: the walk reproduces the desk's position to the last decimal`);
+    const cv = X.coverStats({ pricedSales: mine.pricedSales, currentStock: mine.currentStock, defKg: mine.defKg, today: new Date(read("TODAY")), reorderKg: read("RULES.reorderKg") });
+    const dcv = read("coverStats()");
+    ok(cv.rate === dcv.rate && cv.free === dcv.free && cv.days === dcv.days && cv.shortBy === dcv.shortBy, `${p}: cover agrees`);
+    const c2 = X.commitments(read("pSales(PROD)"), mine.currentStock), f = read("forecast()");
+    ok(c2.commitKg === f.commitKg && c2.shortKg === f.shortKg && c2.owedKg === f.owedKg && c2.promKg === f.promKg, `${p}: the commitments agree with the forecast`);
+  }
+  try { w.close(); } catch (e) { }
+}
+
 /* ---- done ----------------------------------------------------------------------- */
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
