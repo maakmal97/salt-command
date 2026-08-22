@@ -1,5 +1,13 @@
 [
  {
+  "v": "v333",
+  "d": "22 Aug 2026",
+  "t": "THE HEADER STRIP FITS THE PHONE",
+  "n": [
+   "<b>THE FOUR CHIPS ABOVE THE TITLE WERE EACH BREAKING INTO THREE LINES ON A 375PX SCREEN,</b> so the date read as a column and the cloud badge as a stack. The row now wraps between chips and never inside one: two lines on a phone, one on a desk. Seen in the Browser pane at phone width straight after v332 shipped. Nothing else moved and no figure changed."
+  ]
+ },
+ {
   "v": "v332",
   "d": "22 Aug 2026",
   "t": "FOUR ROWS FOLDED LATE, AND THE REASON THEY WERE LATE WAS A MIRROR NOBODY REFRESHED",
