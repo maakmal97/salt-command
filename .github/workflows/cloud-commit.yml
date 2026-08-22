@@ -270,3 +270,24 @@ jobs:
           git config user.email "noreply@github.com"
           git commit -m "Clear the fold handoff: the rows are on the phone and marked committed"
           git push
+
+      # KEEP THE MIRROR LEVEL WITH THE BOOK, added 22 Aug 2026.
+      #
+      # The drafter confirms every amendment against the open-order snapshot in D1 and costs
+      # every draft off the PRICING snapshot there, and both come from the last seed. Nothing in
+      # the cloud chain re-seeded after the master moved here: the mirror sat at v320 (seeded
+      # 20 Aug, 12:07 KL) while v321 to v331 folded, so every fulfilment queued after it was
+      # refused as matching no open order, the refusal told him the order had been settled, he
+      # typed each one again, and three drafts in a row carried a shelf rate that had moved.
+      # Nine queue entries for three events and one sale, all found on 22 Aug.
+      #
+      # LAST, so a failure here leaves the deploy and the committed marks standing. It still
+      # fails the run, because a stale mirror is exactly the silent fault this job exists to end.
+      - name: Re-seed the mirror from the master just shipped
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          node tools/ledger.mjs
+          node tools/d1.mjs --seed

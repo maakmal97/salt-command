@@ -1,5 +1,18 @@
 [
  {
+  "v": "v332",
+  "d": "22 Aug 2026",
+  "t": "FOUR ROWS FOLDED LATE, AND THE REASON THEY WERE LATE WAS A MIRROR NOBODY REFRESHED",
+  "n": [
+   "<b>FOUR ENTRIES FOLDED: THREE FULFILMENTS THE DRAFTER HAD REFUSED AND ONE SALE STILL WAITING FOR A TAP.</b> CA4-DAM took delivery of his half unit and paid RM50 on the 20th. CN6-WM took half a unit on the 21st and the other 1.5 with RM150 on the 22nd. CJ4-BJ took 6.25 of his 12.5 unit on the 21st, leaving 6.25 unit and RM450 outstanding. CS6-BS took 1.5 unit for RM190 on the 21st, paid and delivered, his second row that day. All four draw on the RM44 lot.",
+   "<b>THE FULFILMENTS WERE REFUSED BECAUSE THE CLOUD DRAFTER WAS READING A BOOK FROZEN AT v320.</b> The drafter confirms an amendment against the open-order snapshot in the D1 mirror, and the mirror was last seeded on 20 Aug at 12:07 KL, before the eleven versions since it folded. It still carried the CA4-DAM order as 1 unit for RM100, had no CN6-WM order at all and keyed CJ4-BJ to an undated row, so every fulfilment queued after it was refused as matching no open order. The refusal said the order had been settled or folded, which is not what had happened, so the same three fulfilments were typed again on the 22nd: nine entries in the queue for three events and one sale. Nothing was double counted, because a refused entry never drafts; each event is folded once here.",
+   "<b>THE FIX IS A STANDING STEP, NOT A ONE-OFF.</b> The deploy job now re-seeds the mirror from the master it has just shipped, so the drafter reads the book as it stands rather than as it stood. The same staleness is why three drafts in a row costed salt at RM56 after the shelf had moved to RM44; from this build the drafter sees the current shelf too.",
+   "<b>THE CS6-BS ROW WAS APPROVED BY INSTRUCTION RATHER THAN BY A TAP,</b> on his word of 22 Aug to commit the whole queue, with the row, the cost and the flag shown in the same session, and the decision is recorded against the draft in those words. The drafter flagged the rate as 16.7% above his RM108.50 habit; RM126.67 a unit is his dearest yet and the flag is the right way round. At RM44 of cost it returns RM124 at 65.3%, not the RM106 at 55.8% the draft implied. If it was meant to replace the RM120 unit queued the night before rather than follow it, it is an amendment and should be said so.",
+   "<b>THE SHELF ROLLS 36.5 TO 26.25</b> on the 10.25 unit that left across the four rows. A roll and not a count, so COUNT_ON stays at the 20th. QUEUE_COMMITTED moves to 2026-08-22T08:09:04.893Z, the newest id folded.",
+   "<b>AND THE DESK GROWS A WAY BACK.</b> Opened from the installed phone app, the desk filled a window with no address bar and no back button, and its Close control could not close a window the app had opened, so there was no way out. In the cloud build that control now reads App and returns to the phone app."
+  ]
+ },
+ {
   "v": "v331",
   "d": "21 Aug 2026",
   "t": "A SALE THAT BEAT THE BOARD, AND A COUNT THAT CONFIRMED THE SHELF RATHER THAN THE WALK",

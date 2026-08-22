@@ -120,7 +120,7 @@ chain is cloud-reachable and the laptop is off the critical path.
 | Approve | D1, from the phone | on tap |
 | Stage the approved rows | Actions, `cloud-commit.yml` | :05 and :35 |
 | **Fold, bump, build, test, push** | **cloud routine, `docs/CLOUD_FOLD.md`** | hourly |
-| Deploy, prove, mark committed | Actions, `cloud-commit.yml` | on push |
+| Deploy, prove, mark committed, **re-seed the D1 mirror** | Actions, `cloud-commit.yml` | on push |
 | Prove repo and live agree | Actions, `ship-check.yml` | 11:00 MYT |
 | Monthly statements | cloud routine, `docs/STATEMENTS.md` | Sundays, gated to the first |
 
