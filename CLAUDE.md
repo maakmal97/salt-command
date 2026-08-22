@@ -118,15 +118,19 @@ chain is cloud-reachable and the laptop is off the critical path.
 | Queue an entry | KV, from the phone | on tap |
 | Draft the row | Worker | on arrival, 15-min cron as the net |
 | Approve | D1, from the phone | on tap |
-| Stage the approved rows | Actions, `cloud-commit.yml` | :05 and :35 |
-| **Fold, bump, build, test, push** | **cloud routine, `docs/CLOUD_FOLD.md`** | hourly |
+| Stage the approved rows | Actions, `cloud-commit.yml` | hourly, cron `5 * * * *` (GitHub drifts it) |
+| **Fold, bump, build, test, push** | **cloud routine, `docs/CLOUD_FOLD.md`** | every six hours: 08:52, 14:52, 20:52, 02:52 MYT |
 | Deploy, prove, mark committed, **re-seed the D1 mirror** | Actions, `cloud-commit.yml` | on push |
 | Prove repo and live agree | Actions, `ship-check.yml` | 11:00 MYT |
 | Monthly statements | cloud routine, `docs/STATEMENTS.md` | Sundays, gated to the first |
 
-**HOURLY IS THE FLOOR, NOT A CHOICE.** The routine API rejects any cron under an hour, so a
-true 30-minute fold is not available to an agent. Staging twice an hour is what closes the gap:
-the average wait between a tap and a row in the ledger is about half an hour.
+**THE FOLD RUNS FOUR TIMES A DAY, BY HIS INSTRUCTION OF 20 AUG.** The routine `Salt daily fold`
+(trig_01UrnjQMWA3f6GXN5R6Dzi4S) fires on `52 */6 * * *` UTC. The routine API rejects any cron under
+an hour in any case. The stage runs hourly so a batch is always ready when the fold comes round,
+and it is the stage, not the fold, that tells you whether anything is waiting: a run that prints
+`approved and uncommitted: 0` means nothing was approved, which on 21 and 22 Aug meant the
+drafter had refused everything against a stale mirror (see the re-seed step in `cloud-commit.yml`).
+Corrected 22 Aug 2026; this paragraph used to say hourly.
 
 **THE STAGE STANDS DOWN RATHER THAN TRAMPLING AN UNFOLDED BATCH,** and the clock is not what
 makes that safe. The stage was first offset to clear the fold, and the routine API then jittered
