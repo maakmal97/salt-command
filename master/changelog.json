@@ -1,5 +1,16 @@
 [
  {
+  "v": "v336",
+  "d": "22 Aug 2026",
+  "t": "THE PHONE PRICE TAB, REBUILT AS ONE QUESTION AND ONE ANSWER",
+  "n": [
+   "<b>THE PRICE TAB ON THE PHONE LOOKED UNFINISHED BECAUSE IT WAS.</b> Measured at 375px before this change: 3750px tall, three dropdowns, 345 characters of method prose, thirty-four party cards standing open under the board, and the board itself a bare table with no styling at all, browser default, beside three cards that said the same thing. A report in a dashboard&rsquo;s clothes.",
+   "<b>NOW: THE QUESTION, THE ANSWER, THE LADDER.</b> The tab opens on What do I charge, the product as two pills, and one figure: the ask for the size chosen, its per-unit rate beside it, the floor and the room to move riding on it as chips rather than a sentence. The ladder below is the picker: tap a rung and the answer follows it, so there is one way to choose a size and nothing that duplicates it. A rung under its floor says so on the rung. One dropdown remains, to name a party and see what they usually pay; the full list of thirty-four folds behind a summary that still says how many. Measured after: 1275px, 75 characters of prose, one dropdown, no card open, no sideways overflow.",
+   "<b>AND A WAY TO ACT ON IT.</b> The answer carries one button, Record 1.5 unit at RM150, which carries the size and the total into the Record form and switches to it. Nothing is recorded until he taps Record there; it saves typing the two figures he has just read.",
+   "<b>NO FIGURE CHANGED AND THE APP STILL COMPUTES NOTHING.</b> Every ask and floor is read from data.json as before; the only arithmetic is the per-unit division beside an ask and the one subtraction for the room. The desk is untouched; this is the phone app alone."
+  ]
+ },
+ {
   "v": "v335",
   "d": "22 Aug 2026",
   "t": "THE QUEUE COMMITTED, A DATE CORRECTED, AND ONE ORDER MADE TWO",

@@ -214,19 +214,50 @@ h2{font-size:17px;font-weight:600;letter-spacing:-.2px;margin:0 0 12px}
 .filters{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 12px}
 .more{margin:9px 0 0}
 
-/* ---- Price: the ask and the floor, side by side --------------------------
-   TWO FIGURES AND THE GAP BETWEEN THEM. That is the whole question at the point of sale:
-   what am I asking, and how far can I come down. Everything else on this panel is context. */
-.ask{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:0 0 10px}
-.ask .c{background:var(--well);border:1px solid var(--brd);border-radius:var(--r-sm);padding:13px 14px}
-.ask .k{font-size:10.5px;text-transform:uppercase;letter-spacing:.9px;font-weight:700;
+/* ---- Price: one question, one answer, the ladder ---------------------------
+   ASK REGISTER (v336). The question is the heading, the size is picked on the ladder
+   itself so there is exactly one way to choose and nothing that duplicates it, and the
+   floor and the room to move ride on the figure as chips rather than as a sentence. The
+   old board was a bare table with no styling at all, beside three cards that said the
+   same thing, over thirty-four party cards standing open: a report in a dashboard's
+   clothes. Measured at 375px before this change: 3750px tall, 345 characters of method
+   prose, three dropdowns. */
+.ans{background:var(--well);border:1px solid var(--brd);border-radius:var(--r-sm);
+  padding:14px 15px 14px;margin:12px 0 0}
+.ans .k{font-size:10.5px;text-transform:uppercase;letter-spacing:.9px;font-weight:700;
   color:var(--ink-3);margin:0 0 4px}
-.ask .v{font-size:24px;font-weight:700;letter-spacing:-.5px;font-variant-numeric:tabular-nums;line-height:1.1}
-.ask .n{font-size:11.5px;color:var(--ink-2);margin:4px 0 0}
-.ask .c.floor .v{color:var(--warn)}
-.ask .c.head .v{color:var(--good)}
-.ask .c.head.thin .v{color:var(--bad)}
-.ask .c.wide{grid-column:1 / -1}
+.ans .row{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.ans .v{font-size:34px;font-weight:700;letter-spacing:-1px;font-variant-numeric:tabular-nums;
+  line-height:1.05;margin:0}
+.ans .u{font-size:13px;font-weight:600;color:var(--ink-2);font-variant-numeric:tabular-nums;white-space:nowrap}
+.ans .chips{margin:10px 0 0}
+.chip.floor{background:rgba(255,207,122,.13);border-color:rgba(255,207,122,.32);color:var(--warn)}
+.chip.room{background:rgba(110,231,168,.13);border-color:rgba(110,231,168,.32);color:var(--good)}
+.chip.under{background:rgba(255,122,138,.14);border-color:rgba(255,122,138,.34);color:var(--bad)}
+.ans .btn{width:100%;justify-content:center;margin:12px 0 0}
+.lad{display:flex;flex-direction:column;gap:5px}
+.lr{display:grid;grid-template-columns:1fr auto;gap:1px 12px;align-items:baseline;width:100%;
+  text-align:left;font:inherit;color:var(--ink);background:rgba(255,255,255,.05);
+  border:1px solid var(--brd);border-radius:var(--r-sm);padding:8px 13px;min-height:var(--tap);cursor:pointer}
+.lr:hover{background:rgba(255,255,255,.09);border-color:var(--brd-2)}
+.lr[aria-selected="true"]{background:rgba(232,198,107,.12);border-color:rgba(232,198,107,.40)}
+.lr .s{font-size:14px;font-weight:700}
+.lr .a{font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap;text-align:right}
+.lr .pu{font-size:11.5px;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.lr .f{font-size:11.5px;color:var(--warn);font-variant-numeric:tabular-nums;white-space:nowrap;text-align:right}
+.lr.under .f{color:var(--bad)}
+/* STUDY, FOLDED. The whole party list is true and worth keeping, and it is not what the
+   tab is for, so it sits shut behind a summary that still says how many there are. */
+.fold{margin:12px 0 0;border:1px solid var(--brd);border-radius:var(--r-sm);background:rgba(255,255,255,.04)}
+.fold summary{cursor:pointer;list-style:none;padding:11px 13px;font-size:11.5px;font-weight:700;
+  text-transform:uppercase;letter-spacing:1px;color:var(--ink-2);display:flex;align-items:center;
+  gap:10px;min-height:var(--tap)}
+.fold summary::-webkit-details-marker{display:none}
+.fold summary::before{content:"";width:7px;height:7px;flex:0 0 auto;
+  border-right:1.7px solid var(--ink-3);border-bottom:1.7px solid var(--ink-3);
+  transform:rotate(-45deg);transition:transform var(--t)}
+.fold[open] summary::before{transform:rotate(45deg)}
+.fold .in{padding:2px 10px 8px}
 /* the party card */
 .pty{background:rgba(255,255,255,.05);border:1px solid var(--brd);border-radius:var(--r-sm);
   padding:11px 13px;margin:0 0 7px;position:relative;overflow:hidden}
@@ -386,26 +417,18 @@ option:checked{background-color:var(--menu-2);font-weight:600}
 
     <!-- ===================== PRICE ===================== -->
     <section class="glass" id="p-price" role="tabpanel" aria-labelledby="tab-price" hidden>
-      <p class="lbl">What to charge</p>
-      <p class="stand" style="margin-bottom:12px">Pick a size. The ask is what the ladder says;
-        the floor is where the money stops. Both come from the desk, not from here.</p>
-      <div class="filters" style="grid-template-columns:1fr 1fr">
-        <div class="field" style="margin:0"><label for="pr-prod">Product</label>
-          <select id="pr-prod"></select></div>
-        <div class="field" style="margin:0"><label for="pr-size">Size</label>
-          <select id="pr-size"></select></div>
-      </div>
-      <div id="prAsk"></div>
-      <p class="lbl" style="margin-top:20px">The whole board</p>
-      <div class="tscroll"><table id="prTable"></table></div>
+      <p class="kicker">Ask</p>
+      <h2 style="margin-bottom:10px">What do I charge?</h2>
+      <div class="seg" id="prProds" aria-label="Product"></div>
+      <div class="ans" id="prAsk"></div>
+      <p class="lbl" style="margin-top:16px">The ladder &middot; tap a size</p>
+      <div class="lad" id="prLad" role="listbox" aria-label="Sizes on the board"></div>
       <p class="basis" id="prBasis"></p>
-
-      <p class="lbl" style="margin-top:22px">Who pays what</p>
-      <p class="stand" style="margin-bottom:11px">Every party with an order on the book, most
-        recent first. The rate is what they have actually paid across everything they have taken.</p>
-      <div class="field"><label for="pr-cust">Find a party</label>
-        <select id="pr-cust"><option value="">All</option></select></div>
+      <p class="lbl" style="margin-top:20px">This party</p>
+      <div class="field" style="margin-bottom:8px"><label for="pr-cust" class="sr-only">Party</label>
+        <select id="pr-cust"><option value="">Choose a party to see what they usually pay</option></select></div>
       <div id="prCust"></div>
+      <details class="fold" id="prFold"><summary id="prFoldS">Every party&rsquo;s rate</summary><div id="prAll"></div></details>
     </section>
 
     <!-- ===================== APPROVE =================== -->
@@ -779,93 +802,102 @@ function drawLedFilters(){
 /* ---- rendering: Price ------------------------------------------------------
    IT COMPUTES NOTHING, same as every other figure on this app. Both the board and the floor
    are computed by the desk during the build and read out of data.json here. The only
-   arithmetic on this panel is picking a row out of an array and one subtraction, the room to
-   move, which is two supplied figures taken apart rather than a price being worked out.
+   arithmetic on this panel is picking a row out of an array, one division for the per-unit
+   figure beside an ask, and one subtraction, the room to move, which is two supplied figures
+   taken apart rather than a price being worked out.
 
    The test suite greps this file for the names of the desk's pricing functions and fails if
    it finds any, which is why they are not written here even in a comment: a guard that cannot
    tell a mention from a call is the right guard to have, and working around it would be
-   working around the point. */
-function prProd(){ var el=$('pr-prod'); return (el&&el.value)||prod||'salt'; }
+   working around the point.
+
+   v336: THE LADDER IS THE PICKER. A size is chosen by tapping its row, the answer block above
+   follows it, and there is no dropdown to duplicate the choice. */
+var prP=null, prQ=null;
+function prProd(){ return (D&&D.board&&D.board[prP])?prP:(prod||'salt'); }
 function prBoard(){ return (D&&D.board&&D.board[prProd()])||null; }
+function prName(){ var id=prProd(), p=(D.products||[]).filter(function(x){return x.id===id;})[0]; return p?p.name.toLowerCase():id; }
+/* the size on the board: the one tapped, else 1 unit where the ladder has it, else the first rung */
+function prSize(){ var b=prBoard(); if(!b)return null; var ss=b.sizes||[];
+  if(ss.indexOf(prQ)>=0)return prQ; return ss.indexOf(1)>=0?1:ss[0]; }
 function drawPrControls(){
   if(!D||!D.board)return;
-  var sp=$('pr-prod'), cur=sp.value;
-  sp.innerHTML=(D.products||[]).map(function(p){
-    return '<option value="'+esc(p.id)+'">'+esc(p.name)+'</option>'; }).join('');
-  sp.value=(D.board[cur]?cur:(prod||'salt'));
-  var b=prBoard(); if(!b)return;
-  var ss=$('pr-size'), keep=ss.value;
-  ss.innerHTML=(b.sizes||[]).map(function(q){
-    return '<option value="'+esc(String(q))+'">'+esc(n2(q))+' unit</option>'; }).join('');
-  if((b.sizes||[]).map(String).indexOf(keep)>=0)ss.value=keep;
+  var box=$('prProds');
+  box.innerHTML=(D.products||[]).filter(function(p){ return !!D.board[p.id]; }).map(function(p){
+    return '<button type="button" data-p="'+esc(p.id)+'" aria-pressed="'+(p.id===prProd())+'">'+esc(p.name)+'</button>'; }).join('');
+  Array.prototype.forEach.call(box.querySelectorAll('button'),function(b){
+    b.addEventListener('click',function(){ prP=b.getAttribute('data-p'); prQ=null; drawPrControls(); drawPrice(); });
+  });
   var sa=$('pr-cust'), kc=sa.value;
-  sa.innerHTML='<option value="">All</option>'+((D.customers||[]).map(function(c){
+  sa.innerHTML='<option value="">Choose a party to see what they usually pay</option>'+((D.customers||[]).map(function(c){
     return '<option value="'+esc(c.id)+'">'+esc(c.id)+'</option>'; }).join(''));
   sa.value=kc;
 }
 function drawPrice(){
-  var box=$('prAsk'), b=prBoard();
-  if(!b){ box.innerHTML='<p class="stand">Loading.</p>'; return; }
-  var q=Number($('pr-size').value||b.sizes[0]);
-  var i=(b.sizes||[]).indexOf(q);
-  /* v328: ONE LADDER, SO TAKE THE ONE ROW. This looked for the tier coded T2 and fell back to
-     the first row. The fallback is what kept the panel alive when the desk retired the tiers, and
-     a fallback quietly carrying a panel is the thing that hides a fault rather than shows it, so
-     the lookup is now simply the row the desk sent. */
+  var box=$('prAsk'), lad=$('prLad'), b=prBoard();
+  if(!b){ box.innerHTML='<p class="stand">Loading.</p>'; lad.innerHTML=''; return; }
+  var sizes=b.sizes||[], q=prSize(), i=sizes.indexOf(q);
   var row=(b.tiers||[])[0]||null;
   var ask=(row&&i>=0)?row.prices[i]:null;
   var fl=(b.floors||{})[String(q)]||null;
-  var head=(ask!=null&&fl&&fl.delivered!=null)?+(ask-fl.delivered).toFixed(2):null;
-  /* THE HEADROOM IS THE POINT, and it is a subtraction of two figures the desk supplied,
-     not a price this app worked out. Under floor it goes red, because that is the number
-     that decides whether to hold the line. */
-  var thin=(head!=null&&head<0)?' thin':'';
-  box.innerHTML='<div class="ask">'
-    +'<div class="c head'+thin+'"><p class="k">Ask</p><p class="v">'+(ask==null?'&mdash;':esc(rm(ask)))+'</p>'
-      +'<p class="n">'+(ask!=null&&q?esc(rm(ask/q))+'/unit':'&nbsp;')+'</p></div>'
-    +'<div class="c floor"><p class="k">Floor, delivered</p><p class="v">'+(fl&&fl.delivered!=null?esc(rm(fl.delivered)):'&mdash;')+'</p>'
-      +'<p class="n">collected '+(fl&&fl.collected!=null?esc(rm(fl.collected)):'&mdash;')+'</p></div>'
-    +'<div class="c wide'+(head!=null&&head<0?' head thin':'')+'"><p class="k">Room to move</p>'
-      +'<p class="v">'+(head==null?'&mdash;':(head>0?'':'')+esc(rm(head)))+'</p>'
-      +'<p class="n">'+(head==null?'&nbsp;':(head<0
-          ?'The board ask is UNDER the delivered floor at this size.'
-          :'How far below the ask you can go and still clear the delivered floor.'))+'</p></div>'
-    +'</div>';
-  drawPrTable(b,i);
+  var fd=(fl&&fl.delivered!=null)?fl.delivered:null, fc=(fl&&fl.collected!=null)?fl.collected:null;
+  /* THE ROOM TO MOVE IS THE POINT: a subtraction of two figures the desk supplied. Under the
+     floor it goes red, because that is the number that decides whether to hold the line. */
+  var head=(ask!=null&&fd!=null)?+(ask-fd).toFixed(2):null;
+  var chips='';
+  if(fd!=null)chips+='<span class="chip floor">Floor '+esc(rm(fd))
+    +(fc!=null&&Math.abs(fc-fd)>0.005?' delivered &middot; '+esc(rm(fc))+' collected':'')+'</span>';
+  if(head!=null)chips+=(head<0
+    ?'<span class="chip under">Under the floor by '+esc(rm(-head))+'</span>'
+    :'<span class="chip room">'+esc(rm(head))+' of room</span>');
+  box.innerHTML='<p class="k">Ask for '+esc(n2(q))+' unit of '+esc(prName())+'</p>'
+    +'<div class="row"><p class="v">'+(ask==null?'&mdash;':esc(rm(ask)))+'</p>'
+    +'<span class="u">'+(ask!=null&&q?esc(rm(ask/q))+'/unit':'')+'</span></div>'
+    +(chips?'<div class="chips">'+chips+'</div>':'')
+    +(ask!=null?'<button type="button" class="btn primary" id="prRec">Record '+esc(n2(q))+' unit at '+esc(rm(ask))+'</button>':'');
+  var rec=$('prRec'); if(rec)rec.addEventListener('click',function(){ prToRecord(q,ask); });
+  lad.innerHTML=sizes.map(function(sz,k){
+    var a=row?row.prices[k]:null, f=(b.floors||{})[String(sz)], fk=(f&&f.delivered!=null)?f.delivered:null;
+    var under=(a!=null&&fk!=null&&a<fk);
+    return '<button type="button" class="lr'+(under?' under':'')+'" role="option" data-q="'+esc(String(sz))+'" aria-selected="'+(k===i)+'">'
+      +'<span class="s">'+esc(n2(sz))+' unit</span>'
+      +'<span class="a">'+(a==null?'&mdash;':esc(rm(a)))+'</span>'
+      +'<span class="pu">'+(a!=null&&sz?esc(rm(a/sz))+'/unit':'&nbsp;')+'</span>'
+      +'<span class="f">'+(fk==null?'&mdash;':(under?'under ':'floor ')+esc(rm(fk)))+'</span></button>';
+  }).join('');
+  Array.prototype.forEach.call(lad.querySelectorAll('.lr'),function(el){
+    el.addEventListener('click',function(){ prQ=Number(el.getAttribute('data-q')); drawPrice(); });
+  });
   $('prBasis').textContent='Board and floors computed by the desk at '+(D.stamped||'')+'. Build '+(D.v||'')+'.';
 }
-function drawPrTable(b,sel){
-  var t=$('prTable');
-  var head='<tr><th scope="col">Size</th>'+(b.tiers||[]).map(function(x){
-    return '<th scope="col">'+esc(x.code)+'</th>'; }).join('')+'<th scope="col">Floor</th></tr>';
-  var rows=(b.sizes||[]).map(function(q,i){
-    var fl=(b.floors||{})[String(q)];
-    return '<tr'+(i===sel?' style="background:rgba(232,198,107,.10)"':'')+'>'
-      +'<td class="num">'+esc(n2(q))+'</td>'
-      +(b.tiers||[]).map(function(x){ var p=x.prices[i];
-        return '<td class="num">'+(p==null?'&mdash;':esc(rm(p)))+'</td>'; }).join('')
-      +'<td class="num" style="color:var(--warn)">'+(fl&&fl.delivered!=null?esc(rm(fl.delivered)):'&mdash;')+'</td></tr>';
-  }).join('');
-  t.innerHTML='<caption class="sr-only">The price board and the delivered floor, by size.</caption>'
-    +'<thead>'+head+'</thead><tbody>'+rows+'</tbody>';
+/* DO: carry the figure into the Record form. Nothing is recorded until he taps Record there;
+   this saves typing the size and the total he has just read off the board. */
+function prToRecord(q,ask){
+  MODE='trade'; drawModes();
+  if(dir!=='SELL')$('d-sell').click();
+  if(D&&D.board&&D.board[prProd()]){ prod=prProd(); drawProds(); }
+  $('f-qty').value=String(q); $('f-total').value=String(ask);
+  preview(); show(3); window.scrollTo(0,0);
 }
 /* ---- rendering: who pays what -------------------------------------------- */
+function prCard(c){
+  var bits=[esc(c.n)+(c.n===1?' order':' orders'), esc(n2(c.kg))+' unit', esc(rm(c.rev))+' in all'];
+  if(c.owed)bits.push('<b style="color:var(--warn)">'+esc(rm(c.owed))+' owed</b>');
+  return '<div class="pty'+(c.owed?' owes':'')+'">'
+    +'<div class="pty-t"><span class="pty-p">'+esc(c.id)+'</span>'
+    +'<span class="pty-r">'+(c.rate==null?'&mdash;':esc(rm(c.rate))+'/unit')+'</span></div>'
+    +'<p class="pty-n"><span class="pty-d">last '+esc(c.last||'never')+'</span>'
+    +'<span>'+bits.join(' &middot; ')+'</span></p></div>';
+}
 function drawCustomers(){
-  var box=$('prCust');
-  if(!D||!D.customers){ box.innerHTML='<p class="stand">Loading.</p>'; return; }
+  var box=$('prCust'), all=$('prAll'), sum=$('prFoldS');
+  if(!D||!D.customers){ box.innerHTML=''; all.innerHTML=''; return; }
   var only=$('pr-cust').value;
-  var list=D.customers.filter(function(c){ return !only||c.id===only; });
-  if(!list.length){ box.innerHTML='<div class="empty">No party matches.</div>'; return; }
-  box.innerHTML=list.slice(0,only?1:40).map(function(c){
-    var bits=[esc(c.n)+(c.n===1?' order':' orders'), esc(n2(c.kg))+' unit', esc(rm(c.rev))+' in all'];
-    if(c.owed)bits.push('<b style="color:var(--warn)">'+esc(rm(c.owed))+' owed</b>');
-    return '<div class="pty'+(c.owed?' owes':'')+'">'
-      +'<div class="pty-t"><span class="pty-p">'+esc(c.id)+'</span>'
-      +'<span class="pty-r">'+(c.rate==null?'&mdash;':esc(rm(c.rate))+'/unit')+'</span></div>'
-      +'<p class="pty-n"><span class="pty-d">last '+esc(c.last||'never')+'</span>'
-      +'<span>'+bits.join(' &middot; ')+'</span></p></div>';
-  }).join('');
+  var one=D.customers.filter(function(c){ return c.id===only; })[0];
+  box.innerHTML=one?prCard(one):'';
+  var n=D.customers.length;
+  sum.textContent='Every party\u2019s rate \u00b7 '+n+(n===1?' party':' parties');
+  all.innerHTML='<div class="in">'+D.customers.map(prCard).join('')+'</div>';
 }
 
 /* ---- rendering: the record forms ----------------------------------------- */
@@ -1742,8 +1774,6 @@ $('p-parent').addEventListener('change',preview);
 ['lf-prod','lf-state','lf-party'].forEach(function(id){
   $(id).addEventListener('change',function(){ LEDN=25; drawLedger(); }); });
 $('ledmore').addEventListener('click',function(){ LEDN+=50; drawLedger(); });
-$('pr-prod').addEventListener('change',function(){ drawPrControls(); drawPrice(); });
-$('pr-size').addEventListener('change',drawPrice);
 $('pr-cust').addEventListener('change',drawCustomers);
 $('rec').addEventListener('click',record);
 $('alertBtn').addEventListener('click',toggleAlerts);
