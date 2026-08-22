@@ -1,5 +1,16 @@
 [
  {
+  "v": "v335",
+  "d": "22 Aug 2026",
+  "t": "THE QUEUE COMMITTED, A DATE CORRECTED, AND ONE ORDER MADE TWO",
+  "n": [
+   "<b>ONE ENTRY IN THE QUEUE, AND IT IS THE REPAIR WORKING.</b> CA5-KER paid RM120 and took his unit on the 22nd, within the hour of the order going on the book. The cloud drafter drafted the fulfilment against the current mirror, the first it has managed since 20 Aug, and it is folded on his instruction to commit the queue. RM76 at 63.3%.",
+   "<b>CM6-PJ BOUGHT ON THE 21ST, NOT THE 22ND.</b> v334 dated the sale to the session for want of a day; he has given the day, and the row, its delivery and its payment move to 21 Aug. No figure changes.",
+   "<b>THE CJ4-BJ 12.5 UNIT ORDER IS TWO TRANCHES, ON HIS WORD.</b> RM400 for the first 6.25 unit, paid on the 20th and delivered on the 21st, is now a complete row at RM64 a unit, RM125 at 31.3% against the RM44 shelf. RM450 for the next 6.25 unit is its own pending row, undated, counting nowhere until it moves, RM72 a unit and RM70 under the ask. The book no longer shows a half-delivered order with RM450 owing; it shows a sale done and an order waiting.",
+   "<b>THE SHELF ROLLS 26.25 TO 25.25</b> on the CA5-KER unit. A roll and not a count; COUNT_ON stays at the 20th. QUEUE_COMMITTED moves to 2026-08-22T11:00:24.409Z."
+  ]
+ },
+ {
   "v": "v334",
   "d": "22 Aug 2026",
   "t": "ONE SALE, NOT TWO; A NEW CUSTOMER; AND TWO ORDERS ON THE BOOK",
