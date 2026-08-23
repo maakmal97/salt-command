@@ -1,6 +1,6 @@
 {
- "v": "v346",
- "stamped": "24 Aug 2026, 03:05 KL",
+ "v": "v348",
+ "stamped": "24 Aug 2026, 04:05 KL",
  "source": "Cow-Crm01 salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -1989,7 +1989,15 @@
     "note": "replied: reducing his salt intake, so expect smaller and less frequent orders rather than none"
    }
   ],
-  "selfUseLog": [],
+  "selfUseLog": [
+   {
+    "date": "2026-08-23",
+    "product": "oil",
+    "kg": 34,
+    "why": "other",
+    "note": "<b>THE WHOLE OF THE OIL GAP, ATTRIBUTED ON HIS WORD: SELF USE AND THE PROMOTION PERIOD.</b> The oil walk is 5 unit of opening plus 100 bought less 71 sold, leaving 34 unit that three counts have found are not on the shelf. It was carried as an unexplained plug from 14 Aug until now. It is neither spillage nor short delivery: the oil went out deliberately, partly to himself and partly as promotion while the product was being introduced. <b>THE SPLIT BETWEEN THE TWO IS NOT KNOWN AND IS NOT INVENTED HERE</b>, which is why the reason is <i>other</i> rather than <i>personal</i> or <i>sample</i>: the two carry different treatments, drawings against IAS 38.69 marketing, and guessing the proportion would put a figure in the accounts that nobody stated. Give the split and this row becomes two. <b>THE DATE IS THE COUNT, NOT THE DAY.</b> It happened across 06 to 23 Aug, between the first lot landing and the shelf being counted empty; 23 Aug is when it was established, not when it went. Attribution changes no figure: the count still wins, and this row touches no revenue, cost, stock or margin. It replaces silence with a reason."
+   }
+  ],
   "lostDemand": [],
   "loans": [
    {
@@ -2202,7 +2210,7 @@
   ],
   "QUEUE_COMMITTED": "2026-08-23T15:36:10.986Z",
   "PRICING": {
-   "takenAt": "2026-08-23T19:05:11.583Z",
+   "takenAt": "2026-08-23T19:30:29.913Z",
    "sizes": [
     0.5,
     1,
@@ -2616,10 +2624,10 @@
      }
     }
    },
-   "v": "v346"
+   "v": "v348"
   },
   "OPEN": {
-   "at": "2026-08-23T19:05:11.613Z",
+   "at": "2026-08-23T19:30:29.927Z",
    "count": 6,
    "byKey": {
     "CJ4-BJ|undefined|450": {
@@ -2726,7 +2734,7 @@
     "salt": "2026-08-20",
     "oil": "2026-08-23"
    },
-   "v": "v346"
+   "v": "v348"
   }
  }
 }

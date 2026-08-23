@@ -70,7 +70,7 @@ const NOT_LEDGER = new Set([
   /* vocabulary, labels and taxonomy: presentation */
   "LOSS_LABEL", "LOST_LABEL", "CONTACT_HOW", "CONTACT_OUT", "TAB_LABEL", "OBS_FAM", "OBS_SEV",
   "OBS_CONF", "ACTSEV", "bSevTag", "WB_NO_PROD", "PLAN_ST", "CHART_INK", "DIAMOND",
-  "LOCS", "PLACES", "METRO", "NON_PLACE", "DOW", "DOW3", "KL_HOLIDAYS", "HOL_MAP",
+  "LOCS", "PLACES", "METRO", "NON_PLACE", "PLACEHOLDER", "DOW", "DOW3", "KL_HOLIDAYS", "HOL_MAP",
   "LEAK_TEST", "BIO_FIELDS", "PROD_META", "builders",
 
   /* transient UI state, not persisted anywhere */

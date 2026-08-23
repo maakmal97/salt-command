@@ -172,7 +172,9 @@
     {"date":"2026-08-06","party":"CG5-SB","how":"message","outcome":"noreply","next":null,"note":"said hello"},
     {"date":"2026-08-06","party":"CC5-OKR","how":"message","outcome":"later","next":null,"note":"replied: reducing his salt intake, so expect smaller and less frequent orders rather than none"}
   ],
-  "selfUseLog": [],
+  "selfUseLog": [
+    {"date":"2026-08-23","product":"oil","kg":34,"why":"other","note":"<b>THE WHOLE OF THE OIL GAP, ATTRIBUTED ON HIS WORD: SELF USE AND THE PROMOTION PERIOD.</b> The oil walk is 5 unit of opening plus 100 bought less 71 sold, leaving 34 unit that three counts have found are not on the shelf. It was carried as an unexplained plug from 14 Aug until now. It is neither spillage nor short delivery: the oil went out deliberately, partly to himself and partly as promotion while the product was being introduced. <b>THE SPLIT BETWEEN THE TWO IS NOT KNOWN AND IS NOT INVENTED HERE</b>, which is why the reason is <i>other</i> rather than <i>personal</i> or <i>sample</i>: the two carry different treatments, drawings against IAS 38.69 marketing, and guessing the proportion would put a figure in the accounts that nobody stated. Give the split and this row becomes two. <b>THE DATE IS THE COUNT, NOT THE DAY.</b> It happened across 06 to 23 Aug, between the first lot landing and the shelf being counted empty; 23 Aug is when it was established, not when it went. Attribution changes no figure: the count still wins, and this row touches no revenue, cost, stock or margin. It replaces silence with a reason."}
+  ],
   "lostDemand": [],
   "loans": [
     {"date":"2026-05-12","party":"CS6-PER","valueRM":650,"valueKg":6,"status":"settled","settledOn":"2026-07-14","preOpening":true,"note":"Offset against the 6.5 unit deferred on the package sale. Went out on 12 May, six weeks BEFORE the 26 Jun opening count, so the 4.90 unit counted that day is already net of it."}
@@ -389,7 +391,8 @@
       "v248: he answered. There is no \"buying less\" outcome in the log, so this is recorded as\n     'later' with the substance in the note rather than as 'no', which would read as a lost\n     customer when what has changed is the SIZE and RHYTHM of what he takes. Worth adding a\n     proper outcome for it if this happens again."
     ],
     "selfUseLog": [
-      "{date,product,kg,why:'personal'|'spillage'|'short'|'sample'|'other',note}  product absent = salt (v275)"
+      "{date,product,kg,why:'personal'|'spillage'|'short'|'sample'|'other',note}  product absent = salt (v275)",
+      "v348: THE OIL LEAK IS ATTRIBUTED AND THE ARRAY IS NO LONGER EMPTY. It had never carried a row, so every plug on this book was unexplained by construction. Oil's 34 unit is the first, on his word of 24 Aug: self use and the promotion period, split unknown. Salt's own plug is still unattributed."
     ],
     "lostDemand": [
       "{date,product,party|null,kg,rm,why:'nostock'|'price'|'credit'|'other',note}  product absent = salt (v275)"
