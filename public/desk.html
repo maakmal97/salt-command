@@ -60,7 +60,7 @@ document.addEventListener('visibilitychange',function(){
    focused, no dialog open. Otherwise it offers a chip and waits to be tapped.
    The same tick retries a held entry, which is what gets a phone write to the cloud
    without waiting for the next open. */
-var SALT_BUILD_ID="e8bee153ef5035a8";
+var SALT_BUILD_ID="1940c09310b1ce20";
 var SALT_REV_MS=10000;
 (function(){
   var chip=null,timer=null;
@@ -3169,7 +3169,8 @@ const whiteboard=[
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{"v":"v355","d":"24 Aug 2026","t":"SALT'S 55.2 UNIT GET A REASON, AND THE PRICED LEAK FALLS BY TWO THIRDS","n":["<b>15:70:15, ON HIS WORD: STORAGE LEAKAGE, PROMOTION, SELF USE.</b> 8.28 unit lost on the shelf, 38.64 given away to win customers, 8.28 used himself. selfUseLog had never carried a salt row, so more than a fifth of everything ever bought was a gap with no reason against it, and it had been that way since the book opened.","<b>THE PRICED LEAK FALLS 17.74% TO 5.32% AND A UNIT COSTS RM47.74 INSTEAD OF RM54.95.</b> The 38.64 unit of promotion leave the price under the v353 rule, because a one-off spent to start selling is not a cost of selling; the 16.56 unit of leakage and self use stay in it, because those are. <b>FLOORS FALL WHERE THE PER-ORDER LEG BINDS AND NOWHERE ELSE:</b> 1 unit goes RM79.95 to RM72.74, 2 unit RM134.90 to RM120.48, and 2.5 upwards do not move at all because the cogs leg already stands above them. <b>NO ASK MOVES.</b>","<b>THE P&amp;L WAS REPORTING A 50:50 SPLIT ON A BOOK THAT NOW STATES 15:70:15.</b> sampleShare has halved every leak since v232, which was an honest stand-in while nothing attributed it, and it survived the attribution. So the accounts said half of salt&rsquo;s loss was unexplained waste when 70% of it was promotion he chose to give. The split is now READ off selfUseLog wherever the log covers the plug, and assumed only where it does not; the desk says which of the two it used.","<b>AND THERE ARE THREE DESTINATIONS, NOT TWO.</b> Promotion is marketing under IAS 38.69. Leakage and short delivery are abnormal waste under IAS 2.16(a). What he took for himself is a DRAWING and belongs on neither: it now has its own line BELOW operating profit and is deliberately outside it, because netting an owner&rsquo;s withdrawal off the trading result flatters nothing and hides the withdrawal.","<b>THE NUMBERS.</b> Marketing goes RM1,473.01 to RM2,062.22 on 38.64 unit. Abnormal loss goes RM1,473.01 to RM441.90 on 8.28. Owner&rsquo;s use appears at RM441.90 on 8.28 and leaves operating profit, which goes <b>RM2,710.95 to RM3,152.85, 13.0% to 15.1%</b>. Nothing was earned by this commit: an assumption about where the salt went was replaced by his account of it."]},
+const evolution=[{"v":"v356","d":"24 Aug 2026","t":"THE SHEET IS AMENDABLE BEFORE IT IS SENT, AND v354 WAS IN THE WRONG PLACE","n":["<b>v354 PUT AN EDITOR ON THE HOUSE BOARD AND WHAT HE ASKED FOR WAS THE SHEET.</b> His correction of 24 Aug: he wants to download the price list the engine derives and then amend it <i>for certain customers</i>. Editing what the desk quotes everyone is a different act with a different consequence, and it does not need doing before handing one man a sheet. The standalone panel is gone.","<b>ONE TABLE, IN THE PRICE LIST CARD, WHERE THE SHEET IS ACTUALLY SAVED.</b> Every size with a tick for whether it appears at all and a price prefilled from the board. Change a figure, untick a lot, press <b>Save the sheet</b> and the customer receives exactly what is on screen. The party picker above it watermarks the sheet as it always did.","<b>THE DOWNLOAD USED TO IGNORE THE TABLE ENTIRELY, WHICH IS THE FAULT THIS FIXES.</b> mnSaveTier read priceLadder() at every size, so the figures on the panel were decoration: he could amend them and the sheet would still carry the derived ask. shRows() is now the single source, so the number he typed is the number that goes out.","<b>A PRICE UNDER ITS FLOOR IS REFUSED, NOT LIFTED, AND THAT DIFFERS FROM THE BOARD ON PURPOSE.</b> A board must always answer, so v352 lifts an ask to the next step above its floor. A SHEET goes to a named person, and quietly sending a different figure from the one he typed is worse than refusing to send it. It says which size and by how much, and saves nothing.","<b>NOTHING IS STORED, WHICH IS HIS DECISION AND HAS A COST WORTH STATING.</b> Asked whether a customer&rsquo;s amended prices should be remembered, he chose one-off: no queue, no approval, nothing to fold. The next sheet starts from the board again. <b>The consequence is that a customer who got RM110 last month and RM130 this month will notice, and this desk cannot warn you</b>, because it does not know what it sent. The saved-sheet confirmation now says so rather than leaving it to be discovered.","<b>THE ONE THING THAT STILL REACHES THE LEDGER IS <i>MAKE IT THE HOUSE BOARD</i>,</b> which queues the typed prices as PRICE_SET on the v354 road: drafted, approved, folded, provisional on the board in the meantime. It is refused while a customer is named, because one man&rsquo;s sheet is not everyone&rsquo;s board."]},
+{"v":"v355","d":"24 Aug 2026","t":"SALT'S 55.2 UNIT GET A REASON, AND THE PRICED LEAK FALLS BY TWO THIRDS","n":["<b>15:70:15, ON HIS WORD: STORAGE LEAKAGE, PROMOTION, SELF USE.</b> 8.28 unit lost on the shelf, 38.64 given away to win customers, 8.28 used himself. selfUseLog had never carried a salt row, so more than a fifth of everything ever bought was a gap with no reason against it, and it had been that way since the book opened.","<b>THE PRICED LEAK FALLS 17.74% TO 5.32% AND A UNIT COSTS RM47.74 INSTEAD OF RM54.95.</b> The 38.64 unit of promotion leave the price under the v353 rule, because a one-off spent to start selling is not a cost of selling; the 16.56 unit of leakage and self use stay in it, because those are. <b>FLOORS FALL WHERE THE PER-ORDER LEG BINDS AND NOWHERE ELSE:</b> 1 unit goes RM79.95 to RM72.74, 2 unit RM134.90 to RM120.48, and 2.5 upwards do not move at all because the cogs leg already stands above them. <b>NO ASK MOVES.</b>","<b>THE P&amp;L WAS REPORTING A 50:50 SPLIT ON A BOOK THAT NOW STATES 15:70:15.</b> sampleShare has halved every leak since v232, which was an honest stand-in while nothing attributed it, and it survived the attribution. So the accounts said half of salt&rsquo;s loss was unexplained waste when 70% of it was promotion he chose to give. The split is now READ off selfUseLog wherever the log covers the plug, and assumed only where it does not; the desk says which of the two it used.","<b>AND THERE ARE THREE DESTINATIONS, NOT TWO.</b> Promotion is marketing under IAS 38.69. Leakage and short delivery are abnormal waste under IAS 2.16(a). What he took for himself is a DRAWING and belongs on neither: it now has its own line BELOW operating profit and is deliberately outside it, because netting an owner&rsquo;s withdrawal off the trading result flatters nothing and hides the withdrawal.","<b>THE NUMBERS.</b> Marketing goes RM1,473.01 to RM2,062.22 on 38.64 unit. Abnormal loss goes RM1,473.01 to RM441.90 on 8.28. Owner&rsquo;s use appears at RM441.90 on 8.28 and leaves operating profit, which goes <b>RM2,710.95 to RM3,152.85, 13.0% to 15.1%</b>. Nothing was earned by this commit: an assumption about where the salt went was replaced by his account of it."]},
 {"v":"v354","d":"24 Aug 2026","t":"THE BOARD IS EDITABLE, AND THE EDIT TRAVELS THE SAME ROAD AS A SALE","n":["<b>EDIT THE BOARD, ON THE PRICE TAB.</b> His instruction of 24 Aug: let him change a price and change which lots are shown, easily. One table, one row per size: the size, a show tick, the price he wants, what the board actually quotes, and the floor beside it. <b>BLANK MEANS DERIVED</b>, so a size he has not set is priced by the ladder, which is where a price should come from unless there is a reason to say otherwise.","<b>IT DOES NOT WRITE THE BOOK, BECAUSE NOTHING ON THIS DESK DOES.</b> It composes a queue entry exactly as a transaction does, and that entry is drafted, approved and folded on the same road. What makes it feel immediate is the OVERLAY: the moment an edit is queued the board is rebuilt with it, marked provisional like every other queued entry, so he can see what a price does to the sizes above it before anyone approves anything. Withdraw the entry and the board goes back. There is no second state to keep in step and nothing to reconcile.","<b>A SET PRICE STILL OBEYS BOTH LAWS AND THE TABLE SAYS SO WHEN IT DOES NOT WIN.</b> The rate may never rise with size, so setting one price moves every size above it. And no ask may sit under its own floor, so a price set too low is lifted to the next step above the floor and tagged <i>lifted</i> rather than quietly honoured. The drafter flags the same thing before anyone approves it, computed off the PRICING snapshot rather than re-derived, because two engines drift.","<b>HIDING A LOT IS REVERSIBLE AND IS NOT A DELETION.</b> `hide` drops a size from the card without taking it out of the ladder, so it stays priceable off the board and comes back by unticking one box. Hiding EVERY size is refused: a board with no sizes on it is not a board.","<b>THE FOLD REPLACES THAT PRODUCT'S ENTRY RATHER THAN MERGING INTO IT.</b> The form on the desk is the whole statement of what he wants the board to be, so a price he cleared is actually cleared and does not survive as a leftover. It moves no stock, no cash and no ledger row. The other product's board is untouched, and there is a test that says so."]},
 {"v":"v353","d":"24 Aug 2026","t":"PROMOTION LEAVES THE PRICE, FINANCING GOES TO 40%, AND HE CAN SET A PRICE AGAIN","n":["<b>PROMOTION IS NOT A LEAK AND THE PRICE STOPS TREATING IT AS ONE.</b> His instruction. Every unit that failed to reach a paying customer used to divide the cost of the ones that did, whatever the reason, so a deliberate launch giveaway was recovered from every future customer for ever. That is not a cost of selling, it is a one-off spent to start selling. <b>OIL: the priced leak goes 32.4% to 6.5%</b>, because 27.2 of its 34 unaccounted unit were the launch, and a unit costs RM12.13 to RM8.77. Its floor at the 10 unit minimum falls RM146.27 to RM112.68. <b>IT LEAVES THE PRICE, NOT THE BOOK:</b> the P&amp;L still carries every one as marketing under IAS 38.69, the count still wins, the plug is unchanged. Only the divisor moves.","<b>ONLY WHAT IS LOGGED AS PROMOTION LEAVES, AND SALT HAS LOGGED NOTHING.</b> An unattributed plug is priced in FULL, which is the conservative way round: a leak nobody has explained is a leak until someone does. Salt&rsquo;s 55.2 unit are still carried whole at 17.74%, so not one salt figure moves on this commit. He has said the salt gap is some storage leakage, mostly promotion and some self use; until those are three numbers rather than three words the price cannot use them. <b>WHEN THEY LAND, SALT&rsquo;S FLOORS FALL SHARPLY</b>, on the same arithmetic that just moved oil.","<b>FINANCING GOES 12% TO 40% A YEAR, ON HIS INSTRUCTION.</b> 12% was a borrowing rate; 40% is what he says his own capital is worth, which is the right basis for a desk funded out of his own pocket. <b>IT IS SMALLER THAN IT SOUNDS AND THAT IS WORTH SAYING.</b> A 50 unit lot clears in about twelve days at 4.32 a day, so the average unit is held under six, and 40% of RM45.20 over six days is about 29 sen a unit. On credit it bites harder: a customer taking ten days to pay now costs 1.1% of the sale against 0.33%.","<b>HE CAN SET A PRICE AGAIN, AND IT OBEYS THE SAME TWO LAWS.</b> PRICE_SET is the twenty-seventh ledger key: prices he has stated, by product and size, overriding the derived ladder. The board has been fully derived since v326, which is the right default and the wrong absolute, because he is the one who meets the customer. A stated price replaces the markup and nothing else: the rate-may-not-rise walk still runs on it and the floor guard still runs beneath it, so <b>a price set under its own floor is lifted rather than honoured</b>.","<b>OIL&rsquo;S 10 UNIT IS SET AT RM130, AND IT TAKES THE WHOLE OIL LADDER WITH IT.</b> That is the honest consequence rather than a fault: RM130 for 10 unit is RM13.00 a unit, and a bigger lot may never cost more per unit, so every size above had to come down. 15 unit goes RM210 to RM190, 50 goes RM650 to RM610 and 100 goes RM1,300 to RM1,210, a flat RM13.00 falling to RM12.10. Every one of them still clears its own floor with room. Salt is untouched: all ten asks stand exactly where they were."]},
 {"v":"v352","d":"24 Aug 2026","t":"THE FLOOR GETS HONEST, AND NOT ONE SALT PRICE HAS TO MOVE","n":["<b>THE WHOLE LEAK IS CHARGED AND NOTHING IS ABSORBED.</b> SHRINK_ATTRIB goes 0.33 to 1 on his instruction. A unit costs RM54.95 to put on the shelf and the floor was built on RM48.01, so <b>RM6.94 a unit was being carried silently</b>. That is what put the delivered floor BELOW true cost at every size up to 9.7 unit, nearly the whole board, and it is why one sale in eighty-two lost money and thirty-one more would have if they had been delivered. Absorbed cost is now RM0.00.","<b>THE CARD IS A COLLECTION PRICE AND DELIVERY IS QUOTED PER ORDER, ON HIS INSTRUCTION.</b> Four orders in five are collected, so pricing all of them as though they were delivered makes the collectors pay for the deliveries. The board states one floor, the collected one, and one charge, RM50, once. The v344 <i>deliverable</i> flag and the collectOnly list are gone: on the true figures they said the same thing at nearly every size, which is a flag answering a question the board should not be asking.","<b>AN ORDER COSTS HIM RM25 OF HIS OWN TIME AND THE FLOOR NOW SAYS SO.</b> His figure: roughly five hours a week at RM50 an hour over the ten orders a week this book runs at. <b>PER ORDER, NOT PER UNIT</b>, because a half unit and a twelve and a half take about the same handling. Nothing in this stack had ever paid him for the work; the whole margin was doing it, undifferentiated from the return on his capital, so he could not tell profit from wages. Tested against his own eighty-two sales: at RM25 seventy-two still clear, at RM40 fifty-nine would and at RM60 forty-six.","<b>AND NOT ONE SALT PRICE MOVES.</b> All ten asks stand exactly where they were, RM60 at half a unit to RM950 at twelve and a half, because the ask is a markup on landed cost and already cleared the honest floor at every size. <b>ONE OIL PRICE MOVES:</b> the 10 unit minimum goes RM140 to RM150, because it was RM6.27 under its own floor once the leak was charged in full, and 34 of the 105 unit of oil ever bought were given away. ladderWalk now enforces what v263 already wrote down: an ask may never sit under its own floor, and where it would it rises to the next grid step above it, never to the floor exactly.","<b>THE MARGIN CURVE IS ALIVE AGAIN, AND WHAT KILLED IT WAS v344.</b> Its base added one whole delivery to every order. When delivery went from RM16.67 to its real RM50, that flat charge inverted the fit: a RM50 order carrying RM50 of delivery reads at minus 100% margin while a big lot barely notices, so measured margin appeared to RISE with size, the <i>may not rise</i> clamp fired, b went to zero and the curve returned its clamp floor of 18% at every size, with an r-squared of 0. The base is now the goods and nothing else, which is what the ladder actually prices. Measured after: <b>b -0.0881, r-squared 0.340</b>, 51.3% at half a unit falling to 23.0% at twelve and a half. His time is deliberately NOT in it: a flat per-order charge in a regression base inverts the slope for the same reason delivery did.","<b>THE SOURCING PLAN IS 50 UNIT ON THE 28TH, WHICH IS HIS CALL AND NOT THE RECOMMENDATION.</b> The ceiling resets on the 28th and RM2,260 sits well inside it. Landed cost is RM45.20 a unit against RM43.60 at the 100 tier, so the lot costs RM80 more than the same salt at the top step and covers a fortnight rather than three weeks. RM4,360 would have fitted with RM140 to spare. Recorded as a decision, not an error."]},
@@ -3281,7 +3282,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='24 Aug 2026, 08:10 KL';
+const LAST_UPDATED='24 Aug 2026, 09:00 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -11095,45 +11096,6 @@ function tabPricing(){
     </div>
   </div>
 
-  ${(()=>{
-    /* ============ EDIT THE BOARD (v354) ============
-       His instruction of 24 Aug: let him change a price and change which lots are shown, easily.
-       THE EDITOR DOES NOT WRITE THE BOOK, because nothing on this desk does. It composes a queue
-       entry, exactly as a transaction does, and that entry is drafted, approved and folded on the
-       same road. What makes it feel immediate is the overlay: the moment a price edit is queued
-       the board below is rebuilt with it, marked provisional like everything else, so he can SEE
-       what a price does to the sizes above it before anyone approves anything. Withdraw the entry
-       and the board goes back. There is no second state to keep in step.
-       BLANK MEANS DERIVED. A price he has not set is priced by the ladder, which is where a price
-       should come from unless there is a reason to say otherwise. */
-    const ALL=(PRICE_ENGINE.sizesBy&&PRICE_ENGINE.sizesBy[PROD])||PRICE_ENGINE.sizes;
-    const SET=setPricesFor(PROD), HID=hiddenFor(PROD);
-    const rows=ALL.map(qq=>{
-      const shown=!HID.some(h=>Math.abs(h-qq)<0.009);
-      const mine=SET[String(qq)];
-      const fl=floorTotal(qq,null,{collects:true});
-      let now=null; try{ now=priceLadder(qq).ask.total; }catch(e){}
-      const lifted=(mine!=null&&now!=null&&Math.abs(now-mine)>0.009);
-      return `<tr${shown?'':' style="opacity:.45"'}>
-        <td class="l">${kg(qq)}</td>
-        <td><input type="checkbox" id="peShow${String(qq).replace('.','_')}" ${shown?'checked':''}></td>
-        <td><input class="peIn" id="pePx${String(qq).replace('.','_')}" type="number" step="10" min="0" placeholder="derived"
-             value="${mine!=null?esc(String(mine)):''}" style="width:88px"></td>
-        <td class="mono"><b>${now!=null?fmt0(now):'&mdash;'}</b>${lifted?' <span class="tag def">lifted</span>':''}</td>
-        <td class="mono" style="color:var(--dim)">${fmt(fl)}</td></tr>`;
-    }).join('');
-    return `<h2 style="margin-top:18px">Edit the board <span class="sub" style="font-weight:400">set a price, hide a lot</span> <span class="rule"></span></h2>
-  <div class="card">
-    <table><thead><tr><th class="l">Size</th><th>Show</th><th>Your price</th><th>On the board</th><th>Floor</th></tr></thead>
-    <tbody>${rows}</tbody></table>
-    <div style="margin-top:11px">
-      <button class="vbtn" style="border-color:var(--acc)" onclick="peQueue()">Queue these changes</button>
-      <button class="vbtn" onclick="peClear()" style="margin-left:6px">Clear my prices</button>
-    </div>
-    <div id="peOut" style="margin-top:10px"></div>
-    <div class="dsc" style="margin-top:9px"><b>Blank means derived</b>: the ladder prices that size. A price you set replaces the markup and nothing else, so both laws still run on it. <b>The rate may never rise with size</b>, so setting one price moves every size above it; and <b>no ask may sit under its floor</b>, so a price set too low is lifted to the next step above it and tagged <i>lifted</i> rather than honoured. Nothing here writes the book: it queues an entry, the board shows it at once as provisional, and it reaches the ledger only when it is approved and folded.</div>
-  </div>`;})()}
-
   ${(()=>{const MC=marginCurve(),q=2,c=pxCost();
     const R=enginePrice(q,'T2',{curve:MC});
     const line=(lab,v,n)=>`<tr><td class="l">${lab}<div class="iref">${esc(n||'')}</div></td><td class="mono">${fmt(v)}</td></tr>`;
@@ -11186,8 +11148,38 @@ function tabPricing(){
     <div class="dsc" style="margin-top:9px"><b>ONE LADDER, AND ITS SHAPE IS MEASURED RATHER THAN CHOSEN.</b> <b>Cogs</b> is the landed cost, ${fmt(c.landed)} a unit, being the lot rate plus freight and nothing else. <b>The volume discount given is proportionate to the volume discount received</b>: the ask per unit falls with size at the exponent fitted to ${esc(supplierQuote.supplier)}&rsquo;s live quote ladder, so a step up in size is worth to the customer what the same step is worth to this desk. Only the LEVEL is typed, one number, <b>${LADDER.anchorX.toFixed(3)}x at ${kg(LADDER.anchorQ)}</b>. Markups are on cost as he states the measure, <b>(sales less cogs) over cogs</b>, so ${LADDER.floor.toFixed(2)}x means the price is ${(1+LADDER.floor).toFixed(2)} times cogs. <b>Floor ${LADDER.floor.toFixed(2)}x and ceiling ${LADDER.ceiling.toFixed(2)}x are bounds, not rungs</b>: the curve is clamped between them and on this cost neither binds at any board size. Asks round <b>UP to the ten</b>; the floor is exact, because rounding a refusal line moves it. <b>The margin shown against each ask is struck on the LOT cost</b>, ${fmt(c.effEx)} after the leak plus one delivery of ${fmt0(c.delPerOrder||0)}, which is what the order really costs to serve and is a different number from cogs on purpose.</div>
     <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--line)">
       <div style="font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:var(--dim);margin-bottom:7px">Save a sheet &mdash; no password</div>
+      ${(()=>{
+        /* ============ AMEND THE SHEET BEFORE YOU SEND IT (v356) ============
+           His instruction of 24 Aug, and it corrects v354, which put an editor on the HOUSE board
+           when what he wanted was to tweak the sheet he hands one customer.
+           ONE TABLE, TWO MODES, decided by the party picked above it. With nobody named it edits the
+           HOUSE board and offers to queue the change, which is the v354 road and reaches the ledger.
+           With a customer named it edits THAT SHEET ONLY: type a price, untick a size, download. His
+           decision, asked and answered: <b>nothing is stored</b>. The next sheet starts from the house
+           board again, and the desk deliberately cannot tell you later what you quoted anyone.
+           WHY NOT STORED. A remembered price is a ledger fact and would have to be queued, drafted and
+           approved before it could be sent, which is friction on the one thing he asked to be easy.
+           The cost is real and is stated rather than hidden: a customer who got RM110 last month and
+           RM130 this month will notice, and this desk will not warn you. */
+        const ALL=(PRICE_ENGINE.sizesBy&&PRICE_ENGINE.sizesBy[PROD])||PRICE_ENGINE.sizes;
+        const HID=hiddenFor(PROD);
+        const rows=ALL.map(qq=>{
+          const id='sh'+String(qq).replace('.','_');
+          const shown=!HID.some(h=>Math.abs(h-qq)<0.009);
+          let ask=null; try{ ask=priceLadder(qq).ask.total; }catch(e){}
+          const fl=floorTotal(qq,null,{collects:true});
+          return `<tr>
+            <td class="l">${kg(qq)}</td>
+            <td><input type="checkbox" id="${id}s" ${shown?'checked':''} onchange="shDirty()"></td>
+            <td><input id="${id}p" type="number" step="10" min="0" value="${ask!=null?ask:''}" style="width:92px" oninput="shDirty()"></td>
+            <td class="mono" style="color:var(--dim)">${fmt(fl)}</td></tr>`;
+        }).join('');
+        return `<table class="pxboard" style="margin-bottom:9px"><thead><tr><th class="l">Size</th><th>On the sheet</th><th>Price</th><th>Floor</th></tr></thead><tbody>${rows}</tbody></table>
+        <div id="shOut" class="dsc" style="margin-bottom:8px">Prefilled from the board. Change a price or untick a size and the sheet follows.</div>`;})()}
       <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center">
-        <button class="vbtn" style="border-color:var(--acc)" onclick="mnSaveTier('')">Save the ladder</button>
+        <button class="vbtn" style="border-color:var(--acc)" onclick="mnSaveTier('')">Save the sheet</button>
+        <button class="vbtn" onclick="shReset()">Back to the board</button>
+        <button class="vbtn" onclick="shQueueHouse()" title="Only with nobody named: change what the desk quotes everyone">Make it the house board</button>
         <label style="font-size:12px;color:var(--mut);display:flex;align-items:center;gap:5px;margin-left:6px"><input type="checkbox" id="mnMark"> watermark with the name picked below</label>
       </div>
       <div class="dsc" style="margin-top:8px">One sheet, <b>no password and no expiry</b>, because a customer cannot be asked for a passphrase at the counter. It opens on anything with nothing to type, and it <b>cannot be withdrawn</b>: treat it as printed. Use the encrypted download below when a list is for <b>one</b> named party and should stop working.</div>
@@ -11514,51 +11506,63 @@ function mnTierDoc(t,rows,meta){
    desk no longer quotes. It now prints the same ask pxQuote gives, which is the only sheet that
    cannot disagree with what he says at the counter. The code argument is kept and ignored, because
    three buttons became one and an old bookmark should still open something. */
-/* ============ THE PRICE EDITOR'S TWO BUTTONS (v354) ============
-   peQueue reads the inputs, works out what actually CHANGED against the book, and queues one
-   entry. It queues nothing when nothing moved, because an entry that says nothing still has to
-   be drafted, approved and folded by a person.
-   IT REFUSES TO HIDE EVERY SIZE. A board with no sizes on it is not a board, and sizesFor would
-   fall back to the full ladder anyway, so the refusal is honest rather than a guard against a
-   fallback. */
-function peQueue(){
-  const ALL=(PRICE_ENGINE.sizesBy&&PRICE_ENGINE.sizesBy[PROD])||PRICE_ENGINE.sizes;
-  const was=setPricesFor(PROD), wasHid=hiddenFor(PROD);
-  const prices={}, hide=[]; let moved=0;
-  ALL.forEach(q=>{
-    const id=String(q).replace('.','_');
-    const px=document.getElementById('pePx'+id), sh=document.getElementById('peShow'+id);
+/* ============ THE SHEET'S OWN FIGURES (v356) ============
+   shRows reads the table above the buttons: what price each size carries on the sheet about to be
+   downloaded, and which sizes appear on it at all. It is the single source for the download, so a
+   figure he typed is the figure the customer receives.
+   A PRICE UNDER ITS FLOOR IS REFUSED, NOT LIFTED. On the house board a price too low is lifted to
+   the next step, because a board must always answer. A SHEET is a thing he hands to a named person,
+   and quietly sending a different number from the one he typed is worse than refusing to send it. */
+function shSizes(){return (PRICE_ENGINE.sizesBy&&PRICE_ENGINE.sizesBy[PROD])||PRICE_ENGINE.sizes;}
+function shRows(){
+  const out=[],under=[];
+  shSizes().forEach(q=>{
+    const id='sh'+String(q).replace('.','_');
+    const sh=document.getElementById(id+'s'), px=document.getElementById(id+'p');
+    if(!sh||!sh.checked)return;
     const v=px&&px.value.trim()!==''?+px.value:null;
-    const old=was[String(q)]!=null?+was[String(q)]:null;
-    if(v!=null&&v>0)prices[String(q)]=v;
-    if((v==null?null:v)!==(old==null?null:old))moved++;
-    if(sh&&!sh.checked)hide.push(q);
+    if(!(v>0))return;
+    if(v<floorTotal(q,null,{collects:true})-0.009)under.push({q:q,p:v});
+    out.push({q:q,p:v});
   });
-  const hidChanged=hide.length!==wasHid.length||hide.some(h=>!wasHid.some(w=>Math.abs(w-h)<0.009));
-  if(hidChanged)moved++;
-  if(!moved)return peOut('<div class="dsc">Nothing changed, so nothing is queued.</div>');
-  if(hide.length>=ALL.length)return peOut('<div class="dsc" style="color:var(--crim)">You cannot hide every size: that is not a board.</div>');
-  const bits=[];
-  Object.keys(prices).forEach(k=>{if(was[k]==null||+was[k]!==prices[k])bits.push(kg(+k)+' at '+fmt0(prices[k]));});
-  Object.keys(was).forEach(k=>{if(prices[k]==null)bits.push(kg(+k)+' back to the ladder');});
-  if(hidChanged)bits.push(hide.length?('hiding '+hide.map(h=>kg(h)).join(', ')):'nothing hidden');
+  return {rows:out,under:under};
+}
+function shDirty(){shOut('<div class="dsc">Changed. <b>Save the sheet</b> sends these figures; nothing is stored, so the next sheet starts from the board again.</div>');}
+function shOut(html){const el=document.getElementById('shOut');if(el)el.innerHTML=html;}
+function shReset(){render();}
+/* the one thing that DOES reach the ledger, and only with nobody named: making the typed prices the
+   house board. It is the v354 road, queued and folded, kept because a stated house price is how oil
+   sits at RM130. Named to a customer it is refused, because one man's sheet is not everyone's board. */
+function shQueueHouse(){
+  const who=(document.getElementById('mnWho')||{}).value||'';
+  if(who)return shOut('<div class="dsc" style="color:var(--crim)">A customer is named, so this would make one man&rsquo;s sheet everyone&rsquo;s board. Clear the name first.</div>');
+  const R=shRows();
+  if(!R.rows.length)return shOut('<div class="dsc" style="color:var(--crim)">Every size is unticked, so there is no board to make.</div>');
+  if(R.under.length)return shOut('<div class="dsc" style="color:var(--crim)">'+R.under.map(u=>kg(u.q)+' at '+fmt0(u.p)).join(', ')+' sits under the floor. The board would lift it rather than quote it, so set it above the floor first.</div>');
+  const prices={},hide=[];
+  const shown={};R.rows.forEach(r=>{prices[String(r.q)]=r.p;shown[String(r.q)]=1;});
+  shSizes().forEach(q=>{if(!shown[String(q)])hide.push(q);});
   queue.push({at:new Date().toISOString(),type:'PRICE',party:null,qty:null,total:null,status:'price',
-    raw:'Price edit on '+PROD+': '+bits.join('; '),
+    raw:'House board on '+PROD+': '+R.rows.map(r=>kg(r.q)+' at '+fmt0(r.p)).join('; ')+(hide.length?('; hiding '+hide.map(h=>kg(h)).join(', ')):''),
     payload:{mode:'price',product:PROD,prices:prices,hide:hide}});
   try{saveQueue();renderQueue();}catch(e){}
   try{applyOverlay();recompute();render();}catch(e){}
-  peOut('<div class="insight"><b>Queued.</b> '+esc(bits.join('; '))+'. The board above already shows it, marked provisional. It reaches the ledger when it is approved and folded; withdraw the entry from the queue to undo it.</div>');
+  shOut('<div class="insight"><b>Queued as the house board.</b> The board above already shows it, marked provisional. It reaches the ledger when it is approved and folded; withdraw the entry from the queue to undo it.</div>');
 }
-function peClear(){
-  const ALL=(PRICE_ENGINE.sizesBy&&PRICE_ENGINE.sizesBy[PROD])||PRICE_ENGINE.sizes;
-  ALL.forEach(q=>{const el=document.getElementById('pePx'+String(q).replace('.','_'));if(el)el.value='';});
-  peOut('<div class="dsc">Cleared in the form only. Press <b>Queue these changes</b> to put every size back on the ladder.</div>');
-}
-function peOut(html){const el=document.getElementById('peOut');if(el)el.innerHTML=html;}
 function mnSaveTier(code){
-  var rows=PRICE_TIERS.sizes.map(function(q){return {q:q,p:priceLadder(q).ask.total};})
+  /* v356: THE SHEET CARRIES WHAT HE TYPED, not what the ladder derived. It read priceLadder() at
+     every size, so the figures on the table above the button were decoration: he could amend them
+     and send something else entirely. shRows() is now the single source, so the number he typed is
+     the number the customer receives. A price under its floor is REFUSED rather than lifted,
+     because a sheet goes to a named person and quietly sending a different figure is worse than
+     sending none. Falls back to the ladder if the table is not on screen. */
+  var R=(typeof shRows==='function'&&document.getElementById('sh'+String(shSizes()[0]).replace('.','_')+'p'))?shRows():null;
+  var rows=R?R.rows:PRICE_TIERS.sizes.map(function(q){return {q:q,p:priceLadder(q).ask.total};})
                             .filter(function(r){return r.p!=null;});
-  if(!rows.length)return mnStatus('<div class="dsc" style="color:var(--crim)">The ladder has no prices.</div>');
+  if(R&&R.under.length)return mnStatus('<div class="dsc" style="color:var(--crim)"><b>Not saved.</b> '
+    +R.under.map(function(u){return kg(u.q)+' at '+fmt0(u.p);}).join(', ')
+    +' sits under the floor, so the sheet would send a price this desk refuses. Raise it, or untick the size.</div>');
+  if(!rows.length)return mnStatus('<div class="dsc" style="color:var(--crim)">Every size is unticked, so the sheet would be empty.</div>');
   var whoSel=(document.getElementById('mnWho')||{}).value||'';
   var mark=(document.getElementById('mnMark')||{}).checked;
   var who=mark&&whoSel?codeOf(whoSel):'';            // codeOf, never ID: no name leaves the desk
@@ -11583,8 +11587,8 @@ function mnSaveTier(code){
     +(who?'watermarked '+esc(who):'no watermark')+', <b>no password</b>.'
     +' It opens anywhere, on anything, with nothing to type. <b>It also cannot be withdrawn</b>, so treat it as printed:'
     +' it will keep showing these prices until you send a newer one.'
-    +' It is <b>the ladder</b>, the same ask this desk quotes at every size, so there is no tier to name and nothing on it'
-    +' that a second sheet could contradict.</div>');
+    +' <b>Nothing is stored</b>: these figures live in this sheet alone, so the next one starts from the board again'
+    +' and the desk cannot tell you later what you quoted anyone.</div>');
 }
 /* ---- Download a page: password-gated and time-limited (v164) ----------------
    A self-contained price list that needs NO WIFI and NO SERVER, and is opened with a

@@ -1,5 +1,18 @@
 [
  {
+  "v": "v356",
+  "d": "24 Aug 2026",
+  "t": "THE SHEET IS AMENDABLE BEFORE IT IS SENT, AND v354 WAS IN THE WRONG PLACE",
+  "n": [
+   "<b>v354 PUT AN EDITOR ON THE HOUSE BOARD AND WHAT HE ASKED FOR WAS THE SHEET.</b> His correction of 24 Aug: he wants to download the price list the engine derives and then amend it <i>for certain customers</i>. Editing what the desk quotes everyone is a different act with a different consequence, and it does not need doing before handing one man a sheet. The standalone panel is gone.",
+   "<b>ONE TABLE, IN THE PRICE LIST CARD, WHERE THE SHEET IS ACTUALLY SAVED.</b> Every size with a tick for whether it appears at all and a price prefilled from the board. Change a figure, untick a lot, press <b>Save the sheet</b> and the customer receives exactly what is on screen. The party picker above it watermarks the sheet as it always did.",
+   "<b>THE DOWNLOAD USED TO IGNORE THE TABLE ENTIRELY, WHICH IS THE FAULT THIS FIXES.</b> mnSaveTier read priceLadder() at every size, so the figures on the panel were decoration: he could amend them and the sheet would still carry the derived ask. shRows() is now the single source, so the number he typed is the number that goes out.",
+   "<b>A PRICE UNDER ITS FLOOR IS REFUSED, NOT LIFTED, AND THAT DIFFERS FROM THE BOARD ON PURPOSE.</b> A board must always answer, so v352 lifts an ask to the next step above its floor. A SHEET goes to a named person, and quietly sending a different figure from the one he typed is worse than refusing to send it. It says which size and by how much, and saves nothing.",
+   "<b>NOTHING IS STORED, WHICH IS HIS DECISION AND HAS A COST WORTH STATING.</b> Asked whether a customer&rsquo;s amended prices should be remembered, he chose one-off: no queue, no approval, nothing to fold. The next sheet starts from the board again. <b>The consequence is that a customer who got RM110 last month and RM130 this month will notice, and this desk cannot warn you</b>, because it does not know what it sent. The saved-sheet confirmation now says so rather than leaving it to be discovered.",
+   "<b>THE ONE THING THAT STILL REACHES THE LEDGER IS <i>MAKE IT THE HOUSE BOARD</i>,</b> which queues the typed prices as PRICE_SET on the v354 road: drafted, approved, folded, provisional on the board in the meantime. It is refused while a customer is named, because one man&rsquo;s sheet is not everyone&rsquo;s board."
+  ]
+ },
+ {
   "v": "v355",
   "d": "24 Aug 2026",
   "t": "SALT'S 55.2 UNIT GET A REASON, AND THE PRICED LEAK FALLS BY TWO THIRDS",

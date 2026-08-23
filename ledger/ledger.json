@@ -1,7 +1,7 @@
 {
- "v": "v355",
- "stamped": "24 Aug 2026, 08:10 KL",
- "source": "Per-Crm01 salt_command.html",
+ "v": "v356",
+ "stamped": "24 Aug 2026, 09:00 KL",
+ "source": "Cow-Crm01 salt_command.html",
  "ledger": {
   "PRODUCTS": {
    "salt": {
@@ -2260,7 +2260,7 @@
   ],
   "QUEUE_COMMITTED": "2026-08-23T15:36:10.986Z",
   "PRICING": {
-   "takenAt": "2026-08-23T22:51:50.089Z",
+   "takenAt": "2026-08-23T23:13:15.651Z",
    "sizes": [
     0.5,
     1,
@@ -2680,10 +2680,10 @@
      }
     }
    },
-   "v": "v355"
+   "v": "v356"
   },
   "OPEN": {
-   "at": "2026-08-23T22:51:50.105Z",
+   "at": "2026-08-23T23:13:15.665Z",
    "count": 7,
    "byKey": {
     "CJ4-BJ|undefined|450": {
@@ -2802,7 +2802,7 @@
     "salt": "2026-08-24",
     "oil": "2026-08-23"
    },
-   "v": "v355"
+   "v": "v356"
   }
  }
 }
