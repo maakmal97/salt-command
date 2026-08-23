@@ -116,6 +116,35 @@ The build **only adds**: a PWA head, a service worker, a per-device id, and clou
 It changes no ledger figure. Every patch anchors on one unique line and the build aborts if an
 anchor moves, so a master edit that would silently break a patch fails loudly instead.
 
+### What each surface carries (v343, 23 Aug 2026)
+
+**The desk is seven views over sixteen tabs, and every tab is one tap away.** `VIEWS` in the
+master: Today (Today, Overview, Forward), Orders and money (Order book, Financials), Stock
+(Inventory, Sourcing), Price, Customers (Customers, Network, Map), The book (Ledger, Analysis),
+Enter (Transaction, Approve, Whiteboard). A view opens on its lead and names its other parts on
+a **strip of pills at the top**; on a wide screen the rail also lists the active view's parts
+beneath it. One part shows at a time. The old tab ids are still addresses: `/desk#network` opens
+Customers on the Network. v341 had folded the parts at the FOOT of the lead, which on a 7,000px
+lead is the same as losing them, and the Network was reported missing; v343 is the correction.
+
+**The cloud desk can register a party and approve a row.** Names & IDs mints a code from a name
+and a place on the laptop only, so `/desk` had no Add ID at all while its own form said to use
+it. The Enter view now carries **Add ID** (a code typed by hand, queued as `addid`, drafted into
+the roster, approved, folded; the name is typed into the directory at the laptop, later) and
+**Approve** (the same `/drafts` endpoints and decisions as the phone). Both are cloud-mode only;
+the laptop desk keeps Names & IDs and has no drafts table.
+
+**The phone has six tabs.** Today (the count when due, what needs doing, the position, **the next
+thirty days** per product off the desk's own forecast, alerts), Book (who owes what, with the age
+of each debt and what the ladder expects; the ledger folded), **People** (who is due on his own
+habit, every customer with the desk's tier and a statement on tap, the network, the customer
+rewards, the demand turned away, the map's heat), Price, Record (Trade, Amend, Stock, **Add ID**),
+Approve. It reads `people` and `forward` from `data.json` and computes nothing; the leak test
+reads those sections as it reads the rest. **What stays off the phone by policy:** cost, margin,
+profit, the P&L, sourcing and the reseller menu. Note that `/desk` serves every one of those at
+the same public URL, so the rule protects nothing while `/desk` is open; lifting it is one line
+in `phonePayloadLeaks()` and is the owner's call, not a default.
+
 **The claude.ai mirror is retired.** It was published from the master by Cowork
 (`update_artifact`) into `Artifacts\salt-command\index.html`, and it went when the master moved
 here on 20 Aug 2026, because Cowork is being retired for this project. `/desk` serves the same
@@ -391,7 +420,7 @@ Cow-Crm01 master (a Cowork/master session); once it lands, the sync above alread
 |---|---|
 | `src/worker.js` | The Worker. Cloud stand-in for `serve_desk.py`: `/queue`, `/vault` (ciphertext), `/bio` (dropped), static assets. KV-backed. |
 | `tools/seed-vault.mjs` | Encrypt the current names with your passphrase and push the ciphertext to KV. Never writes plaintext anywhere. |
-| `public/index.html` | **The phone app (v291). SOURCE, hand-written, edit it here.** 28 KB. Reads `data.json`, computes nothing, writes queue entries. Liquid Glass, Ledger tuning. |
+| `public/index.html` | **The phone app (v291, six tabs since v343). SOURCE, hand-written, edit it here.** 123 KB. Reads `data.json`, computes nothing, writes queue entries. Liquid Glass, Ledger tuning. |
 | `public/desk.html` | The built desk, served at `/desk`. **Derived from the master, do not hand-edit.** Committed on purpose. |
 | `public/data.json` | The phone payload: position, actions, party lists, the queue watermark and the build id. Written by the build via `payload.mjs`, which runs the master in jsdom. |
 | `public/sw.js` | Service worker. Shell network-first; the `/queue` API is never cached. |

@@ -340,7 +340,7 @@ section("The phone app, and the desk at /desk");
      desk to the root fails loudly, and 120 KB still catches that by a factor of seven and a
      half. Raised again at v324 when the Price tab landed: the board, the floors and the party
      list are rendering, not logic, but rendering is not free either. */
-  ok(app.length < 120 * 1024, `the app is small (${(app.length / 1024).toFixed(0)} KB, the desk is ~900 KB)`);
+  ok(app.length < 140 * 1024, `the app is small (${(app.length / 1024).toFixed(0)} KB, the desk is ~1,100 KB)`);   /* v343: the People tab and the forecast */
   ok(app.includes("fetch('data.json'"), "the app reads its figures from data.json");
   ok(app.includes("X-Salt-Key"), "the app sends the write key");
   ok(app.includes("queueCommitted"), "the app self-clears against the watermark");
@@ -1470,6 +1470,53 @@ section("Fold — an approved batch becomes records in the book (v340)");
     ok(payload.position.salt.onHand === +(from - 0.5 - 6.25).toFixed(2), "and the phone's shelf is the rolled figure");
     try { rmSync(tmpMaster); } catch (e) { }
   }
+}
+
+/* ---- 24. The parts are visible, and the phone carries the people (v343) ------------ */
+section("Views — every part is one tap away (v343)");
+{
+  const m = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+  ok(/const VIEW_PART=\{\}/.test(m) && /function railSubs\(\)/.test(m), "the master keeps the part each view shows and lists the parts under the rail");
+  ok(/class="vnav"/.test(m) && !/details\.vfold/.test(m), "a view names its parts on a strip; the buried folds are gone");
+  ok(/parts:\['approve','plans'\]/.test(m) && /function tabApprove\(\)/.test(m) && /async function apDecide\(/.test(m), "Enter carries Approve, reading and deciding the same drafts the phone does");
+  ok(/data-m="addid">Add ID/.test(m) && /id="wbPaneAddid"/.test(m) && /wbMode==='addid'/.test(m), "the cloud desk's Workbench can register a party by code");
+  ok(/mode:'addid',code:code,kind:kind,parent:parent/.test(m), "and queues it as the addid entry the drafter knows");
+  ok(/class="warnpill" style="display:block;margin:8px 0 0/.test(m), "a draft's flags are pills the notes toggle cannot hide");
+  /* every lead and every part has a question on the strip */
+  const q = m.match(/const PART_Q=\{([\s\S]*?)\};/)[1];
+  for (const t of ["today","overview","forward","receivables","financials","inventory","sourcing","pricing","concentration","network","map","ledger","analysis","add","approve","plans"]) {
+    ok(new RegExp("(^|\\s)" + t + ":'").test(q), `the strip can say what ${t} is for`);
+  }
+}
+section("Payload — the people, the next thirty days and the age of a debt (v343)");
+{
+  const f = join(REPO, "public", "data.json");
+  if (!existsSync(f)) ok(true, "no data.json on this machine, so the check is skipped");
+  else {
+    const d = JSON.parse(readFileSync(f, "utf8"));
+    ok(d.people && Array.isArray(d.people.approach) && Array.isArray(d.people.network) && Array.isArray(d.people.rewards) && Array.isArray(d.people.lost) && d.people.map && Array.isArray(d.people.map.places),
+       "the payload carries who is due, the network, the rewards, the demand turned away and the map");
+    ok(d.forward && d.forward.salt && Array.isArray(d.forward.salt.walk) && d.forward.salt.walk.length === 31 && d.forward.oil && d.forward.oil.walk.length === 31,
+       "and the next thirty days per product, day by day");
+    ok(d.customers.every((c) => "tier" in c && "hi" in c && "days" in c), "every customer carries the desk's tier, its priority flag and the days since the last order");
+    const rec = d.open.filter((o) => o.st === "dueMoney");
+    ok(rec.length === 0 || rec.every((o) => typeof o.age === "number" && typeof o.exp === "number" && o.exp <= o.oweRM + 1e-9),
+       `every receivable says how old it is and what the ladder expects of it (${rec.length})`);
+    /* NO COST, MARGIN OR PROFIT IN ANY OF IT: the shape check, beside the leak gate's money check */
+    const banned = ["cost", "margin", "profit", "pct", "cogs", "eff", "repl"];
+    const keys = new Set();
+    const walk = (v) => { if (Array.isArray(v)) v.forEach(walk); else if (v && typeof v === "object") for (const k of Object.keys(v)) { keys.add(k); walk(v[k]); } };
+    walk(d.people); walk(d.forward);
+    const bad = [...keys].filter((k) => banned.some((b) => k.toLowerCase().includes(b)));
+    ok(bad.length === 0, bad.length ? `a people or forward field carries ${bad.join(", ")}` : "no people or forward field carries a cost, a margin or a profit");
+    ok(JSON.stringify(d.people.map).indexOf("lat") < 0, "the map ships normalised points, not coordinates the phone would have to project");
+  }
+  const app = readFileSync(join(REPO, "public", "index.html"), "utf8");
+  ok(/id="p-people"/.test(app) && /\['tab-people','p-people','Customers'\]/.test(app), "the phone has a People tab");
+  ok(/function drawFwd\(\)/.test(app) && /id="fwd"/.test(app), "Today carries the next thirty days");
+  ok(/\[hidden\]\{display:none!important\}/.test(app), "hidden means hidden on the phone: the Approve badge read 0 on every bar since v302");
+  ok(/data-m="party" aria-pressed="false">Add ID</.test(app) && /party:\['gate'/.test(app), "the phone's registration mode is called Add ID and says it goes through the gate");
+  ok(!/show\(3\)/.test(app) && /show\('p-add'\)/.test(app), "a tab is addressed by its id, not its position");
 }
 
 /* ---- done ----------------------------------------------------------------------- */

@@ -47,6 +47,7 @@
   font-synthesis:none;
 }
 *{box-sizing:border-box}
+[hidden]{display:none!important}
 html,body{margin:0;padding:0}
 body{
   color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.55;
@@ -86,7 +87,7 @@ section.glass{padding:17px 17px 19px;margin:0 0 14px}
   border:1px solid var(--brd-2);border-radius:var(--pill);padding:4px;
   display:flex;gap:3px}
 .tab{flex:1;border:1px solid transparent;border-radius:var(--pill);
-  padding:8px 4px;font:inherit;font-size:13px;font-weight:600;color:var(--ink-2);
+  padding:8px 2px;font:inherit;font-size:12.5px;font-weight:600;color:var(--ink-2);white-space:nowrap;
   background:none;cursor:pointer;min-height:var(--tap)}
 .tab[aria-selected="true"]{background:var(--glass-2);border-color:var(--brd-2);color:var(--ink)}
 
@@ -258,6 +259,31 @@ h2{font-size:17px;font-weight:600;letter-spacing:-.2px;margin:0 0 12px}
   transform:rotate(-45deg);transition:transform var(--t)}
 .fold[open] summary::before{transform:rotate(45deg)}
 .fold .in{padding:2px 10px 8px}
+/* ---- v343: the next thirty days, the people and the map ------------------------------- */
+.fw{background:rgba(255,255,255,.05);border:1px solid var(--brd);border-radius:var(--r-sm);padding:12px 14px;margin:0 0 10px}
+.fw-t{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.fw-p{font-size:14px;font-weight:700}
+.fw-d{font-size:12.5px;font-weight:700;color:var(--warn);white-space:nowrap}
+.fw-d.good{color:var(--good)} .fw-d.bad{color:var(--bad)}
+.fw svg{display:block;width:100%;height:54px;margin:8px 0 4px}
+.fw-n{font-size:12.5px;color:var(--ink-2);margin:4px 0 0}
+.fw-n b{color:var(--ink);font-weight:600}
+.fw-l{display:flex;flex-direction:column;gap:4px;margin:8px 0 0;font-size:12.5px}
+.fw-l span{display:flex;justify-content:space-between;gap:10px;color:var(--ink-2)}
+.fw-l .num{color:var(--ink);font-weight:600}
+.tier{font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;padding:2px 7px;border-radius:var(--pill);
+  background:rgba(255,255,255,.08);color:var(--ink-2);vertical-align:1px;margin-left:6px}
+.tier.Loyal{background:rgba(232,198,107,.16);color:var(--lead)} .tier.Regular{background:rgba(127,215,232,.14);color:var(--counter)}
+.tier.New{background:rgba(110,231,168,.14);color:var(--good)} .tier.Dormant{background:rgba(255,122,138,.14);color:var(--bad)}
+.pty.due{background:rgba(255,207,122,.09);border-color:rgba(255,207,122,.28)} .pty.due::before{background:var(--warn)}
+.pty.tap{cursor:pointer} .pty .stmt{margin:10px 0 0;display:none} .pty.open .stmt{display:block}
+.pty .stmt .led{margin:0 0 6px}
+.heat{position:relative;width:100%;aspect-ratio:820/520;border-radius:var(--r-sm);background:rgba(0,0,0,.28);border:1px solid var(--brd);overflow:hidden}
+.heat svg{display:block;width:100%;height:100%}
+.gaz{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:10px 0 0;font-size:12px}
+.gaz span{display:flex;justify-content:space-between;gap:6px;background:rgba(255,255,255,.04);border:1px solid var(--brd);border-radius:9px;padding:5px 8px}
+.gaz .mono{color:var(--ink-2)}
+@media (max-width:400px){.gaz{grid-template-columns:repeat(2,1fr)}}
 /* the party card */
 .pty{background:rgba(255,255,255,.05);border:1px solid var(--brd);border-radius:var(--r-sm);
   padding:11px 13px;margin:0 0 7px;position:relative;overflow:hidden}
@@ -359,6 +385,7 @@ option:checked{background-color:var(--menu-2);font-weight:600}
   <nav class="bar" aria-label="Sections"><div class="bar-in" role="tablist">
     <button class="tab" role="tab" id="tab-today" aria-controls="p-today" aria-selected="true">Today</button>
     <button class="tab" role="tab" id="tab-book" aria-controls="p-book" aria-selected="false">Book</button>
+    <button class="tab" role="tab" id="tab-people" aria-controls="p-people" aria-selected="false">People</button>
     <button class="tab" role="tab" id="tab-price" aria-controls="p-price" aria-selected="false">Price</button>
     <button class="tab" role="tab" id="tab-add" aria-controls="p-add" aria-selected="false">Record</button>
     <button class="tab" role="tab" id="tab-appr" aria-controls="p-appr" aria-selected="false">Approve <span class="cnt" id="apprN" hidden>0</span></button>
@@ -381,6 +408,8 @@ option:checked{background-color:var(--menu-2);font-weight:600}
       <p class="lbl" style="margin-top:20px">Where the book stands</p>
       <div id="pos"></div>
       <p class="basis" id="basis"></p>
+      <p class="lbl" style="margin-top:20px">The next thirty days</p>
+      <div id="fwd"></div>
       <p class="lbl" style="margin-top:20px">Alerts</p>
       <p class="stand" id="alertWhy" style="margin-bottom:10px">Checking whether this device can take them.</p>
       <button class="btn" id="alertBtn" hidden>Turn alerts on</button>
@@ -413,6 +442,23 @@ option:checked{background-color:var(--menu-2);font-weight:600}
       <div id="ledbox"></div>
       <button class="btn more" id="ledmore" hidden>Show more</button>
       </div></details>
+    </section>
+
+    <!-- ===================== PEOPLE (v343) ============== -->
+    <section class="glass" id="p-people" role="tabpanel" aria-labelledby="tab-people" hidden>
+      <p class="lbl">Due on their own habit</p>
+      <p class="basis" style="margin:0 0 10px">Each buyer against his own cadence, from the desk. A message, not a decision.</p>
+      <div id="approach"></div>
+      <details class="fold" id="custFold"><summary id="custFoldS">Every customer</summary><div class="in">
+        <div class="field" style="margin:8px 0 10px"><label for="pp-sort" class="sr-only">Order</label>
+          <select id="pp-sort"><option value="last">Most recent first</option><option value="rev">Biggest first</option><option value="owed">Owing first</option><option value="id">By code</option></select></div>
+        <p class="basis" style="margin:0 0 8px">Tap a customer for their statement: every row of theirs on the book.</p>
+        <div id="custs"></div>
+      </div></details>
+      <details class="fold" id="netFold"><summary id="netFoldS">Network</summary><div class="in"><div id="netbox"></div></div></details>
+      <details class="fold" id="rewFold"><summary id="rewFoldS">Customer rewards</summary><div class="in"><div id="rew"></div></div></details>
+      <details class="fold" id="lostFold"><summary id="lostFoldS">Demand turned away</summary><div class="in"><div id="lost"></div></div></details>
+      <details class="fold" id="mapFold"><summary id="mapFoldS">Where the book is</summary><div class="in"><div id="map"></div></div></details>
     </section>
 
     <!-- ===================== PRICE ===================== -->
@@ -454,7 +500,7 @@ option:checked{background-color:var(--menu-2);font-weight:600}
           <button type="button" data-m="trade" aria-pressed="true">Trade</button>
           <button type="button" data-m="amend" aria-pressed="false">Amend</button>
           <button type="button" data-m="stock" aria-pressed="false">Stock</button>
-          <button type="button" data-m="party" aria-pressed="false">Party</button>
+          <button type="button" data-m="party" aria-pressed="false">Add ID</button>
         </div>
       </div>
       <div class="road" id="road"></div>
@@ -774,6 +820,8 @@ function ledCard(r){
   bits.push(esc(n2(r.q))+' unit'+(r.pr?' '+esc(r.pr):''));
   if(r.oweRM)bits.push(esc(rm(r.oweRM))+(buy?' still to pay':' outstanding'));
   if(r.oweKg)bits.push(esc(n2(r.oweKg))+' unit'+(buy?' still to arrive':' to hand over'));
+  /* v343: how old the debt is and what the desk's ladder says it is worth, both read off the row */
+  if(r.age!=null&&r.exp!=null)bits.push('<span style="color:var(--warn)">'+esc(r.age)+(r.age===1?' day':' days')+' old &middot; expect '+esc(rm(r.exp))+'</span>');
   return '<div class="led '+esc(st)+(st==='canc'?' canc':'')+'">'
     +'<div class="led-t"><span class="led-p">'+(buy?'Bought from ':'Sold to ')+esc(r.p)+'</span>'
     +'<span class="led-rm">'+esc(rm(r.t))+'</span></div>'
@@ -898,7 +946,7 @@ function prToRecord(q,ask){
   if(dir!=='SELL')$('d-sell').click();
   if(D&&D.board&&D.board[prProd()]){ prod=prProd(); drawProds(); }
   $('f-qty').value=String(q); $('f-total').value=String(ask);
-  preview(); show(3); window.scrollTo(0,0);
+  preview(); show('p-add'); window.scrollTo(0,0);
 }
 /* ---- rendering: who pays what -------------------------------------------- */
 function prCard(c){
@@ -1031,7 +1079,7 @@ var ROADS={
   trade:['gate','<b>This goes through the gate.</b> The drafter turns it into a proposed row with its cost and margin, and it comes back to the Approve tab for a tap. Nothing reaches the ledger until you decide.'],
   amend:['person','<b>This is left for a person.</b> The drafter refuses amendments by design, because which row it amends is a judgement. It is queued, shown under Approve as already in hand, and folded at the laptop on the daily run.'],
   stock:['person','<b>This is left for a person.</b> A count, a loss and a lost sale move stock without being trades, so the drafter refuses them. It is queued and folded at the laptop. A count always wins over the ledger when it is.'],
-  party:['person','<b>This is left for a person.</b> Registering a party is not a trade and has no row to draft. The code goes up now; the name and the place are typed into the directory at the laptop and never travel.']
+  party:['gate','<b>This goes through the gate.</b> The drafter writes the registration up, checks the code is not already on the roster, and it comes back to the Approve tab for a tap. The name and the place are typed into the directory at the laptop and never travel.']
 };
 function drawRoad(){
   var r=ROADS[MODE]||ROADS.trade;
@@ -1383,11 +1431,157 @@ function record(){
   });
 }
 
+/* ---- WATCH: the next thirty days (v343) ----------------------------------
+   Read off the desk's forecast, per product: the day the shelf runs dry at the rate it has
+   actually been shipping, what lands and when, what is expected in and what is due out. The
+   line is the desk's day-by-day walk; this draws it and computes nothing. */
+function dayWord(d){ return d===0?'today':d===1?'tomorrow':'in '+d+' days'; }
+function spark(walk,dry){
+  if(!walk||walk.length<2)return '';
+  var W=300,H=54,max=Math.max.apply(null,walk.map(function(r){return r.stock;}))||1;
+  var pts=walk.map(function(r,i){ return (i/(walk.length-1)*W).toFixed(1)+','+(H-4-(r.stock/max)*(H-10)).toFixed(1); });
+  var x=(dry==null||dry>=walk.length)?null:(dry/(walk.length-1)*W).toFixed(1);
+  return '<svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" aria-hidden="true">'
+    +'<polyline points="'+pts.join(' ')+'" fill="none" stroke="var(--counter)" stroke-width="2" vector-effect="non-scaling-stroke"/>'
+    +(x!=null?'<line x1="'+x+'" y1="0" x2="'+x+'" y2="'+H+'" stroke="var(--bad)" stroke-width="1" stroke-dasharray="3 3" vector-effect="non-scaling-stroke"/>':'')
+    +'</svg>';
+}
+function drawFwd(){
+  var box=$('fwd'); if(!box)return;
+  if(!D||!D.forward){ box.innerHTML='<p class="stand">Loading.</p>'; return; }
+  box.innerHTML=(D.products||[]).map(function(p){
+    var f=D.forward[p.id]; if(!f||f.error)return '';
+    var dryCls=f.dry==null?'good':f.dry<=3?'bad':f.dry<=10?'':'good';
+    var dryTxt=f.dry==null?'lasts the month':'runs dry '+dayWord(f.dry);
+    var note=f.rate>0?'At <b>'+esc(n2(f.rate))+' unit/day</b>, the rate actually shipped'+(f.promised>0?', after the <b>'+esc(n2(f.promised))+' unit</b> promised out':'')+'.':'Nothing has shipped recently, so there is no rate to run the shelf down at.';
+    if(f.short>0)note+=' <b style="color:var(--bad)">Short by '+esc(n2(f.short))+' unit</b> on what is promised.';
+    var lines=[];
+    (f.lots||[]).forEach(function(l){ lines.push('<span><span>'+esc(n2(l.q))+' unit from '+esc(l.who)+', '+esc(l.what)+'</span><span class="num">'+dayWord(l.day)+(l.rm>0?' &middot; '+esc(rm(l.rm))+' to pay':'')+'</span></span>'); });
+    (f.cashIn||[]).forEach(function(c){ lines.push('<span><span>'+esc(rm(c.gross))+' from '+esc(c.who)+(c.what==='recoverable'?', recoverable':'')+'</span><span class="num">expect '+esc(rm(c.rm))+' '+dayWord(c.day)+'</span></span>'); });
+    (f.cashOut||[]).forEach(function(c){ lines.push('<span><span>'+esc(rm(c.rm))+' to '+esc(c.who)+', '+esc(c.what)+'</span><span class="num">'+dayWord(c.day)+'</span></span>'); });
+    if(f.cashKnown&&f.cashLow)lines.push('<span><span>Cash low point</span><span class="num">'+esc(rm(f.cashLow.rm))+' '+dayWord(f.cashLow.day)+'</span></span>');
+    return '<div class="fw"><div class="fw-t"><span class="fw-p">'+esc(p.name)+'</span><span class="fw-d '+dryCls+'">'+esc(dryTxt)+'</span></div>'
+      +spark(f.walk,f.dry)
+      +'<p class="fw-n">'+note+'</p>'
+      +(lines.length?'<div class="fw-l">'+lines.join('')+'</div>':'')
+      +'</div>';
+  }).join('');
+}
+/* ---- PEOPLE (v343) ---------------------------------------------------------
+   Who is due on his own buying habit, every customer with the desk's tier and a statement on
+   tap, the associates and what each has made and earned, the customer rewards, the demand
+   turned away and the map's heat. Every figure is the desk's; nothing is worked out here. */
+function custCard(c,open){
+  var bits=[esc(c.n)+(c.n===1?' order':' orders'), esc(n2(c.kg))+' unit', esc(rm(c.rev))+' in all'];
+  if(c.owed)bits.push('<b style="color:var(--warn)">'+esc(rm(c.owed))+' owed</b>');
+  var rows=(D.ledger||[]).filter(function(r){ return r.p===c.id; });
+  return '<div class="pty tap'+(c.owed?' owes':'')+(open?' open':'')+'" data-id="'+esc(c.id)+'">'
+    +'<div class="pty-t"><span class="pty-p">'+esc(c.id)+(c.tier?'<span class="tier '+esc(c.tier)+'">'+esc(c.tier)+'</span>':'')+(c.hi?'<span class="tier" title="a priority account on the desk">&#9733;</span>':'')+'</span>'
+    +'<span class="pty-r">'+(c.rate==null?'&mdash;':esc(rm(c.rate))+'/unit')+'</span></div>'
+    +'<p class="pty-n"><span class="pty-d">'+(c.days==null?'never':c.days===0?'today':c.days+(c.days===1?' day ago':' days ago'))+'</span>'
+    +'<span>'+bits.join(' &middot; ')+'</span></p>'
+    +'<div class="stmt">'+(rows.length?rows.map(ledCard).join(''):'<p class="basis">No row on the book yet.</p>')+'</div></div>';
+}
+var CUST_OPEN={};
+function drawCustList(){
+  var box=$('custs'), sum=$('custFoldS'); if(!box)return;
+  var list=((D&&D.customers)||[]).slice(), k=($('pp-sort')||{}).value||'last';
+  list.sort(function(a,b){
+    if(k==='rev')return b.rev-a.rev;
+    if(k==='owed')return (b.owed-a.owed)||(b.rev-a.rev);
+    if(k==='id')return a.id<b.id?-1:a.id>b.id?1:0;
+    return (a.last===b.last)?0:(a.last<b.last?1:-1);
+  });
+  sum.textContent='Every customer \u00b7 '+list.length;
+  box.innerHTML=list.map(function(c){ return custCard(c,!!CUST_OPEN[c.id]); }).join('');
+  Array.prototype.forEach.call(box.querySelectorAll('.pty.tap'),function(el){
+    el.addEventListener('click',function(e){
+      if(e.target.closest('.stmt'))return;
+      var id=el.getAttribute('data-id'); CUST_OPEN[id]=!CUST_OPEN[id]; el.classList.toggle('open',!!CUST_OPEN[id]);
+    });
+  });
+}
+function drawApproach(){
+  var box=$('approach'); if(!box)return;
+  var a=(D&&D.people&&D.people.approach)||[];
+  var due=a.filter(function(r){ return r.due!=null&&r.due>0; });
+  if(!a.length){ box.innerHTML='<div class="empty">No buyer has two priced orders yet, so there is no habit to read.</div>'; return; }
+  if(!due.length){ box.innerHTML='<div class="empty">Everyone is inside their own cadence.</div>'; return; }
+  box.innerHTML=due.map(function(r){
+    return '<div class="pty due"><div class="pty-t"><span class="pty-p">'+esc(r.id)+'</span>'
+      +'<span class="pty-r" style="color:var(--warn)">'+esc(r.due)+(r.due===1?' day late':' days late')+'</span></div>'
+      +'<p class="pty-n"><span class="pty-d">'+(r.every===1?'every day':'every '+esc(r.every)+' days')+' &middot; last '+esc(r.since)+' days ago</span>'
+      +'<span>usually '+esc(n2(r.q))+' unit'+(r.paid!=null?' at '+esc(rm(r.paid))+'/unit':'')+(r.ask!=null?' &middot; board asks '+esc(rm(r.ask)):'')
+      +(r.owed?' &middot; <b style="color:var(--warn)">owes '+esc(rm(r.owed))+', chase first</b>':'')+'</span></p></div>';
+  }).join('');
+}
+function drawNet(){
+  var box=$('netbox'), sum=$('netFoldS'); if(!box)return;
+  var n=(D&&D.people&&D.people.network)||[];
+  sum.textContent='Network \u00b7 '+n.length+(n.length===1?' associate':' associates');
+  if(!n.length){ box.innerHTML='<div class="empty">No associate on the book.</div>'; return; }
+  box.innerHTML=n.map(function(r){
+    var title=r.kind==='R0'?'Co-founder':'Associate #'+(r.rank||'');
+    var free=Math.max(0,Math.round((r.earned-r.applied)*100)/100);
+    var bits=[];
+    if(r.bought)bits.push('bought '+esc(rm(r.bought)));
+    if(r.soldFor)bits.push('sold for you '+esc(rm(r.soldFor)));
+    if(r.brought)bits.push('brought you '+esc(rm(r.brought))+' through '+r.referred+(r.referred===1?' referral':' referrals'));
+    var rew=(r.earned||r.applied)?('earned '+esc(n2(r.earned))+' unit, taken '+esc(n2(r.applied))+(free>0?', <b style="color:var(--lead)">'+esc(n2(free))+' unit free to claim</b>':'')):'nothing earned yet';
+    return '<div class="pty"><div class="pty-t"><span class="pty-p">'+esc(r.id)+(r.departed?'<span class="tier Dormant">departed</span>':'')+'</span>'
+      +'<span class="pty-r">'+esc(rm(r.made))+'</span></div>'
+      +'<p class="pty-n"><span class="pty-d">'+esc(title)+(r.stars?' &middot; '+'\u2605'.repeat(r.stars):'')+'</span><span>'+bits.join(' &middot; ')+'</span></p>'
+      +'<p class="pty-n"><span>'+rew+' &middot; '+esc(rm(r.toNext))+' more to the next</span></p></div>';
+  }).join('');
+}
+function drawRewards(){
+  var box=$('rew'), sum=$('rewFoldS'); if(!box)return;
+  var r=(D&&D.people&&D.people.rewards)||[];
+  var ready=r.filter(function(x){ return x.earned>0.009; });
+  sum.textContent='Customer rewards \u00b7 '+(ready.length?ready.length+' to honour':'none to honour');
+  if(!r.length){ box.innerHTML='<div class="empty">Nothing counted yet. The scheme runs from the day it was adopted.</div>'; return; }
+  box.innerHTML=r.map(function(x){
+    return '<div class="pty"><div class="pty-t"><span class="pty-p">'+esc(x.id)+'</span>'
+      +'<span class="pty-r" style="color:'+(x.earned>0.009?'var(--lead)':'var(--ink-3)')+'">'+(x.earned>0.009?esc(n2(x.earned))+' unit earned':'&mdash;')+'</span></div>'
+      +'<p class="pty-n"><span class="pty-d">'+esc(x.band)+' band</span><span>bought '+esc(rm(x.bought))+' &middot; '+esc(rm(x.toNext))+' to the next unit</span></p></div>';
+  }).join('');
+}
+function drawLost(){
+  var box=$('lost'), sum=$('lostFoldS'); if(!box)return;
+  var l=(D&&D.people&&D.people.lost)||[];
+  sum.textContent='Demand turned away \u00b7 '+(l.length||'none');
+  if(!l.length){ box.innerHTML='<div class="empty">Nothing recorded. Log a refused order under Record, Stock, so an empty shelf does not read like no demand.</div>'; return; }
+  box.innerHTML=l.map(function(x){
+    return '<div class="led"><div class="led-t"><span class="led-p">'+esc(x.p||'walk-up')+'</span><span class="led-rm">'+(x.rm?esc(rm(x.rm)):'&mdash;')+'</span></div>'
+      +'<p class="led-n"><span class="led-d">'+esc(x.d)+'</span><span>'+esc(n2(x.q))+' unit '+esc(x.pr)+' &middot; '+esc(x.why)+'</span></p></div>';
+  }).join('');
+}
+function drawMap(){
+  var box=$('map'), sum=$('mapFoldS'); if(!box)return;
+  var m=(D&&D.people&&D.people.map)||{places:[]};
+  sum.textContent='Where the book is \u00b7 '+m.places.length+(m.places.length===1?' place':' places');
+  if(!m.places.length){ box.innerHTML='<div class="empty">No party can be placed yet.</div>'; return; }
+  var W=820,H=520,C=['#5ad1c8','#e8c66b','#ff7a5a'];
+  var band=function(f){ return f<0.34?0:f<0.67?1:2; };
+  var defs=C.map(function(c,i){ return '<radialGradient id="ph'+i+'" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="'+c+'" stop-opacity=".55"/><stop offset="55%" stop-color="'+c+'" stop-opacity=".18"/><stop offset="100%" stop-color="'+c+'" stop-opacity="0"/></radialGradient>'; }).join('');
+  var blobs=m.places.slice().sort(function(a,b){ return a.rm-b.rm; }).map(function(h){
+    var r=30+Math.sqrt(Math.max(0,h.share))*78;
+    return '<circle cx="'+(h.x*W).toFixed(1)+'" cy="'+(h.y*H).toFixed(1)+'" r="'+r.toFixed(1)+'" fill="url(#ph'+band(h.share)+')" style="mix-blend-mode:screen"/>';
+  }).join('');
+  var gaz=m.places.slice().sort(function(a,b){ return b.rm-a.rm; }).map(function(h){
+    return '<span><span class="mono">'+esc(h.t)+' &middot; '+h.n+'</span><span class="num">'+esc(rm(h.rm))+'</span></span>';
+  }).join('');
+  box.innerHTML='<div class="heat"><svg viewBox="0 0 '+W+' '+H+'" aria-label="Where the book is concentrated"><defs>'+defs+'</defs>'+blobs+'</svg></div>'
+    +'<p class="basis" style="margin:8px 0 0">Heat by locality, unlabelled on purpose; each suffix is already in the codes. '+(m.spanKm?esc(m.spanKm)+' km across. ':'')+(m.unplaced?m.unplaced+' without a place. ':'')+(m.far?m.far+' beyond the frame.':'')+'</p>'
+    +'<div class="gaz">'+gaz+'</div>';
+}
+function drawPeople(){ drawApproach(); drawCustList(); drawNet(); drawRewards(); drawLost(); drawMap(); }
+
 /* ---- data ---------------------------------------------------------------- */
 function paint(){
-  drawCounts(); drawActs(); drawPos(); drawProds(); drawParties();
+  drawCounts(); drawActs(); drawPos(); drawFwd(); drawProds(); drawParties();
   drawLedFilters(); drawOwes(); drawLedger(); drawOpens(); drawHeld();
-  drawPrControls(); drawPrice(); drawCustomers(); preview();
+  drawPrControls(); drawPrice(); drawCustomers(); drawPeople(); preview();
   var a=(D&&D.actions)||[];
   var now=a.filter(function(x){return x.sev==='now';}).length;
   var co=(D&&D.countedOn)||{};
@@ -1760,15 +1954,16 @@ async function toggleAlerts(){
 
 /* ---- tabs ---------------------------------------------------------------- */
 var TABS=[['tab-today','p-today','Today'],['tab-book','p-book','The book'],
-  ['tab-price','p-price','What to charge'],
+  ['tab-people','p-people','Customers'],['tab-price','p-price','What to charge'],
   ['tab-add','p-add','Record'],['tab-appr','p-appr','Approve']];
 function show(i){
+  if(typeof i==='string'){ i=TABS.findIndex(function(t){ return t[1]===i; }); if(i<0)i=0; }
   TABS.forEach(function(t,k){
     $(t[0]).setAttribute('aria-selected',String(k===i));
     $(t[1]).hidden=(k!==i);
   });
   $('head').textContent=TABS[i][2];
-  try{ localStorage.setItem('saltAppTab',String(i)); }catch(e){}
+  try{ localStorage.setItem('saltAppTab',TABS[i][1]); }catch(e){}
 }
 TABS.forEach(function(t,i){ $(t[0]).addEventListener('click',function(){ show(i); }); });
 
@@ -1807,6 +2002,7 @@ $('p-parent').addEventListener('change',preview);
   $(id).addEventListener('change',function(){ LEDN=25; drawLedger(); }); });
 $('ledmore').addEventListener('click',function(){ LEDN+=50; drawLedger(); });
 $('pr-cust').addEventListener('change',drawCustomers);
+$('pp-sort').addEventListener('change',drawCustList);
 $('rec').addEventListener('click',record);
 $('alertBtn').addEventListener('click',toggleAlerts);
 $('alertTest').addEventListener('click',testAlert);
@@ -1818,7 +2014,7 @@ document.addEventListener('visibilitychange',function(){ if(document.visibilityS
 ['f-date','a-date','s-date'].forEach(function(id){ $(id).value=today(); });
 loadHeld();
 drawModes(); drawSKind(); drawAKind(); drawPKind();
-try{ var t=parseInt(localStorage.getItem('saltAppTab')||'0',10); show(isNaN(t)?0:t); }catch(e){ show(0); }
+try{ var t=localStorage.getItem('saltAppTab')||'p-today'; show(/^p-/.test(t)?t:0); }catch(e){ show(0); }
 loadData().then(function(){ if(held.length)push().then(paint); });
 loadDrafts();
 alertsState();
