@@ -89,6 +89,13 @@ export function plan(book, staged, notes) {
       const arr = dir === "BUY" ? book.purchases : book.sales;
       const hits = arr.filter((x) => E.ovKey(x) === it.amends);
       if (hits.length !== 1) { out.refused.push({ id: it.id, why: hits.length ? `key ${it.amends} matches ${hits.length} rows` : `no row on the book matches ${it.amends}` }); continue; }
+      /* v347: A CANCELLED ORDER IS NOT A TARGET. The match was by key alone, so a fulfilment
+         queued against an order that has since been cancelled would fold straight onto it and
+         quietly bring it back: cash, units and a date on a row the book says did not happen.
+         Nothing has hit it yet, but v345 cancelled two live pending orders, so the road is
+         open. Reviving a cancelled order is a judgement in any case, which is the same test
+         every other amendment here is measured by. */
+      if (hits[0].cancelled) { out.refused.push({ id: it.id, why: `the row at ${it.amends} is cancelled; reviving it is a judgement, left for a person` }); continue; }
       const pay = (it.entry && it.entry.payload) || {};
       entry.target = hits[0]; entry.dir = dir; entry.pay = { date: pay.date || r.date || TODAY, kind: it.amendKind, cash: +pay.cash || 0, kg: +pay.kg || 0 };
       entry.does.push(`${it.amendKind.toLowerCase()} ${entry.pay.cash ? "RM" + entry.pay.cash + " " : ""}${entry.pay.kg ? entry.pay.kg + " unit " : ""}on ${entry.pay.date} against ${dir === "BUY" ? "lot" : "order"} ${it.amends}`);

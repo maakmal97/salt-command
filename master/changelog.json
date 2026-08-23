@@ -1,5 +1,18 @@
 [
  {
+  "v": "v347",
+  "d": "24 Aug 2026",
+  "t": "THE MAP READS THE PLACE OUT OF THE CODE, AND GETS A GRATICULE",
+  "n": [
+   "<b>A PARTY FELL OFF THE MAP THE MOMENT IT WAS ADDED, AND THE REASON PRINTED AGAINST IT WAS WRONG.</b> locOf read one hand-kept list, LOCS, and nothing else, so any party registered since that list was last typed was reported as having <i>no location suffix</i> against a code that plainly ends in one. CK4-SEN, folded onto the roster at v346, did exactly that. v237 put the locality INSIDE the code on purpose, so the desk now reads it. LOCS stays as the override for the party whose locality is not what its suffix says, CH4-KS at KLS, and it still wins.",
+   "<b>NILAI JOINS THE GAZETTEER AND CY2-NIL IS SITED AT LAST.</b> The suffix NIL was never a mystery, it was simply not in PLACES, so a party the desk could place was reported as unknown. At 2.81N 101.80E it falls outside the Klang Valley frame, so it is listed rather than drawn: 39km SSE of the frame centre, beside CN5-TAI at 217km NNW and CM6-HCM at 1,017km NNE.",
+   "<b>THIRTY-ONE PARTIES ARE NOW DRAWN AND THREE MORE SITED, AGAINST THIRTY AND TWO.</b> Five remain off the map and none of them is a mystery: three are reseller trading accounts, which are the same people as their parent codes and would draw one man twice, and two carry TBC, which is an admission rather than a location. Those two are the only genuine gaps left on the book.",
+   "<b>THE GRID WAS NOT A GRATICULE AND NOW IT IS.</b> It drew three lines at a quarter, a half and three quarters of the canvas, which correspond to no coordinate at all: the look of a graticule with none of the information, in a colour barely separable from the background, so the page read as blobs floating in nothing. The lines now sit at round latitudes and longitudes 0.05&deg; apart and are labelled, and the frame has a border. <b>THERE IS STILL NO COASTLINE.</b> This file loads nothing at runtime, so there is no basemap to be had, and a shoreline drawn from memory would be a fabricated fact on a page whose whole claim is that its figures are checked. A graticule is exact.",
+   "<b>A CANCELLED ORDER IS NO LONGER A TARGET FOR AN AMENDMENT.</b> tools/fold.mjs matched the row an amendment names by key alone, so a fulfilment queued against an order that had since been cancelled would have folded straight onto it: cash, units and a date written on a row the book says did not happen. Nothing has hit it, but v345 cancelled two live pending orders, so the road was open. It is refused now and left for a person, which is the test every other amendment is measured by.",
+   "<b>THE FOOTER STOPPED COUNTING ON ITS FINGERS.</b> Its copy hard-coded <i>two resellers, two buckets, two TBC</i> from the day it was written and read <i>2 of these is a genuine gap</i> in the plural. It now counts what is there and says which of the two roads fixes it: a real place goes into PLACES, a placeholder has to be learnt first."
+  ]
+ },
+ {
   "v": "v346",
   "d": "24 Aug 2026",
   "t": "A THIRD ZERO ON THE OIL SHELF, AND A CUSTOMER ON THE ROSTER",

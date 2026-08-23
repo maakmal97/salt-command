@@ -1425,9 +1425,12 @@ section("Fold — an approved batch becomes records in the book (v340)");
   const { plan, apply } = await import("../tools/fold.mjs");
   const book = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
   const master = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
-  const pending = book.sales.find((r) => !r.date && r.customer === "CS6-PER" && r.total === 350);
-  ok(!!pending, "the book carries the CS6-PER pending order the test amends");
-  const key = pending ? `CS6-PER|undefined|350` : null;
+  /* v347: CJ4-BJ, NOT CS6-PER. v345 cancelled the CS6-PER pending order, and the fold now
+     refuses a cancelled target outright, so the fixture had to point at a live one. The
+     cancelled row gets its own case below: an amendment may not revive it. */
+  const pending = book.sales.find((r) => !r.date && !r.cancelled && r.customer === "CJ4-BJ" && r.total === 450);
+  ok(!!pending, "the book carries the CJ4-BJ pending order the test amends");
+  const key = pending ? `CJ4-BJ|undefined|450` : null;
   /* THE FIXTURE IDS ARE BUILT FROM THE BOOK'S OWN WATERMARK AND NOT WRITTEN DOWN, because
      apply() only moves QUEUE_COMMITTED when the newest id folded is newer than the one the
      book already carries. Hard-coded 2026-08-23T01:xx ids outranked the watermark when this
@@ -1441,8 +1444,8 @@ section("Fold — an approved batch becomes records in the book (v340)");
       row: { customer: "CA4-DAM", qty: 0.5, total: 50, cost: 44, cash: 50, date: "2026-08-23", deliveredQty: 0.5, deliveredOn: "2026-08-23", paidOn: "2026-08-23" },
       entry: { at: ID("01:00"), payload: { mode: "new", direction: "SELL" } } },
     { id: ID("01:05"), collection: "sales", amends: key, amendKind: "Fulfilment",
-      row: { customer: "CS6-PER", qty: 6.25, total: 350, cash: 0, date: null },
-      entry: { at: ID("01:05"), payload: { mode: "amend", direction: "SELL", orderKey: key, kind: "Fulfilment", date: "2026-08-23", cash: 350, kg: 6.25 } } },
+      row: { customer: "CJ4-BJ", qty: 6.25, total: 450, cash: 0, date: null },
+      entry: { at: ID("01:05"), payload: { mode: "amend", direction: "SELL", orderKey: key, kind: "Fulfilment", date: "2026-08-23", cash: 450, kg: 6.25 } } },
     { id: ID("01:10"), collection: "count", amends: null, amendKind: null,
       row: { product: "oil", qty: 3, date: "2026-08-23", was: 0, drift: 3 }, entry: { at: ID("01:10"), payload: { mode: "count" } } },
     { id: ID("01:15"), collection: "roster", amends: null, amendKind: null,
@@ -1450,6 +1453,18 @@ section("Fold — an approved batch becomes records in the book (v340)");
     { id: ID("01:20"), collection: "sales", amends: "CX9-NOPE|undefined|1", amendKind: "Modification",
       row: {}, entry: { at: ID("01:20"), payload: { mode: "amend", direction: "SELL", kind: "Modification" } } },
   ] };
+  /* v347: a cancelled order is not a target. Its key still matches, so only the guard stops it. */
+  {
+    const canc = book.sales.find((r) => r.cancelled && r.customer === "CS6-PER" && r.total === 350);
+    ok(!!canc, "the book carries the cancelled CS6-PER order");
+    const one = { ok: true, count: 1, approved: [{ id: ID("02:00"), collection: "sales",
+      amends: `CS6-PER|undefined|350`, amendKind: "Fulfilment",
+      row: { customer: "CS6-PER", qty: 6.25, total: 350, cash: 0, date: null },
+      entry: { at: ID("02:00"), payload: { mode: "amend", direction: "SELL", kind: "Fulfilment", date: "2026-08-23", cash: 350, kg: 6.25 } } }] };
+    const pc = plan(JSON.parse(JSON.stringify(book)), one, null);
+    ok(pc.items.length === 0 && pc.refused.length === 1 && /cancelled/.test(pc.refused[0].why),
+      "a fulfilment against a cancelled order is refused, not folded onto it");
+  }
   /* the plan refuses what it must and describes the rest */
   let p = plan(JSON.parse(JSON.stringify(book)), staged, null);
   ok(p.refused.length === 1 && /Modification/.test(p.refused[0].why), "a Modification is refused as a judgement");
@@ -1472,8 +1487,8 @@ section("Fold — an approved batch becomes records in the book (v340)");
   if (r.ok) {
     const added = B.sales.find((x) => x.customer === "CA4-DAM" && x.date === "2026-08-23" && x.total === 50);
     ok(!!added && /RM100 anchor/.test(added.note), "the new row is on the book with its note");
-    const ful = B.sales.find((x) => x.customer === "CS6-PER" && x.total === 350);
-    ok(ful && ful.cash === 350 && ful.deliveredQty === 6.25 && ful.date === "2026-08-23" && ful.deliveredOn === "2026-08-23" && ful.paidOn === "2026-08-23",
+    const ful = B.sales.find((x) => x.customer === "CJ4-BJ" && x.total === 450);
+    ok(ful && ful.cash === 450 && ful.deliveredQty === 6.25 && ful.date === "2026-08-23" && ful.deliveredOn === "2026-08-23" && ful.paidOn === "2026-08-23",
       "the fulfilment moved the cash and the units and dated the order");
     ok(ful && ful.amend && ful.amend.length === 2 && ful.amend[0].note.startsWith("as booked") && ful.amend[1].kg === 6.25 && /in full/.test(ful.amend[1].note), "and extended the trail from an as-booked seed");
     ok(ful && ful.cost === 44, "salt that left the shelf took the shelf's cost");
