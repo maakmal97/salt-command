@@ -29,3 +29,12 @@ migrations/.query.sql
 
 # zero-byte leftovers from the ledger extract tooling
 .scratch_v*.mjs
+
+# THE FOLD'S OWN SCRATCH INPUT, and it must never be committed. master/_to_fold.json and
+# master/_folded.json ARE tracked, because they are the handoff between the stage job, the
+# agent and the deploy. _fold_notes.json is not part of that: it is the notes skeleton
+# tools/fold.mjs writes for the agent to fill in, and it is spent the moment --apply reads it.
+# A committed copy is worse than clutter. --plan prints "_fold_notes.json exists; --apply will
+# use it" and leaves it alone, so a stale one left in the tree is a set of notes from a batch
+# that is already folded, sitting where the next --apply will pick it up.
+master/_fold_notes.json
