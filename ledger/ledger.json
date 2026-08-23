@@ -1,6 +1,6 @@
 {
- "v": "v350",
- "stamped": "24 Aug 2026, 05:10 KL",
+ "v": "v351",
+ "stamped": "24 Aug 2026, 05:30 KL",
  "source": "Cow-Crm01 salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -41,9 +41,9 @@
     "stated": 0
    }
   },
-  "STATED_STOCK": 25.25,
+  "STATED_STOCK": 21.5,
   "COUNT_ON": {
-   "salt": "2026-08-20",
+   "salt": "2026-08-24",
    "oil": "2026-08-23"
   },
   "purchases": [
@@ -2226,7 +2226,7 @@
   ],
   "QUEUE_COMMITTED": "2026-08-23T15:36:10.986Z",
   "PRICING": {
-   "takenAt": "2026-08-23T19:55:57.936Z",
+   "takenAt": "2026-08-23T20:00:33.428Z",
    "sizes": [
     0.5,
     1,
@@ -2254,19 +2254,19 @@
      "replCost": 44,
      "floors": {
       "1": {
-       "delivered": 97.81,
+       "delivered": 98.01,
        "collected": 60.12
       },
       "2": {
-       "delivered": 145.62,
+       "delivered": 146.02,
        "collected": 120.23
       },
       "3": {
-       "delivered": 193.43,
+       "delivered": 194.03,
        "collected": 180.35
       },
       "4": {
-       "delivered": 241.24,
+       "delivered": 242.04,
        "collected": 240.46
       },
       "5": {
@@ -2274,15 +2274,15 @@
        "collected": 300.58
       },
       "0.5": {
-       "delivered": 73.9,
+       "delivered": 74.01,
        "collected": 30.06
       },
       "1.5": {
-       "delivered": 121.71,
+       "delivered": 122.02,
        "collected": 90.17
       },
       "2.5": {
-       "delivered": 169.52,
+       "delivered": 170.03,
        "collected": 150.29
       },
       "6.25": {
@@ -2374,7 +2374,7 @@
         }
        },
        "attrib": 0.33,
-       "shrinkRate": 0.16535433070866143,
+       "shrinkRate": 0.1774063956291178,
        "avgDel": {
         "n": 92,
         "kg": 234.45,
@@ -2447,43 +2447,43 @@
      "replCost": 7,
      "floors": {
       "1": {
-       "delivered": 58.67,
+       "delivered": 58.71,
        "collected": 10.91
       },
       "2": {
-       "delivered": 67.35,
+       "delivered": 67.42,
        "collected": 21.81
       },
       "3": {
-       "delivered": 76.02,
+       "delivered": 76.13,
        "collected": 32.72
       },
       "4": {
-       "delivered": 84.69,
+       "delivered": 84.84,
        "collected": 43.62
       },
       "5": {
-       "delivered": 93.37,
+       "delivered": 93.55,
        "collected": 54.53
       },
       "0.5": {
-       "delivered": 54.34,
+       "delivered": 54.35,
        "collected": 5.45
       },
       "1.5": {
-       "delivered": 63.01,
+       "delivered": 63.06,
        "collected": 16.36
       },
       "2.5": {
-       "delivered": 71.68,
+       "delivered": 71.77,
        "collected": 27.27
       },
       "6.25": {
-       "delivered": 104.21,
+       "delivered": 104.44,
        "collected": 68.16
       },
       "12.5": {
-       "delivered": 158.41,
+       "delivered": 158.87,
        "collected": 136.33
       }
      },
@@ -2567,7 +2567,7 @@
         }
        },
        "attrib": 0.33,
-       "shrinkRate": 0.16530120481927713,
+       "shrinkRate": 0.17734939759036145,
        "avgDel": {
         "n": 5,
         "kg": 71,
@@ -2640,10 +2640,10 @@
      }
     }
    },
-   "v": "v350"
+   "v": "v351"
   },
   "OPEN": {
-   "at": "2026-08-23T19:55:57.949Z",
+   "at": "2026-08-23T20:00:33.447Z",
    "count": 7,
    "byKey": {
     "CJ4-BJ|undefined|450": {
@@ -2737,10 +2737,10 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 25.25,
-     "free": 17.25,
+     "onHand": 21.5,
+     "free": 13.5,
      "owedOut": 8,
-     "coverDays": 4,
+     "coverDays": 3.1,
      "rate": 4.32,
      "owedToYou": 80,
      "promised": 18.25,
@@ -2759,10 +2759,10 @@
     }
    },
    "countedOn": {
-    "salt": "2026-08-20",
+    "salt": "2026-08-24",
     "oil": "2026-08-23"
    },
-   "v": "v350"
+   "v": "v351"
   }
  }
 }
