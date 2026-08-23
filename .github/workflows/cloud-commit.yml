@@ -258,11 +258,24 @@ jobs:
           code=$(curl -s -o /dev/null -w "%{http_code}" -X POST -H "X-Push-Key: $PUSH_KEY" -H "content-type: application/json" -d '{"tag":"folded"}' https://salt-command.maakmal97.workers.dev/push/send)
           echo "push/send -> $code for $n folded row(s)"
 
+      # A PUSH THAT FOLDED NOTHING MUST NOT UNSTAGE A WAITING BATCH, fixed 24 Aug 2026.
+      # This cleared master/_to_fold.json on EVERY push. A v344 push that touched only the cost
+      # basis therefore deleted a batch approved on 23 Aug and still unfolded, which is the very
+      # file the stage job reads to decide whether to stand down. Nothing was lost, because D1
+      # stays authoritative until `drafts.mjs --committed` runs and neither row was marked, so
+      # the next hourly stage re-staged them. It is still wrong: the guard was gone for a cycle
+      # and the batch was delayed by one.
+      # _folded.json is the proof that a fold happened in THIS push. Without it, only _folded is
+      # cleared (there is none) and the waiting batch is left exactly where the fold expects it.
       - name: Clear the handoff files
         run: |
           set -euo pipefail
           changed=0
-          for f in master/_to_fold.json master/_folded.json; do
+          files="master/_folded.json"
+          if [ -f master/_folded.json ]; then files="master/_to_fold.json master/_folded.json"; else
+            echo "No _folded.json: this push folded nothing, so any staged batch is left alone."
+          fi
+          for f in $files; do
             if [ -f "$f" ]; then git rm -q "$f"; changed=1; fi
           done
           [ "$changed" = "0" ] && exit 0
