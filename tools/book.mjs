@@ -46,6 +46,21 @@ export const LEDGER = {
 };
 export const LEDGER_KEYS = Object.keys(LEDGER);
 
+/* ============ THE ONE PLACE THE DATA FOLDER IS NAMED (v357) ============
+   salt_bio.json, salt_vault.json, menu_secret.txt and the two queue files live in the PROJECT
+   folder and never in this repo, by the hard rule at the top of CLAUDE.md. Three tools each
+   carried their own copy of that path, and on 24 Aug the project was moved and renamed from
+   Projects\Personal\Cow-Crm01_Salt Business to Projects\Personal\Commerce\Per-Crm01_Salt
+   Business. All three then pointed at a folder that no longer existed, and drain.mjs did the
+   worst thing available: it mkdir'd the dead path and wrote an empty queue into it, so the run
+   reported success while the real queue sat elsewhere. Nothing was lost, because the file it
+   wrote was empty and the real one was untouched, but only because the timing was kind.
+   ONE CONSTANT, AND THE TOOLS FAIL LOUDLY RATHER THAN CREATING A FOLDER. A missing data folder
+   means the project has moved, and inventing it hides exactly the fact worth knowing. */
+export const PROJECT_DIR = process.env.SALT_PROJECT
+  || "C:/Users/maakm/Claude/Projects/Personal/Commerce/Per-Crm01_Salt Business";
+export const DATA_DIR = process.env.SALT_DATA || `${PROJECT_DIR}/10_Data`;
+
 /* Lists of records, as against single values. Rows go in `entry`, the rest in `state`. */
 export const COLLECTIONS = ["sales", "purchases", "loans", "contacts", "selfUseLog",
   "lostDemand", "customerRefunds", "ONE_OFFS"];

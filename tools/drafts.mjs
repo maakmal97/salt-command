@@ -22,6 +22,7 @@
  *   --local                                    act on the local D1 rather than the remote one
  */
 import { readFileSync, existsSync } from "node:fs";
+import { DATA_DIR } from "./book.mjs";
 import { spawnSync } from "node:child_process";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -29,8 +30,7 @@ import { fileURLToPath } from "node:url";
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const DB = "salt_ledger";
 const WHERE = process.argv.includes("--local") ? "--local" : "--remote";
-const DATA = process.env.SALT_DATA ||
-  "C:/Users/maakm/Claude/Projects/Personal/Cow-Crm01_Salt Business/10_Data";
+const DATA = DATA_DIR;
 const LAPTOP_QUEUE = resolve(DATA, "salt_queue.json");
 const CLOUD_QUEUE  = resolve(DATA, "salt_queue_cloud.json");
 const argv = process.argv.slice(2);

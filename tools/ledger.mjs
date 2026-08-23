@@ -312,7 +312,7 @@ if (existsSync(BIO)) {
 /* ---- write --------------------------------------------------------------------------- */
 const stamp = meta.LAST_UPDATED || null;
 const version = (Array.isArray(meta.evolution) && meta.evolution[0] && meta.evolution[0].v) || null;
-const body = { v: version, stamped: stamp, source: "Cow-Crm01 salt_command.html", ledger: roundTripped || ledger };
+const body = { v: version, stamped: stamp, source: "master/salt_command.html", ledger: roundTripped || ledger };
 const json = JSON.stringify(body, null, 1);
 const hash = createHash("sha256").update(json).digest("hex").slice(0, 16);
 

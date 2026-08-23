@@ -1,4 +1,4 @@
-/* build.mjs — produce public/index.html from the Cow-Crm01 master.
+/* build.mjs — produce public/index.html from the master in this repo.
  *
  * The master (salt_command.html) is the ONLY place the desk is edited. This step reads
  * it, injects the PWA head and a handful of cloud-mode patches, and writes the result

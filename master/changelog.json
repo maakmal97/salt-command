@@ -1,5 +1,17 @@
 [
  {
+  "v": "v357",
+  "d": "24 Aug 2026",
+  "t": "THE PROJECT MOVED, SIX TOOLS DID NOT, AND THE NAME-LEAK GATE WENT QUIET",
+  "n": [
+   "<b>THE PROJECT FOLDER WAS MOVED AND RENAMED WHILE THIS SESSION WAS RUNNING.</b> Projects\\Personal\\Cow-Crm01_Salt Business became Projects\\Personal\\Commerce\\Per-Crm01_Salt Business. Nothing was lost: the directory, the vault, the menu secret and both queue files all moved intact, and the 39th name added this morning is still in it. <b>SIX PLACES CARRIED THEIR OWN COPY OF THAT PATH</b> and every one of them was then pointing at a folder that no longer existed.",
+   "<b>THE WORST OF THEM WAS SILENT AND IT WAS THE ONE THAT PROTECTS NAMES.</b> The test that scans public/desk.html for any customer name or neighbourhood reads the directory to know what to look for, and it SKIPS ITSELF when the file is not on the machine, which is right on a CI runner and wrong here. So it passed on an empty list: <b>the gate that keeps a real name off a public page was off, and the suite still printed green</b>. Repointed, it is scanning again and the suite goes 440 assertions to 447.",
+   "<b>THE SECOND WORST INVENTED A FOLDER RATHER THAN FAILING.</b> drain.mjs mkdir'd the dead path and wrote an empty queue into it, so the run reported success while the real queue sat elsewhere. Nothing was lost only because the file it wrote was empty. It now REFUSES: a missing data folder means the project has moved, and creating one hides exactly the fact worth knowing.",
+   "<b>ONE CONSTANT NOW, NOT SIX COPIES.</b> PROJECT_DIR and DATA_DIR are exported from tools/book.mjs and imported by drain, drafts, update, seed-vault and the test suite, each still overridable by SALT_PROJECT and SALT_DATA. The next move is one line rather than six, and the tools that cannot find it say so.",
+   "<b>ONE THING IS LEFT ON DISK FOR HIM.</b> The old folder still exists at Projects\\Personal\\Cow-Crm01_Salt Business, holding nothing but the empty queue file the drain wrote into it. It is safe to delete and is not deleted here: the move was his, and undoing half of someone else&rsquo;s tidy-up is not this desk&rsquo;s business."
+  ]
+ },
+ {
   "v": "v356",
   "d": "24 Aug 2026",
   "t": "THE SHEET IS AMENDABLE BEFORE IT IS SENT, AND v354 WAS IN THE WRONG PLACE",

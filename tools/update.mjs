@@ -31,6 +31,7 @@
  */
 
 import { readFileSync, existsSync, writeFileSync, readdirSync } from "node:fs";
+import { DATA_DIR } from "./book.mjs";
 import { spawnSync } from "node:child_process";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -44,8 +45,7 @@ const MASTER = process.env.SALT_MASTER || DEFAULT_MASTER;
    derived path became <repo>/10_Data, which does not exist, so both queue reads warned
    "unreadable" on every run and the drain had nowhere to write. The queue files never
    moved; only the master did. */
-const DATA = process.env.SALT_DATA ||
-  "C:/Users/maakm/Claude/Projects/Personal/Cow-Crm01_Salt Business/10_Data";
+const DATA = DATA_DIR;
 const SITE = (process.env.SALT_URL || "https://salt-command.maakmal97.workers.dev").replace(/\/+$/, "");
 
 const argv = process.argv.slice(2);

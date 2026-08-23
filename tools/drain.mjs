@@ -34,7 +34,8 @@
  *       an unattended run may need CLOUDFLARE_API_TOKEN set.
  */
 
-import { readFileSync, writeFileSync, renameSync, existsSync, mkdirSync } from "node:fs";
+import { readFileSync, writeFileSync, renameSync, existsSync } from "node:fs";
+import { DATA_DIR } from "./book.mjs";
 import { dirname, resolve, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { execFileSync } from "node:child_process";
@@ -44,9 +45,7 @@ const REPO = resolve(HERE, "..");
 const BINDING = "SALT_QUEUE";
 const FILE = "salt_queue_cloud.json";
 
-const DEFAULT_DATA =
-  "C:/Users/maakm/Claude/Projects/Personal/Cow-Crm01_Salt Business/10_Data";
-const DATA = process.env.SALT_DATA || DEFAULT_DATA;
+const DATA = DATA_DIR;
 const OUT = join(DATA, FILE);
 
 const nowISO = () => new Date().toISOString();
@@ -85,7 +84,13 @@ function readFile() {
   catch (e) { return { updated: null, desk: "cloud", queue: [] }; }
 }
 function writeAtomic(obj) {
-  mkdirSync(DATA, { recursive: true });
+  /* v357: NEVER CREATE IT. A missing data folder means the project has moved, and mkdir here
+     wrote an empty queue into a dead path on 24 Aug while the real one sat elsewhere. */
+  if (!existsSync(DATA)) {
+    console.error(`  FAIL  the data folder does not exist: ${DATA}`);
+    console.error("        The project has moved. Fix DATA_DIR in tools/book.mjs, or set SALT_DATA.");
+    process.exit(2);
+  }
   const tmp = OUT + ".tmp";
   writeFileSync(tmp, JSON.stringify(obj, null, 1));
   renameSync(tmp, OUT);

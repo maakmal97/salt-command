@@ -27,7 +27,8 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO = resolve(HERE, "..");
 const BINDING = "SALT_QUEUE";
 const VKEY = "vault";
-const DEFAULT_DATA = "C:/Users/maakm/Claude/Projects/Personal/Cow-Crm01_Salt Business/10_Data";
+import { DATA_DIR } from "./book.mjs";
+const DEFAULT_DATA = DATA_DIR;
 const DATA = process.env.SALT_DATA || DEFAULT_DATA;
 
 const b64e = (buf) => Buffer.from(buf).toString("base64");

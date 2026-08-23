@@ -6,6 +6,7 @@
  * No network, no browser: `npm test` runs it in a couple of seconds.
  */
 import { execFileSync } from "node:child_process";
+import { DATA_DIR, PROJECT_DIR } from "../tools/book.mjs";
 import { createHash } from "node:crypto";
 import { readFileSync, writeFileSync, mkdirSync, rmSync, existsSync } from "node:fs";
 import { dirname, resolve, join } from "node:path";
@@ -278,7 +279,7 @@ section("Ledger extract");
 /* ---- 1e. No directory name or place may reach the public desk (v293) ------------- */
 section("The public desk carries no name and no place");
 {
-  const BIO = "C:/Users/maakm/Claude/Projects/Personal/Cow-Crm01_Salt Business/10_Data/salt_bio.json";
+  const BIO = `${DATA_DIR}/salt_bio.json`;
   if (!existsSync(BIO)) {
     ok(true, "salt_bio.json is not on this machine, so the name scan is skipped");
   } else {
@@ -988,7 +989,7 @@ section("The gate is the only road in");
   ok(/NOT A COMMIT SOURCE/.test(drain), "drain.mjs says plainly that it is no longer a commit source");
 
   /* serve_desk.py lives outside this repo; check it only if it is on this machine */
-  const desk = "C:/Users/maakm/Claude/Projects/Personal/Cow-Crm01_Salt Business/30_Published/serve_desk.py";
+  const desk = `${PROJECT_DIR}/30_Published/serve_desk.py`;
   if (existsSync(desk)) {
     const py = readFileSync(desk, "utf8");
     ok(!/_run_sync\("-PullOnly"/.test(py), "serve_desk.py no longer drains the cloud queue on a timer");
@@ -996,7 +997,7 @@ section("The gate is the only road in");
     /* AND THE DRAIN INSIDE THE SYNC PASS, which the first removal missed entirely: the
        timer went but salt_sync.ps1 still ran the drain on every pass, so the log kept
        printing "drained the phone queue" and the road stayed open. */
-    const ps1 = "C:/Users/maakm/Claude/Projects/Personal/Cow-Crm01_Salt Business/30_Published/salt_sync.ps1";
+    const ps1 = `${PROJECT_DIR}/30_Published/salt_sync.ps1`;
     if (existsSync(ps1)) {
       const sync = readFileSync(ps1, "utf8");
       /* the EXECUTABLE form, not the word: the comment explaining the removal names the
