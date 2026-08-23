@@ -1376,6 +1376,28 @@ section("Engine — the position, out of the desk (v338)");
   try { w.close(); } catch (e) { }
 }
 
+/* ---- the book as data ---------------------------------------------------------------- */
+section("Book — ledger/book.json is the source (v339)");
+{
+  let chk = "";
+  try { chk = execFileSync("node", [join(REPO, "tools", "booksync.mjs"), "--check"], { encoding: "utf8" }); }
+  catch (e) { chk = String((e && e.stdout) || e); }
+  ok(/ok\s+the master's BOOK block is ledger\/book\.json/.test(chk), "tools/booksync.mjs --check: the master's book block is the file");
+  const book = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const keys = Object.keys(book).filter((k) => k !== "NOTES");
+  ok(keys.length === 26, "the book holds the twenty-six ledger keys");
+  ok(Array.isArray(book.sales) && book.sales.length > 100 && Array.isArray(book.purchases), "with the rows as records");
+  ok(typeof book.QUEUE_COMMITTED === "string" && typeof book.STATED_STOCK === "number", "and the singletons as values");
+  ok(book.NOTES && Array.isArray(book.NOTES.STATED_STOCK) && book.NOTES.STATED_STOCK.length > 0, "the stated stock's roll history survived as NOTES");
+  /* the running desk evaluates to the file: read back through the extract */
+  const led = JSON.parse(readFileSync(join(REPO, "ledger", "ledger.json"), "utf8")).ledger;
+  const same = keys.every((k) => JSON.stringify(led[k]) === JSON.stringify(book[k]));
+  ok(same, "the extract read from the running desk equals ledger/book.json on every key");
+  const master = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+  ok(!/(?:^|\n)const sales=\[\n  \{date:'/.test(master), "the hand-written sales array is gone from the master");
+  ok(/const sales=\[\n  \{"date"/.test(master) || /const sales=\[\n  \{"/.test(master), "and the generated one stands in its place");
+}
+
 /* ---- done ----------------------------------------------------------------------- */
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

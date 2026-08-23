@@ -8,6 +8,17 @@ of context this file does not repeat, and the numbered steps below are the part 
 into a cloud run. Where the two disagree, this file wins, because `DAILY_FOLD.md` still assumes
 a laptop, a server window and a `10_Data` folder that the agent cannot see.
 
+## READ THIS FIRST: FROM v339 THE BOOK IS A FILE, NOT THE PAGE
+
+The rows, the stated stock, the count dates, the roster and the watermark live in
+****. The master carries a generated copy of them between the  markers,
+written by   ok    the book is in the master: 26 declarations, 445 lines, and CI fails if the copy is not the file. So every
+edit the steps below describe as an edit to  is now an edit to
+, followed by   ok    the book is in the master: 26 declarations, 445 lines. The prose that used to sit in
+comments beside a figure (the roll of , for one) is  in the same file: add
+the new sentence there.  and  are still in the master. A fold tool that
+does the mechanical part of this () arrives at v340; until then the steps stand.
+
 ## What the agent has, and what it has not
 
 **Has:** a fresh git checkout of this repo, including `master/salt_command.html`, every tool in

@@ -48,6 +48,11 @@ jobs:
       - name: The engine in the master is the module
         run: node tools/engine.mjs --check
 
+      # THE BOOK IN THE MASTER IS THE FILE (v339). ledger/book.json is the source of the book; the
+      # desk carries a generated copy between markers. This proves the copy is the file.
+      - name: The book in the master is ledger/book.json
+        run: node tools/booksync.mjs --check
+
       - name: Tests
         run: npm test
 

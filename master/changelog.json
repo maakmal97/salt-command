@@ -1,5 +1,15 @@
 [
  {
+  "v": "v339",
+  "d": "23 Aug 2026",
+  "t": "THE BOOK LEAVES THE DESK",
+  "n": [
+   "<b>MOVE 2 OF THE REBUILD: THE BOOK IS DATA.</b> The twenty-six ledger declarations this file used to carry as JavaScript, the rows, the opening, the stated stock, the count dates, the roster, the quotes, the watermark and the rest, now live in ledger/book.json, and the desk carries a generated copy of them in one block near the top of its script, rendered by tools/booksync.mjs. CI fails if the block is not the file. The prose that sat in comments beside the data, the roll of the stated stock, the oil counts, the 07 Aug orders, is kept as NOTES in the same file and rendered back as comments, so nothing written beside a figure is lost.",
+   "<b>WHY THIS IS THE MOVE THAT MATTERS.</b> The mirror went stale for two days because the book was a JavaScript file only a browser could evaluate. As a JSON document it is a copy any job can regenerate, the desk and the phone are builds of it, and the fold, from the next version, writes a record rather than editing twelve thousand lines of a page.",
+   "<b>THE GATE HELD.</b> The v338 master and this one, built on the same date, produce byte-identical payloads, and the extract read back from the running desk equals the file on every key. No figure moved."
+  ]
+ },
+ {
   "v": "v338",
   "d": "23 Aug 2026",
   "t": "THE POSITION LEAVES THE DESK",
