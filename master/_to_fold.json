@@ -1,0 +1,84 @@
+{
+ "ok": true,
+ "count": 2,
+ "approved": [
+  {
+   "id": "2026-08-23T09:38:30.781Z",
+   "collection": "roster",
+   "row": {
+    "code": "CK4-SEN",
+    "kind": "customer",
+    "parent": null,
+    "note": null
+   },
+   "reasoning": "Registers CK4-SEN as a customer. It touches no figure: the fold appends the code to the roster. THE NAME AND THE PLACE ARE NOT HERE AND MUST NOT BE: the directory is typed at the laptop and never travels.",
+   "flags": [],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-08-23T09:38:30.781Z",
+    "type": "ADDID",
+    "party": "CK4-SEN",
+    "qty": null,
+    "total": null,
+    "status": "addid",
+    "raw": "Register CK4-SEN as a customer",
+    "payload": {
+     "mode": "addid",
+     "code": "CK4-SEN",
+     "kind": "customer",
+     "parent": null,
+     "rev": null,
+     "note": null
+    }
+   },
+   "decidedAt": "2026-08-23T09:38:42.831Z",
+   "decidedBy": "phone"
+  },
+  {
+   "id": "2026-08-23T15:36:10.986Z",
+   "collection": "count",
+   "row": {
+    "product": "oil",
+    "qty": 0,
+    "date": "2026-08-23",
+    "was": 0,
+    "drift": 0
+   },
+   "reasoning": "Counted 0 unit of oil by hand on 2026-08-23, against 0 on the book: a drift of 0. The last count was 2026-08-20. A count wins over the ledger, and the fold sets the stated stock and moves COUNT_ON to this date.",
+   "flags": [
+    "The book says 0 and you counted the same. Nothing is unaccounted for, which is the first time that can be said since the last count."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-08-23T15:36:10.986Z",
+    "type": "COUNT",
+    "party": null,
+    "qty": 0,
+    "total": null,
+    "status": "count",
+    "raw": "Count of oil on 2026-08-23: 0 unit on the shelf, against 0 on the book, drift 0",
+    "payload": {
+     "mode": "count",
+     "product": "oil",
+     "direction": null,
+     "party": null,
+     "date": "2026-08-23",
+     "qty": 0,
+     "total": null,
+     "cash": null,
+     "kg": 0,
+     "assoc": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": null
+    }
+   },
+   "decidedAt": "2026-08-23T15:36:40.285Z",
+   "decidedBy": "phone"
+  }
+ ]
+}
