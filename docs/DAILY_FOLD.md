@@ -27,7 +27,7 @@ Code and generated state are deliberately apart. `serve_desk.py` and `serve_menu
 
 ## ONE MASTER, AND A COMMAND THAT PROVES IT
 
-    MASTER  C:\Users\maakm\Claude\Projects\Personal\Per-Crm01_Salt Business\30_Published\salt_command.html
+    MASTER  C:\Users\maakm\Claude\Projects\Personal\Commerce\Per-Crm01_Salt Business\30_Published\salt_command.html
 
 The master is the **only** place the desk is edited, and since 12 Aug 2026 the only copy tracked. Do not look for a working copy in any outputs, uploads, download or sandbox path; copies found there are stale staging and are ignored.
 
@@ -35,7 +35,7 @@ The master is the **only** place the desk is edited, and since 12 Aug 2026 the o
 
 **FIRST ACTION, EVERY RUN, NO EXCEPTIONS:**
 
-    cd "C:\Users\maakm\Claude\Projects\Personal\Per-Crm01_Salt Business\30_Published"
+    cd "C:\Users\maakm\Claude\Projects\Personal\Commerce\Per-Crm01_Salt Business\30_Published"
     python deskctl.py status
 
 It prints the master's version and hash, a queue line, and exits non-zero when anything is out of step. `DESK.json` states `paths.master` and `paths.queue` explicitly, so no surface has to guess. Read what it says and act on it before touching anything:

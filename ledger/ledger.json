@@ -1,6 +1,6 @@
 {
- "v": "v354",
- "stamped": "24 Aug 2026, 07:40 KL",
+ "v": "v355",
+ "stamped": "24 Aug 2026, 08:10 KL",
  "source": "Per-Crm01 salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -2012,6 +2012,27 @@
     "kg": 27.2,
     "why": "sample",
     "note": "<b>PROMOTION: 27.2 UNIT, THE 80 IN HIS 20:80.</b> The oil walk is 5 unit of opening plus 100 bought less 71 sold, leaving 34 unit that three counts have found are not on the shelf. It went out on purpose across 06 to 23 Aug, between the first lot landing and the shelf being counted empty; the date is the count, 23 Aug, not the day. <b>THE 20:80 IS HIS, THE ARITHMETIC IS MINE:</b> he gave the ratio in the order the causes were put to him, self use first, so 20% is what he used and 80% is what went out as promotion. Attribution changes no figure: the count still wins and neither row touches revenue, cost, stock or margin. Oil was being introduced and this is what was given away to introduce it. IAS 38.69 expenses promotion as incurred, so it is marketing rather than a drawing and rather than abnormal waste."
+   },
+   {
+    "date": "2026-08-24",
+    "product": "salt",
+    "kg": 8.28,
+    "why": "spillage",
+    "note": "<b>STORAGE LEAKAGE: 8.28 UNIT, THE FIRST 15.</b> Salt lost on the shelf rather than given to anyone: the part of the gap that is a real cost of holding stock. It is the only one of the three that a better store would reduce, and the only one that stays in the price. <b>THE THREE PERCENTAGES ARE HIS, GIVEN ON 24 Aug; THE ARITHMETIC IS MINE.</b> 15:70:15 across the 55.2 unit the 24 Aug count established as missing, against 306.25 unit bought and 4.9 of opening. <b>THE DATE IS THE COUNT, NOT THE DAY.</b> It went across the whole life of the book, from 26 Jun to 24 Aug; 24 Aug is when the figure was established. Attribution changes no figure: the count still wins and none of these rows touches revenue, cost, stock or margin. What they change is the DIVISOR: only the leakage and the self use are now charged into the price."
+   },
+   {
+    "date": "2026-08-24",
+    "product": "salt",
+    "kg": 38.64,
+    "why": "sample",
+    "note": "<b>PROMOTION: 38.64 UNIT, THE 70 IN THE MIDDLE, AND IT IS THE BIGGEST SINGLE ITEM ON THIS BOOK AFTER THE GOODS.</b> Salt given away to win customers. IAS 38.69 expenses promotion as incurred, so it is marketing rather than a drawing and rather than abnormal waste. From v353 it LEAVES THE PRICE: a one-off spent to start selling is not a cost of selling, and charging it into every future unit would recover it for ever. <b>THE THREE PERCENTAGES ARE HIS, GIVEN ON 24 Aug; THE ARITHMETIC IS MINE.</b> 15:70:15 across the 55.2 unit the 24 Aug count established as missing, against 306.25 unit bought and 4.9 of opening. <b>THE DATE IS THE COUNT, NOT THE DAY.</b> It went across the whole life of the book, from 26 Jun to 24 Aug; 24 Aug is when the figure was established. Attribution changes no figure: the count still wins and none of these rows touches revenue, cost, stock or margin. What they change is the DIVISOR: only the leakage and the self use are now charged into the price."
+   },
+   {
+    "date": "2026-08-24",
+    "product": "salt",
+    "kg": 8.28,
+    "why": "personal",
+    "note": "<b>SELF USE: 8.28 UNIT, THE LAST 15.</b> Salt he used himself. A drawing, not a cost of selling, so it is separated from the promotion above rather than blended with it. <b>THE THREE PERCENTAGES ARE HIS, GIVEN ON 24 Aug; THE ARITHMETIC IS MINE.</b> 15:70:15 across the 55.2 unit the 24 Aug count established as missing, against 306.25 unit bought and 4.9 of opening. <b>THE DATE IS THE COUNT, NOT THE DAY.</b> It went across the whole life of the book, from 26 Jun to 24 Aug; 24 Aug is when the figure was established. Attribution changes no figure: the count still wins and none of these rows touches revenue, cost, stock or margin. What they change is the DIVISOR: only the leakage and the self use are now charged into the price."
    }
   ],
   "lostDemand": [],
@@ -2239,7 +2260,7 @@
   ],
   "QUEUE_COMMITTED": "2026-08-23T15:36:10.986Z",
   "PRICING": {
-   "takenAt": "2026-08-23T22:37:15.348Z",
+   "takenAt": "2026-08-23T22:51:50.089Z",
    "sizes": [
     0.5,
     1,
@@ -2267,43 +2288,43 @@
      "replCost": 44,
      "floors": {
       "1": {
-       "delivered": 129.95,
-       "collected": 79.95
+       "delivered": 122.74,
+       "collected": 72.74
       },
       "2": {
-       "delivered": 184.9,
-       "collected": 134.9
+       "delivered": 170.48,
+       "collected": 120.48
       },
       "3": {
-       "delivered": 239.84,
-       "collected": 189.84
+       "delivered": 218.22,
+       "collected": 180.35
       },
       "4": {
-       "delivered": 294.79,
-       "collected": 244.79
+       "delivered": 265.96,
+       "collected": 240.46
       },
       "5": {
-       "delivered": 349.74,
+       "delivered": 313.7,
        "collected": 300.58
       },
       "0.5": {
-       "delivered": 102.47,
-       "collected": 52.47
+       "delivered": 98.87,
+       "collected": 48.87
       },
       "1.5": {
-       "delivered": 157.42,
-       "collected": 107.42
+       "delivered": 146.61,
+       "collected": 96.61
       },
       "2.5": {
-       "delivered": 212.37,
-       "collected": 162.37
+       "delivered": 194.35,
+       "collected": 150.29
       },
       "6.25": {
-       "delivered": 418.43,
+       "delivered": 375.73,
        "collected": 375.73
       },
       "12.5": {
-       "delivered": 761.85,
+       "delivered": 751.45,
        "collected": 751.45
       }
      },
@@ -2387,7 +2408,7 @@
         }
        },
        "attrib": 1,
-       "shrinkRate": 0.1774063956291178,
+       "shrinkRate": 0.05322191868873535,
        "avgDel": {
         "n": 92,
         "kg": 234.45,
@@ -2659,10 +2680,10 @@
      }
     }
    },
-   "v": "v354"
+   "v": "v355"
   },
   "OPEN": {
-   "at": "2026-08-23T22:37:15.363Z",
+   "at": "2026-08-23T22:51:50.105Z",
    "count": 7,
    "byKey": {
     "CJ4-BJ|undefined|450": {
@@ -2781,7 +2802,7 @@
     "salt": "2026-08-24",
     "oil": "2026-08-23"
    },
-   "v": "v354"
+   "v": "v355"
   }
  }
 }

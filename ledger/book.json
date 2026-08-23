@@ -2008,6 +2008,27 @@
    "kg": 27.2,
    "why": "sample",
    "note": "<b>PROMOTION: 27.2 UNIT, THE 80 IN HIS 20:80.</b> The oil walk is 5 unit of opening plus 100 bought less 71 sold, leaving 34 unit that three counts have found are not on the shelf. It went out on purpose across 06 to 23 Aug, between the first lot landing and the shelf being counted empty; the date is the count, 23 Aug, not the day. <b>THE 20:80 IS HIS, THE ARITHMETIC IS MINE:</b> he gave the ratio in the order the causes were put to him, self use first, so 20% is what he used and 80% is what went out as promotion. Attribution changes no figure: the count still wins and neither row touches revenue, cost, stock or margin. Oil was being introduced and this is what was given away to introduce it. IAS 38.69 expenses promotion as incurred, so it is marketing rather than a drawing and rather than abnormal waste."
+  },
+  {
+   "date": "2026-08-24",
+   "product": "salt",
+   "kg": 8.28,
+   "why": "spillage",
+   "note": "<b>STORAGE LEAKAGE: 8.28 UNIT, THE FIRST 15.</b> Salt lost on the shelf rather than given to anyone: the part of the gap that is a real cost of holding stock. It is the only one of the three that a better store would reduce, and the only one that stays in the price. <b>THE THREE PERCENTAGES ARE HIS, GIVEN ON 24 Aug; THE ARITHMETIC IS MINE.</b> 15:70:15 across the 55.2 unit the 24 Aug count established as missing, against 306.25 unit bought and 4.9 of opening. <b>THE DATE IS THE COUNT, NOT THE DAY.</b> It went across the whole life of the book, from 26 Jun to 24 Aug; 24 Aug is when the figure was established. Attribution changes no figure: the count still wins and none of these rows touches revenue, cost, stock or margin. What they change is the DIVISOR: only the leakage and the self use are now charged into the price."
+  },
+  {
+   "date": "2026-08-24",
+   "product": "salt",
+   "kg": 38.64,
+   "why": "sample",
+   "note": "<b>PROMOTION: 38.64 UNIT, THE 70 IN THE MIDDLE, AND IT IS THE BIGGEST SINGLE ITEM ON THIS BOOK AFTER THE GOODS.</b> Salt given away to win customers. IAS 38.69 expenses promotion as incurred, so it is marketing rather than a drawing and rather than abnormal waste. From v353 it LEAVES THE PRICE: a one-off spent to start selling is not a cost of selling, and charging it into every future unit would recover it for ever. <b>THE THREE PERCENTAGES ARE HIS, GIVEN ON 24 Aug; THE ARITHMETIC IS MINE.</b> 15:70:15 across the 55.2 unit the 24 Aug count established as missing, against 306.25 unit bought and 4.9 of opening. <b>THE DATE IS THE COUNT, NOT THE DAY.</b> It went across the whole life of the book, from 26 Jun to 24 Aug; 24 Aug is when the figure was established. Attribution changes no figure: the count still wins and none of these rows touches revenue, cost, stock or margin. What they change is the DIVISOR: only the leakage and the self use are now charged into the price."
+  },
+  {
+   "date": "2026-08-24",
+   "product": "salt",
+   "kg": 8.28,
+   "why": "personal",
+   "note": "<b>SELF USE: 8.28 UNIT, THE LAST 15.</b> Salt he used himself. A drawing, not a cost of selling, so it is separated from the promotion above rather than blended with it. <b>THE THREE PERCENTAGES ARE HIS, GIVEN ON 24 Aug; THE ARITHMETIC IS MINE.</b> 15:70:15 across the 55.2 unit the 24 Aug count established as missing, against 306.25 unit bought and 4.9 of opening. <b>THE DATE IS THE COUNT, NOT THE DAY.</b> It went across the whole life of the book, from 26 Jun to 24 Aug; 24 Aug is when the figure was established. Attribution changes no figure: the count still wins and none of these rows touches revenue, cost, stock or margin. What they change is the DIVISOR: only the leakage and the self use are now charged into the price."
   }
  ],
  "lostDemand": [],
@@ -2260,7 +2281,8 @@
   ],
   "selfUseLog": [
    "v348: THE OIL LEAK IS ATTRIBUTED AND THE ARRAY IS NO LONGER EMPTY. It had never carried a row, so every plug on this book was unexplained by construction. Oil's 34 unit was the first, on his word of 24 Aug: self use and the promotion period.",
-   "v350: AND IT IS SPLIT, 20:80. One row of 34 unit marked `other` became 6.8 personal and 27.2 sample, which is the split he gave. The two carry different treatments, a drawing against IAS 38.69 marketing, which is why it was never guessed at. Salt's own plug is still unattributed."
+   "v350: AND IT IS SPLIT, 20:80. One row of 34 unit marked `other` became 6.8 personal and 27.2 sample, which is the split he gave. The two carry different treatments, a drawing against IAS 38.69 marketing, which is why it was never guessed at. Salt's own plug is still unattributed.",
+   "v355: SALT IS ATTRIBUTED AT LAST, 15:70:15. Storage leakage, promotion, self use, across the 55.2 unit the 24 Aug count established. It had never carried a row, so more than a fifth of everything ever bought was a gap with no reason against it. The priced leak falls 17.74% to 5.32%, because the 38.64 unit of promotion leave the price under the v353 rule and the 16.56 unit of leakage and self use stay in it."
   ],
   "lostDemand": [
    "{date,product,party|null,kg,rm,why:'nostock'|'price'|'credit'|'other',note}  product absent = salt (v275)"
