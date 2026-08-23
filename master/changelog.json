@@ -1,5 +1,15 @@
 [
  {
+  "v": "v341",
+  "d": "23 Aug 2026",
+  "t": "SEVEN VIEWS OVER FIFTEEN TABS",
+  "n": [
+   "<b>MOVE 4 OF THE REBUILD: THE DESK IS SEVEN VIEWS.</b> Today (with Overview and Forward behind it), Orders and money (the order book, with Financials behind it), Stock (Inventory, with Sourcing behind it), Price, Customers (with Network and the Map behind it), The book (the Ledger, with Analysis behind it) and Enter (the Transaction form, with the Whiteboard behind it). A view leads with one tab open and carries the others as folds that render on first opening; every figure is still here, and the old tab ids still work as addresses and links, opening the fold they name.",
+   "<b>THE METHOD PROSE FOLDS ONCE PER TAB.</b> Every standing paragraph that explained what the figures mean is kept, word for word, behind one Method and caveats fold at the top of the tab, each block under the heading it sat beneath. The lead sentence stays, because it says what the tab is for. Measured at 1280px before this change, across the fifteen tabs: 61,700px of page, 5,770 characters of prose standing open, 92 tables. Measured after, the seven views with their folds shut: 29,579px of page and 766 characters of prose standing open, the Enter form&rsquo;s own copy being most of that. Every view&rsquo;s figure tokens, with every fold opened, are the same multiset as its tabs produced before: 2,897 tokens across the seven, none missing, none added.",
+   "<b>NO FIGURE MOVED.</b> The builders that draw each tab are untouched; the views compose them. The figure tokens extracted from every view with its folds opened are the same multiset as the fifteen tabs produced before the change."
+  ]
+ },
+ {
   "v": "v340",
   "d": "23 Aug 2026",
   "t": "THE FOLD IS A DATA WRITE",

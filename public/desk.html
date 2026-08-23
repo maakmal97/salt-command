@@ -60,7 +60,7 @@ document.addEventListener('visibilitychange',function(){
    focused, no dialog open. Otherwise it offers a chip and waits to be tapped.
    The same tick retries a held entry, which is what gets a phone write to the cloud
    without waiting for the next open. */
-var SALT_BUILD_ID="0381310f6b1a609f";
+var SALT_BUILD_ID="d9afe57296ccf78c";
 var SALT_REV_MS=10000;
 (function(){
   var chip=null,timer=null;
@@ -115,6 +115,13 @@ body[data-sec="ledger"]{--acc:#f0932b;--accB:#c46f14;}
 body[data-sec="add"]{--acc:#8aa0ff;--accB:#6377d6;}
 body[data-sec="plans"]{--acc:#cfd8e8;--accB:#9aa7bd;}
 body[data-sec="changelog"]{--acc:#7c6aa0;--accB:#5d4f7a;}
+/* v341: the seven views own the hues their lead tabs did */
+body[data-sec="money"]{--acc:#63e6e0;--accB:#3fb8b2;}
+body[data-sec="stock"]{--acc:#5fd6a0;--accB:#3fae82;}
+body[data-sec="price"]{--acc:#f5c451;--accB:#f0932b;}
+body[data-sec="people"]{--acc:#ff6f9c;--accB:#d14e79;}
+body[data-sec="book"]{--acc:#f0932b;--accB:#c46f14;}
+body[data-sec="enter"]{--acc:#8aa0ff;--accB:#6377d6;}
 :root{--acc:#f5c451;--accB:#f0932b;color-scheme:dark;
  --bg0:#100a1c;--card:#1c1434;--card2:#231a40;--line:#382a58;
  --ink:#f4f5f7;--mut:#b6a6d6;--dim:#9689b8;
@@ -432,6 +439,17 @@ details.obsec[open]>summary::before{transform:rotate(90deg);}
 details.obsec>summary .q{font-weight:500;color:var(--dim);font-size:11px;}
 details.obsec>summary .ct{margin-left:auto;font-size:11px;font-weight:700;color:var(--mut);background:#140b26;border:1px solid var(--line);border-radius:999px;padding:2px 9px;}
 details.obsec>summary .ct.zero{color:var(--dim);}
+/* ============ v341: VIEWS. A part folded whole, and the method prose of a lead folded once ============ */
+details.vfold{margin-top:18px;}
+details.vfold>summary{font-size:14px;padding:14px 0;}
+details.vfold>summary .q{font-size:11.5px;}
+.vbody{padding:0 0 10px;}
+.vbody h1{font-size:19px;margin:8px 0 10px;}
+details.vmethod{margin:10px 0 14px;}
+details.vmethod>summary{font-size:12px;letter-spacing:.6px;text-transform:uppercase;}
+.vm{margin:6px 0 10px;}
+.vmh{font-size:9.5px;letter-spacing:1.3px;text-transform:uppercase;color:var(--dim);margin:0 0 3px;}
+.vm .dsc,.vm .dsclead,.vm .insight{margin:0;}
 .obsec .card{background:none;border:none;padding:0 0 13px;}
 details.rcard{background:linear-gradient(160deg,var(--card2),var(--card));border:1px solid var(--line);border-radius:12px;padding:2px 16px 14px;margin-top:12px;}
 details.rcard>summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:13px 0;}
@@ -1375,29 +1393,21 @@ tbody tr:hover td:not(.l){background:rgba(255,255,255,.03);}
     <div class="band prodband"><span class="bandnm" id="bandnm">Salt</span><span class="bandrule"></span></div>
     <div class="railgroup"><div class="grouplbl">Command</div>
       <button class="tab on" data-s="today">Today</button>
-      <button class="tab" data-s="forward">Forward</button>
     </div>
     <div class="railgroup"><div class="grouplbl">Position</div>
-      <button class="tab" data-s="overview">Overview</button>
-      <button class="tab" data-s="receivables">Order book</button>
-      <button class="tab" data-s="inventory">Inventory</button>
-      <button class="tab" data-s="financials">Financials</button>
-      <button class="tab" data-s="analysis">Analysis</button>
+      <button class="tab" data-s="money">Orders and money</button>
+      <button class="tab" data-s="stock">Stock</button>
     </div>
     <div class="railgroup"><div class="grouplbl">Trading</div>
-      <button class="tab" data-s="sourcing">Sourcing</button>
-      <button class="tab" data-s="pricing">Pricing</button>
+      <button class="tab" data-s="price">Price</button>
     </div>
     <div class="band"><span class="bandnm allnm">All products</span><span class="bandrule"></span></div>
     <div class="railgroup"><div class="grouplbl">Relationships</div>
-      <button class="tab" data-s="concentration">Customers</button>
-      <button class="tab" data-s="network">Network</button>
-      <button class="tab" data-s="map">Map</button>
-      <button class="tab" data-s="ledger">Ledger</button>
+      <button class="tab" data-s="people">Customers</button>
+      <button class="tab" data-s="book">The book</button>
     </div>
     <div class="railgroup"><div class="grouplbl">Actions</div>
-      <button class="tab" data-s="add">Transaction</button>
-      <button class="tab" data-s="plans">Whiteboard</button>
+      <button class="tab" data-s="enter">Enter</button>
     </div>
     <div class="railfoot">
     </div>
@@ -1405,20 +1415,12 @@ tbody tr:hover td:not(.l){background:rgba(255,255,255,.03);}
   <main class="main">
     <div class="meta" id="meta"></div>
     <div class="sec on" id="sec-today"></div>
-    <div class="sec" id="sec-forward"></div>
-    <div class="sec" id="sec-sourcing"></div>
-    <div class="sec" id="sec-analysis"></div>
-    <div class="sec" id="sec-map"></div>
-    <div class="sec" id="sec-overview"></div>
-    <div class="sec" id="sec-inventory"></div>
-    <div class="sec" id="sec-ledger"></div>
-    <div class="sec" id="sec-receivables"></div>
-    <div class="sec" id="sec-concentration"></div>
-    <div class="sec" id="sec-network"></div>
-    <div class="sec" id="sec-add"></div>
-    <div class="sec" id="sec-pricing"></div>
-    <div class="sec" id="sec-plans"></div>
-    <div class="sec" id="sec-financials"></div>
+    <div class="sec" id="sec-money"></div>
+    <div class="sec" id="sec-stock"></div>
+    <div class="sec" id="sec-price"></div>
+    <div class="sec" id="sec-people"></div>
+    <div class="sec" id="sec-book"></div>
+    <div class="sec" id="sec-enter"></div>
     <div class="foot0" id="foot0"></div>
   </main>
 </div>
@@ -3045,7 +3047,9 @@ const whiteboard=[
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{v:'v340',d:'23 Aug 2026',t:'THE FOLD IS A DATA WRITE',n:['<b>MOVE 3 OF THE REBUILD: AN APPROVED ROW BECOMES A RECORD, WITH ITS NOTE, BY A TOOL.</b> tools/fold.mjs reads the staged batch, says what every row would do and what would leave or land on the shelf, refuses what it must (a Modification, a key that matches nothing or two things, a replay, a row with no note), takes the agent&rsquo;s notes from one file and writes the book, the master, the version entry and the changelog in one pass, all or nothing. A fulfilment is applied exactly as the desk&rsquo;s own ovAmend applies it; a count sets the stated shelf and moves COUNT_ON; the roll is written as a sentence into NOTES; the watermark moves to the newest id.','<b>WHAT STAYS WITH THE AGENT IS THE JUDGEMENT.</b> The note on every new row, the trail note on every amendment, the sentence on the roll and the version entry are typed by the agent into master/_fold_notes.json, and the tool refuses to fold without them. What leaves the agent is the syntax: nobody edits twelve thousand lines of a page to add a row again.','<b>PROVED ON A COPY.</b> The suite folds a four-row batch (a new sale, a fulfilment of a pending order, an oil count and a registration) into a copy of the book, checks every figure it moved, syncs it into a copy of the master, builds the phone payload from that and finds the new row on the phone&rsquo;s ledger at the rolled shelf. It also proves the tool refuses a Modification and a note-less row. The sorter now sorts the book and syncs the block, and the cloud routine&rsquo;s procedure is rewritten for this in docs/CLOUD_FOLD.md.','<b>NO FIGURE MOVED.</b> The book as it stands is untouched; this version is the tool and its proof.']},
+const evolution=[{v:'v341',d:'23 Aug 2026',t:'SEVEN VIEWS OVER FIFTEEN TABS',n:['<b>MOVE 4 OF THE REBUILD: THE DESK IS SEVEN VIEWS.</b> Today (with Overview and Forward behind it), Orders and money (the order book, with Financials behind it), Stock (Inventory, with Sourcing behind it), Price, Customers (with Network and the Map behind it), The book (the Ledger, with Analysis behind it) and Enter (the Transaction form, with the Whiteboard behind it). A view leads with one tab open and carries the others as folds that render on first opening; every figure is still here, and the old tab ids still work as addresses and links, opening the fold they name.','<b>THE METHOD PROSE FOLDS ONCE PER TAB.</b> Every standing paragraph that explained what the figures mean is kept, word for word, behind one Method and caveats fold at the top of the tab, each block under the heading it sat beneath. The lead sentence stays, because it says what the tab is for. Measured at 1280px before this change, across the fifteen tabs: 61,700px of page, 5,770 characters of prose standing open, 92 tables. Measured after, the seven views with their folds shut: 29,579px of page and 766 characters of prose standing open, the Enter form&rsquo;s own copy being most of that. Every view&rsquo;s figure tokens, with every fold opened, are the same multiset as its tabs produced before: 2,897 tokens across the seven, none missing, none added.','<b>NO FIGURE MOVED.</b> The builders that draw each tab are untouched; the views compose them. The figure tokens extracted from every view with its folds opened are the same multiset as the fifteen tabs produced before the change.']},
+
+{v:'v340',d:'23 Aug 2026',t:'THE FOLD IS A DATA WRITE',n:['<b>MOVE 3 OF THE REBUILD: AN APPROVED ROW BECOMES A RECORD, WITH ITS NOTE, BY A TOOL.</b> tools/fold.mjs reads the staged batch, says what every row would do and what would leave or land on the shelf, refuses what it must (a Modification, a key that matches nothing or two things, a replay, a row with no note), takes the agent&rsquo;s notes from one file and writes the book, the master, the version entry and the changelog in one pass, all or nothing. A fulfilment is applied exactly as the desk&rsquo;s own ovAmend applies it; a count sets the stated shelf and moves COUNT_ON; the roll is written as a sentence into NOTES; the watermark moves to the newest id.','<b>WHAT STAYS WITH THE AGENT IS THE JUDGEMENT.</b> The note on every new row, the trail note on every amendment, the sentence on the roll and the version entry are typed by the agent into master/_fold_notes.json, and the tool refuses to fold without them. What leaves the agent is the syntax: nobody edits twelve thousand lines of a page to add a row again.','<b>PROVED ON A COPY.</b> The suite folds a four-row batch (a new sale, a fulfilment of a pending order, an oil count and a registration) into a copy of the book, checks every figure it moved, syncs it into a copy of the master, builds the phone payload from that and finds the new row on the phone&rsquo;s ledger at the rolled shelf. It also proves the tool refuses a Modification and a note-less row. The sorter now sorts the book and syncs the block, and the cloud routine&rsquo;s procedure is rewritten for this in docs/CLOUD_FOLD.md.','<b>NO FIGURE MOVED.</b> The book as it stands is untouched; this version is the tool and its proof.']},
 
 {v:'v339',d:'23 Aug 2026',t:'THE BOOK LEAVES THE DESK',n:['<b>MOVE 2 OF THE REBUILD: THE BOOK IS DATA.</b> The twenty-six ledger declarations this file used to carry as JavaScript, the rows, the opening, the stated stock, the count dates, the roster, the quotes, the watermark and the rest, now live in ledger/book.json, and the desk carries a generated copy of them in one block near the top of its script, rendered by tools/booksync.mjs. CI fails if the block is not the file. The prose that sat in comments beside the data, the roll of the stated stock, the oil counts, the 07 Aug orders, is kept as NOTES in the same file and rendered back as comments, so nothing written beside a figure is lost.','<b>WHY THIS IS THE MOVE THAT MATTERS.</b> The mirror went stale for two days because the book was a JavaScript file only a browser could evaluate. As a JSON document it is a copy any job can regenerate, the desk and the phone are builds of it, and the fold, from the next version, writes a record rather than editing twelve thousand lines of a page.','<b>THE GATE HELD.</b> The v338 master and this one, built on the same date, produce byte-identical payloads, and the extract read back from the running desk equals the file on every key. No figure moved.']},
 
@@ -3138,7 +3142,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='23 Aug 2026, 09:49 KL';
+const LAST_UPDATED='23 Aug 2026, 09:58 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -12081,6 +12085,76 @@ function setProdView(pr){
   recompute(); drawProdSw(); render();
 }
 const builders={today:tabToday,forward:tabForward,sourcing:()=>perProduct(tabSourcing,{skipEmpty:true}),analysis:()=>perProduct(tabAnalysis),map:tabMap,overview:tabOverview,inventory:()=>perProduct(tabInventory),financials:()=>consoBlock()+perProduct(tabFinancials),ledger:tabLedger,concentration:tabConcentration,network:tabNetwork,receivables:()=>consoBlock()+perProduct(tabReceivables),add:tabWorkbench,pricing:()=>perProduct(tabPricing),plans:tabPlans};
+/* ============ SEVEN VIEWS OVER FIFTEEN TABS (v341, move 4 of the rebuild) ============
+   The fifteen tabs were fifteen reports stacked: a megabyte to open for one figure, with the
+   method prose standing open on every one. A view leads with one tab open, folds that tab's
+   method prose into a single "Method and caveats" fold (every word kept, each block under the
+   heading it sat beneath), and carries the other tabs it absorbs as folds that render on first
+   opening. Every figure is still here; what changed is what stands open. The old tab ids still
+   work as addresses and as links: switchTab maps them to the view that holds them and opens
+   the fold, so nothing that pointed at a tab has to change. */
+const VIEWS=[
+  {id:'today', name:'Today',            lead:'today',         parts:['overview','forward']},
+  {id:'money', name:'Orders and money', lead:'receivables',   parts:['financials']},
+  {id:'stock', name:'Stock',            lead:'inventory',     parts:['sourcing']},
+  {id:'price', name:'Price',            lead:'pricing',       parts:[]},
+  {id:'people',name:'Customers',        lead:'concentration', parts:['network','map']},
+  {id:'book',  name:'The book',         lead:'ledger',        parts:['analysis']},
+  {id:'enter', name:'Enter',            lead:'add',           parts:['plans']}
+];
+const VIEW_OF={}; VIEWS.forEach(v=>{VIEW_OF[v.id]=v.id;VIEW_OF[v.lead]=v.id;v.parts.forEach(p=>{VIEW_OF[p]=v.id;});});
+const PART_Q={overview:'every rule the desk trades by, and the register of what is breached',
+  forward:'the next thirty days of shelf and cash, day by day',
+  financials:'the profit and loss, the cash position and the cost of doing business',
+  sourcing:'the next lot: the quote, the taper, the leak and the buy simulator',
+  network:'associates, their downstream buckets and the rewards',
+  map:'where the book is concentrated, drawn as heat',
+  analysis:'the month read twelve ways',
+  plans:'the whiteboard: plans, never figures'};
+/* the chart and wiring passes each tab needs after its HTML is in the document */
+const PART_DRAW={inventory:()=>drawPerProduct([trackCharts]),
+  pricing:()=>drawPerProduct([wirePricing,drawPriceCharts,drawEarnChart,drawBoardCharts]),
+  today:()=>drawTodayCharts(), concentration:()=>drawConcCharts(),
+  receivables:()=>drawPerProduct([drawRecvCharts]), financials:()=>drawPerProduct([drawFinCharts]),
+  network:()=>drawNetworkCharts(), ledger:()=>{drawLedgerCharts();wireLedger();},
+  sourcing:()=>drawPerProduct([drawSourcingCharts,drawOutlookChart]), forward:()=>drawFwdCharts(),
+  analysis:()=>drawPerProduct([drawAnalysis])};
+/* STUDY FOLDS. The standing prose on a tab is method: what the figures mean and how they were
+   struck. It is kept, every word, behind one fold, each block under the heading it sat beneath.
+   The part's lead sentence stays, because it says what the part is for. A block that carries a
+   control or a figure of its own is not prose and is left where it is. */
+function foldMethod(el){
+  const blocks=[...el.querySelectorAll('.dsc,.dsclead,.insight')].filter(b=>
+    !b.closest('table,details,.kpi,.act,.plan,.obs,.qfield,.vm')&&!b.querySelector('button,input,select,canvas,table,.kpi'));
+  if(blocks.length<2)return;
+  const keep=blocks.find(b=>b.classList.contains('dsclead'))||blocks[0];
+  const moved=blocks.filter(b=>b!==keep);
+  const heads=[...el.querySelectorAll('h1,h2,h3,.prodhd,.cardh')];
+  const headingFor=node=>{let h=null;for(const x of heads){if(x.compareDocumentPosition(node)&Node.DOCUMENT_POSITION_FOLLOWING)h=x;else break;}
+    return h?h.textContent.replace(/\s+/g,' ').trim().slice(0,60):'';};
+  const fold=document.createElement('details');fold.className='obsec vmethod';
+  fold.innerHTML=`<summary>Method and caveats<span class="q">what the figures mean and how they were struck</span><span class="ct">${moved.length}</span></summary>`;
+  const body=document.createElement('div');
+  moved.forEach(b=>{const w=document.createElement('div');w.className='vm';
+    const h=headingFor(b);if(h){const hh=document.createElement('div');hh.className='vmh';hh.textContent=h;w.appendChild(hh);}
+    b.parentNode.removeChild(b);w.appendChild(b);body.appendChild(w);});
+  fold.appendChild(body);
+  keep.parentNode.insertBefore(fold,keep.nextSibling);
+}
+function renderPart(tab,el,snap){
+  el.innerHTML=builders[tab]();
+  if(tab==='add'){
+    wireWorkbench();
+    if(snap){Object.keys(snap).forEach(id=>{const e=document.getElementById(id);if(!e)return;
+      if(e.type==='checkbox')e.checked=snap[id].c;else if(snap[id].v!==''&&snap[id].v!=null)e.value=snap[id].v;});}
+    const ab=document.getElementById('wbAssocBox'),ac=document.getElementById('wbAssoc');
+    if(ab&&ac)ab.style.display=ac.checked?'':'none';
+    const nb=document.getElementById('wbNewBox'),ps=document.getElementById('wbParty');
+    if(nb&&ps)nb.style.display=ps.value==='__new__'?'':'none';
+    wbApply();wbPreview();
+  } else foldMethod(el);
+  try{if(PART_DRAW[tab])PART_DRAW[tab]();}catch(e){}
+}
 let curTab='today';   // v147: the desk opens on what to do, not on what happened
 function navCounts(){
   // live counts on the rail: open+pending positions, queued entries
@@ -12093,45 +12167,27 @@ function navCounts(){
     c.textContent=n;};
   // plans ride the same queue but are not transactions, so they must not inflate the Workbench count
   const planN=queue.filter(q=>q.payload&&q.payload.mode==='plan').length;
-  put('receivables',openN);put('add',queue.length-planN);put('plans',planN);
-  put('overview',boundaryScan().filter(x=>x.sev==='breach').length);   // breaches only: a badge that always shows means nothing
-  put('today',actions().filter(x=>x.sev==='now').length);              // same discipline: only what is actually due now
+  put('money',openN);put('enter',queue.length);
+  /* v341: what is due now and what is breached, on the one view that carries both */
+  put('today',actions().filter(x=>x.sev==='now').length+boundaryScan().filter(x=>x.sev==='breach').length);
 }
 function render(){recompute();
-  for(const k in builders){const el=document.getElementById('sec-'+k);if(!el||!el.classList.contains('on'))continue;
-    if(k==='add'){
-      // snapshot half-typed fields: a header toggle (Show names / Lock) re-renders
-      // this tab and used to wipe an entry mid-composition
-      const snap={};el.querySelectorAll('input,select').forEach(e=>{if(e.id)snap[e.id]={v:e.value,c:e.checked};});
-      el.innerHTML=builders[k]();
-      window.__wbSnap=snap;
-    }else el.innerHTML=builders[k]();}
-  if(curTab==='inventory')drawPerProduct([trackCharts]);
-  if(curTab==='add'){wireWorkbench();
-    const snap=window.__wbSnap||{};window.__wbSnap=null;
-    Object.keys(snap).forEach(id=>{const e=document.getElementById(id);if(!e)return;
-      if(e.type==='checkbox')e.checked=snap[id].c;else if(snap[id].v!==''&&snap[id].v!=null)e.value=snap[id].v;});
-    const ab=document.getElementById('wbAssocBox'),ac=document.getElementById('wbAssoc');
-    if(ab&&ac)ab.style.display=ac.checked?'':'none';
-    const nb=document.getElementById('wbNewBox'),ps=document.getElementById('wbParty');
-    if(nb&&ps)nb.style.display=ps.value==='__new__'?'':'none';
-    wbApply();wbPreview();}
-  if(curTab==='pricing')drawPerProduct([wirePricing,drawPriceCharts,drawEarnChart,drawBoardCharts]);
-  if(curTab==='today')drawTodayCharts();
-  if(curTab==='concentration')drawConcCharts();
-  if(curTab==='receivables')drawPerProduct([drawRecvCharts]);
-  if(curTab==='financials')drawPerProduct([drawFinCharts]);
-  if(curTab==='network')drawNetworkCharts();
-  if(curTab==='ledger')drawLedgerCharts();
-  if(curTab==='sourcing')drawPerProduct([drawSourcingCharts,drawOutlookChart]);
-  if(curTab==='forward')drawFwdCharts();
-  if(curTab==='analysis')drawPerProduct([drawAnalysis]);
-  if(curTab==='ledger')wireLedger();
+  const V=VIEWS.find(v=>v.id===curTab); if(!V)return;
+  const el=document.getElementById('sec-'+V.id); if(!el)return;
+  /* the Workbench keeps what was typed across a re-render, exactly as before */
+  let snap=null;
+  if(V.lead==='add'){snap={};el.querySelectorAll('input,select').forEach(e=>{if(e.id)snap[e.id]={v:e.value,c:e.checked};});}
+  const wasOpen={};el.querySelectorAll('details.vfold').forEach(d=>{wasOpen[d.dataset.tab]=d.open;});
+  el.innerHTML=`<div class="vpart vlead" data-tab="${V.lead}"></div>`
+    +V.parts.map(p=>`<details class="obsec vfold" data-tab="${p}"${wasOpen[p]?' open':''}><summary>${esc(TAB_LABEL[p]||p)}<span class="q">${esc(PART_Q[p]||'')}</span></summary><div class="vpart vbody" data-tab="${p}"></div></details>`).join('');
+  renderPart(V.lead,el.querySelector('.vlead'),snap);
+  el.querySelectorAll('details.vfold').forEach(d=>{
+    const body=d.querySelector('.vbody');
+    const fill=()=>{if(body.dataset.done)return;body.dataset.done='1';renderPart(d.dataset.tab,body,null);try{wrapTables();}catch(e){}};
+    if(d.open)fill();
+    d.addEventListener('toggle',()=>{if(d.open)fill();});
+  });
   renderQueue();renderProvBar();navCounts();applyNotes();
-  /* v276: AFTER applyNotes, because that rewrites innerHTML on the lead and the notes and
-     would orphan a wrapper made before it. Every render, not only a tab change: the desk
-     re-renders on a queue post, a product jump and a name toggle too, and each of those
-     rebuilds the tables. */
   try{wrapTables();}catch(e){}}
 /* ============ KEY MESSAGE vs DATABASE (v210) ============
    The desk had grown to 52% prose. Not one word of it was wasted when it was written,
@@ -12193,7 +12249,14 @@ function applyNotes(){
   if(bar)bar.innerHTML=(notesOn?'&#9662;':'&#9656;')+' Method and caveats ('+n+')';
   if(bar&&!n)bar.remove();
 }
-function switchTab(s){curTab=s;document.body.setAttribute('data-sec',s);[...document.querySelectorAll('.tab')].forEach(t=>t.classList.toggle('on',t.dataset.s===s));[...document.querySelectorAll('.sec')].forEach(x=>x.classList.toggle('on',x.id==='sec-'+s));render();
+function switchTab(s){
+  /* v341: an old tab id is an address into a view: the view switches and the fold opens */
+  const view=VIEW_OF[s]||'today', part=(view!==s)?s:null;
+  curTab=view;document.body.setAttribute('data-sec',view);[...document.querySelectorAll('.tab')].forEach(t=>t.classList.toggle('on',t.dataset.s===view));[...document.querySelectorAll('.sec')].forEach(x=>x.classList.toggle('on',x.id==='sec-'+view));render();
+  if(part){const V=VIEWS.find(v=>v.id===view);
+    if(V&&V.lead!==part){const d=document.querySelector('#sec-'+view+' details.vfold[data-tab="'+part+'"]');
+      if(d){d.open=true;setTimeout(()=>{try{d.scrollIntoView({behavior:'smooth',block:'start'});}catch(e){}},60);}}}
+  s=view;
   /* v281: the cards of the incoming tab settle in with a short stagger. The class is
      transient so a re-render mid-tab (a queue post, a name toggle) never replays it. */
   try{const el=document.getElementById('sec-'+s);
@@ -12368,10 +12431,10 @@ applyOverlay();                            // uncommitted entries fold in before
 /* v281: a fresh open still lands on Today (v147: the desk opens on what to do), but an
    address that names a tab is honoured, which is what lets a reload resume in place. */
 recompute();drawProdSw();
-(function(){const h=(location.hash||'').slice(1);switchTab(builders[h]?h:'today');})();
+(function(){const h=(location.hash||'').slice(1);switchTab(VIEW_OF[h]?h:'today');})();
 window.addEventListener('hashchange',()=>{
   const h=(location.hash||'').slice(1);
-  if(builders[h]&&h!==curTab)switchTab(h);
+  if(VIEW_OF[h]&&VIEW_OF[h]!==curTab)switchTab(h);
 });
 /* ===== v132: ONE palette. The v108 time-of-day bands (dawn/day/dusk/night) and their
    rail switcher are retired at your call; the desk is pinned to Register (classic), the

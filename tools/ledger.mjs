@@ -61,7 +61,8 @@ const NOT_LEDGER = new Set([
      A rule can be rewritten from the code; a fact cannot be rewritten from anywhere. */
 
   /* pricing, cost and reward MODEL: rules, not facts */
-  "PRICE", "PRICE_ENGINE", "PRICING_ENGINE", "POSITION_ENGINE" /* v337, v338: the engine modules inlined by tools/engine.mjs; functions, no data */, "PRICE_TIERS", "PRICE_MODEL", "PRICE_LOCK", "PXBANDS", "PX",
+  "PRICE", "PRICE_ENGINE", "PRICING_ENGINE", "POSITION_ENGINE" /* v337, v338: the engine modules inlined by tools/engine.mjs; functions, no data */,
+  "VIEWS", "VIEW_OF", "PART_Q", "PART_DRAW" /* v341: the seven views over the tabs; navigation, not the book */, "PRICE_TIERS", "PRICE_MODEL", "PRICE_LOCK", "PXBANDS", "PX",
   "REF", "REF_POINTS", "LADDER", "BAND_LABEL", "BAND_NAME", "COST_BASIS", "COST_BOOK", "SALES_POLICY",
   "RULES", "SHRINK", "R0_NETWORK", "REBATE", "REWARD", "FWD", "PROD_STOCK_COST", "PROD_IDS",
   "TIERS", "SIZES", "PRICES", "BANDS", "HURDLES", "REWARDS", "CADENCE", "THRESHOLDS",
