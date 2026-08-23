@@ -1,0 +1,39 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-08-23T09:38:30.781Z",
+   "collection": "roster",
+   "row": {
+    "code": "CK4-SEN",
+    "kind": "customer",
+    "parent": null,
+    "note": null
+   },
+   "reasoning": "Registers CK4-SEN as a customer. It touches no figure: the fold appends the code to the roster. THE NAME AND THE PLACE ARE NOT HERE AND MUST NOT BE: the directory is typed at the laptop and never travels.",
+   "flags": [],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-08-23T09:38:30.781Z",
+    "type": "ADDID",
+    "party": "CK4-SEN",
+    "qty": null,
+    "total": null,
+    "status": "addid",
+    "raw": "Register CK4-SEN as a customer",
+    "payload": {
+     "mode": "addid",
+     "code": "CK4-SEN",
+     "kind": "customer",
+     "parent": null,
+     "rev": null,
+     "note": null
+    }
+   },
+   "decidedAt": "2026-08-23T09:38:42.831Z",
+   "decidedBy": "phone"
+  }
+ ]
+}
