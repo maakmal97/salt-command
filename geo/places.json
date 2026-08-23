@@ -1,0 +1,170 @@
+{
+ "what": "The gazetteer: where a locality is, which suffixes are not places, and the per-party override. Rendered into the master between the GEO markers by tools/geosync.mjs.",
+ "PLACES": {
+  "KLC": {
+   "lat": 3.16,
+   "lng": 101.71
+  },
+  "OKR": {
+   "lat": 3.09,
+   "lng": 101.67
+  },
+  "PJ": {
+   "lat": 3.11,
+   "lng": 101.61
+  },
+  "CS": {
+   "lat": 3.06,
+   "lng": 101.75
+  },
+  "MK": {
+   "lat": 3.17,
+   "lng": 101.65
+  },
+  "BK": {
+   "lat": 3.05,
+   "lng": 101.64
+  },
+  "WM": {
+   "lat": 3.21,
+   "lng": 101.74
+  },
+  "KLS": {
+   "lat": 3.13,
+   "lng": 101.69
+  },
+  "SEN": {
+   "lat": 3.18,
+   "lng": 101.68
+  },
+  "SB": {
+   "lat": 3.05,
+   "lng": 101.71
+  },
+  "BJ": {
+   "lat": 3.06,
+   "lng": 101.69
+  },
+  "DAM": {
+   "lat": 3.15,
+   "lng": 101.66
+  },
+  "PER": {
+   "lat": 3.1,
+   "lng": 101.72
+  },
+  "CHE": {
+   "lat": 3.11,
+   "lng": 101.72
+  },
+  "SK": {
+   "lat": 3.02,
+   "lng": 101.7
+  },
+  "BS": {
+   "lat": 3.11,
+   "lng": 101.67
+  },
+  "KER": {
+   "lat": 3.11,
+   "lng": 101.67
+  },
+  "AD": {
+   "lat": 3.06,
+   "lng": 101.74
+  },
+  "BTR": {
+   "lat": 3.09,
+   "lng": 101.71
+  },
+  "KEP": {
+   "lat": 3.21,
+   "lng": 101.64
+  },
+  "PUD": {
+   "lat": 3.14,
+   "lng": 101.71
+  },
+  "MLR": {
+   "lat": 3.13,
+   "lng": 101.73
+  },
+  "TAI": {
+   "lat": 4.85,
+   "lng": 100.74
+  },
+  "NIL": {
+   "lat": 2.81,
+   "lng": 101.8
+  },
+  "HCM": {
+   "lat": 10.78,
+   "lng": 106.7
+  }
+ },
+ "METRO": {
+  "la0": 2.9,
+  "la1": 3.35,
+  "ln0": 101.45,
+  "ln1": 101.85,
+  "name": "the Klang Valley frame"
+ },
+ "NON_PLACE": {
+  "GEN": "a reseller general bucket, not a person or a place",
+  "R": "a reseller trading account, the same person as the parent code, so it is not a second place"
+ },
+ "PLACEHOLDER": {
+  "TBC": "TBC is to be confirmed: nobody has recorded where this party is, so there is nothing to look up. Ask, then set the location in Names &amp; IDs."
+ },
+ "LOCS": {
+  "CG5-SB": "SB",
+  "CJ4-OKR": "OKR",
+  "SF6-KLC": "KLC",
+  "CJ4-BJ": "BJ",
+  "CR3-DAM": "DAM",
+  "CN5-TAI": "TAI",
+  "CS6-PER": "PER",
+  "SA5-BTR": "BTR",
+  "CC5-OKR": "OKR",
+  "CA4-DAM": "DAM",
+  "CS6-BS": "BS",
+  "CM4-SK": "SK",
+  "CM6-HCM": "HCM",
+  "CM4-MK": "MK",
+  "CH5-KLC": "KLC",
+  "CE4-CHE": "CHE",
+  "CI4-OKR": "OKR",
+  "CN6-WM": "WM",
+  "CZ6-WM": "WM",
+  "CR4-PJ": "PJ",
+  "CD4-CS": "CS",
+  "CA5-KER": "KER",
+  "CE4-AD": "AD",
+  "CA5-SEN": "SEN",
+  "SP7-PUD": "PUD",
+  "SM4-KEP": "KEP",
+  "CH4-KS": "KLS",
+  "CR3-PUD": "PUD",
+  "CH4-MLR": "MLR",
+  "CM3-OKR": "OKR",
+  "CA11-SEN": "SEN",
+  "CM6-PJ": "PJ"
+ },
+ "NOTES": {
+  "PLACES": [
+   "A LOCALITY, NOT A DOORSTEP. Coordinates are rounded to TWO decimal places, about 1.1km,\n   which a heatmap blurs over anyway and which no longer points at a street. The names, the\n   provenance and the original precision are in the directory on the laptop, beside the real\n   names; read them there when siting a new suffix.\n   v347: the NIL suffix joined this list. It was never a mystery, it was simply not here, so a\n   party the desk could place was reported as unknown. The locality it stands for is in the\n   directory on the laptop, and is deliberately not written here: this file is inlined into a\n   page served publicly, and naming a neighbourhood beside a suffix identifies its customer."
+  ],
+  "METRO": [
+   "The drawn map is a KLANG VALLEY schematic and stays one. Parties far outside it are listed\n   with a real distance and bearing rather than plotted, because a canvas wide enough to hold\n   them would compress every metro point into a single smudge: arithmetically correct and\n   visually useless."
+  ],
+  "NON_PLACE": [
+   "Suffixes that are explicitly NOT places, so they are never offered for siting. These will\n   never have a place of their own, which is what separates them from a PLACEHOLDER."
+  ],
+  "PLACEHOLDER": [
+   "v348: A PLACEHOLDER IS NOT A GAZETTEER GAP, AND SAYING SO WRONGLY POINTS AT THE WRONG FIX.\n   CH6-TBC and CZ4-TBC were reported as `suffix \"TBC\" is not in the gazetteer`, which invites\n   exactly the wrong repair: putting TBC into PLACES would site two different people at one\n   invented spot and the map would look complete. TBC is to be confirmed. Nobody has asked them\n   yet, so there is nothing to look up.\n   THEY STILL COUNT AS GENUINE GAPS, not as excluded by rule. A reseller account will never have\n   a place of its own; these two will, the moment someone asks. Only the reason changes."
+  ],
+  "LOCS": [
+   "THE OVERRIDE, and only the override. From v347 locOf reads the locality out of the party\n   code itself, which is where v237 put it, so this list is no longer the only source and a\n   party added since it was last typed no longer falls off the map. It stays for the party\n   whose locality is NOT what its suffix says: CH4-KS sits at KLS. It still wins."
+  ]
+ }
+}

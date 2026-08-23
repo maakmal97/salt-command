@@ -53,6 +53,12 @@ jobs:
       - name: The book in the master is ledger/book.json
         run: node tools/booksync.mjs --check
 
+      # THE GEOGRAPHY IN THE MASTER IS THE FILES (v349). geo/basemap.json holds the drawn outlines
+      # with their provenance and geo/places.json the gazetteer; the desk carries both inlined.
+      # Same rule as the engine and the book: the copy is proved, never trusted.
+      - name: The geography in the master is geo/basemap.json and geo/places.json
+        run: node tools/geosync.mjs --check
+
       - name: Tests
         run: npm test
 

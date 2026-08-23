@@ -1,5 +1,17 @@
 [
  {
+  "v": "v349",
+  "d": "24 Aug 2026",
+  "t": "THE MAP HAS A REAL OUTLINE, FETCHED ONCE AND COMMITTED",
+  "n": [
+   "<b>THE GEOGRAPHY IS A MODULE IN THE REPO, THE THIRD AFTER THE ENGINE AND THE BOOK.</b> <b>geo/basemap.json</b> holds the drawn outlines with their provenance, <b>geo/places.json</b> the gazetteer that was five hand-typed declarations in this file, and <b>tools/geosync.mjs --sync</b> renders both into the master between markers. CI runs --check, so the copy in the desk is PROVED to be the files rather than trusted to be, exactly as engine/pricing.mjs and ledger/book.json are. The prose that explained each declaration is NOTES in places.json and comes back as comments.",
+   "<b>THE OUTLINES ARE REAL AND THEY WERE NEVER REMEMBERED.</b> Kuala Lumpur, Selangor, Putrajaya and Negeri Sembilan, from OpenStreetMap via geoBoundaries, pinned to one release, simplified by Douglas-Peucker and rounded to about 11m: 683 points and 13 KB for the four. <b>tools/geofetch.mjs</b> is what fetched them, it is run by hand, and it is never run by CI or by the build. <b>THE RUNTIME RULE IS UNTOUCHED:</b> the desk still loads nothing at run time. v149 refused a coastline because there was no basemap to be had offline and one drawn from memory would be a fabricated fact. It was right about inventing geometry and wrong about the conclusion, because geometry can be fetched, checked and committed.",
+   "<b>ODbL, SO THE CREDIT IS PRINTED UNDER THE MAP.</b> That licence asks for attribution wherever the data is shown and /desk is served publicly, so it goes where a reader sees it rather than into a comment. DOSM Malaysia publishes the same boundaries and was the first choice; its repository carries no licence file at all and GitHub reads it as NOASSERTION, so it was not committed into a private ledger on a guess.",
+   "<b>THE OUTLINES CARRY NO NAME, AND NOT EVEN INTO THE FILE THE DESK SHIPS.</b> v293 stripped every label from this canvas because a named place beside a party code identifies a customer. The basemap keeps its names in geo/basemap.json, for whoever maintains it, and geosync renders only the kind and the rings. The leak gate caught the first draft: a note explaining the NIL suffix named the locality it stands for, on a public page, which is precisely the disclosure v293 removed. The note now says the locality is in the directory and does not repeat it.",
+   "<b>WHAT IT LOOKS LIKE.</b> The territory the frame sits in is drawn brighter with a faint fill, the surrounding states a dim stroke, everything beyond the frame clips itself, and it all sits UNDER the heat so the blobs still read first. Eight new assertions, including one that every point lies inside Malaysia's own bounding box: a hand-typed coastline or a swapped lat and lng cannot pass as real geometry."
+  ]
+ },
+ {
   "v": "v348",
   "d": "24 Aug 2026",
   "t": "THE OIL GAP HAS A REASON, AND TBC STOPS READING AS A MISSING GAZETTEER ENTRY",

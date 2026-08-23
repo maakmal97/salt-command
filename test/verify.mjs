@@ -1397,6 +1397,33 @@ section("Engine — the position, out of the desk (v338)");
   try { w.close(); } catch (e) { }
 }
 
+/* ---- the geography as data ------------------------------------------------------------ */
+section("Geography — geo/ is the source (v349)");
+{
+  let chk = "";
+  try { chk = execFileSync("node", [join(REPO, "tools", "geosync.mjs"), "--check"], { encoding: "utf8" }); }
+  catch (e) { chk = String((e && e.stdout) || e); }
+  ok(/ok\s+the master's GEO block/.test(chk), "tools/geosync.mjs --check: the master's GEO block is the two files");
+  const bm = JSON.parse(readFileSync(join(REPO, "geo", "basemap.json"), "utf8"));
+  const pl = JSON.parse(readFileSync(join(REPO, "geo", "places.json"), "utf8"));
+  ok(bm.features.length >= 1 && bm.features.every((f) => f.rings.length && f.rings.every((r) => r.length >= 4)),
+    `the basemap holds ${bm.features.length} outline(s), every ring closed`);
+  ok(typeof bm.licence === "string" && typeof bm.attribution === "string" && typeof bm.sourceUrl === "string" && typeof bm.fetchedOn === "string",
+    "and states its licence, attribution, source and the day it was fetched");
+  /* fetched, never remembered: every point must sit inside Malaysia's own box, so a hand-typed
+     coastline or a lat/lng swap cannot pass as real geometry. */
+  const all = bm.features.flatMap((f) => f.rings.flat());
+  ok(all.every(([lg, la]) => lg > 99.5 && lg < 105 && la > 0.8 && la < 7.5),
+    `every one of the ${all.length} points is inside Malaysia's bounding box`);
+  ok(["PLACES", "METRO", "NON_PLACE", "PLACEHOLDER", "LOCS"].every((k) => pl[k] && typeof pl[k] === "object"),
+    "the gazetteer holds all five declarations");
+  /* the outlines are drawn and credited, and they carry NO name into a public page */
+  const desk = readFileSync(join(REPO, "public", "desk.html"), "utf8");
+  ok(/const BASEMAP=\[/.test(desk) && !/const BASEMAP=\[\s*\{name:/.test(desk), "the built desk carries the outlines and no feature name");
+  ok(bm.features.every((f) => !desk.includes(`"${f.name}"`)), "no basemap feature is named in the public desk");
+  ok(desk.includes(bm.attribution.slice(0, 24)), "the ODbL attribution is on the page, which is what the licence asks");
+}
+
 /* ---- the book as data ---------------------------------------------------------------- */
 section("Book — ledger/book.json is the source (v339)");
 {
