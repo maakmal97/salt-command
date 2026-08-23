@@ -88,7 +88,7 @@ if (!existsSync(MASTER)) {
   process.exit(2);
 }
 const masterSrc = readFileSync(MASTER, "utf8");
-const VER = (masterSrc.match(/const evolution=\[\{v:'(v\d+)'/) || [])[1] || null;
+const VER = (masterSrc.match(/const evolution=\[\{\s*"?v"?\s*:\s*['"](v\d+)['"]/) || [])[1] || null;
 /* v344: EITHER QUOTE. booksync.mjs has rendered the book from JSON since v339, so the
    watermark is written with double quotes and this regex stopped matching. It failed the run
    rather than passing it, but the REPLAY CHECK below reads MARK, and a check that never runs

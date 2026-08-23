@@ -271,7 +271,7 @@ src = src.split(IDTOKEN).join(BUILD_ID);
 
 /* the version the desk is stamped with, read from the master's one-entry evolution */
 let VER = "";
-try { VER = (src.match(/const evolution=\[\{v:'(v\d+)'/) || [])[1] || ""; } catch (e) { }
+try { VER = (src.match(/const evolution=\[\{\s*"?v"?\s*:\s*['"](v\d+)['"]/) || [])[1] || ""; } catch (e) { }
 
 mkdirSync(dirname(OUT), { recursive: true });
 writeFileSync(OUT, src);

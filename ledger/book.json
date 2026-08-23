@@ -40,7 +40,7 @@
   "STATED_STOCK": 25.25,
   "COUNT_ON": {
     "salt": "2026-08-20",
-    "oil": "2026-08-20"
+    "oil": "2026-08-23"
   },
   "purchases": [
     {"date":"2026-06-27","qty":12.5,"total":800,"supplier":"SF6-KLC","status":"paid"},
@@ -226,7 +226,8 @@
     "CH4-MLR",
     "CM3-OKR",
     "CA11-SEN",
-    "CM6-PJ"
+    "CM6-PJ",
+    "CK4-SEN"
   ],
   "associates": [
     "CS6-BS",
@@ -363,12 +364,13 @@
   "ONE_OFFS": [
     {"id":"CM6-HCM","date":"2026-07-14","note":"Judged a rare one-off. Treat the RM104/unit it paid as an outlier, not as evidence of what wholesale will bear."}
   ],
-  "QUEUE_COMMITTED": "2026-08-22T11:00:24.409Z",
+  "QUEUE_COMMITTED": "2026-08-23T15:36:10.986Z",
   "NOTES": {
     "PRODUCTS": [
       "v266: accent was var(--cyan), a token this file has never defined, so salt's colour\n     resolved to nothing wherever it was used: the product band label and, from today, the\n     ledger stamp. It is var(--ice), which is the cyan the rest of the desk actually uses."
     ],
     "PROD_OPENING": [
+      "COUNTED AT v346 on 2026-08-23: the oil shelf held 0 against 0 on the roll, a drift of 0. A COUNT AND NOT A ROLL, so COUNT_ON.oil moves to 2026-08-23. The third zero on the oil shelf in four days, and the first of them that moves the date: the second count of 20 Aug agreed with the first on the same day, so COUNT_ON stayed put, whereas this is a fresh look on a fresh day. THE FLAG ON THE APPROVAL SCREEN SAID NOTHING IS UNACCOUNTED FOR, AND THAT IS TRUE ONLY OF THE STATED FIGURE. The ledger walk is 5 unit of opening plus 100 bought less 71 sold, which is 34 unit that should be on a shelf three counts have now found empty, and no oil row has been folded since 14 Aug, so the gap is unchanged. A count confirms the shelf, not the walk.",
       "v229: oil opens at 5 unit and he states the shelf at 45. 5 + 50 bought - 10 sold = 45,\n     so the count and the ledger agree exactly and the plug is nil.\n     v230: THE OPENING RATE IS NOW KNOWN. The remnant came off a 30 unit lot bought for\n     RM230, so it is carried at RM7.667 a unit, the 30 unit tier on SP7-PUD's ladder. Written\n     as the division rather than as a rounded 7.67 so the arithmetic shows its working and\n     no rounding is baked into a cost basis. The remnant is 5 unit of that lot; the other\n     25 were gone before this book opened and are not on it.",
       "v290: OIL IS COUNTED FOR THE FIRST TIME, 12 Aug 2026, and it holds 20.\n     The ledger implied 35: 5 opening plus 100 bought less 70 sold. So the first real count\n     on this book finds 15 unit missing and oil's leak stops reading nil at 14.29%. It never\n     had no leak; nobody had ever looked. Every oil figure that rested on 35 moves with it.\n     Superseded, for the record: v267 rolled the shelf to 35 arithmetically on the CS6-PER-R\n     resell and called the plug nil, which was a derived figure wearing a count's clothes.\n     v286: THE COUNT IS WITHDRAWN, back to null. 50 unit went out on 11 Aug against those 35,\n     so the 07 Aug figure is superseded and there is no honest number to roll it to: 35 less 50\n     is minus 15, and a count cannot be negative. Null is the truthful state here, because null\n     means nobody has looked since, which is exactly the case, whereas leaving 35 in place would\n     have the desk assert a shelf the ledger says cannot exist and report the gap as nil.\n     With no count the ledger stands, and it stands at minus 15, which is the desk stating its\n     own breach rather than hiding it. AN OIL PURCHASE IS MISSING, made somewhere between 07 and\n     11 Aug and never queued. Record it and both the walk and the count close by themselves.",
       "v318: OIL IS COUNTED AT ZERO, 20 Aug 2026, on the same look that found the salt shelf\n     empty. The roll said 19 and it holds nothing, so this count costs 19 unit. IT IS A COUNT\n     AND NOT A ROLL, so it wins outright and the plug widens by the full 19. Nothing is owed\n     on oil, no order is pending on it and nobody has paid for a unit of it that is not there,\n     which is what separates this from the salt hole: oil is simply gone, and gone quietly,\n     because the last count was 12 Aug and the last oil row was 14 Aug. A shelf nobody looks\n     at reports whatever the arithmetic last said, and both products have now proved it in\n     the same week.",

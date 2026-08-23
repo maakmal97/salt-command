@@ -1,5 +1,16 @@
 [
  {
+  "v": "v346",
+  "d": "24 Aug 2026",
+  "t": "A THIRD ZERO ON THE OIL SHELF, AND A CUSTOMER ON THE ROSTER",
+  "n": [
+   "<b>CK4-SEN IS ON THE ROSTER AND THE DIRECTORY IS NOT TOUCHED.</b> The code was typed by hand on the phone, drafted into the roster, approved and folded, which is the whole of the cloud route for a registration. The roster goes 38 codes to 39. The name and the place behind the code are typed at the laptop and never travel, so nothing in the cloud holds them. No figure moves: CK4-SEN has no order on the book and shows as a customer with nothing against it until one is queued. What it does change is the drafter&rsquo;s reading, because a party on the roster stops being flagged unknown, so the first row carrying this code will be judged on its rate rather than on its novelty.",
+   "<b>OIL IS COUNTED AT ZERO FOR THE THIRD TIME AND THE STATED SHELF DOES NOT MOVE.</b> 0 unit counted by hand on 23 Aug against 0 on the book, a drift of 0. Stated stays 0 and COUNT_ON.oil moves from 20 Aug to 23 Aug. That is the one difference from the second count of 20 Aug, which agreed with the first on the same day and therefore moved neither figure nor date: this is a fresh look on a fresh day, so the date of the last look moves even though the figure does not.",
+   "<b>THE APPROVAL SCREEN SAID NOTHING IS UNACCOUNTED FOR, AND AGAINST THE WALK THAT IS STILL NOT TRUE.</b> The flag reads the count against the STATED figure, where it is exact. Read against the LEDGER it is not: oil walks 5 unit of opening plus 100 bought less 71 sold, which is 34 unit the book says should be on a shelf three counts have now found empty. No oil row has been folded since 14 Aug and v345 touched salt alone, so the gap is unchanged at 34 unit. A count confirms the shelf, not the walk. This is the same finding as v331 and it is written again because the flag will say it again on the next count.",
+   "<b>NOTHING ROLLED AND NO OTHER FIGURE MOVED.</b> Neither row is a movement, so the shelf is not rolled at all: salt stands at 25.25 with COUNT_ON.salt still on 20 Aug, and no cash, no unit and no cost basis changed. The watermark moves to the newest id folded, 2026-08-23T15:36:10.986Z. This is the batch that was approved on the 23rd and has been waiting through two versions: v344 folded nothing and v345 was a desk edit, so the staged rows sat where the fold expects to find them until now."
+  ]
+ },
+ {
   "v": "v345",
   "d": "24 Aug 2026",
   "t": "AN ORDER AGREED BEFORE ITS PRICE, AND TWO WITHDRAWN",

@@ -1428,19 +1428,27 @@ section("Fold — an approved batch becomes records in the book (v340)");
   const pending = book.sales.find((r) => !r.date && r.customer === "CS6-PER" && r.total === 350);
   ok(!!pending, "the book carries the CS6-PER pending order the test amends");
   const key = pending ? `CS6-PER|undefined|350` : null;
+  /* THE FIXTURE IDS ARE BUILT FROM THE BOOK'S OWN WATERMARK AND NOT WRITTEN DOWN, because
+     apply() only moves QUEUE_COMMITTED when the newest id folded is newer than the one the
+     book already carries. Hard-coded 2026-08-23T01:xx ids outranked the watermark when this
+     was written and stopped doing so the moment a real fold moved it past them: the fold of
+     23 Aug took it to 15:36 that same day and the two watermark assertions below failed on a
+     batch that was faultless. A day after whatever the book says is always newer. */
+  const day = new Date(new Date(book.QUEUE_COMMITTED).getTime() + 864e5).toISOString().slice(0, 11);
+  const ID = (hhmm) => `${day}${hhmm}:00.000Z`;
   const staged = { ok: true, count: 5, approved: [
-    { id: "2026-08-23T01:00:00.000Z", collection: "sales", amends: null, amendKind: null,
+    { id: ID("01:00"), collection: "sales", amends: null, amendKind: null,
       row: { customer: "CA4-DAM", qty: 0.5, total: 50, cost: 44, cash: 50, date: "2026-08-23", deliveredQty: 0.5, deliveredOn: "2026-08-23", paidOn: "2026-08-23" },
-      entry: { at: "2026-08-23T01:00:00.000Z", payload: { mode: "new", direction: "SELL" } } },
-    { id: "2026-08-23T01:05:00.000Z", collection: "sales", amends: key, amendKind: "Fulfilment",
+      entry: { at: ID("01:00"), payload: { mode: "new", direction: "SELL" } } },
+    { id: ID("01:05"), collection: "sales", amends: key, amendKind: "Fulfilment",
       row: { customer: "CS6-PER", qty: 6.25, total: 350, cash: 0, date: null },
-      entry: { at: "2026-08-23T01:05:00.000Z", payload: { mode: "amend", direction: "SELL", orderKey: key, kind: "Fulfilment", date: "2026-08-23", cash: 350, kg: 6.25 } } },
-    { id: "2026-08-23T01:10:00.000Z", collection: "count", amends: null, amendKind: null,
-      row: { product: "oil", qty: 3, date: "2026-08-23", was: 0, drift: 3 }, entry: { at: "2026-08-23T01:10:00.000Z", payload: { mode: "count" } } },
-    { id: "2026-08-23T01:15:00.000Z", collection: "roster", amends: null, amendKind: null,
-      row: { code: "CT7-KLC", kind: "customer", parent: null, note: null }, entry: { at: "2026-08-23T01:15:00.000Z", payload: { mode: "party" } } },
-    { id: "2026-08-23T01:20:00.000Z", collection: "sales", amends: "CX9-NOPE|undefined|1", amendKind: "Modification",
-      row: {}, entry: { at: "2026-08-23T01:20:00.000Z", payload: { mode: "amend", direction: "SELL", kind: "Modification" } } },
+      entry: { at: ID("01:05"), payload: { mode: "amend", direction: "SELL", orderKey: key, kind: "Fulfilment", date: "2026-08-23", cash: 350, kg: 6.25 } } },
+    { id: ID("01:10"), collection: "count", amends: null, amendKind: null,
+      row: { product: "oil", qty: 3, date: "2026-08-23", was: 0, drift: 3 }, entry: { at: ID("01:10"), payload: { mode: "count" } } },
+    { id: ID("01:15"), collection: "roster", amends: null, amendKind: null,
+      row: { code: "CT7-KLC", kind: "customer", parent: null, note: null }, entry: { at: ID("01:15"), payload: { mode: "party" } } },
+    { id: ID("01:20"), collection: "sales", amends: "CX9-NOPE|undefined|1", amendKind: "Modification",
+      row: {}, entry: { at: ID("01:20"), payload: { mode: "amend", direction: "SELL", kind: "Modification" } } },
   ] };
   /* the plan refuses what it must and describes the rest */
   let p = plan(JSON.parse(JSON.stringify(book)), staged, null);
@@ -1449,12 +1457,12 @@ section("Fold — an approved batch becomes records in the book (v340)");
   ok(p.moves.some((m) => m.kg === -0.5 && m.product === "salt") && p.moves.some((m) => m.kg === -6.25), "the plan sees what will leave the shelf");
   /* a refusal folds nothing, and so does a missing note */
   const notes = { version: "v999", date: "23 Aug 2026", title: "A TEST FOLD", notes: ["<b>TEST.</b> Nothing real."],
-    rows: { "2026-08-23T01:00:00.000Z": { note: "Half a unit at the RM100 anchor, paid and delivered." }, "2026-08-23T01:05:00.000Z": { note: "paid and delivered in full" } },
+    rows: { [ID("01:00")]: { note: "Half a unit at the RM100 anchor, paid and delivered." }, [ID("01:05")]: { note: "paid and delivered in full" } },
     stockNote: "Test roll." };
   let r = apply(JSON.parse(JSON.stringify(book)), staged, notes, master);
   ok(!r.ok && r.problems.some((x) => /Modification/.test(x)), "apply refuses the whole batch while a refusal stands");
   const clean = { ...staged, count: 4, approved: staged.approved.slice(0, 4) };
-  r = apply(JSON.parse(JSON.stringify(book)), clean, { ...notes, rows: { "2026-08-23T01:05:00.000Z": notes.rows["2026-08-23T01:05:00.000Z"] } }, master);
+  r = apply(JSON.parse(JSON.stringify(book)), clean, { ...notes, rows: { [ID("01:05")]: notes.rows[ID("01:05")] } }, master);
   ok(!r.ok && r.problems.some((x) => /needs a note/.test(x)), "a new row with no note is refused");
   /* the real thing, on a copy */
   const B = JSON.parse(JSON.stringify(book));
@@ -1473,8 +1481,8 @@ section("Fold — an approved batch becomes records in the book (v340)");
     ok(B.roster.includes("CT7-KLC"), "the registration joined the roster");
     ok(Math.abs(B.STATED_STOCK - (from - 0.5 - 6.25)) < 1e-9, `the salt shelf rolled ${from} to ${B.STATED_STOCK}`);
     ok(/^ROLLED AT v999/.test(B.NOTES.STATED_STOCK[0]) && /Test roll\./.test(B.NOTES.STATED_STOCK[0]), "the roll sentence leads the stated stock's notes, with the agent's words");
-    ok(B.QUEUE_COMMITTED === "2026-08-23T01:15:00.000Z", "the watermark moved to the newest id folded");
-    ok(r.folded.length === 4 && r.newest === "2026-08-23T01:15:00.000Z", "_folded would name the four ids");
+    ok(B.QUEUE_COMMITTED === ID("01:15"), "the watermark moved to the newest id folded");
+    ok(r.folded.length === 4 && r.newest === ID("01:15"), "_folded would name the four ids");
     ok(/const evolution=\[\{"v":"v999"/.test(r.master) && /const LAST_UPDATED='\d\d \w\w\w 2026, \d\d:\d\d KL';/.test(r.master), "the version entry and the stamp are in the master");
     const { checkText } = await import("../tools/booksync.mjs");
     ok(checkText(r.master, B) === null, "and the master's book block is the folded book");
