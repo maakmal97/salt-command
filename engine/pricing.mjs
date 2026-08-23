@@ -32,7 +32,10 @@ const PRICING_ENGINE=(function(){
    2. freight, spread over the lot it arrived on, so a big lot carries it thinly;
    3. the leak: the units that never reach a paying customer divide the cost rather than add to
       it, and SHRINK_ATTRIB says how much of the leak the price carries;
-   4. delivery, a per-ORDER cost divided by what an average order actually carries.
+   4. delivery, a per-ORDER cost divided by what an average order actually carries, and
+      weighted by the share of orders that are DELIVERED at all: four in five customers come
+      and collect, so the blended figure in eff is a fifth of one delivery. delPerOrder stays
+      the FULL cost of one delivery, because that is what a delivered order has to carry.
    THE LOCKED PATH COMES FIRST. When the board is frozen on the current lot the snapshot is
    returned verbatim and nothing below runs; a simulator override bypasses the lock because
    testing a hypothetical lot is the one time a fresh number is wanted. The lock has been OFF
@@ -57,7 +60,7 @@ function costStack(I){
   const lot=pxOver.cost!=null?+pxOver.cost:(L?L.rate:I.quoteRate);
   /* 2. GETTING THEM HERE. Spread over the lot it arrived on. */
   const lotQty=(pxOver.cost!=null&&L)?L.qty:(L?L.qty:null);
-  const freight=(LKb&&pxOver.cost!=null)?LKb.freight:(lotQty?COST_BASIS.freightPerLot.rm/lotQty:0);
+  const freight=(LKb&&pxOver.cost!=null)?LKb.freight:(lotQty?COST_BASIS.freightPerTrip.rm/lotQty:0);
   const landed=lot+freight;                   // <- IAS 2 inventoriable cost, and nothing below this line is
   /* 3. THE UNITS THAT NEVER REACH A PAYING CUSTOMER. It divides rather than adds: losing 8% of
      what you buy means the 92% that sells has to return the cost of 100%. When a lock exists and
@@ -68,7 +71,7 @@ function costStack(I){
   const yielded=landed/Math.max(0.01,1-sh);
   /* 4. GETTING THEM TO THE CUSTOMER. Per order, so divided by what an average order carries. */
   const del=(LKb&&pxOver.cost!=null)?{n:LKb.delN,mean:LKb.avgDel}:I.avgDel;
-  const txn=del.mean?COST_BASIS.txnPerDelivery.rm/del.mean:0;
+  const txn=del.mean?(COST_BASIS.deliveredShare.v*COST_BASIS.txnPerDelivery.rm)/del.mean:0;
   const eff=yielded+txn;
   return {repl:+lot.toFixed(2),lot:+lot.toFixed(4),freight:+freight.toFixed(4),
           landed:+landed.toFixed(4),inventoriable:+landed.toFixed(4),
@@ -218,16 +221,30 @@ function ladderRow(sizes,C,P){
   }];
 }
 /* THE BOARD AND THE FLOORS, for quoting at the point of sale: what the phone receives. */
+/* v344: THE CARD PRICE IS A COLLECTION PRICE, AND THE BOARD NOW SAYS WHERE IT STOPS BEING ONE.
+   Four orders in five are collected, so the carded ask is what a customer who comes pays. One
+   delivery costs the full RM50, and on the smallest lots that is most of the price: at half a
+   unit the ask is RM60 and the delivered floor is RM73, so DELIVERING IT LOSES MONEY. That was
+   invisible while every order was charged a third of a delivery it mostly never had.
+   deliverable is a REPORTED FACT, not a new price. It says whether the carded ask covers a
+   delivery at that size. Nothing here refuses an order or moves an ask; what to charge for a
+   delivery is a decision, and it is his. */
 function board(sizes,C,P){
-  const f={};
-  sizes.forEach(q=>{
+  const f={}, asks=ladderRow(sizes,C,P);
+  const ask=asks&&asks[0]?asks[0].prices:[];
+  sizes.forEach((q,i)=>{
     try{
       const d=floorTotal(q,C,P), c=floorTotal(q,C,P,null,{collects:true});
-      f[q]={delivered:(typeof d==='number')?+d.toFixed(2):null,
-            collected:(typeof c==='number')?+c.toFixed(2):null};
+      const dv=(typeof d==='number')?+d.toFixed(2):null;
+      const a=ask[i];
+      f[q]={delivered:dv,
+            collected:(typeof c==='number')?+c.toFixed(2):null,
+            deliverable:(dv==null||a==null)?null:(a>=dv-0.009),
+            deliveryGap:(dv==null||a==null)?null:+(dv-a).toFixed(2)};
     }catch(e){ f[q]=null; }
   });
-  return {floors:f, sizes:sizes.slice(), tiers:ladderRow(sizes,C,P)};
+  return {floors:f, sizes:sizes.slice(), tiers:asks,
+          collectOnly:sizes.filter(q=>f[q]&&f[q].deliverable===false)};
 }
 
 return {costStack:costStack,buyTaper:buyTaper,ladderMarkup:ladderMarkup,ladderCogs:ladderCogs,

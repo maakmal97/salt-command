@@ -1,5 +1,17 @@
 [
  {
+  "v": "v344",
+  "d": "24 Aug 2026",
+  "t": "THE TWO MOVEMENT COSTS ARE MEASURED, AND THE CARD IS A COLLECTION PRICE",
+  "n": [
+   "<b>COLLECTION IS RM60 A RETURN TRIP, NOT RM100 A LOT.</b> v325 set it at RM100 and said in terms that it was the line to challenge first. It has been. The key is renamed freightPerTrip because the distinction is real: a trip that collected three lots on 22 Jul cost RM60, not RM180. Landed cost on the 20 Aug 50 unit lot goes RM46.00 to RM45.20, and freight in the accounts goes RM1,300 to RM780 across thirteen lots. One trip per lot is still assumed, because the rows do not say otherwise.",
+   "<b>DELIVERY IS TWO NUMBERS, AND THE OLD ONE WAS NEITHER.</b> RM50 is what ONE delivery costs. Four orders in five are collected by the customer, so deliveredShare is 0.20 and the blended cost of an order is RM10. The old RM16.67 charged every order a third of a delivery that most of them never had. delPerOrder is now the full RM50, which is what a delivered order has to carry, while the blended figure is what goes into effective cost: RM3.92 a unit against RM6.54.",
+   "<b>THE NET IS RM3.47 A UNIT OFF EFFECTIVE COST.</b> RM55.20 to RM51.73. Goods and freight account for RM0.85 of it and delivery for RM2.62. Floors fall about 1.7% at every size: a 12.5 unit lot collected goes RM764.75 to RM751.45, and a single unit RM61.18 to RM60.12. No ask moved.",
+   "<b>THE CARDED ASK IS A COLLECTION PRICE, AND THE BOARD NOW SAYS WHERE IT STOPS BEING ONE.</b> Charging one delivery at its real RM50 shows what the old blend hid: at half a unit the ask is RM60 and the delivered floor is RM73.90, so delivering it loses RM13.90. Oil is the same at its 10 unit minimum, RM140 against RM141.81. Every size now carries deliverable and deliveryGap, and the board lists collectOnly. It is a reported fact and not a new price: nothing refuses an order and nothing moves an ask. What to charge for a delivery is his decision and it is not taken here.",
+   "<b>THE P&amp;L RESTATES AND NOTHING ABOUT THE PAST CHANGED.</b> Gross profit goes RM6,925.22 to RM7,346.97, 33.3% to 35.3%. Selling and distribution goes RM1,533.33 to RM920, being 18.4 of 92 orders delivered rather than all 92. Operating profit goes RM1,876.00 to RM2,911.08, 9.0% to 14.0%. An assumption about the past was corrected, not the past."
+  ]
+ },
+ {
   "v": "v343",
   "d": "23 Aug 2026",
   "t": "THE PARTS ARE VISIBLE, AND THE PHONE CARRIES THE PEOPLE",

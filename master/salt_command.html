@@ -1605,7 +1605,10 @@ const PRICING_ENGINE=(function(){
    2. freight, spread over the lot it arrived on, so a big lot carries it thinly;
    3. the leak: the units that never reach a paying customer divide the cost rather than add to
       it, and SHRINK_ATTRIB says how much of the leak the price carries;
-   4. delivery, a per-ORDER cost divided by what an average order actually carries.
+   4. delivery, a per-ORDER cost divided by what an average order actually carries, and
+      weighted by the share of orders that are DELIVERED at all: four in five customers come
+      and collect, so the blended figure in eff is a fifth of one delivery. delPerOrder stays
+      the FULL cost of one delivery, because that is what a delivered order has to carry.
    THE LOCKED PATH COMES FIRST. When the board is frozen on the current lot the snapshot is
    returned verbatim and nothing below runs; a simulator override bypasses the lock because
    testing a hypothetical lot is the one time a fresh number is wanted. The lock has been OFF
@@ -1630,7 +1633,7 @@ function costStack(I){
   const lot=pxOver.cost!=null?+pxOver.cost:(L?L.rate:I.quoteRate);
   /* 2. GETTING THEM HERE. Spread over the lot it arrived on. */
   const lotQty=(pxOver.cost!=null&&L)?L.qty:(L?L.qty:null);
-  const freight=(LKb&&pxOver.cost!=null)?LKb.freight:(lotQty?COST_BASIS.freightPerLot.rm/lotQty:0);
+  const freight=(LKb&&pxOver.cost!=null)?LKb.freight:(lotQty?COST_BASIS.freightPerTrip.rm/lotQty:0);
   const landed=lot+freight;                   // <- IAS 2 inventoriable cost, and nothing below this line is
   /* 3. THE UNITS THAT NEVER REACH A PAYING CUSTOMER. It divides rather than adds: losing 8% of
      what you buy means the 92% that sells has to return the cost of 100%. When a lock exists and
@@ -1641,7 +1644,7 @@ function costStack(I){
   const yielded=landed/Math.max(0.01,1-sh);
   /* 4. GETTING THEM TO THE CUSTOMER. Per order, so divided by what an average order carries. */
   const del=(LKb&&pxOver.cost!=null)?{n:LKb.delN,mean:LKb.avgDel}:I.avgDel;
-  const txn=del.mean?COST_BASIS.txnPerDelivery.rm/del.mean:0;
+  const txn=del.mean?(COST_BASIS.deliveredShare.v*COST_BASIS.txnPerDelivery.rm)/del.mean:0;
   const eff=yielded+txn;
   return {repl:+lot.toFixed(2),lot:+lot.toFixed(4),freight:+freight.toFixed(4),
           landed:+landed.toFixed(4),inventoriable:+landed.toFixed(4),
@@ -1791,16 +1794,30 @@ function ladderRow(sizes,C,P){
   }];
 }
 /* THE BOARD AND THE FLOORS, for quoting at the point of sale: what the phone receives. */
+/* v344: THE CARD PRICE IS A COLLECTION PRICE, AND THE BOARD NOW SAYS WHERE IT STOPS BEING ONE.
+   Four orders in five are collected, so the carded ask is what a customer who comes pays. One
+   delivery costs the full RM50, and on the smallest lots that is most of the price: at half a
+   unit the ask is RM60 and the delivered floor is RM73, so DELIVERING IT LOSES MONEY. That was
+   invisible while every order was charged a third of a delivery it mostly never had.
+   deliverable is a REPORTED FACT, not a new price. It says whether the carded ask covers a
+   delivery at that size. Nothing here refuses an order or moves an ask; what to charge for a
+   delivery is a decision, and it is his. */
 function board(sizes,C,P){
-  const f={};
-  sizes.forEach(q=>{
+  const f={}, asks=ladderRow(sizes,C,P);
+  const ask=asks&&asks[0]?asks[0].prices:[];
+  sizes.forEach((q,i)=>{
     try{
       const d=floorTotal(q,C,P), c=floorTotal(q,C,P,null,{collects:true});
-      f[q]={delivered:(typeof d==='number')?+d.toFixed(2):null,
-            collected:(typeof c==='number')?+c.toFixed(2):null};
+      const dv=(typeof d==='number')?+d.toFixed(2):null;
+      const a=ask[i];
+      f[q]={delivered:dv,
+            collected:(typeof c==='number')?+c.toFixed(2):null,
+            deliverable:(dv==null||a==null)?null:(a>=dv-0.009),
+            deliveryGap:(dv==null||a==null)?null:+(dv-a).toFixed(2)};
     }catch(e){ f[q]=null; }
   });
-  return {floors:f, sizes:sizes.slice(), tiers:ladderRow(sizes,C,P)};
+  return {floors:f, sizes:sizes.slice(), tiers:asks,
+          collectOnly:sizes.filter(q=>f[q]&&f[q].deliverable===false)};
 }
 
 return {costStack:costStack,buyTaper:buyTaper,ladderMarkup:ladderMarkup,ladderCogs:ladderCogs,
@@ -2977,7 +2994,8 @@ const whiteboard=[
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{v:'v343',d:'23 Aug 2026',t:'THE PARTS ARE VISIBLE, AND THE PHONE CARRIES THE PEOPLE',n:['<b>THE FIFTEEN TABS ARE ONE TAP AWAY AGAIN.</b> v341 folded a view&rsquo;s other tabs at the foot of its lead, and on a 7,000px lead that is the same as losing them: the Network sat closed under the whole of Customers and was reported missing. Every view now opens with a strip naming each part it holds, the rail lists the active view&rsquo;s parts beneath it, and one part shows at a time. The old addresses still work: #network opens Customers on the Network.','<b>ADD ID AND APPROVE REACH THE CLOUD DESK.</b> Names &amp; IDs mints a code from a name and a place on the laptop only, so the cloud desk could not register a party at all while its own form said to use a control it did not have. The Enter view now carries Add ID, the phone&rsquo;s route: a code typed by hand, queued, drafted into the roster, approved, folded. And Approve, which only the phone had since v302, is a part of Enter on the cloud desk, reading the same drafts and writing the same decisions.','<b>THE PHONE GAINS THE PEOPLE, THE NEXT THIRTY DAYS AND THE AGE OF EACH DEBT.</b> A People tab: who is due on his own buying habit, every customer with the desk&rsquo;s tier and a statement on tap, the associates and what each made, brought and earned, the customer rewards, the demand turned away and the map&rsquo;s heat. Today carries the forecast per product, the shelf&rsquo;s dry day on the desk&rsquo;s own walk, what lands and what is expected in. Who-owes-what says how old a debt is and what the ladder says it is worth. Every figure is read off the desk&rsquo;s own functions (nextBest without its profit, networkStats, customerRewards as band and units, mapPoints), and the leak test reads the payload as before: no cost, no margin, no profit, no prose.','<b>THE PHONE&rsquo;S ADD ID SAYS WHAT IT DOES.</b> The Record mode was labelled Party and its road text said the drafter refuses it; the drafter has drafted a registration into the roster since v309, so the mode is named Add ID and the text says it goes through the gate.','<b>NO FIGURE MOVED.</b>']},
+const evolution=[{v:'v344',d:'24 Aug 2026',t:'THE TWO MOVEMENT COSTS ARE MEASURED, AND THE CARD IS A COLLECTION PRICE',n:['<b>COLLECTION IS RM60 A RETURN TRIP, NOT RM100 A LOT.</b> v325 set it at RM100 and said in terms that it was the line to challenge first. It has been. The key is renamed freightPerTrip because the distinction is real: a trip that collected three lots on 22 Jul cost RM60, not RM180. Landed cost on the 20 Aug 50 unit lot goes RM46.00 to RM45.20, and freight in the accounts goes RM1,300 to RM780 across thirteen lots. One trip per lot is still assumed, because the rows do not say otherwise.','<b>DELIVERY IS TWO NUMBERS, AND THE OLD ONE WAS NEITHER.</b> RM50 is what ONE delivery costs. Four orders in five are collected by the customer, so deliveredShare is 0.20 and the blended cost of an order is RM10. The old RM16.67 charged every order a third of a delivery that most of them never had. delPerOrder is now the full RM50, which is what a delivered order has to carry, while the blended figure is what goes into effective cost: RM3.92 a unit against RM6.54.','<b>THE NET IS RM3.47 A UNIT OFF EFFECTIVE COST.</b> RM55.20 to RM51.73. Goods and freight account for RM0.85 of it and delivery for RM2.62. Floors fall about 1.7% at every size: a 12.5 unit lot collected goes RM764.75 to RM751.45, and a single unit RM61.18 to RM60.12. No ask moved.','<b>THE CARDED ASK IS A COLLECTION PRICE, AND THE BOARD NOW SAYS WHERE IT STOPS BEING ONE.</b> Charging one delivery at its real RM50 shows what the old blend hid: at half a unit the ask is RM60 and the delivered floor is RM73.90, so delivering it loses RM13.90. Oil is the same at its 10 unit minimum, RM140 against RM141.81. Every size now carries deliverable and deliveryGap, and the board lists collectOnly. It is a reported fact and not a new price: nothing refuses an order and nothing moves an ask. What to charge for a delivery is his decision and it is not taken here.','<b>THE P&amp;L RESTATES AND NOTHING ABOUT THE PAST CHANGED.</b> Gross profit goes RM6,925.22 to RM7,346.97, 33.3% to 35.3%. Selling and distribution goes RM1,533.33 to RM920, being 18.4 of 92 orders delivered rather than all 92. Operating profit goes RM1,876.00 to RM2,911.08, 9.0% to 14.0%. An assumption about the past was corrected, not the past.']},
+{v:'v343',d:'23 Aug 2026',t:'THE PARTS ARE VISIBLE, AND THE PHONE CARRIES THE PEOPLE',n:['<b>THE FIFTEEN TABS ARE ONE TAP AWAY AGAIN.</b> v341 folded a view&rsquo;s other tabs at the foot of its lead, and on a 7,000px lead that is the same as losing them: the Network sat closed under the whole of Customers and was reported missing. Every view now opens with a strip naming each part it holds, the rail lists the active view&rsquo;s parts beneath it, and one part shows at a time. The old addresses still work: #network opens Customers on the Network.','<b>ADD ID AND APPROVE REACH THE CLOUD DESK.</b> Names &amp; IDs mints a code from a name and a place on the laptop only, so the cloud desk could not register a party at all while its own form said to use a control it did not have. The Enter view now carries Add ID, the phone&rsquo;s route: a code typed by hand, queued, drafted into the roster, approved, folded. And Approve, which only the phone had since v302, is a part of Enter on the cloud desk, reading the same drafts and writing the same decisions.','<b>THE PHONE GAINS THE PEOPLE, THE NEXT THIRTY DAYS AND THE AGE OF EACH DEBT.</b> A People tab: who is due on his own buying habit, every customer with the desk&rsquo;s tier and a statement on tap, the associates and what each made, brought and earned, the customer rewards, the demand turned away and the map&rsquo;s heat. Today carries the forecast per product, the shelf&rsquo;s dry day on the desk&rsquo;s own walk, what lands and what is expected in. Who-owes-what says how old a debt is and what the ladder says it is worth. Every figure is read off the desk&rsquo;s own functions (nextBest without its profit, networkStats, customerRewards as band and units, mapPoints), and the leak test reads the payload as before: no cost, no margin, no profit, no prose.','<b>THE PHONE&rsquo;S ADD ID SAYS WHAT IT DOES.</b> The Record mode was labelled Party and its road text said the drafter refuses it; the drafter has drafted a registration into the roster since v309, so the mode is named Add ID and the text says it goes through the gate.','<b>NO FIGURE MOVED.</b>']},
 
 {v:'v342',d:'23 Aug 2026',t:'THE PHONE ON THE STORYBOARD',n:['<b>MOVE 5 OF THE REBUILD: TODAY, THE BOOK AND RECORD FOLLOW THE PRICE TAB.</b> Today leads with the count only when a count is due: a shelf looked at today is one line with its figure, and the card with the instruction is kept for the shelf that has not been looked at. What needs doing follows, and the position, on hand, free, cover and owed to you, moves here from the Book tab as the Watch block, because the question it answers is asked in the morning, not while reading the ledger.','<b>THE BOOK OPENS ON WHO OWES WHAT.</b> Every open order with money or stock still to move, either way, what is due to you first, then what is agreed and not yet moved, read straight off the open orders the desk sends. The ledger itself, with its filters, folds behind a summary that says how many rows it holds, and its method sentence goes inside the fold.','<b>RECORD SAYS WHAT THE PARTY USUALLY PAYS.</b> When a customer is chosen on a sale, one line under the field gives their rate across their orders and the date of the last, from the desk&rsquo;s own customer figures, so the price being typed is typed against something. The app still computes nothing.','<b>NO FIGURE MOVED.</b> The phone reads the same data.json; only what stands open changed.']},
 
@@ -3076,7 +3094,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='23 Aug 2026, 14:38 KL';
+const LAST_UPDATED='24 Aug 2026, 11:05 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -4100,7 +4118,8 @@ function deliveryCost(){
   /* MEASURED from v232 rather than standing in at a guess: RM5 an order, stated by him as
      the average of delivery, packaging and handling. */
   const d=avgDelivery(PROD);
-  return {rm:COST_BASIS.txnPerDelivery.rm,n:d.n,observed:true,perUnit:d.mean?+(COST_BASIS.txnPerDelivery.rm/d.mean).toFixed(4):null};
+  return {rm:COST_BASIS.txnPerDelivery.rm,n:d.n,observed:true,share:COST_BASIS.deliveredShare.v,
+    perUnit:d.mean?+((COST_BASIS.deliveredShare.v*COST_BASIS.txnPerDelivery.rm)/d.mean).toFixed(4):null};
 }
 /* ============ THE DYNAMIC LADDER (v173) ============
    He asked for pricing driven by purchase cost, demand, shrinkage, delivery, buffer and
@@ -6853,7 +6872,7 @@ function ifrsPanel(){
       ${L('Cost of sales &mdash; goods',-F.goods,{neg:true,ref:'IAS 2.11',n:'at the rate of the lot each order drew from'})}
       ${L('Cost of sales &mdash; freight in',-F.freightCos,{neg:true,ref:'IAS 2.11',n:`${fmt0(F.freightTot)} over ${F.lots} lot${F.lots===1?'':'s'}, ${fmt(F.freightPerKg)}/unit`})}
       ${L('<b>Gross profit</b>',F.gross,{cls:'tot',n:`${F.grossPct}% of revenue`})}
-      ${L('Selling and distribution',-F.selling,{neg:true,ref:'IAS 2.16(d)',n:`${F.delN} deliver${F.delN===1?'y':'ies'} at ${fmt0(COST_BASIS.txnPerDelivery.rm)}`})}
+      ${L('Selling and distribution',-F.selling,{neg:true,ref:'IAS 2.16(d)',n:`${F.delAssumed} of ${F.delN} orders delivered at ${fmt0(COST_BASIS.txnPerDelivery.rm)}, the rest collected`})}
       ${L('Marketing &mdash; samples and testers',-F.marketing,{neg:true,ref:'IAS 38.69',n:F.sampleKg?`${kg(F.sampleKg)} at ${fmt(F.unitCost)}`:'none'})}
       ${L('Abnormal inventory loss',-F.abnormal,{neg:true,ref:'IAS 2.16(a)',n:F.abnKg?`${kg(F.abnKg)} unexplained`:'none'})}
       ${L('Impairment &mdash; trade receivables',-F.ecl,{neg:true,ref:'IFRS 9',n:F.ecl?'loss allowance on open balances':'no open balance'})}
@@ -8908,9 +8927,19 @@ const SHRINK_ATTRIB=0.33;
    marketing. Inventoriable cost is the purchase price plus the cost of getting the goods
    here. Everything after that is a period cost: it must be RECOVERED in the price and it
    must NOT sit in the balance sheet. */
+/* v344, 24 Aug 2026: BOTH MOVEMENT COSTS ARE HIS MEASURED FIGURES, NOT ASSUMPTIONS.
+   v325 set freight at RM100 a lot and delivery at RM50 for every three orders, and said in
+   terms that the freight line was the one to challenge first. It has been. Collection is
+   RM60 a RETURN TRIP, which is why the key is renamed: it is a cost of going, not a cost of
+   the lot, and a trip that collected three lots on 22 Jul cost RM60 and not RM180.
+   DELIVERY IS TWO NUMBERS, NOT ONE. RM50 is what ONE delivery costs, and four orders in five
+   are collected by the customer, so the blended cost of an order is RM10. The old RM16.67
+   was neither: it charged every order a third of a delivery that most of them never had.
+   Keeping them apart is what lets the delivered and the collected floor differ honestly. */
 const COST_BASIS={
-  freightPerLot:{rm:100, what:'collecting a lot', ias2:'inventory', ref:'IAS 2.11 costs of purchase include transport and handling directly attributable to acquisition'},
-  txnPerDelivery:{rm:50/3, what:'delivery, packaging, handling, per order; RM50 buys three orders', ias2:'period', ref:'IAS 2.16(d) selling costs are excluded from the cost of inventories'},
+  freightPerTrip:{rm:60, what:'one return trip to collect a lot', ias2:'inventory', ref:'IAS 2.11 costs of purchase include transport and handling directly attributable to acquisition'},
+  txnPerDelivery:{rm:50, what:'ONE delivery, to a customer who does not collect', ias2:'period', ref:'IAS 2.16(d) selling costs are excluded from the cost of inventories'},
+  deliveredShare:{v:0.20, what:'the share of orders delivered rather than collected; four in five come and collect', ias2:'period', ref:'stated by him 24 Aug 2026'},
   sampleShare:{v:0.5,    what:'the half of the leak that is samples, testers and advertising', ias2:'period', ref:'IAS 38.69 advertising and promotional costs are expensed as incurred'},
   abnormalNote:{ias2:'period', ref:'IAS 2.16(a) abnormal amounts of wasted materials are expensed in the period incurred'}
 };
@@ -8993,7 +9022,7 @@ function avgDelivery(p){
    desk that recovers all four in its price while capitalising all four in its stock is
    overstating both its assets and its gross margin.
      IAS 2.11  purchase price and the cost of bringing goods to their present location
-               and condition -> INVENTORY. Lot rate and the RM20 pickup.
+               and condition -> INVENTORY. Lot rate and the RM60 collection trip.
      IAS 2.16(d) selling costs -> EXPENSE. Delivery, packaging and handling out.
      IAS 38.69 advertising and promotion -> EXPENSE. Samples and testers.
      IAS 2.16(a) abnormal waste -> EXPENSE. The unexplained half of the leak.
@@ -9006,7 +9035,9 @@ function ifrsPL(p){
   const recvKg=lots.reduce((a,x)=>a+poRecvKg(x),0);
   /* freight is spread over everything received rather than traced lot by lot, because the
      rows do not say which lot they drew from. Stated as the basis, not hidden. */
-  const freightTot=lots.length*COST_BASIS.freightPerLot.rm;
+  /* v344: one trip per lot. Where two lots were collected on one run the total is overstated
+     by a trip; the rows do not say, so the assumption is stated rather than modelled. */
+  const freightTot=lots.length*COST_BASIS.freightPerTrip.rm;
   const freightPerKg=recvKg>0?freightTot/recvKg:0;
   const rows=(P===PROD?pricedSales:pSales(P).filter(s=>{const o=txStat(s).order;return o!=='Pending'&&o!=='Cancelled';}));
   const op=openingFor(P);
@@ -9018,7 +9049,10 @@ function ifrsPL(p){
   const gross=+(rev-cos).toFixed(2);
   // period costs
   const del=avgDelivery(P);
-  const selling=+(del.n*COST_BASIS.txnPerDelivery.rm).toFixed(2);
+  /* v344: del.n counts every order that moved goods, not every DELIVERY. Four in five are
+     collected, so the charge is the share that were delivered, at the full RM50 each. */
+  const delAssumed=+(del.n*COST_BASIS.deliveredShare.v).toFixed(1);
+  const selling=+(delAssumed*COST_BASIS.txnPerDelivery.rm).toFixed(2);
   /* the leak, valued at what those units cost to have on the shelf, split the way he
      stated it: half went out as samples and testers, half is unexplained */
   const leakKg=(P===PROD)?selfUse:0;
@@ -9047,14 +9081,14 @@ function ifrsPL(p){
      amount rather than quietly treated as passing. */
   const hasBoard=(P===DEFAULT_PROD);
   const nrvRate=hasBoard?(function(){try{const q=pxQuote(Math.max(0.5,del.mean||1),pxSignals().net,0);
-    return q&&q.perKg?+(q.perKg-COST_BASIS.txnPerDelivery.rm/Math.max(0.01,del.mean||1)).toFixed(4):null;}catch(e){return null;}})():null;
+    return q&&q.perKg?+(q.perKg-(COST_BASIS.deliveredShare.v*COST_BASIS.txnPerDelivery.rm)/Math.max(0.01,del.mean||1)).toFixed(4):null;}catch(e){return null;}})():null;
   const nrv=nrvRate!=null?+(closeKg*nrvRate).toFixed(2):null;
   const carrying=(nrv!=null&&nrv<atCost)?nrv:atCost;
   return {rev,goods,freightCos,cos,gross,grossPct:rev>0?+(gross/rev*100).toFixed(1):null,
     selling,marketing,abnormal,ecl,supImp,opex,opProfit,
     opPct:rev>0?+(opProfit/rev*100).toFixed(1):null,
     soldKg:soldKgP,freightPerKg:+freightPerKg.toFixed(4),freightTot,lots:lots.length,
-    sampleKg,abnKg,unitCost,delN:del.n,
+    sampleKg,abnKg,unitCost,delN:del.n,delAssumed,
     closeKg,atCost,nrv,nrvRate,carrying,nrvTested:nrvRate!=null,writeDown:+(atCost-carrying).toFixed(2)};
 }
 /* ============ THE ENGINE IS A MODULE (v337) ============
@@ -9067,7 +9101,8 @@ function ifrsPL(p){
 function pxInputs(){
   return {prod:PROD, lockOn:PRICE_LOCK_ON, lockState:priceLockState(PROD), lockBase:PRICE_LOCK[PROD]||null,
     over:{cost:pxOver.cost,shrink:pxOver.shrink}, lot:latestLot(PROD), quoteRate:pxQuoteRate(),
-    costBasis:{freightPerLot:{rm:COST_BASIS.freightPerLot.rm},txnPerDelivery:{rm:COST_BASIS.txnPerDelivery.rm}},
+    costBasis:{freightPerTrip:{rm:COST_BASIS.freightPerTrip.rm},txnPerDelivery:{rm:COST_BASIS.txnPerDelivery.rm},
+      deliveredShare:{v:COST_BASIS.deliveredShare.v}},
     attrib:SHRINK_ATTRIB, shrinkRate:pxShrinkRate(), avgDel:avgDelivery(PROD)};
 }
 function pxPolicy(){
@@ -10927,10 +10962,10 @@ function tabPricing(){
     return `<h2 style="margin-top:22px">What a unit costs ${chip} <span class="sub" style="font-weight:400">${c.locked?`held since ${LK.lock.lockedOn}`:'not the locked basis'}</span> <span class="rule"></span></h2>
     <div class="card"><table class="fintab istmt"><tbody>
       ${r('Lot rate',c.lot,'inventory',`${kg(c.lotQty)} on ${c.lotDate}`)}
-      ${r('Collection',c.freight,'inventory',`${fmt0(COST_BASIS.freightPerLot.rm)} spread over ${kg(c.lotQty)}`)}
+      ${r('Collection',c.freight,'inventory',`${fmt0(COST_BASIS.freightPerTrip.rm)} a return trip, spread over ${kg(c.lotQty)}`)}
       <tr class="tot"><td class="l"><b>Landed</b><div class="iref">what the balance sheet carries</div></td><td class="mono"><b>${fmt(c.landed)}</b></td><td><span class="tag paid">Inventory</span></td></tr>
       ${r('Samples and testers',c.sampleLoad,'period',`${(c.shrink*100).toFixed(1)}% of what is bought never sells`)}
-      ${r('Delivery and packaging',c.txn,'period',`${fmt0(COST_BASIS.txnPerDelivery.rm)} over ${kg(c.avgDel)}, the average delivery`)}
+      ${r('Delivery and packaging',c.txn,'period',`${fmt0(COST_BASIS.txnPerDelivery.rm)} on ${Math.round(COST_BASIS.deliveredShare.v*100)}% of orders, over ${kg(c.avgDel)}, the average order`)}
       <tr class="tot"><td class="l"><b>Pricing basis</b><div class="iref">what a price has to return</div></td><td class="mono"><b>${fmt(c.eff)}</b></td><td></td></tr>
     </tbody></table>
     ${c.absorbed>0.009?`<div class="dsc" style="margin-top:8px">Absorbed and not recovered: ${fmt(c.absorbed)}/unit, the unexplained half of the leak.</div>`:''}

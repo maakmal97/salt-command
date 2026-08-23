@@ -1168,13 +1168,26 @@ section("Payload — what the phone is given, and what it is not");
       const priced = (b.sizes || []).filter((q, i) => row.prices[i] != null);
       ok(priced.length === (b.sizes || []).length,
          `${pid}: every size on the board has an ask (${priced.length} of ${(b.sizes||[]).length})`);
+      /* v344: THE CARD IS A COLLECTION PRICE. Four orders in five are collected, and one
+         delivery costs the full RM50, so on the smallest lot the delivery is most of the
+         price. The ask must clear the COLLECTED floor at every size without exception; where
+         it cannot also carry a delivery the payload must SAY so on that size rather than
+         leaving a reader to price a loss. */
       const under = (b.sizes || []).filter((q, i) => {
         const p = row.prices[i], fl = (b.floors || {})[String(q)];
-        return p != null && fl && fl.delivered != null && p < fl.delivered - 0.009;
+        return p != null && fl && fl.collected != null && p < fl.collected - 0.009;
       });
       ok(under.length === 0, under.length
-        ? `${pid}: the ask is under its own delivered floor at ${under.join(", ")} unit`
-        : `${pid}: every ask clears the delivered floor this payload states`);
+        ? `${pid}: the ask is under its own collected floor at ${under.join(", ")} unit`
+        : `${pid}: every ask clears the collected floor this payload states`);
+      const mislabelled = (b.sizes || []).filter((q, i) => {
+        const p = row.prices[i], fl = (b.floors || {})[String(q)];
+        if (p == null || !fl || fl.delivered == null || fl.deliverable == null) return true;
+        return fl.deliverable !== (p >= fl.delivered - 0.009);
+      });
+      ok(mislabelled.length === 0, mislabelled.length
+        ? `${pid}: deliverable is missing or wrong at ${mislabelled.join(", ")} unit`
+        : `${pid}: every size states whether its ask can carry a delivery`);
       /* the rate may not RISE with size, which is the one law a customer can check by hand */
       let prev = Infinity, inverted = [];
       (b.sizes || []).forEach((q, i) => {
@@ -1275,14 +1288,16 @@ section("Engine — one definition, out of the desk (v337)");
   /* 2. it prices without a browser, and the ladder holds its own laws */
   const I = { prod: "salt", lockOn: false, lockState: { state: "none", lock: null }, lockBase: null,
     over: { cost: null, shrink: null }, lot: { qty: 50, total: 2200, rate: 44, date: "2026-08-20" },
-    quoteRate: 44, costBasis: { freightPerLot: { rm: 100 }, txnPerDelivery: { rm: 50 / 3 } },
+    quoteRate: 44, costBasis: { freightPerTrip: { rm: 60 }, txnPerDelivery: { rm: 50 }, deliveredShare: { v: 0.2 } },
     attrib: 0.33, shrinkRate: 0.1, avgDel: { n: 20, mean: 2.5 } };
   const P = { LADDER: { floor: 0.33, ceiling: 2.0, anchorQ: 2.5, anchorX: 0.958, at: { lo: 0.5, hi: 12.5 },
       basis: "cogs", round: { to: 10, up: true }, taper: "supplier" },
     minPerUnit: 0, lotFloor: {}, tiers: [{ qty: 12.5, total: 700 }, { qty: 25, total: 1300 }, { qty: 50, total: 2200 }],
     boardSizes: [0.5, 1, 1.5, 2, 2.5, 3, 4, 5, 6.25, 12.5] };
   const C = E.costStack(I);
-  ok(Math.abs(C.landed - 46) < 1e-9, "landed cost is the lot rate plus freight spread over the lot");
+  ok(Math.abs(C.landed - 45.2) < 1e-9, "landed cost is the lot rate plus the trip spread over the lot");
+  ok(Math.abs(C.delPerOrder - 50) < 1e-9, "delPerOrder is ONE full delivery, not the blended figure");
+  ok(Math.abs(C.txn - (0.2 * 50) / 2.5) < 1e-9, "eff carries only the share of orders that are delivered");
   ok(C.effEx > C.landed && C.eff > C.effEx, "the leak divides and delivery adds, in that order");
   const B = E.board(P.boardSizes, C, P);
   const asks = B.tiers[0].prices;
@@ -1290,7 +1305,13 @@ section("Engine — one definition, out of the desk (v337)");
   let law = true;
   for (let i = 1; i < asks.length; i++) if (asks[i] / P.boardSizes[i] > asks[i - 1] / P.boardSizes[i - 1] + 1e-9) law = false;
   ok(law, "the rate never rises with size");
-  ok(P.boardSizes.every((q, i) => B.floors[q].delivered <= asks[i] + 1e-9), "no ask sits under its own floor");
+  ok(P.boardSizes.every((q, i) => B.floors[q].collected <= asks[i] + 1e-9), "no ask sits under its own collected floor");
+  /* v344: the card is a COLLECTION price, because four orders in five are collected. Where the
+     ask cannot also carry a RM50 delivery the board says so rather than quietly pricing a loss. */
+  ok(B.collectOnly.length > 0 && B.collectOnly.every((q) => B.floors[q].deliverable === false),
+    "the board names the sizes whose ask cannot carry a delivery");
+  ok(P.boardSizes.filter((q) => !B.collectOnly.includes(q)).every((q) => B.floors[q].deliverable === true),
+    "every other size can be delivered at its carded ask");
   ok(E.floorTotal(1, C, P, null, { collects: true }) <= E.floorTotal(1, C, P), "collecting never raises the floor");
   ok(E.buyTaper(P.tiers).b < 0 && E.buyTaper([]).b === null, "the taper is fitted from the quote and absent without one");
 
