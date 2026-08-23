@@ -1,0 +1,298 @@
+/* fold.mjs — THE FOLD AS A DATA WRITE (move 3 of the rebuild, v340).
+ *
+ * An approved draft becomes a record in ledger/book.json, with its note, and the book is
+ * synced into the master. The agent keeps the judgement (the note on every row, the sentence
+ * on the roll, the version entry) and loses the syntax: nothing here edits a twelve-thousand
+ * line page by hand, and nothing here invents a figure.
+ *
+ *   node tools/fold.mjs --plan     read master/_to_fold.json against the book; say what each row
+ *                                  would do and what it refuses; write master/_fold_notes.json as a
+ *                                  skeleton for the agent to fill (never overwrites one that exists)
+ *   node tools/fold.mjs --apply    fold everything in the batch with the notes; write book.json,
+ *                                  sync the master, set the version and the stamp, prepend the
+ *                                  changelog, sort, write master/_folded.json. All or nothing.
+ *
+ * Paths can be overridden for the tests: --staged, --notes, --book, --master, --folded, --today.
+ *
+ * WHAT IT APPLIES, exactly as docs/CLOUD_FOLD.md states and as the desk's own overlay would:
+ *   a new row         appended to sales or purchases WITH ITS NOTE (a row with no note is refused)
+ *   a fulfilment      applied to the row its key names, as ovAmend in the desk applies it: cash
+ *                     and units added, the trail extended, a pending lot that stops being pending
+ *                     gets receivedQty 0 and inTransit so a deposit cannot walk it into stock
+ *   a cancellation    the row marked cancelled, the trail extended
+ *   a count           the stated stock set and COUNT_ON moved; the one entry that moves it
+ *   a loss            appended to selfUseLog     a lost sale   appended to lostDemand
+ *   a registration    the code appended to the roster; the directory is never touched
+ * then the shelf is ROLLED for what physically moved (a roll, never a count), the watermark
+ * moves to the newest id folded, and the book is sorted.
+ *
+ * WHAT IT REFUSES: a Modification, Linked or Rewarded amendment; an amendment whose key matches
+ * no row or more than one; a new row that would replay one already on the book (same party,
+ * date and total); a new row with no note; a version entry with no title or notes. A refusal
+ * folds nothing: the batch is applied whole or not at all. */
+import { readFileSync, writeFileSync, existsSync } from "node:fs";
+import { resolve, dirname } from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
+import { execFileSync } from "node:child_process";
+import { readBookFile, writeBookFile, syncText, BOOK as BOOK_DEFAULT, MASTER as MASTER_DEFAULT } from "./booksync.mjs";
+import { sortBook } from "./sort-ledger.mjs";
+import POSITION_ENGINE from "../engine/position.mjs";
+
+const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const argv = process.argv.slice(2);
+const opt = (name, d) => { const i = argv.indexOf(name); return i >= 0 && argv[i + 1] ? argv[i + 1] : d; };
+const MASTER = opt("--master", MASTER_DEFAULT);
+const BOOK = opt("--book", BOOK_DEFAULT);
+const STAGED = opt("--staged", resolve(dirname(MASTER), "_to_fold.json"));
+const NOTES = opt("--notes", resolve(dirname(MASTER), "_fold_notes.json"));
+const FOLDED = opt("--folded", resolve(dirname(MASTER), "_folded.json"));
+const TODAY = opt("--today", new Date(Date.now() + 8 * 36e5).toISOString().slice(0, 10));   // Kuala Lumpur
+
+const E = POSITION_ENGINE;
+const r2 = (v) => +(+v).toFixed(2);
+const stamp = () => { const d = new Date(Date.now() + 8 * 36e5); const MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  return `${String(d.getUTCDate()).padStart(2, "0")} ${MON[d.getUTCMonth()]} ${d.getUTCFullYear()}, ${String(d.getUTCHours()).padStart(2, "0")}:${String(d.getUTCMinutes()).padStart(2, "0")} KL`; };
+const dayOf = (iso) => { const MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]; const [y, m, d] = iso.split("-"); return `${d} ${MON[+m - 1]} ${y}`; };
+
+/* ---- read the batch ---------------------------------------------------------------------- */
+function readStaged() {
+  if (!existsSync(STAGED)) return null;
+  const j = JSON.parse(readFileSync(STAGED, "utf8"));
+  if (!j || !j.ok) throw new Error("the staged file does not report ok");
+  return j;
+}
+function prodOf(row) { return (row && row.product) || "salt"; }
+function describe(item) {
+  const r = item.row || {};
+  if (item.amends) return `${item.amendKind} on ${item.amends}: cash ${r.cash != null ? r.cash : "?"}`;
+  switch (item.collection) {
+    case "sales": return `SELL ${r.customer} ${r.qty} unit ${prodOf(r)} RM${r.total}${r.date ? " on " + r.date : " (pending, undated)"}`;
+    case "purchases": return `BUY ${r.supplier} ${r.qty} unit ${prodOf(r)} RM${r.total}${r.pending ? " (pending lot)" : ""}`;
+    case "count": return `COUNT ${r.product} ${r.qty} unit on ${r.date} (book said ${r.was}, drift ${r.drift})`;
+    case "loss": return `LOSS ${r.kg} unit ${r.product} on ${r.date}: ${r.why}`;
+    case "lostDemand": return `LOST SALE ${r.kg} unit ${r.product}${r.party ? " to " + r.party : ""} on ${r.date}: ${r.why}`;
+    case "roster": return `REGISTER ${r.code} as ${r.kind}${r.parent ? " under " + r.parent : ""}`;
+    default: return `${item.collection}: ${JSON.stringify(r).slice(0, 80)}`;
+  }
+}
+
+/* ---- the plan: what each item would do, and what is refused ----------------------------- */
+export function plan(book, staged, notes) {
+  const out = { items: [], refused: [], moves: [] };
+  const rows = (staged && staged.approved) || [];
+  for (const it of rows) {
+    const entry = { id: it.id, what: describe(it), does: [] };
+    const r = it.row || {};
+    if (it.amends) {
+      if (it.amendKind !== "Fulfilment" && it.amendKind !== "Cancellation") { out.refused.push({ id: it.id, why: `${it.amendKind || "nameless"} amendment: what changed is a judgement, left for a person` }); continue; }
+      const dir = (it.entry && it.entry.payload && it.entry.payload.direction) || "SELL";
+      const arr = dir === "BUY" ? book.purchases : book.sales;
+      const hits = arr.filter((x) => E.ovKey(x) === it.amends);
+      if (hits.length !== 1) { out.refused.push({ id: it.id, why: hits.length ? `key ${it.amends} matches ${hits.length} rows` : `no row on the book matches ${it.amends}` }); continue; }
+      const pay = (it.entry && it.entry.payload) || {};
+      entry.target = hits[0]; entry.dir = dir; entry.pay = { date: pay.date || r.date || TODAY, kind: it.amendKind, cash: +pay.cash || 0, kg: +pay.kg || 0 };
+      entry.does.push(`${it.amendKind.toLowerCase()} ${entry.pay.cash ? "RM" + entry.pay.cash + " " : ""}${entry.pay.kg ? entry.pay.kg + " unit " : ""}on ${entry.pay.date} against ${dir === "BUY" ? "lot" : "order"} ${it.amends}`);
+      if (dir !== "BUY" && entry.pay.kg > 0.009) out.moves.push({ product: prodOf(hits[0]), kg: -entry.pay.kg, who: hits[0].customer, when: entry.pay.date });
+      if (dir === "BUY" && entry.pay.kg > 0.009) out.moves.push({ product: prodOf(hits[0]), kg: +entry.pay.kg, who: hits[0].supplier, when: entry.pay.date, landed: true });
+    } else if (it.collection === "sales" || it.collection === "purchases") {
+      const key = it.collection === "sales" ? "customer" : "supplier";
+      const dup = (book[it.collection] || []).find((x) => x[key] === r[key] && (x.date || null) === (r.date || null) && +x.total === +r.total && +x.qty === +r.qty);
+      if (dup) { out.refused.push({ id: it.id, why: `a row for ${r[key]} with the same date, size and total is already on the book, so this would be a replay` }); continue; }
+      entry.append = it.collection;
+      entry.does.push(`append to ${it.collection} with its note`);
+      const moved = it.collection === "sales" ? (+r.deliveredQty || 0) : (r.pending || r.inTransit ? 0 : (r.receivedQty != null ? +r.receivedQty : +r.qty || 0));
+      if (moved > 0.009) out.moves.push({ product: prodOf(r), kg: it.collection === "sales" ? -moved : +moved, who: r[key], when: r.date || TODAY, landed: it.collection === "purchases" });
+    } else if (it.collection === "count") {
+      entry.count = { product: r.product || "salt", qty: +r.qty, date: r.date || TODAY, was: r.was, drift: r.drift };
+      entry.does.push(`set the stated ${entry.count.product} shelf to ${entry.count.qty} and move COUNT_ON.${entry.count.product} to ${entry.count.date}`);
+    } else if (it.collection === "loss") {
+      entry.append = "selfUseLog"; entry.does.push("append to selfUseLog; it draws stock and books no revenue");
+      if (+r.kg > 0.009) out.moves.push({ product: r.product || "salt", kg: -(+r.kg), who: "loss: " + r.why, when: r.date || TODAY });
+    } else if (it.collection === "lostDemand") {
+      entry.append = "lostDemand"; entry.does.push("append to lostDemand; touches no stock and no cash");
+    } else if (it.collection === "roster") {
+      if ((book.roster || []).includes(r.code)) { out.refused.push({ id: it.id, why: `${r.code} is already on the roster` }); continue; }
+      entry.roster = r.code; entry.does.push(`append ${r.code} to the roster (the directory is not touched)`);
+    } else { out.refused.push({ id: it.id, why: `unknown collection ${it.collection}` }); continue; }
+    out.items.push(entry);
+  }
+  return out;
+}
+
+/* ---- the skeleton the agent fills in ---------------------------------------------------- */
+function skeleton(book, staged, p) {
+  const cur = book.STATED_STOCK;
+  const rows = {};
+  for (const it of p.items) rows[it.id] = { what: it.what, note: "" };
+  return {
+    version: "", date: dayOf(TODAY), title: "", notes: [],
+    rows,
+    stockNote: "", stockCost: null, stockCostNote: "",
+    hint: `Fill note for every row (prose a person auditing it would need; codes only, never a name), the version (the next after the master's), a title in capitals and notes as an array of HTML strings. stockNote is prepended to the roll sentence the tool writes; the salt shelf stands at ${cur}. Leave stockCost null unless a lot landed and the cost basis moves.`
+  };
+}
+
+/* ---- apply ------------------------------------------------------------------------------- */
+/* ovAmend, as the desk applies it, on a plain row */
+function applyAmend(row, pay, dir, note) {
+  if (dir === "BUY") {
+    if (pay.kind === "Default") { row.defaulted = true; delete row.receivedOn; delete row.pending; return; }
+    const wasPending = !!row.pending;
+    if (((+pay.cash || 0) > 0.009) || ((+pay.kg || 0) > 0.009)) {
+      delete row.pending;
+      if (wasPending && row.receivedQty == null) { row.receivedQty = 0; row.inTransit = true; }
+    }
+    if ((+pay.cash || 0) > 0.009) {
+      const before = wasPending ? 0 : (row.cash != null ? row.cash : (row.status === "paid" ? row.total : 0));
+      row.cash = +(before + (+pay.cash)).toFixed(2);
+    }
+    if ((+pay.kg || 0) > 0.009) {
+      row.receivedOn = pay.date;
+      const had = row.receivedQty != null ? row.receivedQty : ((wasPending || row.inTransit) ? 0 : row.qty);
+      row.receivedQty = Math.max(0, Math.min(had + (+pay.kg || 0), row.qty));
+      if (row.receivedQty >= row.qty - 0.0001) delete row.inTransit; else row.inTransit = true;
+    }
+    const paid = row.cash != null ? row.cash : 0;
+    row.status = paid >= row.total - 0.009 ? "paid" : (paid <= 0.009 ? "unpaid" : "partial");
+    if (!row.date) row.date = pay.date;
+    if (!row.paidOn && row.status === "paid" && (+pay.cash || 0) > 0.009) row.paidOn = pay.date;
+    return;
+  }
+  if (!row.amend || !row.amend.length)
+    row.amend = [{ date: row.date, kind: "Fulfilment", cash: E.txPaid(row), kg: E.txDeliv(row), note: "as booked" + (row.date ? "" : ", pending and undated") }];
+  const step = { date: pay.date, kind: pay.kind, cash: +pay.cash || 0, kg: +pay.kg || 0 };
+  if (note) step.note = note;
+  row.amend = row.amend.concat([step]);
+  if (pay.kind === "Cancellation") { row.cancelled = true; return; }
+  row.cash = +((row.cash || 0) + (+pay.cash || 0)).toFixed(2);
+  row.deliveredQty = +((row.deliveredQty || 0) + (+pay.kg || 0)).toFixed(2);
+  /* the dates the phone and the ledger read: the first movement dates an undated order, and a
+     step that completes delivery or payment stamps the day it did */
+  if (!row.date) row.date = pay.date;
+  if ((+pay.kg || 0) > 0.009 && row.qty > 0 && row.deliveredQty >= row.qty - 0.0001) row.deliveredOn = pay.date;
+  if ((+pay.cash || 0) > 0.009 && row.total > 0 && row.cash >= row.total - 0.009) row.paidOn = pay.date;
+}
+
+export function apply(book, staged, notes, masterText) {
+  const p = plan(book, staged, notes);
+  const problems = [];
+  if (p.refused.length) p.refused.forEach((x) => problems.push(`${x.id}: ${x.why}`));
+  if (!notes || !notes.version || !/^v\d+$/.test(notes.version)) problems.push("notes.version is missing (the next version after the master's)");
+  if (!notes || !notes.title) problems.push("notes.title is missing");
+  if (!notes || !Array.isArray(notes.notes) || !notes.notes.length) problems.push("notes.notes is empty: the version entry needs at least one note");
+  for (const it of p.items) {
+    const n = notes && notes.rows && notes.rows[it.id];
+    if (it.append === "sales" || it.append === "purchases") { if (!n || !String(n.note || "").trim()) problems.push(`${it.id}: a new row needs a note`); }
+  }
+  if (problems.length) return { ok: false, problems };
+
+  const stockCost = (() => { const m = /const STOCK_COST=([\d.]+);/.exec(masterText); return m ? +m[1] : null; })();
+  const fromSalt = book.STATED_STOCK;
+  const moves = [];
+  let newest = book.QUEUE_COMMITTED || "";
+  const folded = [];
+  for (const it of p.items) {
+    const src = staged.approved.find((x) => x.id === it.id);
+    const n = (notes.rows && notes.rows[it.id]) || {};
+    if (it.target) {
+      applyAmend(it.target, it.pay, it.dir, String(n.note || "").trim() || undefined);
+      if (it.dir !== "BUY" && it.pay.kg > 0.009 && it.target.cost == null && prodOf(it.target) === "salt" && stockCost != null) it.target.cost = stockCost;
+      if (n.cost != null) it.target.cost = +n.cost;
+      if (n.rowNote) it.target.note = String(n.rowNote) + " " + (it.target.note || "");
+    } else if (it.append === "sales" || it.append === "purchases") {
+      const row = { ...src.row };
+      if (n.cost != null) row.cost = +n.cost;
+      row.note = String(n.note).trim();
+      book[it.append].push(row);
+    } else if (it.count) {
+      const c = it.count;
+      if (c.product === "salt") book.STATED_STOCK = c.qty;
+      else { book.PROD_OPENING[c.product] = book.PROD_OPENING[c.product] || { qty: 0, costPerKg: null, stated: null }; book.PROD_OPENING[c.product].stated = c.qty; }
+      book.COUNT_ON[c.product] = c.date;
+      const sentence = `COUNTED AT ${notes.version} on ${c.date}: the ${c.product} shelf held ${c.qty} against ${c.was != null ? c.was : "?"} on the roll, a drift of ${c.drift != null ? c.drift : "?"}. A COUNT AND NOT A ROLL, so COUNT_ON.${c.product} moves to ${c.date}.` + (n.note ? " " + String(n.note).trim() : "");
+      const key = c.product === "salt" ? "STATED_STOCK" : "PROD_OPENING";
+      book.NOTES = book.NOTES || {}; book.NOTES[key] = [sentence].concat(book.NOTES[key] || []);
+    } else if (it.append === "selfUseLog" || it.append === "lostDemand") {
+      const row = { ...src.row }; if (n.note) row.note = String(n.note).trim();
+      book[it.append] = book[it.append] || []; book[it.append].push(row);
+    } else if (it.roster) {
+      book.roster.push(it.roster);
+    }
+    if (it.id > newest) newest = it.id;
+    folded.push(it.id);
+  }
+  /* THE ROLL: what physically moved, per product, applied to the stated figure that stands */
+  const byProd = {};
+  for (const m of p.moves) { byProd[m.product] = byProd[m.product] || []; byProd[m.product].push(m); }
+  for (const prod of Object.keys(byProd)) {
+    const ms = byProd[prod];
+    const out = ms.filter((m) => m.kg < 0).reduce((a, m) => a - m.kg, 0), inn = ms.filter((m) => m.kg > 0).reduce((a, m) => a + m.kg, 0);
+    const desc = ms.map((m) => `${Math.abs(m.kg)} unit ${m.kg < 0 ? "to" : "from"} ${m.who} on ${m.when}`).join(", ");
+    if (prod === "salt") {
+      const from = book.STATED_STOCK, to = r2(from - out + inn);
+      book.STATED_STOCK = to;
+      const sentence = `ROLLED AT ${notes.version}: ${desc}, so ${from}${out ? " less " + r2(out) : ""}${inn ? " plus " + r2(inn) : ""} is ${to}. A ROLL AND NOT A COUNT; COUNT_ON is untouched.` + (notes.stockNote ? " " + String(notes.stockNote).trim() : "");
+      book.NOTES = book.NOTES || {}; book.NOTES.STATED_STOCK = [sentence].concat(book.NOTES.STATED_STOCK || []);
+      moves.push({ product: prod, from, out, inn, to });
+    } else {
+      const o = (book.PROD_OPENING || {})[prod];
+      if (o && o.stated != null) {
+        const from = o.stated, to = r2(from - out + inn); o.stated = to;
+        const sentence = `ROLLED AT ${notes.version} (${prod}): ${desc}, so ${from}${out ? " less " + r2(out) : ""}${inn ? " plus " + r2(inn) : ""} is ${to}. A ROLL AND NOT A COUNT; COUNT_ON is untouched.`;
+        book.NOTES = book.NOTES || {}; book.NOTES.PROD_OPENING = [sentence].concat(book.NOTES.PROD_OPENING || []);
+        moves.push({ product: prod, from, out, inn, to });
+      } else moves.push({ product: prod, from: null, out, inn, to: null, uncounted: true });
+    }
+  }
+  if (newest && newest > (book.QUEUE_COMMITTED || "")) book.QUEUE_COMMITTED = newest;
+  sortBook(book);
+
+  /* the master: the book, the version entry, the stamp, and the cost basis if it moved */
+  let m = syncText(masterText, book);
+  const entry = { v: notes.version, d: notes.date || dayOf(TODAY), t: notes.title, n: notes.notes };
+  const open = m.indexOf("const evolution=[");
+  if (open < 0) return { ok: false, problems: ["the master has no evolution array"] };
+  m = m.slice(0, open) + "const evolution=[" + JSON.stringify(entry) + ",\n\n" + m.slice(open + "const evolution=[".length);
+  m = m.replace(/const LAST_UPDATED='[^']*';/, `const LAST_UPDATED='${stamp()}';`);
+  if (notes.stockCost != null) {
+    const re = /const STOCK_COST=[\d.]+;(\s*\/\*)?/;
+    if (!re.test(m)) return { ok: false, problems: ["the master has no STOCK_COST line to move"] };
+    m = m.replace(re, (all, c) => `const STOCK_COST=${+notes.stockCost};` + (c ? `  /* ${notes.version}: ${String(notes.stockCostNote || "the cost basis moved with the lot that landed").replace(/\*\//g, "* /")}` + (c.includes("/*") ? "\n  " : "") : ""));
+  }
+  return { ok: true, folded, newest, moves, master: m, plan: p };
+}
+
+/* ---- the command line ---------------------------------------------------------------------- */
+const isMain = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
+if (isMain) {
+  const mode = argv.find((a) => a === "--plan" || a === "--apply");
+  if (!mode) { console.log("usage: node tools/fold.mjs --plan | --apply   [--staged f] [--notes f] [--book f] [--master f] [--folded f] [--today YYYY-MM-DD]"); process.exit(2); }
+  const staged = readStaged();
+  if (!staged || !staged.count) { console.log("  nothing to fold: no staged batch, or its count is zero. Stop here; do not bump a version."); process.exit(0); }
+  const book = readBookFile(BOOK);
+  const notes = existsSync(NOTES) ? JSON.parse(readFileSync(NOTES, "utf8")) : null;
+  if (mode === "--plan") {
+    const p = plan(book, staged, notes);
+    console.log(`\nTHE BATCH: ${staged.count} approved row(s) against the book at ${book.QUEUE_COMMITTED}\n`);
+    for (const it of p.items) console.log(`  FOLD     ${it.id}  ${it.what}\n           -> ${it.does.join("; ")}`);
+    for (const x of p.refused) console.log(`  REFUSE   ${x.id}  ${x.why}`);
+    if (p.moves.length) console.log("\n  MOVES    " + p.moves.map((m) => `${m.kg > 0 ? "+" : ""}${m.kg} ${m.product} (${m.who})`).join("; ") + `  from a salt shelf of ${book.STATED_STOCK}`);
+    if (!notes) { writeFileSync(NOTES, JSON.stringify(skeleton(book, staged, p), null, 2) + "\n"); console.log(`\n  wrote ${NOTES}: fill in the notes, then run --apply`); }
+    else console.log(`\n  ${NOTES} exists; --apply will use it`);
+    if (p.refused.length) { console.log("\n  A refusal folds nothing. Resolve it or take the row out of the batch."); process.exit(1); }
+  } else {
+    if (!notes) { console.log(`  FAIL  no notes at ${NOTES}. Run --plan first and fill in the skeleton.`); process.exit(1); }
+    const masterText = readFileSync(MASTER, "utf8");
+    const res = apply(book, staged, notes, masterText);
+    if (!res.ok) { console.log("  FAIL  nothing folded:"); res.problems.forEach((x) => console.log("         " + x)); process.exit(1); }
+    writeBookFile(book, BOOK);
+    writeFileSync(MASTER, res.master);
+    writeFileSync(FOLDED, JSON.stringify({ ids: res.folded }) + "\n");
+    try { execFileSync("node", [resolve(REPO, "tools", "changelog.mjs")], { cwd: REPO, encoding: "utf8", env: { ...process.env, SALT_MASTER: MASTER } }); }
+    catch (e) { console.log("  FAIL  the changelog did not take: " + String((e && e.stdout) || e)); process.exit(1); }
+    console.log(`  ok    folded ${res.folded.length} row(s) into ${BOOK} and the master at ${notes.version}`);
+    for (const mv of res.moves) console.log(mv.uncounted ? `  note  ${mv.product}: ${mv.out} out, ${mv.inn} in, but this book is uncounted so nothing stated was rolled` : `  ok    ${mv.product} shelf rolled ${mv.from} -> ${mv.to} (${mv.out} out, ${mv.inn} in)`);
+    console.log(`  ok    QUEUE_COMMITTED -> ${book.QUEUE_COMMITTED}; ${FOLDED} names ${res.folded.length} id(s)`);
+    console.log("  next  npm run build && npm test, then commit and push. The deploy marks the ids committed.");
+  }
+}

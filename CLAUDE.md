@@ -185,7 +185,8 @@ phone: add transaction ──POST /queue──▶ Worker ──▶ KV  (key q:<d
         │
         ▼   phone: Approve tab, a tap            ** THIS STEP IS NOT OPTIONAL, v305 **
         │
-   salt-daily-price-brief folds ONLY approved rows, sets QUEUE_COMMITTED, bumps the version
+   the cloud fold (tools/fold.mjs --apply, docs/CLOUD_FOLD.md) writes the approved rows into
+   ledger/book.json with their notes, rolls the shelf, sets QUEUE_COMMITTED, bumps the version
         │
         ├─ node tools/drafts.mjs --committed <id>...            (mark them folded)
         ├─ npm run build                                        (refresh public/desk.html)
@@ -407,6 +408,7 @@ Cow-Crm01 master (a Cowork/master session); once it lands, the sync above alread
 | `migrations/0003_refused.sql` | The `refused` table: entries the drafter declined, kept so they can be SEEN. No decision column, by design. |
 | `master/salt_command.html` | **THE MASTER.** The only editable source. Moved here 20 Aug 2026 so the fold can run in the cloud. |
 | `master/changelog.json` | Every `evolution` entry ever written. `tools/changelog.mjs` keeps it in step with the master's one-entry array. |
+| `tools/fold.mjs` | **THE FOLD** (v340, move 3): `--plan` reads `master/_to_fold.json` against the book, says what each row would do, refuses what it must and writes the notes skeleton; `--apply` folds the batch with the agent's notes into `ledger/book.json`, syncs the master, sets the version and the changelog, rolls the shelf, moves the watermark, writes `_folded.json`. All or nothing. |
 | `tools/sort-ledger.mjs` | Puts `sales` and `purchases` back in date order, undated pending rows last. Asserts its output is a permutation of its input. |
 | `ledger/book.json` | **THE BOOK** (v339, move 2): the twenty-six ledger keys as data, plus `NOTES`. Edited by the fold; rendered into the master by `tools/booksync.mjs --sync`; CI proves the copy. |
 | `tools/booksync.mjs` | `--sync` renders the book into the master between its markers; `--check` fails if the block is not the file; `--normalise` rewrites the JSON one record per line. |

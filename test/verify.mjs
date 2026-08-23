@@ -1398,6 +1398,80 @@ section("Book — ledger/book.json is the source (v339)");
   ok(/const sales=\[\n  \{"date"/.test(master) || /const sales=\[\n  \{"/.test(master), "and the generated one stands in its place");
 }
 
+/* ---- the fold as a data write ----------------------------------------------------------- */
+section("Fold — an approved batch becomes records in the book (v340)");
+{
+  const { plan, apply } = await import("../tools/fold.mjs");
+  const book = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const master = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+  const pending = book.sales.find((r) => !r.date && r.customer === "CS6-PER" && r.total === 350);
+  ok(!!pending, "the book carries the CS6-PER pending order the test amends");
+  const key = pending ? `CS6-PER|undefined|350` : null;
+  const staged = { ok: true, count: 5, approved: [
+    { id: "2026-08-23T01:00:00.000Z", collection: "sales", amends: null, amendKind: null,
+      row: { customer: "CA4-DAM", qty: 0.5, total: 50, cost: 44, cash: 50, date: "2026-08-23", deliveredQty: 0.5, deliveredOn: "2026-08-23", paidOn: "2026-08-23" },
+      entry: { at: "2026-08-23T01:00:00.000Z", payload: { mode: "new", direction: "SELL" } } },
+    { id: "2026-08-23T01:05:00.000Z", collection: "sales", amends: key, amendKind: "Fulfilment",
+      row: { customer: "CS6-PER", qty: 6.25, total: 350, cash: 0, date: null },
+      entry: { at: "2026-08-23T01:05:00.000Z", payload: { mode: "amend", direction: "SELL", orderKey: key, kind: "Fulfilment", date: "2026-08-23", cash: 350, kg: 6.25 } } },
+    { id: "2026-08-23T01:10:00.000Z", collection: "count", amends: null, amendKind: null,
+      row: { product: "oil", qty: 3, date: "2026-08-23", was: 0, drift: 3 }, entry: { at: "2026-08-23T01:10:00.000Z", payload: { mode: "count" } } },
+    { id: "2026-08-23T01:15:00.000Z", collection: "roster", amends: null, amendKind: null,
+      row: { code: "CT7-KLC", kind: "customer", parent: null, note: null }, entry: { at: "2026-08-23T01:15:00.000Z", payload: { mode: "party" } } },
+    { id: "2026-08-23T01:20:00.000Z", collection: "sales", amends: "CX9-NOPE|undefined|1", amendKind: "Modification",
+      row: {}, entry: { at: "2026-08-23T01:20:00.000Z", payload: { mode: "amend", direction: "SELL", kind: "Modification" } } },
+  ] };
+  /* the plan refuses what it must and describes the rest */
+  let p = plan(JSON.parse(JSON.stringify(book)), staged, null);
+  ok(p.refused.length === 1 && /Modification/.test(p.refused[0].why), "a Modification is refused as a judgement");
+  ok(p.items.length === 4, "the four mechanical rows are planned");
+  ok(p.moves.some((m) => m.kg === -0.5 && m.product === "salt") && p.moves.some((m) => m.kg === -6.25), "the plan sees what will leave the shelf");
+  /* a refusal folds nothing, and so does a missing note */
+  const notes = { version: "v999", date: "23 Aug 2026", title: "A TEST FOLD", notes: ["<b>TEST.</b> Nothing real."],
+    rows: { "2026-08-23T01:00:00.000Z": { note: "Half a unit at the RM100 anchor, paid and delivered." }, "2026-08-23T01:05:00.000Z": { note: "paid and delivered in full" } },
+    stockNote: "Test roll." };
+  let r = apply(JSON.parse(JSON.stringify(book)), staged, notes, master);
+  ok(!r.ok && r.problems.some((x) => /Modification/.test(x)), "apply refuses the whole batch while a refusal stands");
+  const clean = { ...staged, count: 4, approved: staged.approved.slice(0, 4) };
+  r = apply(JSON.parse(JSON.stringify(book)), clean, { ...notes, rows: { "2026-08-23T01:05:00.000Z": notes.rows["2026-08-23T01:05:00.000Z"] } }, master);
+  ok(!r.ok && r.problems.some((x) => /needs a note/.test(x)), "a new row with no note is refused");
+  /* the real thing, on a copy */
+  const B = JSON.parse(JSON.stringify(book));
+  const from = B.STATED_STOCK;
+  r = apply(B, clean, notes, master);
+  ok(r.ok, "the clean batch applies: " + (r.ok ? "" : r.problems.join("; ")));
+  if (r.ok) {
+    const added = B.sales.find((x) => x.customer === "CA4-DAM" && x.date === "2026-08-23" && x.total === 50);
+    ok(!!added && /RM100 anchor/.test(added.note), "the new row is on the book with its note");
+    const ful = B.sales.find((x) => x.customer === "CS6-PER" && x.total === 350);
+    ok(ful && ful.cash === 350 && ful.deliveredQty === 6.25 && ful.date === "2026-08-23" && ful.deliveredOn === "2026-08-23" && ful.paidOn === "2026-08-23",
+      "the fulfilment moved the cash and the units and dated the order");
+    ok(ful && ful.amend && ful.amend.length === 2 && ful.amend[0].note.startsWith("as booked") && ful.amend[1].kg === 6.25 && /in full/.test(ful.amend[1].note), "and extended the trail from an as-booked seed");
+    ok(ful && ful.cost === 44, "salt that left the shelf took the shelf's cost");
+    ok(B.PROD_OPENING.oil.stated === 3 && B.COUNT_ON.oil === "2026-08-23", "the oil count set the stated shelf and moved COUNT_ON");
+    ok(B.roster.includes("CT7-KLC"), "the registration joined the roster");
+    ok(Math.abs(B.STATED_STOCK - (from - 0.5 - 6.25)) < 1e-9, `the salt shelf rolled ${from} to ${B.STATED_STOCK}`);
+    ok(/^ROLLED AT v999/.test(B.NOTES.STATED_STOCK[0]) && /Test roll\./.test(B.NOTES.STATED_STOCK[0]), "the roll sentence leads the stated stock's notes, with the agent's words");
+    ok(B.QUEUE_COMMITTED === "2026-08-23T01:15:00.000Z", "the watermark moved to the newest id folded");
+    ok(r.folded.length === 4 && r.newest === "2026-08-23T01:15:00.000Z", "_folded would name the four ids");
+    ok(/const evolution=\[\{"v":"v999"/.test(r.master) && /const LAST_UPDATED='\d\d \w\w\w 2026, \d\d:\d\d KL';/.test(r.master), "the version entry and the stamp are in the master");
+    const { checkText } = await import("../tools/booksync.mjs");
+    ok(checkText(r.master, B) === null, "and the master's book block is the folded book");
+    const last = B.sales[B.sales.length - 1];
+    ok(!last.date, "the book stays sorted: undated pending rows last");
+    /* the folded master still builds a payload that carries the new row */
+    mkdirSync(join(REPO, "test", "tmp"), { recursive: true });
+    const tmpMaster = join(REPO, "test", "tmp", "fold-master.html");
+    writeFileSync(tmpMaster, r.master);
+    const { buildPayload } = await import("../tools/payload.mjs");
+    const { payload, leaks } = await buildPayload(tmpMaster);
+    ok(leaks.length === 0, "the folded desk leaks nothing to the phone");
+    ok(payload.v === "v999" && payload.ledger.some((x) => x.p === "CA4-DAM" && x.d === "2026-08-23" && x.t === 50), "the folded desk builds, at the new version, with the new row on the phone's ledger");
+    ok(payload.position.salt.onHand === +(from - 0.5 - 6.25).toFixed(2), "and the phone's shelf is the rolled figure");
+    try { rmSync(tmpMaster); } catch (e) { }
+  }
+}
+
 /* ---- done ----------------------------------------------------------------------- */
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

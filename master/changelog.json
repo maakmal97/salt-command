@@ -1,5 +1,16 @@
 [
  {
+  "v": "v340",
+  "d": "23 Aug 2026",
+  "t": "THE FOLD IS A DATA WRITE",
+  "n": [
+   "<b>MOVE 3 OF THE REBUILD: AN APPROVED ROW BECOMES A RECORD, WITH ITS NOTE, BY A TOOL.</b> tools/fold.mjs reads the staged batch, says what every row would do and what would leave or land on the shelf, refuses what it must (a Modification, a key that matches nothing or two things, a replay, a row with no note), takes the agent&rsquo;s notes from one file and writes the book, the master, the version entry and the changelog in one pass, all or nothing. A fulfilment is applied exactly as the desk&rsquo;s own ovAmend applies it; a count sets the stated shelf and moves COUNT_ON; the roll is written as a sentence into NOTES; the watermark moves to the newest id.",
+   "<b>WHAT STAYS WITH THE AGENT IS THE JUDGEMENT.</b> The note on every new row, the trail note on every amendment, the sentence on the roll and the version entry are typed by the agent into master/_fold_notes.json, and the tool refuses to fold without them. What leaves the agent is the syntax: nobody edits twelve thousand lines of a page to add a row again.",
+   "<b>PROVED ON A COPY.</b> The suite folds a four-row batch (a new sale, a fulfilment of a pending order, an oil count and a registration) into a copy of the book, checks every figure it moved, syncs it into a copy of the master, builds the phone payload from that and finds the new row on the phone&rsquo;s ledger at the rolled shelf. It also proves the tool refuses a Modification and a note-less row. The sorter now sorts the book and syncs the block, and the cloud routine&rsquo;s procedure is rewritten for this in docs/CLOUD_FOLD.md.",
+   "<b>NO FIGURE MOVED.</b> The book as it stands is untouched; this version is the tool and its proof."
+  ]
+ },
+ {
   "v": "v339",
   "d": "23 Aug 2026",
   "t": "THE BOOK LEAVES THE DESK",
