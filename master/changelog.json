@@ -1,5 +1,16 @@
 [
  {
+  "v": "v345",
+  "d": "24 Aug 2026",
+  "t": "AN ORDER AGREED BEFORE ITS PRICE, AND TWO WITHDRAWN",
+  "n": [
+   "<b>CS6-BS-R TAKES 3 UNIT AND THE PRICE IS NOT STRUCK YET.</b> On the book pending and undated, so it draws no stock and raises no receivable. The total is a placeholder zero and the row says so: <b>unpriced</b>. <b>WHAT THE EVIDENCE SAYS IT SHOULD BE.</b> The ladder asks RM260 at 3 unit, RM86.67 a unit. His own last comparable order was 2.5 unit for RM270 on 03 Aug, RM108 a unit, and the only other 3 unit he has taken was RM285 on 15 Jul, RM95 a unit. The board therefore asks RM25 LESS than he paid three weeks ago for half a unit LESS. Both his own figures and the ask clear the v344 floors, RM180.35 collected and RM193.43 delivered.",
+   "<b>THE DESK CAN NOW TELL TWO KINDS OF ZERO APART.</b> A zero total has read as paid in full since the first free unit went out, which is right for a rebate and wrong for an order whose price is still being worked out: it would have read Pending and Paid, nothing owed, on the one row whose whole point is that no figure is agreed. unpriced makes payFull false and labels the row Unpriced. Everything downstream follows without a second rule: undated with nothing moved it is Pending and counts nowhere, and if goods ever go out before a price is agreed it becomes Open and Advance, which is exactly what that would be.",
+   "<b>CN6-WM AND CS6-PER ARE CANCELLED ON HIS WORD, AND NEITHER TAKES ANYTHING BACK.</b> Both were agreed, never dated, never paid and never handed over, so both counted nowhere before and count nowhere now. CN6-WM was 1.5 unit for RM185, RM123.33 a unit, which was his dearest direct rate by some way and reversed four orders that had fallen at every step. CS6-PER was 6.25 unit for RM350, RM56 a unit, RM170 under the RM520 ask and <b>RM25.73 UNDER THE v344 COLLECTED FLOOR OF RM375.73</b>: an order this desk could not have filled without a loss. Both rows are kept rather than deleted, because the rate is the record.",
+   "<b>PROMISED FALLS 22 TO 17.25 UNIT AND NOW EXACTLY EQUALS FREE STOCK.</b> Minus 7.75 on the two cancellations, plus 3 on the new order. The shelf holds 25.25 with 8 owed out, so 17.25 is free and every one of those units is spoken for. Nothing is short and there is no headroom either."
+  ]
+ },
+ {
   "v": "v344",
   "d": "24 Aug 2026",
   "t": "THE TWO MOVEMENT COSTS ARE MEASURED, AND THE CARD IS A COLLECTION PRICE",

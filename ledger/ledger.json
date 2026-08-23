@@ -1,6 +1,6 @@
 {
- "v": "v343",
- "stamped": "23 Aug 2026, 14:38 KL",
+ "v": "v344",
+ "stamped": "24 Aug 2026, 11:05 KL",
  "source": "Cow-Crm01 salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -68,7 +68,7 @@
     "supplier": "SF6-KLC",
     "status": "paid",
     "defaulted": true,
-    "note": "RM60/unit. Paid with the RM750 cash from the CS6-PER settlement package. Supplier took payment and DELIVERED NOTHING — now in default; the RM750 sits as a recoverable write-off, not stock."
+    "note": "RM60/unit. Paid with the RM750 cash from the CS6-PER settlement package. Supplier took payment and DELIVERED NOTHING â€” now in default; the RM750 sits as a recoverable write-off, not stock."
    },
    {
     "date": "2026-07-08",
@@ -76,7 +76,7 @@
     "total": 700,
     "supplier": "SA5-BTR",
     "status": "paid",
-    "note": "RM56/unit — cheapest sourcing to date. Bought from the fourth supplier (the third supplier’s own supplier) after the RM750 default. Received. He may be testing the price; a better rate is expected."
+    "note": "RM56/unit â€” cheapest sourcing to date. Bought from the fourth supplier (the third supplierâ€™s own supplier) after the RM750 default. Received. He may be testing the price; a better rate is expected."
    },
    {
     "date": "2026-07-14",
@@ -1937,7 +1937,9 @@
     "total": 185,
     "cash": 0,
     "deliveredQty": 0,
-    "note": "<b>PENDING, AGREED ON 22 AUG, AND IT COUNTS NOWHERE UNTIL IT MOVES.</b> 1.5 unit for RM185, RM123.33 a unit, with nothing paid and nothing handed over, so the row carries no date, draws no stock and raises no receivable. <b>IT IS HIS DEAREST DIRECT RATE BY SOME WAY</b>: his four direct orders ran RM100 a unit at half a unit on 21 Jul and 04 Aug, RM80 on the 6th and RM75 on the 2 unit completed on the 22nd, so this reverses a rate that had fallen at every order. He is an associate who resells, and his downstream bucket has cleared RM67.69 to RM125 a unit, so RM123.33 sits at the top of what his own customers pay. The ladder asks RM150 at 1.5 unit and the delivered floor stands at RM91.77, so it clears both. Entered by him in the 22 Aug session, not queued from the phone, so no draft stands behind it."
+    "note": "<b>CANCELLED 24 AUG, ON HIS WORD, WITH NOTHING EVER MOVED EITHER WAY.</b> 1.5 unit for RM185 was agreed on 22 Aug and never dated, paid or handed over, so cancelling it takes nothing back: it counted nowhere before and it counts nowhere now. The row is kept rather than deleted because the rate is the record worth having. RM123.33 a unit was his dearest direct rate by some way, against RM100 at half a unit on 21 Jul and 04 Aug, RM80 on the 6th and RM75 on the 2 unit of the 22nd, so the reversal it represented is now itself reversed. CN6-WM is an associate and his last four direct orders had fallen at every step; this one is off the book.",
+    "cancelled": true,
+    "cancelledOn": "2026-08-24"
    },
    {
     "customer": "CS6-PER",
@@ -1945,7 +1947,20 @@
     "total": 350,
     "cash": 0,
     "deliveredQty": 0,
-    "note": "<b>PENDING, AND NOTHING ABOUT IT COUNTS YET.</b> 6.25 unit for RM350, RM56 a unit, agreed on the 20th with nothing paid and nothing moved, so it carries no date and draws no stock. <b>RM56 WOULD BE HIS CHEAPEST EVER BY SOME WAY.</b> His three orders ran 12.5 unit at RM60 on 08 Jul, 7.25 at RM85.52 on the 14th and 3 at RM80 on 07 Aug, so this is RM4 under his own previous floor and RM24 under what he paid a fortnight ago. If it moves it becomes the second cheapest ordinary rate on the book, behind only the RM48 CM3-OKR paid on the same day. <b>HE IS AN ASSOCIATE TOO</b>, so the same reading applies as to CN6-WM: a wholesale rate to somebody who resells rather than a retail price. What differs is the direction of travel. CN6-WM has come down RM25 a unit across three orders while doubling his size; this comes down RM29.52 from the 14 Jul rate while the size goes from 3 unit back up to 6.25. <b>IT IS UNDER FLOOR AND WILL STILL BE UNDER FLOOR WHEN IT MOVES.</b> RM350 against a delivered floor of RM382.38 at 6.25 unit is RM32.38 short, and the ladder asks RM520. The drafter measured it against the older RM505.42 floor and reached the same verdict, so the finding survives the board change. Nothing is repriced: the price is his to set and this row records that he set it. <b>IF BOTH PENDING ROWS MOVE, 8.25 UNIT LEAVE THE SHELF</b> against 23.62 free to sell, so both are covered and there is no stock reason to hold either."
+    "note": "<b>CANCELLED 24 AUG, ON HIS WORD, WITH NOTHING EVER MOVED EITHER WAY.</b> 6.25 unit for RM350 was agreed on the 20th and never dated, paid or handed over, so it counted nowhere before and counts nowhere now. RM56 a unit was the sharpest rate on the book at that size and sat RM170 under the RM520 ask; it also sat under the v344 collected floor of RM375.73, so the order it cancels was one this desk could not have filled without a loss. CS6-PER is an associate. The row is kept rather than deleted because a price that low, agreed and withdrawn, is the record.",
+    "cancelled": true,
+    "cancelledOn": "2026-08-24"
+   },
+   {
+    "customer": "CS6-BS-R",
+    "qty": 3,
+    "total": 0,
+    "unpriced": true,
+    "cash": 0,
+    "deliveredQty": 0,
+    "rev": "R2",
+    "agreedOn": "2026-08-24",
+    "note": "<b>PENDING AND NOT YET PRICED, AGREED 24 AUG.</b> 3 unit for CS6-BS-R, with the price still being worked out. It carries no date, draws no stock and raises no receivable, and the total is a placeholder zero rather than a figure anyone agreed: <b>unpriced</b> is what says so, and v345 teaches the desk the difference, so the row reads Pending and Unpriced rather than Pending and Paid. <b>WHAT THE EVIDENCE SAYS THE PRICE SHOULD BE.</b> The ladder asks RM260 at 3 unit, RM86.67 a unit. His own last comparable order was 2.5 unit for RM270 on 03 Aug, RM108 a unit, and the only other 3 unit he has taken was RM285 on 15 Jul, RM95 a unit. So the board asks RM25 less than he paid three weeks ago for half a unit less. The v344 collected floor at 3 unit is RM180.35 and the delivered floor RM193.43, so every one of those figures clears. Amend the total when he settles it."
    }
   ],
   "contacts": [
@@ -2186,7 +2201,7 @@
   ],
   "QUEUE_COMMITTED": "2026-08-22T11:00:24.409Z",
   "PRICING": {
-   "takenAt": "2026-08-23T06:40:25.739Z",
+   "takenAt": "2026-08-23T18:52:11.638Z",
    "sizes": [
     0.5,
     1,
@@ -2214,44 +2229,44 @@
      "replCost": 44,
      "floors": {
       "1": {
-       "delivered": 65.32,
-       "collected": 61.18
+       "delivered": 97.81,
+       "collected": 60.12
       },
       "2": {
-       "delivered": 122.36,
-       "collected": 122.36
+       "delivered": 145.62,
+       "collected": 120.23
       },
       "3": {
-       "delivered": 183.54,
-       "collected": 183.54
+       "delivered": 193.43,
+       "collected": 180.35
       },
       "4": {
-       "delivered": 244.72,
-       "collected": 244.72
+       "delivered": 241.24,
+       "collected": 240.46
       },
       "5": {
-       "delivered": 305.9,
-       "collected": 305.9
+       "delivered": 300.58,
+       "collected": 300.58
       },
       "0.5": {
-       "delivered": 40.99,
-       "collected": 30.59
+       "delivered": 73.9,
+       "collected": 30.06
       },
       "1.5": {
-       "delivered": 91.77,
-       "collected": 91.77
+       "delivered": 121.71,
+       "collected": 90.17
       },
       "2.5": {
-       "delivered": 152.95,
-       "collected": 152.95
+       "delivered": 169.52,
+       "collected": 150.29
       },
       "6.25": {
-       "delivered": 382.38,
-       "collected": 382.38
+       "delivered": 375.73,
+       "collected": 375.73
       },
       "12.5": {
-       "delivered": 764.75,
-       "collected": 764.75
+       "delivered": 751.45,
+       "collected": 751.45
       }
      },
      "inputs": {
@@ -2287,8 +2302,8 @@
          "date": "2026-08-20",
          "sup": "SA5-BTR"
         },
-        "days": 17,
-        "sinceLot": 26
+        "days": 18,
+        "sinceLot": 27
        },
        "lockBase": {
         "lockedOn": "2026-08-06",
@@ -2323,11 +2338,14 @@
        },
        "quoteRate": 56,
        "costBasis": {
-        "freightPerLot": {
-         "rm": 100
+        "freightPerTrip": {
+         "rm": 60
         },
         "txnPerDelivery": {
-         "rm": 16.666666666666668
+         "rm": 50
+        },
+        "deliveredShare": {
+         "v": 0.2
         }
        },
        "attrib": 0.33,
@@ -2404,44 +2422,44 @@
      "replCost": 7,
      "floors": {
       "1": {
-       "delivered": 26.19,
-       "collected": 11.97
+       "delivered": 58.67,
+       "collected": 10.91
       },
       "2": {
-       "delivered": 35.71,
-       "collected": 23.94
+       "delivered": 67.35,
+       "collected": 21.81
       },
       "3": {
-       "delivered": 45.22,
-       "collected": 35.91
+       "delivered": 76.02,
+       "collected": 32.72
       },
       "4": {
-       "delivered": 54.74,
-       "collected": 47.88
+       "delivered": 84.69,
+       "collected": 43.62
       },
       "5": {
-       "delivered": 64.26,
-       "collected": 59.85
+       "delivered": 93.37,
+       "collected": 54.53
       },
       "0.5": {
-       "delivered": 21.43,
-       "collected": 5.99
+       "delivered": 54.34,
+       "collected": 5.45
       },
       "1.5": {
-       "delivered": 30.95,
-       "collected": 17.96
+       "delivered": 63.01,
+       "collected": 16.36
       },
       "2.5": {
-       "delivered": 40.46,
-       "collected": 29.93
+       "delivered": 71.68,
+       "collected": 27.27
       },
       "6.25": {
-       "delivered": 76.16,
-       "collected": 74.81
+       "delivered": 104.21,
+       "collected": 68.16
       },
       "12.5": {
-       "delivered": 149.63,
-       "collected": 149.63
+       "delivered": 158.41,
+       "collected": 136.33
       }
      },
      "inputs": {
@@ -2477,8 +2495,8 @@
          "date": "2026-08-11",
          "sup": "SP7-PUD"
         },
-        "days": 17,
-        "sinceLot": 17
+        "days": 18,
+        "sinceLot": 18
        },
        "lockBase": {
         "lockedOn": "2026-08-06",
@@ -2513,11 +2531,14 @@
        },
        "quoteRate": 56,
        "costBasis": {
-        "freightPerLot": {
-         "rm": 100
+        "freightPerTrip": {
+         "rm": 60
         },
         "txnPerDelivery": {
-         "rm": 16.666666666666668
+         "rm": 50
+        },
+        "deliveredShare": {
+         "v": 0.2
         }
        },
        "attrib": 0.33,
@@ -2594,11 +2615,11 @@
      }
     }
    },
-   "v": "v343"
+   "v": "v344"
   },
   "OPEN": {
-   "at": "2026-08-23T06:40:25.753Z",
-   "count": 7,
+   "at": "2026-08-23T18:52:11.651Z",
+   "count": 6,
    "byKey": {
     "CJ4-BJ|undefined|450": {
      "d": null,
@@ -2613,31 +2634,17 @@
      "oweKg": 6.25,
      "key": "CJ4-BJ|undefined|450"
     },
-    "CN6-WM|undefined|185": {
+    "CS6-BS-R|undefined|0": {
      "d": null,
-     "p": "CN6-WM",
+     "p": "CS6-BS-R",
      "dir": "S",
-     "q": 1.5,
-     "t": 185,
+     "q": 3,
+     "t": 0,
      "cash": 0,
      "mv": 0,
      "st": "pend",
-     "oweRM": 185,
-     "oweKg": 1.5,
-     "key": "CN6-WM|undefined|185"
-    },
-    "CS6-PER|undefined|350": {
-     "d": null,
-     "p": "CS6-PER",
-     "dir": "S",
-     "q": 6.25,
-     "t": 350,
-     "cash": 0,
-     "mv": 0,
-     "st": "pend",
-     "oweRM": 350,
-     "oweKg": 6.25,
-     "key": "CS6-PER|undefined|350"
+     "oweKg": 3,
+     "key": "CS6-BS-R|undefined|0"
     },
     "CE4-AD|2026-08-20|435": {
      "d": "2026-08-20",
@@ -2662,7 +2669,7 @@
      "st": "dueMoney",
      "oweRM": 80,
      "key": "CR3-DAM|2026-08-18|80",
-     "age": 5,
+     "age": 6,
      "exp": 60
     },
     "CE4-CHE|2026-08-18|500": {
@@ -2699,7 +2706,7 @@
      "coverDays": 4,
      "rate": 4.32,
      "owedToYou": 80,
-     "promised": 22,
+     "promised": 17.25,
      "short": 0
     },
     "oil": {
@@ -2718,7 +2725,7 @@
     "salt": "2026-08-20",
     "oil": "2026-08-20"
    },
-   "v": "v343"
+   "v": "v344"
   }
  }
 }

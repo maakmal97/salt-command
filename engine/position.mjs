@@ -27,9 +27,16 @@ function txStat(t){
   /* A ZERO-VALUE ROW IS PAID IN FULL BY DEFINITION. payFull required total>0, so the
      first free unit ever handed over read as Open - Advance: salt out, nothing in,
      therefore money owed. Nothing was owed. There is no price to meet, so the test is
-     met. Without this a rebate redemption sits on the books for ever as a debt. */
-  const payFull=t.total<=0.009?true:(paid>=t.total-0.009), payNone=paid<=0.009, delFull=t.qty>0&&del>=t.qty-0.009, delNone=del<=0.009;
-  const pay=payFull?'Paid':payNone?'Unpaid':'Partial';
+     met. Without this a rebate redemption sits on the books for ever as a debt.
+     v345: AND A ZERO IS NOT ALWAYS THAT ZERO. An order can be agreed before its price is
+     struck, and the rule above would read it as settled in full: Pending, Paid, nothing
+     owed, on a row where the whole point is that the figure is not decided. `unpriced` says
+     which of the two a zero is. It can never be paid, because there is nothing yet to pay,
+     so payFull is false and the label says so. Everything downstream then behaves: undated
+     with nothing moved it is Pending and counts nowhere, and if goods go out before a price
+     is agreed it becomes Open - Advance, which is exactly what that would be. */
+  const payFull=t.unpriced?false:(t.total<=0.009?true:(paid>=t.total-0.009)), payNone=paid<=0.009, delFull=t.qty>0&&del>=t.qty-0.009, delNone=del<=0.009;
+  const pay=t.unpriced?'Unpriced':payFull?'Paid':payNone?'Unpaid':'Partial';
   const deliv=delFull?'Delivered':delNone?'Undelivered':'Partial';
   let order=(payFull&&delFull)?'Completed':(payNone&&delNone)?'Pending':'Open';
   if(order==='Open'){                                                  // split Open the same way the replay does
