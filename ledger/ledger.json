@@ -1,6 +1,6 @@
 {
- "v": "v349",
- "stamped": "24 Aug 2026, 04:40 KL",
+ "v": "v350",
+ "stamped": "24 Aug 2026, 05:10 KL",
  "source": "Cow-Crm01 salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -1961,6 +1961,15 @@
     "rev": "R2",
     "agreedOn": "2026-08-24",
     "note": "<b>PENDING AND NOT YET PRICED, AGREED 24 AUG.</b> 3 unit for CS6-BS-R, with the price still being worked out. It carries no date, draws no stock and raises no receivable, and the total is a placeholder zero rather than a figure anyone agreed: <b>unpriced</b> is what says so, and v345 teaches the desk the difference, so the row reads Pending and Unpriced rather than Pending and Paid. <b>WHAT THE EVIDENCE SAYS THE PRICE SHOULD BE.</b> The ladder asks RM260 at 3 unit, RM86.67 a unit. His own last comparable order was 2.5 unit for RM270 on 03 Aug, RM108 a unit, and the only other 3 unit he has taken was RM285 on 15 Jul, RM95 a unit. So the board asks RM25 less than he paid three weeks ago for half a unit less. The v344 collected floor at 3 unit is RM180.35 and the delivered floor RM193.43, so every one of those figures clears. Amend the total when he settles it."
+   },
+   {
+    "customer": "CS6-BS",
+    "qty": 1,
+    "total": 0,
+    "cash": 0,
+    "deliveredQty": 0,
+    "agreedOn": "2026-08-24",
+    "note": "<b>ONE UNIT, FREE, DUE OUT AND NOT YET MOVED.</b> Stated by him on 24 Aug as one of the four units set aside on the shelf, beside the 3 unit due to CS6-BS-R. It carries no date, draws no stock and raises no receivable until it goes. A zero total is paid in full by definition, which is right here: there is nothing to pay. <b>WHY IT IS FREE IS NOT STATED AND IS NOT GUESSED.</b> It is not an earned reseller rebate on this book: CS6-BS has applied all three units he has earned, and the network reads earned 0 with RM470 of resale still to run before the next one. So it is goodwill, or an advance on the next award, and the two are not the same row: a rebate settles an award in kind, goodwill is excluded from priced sales altogether. The flag goes on when it moves and he says which."
    }
   ],
   "contacts": [
@@ -1993,9 +2002,16 @@
    {
     "date": "2026-08-23",
     "product": "oil",
-    "kg": 34,
-    "why": "other",
-    "note": "<b>THE WHOLE OF THE OIL GAP, ATTRIBUTED ON HIS WORD: SELF USE AND THE PROMOTION PERIOD.</b> The oil walk is 5 unit of opening plus 100 bought less 71 sold, leaving 34 unit that three counts have found are not on the shelf. It was carried as an unexplained plug from 14 Aug until now. It is neither spillage nor short delivery: the oil went out deliberately, partly to himself and partly as promotion while the product was being introduced. <b>THE SPLIT BETWEEN THE TWO IS NOT KNOWN AND IS NOT INVENTED HERE</b>, which is why the reason is <i>other</i> rather than <i>personal</i> or <i>sample</i>: the two carry different treatments, drawings against IAS 38.69 marketing, and guessing the proportion would put a figure in the accounts that nobody stated. Give the split and this row becomes two. <b>THE DATE IS THE COUNT, NOT THE DAY.</b> It happened across 06 to 23 Aug, between the first lot landing and the shelf being counted empty; 23 Aug is when it was established, not when it went. Attribution changes no figure: the count still wins, and this row touches no revenue, cost, stock or margin. It replaces silence with a reason."
+    "kg": 6.8,
+    "why": "personal",
+    "note": "<b>SELF USE: 6.8 UNIT, THE 20 IN HIS 20:80.</b> The oil walk is 5 unit of opening plus 100 bought less 71 sold, leaving 34 unit that three counts have found are not on the shelf. It went out on purpose across 06 to 23 Aug, between the first lot landing and the shelf being counted empty; the date is the count, 23 Aug, not the day. <b>THE 20:80 IS HIS, THE ARITHMETIC IS MINE:</b> he gave the ratio in the order the causes were put to him, self use first, so 20% is what he used and 80% is what went out as promotion. Attribution changes no figure: the count still wins and neither row touches revenue, cost, stock or margin. Personal use is a drawing, not a cost of selling, so it is separated from the promotion below rather than blended with it."
+   },
+   {
+    "date": "2026-08-23",
+    "product": "oil",
+    "kg": 27.2,
+    "why": "sample",
+    "note": "<b>PROMOTION: 27.2 UNIT, THE 80 IN HIS 20:80.</b> The oil walk is 5 unit of opening plus 100 bought less 71 sold, leaving 34 unit that three counts have found are not on the shelf. It went out on purpose across 06 to 23 Aug, between the first lot landing and the shelf being counted empty; the date is the count, 23 Aug, not the day. <b>THE 20:80 IS HIS, THE ARITHMETIC IS MINE:</b> he gave the ratio in the order the causes were put to him, self use first, so 20% is what he used and 80% is what went out as promotion. Attribution changes no figure: the count still wins and neither row touches revenue, cost, stock or margin. Oil was being introduced and this is what was given away to introduce it. IAS 38.69 expenses promotion as incurred, so it is marketing rather than a drawing and rather than abnormal waste."
    }
   ],
   "lostDemand": [],
@@ -2210,7 +2226,7 @@
   ],
   "QUEUE_COMMITTED": "2026-08-23T15:36:10.986Z",
   "PRICING": {
-   "takenAt": "2026-08-23T19:42:19.055Z",
+   "takenAt": "2026-08-23T19:55:57.936Z",
    "sizes": [
     0.5,
     1,
@@ -2624,11 +2640,11 @@
      }
     }
    },
-   "v": "v349"
+   "v": "v350"
   },
   "OPEN": {
-   "at": "2026-08-23T19:42:19.069Z",
-   "count": 6,
+   "at": "2026-08-23T19:55:57.949Z",
+   "count": 7,
    "byKey": {
     "CJ4-BJ|undefined|450": {
      "d": null,
@@ -2654,6 +2670,18 @@
      "st": "pend",
      "oweKg": 3,
      "key": "CS6-BS-R|undefined|0"
+    },
+    "CS6-BS|undefined|0": {
+     "d": null,
+     "p": "CS6-BS",
+     "dir": "S",
+     "q": 1,
+     "t": 0,
+     "cash": 0,
+     "mv": 0,
+     "st": "pend",
+     "oweKg": 1,
+     "key": "CS6-BS|undefined|0"
     },
     "CE4-AD|2026-08-20|435": {
      "d": "2026-08-20",
@@ -2715,7 +2743,7 @@
      "coverDays": 4,
      "rate": 4.32,
      "owedToYou": 80,
-     "promised": 17.25,
+     "promised": 18.25,
      "short": 0
     },
     "oil": {
@@ -2734,7 +2762,7 @@
     "salt": "2026-08-20",
     "oil": "2026-08-23"
    },
-   "v": "v349"
+   "v": "v350"
   }
  }
 }
