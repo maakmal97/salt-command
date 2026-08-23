@@ -378,7 +378,9 @@ option:checked{background-color:var(--menu-2);font-weight:600}
       <div id="counts"></div>
       <p class="lbl" style="margin-top:18px">What needs doing</p>
       <div id="acts"><p class="stand">Loading.</p></div>
-
+      <p class="lbl" style="margin-top:20px">Where the book stands</p>
+      <div id="pos"></div>
+      <p class="basis" id="basis"></p>
       <p class="lbl" style="margin-top:20px">Alerts</p>
       <p class="stand" id="alertWhy" style="margin-bottom:10px">Checking whether this device can take them.</p>
       <button class="btn" id="alertBtn" hidden>Turn alerts on</button>
@@ -388,13 +390,10 @@ option:checked{background-color:var(--menu-2);font-weight:600}
 
     <!-- ===================== BOOK ====================== -->
     <section class="glass" id="p-book" role="tabpanel" aria-labelledby="tab-book" hidden>
-      <p class="lbl">Where the book stands</p>
-      <div id="pos"></div>
-      <p class="basis" id="basis"></p>
-
-      <p class="lbl" style="margin-top:22px">The ledger</p>
-      <p class="stand" style="margin-bottom:11px">What was traded and what is owed. Cost and
-        margin stay on the laptop, because this page is public.</p>
+      <p class="lbl">Who owes what</p>
+      <div id="owes"></div>
+      <details class="fold" id="ledFold"><summary id="ledFoldS">The ledger</summary><div class="in">
+      <p class="basis" style="margin:4px 0 10px">What was traded and what is owed. Cost and margin stay on the laptop, because this page is public.</p>
       <div class="filters">
         <div class="field" style="margin:0"><label for="lf-prod">Product</label>
           <select id="lf-prod"><option value="">All</option></select></div>
@@ -413,6 +412,7 @@ option:checked{background-color:var(--menu-2);font-weight:600}
       </div>
       <div id="ledbox"></div>
       <button class="btn more" id="ledmore" hidden>Show more</button>
+      </div></details>
     </section>
 
     <!-- ===================== PRICE ===================== -->
@@ -475,6 +475,7 @@ option:checked{background-color:var(--menu-2);font-weight:600}
         <div class="field">
           <label for="f-party">Counterparty</label>
           <select id="f-party"><option value="">Choose</option></select>
+          <p class="basis" id="f-hint" style="margin:6px 0 0" hidden></p>
         </div>
         <div class="row">
           <div class="field"><label for="f-qty">Quantity (unit)</label>
@@ -693,9 +694,14 @@ function drawCounts(){
     var pos=(D.position&&D.position[p.id])||{};
     var cls=age===null?'stale':age<=0?'':age===1?'due':'stale';
     var word=age===null?'never counted':age<=0?'counted today':age===1?'counted yesterday':age+' days old';
-    var note=age<=0&&age!==null
-      ? 'The shelf reads '+n2(pos.onHand)+' unit and it was looked at. Nothing to do.'
-      : 'The shelf reads '+n2(pos.onHand)+' unit on the roll, which is arithmetic and not a look. '
+    /* v342: A SHELF COUNTED TODAY IS ONE LINE. The card, with its instruction, is for the
+       shelf that has not been looked at; a count already taken needs no paragraph. */
+    if(age!==null&&age<=0){
+      return '<div class="cw"><div class="cw-t">'
+        +'<span class="cw-p">'+esc(p.name)+' <span class="num" style="color:var(--ink-2);font-weight:600">'+esc(n2(pos.onHand))+' unit</span></span>'
+        +'<span class="cw-age">'+esc(word)+'</span></div></div>';
+    }
+    var note='The shelf reads '+n2(pos.onHand)+' unit on the roll, which is arithmetic and not a look. '
         +'Count it under Record, Stock.';
     return '<div class="cw '+cls+'"><div class="cw-t">'
       +'<span class="cw-p">'+esc(p.name)+'</span>'
@@ -759,6 +765,35 @@ function ledMatch(r){
   if(fs==='due')return r.st==='dueStock'||r.st==='dueMoney';
   return r.st===fs;
 }
+/* one card for a row, shared by the ledger and by who-owes-what */
+function ledCard(r){
+  var st=r.st, buy=r.dir==='B';
+  var rate=(r.q>0)?rm(r.t/r.q)+'/unit':'';
+  var bits=[];
+  if(rate)bits.push(esc(rate));
+  bits.push(esc(n2(r.q))+' unit'+(r.pr?' '+esc(r.pr):''));
+  if(r.oweRM)bits.push(esc(rm(r.oweRM))+(buy?' still to pay':' outstanding'));
+  if(r.oweKg)bits.push(esc(n2(r.oweKg))+' unit'+(buy?' still to arrive':' to hand over'));
+  return '<div class="led '+esc(st)+(st==='canc'?' canc':'')+'">'
+    +'<div class="led-t"><span class="led-p">'+(buy?'Bought from ':'Sold to ')+esc(r.p)+'</span>'
+    +'<span class="led-rm">'+esc(rm(r.t))+'</span></div>'
+    +'<p class="led-n"><span class="led-d">'+esc(r.d||'undated')+'</span>'
+    +'<span class="pill '+esc(st)+'">'+esc(STATEW[st]||st)+'</span>'
+    +'<span>'+bits.join(' &middot; ')+'</span></p></div>';
+}
+/* DO: WHO OWES WHAT. Every open order with money or stock still to move, either way, the ones
+   where something is due to you first; then what is agreed and not yet moved. Read straight
+   off the open orders the desk sends; nothing is worked out here. */
+function drawOwes(){
+  var box=$('owes'); if(!box)return;
+  if(!D||!D.open){ box.innerHTML='<p class="stand">Loading.</p>'; return; }
+  var rank={dueMoney:0,dueStock:1,part:2,oweStock:3,oweMoney:4,pend:5};
+  var rows=D.open.filter(function(r){ return rank[r.st]!=null; })
+    .sort(function(a,b){ return rank[a.st]-rank[b.st]; });
+  if(!rows.length){ box.innerHTML='<div class="empty">Nothing is owed either way. The book is square.</div>'; return; }
+  box.innerHTML=rows.map(ledCard).join('');
+  var s=$('ledFoldS'); if(s)s.textContent='The ledger \u00b7 '+(D.ledger||[]).length+' rows';
+}
 function drawLedger(){
   var box=$('ledbox'), more=$('ledmore');
   if(!D||!D.ledger){ box.innerHTML='<p class="stand">Loading.</p>'; more.hidden=true; return; }
@@ -768,21 +803,7 @@ function drawLedger(){
     more.hidden=true; return;
   }
   var shown=rows.slice(0,LEDN);
-  box.innerHTML=shown.map(function(r){
-    var st=r.st, buy=r.dir==='B';
-    var rate=(r.q>0)?rm(r.t/r.q)+'/unit':'';
-    var bits=[];
-    if(rate)bits.push(esc(rate));
-    bits.push(esc(n2(r.q))+' unit'+(r.pr?' '+esc(r.pr):''));
-    if(r.oweRM)bits.push(esc(rm(r.oweRM))+(buy?' still to pay':' outstanding'));
-    if(r.oweKg)bits.push(esc(n2(r.oweKg))+' unit'+(buy?' still to arrive':' to hand over'));
-    return '<div class="led '+esc(st)+(st==='canc'?' canc':'')+'">'
-      +'<div class="led-t"><span class="led-p">'+(buy?'Bought from ':'Sold to ')+esc(r.p)+'</span>'
-      +'<span class="led-rm">'+esc(rm(r.t))+'</span></div>'
-      +'<p class="led-n"><span class="led-d">'+esc(r.d||'undated')+'</span>'
-      +'<span class="pill '+esc(st)+'">'+esc(STATEW[st]||st)+'</span>'
-      +'<span>'+bits.join(' &middot; ')+'</span></p></div>';
-  }).join('');
+  box.innerHTML=shown.map(ledCard).join('');
   more.hidden=rows.length<=LEDN;
   more.textContent='Show more ('+(rows.length-shown.length)+' of '+rows.length+' left)';
 }
@@ -1279,7 +1300,17 @@ function buildEntry(){
     raw:'Register '+code+' as a '+PKIND+(parent?' under '+parent:'')+(pnote?' ('+pnote+')':''),
     payload:{mode:'addid',code:code,kind:PKIND,parent:parent,rev:null,note:pnote||null}};
 }
+/* what this party usually pays, beside the form, read off the desk's customer figures */
+function partyHint(){
+  var h=$('f-hint'); if(!h)return;
+  var id=$('f-party').value, c=null;
+  if(D&&dir==='SELL'&&id)c=(D.customers||[]).filter(function(x){ return x.id===id; })[0];
+  if(!c||c.rate==null){ h.hidden=true; h.textContent=''; return; }
+  h.hidden=false;
+  h.textContent='Usually '+rm(c.rate)+'/unit across '+c.n+(c.n===1?' order':' orders')+', last '+(c.last||'never')+'.';
+}
 function preview(){
+  partyHint();
   if(MODE==='trade'){
     $('w-paid').className='check'+($('f-paid').checked?' on':'');
     $('w-deliv').className='check'+($('f-deliv').checked?' on':'');
@@ -1355,7 +1386,7 @@ function record(){
 /* ---- data ---------------------------------------------------------------- */
 function paint(){
   drawCounts(); drawActs(); drawPos(); drawProds(); drawParties();
-  drawLedFilters(); drawLedger(); drawOpens(); drawHeld();
+  drawLedFilters(); drawOwes(); drawLedger(); drawOpens(); drawHeld();
   drawPrControls(); drawPrice(); drawCustomers(); preview();
   var a=(D&&D.actions)||[];
   var now=a.filter(function(x){return x.sev==='now';}).length;
@@ -1767,6 +1798,7 @@ $('d-buy').addEventListener('click',function(){ dir='BUY';
   drawParties(); preview(); });
 TYPED.concat(['f-date','a-date','s-date']).forEach(function(id){
   var el=$(id); if(el)el.addEventListener('input',preview); });
+$('f-party').addEventListener('change',preview);   // v342: the party hint, on browsers that fire change alone for a select
 ['f-paid','f-deliv'].forEach(function(id){ $(id).addEventListener('change',preview); });
 $('s-prod').addEventListener('change',function(){ drawRecon(); preview(); });
 $('s-party').addEventListener('change',preview);
