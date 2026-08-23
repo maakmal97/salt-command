@@ -60,7 +60,7 @@ document.addEventListener('visibilitychange',function(){
    focused, no dialog open. Otherwise it offers a chip and waits to be tapped.
    The same tick retries a held entry, which is what gets a phone write to the cloud
    without waiting for the next open. */
-var SALT_BUILD_ID="d0c9cd7480d4773b";
+var SALT_BUILD_ID="f6992fe788c0bb07";
 var SALT_REV_MS=10000;
 (function(){
   var chip=null,timer=null;
@@ -1672,6 +1672,7 @@ return {txPrice:txPrice,txPaid:txPaid,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:t
  *   P  the policy: {LADDER, minPerUnit, lotFloor, tiers, boardSizes}
  *      LADDER      the house ladder (floor, ceiling, anchorQ, anchorX, at, round, taper)
  *      minPerUnit  the least a unit may earn, in ringgit (PRICE_ENGINE.minPerUnit)
+ *      timePerOrder what an order of his own time costs, in ringgit (PRICE_ENGINE.timePerOrder)
  *      lotFloor    named floors by size (PRICE.lotFloor), kept as a mechanism, empty as a policy
  *      tiers       the supplier's live quote tiers, for the taper ({qty,total} each)
  *      boardSizes  the sizes the board quotes, for walking an off-board size against them
@@ -1803,6 +1804,16 @@ function ladderWalk(sizes,C,P){
       const least=cogs*(1+LADDER.floor);          // never step down through the floor
       if(stepped>0&&stepped>=least-0.009)p=stepped;
     }
+    /* v352: AND NEVER UNDER THE FLOOR, WHICH IS THE HOUSE RULE ALREADY WRITTEN DOWN. v263 put it
+       plainly: a price above its floor that breaks a rate taper is a decision the desk can defend,
+       one below its floor is not. The markup ladder and the floor are struck on different bases, so
+       nothing had ever forced them to agree, and charging the whole leak and his own time at v352
+       pushed one ask under: oil at its 10 unit minimum asked RM140 against a floor of RM146.27,
+       because 34 of the 105 unit ever bought were given away and the price now carries that.
+       IT RAISES TO THE NEXT GRID STEP ABOVE THE FLOOR, never to the exact floor, because an ask
+       equal to its refusal line leaves nothing and is not an ask. */
+    const fl=floorTotal(q,C,P,null,{collects:true});
+    if(fl>p+0.009)p=Math.ceil((fl+0.009)/LADDER.round.to)*LADDER.round.to;
     out.push({q:q,p:p});
     if(q>0)prevRate=Math.min(prevRate,p/q);
   });
@@ -1836,8 +1847,14 @@ function floorTotal(q,C,P,eff,opts){
   opts=opts||{};
   const per=eff!=null?eff:(C.effEx!=null?C.effEx:C.eff);
   const del=opts.collects?0:(C.delPerOrder!=null?C.delPerOrder:0);
+  /* v352: AN ORDER COSTS HIM TIME AND THE FLOOR NOW SAYS SO. Nothing in this stack has ever
+     paid him for the work: the whole margin was doing it, undifferentiated from the return on
+     his capital, so he could not tell profit from wages. timePerOrder is charged PER ORDER and
+     not per unit, because that is how the work actually falls: a half unit and a twelve and a
+     half take about the same handling. It sits in the mpu leg beside delivery for the same
+     reason, and like delivery it is a real cost that a small order struggles to carry. */
   let t=ladderCogs(q,C)*(1+P.LADDER.floor);
-  const mpu=(per*q+del)+(P.minPerUnit||0)*q;
+  const mpu=(per*q+del+(P.timePerOrder||0))+(P.minPerUnit||0)*q;
   if(mpu>t)t=mpu;
   const named=(P.lotFloor||{})[String(q)];        // kept as a mechanism, empty as a policy
   if(named!=null&&named>t)t=named;
@@ -1880,30 +1897,29 @@ function ladderRow(sizes,C,P){
   }];
 }
 /* THE BOARD AND THE FLOORS, for quoting at the point of sale: what the phone receives. */
-/* v344: THE CARD PRICE IS A COLLECTION PRICE, AND THE BOARD NOW SAYS WHERE IT STOPS BEING ONE.
-   Four orders in five are collected, so the carded ask is what a customer who comes pays. One
-   delivery costs the full RM50, and on the smallest lots that is most of the price: at half a
-   unit the ask is RM60 and the delivered floor is RM73, so DELIVERING IT LOSES MONEY. That was
-   invisible while every order was charged a third of a delivery it mostly never had.
-   deliverable is a REPORTED FACT, not a new price. It says whether the carded ask covers a
-   delivery at that size. Nothing here refuses an order or moves an ask; what to charge for a
-   delivery is a decision, and it is his. */
+/* THE CARD IS A COLLECTION PRICE AND DELIVERY IS QUOTED ON TOP, PER ORDER (v352, his instruction).
+   v344 charged delivery at its real RM50 and put a `deliverable` flag on every size saying whether
+   the carded ask could also carry one. On the true figures it could not, at nearly every size, so
+   the flag said the same thing everywhere and answered a question the board should not have been
+   asking: four orders in five are collected, and pricing all of them as if they were delivered
+   makes the collectors pay for the deliveries.
+   SO THE BOARD IS ONE PRICE AND ONE CHARGE. `collected` is the floor the ask must clear and the
+   basis the ask is struck on. `delivered` is that plus one delivery, which is what to quote when
+   he is driving. `deliveryCharge` states the figure once so nothing has to derive it. The flag and
+   the collectOnly list are gone: a flag whose answer never varies is noise. */
 function board(sizes,C,P){
-  const f={}, asks=ladderRow(sizes,C,P);
-  const ask=asks&&asks[0]?asks[0].prices:[];
-  sizes.forEach((q,i)=>{
+  const f={};
+  const asks=ladderRow(sizes,C,P);
+  sizes.forEach(q=>{
     try{
       const d=floorTotal(q,C,P), c=floorTotal(q,C,P,null,{collects:true});
-      const dv=(typeof d==='number')?+d.toFixed(2):null;
-      const a=ask[i];
-      f[q]={delivered:dv,
-            collected:(typeof c==='number')?+c.toFixed(2):null,
-            deliverable:(dv==null||a==null)?null:(a>=dv-0.009),
-            deliveryGap:(dv==null||a==null)?null:+(dv-a).toFixed(2)};
+      f[q]={collected:(typeof c==='number')?+c.toFixed(2):null,
+            delivered:(typeof d==='number')?+d.toFixed(2):null};
     }catch(e){ f[q]=null; }
   });
   return {floors:f, sizes:sizes.slice(), tiers:asks,
-          collectOnly:sizes.filter(q=>f[q]&&f[q].deliverable===false)};
+          deliveryCharge:(C.delPerOrder!=null?+C.delPerOrder.toFixed(2):null),
+          timePerOrder:+(P.timePerOrder||0).toFixed(2)};
 }
 
 return {costStack:costStack,buyTaper:buyTaper,ladderMarkup:ladderMarkup,ladderCogs:ladderCogs,
@@ -2345,14 +2361,15 @@ const oilQuote={
      wording had to go with it: RM47 was ALSO the rate paid on 28 Jul, and those two facts have
      now parted company. RM43 has been quoted and never paid. */
 const SOURCING_PLAN={
-  "statedOn": "2026-08-05",
-  "qty": 150,
-  "by": "2026-08-31",
-  "label": "end August",
-  "cadence": "monthly",
-  "basis": "His own reading: a big monthly lot, and enough on the shelf that next week needs nothing.",
-  "assumedRate": 43,
-  "rateBasis": "the 100 unit tier, the largest on the 20 Aug ladder. It has been quoted and never paid, so it is a rate on offer rather than a rate achieved, and there is no 150 unit tier at all: this is an assumption, not a quote."
+  "statedOn": "2026-08-24",
+  "qty": 50,
+  "by": "2026-08-28",
+  "label": "the 28th",
+  "cadence": "monthly, on the ceiling reset",
+  "basis": "His decision of 24 Aug. The purchase ceiling of RM4,500 resets on the 28th of each month and anything beyond it comes out of rolling cash. 50 unit at RM2,200 plus the RM60 collection trip is RM2,260, well inside the ceiling.",
+  "assumedRate": 44,
+  "rateBasis": "the 50 unit tier on the 20 Aug ladder, quoted AND paid on that date, so it is a rate achieved rather than a rate on offer.",
+  "note": "THE 100 UNIT TIER WAS THE RECOMMENDATION AND HE HAS TAKEN THE 50. Landed cost is RM45.20 a unit against RM43.60, so this lot costs RM80 more than the same salt bought at the top tier, and it covers about a fortnight rather than three weeks. RM4,360 would have fitted the ceiling with RM140 to spare. Recorded as his call, not as an error."
 };
 const CASH_COUNT_RETIRED={
   "on": "2026-07-28",
@@ -3116,7 +3133,8 @@ const whiteboard=[
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{"v":"v351","d":"24 Aug 2026","t":"THE SHELF IS COUNTED AT 21.5, AND 3.75 UNIT ARE GONE","n":["<b>COUNTED AT 21.5 UNIT AGAINST 25.25 ON THE BOOK.</b> A count, not a roll, so COUNT_ON.salt moves 20 Aug to 24 Aug. He counted 17.5 free plus 4 set aside on the shelf, being the 3 unit due to CS6-BS-R tomorrow and the free unit to CS6-BS, and confirmed on the question that 21.5 is the WHOLE shelf: the 8 unit owed to CE4-CHE and CE4-AD as deferred deliveries are inside it, not on top of it. v350 held the figure back for exactly this, because the same three words read three ways and two of them wrote a shrinkage that was not there.","<b>THE DRIFT IS MINUS 3.75 UNIT, ABOUT RM170 AT THE RM45.20 LANDED COST, AND IT IS THE LARGEST SINGLE COUNT DIFFERENCE THIS BOOK HAS RECORDED.</b> The salt plug goes 51.45 unit to 55.2, and the leak charged into the price goes 5.46% to 5.85%. Effective cost follows, RM51.73 to RM51.93 a unit. <b>THE CARDED FLOORS DO NOT MOVE</b>, and that is not an oversight: since v326 the floor is a markup on the LANDED cost of a lot, not on the leaked-up cost, so a worse leak shows in the margin rather than in the refusal line. 12.5 unit collected still floors at RM751.45.","<b>IT IS UNATTRIBUTED, WHICH IS THE PART TO ACT ON.</b> selfUseLog now carries oil, split 20:80 at v350, and still carries nothing at all for salt. So 55.2 unit of salt, more than a fifth of everything ever bought, is a gap with no reason written against it. Oil's 34 unit took one sentence from him to explain; salt&rsquo;s 55.2 has never been asked about.","<b>FREE TO SELL FALLS 17.25 TO 13.5 AND COVER TO 3.1 DAYS.</b> Against it stand 10.25 unit of pending orders, CJ4-BJ 6.25, CS6-BS-R 3 and the free unit, so there are 3.25 unit spare and nothing is short. The 100 unit buy at RM4,360 was already the standing recommendation; the shelf is now a day thinner than when it was made."]},
+const evolution=[{"v":"v352","d":"24 Aug 2026","t":"THE FLOOR GETS HONEST, AND NOT ONE SALT PRICE HAS TO MOVE","n":["<b>THE WHOLE LEAK IS CHARGED AND NOTHING IS ABSORBED.</b> SHRINK_ATTRIB goes 0.33 to 1 on his instruction. A unit costs RM54.95 to put on the shelf and the floor was built on RM48.01, so <b>RM6.94 a unit was being carried silently</b>. That is what put the delivered floor BELOW true cost at every size up to 9.7 unit, nearly the whole board, and it is why one sale in eighty-two lost money and thirty-one more would have if they had been delivered. Absorbed cost is now RM0.00.","<b>THE CARD IS A COLLECTION PRICE AND DELIVERY IS QUOTED PER ORDER, ON HIS INSTRUCTION.</b> Four orders in five are collected, so pricing all of them as though they were delivered makes the collectors pay for the deliveries. The board states one floor, the collected one, and one charge, RM50, once. The v344 <i>deliverable</i> flag and the collectOnly list are gone: on the true figures they said the same thing at nearly every size, which is a flag answering a question the board should not be asking.","<b>AN ORDER COSTS HIM RM25 OF HIS OWN TIME AND THE FLOOR NOW SAYS SO.</b> His figure: roughly five hours a week at RM50 an hour over the ten orders a week this book runs at. <b>PER ORDER, NOT PER UNIT</b>, because a half unit and a twelve and a half take about the same handling. Nothing in this stack had ever paid him for the work; the whole margin was doing it, undifferentiated from the return on his capital, so he could not tell profit from wages. Tested against his own eighty-two sales: at RM25 seventy-two still clear, at RM40 fifty-nine would and at RM60 forty-six.","<b>AND NOT ONE SALT PRICE MOVES.</b> All ten asks stand exactly where they were, RM60 at half a unit to RM950 at twelve and a half, because the ask is a markup on landed cost and already cleared the honest floor at every size. <b>ONE OIL PRICE MOVES:</b> the 10 unit minimum goes RM140 to RM150, because it was RM6.27 under its own floor once the leak was charged in full, and 34 of the 105 unit of oil ever bought were given away. ladderWalk now enforces what v263 already wrote down: an ask may never sit under its own floor, and where it would it rises to the next grid step above it, never to the floor exactly.","<b>THE MARGIN CURVE IS ALIVE AGAIN, AND WHAT KILLED IT WAS v344.</b> Its base added one whole delivery to every order. When delivery went from RM16.67 to its real RM50, that flat charge inverted the fit: a RM50 order carrying RM50 of delivery reads at minus 100% margin while a big lot barely notices, so measured margin appeared to RISE with size, the <i>may not rise</i> clamp fired, b went to zero and the curve returned its clamp floor of 18% at every size, with an r-squared of 0. The base is now the goods and nothing else, which is what the ladder actually prices. Measured after: <b>b -0.0881, r-squared 0.340</b>, 51.3% at half a unit falling to 23.0% at twelve and a half. His time is deliberately NOT in it: a flat per-order charge in a regression base inverts the slope for the same reason delivery did.","<b>THE SOURCING PLAN IS 50 UNIT ON THE 28TH, WHICH IS HIS CALL AND NOT THE RECOMMENDATION.</b> The ceiling resets on the 28th and RM2,260 sits well inside it. Landed cost is RM45.20 a unit against RM43.60 at the 100 tier, so the lot costs RM80 more than the same salt at the top step and covers a fortnight rather than three weeks. RM4,360 would have fitted with RM140 to spare. Recorded as a decision, not an error."]},
+{"v":"v351","d":"24 Aug 2026","t":"THE SHELF IS COUNTED AT 21.5, AND 3.75 UNIT ARE GONE","n":["<b>COUNTED AT 21.5 UNIT AGAINST 25.25 ON THE BOOK.</b> A count, not a roll, so COUNT_ON.salt moves 20 Aug to 24 Aug. He counted 17.5 free plus 4 set aside on the shelf, being the 3 unit due to CS6-BS-R tomorrow and the free unit to CS6-BS, and confirmed on the question that 21.5 is the WHOLE shelf: the 8 unit owed to CE4-CHE and CE4-AD as deferred deliveries are inside it, not on top of it. v350 held the figure back for exactly this, because the same three words read three ways and two of them wrote a shrinkage that was not there.","<b>THE DRIFT IS MINUS 3.75 UNIT, ABOUT RM170 AT THE RM45.20 LANDED COST, AND IT IS THE LARGEST SINGLE COUNT DIFFERENCE THIS BOOK HAS RECORDED.</b> The salt plug goes 51.45 unit to 55.2, and the leak charged into the price goes 5.46% to 5.85%. Effective cost follows, RM51.73 to RM51.93 a unit. <b>THE CARDED FLOORS DO NOT MOVE</b>, and that is not an oversight: since v326 the floor is a markup on the LANDED cost of a lot, not on the leaked-up cost, so a worse leak shows in the margin rather than in the refusal line. 12.5 unit collected still floors at RM751.45.","<b>IT IS UNATTRIBUTED, WHICH IS THE PART TO ACT ON.</b> selfUseLog now carries oil, split 20:80 at v350, and still carries nothing at all for salt. So 55.2 unit of salt, more than a fifth of everything ever bought, is a gap with no reason written against it. Oil's 34 unit took one sentence from him to explain; salt&rsquo;s 55.2 has never been asked about.","<b>FREE TO SELL FALLS 17.25 TO 13.5 AND COVER TO 3.1 DAYS.</b> Against it stand 10.25 unit of pending orders, CJ4-BJ 6.25, CS6-BS-R 3 and the free unit, so there are 3.25 unit spare and nothing is short. The 100 unit buy at RM4,360 was already the standing recommendation; the shelf is now a day thinner than when it was made."]},
 {"v":"v350","d":"24 Aug 2026","t":"THE OIL LEAK SPLITS 20:80, AND A FREE UNIT GOES ON THE BOOK","n":["<b>SIX POINT EIGHT UNIT OF OIL WERE USED AND TWENTY-SEVEN POINT TWO WERE GIVEN AWAY.</b> v348 recorded the whole 34 unit as one row marked <i>other</i> because the split was not known and was not going to be guessed. He has given it: 20:80, in the order the causes were put to him, so self use first. It is now two rows, 6.8 <i>personal</i> and 27.2 <i>sample</i>. The two carry different treatments, a drawing against IAS 38.69 marketing expensed as incurred, which is exactly why one blended row would not do. No figure moves: attribution never overrides a count, and neither row touches revenue, cost, stock or margin.","<b>ONE UNIT, FREE, TO CS6-BS, DUE OUT AND NOT YET MOVED.</b> On the book pending and undated, so it draws no stock and raises no receivable until it goes. A zero total is paid in full by definition, which is right here: there is nothing to pay. <b>WHY IT IS FREE IS NOT STATED AND IS NOT GUESSED.</b> It is not an earned reseller rebate on this book: CS6-BS has applied all three units he has earned and the network reads earned 0 with RM470 of resale still to run before the next. So it is goodwill, or an advance on the next award, and the two are not the same row, because a rebate settles an award in kind while goodwill is excluded from priced sales altogether. The flag goes on when it moves and he says which.","<b>THE SALT COUNT OF 24 AUG IS NOT WRITTEN, AND THAT IS DELIBERATE.</b> He counted 17.5 free plus 4 set aside, being the 3 unit due to CS6-BS-R tomorrow and the free unit above. <b>IT DOES NOT RECONCILE UNDER ANY READING AND THE GAP IS WORTH RM169.</b> The book holds 25.25 on hand, 8 unit owed out to CE4-CHE and CE4-AD as deferred deliveries already paid for, and 17.25 free. His 17.5 is a quarter of a unit off the FREE figure, not off the shelf. If 21.5 is the whole shelf then 3.75 unit are gone and free is 9.5, not 17.5. If 17.5 is free after the 4 are set aside, the shelf is 29.5 and the book is 4.25 light. A stated stock written on the wrong reading is a false shrinkage on a book whose leak is its largest single loss, so the figure waits one question rather than being taken twice.","<b>PROMISED RISES 17.25 TO 18.25</b> on the free unit. Free to sell is unchanged at 17.25, so the pending book now exceeds the free shelf by a unit for the first time."]},
 {"v":"v349","d":"24 Aug 2026","t":"THE MAP HAS A REAL OUTLINE, FETCHED ONCE AND COMMITTED","n":["<b>THE GEOGRAPHY IS A MODULE IN THE REPO, THE THIRD AFTER THE ENGINE AND THE BOOK.</b> <b>geo/basemap.json</b> holds the drawn outlines with their provenance, <b>geo/places.json</b> the gazetteer that was five hand-typed declarations in this file, and <b>tools/geosync.mjs --sync</b> renders both into the master between markers. CI runs --check, so the copy in the desk is PROVED to be the files rather than trusted to be, exactly as engine/pricing.mjs and ledger/book.json are. The prose that explained each declaration is NOTES in places.json and comes back as comments.","<b>THE OUTLINES ARE REAL AND THEY WERE NEVER REMEMBERED.</b> Kuala Lumpur, Selangor, Putrajaya and Negeri Sembilan, from OpenStreetMap via geoBoundaries, pinned to one release, simplified by Douglas-Peucker and rounded to about 11m: 683 points and 13 KB for the four. <b>tools/geofetch.mjs</b> is what fetched them, it is run by hand, and it is never run by CI or by the build. <b>THE RUNTIME RULE IS UNTOUCHED:</b> the desk still loads nothing at run time. v149 refused a coastline because there was no basemap to be had offline and one drawn from memory would be a fabricated fact. It was right about inventing geometry and wrong about the conclusion, because geometry can be fetched, checked and committed.","<b>ODbL, SO THE CREDIT IS PRINTED UNDER THE MAP.</b> That licence asks for attribution wherever the data is shown and /desk is served publicly, so it goes where a reader sees it rather than into a comment. DOSM Malaysia publishes the same boundaries and was the first choice; its repository carries no licence file at all and GitHub reads it as NOASSERTION, so it was not committed into a private ledger on a guess.","<b>THE OUTLINES CARRY NO NAME, AND NOT EVEN INTO THE FILE THE DESK SHIPS.</b> v293 stripped every label from this canvas because a named place beside a party code identifies a customer. The basemap keeps its names in geo/basemap.json, for whoever maintains it, and geosync renders only the kind and the rings. The leak gate caught the first draft: a note explaining the NIL suffix named the locality it stands for, on a public page, which is precisely the disclosure v293 removed. The note now says the locality is in the directory and does not repeat it.","<b>WHAT IT LOOKS LIKE.</b> The territory the frame sits in is drawn brighter with a faint fill, the surrounding states a dim stroke, everything beyond the frame clips itself, and it all sits UNDER the heat so the blobs still read first. Eight new assertions, including one that every point lies inside Malaysia's own bounding box: a hand-typed coastline or a swapped lat and lng cannot pass as real geometry."]},
 {"v":"v348","d":"24 Aug 2026","t":"THE OIL GAP HAS A REASON, AND TBC STOPS READING AS A MISSING GAZETTEER ENTRY","n":["<b>THIRTY-FOUR UNIT OF OIL ARE ATTRIBUTED, ON HIS WORD: SELF USE AND THE PROMOTION PERIOD.</b> The oil walk is 5 unit of opening plus 100 bought less 71 sold, and three counts have found the shelf empty, so 34 unit had sat as an unexplained plug since 14 Aug. It was never spillage or short delivery. The oil went out deliberately, partly to himself and partly as promotion while the product was being introduced. <b>selfUseLog had never carried a single row</b>, so every plug on this book was unexplained by construction; this is the first, and salt&rsquo;s own plug is still unattributed.","<b>THE SPLIT BETWEEN SELF USE AND PROMOTION IS NOT KNOWN AND IS NOT INVENTED.</b> The reason is recorded as <i>other</i> rather than <i>personal</i> or <i>sample</i>, because the two carry different treatments, drawings against IAS 38.69 marketing, and guessing the proportion would put a figure in the accounts nobody stated. Give the split and the row becomes two. The date is the count, 23 Aug, not the day: it went across 06 to 23 Aug and 23 Aug is when it was established.","<b>NO FIGURE MOVES.</b> selfUseLog attributes the plug and never overrides the count, which still wins. It touches no revenue, no cost, no stock and no margin. What changes is that the oil shelf now reads as a product given away on purpose rather than as 34 unit nobody can account for.","<b>TBC MEANS TO BE CONFIRMED, AND THE MAP NOW SAYS THAT INSTEAD OF BLAMING THE GAZETTEER.</b> CH6-TBC and CZ4-TBC were reported as <i>suffix TBC is not in the gazetteer</i>, which invites exactly the wrong repair: putting TBC into PLACES would site two different people at one invented spot and the map would look complete. They still count as genuine gaps rather than exclusions by rule, because a reseller account will never have a place of its own and these two will, the moment someone asks."]},
@@ -3224,7 +3242,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='24 Aug 2026, 05:30 KL';
+const LAST_UPDATED='24 Aug 2026, 06:20 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -3773,6 +3791,21 @@ const PRICE_ENGINE={
      percentage, which is the desk's own refusal line and asks nothing it cannot justify. */
   markupCurve:{salt:{lo:1, hi:12.5, T1:{lo:0.33, hi:0.15}, T3:{lo:1.00, hi:0.45}}},
   minPerUnit:0,
+  /* ============ WHAT AN ORDER OF HIS OWN TIME COSTS (v352) ============
+     RM25, stated by him on 24 Aug. Roughly five hours a week at RM50 an hour spread over the ten
+     orders a week this book actually runs at.
+     PER ORDER, NOT PER UNIT, because that is how the work falls: a half unit and a twelve and a
+     half take about the same handling, one message, one handover, one line in the book.
+     WHY IT IS RM25 AND NOT MORE. Tested against his own eighty-two priced sales: at RM25 seventy-
+     three of them still clear the floor, at RM40 fifty-nine do and at RM60 forty-six. RM25
+     disciplines the worst nine without declaring half the book a mistake. Raise it when the ask
+     has caught up with it, not before.
+     IT IS NOT IN THE MARGIN CURVE, and that is deliberate. A flat per-order charge is
+     proportionally enormous on a small order, so putting it in the regression base inverts the
+     slope: margin appears to RISE with size, the "may not rise" clamp fires, and the curve dies.
+     Measured, with it in: b +0.0436, r-squared 0.058. Without: b -0.0881, r-squared 0.340. His
+     time belongs in the refusal line, not in the measurement of what the book has achieved. */
+  timePerOrder:25,
   /* WHEN THE SHELF IS SHORT, STOP PAYING PEOPLE TO EMPTY IT. The 3% step incentive is a
      policy for spare capacity. Below this many days of cover it goes to zero, so the
      ladder flattens by itself and returns when stock does. */
@@ -3798,7 +3831,17 @@ const PRICE_ENGINE={
 function marginCurve(){
   const c=pxCost();
   const rows=pricedSales.filter(s=>s.qty>0.009&&s.total>0.009&&!s.rebate&&!s.cancelled)
-    .map(s=>{const base=c.effEx*s.qty+(c.delPerOrder||0);
+    /* v352: THE BASE IS THE GOODS AND NOTHING ELSE. It used to add one whole delivery to every
+       order, and when delivery went from RM16.67 to its real RM50 at v344 that flat charge
+       inverted the fit: a RM50 order carrying RM50 of delivery reads at minus 100% margin while a
+       twelve and a half unit lot barely notices it, so measured margin RISES with size, the "may
+       not rise" clamp fires, b goes to zero and the curve returns its clamp floor at every size.
+       That is what killed it: r-squared 0.404 on a relationship pointing the wrong way, then 0.
+       The board is a COLLECTION price from v352 and delivery is quoted per order, so there is no
+       delivery in the ask and there is none in the base. c.effEx now carries the whole leak, so
+       this measures exactly what the ladder prices. Measured after: b -0.0881, r-squared 0.340,
+       51% at half a unit falling to 23% at twelve and a half. */
+    .map(s=>{const base=c.effEx*s.qty;
       return {x:Math.log(s.qty),y:(s.total-base)/s.total};})
     .filter(p=>isFinite(p.x)&&isFinite(p.y)&&p.y>-2&&p.y<0.95);
   const n=rows.length;
@@ -9082,7 +9125,14 @@ function pxShrinkRate(){const h=buyKg+openingFor(PROD).qty;return h>0?selfUse/h:
    with it, on top of the fall the RM44 lot already delivers. The v205 argument three paragraphs above is
    the case FOR carrying more of it and the v244 note is the case for carrying all of it; this lever has
    now moved four times, so read them rather than deleting either. */
-const SHRINK_ATTRIB=0.33;
+/* v352, HIS INSTRUCTION OF 24 Aug: ALL OF IT. The leak is charged into the price in full and nothing
+   is absorbed. What the third was costing, measured: a unit costs RM54.95 to put on the shelf and the
+   floor was built on RM48.01, so RM6.94 a unit was carried silently. That is what made the delivered
+   floor sit BELOW true cost at every size up to 9.7 unit, which is nearly the whole board, and it is
+   why one sale in eighty-two lost money and thirty-one more would have if they had been delivered.
+   IT MOVES NO CARDED PRICE. The ask is a markup on cogs, the landed cost of a lot, and this lever is
+   not in that line at all. It moves the REFUSAL line, which is the one that was lying. */
+const SHRINK_ATTRIB=1;
 /* ============ THE COST STACK (v232) ============
    The board priced off ONE number, a 30-day average buying rate grossed up for half the
    leak, and it was wrong in three ways at once: it used an average rather than the rate
@@ -9273,7 +9323,7 @@ function pxInputs(){
     attrib:SHRINK_ATTRIB, shrinkRate:pxShrinkRate(), avgDel:avgDelivery(PROD)};
 }
 function pxPolicy(){
-  return {LADDER:LADDER, minPerUnit:PRICE_ENGINE.minPerUnit||0, lotFloor:PRICE.lotFloor||{},
+  return {LADDER:LADDER, minPerUnit:PRICE_ENGINE.minPerUnit||0, timePerOrder:PRICE_ENGINE.timePerOrder||0, lotFloor:PRICE.lotFloor||{},
     tiers:(typeof supplierQuote!=='undefined'&&supplierQuote&&supplierQuote.tiers)?supplierQuote.tiers:[],
     boardSizes:(typeof sizesFor==='function')?sizesFor(PROD):[]};
 }

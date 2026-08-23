@@ -1180,14 +1180,19 @@ section("Payload — what the phone is given, and what it is not");
       ok(under.length === 0, under.length
         ? `${pid}: the ask is under its own collected floor at ${under.join(", ")} unit`
         : `${pid}: every ask clears the collected floor this payload states`);
-      const mislabelled = (b.sizes || []).filter((q, i) => {
-        const p = row.prices[i], fl = (b.floors || {})[String(q)];
-        if (p == null || !fl || fl.delivered == null || fl.deliverable == null) return true;
-        return fl.deliverable !== (p >= fl.delivered - 0.009);
+      /* v352: one price and one charge. delivered is collected plus exactly one delivery, and
+         the charge is stated once so nothing downstream has to derive it. */
+      /* The floor is the HIGHER of two legs, so once the cogs leg binds it already covers a
+         delivery and the delivered floor stops rising. It may never be below the collected one,
+         and may never exceed it by more than one delivery. */
+      const badDel = (b.sizes || []).filter((q) => {
+        const fl = (b.floors || {})[String(q)];
+        if (!fl || fl.collected == null || fl.delivered == null || b.deliveryCharge == null) return true;
+        return fl.delivered < fl.collected - 0.02 || fl.delivered > fl.collected + b.deliveryCharge + 0.02;
       });
-      ok(mislabelled.length === 0, mislabelled.length
-        ? `${pid}: deliverable is missing or wrong at ${mislabelled.join(", ")} unit`
-        : `${pid}: every size states whether its ask can carry a delivery`);
+      ok(badDel.length === 0, badDel.length
+        ? `${pid}: the delivered floor is not within one delivery of the collected one at ${badDel.join(", ")} unit`
+        : `${pid}: every delivered floor is the collected floor plus at most one delivery`);
       /* the rate may not RISE with size, which is the one law a customer can check by hand */
       let prev = Infinity, inverted = [];
       (b.sizes || []).forEach((q, i) => {
@@ -1292,7 +1297,7 @@ section("Engine — one definition, out of the desk (v337)");
     attrib: 0.33, shrinkRate: 0.1, avgDel: { n: 20, mean: 2.5 } };
   const P = { LADDER: { floor: 0.33, ceiling: 2.0, anchorQ: 2.5, anchorX: 0.958, at: { lo: 0.5, hi: 12.5 },
       basis: "cogs", round: { to: 10, up: true }, taper: "supplier" },
-    minPerUnit: 0, lotFloor: {}, tiers: [{ qty: 12.5, total: 700 }, { qty: 25, total: 1300 }, { qty: 50, total: 2200 }],
+    minPerUnit: 0, timePerOrder: 25, lotFloor: {}, tiers: [{ qty: 12.5, total: 700 }, { qty: 25, total: 1300 }, { qty: 50, total: 2200 }],
     boardSizes: [0.5, 1, 1.5, 2, 2.5, 3, 4, 5, 6.25, 12.5] };
   const C = E.costStack(I);
   ok(Math.abs(C.landed - 45.2) < 1e-9, "landed cost is the lot rate plus the trip spread over the lot");
@@ -1308,10 +1313,19 @@ section("Engine — one definition, out of the desk (v337)");
   ok(P.boardSizes.every((q, i) => B.floors[q].collected <= asks[i] + 1e-9), "no ask sits under its own collected floor");
   /* v344: the card is a COLLECTION price, because four orders in five are collected. Where the
      ask cannot also carry a RM50 delivery the board says so rather than quietly pricing a loss. */
-  ok(B.collectOnly.length > 0 && B.collectOnly.every((q) => B.floors[q].deliverable === false),
-    "the board names the sizes whose ask cannot carry a delivery");
-  ok(P.boardSizes.filter((q) => !B.collectOnly.includes(q)).every((q) => B.floors[q].deliverable === true),
-    "every other size can be delivered at its carded ask");
+  /* v352: the board states one delivery charge and one time charge rather than flagging each size */
+  ok(B.deliveryCharge === C.delPerOrder && B.timePerOrder === P.timePerOrder,
+    "the board states the delivery charge and the time charge once");
+  ok(P.boardSizes.every((q) => B.floors[q].delivered >= B.floors[q].collected - 0.02
+      && B.floors[q].delivered <= B.floors[q].collected + B.deliveryCharge + 0.02),
+    "a delivered floor is the collected floor plus at most one delivery");
+  /* HIS TIME IS PER ORDER AND NEVER PER UNIT. Raising it by T lifts a floor by at most T,
+     whatever the size; a per-unit charge would lift a 12.5 lot by 12.5 times as much. */
+  const T = 40, more = { ...P, timePerOrder: (P.timePerOrder || 0) + T };
+  ok(P.boardSizes.every((q) => {
+    const d = E.floorTotal(q, C, more, null, { collects: true }) - E.floorTotal(q, C, P, null, { collects: true });
+    return d >= -0.02 && d <= T + 0.02;
+  }), "his time enters the floor once per order, never per unit");
   ok(E.floorTotal(1, C, P, null, { collects: true }) <= E.floorTotal(1, C, P), "collecting never raises the floor");
   ok(E.buyTaper(P.tiers).b < 0 && E.buyTaper([]).b === null, "the taper is fitted from the quote and absent without one");
 

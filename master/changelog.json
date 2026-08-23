@@ -1,5 +1,18 @@
 [
  {
+  "v": "v352",
+  "d": "24 Aug 2026",
+  "t": "THE FLOOR GETS HONEST, AND NOT ONE SALT PRICE HAS TO MOVE",
+  "n": [
+   "<b>THE WHOLE LEAK IS CHARGED AND NOTHING IS ABSORBED.</b> SHRINK_ATTRIB goes 0.33 to 1 on his instruction. A unit costs RM54.95 to put on the shelf and the floor was built on RM48.01, so <b>RM6.94 a unit was being carried silently</b>. That is what put the delivered floor BELOW true cost at every size up to 9.7 unit, nearly the whole board, and it is why one sale in eighty-two lost money and thirty-one more would have if they had been delivered. Absorbed cost is now RM0.00.",
+   "<b>THE CARD IS A COLLECTION PRICE AND DELIVERY IS QUOTED PER ORDER, ON HIS INSTRUCTION.</b> Four orders in five are collected, so pricing all of them as though they were delivered makes the collectors pay for the deliveries. The board states one floor, the collected one, and one charge, RM50, once. The v344 <i>deliverable</i> flag and the collectOnly list are gone: on the true figures they said the same thing at nearly every size, which is a flag answering a question the board should not be asking.",
+   "<b>AN ORDER COSTS HIM RM25 OF HIS OWN TIME AND THE FLOOR NOW SAYS SO.</b> His figure: roughly five hours a week at RM50 an hour over the ten orders a week this book runs at. <b>PER ORDER, NOT PER UNIT</b>, because a half unit and a twelve and a half take about the same handling. Nothing in this stack had ever paid him for the work; the whole margin was doing it, undifferentiated from the return on his capital, so he could not tell profit from wages. Tested against his own eighty-two sales: at RM25 seventy-two still clear, at RM40 fifty-nine would and at RM60 forty-six.",
+   "<b>AND NOT ONE SALT PRICE MOVES.</b> All ten asks stand exactly where they were, RM60 at half a unit to RM950 at twelve and a half, because the ask is a markup on landed cost and already cleared the honest floor at every size. <b>ONE OIL PRICE MOVES:</b> the 10 unit minimum goes RM140 to RM150, because it was RM6.27 under its own floor once the leak was charged in full, and 34 of the 105 unit of oil ever bought were given away. ladderWalk now enforces what v263 already wrote down: an ask may never sit under its own floor, and where it would it rises to the next grid step above it, never to the floor exactly.",
+   "<b>THE MARGIN CURVE IS ALIVE AGAIN, AND WHAT KILLED IT WAS v344.</b> Its base added one whole delivery to every order. When delivery went from RM16.67 to its real RM50, that flat charge inverted the fit: a RM50 order carrying RM50 of delivery reads at minus 100% margin while a big lot barely notices, so measured margin appeared to RISE with size, the <i>may not rise</i> clamp fired, b went to zero and the curve returned its clamp floor of 18% at every size, with an r-squared of 0. The base is now the goods and nothing else, which is what the ladder actually prices. Measured after: <b>b -0.0881, r-squared 0.340</b>, 51.3% at half a unit falling to 23.0% at twelve and a half. His time is deliberately NOT in it: a flat per-order charge in a regression base inverts the slope for the same reason delivery did.",
+   "<b>THE SOURCING PLAN IS 50 UNIT ON THE 28TH, WHICH IS HIS CALL AND NOT THE RECOMMENDATION.</b> The ceiling resets on the 28th and RM2,260 sits well inside it. Landed cost is RM45.20 a unit against RM43.60 at the 100 tier, so the lot costs RM80 more than the same salt at the top step and covers a fortnight rather than three weeks. RM4,360 would have fitted with RM140 to spare. Recorded as a decision, not an error."
+  ]
+ },
+ {
   "v": "v351",
   "d": "24 Aug 2026",
   "t": "THE SHELF IS COUNTED AT 21.5, AND 3.75 UNIT ARE GONE",

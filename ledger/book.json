@@ -2199,14 +2199,15 @@
   ]
  },
  "SOURCING_PLAN": {
-  "statedOn": "2026-08-05",
-  "qty": 150,
-  "by": "2026-08-31",
-  "label": "end August",
-  "cadence": "monthly",
-  "basis": "His own reading: a big monthly lot, and enough on the shelf that next week needs nothing.",
-  "assumedRate": 43,
-  "rateBasis": "the 100 unit tier, the largest on the 20 Aug ladder. It has been quoted and never paid, so it is a rate on offer rather than a rate achieved, and there is no 150 unit tier at all: this is an assumption, not a quote."
+  "statedOn": "2026-08-24",
+  "qty": 50,
+  "by": "2026-08-28",
+  "label": "the 28th",
+  "cadence": "monthly, on the ceiling reset",
+  "basis": "His decision of 24 Aug. The purchase ceiling of RM4,500 resets on the 28th of each month and anything beyond it comes out of rolling cash. 50 unit at RM2,200 plus the RM60 collection trip is RM2,260, well inside the ceiling.",
+  "assumedRate": 44,
+  "rateBasis": "the 50 unit tier on the 20 Aug ladder, quoted AND paid on that date, so it is a rate achieved rather than a rate on offer.",
+  "note": "THE 100 UNIT TIER WAS THE RECOMMENDATION AND HE HAS TAKEN THE 50. Landed cost is RM45.20 a unit against RM43.60, so this lot costs RM80 more than the same salt bought at the top tier, and it covers about a fortnight rather than three weeks. RM4,360 would have fitted the ceiling with RM140 to spare. Recorded as his call, not as an error."
  },
  "CASH_COUNT_RETIRED": {
   "on": "2026-07-28",

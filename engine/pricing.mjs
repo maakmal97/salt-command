@@ -13,6 +13,7 @@
  *   P  the policy: {LADDER, minPerUnit, lotFloor, tiers, boardSizes}
  *      LADDER      the house ladder (floor, ceiling, anchorQ, anchorX, at, round, taper)
  *      minPerUnit  the least a unit may earn, in ringgit (PRICE_ENGINE.minPerUnit)
+ *      timePerOrder what an order of his own time costs, in ringgit (PRICE_ENGINE.timePerOrder)
  *      lotFloor    named floors by size (PRICE.lotFloor), kept as a mechanism, empty as a policy
  *      tiers       the supplier's live quote tiers, for the taper ({qty,total} each)
  *      boardSizes  the sizes the board quotes, for walking an off-board size against them
@@ -144,6 +145,16 @@ function ladderWalk(sizes,C,P){
       const least=cogs*(1+LADDER.floor);          // never step down through the floor
       if(stepped>0&&stepped>=least-0.009)p=stepped;
     }
+    /* v352: AND NEVER UNDER THE FLOOR, WHICH IS THE HOUSE RULE ALREADY WRITTEN DOWN. v263 put it
+       plainly: a price above its floor that breaks a rate taper is a decision the desk can defend,
+       one below its floor is not. The markup ladder and the floor are struck on different bases, so
+       nothing had ever forced them to agree, and charging the whole leak and his own time at v352
+       pushed one ask under: oil at its 10 unit minimum asked RM140 against a floor of RM146.27,
+       because 34 of the 105 unit ever bought were given away and the price now carries that.
+       IT RAISES TO THE NEXT GRID STEP ABOVE THE FLOOR, never to the exact floor, because an ask
+       equal to its refusal line leaves nothing and is not an ask. */
+    const fl=floorTotal(q,C,P,null,{collects:true});
+    if(fl>p+0.009)p=Math.ceil((fl+0.009)/LADDER.round.to)*LADDER.round.to;
     out.push({q:q,p:p});
     if(q>0)prevRate=Math.min(prevRate,p/q);
   });
@@ -177,8 +188,14 @@ function floorTotal(q,C,P,eff,opts){
   opts=opts||{};
   const per=eff!=null?eff:(C.effEx!=null?C.effEx:C.eff);
   const del=opts.collects?0:(C.delPerOrder!=null?C.delPerOrder:0);
+  /* v352: AN ORDER COSTS HIM TIME AND THE FLOOR NOW SAYS SO. Nothing in this stack has ever
+     paid him for the work: the whole margin was doing it, undifferentiated from the return on
+     his capital, so he could not tell profit from wages. timePerOrder is charged PER ORDER and
+     not per unit, because that is how the work actually falls: a half unit and a twelve and a
+     half take about the same handling. It sits in the mpu leg beside delivery for the same
+     reason, and like delivery it is a real cost that a small order struggles to carry. */
   let t=ladderCogs(q,C)*(1+P.LADDER.floor);
-  const mpu=(per*q+del)+(P.minPerUnit||0)*q;
+  const mpu=(per*q+del+(P.timePerOrder||0))+(P.minPerUnit||0)*q;
   if(mpu>t)t=mpu;
   const named=(P.lotFloor||{})[String(q)];        // kept as a mechanism, empty as a policy
   if(named!=null&&named>t)t=named;
@@ -221,30 +238,29 @@ function ladderRow(sizes,C,P){
   }];
 }
 /* THE BOARD AND THE FLOORS, for quoting at the point of sale: what the phone receives. */
-/* v344: THE CARD PRICE IS A COLLECTION PRICE, AND THE BOARD NOW SAYS WHERE IT STOPS BEING ONE.
-   Four orders in five are collected, so the carded ask is what a customer who comes pays. One
-   delivery costs the full RM50, and on the smallest lots that is most of the price: at half a
-   unit the ask is RM60 and the delivered floor is RM73, so DELIVERING IT LOSES MONEY. That was
-   invisible while every order was charged a third of a delivery it mostly never had.
-   deliverable is a REPORTED FACT, not a new price. It says whether the carded ask covers a
-   delivery at that size. Nothing here refuses an order or moves an ask; what to charge for a
-   delivery is a decision, and it is his. */
+/* THE CARD IS A COLLECTION PRICE AND DELIVERY IS QUOTED ON TOP, PER ORDER (v352, his instruction).
+   v344 charged delivery at its real RM50 and put a `deliverable` flag on every size saying whether
+   the carded ask could also carry one. On the true figures it could not, at nearly every size, so
+   the flag said the same thing everywhere and answered a question the board should not have been
+   asking: four orders in five are collected, and pricing all of them as if they were delivered
+   makes the collectors pay for the deliveries.
+   SO THE BOARD IS ONE PRICE AND ONE CHARGE. `collected` is the floor the ask must clear and the
+   basis the ask is struck on. `delivered` is that plus one delivery, which is what to quote when
+   he is driving. `deliveryCharge` states the figure once so nothing has to derive it. The flag and
+   the collectOnly list are gone: a flag whose answer never varies is noise. */
 function board(sizes,C,P){
-  const f={}, asks=ladderRow(sizes,C,P);
-  const ask=asks&&asks[0]?asks[0].prices:[];
-  sizes.forEach((q,i)=>{
+  const f={};
+  const asks=ladderRow(sizes,C,P);
+  sizes.forEach(q=>{
     try{
       const d=floorTotal(q,C,P), c=floorTotal(q,C,P,null,{collects:true});
-      const dv=(typeof d==='number')?+d.toFixed(2):null;
-      const a=ask[i];
-      f[q]={delivered:dv,
-            collected:(typeof c==='number')?+c.toFixed(2):null,
-            deliverable:(dv==null||a==null)?null:(a>=dv-0.009),
-            deliveryGap:(dv==null||a==null)?null:+(dv-a).toFixed(2)};
+      f[q]={collected:(typeof c==='number')?+c.toFixed(2):null,
+            delivered:(typeof d==='number')?+d.toFixed(2):null};
     }catch(e){ f[q]=null; }
   });
   return {floors:f, sizes:sizes.slice(), tiers:asks,
-          collectOnly:sizes.filter(q=>f[q]&&f[q].deliverable===false)};
+          deliveryCharge:(C.delPerOrder!=null?+C.delPerOrder.toFixed(2):null),
+          timePerOrder:+(P.timePerOrder||0).toFixed(2)};
 }
 
 return {costStack:costStack,buyTaper:buyTaper,ladderMarkup:ladderMarkup,ladderCogs:ladderCogs,

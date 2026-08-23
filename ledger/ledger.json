@@ -1,6 +1,6 @@
 {
- "v": "v351",
- "stamped": "24 Aug 2026, 05:30 KL",
+ "v": "v352",
+ "stamped": "24 Aug 2026, 06:20 KL",
  "source": "Cow-Crm01 salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -2203,14 +2203,15 @@
    ]
   },
   "SOURCING_PLAN": {
-   "statedOn": "2026-08-05",
-   "qty": 150,
-   "by": "2026-08-31",
-   "label": "end August",
-   "cadence": "monthly",
-   "basis": "His own reading: a big monthly lot, and enough on the shelf that next week needs nothing.",
-   "assumedRate": 43,
-   "rateBasis": "the 100 unit tier, the largest on the 20 Aug ladder. It has been quoted and never paid, so it is a rate on offer rather than a rate achieved, and there is no 150 unit tier at all: this is an assumption, not a quote."
+   "statedOn": "2026-08-24",
+   "qty": 50,
+   "by": "2026-08-28",
+   "label": "the 28th",
+   "cadence": "monthly, on the ceiling reset",
+   "basis": "His decision of 24 Aug. The purchase ceiling of RM4,500 resets on the 28th of each month and anything beyond it comes out of rolling cash. 50 unit at RM2,200 plus the RM60 collection trip is RM2,260, well inside the ceiling.",
+   "assumedRate": 44,
+   "rateBasis": "the 50 unit tier on the 20 Aug ladder, quoted AND paid on that date, so it is a rate achieved rather than a rate on offer.",
+   "note": "THE 100 UNIT TIER WAS THE RECOMMENDATION AND HE HAS TAKEN THE 50. Landed cost is RM45.20 a unit against RM43.60, so this lot costs RM80 more than the same salt bought at the top tier, and it covers about a fortnight rather than three weeks. RM4,360 would have fitted the ceiling with RM140 to spare. Recorded as his call, not as an error."
   },
   "CASH_COUNT_RETIRED": {
    "on": "2026-07-28",
@@ -2226,7 +2227,7 @@
   ],
   "QUEUE_COMMITTED": "2026-08-23T15:36:10.986Z",
   "PRICING": {
-   "takenAt": "2026-08-23T20:00:33.428Z",
+   "takenAt": "2026-08-23T21:28:18.001Z",
    "sizes": [
     0.5,
     1,
@@ -2247,50 +2248,50 @@
     "retail": 20,
     "wholesale": 20
    },
-   "shrinkAttrib": 0.33,
+   "shrinkAttrib": 1,
    "byProduct": {
     "salt": {
      "stockCost": 44,
      "replCost": 44,
      "floors": {
       "1": {
-       "delivered": 98.01,
-       "collected": 60.12
+       "delivered": 129.95,
+       "collected": 79.95
       },
       "2": {
-       "delivered": 146.02,
-       "collected": 120.23
+       "delivered": 184.9,
+       "collected": 134.9
       },
       "3": {
-       "delivered": 194.03,
-       "collected": 180.35
+       "delivered": 239.84,
+       "collected": 189.84
       },
       "4": {
-       "delivered": 242.04,
-       "collected": 240.46
+       "delivered": 294.79,
+       "collected": 244.79
       },
       "5": {
-       "delivered": 300.58,
+       "delivered": 349.74,
        "collected": 300.58
       },
       "0.5": {
-       "delivered": 74.01,
-       "collected": 30.06
+       "delivered": 102.47,
+       "collected": 52.47
       },
       "1.5": {
-       "delivered": 122.02,
-       "collected": 90.17
+       "delivered": 157.42,
+       "collected": 107.42
       },
       "2.5": {
-       "delivered": 170.03,
-       "collected": 150.29
+       "delivered": 212.37,
+       "collected": 162.37
       },
       "6.25": {
-       "delivered": 375.73,
+       "delivered": 418.43,
        "collected": 375.73
       },
       "12.5": {
-       "delivered": 751.45,
+       "delivered": 761.85,
        "collected": 751.45
       }
      },
@@ -2373,7 +2374,7 @@
          "v": 0.2
         }
        },
-       "attrib": 0.33,
+       "attrib": 1,
        "shrinkRate": 0.1774063956291178,
        "avgDel": {
         "n": 92,
@@ -2399,6 +2400,7 @@
         "taper": "supplier"
        },
        "minPerUnit": 0,
+       "timePerOrder": 25,
        "lotFloor": {},
        "tiers": [
         {
@@ -2447,44 +2449,44 @@
      "replCost": 7,
      "floors": {
       "1": {
-       "delivered": 58.71,
-       "collected": 10.91
+       "delivered": 84.97,
+       "collected": 34.97
       },
       "2": {
-       "delivered": 67.42,
-       "collected": 21.81
+       "delivered": 94.94,
+       "collected": 44.94
       },
       "3": {
-       "delivered": 76.13,
-       "collected": 32.72
+       "delivered": 104.9,
+       "collected": 54.9
       },
       "4": {
-       "delivered": 84.84,
-       "collected": 43.62
+       "delivered": 114.87,
+       "collected": 64.87
       },
       "5": {
-       "delivered": 93.55,
-       "collected": 54.53
+       "delivered": 124.84,
+       "collected": 74.84
       },
       "0.5": {
-       "delivered": 54.35,
-       "collected": 5.45
+       "delivered": 79.98,
+       "collected": 29.98
       },
       "1.5": {
-       "delivered": 63.06,
-       "collected": 16.36
+       "delivered": 89.95,
+       "collected": 39.95
       },
       "2.5": {
-       "delivered": 71.77,
-       "collected": 27.27
+       "delivered": 99.92,
+       "collected": 49.92
       },
       "6.25": {
-       "delivered": 104.44,
-       "collected": 68.16
+       "delivered": 137.3,
+       "collected": 87.3
       },
       "12.5": {
-       "delivered": 158.87,
-       "collected": 136.33
+       "delivered": 199.6,
+       "collected": 149.6
       }
      },
      "inputs": {
@@ -2566,7 +2568,7 @@
          "v": 0.2
         }
        },
-       "attrib": 0.33,
+       "attrib": 1,
        "shrinkRate": 0.17734939759036145,
        "avgDel": {
         "n": 5,
@@ -2592,6 +2594,7 @@
         "taper": "supplier"
        },
        "minPerUnit": 0,
+       "timePerOrder": 25,
        "lotFloor": {},
        "tiers": [
         {
@@ -2640,10 +2643,10 @@
      }
     }
    },
-   "v": "v351"
+   "v": "v352"
   },
   "OPEN": {
-   "at": "2026-08-23T20:00:33.447Z",
+   "at": "2026-08-23T21:28:18.015Z",
    "count": 7,
    "byKey": {
     "CJ4-BJ|undefined|450": {
@@ -2762,7 +2765,7 @@
     "salt": "2026-08-24",
     "oil": "2026-08-23"
    },
-   "v": "v351"
+   "v": "v352"
   }
  }
 }
