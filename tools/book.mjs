@@ -37,7 +37,9 @@ export const LEDGER = {
   AWARDS: "AWARDS",
   supplierQuote: "supplierQuote", oilQuote: "oilQuote",
   SOURCING_PLAN: "SOURCING_PLAN",
-  PRICE_SET: "PRICE_SET",                 // v353: prices he has set, overriding the derived ladder
+  /* v354: read the COMMITTED copy, like sales and selfUseLog. PRICE_SET carries the overlay once a
+     price edit is queued, and the extract must never see a change nobody has approved. */
+  PRICE_SET: "BASE_PRICESET",
   CASH_COUNT_RETIRED: "CASH_COUNT_RETIRED",
   ONE_OFFS: "ONE_OFFS",
   QUEUE_COMMITTED: "QUEUE_COMMITTED",

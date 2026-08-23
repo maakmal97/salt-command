@@ -6,7 +6,7 @@ the phone reaches the ledger.
 
 - **Read [CLAUDE.md](CLAUDE.md) before editing anything.** It carries the hard rules, the
   three-surface model, the queue loop and the deploy runbook.
-- The desk is **not edited here.** The master is the Cow-Crm01 `salt_command.html`;
+- The desk is **not edited here.** The master is the Per-Crm01 `salt_command.html`;
   `public/index.html` is built from it by `npm run build`.
 - Names never reach the cloud: the phone shows codes only.
 

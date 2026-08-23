@@ -1,5 +1,17 @@
 [
  {
+  "v": "v354",
+  "d": "24 Aug 2026",
+  "t": "THE BOARD IS EDITABLE, AND THE EDIT TRAVELS THE SAME ROAD AS A SALE",
+  "n": [
+   "<b>EDIT THE BOARD, ON THE PRICE TAB.</b> His instruction of 24 Aug: let him change a price and change which lots are shown, easily. One table, one row per size: the size, a show tick, the price he wants, what the board actually quotes, and the floor beside it. <b>BLANK MEANS DERIVED</b>, so a size he has not set is priced by the ladder, which is where a price should come from unless there is a reason to say otherwise.",
+   "<b>IT DOES NOT WRITE THE BOOK, BECAUSE NOTHING ON THIS DESK DOES.</b> It composes a queue entry exactly as a transaction does, and that entry is drafted, approved and folded on the same road. What makes it feel immediate is the OVERLAY: the moment an edit is queued the board is rebuilt with it, marked provisional like every other queued entry, so he can see what a price does to the sizes above it before anyone approves anything. Withdraw the entry and the board goes back. There is no second state to keep in step and nothing to reconcile.",
+   "<b>A SET PRICE STILL OBEYS BOTH LAWS AND THE TABLE SAYS SO WHEN IT DOES NOT WIN.</b> The rate may never rise with size, so setting one price moves every size above it. And no ask may sit under its own floor, so a price set too low is lifted to the next step above the floor and tagged <i>lifted</i> rather than quietly honoured. The drafter flags the same thing before anyone approves it, computed off the PRICING snapshot rather than re-derived, because two engines drift.",
+   "<b>HIDING A LOT IS REVERSIBLE AND IS NOT A DELETION.</b> `hide` drops a size from the card without taking it out of the ladder, so it stays priceable off the board and comes back by unticking one box. Hiding EVERY size is refused: a board with no sizes on it is not a board.",
+   "<b>THE FOLD REPLACES THAT PRODUCT'S ENTRY RATHER THAN MERGING INTO IT.</b> The form on the desk is the whole statement of what he wants the board to be, so a price he cleared is actually cleared and does not survive as a leftover. It moves no stock, no cash and no ledger row. The other product's board is untouched, and there is a test that says so."
+  ]
+ },
+ {
   "v": "v353",
   "d": "24 Aug 2026",
   "t": "PROMOTION LEAVES THE PRICE, FINANCING GOES TO 40%, AND HE CAN SET A PRICE AGAIN",

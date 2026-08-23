@@ -8,7 +8,7 @@ name: salt-daily-price-brief
 description: Daily salt-trading run on the fifteen-tab Salt Command desk in 30_Published, inside the server window salt_daily.ps1 opens at 10:00: check the gate, drain phone entries, commit all queued transactions, date deliveries then refresh cost and margin, verify under every product, stamp and deploy to the phone, prune the cloud queue, post a brief and close the gate. Rewritten at v293: the watermark rule now clears cloud entries too (the v287 fault), tools/update.mjs is the cloud leg, both books carry a count since v290, and the Artifacts mirror was retired on 12 Aug 2026 so there is no publish step.
 ---
 
-Daily salt-trading run for the "Cow-Crm01_Salt Business" project. Concise; British English; no em-dash; RM and **unit** only (the mass symbol was retired at v161: quantities read "98.6 unit", rates read "RM47.47/unit", and the words kilo and kilogram are not used anywhere on screen or in the brief); anonymise every client and supplier using their desk codes (never write real names in the output).
+Daily salt-trading run for the "Per-Crm01_Salt Business" project. Concise; British English; no em-dash; RM and **unit** only (the mass symbol was retired at v161: quantities read "98.6 unit", rates read "RM47.47/unit", and the words kilo and kilogram are not used anywhere on screen or in the brief); anonymise every client and supplier using their desk codes (never write real names in the output).
 
 ## THE FOLDER IS FILED BY FUNCTION (reorganised 30 Jul 2026)
 
@@ -27,7 +27,7 @@ Code and generated state are deliberately apart. `serve_desk.py` and `serve_menu
 
 ## ONE MASTER, AND A COMMAND THAT PROVES IT
 
-    MASTER  C:\Users\maakm\Claude\Projects\Personal\Cow-Crm01_Salt Business\30_Published\salt_command.html
+    MASTER  C:\Users\maakm\Claude\Projects\Personal\Per-Crm01_Salt Business\30_Published\salt_command.html
 
 The master is the **only** place the desk is edited, and since 12 Aug 2026 the only copy tracked. Do not look for a working copy in any outputs, uploads, download or sandbox path; copies found there are stale staging and are ignored.
 
@@ -35,7 +35,7 @@ The master is the **only** place the desk is edited, and since 12 Aug 2026 the o
 
 **FIRST ACTION, EVERY RUN, NO EXCEPTIONS:**
 
-    cd "C:\Users\maakm\Claude\Projects\Personal\Cow-Crm01_Salt Business\30_Published"
+    cd "C:\Users\maakm\Claude\Projects\Personal\Per-Crm01_Salt Business\30_Published"
     python deskctl.py status
 
 It prints the master's version and hash, a queue line, and exits non-zero when anything is out of step. `DESK.json` states `paths.master` and `paths.queue` explicitly, so no surface has to guess. Read what it says and act on it before touching anything:

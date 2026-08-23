@@ -18,7 +18,7 @@ row is approved on the phone.
    hand-edit there is overwritten on the next build and lost. If a change to the desk is
    needed, edit the master, then build.
 
-   **IT MOVED HERE ON 20 Aug 2026, from `Cow-Crm01\30_Published\`, and the reason is the whole
+   **IT MOVED HERE ON 20 Aug 2026, from `Per-Crm01\30_Published\`, and the reason is the whole
    point.** The daily commit needed the laptop, because the fold writes to the master and
    nothing in the cloud can write a file on that machine. Every other step was already
    cloud-reachable: the queue is in KV, the drafter runs on a Worker cron, approvals are in D1,
@@ -412,7 +412,7 @@ after a password.
 The desk's current Names panel treats the vault as a *legacy one-time import into plaintext*
 and carries "kept in the clear" copy that is wrong for the phone. And `NAME_VAULT` is a lexical
 `let`, so the build cannot re-wire the reveal from injected code. That UI belongs in the
-Cow-Crm01 master (a Cowork/master session); once it lands, the sync above already feeds it.
+Per-Crm01 master (a Cowork/master session); once it lands, the sync above already feeds it.
 
 ## Files
 

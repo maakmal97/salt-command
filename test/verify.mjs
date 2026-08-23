@@ -1508,6 +1508,31 @@ section("Fold — an approved batch becomes records in the book (v340)");
     { id: ID("01:20"), collection: "sales", amends: "CX9-NOPE|undefined|1", amendKind: "Modification",
       row: {}, entry: { at: ID("01:20"), payload: { mode: "amend", direction: "SELL", kind: "Modification" } } },
   ] };
+  /* v354: a price edit folds into PRICE_SET, moves no stock and no cash, and REPLACES rather
+     than merges, so a price he cleared on the desk is actually cleared in the book. */
+  {
+    const one = { ok: true, count: 1, approved: [{ id: ID("03:00"), collection: "priceset", amends: null, amendKind: null,
+      row: { product: "oil", prices: { "10": 130, "20": 250 }, hide: [90, 100] },
+      entry: { at: ID("03:00"), payload: { mode: "price", product: "oil" } } }] };
+    const pp = plan(JSON.parse(JSON.stringify(book)), one, null);
+    ok(pp.items.length === 1 && pp.refused.length === 0 && pp.moves.length === 0,
+      "a price edit is planned and moves nothing physical");
+    const PB = JSON.parse(JSON.stringify(book)); PB.QUEUE_COMMITTED = "2026-01-01T00:00:00.000Z";
+    const beforeStock = PB.STATED_STOCK, beforeSales = PB.sales.length;
+    const pr = apply(PB, one, { version: "v998", date: "24 Aug 2026", title: "A TEST PRICE EDIT",
+      notes: ["<b>TEST.</b> Nothing real."], rows: { [ID("03:00")]: { note: "Sets the oil board." } }, stockNote: "" }, master);
+    ok(pr.ok, "the price edit applies: " + (pr.ok ? "" : pr.problems.join("; ")));
+    if (pr.ok) {
+      ok(PB.PRICE_SET.oil.prices["10"] === 130 && PB.PRICE_SET.oil.prices["20"] === 250, "the prices he set are on the book");
+      ok(JSON.stringify(PB.PRICE_SET.oil.hide) === JSON.stringify([90, 100]), "and the sizes he hid");
+      ok(PB.STATED_STOCK === beforeStock && PB.sales.length === beforeSales, "and no stock moved and no row was written");
+      ok(PB.PRICE_SET.salt && JSON.stringify(PB.PRICE_SET.salt) === JSON.stringify(book.PRICE_SET.salt), "the other product's board is untouched");
+    }
+    /* a product that is not on the book is refused rather than invented */
+    const bad = { ...one, approved: [{ ...one.approved[0], row: { product: "sugar", prices: {}, hide: [] } }] };
+    const bp = plan(JSON.parse(JSON.stringify(book)), bad, null);
+    ok(bp.items.length === 0 && /not a product/.test(bp.refused[0].why || ""), "a price edit for a product that does not exist is refused");
+  }
   /* v347: a cancelled order is not a target. Its key still matches, so only the guard stops it. */
   {
     const canc = book.sales.find((r) => r.cancelled && r.customer === "CS6-PER" && r.total === 350);

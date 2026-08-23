@@ -266,7 +266,7 @@ async function handleVaultPost(request, env) {
  *
  * The book now also lives in D1, seeded from the master by tools/d1.mjs. This serves it.
  *
- * IT IS A MIRROR AND IT SAYS SO IN EVERY RESPONSE. The Cow-Crm01 master is still the source
+ * IT IS A MIRROR AND IT SAYS SO IN EVERY RESPONSE. The Per-Crm01 master is still the source
  * of truth: the desk computes from its own arrays, the daily run still folds the queue into
  * the master, and nothing here writes. The direction flips only once the store is proven to
  * reproduce the desk's figures exactly, and until then a reader that quietly preferred this
@@ -287,7 +287,7 @@ async function handleLedger(env, url) {
       const by = {};
       for (const r of (counts.results || [])) by[r.collection] = r.n;
       return json({ ok: true, seeded: true, snapshot: snap, counts: by,
-        source: "mirror of the Cow-Crm01 master; that desk is still authoritative" });
+        source: "mirror of the Per-Crm01 master; that desk is still authoritative" });
     }
     if (rest === "state") {
       const rs = await env.SALT_LEDGER.prepare("SELECT key,doc FROM state ORDER BY key").all();

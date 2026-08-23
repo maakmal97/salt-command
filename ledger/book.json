@@ -2223,9 +2223,15 @@
  ],
  "QUEUE_COMMITTED": "2026-08-23T15:36:10.986Z",
  "PRICE_SET": {
-  "salt": {},
+  "salt": {
+   "prices": {},
+   "hide": []
+  },
   "oil": {
-   "10": 130
+   "prices": {
+    "10": 130
+   },
+   "hide": []
   }
  },
  "NOTES": {
@@ -2269,7 +2275,8 @@
    "the rate the arithmetic below is run at, and WHY it is not a quote. The ladder\n     stops at 100 unit; there has never been a 150 unit tier and there has never been a\n     150 unit lot. Using the 100 unit rate is the least flattering honest assumption\n     available, because a bigger lot should not be dearer, and it is labelled an\n     assumption everywhere it appears rather than presented as a price.\n     FOLLOWED TO RM43 ON 20 AUG, because the RULE did not change and the figure it points at\n     did. The rule is \"the largest tier quoted\"; the re-quote moved that tier from RM47 to\n     RM43, so leaving 47 here would have kept a number the ladder no longer carries and made\n     the plan look dearer than the quote it is measured against. The second half of the old\n     wording had to go with it: RM47 was ALSO the rate paid on 28 Jul, and those two facts have\n     now parted company. RM43 has been quoted and never paid."
   ],
   "PRICE_SET": [
-   "v353: PRICES HE HAS SET, BY PRODUCT AND SIZE, OVERRIDING THE DERIVED LADDER. The board has been\n   fully derived since v326, which is the right default and the wrong absolute: he is the one who\n   meets the customer. A stated price replaces the markup and nothing else. The two laws still run\n   on it: the rate may not rise with size, so setting one price moves the sizes above it, and no ask\n   may sit under its own floor, so a price set too low is lifted and the desk says so.\n   EMPTY IS THE NORMAL STATE. A size absent here is priced by the ladder, which is where a price\n   should come from unless there is a reason. oil 10 is RM130 on his instruction of 24 Aug."
+   "v353: PRICES HE HAS SET, BY PRODUCT AND SIZE, OVERRIDING THE DERIVED LADDER. The board has been\n   fully derived since v326, which is the right default and the wrong absolute: he is the one who\n   meets the customer. A stated price replaces the markup and nothing else. The two laws still run\n   on it: the rate may not rise with size, so setting one price moves the sizes above it, and no ask\n   may sit under its own floor, so a price set too low is lifted and the desk says so.\n   EMPTY IS THE NORMAL STATE. A size absent here is priced by the ladder, which is where a price\n   should come from unless there is a reason. oil 10 is RM130 on his instruction of 24 Aug.",
+   "v354: AND WHICH SIZES ARE SHOWN AT ALL. `hide` drops a size from the board without deleting it\n   from the ladder, so a lot he does not want to offer this month stops being quoted and comes back\n   by removing one entry. Both halves are edited from the desk's Price tab and travel through the\n   queue like any other entry: drafted, approved, folded. Nothing on this desk writes the book."
   ]
  }
 }

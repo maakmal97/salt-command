@@ -23,6 +23,8 @@
  *   a count           the stated stock set and COUNT_ON moved; the one entry that moves it
  *   a loss            appended to selfUseLog     a lost sale   appended to lostDemand
  *   a registration    the code appended to the roster; the directory is never touched
+ *   a price edit      PRICE_SET[product] REPLACED with what he set: the form on the desk is the
+ *                     whole statement of what the board should be, so a price he cleared is cleared
  * then the shelf is ROLLED for what physically moved (a roll, never a count), the watermark
  * moves to the newest id folded, and the book is sorted.
  *
@@ -72,6 +74,7 @@ function describe(item) {
     case "loss": return `LOSS ${r.kg} unit ${r.product} on ${r.date}: ${r.why}`;
     case "lostDemand": return `LOST SALE ${r.kg} unit ${r.product}${r.party ? " to " + r.party : ""} on ${r.date}: ${r.why}`;
     case "roster": return `REGISTER ${r.code} as ${r.kind}${r.parent ? " under " + r.parent : ""}`;
+    case "priceset": return `SET THE BOARD for ${r.product}${Object.keys(r.prices || {}).length ? ": " + Object.entries(r.prices).map(([q, p]) => `${q} unit at RM${p}`).join(", ") : ""}${(r.hide || []).length ? `, hiding ${r.hide.join(", ")} unit` : ""}`;
     default: return `${item.collection}: ${JSON.stringify(r).slice(0, 80)}`;
   }
 }
@@ -120,6 +123,15 @@ export function plan(book, staged, notes) {
     } else if (it.collection === "roster") {
       if ((book.roster || []).includes(r.code)) { out.refused.push({ id: it.id, why: `${r.code} is already on the roster` }); continue; }
       entry.roster = r.code; entry.does.push(`append ${r.code} to the roster (the directory is not touched)`);
+    } else if (it.collection === "priceset") {
+      /* v354: A PRICE EDIT MOVES NO STOCK AND NO CASH. It REPLACES that product's entry in
+         PRICE_SET rather than merging into it, so the form on the desk is the whole statement of
+         what he wants the board to be and a price he cleared is actually cleared. */
+      const prod = r.product || "salt";
+      if (!(book.PRODUCTS || {})[prod]) { out.refused.push({ id: it.id, why: `${prod} is not a product on this book` }); continue; }
+      entry.priceset = { product: prod, prices: r.prices || {}, hide: r.hide || [] };
+      const n = Object.keys(r.prices || {}).length;
+      entry.does.push(`set ${n} price${n === 1 ? "" : "s"} on the ${prod} board${(r.hide || []).length ? ` and hide ${r.hide.join(", ")} unit` : ""}; it moves no stock and no cash`);
     } else { out.refused.push({ id: it.id, why: `unknown collection ${it.collection}` }); continue; }
     out.items.push(entry);
   }
@@ -224,6 +236,14 @@ export function apply(book, staged, notes, masterText) {
       book[it.append] = book[it.append] || []; book[it.append].push(row);
     } else if (it.roster) {
       book.roster.push(it.roster);
+    } else if (it.priceset) {
+      const ps = it.priceset;
+      book.PRICE_SET = book.PRICE_SET || {};
+      book.PRICE_SET[ps.product] = { prices: ps.prices, hide: ps.hide };
+      if (n && String(n.note || "").trim()) {
+        book.NOTES = book.NOTES || {};
+        book.NOTES.PRICE_SET = [String(n.note).trim()].concat(book.NOTES.PRICE_SET || []);
+      }
     }
     if (it.id > newest) newest = it.id;
     folded.push(it.id);

@@ -461,6 +461,44 @@ export function draftRow(entry, book) {
         + " THE NAME AND THE PLACE ARE NOT HERE AND MUST NOT BE: the directory is typed at the laptop and never travels.",
     };
   }
+  /* A PRICE EDIT (v354). It moves no stock, no cash and no row: it states what the board asks and
+     which sizes it shows. What it CAN do is put a price under its own floor, so that is the flag,
+     and it is computed off the PRICING snapshot rather than re-derived here, for the same reason
+     nothing else in this file prices anything: two engines drift. */
+  if (pay.mode === "price") {
+    const product = String(pay.product || "salt");
+    const prices = (pay.prices && typeof pay.prices === "object") ? pay.prices : {};
+    const hide = Array.isArray(pay.hide) ? pay.hide.map(Number).filter((x) => x > 0) : [];
+    for (const k of Object.keys(prices)) {
+      if (!(+k > 0)) return { skip: `"${k}" is not a size` };
+      if (!(+prices[k] > 0)) return { skip: `the price set at ${k} unit is not a figure` };
+    }
+    if (!Object.keys(prices).length && !hide.length && !pay.clearing) {
+      return { skip: "the edit sets no price and hides no size, so there is nothing to fold" };
+    }
+    const px = (book.state && book.state.PRICING) || {};
+    const floors = (px.floors && px.floors[product]) || {};
+    const flags = [];
+    for (const k of Object.keys(prices)) {
+      const f = floors[k] && (floors[k].collected != null ? floors[k].collected : floors[k].delivered);
+      if (f != null && +prices[k] < f - 0.009) {
+        flags.push(`RM${prices[k]} at ${k} unit is UNDER the floor of RM${f.toFixed(2)}. The board will lift it to the next step above the floor rather than quote it, so this is not the price it would set.`);
+      }
+    }
+    if (hide.length) {
+      flags.push(`It hides ${hide.length} size${hide.length === 1 ? "" : "s"} from the board: ${hide.join(", ")} unit. They stay priceable off the board; they stop being quoted on it.`);
+    }
+    const bits = Object.keys(prices).map((k) => `${k} unit at RM${prices[k]}`);
+    return {
+      collection: "priceset",
+      row: { product, prices, hide },
+      flags,
+      reasoning: `Sets the board for ${product}${bits.length ? `: ${bits.join(", ")}` : ""}${hide.length ? `, hiding ${hide.join(", ")} unit` : ""}.`
+        + " It moves no stock, no cash and no ledger row: it states what the board asks."
+        + " A stated price replaces the markup and nothing else, so the rate-may-not-rise walk and the"
+        + " floor guard both still run on it, and setting one price moves every size above it.",
+    };
+  }
   if (pay.mode && pay.mode !== "new") {
     return { skip: `this entry carries mode "${pay.mode}", which the drafter has no row shape for, so it is left for a person` };
   }
