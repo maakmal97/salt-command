@@ -39,7 +39,13 @@ const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const DEFAULT_MASTER =
   resolve(REPO, "master", "salt_command.html");
 const MASTER = process.env.SALT_MASTER || DEFAULT_MASTER;
-const DATA = resolve(dirname(MASTER), "..", "10_Data");
+/* v344: the queue folder is ABSOLUTE, matching drain.mjs and drafts.mjs, and no longer
+   derived from where the master sits. When the master moved into this repo on 20 Aug the
+   derived path became <repo>/10_Data, which does not exist, so both queue reads warned
+   "unreadable" on every run and the drain had nowhere to write. The queue files never
+   moved; only the master did. */
+const DATA = process.env.SALT_DATA ||
+  "C:/Users/maakm/Claude/Projects/Personal/Cow-Crm01_Salt Business/10_Data";
 const SITE = (process.env.SALT_URL || "https://salt-command.maakmal97.workers.dev").replace(/\/+$/, "");
 
 const argv = process.argv.slice(2);
@@ -83,7 +89,11 @@ if (!existsSync(MASTER)) {
 }
 const masterSrc = readFileSync(MASTER, "utf8");
 const VER = (masterSrc.match(/const evolution=\[\{v:'(v\d+)'/) || [])[1] || null;
-const MARK = (masterSrc.match(/const QUEUE_COMMITTED='([^']*)'/) || [])[1] || null;
+/* v344: EITHER QUOTE. booksync.mjs has rendered the book from JSON since v339, so the
+   watermark is written with double quotes and this regex stopped matching. It failed the run
+   rather than passing it, but the REPLAY CHECK below reads MARK, and a check that never runs
+   is the exact shape of fault this file exists to catch. */
+const MARK = (masterSrc.match(/const QUEUE_COMMITTED\s*=\s*['"]([^'"]*)['"]/) || [])[1] || null;
 if (!VER) fail("no version found in the master (evolution[0].v)");
 if (!MARK) fail("no QUEUE_COMMITTED found in the master");
 ok(`master ${VER}, watermark ${MARK}`);
