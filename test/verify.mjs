@@ -1328,6 +1328,20 @@ section("Engine — one definition, out of the desk (v337)");
   }), "his time enters the floor once per order, never per unit");
   ok(E.floorTotal(1, C, P, null, { collects: true }) <= E.floorTotal(1, C, P), "collecting never raises the floor");
   ok(E.buyTaper(P.tiers).b < 0 && E.buyTaper([]).b === null, "the taper is fitted from the quote and absent without one");
+  /* v353: A STATED PRICE WINS OVER THE DERIVED ONE, then obeys the same two laws. */
+  {
+    const setP = { ...P, stated: { "2": 150 } };
+    const SB = E.board(P.boardSizes, C, setP), sa = SB.tiers[0].prices;
+    ok(sa[P.boardSizes.indexOf(2)] === 150, "the price he sets at 2 unit is the price on the board");
+    let law = true;
+    for (let i = 1; i < sa.length; i++) if (sa[i] / P.boardSizes[i] > sa[i-1] / P.boardSizes[i-1] + 1e-9) law = false;
+    ok(law, "and the rate still never rises with size, so setting one price moves the sizes above it");
+    ok(P.boardSizes.every((q, i) => sa[i] >= SB.floors[q].collected - 0.009), "and no stated price sits under its own floor");
+    /* set one absurdly low and the floor guard must lift it rather than honour it */
+    const lowB = E.board(P.boardSizes, C, { ...P, stated: { "12.5": 1 } });
+    ok(lowB.tiers[0].prices[P.boardSizes.indexOf(12.5)] >= lowB.floors[12.5].collected - 0.009,
+      "a price set under the floor is lifted, never honoured");
+  }
 
   /* 3. THE GATE FOR MOVE 1. Fed the desk's own inputs, the module reproduces the desk's asks and
      floors at every size on both books. The desk is running the inlined copy of the same code, so
@@ -1447,7 +1461,7 @@ section("Book — ledger/book.json is the source (v339)");
   ok(/ok\s+the master's BOOK block is ledger\/book\.json/.test(chk), "tools/booksync.mjs --check: the master's book block is the file");
   const book = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
   const keys = Object.keys(book).filter((k) => k !== "NOTES");
-  ok(keys.length === 26, "the book holds the twenty-six ledger keys");
+  ok(keys.length === 27, "the book holds the twenty-seven ledger keys");   // v353 added PRICE_SET
   ok(Array.isArray(book.sales) && book.sales.length > 100 && Array.isArray(book.purchases), "with the rows as records");
   ok(typeof book.QUEUE_COMMITTED === "string" && typeof book.STATED_STOCK === "number", "and the singletons as values");
   ok(book.NOTES && Array.isArray(book.NOTES.STATED_STOCK) && book.NOTES.STATED_STOCK.length > 0, "the stated stock's roll history survived as NOTES");

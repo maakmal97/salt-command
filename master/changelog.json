@@ -1,5 +1,17 @@
 [
  {
+  "v": "v353",
+  "d": "24 Aug 2026",
+  "t": "PROMOTION LEAVES THE PRICE, FINANCING GOES TO 40%, AND HE CAN SET A PRICE AGAIN",
+  "n": [
+   "<b>PROMOTION IS NOT A LEAK AND THE PRICE STOPS TREATING IT AS ONE.</b> His instruction. Every unit that failed to reach a paying customer used to divide the cost of the ones that did, whatever the reason, so a deliberate launch giveaway was recovered from every future customer for ever. That is not a cost of selling, it is a one-off spent to start selling. <b>OIL: the priced leak goes 32.4% to 6.5%</b>, because 27.2 of its 34 unaccounted unit were the launch, and a unit costs RM12.13 to RM8.77. Its floor at the 10 unit minimum falls RM146.27 to RM112.68. <b>IT LEAVES THE PRICE, NOT THE BOOK:</b> the P&amp;L still carries every one as marketing under IAS 38.69, the count still wins, the plug is unchanged. Only the divisor moves.",
+   "<b>ONLY WHAT IS LOGGED AS PROMOTION LEAVES, AND SALT HAS LOGGED NOTHING.</b> An unattributed plug is priced in FULL, which is the conservative way round: a leak nobody has explained is a leak until someone does. Salt&rsquo;s 55.2 unit are still carried whole at 17.74%, so not one salt figure moves on this commit. He has said the salt gap is some storage leakage, mostly promotion and some self use; until those are three numbers rather than three words the price cannot use them. <b>WHEN THEY LAND, SALT&rsquo;S FLOORS FALL SHARPLY</b>, on the same arithmetic that just moved oil.",
+   "<b>FINANCING GOES 12% TO 40% A YEAR, ON HIS INSTRUCTION.</b> 12% was a borrowing rate; 40% is what he says his own capital is worth, which is the right basis for a desk funded out of his own pocket. <b>IT IS SMALLER THAN IT SOUNDS AND THAT IS WORTH SAYING.</b> A 50 unit lot clears in about twelve days at 4.32 a day, so the average unit is held under six, and 40% of RM45.20 over six days is about 29 sen a unit. On credit it bites harder: a customer taking ten days to pay now costs 1.1% of the sale against 0.33%.",
+   "<b>HE CAN SET A PRICE AGAIN, AND IT OBEYS THE SAME TWO LAWS.</b> PRICE_SET is the twenty-seventh ledger key: prices he has stated, by product and size, overriding the derived ladder. The board has been fully derived since v326, which is the right default and the wrong absolute, because he is the one who meets the customer. A stated price replaces the markup and nothing else: the rate-may-not-rise walk still runs on it and the floor guard still runs beneath it, so <b>a price set under its own floor is lifted rather than honoured</b>.",
+   "<b>OIL&rsquo;S 10 UNIT IS SET AT RM130, AND IT TAKES THE WHOLE OIL LADDER WITH IT.</b> That is the honest consequence rather than a fault: RM130 for 10 unit is RM13.00 a unit, and a bigger lot may never cost more per unit, so every size above had to come down. 15 unit goes RM210 to RM190, 50 goes RM650 to RM610 and 100 goes RM1,300 to RM1,210, a flat RM13.00 falling to RM12.10. Every one of them still clears its own floor with room. Salt is untouched: all ten asks stand exactly where they were."
+  ]
+ },
+ {
   "v": "v352",
   "d": "24 Aug 2026",
   "t": "THE FLOOR GETS HONEST, AND NOT ONE SALT PRICE HAS TO MOVE",

@@ -17,6 +17,7 @@
  *      lotFloor    named floors by size (PRICE.lotFloor), kept as a mechanism, empty as a policy
  *      tiers       the supplier's live quote tiers, for the taper ({qty,total} each)
  *      boardSizes  the sizes the board quotes, for walking an off-board size against them
+ *      stated      prices HE has set, by size, overriding the derived ask (PRICE_SET[product])
  * and costStack() takes the input record the desk's pxInputs() gathers (see there).
  *
  * PORTED VERBATIM. The bodies are the desk's, with the globals replaced by C, P and I. Every
@@ -139,7 +140,15 @@ function ladderWalk(sizes,C,P){
   const out=[]; let prevRate=Infinity;
   sizes.forEach(q=>{
     const cogs=ladderCogs(q,C);
-    let p=ladderRound(cogs*(1+ladderMarkup(q,P)),LADDER);
+    /* v353: A PRICE HE HAS SET WINS OVER THE DERIVED ONE, and then obeys the same two laws.
+       The board has been fully derived since v326, which is right as a default and wrong as an
+       absolute: he is the one who meets the customer. A stated price replaces the markup and
+       nothing else, so the rate-may-not-rise walk below and the floor guard beneath it both
+       still run on it. Setting one price therefore MOVES THE SIZES ABOVE IT, because a bigger
+       lot may never cost more per unit, and that is the honest consequence rather than a fault.
+       A stated price under its own floor is not honoured; the floor guard lifts it and says so. */
+    const set=(P.stated||{})[String(q)];
+    let p=(set!=null&&+set>0)?+set:ladderRound(cogs*(1+ladderMarkup(q,P)),LADDER);
     if(q>0&&prevRate<Infinity&&p/q>prevRate+1e-9){
       const stepped=Math.floor((prevRate*q+1e-9)/LADDER.round.to)*LADDER.round.to;
       const least=cogs*(1+LADDER.floor);          // never step down through the floor

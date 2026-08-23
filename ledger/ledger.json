@@ -1,6 +1,6 @@
 {
- "v": "v352",
- "stamped": "24 Aug 2026, 06:20 KL",
+ "v": "v353",
+ "stamped": "24 Aug 2026, 07:00 KL",
  "source": "Cow-Crm01 salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -2213,6 +2213,12 @@
    "rateBasis": "the 50 unit tier on the 20 Aug ladder, quoted AND paid on that date, so it is a rate achieved rather than a rate on offer.",
    "note": "THE 100 UNIT TIER WAS THE RECOMMENDATION AND HE HAS TAKEN THE 50. Landed cost is RM45.20 a unit against RM43.60, so this lot costs RM80 more than the same salt bought at the top tier, and it covers about a fortnight rather than three weeks. RM4,360 would have fitted the ceiling with RM140 to spare. Recorded as his call, not as an error."
   },
+  "PRICE_SET": {
+   "salt": {},
+   "oil": {
+    "10": 130
+   }
+  },
   "CASH_COUNT_RETIRED": {
    "on": "2026-07-28",
    "amount": 8950,
@@ -2227,7 +2233,7 @@
   ],
   "QUEUE_COMMITTED": "2026-08-23T15:36:10.986Z",
   "PRICING": {
-   "takenAt": "2026-08-23T21:28:18.001Z",
+   "takenAt": "2026-08-23T22:28:09.125Z",
    "sizes": [
     0.5,
     1,
@@ -2402,6 +2408,7 @@
        "minPerUnit": 0,
        "timePerOrder": 25,
        "lotFloor": {},
+       "stated": {},
        "tiers": [
         {
          "qty": 6.25,
@@ -2449,44 +2456,44 @@
      "replCost": 7,
      "floors": {
       "1": {
-       "delivered": 84.97,
-       "collected": 34.97
+       "delivered": 84.01,
+       "collected": 34.01
       },
       "2": {
-       "delivered": 94.94,
-       "collected": 44.94
+       "delivered": 93.02,
+       "collected": 43.02
       },
       "3": {
-       "delivered": 104.9,
-       "collected": 54.9
+       "delivered": 102.03,
+       "collected": 52.03
       },
       "4": {
-       "delivered": 114.87,
-       "collected": 64.87
+       "delivered": 111.04,
+       "collected": 61.04
       },
       "5": {
-       "delivered": 124.84,
-       "collected": 74.84
+       "delivered": 120.05,
+       "collected": 70.05
       },
       "0.5": {
-       "delivered": 79.98,
-       "collected": 29.98
+       "delivered": 79.51,
+       "collected": 29.51
       },
       "1.5": {
-       "delivered": 89.95,
-       "collected": 39.95
+       "delivered": 88.52,
+       "collected": 38.52
       },
       "2.5": {
-       "delivered": 99.92,
-       "collected": 49.92
+       "delivered": 97.53,
+       "collected": 47.53
       },
       "6.25": {
-       "delivered": 137.3,
-       "collected": 87.3
+       "delivered": 131.32,
+       "collected": 81.32
       },
       "12.5": {
-       "delivered": 199.6,
-       "collected": 149.6
+       "delivered": 187.63,
+       "collected": 137.63
       }
      },
      "inputs": {
@@ -2569,7 +2576,7 @@
         }
        },
        "attrib": 1,
-       "shrinkRate": 0.17734939759036145,
+       "shrinkRate": 0.08995983935742972,
        "avgDel": {
         "n": 5,
         "kg": 71,
@@ -2596,6 +2603,9 @@
        "minPerUnit": 0,
        "timePerOrder": 25,
        "lotFloor": {},
+       "stated": {
+        "10": 130
+       },
        "tiers": [
         {
          "qty": 6.25,
@@ -2643,10 +2653,10 @@
      }
     }
    },
-   "v": "v352"
+   "v": "v353"
   },
   "OPEN": {
-   "at": "2026-08-23T21:28:18.015Z",
+   "at": "2026-08-23T22:28:09.140Z",
    "count": 7,
    "byKey": {
     "CJ4-BJ|undefined|450": {
@@ -2765,7 +2775,7 @@
     "salt": "2026-08-24",
     "oil": "2026-08-23"
    },
-   "v": "v352"
+   "v": "v353"
   }
  }
 }

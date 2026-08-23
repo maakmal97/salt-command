@@ -37,6 +37,7 @@ export const LEDGER = {
   AWARDS: "AWARDS",
   supplierQuote: "supplierQuote", oilQuote: "oilQuote",
   SOURCING_PLAN: "SOURCING_PLAN",
+  PRICE_SET: "PRICE_SET",                 // v353: prices he has set, overriding the derived ladder
   CASH_COUNT_RETIRED: "CASH_COUNT_RETIRED",
   ONE_OFFS: "ONE_OFFS",
   QUEUE_COMMITTED: "QUEUE_COMMITTED",
