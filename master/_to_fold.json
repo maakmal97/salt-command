@@ -1,0 +1,145 @@
+{
+ "ok": true,
+ "count": 3,
+ "approved": [
+  {
+   "id": "2026-08-24T08:26:47.254Z",
+   "collection": "sales",
+   "row": {
+    "qty": 3,
+    "total": 290,
+    "cash": 0,
+    "date": null,
+    "customer": "CS6-BS-R"
+   },
+   "reasoning": "Fulfilment against CS6-BS-R's order of 3 unit for RM 290 which is pending and undated. RM 290 and 3 unit move on 2026-08-24, against RM 290 and 3 unit outstanding. Leaves RM 0 and 0 unit outstanding. The row itself is NOT recomputed here: ovAmend in the master applies it, so there is one definition of what a fulfilment does rather than two.",
+   "flags": [
+    "This SETTLES the order in full: nothing is left outstanding after it."
+   ],
+   "amends": "CS6-BS-R|undefined|290",
+   "amendKind": "Fulfilment",
+   "entry": {
+    "at": "2026-08-24T08:26:47.254Z",
+    "type": "AMEND",
+    "party": "CS6-BS-R",
+    "qty": 3,
+    "total": 290,
+    "status": "paid",
+    "raw": "Fulfilment on CS6-BS-R — order 3 unit of RM 290 planned, undated marked paid and delivered in full on 2026-08-24",
+    "payload": {
+     "mode": "amend",
+     "direction": "SELL",
+     "party": "CS6-BS-R",
+     "orderKey": "CS6-BS-R|undefined|290",
+     "date": "2026-08-24",
+     "assoc": null,
+     "downstream": null,
+     "kind": "Fulfilment",
+     "orderCode": null,
+     "linkTo": null,
+     "sameDay": false,
+     "note": null,
+     "qty": 3,
+     "total": 290,
+     "cash": 290,
+     "kg": 3
+    }
+   },
+   "decidedAt": "2026-08-24T08:31:49.110Z",
+   "decidedBy": "phone"
+  },
+  {
+   "id": "2026-08-24T08:26:56.226Z",
+   "collection": "sales",
+   "row": {
+    "qty": 1,
+    "total": 0,
+    "cash": 0,
+    "date": null,
+    "customer": "CS6-BS"
+   },
+   "reasoning": "Fulfilment against CS6-BS's order of 1 unit for RM 0 which is pending and undated. RM 0 and 1 unit move on 2026-08-24, against RM 0 and 1 unit outstanding. Leaves RM 0 and 0 unit outstanding. The row itself is NOT recomputed here: ovAmend in the master applies it, so there is one definition of what a fulfilment does rather than two.",
+   "flags": [
+    "This SETTLES the order in full: nothing is left outstanding after it."
+   ],
+   "amends": "CS6-BS|undefined|0",
+   "amendKind": "Fulfilment",
+   "entry": {
+    "at": "2026-08-24T08:26:56.226Z",
+    "type": "AMEND",
+    "party": "CS6-BS",
+    "qty": 1,
+    "total": 0,
+    "status": "paid",
+    "raw": "Fulfilment on CS6-BS — order 1 unit of RM 0 planned, undated marked paid and delivered in full on 2026-08-24",
+    "payload": {
+     "mode": "amend",
+     "direction": "SELL",
+     "party": "CS6-BS",
+     "orderKey": "CS6-BS|undefined|0",
+     "date": "2026-08-24",
+     "assoc": null,
+     "downstream": null,
+     "kind": "Fulfilment",
+     "orderCode": null,
+     "linkTo": null,
+     "sameDay": false,
+     "note": null,
+     "qty": 1,
+     "total": 0,
+     "cash": 0,
+     "kg": 1
+    }
+   },
+   "decidedAt": "2026-08-24T08:31:52.113Z",
+   "decidedBy": "phone"
+  },
+  {
+   "id": "2026-08-24T08:27:20.916Z",
+   "collection": "sales",
+   "row": {
+    "customer": "CA4-DAM",
+    "qty": 0.5,
+    "total": 50,
+    "cash": 0,
+    "deliveredQty": 0
+   },
+   "reasoning": "Sold 0.5 unit of salt to CA4-DAM for RM 50, RM 100/unit. Costed at RM 44/unit from the desk's own shelf cost, so RM 28 on the order at 56%. Nothing was paid and nothing moved, so the row is PENDING and carries NO DATE: it draws no stock and books no revenue until it does. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [
+    "RM 50 is under the delivered floor of RM 98.87, though it clears the collected floor of RM 48.87."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-08-24T08:27:20.916Z",
+    "type": "SELL",
+    "party": "CA4-DAM",
+    "qty": 0.5,
+    "total": 50,
+    "status": "unpaid",
+    "raw": "Sell 0.5 unit to CA4-DAM for RM 50 on 2026-08-24 — RM 0 cash, 0 unit moved → Pending",
+    "payload": {
+     "mode": "new",
+     "product": "salt",
+     "direction": "SELL",
+     "party": "CA4-DAM",
+     "newId": null,
+     "date": "2026-08-24",
+     "qty": 0.5,
+     "total": 50,
+     "cash": 0,
+     "kg": 0,
+     "assoc": null,
+     "stream": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": null
+    }
+   },
+   "decidedAt": "2026-08-24T08:31:57.370Z",
+   "decidedBy": "phone"
+  }
+ ]
+}
