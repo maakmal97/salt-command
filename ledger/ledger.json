@@ -1,6 +1,6 @@
 {
- "v": "v359",
- "stamped": "24 Aug 2026, 20:57 KL",
+ "v": "v360",
+ "stamped": "24 Aug 2026, 21:18 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -41,7 +41,7 @@
     "stated": 0
    }
   },
-  "STATED_STOCK": 17.5,
+  "STATED_STOCK": 12,
   "COUNT_ON": {
    "salt": "2026-08-24",
    "oil": "2026-08-23"
@@ -1988,6 +1988,55 @@
     "cost": 44
    },
    {
+    "customer": "CA4-DAM",
+    "qty": 0.5,
+    "total": 50,
+    "cash": 0,
+    "deliveredQty": 0.5,
+    "note": "<b>PENDING AND UNDATED: HALF A UNIT AT RM50, AGREED 24 AUG.</b> Nothing paid and nothing moved, so the row carries no date, draws no stock, books no revenue and raises no receivable until it does. <b>RM100 A UNIT IS HIS RATE AND IT HAS NOT MOVED SINCE 12 JUL.</b> This is his twelfth order and the eleventh struck at exactly RM100 a unit; the only order he has ever taken at another rate is 1.5 unit at RM116.67 on 26 Jul, so the price itself is not news. <b>THE FLOOR IS WHAT IS WORTH READING HERE.</b> At half a unit the v358 snapshot puts the collected floor at RM48.87 and the delivered floor at RM98.87, so RM50 clears the collected floor by RM1.13 and falls RM48.87 short of the delivered one. The whole of that gap is the RM50 per-delivery transaction cost, which falls whole on an order however small it is, so a half unit carries it as badly as any size on the board can. The book has recorded since 01 Aug that he always collects, so the collected floor is the one that binds and RM50 clears it. RM1.13 is not much of a margin for error, and it sits beside the fact that this rate has held through a cost basis that has gone RM64 to RM47 to RM56 to RM44: the desk has absorbed every move in the buying rate and he has absorbed none. The next rise takes RM100 a unit under its own floor on the basis he actually trades on. <b>NO COST AND NO MARGIN ARE PRINTED, BECAUSE NOTHING HAS HAPPENED.</b> Were it to move against the RM44 shelf it would return RM28 on RM50, 56%, and that is a projection rather than a figure on the book. Read the Pricing tab for the floor of the day rather than this sentence.",
+    "amend": [
+     {
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 0,
+      "note": "as booked, pending and undated"
+     },
+     {
+      "date": "2026-08-24",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 0.5,
+      "note": "the 0.5 unit has gone out on 24 Aug, RM50 still owed. His standard RM100/unit for this size, unchanged; an advance, not a rate question."
+     }
+    ],
+    "date": "2026-08-24",
+    "deliveredOn": "2026-08-24",
+    "cost": 44
+   },
+   {
+    "customer": "CM4-MK",
+    "qty": 4,
+    "total": 360,
+    "cost": 44,
+    "cash": 360,
+    "date": "2026-08-24",
+    "deliveredQty": 4,
+    "deliveredOn": "2026-08-24",
+    "paidOn": "2026-08-24",
+    "note": "4 unit at RM90/unit, RM184 of margin at 51.1%. The drafter flags it 18.2% under his typical RM110/unit, but that rate is drawn from his 2-unit orders; this is the same size and the same total, RM360 for 4 unit, that he paid on 10 Aug. The ladder's size taper explains the gap, not a change in what he is charged."
+   },
+   {
+    "customer": "CR3-DAM",
+    "qty": 1,
+    "total": 80,
+    "cost": 44,
+    "cash": 0,
+    "date": "2026-08-24",
+    "deliveredQty": 1,
+    "deliveredOn": "2026-08-24",
+    "note": "1 unit at RM80, his rate on every order this book has ever recorded for him, unbroken since June. Delivered 24 Aug with the RM80 still owed, an advance: check it against his credit cap if it stands alongside other unpaid orders, though nothing here suggests it should be refused, only watched."
+   },
+   {
     "customer": "CJ4-BJ",
     "qty": 6.25,
     "total": 450,
@@ -2014,14 +2063,6 @@
     "note": "<b>CANCELLED 24 AUG, ON HIS WORD, WITH NOTHING EVER MOVED EITHER WAY.</b> 6.25 unit for RM350 was agreed on the 20th and never dated, paid or handed over, so it counted nowhere before and counts nowhere now. RM56 a unit was the sharpest rate on the book at that size and sat RM170 under the RM520 ask; it also sat under the v344 collected floor of RM375.73, so the order it cancels was one this desk could not have filled without a loss. CS6-PER is an associate. The row is kept rather than deleted because a price that low, agreed and withdrawn, is the record.",
     "cancelled": true,
     "cancelledOn": "2026-08-24"
-   },
-   {
-    "customer": "CA4-DAM",
-    "qty": 0.5,
-    "total": 50,
-    "cash": 0,
-    "deliveredQty": 0,
-    "note": "<b>PENDING AND UNDATED: HALF A UNIT AT RM50, AGREED 24 AUG.</b> Nothing paid and nothing moved, so the row carries no date, draws no stock, books no revenue and raises no receivable until it does. <b>RM100 A UNIT IS HIS RATE AND IT HAS NOT MOVED SINCE 12 JUL.</b> This is his twelfth order and the eleventh struck at exactly RM100 a unit; the only order he has ever taken at another rate is 1.5 unit at RM116.67 on 26 Jul, so the price itself is not news. <b>THE FLOOR IS WHAT IS WORTH READING HERE.</b> At half a unit the v358 snapshot puts the collected floor at RM48.87 and the delivered floor at RM98.87, so RM50 clears the collected floor by RM1.13 and falls RM48.87 short of the delivered one. The whole of that gap is the RM50 per-delivery transaction cost, which falls whole on an order however small it is, so a half unit carries it as badly as any size on the board can. The book has recorded since 01 Aug that he always collects, so the collected floor is the one that binds and RM50 clears it. RM1.13 is not much of a margin for error, and it sits beside the fact that this rate has held through a cost basis that has gone RM64 to RM47 to RM56 to RM44: the desk has absorbed every move in the buying rate and he has absorbed none. The next rise takes RM100 a unit under its own floor on the basis he actually trades on. <b>NO COST AND NO MARGIN ARE PRINTED, BECAUSE NOTHING HAS HAPPENED.</b> Were it to move against the RM44 shelf it would return RM28 on RM50, 56%, and that is a projection rather than a figure on the book. Read the Pricing tab for the floor of the day rather than this sentence."
    }
   ],
   "contacts": [
@@ -2310,9 +2351,9 @@
     "note": "Judged a rare one-off. Treat the RM104/unit it paid as an outlier, not as evidence of what wholesale will bear."
    }
   ],
-  "QUEUE_COMMITTED": "2026-08-24T08:27:20.916Z",
+  "QUEUE_COMMITTED": "2026-08-24T13:30:10.000Z",
   "PRICING": {
-   "takenAt": "2026-08-24T13:02:18.012Z",
+   "takenAt": "2026-08-24T13:19:01.556Z",
    "sizes": [
     0.5,
     1,
@@ -2462,9 +2503,9 @@
        "attrib": 1,
        "shrinkRate": 0.05322191868873535,
        "avgDel": {
-        "n": 94,
-        "kg": 238.45,
-        "mean": 2.5367
+        "n": 97,
+        "kg": 243.95,
+        "mean": 2.5149
        }
       },
       "policy": {
@@ -2732,11 +2773,11 @@
      }
     }
    },
-   "v": "v359"
+   "v": "v360"
   },
   "OPEN": {
-   "at": "2026-08-24T13:02:18.045Z",
-   "count": 6,
+   "at": "2026-08-24T13:19:01.576Z",
+   "count": 7,
    "byKey": {
     "CJ4-BJ|undefined|450": {
      "d": null,
@@ -2751,18 +2792,33 @@
      "oweKg": 6.25,
      "key": "CJ4-BJ|undefined|450"
     },
-    "CA4-DAM|undefined|50": {
-     "d": null,
+    "CA4-DAM|2026-08-24|50": {
+     "d": "2026-08-24",
      "p": "CA4-DAM",
      "dir": "S",
      "q": 0.5,
      "t": 50,
      "cash": 0,
-     "mv": 0,
-     "st": "pend",
+     "mv": 0.5,
+     "st": "dueMoney",
      "oweRM": 50,
-     "oweKg": 0.5,
-     "key": "CA4-DAM|undefined|50"
+     "key": "CA4-DAM|2026-08-24|50",
+     "age": 0,
+     "exp": 50
+    },
+    "CR3-DAM|2026-08-24|80": {
+     "d": "2026-08-24",
+     "p": "CR3-DAM",
+     "dir": "S",
+     "q": 1,
+     "t": 80,
+     "cash": 0,
+     "mv": 1,
+     "st": "dueMoney",
+     "oweRM": 80,
+     "key": "CR3-DAM|2026-08-24|80",
+     "age": 0,
+     "exp": 80
     },
     "CE4-AD|2026-08-20|435": {
      "d": "2026-08-20",
@@ -2818,14 +2874,14 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 17.5,
-     "free": 9.5,
+     "onHand": 12,
+     "free": 4,
      "owedOut": 8,
-     "coverDays": 2.1,
-     "rate": 4.61,
-     "owedToYou": 80,
-     "promised": 14.75,
-     "short": 0
+     "coverDays": 0.8,
+     "rate": 5,
+     "owedToYou": 210,
+     "promised": 14.25,
+     "short": 2.25
     },
     "oil": {
      "name": "Oil",
@@ -2843,7 +2899,7 @@
     "salt": "2026-08-24",
     "oil": "2026-08-23"
    },
-   "v": "v359"
+   "v": "v360"
   }
  }
 }
