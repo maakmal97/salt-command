@@ -1,10 +1,15 @@
 # The cloud fold
 
-**What the scheduled cloud agent does four times a day, and what it deliberately does not.**
+**What an agent does when asked to fold, and what it deliberately does not.**
 
-Rewritten 23 Aug 2026 for the book as data (v339) and the fold tool (v340). The laptop-era
-procedure is kept verbatim beside this as `DAILY_FOLD.md` for its context; where the two
-disagree, this file wins.
+Rewritten 23 Aug 2026 for the book as data (v339) and the fold tool (v340). The routine that
+once ran this four times a day (`Salt daily fold`, trig_01UrnjQMWA3f6GXN5R6Dzi4S) was disabled
+24 Aug 2026: a fold reached on request lands inside a minute, faster than the six-hourly slot
+ever did, so the clock was adding a race (see CLAUDE.md, "Retiring Cowork") without adding
+speed. This procedure is unchanged and still what any agent follows, whether that is a Code
+session asked to fold, or the routine re-armed and fired again. The laptop-era procedure is
+kept verbatim beside this as `DAILY_FOLD.md` for its context; where the two disagree, this file
+wins.
 
 ## The shape of it
 
@@ -31,7 +36,7 @@ tool in `tools/`, the test suite, and `master/_to_fold.json` if there was anythi
 | When | Who | What |
 |---|---|---|
 | hourly | `cloud-commit.yml` | reads the approved rows out of D1 into `master/_to_fold.json`, commits |
-| 08:52, 14:52, 20:52, 02:52 MYT | **the agent** | folds with the tool, builds, tests, commits, pushes |
+| on demand | **the agent, asked to fold** | folds with the tool, builds, tests, commits, pushes |
 | on push | `cloud-commit.yml` | deploys, checks the phone is serving it, marks the ids committed, re-seeds the mirror |
 | 11:00 MYT | `ship-check.yml` | proves the repo and the live Worker agree |
 

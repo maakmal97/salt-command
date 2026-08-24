@@ -25,10 +25,13 @@ name: Cloud commit
 
 on:
   schedule:
-    # HOURLY, against a fold that runs every SIX hours (his instruction of 20 Aug). Staging
-    # more often than the fold costs nothing and means a batch is always ready and recent when
-    # the fold comes round; staging twice an hour, as this briefly did, was 48 runs a day for
-    # four folds and would have eaten the Actions allowance for no gain.
+    # HOURLY. Originally against a fold that ran every SIX hours (his instruction of 20 Aug);
+    # that routine is disabled from 24 Aug and folding is on demand instead (CLAUDE.md,
+    # "Retiring Cowork"). Staging still runs on its own clock regardless of when, or whether
+    # by clock at all, a fold comes: a batch stays ready and recent for whenever one is asked
+    # for, and it is still what answers "is anything waiting" without needing D1 credentials.
+    # Staging twice an hour, as this briefly did, was 48 runs a day for no gain even against
+    # the old four-a-day fold, so hourly stands.
     #
     # THE CLOCK IS NOT THE GUARD, AND THAT WAS THE FIRST DESIGN'S MISTAKE. This was offset to
     # clear a fold at :00, and the routine API then JITTERED the fold's minute of its own

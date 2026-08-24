@@ -162,18 +162,28 @@ chain is cloud-reachable and the laptop is off the critical path.
 | Draft the row | Worker | on arrival, 15-min cron as the net |
 | Approve | D1, from the phone | on tap |
 | Stage the approved rows | Actions, `cloud-commit.yml` | hourly, cron `5 * * * *` (GitHub drifts it) |
-| **Fold, bump, build, test, push** | **cloud routine, `docs/CLOUD_FOLD.md`** | every six hours: 08:52, 14:52, 20:52, 02:52 MYT |
+| **Fold, bump, build, test, push** | **on demand, `docs/CLOUD_FOLD.md`, an agent asked to** | no schedule; see below |
 | Deploy, prove, mark committed, **re-seed the D1 mirror** | Actions, `cloud-commit.yml` | on push |
 | Prove repo and live agree | Actions, `ship-check.yml` | 11:00 MYT |
 | Monthly statements | cloud routine, `docs/STATEMENTS.md` | Sundays, gated to the first |
 
-**THE FOLD RUNS FOUR TIMES A DAY, BY HIS INSTRUCTION OF 20 AUG.** The routine `Salt daily fold`
-(trig_01UrnjQMWA3f6GXN5R6Dzi4S) fires on `52 */6 * * *` UTC. The routine API rejects any cron under
-an hour in any case. The stage runs hourly so a batch is always ready when the fold comes round,
-and it is the stage, not the fold, that tells you whether anything is waiting: a run that prints
-`approved and uncommitted: 0` means nothing was approved, which on 21 and 22 Aug meant the
-drafter had refused everything against a stale mirror (see the re-seed step in `cloud-commit.yml`).
-Corrected 22 Aug 2026; this paragraph used to say hourly.
+**THE FOLD STOPPED RUNNING ON A CLOCK, ON HIS INSTRUCTION OF 24 AUG 2026.** From 20 to 24 Aug
+the routine `Salt daily fold` (trig_01UrnjQMWA3f6GXN5R6Dzi4S) fired on `52 */6 * * *` UTC,
+four times a day. It is now DISABLED, not deleted (the routine API has no delete, only
+enable/disable), because on 24 Aug it and a session working the same staged batch by hand
+folded it independently within minutes of each other: no git conflict, since the session's
+commit was still local when the routine's landed, but two different versions briefly existed
+for the same rows before the session reconciled them. **The actual reason to retire it is
+simpler than the collision that exposed it:** a fold reachable on request lands inside a
+minute of being asked for, which is faster than the six-hourly slot ever was, so the clock was
+adding a race without adding speed. **Folding is on demand now: ask an agent, in a Code session
+or otherwise, to read `docs/CLOUD_FOLD.md` and follow it.** The stage still runs hourly and
+still matters: it is what keeps `master/_to_fold.json` current so a fold, whenever asked for,
+does not have to reach D1 itself first, and it is still the thing that tells you whether
+anything is waiting (`approved and uncommitted: 0` means nothing was approved, which on 21 and
+22 Aug meant the drafter had refused everything against a stale mirror; see the re-seed step in
+`cloud-commit.yml`). To re-arm the routine: `RemoteTrigger` (or the `schedule` skill) with
+`action: "update"`, `{"enabled": true}`, on trig_01UrnjQMWA3f6GXN5R6Dzi4S.
 
 **THE STAGE STANDS DOWN RATHER THAN TRAMPLING AN UNFOLDED BATCH,** and the clock is not what
 makes that safe. The stage was first offset to clear the fold, and the routine API then jittered
