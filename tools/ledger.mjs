@@ -76,6 +76,14 @@ const NOT_LEDGER = new Set([
   /* transient UI state, not persisted anywhere */
   "ledF", "concSort", "mnOver", "pxOver",
 
+  /* v359: A MEMOISATION CACHE, NOT A FACT. _wavgMemo holds wavgFor()'s answer per product for
+     the life of one page load, so a second call in the same run does not re-walk every
+     purchase. It stayed invisible here for as long as nothing in the extract path happened to
+     call wavgFor(): an empty object is treated as scratch and skipped, and a batch large or
+     varied enough is what makes that call fire for the first time. Computed from purchases on
+     demand, never stored, never read back; the next load starts it empty again. */
+  "_wavgMemo",
+
   /* QUOTES IS AN ACCESSOR, NOT DATA, and the JSON check is what proved it: both its keys
      hold FUNCTIONS over supplierQuote and oilQuote, which are extracted in their own right.
      Stored, it would have arrived as `{"salt":null,"oil":null}` with nothing to say a
