@@ -1625,11 +1625,19 @@ section("Fold — an approved batch becomes records in the book (v340)");
      batch that was faultless. A day after whatever the book says is always newer. */
   const day = new Date(new Date(book.QUEUE_COMMITTED).getTime() + 864e5).toISOString().slice(0, 11);
   const ID = (hhmm) => `${day}${hhmm}:00.000Z`;
-  /* the CS6-BS free-unit pending row (qty 1, total 0), a target distinct from the CJ4-BJ one
-     the Fulfilment above amends, so the two cases stay independent */
-  const modPending = book.sales.find((r) => !r.date && !r.cancelled && r.customer === "CS6-BS" && r.total === 0);
-  ok(!!modPending, "the book carries the CS6-BS free-unit pending row the test restates");
-  const modKey = modPending ? `CS6-BS|undefined|0` : null;
+  /* THE MODIFICATION'S TARGET IS WHATEVER LIVE UNDATED ROW THE BOOK HAPPENS TO CARRY, so long
+     as it is not the one the Fulfilment above amends and its key is unambiguous. It was pinned
+     to a named row twice and broken twice by a real fold settling that very row: CS6-PER at
+     v347, and the CS6-BS free unit at v359, which took five assertions down with it on a batch
+     that was faultless. A fixture that names a row the fold exists to consume has a half-life,
+     so it names none. The figures it restates to are derived from the row it finds. */
+  const modPending = book.sales.find((r) => !r.date && !r.cancelled && r !== pending
+    && book.sales.filter((x) => !x.date && x.customer === r.customer && x.total === r.total).length === 1);
+  ok(!!modPending, "the book carries a second live undated row for the Modification case to restate");
+  const modKey = modPending ? `${modPending.customer}|undefined|${modPending.total}` : null;
+  const MOD_Q = modPending ? +(modPending.qty * 2).toFixed(2) : 1;
+  const MOD_T = modPending ? +(modPending.total + 100).toFixed(2) : 100;
+  const MOD_NOTE = `restated to ${MOD_Q} unit for RM${MOD_T} once the price was agreed`;
   const staged = { ok: true, count: 6, approved: [
     { id: ID("01:00"), collection: "sales", amends: null, amendKind: null,
       row: { customer: "CA4-DAM", qty: 0.5, total: 50, cost: 44, cash: 50, date: "2026-08-23", deliveredQty: 0.5, deliveredOn: "2026-08-23", paidOn: "2026-08-23" },
@@ -1644,8 +1652,8 @@ section("Fold — an approved batch becomes records in the book (v340)");
     /* v358: a Modification now plans and applies mechanically, exactly like the Fulfilment
        above; it just replaces qty/total rather than adding to cash/deliveredQty. */
     { id: ID("01:20"), collection: "sales", amends: modKey, amendKind: "Modification",
-      row: { customer: "CS6-BS", qty: 1, total: 0, newQty: 1, newTotal: 130 },
-      entry: { at: ID("01:20"), payload: { mode: "amend", direction: "SELL", orderKey: modKey, kind: "Modification", date: "2026-08-23", newQty: 1, newTotal: 130 } } },
+      row: { customer: modPending && modPending.customer, qty: modPending && modPending.qty, total: modPending && modPending.total, newQty: MOD_Q, newTotal: MOD_T },
+      entry: { at: ID("01:20"), payload: { mode: "amend", direction: "SELL", orderKey: modKey, kind: "Modification", date: "2026-08-23", newQty: MOD_Q, newTotal: MOD_T } } },
     /* Linked stays refused: unlike Modification it carries no figure to check, only a
        judgement about which OTHER row it links to. Placed last so slice(0, 5) below drops
        only this one item and keeps the Modification among the ones that fold. */
@@ -1694,13 +1702,13 @@ section("Fold — an approved batch becomes records in the book (v340)");
   ok(p.refused.length === 1 && /Linked/.test(p.refused[0].why), "a Linked amendment is refused as a judgement; a Modification is not");
   ok(p.items.length === 5, "the five mechanical rows are planned, the Modification among them");
   const modPlanned = p.items.find((it) => it.what && /Modification on/.test(it.what));
-  ok(modPlanned && /to 1 unit \/ RM130/.test(modPlanned.what), "the plan describes a Modification by what it restates to, not by cash");
+  ok(modPlanned && modPlanned.what.includes(`to ${MOD_Q} unit / RM${MOD_T}`), "the plan describes a Modification by what it restates to, not by cash");
   ok(p.moves.some((m) => m.kg === -0.5 && m.product === "salt") && p.moves.some((m) => m.kg === -6.25), "the plan sees what will leave the shelf");
-  ok(!p.moves.some((m) => m.who === "CS6-BS"), "a pure Modification moves no stock");
+  ok(p.moves.length === 2, "a pure Modification moves no stock: only the new row and the fulfilment do");
   /* a refusal folds nothing, and so does a missing note */
   const notes = { version: "v999", date: "23 Aug 2026", title: "A TEST FOLD", notes: ["<b>TEST.</b> Nothing real."],
     rows: { [ID("01:00")]: { note: "Half a unit at the RM100 anchor, paid and delivered." }, [ID("01:05")]: { note: "paid and delivered in full" },
-            [ID("01:20")]: { note: "restated to 1 unit for RM130 once the price was agreed" } },
+            [ID("01:20")]: { note: MOD_NOTE } },
     stockNote: "Test roll." };
   let r = apply(JSON.parse(JSON.stringify(book)), staged, notes, master);
   ok(!r.ok && r.problems.some((x) => /Linked/.test(x)), "apply refuses the whole batch while a refusal stands");
@@ -1724,11 +1732,11 @@ section("Fold — an approved batch becomes records in the book (v340)");
     ok(B.roster.includes("CT7-KLC"), "the registration joined the roster");
     ok(Math.abs(B.STATED_STOCK - (from - 0.5 - 6.25)) < 1e-9, `the salt shelf rolled ${from} to ${B.STATED_STOCK}`);
     ok(/^ROLLED AT v999/.test(B.NOTES.STATED_STOCK[0]) && /Test roll\./.test(B.NOTES.STATED_STOCK[0]), "the roll sentence leads the stated stock's notes, with the agent's words");
-    const modded = B.sales.find((x) => x.customer === "CS6-BS" && !x.date && x.qty === 1 && x.total === 130);
+    const modded = B.sales.find((x) => x.customer === modPending.customer && !x.date && x.qty === MOD_Q && x.total === MOD_T);
     ok(!!modded, "the Modification REPLACED qty and total rather than adding to them");
-    ok(modded && modded.cash === 0 && modded.deliveredQty === 0 && !modded.date, "and moved no cash, no stock and no date: a pure reprice");
-    ok(modded && /restated.*from 1 unit \/ RM0 to 1 unit \/ RM130/.test(modded.mod), "the row's mod field records what changed, in the same style as an existing restatement");
-    ok(modded && modded.amend && modded.amend.some((a) => a.kind === "Modification" && /RM130 once the price/.test(a.note || "")), "and the trail carries the Modification step with the agent's note");
+    ok(modded && (modded.cash || 0) === (modPending.cash || 0) && (modded.deliveredQty || 0) === (modPending.deliveredQty || 0) && !modded.date, "and moved no cash, no stock and no date: a pure reprice");
+    ok(modded && modded.mod.includes(`from ${modPending.qty} unit / RM${modPending.total} to ${MOD_Q} unit / RM${MOD_T}`), "the row's mod field records what changed, in the same style as an existing restatement");
+    ok(modded && modded.amend && modded.amend.some((a) => a.kind === "Modification" && (a.note || "").includes(MOD_NOTE)), "and the trail carries the Modification step with the agent's note");
     ok(B.QUEUE_COMMITTED === ID("01:20"), "the watermark moved to the newest id folded, past the Modification");
     ok(r.folded.length === 5 && r.newest === ID("01:20"), "_folded would name the five ids");
     ok(/const evolution=\[\{"v":"v999"/.test(r.master) && /const LAST_UPDATED='\d\d \w\w\w 2026, \d\d:\d\d KL';/.test(r.master), "the version entry and the stamp are in the master");

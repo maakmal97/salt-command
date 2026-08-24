@@ -1,6 +1,6 @@
 {
- "v": "v358",
- "stamped": "24 Aug 2026, 15:57 KL",
+ "v": "v359",
+ "stamped": "24 Aug 2026, 20:57 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -41,7 +41,7 @@
     "stated": 0
    }
   },
-  "STATED_STOCK": 21.5,
+  "STATED_STOCK": 17.5,
   "COUNT_ON": {
    "salt": "2026-08-24",
    "oil": "2026-08-23"
@@ -1924,6 +1924,70 @@
     "note": "<b>COMPLETED ON 22 AUG, FOLDED AT v335: RM120 PAID AND THE UNIT HANDED OVER, NOTHING OUTSTANDING.</b> The order went on the book pending at v334 the same day and was settled within the hour; against the RM44 shelf it returns <b>RM76 at 63.3%</b>. The first fulfilment the cloud drafter has drafted since the mirror was brought level, which is the repair of v332 working. What follows is the note as it stood while the order was pending. <b>PENDING, AGREED ON 22 AUG, AND IT COUNTS NOWHERE UNTIL IT MOVES.</b> 1 unit for RM120 with nothing paid and nothing handed over, so the row carries no date, draws no stock and raises no receivable. <b>AN EXACT REPEAT OF HIS ONLY OTHER ORDER</b>, the unit at RM120 agreed on 28 Jul and settled on 03 Aug, so the rate holds through a cost basis that has since gone from RM47 to RM44. The ladder asks RM100 at this size and the delivered floor stands at RM65.32, so it clears both; read the Pricing tab for the figure of the day. Entered by him in the 22 Aug session, not queued from the phone, so no draft stands behind it."
    },
    {
+    "customer": "CS6-BS-R",
+    "qty": 3,
+    "total": 290,
+    "cash": 290,
+    "deliveredQty": 3,
+    "rev": "R2",
+    "agreedOn": "2026-08-24",
+    "note": "<b>SETTLED IN FULL ON 24 AUG: RM290 PAID AND 3 UNIT HANDED OVER.</b> Priced at v358 and completed the same day, so it never stood on the order book as a priced pending order. RM96.67 a unit off the RM44 shelf returns RM158, 54.5% on RM290, and it clears the 3 unit collected floor of RM180.35 and the delivered floor of RM218.22, by RM71.78 on the harder of the two. It is one of the two set-aside orders the 24 Aug count named, and the shelf rolls for it here. What follows is the note as it stood while the order was pending. <b>PENDING AND NOT YET PRICED, AGREED 24 AUG.</b> 3 unit for CS6-BS-R, with the price still being worked out. It carries no date, draws no stock and raises no receivable, and the total is a placeholder zero rather than a figure anyone agreed: <b>unpriced</b> is what says so, and v345 teaches the desk the difference, so the row reads Pending and Unpriced rather than Pending and Paid. <b>WHAT THE EVIDENCE SAYS THE PRICE SHOULD BE.</b> The ladder asks RM260 at 3 unit, RM86.67 a unit. His own last comparable order was 2.5 unit for RM270 on 03 Aug, RM108 a unit, and the only other 3 unit he has taken was RM285 on 15 Jul, RM95 a unit. So the board asks RM25 less than he paid three weeks ago for half a unit less. The v344 collected floor at 3 unit is RM180.35 and the delivered floor RM193.43, so every one of those figures clears. Amend the total when he settles it.",
+    "mod": "restated on 2026-08-24 from 3 unit / RM0 to 3 unit / RM290",
+    "amend": [
+     {
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 0,
+      "note": "as booked, pending and undated"
+     },
+     {
+      "date": "2026-08-24",
+      "kind": "Modification",
+      "cash": 0,
+      "kg": 0,
+      "note": "restated from RM0/Unpriced to RM290 for 3 unit once the price was agreed on 24 Aug. RM96.67/unit, between the RM86.67 the board asked and the RM108 he paid for 2.5 unit on 03 Aug; 13.3% under his own six-order median of RM111.5, which the order's own history explains, and clear of both the RM180.35 collected and RM218.22 delivered floors at this size. Still pending: nothing paid, nothing moved."
+     },
+     {
+      "date": "2026-08-24",
+      "kind": "Fulfilment",
+      "cash": 290,
+      "kg": 3,
+      "note": "RM290 paid and all 3 unit handed over on 24 Aug, the same day the price was agreed at v358. It settles the order in full: nothing outstanding, no receivable, and it leaves the order book."
+     }
+    ],
+    "date": "2026-08-24",
+    "deliveredOn": "2026-08-24",
+    "paidOn": "2026-08-24",
+    "cost": 44
+   },
+   {
+    "customer": "CS6-BS",
+    "qty": 1,
+    "total": 0,
+    "cash": 0,
+    "deliveredQty": 1,
+    "agreedOn": "2026-08-24",
+    "note": "<b>HANDED OVER ON 24 AUG, AND WHY IT IS FREE IS STILL NOT STATED.</b> The unit went out and no reason came with the entry, so the row folds unflagged and this is what unflagged means: a completed sale of 1 unit at a total of RM0 against RM44 of cost, in the priced set, dragging every averaged rate on the desk. It is the first zero-total completed row on this book. If it was goodwill it belongs out of the priced set, which is his own ruling of v280; if it was an advance on his next reseller award it belongs against the award, and he stands at 0 earned with RM470 of resale still to run before the next one falls due. The two are not the same row and neither is guessed here. What follows is the note as it stood while it was due out. <b>ONE UNIT, FREE, DUE OUT AND NOT YET MOVED.</b> Stated by him on 24 Aug as one of the four units set aside on the shelf, beside the 3 unit due to CS6-BS-R. It carries no date, draws no stock and raises no receivable until it goes. A zero total is paid in full by definition, which is right here: there is nothing to pay. <b>WHY IT IS FREE IS NOT STATED AND IS NOT GUESSED.</b> It is not an earned reseller rebate on this book: CS6-BS has applied all three units he has earned, and the network reads earned 0 with RM470 of resale still to run before the next one. So it is goodwill, or an advance on the next award, and the two are not the same row: a rebate settles an award in kind, goodwill is excluded from priced sales altogether. The flag goes on when it moves and he says which.",
+    "amend": [
+     {
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 0,
+      "note": "as booked, pending and undated"
+     },
+     {
+      "date": "2026-08-24",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 1,
+      "note": "the free unit is handed over on 24 Aug. There is nothing to pay, so nothing is left outstanding and the order closes; 1 unit leaves the shelf."
+     }
+    ],
+    "date": "2026-08-24",
+    "deliveredOn": "2026-08-24",
+    "cost": 44
+   },
+   {
     "customer": "CJ4-BJ",
     "qty": 6.25,
     "total": 450,
@@ -1952,39 +2016,12 @@
     "cancelledOn": "2026-08-24"
    },
    {
-    "customer": "CS6-BS-R",
-    "qty": 3,
-    "total": 290,
+    "customer": "CA4-DAM",
+    "qty": 0.5,
+    "total": 50,
     "cash": 0,
     "deliveredQty": 0,
-    "rev": "R2",
-    "agreedOn": "2026-08-24",
-    "note": "<b>PENDING AND NOT YET PRICED, AGREED 24 AUG.</b> 3 unit for CS6-BS-R, with the price still being worked out. It carries no date, draws no stock and raises no receivable, and the total is a placeholder zero rather than a figure anyone agreed: <b>unpriced</b> is what says so, and v345 teaches the desk the difference, so the row reads Pending and Unpriced rather than Pending and Paid. <b>WHAT THE EVIDENCE SAYS THE PRICE SHOULD BE.</b> The ladder asks RM260 at 3 unit, RM86.67 a unit. His own last comparable order was 2.5 unit for RM270 on 03 Aug, RM108 a unit, and the only other 3 unit he has taken was RM285 on 15 Jul, RM95 a unit. So the board asks RM25 less than he paid three weeks ago for half a unit less. The v344 collected floor at 3 unit is RM180.35 and the delivered floor RM193.43, so every one of those figures clears. Amend the total when he settles it.",
-    "mod": "restated on 2026-08-24 from 3 unit / RM0 to 3 unit / RM290",
-    "amend": [
-     {
-      "kind": "Fulfilment",
-      "cash": 0,
-      "kg": 0,
-      "note": "as booked, pending and undated"
-     },
-     {
-      "date": "2026-08-24",
-      "kind": "Modification",
-      "cash": 0,
-      "kg": 0,
-      "note": "restated from RM0/Unpriced to RM290 for 3 unit once the price was agreed on 24 Aug. RM96.67/unit, between the RM86.67 the board asked and the RM108 he paid for 2.5 unit on 03 Aug; 13.3% under his own six-order median of RM111.5, which the order's own history explains, and clear of both the RM180.35 collected and RM218.22 delivered floors at this size. Still pending: nothing paid, nothing moved."
-     }
-    ]
-   },
-   {
-    "customer": "CS6-BS",
-    "qty": 1,
-    "total": 0,
-    "cash": 0,
-    "deliveredQty": 0,
-    "agreedOn": "2026-08-24",
-    "note": "<b>ONE UNIT, FREE, DUE OUT AND NOT YET MOVED.</b> Stated by him on 24 Aug as one of the four units set aside on the shelf, beside the 3 unit due to CS6-BS-R. It carries no date, draws no stock and raises no receivable until it goes. A zero total is paid in full by definition, which is right here: there is nothing to pay. <b>WHY IT IS FREE IS NOT STATED AND IS NOT GUESSED.</b> It is not an earned reseller rebate on this book: CS6-BS has applied all three units he has earned, and the network reads earned 0 with RM470 of resale still to run before the next one. So it is goodwill, or an advance on the next award, and the two are not the same row: a rebate settles an award in kind, goodwill is excluded from priced sales altogether. The flag goes on when it moves and he says which."
+    "note": "<b>PENDING AND UNDATED: HALF A UNIT AT RM50, AGREED 24 AUG.</b> Nothing paid and nothing moved, so the row carries no date, draws no stock, books no revenue and raises no receivable until it does. <b>RM100 A UNIT IS HIS RATE AND IT HAS NOT MOVED SINCE 12 JUL.</b> This is his twelfth order and the eleventh struck at exactly RM100 a unit; the only order he has ever taken at another rate is 1.5 unit at RM116.67 on 26 Jul, so the price itself is not news. <b>THE FLOOR IS WHAT IS WORTH READING HERE.</b> At half a unit the v358 snapshot puts the collected floor at RM48.87 and the delivered floor at RM98.87, so RM50 clears the collected floor by RM1.13 and falls RM48.87 short of the delivered one. The whole of that gap is the RM50 per-delivery transaction cost, which falls whole on an order however small it is, so a half unit carries it as badly as any size on the board can. The book has recorded since 01 Aug that he always collects, so the collected floor is the one that binds and RM50 clears it. RM1.13 is not much of a margin for error, and it sits beside the fact that this rate has held through a cost basis that has gone RM64 to RM47 to RM56 to RM44: the desk has absorbed every move in the buying rate and he has absorbed none. The next rise takes RM100 a unit under its own floor on the basis he actually trades on. <b>NO COST AND NO MARGIN ARE PRINTED, BECAUSE NOTHING HAS HAPPENED.</b> Were it to move against the RM44 shelf it would return RM28 on RM50, 56%, and that is a projection rather than a figure on the book. Read the Pricing tab for the floor of the day rather than this sentence."
    }
   ],
   "contacts": [
@@ -2273,9 +2310,9 @@
     "note": "Judged a rare one-off. Treat the RM104/unit it paid as an outlier, not as evidence of what wholesale will bear."
    }
   ],
-  "QUEUE_COMMITTED": "2026-08-24T06:09:16.013Z",
+  "QUEUE_COMMITTED": "2026-08-24T08:27:20.916Z",
   "PRICING": {
-   "takenAt": "2026-08-24T07:57:37.097Z",
+   "takenAt": "2026-08-24T13:02:18.012Z",
    "sizes": [
     0.5,
     1,
@@ -2425,9 +2462,9 @@
        "attrib": 1,
        "shrinkRate": 0.05322191868873535,
        "avgDel": {
-        "n": 92,
-        "kg": 234.45,
-        "mean": 2.5484
+        "n": 94,
+        "kg": 238.45,
+        "mean": 2.5367
        }
       },
       "policy": {
@@ -2695,11 +2732,11 @@
      }
     }
    },
-   "v": "v358"
+   "v": "v359"
   },
   "OPEN": {
-   "at": "2026-08-24T07:57:37.124Z",
-   "count": 7,
+   "at": "2026-08-24T13:02:18.045Z",
+   "count": 6,
    "byKey": {
     "CJ4-BJ|undefined|450": {
      "d": null,
@@ -2714,30 +2751,18 @@
      "oweKg": 6.25,
      "key": "CJ4-BJ|undefined|450"
     },
-    "CS6-BS-R|undefined|290": {
+    "CA4-DAM|undefined|50": {
      "d": null,
-     "p": "CS6-BS-R",
+     "p": "CA4-DAM",
      "dir": "S",
-     "q": 3,
-     "t": 290,
+     "q": 0.5,
+     "t": 50,
      "cash": 0,
      "mv": 0,
      "st": "pend",
-     "oweRM": 290,
-     "oweKg": 3,
-     "key": "CS6-BS-R|undefined|290"
-    },
-    "CS6-BS|undefined|0": {
-     "d": null,
-     "p": "CS6-BS",
-     "dir": "S",
-     "q": 1,
-     "t": 0,
-     "cash": 0,
-     "mv": 0,
-     "st": "pend",
-     "oweKg": 1,
-     "key": "CS6-BS|undefined|0"
+     "oweRM": 50,
+     "oweKg": 0.5,
+     "key": "CA4-DAM|undefined|50"
     },
     "CE4-AD|2026-08-20|435": {
      "d": "2026-08-20",
@@ -2793,13 +2818,13 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 21.5,
-     "free": 13.5,
+     "onHand": 17.5,
+     "free": 9.5,
      "owedOut": 8,
-     "coverDays": 3.1,
-     "rate": 4.32,
+     "coverDays": 2.1,
+     "rate": 4.61,
      "owedToYou": 80,
-     "promised": 18.25,
+     "promised": 14.75,
      "short": 0
     },
     "oil": {
@@ -2818,7 +2843,7 @@
     "salt": "2026-08-24",
     "oil": "2026-08-23"
    },
-   "v": "v358"
+   "v": "v359"
   }
  }
 }
