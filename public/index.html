@@ -165,7 +165,7 @@ h2{font-size:17px;font-weight:600;letter-spacing:-.2px;margin:0 0 12px}
 .drf-why{font-size:12.5px;color:var(--ink-2);margin:0 0 10px;overflow-wrap:break-word}
 .drf-f{background:rgba(255,207,122,.10);border:1px solid rgba(255,207,122,.30);
   border-radius:10px;padding:9px 11px;margin:0 0 10px;font-size:12.5px;color:var(--warn)}
-.drf-b{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.drf-b{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px}
 .btn.rej{background:rgba(255,138,138,.10);border-color:rgba(255,138,138,.32);color:var(--bad)}
 .btn.rej:hover{background:rgba(255,138,138,.20)}
 .rfz{background:rgba(255,255,255,.035);border:1px solid var(--brd);border-radius:var(--r-sm);
@@ -175,6 +175,7 @@ h2{font-size:17px;font-weight:600;letter-spacing:-.2px;margin:0 0 12px}
 .rfz .r{font-size:12.5px;color:var(--ink-3);margin:0;overflow-wrap:break-word}
 .rfz .src{display:inline-block;font-size:9.5px;text-transform:uppercase;letter-spacing:.8px;
   font-weight:700;color:var(--bridge);margin:6px 0 0}
+.rfz .btn{margin:9px 0 0}
 
 /* ---- Watch: stat cards --------------------------------------------------- */
 .stats{display:grid;grid-template-columns:1fr 1fr;gap:9px}
@@ -503,6 +504,8 @@ option:checked{background-color:var(--menu-2);font-weight:600}
         </div>
       </div>
       <div class="road" id="road"></div>
+      <div class="msg warn" id="editBanner" hidden><b>Editing a correction.</b> <span id="editBannerText"></span>
+        <button type="button" class="btn" id="editCancel" style="width:auto;padding:6px 12px;margin:8px 0 0">Cancel, start fresh</button></div>
 
       <!-- ---- TRADE ---- -->
       <div id="m-trade">
@@ -722,6 +725,35 @@ function push(){
     if(r.status===401)return {ok:false,why:'key'};
     if(!r.ok)return {ok:false,why:'http '+r.status};
     return {ok:true};
+  }).catch(function(){ return {ok:false,why:'offline'}; });
+}
+/* WITHDRAWING THE ORIGINAL BEFORE SENDING THE CORRECTION, and BLOCKING ON IT rather than
+   holding the correction locally the way an ordinary entry would. An ordinary entry has
+   nothing to conflict with, so queueing it offline and retrying later is safe. A correction
+   does: if the withdrawal silently failed and the correction went up anyway, the original
+   could still be approved and folded, and the correction folded beside it, and the same
+   trade would be on the book twice. So a correction is not queued at all unless the
+   original is confirmed gone first. If it was already APPROVED by the time this runs
+   (decided on another device, say), that is reported rather than overridden: the row is on
+   its way into the ledger and a phone is not where that gets reversed. */
+function rejectDraft(editing){
+  if(!editing||editing.kind!=='draft')return Promise.resolve({ok:true});
+  var url='drafts/'+encodeURIComponent(editing.id)+'/reject';
+  var body=JSON.stringify({by:'phone'});
+  var go=function(){ return fetch(url,{method:'POST',headers:headers(),body:body}); };
+  return go().then(function(r){
+    if(r.status===401&&askWriteKey())return go();
+    return r;
+  }).then(function(r){
+    if(r.ok)return {ok:true};
+    if(r.status===409){
+      return r.json().catch(function(){ return {}; }).then(function(j){
+        return (j&&j.status==='approved')
+          ? {ok:false,why:'approved',msg:'That row was already approved elsewhere, so the correction was not sent. It is on its way into the ledger as it stood.'}
+          : {ok:true};   // already rejected/withdrawn some other way: fine to proceed
+      });
+    }
+    return {ok:false,why:'key',msg:'The write key was not accepted, so the original could not be withdrawn. Nothing was sent.'};
   }).catch(function(){ return {ok:false,why:'offline'}; });
 }
 
@@ -1404,31 +1436,47 @@ function record(){
   if(busy)return;
   var e=buildEntry();
   if(e.why)return msg('bad',esc(e.why));
-  held.push(e); saveHeld(); drawHeld();
+  var was=EDITING;
   busy=true; $('rec').disabled=true; msg('','Recording.');
   /* EVERY MODE THIS FORM CAN SEND IS GATED, so one message covers all of them: trade and
      party since v343, stock (count/loss/lost) since 20 Aug, amend (Fulfilment and
      Cancellation since v322, Restate since v358). The one thing that never travels through
      this road is a party's actual NAME and PLACE, which stays a separate step at the
-     laptop; the code this form sends is what gets drafted and approved. */
-  push().then(function(r){
-    busy=false; $('rec').disabled=false;
-    if(r.ok){
-      msg('ok','Queued. The drafter turns it into a proposed row in a second or two and it comes back to <b>Approve</b> for a tap.');
-      clearForm();
-      /* WAIT FOR THE DRAFTER, DO NOT RACE IT. The first version called loadDrafts() once,
-         right here, and that is too early every time: the Worker answers the queue POST and
-         drafts the row afterwards in waitUntil, so the row does not exist yet when the 200
-         arrives. The panel then said "nothing waiting" and there was nothing to tap, which
-         is exactly what happened on the first real entry, on 20 Aug. Nothing re-fetched
-         until the app was backgrounded and brought back, so the row sat pending and looked
-         like a failure. Poll instead, and stop as soon as something appears. */
-      chaseDraft();
-    } else if(r.why==='key'){
-      msg('bad','The write key was not accepted. The entry is held on this device and will go up when the key is right.');
-    } else {
-      msg('warn','No signal, so it is <b>held on this device</b> and pushed on the next open with a connection.');
+     laptop; the code this form sends is what gets drafted and approved.
+     A CORRECTION WITHDRAWS THE ORIGINAL FIRST, AND WAITS TO KNOW IT WORKED, which is why
+     `held` is not touched until rejectDraft resolves: see the note on that function for why
+     queueing a correction that might land beside its own original is the one shape of
+     mistake worth blocking on rather than just retrying later. */
+  rejectDraft(was).then(function(rr){
+    if(!rr.ok){
+      busy=false; $('rec').disabled=false;
+      msg('bad',esc(rr.msg||'Could not withdraw the original, so nothing was sent. Try again.'));
+      if(rr.why==='approved'){ EDITING=null; $('editBanner').hidden=true; loadDrafts(); }
+      return;
     }
+    held.push(e); saveHeld(); drawHeld();
+    push().then(function(r){
+      busy=false; $('rec').disabled=false;
+      if(r.ok){
+        msg('ok',was
+          ?'Sent as a correction.'+(was.kind==='draft'?' The original is withdrawn and t':' T')+'he drafter reads this one fresh.'
+          :'Queued. The drafter turns it into a proposed row in a second or two and it comes back to <b>Approve</b> for a tap.');
+        EDITING=null; $('editBanner').hidden=true;
+        clearForm();
+        /* WAIT FOR THE DRAFTER, DO NOT RACE IT. The first version called loadDrafts() once,
+           right here, and that is too early every time: the Worker answers the queue POST and
+           drafts the row afterwards in waitUntil, so the row does not exist yet when the 200
+           arrives. The panel then said "nothing waiting" and there was nothing to tap, which
+           is exactly what happened on the first real entry, on 20 Aug. Nothing re-fetched
+           until the app was backgrounded and brought back, so the row sat pending and looked
+           like a failure. Poll instead, and stop as soon as something appears. */
+        chaseDraft();
+      } else if(r.why==='key'){
+        msg('bad','The write key was not accepted. The entry is held on this device and will go up when the key is right.');
+      } else {
+        msg('warn','No signal, so it is <b>held on this device</b> and pushed on the next open with a connection.');
+      }
+    });
   });
 }
 
@@ -1643,6 +1691,10 @@ function poll(){
    the drafter wrote them. A second opinion computed here would be a second pricing
    engine, and two engines drift. */
 var DRAFTS=[],REFUSED=[],apprBusy={};
+/* null, or {kind:'draft'|'refused', id:'<the original entry's own at>'}. Set by editEntry,
+   read by record() to decide whether a submit is a fresh entry or a correction, cleared on
+   submit, on cancel and whenever the Record tab is left by hand. */
+var EDITING=null;
 function money(n){ if(n==null||isNaN(n))return '-';
   return 'RM '+Number(n).toLocaleString('en-MY',{maximumFractionDigits:2}); }
 /* READING THE DRAFTS NEEDS THE KEY SINCE 20 Aug 2026, because a draft carries the row's COST
@@ -1675,6 +1727,81 @@ function loadDrafts(){
     .then(function(j){ DRAFTS=(j&&j.drafts)||[]; REFUSED=(j&&j.refused)||[]; drawDrafts(); })
     .catch(function(){ DRAFTS=[]; REFUSED=[]; drawDrafts(); });
 }
+/* One button row for every draft card. Edit sits between the two decisions rather than
+   being a third kind of card, because it is not a decision: it withdraws this draft and
+   sends a corrected entry in its place, and the drafter decides the correction on its own
+   merits, with a fresh cost, margin and set of flags. Nothing here recomputes anything. */
+function drfButtons(){
+  return '<div class="drf-b"><button class="btn rej" data-a="reject">Reject</button>'
+    +'<button class="btn" data-a="edit">Edit</button>'
+    +'<button class="btn primary" data-a="approve">Approve</button></div>';
+}
+/* WHICH ENTRIES THE FORM CAN HONESTLY REBUILD. Most refusals reachable from a phone-typed
+   entry cannot recur (the phone validates a quantity, a reason, a date before it ever
+   queues), so the one that matters is the entry carrying assoc/stream/downstream/orderCode/
+   linkTo: the Trade form has no fields for any of those, so "editing" one and resending it
+   through Trade would silently drop what made it an associate sale or a downsell rather than
+   correct it. Excluded rather than offered and wrong. Linked and Rewarded amendments have no
+   button on this form at all and stay excluded for the same reason. */
+function editableMode(e){
+  var p=e&&e.payload; if(!p)return false;
+  if(p.mode==='new')return !(p.assoc||p.stream||p.downstream||p.orderCode||p.linkTo);
+  if(p.mode==='amend')return p.kind==='Fulfilment'||p.kind==='Cancellation'||p.kind==='Modification';
+  if(p.mode==='count'||p.mode==='loss'||p.mode==='lost')return true;
+  if(p.mode==='addid')return true;
+  return false;
+}
+/* EDIT AND RESEND, NOT EDIT IN PLACE. The row on screen (cost, margin, flags) is the
+   drafter's own computation and is never hand-edited: doing that would make this app a
+   second pricing engine, which is exactly what it refuses to be everywhere else. What is
+   edited is the TYPED ENTRY underneath it, pre-filled into the same form a fresh entry
+   uses, so the correction goes back through the drafter and earns its own fresh cost,
+   margin and flags rather than inheriting the old ones unread. */
+function editEntry(kind,id){
+  var src=(kind==='draft'?DRAFTS:REFUSED).filter(function(x){ return x.id===id; })[0];
+  var e=src&&src.entry, p=e&&e.payload;
+  if(!p||!editableMode(e)){ msg('bad','Nothing here to reopen: this entry carries no shape the form on this phone can rebuild.'); show('p-add'); return; }
+  var missingTarget=false;
+  EDITING={kind:kind,id:id};
+  if(p.mode==='new'){
+    MODE='trade'; dir=p.direction==='BUY'?'BUY':'SELL'; prod=p.product||'salt';
+  } else if(p.mode==='amend'){
+    MODE='amend';
+    var i=(D&&D.open||[]).findIndex(function(o){ return o.key===p.orderKey; });
+    OPENSEL=i>=0?i:null; missingTarget=(i<0);
+    AKIND=p.kind==='Cancellation'?'cancel':p.kind==='Modification'?'restate'
+      :((+p.cash||0)>0.005&&(+p.kg||0)>0.005)?'done':((+p.cash||0)>0.005)?'paid':'deliv';
+  } else if(p.mode==='count'||p.mode==='loss'||p.mode==='lost'){
+    MODE='stock'; SKIND=p.mode;
+  } else if(p.mode==='addid'){
+    MODE='party'; PKIND=p.kind||'customer';
+  }
+  drawModes(); drawParties(); drawProds(); drawOpens(); drawAKind(); drawSKind(); drawPKind(); drawRoad();
+  if(p.mode==='new'){
+    $('f-paid').checked=false; $('f-deliv').checked=false;
+    $('f-cash').disabled=false; $('f-kg').disabled=false;
+    $('f-party').value=p.party||''; $('f-qty').value=n2(p.qty); $('f-total').value=n2(p.total);
+    $('f-cash').value=n2(p.cash||0); $('f-kg').value=n2(p.kg||0);
+    $('f-date').value=p.date||today(); $('f-note').value=p.note||'';
+  } else if(p.mode==='amend'&&!missingTarget){
+    $('a-date').value=p.date||today(); $('a-note').value=p.note||'';
+    if(AKIND==='restate'){ $('a-qty').value=n2(p.newQty); $('a-total').value=n2(p.newTotal); }
+    else if(AKIND!=='cancel'){ $('a-cash').value=n2(p.cash||0); $('a-kg').value=n2(p.kg||0); }
+  } else if(p.mode==='count'||p.mode==='loss'||p.mode==='lost'){
+    $('s-prod').value=p.product||'salt'; $('s-qty').value=n2(p.qty);
+    $('s-date').value=p.date||today(); $('s-why').value=p.why||'';
+    if(p.mode==='lost'){ $('s-rm').value=p.total!=null?n2(p.total):''; $('s-party').value=p.party||''; }
+  } else if(p.mode==='addid'){
+    $('p-code').value=p.code||''; $('p-parent').value=p.parent||''; $('p-note').value=p.note||'';
+  }
+  $('editBanner').hidden=false;
+  $('editBannerText').textContent=missingTarget
+    ?'The order this amends is no longer open (settled, cancelled or folded since), so nothing is pre-filled. Pick from what is open now, or cancel.'
+    :(kind==='draft'?'Submitting sends the correction and withdraws the original.'
+      :'Refused: '+(src.why||'see above')+'. Submitting sends the correction fresh.');
+  preview();
+  show('p-add');
+}
 /* The refused list. Drawn on every pass, including the one where there is nothing to
    approve, because "nothing waiting" and "nothing waiting but three are in hand on the
    laptop" are different states and only one means you should stop thinking about it. */
@@ -1684,10 +1811,21 @@ function drawRefused(){
   wrap.hidden=false;
   box.innerHTML=REFUSED.map(function(r){
     var e=r.entry||{}, line=e.raw||((e.type||'Entry')+' '+(r.party||''));
-    return '<div class="rfz"><p class="w">'+esc(line)+'</p>'
+    /* NO APPROVE OR REJECT HERE, on purpose: a refused entry has no decision column, so
+       there is nothing to decide. Edit is not a decision either. It reads what was typed,
+       lets it be corrected, and queues the correction as a fresh entry; the drafter reads
+       that on its own merits, exactly as it would anything else typed fresh. The old
+       refused row is left alone and self-cleans once the correction is folded, the same
+       way it always has. */
+    return '<div class="rfz" data-id="'+esc(r.id)+'"><p class="w">'+esc(line)+'</p>'
       +'<p class="r">'+esc(r.why||'')+'</p>'
-      +'<p class="src">seen by the '+esc(r.source||'drafter')+'</p></div>';
+      +'<p class="src">seen by the '+esc(r.source||'drafter')+'</p>'
+      +(editableMode(e)?'<button type="button" class="btn" data-a="edit">Edit and resend</button>':'')
+      +'</div>';
   }).join('');
+  Array.prototype.forEach.call(box.querySelectorAll('button[data-a="edit"]'),function(b){
+    b.addEventListener('click',function(){ editEntry('refused',b.closest('[data-id]').getAttribute('data-id')); });
+  });
 }
 function drawDrafts(){
   var box=$('appr'),n=$('apprN');
@@ -1730,8 +1868,7 @@ function drawDrafts(){
         +'</div>'
         +(d.flags||[]).map(function(f){ return '<div class="drf-f">'+esc(f)+'</div>'; }).join('')
         +'<p class="drf-why">'+esc(d.reasoning||'')+'</p>'
-        +'<div class="drf-b"><button class="btn rej" data-a="reject">Reject</button>'
-        +'<button class="btn primary" data-a="approve">Approve</button></div></div>';
+        +drfButtons()+'</div>';
     }
     if(d.collection==='loss'||d.collection==='lostDemand'){
       var isLost=d.collection==='lostDemand';
@@ -1748,8 +1885,7 @@ function drawDrafts(){
         +(isLost?'<p class="drf-why"><b>Why:</b> '+esc(r.why||'-')+'</p>':'')
         +(d.flags||[]).map(function(f){ return '<div class="drf-f">'+esc(f)+'</div>'; }).join('')
         +'<p class="drf-why">'+esc(d.reasoning||'')+'</p>'
-        +'<div class="drf-b"><button class="btn rej" data-a="reject">Reject</button>'
-        +'<button class="btn primary" data-a="approve">Approve</button></div></div>';
+        +drfButtons()+'</div>';
     }
     if(d.collection==='roster'){
       return '<div class="drf" data-id="'+esc(d.id)+'">'
@@ -1761,8 +1897,7 @@ function drawDrafts(){
         +'</div>'
         +(d.flags||[]).map(function(f){ return '<div class="drf-f">'+esc(f)+'</div>'; }).join('')
         +'<p class="drf-why">'+esc(d.reasoning||'')+'</p>'
-        +'<div class="drf-b"><button class="btn rej" data-a="reject">Reject</button>'
-        +'<button class="btn primary" data-a="approve">Approve</button></div></div>';
+        +drfButtons()+'</div>';
     }
     if(d.amends){
       var e=(d.entry&&d.entry.payload)||{};
@@ -1780,8 +1915,7 @@ function drawDrafts(){
         +'</div>'
         +(d.flags||[]).map(function(f){ return '<div class="drf-f">'+esc(f)+'</div>'; }).join('')
         +'<p class="drf-why">'+esc(d.reasoning||'')+'</p>'
-        +'<div class="drf-b"><button class="btn rej" data-a="reject">Reject</button>'
-        +'<button class="btn primary" data-a="approve">Approve</button></div></div>';
+        +drfButtons()+'</div>';
     }
     /* Banded against the v300 ladder, converted to margin on price so it is compared
        like with like: a 25% markup on cost is a 20% margin, 50% is 33.3%, 75% is 42.9%.
@@ -1806,12 +1940,12 @@ function drawDrafts(){
       +'</div>'
       +(d.flags||[]).map(function(f){ return '<div class="drf-f">'+esc(f)+'</div>'; }).join('')
       +'<p class="drf-why">'+esc(d.reasoning||'')+'</p>'
-      +'<div class="drf-b"><button class="btn rej" data-a="reject">Reject</button>'
-      +'<button class="btn primary" data-a="approve">Approve</button></div></div>';
+      +drfButtons()+'</div>';
   }).join('');
   Array.prototype.forEach.call(box.querySelectorAll('button[data-a]'),function(b){
     b.addEventListener('click',function(){
-      decide(b.parentNode.parentNode.getAttribute('data-id'),b.getAttribute('data-a'),b);
+      var id=b.closest('[data-id]').getAttribute('data-id'), action=b.getAttribute('data-a');
+      if(action==='edit')editEntry('draft',id); else decide(id,action,b);
     });
   });
 }
@@ -1970,7 +2104,19 @@ TABS.forEach(function(t,i){ $(t[0]).addEventListener('click',function(){ show(i)
 
 /* ---- wiring -------------------------------------------------------------- */
 Array.prototype.forEach.call($('modes').querySelectorAll('button'),function(b){
-  b.addEventListener('click',function(){ MODE=b.getAttribute('data-m'); drawModes(); preview(); });
+  /* CHOOSING A DIFFERENT MODE BY HAND ENDS THE EDIT, because editEntry sets MODE to match
+     the entry it opened and a tap here means that pairing is no longer wanted: staying
+     "in edit" while the form now holds an unrelated Trade or Stock entry would submit that
+     entry as if it corrected the old draft. Switching AKIND/SKIND/PKIND within the same
+     mode stays inside the edit; only leaving the mode itself cancels it. */
+  b.addEventListener('click',function(){
+    MODE=b.getAttribute('data-m');
+    if(EDITING){ EDITING=null; $('editBanner').hidden=true; }
+    drawModes(); preview();
+  });
+});
+$('editCancel').addEventListener('click',function(){
+  EDITING=null; $('editBanner').hidden=true; clearForm();
 });
 Array.prototype.forEach.call($('skinds').querySelectorAll('button'),function(b){
   /* THE REASON IS CLEARED WHEN THE KIND CHANGES. "Spillage" is a reason for a loss and

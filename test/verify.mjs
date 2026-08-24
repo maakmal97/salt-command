@@ -1071,7 +1071,13 @@ section("Refused entries — seen, not approvable");
   ok(/function drawRefused/.test(app), "the app draws them");
   ok(/id="refbox"/.test(app), "in their own panel");
   const seg = app.slice(app.indexOf("function drawRefused"), app.indexOf("function drawDrafts"));
-  ok(!/data-a=|Approve|Reject/.test(seg), "the refused panel renders no decision buttons");
+  ok(!/Approve|Reject|data-a="approve"|data-a="reject"/.test(seg),
+    "the refused panel renders no decision buttons: no route to approve or reject a refused entry");
+  /* EDIT IS NOT A DECISION, and the test above must not be read as forbidding it. It reads
+     the entry, lets it be corrected, and queues the correction as a fresh entry for the
+     drafter to judge on its own; the refused row itself is never approved, only left to
+     self-clean once the correction is folded, exactly as it always has. */
+  ok(/data-a="edit"/.test(seg), "it does offer an edit, which queues a correction rather than deciding this row");
   ok(/n\.hidden=!DRAFTS\.length/.test(app), "the tab badge counts only what a tap can clear");
 }
 
@@ -1334,6 +1340,75 @@ section("App — every mode this form sends goes through the gate");
   ok(!/not drafted and not approvable/.test(app), "the confirmation toast no longer claims any mode is unapprovable");
   const recordFn = app.match(/function record\(\)\{[\s\S]*?\n\}/)[0];
   ok(/Queued\. The drafter turns it into a proposed row/.test(recordFn), "it always says the drafter picks the entry up");
+}
+
+/* ---- 20. Editing an unapproved entry: correction, not a second engine ------------ */
+section("App — an unapproved entry can be corrected and resent");
+{
+  const app = readFileSync(join(REPO, "public", "index.html"), "utf8");
+  /* WHAT THIS IS AND WHAT IT IS DELIBERATELY NOT. Editing never touches the row on
+     screen (cost, margin, flags): that is the drafter's own computation, and hand-editing
+     it would make the phone a second pricing engine, which is the one thing this whole app
+     refuses to become anywhere else. Instead it reopens the TYPED ENTRY underneath, in the
+     same form a fresh entry uses, and the correction is sent as a fresh entry the drafter
+     judges on its own merits. */
+  ok(/function editEntry\(kind,id\)/.test(app), "there is a single edit-and-resend path for both drafts and refused entries");
+  ok(!/\.row\.(qty|total|cost)\s*=/.test(app), "a draft's computed row is never assigned to: nothing here hand-edits the drafter's own figures");
+
+  /* EVERY DRAFT CARD OFFERS IT, and it sits between the two decisions because it is not one:
+     it withdraws the draft and queues a correction, and does not itself decide anything. */
+  const drfB = app.match(/function drfButtons\(\)\{[\s\S]*?\n\}/)[0];
+  ok(/data-a="reject"/.test(drfB) && /data-a="edit"/.test(drfB) && /data-a="approve"/.test(drfB),
+    "the one button row used by every draft card carries all three");
+  const drawDraftsFn = app.slice(app.indexOf("function drawDrafts"), app.indexOf("function decide"));
+  const cardCount = (drawDraftsFn.match(/drfButtons\(\)/g) || []).length;
+  ok(cardCount === 5, `all five draft card shapes (count, loss/lostDemand, roster, amendment, trade) use it, found ${cardCount}`);
+  ok(!/<div class="drf-b"><button class="btn rej"/.test(drawDraftsFn), "no card still hand-writes its own two-button row");
+
+  /* THE ONE THING THE FORM CANNOT HONESTLY REBUILD. The Trade form has no field for
+     assoc/stream/downstream/orderCode/linkTo, so editing and resending an entry that
+     carried one would silently drop what made it an associate sale or a downsell. Excluded
+     rather than offered and wrong. Linked and Rewarded amendments have no button on this
+     form at all and are excluded the same way. */
+  const editableFn = app.match(/function editableMode\(e\)\{[\s\S]*?\n\}/)[0];
+  ok(/assoc\|\|p\.stream\|\|p\.downstream\|\|p\.orderCode\|\|p\.linkTo/.test(editableFn),
+    "a 'new' entry carrying associate, stream or link fields is not offered for edit");
+  ok(/'Fulfilment'.*'Cancellation'.*'Modification'/.test(editableFn.replace(/\s/g, "")),
+    "an amendment is editable only as Fulfilment, Cancellation or Modification: Linked and Rewarded stay excluded");
+
+  /* THE REFUSED PANEL: edit only where it can be honest about it, never a decision button. */
+  const refusedFn = app.slice(app.indexOf("function drawRefused"), app.indexOf("function drawDrafts"));
+  ok(/editableMode\(e\)/.test(refusedFn), "a refused card offers edit only when the mode is one the form can rebuild");
+  ok(!/data-a="approve"|data-a="reject"/.test(refusedFn), "and never an approve or reject: a refused row still has no decision column");
+
+  /* AN AMENDMENT'S TARGET MAY HAVE MOVED ON. The order it amends might have settled,
+     cancelled or folded since the entry was typed, and pre-filling stale terms against a
+     row that no longer means what it did would be worse than not pre-filling at all. */
+  ok(/findIndex\(function\(o\)\{ return o\.key===p\.orderKey; \}\)/.test(app),
+    "the target order is re-found by key against the LIVE open list, not assumed still there");
+  ok(/no longer open/.test(app), "and says so plainly when it is not, rather than pre-filling stale terms");
+
+  /* A CORRECTION IS BLOCKED, NOT HELD, IF THE WITHDRAWAL CANNOT BE CONFIRMED. An ordinary
+     entry has nothing to conflict with, so holding it offline and retrying later is safe.
+     A correction does: sending it without knowing the original is gone risks the same
+     trade landing on the book twice, once as approved-then-folded and once as the
+     correction folded beside it. */
+  const rejectFn = app.match(/function rejectDraft\(editing\)\{[\s\S]*?\n\}/)[0];
+  ok(/editing\.kind!=='draft'.*Promise\.resolve\(\{ok:true\}\)/.test(rejectFn.replace(/\s/g, "")),
+    "editing a refused entry has nothing to withdraw, so it is a no-op that always proceeds");
+  ok(/status==='approved'/.test(rejectFn), "but a draft already approved elsewhere is recognised and not silently overridden");
+
+  const recordFn2 = app.match(/function record\(\)\{[\s\S]*?\n\}/)[0];
+  ok(/rejectDraft\(was\)/.test(recordFn2), "record() withdraws the original (a no-op unless one is being edited) before it ever pushes the correction");
+  ok(/held\.push\(e\)/.test(recordFn2.slice(recordFn2.indexOf("rejectDraft"))),
+    "the entry is not held for later until the withdrawal is confirmed, so a failed one cannot leave both versions in flight");
+  ok(/EDITING=null/.test(recordFn2), "a successful submit clears the edit state");
+
+  /* CHOOSING A DIFFERENT TOP-LEVEL MODE BY HAND ENDS THE EDIT, because the pairing between
+     what is open on screen and the draft it corrects would otherwise silently break. */
+  ok(/if\(EDITING\)\{ EDITING=null; \$\('editBanner'\)\.hidden=true; \}/.test(app),
+    "switching Trade/Amend/Stock/Add ID by hand cancels an edit in progress rather than orphaning it");
+  ok(app.includes("id=\"editCancel\""), "and there is an explicit way to cancel one without switching modes");
 }
 
 /* ---- the engine ------------------------------------------------------------------ */
