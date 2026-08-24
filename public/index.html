@@ -352,15 +352,14 @@ option:checked{background-color:var(--menu-2);font-weight:600}
 .prev{background:var(--well);border:1px solid var(--brd);border-radius:var(--r-sm);
   padding:11px 13px;font-family:var(--mono);font-size:11.5px;color:var(--ink-2);
   margin:0 0 12px;overflow-wrap:break-word}
-/* WHICH ROAD THE ENTRY TAKES. A trade is drafted and comes back for a tap; everything
-   else is refused by the drafter by design and waits for a person at the laptop. Saying
-   so on the form is the difference between a queue that looks broken and one you
-   understand. */
+/* WHICH ROAD THE ENTRY TAKES. Every mode this form can send goes through the gate: drafted,
+   shown on Approve, folded by a tap. Saying so on the form is the difference between a
+   queue that looks broken and one you understand. The .person variant this class once
+   needed is gone with the last mode that used it (see ROADS above). */
 .road{border-radius:var(--r-sm);padding:10px 13px;font-size:12.5px;margin:0 0 12px;
   border:1px solid var(--brd);background:rgba(255,255,255,.05);color:var(--ink-2)}
 .road b{color:var(--ink)}
 .road.gate{background:rgba(110,231,168,.09);border-color:rgba(110,231,168,.26)}
-.road.person{background:rgba(179,166,245,.10);border-color:rgba(179,166,245,.28)}
 .msg{border-radius:var(--r-sm);padding:11px 14px;font-size:13.5px;margin:11px 0 0;
   border:1px solid var(--brd);background:rgba(255,255,255,.05)}
 .msg.ok{background:rgba(110,231,168,.10);border-color:rgba(110,231,168,.28);color:var(--good)}
@@ -1070,15 +1069,19 @@ function drawRecon(){
     +'<div class="c d '+cls+'"><p class="k">Drift</p><p class="v">'
     +(drift==null?'&mdash;':(drift>0?'+':'')+esc(n2(drift)))+'</p></div>';
 }
-/* WHICH ROAD THE ENTRY TAKES. Only a new trade is drafted into a row and comes back
-   here for a tap. Every other mode is refused by the drafter BY DESIGN, because which
-   row an amendment amends, whose bucket a party belongs in and what a count means are
-   judgements, and it is left for a person at the laptop. Saying so on the form is the
-   difference between a queue that looks broken and one you understand. */
+/* WHICH ROAD THE ENTRY TAKES, AND WHY THIS ONCE SAID SOMETHING ELSE. Only a new trade was
+   drafted into a row when this form was written; every other mode was refused by the
+   drafter BY DESIGN and left for a person at the laptop. That stopped being true mode by
+   mode as the drafter grew: party (registration) and stock (count, loss, lost sale) from
+   20 Aug, amend (Fulfilment and Cancellation) from v322, the rest of amend (Restate, a
+   Modification) from v358. EVERY MODE THIS FORM CAN SEND NOW GOES THROUGH THE GATE. The one
+   thing that still does not travel is a party's actual NAME and PLACE: this form sends only
+   a code, and the name is typed into the directory separately, at the laptop, because
+   salt_bio.json stays local by policy and nothing here can change that. */
 var ROADS={
   trade:['gate','<b>This goes through the gate.</b> The drafter turns it into a proposed row with its cost and margin, and it comes back to the Approve tab for a tap. Nothing reaches the ledger until you decide.'],
   amend:['gate','<b>This goes through the gate.</b> Fulfilment, Cancellation and Restate all name the order they target and come back to the Approve tab for a tap.'],
-  stock:['person','<b>This is left for a person.</b> A count, a loss and a lost sale move stock without being trades, so the drafter refuses them. It is queued and folded at the laptop. A count always wins over the ledger when it is.'],
+  stock:['gate','<b>This goes through the gate.</b> A count, a loss and a lost sale each show the fact against what the book already says (the drift, the size against the shelf), and come back to the Approve tab for a tap. A count always wins over the ledger when it is.'],
   party:['gate','<b>This goes through the gate.</b> The drafter writes the registration up, checks the code is not already on the roster, and it comes back to the Approve tab for a tap. The name and the place are typed into the directory at the laptop and never travel.']
 };
 function drawRoad(){
@@ -1403,17 +1406,15 @@ function record(){
   if(e.why)return msg('bad',esc(e.why));
   held.push(e); saveHeld(); drawHeld();
   busy=true; $('rec').disabled=true; msg('','Recording.');
-  /* AMEND IS GATED TOO, FROM TODAY: a Restate carries the new terms exactly as a Fulfilment
-     carries cash and kg, so it drafts and comes back for a tap the same way. Stock and party
-     modes are unchanged here; that message is a separate, pre-existing question, not this
-     one. */
-  var gated=(MODE==='trade'||MODE==='amend');
+  /* EVERY MODE THIS FORM CAN SEND IS GATED, so one message covers all of them: trade and
+     party since v343, stock (count/loss/lost) since 20 Aug, amend (Fulfilment and
+     Cancellation since v322, Restate since v358). The one thing that never travels through
+     this road is a party's actual NAME and PLACE, which stays a separate step at the
+     laptop; the code this form sends is what gets drafted and approved. */
   push().then(function(r){
     busy=false; $('rec').disabled=false;
     if(r.ok){
-      msg('ok',gated
-        ? 'Queued. The drafter turns it into a row in a second or two and it comes back to <b>Approve</b> for a tap.'
-        : 'Queued. It is <b>not drafted and not approvable</b>, by design: it shows under Approve as already in hand and is folded at the laptop.');
+      msg('ok','Queued. The drafter turns it into a proposed row in a second or two and it comes back to <b>Approve</b> for a tap.');
       clearForm();
       /* WAIT FOR THE DRAFTER, DO NOT RACE IT. The first version called loadDrafts() once,
          right here, and that is too early every time: the Worker answers the queue POST and

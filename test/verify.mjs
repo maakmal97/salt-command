@@ -1307,6 +1307,35 @@ section("App — a rate is checked where every entry passes");
     "and the form says a restatement goes through the gate, not that it is left for a person");
 }
 
+/* ---- 19. Stock and party stopped being left for a person a while before the copy said so - */
+section("App — every mode this form sends goes through the gate");
+{
+  const app = readFileSync(join(REPO, "public", "index.html"), "utf8");
+  /* THE FAULT. A count, a loss, a lost sale and a registration have been drafted by
+     src/drafter.js and approvable from the phone's Approve tab since 20 Aug 2026 (party) and
+     20 Aug 2026 (stock) respectively, proved by "a count is drafted, not refused" and
+     "a registration is drafted" in the Drafter section above. The phone's own copy did not
+     agree: it kept saying these were refused by design and folded at the laptop, which is
+     what the v358 Modification fix went looking for elsewhere and found here too. */
+  ok(!/folded at the laptop/.test(app), "no road claims a mode is folded at the laptop; every mode is drafted");
+  ok(!/road person|'person'/.test(app), "the person road is gone from the JS along with the last mode that used it");
+
+  /* the ROADS table itself: every entry now says gate */
+  const roadsBlock = app.match(/var ROADS=\{[\s\S]*?\};/)[0];
+  ok(/stock:\['gate'/.test(roadsBlock), "the stock road (count, loss, lost sale) says gate, not person");
+  ok(/trade:\['gate'/.test(roadsBlock) && /amend:\['gate'/.test(roadsBlock) && /party:\['gate'/.test(roadsBlock),
+    "and so does every other road: nothing left on this form is refused by design");
+
+  /* the one thing that still does not travel: a party's actual name and place */
+  ok(/typed into the directory at the laptop and never travel/.test(roadsBlock),
+    "the party road still says the name and place are a separate, laptop-side step: that part is still true");
+
+  /* the post-submit toast no longer branches on mode: every mode gets the same gate message */
+  ok(!/not drafted and not approvable/.test(app), "the confirmation toast no longer claims any mode is unapprovable");
+  const recordFn = app.match(/function record\(\)\{[\s\S]*?\n\}/)[0];
+  ok(/Queued\. The drafter turns it into a proposed row/.test(recordFn), "it always says the drafter picks the entry up");
+}
+
 /* ---- the engine ------------------------------------------------------------------ */
 section("Engine — one definition, out of the desk (v337)");
 {
