@@ -240,19 +240,29 @@ export function draftRow(entry, book) {
    * tab started making you TAP a specific open order and sending the desk's own ovKey for it:
    * the judgement is now made by the person making it, before the entry is ever queued.
    *
-   * ONLY FULFILMENT AND CANCELLATION. Those are mechanical once the row is named. Modification,
-   * Linked and Rewarded are judgements about WHAT changed rather than WHICH row, and they stay
-   * with a person.
+   * FULFILMENT, CANCELLATION AND, FROM 24 Aug 2026, MODIFICATION. All three are mechanical once
+   * the row is named: a Modification's payload carries newQty and newTotal exactly as a
+   * Fulfilment's carries cash and kg, so "what changed" is no longer free text either, it is a
+   * figure typed against a specific tapped order. What is left to judge is whether the NEW
+   * figure is sound, and that is exactly what flagsFor already answers for a brand new row: the
+   * rate against the product's range, against the party's own history, against the live floor,
+   * below cost. Running the same comparisons on a restated rate is what closed the 20 Aug gap
+   * (docs/CLOUD_FOLD.md and the changelog record it): a Modification that restated an order to
+   * 5 unit for RM50, RM10 a unit against salt that has never gone below RM46, reached the fold
+   * with nothing beside it but a person reading it, because a Modification did not go through
+   * the gate. It does now. Linked and Rewarded stay refused: neither has a phone form that
+   * captures a figure to check, only a judgement about which other row or which award applies.
    *
    * IT DOES NOT COMPUTE THE RESULT, and that is the important restraint. ovAmend in the master
    * is layered, careful logic: a pending lot that stops being pending, a partial receipt, the
    * inTransit flag that exists so a deposit cannot walk a whole lot into the cost basis. A
    * second copy of it here would drift from the first the day either changed. So what is
    * drafted, and therefore what is approved, is the IDENTIFICATION and the FIGURES: is this the
-   * right row, and is that what happened to it. The fold applies it where the desk is. */
+   * right row, and is that what happened to it (or, for a Modification, what it would become).
+   * The fold applies it where the desk is. */
   if (pay.mode === "amend") {
     const kind = String(pay.kind || "");
-    if (kind !== "Fulfilment" && kind !== "Cancellation") {
+    if (kind !== "Fulfilment" && kind !== "Cancellation" && kind !== "Modification") {
       return { skip: `this is a ${kind || "nameless"} amendment, and what changed is a judgement rather than which row, so it is left for a person` };
     }
     const key = pay.orderKey;
@@ -266,6 +276,58 @@ export function draftRow(entry, book) {
       return { skip: `no OPEN order on the book matches ${key}. It has been settled or cancelled since the phone listed it, or it was folded already` };
     }
     const dir2 = t.dir === "B" ? "BUY" : "SELL";
+
+    /* A MODIFICATION IS A DIFFERENT SHAPE FROM A FULFILMENT: it carries newQty/newTotal rather
+       than cash/kg, and nothing moves, so it takes its own branch rather than forcing the
+       cash/moved reading below to mean two different things. */
+    if (kind === "Modification") {
+      const newQty = isNum(pay.newQty) ? +pay.newQty : null;
+      const newTotal = isNum(pay.newTotal) ? +pay.newTotal : null;
+      if (newQty == null || newTotal == null || newQty <= 0) {
+        return { skip: "this modification carries no new quantity and total to restate to" };
+      }
+      const isSale = dir2 === "SELL";
+      const product = t.pr || "salt";
+      const priced = isSale ? costFor(book, product) : { cost: null, mayBlend: false };
+      /* THE SAME COMPARISONS A NEW ROW GETS, run on the RESTATED rate rather than a fresh one.
+         This is the check that was missing on 17 Aug: nothing put the new RM10/unit beside the
+         product's RM46-and-up range before it reached the fold. flagsFor is the one place those
+         comparisons live, so it is reused rather than re-written here. */
+      const synth = { qty: newQty, total: newTotal, cash: t.cash, deliveredQty: t.mv || 0 };
+      synth[isSale ? "customer" : "supplier"] = t.p;
+      if (product !== "salt") synth.product = product;
+      const flags = isSale ? flagsFor(entry, synth, book, priced) : [];
+      if (newTotal < (t.cash || 0) - 0.005) {
+        flags.push(`The new total of RM ${round(newTotal)} is less than the RM ${round(t.cash || 0)} already paid against this order.`);
+      }
+      if (newQty < (t.mv || 0) - 0.005) {
+        flags.push(`The new quantity of ${round(newQty)} unit is less than the ${round(t.mv || 0)} unit already moved against this order.`);
+      }
+      if (open.v && book.version && open.v !== book.version) {
+        flags.push(`The open-order snapshot was taken at ${open.v} but the mirror is at ${book.version}, so the terms it is restating from may be stale.`);
+      }
+      const rate = newQty > 0 ? newTotal / newQty : null;
+      const reasoning = [
+        `Modification against ${t.p}'s ${isSale ? "order" : "lot"} of ${round(t.q)} unit for RM ${round(t.t)}${t.d ? ` agreed ${t.d}` : ", pending and undated"}.`,
+        `Restates it to ${round(newQty)} unit for RM ${round(newTotal)}, RM ${round(rate)}/unit.`,
+        (isSale && priced.cost != null) ? `Costed at RM ${round(priced.cost)}/unit from ${priced.source}, so ${round((newTotal - priced.cost * newQty) / newTotal * 100, 1)}% margin on the new terms.` : "",
+        "The row itself is NOT recomputed here: ovAmend in the master applies it, so there is one definition of what a modification does rather than two.",
+      ].filter(Boolean).join(" ");
+
+      /* Shaped like a row so the Approve panel needs no special case for what it shows: the
+         TARGET as it stands today, WITH the proposed new figures beside it. */
+      const row = { qty: t.q, total: t.t, cash: t.cash, date: t.d || null, newQty: round(newQty), newTotal: round(newTotal) };
+      row[isSale ? "customer" : "supplier"] = t.p;
+      if (t.pr) row.product = t.pr;
+
+      return {
+        collection: isSale ? "sales" : "purchases",
+        row, reasoning, flags,
+        amends: key,
+        amendKind: kind,
+      };
+    }
+
     const cash = isNum(pay.cash) ? +pay.cash : 0;
     const moved = isNum(pay.kg) ? +pay.kg : 0;
     const when = pay.date || null;

@@ -42,10 +42,12 @@ tool in `tools/`, the test suite, and `master/_to_fold.json` if there was anythi
    do (append, fulfil, count, register) and what will leave or land on the shelf, refuses anything
    it must refuse, and writes **`master/_fold_notes.json`**, a skeleton with one entry per row.
 
-2. **A refusal folds nothing.** The tool refuses a Modification, Linked or Rewarded amendment
-   (what changed is a judgement), an amendment whose key matches no row or more than one, a
-   registration already on the roster, and a new row that would replay one already on the book
-   (same party, date, size and total). If anything is refused, report it and stop; do not edit the
+2. **A refusal folds nothing.** The tool refuses a Linked or Rewarded amendment (neither carries
+   a figure to check, only a judgement about which other row or which award applies; a
+   Modification is mechanical from 24 Aug 2026, see below), an amendment whose key matches no
+   row or more than one, a registration already on the roster, and a new row that would replay
+   one already on the book (same party, date, size and total). If anything is refused, report it
+   and stop; do not edit the
    batch to get past it. A day with no commit is cheap and a wrong row is not.
 
 3. **Fill in `master/_fold_notes.json`.** This is the judgement, and it is most of what makes this
@@ -66,7 +68,10 @@ tool in `tools/`, the test suite, and `master/_to_fold.json` if there was anythi
 4. **`node tools/fold.mjs --apply`.** It appends the new rows with their notes, applies each
    fulfilment exactly as the desk's own `ovAmend` would (cash and units added, the trail extended
    from an as-booked seed, a pending lot that stops being pending gets `receivedQty:0` and
-   `inTransit` so a deposit cannot walk it into stock), sets a count's stated shelf and moves
+   `inTransit` so a deposit cannot walk it into stock), **replaces** a modified row's qty and
+   total with its new terms (nothing is added, unlike a fulfilment; `unpriced` is cleared if the
+   new total is real, and a plain restated-from-to line is appended to the row's `mod` field),
+   sets a count's stated shelf and moves
    `COUNT_ON`, appends a loss to `selfUseLog` and a lost sale to `lostDemand`, adds a registration
    to the roster, **rolls the stated stock for what physically moved** (a roll and not a count;
    `COUNT_ON` is untouched) and writes the roll sentence into `NOTES`, moves `QUEUE_COMMITTED` to

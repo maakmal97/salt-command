@@ -26,8 +26,11 @@
 -- actually is.
 --
 -- kind is constrained on purpose. Fulfilment and Cancellation are mechanical once the row is
--- named. Modification, Linked and Rewarded are judgements about WHAT changed rather than WHICH
--- row, so they are still refused and still belong to a person at the laptop.
+-- named. Modification joined them on 24 Aug 2026: the phone's Restate form carries newQty and
+-- newTotal exactly as a Fulfilment carries cash and kg, so what changed is a figure typed
+-- against a tapped order, not free text, and the drafter runs the same rate check on it that a
+-- brand new row gets. Linked and Rewarded are still refused: neither form exists on the phone,
+-- and each is a judgement about which OTHER row or which award applies, not a figure to check.
 
 ALTER TABLE draft ADD COLUMN amends TEXT;
 ALTER TABLE draft ADD COLUMN amend_kind TEXT;

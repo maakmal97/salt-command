@@ -33,7 +33,14 @@ export function splitRecords(lines) {
 /* a record is an array of lines (the master's block) or a row object (the book) */
 export function dateOf(rec) {
   if (rec && !Array.isArray(rec) && typeof rec === "object") return rec.date || null;
-  const m = /(?:\bdate:'|"date":")(\d{4}-\d{2}-\d{2})/.exec(rec[0]);
+  /* v358: A ROW'S OWN date, WHEN IT HAS ONE, IS ALWAYS ITS FIRST KEY, and amend/paidSplit are
+     always added to a row after it exists, so a row's own date (if any) always precedes them in
+     the text. Searching only up to the first nested array avoids reading a Modification step's
+     own date off a row that carries none of its own: a Modification can restate a still-pending,
+     still-undated order (nothing paid, nothing moved), and its trail entry is dated even though
+     the row is not. The first such row, folded at v358, is exactly what exposed this. */
+  const head = rec[0].split(/"amend":|"paidSplit":/)[0];
+  const m = /(?:\bdate:'|"date":")(\d{4}-\d{2}-\d{2})/.exec(head);
   return m ? m[1] : null;
 }
 export function sortRecords(recs) {

@@ -1,6 +1,6 @@
 {
-  "v": "v357",
-  "derivedFrom": "e4393923628e6091",
+  "v": "v358",
+  "derivedFrom": "3ea6efa652ee85ce",
   "tables": {
     "sales": {
       "rows": 106,
@@ -14,7 +14,7 @@
           ]
         },
         "amend": {
-          "present": 27,
+          "present": 28,
           "of": 106,
           "optional": true,
           "types": [
@@ -102,7 +102,7 @@
           ]
         },
         "mod": {
-          "present": 3,
+          "present": 4,
           "of": 106,
           "optional": true,
           "types": [
@@ -227,14 +227,6 @@
           "optional": false,
           "types": [
             "number"
-          ]
-        },
-        "unpriced": {
-          "present": 1,
-          "of": 106,
-          "optional": true,
-          "types": [
-            "boolean"
           ]
         }
       }

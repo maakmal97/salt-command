@@ -20,6 +20,9 @@
  *                     and units added, the trail extended, a pending lot that stops being pending
  *                     gets receivedQty 0 and inTransit so a deposit cannot walk it into stock
  *   a cancellation    the row marked cancelled, the trail extended
+ *   a modification    the row's qty and total REPLACED with the new terms (nothing added, unlike
+ *                     a fulfilment), unpriced cleared if the new total is real, the trail
+ *                     extended and a plain restated-from-to line appended to the row's mod field
  *   a count           the stated stock set and COUNT_ON moved; the one entry that moves it
  *   a loss            appended to selfUseLog     a lost sale   appended to lostDemand
  *   a registration    the code appended to the roster; the directory is never touched
@@ -28,10 +31,11 @@
  * then the shelf is ROLLED for what physically moved (a roll, never a count), the watermark
  * moves to the newest id folded, and the book is sorted.
  *
- * WHAT IT REFUSES: a Modification, Linked or Rewarded amendment; an amendment whose key matches
- * no row or more than one; a new row that would replay one already on the book (same party,
- * date and total); a new row with no note; a version entry with no title or notes. A refusal
- * folds nothing: the batch is applied whole or not at all. */
+ * WHAT IT REFUSES: a Linked or Rewarded amendment (neither carries a figure the drafter can
+ * check, only a judgement about which other row or which award applies); an amendment whose key
+ * matches no row or more than one; a new row that would replay one already on the book (same
+ * party, date and total); a new row with no note; a version entry with no title or notes. A
+ * refusal folds nothing: the batch is applied whole or not at all. */
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -66,7 +70,10 @@ function readStaged() {
 function prodOf(row) { return (row && row.product) || "salt"; }
 function describe(item) {
   const r = item.row || {};
-  if (item.amends) return `${item.amendKind} on ${item.amends}: cash ${r.cash != null ? r.cash : "?"}`;
+  if (item.amends) {
+    if (item.amendKind === "Modification") return `Modification on ${item.amends}: to ${r.newQty ?? "?"} unit / RM${r.newTotal ?? "?"}`;
+    return `${item.amendKind} on ${item.amends}: cash ${r.cash != null ? r.cash : "?"}`;
+  }
   switch (item.collection) {
     case "sales": return `SELL ${r.customer} ${r.qty} unit ${prodOf(r)} RM${r.total}${r.date ? " on " + r.date : " (pending, undated)"}`;
     case "purchases": return `BUY ${r.supplier} ${r.qty} unit ${prodOf(r)} RM${r.total}${r.pending ? " (pending lot)" : ""}`;
@@ -87,7 +94,7 @@ export function plan(book, staged, notes) {
     const entry = { id: it.id, what: describe(it), does: [] };
     const r = it.row || {};
     if (it.amends) {
-      if (it.amendKind !== "Fulfilment" && it.amendKind !== "Cancellation") { out.refused.push({ id: it.id, why: `${it.amendKind || "nameless"} amendment: what changed is a judgement, left for a person` }); continue; }
+      if (it.amendKind !== "Fulfilment" && it.amendKind !== "Cancellation" && it.amendKind !== "Modification") { out.refused.push({ id: it.id, why: `${it.amendKind || "nameless"} amendment: what changed is a judgement, left for a person` }); continue; }
       const dir = (it.entry && it.entry.payload && it.entry.payload.direction) || "SELL";
       const arr = dir === "BUY" ? book.purchases : book.sales;
       const hits = arr.filter((x) => E.ovKey(x) === it.amends);
@@ -100,8 +107,19 @@ export function plan(book, staged, notes) {
          every other amendment here is measured by. */
       if (hits[0].cancelled) { out.refused.push({ id: it.id, why: `the row at ${it.amends} is cancelled; reviving it is a judgement, left for a person` }); continue; }
       const pay = (it.entry && it.entry.payload) || {};
-      entry.target = hits[0]; entry.dir = dir; entry.pay = { date: pay.date || r.date || TODAY, kind: it.amendKind, cash: +pay.cash || 0, kg: +pay.kg || 0 };
-      entry.does.push(`${it.amendKind.toLowerCase()} ${entry.pay.cash ? "RM" + entry.pay.cash + " " : ""}${entry.pay.kg ? entry.pay.kg + " unit " : ""}on ${entry.pay.date} against ${dir === "BUY" ? "lot" : "order"} ${it.amends}`);
+      entry.target = hits[0]; entry.dir = dir;
+      /* v358: A MODIFICATION CARRIES newQty/newTotal, NOT cash/kg. It moves nothing, so it adds
+         nothing to out.moves, and it is described by what it restates the order TO rather than
+         by what moved. */
+      if (it.amendKind === "Modification") {
+        const newQty = +pay.newQty, newTotal = +pay.newTotal;
+        if (!(newQty > 0) || !(newTotal >= 0)) { out.refused.push({ id: it.id, why: `the modification on ${it.amends} carries no valid new quantity and total` }); continue; }
+        entry.pay = { date: pay.date || r.date || TODAY, kind: "Modification", cash: 0, kg: 0, newQty, newTotal };
+        entry.does.push(`restate ${dir === "BUY" ? "lot" : "order"} ${it.amends} to ${newQty} unit / RM${newTotal}${pay.date ? " on " + pay.date : ""}`);
+      } else {
+        entry.pay = { date: pay.date || r.date || TODAY, kind: it.amendKind, cash: +pay.cash || 0, kg: +pay.kg || 0 };
+        entry.does.push(`${it.amendKind.toLowerCase()} ${entry.pay.cash ? "RM" + entry.pay.cash + " " : ""}${entry.pay.kg ? entry.pay.kg + " unit " : ""}on ${entry.pay.date} against ${dir === "BUY" ? "lot" : "order"} ${it.amends}`);
+      }
       if (dir !== "BUY" && entry.pay.kg > 0.009) out.moves.push({ product: prodOf(hits[0]), kg: -entry.pay.kg, who: hits[0].customer, when: entry.pay.date });
       if (dir === "BUY" && entry.pay.kg > 0.009) out.moves.push({ product: prodOf(hits[0]), kg: +entry.pay.kg, who: hits[0].supplier, when: entry.pay.date, landed: true });
     } else if (it.collection === "sales" || it.collection === "purchases") {
@@ -154,6 +172,30 @@ function skeleton(book, staged, p) {
 /* ---- apply ------------------------------------------------------------------------------- */
 /* ovAmend, as the desk applies it, on a plain row */
 function applyAmend(row, pay, dir, note) {
+  if (pay.kind === "Modification") {
+    const wasQty = row.qty, wasTotal = row.total;
+    const modLine = `restated${pay.date ? " on " + pay.date : ""} from ${wasQty} unit / RM${wasTotal} to ${pay.newQty} unit / RM${pay.newTotal}`;
+    row.mod = row.mod ? row.mod + ", then " + modLine : modLine;
+    if (dir === "BUY") {
+      row.qty = pay.newQty;
+      row.total = pay.newTotal;
+      const paid = row.cash != null ? row.cash : 0;
+      row.status = paid >= row.total - 0.009 ? "paid" : (paid <= 0.009 ? "unpaid" : "partial");
+      if (note) row.note = note + " " + (row.note || "");
+      return;
+    }
+    /* SELL: qty and total are REPLACED, not added to, which is what "restate" means and what
+       tells this apart from a Fulfilment. Nothing moves, so cash/deliveredQty are untouched. */
+    if (!row.amend || !row.amend.length)
+      row.amend = [{ date: row.date, kind: "Fulfilment", cash: E.txPaid(row), kg: E.txDeliv(row), note: "as booked" + (row.date ? "" : ", pending and undated") }];
+    const step = { date: pay.date, kind: "Modification", cash: 0, kg: 0 };
+    if (note) step.note = note;
+    row.amend = row.amend.concat([step]);
+    row.qty = pay.newQty;
+    row.total = pay.newTotal;
+    if (row.unpriced && pay.newTotal > 0) delete row.unpriced;
+    return;
+  }
   if (dir === "BUY") {
     if (pay.kind === "Default") { row.defaulted = true; delete row.receivedOn; delete row.pending; return; }
     const wasPending = !!row.pending;

@@ -1,6 +1,6 @@
 {
- "v": "v357",
- "stamped": "24 Aug 2026, 09:30 KL",
+ "v": "v358",
+ "stamped": "24 Aug 2026, 15:57 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -1954,13 +1954,28 @@
    {
     "customer": "CS6-BS-R",
     "qty": 3,
-    "total": 0,
-    "unpriced": true,
+    "total": 290,
     "cash": 0,
     "deliveredQty": 0,
     "rev": "R2",
     "agreedOn": "2026-08-24",
-    "note": "<b>PENDING AND NOT YET PRICED, AGREED 24 AUG.</b> 3 unit for CS6-BS-R, with the price still being worked out. It carries no date, draws no stock and raises no receivable, and the total is a placeholder zero rather than a figure anyone agreed: <b>unpriced</b> is what says so, and v345 teaches the desk the difference, so the row reads Pending and Unpriced rather than Pending and Paid. <b>WHAT THE EVIDENCE SAYS THE PRICE SHOULD BE.</b> The ladder asks RM260 at 3 unit, RM86.67 a unit. His own last comparable order was 2.5 unit for RM270 on 03 Aug, RM108 a unit, and the only other 3 unit he has taken was RM285 on 15 Jul, RM95 a unit. So the board asks RM25 less than he paid three weeks ago for half a unit less. The v344 collected floor at 3 unit is RM180.35 and the delivered floor RM193.43, so every one of those figures clears. Amend the total when he settles it."
+    "note": "<b>PENDING AND NOT YET PRICED, AGREED 24 AUG.</b> 3 unit for CS6-BS-R, with the price still being worked out. It carries no date, draws no stock and raises no receivable, and the total is a placeholder zero rather than a figure anyone agreed: <b>unpriced</b> is what says so, and v345 teaches the desk the difference, so the row reads Pending and Unpriced rather than Pending and Paid. <b>WHAT THE EVIDENCE SAYS THE PRICE SHOULD BE.</b> The ladder asks RM260 at 3 unit, RM86.67 a unit. His own last comparable order was 2.5 unit for RM270 on 03 Aug, RM108 a unit, and the only other 3 unit he has taken was RM285 on 15 Jul, RM95 a unit. So the board asks RM25 less than he paid three weeks ago for half a unit less. The v344 collected floor at 3 unit is RM180.35 and the delivered floor RM193.43, so every one of those figures clears. Amend the total when he settles it.",
+    "mod": "restated on 2026-08-24 from 3 unit / RM0 to 3 unit / RM290",
+    "amend": [
+     {
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 0,
+      "note": "as booked, pending and undated"
+     },
+     {
+      "date": "2026-08-24",
+      "kind": "Modification",
+      "cash": 0,
+      "kg": 0,
+      "note": "restated from RM0/Unpriced to RM290 for 3 unit once the price was agreed on 24 Aug. RM96.67/unit, between the RM86.67 the board asked and the RM108 he paid for 2.5 unit on 03 Aug; 13.3% under his own six-order median of RM111.5, which the order's own history explains, and clear of both the RM180.35 collected and RM218.22 delivered floors at this size. Still pending: nothing paid, nothing moved."
+     }
+    ]
    },
    {
     "customer": "CS6-BS",
@@ -2258,9 +2273,9 @@
     "note": "Judged a rare one-off. Treat the RM104/unit it paid as an outlier, not as evidence of what wholesale will bear."
    }
   ],
-  "QUEUE_COMMITTED": "2026-08-23T15:36:10.986Z",
+  "QUEUE_COMMITTED": "2026-08-24T06:09:16.013Z",
   "PRICING": {
-   "takenAt": "2026-08-23T23:20:30.720Z",
+   "takenAt": "2026-08-24T07:57:37.097Z",
    "sizes": [
     0.5,
     1,
@@ -2680,10 +2695,10 @@
      }
     }
    },
-   "v": "v357"
+   "v": "v358"
   },
   "OPEN": {
-   "at": "2026-08-23T23:20:30.736Z",
+   "at": "2026-08-24T07:57:37.124Z",
    "count": 7,
    "byKey": {
     "CJ4-BJ|undefined|450": {
@@ -2699,17 +2714,18 @@
      "oweKg": 6.25,
      "key": "CJ4-BJ|undefined|450"
     },
-    "CS6-BS-R|undefined|0": {
+    "CS6-BS-R|undefined|290": {
      "d": null,
      "p": "CS6-BS-R",
      "dir": "S",
      "q": 3,
-     "t": 0,
+     "t": 290,
      "cash": 0,
      "mv": 0,
      "st": "pend",
+     "oweRM": 290,
      "oweKg": 3,
-     "key": "CS6-BS-R|undefined|0"
+     "key": "CS6-BS-R|undefined|290"
     },
     "CS6-BS|undefined|0": {
      "d": null,
@@ -2802,7 +2818,7 @@
     "salt": "2026-08-24",
     "oil": "2026-08-23"
    },
-   "v": "v357"
+   "v": "v358"
   }
  }
 }

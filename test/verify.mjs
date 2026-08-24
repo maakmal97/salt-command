@@ -818,8 +818,8 @@ section("Drafter — rows, refusals and flags");
      desk's own ovKey, which the phone now sends because it makes you tap a specific order. */
   ok(/names no order/.test(draftRow({ at: "x", payload: { mode: "amend", kind: "Fulfilment", direction: "SELL", party: "CC5-OKR" } }, book).skip || ""),
     "an amendment with NO order key is still left for a person");
-  ok(/judgement rather than which row/.test(draftRow({ at: "x", payload: { mode: "amend", kind: "Modification", direction: "SELL", party: "CC5-OKR", orderKey: "CC5-OKR|2026-08-01|90" } }, book).skip || ""),
-    "a Modification is left for a person even WITH a key: what changed is the judgement");
+  ok(/judgement rather than which row/.test(draftRow({ at: "x", payload: { mode: "amend", kind: "Linked", direction: "SELL", party: "CC5-OKR", orderKey: "CC5-OKR|2026-08-01|90" } }, book).skip || ""),
+    "a Linked amendment is still left for a person even WITH a key: whose bucket it books to is the judgement");
 
   /* With a key, a Fulfilment kind and a matching OPEN snapshot, it drafts. */
   const openBook = { ...book, version: "vTEST", state: { ...(book.state || {}), OPEN: { v: "vTEST", byKey: {
@@ -833,6 +833,21 @@ section("Drafter — rows, refusals and flags");
     "the row it carries is the TARGET as it stands, not a row to append");
   ok(/SETTLES the order in full/.test(amend.flags.join(" ")), "settling the whole order is flagged as such");
   ok(/ovAmend/.test(amend.reasoning), "and the reasoning says plainly that the desk applies it, not the drafter");
+
+  /* A MODIFICATION IS MECHANICAL TOO, FROM 24 Aug 2026: the phone's Restate form sends newQty
+     and newTotal against a tapped order, so what changed is a figure rather than free text, and
+     the drafter runs the same history/floor/below-cost comparisons a brand new row gets. */
+  const mod = draftRow({ at: "x", payload: { mode: "amend", kind: "Modification", direction: "SELL",
+    party: "CC5-OKR", orderKey: "CC5-OKR|2026-08-01|90", newQty: 2, newTotal: 150 } }, openBook);
+  ok(!mod.skip, "a Modification with new terms against an OPEN order is drafted, not refused");
+  ok(mod.amends === "CC5-OKR|2026-08-01|90" && mod.amendKind === "Modification", "and it records which row it amends, and how");
+  ok(mod.row.customer === "CC5-OKR" && mod.row.qty === 1 && mod.row.total === 90, "the row is the TARGET as it stands today");
+  ok(mod.row.newQty === 2 && mod.row.newTotal === 150, "and the proposed new terms travel beside it");
+  ok(mod.flags.some(f => /has paid RM 90\/unit on every one of their 2 orders/.test(f)), "the restated rate is measured against the party's own history, exactly as a new row would be");
+  ok(/Restates it to 2 unit for RM 150/.test(mod.reasoning), "the reasoning states the change plainly");
+  const modNoTerms = draftRow({ at: "x", payload: { mode: "amend", kind: "Modification", direction: "SELL",
+    party: "CC5-OKR", orderKey: "CC5-OKR|2026-08-01|90" } }, openBook);
+  ok(/no new quantity and total/.test(modNoTerms.skip || ""), "a Modification with no new terms is refused rather than guessed at");
 
   /* overpaying and overdelivering are the comparisons an amendment cannot make against itself */
   const over = draftRow({ at: "x", payload: { mode: "amend", kind: "Fulfilment", direction: "SELL",
@@ -1104,7 +1119,15 @@ section("Ledger — the date is superior to the position");
        written. The desk sorts by date wherever the order matters, so this never moved a figure;
        it made the FILE unreadable, and the file is what a person audits. 37 sales rows and one
        purchase were out of order when this check was first run. */
-    const { splitRecords, outOfOrder, sortRecords } = await import("../tools/sort-ledger.mjs");
+    const { splitRecords, outOfOrder, sortRecords, dateOf } = await import("../tools/sort-ledger.mjs");
+
+    /* v358: A STILL-UNDATED ROW CAN NOW CARRY A DATED AMEND STEP. A Modification can restate a
+       pending order's price without moving cash or stock, so the row stays undated while its
+       trail entry, dated the day it was typed, is the only "date" the line contains. The naive
+       regex read that nested date as the row's own and reported the pending row as dated, which
+       broke the order check the moment the first such row existed. */
+    const pendingWithDatedAmend = ['  {"customer":"Z","qty":1,"total":0,"amend":[{"kind":"Fulfilment","cash":0,"kg":0},{"date":"2026-08-24","kind":"Modification","cash":0,"kg":0}],"note":"x"}'];
+    ok(dateOf(pendingWithDatedAmend) === null, "a row with no date of its own reads as undated, even with a dated amend step");
 
     /* THE REGRESSION THAT DESTROYED RM 8,981 OF THE BOOK, AS A UNIT TEST. The first splitter
        started a record at ANY line whose trimmed content began with "{", so a row carrying a
@@ -1259,26 +1282,29 @@ section("App — an amendment says one thing, not two");
 section("App — a rate is checked where every entry passes");
 {
   const app = readFileSync(join(REPO, "public", "index.html"), "utf8");
-  /* WHY IT SITS AT ENTRY TIME. The RM115 oil unit was caught by the approval screen. The
-     Modification that restated an order to 5 unit for RM50, RM10 a unit against salt that
-     has never gone below RM46, was NOT: a Modification does not go through the gate, so
-     nothing put a rate beside it. The check moved to the one place every entry passes. */
+  /* WHY IT SITS AT ENTRY TIME, AND WHY IT STAYS EVEN NOW THE GATE COVERS A RESTATE TOO.
+     The RM115 oil unit was caught by the approval screen. The Modification that restated an
+     order to 5 unit for RM50, RM10 a unit against salt that has never gone below RM46, was NOT,
+     because on 17 Aug a Modification did not go through the gate at all. It does from 24 Aug
+     2026, and runs the same history/floor check the gate runs on a brand new row. The entry-time
+     check stays regardless: it is the earliest warning, before anything is even typed into the
+     queue, and belt-and-braces costs nothing here. */
   ok(/function rateVerdict/.test(app), "the app checks a typed rate before anything is queued");
   ok(/function seenRates/.test(app), "against the rates the desk has actually recorded");
   ok(/rateVerdict\(/.test(app) && /MODE==='amend'&&AKIND==='restate'/.test(app),
-    "and it runs on a RESTATE too, which is the road the gate does not cover");
+    "and it runs on a RESTATE too, as an early warning ahead of the gate's own check");
   /* it must stay a reader: no price of its own, and nothing it says reaches the entry */
   ok(!/rateVerdict[\s\S]{0,400}payload:/.test(app),
     "the verdict never reaches the payload; it is shown, not recorded");
 
-  /* the amendment kinds, and the two roads they take */
+  /* the amendment kinds, and the one road they now all take */
   for (const k of ["done", "paid", "deliv", "restate", "cancel"]) {
     ok(app.includes(`data-k="${k}"`), `the amend form offers ${k}`);
   }
   ok(/kind:'Cancellation'/.test(app) && /kind:'Modification'/.test(app),
     "a cancel sends Cancellation and a restate sends Modification");
-  ok(/A restatement changes WHAT the/.test(app),
-    "and the form says a restatement is left for a person rather than pretending it is gated");
+  ok(/road gate/.test(app) && !/A restatement changes WHAT the/.test(app),
+    "and the form says a restatement goes through the gate, not that it is left for a person");
 }
 
 /* ---- the engine ------------------------------------------------------------------ */
@@ -1495,7 +1521,12 @@ section("Fold — an approved batch becomes records in the book (v340)");
      batch that was faultless. A day after whatever the book says is always newer. */
   const day = new Date(new Date(book.QUEUE_COMMITTED).getTime() + 864e5).toISOString().slice(0, 11);
   const ID = (hhmm) => `${day}${hhmm}:00.000Z`;
-  const staged = { ok: true, count: 5, approved: [
+  /* the CS6-BS free-unit pending row (qty 1, total 0), a target distinct from the CJ4-BJ one
+     the Fulfilment above amends, so the two cases stay independent */
+  const modPending = book.sales.find((r) => !r.date && !r.cancelled && r.customer === "CS6-BS" && r.total === 0);
+  ok(!!modPending, "the book carries the CS6-BS free-unit pending row the test restates");
+  const modKey = modPending ? `CS6-BS|undefined|0` : null;
+  const staged = { ok: true, count: 6, approved: [
     { id: ID("01:00"), collection: "sales", amends: null, amendKind: null,
       row: { customer: "CA4-DAM", qty: 0.5, total: 50, cost: 44, cash: 50, date: "2026-08-23", deliveredQty: 0.5, deliveredOn: "2026-08-23", paidOn: "2026-08-23" },
       entry: { at: ID("01:00"), payload: { mode: "new", direction: "SELL" } } },
@@ -1506,8 +1537,16 @@ section("Fold — an approved batch becomes records in the book (v340)");
       row: { product: "oil", qty: 3, date: "2026-08-23", was: 0, drift: 3 }, entry: { at: ID("01:10"), payload: { mode: "count" } } },
     { id: ID("01:15"), collection: "roster", amends: null, amendKind: null,
       row: { code: "CT7-KLC", kind: "customer", parent: null, note: null }, entry: { at: ID("01:15"), payload: { mode: "party" } } },
-    { id: ID("01:20"), collection: "sales", amends: "CX9-NOPE|undefined|1", amendKind: "Modification",
-      row: {}, entry: { at: ID("01:20"), payload: { mode: "amend", direction: "SELL", kind: "Modification" } } },
+    /* v358: a Modification now plans and applies mechanically, exactly like the Fulfilment
+       above; it just replaces qty/total rather than adding to cash/deliveredQty. */
+    { id: ID("01:20"), collection: "sales", amends: modKey, amendKind: "Modification",
+      row: { customer: "CS6-BS", qty: 1, total: 0, newQty: 1, newTotal: 130 },
+      entry: { at: ID("01:20"), payload: { mode: "amend", direction: "SELL", orderKey: modKey, kind: "Modification", date: "2026-08-23", newQty: 1, newTotal: 130 } } },
+    /* Linked stays refused: unlike Modification it carries no figure to check, only a
+       judgement about which OTHER row it links to. Placed last so slice(0, 5) below drops
+       only this one item and keeps the Modification among the ones that fold. */
+    { id: ID("01:25"), collection: "sales", amends: "CX9-NOPE|undefined|1", amendKind: "Linked",
+      row: {}, entry: { at: ID("01:25"), payload: { mode: "amend", direction: "SELL", kind: "Linked" } } },
   ] };
   /* v354: a price edit folds into PRICE_SET, moves no stock and no cash, and REPLACES rather
      than merges, so a price he cleared on the desk is actually cleared in the book. */
@@ -1548,16 +1587,20 @@ section("Fold — an approved batch becomes records in the book (v340)");
   }
   /* the plan refuses what it must and describes the rest */
   let p = plan(JSON.parse(JSON.stringify(book)), staged, null);
-  ok(p.refused.length === 1 && /Modification/.test(p.refused[0].why), "a Modification is refused as a judgement");
-  ok(p.items.length === 4, "the four mechanical rows are planned");
+  ok(p.refused.length === 1 && /Linked/.test(p.refused[0].why), "a Linked amendment is refused as a judgement; a Modification is not");
+  ok(p.items.length === 5, "the five mechanical rows are planned, the Modification among them");
+  const modPlanned = p.items.find((it) => it.what && /Modification on/.test(it.what));
+  ok(modPlanned && /to 1 unit \/ RM130/.test(modPlanned.what), "the plan describes a Modification by what it restates to, not by cash");
   ok(p.moves.some((m) => m.kg === -0.5 && m.product === "salt") && p.moves.some((m) => m.kg === -6.25), "the plan sees what will leave the shelf");
+  ok(!p.moves.some((m) => m.who === "CS6-BS"), "a pure Modification moves no stock");
   /* a refusal folds nothing, and so does a missing note */
   const notes = { version: "v999", date: "23 Aug 2026", title: "A TEST FOLD", notes: ["<b>TEST.</b> Nothing real."],
-    rows: { [ID("01:00")]: { note: "Half a unit at the RM100 anchor, paid and delivered." }, [ID("01:05")]: { note: "paid and delivered in full" } },
+    rows: { [ID("01:00")]: { note: "Half a unit at the RM100 anchor, paid and delivered." }, [ID("01:05")]: { note: "paid and delivered in full" },
+            [ID("01:20")]: { note: "restated to 1 unit for RM130 once the price was agreed" } },
     stockNote: "Test roll." };
   let r = apply(JSON.parse(JSON.stringify(book)), staged, notes, master);
-  ok(!r.ok && r.problems.some((x) => /Modification/.test(x)), "apply refuses the whole batch while a refusal stands");
-  const clean = { ...staged, count: 4, approved: staged.approved.slice(0, 4) };
+  ok(!r.ok && r.problems.some((x) => /Linked/.test(x)), "apply refuses the whole batch while a refusal stands");
+  const clean = { ...staged, count: 5, approved: staged.approved.slice(0, 5) };
   r = apply(JSON.parse(JSON.stringify(book)), clean, { ...notes, rows: { [ID("01:05")]: notes.rows[ID("01:05")] } }, master);
   ok(!r.ok && r.problems.some((x) => /needs a note/.test(x)), "a new row with no note is refused");
   /* the real thing, on a copy */
@@ -1577,8 +1620,13 @@ section("Fold — an approved batch becomes records in the book (v340)");
     ok(B.roster.includes("CT7-KLC"), "the registration joined the roster");
     ok(Math.abs(B.STATED_STOCK - (from - 0.5 - 6.25)) < 1e-9, `the salt shelf rolled ${from} to ${B.STATED_STOCK}`);
     ok(/^ROLLED AT v999/.test(B.NOTES.STATED_STOCK[0]) && /Test roll\./.test(B.NOTES.STATED_STOCK[0]), "the roll sentence leads the stated stock's notes, with the agent's words");
-    ok(B.QUEUE_COMMITTED === ID("01:15"), "the watermark moved to the newest id folded");
-    ok(r.folded.length === 4 && r.newest === ID("01:15"), "_folded would name the four ids");
+    const modded = B.sales.find((x) => x.customer === "CS6-BS" && !x.date && x.qty === 1 && x.total === 130);
+    ok(!!modded, "the Modification REPLACED qty and total rather than adding to them");
+    ok(modded && modded.cash === 0 && modded.deliveredQty === 0 && !modded.date, "and moved no cash, no stock and no date: a pure reprice");
+    ok(modded && /restated.*from 1 unit \/ RM0 to 1 unit \/ RM130/.test(modded.mod), "the row's mod field records what changed, in the same style as an existing restatement");
+    ok(modded && modded.amend && modded.amend.some((a) => a.kind === "Modification" && /RM130 once the price/.test(a.note || "")), "and the trail carries the Modification step with the agent's note");
+    ok(B.QUEUE_COMMITTED === ID("01:20"), "the watermark moved to the newest id folded, past the Modification");
+    ok(r.folded.length === 5 && r.newest === ID("01:20"), "_folded would name the five ids");
     ok(/const evolution=\[\{"v":"v999"/.test(r.master) && /const LAST_UPDATED='\d\d \w\w\w 2026, \d\d:\d\d KL';/.test(r.master), "the version entry and the stamp are in the master");
     const { checkText } = await import("../tools/booksync.mjs");
     ok(checkText(r.master, B) === null, "and the master's book block is the folded book");

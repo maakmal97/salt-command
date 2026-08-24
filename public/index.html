@@ -1077,31 +1077,27 @@ function drawRecon(){
    difference between a queue that looks broken and one you understand. */
 var ROADS={
   trade:['gate','<b>This goes through the gate.</b> The drafter turns it into a proposed row with its cost and margin, and it comes back to the Approve tab for a tap. Nothing reaches the ledger until you decide.'],
-  amend:['person','<b>This is left for a person.</b> The drafter refuses amendments by design, because which row it amends is a judgement. It is queued, shown under Approve as already in hand, and folded at the laptop on the daily run.'],
+  amend:['gate','<b>This goes through the gate.</b> Fulfilment, Cancellation and Restate all name the order they target and come back to the Approve tab for a tap.'],
   stock:['person','<b>This is left for a person.</b> A count, a loss and a lost sale move stock without being trades, so the drafter refuses them. It is queued and folded at the laptop. A count always wins over the ledger when it is.'],
   party:['gate','<b>This goes through the gate.</b> The drafter writes the registration up, checks the code is not already on the roster, and it comes back to the Approve tab for a tap. The name and the place are typed into the directory at the laptop and never travel.']
 };
 function drawRoad(){
   var r=ROADS[MODE]||ROADS.trade;
-  /* AN AMENDMENT TAKES TWO DIFFERENT ROADS AND THE FORM MUST NOT PRETEND OTHERWISE.
-     Fulfilment and Cancellation are drafted and come back for a tap; a Modification is
-     refused by the drafter by design, because what changed is a judgement rather than
-     which row, and it is folded by a person. Saying "left for a person" over a Fulfilment
-     would be wrong, and saying "goes through the gate" over a Modification would be worse. */
+  /* EVERY KIND THIS FORM CAN SEND NOW GOES THROUGH THE GATE (24 Aug 2026). Fulfilment and
+     Cancellation since v322, Restate (a Modification) since today: it carries the new
+     quantity and total exactly as a Fulfilment carries cash and kg, so the drafter runs the
+     same rate-against-history-and-floor check on the restated terms that a brand new row
+     gets. Only Linked and Rewarded amendments are still left for a person, and neither has a
+     button on this form. */
   if(MODE==='amend'){
-    if(AKIND==='restate'){
-      $('road').className='road person';
-      $('road').innerHTML='<b>This one is left for a person.</b> A restatement changes WHAT the '
-        +'order is, which is a judgement rather than a question of which row, so the drafter '
-        +'refuses it by design. It is queued, shown under Approve as already in hand, and folded '
-        +'at the laptop. <b>Nothing will put a rate beside it before then</b>, so read the figures '
-        +'above before you send it.';
-      return;
-    }
     $('road').className='road gate';
-    $('road').innerHTML='<b>This goes through the gate.</b> The drafter names the order it targets '
-      +'and what it leaves outstanding, and it comes back to the Approve tab for a tap. Nothing '
-      +'reaches the ledger until you decide.';
+    $('road').innerHTML=(AKIND==='restate')
+      ?'<b>This goes through the gate.</b> The drafter names the order it targets and checks the '
+        +'restated rate against its history and its floor, the same as a brand new row. It comes '
+        +'back to the Approve tab for a tap. Nothing reaches the ledger until you decide.'
+      :'<b>This goes through the gate.</b> The drafter names the order it targets '
+        +'and what it leaves outstanding, and it comes back to the Approve tab for a tap. Nothing '
+        +'reaches the ledger until you decide.';
     return;
   }
   $('road').className='road '+r[0];
@@ -1407,7 +1403,11 @@ function record(){
   if(e.why)return msg('bad',esc(e.why));
   held.push(e); saveHeld(); drawHeld();
   busy=true; $('rec').disabled=true; msg('','Recording.');
-  var gated=(MODE==='trade');
+  /* AMEND IS GATED TOO, FROM TODAY: a Restate carries the new terms exactly as a Fulfilment
+     carries cash and kg, so it drafts and comes back for a tap the same way. Stock and party
+     modes are unchanged here; that message is a separate, pre-existing question, not this
+     one. */
+  var gated=(MODE==='trade'||MODE==='amend');
   push().then(function(r){
     busy=false; $('rec').disabled=false;
     if(r.ok){
