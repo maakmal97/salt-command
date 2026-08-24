@@ -330,7 +330,7 @@ Only the watermark stopped the double count.
 Run the drafter by hand with a write key:
 
 ```bash
-curl -X POST -H "X-Salt-Key: <key>" "https://salt-command.maakmal97.workers.dev/draft-now?dry=1"
+curl -X POST -H "X-Salt-Key: <key>" "https://salt-command.qyts8mh72kyg.workers.dev/draft-now?dry=1"
 ```
 
 `?dry=1` reports what it would draft and stores nothing, which is how to prove it against the

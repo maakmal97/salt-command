@@ -46,7 +46,7 @@ const MASTER = process.env.SALT_MASTER || DEFAULT_MASTER;
    "unreadable" on every run and the drain had nowhere to write. The queue files never
    moved; only the master did. */
 const DATA = DATA_DIR;
-const SITE = (process.env.SALT_URL || "https://salt-command.maakmal97.workers.dev").replace(/\/+$/, "");
+const SITE = (process.env.SALT_URL || "https://salt-command.qyts8mh72kyg.workers.dev").replace(/\/+$/, "");
 
 const argv = process.argv.slice(2);
 const has = (f) => argv.includes(f);

@@ -192,7 +192,7 @@ jobs:
           set -euo pipefail
           want=$(node -p "require('./public/rev.json').id")
           for i in 1 2 3 4 5 6; do
-            got=$(curl -fsS --max-time 20 https://salt-command.maakmal97.workers.dev/rev | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).id")
+            got=$(curl -fsS --max-time 20 https://salt-command.qyts8mh72kyg.workers.dev/rev | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).id")
             [ "$got" = "$want" ] && { echo "live at $got"; exit 0; }
             echo "attempt $i: live=$got want=$want"
             sleep 10
@@ -255,7 +255,7 @@ jobs:
             n=$(node -p "(require('./master/_folded.json').ids||[]).length")
             [ "$n" = "0" ] && { echo "Nothing folded."; exit 0; }
           fi
-          code=$(curl -s -o /dev/null -w "%{http_code}" -X POST -H "X-Push-Key: $PUSH_KEY" -H "content-type: application/json" -d '{"tag":"folded"}' https://salt-command.maakmal97.workers.dev/push/send)
+          code=$(curl -s -o /dev/null -w "%{http_code}" -X POST -H "X-Push-Key: $PUSH_KEY" -H "content-type: application/json" -d '{"tag":"folded"}' https://salt-command.qyts8mh72kyg.workers.dev/push/send)
           echo "push/send -> $code for $n folded row(s)"
 
       # A PUSH THAT FOLDED NOTHING MUST NOT UNSTAGE A WAITING BATCH, fixed 24 Aug 2026.

@@ -153,7 +153,7 @@ async function fromQueue() {
   }
   if (!files.length) { ok("no queue file on disk, so there is nothing to draft"); return; }
 
-  const base = (process.env.SALT_BASE || "https://salt-command.maakmal97.workers.dev").replace(/\/+$/, "");
+  const base = (process.env.SALT_BASE || "https://salt-command.qyts8mh72kyg.workers.dev").replace(/\/+$/, "");
   const get = async (p) => {
     const r = await fetch(base + p);
     if (!r.ok) throw new Error("GET " + p + " -> " + r.status);

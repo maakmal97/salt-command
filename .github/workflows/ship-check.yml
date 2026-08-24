@@ -32,7 +32,7 @@ jobs:
           set -euo pipefail
           repo_id=$(node -p "require('./public/rev.json').id")
           repo_v=$(node -p "require('./public/rev.json').v")
-          live=$(curl -fsS --max-time 20 https://salt-command.maakmal97.workers.dev/rev)
+          live=$(curl -fsS --max-time 20 https://salt-command.qyts8mh72kyg.workers.dev/rev)
           live_id=$(node -p "JSON.parse(process.argv[1]).id" "$live")
           live_v=$(node -p "JSON.parse(process.argv[1]).v" "$live")
           echo "repo  $repo_v  $repo_id"
