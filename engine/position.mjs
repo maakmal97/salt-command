@@ -211,6 +211,18 @@ function ledgerRow(t,dir,defaultProd){
      editor cannot touch: the notes carry lot costs and margins in prose, and this app is
      public by decision. That is a policy line, not a size one. */
   if(t.rid) r.rid=t.rid;
+  /* v364: THE RAW FIGURES, WHERE THEY DIFFER FROM THE DERIVED ONES. r.cash is txPaid and
+     r.mv is txEffDeliv, which is right for READING a row (they are what the row has
+     actually settled) and wrong for EDITING one: a correction writes the raw cash and
+     deliveredQty fields, and on the thirteen rows carrying in-kind settlements the two
+     part company. The phone's editor prefilled the derived figure into a box that writes
+     the raw field, so retyping RM100 over a shown RM80 on a row whose raw cash was 0
+     would have set effective paid to RM180. Emitted only where they differ, which is
+     what keeps this a few bytes rather than two fields on every row. */
+  if(dir!=='B'){
+    if(Math.abs((t.cash||0)-paidRM)>0.005) r.cashRaw=+(t.cash||0);
+    if(Math.abs((t.deliveredQty||0)-mv)>0.005) r.delivRaw=+(t.deliveredQty||0);
+  }
   const at=attributionOf(t,dir==='B'?'supplier':'customer');
   if(at.assoc){ r.as=at.assoc; r.st2=at.stream; if(at.downstream) r.dn=at.downstream; }
   /* v363: EVERY REMAINING EDITABLE ATTRIBUTE, so the phone's editor can prefill a row rather

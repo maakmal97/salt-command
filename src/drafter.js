@@ -194,6 +194,13 @@ export function checkCorrection(fields, book, target, isSale) {
   if (num(after.receivedQty) > num(after.qty) + 0.005) {
     flags.push(`${round(after.receivedQty)} unit is recorded as received against a lot of ${round(after.qty)} unit.`);
   }
+  if (changes.some((c) => c.field === "date" && c.to === null)) {
+    const eff = isSale ? POSITION_ENGINE.txPaid(target) : POSITION_ENGINE.poCash(target);
+    const mvd = isSale ? POSITION_ENGINE.txEffDeliv(target) : POSITION_ENGINE.poRecvKg(target);
+    if (eff > 0.005 || mvd > 0.005) {
+      errs.push("the date cannot be cleared: money or stock has moved against this row, and an undated row reads as pending, which a row with movement is not");
+    }
+  }
   const touchedFigure = changes.some((c) => c.field === "cash" || c.field === "deliveredQty" || c.field === "receivedQty");
   if (touchedFigure && (target.amend || []).length) {
     flags.push(`This row carries a trail of ${target.amend.length} step${target.amend.length === 1 ? "" : "s"}. Setting the figure directly does not rewrite them, so the trail will no longer add up to it; the correction is recorded beside them saying so.`);
@@ -464,21 +471,27 @@ export function draftRow(entry, book) {
         if (product !== "salt") synth.product = product;
         for (const f of flagsFor(entry, synth, book, priced)) flags.push(f);
       }
-      const paid = target.cash || 0, movedQty = target.deliveredQty || 0;
+      /* THE EFFECTIVE FIGURES, NOT THE RAW FIELDS. txPaid is cash plus what was settled in
+         kind, and txEffDeliv folds the settled and advanced units in; raw cash misses every
+         in-kind settlement, and s010 (cash 0, settledRM 80) proved it by raising nothing when
+         its total was corrected below what had actually been paid. */
+      const paid = isSale ? POSITION_ENGINE.txPaid(target) : POSITION_ENGINE.poCash(target);
+      const movedQty = isSale ? POSITION_ENGINE.txEffDeliv(target) : POSITION_ENGINE.poRecvKg(target);
       if (isNum(after.total) && after.total < paid - 0.005) {
         flags.push(`The corrected total of RM ${round(after.total)} is under the RM ${round(paid)} already paid against this row.`);
       }
       if (isNum(after.qty) && after.qty < movedQty - 0.005) {
-        flags.push(`The corrected quantity of ${round(after.qty)} unit is under the ${round(movedQty)} unit already handed over.`);
+        flags.push(`The corrected quantity of ${round(after.qty)} unit is under the ${round(movedQty)} unit already ${isSale ? "handed over" : "received"}.`);
+      }
+      if (chk.changes.some((c) => c.field === "total") && after.total > 0.005 && target.unpriced && after.unpriced !== false) {
+        flags.push("This row is marked unpriced, and this sets a real total, so the fold clears the unpriced flag with it: a row with an agreed figure is priced by definition.");
+      }
+      if (!isSale && target.pending && after.pending !== false
+        && chk.changes.some((c) => c.field === "cash" || c.field === "receivedQty")) {
+        flags.push("This lot is marked pending, which means nothing has moved, and this records money or stock against it. Untick pending if it is no longer agreed-only.");
       }
       if (chk.changes.some((c) => c.field === "product") && isSale && priced.cost != null && isNum(target.cost) && Math.abs(priced.cost - target.cost) > 0.005) {
         flags.push(`The row carries RM ${round(target.cost)}/unit of cost from its old product. ${product} costs RM ${round(priced.cost)}/unit off the shelf, so this row's margin moves when it is recosted.`);
-      }
-      if (chk.changes.some((c) => c.field === "party")) {
-        flags.push(`This moves the row from ${target[partyKey]} to ${after.party}, so what each of them owes changes with it, and so does every figure drawn per party.`);
-      }
-      if (chk.changes.some((c) => c.field === "date") && (target.deliveredQty > 0.005 || paid > 0.005)) {
-        flags.push(`Money or stock has already moved against this row, so redating it moves when that is counted as having happened.`);
       }
 
       const words = chk.changes.map((c) => `${c.field} from ${c.from == null ? "unset" : c.from} to ${c.to == null ? "cleared" : c.to}`);

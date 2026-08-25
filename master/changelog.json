@@ -1,5 +1,20 @@
 [
  {
+  "v": "v364",
+  "d": "25 Aug 2026",
+  "t": "THE AUDIT: THIRTEEN FINDINGS ON THE CORRECTION ROAD, EVERY ONE FIXED AND PINNED",
+  "n": [
+   "<b>A FULL PASS OVER BOTH SURFACES, ON HIS INSTRUCTION.</b> Every hop of the correction road was read against every other: the phone's sheet, the desk's panel, the drafter, the fold, the desk's own ovAmend and the payload that feeds the phone. Thirteen findings, all fixed, all pinned with an assertion so none can come back quietly. The suite grows 546 to 568.",
+   "<b>THE WORST ONE: THE PHONE PREFILLED A FIGURE THAT IS NOT THE FIELD IT EDITS.</b> The payload's cash is txPaid and its delivered is txEffDeliv, which is right for reading a row and wrong for editing one: a correction writes the RAW fields, and on the thirteen rows carrying in-kind settlements the two part company. s074 showed Cash RM188 over a stored cash of 0, so retyping the shown figure would have added RM188 of phantom cash. The payload now sends the raw figure wherever it differs, the sheet prefills it, and the Settled boxes sit beside it so the whole picture is on screen.",
+   "<b>AN OLD LOT LOST ITS PAYMENT TO A DATE FIX.</b> A settled lot stores its payment as status \"paid\" with no cash field at all. The correction path recomputed status from raw cash on EVERY correction, so fixing the date on such a lot flipped it to unpaid. The recompute now runs only when cash or total was actually set. Same fix in the fold and in ovAmend, from the same reading.",
+   "<b>CLEARING pending COULD WALK A WHOLE LOT INTO STOCK.</b> An absent receivedQty means fully received, which is how every settled lot is stored, so a correction that cleared pending on a deposit would have booked the entire undelivered lot into stock and the cost basis: the v146 failure on a new road. The guard ovAmend's fulfilment path has always had is on this one now: clearing pending without stating a receipt writes receivedQty 0 and inTransit.",
+   "<b>THE GATE MISSED EVERY IN-KIND SETTLEMENT.</b> The under-paid flag compared the corrected total against raw cash, so restating s010's total below the RM80 it was settled for raised nothing. It reads txPaid and txEffDeliv now, and a correction pricing an unpriced row clears the flag exactly as a Modification has since v358, with the clearance recorded in the trail.",
+   "<b>EDIT ON A QUEUED CORRECTION WENT NOWHERE.</b> The Approve tab's Edit button, wired at v360, predates corrections: tapping it on one errored into the Record tab. It now reopens the row editor on the PROPOSED state, and saving withdraws the earlier draft first, with the same block-on-it discipline record() uses, so one row never carries two live corrections. A desk-authored note or cost riding in the draft survives a phone resend instead of being silently dropped, and the sheet says so.",
+   "<b>THE DESK'S APPROVE PANEL SHOWED A CORRECTION AS ZEROS.</b> The generic amendment card leads with cash and units moving, both zero on a correction by definition. The desk now renders the same before-and-after card the phone got at v361. Smaller findings alongside: duplicate party and date flags on every correction card, raw field keys where labels belonged, the fold's plan describing a correction by its target's balance, a cancelled row's editor offering a save the drafter was always going to refuse, and clearing the date off a row with movement now refused outright rather than flagged.",
+   "<b>NO FIGURE MOVED.</b> No row was folded and no rate changed; the audit changed what the tools do, not what the book says."
+  ]
+ },
+ {
   "v": "v363",
   "d": "25 Aug 2026",
   "t": "EVERY ATTRIBUTE OF A ROW IS EDITABLE, AND THE CHAIN IS PROVED ON THE REAL QUEUE",

@@ -74,6 +74,10 @@ function describe(item) {
   const r = item.row || {};
   if (item.amends) {
     if (item.amendKind === "Modification") return `Modification on ${item.amends}: to ${r.newQty ?? "?"} unit / RM${r.newTotal ?? "?"}`;
+    if (item.amendKind === "Correction") {
+      const f = (item.entry && item.entry.payload && item.entry.payload.fields) || {};
+      return `Correction on ${item.amends}: ${Object.keys(f).join(", ") || "nothing"}`;
+    }
     return `${item.amendKind} on ${item.amends}: cash ${r.cash != null ? r.cash : "?"}`;
   }
   switch (item.collection) {
@@ -246,6 +250,21 @@ function applyAmend(row, pay, dir, note) {
       if (!asked(k)) continue;
       if (f[k] === true) row[k] = true; else delete row[k];
     }
+    /* A ROW WITH AN AGREED FIGURE IS PRICED BY DEFINITION. Same behaviour as a Modification,
+       which has cleared the flag since v358; a correction that sets the total should not need
+       a second tap to say so, and the trail records that it happened. */
+    if (!asked("unpriced") && asked("total") && f.total > 0.005 && row.unpriced) {
+      delete row.unpriced;
+      said.push("unpriced (cleared: a real total was set)");
+    }
+    /* THE v146 GUARD, on the correction road too. poRecvKg reads an ABSENT receivedQty as
+       fully received, which is how every settled historical lot is stored. So clearing
+       `pending` alone would walk the whole lot into stock and the cost basis the moment a
+       deposit is recorded; the receipt has to be stated explicitly: nothing has arrived, the
+       lot is on order. ovAmend's fulfilment path does exactly this, for exactly this reason. */
+    if (dir === "BUY" && asked("pending") && f.pending !== true && row.receivedQty == null) {
+      row.receivedQty = 0; row.inTransit = true;
+    }
     if (asked("product")) { if (f.product === "salt") delete row.product; else row.product = f.product; }
 
     /* THEN THE ATTRIBUTION, once, from the three fields read together. A per-field write would
@@ -268,7 +287,12 @@ function applyAmend(row, pay, dir, note) {
 
     /* A PURCHASE'S status IS DERIVED, so it is recomputed rather than offered. ovAmend does
        exactly this after a payment, and a corrected cash or total has to leave the same answer. */
-    if (dir === "BUY") {
+    /* ONLY WHEN A FIGURE IT DERIVES FROM WAS SET. An old lot stores its payment as
+       status:"paid" with no cash field at all, so an unconditional recompute read paid as
+       zero and flipped the lot to unpaid on ANY correction, a date fix included. Touch the
+       status only when cash or total moved, and read what was asked rather than a raw field
+       that is legitimately absent. */
+    if (dir === "BUY" && (asked("cash") || asked("total"))) {
       const paid = row.cash != null ? row.cash : 0;
       row.status = paid >= (row.total || 0) - 0.009 ? "paid" : (paid <= 0.009 ? "unpaid" : "partial");
     }

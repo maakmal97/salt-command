@@ -910,9 +910,9 @@ var PHFORM=[
   {k:'dn',          f:'downstream',   l:'Downstream',         kind:'code', only:'S'},
   {k:'orderCode',   f:'orderCode',    l:'Order code',         kind:'text'},
   {g:'What has moved'},
-  {k:'cash',        f:'cash',         l:'Cash in, RM',        kind:'num'},
+  {k:'cash',        f:'cash',         l:'Cash in, RM',        kind:'num', hint:'Cash alone. Anything settled in kind sits under Settled, below.'},
   {k:'mv',          f:'deliveredQty', l:'Handed over, unit',  kind:'num', only:'S'},
-  {k:'receivedQty', f:'receivedQty',  l:'Received, unit',     kind:'num', only:'B'},
+  {k:'receivedQty', f:'receivedQty',  l:'Received, unit',     kind:'num', only:'B', hint:'Empty on a settled lot means received in full; the book stores it that way.'},
   {g:'Dates'},
   {k:'d',           f:'date',         l:'Row date',           kind:'date', hint:'Empty for a pending row that has not moved.'},
   {k:'agreedOn',    f:'agreedOn',     l:'Agreed on',          kind:'date'},
@@ -942,18 +942,22 @@ function phView(r){
   v.product=r.pr||'salt';
   v.party=(r.st2==='R2')?(r.dn||null):(r.p||null);
   v.assoc=r.as||null; v.stream=r.st2||null; v.downstream=r.dn||null;
+  /* the raw figures where the payload says they differ from the derived ones */
+  if(r.cashRaw!==undefined)v.cash=r.cashRaw;
+  if(r.delivRaw!==undefined)v.deliveredQty=r.delivRaw;
   return v;
 }
-var EDR=null, edBusy=false;
+var EDR=null, edBusy=false, EDPATCH=null, EDFROM=null;
 function edRow(rid){ return ((D&&D.ledger)||[]).filter(function(r){ return r.rid===rid; })[0]||null; }
-function edOpen(rid){ var r=edRow(rid); if(!r)return; EDR=rid; edBusy=false; edDraw(); }
-function edShut(){ if(edBusy)return; EDR=null; edDraw(); }
+function edOpen(rid,patch,fromId){ var r=edRow(rid); if(!r)return; EDR=rid; EDPATCH=patch||null; EDFROM=fromId||null; edBusy=false; edDraw(); }
+function edShut(){ if(edBusy)return; EDR=null; EDPATCH=null; EDFROM=null; edDraw(); }
 function edDraw(){
   var wrap=$('edWrap');
   if(!wrap){ wrap=document.createElement('div'); wrap.id='edWrap'; document.body.appendChild(wrap); }
   if(!EDR){ wrap.innerHTML=''; wrap.className=''; return; }
   var r=edRow(EDR); if(!r){ EDR=null; wrap.innerHTML=''; wrap.className=''; return; }
   var buy=r.dir==='B', canc=(r.st==='canc'), v=phView(r);
+  if(EDPATCH){ Object.keys(EDPATCH).forEach(function(k){ if(EDPATCH[k]===null)delete v[k]; else if(EDPATCH[k]!==undefined)v[k]=EDPATCH[k]; }); }
   var codes=((D&&D.parties)||[]).concat((D&&D.suppliers)||[])
     .filter(function(x,i,a){ return x&&a.indexOf(x)===i; }).sort();
   var dis=canc?' disabled':'';
@@ -990,7 +994,9 @@ function edDraw(){
     +'<p class="ed-sub">'+esc(r.rid)+' &middot; '+(buy?'bought from ':'sold to ')+esc(r.p)+' &middot; '+esc(r.d||'undated')+'</p>'
     +(canc
       ? '<p class="ed-note bad">This row is <b>cancelled</b>. Reviving one is a judgement rather than a figure, so it is left for the desk.</p>'
-      : '<p class="ed-note">This <b>queues a correction</b>. It does not write to the book. The drafter checks every field against the ledger and it comes back to <b>Approve</b> for a tap.</p>')
+      : '<p class="ed-note">This <b>queues a correction</b>. It does not write to the book. The drafter checks every field against the ledger and it comes back to <b>Approve</b> for a tap.'
+        +(EDFROM?' <b>Saving withdraws the earlier queued correction first</b>, so only this one stands.':'')
+        +((EDPATCH&&(EDPATCH.note!==undefined||EDPATCH.cost!==undefined))?' It also sets the '+[EDPATCH.note!==undefined?'note':null,EDPATCH.cost!==undefined?'cost':null].filter(Boolean).join(' and the ')+', which this phone cannot show; that part is kept exactly as it was queued.':'')+'</p>')
     +'<datalist id="edCodes">'+codes.map(function(c){ return '<option value="'+esc(c)+'"></option>'; }).join('')+'</datalist>'
     +html
     +'<p class="ed-h" style="margin:10px 0 12px">The cost and the row note are edited at the desk. Both quote lot costs, so they are kept off this app and it will not offer to replace a value it cannot show you.</p>'
@@ -1022,6 +1028,7 @@ function edSave(){
     var was=(f.kind==='bool')?!!raw:raw;
     if(JSON.stringify(want)!==JSON.stringify(was))fields[f.f]=want;
   });
+  if(EDPATCH){ ['note','cost'].forEach(function(k){ if(EDPATCH[k]!==undefined&&fields[k]===undefined)fields[k]=EDPATCH[k]; }); }
   var why=$('ed-why');
   var say=function(cls,m){ if(why){ why.innerHTML=m; why.className='ed-why '+cls; } };
   if(!Object.keys(fields).length)return say('bad','Nothing changed, so there is nothing to queue.');
@@ -1044,12 +1051,25 @@ function edSave(){
      next open, which is why held is written before the fetch rather than after it. */
   edBusy=true; say('','Queueing.');
   var btn=$('ed-save'); if(btn)btn.disabled=true;
-  held.push(e); saveHeld(); drawHeld();
-  push().then(function(res){
-    edBusy=false; if(btn)btn.disabled=false;
-    if(res.ok){ edShut(); chaseDraft(); }
-    else if(res.why==='key')say('bad','The write key was not accepted. The correction is held on this device and goes up when the key is right.');
-    else say('warn','No signal, so it is held on this device and pushed on the next open with a connection.');
+  /* Withdraw the earlier draft FIRST and block on it, exactly as record() does for an edited
+     entry: if the withdrawal fails and this went up anyway, the same row would carry two
+     corrections and both could be approved and folded. */
+  var pre=EDFROM?rejectDraft({kind:'draft',id:EDFROM}):Promise.resolve({ok:true});
+  pre.then(function(rr){
+    if(!rr.ok){
+      edBusy=false; if(btn)btn.disabled=false;
+      say('bad',esc(rr.msg||'The earlier correction could not be withdrawn, so nothing was sent. Try again.'));
+      if(rr.why==='approved'){ EDFROM=null; loadDrafts(); }
+      return;
+    }
+    EDFROM=null;
+    held.push(e); saveHeld(); drawHeld();
+    push().then(function(res){
+      edBusy=false; if(btn)btn.disabled=false;
+      if(res.ok){ edShut(); chaseDraft(); }
+      else if(res.why==='key')say('bad','The write key was not accepted. The correction is held on this device and goes up when the key is right.');
+      else say('warn','No signal, so it is held on this device and pushed on the next open with a connection.');
+    });
   });
 }
 function ledCard(r){
@@ -1970,7 +1990,7 @@ function drfButtons(){
 function editableMode(e){
   var p=e&&e.payload; if(!p)return false;
   if(p.mode==='new')return !(p.assoc||p.stream||p.downstream||p.orderCode||p.linkTo);
-  if(p.mode==='amend')return p.kind==='Fulfilment'||p.kind==='Cancellation'||p.kind==='Modification';
+  if(p.mode==='amend')return p.kind==='Fulfilment'||p.kind==='Cancellation'||p.kind==='Modification'||p.kind==='Correction';
   if(p.mode==='count'||p.mode==='loss'||p.mode==='lost')return true;
   if(p.mode==='addid')return true;
   return false;
@@ -1985,6 +2005,16 @@ function editEntry(kind,id){
   var src=(kind==='draft'?DRAFTS:REFUSED).filter(function(x){ return x.id===id; })[0];
   var e=src&&src.entry, p=e&&e.payload;
   if(!p||!editableMode(e)){ msg('bad','Nothing here to reopen: this entry carries no shape the form on this phone can rebuild.'); show('p-add'); return; }
+  /* A CORRECTION REOPENS THE ROW EDITOR, NOT THE TRADE FORM. The form has no boxes for a
+     row patch; the sheet that queued it does, and it opens on the PROPOSED state so what was
+     asked for is on screen, not lost. From a draft, saving withdraws this one first; a
+     refused correction has no decision to withdraw and simply goes again. */
+  if(p.mode==='amend'&&p.kind==='Correction'){
+    if(!edRow(p.rid)){ msg('bad','The row this corrects is not on this copy of the book yet. Reload and try again.'); return; }
+    show('p-book');
+    edOpen(p.rid,p.fields||{},kind==='draft'?id:null);
+    return;
+  }
   var missingTarget=false;
   EDITING={kind:kind,id:id};
   if(p.mode==='new'){
@@ -2132,7 +2162,14 @@ function drawDrafts(){
     if(d.amends&&d.amendKind==='Correction'){
       var ch=(r.changes||[]);
       var LAB={product:'Product',party:'Party',assoc:'Associate',stream:'Stream',
-               downstream:'Downstream',date:'Date',qty:'Quantity',total:'Total',note:'Note'};
+               downstream:'Downstream',date:'Date',qty:'Quantity',total:'Total',note:'Note',
+               cash:'Cash in',deliveredQty:'Handed over',receivedQty:'Received',cost:'Cost',
+               settledRM:'Settled RM',settledKg:'Settled unit',settle:'Settled in',
+               rebate:'Rebate RM',rebateKg:'Rebate unit',goodwill:'Goodwill',
+               agreedOn:'Agreed on',paidOn:'Paid on',deliveredOn:'Delivered on',
+               receivedOn:'Received on',cancelledOn:'Cancelled on',orderCode:'Order code',
+               unpriced:'Unpriced',cancelled:'Cancelled',pending:'Pending',
+               inTransit:'In transit',defaulted:'Defaulted'};
       var shortly=function(v){
         if(v===null||v===undefined)return 'nothing';
         v=String(v); return v.length>42?v.slice(0,42)+'…':v;

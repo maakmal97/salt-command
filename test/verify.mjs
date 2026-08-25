@@ -1763,6 +1763,107 @@ section("Fold — an approved batch becomes records in the book (v340)");
     ok(checkCorrection({ party: "CN6-WM" }, bk, r2, true).changes.length === 1,
       "and naming a different buyer on it is");
   }
+  /* ---- the 25 Aug audit: every finding pinned so it cannot come back quietly ---- */
+  {
+    const { draftRow, checkCorrection } = await import("../src/drafter.js");
+    const E2 = (await import("../engine/position.mjs")).default;
+    const app2 = readFileSync(join(REPO, "public", "index.html"), "utf8");
+    const m2 = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+
+    /* the engine emits the RAW figures where they differ from the derived ones, so the
+       phone edits the field a correction actually writes. Thirteen live rows diverge. */
+    const ink = E2.ledgerRow({ rid: "sT", customer: "X", qty: 1, total: 80, cash: 0, settledRM: 80, deliveredQty: 1, date: "2026-07-01" }, "S", "salt");
+    ok(ink.cash === 80 && ink.cashRaw === 0, "an in-kind row reads paid RM80 and says its raw cash is 0");
+    const plainR = E2.ledgerRow({ rid: "sU", customer: "X", qty: 1, total: 100, cash: 100, deliveredQty: 1, date: "2026-07-01" }, "S", "salt");
+    ok(plainR.cashRaw === undefined && plainR.delivRaw === undefined, "a row with no divergence carries no extra fields");
+    ok(/cashRaw!==undefined\)v\.cash=r\.cashRaw/.test(app2), "and the phone prefills the raw figure when it is sent");
+
+    /* the drafter: one flag per fact, effective figures, and the two new refusals */
+    const bk2 = { state: { roster: ["CA4-DAM", "CN6-WM"], PRODUCTS: { salt: {}, oil: {} }, associates: ["CN6-WM"] } };
+    const inkT = { rid: "sK1", customer: "CA4-DAM", qty: 1, total: 80, cash: 0, settledRM: 80, deliveredQty: 1, date: "2026-07-01" };
+    const c1 = checkCorrection({ date: null }, bk2, inkT, true);
+    ok(/cannot be cleared: money or stock has moved/.test(c1.errs.join(" ")),
+      "clearing the date off a row with movement is refused, not flagged");
+    /* one flag per fact: checkCorrection and the branch each raised the party and date
+       flags, so every card said each twice. And the under-paid comparison reads the
+       EFFECTIVE paid, or an in-kind settlement hides it entirely. */
+    {
+      const bkL = { sales: [inkT], purchases: [], state: bk2.state, pricing: null };
+      const d1 = draftRow({ at: "a1", payload: { mode: "amend", kind: "Correction", rid: "sK1", fields: { party: "CN6-WM", date: "2026-07-02" } } }, bkL);
+      ok(!d1.skip && (d1.flags || []).filter((f) => /moves the row from/.test(f)).length === 1,
+        "a party correction raises the party flag once, not twice");
+      ok((d1.flags || []).filter((f) => /redating|counted as having happened/.test(f)).length === 1,
+        "and the date flag once");
+      const d2 = draftRow({ at: "a2", payload: { mode: "amend", kind: "Correction", rid: "sK1", fields: { total: 70 } } }, bkL);
+      ok(!d2.skip && (d2.flags || []).some((f) => /under the RM 80 already paid/.test(f)),
+        "a total under the EFFECTIVE paid figure is flagged: raw cash is 0 here and the RM80 was settled in kind");
+    }
+    const oldLot = { rid: "pK1", supplier: "SA5-BTR", qty: 5, total: 250, status: "paid" };
+    ok(checkCorrection({ date: "2026-07-03" }, bk2, { ...oldLot, date: "2026-07-02" }, false).errs.length === 0,
+      "a date fix on an old lot is admissible");
+
+    /* the fold: the three writes the audit added, each against the failure it stops */
+    {
+      const FB = JSON.parse(JSON.stringify(book));
+      FB.QUEUE_COMMITTED = "2026-01-01T00:00:00.000Z";
+      FB.purchases.push({ rid: "pX01", date: "2026-07-02", supplier: "SA5-BTR", qty: 5, total: 250, status: "paid", note: "fixture." });
+      FB.sales.push({ rid: "sX02", customer: "CX9-TESTUP", qty: 3, total: 0, cash: 0, deliveredQty: 0, unpriced: true, note: "fixture." });
+      const corr2 = (at, rid, coll, dirn, fields) => ({ ok: true, count: 1, approved: [{
+        id: ID(at), collection: coll, amends: rid, amendKind: "Correction",
+        row: { rid }, entry: { at: ID(at), payload: { mode: "amend", direction: dirn, rid, kind: "Correction", date: "2026-08-25", fields } } }] });
+      const N2 = (at) => ({ version: "v999", date: "25 Aug 2026", title: "AUDIT", notes: ["<b>TEST.</b>"], rows: { [ID(at)]: { note: "audit fixture." } }, stockNote: "" });
+
+      /* F12: a date-only correction must not touch a status-carried payment. The old lot
+         stores "paid" as a word with no cash field, and the unconditional recompute read
+         that as zero and flipped it to unpaid. */
+      const A2 = JSON.parse(JSON.stringify(FB));
+      const r1 = apply(A2, corr2("05:00", "pX01", "purchases", "BUY", { date: "2026-07-03" }), N2("05:00"), master);
+      ok(r1.ok, "a date fix on an old lot applies: " + (r1.ok ? "" : r1.problems.join("; ")));
+      if (r1.ok) {
+        const row = A2.purchases.find((x) => x.rid === "pX01");
+        ok(row.status === "paid" && row.date === "2026-07-03",
+          "and the lot is still paid: the status recompute only runs when cash or total was set");
+      }
+
+      /* F13: clearing pending without stating a receipt gets the v146 guard, or the whole
+         lot walks into stock and the cost basis on a deposit. */
+      const B2 = JSON.parse(JSON.stringify(FB));
+      B2.purchases.push({ rid: "pX02", supplier: "SA5-BTR", qty: 100, total: 4600, pending: true, note: "fixture." });
+      const r2 = apply(B2, corr2("05:01", "pX02", "purchases", "BUY", { pending: false, cash: 500, date: "2026-08-25" }), N2("05:01"), master);
+      ok(r2.ok, "clearing pending applies: " + (r2.ok ? "" : r2.problems.join("; ")));
+      if (r2.ok) {
+        const row = B2.purchases.find((x) => x.rid === "pX02");
+        ok(!row.pending && row.receivedQty === 0 && row.inTransit === true,
+          "and the receipt is stated explicitly: nothing arrived, the lot is on order (the v146 guard)");
+        ok(E2.poRecvKg(row) === 0, "so the walk books no phantom stock from it");
+      }
+
+      /* F3: a real total on an unpriced row clears the flag, as a Modification has since
+         v358, and the trail says it happened. */
+      const C3 = JSON.parse(JSON.stringify(FB));
+      const r3 = apply(C3, corr2("05:02", "sX02", "sales", "SELL", { total: 290 }), N2("05:02"), master);
+      ok(r3.ok, "pricing an unpriced row applies: " + (r3.ok ? "" : r3.problems.join("; ")));
+      if (r3.ok) {
+        const row = C3.sales.find((x) => x.rid === "sX02");
+        ok(!row.unpriced && row.total === 290, "the unpriced flag clears itself when a real total lands");
+        ok(/unpriced \(cleared/.test(row.mod || ""), "and the trail records that it did");
+      }
+    }
+
+    /* the surfaces: each renders a correction as what it is */
+    ok(/amendKind==='Correction'/.test(m2) && /r\.changes/.test(m2.slice(m2.indexOf("function apCard"), m2.indexOf("function apDraw"))),
+      "the desk Approve card renders a correction as before-and-after, not as cash moving");
+    ok(/kind==='Correction'/.test(app2.slice(app2.indexOf("function editableMode"), app2.indexOf("function editEntry"))),
+      "the Approve tab Edit button admits a correction");
+    ok(/edOpen\(p\.rid,p\.fields\|\|\{\},kind==='draft'\?id:null\)/.test(app2),
+      "and reopens the row editor on the proposed state, withdrawing the draft on save");
+    ok(/rejectDraft\(\{kind:'draft',id:EDFROM\}\)/.test(app2),
+      "the sheet withdraws the earlier correction before sending the replacement");
+    ok(/settledRM:'Settled RM'/.test(app2) && /paidOn:'Paid on'/.test(app2),
+      "the correction card labels the audit-era fields rather than printing raw keys");
+    ok(/EDPATCH\[k\]!==undefined&&fields\[k\]===undefined/.test(app2),
+      "a desk-authored note or cost rides through a phone resend instead of being dropped");
+  }
   /* ---- a CORRECTION: every field on any row, including a settled one (25 Aug 2026) ---- */
   /* Self-contained for the same reason the batch above is: it pushes its own target onto this
      COPY of the book, with its own rid, so no real fold can ever consume it and no assertion
