@@ -136,7 +136,8 @@ the laptop desk keeps Names & IDs and has no drafts table.
 
 **The phone has six tabs.** Today (the count when due, what needs doing, the position, **the next
 thirty days** per product off the desk's own forecast, alerts), Book (who owes what, with the age
-of each debt and what the ladder expects; the ledger folded), **People** (who is due on his own
+of each debt and what the ladder expects; the ledger folded, and **from v362 a tap on any row
+opens the editor**), **People** (who is due on his own
 habit, every customer with the desk's tier and a statement on tap, the network, the customer
 rewards, the demand turned away, the map's heat), Price, Record (Trade, Amend, Stock, **Add ID**),
 Approve. It reads `people` and `forward` from `data.json` and computes nothing; the leak test
@@ -232,8 +233,11 @@ phone: add transaction ──POST /queue──▶ Worker ──▶ KV  (key q:<d
         └─ npm run deploy   +   git commit/push                 (phone gets the new ledger)
 
    The laptop's own queue joins the same road:  node tools/drafts.mjs --from-queue
-   A row edit joins it too (v361):  right-click any ledger row on /desk, edit any field,
-   and it queues as a Correction that is drafted, flagged and approved like everything else.
+   A row edit joins it too:  right-click a ledger row on /desk (v361) or TAP one on the
+   phone's Book tab (v362), edit any field, and it queues as a Correction that is drafted,
+   flagged and approved exactly like a transaction. The phone edits everything except the
+   NOTE, because notes carry lot costs in prose and the payload keeps those off a public app;
+   notes stay editable at the desk.
 ```
 
 The desk needed almost no change because it already speaks this HTTP contract to
@@ -457,7 +461,7 @@ Per-Crm01 master (a Cowork/master session); once it lands, the sync above alread
 | `ledger/book.json` | **THE BOOK** (v339, move 2): the twenty-six ledger keys as data, plus `NOTES`. Edited by the fold; rendered into the master by `tools/booksync.mjs --sync`; CI proves the copy. |
 | `tools/booksync.mjs` | `--sync` renders the book into the master between its markers; `--check` fails if the block is not the file; `--normalise` rewrites the JSON one record per line. |
 | `engine/pricing.mjs` | **THE PRICING ENGINE** (v337, move 1 of the rebuild): the cost stack, the taper, the ladder, the floors and the board as pure functions of explicit inputs. The desk, the payload build and the drafter all price from it. Inlined into the master by `tools/engine.mjs --sync`; CI proves the copy is the file. |
-| `engine/position.mjs` | **THE POSITION ENGINE** (v338): the transaction model (what a row has paid, delivered, deferred, pending; its state and dates; what a lot received and paid; the ageing ladder), the ledger walk that was `recompute()`, cover, the commitments and the phone's row shape. Same rules as the pricing engine. |
+| `engine/position.mjs` | **THE POSITION ENGINE** (v338): the attribution rule (`attributionOf`, v362: who the associate is, read back out of a row, since R2 and R3 store it differently and the desk, the fold and the payload all need the same answer), the transaction model (what a row has paid, delivered, deferred, pending; its state and dates; what a lot received and paid; the ageing ladder), the ledger walk that was `recompute()`, cover, the commitments and the phone's row shape. Same rules as the pricing engine. |
 | `tools/engine.mjs` | `--sync` writes `engine/*.mjs` into the master between its markers; `--check` fails if the block is not the module. |
 | `geo/basemap.json` | **THE BASEMAP** (v349): the drawn administrative outlines, with source, licence, the day fetched and the simplification stated. OpenStreetMap via geoBoundaries, ODbL 1.0, so the credit is printed under the map. Fetched ONCE by `tools/geofetch.mjs` and committed; nothing loads at runtime. |
 | `geo/places.json` | **THE GAZETTEER** (v349): `PLACES`, `METRO`, `NON_PLACE`, `PLACEHOLDER`, `LOCS` and `NOTES`, out of the master and into data. |

@@ -204,9 +204,40 @@ function ledgerRow(t,dir,defaultProd){
   if(oweKg>=0.005) r.oweKg=oweKg;
   const pr=t.product||defaultProd;
   if(pr!==defaultProd) r.pr=pr;
+  /* v362: THE ID AND THE ATTRIBUTION, so the phone can name a row and prefill an edit of it.
+     Neither is a cost and neither is a margin, so neither trips the leak rule the rest of this
+     shape obeys: a rid is opaque and an attribution is a code that is already on the roster the
+     payload ships anyway. THE NOTE IS STILL NOT HERE, and that is the one field the phone
+     editor cannot touch: the notes carry lot costs and margins in prose, and this app is
+     public by decision. That is a policy line, not a size one. */
+  if(t.rid) r.rid=t.rid;
+  const at=attributionOf(t,dir==='B'?'supplier':'customer');
+  if(at.assoc){ r.as=at.assoc; r.st2=at.stream; if(at.downstream) r.dn=at.downstream; }
   return r;
 }
 function openable(r){return r.st!=='done'&&r.st!=='canc';}
+/* WHO THE ASSOCIATE IS, READ BACK OUT OF A ROW. An attribution is not stored the way it is
+   typed: a row has no assoc field and no stream field, and the book never carried either.
+   What it carries is the desk's translation of them, and the two streams translate
+   differently.
+
+     R2  the row books TO the associate. The counterparty field holds the associate, rev is
+         'R2', and the actual buyer is kept beside it as downstream. The buyer is not the
+         counterparty on that row and gets no statement from it.
+     R3  the row books to the BUYER as normal, and the introduction is credited beside it:
+         ref holds the associate, refKg the size.
+
+   So the associate has to be DERIVED from a row rather than read off a field, and clearing
+   an R2 has to put the buyer back from downstream or the counterparty is lost outright.
+   It lives here, in the engine, because three places need the same answer: the desk's
+   ovAmend, the fold's applyAmend, and the phone payload below. Two of them had their own
+   copy for about an hour on 25 Aug and that is exactly the drift this file exists to stop. */
+function attributionOf(row,partyKey){
+  const pk=partyKey||(row.supplier!=null?'supplier':'customer');
+  if(row.rev==='R2')return {assoc:row[pk],stream:'R2',downstream:row.downstream||null};
+  if(row.ref)return {assoc:row.ref,stream:'R3',downstream:null};
+  return {assoc:null,stream:null,downstream:null};
+}
 /* the key an amendment names a row by, shared with the phone and the drafter */
 function ovKey(t){return (t.customer||t.supplier)+'|'+t.date+'|'+t.total;}
 
@@ -214,6 +245,6 @@ return {txPrice:txPrice,txPaid:txPaid,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:t
         txDeferKg:txDeferKg,txPendKg:txPendKg,txPendKgRaw:txPendKgRaw,txPendRM:txPendRM,txStat:txStat,txDates:txDates,
         poRecvKg:poRecvKg,poCash:poCash,poLive:poLive,poRate:poRate,poOpenKg:poOpenKg,provRate:provRate,
         daysBetween:daysBetween,walk:walk,coverStats:coverStats,commitments:commitments,
-        ledgerRow:ledgerRow,openable:openable,ovKey:ovKey};
+        ledgerRow:ledgerRow,openable:openable,ovKey:ovKey,attributionOf:attributionOf};
 })();
 export default POSITION_ENGINE;

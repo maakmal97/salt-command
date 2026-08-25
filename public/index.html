@@ -165,6 +165,32 @@ h2{font-size:17px;font-weight:600;letter-spacing:-.2px;margin:0 0 12px}
 .drf-why{font-size:12.5px;color:var(--ink-2);margin:0 0 10px;overflow-wrap:break-word}
 .drf-f{background:rgba(255,207,122,.10);border:1px solid rgba(255,207,122,.30);
   border-radius:10px;padding:9px 11px;margin:0 0 10px;font-size:12.5px;color:var(--warn)}
+/* the row editor sheet (v362) */
+.led[data-rid]{cursor:pointer}
+.led[data-rid]:active{background:rgba(255,255,255,.09)}
+.ed-bd{position:fixed;inset:0;background:rgba(6,4,14,.62);z-index:98}
+.ed-sheet{position:fixed;left:0;right:0;bottom:0;z-index:99;max-height:92vh;overflow-y:auto;
+  background:var(--card);border-top:1px solid var(--brd-2);
+  border-radius:var(--r) var(--r) 0 0;padding:16px 16px calc(18px + env(safe-area-inset-bottom));
+  box-shadow:0 -18px 40px rgba(0,0,0,.5)}
+@media (min-width:620px){.ed-sheet{left:50%;transform:translateX(-50%);width:min(520px,94vw);
+  bottom:0;border-radius:var(--r) var(--r) 0 0}}
+.ed-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.ed-h1{font-size:15px;font-weight:700;letter-spacing:-.2px}
+.ed-x{background:none;border:none;color:var(--ink-3);font-size:24px;line-height:1;cursor:pointer;
+  min-height:var(--tap);min-width:var(--tap)}
+.ed-sub{margin:2px 0 10px;font-size:11.5px;color:var(--ink-3);font-family:var(--mono)}
+.ed-note{margin:0 0 14px;font-size:12.5px;line-height:1.45;color:var(--ink-2);
+  background:rgba(127,215,232,.09);border:1px solid rgba(127,215,232,.26);
+  border-radius:var(--r-sm);padding:10px 12px}
+.ed-note.bad{background:rgba(255,122,138,.10);border-color:rgba(255,122,138,.30)}
+.ed-f{margin-bottom:12px}
+.ed-h{margin:4px 0 0;font-size:11.5px;line-height:1.4;color:var(--ink-3)}
+.ed-why{margin:0;font-size:12.5px;line-height:1.45;min-height:0}
+.ed-why.bad{color:var(--bad);margin-bottom:10px}
+.ed-why.warn{color:var(--warn);margin-bottom:10px}
+.ed-b{display:grid;grid-template-columns:1fr 2fr;gap:9px;margin-top:6px}
+.ed-b .go{background:linear-gradient(135deg,var(--lead),#d8553a);border-color:transparent;color:#fff}
 .drf-ch{display:flex;flex-direction:column;gap:5px;margin:9px 0 3px}
 .drf-cl{display:grid;grid-template-columns:auto 1fr auto 1fr;gap:7px;align-items:baseline;
   background:rgba(255,255,255,.04);border:1px solid var(--brd);border-radius:9px;padding:7px 10px}
@@ -850,6 +876,122 @@ function ledMatch(r){
   return r.st===fs;
 }
 /* one card for a row, shared by the ledger and by who-owes-what */
+/* ============ THE ROW EDITOR, ON THE PHONE (v362, 25 Aug 2026) ============
+   Tap any row on the Book tab and every field a person typed is typeable again. The desk got
+   this first, on a right-click; a long press raises the same event on a touch screen, but iOS
+   Safari is not reliable about it, so the phone opens on a plain TAP. A ledger card had no tap
+   action before, so nothing is taken away, and the sheet queues nothing until Save is pressed.
+
+   IT QUEUES A CORRECTION AND WRITES NOTHING, the same as everything else on this app: it joins
+   `held`, goes up on the same push, the drafter checks every field against the book, and it
+   comes back to the Approve tab for a tap.
+
+   THE NOTE IS NOT HERE, AND THAT IS A POLICY LINE RATHER THAN AN OVERSIGHT. Row notes carry lot
+   costs and margins in prose, and phonePayloadLeaks() keeps every one of those off this payload
+   because the app is public by decision. The phone cannot SHOW a note, so it must not offer to
+   REPLACE one: blindly overwriting prose you cannot read is worse than not offering it. Notes
+   are edited at the desk, and the sheet says so rather than leaving it a mystery. */
+var EDR=null, edBusy=false;
+function edRow(rid){ return ((D&&D.ledger)||[]).filter(function(r){ return r.rid===rid; })[0]||null; }
+function edOpen(rid){
+  var r=edRow(rid);
+  if(!r)return;
+  EDR=rid; edBusy=false; edDraw();
+}
+function edShut(){ if(edBusy)return; EDR=null; edDraw(); }
+function edDraw(){
+  var wrap=$('edWrap');
+  if(!wrap){ wrap=document.createElement('div'); wrap.id='edWrap'; document.body.appendChild(wrap); }
+  if(!EDR){ wrap.innerHTML=''; wrap.className=''; return; }
+  var r=edRow(EDR); if(!r){ EDR=null; wrap.innerHTML=''; wrap.className=''; return; }
+  var buy=r.dir==='B', canc=(r.st==='canc');
+  var codes=((D&&D.parties)||[]).concat((D&&D.suppliers)||[])
+    .filter(function(v,i,a){ return v&&a.indexOf(v)===i; }).sort();
+  var opts=function(list,cur){ return list.map(function(o){
+    return '<option value="'+esc(o[0])+'"'+(String(cur==null?'':cur)===String(o[0])?' selected':'')+'>'+esc(o[1])+'</option>'; }).join(''); };
+  var prods=((D&&D.products)||[]).map(function(p){ return [p.id,p.name]; });
+  var fld=function(id,lab,inner,hint){
+    return '<div class="ed-f"><label class="lbl" for="'+id+'">'+esc(lab)+'</label>'+inner
+      +(hint?'<p class="ed-h">'+hint+'</p>':'')+'</div>'; };
+  wrap.className='ed-on';
+  wrap.innerHTML='<div class="ed-bd" data-a="shut"></div>'
+    +'<div class="ed-sheet" role="dialog" aria-modal="true" aria-label="Edit the entry">'
+    +'<div class="ed-top"><span class="ed-h1">Edit the entry</span>'
+    +'<button class="ed-x" data-a="shut" aria-label="Close">&times;</button></div>'
+    +'<p class="ed-sub">'+esc(r.rid)+' &middot; '+(buy?'bought from ':'sold to ')+esc(r.p)+' &middot; '+esc(r.d||'undated')+'</p>'
+    +(canc
+      ? '<p class="ed-note bad">This row is <b>cancelled</b>. Reviving one is a judgement rather than a figure, so it is left for the desk.</p>'
+      : '<p class="ed-note">This <b>queues a correction</b>. It does not write to the book. The drafter checks every field against the ledger and it comes back to <b>Approve</b> for a tap.</p>')
+    +'<datalist id="edCodes">'+codes.map(function(c){ return '<option value="'+esc(c)+'"></option>'; }).join('')+'</datalist>'
+    +fld('ed-prod','Product','<select id="ed-prod"'+(canc?' disabled':'')+'>'+opts(prods,r.pr||'salt')+'</select>','Changing this recosts the row off the other shelf.')
+    +fld('ed-party',buy?'Supplier':'Buyer','<input id="ed-party" list="edCodes"'+(canc?' disabled':'')+' value="'+esc(r.st2==='R2'?(r.dn||''):(r.p||''))+'">','Who the row books to. Moving it moves what each of them owes.')
+    +(buy?'':fld('ed-assoc','Associate','<input id="ed-assoc" list="edCodes" placeholder="none"'+(canc?' disabled':'')+' value="'+esc(r.as||'')+'">','Leave it empty to take an attribution off the row.'))
+    +(buy?'':fld('ed-stream','Stream','<select id="ed-stream"'+(canc?' disabled':'')+'>'+opts([['','none'],['R2','R2, books to the associate'],['R3','R3, credits the introduction']],r.st2||'')+'</select>','R2 makes the associate the counterparty and keeps the buyer beside it.'))
+    +fld('ed-date','Date','<input id="ed-date" type="date"'+(canc?' disabled':'')+' value="'+esc(r.d||'')+'">','Empty for a pending row that has not moved.')
+    +fld('ed-qty','Quantity, unit','<input id="ed-qty" type="number" step="0.01" inputmode="decimal"'+(canc?' disabled':'')+' value="'+esc(n2(r.q))+'">')
+    +fld('ed-total','Total, RM','<input id="ed-total" type="number" step="0.01" inputmode="decimal"'+(canc?' disabled':'')+' value="'+esc(n2(r.t))+'">')
+    +'<p class="ed-h" style="margin:-4px 0 12px">The row note is edited at the desk. Notes carry lot costs and margins in prose, so they are kept off this app.</p>'
+    +'<p id="ed-why" class="ed-why"></p>'
+    +'<div class="ed-b"><button class="btn" data-a="shut">Cancel</button>'
+    +(canc?'':'<button class="btn go" id="ed-save" data-a="save">Queue the correction</button>')
+    +'</div></div>';
+  Array.prototype.forEach.call(wrap.querySelectorAll('[data-a]'),function(b){
+    b.addEventListener('click',function(){
+      var a=b.getAttribute('data-a');
+      if(a==='shut')edShut(); else if(a==='save')edSave();
+    });
+  });
+}
+function edSave(){
+  if(edBusy)return;
+  var r=edRow(EDR); if(!r)return;
+  var g=function(id){ var e=$(id); return e?e.value:undefined; };
+  var blank=function(v){ return v===undefined||v===null||String(v).trim()===''; };
+  var buy=r.dir==='B';
+  var now={product:r.pr||'salt', party:(r.st2==='R2'?(r.dn||null):(r.p||null)),
+    assoc:r.as||null, stream:r.st2||null, date:r.d==null?null:r.d, qty:r.q, total:r.t};
+  var want={product:g('ed-prod'),
+    party:blank(g('ed-party'))?null:String(g('ed-party')).trim(),
+    assoc:g('ed-assoc')===undefined?undefined:(blank(g('ed-assoc'))?null:String(g('ed-assoc')).trim()),
+    stream:g('ed-stream')===undefined?undefined:(blank(g('ed-stream'))?null:String(g('ed-stream')).trim()),
+    date:blank(g('ed-date'))?null:String(g('ed-date')).trim(),
+    qty:blank(g('ed-qty'))?null:Number(g('ed-qty')),
+    total:blank(g('ed-total'))?null:Number(g('ed-total'))};
+  var fields={};
+  Object.keys(now).forEach(function(k){
+    if(want[k]===undefined)return;
+    if(JSON.stringify(want[k])!==JSON.stringify(now[k]))fields[k]=want[k];
+  });
+  var why=$('ed-why');
+  var say=function(cls,m){ if(why){ why.innerHTML=m; why.className='ed-why '+cls; } };
+  if(!Object.keys(fields).length)return say('bad','Nothing changed, so there is nothing to queue.');
+  var fa=Object.prototype.hasOwnProperty.call(fields,'assoc')?fields.assoc:now.assoc;
+  var fs=Object.prototype.hasOwnProperty.call(fields,'stream')?fields.stream:now.stream;
+  if(fa&&!fs)return say('bad','An associate needs a stream, R2 or R3, to say how the credit reaches them.');
+  if(!fa&&fs)return say('bad','A stream with no associate credits nobody. Clear the stream or name an associate.');
+  if(fields.qty!==undefined&&!(fields.qty>0))return say('bad','A quantity has to be a number above zero.');
+  if(fields.total!==undefined&&!(fields.total>=0))return say('bad','A total has to be a number, and not negative.');
+  var today=new Date().toISOString().slice(0,10);
+  var words=Object.keys(fields).map(function(k){ return k+' to '+(fields[k]===null?'(cleared)':fields[k]); });
+  var e={at:new Date().toISOString(),type:'AMEND',party:r.p,qty:0,total:0,
+    raw:'Correction on '+r.p+' '+r.rid+': '+words.join(', ')+', recorded '+today,
+    payload:{mode:'amend',direction:buy?'BUY':'SELL',party:r.p,rid:r.rid,orderKey:null,
+      kind:'Correction',date:today,fields:fields,
+      assoc:null,downstream:null,orderCode:null,linkTo:null,sameDay:false,note:null,
+      qty:0,total:0,cash:0,kg:0}};
+  /* THE SAME ROAD EVERY ENTRY TAKES: onto `held` first so it survives a dead connection, then
+     the shared push. An entry that never reaches KV is held on the device and goes up on the
+     next open, which is why held is written before the fetch rather than after it. */
+  edBusy=true; say('','Queueing.');
+  var btn=$('ed-save'); if(btn)btn.disabled=true;
+  held.push(e); saveHeld(); drawHeld();
+  push().then(function(res){
+    edBusy=false; if(btn)btn.disabled=false;
+    if(res.ok){ edShut(); chaseDraft(); }
+    else if(res.why==='key')say('bad','The write key was not accepted. The correction is held on this device and goes up when the key is right.');
+    else say('warn','No signal, so it is held on this device and pushed on the next open with a connection.');
+  });
+}
 function ledCard(r){
   var st=r.st, buy=r.dir==='B';
   var rate=(r.q>0)?rm(r.t/r.q)+'/unit':'';
@@ -860,7 +1002,11 @@ function ledCard(r){
   if(r.oweKg)bits.push(esc(n2(r.oweKg))+' unit'+(buy?' still to arrive':' to hand over'));
   /* v343: how old the debt is and what the desk's ladder says it is worth, both read off the row */
   if(r.age!=null&&r.exp!=null)bits.push('<span style="color:var(--warn)">'+esc(r.age)+(r.age===1?' day':' days')+' old &middot; expect '+esc(rm(r.exp))+'</span>');
-  return '<div class="led '+esc(st)+(st==='canc'?' canc':'')+'">'
+  /* v362: data-rid is what a tap opens the editor on. A row with no rid renders without the
+     attribute rather than with an empty one, so the delegated listener simply does not match
+     it and the tap does nothing. */
+  return '<div class="led '+esc(st)+(st==='canc'?' canc':'')+'"'
+    +(r.rid?' data-rid="'+esc(r.rid)+'" data-dir="'+esc(r.dir)+'"':'')+'>'
     +'<div class="led-t"><span class="led-p">'+(buy?'Bought from ':'Sold to ')+esc(r.p)+'</span>'
     +'<span class="led-rm">'+esc(rm(r.t))+'</span></div>'
     +'<p class="led-n"><span class="led-d">'+esc(r.d||'undated')+'</span>'
@@ -890,6 +1036,17 @@ function drawLedger(){
   }
   var shown=rows.slice(0,LEDN);
   box.innerHTML=shown.map(ledCard).join('');
+  if(!box.__edBound){
+    box.__edBound=1;
+    var openFrom=function(ev){
+      var card=ev.target&&ev.target.closest?ev.target.closest('.led[data-rid]'):null;
+      if(!card)return;
+      ev.preventDefault();
+      edOpen(card.getAttribute('data-rid'));
+    };
+    box.addEventListener('click',openFrom);
+    box.addEventListener('contextmenu',openFrom);
+  }
   more.hidden=rows.length<=LEDN;
   more.textContent='Show more ('+(rows.length-shown.length)+' of '+rows.length+' left)';
 }

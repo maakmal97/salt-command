@@ -60,7 +60,7 @@ document.addEventListener('visibilitychange',function(){
    focused, no dialog open. Otherwise it offers a chip and waits to be tapped.
    The same tick retries a held entry, which is what gets a phone write to the cloud
    without waiting for the next open. */
-var SALT_BUILD_ID="76c8db8362ca2485";
+var SALT_BUILD_ID="7b0e8a45d4c4e30a";
 var SALT_REV_MS=10000;
 (function(){
   var chip=null,timer=null;
@@ -1643,9 +1643,40 @@ function ledgerRow(t,dir,defaultProd){
   if(oweKg>=0.005) r.oweKg=oweKg;
   const pr=t.product||defaultProd;
   if(pr!==defaultProd) r.pr=pr;
+  /* v362: THE ID AND THE ATTRIBUTION, so the phone can name a row and prefill an edit of it.
+     Neither is a cost and neither is a margin, so neither trips the leak rule the rest of this
+     shape obeys: a rid is opaque and an attribution is a code that is already on the roster the
+     payload ships anyway. THE NOTE IS STILL NOT HERE, and that is the one field the phone
+     editor cannot touch: the notes carry lot costs and margins in prose, and this app is
+     public by decision. That is a policy line, not a size one. */
+  if(t.rid) r.rid=t.rid;
+  const at=attributionOf(t,dir==='B'?'supplier':'customer');
+  if(at.assoc){ r.as=at.assoc; r.st2=at.stream; if(at.downstream) r.dn=at.downstream; }
   return r;
 }
 function openable(r){return r.st!=='done'&&r.st!=='canc';}
+/* WHO THE ASSOCIATE IS, READ BACK OUT OF A ROW. An attribution is not stored the way it is
+   typed: a row has no assoc field and no stream field, and the book never carried either.
+   What it carries is the desk's translation of them, and the two streams translate
+   differently.
+
+     R2  the row books TO the associate. The counterparty field holds the associate, rev is
+         'R2', and the actual buyer is kept beside it as downstream. The buyer is not the
+         counterparty on that row and gets no statement from it.
+     R3  the row books to the BUYER as normal, and the introduction is credited beside it:
+         ref holds the associate, refKg the size.
+
+   So the associate has to be DERIVED from a row rather than read off a field, and clearing
+   an R2 has to put the buyer back from downstream or the counterparty is lost outright.
+   It lives here, in the engine, because three places need the same answer: the desk's
+   ovAmend, the fold's applyAmend, and the phone payload below. Two of them had their own
+   copy for about an hour on 25 Aug and that is exactly the drift this file exists to stop. */
+function attributionOf(row,partyKey){
+  const pk=partyKey||(row.supplier!=null?'supplier':'customer');
+  if(row.rev==='R2')return {assoc:row[pk],stream:'R2',downstream:row.downstream||null};
+  if(row.ref)return {assoc:row.ref,stream:'R3',downstream:null};
+  return {assoc:null,stream:null,downstream:null};
+}
 /* the key an amendment names a row by, shared with the phone and the drafter */
 function ovKey(t){return (t.customer||t.supplier)+'|'+t.date+'|'+t.total;}
 
@@ -1653,7 +1684,7 @@ return {txPrice:txPrice,txPaid:txPaid,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:t
         txDeferKg:txDeferKg,txPendKg:txPendKg,txPendKgRaw:txPendKgRaw,txPendRM:txPendRM,txStat:txStat,txDates:txDates,
         poRecvKg:poRecvKg,poCash:poCash,poLive:poLive,poRate:poRate,poOpenKg:poOpenKg,provRate:provRate,
         daysBetween:daysBetween,walk:walk,coverStats:coverStats,commitments:commitments,
-        ledgerRow:ledgerRow,openable:openable,ovKey:ovKey};
+        ledgerRow:ledgerRow,openable:openable,ovKey:ovKey,attributionOf:attributionOf};
 })();
 /* ==== END ENGINE position ==== */
 /* ==== ENGINE pricing: generated from engine/pricing.mjs by tools/engine.mjs. Edit the module, never this block. ==== */
@@ -3174,7 +3205,8 @@ const whiteboard=[
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{"v":"v361","d":"25 Aug 2026","t":"EVERY FIELD ON EVERY ROW CAN BE EDITED, AND EVERY ROW HAS A NAME","n":["<b>RIGHT-CLICK ANY LEDGER ROW AND EDIT IT.</b> His instruction of 25 Aug: \"I am unable to edit the ledger.\" He was right, and about more than he said. The only amendments that existed were paid, delivered, restate and cancel, and not one of them touches what a row SAYS about itself: a row's product and its associate were set once, at entry, and nothing anywhere could change them afterwards. The Ledger tab now opens a panel on a right-click, or a long press, with the product, the party, the associate, the stream, the date, the size, the total and the note all typeable. It <b>queues a correction</b> and writes nothing: the drafter checks every field against the book and it comes back to Approve for a tap, exactly like a transaction.","<b>EVERY ROW CARRIES AN ID NOW, AND THE OLD ONE COULD NOT HAVE WORKED.</b> A row was addressed by ovKey, which is party, date and total joined together. That names a row for exactly as long as none of those three changes, and an editor whose job is changing them cannot use it: correct a party and the row's own name no longer finds it. It also already collided, on two SA5-BTR lots dated 22 Jul both for RM350, neither of which could be addressed at all. All 125 rows were given a rid, the fold mints one for every new row, and the drafter, the fold and the desk all resolve by rid first and fall back to ovKey.","<b>THE DRAFTER COULD ONLY REACH SEVEN ROWS, AND NOW REACHES ALL OF THEM.</b> Every amendment resolved its target through the open-order snapshot, so 118 of the 125 rows on this book, every settled one, were beyond any amendment. A correction reads the full book instead. It is the one amendment that does, deliberately: a row is as often wrong once it is closed as while it is live.","<b>AN ASSOCIATE CAN BE ATTRIBUTED FROM THE PHONE.</b> The drafter refused outright any entry carrying associate, stream or downstream fields, on the ground that whose bucket a row books to is a judgement. That was true of the link fields and never true of these three: each is a code the book either knows or does not. They are checked per field now, and R2 and R3 are applied exactly as the desk's own rule applies them. Only linkTo and orderCode stay refused, because which OTHER row a row links to is a judgement no figure settles.","<b>WHAT A CORRECTION IS APPROVED ON IS WHAT CHANGED.</b> The Approve card leads with cash and units moving, both of which are zero on a correction and say nothing. A correction gets its own card: a before-and-after line for every field it touches, the flags the drafter raised on the row as it would then stand, and nothing else. Changing the product re-runs the whole rate check against the new shelf, which is how a RM100/unit row moved to oil is flagged as more than double the highest oil rate this book has carried.","<b>NO FIGURE MOVED.</b> No row was folded and no rate changed. Every row gained a rid and nothing else; the ledger stands exactly where v360 left it."]},
+const evolution=[{"v":"v362","d":"25 Aug 2026","t":"THE ROW EDITOR REACHES THE PHONE, AND THE ATTRIBUTION RULE HAS ONE HOME","n":["<b>TAP ANY ROW ON THE BOOK TAB AND EDIT IT.</b> The desk got this at v361 on a right-click. The phone opens on a plain <b>tap</b> rather than a long press: a long press raises the same event, but iOS Safari is not reliable about it, and a ledger card had no tap action before, so nothing is taken away. The sheet carries the product, the buyer, the associate, the stream, the date, the size and the total, prefilled from the row. It joins <code>held</code> and goes up on the same push every other entry uses, so it survives a dead connection, and it queues a correction rather than writing one.","<b>THE NOTE IS THE ONE FIELD THE PHONE CANNOT TOUCH, and that is a policy line rather than an oversight.</b> Row notes carry lot costs and margins in prose, and <code>phonePayloadLeaks()</code> keeps every per-unit cost off this payload because the app is public by decision. The phone cannot SHOW a note, so it must not offer to REPLACE one: overwriting prose you cannot read is worse than not offering it. The sheet says so in a line rather than leaving it a mystery, and notes stay editable at the desk.","<b>THE ATTRIBUTION RULE MOVED INTO THE ENGINE, WHERE IT SHOULD HAVE GONE FIRST.</b> Reading the associate back out of a row is not trivial (R2 puts them in the counterparty field with the buyer as <code>downstream</code>; R3 leaves the buyer and credits <code>ref</code>), and v361 shipped it TWICE, once in the master's ovAmend and once in the fold's applyAmend. The phone needed the same answer a third time, which is the point at which a copy becomes a fault. <code>attributionOf</code> now lives in <code>engine/position.mjs</code> with one definition and three consumers, which is the rule this repo already had and that I broke for an hour.","<b>THE PAYLOAD CARRIES EACH ROW'S ID AND ATTRIBUTION.</b> Two small fields, 2.2 KB across 125 rows, and neither is a cost: a rid is opaque and an attribution is a code the payload already ships in its party list. The leak test reads them as it reads the rest.","<b>NO FIGURE MOVED.</b> No row was folded and no rate changed."]},
+{"v":"v361","d":"25 Aug 2026","t":"EVERY FIELD ON EVERY ROW CAN BE EDITED, AND EVERY ROW HAS A NAME","n":["<b>RIGHT-CLICK ANY LEDGER ROW AND EDIT IT.</b> His instruction of 25 Aug: \"I am unable to edit the ledger.\" He was right, and about more than he said. The only amendments that existed were paid, delivered, restate and cancel, and not one of them touches what a row SAYS about itself: a row's product and its associate were set once, at entry, and nothing anywhere could change them afterwards. The Ledger tab now opens a panel on a right-click, or a long press, with the product, the party, the associate, the stream, the date, the size, the total and the note all typeable. It <b>queues a correction</b> and writes nothing: the drafter checks every field against the book and it comes back to Approve for a tap, exactly like a transaction.","<b>EVERY ROW CARRIES AN ID NOW, AND THE OLD ONE COULD NOT HAVE WORKED.</b> A row was addressed by ovKey, which is party, date and total joined together. That names a row for exactly as long as none of those three changes, and an editor whose job is changing them cannot use it: correct a party and the row's own name no longer finds it. It also already collided, on two SA5-BTR lots dated 22 Jul both for RM350, neither of which could be addressed at all. All 125 rows were given a rid, the fold mints one for every new row, and the drafter, the fold and the desk all resolve by rid first and fall back to ovKey.","<b>THE DRAFTER COULD ONLY REACH SEVEN ROWS, AND NOW REACHES ALL OF THEM.</b> Every amendment resolved its target through the open-order snapshot, so 118 of the 125 rows on this book, every settled one, were beyond any amendment. A correction reads the full book instead. It is the one amendment that does, deliberately: a row is as often wrong once it is closed as while it is live.","<b>AN ASSOCIATE CAN BE ATTRIBUTED FROM THE PHONE.</b> The drafter refused outright any entry carrying associate, stream or downstream fields, on the ground that whose bucket a row books to is a judgement. That was true of the link fields and never true of these three: each is a code the book either knows or does not. They are checked per field now, and R2 and R3 are applied exactly as the desk's own rule applies them. Only linkTo and orderCode stay refused, because which OTHER row a row links to is a judgement no figure settles.","<b>WHAT A CORRECTION IS APPROVED ON IS WHAT CHANGED.</b> The Approve card leads with cash and units moving, both of which are zero on a correction and say nothing. A correction gets its own card: a before-and-after line for every field it touches, the flags the drafter raised on the row as it would then stand, and nothing else. Changing the product re-runs the whole rate check against the new shelf, which is how a RM100/unit row moved to oil is flagged as more than double the highest oil rate this book has carried.","<b>NO FIGURE MOVED.</b> No row was folded and no rate changed. Every row gained a rid and nothing else; the ledger stands exactly where v360 left it."]},
 {"v":"v360","d":"24 Aug 2026","t":"CM4-MK'S SIZE TAPER, CR3-DAM'S STANDARD ADVANCE, AND CA4-DAM GOES OUT","n":["<b>THREE ORDERS, ON HIS WORD.</b> CA4-DAM's pending 0.5 unit at RM50 has gone out with the RM50 still owed, an advance rather than a settlement. CM4-MK took 4 unit for RM360, RM90/unit, paid and delivered on the day. CR3-DAM took his standard 1 unit for RM80, delivered with the RM80 still owed.","<b>CM4-MK'S RM90 IS THE SIZE TAPER, NOT A CHEAPER RATE.</b> The drafter flags it 18.2% under his typical RM110/unit, but that figure is drawn from his 2-unit orders; RM360 for 4 unit is the exact size and total he paid on 10 Aug. Nothing about what he is charged has changed.","<b>CR3-DAM'S RM80 IS HIS RATE ON EVERY ORDER THIS BOOK HAS EVER RECORDED FOR HIM</b>, unbroken since June. It flags only because it is an advance: RM80 sits under the RM122.74 delivered floor while clearing the RM72.74 collected one, which is what an advance always does until the cash lands.","<b>THE SHELF ROLLS 17.5 TO 12 UNIT</b> on 5.5 unit physically out: 0.5 to CA4-DAM, 4 to CM4-MK, 1 to CR3-DAM."]},
 
 {"v":"v359","d":"24 Aug 2026","t":"THE FOUR SET-ASIDE UNIT GO OUT, AND CA4-DAM'S HALF UNIT CLEARS ITS FLOOR BY RM1.13","n":["<b>THE FOUR UNIT HE SET ASIDE AT THE v351 COUNT ARE THE FOUR THAT MOVED, AND THE ROLL LANDS EXACTLY ON THE COUNT.</b> The count of 24 Aug read 21.5 on the shelf and said in terms what it was made of: 17.5 free plus 4 set aside, being the 3 unit due to CS6-BS-R and the free unit due to CS6-BS. Both went out on the 24th, so the shelf rolls 21.5 less 4 to 17.5, which is the free figure he counted, to the unit. A roll and not a count; COUNT_ON.salt stays at 24 Aug. Of the 17.5 that stand, 8 are already paid for and owed out as deferred deliveries, 3 to CE4-CHE and 5 to CE4-AD, so 9.5 unit are genuinely free to sell.","<b>CS6-BS-R'S 3 UNIT SETTLES IN FULL ON THE DAY IT WAS PRICED.</b> The order was restated from RM0 and Unpriced to RM290 at v358 this morning, and RM290 and all 3 unit moved the same day, so it never spent a day on the order book as a priced pending order. RM96.67 a unit against the RM44 shelf returns RM158, <b>54.5% on RM290</b>, and it clears the 3 unit collected floor of RM180.35 and the delivered floor of RM218.22 by RM71.78 on the harder of the two. Nothing is outstanding and no receivable is raised.","<b>THE FREE UNIT MOVES AND NO REASON CAME WITH IT, WHICH IS THE ONE THING IN THIS FOLD THAT NEEDS HIS WORD.</b> The row booked on the 24th said plainly that why it is free was not stated and would not be guessed, and that the flag would go on when it moved and he said which. It has moved and he has not said. So it folds unflagged, and unflagged has a consequence: with no goodwill flag on it, 1 unit at a total of RM0 against RM44 of cost is a COMPLETED SALE in the priced set, <b>the first zero-total completed row this book has carried</b>, and it pulls down every rate the desk averages over priced sales. Goodwill belongs out of that set by his own ruling of v280; an advance on his next reseller award belongs against the award, and the network reads him at 0 earned with RM470 of resale still to run. Neither is invented here. One word from him sets the flag and the row is correct either way.","<b>CA4-DAM ORDERS HALF A UNIT AT RM50, PENDING, AND IT CLEARS ITS FLOOR BY RM1.13.</b> His twelfth order and the eleventh struck at exactly RM100 a unit; the only order he has ever taken at another rate is 1.5 unit at RM116.67 on 26 Jul, so the price is not the news. The floor is. At half a unit the v358 snapshot puts the collected floor at RM48.87 and the delivered floor at RM98.87, and the whole RM50 of difference is the per-delivery transaction cost, which falls whole on an order however small it is. He has collected on every order and the book has said so since 01 Aug, so the collected floor is the one that binds and RM50 clears it, by RM1.13. That is the narrowest clearance his standing rate has stood at, and it is worth reading beside the fact that this rate has not moved through a cost basis that has gone RM64 to RM47 to RM56 to RM44: the desk has absorbed every move and he has absorbed none. The next rise in the buying rate takes RM100 a unit under its own floor on the basis he actually trades on. Nothing is paid and nothing has moved, so the row is undated and draws no stock."]},
@@ -3295,7 +3327,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='25 Aug 2026, 14:30 KL';
+const LAST_UPDATED='25 Aug 2026, 15:10 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -3519,15 +3551,11 @@ function ovNew(p,q){
     sales.push(row);
   }
 }
-/* An attribution is not stored the way it is typed. A row has no assoc field and no stream
-   field: R2 books the row TO the associate (customer=associate, rev='R2', the real buyer kept
-   beside it as downstream), and R3 leaves the buyer on the row and credits the introduction
-   (ref=associate, refKg=size). So the associate has to be read back OUT of a row, and clearing
-   an R2 has to put the buyer back from downstream or the counterparty is lost outright. */
-function ovAttribution(row,partyKey){
-  if(row.rev==='R2')return {assoc:row[partyKey],stream:'R2',downstream:row.downstream||null};
-  if(row.ref)return {assoc:row.ref,stream:'R3',downstream:null};
-  return {assoc:null,stream:null,downstream:null};}
+/* The attribution rule is the ENGINE's (engine/position.mjs attributionOf), because this
+   desk, tools/fold.mjs and the phone payload all need the same answer to "who is the
+   associate on this row", and two of them carried their own copy for about an hour on
+   25 Aug before it was consolidated. */
+const ovAttribution=(row,partyKey)=>POSITION_ENGINE.attributionOf(row,partyKey);
 function ovAmend(p,q){
   const row=ovFind(p.direction==='BUY'?purchases:sales,p.rid||p.orderKey);
   if(!row){provNotes.push('no order matched '+(p.orderCode||p.orderKey)+', so it was not applied');return;}

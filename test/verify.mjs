@@ -341,7 +341,7 @@ section("The phone app, and the desk at /desk");
      desk to the root fails loudly, and 120 KB still catches that by a factor of seven and a
      half. Raised again at v324 when the Price tab landed: the board, the floors and the party
      list are rendering, not logic, but rendering is not free either. */
-  ok(app.length < 140 * 1024, `the app is small (${(app.length / 1024).toFixed(0)} KB, the desk is ~1,100 KB)`);   /* v343: the People tab and the forecast */
+  ok(app.length < 152 * 1024, `the app is small (${(app.length / 1024).toFixed(0)} KB, the desk is ~1,100 KB)`);   /* v362: the row editor sheet */
   ok(app.includes("fetch('data.json'"), "the app reads its figures from data.json");
   ok(app.includes("X-Salt-Key"), "the app sends the write key");
   ok(app.includes("queueCommitted"), "the app self-clears against the watermark");

@@ -1,5 +1,17 @@
 [
  {
+  "v": "v362",
+  "d": "25 Aug 2026",
+  "t": "THE ROW EDITOR REACHES THE PHONE, AND THE ATTRIBUTION RULE HAS ONE HOME",
+  "n": [
+   "<b>TAP ANY ROW ON THE BOOK TAB AND EDIT IT.</b> The desk got this at v361 on a right-click. The phone opens on a plain <b>tap</b> rather than a long press: a long press raises the same event, but iOS Safari is not reliable about it, and a ledger card had no tap action before, so nothing is taken away. The sheet carries the product, the buyer, the associate, the stream, the date, the size and the total, prefilled from the row. It joins <code>held</code> and goes up on the same push every other entry uses, so it survives a dead connection, and it queues a correction rather than writing one.",
+   "<b>THE NOTE IS THE ONE FIELD THE PHONE CANNOT TOUCH, and that is a policy line rather than an oversight.</b> Row notes carry lot costs and margins in prose, and <code>phonePayloadLeaks()</code> keeps every per-unit cost off this payload because the app is public by decision. The phone cannot SHOW a note, so it must not offer to REPLACE one: overwriting prose you cannot read is worse than not offering it. The sheet says so in a line rather than leaving it a mystery, and notes stay editable at the desk.",
+   "<b>THE ATTRIBUTION RULE MOVED INTO THE ENGINE, WHERE IT SHOULD HAVE GONE FIRST.</b> Reading the associate back out of a row is not trivial (R2 puts them in the counterparty field with the buyer as <code>downstream</code>; R3 leaves the buyer and credits <code>ref</code>), and v361 shipped it TWICE, once in the master's ovAmend and once in the fold's applyAmend. The phone needed the same answer a third time, which is the point at which a copy becomes a fault. <code>attributionOf</code> now lives in <code>engine/position.mjs</code> with one definition and three consumers, which is the rule this repo already had and that I broke for an hour.",
+   "<b>THE PAYLOAD CARRIES EACH ROW'S ID AND ATTRIBUTION.</b> Two small fields, 2.2 KB across 125 rows, and neither is a cost: a rid is opaque and an attribution is a code the payload already ships in its party list. The leak test reads them as it reads the rest.",
+   "<b>NO FIGURE MOVED.</b> No row was folded and no rate changed."
+  ]
+ },
+ {
   "v": "v361",
   "d": "25 Aug 2026",
   "t": "EVERY FIELD ON EVERY ROW CAN BE EDITED, AND EVERY ROW HAS A NAME",

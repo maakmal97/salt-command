@@ -188,24 +188,11 @@ function skeleton(book, staged, p) {
 
 /* ---- apply ------------------------------------------------------------------------------- */
 /* ovAmend, as the desk applies it, on a plain row */
-/* HOW AN ATTRIBUTION IS STORED, and it is not how it is typed. A row has no `assoc` field and
- * no `stream` field: the book has never carried either. What it carries is the desk's own
- * translation of them, and the two streams translate differently.
- *
- *   R2  the row books TO the associate. customer = the associate, rev = "R2", and the actual
- *       buyer is kept beside it as `downstream`. The buyer is not the counterparty and gets no
- *       statement from this row.
- *   R3  the row books to the BUYER as normal, and the introduction is credited beside it:
- *       ref = the associate, refKg = the size.
- *
- * So "who is the associate" has to be read back OUT of the row rather than off a field, and
- * clearing an R2 attribution has to put the real buyer back on the row from `downstream`,
- * or the row is left booked to the associate with nothing saying who bought it. */
-function attributionOf(row, partyKey) {
-  if (row.rev === "R2") return { assoc: row[partyKey], stream: "R2", downstream: row.downstream || null };
-  if (row.ref) return { assoc: row.ref, stream: "R3", downstream: null };
-  return { assoc: null, stream: null, downstream: null };
-}
+/* The attribution rule lives in engine/position.mjs, because the desk, this fold and the
+   phone payload all need the same answer to "who is the associate on this row". Both this
+   file and the master carried their own copy for about an hour on 25 Aug, which is exactly
+   the drift the engine exists to stop. */
+const attributionOf = E.attributionOf;
 
 function applyAmend(row, pay, dir, note) {
   /* A CORRECTION REWRITES WHAT THE ROW SAYS, and nothing else. It moves no cash and no stock,
