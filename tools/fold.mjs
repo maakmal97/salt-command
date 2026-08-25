@@ -44,6 +44,7 @@ import { readBookFile, writeBookFile, syncText, BOOK as BOOK_DEFAULT, MASTER as 
 import { sortBook } from "./sort-ledger.mjs";
 import POSITION_ENGINE from "../engine/position.mjs";
 import { nextRid } from "./rid.mjs";
+import { CORRECT_BOOL, CORRECT_DATE, CORRECT_NUM_NN, CORRECT_NUM_POS, CORRECT_TEXT } from "../src/drafter.js";
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const argv = process.argv.slice(2);
@@ -202,52 +203,74 @@ function applyAmend(row, pay, dir, note) {
      WHAT IT DOES WRITE, besides the field, is a line in the trail saying what the value was
      before. The rate is the record: a row whose price changed without saying so is worse than
      no row at all, so every correction leaves its old value readable in `mod`. */
+  /* A CORRECTION REWRITES WHAT THE ROW SAYS, and from 25 Aug 2026 that is EVERY attribute a
+     person states: what was traded, who it books to, when, what has actually moved, what was
+     settled other than in cash, and the row's own flags. It still writes nothing the desk
+     computes: rid is identity, amend and mod are the trail, rev/ref/refKg follow from the
+     attribution, and a purchase's status is recomputed from cash against total below.
+
+     WHAT IT ALWAYS WRITES, besides the fields, is a line saying what each was before. The rate
+     is the record: a row whose price or party changed without saying so is worse than no row,
+     so every correction leaves its old values readable in `mod`. */
   if (pay.kind === "Correction") {
     const f = pay.fields || {};
     const partyKey = dir === "BUY" ? "supplier" : "customer";
-    const attr = attributionOf(row, partyKey);
-    /* The party as a PERSON would name it: for an R2 row the counterparty field holds the
-       associate, so the buyer is the downstream. */
-    const buyerNow = attr.stream === "R2" ? (attr.downstream || null) : row[partyKey];
-    const before = { product: row.product || "salt", party: buyerNow, assoc: attr.assoc, stream: attr.stream,
-                     downstream: attr.downstream, date: row.date == null ? null : row.date,
-                     qty: row.qty, total: row.total, note: row.note == null ? null : row.note };
-    const said = [];
+    const attr = E.attributionOf(row, partyKey);
+    const buyerNow = attr.stream === "R2" ? (attr.downstream || null) : (row[partyKey] || null);
+    const before = Object.assign({}, row, {
+      product: row.product || "salt", party: buyerNow,
+      assoc: attr.assoc, stream: attr.stream, downstream: attr.downstream,
+    });
     const asked = (k) => Object.prototype.hasOwnProperty.call(f, k) && f[k] !== undefined;
+    const said = [];
     for (const k of Object.keys(f)) {
       if (f[k] === undefined) continue;
-      if (JSON.stringify(f[k]) === JSON.stringify(before[k] === undefined ? null : before[k])) continue;
-      said.push(`${k} ${before[k] == null ? "(unset)" : before[k]} to ${f[k] == null ? "(cleared)" : f[k]}`);
+      const was = before[k] === undefined ? null : before[k];
+      if (JSON.stringify(f[k]) === JSON.stringify(was)) continue;
+      said.push(`${k} ${was == null ? "(unset)" : was} to ${f[k] == null ? "(cleared)" : f[k]}`);
     }
 
-    /* THE PLAIN FIELDS FIRST. product is the one the book omits when it is the default, and
-       the desk reads an absent product as salt (prodOf), so writing "salt" explicitly would
-       make this the only row on the book shaped differently from its peers. */
-    for (const k of ["date", "qty", "total", "note"]) {
+    /* THE PLAIN FIELDS: set, or delete when cleared. Everything numeric, dated or textual goes
+       through here, so adding a field to the drafter's table is all it takes to make it
+       editable end to end. */
+    const PLAIN = [].concat(CORRECT_NUM_POS, CORRECT_NUM_NN, CORRECT_DATE, CORRECT_TEXT);
+    for (const k of PLAIN) {
       if (!asked(k)) continue;
       if (f[k] === null) delete row[k]; else row[k] = f[k];
+    }
+    /* A FALSE FLAG IS AN ABSENT FLAG on this book. Every row that is not cancelled simply has
+       no `cancelled` key, and writing cancelled:false would make the corrected row the only
+       one shaped differently from its peers, which is the same reason product:"salt" is
+       deleted rather than written. */
+    for (const k of CORRECT_BOOL) {
+      if (!asked(k)) continue;
+      if (f[k] === true) row[k] = true; else delete row[k];
     }
     if (asked("product")) { if (f.product === "salt") delete row.product; else row.product = f.product; }
 
     /* THEN THE ATTRIBUTION, once, from the three fields read together. A per-field write would
-       see them half-applied and book the row to a code that was only ever half-chosen, which
-       is the 02 Aug CS6-BS-R failure in a different costume. */
+       see them half-applied and book the row to a code that was only ever half-chosen. */
     const wantAssoc = asked("assoc") ? f.assoc : attr.assoc;
     const wantStream = asked("stream") ? f.stream : attr.stream;
     let wantBuyer = asked("party") ? f.party : buyerNow;
     if (asked("downstream") && f.downstream !== null) wantBuyer = f.downstream;
-
     delete row.rev; delete row.ref; delete row.refKg; delete row.downstream;
     if (wantAssoc && wantStream === "R3") {
-      row[partyKey] = wantBuyer;
-      row.ref = wantAssoc; row.refKg = row.qty;
+      row[partyKey] = wantBuyer; row.ref = wantAssoc; row.refKg = row.qty;
     } else if (wantAssoc) {
       row[partyKey] = wantAssoc; row.rev = "R2";
       if (wantBuyer && wantBuyer !== wantAssoc) row.downstream = wantBuyer;
     } else {
-      /* CLEARING AN R2 PUTS THE BUYER BACK. Without this the row stays booked to the associate
-         with nothing left saying who actually bought it, which loses the counterparty outright. */
+      /* CLEARING AN R2 PUTS THE BUYER BACK, or the row stays booked to the associate with
+         nothing left saying who actually bought it. */
       row[partyKey] = wantBuyer || row[partyKey];
+    }
+
+    /* A PURCHASE'S status IS DERIVED, so it is recomputed rather than offered. ovAmend does
+       exactly this after a payment, and a corrected cash or total has to leave the same answer. */
+    if (dir === "BUY") {
+      const paid = row.cash != null ? row.cash : 0;
+      row.status = paid >= (row.total || 0) - 0.009 ? "paid" : (paid <= 0.009 ? "unpaid" : "partial");
     }
 
     if (said.length) {

@@ -75,65 +75,141 @@ export function findRow(book, ref) {
   return { err: `no row on the book matches ${ref}` };
 }
 
-/* WHAT A CORRECTION MAY SET. Everything a row carries that a person types, and nothing it
- * computes. A field absent from the patch is left alone; a field set to null is CLEARED,
- * which is how a wrong attribution comes off a row rather than being overwritten with
- * another wrong one. The trail (`amend`), the settlement figures (`cash`, `deliveredQty`)
- * and the cost are deliberately NOT here: those move by fulfilment and by the fold rolling
- * the shelf, and letting an editor set them directly would put two writers on one figure. */
-export const CORRECTABLE = ["product", "party", "assoc", "stream", "downstream", "date", "qty", "total", "note"];
+/* WHAT A CORRECTION MAY SET: every attribute a person states, and nothing the desk computes.
+ * Widened to the whole row on 25 Aug 2026 on his instruction, "I need to be able to edit every
+ * attribute of an entry on the ledger". The first cut deliberately withheld the settlement
+ * figures on the ground that cash and deliveredQty "move by fulfilment, and two writers on one
+ * figure drift". READING THE ENGINE SHOWED THAT WAS WRONG: txPaid is (cash + settledRM) read
+ * straight off the row, so the `amend` trail is a NARRATIVE beside the figure and never its
+ * source. Setting cash directly is a correction; adding to it is a movement. Both legitimately
+ * write the same field, which is exactly what ovAmend already does.
+ *
+ * A field absent from the patch is left alone; a field set to null is CLEARED, which is how a
+ * wrong attribution or a stray date comes off a row rather than being overwritten with another
+ * wrong one. Four cannot be cleared, only changed, because a row without them is not a row:
+ * product, party, qty and total.
+ *
+ * WHAT IS NOT HERE, and why each one is excluded rather than forgotten:
+ *   rid           the row's identity. Editing it would rename the thing being edited.
+ *   amend, mod    the trail. Written by the fold as a record of corrections, including this one.
+ *   rev, ref,     DERIVED from assoc + stream. Set those and these follow; setting them
+ *   refKg         directly would let a row claim R2 and R3 at once.
+ *   status        DERIVED on a purchase from cash against total. Recomputed after every change.
+ * Every one of those is computed or structural. Everything a person typed is editable. */
+/* READ FROM THE ENGINE, re-exported here so the fold and the tests can reach them by the
+   name they already use. One table, three consumers: this drafter, tools/fold.mjs and the
+   desk's own ovAmend, which gets it inlined with the rest of the engine. */
+export const CORRECT_NUM_POS = POSITION_ENGINE.CORRECT_NUM_POS;
+export const CORRECT_NUM_NN = POSITION_ENGINE.CORRECT_NUM_NN;
+export const CORRECT_DATE = POSITION_ENGINE.CORRECT_DATE;
+export const CORRECT_BOOL = POSITION_ENGINE.CORRECT_BOOL;
+export const CORRECT_CODE = POSITION_ENGINE.CORRECT_CODE;
+export const CORRECT_TEXT = POSITION_ENGINE.CORRECT_TEXT;
+export const CORRECTABLE = POSITION_ENGINE.CORRECTABLE;
+const CORRECT_REQUIRED = POSITION_ENGINE.CORRECT_REQUIRED;
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
-/* Each field checked against the book it is going onto, so a correction is refused for the
- * same reasons a new row is: an unknown product cannot be costed, an unknown code cannot be
- * credited. Anything checkable is CHECKED; anything merely unusual is FLAGGED. */
+/* Each field checked against the book it is going onto, so a correction is refused for the same
+ * reasons a new row is: an unknown product cannot be costed, an unknown code cannot be credited.
+ * Anything checkable is CHECKED and refuses; anything merely unusual is FLAGGED and proceeds. */
 export function checkCorrection(fields, book, target, isSale) {
   const errs = [], flags = [], changes = [];
   const roster = (book.state && book.state.roster) || [];
   const products = (book.state && book.state.PRODUCTS) || {};
   const associates = (book.state && book.state.associates) || [];
   const partyKey = isSale ? "customer" : "supplier";
-  const now = { ...target, party: target[partyKey], product: prodOf(target) };
+
+  /* THE ROW AS A PERSON WOULD NAME IT, not as it is stored. On an R2 row the counterparty field
+     holds the associate and the buyer is the downstream, so reading target[partyKey] as "party"
+     would report the associate as the buyer and every before-and-after line would be wrong. The
+     engine's attributionOf is the one place that knows this. */
+  const at = POSITION_ENGINE.attributionOf(target, partyKey);
+  const buyerNow = at.stream === "R2" ? (at.downstream || null) : (target[partyKey] || null);
+  const now = Object.assign({}, target, {
+    party: buyerNow, assoc: at.assoc, stream: at.stream, downstream: at.downstream,
+    product: prodOf(target),
+  });
 
   for (const k of Object.keys(fields)) {
     if (!CORRECTABLE.includes(k)) { errs.push(`${k} is not a field a correction may set`); continue; }
     const v = fields[k];
     if (v === undefined) continue;
-    const was = now[k] == null ? null : now[k];
-    if (JSON.stringify(v) === JSON.stringify(was)) continue;      /* asked for, already true */
+    /* AN ABSENT FLAG AND false ARE THE SAME THING on this book: a row that is not cancelled
+       simply has no `cancelled` key. Comparing them raw would read null against false as a
+       change and record a correction on every save that touched nothing. */
+    const raw = now[k] === undefined ? null : now[k];
+    const isBool = CORRECT_BOOL.includes(k);
+    const was = isBool ? !!raw : raw;
+    const asIs = isBool ? !!v : v;
+    if (JSON.stringify(asIs) === JSON.stringify(was)) continue;   /* asked for, already true */
     changes.push({ field: k, from: was, to: v });
 
     if (v === null) {
-      if (k === "product" || k === "party" || k === "qty" || k === "total") errs.push(`${k} cannot be cleared, only changed`);
+      if (CORRECT_REQUIRED.includes(k)) errs.push(`${k} cannot be cleared, only changed`);
       continue;
     }
     if (k === "product" && !products[v]) errs.push(`${v} is not a product on this book`);
     if (k === "stream" && v !== "R2" && v !== "R3") errs.push(`a stream is R2 or R3, not ${v}`);
-    if (k === "date" && !DATE_RE.test(String(v))) errs.push(`${v} is not a date in YYYY-MM-DD`);
-    if (k === "qty" && !(isNum(v) && v > 0)) errs.push("a quantity has to be a number above zero");
-    if (k === "total" && !(isNum(v) && v >= 0)) errs.push("a total has to be a number, and not negative");
-    if ((k === "party" || k === "assoc" || k === "downstream") && !roster.includes(String(v))) {
+    if (CORRECT_DATE.includes(k) && !DATE_RE.test(String(v))) errs.push(`${k} is not a date in YYYY-MM-DD: ${v}`);
+    if (CORRECT_NUM_POS.includes(k) && !(isNum(v) && v > 0)) errs.push(`${k} has to be a number above zero`);
+    if (CORRECT_NUM_NN.includes(k) && !(isNum(v) && v >= 0)) errs.push(`${k} has to be a number, and not negative`);
+    if (CORRECT_BOOL.includes(k) && typeof v !== "boolean") errs.push(`${k} is true or false, not ${v}`);
+    if (CORRECT_TEXT.includes(k) && typeof v !== "string") errs.push(`${k} has to be text`);
+    if (CORRECT_CODE.includes(k) && !roster.includes(String(v))) {
       flags.push(`${v} is not on the roster. A party needs a code and a directory entry before this is committed.`);
     }
     if (k === "assoc" && !associates.includes(String(v))) {
-      flags.push(`${v} is not listed as an associate on this book, so crediting a downsell to them is a new relationship rather than an existing one.`);
+      flags.push(`${v} is on the book but is not listed as an associate, so crediting a downsell to them is a new relationship rather than an existing one.`);
     }
   }
   if (!changes.length) errs.push("this correction changes nothing on the row it names");
 
-  /* AN ATTRIBUTION IS THREE FIELDS THAT ONLY MEAN ANYTHING TOGETHER, and the desk's own rule
-     is that R2 books the sale to the associate with the buyer behind it, while R3 leaves the
-     buyer on the row and credits the introduction. Setting one leg and not the others is how a
+  const after = Object.assign({}, now);
+  for (const k of Object.keys(fields)) {
+    if (fields[k] === undefined) continue;
+    if (fields[k] === null) delete after[k]; else after[k] = fields[k];
+  }
+
+  /* AN ATTRIBUTION IS THREE FIELDS THAT ONLY MEAN ANYTHING TOGETHER, and the desk's own rule is
+     that R2 books the sale to the associate with the buyer behind it, while R3 leaves the buyer
+     on the row and credits the introduction. Setting one leg and not the others is how a
      downsell ends up booked to a bucket owed money by nobody, which is the 02 Aug CS6-BS-R
      failure the desk already guards against at entry. */
-  const after = { ...now };
-  for (const k of Object.keys(fields)) if (fields[k] !== undefined) { if (fields[k] === null) delete after[k]; else after[k] = fields[k]; }
   if (after.assoc && !after.stream) errs.push("an associate needs a stream, R2 or R3, to say how the credit reaches them");
+  if (!after.assoc && (after.stream || after.downstream)) errs.push("a stream or a downstream without an associate credits nobody");
   if (after.stream === "R2" && after.assoc && !after.downstream) {
     flags.push("R2 books the row to the associate, so without a downstream the end buyer is recorded nowhere.");
   }
-  if (!after.assoc && (after.stream || after.downstream)) errs.push("a stream or a downstream without an associate credits nobody");
+
+  /* THE COMPARISONS A FIELD CANNOT MAKE AGAINST ITSELF. Each of these is a figure that is legal
+     on its own and says something worth reading beside the rest of the row. */
+  const num = (x) => (isNum(x) ? x : 0);
+  if (num(after.cash) > num(after.total) + 0.005) {
+    flags.push(`RM ${round(after.cash)} is recorded as paid against a row worth RM ${round(after.total)}, so it would be RM ${round(num(after.cash) - num(after.total))} overpaid.`);
+  }
+  if (num(after.deliveredQty) > num(after.qty) + 0.005) {
+    flags.push(`${round(after.deliveredQty)} unit is recorded as handed over against an order of ${round(after.qty)} unit.`);
+  }
+  if (num(after.receivedQty) > num(after.qty) + 0.005) {
+    flags.push(`${round(after.receivedQty)} unit is recorded as received against a lot of ${round(after.qty)} unit.`);
+  }
+  const touchedFigure = changes.some((c) => c.field === "cash" || c.field === "deliveredQty" || c.field === "receivedQty");
+  if (touchedFigure && (target.amend || []).length) {
+    flags.push(`This row carries a trail of ${target.amend.length} step${target.amend.length === 1 ? "" : "s"}. Setting the figure directly does not rewrite them, so the trail will no longer add up to it; the correction is recorded beside them saying so.`);
+  }
+  if (changes.some((c) => c.field === "cost")) {
+    flags.push("A cost typed here overrides what the shelf says this row drew, and it is what every margin on the row is then measured against.");
+  }
+  if (changes.some((c) => c.field === "cancelled" && c.to === true)) {
+    flags.push("Cancelling takes this row out of every figure on the desk: the revenue, the stock it drew and anything owed on it.");
+  }
+  if (changes.some((c) => c.field === "party")) {
+    flags.push(`This moves the row from ${buyerNow} to ${after.party}, so what each of them owes changes with it, and so does every figure drawn per party.`);
+  }
+  if (changes.some((c) => c.field === "date") && (num(target.deliveredQty) > 0.005 || num(target.cash) > 0.005)) {
+    flags.push("Money or stock has already moved against this row, so redating it moves when that counts as having happened.");
+  }
 
   return { errs, flags, changes, after };
 }

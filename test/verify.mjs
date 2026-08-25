@@ -1710,6 +1710,59 @@ section("Fold — an approved batch becomes records in the book (v340)");
     const bp = plan(JSON.parse(JSON.stringify(book)), bad, null);
     ok(bp.items.length === 0 && /not a product/.test(bp.refused[0].why || ""), "a price edit for a product that does not exist is refused");
   }
+  /* ---- a CORRECTION reaches EVERY attribute a person states (v363) ---- */
+  {
+    const { checkCorrection, CORRECTABLE } = await import("../src/drafter.js");
+    const E = (await import("../engine/position.mjs")).default;
+    const mtxt = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+
+    ok(E.CORRECTABLE.length === 30, `thirty attributes are editable, found ${E.CORRECTABLE.length}`);
+    /* THE EXCLUSIONS ARE THE POINT. Each is computed or structural, and a table that quietly
+       gained one would let an editor rename the row it is editing, or claim two streams at once. */
+    for (const banned of ["rid", "amend", "mod", "rev", "ref", "refKg", "status"]) {
+      ok(!E.CORRECTABLE.includes(banned), `${banned} is not editable: it is computed or structural`);
+    }
+    for (const wanted of ["cash", "deliveredQty", "cost", "paidOn", "cancelled", "goodwill", "settledRM", "orderCode", "unpriced", "note"]) {
+      ok(E.CORRECTABLE.includes(wanted), `${wanted} is editable`);
+    }
+    /* ONE TABLE, THREE CONSUMERS: the drafter decides what to accept, the fold applies it, the
+       desk applies it too. A table in two places is a table that will differ. */
+    ok(CORRECTABLE === E.CORRECTABLE, "the drafter reads the engine table rather than its own copy");
+    ok(/PE\.CORRECT_BOOL/.test(mtxt), "and the desk applies a correction from that same table");
+
+    const bk = { state: { roster: ["CA4-DAM", "CN6-WM"], PRODUCTS: { salt: {}, oil: {} }, associates: ["CN6-WM"] } };
+    const tgt = { rid: "sZ1", customer: "CA4-DAM", qty: 2, total: 200, cash: 200, deliveredQty: 2, cost: 44 };
+    const errsOf = (f, t) => checkCorrection(f, bk, t || tgt, true).errs.join(" ");
+    const flagsOf = (f, t) => checkCorrection(f, bk, t || tgt, true).flags;
+
+    /* AN ABSENT FLAG AND false ARE THE SAME THING on this book, or every save that touched a
+       checkbox would record a correction that changed nothing. */
+    ok(/changes nothing/.test(errsOf({ cancelled: false })), "setting a flag false on a row that never had it is not a change");
+    ok(checkCorrection({ cancelled: true }, bk, tgt, true).changes.length === 1, "but setting it true is");
+
+    /* the checks that REFUSE, one per kind of field */
+    ok(/not a date/.test(errsOf({ paidOn: "yesterday" })), "a date that is not a date is refused");
+    ok(/true or false/.test(errsOf({ cancelled: "yes" })), "a flag that is not a boolean is refused");
+    ok(/not negative/.test(errsOf({ cash: -1 })), "a negative figure is refused");
+    ok(/not a field/.test(errsOf({ rid: "sZ9" })), "a field outside the table is refused, so a row cannot be renamed");
+    ok(/cannot be cleared/.test(errsOf({ total: null })), "the four a row cannot do without cannot be cleared");
+
+    /* the flags that WARN and let it through, because each is a real thing that happens */
+    ok(flagsOf({ cash: 400 }).some((f) => /overpaid/.test(f)), "more cash than the row is worth is flagged, not refused");
+    ok(flagsOf({ cost: 99 }).some((f) => /overrides what the shelf says/.test(f)), "a hand-typed cost says it overrides the shelf");
+    ok(flagsOf({ cancelled: true }).some((f) => /out of every figure/.test(f)), "cancelling says what it takes with it");
+    ok(flagsOf({ cash: 10 }, { ...tgt, amend: [{ kind: "Fulfilment" }] }).some((f) => /no longer add up/.test(f)),
+      "setting a figure on a row with a trail says the trail will no longer sum to it");
+
+    /* THE ROW AS A PERSON NAMES IT. On an R2 row the counterparty field holds the ASSOCIATE and
+       the buyer is the downstream, so a diff built from the raw row would report the associate
+       as the buyer and every before-and-after line would be wrong. */
+    const r2 = { rid: "sZ2", customer: "CN6-WM", rev: "R2", downstream: "CA4-DAM", qty: 1, total: 100 };
+    ok(/changes nothing/.test(errsOf({ party: "CA4-DAM" }, r2)),
+      "the buyer on an R2 row reads as the downstream, so restating it is not a change");
+    ok(checkCorrection({ party: "CN6-WM" }, bk, r2, true).changes.length === 1,
+      "and naming a different buyer on it is");
+  }
   /* ---- a CORRECTION: every field on any row, including a settled one (25 Aug 2026) ---- */
   /* Self-contained for the same reason the batch above is: it pushes its own target onto this
      COPY of the book, with its own rid, so no real fold can ever consume it and no assertion

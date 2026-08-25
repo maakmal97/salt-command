@@ -213,6 +213,19 @@ function ledgerRow(t,dir,defaultProd){
   if(t.rid) r.rid=t.rid;
   const at=attributionOf(t,dir==='B'?'supplier':'customer');
   if(at.assoc){ r.as=at.assoc; r.st2=at.stream; if(at.downstream) r.dn=at.downstream; }
+  /* v363: EVERY REMAINING EDITABLE ATTRIBUTE, so the phone's editor can prefill a row rather
+     than offering a blank box for a field that already has a value. Emitted only when present,
+     which is why this costs 2 KB across 125 rows: most rows carry none of them.
+
+     TWO ARE DELIBERATELY ABSENT AND MUST STAY ABSENT. `cost` is a per-unit cost, which is the
+     one figure phonePayloadLeaks() bans outright. `note` is prose that quotes lot costs and
+     margins in words, which is the same ban in a longer form. The phone therefore cannot edit
+     those two, and its sheet says so rather than leaving it a mystery: it will not offer to
+     replace a value it is not allowed to show you. */
+  for(const k of CORRECT_DATE.concat(CORRECT_TEXT,CORRECT_BOOL,['receivedQty','settledRM','settledKg','rebate','rebateKg','goodwill'])){
+    if(k==='date'||k==='note') continue;                 // date is already `d`; note never travels
+    if(t[k]!=null&&t[k]!==false) r[k]=t[k];
+  }
   return r;
 }
 function openable(r){return r.st!=='done'&&r.st!=='canc';}
@@ -232,6 +245,25 @@ function openable(r){return r.st!=='done'&&r.st!=='canc';}
    It lives here, in the engine, because three places need the same answer: the desk's
    ovAmend, the fold's applyAmend, and the phone payload below. Two of them had their own
    copy for about an hour on 25 Aug and that is exactly the drift this file exists to stop. */
+/* WHAT A CORRECTION MAY SET, grouped by how each field is checked. It lives in the engine
+   for the same reason attributionOf does, one line above: the drafter decides whether to
+   accept a correction, the fold applies it and the desk's ovAmend applies it too, and all
+   three have to agree about which fields exist and what kind each one is. A table in two
+   places is a table that will differ.
+
+   NOT HERE, and excluded rather than forgotten: rid (identity), amend and mod (the trail),
+   rev/ref/refKg (derived from assoc + stream) and a purchase's status (derived from cash
+   against total). Everything a person typed is editable; nothing the desk computes is. */
+const CORRECT_NUM_POS=['qty'];
+const CORRECT_NUM_NN=['total','cash','deliveredQty','receivedQty','cost',
+  'settledRM','settledKg','rebate','rebateKg','goodwill'];
+const CORRECT_DATE=['date','agreedOn','paidOn','deliveredOn','receivedOn','cancelledOn'];
+const CORRECT_BOOL=['unpriced','cancelled','pending','inTransit','defaulted'];
+const CORRECT_CODE=['party','assoc','downstream'];
+const CORRECT_TEXT=['orderCode','settle','note'];
+const CORRECT_REQUIRED=['product','party','qty','total'];
+const CORRECTABLE=['product','stream'].concat(CORRECT_NUM_POS,CORRECT_NUM_NN,CORRECT_DATE,
+  CORRECT_BOOL,CORRECT_CODE,CORRECT_TEXT);
 function attributionOf(row,partyKey){
   const pk=partyKey||(row.supplier!=null?'supplier':'customer');
   if(row.rev==='R2')return {assoc:row[pk],stream:'R2',downstream:row.downstream||null};
@@ -245,6 +277,9 @@ return {txPrice:txPrice,txPaid:txPaid,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:t
         txDeferKg:txDeferKg,txPendKg:txPendKg,txPendKgRaw:txPendKgRaw,txPendRM:txPendRM,txStat:txStat,txDates:txDates,
         poRecvKg:poRecvKg,poCash:poCash,poLive:poLive,poRate:poRate,poOpenKg:poOpenKg,provRate:provRate,
         daysBetween:daysBetween,walk:walk,coverStats:coverStats,commitments:commitments,
-        ledgerRow:ledgerRow,openable:openable,ovKey:ovKey,attributionOf:attributionOf};
+        ledgerRow:ledgerRow,openable:openable,ovKey:ovKey,attributionOf:attributionOf,
+        CORRECTABLE:CORRECTABLE,CORRECT_REQUIRED:CORRECT_REQUIRED,CORRECT_NUM_POS:CORRECT_NUM_POS,
+        CORRECT_NUM_NN:CORRECT_NUM_NN,CORRECT_DATE:CORRECT_DATE,CORRECT_BOOL:CORRECT_BOOL,
+        CORRECT_CODE:CORRECT_CODE,CORRECT_TEXT:CORRECT_TEXT};
 })();
 export default POSITION_ENGINE;

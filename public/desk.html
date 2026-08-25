@@ -60,7 +60,7 @@ document.addEventListener('visibilitychange',function(){
    focused, no dialog open. Otherwise it offers a chip and waits to be tapped.
    The same tick retries a held entry, which is what gets a phone write to the cloud
    without waiting for the next open. */
-var SALT_BUILD_ID="7b0e8a45d4c4e30a";
+var SALT_BUILD_ID="01532eb1e24884b5";
 var SALT_REV_MS=10000;
 (function(){
   var chip=null,timer=null;
@@ -1652,6 +1652,19 @@ function ledgerRow(t,dir,defaultProd){
   if(t.rid) r.rid=t.rid;
   const at=attributionOf(t,dir==='B'?'supplier':'customer');
   if(at.assoc){ r.as=at.assoc; r.st2=at.stream; if(at.downstream) r.dn=at.downstream; }
+  /* v363: EVERY REMAINING EDITABLE ATTRIBUTE, so the phone's editor can prefill a row rather
+     than offering a blank box for a field that already has a value. Emitted only when present,
+     which is why this costs 2 KB across 125 rows: most rows carry none of them.
+
+     TWO ARE DELIBERATELY ABSENT AND MUST STAY ABSENT. `cost` is a per-unit cost, which is the
+     one figure phonePayloadLeaks() bans outright. `note` is prose that quotes lot costs and
+     margins in words, which is the same ban in a longer form. The phone therefore cannot edit
+     those two, and its sheet says so rather than leaving it a mystery: it will not offer to
+     replace a value it is not allowed to show you. */
+  for(const k of CORRECT_DATE.concat(CORRECT_TEXT,CORRECT_BOOL,['receivedQty','settledRM','settledKg','rebate','rebateKg','goodwill'])){
+    if(k==='date'||k==='note') continue;                 // date is already `d`; note never travels
+    if(t[k]!=null&&t[k]!==false) r[k]=t[k];
+  }
   return r;
 }
 function openable(r){return r.st!=='done'&&r.st!=='canc';}
@@ -1671,6 +1684,25 @@ function openable(r){return r.st!=='done'&&r.st!=='canc';}
    It lives here, in the engine, because three places need the same answer: the desk's
    ovAmend, the fold's applyAmend, and the phone payload below. Two of them had their own
    copy for about an hour on 25 Aug and that is exactly the drift this file exists to stop. */
+/* WHAT A CORRECTION MAY SET, grouped by how each field is checked. It lives in the engine
+   for the same reason attributionOf does, one line above: the drafter decides whether to
+   accept a correction, the fold applies it and the desk's ovAmend applies it too, and all
+   three have to agree about which fields exist and what kind each one is. A table in two
+   places is a table that will differ.
+
+   NOT HERE, and excluded rather than forgotten: rid (identity), amend and mod (the trail),
+   rev/ref/refKg (derived from assoc + stream) and a purchase's status (derived from cash
+   against total). Everything a person typed is editable; nothing the desk computes is. */
+const CORRECT_NUM_POS=['qty'];
+const CORRECT_NUM_NN=['total','cash','deliveredQty','receivedQty','cost',
+  'settledRM','settledKg','rebate','rebateKg','goodwill'];
+const CORRECT_DATE=['date','agreedOn','paidOn','deliveredOn','receivedOn','cancelledOn'];
+const CORRECT_BOOL=['unpriced','cancelled','pending','inTransit','defaulted'];
+const CORRECT_CODE=['party','assoc','downstream'];
+const CORRECT_TEXT=['orderCode','settle','note'];
+const CORRECT_REQUIRED=['product','party','qty','total'];
+const CORRECTABLE=['product','stream'].concat(CORRECT_NUM_POS,CORRECT_NUM_NN,CORRECT_DATE,
+  CORRECT_BOOL,CORRECT_CODE,CORRECT_TEXT);
 function attributionOf(row,partyKey){
   const pk=partyKey||(row.supplier!=null?'supplier':'customer');
   if(row.rev==='R2')return {assoc:row[pk],stream:'R2',downstream:row.downstream||null};
@@ -1684,7 +1716,10 @@ return {txPrice:txPrice,txPaid:txPaid,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:t
         txDeferKg:txDeferKg,txPendKg:txPendKg,txPendKgRaw:txPendKgRaw,txPendRM:txPendRM,txStat:txStat,txDates:txDates,
         poRecvKg:poRecvKg,poCash:poCash,poLive:poLive,poRate:poRate,poOpenKg:poOpenKg,provRate:provRate,
         daysBetween:daysBetween,walk:walk,coverStats:coverStats,commitments:commitments,
-        ledgerRow:ledgerRow,openable:openable,ovKey:ovKey,attributionOf:attributionOf};
+        ledgerRow:ledgerRow,openable:openable,ovKey:ovKey,attributionOf:attributionOf,
+        CORRECTABLE:CORRECTABLE,CORRECT_REQUIRED:CORRECT_REQUIRED,CORRECT_NUM_POS:CORRECT_NUM_POS,
+        CORRECT_NUM_NN:CORRECT_NUM_NN,CORRECT_DATE:CORRECT_DATE,CORRECT_BOOL:CORRECT_BOOL,
+        CORRECT_CODE:CORRECT_CODE,CORRECT_TEXT:CORRECT_TEXT};
 })();
 /* ==== END ENGINE position ==== */
 /* ==== ENGINE pricing: generated from engine/pricing.mjs by tools/engine.mjs. Edit the module, never this block. ==== */
@@ -3205,7 +3240,8 @@ const whiteboard=[
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{"v":"v362","d":"25 Aug 2026","t":"THE ROW EDITOR REACHES THE PHONE, AND THE ATTRIBUTION RULE HAS ONE HOME","n":["<b>TAP ANY ROW ON THE BOOK TAB AND EDIT IT.</b> The desk got this at v361 on a right-click. The phone opens on a plain <b>tap</b> rather than a long press: a long press raises the same event, but iOS Safari is not reliable about it, and a ledger card had no tap action before, so nothing is taken away. The sheet carries the product, the buyer, the associate, the stream, the date, the size and the total, prefilled from the row. It joins <code>held</code> and goes up on the same push every other entry uses, so it survives a dead connection, and it queues a correction rather than writing one.","<b>THE NOTE IS THE ONE FIELD THE PHONE CANNOT TOUCH, and that is a policy line rather than an oversight.</b> Row notes carry lot costs and margins in prose, and <code>phonePayloadLeaks()</code> keeps every per-unit cost off this payload because the app is public by decision. The phone cannot SHOW a note, so it must not offer to REPLACE one: overwriting prose you cannot read is worse than not offering it. The sheet says so in a line rather than leaving it a mystery, and notes stay editable at the desk.","<b>THE ATTRIBUTION RULE MOVED INTO THE ENGINE, WHERE IT SHOULD HAVE GONE FIRST.</b> Reading the associate back out of a row is not trivial (R2 puts them in the counterparty field with the buyer as <code>downstream</code>; R3 leaves the buyer and credits <code>ref</code>), and v361 shipped it TWICE, once in the master's ovAmend and once in the fold's applyAmend. The phone needed the same answer a third time, which is the point at which a copy becomes a fault. <code>attributionOf</code> now lives in <code>engine/position.mjs</code> with one definition and three consumers, which is the rule this repo already had and that I broke for an hour.","<b>THE PAYLOAD CARRIES EACH ROW'S ID AND ATTRIBUTION.</b> Two small fields, 2.2 KB across 125 rows, and neither is a cost: a rid is opaque and an attribution is a code the payload already ships in its party list. The leak test reads them as it reads the rest.","<b>NO FIGURE MOVED.</b> No row was folded and no rate changed."]},
+const evolution=[{"v":"v363","d":"25 Aug 2026","t":"EVERY ATTRIBUTE OF A ROW IS EDITABLE, AND THE CHAIN IS PROVED ON THE REAL QUEUE","n":["<b>THIRTY ATTRIBUTES, NOT NINE.</b> His instruction of 25 Aug: \"I need to be able to edit every attribute of an entry on the ledger.\" v361 covered nine. The editor now reaches what was traded (product, party, size, total, unpriced), who it books to (associate, stream, downstream, order code), what has actually moved (cash, handed over, received, cost), every date the row carries, what was settled other than in cash (settled RM and unit, rebate, goodwill) and the row's own flags (cancelled, pending, in transit, defaulted).","<b>THE FIRST CUT WITHHELD THE SETTLEMENT FIGURES AND THAT WAS WRONG.</b> cash and deliveredQty were held back on the ground that they \"move by fulfilment, and two writers on one figure drift\". Reading the engine settled it: <code>txPaid</code> is <code>cash + settledRM</code> read straight off the row, so the <code>amend</code> trail is a narrative BESIDE the figure and never its source. Setting cash is a correction; adding to it is a movement; both legitimately write the same field, which is what ovAmend already did. The correction is still recorded beside the trail, and a flag says the trail will no longer sum to the figure.","<b>WHAT IS STILL NOT EDITABLE IS EXCLUDED RATHER THAN FORGOTTEN, and the suite asserts each one.</b> <code>rid</code> is the row's identity, so editing it would rename the thing being edited. <code>amend</code> and <code>mod</code> are the trail. <code>rev</code>, <code>ref</code> and <code>refKg</code> are derived from the associate and the stream, and offering them directly would let a row claim R2 and R3 at once. A purchase's <code>status</code> is derived from cash against total and is recomputed after every change.","<b>THE FORM IS A TABLE NOW, IN ALL THREE PLACES.</b> Thirty fields hand-written would need thirty pieces of markup, thirty read-backs and thirty diff lines, and the three would drift. The field table lives in <code>engine/position.mjs</code> beside <code>attributionOf</code>, so the drafter that accepts a correction, the fold that applies it and the desk that applies it all read one array; the suite asserts they are the same object. The panels render from a spec and diff from the same spec.","<b>AN ABSENT FLAG AND false ARE THE SAME THING</b>, and comparing them raw would have recorded a correction on every save that touched a checkbox. A row that is not cancelled simply has no <code>cancelled</code> key, so the comparison coerces both sides and a false flag deletes the key rather than writing false.","<b>THE PHONE GETS EVERYTHING EXCEPT THE COST AND THE NOTE, and that is a policy line.</b> A per-unit cost is the one figure <code>phonePayloadLeaks()</code> bans outright, and a row note quotes lot costs in prose. Neither reaches the payload, so the phone cannot SHOW either, so it must not offer to REPLACE either: overwriting a value you are not allowed to see is worse than not offering it. The sheet says so. The other twenty-eight are on the phone, and the payload grew 4.6 KB to carry them.","<b>THE CHAIN IS PROVED ON THE LIVE QUEUE, END TO END.</b> A correction was posted into the real KV at 07:21:35; the production cron fired at 07:30, read it, resolved the row by rid against the live mirror and wrote a pending draft into the live D1 with all three flags it should have raised. It was queued deliberately wrong, salt to oil on a RM100/unit row, so what was proved is the gate REFUSING rather than passing. It was then rejected and withdrawn from KV, and the queue is back to the three entries it held before.","<b>NO FIGURE MOVED.</b> No row was folded and no rate changed."]},
+{"v":"v362","d":"25 Aug 2026","t":"THE ROW EDITOR REACHES THE PHONE, AND THE ATTRIBUTION RULE HAS ONE HOME","n":["<b>TAP ANY ROW ON THE BOOK TAB AND EDIT IT.</b> The desk got this at v361 on a right-click. The phone opens on a plain <b>tap</b> rather than a long press: a long press raises the same event, but iOS Safari is not reliable about it, and a ledger card had no tap action before, so nothing is taken away. The sheet carries the product, the buyer, the associate, the stream, the date, the size and the total, prefilled from the row. It joins <code>held</code> and goes up on the same push every other entry uses, so it survives a dead connection, and it queues a correction rather than writing one.","<b>THE NOTE IS THE ONE FIELD THE PHONE CANNOT TOUCH, and that is a policy line rather than an oversight.</b> Row notes carry lot costs and margins in prose, and <code>phonePayloadLeaks()</code> keeps every per-unit cost off this payload because the app is public by decision. The phone cannot SHOW a note, so it must not offer to REPLACE one: overwriting prose you cannot read is worse than not offering it. The sheet says so in a line rather than leaving it a mystery, and notes stay editable at the desk.","<b>THE ATTRIBUTION RULE MOVED INTO THE ENGINE, WHERE IT SHOULD HAVE GONE FIRST.</b> Reading the associate back out of a row is not trivial (R2 puts them in the counterparty field with the buyer as <code>downstream</code>; R3 leaves the buyer and credits <code>ref</code>), and v361 shipped it TWICE, once in the master's ovAmend and once in the fold's applyAmend. The phone needed the same answer a third time, which is the point at which a copy becomes a fault. <code>attributionOf</code> now lives in <code>engine/position.mjs</code> with one definition and three consumers, which is the rule this repo already had and that I broke for an hour.","<b>THE PAYLOAD CARRIES EACH ROW'S ID AND ATTRIBUTION.</b> Two small fields, 2.2 KB across 125 rows, and neither is a cost: a rid is opaque and an attribution is a code the payload already ships in its party list. The leak test reads them as it reads the rest.","<b>NO FIGURE MOVED.</b> No row was folded and no rate changed."]},
 {"v":"v361","d":"25 Aug 2026","t":"EVERY FIELD ON EVERY ROW CAN BE EDITED, AND EVERY ROW HAS A NAME","n":["<b>RIGHT-CLICK ANY LEDGER ROW AND EDIT IT.</b> His instruction of 25 Aug: \"I am unable to edit the ledger.\" He was right, and about more than he said. The only amendments that existed were paid, delivered, restate and cancel, and not one of them touches what a row SAYS about itself: a row's product and its associate were set once, at entry, and nothing anywhere could change them afterwards. The Ledger tab now opens a panel on a right-click, or a long press, with the product, the party, the associate, the stream, the date, the size, the total and the note all typeable. It <b>queues a correction</b> and writes nothing: the drafter checks every field against the book and it comes back to Approve for a tap, exactly like a transaction.","<b>EVERY ROW CARRIES AN ID NOW, AND THE OLD ONE COULD NOT HAVE WORKED.</b> A row was addressed by ovKey, which is party, date and total joined together. That names a row for exactly as long as none of those three changes, and an editor whose job is changing them cannot use it: correct a party and the row's own name no longer finds it. It also already collided, on two SA5-BTR lots dated 22 Jul both for RM350, neither of which could be addressed at all. All 125 rows were given a rid, the fold mints one for every new row, and the drafter, the fold and the desk all resolve by rid first and fall back to ovKey.","<b>THE DRAFTER COULD ONLY REACH SEVEN ROWS, AND NOW REACHES ALL OF THEM.</b> Every amendment resolved its target through the open-order snapshot, so 118 of the 125 rows on this book, every settled one, were beyond any amendment. A correction reads the full book instead. It is the one amendment that does, deliberately: a row is as often wrong once it is closed as while it is live.","<b>AN ASSOCIATE CAN BE ATTRIBUTED FROM THE PHONE.</b> The drafter refused outright any entry carrying associate, stream or downstream fields, on the ground that whose bucket a row books to is a judgement. That was true of the link fields and never true of these three: each is a code the book either knows or does not. They are checked per field now, and R2 and R3 are applied exactly as the desk's own rule applies them. Only linkTo and orderCode stay refused, because which OTHER row a row links to is a judgement no figure settles.","<b>WHAT A CORRECTION IS APPROVED ON IS WHAT CHANGED.</b> The Approve card leads with cash and units moving, both of which are zero on a correction and say nothing. A correction gets its own card: a before-and-after line for every field it touches, the flags the drafter raised on the row as it would then stand, and nothing else. Changing the product re-runs the whole rate check against the new shelf, which is how a RM100/unit row moved to oil is flagged as more than double the highest oil rate this book has carried.","<b>NO FIGURE MOVED.</b> No row was folded and no rate changed. Every row gained a rid and nothing else; the ledger stands exactly where v360 left it."]},
 {"v":"v360","d":"24 Aug 2026","t":"CM4-MK'S SIZE TAPER, CR3-DAM'S STANDARD ADVANCE, AND CA4-DAM GOES OUT","n":["<b>THREE ORDERS, ON HIS WORD.</b> CA4-DAM's pending 0.5 unit at RM50 has gone out with the RM50 still owed, an advance rather than a settlement. CM4-MK took 4 unit for RM360, RM90/unit, paid and delivered on the day. CR3-DAM took his standard 1 unit for RM80, delivered with the RM80 still owed.","<b>CM4-MK'S RM90 IS THE SIZE TAPER, NOT A CHEAPER RATE.</b> The drafter flags it 18.2% under his typical RM110/unit, but that figure is drawn from his 2-unit orders; RM360 for 4 unit is the exact size and total he paid on 10 Aug. Nothing about what he is charged has changed.","<b>CR3-DAM'S RM80 IS HIS RATE ON EVERY ORDER THIS BOOK HAS EVER RECORDED FOR HIM</b>, unbroken since June. It flags only because it is an advance: RM80 sits under the RM122.74 delivered floor while clearing the RM72.74 collected one, which is what an advance always does until the cash lands.","<b>THE SHELF ROLLS 17.5 TO 12 UNIT</b> on 5.5 unit physically out: 0.5 to CA4-DAM, 4 to CM4-MK, 1 to CR3-DAM."]},
 
@@ -3327,7 +3363,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='25 Aug 2026, 15:10 KL';
+const LAST_UPDATED='25 Aug 2026, 15:55 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -3566,21 +3602,31 @@ function ovAmend(p,q){
      of each and compares, because a desk and a fold that disagree about what an edit does is
      two books. It takes its branch above the BUY split because it is the one amendment that
      works the same on a lot as on an order. */
+  /* A CORRECTION REWRITES WHAT THE ROW SAYS AND NOTHING ELSE, and from 25 Aug 2026 that is
+     EVERY attribute a person states. This is the same code as applyAmend in tools/fold.mjs,
+     over the same field table out of the engine, because a desk and a fold that disagree
+     about what an edit does is two books. It takes its branch above the BUY split because it
+     is the one amendment that works identically on a lot and on an order. */
   if(p.kind==='Correction'){
     const f=p.fields||{};
     const partyKey=p.direction==='BUY'?'supplier':'customer';
     const attr=ovAttribution(row,partyKey);
-    const buyerNow=attr.stream==='R2'?(attr.downstream||null):row[partyKey];
-    const before={product:row.product||'salt',party:buyerNow,assoc:attr.assoc,stream:attr.stream,
-      downstream:attr.downstream,date:row.date==null?null:row.date,qty:row.qty,total:row.total,
-      note:row.note==null?null:row.note};
+    const buyerNow=attr.stream==='R2'?(attr.downstream||null):(row[partyKey]||null);
+    const before=Object.assign({},row,{product:row.product||'salt',party:buyerNow,
+      assoc:attr.assoc,stream:attr.stream,downstream:attr.downstream});
     const asked=k=>Object.prototype.hasOwnProperty.call(f,k)&&f[k]!==undefined;
     const said=[];
     Object.keys(f).forEach(k=>{
       if(f[k]===undefined)return;
-      if(JSON.stringify(f[k])===JSON.stringify(before[k]===undefined?null:before[k]))return;
-      said.push(k+' '+(before[k]==null?'(unset)':before[k])+' to '+(f[k]==null?'(cleared)':f[k]));});
-    ['date','qty','total','note'].forEach(k=>{if(!asked(k))return;if(f[k]===null)delete row[k];else row[k]=f[k];});
+      const was=before[k]===undefined?null:before[k];
+      if(JSON.stringify(f[k])===JSON.stringify(was))return;
+      said.push(k+' '+(was==null?'(unset)':was)+' to '+(f[k]==null?'(cleared)':f[k]));});
+    const PE=POSITION_ENGINE;
+    const PLAIN=[].concat(PE.CORRECT_NUM_POS,PE.CORRECT_NUM_NN,PE.CORRECT_DATE,PE.CORRECT_TEXT);
+    PLAIN.forEach(k=>{if(!asked(k))return;if(f[k]===null)delete row[k];else row[k]=f[k];});
+    /* A FALSE FLAG IS AN ABSENT FLAG on this book: an uncancelled row simply has no
+       `cancelled` key, so writing false would shape this row unlike every one of its peers. */
+    PE.CORRECT_BOOL.forEach(k=>{if(!asked(k))return;if(f[k]===true)row[k]=true;else delete row[k];});
     if(asked('product')){if(f.product==='salt')delete row.product;else row.product=f.product;}
     const wantAssoc=asked('assoc')?f.assoc:attr.assoc;
     const wantStream=asked('stream')?f.stream:attr.stream;
@@ -3590,6 +3636,9 @@ function ovAmend(p,q){
     if(wantAssoc&&wantStream==='R3'){row[partyKey]=wantBuyer;row.ref=wantAssoc;row.refKg=row.qty;}
     else if(wantAssoc){row[partyKey]=wantAssoc;row.rev='R2';if(wantBuyer&&wantBuyer!==wantAssoc)row.downstream=wantBuyer;}
     else{row[partyKey]=wantBuyer||row[partyKey];}
+    if(p.direction==='BUY'){
+      const paid=row.cash!=null?row.cash:0;
+      row.status=paid>=(row.total||0)-0.009?'paid':(paid<=0.009?'unpaid':'partial');}
     if(said.length){
       const line='corrected'+(p.date?' on '+p.date:'')+': '+said.join('; ');
       row.mod=row.mod?row.mod+', then '+line:line;
@@ -6360,23 +6409,81 @@ function deskExit(){
   };
   try{Promise.resolve(qFlush()).then(bye,bye);}catch(e){bye();}
 }
-/* ============ THE ROW EDITOR (25 Aug 2026) ============
-   Right-click any ledger row (a long press on a touch screen raises the same event) and every
-   field a person typed is typeable again. His instruction of 25 Aug, after finding that a row's
-   product and its associate could not be changed at all once it was on the book: the only
-   amendments that existed were paid, delivered, restate and cancel, and not one of them touches
-   what a row SAYS about itself.
+/* ============ THE ROW EDITOR (v361, widened to every attribute at v363) ============
+   Right-click any ledger row (a long press raises the same event) and every attribute a person
+   states is typeable again. His instruction of 25 Aug: "I need to be able to edit every attribute
+   of an entry on the ledger."
 
    IT QUEUES, IT DOES NOT POST. Exactly like ledQuick below, and like every other entry on this
    desk: the correction becomes a queued entry, the drafter turns it into a proposed change with
    its flags beside it, and it reaches the book only once it is approved. Nothing here writes to
-   the ledger. That is deliberate and it is the whole architecture: an editor that wrote straight
-   through would be the one road into this book with no second look at it.
+   the ledger. That is the whole architecture: an editor that wrote straight through would be the
+   one road into this book with no second look at it.
 
-   ONLY WHAT CHANGED IS SENT. The panel opens prefilled with the row as it stands, so most fields
-   go back untouched; sending them all would make every correction look like it rewrote the row
-   and would bury the one field that actually moved. A field emptied is sent as null, which is
-   how a wrong attribution comes OFF a row rather than being replaced by another wrong one. */
+   ONLY WHAT CHANGED IS SENT. The panel opens prefilled, so most fields go back untouched; sending
+   them all would make every correction look like it rewrote the row and would bury the one field
+   that actually moved. An emptied box is sent as null, which is how a value comes OFF a row
+   rather than being replaced by another wrong one. */
+
+/* THE FORM, AS DATA. Thirty editable fields is too many to hand-write: each would need its own
+   markup, its own read-back and its own diff line, and the three would drift apart. This spec is
+   the single description of the panel, and render, read-back and diff all walk it. Adding a field
+   to the engine's table plus a line here is the whole job.
+
+   `only` is 'S' for a sale and 'B' for a purchase, absent for both. `kind` decides the control
+   and how the value is read back: a number returns a number, a tick returns a boolean, and an
+   emptied box returns null. */
+const EDFORM=[
+  {g:'The trade'},
+  {k:'product', l:'Product',            kind:'product', hint:'Changing this recosts the row off the other shelf.'},
+  {k:'party',   l:'Buyer',              kind:'code', only:'S', hint:'Who the row books to. Moving it moves what each of them owes.'},
+  {k:'party',   l:'Supplier',           kind:'code', only:'B'},
+  {k:'qty',     l:'Quantity, unit',     kind:'num'},
+  {k:'total',   l:'Total, RM',          kind:'num'},
+  {k:'unpriced',l:'Price not agreed yet', kind:'bool', hint:'A zero total on an unpriced row is not the same as paid in full. This is what tells them apart.'},
+  {g:'Attribution', only:'S'},
+  {k:'assoc',     l:'Associate',  kind:'code', only:'S', hint:'Leave it empty to take an attribution off the row.'},
+  {k:'stream',    l:'Stream',     kind:'stream', only:'S', hint:'R2 books the row to the associate and keeps the buyer beside it. R3 leaves the buyer as the counterparty.'},
+  {k:'downstream',l:'Downstream', kind:'code', only:'S', hint:'The end buyer on an R2 row.'},
+  {k:'orderCode', l:'Order code', kind:'text'},
+  {g:'What has moved'},
+  {k:'cash',        l:'Cash in, RM',        kind:'num'},
+  {k:'deliveredQty',l:'Handed over, unit',  kind:'num', only:'S'},
+  {k:'receivedQty', l:'Received, unit',     kind:'num', only:'B'},
+  {k:'cost',        l:'Cost, RM/unit',      kind:'num', only:'S', hint:'Typed here it overrides the shelf, and every margin on this row is measured against it.'},
+  {g:'Dates'},
+  {k:'date',        l:'Row date',     kind:'date', hint:'Empty for a pending row that has not moved.'},
+  {k:'agreedOn',    l:'Agreed on',    kind:'date'},
+  {k:'paidOn',      l:'Paid on',      kind:'date'},
+  {k:'deliveredOn', l:'Delivered on', kind:'date', only:'S'},
+  {k:'receivedOn',  l:'Received on',  kind:'date', only:'B'},
+  {g:'Settled other than in cash', fold:true},
+  {k:'settledRM', l:'Settled, RM',   kind:'num'},
+  {k:'settledKg', l:'Settled, unit', kind:'num'},
+  {k:'settle',    l:'In what',       kind:'text', hint:'What the settlement was made in.'},
+  {k:'rebate',    l:'Rebate, RM',    kind:'num'},
+  {k:'rebateKg',  l:'Rebate, unit',  kind:'num'},
+  {k:'goodwill',  l:'Goodwill, RM',  kind:'num'},
+  {g:'State', fold:true},
+  {k:'cancelled',  l:'Cancelled',              kind:'bool', hint:'This takes the row out of every figure on the desk.'},
+  {k:'cancelledOn',l:'Cancelled on',           kind:'date'},
+  {k:'pending',    l:'Pending, nothing moved', kind:'bool', only:'B'},
+  {k:'inTransit',  l:'In transit',             kind:'bool', only:'B'},
+  {k:'defaulted',  l:'Defaulted',              kind:'bool', only:'B'},
+  {g:'Note'},
+  {k:'note', l:'Row note', kind:'prose'},
+];
+const edFields=dir=>EDFORM.filter(f=>!f.only||f.only===(dir==='BUY'?'B':'S'));
+/* THE ROW AS A PERSON NAMES IT. On an R2 row the counterparty field holds the associate and the
+   buyer is the downstream, so reading row.customer as "the buyer" would put the associate in the
+   Buyer box and every diff line would be wrong. attributionOf is the one place that knows. */
+function edView(row,dir){
+  const partyKey=dir==='BUY'?'supplier':'customer';
+  const at=ovAttribution(row,partyKey);
+  return Object.assign({},row,{product:row.product||'salt',
+    party:at.stream==='R2'?(at.downstream||null):(row[partyKey]||null),
+    assoc:at.assoc,stream:at.stream,downstream:at.downstream});
+}
 const ridOf=t=>t.rid||(t._buy&&t._buy.rid)||null;
 let edRid=null,edType='SELL';
 function edRowOf(rid,type){return ovFind(type==='BUY'?purchases:sales,rid);}
@@ -6391,35 +6498,50 @@ function renderEditor(){
   if(!bd){bd=document.createElement('div');bd.id='edBackdrop';document.body.appendChild(bd);}
   if(!pn){pn=document.createElement('div');pn.id='edPanel';document.body.appendChild(pn);}
   bd.setAttribute('style','display:'+(edRid?'block':'none')+';position:fixed;inset:0;background:rgba(8,4,18,.55);z-index:89');
-  pn.setAttribute('style','display:'+(edRid?'block':'none')+';position:fixed;top:0;right:0;height:100vh;width:min(460px,94vw);z-index:90;text-align:left;overflow-y:auto;background:linear-gradient(180deg,var(--card2),var(--card));border-left:1px solid var(--line);padding:15px 16px;box-shadow:-18px 0 40px rgba(0,0,0,.45)');
+  pn.setAttribute('style','display:'+(edRid?'block':'none')+';position:fixed;top:0;right:0;height:100vh;width:min(470px,94vw);z-index:90;text-align:left;overflow-y:auto;background:linear-gradient(180deg,var(--card2),var(--card));border-left:1px solid var(--line);padding:15px 16px 30px;box-shadow:-18px 0 40px rgba(0,0,0,.45)');
   if(!edRid){pn.innerHTML='';return;}
   const row=edRowOf(edRid,edType);
   if(!row){pn.innerHTML='<div class="note warn">That row could not be found. It may have been folded under a different id since this page loaded.</div>';return;}
   const partyKey=edType==='BUY'?'supplier':'customer';
-  const attr=ovAttribution(row,partyKey);
-  const buyer=attr.stream==='R2'?(attr.downstream||''):(row[partyKey]||'');
+  const v=edView(row,edType);
   const codes=(roster||[]).slice().sort();
-  const box='width:100%;border:1px solid var(--brd);border-radius:8px;padding:9px 10px;font-size:15px;color:var(--ink);background:var(--wellbg)';
-  const fld=(lab,inner,hint)=>'<div style="margin-bottom:11px"><label style="display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.8px;color:var(--mut);font-weight:700;margin-bottom:4px">'+lab+'</label>'+inner+(hint?'<div style="font-size:11px;color:var(--dim);margin-top:3px">'+hint+'</div>':'')+'</div>';
-  const inp=(id,val,type)=>'<input id="'+id+'" type="'+(type||'text')+'" value="'+edEsc(val)+'" style="'+box+'">';
-  const lst=(id,val,ph)=>'<input id="'+id+'" list="edCodes" value="'+edEsc(val)+'" placeholder="'+(ph||'')+'" style="'+box+'">';
-  const sel=(id,opts,cur)=>'<select id="'+id+'" style="'+box+'">'+opts.map(o=>'<option value="'+edEsc(o[0])+'"'+(String(cur==null?'':cur)===String(o[0])?' selected':'')+'>'+o[1]+'</option>').join('')+'</select>';
-  const prods=Object.keys(PRODUCTS).map(k=>[k,PRODUCTS[k].name]);
+  const box='width:100%;border:1px solid var(--brd);border-radius:8px;padding:9px 10px;font-size:14px;color:var(--ink);background:var(--wellbg)';
+  const ctl=f=>{
+    const id='ed_'+f.k, val=v[f.k];
+    if(f.kind==='product')return '<select id="'+id+'" style="'+box+'">'+Object.keys(PRODUCTS).map(k=>'<option value="'+edEsc(k)+'"'+((val||'salt')===k?' selected':'')+'>'+edEsc(PRODUCTS[k].name)+'</option>').join('')+'</select>';
+    if(f.kind==='stream')return '<select id="'+id+'" style="'+box+'">'+[['','none'],['R2','R2, books to the associate'],['R3','R3, credits the introduction']].map(o=>'<option value="'+o[0]+'"'+(String(val||'')===o[0]?' selected':'')+'>'+o[1]+'</option>').join('')+'</select>';
+    if(f.kind==='code')return '<input id="'+id+'" list="edCodes" value="'+edEsc(val)+'" placeholder="none" style="'+box+'">';
+    if(f.kind==='num')return '<input id="'+id+'" type="number" step="0.01" value="'+edEsc(val)+'" style="'+box+'">';
+    if(f.kind==='date')return '<input id="'+id+'" type="date" value="'+edEsc(val)+'" style="'+box+'">';
+    if(f.kind==='bool')return '<label style="display:flex;gap:8px;align-items:center;font-size:13px;color:var(--ink);cursor:pointer"><input id="'+id+'" type="checkbox"'+(val?' checked':'')+' style="width:auto;min-height:0;accent-color:var(--gold)"> '+edEsc(f.l)+'</label>';
+    if(f.kind==='prose')return '<textarea id="'+id+'" rows="4" style="'+box+';font-size:12.5px;line-height:1.45;resize:vertical">'+edEsc(val)+'</textarea>';
+    return '<input id="'+id+'" value="'+edEsc(val)+'" placeholder="none" style="'+box+'">';
+  };
+  let html='',open=null;
+  edFields(edType).forEach(f=>{
+    if(f.g){
+      if(open)html+=(open.fold?'</details>':'')+'';
+      open=f;
+      html+=f.fold
+        ? '<details style="margin:14px 0 4px"><summary style="cursor:pointer;font-size:10.5px;text-transform:uppercase;letter-spacing:1px;color:var(--mut);font-weight:700;margin-bottom:8px">'+edEsc(f.g)+'</summary>'
+        : '<p style="font-size:10.5px;text-transform:uppercase;letter-spacing:1px;color:var(--mut);font-weight:700;margin:14px 0 8px">'+edEsc(f.g)+'</p>';
+      return;
+    }
+    html+='<div style="margin-bottom:11px">'
+      +(f.kind==='bool'?'':'<label for="ed_'+f.k+'" style="display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.8px;color:var(--mut);font-weight:700;margin-bottom:4px">'+edEsc(f.l)+'</label>')
+      +ctl(f)
+      +(f.hint?'<div style="font-size:11px;color:var(--dim);margin-top:3px">'+f.hint+'</div>':'')
+      +'</div>';
+  });
+  if(open&&open.fold)html+='</details>';
   pn.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">'
     +'<div style="font-size:13px;font-weight:800;color:var(--gold);letter-spacing:.3px">Edit the entry</div>'
     +'<button id="edX" aria-label="Close" style="background:none;border:none;color:var(--dim);font-size:19px;line-height:1;cursor:pointer">&times;</button></div>'
     +'<div class="mono" style="font-size:11px;color:var(--dim);margin-bottom:10px">'+edEsc(edRid)+' &middot; '+edType+' &middot; '+(row.date||'undated')+' &middot; '+ID(row[partyKey])+'</div>'
-    +'<div class="note" style="margin:0 0 12px">This <b>queues a correction</b>. It does not write to the book. The drafter checks every field against the ledger and it comes back to Approve for a tap, exactly like a transaction does.</div>'
+    +'<div class="note" style="margin:0 0 4px">This <b>queues a correction</b>. It does not write to the book. The drafter checks every field against the ledger and it comes back to Approve for a tap, exactly like a transaction does.</div>'
     +'<datalist id="edCodes">'+codes.map(c=>'<option value="'+edEsc(c)+'"></option>').join('')+'</datalist>'
-    +fld('Product',sel('edProduct',prods,row.product||'salt'),'Changing this recosts the row off the other shelf.')
-    +fld(edType==='BUY'?'Supplier':'Buyer',lst('edParty',buyer),'Who the row books to. Moving it moves what each of them owes.')
-    +(edType==='BUY'?'':fld('Associate',lst('edAssoc',attr.assoc,'none'),'Leave it empty to take an attribution off the row.'))
-    +(edType==='BUY'?'':fld('Stream',sel('edStream',[['','none'],['R2','R2, books to the associate'],['R3','R3, credits the introduction']],attr.stream||''),'R2 makes the associate the counterparty and keeps the buyer beside it. R3 leaves the buyer as the counterparty.'))
-    +fld('Date',inp('edDate',row.date||'','date'),'Leave it empty for a pending row that has not moved.')
-    +fld('Quantity, unit',inp('edQty',row.qty,'number'))
-    +fld('Total, RM',inp('edTotal',row.total,'number'))
-    +fld('Note','<textarea id="edNote" rows="3" style="'+box+';font-size:13px;line-height:1.45;resize:vertical">'+edEsc(row.note)+'</textarea>')
-    +'<div style="display:flex;gap:8px;margin-top:14px"><button id="edSave" class="vbtn" style="border-color:var(--gold);color:var(--gold);flex:1">Queue the correction</button>'
+    +html
+    +'<div style="display:flex;gap:8px;margin-top:16px"><button id="edSave" class="vbtn" style="border-color:var(--gold);color:var(--gold);flex:1">Queue the correction</button>'
     +'<button id="edCancel" class="vbtn" style="flex:0 0 auto">Cancel</button></div>'
     +'<div id="edWhy" style="font-size:11.5px;color:var(--dim);margin-top:9px"></div>';
   document.getElementById('edX').onclick=edClose;
@@ -6430,31 +6552,27 @@ function renderEditor(){
 function edSubmit(){
   const row=edRowOf(edRid,edType);if(!row)return;
   const partyKey=edType==='BUY'?'supplier':'customer';
-  const attr=ovAttribution(row,partyKey);
-  const buyerNow=attr.stream==='R2'?(attr.downstream||null):(row[partyKey]||null);
-  const g=id=>{const e=document.getElementById(id);return e?e.value:undefined;};
-  const blank=v=>v===undefined||v===null||String(v).trim()==='';
-  const now={product:row.product||'salt',party:buyerNow,assoc:attr.assoc,stream:attr.stream,
-    date:row.date==null?null:row.date,qty:row.qty,total:row.total,note:row.note==null?null:row.note};
-  const want={product:g('edProduct'),
-    party:blank(g('edParty'))?null:String(g('edParty')).trim(),
-    assoc:g('edAssoc')===undefined?undefined:(blank(g('edAssoc'))?null:String(g('edAssoc')).trim()),
-    stream:g('edStream')===undefined?undefined:(blank(g('edStream'))?null:String(g('edStream')).trim()),
-    date:blank(g('edDate'))?null:String(g('edDate')).trim(),
-    qty:blank(g('edQty'))?null:+g('edQty'),
-    total:blank(g('edTotal'))?null:+g('edTotal'),
-    note:blank(g('edNote'))?null:String(g('edNote'))};
+  const now=edView(row,edType);
+  const blank=x=>x===undefined||x===null||String(x).trim()==='';
   const fields={};
-  Object.keys(now).forEach(k=>{
-    if(want[k]===undefined)return;
-    if(JSON.stringify(want[k])!==JSON.stringify(now[k]))fields[k]=want[k];});
+  edFields(edType).forEach(f=>{
+    if(f.g)return;
+    const el=document.getElementById('ed_'+f.k);if(!el)return;
+    let want;
+    if(f.kind==='bool')want=!!el.checked;
+    else if(f.kind==='num')want=blank(el.value)?null:Number(el.value);
+    else want=blank(el.value)?null:String(el.value).trim();
+    const raw=now[f.k]===undefined?null:now[f.k];
+    const was=f.kind==='bool'?!!raw:raw;
+    if(JSON.stringify(want)!==JSON.stringify(was))fields[f.k]=want;
+  });
   const why=document.getElementById('edWhy');
   const say=m=>{if(why)why.innerHTML='<span style="color:var(--amber)">'+m+'</span>';};
-  if(!Object.keys(fields).length){say('Nothing changed, so there is nothing to queue.');return;}
-  const finalAssoc=Object.prototype.hasOwnProperty.call(fields,'assoc')?fields.assoc:attr.assoc;
-  const finalStream=Object.prototype.hasOwnProperty.call(fields,'stream')?fields.stream:attr.stream;
-  if(finalAssoc&&!finalStream){say('An associate needs a stream, R2 or R3, to say how the credit reaches them.');return;}
-  if(!finalAssoc&&finalStream){say('A stream with no associate credits nobody. Clear the stream or name an associate.');return;}
+  if(!Object.keys(fields).length)return say('Nothing changed, so there is nothing to queue.');
+  const has=k=>Object.prototype.hasOwnProperty.call(fields,k);
+  const fa=has('assoc')?fields.assoc:now.assoc, fs=has('stream')?fields.stream:now.stream;
+  if(fa&&!fs)return say('An associate needs a stream, R2 or R3, to say how the credit reaches them.');
+  if(!fa&&fs)return say('A stream with no associate credits nobody. Clear the stream or name an associate.');
   const today=TODAY.toISOString().slice(0,10);
   const words=Object.keys(fields).map(k=>k+' to '+(fields[k]===null?'(cleared)':fields[k]));
   queue.push({at:new Date().toISOString(),type:'AMEND',party:codeOf(row[partyKey]),qty:0,total:0,

@@ -189,6 +189,11 @@ h2{font-size:17px;font-weight:600;letter-spacing:-.2px;margin:0 0 12px}
 .ed-why{margin:0;font-size:12.5px;line-height:1.45;min-height:0}
 .ed-why.bad{color:var(--bad);margin-bottom:10px}
 .ed-why.warn{color:var(--warn);margin-bottom:10px}
+.ed-g{margin:14px 0 8px;font-size:10.5px;text-transform:uppercase;letter-spacing:1px;font-weight:700;color:var(--ink-3)}
+.ed-fold{margin:14px 0 4px}
+.ed-fold summary{cursor:pointer;font-size:10.5px;text-transform:uppercase;letter-spacing:1px;font-weight:700;color:var(--ink-3);margin-bottom:8px;min-height:var(--tap);display:flex;align-items:center}
+.ed-ck{display:flex;gap:10px;align-items:center;font-size:14px;color:var(--ink);cursor:pointer;min-height:var(--tap)}
+.ed-ck input{width:auto;min-height:0;accent-color:var(--lead);transform:scale(1.25)}
 .ed-b{display:grid;grid-template-columns:1fr 2fr;gap:9px;margin-top:6px}
 .ed-b .go{background:linear-gradient(135deg,var(--lead),#d8553a);border-color:transparent;color:#fff}
 .drf-ch{display:flex;flex-direction:column;gap:5px;margin:9px 0 3px}
@@ -876,43 +881,107 @@ function ledMatch(r){
   return r.st===fs;
 }
 /* one card for a row, shared by the ledger and by who-owes-what */
-/* ============ THE ROW EDITOR, ON THE PHONE (v362, 25 Aug 2026) ============
-   Tap any row on the Book tab and every field a person typed is typeable again. The desk got
-   this first, on a right-click; a long press raises the same event on a touch screen, but iOS
-   Safari is not reliable about it, so the phone opens on a plain TAP. A ledger card had no tap
-   action before, so nothing is taken away, and the sheet queues nothing until Save is pressed.
+/* ============ THE ROW EDITOR, ON THE PHONE (v362, every attribute at v363) ============
+   Tap any row on the Book tab and every attribute a person states is typeable again. The desk got
+   this first on a right-click; a long press raises the same event on a touch screen, but iOS
+   Safari is not reliable about it, and a ledger card had no tap action before, so nothing is
+   taken away. The sheet queues nothing until Save is pressed.
 
-   IT QUEUES A CORRECTION AND WRITES NOTHING, the same as everything else on this app: it joins
-   `held`, goes up on the same push, the drafter checks every field against the book, and it
-   comes back to the Approve tab for a tap.
+   IT QUEUES A CORRECTION AND WRITES NOTHING, the same as everything else here: it joins `held`,
+   goes up on the same push, the drafter checks every field against the book, and it comes back to
+   the Approve tab for a tap.
 
-   THE NOTE IS NOT HERE, AND THAT IS A POLICY LINE RATHER THAN AN OVERSIGHT. Row notes carry lot
-   costs and margins in prose, and phonePayloadLeaks() keeps every one of those off this payload
-   because the app is public by decision. The phone cannot SHOW a note, so it must not offer to
-   REPLACE one: blindly overwriting prose you cannot read is worse than not offering it. Notes
-   are edited at the desk, and the sheet says so rather than leaving it a mystery. */
+   TWO FIELDS ARE MISSING AND BOTH ARE A POLICY LINE RATHER THAN AN OVERSIGHT. `cost` is a
+   per-unit cost, the one figure phonePayloadLeaks() bans outright, and the row NOTE is prose that
+   quotes lot costs and margins in words. Neither reaches this payload, so the phone cannot SHOW
+   either, so it must not offer to REPLACE either: overwriting a value you are not allowed to see
+   is worse than not offering it. Both stay editable at the desk, and the sheet says so. */
+var PHFORM=[
+  {g:'The trade'},
+  {k:'pr',          f:'product',      l:'Product',            kind:'product'},
+  {k:'party',       f:'party',        l:'Buyer',              kind:'code', only:'S'},
+  {k:'party',       f:'party',        l:'Supplier',           kind:'code', only:'B'},
+  {k:'q',           f:'qty',          l:'Quantity, unit',     kind:'num'},
+  {k:'t',           f:'total',        l:'Total, RM',          kind:'num'},
+  {k:'unpriced',    f:'unpriced',     l:'Price not agreed yet', kind:'bool'},
+  {g:'Attribution', only:'S'},
+  {k:'as',          f:'assoc',        l:'Associate',          kind:'code', only:'S', hint:'Leave it empty to take an attribution off the row.'},
+  {k:'st2',         f:'stream',       l:'Stream',             kind:'stream', only:'S'},
+  {k:'dn',          f:'downstream',   l:'Downstream',         kind:'code', only:'S'},
+  {k:'orderCode',   f:'orderCode',    l:'Order code',         kind:'text'},
+  {g:'What has moved'},
+  {k:'cash',        f:'cash',         l:'Cash in, RM',        kind:'num'},
+  {k:'mv',          f:'deliveredQty', l:'Handed over, unit',  kind:'num', only:'S'},
+  {k:'receivedQty', f:'receivedQty',  l:'Received, unit',     kind:'num', only:'B'},
+  {g:'Dates'},
+  {k:'d',           f:'date',         l:'Row date',           kind:'date', hint:'Empty for a pending row that has not moved.'},
+  {k:'agreedOn',    f:'agreedOn',     l:'Agreed on',          kind:'date'},
+  {k:'paidOn',      f:'paidOn',       l:'Paid on',            kind:'date'},
+  {k:'deliveredOn', f:'deliveredOn',  l:'Delivered on',       kind:'date', only:'S'},
+  {k:'receivedOn',  f:'receivedOn',   l:'Received on',        kind:'date', only:'B'},
+  {g:'Settled other than in cash', fold:true},
+  {k:'settledRM',   f:'settledRM',    l:'Settled, RM',        kind:'num'},
+  {k:'settledKg',   f:'settledKg',    l:'Settled, unit',      kind:'num'},
+  {k:'settle',      f:'settle',       l:'In what',            kind:'text'},
+  {k:'rebate',      f:'rebate',       l:'Rebate, RM',         kind:'num'},
+  {k:'rebateKg',    f:'rebateKg',     l:'Rebate, unit',       kind:'num'},
+  {k:'goodwill',    f:'goodwill',     l:'Goodwill, RM',       kind:'num'},
+  {g:'State', fold:true},
+  {k:'cancelled',   f:'cancelled',    l:'Cancelled',          kind:'bool', hint:'This takes the row out of every figure.'},
+  {k:'cancelledOn', f:'cancelledOn',  l:'Cancelled on',       kind:'date'},
+  {k:'pending',     f:'pending',      l:'Pending, nothing moved', kind:'bool', only:'B'},
+  {k:'inTransit',   f:'inTransit',    l:'In transit',         kind:'bool', only:'B'},
+  {k:'defaulted',   f:'defaulted',    l:'Defaulted',          kind:'bool', only:'B'}
+];
+function phFields(dir){ return PHFORM.filter(function(f){ return !f.only||f.only===(dir==='B'?'B':'S'); }); }
+/* THE ROW AS A PERSON NAMES IT. On an R2 row the payload's `p` is the associate and the buyer is
+   the downstream, so showing `p` in the Buyer box would put the associate there. */
+function phView(r){
+  var v={};
+  PHFORM.forEach(function(f){ if(f.k&&r[f.k]!==undefined)v[f.f]=r[f.k]; });
+  v.product=r.pr||'salt';
+  v.party=(r.st2==='R2')?(r.dn||null):(r.p||null);
+  v.assoc=r.as||null; v.stream=r.st2||null; v.downstream=r.dn||null;
+  return v;
+}
 var EDR=null, edBusy=false;
 function edRow(rid){ return ((D&&D.ledger)||[]).filter(function(r){ return r.rid===rid; })[0]||null; }
-function edOpen(rid){
-  var r=edRow(rid);
-  if(!r)return;
-  EDR=rid; edBusy=false; edDraw();
-}
+function edOpen(rid){ var r=edRow(rid); if(!r)return; EDR=rid; edBusy=false; edDraw(); }
 function edShut(){ if(edBusy)return; EDR=null; edDraw(); }
 function edDraw(){
   var wrap=$('edWrap');
   if(!wrap){ wrap=document.createElement('div'); wrap.id='edWrap'; document.body.appendChild(wrap); }
   if(!EDR){ wrap.innerHTML=''; wrap.className=''; return; }
   var r=edRow(EDR); if(!r){ EDR=null; wrap.innerHTML=''; wrap.className=''; return; }
-  var buy=r.dir==='B', canc=(r.st==='canc');
+  var buy=r.dir==='B', canc=(r.st==='canc'), v=phView(r);
   var codes=((D&&D.parties)||[]).concat((D&&D.suppliers)||[])
-    .filter(function(v,i,a){ return v&&a.indexOf(v)===i; }).sort();
-  var opts=function(list,cur){ return list.map(function(o){
-    return '<option value="'+esc(o[0])+'"'+(String(cur==null?'':cur)===String(o[0])?' selected':'')+'>'+esc(o[1])+'</option>'; }).join(''); };
-  var prods=((D&&D.products)||[]).map(function(p){ return [p.id,p.name]; });
-  var fld=function(id,lab,inner,hint){
-    return '<div class="ed-f"><label class="lbl" for="'+id+'">'+esc(lab)+'</label>'+inner
-      +(hint?'<p class="ed-h">'+hint+'</p>':'')+'</div>'; };
+    .filter(function(x,i,a){ return x&&a.indexOf(x)===i; }).sort();
+  var dis=canc?' disabled':'';
+  var ctl=function(f){
+    var id='ed_'+f.f, val=v[f.f];
+    if(f.kind==='product')return '<select id="'+id+'"'+dis+'>'+((D&&D.products)||[]).map(function(p){
+      return '<option value="'+esc(p.id)+'"'+((val||'salt')===p.id?' selected':'')+'>'+esc(p.name)+'</option>'; }).join('')+'</select>';
+    if(f.kind==='stream')return '<select id="'+id+'"'+dis+'>'+[['','none'],['R2','R2, books to the associate'],['R3','R3, credits the introduction']].map(function(o){
+      return '<option value="'+o[0]+'"'+(String(val||'')===o[0]?' selected':'')+'>'+o[1]+'</option>'; }).join('')+'</select>';
+    if(f.kind==='code')return '<input id="'+id+'" list="edCodes" placeholder="none"'+dis+' value="'+esc(val)+'">';
+    if(f.kind==='num')return '<input id="'+id+'" type="number" step="0.01" inputmode="decimal"'+dis+' value="'+esc(val==null?'':val)+'">';
+    if(f.kind==='date')return '<input id="'+id+'" type="date"'+dis+' value="'+esc(val||'')+'">';
+    if(f.kind==='bool')return '<label class="ed-ck"><input id="'+id+'" type="checkbox"'+(val?' checked':'')+dis+'> '+esc(f.l)+'</label>';
+    return '<input id="'+id+'" placeholder="none"'+dis+' value="'+esc(val==null?'':val)+'">';
+  };
+  var html='', open=null;
+  phFields(r.dir).forEach(function(f){
+    if(f.g){
+      if(open&&open.fold)html+='</details>';
+      open=f;
+      html+=f.fold?'<details class="ed-fold"><summary>'+esc(f.g)+'</summary>':'<p class="ed-g">'+esc(f.g)+'</p>';
+      return;
+    }
+    html+='<div class="ed-f">'
+      +(f.kind==='bool'?'':'<label class="lbl" for="ed_'+f.f+'">'+esc(f.l)+'</label>')
+      +ctl(f)+(f.hint?'<p class="ed-h">'+esc(f.hint)+'</p>':'')+'</div>';
+  });
+  if(open&&open.fold)html+='</details>';
   wrap.className='ed-on';
   wrap.innerHTML='<div class="ed-bd" data-a="shut"></div>'
     +'<div class="ed-sheet" role="dialog" aria-modal="true" aria-label="Edit the entry">'
@@ -923,14 +992,8 @@ function edDraw(){
       ? '<p class="ed-note bad">This row is <b>cancelled</b>. Reviving one is a judgement rather than a figure, so it is left for the desk.</p>'
       : '<p class="ed-note">This <b>queues a correction</b>. It does not write to the book. The drafter checks every field against the ledger and it comes back to <b>Approve</b> for a tap.</p>')
     +'<datalist id="edCodes">'+codes.map(function(c){ return '<option value="'+esc(c)+'"></option>'; }).join('')+'</datalist>'
-    +fld('ed-prod','Product','<select id="ed-prod"'+(canc?' disabled':'')+'>'+opts(prods,r.pr||'salt')+'</select>','Changing this recosts the row off the other shelf.')
-    +fld('ed-party',buy?'Supplier':'Buyer','<input id="ed-party" list="edCodes"'+(canc?' disabled':'')+' value="'+esc(r.st2==='R2'?(r.dn||''):(r.p||''))+'">','Who the row books to. Moving it moves what each of them owes.')
-    +(buy?'':fld('ed-assoc','Associate','<input id="ed-assoc" list="edCodes" placeholder="none"'+(canc?' disabled':'')+' value="'+esc(r.as||'')+'">','Leave it empty to take an attribution off the row.'))
-    +(buy?'':fld('ed-stream','Stream','<select id="ed-stream"'+(canc?' disabled':'')+'>'+opts([['','none'],['R2','R2, books to the associate'],['R3','R3, credits the introduction']],r.st2||'')+'</select>','R2 makes the associate the counterparty and keeps the buyer beside it.'))
-    +fld('ed-date','Date','<input id="ed-date" type="date"'+(canc?' disabled':'')+' value="'+esc(r.d||'')+'">','Empty for a pending row that has not moved.')
-    +fld('ed-qty','Quantity, unit','<input id="ed-qty" type="number" step="0.01" inputmode="decimal"'+(canc?' disabled':'')+' value="'+esc(n2(r.q))+'">')
-    +fld('ed-total','Total, RM','<input id="ed-total" type="number" step="0.01" inputmode="decimal"'+(canc?' disabled':'')+' value="'+esc(n2(r.t))+'">')
-    +'<p class="ed-h" style="margin:-4px 0 12px">The row note is edited at the desk. Notes carry lot costs and margins in prose, so they are kept off this app.</p>'
+    +html
+    +'<p class="ed-h" style="margin:10px 0 12px">The cost and the row note are edited at the desk. Both quote lot costs, so they are kept off this app and it will not offer to replace a value it cannot show you.</p>'
     +'<p id="ed-why" class="ed-why"></p>'
     +'<div class="ed-b"><button class="btn" data-a="shut">Cancel</button>'
     +(canc?'':'<button class="btn go" id="ed-save" data-a="save">Queue the correction</button>')
@@ -945,32 +1008,29 @@ function edDraw(){
 function edSave(){
   if(edBusy)return;
   var r=edRow(EDR); if(!r)return;
-  var g=function(id){ var e=$(id); return e?e.value:undefined; };
-  var blank=function(v){ return v===undefined||v===null||String(v).trim()===''; };
-  var buy=r.dir==='B';
-  var now={product:r.pr||'salt', party:(r.st2==='R2'?(r.dn||null):(r.p||null)),
-    assoc:r.as||null, stream:r.st2||null, date:r.d==null?null:r.d, qty:r.q, total:r.t};
-  var want={product:g('ed-prod'),
-    party:blank(g('ed-party'))?null:String(g('ed-party')).trim(),
-    assoc:g('ed-assoc')===undefined?undefined:(blank(g('ed-assoc'))?null:String(g('ed-assoc')).trim()),
-    stream:g('ed-stream')===undefined?undefined:(blank(g('ed-stream'))?null:String(g('ed-stream')).trim()),
-    date:blank(g('ed-date'))?null:String(g('ed-date')).trim(),
-    qty:blank(g('ed-qty'))?null:Number(g('ed-qty')),
-    total:blank(g('ed-total'))?null:Number(g('ed-total'))};
+  var v=phView(r), buy=r.dir==='B';
+  var blank=function(x){ return x===undefined||x===null||String(x).trim()===''; };
   var fields={};
-  Object.keys(now).forEach(function(k){
-    if(want[k]===undefined)return;
-    if(JSON.stringify(want[k])!==JSON.stringify(now[k]))fields[k]=want[k];
+  phFields(r.dir).forEach(function(f){
+    if(f.g)return;
+    var el=$('ed_'+f.f); if(!el)return;
+    var want;
+    if(f.kind==='bool')want=!!el.checked;
+    else if(f.kind==='num')want=blank(el.value)?null:Number(el.value);
+    else want=blank(el.value)?null:String(el.value).trim();
+    var raw=v[f.f]===undefined?null:v[f.f];
+    var was=(f.kind==='bool')?!!raw:raw;
+    if(JSON.stringify(want)!==JSON.stringify(was))fields[f.f]=want;
   });
   var why=$('ed-why');
   var say=function(cls,m){ if(why){ why.innerHTML=m; why.className='ed-why '+cls; } };
   if(!Object.keys(fields).length)return say('bad','Nothing changed, so there is nothing to queue.');
-  var fa=Object.prototype.hasOwnProperty.call(fields,'assoc')?fields.assoc:now.assoc;
-  var fs=Object.prototype.hasOwnProperty.call(fields,'stream')?fields.stream:now.stream;
+  var has=function(k){ return Object.prototype.hasOwnProperty.call(fields,k); };
+  var fa=has('assoc')?fields.assoc:v.assoc, fs=has('stream')?fields.stream:v.stream;
   if(fa&&!fs)return say('bad','An associate needs a stream, R2 or R3, to say how the credit reaches them.');
   if(!fa&&fs)return say('bad','A stream with no associate credits nobody. Clear the stream or name an associate.');
-  if(fields.qty!==undefined&&!(fields.qty>0))return say('bad','A quantity has to be a number above zero.');
-  if(fields.total!==undefined&&!(fields.total>=0))return say('bad','A total has to be a number, and not negative.');
+  if(has('qty')&&!(fields.qty>0))return say('bad','A quantity has to be a number above zero.');
+  if(has('total')&&!(fields.total>=0))return say('bad','A total has to be a number, and not negative.');
   var today=new Date().toISOString().slice(0,10);
   var words=Object.keys(fields).map(function(k){ return k+' to '+(fields[k]===null?'(cleared)':fields[k]); });
   var e={at:new Date().toISOString(),type:'AMEND',party:r.p,qty:0,total:0,

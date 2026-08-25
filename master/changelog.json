@@ -1,5 +1,20 @@
 [
  {
+  "v": "v363",
+  "d": "25 Aug 2026",
+  "t": "EVERY ATTRIBUTE OF A ROW IS EDITABLE, AND THE CHAIN IS PROVED ON THE REAL QUEUE",
+  "n": [
+   "<b>THIRTY ATTRIBUTES, NOT NINE.</b> His instruction of 25 Aug: \"I need to be able to edit every attribute of an entry on the ledger.\" v361 covered nine. The editor now reaches what was traded (product, party, size, total, unpriced), who it books to (associate, stream, downstream, order code), what has actually moved (cash, handed over, received, cost), every date the row carries, what was settled other than in cash (settled RM and unit, rebate, goodwill) and the row's own flags (cancelled, pending, in transit, defaulted).",
+   "<b>THE FIRST CUT WITHHELD THE SETTLEMENT FIGURES AND THAT WAS WRONG.</b> cash and deliveredQty were held back on the ground that they \"move by fulfilment, and two writers on one figure drift\". Reading the engine settled it: <code>txPaid</code> is <code>cash + settledRM</code> read straight off the row, so the <code>amend</code> trail is a narrative BESIDE the figure and never its source. Setting cash is a correction; adding to it is a movement; both legitimately write the same field, which is what ovAmend already did. The correction is still recorded beside the trail, and a flag says the trail will no longer sum to the figure.",
+   "<b>WHAT IS STILL NOT EDITABLE IS EXCLUDED RATHER THAN FORGOTTEN, and the suite asserts each one.</b> <code>rid</code> is the row's identity, so editing it would rename the thing being edited. <code>amend</code> and <code>mod</code> are the trail. <code>rev</code>, <code>ref</code> and <code>refKg</code> are derived from the associate and the stream, and offering them directly would let a row claim R2 and R3 at once. A purchase's <code>status</code> is derived from cash against total and is recomputed after every change.",
+   "<b>THE FORM IS A TABLE NOW, IN ALL THREE PLACES.</b> Thirty fields hand-written would need thirty pieces of markup, thirty read-backs and thirty diff lines, and the three would drift. The field table lives in <code>engine/position.mjs</code> beside <code>attributionOf</code>, so the drafter that accepts a correction, the fold that applies it and the desk that applies it all read one array; the suite asserts they are the same object. The panels render from a spec and diff from the same spec.",
+   "<b>AN ABSENT FLAG AND false ARE THE SAME THING</b>, and comparing them raw would have recorded a correction on every save that touched a checkbox. A row that is not cancelled simply has no <code>cancelled</code> key, so the comparison coerces both sides and a false flag deletes the key rather than writing false.",
+   "<b>THE PHONE GETS EVERYTHING EXCEPT THE COST AND THE NOTE, and that is a policy line.</b> A per-unit cost is the one figure <code>phonePayloadLeaks()</code> bans outright, and a row note quotes lot costs in prose. Neither reaches the payload, so the phone cannot SHOW either, so it must not offer to REPLACE either: overwriting a value you are not allowed to see is worse than not offering it. The sheet says so. The other twenty-eight are on the phone, and the payload grew 4.6 KB to carry them.",
+   "<b>THE CHAIN IS PROVED ON THE LIVE QUEUE, END TO END.</b> A correction was posted into the real KV at 07:21:35; the production cron fired at 07:30, read it, resolved the row by rid against the live mirror and wrote a pending draft into the live D1 with all three flags it should have raised. It was queued deliberately wrong, salt to oil on a RM100/unit row, so what was proved is the gate REFUSING rather than passing. It was then rejected and withdrawn from KV, and the queue is back to the three entries it held before.",
+   "<b>NO FIGURE MOVED.</b> No row was folded and no rate changed."
+  ]
+ },
+ {
   "v": "v362",
   "d": "25 Aug 2026",
   "t": "THE ROW EDITOR REACHES THE PHONE, AND THE ATTRIBUTION RULE HAS ONE HOME",
