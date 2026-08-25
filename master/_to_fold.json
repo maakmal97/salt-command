@@ -1,0 +1,341 @@
+{
+ "ok": true,
+ "count": 5,
+ "approved": [
+  {
+   "id": "2026-08-25T14:21:43.566Z",
+   "collection": "sales",
+   "row": {
+    "rid": "s104",
+    "qty": 0.5,
+    "total": 50,
+    "cash": 0,
+    "date": "2026-08-24",
+    "product": "salt",
+    "changes": [
+     {
+      "field": "qty",
+      "from": 0.5,
+      "to": 1
+     },
+     {
+      "field": "total",
+      "from": 50,
+      "to": 100
+     },
+     {
+      "field": "deliveredQty",
+      "from": 0.5,
+      "to": 1
+     }
+    ],
+    "customer": "CA4-DAM"
+   },
+   "reasoning": "Correction against CA4-DAM's order of 0.5 unit for RM 50 dated 2026-08-24 (s104). Sets qty from 0.5 to 1, total from 50 to 100, deliveredQty from 0.5 to 1. It moves no cash and no stock: it changes what the row says about itself. The row is not rewritten here. The fold applies the patch, so there is one definition of what a correction does rather than two.",
+   "flags": [
+    "This row carries a trail of 2 steps. Setting the figure directly does not rewrite them, so the trail will no longer add up to it; the correction is recorded beside them saying so.",
+    "RM 100 is under the delivered floor of RM 122.74, though it clears the collected floor of RM 72.74.",
+    "This is an ADVANCE: 0.5 unit goes out with RM 100 unpaid. Check it against CA4-DAM's credit cap."
+   ],
+   "amends": "s104",
+   "amendKind": "Correction",
+   "entry": {
+    "at": "2026-08-25T14:21:43.566Z",
+    "type": "AMEND",
+    "party": "CA4-DAM",
+    "qty": 0,
+    "total": 0,
+    "raw": "Correction on CA4-DAM s104: qty to 1, total to 100, deliveredQty to 1, recorded 2026-08-25",
+    "payload": {
+     "mode": "amend",
+     "direction": "SELL",
+     "party": "CA4-DAM",
+     "rid": "s104",
+     "orderKey": "CA4-DAM|2026-08-24|50",
+     "kind": "Correction",
+     "date": "2026-08-25",
+     "fields": {
+      "qty": 1,
+      "total": 100,
+      "deliveredQty": 1
+     },
+     "assoc": null,
+     "downstream": null,
+     "orderCode": null,
+     "linkTo": null,
+     "sameDay": false,
+     "note": null,
+     "qty": 0,
+     "total": 0,
+     "cash": 0,
+     "kg": 0
+    }
+   },
+   "decidedAt": "2026-08-25T14:47:08.070Z",
+   "decidedBy": "phone"
+  },
+  {
+   "id": "2026-08-25T14:22:20.157Z",
+   "collection": "sales",
+   "row": {
+    "rid": "s105",
+    "qty": 4,
+    "total": 360,
+    "cash": 360,
+    "date": "2026-08-24",
+    "product": "salt",
+    "changes": [
+     {
+      "field": "total",
+      "from": 360,
+      "to": 380
+     },
+     {
+      "field": "cash",
+      "from": 360,
+      "to": 0
+     }
+    ],
+    "customer": "CM4-MK"
+   },
+   "reasoning": "Correction against CM4-MK's order of 4 unit for RM 360 dated 2026-08-24 (s105). Sets total from 360 to 380, cash from 360 to 0. It moves no cash and no stock: it changes what the row says about itself. The row is not rewritten here. The fold applies the patch, so there is one definition of what a correction does rather than two.",
+   "flags": [
+    "This is an ADVANCE: 4 unit goes out with RM 20 unpaid. Check it against CM4-MK's credit cap."
+   ],
+   "amends": "s105",
+   "amendKind": "Correction",
+   "entry": {
+    "at": "2026-08-25T14:22:20.157Z",
+    "type": "AMEND",
+    "party": "CM4-MK",
+    "qty": 0,
+    "total": 0,
+    "raw": "Correction on CM4-MK s105: total to 380, cash to 0, recorded 2026-08-25",
+    "payload": {
+     "mode": "amend",
+     "direction": "SELL",
+     "party": "CM4-MK",
+     "rid": "s105",
+     "orderKey": "CM4-MK|2026-08-24|360",
+     "kind": "Correction",
+     "date": "2026-08-25",
+     "fields": {
+      "total": 380,
+      "cash": 0
+     },
+     "assoc": null,
+     "downstream": null,
+     "orderCode": null,
+     "linkTo": null,
+     "sameDay": false,
+     "note": null,
+     "qty": 0,
+     "total": 0,
+     "cash": 0,
+     "kg": 0
+    }
+   },
+   "decidedAt": "2026-08-25T14:49:54.649Z",
+   "decidedBy": "phone"
+  },
+  {
+   "id": "2026-08-25T14:23:39.003Z",
+   "collection": "sales",
+   "row": {
+    "rid": "s100",
+    "qty": 1,
+    "total": 120,
+    "cash": 120,
+    "date": "2026-08-21",
+    "product": "salt",
+    "changes": [
+     {
+      "field": "total",
+      "from": 120,
+      "to": 100
+     },
+     {
+      "field": "assoc",
+      "from": null,
+      "to": "CI4-OKR"
+     },
+     {
+      "field": "stream",
+      "from": null,
+      "to": "R3"
+     },
+     {
+      "field": "cash",
+      "from": 120,
+      "to": 100
+     }
+    ],
+    "customer": "CM6-PJ"
+   },
+   "reasoning": "Correction against CM6-PJ's order of 1 unit for RM 120 dated 2026-08-21 (s100). Sets total from 120 to 100, assoc from unset to CI4-OKR, stream from unset to R3, cash from 120 to 100. It moves no cash and no stock: it changes what the row says about itself. The row is not rewritten here. The fold applies the patch, so there is one definition of what a correction does rather than two.",
+   "flags": [
+    "RM 100 is under the delivered floor of RM 122.74, though it clears the collected floor of RM 72.74.",
+    "The corrected total of RM 100 is under the RM 120 already paid against this row."
+   ],
+   "amends": "s100",
+   "amendKind": "Correction",
+   "entry": {
+    "at": "2026-08-25T14:23:39.003Z",
+    "type": "AMEND",
+    "party": "CM6-PJ",
+    "qty": 0,
+    "total": 0,
+    "raw": "Correction on CM6-PJ s100: total to 100, assoc to CI4-OKR, stream to R3, cash to 100, recorded 2026-08-25",
+    "payload": {
+     "mode": "amend",
+     "direction": "SELL",
+     "party": "CM6-PJ",
+     "rid": "s100",
+     "orderKey": "CM6-PJ|2026-08-21|120",
+     "kind": "Correction",
+     "date": "2026-08-25",
+     "fields": {
+      "total": 100,
+      "assoc": "CI4-OKR",
+      "stream": "R3",
+      "cash": 100
+     },
+     "assoc": null,
+     "downstream": null,
+     "orderCode": null,
+     "linkTo": null,
+     "sameDay": false,
+     "note": null,
+     "qty": 0,
+     "total": 0,
+     "cash": 0,
+     "kg": 0
+    }
+   },
+   "decidedAt": "2026-08-25T14:47:14.297Z",
+   "decidedBy": "phone"
+  },
+  {
+   "id": "2026-08-25T14:27:16.305Z",
+   "collection": "sales",
+   "row": {
+    "rid": "s093",
+    "qty": 6.25,
+    "total": 500,
+    "cash": 500,
+    "date": "2026-08-18",
+    "product": "salt",
+    "changes": [
+     {
+      "field": "total",
+      "from": 500,
+      "to": 520
+     },
+     {
+      "field": "deliveredQty",
+      "from": 3.25,
+      "to": 5.25
+     }
+    ],
+    "customer": "CE4-CHE"
+   },
+   "reasoning": "Correction against CE4-CHE's order of 6.25 unit for RM 500 dated 2026-08-18 (s093). Sets total from 500 to 520, deliveredQty from 3.25 to 5.25. It moves no cash and no stock: it changes what the row says about itself. The row is not rewritten here. The fold applies the patch, so there is one definition of what a correction does rather than two.",
+   "flags": [
+    "This row carries a trail of 2 steps. Setting the figure directly does not rewrite them, so the trail will no longer add up to it; the correction is recorded beside them saying so.",
+    "This is an ADVANCE: 3.25 unit goes out with RM 20 unpaid. Check it against CE4-CHE's credit cap."
+   ],
+   "amends": "s093",
+   "amendKind": "Correction",
+   "entry": {
+    "at": "2026-08-25T14:27:16.305Z",
+    "type": "AMEND",
+    "party": "CE4-CHE",
+    "qty": 0,
+    "total": 0,
+    "raw": "Correction on CE4-CHE s093: total to 520, deliveredQty to 5.25, recorded 2026-08-25",
+    "payload": {
+     "mode": "amend",
+     "direction": "SELL",
+     "party": "CE4-CHE",
+     "rid": "s093",
+     "orderKey": "CE4-CHE|2026-08-18|500",
+     "kind": "Correction",
+     "date": "2026-08-25",
+     "fields": {
+      "total": 520,
+      "deliveredQty": 5.25
+     },
+     "assoc": null,
+     "downstream": null,
+     "orderCode": null,
+     "linkTo": null,
+     "sameDay": false,
+     "note": null,
+     "qty": 0,
+     "total": 0,
+     "cash": 0,
+     "kg": 0
+    }
+   },
+   "decidedAt": "2026-08-25T14:49:59.674Z",
+   "decidedBy": "phone"
+  },
+  {
+   "id": "2026-08-25T14:28:13.138Z",
+   "collection": "sales",
+   "row": {
+    "rid": "s093",
+    "qty": 6.25,
+    "total": 500,
+    "cash": 500,
+    "date": "2026-08-18",
+    "product": "salt",
+    "changes": [
+     {
+      "field": "qty",
+      "from": 6.25,
+      "to": 5.75
+     }
+    ],
+    "customer": "CE4-CHE"
+   },
+   "reasoning": "Correction against CE4-CHE's order of 6.25 unit for RM 500 dated 2026-08-18 (s093). Sets qty from 6.25 to 5.75. It moves no cash and no stock: it changes what the row says about itself. The row is not rewritten here. The fold applies the patch, so there is one definition of what a correction does rather than two.",
+   "flags": [],
+   "amends": "s093",
+   "amendKind": "Correction",
+   "entry": {
+    "at": "2026-08-25T14:28:13.138Z",
+    "type": "AMEND",
+    "party": "CE4-CHE",
+    "qty": 0,
+    "total": 0,
+    "raw": "Correction on CE4-CHE s093: qty to 5.75, total to 500, recorded 2026-08-25",
+    "payload": {
+     "mode": "amend",
+     "direction": "SELL",
+     "party": "CE4-CHE",
+     "rid": "s093",
+     "orderKey": "CE4-CHE|2026-08-18|520",
+     "kind": "Correction",
+     "date": "2026-08-25",
+     "fields": {
+      "qty": 5.75,
+      "total": 500
+     },
+     "assoc": null,
+     "downstream": null,
+     "orderCode": null,
+     "linkTo": null,
+     "sameDay": false,
+     "note": null,
+     "qty": 0,
+     "total": 0,
+     "cash": 0,
+     "kg": 0
+    }
+   },
+   "decidedAt": "2026-08-25T14:47:19.856Z",
+   "decidedBy": "phone"
+  }
+ ]
+}
