@@ -903,8 +903,28 @@ section("Drafter — rows, refusals and flags");
     "a code that is not a desk code is refused");
   ok(/bucket sits under a party/.test(draftRow({ at: "x", payload: { mode: "addid", code: "CX2-B", kind: "bucket" } }, shelf).skip || ""),
     "a bucket with no parent is refused: whose bucket is a judgement");
-  ok(/bucket/.test(draftRow(entry({ direction: "SELL", party: "CN6-WM-R", qty: 1, total: 100, assoc: "CN6-WM" }), book).skip || ""),
-    "an entry carrying associate or stream fields is left for a person");
+  /* ---- associate attribution goes through the gate now (25 Aug 2026) ---- */
+  /* It used to be refused outright, so a downsell could only be typed at the laptop. Each of
+     the three fields is a code the book either knows or does not, so each is CHECKED. */
+  const r2 = draftRow(entry({ direction: "SELL", party: "CM4-MK", qty: 1, total: 100, cash: 100, kg: 1, date: "2026-08-16", assoc: "CN6-WM", stream: "R2", downstream: "CM4-MK" }), book);
+  ok(!r2.skip, "an R2 downsell is drafted rather than refused");
+  ok(r2.row.customer === "CN6-WM" && r2.row.rev === "R2" && r2.row.downstream === "CM4-MK",
+    "and it books to the associate with the buyer behind it, exactly as the desk's own rule does");
+  ok(r2.flags.some(f => /is not the counterparty on this row/.test(f)),
+    "the reader is told the buyer gets no statement from it");
+  const r3 = draftRow(entry({ direction: "SELL", party: "CM4-MK", qty: 1, total: 100, cash: 100, kg: 1, date: "2026-08-16", assoc: "CN6-WM", stream: "R3" }), book);
+  ok(!r3.skip && r3.row.customer === "CM4-MK" && r3.row.ref === "CN6-WM" && r3.row.refKg === 1,
+    "R3 leaves the buyer on the row and credits the introduction beside it");
+  ok(/stream/.test(draftRow(entry({ direction: "SELL", party: "CM4-MK", qty: 1, total: 100, assoc: "CN6-WM" }), book).skip || ""),
+    "an associate with no stream is refused: the credit has no route");
+  ok(/credit reaches nobody/.test(draftRow(entry({ direction: "SELL", party: "CM4-MK", qty: 1, total: 100, stream: "R2" }), book).skip || ""),
+    "a stream with no associate is refused: it credits nobody");
+  ok(/R2 or R3/.test(draftRow(entry({ direction: "SELL", party: "CM4-MK", qty: 1, total: 100, assoc: "CN6-WM", stream: "R9" }), book).skip || ""),
+    "a stream that is not R2 or R3 is refused");
+  ok(draftRow(entry({ direction: "SELL", party: "CM4-MK", qty: 1, total: 100, cash: 100, kg: 1, date: "2026-08-16", assoc: "CX9-NOBODY", stream: "R3" }), book)
+    .flags.some(f => /not on the roster/.test(f)), "an associate the book does not know is flagged");
+  ok(/links to another order/.test(draftRow(entry({ direction: "SELL", party: "CM4-MK", qty: 1, total: 100, linkTo: "whatever" }), book).skip || ""),
+    "the link fields stay refused: which order a row links to is a judgement");
   ok(/counterparty/.test(draftRow(entry({ direction: "SELL", qty: 1, total: 100 }), book).skip || ""), "no party, no row");
   ok(/quantity or no total/.test(draftRow(entry({ direction: "SELL", party: "CC5-OKR", qty: 1 }), book).skip || ""), "no total, no row");
   ok(/no date/.test(draftRow(entry({ direction: "SELL", party: "CC5-OKR", qty: 1, total: 90, cash: 90, kg: 1 }), book).skip || ""),
@@ -1362,7 +1382,14 @@ section("App — an unapproved entry can be corrected and resent");
     "the one button row used by every draft card carries all three");
   const drawDraftsFn = app.slice(app.indexOf("function drawDrafts"), app.indexOf("function decide"));
   const cardCount = (drawDraftsFn.match(/drfButtons\(\)/g) || []).length;
-  ok(cardCount === 5, `all five draft card shapes (count, loss/lostDemand, roster, amendment, trade) use it, found ${cardCount}`);
+  ok(cardCount === 6, `all six draft card shapes (count, loss/lostDemand, roster, correction, amendment, trade) use it, found ${cardCount}`);
+  /* A CORRECTION IS APPROVED ON WHAT CHANGED, not on cash and units, both of which are zero on
+     one. It gets its own card above the general amendment card, and the general card must not
+     swallow it: the branch order is what makes that true, so it is asserted rather than assumed. */
+  ok(drawDraftsFn.indexOf("d.amendKind==='Correction'") > -1 && drawDraftsFn.indexOf("d.amendKind==='Correction'") < drawDraftsFn.indexOf("if(d.amends){"),
+    "the correction card is matched BEFORE the general amendment card, or it would never render");
+  ok(/drf-ch/.test(drawDraftsFn) && /class="cw"/.test(drawDraftsFn) && /class="cn"/.test(drawDraftsFn),
+    "and it renders a before-and-after line per changed field");
   ok(!/<div class="drf-b"><button class="btn rej"/.test(drawDraftsFn), "no card still hand-writes its own two-button row");
 
   /* THE ONE THING THE FORM CANNOT HONESTLY REBUILD. The Trade form has no field for
@@ -1682,6 +1709,80 @@ section("Fold — an approved batch becomes records in the book (v340)");
     const bad = { ...one, approved: [{ ...one.approved[0], row: { product: "sugar", prices: {}, hide: [] } }] };
     const bp = plan(JSON.parse(JSON.stringify(book)), bad, null);
     ok(bp.items.length === 0 && /not a product/.test(bp.refused[0].why || ""), "a price edit for a product that does not exist is refused");
+  }
+  /* ---- a CORRECTION: every field on any row, including a settled one (25 Aug 2026) ---- */
+  /* Self-contained for the same reason the batch above is: it pushes its own target onto this
+     COPY of the book, with its own rid, so no real fold can ever consume it and no assertion
+     depends on the live ledger holding a particular shape. The target is deliberately SETTLED,
+     paid and delivered, because that is the case nothing could reach before: 118 of the 125 rows
+     on the real book are closed, and every amendment resolved through the open-order snapshot. */
+  {
+    const CB = JSON.parse(JSON.stringify(book));
+    CB.QUEUE_COMMITTED = "2026-01-01T00:00:00.000Z";
+    CB.sales.push({ rid: "sX01", date: "2026-08-20", customer: "CX9-TESTCOR", qty: 2, total: 200,
+      cost: 44, cash: 200, deliveredQty: 2, deliveredOn: "2026-08-20", paidOn: "2026-08-20", note: "fixture." });
+
+    const corr = (at, fields) => ({ ok: true, count: 1, approved: [{
+      id: ID(at), collection: "sales", amends: "sX01", amendKind: "Correction",
+      row: { rid: "sX01", customer: "CX9-TESTCOR", qty: 2, total: 200, cash: 200, date: "2026-08-20", product: "salt" },
+      entry: { at: ID(at), payload: { mode: "amend", direction: "SELL", rid: "sX01", kind: "Correction", date: "2026-08-25", fields } } }] });
+    const CNOTES = (at) => ({ version: "v999", date: "25 Aug 2026", title: "A TEST CORRECTION",
+      notes: ["<b>TEST.</b> Nothing real."], rows: { [ID(at)]: { note: "Corrected in the suite." } }, stockNote: "" });
+
+    const cp = plan(JSON.parse(JSON.stringify(CB)), corr("04:00", { product: "oil" }), null);
+    ok(cp.items.length === 1 && cp.refused.length === 0, "a correction against a SETTLED row is planned, not refused");
+    ok(cp.moves.length === 0, "and it moves nothing physical: it changes what a row says, not what happened");
+    ok(plan(JSON.parse(JSON.stringify(CB)), corr("04:01", {}), null).refused.length === 1,
+      "a correction with no fields is refused rather than folded as a no-op");
+
+    const A = JSON.parse(JSON.stringify(CB));
+    const ar = apply(A, corr("04:02", { product: "oil", assoc: "CN6-WM", stream: "R2", downstream: "CX9-TESTCOR" }), CNOTES("04:02"), master);
+    ok(ar.ok, "product and attribution correct in one pass: " + (ar.ok ? "" : ar.problems.join("; ")));
+    if (ar.ok) {
+      const r = A.sales.find((x) => x.rid === "sX01");
+      ok(r.product === "oil", "the product changed on a row that was already paid and delivered");
+      ok(r.customer === "CN6-WM" && r.rev === "R2" && r.downstream === "CX9-TESTCOR",
+        "the R2 attribution books it to the associate with the buyer behind it, as the desk does");
+      ok(r.cash === 200 && r.deliveredQty === 2, "the settlement figures are untouched: a correction moves no money and no salt");
+      ok(/corrected/.test(r.mod || "") && /salt to oil/.test(r.mod || ""),
+        "the trail says what it was before, because the rate is the record");
+      ok((r.amend || []).some((x) => x.kind === "Correction"), "and the amend trail carries the correction");
+    }
+
+    const C2 = JSON.parse(JSON.stringify(A));
+    C2.QUEUE_COMMITTED = "2026-01-01T00:00:00.000Z";
+    const cr = apply(C2, corr("04:03", { assoc: null }), CNOTES("04:03"), master);
+    ok(cr.ok, "clearing an attribution applies: " + (cr.ok ? "" : cr.problems.join("; ")));
+    if (cr.ok) {
+      const r = C2.sales.find((x) => x.rid === "sX01");
+      ok(r.customer === "CX9-TESTCOR" && !r.rev && !r.downstream,
+        "clearing an R2 puts the BUYER back on the row rather than leaving it booked to the associate");
+    }
+
+    const R3 = JSON.parse(JSON.stringify(CB));
+    const rr = apply(R3, corr("04:04", { assoc: "CN6-WM", stream: "R3" }), CNOTES("04:04"), master);
+    ok(rr.ok, "an R3 correction applies: " + (rr.ok ? "" : rr.problems.join("; ")));
+    if (rr.ok) {
+      const r = R3.sales.find((x) => x.rid === "sX01");
+      ok(r.customer === "CX9-TESTCOR" && r.ref === "CN6-WM" && r.refKg === 2 && !r.rev,
+        "R3 leaves the buyer as the counterparty and credits the introduction beside it");
+    }
+
+    const N = JSON.parse(JSON.stringify(CB));
+    const fresh1 = { ok: true, count: 1, approved: [{ id: ID("04:05"), collection: "sales", amends: null, amendKind: null,
+      row: { customer: "CA4-DAM", qty: 0.25, total: 25, cost: 44, cash: 25, date: "2026-08-25", deliveredQty: 0.25, deliveredOn: "2026-08-25", paidOn: "2026-08-25" },
+      entry: { at: ID("04:05"), payload: { mode: "new", direction: "SELL" } } }] };
+    const nr = apply(N, fresh1, CNOTES("04:05"), master);
+    ok(nr.ok, "a fresh row folds: " + (nr.ok ? "" : nr.problems.join("; ")));
+    if (nr.ok) {
+      /* NOT sales[length-1]: apply() sorts the book, and sort-ledger puts undated pending rows
+         last, so the tail of the array is a fixture row rather than the one just folded. */
+      const fresh = N.sales.find((x) => x.customer === "CA4-DAM" && x.date === "2026-08-25" && x.total === 25);
+      ok(!!fresh, "the freshly folded row is on the book");
+      ok(typeof fresh.rid === "string" && fresh.rid[0] === "s" && fresh.rid.length === 4 && Number.isInteger(Number(fresh.rid.slice(1))),
+        "a newly folded row is minted a rid, so it can be corrected tomorrow");
+      ok(N.sales.filter((x) => x.rid === fresh.rid).length === 1, "and the rid it is given is not one already in use");
+    }
   }
   /* v347: a cancelled order is not a target. Its key still matches, so only the guard stops it. */
   {

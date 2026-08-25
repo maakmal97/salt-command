@@ -1,5 +1,18 @@
 [
  {
+  "v": "v361",
+  "d": "25 Aug 2026",
+  "t": "EVERY FIELD ON EVERY ROW CAN BE EDITED, AND EVERY ROW HAS A NAME",
+  "n": [
+   "<b>RIGHT-CLICK ANY LEDGER ROW AND EDIT IT.</b> His instruction of 25 Aug: \"I am unable to edit the ledger.\" He was right, and about more than he said. The only amendments that existed were paid, delivered, restate and cancel, and not one of them touches what a row SAYS about itself: a row's product and its associate were set once, at entry, and nothing anywhere could change them afterwards. The Ledger tab now opens a panel on a right-click, or a long press, with the product, the party, the associate, the stream, the date, the size, the total and the note all typeable. It <b>queues a correction</b> and writes nothing: the drafter checks every field against the book and it comes back to Approve for a tap, exactly like a transaction.",
+   "<b>EVERY ROW CARRIES AN ID NOW, AND THE OLD ONE COULD NOT HAVE WORKED.</b> A row was addressed by ovKey, which is party, date and total joined together. That names a row for exactly as long as none of those three changes, and an editor whose job is changing them cannot use it: correct a party and the row's own name no longer finds it. It also already collided, on two SA5-BTR lots dated 22 Jul both for RM350, neither of which could be addressed at all. All 125 rows were given a rid, the fold mints one for every new row, and the drafter, the fold and the desk all resolve by rid first and fall back to ovKey.",
+   "<b>THE DRAFTER COULD ONLY REACH SEVEN ROWS, AND NOW REACHES ALL OF THEM.</b> Every amendment resolved its target through the open-order snapshot, so 118 of the 125 rows on this book, every settled one, were beyond any amendment. A correction reads the full book instead. It is the one amendment that does, deliberately: a row is as often wrong once it is closed as while it is live.",
+   "<b>AN ASSOCIATE CAN BE ATTRIBUTED FROM THE PHONE.</b> The drafter refused outright any entry carrying associate, stream or downstream fields, on the ground that whose bucket a row books to is a judgement. That was true of the link fields and never true of these three: each is a code the book either knows or does not. They are checked per field now, and R2 and R3 are applied exactly as the desk's own rule applies them. Only linkTo and orderCode stay refused, because which OTHER row a row links to is a judgement no figure settles.",
+   "<b>WHAT A CORRECTION IS APPROVED ON IS WHAT CHANGED.</b> The Approve card leads with cash and units moving, both of which are zero on a correction and say nothing. A correction gets its own card: a before-and-after line for every field it touches, the flags the drafter raised on the row as it would then stand, and nothing else. Changing the product re-runs the whole rate check against the new shelf, which is how a RM100/unit row moved to oil is flagged as more than double the highest oil rate this book has carried.",
+   "<b>NO FIGURE MOVED.</b> No row was folded and no rate changed. Every row gained a rid and nothing else; the ledger stands exactly where v360 left it."
+  ]
+ },
+ {
   "v": "v360",
   "d": "24 Aug 2026",
   "t": "CM4-MK'S SIZE TAPER, CR3-DAM'S STANDARD ADVANCE, AND CA4-DAM GOES OUT",

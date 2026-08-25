@@ -33,6 +33,7 @@ const prodOf = (r) => (r && r.product) || "salt";
  * proceed: pricing off a stale shelf is how a wrong cost reaches an approval screen looking
  * authoritative. */
 import PRICING_ENGINE from "../engine/pricing.mjs";
+import POSITION_ENGINE from "../engine/position.mjs";
 
 export async function readBook(db) {
   const rows = async (c) => {
@@ -50,6 +51,91 @@ export async function readBook(db) {
     version: snap ? snap.v : null,
     pricing: state.PRICING || null
   };
+}
+
+/* ---- addressing a row, and correcting one ------------------------------------------- */
+/* A ROW IS NAMED BY ITS rid, NOT BY WHAT IT SAYS. ovKey is `party|date|total`, which is
+ * enough for a fulfilment (none of the three ever changes) and not enough for an editor whose
+ * whole job is changing them: correct a party and the row's own key no longer names it. It
+ * also already collides on the real book, on two SA5-BTR lots. tools/rid.mjs gave every row a
+ * rid for this. ovKey is still accepted so an entry queued before rids existed still resolves,
+ * and it is refused when it matches more than one row rather than guessing. */
+export function findRow(book, ref) {
+  if (!ref) return { err: "this correction names no row" };
+  for (const coll of ["sales", "purchases"]) {
+    const byRid = (book[coll] || []).filter((r) => r && r.rid === ref);
+    if (byRid.length === 1) return { row: byRid[0], collection: coll };
+    if (byRid.length > 1) return { err: `${ref} matches ${byRid.length} rows, which should be impossible; the book needs a look` };
+  }
+  for (const coll of ["sales", "purchases"]) {
+    const hits = (book[coll] || []).filter((r) => r && POSITION_ENGINE.ovKey(r) === ref);
+    if (hits.length === 1) return { row: hits[0], collection: coll };
+    if (hits.length > 1) return { err: `${ref} matches ${hits.length} rows on the book, so which one is meant is a judgement. It has a rid now; name that instead` };
+  }
+  return { err: `no row on the book matches ${ref}` };
+}
+
+/* WHAT A CORRECTION MAY SET. Everything a row carries that a person types, and nothing it
+ * computes. A field absent from the patch is left alone; a field set to null is CLEARED,
+ * which is how a wrong attribution comes off a row rather than being overwritten with
+ * another wrong one. The trail (`amend`), the settlement figures (`cash`, `deliveredQty`)
+ * and the cost are deliberately NOT here: those move by fulfilment and by the fold rolling
+ * the shelf, and letting an editor set them directly would put two writers on one figure. */
+export const CORRECTABLE = ["product", "party", "assoc", "stream", "downstream", "date", "qty", "total", "note"];
+
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+/* Each field checked against the book it is going onto, so a correction is refused for the
+ * same reasons a new row is: an unknown product cannot be costed, an unknown code cannot be
+ * credited. Anything checkable is CHECKED; anything merely unusual is FLAGGED. */
+export function checkCorrection(fields, book, target, isSale) {
+  const errs = [], flags = [], changes = [];
+  const roster = (book.state && book.state.roster) || [];
+  const products = (book.state && book.state.PRODUCTS) || {};
+  const associates = (book.state && book.state.associates) || [];
+  const partyKey = isSale ? "customer" : "supplier";
+  const now = { ...target, party: target[partyKey], product: prodOf(target) };
+
+  for (const k of Object.keys(fields)) {
+    if (!CORRECTABLE.includes(k)) { errs.push(`${k} is not a field a correction may set`); continue; }
+    const v = fields[k];
+    if (v === undefined) continue;
+    const was = now[k] == null ? null : now[k];
+    if (JSON.stringify(v) === JSON.stringify(was)) continue;      /* asked for, already true */
+    changes.push({ field: k, from: was, to: v });
+
+    if (v === null) {
+      if (k === "product" || k === "party" || k === "qty" || k === "total") errs.push(`${k} cannot be cleared, only changed`);
+      continue;
+    }
+    if (k === "product" && !products[v]) errs.push(`${v} is not a product on this book`);
+    if (k === "stream" && v !== "R2" && v !== "R3") errs.push(`a stream is R2 or R3, not ${v}`);
+    if (k === "date" && !DATE_RE.test(String(v))) errs.push(`${v} is not a date in YYYY-MM-DD`);
+    if (k === "qty" && !(isNum(v) && v > 0)) errs.push("a quantity has to be a number above zero");
+    if (k === "total" && !(isNum(v) && v >= 0)) errs.push("a total has to be a number, and not negative");
+    if ((k === "party" || k === "assoc" || k === "downstream") && !roster.includes(String(v))) {
+      flags.push(`${v} is not on the roster. A party needs a code and a directory entry before this is committed.`);
+    }
+    if (k === "assoc" && !associates.includes(String(v))) {
+      flags.push(`${v} is not listed as an associate on this book, so crediting a downsell to them is a new relationship rather than an existing one.`);
+    }
+  }
+  if (!changes.length) errs.push("this correction changes nothing on the row it names");
+
+  /* AN ATTRIBUTION IS THREE FIELDS THAT ONLY MEAN ANYTHING TOGETHER, and the desk's own rule
+     is that R2 books the sale to the associate with the buyer behind it, while R3 leaves the
+     buyer on the row and credits the introduction. Setting one leg and not the others is how a
+     downsell ends up booked to a bucket owed money by nobody, which is the 02 Aug CS6-BS-R
+     failure the desk already guards against at entry. */
+  const after = { ...now };
+  for (const k of Object.keys(fields)) if (fields[k] !== undefined) { if (fields[k] === null) delete after[k]; else after[k] = fields[k]; }
+  if (after.assoc && !after.stream) errs.push("an associate needs a stream, R2 or R3, to say how the credit reaches them");
+  if (after.stream === "R2" && after.assoc && !after.downstream) {
+    flags.push("R2 books the row to the associate, so without a downstream the end buyer is recorded nowhere.");
+  }
+  if (!after.assoc && (after.stream || after.downstream)) errs.push("a stream or a downstream without an associate credits nobody");
+
+  return { errs, flags, changes, after };
 }
 
 /* ---- the lot the row draws --------------------------------------------------------- */
@@ -262,9 +348,86 @@ export function draftRow(entry, book) {
    * The fold applies it where the desk is. */
   if (pay.mode === "amend") {
     const kind = String(pay.kind || "");
-    if (kind !== "Fulfilment" && kind !== "Cancellation" && kind !== "Modification") {
+    if (kind !== "Fulfilment" && kind !== "Cancellation" && kind !== "Modification" && kind !== "Correction") {
       return { skip: `this is a ${kind || "nameless"} amendment, and what changed is a judgement rather than which row, so it is left for a person` };
     }
+
+    /* A CORRECTION IS THE ONLY AMENDMENT THAT CAN TARGET ANY ROW, so it takes its branch above
+       the open-order lookup rather than through it. Every other kind amends an order that is
+       still running, and the OPEN snapshot is the right place to find one. A correction fixes
+       what a row SAYS about itself, and a row is as often wrong once it is settled as while it
+       is live: 118 of the 125 rows on this book are closed, and none of them could be reached
+       at all before this. It reads the full book, which readBook already loads. */
+    if (kind === "Correction") {
+      const fields = (pay.fields && typeof pay.fields === "object" && !Array.isArray(pay.fields)) ? pay.fields : null;
+      if (!fields) return { skip: "this correction carries no fields to set" };
+      const found = findRow(book, pay.rid || pay.orderKey);
+      if (found.err) return { skip: found.err };
+      const target = found.row;
+      const isSale = found.collection === "sales";
+      const partyKey = isSale ? "customer" : "supplier";
+      if (target.cancelled) {
+        return { skip: `the row at ${target.rid || pay.orderKey} is cancelled, and correcting a cancelled row is a judgement about whether it should be revived` };
+      }
+
+      const chk = checkCorrection(fields, book, target, isSale);
+      if (chk.errs.length) return { skip: chk.errs.join("; ") };
+
+      const flags = chk.flags.slice();
+      const after = chk.after;
+      const product = after.product || "salt";
+      const priced = isSale ? costFor(book, product) : { cost: null, mayBlend: false };
+
+      /* THE CORRECTED ROW GETS THE SAME COMPARISONS A NEW ONE DOES. A correction can change the
+         product, the size and the price, which between them are every input the rate flags read.
+         Running them on the RESULT is the whole reason this goes through the gate instead of
+         straight onto the book, and it is the same argument that put Modification through it on
+         24 Aug: what is approved is the row as it will stand, not the edit that produced it. */
+      if (isSale) {
+        const synth = { customer: after.party, qty: +after.qty, total: +after.total, cash: target.cash || 0, deliveredQty: target.deliveredQty || 0 };
+        if (product !== "salt") synth.product = product;
+        for (const f of flagsFor(entry, synth, book, priced)) flags.push(f);
+      }
+      const paid = target.cash || 0, movedQty = target.deliveredQty || 0;
+      if (isNum(after.total) && after.total < paid - 0.005) {
+        flags.push(`The corrected total of RM ${round(after.total)} is under the RM ${round(paid)} already paid against this row.`);
+      }
+      if (isNum(after.qty) && after.qty < movedQty - 0.005) {
+        flags.push(`The corrected quantity of ${round(after.qty)} unit is under the ${round(movedQty)} unit already handed over.`);
+      }
+      if (chk.changes.some((c) => c.field === "product") && isSale && priced.cost != null && isNum(target.cost) && Math.abs(priced.cost - target.cost) > 0.005) {
+        flags.push(`The row carries RM ${round(target.cost)}/unit of cost from its old product. ${product} costs RM ${round(priced.cost)}/unit off the shelf, so this row's margin moves when it is recosted.`);
+      }
+      if (chk.changes.some((c) => c.field === "party")) {
+        flags.push(`This moves the row from ${target[partyKey]} to ${after.party}, so what each of them owes changes with it, and so does every figure drawn per party.`);
+      }
+      if (chk.changes.some((c) => c.field === "date") && (target.deliveredQty > 0.005 || paid > 0.005)) {
+        flags.push(`Money or stock has already moved against this row, so redating it moves when that is counted as having happened.`);
+      }
+
+      const words = chk.changes.map((c) => `${c.field} from ${c.from == null ? "unset" : c.from} to ${c.to == null ? "cleared" : c.to}`);
+      const row = {
+        rid: target.rid || null,
+        qty: target.qty, total: target.total, cash: target.cash != null ? target.cash : 0,
+        date: target.date || null, product: prodOf(target), changes: chk.changes,
+      };
+      row[partyKey] = target[partyKey];
+
+      return {
+        collection: found.collection,
+        row,
+        reasoning: [
+          `Correction against ${target[partyKey]}'s ${isSale ? "order" : "lot"} of ${round(target.qty)} unit for RM ${round(target.total)}${target.date ? ` dated ${target.date}` : ", pending and undated"}${target.rid ? ` (${target.rid})` : ""}.`,
+          `Sets ${words.join(", ")}.`,
+          "It moves no cash and no stock: it changes what the row says about itself.",
+          "The row is not rewritten here. The fold applies the patch, so there is one definition of what a correction does rather than two.",
+        ].join(" "),
+        flags,
+        amends: target.rid || pay.orderKey,
+        amendKind: kind,
+      };
+    }
+
     const key = pay.orderKey;
     if (!key) return { skip: "this amendment names no order, so which row it amends is still a judgement" };
     const open = book.state && book.state.OPEN;
@@ -569,8 +732,30 @@ export function draftRow(entry, book) {
   if (dir !== "SELL" && dir !== "BUY") return { skip: "the entry names no direction" };
   const party = pay.party;
   if (!party) return { skip: "the entry names no counterparty" };
-  if (pay.assoc || pay.stream || pay.downstream || pay.linkTo || pay.orderCode) {
-    return { skip: "the entry carries associate, stream or link fields, which decide whose bucket the row books to and is left for a person" };
+  /* ASSOCIATE ATTRIBUTION IS CHECKED NOW, NOT REFUSED WHOLESALE (25 Aug 2026, on his
+     instruction). The old line refused any entry carrying assoc, stream, downstream, linkTo or
+     orderCode together, on the ground that "whose bucket the row books to" is a judgement. That
+     was true of the link fields and never true of the other three: an associate, a stream and a
+     downstream are three codes, each either on the roster or not, and the desk's own rule for
+     turning them into a row is four lines long and unambiguous. Refusing them meant a downsell
+     could only be typed at the laptop, which is the gap that made this whole change necessary.
+
+     THE LINK FIELDS STAY REFUSED, and for the reason the old wording gave: linkTo and orderCode
+     name ANOTHER order, and which order a row links to is a judgement no figure settles. */
+  if (pay.linkTo || pay.orderCode) {
+    return { skip: "the entry links to another order, and which order it links to is a judgement rather than a figure, so it is left for a person" };
+  }
+  const assoc = pay.assoc || null;
+  const stream = pay.stream || null;
+  const downstream = pay.downstream || null;
+  if (assoc && stream !== "R2" && stream !== "R3") {
+    return { skip: `an associate is credited through a stream, R2 or R3, and this entry carries ${stream ? `"${stream}"` : "none"}` };
+  }
+  if (!assoc && (stream || downstream)) {
+    return { skip: "the entry carries a stream or a downstream but names no associate, so the credit reaches nobody" };
+  }
+  if (assoc && dir === "BUY") {
+    return { skip: "an associate credits a sale, and this entry is a purchase" };
   }
 
   const product = pay.product || "salt";
@@ -625,6 +810,28 @@ export function draftRow(entry, book) {
     delete row.cost;
     row.deliveredQty = 0;
   }
+  /* THE DESK'S OWN RULE, COPIED RATHER THAN REINTERPRETED. R2 books the row to the associate;
+     R3 leaves the buyer on the row and credits the introduction beside it. These four lines are
+     the master's queue branch, and they are here in the same shape deliberately: a phone-entered
+     downsell and a laptop-entered one have to produce the same row or the book has two kinds of
+     downsell in it. What is NOT copied is the desk's assocOf() inference, which reads the whole
+     sales history to guess an associate from a code. Guessing belongs on one side of the gate
+     only: the drafter states what it was given and flags the silence, below. */
+  const assocFlags = [];
+  if (dir === "SELL" && assoc) {
+    if (stream === "R3") { row.ref = assoc; row.refKg = qty; }
+    else { row.customer = assoc; row.rev = "R2"; if (downstream) row.downstream = downstream; }
+    const roster0 = (book.state && book.state.roster) || [];
+    const assocs0 = (book.state && book.state.associates) || [];
+    if (!roster0.includes(assoc)) assocFlags.push(`${assoc} is not on the roster, so the credit would go to a code the book does not know.`);
+    else if (!assocs0.includes(assoc)) assocFlags.push(`${assoc} is on the roster but is not listed as an associate, so this is a new reselling relationship rather than an existing one.`);
+    if (downstream && !roster0.includes(downstream)) assocFlags.push(`The downstream ${downstream} is not on the roster.`);
+    if (stream === "R2" && !downstream) {
+      assocFlags.push(`R2 books this row to ${assoc}, and no downstream was given, so the end buyer ${party} is recorded nowhere on it.`);
+    }
+    if (stream === "R2") assocFlags.push(`Booked to ${assoc} as an R2 downsell, so ${party} is not the counterparty on this row and gets no statement from it.`);
+  }
+
   if (pay.note) row.note = String(pay.note);
 
   const rate = qty > 0 ? total / qty : null;
@@ -642,7 +849,7 @@ export function draftRow(entry, book) {
     collection: dir === "BUY" ? "purchases" : "sales",
     row,
     reasoning: bits.join(" "),
-    flags: flagsFor(entry, row, book, priced)
+    flags: assocFlags.concat(flagsFor(entry, row, book, priced))
   };
 }
 

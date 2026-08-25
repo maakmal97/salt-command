@@ -1,6 +1,6 @@
 {
-  "v": "v360",
-  "derivedFrom": "9c3384e9de09e6a1",
+  "v": "v361",
+  "derivedFrom": "6ea332fc63eb9881",
   "tables": {
     "sales": {
       "rows": 109,
@@ -197,6 +197,14 @@
             "string"
           ]
         },
+        "rid": {
+          "present": 109,
+          "of": 109,
+          "optional": false,
+          "types": [
+            "string"
+          ]
+        },
         "settle": {
           "present": 1,
           "of": 109,
@@ -312,6 +320,14 @@
           "optional": true,
           "types": [
             "number"
+          ]
+        },
+        "rid": {
+          "present": 16,
+          "of": 16,
+          "optional": false,
+          "types": [
+            "string"
           ]
         },
         "status": {

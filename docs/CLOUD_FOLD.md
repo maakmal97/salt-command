@@ -47,7 +47,10 @@ tool in `tools/`, the test suite, and `master/_to_fold.json` if there was anythi
    do (append, fulfil, count, register) and what will leave or land on the shelf, refuses anything
    it must refuse, and writes **`master/_fold_notes.json`**, a skeleton with one entry per row.
 
-2. **A refusal folds nothing.** The tool refuses a Linked or Rewarded amendment (neither carries
+2. **A refusal folds nothing.** A **Correction** is mechanical from 25 Aug 2026 and folds like
+   any other amendment: it rewrites what a row says (its product, its party, its attribution, its
+   date, its size, its total, its note), moves no cash and no stock, and leaves the old value in
+   the row's `mod` field. The tool refuses a Linked or Rewarded amendment (neither carries
    a figure to check, only a judgement about which other row or which award applies; a
    Modification is mechanical from 24 Aug 2026, see below), an amendment whose key matches no
    row or more than one, a registration already on the roster, and a new row that would replay

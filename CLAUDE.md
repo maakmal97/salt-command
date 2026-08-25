@@ -232,6 +232,8 @@ phone: add transaction ──POST /queue──▶ Worker ──▶ KV  (key q:<d
         └─ npm run deploy   +   git commit/push                 (phone gets the new ledger)
 
    The laptop's own queue joins the same road:  node tools/drafts.mjs --from-queue
+   A row edit joins it too (v361):  right-click any ledger row on /desk, edit any field,
+   and it queues as a Correction that is drafted, flagged and approved like everything else.
 ```
 
 The desk needed almost no change because it already speaks this HTTP contract to
@@ -320,12 +322,14 @@ running task still holds the old fold-every-queue-file instruction.
 governs NEW ROWS from queued transactions, the ones typed in a hurry at the point of sale.
 It does NOT cover:
 
-- **Amendments.** The drafter refuses them (which row does it amend?), so they are never drafted
-  and never approved. `--from-queue` prints a `skip` line for each, and the daily run reads them
-  from the queue file and folds them against the row they amend, exactly as before. Found by
-  running it: two of the three entries queued on 17 Aug were amendments.
-- **Entries carrying associate, stream or link fields**, a movement with no date, or a product
-  with no cost on the book. Same road: refused, listed, left for a person.
+- **Linked and Rewarded amendments.** Neither carries a figure the drafter can check, only a
+  judgement about which OTHER row or which award applies, so both are refused, listed and left
+  for a person. Fulfilment and Cancellation have gone through the gate since v322, Modification
+  since v358, and **Correction since v361**.
+- **Entries carrying `linkTo` or `orderCode`**, a movement with no date, or a product with no
+  cost on the book. Same road: refused, listed, left for a person. **Associate, stream and
+  downstream stopped being on this list at v361**: each is a code the book either knows or does
+  not, so each is checked rather than refused, and a downsell can be entered from the phone.
 - **Editing the master by hand.** That is the desk itself and needs no tap.
 
 **REFUSED ENTRIES ARE VISIBLE ON THE PHONE (v309), which is not the same as approvable.**
@@ -357,9 +361,9 @@ is the row NOTE, which is prose and which nobody approves; that is deliberately 
 the reason both exist: two engines drift. `PRICING` is **derived, not declared**, which is why
 it is not in `LEDGER_KEYS`; nothing in the master is named `PRICING`.
 
-**What it refuses to draft** matters as much as what it drafts: an amendment (which row?), an
-entry carrying associate, stream or link fields (whose bucket?), a movement with no date, a
-product with no cost on the book. Each is recorded with a reason and left for a person.
+**What it refuses to draft** matters as much as what it drafts: a Linked or Rewarded amendment
+(which other row? which award?), an entry carrying `linkTo` or `orderCode`, a movement with no
+date, a product with no cost on the book. Each is recorded with a reason and left for a person.
 
 **The flags are the product.** They are the comparisons an entry cannot make against itself:
 the rate against the product's whole observed range (this catches the RM115 oil unit), against
@@ -448,6 +452,7 @@ Per-Crm01 master (a Cowork/master session); once it lands, the sync above alread
 | `master/salt_command.html` | **THE MASTER.** The only editable source. Moved here 20 Aug 2026 so the fold can run in the cloud. |
 | `master/changelog.json` | Every `evolution` entry ever written. `tools/changelog.mjs` keeps it in step with the master's one-entry array. |
 | `tools/fold.mjs` | **THE FOLD** (v340, move 3): `--plan` reads `master/_to_fold.json` against the book, says what each row would do, refuses what it must and writes the notes skeleton; `--apply` folds the batch with the agent's notes into `ledger/book.json`, syncs the master, sets the version and the changelog, rolls the shelf, moves the watermark, writes `_folded.json`. All or nothing. |
+| `tools/rid.mjs` | **THE ROW ID** (v361): gives every ledger row a stable `rid` and mints one for each new row the fold appends. `ovKey` is party, date and total joined, so it names a row only until one of those three is edited, and it already collided on two SA5-BTR lots. `nextRid` is the one place an id is minted, so the tool and the fold cannot disagree. |
 | `tools/sort-ledger.mjs` | Puts `sales` and `purchases` back in date order, undated pending rows last. Asserts its output is a permutation of its input. |
 | `ledger/book.json` | **THE BOOK** (v339, move 2): the twenty-six ledger keys as data, plus `NOTES`. Edited by the fold; rendered into the master by `tools/booksync.mjs --sync`; CI proves the copy. |
 | `tools/booksync.mjs` | `--sync` renders the book into the master between its markers; `--check` fails if the block is not the file; `--normalise` rewrites the JSON one record per line. |

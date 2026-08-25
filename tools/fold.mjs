@@ -43,6 +43,7 @@ import { execFileSync } from "node:child_process";
 import { readBookFile, writeBookFile, syncText, BOOK as BOOK_DEFAULT, MASTER as MASTER_DEFAULT } from "./booksync.mjs";
 import { sortBook } from "./sort-ledger.mjs";
 import POSITION_ENGINE from "../engine/position.mjs";
+import { nextRid } from "./rid.mjs";
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const argv = process.argv.slice(2);
@@ -94,10 +95,16 @@ export function plan(book, staged, notes) {
     const entry = { id: it.id, what: describe(it), does: [] };
     const r = it.row || {};
     if (it.amends) {
-      if (it.amendKind !== "Fulfilment" && it.amendKind !== "Cancellation" && it.amendKind !== "Modification") { out.refused.push({ id: it.id, why: `${it.amendKind || "nameless"} amendment: what changed is a judgement, left for a person` }); continue; }
+      if (it.amendKind !== "Fulfilment" && it.amendKind !== "Cancellation" && it.amendKind !== "Modification" && it.amendKind !== "Correction") { out.refused.push({ id: it.id, why: `${it.amendKind || "nameless"} amendment: what changed is a judgement, left for a person` }); continue; }
       const dir = (it.entry && it.entry.payload && it.entry.payload.direction) || "SELL";
       const arr = dir === "BUY" ? book.purchases : book.sales;
-      const hits = arr.filter((x) => E.ovKey(x) === it.amends);
+      /* BY rid FIRST (25 Aug 2026). ovKey is party|date|total, which names a row only for as
+         long as none of those three changes. A correction changes exactly those, and two
+         SA5-BTR lots already share one key, so an id that survives an edit is the only thing
+         that can name a row for an editor. ovKey stays as the fallback, so anything queued
+         before rids existed still folds. */
+      const byRid = arr.filter((x) => x && x.rid && x.rid === it.amends);
+      const hits = byRid.length ? byRid : arr.filter((x) => E.ovKey(x) === it.amends);
       if (hits.length !== 1) { out.refused.push({ id: it.id, why: hits.length ? `key ${it.amends} matches ${hits.length} rows` : `no row on the book matches ${it.amends}` }); continue; }
       /* v347: A CANCELLED ORDER IS NOT A TARGET. The match was by key alone, so a fulfilment
          queued against an order that has since been cancelled would fold straight onto it and
@@ -111,7 +118,17 @@ export function plan(book, staged, notes) {
       /* v358: A MODIFICATION CARRIES newQty/newTotal, NOT cash/kg. It moves nothing, so it adds
          nothing to out.moves, and it is described by what it restates the order TO rather than
          by what moved. */
-      if (it.amendKind === "Modification") {
+      if (it.amendKind === "Correction") {
+        /* A CORRECTION MOVES NOTHING, so it adds nothing to out.moves and needs no date to be
+           valid: what it changes is what the row SAYS about itself. The patch is read from the
+           ENTRY rather than from the drafted row, because the drafted row is a before-and-after
+           card built for the Approve screen and the entry is what was actually asked for. */
+        const fields = pay.fields && typeof pay.fields === "object" ? pay.fields : null;
+        if (!fields || !Object.keys(fields).length) { out.refused.push({ id: it.id, why: `the correction on ${it.amends} carries no fields to set` }); continue; }
+        entry.pay = { date: pay.date || null, kind: "Correction", cash: 0, kg: 0, fields };
+        const words = Object.keys(fields).map((k) => `${k} to ${fields[k] === null ? "(cleared)" : fields[k]}`);
+        entry.does.push(`correct ${dir === "BUY" ? "lot" : "order"} ${it.amends}: ${words.join(", ")}`);
+      } else if (it.amendKind === "Modification") {
         const newQty = +pay.newQty, newTotal = +pay.newTotal;
         if (!(newQty > 0) || !(newTotal >= 0)) { out.refused.push({ id: it.id, why: `the modification on ${it.amends} carries no valid new quantity and total` }); continue; }
         entry.pay = { date: pay.date || r.date || TODAY, kind: "Modification", cash: 0, kg: 0, newQty, newTotal };
@@ -171,7 +188,92 @@ function skeleton(book, staged, p) {
 
 /* ---- apply ------------------------------------------------------------------------------- */
 /* ovAmend, as the desk applies it, on a plain row */
+/* HOW AN ATTRIBUTION IS STORED, and it is not how it is typed. A row has no `assoc` field and
+ * no `stream` field: the book has never carried either. What it carries is the desk's own
+ * translation of them, and the two streams translate differently.
+ *
+ *   R2  the row books TO the associate. customer = the associate, rev = "R2", and the actual
+ *       buyer is kept beside it as `downstream`. The buyer is not the counterparty and gets no
+ *       statement from this row.
+ *   R3  the row books to the BUYER as normal, and the introduction is credited beside it:
+ *       ref = the associate, refKg = the size.
+ *
+ * So "who is the associate" has to be read back OUT of the row rather than off a field, and
+ * clearing an R2 attribution has to put the real buyer back on the row from `downstream`,
+ * or the row is left booked to the associate with nothing saying who bought it. */
+function attributionOf(row, partyKey) {
+  if (row.rev === "R2") return { assoc: row[partyKey], stream: "R2", downstream: row.downstream || null };
+  if (row.ref) return { assoc: row.ref, stream: "R3", downstream: null };
+  return { assoc: null, stream: null, downstream: null };
+}
+
 function applyAmend(row, pay, dir, note) {
+  /* A CORRECTION REWRITES WHAT THE ROW SAYS, and nothing else. It moves no cash and no stock,
+     so cash, deliveredQty, receivedQty and the shelf are untouched by design: those move by
+     fulfilment, and letting an editor set them directly would put two writers on one figure.
+
+     WHAT IT DOES WRITE, besides the field, is a line in the trail saying what the value was
+     before. The rate is the record: a row whose price changed without saying so is worse than
+     no row at all, so every correction leaves its old value readable in `mod`. */
+  if (pay.kind === "Correction") {
+    const f = pay.fields || {};
+    const partyKey = dir === "BUY" ? "supplier" : "customer";
+    const attr = attributionOf(row, partyKey);
+    /* The party as a PERSON would name it: for an R2 row the counterparty field holds the
+       associate, so the buyer is the downstream. */
+    const buyerNow = attr.stream === "R2" ? (attr.downstream || null) : row[partyKey];
+    const before = { product: row.product || "salt", party: buyerNow, assoc: attr.assoc, stream: attr.stream,
+                     downstream: attr.downstream, date: row.date == null ? null : row.date,
+                     qty: row.qty, total: row.total, note: row.note == null ? null : row.note };
+    const said = [];
+    const asked = (k) => Object.prototype.hasOwnProperty.call(f, k) && f[k] !== undefined;
+    for (const k of Object.keys(f)) {
+      if (f[k] === undefined) continue;
+      if (JSON.stringify(f[k]) === JSON.stringify(before[k] === undefined ? null : before[k])) continue;
+      said.push(`${k} ${before[k] == null ? "(unset)" : before[k]} to ${f[k] == null ? "(cleared)" : f[k]}`);
+    }
+
+    /* THE PLAIN FIELDS FIRST. product is the one the book omits when it is the default, and
+       the desk reads an absent product as salt (prodOf), so writing "salt" explicitly would
+       make this the only row on the book shaped differently from its peers. */
+    for (const k of ["date", "qty", "total", "note"]) {
+      if (!asked(k)) continue;
+      if (f[k] === null) delete row[k]; else row[k] = f[k];
+    }
+    if (asked("product")) { if (f.product === "salt") delete row.product; else row.product = f.product; }
+
+    /* THEN THE ATTRIBUTION, once, from the three fields read together. A per-field write would
+       see them half-applied and book the row to a code that was only ever half-chosen, which
+       is the 02 Aug CS6-BS-R failure in a different costume. */
+    const wantAssoc = asked("assoc") ? f.assoc : attr.assoc;
+    const wantStream = asked("stream") ? f.stream : attr.stream;
+    let wantBuyer = asked("party") ? f.party : buyerNow;
+    if (asked("downstream") && f.downstream !== null) wantBuyer = f.downstream;
+
+    delete row.rev; delete row.ref; delete row.refKg; delete row.downstream;
+    if (wantAssoc && wantStream === "R3") {
+      row[partyKey] = wantBuyer;
+      row.ref = wantAssoc; row.refKg = row.qty;
+    } else if (wantAssoc) {
+      row[partyKey] = wantAssoc; row.rev = "R2";
+      if (wantBuyer && wantBuyer !== wantAssoc) row.downstream = wantBuyer;
+    } else {
+      /* CLEARING AN R2 PUTS THE BUYER BACK. Without this the row stays booked to the associate
+         with nothing left saying who actually bought it, which loses the counterparty outright. */
+      row[partyKey] = wantBuyer || row[partyKey];
+    }
+
+    if (said.length) {
+      const line = `corrected${pay.date ? " on " + pay.date : ""}: ${said.join("; ")}`;
+      row.mod = row.mod ? row.mod + ", then " + line : line;
+      if (!row.amend || !row.amend.length) {
+        row.amend = [{ date: row.date, kind: "Fulfilment", cash: E.txPaid(row), kg: E.txDeliv(row), note: "as booked" }];
+      }
+      row.amend = row.amend.concat([{ date: pay.date || null, kind: "Correction", cash: 0, kg: 0, note: note || line }]);
+    }
+    if (note && !asked("note")) row.note = note + " " + (row.note || "");
+    return;
+  }
   if (pay.kind === "Modification") {
     const wasQty = row.qty, wasTotal = row.total;
     const modLine = `restated${pay.date ? " on " + pay.date : ""} from ${wasQty} unit / RM${wasTotal} to ${pay.newQty} unit / RM${pay.newTotal}`;
@@ -264,6 +366,11 @@ export function apply(book, staged, notes, masterText) {
       const row = { ...src.row };
       if (n.cost != null) row.cost = +n.cost;
       row.note = String(n.note).trim();
+      /* EVERY ROW GETS AN ID ON THE WAY IN (25 Aug 2026). A row with no rid cannot be named by
+         the editor, so a fold that appended one without would put a row on the book that could
+         never be corrected. Minted by the same function tools/rid.mjs uses, so the two cannot
+         disagree about the shape, and never reused: it reads the highest already on the book. */
+      row.rid = nextRid(book[it.append] || [], it.append === "sales" ? "s" : "p")(1);
       book[it.append].push(row);
     } else if (it.count) {
       const c = it.count;
