@@ -1,6 +1,6 @@
 {
- "v": "v379",
- "stamped": "26 Aug 2026, 19:18 KL",
+ "v": "v383",
+ "stamped": "27 Aug 2026, 03:45 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -38,10 +38,10 @@
    "oil": {
     "qty": 5,
     "costPerKg": 7.666666666666667,
-    "stated": 0
+    "stated": 20
    }
   },
-  "STATED_STOCK": 10,
+  "STATED_STOCK": 25.5,
   "COUNT_ON": {
    "salt": "2026-08-24",
    "oil": "2026-08-23"
@@ -235,6 +235,33 @@
     ],
     "note": "<b>THE 25 UNIT TIER, TAKEN FOR THE FIRST TIME, AND IT BOOKS NOTHING YET.</b> 25 unit for RM1,300 agreed with SA5-BTR, RM52 a unit. Nothing has been paid and nothing has moved, so the row is PENDING and carries NO DATE: it draws no stock, raises no payable, moves no cash and stays out of the cost basis until it settles. <b>IT IS THE QUOTED 25 UNIT TIER TO THE RINGGIT</b>, the RM1,300 step standing on the 14 Jul ladder, and it is the first time that step has ever been taken: every lot on this book since 08 Jul has been 6.25, 12.5, 50 or 100. <b>RM52 IS THE MIDDLE OF THE LADDER AND IT IS THE RIGHT MIDDLE.</b> The same 25 unit bought as two 12.5 unit lots costs RM1,400 at the RM56 both August lots carried, so the tier saves RM100, RM4 a unit. It stays dearer than the RM48 fifty unit tier and the RM47 hundred STANDING THAT MORNING, which is the ladder working as quoted rather than a concession lost. <b>Those two rates are the 14 Jul ladder and they were superseded the same afternoon</b>, so read them as what this lot was struck against and not as what salt costs; the addendum below has the rest. <b>WHAT IT DOES NOT DO IS MOVE A FLOOR.</b> Replacement cost is read off the newest RECEIVED lot and that is still the 18 Aug lot at RM56, which is exactly the job <b>pending:true</b> is doing here; STOCK_COST is untouched. When this lands it becomes the newest received lot and every floor on the desk falls with it, so re-read the pending sales against the Pricing tab on that commit and not before. <b>THE SHELF IT IS COMING TO IS EMPTY.</b> Salt was counted at zero on the 20th and the book owes 3 unit to CE4-CHE, paid for on the 18th with nothing behind it; the desk reads 21.5 unit of promises with no stock against them at this commit, so 25 unit clears them with room over. That figure moves with every sale, so read it off the Forward tab rather than off this sentence. <b>NO ARRIVAL DATE WAS QUEUED AND NONE IS INVENTED HERE.</b> When money or salt first moves against it, set receivedQty, receivedOn and paidOn and clear pending, the same shape as the lot agreed at v311 and settled on the 18th. <b>ADDED AT v321, AND NO FIGURE ON THIS ROW WAS TOUCHED TO SAY IT: SA5-BTR RE-QUOTED THE SAME AFTERNOON AND THIS LOT IS NOW RM50 ABOVE HIS OWN LADDER.</b> 25 unit is quoted at RM1,250 from the 20th, against the RM1,300 agreed here that morning against the 14 Jul ladder. <b>The row keeps RM1,300 because that is what was agreed and approved</b>, and a quote that arrives after a handshake does not rewrite it; what it does is make this lot worth re-opening before any money moves, which nothing has. <b>NOTHING IS LOST BY ASKING.</b> The lot is PENDING, so there is no payment to claw back and no stock to return, and the same salt at the new 50 unit tier is RM44 a unit against the RM52 on this row. Re-agree it, replace it, or let it stand: all three are his call and none of them is this note. <b>HE RE-AGREED IT, AND HE TOOK THE TIER THE LADDER ACTUALLY REWARDS.</b> 50 unit for RM2,200 replaces 25 for RM1,300: <b>RM44 a unit against RM52, and twice the salt for RM900 more</b>. It is the cheapest rate this desk has ever agreed to except the RM43 hundred-unit step, and it is RM3 under the RM47 the 100 unit lot of 28 Jul actually cost. <b>THE RE-QUOTE SAID WHERE THE DISCOUNT HAD MOVED AND THIS IS THE ANSWER TO IT.</b> The new ladder gives RM2 a unit at the 25 step and RM6 at the 50, so 25 had stopped paying and 50 is where it pays; taking the 25 would have spent RM1,300 to save RM50 against a size that saves RM400. <b>IT IS STILL PENDING AND STILL BOOKS NOTHING.</b> No cash has moved and no salt has landed, so replacement cost is still read off the 18 Aug lot at RM56 and not one floor on this desk moves until this arrives. When it does, every floor falls by roughly a fifth at once, and the 8 unit already owed to CE4-CHE and CE4-AD are the first call on it. <b>IT LANDED THE SAME DAY, PAID AND RECEIVED IN FULL, AND IT IS THE CHEAPEST SALT THIS BOOK HAS EVER BOUGHT.</b> 50 unit for RM2,200, RM44 a unit, against the RM47 hundred-unit lot of 28 Jul that held the record until today. RM2,200 left the bank and 50 unit reached the shelf, both stamped the 20th, so the row is no longer pending and every figure in the paragraphs above that begins &lsquo;when this lands&rsquo; has now happened. <b>IT IS THE NEWEST RECEIVED LOT, SO EVERY FLOOR ON THIS DESK MOVED AT ONCE.</b> Replacement cost falls from RM56 to RM44 and STOCK_COST rolls with it, because the shelf counted zero that morning and everything on it now came off this one lot. There is no blend to solve. The delivered floor at 1 unit goes from RM86.12 to RM81.65 and the collected floor from RM79.87 to RM60.82, and the collected one moves further because a delivery is now a dearer thing to skip. <b>THE SHELF GOES FROM NOTHING TO FIFTY AND EIGHT OF IT IS ALREADY SPOKEN FOR.</b> STATED_STOCK rolls 0 to 50 against the count of zero taken the same morning. That is a ROLL AND NOT A COUNT, so COUNT_ON does not move: nobody has looked at the shelf since the lot arrived. THREE ROWS ARE OWED SALT AND NOT TWO: CE4-CHE 3 unit, CE4-AD 5 and CJ4-BJ 5.88, 13.88 in all, every one of them paid for with nothing behind it. Free to sell is 36.12. The paragraphs above say 8 unit because they were written before the CJ4-BJ row was folded; read defKg rather than either sentence. <b>THE LEAK RATE FELL AND NOT ONE UNIT WAS FOUND.</b> The 51.45 unit unexplained at the count are still unexplained; 50 unit of fresh volume entered the denominator, so the observed rate goes from 19.70% to 16.54%. A leak that improves because you bought more salt is arithmetic rather than progress, and it must not be read as the count being closed.",
     "rid": "p016"
+   },
+   {
+    "date": "2026-08-26",
+    "qty": 25,
+    "total": 1250,
+    "supplier": "SA5-BTR",
+    "status": "paid",
+    "cash": 1250,
+    "paidOn": "2026-08-26",
+    "receivedOn": "2026-08-26",
+    "receivedQty": 25,
+    "note": "<b>25 unit for RM1,250, paid and received on the day: RM50 a unit, and the shelf cost basis moves with it.</b> Up 13.6% from the RM44 of the 20 Aug lot, so every floor on the salt board rises and nothing printed before today should be read as current. <b>Worth setting beside the 20 Aug trail:</b> that lot began as 25 unit at RM1,300 and was re-agreed to 50 unit at RM2,200. The 25-unit offer withdrawn then implied RM52 a unit; the same size today came in at RM50, so the smaller lot is being bought better than the withdrawn one, not worse. It arrives on a shelf of 0.5 unit after the day&rsquo;s sales, which is what makes it the whole of the cost basis rather than a blend.",
+    "rid": "p017"
+   },
+   {
+    "date": "2026-08-26",
+    "product": "oil",
+    "qty": 30,
+    "total": 230,
+    "supplier": "SP7-PUD",
+    "status": "paid",
+    "cash": 230,
+    "paidOn": "2026-08-26",
+    "receivedOn": "2026-08-26",
+    "receivedQty": 30,
+    "note": "<b>30 unit of oil for RM230, paid and received on the day: RM7.67 a unit, exactly the 30-unit rung of the 06 Aug ladder.</b> Both earlier lots were 50 unit bought at the RM7.00 rung, the sharpest on that card, so this is 9.5% above what oil has cost until now. That is the quoted taper working as published rather than a price rise: a 30-unit lot has always been RM7.67 on his card, and the difference is the size, not the supplier. <b>It lands on an empty shelf</b>, the 23 Aug count having put oil at 0, so it is the whole of the oil cost basis and the 10 unit sold today are costed against it. Oil closes at 20 unit.",
+    "rid": "p018"
    }
   ],
   "sales": [
@@ -851,16 +878,33 @@
    },
    {
     "date": "2026-07-21",
-    "customer": "CH6-TBC",
+    "customer": "CH6-SET",
     "qty": 2,
     "total": 230,
     "cost": 56,
     "cash": 230,
     "deliveredQty": 2,
+    "note": "<b>RE-KEYED TO CH6-SET ON 26 Aug 2026, ON HIS INSTRUCTION, WHICH SUPERSEDES THE LINE BELOW SAYING A CODE IS NEVER RE-KEYED.</b> The location was stated, so the suffix carries a place instead of a placeholder. The account below stands unchanged. Re-keyed CH6-TBC to CH6-SET on his instruction of 26 Aug. <b>This reverses what the row itself asserts.</b> Its note says the TBC suffix stays as minted because codes are canonical and are not re-keyed once issued; that is now superseded, and the reversal is prepended to the row rather than written over it. Nothing about the order changes: 2 unit, RM230, paid and delivered together on 21 Jul, and it stays the first sale against the CS6-PER refer stream. R3 referral: introduced by CS6-PER, and the first sale booked against his refer stream. 2 unit at RM115/unit, paid and delivered together. Location was entered as TBC, so the code suffix is a placeholder rather than a place; it stays as minted, since codes are canonical and are not re-keyed once issued.",
+    "rid": "s032",
     "ref": "CS6-PER",
     "refKg": 2,
-    "note": "R3 referral: introduced by CS6-PER, and the first sale booked against his refer stream. 2 unit at RM115/unit, paid and delivered together. Location was entered as TBC, so the code suffix is a placeholder rather than a place; it stays as minted, since codes are canonical and are not re-keyed once issued.",
-    "rid": "s032"
+    "mod": "corrected on 2026-08-26: customer CH6-TBC to CH6-SET",
+    "amend": [
+     {
+      "date": "2026-07-21",
+      "kind": "Fulfilment",
+      "cash": 230,
+      "kg": 2,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-08-26",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 0,
+      "note": "Re-keyed CH6-TBC to CH6-SET on his instruction of 26 Aug. <b>This reverses what the row itself asserts.</b> Its note says the TBC suffix stays as minted because codes are canonical and are not re-keyed once issued; that is now superseded, and the reversal is prepended to the row rather than written over it. Nothing about the order changes: 2 unit, RM230, paid and delivered together on 21 Jul, and it stays the first sale against the CS6-PER refer stream."
+     }
+    ]
    },
    {
     "date": "2026-07-21",
@@ -1080,7 +1124,7 @@
    },
    {
     "date": "2026-07-30",
-    "customer": "CZ4-TBC",
+    "customer": "CZ4-MK",
     "qty": 5,
     "total": 435,
     "cost": 47,
@@ -1088,10 +1132,27 @@
     "deliveredQty": 5,
     "deliveredOn": "2026-07-30",
     "paidOn": "2026-07-30",
+    "note": "<b>RE-KEYED TO CZ4-MK ON 26 Aug 2026</b>, the second re-key of this party, once the location was stated. The account below stands unchanged. Re-keyed CZ4-TBC to CZ4-MK on his instruction of 26 Aug. This is the SECOND re-key of this party: the row&rsquo;s own note records that he arrived on a provisional code, was named on 30 Jul, and was moved to CZ4-TBC then with the placeholder purged. Same one-identifier rule, applied again now that the location is known. Nothing about the order changes: 5 unit, RM435, paid and collected on 30 Jul as booked. Agreed and completed on 30 Jul: RM435 for 5 unit, which is exactly what the board quotes, so the price is right. Paid in full and collected on the day, so it counts everywhere: RM435 in revenue, RM435 in cash, 5 unit off the shelf and no receivable. It carried a one-step amendment trail dated on the order date, which folded into the opening at v191: a settlement on the order date is the opening line, not a movement against it. Drawn from the RM47 lot, so it earns RM40/unit on lot cost and a margin over replacement that the desk computes live, because a figure typed here goes stale the moment the buying rate moves. He arrived on a provisional code and was named on 30 Jul, so the desk re-keyed him to CZ4-TBC and purged the placeholder outright, per the standing one-identifier rule. The encrypted vault cannot be re-keyed from here, since it opens only on your passphrase, so the name needs typing once against CZ4-TBC in Names and IDs.",
+    "rid": "s046",
     "ref": "CI4-OKR",
     "refKg": 5,
-    "note": "Agreed and completed on 30 Jul: RM435 for 5 unit, which is exactly what the board quotes, so the price is right. Paid in full and collected on the day, so it counts everywhere: RM435 in revenue, RM435 in cash, 5 unit off the shelf and no receivable. It carried a one-step amendment trail dated on the order date, which folded into the opening at v191: a settlement on the order date is the opening line, not a movement against it. Drawn from the RM47 lot, so it earns RM40/unit on lot cost and a margin over replacement that the desk computes live, because a figure typed here goes stale the moment the buying rate moves. He arrived on a provisional code and was named on 30 Jul, so the desk re-keyed him to CZ4-TBC and purged the placeholder outright, per the standing one-identifier rule. The encrypted vault cannot be re-keyed from here, since it opens only on your passphrase, so the name needs typing once against CZ4-TBC in Names and IDs.",
-    "rid": "s046"
+    "mod": "corrected on 2026-08-26: customer CZ4-TBC to CZ4-MK",
+    "amend": [
+     {
+      "date": "2026-07-30",
+      "kind": "Fulfilment",
+      "cash": 435,
+      "kg": 5,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-08-26",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 0,
+      "note": "Re-keyed CZ4-TBC to CZ4-MK on his instruction of 26 Aug. This is the SECOND re-key of this party: the row&rsquo;s own note records that he arrived on a provisional code, was named on 30 Jul, and was moved to CZ4-TBC then with the placeholder purged. Same one-identifier rule, applied again now that the location is known. Nothing about the order changes: 5 unit, RM435, paid and collected on 30 Jul as booked."
+     }
+    ]
    },
    {
     "date": "2026-07-31",
@@ -2188,11 +2249,11 @@
     "qty": 4,
     "total": 380,
     "cost": 44,
-    "cash": 0,
+    "cash": 380,
     "date": "2026-08-24",
     "deliveredQty": 4,
     "deliveredOn": "2026-08-24",
-    "paidOn": "2026-08-24",
+    "paidOn": "2026-08-26",
     "note": "restated to RM380 total, cash to RM0: the 4 unit already delivered on 24 Aug carried the wrong total and a paid flag that did not hold. Now an advance -- 4 unit out, RM380 owed -- rather than settled. 4 unit at RM90/unit, RM184 of margin at 51.1%. The drafter flags it 18.2% under his typical RM110/unit, but that rate is drawn from his 2-unit orders; this is the same size and the same total, RM360 for 4 unit, that he paid on 10 Aug. The ladder's size taper explains the gap, not a change in what he is charged.",
     "rid": "s105",
     "mod": "corrected on 2026-08-25: total 360 to 380; cash 360 to 0",
@@ -2210,6 +2271,13 @@
       "cash": 0,
       "kg": 0,
       "note": "restated to RM380 total, cash to RM0: the 4 unit already delivered on 24 Aug carried the wrong total and a paid flag that did not hold. Now an advance -- 4 unit out, RM380 owed -- rather than settled."
+     },
+     {
+      "date": "2026-08-26",
+      "kind": "Fulfilment",
+      "cash": 380,
+      "kg": 0,
+      "note": "RM380 lands on 26 Aug and the advance closes. The 4 unit went out on 24 Aug against a total that was corrected from RM360 to RM380 the following day, leaving him owing the money with the salt already gone. Nothing is outstanding on this order now, in money or in stock."
      }
     ]
    },
@@ -2229,10 +2297,93 @@
     "customer": "CJ4-BJ",
     "qty": 6.25,
     "total": 450,
-    "cash": 0,
+    "cash": 450,
     "deliveredQty": 0,
     "note": "<b>PENDING: THE SECOND 6.25 UNIT OF THE 12.5 UNIT ORDER AGREED ON 20 AUG, RM450, NOTHING PAID AND NOTHING MOVED.</b> Split out at v335 on his word; the first tranche is the RM400 row dated the 20th, paid that day and delivered on the 21st. RM72 a unit against RM64 on the first half. It carries no date, draws no stock and raises no receivable until it moves. The ladder asks RM520 at 6.25 unit and the delivered floor stands at RM382.38, so RM450 clears the floor by RM67.62 and sits RM70 under the ask; read the Pricing tab for the figure of the day.",
-    "rid": "s107"
+    "rid": "s107",
+    "amend": [
+     {
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 0,
+      "note": "as booked, pending and undated"
+     },
+     {
+      "date": "2026-08-26",
+      "kind": "Fulfilment",
+      "cash": 450,
+      "kg": 0,
+      "note": "<b>RM450 lands and the second tranche is PAID IN FULL WITH NOTHING HANDED OVER.</b> This is the 6.25 unit split out at v335 from the 12.5 unit agreed on 20 Aug; the first tranche was paid on the 20th and delivered on the 21st. The order now joins the deferred column: 6.25 unit owed out, no receivable, and no stock drawn until it moves. He is paid ahead on this desk for the second time in a week."
+     }
+    ],
+    "date": "2026-08-26",
+    "paidOn": "2026-08-26"
+   },
+   {
+    "customer": "CH6-SET",
+    "qty": 1,
+    "total": 120,
+    "cost": 44,
+    "cash": 120,
+    "date": "2026-08-26",
+    "deliveredQty": 1,
+    "deliveredOn": "2026-08-26",
+    "paidOn": "2026-08-26",
+    "note": "<b>His second order, and the first under the CH6-SET code.</b> 1 unit for RM120. His opening order on 21 Jul was 2 unit at RM115 a unit, so RM120 at a single unit is the size taper working as the ladder intends rather than a rise in what he is charged: a one-unit lot prices above a two-unit one on every card. Drawn from the RM44 shelf, so it returns <b>RM76 at 63.3%</b>, the best margin in this batch. He came in on the CS6-PER refer stream and that attribution is unaffected by the re-key.",
+    "rid": "s110"
+   },
+   {
+    "customer": "CZ4-MK",
+    "qty": 5,
+    "total": 420,
+    "cost": 44,
+    "cash": 420,
+    "date": "2026-08-26",
+    "deliveredQty": 5,
+    "deliveredOn": "2026-08-26",
+    "paidOn": "2026-08-26",
+    "note": "<b>His second order, the same size as his first, RM15 lower.</b> 5 unit for RM420 against 5 unit for RM435 on 30 Jul: RM84 a unit against RM87. The first order was exactly what the board quoted at that size; this one sits RM15 under it, so it is a concession rather than a card. <b>What moved more than the price is the cost.</b> The 30 Jul order drew the RM47 lot; this draws RM44, so despite charging RM15 less it returns <b>RM200 at 47.6%</b> against the RM188 the first one made. Read the Price view for the floor of the day, which rises with the RM50 lot landing today.",
+    "rid": "s111"
+   },
+   {
+    "customer": "CY2-NIL",
+    "qty": 2.5,
+    "total": 230,
+    "cost": 44,
+    "cash": 230,
+    "date": "2026-08-26",
+    "deliveredQty": 2.5,
+    "deliveredOn": "2026-08-26",
+    "paidOn": "2026-08-26",
+    "note": "<b>His THIRD order at exactly the same size and total: 2.5 unit for RM230.</b> The same as 11 Aug and 18 Aug, RM92 a unit on all three, so this is his rate and there is nothing to explain about the price. <b>What changes across the three is the cost, and it has now moved twice.</b> RM47 on the first returned RM112.50 at 48.9%; RM56 on the second returned RM90 at 39.1%; RM44 today returns <b>RM120 at 52.2%</b>, the best of the three. The supplier took ten points off him in August and has handed them back, at an unchanged price to the customer throughout.",
+    "rid": "s112"
+   },
+   {
+    "customer": "CS6-PER",
+    "qty": 1,
+    "total": 100,
+    "cost": 44,
+    "cash": 100,
+    "date": "2026-08-26",
+    "deliveredQty": 1,
+    "deliveredOn": "2026-08-26",
+    "paidOn": "2026-08-26",
+    "note": "<b>THE BAN IS LIFTED, AND THIS IS THE ROW THAT RECORDS IT.</b> 1 unit for RM100, paid and collected on the day, RM56 of margin at 56.0% off the RM44 shelf. s016 banned him from sale on 30 Jul in terms that were not time-limited, and the desk then sold to him twice anyway, on 07 Aug and on the order cancelled on 24 Aug. On his instruction of 26 Aug the ban is lifted, so the restriction stops being a thing the book asserts and nothing enforces. <b>It does not settle his open position:</b> s068 still reads Open with salt owed out to him and RM80 uncollected, and this order neither draws on that nor pays it down.",
+    "rid": "s113"
+   },
+   {
+    "customer": "CZ4-MK",
+    "product": "oil",
+    "qty": 10,
+    "total": 130,
+    "cost": 7.666666666666667,
+    "cash": 150,
+    "date": "2026-08-26",
+    "deliveredQty": 10,
+    "deliveredOn": "2026-08-26",
+    "paidOn": "2026-08-26",
+    "note": "<b>His first oil order, and the second time this desk has sold 10 unit for RM130.</b> The rate matches s062 of 06 Aug to the ringgit, RM13 a unit. <b>It is costed at RM7.67, not RM7</b>, because the 23 Aug count put oil at 0 and none of the cheaper stock was left: what he took came off the 30 unit that landed the same day. So it returns <b>RM53.33 at 41.0%</b>, and the RM60 it would have shown against the old lot cost was never available to earn. <b>RM150 was tendered against RM130 owed.</b> At RM13 a unit the RM150 buys 11.54 unit and 10 went out, so the row carries <b>1.54 unit of oil owed out</b> and nothing owed in money either way. Booked that way rather than as a cash balance because that is how this book already carries paid-ahead, and because a credit expressed in stock is the one that shows up in cover. Note that the 10-unit oil card currently sits under its own floor on the board; that is a pricing condition to settle on the Price view, not a fault in this row.",
+    "rid": "s114"
    },
    {
     "customer": "CN6-WM",
@@ -2370,13 +2521,11 @@
    "CI4-OKR",
    "CN6-WM",
    "CN6-WM-R",
-   "CH6-TBC",
    "CZ6-WM",
    "CR4-PJ",
    "CD4-CS",
    "CA5-KER",
    "CE4-AD",
-   "CZ4-TBC",
    "SF6-KLC",
    "SA5-BTR",
    "SM4-KEP",
@@ -2389,7 +2538,9 @@
    "CM3-OKR",
    "CA11-SEN",
    "CM6-PJ",
-   "CK4-SEN"
+   "CK4-SEN",
+   "CZ4-MK",
+   "CH6-SET"
   ],
   "associates": [
    "CS6-BS",
@@ -2543,9 +2694,9 @@
     "note": "Judged a rare one-off. Treat the RM104/unit it paid as an outlier, not as evidence of what wholesale will bear."
    }
   ],
-  "QUEUE_COMMITTED": "2026-08-25T14:28:13.138Z",
+  "QUEUE_COMMITTED": "2026-08-26T12:12:00.000Z",
   "PRICING": {
-   "takenAt": "2026-08-26T11:20:02.237Z",
+   "takenAt": "2026-08-26T19:45:12.639Z",
    "sizes": [
     0.5,
     1,
@@ -2569,48 +2720,48 @@
    "shrinkAttrib": 1,
    "byProduct": {
     "salt": {
-     "stockCost": 44,
-     "replCost": 44,
+     "stockCost": 50,
+     "replCost": 50,
      "floors": {
       "1": {
-       "delivered": 122.66,
-       "collected": 72.66
+       "delivered": 88.84,
+       "collected": 78.84
       },
       "2": {
-       "delivered": 170.32,
-       "collected": 120.32
+       "delivered": 142.68,
+       "collected": 136.37
       },
       "3": {
-       "delivered": 217.98,
-       "collected": 180.35
+       "delivered": 204.56,
+       "collected": 204.56
       },
       "4": {
-       "delivered": 265.64,
-       "collected": 240.46
+       "delivered": 272.75,
+       "collected": 272.75
       },
       "5": {
-       "delivered": 313.3,
-       "collected": 300.58
+       "delivered": 340.93,
+       "collected": 340.93
       },
       "0.5": {
-       "delivered": 98.83,
-       "collected": 48.83
+       "delivered": 61.92,
+       "collected": 51.92
       },
       "1.5": {
-       "delivered": 146.49,
-       "collected": 96.49
+       "delivered": 115.76,
+       "collected": 105.76
       },
       "2.5": {
-       "delivered": 194.15,
-       "collected": 150.29
+       "delivered": 170.47,
+       "collected": 170.47
       },
       "6.25": {
-       "delivered": 375.73,
-       "collected": 375.73
+       "delivered": 426.16,
+       "collected": 426.16
       },
       "12.5": {
-       "delivered": 751.45,
-       "collected": 751.45
+       "delivered": 852.33,
+       "collected": 852.33
       }
      },
      "inputs": {
@@ -2640,14 +2791,14 @@
          "why": "RE-LOCKED v244 on the same 28 Jul lot, at the 06 Aug count. The lot has not changed; what changed is the leak behind it and the attribution in front of it. The 33.14 count took the observed rate from 16.19% to 18.87%, and SHRINK_ATTRIB went to 1, so the whole leak is now carried in the price and nothing is absorbed. Effective cost RM53.19 to RM60.01. These numbers are the unlocked path’s own output, captured rather than hand-computed: the lock was deleted, pxCost() run fresh at attrib 1, and the result written back here. Absorbed is 0 by definition at full attribution."
         },
         "cur": {
-         "qty": 50,
-         "total": 2200,
-         "rate": 44,
-         "date": "2026-08-20",
+         "qty": 25,
+         "total": 1250,
+         "rate": 50,
+         "date": "2026-08-26",
          "sup": "SA5-BTR"
         },
-        "days": 20,
-        "sinceLot": 29
+        "days": 21,
+        "sinceLot": 30
        },
        "lockBase": {
         "lockedOn": "2026-08-06",
@@ -2674,30 +2825,31 @@
         "shrink": null
        },
        "lot": {
-        "qty": 50,
-        "total": 2200,
-        "rate": 44,
-        "date": "2026-08-20",
+        "qty": 25,
+        "total": 1250,
+        "rate": 50,
+        "date": "2026-08-26",
         "sup": "SA5-BTR"
        },
+       "meanLot": 23.660714285714285,
        "quoteRate": 56,
        "costBasis": {
         "freightPerTrip": {
-         "rm": 60
+         "rm": 30
         },
         "txnPerDelivery": {
-         "rm": 50
+         "rm": 10
         },
         "deliveredShare": {
          "v": 0.2
         }
        },
        "attrib": 1,
-       "shrinkRate": 0.05161497669934117,
+       "shrinkRate": 0.04777629034657148,
        "avgDel": {
-        "n": 97,
-        "kg": 246.45,
-        "mean": 2.5407
+        "n": 101,
+        "kg": 255.95,
+        "mean": 2.5342
        }
       },
       "policy": {
@@ -2768,44 +2920,44 @@
      "replCost": 7,
      "floors": {
       "1": {
-       "delivered": 83.99,
-       "collected": 33.99
+       "delivered": 44.1,
+       "collected": 34.1
       },
       "2": {
-       "delivered": 92.99,
-       "collected": 42.99
+       "delivered": 53.21,
+       "collected": 43.21
       },
       "3": {
-       "delivered": 101.98,
-       "collected": 51.98
+       "delivered": 62.31,
+       "collected": 52.31
       },
       "4": {
-       "delivered": 110.98,
-       "collected": 60.98
+       "delivered": 71.41,
+       "collected": 61.41
       },
       "5": {
-       "delivered": 119.97,
-       "collected": 69.97
+       "delivered": 80.52,
+       "collected": 70.52
       },
       "0.5": {
-       "delivered": 79.5,
-       "collected": 29.5
+       "delivered": 39.55,
+       "collected": 29.55
       },
       "1.5": {
-       "delivered": 88.49,
-       "collected": 38.49
+       "delivered": 48.66,
+       "collected": 38.66
       },
       "2.5": {
-       "delivered": 97.49,
-       "collected": 47.49
+       "delivered": 57.76,
+       "collected": 47.76
       },
       "6.25": {
-       "delivered": 131.22,
-       "collected": 81.22
+       "delivered": 91.9,
+       "collected": 81.9
       },
       "12.5": {
-       "delivered": 187.43,
-       "collected": 137.43
+       "delivered": 148.79,
+       "collected": 138.97
       }
      },
      "inputs": {
@@ -2835,14 +2987,14 @@
          "why": "Locked on the first oil lot, the day it landed."
         },
         "cur": {
-         "qty": 50,
-         "total": 350,
-         "rate": 7,
-         "date": "2026-08-11",
+         "qty": 30,
+         "total": 230,
+         "rate": 7.6667,
+         "date": "2026-08-26",
          "sup": "SP7-PUD"
         },
-        "days": 20,
-        "sinceLot": 20
+        "days": 21,
+        "sinceLot": 21
        },
        "lockBase": {
         "lockedOn": "2026-08-06",
@@ -2869,30 +3021,31 @@
         "shrink": null
        },
        "lot": {
-        "qty": 50,
-        "total": 350,
-        "rate": 7,
-        "date": "2026-08-11",
+        "qty": 30,
+        "total": 230,
+        "rate": 7.6667,
+        "date": "2026-08-26",
         "sup": "SP7-PUD"
        },
+       "meanLot": 43.333333333333336,
        "quoteRate": 56,
        "costBasis": {
         "freightPerTrip": {
-         "rm": 60
+         "rm": 30
         },
         "txnPerDelivery": {
-         "rm": 50
+         "rm": 10
         },
         "deliveredShare": {
          "v": 0.2
         }
        },
        "attrib": 1,
-       "shrinkRate": 0.08835341365461849,
+       "shrinkRate": 0.08178438661710039,
        "avgDel": {
-        "n": 5,
-        "kg": 71,
-        "mean": 14.2
+        "n": 6,
+        "kg": 81,
+        "mean": 13.5
        }
       },
       "policy": {
@@ -2965,42 +3118,25 @@
      }
     }
    },
-   "v": "v379"
+   "v": "v383"
   },
   "OPEN": {
-   "at": "2026-08-26T11:20:02.255Z",
-   "count": 7,
+   "at": "2026-08-26T19:45:12.660Z",
+   "count": 6,
    "byKey": {
-    "CJ4-BJ|undefined|450": {
-     "d": null,
+    "CJ4-BJ|2026-08-26|450": {
+     "d": "2026-08-26",
      "p": "CJ4-BJ",
      "dir": "S",
      "q": 6.25,
      "t": 450,
-     "cash": 0,
+     "cash": 450,
      "mv": 0,
-     "st": "pend",
-     "oweRM": 450,
+     "st": "oweStock",
      "oweKg": 6.25,
      "rid": "s107",
-     "key": "CJ4-BJ|undefined|450"
-    },
-    "CM4-MK|2026-08-24|380": {
-     "d": "2026-08-24",
-     "p": "CM4-MK",
-     "dir": "S",
-     "q": 4,
-     "t": 380,
-     "cash": 0,
-     "mv": 4,
-     "st": "dueMoney",
-     "oweRM": 380,
-     "rid": "s105",
-     "paidOn": "2026-08-24",
-     "deliveredOn": "2026-08-24",
-     "key": "CM4-MK|2026-08-24|380",
-     "age": 2,
-     "exp": 380
+     "paidOn": "2026-08-26",
+     "key": "CJ4-BJ|2026-08-26|450"
     },
     "CR3-DAM|2026-08-24|80": {
      "d": "2026-08-24",
@@ -3015,7 +3151,7 @@
      "rid": "s106",
      "deliveredOn": "2026-08-24",
      "key": "CR3-DAM|2026-08-24|80",
-     "age": 2,
+     "age": 3,
      "exp": 80
     },
     "CE4-AD|2026-08-20|435": {
@@ -3045,7 +3181,7 @@
      "rid": "s092",
      "deliveredOn": "2026-08-18",
      "key": "CR3-DAM|2026-08-18|80",
-     "age": 8,
+     "age": 9,
      "exp": 40
     },
     "CE4-CHE|2026-08-18|500": {
@@ -3081,24 +3217,24 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 10,
-     "free": 4.5,
-     "owedOut": 5.5,
-     "coverDays": 1.1,
-     "rate": 4.25,
-     "owedToYou": 540,
+     "onHand": 25.5,
+     "free": 13.75,
+     "owedOut": 11.75,
+     "coverDays": 2.9,
+     "rate": 4.82,
+     "owedToYou": 160,
      "promised": 11.75,
-     "short": 1.75
+     "short": 0
     },
     "oil": {
      "name": "Oil",
-     "onHand": 0,
-     "free": 0,
-     "owedOut": 0,
-     "coverDays": 0,
-     "rate": 0.07,
+     "onHand": 20,
+     "free": 18.46,
+     "owedOut": 1.54,
+     "coverDays": 23.5,
+     "rate": 0.79,
      "owedToYou": 0,
-     "promised": 0,
+     "promised": 1.54,
      "short": 0
     }
    },
@@ -3106,7 +3242,7 @@
     "salt": "2026-08-24",
     "oil": "2026-08-23"
    },
-   "v": "v379"
+   "v": "v383"
   }
  }
 }

@@ -2045,7 +2045,12 @@ section("Fold — an approved batch becomes records in the book (v340)");
     ok(ful && ful.cash === 450 && ful.deliveredQty === 6.25 && ful.date === "2026-08-23" && ful.deliveredOn === "2026-08-23" && ful.paidOn === "2026-08-23",
       "the fulfilment moved the cash and the units and dated the order");
     ok(ful && ful.amend && ful.amend.length === 2 && ful.amend[0].note.startsWith("as booked") && ful.amend[1].kg === 6.25 && /in full/.test(ful.amend[1].note), "and extended the trail from an as-booked seed");
-    ok(ful && ful.cost === 44, "salt that left the shelf took the shelf's cost");
+    /* v381: DERIVED, NOT PINNED. This read 44 because that was the shelf cost the day it was
+       written, so the first lot to move the basis broke it for no good reason. STOCK_COST in
+       the master is where the fold itself reads the figure, so read it from the same place and
+       the assertion survives every lot that lands. */
+    const shelfCost = +(/const STOCK_COST=([\d.]+);/.exec(master) || [])[1];
+    ok(ful && ful.cost === shelfCost, `salt that left the shelf took the shelf's cost (RM${shelfCost})`);
     ok(B.PROD_OPENING.oil.stated === 3 && B.COUNT_ON.oil === "2026-08-23", "the oil count set the stated shelf and moved COUNT_ON");
     ok(B.roster.includes("CT7-KLC"), "the registration joined the roster");
     ok(Math.abs(B.STATED_STOCK - (from - 0.5 - 6.25)) < 1e-9, `the salt shelf rolled ${from} to ${B.STATED_STOCK}`);

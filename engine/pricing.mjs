@@ -31,7 +31,12 @@ const PRICING_ENGINE=(function(){
 /* ============ THE COST STACK (v232, v233, v240, v280) ============
    What a unit costs to put in front of a customer, in four components, each tagged for IAS 2.
    1. the rate on the latest lot, not a 30-day average: a price set today has to replace today;
-   2. freight, spread over the lot it arrived on, so a big lot carries it thinly;
+   2. freight, spread over the AVERAGE lot this book has received rather than over whichever
+      one arrived last (v381, his instruction): a trip is a recurring cost and the lots keep
+      coming, so pinning it to the last purchase made the figure swing on nothing. Oil's
+      freight went RM1.20 to RM2.00 a unit when a 30-unit buy followed two 50-unit ones, and
+      every oil floor moved with it. The mean settles as the book grows; the latest lot is
+      still the fallback while a product has no history to average;
    3. the leak: the units that never reach a paying customer divide the cost rather than add to
       it, and SHRINK_ATTRIB says how much of the leak the price carries;
    4. delivery, a per-ORDER cost divided by what an average order actually carries, and
@@ -57,12 +62,16 @@ function costStack(I){
             delPerOrder:COST_BASIS.txnPerDelivery.rm,
             locked:true,lockedOn:L.lockedOn,lockAge:LK.days};
   }
-  /* 1. WHAT THE GOODS COST. The rate on the latest lot, else the dearest live quote. */
+  /* 1. WHAT THE GOODS COST. The rate on the latest lot, else the highest live quote. */
   const L=I.lot;
   const lot=pxOver.cost!=null?+pxOver.cost:(L?L.rate:I.quoteRate);
-  /* 2. GETTING THEM HERE. Spread over the lot it arrived on. */
+  /* 2. GETTING THEM HERE. Spread over the AVERAGE lot received, not the latest one (v381).
+     lotQty stays the latest lot because the rest of the stack reports on the lot in hand;
+     only the freight divisor moves to the mean. A product with no averaged history falls
+     back to the lot, so nothing is undefined on the first purchase of a new book. */
   const lotQty=(pxOver.cost!=null&&L)?L.qty:(L?L.qty:null);
-  const freight=(LKb&&pxOver.cost!=null)?LKb.freight:(lotQty?COST_BASIS.freightPerTrip.rm/lotQty:0);
+  const freightQty=(I.meanLot>0)?I.meanLot:lotQty;
+  const freight=(LKb&&pxOver.cost!=null)?LKb.freight:(freightQty?COST_BASIS.freightPerTrip.rm/freightQty:0);
   const landed=lot+freight;                   // <- IAS 2 inventoriable cost, and nothing below this line is
   /* 3. THE UNITS THAT NEVER REACH A PAYING CUSTOMER. It divides rather than adds: losing 8% of
      what you buy means the 92% that sells has to return the cost of 100%. When a lock exists and

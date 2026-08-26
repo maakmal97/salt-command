@@ -130,6 +130,15 @@ export function plan(book, staged, notes) {
            card built for the Approve screen and the entry is what was actually asked for. */
         const fields = pay.fields && typeof pay.fields === "object" ? pay.fields : null;
         if (!fields || !Object.keys(fields).length) { out.refused.push({ id: it.id, why: `the correction on ${it.amends} carries no fields to set` }); continue; }
+        /* v383: A FIELD THIS BOOK CANNOT CORRECT IS REFUSED, NOT QUIETLY DROPPED. The apply
+           writes only what is in CORRECTABLE, but it built the `mod` line and the trail note
+           from whatever keys the caller supplied, so the two disagreed the moment a key was
+           wrong. A correction naming `customer` rather than `party` was accepted on 27 Aug:
+           it recorded "customer CZ4-TBC to CZ4-MK" in mod, extended the trail, and left the
+           party exactly as it was. A row asserting a change it did not make is worse than a
+           refusal, and it is the one thing a ledger must never do. */
+        const unknown = Object.keys(fields).filter((k) => !E.CORRECTABLE.includes(k));
+        if (unknown.length) { out.refused.push({ id: it.id, why: `the correction on ${it.amends} names ${unknown.join(", ")}, which ${unknown.length > 1 ? "are not correctable fields" : "is not a correctable field"} (the party of a row is \`party\`, not \`customer\`)` }); continue; }
         entry.pay = { date: pay.date || null, kind: "Correction", cash: 0, kg: 0, fields };
         const words = Object.keys(fields).map((k) => `${k} to ${fields[k] === null ? "(cleared)" : fields[k]}`);
         entry.does.push(`correct ${dir === "BUY" ? "lot" : "order"} ${it.amends}: ${words.join(", ")}`);
