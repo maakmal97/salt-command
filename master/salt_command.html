@@ -5759,7 +5759,13 @@ function lotOutlook(){
   const mean=mixMean;
   const sd=pool.length>1?Math.sqrt(pool.reduce((a,x)=>a+Math.pow(x.r-(pool.reduce((y,z)=>y+z.r,0)/pool.length),2),0)/(pool.length-1)):0;
   /* FIFO: consume physically delivered units from the oldest received lot first */
-  const lots=purchases.filter(poLive).filter(p=>poRecvKg(p)>0.0001)
+  /* v384: pPurch(PROD), not the bare `purchases`. This walked BOTH books: fifteen lots under
+     each product, so Salt's two Oil lots of 50 unit at RM7 sat inside the list its counted
+     shelf is allocated against, newest first. It read right only because today's newest lot
+     happens to be Salt's; at the 100 unit Salt held on 28 Jul the walk would have run past
+     18 Aug and 13 Aug into the 11 Aug OIL lot and costed Salt's shelf at RM7. Same fault as
+     v236 in supplierStats and v365 in the tier table, in the third place it lived. */
+  const lots=pPurch(PROD).filter(poLive).filter(p=>poRecvKg(p)>0.0001)
     .map(p=>({p:p,recv:poRecvKg(p),date:p.receivedOn||p.date,
               rate:+(p.total/p.qty).toFixed(2),sup:p.supplier}))
     .sort((a,b)=>a.date<b.date?-1:1);
@@ -5796,7 +5802,13 @@ function lotOutlook(){
   });
   rows.reverse();                                   // back into receipt order for display
   const sum=k=>+rows.reduce((a,r)=>a+r[k],0).toFixed(2);
-  return {rows:rows,best:best,bands:bands,mixBest:+mixBest.toFixed(2),mean:+mean.toFixed(2),sd:+sd.toFixed(2),n:pool.length,
+  /* v384, THE v379 SHAPE AGAIN: a ceiling computed over no trade at all is not zero, it is
+     absent. With no priced sale the bands are empty, so mixBest and mixMean are both 0, every
+     maxRev and expRev is 0, and maxMar comes back as MINUS THE WHOLE COST OF THE SHELF. The
+     desk would have printed a lot bought yesterday as a total loss because nothing had been
+     sold from it yet. `priced` says so, and the callers say "no trade" rather than print. */
+  return {rows:rows,best:best,bands:bands,priced:priced.length>0,
+    mixBest:+mixBest.toFixed(2),mean:+mean.toFixed(2),sd:+sd.toFixed(2),n:pool.length,
     windowed:recent.length>=3,shrink:shrink,
     tot:{left:sum('left'),maxRev:sum('maxRev'),maxMar:sum('maxMar'),
          expRev:sum('expRev'),expMar:sum('expMar'),costLeft:sum('costLeft'),
@@ -5860,8 +5872,12 @@ function tabSourcing(){
     <div class="kpi ${ss.some(s=>s.defaults)?'r':'g'}"><div class="l">Lost to defaults</div><div class="v">${fmt0(ss.reduce((a,s)=>a+s.defaultRM,0))}</div><div class="n">${ss.reduce((a,s)=>a+s.defaults,0)} lot${ss.reduce((a,s)=>a+s.defaults,0)===1?'':'s'} paid for and never delivered</div></div>
   </div>
 
-  <h2 style="margin-top:18px">The next lot <span class="sub" style="font-weight:400">${PROD===DEFAULT_PROD?`stated ${SOURCING_PLAN.statedOn}, and what the shelf says about it`:'no stated plan for this product'}</span> <span class="rule"></span></h2>
-  ${PROD!==DEFAULT_PROD?`<div class="card"><div class="dsc">No stated plan for this product. SOURCING_PLAN is one hand-entered lot, for Salt, on the Salt supplier ladder; the same class of mistake supplierStats() was fixed for at v236.</div></div>`:(()=>{const s=sourcingPlan();
+  <h2 style="margin-top:18px">The next lot ${PROD===DEFAULT_PROD?`<span class="sub" style="font-weight:400">stated ${SOURCING_PLAN.statedOn}, and what the shelf says about it</span>`:'<span class="rtag">no stated plan</span>'} <span class="rule"></span></h2>
+  ${PROD!==DEFAULT_PROD?''/* v384: THE STATE GOES ON THE HEADING AND THE CARD GOES. The card held one
+      free-standing .dsc, which is exactly what stripMethod sweeps, so every book but Salt drew
+      a heading promising the next lot over a completely empty box. SOURCING_PLAN is one
+      hand-entered lot on the Salt ladder and there is nothing else to say; a chip says it. */
+    :(()=>{const s=sourcingPlan();
     const late=s.gapDays!=null&&s.gapDays>0;
     return `<div class="card">
     <div class="kpis k4">
@@ -5870,8 +5886,16 @@ function tabSourcing(){
       <div class="kpi ${late?'r':'g'}"><div class="l">${late?'Gap to cover':'Lands in time'}</div><div class="v" style="${late?'color:var(--crim)':'color:var(--grn)'}">${late?s.gapDays+'d':'none'}</div><div class="n">${late?`${kg(s.gapKg)} of demand with an empty shelf`:'the lot lands before the shelf empties'}</div></div>
       <div class="kpi gold"><div class="l">Cover it buys</div><div class="v">${s.cover==null?'&mdash;':s.cover+'d'}</div><div class="n">${kg(s.usable)} usable of ${kg(s.q)}, at ${s.lvl}% shrinkage</div></div>
     </div>
-    <div class="insight" style="margin-top:11px"><b>Next week is covered, and that part is not in doubt.</b>
-      ${kg(s.free)} is free to sell, the reorder mark of ${kg(RULES.reorderKg)} is not reached until <b>${s.reorder}</b>, and nothing needs to be bought before then.
+    <div class="insight" style="margin-top:11px"><b>${!(s.rate>0)
+        ? `No trade in the last four weeks, so there is no rate to say when the shelf empties.`
+        : late
+          ? `The stated lot lands ${s.gapDays} day${s.gapDays===1?'':'s'} after the shelf empties on ${s.dry}.`
+          : (s.reD!=null&&s.reD<=0)
+            ? `The shelf is already under the ${kg(RULES.reorderKg)} reorder mark, and the stated lot lands before it empties.`
+            : `Covered to ${s.dry}, and the stated lot lands before that.`}</b>
+      ${kg(s.free)} is free to sell${s.reD==null?''
+        :s.reD<=0?`, which is past the reorder mark of ${kg(RULES.reorderKg)} already`
+        :`, and the reorder mark of ${kg(RULES.reorderKg)} is not reached until <b>${s.reorder}</b>`}.
       ${late?`<b style="color:var(--crim)">The stated date is the problem, not the size.</b> At ${kg(s.rate)} a day the shelf empties on <b>${s.dry}</b>, which is <b>${s.gapDays} days</b> before ${s.P.label}. That is ${kg(s.gapKg)} of demand arriving at an empty shelf, and on the four-week rate of ${kg(s.r28)} a day it empties earlier still, on ${s.dry28}.`
         :`The lot lands before the shelf empties, so no bridge is needed.`}</div>
     ${late?`<div class="dsc" style="margin-top:9px"><b>Two ways out, and they are not equally good.</b>
@@ -5880,13 +5904,19 @@ function tabSourcing(){
     <div class="dsc" style="margin-top:9px"><b>The size is right for a monthly lot.</b> ${kg(s.q)} is about ${kg(s.monthly)} of demand at the fortnight rate and ${kg(s.monthly28)} at the four-week rate, so one lot a month is the correct shape. It is also <b>${s.multiple}&times;</b> the largest lot this desk has ever bought${s.biggest?` (${kg(s.biggest.qty)} on ${s.biggest.date} at ${fmt(s.biggest.total/s.biggest.qty)}/unit)`:''}, which is a step up in one go rather than a repeat of something proven.</div>
     <div class="dsc" style="margin-top:7px"><b>${fmt(s.rt)}/unit is an assumption and is labelled as one.</b> It is ${esc(s.P.rateBasis)} At that rate the lot costs <b>${fmt0(s.cash)}</b>, loses ${kg(s.lossKg)} to expected shrinkage, and each usable unit carries an effective <b>${fmt(s.eff)}</b>. It would pull the weighted average from ${fmt(wavgBuy)} to <b>${fmt(s.newWavg)}</b>. ${s.quoted?'':'<b>Get a quote at this size before treating any of it as real.</b>'}</div>
     ${s.top&&s.top.recentShare>80?`<div class="dsc" style="margin-top:7px"><b style="color:var(--crim)">The real risk here is the counterparty, not the price.</b> ${ID(s.top.id)} is ${s.top.recentShare.toFixed(0)}% of every unit bought in the last ${s.top.recentDays} days, ${s.top.lots} lots, all filled. ${fmt0(s.cash)} to one name is <b>${s.lostMultiple}&times;</b> the ${fmt0(s.lost)} already lost to ${ID(supplierReceivable.party)}, who was also reliable until he was not. Nothing here says do not buy it: it says a lot this size is the one worth splitting, or worth paying against delivery rather than in advance.</div>`:''}
-    <div class="dsc" style="margin-top:7px"><b>Nothing above is booked.</b> It is a stated intention with the arithmetic run against today's shelf, and every date in it moves as the shelf moves. Test it in the simulator below, and it becomes a figure only when it is recorded on the Transaction tab.</div>
+    <div class="dsc" style="margin-top:7px"><b>Nothing above is booked.</b> It is a stated intention with the arithmetic run against today's shelf, and every date in it moves as the shelf moves. It becomes a figure only when it is recorded on the Transaction tab.</div>
     </div>`;})()}
 
-  <h2 style="margin-top:18px">What each lot can still earn <span class="sub" style="font-weight:400">ceiling, expectation, and the gap between them</span> <span class="rule"></span></h2>
   ${(()=>{const L=lotOutlook();
     const live=L.rows.filter(r=>r.left>0.009);
-    if(!live.length)return '<div class="card"><div class="dsc">No received lot has anything left on the shelf.</div></div>';
+    /* v384: the heading is inside here now, so a state can go ON it instead of into a card
+       that stripMethod empties. Two states get a chip and nothing else: an empty shelf, and
+       a shelf with no priced sale to value it against. The second is the v379 shape -- with
+       no trade the ceiling and the expectation are both 0, so the margin columns would have
+       reported MINUS THE WHOLE COST of a lot bought yesterday as though it were a loss. */
+    const hd=c=>`<h2 style="margin-top:18px">What each lot can still earn <span class="sub" style="font-weight:400">ceiling, expectation, and the gap between them</span>${c?` <span class="rtag">${c}</span>`:''} <span class="rule"></span></h2>`;
+    if(!live.length)return hd('nothing left on the shelf');
+    if(!L.priced)return hd('no priced sale to value it against');
     const b=L.best;
     const rows=live.map(r=>`<tr>
       <td class="l">${r.date}<div style="font-size:10px;color:var(--dim)">${ID(r.sup)} &middot; ${fmt(r.rate)}/unit</div></td>
@@ -5897,7 +5927,7 @@ function tabSourcing(){
       <td style="color:var(--crim)">${fmt0(r.lostLeak)}</td>
       <td style="color:var(--gold)">${fmt0(r.lostPrice)}</td></tr>`).join('');
     const T=L.tot, gap=+(T.maxRev-T.expRev).toFixed(2);
-    return `<div class="card">
+    return hd('')+`<div class="card">
     <div class="kpis k5" style="margin-bottom:12px">
       <div class="kpi"><div class="l">Still on the shelf</div><div class="v">${kg(T.left)}</div><div class="n">${fmt0(T.costLeft)} of salt at what it cost</div></div>
       <div class="kpi gold"><div class="l">Maximum revenue</div><div class="v">${fmt0(T.maxRev)}</div><div class="n">your best price at every size, nothing lost</div></div>
@@ -5941,7 +5971,7 @@ function tabSourcing(){
         <td>${kg(t.qty*(1-c.shrink))}</td><td>${cv.rate>0?(t.qty*(1-c.shrink)/cv.rate).toFixed(1)+'d':'&mdash;'}</td>
         <td><b>${fmt0(qt.profit)}</b></td></tr>`;}).join('')}
   </tbody></table><div class="dsc" style="margin-top:8px">Quoted ${pq?pq.quotedOn:''} by ${pq?ID(pq.supplier):''}, and indicative rather than a purchase. The profit column holds the resale price fixed and moves only the cost, so it isolates what the buying rate alone is worth.</div></div>`;})()}
-  <div class="dsc" style="margin-top:14px"><b>Nothing on this tab books anything.</b> A lot becomes a figure only when it is recorded on the Transaction tab as a buy.</div>`;
+  <div class="dsc" style="margin-top:14px"><b>Nothing on this tab books anything.</b> A lot becomes a figure only when it is recorded as a buy on the Transaction tab.</div>`;
 }
 
 /* ============ TAB: ANALYSIS (v149) ============
@@ -6322,6 +6352,37 @@ function tabMap(){
   <div class="dsc" style="margin-top:9px"><b>The name, the coordinates and the provenance are no longer here, and that is the point.</b> This desk is served publicly, so everything on it is readable by anyone holding the address, and a named neighbourhood sitting beside a party code identifies a customer far better than the code ever did on its own. The suffix stays because it is already inside every code and discloses nothing further. The rest moved to the directory on the laptop, beside the real names, where it can still be read when a new suffix needs siting. <b>The map itself keeps only position, rounded to about 1.1km</b>, which a heatmap blurs over in any case.</div></div>`;
 }
 
+/* ============ THE SHELF CALL (v384) ============
+   THE ONE THING THIS VIEW EXISTS TO ANSWER IS WHETHER TO BUY, AND IT WAS THE HARDEST THING
+   ON IT TO FIND. Cover sat as the first tile of the SECOND KPI strip, the reorder mark as the
+   fourth tile of the same strip, and the instruction itself was inside an insight that
+   stripMethod cuts at the first full stop -- which on 27 Aug fell exactly BEFORE the warning:
+   "the 4.5 unit free to sell runs out on 28 Aug." and then nothing about being 10.5 unit past
+   the mark. A dashboard that loses the instruction and keeps the description has the wrong
+   half. So the call is stated once, at the top, in the same Do grammar Today already uses,
+   where the state is a rail colour and a label rather than a sentence a cut can take away.
+
+   IT COMPUTES NOTHING. Every figure is read off coverStats(), which is the position engine's,
+   and the branches are comparisons between figures it returned. There is no second opinion
+   here for the same reason data.json exists. */
+function shelfCall(cv,oversold,free){
+  const dry=cv.zero?cv.zero.toLocaleDateString('en-GB',{day:'2-digit',month:'short'}):null;
+  if(oversold)return {sev:'var(--crim)',k:'Oversold',f:kg(-free),
+    t:`You owe ${kg(-free)} more than is on the shelf`,
+    w:`${kg(defKg)} owed out against ${kg(currentStock)} on hand. Nothing more can be promised until a lot lands.`};
+  if(currentStock<0.009)return {sev:'var(--crim)',k:'Empty',f:'0 d',
+    t:'The shelf is empty',
+    w:'Nothing to sell on this book. An order you cannot fill is never recorded, so the loss will not appear in any figure on this desk.'};
+  if(!(cv.rate>0))return {sev:'var(--mut)',k:'Quiet',f:'&mdash;',
+    t:'No trade in four weeks',
+    w:`${kg(free)} free to sell, and no rate to measure it against, so cover cannot be stated.`};
+  if(cv.below)return {sev:cv.days<3?'var(--crim)':'var(--gold)',k:'Buy',f:cv.days+' d',
+    t:`Buying is overdue by ${kg(cv.shortBy)}`,
+    w:`${kg(free)} free to sell at ${kg(cv.rate)} a day, already under the ${kg(cv.reorderAt)} mark. The shelf runs dry ${cv.days<1?'today':'on '+dry}.`};
+  return {sev:'var(--grn)',k:'Clear',f:cv.days+' d',
+    t:`Clear by ${kg(-cv.shortBy)} above the reorder mark`,
+    w:`${kg(free)} free to sell at ${kg(cv.rate)} a day. The ${kg(cv.reorderAt)} mark comes first; the shelf runs dry on ${dry}.`};
+}
 /* ============ TAB: INVENTORY & MARGIN ============ */
 function tabInventory(){
   /* v365: openingFor(PROD), not the bare `opening` (Salt's alone). The KPI above these
@@ -6353,10 +6414,26 @@ function tabInventory(){
      listed salt's shrinkage rows and 'still unexplained' subtracted a whole-desk attributed
      total from a per-product plug. */
   const suRows=selfUseLog.filter(r=>(r.product||DEFAULT_PROD)===PROD).sort((a,b)=>a.date<b.date?1:-1),suKg=+suRows.reduce((a,r)=>a+r.kg,0).toFixed(2);
-  const sec=(t,q,n,inner)=>`<details class="obsec"${n>0?' open':''}><summary>${t} <span class="q">${q}</span><span class="ct${n>0?'':' zero'}">${n>0?n:'none'}</span></summary><div class="card">${n>0?inner:'<div class="dsc">None.</div>'}</div></details>`;
+  /* v384: SHUT, and the summary carries the answer. These three were open on every load and
+     on both books, so the lead part of the Stock view opened as six standing sections of
+     workings. Every one of them is read once and then trusted, which is what a fold is for;
+     nothing is deleted, and `q` now states the figure so the shut state still says something. */
+  const sec=(t,q,n,inner)=>`<details class="obsec"><summary>${t} <span class="q">${q}</span><span class="ct${n>0?'':' zero'}">${n>0?n:'none'}</span></summary><div class="card">${n>0?inner:'<div class="dsc">None.</div>'}</div></details>`;
+  /* the fold writes <b> into a ledger NOTE and the desk escapes every ledger field, so the
+     tags were printed at the reader as text. Strip the markers, keep every word; the
+     escaping stays, because a note is book data and must never render as markup. */
+  const plain=t=>String(t||'').replace(/<\/?b>/g,'');
+  const lead1=t=>{const m=t.match(/^[\s\S]*?[.!?](?=\s|$)/);return m?m[0]:t;};
+  const call=shelfCall(cv,oversold,free);
   return `<h1>Inventory</h1>
   <div class="dsc dsclead">What is on the shelf, what it cost, and how long it lasts at the rate you are shipping.</div>
-  <h2>What is on the shelf <span class="rule"></span></h2>
+  <div class="acts"><div class="act" style="--sev:${call.sev}">
+    <div class="actk">${call.k}</div>
+    <div><div class="actt">${call.t}</div><div class="actw">${call.w}</div></div>
+    <div class="actm">${call.f}</div>
+    <div class="actb"><button class="navlink" onclick="switchTab('sourcing')">Sourcing &rarr;</button></div>
+  </div></div>
+  <h2 style="margin-top:18px">What is on the shelf <span class="rule"></span></h2>
   <div class="kpis k3">
     <div class="kpi"><div class="l">Stock on hand</div><div class="v">${kg(currentStock)}</div><div class="n">${countedFor(PROD)!=null?'counted '+countedFor(PROD):'no count on this book, so the ledger stands'}</div></div>
     <div class="kpi ${oversold?'r':'gold'}"><div class="l">Free to sell</div><div class="v">${kg(free)}</div><div class="n">${defKg>0.009?`${kg(defKg)} owed out`:'nothing reserved'}</div></div>
@@ -6383,16 +6460,35 @@ function tabInventory(){
   <h2 style="margin-top:18px">Where the shrinkage went <span class="rule"></span></h2>
   <div class="card">${suRows.length
     ? `<table><thead><tr><th class="l">Date</th><th class="l">Where</th><th>Unit</th><th>At cost</th><th class="l">Note</th></tr></thead><tbody>`
-      +suRows.map(r=>`<tr><td class="l">${r.date}</td><td class="l">${LOSS_LABEL[r.why]||r.why}</td><td>${kg(r.kg)}</td><td>${fmt0(r.kg*wavgBuy)}</td><td class="l">${esc(r.note||'')}</td></tr>`).join('')
+      +suRows.map(r=>`<tr><td class="l">${r.date}</td><td class="l">${LOSS_LABEL[r.why]||r.why}</td><td>${kg(r.kg)}</td><td>${fmt0(r.kg*wavgBuy)}</td><td class="l">${esc(lead1(plain(r.note)))}</td></tr>`).join('')
       +`<tr class="tot"><td class="l" colspan="2">Attributed</td><td>${kg(suKg)}</td><td>${fmt0(suKg*wavgBuy)}</td><td></td></tr>`
       +`<tr class="tot"><td class="l" colspan="2">Still unexplained</td><td>${kg(Math.max(0,selfUse-suKg))}</td><td>${fmt0(Math.max(0,selfUse-suKg)*wavgBuy)}</td><td class="l">the plug that remains</td></tr>`
       +`</tbody></table>`
-    : `<div class="dsc">Nothing attributed yet. <b>${kg(selfUse)}</b> has gone missing against <b>${kg(buyKg+op.qty)}</b> handled, <b>${((selfUse/(buyKg+op.qty))*100).toFixed(1)}%</b>, worth about <b>${fmt0(selfUse*wavgBuy)}</b> at the ${fmt(wavgBuy)}/unit average. That is <b>${((selfUse*wavgBuy)/grossMargin*100).toFixed(0)}%</b> of every ringgit of gross margin the desk has ever earned, and it is currently a single unexplained number.<br><br>Record what you know as it happens under <b>Workbench &rarr; Self-use or loss</b>. The count still wins, so nothing here moves a figure; it splits the plug into the part you chose and the part you lost, which are two very different problems.</div>`}</div>
+    : (()=>{
+      /* v384, TWICE THE v379 SHAPE, AND THE PROSE WAS INVISIBLE ANYWAY. This paragraph divided
+         by `buyKg+op.qty` and by `grossMargin`, neither of which is guaranteed to be anything:
+         a book with nothing bought printed NaN%, and a book whose margin is nil or negative
+         printed Infinity% or a negative share of a loss, both as though they were findings.
+         It was also a free-standing .dsc, so stripMethod swept it and left the card EMPTY under
+         its own heading. The figures now sit in a KPI row, which stripMethod does not touch and
+         which reads at a glance, and each one says "no basis" rather than printing one. */
+      const handled=+(buyKg+op.qty).toFixed(2);
+      if(selfUse<0.009)return `<div class="kpis k3"><div class="kpi gold"><div class="l">Unexplained</div><div class="v">none</div><div class="n">the ledger and the count agree</div></div></div>`;
+      const share=handled>0.009?((selfUse/handled)*100).toFixed(1)+'%':'&mdash;';
+      const mar=grossMargin>0.009?((selfUse*wavgBuy)/grossMargin*100).toFixed(0)+'%':'&mdash;';
+      return `<div class="kpis k3">
+        <div class="kpi r"><div class="l">Gone missing</div><div class="v">${kg(selfUse)}</div><div class="n">${handled>0.009?share+' of the '+kg(handled)+' handled':'nothing bought to measure it against'}</div></div>
+        <div class="kpi r"><div class="l">At cost</div><div class="v">${fmt0(selfUse*wavgBuy)}</div><div class="n">at the ${fmt(wavgBuy)}/unit average</div></div>
+        <div class="kpi p"><div class="l">Of gross margin</div><div class="v">${mar}</div><div class="n">${grossMargin>0.009?'of every ringgit the desk has earned':'no margin yet to measure it against'}</div></div>
+      </div>
+      <div class="dsc" style="margin-top:9px">Record what you know under Self-use or loss on <button class="navlink" onclick="switchTab('add')">Transaction &rarr;</button>. The count still wins, so nothing here moves a figure; it splits the plug into the part you chose and the part you lost.</div>`;})()}</div>
+  ${sec('Why each loss is booked where it is',suRows.length?`${kg(suKg)} attributed across ${suRows.length} entr${suRows.length===1?'y':'ies'}`:'nothing attributed yet',suRows.length,
+    suRows.map(r=>`<div class="dsc" style="margin-top:9px"><b>${r.date} &middot; ${LOSS_LABEL[r.why]||r.why} &middot; ${kg(r.kg)}</b><br>${esc(plain(r.note))}</div>`).join(''))}
 
-  ${sec('Stock reconciliation','how the count is reached, opening to on-hand',recon.length,
+  ${sec('Stock reconciliation',`opening to ${kg(currentStock)} on hand, with ${kg(selfUse)} unexplained`,recon.length,
     `<table><thead><tr><th class="l">Line</th><th>Qty</th><th>Cost</th></tr></thead><tbody>${recon.map(r=>`<tr><td class="l">${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join('')}<tr class="tot"><td class="l">On hand ${stockCounted?'(counted)':'(ledger, never counted)'}</td><td>${kg(currentStock)}</td><td>${fmt(wavgBuy)}/unit avg</td></tr></tbody></table>
     <div class="dsc" style="margin-top:9px">Ledger implies ${kg(ledgerStock)}; the count is ${countedFor(PROD)!=null?kg(countedFor(PROD)):'not taken on this book'}. The gap, <b>${kg(selfUse)}</b>, is booked as self-use / shrinkage &mdash; the count always wins.${loanPre>0?` The ${kg(loanPre)} lent on ${loans.filter(l=>l.preOpening)[0].date} does <b>not</b> appear as a deduction, because it went out before the ${kg(op.qty)} opening was counted and is therefore already inside it. Subtracting it again would remove the same units twice and inflate shrinkage by exactly that much, which is what the desk did until 28 Jul.`:''}</div>`)}
-  ${sec('Lots and sourcing','each purchase, and what is in the cost basis',lots.length,
+  ${sec('Lots and sourcing',`${fmt(wavgBuy)}/unit weighted over ${lotsIn.length} lot${lotsIn.length===1?'':'s'} in the basis`,lots.length,
     `<table><thead><tr><th class="l">Lot</th><th>Qty</th><th>Cost/unit</th><th>Basis</th></tr></thead><tbody>${lots.map(r=>`<tr><td class="l">${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td></tr>`).join('')}</tbody></table>
     <div class="dsc" style="margin-top:9px">Weighted-average cost <b>${fmt(wavgBuy)}/unit</b> over the received lots and opening. Defaulted and in-transit lots are excluded until (and unless) they arrive.</div>`)}
   <details class="obsec" open><summary>Movement <span class="q">opening, received, out, on hand</span></summary><div class="chartbox" style="margin-top:4px"><canvas id="invChart"></canvas></div></details>`;
@@ -10662,7 +10758,11 @@ function trackCharts(){
 }
 function drawInvChart(ic){
   const loanOut=loanDrawKg();
-  const labs=['Opening','Received','Sold','Self-use','On hand'],vals=[opening.qty,buyKg,-(soldKg-loanOut),-selfUse,currentStock],cols=['#e8c66b','#7fd7e8','#ff7a8a','#f0932b','#6ee7a8'];
+  /* v384: openingFor(PROD), not the bare `opening`. This is the v365 fault, left standing in
+     the chart after the table above it was fixed. `opening` is Salt's 4.9 unit under BOTH
+     books, so Oil's movement bar opened on Salt's lot and the walk missed by exactly that
+     difference: 4.9 + 100 - 71 - 34 = -0.1 against a counted 0. With Oil's own 5 it closes. */
+  const labs=['Opening','Received','Sold','Self-use','On hand'],vals=[openingFor(PROD).qty,buyKg,-(soldKg-loanOut),-selfUse,currentStock],cols=['#e8c66b','#7fd7e8','#ff7a8a','#f0932b','#6ee7a8'];
   if(loanOut>0){labs.splice(3,0,'Loan out');vals.splice(3,0,-loanOut);cols.splice(3,0,'#b3a6f5');}  // the walk splits it; the chart should too
   freshChart(ic,{type:'bar',data:{labels:labs,datasets:[{data:vals,backgroundColor:cols,borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},title:{display:true,text:'Inventory movement (unit)',color:'#f4f5f7',font:{size:12}}},scales:{x:{grid:{color:'rgba(255,255,255,0.07)'},ticks:{color:'rgba(244,245,247,0.66)'}},y:{grid:{color:'rgba(255,255,255,0.07)'},ticks:{color:'rgba(244,245,247,0.66)'}}}}});
 }
@@ -13513,7 +13613,7 @@ const PART_Q={today:'what needs doing, ranked by the money at stake',
   receivables:'who owes you, what you owe, and what the ageing ladder says it is worth',
   financials:'the profit and loss, the cash position and the cost of doing business',
   inventory:'what is on the shelf, how long it lasts and where the shrinkage went',
-  sourcing:'the next lot: the quote, the taper, the leak and the buy simulator',
+  sourcing:'the next lot: the quote, the taper, the leak and who you buy from',
   pricing:'the board, the floors and what the book has actually earned',
   concentration:'who buys, who to approach next, and the demand you could not serve',
   network:'associates, their downstream buckets and the rewards',
