@@ -75,11 +75,11 @@ body{margin:0;background:
 .railgroup{margin-bottom:12px;}
 .grouplbl{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--dim);padding:0 8px;margin-bottom:5px;}
 .railfoot{border-top:1px solid var(--line);padding-top:10px;margin-top:4px;}
-.tab{display:block;width:100%;text-align:left;font-size:13px;font-weight:600;letter-spacing:.2px;padding:8px 11px;border-radius:9px;cursor:pointer;background:none;border:1px solid transparent;color:var(--mut);user-select:none;margin-bottom:2px;font-family:inherit;transition:background .12s,color .12s;}
+.tab{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;text-align:left;font-size:13px;font-weight:600;letter-spacing:.2px;padding:8px 11px;border-radius:9px;cursor:pointer;background:none;border:1px solid transparent;color:var(--mut);user-select:none;margin-bottom:2px;font-family:inherit;transition:background .12s,color .12s;}
 .tab:hover{background:#ffffff0c;color:var(--ink);}
 .tab.on{color:#1a1030;border-color:transparent;background:linear-gradient(135deg,var(--acc),var(--accB));font-weight:800;}
 .tabghost{color:var(--dim);font-weight:600;}
-.navct{float:right;min-width:17px;text-align:center;font-size:10px;font-weight:800;padding:1px 5px;border-radius:8px;background:#ffffff14;color:var(--mut);}
+.navct{flex:0 0 auto;min-width:17px;text-align:center;font-size:10px;font-weight:800;padding:1px 5px;border-radius:8px;background:#ffffff14;color:var(--mut);}
 .tab.on .navct{background:#1a103055;color:#1a1030;}
 .main{flex:1;min-width:0;}
 h1{margin:2px 0 0;font-size:28px;font-weight:800;letter-spacing:-.4px;background:linear-gradient(92deg,#fff,#f0dca6 55%,#7fd7e8);-webkit-background-clip:text;background-clip:text;color:transparent;}
@@ -88,6 +88,51 @@ h1{margin:2px 0 0;font-size:28px;font-weight:800;letter-spacing:-.4px;background
 .chip.stamp{margin-left:6px;color:var(--dim);font-variant-numeric:tabular-nums;}
 .chip b{color:var(--ice);}
 .metarow{display:flex;justify-content:space-between;align-items:center;gap:10px;}
+/* ============ THE HEADER IS A BAR, AND IT HOLDS ITS OWN CONTROLS (v378) ============
+   v376 pinned the menu and Names & IDs to the top right corner of the VIEWPORT, which put two
+   discs on top of the header that was already there: the version chip sat underneath them and
+   could not be read. Floating a control over a page is right when the page has nothing at that
+   corner and wrong when it has a header, and this page has a header.
+   SO THEY ARE IN IT. The bar is sticky, so they are reachable from any scroll position, which
+   is what floating them was for in the first place; and they are in the flow, so nothing can
+   sit on top of anything. It is one row at every width and adapts by dropping what the layout
+   already provides: above 860px the rail carries the mark and the tabs, so the bar shows the
+   version and the key alone. Below it the mark and the menu appear. Same markup, same page,
+   one surface since v376.
+   THE TWO AT THE BOTTOM STAY FLOATING, because the bottom corners carry no content of their own
+   and both controls have to be reachable mid-scroll. */
+.deskbar{position:sticky;top:0;z-index:60;display:flex;align-items:center;justify-content:space-between;
+  gap:12px;margin:0 -6px 8px;padding:9px 6px 8px;
+  background:linear-gradient(180deg,var(--bg0) 72%,transparent);
+  -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);}
+.dbtools{display:flex;align-items:center;gap:8px;flex:0 0 auto;margin-left:auto;}
+.deskbar .fabtn{position:static;width:34px;height:34px;box-shadow:var(--gloss);}
+.deskbar .fabtn svg{width:16px;height:16px;}
+.deskbar .navbtn .nbars{gap:3px;}
+.deskbar .navbtn .nbars span{width:15px;}
+body.navopen .deskbar .navbtn .nb1{transform:translateY(5px) rotate(45deg);}
+body.navopen .deskbar .navbtn .nb3{transform:translateY(-5px) rotate(-45deg);}
+/* ============ THE PAGE HEADER (v374) ============
+   HIS INSTRUCTION OF 26 Aug: the top level is the mark and the name, the level under it is
+   when the book was last updated, and the VERSION sits at the top right. Until now the meta
+   row led with the as-at date and carried the version in the middle of a row of chips, which
+   put the least identifying thing first and buried the one figure that says which build you
+   are reading. It matters more since v371: below 860px the rail is a menu, so nothing on the
+   screen said what this page was at all.
+   THE LOCKUP IS ONLY DRAWN WHERE THE RAIL IS NOT. Above 860px the rail carries the mark and
+   the name in the left column, three centimetres away, and a page that says its own name
+   twice on one screen is worse than one that says it once. The version chip stays top right
+   at every width, because that is where he asked for it and it is true of both layouts. */
+.deskhead{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 9px;}
+/* #meta is a WRAPPING FLEX ROW, so its row has to claim the full width or it shrink-wraps. */
+.meta>.metarow{flex:1 0 100%;}
+.metarow{justify-content:flex-start;}
+.dhbrand{display:flex;align-items:center;gap:10px;min-width:0;}
+.dhname{font-size:15px;font-weight:800;letter-spacing:-.2px;color:var(--ink);}
+.logo.sm{width:30px;height:30px;font-size:15px;border-radius:9px;}
+.chip.ver{color:var(--gold);border-color:rgba(232,198,107,.42);font-weight:800;letter-spacing:.6px;
+  font-variant-numeric:tabular-nums;flex:0 0 auto;}
+@media(min-width:861px){.dhbrand{display:none;}}
 /* v333: ON A PHONE THE STRIP WRAPS BETWEEN CHIPS, NEVER INSIDE ONE. Four chips in a 353px row
    were each breaking mid-phrase into three lines, so the date read as a column and the cloud
    badge as a stack. Two lines on a phone, one on a desk. */
@@ -123,10 +168,7 @@ h2 .rule{flex:1;height:1px;background:linear-gradient(90deg,var(--acc) -40%,var(
    sentence and its figures; every prose block over 140 characters is marked .note and
    hidden until asked for. The threshold is a display heuristic with a visible toggle,
    so its failure mode is a click rather than a wrong number. */
-body.noteshide .note{display:none;}
 .dsclead{font-size:13px;color:var(--mut);line-height:1.5;margin-bottom:10px;}
-.notesbar{display:inline-flex;align-items:center;gap:6px;font-size:10px;letter-spacing:.8px;text-transform:uppercase;color:var(--dim);cursor:pointer;user-select:none;padding:3px 10px;border:1px solid var(--line);border-radius:20px;margin:0 0 13px;}
-.notesbar:hover{color:var(--gold);border-color:var(--gold);}
 /* ---- a plan is a headline with the reasoning behind it (v210) ---- */
 .plan{border:1px solid var(--line);border-radius:10px;margin-bottom:7px;background:rgba(0,0,0,.13);}
 .plan>summary{list-style:none;cursor:pointer;padding:9px 12px;display:grid;grid-template-columns:40px 1fr auto auto;gap:11px;align-items:baseline;}
@@ -373,13 +415,10 @@ details.obsec>summary .ct.zero{color:var(--dim);}
 .sub{display:block;width:100%;text-align:left;font:inherit;font-size:11.5px;font-weight:600;color:var(--dim);background:none;border:1px solid transparent;padding:4px 8px;border-radius:7px;cursor:pointer;}
 .sub:hover{color:var(--ink);}
 .sub.on{color:var(--ink);background:rgba(255,255,255,.06);}
-@media(max-width:860px){.subs{display:none!important;}}
+/* v371: the sub-parts were hidden below 860px because they made no sense inside a flat
+   strip of buttons. The narrow rail is the upright rail again, so they come back and the
+   active view's parts are one tap away there exactly as they are on the wide desk. */
 /* v341: the method prose of a lead, folded once */
-details.vmethod{margin:10px 0 14px;}
-details.vmethod>summary{font-size:12px;letter-spacing:.6px;text-transform:uppercase;}
-.vm{margin:6px 0 10px;}
-.vmh{font-size:9.5px;letter-spacing:1.3px;text-transform:uppercase;color:var(--dim);margin:0 0 3px;}
-.vm .dsc,.vm .dsclead,.vm .insight{margin:0;}
 .obsec .card{background:none;border:none;padding:0 0 13px;}
 details.rcard{background:linear-gradient(160deg,var(--card2),var(--card));border:1px solid var(--line);border-radius:12px;padding:2px 16px 14px;margin-top:12px;}
 details.rcard>summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:13px 0;}
@@ -542,12 +581,13 @@ select{width:100%;border:1px solid var(--line);border-radius:8px;padding:8px 9px
 .evo .txt b{color:var(--ink);}
 .note{margin-top:12px;font-size:12px;color:var(--mut);background:linear-gradient(120deg,rgba(245,196,81,.08),transparent);border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:10px;padding:10px 13px;}
 .note b{color:var(--gold);}
-/* v365: SAME LOOK, NEVER HIDDEN. body.noteshide{}.note{display:none} is the "Method and
-   caveats" fold, on by default (notesOn starts false, so every fresh load carries the
-   class): right for a long .dsc promoted into that fold, wrong for a short standing notice
-   that has nothing to expand. The row editor's two notes reused .note and vanished on
-   every fresh load, including the one sentence that explains why a cancelled row has no
-   Save button. .stand-note is the same box, exempt. */
+/* v372: .stand-note WAS .note WITH AN EXEMPTION, and there is nothing left to be exempt
+   from. v365 added it because body.noteshide hid every .note on a fresh load, which was
+   right for a long paragraph promoted into the Method fold and wrong for a standing notice
+   with nothing to expand: the row editor's own notes vanished, including the sentence
+   explaining why a cancelled row has no Save button. The fold is gone and nothing hides a
+   .note any more, so the two are one box under two names and the alias is kept only so the
+   six places using it do not all have to be edited to say the same thing. */
 .stand-note{margin-top:12px;font-size:12px;color:var(--mut);background:linear-gradient(120deg,rgba(245,196,81,.08),transparent);border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:10px;padding:10px 13px;}
 .stand-note b{color:var(--gold);}
 
@@ -625,17 +665,9 @@ select{width:100%;border:1px solid var(--line);border-radius:8px;padding:8px 9px
   .chartbox canvas{max-width:100%!important;}
   input,select,textarea{max-width:100%;min-width:0;}
   svg{max-width:100%;height:auto;}
-  /* v273: the rail lies flat and wraps on a narrow screen, so its own scroller must come
-     off or the tab strip gets a second scrollbar inside the page's. */
-  .rail{width:100%;flex:none;position:static;display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:12px;
-    max-height:none;overflow:visible;}
-  .railbrand{border-bottom:none;margin:0 8px 0 0;padding:0;flex:0 0 auto;}
-  .railtitle{font-size:13px;}
-  .railgroup{margin:0;display:contents;}
-  .grouplbl{display:none;}
-  .railfoot{border-top:none;padding:0;margin:0;display:contents;}
-  .tab{display:inline-block;width:auto;padding:7px 12px;border:1px solid var(--line);background:#160c28;margin:0;}
-  .tab.on{border-color:transparent;}}
+  /* v371: the rail is no longer laid flat here. It stays upright and hides behind a
+     button; everything it needs is in THE RAIL ON A NARROW SCREEN, further down. */
+  .shell{display:block;}}
 /* ============ v108 - LIQUID GLASS + TIME-OF-DAY (four dark bands) ============ */
 :root{--glassBlur:18px;--glassSat:1.5;
   --gloss:inset 0 1px 0 rgba(255,255,255,.14),inset 0 0 0 1px rgba(255,255,255,.045);
@@ -777,7 +809,7 @@ thead th{background:var(--veil);}
 .card,.chartbox,.quotecard,.evo,.pend,.lcard,details.obsec,details.rcard,.apcal,.apside{border-radius:var(--r);}
 .kpi{border-radius:var(--r-sm);}
 .insight,.note,.apday,.plan{border-radius:var(--r-sm);}
-.chip,.sbadge,.viewsw,.navct,.notesbar{border-radius:var(--pill);}
+.chip,.sbadge,.viewsw,.navct{border-radius:var(--pill);}
 /* FOCUS. There was none. Every control is now keyboard-reachable with a visible ring. */
 :where(a,button,summary,input,select,textarea,[tabindex]):focus-visible{
   outline:2px solid #7fd7e8;outline-offset:2px;border-radius:6px;}
@@ -832,16 +864,21 @@ select[multiple],select[size]{background-image:none;padding-right:9px;}
   background:rgba(255,255,255,.03);border:1px solid var(--line);color:var(--mut);
   font:600 12.5px/1.2 inherit;letter-spacing:.2px;transition:background .15s,border-color .15s,color .15s;}
 .prodsw button:hover{background:rgba(255,255,255,.06);color:var(--ink);}
-.prodsw button.on{background:rgba(99,230,224,.10);border-color:rgba(99,230,224,.42);color:var(--ink);}
 .prodsw button .pdot{width:8px;height:8px;border-radius:50%;flex:0 0 8px;}
 .prodsw button .pnm{flex:1;}
 .prodsw button .pv{font-weight:500;font-size:10.5px;color:var(--dim);font-variant-numeric:tabular-nums;}
-.prodsw button.on .pv{color:var(--mut);}
+/* v370: LIT WHEN THERE IS SOMEWHERE TO JUMP TO. --pacc is the product's own accent, set on
+   the button itself, so salt glows ice and oil gold rather than both glowing the same. The
+   dim state is NOT disabled: the button still explains why it has nothing to do, and a
+   control that cannot be pressed cannot tell you that. */
+.prodsw button.live{border-color:var(--pacc);color:var(--ink);
+  box-shadow:0 0 12px -4px var(--pacc),inset 0 0 0 1px var(--pacc);}
+.prodsw button.live .pdot{box-shadow:0 0 7px 1px var(--pacc);}
+.prodsw button.live .pv{color:var(--mut);}
+.prodsw button:not(.live){opacity:.45;}
+.prodsw button:not(.live):hover{opacity:.75;}
 .prodsw .pall{font-size:10px;color:var(--dim);margin:1px 2px 0;line-height:1.45;}
 @media print{.prodsw{display:none!important;}}
-/* RAIL BANDS (v231). The rail says which tabs follow the product and which do not, so no
-   sentence has to. Everything under the coloured band is the selected product; everything
-   under 'All products' is the whole business. */
 .pstrip .pon{background:rgba(99,230,224,.06);}
 .pstrip .pon td{font-weight:600;}
 .pstrip .ptot td{border-top:1px solid var(--line);color:var(--mut);}
@@ -853,12 +890,6 @@ select[multiple],select[size]{background-image:none;padding-right:9px;}
 .istmt td{padding:6px 9px;}
 .istmt .tot td{border-top:1px solid var(--line);font-weight:700;}
 .tag.buychip{background:rgba(232,198,107,.14);color:var(--gold);border-color:rgba(232,198,107,.35);}
-.band{display:flex;align-items:center;gap:8px;padding:0 8px;margin:2px 0 7px;}
-.bandnm{font-size:9.5px;letter-spacing:1.6px;text-transform:uppercase;font-weight:700;white-space:nowrap;}
-.prodband .bandnm{color:var(--ice);}
-.allnm{color:var(--dim);}
-.bandrule{flex:1;height:1px;background:linear-gradient(90deg,var(--line),transparent);}
-.prodband .bandrule{background:linear-gradient(90deg,rgba(99,230,224,.45),transparent);}
 /* v275: the product badge on the three tabs that draw ONE book while their lead lines claim
    the desk. Small and quiet: it states scope, and the jump buttons beside it are the control.
    IT SITS IN ITS OWN ROW, NOT IN THE LEAD, AND THAT IS THE WHOLE POINT. The first attempt put
@@ -915,7 +946,7 @@ details.obshush:hover{opacity:.85;}
    right, where nothing else is drawn. It appears only once there is something to go back
    up to, which is why the default state is invisible AND non-interactive. Both matter:
    opacity alone would leave an invisible target sitting over the page. */
-.totop{position:fixed;right:22px;bottom:22px;z-index:40;
+.totop{position:fixed;left:22px;right:auto;bottom:22px;z-index:40;
   width:46px;height:46px;border-radius:50%;cursor:pointer;
   display:grid;place-items:center;
   background:rgba(255,255,255,.07);
@@ -943,7 +974,7 @@ details.obshush:hover{opacity:.85;}
     background:rgba(24,29,41,.97)!important;}}
 @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
   .totop{background:rgba(24,29,41,.94);}}
-@media(max-width:860px){.totop{right:14px;bottom:14px;width:42px;height:42px;}}
+@media(max-width:860px){.totop{left:14px;right:auto;bottom:14px;width:42px;height:42px;}}
 /* ============ v276: PORTRAIT ============
    Landscape was always fine because a phone on its side is 640 to 930px and lands in the
    860px rules, which are a narrow DESKTOP layout. Portrait is about 390px and had no rules
@@ -978,17 +1009,6 @@ details.obshush:hover{opacity:.85;}
     padding-right:max(11px,env(safe-area-inset-right));}
   h1{font-size:22px;}
   h2{margin:18px 0 9px;}
-  /* ONE ROW, SCROLLED. Wrapping fifteen tabs cost about 150px of vertical before any
-     content; a single scrolling row costs one. */
-  .rail{flex-wrap:nowrap;overflow-x:auto;gap:5px;padding:9px 10px;
-    scrollbar-width:none;}
-  .rail::-webkit-scrollbar{display:none;}
-  .railbrand{margin:0 6px 0 0;}
-  .logo{width:30px;height:30px;font-size:15px;border-radius:9px;}
-  .railtitle{display:none;}
-  .kick{font-size:9px;letter-spacing:1.6px;}
-  .tab{flex:0 0 auto;padding:7px 11px;font-size:12px;}
-  .prodsw,.band{flex:0 0 auto;}
   /* two columns still beat one here: a single column of KPI tiles turns a glance into a
      scroll, and the figures fit at this size. */
   .kpis,.kpis.k3,.kpis.k4,.kpis.k5,.kpis.k6{grid-template-columns:1fr 1fr;gap:9px;}
@@ -1019,49 +1039,18 @@ details.obshush:hover{opacity:.85;}
   .insight{padding:10px 12px;font-size:12.5px;}
   .dsc,.dsclead{font-size:11.5px;}
   .pscope{gap:5px;}
-  .totop{right:max(12px,env(safe-area-inset-right));bottom:max(12px,env(safe-area-inset-bottom));}
+  .totop{left:max(12px,env(safe-area-inset-left));right:auto;bottom:max(12px,env(safe-area-inset-bottom));}
 }
 
 /* ============================================================================
-   THE RAIL ON A PHONE, REWORKED 20 Aug 2026, because it was the first thing on
-   the screen and the worst.
-
-   THE ONE-ROW DECISION ABOVE STANDS. Wrapping fifteen tabs really does cost about
-   150px of vertical before any content, and on a 812px screen that is a fifth of
-   it. What was wrong was never the row; it was WHAT CAME FIRST IN IT.
-
-   Measured at 375px before this change: the rail scrolled 1769px inside a 353px
-   box, and the first 380px of that scroll were the logo, the product switcher and
-   two status bands. So reaching Pricing, which is the tab you want while standing
-   in front of a customer, meant scrolling past a third of a screen of chrome. The
-   group headings (Command, Position, Trading, Relationships, Actions) are
-   display:contents and vanish entirely, so what remained read as fifteen
-   undifferentiated buttons with no way to tell where you were among them.
-
-   THE FIX IS ORDERING, NOT LAYOUT. Flex `order` puts the tabs first and the
-   chrome after, so the rail opens on the thing it is for. The logo goes: the
-   page title already says what this is, and 30px of a 375px screen is not free.
+   WHAT IS LEFT OF THE PHONE REWORK OF 20 Aug 2026: the type floors, and nothing
+   else. That version ordered the flat rail so the tabs came first and the chrome
+   after, hid the mark, and marked the active tab hard because in a scroller it
+   could be entirely off screen. Every one of those is a repair to a strip of
+   buttons, and v371 has no strip. They are gone with it; the type floors below
+   are about reading at arm's length and stand on their own.
    ============================================================================ */
 @media(max-width:560px){
-  /* tabs first, chrome after. Anything not given an order defaults to 0, so the
-     tabs are pulled ahead explicitly rather than everything else being pushed. */
-  .rail .tab{order:1;}
-  .prodsw{order:2;}
-  .band{order:3;}
-  .railbrand{order:4;}
-  .railfoot{order:5;}
-
-  /* THE LOGO GOES. .railtitle was already hidden above, which left a 30px mark
-     sitting in the most expensive position on the screen and identifying nothing
-     the title bar does not. */
-  .railbrand{display:none;}
-
-  /* WHERE YOU ARE, WITHOUT SCROLLING TO FIND OUT. In a scroller the active tab
-     can be entirely off-screen, so it is marked hard rather than tinted: fifteen
-     tabs of which one is subtly lighter is not readable at arm's length. */
-  .rail .tab[aria-selected="true"],.rail .tab.on,.rail .tab.active{
-    box-shadow:inset 0 -2px 0 var(--gold);font-weight:600;}
-
   /* NOTHING BELOW 11px. The desk carried labels at 9px, which is legible on a
      laptop at 60cm and not on a phone at 30cm held in one hand at a market. */
   .kpi .l,.kpi .n,.apdow,.apday .apdn,.apchip,.kick{font-size:11px !important;}
@@ -1070,7 +1059,7 @@ details.obshush:hover{opacity:.85;}
      minimum-font-size and raising everything would inflate a design that is mostly fine.
      These are the classes measured under 10.5px across Today, Overview, Financials,
      Pricing, Customers, Ledger, Sourcing and Network at 375px. */
-  .plbl,.bandnm,.grouplbl,.actk,.navct,.sbadge,.iref,.notesbar,.sub,.sub2,.rchip,
+  .plbl,.grouplbl,.actk,.navct,.sbadge,.iref,.sub,.sub2,.rchip,
   .vbtn,.tag,.rtag,.finpct,.label,.apm,.lqlab{font-size:11px !important;}
 
   /* CUSTOMERS OVERFLOWED THE PAGE BY 77px, and it was the one tab that did. The approach
@@ -1099,27 +1088,97 @@ details.obshush:hover{opacity:.85;}
   .act{grid-template-columns:1fr auto;gap:8px 10px;}
   .act>*:nth-child(1){grid-column:1 / -1;}
 
-  /* THE GROUP LABELS COME BACK, AS DIVIDERS RATHER THAN HEADINGS. They were
-     display:none here, which left fifteen buttons in a row with nothing to say
-     that Pricing sits under Trading and Ledger under Relationships. On a laptop
-     the rail is vertical and the grouping is free; in a scroller it has to be
-     earned, and a 60px divider every few tabs earns it. `order:1` matches the
-     tabs so the DOM interleaving survives: flex sorts by order first and by
-     document position second, and putting both on the same rung is what keeps
-     Command next to Today rather than all five labels bunched at the front. */
-  .rail .grouplbl{display:flex !important;align-items:center;order:1;flex:0 0 auto;
-    font-size:11px;letter-spacing:1.1px;text-transform:uppercase;font-weight:700;
-    color:var(--dim);padding:0 4px 0 10px;margin-left:4px;
-    border-left:1px solid var(--line);}
-  .rail .grouplbl:first-of-type{border-left:0;margin-left:0;padding-left:2px;}
-
   /* Wide content scrolls in its own box, never the page. */
   .tscroll,.chartbox{max-width:100%;overflow-x:auto;}
 }
+/* ============================================================================
+   THE RAIL ON A NARROW SCREEN (v371). IT STAYS UPRIGHT AND HIDES.
+
+   HIS INSTRUCTION OF 26 Aug 2026, and it retires four versions of the same wrong
+   idea. From v273 the rail lay flat below 860px and became a bar, and every
+   attempt since was an effort to make a column of sixteen destinations read as a
+   row: wrapping, then one scrolling row, then ordering the chrome behind the
+   tabs, then group labels as dividers, then pills at v370. Each was better than
+   the one before and all of them were repairing the same decision.
+
+   The rail is now EXACTLY the rail the wide desk has. It floats out of a button
+   in the corner with the desk frosted behind it, and nothing about it is a
+   special narrow layout any more, which is why all of that comes out rather than
+   being carried alongside. The button sits bottom LEFT: the way out of the desk
+   is pinned top left and back-to-top is pinned bottom right, so it is the one
+   corner free, and it is the one a thumb reaches.
+   ============================================================================ */
+/* THE BUTTON, THE VEIL AND THE RAIL ARE ALL INSIDE .wrap, AND THAT IS NOT ARBITRARY.
+   .wrap is position:relative with a z-index, so it is a stacking context, and z-index on
+   anything inside it is scoped to it. The first attempt put the veil at body level, where
+   no z-index could order it under a rail nested inside .wrap: it frosted the menu along
+   with the desk. Inside, the three order against each other as written, and .wrap is
+   lifted over the two body-level fixed buttons for as long as the menu is open so neither
+   floats on top of it. The mark is laid over --bg0 because --railA and --railB are
+   translucent under the glass palettes and a see-through button over a card is a smudge. */
+body.navopen .wrap{z-index:97;}
+/* THE FOUR CORNERS (v376, his instruction). One shape for every control that floats over the
+   page, and a corner each so none of them argues with another:
+     top right     the menu, and Names & IDs beside it
+     bottom right  enter an order
+     bottom left   back to the top
+     top left      nothing, on this build. The laptop desk keeps Close there.
+   The menu moved from the bottom left, where v371 put it, because that is where back-to-top
+   has now gone and the two were about to share a corner. */
+.fabtn{position:fixed;z-index:96;width:46px;height:46px;border-radius:50%;cursor:pointer;padding:0;
+  display:grid;place-items:center;color:var(--gold);font-family:inherit;
+  background:linear-gradient(165deg,var(--railA,#201142),var(--railB,#1a1030)),var(--bg0);
+  border:1px solid var(--line);box-shadow:0 14px 34px -12px #000,var(--gloss);
+  transition:transform .18s ease,border-color .18s ease;}
+.fabtn:hover{border-color:rgba(232,198,107,.5);}
+.fabtn:active{transform:scale(.94);}
+.fabtn:focus-visible{outline:2px solid var(--gold);outline-offset:3px;}
+.navbtn{display:none;}
+/* lit when a name is showing, which is the one state worth seeing at a glance */
+.idfix.on{border-color:var(--gold);box-shadow:0 0 12px -4px var(--gold),var(--gloss);}
+.orderbtn{right:14px;bottom:14px;font-size:24px;font-weight:400;line-height:1;}
+@media(max-width:560px){
+  .orderbtn{right:max(11px,env(safe-area-inset-right));bottom:max(11px,env(safe-area-inset-bottom));}
+}
+.navbtn .nbars{display:grid;gap:4px;}
+.navbtn .nbars span{display:block;width:18px;height:2px;border-radius:2px;background:currentColor;
+  transform-origin:center;transition:transform .2s ease,opacity .15s ease;}
+/* the bars become a cross while it is open, so the button is also the way out */
+body.navopen .navbtn .nb2{opacity:0;}
+body.navopen .navbtn .nb1{transform:translateY(6px) rotate(45deg);}
+body.navopen .navbtn .nb3{transform:translateY(-6px) rotate(-45deg);}
+/* THE DESK GOES BEHIND FROSTED GLASS RATHER THAN BEHIND A FLAT SCRIM. The page stays
+   recognisably where you left it and stops competing for the eye, which a solid panel
+   would not do and a plain dark wash would not do either. */
+.navveil{position:fixed;inset:0;z-index:94;opacity:0;pointer-events:none;
+  background:rgba(8,4,18,.42);
+  -webkit-backdrop-filter:blur(14px) saturate(.9);backdrop-filter:blur(14px) saturate(.9);
+  transition:opacity .2s ease;}
+body.navopen .navveil{opacity:1;pointer-events:auto;}
+@media(max-width:860px){
+  .navbtn{display:grid;}
+  /* every rule the upright rail already has is kept; this only takes it out of the flow
+     and floats it. visibility, not just opacity, so a closed menu is out of the tab order
+     as well as off the screen; the delay lets it fade rather than vanish. */
+  .rail{position:fixed;bottom:auto;left:auto;right:14px;top:64px;z-index:95;flex:none;
+    width:min(272px,calc(100vw - 28px));
+    max-height:calc(100vh - 96px);max-height:calc(100dvh - 96px);
+    opacity:0;visibility:hidden;pointer-events:none;
+    transform:scale(.94) translateY(-12px);transform-origin:100% 0;
+    transition:opacity .16s ease,transform .2s cubic-bezier(.2,.9,.3,1.25),visibility 0s linear .2s;}
+  body.navopen .rail{opacity:1;visibility:visible;pointer-events:auto;transform:none;
+    transition-delay:0s;}
+}
+@media(max-width:560px){
+  .navbtn{left:11px;bottom:max(11px,env(safe-area-inset-bottom));}
+  .rail{right:calc(11px + env(safe-area-inset-right));left:auto;top:60px;bottom:auto;
+    width:min(268px,calc(100vw - 22px));}
+}
+
 /* MOTION */
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;}}
 /* PRINT: no aurora, no frost, no orbs, and details forced open. */
-@media print{.orb,.rail,.totop{display:none!important;}
+@media print{.orb,.rail,.totop,.navbtn,.navveil{display:none!important;}
   body{background:#fff!important;color:#141821!important;}
   .kpi,.card,.chartbox,.lcard,.pend{background:#fff!important;border:1px solid #dfe3ec!important;
     box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;}
@@ -1199,31 +1258,14 @@ tbody tr:hover td:not(.l){background:rgba(255,255,255,.03);}
 .qfield select:focus,.qfield input:focus,.ledbar input:focus,.ledbar select:focus{
   border-color:var(--acc);
   box-shadow:0 0 0 3px color-mix(in srgb,var(--acc) 20%,transparent);}
-/* ============ v281 PHONE: THE RAIL STAYS WITH YOU ============
-   One row, sticky, on the Veil. Fifteen tabs were reachable only by scrolling back to
-   the top; now the way around the desk is always on screen. Sticky only at the one-row
-   width: at tablet widths the rail wraps to three rows and pinning that would cost a
-   third of the viewport. */
+/* v371: THE v281 PHONE BLOCK IS GONE, whole. It pinned the flat strip to the top of a
+   phone on the Veil, moved the Close button off the corner the strip had taken, gave
+   headings 70px of scroll clearance beneath it, and squashed the product switcher into two
+   label-less pills so the pinned strip was not 129px tall. Every one of those is a repair
+   to a strip that no longer exists. The rail is a floating menu now, so Close goes back to
+   the top left where it sits at every other width, nothing is pinned for a heading to
+   clear, and the switcher is the switcher. */
 @media(max-width:560px){
-  .rail{position:sticky;top:0;z-index:55;
-    margin:0 -11px;width:auto;border-radius:0 0 16px 16px;border-top:none;
-    background:var(--veil);
-    -webkit-backdrop-filter:blur(20px) saturate(1.5);backdrop-filter:blur(20px) saturate(1.5);
-    box-shadow:0 12px 30px -18px rgba(0,0,0,.85);
-    padding-top:max(9px,env(safe-area-inset-top));
-    padding-left:max(10px,env(safe-area-inset-left));
-    padding-right:max(10px,env(safe-area-inset-right));}
-  /* jumped-to headings clear the pinned rail */
-  h2,.prodhd{scroll-margin-top:70px;}
-  /* the Close button moves off the rail's corner to the quiet bottom-left, clear of
-     the back-to-top button on the right */
-  .exitfix{top:auto;left:12px;bottom:max(12px,env(safe-area-inset-bottom));}
-  /* the product switcher joins the row as two compact pills, or the pinned rail is
-     129px tall: its label and revenue figures are desktop furniture at this width */
-  .prodsw{flex-direction:row;align-items:center;gap:4px;margin:0 6px 0 0;}
-  .prodsw .plbl,.prodsw button .pv,.prodsw .pall{display:none;}
-  .prodsw button{width:auto;padding:6px 10px;border-radius:999px;}
-
   /* ============ THE SHRINK FIX (v283) ============
      The desk overflowed sideways to 1649px inside a 375px screen, and it was one CSS
      gotcha repeated everywhere rather than fifteen separate faults. A `1fr` grid track
@@ -1241,11 +1283,11 @@ tbody tr:hover td:not(.l){background:rgba(255,255,255,.03);}
      content. So .main sat at 796px inside a 353px shell and every section, heading and
      paragraph below simply filled the width it had been handed. That is why they all
      measured wide and why nothing downstream was ever the cause. */
-  /* min-width:0 is not enough. .shell is a COLUMN flex at this width, so the automatic
-     minimum size applies to its main axis (height), not to width, and a wide child still
-     grows its own box. max-width:100% resolves against the container and caps it, which
-     is what actually holds .rail to the screen and lets its overflow-x:auto scroller
-     engage instead of the whole page sliding sideways. */
+  /* min-width:0 was not enough when .shell was a COLUMN flex here, because the automatic
+     minimum size then applies to its main axis (height) and not to width, so a wide child
+     still grew its own box; max-width:100% resolves against the container and caps it.
+     v371 made .shell a plain block below 860px and took the rail out of the flow entirely,
+     so the cap now only has to hold .main. It stays because that is still worth holding. */
   .main{min-width:0;max-width:100%;}
   .rail{min-width:0;max-width:100%;}
   .sec,.prodblock,.card,.chartbox{max-width:100%;}
@@ -1320,15 +1362,17 @@ tbody tr:hover td:not(.l){background:rgba(255,255,255,.03);}
 <body>
 <div class="orb a"></div><div class="orb b"></div><div class="orb c"></div>
 <div class="wrap">
+<button class="fabtn orderbtn" id="orderbtn" type="button" title="Enter an order"
+  aria-label="Enter an order">+</button>
+<div class="navveil" id="navveil"></div>
 <h2 class="sr-only">Salt Command: one dashboard for inventory, margin, receivables, cost-linked pricing and transaction entry.</h2>
 <div class="shell">
   <nav class="rail" id="tabs" aria-label="Sections">
     <div class="railbrand">
       <div class="logo">&#9670;</div>
-      <div><div class="kick">Salt Command</div><div class="railtitle">Obsidian Salt Desk</div></div>
+      <div><div class="kick">Salt Command</div></div>
     </div>
     <div class="prodsw" id="prodsw"></div>
-    <div class="band prodband"><span class="bandnm" id="bandnm">Salt</span><span class="bandrule"></span></div>
     <div class="railgroup"><div class="grouplbl">Command</div>
       <button class="tab on" data-s="today">Today</button>
     </div>
@@ -1339,7 +1383,6 @@ tbody tr:hover td:not(.l){background:rgba(255,255,255,.03);}
     <div class="railgroup"><div class="grouplbl">Trading</div>
       <button class="tab" data-s="price">Price</button>
     </div>
-    <div class="band"><span class="bandnm allnm">All products</span><span class="bandrule"></span></div>
     <div class="railgroup"><div class="grouplbl">Relationships</div>
       <button class="tab" data-s="people">Customers</button>
       <button class="tab" data-s="book">The book</button>
@@ -1351,6 +1394,12 @@ tbody tr:hover td:not(.l){background:rgba(255,255,255,.03);}
     </div>
   </nav>
   <main class="main">
+    <div class="deskbar" id="deskbar">
+      <div class="dhbrand"><div class="logo sm">&#9670;</div><div class="dhname">Salt Command</div></div>
+      <div class="dbtools"><span class="chip ver" id="verChip"></span><span id="revealCtrl"></span>
+        <button class="fabtn navbtn" id="navbtn" type="button" aria-controls="tabs" aria-expanded="false"
+          aria-label="Sections"><span class="nbars"><span class="nb1"></span><span class="nb2"></span><span class="nb3"></span></span></button></div>
+    </div>
     <div class="meta" id="meta"></div>
     <div class="sec on" id="sec-today"></div>
     <div class="sec" id="sec-money"></div>
@@ -1645,7 +1694,15 @@ const CORRECT_NUM_NN=['total','cash','deliveredQty','receivedQty','cost',
 const CORRECT_DATE=['date','agreedOn','paidOn','deliveredOn','receivedOn','cancelledOn'];
 const CORRECT_BOOL=['unpriced','cancelled','pending','inTransit','defaulted','rebate','goodwill'];
 const CORRECT_CODE=['party','assoc','downstream'];
-const CORRECT_TEXT=['orderCode','settle','note'];
+/* v373: handover says WHO MOVED THE GOODS, 'delivered' when he drove and 'collected' when
+   they came. Absent is not a third answer, it is NO answer: the share of orders delivered
+   was a stated 0.20 from v344 to v373 and is now measured over the rows that say, so a row
+   that has not been asked has to be distinguishable from one that has. It rides in
+   CORRECT_TEXT because everything a text field does is what it needs, an empty box clearing
+   the key included; the only thing it adds is a closed list of values, which the drafter
+   checks and both editors render as a select rather than a box to mistype into. */
+const HANDOVER=['delivered','collected'];
+const CORRECT_TEXT=['orderCode','settle','note','handover'];
 const CORRECT_REQUIRED=['product','party','qty','total'];
 const CORRECTABLE=['product','stream'].concat(CORRECT_NUM_POS,CORRECT_NUM_NN,CORRECT_DATE,
   CORRECT_BOOL,CORRECT_CODE,CORRECT_TEXT);
@@ -1665,7 +1722,7 @@ return {txPrice:txPrice,txPaid:txPaid,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:t
         ledgerRow:ledgerRow,openable:openable,ovKey:ovKey,attributionOf:attributionOf,
         CORRECTABLE:CORRECTABLE,CORRECT_REQUIRED:CORRECT_REQUIRED,CORRECT_NUM_POS:CORRECT_NUM_POS,
         CORRECT_NUM_NN:CORRECT_NUM_NN,CORRECT_DATE:CORRECT_DATE,CORRECT_BOOL:CORRECT_BOOL,
-        CORRECT_CODE:CORRECT_CODE,CORRECT_TEXT:CORRECT_TEXT};
+        CORRECT_CODE:CORRECT_CODE,CORRECT_TEXT:CORRECT_TEXT,HANDOVER:HANDOVER};
 })();
 /* ==== END ENGINE position ==== */
 /* ==== ENGINE pricing: generated from engine/pricing.mjs by tools/engine.mjs. Edit the module, never this block. ==== */
@@ -3091,9 +3148,15 @@ const pPurch=p=>purchases.filter(r=>inProd(r,p));
    was scoped to, which is the worst of both. The buttons jump to a product's block on the
    current tab, and say so. setProd survives for the internal scoping perProduct() does. */
 function setProd(p){if(!PRODUCTS[p])return;PROD=p;recompute();}
+/* v370: ONE PREDICATE, TWO CONSUMERS. The jump and the light on the button ask the same
+   question of the same tab, so a lit button always lands somewhere and a dim one never
+   pretends it will. */
+function prodHead(p){
+  const sec=document.getElementById('sec-'+curTab); if(!sec)return null;
+  return [...sec.querySelectorAll('.prodhd')].find(h=>h.textContent.trim().indexOf(PRODUCTS[p].name)===0)||null;
+}
 function prodJump(p){
-  const sec=document.getElementById('sec-'+curTab); if(!sec)return;
-  const hd=[...sec.querySelectorAll('.prodhd')].find(h=>h.textContent.trim().indexOf(PRODUCTS[p].name)===0);
+  const hd=prodHead(p);
   if(hd){hd.scrollIntoView({behavior:'smooth',block:'start'});
     hd.style.transition='none';hd.style.opacity='.35';
     setTimeout(()=>{hd.style.transition='opacity .5s ease';hd.style.opacity='1';},60);
@@ -3110,14 +3173,27 @@ function drawProdSw(){
   const host=document.getElementById('prodsw');if(!host)return;
   const sums=PROD_IDS.map(p=>prodSummary(p));
   host.innerHTML=`<div class="plbl">Product</div>`
-    +sums.map(x=>`<button onclick="prodJump('${x.id}')" title="Jump to ${esc(x.name)} on this tab">
+    +sums.map(x=>`<button data-p="${x.id}" style="--pacc:${PRODUCTS[x.id].accent}" onclick="prodJump('${x.id}')">
         <span class="pdot" style="background:${PRODUCTS[x.id].accent}"></span>
         <span class="pnm">${esc(x.name)}</span>
         <span class="pv">${fmt0(x.rev)}</span></button>`).join('');
-  const b=document.getElementById('bandnm');
-  if(b){b.textContent='Both products';b.style.color='var(--mut)';}
-  const br=document.querySelector('.prodband .bandrule');
-  if(br)br.style.background='linear-gradient(90deg,var(--line),transparent)';
+  markProdSw();
+}
+/* v370: THE SWITCHER SAYS WHETHER IT WILL DO ANYTHING, AND IT IS WHAT THE RAIL BANDS WERE
+   FOR. These buttons jump to a product's block on the current tab; roughly half the tabs
+   read both books together and have no block to jump to, so on those the button did nothing
+   but explain itself after the tap. It is lit in the product's own colour where the block
+   exists and dimmed where it does not. The bands said the same thing from the side of the
+   rail, for the whole rail at once; this says it per product and per tab, on the control it
+   is about. Runs at the end of every render, because the answer is a property of the tab. */
+function markProdSw(){
+  const host=document.getElementById('prodsw'); if(!host)return;
+  host.querySelectorAll('button[data-p]').forEach(b=>{
+    const p=b.dataset.p, nm=PRODUCTS[p]?PRODUCTS[p].name:p, live=!!prodHead(p);
+    b.classList.toggle('live',live);
+    b.title=live?('Jump to '+nm+' on this tab')
+                :(nm+' is not split out on this tab, which reads both books together');
+  });
 }
 /* Per-product headline, computed WITHOUT disturbing the active book. Used by the switcher
    and by the consolidated view, so both read the same arithmetic rather than two guesses.
@@ -3192,7 +3268,27 @@ const whiteboard=[
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{"v":"v368","d":"26 Aug 2026","t":"TWO OF v366's CORRECTIONS WERE ACTUALLY FULFILMENTS, AND ARE REFOLDED AS THAT","n":["<b>NOT EVERYTHING v366 FOLDED AS A CORRECTION WAS ONE.</b> A Correction rewrites what a row says about a past event; it moves no stock, on purpose. Two of the five folded at v366 were real movement, not record fixes, and were flagged as such after the fact. Both are refolded here as Fulfilments instead, same end figures, the trail now says what actually happened, and the shelf rolls for the one that never rolled.","<b>CE4-CHE's s093: 2 UNIT WERE HANDED OVER, NOT JUST RESTATED.</b> Folded at v366 as a Correction that quietly restated deliveredQty from 3.25 to 5.25, so the 2 unit never left the stated shelf. Refolded here as a Fulfilment of 2 unit; the shelf rolls -2 to reflect it. The order's own quantity correction, 6.25 to 5.75 unit, was a genuine record fix approved from the phone and is unchanged.","<b>CA4-DAM's s104: HE PAID, WHICH IS A FULFILMENT.</b> The RM100 recorded directly on 26 Aug (v367) was folded as a Correction for want of a better tool from this session. Refolded here as a proper Fulfilment: same RM100, but the trail now reads as a payment rather than a rewrite, and paidOn is set.","<b>THE SHELF ROLLS 12 TO 10</b> on the 2 unit s093 actually handed over; s104's fulfilment is cash only and moves nothing."]},
+const evolution=[{"v":"v378","d":"26 Aug 2026","t":"THE HEADER IS A STICKY BAR AND IT HOLDS ITS OWN CONTROLS, SO NOTHING SITS ON TOP OF ANYTHING","n":["<b>v376 PUT TWO DISCS ON TOP OF A HEADER THAT WAS ALREADY THERE.</b> Pinning the menu and Names &amp; IDs to the top right corner of the viewport is right when the page has nothing at that corner. This page has a header, and the version chip ended up underneath them, unreadable.","<b>THEY ARE IN THE HEADER NOW, AND THE HEADER IS STICKY.</b> Sticky is what floating them was for: reachable from any scroll position. In the flow, nothing can overlap anything. The two at the bottom stay floating, because the bottom corners carry no content of their own and both have to be reachable mid-scroll.","<b>ONE BAR THAT ADAPTS, WHICH IS THE POINT OF ONE SURFACE.</b> Above 860px the rail carries the mark and the tabs, so the bar shows the version and the key alone. Below it the mark and the menu appear in the same row. Same markup, same page, no second layout to keep level.","<b>NO FIGURE MOVED.</b> Nothing was folded, no rate changed, and the book is exactly as v368 left it."]},
+
+{"v":"v377","d":"26 Aug 2026","t":"ENTERING AN ORDER IS THE SAME SHEET AS EDITING ONE","n":["<b>HIS INSTRUCTION: ENTERING AN ORDER SHOULD BE AS COMPLETE AS THE ROW EDITOR.</b> It is now the same sheet. The + in the bottom right opens the editor on an empty row: the same EDFORM table, the same thirty controls, the same select for a stream and the same one for a handover. The Workbench form is untouched and still takes an amendment, a count, a loss, a lost sale and the rest; what this replaces is reaching it for the one thing done most often, and finding eleven fields there where the editor offers thirty.","<b>IT IS READ STRAIGHT, NOT DIFFED, and that is not a detail.</b> A correction queues what CHANGED, which on an empty row would silently drop the product every time it is salt, because salt is the default and therefore not a change. The new-order path reads every control as it stands.","<b>THE ELEVEN THE QUEUE ALREADY NAMES TRAVEL AS THEMSELVES; THE REST RIDE IN <code>more</code>.</b> The drafter checks that bag field by field against the same arrays a correction goes through, and refuses the whole row rather than guessing: an unknown key, a date that is not a date, a flag that is not a boolean, and nothing is drafted. Same discipline, one table, no second copy.","<b>IT QUEUES, IT DOES NOT WRITE.</b> The order is drafted, flagged against the book and comes back to Approve for a tap, exactly like an entry typed on the Workbench or a correction from the ledger. Nothing about the v305 gate is bypassed.","<b>NO FIGURE MOVED.</b> Nothing was folded, no rate changed, and the book is exactly as v368 left it."]},
+
+{"v":"v376","d":"26 Aug 2026","t":"THE DESK AND THE APP ARE ONE SURFACE, AND THE FLOATING CONTROLS TAKE A CORNER EACH","n":["<b>ONE SURFACE, HIS INSTRUCTION.</b> The desk is served at the root as well as at /desk, so the phone opens the same page the laptop does and there is one thing to keep level instead of two. v290 split them because a 1.3 MB page built around a laptop rail was not a phone app; that stopped being true at v371, when the rail became a menu and the desk started laying out like one. The policy that justified the split, keeping cost and margin off a public app, protected nothing while /desk served every one of those figures at the same public URL.","<b>THE OLD APP STAYS AT /app FOR THIS VERSION, DELIBERATELY.</b> It is one route and it costs nothing, and if the desk turns out to be wrong on a real phone it is the difference between a bad afternoon and no phone surface at all. Retire it after a week without it. The installed home-screen icon needs no change: the manifest already starts at the root.","<b>A CORNER EACH, so none of them argues with another.</b> Top right: the menu, with Names &amp; IDs beside it. Bottom right: enter an order. Bottom left: back to the top. Top left: nothing, in this build. The menu moved off the bottom left because that is where back-to-top has gone. All four are the same 46px disc in the rail&rsquo;s own material, so a floating control looks like a floating control wherever it is.","<b>NAMES &amp; IDS IS AN ICON NOW,</b> the key on its own, lit when a name is showing. It was a labelled chip in the middle of the meta row, which is a strange place for the one control on the desk that changes what you are allowed to read. It lights rather than shouts.","<b>THE WAY BACK IS NOT DRAWN.</b> v332 turned the built desk&rsquo;s Close control into a link back to the app, because from an installed window there was no address bar and window.close() cannot honour a Close. With one surface that link points at the page it is already on, so the control is not appended at all. The laptop desk keeps it, because there Close writes the queue and stops a real server.","<b>THE ORDER BUTTON OPENS THE ENTER VIEW FOR NOW.</b> He asked for it to be as complete as the row editor, which means a sheet rendering the same field table rather than a jump. That is the next version; this one puts the control in the corner it belongs in.","<b>NO FIGURE MOVED.</b> Nothing was folded, no rate changed, and the book is exactly as v368 left it."]},
+
+{"v":"v375","d":"26 Aug 2026","t":"THE COPY GETS CUT: A HEADING IS A NOUN PHRASE AND A WRITE-UP LEADS WITH THE FIGURE","n":["<b>HIS INSTRUCTION: WAY TOO MANY WORDS, EVERYWHERE.</b> He pointed at five things on Today, and each was the same fault. A scope line that spent nine words introducing a badge that says it in one. A lead sentence restating what the severity headings under it already say. Two card headings written as sentences. And a buy write-up of sixty-one words where the figure and the action are the first nine.","<b>WHAT CHANGED.</b> The three scope lines are now the badge alone. Today&rsquo;s lead is gone. &quot;Where the money at stake sits&quot; is <b>Money at stake</b>; &quot;Cover against the trigger&quot; is <b>Cover</b>. The buy write-up goes from 61 words to 27, the chase from 18 to 12, the supplier default from 33 to 20, and the revive from 40 to 19. <b>Not one figure was dropped</b>: what went is the connective tissue between them, which a reader supplies for free.","<b>THE RULE, so the next line written follows it.</b> A heading is a noun phrase. A write-up leads with the number and the action and stops. A clause restating a rule the reader already knows is cut. Nothing explains a figure that is visible beside it.","<b>THIS IS THE FIRST PASS AND IT IS NOT THE WHOLE DESK.</b> It covers what he named and the same patterns around them. The rest of the generated copy gets the same treatment as it is met rather than in one sweep, because rewriting every string on sixteen parts blind is how a figure gets lost in a sentence nobody reread.","<b>NO FIGURE MOVED.</b> Nothing was folded, no rate changed, and the book is exactly as v368 left it."]},
+
+{"v":"v374","d":"26 Aug 2026","t":"THE PAGE HAS A HEADER: THE MARK AND THE NAME ON TOP, THE VERSION AT THE TOP RIGHT","n":["<b>HIS INSTRUCTION: THE TOP LEVEL IS THE LOGO AND SALT COMMAND, THE LEVEL UNDER IT IS WHEN IT WAS UPDATED, AND THE VERSION GOES TOP RIGHT.</b> The meta row led with the as-at date and carried the version in the middle of four chips, which put the least identifying thing first and buried the one figure that says which build you are reading.","<b>IT MATTERS MORE SINCE v371.</b> Below 860px the rail is a menu behind a button, so from that version until this one nothing on a narrow screen said what the page was at all: the mark and the name were inside the thing that had just been hidden.","<b>THE LOCKUP IS DRAWN ONLY WHERE THE RAIL IS NOT.</b> Above 860px the rail carries the mark and the name in the left column, and a page that says its own name twice on one screen is worse than one that says it once. The version chip stays top right at every width, because that is where he asked for it and it is true of both layouts.","<b>THE TWO DATE CHIPS BECAME ONE LINE.</b> As at and updated now share a chip, reading &quot;As at 26 Aug 2026 &middot; updated 18:12 KL&quot;. The v369 rule stands underneath it: the stamp keeps only its time while the two agree and shows the full date the moment they part.","<b>NO FIGURE MOVED.</b> Nothing was folded, no rate changed, and the book is exactly as v368 left it."]},
+
+{"v":"v373","d":"26 Aug 2026","t":"WHO MOVED THE GOODS IS A FIELD NOW, AND THE DELIVERED SHARE IS MEASURED FROM IT","n":["<b>HIS QUESTION: HOW IS DELIVERY RM50 AN ORDER WHEN MOST CUSTOMERS COLLECT?</b> It was not: RM50 is one delivery, weighted by a delivered share of 0.20, so the blend reaching effective cost was RM10 an order and RM3.94 a unit, and since v352 the carded ask is a collection price with delivery quoted on top. But the 0.20 was <b>stated</b>, on 24 Aug, and nothing on the book could check it, because no row recorded who moved the goods. The P&amp;L&rsquo;s &quot;18.4 of 92 orders delivered&quot; was 0.20 times 92, a fifth of an order rather than a count.","<b>EVERY SALE CAN NOW SAY, AND SILENCE IS NOT COLLECTION.</b> <code>handover</code> takes <code>delivered</code> or <code>collected</code>, and a row that has not been asked carries no key at all. That third state is the point: a share computed as delivered-over-everything would report 123 orders collected on the day this ships because nobody had answered, which is a measurement of nothing dressed as a fact. The share is delivered over the rows that SAY, and <code>measured</code> travels with it so every reader knows which of the two they are looking at.","<b>NOTHING MOVES ON THE DAY IT SHIPS.</b> While no row states a handover the share falls back to his stated 0.20, so the board, the floors and the P&amp;L stand exactly where v372 left them. They move as the rows are answered, and the Pricing basis line says so in words: it reads &quot;RM50 on 20% of orders (stated, no row says yet)&quot; today and &quot;on 33% of orders (2 of 6 that say)&quot; once two of six are answered.","<b>IT RIDES THE ROAD THAT ALREADY EXISTS.</b> One entry in <code>CORRECT_TEXT</code> in <code>engine/position.mjs</code> gives it to the drafter, the fold, both row editors and the phone payload at once, which is the whole reason that table lives in the engine. The only thing it adds is a closed list: the drafter refuses anything that is not one of the two words, and both editors render a select rather than a box to mistype into. <b>And it is asked at ENTRY as well as by correction</b>, on the desk&rsquo;s Transaction form and the phone&rsquo;s Record tab, because a flag that can only be set by going back and correcting the row is a flag that stays empty.","<b>WHAT IS STILL STATED, AND SAID PLAINLY: THE RM50 ITSELF.</b> <code>freightPerTrip</code> was tied to a real trip on 22 Jul that collected three lots. <code>txnPerDelivery</code> has no such derivation recorded, and its reference is an IAS 2 citation about classification rather than about the amount. Measuring the share does not measure the rate; that one is still his to state.","<b>NO FIGURE MOVED.</b> Nothing was folded, no rate changed, no row carries a handover yet, and the book is exactly as v368 left it."]},
+
+{"v":"v372","d":"26 Aug 2026","t":"METHOD AND CAVEATS IS GONE FROM EVERY PART, AND THE PAGE LOOKS THE SAME","n":["<b>HIS INSTRUCTION: IT IS USELESS, REMOVE IT EVERYWHERE.</b> There were <b>two</b> of them on every part, which is most of why it read as clutter. <code>applyNotes()</code> marked every long paragraph as a note, hid it behind a pill reading &quot;Method and caveats (2)&quot;, and cut the lead and every insight to their first sentence. <code>foldMethod()</code> then swept whatever prose was left into a <code>details</code> bar of its own, reading &quot;Method and caveats, what the figures mean and how they were struck (6)&quot;. Two controls, both shut on every load, saying the same thing about the same paragraphs.","<b>NOTHING VISIBLE CHANGES, AND THAT IS THE TEST.</b> Both were closed on a fresh load, so what a part showed was its lead sentence, the first sentence of each insight, and its figures. That is exactly what it shows now. What goes is the two bars, the toggle, the body class, about forty lines of CSS and JavaScript, and the prose they were hiding. The lead stays because it says what the part is for; the first sentence of an insight stays because that is the finding rather than the method. A block carrying a control or a figure was never prose and is untouched.","<b>.stand-note WAS AN EXEMPTION FROM A RULE THAT NO LONGER EXISTS.</b> v365 added it because <code>body.noteshide</code> hid every <code>.note</code> on a fresh load, which took the row editor&rsquo;s own standing notices with it, including the sentence explaining why a cancelled row has no Save button. Nothing hides a note now, so those five standing notices simply show, which is what they were written to do.","<b>THE PROSE STAYS IN THE BUILDERS.</b> It is deleted from the page, not from the source, because next to the code that computes a figure it still explains how that figure was struck, which is who it was always useful to.","<b>NO FIGURE MOVED.</b> Nothing was folded, no rate changed, and the book is exactly as v368 left it."]},
+
+{"v":"v371","d":"26 Aug 2026","t":"THE NARROW RAIL STANDS UP AGAIN, HIDDEN BEHIND A BUTTON, WITH THE DESK FROSTED BEHIND IT","n":["<b>HIS INSTRUCTION OF 26 AUG: KEEP THE RAIL VERTICAL, HIDE IT, PUT IT BEHIND A BUTTON.</b> Below 860px the rail no longer lies down. It is <b>exactly the rail the wide desk has</b>, upright, with its mark, its product switcher, its group headings, its tabs and the active view&rsquo;s parts beneath them, floating out of a button in the bottom left corner while the desk goes behind frosted glass. It closes on the button, on the glass, on Escape and on choosing anything, and that last one runs from <code>switchTab</code> so every road out is one line.","<b>IT RETIRES FOUR VERSIONS OF THE SAME WRONG IDEA, RATHER THAN SITTING BESIDE THEM.</b> From v273 the rail became a bar on a narrow screen, and everything since was an attempt to make a column of sixteen destinations read as a row: wrapping, then one scrolling row, then ordering the chrome behind the tabs and hiding the mark, then bringing the group labels back as dividers, then pills at v370 this afternoon. Each was better than the one before and all of them were repairing the same decision. A narrow rail is not a special layout any more, so all of it comes out: about sixty lines of CSS, and the 20 Aug rework keeps only its type floors, which were about reading at arm&rsquo;s length and never about the strip.","<b>THE SUB-PARTS COME BACK WITH IT.</b> <code>.subs</code> was hidden below 860px because a list of a view&rsquo;s parts is meaningless inside a strip of buttons. In an upright menu it is the v343 rule again: the active view&rsquo;s parts are one tap away, on the phone as on the desk.","<b>BOTTOM LEFT, AND THE CORNER WAS CHOSEN RATHER THAN DEFAULTED TO.</b> The way out of the desk is pinned top left and back-to-top is pinned bottom right, so it is the one corner free, and on a phone it is the one a thumb reaches without shifting grip. The three bars fold into a cross while it is open, so the button is also the way out.","<b>NO FIGURE MOVED.</b> Nothing was folded, no rate changed, and the book is exactly as v368 left it."]},
+
+{"v":"v370","d":"26 Aug 2026","t":"THE SWITCHER LIGHTS WHEN IT HAS SOMEWHERE TO GO, THE FLAT RAIL IS A BAR, AND A PANEL IS OPAQUE","n":["<b>THE PRODUCT BUTTONS SAY WHETHER THEY WILL DO ANYTHING.</b> They jump to a product&rsquo;s block on the current tab, and about half the tabs read both books together and have no block to jump to, so on those the button did nothing at all except explain itself after the tap. Each is lit in its own accent, ice for salt and gold for oil, where the block exists, and dimmed where it does not. <b>This is the job v369 took off the rail bands</b>, done better: the bands said it once for the whole rail from the side, this says it per product and per tab on the control it is about. The jump and the light call the same <code>prodHead()</code>, so a lit button always lands somewhere. A dim one is still pressable, because a control that cannot be pressed cannot tell you why.","<b>THE FLAT RAIL WAS UGLY AND THE REASON WAS THAT ONLY HALF OF IT KNEW.</b> Below 860px the rail lies down into a bar. The tabs were told; the product switcher was not, and kept the column it has upright, so a two-storey block sat in the middle of a single row of buttons and drove the whole rail ragged. The 38px logo made the bar taller than anything in it needed to be. It is now one line of one height: the mark at 30px, two product pills, a rule where the rail changes subject, and the tabs as pills after it.","<b>THE PHONE&rsquo;S ROW EDITOR HAD NO BACKGROUND AT ALL, AND THAT WAS A BUG RATHER THAN A TASTE.</b> <code>.ed-sheet</code> painted <code>var(--card)</code>, and <code>--card</code> is not declared anywhere in the app: it is a desk token that came across with the rule at v362. An undefined custom property makes the whole declaration invalid, so the sheet fell back to transparent and the ledger read straight through the form. It uses <code>--menu</code> now, the app&rsquo;s own opaque surface.","<b>THE DESK&rsquo;S TWO SIDE PANELS WERE TRANSLUCENT WITHOUT BEING FROSTED,</b> which is the combination that cannot be read. Names &amp; IDs and the row editor both paint the card gradient, and under the glass palettes those tokens are about 62% opaque; neither panel is in the list that gets a backdrop blur, so the page behind showed through sharp. Both now lay that gradient over <code>--bg0</code>, so the material is unchanged and what is underneath is gone.","<b>NO FIGURE MOVED.</b> Nothing was folded, no rate changed, and the book is exactly as v368 left it."]},
+
+{"v":"v369","d":"26 Aug 2026","t":"THE RAIL DROPS A NAME AND TWO LABELS, AND THE TAB COUNT SITS STRAIGHT","n":["<b>THE NAME &quot;OBSIDIAN SALT DESK&quot; IS GONE, EVERYWHERE.</b> It sat under the logo in the rail, in the page footer, on the eyebrow of every printed statement and price list, and in the README, the manifest and the package description. The desk is <b>Salt Command</b>, which is what the title bar, the repo and the kick line above it already said. One name is easier to read than two, and the second one was never doing any work.","<b>THE RAIL BANDS GO.</b> v231 put two small labels in the rail, a coloured one naming the selected product and a grey <b>All products</b> below it, to mark where the tabs stop following the product switch. In the upright rail they read as headings. Laid flat on anything under 860px the rail becomes one wrapping row of buttons, and the labels become two pieces of stray uppercase text floating between tabs with nothing above or below them to head. <b>The scope is still stated where it is needed:</b> the product switcher sits at the front of the rail, and the three tabs that draw one book while their lead lines claim the desk still carry the v275 badge in their own row.","<b>THE TAB COUNT WAS FLOATED, WHICH IS RIGHT IN ONE LAYOUT AND WRONG IN THE OTHER.</b> <code>.navct</code> used <code>float:right</code>, which puts the count on the far edge of a full-width rail button exactly as intended. A flat tab is shrink-to-fit, so the float had nothing to travel to and the badge rode up against the label and out of its line. The tab is a flex row now: the count is pushed to the right edge when there is a width to push against and simply follows the label when there is not, vertically centred either way.","<b>ONE DATE ON THE DAY OF A FOLD.</b> The meta row shows the day you are reading it and the day the book was last updated. Those are different facts and both stay, but on any day the book is folded they are the same date printed twice, which reads as a fault. The stamp now drops the date and keeps the time when the two agree, so today it says <code>v369 &middot; updated 17:04 KL</code>, and the full date returns as soon as they part.","<b>NO FIGURE MOVED.</b> Nothing was folded, no rate changed, and the book is exactly as v368 left it."]},
+
+{"v":"v368","d":"26 Aug 2026","t":"TWO OF v366's CORRECTIONS WERE ACTUALLY FULFILMENTS, AND ARE REFOLDED AS THAT","n":["<b>NOT EVERYTHING v366 FOLDED AS A CORRECTION WAS ONE.</b> A Correction rewrites what a row says about a past event; it moves no stock, on purpose. Two of the five folded at v366 were real movement, not record fixes, and were flagged as such after the fact. Both are refolded here as Fulfilments instead, same end figures, the trail now says what actually happened, and the shelf rolls for the one that never rolled.","<b>CE4-CHE's s093: 2 UNIT WERE HANDED OVER, NOT JUST RESTATED.</b> Folded at v366 as a Correction that quietly restated deliveredQty from 3.25 to 5.25, so the 2 unit never left the stated shelf. Refolded here as a Fulfilment of 2 unit; the shelf rolls -2 to reflect it. The order's own quantity correction, 6.25 to 5.75 unit, was a genuine record fix approved from the phone and is unchanged.","<b>CA4-DAM's s104: HE PAID, WHICH IS A FULFILMENT.</b> The RM100 recorded directly on 26 Aug (v367) was folded as a Correction for want of a better tool from this session. Refolded here as a proper Fulfilment: same RM100, but the trail now reads as a payment rather than a rewrite, and paidOn is set.","<b>THE SHELF ROLLS 12 TO 10</b> on the 2 unit s093 actually handed over; s104's fulfilment is cash only and moves nothing."]},
 
 {"v":"v367","d":"26 Aug 2026","t":"CA4-DAM'S ADVANCE IS SETTLED, ON HIS WORD DIRECTLY","n":["<b>ONE CORRECTION, NOT FROM THE PHONE'S QUEUE.</b> s104 (CA4-DAM, 1 unit for RM100, delivered 24 Aug) was folded as an advance at v366: delivered in full, nothing paid. He has now said directly that it is paid; cash is corrected to RM100. The row closes as Completed rather than staying an open advance."]},
 
@@ -3295,7 +3391,7 @@ function ledFact(t,am){
   return settle>=3?`${settle} days from agreed to settled`:'';
 }
 const LEDGER_NOISE=/^(as booked|as agreed|no change|opening|opened|booked)\.?$/i;
-const NOTE_MIN=140;   /* a .dsc at or over this is method prose, not a load-bearing scrap */
+const NOTE_MIN=140;   /* prose at or over this is method: cut to its first sentence (v372) */
 const fmt=n=>CUR+' '+Number(n).toLocaleString('en-MY',{minimumFractionDigits:(Math.abs(n%1)>1e-9?2:0),maximumFractionDigits:2});
 const fmt0=n=>CUR+' '+Number(n).toLocaleString('en-MY',{maximumFractionDigits:0});
 const kg=n=>Number(n).toLocaleString('en-MY',{maximumFractionDigits:2})+' unit';
@@ -3323,7 +3419,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='26 Aug 2026, 15:39 KL';
+const LAST_UPDATED='26 Aug 2026, 18:40 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -4481,9 +4577,9 @@ const deliveryLog=[];   // {date, rm, lots:1, note}  e.g. {date:'2026-08-01',rm:
 function deliveryCost(){
   /* MEASURED from v232 rather than standing in at a guess: RM5 an order, stated by him as
      the average of delivery, packaging and handling. */
-  const d=avgDelivery(PROD);
-  return {rm:COST_BASIS.txnPerDelivery.rm,n:d.n,observed:true,share:COST_BASIS.deliveredShare.v,
-    perUnit:d.mean?+((COST_BASIS.deliveredShare.v*COST_BASIS.txnPerDelivery.rm)/d.mean).toFixed(4):null};
+  const d=avgDelivery(PROD), sh=delShare(PROD);
+  return {rm:COST_BASIS.txnPerDelivery.rm,n:d.n,observed:sh.measured,share:sh.v,said:sh.said,
+    perUnit:d.mean?+((sh.v*COST_BASIS.txnPerDelivery.rm)/d.mean).toFixed(4):null};
 }
 /* ============ THE DYNAMIC LADDER (v173) ============
    He asked for pricing driven by purchase cost, demand, shrinkage, delivery, buffer and
@@ -5275,7 +5371,7 @@ function tabOverview(){
   const readyM=miles.filter(m=>m.freeKg>0.009);
   const recent=sales.slice().filter(s=>s.date).sort((a,b)=>a.date<b.date?1:-1).slice(0,3);
   return `<h1>Overview</h1>
-  <div class="pscope">Position at a glance is ${prodBadge()} <span class="pscopen">the product strip and the cash line read every book</span></div>
+  <div class="pscope">${prodBadge()}</div>
   <div class="dsc dsclead">Where the desk stands right now, with one headline lifted from every other tab.</div>
   <h2>Position at a glance <span class="rule"></span></h2>
   <div class="kpis k3">
@@ -5359,8 +5455,7 @@ function tabToday(){
     : `Holds past the ${f.days}-day window.`;
   const cf=cashFlow();
   return `<h1>Today</h1>
-  <div class="pscope">Shelf, cover and promised out are ${prodBadge()} <span class="pscopen">cash is the whole business, because there is one bank account</span></div>
-  <div class="dsc dsclead" style="margin-bottom:13px">What needs doing, ranked. Severity follows a rule; inside it the order is the money at stake.</div>
+  <div class="pscope">${prodBadge()}</div>
   <div class="kpis k5">
     <div class="kpi ${now.length?'r':'g'}"><div class="l">Now</div><div class="v">${now.length}</div><div class="n">${money('now')>0?fmt0(money('now'))+' at stake':'nothing pressing'}</div></div>
     <div class="kpi gold"><div class="l">This week</div><div class="v">${soon.length}</div><div class="n">${money('soon')>0?fmt0(money('soon'))+' at stake':'nothing dated'}</div></div>
@@ -5369,10 +5464,10 @@ function tabToday(){
     <div class="kpi ${cf.net<0?'r':'p'}"><div class="l">Cash &middot; trading net</div><div class="v">${fmt0(cf.net)}</div><div class="n">${fmt0(cf.dueOut)} promised away against it</div></div>
   </div>
   <div class="tdsplit">
-    <div class="card"><div class="cardh">Where the money at stake sits <span class="sub">by kind</span></div>
+    <div class="card"><div class="cardh">Money at stake <span class="sub">by kind</span></div>
       <div class="chartbox" style="height:186px"><canvas id="tdKindChart"></canvas></div>
       <div class="dsc" style="margin-top:7px">Only items carrying a figure appear. A broken rule, a promised call and an overdue plan are on the list below at <b>&mdash;</b>, because they cost nothing to leave and something to ignore.</div></div>
-    <div class="card"><div class="cardh">Cover against the trigger <span class="sub">days of shelf</span></div>
+    <div class="card"><div class="cardh">Cover <span class="sub">days of shelf</span></div>
       <div class="chartbox" style="height:186px"><canvas id="tdCoverChart"></canvas></div>
       <div class="dsc" style="margin-top:7px">${cv.days==null?'No recent trade, so there is no rate to read.':`Shipping ${kg(cv.rate)} a day over the last fortnight. The trigger sits at ${kg(cv.reorderAt)}.`}</div></div>
   </div>
@@ -5473,7 +5568,7 @@ function tabForward(){
   const iso=n=>new Date(TODAY.getTime()+n*86400000).toISOString().slice(0,10);
   const taken=(f.planRows||[]).reduce((a,p)=>a+(p._taken||0),0);
   return `<h1>Forward</h1>
-  <div class="pscope">The shelf walk is ${prodBadge()}</div>
+  <div class="pscope">${prodBadge()}</div>
   <div class="dsc dsclead" style="margin-bottom:11px">The only view on this desk that looks ahead. It is built from what is already on the book, not from a forecast: units already promised, the rate you have actually been shipping, your own ${RULES.creditDays}-day credit term and the provisioning ladder. <b>There is no demand model here.</b> Nothing is seasonal, nothing is fitted, and no order that has not been placed appears anywhere.</div>
   <div style="display:flex;flex-wrap:wrap;gap:9px;align-items:center">
     <span class="viewsw" id="fwdSw">${sw}</span>
@@ -6429,6 +6524,7 @@ const EDFORM=[
   {k:'cash',        l:'Cash in, RM',        kind:'num', only:'S'},
   {k:'cash',        l:'Cash paid, RM',      kind:'num', only:'B'},
   {k:'deliveredQty',l:'Handed over, unit',  kind:'num', only:'S'},
+  {k:'handover',    l:'Handover',            kind:'handover', only:'S', hint:'Who moved the goods. This is what the delivered share is measured from, so leaving it unanswered is not the same as saying collected.'},
   {k:'receivedQty', l:'Received, unit',     kind:'num', only:'B', hint:'Empty on a settled lot means received in full; the book stores it that way. Type a figure only to state a partial receipt.'},
   {k:'cost',        l:'Cost, RM/unit',      kind:'num', only:'S', hint:'Typed here it overrides the shelf, and every margin on this row is measured against it.'},
   {g:'Dates'},
@@ -6465,13 +6561,21 @@ function edView(row,dir){
     assoc:at.assoc,stream:at.stream,downstream:at.downstream});
 }
 const ridOf=t=>t.rid||(t._buy&&t._buy.rid)||null;
-let edRid=null,edType='SELL';
+let edRid=null,edType='SELL',edNew=false;
+const edOpen=()=>!!(edRid||edNew);
+/* v377: THE SAME SHEET WRITES A NEW ROW. His instruction: entering an order should be as
+   complete as editing one. It is the same panel, the same EDFORM table and the same
+   controls, opened on an empty row instead of a real one, and it queues mode:'new' rather
+   than a correction. The Workbench form stays where it is and still takes an amendment, a
+   count, a loss and the rest; what this replaces is having to reach it for the ONE thing
+   done most often, and having that form offer eleven fields where the editor offers thirty. */
+function ledNew(){edNew=true;edRid=null;edType='SELL';renderEditor();}
 function edRowOf(rid,type){return ovFind(type==='BUY'?purchases:sales,rid);}
 function ledEdit(rid,type){
   if(!rid){alert('This row has no id yet, so nothing can name it for an edit. It will have one after the next fold.');return;}
   edRid=rid;edType=type||'SELL';renderEditor();
 }
-function edClose(){edRid=null;renderEditor();}
+function edClose(){edRid=null;edNew=false;renderEditor();}
 function edEsc(v){return v==null?'':String(v).split('&').join('&amp;').split('"').join('&quot;').split('<').join('&lt;');}
 function renderEditor(){
   let bd=document.getElementById('edBackdrop'),pn=document.getElementById('edPanel');
@@ -6484,10 +6588,11 @@ function renderEditor(){
      take focus programmatically without joining the Tab order in its own right. */
   pn.setAttribute('role','dialog');pn.setAttribute('aria-modal','true');
   pn.setAttribute('aria-label','Edit the entry');pn.setAttribute('tabindex','-1');
-  bd.setAttribute('style','display:'+(edRid?'block':'none')+';position:fixed;inset:0;background:rgba(8,4,18,.55);z-index:89');
-  pn.setAttribute('style','display:'+(edRid?'block':'none')+';position:fixed;top:0;right:0;height:100vh;width:min(470px,94vw);z-index:90;text-align:left;overflow-y:auto;background:linear-gradient(180deg,var(--card2),var(--card));border-left:1px solid var(--line);padding:15px 16px 30px;box-shadow:-18px 0 40px rgba(0,0,0,.45)');
-  if(!edRid){pn.innerHTML='';return;}
-  const row=edRowOf(edRid,edType);
+  bd.setAttribute('style','display:'+(edOpen()?'block':'none')+';position:fixed;inset:0;background:rgba(8,4,18,.55);z-index:89');
+  pn.setAttribute('style','display:'+(edOpen()?'block':'none')+';position:fixed;top:0;right:0;height:100vh;width:min(470px,94vw);z-index:90;text-align:left;overflow-y:auto;background:linear-gradient(180deg,var(--card2),var(--card)),var(--bg0);border-left:1px solid var(--line);padding:15px 16px 30px;box-shadow:-18px 0 40px rgba(0,0,0,.45)');
+  pn.setAttribute('aria-label',edNew?'New order':'Edit the entry');
+  if(!edOpen()){pn.innerHTML='';return;}
+  const row=edNew?{}:edRowOf(edRid,edType);
   if(!row){pn.innerHTML='<div class="stand-note warn">That row could not be found. It may have been folded under a different id since this page loaded.</div>';return;}
   const partyKey=edType==='BUY'?'supplier':'customer';
   const canc=!!row.cancelled;
@@ -6498,6 +6603,7 @@ function renderEditor(){
     const id='ed_'+f.k, val=v[f.k];
     if(f.kind==='product')return '<select id="'+id+'" style="'+box+'">'+Object.keys(PRODUCTS).map(k=>'<option value="'+edEsc(k)+'"'+((val||'salt')===k?' selected':'')+'>'+edEsc(PRODUCTS[k].name)+'</option>').join('')+'</select>';
     if(f.kind==='stream')return '<select id="'+id+'" style="'+box+'">'+[['','none'],['R2','R2, books to the associate'],['R3','R3, credits the introduction']].map(o=>'<option value="'+o[0]+'"'+(String(val||'')===o[0]?' selected':'')+'>'+o[1]+'</option>').join('')+'</select>';
+    if(f.kind==='handover')return '<select id="'+id+'" style="'+box+'">'+[['','not stated'],['collected','Collected by the customer'],['delivered','Delivered by us']].map(o=>'<option value="'+o[0]+'"'+(String(val||'')===o[0]?' selected':'')+'>'+o[1]+'</option>').join('')+'</select>';
     if(f.kind==='code')return '<input id="'+id+'" list="edCodes" value="'+edEsc(val)+'" placeholder="none" style="'+box+'">';
     if(f.kind==='num')return '<input id="'+id+'" type="number" step="0.01" value="'+edEsc(val)+'" style="'+box+'">';
     if(f.kind==='date')return '<input id="'+id+'" type="date" value="'+edEsc(val)+'" style="'+box+'">';
@@ -6537,16 +6643,20 @@ function renderEditor(){
   });
   if(open&&open.fold)html+='</details>';
   pn.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">'
-    +'<div style="font-size:13px;font-weight:800;color:var(--gold);letter-spacing:.3px">Edit the entry</div>'
+    +'<div style="font-size:13px;font-weight:800;color:var(--gold);letter-spacing:.3px">'+(edNew?'New order':'Edit the entry')+'</div>'
     +'<button id="edX" aria-label="Close" style="background:none;border:none;color:var(--dim);font-size:19px;line-height:1;cursor:pointer">&times;</button></div>'
-    +'<div class="mono" style="font-size:11px;color:var(--dim);margin-bottom:10px">'+edEsc(edRid)+' &middot; '+edType+' &middot; '+(row.date||'undated')+' &middot; '+ID(row[partyKey])+'</div>'
+    +'<div class="mono" style="font-size:11px;color:var(--dim);margin-bottom:10px">'+(edNew
+      ?'new &middot; SELL &middot; queued for approval, like every other entry'
+      :edEsc(edRid)+' &middot; '+edType+' &middot; '+(row.date||'undated')+' &middot; '+ID(row[partyKey]))+'</div>'
     +(canc
       ?'<div class="stand-note warn" style="margin:0 0 4px">This row is <b>cancelled</b>. Reviving one is a fold-level judgement, and the drafter refuses corrections against it, so there is nothing to queue from here.</div>'
-      :'<div class="stand-note" style="margin:0 0 4px">This <b>queues a correction</b>. It does not write to the book. The drafter checks every field against the ledger and it comes back to Approve for a tap, exactly like a transaction does.</div>')
+      :'<div class="stand-note" style="margin:0 0 4px">'+(edNew
+        ?'Queues an <b>order</b>. Drafted, checked and back at Approve for a tap.'
+        :'Queues a <b>correction</b>. Drafted, checked and back at Approve for a tap.')+'</div>')
     +'<datalist id="edCodes">'+codes.map(c=>'<option value="'+edEsc(c)+'"></option>').join('')+'</datalist>'
     +html
     +'<div style="display:flex;gap:8px;margin-top:16px">'
-    +(canc?'':'<button id="edSave" class="vbtn" style="border-color:var(--gold);color:var(--gold);flex:1">Queue the correction</button>')
+    +(canc?'':'<button id="edSave" class="vbtn" style="border-color:var(--gold);color:var(--gold);flex:1">'+(edNew?'Queue the order':'Queue the correction')+'</button>')
     +'<button id="edCancel" class="vbtn" style="flex:0 0 auto">Cancel</button></div>'
     +'<div id="edWhy" style="font-size:11.5px;color:var(--dim);margin-top:9px"></div>';
   document.getElementById('edX').onclick=edClose;
@@ -6557,9 +6667,59 @@ function renderEditor(){
      so moving focus here happens once per open (wasOpen reads the panel's OWN display style
      from before this call, not edRid, which the caller has already overwritten) and never
      steals it back from a field being typed into. */
-  if(edRid&&!wasOpen)try{pn.focus();}catch(e){}
+  if(edOpen()&&!wasOpen)try{pn.focus();}catch(e){}
+}
+/* THE NEW ROW. Everything the sheet holds, read straight rather than diffed: on an empty row
+   a diff would drop the product whenever it is salt, which is the default and therefore not a
+   change. The thirteen fields the queue contract already names travel as themselves and the
+   rest ride in `more`, which the drafter checks field by field against the same table a
+   correction goes through. Nothing here writes a row: it queues one, and it is drafted,
+   flagged and approved exactly as an entry typed on the Workbench is. */
+function edSubmitNew(){
+  const why=document.getElementById('edWhy');
+  const say=m=>{if(why)why.innerHTML='<span style="color:var(--amber)">'+m+'</span>';};
+  const blank=x=>x===undefined||x===null||String(x).trim()==='';
+  const all={};
+  edFields('SELL').forEach(f=>{
+    if(f.g)return;
+    const el=document.getElementById('ed_'+f.k);if(!el)return;
+    if(f.kind==='bool')all[f.k]=!!el.checked;
+    else if(f.kind==='num')all[f.k]=blank(el.value)?null:Number(el.value);
+    else all[f.k]=blank(el.value)?null:String(el.value).trim();
+  });
+  if(!all.party)return say('An order needs a buyer.');
+  if(!(all.qty>0))return say('An order needs a quantity above zero.');
+  if(all.total==null&&!all.unpriced)return say('State a total, or tick that the price is not agreed yet.');
+  if(all.assoc&&!all.stream)return say('An associate needs a stream, R2 or R3, to say how the credit reaches them.');
+  if(!all.assoc&&all.stream)return say('A stream with no associate credits nobody.');
+  const BASE=['product','party','qty','total','cash','deliveredQty','date','assoc','stream',
+              'downstream','orderCode','note','handover'];
+  const more={};
+  Object.keys(all).forEach(k=>{
+    if(BASE.indexOf(k)>=0)return;
+    const v=all[k];
+    if(v===null||v===false)return;      // an absent flag and false are the same thing here too
+    more[k]=v;
+  });
+  const today=TODAY.toISOString().slice(0,10);
+  queue.push({at:new Date().toISOString(),type:'SELL',party:codeOf(all.party),
+    qty:all.qty,total:all.total||0,
+    raw:'New order: '+codeOf(all.party)+' '+kg(all.qty)+' for '+fmt0(all.total||0)
+        +(all.date?' on '+all.date:'')+', recorded '+today,
+    payload:{mode:'new',product:all.product||'salt',direction:'SELL',party:all.party,newId:null,
+      date:all.date||null,qty:all.qty,total:all.total||0,cash:all.cash||0,kg:all.deliveredQty||0,
+      assoc:all.assoc||null,stream:all.stream||null,downstream:all.downstream||null,
+      kind:null,orderCode:all.orderCode||null,linkTo:null,note:all.note||null,
+      handover:all.handover||null,
+      more:Object.keys(more).length?more:null}});
+  edClose();
+  /* applyOverlay BEFORE render, the same order the correction path and wbRecord use: render()
+     recomputes but does not re-apply the queue over BASE, so a queued entry that skipped this
+     would count in the Transaction badge and change nothing on the books. */
+  applyOverlay();render();
 }
 function edSubmit(){
+  if(edNew)return edSubmitNew();
   const row=edRowOf(edRid,edType);if(!row)return;
   const partyKey=edType==='BUY'?'supplier':'customer';
   const now=edView(row,edType);
@@ -6623,7 +6783,7 @@ if(typeof document!=='undefined'&&!window.__edBound){
       ledEdit(card.getAttribute('data-rid'),card.getAttribute('data-type')||'SELL');
       return;
     }
-    if(e.key==='Escape'&&edRid){
+    if(e.key==='Escape'&&edOpen()){
       edClose();
     }
   });
@@ -6983,7 +7143,7 @@ function stmtDoc(party,rows,o){
    '.owed{background:#f2f8fa;border-color:#9dc4cf}.owedl,.owedv{color:#0b5f70}',
    '.owedv span,.owedn{color:#3d6d78}.owedkg{color:#0b5f70}.gift{color:#5a3d8a}}',
    '</style></head><body><div class="w">',
-   '<p class="eyebrow">'+e(o.brand||'Obsidian Salt')+'</p>',
+   '<p class="eyebrow">'+e(o.brand||'Salt Command')+'</p>',
    '<h1>Statement of account</h1>',
    /* the period line has to survive the reader checking it against the rows. Once a
       pending order can sit outside the window, a statement headed "to 02 Aug" can carry
@@ -7107,7 +7267,7 @@ function stmtExport(){
   const o={from:g('stFrom')||null,to:g('stTo')||null,
     completed:ck('stDone'),open:ck('stOpen'),pending:ck('stPend'),
     dates:ck('stDates'),links:ck('stLinks'),useName:ck('stName'),
-    brand:'Obsidian Salt',
+    brand:'Salt Command',
     issued:new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})};
   if(!o.completed&&!o.open&&!o.pending)return msg('Tick at least one kind of order to include.','var(--crim)');
   const rows=stmtRows(party,o);
@@ -9280,9 +9440,9 @@ function renderReveal(){
       : '<div style="display:flex;gap:9px;align-items:center">'+av+'<span style="color:var(--dim);font-size:12px">&bull;&bull;&bull;&bull;&bull;&bull;</span></div>';
     return '<tr><td class="l mono" style="vertical-align:top;padding-top:11px">'+codeOf(id)+'</td><td class="l">'+cell+'</td><td style="vertical-align:top;padding-top:11px">'+kindOf(id)+'</td></tr>';
   }).join('');
-  el.innerHTML=`<button id="idBtn" style="display:inline-flex;align-items:center;gap:6px;background:${idOpen?'var(--card2)':'#160c28'};border:1px solid ${(idOpen||revealed)?'var(--gold)':'var(--line)'};color:${revealed?'var(--gold)':'var(--mut)'};font-weight:700;font-size:11px;letter-spacing:.6px;text-transform:uppercase;border-radius:9px;padding:6px 10px;cursor:pointer">${key} Names &amp; IDs</button>
+  el.innerHTML=`<button id="idBtn" class="fabtn idfix${(idOpen||revealed)?' on':''}" type="button" title="Names &amp; IDs" aria-label="Names and IDs">${key}</button>
   <div id="idBackdrop" style="display:${idOpen?'block':'none'};position:fixed;inset:0;background:rgba(8,4,18,.55);z-index:79"></div>
-  <div id="idPanel" style="display:${idOpen?'block':'none'};position:fixed;top:0;right:0;height:100vh;width:min(430px,92vw);z-index:80;text-align:left;overflow-y:auto;background:linear-gradient(180deg,var(--card2),var(--card));border-left:1px solid var(--line);padding:15px 16px;box-shadow:-18px 0 40px rgba(0,0,0,.45)">
+  <div id="idPanel" style="display:${idOpen?'block':'none'};position:fixed;top:0;right:0;height:100vh;width:min(430px,92vw);z-index:80;text-align:left;overflow-y:auto;background:linear-gradient(180deg,var(--card2),var(--card)),var(--bg0);border-left:1px solid var(--line);padding:15px 16px;box-shadow:-18px 0 40px rgba(0,0,0,.45)">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px"><div style="font-size:13px;font-weight:800;color:var(--gold);letter-spacing:.3px">Names &amp; IDs</div><button id="idClose" aria-label="Close" style="background:none;border:none;color:var(--dim);font-size:19px;line-height:1;cursor:pointer">&times;</button></div>
     ${cloudMode()?`
     <div class="note" style="margin:0 0 10px">Read only on this device. The directory is edited on the laptop, where it lives; this copy exists so a code on screen can be turned into a name when you need one.</div>
@@ -9727,6 +9887,26 @@ function latestLot(p){
 /* how much salt leaves per delivery, which is what turns a per-ORDER cost into a per-UNIT
    one. The mean is used rather than the median because the cost is being spread over
    everything shipped, not over a typical order. */
+/* ============ THE DELIVERED SHARE, MEASURED (v373) ============
+   From v344 to v372 this was 0.20, stated by him on 24 Aug: four orders in five are
+   collected. It was the right correction at the time, because the alternative was charging
+   every order a third of a delivery it never had, but it was still one number applied to
+   every row on a book that recorded nothing about who moved the goods.
+   NOW EVERY ROW CAN SAY, and the share is the rows that say delivered over the rows that say
+   ANYTHING. Silence is not collection: a book where two rows have been answered gives a share
+   over two rows and says so, rather than reporting that 123 orders were collected because
+   nobody asked. WHILE NOTHING IS STATED IT FALLS BACK TO HIS FIGURE, so the board does not
+   move on the day this ships, and `measured` tells every reader which of the two it is.
+   The denominator for the per-unit spread stays the average of ALL moved orders, because
+   what the share estimates is the rate at which any order turns out to need a delivery. */
+function delShare(p){
+  const rows=pSales(p).filter(s=>!s.cancelled&&txPhys(s)>0.009);
+  const said=rows.filter(s=>s.handover==='delivered'||s.handover==='collected');
+  const del=said.filter(s=>s.handover==='delivered');
+  return said.length
+    ? {v:del.length/said.length,delivered:del.length,said:said.length,of:rows.length,measured:true}
+    : {v:COST_BASIS.deliveredShare.v,delivered:0,said:0,of:rows.length,measured:false};
+}
 function avgDelivery(p){
   const rows=pSales(p).filter(s=>!s.cancelled&&txPhys(s)>0.009);
   const kgs=rows.reduce((a,s)=>a+txPhys(s),0);
@@ -9765,9 +9945,13 @@ function ifrsPL(p){
   const gross=+(rev-cos).toFixed(2);
   // period costs
   const del=avgDelivery(P);
-  /* v344: del.n counts every order that moved goods, not every DELIVERY. Four in five are
-     collected, so the charge is the share that were delivered, at the full RM50 each. */
-  const delAssumed=+(del.n*COST_BASIS.deliveredShare.v).toFixed(1);
+  /* v344: del.n counts every order that moved goods, not every DELIVERY, so the charge is
+     the share that were delivered at the full RM50 each. v373: where the rows say which were
+     delivered the count is the COUNT, a whole number of real deliveries; where they do not it
+     is still del.n times his stated share, and still a fraction of an order, which is what a
+     fraction of an order in a P&L should look like. */
+  const dsh=delShare(P);
+  const delAssumed=dsh.measured&&dsh.said===dsh.of?dsh.delivered:+(del.n*dsh.v).toFixed(1);
   const selling=+(delAssumed*COST_BASIS.txnPerDelivery.rm).toFixed(2);
   /* the leak, valued at what those units cost to have on the shelf, split the way he
      stated it: half went out as samples and testers, half is unexplained */
@@ -9814,7 +9998,7 @@ function ifrsPL(p){
      amount rather than quietly treated as passing. */
   const hasBoard=(P===DEFAULT_PROD);
   const nrvRate=hasBoard?(function(){try{const q=pxQuote(Math.max(0.5,del.mean||1),pxSignals().net,0);
-    return q&&q.perKg?+(q.perKg-(COST_BASIS.deliveredShare.v*COST_BASIS.txnPerDelivery.rm)/Math.max(0.01,del.mean||1)).toFixed(4):null;}catch(e){return null;}})():null;
+    return q&&q.perKg?+(q.perKg-(delShare(P).v*COST_BASIS.txnPerDelivery.rm)/Math.max(0.01,del.mean||1)).toFixed(4):null;}catch(e){return null;}})():null;
   const nrv=nrvRate!=null?+(closeKg*nrvRate).toFixed(2):null;
   const carrying=(nrv!=null&&nrv<atCost)?nrv:atCost;
   return {rev,goods,freightCos,cos,gross,grossPct:rev>0?+(gross/rev*100).toFixed(1):null,
@@ -9835,7 +10019,7 @@ function pxInputs(){
   return {prod:PROD, lockOn:PRICE_LOCK_ON, lockState:priceLockState(PROD), lockBase:PRICE_LOCK[PROD]||null,
     over:{cost:pxOver.cost,shrink:pxOver.shrink}, lot:latestLot(PROD), quoteRate:pxQuoteRate(),
     costBasis:{freightPerTrip:{rm:COST_BASIS.freightPerTrip.rm},txnPerDelivery:{rm:COST_BASIS.txnPerDelivery.rm},
-      deliveredShare:{v:COST_BASIS.deliveredShare.v}},
+      deliveredShare:{v:delShare(PROD).v}},
     attrib:SHRINK_ATTRIB, shrinkRate:pxShrinkRate(), avgDel:avgDelivery(PROD)};
 }
 function pxPolicy(){
@@ -10133,14 +10317,14 @@ function actions(){
   if(short||low){
     const sev=(short||(cv.days!=null&&cv.days<2))?'now':'soon';
     const refill=+(Math.max(cv.shortBy,f.shortKg)*c.eff).toFixed(2);
-    const title=short&&low?`Buy: ${kg(f.shortKg)} short on promises and ${kg(cv.shortBy)} under the trigger`
-      :short?`Buy: ${kg(f.shortKg)} short of what you have already promised`
-      :`Reorder: ${kg(cv.free)} free, ${cv.days==null?'no rate to read':cv.days+' days of cover'}`;
-    const why=(short?`<b>${kg(f.commitKg)} is owed out</b> (${kg(f.owedKg)} paid ahead, ${kg(f.promKg)} agreed) against ${kg(currentStock)} on the shelf, so ${kg(f.unmet)} cannot be met. `
-        +`${f.pendRows.map(r=>ID(r.id)+' '+kg(r.kg)).join(', ')}${f.defRows.length?'; deferred to '+f.defRows.map(r=>ID(r.id)+' '+kg(r.kg)).join(', '):''}. `:'')
-      +(low?`The trigger is ${kg(cv.reorderAt)} and you are ${kg(cv.shortBy)} under it, shipping ${kg(cv.rate)} a day over the last fortnight. `:'')
-      +`Refilling the larger gap costs about ${fmt0(refill)} at ${fmt(c.eff)}/unit effective.`
-      +(f.cashKnown?` You hold ${fmt0(cashFlow().free)} free.`:'');
+    const title=short&&low?`Buy: ${kg(f.shortKg)} short on promises, ${kg(cv.shortBy)} under trigger`
+      :short?`Buy: ${kg(f.shortKg)} short of what is promised`
+      :`Reorder: ${kg(cv.free)} free, ${cv.days==null?'no rate to read':cv.days+' days cover'}`;
+    const why=(short?`<b>${kg(f.commitKg)} owed out</b> against ${kg(currentStock)} held, ${kg(f.unmet)} unmet. `
+        +`${f.pendRows.map(r=>ID(r.id)+' '+kg(r.kg)).join(', ')}${f.defRows.length?'; deferred '+f.defRows.map(r=>ID(r.id)+' '+kg(r.kg)).join(', '):''}. `:'')
+      +(low?`${kg(cv.shortBy)} under the ${kg(cv.reorderAt)} trigger, ${kg(cv.rate)}/day. `:'')
+      +`Refill ${fmt0(refill)} at ${fmt(c.eff)}/unit.`
+      +(f.cashKnown?` ${fmt0(cashFlow().free)} free.`:'');
     add(sev,'buy',title,Math.max(refill,short?f.promRM:0),why,'sourcing');
   }
   /* 3. money out with other people, each at its own age and provision */
@@ -10148,14 +10332,14 @@ function actions(){
     if(g<=0.009)return;
     const sev=age>=RULES.fullProvDays?'now':age>=RULES.creditDays?'now':age>=RULES.creditDays-3?'soon':'watch';
     add(sev,'collect',`Chase ${ID(s.customer)} for ${fmt0(g)}`,g,
-      `${age} days out against a ${RULES.creditDays}-day term, ${(pr*100).toFixed(0)}% provisioned, so ${fmt0(g*(1-pr))} is the realistic figure.`
-      +(isBanned(s.customer)?' He is banned from sale; the ban ends the trade, not the debt.':''),'receivables');});
+      `${age}d out on a ${RULES.creditDays}d term, ${(pr*100).toFixed(0)}% provisioned, ${fmt0(g*(1-pr))} realistic.`
+      +(isBanned(s.customer)?' Banned from sale; the ban ends the trade, not the debt.':''),'receivables');});
   if(typeof supplierReceivable!=='undefined'&&supplierReceivable&&supplierReceivable.status==='recoverable'){
     const age=dbet(supplierReceivable.since),pr=provRate(age);
     add(age>=RULES.fullProvDays?'now':'soon','collect',`Settle the ${ID(supplierReceivable.party)} default, ${fmt0(supplierReceivable.amount)}`,
       supplierReceivable.amount,
-      `Paid ${age} days ago for a lot that never arrived, ${(pr*100).toFixed(0)}% provisioned, ${fmt0(supplierReceivable.amount*(1-pr))} net. `
-      +`It is ${(supplierReceivable.amount/Math.max(1,grossMargin)*100).toFixed(0)}% of every ringgit of margin the desk has ever earned.`,'receivables');}
+      `Paid ${age}d ago, lot never arrived. ${(pr*100).toFixed(0)}% provisioned, ${fmt0(supplierReceivable.amount*(1-pr))} net, `
+      +`${(supplierReceivable.amount/Math.max(1,grossMargin)*100).toFixed(0)}% of all margin ever earned.`,'receivables');}
   /* 4. money you owe back */
   customerRefunds.filter(r=>!r.paidOn).forEach(r=>add('soon','pay',`Refund ${ID(r.party)} ${fmt0(r.amount)}`,r.amount,
     `Owed since ${r.since}, ${dbet(r.since)} days. ${esc(r.note||'')}`,'receivables'));
@@ -10197,10 +10381,10 @@ function actions(){
     const worth=quiet.reduce((a,x)=>{const nb=nextBest(x.id);return a+(nb?nb.profit:0);},0);
     const worst=quiet[0];
     add('watch','reconnect',
-      `${quiet.length} customer${quiet.length===1?' has':'s have'} not ordered within their own cadence`,
+      `${quiet.length} customer${quiet.length===1?'':'s'} past their own cadence`,
       worth,
-      `Worth about ${fmt0(worth)} at today's board if each reorders at his usual size. The furthest behind is ${ID(worst.id)}, ${worst.late} day${worst.late===1?'':'s'} past his own ${worst.med}-day rhythm.`
-      +(farQ.length?` ${farQ.length} more (${farQ.map(x=>ID(x.id)).join(', ')}) are out of area and not counted.`:''),
+      `${fmt0(worth)} at today's board. Furthest: ${ID(worst.id)}, ${worst.late}d past a ${worst.med}d rhythm.`
+      +(farQ.length?` ${farQ.length} out of area, not counted (${farQ.map(x=>ID(x.id)).join(', ')}).`:''),
       'concentration');
   }
   /* 8. rewards already earned and not yet handed over */
@@ -11242,7 +11426,9 @@ function tabWorkbench(){
           <span class="viewsw mini" id="wbCashQ" style="margin-top:6px"><button data-c="none">None</button><button data-c="half">Half</button><button data-c="full">Full</button></span></div>
         <div class="qfield qkg"><label>Salt delivered now (unit)</label><input id="wbKg" type="number" step="0.5" min="0" value="0" inputmode="decimal">
           <span class="viewsw mini" id="wbKgQ" style="margin-top:6px"><button data-k="none">None</button><button data-k="all">All</button></span></div>
-        <div class="qfield"></div>
+        <div class="qfield" id="wbHandCell"><label>Handover</label><select id="wbHand">
+          <option value="">Not stated</option><option value="collected">Collected by the customer</option><option value="delivered">Delivered by us</option></select>
+          <div class="dsc" style="margin-top:6px;font-size:10.5px">What the delivered share is measured from.</div></div>
       </div>
       <div id="wbAssocWrap" style="margin-bottom:4px">
         <label style="font-size:12px;color:var(--mut);display:inline-flex;align-items:center;gap:7px;cursor:pointer"><input type="checkbox" id="wbAssoc" style="width:auto"> Sold through an associate?</label>
@@ -11765,7 +11951,7 @@ function tabPricing(){
       ${r('Collection',c.freight,'inventory',`${fmt0(COST_BASIS.freightPerTrip.rm)} a return trip, spread over ${kg(c.lotQty)}`)}
       <tr class="tot"><td class="l"><b>Landed</b><div class="iref">what the balance sheet carries</div></td><td class="mono"><b>${fmt(c.landed)}</b></td><td><span class="tag paid">Inventory</span></td></tr>
       ${r('Samples and testers',c.sampleLoad,'period',`${(c.shrink*100).toFixed(1)}% of what is bought never sells`)}
-      ${r('Delivery and packaging',c.txn,'period',`${fmt0(COST_BASIS.txnPerDelivery.rm)} on ${Math.round(COST_BASIS.deliveredShare.v*100)}% of orders, over ${kg(c.avgDel)}, the average order`)}
+      ${r('Delivery and packaging',c.txn,'period',(()=>{const s=delShare(PROD);return `${fmt0(COST_BASIS.txnPerDelivery.rm)} on ${Math.round(s.v*100)}% of orders (${s.measured?s.delivered+' of '+s.said+' that say':'stated, no row says yet'}), over ${kg(c.avgDel)}, the average order`;})())}
       <tr class="tot"><td class="l"><b>Pricing basis</b><div class="iref">what a price has to return</div></td><td class="mono"><b>${fmt(c.eff)}</b></td><td></td></tr>
     </tbody></table>
     ${c.absorbed>0.009?`<div class="dsc" style="margin-top:8px">Absorbed and not recovered: ${fmt(c.absorbed)}/unit, the unexplained half of the leak.</div>`:''}
@@ -11844,7 +12030,7 @@ async function mnPublish(btn){
   const rows=mnScope(prod,()=>mnRows());
   try{
     const r=await fetch('menu/publish',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({brand:'Obsidian Salt',version:(evolution[0]?evolution[0].v:''),
+      body:JSON.stringify({brand:'Salt Command',version:(evolution[0]?evolution[0].v:''),
         dated:LAST_UPDATED.replace(/,.*/,''),rows:rows,
         note:'Prices move with the buying rate. This list is today’s, not a quotation held open.'})});
     const j=await r.json();
@@ -12031,7 +12217,7 @@ function mnSaveTier(code,btn){
   var mark=(prodEl(prod,'mnMark')||{}).checked;
   var who=mark&&whoSel?codeOf(whoSel):'';            // codeOf, never ID: no name leaves the desk
   var now=new Date(), pad=function(n){return (n<10?'0':'')+n;};
-  var meta={brand:'Obsidian Salt',who:who,
+  var meta={brand:'Salt Command',who:who,
     dated:now.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})};
   var t=tierOf(code)||PRICE_TIERS.tiers[PRICE_TIERS.tiers.length-1];   // the sheet's own styling only, no prices come from it
   var html=mnTierDoc(t,rows,meta);
@@ -12246,14 +12432,14 @@ async function mnDownload(btn){
        the tag stops verifying, so the whole list refuses to open */
     var ct=await crypto.subtle.encrypt({name:'AES-GCM',iv:iv,additionalData:enc.encode(String(exp))},
       key,enc.encode(JSON.stringify(secret)));
-    payload={v:1,code:code,brand:'Obsidian Salt',version:(evolution[0]?evolution[0].v:''),
+    payload={v:1,code:code,brand:'Salt Command',version:(evolution[0]?evolution[0].v:''),
       dated:LAST_UPDATED.replace(/,.*/,''),issued:fmtWhen(now),
       exp:exp,expLabel:fmtWhen(new Date(exp*1000)),iter:150000,
       salt:_b64e(salt),iv:_b64e(iv),ct:_b64e(ct)};
   }catch(err){
     return mnStatus('<div class="dsc" style="color:var(--crim)">Could not encrypt the file: '+esc(err.message)+'</div>',prod);
   }
-  var html=mnDocHTML(code,payload,{brand:'Obsidian Salt'});
+  var html=mnDocHTML(code,payload,{brand:'Salt Command'});
   var stamp=now.getFullYear()+'-'+pad(now.getMonth()+1)+'-'+pad(now.getDate());
   var fname='menu_'+String(code).replace(/[^A-Za-z0-9._-]+/g,'-')+'_'+stamp+'.html';
   try{
@@ -12679,7 +12865,8 @@ function wbRecord(){
       +(useA?(isR2?' (R2 via '+codeOf(assoc)+')':' (R3 referred by '+codeOf(assoc)+')'):'')+(note?' — '+note:'');
     queue.push({at:new Date().toISOString(),type:wbDir,party:label,qty:qty,total:total,status:status,raw:raw,
       payload:{mode:'new',product:wbProdVal(),direction:wbDir,party:party,newId:null,
-        date:date,qty:qty,total:total,cash:cash,kg:kgd,assoc:assoc,stream:useA?wbStream:null,downstream:down,kind:null,orderCode:null,linkTo:null,note:note||null}});
+        date:date,qty:qty,total:total,cash:cash,kg:kgd,assoc:assoc,stream:useA?wbStream:null,downstream:down,kind:null,orderCode:null,linkTo:null,note:note||null,
+        handover:(wbDir==='SELL'&&wbEl('wbHand')?wbEl('wbHand').value||null:null)}});
     ['wbQty','wbTotal','wbNote'].forEach(id=>{const e=wbEl(id);if(e)e.value='';});
     ['wbCash','wbKg'].forEach(id=>{const e=wbEl(id);if(e)e.value='0';});
     const nb=wbEl('wbNewBox');if(nb)nb.style.display='none';
@@ -13205,27 +13392,29 @@ const PART_DRAW={inventory:()=>drawPerProduct([trackCharts]),
   network:()=>drawNetworkCharts(), ledger:()=>{drawLedgerCharts();wireLedger();},
   sourcing:()=>drawPerProduct([drawSourcingCharts,drawOutlookChart]), forward:()=>drawFwdCharts(),
   analysis:()=>drawPerProduct([drawAnalysis]), approve:()=>apLoad()};
-/* STUDY FOLDS. The standing prose on a tab is method: what the figures mean and how they were
-   struck. It is kept, every word, behind one fold, each block under the heading it sat beneath.
-   The part's lead sentence stays, because it says what the part is for. A block that carries a
-   control or a figure of its own is not prose and is left where it is. */
-function foldMethod(el){
+/* THE METHOD PROSE GOES (v372). HIS INSTRUCTION OF 26 Aug: Method and caveats is useless,
+   remove it everywhere. There were TWO of these on every part, which is most of why it read
+   as clutter: applyNotes() hid the long paragraphs behind a pill and cut the lead and every
+   insight to their first sentence, and foldMethod() then swept what remained into a details
+   bar of its own. Both were shut on every fresh load, so THE PAGE DOES NOT CHANGE: what goes
+   is the two controls and the prose they were hiding. The lead sentence stays, because it
+   says what the part is for, and so does the first sentence of every insight, because that
+   is the finding rather than the method. A block carrying a control or a figure is not prose
+   and is left alone. The prose itself stays in the builders, where it documents them. */
+function stripMethod(el){
+  const cut=t=>{const m=t.match(/^[\s\S]*?[.!?](?=\s|$)/);return m?m[0]:t;};
+  const trim=e=>{if(!e)return;const t=(e.textContent||'').replace(/\s+/g,' ').trim();
+    if(t.length>=NOTE_MIN)e.textContent=cut(t);};
+  el.querySelectorAll('.insight').forEach(trim);
+  /* the lead is cut whatever its length, which is what the fold did: one sentence saying
+     what the part is for. An insight is only cut when it has grown into an essay. */
+  const lead=el.querySelector('.dsclead');
+  if(lead){const t=(lead.textContent||'').replace(/\s+/g,' ').trim();if(t)lead.textContent=cut(t);}
   const blocks=[...el.querySelectorAll('.dsc,.dsclead,.insight')].filter(b=>
-    !b.closest('table,details,.kpi,.act,.plan,.obs,.qfield,.vm')&&!b.querySelector('button,input,select,canvas,table,.kpi'));
+    !b.closest('table,details,.kpi,.act,.plan,.obs,.qfield')&&!b.querySelector('button,input,select,canvas,table,.kpi'));
   if(blocks.length<2)return;
   const keep=blocks.find(b=>b.classList.contains('dsclead'))||blocks[0];
-  const moved=blocks.filter(b=>b!==keep);
-  const heads=[...el.querySelectorAll('h1,h2,h3,.prodhd,.cardh')];
-  const headingFor=node=>{let h=null;for(const x of heads){if(x.compareDocumentPosition(node)&Node.DOCUMENT_POSITION_FOLLOWING)h=x;else break;}
-    return h?h.textContent.replace(/\s+/g,' ').trim().slice(0,60):'';};
-  const fold=document.createElement('details');fold.className='obsec vmethod';
-  fold.innerHTML=`<summary>Method and caveats<span class="q">what the figures mean and how they were struck</span><span class="ct">${moved.length}</span></summary>`;
-  const body=document.createElement('div');
-  moved.forEach(b=>{const w=document.createElement('div');w.className='vm';
-    const h=headingFor(b);if(h){const hh=document.createElement('div');hh.className='vmh';hh.textContent=h;w.appendChild(hh);}
-    b.parentNode.removeChild(b);w.appendChild(b);body.appendChild(w);});
-  fold.appendChild(body);
-  keep.parentNode.insertBefore(fold,keep.nextSibling);
+  blocks.forEach(b=>{if(b!==keep&&!b.classList.contains('insight')&&b.parentNode)b.parentNode.removeChild(b);});
 }
 function renderPart(tab,el,snap){
   el.innerHTML=builders[tab]();
@@ -13238,7 +13427,8 @@ function renderPart(tab,el,snap){
     const nb=document.getElementById('wbNewBox'),ps=document.getElementById('wbParty');
     if(nb&&ps)nb.style.display=ps.value==='__new__'?'':'none';
     wbApply();wbPreview();
-  } else foldMethod(el);
+  }
+  stripMethod(el);
   try{if(PART_DRAW[tab])PART_DRAW[tab]();}catch(e){}
 }
 let curTab='today';   // v147: the desk opens on what to do, not on what happened
@@ -13281,7 +13471,7 @@ function render(){recompute();
     +`<div class="vpart" data-tab="${part}"></div>`;
   el.querySelectorAll('.vpill').forEach(b=>{b.onclick=()=>switchTab(b.dataset.s);});
   renderPart(part,el.querySelector('.vpart'),snap);
-  renderQueue();renderProvBar();navCounts();railSubs();applyNotes();
+  renderQueue();renderProvBar();navCounts();railSubs();markProdSw();
   try{wrapTables();}catch(e){}}
 /* ============ KEY MESSAGE vs DATABASE (v210) ============
    The desk had grown to 52% prose. Not one word of it was wasted when it was written,
@@ -13302,53 +13492,13 @@ function render(){recompute();
    paragraph from the copy taken before the first truncation. render() rebuilds
    innerHTML from source every time, so the copy is retaken each render and can never
    accumulate a truncation of a truncation. */
-let notesOn=false;
-function toggleNotes(){notesOn=!notesOn;applyNotes();}
-function applyNotes(){
-  const sec=document.getElementById('sec-'+curTab); if(!sec)return;
-  document.body.classList.toggle('noteshide',!notesOn);
-  let n=0;
-  sec.querySelectorAll('.dsc').forEach(e=>{
-    if(e.classList.contains('dsclead'))return;
-    const t=(e.textContent||'').replace(/\s+/g,' ').trim();
-    if(t.length>=NOTE_MIN){e.classList.add('note');n++;} else e.classList.remove('note');
-  });
-  /* AN INSIGHT IS A CONCLUSION, NOT AN ESSAY (v231). .dsc notes have folded since v210 but
-     .insight never did, so the longest prose on the desk was the prose that always showed:
-     Network alone carried 1,976 characters of permanently visible explanation. They are now
-     treated exactly as the lead is. The first sentence stays, because that is the finding;
-     everything after it is method and folds with the rest. Nothing is deleted and nothing
-     is summarised: expanding restores the original HTML verbatim. */
-  sec.querySelectorAll('.insight').forEach(e=>{
-    if(e.dataset.full==null){e.dataset.full=e.innerHTML;e.dataset.plain=(e.textContent||'').replace(/\s+/g,' ').trim();}
-    const t=e.dataset.plain||'';
-    if(t.length<NOTE_MIN){e.innerHTML=e.dataset.full;return;}
-    n++;
-    if(notesOn)e.innerHTML=e.dataset.full;
-    else{const m=t.match(/^[\s\S]*?[.!?](?=\s|$)/);e.textContent=m?m[0]:t;}
-  });
-  const lead=sec.querySelector('.dsclead');
-  if(lead){
-    if(lead.dataset.full==null){lead.dataset.full=lead.innerHTML;lead.dataset.plain=(lead.textContent||'').replace(/\s+/g,' ').trim();}
-    if(notesOn)lead.innerHTML=lead.dataset.full;
-    else{const t=lead.dataset.plain||'';const m=t.match(/^[\s\S]*?[.!?](?=\s|$)/);lead.textContent=m?m[0]:t;}
-  }
-  let bar=sec.querySelector('.notesbar');
-  if(n&&!bar){
-    bar=document.createElement('div');bar.className='notesbar';bar.onclick=toggleNotes;
-    const anchor=lead||sec.querySelector('h1');
-    if(anchor&&anchor.parentNode)anchor.parentNode.insertBefore(bar,anchor.nextSibling);
-    else sec.insertBefore(bar,sec.firstChild);
-  }
-  if(bar)bar.innerHTML=(notesOn?'&#9662;':'&#9656;')+' Method and caveats ('+n+')';
-  if(bar&&!n)bar.remove();
-}
 function switchTab(s){
   /* v341: an old tab id is an address into a view. v343: the view shows that part, and the
      view's own button takes it back to its lead. */
   const view=VIEW_OF[s]||'today', V=VIEWS.find(v=>v.id===view);
   VIEW_PART[view]=(view!==s)?s:V.lead;
   curTab=view;document.body.setAttribute('data-sec',view);[...document.querySelectorAll('.tab')].forEach(t=>t.classList.toggle('on',t.dataset.s===view));[...document.querySelectorAll('.sec')].forEach(x=>x.classList.toggle('on',x.id==='sec-'+view));render();
+  if(window.__navClose)window.__navClose();
   const addr=(VIEW_PART[view]===V.lead)?view:VIEW_PART[view];
   curAddr=addr;
   s=view;
@@ -13435,7 +13585,41 @@ document.getElementById('tabs').onclick=e=>{const s=e.target.dataset.s;if(s)swit
   b.innerHTML='&#10005; Close';
   b.onclick=deskExit;
   document.body.appendChild(b);})();
-document.getElementById('meta').innerHTML='<div class="metarow"><span class="chip">As at <b>'+TODAY.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})+'</b></span><span class="chip stamp">'+(evolution[0]?evolution[0].v:'')+' &middot; updated '+LAST_UPDATED+'</span><span id="deskRole"></span><span id="revealCtrl"></span></div><div id="provBar"></div>';renderReveal();renderRole();
+/* v371: the narrow rail is a menu. All of it is CSS; this is the toggle and the three ways
+   out, and choosing a tab is the fourth, closed from switchTab so every road out goes
+   through one line. Opening moves focus onto the active tab, because a menu you can only
+   reach with a finger is not a menu on a laptop at 800px. */
+(function(){
+  const b=document.getElementById('navbtn'),v=document.getElementById('navveil');
+  if(!b||!v)return;
+  const set=o=>{
+    document.body.classList.toggle('navopen',o);
+    b.setAttribute('aria-expanded',o?'true':'false');
+    if(o){const t=document.querySelector('#tabs .tab.on')||document.querySelector('#tabs .tab');
+      if(t)try{t.focus();}catch(e){}}
+  };
+  b.onclick=()=>set(!document.body.classList.contains('navopen'));
+  const ob=document.getElementById('orderbtn');
+  if(ob)ob.onclick=()=>{set(false);ledNew();};
+  v.onclick=()=>set(false);
+  document.addEventListener('keydown',e=>{
+    if(e.key==='Escape'&&document.body.classList.contains('navopen')){e.stopPropagation();set(false);}
+  },true);
+  window.__navClose=()=>set(false);
+})();
+/* v369: two chips carried the same date on every day the book was folded, which is most
+   days, and it read as a fault rather than as two facts. They ARE two facts: the day you are
+   reading it and the day the book was last updated. Neither goes; the stamp drops the date
+   and keeps the time whenever the two agree, and the full date comes back when they part. */
+(function(){
+  const asAt=TODAY.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+  const stamp=LAST_UPDATED.startsWith(asAt+',')?LAST_UPDATED.slice(asAt.length+2):LAST_UPDATED;
+  const vc=document.getElementById('verChip');
+  if(vc)vc.textContent=(evolution[0]?evolution[0].v:'');
+  document.getElementById('meta').innerHTML=
+    '<div class="metarow"><span class="chip">As at <b>'+asAt+'</b> &middot; updated '+stamp+'</span>'
+      +'<span id="deskRole"></span></div><div id="provBar"></div>';
+})();renderReveal();renderRole();
 /* the provisional banner rides above every tab, so an uncommitted figure is never
    mistaken for a banked one whichever tab you happen to be looking at */
 /* ============ WHICH COPY AM I LOOKING AT (v154) ============
@@ -13486,7 +13670,7 @@ function undoLast(){
   const last=queue.slice().sort((a,b)=>(a.at||'')<(b.at||'')?-1:1).pop();
   undoEntry(last.at);
 }
-document.getElementById('foot0').innerHTML='The Obsidian Salt Desk';
+document.getElementById('foot0').innerHTML='Salt Command';
 /* v273: back to top. Shown once the page has moved a screen's worth, so it never sits over
    a tab that fits without scrolling. The threshold is read from the viewport rather than
    typed, because the tabs differ enormously in length. The listener is passive: it only

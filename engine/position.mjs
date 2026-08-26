@@ -277,7 +277,15 @@ const CORRECT_NUM_NN=['total','cash','deliveredQty','receivedQty','cost',
 const CORRECT_DATE=['date','agreedOn','paidOn','deliveredOn','receivedOn','cancelledOn'];
 const CORRECT_BOOL=['unpriced','cancelled','pending','inTransit','defaulted','rebate','goodwill'];
 const CORRECT_CODE=['party','assoc','downstream'];
-const CORRECT_TEXT=['orderCode','settle','note'];
+/* v373: handover says WHO MOVED THE GOODS, 'delivered' when he drove and 'collected' when
+   they came. Absent is not a third answer, it is NO answer: the share of orders delivered
+   was a stated 0.20 from v344 to v373 and is now measured over the rows that say, so a row
+   that has not been asked has to be distinguishable from one that has. It rides in
+   CORRECT_TEXT because everything a text field does is what it needs, an empty box clearing
+   the key included; the only thing it adds is a closed list of values, which the drafter
+   checks and both editors render as a select rather than a box to mistype into. */
+const HANDOVER=['delivered','collected'];
+const CORRECT_TEXT=['orderCode','settle','note','handover'];
 const CORRECT_REQUIRED=['product','party','qty','total'];
 const CORRECTABLE=['product','stream'].concat(CORRECT_NUM_POS,CORRECT_NUM_NN,CORRECT_DATE,
   CORRECT_BOOL,CORRECT_CODE,CORRECT_TEXT);
@@ -297,6 +305,6 @@ return {txPrice:txPrice,txPaid:txPaid,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:t
         ledgerRow:ledgerRow,openable:openable,ovKey:ovKey,attributionOf:attributionOf,
         CORRECTABLE:CORRECTABLE,CORRECT_REQUIRED:CORRECT_REQUIRED,CORRECT_NUM_POS:CORRECT_NUM_POS,
         CORRECT_NUM_NN:CORRECT_NUM_NN,CORRECT_DATE:CORRECT_DATE,CORRECT_BOOL:CORRECT_BOOL,
-        CORRECT_CODE:CORRECT_CODE,CORRECT_TEXT:CORRECT_TEXT};
+        CORRECT_CODE:CORRECT_CODE,CORRECT_TEXT:CORRECT_TEXT,HANDOVER:HANDOVER};
 })();
 export default POSITION_ENGINE;

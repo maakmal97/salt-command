@@ -1,7 +1,7 @@
 {
   "name": "Salt Command",
   "short_name": "Salt",
-  "description": "The Obsidian Salt Desk: ledger, pricing and transaction entry, on the go.",
+  "description": "Salt Command: ledger, pricing and transaction entry, on the go.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

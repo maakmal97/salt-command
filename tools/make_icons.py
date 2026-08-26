@@ -1,6 +1,6 @@
 """Generate the Salt Command PWA icons.
 
-The Obsidian Salt crystal from the desk's own inline favicon: a diamond with a gold
+The salt crystal from the desk's own inline favicon: a diamond with a gold
 top-right face and a violet lower-left face over a cyan body, on the desk's dark ground.
 Rendered at 4x and downscaled so the facets have clean edges. Run: python tools/make_icons.py
 """

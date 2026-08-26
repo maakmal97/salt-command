@@ -200,21 +200,16 @@ replaceOnce("P7 qPayload device id",
   "function qPayload(){return JSON.stringify({updated:new Date().toISOString(),desk:LAST_UPDATED,queue},null,1);}",
   "function qPayload(){return JSON.stringify({updated:new Date().toISOString(),desk:LAST_UPDATED,device:(typeof saltDeviceId==='function'?saltDeviceId():'anon'),queue},null,1);}");
 
-/* P8 THE WAY BACK (v332). The built desk has one home, the Worker at /desk, and the phone app
-   sits at its root. Opened from the installed app the desk filled the standalone window with no
-   address bar, no back button and a Close control that window.close() cannot honour, so there
-   was no way out. In this build the control goes back to the app instead. Decided at build time
-   rather than on window.SALT_CLOUD, because the built file is never served anywhere else and
-   SALT_CLOUD is only known after the ping, long after the button is drawn. */
-replaceOnce("P8a exit control title",
-  "  b.title='Write the queue, stop the server and close the desk';",
-  "  b.title='Back to the phone app';");
-replaceOnce("P8b exit control label",
-  "  b.innerHTML='&#10005; Close';",
-  "  b.innerHTML='&#8592; App';");
-replaceOnce("P8c exit control action",
-  "  b.onclick=deskExit;",
-  "  b.onclick=function(){location.href='./';};");
+/* P8 THERE IS NO WAY OUT TO OFFER (v376). v332 turned the desk's Close control into a link back
+   to the phone app, because opened from the installed app the desk filled a standalone window
+   with no address bar and a Close that window.close() cannot honour. v376 merged the two: the
+   desk IS the root now, so the link would go to the page it is already on. The control is simply
+   not drawn in this build. The laptop desk keeps it, because there Close writes the queue and
+   stops a real server. Decided at build time for the same reason as before: the built file is
+   never served anywhere else, and SALT_CLOUD is only known after the ping. */
+replaceOnce("P8 exit control not drawn",
+  "  document.body.appendChild(b);})();",
+  "  /* v376: not appended. The desk is the root; there is nowhere back to. */ })();");
 
 /* ---- guard: the deploy must load nothing off a third-party origin (CSP is self-only) */
 const externals = [];

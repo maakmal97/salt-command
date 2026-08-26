@@ -105,6 +105,7 @@ export const CORRECT_DATE = POSITION_ENGINE.CORRECT_DATE;
 export const CORRECT_BOOL = POSITION_ENGINE.CORRECT_BOOL;
 export const CORRECT_CODE = POSITION_ENGINE.CORRECT_CODE;
 export const CORRECT_TEXT = POSITION_ENGINE.CORRECT_TEXT;
+export const HANDOVER = POSITION_ENGINE.HANDOVER;
 export const CORRECTABLE = POSITION_ENGINE.CORRECTABLE;
 const CORRECT_REQUIRED = POSITION_ENGINE.CORRECT_REQUIRED;
 
@@ -151,6 +152,7 @@ export function checkCorrection(fields, book, target, isSale) {
     }
     if (k === "product" && !products[v]) errs.push(`${v} is not a product on this book`);
     if (k === "stream" && v !== "R2" && v !== "R3") errs.push(`a stream is R2 or R3, not ${v}`);
+    if (k === "handover" && !HANDOVER.includes(v)) errs.push(`handover is delivered or collected, not ${v}`);
     if (CORRECT_DATE.includes(k) && !DATE_RE.test(String(v))) errs.push(`${k} is not a date in YYYY-MM-DD: ${v}`);
     if (CORRECT_NUM_POS.includes(k) && !(isNum(v) && v > 0)) errs.push(`${k} has to be a number above zero`);
     if (CORRECT_NUM_NN.includes(k) && !(isNum(v) && v >= 0)) errs.push(`${k} has to be a number, and not negative`);
@@ -862,6 +864,30 @@ export function draftRow(entry, book) {
   const nothingMoved = cash < 0.005 && moved < 0.005;
 
   const row = { customer: party, qty, total, cost: round(priced.cost), cash: round(cash) };
+  /* v373: who moved the goods, when the entry says. A sale that does not say carries no key,
+     because the measured delivered share counts the rows that answered and not the silent ones. */
+  if (dir === "SELL" && HANDOVER.includes(pay.handover)) row.handover = pay.handover;
+  /* v377: THE REST OF THE ROW, when the sheet stated it. The Workbench names eleven fields in
+     the queue contract; the order sheet renders the whole correctable table, so anything past
+     those eleven arrives in `more` and is checked HERE, field by field, against the same
+     arrays a correction goes through. It refuses rather than guesses: an unknown key, a date
+     that is not a date, a flag that is not a boolean, and the row is not drafted at all. */
+  if (pay.more && typeof pay.more === "object") {
+    const bad = [];
+    for (const k of Object.keys(pay.more)) {
+      const v = pay.more[k];
+      if (v === null || v === undefined) continue;
+      if (!CORRECTABLE.includes(k)) { bad.push(`${k} is not a field an entry may set`); continue; }
+      if (CORRECT_DATE.includes(k) && !DATE_RE.test(String(v))) bad.push(`${k} is not a date in YYYY-MM-DD: ${v}`);
+      else if (CORRECT_NUM_POS.includes(k) && !(isNum(v) && v > 0)) bad.push(`${k} has to be a number above zero`);
+      else if (CORRECT_NUM_NN.includes(k) && !(isNum(v) && v >= 0)) bad.push(`${k} has to be a number, and not negative`);
+      else if (CORRECT_BOOL.includes(k) && typeof v !== "boolean") bad.push(`${k} is true or false, not ${v}`);
+      else if (CORRECT_TEXT.includes(k) && typeof v !== "string") bad.push(`${k} has to be text`);
+      else if (CORRECT_BOOL.includes(k)) { if (v === true) row[k] = true; }
+      else row[k] = v;
+    }
+    if (bad.length) return { skip: bad.join("; ") };
+  }
   if (dir === "BUY") {
     delete row.customer; delete row.cost;
     row.supplier = party;

@@ -1,6 +1,6 @@
 # Salt Command, on the phone
 
-The Obsidian Salt Desk, ported to a real cloud app so the ledger and the pricing engine
+The Salt Command desk, ported to a real cloud app so the ledger and the pricing engine
 are reachable on the go and a transaction can be added from the phone. **Since 20 Aug 2026 this
 repo also HOLDS the master**, so it is the source as well as the deploy surface.
 

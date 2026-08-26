@@ -1,5 +1,127 @@
 [
  {
+  "v": "v378",
+  "d": "26 Aug 2026",
+  "t": "THE HEADER IS A STICKY BAR AND IT HOLDS ITS OWN CONTROLS, SO NOTHING SITS ON TOP OF ANYTHING",
+  "n": [
+   "<b>v376 PUT TWO DISCS ON TOP OF A HEADER THAT WAS ALREADY THERE.</b> Pinning the menu and Names &amp; IDs to the top right corner of the viewport is right when the page has nothing at that corner. This page has a header, and the version chip ended up underneath them, unreadable.",
+   "<b>THEY ARE IN THE HEADER NOW, AND THE HEADER IS STICKY.</b> Sticky is what floating them was for: reachable from any scroll position. In the flow, nothing can overlap anything. The two at the bottom stay floating, because the bottom corners carry no content of their own and both have to be reachable mid-scroll.",
+   "<b>ONE BAR THAT ADAPTS, WHICH IS THE POINT OF ONE SURFACE.</b> Above 860px the rail carries the mark and the tabs, so the bar shows the version and the key alone. Below it the mark and the menu appear in the same row. Same markup, same page, no second layout to keep level.",
+   "<b>NO FIGURE MOVED.</b> Nothing was folded, no rate changed, and the book is exactly as v368 left it."
+  ]
+ },
+ {
+  "v": "v377",
+  "d": "26 Aug 2026",
+  "t": "ENTERING AN ORDER IS THE SAME SHEET AS EDITING ONE",
+  "n": [
+   "<b>HIS INSTRUCTION: ENTERING AN ORDER SHOULD BE AS COMPLETE AS THE ROW EDITOR.</b> It is now the same sheet. The + in the bottom right opens the editor on an empty row: the same EDFORM table, the same thirty controls, the same select for a stream and the same one for a handover. The Workbench form is untouched and still takes an amendment, a count, a loss, a lost sale and the rest; what this replaces is reaching it for the one thing done most often, and finding eleven fields there where the editor offers thirty.",
+   "<b>IT IS READ STRAIGHT, NOT DIFFED, and that is not a detail.</b> A correction queues what CHANGED, which on an empty row would silently drop the product every time it is salt, because salt is the default and therefore not a change. The new-order path reads every control as it stands.",
+   "<b>THE ELEVEN THE QUEUE ALREADY NAMES TRAVEL AS THEMSELVES; THE REST RIDE IN <code>more</code>.</b> The drafter checks that bag field by field against the same arrays a correction goes through, and refuses the whole row rather than guessing: an unknown key, a date that is not a date, a flag that is not a boolean, and nothing is drafted. Same discipline, one table, no second copy.",
+   "<b>IT QUEUES, IT DOES NOT WRITE.</b> The order is drafted, flagged against the book and comes back to Approve for a tap, exactly like an entry typed on the Workbench or a correction from the ledger. Nothing about the v305 gate is bypassed.",
+   "<b>NO FIGURE MOVED.</b> Nothing was folded, no rate changed, and the book is exactly as v368 left it."
+  ]
+ },
+ {
+  "v": "v376",
+  "d": "26 Aug 2026",
+  "t": "THE DESK AND THE APP ARE ONE SURFACE, AND THE FLOATING CONTROLS TAKE A CORNER EACH",
+  "n": [
+   "<b>ONE SURFACE, HIS INSTRUCTION.</b> The desk is served at the root as well as at /desk, so the phone opens the same page the laptop does and there is one thing to keep level instead of two. v290 split them because a 1.3 MB page built around a laptop rail was not a phone app; that stopped being true at v371, when the rail became a menu and the desk started laying out like one. The policy that justified the split, keeping cost and margin off a public app, protected nothing while /desk served every one of those figures at the same public URL.",
+   "<b>THE OLD APP STAYS AT /app FOR THIS VERSION, DELIBERATELY.</b> It is one route and it costs nothing, and if the desk turns out to be wrong on a real phone it is the difference between a bad afternoon and no phone surface at all. Retire it after a week without it. The installed home-screen icon needs no change: the manifest already starts at the root.",
+   "<b>A CORNER EACH, so none of them argues with another.</b> Top right: the menu, with Names &amp; IDs beside it. Bottom right: enter an order. Bottom left: back to the top. Top left: nothing, in this build. The menu moved off the bottom left because that is where back-to-top has gone. All four are the same 46px disc in the rail&rsquo;s own material, so a floating control looks like a floating control wherever it is.",
+   "<b>NAMES &amp; IDS IS AN ICON NOW,</b> the key on its own, lit when a name is showing. It was a labelled chip in the middle of the meta row, which is a strange place for the one control on the desk that changes what you are allowed to read. It lights rather than shouts.",
+   "<b>THE WAY BACK IS NOT DRAWN.</b> v332 turned the built desk&rsquo;s Close control into a link back to the app, because from an installed window there was no address bar and window.close() cannot honour a Close. With one surface that link points at the page it is already on, so the control is not appended at all. The laptop desk keeps it, because there Close writes the queue and stops a real server.",
+   "<b>THE ORDER BUTTON OPENS THE ENTER VIEW FOR NOW.</b> He asked for it to be as complete as the row editor, which means a sheet rendering the same field table rather than a jump. That is the next version; this one puts the control in the corner it belongs in.",
+   "<b>NO FIGURE MOVED.</b> Nothing was folded, no rate changed, and the book is exactly as v368 left it."
+  ]
+ },
+ {
+  "v": "v375",
+  "d": "26 Aug 2026",
+  "t": "THE COPY GETS CUT: A HEADING IS A NOUN PHRASE AND A WRITE-UP LEADS WITH THE FIGURE",
+  "n": [
+   "<b>HIS INSTRUCTION: WAY TOO MANY WORDS, EVERYWHERE.</b> He pointed at five things on Today, and each was the same fault. A scope line that spent nine words introducing a badge that says it in one. A lead sentence restating what the severity headings under it already say. Two card headings written as sentences. And a buy write-up of sixty-one words where the figure and the action are the first nine.",
+   "<b>WHAT CHANGED.</b> The three scope lines are now the badge alone. Today&rsquo;s lead is gone. &quot;Where the money at stake sits&quot; is <b>Money at stake</b>; &quot;Cover against the trigger&quot; is <b>Cover</b>. The buy write-up goes from 61 words to 27, the chase from 18 to 12, the supplier default from 33 to 20, and the revive from 40 to 19. <b>Not one figure was dropped</b>: what went is the connective tissue between them, which a reader supplies for free.",
+   "<b>THE RULE, so the next line written follows it.</b> A heading is a noun phrase. A write-up leads with the number and the action and stops. A clause restating a rule the reader already knows is cut. Nothing explains a figure that is visible beside it.",
+   "<b>THIS IS THE FIRST PASS AND IT IS NOT THE WHOLE DESK.</b> It covers what he named and the same patterns around them. The rest of the generated copy gets the same treatment as it is met rather than in one sweep, because rewriting every string on sixteen parts blind is how a figure gets lost in a sentence nobody reread.",
+   "<b>NO FIGURE MOVED.</b> Nothing was folded, no rate changed, and the book is exactly as v368 left it."
+  ]
+ },
+ {
+  "v": "v374",
+  "d": "26 Aug 2026",
+  "t": "THE PAGE HAS A HEADER: THE MARK AND THE NAME ON TOP, THE VERSION AT THE TOP RIGHT",
+  "n": [
+   "<b>HIS INSTRUCTION: THE TOP LEVEL IS THE LOGO AND SALT COMMAND, THE LEVEL UNDER IT IS WHEN IT WAS UPDATED, AND THE VERSION GOES TOP RIGHT.</b> The meta row led with the as-at date and carried the version in the middle of four chips, which put the least identifying thing first and buried the one figure that says which build you are reading.",
+   "<b>IT MATTERS MORE SINCE v371.</b> Below 860px the rail is a menu behind a button, so from that version until this one nothing on a narrow screen said what the page was at all: the mark and the name were inside the thing that had just been hidden.",
+   "<b>THE LOCKUP IS DRAWN ONLY WHERE THE RAIL IS NOT.</b> Above 860px the rail carries the mark and the name in the left column, and a page that says its own name twice on one screen is worse than one that says it once. The version chip stays top right at every width, because that is where he asked for it and it is true of both layouts.",
+   "<b>THE TWO DATE CHIPS BECAME ONE LINE.</b> As at and updated now share a chip, reading &quot;As at 26 Aug 2026 &middot; updated 18:12 KL&quot;. The v369 rule stands underneath it: the stamp keeps only its time while the two agree and shows the full date the moment they part.",
+   "<b>NO FIGURE MOVED.</b> Nothing was folded, no rate changed, and the book is exactly as v368 left it."
+  ]
+ },
+ {
+  "v": "v373",
+  "d": "26 Aug 2026",
+  "t": "WHO MOVED THE GOODS IS A FIELD NOW, AND THE DELIVERED SHARE IS MEASURED FROM IT",
+  "n": [
+   "<b>HIS QUESTION: HOW IS DELIVERY RM50 AN ORDER WHEN MOST CUSTOMERS COLLECT?</b> It was not: RM50 is one delivery, weighted by a delivered share of 0.20, so the blend reaching effective cost was RM10 an order and RM3.94 a unit, and since v352 the carded ask is a collection price with delivery quoted on top. But the 0.20 was <b>stated</b>, on 24 Aug, and nothing on the book could check it, because no row recorded who moved the goods. The P&amp;L&rsquo;s &quot;18.4 of 92 orders delivered&quot; was 0.20 times 92, a fifth of an order rather than a count.",
+   "<b>EVERY SALE CAN NOW SAY, AND SILENCE IS NOT COLLECTION.</b> <code>handover</code> takes <code>delivered</code> or <code>collected</code>, and a row that has not been asked carries no key at all. That third state is the point: a share computed as delivered-over-everything would report 123 orders collected on the day this ships because nobody had answered, which is a measurement of nothing dressed as a fact. The share is delivered over the rows that SAY, and <code>measured</code> travels with it so every reader knows which of the two they are looking at.",
+   "<b>NOTHING MOVES ON THE DAY IT SHIPS.</b> While no row states a handover the share falls back to his stated 0.20, so the board, the floors and the P&amp;L stand exactly where v372 left them. They move as the rows are answered, and the Pricing basis line says so in words: it reads &quot;RM50 on 20% of orders (stated, no row says yet)&quot; today and &quot;on 33% of orders (2 of 6 that say)&quot; once two of six are answered.",
+   "<b>IT RIDES THE ROAD THAT ALREADY EXISTS.</b> One entry in <code>CORRECT_TEXT</code> in <code>engine/position.mjs</code> gives it to the drafter, the fold, both row editors and the phone payload at once, which is the whole reason that table lives in the engine. The only thing it adds is a closed list: the drafter refuses anything that is not one of the two words, and both editors render a select rather than a box to mistype into. <b>And it is asked at ENTRY as well as by correction</b>, on the desk&rsquo;s Transaction form and the phone&rsquo;s Record tab, because a flag that can only be set by going back and correcting the row is a flag that stays empty.",
+   "<b>WHAT IS STILL STATED, AND SAID PLAINLY: THE RM50 ITSELF.</b> <code>freightPerTrip</code> was tied to a real trip on 22 Jul that collected three lots. <code>txnPerDelivery</code> has no such derivation recorded, and its reference is an IAS 2 citation about classification rather than about the amount. Measuring the share does not measure the rate; that one is still his to state.",
+   "<b>NO FIGURE MOVED.</b> Nothing was folded, no rate changed, no row carries a handover yet, and the book is exactly as v368 left it."
+  ]
+ },
+ {
+  "v": "v372",
+  "d": "26 Aug 2026",
+  "t": "METHOD AND CAVEATS IS GONE FROM EVERY PART, AND THE PAGE LOOKS THE SAME",
+  "n": [
+   "<b>HIS INSTRUCTION: IT IS USELESS, REMOVE IT EVERYWHERE.</b> There were <b>two</b> of them on every part, which is most of why it read as clutter. <code>applyNotes()</code> marked every long paragraph as a note, hid it behind a pill reading &quot;Method and caveats (2)&quot;, and cut the lead and every insight to their first sentence. <code>foldMethod()</code> then swept whatever prose was left into a <code>details</code> bar of its own, reading &quot;Method and caveats, what the figures mean and how they were struck (6)&quot;. Two controls, both shut on every load, saying the same thing about the same paragraphs.",
+   "<b>NOTHING VISIBLE CHANGES, AND THAT IS THE TEST.</b> Both were closed on a fresh load, so what a part showed was its lead sentence, the first sentence of each insight, and its figures. That is exactly what it shows now. What goes is the two bars, the toggle, the body class, about forty lines of CSS and JavaScript, and the prose they were hiding. The lead stays because it says what the part is for; the first sentence of an insight stays because that is the finding rather than the method. A block carrying a control or a figure was never prose and is untouched.",
+   "<b>.stand-note WAS AN EXEMPTION FROM A RULE THAT NO LONGER EXISTS.</b> v365 added it because <code>body.noteshide</code> hid every <code>.note</code> on a fresh load, which took the row editor&rsquo;s own standing notices with it, including the sentence explaining why a cancelled row has no Save button. Nothing hides a note now, so those five standing notices simply show, which is what they were written to do.",
+   "<b>THE PROSE STAYS IN THE BUILDERS.</b> It is deleted from the page, not from the source, because next to the code that computes a figure it still explains how that figure was struck, which is who it was always useful to.",
+   "<b>NO FIGURE MOVED.</b> Nothing was folded, no rate changed, and the book is exactly as v368 left it."
+  ]
+ },
+ {
+  "v": "v371",
+  "d": "26 Aug 2026",
+  "t": "THE NARROW RAIL STANDS UP AGAIN, HIDDEN BEHIND A BUTTON, WITH THE DESK FROSTED BEHIND IT",
+  "n": [
+   "<b>HIS INSTRUCTION OF 26 AUG: KEEP THE RAIL VERTICAL, HIDE IT, PUT IT BEHIND A BUTTON.</b> Below 860px the rail no longer lies down. It is <b>exactly the rail the wide desk has</b>, upright, with its mark, its product switcher, its group headings, its tabs and the active view&rsquo;s parts beneath them, floating out of a button in the bottom left corner while the desk goes behind frosted glass. It closes on the button, on the glass, on Escape and on choosing anything, and that last one runs from <code>switchTab</code> so every road out is one line.",
+   "<b>IT RETIRES FOUR VERSIONS OF THE SAME WRONG IDEA, RATHER THAN SITTING BESIDE THEM.</b> From v273 the rail became a bar on a narrow screen, and everything since was an attempt to make a column of sixteen destinations read as a row: wrapping, then one scrolling row, then ordering the chrome behind the tabs and hiding the mark, then bringing the group labels back as dividers, then pills at v370 this afternoon. Each was better than the one before and all of them were repairing the same decision. A narrow rail is not a special layout any more, so all of it comes out: about sixty lines of CSS, and the 20 Aug rework keeps only its type floors, which were about reading at arm&rsquo;s length and never about the strip.",
+   "<b>THE SUB-PARTS COME BACK WITH IT.</b> <code>.subs</code> was hidden below 860px because a list of a view&rsquo;s parts is meaningless inside a strip of buttons. In an upright menu it is the v343 rule again: the active view&rsquo;s parts are one tap away, on the phone as on the desk.",
+   "<b>BOTTOM LEFT, AND THE CORNER WAS CHOSEN RATHER THAN DEFAULTED TO.</b> The way out of the desk is pinned top left and back-to-top is pinned bottom right, so it is the one corner free, and on a phone it is the one a thumb reaches without shifting grip. The three bars fold into a cross while it is open, so the button is also the way out.",
+   "<b>NO FIGURE MOVED.</b> Nothing was folded, no rate changed, and the book is exactly as v368 left it."
+  ]
+ },
+ {
+  "v": "v370",
+  "d": "26 Aug 2026",
+  "t": "THE SWITCHER LIGHTS WHEN IT HAS SOMEWHERE TO GO, THE FLAT RAIL IS A BAR, AND A PANEL IS OPAQUE",
+  "n": [
+   "<b>THE PRODUCT BUTTONS SAY WHETHER THEY WILL DO ANYTHING.</b> They jump to a product&rsquo;s block on the current tab, and about half the tabs read both books together and have no block to jump to, so on those the button did nothing at all except explain itself after the tap. Each is lit in its own accent, ice for salt and gold for oil, where the block exists, and dimmed where it does not. <b>This is the job v369 took off the rail bands</b>, done better: the bands said it once for the whole rail from the side, this says it per product and per tab on the control it is about. The jump and the light call the same <code>prodHead()</code>, so a lit button always lands somewhere. A dim one is still pressable, because a control that cannot be pressed cannot tell you why.",
+   "<b>THE FLAT RAIL WAS UGLY AND THE REASON WAS THAT ONLY HALF OF IT KNEW.</b> Below 860px the rail lies down into a bar. The tabs were told; the product switcher was not, and kept the column it has upright, so a two-storey block sat in the middle of a single row of buttons and drove the whole rail ragged. The 38px logo made the bar taller than anything in it needed to be. It is now one line of one height: the mark at 30px, two product pills, a rule where the rail changes subject, and the tabs as pills after it.",
+   "<b>THE PHONE&rsquo;S ROW EDITOR HAD NO BACKGROUND AT ALL, AND THAT WAS A BUG RATHER THAN A TASTE.</b> <code>.ed-sheet</code> painted <code>var(--card)</code>, and <code>--card</code> is not declared anywhere in the app: it is a desk token that came across with the rule at v362. An undefined custom property makes the whole declaration invalid, so the sheet fell back to transparent and the ledger read straight through the form. It uses <code>--menu</code> now, the app&rsquo;s own opaque surface.",
+   "<b>THE DESK&rsquo;S TWO SIDE PANELS WERE TRANSLUCENT WITHOUT BEING FROSTED,</b> which is the combination that cannot be read. Names &amp; IDs and the row editor both paint the card gradient, and under the glass palettes those tokens are about 62% opaque; neither panel is in the list that gets a backdrop blur, so the page behind showed through sharp. Both now lay that gradient over <code>--bg0</code>, so the material is unchanged and what is underneath is gone.",
+   "<b>NO FIGURE MOVED.</b> Nothing was folded, no rate changed, and the book is exactly as v368 left it."
+  ]
+ },
+ {
+  "v": "v369",
+  "d": "26 Aug 2026",
+  "t": "THE RAIL DROPS A NAME AND TWO LABELS, AND THE TAB COUNT SITS STRAIGHT",
+  "n": [
+   "<b>THE NAME &quot;OBSIDIAN SALT DESK&quot; IS GONE, EVERYWHERE.</b> It sat under the logo in the rail, in the page footer, on the eyebrow of every printed statement and price list, and in the README, the manifest and the package description. The desk is <b>Salt Command</b>, which is what the title bar, the repo and the kick line above it already said. One name is easier to read than two, and the second one was never doing any work.",
+   "<b>THE RAIL BANDS GO.</b> v231 put two small labels in the rail, a coloured one naming the selected product and a grey <b>All products</b> below it, to mark where the tabs stop following the product switch. In the upright rail they read as headings. Laid flat on anything under 860px the rail becomes one wrapping row of buttons, and the labels become two pieces of stray uppercase text floating between tabs with nothing above or below them to head. <b>The scope is still stated where it is needed:</b> the product switcher sits at the front of the rail, and the three tabs that draw one book while their lead lines claim the desk still carry the v275 badge in their own row.",
+   "<b>THE TAB COUNT WAS FLOATED, WHICH IS RIGHT IN ONE LAYOUT AND WRONG IN THE OTHER.</b> <code>.navct</code> used <code>float:right</code>, which puts the count on the far edge of a full-width rail button exactly as intended. A flat tab is shrink-to-fit, so the float had nothing to travel to and the badge rode up against the label and out of its line. The tab is a flex row now: the count is pushed to the right edge when there is a width to push against and simply follows the label when there is not, vertically centred either way.",
+   "<b>ONE DATE ON THE DAY OF A FOLD.</b> The meta row shows the day you are reading it and the day the book was last updated. Those are different facts and both stay, but on any day the book is folded they are the same date printed twice, which reads as a fault. The stamp now drops the date and keeps the time when the two agree, so today it says <code>v369 &middot; updated 17:04 KL</code>, and the full date returns as soon as they part.",
+   "<b>NO FIGURE MOVED.</b> Nothing was folded, no rate changed, and the book is exactly as v368 left it."
+  ]
+ },
+ {
   "v": "v368",
   "d": "26 Aug 2026",
   "t": "TWO OF v366's CORRECTIONS WERE ACTUALLY FULFILMENTS, AND ARE REFOLDED AS THAT",

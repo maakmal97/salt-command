@@ -2,7 +2,7 @@
   "name": "salt-command",
   "version": "1.0.0",
   "private": true,
-  "description": "The Obsidian Salt Desk, on the phone. Ported from the Per-Crm01 master, deployed as a Cloudflare Worker. Access is OFF by decision, so the gate is the URL and, for names, the vault passphrase.",
+  "description": "Salt Command, on the phone. Ported from the Per-Crm01 master, deployed as a Cloudflare Worker. Access is OFF by decision, so the gate is the URL and, for names, the vault passphrase.",
   "type": "module",
   "scripts": {
     "build": "node tools/build.mjs",

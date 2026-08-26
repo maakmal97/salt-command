@@ -1,6 +1,6 @@
 # salt-command
 
-The Obsidian Salt Desk as an installable phone app. Same desk as the laptop, deployed as a
+The Salt Command desk as an installable phone app. Same desk as the laptop, deployed as a
 Cloudflare Worker behind Cloudflare Access, with a KV-backed queue so a transaction added on
 the phone reaches the ledger.
 

@@ -37,7 +37,7 @@ setTimeout(()=>{
        complete position than as a slice, and it removes the brought-forward problem
        entirely. The month is what the folder records, not what the statement covers. */
     const o={from:null,to:issue,completed:true,open:true,pending:true,
-             dates:true,useName:false,brand:'Obsidian Salt',issued:issued};
+             dates:true,useName:false,brand:'Salt Command',issued:issued};
     const res=w.eval(`(function(){
       const o=${JSON.stringify(o)};
       const rows=stmtRows(${JSON.stringify(p)},o);

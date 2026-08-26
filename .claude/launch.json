@@ -4,8 +4,26 @@
     {
       "name": "salt-app",
       "runtimeExecutable": "npx",
-      "runtimeArgs": ["wrangler", "dev", "--port", "8787"],
+      "runtimeArgs": [
+        "wrangler",
+        "dev",
+        "--port",
+        "8787"
+      ],
       "port": 8787
+    },
+    {
+      "name": "salt-desk-preview",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "wrangler",
+        "dev",
+        "--port",
+        "8788",
+        "--inspector-port",
+        "9230"
+      ],
+      "port": 8788
     }
   ]
 }

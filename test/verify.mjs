@@ -1723,7 +1723,13 @@ section("Fold — an approved batch becomes records in the book (v340)");
     const E = (await import("../engine/position.mjs")).default;
     const mtxt = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
 
-    ok(E.CORRECTABLE.length === 30, `thirty attributes are editable, found ${E.CORRECTABLE.length}`);
+    /* v373: thirty-one. handover joined the table so the delivered share could be measured
+       from the rows rather than stated at 0.20. The count is pinned rather than derived on
+       purpose: a table that quietly gains a field is exactly what this assertion is for. */
+    ok(E.CORRECTABLE.length === 31, `thirty-one attributes are editable, found ${E.CORRECTABLE.length}`);
+    ok(E.CORRECTABLE.includes('handover'), 'handover is one of them');
+    ok(Array.isArray(E.HANDOVER) && E.HANDOVER.join(',') === 'delivered,collected',
+       `handover takes two values, found ${JSON.stringify(E.HANDOVER)}`);
     /* THE EXCLUSIONS ARE THE POINT. Each is computed or structural, and a table that quietly
        gained one would let an editor rename the row it is editing, or claim two streams at once. */
     for (const banned of ["rid", "amend", "mod", "rev", "ref", "refKg", "status"]) {

@@ -179,7 +179,10 @@ h2{font-size:17px;font-weight:600;letter-spacing:-.2px;margin:0 0 12px}
 .led[data-rid]:active{background:rgba(255,255,255,.09)}
 .ed-bd{position:fixed;inset:0;background:rgba(6,4,14,.62);z-index:98}
 .ed-sheet{position:fixed;left:0;right:0;bottom:0;z-index:99;max-height:92vh;overflow-y:auto;
-  background:var(--card);border-top:1px solid var(--brd-2);
+  /* v370: --card is a DESK token and was never declared here, so this whole declaration
+     was invalid and the sheet painted nothing: the ledger read straight through the form.
+     --menu is the app's own opaque surface. */
+  background:var(--menu);border-top:1px solid var(--brd-2);
   border-radius:var(--r) var(--r) 0 0;padding:16px 16px calc(18px + env(safe-area-inset-bottom));
   box-shadow:0 -18px 40px rgba(0,0,0,.5)}
 @media (min-width:620px){.ed-sheet{left:50%;transform:translateX(-50%);width:min(520px,94vw);
@@ -585,6 +588,10 @@ option:checked{background-color:var(--menu-2);font-weight:600}
             <label class="check on" id="w-deliv"><input type="checkbox" id="f-deliv" checked> Delivered in full</label>
           </div>
         </div>
+        <!-- v373: who moved the goods. Not stated is a real answer here, meaning nobody has
+             said: the delivered share counts the rows that answer and ignores the silent. -->
+        <div class="field" id="w-hand"><label for="f-hand">Handover</label>
+          <select id="f-hand"><option value="">Not stated</option><option value="collected">Collected by the customer</option><option value="delivered">Delivered by us</option></select></div>
         <div class="row">
           <div class="field"><label for="f-cash">Cash received (RM)</label>
             <input id="f-cash" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0"></div>
@@ -916,6 +923,7 @@ var PHFORM=[
   {g:'Attribution', only:'S'},
   {k:'as',          f:'assoc',        l:'Associate',          kind:'code', only:'S', hint:'Leave it empty to take an attribution off the row.'},
   {k:'st2',         f:'stream',       l:'Stream',             kind:'stream', only:'S'},
+  {k:'ho',          f:'handover',     l:'Handover',           kind:'handover', only:'S'},
   {k:'dn',          f:'downstream',   l:'Downstream',         kind:'code', only:'S'},
   {k:'orderCode',   f:'orderCode',    l:'Order code',         kind:'text'},
   {g:'What has moved'},
@@ -975,6 +983,8 @@ function edDraw(){
     var id='ed_'+f.f, val=v[f.f];
     if(f.kind==='product')return '<select id="'+id+'"'+dis+'>'+((D&&D.products)||[]).map(function(p){
       return '<option value="'+esc(p.id)+'"'+((val||'salt')===p.id?' selected':'')+'>'+esc(p.name)+'</option>'; }).join('')+'</select>';
+    if(f.kind==='handover')return '<select id="'+id+'"'+dis+'>'+[['','not stated'],['collected','Collected by the customer'],['delivered','Delivered by us']].map(function(o){
+      return '<option value="'+o[0]+'"'+(String(val||'')===o[0]?' selected':'')+'>'+o[1]+'</option>';}).join('')+'</select>';
     if(f.kind==='stream')return '<select id="'+id+'"'+dis+'>'+[['','none'],['R2','R2, books to the associate'],['R3','R3, credits the introduction']].map(function(o){
       return '<option value="'+o[0]+'"'+(String(val||'')===o[0]?' selected':'')+'>'+o[1]+'</option>'; }).join('')+'</select>';
     if(f.kind==='code')return '<input id="'+id+'" list="edCodes" placeholder="none"'+dis+' value="'+esc(val)+'">';
@@ -1613,7 +1623,8 @@ function buildEntry(){
       status:(f.cash>=f.total-0.001)?'paid':(f.cash<=0.001?'unpaid':'partial'),raw:raw,
       payload:{mode:'new',product:prod,direction:dir,party:f.party,newId:null,date:f.date,
         qty:f.qty,total:f.total,cash:f.cash,kg:f.kg,assoc:null,stream:null,downstream:null,
-        kind:null,orderCode:null,linkTo:null,note:f.note||null}};
+        kind:null,orderCode:null,linkTo:null,note:f.note||null,
+        handover:(dir==='SELL'&&$('f-hand')?$('f-hand').value||null:null)}};
   }
   if(MODE==='amend'){
     var o=openRow();

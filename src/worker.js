@@ -562,10 +562,22 @@ export default {
     }
     if (p === "/bye") return json({ ok: true });            // no server to stop; answer so the beacon is quiet
 
-    /* THE FULL DESK, at a path (v290). The root is the phone app now; the 900 KB desk built
-     * from the master stays reachable here so nothing the app has not rebuilt becomes
-     * laptop-only. Served through ASSETS by its real filename, so the app keeps the root. */
-    if (p === "/desk") {
+    /* ONE SURFACE (v376, his instruction). v290 split them: the root was the phone app and the
+     * desk sat at /desk, because a 1.3 MB page built for a laptop rail was not a phone app. That
+     * reason went with v371, when the rail became a menu and the desk started laying out like
+     * one. Two surfaces over one book was always two things to keep level, and the policy that
+     * justified the split, keeping cost and margin off a public app, protected nothing while
+     * /desk served all of it at the same public URL.
+     * THE DESK IS THE ROOT NOW, and /desk still answers so every link and bookmark holds.
+     * THE APP STAYS AT /app FOR THIS VERSION, deliberately: it is one route, it costs nothing,
+     * and if the desk turns out to be wrong on a phone it is the difference between a bad
+     * afternoon and no phone surface at all. Retire it when a week has passed without it. */
+    if (p === "/app") {
+      const res = await env.ASSETS.fetch(new Request(new URL("/index.html", url), { method: "GET" }));
+      if (res && res.ok) return new Response(res.body, { status: 200, headers: res.headers });
+      return json({ ok: false, error: "the app is not built" }, 404);
+    }
+    if (p === "/desk" || p === "/") {
       const res = await env.ASSETS.fetch(new Request(new URL("/desk.html", url), { method: "GET" }));
       if (res && res.ok) return new Response(res.body, { status: 200, headers: res.headers });
       return json({ ok: false, error: "the desk is not built" }, 404);
