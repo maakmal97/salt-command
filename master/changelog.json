@@ -1,5 +1,24 @@
 [
  {
+  "v": "v367",
+  "d": "26 Aug 2026",
+  "t": "CA4-DAM'S ADVANCE IS SETTLED, ON HIS WORD DIRECTLY",
+  "n": [
+   "<b>ONE CORRECTION, NOT FROM THE PHONE'S QUEUE.</b> s104 (CA4-DAM, 1 unit for RM100, delivered 24 Aug) was folded as an advance at v366: delivered in full, nothing paid. He has now said directly that it is paid; cash is corrected to RM100. The row closes as Completed rather than staying an open advance."
+  ]
+ },
+ {
+  "v": "v366",
+  "d": "26 Aug 2026",
+  "t": "FIVE CORRECTIONS FROM THE PHONE, ONE PAIR OF THEM WORKING TOGETHER",
+  "n": [
+   "<b>FIVE CORRECTIONS, APPROVED FROM THE PHONE ON 25 AUG, FOLDED ON HIS WORD TODAY.</b> Each rewrites what a row already on the book says; none moves cash or stock in the trail sense, and none is a new order. CA4-DAM's s104 restates to 1 unit for RM100, delivered in full (was 0.5 unit for RM50, half delivered). CM4-MK's s105 restates its total to RM380 and its cash to RM0. CM6-PJ's s100 restates its total to RM100, its cash to RM100, and attributes it to CI4-OKR via R3, where it carried no attribution before. CE4-CHE's s093 carries two corrections that work as a pair: the first restates the total to RM520 and the delivered quantity to 5.25 unit, the second restates the quantity to 5.75 unit and, in the same step, the total back to RM500. Folded in the order approved, s093 ends the batch at 5.75 unit for RM500, 5.25 delivered, RM500 already collected -- exactly what he confirmed directly.",
+   "<b>CA4-DAM'S s104 IS STILL AN ADVANCE AFTER THIS BATCH, ON PURPOSE.</b> The correction restates the order (qty, total, delivered) but was not asked to touch cash, which stays at RM0 on a RM100 order. He has separately said the order is now paid; that is folded right after this batch, as its own step, because it did not come through the phone's approval gate and the two should not read as one thing.",
+   "<b>NOTHING PHYSICALLY MOVES IN THIS BATCH.</b> A Correction rewrites the record, not the shelf: s104's and s093's delivered-quantity changes restate what already happened rather than booking a fresh movement, so the roll below is zero. Any resulting gap between the ledger and the counted shelf surfaces the same way any other gap does, at the next count.",
+   "<b>EVERY ROW KEEPS ITS OLD TRAIL, WITH THE CORRECTION ADDED BESIDE IT, NOT IN PLACE OF IT.</b> Each row's amend trail still shows what was originally booked; a correction line is appended saying what changed and to what, so the arithmetic in the trail will no longer sum to the row's own headline figures on these five, and that is the intended, visible mark of a corrected row rather than an error to chase."
+  ]
+ },
+ {
   "v": "v365",
   "d": "26 Aug 2026",
   "t": "THE SWEEP: THIRTY-NINE FINDINGS ACROSS BOTH APPS, EVERY ONE FIXED AND PINNED",
