@@ -565,6 +565,19 @@ select{width:100%;border:1px solid var(--line);border-radius:8px;padding:8px 9px
 .ledbar input{flex:1;min-width:170px;border:1px solid var(--line);border-radius:9px;padding:7px 10px;font-size:13px;color:var(--ink);background:#140c26;}
 .ledbar select{border:1px solid var(--line);border-radius:9px;padding:7px 34px 7px 8px;font-size:12px;color:var(--mut);background-color:#140c26;}
 .ledbar .ledct{font-size:11px;color:var(--dim);margin-left:auto;}
+/* What the filter comes to. One line of figures under the toolbar, in the ledger
+   tuning: gold for what was bought, ice for what was written, amber for what is still
+   between the two parties. No prose, because the labels are the sentence. */
+.ledsum{display:flex;flex-wrap:wrap;align-items:flex-end;gap:7px 24px;margin:0 0 12px;padding:10px 13px;border:1px solid var(--line);border-radius:12px;background:linear-gradient(160deg,var(--card2),var(--card));}
+.ledsum .s{display:flex;flex-direction:column;gap:1px;min-width:0;}
+.ledsum .l{font-size:10px;letter-spacing:.7px;text-transform:uppercase;color:var(--dim);font-weight:700;white-space:nowrap;}
+.ledsum .v{font-size:17px;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums;white-space:nowrap;line-height:1.15;}
+.ledsum .v.ice{color:var(--ice);}
+.ledsum .v.gold{color:var(--gold);}
+.ledsum .v.warn{color:var(--amber);}
+.ledsum .v.nil{color:var(--mut);font-weight:600;}
+.ledsum .sb{font-size:11px;color:var(--mut);white-space:nowrap;}
+.ledsum .scope{margin-left:auto;font-size:11px;color:var(--dim);white-space:nowrap;align-self:flex-end;}
 .fintab{width:100%;border-collapse:collapse;}
 .fintab th,.fintab td{padding:7px 9px;font-size:13px;text-align:right;border-bottom:1px solid var(--line);}
 .fintab th.l,.fintab td.l{text-align:left;}
@@ -6844,39 +6857,68 @@ function ledQuick(what,type,who,date,total,qty){
 }
 function goEnt(code){const el=document.getElementById('ent-'+code);if(el){el.scrollIntoView({behavior:'smooth',block:'center'});el.classList.add('entflash');setTimeout(()=>el.classList.remove('entflash'),1200);}return false;}
 let ledF={q:'',state:'',party:'',month:'',product:''};
+/* the rows tabLedger last matched. The day-by-day chart draws THIS rather than reaching for
+   `sales`, so a chart sitting under the toolbar cannot show a different book from the list
+   under it. Set on every build of the tab, read only by drawLedgerCharts. */
+let ledShown=[];
 /* v365: NEITHER FILTER NOR SEARCH COULD ISOLATE A PRODUCT. Oil could not be scanned out on
    this tab short of reading every row by eye, and the search box's own haystack did not
    even carry the name, though every row already knows it. ledgerProdOf resolves the same
    way tabLedger's own rows do: a sale carries product directly, a purchase's product lives
    on the raw lot in _buy. */
 const ledgerProdOf=t=>prodOf(t.type==='BUY'?(t._buy||t):t);
+/* THE CLOSING STATE, DECIDED ONCE. It was written twice, here and in tabLedger's own
+   row loop, and the two copies drifted: this side never learned about Cancelled when the
+   card's side did. So a cancelled row was filtered under whatever its amendment replay
+   happened to end on, and the Cancelled option returned three rows of five while Pending
+   returned three where only one is pending. In-Kind, Default and Cancelled are terminal
+   headlines and win at the close even where the last arithmetic step reads Completed. */
+const ledFinal=(si,am)=>(si.order==='In-Kind'||si.order==='Default'||si.order==='Cancelled')
+  ?si.order:(am.length?am[am.length-1].state:si.order);
+/* an undated row is PLANNED rather than agreed, and printing t.date on one put the literal
+   word "undefined" in the date column of three cards. */
+const ledDate=d=>d&&d!=='undefined'?d:'undated';
 function ledMatches(t,si,am,code){
   if(ledF.party&&t.who!==ledF.party)return false;
-  if(ledF.month&&t.date.slice(0,7)!==ledF.month)return false;
+  /* t.date is absent on a row agreed but never moved, so this threw on every month
+     in the list and the dropdown silently did nothing at all. An undated row has no month
+     and is therefore not in one. */
+  if(ledF.month&&(t.date||'').slice(0,7)!==ledF.month)return false;
   if(ledF.product&&ledgerProdOf(t)!==ledF.product)return false;
   if(ledF.state){
-    const fin=(si.order==='In-Kind'||si.order==='Default')?si.order:(am.length?am[am.length-1].state:si.order);
+    const fin=ledFinal(si,am);
     if(ledF.state==='Open'){if(!/^Open/.test(fin))return false;}
     else if(fin!==ledF.state)return false;}
   if(ledF.q){
     const q=ledF.q.toLowerCase();
-    const hay=(code+' '+t.who+' '+ID(t.who)+' '+t.date+' '+(t.total||'')+' '+(t.note||'')+' '+(t.mod||'')+' '+(PRODUCTS[ledgerProdOf(t)]||{}).name).toLowerCase();
+    const hay=(code+' '+t.who+' '+ID(t.who)+' '+(t.date||'')+' '+(t.total||'')+' '+(t.note||'')+' '+(t.mod||'')+' '+((PRODUCTS[ledgerProdOf(t)]||{}).name||'')).toLowerCase();
     if(hay.indexOf(q)<0)return false;}
   return true;
 }
 function wireLedger(){
   const q=document.getElementById('ledQ');if(!q)return;
-  /* v365: was sec-ledger, which hasn't existed since Ledger and Analysis merged into one
-     view at v341-343 (the real container is sec-book, line 1352). The lookup failed
-     silently, so every filter updated its own state and then redrew nothing. */
-  const rerun=()=>{const el=document.getElementById('sec-book');if(el){el.innerHTML=tabLedger();wireLedger();
-    const q2=document.getElementById('ledQ');if(q2){q2.value=ledF.q;q2.focus();q2.setSelectionRange(q2.value.length,q2.value.length);}}};
-  q.oninput=()=>{ledF.q=q.value;rerun();};
-  const st=document.getElementById('ledState');if(st)st.onchange=()=>{ledF.state=st.value;rerun();};
-  const pt=document.getElementById('ledParty');if(pt)pt.onchange=()=>{ledF.party=pt.value;rerun();};
-  const mo=document.getElementById('ledMonth');if(mo)mo.onchange=()=>{ledF.month=mo.value;rerun();};
-  const pr=document.getElementById('ledProduct');if(pr)pr.onchange=()=>{ledF.product=pr.value;rerun();};
-  const cl=document.getElementById('ledClear');if(cl)cl.onclick=()=>{ledF={q:'',state:'',party:'',month:'',product:''};rerun();};
+  /* v365 pointed this at sec-book, which exists, and that was the fault rather than the fix.
+     sec-book is the whole VIEW: the pills strip that names Analysis, then a .vpart holding
+     one part. Repainting it with tabLedger() alone THREW THE STRIP AWAY, so one keystroke in
+     the search box lost the way to Analysis, and it skipped stripMethod and the chart pass
+     as well, so the method prose v372 removed came back and the chart went blank. It now
+     repaints the PART, through renderPart, which is the one path that builds a part: the
+     builder, the prose trim and the chart pass, in that order.
+     Focus goes back to the control that was used, not always to the search box. */
+  const rerun=id=>{
+    const host=document.querySelector('#sec-book .vpart[data-tab="ledger"]');
+    if(!host)return;
+    renderPart('ledger',host);
+    const el=document.getElementById(id);if(!el)return;
+    try{el.focus();}catch(e){}
+    if(el.tagName==='INPUT'&&el.setSelectionRange)el.setSelectionRange(el.value.length,el.value.length);
+  };
+  q.oninput=()=>{ledF.q=q.value;rerun('ledQ');};
+  const st=document.getElementById('ledState');if(st)st.onchange=()=>{ledF.state=st.value;rerun('ledState');};
+  const pt=document.getElementById('ledParty');if(pt)pt.onchange=()=>{ledF.party=pt.value;rerun('ledParty');};
+  const mo=document.getElementById('ledMonth');if(mo)mo.onchange=()=>{ledF.month=mo.value;rerun('ledMonth');};
+  const pr=document.getElementById('ledProduct');if(pr)pr.onchange=()=>{ledF.product=pr.value;rerun('ledProduct');};
+  const cl=document.getElementById('ledClear');if(cl)cl.onclick=()=>{ledF={q:'',state:'',party:'',month:'',product:''};rerun('ledQ');};
 }
 
 /* ============ STATEMENT OF ACCOUNT (v183) ============
@@ -7328,6 +7370,57 @@ function prodTag(t){
   return `<span class="prodtag" style="color:${P.accent}" title="${esc(P.name)}">`
     +`<span class="gl"></span>${esc(P.name)}</span>`;
 }
+/* ============ WHAT THE FILTER COMES TO ============
+   The toolbar could isolate a party, a month, a state or a product, and then said only how
+   many rows it had found. The question a book is actually opened with, "how much is that",
+   had to be answered by adding the cards up by eye, on a tab that carries a hundred and
+   twenty-five of them.
+   EVERY FIGURE HERE IS A SUM OF ONE THE ROWS ALREADY CARRY. txDeliv, txPaid, txAdvance and
+   txDeferKg are the position engine's, read exactly as the Order book reads them; nothing
+   is re-derived, because a second opinion on a receivable is a second engine.
+   A CANCELLED ROW COUNTS IN THE ROWS SHOWN AND IN NONE OF THE MONEY, which is what the rest
+   of the desk does with one. */
+function ledTotals(list){
+  const S=list.filter(t=>t.type==='SELL'&&!t.cancelled), B=list.filter(t=>t.type==='BUY');
+  const sum=(a,f)=>a.reduce((n,x)=>n+(+f(x)||0),0);
+  /* WHICH OF THE ENGINE'S FIGURES, AND WHY EACH ONE. Checked against recompute's own
+     totals for a single product, because a strip that disagrees with the Order book by a
+     definition nobody stated is worse than no strip:
+       txPhys, not txDeliv    what left the shelf. Ties to soldKg exactly; txDeliv adds
+                              set-off fulfilment, which settles a balance without moving salt.
+       txPaid                 cash AND what was settled in kind, which is what "settled" says.
+                              revCollected is the cash half alone and is labelled cash.
+       txAdvance              the desk's own definition of a receivable, and outstandingOf IS
+                              this function; a pending order is not one.
+       total, not net of the pending tail  this is the sum of the Total column above it, and
+                              a ledger that would not add up its own column is no use.
+       a defaulted lot        paid for, never arrived. Out of the ringgit as poRecvKg already
+                              keeps it out of the units, so the two halves of the cell agree.
+                              It still counts as a lot shown, and its own card says Default. */
+  return {sellN:S.length,buyN:B.length,
+    written:sum(S,t=>t.total), out:sum(S,t=>txPhys(t)), got:sum(S,t=>txPaid(t)),
+    owed:sum(S,t=>txAdvance(t)), oweKg:sum(S,t=>txDeferKg(t)),
+    bought:sum(B.filter(t=>!(t._buy&&t._buy.defaulted)),t=>t.total), inKg:sum(B,t=>poRecvKg(t._buy))};
+}
+function ledSumBar(list,total){
+  if(!list.length)return '';
+  const T=ledTotals(list);
+  const cell=(l,v,sub,cls)=>`<div class="s"><span class="l">${l}</span>`
+    +`<span class="v${cls?' '+cls:''}">${v}</span><span class="sb">${sub}</span></div>`;
+  const bits=[];
+  if(T.sellN){
+    bits.push(cell('Written',fmt0(T.written),T.sellN+(T.sellN===1?' order':' orders'),'ice'));
+    bits.push(cell('Handed over',kg(T.out),fmt0(T.got)+' settled',''));
+  }
+  if(T.owed>0.009)bits.push(cell('Owed to you',fmt0(T.owed),'delivered, unpaid','warn'));
+  if(T.oweKg>0.009)bits.push(cell('Salt you owe',kg(T.oweKg),'paid, undelivered','warn'));
+  /* an empty state is a finding, not a gap: a missing cell reads as a figure nobody worked
+     out, so the one case where nothing is between the parties says so. */
+  if(T.sellN&&T.owed<=0.009&&T.oweKg<=0.009)bits.push(cell('Outstanding','none','nothing owed either way','nil'));
+  if(T.buyN)bits.push(cell('Bought',fmt0(T.bought),T.buyN+(T.buyN===1?' lot, ':' lots, ')+kg(T.inKg)+' in','gold'));
+  const scope=list.length===total?`all ${total} rows`:`the ${list.length} of ${total} rows shown`;
+  return `<div class="ledsum">${bits.join('')}<span class="scope">across ${scope}</span></div>`;
+}
 function tabLedger(){
   // a fully pending order (agreed, nothing moved) carries no meaningful date and sits at the very bottom
   const isPend=t=>t.type==='BUY'?(ledgerBuy(t._buy).order==='Pending'):(txStat(t).order==='Pending');
@@ -7350,6 +7443,7 @@ function tabLedger(){
     if(a.ref)bits.push(`<span class="eref">${a.ref}</span>`);
     return bits.length?`see ${bits.join(' ')}`:'';};
   // one card per order: opening (strong) -> movements (recessed rail) -> closing (strong, only when completed)
+  const shownTx=[];
   const rows=all.map((t,idx)=>{
     const code=codes[idx];
     const si=t.type==='BUY'?ledgerBuy(t._buy):txStat(t);
@@ -7361,7 +7455,7 @@ function tabLedger(){
     const openState=am.length?am[0].state:si.order;
     /* In-Kind (barter/rebate) and Default are terminal even when the replay's last
        arithmetic step reads Completed/Open: the special headline wins at close. */
-    const finalState=(si.order==='In-Kind'||si.order==='Default'||si.order==='Cancelled')?si.order:(am.length?am[am.length-1].state:si.order);
+    const finalState=ledFinal(si,am);
     const completed=am.length?(am[am.length-1].state==='Completed'||si.order==='In-Kind'||si.order==='Default'||si.order==='Cancelled'):(si.order==='Completed'||si.order==='In-Kind'||si.order==='Default'||si.order==='Cancelled');
     const closeState=finalState;
     const moves=am.length?am.slice(1,completed?am.length-1:am.length):[];
@@ -7377,7 +7471,10 @@ function tabLedger(){
     /* v266: PENDING HAS NO MARGIN. Nothing has been paid and nothing delivered, so there is
        no cost of goods against it; printing one states a profit on a trade that has not
        happened. It reappears the moment the order moves. */
-    let margin=(t.type==='SELL'&&si.order!=='Pending')?t.total-t.qty*costOf(t):null;
+    /* NOR HAS A CANCELLED ONE, for a stronger version of the same reason. A cancelled
+       row is out of every figure on this desk, so "RM 108.77 · 59%" beside it states a profit
+       on a trade that was called off. Two of them printed one. */
+    let margin=(t.type==='SELL'&&si.order!=='Pending'&&si.order!=='Cancelled')?t.total-t.qty*costOf(t):null;
     if(margin!=null&&Math.abs(margin)<0.005)margin=0;   // a rebate settled at cost printed "RM -0.00 · -0%"
     const marPct=(margin!=null&&t.total>0)?margin/t.total*100:null;
     const qCell=(mv,v)=>`<span class="lcol cqty${mv?'':' carried'}">${kg(v)}</span>`;
@@ -7396,7 +7493,7 @@ function tabLedger(){
       +`<span class="lgroup">`
         +`<span class="ecode">${code}</span>`
         +`<span class="lclabel ${headLabelCls}">${headLabel}</span>`
-        +`<span class="ldate">${isPend(t)?'':t.date}</span>`
+        +`<span class="ldate">${isPend(t)?'':ledDate(t.date)}</span>`
         +`<span class="tag ${t.type==='BUY'?'buy':'sell'}">${t.type}</span>`
         +prodTag(t)
         +(provOf(t)?`<span class="tag prov" title="recorded but not yet committed">Provisional</span>`:'')
@@ -7464,18 +7561,19 @@ function tabLedger(){
       +`<span class="lgroup">`
         +`<span class="ecode">${code}</span>`
         +`<span class="lclabel roleclose">Closed</span>`
-        +`<span class="ldate">${closeA.date}</span>`
+        +`<span class="ldate">${ledDate(closeA.date)}</span>`
         +`<span class="tag ${t.type==='BUY'?'buy':'sell'}">${t.type}</span>`
         +prodTag(t)
         +(provOf(t)?`<span class="tag prov" title="recorded but not yet committed">Provisional</span>`:'')
         +`<span class="lparty">${ID(t.who)}</span>`
-        +`<span class="lagreed">agreed ${t.date}</span>`
+        +`<span class="lagreed">${t.date?'agreed '+t.date:'planned, undated'}</span>`
         +(caption?`<span class="lmnote">${caption}</span>`:'')
       +`</span>`
       +qCell(true,t.qty)+pCell(true)+tCell(true,t.total,true)
       +`<span class="lstate">${pill(finalState,stateCls(finalState))}</span>`
       +`</div>`:'';
     if(!ledMatches(t,si,am,code))return '';
+    shownTx.push(t);
     const cardCls=finalState==='Completed'?'s-completed':finalState==='Pending'?'s-pending':finalState==='In-Kind'?'s-inkind':finalState==='Default'?'s-default':finalState==='Cancelled'?'s-cancelled':'s-open';
     /* v253: a pending order carries its own next action */
     const q=(w,c,l)=>`<button class="lqb ${c}" onclick="ledQuick('${w}','${t.type}','${String(t.who).replace(/'/g,"\\'")}','${t.date}',${+t.total},${+t.qty})">${l}</button>`;
@@ -7493,6 +7591,8 @@ function tabLedger(){
     const rid=ridOf(t);
     return `<div class="lcard ${cardCls}" id="ent-${code}"${rid?` data-rid="${rid}" data-type="${t.type}" tabindex="0"`:""}>${collapse?collapsedLine:(openLine+movePanel+closeLine)}${quickBar}</div>`;}).filter(Boolean);
   const shown=rows.length,total=all.length,rowsHtml=rows.join('');
+  ledShown=shownTx;                       // the chart draws the same set the list shows
+  const filtered=!!(ledF.q||ledF.state||ledF.party||ledF.month||ledF.product);
   const parties=[...new Set(all.map(t=>t.who))];
   /* v280: a PENDING order carries no date, because it is not firm until something moves.
      So the month index is built from the rows that have one, and undated rows fall through
@@ -7506,12 +7606,11 @@ function tabLedger(){
     <select id="ledParty">${selOpt('',ledF.party,'All parties')}${parties.map(x=>selOpt(x,ledF.party,ID(x))).join('')}</select>
     <select id="ledMonth">${selOpt('',ledF.month,'All months')}${months.map(x=>selOpt(x,ledF.month,mLab(x))).join('')}</select>
     <select id="ledProduct">${selOpt('',ledF.product,'All products')}${PROD_IDS.map(p=>selOpt(p,ledF.product,PRODUCTS[p].name)).join('')}</select>
-    ${(ledF.q||ledF.state||ledF.party||ledF.month||ledF.product)?'<button class="vbtn" id="ledClear" style="font-size:11px">Clear</button>':''}
+    ${filtered?'<button class="vbtn" id="ledClear" style="font-size:11px">Clear</button>':''}
     <span class="ledct">${shown} of ${total}</span>
   </div>`;
   return `<h1>Ledger</h1>
-  <div class="dsc dsclead">Every transaction the desk holds, newest first, with the trail of what moved when.</div>
-  <div class="card" style="margin-bottom:14px"><div class="cardh">The book, day by day <span class="sub">RM written and units moved</span></div><div class="chartbox" style="height:180px"><canvas id="lgTimeChart"></canvas></div></div>
+  <div class="dsc dsclead">Every transaction the desk holds, oldest first, with the trail of what moved when.</div>
   <h2 style="margin-top:20px">Statement of account <span class="sub" style="font-weight:400">what a customer may be given</span> <span class="rule"></span></h2>
   <div class="dsc" style="margin-bottom:9px">A record of one party&rsquo;s own dealings, for handing to them. Deliberately spare: <b>what they took, when, and how much</b>, and nothing else. It is <b>built rather than copied</b>, so <b>no cost, no margin, no unit price, no other party and none of the notes in this ledger</b> can travel with it &mdash; the notes here are written for you, and several are about your own bookkeeping.</div>
   <div class="card">
@@ -7534,8 +7633,10 @@ function tabLedger(){
   </div>
 
   <h2>Transactions ledger <span class="rule"></span></h2>
-  <div class="note">One card per order: <b>Opened &rarr; movements &rarr; Closed</b>. The <b>left spine</b> colours each card by state (green completed, amber open, violet pending, gold in-kind, red cancelled or default). <b>Bright</b> figures moved at that step; <b>grey</b> ones carried over. Long amendment trails collapse in the middle and expand on tap; <b>linked</b> references are clickable.</div>
+  <div class="note">One card per order, <b>Opened &rarr; movements &rarr; Closed</b>, with <b>bright</b> figures moved at that step and <b>grey</b> ones carried over.</div>
   ${toolbar}
+  ${ledSumBar(shownTx,total)}
+  <div class="card" style="margin:0 0 6px"><div class="cardh">The book, day by day <span class="sub">RM written and units moved${filtered?', across the rows shown':''}</span></div><div class="chartbox" style="height:180px"><canvas id="lgTimeChart"></canvas></div></div>
   <div class="lhead" style="margin-top:12px"><span class="lgroup">Entry</span><span class="lcol cqty">Qty</span><span class="lcol cprc">Price/unit</span><span class="lcol ctot">Total &middot; margin</span><span class="lstate">State</span></div>
   <div class="lcards" style="margin-top:0">${rowsHtml||'<div class="dsc" style="padding:14px 4px">Nothing matches this filter.</div>'}</div>
   ${supplierQuote&&supplierQuote.tiers?`<h2 style="margin-top:24px">Supplier bulk quote <span class="rule"></span></h2><div class="card"><div style="font-size:12px;color:var(--mut);margin-bottom:8px">Indicative from ${ID(supplierQuote.supplier)} &mdash; not a purchase.</div><table><thead><tr><th class="l">Order</th><th>Price</th><th>Cost/unit</th></tr></thead><tbody>${supplierQuote.tiers.map(t=>`<tr><td class="l">${kg(t.qty)}</td><td>${fmt(t.total)}</td><td class="mono">${fmt(t.total/t.qty)}</td></tr>`).join('')}</tbody></table></div>`:''}`;
@@ -7681,10 +7782,15 @@ function drawLedgerCharts(){
     if(!ok){chartEmpty(el,'Chart unavailable. Every figure it draws is in the tables on this tab.');return;}
     try{
       const by={};
-      sales.filter(x=>!x.cancelled&&x.total>0).forEach(x=>{
+      /* THE CHART DREW THE WHOLE BOOK WHILE THE LIST BELOW IT SHOWED A SUBSET. It sat
+         above the toolbar reading `sales` directly, so filtering to one party left a chart
+         over it still charting everybody. It now draws ledShown, which is what tabLedger
+         matched, so the picture and the list cannot disagree. An undated row has no day to
+         stand on and is left out rather than piled onto a column called undefined. */
+      ledShown.filter(x=>x.type==='SELL'&&!x.cancelled&&x.total>0&&x.date).forEach(x=>{
         (by[x.date]=by[x.date]||{rm:0,k:0}).rm+=x.total;by[x.date].k+=x.qty;});
       const days=Object.keys(by).sort();
-      if(lgOrEmpty(el,days.length))return;
+      if(!days.length){chartEmpty(el,'No dated sale in this selection.');return;}
       if(lgTimeObj){try{lgTimeObj.destroy();}catch(e){}}
       lgTimeObj=new Chart(el,{data:{labels:days.map(d=>d.slice(5)),datasets:[
         {type:'bar',label:'RM written',data:days.map(d=>+by[d].rm.toFixed(2)),backgroundColor:'rgba(99,230,224,.5)',borderWidth:0,borderRadius:2},
