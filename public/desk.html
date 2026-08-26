@@ -60,7 +60,7 @@ document.addEventListener('visibilitychange',function(){
    focused, no dialog open. Otherwise it offers a chip and waits to be tapped.
    The same tick retries a held entry, which is what gets a phone write to the cloud
    without waiting for the next open. */
-var SALT_BUILD_ID="f8235e112aae34ca";
+var SALT_BUILD_ID="14498726d3de4cc4";
 var SALT_REV_MS=10000;
 (function(){
   var chip=null,timer=null;
@@ -2477,7 +2477,7 @@ const supplierQuote={
     {
       "qty": 50,
       "total": 2200,
-      "note": "RM44/unit, back to exactly the RM2,200 quoted on 10 Jul before this tier moved dearer."
+      "note": "RM44/unit, back to exactly the RM2,200 quoted on 10 Jul after this tier moved up."
     },
     {
       "qty": 100,
@@ -2497,7 +2497,7 @@ const oilQuote={
     {
       "qty": 10,
       "total": 100,
-      "note": "RM10/unit, the smallest lot he sells and the dearest rate"
+      "note": "RM10/unit, the smallest lot he sells and the highest rate"
     },
     {
       "qty": 20,
@@ -3347,7 +3347,9 @@ const whiteboard=[
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{"v":"v378","d":"26 Aug 2026","t":"THE HEADER IS A STICKY BAR AND IT HOLDS ITS OWN CONTROLS, SO NOTHING SITS ON TOP OF ANYTHING","n":["<b>v376 PUT TWO DISCS ON TOP OF A HEADER THAT WAS ALREADY THERE.</b> Pinning the menu and Names &amp; IDs to the top right corner of the viewport is right when the page has nothing at that corner. This page has a header, and the version chip ended up underneath them, unreadable.","<b>THEY ARE IN THE HEADER NOW, AND THE HEADER IS STICKY.</b> Sticky is what floating them was for: reachable from any scroll position. In the flow, nothing can overlap anything. The two at the bottom stay floating, because the bottom corners carry no content of their own and both have to be reachable mid-scroll.","<b>ONE BAR THAT ADAPTS, WHICH IS THE POINT OF ONE SURFACE.</b> Above 860px the rail carries the mark and the tabs, so the bar shows the version and the key alone. Below it the mark and the menu appear in the same row. Same markup, same page, no second layout to keep level.","<b>NO FIGURE MOVED.</b> Nothing was folded, no rate changed, and the book is exactly as v368 left it."]},
+const evolution=[{"v":"v379","d":"26 Aug 2026","t":"AN EMPTY SIZE BAND WAS REPORTED AS A LOSS OF THE ENTIRE COST","n":["<b>OIL&rsquo;S 1-TO-6.25 UNIT BAND READ RM -7.49 A UNIT AGAINST AN EFFECTIVE COST OF RM 7.49.</b> Nothing has ever been sold in that band, because oil&rsquo;s minimum order is 10 unit. <code>earnedPerKg()</code> returns a per-unit of 0 for a band with no rows, and the shrinkage table subtracted the cost from it, so an empty set was printed as a catastrophic loss on every row of the table. It says <b>no trade</b> now, and the bulk cap, which computes its per-unit the same way, is guarded with it.","<b>THIS IS OLDER THAN TODAY.</b> Nothing in v369 to v378 touched this table; the fault has been on the Price view for as long as oil has had a band with no trade in it. It is the same rule the drafter&rsquo;s flags follow: a figure that fires when nothing is wrong teaches the reader to ignore the ones that mean something.","<b>AND A BANNED WORD, IN THE ONE PLACE THE DESK SAID IT ITSELF.</b> &quot;Dearest live quote tier&quot; is now &quot;highest&quot;. Two more sat in quote notes on the book and are corrected with it. Neither is a figure.","<b>NO FIGURE MOVED.</b> Nothing was folded and no rate changed. What changed is that a figure which was never real stopped being printed."]},
+
+{"v":"v378","d":"26 Aug 2026","t":"THE HEADER IS A STICKY BAR AND IT HOLDS ITS OWN CONTROLS, SO NOTHING SITS ON TOP OF ANYTHING","n":["<b>v376 PUT TWO DISCS ON TOP OF A HEADER THAT WAS ALREADY THERE.</b> Pinning the menu and Names &amp; IDs to the top right corner of the viewport is right when the page has nothing at that corner. This page has a header, and the version chip ended up underneath them, unreadable.","<b>THEY ARE IN THE HEADER NOW, AND THE HEADER IS STICKY.</b> Sticky is what floating them was for: reachable from any scroll position. In the flow, nothing can overlap anything. The two at the bottom stay floating, because the bottom corners carry no content of their own and both have to be reachable mid-scroll.","<b>ONE BAR THAT ADAPTS, WHICH IS THE POINT OF ONE SURFACE.</b> Above 860px the rail carries the mark and the tabs, so the bar shows the version and the key alone. Below it the mark and the menu appear in the same row. Same markup, same page, no second layout to keep level.","<b>NO FIGURE MOVED.</b> Nothing was folded, no rate changed, and the book is exactly as v368 left it."]},
 
 {"v":"v377","d":"26 Aug 2026","t":"ENTERING AN ORDER IS THE SAME SHEET AS EDITING ONE","n":["<b>HIS INSTRUCTION: ENTERING AN ORDER SHOULD BE AS COMPLETE AS THE ROW EDITOR.</b> It is now the same sheet. The + in the bottom right opens the editor on an empty row: the same EDFORM table, the same thirty controls, the same select for a stream and the same one for a handover. The Workbench form is untouched and still takes an amendment, a count, a loss, a lost sale and the rest; what this replaces is reaching it for the one thing done most often, and finding eleven fields there where the editor offers thirty.","<b>IT IS READ STRAIGHT, NOT DIFFED, and that is not a detail.</b> A correction queues what CHANGED, which on an empty row would silently drop the product every time it is salt, because salt is the default and therefore not a change. The new-order path reads every control as it stands.","<b>THE ELEVEN THE QUEUE ALREADY NAMES TRAVEL AS THEMSELVES; THE REST RIDE IN <code>more</code>.</b> The drafter checks that bag field by field against the same arrays a correction goes through, and refuses the whole row rather than guessing: an unknown key, a date that is not a date, a flag that is not a boolean, and nothing is drafted. Same discipline, one table, no second copy.","<b>IT QUEUES, IT DOES NOT WRITE.</b> The order is drafted, flagged against the book and comes back to Approve for a tap, exactly like an entry typed on the Workbench or a correction from the ledger. Nothing about the v305 gate is bypassed.","<b>NO FIGURE MOVED.</b> Nothing was folded, no rate changed, and the book is exactly as v368 left it."]},
 
@@ -3498,7 +3500,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='26 Aug 2026, 18:40 KL';
+const LAST_UPDATED='26 Aug 2026, 19:18 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -11783,7 +11785,7 @@ function tabPricing(){
                  :`Nothing has traded yet, so there is nothing to check it against.`)
       +`</div>`;})()}
   <div class="kpis k4">
-    <div class="kpi"><div class="l">Replacement cost</div><div class="v">${fmt(c.repl)}<span style="font-size:12px;color:var(--mut)">/unit</span></div><div class="n">${pxOver.cost!=null?'your override':'dearest live quote tier'}</div></div>
+    <div class="kpi"><div class="l">Replacement cost</div><div class="v">${fmt(c.repl)}<span style="font-size:12px;color:var(--mut)">/unit</span></div><div class="n">${pxOver.cost!=null?'your override':'highest live quote tier'}</div></div>
     <div class="kpi ${hrTone}"><div class="l">Board headroom</div><div class="v">${hr.unbounded?'&mdash;':fmt(hr.headroom)}<span style="font-size:12px;color:var(--mut)">/unit</span></div><div class="n">${hr.unbounded?'no printed card breaches within RM200 of the live rate':`cards clear to ${fmt(hr.safeTo)}/unit, ${hr.pct}% up; <b>${hr.firstTier}</b> gives first at ${fmt(hr.firstAt)}`}</div></div>
     <div class="kpi r"><div class="l">Shrinkage load</div><div class="v">${(c.shrink*100).toFixed(1)}%</div><div class="n">${pxOver.shrink!=null?'your override':`<b>${(c.shrinkRaw*100).toFixed(1)}% observed</b>, ${(SHRINK_ATTRIB*100)}% of it charged`}</div></div>
     <div class="kpi gold"><div class="l">Effective cost</div><div class="v">${fmt(c.eff)}<span style="font-size:12px;color:var(--mut)">/unit</span></div><div class="n">per unit that reaches a customer</div></div>
@@ -11962,14 +11964,24 @@ function tabPricing(){
     const bandsNow={};E.bands.forEach(b=>bandsNow[b.band]={perKg:b.perKg,kg:b.kg});
     const levels=[{pct:+(c.shrink*100).toFixed(1),label:'today, observed',now:true}]
       .concat(SHRINK.levels.filter(l=>l.pct!=null).map(t=>({pct:t.pct,label:t.label,note:t.src})));
+    /* v379: A BAND WITH NOTHING SOLD IN IT HAS NO MARGIN, and printing one is worse than
+       printing nothing. agg() returns perKg 0 for an empty band, so `perKg - eff` came out as
+       MINUS THE WHOLE EFFECTIVE COST. Oil's 1-to-6.25 unit band, where nothing has ever been
+       sold because the minimum order is 10 unit, read RM -7.49 against an effective cost of
+       RM 7.49: it looked like a catastrophic loss on every row of the table and it was an
+       empty set. Same guard on the bulk cap, which computes its per-unit the same way. */
     const rows=levels.map(L=>{const eff=repl/(1-L.pct/100);
-      const sm=bandsNow.small.perKg-eff, md=bandsNow.mid.perKg-eff, bk=C.perKgEx-eff;
+      const marg=(traded,per)=>traded>0.009?per-eff:null;
+      const cell=v=>v==null?'<span style="color:var(--dim)">no trade</span>':fmt(v);
+      const sm=marg(bandsNow.small.kg,bandsNow.small.perKg),
+            md=marg(bandsNow.mid.kg,bandsNow.mid.perKg),
+            bk=marg(C.kgEx,C.perKgEx);
       return `<tr${L.now?' style="background:rgba(245,196,81,.06)"':''}><td class="l">${L.pct}%${L.now?' <span class="tag prov">now</span>':` <span style="color:var(--dim)">${esc(L.label)}</span>`}</td>
         <td>${fmt(eff)}</td>
-        <td style="color:var(--grn)">${fmt(sm)}</td><td style="color:var(--grn)">${fmt(md)}</td>
-        <td style="color:${bk<0?'var(--crim)':'var(--grn)'}"><b>${fmt(bk)}</b></td>
-        <td><b>${fmt(sm-bk)}</b></td>
-        <td style="color:${bk<0?'var(--crim)':'var(--ink)'}">${fmt0(bk*C.kgEx)}</td></tr>`;}).join('');
+        <td style="color:var(--grn)">${cell(sm)}</td><td style="color:var(--grn)">${cell(md)}</td>
+        <td style="color:${(bk!=null&&bk<0)?'var(--crim)':'var(--grn)'}"><b>${cell(bk)}</b></td>
+        <td><b>${(sm!=null&&bk!=null)?fmt(sm-bk):cell(null)}</b></td>
+        <td style="color:${(bk!=null&&bk<0)?'var(--crim)':'var(--ink)'}">${bk!=null?fmt0(bk*C.kgEx):cell(null)}</td></tr>`;}).join('');
     const tgt=SHRINK.levels.filter(l=>l.pct!=null);
     const effT=repl/(1-tgt[0].pct/100), bkT=C.perKgEx-effT;
     return `<div class="dsc" style="margin-bottom:9px">Shrinkage is expected to fall to <b>${tgt.map(t=>t.pct+'%').join(' and then ')}</b>. Those are an <b>expectation, not a measurement</b>, so the board still prices off the observed figure; this table exists so a decision can be tested against where the desk is trying to get to. Selling prices are held at what each band has actually realised, and only the cost moves.</div>

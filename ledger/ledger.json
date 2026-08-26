@@ -1,6 +1,6 @@
 {
- "v": "v368",
- "stamped": "26 Aug 2026, 15:39 KL",
+ "v": "v379",
+ "stamped": "26 Aug 2026, 19:18 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -2471,7 +2471,7 @@
     {
      "qty": 50,
      "total": 2200,
-     "note": "RM44/unit, back to exactly the RM2,200 quoted on 10 Jul before this tier moved dearer."
+     "note": "RM44/unit, back to exactly the RM2,200 quoted on 10 Jul after this tier moved up."
     },
     {
      "qty": 100,
@@ -2489,7 +2489,7 @@
     {
      "qty": 10,
      "total": 100,
-     "note": "RM10/unit, the smallest lot he sells and the dearest rate"
+     "note": "RM10/unit, the smallest lot he sells and the highest rate"
     },
     {
      "qty": 20,
@@ -2545,7 +2545,7 @@
   ],
   "QUEUE_COMMITTED": "2026-08-25T14:28:13.138Z",
   "PRICING": {
-   "takenAt": "2026-08-26T07:40:20.310Z",
+   "takenAt": "2026-08-26T11:20:02.237Z",
    "sizes": [
     0.5,
     1,
@@ -2740,7 +2740,7 @@
         {
          "qty": 50,
          "total": 2200,
-         "note": "RM44/unit, back to exactly the RM2,200 quoted on 10 Jul before this tier moved dearer."
+         "note": "RM44/unit, back to exactly the RM2,200 quoted on 10 Jul after this tier moved up."
         },
         {
          "qty": 100,
@@ -2937,7 +2937,7 @@
         {
          "qty": 50,
          "total": 2200,
-         "note": "RM44/unit, back to exactly the RM2,200 quoted on 10 Jul before this tier moved dearer."
+         "note": "RM44/unit, back to exactly the RM2,200 quoted on 10 Jul after this tier moved up."
         },
         {
          "qty": 100,
@@ -2965,10 +2965,10 @@
      }
     }
    },
-   "v": "v368"
+   "v": "v379"
   },
   "OPEN": {
-   "at": "2026-08-26T07:40:20.331Z",
+   "at": "2026-08-26T11:20:02.255Z",
    "count": 7,
    "byKey": {
     "CJ4-BJ|undefined|450": {
@@ -3106,7 +3106,7 @@
     "salt": "2026-08-24",
     "oil": "2026-08-23"
    },
-   "v": "v368"
+   "v": "v379"
   }
  }
 }

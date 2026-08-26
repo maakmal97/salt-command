@@ -1,5 +1,16 @@
 [
  {
+  "v": "v379",
+  "d": "26 Aug 2026",
+  "t": "AN EMPTY SIZE BAND WAS REPORTED AS A LOSS OF THE ENTIRE COST",
+  "n": [
+   "<b>OIL&rsquo;S 1-TO-6.25 UNIT BAND READ RM -7.49 A UNIT AGAINST AN EFFECTIVE COST OF RM 7.49.</b> Nothing has ever been sold in that band, because oil&rsquo;s minimum order is 10 unit. <code>earnedPerKg()</code> returns a per-unit of 0 for a band with no rows, and the shrinkage table subtracted the cost from it, so an empty set was printed as a catastrophic loss on every row of the table. It says <b>no trade</b> now, and the bulk cap, which computes its per-unit the same way, is guarded with it.",
+   "<b>THIS IS OLDER THAN TODAY.</b> Nothing in v369 to v378 touched this table; the fault has been on the Price view for as long as oil has had a band with no trade in it. It is the same rule the drafter&rsquo;s flags follow: a figure that fires when nothing is wrong teaches the reader to ignore the ones that mean something.",
+   "<b>AND A BANNED WORD, IN THE ONE PLACE THE DESK SAID IT ITSELF.</b> &quot;Dearest live quote tier&quot; is now &quot;highest&quot;. Two more sat in quote notes on the book and are corrected with it. Neither is a figure.",
+   "<b>NO FIGURE MOVED.</b> Nothing was folded and no rate changed. What changed is that a figure which was never real stopped being printed."
+  ]
+ },
+ {
   "v": "v378",
   "d": "26 Aug 2026",
   "t": "THE HEADER IS A STICKY BAR AND IT HOLDS ITS OWN CONTROLS, SO NOTHING SITS ON TOP OF ANYTHING",
