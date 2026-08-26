@@ -1,6 +1,6 @@
 {
- "v": "v367",
- "stamped": "26 Aug 2026, 15:17 KL",
+ "v": "v368",
+ "stamped": "26 Aug 2026, 15:39 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -41,7 +41,7 @@
     "stated": 0
    }
   },
-  "STATED_STOCK": 12,
+  "STATED_STOCK": 10,
   "COUNT_ON": {
    "salt": "2026-08-24",
    "oil": "2026-08-23"
@@ -1822,22 +1822,22 @@
      },
      {
       "date": "2026-08-25",
-      "kind": "Correction",
+      "kind": "Fulfilment",
       "cash": 0,
-      "kg": 0,
-      "note": "first of two corrections on this row, folded together: restates total to RM520 and delivered quantity to 5.25 unit (was 3.25). See the second correction on this row for where the total actually lands."
+      "kg": 2,
+      "note": "2 further unit handed over, found on 25 Aug rather than reported at the time -- the same shape as the 3 unit found on 20 Aug, above. Said directly, not queued from the phone."
      },
      {
       "date": "2026-08-25",
       "kind": "Correction",
       "cash": 0,
       "kg": 0,
-      "note": "second of two corrections on this row, folded right after the first: restates quantity to 5.75 unit and total back to RM500. Net of both, on his direct confirmation: 5.75 unit for RM500, RM500 already collected, 5.25 delivered, 0.5 unit still owed in salt."
+      "note": "the order was 5.75 unit, not 6.25 (was corrected alongside a total change at v366 that has since been superseded by the fulfilment above; the total stands unchanged at RM500)."
      }
     ],
-    "note": "second of two corrections on this row, folded right after the first: restates quantity to 5.75 unit and total back to RM500. Net of both, on his direct confirmation: 5.75 unit for RM500, RM500 already collected, 5.25 delivered, 0.5 unit still owed in salt. first of two corrections on this row, folded together: restates total to RM520 and delivered quantity to 5.25 unit (was 3.25). See the second correction on this row for where the total actually lands. <b>PAID IN FULL WITH A QUARTER UNIT HANDED OVER, SO 6 UNIT ARE OWED IN SALT RATHER THAN IN CASH.</b> 6.25 unit for RM500, RM80 a unit, the whole RM500 collected on the 18th. The money is in and the obligation is out: this is the only deferred delivery on the book, and it is the mirror image of CR3-DAM, who has the salt and owes the money. <b>THE RATE IS RM12 UNDER HIS OWN STANDING PRICE, AND THAT WAS THE FIRST FLAG HE APPROVED.</b> Five orders at about RM92 a unit, this one at RM80, 13% below. <b>The second flag was the floor, and it is not settled yet:</b> RM500 clears the collected line and misses the delivered one, so how the remaining 6 unit are handed over is what decides which floor this row is measured against. The same question CR3-DAM left open at v311 was answered the unfavourable way on the 18th. On the RM56 shelf it returns RM24 a unit, <b>RM150 on the order at 30% on the price</b>, the same margin CC5-OKR took on his RM80 unit the day before: RM80 a unit now buys thirty points where his RM92 bought forty-nine. Size explains some of it, 6.25 unit against the 2.5 he has taken four times, and it is his largest order by a distance. <b>AMENDED AT v318: HE HAS TAKEN 3.25 OF THE 6.25, NOT 0.25, AND THREE UNIT ARE STILL OWED.</b> The further three were found by the 20 Aug count rather than reported when they moved, which is the whole reason the count was worth taking. <b>THREE UNIT ARE PAID FOR AND ARE NOT ON THE SHELF</b>, because the shelf counted zero: they are owed to a man who has settled in full, and the desk has no stock behind the obligation. That is the sharpest single line on this book today. They come off whatever the shelf costs when they move, so every day they sit unbought is a day the desk carries the cost risk on them, and it now carries that risk with nothing in hand.",
+    "note": "the order was 5.75 unit, not 6.25 (was corrected alongside a total change at v366 that has since been superseded by the fulfilment above; the total stands unchanged at RM500). <b>PAID IN FULL WITH A QUARTER UNIT HANDED OVER, SO 6 UNIT ARE OWED IN SALT RATHER THAN IN CASH.</b> 6.25 unit for RM500, RM80 a unit, the whole RM500 collected on the 18th. The money is in and the obligation is out: this is the only deferred delivery on the book, and it is the mirror image of CR3-DAM, who has the salt and owes the money. <b>THE RATE IS RM12 UNDER HIS OWN STANDING PRICE, AND THAT WAS THE FIRST FLAG HE APPROVED.</b> Five orders at about RM92 a unit, this one at RM80, 13% below. <b>The second flag was the floor, and it is not settled yet:</b> RM500 clears the collected line and misses the delivered one, so how the remaining 6 unit are handed over is what decides which floor this row is measured against. The same question CR3-DAM left open at v311 was answered the unfavourable way on the 18th. On the RM56 shelf it returns RM24 a unit, <b>RM150 on the order at 30% on the price</b>, the same margin CC5-OKR took on his RM80 unit the day before: RM80 a unit now buys thirty points where his RM92 bought forty-nine. Size explains some of it, 6.25 unit against the 2.5 he has taken four times, and it is his largest order by a distance. <b>AMENDED AT v318: HE HAS TAKEN 3.25 OF THE 6.25, NOT 0.25, AND THREE UNIT ARE STILL OWED.</b> The further three were found by the 20 Aug count rather than reported when they moved, which is the whole reason the count was worth taking. <b>THREE UNIT ARE PAID FOR AND ARE NOT ON THE SHELF</b>, because the shelf counted zero: they are owed to a man who has settled in full, and the desk has no stock behind the obligation. That is the sharpest single line on this book today. They come off whatever the shelf costs when they move, so every day they sit unbought is a day the desk carries the cost risk on them, and it now carries that risk with nothing in hand.",
     "rid": "s093",
-    "mod": "corrected on 2026-08-25: total 500 to 520; deliveredQty 3.25 to 5.25, then corrected on 2026-08-25: qty 6.25 to 5.75; total 520 to 500"
+    "mod": "corrected on 2026-08-25: qty 6.25 to 5.75"
    },
    {
     "date": "2026-08-20",
@@ -2146,7 +2146,7 @@
     "total": 100,
     "cash": 100,
     "deliveredQty": 1,
-    "note": "cash corrected from RM0 to RM100, closing the advance folded at v366: 1 unit for RM100, now paid and delivered in full. Said directly, not queued from the phone. restated to 1 unit for RM100, delivered in full (was 0.5 unit for RM50, half delivered): his half-unit order actually went out whole on 24 Aug. Cash is untouched here and stays RM0, so the row remains an advance until it is separately corrected. <b>PENDING AND UNDATED: HALF A UNIT AT RM50, AGREED 24 AUG.</b> Nothing paid and nothing moved, so the row carries no date, draws no stock, books no revenue and raises no receivable until it does. <b>RM100 A UNIT IS HIS RATE AND IT HAS NOT MOVED SINCE 12 JUL.</b> This is his twelfth order and the eleventh struck at exactly RM100 a unit; the only order he has ever taken at another rate is 1.5 unit at RM116.67 on 26 Jul, so the price itself is not news. <b>THE FLOOR IS WHAT IS WORTH READING HERE.</b> At half a unit the v358 snapshot puts the collected floor at RM48.87 and the delivered floor at RM98.87, so RM50 clears the collected floor by RM1.13 and falls RM48.87 short of the delivered one. The whole of that gap is the RM50 per-delivery transaction cost, which falls whole on an order however small it is, so a half unit carries it as badly as any size on the board can. The book has recorded since 01 Aug that he always collects, so the collected floor is the one that binds and RM50 clears it. RM1.13 is not much of a margin for error, and it sits beside the fact that this rate has held through a cost basis that has gone RM64 to RM47 to RM56 to RM44: the desk has absorbed every move in the buying rate and he has absorbed none. The next rise takes RM100 a unit under its own floor on the basis he actually trades on. <b>NO COST AND NO MARGIN ARE PRINTED, BECAUSE NOTHING HAS HAPPENED.</b> Were it to move against the RM44 shelf it would return RM28 on RM50, 56%, and that is a projection rather than a figure on the book. Read the Pricing tab for the floor of the day rather than this sentence.",
+    "note": "restated to 1 unit for RM100, delivered in full (was 0.5 unit for RM50, half delivered): his half-unit order actually went out whole on 24 Aug. Unchanged from v366; refolded only because the row under it was reverted to redo the fulfilment below correctly. <b>PENDING AND UNDATED: HALF A UNIT AT RM50, AGREED 24 AUG.</b> Nothing paid and nothing moved, so the row carries no date, draws no stock, books no revenue and raises no receivable until it does. <b>RM100 A UNIT IS HIS RATE AND IT HAS NOT MOVED SINCE 12 JUL.</b> This is his twelfth order and the eleventh struck at exactly RM100 a unit; the only order he has ever taken at another rate is 1.5 unit at RM116.67 on 26 Jul, so the price itself is not news. <b>THE FLOOR IS WHAT IS WORTH READING HERE.</b> At half a unit the v358 snapshot puts the collected floor at RM48.87 and the delivered floor at RM98.87, so RM50 clears the collected floor by RM1.13 and falls RM48.87 short of the delivered one. The whole of that gap is the RM50 per-delivery transaction cost, which falls whole on an order however small it is, so a half unit carries it as badly as any size on the board can. The book has recorded since 01 Aug that he always collects, so the collected floor is the one that binds and RM50 clears it. RM1.13 is not much of a margin for error, and it sits beside the fact that this rate has held through a cost basis that has gone RM64 to RM47 to RM56 to RM44: the desk has absorbed every move in the buying rate and he has absorbed none. The next rise takes RM100 a unit under its own floor on the basis he actually trades on. <b>NO COST AND NO MARGIN ARE PRINTED, BECAUSE NOTHING HAS HAPPENED.</b> Were it to move against the RM44 shelf it would return RM28 on RM50, 56%, and that is a projection rather than a figure on the book. Read the Pricing tab for the floor of the day rather than this sentence.",
     "amend": [
      {
       "kind": "Fulfilment",
@@ -2166,21 +2166,22 @@
       "kind": "Correction",
       "cash": 0,
       "kg": 0,
-      "note": "restated to 1 unit for RM100, delivered in full (was 0.5 unit for RM50, half delivered): his half-unit order actually went out whole on 24 Aug. Cash is untouched here and stays RM0, so the row remains an advance until it is separately corrected."
+      "note": "restated to 1 unit for RM100, delivered in full (was 0.5 unit for RM50, half delivered): his half-unit order actually went out whole on 24 Aug. Unchanged from v366; refolded only because the row under it was reverted to redo the fulfilment below correctly."
      },
      {
       "date": "2026-08-26",
-      "kind": "Correction",
-      "cash": 0,
+      "kind": "Fulfilment",
+      "cash": 100,
       "kg": 0,
-      "note": "cash corrected from RM0 to RM100, closing the advance folded at v366: 1 unit for RM100, now paid and delivered in full. Said directly, not queued from the phone."
+      "note": "RM100 paid on 26 Aug, closing the advance: 1 unit for RM100, now paid and delivered in full. Said directly, not queued from the phone."
      }
     ],
     "date": "2026-08-24",
     "deliveredOn": "2026-08-24",
     "cost": 44,
     "rid": "s104",
-    "mod": "corrected on 2026-08-25: qty 0.5 to 1; total 50 to 100; deliveredQty 0.5 to 1, then corrected on 2026-08-26: cash 0 to 100"
+    "mod": "corrected on 2026-08-25: qty 0.5 to 1; total 50 to 100; deliveredQty 0.5 to 1",
+    "paidOn": "2026-08-26"
    },
    {
     "customer": "CM4-MK",
@@ -2544,7 +2545,7 @@
   ],
   "QUEUE_COMMITTED": "2026-08-25T14:28:13.138Z",
   "PRICING": {
-   "takenAt": "2026-08-26T07:19:22.016Z",
+   "takenAt": "2026-08-26T07:40:20.310Z",
    "sizes": [
     0.5,
     1,
@@ -2572,35 +2573,35 @@
      "replCost": 44,
      "floors": {
       "1": {
-       "delivered": 122.34,
-       "collected": 72.34
+       "delivered": 122.66,
+       "collected": 72.66
       },
       "2": {
-       "delivered": 169.68,
-       "collected": 120.23
+       "delivered": 170.32,
+       "collected": 120.32
       },
       "3": {
-       "delivered": 217.02,
+       "delivered": 217.98,
        "collected": 180.35
       },
       "4": {
-       "delivered": 264.36,
+       "delivered": 265.64,
        "collected": 240.46
       },
       "5": {
-       "delivered": 311.7,
+       "delivered": 313.3,
        "collected": 300.58
       },
       "0.5": {
-       "delivered": 98.67,
-       "collected": 48.67
+       "delivered": 98.83,
+       "collected": 48.83
       },
       "1.5": {
-       "delivered": 146.01,
-       "collected": 96.01
+       "delivered": 146.49,
+       "collected": 96.49
       },
       "2.5": {
-       "delivered": 193.35,
+       "delivered": 194.15,
        "collected": 150.29
       },
       "6.25": {
@@ -2692,7 +2693,7 @@
         }
        },
        "attrib": 1,
-       "shrinkRate": 0.045187208741764434,
+       "shrinkRate": 0.05161497669934117,
        "avgDel": {
         "n": 97,
         "kg": 246.45,
@@ -2767,44 +2768,44 @@
      "replCost": 7,
      "floors": {
       "1": {
-       "delivered": 83.93,
-       "collected": 33.93
+       "delivered": 83.99,
+       "collected": 33.99
       },
       "2": {
-       "delivered": 92.86,
-       "collected": 42.86
+       "delivered": 92.99,
+       "collected": 42.99
       },
       "3": {
-       "delivered": 101.8,
-       "collected": 51.8
+       "delivered": 101.98,
+       "collected": 51.98
       },
       "4": {
-       "delivered": 110.73,
-       "collected": 60.73
+       "delivered": 110.98,
+       "collected": 60.98
       },
       "5": {
-       "delivered": 119.66,
-       "collected": 69.66
+       "delivered": 119.97,
+       "collected": 69.97
       },
       "0.5": {
-       "delivered": 79.47,
-       "collected": 29.47
+       "delivered": 79.5,
+       "collected": 29.5
       },
       "1.5": {
-       "delivered": 88.4,
-       "collected": 38.4
+       "delivered": 88.49,
+       "collected": 38.49
       },
       "2.5": {
-       "delivered": 97.33,
-       "collected": 47.33
+       "delivered": 97.49,
+       "collected": 47.49
       },
       "6.25": {
-       "delivered": 130.82,
-       "collected": 80.82
+       "delivered": 131.22,
+       "collected": 81.22
       },
       "12.5": {
-       "delivered": 186.65,
-       "collected": 136.65
+       "delivered": 187.43,
+       "collected": 137.43
       }
      },
      "inputs": {
@@ -2887,7 +2888,7 @@
         }
        },
        "attrib": 1,
-       "shrinkRate": 0.08192771084337351,
+       "shrinkRate": 0.08835341365461849,
        "avgDel": {
         "n": 5,
         "kg": 71,
@@ -2964,10 +2965,10 @@
      }
     }
    },
-   "v": "v367"
+   "v": "v368"
   },
   "OPEN": {
-   "at": "2026-08-26T07:19:22.036Z",
+   "at": "2026-08-26T07:40:20.331Z",
    "count": 7,
    "byKey": {
     "CJ4-BJ|undefined|450": {
@@ -3080,14 +3081,14 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 12,
-     "free": 6.5,
+     "onHand": 10,
+     "free": 4.5,
      "owedOut": 5.5,
-     "coverDays": 1.5,
+     "coverDays": 1.1,
      "rate": 4.25,
      "owedToYou": 540,
      "promised": 11.75,
-     "short": 0
+     "short": 1.75
     },
     "oil": {
      "name": "Oil",
@@ -3105,7 +3106,7 @@
     "salt": "2026-08-24",
     "oil": "2026-08-23"
    },
-   "v": "v367"
+   "v": "v368"
   }
  }
 }

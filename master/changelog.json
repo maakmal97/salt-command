@@ -1,5 +1,16 @@
 [
  {
+  "v": "v368",
+  "d": "26 Aug 2026",
+  "t": "TWO OF v366's CORRECTIONS WERE ACTUALLY FULFILMENTS, AND ARE REFOLDED AS THAT",
+  "n": [
+   "<b>NOT EVERYTHING v366 FOLDED AS A CORRECTION WAS ONE.</b> A Correction rewrites what a row says about a past event; it moves no stock, on purpose. Two of the five folded at v366 were real movement, not record fixes, and were flagged as such after the fact. Both are refolded here as Fulfilments instead, same end figures, the trail now says what actually happened, and the shelf rolls for the one that never rolled.",
+   "<b>CE4-CHE's s093: 2 UNIT WERE HANDED OVER, NOT JUST RESTATED.</b> Folded at v366 as a Correction that quietly restated deliveredQty from 3.25 to 5.25, so the 2 unit never left the stated shelf. Refolded here as a Fulfilment of 2 unit; the shelf rolls -2 to reflect it. The order's own quantity correction, 6.25 to 5.75 unit, was a genuine record fix approved from the phone and is unchanged.",
+   "<b>CA4-DAM's s104: HE PAID, WHICH IS A FULFILMENT.</b> The RM100 recorded directly on 26 Aug (v367) was folded as a Correction for want of a better tool from this session. Refolded here as a proper Fulfilment: same RM100, but the trail now reads as a payment rather than a rewrite, and paidOn is set.",
+   "<b>THE SHELF ROLLS 12 TO 10</b> on the 2 unit s093 actually handed over; s104's fulfilment is cash only and moves nothing."
+  ]
+ },
+ {
   "v": "v367",
   "d": "26 Aug 2026",
   "t": "CA4-DAM'S ADVANCE IS SETTLED, ON HIS WORD DIRECTLY",
