@@ -2122,6 +2122,74 @@ section("Payload — the people, the next thirty days and the age of a debt (v34
   ok(!/show\(3\)/.test(app) && /show\('p-add'\)/.test(app), "a tab is addressed by its id, not its position");
 }
 
+/* ---- 25. Orders and money: a figure is stated where it is true, and once (v381) ----
+   Both faults this locks down were silent for weeks and every exit code was zero.
+   cashFlow() is whole-book by construction and says so in its own comment, and tabFinancials
+   drew it INSIDE perProduct(), so the same four figures appeared under Salt and again under
+   Oil, each heading claiming them. riskRates()'s supplier legs did the same. And ifrsPanel()
+   carried two Owner's use rows, so a statement of profit or loss reported one drawing twice.
+   A duplicated figure reads exactly like a counted one, which is why this is a test. */
+section("Orders and money — whole-book figures sit above the repeat, and once (v381)");
+{
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  const read = (expr) => JSON.parse(w.eval("JSON.stringify(" + expr + ")"));
+  const html = (expr) => String(w.eval(expr));
+  const count = (h, needle) => h.split(needle).length - 1;
+
+  /* a figure that cannot be SPLIT by book must not be drawn inside the per-product repeat */
+  const fin = html("builders.financials()"), one = html("tabFinancials()");
+  ok(count(fin, '<div class="l">Trading net</div>') === 1 && count(fin, '<div class="l">Still to come in</div>') === 1,
+    "the cash position is on the Financials part once, not once per book");
+  ok(count(fin, "Lost to suppliers") === 1, "and so is what the suppliers have cost");
+  ok(count(one, "Trading net") === 0 && count(one, "Lost to suppliers") === 0,
+    "a per-product builder states no whole-book figure at all");
+
+  /* a whole-book head must give the same answer whichever book happens to be selected */
+  const keep = read("PROD");
+  const seen = { order: new Set(), cash: new Set(), conso: new Set() };
+  for (const pr of read("PROD_IDS")) {
+    w.eval(`PROD=${JSON.stringify(pr)};recompute();`);
+    seen.order.add(html("consoOrderBlock()")); seen.cash.add(html("consoCashBlock()")); seen.conso.add(html("consoBlock()"));
+  }
+  w.eval(`PROD=${JSON.stringify(keep)};recompute();`);
+  ok(seen.order.size === 1 && seen.cash.size === 1 && seen.conso.size === 1,
+    "and reads the same whichever book is selected");
+
+  /* the Order book's head is the sum of the books beneath it, not a second opinion */
+  const cl = read("obClaims()");
+  const g = +cl.reduce((a, x) => a + x.g, 0).toFixed(2), n = +cl.reduce((a, x) => a + x.n, 0).toFixed(2);
+  let sg = 0, sn = 0;
+  for (const pr of read("PROD_IDS")) {
+    w.eval(`PROD=${JSON.stringify(pr)};recompute();`);
+    sg += read("arGross"); sn += read("ar");
+  }
+  w.eval(`PROD=${JSON.stringify(keep)};recompute();`);
+  ok(g === +sg.toFixed(2) && n === +sn.toFixed(2), `the head's claim is the books added up (${g} gross, ${n} net)`);
+  ok(cl.every((x, i) => i === 0 || cl[i - 1].d >= x.d), "and it is ordered oldest first, so the one to chase is the one named");
+
+  /* a drawing is reported once. Two rows shipped for four versions and neither was wrong on its face. */
+  for (const pr of read("PROD_IDS")) {
+    w.eval(`PROD=${JSON.stringify(pr)};recompute();`);
+    ok(count(html("ifrsPanel()"), "Owner&rsquo;s use") <= 1, `${pr}: the statement reports the owner's drawing once`);
+  }
+  w.eval(`PROD=${JSON.stringify(keep)};recompute();`);
+
+  /* an empty fold is a control that opens onto nothing; the strip above it carries the answer */
+  const rec = html("builders.receivables()");
+  ok(count(rec, 'class="ct zero"') === 0 && count(rec, ">None.<") === 0,
+    "every fold on the Order book has a row behind it");
+  for (const pr of read("PROD_IDS")) {
+    w.eval(`PROD=${JSON.stringify(pr)};recompute();`);
+    const b = html("tabReceivables()");
+    ok(count(b, '<details class="obsec"') > 0 ? count(b, "Nothing open") === 0 : count(b, "Nothing open") === 1,
+      `${pr}: the book either lists what is open or says in one line that nothing is`);
+  }
+  w.eval(`PROD=${JSON.stringify(keep)};recompute();`);
+  ok(!/>\s*(undefined|NaN|Infinity)/.test(rec + fin), "neither part renders an undefined, a NaN or an infinity");
+  try { w.close(); } catch (e) { }
+}
+
 /* ---- done ----------------------------------------------------------------------- */
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
