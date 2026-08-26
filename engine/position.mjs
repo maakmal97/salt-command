@@ -267,10 +267,15 @@ function openable(r){return r.st!=='done'&&r.st!=='canc';}
    rev/ref/refKg (derived from assoc + stream) and a purchase's status (derived from cash
    against total). Everything a person typed is editable; nothing the desk computes is. */
 const CORRECT_NUM_POS=['qty'];
+/* v365: rebate and goodwill are FLAGS, not amounts -- every row that carries either stores
+   it as true, never a figure, and the real redemption size lives in the neighbouring
+   rebateKg. Both sat here as numeric until an untouched Save on a rebate-settled phone row
+   queued a boolean coerced into a blank number box back out as null, silently clearing the
+   flag. Kept out of CORRECT_NUM_NN and into CORRECT_BOOL instead. */
 const CORRECT_NUM_NN=['total','cash','deliveredQty','receivedQty','cost',
-  'settledRM','settledKg','rebate','rebateKg','goodwill'];
+  'settledRM','settledKg','rebateKg'];
 const CORRECT_DATE=['date','agreedOn','paidOn','deliveredOn','receivedOn','cancelledOn'];
-const CORRECT_BOOL=['unpriced','cancelled','pending','inTransit','defaulted'];
+const CORRECT_BOOL=['unpriced','cancelled','pending','inTransit','defaulted','rebate','goodwill'];
 const CORRECT_CODE=['party','assoc','downstream'];
 const CORRECT_TEXT=['orderCode','settle','note'];
 const CORRECT_REQUIRED=['product','party','qty','total'];

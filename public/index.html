@@ -107,6 +107,15 @@ h2{font-size:17px;font-weight:600;letter-spacing:-.2px;margin:0 0 12px}
   color:var(--ink-2)}
 .chip.live{background:rgba(110,231,168,.13);border-color:rgba(110,231,168,.32);color:var(--good)}
 .chip.off{background:rgba(255,207,122,.13);border-color:rgba(255,207,122,.32);color:var(--warn)}
+/* v365: the desk's build already offers this exact chip (tools/build.mjs) when a page is
+   not idle enough to reload silently over; the phone had no equivalent at all and just
+   quietly re-fetched data mid-entry, with nothing on screen to say a newer build had
+   landed. Same shape, same behaviour: pinned to the bottom, tap to reload. */
+.reload-chip{position:fixed;left:50%;transform:translateX(-50%);
+  bottom:calc(16px + env(safe-area-inset-bottom));z-index:999;
+  font:600 13px/1.2 inherit;padding:10px 15px;border-radius:var(--pill);
+  border:1px solid var(--brd-2);background:var(--veil);color:var(--ink);
+  box-shadow:0 6px 24px rgba(0,0,0,.45);cursor:pointer}
 
 /* ---- Do: the action list ------------------------------------------------- */
 .act{position:relative;background:rgba(255,255,255,.05);border:1px solid var(--brd);
@@ -910,7 +919,8 @@ var PHFORM=[
   {k:'dn',          f:'downstream',   l:'Downstream',         kind:'code', only:'S'},
   {k:'orderCode',   f:'orderCode',    l:'Order code',         kind:'text'},
   {g:'What has moved'},
-  {k:'cash',        f:'cash',         l:'Cash in, RM',        kind:'num', hint:'Cash alone. Anything settled in kind sits under Settled, below.'},
+  {k:'cash',        f:'cash',         l:'Cash in, RM',        kind:'num', only:'S', hint:'Cash alone. Anything settled in kind sits under Settled, below.'},
+  {k:'cash',        f:'cash',         l:'Cash paid, RM',      kind:'num', only:'B', hint:'Cash alone. Anything settled in kind sits under Settled, below.'},
   {k:'mv',          f:'deliveredQty', l:'Handed over, unit',  kind:'num', only:'S'},
   {k:'receivedQty', f:'receivedQty',  l:'Received, unit',     kind:'num', only:'B', hint:'Empty on a settled lot means received in full; the book stores it that way.'},
   {g:'Dates'},
@@ -923,9 +933,9 @@ var PHFORM=[
   {k:'settledRM',   f:'settledRM',    l:'Settled, RM',        kind:'num'},
   {k:'settledKg',   f:'settledKg',    l:'Settled, unit',      kind:'num'},
   {k:'settle',      f:'settle',       l:'In what',            kind:'text'},
-  {k:'rebate',      f:'rebate',       l:'Rebate, RM',         kind:'num'},
+  {k:'rebate',      f:'rebate',       l:'Settled by rebate redemption', kind:'bool', hint:'A flag, not an amount. The unit redeemed is Rebate, unit, below.'},
   {k:'rebateKg',    f:'rebateKg',     l:'Rebate, unit',       kind:'num'},
-  {k:'goodwill',    f:'goodwill',     l:'Goodwill, RM',       kind:'num'},
+  {k:'goodwill',    f:'goodwill',     l:'A goodwill gift, not a sale', kind:'bool', hint:'Booked at cost, excluded from revenue everywhere.'},
   {g:'State', fold:true},
   {k:'cancelled',   f:'cancelled',    l:'Cancelled',          kind:'bool', hint:'This takes the row out of every figure.'},
   {k:'cancelledOn', f:'cancelledOn',  l:'Cancelled on',       kind:'date'},
@@ -947,10 +957,10 @@ function phView(r){
   if(r.delivRaw!==undefined)v.deliveredQty=r.delivRaw;
   return v;
 }
-var EDR=null, edBusy=false, EDPATCH=null, EDFROM=null;
+var EDR=null, edBusy=false, EDPATCH=null, EDFROM=null, EDWHY=null;
 function edRow(rid){ return ((D&&D.ledger)||[]).filter(function(r){ return r.rid===rid; })[0]||null; }
-function edOpen(rid,patch,fromId){ var r=edRow(rid); if(!r)return; EDR=rid; EDPATCH=patch||null; EDFROM=fromId||null; edBusy=false; edDraw(); }
-function edShut(){ if(edBusy)return; EDR=null; EDPATCH=null; EDFROM=null; edDraw(); }
+function edOpen(rid,patch,fromId,why){ var r=edRow(rid); if(!r)return; EDR=rid; EDPATCH=patch||null; EDFROM=fromId||null; EDWHY=why||null; edBusy=false; edDraw(); }
+function edShut(){ if(edBusy)return; EDR=null; EDPATCH=null; EDFROM=null; EDWHY=null; edDraw(); }
 function edDraw(){
   var wrap=$('edWrap');
   if(!wrap){ wrap=document.createElement('div'); wrap.id='edWrap'; document.body.appendChild(wrap); }
@@ -973,12 +983,27 @@ function edDraw(){
     if(f.kind==='bool')return '<label class="ed-ck"><input id="'+id+'" type="checkbox"'+(val?' checked':'')+dis+'> '+esc(f.l)+'</label>';
     return '<input id="'+id+'" placeholder="none"'+dis+' value="'+esc(val==null?'':val)+'">';
   };
-  var html='', open=null;
-  phFields(r.dir).forEach(function(f){
+  /* v365: A FOLD OPENS WHEN IT HAS SOMETHING TO SHOW. Whether a group renders collapsed used
+     to depend only on whether the group was MARKED foldable, never on whether it actually
+     carried a value -- a row genuinely settled RM80 in kind looked identical, collapsed, to
+     a row with nothing there at all. One pass decides which groups have a value; the render
+     pass below reads it back by the same group order. */
+  var edHasVal=function(f,val){
+    if(f.kind==='bool')return !!val;
+    if(f.kind==='num')return val!=null&&val!==''&&Number(val)!==0;
+    return val!=null&&String(val).trim()!=='';
+  };
+  var fields=phFields(r.dir), foldOpen=[], gi=-1;
+  fields.forEach(function(f){
+    if(f.g){ gi++; foldOpen[gi]=false; return; }
+    if(gi>=0&&edHasVal(f,v[f.f]))foldOpen[gi]=true;
+  });
+  var html='', open=null; gi=-1;
+  fields.forEach(function(f){
     if(f.g){
       if(open&&open.fold)html+='</details>';
-      open=f;
-      html+=f.fold?'<details class="ed-fold"><summary>'+esc(f.g)+'</summary>':'<p class="ed-g">'+esc(f.g)+'</p>';
+      open=f; gi++;
+      html+=f.fold?'<details class="ed-fold"'+(foldOpen[gi]?' open':'')+'><summary>'+esc(f.g)+'</summary>':'<p class="ed-g">'+esc(f.g)+'</p>';
       return;
     }
     html+='<div class="ed-f">'
@@ -988,10 +1013,15 @@ function edDraw(){
   if(open&&open.fold)html+='</details>';
   wrap.className='ed-on';
   wrap.innerHTML='<div class="ed-bd" data-a="shut"></div>'
-    +'<div class="ed-sheet" role="dialog" aria-modal="true" aria-label="Edit the entry">'
+    +'<div class="ed-sheet" role="dialog" aria-modal="true" aria-label="Edit the entry" tabindex="-1">'
     +'<div class="ed-top"><span class="ed-h1">Edit the entry</span>'
     +'<button class="ed-x" data-a="shut" aria-label="Close">&times;</button></div>'
     +'<p class="ed-sub">'+esc(r.rid)+' &middot; '+(buy?'bought from ':'sold to ')+esc(r.p)+' &middot; '+esc(r.d||'undated')+'</p>'
+    /* v365: "Edit and resend" on a refused Correction opened straight into this sheet with
+       no trace of why it came back -- the reason is never lost, it is just nowhere on
+       screen once you are looking at the one thing you need it for, because the Correction
+       branch in editEntry() jumps here before the Approve tab's own refusal banner runs. */
+    +(EDWHY?'<p class="ed-note bad">Refused: '+esc(EDWHY)+'. Correct it and save to try again.</p>':'')
     +(canc
       ? '<p class="ed-note bad">This row is <b>cancelled</b>. Reviving one is a judgement rather than a figure, so it is left for the desk.</p>'
       : '<p class="ed-note">This <b>queues a correction</b>. It does not write to the book. The drafter checks every field against the ledger and it comes back to <b>Approve</b> for a tap.'
@@ -1009,6 +1039,19 @@ function edDraw(){
       var a=b.getAttribute('data-a');
       if(a==='shut')edShut(); else if(a==='save')edSave();
     });
+  });
+  /* v365: edDraw only ever runs on open (edOpen) or close (edShut), never mid-edit, so
+     moving focus here happens once per open and never steals it back from a field being
+     typed into. */
+  var sheet=wrap.querySelector('.ed-sheet');
+  if(sheet)try{sheet.focus();}catch(e){}
+}
+/* v365: Escape closed nothing on this sheet either. Bound once, on the document, since the
+   sheet is torn down and rebuilt on every open. */
+if(typeof document!=='undefined'&&!window.__edEscBound){
+  window.__edEscBound=1;
+  document.addEventListener('keydown',function(ev){
+    if(ev.key==='Escape'&&EDR)edShut();
   });
 }
 function edSave(){
@@ -1085,13 +1128,45 @@ function ledCard(r){
   /* v362: data-rid is what a tap opens the editor on. A row with no rid renders without the
      attribute rather than with an empty one, so the delegated listener simply does not match
      it and the tap does nothing. */
-  return '<div class="led '+esc(st)+(st==='canc'?' canc':'')+'"'
-    +(r.rid?' data-rid="'+esc(r.rid)+'" data-dir="'+esc(r.dir)+'"':'')+'>'
+  /* v365: st is already "canc" on a cancelled row (STATEW/st is drawn from the same state
+     word), so appending a second literal "canc" duplicated the token for nothing -- dead,
+     since a repeated class does nothing extra, but dead code all the same. */
+  /* v365: tabindex and role make a rid-carrying card reachable and announced without a
+     pointer; a card here holds no nested control, unlike the desk's, so role="button" is
+     safe. bindEdOpen's keydown handler is what turns Enter/Space on a focused card into
+     the same edit a tap opens. */
+  return '<div class="led '+esc(st)+'"'
+    +(r.rid?' data-rid="'+esc(r.rid)+'" data-dir="'+esc(r.dir)+'" tabindex="0" role="button" aria-label="Edit this row"':'')+'>'
     +'<div class="led-t"><span class="led-p">'+(buy?'Bought from ':'Sold to ')+esc(r.p)+'</span>'
     +'<span class="led-rm">'+esc(rm(r.t))+'</span></div>'
     +'<p class="led-n"><span class="led-d">'+esc(r.d||'undated')+'</span>'
     +'<span class="pill '+esc(st)+'">'+esc(STATEW[st]||st)+'</span>'
     +'<span>'+bits.join(' &middot; ')+'</span></p></div>';
+}
+/* v365: the tap-to-edit listener, wired once per container. ledCard() renders an identical,
+   identically-tappable card in three places -- the main ledger, "who owes what", and a
+   customer's statement -- but only the ledger ever bound this. The other two looked exactly
+   as tappable and silently did nothing. */
+function bindEdOpen(box){
+  if(!box||box.__edBound)return;
+  box.__edBound=1;
+  var openFrom=function(ev){
+    var card=ev.target&&ev.target.closest?ev.target.closest('.led[data-rid]'):null;
+    if(!card)return;
+    ev.preventDefault();
+    edOpen(card.getAttribute('data-rid'));
+  };
+  box.addEventListener('click',openFrom);
+  box.addEventListener('contextmenu',openFrom);
+  /* v365: THE ROW EDITOR HAD NO KEYBOARD ENTRY POINT AT ALL, on either app. Tab now lands on
+     a rid-carrying card (tabindex set in ledCard()); Enter or Space opens it, same as a tap. */
+  box.addEventListener('keydown',function(ev){
+    if(ev.key!=='Enter'&&ev.key!==' ')return;
+    var card=ev.target&&ev.target.closest?ev.target.closest('.led[data-rid]'):null;
+    if(!card)return;
+    ev.preventDefault();
+    edOpen(card.getAttribute('data-rid'));
+  });
 }
 /* DO: WHO OWES WHAT. Every open order with money or stock still to move, either way, the ones
    where something is due to you first; then what is agreed and not yet moved. Read straight
@@ -1104,29 +1179,32 @@ function drawOwes(){
     .sort(function(a,b){ return rank[a.st]-rank[b.st]; });
   if(!rows.length){ box.innerHTML='<div class="empty">Nothing is owed either way. The book is square.</div>'; return; }
   box.innerHTML=rows.map(ledCard).join('');
-  var s=$('ledFoldS'); if(s)s.textContent='The ledger \u00b7 '+(D.ledger||[]).length+' rows';
+  bindEdOpen(box);
+  /* v365: moved to ledHeading(), called from drawLedger() below -- this line always ran
+     right before drawLedger() overwrote it anyway (see paint()), so it was dead weight
+     rather than a second source of truth. */
+}
+/* v365: THE HEADING NEVER MOVED WITH A FILTER. It was set once, from the unfiltered count,
+   the moment data loaded (drawOwes(), which runs first); the three filter listeners and
+   Show more all redraw the ledger itself and never touched it. Filter to Oil and seven rows
+   render under a heading still reading "125 rows". Set here instead, on every redraw, so it
+   tracks whatever is actually filtering. */
+function ledHeading(shown,total){
+  var s=$('ledFoldS'); if(!s)return;
+  s.textContent='The ledger · '+(shown===total?total+' rows':shown+' of '+total+' rows');
 }
 function drawLedger(){
   var box=$('ledbox'), more=$('ledmore');
   if(!D||!D.ledger){ box.innerHTML='<p class="stand">Loading.</p>'; more.hidden=true; return; }
   var rows=D.ledger.filter(ledMatch);
+  ledHeading(rows.length,D.ledger.length);
   if(!rows.length){
     box.innerHTML='<div class="empty">No rows match. Clear a filter to see more.</div>';
     more.hidden=true; return;
   }
   var shown=rows.slice(0,LEDN);
   box.innerHTML=shown.map(ledCard).join('');
-  if(!box.__edBound){
-    box.__edBound=1;
-    var openFrom=function(ev){
-      var card=ev.target&&ev.target.closest?ev.target.closest('.led[data-rid]'):null;
-      if(!card)return;
-      ev.preventDefault();
-      edOpen(card.getAttribute('data-rid'));
-    };
-    box.addEventListener('click',openFrom);
-    box.addEventListener('contextmenu',openFrom);
-  }
+  bindEdOpen(box);
   more.hidden=rows.length<=LEDN;
   more.textContent='Show more ('+(rows.length-shown.length)+' of '+rows.length+' left)';
 }
@@ -1170,7 +1248,9 @@ function drawPrControls(){
   box.innerHTML=(D.products||[]).filter(function(p){ return !!D.board[p.id]; }).map(function(p){
     return '<button type="button" data-p="'+esc(p.id)+'" aria-pressed="'+(p.id===prProd())+'">'+esc(p.name)+'</button>'; }).join('');
   Array.prototype.forEach.call(box.querySelectorAll('button'),function(b){
-    b.addEventListener('click',function(){ prP=b.getAttribute('data-p'); prQ=null; drawPrControls(); drawPrice(); });
+    /* v365: "This party" reads a per-product rate, so switching the ladder has to redraw it
+       too -- it never did, and kept showing whichever product's rate was on screen first. */
+    b.addEventListener('click',function(){ prP=b.getAttribute('data-p'); prQ=null; drawPrControls(); drawPrice(); drawCustomers(); });
   });
   var sa=$('pr-cust'), kc=sa.value;
   sa.innerHTML='<option value="">Choose a party to see what they usually pay</option>'+((D.customers||[]).map(function(c){
@@ -1224,12 +1304,23 @@ function prToRecord(q,ask){
   preview(); show('p-add'); window.scrollTo(0,0);
 }
 /* ---- rendering: who pays what -------------------------------------------- */
+/* v365: the rate beside a product's own ladder has to be THAT product's rate. custRateByProd
+   carries it per book; where the party has never bought the product on screen, or the payload
+   predates this field, fall back to the blended figure and say so rather than passing it off
+   as specific to whichever ladder happens to be open. */
+function prRateFor(id){
+  var byP=(D&&D.custRateByProd&&D.custRateByProd[prProd()])||null;
+  return (byP&&byP[id]!=null)?byP[id]:null;
+}
 function prCard(c){
   var bits=[esc(c.n)+(c.n===1?' order':' orders'), esc(n2(c.kg))+' unit', esc(rm(c.rev))+' in all'];
   if(c.owed)bits.push('<b style="color:var(--warn)">'+esc(rm(c.owed))+' owed</b>');
+  var own=prRateFor(c.id);
+  var rateHtml=own!=null?esc(rm(own))+'/unit'
+    :(c.rate==null?'&mdash;':esc(rm(c.rate))+'/unit<span class="pty-d" style="margin-left:5px">every product</span>');
   return '<div class="pty'+(c.owed?' owes':'')+'">'
     +'<div class="pty-t"><span class="pty-p">'+esc(c.id)+'</span>'
-    +'<span class="pty-r">'+(c.rate==null?'&mdash;':esc(rm(c.rate))+'/unit')+'</span></div>'
+    +'<span class="pty-r">'+rateHtml+'</span></div>'
     +'<p class="pty-n"><span class="pty-d">last '+esc(c.last||'never')+'</span>'
     +'<span>'+bits.join(' &middot; ')+'</span></p></div>';
 }
@@ -1572,8 +1663,27 @@ function buildEntry(){
        See the note above the disabled-field wiring in fillAmend. */
     var cash=(AKIND==='deliv')?0:Number($('a-cash').value||0);
     var kg=(AKIND==='paid')?0:Number($('a-kg').value||0);
+    /* v365: the box carries min="0", but nothing on the page ever asked the browser to
+       enforce it. The only check here rejected cash and kg together being non-positive, so
+       a negative cash paired with a positive quantity sailed straight through as typed. */
+    if(cash<0||kg<0)return {why:'Cash and units cannot be negative.'};
     if(cash<=0.001&&kg<=0.001)return {why:'A fulfilment has to move cash or stock.'};
-    var lab=AKIND==='paid'?'paid in full':AKIND==='deliv'?'delivered in full':'paid and delivered in full';
+    /* v365: THE WORDING WAS BUILT FROM WHICH BUTTON WAS TAPPED, NEVER FROM THE FIGURE
+       TYPED. The field is deliberately left editable for exactly the case this broke: "a
+       part payment is ordinary," per the comment above. But the label read straight off
+       AKIND, so tapping Paid and then typing RM100 against an order owed RM450 still said
+       "paid in full" everywhere -- the preview, and the permanent text that travels with
+       the entry into the queue. What actually gets queued (the RM100) was always correct;
+       only what a person reads about it, before and after, said otherwise. o.oweRM/oweKg
+       are the same outstanding figures ledCard() already reads to show "still to pay". */
+    var oweRM=o.oweRM||0, oweKg=o.oweKg||0;
+    var fullPay=AKIND!=='deliv'&&cash>=oweRM-0.005, fullDeliv=AKIND!=='paid'&&kg>=oweKg-0.005;
+    var lab=AKIND==='paid'?(fullPay?'paid in full':'RM '+n2(cash)+' paid')
+      :AKIND==='deliv'?(fullDeliv?'delivered in full':n2(kg)+' unit delivered')
+      :(fullPay&&fullDeliv)?'paid and delivered in full'
+      :(fullPay?'paid in full, '+n2(kg)+' unit delivered'
+        :fullDeliv?'RM '+n2(cash)+' paid, delivered in full'
+        :'RM '+n2(cash)+' paid, '+n2(kg)+' unit delivered');
     var rawA='Fulfilment on '+o.p+' - '+what+n2(o.q)+' of RM '+n2(o.t)
       +(o.d?' agreed '+o.d:' planned, undated')+' marked '+lab+' on '+d
       +(note?' ('+note+')':'');
@@ -1632,8 +1742,17 @@ function partyHint(){
   h.hidden=false;
   h.textContent='Usually '+rm(c.rate)+'/unit across '+c.n+(c.n===1?' order':' orders')+', last '+(c.last||'never')+'.';
 }
+/* v365: A DATE DECADES OUT WENT THROUGH WITH NO WARNING ANYWHERE. Checked the full chain,
+   including the cloud drafter, and every layer's only date rule was refusing a MISSING date.
+   Not a hard block: a genuine forward-dated entry is legitimate, so the ceiling is generous
+   and only the picker itself enforces it (iOS Safari's native date wheel does respect max).
+   Recomputed on every preview() call rather than once at boot, so it stays a year out even
+   if the app is left open past midnight. */
+function dateCeiling(){ var d=new Date(); d.setFullYear(d.getFullYear()+1); return d.toISOString().slice(0,10); }
 function preview(){
   partyHint();
+  var maxD=dateCeiling();
+  ['f-date','a-date','s-date'].forEach(function(id){ var el=$(id); if(el)el.max=maxD; });
   if(MODE==='trade'){
     $('w-paid').className='check'+($('f-paid').checked?' on':'');
     $('w-deliv').className='check'+($('f-deliv').checked?' on':'');
@@ -1793,6 +1912,10 @@ function drawCustList(){
       var id=el.getAttribute('data-id'); CUST_OPEN[id]=!CUST_OPEN[id]; el.classList.toggle('open',!!CUST_OPEN[id]);
     });
   });
+  /* v365: a statement is a list of ledCard()s too, and looked exactly as tappable as the
+     ledger's own -- the toggle listener above already steps aside for a click inside .stmt,
+     it just never gave that click anywhere to go. */
+  bindEdOpen(box);
 }
 function drawApproach(){
   var box=$('approach'); if(!box)return;
@@ -1905,11 +2028,32 @@ function loadData(){
    nothing is half-typed, because reloading over an unsaved entry would throw it
    away. The idle test covers EVERY mode's fields, not just the trade form: a
    half-typed count is exactly as easy to lose as a half-typed sale. */
-var TYPED=['f-party','f-qty','f-total','f-note','a-cash','a-kg','a-qty','a-total','a-note',
+/* v365: f-cash/f-kg were missing here -- a-cash/a-kg, their Amend-form equivalents, were
+   always on this list. Typing into either directly (after unchecking Paid/Delivered in
+   full) updated nothing on screen: the preview kept showing the old figures and the old
+   resulting state, and idle() had no idea either was half-typed. What actually queued was
+   always correct; only the display meant to catch a mistake before Record was blind to it. */
+var TYPED=['f-party','f-qty','f-total','f-cash','f-kg','f-note','a-cash','a-kg','a-qty','a-total','a-note',
   's-qty','s-rm','s-why','p-code','p-note'];
 function idle(){
   if(OPENSEL!==null)return false;
+  /* v365: "every mode's fields" did not, in fact, cover every mode. The row editor's own
+     state (EDR, its dynamic ed_* fields) was never added to this check, so a background
+     deploy could reload the page out from under a half-finished correction exactly as if
+     nothing were open at all -- silently, with no warning, and whatever was typed lost. The
+     editor being open at all is enough to hold off, same as OPENSEL above: a correction is
+     a judgement mid-flight, not a form to skim for a non-empty box. */
+  if(EDR)return false;
   return TYPED.every(function(id){ var el=$(id); return !el||!el.value; });
+}
+var reloadChip=null;
+function offerReload(v){
+  if(reloadChip||!document.body)return;
+  reloadChip=document.createElement('button');
+  reloadChip.type='button'; reloadChip.className='reload-chip';
+  reloadChip.textContent='New version'+(v?' '+v:'')+' · tap to load';
+  reloadChip.onclick=function(){ location.reload(); };
+  document.body.appendChild(reloadChip);
 }
 function poll(){
   if(document.visibilityState!=='visible')return;
@@ -1919,7 +2063,10 @@ function poll(){
   fetch('rev',{cache:'no-store'}).then(function(r){ return r.ok?r.json():null; })
     .then(function(j){
       if(!j||!j.id)return;
-      if(REV&&j.id!==REV){ if(idle())location.reload(); else loadData(); }
+      /* v365: not-idle used to mean "quietly re-fetch data.json and say nothing" -- the
+         figures went current but nothing on screen said a newer build had landed. offerReload
+         is the same chip the desk's own build already shows in this exact situation. */
+      if(REV&&j.id!==REV){ if(idle())location.reload(); else{ loadData(); offerReload(j.v); } }
       else if(!REV)REV=j.id;
     }).catch(function(){});
 }
@@ -1975,9 +2122,14 @@ function loadDrafts(){
    being a third kind of card, because it is not a decision: it withdraws this draft and
    sends a corrected entry in its place, and the drafter decides the correction on its own
    merits, with a fresh cost, margin and set of flags. Nothing here recomputes anything. */
-function drfButtons(){
+/* v365: EDIT ONLY WHERE THE FORM CAN HONESTLY REBUILD IT, same gate drawRefused() already
+   uses. This card is not the only road to an editable draft any more: since 25 Aug an
+   associate-attributed sale is DRAFTED rather than refused, so an unconditional Edit button
+   here was reachable on a normal pending row, not just an edge case, and tapping it on one
+   silently discarded the phone onto the Trade form with the still-pending draft out of sight. */
+function drfButtons(editable){
   return '<div class="drf-b"><button class="btn rej" data-a="reject">Reject</button>'
-    +'<button class="btn" data-a="edit">Edit</button>'
+    +(editable?'<button class="btn" data-a="edit">Edit</button>':'')
     +'<button class="btn primary" data-a="approve">Approve</button></div>';
 }
 /* WHICH ENTRIES THE FORM CAN HONESTLY REBUILD. Most refusals reachable from a phone-typed
@@ -2012,7 +2164,7 @@ function editEntry(kind,id){
   if(p.mode==='amend'&&p.kind==='Correction'){
     if(!edRow(p.rid)){ msg('bad','The row this corrects is not on this copy of the book yet. Reload and try again.'); return; }
     show('p-book');
-    edOpen(p.rid,p.fields||{},kind==='draft'?id:null);
+    edOpen(p.rid,p.fields||{},kind==='draft'?id:null,kind==='refused'?(src.why||null):null);
     return;
   }
   var missingTarget=false;
@@ -2122,7 +2274,7 @@ function drawDrafts(){
         +'</div>'
         +(d.flags||[]).map(function(f){ return '<div class="drf-f">'+esc(f)+'</div>'; }).join('')
         +'<p class="drf-why">'+esc(d.reasoning||'')+'</p>'
-        +drfButtons()+'</div>';
+        +drfButtons(editableMode(d.entry))+'</div>';
     }
     if(d.collection==='loss'||d.collection==='lostDemand'){
       var isLost=d.collection==='lostDemand';
@@ -2139,7 +2291,7 @@ function drawDrafts(){
         +(isLost?'<p class="drf-why"><b>Why:</b> '+esc(r.why||'-')+'</p>':'')
         +(d.flags||[]).map(function(f){ return '<div class="drf-f">'+esc(f)+'</div>'; }).join('')
         +'<p class="drf-why">'+esc(d.reasoning||'')+'</p>'
-        +drfButtons()+'</div>';
+        +drfButtons(editableMode(d.entry))+'</div>';
     }
     if(d.collection==='roster'){
       return '<div class="drf" data-id="'+esc(d.id)+'">'
@@ -2151,7 +2303,7 @@ function drawDrafts(){
         +'</div>'
         +(d.flags||[]).map(function(f){ return '<div class="drf-f">'+esc(f)+'</div>'; }).join('')
         +'<p class="drf-why">'+esc(d.reasoning||'')+'</p>'
-        +drfButtons()+'</div>';
+        +drfButtons(editableMode(d.entry))+'</div>';
     }
     /* A CORRECTION IS APPROVED ON WHAT CHANGED, so it gets its own card (25 Aug 2026). The
        amendment card below leads with cash and units moving, which are both zero on a
@@ -2189,7 +2341,7 @@ function drawDrafts(){
           }).join(''):'<div class="drf-cl"><span class="cf">nothing</span></div>')+'</div>'
         +(d.flags||[]).map(function(f){ return '<div class="drf-f">'+esc(f)+'</div>'; }).join('')
         +'<p class="drf-why">'+esc(d.reasoning||'')+'</p>'
-        +drfButtons()+'</div>';
+        +drfButtons(editableMode(d.entry))+'</div>';
     }
     if(d.amends){
       var e=(d.entry&&d.entry.payload)||{};
@@ -2207,7 +2359,7 @@ function drawDrafts(){
         +'</div>'
         +(d.flags||[]).map(function(f){ return '<div class="drf-f">'+esc(f)+'</div>'; }).join('')
         +'<p class="drf-why">'+esc(d.reasoning||'')+'</p>'
-        +drfButtons()+'</div>';
+        +drfButtons(editableMode(d.entry))+'</div>';
     }
     /* Banded against the v300 ladder, converted to margin on price so it is compared
        like with like: a 25% markup on cost is a 20% margin, 50% is 33.3%, 75% is 42.9%.
@@ -2232,7 +2384,7 @@ function drawDrafts(){
       +'</div>'
       +(d.flags||[]).map(function(f){ return '<div class="drf-f">'+esc(f)+'</div>'; }).join('')
       +'<p class="drf-why">'+esc(d.reasoning||'')+'</p>'
-      +drfButtons()+'</div>';
+      +drfButtons(editableMode(d.entry))+'</div>';
   }).join('');
   Array.prototype.forEach.call(box.querySelectorAll('button[data-a]'),function(b){
     b.addEventListener('click',function(){
@@ -2433,7 +2585,16 @@ $('d-buy').addEventListener('click',function(){ dir='BUY';
 TYPED.concat(['f-date','a-date','s-date']).forEach(function(id){
   var el=$(id); if(el)el.addEventListener('input',preview); });
 $('f-party').addEventListener('change',preview);   // v342: the party hint, on browsers that fire change alone for a select
-['f-paid','f-deliv'].forEach(function(id){ $(id).addEventListener('change',preview); });
+/* v365: UNCHECKING NEVER CLEARED THE BOX. preview() only ever WRITES the full total/qty in
+   while the checkbox is checked (and the box is disabled, so nothing else could have put a
+   different figure there); it never had a reason to clear anything, because nothing did.
+   Unchecking specifically to record a smaller real payment, or just to unpaid, left the old
+   full amount sitting there, and an untouched submission after that queued the sale as paid
+   or delivered in full regardless of what was typed next. Cleared once, exactly on the
+   uncheck itself, not in preview() -- preview() re-runs on every keystroke, so clearing
+   there would erase whatever was being typed on every character. */
+$('f-paid').addEventListener('change',function(){ if(!this.checked)$('f-cash').value=''; preview(); });
+$('f-deliv').addEventListener('change',function(){ if(!this.checked)$('f-kg').value=''; preview(); });
 $('s-prod').addEventListener('change',function(){ drawRecon(); preview(); });
 $('s-party').addEventListener('change',preview);
 $('p-parent').addEventListener('change',preview);

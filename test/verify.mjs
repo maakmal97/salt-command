@@ -340,8 +340,11 @@ section("The phone app, and the desk at /desk");
      record modes. The bound is not ceremony. It exists so a stray build writing the 900 KB
      desk to the root fails loudly, and 120 KB still catches that by a factor of seven and a
      half. Raised again at v324 when the Price tab landed: the board, the floors and the party
-     list are rendering, not logic, but rendering is not free either. */
-  ok(app.length < 152 * 1024, `the app is small (${(app.length / 1024).toFixed(0)} KB, the desk is ~1,100 KB)`);   /* v362: the row editor sheet */
+     list are rendering, not logic, but rendering is not free either. Raised again at v365,
+     the audit fixes: keyboard access for the row editor, a reload chip matching the desk's
+     own, a per-product party rate, and the rest of the thirteen phone-side findings, each
+     real code rather than bulk. Still a fraction of the desk. */
+  ok(app.length < 172 * 1024, `the app is small (${(app.length / 1024).toFixed(0)} KB, the desk is ~1,100 KB)`);   /* v365: the audit fixes */
   ok(app.includes("fetch('data.json'"), "the app reads its figures from data.json");
   ok(app.includes("X-Salt-Key"), "the app sends the write key");
   ok(app.includes("queueCommitted"), "the app self-clears against the watermark");
@@ -1375,13 +1378,17 @@ section("App — an unapproved entry can be corrected and resent");
   ok(/function editEntry\(kind,id\)/.test(app), "there is a single edit-and-resend path for both drafts and refused entries");
   ok(!/\.row\.(qty|total|cost)\s*=/.test(app), "a draft's computed row is never assigned to: nothing here hand-edits the drafter's own figures");
 
-  /* EVERY DRAFT CARD OFFERS IT, and it sits between the two decisions because it is not one:
-     it withdraws the draft and queues a correction, and does not itself decide anything. */
-  const drfB = app.match(/function drfButtons\(\)\{[\s\S]*?\n\}/)[0];
-  ok(/data-a="reject"/.test(drfB) && /data-a="edit"/.test(drfB) && /data-a="approve"/.test(drfB),
-    "the one button row used by every draft card carries all three");
+  /* EVERY DRAFT CARD OFFERS Reject and Approve, and Edit besides where editableMode(d.entry)
+     says the shape can be honestly rebuilt (v365: it did not used to gate at all, so Edit was
+     offered even on the now-common case of an associate-attributed sale drafted rather than
+     refused, and tapping it there silently discarded the phone onto the Trade form). It sits
+     between the two decisions because it is not one: it withdraws the draft and queues a
+     correction, and does not itself decide anything. */
+  const drfB = app.match(/function drfButtons\(editable\)\{[\s\S]*?\n\}/)[0];
+  ok(/data-a="reject"/.test(drfB) && /data-a="edit"/.test(drfB) && /data-a="approve"/.test(drfB) && /editable\?/.test(drfB),
+    "the one button row used by every draft card carries all three, Edit gated on editable");
   const drawDraftsFn = app.slice(app.indexOf("function drawDrafts"), app.indexOf("function decide"));
-  const cardCount = (drawDraftsFn.match(/drfButtons\(\)/g) || []).length;
+  const cardCount = (drawDraftsFn.match(/drfButtons\(editableMode\(d\.entry\)\)/g) || []).length;
   ok(cardCount === 6, `all six draft card shapes (count, loss/lostDemand, roster, correction, amendment, trade) use it, found ${cardCount}`);
   /* A CORRECTION IS APPROVED ON WHAT CHANGED, not on cash and units, both of which are zero on
      one. It gets its own card above the general amendment card, and the general card must not
@@ -1855,8 +1862,13 @@ section("Fold — an approved batch becomes records in the book (v340)");
       "the desk Approve card renders a correction as before-and-after, not as cash moving");
     ok(/kind==='Correction'/.test(app2.slice(app2.indexOf("function editableMode"), app2.indexOf("function editEntry"))),
       "the Approve tab Edit button admits a correction");
-    ok(/edOpen\(p\.rid,p\.fields\|\|\{\},kind==='draft'\?id:null\)/.test(app2),
+    ok(/edOpen\(p\.rid,p\.fields\|\|\{\},kind==='draft'\?id:null,kind==='refused'\?\(src\.why\|\|null\):null\)/.test(app2),
       "and reopens the row editor on the proposed state, withdrawing the draft on save");
+    /* v365: "Edit and resend" on a refused Correction used to open straight into the row
+       editor with no trace of why it came back -- the reason was never lost, it was simply
+       nowhere on screen once you were looking at the one thing you needed it for. */
+    ok(/EDWHY/.test(app2) && /Refused: '\+esc\(EDWHY\)/.test(app2),
+      "and the row editor itself shows why a refused correction came back");
     ok(/rejectDraft\(\{kind:'draft',id:EDFROM\}\)/.test(app2),
       "the sheet withdraws the earlier correction before sending the replacement");
     ok(/settledRM:'Settled RM'/.test(app2) && /paidOn:'Paid on'/.test(app2),

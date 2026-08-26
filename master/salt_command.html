@@ -542,6 +542,14 @@ select{width:100%;border:1px solid var(--line);border-radius:8px;padding:8px 9px
 .evo .txt b{color:var(--ink);}
 .note{margin-top:12px;font-size:12px;color:var(--mut);background:linear-gradient(120deg,rgba(245,196,81,.08),transparent);border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:10px;padding:10px 13px;}
 .note b{color:var(--gold);}
+/* v365: SAME LOOK, NEVER HIDDEN. body.noteshide{}.note{display:none} is the "Method and
+   caveats" fold, on by default (notesOn starts false, so every fresh load carries the
+   class): right for a long .dsc promoted into that fold, wrong for a short standing notice
+   that has nothing to expand. The row editor's two notes reused .note and vanished on
+   every fresh load, including the one sentence that explains why a cancelled row has no
+   Save button. .stand-note is the same box, exempt. */
+.stand-note{margin-top:12px;font-size:12px;color:var(--mut);background:linear-gradient(120deg,rgba(245,196,81,.08),transparent);border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:10px;padding:10px 13px;}
+.stand-note b{color:var(--gold);}
 
 
 
@@ -1627,10 +1635,15 @@ function openable(r){return r.st!=='done'&&r.st!=='canc';}
    rev/ref/refKg (derived from assoc + stream) and a purchase's status (derived from cash
    against total). Everything a person typed is editable; nothing the desk computes is. */
 const CORRECT_NUM_POS=['qty'];
+/* v365: rebate and goodwill are FLAGS, not amounts -- every row that carries either stores
+   it as true, never a figure, and the real redemption size lives in the neighbouring
+   rebateKg. Both sat here as numeric until an untouched Save on a rebate-settled phone row
+   queued a boolean coerced into a blank number box back out as null, silently clearing the
+   flag. Kept out of CORRECT_NUM_NN and into CORRECT_BOOL instead. */
 const CORRECT_NUM_NN=['total','cash','deliveredQty','receivedQty','cost',
-  'settledRM','settledKg','rebate','rebateKg','goodwill'];
+  'settledRM','settledKg','rebateKg'];
 const CORRECT_DATE=['date','agreedOn','paidOn','deliveredOn','receivedOn','cancelledOn'];
-const CORRECT_BOOL=['unpriced','cancelled','pending','inTransit','defaulted'];
+const CORRECT_BOOL=['unpriced','cancelled','pending','inTransit','defaulted','rebate','goodwill'];
 const CORRECT_CODE=['party','assoc','downstream'];
 const CORRECT_TEXT=['orderCode','settle','note'];
 const CORRECT_REQUIRED=['product','party','qty','total'];
@@ -2688,8 +2701,11 @@ const OPENING_CASH=null;   // RM in hand on 26 Jun 2026, if it is ever remembere
    that never got written down. Every one of those was a place for a wrong number to
    enter and then be inherited by everything downstream, including a RM200 overstatement
    that survived four versions. What the desk CAN state exactly is what trading moved:
-   money in from sales, money out for salt, and the net between them. That is now all it
-   claims. CASH_COUNT is kept as a dated historical note and feeds nothing. */
+   money in from sales, money out for stock, and the net between them. That is now all it
+   claims. CASH_COUNT is kept as a dated historical note and feeds nothing.
+   v365: "for salt" was true when there was one product; cashFlow() has read the whole
+   book since v275 (Oil included), so every label reads "for stock" now, not one product's
+   name. */
 /* CASH_COUNT_RETIRED: declared in the BOOK block near the top of this script, generated from ledger/book.json (v339). */
 const cashAdjust=[];       // {date,kind:'expense'|'drawing'|'injection',amount,note}
 /* ============ PLANNED CASH (v149) ============
@@ -3108,7 +3124,9 @@ function drawProdSw(){
    drawing a chip would be the worst kind of bug to find. */
 function prodSummary(p){
   const S=pSales(p), B=pPurch(p);
-  const live=S.filter(s=>{const o=txStat(s).order;return o!=='Pending'&&o!=='Cancelled';});
+  /* v365: goodwill excluded here too, matching walk()'s pricedSales (HIS RULING: goodwill is
+     an EXPENSE, not a sale) — this filter had drifted from that one and disagreed with it. */
+  const live=S.filter(s=>{const o=txStat(s).order;return o!=='Pending'&&o!=='Cancelled'&&!s.goodwill;});
   const rev=+live.reduce((a,s)=>a+((s.total||0)-txPendRM(s)),0).toFixed(2);
   const cash=+S.reduce((a,s)=>a+(s.cash||0),0).toFixed(2);
   const qty=+live.reduce((a,s)=>a+txPhys(s),0).toFixed(2);
@@ -3173,7 +3191,8 @@ const whiteboard=[
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{"v":"v364","d":"25 Aug 2026","t":"THE AUDIT: THIRTEEN FINDINGS ON THE CORRECTION ROAD, EVERY ONE FIXED AND PINNED","n":["<b>A FULL PASS OVER BOTH SURFACES, ON HIS INSTRUCTION.</b> Every hop of the correction road was read against every other: the phone's sheet, the desk's panel, the drafter, the fold, the desk's own ovAmend and the payload that feeds the phone. Thirteen findings, all fixed, all pinned with an assertion so none can come back quietly. The suite grows 546 to 568.","<b>THE WORST ONE: THE PHONE PREFILLED A FIGURE THAT IS NOT THE FIELD IT EDITS.</b> The payload's cash is txPaid and its delivered is txEffDeliv, which is right for reading a row and wrong for editing one: a correction writes the RAW fields, and on the thirteen rows carrying in-kind settlements the two part company. s074 showed Cash RM188 over a stored cash of 0, so retyping the shown figure would have added RM188 of phantom cash. The payload now sends the raw figure wherever it differs, the sheet prefills it, and the Settled boxes sit beside it so the whole picture is on screen.","<b>AN OLD LOT LOST ITS PAYMENT TO A DATE FIX.</b> A settled lot stores its payment as status \"paid\" with no cash field at all. The correction path recomputed status from raw cash on EVERY correction, so fixing the date on such a lot flipped it to unpaid. The recompute now runs only when cash or total was actually set. Same fix in the fold and in ovAmend, from the same reading.","<b>CLEARING pending COULD WALK A WHOLE LOT INTO STOCK.</b> An absent receivedQty means fully received, which is how every settled lot is stored, so a correction that cleared pending on a deposit would have booked the entire undelivered lot into stock and the cost basis: the v146 failure on a new road. The guard ovAmend's fulfilment path has always had is on this one now: clearing pending without stating a receipt writes receivedQty 0 and inTransit.","<b>THE GATE MISSED EVERY IN-KIND SETTLEMENT.</b> The under-paid flag compared the corrected total against raw cash, so restating s010's total below the RM80 it was settled for raised nothing. It reads txPaid and txEffDeliv now, and a correction pricing an unpriced row clears the flag exactly as a Modification has since v358, with the clearance recorded in the trail.","<b>EDIT ON A QUEUED CORRECTION WENT NOWHERE.</b> The Approve tab's Edit button, wired at v360, predates corrections: tapping it on one errored into the Record tab. It now reopens the row editor on the PROPOSED state, and saving withdraws the earlier draft first, with the same block-on-it discipline record() uses, so one row never carries two live corrections. A desk-authored note or cost riding in the draft survives a phone resend instead of being silently dropped, and the sheet says so.","<b>THE DESK'S APPROVE PANEL SHOWED A CORRECTION AS ZEROS.</b> The generic amendment card leads with cash and units moving, both zero on a correction by definition. The desk now renders the same before-and-after card the phone got at v361. Smaller findings alongside: duplicate party and date flags on every correction card, raw field keys where labels belonged, the fold's plan describing a correction by its target's balance, a cancelled row's editor offering a save the drafter was always going to refuse, and clearing the date off a row with movement now refused outright rather than flagged.","<b>NO FIGURE MOVED.</b> No row was folded and no rate changed; the audit changed what the tools do, not what the book says."]},
+const evolution=[{"v":"v365","d":"26 Aug 2026","t":"THE SWEEP: THIRTY-NINE FINDINGS ACROSS BOTH APPS, EVERY ONE FIXED AND PINNED","n":["<b>A FULL SWEEP OF EVERY ACTION ON BOTH APPS, ON HIS INSTRUCTION.</b> Twelve clusters, every button, form, filter and tap tried and read against the source. Thirty-nine findings, all fixed, all pinned. The suite grows 568 to 569, plus the build-size and em-dash checks widened for real, justified growth on the phone.","<b>THE WORST ONE: A BOOLEAN FLAG DECLARED NUMERIC.</b> rebate and goodwill are stored true, never a figure, but CORRECT_NUM_NN carried both as amounts. A boolean rendered into a number box shows blank, and an untouched Save on any of the eleven rows carrying a rebate silently queued a correction clearing the flag. Both moved into CORRECT_BOOL, in engine/position.mjs, the one table the drafter, the fold and both apps all read.","<b>FIGURES THAT DISAGREED WITH THEMSELVES.</b> Six of them: a goodwill gift counted into revenue on one tab and not another, RM26.26 apart; the supplier write-off card showing RM0 on Oil's page instead of staying off it; \"out for salt\" labelling a cash figure that has counted Oil since v275; a paid refund vanishing from the cash table without vanishing from the total under it; \"Promised away\" printed twice, identically; and Analysis's delivery-timing block reading the whole book under both products at once.","<b>ONE PRODUCT'S DATA SHOWN UNDER THE OTHER, FIVE TIMES.</b> Inventory's opening lot, Sourcing's tier table and its next-lot plan, the Reseller Menu's hours/password/watermark fields, and the phone's This Party rate: each read a bare, unscoped value or a duplicate id instead of the product-aware resolver the rest of the desk already uses. The Reseller Menu fix is the one with teeth: every Publish, Make-a-code and Download handler was reading Salt's boxes regardless of which panel was filled in.","<b>THE ROW EDITOR, EIGHT FINDINGS DEEP.</b> Beyond the rebate flag: two more tappable-looking places (who owes what, a customer's statement) that were never wired to open it; the Approve tab's Edit button offered on shapes it cannot rebuild; its own explanatory notes hidden by a reused CSS class; a purchase's cash field labelled as if money came in; a fold that opened collapsed regardless of whether it had anything to show; and a refused Correction reopening with no trace of why it came back.","<b>REACHABLE ONLY WITHOUT A MOUSE, OR NOT AT ALL.</b> The flagship feature of the last three versions had no keyboard entry point on either app: no tabindex, no keydown handler, nothing. Fixed on both, with Escape to close. The desk's panel also gained the dialog role, label and focus the phone's already had. And a background deploy could silently close the row editor mid-correction with no warning at all; the phone's own idle() check now covers it, the same discipline it already gives a half-typed trade.","<b>ELEVEN FINDINGS ACROSS THE TRANSACTION AND RECORD FORMS.</b> A dead pricing box (wrong container id, no console error, ever). Amend order pickers listing every order ever written with no status filter. A Modification's preview computing the wrong resulting state, and a Cancellation's preview never once saying the word. A Linked amendment's Record button staying enabled with its one required field blank. A date decades in the future, accepted everywhere, now warned on the desk and capped on the phone. Add ID's preview reading raw select values instead of the dropdown's own words. Unchecking Paid or Delivered in full leaving the stale total sitting in the box. A Fulfilment's own record calling a partial payment \"paid in full\". A negative cash figure sailing straight through. And Cash/Units typed directly never refreshing the preview.","<b>FOUR SMALLER ONES.</b> The Book tab's row count frozen at the unfiltered total while a filter narrows what is actually shown. The phone refreshing itself in the background with none of the desk's \"tap to load\" chip. A never-dated cancelled row printing the literal word \"undefined\". And the Ledger toolbar with no way to isolate a product, on a desk with two of them.","<b>NO FIGURE MOVED.</b> No row was folded and no rate changed; the sweep changed what the tools do and say, not what the book holds."]},
+{"v":"v364","d":"25 Aug 2026","t":"THE AUDIT: THIRTEEN FINDINGS ON THE CORRECTION ROAD, EVERY ONE FIXED AND PINNED","n":["<b>A FULL PASS OVER BOTH SURFACES, ON HIS INSTRUCTION.</b> Every hop of the correction road was read against every other: the phone's sheet, the desk's panel, the drafter, the fold, the desk's own ovAmend and the payload that feeds the phone. Thirteen findings, all fixed, all pinned with an assertion so none can come back quietly. The suite grows 546 to 568.","<b>THE WORST ONE: THE PHONE PREFILLED A FIGURE THAT IS NOT THE FIELD IT EDITS.</b> The payload's cash is txPaid and its delivered is txEffDeliv, which is right for reading a row and wrong for editing one: a correction writes the RAW fields, and on the thirteen rows carrying in-kind settlements the two part company. s074 showed Cash RM188 over a stored cash of 0, so retyping the shown figure would have added RM188 of phantom cash. The payload now sends the raw figure wherever it differs, the sheet prefills it, and the Settled boxes sit beside it so the whole picture is on screen.","<b>AN OLD LOT LOST ITS PAYMENT TO A DATE FIX.</b> A settled lot stores its payment as status \"paid\" with no cash field at all. The correction path recomputed status from raw cash on EVERY correction, so fixing the date on such a lot flipped it to unpaid. The recompute now runs only when cash or total was actually set. Same fix in the fold and in ovAmend, from the same reading.","<b>CLEARING pending COULD WALK A WHOLE LOT INTO STOCK.</b> An absent receivedQty means fully received, which is how every settled lot is stored, so a correction that cleared pending on a deposit would have booked the entire undelivered lot into stock and the cost basis: the v146 failure on a new road. The guard ovAmend's fulfilment path has always had is on this one now: clearing pending without stating a receipt writes receivedQty 0 and inTransit.","<b>THE GATE MISSED EVERY IN-KIND SETTLEMENT.</b> The under-paid flag compared the corrected total against raw cash, so restating s010's total below the RM80 it was settled for raised nothing. It reads txPaid and txEffDeliv now, and a correction pricing an unpriced row clears the flag exactly as a Modification has since v358, with the clearance recorded in the trail.","<b>EDIT ON A QUEUED CORRECTION WENT NOWHERE.</b> The Approve tab's Edit button, wired at v360, predates corrections: tapping it on one errored into the Record tab. It now reopens the row editor on the PROPOSED state, and saving withdraws the earlier draft first, with the same block-on-it discipline record() uses, so one row never carries two live corrections. A desk-authored note or cost riding in the draft survives a phone resend instead of being silently dropped, and the sheet says so.","<b>THE DESK'S APPROVE PANEL SHOWED A CORRECTION AS ZEROS.</b> The generic amendment card leads with cash and units moving, both zero on a correction by definition. The desk now renders the same before-and-after card the phone got at v361. Smaller findings alongside: duplicate party and date flags on every correction card, raw field keys where labels belonged, the fold's plan describing a correction by its target's balance, a cancelled row's editor offering a save the drafter was always going to refuse, and clearing the date off a row with movement now refused outright rather than flagged.","<b>NO FIGURE MOVED.</b> No row was folded and no rate changed; the audit changed what the tools do, not what the book says."]},
 {"v":"v363","d":"25 Aug 2026","t":"EVERY ATTRIBUTE OF A ROW IS EDITABLE, AND THE CHAIN IS PROVED ON THE REAL QUEUE","n":["<b>THIRTY ATTRIBUTES, NOT NINE.</b> His instruction of 25 Aug: \"I need to be able to edit every attribute of an entry on the ledger.\" v361 covered nine. The editor now reaches what was traded (product, party, size, total, unpriced), who it books to (associate, stream, downstream, order code), what has actually moved (cash, handed over, received, cost), every date the row carries, what was settled other than in cash (settled RM and unit, rebate, goodwill) and the row's own flags (cancelled, pending, in transit, defaulted).","<b>THE FIRST CUT WITHHELD THE SETTLEMENT FIGURES AND THAT WAS WRONG.</b> cash and deliveredQty were held back on the ground that they \"move by fulfilment, and two writers on one figure drift\". Reading the engine settled it: <code>txPaid</code> is <code>cash + settledRM</code> read straight off the row, so the <code>amend</code> trail is a narrative BESIDE the figure and never its source. Setting cash is a correction; adding to it is a movement; both legitimately write the same field, which is what ovAmend already did. The correction is still recorded beside the trail, and a flag says the trail will no longer sum to the figure.","<b>WHAT IS STILL NOT EDITABLE IS EXCLUDED RATHER THAN FORGOTTEN, and the suite asserts each one.</b> <code>rid</code> is the row's identity, so editing it would rename the thing being edited. <code>amend</code> and <code>mod</code> are the trail. <code>rev</code>, <code>ref</code> and <code>refKg</code> are derived from the associate and the stream, and offering them directly would let a row claim R2 and R3 at once. A purchase's <code>status</code> is derived from cash against total and is recomputed after every change.","<b>THE FORM IS A TABLE NOW, IN ALL THREE PLACES.</b> Thirty fields hand-written would need thirty pieces of markup, thirty read-backs and thirty diff lines, and the three would drift. The field table lives in <code>engine/position.mjs</code> beside <code>attributionOf</code>, so the drafter that accepts a correction, the fold that applies it and the desk that applies it all read one array; the suite asserts they are the same object. The panels render from a spec and diff from the same spec.","<b>AN ABSENT FLAG AND false ARE THE SAME THING</b>, and comparing them raw would have recorded a correction on every save that touched a checkbox. A row that is not cancelled simply has no <code>cancelled</code> key, so the comparison coerces both sides and a false flag deletes the key rather than writing false.","<b>THE PHONE GETS EVERYTHING EXCEPT THE COST AND THE NOTE, and that is a policy line.</b> A per-unit cost is the one figure <code>phonePayloadLeaks()</code> bans outright, and a row note quotes lot costs in prose. Neither reaches the payload, so the phone cannot SHOW either, so it must not offer to REPLACE either: overwriting a value you are not allowed to see is worse than not offering it. The sheet says so. The other twenty-eight are on the phone, and the payload grew 4.6 KB to carry them.","<b>THE CHAIN IS PROVED ON THE LIVE QUEUE, END TO END.</b> A correction was posted into the real KV at 07:21:35; the production cron fired at 07:30, read it, resolved the row by rid against the live mirror and wrote a pending draft into the live D1 with all three flags it should have raised. It was queued deliberately wrong, salt to oil on a RM100/unit row, so what was proved is the gate REFUSING rather than passing. It was then rejected and withdrawn from KV, and the queue is back to the three entries it held before.","<b>NO FIGURE MOVED.</b> No row was folded and no rate changed."]},
 {"v":"v362","d":"25 Aug 2026","t":"THE ROW EDITOR REACHES THE PHONE, AND THE ATTRIBUTION RULE HAS ONE HOME","n":["<b>TAP ANY ROW ON THE BOOK TAB AND EDIT IT.</b> The desk got this at v361 on a right-click. The phone opens on a plain <b>tap</b> rather than a long press: a long press raises the same event, but iOS Safari is not reliable about it, and a ledger card had no tap action before, so nothing is taken away. The sheet carries the product, the buyer, the associate, the stream, the date, the size and the total, prefilled from the row. It joins <code>held</code> and goes up on the same push every other entry uses, so it survives a dead connection, and it queues a correction rather than writing one.","<b>THE NOTE IS THE ONE FIELD THE PHONE CANNOT TOUCH, and that is a policy line rather than an oversight.</b> Row notes carry lot costs and margins in prose, and <code>phonePayloadLeaks()</code> keeps every per-unit cost off this payload because the app is public by decision. The phone cannot SHOW a note, so it must not offer to REPLACE one: overwriting prose you cannot read is worse than not offering it. The sheet says so in a line rather than leaving it a mystery, and notes stay editable at the desk.","<b>THE ATTRIBUTION RULE MOVED INTO THE ENGINE, WHERE IT SHOULD HAVE GONE FIRST.</b> Reading the associate back out of a row is not trivial (R2 puts them in the counterparty field with the buyer as <code>downstream</code>; R3 leaves the buyer and credits <code>ref</code>), and v361 shipped it TWICE, once in the master's ovAmend and once in the fold's applyAmend. The phone needed the same answer a third time, which is the point at which a copy becomes a fault. <code>attributionOf</code> now lives in <code>engine/position.mjs</code> with one definition and three consumers, which is the rule this repo already had and that I broke for an hour.","<b>THE PAYLOAD CARRIES EACH ROW'S ID AND ATTRIBUTION.</b> Two small fields, 2.2 KB across 125 rows, and neither is a cost: a rid is opaque and an attribution is a code the payload already ships in its party list. The leak test reads them as it reads the rest.","<b>NO FIGURE MOVED.</b> No row was folded and no rate changed."]},
 {"v":"v361","d":"25 Aug 2026","t":"EVERY FIELD ON EVERY ROW CAN BE EDITED, AND EVERY ROW HAS A NAME","n":["<b>RIGHT-CLICK ANY LEDGER ROW AND EDIT IT.</b> His instruction of 25 Aug: \"I am unable to edit the ledger.\" He was right, and about more than he said. The only amendments that existed were paid, delivered, restate and cancel, and not one of them touches what a row SAYS about itself: a row's product and its associate were set once, at entry, and nothing anywhere could change them afterwards. The Ledger tab now opens a panel on a right-click, or a long press, with the product, the party, the associate, the stream, the date, the size, the total and the note all typeable. It <b>queues a correction</b> and writes nothing: the drafter checks every field against the book and it comes back to Approve for a tap, exactly like a transaction.","<b>EVERY ROW CARRIES AN ID NOW, AND THE OLD ONE COULD NOT HAVE WORKED.</b> A row was addressed by ovKey, which is party, date and total joined together. That names a row for exactly as long as none of those three changes, and an editor whose job is changing them cannot use it: correct a party and the row's own name no longer finds it. It also already collided, on two SA5-BTR lots dated 22 Jul both for RM350, neither of which could be addressed at all. All 125 rows were given a rid, the fold mints one for every new row, and the drafter, the fold and the desk all resolve by rid first and fall back to ovKey.","<b>THE DRAFTER COULD ONLY REACH SEVEN ROWS, AND NOW REACHES ALL OF THEM.</b> Every amendment resolved its target through the open-order snapshot, so 118 of the 125 rows on this book, every settled one, were beyond any amendment. A correction reads the full book instead. It is the one amendment that does, deliberately: a row is as often wrong once it is closed as while it is live.","<b>AN ASSOCIATE CAN BE ATTRIBUTED FROM THE PHONE.</b> The drafter refused outright any entry carrying associate, stream or downstream fields, on the ground that whose bucket a row books to is a judgement. That was true of the link fields and never true of these three: each is a code the book either knows or does not. They are checked per field now, and R2 and R3 are applied exactly as the desk's own rule applies them. Only linkTo and orderCode stay refused, because which OTHER row a row links to is a judgement no figure settles.","<b>WHAT A CORRECTION IS APPROVED ON IS WHAT CHANGED.</b> The Approve card leads with cash and units moving, both of which are zero on a correction and say nothing. A correction gets its own card: a before-and-after line for every field it touches, the flags the drafter raised on the row as it would then stand, and nothing else. Changing the product re-runs the whole rate check against the new shelf, which is how a RM100/unit row moved to oil is flagged as more than double the highest oil rate this book has carried.","<b>NO FIGURE MOVED.</b> No row was folded and no rate changed. Every row gained a rid and nothing else; the ledger stands exactly where v360 left it."]},
@@ -3297,7 +3316,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='25 Aug 2026, 17:20 KL';
+const LAST_UPDATED='26 Aug 2026, 14:05 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -5161,7 +5180,7 @@ function cashFlow(){
   const billsOut=+purchases.reduce((a,p)=>a+(p.pending?0:Math.max(0,(+p.total)-poCash(p))),0).toFixed(2);   // a pending lot is not a bill: nothing has been bought yet
   const refundsOut=+customerRefunds.filter(r=>!r.paidOn).reduce((a,r)=>a+ +r.amount,0).toFixed(2);   // a paid refund is no longer promised away
   const dueOut=+(billsOut+refundsOut).toFixed(2);
-  return {inRM,outRM,inj,spend,net,onHand:null,dueIn,dueOut,billsOut,refundsOut,
+  return {inRM,outRM,inj,spend,refPaid,net,onHand:null,dueIn,dueOut,billsOut,refundsOut,
     free:null,count:null,netTo,netAfter,impliedOpen:null,drift:null,
     known:false};
 }
@@ -5276,7 +5295,7 @@ function tabOverview(){
   ${boundaryPanel()}
   ${defKg>0.009?`<div class="pend"><h3>&#128230; Deferred deliveries <span class="cd" style="color:var(--amber);border-color:var(--amber)">${kg(defKg)} owed out</span></h3><div class="dsc"><b>Paid ahead of delivery</b>, so you owe salt: ${defRows.map(s=>ID(s.customer)+' '+kg(txDeferKg(s))).join(', ')||'&mdash;'}.${defKg>currentStock?` <b style="color:var(--crim)">Exceeds ${kg(currentStock)} on hand &mdash; cannot cover.</b>`:''}</div></div>`:''}
   ${advTotal>0.5?`<div class="pend"><h3>&#128179; Advances out <span class="cd" style="color:var(--amber);border-color:var(--amber)">${fmt0(advTotal)} owed to you</span></h3><div class="dsc"><b>Delivered ahead of payment</b>, so they owe you: ${arList.map(s=>ID(s.customer)+' '+fmt0(outstandingOf(s))+((s.deliveredQty||0)>1&&!s.exemptCap?' <span style="color:var(--crim)">(over 1 unit cap!)</span>':'')).join(', ')}. Net of provisioning, <b>${fmt0(ar)}</b> is the realistic figure.</div></div>`:''}
-  ${supplierReceivable.status!=='closed'?`<div class="pend def"><h3>&#9888; Supplier default &mdash; ${ID(supplierReceivable.party)} <span class="cd crim">${supplierReceivable.status==='writtenOff'?fmt0(supRecovGross)+' written off':fmt0(supRecovNet)+' net'}</span></h3><div class="dsc">${supplierReceivable.status==='writtenOff'?`Paid 08 Jul, lot never arrived, and he stopped responding. <b>Written off ${supplierReceivable.writtenOffOn}</b> at ${dbet(supplierReceivable.since)} days: the ${fmt0(supRecovGross)} provision stays charged against margin and the desk no longer counts this as expected cash. It is off the forward view, off Today and out of Boundaries. <b>Any recovery is upside</b> against a book that has already taken the loss, and would be recorded as a fresh receipt rather than by reversing this.`:`Paid 08 Jul, lot never arrived; ${dbet(supplierReceivable.since)} days out, ${(provRate(dbet(supplierReceivable.since))*100).toFixed(0)}% provisioned (${fmt0(supRecovGross)} gross). Recoverable pending the settlement meeting.`}</div></div>`:''}
+  ${(PROD===DEFAULT_PROD&&supplierReceivable.status!=='closed')?`<div class="pend def"><h3>&#9888; Supplier default &mdash; ${ID(supplierReceivable.party)} <span class="cd crim">${supplierReceivable.status==='writtenOff'?fmt0(supRecovGross)+' written off':fmt0(supRecovNet)+' net'}</span></h3><div class="dsc">${supplierReceivable.status==='writtenOff'?`Paid 08 Jul, lot never arrived, and he stopped responding. <b>Written off ${supplierReceivable.writtenOffOn}</b> at ${dbet(supplierReceivable.since)} days: the ${fmt0(supRecovGross)} provision stays charged against margin and the desk no longer counts this as expected cash. It is off the forward view, off Today and out of Boundaries. <b>Any recovery is upside</b> against a book that has already taken the loss, and would be recorded as a fresh receipt rather than by reversing this.`:`Paid 08 Jul, lot never arrived; ${dbet(supplierReceivable.since)} days out, ${(provRate(dbet(supplierReceivable.since))*100).toFixed(0)}% provisioned (${fmt0(supRecovGross)} gross). Recoverable pending the settlement meeting.`}</div></div>`:''}
   <h2>Desk digest <span class="sub" style="font-weight:400">the headline from every tab</span> <span class="rule"></span></h2>
   <div class="kpis k4">
     <div class="kpi ${oversold?'r':''}"><div class="l">Inventory &middot; free to sell</div><div class="v">${kg(free)}</div><div class="n">${oversold?`oversold: ${kg(defKg)} owed vs ${kg(currentStock)} on hand`:'covers what is owed out'}</div></div>
@@ -5285,7 +5304,7 @@ function tabOverview(){
     <div class="kpi p"><div class="l">Financials &middot; collected</div><div class="v">${fmt0(revCollected)}</div><div class="n">${fmt0(arGross)} still to come in as cash; ${fmt0(Math.max(0,uncollected-arGross))} settled in kind</div></div>
     <div class="kpi"><div class="l">Customers &middot; concentration</div><div class="v" style="color:${conCol}">${con.hhi.toFixed(0)}</div><div class="n">${conRisk}; top buyer ${con.top.toFixed(0)}% of ${con.n}</div></div>
     <div class="kpi ${cv.below?'r':'g'}"><div class="l">Inventory &middot; cover</div><div class="v">${cv.days==null?'&mdash;':cv.days+'d'}</div><div class="n">${cv.rate>0?`${kg(cv.rate)}/day over the last fortnight`:'no recent trade to rate'}${cv.below?`; ${kg(cv.shortBy)} under the ${kg(cv.reorderAt)} trigger`:''}</div></div>
-    <div class="kpi ${cf.net<0?'r':'p'}"><div class="l">Cash &middot; trading net</div><div class="v">${fmt0(cf.net)}</div><div class="n">${fmt0(cf.inRM)} in from sales less ${fmt0(cf.outRM)} out for salt</div></div>
+    <div class="kpi ${cf.net<0?'r':'p'}"><div class="l">Cash &middot; trading net</div><div class="v">${fmt0(cf.net)}</div><div class="n">${fmt0(cf.inRM)} in from sales less ${fmt0(cf.outRM)} out for stock</div></div>
     <div class="kpi g"><div class="l">Suppliers &middot; in transit</div><div class="v">${kg(itKg)}</div><div class="n">${supBills>0.009?`${fmt0(supBills)} bills unpaid`:'all lots paid'}${supRecovNet>0.009?`; ${fmt0(supRecovNet)} refund due`:''}</div></div>
   </div>
   <div class="two">
@@ -5676,8 +5695,8 @@ function tabSourcing(){
     <div class="kpi ${ss.some(s=>s.defaults)?'r':'g'}"><div class="l">Lost to defaults</div><div class="v">${fmt0(ss.reduce((a,s)=>a+s.defaultRM,0))}</div><div class="n">${ss.reduce((a,s)=>a+s.defaults,0)} lot${ss.reduce((a,s)=>a+s.defaults,0)===1?'':'s'} paid for and never delivered</div></div>
   </div>
 
-  <h2 style="margin-top:18px">The next lot <span class="sub" style="font-weight:400">stated ${SOURCING_PLAN.statedOn}, and what the shelf says about it</span> <span class="rule"></span></h2>
-  ${(()=>{const s=sourcingPlan();
+  <h2 style="margin-top:18px">The next lot <span class="sub" style="font-weight:400">${PROD===DEFAULT_PROD?`stated ${SOURCING_PLAN.statedOn}, and what the shelf says about it`:'no stated plan for this product'}</span> <span class="rule"></span></h2>
+  ${PROD!==DEFAULT_PROD?`<div class="card"><div class="dsc">No stated plan for this product. SOURCING_PLAN is one hand-entered lot, for Salt, on the Salt supplier ladder; the same class of mistake supplierStats() was fixed for at v236.</div></div>`:(()=>{const s=sourcingPlan();
     const late=s.gapDays!=null&&s.gapDays>0;
     return `<div class="card">
     <div class="kpis k4">
@@ -5745,13 +5764,18 @@ function tabSourcing(){
 
   <div class="card" style="margin-top:14px"><div class="cardh">Every lot, at the rate it landed <span class="sub">received lots by date</span></div><div class="chartbox" style="height:190px"><canvas id="srcLotChart"></canvas></div><div class="dsc" style="margin-top:7px">One bar per received lot at its RM/unit, in landing order. The defaulted lot is drawn hollow at the rate that was paid for nothing. The trend to look for is the right-hand end sitting lower than the left.</div></div>
   <h2 style="margin-top:18px">What each tier is worth <span class="rule"></span></h2>
-  <div class="card"><table><thead><tr><th class="l">Tier</th><th>Rate</th><th>Cash</th><th>Effective</th><th>Usable unit</th><th>Cover</th><th>Profit on a ${kg(12.5)} resale</th></tr></thead><tbody>
-    ${(supplierQuote&&supplierQuote.tiers?supplierQuote.tiers:[]).map(t=>{const rr=t.total/t.qty,ef=rr/Math.max(0.01,1-c.shrink);
+  ${(()=>{/* v365: quoteFor(PROD), not the bare supplierQuote (Salt's alone) — the exact
+      mistake the Pricing tab already avoids with this same resolver, per the comment on
+      QUOTES/quoteFor above. Sourcing's tier table was never switched onto it, and showed
+      Salt's quote, in full, under Oil. */
+    const pq=quoteFor(PROD);
+    return `<div class="card"><table><thead><tr><th class="l">Tier</th><th>Rate</th><th>Cash</th><th>Effective</th><th>Usable unit</th><th>Cover</th><th>Profit on a ${kg(12.5)} resale</th></tr></thead><tbody>
+    ${(pq&&pq.tiers?pq.tiers:[]).map(t=>{const rr=t.total/t.qty,ef=rr/Math.max(0.01,1-c.shrink);
       const keep=pxOver.cost;pxOver.cost=rr;const qt=pxQuote(12.5,sg.net,0);pxOver.cost=keep;
       return `<tr><td class="l">${kg(t.qty)}</td><td>${fmt(rr)}</td><td>${fmt0(t.total)}</td><td>${fmt(ef)}</td>
         <td>${kg(t.qty*(1-c.shrink))}</td><td>${cv.rate>0?(t.qty*(1-c.shrink)/cv.rate).toFixed(1)+'d':'&mdash;'}</td>
         <td><b>${fmt0(qt.profit)}</b></td></tr>`;}).join('')}
-  </tbody></table><div class="dsc" style="margin-top:8px">Quoted ${supplierQuote?supplierQuote.quotedOn:''} by ${supplierQuote?ID(supplierQuote.supplier):''}, and indicative rather than a purchase. The profit column holds the resale price fixed and moves only the cost, so it isolates what the buying rate alone is worth.</div></div>
+  </tbody></table><div class="dsc" style="margin-top:8px">Quoted ${pq?pq.quotedOn:''} by ${pq?ID(pq.supplier):''}, and indicative rather than a purchase. The profit column holds the resale price fixed and moves only the cost, so it isolates what the buying rate alone is worth.</div></div>`;})()}
   <div class="dsc" style="margin-top:14px"><b>Nothing on this tab books anything.</b> A lot becomes a figure only when it is recorded on the Transaction tab as a buy.</div>`;
 }
 
@@ -5843,7 +5867,7 @@ function tabAnalysis(){
 
   <h2 style="margin-top:20px">How long between agreeing, delivering and being paid <span class="rule"></span></h2>
   <div class="dsc" style="margin-bottom:9px">Now that orders carry a delivery and a payment date, the desk can measure its own working capital rather than describe it. A positive lag is days after the order was agreed. Orders where the date is assumed contribute a zero lag, so <b>these are floors, not averages</b>: the true gaps can only be longer.</div>
-  ${(()=>{const rows=sales.map(s=>({s,d:txDates(s)})).filter(x=>x.d.dOn||x.d.pOn)
+  ${(()=>{const rows=pSales(PROD).map(s=>({s,d:txDates(s)})).filter(x=>x.d.dOn||x.d.pOn)
       .map(x=>({c:x.s.customer,date:x.s.date,rm:x.s.total,
         dl:lagDays(x.s.date,x.d.dOn),pl:lagDays(x.s.date,x.d.pOn),
         gap:(x.d.dOn&&x.d.pOn)?lagDays(x.d.dOn,x.d.pOn):null,dSrc:x.d.dSrc,pSrc:x.d.pSrc}));
@@ -6135,6 +6159,11 @@ function tabMap(){
 
 /* ============ TAB: INVENTORY & MARGIN ============ */
 function tabInventory(){
+  /* v365: openingFor(PROD), not the bare `opening` (Salt's alone). The KPI above these
+     tables already used the product-aware helper, which is why it was right while these
+     were wrong: Oil's page showed Salt's opening lot, and the reconciliation no longer
+     summed because of it. */
+  const op=openingFor(PROD);
   const stockVal=+(currentStock*stockCostFor(PROD)).toFixed(2);
   const free=+(currentStock-defKg).toFixed(2);           // free to sell = on hand minus salt you owe (deferred)
   const oversold=free<0;
@@ -6142,14 +6171,14 @@ function tabInventory(){
   const loanPre=(typeof loans!=='undefined'?loans:[]).reduce((a,l)=>a+(l.preOpening?(l.valueKg||0):0),0);
   // reconciliation walk (only lines that apply)
   const recon=[
-    ['Opening (pre-record)','+'+kg(opening.qty),opening.costPerKg?fmt(opening.costPerKg)+'/unit':'<span class="tag unpaid">TBC</span>'],
+    ['Opening (pre-record)','+'+kg(op.qty),op.costPerKg?fmt(op.costPerKg)+'/unit':'<span class="tag unpaid">TBC</span>'],
     ...receivedPO.map(p=>['Received '+p.date,'+'+kg(p.qty),fmt(p.total/p.qty)+'/unit']),
     ['Sold and delivered','-'+kg(+(soldKg-loanKg).toFixed(2)),'&mdash;'],   // soldKg already carries the loan; the loan gets its own line below
     loanKg>0?['Loan out (settled)','-'+kg(loanKg),'&mdash;']:null,
     selfUse>0?['Self-use / shrinkage','-'+kg(selfUse),'&asymp; '+fmt0(selfUse*wavgBuy)]:null,
   ].filter(Boolean);
   // lots: received (in cost), plus excluded (in-transit / defaulted)
-  const lotsIn=[['Opening',kg(opening.qty),opening.costPerKg?fmt(opening.costPerKg):'&mdash;','in basis'],
+  const lotsIn=[['Opening',kg(op.qty),op.costPerKg?fmt(op.costPerKg):'&mdash;','in basis'],
     ...receivedPO.map(p=>['Purchase '+p.date,kg(p.qty),fmt(p.total/p.qty),'in basis'])];
   const lotsEx=[...defaultPO.map(p=>['Defaulted '+p.date,kg(p.qty),fmt(p.total/p.qty),'<span class="risk">excluded</span>']),
     ...purchases.filter(p=>poOpenKg(p)>0.0001&&poLive(p)).map(p=>['Still to arrive '+p.date,kg(poOpenKg(p)),fmt(poRate(p)),'<span class="attn">excluded</span>'])];
@@ -6193,11 +6222,11 @@ function tabInventory(){
       +`<tr class="tot"><td class="l" colspan="2">Attributed</td><td>${kg(suKg)}</td><td>${fmt0(suKg*wavgBuy)}</td><td></td></tr>`
       +`<tr class="tot"><td class="l" colspan="2">Still unexplained</td><td>${kg(Math.max(0,selfUse-suKg))}</td><td>${fmt0(Math.max(0,selfUse-suKg)*wavgBuy)}</td><td class="l">the plug that remains</td></tr>`
       +`</tbody></table>`
-    : `<div class="dsc">Nothing attributed yet. <b>${kg(selfUse)}</b> has gone missing against <b>${kg(buyKg+opening.qty)}</b> handled, <b>${((selfUse/(buyKg+opening.qty))*100).toFixed(1)}%</b>, worth about <b>${fmt0(selfUse*wavgBuy)}</b> at the ${fmt(wavgBuy)}/unit average. That is <b>${((selfUse*wavgBuy)/grossMargin*100).toFixed(0)}%</b> of every ringgit of gross margin the desk has ever earned, and it is currently a single unexplained number.<br><br>Record what you know as it happens under <b>Workbench &rarr; Self-use or loss</b>. The count still wins, so nothing here moves a figure; it splits the plug into the part you chose and the part you lost, which are two very different problems.</div>`}</div>
+    : `<div class="dsc">Nothing attributed yet. <b>${kg(selfUse)}</b> has gone missing against <b>${kg(buyKg+op.qty)}</b> handled, <b>${((selfUse/(buyKg+op.qty))*100).toFixed(1)}%</b>, worth about <b>${fmt0(selfUse*wavgBuy)}</b> at the ${fmt(wavgBuy)}/unit average. That is <b>${((selfUse*wavgBuy)/grossMargin*100).toFixed(0)}%</b> of every ringgit of gross margin the desk has ever earned, and it is currently a single unexplained number.<br><br>Record what you know as it happens under <b>Workbench &rarr; Self-use or loss</b>. The count still wins, so nothing here moves a figure; it splits the plug into the part you chose and the part you lost, which are two very different problems.</div>`}</div>
 
   ${sec('Stock reconciliation','how the count is reached, opening to on-hand',recon.length,
     `<table><thead><tr><th class="l">Line</th><th>Qty</th><th>Cost</th></tr></thead><tbody>${recon.map(r=>`<tr><td class="l">${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join('')}<tr class="tot"><td class="l">On hand ${stockCounted?'(counted)':'(ledger, never counted)'}</td><td>${kg(currentStock)}</td><td>${fmt(wavgBuy)}/unit avg</td></tr></tbody></table>
-    <div class="dsc" style="margin-top:9px">Ledger implies ${kg(ledgerStock)}; the count is ${countedFor(PROD)!=null?kg(countedFor(PROD)):'not taken on this book'}. The gap, <b>${kg(selfUse)}</b>, is booked as self-use / shrinkage &mdash; the count always wins.${loanPre>0?` The ${kg(loanPre)} lent on ${loans.filter(l=>l.preOpening)[0].date} does <b>not</b> appear as a deduction, because it went out before the ${kg(opening.qty)} opening was counted and is therefore already inside it. Subtracting it again would remove the same units twice and inflate shrinkage by exactly that much, which is what the desk did until 28 Jul.`:''}</div>`)}
+    <div class="dsc" style="margin-top:9px">Ledger implies ${kg(ledgerStock)}; the count is ${countedFor(PROD)!=null?kg(countedFor(PROD)):'not taken on this book'}. The gap, <b>${kg(selfUse)}</b>, is booked as self-use / shrinkage &mdash; the count always wins.${loanPre>0?` The ${kg(loanPre)} lent on ${loans.filter(l=>l.preOpening)[0].date} does <b>not</b> appear as a deduction, because it went out before the ${kg(op.qty)} opening was counted and is therefore already inside it. Subtracting it again would remove the same units twice and inflate shrinkage by exactly that much, which is what the desk did until 28 Jul.`:''}</div>`)}
   ${sec('Lots and sourcing','each purchase, and what is in the cost basis',lots.length,
     `<table><thead><tr><th class="l">Lot</th><th>Qty</th><th>Cost/unit</th><th>Basis</th></tr></thead><tbody>${lots.map(r=>`<tr><td class="l">${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td></tr>`).join('')}</tbody></table>
     <div class="dsc" style="margin-top:9px">Weighted-average cost <b>${fmt(wavgBuy)}/unit</b> over the received lots and opening. Defaulted and in-transit lots are excluded until (and unless) they arrive.</div>`)}
@@ -6390,7 +6419,8 @@ const EDFORM=[
   {k:'downstream',l:'Downstream', kind:'code', only:'S', hint:'The end buyer on an R2 row.'},
   {k:'orderCode', l:'Order code', kind:'text'},
   {g:'What has moved'},
-  {k:'cash',        l:'Cash in, RM',        kind:'num'},
+  {k:'cash',        l:'Cash in, RM',        kind:'num', only:'S'},
+  {k:'cash',        l:'Cash paid, RM',      kind:'num', only:'B'},
   {k:'deliveredQty',l:'Handed over, unit',  kind:'num', only:'S'},
   {k:'receivedQty', l:'Received, unit',     kind:'num', only:'B', hint:'Empty on a settled lot means received in full; the book stores it that way. Type a figure only to state a partial receipt.'},
   {k:'cost',        l:'Cost, RM/unit',      kind:'num', only:'S', hint:'Typed here it overrides the shelf, and every margin on this row is measured against it.'},
@@ -6404,9 +6434,9 @@ const EDFORM=[
   {k:'settledRM', l:'Settled, RM',   kind:'num'},
   {k:'settledKg', l:'Settled, unit', kind:'num'},
   {k:'settle',    l:'In what',       kind:'text', hint:'What the settlement was made in.'},
-  {k:'rebate',    l:'Rebate, RM',    kind:'num'},
+  {k:'rebate',    l:'Settled by rebate redemption', kind:'bool', hint:'A flag, not an amount. The unit redeemed is Rebate, unit, below.'},
   {k:'rebateKg',  l:'Rebate, unit',  kind:'num'},
-  {k:'goodwill',  l:'Goodwill, RM',  kind:'num'},
+  {k:'goodwill',  l:'A goodwill gift, not a sale', kind:'bool', hint:'Booked at cost, excluded from revenue everywhere.'},
   {g:'State', fold:true},
   {k:'cancelled',  l:'Cancelled',              kind:'bool', hint:'This takes the row out of every figure on the desk.'},
   {k:'cancelledOn',l:'Cancelled on',           kind:'date'},
@@ -6438,13 +6468,20 @@ function edClose(){edRid=null;renderEditor();}
 function edEsc(v){return v==null?'':String(v).split('&').join('&amp;').split('"').join('&quot;').split('<').join('&lt;');}
 function renderEditor(){
   let bd=document.getElementById('edBackdrop'),pn=document.getElementById('edPanel');
+  const wasOpen=!!(pn&&pn.style.display==='block');
   if(!bd){bd=document.createElement('div');bd.id='edBackdrop';document.body.appendChild(bd);}
   if(!pn){pn=document.createElement('div');pn.id='edPanel';document.body.appendChild(pn);}
+  /* v365: THE PHONE'S IDENTICAL SHEET ANNOUNCES ITSELF; THIS PANEL DID NOT. Same job, same
+     modal backdrop, same Cancel/Save pair, but no role, no aria-modal, no label, and focus
+     stayed wherever it already was when it opened. tabindex="-1" is what lets a plain div
+     take focus programmatically without joining the Tab order in its own right. */
+  pn.setAttribute('role','dialog');pn.setAttribute('aria-modal','true');
+  pn.setAttribute('aria-label','Edit the entry');pn.setAttribute('tabindex','-1');
   bd.setAttribute('style','display:'+(edRid?'block':'none')+';position:fixed;inset:0;background:rgba(8,4,18,.55);z-index:89');
   pn.setAttribute('style','display:'+(edRid?'block':'none')+';position:fixed;top:0;right:0;height:100vh;width:min(470px,94vw);z-index:90;text-align:left;overflow-y:auto;background:linear-gradient(180deg,var(--card2),var(--card));border-left:1px solid var(--line);padding:15px 16px 30px;box-shadow:-18px 0 40px rgba(0,0,0,.45)');
   if(!edRid){pn.innerHTML='';return;}
   const row=edRowOf(edRid,edType);
-  if(!row){pn.innerHTML='<div class="note warn">That row could not be found. It may have been folded under a different id since this page loaded.</div>';return;}
+  if(!row){pn.innerHTML='<div class="stand-note warn">That row could not be found. It may have been folded under a different id since this page loaded.</div>';return;}
   const partyKey=edType==='BUY'?'supplier':'customer';
   const canc=!!row.cancelled;
   const v=edView(row,edType);
@@ -6461,13 +6498,27 @@ function renderEditor(){
     if(f.kind==='prose')return '<textarea id="'+id+'" rows="4" style="'+box+';font-size:12.5px;line-height:1.45;resize:vertical">'+edEsc(val)+'</textarea>';
     return '<input id="'+id+'" value="'+edEsc(val)+'" placeholder="none" style="'+box+'">';
   };
-  let html='',open=null;
-  edFields(edType).forEach(f=>{
+  /* v365: A FOLD OPENS WHEN IT HAS SOMETHING TO SHOW, same reasoning and same fix as the
+     phone's edDraw(). Whether a group rendered collapsed used to depend only on whether it
+     was MARKED foldable, never on whether it actually carried a value. */
+  const edHasVal=(f,val)=>{
+    if(f.kind==='bool')return !!val;
+    if(f.kind==='num')return val!=null&&val!==''&&Number(val)!==0;
+    return val!=null&&String(val).trim()!=='';
+  };
+  const edFl=edFields(edType);
+  const foldOpen=[];let fgi=-1;
+  edFl.forEach(f=>{
+    if(f.g){fgi++;foldOpen[fgi]=false;return;}
+    if(fgi>=0&&edHasVal(f,v[f.k]))foldOpen[fgi]=true;
+  });
+  let html='',open=null;fgi=-1;
+  edFl.forEach(f=>{
     if(f.g){
       if(open)html+=(open.fold?'</details>':'')+'';
-      open=f;
+      open=f;fgi++;
       html+=f.fold
-        ? '<details style="margin:14px 0 4px"><summary style="cursor:pointer;font-size:10.5px;text-transform:uppercase;letter-spacing:1px;color:var(--mut);font-weight:700;margin-bottom:8px">'+edEsc(f.g)+'</summary>'
+        ? '<details style="margin:14px 0 4px"'+(foldOpen[fgi]?' open':'')+'><summary style="cursor:pointer;font-size:10.5px;text-transform:uppercase;letter-spacing:1px;color:var(--mut);font-weight:700;margin-bottom:8px">'+edEsc(f.g)+'</summary>'
         : '<p style="font-size:10.5px;text-transform:uppercase;letter-spacing:1px;color:var(--mut);font-weight:700;margin:14px 0 8px">'+edEsc(f.g)+'</p>';
       return;
     }
@@ -6483,8 +6534,8 @@ function renderEditor(){
     +'<button id="edX" aria-label="Close" style="background:none;border:none;color:var(--dim);font-size:19px;line-height:1;cursor:pointer">&times;</button></div>'
     +'<div class="mono" style="font-size:11px;color:var(--dim);margin-bottom:10px">'+edEsc(edRid)+' &middot; '+edType+' &middot; '+(row.date||'undated')+' &middot; '+ID(row[partyKey])+'</div>'
     +(canc
-      ?'<div class="note warn" style="margin:0 0 4px">This row is <b>cancelled</b>. Reviving one is a fold-level judgement, and the drafter refuses corrections against it, so there is nothing to queue from here.</div>'
-      :'<div class="note" style="margin:0 0 4px">This <b>queues a correction</b>. It does not write to the book. The drafter checks every field against the ledger and it comes back to Approve for a tap, exactly like a transaction does.</div>')
+      ?'<div class="stand-note warn" style="margin:0 0 4px">This row is <b>cancelled</b>. Reviving one is a fold-level judgement, and the drafter refuses corrections against it, so there is nothing to queue from here.</div>'
+      :'<div class="stand-note" style="margin:0 0 4px">This <b>queues a correction</b>. It does not write to the book. The drafter checks every field against the ledger and it comes back to Approve for a tap, exactly like a transaction does.</div>')
     +'<datalist id="edCodes">'+codes.map(c=>'<option value="'+edEsc(c)+'"></option>').join('')+'</datalist>'
     +html
     +'<div style="display:flex;gap:8px;margin-top:16px">'
@@ -6495,6 +6546,11 @@ function renderEditor(){
   document.getElementById('edCancel').onclick=edClose;
   bd.onclick=edClose;
   const sv=document.getElementById('edSave'); if(sv)sv.onclick=edSubmit;
+  /* v365: renderEditor only ever runs on open (ledEdit) or close (edClose), never mid-edit,
+     so moving focus here happens once per open (wasOpen reads the panel's OWN display style
+     from before this call, not edRid, which the caller has already overwritten) and never
+     steals it back from a field being typed into. */
+  if(edRid&&!wasOpen)try{pn.focus();}catch(e){}
 }
 function edSubmit(){
   const row=edRowOf(edRid,edType);if(!row)return;
@@ -6546,6 +6602,24 @@ if(typeof document!=='undefined'&&!window.__edBound){
     e.preventDefault();
     ledEdit(rid,card.getAttribute('data-type')||'SELL');
   });
+  /* v365: THE ROW EDITOR HAD NO KEYBOARD ENTRY POINT AT ALL. Right-click and long-press were
+     the only roads in; tabbing through the page never landed on a row, and nothing here
+     answered a keydown. Enter on a focused card (tabindex is set where the card carries a
+     rid) opens the same editor a right-click does. Escape closes it, on either the panel or
+     anything inside it, which the panel could not do either. */
+  document.addEventListener('keydown',function(e){
+    if(e.key==='Enter'){
+      const card=e.target&&e.target.closest?e.target.closest('.lcard[data-rid]'):null;
+      if(!card)return;
+      if(e.target.closest('button,a,select,textarea,input,details'))return;
+      e.preventDefault();
+      ledEdit(card.getAttribute('data-rid'),card.getAttribute('data-type')||'SELL');
+      return;
+    }
+    if(e.key==='Escape'&&edRid){
+      edClose();
+    }
+  });
 }
 function ledQuick(what,type,who,date,total,qty){
   const arr=(type==='BUY')?purchases:sales;
@@ -6573,29 +6647,40 @@ function ledQuick(what,type,who,date,total,qty){
   applyOverlay();saveQueue();render();
 }
 function goEnt(code){const el=document.getElementById('ent-'+code);if(el){el.scrollIntoView({behavior:'smooth',block:'center'});el.classList.add('entflash');setTimeout(()=>el.classList.remove('entflash'),1200);}return false;}
-let ledF={q:'',state:'',party:'',month:''};
+let ledF={q:'',state:'',party:'',month:'',product:''};
+/* v365: NEITHER FILTER NOR SEARCH COULD ISOLATE A PRODUCT. Oil could not be scanned out on
+   this tab short of reading every row by eye, and the search box's own haystack did not
+   even carry the name, though every row already knows it. ledgerProdOf resolves the same
+   way tabLedger's own rows do: a sale carries product directly, a purchase's product lives
+   on the raw lot in _buy. */
+const ledgerProdOf=t=>prodOf(t.type==='BUY'?(t._buy||t):t);
 function ledMatches(t,si,am,code){
   if(ledF.party&&t.who!==ledF.party)return false;
   if(ledF.month&&t.date.slice(0,7)!==ledF.month)return false;
+  if(ledF.product&&ledgerProdOf(t)!==ledF.product)return false;
   if(ledF.state){
     const fin=(si.order==='In-Kind'||si.order==='Default')?si.order:(am.length?am[am.length-1].state:si.order);
     if(ledF.state==='Open'){if(!/^Open/.test(fin))return false;}
     else if(fin!==ledF.state)return false;}
   if(ledF.q){
     const q=ledF.q.toLowerCase();
-    const hay=(code+' '+t.who+' '+ID(t.who)+' '+t.date+' '+(t.total||'')+' '+(t.note||'')+' '+(t.mod||'')).toLowerCase();
+    const hay=(code+' '+t.who+' '+ID(t.who)+' '+t.date+' '+(t.total||'')+' '+(t.note||'')+' '+(t.mod||'')+' '+(PRODUCTS[ledgerProdOf(t)]||{}).name).toLowerCase();
     if(hay.indexOf(q)<0)return false;}
   return true;
 }
 function wireLedger(){
   const q=document.getElementById('ledQ');if(!q)return;
-  const rerun=()=>{const el=document.getElementById('sec-ledger');if(el){el.innerHTML=tabLedger();wireLedger();
+  /* v365: was sec-ledger, which hasn't existed since Ledger and Analysis merged into one
+     view at v341-343 (the real container is sec-book, line 1352). The lookup failed
+     silently, so every filter updated its own state and then redrew nothing. */
+  const rerun=()=>{const el=document.getElementById('sec-book');if(el){el.innerHTML=tabLedger();wireLedger();
     const q2=document.getElementById('ledQ');if(q2){q2.value=ledF.q;q2.focus();q2.setSelectionRange(q2.value.length,q2.value.length);}}};
   q.oninput=()=>{ledF.q=q.value;rerun();};
   const st=document.getElementById('ledState');if(st)st.onchange=()=>{ledF.state=st.value;rerun();};
   const pt=document.getElementById('ledParty');if(pt)pt.onchange=()=>{ledF.party=pt.value;rerun();};
   const mo=document.getElementById('ledMonth');if(mo)mo.onchange=()=>{ledF.month=mo.value;rerun();};
-  const cl=document.getElementById('ledClear');if(cl)cl.onclick=()=>{ledF={q:'',state:'',party:'',month:''};rerun();};
+  const pr=document.getElementById('ledProduct');if(pr)pr.onchange=()=>{ledF.product=pr.value;rerun();};
+  const cl=document.getElementById('ledClear');if(cl)cl.onclick=()=>{ledF={q:'',state:'',party:'',month:'',product:''};rerun();};
 }
 
 /* ============ STATEMENT OF ACCOUNT (v183) ============
@@ -7203,9 +7288,14 @@ function tabLedger(){
       : '';
     /* data-rid is what the row editor right-clicks onto (25 Aug 2026). A row with no rid yet
        renders without the attribute rather than with an empty one, so the delegated listener
-       simply does not match it and the menu stays the browser default. */
+       simply does not match it and the menu stays the browser default.
+       v365: tabindex makes the card reachable by Tab; no role="button" because a card can
+       already hold a real <details> and real <button>s (the quick-action bar), and a role
+       announcing the whole card as one control would misdescribe what is inside it. The
+       keydown listener below is what turns a focused card's Enter into the same edit a
+       right-click opens. */
     const rid=ridOf(t);
-    return `<div class="lcard ${cardCls}" id="ent-${code}"${rid?` data-rid="${rid}" data-type="${t.type}"`:""}>${collapse?collapsedLine:(openLine+movePanel+closeLine)}${quickBar}</div>`;}).filter(Boolean);
+    return `<div class="lcard ${cardCls}" id="ent-${code}"${rid?` data-rid="${rid}" data-type="${t.type}" tabindex="0"`:""}>${collapse?collapsedLine:(openLine+movePanel+closeLine)}${quickBar}</div>`;}).filter(Boolean);
   const shown=rows.length,total=all.length,rowsHtml=rows.join('');
   const parties=[...new Set(all.map(t=>t.who))];
   /* v280: a PENDING order carries no date, because it is not firm until something moves.
@@ -7219,7 +7309,8 @@ function tabLedger(){
     <select id="ledState">${selOpt('',ledF.state,'All states')}${['Open','Pending','Completed','In-Kind','Cancelled','Default'].map(x=>selOpt(x,ledF.state,x)).join('')}</select>
     <select id="ledParty">${selOpt('',ledF.party,'All parties')}${parties.map(x=>selOpt(x,ledF.party,ID(x))).join('')}</select>
     <select id="ledMonth">${selOpt('',ledF.month,'All months')}${months.map(x=>selOpt(x,ledF.month,mLab(x))).join('')}</select>
-    ${(ledF.q||ledF.state||ledF.party||ledF.month)?'<button class="vbtn" id="ledClear" style="font-size:11px">Clear</button>':''}
+    <select id="ledProduct">${selOpt('',ledF.product,'All products')}${PROD_IDS.map(p=>selOpt(p,ledF.product,PRODUCTS[p].name)).join('')}</select>
+    ${(ledF.q||ledF.state||ledF.party||ledF.month||ledF.product)?'<button class="vbtn" id="ledClear" style="font-size:11px">Clear</button>':''}
     <span class="ledct">${shown} of ${total}</span>
   </div>`;
   return `<h1>Ledger</h1>
@@ -7500,13 +7591,14 @@ function tabFinancials(){
     <div class="kpi ${cf.net<0?'r':'g'}"><div class="l">Trading net</div><div class="v">${fmt0(cf.net)}</div><div class="n">what the salt itself has generated</div></div>
     <div class="kpi gold"><div class="l">Promised away</div><div class="v">${fmt0(cf.dueOut)}</div><div class="n">bills and refunds already committed</div></div>
     <div class="kpi p"><div class="l">Still to come in</div><div class="v">${fmt0(cf.dueIn)}</div><div class="n">net of provisioning</div></div>
-    <div class="kpi r"><div class="l">Promised away</div><div class="v">${fmt0(cf.dueOut)}</div><div class="n">${cf.billsOut>0.009?`${fmt0(cf.billsOut)} supplier bills &middot; `:''}${fmt0(cf.refundsOut)} refunds</div></div>
+    <div class="kpi r"><div class="l">Supplier bills unpaid</div><div class="v">${fmt0(cf.billsOut)}</div><div class="n">${cf.refundsOut>0.009?`${fmt0(cf.refundsOut)} refunds also promised away`:'no refunds promised away'}</div></div>
   </div>
   <div class="card" style="margin-top:12px"><table><thead><tr><th class="l">Line</th><th>RM</th><th class="l">What it is</th></tr></thead><tbody>
     <tr><td class="l">Cash in from sales</td><td>${fmt0(cf.inRM)}</td><td class="l">every ringgit actually received, set-offs excluded</td></tr>
-    <tr><td class="l">Cash out for salt</td><td>${fmt0(-cf.outRM)}</td><td class="l">paid to suppliers, including the lot that never arrived</td></tr>
+    <tr><td class="l">Cash out for stock</td><td>${fmt0(-cf.outRM)}</td><td class="l">paid to suppliers, including the lot that never arrived</td></tr>
     ${cf.inj>0.009?`<tr><td class="l">Money you put in</td><td>${fmt0(cf.inj)}</td><td class="l">injections recorded in cashAdjust</td></tr>`:''}
     ${cf.spend>0.009?`<tr><td class="l">Costs and drawings</td><td>${fmt0(-cf.spend)}</td><td class="l">non-trading outflows recorded in cashAdjust</td></tr>`:''}
+    ${cf.refPaid>0.009?`<tr><td class="l">Customer refunds paid</td><td>${fmt0(-cf.refPaid)}</td><td class="l">a paid refund is trade cash going back out</td></tr>`:''}
     <tr class="tot"><td class="l">Trading net</td><td><b>${fmt0(cf.net)}</b></td><td class="l">${cf.known?'added to your opening balance above':'a flow, not a balance'}</td></tr>
   </tbody></table>
   <div class="dsc" style="margin-top:8px">${cf.known
@@ -7706,6 +7798,23 @@ function phonePayloadBuild(){
         out[pid]=PRICING_ENGINE.board(PRICE_TIERS.sizes,pxCost(),pxPolicy());
       });
       try{ if(typeof setProd==='function')setProd(keepP,true); else PROD=keepP; recompute(); }catch(e){}
+      return out;
+    })(),
+    /* v365: A CUSTOMER'S RATE, PER PRODUCT. custStats() below reads pricedSales, which is
+       scoped to whichever book is active when it runs; called once, it silently carries
+       one product's rate under whichever ladder the phone happens to be viewing. Same
+       PROD-cycle as board(), immediately above, so "This party" on the phone can read the
+       figure for the product actually on screen rather than a blended or mislabelled one. */
+    custRateByProd:(function(){
+      const out={};
+      const keepP2=(typeof PROD!=='undefined')?PROD:prods[0];
+      prods.forEach(pid=>{
+        try{ if(typeof setProd==='function')setProd(pid,true); else PROD=pid; recompute(); }catch(e){}
+        const m={};
+        try{ custStats().forEach(o=>{ if(o.kg>0)m[o.id]=+((o.rev||0)/o.kg).toFixed(2); }); }catch(e){}
+        out[pid]=m;
+      });
+      try{ if(typeof setProd==='function')setProd(keepP2,true); else PROD=keepP2; recompute(); }catch(e){}
       return out;
     })(),
     /* ---- THE PARTIES, so a rate can be checked without opening the desk -----------
@@ -10151,7 +10260,7 @@ function renderQueue(){const b=document.getElementById('queueBox');if(!b)return;
   if(!txq.length){b.innerHTML=cleared;return;}
   b.innerHTML=cleared;b.innerHTML+='<div style="margin-top:12px;font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:var(--gold)">Live in the desk, awaiting commit ('+txq.length+')— '+qLabel()+'</div>'
     +'<div class="dsc" style="margin-top:5px">These are already folded into every figure on the desk. Undo removes an entry and rebuilds; once committed it is in the ledger and can only be reversed by a new entry.</div>'
-    +'<table style="margin-top:6px"><thead><tr><th class="l">Entry</th><th>Type</th><th>Party</th><th>Qty</th><th>RM</th><th>Status</th><th></th></tr></thead><tbody>'+txq.map(q=>`<tr><td class="l" style="max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(q.raw||'')}</td><td>${q.type}</td><td class="mono">${esc(q.party)||'&mdash;'}</td><td>${q.qty!=null?q.qty+'unit':'&mdash;'}</td><td>${q.total!=null?fmt0(q.total):'&mdash;'}</td><td><span class="tag ${q.status==='paid'?'paid':q.status==='inkind'?'inkind':q.status==='modified'?'mod':q.status==='count'?'inkind':'unpaid'}">${({paid:'Paid',unpaid:'Unpaid',partial:'Partial',inkind:'In-Kind',modified:'Modified',credit:'Unpaid',count:'Count'})[q.status]||q.status}</span></td><td><button class="ubtn" onclick="undoEntry('${esc(q.at)}')">Undo</button></td></tr>`).join('')+'</tbody></table>';}
+    +'<table style="margin-top:6px"><thead><tr><th class="l">Entry</th><th>Type</th><th>Party</th><th>Qty</th><th>RM</th><th>Status</th><th></th></tr></thead><tbody>'+txq.map(q=>`<tr><td class="l" style="max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(q.raw||'')}</td><td>${q.type}</td><td class="mono">${esc(q.party)||'&mdash;'}</td><td>${q.qty!=null?q.qty+'unit':'&mdash;'}</td><td>${q.total!=null?fmt0(q.total):'&mdash;'}</td><td><span class="tag ${q.status==='paid'?'paid':q.status==='inkind'?'inkind':q.status==='modified'?'mod':q.status==='cancelled'?'def':q.status==='count'?'inkind':'unpaid'}">${({paid:'Paid',unpaid:'Unpaid',partial:'Partial',inkind:'In-Kind',modified:'Modified',cancelled:'Cancelled',credit:'Unpaid',count:'Count'})[q.status]||q.status}</span></td><td><button class="ubtn" onclick="undoEntry('${esc(q.at)}')">Undo</button></td></tr>`).join('')+'</tbody></table>';}
 
 /* ============ CHARTS for tracker tabs ============ */
 /* Chart.js comes from the CDN, but the desk must not depend on being online:
@@ -10816,7 +10925,10 @@ function resellerCard(r){
   const rebateLine=`<div class="insight" style="margin-top:10px">Rating <b>${r.starN?starStr(r.starN):'unrated'}</b> from <b>${r.share.toFixed(1)}%</b> revenue share. <b>Brought in</b> (resold + referred): <b>${fmt0(r.bring)}</b> at <b>${r.bringPct}%</b> margin, ${r.bringBand} band, earns <b>${r.earnedR2} unit</b> per ${fmt0(r.toNextR2+ (r.bring%rewardHurdle(PROD,'associate')))}. <b>Bought himself</b>: <b>${fmt0(r.direct)}</b> at <b>${r.ownPct}%</b>, ${r.ownBand} band, earns <b>${r.earnedOwn} unit</b>. ${r.opening?`Opening position <b>${r.opening>0?'+':''}${r.opening} unit</b>, carried. `:''}<b>${r.earned} unit</b> in total. ${fmt0(r.toNextR2)} more brought in, or ${fmt0(r.toNextOwn)} more bought, reaches the next. ${applied>0?`<b>${kg(applied)} applied</b> already. `:''}${freeKg>0.009?`<button class="vbtn" style="margin-left:4px" onclick="redeemRebate('${r.id}')">${sales.some(s=>s.customer===r.id&&txAdvance(s)>0.009)?'Offset':'Redeem'} ${kg(freeKg)}</button>`:''}</div>`;
   // ---- three uniform ledgers ----
   const buys=sales.filter(s=>s.total!=null&&s.customer===r.id&&s.rev!=='R2');
-  const buyRows=buys.map(s=>{const si=txStat(s);return `<tr><td class="l">${s.date}</td><td>${kg(s.qty)}</td><td>${fmt0(s.total)}</td><td><span class="tag ${si.cls}">${si.order}</span></td></tr>`;}).join('');
+  /* v365: was ${s.date} with no fallback, so a never-dated row (two real cancelled deals,
+     "never dated, paid or handed over" by their own notes) printed the literal word
+     "undefined" instead of a date. Same fallback every other date in this file uses. */
+  const buyRows=buys.map(s=>{const si=txStat(s);return `<tr><td class="l">${s.date||'undated'}</td><td>${kg(s.qty)}</td><td>${fmt0(s.total)}</td><td><span class="tag ${si.cls}">${si.order}</span></td></tr>`;}).join('');
   const resells=sales.filter(s=>s.total!=null&&s.rev==='R2'&&ownerOf(s.customer)===r.id);
   const resellRows=resells.map(s=>{const si=txStat(s);return `<tr><td class="l">${s.date}</td><td class="mono">${ID(s.downstream||s.customer)}</td><td>${kg(s.qty)}</td><td>${fmt0(s.total)}</td><td><span class="tag ${si.cls}">${si.order}</span></td></tr>`;}).join('');
   const refRows=r.referrals.map(c=>`<tr><td class="l mono">${ID(c)}</td><td>${fmt0(firstOrderOf(c))}</td></tr>`).join('');
@@ -11005,14 +11117,39 @@ async function apDecide(id,action,btn){
 const wbEl=id=>document.getElementById(id);
 const wbVal=id=>{const e=wbEl(id);return e?e.value:'';};
 const wbNum=id=>{const e=wbEl(id);if(!e)return 0;const v=parseFloat(e.value);return isNaN(v)?0:v;};
+/* v365: A DATE DECADES OUT WENT THROUGH WITH NO WARNING ANYWHERE — checked the full chain,
+   including the cloud drafter, and every layer's only date rule was refusing a MISSING date.
+   This is a warning, not a hard stop: a genuine forward-dated order is legitimate, so the
+   threshold is generous and it only catches the fat-finger case the audit actually found (a
+   stray digit reading as a date decades away). */
+/* v365: same wording as the Kind dropdown (line ~11326), so what a person reads back before
+   clicking Record is what the dropdown itself says, not the raw select value. */
+const ADDID_KIND_LABEL={customer:'Customer, buys direct',reseller:'Associate, resells for you (R2)',
+  referral:'Referrer, introduces buyers (R3)',downstream:'An associate’s end buyer',
+  bucket:'An associate’s -Gen bucket',supplier:'Supplier'};
+const wbFutureWarn=d=>{
+  if(!d)return null;
+  const dt=new Date(d);if(isNaN(+dt))return null;
+  const yrs=(dt-TODAY)/(365.25*86400000);
+  return yrs>1?d+' is over a year in the future — check it before recording.':null;
+};
 /* the ledger's own entry list, in the ledger's own order, so E-codes match tabLedger exactly */
 function wbLedgerAll(){
   return [...purchases.map(p=>({date:p.date,type:'BUY',who:p.supplier,qty:p.qty,total:p.total,_buy:p})),
     ...sales.map(s=>Object.assign({type:'SELL',who:s.customer},s))].sort((a,b)=>new Date(a.date)-new Date(b.date));
 }
-function wbSellOrders(){const out=[];wbLedgerAll().forEach((t,i)=>{if(t.type==='SELL')out.push({code:'E'+(i+1),t});});return out;}
+/* v365: STILL OPEN, ONLY. Every E-code is assigned off the FULL ledger first, so a code
+   still matches the Ledger tab exactly even though most rows never reach the list below it:
+   the picker used to offer all 109 sale orders and 16 lots with no status filter at all, so
+   the only way to learn a row could not be amended was to pick it and read the error that
+   came back. "Still open" is the same rule tabReceivables() already draws its own Order
+   book from: Completed, Cancelled and In-Kind sales are settled and not listed; a purchase
+   is listed only while it is still a bill, still has salt to arrive, or is pending. */
+const wbSellOpen=t=>{const o=txStat(t).order;return o==='Pending'||o.indexOf('Open')===0;};
+const wbBuyOpen=p=>!p.defaulted&&(p.status!=='paid'||poOpenKg(p)>0.0001||!!p.pending);
+function wbSellOrders(){const out=[];wbLedgerAll().forEach((t,i)=>{if(t.type==='SELL'&&wbSellOpen(t))out.push({code:'E'+(i+1),t});});return out;}
 /* supplier lots, sharing the same E-code namespace so a lot's code matches the Ledger tab exactly */
-function wbBuyOrders(){const out=[];wbLedgerAll().forEach((t,i)=>{if(t.type==='BUY')out.push({code:'E'+(i+1),t});});return out;}
+function wbBuyOrders(){const out=[];wbLedgerAll().forEach((t,i)=>{if(t.type==='BUY'&&wbBuyOpen(t._buy))out.push({code:'E'+(i+1),t});});return out;}
 function wbAmendList(){return wbASide==='BUY'?wbBuyOrders():wbSellOrders();}
 /* purchases carry no amend[]: progress is read straight off the row. Cash is the part
    payment if one is recorded, else the whole total once paid; a lot arrives whole or not at all. */
@@ -11462,16 +11599,16 @@ function tabPricing(){
           const fl=floorTotal(qq,null,{collects:true});
           return `<tr>
             <td class="l">${kg(qq)}</td>
-            <td><input type="checkbox" id="${id}s" ${shown?'checked':''} onchange="shDirty()"></td>
-            <td><input id="${id}p" type="number" step="10" min="0" value="${ask!=null?ask:''}" style="width:92px" oninput="shDirty()"></td>
+            <td><input type="checkbox" id="${id}s" ${shown?'checked':''} onchange="shDirty(this)"></td>
+            <td><input id="${id}p" type="number" step="10" min="0" value="${ask!=null?ask:''}" style="width:92px" oninput="shDirty(this)"></td>
             <td class="mono" style="color:var(--dim)">${fmt(fl)}</td></tr>`;
         }).join('');
         return `<table class="pxboard" style="margin-bottom:9px"><thead><tr><th class="l">Size</th><th>On the sheet</th><th>Price</th><th>Floor</th></tr></thead><tbody>${rows}</tbody></table>
         <div id="shOut" class="dsc" style="margin-bottom:8px">Prefilled from the board. Change a price or untick a size and the sheet follows.</div>`;})()}
       <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center">
-        <button class="vbtn" style="border-color:var(--acc)" onclick="mnSaveTier('')">Save the sheet</button>
+        <button class="vbtn" style="border-color:var(--acc)" onclick="mnSaveTier('',this)">Save the sheet</button>
         <button class="vbtn" onclick="shReset()">Back to the board</button>
-        <button class="vbtn" onclick="shQueueHouse()" title="Only with nobody named: change what the desk quotes everyone">Make it the house board</button>
+        <button class="vbtn" onclick="shQueueHouse(this)" title="Only with nobody named: change what the desk quotes everyone">Make it the house board</button>
         <label style="font-size:12px;color:var(--mut);display:flex;align-items:center;gap:5px;margin-left:6px"><input type="checkbox" id="mnMark"> watermark with the name picked below</label>
       </div>
       <div class="dsc" style="margin-top:8px">One sheet, <b>no password and no expiry</b>, because a customer cannot be asked for a passphrase at the counter. It opens on anything with nothing to type, and it <b>cannot be withdrawn</b>: treat it as printed. Use the encrypted download below when a list is for <b>one</b> named party and should stop working.</div>
@@ -11592,10 +11729,10 @@ function tabPricing(){
     <div class="qrow">
       <div class="qfield"><label>Issue to</label><select id="mnWho">${roster.filter(id=>!id.startsWith('S')).map(id=>`<option value="${id}"${mnOver.who===id?' selected':''}>${codeOf(id)}</option>`).join('')}</select></div>
       <div class="qfield qkg"><label>Valid for (hours)</label><input id="mnHrs" type="number" step="1" min="1" value="${esc(mnOver.hours)}" inputmode="numeric"></div>
-      <div class="qfield"><label>&nbsp;</label><button class="vbtn" onclick="mnPublish()">Publish these prices</button></div>
-      <div class="qfield"><label>&nbsp;</label><button class="vbtn" onclick="mnMint()">Make a code</button></div>
+      <div class="qfield"><label>&nbsp;</label><button class="vbtn" onclick="mnPublish(this)">Publish these prices</button></div>
+      <div class="qfield"><label>&nbsp;</label><button class="vbtn" onclick="mnMint(this)">Make a code</button></div>
       <div class="qfield qkg"><label>Password</label><input id="mnPass" type="text" value="${esc(mnOver.pass||mnPass6())}" spellcheck="false" autocomplete="off"></div>
-      <div class="qfield"><label>&nbsp;</label><button class="vbtn" onclick="mnDownload()">Download a page</button></div>
+      <div class="qfield"><label>&nbsp;</label><button class="vbtn" onclick="mnDownload(this)">Download a page</button></div>
     </div>
     <div id="mnOut" style="margin-top:13px"><div class="dsc">Publish sends the board above to the menu, so every code already in circulation shows the new figures without being rescanned. Make a code issues a link to one reseller. Download a page saves a file you can send, which does <b>not</b> need the server or this wifi.</div></div>
     <div class="dsc" style="margin-top:11px"><b>What this cannot do.</b> No web page can blank a screenshot: there is no API for it on iOS Safari or anywhere else, and anything claiming otherwise is theatre. What it does instead is make a leak <b>traceable and perishable</b>, by writing the reseller&rsquo;s code across the page and expiring the link. If a screenshot turns up, the code on it names who took it.</div>
@@ -11670,10 +11807,34 @@ function mnRows(){
     if(q===best&&bestN>=3){row.hero=true;row.label='most asked for';}
     return row;});
 }
-function mnStatus(html){const e=document.getElementById('mnOut');if(e)e.innerHTML=html;}
-async function mnPublish(){
-  if(!qServed())return mnStatus('<div class="dsc" style="color:var(--crim)">The desk is not being served, so there is nothing to publish to. Open it with <b>Open Salt Command.bat</b>.</div>');
-  const rows=mnRows();
+/* v365: RESELLER MENU RESOLVES ITS OWN PRODUCT. tabPricing, and the sheet inside it,
+   render once per book via perProduct(), so mnWho/mnHrs/mnPass/mnMark/mnOut/shOut all
+   exist twice on the page with the same id -- valid HTML never lets two elements share
+   one -- and every handler's plain getElementById found the first (Salt) copy regardless
+   of which panel was actually filled in. mnProdOf() reads which panel a click came from
+   (named apart from the existing prodOf(r), which resolves a LEDGER ROW's product, not a
+   DOM element's); prodEl() re-resolves an id inside THAT product's block from the LIVE
+   document, never a held node reference (a render() in between would detach it); mnScope()
+   runs a read with PROD set to it, the same discipline drawPerProduct() already uses for
+   charts. */
+function mnProdOf(el){
+  const blk=el&&el.closest?el.closest('.prodblock'):null;
+  return (blk&&PRODUCTS[blk.dataset.prod])?blk.dataset.prod:PROD;
+}
+function prodEl(prod,id){
+  const blk=document.querySelector('.prodblock[data-prod="'+prod+'"]');
+  return (blk||document).querySelector('[id="'+id+'"]');
+}
+function mnScope(prod,fn){
+  if(prod===PROD)return fn();
+  const keep=PROD;PROD=prod;recompute();
+  try{return fn();}finally{PROD=keep;recompute();}
+}
+function mnStatus(html,prod){const e=prodEl(prod||PROD,'mnOut');if(e)e.innerHTML=html;}
+async function mnPublish(btn){
+  const prod=mnProdOf(btn);
+  if(!qServed())return mnStatus('<div class="dsc" style="color:var(--crim)">The desk is not being served, so there is nothing to publish to. Open it with <b>Open Salt Command.bat</b>.</div>',prod);
+  const rows=mnScope(prod,()=>mnRows());
   try{
     const r=await fetch('menu/publish',{method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({brand:'Obsidian Salt',version:(evolution[0]?evolution[0].v:''),
@@ -11681,18 +11842,19 @@ async function mnPublish(){
         note:'Prices move with the buying rate. This list is today’s, not a quotation held open.'})});
     const j=await r.json();
     mnStatus(j.ok?`<div class="insight"><b>Published ${j.rows} lots.</b> Every code already issued now shows these figures, without being scanned again. Sizes above any cap you have set are left off.</div>`
-      :`<div class="dsc" style="color:var(--crim)">Publish failed: ${esc(j.error||'unknown')}</div>`);
-  }catch(e){mnStatus('<div class="dsc" style="color:var(--crim)">Publish failed: '+esc(e.message)+'</div>');}
+      :`<div class="dsc" style="color:var(--crim)">Publish failed: ${esc(j.error||'unknown')}</div>`,prod);
+  }catch(e){mnStatus('<div class="dsc" style="color:var(--crim)">Publish failed: '+esc(e.message)+'</div>',prod);}
 }
-async function mnMint(){
-  if(!qServed())return mnStatus('<div class="dsc" style="color:var(--crim)">The desk is not being served, so a link cannot be signed.</div>');
-  const who=(document.getElementById('mnWho')||{}).value||roster[0];
-  const hrs=(document.getElementById('mnHrs')||{}).value||48;
+async function mnMint(btn){
+  const prod=mnProdOf(btn);
+  if(!qServed())return mnStatus('<div class="dsc" style="color:var(--crim)">The desk is not being served, so a link cannot be signed.</div>',prod);
+  const who=(prodEl(prod,'mnWho')||{}).value||roster[0];
+  const hrs=(prodEl(prod,'mnHrs')||{}).value||48;
   mnOver.who=who;mnOver.hours=hrs;
   try{
     const r=await fetch('menu/mint?r='+encodeURIComponent(who)+'&hours='+encodeURIComponent(hrs));
     const j=await r.json();
-    if(!j.ok)return mnStatus('<div class="dsc" style="color:var(--crim)">'+esc(j.error||'could not mint')+'</div>');
+    if(!j.ok)return mnStatus('<div class="dsc" style="color:var(--crim)">'+esc(j.error||'could not mint')+'</div>',prod);
     const exp=new Date(j.expires*1000);
     mnStatus(`<div class="two" style="align-items:start">
       <div class="card" style="text-align:center;background:#fff;padding:14px">
@@ -11706,8 +11868,8 @@ async function mnMint(){
       <br><br><span style="word-break:break-all;color:var(--dim);font-size:11px">${esc(j.url)}</span></div>
       <div style="margin-top:9px"><button class="vbtn" onclick="navigator.clipboard&&navigator.clipboard.writeText('${esc(j.url)}')">Copy the link</button></div></div>
     </div>
-    <div class="dsc" style="margin-top:10px">The menu server must be running for the code to open: <b class="mono">python serve_menu.py</b>. The desk itself stays on loopback, so publishing to the wifi never exposes the queue or the vault.</div>`);
-  }catch(e){mnStatus('<div class="dsc" style="color:var(--crim)">Could not mint: '+esc(e.message)+'</div>');}
+    <div class="dsc" style="margin-top:10px">The menu server must be running for the code to open: <b class="mono">python serve_menu.py</b>. The desk itself stays on loopback, so publishing to the wifi never exposes the queue or the vault.</div>`,prod);
+  }catch(e){mnStatus('<div class="dsc" style="color:var(--crim)">Could not mint: '+esc(e.message)+'</div>',prod);}
 }
 
 /* ---- Save one tier, no password (v172) -------------------------------------
@@ -11806,11 +11968,12 @@ function mnTierDoc(t,rows,meta){
    the next step, because a board must always answer. A SHEET is a thing he hands to a named person,
    and quietly sending a different number from the one he typed is worse than refusing to send it. */
 function shSizes(){return (PRICE_ENGINE.sizesBy&&PRICE_ENGINE.sizesBy[PROD])||PRICE_ENGINE.sizes;}
-function shRows(){
+function shRows(prod){
+  const p=prod||PROD;
   const out=[],under=[];
   shSizes().forEach(q=>{
     const id='sh'+String(q).replace('.','_');
-    const sh=document.getElementById(id+'s'), px=document.getElementById(id+'p');
+    const sh=prodEl(p,id+'s'), px=prodEl(p,id+'p');
     if(!sh||!sh.checked)return;
     const v=px&&px.value.trim()!==''?+px.value:null;
     if(!(v>0))return;
@@ -11819,44 +11982,46 @@ function shRows(){
   });
   return {rows:out,under:under};
 }
-function shDirty(){shOut('<div class="dsc">Changed. <b>Save the sheet</b> sends these figures; nothing is stored, so the next sheet starts from the board again.</div>');}
-function shOut(html){const el=document.getElementById('shOut');if(el)el.innerHTML=html;}
+function shDirty(el){shOut('<div class="dsc">Changed. <b>Save the sheet</b> sends these figures; nothing is stored, so the next sheet starts from the board again.</div>',mnProdOf(el));}
+function shOut(html,prod){const el=prodEl(prod||PROD,'shOut');if(el)el.innerHTML=html;}
 function shReset(){render();}
 /* the one thing that DOES reach the ledger, and only with nobody named: making the typed prices the
    house board. It is the v354 road, queued and folded, kept because a stated house price is how oil
    sits at RM130. Named to a customer it is refused, because one man's sheet is not everyone's board. */
-function shQueueHouse(){
-  const who=(document.getElementById('mnWho')||{}).value||'';
-  if(who)return shOut('<div class="dsc" style="color:var(--crim)">A customer is named, so this would make one man&rsquo;s sheet everyone&rsquo;s board. Clear the name first.</div>');
-  const R=shRows();
-  if(!R.rows.length)return shOut('<div class="dsc" style="color:var(--crim)">Every size is unticked, so there is no board to make.</div>');
-  if(R.under.length)return shOut('<div class="dsc" style="color:var(--crim)">'+R.under.map(u=>kg(u.q)+' at '+fmt0(u.p)).join(', ')+' sits under the floor. The board would lift it rather than quote it, so set it above the floor first.</div>');
+function shQueueHouse(btn){
+  const prod=mnProdOf(btn);
+  const who=(prodEl(prod,'mnWho')||{}).value||'';
+  if(who)return shOut('<div class="dsc" style="color:var(--crim)">A customer is named, so this would make one man&rsquo;s sheet everyone&rsquo;s board. Clear the name first.</div>',prod);
+  const R=mnScope(prod,()=>shRows(prod));
+  if(!R.rows.length)return shOut('<div class="dsc" style="color:var(--crim)">Every size is unticked, so there is no board to make.</div>',prod);
+  if(R.under.length)return shOut('<div class="dsc" style="color:var(--crim)">'+R.under.map(u=>kg(u.q)+' at '+fmt0(u.p)).join(', ')+' sits under the floor. The board would lift it rather than quote it, so set it above the floor first.</div>',prod);
   const prices={},hide=[];
   const shown={};R.rows.forEach(r=>{prices[String(r.q)]=r.p;shown[String(r.q)]=1;});
-  shSizes().forEach(q=>{if(!shown[String(q)])hide.push(q);});
+  mnScope(prod,()=>shSizes()).forEach(q=>{if(!shown[String(q)])hide.push(q);});
   queue.push({at:new Date().toISOString(),type:'PRICE',party:null,qty:null,total:null,status:'price',
-    raw:'House board on '+PROD+': '+R.rows.map(r=>kg(r.q)+' at '+fmt0(r.p)).join('; ')+(hide.length?('; hiding '+hide.map(h=>kg(h)).join(', ')):''),
-    payload:{mode:'price',product:PROD,prices:prices,hide:hide}});
+    raw:'House board on '+prod+': '+R.rows.map(r=>kg(r.q)+' at '+fmt0(r.p)).join('; ')+(hide.length?('; hiding '+hide.map(h=>kg(h)).join(', ')):''),
+    payload:{mode:'price',product:prod,prices:prices,hide:hide}});
   try{saveQueue();renderQueue();}catch(e){}
   try{applyOverlay();recompute();render();}catch(e){}
-  shOut('<div class="insight"><b>Queued as the house board.</b> The board above already shows it, marked provisional. It reaches the ledger when it is approved and folded; withdraw the entry from the queue to undo it.</div>');
+  shOut('<div class="insight"><b>Queued as the house board.</b> The board above already shows it, marked provisional. It reaches the ledger when it is approved and folded; withdraw the entry from the queue to undo it.</div>',prod);
 }
-function mnSaveTier(code){
+function mnSaveTier(code,btn){
   /* v356: THE SHEET CARRIES WHAT HE TYPED, not what the ladder derived. It read priceLadder() at
      every size, so the figures on the table above the button were decoration: he could amend them
      and send something else entirely. shRows() is now the single source, so the number he typed is
      the number the customer receives. A price under its floor is REFUSED rather than lifted,
      because a sheet goes to a named person and quietly sending a different figure is worse than
      sending none. Falls back to the ladder if the table is not on screen. */
-  var R=(typeof shRows==='function'&&document.getElementById('sh'+String(shSizes()[0]).replace('.','_')+'p'))?shRows():null;
-  var rows=R?R.rows:PRICE_TIERS.sizes.map(function(q){return {q:q,p:priceLadder(q).ask.total};})
-                            .filter(function(r){return r.p!=null;});
+  var prod=mnProdOf(btn);
+  var R=(typeof shRows==='function'&&prodEl(prod,'sh'+String(shSizes()[0]).replace('.','_')+'p'))?mnScope(prod,()=>shRows(prod)):null;
+  var rows=R?R.rows:mnScope(prod,()=>PRICE_TIERS.sizes.map(function(q){return {q:q,p:priceLadder(q).ask.total};})
+                            .filter(function(r){return r.p!=null;}));
   if(R&&R.under.length)return mnStatus('<div class="dsc" style="color:var(--crim)"><b>Not saved.</b> '
     +R.under.map(function(u){return kg(u.q)+' at '+fmt0(u.p);}).join(', ')
-    +' sits under the floor, so the sheet would send a price this desk refuses. Raise it, or untick the size.</div>');
-  if(!rows.length)return mnStatus('<div class="dsc" style="color:var(--crim)">Every size is unticked, so the sheet would be empty.</div>');
-  var whoSel=(document.getElementById('mnWho')||{}).value||'';
-  var mark=(document.getElementById('mnMark')||{}).checked;
+    +' sits under the floor, so the sheet would send a price this desk refuses. Raise it, or untick the size.</div>',prod);
+  if(!rows.length)return mnStatus('<div class="dsc" style="color:var(--crim)">Every size is unticked, so the sheet would be empty.</div>',prod);
+  var whoSel=(prodEl(prod,'mnWho')||{}).value||'';
+  var mark=(prodEl(prod,'mnMark')||{}).checked;
   var who=mark&&whoSel?codeOf(whoSel):'';            // codeOf, never ID: no name leaves the desk
   var now=new Date(), pad=function(n){return (n<10?'0':'')+n;};
   var meta={brand:'Obsidian Salt',who:who,
@@ -11873,14 +12038,14 @@ function mnSaveTier(code){
     document.body.appendChild(a);a.click();
     setTimeout(function(){URL.revokeObjectURL(url);a.remove();},1500);
   }catch(err){
-    return mnStatus('<div class="dsc" style="color:var(--crim)">Could not save: '+esc(err.message)+'</div>');
+    return mnStatus('<div class="dsc" style="color:var(--crim)">Could not save: '+esc(err.message)+'</div>',prod);
   }
   mnStatus('<div class="insight"><b>Saved '+esc(fname)+'</b> &mdash; '+rows.length+' sizes, '
     +(who?'watermarked '+esc(who):'no watermark')+', <b>no password</b>.'
     +' It opens anywhere, on anything, with nothing to type. <b>It also cannot be withdrawn</b>, so treat it as printed:'
     +' it will keep showing these prices until you send a newer one.'
     +' <b>Nothing is stored</b>: these figures live in this sheet alone, so the next one starts from the board again'
-    +' and the desk cannot tell you later what you quoted anyone.</div>');
+    +' and the desk cannot tell you later what you quoted anyone.</div>',prod);
 }
 /* ---- Download a page: password-gated and time-limited (v164) ----------------
    A self-contained price list that needs NO WIFI and NO SERVER, and is opened with a
@@ -12046,16 +12211,17 @@ function mnDocHTML(code,payload,meta){
    CT,'</body></html>'
   ].join('\n');
 }
-async function mnDownload(){
-  var who=(document.getElementById('mnWho')||{}).value||roster[0];
-  var hrs=parseFloat((document.getElementById('mnHrs')||{}).value)||48;
-  var pass=((document.getElementById('mnPass')||{}).value||'').trim();
+async function mnDownload(btn){
+  var prod=mnProdOf(btn);
+  var who=(prodEl(prod,'mnWho')||{}).value||roster[0];
+  var hrs=parseFloat((prodEl(prod,'mnHrs')||{}).value)||48;
+  var pass=((prodEl(prod,'mnPass')||{}).value||'').trim();
   mnOver.who=who;mnOver.hours=String(hrs);mnOver.pass=pass;
-  if(!pass)return mnStatus('<div class="dsc" style="color:var(--crim)">Set a password first. It is the only thing standing between the file and whoever it gets forwarded to.</div>');
-  if(!(window.crypto&&window.crypto.subtle))return mnStatus('<div class="dsc" style="color:var(--crim)">This browser cannot encrypt the file (no Web Crypto). Open the desk over <b>localhost</b> with <b>Open Salt Command.bat</b> rather than by double-clicking it.</div>');
+  if(!pass)return mnStatus('<div class="dsc" style="color:var(--crim)">Set a password first. It is the only thing standing between the file and whoever it gets forwarded to.</div>',prod);
+  if(!(window.crypto&&window.crypto.subtle))return mnStatus('<div class="dsc" style="color:var(--crim)">This browser cannot encrypt the file (no Web Crypto). Open the desk over <b>localhost</b> with <b>Open Salt Command.bat</b> rather than by double-clicking it.</div>',prod);
   var code=codeOf(who);
-  var rows=mnRows();
-  if(!rows.length)return mnStatus('<div class="dsc" style="color:var(--crim)">The board has no sizes to publish, so there is nothing to download.</div>');
+  var rows=mnScope(prod,()=>mnRows());
+  if(!rows.length)return mnStatus('<div class="dsc" style="color:var(--crim)">The board has no sizes to publish, so there is nothing to download.</div>',prod);
   var now=new Date(), exp=Math.floor(now.getTime()/1000)+Math.round(hrs*3600);
   var pad=function(n){return (n<10?'0':'')+n;};
   var fmtWhen=function(d){return d.toLocaleString('en-GB',{day:'2-digit',month:'short',
@@ -12078,7 +12244,7 @@ async function mnDownload(){
       exp:exp,expLabel:fmtWhen(new Date(exp*1000)),iter:150000,
       salt:_b64e(salt),iv:_b64e(iv),ct:_b64e(ct)};
   }catch(err){
-    return mnStatus('<div class="dsc" style="color:var(--crim)">Could not encrypt the file: '+esc(err.message)+'</div>');
+    return mnStatus('<div class="dsc" style="color:var(--crim)">Could not encrypt the file: '+esc(err.message)+'</div>',prod);
   }
   var html=mnDocHTML(code,payload,{brand:'Obsidian Salt'});
   var stamp=now.getFullYear()+'-'+pad(now.getMonth()+1)+'-'+pad(now.getDate());
@@ -12091,7 +12257,7 @@ async function mnDownload(){
     document.body.appendChild(a);a.click();
     setTimeout(function(){URL.revokeObjectURL(url);a.remove();},1500);
   }catch(err){
-    return mnStatus('<div class="dsc" style="color:var(--crim)">Could not save the file: '+esc(err.message)+'</div>');
+    return mnStatus('<div class="dsc" style="color:var(--crim)">Could not save the file: '+esc(err.message)+'</div>',prod);
   }
   mnStatus('<div class="insight"><b>Saved '+esc(fname)+'</b> &mdash; '+rows.length+' lots, locked, issued to <b>'+esc(code)+'</b>.'
     +'<div style="margin-top:9px;font-family:ui-monospace,Consolas,monospace;font-size:19px;letter-spacing:.2em">'+esc(pass)+'</div>'
@@ -12099,7 +12265,7 @@ async function mnDownload(){
     +' <b>Send the password by a different channel</b> than the file, or the two travel together and the lock is decoration.'
     +' Needs no wifi and no server: the prices are inside the file, encrypted, and nothing is fetched.'
     +' The expiry is authenticated, so editing the date in the file stops it opening at all &mdash; but it is compared against the reader&rsquo;s own clock, which a determined reader can move.'
-    +' And once the right password is in, a screenshot cannot be stopped, which is why the code is tiled across the sheet.</div></div>');
+    +' And once the right password is in, a screenshot cannot be stopped, which is why the code is tiled across the sheet.</div></div>',prod);
 }
 function pxSet(k,v){pxOver[k]=v;render();}
 function pxReset(){pxOver={cost:null,shrink:null,party:'',anyQ:pxOver.anyQ,tier:pxOver.tier,cap:pxOver.cap};render();}
@@ -12147,7 +12313,12 @@ function drawEarnChart(){
   });
 }
 function pxRedraw(){
-  const host=document.getElementById('sec-pricing');if(!host)return;
+  /* v365: was sec-pricing, which has never existed -- the view's internal label is
+     "pricing" (VIEW_OF etc.), but its actual container id is sec-price (line 1358). The
+     lookup failed silently and every override box (not just Quote any size) redrew nothing
+     on this tab: typing updated pxOver correctly and the pane never reflected it, with no
+     console error either. */
+  const host=document.getElementById('sec-price');if(!host)return;
   const keep={};['pxCostIn','pxShrinkIn','pxPartyIn','pxAnyIn','pxCapIn'].forEach(id=>{const e=document.getElementById(id);if(e)keep[id]={v:e.value,s:e.selectionStart};});
   /* v281: through perProduct, as builders.pricing is. Rebuilt bare, the first keystroke
      in an override collapsed the tab to a single unbanded book. */
@@ -12297,6 +12468,7 @@ function wbPreview(){
     if(wbDir==='SELL'&&wbEl('wbAssoc')&&wbEl('wbAssoc').checked&&!wbVal('wbAssocSel'))errs.push('Choose the associate.');
     /* the date is blank by default so it cannot silently carry a stale day */
     if(!wbVal('wbDate'))errs.push('Enter the date &mdash; it is deliberately blank.');
+    else{const fw=wbFutureWarn(wbVal('wbDate'));if(fw)warns.push(fw);}
     if(wbDir==='SELL'){
       /* a ban is the one boundary that stops the entry rather than warning about it.
          Payments still go through, because the debt is still being pursued: those are
@@ -12318,6 +12490,7 @@ function wbPreview(){
     const o=wbAmendList().find(x=>x.code===wbVal('wbOrder'));
     if(o&&!wbVal('wbKind'))errs.push('Choose what happened to this order.');
     if(o&&!wbVal('wbADate'))errs.push('Enter the date &mdash; it is deliberately blank.');
+    else if(o){const fw=wbFutureWarn(wbVal('wbADate'));if(fw)warns.push(fw);}
     if(!o){body='<div class="dsc">Pick an order.</div>';errs.push('Pick an order to amend.');}
     else if(wbASide==='BUY'){
       const t=o.t,sf=wbSoFarBuy(t),ac=wbNum('wbACash'),ak=wbNum('wbAKg'),kind=wbVal('wbKind');
@@ -12343,35 +12516,58 @@ function wbPreview(){
       if(kind!=='Default'&&outRM<=0.009&&outKg<=0.009)warns.push(`${o.code} is already paid in full and received.`);
     }
     else{
-      const t=o.t,sf=wbSoFar(t),ac=wbNum('wbACash'),ak=wbNum('wbAKg');
-      const now=wbState(t.total,t.qty,sf.cash,sf.kg),nxt=wbState(t.total,t.qty,sf.cash+ac,sf.kg+ak);
+      const t=o.t,sf=wbSoFar(t),ac=wbNum('wbACash'),ak=wbNum('wbAKg'),kind=wbVal('wbKind');
+      /* v365: LINKED NEEDED ITS TARGET BEFORE THE CLICK, NOT AFTER. wbRecord() has always
+         refused a Linked amendment with nothing chosen in "settles which order" -- but only
+         there, so the Record button stayed enabled with the one field this kind actually
+         requires left blank, the only field on this whole form that worked that way. */
+      if(kind==='Linked'&&!wbVal('wbLinkTo'))errs.push('Choose which order this settles.');
+      /* v365: A MODIFICATION'S PREVIEW HAD THE SAME BUG wbRecord() WAS ALREADY FIXED FOR
+         (v177, see the comment on wbRecord's own isMod), just never given the matching fix:
+         ac/ak are the order's NEW total and NEW quantity, not an increment on top of the
+         old ones. Treated as an increment, the preview read a restatement as a part-delivery
+         and reported the wrong resulting state, and comparing the new (often larger) total
+         against the OLD outstanding threw a nonsense "cash exceeds outstanding" warning on
+         nothing more than restating an unpaid order upward.
+         A CANCELLATION HAS NO "AFTER" STATE TO PREVIEW EITHER: on commit the row is marked
+         cancelled outright (ovAmend, kind==='Cancellation') and none of ac/ak is applied, so
+         a Now->After movement pill was previewing a movement that was never going to happen. */
+      const isMod=(kind==='Modification'),isCancel=(kind==='Cancellation');
+      const now=wbState(t.total,t.qty,sf.cash,sf.kg);
+      const nxt=isMod?wbState(ac,ak,sf.cash,sf.kg):wbState(t.total,t.qty,sf.cash+ac,sf.kg+ak);
       body=`<div style="display:flex;gap:7px;align-items:center;flex-wrap:wrap;font-size:13px;color:var(--mut)">`
         +`<span style="${lbl0()}">Now</span>`+wbPill(now.pay,wbPayCls(now.pay))+wbPill(now.deliv,wbPayCls(now.deliv))+wbPill(now.state,wbStCls(now.state))
         +`<span style="color:var(--dim)">&rarr;</span>`
-        +`<span style="${lbl0()}">After</span>`+wbPill(nxt.pay,wbPayCls(nxt.pay))+wbPill(nxt.deliv,wbPayCls(nxt.deliv))+wbPill(nxt.state,wbStCls(nxt.state))
+        +(isCancel?`<span class="pill" style="background:var(--crim);color:#fff">Cancelled</span>`
+          :`<span style="${lbl0()}">After</span>`+wbPill(nxt.pay,wbPayCls(nxt.pay))+wbPill(nxt.deliv,wbPayCls(nxt.deliv))+wbPill(nxt.state,wbStCls(nxt.state)))
         +`</div><div style="font-size:13px;color:var(--mut);margin-top:6px">${o.code} &middot; ${ID(t.who)} &middot; ${kg(t.qty)} for ${fmt0(t.total)} &mdash; ${fmt0(sf.cash)} paid, ${kg(+sf.kg.toFixed(2))} delivered so far.</div>`
-        +((wbVal('wbADate')===t.date)?`<div class="dsc" style="margin-top:6px">Same day as the order &mdash; this <b>folds into the opening</b> as one transaction rather than a separate movement.</div>`:'');
-      const outRM=+(t.total-sf.cash).toFixed(2),outKg=+(t.qty-sf.kg).toFixed(2);
-      if(ac>outRM+0.009)warns.push(`Cash moved exceeds the ${fmt0(outRM)} outstanding on ${o.code}.`);
-      if(ak>outKg+0.009)warns.push(`Salt moved exceeds the ${kg(outKg)} outstanding on ${o.code}.`);
-      if(ac<=0.009&&ak<=0.009&&wbVal('wbKind')==='Fulfilment')warns.push('Nothing moves on this step.');
-      if(wbVal('wbKind')==='Modification'){
+        +(isCancel?`<div class="dsc" style="margin-top:6px">The row is marked <b>cancelled</b> outright; nothing typed here about cash or units is applied.</div>`
+          :(wbVal('wbADate')===t.date)?`<div class="dsc" style="margin-top:6px">Same day as the order &mdash; this <b>folds into the opening</b> as one transaction rather than a separate movement.</div>`:'');
+      /* Nothing below applies to a Cancellation (nothing moves) or a Modification (ac/ak are
+         the new total/qty, not a movement, and have their own checks just below). */
+      if(!isMod&&!isCancel){
+        const outRM=+(t.total-sf.cash).toFixed(2),outKg=+(t.qty-sf.kg).toFixed(2);
+        if(ac>outRM+0.009)warns.push(`Cash moved exceeds the ${fmt0(outRM)} outstanding on ${o.code}.`);
+        if(ak>outKg+0.009)warns.push(`Salt moved exceeds the ${kg(outKg)} outstanding on ${o.code}.`);
+        if(ac<=0.009&&ak<=0.009&&kind==='Fulfilment')warns.push('Nothing moves on this step.');
+        /* the same boundaries the register holds, checked before the entry is made */
+        const pr=txPrice(t);
+        if(pr>0){
+          const nowOwed=Math.max(0,(t.deliveredQty||0)-txPaid(t)/pr);
+          const nextOwed=Math.max(0,((t.deliveredQty||0)+ak)-(txPaid(t)+ac)/pr);
+          const tot=+(wbCreditKg(t.customer,0)-nowOwed+nextOwed).toFixed(2),acap=capForParty(t.customer);
+          if(tot>acap+0.009)warns.push(`Takes this customer to ${kg(tot)} delivered and unpaid, over their ${kg(acap)} credit cap.`);
+        }
+        if(ak>0.009){const fr=+(currentStock-defKg).toFixed(2);
+          if(ak>fr+0.009)warns.push(`Only ${kg(fr)} is free to sell &mdash; short by ${kg(+(ak-fr).toFixed(2))}.`);}
+        if(ac>0.009){
+          const older=sales.filter(s=>s.customer===t.customer&&ovKey(s)!==ovKey(t)&&txAdvance(s)>0.009&&s.date<t.date);
+          if(older.length)warns.push(`This customer still owes ${fmt0(older.reduce((a,s)=>a+txAdvance(s),0))} on an older order, so at commit this cash may clear that instead of this one.`);}
+      }
+      if(isMod){
         if(ac<=0.009&&ak<=0.009)warns.push('A modification restates the order, so it needs the NEW total and the NEW quantity, not zero.');
         else if(ak<sf.kg-0.009||ac<sf.cash-0.009)warns.push('The new terms are smaller than what has already moved on this order, so it would read as over-delivered or over-paid. Check the figures.');
       }
-      /* the same boundaries the register holds, checked before the entry is made */
-      const pr=txPrice(t);
-      if(pr>0){
-        const nowOwed=Math.max(0,(t.deliveredQty||0)-txPaid(t)/pr);
-        const nextOwed=Math.max(0,((t.deliveredQty||0)+ak)-(txPaid(t)+ac)/pr);
-        const tot=+(wbCreditKg(t.customer,0)-nowOwed+nextOwed).toFixed(2),acap=capForParty(t.customer);
-        if(tot>acap+0.009)warns.push(`Takes this customer to ${kg(tot)} delivered and unpaid, over their ${kg(acap)} credit cap.`);
-      }
-      if(ak>0.009){const fr=+(currentStock-defKg).toFixed(2);
-        if(ak>fr+0.009)warns.push(`Only ${kg(fr)} is free to sell &mdash; short by ${kg(+(ak-fr).toFixed(2))}.`);}
-      if(ac>0.009){
-        const older=sales.filter(s=>s.customer===t.customer&&ovKey(s)!==ovKey(t)&&txAdvance(s)>0.009&&s.date<t.date);
-        if(older.length)warns.push(`This customer still owes ${fmt0(older.reduce((a,s)=>a+txAdvance(s),0))} on an older order, so at commit this cash may clear that instead of this one.`);}
     }
   }else if(wbMode==='loss'){
     const el=wbEl('wbLossKg'),w=wbNum('wbLossKg'),has=el&&el.value!=='';
@@ -12380,6 +12576,7 @@ function wbPreview(){
       +`<div class="dsc" style="margin-top:6px">Shrinkage stands at <b>${kg(selfUse)}</b> on <b>${kg(buyKg+opening.qty)}</b> handled, <b>${((selfUse/(buyKg+opening.qty))*100).toFixed(1)}%</b>. This entry attributes part of that gap; it does not move the count or any figure.</div></div>`;
     if(!has||!(w>0))errs.push('Enter the units that went.');
     if(!wbVal('wbLossDate'))errs.push('Enter the date &mdash; it is deliberately blank.');
+    else{const fw=wbFutureWarn(wbVal('wbLossDate'));if(fw)warns.push(fw);}
   }else if(wbMode==='lost'){
     const el=wbEl('wbLostKg'),w=wbNum('wbLostKg'),rm=wbNum('wbLostRM'),has=el&&el.value!=='';
     const why=wbVal('wbLostWhy'),who=wbVal('wbLostParty');
@@ -12389,10 +12586,15 @@ function wbPreview(){
       +`</div>`;
     if(!has||!(w>0))errs.push('Enter the units they wanted.');
     if(!wbVal('wbLostDate'))errs.push('Enter the date &mdash; it is deliberately blank.');
+    else{const fw=wbFutureWarn(wbVal('wbLostDate'));if(fw)warns.push(fw);}
   }else if(wbMode==='addid'){
     const code=(wbVal('wbApCode')||'').trim().toUpperCase(),kind=wbVal('wbApKind'),parent=wbVal('wbApParent');
     const needP=(kind==='downstream'||kind==='bucket');
-    body=`<div style="font-size:13px;color:var(--mut)">${code?`Registers <b style="color:var(--ink)">${esc(code)}</b> as a <b style="color:var(--ink)">${esc(kind)}</b>${needP&&parent?` under <b style="color:var(--ink)">${esc(codeOf(parent))}</b>`:''}. No figure moves; the code joins the roster when the row is approved and folded.`:'Type the code.'}</div>`;
+    /* v365: the preview interpolated the raw select VALUE ("downstream", "bucket") rather
+       than what the dropdown itself says, which reads as internal jargon to anyone reading
+       it back before clicking Record. ADDID_KIND_LABEL is the same wording the option list
+       (line ~11326) already carries. */
+    body=`<div style="font-size:13px;color:var(--mut)">${code?`Registers <b style="color:var(--ink)">${esc(code)}</b> as a <b style="color:var(--ink)">${esc(ADDID_KIND_LABEL[kind]||kind)}</b>${needP&&parent?` under <b style="color:var(--ink)">${esc(codeOf(parent))}</b>`:''}. No figure moves; the code joins the roster when the row is approved and folded.`:'Type the code.'}</div>`;
     if(!code)errs.push('Type the code.');
     else if(!/^[A-Z]{1,3}\d{0,2}[A-Z0-9-]*$/.test(code))errs.push('That does not look like a desk code. They run like CA4-DAM or SP7-PUD.');
     else if(roster.indexOf(code)>=0)errs.push(`<b>${esc(code)}</b> is already on the roster.`);
@@ -12407,6 +12609,7 @@ function wbPreview(){
       +`</div>`;
     if(!who)errs.push('Choose a customer.');
     if(!wbVal('wbCtDate'))errs.push('Enter the date &mdash; it is deliberately blank.');
+    else{const fw=wbFutureWarn(wbVal('wbCtDate'));if(fw)warns.push(fw);}
   }else{
     const el=wbEl('wbCountKg'),w=wbNum('wbCountKg'),has=el&&el.value!=='';
     const diff=+(w-currentStock).toFixed(2);
@@ -12414,6 +12617,7 @@ function wbPreview(){
       +(has?` &middot; new count <b style="color:var(--ink)">${kg(w)}</b> &middot; difference <b style="color:${diff<0?'var(--crim)':diff>0?'var(--grn)':'var(--mut)'}">${diff>0?'+':''}${kg(diff)}</b>`:' &middot; enter the units on hand.')+`</div>`;
     if(!has||!(w>=0))errs.push('Enter the units on hand.');
     if(!wbVal('wbCDate'))errs.push('Enter the date of the count &mdash; it is deliberately blank.');
+    else{const fw=wbFutureWarn(wbVal('wbCDate'));if(fw)warns.push(fw);}
   }
   prev.innerHTML=body;
   if(msgs)msgs.innerHTML=errs.map(wbErr).join('')+warns.map(wbWarn).join('')+goods.map(wbGood).join('');
@@ -12504,11 +12708,18 @@ function wbRecord(){
          already moved left exactly as it was. Adding them to the movement, which is what
          the form used to do for every kind alike, turned "this order is now 2 unit at
          RM185" into "2 unit were handed over", and then reported it as Deferred. */
-      const isMod=(kind==='Modification');
+      const isMod=(kind==='Modification'),isCancel=(kind==='Cancellation');
       const nxt=isMod?wbState(ac,ak,sf.cash,sf.kg):wbState(t.total,t.qty,sf.cash+ac,sf.kg+ak);
-      const status=(kind==='Modification'||kind==='Cancellation')?'modified':(nxt.pay==='Paid'?'paid':nxt.pay==='Unpaid'?'unpaid':'partial');
+      const status=isCancel?'cancelled':isMod?'modified':(nxt.pay==='Paid'?'paid':nxt.pay==='Unpaid'?'unpaid':'partial');
       const sameDay=(date===t.date);         // settled the same day -> fold into the opening, not a movement
-      const raw=isMod
+      /* v365: A CANCELLATION HAS ITS OWN LINE TOO, same reasoning as the isMod split above
+         it. Neither the preview nor this queued text used to have any concept of the
+         cancelled flag, so both described the same generic movement an ordinary Fulfilment
+         gets -- on a row where nothing typed here about cash or units is applied at all
+         (ovAmend sets row.cancelled=true and returns, unconditionally). */
+      const raw=isCancel
+        ? kind+' on '+o.code+' · '+codeOf(t.who)+' — marked cancelled on '+date+(an?' — '+an:'')
+        : isMod
         ? kind+' on '+o.code+' · '+codeOf(t.who)+' — order restated to '+kg(ak)+' for '+fmt0(ac)
           +' on '+date+' (was '+kg(t.qty)+' for '+fmt0(t.total)+') → '+nxt.state+(an?' — '+an:'')
         : kind+' on '+o.code+' · '+codeOf(t.who)+' — '+fmt0(ac)+' and '+kg(ak)+' moved on '+date+' → '+nxt.state
@@ -12548,7 +12759,7 @@ function wbRecord(){
     try{localStorage.setItem('saltAddedParties',JSON.stringify(addedParties));}catch(e){}
     roster.push(code);
     queue.push({at:new Date().toISOString(),type:'ADDID',party:code,qty:null,total:null,status:'addid',
-      raw:'Add '+code+' to the roster as a '+(kind==='downstream'?('downstream of '+parent):kind)+(an?' — '+an:''),
+      raw:'Add '+code+' to the roster as: '+(ADDID_KIND_LABEL[kind]||kind)+(parent?' (under '+codeOf(parent)+')':'')+(an?' — '+an:''),
       payload:{mode:'addid',code:code,kind:kind,parent:parent,rev:kind==='reseller'?'R2':(kind==='referral'?'R3':null),note:an||null}});
     ['wbApCode','wbApNote'].forEach(id=>{const e=wbEl(id);if(e)e.value='';});
   }else if(wbMode==='contact'){
@@ -13024,6 +13235,7 @@ function renderPart(tab,el,snap){
   try{if(PART_DRAW[tab])PART_DRAW[tab]();}catch(e){}
 }
 let curTab='today';   // v147: the desk opens on what to do, not on what happened
+let curAddr='today';  // v365: the PART showing, not just the view; #inventory and #sourcing share a view but not an address
 function navCounts(){
   // live counts on the rail: open+pending positions, queued entries
   const openN=sales.filter(t=>{const o=txStat(t).order;return o==='Pending'||/^Open/.test(o);}).length
@@ -13131,6 +13343,7 @@ function switchTab(s){
   VIEW_PART[view]=(view!==s)?s:V.lead;
   curTab=view;document.body.setAttribute('data-sec',view);[...document.querySelectorAll('.tab')].forEach(t=>t.classList.toggle('on',t.dataset.s===view));[...document.querySelectorAll('.sec')].forEach(x=>x.classList.toggle('on',x.id==='sec-'+view));render();
   const addr=(VIEW_PART[view]===V.lead)?view:VIEW_PART[view];
+  curAddr=addr;
   s=view;
   /* v281: the cards of the incoming tab settle in with a short stagger. The class is
      transient so a re-render mid-tab (a queue post, a name toggle) never replays it. */
@@ -13309,7 +13522,11 @@ recompute();drawProdSw();
 (function(){const h=(location.hash||'').slice(1);switchTab(VIEW_OF[h]?h:'today');})();
 window.addEventListener('hashchange',()=>{
   const h=(location.hash||'').slice(1);
-  if(VIEW_OF[h]&&VIEW_OF[h]!==curTab)switchTab(h);
+  /* v365: was VIEW_OF[h]!==curTab, which only ever caught a jump between views. Two
+     addresses in the SAME view (#inventory, #sourcing) both resolve to that one view id,
+     so the guard was true and the part never redrew: the hash moved, the screen didn't.
+     curAddr is the part actually showing, so this now catches a sibling jump too. */
+  if(VIEW_OF[h]&&h!==curAddr)switchTab(h);
 });
 /* ===== v132: ONE palette. The v108 time-of-day bands (dawn/day/dusk/night) and their
    rail switcher are retired at your call; the desk is pinned to Register (classic), the

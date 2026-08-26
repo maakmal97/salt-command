@@ -72,6 +72,8 @@ const NOT_LEDGER = new Set([
   "TIERS", "SIZES", "PRICES", "BANDS", "HURDLES", "REWARDS", "CADENCE", "THRESHOLDS",
 
   /* vocabulary, labels and taxonomy: presentation */
+  "ADDID_KIND_LABEL" /* v365: the Add ID kind dropdown's own wording, reused so the preview and
+     the queued line read what the dropdown says rather than the raw select value. */,
   "LOSS_LABEL", "LOST_LABEL", "CONTACT_HOW", "CONTACT_OUT", "TAB_LABEL", "OBS_FAM", "OBS_SEV",
   "OBS_CONF", "ACTSEV", "bSevTag", "WB_NO_PROD", "PLAN_ST", "CHART_INK", "DIAMOND",
   "LOCS", "PLACES", "METRO", "NON_PLACE", "PLACEHOLDER", "BASEMAP", "BASEMAP_META", "DOW", "DOW3", "KL_HOLIDAYS", "HOL_MAP",
