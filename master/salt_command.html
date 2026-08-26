@@ -6248,14 +6248,19 @@ function tabMap(){
       <td class="mono" style="color:var(--dim)">${h?fmt0(h.value):'&mdash;'}</td>
       <td>${h?`<span class="tag prov">${HEATL[band(f)]}</span>`:'<span class="tag">not drawn</span>'}</td></tr>`;}).join('');
   return `<h1>Map</h1>
-  <div class="dsc dsclead" style="margin-bottom:12px"><b>Where the book is concentrated, drawn as heat and deliberately unlabelled (v293).</b> It was a pin map: one circle per party, fanned around its locality, with the place name printed underneath and repeated in the tooltip. That is a customer directory drawn as a picture, and this desk is public. So the parties are summed to their locality and each one is a single blob whose size and heat are its share of the book, with no text on the canvas at all. Overlapping blobs brighten, so the shape reads as concentration. <b>Position is rounded to about 1.1km</b> and it was never a doorstep to begin with: relative position is meaningful here, exact position is not, and now it is not even available. <b>v347 gives it a graticule and a frame.</b> The old grid drew three lines at a quarter, a half and three quarters of the canvas, which correspond to no coordinate at all; these sit at round latitudes and longitudes 0.05&deg; apart and are labelled. There is no coastline because nothing here may draw one from memory.</div>
+  <!-- v381: THE LEAD WAS A CHANGELOG AND ONLY ITS FIRST LINE EVER RENDERED. 994 characters
+       of what the map used to be and which version changed it, of which stripMethod (v372)
+       shows the first sentence and drops the other 913. So the sentence that survives is
+       now the one worth having: what the picture is, and why it carries no label. The
+       version history is in master/changelog.json, which is where a reader who wants it
+       will look. -->
+  <div class="dsc dsclead" style="margin-bottom:12px">Where the book is concentrated, drawn as heat: parties summed to their locality with no label on the canvas, because a place name beside a party code identifies a customer and this desk is public.</div>
   <div class="kpis k4">
     <div class="kpi"><div class="l">Sited</div><div class="v">${pts.length+far.length}</div><div class="n">of ${roster.length} on the roster${far.length?`, ${far.length} beyond the frame`:''}</div></div>
     <div class="kpi ${miss.some(m=>!NON_PLACE[m.id.split('-').pop()])?'r':'g'}"><div class="l">Without a place</div><div class="v">${miss.length}</div><div class="n">${miss.filter(m=>NON_PLACE[m.id.split('-').pop()]).length} by rule, ${miss.filter(m=>!NON_PLACE[m.id.split('-').pop()]).length} genuinely unknown</div></div>
-    <div class="kpi gold"><div class="l">Places known</div><div class="v">${Object.keys(PLACES).length}</div><div class="n">all approximate, none exact yet</div></div>
+    <div class="kpi gold"><div class="l">Places known</div><div class="v">${Object.keys(PLACES).length}</div><div class="n">locality centroids, rounded to about 1.1km</div></div>
     <div class="kpi p"><div class="l">Spread</div><div class="v">${spanKm.toFixed(0)}<span style="font-size:12px;color:var(--mut)">km</span></div><div class="n">east to west across the drawn frame</div></div>
   </div>
-  ${far.length?`<div class="dsc" style="margin-top:11px"><b>${far.length} part${far.length===1?'y is':'ies are'} sited but not drawn.</b> ${far.map(f=>`<b>${esc(codeOf(f.id))}</b> about ${f.geo.km.toLocaleString('en-MY')}km ${f.geo.compass} of the frame centre, worth ${fmt0(f.value)}`).join('; ')}. They are outside ${METRO.name} and are listed rather than plotted: a canvas wide enough to hold ${far.length===1?'it':'them'} would compress every metro pin into a single smudge, which would be arithmetically honest and visually useless. Distance and bearing say more than a dot pinned to a corner.</div>`:''}
   <div class="card" style="margin-top:13px">
     <div style="margin-bottom:9px">${legend}</div>
     <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block;background:linear-gradient(160deg,#160e2a,#1c1434);border:1px solid var(--line);border-radius:12px" role="img" aria-label="Heatmap of where the book is concentrated across ${esc(METRO.name)}. Unlabelled by design.">
@@ -6274,18 +6279,38 @@ function tabMap(){
         <text x="0" y="20" text-anchor="middle" font-size="11" fill="#b6a6d6">N</text>
       </g>
     </svg>
-    <div class="dsc" style="margin-top:8px;font-size:11px">${esc(BASEMAP_META.attribution)}, ${BASEMAP_META.year}, via ${esc(BASEMAP_META.source.split(',')[0])}. Fetched ${BASEMAP_META.fetchedOn} and committed; nothing on this page is loaded at run time. The outlines are simplified and carry no label.</div>
+    <!-- v381: THIS WAS A .dsc AND stripMethod DELETED IT ON EVERY RENDER. The basemap is
+         ODbL, which asks for attribution wherever the data is SHOWN, and /desk is served
+         publicly, so a credit that never reaches the page is the same as no credit at all.
+         It is not method prose and it must never be classed as prose: it is a licence
+         condition of drawing the outlines. Same styling, no class the strip can see. -->
+    <div style="margin-top:8px;font-size:11px;color:var(--mut);line-height:1.5">${esc(BASEMAP_META.attribution)}, ${BASEMAP_META.year}, via ${esc(BASEMAP_META.source.split(',')[0])}, fetched ${BASEMAP_META.fetchedOn}. Simplified, and unlabelled by design.</div>
   </div>
-  ${miss.length?(()=>{const byRule=miss.filter(m=>NON_PLACE[m.id.split('-').pop()]),unknown=miss.filter(m=>!NON_PLACE[m.id.split('-').pop()]);
-  return `<h2 style="margin-top:18px">Not on the map <span class="sub" style="font-weight:400">${unknown.length?`${unknown.length} unknown, ${byRule.length} excluded by rule`:`all ${byRule.length} excluded by rule, none unknown`}</span> <span class="rule"></span></h2>
-  <div class="card"><table><thead><tr><th class="l">Party</th><th class="l">Suffix</th><th class="l">Why it is not placed</th></tr></thead><tbody>
-    ${miss.map(m=>`<tr><td class="l mono">${ID(m.id)}</td><td class="l mono">${m.t?esc(m.t):'&mdash;'}</td><td class="l" style="color:var(--mut)">${esc(m.why)}</td></tr>`).join('')}
-  </tbody></table>
-  <div class="dsc" style="margin-top:9px">${unknown.length?`<b>${unknown.length===1?'One of these is a genuine gap':`${unknown.length} of these are genuine gaps`}, and ${byRule.length} ${byRule.length===1?'is':'are'} excluded by rule.</b> The desk refuses to site a party whose suffix is not in the gazetteer, because a pin invented from an abbreviation looks exactly like a pin that was known, which is the one thing a map must never do. Two roads to fixing one: if the suffix IS a real place, add it to <b>PLACES</b> with a latitude and longitude and every party carrying it appears at once; if it is a placeholder such as TBC, the location has to be learnt first and set in Names &amp; IDs. From v347 the desk reads the locality straight out of the party code, so a new party at a known suffix places itself.`
-    :`<b>Every one of these is excluded because it is not a place, not because the place is unknown.</b> They are reseller trading accounts and downsell buckets: the same people as their parent codes, or accounting destinations rather than persons, and siting them would draw one man twice. There is no longer a single party on this book whose whereabouts the desk knows and fails to draw.`}</div></div>`;})():''}
+  <!-- ============ v381: ONE TABLE FOR EVERYTHING THE CANVAS DOES NOT DRAW ============
+       There were two accounts of an undrawn party and neither reached the page. A party
+       sited OUTSIDE the frame was a .dsc above the map carrying the only statement of what
+       those three are worth, and stripMethod deletes it, so their value appeared nowhere on
+       this part at all. A party with NO place was a table (which survives) plus a
+       618-character explanation of the rule (which does not). The reason is already a
+       column on every row, so the paragraph was restating the table beside it. Both kinds
+       are now rows in one table, under one heading, with the worth as a field.
+       CODES ONLY IN HERE, both kinds, which the far note already did and the miss table did
+       not. This is the section that pairs a party with a WHERE, a bearing or a suffix, and
+       that pairing is the exact disclosure v293 stripped the canvas to avoid. Everywhere
+       else on the desk ID() is right; on the geography it is one identifier too many. -->
+  ${(far.length+miss.length)?(()=>{const byRule=miss.filter(m=>NON_PLACE[m.id.split('-').pop()]),unknown=miss.filter(m=>!NON_PLACE[m.id.split('-').pop()]);
+  const bits=[far.length?`${far.length} off the frame`:'',unknown.length?`${unknown.length} unknown`:'',byRule.length?`${byRule.length} excluded by rule`:''].filter(Boolean);
+  return `<h2 style="margin-top:18px">Not drawn <span class="sub" style="font-weight:400">${bits.join(', ')}</span> <span class="rule"></span></h2>
+  <div class="card"><table><thead><tr><th class="l">Party</th><th class="l">Where</th><th>Worth</th><th class="l">Why it is not drawn</th></tr></thead><tbody>
+    ${far.map(f=>`<tr><td class="l mono">${esc(codeOf(f.id))}</td><td class="l">about ${f.geo.km.toLocaleString('en-MY')}km ${f.geo.compass} of the frame centre</td><td>${fmt0(f.value)}</td><td class="l" style="color:var(--mut)">sited, but outside ${esc(METRO.name)}</td></tr>`).join('')}
+    ${miss.map(m=>`<tr><td class="l mono">${esc(codeOf(m.id))}</td><td class="l mono" style="color:var(--dim)">${m.t?esc(m.t):'&mdash;'}</td><td style="color:var(--dim)">&mdash;</td><td class="l" style="color:var(--mut)">${esc(m.why)}</td></tr>`).join('')}
+  </tbody></table></div>`;})():''}
   <h2 style="margin-top:18px">The gazetteer <span class="rule"></span></h2>
-  <div class="card"><table><thead><tr><th class="l">Suffix</th><th>Parties</th><th class="l">Worth</th><th>Heat</th></tr></thead><tbody>${placedRows}</tbody></table>
-  <div class="dsc" style="margin-top:9px"><b>The name, the coordinates and the provenance are no longer here, and that is the point.</b> This desk is served publicly, so everything on it is readable by anyone holding the address, and a named neighbourhood sitting beside a party code identifies a customer far better than the code ever did on its own. The suffix stays because it is already inside every code and discloses nothing further. The rest moved to the directory on the laptop, beside the real names, where it can still be read when a new suffix needs siting. <b>The map itself keeps only position, rounded to about 1.1km</b>, which a heatmap blurs over in any case.</div></div>`;
+  <!-- v381: the 619-character footnote went with the rest of the deleted prose. Why the
+       gazetteer carries a suffix and not a name is the lead's own sentence now, which is
+       the one line of this part that actually renders; the rounding it also claimed is on
+       the Places known tile, where a reader looking at the figure will see it. -->
+  <div class="card"><table><thead><tr><th class="l">Suffix</th><th>Parties</th><th class="l">Worth</th><th>Heat</th></tr></thead><tbody>${placedRows}</tbody></table></div>`;
 }
 
 /* ============ TAB: INVENTORY & MARGIN ============ */
@@ -10774,7 +10799,15 @@ function networkStats(){
     return {id,kind:isR0?'R0':'R2',direct,indirect,r3,referrals:refs,dsN:conns,connKind:isR0?'referred':(ds.size&&refs.length?'linked':refs.length?'referred':'end cust'),
       dsResell:ds.size,total:direct+indirect,share,starN,
       earnedR2,earnedR3,earnedLot,lotN:0,earned,toNextR2,toNextR3,
-      earnedOwn,toNextOwn,opening,bring,bringPct:bringM.pct,ownPct:ownM.pct,bringBand:bringBand.label,ownBand:ownBand.label};
+      earnedOwn,toNextOwn,opening,bring,bringPct:bringM.pct,ownPct:ownM.pct,bringBand:bringBand.label,ownBand:ownBand.label,
+      /* v381: THE BAND'S UNITS AND THE SCHEME'S OWN TURNOVER, both of which the card needed
+         and neither of which it could get. It read the band LABEL and could not say what
+         crossing a hurdle actually pays, so it told every associate a hurdle was worth a
+         unit when under 30% margin it is worth nothing. And it printed lifetime `direct`
+         beside `ownPct`, which is measured only since adoption: RM 1,610 of buying at 0%
+         on the same line, two different books in one sentence. `own` is the turnover the
+         margin was read from. */
+      bringUnits:bringBand.units, ownUnits:ownBand.units, own:sinceOwn};
   });
   // R0 first, then by total made-you
   out.sort((a,b)=>{if(a.kind==='R0'&&b.kind!=='R0')return -1;if(b.kind==='R0'&&a.kind!=='R0')return 1;return b.total-a.total;});
@@ -10906,12 +10939,28 @@ function approachBoard(approach,owedBy,bm){
         <div style="font-size:13px;font-weight:600;letter-spacing:.5px">${MON[m]} ${y}</div>
         <div style="font-size:11px;color:var(--mut)">${soon.length} still to fall due &middot; ${late.length} already past</div>
       </div>
+      <!-- ============ v381: THE KEY TO THE COLOURS WAS BEING DELETED ============
+           Gold and red are the whole grammar of this board, and the only thing that said so
+           was the paragraph underneath, which is a .dsc, which stripMethod (v372) removes on
+           every render. So the board shipped with colour as its only signal and no legend at
+           all, which is the one thing a coloured chip must never do. The key is chips now,
+           built from the same two classes the board itself uses, so the swatch cannot drift
+           from the thing it stands for, and each carries a WORD as well as a colour.
+           The count of names with no habit moved up here for the same reason, and because a
+           name that is simply absent reads as a name that was lost: it says how many, why,
+           and where to find them. What went for good is the method behind the board, which
+           is the card that opens on any chip. -->
+      <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:center;font-size:11px;color:var(--mut);margin-bottom:9px">
+        <span style="display:inline-flex;align-items:center;gap:6px"><span class="apchip aplate" style="display:inline-block;width:auto;margin:0;padding:2px 7px;pointer-events:none">due</span> on his own habit</span>
+        <span style="display:inline-flex;align-items:center;gap:6px"><span class="apchip apowes" style="display:inline-block;width:auto;margin:0;padding:2px 7px;pointer-events:none">owes</span> chase before you offer</span>
+        <span>a dimmed day is past, and anything due there is on the rail</span>
+      </div>
       ${late.length?`<div class="apm" style="font-size:10px;letter-spacing:.9px;text-transform:uppercase;color:var(--gold)">Overdue &middot; ${late.length} name${late.length===1?'':'s'} &middot; ${fmt0(lateRM)} of profit waiting</div>
       <div class="aprail">${railChips}</div>
       <div style="height:1px;background:var(--line);margin:11px 0 9px"></div>`
-      :`<div class="dsc" style="margin-bottom:9px;color:var(--grn)">Nobody is past their own cadence.</div>`}
+      :`<div style="font-size:12px;color:var(--grn);margin-bottom:9px">Nobody is past their own cadence.</div>`}
       <div class="apgrid">${dow}${cells}</div>
-      <div class="dsc" style="margin-top:9px">A name sits on the day his <b>own</b> median gap says he is next due, never a desk average. Point at a chip, or tap it, for his cadence, his usual lot, what he has paid, what the board asks today and his last three orders. Gold is due or overdue, red means he owes money and a chase comes before an offer. Days before today are dimmed because anything that fell due there is on the overdue rail above.${noCad?` <b>${noCad} of ${approach.length} names are not on this board at all</b>, because they have bought once and one order is not a habit. They are not lost: every one is in the table at the foot of this tab, and any that have gone quiet for 21 days show in Reconnect on the Overview. Giving them a due date would mean handing them somebody else&rsquo;s cadence and then acting on it.`:''}</div>
+      ${noCad?`<div style="font-size:11px;color:var(--mut);margin-top:9px">${noCad} of ${approach.length} names have bought once, so they have no habit to put on a day. They are not lost: every one is in the database at the foot of this part.</div>`:''}
     </div>
     <div class="apside">
       <div class="apm">${MON[nS.getUTCMonth()]} &middot; ahead</div>
@@ -10995,50 +11044,82 @@ function tabConcentration(){
   for(const x of c.bc){run+=x.rev;to80++;if(run>=c.tot*0.8)break;}
   const single=c.bc.filter(x=>(x.n||0)===1).length;
   const topName=c.bc[0]?codeOf(c.bc[0].id):'-';
+  /* ---- v381: THE READ WAS FOUR PARAGRAPHS AND RENDERED AS THE WORDS "The read." ----
+     stripMethod cuts an .insight of 140 characters or more to its FIRST SENTENCE, and the
+     first sentence here was the bold label. So the whole finding, concentration, the thin
+     margins, who is overdue and what it is worth, was deleted on every render and the page
+     showed a two-word stub. Under 140 characters nothing is trimmed at all, which is the
+     real constraint this block has been under since v372 and had never been written for.
+     So it is ONE short sentence naming the single thing to act on, and it is deliberately
+     kept short. The four findings it used to restate are the five tiles directly above it,
+     which is where they belong; a block that repeats the strip beside it earns nothing. */
+  const read=overdue.length
+    ? `<b>${overdue.length}</b> ${overdue.length===1?'buyer is':'buyers are'} past their own habit, worth <b>${fmt0(overdueRM)}</b>. That is a message, not a decision.`
+    : thin.length
+    ? `<b>${thin.length}</b> customer${thin.length===1?'':'s'} under a 20% margin: the same salt earns more elsewhere on this book.`
+    : `Nobody is past their own habit and nobody is under a 20% margin.`;
+  /* ---- v381: THE BAND COLUMN NAMED A BAND AND NEVER SAID WHAT ONE WAS WORTH ----
+     The rule was in the paragraph under the table, and that paragraph is a .dsc, which
+     stripMethod (v372) deletes on every render. So the page carried a column reading
+     "quarter" against a customer with no statement anywhere of what a quarter pays, and
+     the hurdle it is measured against was invisible too. Both are fields now: the band
+     column carries its own units, and the hurdle is the card's subtitle, where a reader
+     looking at "To next" will find what the distance is to. */
   const cr=customerRewards(), crReady=cr.filter(r=>r.earned>0.009);
-  const crBody=cr.length?cr.map(r=>`<tr><td class="l mono">${ID(r.id)}</td><td>${fmt0(r.rev)}</td><td>${r.pct}%</td><td class="l">${r.band}</td><td>${r.earned>0.009?`<b style="color:var(--gold)">${kg(r.earned)}</b>`:'&mdash;'}</td><td class="mono" style="color:var(--dim)">${fmt0(r.toNext)}</td></tr>`).join('')
+  const crBody=cr.length?cr.map(r=>`<tr><td class="l mono">${ID(r.id)}</td><td>${fmt0(r.rev)}</td><td>${r.pct}%</td><td class="l">${r.band}${r.bandUnits>0?` <span style="color:var(--dim)">&middot; ${kg(r.bandUnits)}</span>`:` <span style="color:var(--dim)">&middot; nothing</span>`}</td><td>${r.earned>0.009?`<b style="color:var(--gold)">${kg(r.earned)}</b>`:'&mdash;'}</td><td class="mono" style="color:var(--dim)">${fmt0(r.toNext)}</td></tr>`).join('')
     :`<tr><td class="l" colspan="6" style="color:var(--dim)">Nothing since ${REWARD.since}. The scheme counts from the day it was adopted, because the opening positions already hold everything before it.</td></tr>`;
-  const crCard=`<div class="card"><div class="cardh">&#127873; Customer rewards <span class="sub">since ${REWARD.since}</span></div>
-    <table><thead><tr><th class="l">Customer</th><th>Bought</th><th>Margin</th><th class="l">Band</th><th>Earned</th><th>To next</th></tr></thead><tbody>${crBody}</tbody></table>
-    <div class="dsc" style="margin-top:9px">A customer clears <b>${fmt0(rewardHurdle(PROD,'customer'))}</b> for a unit, against <b>${fmt0(rewardHurdle(PROD,'associate'))}</b> for an associate bringing business in: base lot times cheapest unit cost times ${REWARD.hurdleMultiple.customer} and ${REWARD.hurdleMultiple.associate}. The hurdle decides <b>if</b>, the margin band decides <b>how much</b>: ${REWARD.bands.filter(b=>b.units>0).map(b=>`${b.min}% and over earns ${kg(b.units)}`).join(', ')}, and under ${REWARD.bands.filter(b=>b.units>0).slice(-1)[0].min}% earns nothing. Turnover and margin rank almost nothing alike on this book, so paying on turnover alone would pay most to whoever was sold to most cheaply.${crReady.length?` <b style="color:var(--gold)">${crReady.map(r=>ID(r.id)).join(', ')} ${crReady.length===1?'has':'have'} a reward waiting.</b>`:''}</div></div>`;
+  const crCard=`<div class="card"><div class="cardh">&#127873; Customer rewards <span class="sub">since ${REWARD.since} &middot; ${fmt0(rewardHurdle(PROD,'customer'))} a hurdle &middot; the band sets the units</span>${crReady.length?`<span class="sub" style="color:var(--gold)">${crReady.map(r=>ID(r.id)).join(', ')} waiting</span>`:''}</div>
+    <table><thead><tr><th class="l">Customer</th><th>Bought</th><th>Margin</th><th class="l">Band pays</th><th>Earned</th><th>To next</th></tr></thead><tbody>${crBody}</tbody></table></div>`;
+  /* ============ v381: DO, THEN WATCH, THEN STUDY ============
+     The order was rewards, tiles, read, two charts, the approach calendar, turned-away, the
+     database. The calendar is the only thing on this part that asks for an ACTION, and the
+     tab's own read said so ("that is the most valuable thing on this tab"), and then put it
+     fifth, below a pareto and a scatter of the same book. It leads now. The tiles keep
+     their place above it because they are one compact row and burying a five-figure strip
+     under a six-thousand-character calendar loses it; everything that studies the shape
+     goes below. The rewards card follows the calendar because a reward waiting is also
+     something to hand over, and the two charts and the database are Study.
+     THE INTRO PARAGRAPHS ARE GONE RATHER THAN MOVED. Every one of them was a .dsc that
+     stripMethod deletes, so none had rendered since v372: what the pareto's 80% line means
+     is the "Carry 80% of revenue" tile, what the scatter's quadrants mean is in its own
+     legend and tooltips, and what the calendar carries is in the card that opens on a chip.
+     Deleting text that never reached a reader costs a reader nothing. */
   return `<h1>Customers</h1>
-  <div class="dsc dsclead" style="margin-bottom:13px">What the book says about who buys, before the book itself. Every figure is observed trade: no fitted demand, no scoring model, and no customer ranked by anything other than what he has actually paid.</div>
-  ${crCard}
+  <div class="dsc dsclead" style="margin-bottom:13px">Who buys, who to approach next and the demand you could not serve, every figure of it observed trade rather than fitted demand or a scoring model.</div>
   <div class="kpis k5">
-    <div class="kpi ${risk==='high'?'r':risk==='moderate'?'gold':'g'}"><div class="l">Concentration</div><div class="v" style="color:${riskCol}">${c.hhi.toFixed(0)}</div><div class="n">${risk}; Herfindahl over ${c.n} buyers</div></div>
+    <div class="kpi ${risk==='high'?'r':risk==='moderate'?'gold':'g'}"><div class="l">Concentration</div><div class="v" style="color:${riskCol}">${c.hhi.toFixed(0)}</div><div class="n">${risk} on the Herfindahl over ${c.n} buyers; ${c.hhi>2500?'widen the base before growing the top':'no single lapse decides the month'}</div></div>
     <div class="kpi"><div class="l">Carry 80% of revenue</div><div class="v">${to80}</div><div class="n">of ${c.n} names; top is ${topName} at ${c.top.toFixed(0)}%</div></div>
     <div class="kpi ${thin.length?'r':'g'}"><div class="l">Thin margin</div><div class="v">${thin.length}</div><div class="n">${thin.length?'under 20%: '+thin.slice(0,3).map(x=>codeOf(x.id)).join(', ')+(thin.length>3?'…':''):'nobody under 20%'}</div></div>
     <div class="kpi ${overdue.length?'gold':'g'}"><div class="l">Overdue on habit</div><div class="v">${overdue.length}</div><div class="n">${overdue.length?fmt0(overdueRM)+' of profit waiting':'everyone inside their own cadence'}</div></div>
     <div class="kpi p"><div class="l">Bought once only</div><div class="v">${single}</div><div class="n">${single?'no habit yet, so no cadence to read':'every buyer has repeated'}</div></div>
   </div>
-  <div class="insight" style="margin-top:12px"><b>The read.</b> ${to80} name${to80===1?'':'s'} of ${c.n} carry four-fifths of the book, and <b>${topName}</b> alone is <b>${c.top.toFixed(0)}%</b> of it, which puts the Herfindahl at <b style="color:${riskCol}">${c.hhi.toFixed(0)}</b>, ${risk}. ${c.hhi>2500?'Above 2,500 one lapse dents the month, so widening the base is worth more than growing the top.':'Below 2,500 the base is wide enough that no single lapse decides the month, which is the cheapest kind of resilience to keep.'}
-  ${thin.length?` <b>${thin.length} customer${thin.length===1?'':'s'} sit under a 20% margin</b> (${thin.map(x=>codeOf(x.id)+' at '+(x.margin/x.rev*100).toFixed(0)+'%').join(', ')}), which is a price problem rather than a cost one: the same salt earns more elsewhere on the same book.`:' Nobody is under a 20% margin.'}
-  ${overdue.length?` <b>${overdue.length} ${overdue.length===1?'is':'are'} past their own buying habit</b>, worth <b>${fmt0(overdueRM)}</b> if the usual lot went out at today&rsquo;s price: ${overdue.slice(0,3).map(r=>codeOf(r.id)+' by '+r.due+'d').join(', ')}${overdue.length>3?' and others':''}. That is the most valuable thing on this tab, because it needs a message rather than a decision.`:''}
-  ${Object.keys(owedBy).length?` Note that ${Object.keys(owedBy).length} of them owe money, and a chase comes before an offer.`:''}</div>
-
-  <h2 style="margin-top:18px">Where the book leans <span class="rule"></span></h2>
-  <div class="dsc" style="margin-bottom:9px">Revenue by buyer, largest first, with the cumulative share running across. Where the line crosses 80% is how few customers the desk actually depends on.</div>
-  <div class="chartbox" style="height:230px"><canvas id="ccPareto"></canvas></div>
-  <div class="card" style="margin-top:14px"><div class="cardh">Revenue against margin <span class="sub">per order across, total revenue as the circle</span></div>
-      <div class="chartbox" style="height:230px"><canvas id="ccScatter"></canvas></div>
-      <div class="dsc" style="margin-top:7px">Each dot is a customer, sized by volume. The line is the 20% mark. <b>Bottom right is the problem quadrant</b>: a large buyer on a thin margin, where the revenue flatters the book and the salt would earn more sold to someone else. The overdue bar chart that used to sit beside this was removed at v208: it plotted days past cadence, which is what the calendar below now says by position, and two pictures of one fact is how a tab starts costing more than it tells you.</div></div>
-  <div class="card" style="margin-top:14px"><div style="font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:var(--dim);margin-bottom:4px">Revenue by customer <span style="text-transform:none;letter-spacing:0">&mdash; drawn without Chart.js, so it is always here</span></div>${bars}</div>
+  <div class="insight" style="margin-top:12px">${read}${Object.keys(owedBy).length?` <span style="color:var(--mut)">${Object.keys(owedBy).length} owe money; a chase comes before an offer.</span>`:''}</div>
 
   <h2 style="margin-top:18px">Who to approach next <span class="rule"></span></h2>
-  <div class="dsc" style="margin-bottom:9px">The month, by the day each buyer is next due on his own habit. Everything the old ten-column table carried is still here, in the card that opens when you point at a name or tap it.</div>
   ${approach.filter(r=>r.cad&&r.cad.last).length?approachBoard(approach,owedBy,bm)
-    :'<div class="card"><div class="dsc">No customer has two priced orders yet, so there is no habit to read and nothing to place on a calendar.</div></div>'}
+    :'<div class="card"><table><tbody><tr><td class="l" style="color:var(--dim)">No customer has two priced orders yet, so there is no habit to read and nothing to place on a calendar.</td></tr></tbody></table></div>'}
+
+  <div style="margin-top:16px">${crCard}</div>
+
+  <h2 style="margin-top:18px">Where the book leans <span class="rule"></span></h2>
+  <div class="chartbox" style="height:230px"><canvas id="ccPareto"></canvas></div>
+  <div class="card" style="margin-top:14px"><div class="cardh">Revenue against margin <span class="sub">per order across, total revenue as the circle</span></div>
+      <div class="chartbox" style="height:230px"><canvas id="ccScatter"></canvas></div></div>
+  <div class="card" style="margin-top:14px"><div style="font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:var(--dim);margin-bottom:4px">Revenue by customer <span style="text-transform:none;letter-spacing:0">&mdash; drawn without Chart.js, so it is always here</span></div>${bars}</div>
 
   <h2 style="margin-top:18px">Demand you could not serve <span class="rule"></span></h2>
-  <div class="card">${ld.length
-    ? `<table><thead><tr><th class="l">Date</th><th class="l">Who asked</th><th>Unit</th><th>RM</th><th>Per unit</th><th class="l">Why not</th></tr></thead><tbody>`
+  <!-- v381: THE EMPTY STATE RENDERED AS AN EMPTY BOX. It was a lone .dsc in a card, so the
+       strip removed it and left a heading over four inches of nothing, on the one section
+       whose entire purpose is to be noticed while it is still empty. The words are the same
+       words; they sit in a table row now, which the strip does not touch. -->
+  <div class="card"><table>${ld.length
+    ? `<thead><tr><th class="l">Date</th><th class="l">Who asked</th><th>Unit</th><th>RM</th><th>Per unit</th><th class="l">Why not</th></tr></thead><tbody>`
       +ld.map(r=>`<tr><td class="l">${r.date}</td><td class="l mono">${r.party?ID(r.party):'walk-up'}</td><td>${kg(r.kg)}</td><td>${fmt0(r.rm)}</td><td>${r.kg>0&&r.rm>0?fmt(r.rm/r.kg):'&mdash;'}</td><td class="l">${LOST_LABEL[r.why]||r.why}${r.note?' &middot; '+esc(r.note):''}</td></tr>`).join('')
-      +`<tr class="tot"><td class="l" colspan="2">Total turned away</td><td>${kg(ldKg)}</td><td>${fmt0(ldRM)}</td><td></td><td class="l">${ldStock>0.009?`${kg(ldStock)} of it for want of stock`:'none for want of stock'}</td></tr></tbody></table>`
-      +`<div class="dsc" style="margin-top:8px">Against ${fmt0(revTotal)} of recorded revenue, that is <b>${(ldRM/revTotal*100).toFixed(1)}%</b> of turnover asked for and refused. None of it appears in any other figure on this desk.</div>`
-    : `<div class="dsc">Nothing recorded yet. This is the only loss the desk is <b>structurally blind to</b>: an order you could not fill leaves no trace anywhere, so a fortnight of empty shelves reads exactly like a fortnight of no demand. With free-to-sell at <b>${kg(Math.max(0,currentStock-defKg))}</b> against recent trade, that is not a hypothetical gap.<br><br>Log them under <b>Workbench &rarr; Turned away</b>. Nothing there touches revenue, stock or margin; it sits beside the books so the cost of running dry stops being invisible.</div>`}</div>
+      +`<tr class="tot"><td class="l" colspan="2">Total turned away</td><td>${kg(ldKg)}</td><td>${fmt0(ldRM)}</td><td></td><td class="l">${ldStock>0.009?`${kg(ldStock)} of it for want of stock`:'none for want of stock'}</td></tr>`
+      +`<tr><td class="l" colspan="6" style="color:var(--mut)">That is <b>${(ldRM/revTotal*100).toFixed(1)}%</b> of ${fmt0(revTotal)} of recorded revenue, asked for and refused. None of it appears in any other figure on this desk.</td></tr></tbody>`
+    : `<tbody><tr><td class="l" style="color:var(--mut)"><b>Nothing recorded, and this is the only loss the desk is structurally blind to.</b> An order you could not fill leaves no trace anywhere, so a fortnight of empty shelves reads exactly like a fortnight of no demand. With free to sell at <b>${kg(Math.max(0,currentStock-defKg))}</b> against recent trade, that is not a hypothetical gap. Log one under <b>Enter &rarr; Transaction &rarr; Turned away</b>: nothing there touches revenue, stock or margin.</td></tr></tbody>`}</table></div>
 
-  <h2 style="margin-top:22px">The database <span class="sub" style="font-weight:400">every customer, for looking one up</span> <span class="rule"></span></h2>
-  <div class="dsc" style="margin-bottom:9px">Sortable on any column. This is the raw book rather than a reading of it, which is why it sits at the foot: everything above is what it means.</div>
+  <h2 style="margin-top:22px">The database <span class="sub" style="font-weight:400">every customer, sortable on any column</span> <span class="rule"></span></h2>
   <div class="card"><table><thead><tr><th class="l" style="cursor:pointer" onclick="sortConc('id')">Customer${ind('id')}</th><th style="cursor:pointer" onclick="sortConc('rev')">Revenue${ind('rev')}</th><th style="cursor:pointer" onclick="sortConc('share')">Share${ind('share')}</th><th style="cursor:pointer" onclick="sortConc('kg')">Volume${ind('kg')}</th><th style="cursor:pointer" onclick="sortConc('margin')">Margin${ind('margin')}</th><th style="cursor:pointer" onclick="sortConc('marginpct')">Margin %${ind('marginpct')}</th></tr></thead><tbody>${rows}<tr class="tot"><td class="l">All</td><td>${fmt0(c.tot)}</td><td>100%</td><td>${kg(c.bc.reduce((a,x)=>a+x.kg,0))}</td><td>${fmt0(c.bc.reduce((a,x)=>a+x.margin,0))}</td><td>${(c.tot>0?c.bc.reduce((a,x)=>a+x.margin,0)/c.tot*100:0).toFixed(0)}%</td></tr></tbody></table></div>`;
 }
 /* ---- the three Customers charts (v165) -------------------------------------
@@ -11167,7 +11248,21 @@ function resellerCard(r){
   // rebate: earned on R2 + R3 (RM rates), minus what has been applied as free units
   const applied=rebateApplied(r.id);
   const freeKg=+((r.earned||0)-applied).toFixed(2);
-  const rebateStr=freeKg>0.009?`${kg(freeKg)} free to redeem`:(r.earned>0?'rebate fully applied':`${fmt0(Math.min(r.toNextR2,r.toNextR3))} to a free unit`);
+  /* ---- v381: THE SUMMARY PROMISED SALT THAT WAS NOT COMING ----
+     It closed every card on the bench with "RM 470 to a free unit", and that was wrong three
+     separate ways. Crossing a hurdle pays the MARGIN BAND'S units, which under 30% is nothing
+     at all. The balance it lands on is negative for five associates of five, because units
+     were drawn under the rules the opening positions replaced. And a party who has brought
+     nothing in since the scheme was adopted has no margin to band in the first place, so the
+     figure was quoting a distance to a reward he could not earn by covering it.
+     Each of the three now says which one it is. The line is what a reader acts on with the
+     card still shut, so it is the one line on this tab that must be exactly true. */
+  const nextGain=r.bringUnits||0, floorBand=REWARD.bands.filter(b=>b.units>0).slice(-1)[0];
+  const rebateStr=freeKg>0.009?`${kg(freeKg)} free to redeem`
+    :r.bring<=0.009?`nothing brought in since ${REWARD.since}`
+    :nextGain<=0?`${r.bringPct}% margin earns nothing, ${floorBand.min}% is the floor`
+    :freeKg+nextGain>0.009?`${fmt0(r.toNextR2)} more brought in earns ${kg(nextGain)}`
+    :`${fmt0(r.toNextR2)} more earns ${kg(nextGain)}, against ${kg(-freeKg)} drawn ahead`;
   // summary line (collapsed)
   const summary=`<summary><span class="mono rname">${ID(r.id)}</span> ${badge}<span class="rsum">made you <b>${fmt0(r.total)}</b> &middot; R3 <b>${fmt0(r.r3)}</b> &middot; ${rebateStr}</span></summary>`;
   // KPI trio: R1 / R2 / R3 (same for every associate)
@@ -11176,8 +11271,23 @@ function resellerCard(r){
     <div class="kpi g"><div class="l">Sold for you</div><div class="v">${fmt0(r.indirect)}</div><div class="n">${r.dsResell} onward ${r.dsResell===1?'sale':'sales'} &middot; R2</div></div>
     <div class="kpi p"><div class="l">Brought you</div><div class="v">${fmt0(r.r3)}</div><div class="n">${r.referrals.length} introduced, first order &middot; R3</div></div>
   </div>`;
-  // rebate insight (uniform)
-  const rebateLine=`<div class="insight" style="margin-top:10px">Rating <b>${r.starN?starStr(r.starN):'unrated'}</b> from <b>${r.share.toFixed(1)}%</b> revenue share. <b>Brought in</b> (resold + referred): <b>${fmt0(r.bring)}</b> at <b>${r.bringPct}%</b> margin, ${r.bringBand} band, earns <b>${r.earnedR2} unit</b> per ${fmt0(r.toNextR2+ (r.bring%rewardHurdle(PROD,'associate')))}. <b>Bought himself</b>: <b>${fmt0(r.direct)}</b> at <b>${r.ownPct}%</b>, ${r.ownBand} band, earns <b>${r.earnedOwn} unit</b>. ${r.opening?`Opening position <b>${r.opening>0?'+':''}${r.opening} unit</b>, carried. `:''}<b>${r.earned} unit</b> in total. ${fmt0(r.toNextR2)} more brought in, or ${fmt0(r.toNextOwn)} more bought, reaches the next. ${applied>0?`<b>${kg(applied)} applied</b> already. `:''}${freeKg>0.009?`<button class="vbtn" style="margin-left:4px" onclick="redeemRebate('${r.id}')">${sales.some(s=>s.customer===r.id&&txAdvance(s)>0.009)?'Offset':'Redeem'} ${kg(freeKg)}</button>`:''}</div>`;
+  /* ---- v381: THE FIELDS, NOT A SENTENCE ----
+     This was 330 characters of prose restating the two streams, and stripMethod cut every
+     card of it to "Rating unrated from 7.9% revenue share.", so the reward rule reached
+     nobody. Worse, the Redeem button lived INSIDE that block: trim() assigns textContent,
+     which takes every child with it, so the one control on this tab that hands out salt
+     was deleted at render the moment anybody earned any. Two fixes, both structural. The
+     stream figures become a table, because six fields per stream is what a table is for
+     and a table survives the strip. The button becomes a sibling, so nothing can eat it. */
+  const bandPays=u=>u>0?kg(u):'nothing';
+  const rewardTbl=`<table style="margin-top:10px"><thead><tr><th class="l">Reward stream</th><th>Turnover</th><th>Margin</th><th class="l">Band</th><th>Per hurdle</th><th>To next</th></tr></thead><tbody>
+    <tr><td class="l">Brought in <span style="color:var(--dim)">R2 + R3</span></td><td>${fmt0(r.bring)}</td><td>${r.bringPct}%</td><td class="l">${r.bringBand}</td><td>${bandPays(r.bringUnits)}</td><td class="mono" style="color:var(--dim)">${fmt0(r.toNextR2)}</td></tr>
+    <tr><td class="l">Bought himself <span style="color:var(--dim)">R1</span></td><td>${fmt0(r.own)}</td><td>${r.ownPct}%</td><td class="l">${r.ownBand}</td><td>${bandPays(r.ownUnits)}</td><td class="mono" style="color:var(--dim)">${fmt0(r.toNextOwn)}</td></tr>
+    <tr class="tot"><td class="l">Balance</td><td class="l" colspan="3" style="color:var(--dim)">${r.opening?`opening ${r.opening>0?'+':''}${kg(r.opening)} carried, `:''}${applied>0?`${kg(applied)} already drawn`:'nothing drawn yet'}</td><td>${kg(r.earned)}</td><td>${freeKg>0.009?`<b style="color:var(--gold)">${kg(freeKg)} free</b>`:'&mdash;'}</td></tr>
+  </tbody></table>`;
+  const rebateLine=`<div class="insight" style="margin-top:10px">Rated <b>${r.starN?starStr(r.starN):'unrated'}</b> on <b>${r.share.toFixed(1)}%</b> of revenue.</div>
+    ${rewardTbl}
+    ${freeKg>0.009?`<div style="margin-top:9px"><button class="vbtn" onclick="redeemRebate('${r.id}')">${sales.some(s=>s.customer===r.id&&txAdvance(s)>0.009)?'Offset':'Redeem'} ${kg(freeKg)}</button></div>`:''}`;
   // ---- three uniform ledgers ----
   const buys=sales.filter(s=>s.total!=null&&s.customer===r.id&&s.rev!=='R2');
   /* v365: was ${s.date} with no fallback, so a never-dated row (two real cancelled deals,
@@ -11239,23 +11349,44 @@ function tabNetwork(){
   <h2>Overall <span class="rule"></span></h2>${summary}
   <h2 style="margin-top:22px">What counts, and why <span class="rule"></span></h2>
   <div class="card">
-    <div class="cardh">Three streams, one associate <span class="sub">what each counts &middot; why it matters</span></div>
+    <div class="cardh">Three streams, one associate <span class="sub">what each counts &middot; what it earns</span></div>
     <div class="netmap">
       <div class="nstream nv">
         <div class="nsh"><span class="tag pendingt">R1</span> Bought from you</div>
         <div class="nsw">His own orders, priced.</div>
-        <div class="nswhy">A partner who is also a buyer: his own demand and loyalty. No rebate earned.</div>
+        <div class="nswhy">A partner who is also a buyer: his own demand and loyalty. Earns on the customer hurdle, <b>${fmt0(rewardHurdle(PROD,'customer'))}</b>.</div>
       </div>
       <div class="nstream ng">
         <div class="nsh"><span class="tag paid">R2</span> Sold for you</div>
         <div class="nsw">Onward sales he runs, booked to him; the end buyer has no separate line.</div>
-        <div class="nswhy">Revenue you would not have made alone. <b>One free unit per RM500 resold.</b></div>
+        <div class="nswhy">Revenue you would not have made alone. Runs with R3 against the associate hurdle, <b>${fmt0(rewardHurdle(PROD,'associate'))}</b>.</div>
       </div>
       <div class="nstream ni">
         <div class="nsh"><span class="tag" style="background:rgba(99,230,224,.16);color:var(--ice)">R3</span> Brought you</div>
         <div class="nsw">First-order value of each new customer he introduces.</div>
-        <div class="nswhy">Network growth, not repeat spend. <b>One free unit per RM1,500 introduced.</b></div>
+        <div class="nswhy">Network growth, not repeat spend. Runs with R2 against that same <b>${fmt0(rewardHurdle(PROD,'associate'))}</b>, not a hurdle of its own.</div>
       </div>
+    </div>
+    <!-- ============ v381: THE THREE FIGURES ON THIS CARD WERE WRONG ============
+         It said R1 earned no rebate, one free unit per RM500 resold, and one per RM1,500
+         introduced. v280 retired all three: an associate's own buying earns at the CUSTOMER
+         hurdle, and resale and referral became ONE stream against the associate hurdle,
+         because both are him bringing business he does not consume. RM500 and RM1,500 were
+         never the figures in any case; the hurdle is base lot x cheapest unit cost x the
+         multiple, which is RM470 and RM940 on salt, RM700 and RM1,400 on oil, and it moves
+         with the book being shown. So they are read from rewardHurdle() now rather than
+         typed, which is the same rule the rest of the desk follows: quote the engine, never
+         restate it, because a restated constant is a constant that goes stale silently.
+         THE BAND CHIPS BELOW ARE THE OTHER HALF OF THE RULE, and they were nowhere on this
+         view at all. The hurdle decides IF, the margin band decides HOW MUCH, and under the
+         floor a crossed hurdle pays nothing. Every card here prints a band label and the
+         Customers tab prints a Band column; neither said what a band was worth, because the
+         one paragraph that did was a .dsc and stripMethod deletes those. Chips survive. -->
+    <div class="neq" style="margin:11px 0 0;padding-top:11px">
+      <span class="nchip">Then the margin band decides how much</span>
+      <span class="nop">:</span>
+      ${REWARD.bands.filter(b=>b.units>0).map(b=>`<span class="nchip ng">${b.min}% and over &rarr; ${kg(b.units)}</span>`).join('')}
+      <span class="nchip" style="color:var(--dim)">under ${REWARD.bands.filter(b=>b.units>0).slice(-1)[0].min}% &rarr; nothing</span>
     </div>
     <div class="neq">
       <span class="nchip nv">R1 Bought</span>
