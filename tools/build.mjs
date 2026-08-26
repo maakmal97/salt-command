@@ -11,7 +11,7 @@
  *   SALT_MASTER   env override for the master path (absolute).
  */
 
-import { readFileSync, writeFileSync, mkdirSync, copyFileSync, existsSync, readdirSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync, statSync, existsSync, readdirSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -272,21 +272,31 @@ mkdirSync(dirname(OUT), { recursive: true });
 writeFileSync(OUT, src);
 writeFileSync(REV, JSON.stringify({ ok: true, v: VER, id: BUILD_ID, built: new Date().toISOString() }) + "\n");
 const kb = (Buffer.byteLength(src) / 1024).toFixed(0);
-/* THE DESK'S ONE RUNTIME ASSET, AND THE REASON THE PHONE HAD NO CHARTS.
+/* THE DESK'S ONE RUNTIME ASSET, AND IT IS NOW SOURCE RATHER THAN A COPY.
    ensureChart() loads `assets/chart.umd.js` from the same origin rather than a CDN, which is
-   what keeps the desk self-contained. The build copied the HTML and nothing beside it, so on
-   the phone that request 404'd, ensureChart called back false, and every chart on every tab
-   fell through to "Chart unavailable". It looked like a rendering fault and was a missing file.
-   The CSP needs no change: script-src is 'self' and this is same-origin. */
-const ASSET_SRC = resolve(dirname(MASTER), "assets", "chart.umd.js");
-const ASSET_OUT = resolve(REPO, "public", "assets", "chart.umd.js");
-if (existsSync(ASSET_SRC)) {
-  mkdirSync(dirname(ASSET_OUT), { recursive: true });
-  copyFileSync(ASSET_SRC, ASSET_OUT);
-  console.log(`  asset:   chart.umd.js -> public/assets/`);
-} else {
-  console.log(`  asset:   WARNING chart.umd.js not found beside the master, so the phone will have no charts`);
+   what keeps the desk self-contained and inside a self-only CSP: script-src is 'self' and
+   this is same-origin, so nothing here needs a CSP change.
+
+   It used to be COPIED in from beside the master, and that step died on 20 Aug 2026 when the
+   master moved into this repo and left its assets folder behind in the Per-Crm01 project folder.
+   Every build since printed "not found beside the master" and copied nothing. Charts went on
+   working only because public/assets/chart.umd.js is committed and served exactly as it sits,
+   so the warning was true, harmless and ignored for six days, which is the worst of the three.
+
+   v380: THE COMMITTED FILE IS THE SOURCE. It is tracked in this repo at the path it ships
+   from, so there is nothing left to copy and a second copy would only be a thing to drift.
+   The build proves it is there and FAILS if it is not, because rev.json's id does not hash
+   it: a missing asset moves no id, so update.mjs would compare equal, skip the deploy and
+   report the desk current. That is the silent shape this repo keeps relearning, and a warning
+   nobody reads is not a guard. To change the library, replace this file and commit it. */
+const ASSET = resolve(REPO, "public", "assets", "chart.umd.js");
+if (!existsSync(ASSET)) {
+  console.error("BUILD FAILED: public/assets/chart.umd.js is missing, so the desk would draw no charts.");
+  console.error("  It is tracked in this repo and is the only copy. Restore it with:");
+  console.error("    git checkout -- public/assets/chart.umd.js");
+  process.exit(1);
 }
+console.log(`  asset:   chart.umd.js present, ${(statSync(ASSET).size / 1024).toFixed(0)} KB`);
 console.log(`BUILD OK: ${OUT}`);
 console.log(`  master:  ${MASTER}`);
 console.log(`  size:    ${kb} KB   eol: ${EOL === "\r\n" ? "CRLF" : "LF"}`);

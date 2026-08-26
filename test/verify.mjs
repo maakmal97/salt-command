@@ -491,6 +491,53 @@ section("Build — patches, scripts, no externals");
        "chart.umd.js copied into public/assets, without which the phone has no charts");
     ok(html.includes("assets/chart.umd.js"),
        "the desk still loads the chart library from its own origin, never a CDN");
+
+    /* EVERY CALLER WAITS FOR THE ONE LOAD (v380). This RUNS the desk's own ensureChart in a
+       stub rather than matching on its text, because the fault it guards against is invisible
+       in the source and obvious the moment two callers arrive in the same tick. chartTried was
+       set when the request went out, so the caller that started the load waited on the script
+       and every caller behind it was answered false at once and never called back. On the live
+       desk that printed "Chart unavailable" over three blocks of the Today view while Chart
+       4.5.0 was loaded and ten canvases elsewhere drew, which reads as a data fault and is a
+       race. drawPerProduct() makes it a tab at a time rather than a chart at a time. */
+    const evFrom = html.indexOf("let chartTried=false");
+    const evSrc = evFrom < 0 ? "" : html.slice(evFrom, html.indexOf("\n}", evFrom) + 2);
+    ok(/chartWait/.test(evSrc), "ensureChart keeps a queue of waiters");
+    const harness = () => {
+      let el = null;
+      const win = {};
+      const doc = { createElement: () => (el = {}), head: { appendChild() {} } };
+      const fn = new Function("window", "document", "chartTheme",
+                              evSrc + "\nreturn ensureChart;")(win, doc, () => {});
+      return { win, script: () => el, ensure: fn };
+    };
+    {
+      const h = harness(), got = [];
+      h.ensure((r) => got.push(["A", r]));
+      h.ensure((r) => got.push(["B", r]));
+      h.ensure((r) => got.push(["C", r]));
+      ok(got.length === 0, "no caller is answered while the library is still in flight");
+      h.win.Chart = { defaults: {} };
+      h.script().onload();
+      ok(got.length === 3 && got.every((g) => g[1] === true),
+         "every caller that waited is answered true once the library lands");
+      const late = [];
+      h.ensure((r) => late.push(r));
+      ok(late.length === 1 && late[0] === true, "a caller arriving after the load is answered at once");
+    }
+    {
+      /* the other half: a genuinely missing file still fails, once, for everybody. */
+      const h = harness(), got = [];
+      h.ensure((r) => got.push(r));
+      h.ensure((r) => got.push(r));
+      const first = h.script();
+      first.onerror();
+      ok(got.length === 2 && got.every((r) => r === false),
+         "a missing library answers every waiter false");
+      h.ensure((r) => got.push(r));
+      ok(got.length === 3 && got[2] === false && h.script() === first,
+         "a library that 404'd is not requested a second time");
+    }
     ok(html.includes("cloud &middot; pushes to source"), "cloud badge present");
     ok(html.includes("device:(typeof saltDeviceId"), "qPayload carries the device id");
     ok(html.includes("if(j.cloud){ await vaultLoad();"), "cloud loads the encrypted vault");
