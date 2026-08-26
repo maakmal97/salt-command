@@ -6248,7 +6248,7 @@ function tabMap(){
       <td class="mono" style="color:var(--dim)">${h?fmt0(h.value):'&mdash;'}</td>
       <td>${h?`<span class="tag prov">${HEATL[band(f)]}</span>`:'<span class="tag">not drawn</span>'}</td></tr>`;}).join('');
   return `<h1>Map</h1>
-  <!-- v381: THE LEAD WAS A CHANGELOG AND ONLY ITS FIRST LINE EVER RENDERED. 994 characters
+  <!-- v384: THE LEAD WAS A CHANGELOG AND ONLY ITS FIRST LINE EVER RENDERED. 994 characters
        of what the map used to be and which version changed it, of which stripMethod (v372)
        shows the first sentence and drops the other 913. So the sentence that survives is
        now the one worth having: what the picture is, and why it carries no label. The
@@ -6279,14 +6279,14 @@ function tabMap(){
         <text x="0" y="20" text-anchor="middle" font-size="11" fill="#b6a6d6">N</text>
       </g>
     </svg>
-    <!-- v381: THIS WAS A .dsc AND stripMethod DELETED IT ON EVERY RENDER. The basemap is
+    <!-- v384: THIS WAS A .dsc AND stripMethod DELETED IT ON EVERY RENDER. The basemap is
          ODbL, which asks for attribution wherever the data is SHOWN, and /desk is served
          publicly, so a credit that never reaches the page is the same as no credit at all.
          It is not method prose and it must never be classed as prose: it is a licence
          condition of drawing the outlines. Same styling, no class the strip can see. -->
     <div style="margin-top:8px;font-size:11px;color:var(--mut);line-height:1.5">${esc(BASEMAP_META.attribution)}, ${BASEMAP_META.year}, via ${esc(BASEMAP_META.source.split(',')[0])}, fetched ${BASEMAP_META.fetchedOn}. Simplified, and unlabelled by design.</div>
   </div>
-  <!-- ============ v381: ONE TABLE FOR EVERYTHING THE CANVAS DOES NOT DRAW ============
+  <!-- ============ v384: ONE TABLE FOR EVERYTHING THE CANVAS DOES NOT DRAW ============
        There were two accounts of an undrawn party and neither reached the page. A party
        sited OUTSIDE the frame was a .dsc above the map carrying the only statement of what
        those three are worth, and stripMethod deletes it, so their value appeared nowhere on
@@ -6295,18 +6295,26 @@ function tabMap(){
        column on every row, so the paragraph was restating the table beside it. Both kinds
        are now rows in one table, under one heading, with the worth as a field.
        CODES ONLY IN HERE, both kinds, which the far note already did and the miss table did
-       not. This is the section that pairs a party with a WHERE, a bearing or a suffix, and
-       that pairing is the exact disclosure v293 stripped the canvas to avoid. Everywhere
-       else on the desk ID() is right; on the geography it is one identifier too many. -->
+       not. This is the section that pairs a party with a WHERE, and that pairing is the exact
+       disclosure v293 stripped the canvas to avoid. Everywhere else on the desk ID() is right;
+       on the geography it is one identifier too many.
+       AND THE WHERE IS THE SUFFIX, NEVER A BEARING. The far note carried "about 39km SSE of
+       the frame centre" and argued that distance and bearing say more than a dot pinned to a
+       corner, which is true of a map and wrong of a public one: a polar coordinate against a
+       stated centre IS a place, and it would sit beside the code in the same row. It was never
+       on the page, because the .dsc holding it was deleted on every render, so carrying it
+       into a table that survives would have DISCLOSED it rather than restored it. What the
+       three off-frame parties were missing is their worth, and that is the column they now
+       have. The suffix is already inside every code and discloses nothing further. -->
   ${(far.length+miss.length)?(()=>{const byRule=miss.filter(m=>NON_PLACE[m.id.split('-').pop()]),unknown=miss.filter(m=>!NON_PLACE[m.id.split('-').pop()]);
   const bits=[far.length?`${far.length} off the frame`:'',unknown.length?`${unknown.length} unknown`:'',byRule.length?`${byRule.length} excluded by rule`:''].filter(Boolean);
   return `<h2 style="margin-top:18px">Not drawn <span class="sub" style="font-weight:400">${bits.join(', ')}</span> <span class="rule"></span></h2>
-  <div class="card"><table><thead><tr><th class="l">Party</th><th class="l">Where</th><th>Worth</th><th class="l">Why it is not drawn</th></tr></thead><tbody>
-    ${far.map(f=>`<tr><td class="l mono">${esc(codeOf(f.id))}</td><td class="l">about ${f.geo.km.toLocaleString('en-MY')}km ${f.geo.compass} of the frame centre</td><td>${fmt0(f.value)}</td><td class="l" style="color:var(--mut)">sited, but outside ${esc(METRO.name)}</td></tr>`).join('')}
+  <div class="card"><table><thead><tr><th class="l">Party</th><th class="l">Suffix to site</th><th>Worth</th><th class="l">Why it is not drawn</th></tr></thead><tbody>
+    ${far.map(f=>`<tr><td class="l mono">${esc(codeOf(f.id))}</td><td style="color:var(--dim)">&mdash;</td><td>${fmt0(f.value)}</td><td class="l" style="color:var(--mut)">sited, but outside ${esc(METRO.name)}</td></tr>`).join('')}
     ${miss.map(m=>`<tr><td class="l mono">${esc(codeOf(m.id))}</td><td class="l mono" style="color:var(--dim)">${m.t?esc(m.t):'&mdash;'}</td><td style="color:var(--dim)">&mdash;</td><td class="l" style="color:var(--mut)">${esc(m.why)}</td></tr>`).join('')}
   </tbody></table></div>`;})():''}
   <h2 style="margin-top:18px">The gazetteer <span class="rule"></span></h2>
-  <!-- v381: the 619-character footnote went with the rest of the deleted prose. Why the
+  <!-- v384: the 619-character footnote went with the rest of the deleted prose. Why the
        gazetteer carries a suffix and not a name is the lead's own sentence now, which is
        the one line of this part that actually renders; the rounding it also claimed is on
        the Places known tile, where a reader looking at the figure will see it. -->
@@ -10800,7 +10808,7 @@ function networkStats(){
       dsResell:ds.size,total:direct+indirect,share,starN,
       earnedR2,earnedR3,earnedLot,lotN:0,earned,toNextR2,toNextR3,
       earnedOwn,toNextOwn,opening,bring,bringPct:bringM.pct,ownPct:ownM.pct,bringBand:bringBand.label,ownBand:ownBand.label,
-      /* v381: THE BAND'S UNITS AND THE SCHEME'S OWN TURNOVER, both of which the card needed
+      /* v384: THE BAND'S UNITS AND THE SCHEME'S OWN TURNOVER, both of which the card needed
          and neither of which it could get. It read the band LABEL and could not say what
          crossing a hurdle actually pays, so it told every associate a hurdle was worth a
          unit when under 30% margin it is worth nothing. And it printed lifetime `direct`
@@ -10939,7 +10947,7 @@ function approachBoard(approach,owedBy,bm){
         <div style="font-size:13px;font-weight:600;letter-spacing:.5px">${MON[m]} ${y}</div>
         <div style="font-size:11px;color:var(--mut)">${soon.length} still to fall due &middot; ${late.length} already past</div>
       </div>
-      <!-- ============ v381: THE KEY TO THE COLOURS WAS BEING DELETED ============
+      <!-- ============ v384: THE KEY TO THE COLOURS WAS BEING DELETED ============
            Gold and red are the whole grammar of this board, and the only thing that said so
            was the paragraph underneath, which is a .dsc, which stripMethod (v372) removes on
            every render. So the board shipped with colour as its only signal and no legend at
@@ -11044,7 +11052,7 @@ function tabConcentration(){
   for(const x of c.bc){run+=x.rev;to80++;if(run>=c.tot*0.8)break;}
   const single=c.bc.filter(x=>(x.n||0)===1).length;
   const topName=c.bc[0]?codeOf(c.bc[0].id):'-';
-  /* ---- v381: THE READ WAS FOUR PARAGRAPHS AND RENDERED AS THE WORDS "The read." ----
+  /* ---- v384: THE READ WAS FOUR PARAGRAPHS AND RENDERED AS THE WORDS "The read." ----
      stripMethod cuts an .insight of 140 characters or more to its FIRST SENTENCE, and the
      first sentence here was the bold label. So the whole finding, concentration, the thin
      margins, who is overdue and what it is worth, was deleted on every render and the page
@@ -11058,7 +11066,7 @@ function tabConcentration(){
     : thin.length
     ? `<b>${thin.length}</b> customer${thin.length===1?'':'s'} under a 20% margin: the same salt earns more elsewhere on this book.`
     : `Nobody is past their own habit and nobody is under a 20% margin.`;
-  /* ---- v381: THE BAND COLUMN NAMED A BAND AND NEVER SAID WHAT ONE WAS WORTH ----
+  /* ---- v384: THE BAND COLUMN NAMED A BAND AND NEVER SAID WHAT ONE WAS WORTH ----
      The rule was in the paragraph under the table, and that paragraph is a .dsc, which
      stripMethod (v372) deletes on every render. So the page carried a column reading
      "quarter" against a customer with no statement anywhere of what a quarter pays, and
@@ -11070,7 +11078,7 @@ function tabConcentration(){
     :`<tr><td class="l" colspan="6" style="color:var(--dim)">Nothing since ${REWARD.since}. The scheme counts from the day it was adopted, because the opening positions already hold everything before it.</td></tr>`;
   const crCard=`<div class="card"><div class="cardh">&#127873; Customer rewards <span class="sub">since ${REWARD.since} &middot; ${fmt0(rewardHurdle(PROD,'customer'))} a hurdle &middot; the band sets the units</span>${crReady.length?`<span class="sub" style="color:var(--gold)">${crReady.map(r=>ID(r.id)).join(', ')} waiting</span>`:''}</div>
     <table><thead><tr><th class="l">Customer</th><th>Bought</th><th>Margin</th><th class="l">Band pays</th><th>Earned</th><th>To next</th></tr></thead><tbody>${crBody}</tbody></table></div>`;
-  /* ============ v381: DO, THEN WATCH, THEN STUDY ============
+  /* ============ v384: DO, THEN WATCH, THEN STUDY ============
      The order was rewards, tiles, read, two charts, the approach calendar, turned-away, the
      database. The calendar is the only thing on this part that asks for an ACTION, and the
      tab's own read said so ("that is the most valuable thing on this tab"), and then put it
@@ -11093,7 +11101,7 @@ function tabConcentration(){
     <div class="kpi ${overdue.length?'gold':'g'}"><div class="l">Overdue on habit</div><div class="v">${overdue.length}</div><div class="n">${overdue.length?fmt0(overdueRM)+' of profit waiting':'everyone inside their own cadence'}</div></div>
     <div class="kpi p"><div class="l">Bought once only</div><div class="v">${single}</div><div class="n">${single?'no habit yet, so no cadence to read':'every buyer has repeated'}</div></div>
   </div>
-  <div class="insight" style="margin-top:12px">${read}${Object.keys(owedBy).length?` <span style="color:var(--mut)">${Object.keys(owedBy).length} owe money; a chase comes before an offer.</span>`:''}</div>
+  <div class="insight" style="margin-top:12px">${read}${Object.keys(owedBy).length?` <span style="color:var(--mut)">${Object.keys(owedBy).length} owe${Object.keys(owedBy).length===1?'s':''} money; a chase comes before an offer.</span>`:''}</div>
 
   <h2 style="margin-top:18px">Who to approach next <span class="rule"></span></h2>
   ${approach.filter(r=>r.cad&&r.cad.last).length?approachBoard(approach,owedBy,bm)
@@ -11108,7 +11116,7 @@ function tabConcentration(){
   <div class="card" style="margin-top:14px"><div style="font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:var(--dim);margin-bottom:4px">Revenue by customer <span style="text-transform:none;letter-spacing:0">&mdash; drawn without Chart.js, so it is always here</span></div>${bars}</div>
 
   <h2 style="margin-top:18px">Demand you could not serve <span class="rule"></span></h2>
-  <!-- v381: THE EMPTY STATE RENDERED AS AN EMPTY BOX. It was a lone .dsc in a card, so the
+  <!-- v384: THE EMPTY STATE RENDERED AS AN EMPTY BOX. It was a lone .dsc in a card, so the
        strip removed it and left a heading over four inches of nothing, on the one section
        whose entire purpose is to be noticed while it is still empty. The words are the same
        words; they sit in a table row now, which the strip does not touch. -->
@@ -11248,7 +11256,7 @@ function resellerCard(r){
   // rebate: earned on R2 + R3 (RM rates), minus what has been applied as free units
   const applied=rebateApplied(r.id);
   const freeKg=+((r.earned||0)-applied).toFixed(2);
-  /* ---- v381: THE SUMMARY PROMISED SALT THAT WAS NOT COMING ----
+  /* ---- v384: THE SUMMARY PROMISED SALT THAT WAS NOT COMING ----
      It closed every card on the bench with "RM 470 to a free unit", and that was wrong three
      separate ways. Crossing a hurdle pays the MARGIN BAND'S units, which under 30% is nothing
      at all. The balance it lands on is negative for five associates of five, because units
@@ -11271,7 +11279,7 @@ function resellerCard(r){
     <div class="kpi g"><div class="l">Sold for you</div><div class="v">${fmt0(r.indirect)}</div><div class="n">${r.dsResell} onward ${r.dsResell===1?'sale':'sales'} &middot; R2</div></div>
     <div class="kpi p"><div class="l">Brought you</div><div class="v">${fmt0(r.r3)}</div><div class="n">${r.referrals.length} introduced, first order &middot; R3</div></div>
   </div>`;
-  /* ---- v381: THE FIELDS, NOT A SENTENCE ----
+  /* ---- v384: THE FIELDS, NOT A SENTENCE ----
      This was 330 characters of prose restating the two streams, and stripMethod cut every
      card of it to "Rating unrated from 7.9% revenue share.", so the reward rule reached
      nobody. Worse, the Redeem button lived INSIDE that block: trim() assigns textContent,
@@ -11367,7 +11375,7 @@ function tabNetwork(){
         <div class="nswhy">Network growth, not repeat spend. Runs with R2 against that same <b>${fmt0(rewardHurdle(PROD,'associate'))}</b>, not a hurdle of its own.</div>
       </div>
     </div>
-    <!-- ============ v381: THE THREE FIGURES ON THIS CARD WERE WRONG ============
+    <!-- ============ v384: THE THREE FIGURES ON THIS CARD WERE WRONG ============
          It said R1 earned no rebate, one free unit per RM500 resold, and one per RM1,500
          introduced. v280 retired all three: an associate's own buying earns at the CUSTOMER
          hurdle, and resale and referral became ONE stream against the associate hurdle,
