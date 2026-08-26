@@ -9749,15 +9749,20 @@ function priceCoach(party,price,qty){
      3 signals   five readings off the book, each small, summed and clamped
    Nothing here books anything. A quote becomes a figure only when it is recorded on
    the Transaction tab. */
+/* v381: `sizes` IS GONE. It was one hardcoded list, 0.5 to 25, and it was salt's, while
+   sizesFor(PROD) has been per-book since oil arrived. Five surfaces read it and every one of
+   them was drawing the wrong book on oil: the earnings table, the earnings chart, the reseller
+   menu, the chart bands and a dead board. All five now read sizesFor(PROD). Removed rather
+   than corrected, because a second list of sizes is a second thing to keep in step. */
 const PX={
-  sizes:[0.5,1,1.5,2,2.5,3,3.5,4,4.5,5,6.25,8,10,12.5,25],
   signalCap:10, partyCap:8,
   bulkFrom:PRICE.retailTo               // the market panel splits where the policy does
 };
 let pxOver={cost:null,shrink:null,party:'',anyQ:'',tier:'T2',cap:''};   // cost/shrink are internal: boardHeadroom walks them, nothing on screen sets them   // user overrides; null means follow the book
 
-/* the dearest tier on the live quote, because that is what restocking in the size
-   usually bought actually costs. Cheaper tiers are chosen deliberately, never assumed. */
+/* the highest tier on the live quote, because that is what restocking in the size
+   usually bought actually costs. Cheaper tiers are chosen deliberately, never assumed.
+   v381: said "dearest", the word retired from this view at v379. */
 function pxQuoteRate(){
   if(!supplierQuote||!supplierQuote.tiers||!supplierQuote.tiers.length)return replCost();
   return Math.max.apply(null,supplierQuote.tiers.map(t=>t.total/t.qty));
@@ -11631,22 +11636,34 @@ function tabWorkbench(){
 function pxMarket(){
   const c=pxCost();
   const rows=pricedSales.filter(s=>s.total>0&&s.qty>0);
-  const seg=f=>{const r=rows.filter(s=>f(s.qty));
+  /* ============ AN EMPTY SEGMENT HAS NO RATE AND NO MARGIN (v381) ============
+     Every segment returned p:0 and m:0 when nothing had been sold in it, and 0.0% is under
+     every floor in the policy, so an empty band rendered in CRIMSON as a segment trading
+     below its floor. Nothing was trading at all. This is the v379 fault wearing a different
+     table: a statistic over an empty set printed as though it were a measurement.
+     `none` says the set is empty and `thin` says it is too small to read. Oil's retail
+     segment is ONE order, and the prose beneath the table calls a single sale "under policy"
+     with the same confidence it uses for salt's eighty-six. Three is the smallest number the
+     rest of this desk treats as a habit (pxParty's loyalty step, the reseller's hero badge),
+     so it is the number used here. */
+  /* v381: takes the whole row, so the one-offs-stripped segment goes through the same guard
+     instead of being a second copy of the arithmetic beside it, which is how it came to be
+     the one segment v379's lesson had not reached. */
+  const seg=f=>{const r=rows.filter(f);
     const k=+r.reduce((a,s)=>a+(s.qty-txPendKgRaw(s)),0).toFixed(2);
     const rm=+r.reduce((a,s)=>a+(s.total-txPendKgRaw(s)*txPrice(s)),0).toFixed(2);
-    const p=k>0?rm/k:0;return {k,rm,p:+p.toFixed(2),m:p>0?+((p-c.eff)/p*100).toFixed(1):0,n:r.length};};
-  const all=seg(()=>true),small=seg(q=>q<PX.bulkFrom),bulk=seg(q=>q>=PX.bulkFrom);
+    const none=!(k>0.009), p=none?null:rm/k;
+    return {k,rm,none,thin:!none&&r.length<3,n:r.length,p:none?null:+p.toFixed(2),
+      m:(!none&&p>0)?+((p-c.eff)/p*100).toFixed(1):null};};
+  const all=seg(()=>true),small=seg(s=>s.qty<PX.bulkFrom),bulk=seg(s=>s.qty>=PX.bulkFrom);
   /* wholesale stripped of anything marked a one-off, because a single outlier at
      RM104/unit is what makes the wholesale average look survivable */
-  const bulkEx=(()=>{const r=rows.filter(s=>s.qty>=PX.bulkFrom&&!isOneOff(s.customer));
-    const k=+r.reduce((a,s)=>a+(s.qty-txPendKgRaw(s)),0).toFixed(2);
-    const rm=+r.reduce((a,s)=>a+(s.total-txPendKgRaw(s)*txPrice(s)),0).toFixed(2);
-    const p=k>0?rm/k:0;return {k,rm,p:+p.toFixed(2),m:p>0?+((p-c.eff)/p*100).toFixed(1):0,n:r.length};})();
+  const bulkEx=seg(s=>s.qty>=PX.bulkFrom&&!isOneOff(s.customer));
   const excluded=rows.filter(s=>s.qty>=PX.bulkFrom&&isOneOff(s.customer));
   /* the buying rate at which the realised bulk price would clear the floor
-     unchanged: back out the effective cost the floor allows, then strip the shrink load */
-  const needEff=bulk.p*(1-PRICE.floorPct.wholesale/100);
-  const needRate=+(needEff*(1-c.shrink)).toFixed(2);
+     unchanged: back out the effective cost the floor allows, then strip the shrink load.
+     v381: null when wholesale has never traded, because there is no realised price to hold. */
+  const needRate=bulk.p==null?null:+(bulk.p*(1-PRICE.floorPct.wholesale/100)*(1-c.shrink)).toFixed(2);
   return {c,all,small,bulk,bulkEx,excluded,needRate};
 }
 /* THE ACTIVE PRODUCT'S SUPPLY QUOTE (v228). One panel, driven by QUOTES, so a third
@@ -11701,39 +11718,37 @@ function tabProductQuote(){
       ${L.rising.map(x=>`The rate RISES from ${kg(x.from.q)} to ${kg(x.to.q)}, ${fmt(x.from.rate)} to ${fmt(x.to.rate)}, ${fmt(x.by)} more per unit for buying more.`).join(' ')}
       ${L.beaten.map(b=>`And ${kg(b.q)} at ${fmt0(b.total)} is beaten by buying smaller lots for ${fmt0(b.cheap)}, saving ${fmt0(b.save)}.`).join(' ')}</div>`
       :`<div class="dsc" style="margin-top:9px">Rate falls at every step and no lot is beaten by splitting it.</div>`}
-    ${L.gaps.length?`<div class="dsc" style="margin-top:7px"><b>Uncarded sizes${L.gapsMore?`, the first ${L.gapsShown} of ${L.gaps.length}`:''}.</b> ${L.gaps.slice(0,4).map(g=>`<b>${kg(g.q)}</b> has no tier, so bought off this ladder it costs <b>${fmt0(g.built)}</b>${g.up?`, while ${kg(g.up)} costs ${fmt0(g.upTotal)}: <b>${fmt0(g.step)}</b> more for ${kg(g.up-g.q)} more`:''}`).join('; ')}. </div>`:''}
+    <!-- ============ UNCARDED SIZES, AS A TABLE, AND THE SIGN READ RIGHT (v381) ============
+         TWO FAULTS IN ONE SENTENCE. The step was printed as "<b>RM x</b> more" whatever its
+         sign, so 43.75 unit, which is built off the tiers for RM 2,250 while the 50 unit tier
+         costs RM 2,200, read "<b>RM -50</b> more for 6.25 unit more". A NEGATIVE STEP IS THE
+         MOST USEFUL ROW IN THE PANEL: it means a bigger lot is CHEAPER IN CASH, so the size
+         asked for should simply be rounded up, and it was the one row phrased as a cost.
+         And it was 558 characters of semicolons carrying four fields per size. A figure per
+         row is what a table is for. -->
+    ${L.gaps.length?(()=>{const g4=L.gaps.slice(0,4);
+      return `<div style="margin-top:11px;font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:var(--dim)">Uncarded sizes${L.gapsMore?`, the first ${L.gapsShown} of ${L.gaps.length}`:''}</div>
+      <table style="margin-top:6px"><thead><tr><th class="l">Size</th><th>Built off the tiers</th><th class="l">Next tier up</th><th>Difference</th></tr></thead><tbody>
+      ${g4.map(g=>{const cheaper=g.step!=null&&g.step<-0.009;
+        return `<tr><td class="l">${kg(g.q)}</td><td>${fmt0(g.built)}</td>`
+        +`<td class="l" style="color:var(--mut)">${g.up?`${kg(g.up)} at ${fmt0(g.upTotal)}`:'&mdash;'}</td>`
+        +`<td style="color:${cheaper?'var(--grn)':'var(--mut)'}">${g.step==null?'&mdash;':cheaper
+          ?`<b>${fmt0(-g.step)} less</b> for ${kg(g.up-g.q)} more`
+          :`${fmt0(g.step)} more for ${kg(g.up-g.q)} more`}</td></tr>`;}).join('')}
+      </tbody></table>
+      ${g4.some(g=>g.step!=null&&g.step<-0.009)?`<div class="insight" style="border-left-color:var(--grn)"><b>Round the order up:</b> ${g4.filter(g=>g.step!=null&&g.step<-0.009).map(g=>`${kg(g.up)} costs ${fmt0(-g.step)} less in cash than ${kg(g.q)} built off the tiers`).join(', and ')}.</div>`:''}`;})():''}
     <div class="dsc" style="margin-top:7px"><b>Where ${esc(P.name.toLowerCase())} stands.</b> ${sum.n?`${fmt0(sum.rev)} sold across ${sum.n} order${sum.n===1?'':'s'} and ${kg(sum.qty)}${sum.margin!=null?`, ${fmt0(sum.margin)} margin at ${sum.pct}%`:', margin not computable'}. `:'Nothing sold yet. '}${sups.length?`Bought from ${sups.map(x=>ID(x)).join(', ')}.`:`<b style="color:var(--crim)">No purchase has ever been recorded</b>, so the shelf reconstructs to ${kg(ledgerStock)} and no stock figure on this product means anything until a lot is entered.`}</div>
   </div>`;
 }
 function tabPricing(){
   const c=pxCost(),sg=pxSignals(),pt=pxParty(pxOver.party),net=sg.net,pn=pt.net;
-  const q=pxQuoteRate(),r30=pxRecentBuyRate(30);
+  const q=pxQuoteRate();                      // v381: r30 went with the dead board, unread since v326
   const mk=pxMarket();
-  const chip=(lbl,val)=>`<button class="vbtn" onclick="pxSet('cost',${val})" style="margin-right:5px">${lbl}</button>`;
-  /* LADDER CHECK (v150). Per-unit must never rise as the lot grows. It can, in one
-     narrow case: when several sizes all sit ON the floor floor, the price is flat
-     per unit and the only thing left moving is the RM5 snap on the total, which costs
-     a different fraction of a unit at each size. At a RM64 replacement cost that puts
-     6.25 unit twenty sen a unit above 5 unit. It is a rounding artefact rather than a
-     pricing decision, and it is SHOWN rather than silently smoothed, because the honest
-     reading is that the floor has stopped leaving room to taper at all. */
-  let prevKg=Infinity; const inverted=[];
-  /* only the sizes NO CARD reaches. Below and including 6.25 the five tiers are the
-     policy (v165), so quoting a second, different number for the same size is exactly
-     the disagreement this change removed. */
-  const engineSizes=PX.sizes.filter(s=>!PRICE_TIERS.sizes.some(t=>Math.abs(t-s)<0.009));
-  const board=engineSizes.map(s=>{
-    const r=pxQuote(s,net,pn),h=pxHistory(s);
-    const gap=h.med?((r.perKg-h.med)/h.med*100):null;
-    const rise=r.perKg>prevKg+1e-6; if(rise)inverted.push({q:s,by:+(r.perKg-prevKg).toFixed(2)});
-    prevKg=r.perKg;
-    return `<tr${rise?' style="background:rgba(255,93,115,.07)"':''}><td class="l">${kg(s)}${rise?' <span class="tag def">ladder</span>':''}</td><td><b>${fmt0(r.total)}</b></td><td>${fmt(r.perKg)}</td>`
-      +`<td style="color:${r.margin<floorPct(r.q)?'var(--crim)':'var(--ink)'}">${r.margin.toFixed(0)}%</td>`
-      +`<td>${fmt0(r.profit)}</td><td class="mono" style="color:var(--dim)">${fmt0(r.walkTotal)}</td>`
-      +`<td>${h.med?fmt(h.med):'&mdash;'}${h.n?` <span style="color:var(--dim);font-size:11px">${h.n}</span>`:''}</td>`
-      +`<td>${h.best?fmt(h.best):'&mdash;'}</td>`
-      +`<td style="color:${gap==null?'var(--dim)':gap>25?'var(--gold)':gap<0?'var(--crim)':'var(--mut)'}">${gap==null?'&mdash;':(gap>=0?'+':'')+gap.toFixed(0)+'%'}</td></tr>`;
-  }).join('');
+  /* v381: A NINE-COLUMN TABLE THAT NOTHING RENDERED. `board` built a row per off-card size,
+     and `inverted` and `chip` were filled and read nowhere; the template has not carried any
+     of the three since the tier cards were retired at v326. Each row ran pxQuote and
+     pxHistory, so every draw of every product block priced nine (salt) or fifteen (oil) lots
+     to throw the answers away. Deleting it moves no figure: it was never on the page. */
   const anyQ=parseFloat(pxOver.anyQ);
   /* v242: THREE THINGS, NOT A PARAGRAPH. This answered in prose: the size, the tier, the
      price, the rate, the earnings and the neighbouring board size, in one sentence that had
@@ -11754,7 +11769,10 @@ function tabPricing(){
   const hr=boardHeadroom(false);
   const hrTone=hr.unbounded?'g':hr.headroom<0?'r':hr.pct!=null&&hr.pct<10?'r':hr.pct!=null&&hr.pct<20?'gold':'g';
   return `<h1>Pricing</h1>
-  <div class="dsc dsclead">What the board asks today for <b>${esc(PRODUCTS[PROD]?PRODUCTS[PROD].name:PROD)}</b>, and how much room is left before a printed card stops paying.</div>
+  <!-- v381: "a printed card" is language from before v326, when the board was four frozen tier
+       cards. There are none: the board is one derived ladder and what goes stale is a price
+       already agreed with somebody. The sentence now names that. -->
+  <div class="dsc dsclead">What the board asks today for <b>${esc(PRODUCTS[PROD]?PRODUCTS[PROD].name:PROD)}</b>, and how much room is left before a price already agreed stops paying.</div>
   ${(()=>{const A=anchorsFor(PROD);if(!A.derived)return '';
     const sold=pSales(PROD).filter(x=>!x.rebate&&x.total>0.009&&x.qty>0);
     const med=sold.length?(function(){const v=sold.map(x=>x.total/x.qty).sort((a,b)=>a-b);return v[Math.floor(v.length/2)];})():null;
@@ -11769,7 +11787,17 @@ function tabPricing(){
       +`</div>`;})()}
   <div class="kpis k4">
     <div class="kpi"><div class="l">Replacement cost</div><div class="v">${fmt(c.repl)}<span style="font-size:12px;color:var(--mut)">/unit</span></div><div class="n">${pxOver.cost!=null?'your override':'highest live quote tier'}</div></div>
-    <div class="kpi ${hrTone}"><div class="l">Board headroom</div><div class="v">${hr.unbounded?'&mdash;':fmt(hr.headroom)}<span style="font-size:12px;color:var(--mut)">/unit</span></div><div class="n">${hr.unbounded?'no printed card breaches within RM200 of the live rate':`cards clear to ${fmt(hr.safeTo)}/unit, ${hr.pct}% up; <b>${hr.firstTier}</b> gives first at ${fmt(hr.firstAt)}`}</div></div>
+    <div class="kpi ${hrTone}"><div class="l">Room before a price fails</div><div class="v">${hr.unbounded?'&mdash;':hr.headroom<0?'none':fmt(hr.headroom)}${hr.unbounded||hr.headroom<0?'':'<span style="font-size:12px;color:var(--mut)">/unit</span>'}</div>
+      <div class="n">${hr.unbounded?'no live price breaches within RM200 of the buying rate'
+        /* v381: THE COPY READ "-2.3% UP" AND "GIVES FIRST" WHEN THE BREACH HAD ALREADY HAPPENED.
+           Headroom on this book is MINUS RM1: 42 live prices are under their floor at the rate
+           being paid today, and the tile announced it as ordinary headroom with a minus sign and
+           the word "up" after it. A negative headroom is not a smaller headroom, it is a different
+           statement, so it gets different words. The label moved with it: since v280 this walks
+           the prices actually agreed, not the board, and calling it "Board headroom" pointed the
+           reader at the one table it does not measure. */
+        :hr.headroom<0?`<b>${hr.nUnderFloor} live price${hr.nUnderFloor===1?'':'s'}</b> already under floor at today&rsquo;s ${fmt(hr.live)}${hr.nUnderReplace?`, ${hr.nUnderReplace} of them under replacement`:''}${hr.nUnderCost?`; <b>${hr.nUnderCost}</b> under what that stock cost`:'; none under what that stock cost'}`
+        :`buying can reach ${fmt(hr.safeTo)}/unit before a live price fails, ${hr.pct}% above today; <b>${hr.firstTier}</b> falls first at ${fmt(hr.firstAt)}`}</div></div>
     <div class="kpi r"><div class="l">Shrinkage load</div><div class="v">${(c.shrink*100).toFixed(1)}%</div><div class="n">${pxOver.shrink!=null?'your override':`<b>${(c.shrinkRaw*100).toFixed(1)}% observed</b>, ${(SHRINK_ATTRIB*100)}% of it charged`}</div></div>
     <div class="kpi gold"><div class="l">Effective cost</div><div class="v">${fmt(c.eff)}<span style="font-size:12px;color:var(--mut)">/unit</span></div><div class="n">per unit that reaches a customer</div></div>
   </div>
@@ -11808,14 +11836,30 @@ function tabPricing(){
     </tbody></table>
     <div class="dsc" style="margin-top:8px"><b>The markup is on cogs and the margin is on the cost to serve</b>, which is why they are different numbers. Cogs is the salt; the cost to serve adds the leak, one delivery and the money tied up while the invoice is out. <b>The retired engine would have asked ${fmt0(R.wanted)}</b> for this lot on its fitted curve, and that figure is kept beside the ladder so the day the two disagree is visible rather than argued about.</div></div></details>`;})()}
   <h2 style="margin-top:18px">The board <span class="sub" style="font-weight:400">one ladder, tapered at the rate the supplier tapers</span> <span class="rule"></span></h2>
-  <div class="dsc" style="margin-bottom:9px">${(()=>{const c=pxCost(),rz=ladderRealised();
-    const T=buyTaper();
-    return `The taper is <b>measured, not chosen</b>, since v327: the ask falls with size at <b>${T.b!=null?T.b.toFixed(3):'&mdash;'}</b>, which is the exponent ${esc(supplierQuote.supplier)}&rsquo;s own quote ladder falls at${T.r2!=null?` (r&sup2; ${T.r2.toFixed(2)} over ${T.n} tiers)`:''}, so the volume discount given is proportionate to the one received. Pinned at <b>${LADDER.anchorX.toFixed(3)}x</b> at ${kg(LADDER.anchorQ)} on cogs of ${fmt(c.landed)} a unit, bounded by a ${LADDER.floor.toFixed(2)}x floor and a ${LADDER.ceiling.toFixed(2)}x ceiling. `
-      +(rz!=null?`<b>Weighted by the salt this book actually trades it returns ${rz.toFixed(2)}x.</b> Move <b>anchorX</b> to charge more or less; it is the only level in the ladder.`:'');})()}</div>
-  ${(()=>{const tb=tierBoard(), L1=priceLadder(1);
-    const head=`<tr><th class="l">Size</th><th>Cogs</th><th>Markup</th><th>Ask</th><th>Floor</th></tr>`;
+  <!-- v381: the taper paragraph moved INTO the fold below the table, beside the rest of the
+       method. It also said "weighted by the SALT this book actually trades" on the oil board,
+       which is the word hardcoded rather than read from PRODUCTS. -->
+  ${(()=>{const tb=tierBoard();
+    /* ============ THE ASK SAYS WHICH FLOOR IT CLEARS (v381) ============
+       THE BOARD HAS BEEN PRINTING ASKS THAT DO NOT CLEAR THEIR OWN FLOOR, IN BLACK, WITH
+       NO MARK ON THEM. Salt asks RM 60 at half a unit against a delivered floor of RM 98.83;
+       oil asks RM 130 at 10 unit against RM 162.68. Three of ten rows on salt and three of
+       fourteen on oil. The floor sat in crimson in the next column and nothing joined the two
+       up, so the one number he reads to a customer standing in front of him could be under
+       the refusal line and the table would not say so.
+       IT IS NOT A PRICING FAULT AND IT IS NOT FIXED HERE. There are TWO floors, and the ask
+       clears one of them: a small lot cannot carry a whole RM 50 delivery, so the delivered
+       floor runs far above the collected one at exactly the sizes where a delivery costs most
+       per unit. RM 60 for half a unit is a fair price COLLECTED and a loss DELIVERED. The
+       engine is right; the table was silent. So the row now names the condition rather than
+       lifting the price, which would be pricing, and pricing does not happen on the desk.
+       A negative margin is crimson for the same reason: it was dim grey beside a positive one. */
+    const head=`<tr><th class="l">Size</th><th>Cogs</th><th>Markup</th><th>Ask</th><th>Floor, delivered</th></tr>`;
     const rows=tb.map(r=>{const L=priceLadder(r.q);
-      return `<tr><td class="l">${kg(r.q)}</td>`
+      const flC=floorTotal(r.q,null,{collects:true});
+      const underD=L.ask.total<L.floor.total-0.009, underC=L.ask.total<flC-0.009;
+      return `<tr${underD?' style="background:rgba(255,93,115,.07)"':''}><td class="l">${kg(r.q)}`
+      +(underC?' <span class="tag def">under floor</span>':underD?' <span class="tag prov">collect only</span>':'')+`</td>`
       +`<td class="mono" style="color:var(--dim)">${fmt0(L.cogs)}</td>`
       +`<td class="mono" style="color:var(--dim)">${L.markupX.toFixed(2)}x</td>`
       /* v330: THE RATE AND THE MARGIN GO ON SEPARATE LINES, and it is a phone fix rather than a
@@ -11824,16 +11868,44 @@ function tabPricing(){
          half off the edge and the Floor column entirely off it. The ask is the number he reads to
          a customer standing in front of him, so it is the last thing that should need a sideways
          scroll to see. Two lines cost one row of height and take the column to about 72px. */
-      +`<td><b>${fmt0(L.ask.total)}</b>`
+      +`<td><b${underD?' style="color:var(--crim)"':''}>${fmt0(L.ask.total)}</b>`
          +`<div style="font-size:10px;color:var(--dim)">${fmt(L.ask.rate)}</div>`
-         +`<div style="font-size:10px;color:var(--dim)">${L.ask.margin.toFixed(0)}% margin</div></td>`
+         +`<div style="font-size:10px;color:${L.ask.margin<0?'var(--crim)':'var(--dim)'}">${L.ask.margin.toFixed(0)}% margin</div></td>`
+      /* v381: THE COLLECTED FLOOR IS NOT PUT IN THIS CELL, and that is a phone decision of
+         exactly the kind v330 made. "collect RM 113" is longer than "RM 197.66", so it took
+         the Floor column from 70px to 94px and the whole board from 325px to 348px in the
+         325px it has on a 375px screen: it would have put the ASK behind a sideways scroll to
+         explain the ask, which is the trade v330 refused. The tag on the row carries the
+         signal, the sentence under the table carries the figures, and the sheet table one
+         pane down already prints the collected floor at every size. */
       +`<td class="mono" style="color:var(--crim)">${fmt0(L.floor.total)}`
          +`<div style="font-size:10px;color:var(--dim)">${fmt(L.floor.rate)}</div></td>`
       +`</tr>`;}).join('');
+    const nUnderD=tb.filter(r=>priceLadder(r.q).ask.total<priceLadder(r.q).floor.total-0.009);
+    const nUnderC=nUnderD.filter(r=>priceLadder(r.q).ask.total<floorTotal(r.q,null,{collects:true})-0.009);
     return `<div class="card"><table class="pxboard"><thead>${head}</thead><tbody>${rows}</tbody></table>
-    <div class="dsc" style="margin-top:9px"><b>ONE LADDER, AND ITS SHAPE IS MEASURED RATHER THAN CHOSEN.</b> <b>Cogs</b> is the landed cost, ${fmt(c.landed)} a unit, being the lot rate plus freight and nothing else. <b>The volume discount given is proportionate to the volume discount received</b>: the ask per unit falls with size at the exponent fitted to ${esc(supplierQuote.supplier)}&rsquo;s live quote ladder, so a step up in size is worth to the customer what the same step is worth to this desk. Only the LEVEL is typed, one number, <b>${LADDER.anchorX.toFixed(3)}x at ${kg(LADDER.anchorQ)}</b>. Markups are on cost as he states the measure, <b>(sales less cogs) over cogs</b>, so ${LADDER.floor.toFixed(2)}x means the price is ${(1+LADDER.floor).toFixed(2)} times cogs. <b>Floor ${LADDER.floor.toFixed(2)}x and ceiling ${LADDER.ceiling.toFixed(2)}x are bounds, not rungs</b>: the curve is clamped between them and on this cost neither binds at any board size. Asks round <b>UP to the ten</b>; the floor is exact, because rounding a refusal line moves it. <b>The margin shown against each ask is struck on the LOT cost</b>, ${fmt(c.effEx)} after the leak plus one delivery of ${fmt0(c.delPerOrder||0)}, which is what the order really costs to serve and is a different number from cogs on purpose.</div>
+    <!-- ============ IT IS AN INSIGHT, NOT A dsc, AND THAT IS LOAD-BEARING (v381) ============
+         stripMethod() deletes every standing .dsc on a part except the first, so this finding
+         written as one would have been REMOVED FROM THE DOM at render and never seen. .insight
+         is the one class it keeps. It keeps it whole only as far as the first full stop, so
+         this is ONE SENTENCE: a second would be silently thrown away. -->
+    ${nUnderD.length?`<div class="insight" style="border-left-color:var(--gold)"><b>${nUnderD.length} of ${tb.length} asks do not carry a delivery</b>, so quote ${nUnderD.map(r=>kg(r.q)).join(', ')} at the counter, where each clears the collected floor printed below${nUnderC.length?`, and do not quote ${nUnderC.map(r=>kg(r.q)).join(', ')} at all, being under both floors`:''}.</div>`
+      :`<div class="insight" style="border-left-color:var(--grn)">Every ask on the board clears its delivered floor.</div>`}
+    <!-- v381: THE 1,010-CHARACTER PARAGRAPH UNDER THE BOARD FOLDS. It is the single longest
+         block of standing prose on this view and it is Study in every line: what cogs is, what
+         the exponent is fitted to, what a markup is measured on, what the bounds do, how the
+         rounding works. All true, read once, then trusted. NOTHING IS CUT: opening it restores
+         the paragraph word for word, and the summary carries the answer so the shut state still
+         says something. What stands open in its place is the one thing that changes with the
+         book, which is whether the asks clear their floors. -->
+    <details class="obsec"><summary>How the ladder is set <span class="q">the level, the taper and the bounds</span><span class="ct">${LADDER.anchorX.toFixed(3)}x at ${kg(LADDER.anchorQ)}</span></summary>
+    <div class="dsc" style="margin-bottom:11px"><b>ONE LADDER, AND ITS SHAPE IS MEASURED RATHER THAN CHOSEN.</b> <b>Cogs</b> is the landed cost, ${fmt(c.landed)} a unit, being the lot rate plus freight and nothing else. <b>The volume discount given is proportionate to the volume discount received</b>: the ask per unit falls with size at the exponent fitted to ${esc(supplierQuote.supplier)}&rsquo;s live quote ladder, so a step up in size is worth to the customer what the same step is worth to this desk. Only the LEVEL is typed, one number, <b>${LADDER.anchorX.toFixed(3)}x at ${kg(LADDER.anchorQ)}</b>. Markups are on cost as he states the measure, <b>(sales less cogs) over cogs</b>, so ${LADDER.floor.toFixed(2)}x means the price is ${(1+LADDER.floor).toFixed(2)} times cogs. <b>Floor ${LADDER.floor.toFixed(2)}x and ceiling ${LADDER.ceiling.toFixed(2)}x are bounds, not rungs</b>: the curve is clamped between them and on this cost neither binds at any board size. Asks round <b>UP to the ten</b>; the floor is exact, because rounding a refusal line moves it. <b>The margin shown against each ask is struck on the LOT cost</b>, ${fmt(c.effEx)} after the leak plus one delivery of ${fmt0(c.delPerOrder||0)}, which is what the order really costs to serve and is a different number from cogs on purpose.</div>
+    ${(()=>{const T=buyTaper(),rz=ladderRealised();
+      return `<div class="dsc">The taper is <b>measured, not chosen</b>, since v327: the ask falls with size at <b>${T.b!=null?T.b.toFixed(3):'&mdash;'}</b>, which is the exponent ${esc(supplierQuote.supplier)}&rsquo;s own quote ladder falls at${T.r2!=null?` (r&sup2; ${T.r2.toFixed(2)} over ${T.n} tiers)`:''}, so the volume discount given is proportionate to the one received. Pinned at <b>${LADDER.anchorX.toFixed(3)}x</b> at ${kg(LADDER.anchorQ)} on cogs of ${fmt(c.landed)} a unit, bounded by a ${LADDER.floor.toFixed(2)}x floor and a ${LADDER.ceiling.toFixed(2)}x ceiling. `
+        +(rz!=null?`<b>Weighted by the ${esc((PRODUCTS[PROD]&&PRODUCTS[PROD].name||PROD).toLowerCase())} this book actually trades it returns ${rz.toFixed(2)}x.</b> Move <b>anchorX</b> to charge more or less; it is the only level in the ladder.`:'')+`</div>`;})()}
+    </details>
     <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--line)">
-      <div style="font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:var(--dim);margin-bottom:7px">Save a sheet &mdash; no password</div>
+      <div style="font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:var(--dim);margin-bottom:7px">Save a sheet, no password</div>
       ${(()=>{
         /* ============ AMEND THE SHEET BEFORE YOU SEND IT (v356) ============
            His instruction of 24 Aug, and it corrects v354, which put an editor on the HOUSE board
@@ -11860,15 +11932,33 @@ function tabPricing(){
             <td><input id="${id}p" type="number" step="10" min="0" value="${ask!=null?ask:''}" style="width:92px" oninput="shDirty(this)"></td>
             <td class="mono" style="color:var(--dim)">${fmt(fl)}</td></tr>`;
         }).join('');
-        return `<table class="pxboard" style="margin-bottom:9px"><thead><tr><th class="l">Size</th><th>On the sheet</th><th>Price</th><th>Floor</th></tr></thead><tbody>${rows}</tbody></table>
-        <div id="shOut" class="dsc" style="margin-bottom:8px">Prefilled from the board. Change a price or untick a size and the sheet follows.</div>`;})()}
+        /* ============ shOut WAS BEING DELETED BEFORE ANYTHING COULD WRITE TO IT (v381) ============
+           It carried id="shOut" AND class="dsc", and stripMethod() removes every standing .dsc on
+           a part but the first, so the element holding the sheet editor's ENTIRE feedback channel
+           was gone from the DOM by the time the reader saw the page. shDirty() fires on every
+           keystroke in the price boxes and shOut() writes the saved-sheet confirmation; both
+           resolve prodEl(prod,'shOut'), find nothing and return silently. Changing a price said
+           nothing, and pressing Save the sheet said nothing either.
+           The id moves to a plain wrapper and the class to the child, which is the shape #mnOut
+           already has and the reason mnOut survived the same pass. */
+        /* v381: the header said "Floor" while the board above says "Floor" and means the
+           DELIVERED one. This column has always been floorTotal(q,{collects:true}), and the
+           difference is the whole reason three asks on the board carry a warning. Say which. */
+        return `<table class="pxboard" style="margin-bottom:9px"><thead><tr><th class="l">Size</th><th>On the sheet</th><th>Price</th><th>Floor, collected</th></tr></thead><tbody>${rows}</tbody></table>
+        <div id="shOut" style="margin-bottom:8px"><div class="insight">Prefilled from the board; change a price or untick a size and the sheet follows.</div></div>`;})()}
       <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center">
         <button class="vbtn" style="border-color:var(--acc)" onclick="mnSaveTier('',this)">Save the sheet</button>
         <button class="vbtn" onclick="shReset()">Back to the board</button>
         <button class="vbtn" onclick="shQueueHouse(this)" title="Only with nobody named: change what the desk quotes everyone">Make it the house board</button>
         <label style="font-size:12px;color:var(--mut);display:flex;align-items:center;gap:5px;margin-left:6px"><input type="checkbox" id="mnMark"> watermark with the name picked below</label>
       </div>
-      <div class="dsc" style="margin-top:8px">One sheet, <b>no password and no expiry</b>, because a customer cannot be asked for a passphrase at the counter. It opens on anything with nothing to type, and it <b>cannot be withdrawn</b>: treat it as printed. Use the encrypted download below when a list is for <b>one</b> named party and should stop working.</div>
+      <!-- v381: the reason a counter sheet has no password is Study; that it cannot be
+           withdrawn is the thing to know BEFORE pressing Save, so that stands and the reason
+           folds. Nothing is cut. -->
+      <div class="insight" style="border-left-color:var(--gold)"><b>No password, no expiry, and it cannot be withdrawn: treat a saved sheet as printed.</b></div>
+      <details class="obsec"><summary>Why a counter sheet is unlocked <span class="q">and when to send the encrypted one instead</span></summary>
+      <div class="dsc">One sheet, <b>no password and no expiry</b>, because a customer cannot be asked for a passphrase at the counter. It opens on anything with nothing to type. Use the encrypted download below when a list is for <b>one</b> named party and should stop working.</div>
+      </details>
     </div></div>`;})()}
 
   <!-- v255: SIZES OFF THE BOARD IS GONE. It was a whole section re-deciding a price the
@@ -11886,32 +11976,64 @@ function tabPricing(){
   <details class="obsec"><summary>What each size earns <span class="q">ringgit a unit, board against trade</span></summary>
   <div class="dsc" style="margin-bottom:9px">Margin as a percentage flatters a big lot. <b>Ringgit per unit</b> is the figure that decides which trade is worth doing, because a unit is the thing in short supply here, not a customer. Everything below is measured on the <b>effective cost of ${fmt(c.eff)}</b>, which is what the next unit costs to replace once shrinkage is carried.</div>
   ${(()=>{const E=earnedPerKg(),cap=capLot();
-    /* v236: ONE ENGINE. This pane ran pxQuote over its own size list while the board ran
-       enginePrice, so the desk quoted two different prices for the same lot and this table
-       was the one that showed profit FALLING as the lot grew, at 6.25 to 12.5 unit. It now
-       reads the same ladder the board does, at Regular, so the two cannot disagree and both
-       laws hold: rate never rises, profit never falls. */
-    const _L=engineLadder(PX.sizes,'T2');
-    const _by={};_L.forEach(c=>_by[c.q]=c);
-    const one=_by[1]||_by[PX.sizes.find(q=>_by[q])];
-    /* a ladder may stop short of the largest sizes, because a tier runs only as far as it
-       can run without breaking a law. A size past the end has no quote, and says so. */
-    const boardRows=PX.sizes.filter(s=>_by[s]).map(s=>{const x=_by[s];const r={total:x.price,perKg:x.rate,profit:x.profit};
+    /* ============ "ON THE BOARD TODAY" NOW SHOWS THE BOARD (v381) ============
+       IT WAS A THIRD ENGINE, AND ITS PRICES WERE ON NEITHER OF THE OTHER TWO. The pane ran
+       engineLadder(), the pre-v326 ladder, which solves a FORWARD PASS over whatever size list
+       it is handed: each rung is clamped against the rung before it, so the same lot prices
+       differently depending on which sizes precede it. A 10 unit lot of oil came out at RM 185
+       over one list and RM 170 over another, while the board two panes up asks RM 130. Three
+       prices for one lot on one view, under a heading that says "on the board today".
+       v236 wrote this pane onto engineLadder BECAUSE that was the board. v326 made the board
+       priceLadder() and did not bring the pane across, so the comment it left behind ("it now
+       reads the same ladder the board does, so the two cannot disagree") has been describing
+       something that stopped being true five versions later. It reads priceLadder now, the
+       identical call the board table makes, so the heading is true again by construction.
+       AND THE SIZES ARE THIS BOOK'S. PX.sizes WAS one hardcoded list, 0.5 to 25, and it was
+       salt's. On the OIL book this table quoted 0.5, 1, 1.5 and 2 unit, sizes whose minimum
+       order is 10, and stopped at 25 while the board it claims to show runs to 100: eleven
+       rows for lots that cannot be bought, and the four biggest lots on the board missing.
+       The "vs a 1 unit sale" column measured everything against one of the impossible ones.
+       The anchor is now the smallest size this book actually sells, and it is named in the
+       header rather than assumed. */
+    const _sizes=(typeof sizesFor==='function'&&sizesFor(PROD)||[]).slice().sort((a,b)=>a-b);
+    const _by={};_sizes.forEach(q=>{try{const L=priceLadder(q);_by[q]={q:q,total:L.ask.total,perKg:L.ask.rate};}catch(e){}});
+    const one=_by[_sizes.find(q=>_by[q])];
+    /* a size the ladder cannot answer is dropped rather than guessed at. */
+    const boardRows=_sizes.filter(s=>_by[s]).map(s=>{const r=_by[s];
+      const pk=+(r.perKg-c.eff).toFixed(2);
       const supp=cap!=null&&s>cap+0.009;
       return `<tr${supp?' style="opacity:.42"':''}><td class="l">${kg(s)}${supp?' <span class="tag def">not sold</span>':''}</td>
         <td>${fmt0(r.total)}</td><td>${fmt(r.perKg)}</td>
         <td style="color:var(--dim)">${fmt(c.eff)}</td>
-        <td style="color:${r.perKg-c.eff<=0?'var(--crim)':(r.perKg-c.eff)<10?'var(--gold)':'var(--grn)'}"><b>${fmt(r.perKg-c.eff)}</b></td>
-        <td>${fmt0(r.profit)}</td>
-        <td style="color:var(--dim)">${one&&one.rate>c.eff?((r.perKg-c.eff)/(one.rate-c.eff)*100).toFixed(0)+'%':'&mdash;'}</td></tr>`;}).join('');
-    const bandRows=E.bands.map(b=>`<tr><td class="l">${BAND_NAME[b.band]}</td><td>${b.n}</td><td>${kg(b.kg)}</td>
-      <td>${fmt(b.perKg)}</td><td>${fmt(b.pkLot)}</td>
-      <td style="color:${b.pkEff<0?'var(--crim)':b.pkEff<10?'var(--gold)':'var(--grn)'}"><b>${fmt(b.pkEff)}</b></td>
-      <td style="color:${b.profEff<0?'var(--crim)':'var(--ink)'}">${fmt0(b.profEff)}</td>
-      <td>${b.losers.length?`<span class="tag def">${b.losers.length} under cost</span>`:'<span class="tag paid">all clear</span>'}</td></tr>`).join('');
+        <td style="color:${pk<=0?'var(--crim)':pk<10?'var(--gold)':'var(--grn)'}"><b>${fmt(pk)}</b></td>
+        <!-- v381: was the engine's price less base less credit, a DIFFERENT basis from the
+             per-unit beside it, so the two columns never multiplied out: oil's 10 unit read
+             RM 9.03 a unit and RM 47 on the lot. The pane's own lead says everything below is
+             measured on the effective cost, and now both columns are. -->
+        <td>${fmt0(pk*s)}</td>
+        <td style="color:var(--dim)">${one&&(one.perKg-c.eff)>0.009?(pk/(one.perKg-c.eff)*100).toFixed(0)+'%':'&mdash;'}</td></tr>`;}).join('');
+    /* ============ AN EMPTY BAND EARNS NOTHING; IT DOES NOT EARN ZERO (v381) ============
+       THIS IS THE v379 FAULT, ON THE TABLE NEXT DOOR. v379 guarded the shrinkage sensitivity
+       table, which reads these same bands, and left the bands' own table unguarded. agg()
+       returns perKg 0 and pkEff 0 for a band with no rows, so oil's 1-to-6.25 unit band, where
+       nothing has ever sold because the minimum order is 10 unit, printed RM 0.00 realised and
+       RM 0.00 profit IN GOLD, the colour this table uses for a thin but real margin, and then
+       flagged itself <b>all clear</b> in green because a band with no rows has no losers.
+       A green reassurance about an empty set is the worst version of the fault: it does not
+       merely print a wrong figure, it certifies it. */
+    const bandRows=E.bands.map(b=>{const none=!(b.kg>0.009);
+      const cell=v=>none?'<span style="color:var(--dim)">no trade</span>':fmt(v);
+      return `<tr${none?' style="opacity:.5"':''}><td class="l">${BAND_NAME[b.band]}</td><td>${b.n}</td><td>${none?'&mdash;':kg(b.kg)}</td>
+      <td>${cell(b.perKg)}</td><td>${cell(b.pkLot)}</td>
+      <td style="color:${none?'var(--dim)':b.pkEff<0?'var(--crim)':b.pkEff<10?'var(--gold)':'var(--grn)'}"><b>${cell(b.pkEff)}</b></td>
+      <td style="color:${none?'var(--dim)':b.profEff<0?'var(--crim)':'var(--ink)'}">${none?'<span style="color:var(--dim)">no trade</span>':fmt0(b.profEff)}</td>
+      <td>${none?'<span style="color:var(--dim);font-size:11px">nothing sold in this band</span>'
+        :b.losers.length?`<span class="tag def">${b.losers.length} under cost</span>`:'<span class="tag paid">all clear</span>'}</td></tr>`;}).join('');
     return `<div class="card"><div class="cardh">On the board today <span class="sub">what a fresh quote would earn per unit</span></div>
-    <table><thead><tr><th class="l">Lot</th><th>Quote</th><th>RM/unit</th><th>Cost/unit</th><th>Profit/unit</th><th>Profit on the lot</th><th>vs a ${kg(1)} sale</th></tr></thead><tbody>${boardRows}</tbody></table>
-    <div class="dsc" style="margin-top:8px">The last column is the point: a ${kg(12.5)} lot earns a fraction of what a single unit earns <b>per unit of stock consumed</b>, and stock is what this desk keeps running out of.</div></div>
+    <table><thead><tr><th class="l">Lot</th><th>Quote</th><th>RM/unit</th><th>Cost/unit</th><th>Profit/unit</th><th>Profit on the lot</th><th>vs ${one?kg(one.q):'the smallest lot'}</th></tr></thead><tbody>${boardRows}</tbody></table>
+    <!-- v381: was hardcoded to "a 12.5 unit lot" and "a single unit", both salt sizes. On the oil
+         board neither exists. Read off this book's own largest and smallest instead. -->
+    <div class="dsc" style="margin-top:8px">The last column is the point: ${_sizes.length>1?`a ${kg(_sizes[_sizes.length-1])} lot earns a fraction of what ${kg(_sizes[0])} earns`:'a big lot earns a fraction of what a small one earns'} <b>per unit of stock consumed</b>, and stock is what this desk keeps running out of.</div></div>
 
     <div class="card" style="margin-top:12px"><div class="cardh">What the book has actually earned <span class="sub">every priced order, by band</span></div>
     <table><thead><tr><th class="l">Band</th><th>Orders</th><th>Unit</th><th>Realised</th><th>Profit/unit on lot cost</th><th>Profit/unit to replace</th><th>Profit to replace</th><th>Flag</th></tr></thead><tbody>${bandRows}</tbody></table>
@@ -11921,20 +12043,41 @@ function tabPricing(){
   </details>
   <details class="obsec"><summary>Wholesale under review <span class="q">is a bulk unit worth more than a small one</span></summary>
   ${(()=>{const C=capCase(PRICE.retailTo),cap=capLot();
+    /* ============ THE PANEL NAMES ITS OWN SUBJECTS (v381) ============
+       Three things were typed in that the book already knows.
+       ONE, the stripped one-off was the literal string 'CM6-HCM'. That is a salt customer, and
+       on the oil book, where nothing is marked a one-off, the sentence still announced that it
+       had stripped him. It counts them now, and says nothing when there are none.
+       TWO, the whole repricing table was about a 12.5 unit lot, hardcoded. Oil has no 12.5.
+       It takes the largest lot on THIS book's board, which is what the table is asking about.
+       THREE, capCase returns a per-unit of 0 for an empty set exactly as earnedPerKg does, so a
+       book with no wholesale trade printed "0 lots, 0 unit for RM 0, at RM 0.00/unit" under a
+       crimson chip reading RM 0.00. Guarded here, the same way v379 guarded its neighbour. */
+    const _bulk=(typeof sizesFor==='function'&&sizesFor(PROD)||[]).filter(s=>s>PRICE.retailTo+0.009);
+    const AT=_bulk.length?_bulk[_bulk.length-1]:PRICE.retailTo;
+    const nOff=C.n-C.nEx;
     const targets=[10,20,25,30].map(m=>{const rate=c.eff/(1-m/100);
-      return {m,rate:+rate.toFixed(2),total:Math.round(rate*12.5/5)*5,
-        vsMed:pxHistory(12.5).med?+((rate-pxHistory(12.5).med)/pxHistory(12.5).med*100).toFixed(0):null};});
-    const h=pxHistory(12.5);
+      return {m,rate:+rate.toFixed(2),total:Math.round(rate*AT/5)*5,
+        vsMed:pxHistory(AT).med?+((rate-pxHistory(AT).med)/pxHistory(AT).med*100).toFixed(0):null};});
+    const h=pxHistory(AT);
+    if(!(C.kgEx>0.009))return `<div class="pend"><h3>Above ${kg(PRICE.retailTo)}, nothing has been sold <span class="cd">no trade</span></h3>
+      <div class="dsc">${C.n?`The only lot${C.n===1?'':'s'} above ${kg(PRICE.retailTo)} on this book ${C.n===1?'is':'are'} marked a one-off, so there is nothing here to read as a wholesale rate.`:`No lot above ${kg(PRICE.retailTo)} has ever been sold on this book, so there is no wholesale margin to review. The board still quotes those sizes; nobody has taken one.`}</div></div>`;
     return `<div class="pend def"><h3>Above ${kg(PRICE.retailTo)}, the book has earned nothing <span class="cd crim">${fmt(C.pkEffEx)}/unit</span></h3>
-    <div class="dsc">Stripping the ${ID('CM6-HCM')} one-off, the desk has sold <b>${C.nEx} lots</b> above ${kg(PRICE.retailTo)}, <b>${kg(C.kgEx)}</b> for <b>${fmt0(C.rmEx)}</b>, at <b>${fmt(C.perKgEx)}/unit</b> against an effective cost of <b>${fmt(C.eff)}</b>. That is <b>${fmt0(C.profEffEx)}</b> of profit on ${kg(C.kgEx)}, or ${fmt(C.pkEffEx)} a unit. ${C.losers.length?`<b>${C.losers.length} of those lots are below replacement cost outright</b>: ${C.losers.map(r=>`${ID(r.id)} ${kg(r.q)} at ${fmt(r.perKg)} (${fmt(r.pkEff)}/unit)`).join(', ')}.`:''}
-    <br><br><b>It is not the price that broke it, it is the shrinkage.</b> The same ${kg(C.kgEx)} valued at the bare ${fmt(C.repl)} replacement rate, with no shrinkage carried, earns <b>${fmt0(C.profNoShrink)}</b>, or ${fmt(C.pkNoShrink)} a unit. Wholesale has no margin cushion, so it is the first thing a ${(pxCost().shrink*100).toFixed(1)}% leak destroys. Fixing plan P4 is worth more to wholesale than any price rise available.</div></div>
+    <div class="dsc">${nOff>0?`Stripping ${nOff===1?'one lot marked a one-off':`${nOff} lots marked one-offs`}, t`:'T'}he desk has sold <b>${C.nEx} lot${C.nEx===1?'':'s'}</b> above ${kg(PRICE.retailTo)}, <b>${kg(C.kgEx)}</b> for <b>${fmt0(C.rmEx)}</b>, at <b>${fmt(C.perKgEx)}/unit</b> against an effective cost of <b>${fmt(C.eff)}</b>. That is <b>${fmt0(C.profEffEx)}</b> of profit on ${kg(C.kgEx)}, or ${fmt(C.pkEffEx)} a unit. ${C.losers.length?`<b>${C.losers.length===1?'One of those lots is':`${C.losers.length} of those lots are`} below replacement cost outright</b>: ${C.losers.map(r=>`${ID(r.id)} ${kg(r.q)} at ${fmt(r.perKg)} (${fmt(r.pkEff)}/unit)`).join(', ')}.`:''}
+    <br><br><b>It is not the price that broke it, it is the shrinkage.</b> The same ${kg(C.kgEx)} valued at the bare ${fmt(C.repl)} replacement rate, with no shrinkage carried, earns <b>${fmt0(C.profNoShrink)}</b>, or ${fmt(C.pkNoShrink)} a unit. Wholesale has no margin cushion, so it is the first thing a ${(pxCost().shrink*100).toFixed(1)}% leak destroys.</div></div>
 
-    <div class="card" style="margin-top:12px"><div class="cardh">What repricing would have to ask <span class="sub">for a ${kg(12.5)} lot at ${fmt(c.eff)} effective</span></div>
+    <div class="card" style="margin-top:12px"><div class="cardh">What repricing would have to ask <span class="sub">for a ${kg(AT)} lot at ${fmt(c.eff)} effective</span></div>
     <table><thead><tr><th class="l">Target margin</th><th>Rate needed</th><th>Total</th><th>Against the median cleared${h.med?' ('+fmt(h.med)+')':''}</th></tr></thead><tbody>
+      <!-- v381: the sign was hardcoded '+', so a rate BELOW the median printed "+-13%". It is
+           also not a warning when it is negative: a target the market already clears is the
+           good case, and it was coloured gold beside the ones that are not. -->
       ${targets.map(t=>`<tr><td class="l">${t.m}%</td><td>${fmt(t.rate)}/unit</td><td><b>${fmt0(t.total)}</b></td>
-        <td style="color:${t.vsMed==null?'var(--dim)':t.vsMed>25?'var(--crim)':'var(--gold)'}">${t.vsMed==null?'&mdash;':'+'+t.vsMed+'%'}</td></tr>`).join('')}
+        <td style="color:${t.vsMed==null?'var(--dim)':t.vsMed<=0?'var(--grn)':t.vsMed>25?'var(--crim)':'var(--gold)'}">${t.vsMed==null?'&mdash;':(t.vsMed>0?'+':'')+t.vsMed+'%'}</td></tr>`).join('')}
     </tbody></table>
-    <div class="dsc" style="margin-top:8px">The board currently quotes <b>${fmt0(pxQuote(12.5,net,pn).total)}</b> for ${kg(12.5)}. The median that size has actually cleared at is <b>${h.med?fmt(h.med):'&mdash;'}/unit</b> across ${h.n||0} orders, and the best ever paid is <b>${h.best?fmt(h.best):'&mdash;'}/unit</b>, which was the one-off. <b>A 20% margin needs a rate no buyer except that one-off has ever paid.</b> That is the honest reading: at this cost structure wholesale is not a pricing problem you can reprice your way out of, because the market has already shown what it pays.</div></div>`;})()}
+    <!-- v381: was hardcoded to 12.5 in three places and asserted that the best rate ever paid
+         "was the one-off" whether or not the book has one. It reads the size the table is
+         actually about, and it says nothing about a median it has not got. -->
+    <div class="dsc" style="margin-top:8px">The board currently quotes <b>${fmt0(pxQuote(AT,net,pn).total)}</b> for ${kg(AT)}. ${h.n?`The median that size has actually cleared at is <b>${fmt(h.med)}/unit</b> across ${h.n} order${h.n===1?'':'s'}, and the best ever paid is <b>${fmt(h.best)}/unit</b>${nOff>0?', which was a one-off':''}. ${targets.filter(t=>t.vsMed!=null&&t.vsMed>0).length?`<b>A ${targets.filter(t=>t.vsMed!=null&&t.vsMed>0)[0].m}% margin already needs a rate above that median.</b> `:''}That is the honest reading: at this cost structure wholesale is not a pricing problem you can reprice your way out of, because the market has already shown what it pays.`:`<b>That size has never been sold</b>, so there is no median to test the rates above against. They are arithmetic on the cost, not evidence about the trade.`}</div></div>`;})()}
     <!-- v281: two stray closing divs removed here. They closed nothing in this template;
          the HTML parser answered them by popping the open <details> AND the .prodblock
          wrapper, so everything from Shrinkage onwards rendered OUTSIDE the product block
@@ -11974,14 +12117,39 @@ function tabPricing(){
 
   </details>
   <details class="obsec"><summary>Against the market <span class="q">the board beside what is actually paid</span></summary>
-  <div class="card"><table><thead><tr><th class="l">Segment</th><th>Orders</th><th>Unit</th><th>Realised</th><th>Margin at ${fmt(c.eff)}/unit</th></tr></thead><tbody>
-    <tr><td class="l">Everything sold</td><td>${mk.all.n}</td><td>${kg(mk.all.k)}</td><td>${fmt(mk.all.p)}/unit</td><td style="color:${mk.all.m<PRICE.floorPct.wholesale?'var(--crim)':'var(--ink)'}">${mk.all.m.toFixed(1)}%</td></tr>
-    <tr><td class="l">Small packs, under ${kg(PX.bulkFrom)}</td><td>${mk.small.n}</td><td>${kg(mk.small.k)}</td><td>${fmt(mk.small.p)}/unit</td><td style="color:${mk.small.m<PRICE.floorPct.retail?'var(--crim)':'var(--grn)'}">${mk.small.m.toFixed(1)}%</td></tr>
-    <tr><td class="l">Bulk, ${kg(PX.bulkFrom)} and over</td><td>${mk.bulk.n}</td><td>${kg(mk.bulk.k)}</td><td>${fmt(mk.bulk.p)}/unit</td><td style="color:${mk.bulk.m<PRICE.floorPct.wholesale?'var(--crim)':'var(--ink)'}">${mk.bulk.m.toFixed(1)}%</td></tr>
-    ${mk.excluded.length?`<tr><td class="l" style="color:var(--gold)">Bulk, one-offs stripped</td><td>${mk.bulkEx.n}</td><td>${kg(mk.bulkEx.k)}</td><td style="color:var(--gold)">${fmt(mk.bulkEx.p)}/unit</td><td style="color:${mk.bulkEx.m<PRICE.floorPct.wholesale?'var(--crim)':'var(--gold)'}">${mk.bulkEx.m.toFixed(1)}%</td></tr>`:''}
-  </tbody></table>
-  ${mk.excluded.length?`<div class="dsc" style="margin-top:8px;color:var(--gold)">${mk.excluded.map(s=>ID(s.customer)).join(', ')} ${mk.excluded.length===1?'is':'are'} marked a <b>one-off</b>, so the stripped row is the honest wholesale read. Including it lifts the wholesale average from <b>${fmt(mk.bulkEx.p)}/unit</b> to <b>${fmt(mk.bulk.p)}/unit</b> and the margin from <b>${mk.bulkEx.m.toFixed(1)}%</b> to <b>${mk.bulk.m.toFixed(1)}%</b>. Price the trade off the stripped figure; the outlier was real money but it is not a benchmark.</div>`:''}
-  <div class="dsc" style="margin-top:8px">The desk has actually been paid <b>${fmt(mk.all.p)}/unit</b> across ${kg(mk.all.k)}, worth <b>${mk.all.m.toFixed(1)}%</b> against today&rsquo;s effective cost, and the two halves are judged against their own floors. <b>Retail</b> has cleared <b>${fmt(mk.small.p)}/unit</b> at <b>${mk.small.m.toFixed(1)}%</b> against a ${PRICE.floorPct.retail}% floor, so it is <b>${mk.small.m>=PRICE.floorPct.retail?'ahead of':'under'}</b> policy. <b>Wholesale</b> has cleared <b>${fmt(mk.bulk.p)}/unit</b> at <b>${mk.bulk.m.toFixed(1)}%</b> against a ${PRICE.floorPct.wholesale}% floor, so it is <b>${mk.bulk.m>=PRICE.floorPct.wholesale?'ahead of':'under'}</b> policy but earning very little: at ${fmt0(PRICE.aWhole.total)} a ${kg(PRICE.aWhole.q)} lot returns about ${fmt0((PRICE.aWhole.total/PRICE.aWhole.q-mk.c.eff)*PRICE.aWhole.q)} of profit against ${fmt0((mk.small.p-mk.c.eff)*PRICE.aRetail.q)} on a ${kg(PRICE.aRetail.q)} retail lot.<br><br>For the realised wholesale price to clear its floor unchanged you would have to buy at <b>${fmt(mk.needRate)}/unit</b>, against the ${fmt(q)}/unit on the live quote. <b>That is the lever.</b> Wholesale on this desk is not a pricing problem, it is a buying problem: the price is set by what the trade will bear, so the only way it earns is if the salt is bought cheaper.</div></div>
+  ${(()=>{
+    /* v381: EVERY CELL GOES THROUGH ONE GUARD. Each of these read `m.toFixed(1)` on a margin
+       that pxMarket returned as 0 for a segment with nothing in it, and 0.0% is under every
+       floor in the policy, so a segment that had never traded printed a crimson breach. It
+       also read a one-order segment exactly as it reads an eighty-six-order one; oil's retail
+       row IS one order. The count was already in the table and told you nothing, because
+       nothing beside it changed when it said 1. */
+    const seg=(lab,s,floor,tone)=>{
+      if(s.none)return `<tr style="opacity:.5"><td class="l">${lab}</td><td>0</td><td>&mdash;</td>`
+        +`<td colspan="2" style="color:var(--dim)">nothing sold in this segment</td></tr>`;
+      const col=s.thin?'var(--gold)':s.m!=null&&s.m<floor?'var(--crim)':tone;
+      return `<tr><td class="l">${lab}${s.thin?` <span class="tag prov">${s.n} order${s.n===1?'':'s'}</span>`:''}</td>`
+        +`<td>${s.n}</td><td>${kg(s.k)}</td><td${s.thin?' style="color:var(--gold)"':''}>${fmt(s.p)}/unit</td>`
+        +`<td style="color:${col}">${s.m==null?'&mdash;':s.m.toFixed(1)+'%'}</td></tr>`;};
+    return `<div class="card"><table><thead><tr><th class="l">Segment</th><th>Orders</th><th>Unit</th><th>Realised</th><th>Margin at ${fmt(c.eff)}/unit</th></tr></thead><tbody>
+    ${seg('Everything sold',mk.all,PRICE.floorPct.wholesale,'var(--ink)')}
+    ${seg(`Small packs, under ${kg(PX.bulkFrom)}`,mk.small,PRICE.floorPct.retail,'var(--grn)')}
+    ${seg(`Bulk, ${kg(PX.bulkFrom)} and over`,mk.bulk,PRICE.floorPct.wholesale,'var(--ink)')}
+    ${mk.excluded.length?seg('Bulk, one-offs stripped',mk.bulkEx,PRICE.floorPct.wholesale,'var(--gold)'):''}
+  </tbody></table>`;})()}
+  ${(mk.small.thin||mk.bulk.thin)?`<div class="dsc" style="margin-top:8px;color:var(--gold)"><b>A segment marked with a count is too small to read as a rate.</b> ${[mk.small.thin?`Retail is ${mk.small.n} order${mk.small.n===1?'':'s'}`:'',mk.bulk.thin?`wholesale is ${mk.bulk.n}`:''].filter(Boolean).join(' and ')}. The margin beside it is arithmetic on that ${mk.small.thin&&mk.small.n===1?'one sale':'handful'} and not a reading of what the trade pays.</div>`:''}
+  ${(mk.excluded.length&&!mk.bulkEx.none)?`<div class="dsc" style="margin-top:8px;color:var(--gold)">${mk.excluded.map(s=>ID(s.customer)).join(', ')} ${mk.excluded.length===1?'is':'are'} marked a <b>one-off</b>, so the stripped row is the honest wholesale read. Including it lifts the wholesale average from <b>${fmt(mk.bulkEx.p)}/unit</b> to <b>${fmt(mk.bulk.p)}/unit</b>${(mk.bulkEx.m!=null&&mk.bulk.m!=null)?` and the margin from <b>${mk.bulkEx.m.toFixed(1)}%</b> to <b>${mk.bulk.m.toFixed(1)}%</b>`:''}. Price the trade off the stripped figure; the outlier was real money but it is not a benchmark.</div>`
+   :mk.excluded.length?`<div class="dsc" style="margin-top:8px;color:var(--gold)">Every wholesale order on this book is a <b>one-off</b> (${mk.excluded.map(s=>ID(s.customer)).join(', ')}), so there is no stripped figure to price against and the wholesale row above is that outlier alone.</div>`:''}
+  <!-- v381: every clause here read a figure that pxMarket now returns as null when the
+       segment is empty, so each is written against the guard. The old text asserted "retail
+       is under policy" off a segment that on the oil book is one sale. -->
+  <div class="dsc" style="margin-top:8px">${mk.all.none?`Nothing has been sold on this book yet, so there is no realised rate to set against the board.`
+   :`The desk has actually been paid <b>${fmt(mk.all.p)}/unit</b> across ${kg(mk.all.k)}, worth <b>${mk.all.m==null?'&mdash;':mk.all.m.toFixed(1)+'%'}</b> against today&rsquo;s effective cost, and the two halves are judged against their own floors. `
+    +(mk.small.none?`<b>Retail</b> has never traded on this book. `
+      :`<b>Retail</b> has cleared <b>${fmt(mk.small.p)}/unit</b> at <b>${mk.small.m==null?'&mdash;':mk.small.m.toFixed(1)+'%'}</b> against a ${PRICE.floorPct.retail}% floor, ${mk.small.thin?`on <b>${mk.small.n} order${mk.small.n===1?'':'s'}</b>, which is too few to call it either way. `:`so it is <b>${mk.small.m>=PRICE.floorPct.retail?'ahead of':'under'}</b> policy. `}`)
+    +(mk.bulk.none?`<b>Wholesale</b> has never traded on this book, so the buying lever below cannot be worked out yet.`
+      :`<b>Wholesale</b> has cleared <b>${fmt(mk.bulk.p)}/unit</b> at <b>${mk.bulk.m==null?'&mdash;':mk.bulk.m.toFixed(1)+'%'}</b> against a ${PRICE.floorPct.wholesale}% floor, ${mk.bulk.thin?`on <b>${mk.bulk.n} order${mk.bulk.n===1?'':'s'}</b>, which is too few to call it either way.`:`so it is <b>${mk.bulk.m>=PRICE.floorPct.wholesale?'ahead of':'under'}</b> policy but earning very little: at ${fmt0(PRICE.aWhole.total)} a ${kg(PRICE.aWhole.q)} lot returns about ${fmt0((PRICE.aWhole.total/PRICE.aWhole.q-mk.c.eff)*PRICE.aWhole.q)} of profit against ${fmt0((mk.small.p-mk.c.eff)*PRICE.aRetail.q)} on a ${kg(PRICE.aRetail.q)} retail lot.`}`)
+    +(mk.needRate==null?'':`<br><br>For the realised wholesale price to clear its floor unchanged you would have to buy at <b>${fmt(mk.needRate)}/unit</b>, against the ${fmt(q)}/unit on the live quote. <b>That is the lever.</b> Wholesale on this desk is not a pricing problem, it is a buying problem: the price is set by what the trade will bear, so the only way it earns is if the stock is bought cheaper.`)}</div></div>
 
   </details>
   <h2 style="margin-top:18px">The board, drawn <span class="sub" style="font-weight:400">the shape of the ladder, and what it has done over time</span> <span class="rule"></span></h2>
@@ -11989,9 +12157,18 @@ function tabPricing(){
     <div class="chartbox"><canvas id="pxShapeChart"></canvas></div>
     <div class="chartbox"><canvas id="pxTimeChart"></canvas></div>
   </div>
-  <div class="dsc" style="margin-top:8px">Left: what a unit costs to buy at each size, against the floor and the effective cost. A flat line is a ladder that has stopped rewarding size; the gap between a tier and the floor is all the room there is. Right: every priced order ever written, plotted at the rate actually paid on the day it was agreed, grouped into three lot bands, with today&rsquo;s Tier II ask for that band drawn as a dashed line. Where the dots sit below the dash, the board is asking more than that band has been paying, which is a forecast of resistance rather than of revenue. There is no fitted curve on either chart and no elasticity anywhere on this desk.</div>
+  <!-- v381: 631 characters of legend standing open under two charts that carry their own
+       axis titles and their own keys. What survives is the one line that says how to READ
+       them, which no axis can say; the rest folds. It also promised a dashed line "for that
+       band" which on the oil book was never drawn, because the bands were salt's. -->
+  <div class="dsc" style="margin-top:8px"><b>Where a dot sits below its dashed line, the board is asking more than that band has been paying.</b> Read that as resistance to come, not as revenue.</div>
+  <details class="obsec"><summary>What the two charts plot <span class="q">and what is deliberately not on them</span><span class="ct">nothing fitted</span></summary>
+  <div class="dsc">Left: what a unit costs to buy at each size, against the floor and the effective cost. A flat line is a ladder that has stopped rewarding size; the gap between a tier and the floor is all the room there is. Right: every priced order ever written, plotted at the rate actually paid on the day it was agreed, grouped into three lot bands taken from this book&rsquo;s own board, with today&rsquo;s ask for each band drawn as a dashed line. There is no fitted curve on either chart and no elasticity anywhere on this desk.</div>
+  </details>
   <h2 style="margin-top:18px">Reseller menu <span class="rule"></span></h2>
-  <div class="dsc" style="margin-bottom:9px">A price list for a phone, opened by QR and reachable only from this wifi. <b>The prices are never in the page</b>: it is an empty shell until the server has checked the link, so a saved copy is worth nothing. Each link is signed, carries an expiry, and puts the reseller&rsquo;s own code across every screen.</div>
+  <!-- v381: was 295 characters restating what the fold below already carries. The lead says
+       what the surface is for; the properties of the scheme are Study and sit with the rest. -->
+  <div class="dsc" style="margin-bottom:9px">A price list for a phone, opened by QR and reachable only from this wifi. <b>The prices are never in the page</b>, so a saved copy is worth nothing.</div>
   <div class="card">
     <div class="qrow">
       <div class="qfield"><label>Issue to</label><select id="mnWho">${roster.filter(id=>!id.startsWith('S')).map(id=>`<option value="${id}"${mnOver.who===id?' selected':''}>${codeOf(id)}</option>`).join('')}</select></div>
@@ -12001,10 +12178,21 @@ function tabPricing(){
       <div class="qfield qkg"><label>Password</label><input id="mnPass" type="text" value="${esc(mnOver.pass||mnPass6())}" spellcheck="false" autocomplete="off"></div>
       <div class="qfield"><label>&nbsp;</label><button class="vbtn" onclick="mnDownload(this)">Download a page</button></div>
     </div>
-    <div id="mnOut" style="margin-top:13px"><div class="dsc">Publish sends the board above to the menu, so every code already in circulation shows the new figures without being rescanned. Make a code issues a link to one reseller. Download a page saves a file you can send, which does <b>not</b> need the server or this wifi.</div></div>
-    <div class="dsc" style="margin-top:11px"><b>What this cannot do.</b> No web page can blank a screenshot: there is no API for it on iOS Safari or anywhere else, and anything claiming otherwise is theatre. What it does instead is make a leak <b>traceable and perishable</b>, by writing the reseller&rsquo;s code across the page and expiring the link. If a screenshot turns up, the code on it names who took it.</div>
-    <div class="dsc" style="margin-top:9px"><b>The downloaded page needs no wifi, and is opened with a password that stops working.</b> The prices travel inside the file as <b>AES-GCM ciphertext</b>, under a key derived from the password by PBKDF2 at 150,000 iterations, the same scheme as this desk&rsquo;s own name vault. The password is not stored in the file and there is nothing in it to compare against: a wrong one fails because the authentication tag does not verify. So a forwarded file, on its own, is ciphertext. <b>Send the password down a different channel than the file</b>, or the two travel together and the lock is decoration.</div>
-    <div class="dsc" style="margin-top:9px"><b>What the time limit is, exactly.</b> The expiry is passed as authenticated data, so <b>editing the date inside the file stops it opening at all</b>. That half is cryptographic. The comparison, though, is against the reader&rsquo;s own device clock, and a clock can be set backwards, so it is not proof against a determined reader. And once the right password is typed the prices are on a screen, which no scheme can un-see. That is why the code stays tiled across the sheet: a leaked screenshot still names who opened it. <b>The QR route remains the stricter one</b> &mdash; it keeps the prices out of the file entirely and can be withdrawn &mdash; so use a code where you would not hand over a copy at all, and the file where the reseller needs it to work without your wifi.</div>
+    <!-- v381: the three buttons are labelled; the paragraph mostly read the labels back. What
+         it said that the labels do not is the ONE distinction that decides which to press, and
+         that is what is left. The rest is in the fold. -->
+    <div id="mnOut" style="margin-top:13px"><div class="insight"><b>A code needs your wifi and can be withdrawn; a downloaded page needs neither and cannot.</b></div></div>
+    <!-- v381: THREE STANDING PARAGRAPHS, ABOUT 1,400 CHARACTERS, ON THE PROPERTIES OF A
+         SCHEME THAT DOES NOT CHANGE. They are the tell the storyboard names: the same words
+         on every render whatever the book says, which is documentation and not a dashboard.
+         They fold, whole, with the one instruction that has to be obeyed EVERY time a file is
+         sent left standing above them, because that one is an action and not a fact. -->
+    <div class="insight" style="border-left-color:var(--gold)"><b>Send the password down a different channel than the file</b>, or the two travel as one thing and the lock is decoration.</div>
+    <details class="obsec"><summary>What a leaked sheet is worth <span class="q">and which of the two routes is stricter</span><span class="ct">the QR</span></summary>
+    <div class="dsc"><b>What this cannot do.</b> No web page can blank a screenshot: there is no API for it on iOS Safari or anywhere else, and anything claiming otherwise is theatre. What it does instead is make a leak <b>traceable and perishable</b>, by writing the reseller&rsquo;s code across the page and expiring the link. If a screenshot turns up, the code on it names who took it.</div>
+    <div class="dsc" style="margin-top:9px"><b>The downloaded page needs no wifi, and is opened with a password that stops working.</b> The prices travel inside the file as <b>AES-GCM ciphertext</b>, under a key derived from the password by PBKDF2 at 150,000 iterations, the same scheme as this desk&rsquo;s own name vault. The password is not stored in the file and there is nothing in it to compare against: a wrong one fails because the authentication tag does not verify. So a forwarded file, on its own, is ciphertext.</div>
+    <div class="dsc" style="margin-top:9px"><b>What the time limit is, exactly.</b> The expiry is passed as authenticated data, so <b>editing the date inside the file stops it opening at all</b>. That half is cryptographic. The comparison, though, is against the reader&rsquo;s own device clock, and a clock can be set backwards, so it is not proof against a determined reader. And once the right password is typed the prices are on a screen, which no scheme can un-see. That is why the code stays tiled across the sheet: a leaked screenshot still names who opened it. <b>The QR route remains the stricter one</b>, since it keeps the prices out of the file entirely and can be withdrawn, so use a code where you would not hand over a copy at all, and the file where the reseller needs it to work without your wifi.</div>
+    </details>
   </div>
 
   <details class="obsec"><summary>Price response <span class="q">what has sold at each price</span></summary>
@@ -12051,28 +12239,47 @@ function mnPass6(){
   for(let i=0;i<6;i++)s+=A[r[i]%A.length];
   return s;
 }
+/* ============ THE PUBLISHED MENU WAS ALL BUT EMPTY (v381) ============
+   THIS IS THE WORST OF THE EMPTY SETS ON THIS VIEW, BECAUSE IT LEAVES THE BUILDING.
+   mnRows() feeds mnPublish() (the QR list) and mnDownload() (the encrypted file a reseller
+   is sent). On the SALT book it returned ONE row, 25 unit at RM 1,890. On the OIL book it
+   returned NOTHING AT ALL, so "Publish these prices" published a price list with no prices
+   on it and the panel above said it was sending the board.
+
+   THE CAUSE IS v326 AND THE FILTER NOBODY REVISITED. The line kept only sizes with an R
+   TIER CARD, or sizes above the top card. v326 retired the frozen tier cards, so
+   tierPrice('R',q) has returned null at every carded size ever since: on salt the filter
+   fell through to the one size above the top card, 25 unit, and on oil, whose top card is
+   100 and whose PX.sizes list stops at 25, nothing survived either clause.
+
+   PX.sizes WAS THE SECOND HALF OF IT. It was one hardcoded list, 0.5 to 25, and it was salt's,
+   so even had the filter worked the oil menu would have offered lots a tenth the size of the
+   minimum order.
+
+   THE FIX IS ALSO THE SIMPLER CODE. One source, this book's own board sizes, priced by the
+   same priceLadder() the board table and the sheet use, which is what the panel already
+   claims. The v165 comment above warned that MIXING card prices with engine prices at the
+   sizes a card skips inverted the ladder; taking every price from one ladder cannot invert,
+   because the ladder is monotone by construction and the board proves it on screen.
+   Sizes hidden from the sheet are hidden here too: unticking a size on the sheet and having
+   it reappear on the published list would be the same fault the other way round. */
 function mnRows(){
-  const sg=pxSignals(),cap=capLot();
-  const sizes=PX.sizes.filter(q=>cap==null||q<=cap+0.009);
+  const cap=capLot(), HID=hiddenFor(PROD);
+  const sizes=((typeof sizesFor==='function'&&sizesFor(PROD))||[])
+    .filter(q=>(cap==null||q<=cap+0.009)&&!HID.some(h=>Math.abs(h-q)<0.009))
+    .slice().sort((a,b)=>a-b);
   /* one hero, not several: the size actually ordered most often. Tagging every size with
      three orders put the badge on half the list, which tells a reseller nothing. */
   let best=null,bestN=0;
   sizes.forEach(q=>{const n=pxHistory(q).n||0;if(n>bestN){bestN=n;best=q;}});
-  /* The reseller menu quotes the R TIER (v165), because R is the card that actually
-     leaves his phone and the published list has to be the same number as the card.
-     Above the carded sizes there is no R price, so the engine answers there.
-
-     SIZES THE R CARD SKIPS ARE DROPPED, not filled from the engine. 3.5 and 4.5 have no
-     R price, and taking them from the computed board put RM340 at 3.5 next to RM390 at
-     4, which is RM97.14 a unit then RM97.50: the rate RISES with size and the ladder
-     inverts. A published list that gets dearer as the lot grows invites exactly one
-     question from a reseller and there is no good answer to it. */
-  const topCard=PRICE_TIERS.sizes[PRICE_TIERS.sizes.length-1];
-  return sizes.filter(q=>tierPrice('R',q)!=null||q>topCard+0.009).map(q=>{
-    const tp=tierPrice('R',q);
-    const row={q:q,p:tp!=null?tp:pxQuote(q,sg.net,0).total};
+  const out=[];
+  sizes.forEach(q=>{
+    let p=null; try{p=priceLadder(q).ask.total;}catch(e){}
+    if(!(p>0))return;                                   // a size the ladder cannot answer is left off
+    const row={q:q,p:p};
     if(q===best&&bestN>=3){row.hero=true;row.label='most asked for';}
-    return row;});
+    out.push(row);});
+  return out;
 }
 /* v365: RESELLER MENU RESOLVES ITS OWN PRODUCT. tabPricing, and the sheet inside it,
    render once per book via perProduct(), so mnWho/mnHrs/mnPass/mnMark/mnOut/shOut all
@@ -12249,7 +12456,9 @@ function shRows(prod){
   });
   return {rows:out,under:under};
 }
-function shDirty(el){shOut('<div class="dsc">Changed. <b>Save the sheet</b> sends these figures; nothing is stored, so the next sheet starts from the board again.</div>',mnProdOf(el));}
+/* v381: .insight, not .dsc, to match the placeholder it replaces. Nothing here is stripped
+   (stripMethod runs at render, not after a handler), but the two states must look alike. */
+function shDirty(el){shOut('<div class="insight">Changed; <b>Save the sheet</b> sends these figures, and nothing is stored, so the next sheet starts from the board again.</div>',mnProdOf(el));}
 function shOut(html,prod){const el=prodEl(prod||PROD,'shOut');if(el)el.innerHTML=html;}
 function shReset(){render();}
 /* the one thing that DOES reach the ledger, and only with nobody named: making the typed prices the
@@ -12558,22 +12767,28 @@ function drawEarnChart(){
   ensureChart(ok=>{
     if(!ok){chartEmpty(el,'Chart unavailable. Every figure it draws is in the tables on this tab.');return;}
     try{
-      const c=pxCost(),sg=pxSignals(),pt=pxParty(pxOver.party),E=earnedPerKg();
+      const c=pxCost(),E=earnedPerKg();
       const GRID='rgba(255,255,255,0.07)',TICK='rgba(244,245,247,0.66)',INK='#f4f5f7';
-      const line=PX.sizes.map(q=>({x:q,y:+(pxQuote(q,sg.net,pt.net).perKg-c.eff).toFixed(2)}));
+      /* v381: was PX.sizes, salt's hardcoded 0.5-to-25 list, so the "Board today" line on the
+         OIL chart ran across sizes oil does not sell and stopped at 25 while the orders
+         plotted beside it sit at 10 to 70. Same per-book list the board uses, priced by the
+         same priceLadder, so the line on the chart is the line in the table. */
+      const _sz=((typeof sizesFor==='function'&&sizesFor(PROD))||[]).slice().sort((a,b)=>a-b);
+      const line=_sz.map(q=>{let r=null;try{r=priceLadder(q).ask.rate;}catch(e){}
+        return r==null?null:{x:q,y:+(r-c.eff).toFixed(2)};}).filter(Boolean);
       const dots=E.rows.filter(r=>!r.oneOff).map(r=>({x:r.q,y:r.pkEff,id:codeOf(r.id),d:r.date}));
       const off=E.rows.filter(r=>r.oneOff).map(r=>({x:r.q,y:r.pkEff,id:codeOf(r.id),d:r.date}));
       freshChart(el,{data:{datasets:[
         {type:'line',label:'Board today',data:line,borderColor:'#e8c66b',backgroundColor:'transparent',pointRadius:0,borderWidth:2,tension:.25},
         {type:'scatter',label:'Orders written',data:dots,backgroundColor:'rgba(99,230,224,.55)',borderColor:'#7fd7e8',pointRadius:5},
         {type:'scatter',label:'One-off',data:off,backgroundColor:'rgba(245,196,81,.5)',borderColor:'#e8c66b',pointRadius:6,pointStyle:'triangle'},
-        {type:'line',label:'Replacement cost',data:PX.sizes.map(q=>({x:q,y:0})),borderColor:'#ff7a8a',backgroundColor:'transparent',pointRadius:0,borderWidth:1.5,borderDash:[5,4]}
+        {type:'line',label:'Replacement cost',data:_sz.map(q=>({x:q,y:0})),borderColor:'#ff7a8a',backgroundColor:'transparent',pointRadius:0,borderWidth:1.5,borderDash:[5,4]}
       ]},options:{responsive:true,maintainAspectRatio:false,
         plugins:{legend:{display:true,labels:{color:TICK,boxWidth:12,font:{size:11}}},
           title:{display:true,text:'Profit per unit against lot size (RM)',color:INK,font:{size:12}},
           tooltip:{callbacks:{label:i=>i.dataset.type==='scatter'
             ?`${i.raw.id} ${i.raw.d}: ${i.raw.x} unit at RM ${i.raw.y}/unit profit`
-            :`${i.raw.x} kg: RM ${i.raw.y}/unit`}}},
+            :`${i.raw.x} unit: RM ${i.raw.y}/unit`}}},   /* v381: said "kg", the mass symbol the desk retired at v161 */
         scales:{x:{type:'logarithmic',grid:{color:GRID},ticks:{color:TICK,callback:v=>v+' unit'},title:{display:true,text:'lot size, log scale',color:TICK}},
                 y:{grid:{color:GRID},ticks:{color:TICK,callback:v=>'RM '+v}}}}});
     }catch(e){}
@@ -12632,9 +12847,27 @@ function priceNote(){
    banded by lot size, with today's ask as a reference. NOTHING IS FITTED: these are the
    observed points and one horizontal line, because 44 orders cannot support a demand curve
    and pretending otherwise is how a desk talks itself into a price nobody will pay. */
-const PXBANDS=[{k:'small',lab:'under 2 unit',lo:0,hi:1.99,q:1,col:'#8fe9ff'},
-               {k:'mid',  lab:'2 to 5 unit', lo:2,hi:5.01,q:2.5,col:'#e8dcae'},
-               {k:'big',  lab:'over 5 unit', lo:5.02,hi:1e9,q:12.5,col:'#e8c66b'}];
+/* ============ THE BANDS ARE THIS BOOK'S (v381) ============
+   PXBANDS was three fixed bands with salt's sizes in them: under 2 unit, 2 to 5, over 5,
+   anchored at 1, 2.5 and 12.5. Oil's smallest lot is 10, so on the oil chart FOUR OF FIVE
+   ORDERS FELL IN ONE BAND and the other two series drew nothing; worse, the dashed reference
+   lines are looked up at the anchor size, and 1, 2.5 and 12.5 are not oil sizes, so
+   tierPrice returned null at all three and NO REFERENCE LINE WAS DRAWN AT ALL. The caption
+   underneath went on promising "today's ask for that band drawn as a dashed line".
+   Derived from the book's own board now: the sizes are split into three, each band is labelled
+   from the real sizes in it and anchored on one of them, so every band has a line that exists.
+   The reference is priceLadder, the same call the board makes, rather than the retired tier
+   card lookup that has returned null since v326. */
+function pxBands(){
+  const col=['#8fe9ff','#e8dcae','#e8c66b'];   // kept local: a top-level array would read as a ledger declaration
+  const s=((typeof sizesFor==='function'&&sizesFor(PROD))||[]).slice().sort((a,b)=>a-b);
+  if(s.length<3)return [];
+  const cut=[Math.ceil(s.length/3),Math.ceil(s.length*2/3)];
+  const grp=[s.slice(0,cut[0]),s.slice(cut[0],cut[1]),s.slice(cut[1])].filter(g=>g.length);
+  return grp.map((g,i)=>({k:'b'+i,lo:i===0?0:g[0]-0.009,hi:i===grp.length-1?1e9:g[g.length-1]+0.009,
+    q:g[Math.floor((g.length-1)/2)],col:col[i]||col[2],
+    lab:g.length===1?kg(g[0]):(i===0?`up to ${kg(g[g.length-1])}`:i===grp.length-1?`${kg(g[0])} and over`:`${kg(g[0])} to ${kg(g[g.length-1])}`)}));
+}
 function drawBoardCharts(){
   const a=blkEl('pxShapeChart'),b=blkEl('pxTimeChart');
   if(!a&&!b)return;
@@ -12663,12 +12896,16 @@ function drawBoardCharts(){
           .map(s=>({x:s.date,y:+(s.total/s.qty).toFixed(2),q:s.qty}))
           .sort((p,r)=>p.x<r.x?-1:1);
         const labs=[...new Set(rows.map(r=>r.x))].sort();
-        const ds=PXBANDS.map(bd=>({label:bd.lab,type:'scatter',borderColor:bd.col,backgroundColor:bd.col,
-          pointRadius:4,showLine:false,
-          data:rows.filter(r=>r.q>=bd.lo&&r.q<=bd.hi).map(r=>({x:r.x,y:r.y}))}));
-        PXBANDS.forEach(bd=>{const p=tierPrice('T2',bd.q);
+        const BANDS=pxBands();
+        /* v381: a band with no order in it draws no legend entry, rather than an empty series
+           the reader has to notice is empty. */
+        const ds=BANDS.map(bd=>({bd:bd,pts:rows.filter(r=>r.q>=bd.lo&&r.q<=bd.hi)})
+          ).filter(x=>x.pts.length).map(x=>({label:x.bd.lab,type:'scatter',borderColor:x.bd.col,
+            backgroundColor:x.bd.col,pointRadius:4,showLine:false,
+            data:x.pts.map(r=>({x:r.x,y:r.y}))}));
+        BANDS.forEach(bd=>{let p=null;try{p=priceLadder(bd.q).ask.rate;}catch(e){}
           if(p!=null)ds.push({label:'ask now, '+bd.lab,type:'line',borderColor:bd.col,borderDash:[6,4],
-            borderWidth:1.5,pointRadius:0,data:labs.map(x=>({x:x,y:+(p/bd.q).toFixed(2)}))});});
+            borderWidth:1.5,pointRadius:0,data:labs.map(x=>({x:x,y:+p.toFixed(2)}))});});
         freshChart(b,{data:{labels:labs,datasets:ds},
           options:Object.assign(base('Rate actually paid, by order date (RM/unit)'),{})});
       }
