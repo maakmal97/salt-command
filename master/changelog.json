@@ -1,5 +1,17 @@
 [
  {
+  "v": "v380",
+  "d": "26 Aug 2026",
+  "t": "A CHART THAT ASKED FOR THE LIBRARY WHILE IT WAS STILL LOADING WAS TOLD THERE WAS NOT ONE",
+  "n": [
+   "<b>THREE BLOCKS OF THE TODAY VIEW READ &lsquo;CHART UNAVAILABLE&rsquo; WHILE CHART.JS 4.5.0 WAS LOADED AND TEN CANVASES ELSEWHERE DREW PERFECTLY.</b> <code>ensureChart()</code> set <code>chartTried</code> the moment it appended the script tag, so the caller that started the load waited on it and every caller arriving while it was still in flight was answered <code>false</code> at once, drew the fallback and was never called back when the library landed. The library was never missing. The second caller was simply told there was not one.",
+   "<b>IT READS AS A DATA FAULT, WHICH IS MOST OF WHY IT SURVIVED.</b> The desk has two sentences for two conditions and only one of them was true here: an empty set says <b>Nothing to draw yet</b>, a missing library says <b>Chart unavailable</b>. Every block that printed the second had its figures in hand the whole time. The waiters queue on <code>chartWait</code> now and are flushed together, so the answer a caller gets is the answer the load actually returned. <code>chartTried</code> still means asked and failed, so a genuine 404 is not requested twice.",
+   "<b>ONE LOST RACE TOOK OUT A TAB, NOT A CHART.</b> <code>drawPerProduct()</code> calls <code>ensureChart</code> once to warm the library and then runs draw functions that each call it again, on the stated assumption that the second call resolves at once. When the first call lost, every one of them lost with it, which is how Analysis loses six charts and Price four from a single missed tick.",
+   "<b>AND THE BUILD HAD BEEN WARNING ABOUT THE CHART LIBRARY FOR SIX DAYS.</b> It copied <code>assets/chart.umd.js</code> in from beside the master, and that folder stayed behind in Per-Crm01 when the master moved into this repo on 20 Aug, so every build since printed <b>not found beside the master</b> and copied nothing. Nothing broke, because <code>public/assets/chart.umd.js</code> is committed and served exactly as it sits, so the warning was true, harmless and ignored, which is the worst of the three. The committed file IS the source now: the build proves it is there and FAILS if it is not, and there is no second copy left to drift.",
+   "<b>NO FIGURE MOVED.</b> Nothing was folded and no rate changed. What changed is that a chart which asked for the library while it was loading now waits for the answer instead of being told there is not one."
+  ]
+ },
+ {
   "v": "v379",
   "d": "26 Aug 2026",
   "t": "AN EMPTY SIZE BAND WAS REPORTED AS A LOSS OF THE ENTIRE COST",

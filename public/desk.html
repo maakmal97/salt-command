@@ -60,7 +60,7 @@ document.addEventListener('visibilitychange',function(){
    focused, no dialog open. Otherwise it offers a chip and waits to be tapped.
    The same tick retries a held entry, which is what gets a phone write to the cloud
    without waiting for the next open. */
-var SALT_BUILD_ID="14498726d3de4cc4";
+var SALT_BUILD_ID="d3b1a994c7240772";
 var SALT_REV_MS=10000;
 (function(){
   var chip=null,timer=null;
@@ -3347,7 +3347,9 @@ const whiteboard=[
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{"v":"v379","d":"26 Aug 2026","t":"AN EMPTY SIZE BAND WAS REPORTED AS A LOSS OF THE ENTIRE COST","n":["<b>OIL&rsquo;S 1-TO-6.25 UNIT BAND READ RM -7.49 A UNIT AGAINST AN EFFECTIVE COST OF RM 7.49.</b> Nothing has ever been sold in that band, because oil&rsquo;s minimum order is 10 unit. <code>earnedPerKg()</code> returns a per-unit of 0 for a band with no rows, and the shrinkage table subtracted the cost from it, so an empty set was printed as a catastrophic loss on every row of the table. It says <b>no trade</b> now, and the bulk cap, which computes its per-unit the same way, is guarded with it.","<b>THIS IS OLDER THAN TODAY.</b> Nothing in v369 to v378 touched this table; the fault has been on the Price view for as long as oil has had a band with no trade in it. It is the same rule the drafter&rsquo;s flags follow: a figure that fires when nothing is wrong teaches the reader to ignore the ones that mean something.","<b>AND A BANNED WORD, IN THE ONE PLACE THE DESK SAID IT ITSELF.</b> &quot;Dearest live quote tier&quot; is now &quot;highest&quot;. Two more sat in quote notes on the book and are corrected with it. Neither is a figure.","<b>NO FIGURE MOVED.</b> Nothing was folded and no rate changed. What changed is that a figure which was never real stopped being printed."]},
+const evolution=[{"v":"v380","d":"26 Aug 2026","t":"A CHART THAT ASKED FOR THE LIBRARY WHILE IT WAS STILL LOADING WAS TOLD THERE WAS NOT ONE","n":["<b>THREE BLOCKS OF THE TODAY VIEW READ &lsquo;CHART UNAVAILABLE&rsquo; WHILE CHART.JS 4.5.0 WAS LOADED AND TEN CANVASES ELSEWHERE DREW PERFECTLY.</b> <code>ensureChart()</code> set <code>chartTried</code> the moment it appended the script tag, so the caller that started the load waited on it and every caller arriving while it was still in flight was answered <code>false</code> at once, drew the fallback and was never called back when the library landed. The library was never missing. The second caller was simply told there was not one.","<b>IT READS AS A DATA FAULT, WHICH IS MOST OF WHY IT SURVIVED.</b> The desk has two sentences for two conditions and only one of them was true here: an empty set says <b>Nothing to draw yet</b>, a missing library says <b>Chart unavailable</b>. Every block that printed the second had its figures in hand the whole time. The waiters queue on <code>chartWait</code> now and are flushed together, so the answer a caller gets is the answer the load actually returned. <code>chartTried</code> still means asked and failed, so a genuine 404 is not requested twice.","<b>ONE LOST RACE TOOK OUT A TAB, NOT A CHART.</b> <code>drawPerProduct()</code> calls <code>ensureChart</code> once to warm the library and then runs draw functions that each call it again, on the stated assumption that the second call resolves at once. When the first call lost, every one of them lost with it, which is how Analysis loses six charts and Price four from a single missed tick.","<b>AND THE BUILD HAD BEEN WARNING ABOUT THE CHART LIBRARY FOR SIX DAYS.</b> It copied <code>assets/chart.umd.js</code> in from beside the master, and that folder stayed behind in Per-Crm01 when the master moved into this repo on 20 Aug, so every build since printed <b>not found beside the master</b> and copied nothing. Nothing broke, because <code>public/assets/chart.umd.js</code> is committed and served exactly as it sits, so the warning was true, harmless and ignored, which is the worst of the three. The committed file IS the source now: the build proves it is there and FAILS if it is not, and there is no second copy left to drift.","<b>NO FIGURE MOVED.</b> Nothing was folded and no rate changed. What changed is that a chart which asked for the library while it was loading now waits for the answer instead of being told there is not one."]},
+
+{"v":"v379","d":"26 Aug 2026","t":"AN EMPTY SIZE BAND WAS REPORTED AS A LOSS OF THE ENTIRE COST","n":["<b>OIL&rsquo;S 1-TO-6.25 UNIT BAND READ RM -7.49 A UNIT AGAINST AN EFFECTIVE COST OF RM 7.49.</b> Nothing has ever been sold in that band, because oil&rsquo;s minimum order is 10 unit. <code>earnedPerKg()</code> returns a per-unit of 0 for a band with no rows, and the shrinkage table subtracted the cost from it, so an empty set was printed as a catastrophic loss on every row of the table. It says <b>no trade</b> now, and the bulk cap, which computes its per-unit the same way, is guarded with it.","<b>THIS IS OLDER THAN TODAY.</b> Nothing in v369 to v378 touched this table; the fault has been on the Price view for as long as oil has had a band with no trade in it. It is the same rule the drafter&rsquo;s flags follow: a figure that fires when nothing is wrong teaches the reader to ignore the ones that mean something.","<b>AND A BANNED WORD, IN THE ONE PLACE THE DESK SAID IT ITSELF.</b> &quot;Dearest live quote tier&quot; is now &quot;highest&quot;. Two more sat in quote notes on the book and are corrected with it. Neither is a figure.","<b>NO FIGURE MOVED.</b> Nothing was folded and no rate changed. What changed is that a figure which was never real stopped being printed."]},
 
 {"v":"v378","d":"26 Aug 2026","t":"THE HEADER IS A STICKY BAR AND IT HOLDS ITS OWN CONTROLS, SO NOTHING SITS ON TOP OF ANYTHING","n":["<b>v376 PUT TWO DISCS ON TOP OF A HEADER THAT WAS ALREADY THERE.</b> Pinning the menu and Names &amp; IDs to the top right corner of the viewport is right when the page has nothing at that corner. This page has a header, and the version chip ended up underneath them, unreadable.","<b>THEY ARE IN THE HEADER NOW, AND THE HEADER IS STICKY.</b> Sticky is what floating them was for: reachable from any scroll position. In the flow, nothing can overlap anything. The two at the bottom stay floating, because the bottom corners carry no content of their own and both have to be reachable mid-scroll.","<b>ONE BAR THAT ADAPTS, WHICH IS THE POINT OF ONE SURFACE.</b> Above 860px the rail carries the mark and the tabs, so the bar shows the version and the key alone. Below it the mark and the menu appear in the same row. Same markup, same page, no second layout to keep level.","<b>NO FIGURE MOVED.</b> Nothing was folded, no rate changed, and the book is exactly as v368 left it."]},
 
@@ -3500,7 +3502,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='26 Aug 2026, 19:18 KL';
+const LAST_UPDATED='26 Aug 2026, 23:54 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -10535,19 +10537,34 @@ function renderQueue(){const b=document.getElementById('queueBox');if(!b)return;
     +'<table style="margin-top:6px"><thead><tr><th class="l">Entry</th><th>Type</th><th>Party</th><th>Qty</th><th>RM</th><th>Status</th><th></th></tr></thead><tbody>'+txq.map(q=>`<tr><td class="l" style="max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(q.raw||'')}</td><td>${q.type}</td><td class="mono">${esc(q.party)||'&mdash;'}</td><td>${q.qty!=null?q.qty+'unit':'&mdash;'}</td><td>${q.total!=null?fmt0(q.total):'&mdash;'}</td><td><span class="tag ${q.status==='paid'?'paid':q.status==='inkind'?'inkind':q.status==='modified'?'mod':q.status==='cancelled'?'def':q.status==='count'?'inkind':'unpaid'}">${({paid:'Paid',unpaid:'Unpaid',partial:'Partial',inkind:'In-Kind',modified:'Modified',cancelled:'Cancelled',credit:'Unpaid',count:'Count'})[q.status]||q.status}</span></td><td><button class="ubtn" onclick="undoEntry('${esc(q.at)}')">Undo</button></td></tr>`).join('')+'</tbody></table>';}
 
 /* ============ CHARTS for tracker tabs ============ */
-/* Chart.js comes from the CDN, but the desk must not depend on being online:
-   if it did not load, fall back to the local copy in assets\, and if that is
-   missing too, leave a quiet note where the chart would be. Either way the rest
-   of the tab renders, which it did not before. */
-let chartTried=false;
+/* Chart.js is vendored at assets/chart.umd.js and loaded ON DEMAND (v176), never from a
+   CDN: the desk is a local tool and should not wait on the internet to show a figure it
+   already holds. If the file is genuinely missing, leave a quiet note where the chart
+   would be and let the rest of the tab render.
+
+   v380: EVERY CALLER NOW WAITS FOR THE ONE LOAD, INSTEAD OF THE SECOND ONE BEING TOLD NO.
+   chartTried was set the moment the request went out, so the caller that started the load
+   waited on the script and every caller arriving while it was still in flight fell straight
+   through to cb(false), drew 'Chart unavailable', and was never called back when the
+   library landed. On the live desk that printed the fallback over three blocks of the Today
+   view while Chart 4.5.0 was loaded and ten canvases elsewhere drew perfectly, which reads
+   as a data fault and is a race. It is worse than it looks in one place: drawPerProduct()
+   calls ensureChart to warm the library and then runs draw functions that each call it
+   again, so one lost race takes out a whole tab of charts at once.
+   The waiters queue on chartWait and are flushed together. chartTried still means asked and
+   failed, so a genuine 404 is never requested twice, and a callback that throws cannot
+   strand the ones behind it. */
+let chartTried=false,chartWait=null;
 function ensureChart(cb){
   if(window.Chart){chartTheme();return cb(true);}
+  if(chartWait){chartWait.push(cb);return;}
   if(chartTried)return cb(false);
-  chartTried=true;
+  chartTried=true;chartWait=[cb];
+  const done=ok=>{if(ok)chartTheme();const q=chartWait;chartWait=null;q.forEach(f=>{try{f(ok);}catch(e){}});};
   const s=document.createElement('script');
   s.src='assets/chart.umd.js';
-  s.onload=()=>{chartTheme();cb(!!window.Chart);};
-  s.onerror=()=>cb(false);
+  s.onload=()=>done(!!window.Chart);
+  s.onerror=()=>done(false);
   document.head.appendChild(s);
 }
 /* v281: ONE LOOK FOR EVERY CHART. Set once on the loaded library so all of the desk's
