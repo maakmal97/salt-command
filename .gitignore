@@ -38,3 +38,16 @@ migrations/.query.sql
 # use it" and leaves it alone, so a stale one left in the tree is a set of notes from a batch
 # that is already folded, sitting where the next --apply will pick it up.
 master/_fold_notes.json
+
+# THE LAUNCHER PAGE IS GENERATED, AND TRACKING IT MADE EVERY WORKTREE DIRTY. _Open.html is
+# the session-start index the launcher writes (LAUNCHER.md), and it stamps the FOLDER NAME
+# into its title, its heading and its file count. In a git worktree that name is the
+# worktree's, so it regenerates as "eloquent-galileo-382b2c: open files" rather than
+# "salt-command" and shows as modified in every session before a line of work is done. That
+# is noise a reader has to learn to ignore, and worse, `git add -A` sweeps it into whatever
+# commit is being made: update.mjs step 7 does exactly that, so a chart fix would have
+# carried a launcher page with a stranger's folder name in it.
+# THE FILE STAYS ON DISK. _MasterOpen.html links to it and the launcher rewrites it on every
+# open, so it is untracked here rather than deleted. Generated pages are never hand-edited
+# and never versioned; this one was the exception and should not have been.
+_Open.html
