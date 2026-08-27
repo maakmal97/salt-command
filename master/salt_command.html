@@ -8349,7 +8349,11 @@ function finRows(){
     bump(mo,'rev',(t.total||0)-txPendRM(t));bump(mo,'cogs',(t.qty-txPendKgRaw(t))*costOf(t));bump(mo,'cash',t.cash||0);bump(mo,'kg',t.qty-txPendKgRaw(t));
     bump(mo,'inkind',(t.waived||0)+((t.settle==='barter'||t.rebate)?(t.settledRM||0):0));
     bump(mo,'provAR',+(txAdvance(t)*provRate(dbet(t.date))).toFixed(2));});
-  if(typeof supplierReceivable!=='undefined'&&supplierReceivable)
+  /* v385: THE CLAIM IS SALT'S, SO ONLY SALT'S MONTHS MOVE. supRecovGross is nil on any other
+     book by construction, but the bump fired regardless and CREATED the month it was keyed to:
+     the oil P&L opened a July column with no oil trade in it, every cell a dash and a gross
+     margin of RM 0 at 0.0%. A month is evidence that something happened in it. */
+  if(typeof supplierReceivable!=='undefined'&&supplierReceivable&&supRecovGross>0.009)
     bump(supplierReceivable.since.slice(0,7),'provSup',+(supRecovGross*provRate(dbet(supplierReceivable.since))).toFixed(2));
   return Object.entries(m).sort((a,b)=>a[0]<b[0]?-1:1);
 }
@@ -8387,21 +8391,26 @@ function drawRecvCharts(){
   if(!el)return;
   ensureChart(ok=>{
     if(!ok){chartEmpty(el,'Chart unavailable. Every figure it draws is in the tables on this tab.');return;}
-    try{
-      const rows=arList.map(x=>({who:codeOf(x.customer),g:outstandingOf(x),age:dbet(x.date)}))
-        .filter(x=>x.g>0.009);
-      if(typeof supplierReceivable!=='undefined'&&supplierReceivable&&supplierReceivable.status==='recoverable')
-        rows.push({who:codeOf(supplierReceivable.party)+' (supplier)',g:supplierReceivable.amount,age:dbet(supplierReceivable.since)});
-      if(!rows.length){chartEmpty(el,'Nothing is owed either way. A rare and correct emptiness.');return;}
-      rows.sort((a,b)=>b.g-a.g);
-      freshChart(el,{type:'bar',data:{labels:rows.map(x=>x.who+' · '+x.age+'d'),datasets:[
-        {label:'Gross',data:rows.map(x=>+x.g.toFixed(2)),backgroundColor:'rgba(255,93,115,.35)',borderColor:'#ff7a8a',borderWidth:1,borderRadius:3},
-        {label:'Net of ladder',data:rows.map(x=>+(x.g*(1-provRate(x.age))).toFixed(2)),backgroundColor:'#7fd7e8',borderWidth:0,borderRadius:3}]},
-        options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
-          plugins:{legend:{labels:{color:CHART_INK.tick,boxWidth:12,font:{size:11}}}},
-          scales:{x:{grid:{color:CHART_INK.grid},ticks:{color:CHART_INK.tick}},
-                  y:{grid:{display:false},ticks:{color:CHART_INK.tick,font:{size:10}}}}}});
-    }catch(e){}
+    const rows=arList.map(x=>({who:codeOf(x.customer),g:outstandingOf(x),age:dbet(x.date)}))
+      .filter(x=>x.g>0.009);
+    /* v385: THE SUPPLIER CLAIM IS SALT'S, ON THE CHART AS IT ALREADY IS IN THE TABLE.
+       arList is scoped by recompute() and supRecovGross is salt-only by construction, so the
+       Order book's own refund row only ever appears under Salt; the chart pushed the raw
+       record with no such test and would have drawn the same bar under Oil. Latent while the
+       default is written off, and a written-off claim is not a receivable in any book. */
+    if(PROD===DEFAULT_PROD&&typeof supplierReceivable!=='undefined'&&supplierReceivable&&supplierReceivable.status==='recoverable')
+      rows.push({who:codeOf(supplierReceivable.party)+' (supplier)',g:supplierReceivable.amount,age:dbet(supplierReceivable.since)});
+    if(!rows.length){chartEmpty(el,'Nothing is owed either way. A rare and correct emptiness.');return;}
+    /* oldest first, matching the table beneath it: the chart's whole argument is what the
+       ladder has taken off with age, so age is the axis it should be read down. */
+    rows.sort((a,b)=>b.age-a.age||b.g-a.g);
+    freshChart(el,{type:'bar',data:{labels:rows.map(x=>x.who+' · '+x.age+'d'),datasets:[
+      {label:'Gross',data:rows.map(x=>+x.g.toFixed(2)),backgroundColor:'rgba(255,93,115,.35)',borderColor:'#ff7a8a',borderWidth:1,borderRadius:3},
+      {label:'Net of ladder',data:rows.map(x=>+(x.g*(1-provRate(x.age))).toFixed(2)),backgroundColor:'#7fd7e8',borderWidth:0,borderRadius:3}]},
+      options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{labels:{color:CHART_INK.tick,boxWidth:12,font:{size:11}}}},
+        scales:{x:{grid:{color:CHART_INK.grid},ticks:{color:CHART_INK.tick}},
+                y:{grid:{display:false},ticks:{color:CHART_INK.tick,font:{size:10}}}}}});
   });
 }
 function drawSourcingCharts(){
@@ -8514,21 +8523,19 @@ function drawFinCharts(){
   if(!el)return;
   ensureChart(ok=>{
     if(!ok){chartEmpty(el,'Chart unavailable. Every figure it draws is in the tables on this tab.');return;}
-    try{
-      const mo={};
-      pricedSales.filter(x=>!x.cancelled&&txPendKg(x)<x.qty-0.009).forEach(x=>{
-        const k=x.date.slice(0,7);(mo[k]=mo[k]||{rev:0,mar:0}).rev+=x.total;
-        mo[k].mar+=x.total-costOf(x)*x.qty;});
-      const keys=Object.keys(mo).sort();
-      const lab=keys.map(k=>new Date(k+'-01').toLocaleString('en-GB',{month:'short'}));
-      freshChart(el,{type:'bar',data:{labels:lab,datasets:[
-        {label:'Revenue',data:keys.map(k=>+mo[k].rev.toFixed(2)),backgroundColor:'#7fd7e8',borderWidth:0,borderRadius:4},
-        {label:'Gross margin',data:keys.map(k=>+mo[k].mar.toFixed(2)),backgroundColor:'#e8c66b',borderWidth:0,borderRadius:4}]},
-        options:{responsive:true,maintainAspectRatio:false,
-          plugins:{legend:{labels:{color:'rgba(244,245,247,0.66)',boxWidth:12,font:{size:11}}}},
-          scales:{x:{grid:{display:false},ticks:{color:'rgba(244,245,247,0.66)'}},
-                  y:{grid:{color:'rgba(255,255,255,0.07)'},ticks:{color:'rgba(244,245,247,0.66)',callback:v=>Number(v).toLocaleString('en-MY',{maximumFractionDigits:0})}}}}});
-    }catch(e){}
+    const mo={};
+    pricedSales.filter(x=>!x.cancelled&&txPendKg(x)<x.qty-0.009).forEach(x=>{
+      const k=x.date.slice(0,7);(mo[k]=mo[k]||{rev:0,mar:0}).rev+=x.total;
+      mo[k].mar+=x.total-costOf(x)*x.qty;});
+    const keys=Object.keys(mo).sort();
+    const lab=keys.map(k=>new Date(k+'-01').toLocaleString('en-GB',{month:'short'}));
+    freshChart(el,{type:'bar',data:{labels:lab,datasets:[
+      {label:'Revenue',data:keys.map(k=>+mo[k].rev.toFixed(2)),backgroundColor:'#7fd7e8',borderWidth:0,borderRadius:4},
+      {label:'Gross margin',data:keys.map(k=>+mo[k].mar.toFixed(2)),backgroundColor:'#e8c66b',borderWidth:0,borderRadius:4}]},
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{labels:{color:'rgba(244,245,247,0.66)',boxWidth:12,font:{size:11}}}},
+        scales:{x:{grid:{display:false},ticks:{color:'rgba(244,245,247,0.66)'}},
+                y:{grid:{color:'rgba(255,255,255,0.07)'},ticks:{color:'rgba(244,245,247,0.66)',callback:v=>Number(v).toLocaleString('en-MY',{maximumFractionDigits:0})}}}}});
   });
 }
 /* The statement, presented the way a reader who knows the standards expects to see it. */
@@ -8538,20 +8545,19 @@ function ifrsPanel(){
     return `<tr class="${opt.cls||''}"><td class="l">${lab}${opt.ref?`<div class="iref">${esc(opt.ref)}</div>`:''}</td>
       <td class="mono" style="${opt.neg?'color:var(--crim)':''}">${v==null?'&mdash;':(opt.neg?'('+fmt0(Math.abs(v))+')':fmt0(v))}</td>
       <td class="l isub">${esc(opt.n||'')}</td></tr>`;};
-  return `<h2 style="margin-top:20px">Statement of profit or loss <span class="tag buychip">IFRS</span> <span class="sub" style="font-weight:400">${esc(P.name)}, to ${TODAY.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}</span> <span class="rule"></span></h2>
+  return `<h2 style="margin-top:20px">Statement of profit or loss <span class="tag buychip">IFRS</span> <span class="sub" style="font-weight:400">${esc(P.name)}, to ${TODAY.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})} &middot; movement costs at today's rates, applied throughout</span> <span class="rule"></span></h2>
   <div class="card">
     <table class="fintab istmt"><tbody>
       ${L('Revenue',F.rev,{ref:'IFRS 15',n:`${kg(F.soldKg)} recognised on transfer of control`})}
       ${L('Cost of sales &mdash; goods',-F.goods,{neg:true,ref:'IAS 2.11',n:'at the rate of the lot each order drew from'})}
-      ${L('Cost of sales &mdash; freight in',-F.freightCos,{neg:true,ref:'IAS 2.11',n:`${fmt0(F.freightTot)} over ${F.lots} lot${F.lots===1?'':'s'}, ${fmt(F.freightPerKg)}/unit`})}
-      ${L('<b>Gross profit</b>',F.gross,{cls:'tot',n:`${F.grossPct}% of revenue`})}
+      ${L('Cost of sales &mdash; freight in',-F.freightCos,{neg:true,ref:'IAS 2.11',n:`${fmt0(COST_BASIS.freightPerTrip.rm)} a trip on ${F.lots} lot${F.lots===1?'':'s'}, ${fmt(F.freightPerKg)}/unit`})}
+      ${L('<b>Gross profit</b>',F.gross,{cls:'tot',n:`${F.grossPct}% of revenue${F.freightCos>0.009?`, and ${fmt0(F.freightCos)} under the gross margin above, which charges goods only`:''}`})}
       ${L('Selling and distribution',-F.selling,{neg:true,ref:'IAS 2.16(d)',n:`${F.delAssumed} of ${F.delN} orders delivered at ${fmt0(COST_BASIS.txnPerDelivery.rm)}, the rest collected`})}
       ${L('Marketing &mdash; samples and testers',-F.marketing,{neg:true,ref:'IAS 38.69',n:F.sampleKg?`${kg(F.sampleKg)} at ${fmt(F.unitCost)}`:'none'})}
       ${L('Abnormal inventory loss',-F.abnormal,{neg:true,ref:'IAS 2.16(a)',n:F.abnKg?`${kg(F.abnKg)} ${F.attributed?'lost in store or short delivered':'unexplained'}`:'none'})}
       ${L('Impairment &mdash; trade receivables',-F.ecl,{neg:true,ref:'IFRS 9',n:F.ecl?'loss allowance on open balances':'no open balance'})}
       ${L('Impairment &mdash; supplier prepayment',-F.supImp,{neg:true,ref:'IAS 36',n:F.supImp?`${ID(supplierReceivable.party)}, paid and never delivered`:'none'})}
       ${L('<b>Operating profit</b>',F.opProfit,{cls:'tot',n:`${F.opPct}% of revenue`})}
-      ${F.ownKg?L('Owner&rsquo;s use',-F.ownUse,{neg:true,ref:'a drawing, not a cost',n:`${kg(F.ownKg)} taken for himself, shown here and deliberately NOT inside operating profit`}):''}
       ${F.ownKg?L("Owner&rsquo;s use",-F.ownUse,{neg:true,ref:'a drawing, not a cost',n:`${kg(F.ownKg)} taken for himself, shown below the trading result and NOT in operating profit`}):''}
     </tbody></table>
     <div class="dsc" style="margin-top:9px">Gross profit is struck on inventoriable cost alone. The three lines beneath it are recovered in the price but cannot sit in inventory, which is why the pricing basis of ${fmt(c.eff)} and the balance-sheet cost of ${fmt(c.landed)} are different numbers and are meant to be.</div>
@@ -8565,12 +8571,19 @@ function ifrsPanel(){
   </div>`;
 }
 function tabFinancials(){
-  const cf=cashFlow();
   const rows=finRows();
   const mLab=mo=>new Date(mo+'-01').toLocaleDateString('en-GB',{month:'long',year:'numeric'});
   const fy=rows.reduce((a,[,v])=>{Object.keys(v).forEach(k=>a[k]=(a[k]||0)+v[k]);return a;},{});
   const gm=v=>v.rev-v.cogs, gmp=v=>v.rev>0?gm(v)/v.rev*100:0, net=v=>gm(v)-v.provAR-v.provSup;
   const uncol=fy.rev-fy.cash-fy.inkind;
+  /* v385: A NEGATIVE HERE IS AN OVERTENDER AND READS AS A NEGATIVE DEBT WITHOUT A WORD ON IT.
+     CZ4-MK tendered RM150 against a RM130 oil order on the 26th, so oil collected RM20 more
+     than it invoiced and this row went to RM -20. The arithmetic is right and the sign is
+     right: what is missing is that the RM20 is not owed back in cash, it is 1.54 unit of oil
+     owed out, which is exactly what the Order book states two views away. Nothing is
+     recomputed to say so; the row says which of the two a minus is. */
+  const unc=v=>{const u=v.rev-v.cash-v.inkind;
+    return `<b>${fmt0(u)}</b>${u<-0.009?'<em class="finpct">held against goods</em>':''}`;};
   const col=(v,neg)=>`<td style="${neg&&v>0?'color:var(--crim)':''}">${v?fmt0(neg?-v:v):'&mdash;'}</td>`;
   const pl=`<table class="fintab"><thead><tr><th class="l">Line</th>${rows.map(([mo])=>`<th>${mLab(mo).split(' ')[0]}</th>`).join('')}<th class="fy">FY 2026</th></tr></thead><tbody>
     <tr><td class="l">Revenue</td>${rows.map(([,v])=>col(v.rev)).join('')}<td class="fy">${fmt0(fy.rev)}</td></tr>
@@ -8584,45 +8597,21 @@ function tabFinancials(){
     <tr><td class="l">Invoiced</td>${rows.map(([,v])=>col(v.rev)).join('')}<td class="fy">${fmt0(fy.rev)}</td></tr>
     <tr><td class="l">Collected in cash</td>${rows.map(([,v])=>col(v.cash)).join('')}<td class="fy">${fmt0(fy.cash)}</td></tr>
     <tr><td class="l">Settled in kind</td>${rows.map(([,v])=>col(v.inkind)).join('')}<td class="fy">${fmt0(fy.inkind)}</td></tr>
-    <tr class="tot"><td class="l">Still uncollected</td>${rows.map(([,v])=>`<td><b>${fmt0(v.rev-v.cash-v.inkind)}</b></td>`).join('')}<td class="fy"><b>${fmt0(uncol)}</b></td></tr>
+    <tr class="tot"><td class="l">Still uncollected</td>${rows.map(([,v])=>`<td>${unc(v)}</td>`).join('')}<td class="fy">${unc(fy)}</td></tr>
   </tbody></table>`;
   return `<h1>Financials</h1>
   <div class="dsc dsclead" style="margin-bottom:12px">Financial year ending <b>31 Dec 2026</b> &middot; accrual by order date &middot; pending orders excluded &middot; in-kind revenue carries a matching expense</div>
   <div class="kpis k3">
-    <div class="kpi gold"><div class="l">FY revenue</div><div class="v">${fmt0(fy.rev)}</div><div class="n">${kg(fy.kg)} sold &middot; ${rows.length} months</div></div>
-    <div class="kpi"><div class="l">FY gross margin</div><div class="v">${fmt0(gm(fy))}</div><div class="n">${gmp(fy).toFixed(1)}% of revenue</div></div>
+    <div class="kpi gold"><div class="l">FY revenue</div><div class="v">${fmt0(fy.rev)}</div><div class="n">${kg(fy.kg)} sold &middot; ${rows.length} month${rows.length===1?'':'s'}</div></div>
+    <div class="kpi"><div class="l">FY gross margin</div><div class="v">${fmt0(gm(fy))}</div><div class="n">${gmp(fy).toFixed(1)}% of revenue, before freight in</div></div>
     <div class="kpi r"><div class="l">Provisions carried</div><div class="v">${fmt0(fy.provAR+fy.provSup)}</div><div class="n">debtors ${fmt0(fy.provAR)} &middot; supplier ${fmt0(fy.provSup)}</div></div>
   </div>
   <div class="card" style="margin-top:14px"><div class="cardh">The year, by month <span class="sub">revenue and gross margin</span></div><div class="chartbox" style="height:180px"><canvas id="finMonthChart"></canvas></div></div>
-  <h2 style="margin-top:18px">Cash position <span class="rule"></span></h2>
-  <div class="kpis k4">
-    <div class="kpi ${cf.net<0?'r':'g'}"><div class="l">Trading net</div><div class="v">${fmt0(cf.net)}</div><div class="n">what the salt itself has generated</div></div>
-    <div class="kpi gold"><div class="l">Promised away</div><div class="v">${fmt0(cf.dueOut)}</div><div class="n">bills and refunds already committed</div></div>
-    <div class="kpi p"><div class="l">Still to come in</div><div class="v">${fmt0(cf.dueIn)}</div><div class="n">net of provisioning</div></div>
-    <div class="kpi r"><div class="l">Supplier bills unpaid</div><div class="v">${fmt0(cf.billsOut)}</div><div class="n">${cf.refundsOut>0.009?`${fmt0(cf.refundsOut)} refunds also promised away`:'no refunds promised away'}</div></div>
-  </div>
-  <div class="card" style="margin-top:12px"><table><thead><tr><th class="l">Line</th><th>RM</th><th class="l">What it is</th></tr></thead><tbody>
-    <tr><td class="l">Cash in from sales</td><td>${fmt0(cf.inRM)}</td><td class="l">every ringgit actually received, set-offs excluded</td></tr>
-    <tr><td class="l">Cash out for stock</td><td>${fmt0(-cf.outRM)}</td><td class="l">paid to suppliers, including the lot that never arrived</td></tr>
-    ${cf.inj>0.009?`<tr><td class="l">Money you put in</td><td>${fmt0(cf.inj)}</td><td class="l">injections recorded in cashAdjust</td></tr>`:''}
-    ${cf.spend>0.009?`<tr><td class="l">Costs and drawings</td><td>${fmt0(-cf.spend)}</td><td class="l">non-trading outflows recorded in cashAdjust</td></tr>`:''}
-    ${cf.refPaid>0.009?`<tr><td class="l">Customer refunds paid</td><td>${fmt0(-cf.refPaid)}</td><td class="l">a paid refund is trade cash going back out</td></tr>`:''}
-    <tr class="tot"><td class="l">Trading net</td><td><b>${fmt0(cf.net)}</b></td><td class="l">${cf.known?'added to your opening balance above':'a flow, not a balance'}</td></tr>
-  </tbody></table>
-  <div class="dsc" style="margin-top:8px">${cf.known
-    ? (()=>{/* read the top tier off the live quote rather than hardcoding it: this line
-              sat at RM4,800 for two days after the quote was corrected to RM4,700 */
-       const bt=((supplierQuote&&supplierQuote.tiers)||[]).slice().sort((a,b)=>b.qty-a.qty)[0];
-       const lead=`After the <b>${fmt0(cf.dueOut)}</b> already promised away, <b>${fmt0(cf.free)}</b> is yours to commit.`;
-       if(!bt) return lead;
-       const cost=bt.total, rate=+(bt.total/bt.qty).toFixed(2);
-       return `${lead} A ${kg(bt.qty)} lot at ${fmt(rate)} would take <b>${fmt0(cost)}</b>, so the buy in P1 ${cf.free>=cost?'is covered':`is <b>${fmt0(cost-cf.free)}</b> short of covered`}.`;})()
-    : `This is what trading has <b>generated</b>, not what you <b>hold</b>. The desk cannot know what was in the bank before 26 Jun, nor what you have drawn since, so it will not pass a flow off as a balance. Set <code>OPENING_CASH</code> near the top of this file and every figure here becomes a real position, including whether the 100 unit buy in P1 is affordable. Non-trading movements go in <code>cashAdjust</code>.`}</div></div>
-  <h2 style="margin-top:18px">Profit &amp; loss <span class="rule"></span></h2>
+  <h2 style="margin-top:18px">Profit &amp; loss <span class="sub" style="font-weight:400">goods at the rate of the lot each order drew; freight in is charged in the statement below</span> <span class="rule"></span></h2>
   <div class="card" style="overflow-x:auto">${pl}</div>
   <h2 style="margin-top:18px">Cash against invoiced <span class="rule"></span></h2>
   <div class="card" style="overflow-x:auto">${cash}
-    <div class="dsc" style="margin-top:8px">Uncollected = advances awaiting payment plus amounts folded into later orders. Closing stock <b>${kg(currentStock)}</b> at ${fmt(STOCK_COST)}/unit = <b>${fmt0(currentStock*STOCK_COST)}</b> on the shelf.</div></div>
+    <div class="dsc" style="margin-top:8px">Uncollected = advances awaiting payment plus amounts folded into later orders. Closing stock <b>${kg(currentStock)}</b> at ${fmt(stockCostFor(PROD))}/unit = <b>${fmt0(currentStock*stockCostFor(PROD))}</b> on the shelf, before freight in.</div></div>
 
   <h2 style="margin-top:22px">The cost of doing business <span class="rule"></span></h2>
   ${costPanel()}${ifrsPanel()}`;
@@ -8957,17 +8946,42 @@ function costPanel(){
 
   /* what one more ringgit of per-order cost does to each end of the ladder: the
      sensitivity is the argument, because it is the same ringgit either way */
+  /* v385: THE RATE OF TRADE IS ORDERS PER MONTH, AND THE MONTH COUNT WAS THE LITERAL 2.
+     A standing cost divided by half the orders EVER placed is a figure about a two-month
+     book and nothing else. Salt has traded three months and oil one, so the line said
+     RM1.96 an order where the answer is RM2.94, and RM33.33 where it is RM16.67: wrong on
+     both books and in opposite directions. It was deleted at render from v372 until v384,
+     which is why a hardcoded 2 outlived two months of trading unremarked. */
+  const months=Math.max(1,finRows().length);
   const small=sizes[0], big=sizes[sizes.length-1];
   const pS=tier.prices[0], pB=tier.prices[sizes.length-1];
   const cS=costToServe(small), cB=costToServe(big);
   const shareS=pS>0?(1/(pS-cS.total)*100):0, shareB=pB>0?(1/(pB-cB.total)*100):0;
+  /* v385: THREE PARAGRAPHS OF THIS WERE NEVER ON THE PAGE. stripMethod cuts EVERY .insight
+     to its first sentence once it passes NOTE_MIN, so from v372 the only thing that rendered
+     was "Read the last two columns against each other" and the sensitivity, which is the
+     finding, was cut every time. One sentence now, carrying the figures, and short enough
+     that the cut does not fire and the emphasis survives with it. The two standing paragraphs
+     said the same thing on every render whatever the data, which is what v372 removed.
+     An order that earns nothing divides by nothing, so the share is guarded rather than
+     printed as an infinity; Price is about to move the oil sizes, which is what moves it. */
+  /* v386: AN ORDER THAT DOES NOT COVER ITS COST HAS NO PERCENTAGE TO TAKE. The v385 board
+     shows five oil sizes rather than fourteen, and at 20 unit and up an oil order is under
+     its own cost, so the share went NEGATIVE and the sentence read "takes -0.6% off what a
+     50 unit order earns", which is not a thing that can happen. The guard here covered an
+     infinity and not a minus, which is the narrower half of the same fault. Where an end is
+     under water the sentence says that instead, because it is the more important finding of
+     the two and a percentage of a loss is not a sensitivity. */
+  const cS0=pS-cS.total, cB0=pB-cB.total;
+  const bite=(c,q)=>`takes <b>${(1/c*100).toFixed(1)}%</b> off what a ${kg(q)} order earns`;
+  const both=cS0>0.009&&cB0>0.009;
+  const ratio=both?(cB0/cS0).toFixed(0):null;
 
   return `<div class="dsc" style="margin-bottom:10px">Costs are grouped by <b>how they scale</b>, because that is what decides which order is worth taking. A <b>per-unit</b> cost doubles when the order doubles. A <b>per-order</b> cost lands whole on every order whatever its size, so it is the line that separates a half unit from six. Figures below are against the ${esc(tier.name)} card.</div>
 
-  <div class="kpis k4">
+  <div class="kpis k3">
     <div class="kpi"><div class="l">Goods, per unit</div><div class="v">${fmt(c.eff)}</div><div class="n">${fmt(c.repl)} plus ${(c.shrink*100).toFixed(2)}% of the leak; you absorb ${fmt(c.absorbed)} more</div></div>
     <div class="kpi ${s0.knownParts<s0.totalParts?'r':'g'}"><div class="l">Per order</div><div class="v">${s0.perOrder>0?fmt(s0.perOrder):'&mdash;'}</div><div class="n">${s0.knownParts} of ${s0.totalParts} lines measured</div></div>
-    <div class="kpi ${R.supplierPct&&R.supplierPct>3?'r':''}"><div class="l">Lost to suppliers</div><div class="v">${R.supplierPct==null?'&mdash;':R.supplierPct+'%'}</div><div class="n">${fmt0(R.supplierLostRM)} of ${fmt0(R.supplierSpentRM)} paid out</div></div>
     <div class="kpi"><div class="l">Provisioned against</div><div class="v">${R.badDebtPct==null?'&mdash;':R.badDebtPct+'%'}</div><div class="n">${fmt0(R.badDebtRM)} discounted on ${fmt0(R.revenueRM)} written</div></div>
   </div>
 
@@ -8978,14 +8992,12 @@ function costPanel(){
       ${dl.observed?`Delivery is the observed average over ${dl.n} logged trips.`:`Delivery falls back to the <b>${fmt(dl.rm)}</b> written into the tier basis and has <b>never been observed</b>; log a few trips and it derives itself.`}</div></div>
     <div class="card"><div class="cardh">Every month, whether anything sells</div>
       <table><thead><tr><th class="l">Line</th><th>RM</th><th class="l">What it is</th></tr></thead><tbody>${monthly}</tbody></table>
-      <div class="dsc" style="margin-top:8px">Spread over ${pricedSales.length} orders to date, every <b>RM100 a month</b> of standing cost is about <b>${fmt(100/Math.max(1,pricedSales.length/2))}</b> an order at the current rate of trade.</div></div>
+      <div class="dsc" style="margin-top:8px">Spread over ${pricedSales.length} orders across ${months} month${months===1?'':'s'}, every <b>RM100 a month</b> of standing cost is about <b>${fmt(100/Math.max(1,pricedSales.length/months))}</b> an order at the current rate of trade.</div></div>
   </div>
 
   <h3 style="margin-top:18px;font-size:14px">What an order is worth, once the trip is in it</h3>
   <div class="card" style="margin-top:8px"><table><thead><tr><th class="l">Size</th><th>${esc(tier.code)} price</th><th>Goods</th><th>Per order</th><th>Order earns</th><th>Per unit</th><th>Pays your time to</th></tr></thead><tbody>${rows}</tbody></table>
-  <div class="insight" style="margin-top:10px"><b>Read the last two columns against each other.</b> Per unit falls as the order grows, which is the taper working as designed. Per order <b>rises steeply</b>, because the trip, the bag and the conversation cost the same either way.
-  <br><br>Which one matters depends on what you are short of. When the shelf was empty, a unit was the scarce thing and the per-unit column was the right one to read. You now hold <b>${kg(currentStock)}</b>, so units are not scarce; <b>trips and hours are</b>, and that makes the per-order column the one that decides.
-  <br><br>The sensitivity says it plainly: <b>one more ringgit</b> of per-order cost takes <b>${shareS.toFixed(1)}%</b> off what a ${kg(small)} order earns and <b>${shareB.toFixed(1)}%</b> off a ${kg(big)} one. Every line you have not measured hurts the small end ${shareB>0?(shareS/shareB).toFixed(0):'many'} times harder.</div></div>
+  <div class="insight" style="margin-top:10px">A ringgit more per order ${cS0>0.009?bite(cS0,small):`is the whole of what a ${kg(small)} order earns`}${both?`, and <b>${(1/cB0*100).toFixed(1)}%</b> off a ${kg(big)} one, ${ratio} times harder at the small end`:`, and a ${kg(big)} one does not cover its own cost`}.</div></div>
 
   <div class="dsc" style="margin-top:12px"><b>Nothing here is invented.</b> Goods and the leak come off the book, the two risk figures are read from what has actually been written off and provisioned, and every line that has not been measured says so rather than carrying a plausible number. Set one in <b>COST_BOOK</b> and it appears in every figure above.</div>`;
 }
@@ -9003,13 +9015,22 @@ function tabReceivables(){
      salt-only by construction, because a written-off default belongs to the book it happened
      on and must not follow the switcher onto another product's page. */
   const _S=pSales(PROD), _B=pPurch(PROD);
-  const none='<div class="dsc">None.</div>';
   // ===== CUSTOMER SIDE =====
-  // Cash they owe you: advance deliveries (salt out, cash short), aged + provisioned.
-  const cCash=arList.map(s=>{const d=dbet(s.date),g=outstandingOf(s),rate=provRate(d),n=+(g*(1-rate)).toFixed(2),over=(s.deliveredQty||0)>1&&!s.exemptCap;return {id:s.customer,date:s.date,d,g,rate,n,over};});
+  // Cash they owe you: advance deliveries (goods out, cash short), aged + provisioned.
+  /* OLDEST FIRST, STATED HERE RATHER THAN INHERITED (v385). These tables come out in date
+     order today, but only because the BOOK is in date order and CI proves it in a different
+     file; nothing on this part asked for it. Age is what makes an open item urgent on either
+     side, so the order every table on this part needs is now stated where the table is built:
+     oldest first, undated last, a tie broken by the larger amount. A Correction that moves a
+     row's date therefore cannot land it in the wrong place between folds.
+     THE CHART IS THE ONE THAT VISIBLY MOVED. It sorted by size while the table beside it sat
+     in date order, so the pair could not be read across. Both read down the ladder now. */
+  const oldest=(a,b)=>(a.date||'9999-99-99')<(b.date||'9999-99-99')?-1:(a.date===b.date?0:1);
+  const cCash=arList.map(s=>{const d=dbet(s.date),g=outstandingOf(s),rate=provRate(d),n=+(g*(1-rate)).toFixed(2),over=(s.deliveredQty||0)>1&&!s.exemptCap;return {id:s.customer,date:s.date,d,g,rate,n,over};})
+    .sort((a,b)=>b.d-a.d||b.g-a.g);
   const cCashBody=cCash.map(r=>`<tr><td class="l mono">${ID(r.id)}${r.over?' <span class="attn" title="advance over the 1 unit credit cap">over cap</span>':''}</td><td class="l">${r.date}</td><td>${r.d}d</td><td>${fmt0(r.g)}</td><td>${(r.rate*100).toFixed(0)}%</td><td>${fmt0(r.n)}</td></tr>`).join('');
-  // Salt you owe them: deferred (paid ahead of delivery).
-  const cSalt=_S.map(s=>{const k=txDeferKg(s);if(k<=0.009)return null;return {id:s.customer,date:s.date,k:+k.toFixed(2),rm:+(k*txPrice(s)).toFixed(2)};}).filter(Boolean);
+  // Goods you owe them: deferred (paid ahead of delivery).
+  const cSalt=_S.map(s=>{const k=txDeferKg(s);if(k<=0.009)return null;return {id:s.customer,date:s.date,k:+k.toFixed(2),rm:+(k*txPrice(s)).toFixed(2)};}).filter(Boolean).sort(oldest);
   const cSaltKg=+cSalt.reduce((a,r)=>a+r.k,0).toFixed(2),cSaltRm=+cSalt.reduce((a,r)=>a+r.rm,0).toFixed(2);
   const cSaltBody=cSalt.map(r=>`<tr><td class="l mono">${ID(r.id)}</td><td class="l">${r.date}</td><td>${kg(r.k)}</td><td>${fmt0(r.rm)}</td></tr>`).join('');
   // Refunds you owe customers.
@@ -9022,19 +9043,19 @@ function tabReceivables(){
   const cRefBody=cRef.map(r=>`<tr><td class="l mono">${ID(r.party)}</td><td class="l">${r.since||''}</td><td>${fmt0(r.amount)}</td></tr>`).join('');
   const cRefTot=+cRef.reduce((a,r)=>a+(r.amount||0),0).toFixed(2);
   // Pending customer orders (agreed, nothing moved).
-  const cPen=_S.map(s=>{const k=txPendKg(s);if(k<=0.009)return null;return {id:s.customer,date:s.date,k,rm:txPendRM(s)};}).filter(Boolean);
+  const cPen=_S.map(s=>{const k=txPendKg(s);if(k<=0.009)return null;return {id:s.customer,date:s.date,k,rm:txPendRM(s)};}).filter(Boolean).sort(oldest);
   const cPenKg=+cPen.reduce((a,r)=>a+r.k,0).toFixed(2),cPenRm=+cPen.reduce((a,r)=>a+r.rm,0).toFixed(2);
   const cPenBody=cPen.map(r=>`<tr><td class="l mono">${ID(r.id)}</td><td class="l">${r.date||'not dated'}</td><td>${kg(r.k)}</td><td>${fmt0(r.rm)}</td></tr>`).join('');
   // ===== SUPPLIER SIDE =====
   // Cash you owe suppliers: bills for salt delivered to you, unpaid.
   /* an unpaid lot is a bill whether or not it has landed: excluding in-transit hid a
      real payable, and the panel opposite was simultaneously calling it "paid for" */
-  const sCash=_B.filter(p=>p.status!=='paid'&&!p.defaulted&&!p.pending).map(p=>({id:p.supplier,date:p.date,rm:+(p.total-(p.cash||0)).toFixed(2)}));
+  const sCash=_B.filter(p=>p.status!=='paid'&&!p.defaulted&&!p.pending).map(p=>({id:p.supplier,date:p.date,rm:+(p.total-(p.cash||0)).toFixed(2)})).sort(oldest);
   const sCashBody=sCash.map(p=>`<tr><td class="l mono">${ID(p.id)}</td><td class="l">${p.date}</td><td>${fmt0(p.rm)}</td></tr>`).join('');
   const sCashTot=+sCash.reduce((a,p)=>a+p.rm,0).toFixed(2);
   // Salt suppliers owe you: paid (or part-paid) but not yet received (in transit).
   const sSalt=_B.filter(p=>poOpenKg(p)>0.0001&&!p.defaulted&&!p.pending)
-    .map(p=>({id:p.supplier,date:p.date,k:poOpenKg(p),rm:+(poOpenKg(p)*poRate(p)).toFixed(2),paid:poCash(p)>=p.total-0.009}));
+    .map(p=>({id:p.supplier,date:p.date,k:poOpenKg(p),rm:+(poOpenKg(p)*poRate(p)).toFixed(2),paid:poCash(p)>=p.total-0.009})).sort(oldest);
   const sSaltBody=sSalt.map(p=>`<tr><td class="l mono">${ID(p.id)}</td><td class="l">${p.date}</td><td>${kg(p.k)}</td><td>${fmt0(p.rm)}</td></tr>`).join('');
   const sSaltKg=+sSalt.reduce((a,p)=>a+p.k,0).toFixed(2);
   // Refunds suppliers owe you: the recoverable default, aged + provisioned.
@@ -9042,27 +9063,65 @@ function tabReceivables(){
   const refDays=dbet(supplierReceivable.since),refRate=provRate(refDays);
   const sRefBody=hasRef?`<tr><td class="l mono">${ID(supplierReceivable.party)}</td><td class="l">${supplierReceivable.since}</td><td>${refDays}d</td><td>${fmt0(supRecovGross)}</td><td>${(refRate*100).toFixed(0)}%</td><td>${fmt0(supRecovNet)}</td></tr>`:'';
   // Pending supplier orders: agreed to buy, nothing paid or received. Counts nowhere else.
-  const sPen=purchases.filter(p=>p.pending&&!p.defaulted)
-    .map(p=>({id:p.supplier,date:p.date,k:p.qty,rm:p.total}));
+  /* v385: _B, not `purchases`. This was the one list on the part still reading the whole
+     book while the comment at the head claimed all of them were scoped, so an agreed-but-unmoved
+     oil buy would have printed under Salt and again under Oil. Latent only because nothing is
+     pending today, which is exactly how the v272 duplicates survived as long as they did. */
+  const sPen=_B.filter(p=>p.pending&&!p.defaulted)
+    .map(p=>({id:p.supplier,date:p.date,k:p.qty,rm:p.total})).sort(oldest);
   const sPenBody=sPen.map(p=>`<tr><td class="l mono">${ID(p.id)}</td><td class="l">${p.date}</td><td>${kg(p.k)}</td><td>${fmt0(p.rm)}</td></tr>`).join('');
   const sPenKg=+sPen.reduce((a,p)=>a+p.k,0).toFixed(2);
   const sPenRM=+sPen.reduce((a,p)=>a+p.rm,0).toFixed(2);
-  // collapsible section: open when it has data; count badge in the summary
-  const sec=(title,q,n,inner)=>`<details class="obsec"${n>0?' open':''}><summary>${title} <span class="q">${q}</span><span class="ct${n>0?'':' zero'}">${n>0?n:'none'}</span></summary><div class="card">${n>0?inner:none}</div></details>`;
+  /* A CATEGORY WITH NO ROWS IS A FIGURE, NOT A FOLD (v385). Every one of these eight was
+     drawn whatever it held, and an empty one was a disclosure control that opened onto the
+     word "None." Salt carried five of them, so most of the taps on this part led nowhere.
+     THE FOLD GOES AND THE STRIP ABOVE IT CARRIES THE ANSWER, which is why both strips widened
+     to four: they had three tiles for four categories, so dropping the empty folds outright
+     would have deleted the only statement that refunds owed and buying agreed are tracked at
+     all. Each side now states its position in four figures and offers a fold only where there
+     is a row behind it. Nothing is hidden: an empty fold held no row to hide. */
+  const sec=(title,q,n,inner)=>n>0?`<details class="obsec" open><summary>${title} <span class="q">${q}</span><span class="ct">${n}</span></summary><div class="card">${inner}</div></details>`:'';
   // hero card: directional colour -> gold class is GREEN (owed to you), r is crimson (you owe), plain ice = neutral
   const hero=(cls,label,val,sub)=>`<div class="kpi ${cls}"><div class="l">${label}</div><div class="v">${val}</div><div class="n">${sub}</div></div>`;
+  /* v385: A CUSTOMER REFUND AND A SUPPLIER DEFAULT BELONG TO ONE BOOK AND SAY SO ON THE OTHER.
+     Both are carried on the default book by construction: cRef is gated on it above, and
+     posInputs() passes supplierReceivable only when the book is salt. A tile reading RM 0
+     under Oil would therefore state that nothing is owed when the answer is merely kept
+     elsewhere, and a zero you can see is worse than a dash that says where to look. Null on
+     the book that holds them, so each tile reads it as "no, show the figure". */
+  const otherBook=PROD===DEFAULT_PROD?null:`carried on the ${esc(PRODUCTS[DEFAULT_PROD].name)} book`;
+  /* v385: THE BOOK NAMES ITSELF. Six labels on this part said "Salt" outright while the part
+     is drawn once per product, so the Oil book reported "Salt you owe 1.54 unit" over an oil
+     row. It was unreachable until the 26th: oil had nothing deferred, so the tile read zero
+     and sec() drew no fold at all. CZ4-MK's overtender put 1.54 unit of oil in that column
+     and the wrong noun came with it. The figure was right throughout; only the word was not. */
+  const NM=codeOfProd(PROD), nm=NM.toLowerCase();
+  /* A BOOK WITH NOTHING OPEN SAYS SO IN ONE LINE (v385). Oil trades and settles on the spot,
+     so its block was two headings, six KPIs reading zero, an ageing chart with nothing to draw
+     and EIGHT folds each saying "None." -- half the part, and none of it an answer to anything.
+     The Order book lists what is OPEN, so a book with nothing open has one thing to report and
+     reports it. Nothing is hidden: there is no fold here to open, because there is no row behind
+     it. The moment a single item opens the full block is back, unchanged.
+     The card carries no .dsc, deliberately: stripMethod() keeps one prose block per part and
+     would delete a second, leaving an empty card under a heading. The sentence rides the
+     cardh's own sub, which is markup the strip does not touch. */
+  const openN=cCash.length+cSalt.length+cRef.length+cPen.length+sCash.length+sSalt.length+sPen.length+(hasRef?1:0);
+  if(!openN) return `<h1>Order book</h1>
+  <div class="dsc dsclead">Who owes you, what you owe, and what the ageing ladder says it is realistically worth.</div>
+  <div class="card" style="margin-top:12px"><div class="cardh">Nothing open <span class="sub">nothing owed either way, and nothing agreed that has not moved</span></div></div>`;
   return `<h1>Order book</h1>
   <div class="dsc dsclead">Who owes you, what you owe, and what the ageing ladder says it is realistically worth.</div>
   <h2>Customers <span class="rule"></span></h2>
-  <div class="kpis k3" style="margin-top:12px">
+  <div class="kpis k4" style="margin-top:12px">
     ${hero('gold','Cash owed to you',fmt0(ar),`${fmt0(arGross)} gross, net of provisioning`)}
-    ${hero('r','Salt you owe',kg(cSaltKg),cSaltKg>0?`worth ${fmt0(cSaltRm)}`:'nothing deferred')}
+    ${hero('r',`${NM} you owe`,kg(cSaltKg),cSaltKg>0?`worth ${fmt0(cSaltRm)}`:'nothing deferred')}
+    ${hero('r','Refunds you owe',otherBook?'&mdash;':fmt0(cRefTot),otherBook||(cRef.length?`${cRef.length} owed back`:'none owed back'))}
     ${hero('','Pending orders',kg(cPenKg),cPenKg>0?`worth ${fmt0(cPenRm)}`:'none open')}
   </div>
   <div class="card" style="margin-top:14px"><div class="cardh">Ageing against the ladder <span class="sub">gross and what it is realistically worth</span></div><div class="chartbox" style="height:190px"><canvas id="rcAgeChart"></canvas></div><div class="dsc" style="margin-top:7px">Each debt twice: the face amount, and the amount net of the provisioning ladder at its age. The gap between the pair is what waiting has already cost.</div></div>
-  ${sec('Cash owed to you','advance deliveries &mdash; salt out, payment short; aged &amp; provisioned',cCash.length,
+  ${sec('Cash owed to you',`advance deliveries &mdash; ${nm} out, payment short; aged &amp; provisioned`,cCash.length,
     `<table><thead><tr><th class="l">Customer</th><th class="l">Since</th><th>Age</th><th>Gross</th><th>Prov.</th><th>Net</th></tr></thead><tbody>${cCashBody}<tr class="tot"><td class="l" colspan="3">Total</td><td>${fmt0(arGross)}</td><td>&mdash;</td><td>${fmt0(ar)}</td></tr></tbody></table>`)}
-  ${sec('Salt you owe them','paid ahead of delivery &mdash; goods still to hand over',cSalt.length,
+  ${sec(`${NM} you owe them`,'paid ahead of delivery &mdash; goods still to hand over',cSalt.length,
     `<table><thead><tr><th class="l">Customer</th><th class="l">Since</th><th>Unit owed</th><th>Value</th></tr></thead><tbody>${cSaltBody}<tr class="tot"><td class="l" colspan="2">Total</td><td>${kg(cSaltKg)}</td><td>${fmt0(cSaltRm)}</td></tr></tbody></table>${cSaltKg>currentStock?`<div class="dsc" style="margin-top:8px"><span class="risk">Exceeds ${kg(currentStock)} on hand &mdash; restock to cover.</span></div>`:''}`)}
   ${sec('Refunds you owe','cash back to a customer',cRef.length,
     `<table><thead><tr><th class="l">Customer</th><th class="l">Since</th><th>Amount</th></tr></thead><tbody>${cRefBody}<tr class="tot"><td class="l" colspan="2">Total</td><td>${fmt0(cRefTot)}</td></tr></tbody></table>`)}
@@ -9070,14 +9129,15 @@ function tabReceivables(){
     `<table><thead><tr><th class="l">Customer</th><th class="l">Since</th><th>Unit</th><th>Value</th></tr></thead><tbody>${cPenBody}<tr class="tot"><td class="l" colspan="2">Total</td><td>${kg(cPenKg)}</td><td>${fmt0(cPenRm)}</td></tr></tbody></table>`)}
 
   <h2 style="margin-top:26px">Suppliers <span class="rule"></span></h2>
-  <div class="kpis k3" style="margin-top:12px">
+  <div class="kpis k4" style="margin-top:12px">
     ${hero('r','Cash you owe',fmt0(sCashTot),sCashTot>0?'bills unpaid':'all lots paid')}
-    ${hero('gold','Salt they owe you',kg(sSaltKg),sSaltKg>0?'in transit':'nothing in transit')}
-    ${hero('gold','Refund due',fmt0(hasRef?supRecovNet:0),hasRef?`${fmt0(supRecovGross)} gross, net of provisioning`:'none')}
+    ${hero('gold',`${NM} they owe you`,kg(sSaltKg),sSaltKg>0?'in transit':'nothing in transit')}
+    ${hero('gold','Refund due',otherBook?'&mdash;':fmt0(hasRef?supRecovNet:0),otherBook||(hasRef?`${fmt0(supRecovGross)} gross, net of provisioning`:'none'))}
+    ${hero('','Agreed to buy',fmt0(sPenRM),sPenKg>0?`${kg(sPenKg)} on order, nothing moved`:'nothing agreed')}
   </div>
-  ${sec('Cash you owe','bills for salt delivered to you, unpaid',sCash.length,
+  ${sec('Cash you owe',`bills for ${nm} delivered to you, unpaid`,sCash.length,
     `<table><thead><tr><th class="l">Supplier</th><th class="l">Since</th><th>Amount</th></tr></thead><tbody>${sCashBody}<tr class="tot"><td class="l" colspan="2">Total</td><td>${fmt0(sCashTot)}</td></tr></tbody></table>`)}
-  ${sec('Salt they owe you','ordered, not yet received &mdash; paid or not',sSalt.length,
+  ${sec(`${NM} they owe you`,'ordered, not yet received &mdash; paid or not',sSalt.length,
     `<table><thead><tr><th class="l">Supplier</th><th class="l">Since</th><th>Unit due</th><th>Value</th></tr></thead><tbody>${sSaltBody}</tbody></table>`)}
   ${sec('Refunds they owe you','recoverable default, aged &amp; provisioned',hasRef?1:0,
     `<table><thead><tr><th class="l">Supplier</th><th class="l">Since</th><th>Age</th><th>Gross</th><th>Prov.</th><th>Net</th></tr></thead><tbody>${sRefBody}</tbody></table><div class="dsc" style="margin-top:8px">Paid 08 Jul for a lot that never arrived; recoverable pending the settlement meeting.</div>`)}
@@ -14489,14 +14549,89 @@ function consoBlock(){
   const C=consoMoney();
   const cell=(l,v,n)=>`<div class="kpi"><div class="l">${l}</div><div class="v">${v}</div><div class="n">${n}</div></div>`;
   const split=k=>C.rows.map(r=>codeOfProd(r.id)+' '+(r[k]==null?'&mdash;':fmt0(r[k]))).join(' &middot; ');
-  return `<div class="conso"><div class="kpis k4">`
-    +cell('Revenue, both products',fmt0(C.rev),split('rev'))
+  return consoHd('Both books','trading added across products; the split is under each figure')
+    +`<div class="conso"><div class="kpis k4">`
+    +cell('Revenue',fmt0(C.rev),split('rev'))
     +cell('Collected',fmt0(C.cash),split('cash'))
     +cell('Gross margin',C.margin==null?'&mdash;':fmt0(C.margin),C.margin==null?'a product has an uncosted row':split('margin'))
     +cell('Spent on stock',fmt0(C.spend),split('spend'))
     +`</div></div>`;
 }
 const codeOfProd=id=>esc((PRODUCTS[id]&&PRODUCTS[id].name)||id);
+/* ============ THE WHOLE-BOOK HEAD (v385) ============
+   perProduct() repeats a builder once per book because a shelf, a cost basis and a price
+   board cannot be ADDED across products. The mirror of that rule was never honoured and it
+   put a wrong figure on the desk: there is ONE BANK ACCOUNT, so the cash position cannot be
+   SPLIT across products either, and cashFlow() says so in its own comment while tabFinancials
+   drew it inside the repeat. The same four figures therefore appeared under Salt and again
+   under Oil, identical to the ringgit, each heading claiming them as that book's. So did
+   riskRates()'s supplier loss, which read "RM 750 of RM 16,950 paid out" above an oil book
+   that spent RM 700 and lost nothing.
+   THE RULE IS NOW STATED ONCE AND OBEYED BOTH WAYS: a figure that cannot be split sits HERE,
+   above the repeat and under its own heading; a figure that cannot be added stays in the
+   product block. Nothing is recomputed to move it. */
+function consoHd(t,sub){return `<div class="prodhd"><span class="pd" style="background:none;box-shadow:inset 0 0 0 2px var(--ice)"></span>${t}<span class="sub">${esc(sub)}</span><span class="rule"></span></div>`;}
+/* THE ORDER BOOK'S OWN HEAD (v385). This part opened on consoBlock(): revenue, cash collected,
+   gross margin, stock spend. Those are the right four figures for the Financials part beneath
+   it and an answer to a question the Order book does not ask. Its question is who owes what,
+   so it opens on that, added across both books because MONEY adds. Units do not, which is why
+   what is owed in goods stays in the per-book strips below rather than being summed here.
+   NOTHING NEW IS COMPUTED. txAdvance, txPendRM and provRate are the engine's own, applied to
+   the whole book exactly as cashFlow() applies them, and the claim named as the one to chase
+   is the first row of the same list the tables below are built from. */
+function obClaims(){
+  const sr=(typeof supplierReceivable!=='undefined'&&supplierReceivable&&supplierReceivable.status==='recoverable')?supplierReceivable:null;
+  const row=(who,date,g)=>{const d=dbet(date);return {who:who,d:d,g:+(+g).toFixed(2),n:+(g*(1-provRate(d))).toFixed(2)};};
+  return sales.filter(s=>txAdvance(s)>0.009).map(s=>row(s.customer,s.date,txAdvance(s)))
+    .concat(sr?[row(sr.party,sr.since,sr.amount)]:[])
+    .sort((a,b)=>b.d-a.d||b.g-a.g);
+}
+function consoOrderBlock(){
+  const cl=obClaims(), cf=cashFlow(), o=cl[0];
+  const g=+cl.reduce((a,r)=>a+r.g,0).toFixed(2), n=+cl.reduce((a,r)=>a+r.n,0).toFixed(2);
+  const pend=+sales.reduce((a,s)=>a+txPendRM(s),0).toFixed(2);
+  const pendB=+purchases.filter(x=>x.pending&&!x.defaulted).reduce((a,x)=>a+(+x.total||0),0).toFixed(2);
+  const cell=(cls,l,v,note)=>`<div class="kpi ${cls}"><div class="l">${l}</div><div class="v">${v}</div><div class="n">${note}</div></div>`;
+  return consoHd('Both books','money adds across products, so the claim is stated once')
+    +`<div class="conso"><div class="kpis k4">`
+    +cell('gold','Owed to you',fmt0(n),g>0.009?`${fmt0(g)} gross; the ladder has already discounted ${fmt0(+(g-n).toFixed(2))}`:'nothing owed to you')
+    +cell(o&&provRate(o.d)>=0.5?'r':'','Chase first',o?ID(o.who):'&mdash;',o?`${o.d} days &middot; ${fmt0(o.g)} gross, ${(provRate(o.d)*100).toFixed(0)}% of it already written off by the ladder`:'nothing is owed to you')
+    +cell('r','You owe, in cash',fmt0(cf.dueOut),cf.dueOut>0.009?`${fmt0(cf.billsOut)} of supplier bills &middot; ${fmt0(cf.refundsOut)} of refunds`:'no bill and no refund outstanding')
+    +cell('','Agreed, nothing moved',fmt0(pend),pendB>0.009?`and ${fmt0(pendB)} of buying agreed the same way`:'no buying agreed the same way')
+    +`</div></div>`;
+}
+/* THE CASH POSITION AND THE SUPPLIER LOSS, lifted out of tabFinancials by v385 unchanged.
+   Both are whole-book by construction, so both were being stated twice under two headings.
+   The prose below is the tab's own and is kept verbatim; stripMethod() removes it on render
+   exactly as it did where it stood before. */
+function consoCashBlock(){
+  const cf=cashFlow(), R=riskRates();
+  return consoHd('Cash and supplier risk','one bank account and one set of suppliers, so neither can be split by book')
+  +`<div class="kpis k5">
+    <div class="kpi ${cf.net<0?'r':'g'}"><div class="l">Trading net</div><div class="v">${fmt0(cf.net)}</div><div class="n">what trading has generated, both books</div></div>
+    <div class="kpi gold"><div class="l">Promised away</div><div class="v">${fmt0(cf.dueOut)}</div><div class="n">bills and refunds already committed</div></div>
+    <div class="kpi p"><div class="l">Still to come in</div><div class="v">${fmt0(cf.dueIn)}</div><div class="n">net of provisioning</div></div>
+    <div class="kpi r"><div class="l">Supplier bills unpaid</div><div class="v">${fmt0(cf.billsOut)}</div><div class="n">${cf.billsOut>0.009?(cf.refundsOut>0.009?`and ${fmt0(cf.refundsOut)} of refunds on top`:'no refunds on top'):(cf.refundsOut>0.009?`every lot paid for; ${fmt0(cf.refundsOut)} of refunds still owed`:'every lot paid for')}</div></div>
+    <div class="kpi ${R.supplierPct&&R.supplierPct>3?'r':''}"><div class="l">Lost to suppliers</div><div class="v">${R.supplierPct==null?'&mdash;':R.supplierPct+'%'}</div><div class="n">${fmt0(R.supplierLostRM)} of ${fmt0(R.supplierSpentRM)} paid out</div></div>
+  </div>
+  <div class="card" style="margin-top:12px"><table><thead><tr><th class="l">Line</th><th>RM</th><th class="l">What it is</th></tr></thead><tbody>
+    <tr><td class="l">Cash in from sales</td><td>${fmt0(cf.inRM)}</td><td class="l">every ringgit actually received, set-offs excluded</td></tr>
+    <tr><td class="l">Cash out for stock</td><td>${fmt0(-cf.outRM)}</td><td class="l">paid to suppliers, including the lot that never arrived</td></tr>
+    ${cf.inj>0.009?`<tr><td class="l">Money you put in</td><td>${fmt0(cf.inj)}</td><td class="l">injections recorded in cashAdjust</td></tr>`:''}
+    ${cf.spend>0.009?`<tr><td class="l">Costs and drawings</td><td>${fmt0(-cf.spend)}</td><td class="l">non-trading outflows recorded in cashAdjust</td></tr>`:''}
+    ${cf.refPaid>0.009?`<tr><td class="l">Customer refunds paid</td><td>${fmt0(-cf.refPaid)}</td><td class="l">a paid refund is trade cash going back out</td></tr>`:''}
+    <tr class="tot"><td class="l">Trading net</td><td><b>${fmt0(cf.net)}</b></td><td class="l">${cf.known?'added to your opening balance above':'a flow, not a balance'}</td></tr>
+  </tbody></table>
+  <div class="dsc" style="margin-top:8px">${cf.known
+    ? (()=>{/* read the top tier off the live quote rather than hardcoding it: this line
+              sat at RM4,800 for two days after the quote was corrected to RM4,700 */
+       const bt=((supplierQuote&&supplierQuote.tiers)||[]).slice().sort((a,b)=>b.qty-a.qty)[0];
+       const lead=`After the <b>${fmt0(cf.dueOut)}</b> already promised away, <b>${fmt0(cf.free)}</b> is yours to commit.`;
+       if(!bt) return lead;
+       const cost=bt.total, rate=+(bt.total/bt.qty).toFixed(2);
+       return `${lead} A ${kg(bt.qty)} lot at ${fmt(rate)} would take <b>${fmt0(cost)}</b>, so the buy in P1 ${cf.free>=cost?'is covered':`is <b>${fmt0(cost-cf.free)}</b> short of covered`}.`;})()
+    : `This is what trading has <b>generated</b>, not what you <b>hold</b>. The desk cannot know what was in the bank before 26 Jun, nor what you have drawn since, so it will not pass a flow off as a balance. Set <code>OPENING_CASH</code> near the top of this file and every figure here becomes a real position, including whether the 100 unit buy in P1 is affordable. Non-trading movements go in <code>cashAdjust</code>.`}</div></div>`;
+}
 /* v275: SAY WHICH BOOK YOU ARE LOOKING AT. Today, Forward and Overview are drawn ONCE, at
    the active product, while their own lead lines claim the whole desk. The v228 comment
    asserted the switcher scoped them; the builders map never wrapped them, and v262 turned
@@ -14517,7 +14652,7 @@ function setProdView(pr){
   PROD=pr; try{localStorage.setItem('saltProd',pr);}catch(e){}
   recompute(); drawProdSw(); render();
 }
-const builders={today:tabToday,forward:tabForward,sourcing:()=>perProduct(tabSourcing,{skipEmpty:true}),analysis:()=>perProduct(tabAnalysis),map:tabMap,overview:tabOverview,inventory:()=>perProduct(tabInventory),financials:()=>consoBlock()+perProduct(tabFinancials),ledger:tabLedger,concentration:tabConcentration,network:tabNetwork,receivables:()=>consoBlock()+perProduct(tabReceivables),add:tabWorkbench,pricing:()=>perProduct(tabPricing),plans:tabPlans,approve:tabApprove};
+const builders={today:tabToday,forward:tabForward,sourcing:()=>perProduct(tabSourcing,{skipEmpty:true}),analysis:()=>perProduct(tabAnalysis),map:tabMap,overview:tabOverview,inventory:()=>perProduct(tabInventory),financials:()=>consoBlock()+consoCashBlock()+perProduct(tabFinancials),ledger:tabLedger,concentration:tabConcentration,network:tabNetwork,receivables:()=>consoOrderBlock()+perProduct(tabReceivables),add:tabWorkbench,pricing:()=>perProduct(tabPricing),plans:tabPlans,approve:tabApprove};
 /* ============ SEVEN VIEWS OVER FIFTEEN TABS (v341, move 4 of the rebuild) ============
    The fifteen tabs were fifteen reports stacked: a megabyte to open for one figure, with the
    method prose standing open on every one. A view leads with one tab open, folds that tab's

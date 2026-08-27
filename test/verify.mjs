@@ -2215,6 +2215,193 @@ section("Payload — the people, the next thirty days and the age of a debt (v34
   ok(!/show\(3\)/.test(app) && /show\('p-add'\)/.test(app), "a tab is addressed by its id, not its position");
 }
 
+/* ---- 25. Orders and money: a figure is stated where it is true, and once (v385) ----
+   Both faults this locks down were silent for weeks and every exit code was zero.
+   cashFlow() is whole-book by construction and says so in its own comment, and tabFinancials
+   drew it INSIDE perProduct(), so the same four figures appeared under Salt and again under
+   Oil, each heading claiming them. riskRates()'s supplier legs did the same. And ifrsPanel()
+   carried two Owner's use rows, so a statement of profit or loss reported one drawing twice.
+   A duplicated figure reads exactly like a counted one, which is why this is a test. */
+section("Orders and money — whole-book figures sit above the repeat, and once (v385)");
+{
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  const read = (expr) => JSON.parse(w.eval("JSON.stringify(" + expr + ")"));
+  const html = (expr) => String(w.eval(expr));
+  const count = (h, needle) => h.split(needle).length - 1;
+
+  /* a figure that cannot be SPLIT by book must not be drawn inside the per-product repeat */
+  const fin = html("builders.financials()"), one = html("tabFinancials()");
+  ok(count(fin, '<div class="l">Trading net</div>') === 1 && count(fin, '<div class="l">Still to come in</div>') === 1,
+    "the cash position is on the Financials part once, not once per book");
+  ok(count(fin, "Lost to suppliers") === 1, "and so is what the suppliers have cost");
+  ok(count(one, "Trading net") === 0 && count(one, "Lost to suppliers") === 0,
+    "a per-product builder states no whole-book figure at all");
+
+  /* a whole-book head must give the same answer whichever book happens to be selected */
+  const keep = read("PROD");
+  const seen = { order: new Set(), cash: new Set(), conso: new Set() };
+  for (const pr of read("PROD_IDS")) {
+    w.eval(`PROD=${JSON.stringify(pr)};recompute();`);
+    seen.order.add(html("consoOrderBlock()")); seen.cash.add(html("consoCashBlock()")); seen.conso.add(html("consoBlock()"));
+  }
+  w.eval(`PROD=${JSON.stringify(keep)};recompute();`);
+  ok(seen.order.size === 1 && seen.cash.size === 1 && seen.conso.size === 1,
+    "and reads the same whichever book is selected");
+
+  /* the Order book's head is the sum of the books beneath it, not a second opinion */
+  const cl = read("obClaims()");
+  const g = +cl.reduce((a, x) => a + x.g, 0).toFixed(2), n = +cl.reduce((a, x) => a + x.n, 0).toFixed(2);
+  let sg = 0, sn = 0;
+  for (const pr of read("PROD_IDS")) {
+    w.eval(`PROD=${JSON.stringify(pr)};recompute();`);
+    sg += read("arGross"); sn += read("ar");
+  }
+  w.eval(`PROD=${JSON.stringify(keep)};recompute();`);
+  ok(g === +sg.toFixed(2) && n === +sn.toFixed(2), `the head's claim is the books added up (${g} gross, ${n} net)`);
+  ok(cl.every((x, i) => i === 0 || cl[i - 1].d >= x.d), "and it is ordered oldest first, so the one to chase is the one named");
+
+  /* a drawing is reported once. Two rows shipped for four versions and neither was wrong on its face. */
+  for (const pr of read("PROD_IDS")) {
+    w.eval(`PROD=${JSON.stringify(pr)};recompute();`);
+    ok(count(html("ifrsPanel()"), "Owner&rsquo;s use") <= 1, `${pr}: the statement reports the owner's drawing once`);
+  }
+  w.eval(`PROD=${JSON.stringify(keep)};recompute();`);
+
+  /* an empty fold is a control that opens onto nothing; the strip above it carries the answer */
+  const rec = html("builders.receivables()");
+  ok(count(rec, 'class="ct zero"') === 0 && count(rec, ">None.<") === 0,
+    "every fold on the Order book has a row behind it");
+  for (const pr of read("PROD_IDS")) {
+    w.eval(`PROD=${JSON.stringify(pr)};recompute();`);
+    const b = html("tabReceivables()");
+    ok(count(b, '<details class="obsec"') > 0 ? count(b, "Nothing open") === 0 : count(b, "Nothing open") === 1,
+      `${pr}: the book either lists what is open or says in one line that nothing is`);
+  }
+  w.eval(`PROD=${JSON.stringify(keep)};recompute();`);
+  ok(!/>\s*(undefined|NaN|Infinity)/.test(rec + fin), "neither part renders an undefined, a NaN or an infinity");
+  try { w.close(); } catch (e) { }
+}
+
+/* ---- 26. Orders and money: the basis moved under the figures (v385) ----------------
+   v382 halved a trip to RM30 and moved its divisor from the latest lot to the average one,
+   and took a delivery from RM50 to RM10. Nothing on this view holds a frozen number, so
+   nothing went stale. What the pass found instead was three things a moving basis makes
+   worse, and these lock them down.
+   THE FIRST IS THE ONE THAT MATTERS. Two gross figures sit on this tab: the monthly table
+   charges goods at the lot rate, the IFRS statement adds freight in, and until now neither
+   said so. They part by exactly the freight-in charge, which halved on 27 Aug with nothing
+   on the surface saying why. The statement now states the bridge, so it is tested.
+   THE SECOND IS DRIFT. ifrsPL spreads freight as total over everything received, which is
+   algebraically the rate over the MEAN lot, so it happened to be on v382's basis before
+   v382 was written. That is luck, not design, and the next change to either need not be so
+   kind. The two are asserted equal.
+   THE THIRD IS THE WORD. This part is drawn once per book and six labels said "Salt". */
+section("Orders and money — every basis is named where the figure is stated (v385)");
+{
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  const read = (expr) => JSON.parse(w.eval("JSON.stringify(" + expr + ")"));
+  const html = (expr) => String(w.eval(expr));
+  const keep = read("PROD"), names = read("PRODUCTS"), ids = read("PROD_IDS");
+  const setP = (p) => w.eval(`PROD=${JSON.stringify(p)};recompute();`);
+
+  for (const pr of ids) {
+    setP(pr);
+    const nm = names[pr].name, other = ids.filter((x) => x !== pr).map((x) => names[x].name);
+    /* the book names itself. "Salt you owe 1.54 unit" stood over an oil row until v385. */
+    const rec = html("tabReceivables()");
+    ok(rec.includes(`${nm} you owe`) || !rec.includes("you owe them"),
+      `${pr}: the Order book calls what is owed in goods by this book's name`);
+    ok(other.every((o) => !rec.includes(`${o} you owe`) && !rec.includes(`${o} they owe`)),
+      `${pr}: and never by another book's`);
+
+    /* the two gross figures on the Financials tab differ by the freight-in charge and say so */
+    const F = read(`ifrsPL(${JSON.stringify(pr)})`);
+    const rows = read("finRows()");
+    const fy = rows.reduce((a, [, v]) => { Object.keys(v).forEach((k) => a[k] = (a[k] || 0) + v[k]); return a; }, {});
+    const monthly = +(fy.rev - fy.cogs).toFixed(2);
+    ok(+(monthly - F.gross).toFixed(2) === F.freightCos,
+      `${pr}: the monthly gross margin and the statement's gross profit part by the freight in (${F.freightCos})`);
+    const panel = html("ifrsPanel()");
+    if (F.freightCos > 0.009)
+      ok(panel.includes(`under the gross margin above`), `${pr}: and the statement states that bridge rather than leaving it to be derived`);
+
+    /* one engine, on whatever basis it is set to. Both are the rate over the mean lot today;
+       a price lock legitimately freezes the desk's copy, so that is the one exemption. */
+    const c = read("pxCost()");
+    if (!c.locked && F.lots > 0)
+      ok(F.freightPerKg === c.freight,
+        `${pr}: the statement's freight per unit is the pricing engine's (${F.freightPerKg})`);
+    /* and the cell names the live rate, so moving the rate without the copy fails here */
+    if (F.lots > 0) ok(panel.includes(html("fmt0(COST_BASIS.freightPerTrip.rm)") + " a trip"),
+      `${pr}: the freight line names the rate it was struck at`);
+
+    /* a month on the P&L is evidence that something happened in it */
+    ok(rows.every(([, v]) => Math.abs(v.rev) + Math.abs(v.cogs) + Math.abs(v.cash) + Math.abs(v.kg) > 0.009),
+      `${pr}: every month on the P&L has trade in it`);
+
+    /* an overtender is stock owed, not a negative debt, and the row says which */
+    const fin = html("tabFinancials()");
+    const unc = (fin.match(/Still uncollected<\/td>(.*?)<\/tr>/) || [, ""])[1];
+    ok((unc.match(/RM\s*-/g) || []).length === (unc.match(/held against goods/g) || []).length,
+      `${pr}: a negative uncollected figure says it is goods owed out, not cash owed back`);
+
+    /* THE CLOSING STOCK IS THIS BOOK'S, AT THIS BOOK'S RATE. It read the salt-wide
+       STOCK_COST inside a per-product block, so the oil book valued 20 unit of oil at
+       salt's RM50 and reported RM1,000 on a shelf holding RM153. Invisible from v372,
+       when stripMethod began deleting the sentence, until v384 put it back. */
+    const right = html("fmt0(currentStock*stockCostFor(PROD))"), wrong = html("fmt0(currentStock*STOCK_COST)");
+    ok(fin.includes(`${right}</b> on the shelf`), `${pr}: closing stock is valued at this book's own shelf rate (${right})`);
+    if (right !== wrong) ok(!fin.includes(`${wrong}</b> on the shelf`), `${pr}: and never at another book's (${wrong})`);
+
+    /* THE RATE OF TRADE IS ORDERS PER MONTH AND THE MONTHS ARE COUNTED, NOT ASSUMED. */
+    const per = html("fmt(100/Math.max(1,pricedSales.length/Math.max(1,finRows().length)))");
+    ok(fin.includes(`<b>${per}</b> an order`), `${pr}: a standing cost is spread over the orders this book actually places in a month (${per})`);
+  }
+
+  /* NEITHER DRAW SWALLOWS A THROW. Both held an empty catch INSIDE their ensureChart
+     callback, which fires before drawPerProduct's reporter and before ensureChart's, so a
+     broken chart left a blank canvas and said nothing anywhere. Found with a Chart that
+     throws, which is the only probe that sees through an inner catch: watching for a
+     failure notice sees nothing, because there was nothing to see. Both catches are gone
+     rather than replaced, since every road out now has a reporter on it. */
+  const src = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+  for (const fn of ["drawRecvCharts", "drawFinCharts"]) {
+    const at = src.indexOf(`function ${fn}()`), end = src.indexOf("\nfunction ", at + 12);
+    const body = src.slice(at, end > at ? end : at + 3000);
+    ok(!/\}catch\(e\)\{\}/.test(body), `${fn} does not swallow a throw, so a broken chart says so`);
+  }
+
+  /* THE FINDING IS ON THE PAGE, WHICH IT WAS NOT FROM v372 TO v385. stripMethod cuts every
+     .insight to its first sentence once it reaches NOTE_MIN, so three paragraphs rendered as
+     "Read the last two columns against each other" and the sensitivity was cut every time.
+     Asserted against the DOM AFTER the strip, because before it everything looks present. */
+  const noteMin = +(/const NOTE_MIN=(\d+)/.exec(src) || [])[1];
+  for (const pr of ids) {
+    setP(pr);
+    w.switchTab("financials");
+    const ins = [...w.document.querySelectorAll('.sec.on .prodblock[data-prod="' + pr + '"] .insight')];
+    ok(ins.length === 1, `${pr}: the cost panel states one finding`);
+    if (ins.length) {
+      const t = (ins[0].textContent || "").trim();
+      ok(/\d[\d.]*%/.test(t), `${pr}: and it survives the strip carrying its figures ("${t.slice(0, 60)}...")`);
+      /* the cut writes textContent, which destroys every child element, so surviving
+         emphasis is the proof that the block stayed under NOTE_MIN and was never cut.
+         Measuring the RENDERED length instead proves nothing: it is short either way. */
+      ok(ins[0].querySelectorAll("b").length > 0,
+        `${pr}: the cut never fired, so the emphasis on the figures is still there (${t.length} of ${noteMin} chars)`);
+      /* A SHARE OF A LOSS IS NOT A SENSITIVITY. v385 shows five oil sizes rather than
+         fourteen and an oil order is under its own cost from 20 unit up, so the share went
+         negative and the sentence read "takes -0.6% off what a 50 unit order earns", which
+         is not a thing that can happen. The guard covered an infinity and not a minus. */
+      ok(!/-\s?\d[\d.]*%/.test(t), `${pr}: it states no negative share of what an order earns ("${t.slice(-58)}")`);
+    }
+  }
+  setP(keep);
+  try { w.close(); } catch (e) { }
+}
+
 section("Silence — four things that failed without saying so (v384)");
 {
   const m = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
