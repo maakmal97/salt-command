@@ -1906,7 +1906,10 @@ section("Fold — an approved batch becomes records in the book (v340)");
       if (r3.ok) {
         const row = C3.sales.find((x) => x.rid === "sX02");
         ok(!row.unpriced && row.total === 290, "the unpriced flag clears itself when a real total lands");
-        ok(/unpriced \(cleared/.test(row.mod || ""), "and the trail records that it did");
+        /* v385: the trail is built from what was WRITTEN now, so it states the transition as
+           well as the reason. The old form named only the reason, which read the same whether
+           the flag had been set or not. */
+        ok(/unpriced true to \(cleared\), a real total was set/.test(row.mod || ""), "and the trail records that it did, and what it was before");
       }
     }
 
