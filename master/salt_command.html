@@ -6802,6 +6802,15 @@ function edSubmit(){
   const why=document.getElementById('edWhy');
   const say=m=>{if(why)why.innerHTML='<span style="color:var(--amber)">'+m+'</span>';};
   if(!Object.keys(fields).length)return say('Nothing changed, so there is nothing to queue.');
+  /* v384: THE FOLD REFUSES A FIELD CORRECTABLE DOES NOT HOLD, SO THE SCREEN SAYS SO FIRST.
+     v383 folded two corrections naming <code>customer</code> where the correctable field is
+     <code>party</code>: applyAmend wrote nothing and still built the mod line out of the keys it
+     was handed, so both rows recorded a re-key that never happened. EDFORM cannot emit that
+     today, its keys and CORRECTABLE's being the same set in both directions; this is for the
+     next control added to the sheet. Checked against the engine's own table rather than a copy
+     of it, because a second list is how the two came apart in the first place. */
+  const edStray=Object.keys(fields).filter(k=>(POSITION_ENGINE.CORRECTABLE||[]).indexOf(k)<0);
+  if(edStray.length)return say('This sheet offered <b>'+esc(edStray.join(', '))+'</b>, which the fold does not accept as a correction field. Nothing was queued.');
   const has=k=>Object.prototype.hasOwnProperty.call(fields,k);
   const fa=has('assoc')?fields.assoc:now.assoc, fs=has('stream')?fields.stream:now.stream;
   if(fa&&!fs)return say('An associate needs a stream, R2 or R3, to say how the credit reaches them.');
@@ -11447,10 +11456,23 @@ function apCard(d){
         +cell('Margin',mar==null?'&mdash;':mar.toFixed(1)+'%',mar==null?'':(d.flags&&d.flags.length)?'gold':mar<20?'r':'g')
         +rate)
       +cell('Cash',fmt0(r.cash||0))+cell(buy?'Received':'Delivered',kg(buy?(r.receivedQty!=null?r.receivedQty:qty):(r.deliveredQty||0)));}
+  /* v384: A DRAFT'S FLAGS ARE FROZEN AT DRAFT TIME AND THE ROSTER IS NOT. v381 re-keyed
+     CZ4-TBC to CZ4-MK and CH6-TBC to CH6-SET and purged both placeholders. A row drafted
+     before that names a code that WAS on the roster when the drafter read it, so no roster
+     flag was ever written into it, and nothing can reach back into a pending draft to add
+     one. Only a reader holding today's book can see it, which is why this is the single
+     thing on this card the desk says for itself.
+     IT COMPUTES NO FIGURE. Not a cost, not a margin, not a floor: set membership against the
+     roster this desk already renders, and it can only ADD a caution, never alter one the
+     drafter wrote. Same class of fact as the drafter's own stale-snapshot flag. Not drawn on
+     a roster draft, where a code the book does not hold is the whole point of the row. */
+  const apGone=(col==='sales'||col==='purchases')&&d.party&&roster.indexOf(d.party)<0
+    ?`<div class="warnpill" style="display:block;margin:8px 0 0;background:rgba(255,122,138,.14);border-color:var(--crim);color:var(--crim)"><b>Read here, not from the draft.</b> ${esc(codeOf(d.party))} is not on the roster this book holds. The row was drafted ${esc((d.draftedAt||'').slice(0,10)||'earlier')} and the code has been retired or renamed since. Do not approve it against a code the book no longer has.</div>`:'';
   return `<div class="card" style="margin-top:10px" data-id="${esc(d.id)}">
     <div style="font-size:14px">${head}</div>
     <div class="kpis k4" style="margin-top:10px">${grid}</div>
     ${(d.flags||[]).map(f=>`<div class="warnpill" style="display:block;margin:8px 0 0;background:rgba(240,147,43,.14);border-color:var(--amber);color:#f5c98a">&#9888; ${esc(f)}</div>`).join('')}
+    ${apGone}
     ${d.reasoning?`<div class="dsc" style="margin-top:8px">${esc(d.reasoning)}</div>`:''}
     <div style="display:flex;gap:8px;margin-top:10px"><button class="vbtn" data-ap="approve" data-id="${esc(d.id)}" style="background:linear-gradient(135deg,#5fd6a0,#3fae82);border-color:transparent;color:#0c2018;box-shadow:none">Approve</button><button class="vbtn" data-ap="reject" data-id="${esc(d.id)}" style="background:rgba(255,122,138,.16);border-color:var(--crim);color:var(--crim);box-shadow:none">Reject</button></div>
   </div>`;

@@ -1009,8 +1009,27 @@ section("Drafter — rows, refusals and flags");
   const cut = draftRow(entry({ direction: "SELL", party: "CC5-OKR", qty: 1, total: 80, cash: 80, kg: 1, date: "2026-08-16" }), book);
   ok(cut.flags.some(f => /has paid RM 90/.test(f)), "a party who has always paid RM90 being charged RM80 is flagged");
   ok(buyNoFloor.flags.every(f => !/floor/.test(f)), "a PURCHASE is never measured against a selling floor");
-  ok(cut.flags.some(f => /under the delivered floor/.test(f)), "and RM80 is flagged as under the RM85.75 delivered floor");
-  ok(cut.flags.some(f => /clears the collected floor/.test(f)), "with the collected floor reported, because it does clear that");
+  /* v384: THE FLOOR IS THE COST LEG ALONE, so a row at it earns nothing at all rather than a
+     thin margin, and this sentence is the only place a reader is ever told. Both floors are
+     NAMED, because RM10 separates delivered from collected where RM50 used to and "the floor"
+     had quietly become two things. */
+  ok(cut.flags.some(f => /RM 5.75 under the DELIVERED floor of RM 85.75/.test(f)), "RM80 is flagged as RM5.75 under the RM85.75 delivered floor, by how much and not only that it is");
+  ok(cut.flags.some(f => /clears the COLLECTED floor of RM 79.5/.test(f)), "the collected floor is named and reported, because it does clear that");
+  ok(cut.flags.some(f => /what the order costs to take out/.test(f)), "and the flag says what the floor IS, so a row at it is not read as thin margin");
+  const under = draftRow(entry({ direction: "SELL", party: "CC5-OKR", qty: 1, total: 70, cash: 70, kg: 1, date: "2026-08-16" }), book);
+  ok(under.flags.some(f => /under the COLLECTED floor of RM 79.5 as well/.test(f) && /neither way/.test(f)),
+    "a price under both floors says so, and says it covers itself neither way");
+
+  /* THE TIME CHARGE IS READ OFF THE POLICY AND NEVER TYPED INTO THE FLAG. An older snapshot
+     carries no policy, and the clause then comes out rather than asserting a figure the
+     snapshot does not hold. */
+  const timed = JSON.parse(JSON.stringify(book));
+  timed.pricing.byProduct.salt.inputs = { policy: { timePerOrder: 25 } };
+  ok(floorFor(timed, "salt", 1).time === 25 && floorFor(book, "salt", 1).time === null,
+    "floorFor reports the stated time charge, and null where the snapshot has no policy");
+  const timedCut = draftRow(entry({ direction: "SELL", party: "CC5-OKR", qty: 1, total: 80, cash: 80, kg: 1, date: "2026-08-16" }), timed);
+  ok(timedCut.flags.some(f => /RM 25 for your time/.test(f)), "and the flag names it where it is stated");
+  ok(cut.flags.every(f => !/for your time/.test(f)), "and leaves the clause out where it is not, rather than guessing at RM25");
 
   /* ---- below cost ---- */
   const loss = draftRow(entry({ direction: "SELL", party: "CS6-BS-R", product: "oil", qty: 20, total: 120, cash: 120, kg: 20, date: "2026-08-16" }), book);
@@ -1490,6 +1509,41 @@ section("App — an unapproved entry can be corrected and resent");
   ok(/if\(EDITING\)\{ EDITING=null; \$\('editBanner'\)\.hidden=true; \}/.test(app),
     "switching Trade/Amend/Stock/Add ID by hand cancels an edit in progress rather than orphaning it");
   ok(app.includes("id=\"editCancel\""), "and there is an explicit way to cancel one without switching modes");
+}
+
+/* ---- 21. The correction sheet may name only what the fold accepts (v384) ---------- */
+section("Desk — the row editor names only fields CORRECTABLE holds");
+{
+  const master = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+  const { default: X } = await import("../engine/position.mjs");
+
+  /* THE v383 FAULT, ASSERTED SO IT CANNOT COME BACK. Two corrections named `customer` where
+     the correctable field is `party`. applyAmend wrote only what CORRECTABLE holds and still
+     built the mod line and the trail from every key it was handed, so both rows recorded a
+     re-key that had never happened. THE RECORD AND THE WRITE WERE BUILT FROM DIFFERENT LISTS.
+     The fold refuses an unknown field now; this asserts the sheet can never emit one, which is
+     the half no refusal can give back, because a refusal at the fold is four steps and a person
+     away from the hand that typed it. */
+  const edform = master.slice(master.indexOf("const EDFORM=["), master.indexOf("const edFields="));
+  const keys = [...new Set([...edform.matchAll(/k:'([a-zA-Z]+)'/g)].map(m => m[1]))];
+  ok(keys.length > 25, `the EDFORM table was found and read, ${keys.length} distinct fields`);
+  const offeredNotCorrectable = keys.filter(k => X.CORRECTABLE.indexOf(k) < 0);
+  ok(offeredNotCorrectable.length === 0,
+    `every field the sheet offers is one the fold accepts; the fold would refuse ${offeredNotCorrectable.join(", ")}`);
+  const correctableNotOffered = X.CORRECTABLE.filter(k => keys.indexOf(k) < 0);
+  ok(correctableNotOffered.length === 0,
+    `and every correctable field is reachable from the sheet; unreachable: ${correctableNotOffered.join(", ")}`);
+
+  /* ONE TABLE, READ, NEVER COPIED. A second copy of the list is how the write and the record
+     came apart in the first place, so the guard reads the engine's own export. */
+  const edSubmit = master.slice(master.indexOf("function edSubmit(){"), master.indexOf("function ledQuick("));
+  ok(edSubmit.includes("POSITION_ENGINE.CORRECTABLE"), "the guard checks against the engine's own table");
+  ok(edSubmit.indexOf("edStray.length") < edSubmit.indexOf("queue.push"),
+    "and refuses BEFORE the push, so a field the fold would refuse is never queued");
+  ok(edSubmit.slice(edSubmit.indexOf("edStray.length"), edSubmit.indexOf("queue.push")).includes("return say("),
+    "through the same message line that refuses an unchanged row, not a silent drop");
+  const afterEngine = master.slice(master.indexOf("==== END ENGINE position ===="));
+  ok(!afterEngine.includes("const CORRECTABLE="), "and nothing outside the engine block keeps a second copy of the list");
 }
 
 /* ---- the engine ------------------------------------------------------------------ */
