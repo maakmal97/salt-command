@@ -2127,14 +2127,14 @@ section("Payload — the people, the next thirty days and the age of a debt (v34
   ok(!/show\(3\)/.test(app) && /show\('p-add'\)/.test(app), "a tab is addressed by its id, not its position");
 }
 
-/* ---- 25. Orders and money: a figure is stated where it is true, and once (v381) ----
+/* ---- 25. Orders and money: a figure is stated where it is true, and once (v384) ----
    Both faults this locks down were silent for weeks and every exit code was zero.
    cashFlow() is whole-book by construction and says so in its own comment, and tabFinancials
    drew it INSIDE perProduct(), so the same four figures appeared under Salt and again under
    Oil, each heading claiming them. riskRates()'s supplier legs did the same. And ifrsPanel()
    carried two Owner's use rows, so a statement of profit or loss reported one drawing twice.
    A duplicated figure reads exactly like a counted one, which is why this is a test. */
-section("Orders and money — whole-book figures sit above the repeat, and once (v381)");
+section("Orders and money — whole-book figures sit above the repeat, and once (v384)");
 {
   const { openMaster } = await import("../tools/payload.mjs");
   const { w } = await openMaster();
@@ -2192,6 +2192,74 @@ section("Orders and money — whole-book figures sit above the repeat, and once 
   }
   w.eval(`PROD=${JSON.stringify(keep)};recompute();`);
   ok(!/>\s*(undefined|NaN|Infinity)/.test(rec + fin), "neither part renders an undefined, a NaN or an infinity");
+  try { w.close(); } catch (e) { }
+}
+
+/* ---- 26. Orders and money: the basis moved under the figures (v384) ----------------
+   v382 halved a trip to RM30 and moved its divisor from the latest lot to the average one,
+   and took a delivery from RM50 to RM10. Nothing on this view holds a frozen number, so
+   nothing went stale. What the pass found instead was three things a moving basis makes
+   worse, and these lock them down.
+   THE FIRST IS THE ONE THAT MATTERS. Two gross figures sit on this tab: the monthly table
+   charges goods at the lot rate, the IFRS statement adds freight in, and until now neither
+   said so. They part by exactly the freight-in charge, which halved on 27 Aug with nothing
+   on the surface saying why. The statement now states the bridge, so it is tested.
+   THE SECOND IS DRIFT. ifrsPL spreads freight as total over everything received, which is
+   algebraically the rate over the MEAN lot, so it happened to be on v382's basis before
+   v382 was written. That is luck, not design, and the next change to either need not be so
+   kind. The two are asserted equal.
+   THE THIRD IS THE WORD. This part is drawn once per book and six labels said "Salt". */
+section("Orders and money — every basis is named where the figure is stated (v384)");
+{
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  const read = (expr) => JSON.parse(w.eval("JSON.stringify(" + expr + ")"));
+  const html = (expr) => String(w.eval(expr));
+  const keep = read("PROD"), names = read("PRODUCTS"), ids = read("PROD_IDS");
+  const setP = (p) => w.eval(`PROD=${JSON.stringify(p)};recompute();`);
+
+  for (const pr of ids) {
+    setP(pr);
+    const nm = names[pr].name, other = ids.filter((x) => x !== pr).map((x) => names[x].name);
+    /* the book names itself. "Salt you owe 1.54 unit" stood over an oil row until v384. */
+    const rec = html("tabReceivables()");
+    ok(rec.includes(`${nm} you owe`) || !rec.includes("you owe them"),
+      `${pr}: the Order book calls what is owed in goods by this book's name`);
+    ok(other.every((o) => !rec.includes(`${o} you owe`) && !rec.includes(`${o} they owe`)),
+      `${pr}: and never by another book's`);
+
+    /* the two gross figures on the Financials tab differ by the freight-in charge and say so */
+    const F = read(`ifrsPL(${JSON.stringify(pr)})`);
+    const rows = read("finRows()");
+    const fy = rows.reduce((a, [, v]) => { Object.keys(v).forEach((k) => a[k] = (a[k] || 0) + v[k]); return a; }, {});
+    const monthly = +(fy.rev - fy.cogs).toFixed(2);
+    ok(+(monthly - F.gross).toFixed(2) === F.freightCos,
+      `${pr}: the monthly gross margin and the statement's gross profit part by the freight in (${F.freightCos})`);
+    const panel = html("ifrsPanel()");
+    if (F.freightCos > 0.009)
+      ok(panel.includes(`under the gross margin above`), `${pr}: and the statement states that bridge rather than leaving it to be derived`);
+
+    /* one engine, on whatever basis it is set to. Both are the rate over the mean lot today;
+       a price lock legitimately freezes the desk's copy, so that is the one exemption. */
+    const c = read("pxCost()");
+    if (!c.locked && F.lots > 0)
+      ok(F.freightPerKg === c.freight,
+        `${pr}: the statement's freight per unit is the pricing engine's (${F.freightPerKg})`);
+    /* and the cell names the live rate, so moving the rate without the copy fails here */
+    if (F.lots > 0) ok(panel.includes(html("fmt0(COST_BASIS.freightPerTrip.rm)") + " a trip"),
+      `${pr}: the freight line names the rate it was struck at`);
+
+    /* a month on the P&L is evidence that something happened in it */
+    ok(rows.every(([, v]) => Math.abs(v.rev) + Math.abs(v.cogs) + Math.abs(v.cash) + Math.abs(v.kg) > 0.009),
+      `${pr}: every month on the P&L has trade in it`);
+
+    /* an overtender is stock owed, not a negative debt, and the row says which */
+    const fin = html("tabFinancials()");
+    const unc = (fin.match(/Still uncollected<\/td>(.*?)<\/tr>/) || [, ""])[1];
+    ok((unc.match(/RM\s*-/g) || []).length === (unc.match(/held against goods/g) || []).length,
+      `${pr}: a negative uncollected figure says it is goods owed out, not cash owed back`);
+  }
+  setP(keep);
   try { w.close(); } catch (e) { }
 }
 
