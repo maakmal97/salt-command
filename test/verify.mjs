@@ -1546,6 +1546,37 @@ section("Desk — the row editor names only fields CORRECTABLE holds");
   ok(!afterEngine.includes("const CORRECTABLE="), "and nothing outside the engine block keeps a second copy of the list");
 }
 
+/* ---- 22. A caveat is a separate block, never a second sentence (v385) ------------- */
+section("Desk — the Whiteboard caveats cannot be cut off");
+{
+  const master = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+  const NOTE_MIN = Number(master.slice(master.indexOf("NOTE_MIN=") + 9).match(/^[0-9]+/));
+  ok(NOTE_MIN > 0, "NOTE_MIN was read from the master rather than assumed, at " + NOTE_MIN);
+
+  /* stripMethod cuts an .insight past NOTE_MIN to its FIRST sentence, so a caveat written as a
+     second sentence is the half that goes. The thin-book caveat measured 151 characters at every
+     size a book can be, one order or a thousand, so it had never once reached the screen: a
+     reader of a book under forty orders got the count and no word that every item beneath it is
+     damped. The other branch survived on twenty characters of headroom, which is not safety, it
+     is the figures being small today. UNDER NOTE_MIN IS A PROPERTY OF A TEMPLATE AND ITS
+     FIGURES, NEVER OF THE TEMPLATE ALONE, so the test measures the caveats ALONE: standing by
+     themselves they cannot be pushed over by any figure, whatever the book grows to. */
+  const NL = String.fromCharCode(10);
+  const plans = master.slice(master.indexOf("function tabPlans(){"), master.indexOf(NL + "function ", master.indexOf("function tabPlans(){") + 20));
+  const caveats = [...plans.matchAll(/'([A-Z][^']{40,})'/g)].map(m => m[1])
+    .filter(t => /forecast with|thin book/.test(t));
+  ok(caveats.length === 2, "both rhythm caveats were found in the source, got " + caveats.length);
+  caveats.forEach(c => ok(c.length < NOTE_MIN,
+    "a caveat standing alone is under the limit and cannot be cut: " + c.length + " of " + NOTE_MIN + ", \"" + c.slice(0, 40) + "...\""));
+
+  /* and they must actually STAND alone: one .insight for the count, another for the caveat */
+  ok(plans.includes('<div class="insight">${esc(rhythmCount)}</div>'),
+    "the count is its own block");
+  ok(plans.includes("${rhythmCaveat?") && plans.includes("esc(rhythmCaveat)"),
+    "and the caveat is its own block rather than a second sentence in the count's");
+  ok(!plans.includes("rhythmLine"), "the joined version is gone, so nothing can put them back together");
+}
+
 /* ---- the engine ------------------------------------------------------------------ */
 section("Engine — one definition, out of the desk (v337)");
 {
