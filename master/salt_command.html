@@ -3761,8 +3761,9 @@ function ovAmend(p,q){
        they had not made. Refusing an unknown field upstream stops the case that is known.
        Reading the SAME list the writes read makes the whole class impossible: a field the
        writes cannot set can no longer reach the record. CORRECTABLE is exactly the union of
-       the lists below, so the two can no longer disagree. applyAmend in tools/fold.mjs is
-       taking the same repair; until both are done the Ledger's check is a guard, not a fix. */
+       the lists below, so the two can no longer disagree. applyAmend in tools/fold.mjs took
+       the matching repair at be2de5a, reading the row back after every write, so the strip on
+       the Ledger is now a check on the record rather than a guard against the tool. */
     POSITION_ENGINE.CORRECTABLE.forEach(k=>{
       if(!asked(k))return;
       const was=before[k]===undefined?null:before[k];
@@ -6085,7 +6086,22 @@ function tabAnalysis(){
     <div class="kpi ${dry>0?'r':'g'}"><div class="l">Days with an empty shelf</div><div class="v">${dry}</div><div class="n">of ${sh.length} trading days reconstructed</div></div>
     <div class="kpi p"><div class="l">Top three buyers</div><div class="v">${(bc.slice(0,3).reduce((a,x)=>a+x.rev,0)/tot*100).toFixed(0)}%</div><div class="n">of ${fmt0(tot)} written across ${bc.length}</div></div>
   </div>
-  ${(su.sample>0.005||su.personal>0.005)?`<div class="insight">${kg(su.sample+su.personal)} of what went out without a sale went out <b>on purpose</b>, as promotion and his own use${(su.spillage+su.other+Math.max(0,su.gap))>0.005?', leaving '+kg(+(su.spillage+su.other+Math.max(0,su.gap)).toFixed(2))+' that is stock genuinely missing':', and none of it is stock that went missing'}.</div>`:''}
+  ${(()=>{
+    /* UNDER NOTE_MIN IS A PROPERTY OF THE TEMPLATE PLUS TODAY'S FIGURES, not of the template.
+       This block read "34 unit of what went out without a sale went out on purpose, as promotion
+       and his own use, and none of it is stock that went missing": 133 characters against a limit
+       of 140, which is seven characters of headroom held by a two-digit quantity. Salt's branch
+       was already over at 144 and losing its emphasis to cut(). The answer is not to trim it, it
+       is to stop the block carrying figures the KPI directly above it already states: what is
+       left is the finding, and the ONE figure that is the finding. The empty branch now holds no
+       data at all and cannot grow; the other moves only with a quantity, on 20 characters of
+       room. Both survive cut() whole in any case, being one sentence with no full stop inside. */
+    if(su.sample<=0.005&&su.personal<=0.005)return '';
+    const miss=+(su.spillage+su.other+Math.max(0,su.gap)).toFixed(2);
+    return `<div class="insight">`+(miss>0.005
+      ?`Only <b>${kg(miss)}</b> of what left without a sale is genuinely missing; the rest went <b>on purpose</b>, as promotion and his own use.`
+      :`<b>None</b> of what left without a sale is genuinely missing: it all went <b>on purpose</b>, as promotion and his own use.`)+`</div>`;
+  })()}
   ${(()=>{
     /* ============ DOES EVERY STATED CORRECTION AGREE WITH THE ROW IT NAMES? ============
        The Ledger checks one row as you read it. This is the same check over the whole book,
@@ -6118,6 +6134,25 @@ function tabAnalysis(){
   <h2 style="margin-top:20px">The board against what people actually pay <span class="rule"></span></h2>
   <div class="dsc" style="margin-bottom:9px">Every priced order as a dot, with the current board drawn through it. A dot <b>under</b> the line is an order that would be quoted higher today. This is plans P2, P3 and P5 in one picture, and it is the chart to argue with rather than the averages.</div>
   <div class="chartbox"><canvas id="anScatter"></canvas></div>
+  ${(()=>{
+    /* ============ THE LINE THROUGH THE DOTS IS NOT ALWAYS THE BOARD ============
+       pxQuote says in its own comment that it returns the board cell on a carded size and
+       reaches for enginePrice only off the board. It calls enginePrice unconditionally, and
+       enginePrice is a different engine: cost-plus solved for a target return with a tier
+       multiplier and a demand lift, five-grid rounded down, against the ladder's cogs times
+       markup, ratcheted and floor-lifted. Measured across both books they agree at 23 of 24
+       board sizes and part company at salt 0.5 unit, RM70 here against RM60 quoted, where the
+       ladder's own ask is also under its own floor of RM61.92.
+       THE REPAIR IS PRICE'S, since it is a pricing rule and pricing rules live in the engine.
+       What is this view's to do is not draw a line called the board when it is not the board.
+       It is COMPUTED, not written down: the moment the two engines agree the notice disappears
+       by itself, so it can never outlive the fault it describes and become stale prose. */
+    const off=PRICE_TIERS.sizes.map(q=>({q:q,a:pxQuote(q,pxSignals().net,0).total,b:priceLadder(q).ask.total}))
+      .filter(r=>r.b!=null&&Math.abs(r.a-r.b)>0.005);
+    if(!off.length)return '';
+    const r=off[0];
+    return `<div class="insight">The line and the Price tab disagree at <b>${off.length} of ${PRICE_TIERS.sizes.length}</b> board sizes: at ${kg(r.q)} it reads ${fmt0(r.a)} where the board quotes ${fmt0(r.b)}.</div>`;
+  })()}
 
   <h2 style="margin-top:20px">The shelf, reconstructed <span class="rule"></span></h2>
   <div class="dsc" style="margin-bottom:9px">Units on hand each day, rebuilt from lots received and units handed over, against the ${kg(RULES.reorderKg)} reorder trigger. It ties to the desk at both ends: it starts at the stated opening and finishes at the counted <b>${kg(currentStock)}</b>. Shrinkage is a plug with no date on it, so it is <b>spread evenly across the days</b>; the shape is right and any single day is not.</div>
@@ -6170,6 +6205,11 @@ function drawAnalysis(){
   ensureChart(ok=>{
     if(!ok){['anBridge','anScatter','anStock','anPareto','anBuys','anCadence'].forEach(id=>{const e=blkEl(id);
       chartEmpty(e,'Chart unavailable. Every figure it draws is in the tables on this tab.');});return;}
+    /* WHICH CHART IS BEING BUILT. Set at the head of each section rather than at its freshChart
+       call, so a throw in the figures a chart is built from is attributed to that chart and not
+       to the one before it. It sits OUTSIDE the try because `let` is block-scoped: declared
+       inside, the catch could not read it and every draw died on a ReferenceError instead. */
+    let cur='anBridge';
     try{
       const GRID='rgba(255,255,255,0.07)',TICK='rgba(244,245,247,0.66)',INK='#f4f5f7';
       const base=t=>({responsive:true,maintainAspectRatio:false,
@@ -6188,6 +6228,7 @@ function drawAnalysis(){
           title:{display:true,text:'Revenue to margin (RM)',color:INK,font:{size:12}},
           tooltip:{callbacks:{label:i=>{const v=i.raw;return 'RM '+Math.abs(v[1]-v[0]).toLocaleString('en-MY',{maximumFractionDigits:0});}}}}})});
 
+      cur='anScatter';
       // 2. price vs size, with the live board through it
       const dots=pricedSales.filter(s=>s.qty>0&&s.total>0&&!s.cancelled)
         .map(s=>({x:s.qty,y:+(s.total/s.qty).toFixed(2),id:s.customer,d:s.date}));
@@ -6207,6 +6248,7 @@ function drawAnalysis(){
           scales:{x:{type:'logarithmic',grid:{color:GRID},ticks:{color:TICK,callback:v=>v+' unit'},title:{display:true,text:'lot size, log scale',color:TICK}},
                   y:{grid:{color:GRID},ticks:{color:TICK,callback:v=>'RM '+v}}}}});
 
+      cur='anStock';
       // 3. reconstructed shelf
       const sh=stockHistory();
       freshChart(blkEl('anStock'),{type:'line',
@@ -6220,6 +6262,7 @@ function drawAnalysis(){
           scales:{x:{grid:{color:GRID},ticks:{color:TICK,maxTicksLimit:14}},
                   y:{grid:{color:GRID},ticks:{color:TICK,callback:v=>v+' unit'}}}}});
 
+      cur='anPareto';
       // 4. pareto
       const bc=byCustomer().slice().sort((a,b)=>b.rev-a.rev),tot=bc.reduce((a,x)=>a+x.rev,0)||1;
       let run=0;const cum=bc.map(x=>{run+=x.rev;return +(run/tot*100).toFixed(1);});
@@ -6234,6 +6277,7 @@ function drawAnalysis(){
                   y:{grid:{color:GRID},ticks:{color:TICK,callback:v=>'RM '+v},position:'left'},
                   y1:{grid:{display:false},ticks:{color:'#e8c66b',callback:v=>v+'%'},position:'right',min:0,max:100}}}});
 
+      cur='anBuys';
       // 5. buy rate against lot size
       const buys=purchases.filter(p=>!p.pending&&p.qty>0).map(p=>({x:p.qty,y:+(p.total/p.qty).toFixed(2),
         r:6+Math.sqrt(p.total/Math.max(1,Math.max.apply(null,purchases.map(z=>z.total))))*14,
@@ -6249,6 +6293,7 @@ function drawAnalysis(){
           scales:{x:{grid:{color:GRID},ticks:{color:TICK,callback:v=>v+' unit'}},
                   y:{grid:{color:GRID},ticks:{color:TICK,callback:v=>'RM '+v}}}}});
 
+      cur='anCadence';
       // 6. cadence: one row per buyer, one dot per order
       const ids=bc.map(x=>x.id);
       const maxT=Math.max.apply(null,pricedSales.map(s=>s.total||0))||1;
@@ -6262,7 +6307,16 @@ function drawAnalysis(){
           scales:{x:{type:'category',labels:[...new Set(pricedSales.map(s=>s.date).filter(Boolean))].sort(),
                      grid:{color:GRID},ticks:{color:TICK,maxRotation:70,minRotation:45,font:{size:9}}},
                   y:{type:'category',labels:ids.map(codeOf).reverse(),grid:{color:GRID},ticks:{color:TICK,font:{size:10}}}}}});
-    }catch(e){}
+    }catch(e){
+      /* ONE try AROUND SIX CHARTS: a throw in the second takes the other four with it, and
+         the empty catch took them in silence. Probed with a Chart that refuses, all six boxes
+         on both product blocks came back blank with nothing said on any of them. It names the
+         one that stopped and says plainly that the rest never ran, which is the truth of a
+         shared try and is better than six identical notices implying six separate faults. */
+      const ids=['anBridge','anScatter','anStock','anPareto','anBuys','anCadence'],i=Math.max(0,ids.indexOf(cur));
+      chartEmpty(blkEl(ids[i]),'This chart could not be drawn: '+((e&&e.message)||e)+'. Every figure it draws is in the tables on this part.');
+      ids.slice(i+1).forEach(id=>chartEmpty(blkEl(id),'Not drawn: the chart above it stopped first. Every figure it draws is in the tables on this part.'));
+    }
   });
 }
 
@@ -7556,9 +7610,20 @@ function ledSumBar(list,total){
    fulfilment the next day may legitimately move the same figure: s105 was corrected to RM0
    cash on the 25th and paid on the 26th. Read against today's row that is a fault, and it is
    not one. A flag that fires when nothing is wrong teaches the reader to tap through. */
+/* DOES THE CLAIM'S STATED NEW VALUE READ BACK OFF THE ROW? Three shapes: a cleared value, which
+   the row must then not carry; a figure, compared to the cent because a claim writes 230 where
+   the row holds 230.0; anything else, compared as text. A TEXT field is checked against the tail
+   of the whole line rather than against the split, because the split takes the last " to " and
+   a note is free to hold one of its own. */
+function claimHolds(c,bit,text){
+  if(c.now==='(cleared)'||c.now==='(unset)')return c.reads==='(unset)';
+  if(text)return bit.endsWith(' to '+c.reads);
+  if(c.reads!=='(unset)'&&isFinite(+c.now)&&isFinite(+c.reads))return Math.abs((+c.now)-(+c.reads))<0.005;
+  return c.now===c.reads;
+}
 function modClaims(t,dir){
   if(!t||!t.mod)return[];
-  const view=edView(t,dir==='BUY'?'BUY':'SELL');
+  const PE=POSITION_ENGINE,view=edView(t,dir==='BUY'?'BUY':'SELL');
   const dates=(t.amend||[]).map(a=>a.date).filter(Boolean).sort();
   const last=dates.length?dates[dates.length-1]:'';
   const out=[];
@@ -7566,18 +7631,25 @@ function modClaims(t,dir){
     const head=/^corrected(?: on ([0-9-]+))?: (.+)$/.exec(seg.trim());
     if(!head){out.push({prose:seg.trim()});return;}
     const on=head[1]||'',stale=!!(on&&last&&last>on);
-    head[2].split('; ').forEach(bit=>{
-      const p=/^(\S+) (.*) to (.*)$/.exec(bit.trim());
-      if(!p){out.push({prose:bit.trim()});return;}
-      const c={on:on,field:p[1],was:p[2],now:p[3]};
-      if(!POSITION_ENGINE.CORRECTABLE.includes(c.field))c.verdict='unknown';
+    head[2].split('; ').forEach(raw=>{
+      const bit=raw.trim(),p=/^(\S+) (.*) to (.*)$/.exec(bit);
+      if(!p){out.push({prose:bit});return;}
+      const c={on:on,field:p[1],was:p[2],now:p[3]},text=PE.CORRECT_TEXT.includes(c.field);
+      /* THE FOLD APPENDS A REASON to a value it moved without being asked (be2de5a):
+         "unpriced true to (cleared), a real total was set". That is prose about the write and
+         not part of the value, and taken as the value it made both of the fold's own reasoned
+         writes read as contradictions the moment the two branches met. A non-text value holds
+         no comma, being a figure, a date, a code, a boolean, (unset) or (cleared), so the split
+         is exact where it is applied and is not attempted where a value may carry one. */
+      if(!text){const r=/^([^,]*), (.+)$/.exec(c.now);if(r){c.now=r[1];c.why=r[2];}}
+      if(!PE.CORRECTABLE.includes(c.field))c.verdict='unknown';
       else if(stale)c.verdict='later';
       else{const v=view[c.field];
         c.reads=(v===undefined||v===null)?'(unset)':String(v);
-        c.verdict=(c.now==='(cleared)'||c.now==='(unset)')?(c.reads==='(unset)'?'agrees':'differs')
-          :(c.reads!=='(unset)'&&isFinite(+c.now)&&isFinite(+c.reads))
-            ?(Math.abs((+c.now)-(+c.reads))<0.005?'agrees':'differs')
-            :(c.now===c.reads?'agrees':'differs');}
+        c.verdict=claimHolds(c,bit,text)?'agrees':'differs';
+        /* and when a text claim holds, the tail is known exactly, so the value the split cut in
+           the wrong place can be put back rather than shown to a reader garbled. */
+        if(text&&c.verdict==='agrees'){c.was=bit.slice(c.field.length+1,bit.length-c.reads.length-4);c.now=c.reads;}}
       out.push(c);});});
   return out;
 }
@@ -7591,6 +7663,7 @@ function corrStrip(t,dir,corrs){
   const bad=claims.filter(c=>c.verdict==='unknown'||c.verdict==='differs');
   const chip=c=>c.prose?`<span class="cprose">${esc(c.prose)}</span>`
     :`<span class="cclaim ${c.verdict}">${esc(c.field)} ${esc(c.was)} &rarr; ${esc(c.now)}`
+      +(c.why?` <em>${esc(c.why)}</em>`:'')
       +(c.verdict==='unknown'?' <em>not a field the book can set</em>'
         :c.verdict==='differs'?` <em>the row reads ${esc(c.reads)}</em>`:'')
       +'</span>';
@@ -7714,13 +7787,13 @@ function tabLedger(){
         +tCell(mc,mc?a.cash:t.total,isMod)
         +`<span class="lstate">${pill(a.state,a.cls)}</span>`
         +`</div>`;};
-    const moveLines=moves.map(a=>stepLine(a,'lmove',`<span class="lmdate">${a.date}</span>`)).join('');
+    const moveLines=moves.map(a=>stepLine(a,'lmove',`<span class="lmdate">${ledDate(a.date)}</span>`)).join('');
     const movePanel=moveLines?(moves.length>=3?`<details class="lmc"><summary><span class="chev">&#9656;</span>${moves.length} interim steps</summary><div class="lmoves">${moveLines}</div></details>`:`<div class="lmoves">${moveLines}</div>`):'';
     // closing line (full strength) when a multi-step order has completed. Opening->Closing with no
     // middle is fine (moves may be empty). A single-line order carries its close on the head row instead.
     const closeA=am.length?Object.assign({},am[am.length-1],{state:finalState,cls:stateCls(finalState)}):null;
     const closeLine=(completed&&am.length)?stepLine(closeA,'lrow lclose',
-       `<span class="ecode"></span><span class="lclabel roleclose">Closed</span><span class="ldate">${closeA.date}</span>`):'';
+       `<span class="ecode"></span><span class="lclabel roleclose">Closed</span><span class="ldate">${ledDate(closeA.date)}</span>`):'';
     /* ============ A PENDING ORDER IS A NOTE TO SELF, NOT AN EVENT (v254) ============
        An order agreed on Monday and settled on Wednesday was rendering as three lines:
        Opened, a Fulfilment, Closed. The middle two say the same thing twice and the first
@@ -7995,7 +8068,7 @@ function drawLedgerCharts(){
           scales:{x:{grid:{display:false},ticks:{color:CHART_INK.tick,font:{size:9},maxRotation:60,minRotation:45}},
                   y:{grid:{color:CHART_INK.grid},ticks:{color:CHART_INK.tick}},
                   y1:{position:'right',grid:{display:false},ticks:{color:'#e8c66b'}}}}});
-    }catch(e){}
+    }catch(e){chartEmpty(el,'This chart could not be drawn: '+((e&&e.message)||e)+'. Every figure it draws is in the tables on this part.');}
   });
 }
 function drawFinCharts(){
