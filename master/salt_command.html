@@ -12099,16 +12099,21 @@ function tabPricing(){
     /* the note is NOT run through esc(): it carries entities, and escaping the whole string
        printed &rsquo; and &sup2; on the page. Data inside it is escaped where it goes in. */
     const r=(lab,v,n)=>`<tr><td class="l">${lab}<div class="iref">${n||''}</div></td><td class="mono">${v}</td></tr>`;
-    /* THERE IS ONE SUPPLIER QUOTE LADDER ON THE BOOK AND BOTH PRODUCTS TAPER OFF IT. He buys oil
-       from SP7-PUD and salt from SA5-BTR, and supplierQuote is salt&rsquo;s. So oil&rsquo;s volume
-       discount is proportionate to a discount that oil&rsquo;s own supplier never offered. It is
-       said in the row rather than fixed here: fixing it means a second quote ladder on the book
-       and a different oil board, which is a price change and his to make. */
+    /* THERE ARE TWO SUPPLIER QUOTE LADDERS ON THE BOOK AND ONLY SALT'S IS READ. supplierQuote is
+       salt's; oilQuote is oil's, SP7-PUD, four tiers, and quoteFor(PROD) already resolves between
+       them. pxPolicy hands buyTaper the bare supplierQuote, so OIL'S VOLUME DISCOUNT IS
+       PROPORTIONATE TO A DISCOUNT SALT'S SUPPLIER OFFERS, which is the one rule this ladder is
+       built on, broken on one of the two books.
+       MEASURED, and it is one line in pxPolicy: fitted to oil's own ladder the taper goes -0.100
+       to -0.231, r-squared 0.97 over its own four tiers, a marginally BETTER fit than the borrowed
+       one, and oil's board falls 20 unit -20, 30 unit -30, 40 unit -30, 50 unit -40. Salt does not
+       move at all, because quoteFor('salt') IS supplierQuote. NOT DONE HERE: it reprices oil, and
+       a price is his. It is said in the row so it is his to decide rather than nobody's to find. */
     const SUP=supplierQuote.supplier, own=(latestLot(PROD)||{}).sup||null;
     const borrowed=!!(own&&SUP&&own!==SUP);
     return `<div class="card"><table class="fintab istmt"><tbody>
       ${r('Level',LADDER.anchorX.toFixed(3)+'x',`typed, at ${kg(LADDER.anchorQ)} on cogs; the only level in the ladder`)}
-      ${r('Taper',(T.b!=null?T.b.toFixed(3):'&mdash;'),T.b!=null?`fitted to ${esc(SUP)}&rsquo;s live quote ladder${T.r2!=null?`, r&sup2; ${T.r2.toFixed(2)} over ${T.n} tiers`:''}, between ${kg(LADDER.at.lo)} and ${kg(LADDER.at.hi)}${borrowed?`; he buys this from ${esc(own)}, and one ladder on the book is what both products taper off`:''}`:'no supplier ladder to fit')}
+      ${r('Taper',(T.b!=null?T.b.toFixed(3):'&mdash;'),T.b!=null?`fitted to ${esc(SUP)}&rsquo;s live quote ladder${T.r2!=null?`, r&sup2; ${T.r2.toFixed(2)} over ${T.n} tiers`:''}, between ${kg(LADDER.at.lo)} and ${kg(LADDER.at.hi)}${borrowed?`; he buys this from ${esc(own)}, <b>whose own quote ladder is on the book and is not the one this is fitted to</b>`:''}`:'no supplier ladder to fit')}
       ${r('Ceiling',LADDER.ceiling.toFixed(2)+'x',`a bound on the curve; it does not bind at any printed size`)}
       ${r('Floor','break-even',`${fmt(c.effEx)} a unit after the leak, one delivery of ${fmt0(c.delPerOrder||0)}, ${fmt0(PRICE_ENGINE.timePerOrder||0)} of his time per order`)}
       <tr class="tot"><td class="l"><b>Markup across the board</b><div class="iref">${kg(SZ[0])} down to ${kg(SZ[SZ.length-1])}</div></td><td class="mono"><b>${mLo.markupX.toFixed(2)}x to ${mHi.markupX.toFixed(2)}x</b></td></tr>
