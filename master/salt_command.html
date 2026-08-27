@@ -643,7 +643,7 @@ select{width:100%;border:1px solid var(--line);border-radius:8px;padding:8px 9px
 .sevh{display:flex;align-items:baseline;gap:11px;margin:24px 0 11px;}
 .sevh h2{margin:0;}
 .sevh .cnt{font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:var(--dim);}
-/* ---- figure chips on a panel head (v381) ----
+/* ---- figure chips on a panel head (v385) ----
    v372 strips prose at render, and the three standing panels on Overview and the one on
    Forward carried their parties and their figures inside a .dsc. So each rendered as a
    heading with nothing under it: a panel announcing deferred deliveries and naming none.
@@ -5272,7 +5272,7 @@ function boundaryPanel(){
   const all=b.filter(x=>x.sev==='breach').concat(b.filter(x=>x.sev==='watch')).concat(r);
   const nb=b.filter(x=>x.sev==='breach').length,nw=b.filter(x=>x.sev==='watch').length;
   const head=`<h2>Boundaries <span class="rule"></span></h2>`;
-  /* v381: THE COUNT GOES ON THE CARD AS A CHIP, not in the card's first sentence. That
+  /* v385: THE COUNT GOES ON THE CARD AS A CHIP, not in the card's first sentence. That
      sentence was a .dsc, v372 strips prose at render, and the one figure saying how bad this
      is went with it: the card rendered as a bare table with no headline, and the all-clear
      branch rendered as an EMPTY card. A chip is a field, so it survives, and it is what the
@@ -5479,7 +5479,7 @@ function tabOverview(){
      and none of them appeared. The digest cards beside it are scoped, so this one panel was
      answering a different question from every neighbour without saying so. */
   const recent=pSales(PROD).slice().filter(s=>s.date).sort((a,b)=>a.date<b.date?1:-1).slice(0,3);
-  /* ============ THE REGISTER LEADS (v381) ============
+  /* ============ THE REGISTER LEADS (v385) ============
      This part is declared as "every rule the desk trades by, and the register of what is
      breached", and the rail badge on Today counts those breaches. A reader who taps a broken
      rule on Today arrives here and used to land on a six-card position strip and a product
@@ -5497,7 +5497,7 @@ function tabOverview(){
   <div class="kpis k3">
     <div class="kpi"><div class="l">Stock on hand</div><div class="v">${kg(currentStock)}</div><div class="n">${defKg>0.009?`owe out ${kg(defKg)} (deferred)`:'nothing owed out'}</div></div>
     <div class="kpi g"><div class="l">Stock cost</div><div class="v">${fmt(stockCost)}<span style="font-size:12px;color:var(--mut)">/unit</span></div><div class="n">${fmt0(stockVal)} on the shelf</div></div>
-    <div class="kpi p"><div class="l">Revenue</div><div class="v">${fmt0(revTotal)}</div><div class="n">${fmt0(revCollected)} collected</div></div>
+    <div class="kpi p"><div class="l">Revenue</div><div class="v">${fmt0(revTotal)}</div><div class="n">${fmt0(revCollected)} collected${revCollected>revTotal+0.009?`, ${fmt0(revCollected-revTotal)} of it paid ahead of delivery`:''}</div></div>
     <div class="kpi gold"><div class="l">Margin</div><div class="v">${fmt0(grossMargin)}</div><div class="n">${marginPct.toFixed(1)}% on ${fmt0(revTotal)} sold</div></div>
     <div class="kpi r"><div class="l">Receivables (net)</div><div class="v">${fmt0(totDue)}</div><div class="n">${fmt0(ar)} trade + ${fmt0(supRecovNet)} refund</div></div>
     <div class="kpi"><div class="l">Bought to date</div><div class="v">${kg(buyKg)}</div><div class="n">${buyKg>0.009?`${fmt0(buyRM)} at ${fmt(buyRM/buyKg)}/unit avg`:`no lot recorded yet`}</div></div>
@@ -5561,7 +5561,7 @@ function tabToday(){
     <div class="actm${x.rm>0.009?'':' nil'}" title="${x.rm>0.009?'At stake: what this item itself exposes':'No figure: it costs nothing to leave and something to ignore'}">${x.rm>0.009?fmt0(x.rm):'&mdash;'}</div>
     <div class="actb"><button class="navlink" onclick="switchTab('${x.tab}')">${TAB_LABEL[x.tab]||x.tab} &rarr;</button></div>
     ${x.rm>0.009&&peak>0?`<div class="actbar" title="${fmt0(x.rm)} of the ${fmt0(peak)} largest item"><i style="width:${Math.max(1.5,x.rm/peak*100).toFixed(1)}%"></i></div>`:''}</div>`;
-  /* v381: A DATED SEVERITY THAT IS EMPTY STILL SAYS SO. The two count cards that used to
+  /* v385: A DATED SEVERITY THAT IS EMPTY STILL SAYS SO. The two count cards that used to
      stand above the list are gone as duplicates, and on a book with nothing due this week
      they were the only thing that said so: the block simply did not render, and an absent
      heading is not the same as a heading that reads clear. Now and This week are dated by
@@ -5581,7 +5581,7 @@ function tabToday(){
     : f.dry!=null?`Runs dry on <b>${f.dryDate}</b>, ${f.dry} day${f.dry===1?'':'s'} out.`
     : `Holds past the ${f.days}-day window.`;
   const cf=cashFlow();
-  /* ============ THE LIST LEADS (v381) ============
+  /* ============ THE LIST LEADS (v385) ============
      The tab opened on five KPI cards and two charts, and the ranked list, which is the only
      reason this tab exists, started a screen and a half down. Two of those five cards said
      what the block headings below them already say: Now and This week each printed a count
@@ -5636,8 +5636,8 @@ function drawTodayCharts(){
       const byKind={};
       a.filter(x=>x.rm>0.009).forEach(x=>{byKind[x.kind]=(byKind[x.kind]||0)+x.rm;});
       const keys=Object.keys(byKind).sort((x,y)=>byKind[y]-byKind[x]);
-      if(tdKindObj){try{tdKindObj.destroy();}catch(e){}}
-      if(tdCoverObj){try{tdCoverObj.destroy();}catch(e){}}
+      if(tdKindObj){try{tdKindObj.destroy();}catch(e){}tdKindObj=null;}
+      if(tdCoverObj){try{tdCoverObj.destroy();}catch(e){}tdCoverObj=null;}
       if(k){
         if(!keys.length){
           chartEmpty(k,'Nothing on the list carries a figure today.');
@@ -5673,7 +5673,19 @@ function drawTodayCharts(){
                          beginAtZero:true}}}});
         }
       }
-    }catch(e){}
+    }catch(e){
+      /* v385: THIS CATCH WAS EMPTY AND NEITHER v385 REPORTER CAN REACH IT. renderPart's catch has
+         already handed control to ensureChart, and ensureChart's own queue only sees a callback
+         that throws asynchronously; this one throws inside the callback and was eaten here first.
+         Probed with a Chart that throws on the second construction: both books, both canvases,
+         nothing said anywhere. A chart dying mid-pass took the one after it and left blank boxes.
+         The objects are nulled on destroy so only the canvas that never got a chart is marked and
+         one that did draw is left alone. */
+      try{console.error('drawTodayCharts threw',e);}catch(_){}
+      const m=esc((e&&e.message)||String(e));
+      if(k&&!tdKindObj)chartEmpty(k,'This chart could not be drawn: '+m+'. Every figure it draws is in the tables on this part.');
+      if(c&&!tdCoverObj)chartEmpty(c,'This chart could not be drawn: '+m+'. Every figure it draws is in the tables on this part.');
+    }
   });
 }
 
@@ -5712,7 +5724,12 @@ function tabForward(){
     ${pend.length?`<button class="vbtn" style="${fwdBuy?'':'opacity:.55'}" onclick="fwdToggle('buy')">${fwdBuy?'&#10003; ':''}Include the agreed ${kg(pend.reduce((a,p)=>a+p.qty,0))} buy</button>`:''}
     ${(typeof PLANS_CASH!=='undefined'&&PLANS_CASH.length)?`<button class="vbtn" style="${fwdPlans?'':'opacity:.55'}" onclick="fwdToggle('plans')">${fwdPlans?'&#10003; ':''}Include the planned drawing</button>`:''}
   </div>
-  ${(fwdBuy||fwdPlans)?`<div class="insight" style="margin-top:11px"><b>Scenario, not the book.</b> ${fwdBuy?`The agreed ${kg(pend.reduce((a,p)=>a+p.qty,0))} at ${fmt(pend.reduce((a,p)=>a+p.total,0)/pend.reduce((a,p)=>a+p.qty,0))}/unit is drawn as though it lands and is paid for today. `:''}${fwdPlans?`${PLANS_CASH.map(p=>esc(p.label)).join('; ')}${taken>0.009?`, which on this path takes <b>${fmt0(taken)}</b> out`:''}. `:''}Nothing here is recorded anywhere, and turning the switch off removes it entirely.</div>`:''}
+  ${/* v385: ONE SENTENCE CARRIES THE SCENARIO, because stripMethod cuts an .insight over
+       NOTE_MIN to its first sentence WHEREVER it sits and whatever is in it, with no figure
+       exemption. This one read "Scenario, not the book." and then said in a SECOND sentence
+       which buy and which drawing were switched on, so the cut left a warning about a scenario
+       it no longer named. Latent only because both toggles need a pending lot or a PLANS_CASH
+       entry to appear at all. Same fault as priceNote. */''}${(fwdBuy||fwdPlans)?`<div class="insight" style="margin-top:11px"><b>Scenario, not the book</b>: ${[fwdBuy?`the agreed ${kg(pend.reduce((a,p)=>a+p.qty,0))} at ${fmt(pend.reduce((a,p)=>a+p.total,0)/pend.reduce((a,p)=>a+p.qty,0))}/unit, drawn as though it lands and is paid for today`:'',fwdPlans?`${PLANS_CASH.map(p=>esc(p.label)).join('; ')}${taken>0.009?`, taking ${fmt0(taken)} out on this path`:''}`:''].filter(Boolean).join('; and ')}. Nothing here is recorded anywhere, and turning the switch off removes it entirely.</div>`:''}
   <div class="kpis k4" style="margin-top:13px">
     <div class="kpi ${f.dry===0?'r':f.dry!=null?'gold':'g'}"><div class="l">Shelf empty</div><div class="v">${f.dry==null?'&mdash;':f.dry===0?'today':'day '+f.dry}</div><div class="n">${f.dry==null?`holds past ${f.days} days`:f.dry===0?'nothing on the shelf now':`on ${f.dryDate}`}</div></div>
     <div class="kpi ${f.shortKg>0.009?'r':'g'}"><div class="l">Promised out</div><div class="v">${kg(f.commitKg)}</div><div class="n">${f.shortKg>0.009?`${kg(f.shortKg)} of it uncovered`:'all covered from stock'}</div></div>
@@ -5745,8 +5762,8 @@ function drawFwdCharts(){
                  title:{display:true,text:t,color:'#f4f5f7',font:{size:12}}},
         scales:{x:{grid:{color:'rgba(255,255,255,0.07)'},ticks:{color:'rgba(244,245,247,0.66)',maxTicksLimit:12}},
                 y:{grid:{color:'rgba(255,255,255,0.07)'},ticks:{color:'rgba(244,245,247,0.66)',callback:v=>pre+v}}}});
-      if(fwdStockObj){try{fwdStockObj.destroy();}catch(e){}}
-      if(fwdCashObj){try{fwdCashObj.destroy();}catch(e){}}
+      if(fwdStockObj){try{fwdStockObj.destroy();}catch(e){}fwdStockObj=null;}
+      if(fwdCashObj){try{fwdCashObj.destroy();}catch(e){}fwdCashObj=null;}
       fwdStockObj=new Chart(s,{type:'line',data:{labels:labs,datasets:[
         {label:'Committed only',data:f.rows.map(r=>r.stockCom),borderColor:'#7fd7e8',backgroundColor:'transparent',tension:.2,pointRadius:0,borderWidth:2},
         {label:'Committed plus rate',data:f.rows.map(r=>r.stock),borderColor:'#b3a6f5',backgroundColor:'transparent',tension:.2,pointRadius:0,borderWidth:2},
@@ -5755,7 +5772,12 @@ function drawFwdCharts(){
       fwdCashObj=new Chart(k,{type:'line',data:{labels:labs,datasets:[
         {label:f.cashKnown?'Cash held':'Cash movement from today',data:f.rows.map(r=>r.cash),borderColor:'#ffcf7a',backgroundColor:'transparent',tension:.2,pointRadius:0,borderWidth:2}
       ]},options:opt(f.cashKnown?'Cash position (RM)':'Cash movement from today (RM)','')});
-    }catch(e){}
+    }catch(e){                                     /* v385: same empty catch as Today's, same probe */
+      try{console.error('drawFwdCharts threw',e);}catch(_){}
+      const m=esc((e&&e.message)||String(e));
+      if(!fwdStockObj)chartEmpty(s,'This chart could not be drawn: '+m+'. Every figure it draws is in the tables on this part.');
+      if(!fwdCashObj)chartEmpty(k,'This chart could not be drawn: '+m+'. Every figure it draws is in the tables on this part.');
+    }
   });
 }
 
@@ -10477,7 +10499,7 @@ function actions(){
       +(f.cashKnown?` ${fmt0(cashFlow().free)} free.`:'');
     add(sev,'buy',title,Math.max(refill,short?f.promRM:0),why,'sourcing');
   }
-  /* ============ 3. MONEY OUT WITH OTHER PEOPLE, ONE ROW PER PERSON (v381) ============
+  /* ============ 3. MONEY OUT WITH OTHER PEOPLE, ONE ROW PER PERSON (v385) ============
      It was one row per DEBT, and a party carrying two open rows was listed twice. CR3-DAM
      stood at RM 80 under This week and again at RM 80 under Watch: the same man, ranked in
      two places, with neither row stating that he actually owes RM 160. A reader who chased
