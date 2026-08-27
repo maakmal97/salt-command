@@ -464,6 +464,26 @@ details.rcard>summary .rsum b{color:var(--ink);}
    next action is obvious, so the card offers it rather than making him cross to Transaction,
    find the order in a dropdown and retype figures the desk already holds. */
 .lquick{display:flex;align-items:center;gap:7px;padding:8px 12px 10px;border-top:1px dashed var(--line);}
+/* A CORRECTION, AND WHETHER IT HOLDS. Quiet while every claim reads back against the row,
+   crimson the moment one does not: a claim the book cannot have written has to show as a
+   contradiction rather than as prose. */
+.lcorr{padding:7px 12px 8px;border-top:1px dashed var(--line);font-size:11.5px;}
+.lcorr .chead{display:flex;flex-wrap:wrap;align-items:baseline;gap:5px 10px;}
+.lcorr .clab{font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--vio);white-space:nowrap;}
+.lcorr .cclaim{font-family:ui-monospace,Consolas,monospace;font-size:11px;color:var(--mut);}
+.lcorr .cclaim em{font-style:normal;font-family:inherit;color:var(--dim);}
+.lcorr .cclaim.later em,.lcorr .cclaim.agrees em{color:var(--dim);}
+.lcorr .cprose{color:var(--dim);}
+.lcorr.bad{background:rgba(255,93,115,.07);border-top-color:rgba(255,93,115,.45);}
+.lcorr.bad .clab{color:var(--crim);}
+.lcorr .cclaim.unknown,.lcorr .cclaim.differs,.lcorr .cclaim.unreadable{color:var(--crim);}
+.lcorr .cclaim.unknown em,.lcorr .cclaim.differs em,.lcorr .cclaim.unreadable em{color:var(--crim);font-weight:600;}
+.lcorr .cwhy{margin-top:5px;}
+.lcorr .cwhy summary{cursor:pointer;color:var(--dim);font-size:11px;list-style:none;}
+.lcorr .cwhy summary::-webkit-details-marker{display:none;}
+.lcorr .cnote{margin-top:5px;color:var(--mut);line-height:1.5;}
+.lcorr .cnote p{margin:0 0 6px;}
+.lcorr .cnote p:last-child{margin-bottom:0;}
 /* ============ CLOSE THE DESK (v255) ============
    Quiet, and to the right of the stamp, because it is the last thing you want and should not
    compete with the first. Crimson only on hover: a button that shouts all day gets pressed by
@@ -565,6 +585,19 @@ select{width:100%;border:1px solid var(--line);border-radius:8px;padding:8px 9px
 .ledbar input{flex:1;min-width:170px;border:1px solid var(--line);border-radius:9px;padding:7px 10px;font-size:13px;color:var(--ink);background:#140c26;}
 .ledbar select{border:1px solid var(--line);border-radius:9px;padding:7px 34px 7px 8px;font-size:12px;color:var(--mut);background-color:#140c26;}
 .ledbar .ledct{font-size:11px;color:var(--dim);margin-left:auto;}
+/* What the filter comes to. One line of figures under the toolbar, in the ledger
+   tuning: gold for what was bought, ice for what was written, amber for what is still
+   between the two parties. No prose, because the labels are the sentence. */
+.ledsum{display:flex;flex-wrap:wrap;align-items:flex-end;gap:7px 24px;margin:0 0 12px;padding:10px 13px;border:1px solid var(--line);border-radius:12px;background:linear-gradient(160deg,var(--card2),var(--card));}
+.ledsum .s{display:flex;flex-direction:column;gap:1px;min-width:0;}
+.ledsum .l{font-size:10px;letter-spacing:.7px;text-transform:uppercase;color:var(--dim);font-weight:700;white-space:nowrap;}
+.ledsum .v{font-size:17px;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums;white-space:nowrap;line-height:1.15;}
+.ledsum .v.ice{color:var(--ice);}
+.ledsum .v.gold{color:var(--gold);}
+.ledsum .v.warn{color:var(--amber);}
+.ledsum .v.nil{color:var(--mut);font-weight:600;}
+.ledsum .sb{font-size:11px;color:var(--mut);white-space:nowrap;}
+.ledsum .scope{margin-left:auto;font-size:11px;color:var(--dim);white-space:nowrap;align-self:flex-end;}
 .fintab{width:100%;border-collapse:collapse;}
 .fintab th,.fintab td{padding:7px 9px;font-size:13px;text-align:right;border-bottom:1px solid var(--line);}
 .fintab th.l,.fintab td.l{text-align:left;}
@@ -3735,8 +3768,18 @@ function ovAmend(p,q){
       assoc:attr.assoc,stream:attr.stream,downstream:attr.downstream});
     const asked=k=>Object.prototype.hasOwnProperty.call(f,k)&&f[k]!==undefined;
     const said=[];
-    Object.keys(f).forEach(k=>{
-      if(f[k]===undefined)return;
+    /* ====== THE RECORD IS BUILT FROM WHAT IS WRITTEN, NOT FROM WHAT IS ASKED (v385) ======
+       v383 folded two re-keys naming `customer`, which the table calls `party`. The writes
+       below run off the engine's field lists, so nothing was written; this loop ran off the
+       caller's keys, so everything was recorded, and both rows came out asserting a re-key
+       they had not made. Refusing an unknown field upstream stops the case that is known.
+       Reading the SAME list the writes read makes the whole class impossible: a field the
+       writes cannot set can no longer reach the record. CORRECTABLE is exactly the union of
+       the lists below, so the two can no longer disagree. applyAmend in tools/fold.mjs took
+       the matching repair at be2de5a, reading the row back after every write, so the strip on
+       the Ledger is now a check on the record rather than a guard against the tool. */
+    POSITION_ENGINE.CORRECTABLE.forEach(k=>{
+      if(!asked(k))return;
       const was=before[k]===undefined?null:before[k];
       if(JSON.stringify(f[k])===JSON.stringify(was))return;
       said.push(k+' '+(was==null?'(unset)':was)+' to '+(f[k]==null?'(cleared)':f[k]));});
@@ -6135,12 +6178,21 @@ function tabSourcing(){
    to be spread: dating it would be inventing a day it happened on. */
 function stockHistory(){
   const MS=86400000;
-  const ds=[].concat(purchases.filter(poLive).map(p=>p.receivedOn||p.date),
-                     sales.map(s=>s.date)).filter(Boolean).sort();
+  /* ============ ONE SHELF PER PRODUCT ============
+     The bare `opening`, `purchases` and `sales` are Salt's plus Oil's, and a shelf walked
+     from both is a shelf of neither: it ended 49 unit above the counted stock while the
+     prose beside it said it tied to that count at both ends, it drove the line under zero
+     on eight days, and the block explained those days as a dating artefact when they were
+     Oil's deliveries coming off Salt's shelf. Same lesson the KPI below learned at v365.
+     These are posInputs()'s four, exactly, so the walk and the engine's own selfUse are
+     computed from one set of rows and the line lands on the count. */
+  const B=pPurch(PROD), S=pSales(PROD), op=openingFor(PROD);
+  const ds=[].concat(B.filter(poLive).map(p=>p.receivedOn||p.date),
+                     S.map(s=>s.date)).filter(Boolean).sort();
   if(!ds.length)return [];
   const d0=new Date(ds[0]), days=Math.max(1,Math.round((TODAY-d0)/MS));
   const inOn={},outOn={};
-  purchases.filter(poLive).forEach(p=>{const k=p.receivedOn||p.date;inOn[k]=(inOn[k]||0)+poRecvKg(p);});
+  B.filter(poLive).forEach(p=>{const k=p.receivedOn||p.date;inOn[k]=(inOn[k]||0)+poRecvKg(p);});
   /* ALL sales, not just priced ones: recompute draws the shelf down with sales.reduce
      over txPhys, so filtering to priced trade here would leave the walk ending somewhere
      the rest of the desk does not agree with.
@@ -6150,7 +6202,7 @@ function stockHistory(){
      Fulfilment moves salt; Linked, Rewarded and Modification settle on paper. Whatever
      the trail does not account for falls back to the order date, so the total still
      reconciles to txPhys exactly. */
-  sales.forEach(s=>{
+  S.forEach(s=>{
     const tot=txPhys(s);if(tot<=0.0001)return;
     let acc=0;
     (s.amend||[]).forEach(a=>{if(a.kind==='Fulfilment'&&+a.kg>0.0001){
@@ -6163,12 +6215,12 @@ function stockHistory(){
   });
   /* only loans made AFTER the opening count draw the shelf down here; a pre-opening loan
      is already inside opening.qty, exactly as recompute now treats it */
-  const loanKg=loanDrawKg();
+  const loanKg=(PROD===DEFAULT_PROD)?loanDrawKg():0;   // the loan book is Salt's, as posInputs has it
   /* shrinkage is a plug for the whole period with no date on it, so it is spread across
      the days that have actually passed. Nothing is taken on day 0, which is the opening
      position rather than a day of trading. */
   const shrinkPerDay=days>0?selfUse/days:0;
-  const rows=[];let lvl=opening.qty-loanKg;
+  const rows=[];let lvl=op.qty-loanKg;
   for(let i=0;i<=days;i++){
     const d=new Date(d0.getTime()+i*MS), k=d.toISOString().slice(0,10);
     lvl=lvl+(inOn[k]||0)-(outOn[k]||0)-(i?shrinkPerDay:0);
@@ -6176,21 +6228,84 @@ function stockHistory(){
   }
   return rows;
 }
+/* ============ AN ATTRIBUTED LOSS AND AN UNEXPLAINED ONE ARE DIFFERENT THINGS (v385) ============
+   The plug was printed as "Lost to shrinkage", which on oil made 27.2 unit of deliberate
+   promotion read as a leak, and reported it as consuming all of that product's margin: a
+   decision he took on purpose, framed as a loss he suffered. selfUseLog carries the reason
+   for every unit it covers and the book already treats the three differently, promotion as
+   marketing under IAS 38.69, leakage as abnormal waste and his own use as a drawing. Only
+   the label on this tab had not learned it.
+   THE LOG IS A SNAPSHOT AND THE PLUG IS LIVE, so the two drift as the book moves: salt's log
+   was struck on 24 Aug against 55.2 unit and the plug now stands at 54.7. Whatever the log
+   does not cover is shown as unattributed rather than folded into the nearest reason. */
+function selfUseSplit(){
+  const R={sample:0,spillage:0,personal:0,other:0};
+  selfUseLog.filter(r=>(r.product||DEFAULT_PROD)===PROD)
+    .forEach(r=>{R[R[r.why]===undefined?'other':r.why]+=+r.kg||0;});
+  const logged=+(R.sample+R.spillage+R.personal+R.other).toFixed(2);
+  return Object.assign(R,{logged:logged,gap:+(selfUse-logged).toFixed(2)});
+}
 function tabAnalysis(){
   const c=pxCost(),sg=pxSignals(),mk=pxMarket(),cv=coverStats();
   const bc=byCustomer().slice().sort((a,b)=>b.rev-a.rev);
   const tot=bc.reduce((a,x)=>a+x.rev,0)||1;
   const shrinkRM=+(selfUse*wavgBuy).toFixed(2);
+  const su=selfUseSplit(),suBits=[];
+  if(su.sample>0.005)suBits.push(kg(su.sample)+' promotion');
+  if(su.spillage>0.005)suBits.push(kg(su.spillage)+' leakage');
+  if(su.personal>0.005)suBits.push(kg(su.personal)+' his own');
+  if(su.other>0.005)suBits.push(kg(su.other)+' unstated reason');
+  if(Math.abs(su.gap)>0.005)suBits.push(kg(Math.abs(su.gap))+(su.gap>0?' unattributed':' over-attributed'));
   const sh=stockHistory();
   const dry=sh.filter(r=>r.lvl<=0.05).length;
   return `<h1>Analysis</h1>
-  <div class="dsc dsclead" style="margin-bottom:12px">Six questions the desk has only ever answered in prose. Observed trade throughout: <b>no fitted curve, no elasticity and no seasonality</b>. Where a chart needs an assumption it is named on the chart rather than hidden in it.</div>
+  <div class="dsc dsclead" style="margin-bottom:12px">Questions the desk has only ever answered in prose. Observed trade throughout: <b>no fitted curve, no elasticity and no seasonality</b>. Where a chart needs an assumption it is named on the chart rather than hidden in it.</div>
   <div class="kpis k4">
     <div class="kpi gold"><div class="l">Gross margin</div><div class="v">${fmt0(grossMargin)}</div><div class="n">${marginPct.toFixed(1)}% of ${fmt0(revTotal)}</div></div>
-    <div class="kpi r"><div class="l">Lost to shrinkage</div><div class="v">${fmt0(shrinkRM)}</div><div class="n">${kg(selfUse)} at ${fmt(wavgBuy)}, ${(shrinkRM/Math.max(1,grossMargin)*100).toFixed(0)}% of all margin</div></div>
+    <div class="kpi ${Math.abs(su.gap)>0.005?'r':'p'}"><div class="l">Out without a sale</div><div class="v">${fmt0(shrinkRM)}</div><div class="n">${kg(selfUse)} at ${fmt(wavgBuy)}${suBits.length?', '+suBits.join(', '):''}</div></div>
     <div class="kpi ${dry>0?'r':'g'}"><div class="l">Days with an empty shelf</div><div class="v">${dry}</div><div class="n">of ${sh.length} trading days reconstructed</div></div>
     <div class="kpi p"><div class="l">Top three buyers</div><div class="v">${(bc.slice(0,3).reduce((a,x)=>a+x.rev,0)/tot*100).toFixed(0)}%</div><div class="n">of ${fmt0(tot)} written across ${bc.length}</div></div>
   </div>
+  ${(()=>{
+    /* UNDER NOTE_MIN IS A PROPERTY OF THE TEMPLATE PLUS TODAY'S FIGURES, not of the template.
+       This block read "34 unit of what went out without a sale went out on purpose, as promotion
+       and his own use, and none of it is stock that went missing": 133 characters against a limit
+       of 140, which is seven characters of headroom held by a two-digit quantity. Salt's branch
+       was already over at 144 and losing its emphasis to cut(). The answer is not to trim it, it
+       is to stop the block carrying figures the KPI directly above it already states: what is
+       left is the finding, and the ONE figure that is the finding. The empty branch now holds no
+       data at all and cannot grow; the other moves only with a quantity, on 20 characters of
+       room. Both survive cut() whole in any case, being one sentence with no full stop inside. */
+    if(su.sample<=0.005&&su.personal<=0.005)return '';
+    const miss=+(su.spillage+su.other+Math.max(0,su.gap)).toFixed(2);
+    return `<div class="insight">`+(miss>0.005
+      ?`Only <b>${kg(miss)}</b> of what left without a sale is genuinely missing; the rest went <b>on purpose</b>, as promotion and his own use.`
+      :`<b>None</b> of what left without a sale is genuinely missing: it all went <b>on purpose</b>, as promotion and his own use.`)+`</div>`;
+  })()}
+  ${(()=>{
+    /* ============ DOES EVERY STATED CORRECTION AGREE WITH THE ROW IT NAMES? ============
+       The Ledger checks one row as you read it. This is the same check over the whole book,
+       because v383 was found by reading two rows back by hand and could have been found on
+       any morning by reading all of them. It renders nothing where nothing has been
+       corrected, and one line where everything holds. */
+    const seen=[],bad=[];
+    [['SELL',pSales(PROD)],['BUY',pPurch(PROD)]].forEach(x=>x[1].forEach(t=>{
+      const cl=modClaims(t,x[0]).filter(c=>c.verdict);
+      if(!cl.length)return;
+      seen.push(t);
+      cl.forEach(c=>{if(c.verdict==='unknown'||c.verdict==='differs')bad.push({t:t,c:c});});}));
+    if(!seen.length)return '';
+    if(!bad.length)return `<div class="pend" style="margin-top:14px"><h3>Every stated correction reads back against its row <span class="cd">${seen.length} corrected</span></h3>
+      <div class="dsc">Each names a field the book can set, and the row carries the value it says it set. A claim made before a later step is not re-read: a fulfilment may legitimately have moved the same figure since.</div></div>`;
+    return `<div class="pend def" style="margin-top:14px"><h3>${bad.length} stated correction${bad.length===1?'':'s'} do not hold <span class="cd crim">of ${seen.length} corrected</span></h3>
+      <div class="insight">A row asserting a change it did not make is worse than a refusal, because every later reader takes it as done.</div>
+      <table style="margin-top:10px"><thead><tr><th class="l">Row</th><th class="l">Party</th><th class="l">Stated</th><th class="l">What is wrong</th></tr></thead><tbody>
+      ${bad.map(b=>`<tr><td class="l mono">${esc(b.t.rid||'')}</td><td class="l mono">${ID(b.t.customer||b.t.supplier)}</td>
+        <td class="l mono">${esc(b.c.field)} ${esc(b.c.was)} &rarr; ${esc(b.c.now)}</td>
+        <td class="l">${b.c.verdict==='unknown'
+          ?'<b>'+esc(b.c.field)+'</b> is not a field a correction may set, so nothing was written'
+          :'the row reads <b>'+esc(b.c.reads)+'</b>'}</td></tr>`).join('')}
+      </tbody></table></div>`;})()}
 
   <h2 style="margin-top:20px">Where the money goes <span class="rule"></span></h2>
   <div class="dsc" style="margin-bottom:9px">Revenue down to margin, then the two losses that sit outside it. <b>Shrinkage is shown beside the bridge, not inside it</b>, because it is already paid for in the cost of goods; putting it in the bridge would deduct it twice. The bar is what it would be worth if it were recovered.</div>
@@ -6199,13 +6314,37 @@ function tabAnalysis(){
   <h2 style="margin-top:20px">The board against what people actually pay <span class="rule"></span></h2>
   <div class="dsc" style="margin-bottom:9px">Every priced order as a dot, with the current board drawn through it. A dot <b>under</b> the line is an order that would be quoted higher today. This is plans P2, P3 and P5 in one picture, and it is the chart to argue with rather than the averages.</div>
   <div class="chartbox"><canvas id="anScatter"></canvas></div>
+  ${(()=>{
+    /* ============ THE LINE THROUGH THE DOTS IS NOT ALWAYS THE BOARD ============
+       pxQuote says in its own comment that it returns the board cell on a carded size and
+       reaches for enginePrice only off the board. It calls enginePrice unconditionally, and
+       enginePrice is a different engine: cost-plus solved for a target return with a tier
+       multiplier and a demand lift, five-grid rounded down, against the ladder's cogs times
+       markup, ratcheted and floor-lifted. Measured across both books they agree at 23 of 24
+       board sizes and part company at salt 0.5 unit, RM70 here against RM60 quoted.
+       WHICH SIDE IS WRONG IS NOT THIS VIEW'S TO SAY, and the first reading written here was
+       wrong: RM60 looked to be under a floor of RM61.92, but that is the DELIVERED floor and
+       ladderWalk lifts to the COLLECTED one, RM51.92, which the ask clears by RM8.08. The board
+       is a collection price with delivery quoted on top per order, his instruction at v352. So
+       the RM70 was enginePrice lifting a collection price to clear a delivery cost on an order
+       nobody said was being delivered, at the only size the board tags collect-only.
+       THE REPAIR IS PRICE'S, since it is a pricing rule and pricing rules live in the engine.
+       What is this view's to do is not draw a line called the board when it is not the board.
+       It is COMPUTED, not written down: the moment the two engines agree the notice disappears
+       by itself, so it can never outlive the fault it describes and become stale prose. */
+    const off=PRICE_TIERS.sizes.map(q=>({q:q,a:pxQuote(q,pxSignals().net,0).total,b:priceLadder(q).ask.total}))
+      .filter(r=>r.b!=null&&Math.abs(r.a-r.b)>0.005);
+    if(!off.length)return '';
+    const r=off[0];
+    return `<div class="insight">The line and the Price tab disagree at <b>${off.length} of ${PRICE_TIERS.sizes.length}</b> board sizes: at ${kg(r.q)} it reads ${fmt0(r.a)} where the board quotes ${fmt0(r.b)}.</div>`;
+  })()}
 
   <h2 style="margin-top:20px">The shelf, reconstructed <span class="rule"></span></h2>
   <div class="dsc" style="margin-bottom:9px">Units on hand each day, rebuilt from lots received and units handed over, against the ${kg(RULES.reorderKg)} reorder trigger. It ties to the desk at both ends: it starts at the stated opening and finishes at the counted <b>${kg(currentStock)}</b>. Shrinkage is a plug with no date on it, so it is <b>spread evenly across the days</b>; the shape is right and any single day is not.</div>
   ${(()=>{const neg=sh.filter(r=>r.raw<-0.01);
     const d=sales.map(txDates), ds={};d.forEach(x=>ds[x.dSrc]=(ds[x.dSrc]||0)+1);
     if(neg.length)return `<div class="pend def" style="margin-bottom:11px"><h3>The line goes below zero on ${neg.length} days, and that is a finding <span class="cd crim">low ${kg(Math.min.apply(null,sh.map(r=>r.raw)))}</span></h3>
-      <div class="dsc">Negative salt is impossible, so those days are a <b>dating artefact rather than a stockout</b>: an order whose delivery date is not recorded falls back to the order date, which can put units out of the door before the lot supplying them arrived. Give those orders a <b>deliveredOn</b> and the line corrects itself.</div></div>`;
+      <div class="insight">Negative salt is impossible, so those days are a <b>dating artefact rather than a stockout</b>: an order with no delivery date falls back to its order date, which can put units out of the door before the lot supplying them arrived, and a <b>deliveredOn</b> on those orders corrects the line.</div></div>`;
     return `<div class="pend" style="margin-bottom:11px"><h3>The walk is clean <span class="cd">low ${kg(Math.min.apply(null,sh.map(r=>r.raw)))}</span></h3>
       <div class="dsc">It never goes below zero and it finishes on the counted <b>${kg(currentStock)}</b>, so every day is physically possible. It got there on <b>${ds.trail||0} orders dated from the amendment trail</b> and <b>${ds.stated||0} from an explicit deliveredOn</b> added where the date had only ever existed in a note. The remaining <b>${ds.assumed||0} are assumed</b>, meaning nothing was recorded and nothing is known to have moved later; each one is a small chance of a day's error and none of them currently breaks the line.</div></div>`;})()}
   <div class="chartbox"><canvas id="anStock"></canvas></div>
@@ -6251,6 +6390,11 @@ function drawAnalysis(){
   ensureChart(ok=>{
     if(!ok){['anBridge','anScatter','anStock','anPareto','anBuys','anCadence'].forEach(id=>{const e=blkEl(id);
       chartEmpty(e,'Chart unavailable. Every figure it draws is in the tables on this tab.');});return;}
+    /* WHICH CHART IS BEING BUILT. Set at the head of each section rather than at its freshChart
+       call, so a throw in the figures a chart is built from is attributed to that chart and not
+       to the one before it. It sits OUTSIDE the try because `let` is block-scoped: declared
+       inside, the catch could not read it and every draw died on a ReferenceError instead. */
+    let cur='anBridge';
     try{
       const GRID='rgba(255,255,255,0.07)',TICK='rgba(244,245,247,0.66)',INK='#f4f5f7';
       const base=t=>({responsive:true,maintainAspectRatio:false,
@@ -6269,6 +6413,7 @@ function drawAnalysis(){
           title:{display:true,text:'Revenue to margin (RM)',color:INK,font:{size:12}},
           tooltip:{callbacks:{label:i=>{const v=i.raw;return 'RM '+Math.abs(v[1]-v[0]).toLocaleString('en-MY',{maximumFractionDigits:0});}}}}})});
 
+      cur='anScatter';
       // 2. price vs size, with the live board through it
       const dots=pricedSales.filter(s=>s.qty>0&&s.total>0&&!s.cancelled)
         .map(s=>({x:s.qty,y:+(s.total/s.qty).toFixed(2),id:s.customer,d:s.date}));
@@ -6288,6 +6433,7 @@ function drawAnalysis(){
           scales:{x:{type:'logarithmic',grid:{color:GRID},ticks:{color:TICK,callback:v=>v+' unit'},title:{display:true,text:'lot size, log scale',color:TICK}},
                   y:{grid:{color:GRID},ticks:{color:TICK,callback:v=>'RM '+v}}}}});
 
+      cur='anStock';
       // 3. reconstructed shelf
       const sh=stockHistory();
       freshChart(blkEl('anStock'),{type:'line',
@@ -6301,6 +6447,7 @@ function drawAnalysis(){
           scales:{x:{grid:{color:GRID},ticks:{color:TICK,maxTicksLimit:14}},
                   y:{grid:{color:GRID},ticks:{color:TICK,callback:v=>v+' unit'}}}}});
 
+      cur='anPareto';
       // 4. pareto
       const bc=byCustomer().slice().sort((a,b)=>b.rev-a.rev),tot=bc.reduce((a,x)=>a+x.rev,0)||1;
       let run=0;const cum=bc.map(x=>{run+=x.rev;return +(run/tot*100).toFixed(1);});
@@ -6315,6 +6462,7 @@ function drawAnalysis(){
                   y:{grid:{color:GRID},ticks:{color:TICK,callback:v=>'RM '+v},position:'left'},
                   y1:{grid:{display:false},ticks:{color:'#e8c66b',callback:v=>v+'%'},position:'right',min:0,max:100}}}});
 
+      cur='anBuys';
       // 5. buy rate against lot size
       const buys=purchases.filter(p=>!p.pending&&p.qty>0).map(p=>({x:p.qty,y:+(p.total/p.qty).toFixed(2),
         r:6+Math.sqrt(p.total/Math.max(1,Math.max.apply(null,purchases.map(z=>z.total))))*14,
@@ -6330,6 +6478,7 @@ function drawAnalysis(){
           scales:{x:{grid:{color:GRID},ticks:{color:TICK,callback:v=>v+' unit'}},
                   y:{grid:{color:GRID},ticks:{color:TICK,callback:v=>'RM '+v}}}}});
 
+      cur='anCadence';
       // 6. cadence: one row per buyer, one dot per order
       const ids=bc.map(x=>x.id);
       const maxT=Math.max.apply(null,pricedSales.map(s=>s.total||0))||1;
@@ -6343,7 +6492,16 @@ function drawAnalysis(){
           scales:{x:{type:'category',labels:[...new Set(pricedSales.map(s=>s.date).filter(Boolean))].sort(),
                      grid:{color:GRID},ticks:{color:TICK,maxRotation:70,minRotation:45,font:{size:9}}},
                   y:{type:'category',labels:ids.map(codeOf).reverse(),grid:{color:GRID},ticks:{color:TICK,font:{size:10}}}}}});
-    }catch(e){}
+    }catch(e){
+      /* ONE try AROUND SIX CHARTS: a throw in the second takes the other four with it, and
+         the empty catch took them in silence. Probed with a Chart that refuses, all six boxes
+         on both product blocks came back blank with nothing said on any of them. It names the
+         one that stopped and says plainly that the rest never ran, which is the truth of a
+         shared try and is better than six identical notices implying six separate faults. */
+      const ids=['anBridge','anScatter','anStock','anPareto','anBuys','anCadence'],i=Math.max(0,ids.indexOf(cur));
+      chartEmpty(blkEl(ids[i]),'This chart could not be drawn: '+((e&&e.message)||e)+'. Every figure it draws is in the tables on this part.');
+      ids.slice(i+1).forEach(id=>chartEmpty(blkEl(id),'Not drawn: the chart above it stopped first. Every figure it draws is in the tables on this part.'));
+    }
   });
 }
 
@@ -7051,7 +7209,7 @@ function renderEditor(){
     +'<datalist id="edCodes">'+codes.map(c=>'<option value="'+edEsc(c)+'"></option>').join('')+'</datalist>'
     +html
     +'<div style="display:flex;gap:8px;margin-top:16px">'
-    +(canc?'':'<button id="edSave" class="vbtn" style="border-color:var(--gold);color:var(--gold);flex:1">'+(edNew?'Queue the order':'Queue the correction')+'</button>')
+    +(canc?'':'<button id="edSave" class="vbtn" style="flex:1">'+(edNew?'Queue the order':'Queue the correction')+'</button>')
     +'<button id="edCancel" class="vbtn" style="flex:0 0 auto">Cancel</button></div>'
     +'<div id="edWhy" style="font-size:11.5px;color:var(--dim);margin-top:9px"></div>';
   document.getElementById('edX').onclick=edClose;
@@ -7219,39 +7377,68 @@ function ledQuick(what,type,who,date,total,qty){
 }
 function goEnt(code){const el=document.getElementById('ent-'+code);if(el){el.scrollIntoView({behavior:'smooth',block:'center'});el.classList.add('entflash');setTimeout(()=>el.classList.remove('entflash'),1200);}return false;}
 let ledF={q:'',state:'',party:'',month:'',product:''};
+/* the rows tabLedger last matched. The day-by-day chart draws THIS rather than reaching for
+   `sales`, so a chart sitting under the toolbar cannot show a different book from the list
+   under it. Set on every build of the tab, read only by drawLedgerCharts. */
+let ledShown=[];
 /* v365: NEITHER FILTER NOR SEARCH COULD ISOLATE A PRODUCT. Oil could not be scanned out on
    this tab short of reading every row by eye, and the search box's own haystack did not
    even carry the name, though every row already knows it. ledgerProdOf resolves the same
    way tabLedger's own rows do: a sale carries product directly, a purchase's product lives
    on the raw lot in _buy. */
 const ledgerProdOf=t=>prodOf(t.type==='BUY'?(t._buy||t):t);
+/* THE CLOSING STATE, DECIDED ONCE. It was written twice, here and in tabLedger's own
+   row loop, and the two copies drifted: this side never learned about Cancelled when the
+   card's side did. So a cancelled row was filtered under whatever its amendment replay
+   happened to end on, and the Cancelled option returned three rows of five while Pending
+   returned three where only one is pending. In-Kind, Default and Cancelled are terminal
+   headlines and win at the close even where the last arithmetic step reads Completed. */
+const ledFinal=(si,am)=>(si.order==='In-Kind'||si.order==='Default'||si.order==='Cancelled')
+  ?si.order:(am.length?am[am.length-1].state:si.order);
+/* an undated row is PLANNED rather than agreed, and printing t.date on one put the literal
+   word "undefined" in the date column of three cards. */
+const ledDate=d=>d&&d!=='undefined'?d:'undated';
 function ledMatches(t,si,am,code){
   if(ledF.party&&t.who!==ledF.party)return false;
-  if(ledF.month&&t.date.slice(0,7)!==ledF.month)return false;
+  /* t.date is absent on a row agreed but never moved, so this threw on every month
+     in the list and the dropdown silently did nothing at all. An undated row has no month
+     and is therefore not in one. */
+  if(ledF.month&&(t.date||'').slice(0,7)!==ledF.month)return false;
   if(ledF.product&&ledgerProdOf(t)!==ledF.product)return false;
   if(ledF.state){
-    const fin=(si.order==='In-Kind'||si.order==='Default')?si.order:(am.length?am[am.length-1].state:si.order);
+    const fin=ledFinal(si,am);
     if(ledF.state==='Open'){if(!/^Open/.test(fin))return false;}
     else if(fin!==ledF.state)return false;}
   if(ledF.q){
     const q=ledF.q.toLowerCase();
-    const hay=(code+' '+t.who+' '+ID(t.who)+' '+t.date+' '+(t.total||'')+' '+(t.note||'')+' '+(t.mod||'')+' '+(PRODUCTS[ledgerProdOf(t)]||{}).name).toLowerCase();
+    const hay=(code+' '+t.who+' '+ID(t.who)+' '+(t.date||'')+' '+(t.total||'')+' '+(t.note||'')+' '+(t.mod||'')+' '+((PRODUCTS[ledgerProdOf(t)]||{}).name||'')).toLowerCase();
     if(hay.indexOf(q)<0)return false;}
   return true;
 }
 function wireLedger(){
   const q=document.getElementById('ledQ');if(!q)return;
-  /* v365: was sec-ledger, which hasn't existed since Ledger and Analysis merged into one
-     view at v341-343 (the real container is sec-book, line 1352). The lookup failed
-     silently, so every filter updated its own state and then redrew nothing. */
-  const rerun=()=>{const el=document.getElementById('sec-book');if(el){el.innerHTML=tabLedger();wireLedger();
-    const q2=document.getElementById('ledQ');if(q2){q2.value=ledF.q;q2.focus();q2.setSelectionRange(q2.value.length,q2.value.length);}}};
-  q.oninput=()=>{ledF.q=q.value;rerun();};
-  const st=document.getElementById('ledState');if(st)st.onchange=()=>{ledF.state=st.value;rerun();};
-  const pt=document.getElementById('ledParty');if(pt)pt.onchange=()=>{ledF.party=pt.value;rerun();};
-  const mo=document.getElementById('ledMonth');if(mo)mo.onchange=()=>{ledF.month=mo.value;rerun();};
-  const pr=document.getElementById('ledProduct');if(pr)pr.onchange=()=>{ledF.product=pr.value;rerun();};
-  const cl=document.getElementById('ledClear');if(cl)cl.onclick=()=>{ledF={q:'',state:'',party:'',month:'',product:''};rerun();};
+  /* v365 pointed this at sec-book, which exists, and that was the fault rather than the fix.
+     sec-book is the whole VIEW: the pills strip that names Analysis, then a .vpart holding
+     one part. Repainting it with tabLedger() alone THREW THE STRIP AWAY, so one keystroke in
+     the search box lost the way to Analysis, and it skipped stripMethod and the chart pass
+     as well, so the method prose v372 removed came back and the chart went blank. It now
+     repaints the PART, through renderPart, which is the one path that builds a part: the
+     builder, the prose trim and the chart pass, in that order.
+     Focus goes back to the control that was used, not always to the search box. */
+  const rerun=id=>{
+    const host=document.querySelector('#sec-book .vpart[data-tab="ledger"]');
+    if(!host)return;
+    renderPart('ledger',host);
+    const el=document.getElementById(id);if(!el)return;
+    try{el.focus();}catch(e){}
+    if(el.tagName==='INPUT'&&el.setSelectionRange)el.setSelectionRange(el.value.length,el.value.length);
+  };
+  q.oninput=()=>{ledF.q=q.value;rerun('ledQ');};
+  const st=document.getElementById('ledState');if(st)st.onchange=()=>{ledF.state=st.value;rerun('ledState');};
+  const pt=document.getElementById('ledParty');if(pt)pt.onchange=()=>{ledF.party=pt.value;rerun('ledParty');};
+  const mo=document.getElementById('ledMonth');if(mo)mo.onchange=()=>{ledF.month=mo.value;rerun('ledMonth');};
+  const pr=document.getElementById('ledProduct');if(pr)pr.onchange=()=>{ledF.product=pr.value;rerun('ledProduct');};
+  const cl=document.getElementById('ledClear');if(cl)cl.onclick=()=>{ledF={q:'',state:'',party:'',month:'',product:''};rerun('ledQ');};
 }
 
 /* ============ STATEMENT OF ACCOUNT (v183) ============
@@ -7703,6 +7890,168 @@ function prodTag(t){
   return `<span class="prodtag" style="color:${P.accent}" title="${esc(P.name)}">`
     +`<span class="gl"></span>${esc(P.name)}</span>`;
 }
+/* ============ WHAT THE FILTER COMES TO ============
+   The toolbar could isolate a party, a month, a state or a product, and then said only how
+   many rows it had found. The question a book is actually opened with, "how much is that",
+   had to be answered by adding the cards up by eye, on a tab that carries a hundred and
+   twenty-five of them.
+   EVERY FIGURE HERE IS A SUM OF ONE THE ROWS ALREADY CARRY. txDeliv, txPaid, txAdvance and
+   txDeferKg are the position engine's, read exactly as the Order book reads them; nothing
+   is re-derived, because a second opinion on a receivable is a second engine.
+   A CANCELLED ROW COUNTS IN THE ROWS SHOWN AND IN NONE OF THE MONEY, which is what the rest
+   of the desk does with one. */
+function ledTotals(list){
+  const S=list.filter(t=>t.type==='SELL'&&!t.cancelled), B=list.filter(t=>t.type==='BUY');
+  const sum=(a,f)=>a.reduce((n,x)=>n+(+f(x)||0),0);
+  /* WHICH OF THE ENGINE'S FIGURES, AND WHY EACH ONE. Checked against recompute's own
+     totals for a single product, because a strip that disagrees with the Order book by a
+     definition nobody stated is worse than no strip:
+       txPhys, not txDeliv    what left the shelf. Ties to soldKg exactly; txDeliv adds
+                              set-off fulfilment, which settles a balance without moving salt.
+       txPaid                 cash AND what was settled in kind, which is what "settled" says.
+                              revCollected is the cash half alone and is labelled cash.
+       txAdvance              the desk's own definition of a receivable, and outstandingOf IS
+                              this function; a pending order is not one.
+       total, not net of the pending tail  this is the sum of the Total column above it, and
+                              a ledger that would not add up its own column is no use.
+       a defaulted lot        paid for, never arrived. Out of the ringgit as poRecvKg already
+                              keeps it out of the units, so the two halves of the cell agree.
+                              It still counts as a lot shown, and its own card says Default. */
+  return {sellN:S.length,buyN:B.length,
+    written:sum(S,t=>t.total), out:sum(S,t=>txPhys(t)), got:sum(S,t=>txPaid(t)),
+    owed:sum(S,t=>txAdvance(t)), oweKg:sum(S,t=>txDeferKg(t)),
+    bought:sum(B.filter(t=>!(t._buy&&t._buy.defaulted)),t=>t.total), inKg:sum(B,t=>poRecvKg(t._buy))};
+}
+function ledSumBar(list,total){
+  if(!list.length)return '';
+  const T=ledTotals(list);
+  const cell=(l,v,sub,cls)=>`<div class="s"><span class="l">${l}</span>`
+    +`<span class="v${cls?' '+cls:''}">${v}</span><span class="sb">${sub}</span></div>`;
+  const bits=[];
+  if(T.sellN){
+    bits.push(cell('Written',fmt0(T.written),T.sellN+(T.sellN===1?' order':' orders'),'ice'));
+    bits.push(cell('Handed over',kg(T.out),fmt0(T.got)+' settled',''));
+  }
+  if(T.owed>0.009)bits.push(cell('Owed to you',fmt0(T.owed),'delivered, unpaid','warn'));
+  if(T.oweKg>0.009)bits.push(cell('Salt you owe',kg(T.oweKg),'paid, undelivered','warn'));
+  /* an empty state is a finding, not a gap: a missing cell reads as a figure nobody worked
+     out, so the one case where nothing is between the parties says so. */
+  if(T.sellN&&T.owed<=0.009&&T.oweKg<=0.009)bits.push(cell('Outstanding','none','nothing owed either way','nil'));
+  if(T.buyN)bits.push(cell('Bought',fmt0(T.bought),T.buyN+(T.buyN===1?' lot, ':' lots, ')+kg(T.inKg)+' in','gold'));
+  const scope=list.length===total?`all ${total} rows`:`the ${list.length} of ${total} rows shown`;
+  return `<div class="ledsum">${bits.join('')}<span class="scope">across ${scope}</span></div>`;
+}
+/* ============ A CORRECTION IS A CLAIM, AND A CLAIM CAN BE READ BACK ============
+   v383 folded two re-keys naming the field `customer`, which the correctable table calls
+   `party`. The fold wrote nothing and recorded everything, so both rows came out asserting a
+   re-key they had not made. Nothing on this desk showed it: `mod` only ever went into the
+   search haystack, never onto the page, and on a settled row the correction step itself is
+   swallowed by the collapse. The one screen built to audit this book had no way to contradict
+   it, which is why it took a person reading two rows back by hand.
+   IT IS PRINTED NOW, AND EVERY CLAIM IN IT IS READ BACK AGAINST THE ROW. ovAmend and
+   applyAmend both write "corrected on <date>: <field> <was> to <now>", joined by ", then".
+   Only that shape is checked; anything a person typed is carried through without a verdict
+   rather than with a wrong one.
+   A LATER STEP ENDS THE CHECK. A correction states what the row read that day, and a
+   fulfilment the next day may legitimately move the same figure: s105 was corrected to RM0
+   cash on the 25th and paid on the 26th. Read against today's row that is a fault, and it is
+   not one. A flag that fires when nothing is wrong teaches the reader to tap through. */
+/* DOES THE CLAIM'S STATED NEW VALUE READ BACK OFF THE ROW? Three shapes: a cleared value, which
+   the row must then not carry; a figure, compared to the cent because a claim writes 230 where
+   the row holds 230.0; anything else, compared as text. A TEXT field is checked against the tail
+   of the whole line rather than against the split, because the split takes the last " to " and
+   a note is free to hold one of its own. */
+function claimHolds(c,bit,text){
+  if(c.now==='(cleared)'||c.now==='(unset)')return c.reads==='(unset)';
+  if(text)return bit.endsWith(' to '+c.reads);
+  if(c.reads!=='(unset)'&&isFinite(+c.now)&&isFinite(+c.reads))return Math.abs((+c.now)-(+c.reads))<0.005;
+  return c.now===c.reads;
+}
+function modClaims(t,dir){
+  if(!t||!t.mod)return[];
+  const PE=POSITION_ENGINE,view=edView(t,dir==='BUY'?'BUY':'SELL');
+  /* WHAT CAME AFTER THE CORRECTION, BY POSITION AND NOT BY DATE. A claim true when it was
+     written and overtaken afterwards is not a contradiction, so it is not called one. The
+     first rule compared the correction's date against the newest date on the row, which
+     misses a step settled on the SAME DAY: a cash 360 to 0 corrected and then fulfilled on
+     the 25th read as a contradiction, and a false crimson is the one thing this strip must
+     not produce. The fold appends a Correction at the end of `amend` when it writes one, so
+     anything sitting after the last Correction was added after it. Position answers exactly
+     where a date can only answer to the day. */
+  const A=t.amend||[];
+  let li=-1;A.forEach((a,i)=>{if(a.kind==='Correction')li=i;});
+  const post=(li>=0?A.slice(li+1):[]).map(a=>a.date).filter(Boolean).sort();
+  const last=post.length?post[post.length-1]:'';
+  const out=[];
+  String(t.mod).split(', then ').forEach(seg=>{
+    const head=/^corrected(?: on ([0-9-]+))?: (.+)$/.exec(seg.trim());
+    if(!head){out.push({prose:seg.trim()});return;}
+    const on=head[1]||'',stale=!!(on&&last&&last>=on);
+    head[2].split('; ').forEach(raw=>{
+      const bit=raw.trim(),p=/^(\S+) (.*) to (.*)$/.exec(bit);
+      /* THE HEAD PARSED, so this line was written by the fold and its shape is a contract.
+         Falling through to prose here would render it as quiet grey text and check nothing,
+         which is the one failure a claim checker must not have. */
+      if(!p){out.push({verdict:'unreadable',raw:bit});return;}
+      const c={on:on,field:p[1],was:p[2],now:p[3]},text=PE.CORRECT_TEXT.includes(c.field);
+      /* THE FOLD APPENDS A REASON to a value it moved without being asked (be2de5a):
+         "unpriced true to (cleared), a real total was set". That is prose about the write and
+         not part of the value, and taken as the value it made both of the fold's own reasoned
+         writes read as contradictions the moment the two branches met. A non-text value holds
+         no comma, being a figure, a date, a code, a boolean, (unset) or (cleared), so the split
+         is exact where it is applied and is not attempted where a value may carry one. */
+      if(!text){const r=/^([^,]*), (.+)$/.exec(c.now);if(r){c.now=r[1];c.why=r[2];}}
+      if(!PE.CORRECTABLE.includes(c.field))c.verdict='unknown';
+      else if(stale)c.verdict='later';
+      else{const v=view[c.field];
+        c.reads=(v===undefined||v===null)?'(unset)':String(v);
+        c.verdict=claimHolds(c,bit,text)?'agrees':'differs';
+        /* and when a text claim holds, the tail is known exactly, so the value the split cut in
+           the wrong place can be put back rather than shown to a reader garbled. */
+        if(text&&c.verdict==='agrees'){c.was=bit.slice(c.field.length+1,bit.length-c.reads.length-4);c.now=c.reads;}}
+      out.push(c);});});
+  return out;
+}
+/* The strip sits at CARD level rather than in the trail, because the trail collapses: four of
+   the six corrected rows on this book render as a single line and drop their correction
+   whole. The claims are the open part, being short and checkable; the prose behind them is
+   folded, being read once and then trusted. */
+function corrStrip(t,dir,corrs){
+  const claims=modClaims(t,dir);
+  if(!claims.length&&!(corrs&&corrs.length))return '';
+  const bad=claims.filter(c=>c.verdict==='unknown'||c.verdict==='differs'||c.verdict==='unreadable');
+  /* ============ A CHECKER THAT STOPS CHECKING MUST SAY SO ============
+     Everything below reads strings the FOLD writes: ", then " between corrections, "corrected
+     on <date>: " at the head, "; " between claims, "<field> <was> to <now>" and the (unset)
+     and (cleared) markers. That is five string contracts owned by tools/fold.mjs, and a
+     reworded reason or a changed separator would leave this function parsing nothing and
+     saying nothing. Tested: of five plausible rewordings, two rendered as quiet prose and
+     reported NO claims at all. So a row that carries a Correction and yields no readable
+     claim is treated as a fault in the READER, stated here, rather than as a row with
+     nothing to check. It cannot be silent about having gone blind. */
+  const chip=c=>c.verdict==='unreadable'
+    ?`<span class="cclaim unreadable">${esc(c.raw)} <em>this desk cannot read that claim</em></span>`
+    :c.prose?`<span class="cprose">${esc(c.prose)}</span>`
+    :`<span class="cclaim ${c.verdict}">${esc(c.field)} ${esc(c.was)} &rarr; ${esc(c.now)}`
+      +(c.why?` <em>${esc(c.why)}</em>`:'')
+      +(c.verdict==='unknown'?' <em>not a field the book can set</em>'
+        :c.verdict==='differs'?` <em>the row reads ${esc(c.reads)}</em>`:'')
+      +'</span>';
+  /* said once, not once per claim: three grey "superseded" chips in a row carry the
+     information of one and read as an alarm that is not being raised. */
+  const later=claims.some(c=>c.verdict==='later')?'<span class="cclaim later"><em>superseded by a later step</em></span>':'';
+  /* `mod` also holds plain restatements nobody generated, and calling those a correction
+     would put the word on four rows that were never corrected. */
+  const lab=(corrs&&corrs.length)||claims.some(c=>c.verdict)?'Corrected':'Restated';
+  const when=(corrs&&corrs.length&&corrs[corrs.length-1].date)||(claims.find(c=>c.on)||{}).on||'';
+  const blind=(corrs&&corrs.length&&!claims.some(c=>c.verdict))
+    ?'<span class="cclaim unreadable"><em>this row was corrected and the desk could not read the trail: check tools/fold.mjs against modClaims</em></span>':'';
+  const notes=(corrs||[]).filter(a=>a.note).map(a=>`<p>${a.note}</p>`).join('');
+  return `<div class="lcorr${bad.length||blind?' bad':''}">`
+    +`<div class="chead"><span class="clab">${lab}${when?' '+when:''}</span>${claims.map(chip).join('')}${later}${blind}</div>`
+    +(notes?`<details class="cwhy"><summary><span class="chev">&#9656;</span>why</summary><div class="cnote">${notes}</div></details>`:'')
+    +'</div>';
+}
 function tabLedger(){
   // a fully pending order (agreed, nothing moved) carries no meaningful date and sits at the very bottom
   const isPend=t=>t.type==='BUY'?(ledgerBuy(t._buy).order==='Pending'):(txStat(t).order==='Pending');
@@ -7725,18 +8074,28 @@ function tabLedger(){
     if(a.ref)bits.push(`<span class="eref">${a.ref}</span>`);
     return bits.length?`see ${bits.join(' ')}`:'';};
   // one card per order: opening (strong) -> movements (recessed rail) -> closing (strong, only when completed)
+  const shownTx=[];
   const rows=all.map((t,idx)=>{
     const code=codes[idx];
     const si=t.type==='BUY'?ledgerBuy(t._buy):txStat(t);
-    const am=(t.type==='SELL'&&t.amend&&t.amend.length)?replayAmend(t):[];
+    /* ============ A CORRECTION IS NOT A STEP IN THE ORDER ============
+       It moves no cash and no salt; it restates what the record should have said. Left in the
+       trail it becomes the last step, so it dates the closing line and it drives the collapse.
+       s032 was paid and delivered together on 21 Jul and read "Closed 2026-08-26, 36 days from
+       agreed to settled", because a re-key touched the row on the 26th. Pulled out, the closing
+       line is the last thing that actually moved and the correction gets a strip of its own
+       that the collapse cannot swallow. */
+    const corrs=(t.type==='SELL'&&t.amend&&t.amend.length)?t.amend.filter(a=>a.kind==='Correction'):[];
+    const steps=(t.type==='SELL'&&t.amend&&t.amend.length)?t.amend.filter(a=>a.kind!=='Correction'):[];
+    const am=steps.length?replayAmend(Object.assign({},t,{amend:steps})):[];
     // carry each step's cross-reference keys through the replay (same order, same sort)
-    if(am.length){const rawA=t.amend.slice().sort((a,b)=>new Date(a.date)-new Date(b.date));
+    if(am.length){const rawA=steps.slice().sort((a,b)=>new Date(a.date)-new Date(b.date));
       am.forEach((s,i)=>{if(rawA[i]&&rawA[i].refKeys)s.refKeys=rawA[i].refKeys;});}
     // opening / closing state resolution
     const openState=am.length?am[0].state:si.order;
     /* In-Kind (barter/rebate) and Default are terminal even when the replay's last
        arithmetic step reads Completed/Open: the special headline wins at close. */
-    const finalState=(si.order==='In-Kind'||si.order==='Default'||si.order==='Cancelled')?si.order:(am.length?am[am.length-1].state:si.order);
+    const finalState=ledFinal(si,am);
     const completed=am.length?(am[am.length-1].state==='Completed'||si.order==='In-Kind'||si.order==='Default'||si.order==='Cancelled'):(si.order==='Completed'||si.order==='In-Kind'||si.order==='Default'||si.order==='Cancelled');
     const closeState=finalState;
     const moves=am.length?am.slice(1,completed?am.length-1:am.length):[];
@@ -7752,7 +8111,10 @@ function tabLedger(){
     /* v266: PENDING HAS NO MARGIN. Nothing has been paid and nothing delivered, so there is
        no cost of goods against it; printing one states a profit on a trade that has not
        happened. It reappears the moment the order moves. */
-    let margin=(t.type==='SELL'&&si.order!=='Pending')?t.total-t.qty*costOf(t):null;
+    /* NOR HAS A CANCELLED ONE, for a stronger version of the same reason. A cancelled
+       row is out of every figure on this desk, so "RM 108.77 · 59%" beside it states a profit
+       on a trade that was called off. Two of them printed one. */
+    let margin=(t.type==='SELL'&&si.order!=='Pending'&&si.order!=='Cancelled')?t.total-t.qty*costOf(t):null;
     if(margin!=null&&Math.abs(margin)<0.005)margin=0;   // a rebate settled at cost printed "RM -0.00 · -0%"
     const marPct=(margin!=null&&t.total>0)?margin/t.total*100:null;
     const qCell=(mv,v)=>`<span class="lcol cqty${mv?'':' carried'}">${kg(v)}</span>`;
@@ -7771,7 +8133,7 @@ function tabLedger(){
       +`<span class="lgroup">`
         +`<span class="ecode">${code}</span>`
         +`<span class="lclabel ${headLabelCls}">${headLabel}</span>`
-        +`<span class="ldate">${isPend(t)?'':t.date}</span>`
+        +`<span class="ldate">${isPend(t)?'':ledDate(t.date)}</span>`
         +`<span class="tag ${t.type==='BUY'?'buy':'sell'}">${t.type}</span>`
         +prodTag(t)
         +(provOf(t)?`<span class="tag prov" title="recorded but not yet committed">Provisional</span>`:'')
@@ -7797,13 +8159,13 @@ function tabLedger(){
         +tCell(mc,mc?a.cash:t.total,isMod)
         +`<span class="lstate">${pill(a.state,a.cls)}</span>`
         +`</div>`;};
-    const moveLines=moves.map(a=>stepLine(a,'lmove',`<span class="lmdate">${a.date}</span>`)).join('');
+    const moveLines=moves.map(a=>stepLine(a,'lmove',`<span class="lmdate">${ledDate(a.date)}</span>`)).join('');
     const movePanel=moveLines?(moves.length>=3?`<details class="lmc"><summary><span class="chev">&#9656;</span>${moves.length} interim steps</summary><div class="lmoves">${moveLines}</div></details>`:`<div class="lmoves">${moveLines}</div>`):'';
     // closing line (full strength) when a multi-step order has completed. Opening->Closing with no
     // middle is fine (moves may be empty). A single-line order carries its close on the head row instead.
     const closeA=am.length?Object.assign({},am[am.length-1],{state:finalState,cls:stateCls(finalState)}):null;
     const closeLine=(completed&&am.length)?stepLine(closeA,'lrow lclose',
-       `<span class="ecode"></span><span class="lclabel roleclose">Closed</span><span class="ldate">${closeA.date}</span>`):'';
+       `<span class="ecode"></span><span class="lclabel roleclose">Closed</span><span class="ldate">${ledDate(closeA.date)}</span>`):'';
     /* ============ A PENDING ORDER IS A NOTE TO SELF, NOT AN EVENT (v254) ============
        An order agreed on Monday and settled on Wednesday was rendering as three lines:
        Opened, a Fulfilment, Closed. The middle two say the same thing twice and the first
@@ -7839,18 +8201,19 @@ function tabLedger(){
       +`<span class="lgroup">`
         +`<span class="ecode">${code}</span>`
         +`<span class="lclabel roleclose">Closed</span>`
-        +`<span class="ldate">${closeA.date}</span>`
+        +`<span class="ldate">${ledDate(closeA.date)}</span>`
         +`<span class="tag ${t.type==='BUY'?'buy':'sell'}">${t.type}</span>`
         +prodTag(t)
         +(provOf(t)?`<span class="tag prov" title="recorded but not yet committed">Provisional</span>`:'')
         +`<span class="lparty">${ID(t.who)}</span>`
-        +`<span class="lagreed">agreed ${t.date}</span>`
+        +`<span class="lagreed">${t.date?'agreed '+t.date:'planned, undated'}</span>`
         +(caption?`<span class="lmnote">${caption}</span>`:'')
       +`</span>`
       +qCell(true,t.qty)+pCell(true)+tCell(true,t.total,true)
       +`<span class="lstate">${pill(finalState,stateCls(finalState))}</span>`
       +`</div>`:'';
     if(!ledMatches(t,si,am,code))return '';
+    shownTx.push(t);
     const cardCls=finalState==='Completed'?'s-completed':finalState==='Pending'?'s-pending':finalState==='In-Kind'?'s-inkind':finalState==='Default'?'s-default':finalState==='Cancelled'?'s-cancelled':'s-open';
     /* v253: a pending order carries its own next action */
     const q=(w,c,l)=>`<button class="lqb ${c}" onclick="ledQuick('${w}','${t.type}','${String(t.who).replace(/'/g,"\\'")}','${t.date}',${+t.total},${+t.qty})">${l}</button>`;
@@ -7866,8 +8229,10 @@ function tabLedger(){
        keydown listener below is what turns a focused card's Enter into the same edit a
        right-click opens. */
     const rid=ridOf(t);
-    return `<div class="lcard ${cardCls}" id="ent-${code}"${rid?` data-rid="${rid}" data-type="${t.type}" tabindex="0"`:""}>${collapse?collapsedLine:(openLine+movePanel+closeLine)}${quickBar}</div>`;}).filter(Boolean);
+    return `<div class="lcard ${cardCls}" id="ent-${code}"${rid?` data-rid="${rid}" data-type="${t.type}" tabindex="0"`:""}>${collapse?collapsedLine:(openLine+movePanel+closeLine)}${corrStrip(t,t.type,corrs)}${quickBar}</div>`;}).filter(Boolean);
   const shown=rows.length,total=all.length,rowsHtml=rows.join('');
+  ledShown=shownTx;                       // the chart draws the same set the list shows
+  const filtered=!!(ledF.q||ledF.state||ledF.party||ledF.month||ledF.product);
   const parties=[...new Set(all.map(t=>t.who))];
   /* v280: a PENDING order carries no date, because it is not firm until something moves.
      So the month index is built from the rows that have one, and undated rows fall through
@@ -7881,12 +8246,11 @@ function tabLedger(){
     <select id="ledParty">${selOpt('',ledF.party,'All parties')}${parties.map(x=>selOpt(x,ledF.party,ID(x))).join('')}</select>
     <select id="ledMonth">${selOpt('',ledF.month,'All months')}${months.map(x=>selOpt(x,ledF.month,mLab(x))).join('')}</select>
     <select id="ledProduct">${selOpt('',ledF.product,'All products')}${PROD_IDS.map(p=>selOpt(p,ledF.product,PRODUCTS[p].name)).join('')}</select>
-    ${(ledF.q||ledF.state||ledF.party||ledF.month||ledF.product)?'<button class="vbtn" id="ledClear" style="font-size:11px">Clear</button>':''}
+    ${filtered?'<button class="vbtn" id="ledClear" style="font-size:11px">Clear</button>':''}
     <span class="ledct">${shown} of ${total}</span>
   </div>`;
   return `<h1>Ledger</h1>
-  <div class="dsc dsclead">Every transaction the desk holds, newest first, with the trail of what moved when.</div>
-  <div class="card" style="margin-bottom:14px"><div class="cardh">The book, day by day <span class="sub">RM written and units moved</span></div><div class="chartbox" style="height:180px"><canvas id="lgTimeChart"></canvas></div></div>
+  <div class="dsc dsclead">Every transaction the desk holds, oldest first, with the trail of what moved when.</div>
   <h2 style="margin-top:20px">Statement of account <span class="sub" style="font-weight:400">what a customer may be given</span> <span class="rule"></span></h2>
   <div class="dsc" style="margin-bottom:9px">A record of one party&rsquo;s own dealings, for handing to them. Deliberately spare: <b>what they took, when, and how much</b>, and nothing else. It is <b>built rather than copied</b>, so <b>no cost, no margin, no unit price, no other party and none of the notes in this ledger</b> can travel with it &mdash; the notes here are written for you, and several are about your own bookkeeping.</div>
   <div class="card">
@@ -7909,8 +8273,10 @@ function tabLedger(){
   </div>
 
   <h2>Transactions ledger <span class="rule"></span></h2>
-  <div class="note">One card per order: <b>Opened &rarr; movements &rarr; Closed</b>. The <b>left spine</b> colours each card by state (green completed, amber open, violet pending, gold in-kind, red cancelled or default). <b>Bright</b> figures moved at that step; <b>grey</b> ones carried over. Long amendment trails collapse in the middle and expand on tap; <b>linked</b> references are clickable.</div>
+  <div class="note">One card per order, <b>Opened &rarr; movements &rarr; Closed</b>, with <b>bright</b> figures moved at that step and <b>grey</b> ones carried over.</div>
   ${toolbar}
+  ${ledSumBar(shownTx,total)}
+  <div class="card" style="margin:0 0 6px"><div class="cardh">The book, day by day <span class="sub">RM written and units moved${filtered?', across the rows shown':''}</span></div><div class="chartbox" style="height:180px"><canvas id="lgTimeChart"></canvas></div></div>
   <div class="lhead" style="margin-top:12px"><span class="lgroup">Entry</span><span class="lcol cqty">Qty</span><span class="lcol cprc">Price/unit</span><span class="lcol ctot">Total &middot; margin</span><span class="lstate">State</span></div>
   <div class="lcards" style="margin-top:0">${rowsHtml||'<div class="dsc" style="padding:14px 4px">Nothing matches this filter.</div>'}</div>
   ${supplierQuote&&supplierQuote.tiers?`<h2 style="margin-top:24px">Supplier bulk quote <span class="rule"></span></h2><div class="card"><div style="font-size:12px;color:var(--mut);margin-bottom:8px">Indicative from ${ID(supplierQuote.supplier)} &mdash; not a purchase.</div><table><thead><tr><th class="l">Order</th><th>Price</th><th>Cost/unit</th></tr></thead><tbody>${supplierQuote.tiers.map(t=>`<tr><td class="l">${kg(t.qty)}</td><td>${fmt(t.total)}</td><td class="mono">${fmt(t.total/t.qty)}</td></tr>`).join('')}</tbody></table></div>`:''}`;
@@ -8071,10 +8437,15 @@ function drawLedgerCharts(){
     if(!ok){chartEmpty(el,'Chart unavailable. Every figure it draws is in the tables on this tab.');return;}
     try{
       const by={};
-      sales.filter(x=>!x.cancelled&&x.total>0).forEach(x=>{
+      /* THE CHART DREW THE WHOLE BOOK WHILE THE LIST BELOW IT SHOWED A SUBSET. It sat
+         above the toolbar reading `sales` directly, so filtering to one party left a chart
+         over it still charting everybody. It now draws ledShown, which is what tabLedger
+         matched, so the picture and the list cannot disagree. An undated row has no day to
+         stand on and is left out rather than piled onto a column called undefined. */
+      ledShown.filter(x=>x.type==='SELL'&&!x.cancelled&&x.total>0&&x.date).forEach(x=>{
         (by[x.date]=by[x.date]||{rm:0,k:0}).rm+=x.total;by[x.date].k+=x.qty;});
       const days=Object.keys(by).sort();
-      if(lgOrEmpty(el,days.length))return;
+      if(!days.length){chartEmpty(el,'No dated sale in this selection.');return;}
       if(lgTimeObj){try{lgTimeObj.destroy();}catch(e){}}
       lgTimeObj=new Chart(el,{data:{labels:days.map(d=>d.slice(5)),datasets:[
         {type:'bar',label:'RM written',data:days.map(d=>+by[d].rm.toFixed(2)),backgroundColor:'rgba(99,230,224,.5)',borderWidth:0,borderRadius:2},
@@ -8084,7 +8455,7 @@ function drawLedgerCharts(){
           scales:{x:{grid:{display:false},ticks:{color:CHART_INK.tick,font:{size:9},maxRotation:60,minRotation:45}},
                   y:{grid:{color:CHART_INK.grid},ticks:{color:CHART_INK.tick}},
                   y1:{position:'right',grid:{display:false},ticks:{color:'#e8c66b'}}}}});
-    }catch(e){}
+    }catch(e){chartEmpty(el,'This chart could not be drawn: '+((e&&e.message)||e)+'. Every figure it draws is in the tables on this part.');}
   });
 }
 function drawFinCharts(){
