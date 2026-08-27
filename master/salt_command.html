@@ -11017,7 +11017,7 @@ function approachBoard(approach,owedBy,bm){
       <div style="height:1px;background:var(--line);margin:11px 0 9px"></div>`
       :`<div style="font-size:12px;color:var(--grn);margin-bottom:9px">Nobody is past their own cadence.</div>`}
       <div class="apgrid">${dow}${cells}</div>
-      ${noCad?`<div style="font-size:11px;color:var(--mut);margin-top:9px">${noCad} of ${approach.length} names have bought once, so they have no habit to put on a day. They are not lost: every one is in the database at the foot of this part.</div>`:''}
+      ${noCad?`<div style="font-size:11px;color:var(--mut);margin-top:9px">${noCad} of the ${approach.length} names you can still approach have bought once, so they have no habit to put on a day. They are not lost: every one is in the database at the foot of this part.</div>`:''}
     </div>
     <div class="apside">
       <div class="apm">${MON[nS.getUTCMonth()]} &middot; ahead</div>
@@ -11407,8 +11407,17 @@ function tabNetwork(){
     <div class="nrow">${cols}</div>
     ${prin.length?`<div class="dsc" style="margin-top:10px;font-size:11px">All of them deal with <b>you</b> directly. ${ID(prin[0].id)} is set apart as <b>${PRINCIPAL_TITLE}</b> for standing, not because their trade passes through him.</div>`:''}
   </div>
-  ${dep.length?dep.map(x=>{const dd=departOf(x.id);return `<div class="pend"><h3>&#9733; ${ID(x.id)} has departed <span class="cd gold">${esc(dd.memorial)}</span></h3><div class="dsc">Left the business on ${dd.since}, ${esc(dd.reason)}. ${esc(dd.note)} His figures stay on this tab because they are earned history, not a live relationship: ${fmt0(x.r3)} brought in across ${x.referrals.length} customer${x.referrals.length===1?'':'s'}, against ${fmt0(x.direct)} he ever spent himself.</div></div>`;}).join(''):''}
-  ${vac.length?`<div class="pend def"><h3>&#9888; Vacant &mdash; ${esc(vac[0].title)} <span class="cd">${esc(vac[0].short||'')}</span></h3><div class="dsc">${esc(vac[0].note)} Open since ${vac[0].since}. On the record so far this is the highest-leverage seat on the desk: the work it covers brought <b>${fmt0(dep.length?dep[0].r3:0)}</b> against <b>${fmt0(dep.length?dep[0].direct:0)}</b> of buying, and nobody is doing it today.</div></div>`:''}`;
+  ${dep.length?dep.map(x=>{const dd=departOf(x.id);
+    /* v385: BOTH HALVES OF THIS BLOCK RENDER NOW, and read together they said the reason
+       twice: "Left the business on 2026-07-26, personal reasons. Departed the business for
+       personal reasons." The builder printed dd.reason and dd.note both, and this note
+       happens to open by restating it. Neither is deletable, since a later departure may
+       carry a note that does NOT state the reason and dropping it unconditionally would
+       lose a declared fact. So the builder prints the reason only where the note has not
+       already said it. */
+    const said=dd.note&&dd.reason&&dd.note.toLowerCase().indexOf(dd.reason.toLowerCase())>=0;
+    return `<div class="pend"><h3>&#9733; ${ID(x.id)} has departed <span class="cd gold">${esc(dd.memorial)}</span></h3><div class="dsc">Left the business on ${dd.since}${said?'':', '+esc(dd.reason)}. ${esc(dd.note)} His figures stay on this tab because they are earned history, not a live relationship: ${fmt0(x.r3)} brought in across ${x.referrals.length} customer${x.referrals.length===1?'':'s'}, against ${fmt0(x.direct)} he ever spent himself.</div></div>`;}).join(''):''}
+  ${vac.length?`<div class="pend def"><h3>&#9888; Vacant &mdash; ${esc(vac[0].title)} <span class="cd">${esc(vac[0].short||'')}</span></h3><div class="dsc">${esc(vac[0].note)} Open since ${vac[0].since}.${dep.length?` On the record so far this is the highest-leverage seat on the desk: the work it covers brought <b>${fmt0(dep[0].r3)}</b> against <b>${fmt0(dep[0].direct)}</b> of buying, and nobody is doing it today.`:''}</div></div>`:''}`;
   // overall summary: total R1/R2/R3 across the network
   const tR1=ns.reduce((a,x)=>a+x.direct,0),tR2=ns.reduce((a,x)=>a+x.indirect,0),tR3=ns.reduce((a,x)=>a+x.r3,0);
   const nDs=ns.reduce((a,x)=>a+(x.dsResell||0),0);                       // end customers sold to on your behalf
