@@ -7738,7 +7738,13 @@ function drawNetworkCharts(){
           plugins:{legend:{labels:{color:CHART_INK.tick,boxWidth:12,font:{size:11}}}},
           scales:{x:{stacked:true,grid:{color:CHART_INK.grid},ticks:{color:CHART_INK.tick}},
                   y:{stacked:true,grid:{display:false},ticks:{color:CHART_INK.tick,font:{size:10}}}}}});
-    }catch(e){}
+    /* v385: THIS CATCH WAS EMPTY, so a chart that threw drew nothing and said nothing, and
+       neither of v384's reporters could see it: a catch INSIDE the ensureChart callback
+       fires before anything outside the callback runs. The fix has to be per function for
+       that reason; the wording is the house one, so a reader meets one shape for one event
+       whichever part he is on. The second sentence is the useful half: it tells him the
+       figures are not lost, only the picture of them. */
+    }catch(e){chartEmpty(el,'This chart could not be drawn: '+((e&&e.message)||e)+'. Every figure it draws is in the tables on this part.');}
   });
 }
 function drawLedgerCharts(){
@@ -11300,7 +11306,13 @@ function drawConcCharts(){
                     y:{title:{display:true,text:'Margin %',color:TICK,font:{size:11}},
                        grid:{color:GRID},ticks:{color:TICK,callback:v=>v+'%'}}}}});
       }
-    }catch(e){}
+    /* v385: THIS CATCH WAS EMPTY, so a chart that threw drew nothing and said nothing, and
+       neither of v384's reporters could see it: a catch INSIDE the ensureChart callback
+       fires before anything outside the callback runs. The fix has to be per function for
+       that reason; the wording is the house one, so a reader meets one shape for one event
+       whichever part he is on. The second sentence is the useful half: it tells him the
+       figures are not lost, only the picture of them. */
+    }catch(e){[p,s].forEach(el=>{if(el)chartEmpty(el,'This chart could not be drawn: '+((e&&e.message)||e)+'. Every figure it draws is in the tables on this part.');});}
   });
 }
 function redeemRebate(rid){const rst=networkStats().find(x=>x.id===rid);if(!rst)return;const applied=rebateApplied(rid);const freeKg=+(rst.earned-applied).toFixed(2);if(freeKg<=0.009)return;
