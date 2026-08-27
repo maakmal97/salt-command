@@ -11170,7 +11170,15 @@ function tabConcentration(){
     <div class="kpi ${overdue.length?'gold':'g'}"><div class="l">Overdue on habit</div><div class="v">${overdue.length}</div><div class="n">${overdue.length?fmt0(overdueRM)+' of profit waiting':'everyone inside their own cadence'}</div></div>
     <div class="kpi p"><div class="l">Bought once only</div><div class="v">${single}</div><div class="n">${single?'no habit yet, so no cadence to read':'every buyer has repeated'}</div></div>
   </div>
-  <div class="insight" style="margin-top:12px">${read}${Object.keys(owedBy).length?` <span style="color:var(--mut)">${Object.keys(owedBy).length} owe${Object.keys(owedBy).length===1?'s':''} money; a chase comes before an offer.</span>`:''}</div>
+  <!-- v385: THESE WERE ONE INSIGHT AND IT WAS 130 CHARACTERS AGAINST A LIMIT OF 140. The
+       chase warning was the last sentence, so it is the one stripMethod deletes first, and
+       what pushes the block over is the DATA: "12 buyers ... RM 11,115 ... 11 owe money" is
+       longer than "8 ... RM 1,115 ... 1 owes" by more than the ten characters of headroom
+       there was. A block that stays whole only while the figures in it stay small is not
+       whole. Two insights, one claim each, so neither can push the other off the page.
+       Trimming applies per block and an insight is never removed, so this is safe. -->
+  <div class="insight" style="margin-top:12px">${read}</div>
+  ${Object.keys(owedBy).length?`<div class="insight" style="margin-top:4px;color:var(--mut)">${Object.keys(owedBy).length} owe${Object.keys(owedBy).length===1?'s':''} money; a chase comes before an offer.</div>`:''}
 
   <h2 style="margin-top:18px">Who to approach next <span class="rule"></span></h2>
   ${approach.filter(r=>r.cad&&r.cad.last).length?approachBoard(approach,owedBy,bm)
@@ -11501,8 +11509,21 @@ function tabNetwork(){
       <span class="nchip ngold">Made you</span>
       <span class="nbranch">R3 &rarr; <span class="nchip ni">rebate &amp; rank</span>, kept out</span>
     </div>
+    <!-- v385: THIS WAS 331 CHARACTERS AND THE READER GOT 111 OF THEM. stripMethod trims any
+         .insight at or over NOTE_MIN to its FIRST SENTENCE wherever it sits, so the reason R3
+         is excluded survived and the reason it MATTERS did not: "would count the same ringgit
+         twice" was sentence two, and why R2 is in the total was sentence three. A reader was
+         told which side of the equation each stream falls on and never told why either.
+         Two insights, one claim each, both comfortably under NOTE_MIN, so both survive whole.
+         An insight is trimmed but never removed, so a second one is safe where a second .dsc
+         would be culled. The clause about R3 driving the rebate and the rank is not restored
+         because it is already the chip directly above this, and saying it twice is what the
+         departed block was doing. -->
     <div class="insight" style="margin:6px 0 0">
-      <b>Why R3 is not in "Made you":</b> a referred customer trades on his own line, so his spend is already counted there. Folding it into the referrer as well would count the same ringgit twice. R2 has no separate buyer line, so it belongs in the total; R3 is a credit for the introduction, and it drives the rebate and network rank instead.
+      <b>R2 is in "Made you":</b> an onward sale has no separate buyer line, so his is the only line it can count on.
+    </div>
+    <div class="insight" style="margin:4px 0 0">
+      <b>R3 is not:</b> a referred customer trades on his own line, so counting it here too would count the same ringgit twice.
     </div>
   </div>
   <div class="card" style="margin-top:14px"><div class="cardh">What each partner is made of <span class="sub">bought, sold for you, brought you</span></div><div class="chartbox" style="height:180px"><canvas id="nwPartnerChart"></canvas></div><div class="dsc" style="margin-top:7px">The same total, split by how it was earned. A partner who mostly <b>buys</b> is a customer with a title; one who mostly <b>brings</b> is doing the business development seat&rsquo;s work.</div></div>
