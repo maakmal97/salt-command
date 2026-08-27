@@ -2391,6 +2391,11 @@ section("Orders and money — every basis is named where the figure is stated (v
          Measuring the RENDERED length instead proves nothing: it is short either way. */
       ok(ins[0].querySelectorAll("b").length > 0,
         `${pr}: the cut never fired, so the emphasis on the figures is still there (${t.length} of ${noteMin} chars)`);
+      /* A SHARE OF A LOSS IS NOT A SENSITIVITY. v385 shows five oil sizes rather than
+         fourteen and an oil order is under its own cost from 20 unit up, so the share went
+         negative and the sentence read "takes -0.6% off what a 50 unit order earns", which
+         is not a thing that can happen. The guard covered an infinity and not a minus. */
+      ok(!/-\s?\d[\d.]*%/.test(t), `${pr}: it states no negative share of what an order earns ("${t.slice(-58)}")`);
     }
   }
   setP(keep);

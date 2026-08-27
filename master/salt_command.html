@@ -8965,8 +8965,17 @@ function costPanel(){
      said the same thing on every render whatever the data, which is what v372 removed.
      An order that earns nothing divides by nothing, so the share is guarded rather than
      printed as an infinity; Price is about to move the oil sizes, which is what moves it. */
-  const pct=v=>Number.isFinite(v)?v.toFixed(1)+'%':'everything it earns';
-  const ratio=(Number.isFinite(shareS)&&shareB>0)?(shareS/shareB).toFixed(0):'many';
+  /* v386: AN ORDER THAT DOES NOT COVER ITS COST HAS NO PERCENTAGE TO TAKE. The v385 board
+     shows five oil sizes rather than fourteen, and at 20 unit and up an oil order is under
+     its own cost, so the share went NEGATIVE and the sentence read "takes -0.6% off what a
+     50 unit order earns", which is not a thing that can happen. The guard here covered an
+     infinity and not a minus, which is the narrower half of the same fault. Where an end is
+     under water the sentence says that instead, because it is the more important finding of
+     the two and a percentage of a loss is not a sensitivity. */
+  const cS0=pS-cS.total, cB0=pB-cB.total;
+  const bite=(c,q)=>`takes <b>${(1/c*100).toFixed(1)}%</b> off what a ${kg(q)} order earns`;
+  const both=cS0>0.009&&cB0>0.009;
+  const ratio=both?(cB0/cS0).toFixed(0):null;
 
   return `<div class="dsc" style="margin-bottom:10px">Costs are grouped by <b>how they scale</b>, because that is what decides which order is worth taking. A <b>per-unit</b> cost doubles when the order doubles. A <b>per-order</b> cost lands whole on every order whatever its size, so it is the line that separates a half unit from six. Figures below are against the ${esc(tier.name)} card.</div>
 
@@ -8988,7 +8997,7 @@ function costPanel(){
 
   <h3 style="margin-top:18px;font-size:14px">What an order is worth, once the trip is in it</h3>
   <div class="card" style="margin-top:8px"><table><thead><tr><th class="l">Size</th><th>${esc(tier.code)} price</th><th>Goods</th><th>Per order</th><th>Order earns</th><th>Per unit</th><th>Pays your time to</th></tr></thead><tbody>${rows}</tbody></table>
-  <div class="insight" style="margin-top:10px">A ringgit more per order costs a ${kg(small)} order <b>${pct(shareS)}</b> of what it earns and a ${kg(big)} one <b>${pct(shareB)}</b>: ${ratio} times harder at the small end.</div></div>
+  <div class="insight" style="margin-top:10px">A ringgit more per order ${cS0>0.009?bite(cS0,small):`is the whole of what a ${kg(small)} order earns`}${both?`, and <b>${(1/cB0*100).toFixed(1)}%</b> off a ${kg(big)} one, ${ratio} times harder at the small end`:`, and a ${kg(big)} one does not cover its own cost`}.</div></div>
 
   <div class="dsc" style="margin-top:12px"><b>Nothing here is invented.</b> Goods and the leak come off the book, the two risk figures are read from what has actually been written off and provisioned, and every line that has not been measured says so rather than carrying a plausible number. Set one in <b>COST_BOOK</b> and it appears in every figure above.</div>`;
 }
