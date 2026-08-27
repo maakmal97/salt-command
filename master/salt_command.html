@@ -3754,8 +3754,17 @@ function ovAmend(p,q){
       assoc:attr.assoc,stream:attr.stream,downstream:attr.downstream});
     const asked=k=>Object.prototype.hasOwnProperty.call(f,k)&&f[k]!==undefined;
     const said=[];
-    Object.keys(f).forEach(k=>{
-      if(f[k]===undefined)return;
+    /* ====== THE RECORD IS BUILT FROM WHAT IS WRITTEN, NOT FROM WHAT IS ASKED (v385) ======
+       v383 folded two re-keys naming `customer`, which the table calls `party`. The writes
+       below run off the engine's field lists, so nothing was written; this loop ran off the
+       caller's keys, so everything was recorded, and both rows came out asserting a re-key
+       they had not made. Refusing an unknown field upstream stops the case that is known.
+       Reading the SAME list the writes read makes the whole class impossible: a field the
+       writes cannot set can no longer reach the record. CORRECTABLE is exactly the union of
+       the lists below, so the two can no longer disagree. applyAmend in tools/fold.mjs is
+       taking the same repair; until both are done the Ledger's check is a guard, not a fix. */
+    POSITION_ENGINE.CORRECTABLE.forEach(k=>{
+      if(!asked(k))return;
       const was=before[k]===undefined?null:before[k];
       if(JSON.stringify(f[k])===JSON.stringify(was))return;
       said.push(k+' '+(was==null?'(unset)':was)+' to '+(f[k]==null?'(cleared)':f[k]));});
@@ -6024,21 +6033,45 @@ function stockHistory(){
   }
   return rows;
 }
+/* ============ AN ATTRIBUTED LOSS AND AN UNEXPLAINED ONE ARE DIFFERENT THINGS (v385) ============
+   The plug was printed as "Lost to shrinkage", which on oil made 27.2 unit of deliberate
+   promotion read as a leak, and reported it as consuming all of that product's margin: a
+   decision he took on purpose, framed as a loss he suffered. selfUseLog carries the reason
+   for every unit it covers and the book already treats the three differently, promotion as
+   marketing under IAS 38.69, leakage as abnormal waste and his own use as a drawing. Only
+   the label on this tab had not learned it.
+   THE LOG IS A SNAPSHOT AND THE PLUG IS LIVE, so the two drift as the book moves: salt's log
+   was struck on 24 Aug against 55.2 unit and the plug now stands at 54.7. Whatever the log
+   does not cover is shown as unattributed rather than folded into the nearest reason. */
+function selfUseSplit(){
+  const R={sample:0,spillage:0,personal:0,other:0};
+  selfUseLog.filter(r=>(r.product||DEFAULT_PROD)===PROD)
+    .forEach(r=>{R[R[r.why]===undefined?'other':r.why]+=+r.kg||0;});
+  const logged=+(R.sample+R.spillage+R.personal+R.other).toFixed(2);
+  return Object.assign(R,{logged:logged,gap:+(selfUse-logged).toFixed(2)});
+}
 function tabAnalysis(){
   const c=pxCost(),sg=pxSignals(),mk=pxMarket(),cv=coverStats();
   const bc=byCustomer().slice().sort((a,b)=>b.rev-a.rev);
   const tot=bc.reduce((a,x)=>a+x.rev,0)||1;
   const shrinkRM=+(selfUse*wavgBuy).toFixed(2);
+  const su=selfUseSplit(),suBits=[];
+  if(su.sample>0.005)suBits.push(kg(su.sample)+' promotion');
+  if(su.spillage>0.005)suBits.push(kg(su.spillage)+' leakage');
+  if(su.personal>0.005)suBits.push(kg(su.personal)+' his own');
+  if(su.other>0.005)suBits.push(kg(su.other)+' unstated reason');
+  if(Math.abs(su.gap)>0.005)suBits.push(kg(Math.abs(su.gap))+(su.gap>0?' unattributed':' over-attributed'));
   const sh=stockHistory();
   const dry=sh.filter(r=>r.lvl<=0.05).length;
   return `<h1>Analysis</h1>
   <div class="dsc dsclead" style="margin-bottom:12px">Questions the desk has only ever answered in prose. Observed trade throughout: <b>no fitted curve, no elasticity and no seasonality</b>. Where a chart needs an assumption it is named on the chart rather than hidden in it.</div>
   <div class="kpis k4">
     <div class="kpi gold"><div class="l">Gross margin</div><div class="v">${fmt0(grossMargin)}</div><div class="n">${marginPct.toFixed(1)}% of ${fmt0(revTotal)}</div></div>
-    <div class="kpi r"><div class="l">Lost to shrinkage</div><div class="v">${fmt0(shrinkRM)}</div><div class="n">${kg(selfUse)} at ${fmt(wavgBuy)}, ${(shrinkRM/Math.max(1,grossMargin)*100).toFixed(0)}% of all margin</div></div>
+    <div class="kpi ${Math.abs(su.gap)>0.005?'r':'p'}"><div class="l">Out without a sale</div><div class="v">${fmt0(shrinkRM)}</div><div class="n">${kg(selfUse)} at ${fmt(wavgBuy)}${suBits.length?', '+suBits.join(', '):''}</div></div>
     <div class="kpi ${dry>0?'r':'g'}"><div class="l">Days with an empty shelf</div><div class="v">${dry}</div><div class="n">of ${sh.length} trading days reconstructed</div></div>
     <div class="kpi p"><div class="l">Top three buyers</div><div class="v">${(bc.slice(0,3).reduce((a,x)=>a+x.rev,0)/tot*100).toFixed(0)}%</div><div class="n">of ${fmt0(tot)} written across ${bc.length}</div></div>
   </div>
+  ${(su.sample>0.005||su.personal>0.005)?`<div class="insight">${kg(su.sample+su.personal)} of what went out without a sale went out <b>on purpose</b>, as promotion and his own use${(su.spillage+su.other+Math.max(0,su.gap))>0.005?', leaving '+kg(+(su.spillage+su.other+Math.max(0,su.gap)).toFixed(2))+' that is stock genuinely missing':', and none of it is stock that went missing'}.</div>`:''}
   ${(()=>{
     /* ============ DOES EVERY STATED CORRECTION AGREE WITH THE ROW IT NAMES? ============
        The Ledger checks one row as you read it. This is the same check over the whole book,
@@ -6055,7 +6088,7 @@ function tabAnalysis(){
     if(!bad.length)return `<div class="pend" style="margin-top:14px"><h3>Every stated correction reads back against its row <span class="cd">${seen.length} corrected</span></h3>
       <div class="dsc">Each names a field the book can set, and the row carries the value it says it set. A claim made before a later step is not re-read: a fulfilment may legitimately have moved the same figure since.</div></div>`;
     return `<div class="pend def" style="margin-top:14px"><h3>${bad.length} stated correction${bad.length===1?'':'s'} do not hold <span class="cd crim">of ${seen.length} corrected</span></h3>
-      <div class="dsc">A row asserting a change it did not make is worse than a refusal, because every later reader takes it as done.</div>
+      <div class="insight">A row asserting a change it did not make is worse than a refusal, because every later reader takes it as done.</div>
       <table style="margin-top:10px"><thead><tr><th class="l">Row</th><th class="l">Party</th><th class="l">Stated</th><th class="l">What is wrong</th></tr></thead><tbody>
       ${bad.map(b=>`<tr><td class="l mono">${esc(b.t.rid||'')}</td><td class="l mono">${ID(b.t.customer||b.t.supplier)}</td>
         <td class="l mono">${esc(b.c.field)} ${esc(b.c.was)} &rarr; ${esc(b.c.now)}</td>
@@ -6077,7 +6110,7 @@ function tabAnalysis(){
   ${(()=>{const neg=sh.filter(r=>r.raw<-0.01);
     const d=sales.map(txDates), ds={};d.forEach(x=>ds[x.dSrc]=(ds[x.dSrc]||0)+1);
     if(neg.length)return `<div class="pend def" style="margin-bottom:11px"><h3>The line goes below zero on ${neg.length} days, and that is a finding <span class="cd crim">low ${kg(Math.min.apply(null,sh.map(r=>r.raw)))}</span></h3>
-      <div class="dsc">Negative salt is impossible, so those days are a <b>dating artefact rather than a stockout</b>: an order whose delivery date is not recorded falls back to the order date, which can put units out of the door before the lot supplying them arrived. Give those orders a <b>deliveredOn</b> and the line corrects itself.</div></div>`;
+      <div class="insight">Negative salt is impossible, so those days are a <b>dating artefact rather than a stockout</b>: an order with no delivery date falls back to its order date, which can put units out of the door before the lot supplying them arrived, and a <b>deliveredOn</b> on those orders corrects the line.</div></div>`;
     return `<div class="pend" style="margin-bottom:11px"><h3>The walk is clean <span class="cd">low ${kg(Math.min.apply(null,sh.map(r=>r.raw)))}</span></h3>
       <div class="dsc">It never goes below zero and it finishes on the counted <b>${kg(currentStock)}</b>, so every day is physically possible. It got there on <b>${ds.trail||0} orders dated from the amendment trail</b> and <b>${ds.stated||0} from an explicit deliveredOn</b> added where the date had only ever existed in a note. The remaining <b>${ds.assumed||0} are assumed</b>, meaning nothing was recorded and nothing is known to have moved later; each one is a small chance of a day's error and none of them currently breaks the line.</div></div>`;})()}
   <div class="chartbox"><canvas id="anStock"></canvas></div>
@@ -6771,7 +6804,7 @@ function renderEditor(){
     +'<datalist id="edCodes">'+codes.map(c=>'<option value="'+edEsc(c)+'"></option>').join('')+'</datalist>'
     +html
     +'<div style="display:flex;gap:8px;margin-top:16px">'
-    +(canc?'':'<button id="edSave" class="vbtn" style="border-color:var(--gold);color:var(--gold);flex:1">'+(edNew?'Queue the order':'Queue the correction')+'</button>')
+    +(canc?'':'<button id="edSave" class="vbtn" style="flex:1">'+(edNew?'Queue the order':'Queue the correction')+'</button>')
     +'<button id="edCancel" class="vbtn" style="flex:0 0 auto">Cancel</button></div>'
     +'<div id="edWhy" style="font-size:11.5px;color:var(--dim);margin-top:9px"></div>';
   document.getElementById('edX').onclick=edClose;
