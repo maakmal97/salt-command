@@ -464,6 +464,26 @@ details.rcard>summary .rsum b{color:var(--ink);}
    next action is obvious, so the card offers it rather than making him cross to Transaction,
    find the order in a dropdown and retype figures the desk already holds. */
 .lquick{display:flex;align-items:center;gap:7px;padding:8px 12px 10px;border-top:1px dashed var(--line);}
+/* A CORRECTION, AND WHETHER IT HOLDS. Quiet while every claim reads back against the row,
+   crimson the moment one does not: a claim the book cannot have written has to show as a
+   contradiction rather than as prose. */
+.lcorr{padding:7px 12px 8px;border-top:1px dashed var(--line);font-size:11.5px;}
+.lcorr .chead{display:flex;flex-wrap:wrap;align-items:baseline;gap:5px 10px;}
+.lcorr .clab{font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--vio);white-space:nowrap;}
+.lcorr .cclaim{font-family:ui-monospace,Consolas,monospace;font-size:11px;color:var(--mut);}
+.lcorr .cclaim em{font-style:normal;font-family:inherit;color:var(--dim);}
+.lcorr .cclaim.later em,.lcorr .cclaim.agrees em{color:var(--dim);}
+.lcorr .cprose{color:var(--dim);}
+.lcorr.bad{background:rgba(255,93,115,.07);border-top-color:rgba(255,93,115,.45);}
+.lcorr.bad .clab{color:var(--crim);}
+.lcorr .cclaim.unknown,.lcorr .cclaim.differs{color:var(--crim);}
+.lcorr .cclaim.unknown em,.lcorr .cclaim.differs em{color:var(--crim);font-weight:600;}
+.lcorr .cwhy{margin-top:5px;}
+.lcorr .cwhy summary{cursor:pointer;color:var(--dim);font-size:11px;list-style:none;}
+.lcorr .cwhy summary::-webkit-details-marker{display:none;}
+.lcorr .cnote{margin-top:5px;color:var(--mut);line-height:1.5;}
+.lcorr .cnote p{margin:0 0 6px;}
+.lcorr .cnote p:last-child{margin-bottom:0;}
 /* ============ CLOSE THE DESK (v255) ============
    Quiet, and to the right of the stamp, because it is the last thing you want and should not
    compete with the first. Crimson only on hover: a button that shouts all day gets pressed by
@@ -5934,12 +5954,21 @@ function tabSourcing(){
    to be spread: dating it would be inventing a day it happened on. */
 function stockHistory(){
   const MS=86400000;
-  const ds=[].concat(purchases.filter(poLive).map(p=>p.receivedOn||p.date),
-                     sales.map(s=>s.date)).filter(Boolean).sort();
+  /* ============ ONE SHELF PER PRODUCT ============
+     The bare `opening`, `purchases` and `sales` are Salt's plus Oil's, and a shelf walked
+     from both is a shelf of neither: it ended 49 unit above the counted stock while the
+     prose beside it said it tied to that count at both ends, it drove the line under zero
+     on eight days, and the block explained those days as a dating artefact when they were
+     Oil's deliveries coming off Salt's shelf. Same lesson the KPI below learned at v365.
+     These are posInputs()'s four, exactly, so the walk and the engine's own selfUse are
+     computed from one set of rows and the line lands on the count. */
+  const B=pPurch(PROD), S=pSales(PROD), op=openingFor(PROD);
+  const ds=[].concat(B.filter(poLive).map(p=>p.receivedOn||p.date),
+                     S.map(s=>s.date)).filter(Boolean).sort();
   if(!ds.length)return [];
   const d0=new Date(ds[0]), days=Math.max(1,Math.round((TODAY-d0)/MS));
   const inOn={},outOn={};
-  purchases.filter(poLive).forEach(p=>{const k=p.receivedOn||p.date;inOn[k]=(inOn[k]||0)+poRecvKg(p);});
+  B.filter(poLive).forEach(p=>{const k=p.receivedOn||p.date;inOn[k]=(inOn[k]||0)+poRecvKg(p);});
   /* ALL sales, not just priced ones: recompute draws the shelf down with sales.reduce
      over txPhys, so filtering to priced trade here would leave the walk ending somewhere
      the rest of the desk does not agree with.
@@ -5949,7 +5978,7 @@ function stockHistory(){
      Fulfilment moves salt; Linked, Rewarded and Modification settle on paper. Whatever
      the trail does not account for falls back to the order date, so the total still
      reconciles to txPhys exactly. */
-  sales.forEach(s=>{
+  S.forEach(s=>{
     const tot=txPhys(s);if(tot<=0.0001)return;
     let acc=0;
     (s.amend||[]).forEach(a=>{if(a.kind==='Fulfilment'&&+a.kg>0.0001){
@@ -5962,12 +5991,12 @@ function stockHistory(){
   });
   /* only loans made AFTER the opening count draw the shelf down here; a pre-opening loan
      is already inside opening.qty, exactly as recompute now treats it */
-  const loanKg=loanDrawKg();
+  const loanKg=(PROD===DEFAULT_PROD)?loanDrawKg():0;   // the loan book is Salt's, as posInputs has it
   /* shrinkage is a plug for the whole period with no date on it, so it is spread across
      the days that have actually passed. Nothing is taken on day 0, which is the opening
      position rather than a day of trading. */
   const shrinkPerDay=days>0?selfUse/days:0;
-  const rows=[];let lvl=opening.qty-loanKg;
+  const rows=[];let lvl=op.qty-loanKg;
   for(let i=0;i<=days;i++){
     const d=new Date(d0.getTime()+i*MS), k=d.toISOString().slice(0,10);
     lvl=lvl+(inOn[k]||0)-(outOn[k]||0)-(i?shrinkPerDay:0);
@@ -5983,13 +6012,37 @@ function tabAnalysis(){
   const sh=stockHistory();
   const dry=sh.filter(r=>r.lvl<=0.05).length;
   return `<h1>Analysis</h1>
-  <div class="dsc dsclead" style="margin-bottom:12px">Six questions the desk has only ever answered in prose. Observed trade throughout: <b>no fitted curve, no elasticity and no seasonality</b>. Where a chart needs an assumption it is named on the chart rather than hidden in it.</div>
+  <div class="dsc dsclead" style="margin-bottom:12px">Questions the desk has only ever answered in prose. Observed trade throughout: <b>no fitted curve, no elasticity and no seasonality</b>. Where a chart needs an assumption it is named on the chart rather than hidden in it.</div>
   <div class="kpis k4">
     <div class="kpi gold"><div class="l">Gross margin</div><div class="v">${fmt0(grossMargin)}</div><div class="n">${marginPct.toFixed(1)}% of ${fmt0(revTotal)}</div></div>
     <div class="kpi r"><div class="l">Lost to shrinkage</div><div class="v">${fmt0(shrinkRM)}</div><div class="n">${kg(selfUse)} at ${fmt(wavgBuy)}, ${(shrinkRM/Math.max(1,grossMargin)*100).toFixed(0)}% of all margin</div></div>
     <div class="kpi ${dry>0?'r':'g'}"><div class="l">Days with an empty shelf</div><div class="v">${dry}</div><div class="n">of ${sh.length} trading days reconstructed</div></div>
     <div class="kpi p"><div class="l">Top three buyers</div><div class="v">${(bc.slice(0,3).reduce((a,x)=>a+x.rev,0)/tot*100).toFixed(0)}%</div><div class="n">of ${fmt0(tot)} written across ${bc.length}</div></div>
   </div>
+  ${(()=>{
+    /* ============ DOES EVERY STATED CORRECTION AGREE WITH THE ROW IT NAMES? ============
+       The Ledger checks one row as you read it. This is the same check over the whole book,
+       because v383 was found by reading two rows back by hand and could have been found on
+       any morning by reading all of them. It renders nothing where nothing has been
+       corrected, and one line where everything holds. */
+    const seen=[],bad=[];
+    [['SELL',pSales(PROD)],['BUY',pPurch(PROD)]].forEach(x=>x[1].forEach(t=>{
+      const cl=modClaims(t,x[0]).filter(c=>c.verdict);
+      if(!cl.length)return;
+      seen.push(t);
+      cl.forEach(c=>{if(c.verdict==='unknown'||c.verdict==='differs')bad.push({t:t,c:c});});}));
+    if(!seen.length)return '';
+    if(!bad.length)return `<div class="pend" style="margin-top:14px"><h3>Every stated correction reads back against its row <span class="cd">${seen.length} corrected</span></h3>
+      <div class="dsc">Each names a field the book can set, and the row carries the value it says it set. A claim made before a later step is not re-read: a fulfilment may legitimately have moved the same figure since.</div></div>`;
+    return `<div class="pend def" style="margin-top:14px"><h3>${bad.length} stated correction${bad.length===1?'':'s'} do not hold <span class="cd crim">of ${seen.length} corrected</span></h3>
+      <div class="dsc">A row asserting a change it did not make is worse than a refusal, because every later reader takes it as done.</div>
+      <table style="margin-top:10px"><thead><tr><th class="l">Row</th><th class="l">Party</th><th class="l">Stated</th><th class="l">What is wrong</th></tr></thead><tbody>
+      ${bad.map(b=>`<tr><td class="l mono">${esc(b.t.rid||'')}</td><td class="l mono">${ID(b.t.customer||b.t.supplier)}</td>
+        <td class="l mono">${esc(b.c.field)} ${esc(b.c.was)} &rarr; ${esc(b.c.now)}</td>
+        <td class="l">${b.c.verdict==='unknown'
+          ?'<b>'+esc(b.c.field)+'</b> is not a field a correction may set, so nothing was written'
+          :'the row reads <b>'+esc(b.c.reads)+'</b>'}</td></tr>`).join('')}
+      </tbody></table></div>`;})()}
 
   <h2 style="margin-top:20px">Where the money goes <span class="rule"></span></h2>
   <div class="dsc" style="margin-bottom:9px">Revenue down to margin, then the two losses that sit outside it. <b>Shrinkage is shown beside the bridge, not inside it</b>, because it is already paid for in the cost of goods; putting it in the bridge would deduct it twice. The bar is what it would be worth if it were recovered.</div>
@@ -7421,6 +7474,72 @@ function ledSumBar(list,total){
   const scope=list.length===total?`all ${total} rows`:`the ${list.length} of ${total} rows shown`;
   return `<div class="ledsum">${bits.join('')}<span class="scope">across ${scope}</span></div>`;
 }
+/* ============ A CORRECTION IS A CLAIM, AND A CLAIM CAN BE READ BACK ============
+   v383 folded two re-keys naming the field `customer`, which the correctable table calls
+   `party`. The fold wrote nothing and recorded everything, so both rows came out asserting a
+   re-key they had not made. Nothing on this desk showed it: `mod` only ever went into the
+   search haystack, never onto the page, and on a settled row the correction step itself is
+   swallowed by the collapse. The one screen built to audit this book had no way to contradict
+   it, which is why it took a person reading two rows back by hand.
+   IT IS PRINTED NOW, AND EVERY CLAIM IN IT IS READ BACK AGAINST THE ROW. ovAmend and
+   applyAmend both write "corrected on <date>: <field> <was> to <now>", joined by ", then".
+   Only that shape is checked; anything a person typed is carried through without a verdict
+   rather than with a wrong one.
+   A LATER STEP ENDS THE CHECK. A correction states what the row read that day, and a
+   fulfilment the next day may legitimately move the same figure: s105 was corrected to RM0
+   cash on the 25th and paid on the 26th. Read against today's row that is a fault, and it is
+   not one. A flag that fires when nothing is wrong teaches the reader to tap through. */
+function modClaims(t,dir){
+  if(!t||!t.mod)return[];
+  const view=edView(t,dir==='BUY'?'BUY':'SELL');
+  const dates=(t.amend||[]).map(a=>a.date).filter(Boolean).sort();
+  const last=dates.length?dates[dates.length-1]:'';
+  const out=[];
+  String(t.mod).split(', then ').forEach(seg=>{
+    const head=/^corrected(?: on ([0-9-]+))?: (.+)$/.exec(seg.trim());
+    if(!head){out.push({prose:seg.trim()});return;}
+    const on=head[1]||'',stale=!!(on&&last&&last>on);
+    head[2].split('; ').forEach(bit=>{
+      const p=/^(\S+) (.*) to (.*)$/.exec(bit.trim());
+      if(!p){out.push({prose:bit.trim()});return;}
+      const c={on:on,field:p[1],was:p[2],now:p[3]};
+      if(!POSITION_ENGINE.CORRECTABLE.includes(c.field))c.verdict='unknown';
+      else if(stale)c.verdict='later';
+      else{const v=view[c.field];
+        c.reads=(v===undefined||v===null)?'(unset)':String(v);
+        c.verdict=(c.now==='(cleared)'||c.now==='(unset)')?(c.reads==='(unset)'?'agrees':'differs')
+          :(c.reads!=='(unset)'&&isFinite(+c.now)&&isFinite(+c.reads))
+            ?(Math.abs((+c.now)-(+c.reads))<0.005?'agrees':'differs')
+            :(c.now===c.reads?'agrees':'differs');}
+      out.push(c);});});
+  return out;
+}
+/* The strip sits at CARD level rather than in the trail, because the trail collapses: four of
+   the six corrected rows on this book render as a single line and drop their correction
+   whole. The claims are the open part, being short and checkable; the prose behind them is
+   folded, being read once and then trusted. */
+function corrStrip(t,dir,corrs){
+  const claims=modClaims(t,dir);
+  if(!claims.length&&!(corrs&&corrs.length))return '';
+  const bad=claims.filter(c=>c.verdict==='unknown'||c.verdict==='differs');
+  const chip=c=>c.prose?`<span class="cprose">${esc(c.prose)}</span>`
+    :`<span class="cclaim ${c.verdict}">${esc(c.field)} ${esc(c.was)} &rarr; ${esc(c.now)}`
+      +(c.verdict==='unknown'?' <em>not a field the book can set</em>'
+        :c.verdict==='differs'?` <em>the row reads ${esc(c.reads)}</em>`:'')
+      +'</span>';
+  /* said once, not once per claim: three grey "superseded" chips in a row carry the
+     information of one and read as an alarm that is not being raised. */
+  const later=claims.some(c=>c.verdict==='later')?'<span class="cclaim later"><em>superseded by a later step</em></span>':'';
+  /* `mod` also holds plain restatements nobody generated, and calling those a correction
+     would put the word on four rows that were never corrected. */
+  const lab=(corrs&&corrs.length)||claims.some(c=>c.verdict)?'Corrected':'Restated';
+  const when=(corrs&&corrs.length&&corrs[corrs.length-1].date)||(claims.find(c=>c.on)||{}).on||'';
+  const notes=(corrs||[]).filter(a=>a.note).map(a=>`<p>${a.note}</p>`).join('');
+  return `<div class="lcorr${bad.length?' bad':''}">`
+    +`<div class="chead"><span class="clab">${lab}${when?' '+when:''}</span>${claims.map(chip).join('')}${later}</div>`
+    +(notes?`<details class="cwhy"><summary><span class="chev">&#9656;</span>why</summary><div class="cnote">${notes}</div></details>`:'')
+    +'</div>';
+}
 function tabLedger(){
   // a fully pending order (agreed, nothing moved) carries no meaningful date and sits at the very bottom
   const isPend=t=>t.type==='BUY'?(ledgerBuy(t._buy).order==='Pending'):(txStat(t).order==='Pending');
@@ -7447,9 +7566,18 @@ function tabLedger(){
   const rows=all.map((t,idx)=>{
     const code=codes[idx];
     const si=t.type==='BUY'?ledgerBuy(t._buy):txStat(t);
-    const am=(t.type==='SELL'&&t.amend&&t.amend.length)?replayAmend(t):[];
+    /* ============ A CORRECTION IS NOT A STEP IN THE ORDER ============
+       It moves no cash and no salt; it restates what the record should have said. Left in the
+       trail it becomes the last step, so it dates the closing line and it drives the collapse.
+       s032 was paid and delivered together on 21 Jul and read "Closed 2026-08-26, 36 days from
+       agreed to settled", because a re-key touched the row on the 26th. Pulled out, the closing
+       line is the last thing that actually moved and the correction gets a strip of its own
+       that the collapse cannot swallow. */
+    const corrs=(t.type==='SELL'&&t.amend&&t.amend.length)?t.amend.filter(a=>a.kind==='Correction'):[];
+    const steps=(t.type==='SELL'&&t.amend&&t.amend.length)?t.amend.filter(a=>a.kind!=='Correction'):[];
+    const am=steps.length?replayAmend(Object.assign({},t,{amend:steps})):[];
     // carry each step's cross-reference keys through the replay (same order, same sort)
-    if(am.length){const rawA=t.amend.slice().sort((a,b)=>new Date(a.date)-new Date(b.date));
+    if(am.length){const rawA=steps.slice().sort((a,b)=>new Date(a.date)-new Date(b.date));
       am.forEach((s,i)=>{if(rawA[i]&&rawA[i].refKeys)s.refKeys=rawA[i].refKeys;});}
     // opening / closing state resolution
     const openState=am.length?am[0].state:si.order;
@@ -7589,7 +7717,7 @@ function tabLedger(){
        keydown listener below is what turns a focused card's Enter into the same edit a
        right-click opens. */
     const rid=ridOf(t);
-    return `<div class="lcard ${cardCls}" id="ent-${code}"${rid?` data-rid="${rid}" data-type="${t.type}" tabindex="0"`:""}>${collapse?collapsedLine:(openLine+movePanel+closeLine)}${quickBar}</div>`;}).filter(Boolean);
+    return `<div class="lcard ${cardCls}" id="ent-${code}"${rid?` data-rid="${rid}" data-type="${t.type}" tabindex="0"`:""}>${collapse?collapsedLine:(openLine+movePanel+closeLine)}${corrStrip(t,t.type,corrs)}${quickBar}</div>`;}).filter(Boolean);
   const shown=rows.length,total=all.length,rowsHtml=rows.join('');
   ledShown=shownTx;                       // the chart draws the same set the list shows
   const filtered=!!(ledF.q||ledF.state||ledF.party||ledF.month||ledF.product);
