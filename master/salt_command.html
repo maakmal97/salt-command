@@ -5874,6 +5874,13 @@ function tabSourcing(){
      one, so the per-unit freight is the SAME at every tier and lot size no longer buys a
      cheaper trip. Nothing on this tab said so, and it is the tab the statement belongs on. */
   const ml=meanLotQty(PROD);
+  /* v385: the plan's shrinkage level, so the tab can say WHICH leak it is using. sourcingPlan
+     takes shrinkPctFor('expected'), 7.5%, while every cost figure four inches above it is
+     struck on the observed rate. Both are correct and SHRINK's own note says so in terms: the
+     board prices off observed, expected exists so a decision can be tested against where the
+     desk is trying to get to. What was missing is any word telling the reader that the two
+     percentages on his screen are different measurements rather than a contradiction. */
+  const SL=shrinkLevel('expected');
   const pend=pPurch(PROD).filter(p=>p.pending);
   const conc=ss.length?ss[0]:null;
   return `<h1>Sourcing</h1>
@@ -5898,7 +5905,7 @@ function tabSourcing(){
       <div class="kpi"><div class="l">Stated lot</div><div class="v">${kg(s.q)}</div><div class="n">${s.P.label}, by ${s.P.by}, ${s.daysToTarget} days out</div></div>
       <div class="kpi ${late?'r':'g'}"><div class="l">Shelf runs dry</div><div class="v" style="${late?'color:var(--crim)':''}">${s.dry||'&mdash;'}</div><div class="n">${s.dryD==null?'no sell rate':`${s.dryD} days at ${kg(s.rate)}/day; ${s.dry28} at the four-week rate`}</div></div>
       <div class="kpi ${late?'r':'g'}"><div class="l">${late?'Gap to cover':'Lands in time'}</div><div class="v" style="${late?'color:var(--crim)':'color:var(--grn)'}">${late?s.gapDays+'d':'none'}</div><div class="n">${late?`${kg(s.gapKg)} of demand with an empty shelf`:'the lot lands before the shelf empties'}</div></div>
-      <div class="kpi gold"><div class="l">Cover it buys</div><div class="v">${s.cover==null?'&mdash;':s.cover+'d'}</div><div class="n">${kg(s.usable)} usable of ${kg(s.q)}, at ${s.lvl}% shrinkage</div></div>
+      <div class="kpi gold"><div class="l">Cover it buys</div><div class="v">${s.cover==null?'&mdash;':s.cover+'d'}</div><div class="n">${kg(s.usable)} usable of ${kg(s.q)}, at the ${s.lvl}% ${SL.label} level, not the ${(c.shrink*100).toFixed(1)}% charged today</div></div>
     </div>
     <div class="insight" style="margin-top:11px"><b>${!(s.rate>0)
         ? `No trade in the last four weeks, so there is no rate to say when the shelf empties.`
@@ -5934,7 +5941,11 @@ function tabSourcing(){
         :s.multiple<0.95?', so nothing about a lot this size is untried'
         :', the same size as the largest it has bought';
       return `<div class="dsc" style="margin-top:9px"><b>${lead}</b> ${kg(s.q)} against ${kg(s.monthly)} of demand in a month at the fortnight rate and ${kg(s.monthly28)} at the four-week rate${shape}. It is <b>${s.multiple}&times;</b> the largest lot this desk has ever bought${s.biggest?` (${kg(s.biggest.qty)} on ${s.biggest.date} at ${fmt(s.biggest.total/s.biggest.qty)}/unit)`:''}${step}.</div>`;})()}
-    <div class="dsc" style="margin-top:7px"><b>${fmt(s.rt)}/unit is an assumption and is labelled as one.</b> It is ${esc(s.P.rateBasis)} At that rate the lot costs <b>${fmt0(s.cash)}</b>, loses ${kg(s.lossKg)} to expected shrinkage, and each usable unit carries an effective <b>${fmt(s.eff)}</b>. It would pull the weighted average from ${fmt(wavgBuy)} to <b>${fmt(s.newWavg)}</b>. ${s.quoted?'':'<b>Get a quote at this size before treating any of it as real.</b>'}</div>
+    <div class="dsc" style="margin-top:7px"><b>${fmt(s.rt)}/unit is an assumption and is labelled as one.</b> It is ${esc(s.P.rateBasis)} At that rate the lot costs <b>${fmt0(s.cash)}</b>, loses ${kg(s.lossKg)} to shrinkage, and each usable unit carries an effective <b>${fmt(s.eff)}</b>. It would pull the weighted average from ${fmt(wavgBuy)} to <b>${fmt(s.newWavg)}</b>. ${s.quoted?'':'<b>Get a quote at this size before treating any of it as real.</b>'}${(()=>{const m=+(c.shrink*100).toFixed(1);
+  const dir=s.lvl>m?`<b>above</b> the ${m}% this book is charging today, so the lot is sized on the cautious reading rather than on the record`
+    :s.lvl<m?`<b>below</b> the ${m}% this book is charging today, so the lot is sized on the optimistic reading rather than on the record`
+    :`level with the ${m}% this book is charging today`;
+  return ` <b>The ${s.lvl}% is a second assumption and it is a different measurement from the leak above.</b> It is the ${SL.label} level, ${esc(SL.src)}, and it sits ${dir}.`;})()}</div>
     ${s.top&&s.top.recentShare>80?`<div class="dsc" style="margin-top:7px"><b style="color:var(--crim)">The real risk here is the counterparty, not the price.</b> ${ID(s.top.id)} is ${s.top.recentShare.toFixed(0)}% of every unit bought in the last ${s.top.recentDays} days, ${s.top.lots} lots, all filled. ${fmt0(s.cash)} to one name is <b>${s.lostMultiple}&times;</b> the ${fmt0(s.lost)} already lost to ${ID(supplierReceivable.party)}, who was also reliable until he was not. Nothing here says do not buy it: it says a lot this size is the one worth splitting, or worth paying against delivery rather than in advance.</div>`:''}
     <div class="dsc" style="margin-top:7px"><b>Nothing above is booked.</b> It is a stated intention with the arithmetic run against today's shelf, and every date in it moves as the shelf moves. It becomes a figure only when it is recorded on the Transaction tab.</div>
     </div>`;})()}
