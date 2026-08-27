@@ -5158,12 +5158,20 @@ function boundaryScan(){
     const p=txPrice(s);if(!(p>0))return;
     const owed=Math.max(0,(s.deliveredQty||0)-txPaid(s)/p);
     if(owed>0.009)credit[s.customer]=+((credit[s.customer]||0)+owed).toFixed(2);});
+  /* v385: AND IT SAYS THAT IT IS THE WHOLE BOOK, BECAUSE IT SITS UNDER A PRODUCT BADGE. The
+     loop above reads bare `sales` on purpose: a credit cap is about a PERSON, and the
+     Whiteboard reads it at the moment of a trade to name someone already in breach, which
+     wants his whole exposure and not this tab's slice. Scoping it would be wrong. Saying
+     nothing was also wrong: on the oil tab this ranked a SALT debt at the sharpest severity
+     with nothing on the row admitting where it came from, while the two rules beside it in the
+     same table are product-scoped, so one debt fired under one rule and not the other on one
+     screen. The caveat about what it is denominated in is stated once, on the panel. */
   Object.keys(credit).forEach(c=>{
     const cap=capForParty(c),tier=cap===RULES.creditKg.associate?'associate':'retail';
     if(credit[c]>cap+0.009)
-      add('breach','Credit cap',c,kg(credit[c])+' out and unpaid','over the '+kg(cap)+' '+tier+' cap, so hand over nothing further until it clears');
+      add('breach','Credit cap',c,kg(credit[c])+' out and unpaid across both books','over the '+kg(cap)+' '+tier+' cap, so hand over nothing further until it clears');
     else if(credit[c]>=cap-0.009)
-      add('watch','Credit cap',c,kg(credit[c])+' out and unpaid','exactly at the '+kg(cap)+' '+tier+' cap, so the next unit breaches it');});
+      add('watch','Credit cap',c,kg(credit[c])+' out and unpaid across both books','exactly at the '+kg(cap)+' '+tier+' cap, so the next unit breaches it');});
   /* 1a. standing. A ban is a decision, not a reading, so it sits at the top and stays
      until it is lifted. The debt behind it is shown here too, because a ban that made
      the money invisible would quietly become a write-off. */
@@ -5288,7 +5296,7 @@ function boundaryPanel(){
   const head=`<h2>Boundaries <span class="rule"></span></h2>`;
   if(!all.length)return head+`<div class="card"><div class="dsc">All clear. No customer past their credit cap (${kg(RULES.creditKg.retail)} retail, ${kg(RULES.creditKg.associate)} associate) or past ${RULES.creditDays} days, no recent sale under its band floor (${PRICE.floorPct.retail}% retail, ${PRICE.floorPct.wholesale}% wholesale), nothing owed out beyond what is on the shelf, no receivable past its provisioning band, and nothing provisional that would read differently once committed.</div></div>`;
   return head+`<div class="card">
-    <div class="dsc" style="margin-bottom:9px">${nb?`<b style="color:var(--crim)">${nb} breach${nb===1?'':'es'}</b>`:'No breaches'}${nw?`, ${nw} to watch`:''}${r.length?`, ${r.length} provisional entr${r.length===1?'y':'ies'} that may read differently once committed`:''}. Nothing is blocked: the desk records what happened and holds the breach here until it is resolved.</div>
+    <div class="dsc" style="margin-bottom:9px">${nb?`<b style="color:var(--crim)">${nb} breach${nb===1?'':'es'}</b>`:'No breaches'}${nw?`, ${nw} to watch`:''}${r.length?`, ${r.length} provisional entr${r.length===1?'y':'ies'} that may read differently once committed`:''}. Nothing is blocked: the desk records what happened and holds the breach here until it is resolved. <b>The credit cap is read across BOTH books</b>, because it is about a person rather than a product, and it is counted in UNITS, so a unit of salt and a unit of oil weigh the same against it although one is worth several times the other.</div>
     <table><thead><tr><th class="l">Rule</th><th class="l">Party</th><th class="l">Position</th><th class="l">Why it matters</th></tr></thead><tbody>
     ${all.map(x=>`<tr><td class="l">${bSevTag[x.sev]||''} ${x.rule}</td><td class="l mono">${x.who==='stock'?'&mdash;':ID(x.who)}</td><td class="l">${x.what}</td><td class="l" style="color:var(--mut)">${x.why}</td></tr>`).join('')}
     </tbody></table></div>`;
@@ -10813,7 +10821,19 @@ function ensureChart(cb){
   if(chartWait){chartWait.push(cb);return;}
   if(chartTried)return cb(false);
   chartTried=true;chartWait=[cb];
-  const done=ok=>{if(ok)chartTheme();const q=chartWait;chartWait=null;q.forEach(f=>{try{f(ok);}catch(e){}});};
+  /* v385: AND THIS CATCH WAS EMPTY TOO, WHICH IS THE ONE NEITHER REPORTER CAN REACH. A waiter
+     queued here runs AFTER drawPerProduct and renderPart have both returned, so a throw from a
+     genuinely asynchronous callback, the first load of the library, was swallowed with nowhere
+     left to report it. It cannot name a block, because DRAW_BLK is null by then, so it says it
+     on the active section instead. A callback that throws still cannot strand the ones behind
+     it, which is what the catch was for. */
+  const done=ok=>{if(ok)chartTheme();const q=chartWait;chartWait=null;
+    q.forEach(f=>{try{f(ok);}catch(e){
+      try{console.error('ensureChart: a queued chart callback threw',e);}catch(_){}
+      const s=document.querySelector('.sec.on');
+      if(s){const n=document.createElement('div');n.className='dsc';n.style.color='var(--crim)';
+        n.textContent='A chart could not be drawn once the library loaded: '+((e&&e.message)||e);s.appendChild(n);}
+    }});};
   const s=document.createElement('script');
   s.src='assets/chart.umd.js';
   s.onload=()=>done(!!window.Chart);
