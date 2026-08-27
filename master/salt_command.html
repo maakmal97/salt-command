@@ -12013,7 +12013,17 @@ function tabPricing(){
          written as one would have been REMOVED FROM THE DOM at render and never seen. .insight
          is the one class it keeps. It keeps it whole only as far as the first full stop, so
          this is ONE SENTENCE: a second would be silently thrown away. -->
-    ${nUnderD.length?`<div class="insight" style="border-left-color:var(--gold)"><b>${nUnderD.length} of ${tb.length} asks do not carry a delivery</b>, so quote ${nUnderD.map(r=>kg(r.q)).join(', ')} at the counter, where each clears the collected floor printed below${nUnderC.length?`, and do not quote ${nUnderC.map(r=>kg(r.q)).join(', ')} at all, being under both floors`:''}.</div>`
+    <!-- ============ TWO CLAIMS, TWO INSIGHTS, BECAUSE EITHER CAN PUSH THE OTHER OFF ============
+         From Customers, 27 Aug, and it applies here: being under NOTE_MIN is not a property of a
+         template, it is a property of a template plus TODAY'S figures. This was one sentence at
+         124 characters against a limit of 140, and the part that grows is a LIST OF SIZES. Three
+         under-floor asks instead of one would tip it, and past the limit stripMethod replaces the
+         element with plain textContent, so the bold comes off the figure that matters, silently.
+         "Do not quote this at all" is also a different and more serious instruction than "quote it
+         at the counter", and it was a sub-clause of it. Split, so neither can crowd the other and
+         neither can grow into the limit. The definition of the two floors is in the fold below. -->
+    ${nUnderD.length?`<div class="insight" style="border-left-color:var(--gold)"><b>${nUnderD.length} of ${tb.length} asks do not carry a delivery</b>: quote ${nUnderD.map(r=>kg(r.q)).join(', ')} at the counter.</div>`
+      +(nUnderC.length?`<div class="insight" style="border-left-color:var(--crim)"><b>Do not quote ${nUnderC.map(r=>kg(r.q)).join(', ')} at all</b>: under both floors.</div>`:'')
       :`<div class="insight" style="border-left-color:var(--grn)">Every ask on the board clears its delivered floor.</div>`}
     <!-- v381: THE 1,010-CHARACTER PARAGRAPH UNDER THE BOARD FOLDS. It is the single longest
          block of standing prose on this view and it is Study in every line: what cogs is, what
@@ -12482,7 +12492,12 @@ function drawEarnChart(){
     /* v384 gave drawPerProduct and renderPart a voice; THIS catch is inside the ensureChart
        callback, so it fires after those have returned and neither of them can ever see it. An
        empty one here is the same silence in a place the fix did not reach. */
-    }catch(e){drawFailed(DRAW_BLK,drawEarnChart,e);}
+    /* v384 gave drawPerProduct and renderPart a voice; THIS catch is inside the ensureChart
+       callback, so it fires before either of them can see it and an empty one here is the same
+       silence in a place their fix does not reach. One wording across all of them, and it goes
+       in the chart's own box rather than at the top of the block, because that is where the
+       reader is looking and it is what the unavailable branch four lines up already does. */
+    }catch(e){chartEmpty(el,'This chart could not be drawn: '+((e&&e.message)||e)+'. Every figure it draws is in the tables on this part.');}
   });
 }
 function pxRedraw(){
@@ -12538,12 +12553,18 @@ function priceNote(){
      test applied to a 12.5 unit lot. */
   const rc=replCost(),flB=PRICE.floorPct.wholesale,under=pts.filter(x=>x.p<rc/(1-flB/100));
   const underKg=under.reduce((a,x)=>a+x.kg,0),totKg=pts.reduce((a,x)=>a+x.kg,0);
-  return `<div class="insight"><b>${(underKg/totKg*100).toFixed(0)}% of your volume</b> has gone below ${fmt0(floorPrice(12))}/unit, the total that clears the ${flB}% wholesale line on today&rsquo;s ${fmt(rc)}/unit replacement cost.</div>`
+  /* THE INSIGHT CARRIES THE CLAIM AND NOTHING ELSE, for the reason Customers found: being under
+     NOTE_MIN is a property of the template PLUS today's figures. With the definition attached this
+     ran 130 characters on salt and 132 on oil against a limit of 140, which is headroom rather
+     than safety: a replacement cost in three figures tips it and the bold comes off the one number
+     the sentence exists for. The definition belongs beside the sentence that already explains the
+     line anyway. */
+  return `<div class="insight"><b>${(underKg/totKg*100).toFixed(0)}% of your volume</b> has sold below ${fmt0(floorPrice(12))}/unit.</div>`
    +`<div class="dsc" style="margin-top:9px">${nOrd} priced order${nOrd===1?'':'s'} at ${pts.length} distinct price${pts.length===1?'':'s'}. `
    +(byKg.n<3
       ? `Too few at any one price to call one of them busiest: the largest is ${fmt0(byKg.p)}/unit, ${byKg.n===1?'a single order':byKg.n+' orders'} and ${kg(byKg.kg)}.`
       : `The busiest is <b>${fmt0(byKg.p)}/unit</b>, ${byKg.n} orders and ${kg(byKg.kg)}; the price earning most is <b>${fmt0(byRM.p)}/unit</b> at ${fmt0(byRM.rm)}.`)
-   +` That ${flB}% line is a percentage over replacement cost and is <b>not</b> the board&rsquo;s floor, which is break-even and carries his time as well.</div>`;
+   +` That ${fmt0(floorPrice(12))}/unit is the total clearing the ${flB}% wholesale line on today&rsquo;s ${fmt(rc)}/unit replacement cost. It is a percentage over cost and it is <b>not</b> the board&rsquo;s floor, which is break-even and carries his time as well.</div>`;
 }
 /* ============ THE BOARD, DRAWN (v246) ============
    Two questions the tables answer badly. FIRST, the SHAPE: a table of thirty prices does not
@@ -12642,7 +12663,12 @@ function drawBoardCharts(){
     /* v384 gave drawPerProduct and renderPart a voice; THIS catch is inside the ensureChart
        callback, so it fires after those have returned and neither of them can ever see it. An
        empty one here is the same silence in a place the fix did not reach. */
-    }catch(e){drawFailed(DRAW_BLK,drawBoardCharts,e);}
+    /* v384 gave drawPerProduct and renderPart a voice; THIS catch is inside the ensureChart
+       callback, so it fires before either of them can see it and an empty one here is the same
+       silence in a place their fix does not reach. One wording across all of them, and it goes
+       in the chart's own box rather than at the top of the block, because that is where the
+       reader is looking and it is what the unavailable branch four lines up already does. */
+    }catch(e){chartEmpty(a||b,'This chart could not be drawn: '+((e&&e.message)||e)+'. Every figure it draws is in the tables on this part.');}
   });
 }
 function drawPriceCharts(){
@@ -12660,7 +12686,12 @@ function drawPriceCharts(){
     /* v384 gave drawPerProduct and renderPart a voice; THIS catch is inside the ensureChart
        callback, so it fires after those have returned and neither of them can ever see it. An
        empty one here is the same silence in a place the fix did not reach. */
-    }catch(e){drawFailed(DRAW_BLK,drawPriceCharts,e);}
+    /* v384 gave drawPerProduct and renderPart a voice; THIS catch is inside the ensureChart
+       callback, so it fires before either of them can see it and an empty one here is the same
+       silence in a place their fix does not reach. One wording across all of them, and it goes
+       in the chart's own box rather than at the top of the block, because that is where the
+       reader is looking and it is what the unavailable branch four lines up already does. */
+    }catch(e){chartEmpty(q||r,'This chart could not be drawn: '+((e&&e.message)||e)+'. Every figure it draws is in the tables on this part.');}
   });
 }
 /* cumulative cash and unit already recorded against a sale (replay if it has steps) */
