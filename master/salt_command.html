@@ -476,8 +476,8 @@ details.rcard>summary .rsum b{color:var(--ink);}
 .lcorr .cprose{color:var(--dim);}
 .lcorr.bad{background:rgba(255,93,115,.07);border-top-color:rgba(255,93,115,.45);}
 .lcorr.bad .clab{color:var(--crim);}
-.lcorr .cclaim.unknown,.lcorr .cclaim.differs{color:var(--crim);}
-.lcorr .cclaim.unknown em,.lcorr .cclaim.differs em{color:var(--crim);font-weight:600;}
+.lcorr .cclaim.unknown,.lcorr .cclaim.differs,.lcorr .cclaim.unreadable{color:var(--crim);}
+.lcorr .cclaim.unknown em,.lcorr .cclaim.differs em,.lcorr .cclaim.unreadable em{color:var(--crim);font-weight:600;}
 .lcorr .cwhy{margin-top:5px;}
 .lcorr .cwhy summary{cursor:pointer;color:var(--dim);font-size:11px;list-style:none;}
 .lcorr .cwhy summary::-webkit-details-marker{display:none;}
@@ -7629,16 +7629,29 @@ function claimHolds(c,bit,text){
 function modClaims(t,dir){
   if(!t||!t.mod)return[];
   const PE=POSITION_ENGINE,view=edView(t,dir==='BUY'?'BUY':'SELL');
-  const dates=(t.amend||[]).map(a=>a.date).filter(Boolean).sort();
-  const last=dates.length?dates[dates.length-1]:'';
+  /* WHAT CAME AFTER THE CORRECTION, BY POSITION AND NOT BY DATE. A claim true when it was
+     written and overtaken afterwards is not a contradiction, so it is not called one. The
+     first rule compared the correction's date against the newest date on the row, which
+     misses a step settled on the SAME DAY: a cash 360 to 0 corrected and then fulfilled on
+     the 25th read as a contradiction, and a false crimson is the one thing this strip must
+     not produce. The fold appends a Correction at the end of `amend` when it writes one, so
+     anything sitting after the last Correction was added after it. Position answers exactly
+     where a date can only answer to the day. */
+  const A=t.amend||[];
+  let li=-1;A.forEach((a,i)=>{if(a.kind==='Correction')li=i;});
+  const post=(li>=0?A.slice(li+1):[]).map(a=>a.date).filter(Boolean).sort();
+  const last=post.length?post[post.length-1]:'';
   const out=[];
   String(t.mod).split(', then ').forEach(seg=>{
     const head=/^corrected(?: on ([0-9-]+))?: (.+)$/.exec(seg.trim());
     if(!head){out.push({prose:seg.trim()});return;}
-    const on=head[1]||'',stale=!!(on&&last&&last>on);
+    const on=head[1]||'',stale=!!(on&&last&&last>=on);
     head[2].split('; ').forEach(raw=>{
       const bit=raw.trim(),p=/^(\S+) (.*) to (.*)$/.exec(bit);
-      if(!p){out.push({prose:bit});return;}
+      /* THE HEAD PARSED, so this line was written by the fold and its shape is a contract.
+         Falling through to prose here would render it as quiet grey text and check nothing,
+         which is the one failure a claim checker must not have. */
+      if(!p){out.push({verdict:'unreadable',raw:bit});return;}
       const c={on:on,field:p[1],was:p[2],now:p[3]},text=PE.CORRECT_TEXT.includes(c.field);
       /* THE FOLD APPENDS A REASON to a value it moved without being asked (be2de5a):
          "unpriced true to (cleared), a real total was set". That is prose about the write and
@@ -7665,8 +7678,19 @@ function modClaims(t,dir){
 function corrStrip(t,dir,corrs){
   const claims=modClaims(t,dir);
   if(!claims.length&&!(corrs&&corrs.length))return '';
-  const bad=claims.filter(c=>c.verdict==='unknown'||c.verdict==='differs');
-  const chip=c=>c.prose?`<span class="cprose">${esc(c.prose)}</span>`
+  const bad=claims.filter(c=>c.verdict==='unknown'||c.verdict==='differs'||c.verdict==='unreadable');
+  /* ============ A CHECKER THAT STOPS CHECKING MUST SAY SO ============
+     Everything below reads strings the FOLD writes: ", then " between corrections, "corrected
+     on <date>: " at the head, "; " between claims, "<field> <was> to <now>" and the (unset)
+     and (cleared) markers. That is five string contracts owned by tools/fold.mjs, and a
+     reworded reason or a changed separator would leave this function parsing nothing and
+     saying nothing. Tested: of five plausible rewordings, two rendered as quiet prose and
+     reported NO claims at all. So a row that carries a Correction and yields no readable
+     claim is treated as a fault in the READER, stated here, rather than as a row with
+     nothing to check. It cannot be silent about having gone blind. */
+  const chip=c=>c.verdict==='unreadable'
+    ?`<span class="cclaim unreadable">${esc(c.raw)} <em>this desk cannot read that claim</em></span>`
+    :c.prose?`<span class="cprose">${esc(c.prose)}</span>`
     :`<span class="cclaim ${c.verdict}">${esc(c.field)} ${esc(c.was)} &rarr; ${esc(c.now)}`
       +(c.why?` <em>${esc(c.why)}</em>`:'')
       +(c.verdict==='unknown'?' <em>not a field the book can set</em>'
@@ -7679,9 +7703,11 @@ function corrStrip(t,dir,corrs){
      would put the word on four rows that were never corrected. */
   const lab=(corrs&&corrs.length)||claims.some(c=>c.verdict)?'Corrected':'Restated';
   const when=(corrs&&corrs.length&&corrs[corrs.length-1].date)||(claims.find(c=>c.on)||{}).on||'';
+  const blind=(corrs&&corrs.length&&!claims.some(c=>c.verdict))
+    ?'<span class="cclaim unreadable"><em>this row was corrected and the desk could not read the trail: check tools/fold.mjs against modClaims</em></span>':'';
   const notes=(corrs||[]).filter(a=>a.note).map(a=>`<p>${a.note}</p>`).join('');
-  return `<div class="lcorr${bad.length?' bad':''}">`
-    +`<div class="chead"><span class="clab">${lab}${when?' '+when:''}</span>${claims.map(chip).join('')}${later}</div>`
+  return `<div class="lcorr${bad.length||blind?' bad':''}">`
+    +`<div class="chead"><span class="clab">${lab}${when?' '+when:''}</span>${claims.map(chip).join('')}${later}${blind}</div>`
     +(notes?`<details class="cwhy"><summary><span class="chev">&#9656;</span>why</summary><div class="cnote">${notes}</div></details>`:'')
     +'</div>';
 }
