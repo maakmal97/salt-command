@@ -1,4 +1,4 @@
-/* drafter.js — turn a queued entry into a proposed ledger ROW, in the cloud.
+/* drafter.js: turn a queued entry into a proposed ledger ROW, in the cloud.
  *
  * This is the piece that removes the laptop from the loop. It reads the queue from KV and the
  * book from D1, writes a proposed row per entry into the `draft` table, and stops. It never

@@ -1462,7 +1462,7 @@ tbody tr:hover td:not(.l){background:rgba(255,255,255,.03);}
 <button class="totop" id="totop" type="button" title="Back to top" aria-label="Back to top">&#9650;</button>
 <script>
 /* ==== ENGINE position: generated from engine/position.mjs by tools/engine.mjs. Edit the module, never this block. ==== */
-/* engine/position.mjs — THE POSITION ENGINE, OUT OF THE DESK (move 1 of the rebuild, session 2, 22 Aug 2026).
+/* engine/position.mjs: THE POSITION ENGINE, OUT OF THE DESK (move 1 of the rebuild, session 2, 22 Aug 2026).
  *
  * ONE DEFINITION of the transaction model and the ledger walk. The row helpers (what a row has
  * paid, delivered, deferred, pending, its state and its dates; what a lot has received and paid;
@@ -1773,7 +1773,7 @@ return {txPrice:txPrice,txPaid:txPaid,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:t
 })();
 /* ==== END ENGINE position ==== */
 /* ==== ENGINE pricing: generated from engine/pricing.mjs by tools/engine.mjs. Edit the module, never this block. ==== */
-/* engine/pricing.mjs — THE PRICING ENGINE, OUT OF THE DESK (move 1 of the rebuild, 22 Aug 2026).
+/* engine/pricing.mjs: THE PRICING ENGINE, OUT OF THE DESK (move 1 of the rebuild, 22 Aug 2026).
  *
  * ONE DEFINITION. The desk, the payload build and the cloud drafter all price from this file.
  * The desk does not import it at runtime, because the desk is a single self-contained page that
@@ -3187,7 +3187,7 @@ function sourcingPlan(){
     lostMultiple:lost>0?+(cash/lost).toFixed(1):null,
     quoted:(supplierQuote&&supplierQuote.tiers||[]).some(t=>t.qty>=q)};
 }
-/* ============ PRODUCTS — THE DESK BECOMES MULTI-COMMODITY (v228) ============
+/* ============ PRODUCTS: THE DESK BECOMES MULTI-COMMODITY (v228) ============
    v226 bolted oil on beside the salt books because one sale did not justify a refactor.
    A second supplier and the promise of more products does. So the shape changes here:
 
@@ -3291,7 +3291,7 @@ function markProdSw(){
 function prodSummary(p){
   const S=pSales(p), B=pPurch(p);
   /* v365: goodwill excluded here too, matching walk()'s pricedSales (HIS RULING: goodwill is
-     an EXPENSE, not a sale) — this filter had drifted from that one and disagreed with it. */
+     an EXPENSE, not a sale), this filter had drifted from that one and disagreed with it. */
   const live=S.filter(s=>{const o=txStat(s).order;return o!=='Pending'&&o!=='Cancelled'&&!s.goodwill;});
   const rev=+live.reduce((a,s)=>a+((s.total||0)-txPendRM(s)),0).toFixed(2);
   const cash=+S.reduce((a,s)=>a+(s.cash||0),0).toFixed(2);
@@ -3311,13 +3311,13 @@ function prodSummary(p){
 }
 /* PATRICK'S OIL QUOTE. Same shape as supplierQuote for salt, because it is the same kind
    of thing: what a supplier charges, by lot size, on a stated date. It is NOT a selling
-   card and must never be rendered as one — v226/v227 made exactly that mistake and priced
+   card and must never be rendered as one, v226/v227 made exactly that mistake and priced
    the whole product backwards for two versions. */
 /* oilQuote: declared in the BOOK block near the top of this script, generated from ledger/book.json (v339). */
 const QUOTES={salt:()=>supplierQuote, oil:()=>oilQuote};
 const quoteFor=p=>{const f=QUOTES[p||PROD];return f?f():null;};
 
-/* ============ WHITEBOARD — plans, deliberately outside the books ============
+/* ============ WHITEBOARD: plans, deliberately outside the books ============
    A plan is an intention, not a transaction. NOTHING here feeds revenue, cost,
    stock, receivables or margin, and nothing here is ever inferred into the ledger.
    A plan becomes a figure only when it is recorded in the Workbench as a real
@@ -6671,7 +6671,7 @@ function tabMap(){
       <td class="mono" style="color:var(--dim)">${h?fmt0(h.value):'&mdash;'}</td>
       <td>${h?`<span class="tag prov">${HEATL[band(f)]}</span>`:'<span class="tag">not drawn</span>'}</td></tr>`;}).join('');
   return `<h1>Map</h1>
-  <!-- v384: THE LEAD WAS A CHANGELOG AND ONLY ITS FIRST LINE EVER RENDERED. 994 characters
+  <!-- v385: THE LEAD WAS A CHANGELOG AND ONLY ITS FIRST LINE EVER RENDERED. 994 characters
        of what the map used to be and which version changed it, of which stripMethod (v372)
        shows the first sentence and drops the other 913. So the sentence that survives is
        now the one worth having: what the picture is, and why it carries no label. The
@@ -6702,14 +6702,14 @@ function tabMap(){
         <text x="0" y="20" text-anchor="middle" font-size="11" fill="#b6a6d6">N</text>
       </g>
     </svg>
-    <!-- v384: THIS WAS A .dsc AND stripMethod DELETED IT ON EVERY RENDER. The basemap is
+    <!-- v385: THIS WAS A .dsc AND stripMethod DELETED IT ON EVERY RENDER. The basemap is
          ODbL, which asks for attribution wherever the data is SHOWN, and /desk is served
          publicly, so a credit that never reaches the page is the same as no credit at all.
          It is not method prose and it must never be classed as prose: it is a licence
          condition of drawing the outlines. Same styling, no class the strip can see. -->
     <div style="margin-top:8px;font-size:11px;color:var(--mut);line-height:1.5">${esc(BASEMAP_META.attribution)}, ${BASEMAP_META.year}, via ${esc(BASEMAP_META.source.split(',')[0])}, fetched ${BASEMAP_META.fetchedOn}. Simplified, and unlabelled by design.</div>
   </div>
-  <!-- ============ v384: ONE TABLE FOR EVERYTHING THE CANVAS DOES NOT DRAW ============
+  <!-- ============ v385: ONE TABLE FOR EVERYTHING THE CANVAS DOES NOT DRAW ============
        There were two accounts of an undrawn party and neither reached the page. A party
        sited OUTSIDE the frame was a .dsc above the map carrying the only statement of what
        those three are worth, and stripMethod deletes it, so their value appeared nowhere on
@@ -6737,7 +6737,7 @@ function tabMap(){
     ${miss.map(m=>`<tr><td class="l mono">${esc(codeOf(m.id))}</td><td class="l mono" style="color:var(--dim)">${m.t?esc(m.t):'&mdash;'}</td><td style="color:var(--dim)">&mdash;</td><td class="l" style="color:var(--mut)">${esc(m.why)}</td></tr>`).join('')}
   </tbody></table></div>`;})():''}
   <h2 style="margin-top:18px">The gazetteer <span class="rule"></span></h2>
-  <!-- v384: the 619-character footnote went with the rest of the deleted prose. Why the
+  <!-- v385: the 619-character footnote went with the rest of the deleted prose. Why the
        gazetteer carries a suffix and not a name is the lead's own sentence now, which is
        the one line of this part that actually renders; the rounding it also claimed is on
        the Places known tile, where a reader looking at the figure will see it. -->
@@ -7409,7 +7409,7 @@ function ledQuick(what,type,who,date,total,qty){
   const moved=(what==='deliv'||what==='done')?+qty:0;
   const today=TODAY.toISOString().slice(0,10);
   const lab=what==='paid'?'paid in full':what==='deliv'?'delivered in full':'paid and delivered in full';
-  const raw='Fulfilment on '+codeOf(who)+' — '+(type==='BUY'?'lot ':'order ')+kg(qty)+' of '+fmt0(total)
+  const raw='Fulfilment on '+codeOf(who)+', '+(type==='BUY'?'lot ':'order ')+kg(qty)+' of '+fmt0(total)
     /* an undated row is PLANNED rather than agreed, and its key really does contain the
        string "undefined" on both sides, so it matches and the button works. Only the
        human-readable line needs to stop saying "agreed undefined". */
@@ -8427,7 +8427,7 @@ function drawSourcingCharts(){
          borderWidth:lots.map(x=>x.def?2:1),borderRadius:3}]},
         options:{responsive:true,maintainAspectRatio:false,
           plugins:{legend:{display:false},tooltip:{callbacks:{label:i=>{const x=lots[i.dataIndex];
-            return x.sup+': RM'+x.rate+'/unit for '+x.q+' unit'+(x.def?' — DEFAULTED, never arrived':'');}}}},
+            return x.sup+': RM'+x.rate+'/unit for '+x.q+' unit'+(x.def?', DEFAULTED, never arrived':'');}}}},
           scales:{x:{grid:{display:false},ticks:{color:CHART_INK.tick,font:{size:9},maxRotation:60,minRotation:45}},
                   y:{grid:{color:CHART_INK.grid},ticks:{color:CHART_INK.tick,callback:v=>'RM'+v}}}}});
     /* v385: was `catch(e){}`. v384 opened drawPerProduct's empty catch for the same reason and
@@ -9923,13 +9923,13 @@ function planAdd(){
   const st2=()=>el('plOk')||ok;
   st2().textContent='Saving…';st2().style.color='var(--mut)';
   Promise.resolve(saveQueue()).then(res=>{const o=st2();
-    if(res===false){o.textContent='Held in this tab, but NOT saved to the folder — a download was made instead.';o.style.color='var(--amber)';}
+    if(res===false){o.textContent='Held in this tab, but NOT saved to the folder: a download was made instead.';o.style.color='var(--amber)';}
     else{o.textContent='Recorded as a plan. It touches no figure on this desk.';o.style.color='var(--grn)';}});
 }
 /* ============ TAB: CHANGELOG ============ */
 /* tabChangelog() retired at v177: the log left the desk for 04_Docs\changelog.json and
    the tab with it. Nothing rendered it and nothing reads it now. */
-/* ============ NAME VAULT — client-side AES-GCM, passphrase never leaves browser ============ */
+/* ============ NAME VAULT: client-side AES-GCM, passphrase never leaves browser ============ */
 const _b64e=buf=>btoa(String.fromCharCode(...new Uint8Array(buf)));
 const _b64d=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
 /* v277: THE ITERATION COUNT TRAVELS WITH THE ENVELOPE. It was hardcoded at 150,000 in both
@@ -10595,7 +10595,7 @@ function priceCoach(party,price,qty){
      3 signals   five readings off the book, each small, summed and clamped
    Nothing here books anything. A quote becomes a figure only when it is recorded on
    the Transaction tab. */
-/* v381: `sizes` IS GONE. It was one hardcoded list, 0.5 to 25, and it was salt's, while
+/* v385: `sizes` IS GONE. It was one hardcoded list, 0.5 to 25, and it was salt's, while
    sizesFor(PROD) has been per-book since oil arrived. Five surfaces read it and every one of
    them was drawing the wrong book on oil: the earnings table, the earnings chart, the reseller
    menu, the chart bands and a dead board. All five now read sizesFor(PROD). Removed rather
@@ -10608,7 +10608,7 @@ let pxOver={cost:null,shrink:null,party:'',anyQ:'',tier:'T2',cap:''};   // cost/
 
 /* the highest tier on the live quote, because that is what restocking in the size
    usually bought actually costs. Cheaper tiers are chosen deliberately, never assumed.
-   v381: said "dearest", the word retired from this view at v379. */
+   v385: said "dearest", the word retired from this view at v379. */
 function pxQuoteRate(){
   if(!supplierQuote||!supplierQuote.tiers||!supplierQuote.tiers.length)return replCost();
   return Math.max.apply(null,supplierQuote.tiers.map(t=>t.total/t.qty));
@@ -11397,7 +11397,7 @@ function renderQueue(){const b=document.getElementById('queueBox');if(!b)return;
   const txq=qTx();
   const cleared=queueCleared?`<div class="dsc" style="margin-top:10px">&#10003; ${queueCleared} committed entr${queueCleared===1?'y':'ies'} cleared automatically &mdash; already in the ledger.</div>`:'';
   if(!txq.length){b.innerHTML=cleared;return;}
-  b.innerHTML=cleared;b.innerHTML+='<div style="margin-top:12px;font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:var(--gold)">Live in the desk, awaiting commit ('+txq.length+')— '+qLabel()+'</div>'
+  b.innerHTML=cleared;b.innerHTML+='<div style="margin-top:12px;font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:var(--gold)">Live in the desk, awaiting commit ('+txq.length+'), '+qLabel()+'</div>'
     +'<div class="dsc" style="margin-top:5px">These are already folded into every figure on the desk. Undo removes an entry and rebuilds; once committed it is in the ledger and can only be reversed by a new entry.</div>'
     +'<table style="margin-top:6px"><thead><tr><th class="l">Entry</th><th>Type</th><th>Party</th><th>Qty</th><th>RM</th><th>Status</th><th></th></tr></thead><tbody>'+txq.map(q=>`<tr><td class="l" style="max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(q.raw||'')}</td><td>${q.type}</td><td class="mono">${esc(q.party)||'&mdash;'}</td><td>${q.qty!=null?q.qty+'unit':'&mdash;'}</td><td>${q.total!=null?fmt0(q.total):'&mdash;'}</td><td><span class="tag ${q.status==='paid'?'paid':q.status==='inkind'?'inkind':q.status==='modified'?'mod':q.status==='cancelled'?'def':q.status==='count'?'inkind':'unpaid'}">${({paid:'Paid',unpaid:'Unpaid',partial:'Partial',inkind:'In-Kind',modified:'Modified',cancelled:'Cancelled',credit:'Unpaid',count:'Count'})[q.status]||q.status}</span></td><td><button class="ubtn" onclick="undoEntry('${esc(q.at)}')">Undo</button></td></tr>`).join('')+'</tbody></table>';}
 
@@ -11674,7 +11674,7 @@ function networkStats(){
     const direct=pricedSales.filter(s=>s.customer===id&&s.total!=null&&s.rev!=='R2').reduce((a,s)=>a+s.total,0);
     const indirect=pricedSales.filter(s=>ownerOf(s.customer)===id&&s.total!=null&&s.rev==='R2').reduce((a,s)=>a+s.total,0);
     const ds=new Set();sales.forEach(s=>{if(ownerOf(s.customer)===id&&s.rev==='R2'&&s.downstream)ds.add(s.downstream);});
-    /* v384: dsResell COUNTED THE WRONG THING, AND THE CARD CONTRADICTED ITSELF SAYING IT.
+    /* v385: dsResell COUNTED THE WRONG THING, AND THE CARD CONTRADICTED ITSELF SAYING IT.
        It was ds.size, the number of distinct NAMED downstream buyers, printed under a label
        reading "N onward sales". Most onward sales go to a general bucket and carry no
        `downstream` at all, so CS6-PER read "0 onward sales" directly above a table listing
@@ -11724,7 +11724,7 @@ function networkStats(){
       dsResell:resellN,total:direct+indirect,share,starN,
       earnedR2,earnedR3,earnedLot,lotN:0,earned,toNextR2,toNextR3,
       earnedOwn,toNextOwn,opening,bring,bringPct:bringM.pct,ownPct:ownM.pct,bringBand:bringBand.label,ownBand:ownBand.label,
-      /* v384: THE BAND'S UNITS AND THE SCHEME'S OWN TURNOVER, both of which the card needed
+      /* v385: THE BAND'S UNITS AND THE SCHEME'S OWN TURNOVER, both of which the card needed
          and neither of which it could get. It read the band LABEL and could not say what
          crossing a hurdle actually pays, so it told every associate a hurdle was worth a
          unit when under 30% margin it is worth nothing. And it printed lifetime `direct`
@@ -11863,7 +11863,7 @@ function approachBoard(approach,owedBy,bm){
         <div style="font-size:13px;font-weight:600;letter-spacing:.5px">${MON[m]} ${y}</div>
         <div style="font-size:11px;color:var(--mut)">${soon.length} still to fall due &middot; ${late.length} already past</div>
       </div>
-      <!-- ============ v384: THE KEY TO THE COLOURS WAS BEING DELETED ============
+      <!-- ============ v385: THE KEY TO THE COLOURS WAS BEING DELETED ============
            Gold and red are the whole grammar of this board, and the only thing that said so
            was the paragraph underneath, which is a .dsc, which stripMethod (v372) removes on
            every render. So the board shipped with colour as its only signal and no legend at
@@ -11968,7 +11968,7 @@ function tabConcentration(){
   for(const x of c.bc){run+=x.rev;to80++;if(run>=c.tot*0.8)break;}
   const single=c.bc.filter(x=>(x.n||0)===1).length;
   const topName=c.bc[0]?codeOf(c.bc[0].id):'-';
-  /* ---- v384: THE READ WAS FOUR PARAGRAPHS AND RENDERED AS THE WORDS "The read." ----
+  /* ---- v385: THE READ WAS FOUR PARAGRAPHS AND RENDERED AS THE WORDS "The read." ----
      stripMethod cuts an .insight of 140 characters or more to its FIRST SENTENCE, and the
      first sentence here was the bold label. So the whole finding, concentration, the thin
      margins, who is overdue and what it is worth, was deleted on every render and the page
@@ -11982,7 +11982,7 @@ function tabConcentration(){
     : thin.length
     ? `<b>${thin.length}</b> customer${thin.length===1?'':'s'} under a 20% margin: the same salt earns more elsewhere on this book.`
     : `Nobody is past their own habit and nobody is under a 20% margin.`;
-  /* ---- v384: THE BAND COLUMN NAMED A BAND AND NEVER SAID WHAT ONE WAS WORTH ----
+  /* ---- v385: THE BAND COLUMN NAMED A BAND AND NEVER SAID WHAT ONE WAS WORTH ----
      The rule was in the paragraph under the table, and that paragraph is a .dsc, which
      stripMethod (v372) deletes on every render. So the page carried a column reading
      "quarter" against a customer with no statement anywhere of what a quarter pays, and
@@ -11994,7 +11994,7 @@ function tabConcentration(){
     :`<tr><td class="l" colspan="6" style="color:var(--dim)">Nothing since ${REWARD.since}. The scheme counts from the day it was adopted, because the opening positions already hold everything before it.</td></tr>`;
   const crCard=`<div class="card"><div class="cardh">&#127873; Customer rewards <span class="sub">since ${REWARD.since} &middot; ${fmt0(rewardHurdle(PROD,'customer'))} a hurdle &middot; the band sets the units</span>${crReady.length?`<span class="sub" style="color:var(--gold)">${crReady.map(r=>ID(r.id)).join(', ')} waiting</span>`:''}</div>
     <table><thead><tr><th class="l">Customer</th><th>Bought</th><th>Margin</th><th class="l">Band pays</th><th>Earned</th><th>To next</th></tr></thead><tbody>${crBody}</tbody></table></div>`;
-  /* ============ v384: DO, THEN WATCH, THEN STUDY ============
+  /* ============ v385: DO, THEN WATCH, THEN STUDY ============
      The order was rewards, tiles, read, two charts, the approach calendar, turned-away, the
      database. The calendar is the only thing on this part that asks for an ACTION, and the
      tab's own read said so ("that is the most valuable thing on this tab"), and then put it
@@ -12040,7 +12040,7 @@ function tabConcentration(){
   <div class="card" style="margin-top:14px"><div style="font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:var(--dim);margin-bottom:4px">Revenue by customer <span style="text-transform:none;letter-spacing:0">&mdash; drawn without Chart.js, so it is always here</span></div>${bars}</div>
 
   <h2 style="margin-top:18px">Demand you could not serve <span class="rule"></span></h2>
-  <!-- v384: THE EMPTY STATE RENDERED AS AN EMPTY BOX. It was a lone .dsc in a card, so the
+  <!-- v385: THE EMPTY STATE RENDERED AS AN EMPTY BOX. It was a lone .dsc in a card, so the
        strip removed it and left a heading over four inches of nothing, on the one section
        whose entire purpose is to be noticed while it is still empty. The words are the same
        words; they sit in a table row now, which the strip does not touch. -->
@@ -12135,7 +12135,7 @@ function drawConcCharts(){
                 const q=i.raw;
                 return q.id+': '+CUR+' '+Number(q.x).toLocaleString('en-MY',{maximumFractionDigits:0})+' an order'
                   +' over '+q.n+' order'+(q.n===1?'':'s')+', '+CUR+' '+Number(q.rev).toLocaleString('en-MY',{maximumFractionDigits:0})+' in all'
-                  +', '+q.y+'% margin — '+ord(q.q)+' percentile, '+BANDCOL[q.band].lab;}}}},
+                  +', '+q.y+'% margin, '+ord(q.q)+' percentile, '+BANDCOL[q.band].lab;}}}},
             scales:{x:{title:{display:true,text:'Revenue per order (RM)',color:TICK,font:{size:11}},
                        grid:{color:GRID},ticks:{color:TICK,callback:v=>Number(v).toLocaleString('en-MY',{maximumFractionDigits:0})}},
                     y:{title:{display:true,text:'Margin %',color:TICK,font:{size:11}},
@@ -12186,7 +12186,7 @@ function resellerCard(r){
   // rebate: earned on R2 + R3 (RM rates), minus what has been applied as free units
   const applied=rebateApplied(r.id);
   const freeKg=+((r.earned||0)-applied).toFixed(2);
-  /* ---- v384: THE SUMMARY PROMISED SALT THAT WAS NOT COMING ----
+  /* ---- v385: THE SUMMARY PROMISED SALT THAT WAS NOT COMING ----
      It closed every card on the bench with "RM 470 to a free unit", and that was wrong three
      separate ways. Crossing a hurdle pays the MARGIN BAND'S units, which under 30% is nothing
      at all. The balance it lands on is negative for five associates of five, because units
@@ -12209,7 +12209,7 @@ function resellerCard(r){
     <div class="kpi g"><div class="l">Sold for you</div><div class="v">${fmt0(r.indirect)}</div><div class="n">${r.dsResell} onward ${r.dsResell===1?'sale':'sales'} &middot; R2</div></div>
     <div class="kpi p"><div class="l">Brought you</div><div class="v">${fmt0(r.r3)}</div><div class="n">${r.referrals.length} introduced, first order &middot; R3</div></div>
   </div>`;
-  /* ---- v384: THE FIELDS, NOT A SENTENCE ----
+  /* ---- v385: THE FIELDS, NOT A SENTENCE ----
      This was 330 characters of prose restating the two streams, and stripMethod cut every
      card of it to "Rating unrated from 7.9% revenue share.", so the reward rule reached
      nobody. Worse, the Redeem button lived INSIDE that block: trim() assigns textContent,
@@ -12218,7 +12218,7 @@ function resellerCard(r){
      stream figures become a table, because six fields per stream is what a table is for
      and a table survives the strip. The button becomes a sibling, so nothing can eat it. */
   const bandPays=u=>u>0?kg(u):'nothing';
-  /* v384: THE BALANCE ROW PRINTED "-1 unit" UNDER A COLUMN HEADED "Per hurdle", on two cards
+  /* v385: THE BALANCE ROW PRINTED "-1 unit" UNDER A COLUMN HEADED "Per hurdle", on two cards
      of five. Two faults in one cell. A balance is not a per-hurdle figure, and a bare negative
      tells a reader nothing he can act on: it is the arithmetic of a deficit carried from the
      rules the opening positions replaced, not salt anybody owes back. The deficit itself stays
@@ -12232,7 +12232,7 @@ function resellerCard(r){
     <tr><td class="l">Bought himself <span style="color:var(--dim)">R1</span></td><td>${fmt0(r.own)}</td><td>${r.ownPct}%</td><td class="l">${r.ownBand}</td><td>${bandPays(r.ownUnits)}</td><td class="mono" style="color:var(--dim)">${fmt0(r.toNextOwn)}</td></tr>
     <tr class="tot"><td class="l">Balance</td><td class="l" colspan="3" style="color:var(--dim)">${r.opening?`opening ${r.opening>0?'+':''}${kg(r.opening)} carried, `:''}${applied>0?`${kg(applied)} already drawn`:'nothing drawn yet'}</td><td>${r.earned>0.009?kg(r.earned):'nothing'}</td><td>${freeKg>0.009?`<b style="color:var(--gold)">${kg(freeKg)} free</b>`:'&mdash;'}</td></tr>
   </tbody></table>`;
-  /* v384: "Rated unrated on 9.1% of revenue." is what the first pass shipped, on all five
+  /* v385: "Rated unrated on 9.1% of revenue." is what the first pass shipped, on all five
      cards, because starN is 0 for every associate and the sentence was built to take a star
      string. It is not a sentence. The rating is a share of ALL revenue with its first star at
      10%, so an unstarred card says the share and says where the star begins, which is the
@@ -12333,7 +12333,7 @@ function tabNetwork(){
         <div class="nswhy">Network growth, not repeat spend. Runs with R2 against that same <b>${fmt0(rewardHurdle(PROD,'associate'))}</b>, not a hurdle of its own.</div>
       </div>
     </div>
-    <!-- ============ v384: THE THREE FIGURES ON THIS CARD WERE WRONG ============
+    <!-- ============ v385: THE THREE FIGURES ON THIS CARD WERE WRONG ============
          It said R1 earned no rebate, one free unit per RM500 resold, and one per RM1,500
          introduced. v280 retired all three: an associate's own buying earns at the CUSTOMER
          hurdle, and resale and referral became ONE stream against the associate hurdle,
@@ -12554,7 +12554,7 @@ async function apDecide(id,action,btn){
 const wbEl=id=>document.getElementById(id);
 const wbVal=id=>{const e=wbEl(id);return e?e.value:'';};
 const wbNum=id=>{const e=wbEl(id);if(!e)return 0;const v=parseFloat(e.value);return isNaN(v)?0:v;};
-/* v365: A DATE DECADES OUT WENT THROUGH WITH NO WARNING ANYWHERE — checked the full chain,
+/* v365: A DATE DECADES OUT WENT THROUGH WITH NO WARNING ANYWHERE, checked the full chain,
    including the cloud drafter, and every layer's only date rule was refusing a MISSING date.
    This is a warning, not a hard stop: a genuine forward-dated order is legitimate, so the
    threshold is generous and it only catches the fat-finger case the audit actually found (a
@@ -12568,7 +12568,7 @@ const wbFutureWarn=d=>{
   if(!d)return null;
   const dt=new Date(d);if(isNaN(+dt))return null;
   const yrs=(dt-TODAY)/(365.25*86400000);
-  return yrs>1?d+' is over a year in the future — check it before recording.':null;
+  return yrs>1?d+' is over a year in the future, so check it before recording.':null;
 };
 /* the ledger's own entry list, in the ledger's own order, so E-codes match tabLedger exactly */
 function wbLedgerAll(){
@@ -12602,7 +12602,7 @@ function wbSoFarBuy(t){const p=t._buy||t;
 const wbRecvLbl=s=>s==='Delivered'?'Received':s==='Undelivered'?'Not received':s;
 /* the same three-axis rules as txStat / replayAmend, applied to a hypothetical entry */
 function wbState(total,qty,cash,kgd){
-  // a zero/blank total must not read as "Paid", nor a zero qty as "Delivered" — that hid Pending orders
+  // a zero/blank total must not read as "Paid", nor a zero qty as "Delivered", that hid Pending orders
   const payFull=total>0&&cash>=total-0.009,payNone=cash<=0.009,delFull=qty>0&&kgd>=qty-0.009,delNone=kgd<=0.009;
   const pay=payFull?'Paid':payNone?'Unpaid':'Partial';
   const deliv=delFull?'Delivered':delNone?'Undelivered':'Partial';
@@ -12836,7 +12836,7 @@ function pxMarket(){
      with the same confidence it uses for salt's eighty-six. Three is the smallest number the
      rest of this desk treats as a habit (pxParty's loyalty step, the reseller's hero badge),
      so it is the number used here. */
-  /* v381: takes the whole row, so the one-offs-stripped segment goes through the same guard
+  /* v385: takes the whole row, so the one-offs-stripped segment goes through the same guard
      instead of being a second copy of the arithmetic beside it, which is how it came to be
      the one segment v379's lesson had not reached. */
   const seg=f=>{const r=rows.filter(f);
@@ -12852,7 +12852,7 @@ function pxMarket(){
   const excluded=rows.filter(s=>s.qty>=PX.bulkFrom&&isOneOff(s.customer));
   /* the buying rate at which the realised bulk price would clear the floor
      unchanged: back out the effective cost the floor allows, then strip the shrink load.
-     v381: null when wholesale has never traded, because there is no realised price to hold. */
+     v385: null when wholesale has never traded, because there is no realised price to hold. */
   const needRate=bulk.p==null?null:+(bulk.p*(1-PRICE.floorPct.wholesale/100)*(1-c.shrink)).toFixed(2);
   return {c,all,small,bulk,bulkEx,excluded,needRate};
 }
@@ -12932,9 +12932,9 @@ function tabProductQuote(){
 }
 function tabPricing(){
   const c=pxCost(),sg=pxSignals(),pt=pxParty(pxOver.party),net=sg.net,pn=pt.net;
-  const q=pxQuoteRate();                      // v381: r30 went with the dead board, unread since v326
+  const q=pxQuoteRate();                      // v385: r30 went with the dead board, unread since v326
   const mk=pxMarket();
-  /* v381: A NINE-COLUMN TABLE THAT NOTHING RENDERED. `board` built a row per off-card size,
+  /* v385: A NINE-COLUMN TABLE THAT NOTHING RENDERED. `board` built a row per off-card size,
      and `inverted` and `chip` were filled and read nowhere; the template has not carried any
      of the three since the tier cards were retired at v326. Each row ran pxQuote and
      pxHistory, so every draw of every product block priced nine (salt) or fifteen (oil) lots
@@ -12959,7 +12959,7 @@ function tabPricing(){
   const hr=boardHeadroom(false);
   const hrTone=hr.unbounded?'g':hr.headroom<0?'r':hr.pct!=null&&hr.pct<10?'r':hr.pct!=null&&hr.pct<20?'gold':'g';
   return `<h1>Pricing</h1>
-  <!-- v381: "a printed card" is language from before v326, when the board was four frozen tier
+  <!-- v385: "a printed card" is language from before v326, when the board was four frozen tier
        cards. There are none: the board is one derived ladder and what goes stale is a price
        already agreed with somebody. The sentence now names that. -->
   <div class="dsc dsclead">What the board asks today for <b>${esc(PRODUCTS[PROD]?PRODUCTS[PROD].name:PROD)}</b>, and how much room is left before a price already agreed stops paying.</div>
@@ -12979,7 +12979,7 @@ function tabPricing(){
     <div class="kpi"><div class="l">Replacement cost</div><div class="v">${fmt(c.repl)}<span style="font-size:12px;color:var(--mut)">/unit</span></div><div class="n">${pxOver.cost!=null?'your override':'highest live quote tier'}</div></div>
     <div class="kpi ${hrTone}"><div class="l">Room before a price fails</div><div class="v">${hr.unbounded?'&mdash;':hr.headroom<0?'none':fmt(hr.headroom)}${hr.unbounded||hr.headroom<0?'':'<span style="font-size:12px;color:var(--mut)">/unit</span>'}</div>
       <div class="n">${hr.unbounded?'no live price breaches within RM200 of the buying rate'
-        /* v381: THE COPY READ "-2.3% UP" AND "GIVES FIRST" WHEN THE BREACH HAD ALREADY HAPPENED.
+        /* v385: THE COPY READ "-2.3% UP" AND "GIVES FIRST" WHEN THE BREACH HAD ALREADY HAPPENED.
            Headroom on this book is MINUS RM1: 42 live prices are under their floor at the rate
            being paid today, and the tile announced it as ordinary headroom with a minus sign and
            the word "up" after it. A negative headroom is not a smaller headroom, it is a different
@@ -13026,7 +13026,7 @@ function tabPricing(){
     </tbody></table>
     <div class="dsc" style="margin-top:8px"><b>The markup is on cogs and the margin is on the cost to serve</b>, which is why they are different numbers. Cogs is the salt; the cost to serve adds the leak, one delivery and the money tied up while the invoice is out. <b>The retired engine would have asked ${fmt0(R.wanted)}</b> for this lot on its fitted curve, and that figure is kept beside the ladder so the day the two disagree is visible rather than argued about.</div></div></details>`;})()}
   <h2 style="margin-top:18px">The board <span class="sub" style="font-weight:400">one ladder, tapered at the rate the supplier tapers</span> <span class="rule"></span></h2>
-  <!-- v381: the taper paragraph moved INTO the fold below the table, beside the rest of the
+  <!-- v385: the taper paragraph moved INTO the fold below the table, beside the rest of the
        method. It also said "weighted by the SALT this book actually trades" on the oil board,
        which is the word hardcoded rather than read from PRODUCTS. -->
   ${(()=>{const tb=tierBoard();
@@ -13061,7 +13061,7 @@ function tabPricing(){
       +`<td><b${underD?' style="color:var(--crim)"':''}>${fmt0(L.ask.total)}</b>`
          +`<div style="font-size:10px;color:var(--dim)">${fmt(L.ask.rate)}</div>`
          +`<div style="font-size:10px;color:${L.ask.margin<0?'var(--crim)':'var(--dim)'}">${L.ask.margin.toFixed(0)}% margin</div></td>`
-      /* v381: THE COLLECTED FLOOR IS NOT PUT IN THIS CELL, and that is a phone decision of
+      /* v385: THE COLLECTED FLOOR IS NOT PUT IN THIS CELL, and that is a phone decision of
          exactly the kind v330 made. "collect RM 113" is longer than "RM 197.66", so it took
          the Floor column from 70px to 94px and the whole board from 325px to 348px in the
          325px it has on a 375px screen: it would have put the ASK behind a sideways scroll to
@@ -13097,7 +13097,7 @@ function tabPricing(){
     ${nUnderD.length?`<div class="insight" style="border-left-color:var(--gold)"><b>${nUnderD.length} of ${tb.length} asks do not carry a delivery</b>: quote ${nUnderD.map(r=>kg(r.q)).join(', ')} at the counter.</div>`
       +(nUnderC.length?`<div class="insight" style="border-left-color:var(--crim)"><b>Do not quote ${nUnderC.map(r=>kg(r.q)).join(', ')} at all</b>: under both floors.</div>`:'')
       :`<div class="insight" style="border-left-color:var(--grn)">Every ask on the board clears its delivered floor.</div>`}
-    <!-- v381: THE 1,010-CHARACTER PARAGRAPH UNDER THE BOARD FOLDS. It is the single longest
+    <!-- v385: THE 1,010-CHARACTER PARAGRAPH UNDER THE BOARD FOLDS. It is the single longest
          block of standing prose on this view and it is Study in every line: what cogs is, what
          the exponent is fitted to, what a markup is measured on, what the bounds do, how the
          rounding works. All true, read once, then trusted. NOTHING IS CUT: opening it restores
@@ -13136,7 +13136,7 @@ function tabPricing(){
             <td><input id="${id}p" type="number" step="10" min="0" value="${ask!=null?ask:''}" style="width:92px" oninput="shDirty(this)"></td>
             <td class="mono" style="color:var(--dim)">${fmt(fl)}</td></tr>`;
         }).join('');
-        /* v381: the id sits on a plain wrapper and the class on the child. stripMethod removes
+        /* v385: the id sits on a plain wrapper and the class on the child. stripMethod removes
            every standing .dsc on a part but the first, and this element is the whole feedback
            channel: with the class on it, changing a price said nothing and neither did saving. */
         return `<table class="pxboard" style="margin-bottom:9px"><thead><tr><th class="l">Size</th><th>On the board</th><th>Price</th><th>Floor, collected</th></tr></thead><tbody>${rows}</tbody></table>
@@ -13243,7 +13243,7 @@ function tabPricing(){
         <td>${fmt0(r.total)}</td><td>${fmt(r.perKg)}</td>
         <td style="color:var(--dim)">${fmt(c.eff)}</td>
         <td style="color:${pk<=0?'var(--crim)':pk<10?'var(--gold)':'var(--grn)'}"><b>${fmt(pk)}</b></td>
-        <!-- v381: was the engine's price less base less credit, a DIFFERENT basis from the
+        <!-- v385: was the engine's price less base less credit, a DIFFERENT basis from the
              per-unit beside it, so the two columns never multiplied out: oil's 10 unit read
              RM 9.03 a unit and RM 47 on the lot. The pane's own lead says everything below is
              measured on the effective cost, and now both columns are. -->
@@ -13268,7 +13268,7 @@ function tabPricing(){
         :b.losers.length?`<span class="tag def">${b.losers.length} under cost</span>`:'<span class="tag paid">all clear</span>'}</td></tr>`;}).join('');
     return `<div class="card"><div class="cardh">On the board today <span class="sub">what a fresh quote would earn per unit</span></div>
     <table><thead><tr><th class="l">Lot</th><th>Quote</th><th>RM/unit</th><th>Cost/unit</th><th>Profit/unit</th><th>Profit on the lot</th><th>vs ${one?kg(one.q):'the smallest lot'}</th></tr></thead><tbody>${boardRows}</tbody></table>
-    <!-- v381: was hardcoded to "a 12.5 unit lot" and "a single unit", both salt sizes. On the oil
+    <!-- v385: was hardcoded to "a 12.5 unit lot" and "a single unit", both salt sizes. On the oil
          board neither exists. Read off this book's own largest and smallest instead. -->
     <div class="dsc" style="margin-top:8px">The last column is the point: ${_sizes.length>1?`a ${kg(_sizes[_sizes.length-1])} lot earns a fraction of what ${kg(_sizes[0])} earns`:'a big lot earns a fraction of what a small one earns'} <b>per unit of stock consumed</b>, and stock is what this desk keeps running out of.</div></div>
 
@@ -13305,13 +13305,13 @@ function tabPricing(){
 
     <div class="card" style="margin-top:12px"><div class="cardh">What repricing would have to ask <span class="sub">for a ${kg(AT)} lot at ${fmt(c.eff)} effective</span></div>
     <table><thead><tr><th class="l">Target margin</th><th>Rate needed</th><th>Total</th><th>Against the median cleared${h.med?' ('+fmt(h.med)+')':''}</th></tr></thead><tbody>
-      <!-- v381: the sign was hardcoded '+', so a rate BELOW the median printed "+-13%". It is
+      <!-- v385: the sign was hardcoded '+', so a rate BELOW the median printed "+-13%". It is
            also not a warning when it is negative: a target the market already clears is the
            good case, and it was coloured gold beside the ones that are not. -->
       ${targets.map(t=>`<tr><td class="l">${t.m}%</td><td>${fmt(t.rate)}/unit</td><td><b>${fmt0(t.total)}</b></td>
         <td style="color:${t.vsMed==null?'var(--dim)':t.vsMed<=0?'var(--grn)':t.vsMed>25?'var(--crim)':'var(--gold)'}">${t.vsMed==null?'&mdash;':(t.vsMed>0?'+':'')+t.vsMed+'%'}</td></tr>`).join('')}
     </tbody></table>
-    <!-- v381: was hardcoded to 12.5 in three places and asserted that the best rate ever paid
+    <!-- v385: was hardcoded to 12.5 in three places and asserted that the best rate ever paid
          "was the one-off" whether or not the book has one. It reads the size the table is
          actually about, and it says nothing about a median it has not got. -->
     <div class="dsc" style="margin-top:8px">The board currently quotes <b>${fmt0(priceLadder(AT).ask.total)}</b> for ${kg(AT)}. ${h.n?`The median that size has actually cleared at is <b>${fmt(h.med)}/unit</b> across ${h.n} order${h.n===1?'':'s'}, and the best ever paid is <b>${fmt(h.best)}/unit</b>${nOff>0?', which was a one-off':''}. ${targets.filter(t=>t.vsMed!=null&&t.vsMed>0).length?`<b>A ${targets.filter(t=>t.vsMed!=null&&t.vsMed>0)[0].m}% margin already needs a rate above that median.</b> `:''}That is the honest reading: at this cost structure wholesale is not a pricing problem you can reprice your way out of, because the market has already shown what it pays.`:`<b>That size has never been sold</b>, so there is no median to test the rates above against. They are arithmetic on the cost, not evidence about the trade.`}</div></div>`;})()}
@@ -13355,7 +13355,7 @@ function tabPricing(){
   </details>
   <details class="obsec"><summary>Against the market <span class="q">the board beside what is actually paid</span></summary>
   ${(()=>{
-    /* v381: EVERY CELL GOES THROUGH ONE GUARD. Each of these read `m.toFixed(1)` on a margin
+    /* v385: EVERY CELL GOES THROUGH ONE GUARD. Each of these read `m.toFixed(1)` on a margin
        that pxMarket returned as 0 for a segment with nothing in it, and 0.0% is under every
        floor in the policy, so a segment that had never traded printed a crimson breach. It
        also read a one-order segment exactly as it reads an eighty-six-order one; oil's retail
@@ -13377,7 +13377,7 @@ function tabPricing(){
   ${(mk.small.thin||mk.bulk.thin)?`<div class="dsc" style="margin-top:8px;color:var(--gold)"><b>A segment marked with a count is too small to read as a rate.</b> ${[mk.small.thin?`Retail is ${mk.small.n} order${mk.small.n===1?'':'s'}`:'',mk.bulk.thin?`wholesale is ${mk.bulk.n}`:''].filter(Boolean).join(' and ')}. The margin beside it is arithmetic on that ${mk.small.thin&&mk.small.n===1?'one sale':'handful'} and not a reading of what the trade pays.</div>`:''}
   ${(mk.excluded.length&&!mk.bulkEx.none)?`<div class="dsc" style="margin-top:8px;color:var(--gold)">${mk.excluded.map(s=>ID(s.customer)).join(', ')} ${mk.excluded.length===1?'is':'are'} marked a <b>one-off</b>, so the stripped row is the honest wholesale read. Including it lifts the wholesale average from <b>${fmt(mk.bulkEx.p)}/unit</b> to <b>${fmt(mk.bulk.p)}/unit</b>${(mk.bulkEx.m!=null&&mk.bulk.m!=null)?` and the margin from <b>${mk.bulkEx.m.toFixed(1)}%</b> to <b>${mk.bulk.m.toFixed(1)}%</b>`:''}. Price the trade off the stripped figure; the outlier was real money but it is not a benchmark.</div>`
    :mk.excluded.length?`<div class="dsc" style="margin-top:8px;color:var(--gold)">Every wholesale order on this book is a <b>one-off</b> (${mk.excluded.map(s=>ID(s.customer)).join(', ')}), so there is no stripped figure to price against and the wholesale row above is that outlier alone.</div>`:''}
-  <!-- v381: every clause here read a figure that pxMarket now returns as null when the
+  <!-- v385: every clause here read a figure that pxMarket now returns as null when the
        segment is empty, so each is written against the guard. The old text asserted "retail
        is under policy" off a segment that on the oil book is one sale. -->
   <div class="dsc" style="margin-top:8px">${mk.all.none?`Nothing has been sold on this book yet, so there is no realised rate to set against the board.`
@@ -13394,7 +13394,7 @@ function tabPricing(){
     <div class="chartbox"><canvas id="pxShapeChart"></canvas></div>
     <div class="chartbox"><canvas id="pxTimeChart"></canvas></div>
   </div>
-  <!-- v381: 631 characters of legend standing open under two charts that carry their own
+  <!-- v385: 631 characters of legend standing open under two charts that carry their own
        axis titles and their own keys. What survives is the one line that says how to READ
        them, which no axis can say; the rest folds. It also promised a dashed line "for that
        band" which on the oil book was never drawn, because the bands were salt's. -->
@@ -13490,7 +13490,7 @@ function shRows(prod){
   });
   return {rows:out,under:under};
 }
-/* v381: .insight, not .dsc, to match the placeholder it replaces. Nothing here is stripped
+/* v385: .insight, not .dsc, to match the placeholder it replaces. Nothing here is stripped
    (stripMethod runs at render, not after a handler), but the two states must look alike. */
 function shDirty(el){shOut('<div class="insight">Changed. <b>Make it the house board</b> queues these figures; nothing moves until they are approved and folded.</div>',pxProdOf(el));}
 function shOut(html,prod){const el=pxEl(prod||PROD,'shOut');if(el)el.innerHTML=html;}
@@ -13539,7 +13539,7 @@ function drawEarnChart(){
     try{
       const c=pxCost(),E=earnedPerKg();
       const GRID='rgba(255,255,255,0.07)',TICK='rgba(244,245,247,0.66)',INK='#f4f5f7';
-      /* v381: was PX.sizes, salt's hardcoded 0.5-to-25 list, so the "Board today" line on the
+      /* v385: was PX.sizes, salt's hardcoded 0.5-to-25 list, so the "Board today" line on the
          OIL chart ran across sizes oil does not sell and stopped at 25 while the orders
          plotted beside it sit at 10 to 70. Same per-book list the board uses, priced by the
          same priceLadder, so the line on the chart is the line in the table. */
@@ -13563,7 +13563,7 @@ function drawEarnChart(){
           title:{display:true,text:'Profit per unit against lot size (RM)',color:INK,font:{size:12}},
           tooltip:{callbacks:{label:i=>i.dataset.type==='scatter'
             ?`${i.raw.id} ${i.raw.d}: ${i.raw.x} unit at RM ${i.raw.y}/unit profit`
-            :`${i.raw.x} unit: RM ${i.raw.y}/unit`}}},   /* v381: said "kg", the mass symbol the desk retired at v161 */
+            :`${i.raw.x} unit: RM ${i.raw.y}/unit`}}},   /* v385: said "kg", the mass symbol the desk retired at v161 */
         scales:{x:{type:'logarithmic',grid:{color:GRID},ticks:{color:TICK,callback:v=>v+' unit'},title:{display:true,text:'lot size, log scale',color:TICK}},
                 y:{grid:{color:GRID},ticks:{color:TICK,callback:v=>'RM '+v}}}}});
     /* v384 gave drawPerProduct and renderPart a voice; THIS catch is inside the ensureChart
@@ -13720,7 +13720,7 @@ function drawBoardCharts(){
           .sort((p,r)=>p.x<r.x?-1:1);
         const labs=[...new Set(rows.map(r=>r.x))].sort();
         const BANDS=pxBands();
-        /* v381: a band with no order in it draws no legend entry, rather than an empty series
+        /* v385: a band with no order in it draws no legend entry, rather than an empty series
            the reader has to notice is empty. */
         /* AND THE GUARD WAS ON ONE SIDE ONLY, WHICH IS HALF A GUARD. v381 stopped an empty band
            drawing a scatter and then pushed its dashed "ask now" line anyway, so on the oil book
@@ -14013,14 +14013,14 @@ function wbRecord(){
     const st=wbState(total,qty,cash,kgd);
     const status=st.pay==='Paid'?'paid':st.pay==='Unpaid'?'unpaid':'partial';
     const raw=(wbDir==='SELL'?'Sell ':'Buy ')+kg(qty)+(wbDir==='SELL'?' to ':' from ')+label+' for '+fmt0(total)+' on '+date
-      +' — '+fmt0(cash)+' cash, '+kg(kgd)+' moved → '+st.state
+      +', '+fmt0(cash)+' cash, '+kg(kgd)+' moved → '+st.state
       /* v313: codeOf, NOT ID. ID() resolves a code to the real name whenever the directory is
          revealed, and this string is the entry's raw line, which is written verbatim into the
          plaintext queue file. So every associate transaction recorded with names on screen put
          a name on disk, not merely the new-associate path that was fixed above. Found by
          booking an ordinary R2 through an existing associate after that fix and reading the
          entry back: the identifiers were codes and the sentence beside them was not. */
-      +(useA?(isR2?' (R2 via '+codeOf(assoc)+')':' (R3 referred by '+codeOf(assoc)+')'):'')+(note?' — '+note:'');
+      +(useA?(isR2?' (R2 via '+codeOf(assoc)+')':' (R3 referred by '+codeOf(assoc)+')'):'')+(note?', '+note:'');
     queue.push({at:new Date().toISOString(),type:wbDir,party:label,qty:qty,total:total,status:status,raw:raw,
       payload:{mode:'new',product:wbProdVal(),direction:wbDir,party:party,newId:null,
         date:date,qty:qty,total:total,cash:cash,kg:kgd,assoc:assoc,stream:useA?wbStream:null,downstream:down,kind:null,orderCode:null,linkTo:null,note:note||null,
@@ -14046,8 +14046,8 @@ function wbRecord(){
       const sf=wbSoFarBuy(t);
       const nxt=(kind==='Default')?{pay:'',deliv:'',state:'Defaulted'}:wbState(t.total,t.qty,sf.cash+ac,sf.kg+ak);
       const status=(kind==='Default')?'defaulted':(nxt.pay==='Paid'?'paid':nxt.pay==='Unpaid'?'unpaid':'partial');
-      const raw=kind+' on '+o.code+' · lot from '+codeOf(t.who)+' — '+fmt0(ac)+' paid and '+kg(ak)+' received on '+date
-        +(kind==='Default'?' → supplier default; cash already paid becomes a recoverable':' → '+nxt.state)+(an?' — '+an:'');
+      const raw=kind+' on '+o.code+' · lot from '+codeOf(t.who)+', '+fmt0(ac)+' paid and '+kg(ak)+' received on '+date
+        +(kind==='Default'?' → supplier default; cash already paid becomes a recoverable':' → '+nxt.state)+(an?', '+an:'');
       queue.push({at:new Date().toISOString(),type:'AMEND',party:codeOf(t.who),qty:ak,total:ac,status:status,raw:raw,
         payload:{mode:'amend',direction:'BUY',party:t.who,orderKey:t.who+'|'+t.date+'|'+t.total,date:date,qty:ak,total:ac,cash:ac,kg:ak,assoc:null,downstream:null,
           kind:kind,orderCode:o.code,linkTo:null,sameDay:(date===t.date),note:an||null}});
@@ -14070,13 +14070,13 @@ function wbRecord(){
          gets -- on a row where nothing typed here about cash or units is applied at all
          (ovAmend sets row.cancelled=true and returns, unconditionally). */
       const raw=isCancel
-        ? kind+' on '+o.code+' · '+codeOf(t.who)+' — marked cancelled on '+date+(an?' — '+an:'')
+        ? kind+' on '+o.code+' · '+codeOf(t.who)+', marked cancelled on '+date+(an?', '+an:'')
         : isMod
-        ? kind+' on '+o.code+' · '+codeOf(t.who)+' — order restated to '+kg(ak)+' for '+fmt0(ac)
-          +' on '+date+' (was '+kg(t.qty)+' for '+fmt0(t.total)+') → '+nxt.state+(an?' — '+an:'')
-        : kind+' on '+o.code+' · '+codeOf(t.who)+' — '+fmt0(ac)+' and '+kg(ak)+' moved on '+date+' → '+nxt.state
-          +(sameDay?' (same day — folds into the opening)':'')
-          +(linkTo?' (settles '+linkTo+')':'')+(an?' — '+an:'');
+        ? kind+' on '+o.code+' · '+codeOf(t.who)+', order restated to '+kg(ak)+' for '+fmt0(ac)
+          +' on '+date+' (was '+kg(t.qty)+' for '+fmt0(t.total)+') → '+nxt.state+(an?', '+an:'')
+        : kind+' on '+o.code+' · '+codeOf(t.who)+', '+fmt0(ac)+' and '+kg(ak)+' moved on '+date+' → '+nxt.state
+          +(sameDay?' (same day, folds into the opening)':'')
+          +(linkTo?' (settles '+linkTo+')':'')+(an?', '+an:'');
       queue.push({at:new Date().toISOString(),type:'AMEND',party:codeOf(t.who),qty:ak,total:ac,status:status,raw:raw,
         payload:Object.assign({mode:'amend',direction:'SELL',party:t.who,orderKey:t.who+'|'+t.date+'|'+t.total,date:date,
           assoc:null,downstream:null,kind:kind,orderCode:o.code,linkTo:linkTo,sameDay:sameDay,note:an||null},
@@ -14093,13 +14093,13 @@ function wbRecord(){
   }else if(wbMode==='loss'){
     const w=wbNum('wbLossKg'),date=wbVal('wbLossDate'),why=wbVal('wbLossWhy'),note=wbVal('wbLossNote').trim();
     queue.push({at:new Date().toISOString(),type:'LOSS',party:'self-use',qty:w,total:null,status:'count',
-      raw:'Self-use / loss: '+kg(w)+' '+wbProdName()+' to '+LOSS_LABEL[why]+' on '+date+(note?' — '+note:''),
+      raw:'Self-use / loss: '+kg(w)+' '+wbProdName()+' to '+LOSS_LABEL[why]+' on '+date+(note?', '+note:''),
       payload:{mode:'loss',product:wbProdVal(),direction:null,party:null,date:date,qty:w,total:null,cash:null,kg:w,why:why,note:note||null}});
     ['wbLossKg','wbLossNote'].forEach(id=>{const e=wbEl(id);if(e)e.value='';});
   }else if(wbMode==='lost'){
     const who=wbVal('wbLostParty'),w=wbNum('wbLostKg'),rm=wbNum('wbLostRM'),date=wbVal('wbLostDate'),why=wbVal('wbLostWhy'),note=wbVal('wbLostNote').trim();
     queue.push({at:new Date().toISOString(),type:'TURNED_AWAY',party:who==='__walkup__'?'walk-up':codeOf(who),qty:w,total:rm,status:'unpaid',
-      raw:'Turned away: '+(who==='__walkup__'?'a walk-up':codeOf(who))+' wanted '+kg(w)+' '+wbProdName()+' for '+fmt0(rm)+', '+LOST_LABEL[why]+', on '+date+(note?' — '+note:''),
+      raw:'Turned away: '+(who==='__walkup__'?'a walk-up':codeOf(who))+' wanted '+kg(w)+' '+wbProdName()+' for '+fmt0(rm)+', '+LOST_LABEL[why]+', on '+date+(note?', '+note:''),
       payload:{mode:'lost',product:wbProdVal(),direction:null,party:who==='__walkup__'?null:who,date:date,qty:w,total:rm,cash:null,kg:w,why:why,note:note||null}});
     ['wbLostKg','wbLostRM','wbLostNote'].forEach(id=>{const e=wbEl(id);if(e)e.value='';});
   }else if(wbMode==='addid'){
@@ -14117,13 +14117,13 @@ function wbRecord(){
     catch(e){wbUnremembered=' '+code+' is selectable now but was NOT remembered on this device, so it drops out of the pickers on the next load until the row is folded.';}
     roster.push(code);
     queue.push({at:new Date().toISOString(),type:'ADDID',party:code,qty:null,total:null,status:'addid',
-      raw:'Add '+code+' to the roster as: '+(ADDID_KIND_LABEL[kind]||kind)+(parent?' (under '+codeOf(parent)+')':'')+(an?' — '+an:''),
+      raw:'Add '+code+' to the roster as: '+(ADDID_KIND_LABEL[kind]||kind)+(parent?' (under '+codeOf(parent)+')':'')+(an?', '+an:''),
       payload:{mode:'addid',code:code,kind:kind,parent:parent,rev:kind==='reseller'?'R2':(kind==='referral'?'R3':null),note:an||null}});
     ['wbApCode','wbApNote'].forEach(id=>{const e=wbEl(id);if(e)e.value='';});
   }else if(wbMode==='contact'){
     const who=wbVal('wbCtParty'),date=wbVal('wbCtDate'),how=wbVal('wbCtHow'),outcome=wbVal('wbCtOut'),next=wbVal('wbCtNext'),note=wbVal('wbCtNote').trim();
     queue.push({at:new Date().toISOString(),type:'CONTACT',party:codeOf(who),qty:null,total:null,status:'count',
-      raw:'Follow-up: '+CONTACT_HOW[how]+' '+codeOf(who)+' on '+date+', '+CONTACT_OUT[outcome]+(next?'; next due '+next:'')+(note?' — '+note:''),
+      raw:'Follow-up: '+CONTACT_HOW[how]+' '+codeOf(who)+' on '+date+', '+CONTACT_OUT[outcome]+(next?'; next due '+next:'')+(note?', '+note:''),
       payload:{mode:'contact',direction:null,party:who,date:date,how:how,outcome:outcome,next:next||null,qty:null,total:null,cash:null,kg:null,note:note||null}});
     ['wbCtNote'].forEach(id=>{const e=wbEl(id);if(e)e.value='';});
   }else{
@@ -14139,8 +14139,8 @@ function wbRecord(){
   st().textContent='Recording…';st().style.color='var(--mut)';
   Promise.resolve(saveQueue()).then(res=>{
     const o=st();
-    if(res===false){o.textContent='Folded into the desk, but NOT saved to the folder — server gone; a download was made instead. Re-record if no file appeared.'+wbUnremembered;o.style.color='var(--amber)';if(queue.length)qDownload();}
-    else{o.textContent='Recorded and folded into the desk — '+QFILE+' saved '+(qSyncState==='server'?'to this folder.':'to the download folder.')+wbUnremembered;
+    if(res===false){o.textContent='Folded into the desk, but NOT saved to the folder: server gone; a download was made instead. Re-record if no file appeared.'+wbUnremembered;o.style.color='var(--amber)';if(queue.length)qDownload();}
+    else{o.textContent='Recorded and folded into the desk, '+QFILE+' saved '+(qSyncState==='server'?'to this folder.':'to the download folder.')+wbUnremembered;
       o.style.color=wbUnremembered?'var(--amber)':'var(--grn)';}
     renderQueue();});
   wbPreview();
@@ -14158,7 +14158,7 @@ function wbFillParty(){
   const nb=wbEl('wbNewBox');if(nb)nb.style.display='none';
 }
 /* the amend pane's Kind list depends on the side: a supplier lot cannot be
-   fulfilled, rewarded or linked — it is paid down, received, or defaulted on. */
+   fulfilled, rewarded or linked, it is paid down, received, or defaulted on. */
 function wbFillKind(){
   const k=wbEl('wbKind');if(!k)return;const cur=k.value;
   const opts=wbASide==='BUY'?['Payment','Receipt','Default']:['Fulfilment','Modification','Cancellation','Rewarded','Linked'];

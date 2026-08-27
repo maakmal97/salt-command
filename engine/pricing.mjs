@@ -1,4 +1,4 @@
-/* engine/pricing.mjs — THE PRICING ENGINE, OUT OF THE DESK (move 1 of the rebuild, 22 Aug 2026).
+/* engine/pricing.mjs: THE PRICING ENGINE, OUT OF THE DESK (move 1 of the rebuild, 22 Aug 2026).
  *
  * ONE DEFINITION. The desk, the payload build and the cloud drafter all price from this file.
  * The desk does not import it at runtime, because the desk is a single self-contained page that
