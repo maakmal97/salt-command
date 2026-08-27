@@ -5421,7 +5421,7 @@ const isOneOff=id=>ONE_OFFS.some(x=>x.id===id);
 function tabOverview(){
   const rs=networkStats(),cs=custStats(),bm=custBadges(),bc=byCustomer();
   const cf=cashFlow(),cv=coverStats(),due=contactsDue();
-  /* v383: SCOPED, because defKg above it always was. defRows was the whole ledger, so the
+  /* v385: SCOPED, because defKg above it always was. defRows was the whole ledger, so the
      salt tab listed an oil obligation beside a salt total that excluded it: four parties
      under a header counting three. It sat in prose nobody saw until the chips below made
      it a field, and it is the v275 rule exactly, a whole-book figure on a per-product tab.
@@ -5454,7 +5454,7 @@ function tabOverview(){
   const conRisk=con.hhi>3000?'high':con.hhi>1800?'moderate':'low';
   const conCol=conRisk==='high'?'var(--crim)':conRisk==='moderate'?'var(--amber)':'var(--grn)';
   const free=+(currentStock-defKg).toFixed(2), oversold=free<0;
-  /* v383: SCOPED. Three cards along this row read the whole book while their neighbours
+  /* v385: SCOPED. Three cards along this row read the whole book while their neighbours
      read the product: pending orders, and the two supplier figures below. Nothing shows
      today because both are empty on both books, which is exactly why it survived. Order
      book, pending sits beside Order book, owed out, which has always been the product's
@@ -5466,13 +5466,13 @@ function tabOverview(){
   /* PENDING BUYS COUNT NOWHERE, exactly as pending sales do: nothing paid and nothing
      received is an intention, not a lot in transit and not a bill. It shows in the Order
      book only. Without this guard an agreed order books a payable for salt never bought. */
-  const _pP=pPurch(PROD);   // v383: scoped. 18 lots on the book, 3 of them oil's
+  const _pP=pPurch(PROD);   // v385: scoped. 18 lots on the book, 3 of them oil's
   const itKg=+_pP.filter(p=>!p.defaulted&&!p.pending).reduce((a,p)=>a+poOpenKg(p),0).toFixed(2);   // the balance still to arrive, not the whole lot
   const supBills=+_pP.filter(p=>p.status!=='paid'&&!p.defaulted&&!p.pending).reduce((a,p)=>a+(p.total-(p.cash||0)),0).toFixed(2);
   const uncollected=+(revTotal-revCollected).toFixed(2);
   const miles=rs.map(r=>{const ap=rebateApplied(r.id);return Object.assign({},r,{ap,freeKg:+((r.earned||0)-ap).toFixed(2)});});
   const readyM=miles.filter(m=>m.freeKg>0.009);
-  /* v383: SCOPED, the same fault as defRows above and for the same reason. Latest ledger
+  /* v385: SCOPED, the same fault as defRows above and for the same reason. Latest ledger
      read the WHOLE ledger under a product badge, so the oil tab's three most recent orders
      were CZ4-MK's oil and then two salt rows, CS6-PER at RM 100 and CY2-NIL at RM 92 a unit,
      on a book that trades at RM 13. Oil's own last three are CZ4-MK, CH4-MLR and CS6-BS-R,
@@ -5490,7 +5490,7 @@ function tabOverview(){
   <div class="pscope">${prodBadge()}</div>
   <div class="dsc dsclead">Where the desk stands right now, with one headline lifted from every other tab.</div>
   ${boundaryPanel()}
-  ${defKg>0.009?`<div class="pend"><h3>&#128230; Deferred deliveries <span class="cd" style="color:var(--amber);border-color:var(--amber)">${kg(defKg)} owed out</span></h3><div class="dsc"><b>Paid ahead of delivery</b>, so you owe salt: ${defRows.map(s=>ID(s.customer)+' '+kg(txDeferKg(s))).join(', ')||'&mdash;'}.${defKg>currentStock?` <b style="color:var(--crim)">Exceeds ${kg(currentStock)} on hand &mdash; cannot cover.</b>`:''}</div><div class="pchips">${defRows.map(s=>`<span class="pchip"><b>${ID(s.customer)}</b> ${kg(txDeferKg(s))}</span>`).join('')}${defKg>currentStock?`<span class="pchip bad">exceeds ${kg(currentStock)} on hand</span>`:''}</div></div>`:''}
+  ${defKg>0.009?`<div class="pend"><h3>&#128230; Deferred deliveries <span class="cd" style="color:var(--amber);border-color:var(--amber)">${kg(defKg)} owed out</span></h3><div class="dsc"><b>Paid ahead of delivery</b>, so you owe ${PRODUCTS[PROD].name.toLowerCase()}: ${defRows.map(s=>ID(s.customer)+' '+kg(txDeferKg(s))).join(', ')||'&mdash;'}.${defKg>currentStock?` <b style="color:var(--crim)">Exceeds ${kg(currentStock)} on hand &mdash; cannot cover.</b>`:''}</div><div class="pchips">${defRows.map(s=>`<span class="pchip"><b>${ID(s.customer)}</b> ${kg(txDeferKg(s))}</span>`).join('')}${defKg>currentStock?`<span class="pchip bad">exceeds ${kg(currentStock)} on hand</span>`:''}</div></div>`:''}
   ${advTotal>0.5?`<div class="pend"><h3>&#128179; Advances out <span class="cd" style="color:var(--amber);border-color:var(--amber)">${fmt0(advTotal)} owed to you</span></h3><div class="dsc"><b>Delivered ahead of payment</b>, so they owe you: ${advBy.map(a=>ID(a.who)+' '+fmt0(a.rm)+(a.over?' <span style="color:var(--crim)">(over 1 unit cap!)</span>':'')).join(', ')}. Net of provisioning, <b>${fmt0(ar)}</b> is the realistic figure.</div><div class="pchips">${advBy.map(a=>`<span class="pchip${a.over?' bad':''}"><b>${ID(a.who)}</b> ${fmt0(a.rm)}${a.over?' &middot; over the '+kg(RULES.creditKg.retail)+' cap':''}</span>`).join('')}<span class="pchip warn">${fmt0(ar)} net of provisioning</span></div></div>`:''}
   ${(PROD===DEFAULT_PROD&&supplierReceivable.status!=='closed')?`<div class="pend def"><h3>&#9888; Supplier default &mdash; ${ID(supplierReceivable.party)} <span class="cd crim">${supplierReceivable.status==='writtenOff'?fmt0(supRecovGross)+' written off':fmt0(supRecovNet)+' net'}</span></h3><div class="dsc">${supplierReceivable.status==='writtenOff'?`Paid 08 Jul, lot never arrived, and he stopped responding. <b>Written off ${supplierReceivable.writtenOffOn}</b> at ${dbet(supplierReceivable.since)} days: the ${fmt0(supRecovGross)} provision stays charged against margin and the desk no longer counts this as expected cash. It is off the forward view, off Today and out of Boundaries. <b>Any recovery is upside</b> against a book that has already taken the loss, and would be recorded as a fresh receipt rather than by reversing this.`:`Paid 08 Jul, lot never arrived; ${dbet(supplierReceivable.since)} days out, ${(provRate(dbet(supplierReceivable.since))*100).toFixed(0)}% provisioned (${fmt0(supRecovGross)} gross). Recoverable pending the settlement meeting.`}</div><div class="pchips">${supplierReceivable.status==='writtenOff'?`<span class="pchip bad">written off ${supplierReceivable.writtenOffOn}</span><span class="pchip">${dbet(supplierReceivable.since)} days out</span><span class="pchip bad">${fmt0(supRecovGross)} charged to margin</span>`:`<span class="pchip">${dbet(supplierReceivable.since)} days out</span><span class="pchip warn">${(provRate(dbet(supplierReceivable.since))*100).toFixed(0)}% provisioned</span><span class="pchip">${fmt0(supRecovGross)} gross</span><span class="pchip warn">${fmt0(supRecovNet)} net</span>`}</div></div>`:''}
   <h2>Position at a glance <span class="rule"></span></h2>
@@ -5527,7 +5527,7 @@ function tabOverview(){
     <div class="kpi g"><div class="l">Suppliers &middot; in transit</div><div class="v">${kg(itKg)}</div><div class="n">${supBills>0.009?`${fmt0(supBills)} bills unpaid`:'all lots paid'}${supRecovNet>0.009?`; ${fmt0(supRecovNet)} refund due`:''}</div></div>
   </div>
   <div class="two">
-    <div class="card"><div class="cardh">&#127894; Reseller milestones <span class="sub">rewards &amp; ranking</span></div><table><thead><tr><th class="l">Associate</th><th>Made you</th><th>Reward</th><th>To next unit</th></tr></thead><tbody>${miles.map(m=>`<tr><td class="l mono">${ID(m.id)}${m.starN?` <span style="color:var(--gold)" title="${m.starN}-star by revenue share">${'&#9733;'.repeat(m.starN)}</span>`:''}</td><td>${fmt0(m.total)}</td><td>${m.freeKg>0.009?`<b style="color:var(--gold)">${kg(m.freeKg)} ready</b>`:(m.freeKg<-0.009?`<span style="color:var(--amber)" title="drawn before the milestone was reached; the next award is smaller by this much">${kg(-m.freeKg)} drawn early</span>`:(m.ap>0.009?`${kg(m.ap)} applied`:'&mdash;'))}</td><td>${fmt0(Math.min(m.toNextR2,m.toNextR3))}</td></tr>`).join('')}</tbody></table>${readyM.length?`<div class="dsc" style="margin-top:8px">${readyM.map(m=>`<b>${ID(m.id)}</b> has <b>${kg(m.freeKg)}</b> to apply. <button class="vbtn" onclick="redeemRebate('${m.id}')">${sales.some(s=>s.customer===m.id&&txAdvance(s)>0.009)?'Offset':'Redeem'} ${kg(m.freeKg)}</button>`).join('<br>')}</div>`:'<div class="dsc" style="margin-top:8px">No rewards waiting. Each free unit offsets an outstanding advance as it is earned, or is redeemed as salt where there is none.</div>'}</div>
+    <div class="card"><div class="cardh">&#127894; Reseller milestones <span class="sub">rewards &amp; ranking</span></div><table><thead><tr><th class="l">Associate</th><th>Made you</th><th>Reward</th><th>To next unit</th></tr></thead><tbody>${miles.map(m=>`<tr><td class="l mono">${ID(m.id)}${m.starN?` <span style="color:var(--gold)" title="${m.starN}-star by revenue share">${'&#9733;'.repeat(m.starN)}</span>`:''}</td><td>${fmt0(m.total)}</td><td>${m.freeKg>0.009?`<b style="color:var(--gold)">${kg(m.freeKg)} ready</b>`:(m.freeKg<-0.009?`<span style="color:var(--amber)" title="drawn before the milestone was reached; the next award is smaller by this much">${kg(-m.freeKg)} drawn early</span>`:(m.ap>0.009?`${kg(m.ap)} applied`:'&mdash;'))}</td><td>${fmt0(Math.min(m.toNextR2,m.toNextR3))}</td></tr>`).join('')}</tbody></table>${readyM.length?`<div class="dsc" style="margin-top:8px">${readyM.map(m=>`<b>${ID(m.id)}</b> has <b>${kg(m.freeKg)}</b> to apply. <button class="vbtn" onclick="redeemRebate('${m.id}')">${sales.some(s=>s.customer===m.id&&txAdvance(s)>0.009)?'Offset':'Redeem'} ${kg(m.freeKg)}</button>`).join('<br>')}</div>`:'<div class="dsc" style="margin-top:8px">No rewards waiting. Each free unit offsets an outstanding advance as it is earned, or is redeemed as ${PRODUCTS[PROD].name.toLowerCase()} where there is none.</div>'}</div>
     <div class="card"><div class="cardh">&#128220; Latest ledger <span class="sub">most recent orders</span></div><table><thead><tr><th class="l">Date</th><th class="l">Party</th><th>Qty</th><th>Total</th><th>State</th></tr></thead><tbody>${recent.map(s=>{const si=txStat(s);return `<tr><td class="l">${s.date}</td><td class="l mono">${ID(s.customer)}</td><td>${kg(s.qty)}</td><td>${fmt0(s.total)}</td><td><span class="tag ${si.cls}">${si.order}</span></td></tr>`;}).join('')}</tbody></table><div class="dsc" style="margin-top:8px">On <b>${evolution[0]?evolution[0].v:''}</b>, updated ${LAST_UPDATED}.</div></div>
   </div>
   ${rs.length?`<h2>Partner performance <span class="rule"></span></h2>
@@ -5703,6 +5703,7 @@ function tabForward(){
   evRows.sort((a,b)=>a.day-b.day||Math.abs(b.rm)-Math.abs(a.rm));
   const iso=n=>new Date(TODAY.getTime()+n*86400000).toISOString().slice(0,10);
   const taken=(f.planRows||[]).reduce((a,p)=>a+(p._taken||0),0);
+  const provNote=f.cin.filter(x=>x.gross>x.rm).map(x=>`${ID(x.who)} is ${x.age} days out, so ${fmt0(x.gross)} counts as ${fmt0(x.rm)}`);
   return `<h1>Forward</h1>
   <div class="pscope">${prodBadge()}</div>
   <div class="dsc dsclead" style="margin-bottom:11px">The only view on this desk that looks ahead. It is built from what is already on the book, not from a forecast: units already promised, the rate you have actually been shipping, your own ${RULES.creditDays}-day credit term and the provisioning ladder. <b>There is no demand model here.</b> Nothing is seasonal, nothing is fitted, and no order that has not been placed appears anywhere.</div>
@@ -5727,7 +5728,7 @@ function tabForward(){
   <h2 style="margin-top:18px">What lands, and when <span class="rule"></span></h2>
   <div class="card">${evRows.length?`<table><thead><tr><th class="l">When</th><th class="l">What</th><th class="l">Kind</th><th>Amount</th></tr></thead><tbody>
     ${evRows.map(e=>`<tr><td class="l">${e.day===0?'<b>today</b>':iso(e.day)+` <span style="color:var(--dim)">d+${e.day}</span>`}</td><td class="l">${e.what}</td><td class="l"><span class="tag ${e.kind==='cash out'?'unpaid':e.kind==='stock in'?'prov':'paid'}">${e.kind}</span></td><td style="color:${e.rm<0?'var(--crim)':'var(--grn)'}">${e.rm<0?'&minus;':''}${fmt0(Math.abs(e.rm))}</td></tr>`).join('')}
-    </tbody></table><div class="dsc" style="margin-top:8px">Cash-in figures are <b>net of provisioning</b>. ${f.cin.filter(x=>x.gross>x.rm).map(x=>`${ID(x.who)} is ${x.age} days out, so ${fmt0(x.gross)} counts as ${fmt0(x.rm)}`).join('; ')||'Nothing is discounted.'}</div>`
+    </tbody></table><div class="dsc" style="margin-top:8px">Cash-in figures are <b>net of provisioning</b>. ${provNote.length?provNote.join('; ')+'.':'Nothing is discounted.'}</div>`
     :'<div class="pchips" style="margin:0"><span class="pchip">nothing scheduled either way inside the window</span></div>'}</div>
   <div class="dsc" style="margin-top:14px">Where a line runs flat it is because nothing is dated there, not because nothing will happen. An order placed tomorrow appears in neither chart until it is recorded.</div>`;
 }
