@@ -5454,17 +5454,31 @@ function tabOverview(){
   const conRisk=con.hhi>3000?'high':con.hhi>1800?'moderate':'low';
   const conCol=conRisk==='high'?'var(--crim)':conRisk==='moderate'?'var(--amber)':'var(--grn)';
   const free=+(currentStock-defKg).toFixed(2), oversold=free<0;
-  const pendKg=+sales.reduce((a,s)=>a+txPendKg(s),0).toFixed(2), pendRM=+sales.reduce((a,s)=>a+txPendRM(s),0).toFixed(2);
-  const pendN=sales.filter(s=>txPendKg(s)>0.009).length;
+  /* v383: SCOPED. Three cards along this row read the whole book while their neighbours
+     read the product: pending orders, and the two supplier figures below. Nothing shows
+     today because both are empty on both books, which is exactly why it survived. Order
+     book, pending sits beside Order book, owed out, which has always been the product's
+     own, so the first pending order on either book would have put one book's total under
+     the other book's badge with nothing on the card to say so. */
+  const _pS=pSales(PROD);
+  const pendKg=+_pS.reduce((a,s)=>a+txPendKg(s),0).toFixed(2), pendRM=+_pS.reduce((a,s)=>a+txPendRM(s),0).toFixed(2);
+  const pendN=_pS.filter(s=>txPendKg(s)>0.009).length;
   /* PENDING BUYS COUNT NOWHERE, exactly as pending sales do: nothing paid and nothing
      received is an intention, not a lot in transit and not a bill. It shows in the Order
      book only. Without this guard an agreed order books a payable for salt never bought. */
-  const itKg=+purchases.filter(p=>!p.defaulted&&!p.pending).reduce((a,p)=>a+poOpenKg(p),0).toFixed(2);   // the balance still to arrive, not the whole lot
-  const supBills=+purchases.filter(p=>p.status!=='paid'&&!p.defaulted&&!p.pending).reduce((a,p)=>a+(p.total-(p.cash||0)),0).toFixed(2);
+  const _pP=pPurch(PROD);   // v383: scoped. 18 lots on the book, 3 of them oil's
+  const itKg=+_pP.filter(p=>!p.defaulted&&!p.pending).reduce((a,p)=>a+poOpenKg(p),0).toFixed(2);   // the balance still to arrive, not the whole lot
+  const supBills=+_pP.filter(p=>p.status!=='paid'&&!p.defaulted&&!p.pending).reduce((a,p)=>a+(p.total-(p.cash||0)),0).toFixed(2);
   const uncollected=+(revTotal-revCollected).toFixed(2);
   const miles=rs.map(r=>{const ap=rebateApplied(r.id);return Object.assign({},r,{ap,freeKg:+((r.earned||0)-ap).toFixed(2)});});
   const readyM=miles.filter(m=>m.freeKg>0.009);
-  const recent=sales.slice().filter(s=>s.date).sort((a,b)=>a.date<b.date?1:-1).slice(0,3);
+  /* v383: SCOPED, the same fault as defRows above and for the same reason. Latest ledger
+     read the WHOLE ledger under a product badge, so the oil tab's three most recent orders
+     were CZ4-MK's oil and then two salt rows, CS6-PER at RM 100 and CY2-NIL at RM 92 a unit,
+     on a book that trades at RM 13. Oil's own last three are CZ4-MK, CH4-MLR and CS6-BS-R,
+     and none of them appeared. The digest cards beside it are scoped, so this one panel was
+     answering a different question from every neighbour without saying so. */
+  const recent=pSales(PROD).slice().filter(s=>s.date).sort((a,b)=>a.date<b.date?1:-1).slice(0,3);
   /* ============ THE REGISTER LEADS (v381) ============
      This part is declared as "every rule the desk trades by, and the register of what is
      breached", and the rail badge on Today counts those breaches. A reader who taps a broken
