@@ -12272,7 +12272,7 @@ function tabPricing(){
        band" which on the oil book was never drawn, because the bands were salt's. -->
   <div class="dsc" style="margin-top:8px"><b>Where a dot sits below its dashed line, the board is asking more than that band has been paying.</b> Read that as resistance to come, not as revenue.</div>
   <details class="obsec"><summary>What the two charts plot <span class="q">and what is deliberately not on them</span><span class="ct">nothing fitted</span></summary>
-  <div class="dsc">Left: what a unit costs to buy at each size, against the floor and the effective cost. A flat line is a ladder that has stopped rewarding size; the gap between a tier and the floor is all the room there is. Right: every priced order ever written, plotted at the rate actually paid on the day it was agreed, grouped into three lot bands taken from this book&rsquo;s own board, with today&rsquo;s ask for each band drawn as a dashed line. There is no fitted curve on either chart and no elasticity anywhere on this desk.</div>
+  <div class="dsc">Left: the ask per unit at each printed size, against both floors and the effective cost. A flat line is a ladder that has stopped rewarding size; the gap between the ask and the floor it clears is all the room there is, and the two floors are one delivery apart per order. Right: every priced order ever written, plotted at the rate actually paid on the day it was agreed, grouped into three lot bands taken from this book&rsquo;s own board, with today&rsquo;s ask for each band drawn as a dashed line. There is no fitted curve on either chart and no elasticity anywhere on this desk.</div>
   </details>
 
   <details class="obsec"><summary>Price response <span class="q">what has sold at each price</span></summary>
@@ -12281,7 +12281,7 @@ function tabPricing(){
     <div class="chartbox"><canvas id="priceQtyChart"></canvas></div>
     <div class="chartbox"><canvas id="priceRevChart"></canvas></div>
   </div>
-  <div class="insight" style="margin-top:10px">${priceNote()}</div>
+  <div style="margin-top:10px">${priceNote()}</div>
   </details>
   ${(()=>{const c=pxCost();if(!c.lotQty)return '';
     const r=(lab,v,tag,n)=>`<tr><td class="l">${lab}<div class="iref">${esc(n||'')}</div></td><td class="mono">${fmt(v)}</td><td><span class="tag ${tag==='inventory'?'paid':'prov'}">${tag==='inventory'?'Inventory':'Period'}</span></td></tr>`;
@@ -12290,7 +12290,14 @@ function tabPricing(){
     return `<h2 style="margin-top:22px">What a unit costs ${chip} <span class="sub" style="font-weight:400">${c.locked?`held since ${LK.lock.lockedOn}`:'not the locked basis'}</span> <span class="rule"></span></h2>
     <div class="card"><table class="fintab istmt"><tbody>
       ${r('Lot rate',c.lot,'inventory',`${kg(c.lotQty)} on ${c.lotDate}`)}
-      ${r('Collection',c.freight,'inventory',`${fmt0(COST_BASIS.freightPerTrip.rm)} a return trip, spread over ${kg(c.lotQty)}`)}
+      ${r('Collection',c.freight,'inventory',(()=>{
+        /* v382 moved the freight divisor from the LATEST lot to the AVERAGE lot received and this
+           sentence was left behind, printing "over 25 unit" for salt when the answer is 23.66 and
+           "over 30 unit" for oil when it is 43.33. The divisor is READ BACK OUT OF THE ANSWER
+           rather than recomputed here, the same discipline the floor markup follows, so it cannot
+           drift from the engine and it stays right under a lock, where the freight is frozen. */
+        const d=c.freight>0?+(COST_BASIS.freightPerTrip.rm/c.freight).toFixed(2):null;
+        return `${fmt0(COST_BASIS.freightPerTrip.rm)} a return trip, over ${d!=null?kg(d):'&mdash;'}, the average lot received`;})())}
       <tr class="tot"><td class="l"><b>Landed</b><div class="iref">what the balance sheet carries</div></td><td class="mono"><b>${fmt(c.landed)}</b></td><td><span class="tag paid">Inventory</span></td></tr>
       ${r('Samples and testers',c.sampleLoad,'period',`${(c.shrink*100).toFixed(1)}% of what is bought never sells`)}
       ${r('Delivery and packaging',c.txn,'period',(()=>{const s=delShare(PROD);return `${fmt0(COST_BASIS.txnPerDelivery.rm)} on ${Math.round(s.v*100)}% of orders (${s.measured?s.delivered+' of '+s.said+' that say':'stated, no row says yet'}), over ${kg(c.avgDel)}, the average order`;})())}
@@ -12413,12 +12420,17 @@ function drawEarnChart(){
         return r==null?null:{x:q,y:+(r-c.eff).toFixed(2)};}).filter(Boolean);
       const dots=E.rows.filter(r=>!r.oneOff).map(r=>({x:r.q,y:r.pkEff,id:codeOf(r.id),d:r.date}));
       const off=E.rows.filter(r=>r.oneOff).map(r=>({x:r.q,y:r.pkEff,id:codeOf(r.id),d:r.date}));
-      freshChart(el,{data:{datasets:[
-        {type:'line',label:'Board today',data:line,borderColor:'#e8c66b',backgroundColor:'transparent',pointRadius:0,borderWidth:2,tension:.25},
-        {type:'scatter',label:'Orders written',data:dots,backgroundColor:'rgba(99,230,224,.55)',borderColor:'#7fd7e8',pointRadius:5},
-        {type:'scatter',label:'One-off',data:off,backgroundColor:'rgba(245,196,81,.5)',borderColor:'#e8c66b',pointRadius:6,pointStyle:'triangle'},
-        {type:'line',label:'Replacement cost',data:_sz.map(q=>({x:q,y:0})),borderColor:'#ff7a8a',backgroundColor:'transparent',pointRadius:0,borderWidth:1.5,borderDash:[5,4]}
-      ]},options:{responsive:true,maintainAspectRatio:false,
+      /* v381 fixed the "Board today" line and MISSED THE ONE BESIDE IT. Oil has no one-off order
+         at all, so this legend carried "One-off" for a series with no points in it: a category the
+         reader is invited to look for and cannot find, on the book where it matters most because
+         there are only six orders to look at. Chart.js names an empty dataset and draws nothing.
+         Same shape as the empty band and the empty tier series: a set with nothing in it printing
+         as though it were a real one. */
+      const sets=[{type:'line',label:'Board today',data:line,borderColor:'#e8c66b',backgroundColor:'transparent',pointRadius:0,borderWidth:2,tension:.25}];
+      if(dots.length)sets.push({type:'scatter',label:'Orders written',data:dots,backgroundColor:'rgba(99,230,224,.55)',borderColor:'#7fd7e8',pointRadius:5});
+      if(off.length)sets.push({type:'scatter',label:'One-off',data:off,backgroundColor:'rgba(245,196,81,.5)',borderColor:'#e8c66b',pointRadius:6,pointStyle:'triangle'});
+      sets.push({type:'line',label:'Replacement cost',data:_sz.map(q=>({x:q,y:0})),borderColor:'#ff7a8a',backgroundColor:'transparent',pointRadius:0,borderWidth:1.5,borderDash:[5,4]});
+      freshChart(el,{data:{datasets:sets},options:{responsive:true,maintainAspectRatio:false,
         plugins:{legend:{display:true,labels:{color:TICK,boxWidth:12,font:{size:11}}},
           title:{display:true,text:'Profit per unit against lot size (RM)',color:INK,font:{size:12}},
           tooltip:{callbacks:{label:i=>i.dataset.type==='scatter'
@@ -12426,7 +12438,10 @@ function drawEarnChart(){
             :`${i.raw.x} unit: RM ${i.raw.y}/unit`}}},   /* v381: said "kg", the mass symbol the desk retired at v161 */
         scales:{x:{type:'logarithmic',grid:{color:GRID},ticks:{color:TICK,callback:v=>v+' unit'},title:{display:true,text:'lot size, log scale',color:TICK}},
                 y:{grid:{color:GRID},ticks:{color:TICK,callback:v=>'RM '+v}}}}});
-    }catch(e){}
+    /* v384 gave drawPerProduct and renderPart a voice; THIS catch is inside the ensureChart
+       callback, so it fires after those have returned and neither of them can ever see it. An
+       empty one here is the same silence in a place the fix did not reach. */
+    }catch(e){drawFailed(DRAW_BLK,drawEarnChart,e);}
   });
 }
 function pxRedraw(){
@@ -12459,18 +12474,35 @@ function priceBuckets(){
     b[p].kg+=q;b[p].rm+=(s.total||0)-txPendRM(s);b[p].n++;});
   return Object.keys(b).map(Number).sort((a,b2)=>a-b2).map(p=>({p,...b[p]}));
 }
+/* ============ A SUPERLATIVE OVER A THIN BOOK IS A FIGURE THAT FIRES WHEN NOTHING IS WRONG ============
+   "Your busiest price is RM 11/unit at 30 unit" was ONE ORDER, and "the price earning most" was
+   that same order. Oil has six priced orders at five distinct prices, four of them a single order
+   each, so both superlatives named a list of one and read as a pattern. Below three orders on the
+   leading price it now says what the book actually holds, which is honest and still useful.
+   AND IT WAS BEING CUT TO ITS FIRST SENTENCE ANYWAY, WHICH NOBODY HAD NOTICED. stripMethod trims
+   every .insight over NOTE_MIN to one sentence, wherever it sits, folds included. This returned
+   THREE sentences inside one insight, so the volume-below-cost figure and the closing line have
+   never been on the page at all: what showed was the superlative and nothing else. The finding is
+   the insight, one sentence; the detail is a .dsc inside the same fold, which survives whole.
+   AND THE 20% LINE IS NOT THE BOARD'S FLOOR. Two different things were both called the floor on
+   one view, and since 27 Aug they are further apart than ever: this one is a percentage over
+   replacement cost, the board's is break-even and carries his time. The sentence says so. */
 function priceNote(){
   const pts=priceBuckets();
-  if(!pts.length)return 'No priced trade yet.';
+  if(!pts.length)return '<div class="insight">No priced trade yet.</div>';
   const byKg=pts.slice().sort((a,b)=>b.kg-a.kg)[0], byRM=pts.slice().sort((a,b)=>b.rm-a.rm)[0];
+  const nOrd=pts.reduce((a,x)=>a+x.n,0);
   /* judged against the BULK floor, the most forgiving of the three, so this reads as
      a floor no trade of any size should fall under rather than an unfair single-unit
      test applied to a 12.5 unit lot. */
   const rc=replCost(),flB=PRICE.floorPct.wholesale,under=pts.filter(x=>x.p<rc/(1-flB/100));
   const underKg=under.reduce((a,x)=>a+x.kg,0),totKg=pts.reduce((a,x)=>a+x.kg,0);
-  return `Your busiest price is <b>${fmt0(byKg.p)}/unit</b> at ${kg(byKg.kg)}; the price earning most is <b>${fmt0(byRM.p)}/unit</b> at ${fmt0(byRM.rm)}. `
-   +`Across ${pts.length} distinct prices, <b>${(underKg/totKg*100).toFixed(0)}% of your volume</b> has gone below ${fmt0(floorPrice(12))}/unit, the total that clears even the ${flB}% wholesale floor against today's ${fmt(rc)}/unit replacement cost. Retail is held to ${PRICE.floorPct.retail}%. `
-   +`That is the gap between what you have been charging and what the shelf now costs.`;
+  return `<div class="insight"><b>${(underKg/totKg*100).toFixed(0)}% of your volume</b> has gone below ${fmt0(floorPrice(12))}/unit, the total that clears the ${flB}% wholesale line on today&rsquo;s ${fmt(rc)}/unit replacement cost.</div>`
+   +`<div class="dsc" style="margin-top:9px">${nOrd} priced order${nOrd===1?'':'s'} at ${pts.length} distinct price${pts.length===1?'':'s'}. `
+   +(byKg.n<3
+      ? `Too few at any one price to call one of them busiest: the largest is ${fmt0(byKg.p)}/unit, ${byKg.n===1?'a single order':byKg.n+' orders'} and ${kg(byKg.kg)}.`
+      : `The busiest is <b>${fmt0(byKg.p)}/unit</b>, ${byKg.n} orders and ${kg(byKg.kg)}; the price earning most is <b>${fmt0(byRM.p)}/unit</b> at ${fmt0(byRM.rm)}.`)
+   +` That ${flB}% line is a percentage over replacement cost and is <b>not</b> the board&rsquo;s floor, which is break-even and carries his time as well.</div>`;
 }
 /* ============ THE BOARD, DRAWN (v246) ============
    Two questions the tables answer badly. FIRST, the SHAPE: a table of thirty prices does not
@@ -12551,17 +12583,25 @@ function drawBoardCharts(){
         const BANDS=pxBands();
         /* v381: a band with no order in it draws no legend entry, rather than an empty series
            the reader has to notice is empty. */
-        const ds=BANDS.map(bd=>({bd:bd,pts:rows.filter(r=>r.q>=bd.lo&&r.q<=bd.hi)})
-          ).filter(x=>x.pts.length).map(x=>({label:x.bd.lab,type:'scatter',borderColor:x.bd.col,
+        /* AND THE GUARD WAS ON ONE SIDE ONLY, WHICH IS HALF A GUARD. v381 stopped an empty band
+           drawing a scatter and then pushed its dashed "ask now" line anyway, so on the oil book
+           ONE observed series was drawn against THREE reference lines, two of them with nothing
+           in the chart to compare against. A reference to nothing is the same fault as a
+           statistic over an empty set: it reads as a finding and is an artefact of the axis. */
+        const kept=BANDS.map(bd=>({bd:bd,pts:rows.filter(r=>r.q>=bd.lo&&r.q<=bd.hi)})).filter(x=>x.pts.length);
+        const ds=kept.map(x=>({label:x.bd.lab,type:'scatter',borderColor:x.bd.col,
             backgroundColor:x.bd.col,pointRadius:4,showLine:false,
             data:x.pts.map(r=>({x:r.x,y:r.y}))}));
-        BANDS.forEach(bd=>{let p=null;try{p=priceLadder(bd.q).ask.rate;}catch(e){}
+        kept.forEach(k=>{const bd=k.bd;let p=null;try{p=priceLadder(bd.q).ask.rate;}catch(e){}
           if(p!=null)ds.push({label:'ask now, '+bd.lab,type:'line',borderColor:bd.col,borderDash:[6,4],
             borderWidth:1.5,pointRadius:0,data:labs.map(x=>({x:x,y:+p.toFixed(2)}))});});
         freshChart(b,{data:{labels:labs,datasets:ds},
           options:Object.assign(base('Rate actually paid, by order date (RM/unit)'),{})});
       }
-    }catch(e){}
+    /* v384 gave drawPerProduct and renderPart a voice; THIS catch is inside the ensureChart
+       callback, so it fires after those have returned and neither of them can ever see it. An
+       empty one here is the same silence in a place the fix did not reach. */
+    }catch(e){drawFailed(DRAW_BLK,drawBoardCharts,e);}
   });
 }
 function drawPriceCharts(){
@@ -12576,7 +12616,10 @@ function drawPriceCharts(){
         scales:{x:{grid:{color:'rgba(255,255,255,0.07)'},ticks:{color:'rgba(244,245,247,0.66)'}},y:{grid:{color:'rgba(255,255,255,0.07)'},ticks:{color:'rgba(244,245,247,0.66)'}}}});
       freshChart(q,{type:'bar',data:{labels:labs,datasets:[{data:pts.map(x=>+x.kg.toFixed(2)),backgroundColor:'#7fd7e8',borderRadius:6}]},options:opt('Volume sold at each price (unit)')});
       freshChart(r,{type:'bar',data:{labels:labs,datasets:[{data:pts.map(x=>+x.rm.toFixed(2)),backgroundColor:'#b3a6f5',borderRadius:6}]},options:opt('Revenue at each price (RM)')});
-    }catch(e){}
+    /* v384 gave drawPerProduct and renderPart a voice; THIS catch is inside the ensureChart
+       callback, so it fires after those have returned and neither of them can ever see it. An
+       empty one here is the same silence in a place the fix did not reach. */
+    }catch(e){drawFailed(DRAW_BLK,drawPriceCharts,e);}
   });
 }
 /* cumulative cash and unit already recorded against a sale (replay if it has steps) */
