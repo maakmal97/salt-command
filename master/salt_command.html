@@ -643,6 +643,20 @@ select{width:100%;border:1px solid var(--line);border-radius:8px;padding:8px 9px
 .sevh{display:flex;align-items:baseline;gap:11px;margin:24px 0 11px;}
 .sevh h2{margin:0;}
 .sevh .cnt{font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:var(--dim);}
+/* ---- figure chips on a panel head (v385) ----
+   v372 strips prose at render, and the three standing panels on Overview and the one on
+   Forward carried their parties and their figures inside a .dsc. So each rendered as a
+   heading with nothing under it: a panel announcing deferred deliveries and naming none.
+   A chip is a field rather than a paragraph, so it survives, and it is what the Watch
+   register wanted in the first place: state and figures, no narrative. */
+.pchips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
+.pchip{font-family:ui-monospace,Consolas,monospace;font-size:11.5px;color:var(--mut);
+  background:var(--card2);border:1px solid var(--line);border-radius:999px;padding:3px 10px;
+  white-space:nowrap;}
+.pchip b{color:var(--ink);font-weight:600;}
+.pchip.good{color:var(--grn);border-color:rgba(110,231,168,.4);}
+.pchip.warn{color:var(--amber);border-color:rgba(255,207,122,.45);}
+.pchip.bad{color:var(--crim);border-color:rgba(255,122,138,.5);}
 @media(max-width:860px){
   .act{grid-template-columns:1fr auto;gap:6px 12px;}
   .actk{grid-column:1/2;padding-top:0;}
@@ -5258,8 +5272,17 @@ function boundaryPanel(){
   const all=b.filter(x=>x.sev==='breach').concat(b.filter(x=>x.sev==='watch')).concat(r);
   const nb=b.filter(x=>x.sev==='breach').length,nw=b.filter(x=>x.sev==='watch').length;
   const head=`<h2>Boundaries <span class="rule"></span></h2>`;
-  if(!all.length)return head+`<div class="card"><div class="dsc">All clear. No customer past their credit cap (${kg(RULES.creditKg.retail)} retail, ${kg(RULES.creditKg.associate)} associate) or past ${RULES.creditDays} days, no recent sale under its band floor (${PRICE.floorPct.retail}% retail, ${PRICE.floorPct.wholesale}% wholesale), nothing owed out beyond what is on the shelf, no receivable past its provisioning band, and nothing provisional that would read differently once committed.</div></div>`;
+  /* v385: THE COUNT GOES ON THE CARD AS A CHIP, not in the card's first sentence. That
+     sentence was a .dsc, v372 strips prose at render, and the one figure saying how bad this
+     is went with it: the card rendered as a bare table with no headline, and the all-clear
+     branch rendered as an EMPTY card. A chip is a field, so it survives, and it is what the
+     Watch register asked for anyway. The reasoning under each rule stays where it was. */
+  const chips=c=>`<div class="pchips" style="margin:0 0 9px">${c}</div>`;
+  if(!all.length)return head+`<div class="card">${chips(`<span class="pchip good">no breaches</span>`)}<div class="dsc">All clear. No customer past their credit cap (${kg(RULES.creditKg.retail)} retail, ${kg(RULES.creditKg.associate)} associate) or past ${RULES.creditDays} days, no recent sale under its band floor (${PRICE.floorPct.retail}% retail, ${PRICE.floorPct.wholesale}% wholesale), nothing owed out beyond what is on the shelf, no receivable past its provisioning band, and nothing provisional that would read differently once committed.</div></div>`;
   return head+`<div class="card">
+    ${chips((nb?`<span class="pchip bad">${nb} breach${nb===1?'':'es'}</span>`:`<span class="pchip good">no breaches</span>`)
+      +(nw?`<span class="pchip warn">${nw} to watch</span>`:'')
+      +(r.length?`<span class="pchip">${r.length} provisional</span>`:''))}
     <div class="dsc" style="margin-bottom:9px">${nb?`<b style="color:var(--crim)">${nb} breach${nb===1?'':'es'}</b>`:'No breaches'}${nw?`, ${nw} to watch`:''}${r.length?`, ${r.length} provisional entr${r.length===1?'y':'ies'} that may read differently once committed`:''}. Nothing is blocked: the desk records what happened and holds the breach here until it is resolved. <b>The credit cap is read across BOTH books</b>, because it is about a person rather than a product, and the ${kg(RULES.creditKg.retail)} retail cap counts a unit of salt and a unit of oil the same although one is worth several times the other.</div>
     <table><thead><tr><th class="l">Rule</th><th class="l">Party</th><th class="l">Position</th><th class="l">Why it matters</th></tr></thead><tbody>
     ${all.map(x=>`<tr><td class="l">${bSevTag[x.sev]||''} ${x.rule}</td><td class="l mono">${x.who==='stock'?'&mdash;':ID(x.who)}</td><td class="l">${x.what}</td><td class="l" style="color:var(--mut)">${x.why}</td></tr>`).join('')}
@@ -5398,7 +5421,16 @@ const isOneOff=id=>ONE_OFFS.some(x=>x.id===id);
 function tabOverview(){
   const rs=networkStats(),cs=custStats(),bm=custBadges(),bc=byCustomer();
   const cf=cashFlow(),cv=coverStats(),due=contactsDue();
-  const defRows=sales.filter(s=>txDeferKg(s)>0.009);
+  /* v385: SCOPED, because defKg above it always was. defRows was the whole ledger, so the
+     salt tab listed an oil obligation beside a salt total that excluded it: four parties
+     under a header counting three. It sat in prose nobody saw until the chips below made
+     it a field, and it is the v275 rule exactly, a whole-book figure on a per-product tab.
+     advBy rolls the advances up BY PARTY: CR3-DAM carries two and was printed twice, at
+     RM 80 and RM 80, while Today one tap away now states the RM 160 he actually owes. */
+  const defRows=sales.filter(s=>prodOf(s)===PROD&&txDeferKg(s)>0.009);
+  const advBy=(()=>{const by={};arList.forEach(s=>{const e=by[s.customer]=by[s.customer]||{rm:0,over:false};
+    e.rm+=outstandingOf(s);e.over=e.over||((s.deliveredQty||0)>1&&!s.exemptCap);});
+    return Object.keys(by).map(k=>({who:k,rm:+by[k].rm.toFixed(2),over:by[k].over}));})();
   const totDue=+(ar+supRecovNet).toFixed(2);
   const stockCost=stockCostFor(PROD);                          // v230: the ACTIVE product's shelf rate, not always salt's
   const stockVal=+(currentStock*stockCost).toFixed(2);
@@ -5422,25 +5454,50 @@ function tabOverview(){
   const conRisk=con.hhi>3000?'high':con.hhi>1800?'moderate':'low';
   const conCol=conRisk==='high'?'var(--crim)':conRisk==='moderate'?'var(--amber)':'var(--grn)';
   const free=+(currentStock-defKg).toFixed(2), oversold=free<0;
-  const pendKg=+sales.reduce((a,s)=>a+txPendKg(s),0).toFixed(2), pendRM=+sales.reduce((a,s)=>a+txPendRM(s),0).toFixed(2);
-  const pendN=sales.filter(s=>txPendKg(s)>0.009).length;
+  /* v385: SCOPED. Three cards along this row read the whole book while their neighbours
+     read the product: pending orders, and the two supplier figures below. Nothing shows
+     today because both are empty on both books, which is exactly why it survived. Order
+     book, pending sits beside Order book, owed out, which has always been the product's
+     own, so the first pending order on either book would have put one book's total under
+     the other book's badge with nothing on the card to say so. */
+  const _pS=pSales(PROD);
+  const pendKg=+_pS.reduce((a,s)=>a+txPendKg(s),0).toFixed(2), pendRM=+_pS.reduce((a,s)=>a+txPendRM(s),0).toFixed(2);
+  const pendN=_pS.filter(s=>txPendKg(s)>0.009).length;
   /* PENDING BUYS COUNT NOWHERE, exactly as pending sales do: nothing paid and nothing
      received is an intention, not a lot in transit and not a bill. It shows in the Order
      book only. Without this guard an agreed order books a payable for salt never bought. */
-  const itKg=+purchases.filter(p=>!p.defaulted&&!p.pending).reduce((a,p)=>a+poOpenKg(p),0).toFixed(2);   // the balance still to arrive, not the whole lot
-  const supBills=+purchases.filter(p=>p.status!=='paid'&&!p.defaulted&&!p.pending).reduce((a,p)=>a+(p.total-(p.cash||0)),0).toFixed(2);
+  const _pP=pPurch(PROD);   // v385: scoped. 18 lots on the book, 3 of them oil's
+  const itKg=+_pP.filter(p=>!p.defaulted&&!p.pending).reduce((a,p)=>a+poOpenKg(p),0).toFixed(2);   // the balance still to arrive, not the whole lot
+  const supBills=+_pP.filter(p=>p.status!=='paid'&&!p.defaulted&&!p.pending).reduce((a,p)=>a+(p.total-(p.cash||0)),0).toFixed(2);
   const uncollected=+(revTotal-revCollected).toFixed(2);
   const miles=rs.map(r=>{const ap=rebateApplied(r.id);return Object.assign({},r,{ap,freeKg:+((r.earned||0)-ap).toFixed(2)});});
   const readyM=miles.filter(m=>m.freeKg>0.009);
-  const recent=sales.slice().filter(s=>s.date).sort((a,b)=>a.date<b.date?1:-1).slice(0,3);
+  /* v385: SCOPED, the same fault as defRows above and for the same reason. Latest ledger
+     read the WHOLE ledger under a product badge, so the oil tab's three most recent orders
+     were CZ4-MK's oil and then two salt rows, CS6-PER at RM 100 and CY2-NIL at RM 92 a unit,
+     on a book that trades at RM 13. Oil's own last three are CZ4-MK, CH4-MLR and CS6-BS-R,
+     and none of them appeared. The digest cards beside it are scoped, so this one panel was
+     answering a different question from every neighbour without saying so. */
+  const recent=pSales(PROD).slice().filter(s=>s.date).sort((a,b)=>a.date<b.date?1:-1).slice(0,3);
+  /* ============ THE REGISTER LEADS (v385) ============
+     This part is declared as "every rule the desk trades by, and the register of what is
+     breached", and the rail badge on Today counts those breaches. A reader who taps a broken
+     rule on Today arrives here and used to land on a six-card position strip and a product
+     table, with Boundaries a screen below. That is the v343 fault again: a thing you have to
+     scroll for reads as a thing that is not there. Boundaries and the three standing
+     exposures lead now, and the position follows them as context. */
   return `<h1>Overview</h1>
   <div class="pscope">${prodBadge()}</div>
   <div class="dsc dsclead">Where the desk stands right now, with one headline lifted from every other tab.</div>
+  ${boundaryPanel()}
+  ${defKg>0.009?`<div class="pend"><h3>&#128230; Deferred deliveries <span class="cd" style="color:var(--amber);border-color:var(--amber)">${kg(defKg)} owed out</span></h3><div class="dsc"><b>Paid ahead of delivery</b>, so you owe ${PRODUCTS[PROD].name.toLowerCase()}: ${defRows.map(s=>ID(s.customer)+' '+kg(txDeferKg(s))).join(', ')||'&mdash;'}.${defKg>currentStock?` <b style="color:var(--crim)">Exceeds ${kg(currentStock)} on hand &mdash; cannot cover.</b>`:''}</div><div class="pchips">${defRows.map(s=>`<span class="pchip"><b>${ID(s.customer)}</b> ${kg(txDeferKg(s))}</span>`).join('')}${defKg>currentStock?`<span class="pchip bad">exceeds ${kg(currentStock)} on hand</span>`:''}</div></div>`:''}
+  ${advTotal>0.5?`<div class="pend"><h3>&#128179; Advances out <span class="cd" style="color:var(--amber);border-color:var(--amber)">${fmt0(advTotal)} owed to you</span></h3><div class="dsc"><b>Delivered ahead of payment</b>, so they owe you: ${advBy.map(a=>ID(a.who)+' '+fmt0(a.rm)+(a.over?' <span style="color:var(--crim)">(over 1 unit cap!)</span>':'')).join(', ')}. Net of provisioning, <b>${fmt0(ar)}</b> is the realistic figure.</div><div class="pchips">${advBy.map(a=>`<span class="pchip${a.over?' bad':''}"><b>${ID(a.who)}</b> ${fmt0(a.rm)}${a.over?' &middot; over the '+kg(RULES.creditKg.retail)+' cap':''}</span>`).join('')}<span class="pchip warn">${fmt0(ar)} net of provisioning</span></div></div>`:''}
+  ${(PROD===DEFAULT_PROD&&supplierReceivable.status!=='closed')?`<div class="pend def"><h3>&#9888; Supplier default &mdash; ${ID(supplierReceivable.party)} <span class="cd crim">${supplierReceivable.status==='writtenOff'?fmt0(supRecovGross)+' written off':fmt0(supRecovNet)+' net'}</span></h3><div class="dsc">${supplierReceivable.status==='writtenOff'?`Paid 08 Jul, lot never arrived, and he stopped responding. <b>Written off ${supplierReceivable.writtenOffOn}</b> at ${dbet(supplierReceivable.since)} days: the ${fmt0(supRecovGross)} provision stays charged against margin and the desk no longer counts this as expected cash. It is off the forward view, off Today and out of Boundaries. <b>Any recovery is upside</b> against a book that has already taken the loss, and would be recorded as a fresh receipt rather than by reversing this.`:`Paid 08 Jul, lot never arrived; ${dbet(supplierReceivable.since)} days out, ${(provRate(dbet(supplierReceivable.since))*100).toFixed(0)}% provisioned (${fmt0(supRecovGross)} gross). Recoverable pending the settlement meeting.`}</div><div class="pchips">${supplierReceivable.status==='writtenOff'?`<span class="pchip bad">written off ${supplierReceivable.writtenOffOn}</span><span class="pchip">${dbet(supplierReceivable.since)} days out</span><span class="pchip bad">${fmt0(supRecovGross)} charged to margin</span>`:`<span class="pchip">${dbet(supplierReceivable.since)} days out</span><span class="pchip warn">${(provRate(dbet(supplierReceivable.since))*100).toFixed(0)}% provisioned</span><span class="pchip">${fmt0(supRecovGross)} gross</span><span class="pchip warn">${fmt0(supRecovNet)} net</span>`}</div></div>`:''}
   <h2>Position at a glance <span class="rule"></span></h2>
   <div class="kpis k3">
     <div class="kpi"><div class="l">Stock on hand</div><div class="v">${kg(currentStock)}</div><div class="n">${defKg>0.009?`owe out ${kg(defKg)} (deferred)`:'nothing owed out'}</div></div>
     <div class="kpi g"><div class="l">Stock cost</div><div class="v">${fmt(stockCost)}<span style="font-size:12px;color:var(--mut)">/unit</span></div><div class="n">${fmt0(stockVal)} on the shelf</div></div>
-    <div class="kpi p"><div class="l">Revenue</div><div class="v">${fmt0(revTotal)}</div><div class="n">${fmt0(revCollected)} collected</div></div>
+    <div class="kpi p"><div class="l">Revenue</div><div class="v">${fmt0(revTotal)}</div><div class="n">${fmt0(revCollected)} collected${revCollected>revTotal+0.009?`, ${fmt0(revCollected-revTotal)} of it paid ahead of delivery`:''}</div></div>
     <div class="kpi gold"><div class="l">Margin</div><div class="v">${fmt0(grossMargin)}</div><div class="n">${marginPct.toFixed(1)}% on ${fmt0(revTotal)} sold</div></div>
     <div class="kpi r"><div class="l">Receivables (net)</div><div class="v">${fmt0(totDue)}</div><div class="n">${fmt0(ar)} trade + ${fmt0(supRecovNet)} refund</div></div>
     <div class="kpi"><div class="l">Bought to date</div><div class="v">${kg(buyKg)}</div><div class="n">${buyKg>0.009?`${fmt0(buyRM)} at ${fmt(buyRM/buyKg)}/unit avg`:`no lot recorded yet`}</div></div>
@@ -5458,10 +5515,6 @@ function tabOverview(){
         <td>${sums.every(x=>x.margin!=null)?fmt0(sums.reduce((a,x)=>a+x.margin,0)):'&mdash;'}</td>
         <td>&mdash;</td><td>&mdash;</td><td>${fmt0(sums.reduce((a,x)=>a+x.spend,0))}</td></tr>
     </tbody></table></div>`;})()}
-  ${boundaryPanel()}
-  ${defKg>0.009?`<div class="pend"><h3>&#128230; Deferred deliveries <span class="cd" style="color:var(--amber);border-color:var(--amber)">${kg(defKg)} owed out</span></h3><div class="dsc"><b>Paid ahead of delivery</b>, so you owe salt: ${defRows.map(s=>ID(s.customer)+' '+kg(txDeferKg(s))).join(', ')||'&mdash;'}.${defKg>currentStock?` <b style="color:var(--crim)">Exceeds ${kg(currentStock)} on hand &mdash; cannot cover.</b>`:''}</div></div>`:''}
-  ${advTotal>0.5?`<div class="pend"><h3>&#128179; Advances out <span class="cd" style="color:var(--amber);border-color:var(--amber)">${fmt0(advTotal)} owed to you</span></h3><div class="dsc"><b>Delivered ahead of payment</b>, so they owe you: ${arList.map(s=>ID(s.customer)+' '+fmt0(outstandingOf(s))+((s.deliveredQty||0)>1&&!s.exemptCap?' <span style="color:var(--crim)">(over 1 unit cap!)</span>':'')).join(', ')}. Net of provisioning, <b>${fmt0(ar)}</b> is the realistic figure.</div></div>`:''}
-  ${(PROD===DEFAULT_PROD&&supplierReceivable.status!=='closed')?`<div class="pend def"><h3>&#9888; Supplier default &mdash; ${ID(supplierReceivable.party)} <span class="cd crim">${supplierReceivable.status==='writtenOff'?fmt0(supRecovGross)+' written off':fmt0(supRecovNet)+' net'}</span></h3><div class="dsc">${supplierReceivable.status==='writtenOff'?`Paid 08 Jul, lot never arrived, and he stopped responding. <b>Written off ${supplierReceivable.writtenOffOn}</b> at ${dbet(supplierReceivable.since)} days: the ${fmt0(supRecovGross)} provision stays charged against margin and the desk no longer counts this as expected cash. It is off the forward view, off Today and out of Boundaries. <b>Any recovery is upside</b> against a book that has already taken the loss, and would be recorded as a fresh receipt rather than by reversing this.`:`Paid 08 Jul, lot never arrived; ${dbet(supplierReceivable.since)} days out, ${(provRate(dbet(supplierReceivable.since))*100).toFixed(0)}% provisioned (${fmt0(supRecovGross)} gross). Recoverable pending the settlement meeting.`}</div></div>`:''}
   <h2>Desk digest <span class="sub" style="font-weight:400">the headline from every tab</span> <span class="rule"></span></h2>
   <div class="kpis k4">
     <div class="kpi ${oversold?'r':''}"><div class="l">Inventory &middot; free to sell</div><div class="v">${kg(free)}</div><div class="n">${oversold?`oversold: ${kg(defKg)} owed vs ${kg(currentStock)} on hand`:'covers what is owed out'}</div></div>
@@ -5474,15 +5527,15 @@ function tabOverview(){
     <div class="kpi g"><div class="l">Suppliers &middot; in transit</div><div class="v">${kg(itKg)}</div><div class="n">${supBills>0.009?`${fmt0(supBills)} bills unpaid`:'all lots paid'}${supRecovNet>0.009?`; ${fmt0(supRecovNet)} refund due`:''}</div></div>
   </div>
   <div class="two">
-    <div class="card"><div class="cardh">&#127894; Reseller milestones <span class="sub">rewards &amp; ranking</span></div><table><thead><tr><th class="l">Associate</th><th>Made you</th><th>Reward</th><th>To next unit</th></tr></thead><tbody>${miles.map(m=>`<tr><td class="l mono">${ID(m.id)}${m.starN?` <span style="color:var(--gold)" title="${m.starN}-star by revenue share">${'&#9733;'.repeat(m.starN)}</span>`:''}</td><td>${fmt0(m.total)}</td><td>${m.freeKg>0.009?`<b style="color:var(--gold)">${kg(m.freeKg)} ready</b>`:(m.freeKg<-0.009?`<span style="color:var(--amber)" title="drawn before the milestone was reached; the next award is smaller by this much">${kg(-m.freeKg)} drawn early</span>`:(m.ap>0.009?`${kg(m.ap)} applied`:'&mdash;'))}</td><td>${fmt0(Math.min(m.toNextR2,m.toNextR3))}</td></tr>`).join('')}</tbody></table>${readyM.length?`<div class="dsc" style="margin-top:8px">${readyM.map(m=>`<b>${ID(m.id)}</b> has <b>${kg(m.freeKg)}</b> to apply. <button class="vbtn" onclick="redeemRebate('${m.id}')">${sales.some(s=>s.customer===m.id&&txAdvance(s)>0.009)?'Offset':'Redeem'} ${kg(m.freeKg)}</button>`).join('<br>')}</div>`:'<div class="dsc" style="margin-top:8px">No rewards waiting. Each free unit offsets an outstanding advance as it is earned, or is redeemed as salt where there is none.</div>'}</div>
+    <div class="card"><div class="cardh">&#127894; Reseller milestones <span class="sub">rewards &amp; ranking</span></div><table><thead><tr><th class="l">Associate</th><th>Made you</th><th>Reward</th><th>To next unit</th></tr></thead><tbody>${miles.map(m=>`<tr><td class="l mono">${ID(m.id)}${m.starN?` <span style="color:var(--gold)" title="${m.starN}-star by revenue share">${'&#9733;'.repeat(m.starN)}</span>`:''}</td><td>${fmt0(m.total)}</td><td>${m.freeKg>0.009?`<b style="color:var(--gold)">${kg(m.freeKg)} ready</b>`:(m.freeKg<-0.009?`<span style="color:var(--amber)" title="drawn before the milestone was reached; the next award is smaller by this much">${kg(-m.freeKg)} drawn early</span>`:(m.ap>0.009?`${kg(m.ap)} applied`:'&mdash;'))}</td><td>${fmt0(Math.min(m.toNextR2,m.toNextR3))}</td></tr>`).join('')}</tbody></table>${readyM.length?`<div class="dsc" style="margin-top:8px">${readyM.map(m=>`<b>${ID(m.id)}</b> has <b>${kg(m.freeKg)}</b> to apply. <button class="vbtn" onclick="redeemRebate('${m.id}')">${sales.some(s=>s.customer===m.id&&txAdvance(s)>0.009)?'Offset':'Redeem'} ${kg(m.freeKg)}</button>`).join('<br>')}</div>`:'<div class="dsc" style="margin-top:8px">No rewards waiting. Each free unit offsets an outstanding advance as it is earned, or is redeemed as ${PRODUCTS[PROD].name.toLowerCase()} where there is none.</div>'}</div>
     <div class="card"><div class="cardh">&#128220; Latest ledger <span class="sub">most recent orders</span></div><table><thead><tr><th class="l">Date</th><th class="l">Party</th><th>Qty</th><th>Total</th><th>State</th></tr></thead><tbody>${recent.map(s=>{const si=txStat(s);return `<tr><td class="l">${s.date}</td><td class="l mono">${ID(s.customer)}</td><td>${kg(s.qty)}</td><td>${fmt0(s.total)}</td><td><span class="tag ${si.cls}">${si.order}</span></td></tr>`;}).join('')}</tbody></table><div class="dsc" style="margin-top:8px">On <b>${evolution[0]?evolution[0].v:''}</b>, updated ${LAST_UPDATED}.</div></div>
   </div>
   ${rs.length?`<h2>Partner performance <span class="rule"></span></h2>
   <div class="card"><table><thead><tr><th class="l">Partner</th><th>Made you</th><th>Bought</th><th>Sold for you</th><th>Brought you</th><th>Customers</th></tr></thead><tbody>${rs.map(r=>`<tr><td class="l mono">${ID(r.id)}${partnerBadge(r)}</td><td>${fmt0(r.total)}</td><td>${fmt0(r.direct)}</td><td>${fmt0(r.indirect)}</td><td>${fmt0(r.r3)}</td><td>${r.dsN}</td></tr>`).join('')}</tbody></table></div>`:''}
   <h2>Key accounts <span class="rule"></span></h2>
   <div class="two">
-    <div class="card"><div class="cardh">&#11088; Priority accounts <span class="sub">loyal or high-margin</span></div>${vip.length?`<table><thead><tr><th class="l">Customer</th><th>Orders</th><th>Margin</th><th>Last</th></tr></thead><tbody>${vip.map(c=>`<tr><td class="l mono">${ID(c.id)}${custBadgeHtml(bm,c.id)}</td><td>${c.n}</td><td>${fmt0(marginOf[c.id]||0)}</td><td>${dbet(c.last)}d ago</td></tr>`).join('')}</tbody></table>`:'<div class="dsc">No loyal or high-margin customers yet.</div>'}</div>
-    <div class="card"><div class="cardh">&#128276; Reconnect <span class="sub">no order in 21+ days${nudgeOut.length?`, ${nudgeOut.length} out of area not shown`:''}</span></div>${nudge.length?`<table><thead><tr><th class="l">Customer</th><th>Orders</th><th>Total unit</th><th>Last order</th><th class="l">Followed up</th></tr></thead><tbody>${nudge.map(c=>{const lc=lastContact(c.id);return `<tr><td class="l mono">${ID(c.id)}${custBadgeHtml(bm,c.id)}</td><td>${c.n}</td><td>${kg(c.kg)}</td><td>${c.last} (${dbet(c.last)}d)</td><td class="l">${lc?`<span class="tag ${dbet(lc.date)<=7?'paid':'open'}">${CONTACT_HOW[lc.how]} ${dbet(lc.date)}d ago</span>`:'<span class="tag unpaid">not yet</span>'}</td></tr>`;}).join('')}</tbody></table><div class="dsc" style="margin-top:8px">A name stays on this list until it <b>orders</b>, not until you contact it, so the follow-up column is what tells you whether the silence is theirs or yours.</div>`:'<div class="dsc">Everyone has ordered within the last three weeks.</div>'}</div>
+    <div class="card"><div class="cardh">&#11088; Priority accounts <span class="sub">loyal or high-margin</span></div>${vip.length?`<table><thead><tr><th class="l">Customer</th><th>Orders</th><th>Margin</th><th>Last</th></tr></thead><tbody>${vip.map(c=>`<tr><td class="l mono">${ID(c.id)}${custBadgeHtml(bm,c.id)}</td><td>${c.n}</td><td>${fmt0(marginOf[c.id]||0)}</td><td>${dbet(c.last)}d ago</td></tr>`).join('')}</tbody></table>`:'<div class="pchips" style="margin:0"><span class="pchip">no loyal or high-margin customer yet</span></div>'}</div>
+    <div class="card"><div class="cardh">&#128276; Reconnect <span class="sub">no order in 21+ days${nudgeOut.length?`, ${nudgeOut.length} out of area not shown`:''}</span></div>${nudge.length?`<table><thead><tr><th class="l">Customer</th><th>Orders</th><th>Total unit</th><th>Last order</th><th class="l">Followed up</th></tr></thead><tbody>${nudge.map(c=>{const lc=lastContact(c.id);return `<tr><td class="l mono">${ID(c.id)}${custBadgeHtml(bm,c.id)}</td><td>${c.n}</td><td>${kg(c.kg)}</td><td>${c.last} (${dbet(c.last)}d)</td><td class="l">${lc?`<span class="tag ${dbet(lc.date)<=7?'paid':'open'}">${CONTACT_HOW[lc.how]} ${dbet(lc.date)}d ago</span>`:'<span class="tag unpaid">not yet</span>'}</td></tr>`;}).join('')}</tbody></table><div class="dsc" style="margin-top:8px">A name stays on this list until it <b>orders</b>, not until you contact it, so the follow-up column is what tells you whether the silence is theirs or yours.</div>`:'<div class="pchips" style="margin:0"><span class="pchip good">everyone has ordered within the last three weeks</span></div>'}</div>
   </div>
   ${due.length?`<div class="card" style="margin-top:14px"><div class="cardh">&#9200; Follow-ups due <span class="sub">${due.length} promised, on or before today</span></div><table><thead><tr><th class="l">Customer</th><th class="l">Due</th><th class="l">Last spoke</th><th class="l">Then</th></tr></thead><tbody>${due.map(c=>`<tr><td class="l mono">${ID(c.party)}</td><td class="l">${c.next}${dbet(c.next)>0?` <span class="risk">${dbet(c.next)}d late</span>`:''}</td><td class="l">${c.date} (${dbet(c.date)}d)</td><td class="l">${CONTACT_OUT[c.outcome]}${c.note?' &middot; '+esc(c.note):''}</td></tr>`).join('')}</tbody></table></div>`:''}`;
 }
@@ -5505,23 +5558,47 @@ function tabToday(){
   const row=x=>`<div class="act" style="--sev:${ACTSEV[x.sev].c}">
     <div class="actk">${KIND[x.kind]||'Item'}</div>
     <div><div class="actt">${x.title}</div><div class="actw">${x.why}</div></div>
-    <div class="actm${x.rm>0.009?'':' nil'}">${x.rm>0.009?fmt0(x.rm):'&mdash;'}</div>
+    <div class="actm${x.rm>0.009?'':' nil'}" title="${x.rm>0.009?'At stake: what this item itself exposes':'No figure: it costs nothing to leave and something to ignore'}">${x.rm>0.009?fmt0(x.rm):'&mdash;'}</div>
     <div class="actb"><button class="navlink" onclick="switchTab('${x.tab}')">${TAB_LABEL[x.tab]||x.tab} &rarr;</button></div>
     ${x.rm>0.009&&peak>0?`<div class="actbar" title="${fmt0(x.rm)} of the ${fmt0(peak)} largest item"><i style="width:${Math.max(1.5,x.rm/peak*100).toFixed(1)}%"></i></div>`:''}</div>`;
-  const block=(list,title,note)=>list.length?`
-    <div class="sevh"><h2 style="color:${ACTSEV[list[0].sev].c}">${title}</h2><span class="cnt">${list.length} item${list.length===1?'':'s'}${money(list[0].sev)>0?' &middot; '+fmt0(money(list[0].sev)):''}</span><span class="rule"></span></div>
+  /* v385: A DATED SEVERITY THAT IS EMPTY STILL SAYS SO. The two count cards that used to
+     stand above the list are gone as duplicates, and on a book with nothing due this week
+     they were the only thing that said so: the block simply did not render, and an absent
+     heading is not the same as a heading that reads clear. Now and This week are dated by
+     the desk itself, so each keeps its line whatever the count; Watch is undated and a
+     "nothing to watch" heading would be noise. Nothing at all outstanding is answered by
+     the card below the list instead, so the clear lines stand down for it. */
+  const CLEARQ={now:'nothing overdue, nothing broken',soon:'nothing falls due this week'};
+  const block=(list,title,note,sev)=>{
+    if(!list.length)return (sev&&a.length)?`
+    <div class="sevh"><h2 style="color:${ACTSEV[sev].c};opacity:.5">${title}</h2><span class="cnt" style="color:var(--grn)">clear &middot; ${CLEARQ[sev]}</span><span class="rule"></span></div>`:'';
+    return `
+    <div class="sevh"><h2 style="color:${ACTSEV[list[0].sev].c}">${title}</h2><span class="cnt" title="At stake is the money the item itself exposes: the balance for a chase, the refill cost for a reorder, the profit a quiet customer would earn back at today&rsquo;s board.">${list.length} item${list.length===1?'':'s'}${money(list[0].sev)>0?' &middot; '+fmt0(money(list[0].sev))+' at stake':''}</span><span class="rule"></span></div>
     <div class="acts">${list.map(row).join('')}</div>
-    ${note?`<div class="dsc" style="margin-top:9px">${note}</div>`:''}`:'';
+    ${note?`<div class="dsc" style="margin-top:9px">${note}</div>`:''}`;};
   const dryLine=f.dry===0
     ? `<b style="color:var(--crim)">The shelf is empty today.</b>`
     : f.dry!=null?`Runs dry on <b>${f.dryDate}</b>, ${f.dry} day${f.dry===1?'':'s'} out.`
     : `Holds past the ${f.days}-day window.`;
   const cf=cashFlow();
+  /* ============ THE LIST LEADS (v385) ============
+     The tab opened on five KPI cards and two charts, and the ranked list, which is the only
+     reason this tab exists, started a screen and a half down. Two of those five cards said
+     what the block headings below them already say: Now and This week each printed a count
+     and a total that the .sevh line beside the list prints again, and the rail badge prints
+     a third time. So the reader paid for a screen of furniture to be told twice what he was
+     about to be told anyway, and the answer was under it.
+     The list is first now, and what stood above it is behind it as the state band: the shelf,
+     the promises and the cash, which are the context for the ranking rather than the ranking
+     itself. Nothing is removed but the two duplicate counts. */
   return `<h1>Today</h1>
   <div class="pscope">${prodBadge()}</div>
-  <div class="kpis k5">
-    <div class="kpi ${now.length?'r':'g'}"><div class="l">Now</div><div class="v">${now.length}</div><div class="n">${money('now')>0?fmt0(money('now'))+' at stake':'nothing pressing'}</div></div>
-    <div class="kpi gold"><div class="l">This week</div><div class="v">${soon.length}</div><div class="n">${money('soon')>0?fmt0(money('soon'))+' at stake':'nothing dated'}</div></div>
+  ${block(now,'Now','Anything here is either past a date the desk set itself, or a rule already broken.','now')}
+  ${block(soon,'This week','Dated by the desk&rsquo;s own terms: a '+RULES.creditDays+'-day credit line, the '+RULES.reorderKg+' unit reorder trigger, and the provisioning ladder.','soon')}
+  ${block(watch,'Watch',watch.length>1?'No date on these. They are ranked by what a reorder would actually earn at today&rsquo;s board, not by how long the silence has been.':'')}
+  ${a.length?'':'<div class="card"><div class="dsc">Nothing is outstanding. No debt past term, no rule broken, no promise unkept, and the shelf is above its trigger.</div></div>'}
+  <h2 style="margin-top:26px">Where the desk stands <span class="sub" style="font-weight:400">shelf, promises and cash</span> <span class="rule"></span></h2>
+  <div class="kpis k3">
     <div class="kpi ${f.shortKg>0.009?'r':''}"><div class="l">Promised out</div><div class="v">${kg(f.commitKg)}</div><div class="n">${f.shortKg>0.009?`<b style="color:var(--crim)">${kg(f.shortKg)} short</b> of ${kg(currentStock)} held`:`covered by ${kg(currentStock)} held`}</div></div>
     <div class="kpi ${cv.below?'r':'g'}"><div class="l">Cover</div><div class="v">${cv.days==null?'&mdash;':cv.days+'d'}</div><div class="n">${dryLine}</div></div>
     <div class="kpi ${cf.net<0?'r':'p'}"><div class="l">Cash &middot; trading net</div><div class="v">${fmt0(cf.net)}</div><div class="n">${fmt0(cf.dueOut)} promised away against it</div></div>
@@ -5529,15 +5606,11 @@ function tabToday(){
   <div class="tdsplit">
     <div class="card"><div class="cardh">Money at stake <span class="sub">by kind</span></div>
       <div class="chartbox" style="height:186px"><canvas id="tdKindChart"></canvas></div>
-      <div class="dsc" style="margin-top:7px">Only items carrying a figure appear. A broken rule, a promised call and an overdue plan are on the list below at <b>&mdash;</b>, because they cost nothing to leave and something to ignore.</div></div>
+      <div class="dsc" style="margin-top:7px">Only items carrying a figure appear. A broken rule, a promised call and an overdue plan are on the list above at <b>&mdash;</b>, because they cost nothing to leave and something to ignore.</div></div>
     <div class="card"><div class="cardh">Cover <span class="sub">days of shelf</span></div>
       <div class="chartbox" style="height:186px"><canvas id="tdCoverChart"></canvas></div>
       <div class="dsc" style="margin-top:7px">${cv.days==null?'No recent trade, so there is no rate to read.':`Shipping ${kg(cv.rate)} a day over the last fortnight. The trigger sits at ${kg(cv.reorderAt)}.`}</div></div>
   </div>
-  ${block(now,'Now','Anything here is either past a date the desk set itself, or a rule already broken.')}
-  ${block(soon,'This week','Dated by the desk&rsquo;s own terms: a '+RULES.creditDays+'-day credit line, the '+RULES.reorderKg+' unit reorder trigger, and the provisioning ladder.')}
-  ${block(watch,'Watch',watch.length>1?'No date on these. They are ranked by what a reorder would actually earn at today&rsquo;s board, not by how long the silence has been.':'')}
-  ${a.length?'':'<div class="card"><div class="dsc">Nothing is outstanding. No debt past term, no rule broken, no promise unkept, and the shelf is above its trigger.</div></div>'}
   <div class="dsc" style="margin-top:20px;padding-top:13px;border-top:1px solid var(--line)"><b>Nothing on this tab books anything.</b> Every button opens the tab that does. <b>At stake</b> is the money the item itself exposes: the balance for a chase, the refill cost for a reorder, the profit a quiet customer would earn back at today&rsquo;s board. A dash means the item costs nothing to leave and something to ignore.</div>`;
 }
 
@@ -5563,8 +5636,8 @@ function drawTodayCharts(){
       const byKind={};
       a.filter(x=>x.rm>0.009).forEach(x=>{byKind[x.kind]=(byKind[x.kind]||0)+x.rm;});
       const keys=Object.keys(byKind).sort((x,y)=>byKind[y]-byKind[x]);
-      if(tdKindObj){try{tdKindObj.destroy();}catch(e){}}
-      if(tdCoverObj){try{tdCoverObj.destroy();}catch(e){}}
+      if(tdKindObj){try{tdKindObj.destroy();}catch(e){}tdKindObj=null;}
+      if(tdCoverObj){try{tdCoverObj.destroy();}catch(e){}tdCoverObj=null;}
       if(k){
         if(!keys.length){
           chartEmpty(k,'Nothing on the list carries a figure today.');
@@ -5600,7 +5673,19 @@ function drawTodayCharts(){
                          beginAtZero:true}}}});
         }
       }
-    }catch(e){}
+    }catch(e){
+      /* v385: THIS CATCH WAS EMPTY AND NEITHER v385 REPORTER CAN REACH IT. renderPart's catch has
+         already handed control to ensureChart, and ensureChart's own queue only sees a callback
+         that throws asynchronously; this one throws inside the callback and was eaten here first.
+         Probed with a Chart that throws on the second construction: both books, both canvases,
+         nothing said anywhere. A chart dying mid-pass took the one after it and left blank boxes.
+         The objects are nulled on destroy so only the canvas that never got a chart is marked and
+         one that did draw is left alone. */
+      try{console.error('drawTodayCharts threw',e);}catch(_){}
+      const m=esc((e&&e.message)||String(e));
+      if(k&&!tdKindObj)chartEmpty(k,'This chart could not be drawn: '+m+'. Every figure it draws is in the tables on this part.');
+      if(c&&!tdCoverObj)chartEmpty(c,'This chart could not be drawn: '+m+'. Every figure it draws is in the tables on this part.');
+    }
   });
 }
 
@@ -5624,36 +5709,35 @@ function tabForward(){
   const sw=[14,30,60].map(n=>`<button data-n="${n}"${fwdDays===n?' class="on"':''} onclick="fwdSet(${n})">${n} days</button>`).join('');
   const evRows=[];
   f.lots.forEach(x=>evRows.push({day:x.day,what:`${kg(x.kg)} arrives from ${ID(x.who)}`,kind:'stock in',rm:x.rm}));
-  f.cin.forEach(x=>evRows.push({day:x.day,what:`${ID(x.who)} ${x.label}, ${fmt0(x.gross)} gross`,kind:'cash in',rm:x.rm}));
+  f.cin.forEach(x=>evRows.push({day:x.day,what:`${ID(x.who)} ${x.label}, ${fmt0(x.gross)} gross${x.age!=null?`, ${x.age}d out`:''}${x.gross>x.rm+0.009?`, ${((1-x.rm/x.gross)*100).toFixed(0)}% provisioned`:''}`,kind:'cash in',rm:x.rm}));
   f.cout.forEach(x=>evRows.push({day:x.day,what:`${ID(x.who)} ${x.label}`,kind:'cash out',rm:-x.rm}));
   (f.planRows||[]).forEach(x=>{if(x._taken)evRows.push({day:x.day,what:esc(x.label),kind:'drawing',rm:-x._taken});});
   evRows.sort((a,b)=>a.day-b.day||Math.abs(b.rm)-Math.abs(a.rm));
   const iso=n=>new Date(TODAY.getTime()+n*86400000).toISOString().slice(0,10);
   const taken=(f.planRows||[]).reduce((a,p)=>a+(p._taken||0),0);
+  const provNote=f.cin.filter(x=>x.gross>x.rm).map(x=>`${ID(x.who)} is ${x.age} days out, so ${fmt0(x.gross)} counts as ${fmt0(x.rm)}`);
   return `<h1>Forward</h1>
   <div class="pscope">${prodBadge()}</div>
-  <div class="dsc dsclead" style="margin-bottom:11px">The only view on this desk that looks ahead. It is built from what is already on the book, not from a forecast: units already promised, the rate you have actually been shipping, your own ${RULES.creditDays}-day credit term and the provisioning ladder. <b>There is no demand model here.</b> Nothing is seasonal, nothing is fitted, and no order that has not been placed appears anywhere.</div>
+  <div class="dsc dsclead" style="margin-bottom:11px">The only view on this desk that looks ahead, and it forecasts nothing: it walks what is already on the book, at the rate you have actually been shipping. Nothing is seasonal, nothing is fitted, and no order that has not been placed appears anywhere. It reads units already promised, your own ${RULES.creditDays}-day credit term and the provisioning ladder.</div>
   <div style="display:flex;flex-wrap:wrap;gap:9px;align-items:center">
     <span class="viewsw" id="fwdSw">${sw}</span>
     ${pend.length?`<button class="vbtn" style="${fwdBuy?'':'opacity:.55'}" onclick="fwdToggle('buy')">${fwdBuy?'&#10003; ':''}Include the agreed ${kg(pend.reduce((a,p)=>a+p.qty,0))} buy</button>`:''}
     ${(typeof PLANS_CASH!=='undefined'&&PLANS_CASH.length)?`<button class="vbtn" style="${fwdPlans?'':'opacity:.55'}" onclick="fwdToggle('plans')">${fwdPlans?'&#10003; ':''}Include the planned drawing</button>`:''}
   </div>
-  ${(fwdBuy||fwdPlans)?`<div class="insight" style="margin-top:11px"><b>Scenario, not the book.</b> ${fwdBuy?`The agreed ${kg(pend.reduce((a,p)=>a+p.qty,0))} at ${fmt(pend.reduce((a,p)=>a+p.total,0)/pend.reduce((a,p)=>a+p.qty,0))}/unit is drawn as though it lands and is paid for today. `:''}${fwdPlans?`${PLANS_CASH.map(p=>esc(p.label)).join('; ')}${taken>0.009?`, which on this path takes <b>${fmt0(taken)}</b> out`:''}. `:''}Nothing here is recorded anywhere, and turning the switch off removes it entirely.</div>`:''}
+  ${/* v385: ONE SENTENCE CARRIES THE SCENARIO, because stripMethod cuts an .insight over
+       NOTE_MIN to its first sentence WHEREVER it sits and whatever is in it, with no figure
+       exemption. This one read "Scenario, not the book." and then said in a SECOND sentence
+       which buy and which drawing were switched on, so the cut left a warning about a scenario
+       it no longer named. Latent only because both toggles need a pending lot or a PLANS_CASH
+       entry to appear at all. Same fault as priceNote. */''}${(fwdBuy||fwdPlans)?`<div class="insight" style="margin-top:11px"><b>Scenario, not the book</b>: ${[fwdBuy?`the agreed ${kg(pend.reduce((a,p)=>a+p.qty,0))} at ${fmt(pend.reduce((a,p)=>a+p.total,0)/pend.reduce((a,p)=>a+p.qty,0))}/unit, drawn as though it lands and is paid for today`:'',fwdPlans?`${PLANS_CASH.map(p=>esc(p.label)).join('; ')}${taken>0.009?`, taking ${fmt0(taken)} out on this path`:''}`:''].filter(Boolean).join('; and ')}. Nothing here is recorded anywhere, and turning the switch off removes it entirely.</div>`:''}
   <div class="kpis k4" style="margin-top:13px">
     <div class="kpi ${f.dry===0?'r':f.dry!=null?'gold':'g'}"><div class="l">Shelf empty</div><div class="v">${f.dry==null?'&mdash;':f.dry===0?'today':'day '+f.dry}</div><div class="n">${f.dry==null?`holds past ${f.days} days`:f.dry===0?'nothing on the shelf now':`on ${f.dryDate}`}</div></div>
     <div class="kpi ${f.shortKg>0.009?'r':'g'}"><div class="l">Promised out</div><div class="v">${kg(f.commitKg)}</div><div class="n">${f.shortKg>0.009?`${kg(f.shortKg)} of it uncovered`:'all covered from stock'}</div></div>
     <div class="kpi"><div class="l">Shipping rate</div><div class="v">${kg(f.rate)}<span style="font-size:12px;color:var(--mut)">/day</span></div><div class="n">observed over the last fortnight</div></div>
-    <div class="kpi ${cash?(f.cashLow.rm<0?'r':'p'):''}"><div class="l">Cash ${cash?'low point':'movement, low'}</div><div class="v">${fmt0(f.cashLow.rm)}</div><div class="n">${cash?`on ${iso(f.cashLow.day)}`:'the low point of the CHANGE from today, not a balance'}</div></div>
+    <div class="kpi ${f.cashEnd<0?'r':'p'}"><div class="l">Cash ${cash?`at day ${f.days}`:`movement, ${f.days} days`}</div><div class="v">${f.cashEnd<0?'&minus;':''}${fmt0(Math.abs(f.cashEnd))}</div><div class="n">${cash?`low ${fmt0(f.cashLow.rm)} on ${iso(f.cashLow.day)}`:`a change from today, never a balance${f.cashLow.rm<-0.009?`; ${fmt0(f.cashLow.rm)} at its worst on ${iso(f.cashLow.day)}`:''}`}</div></div>
   </div>
-  ${(()=>{/* v180: the counted-balance panel is gone with the balance itself. This comment
-             sat AFTER the closing brace, inside the template literal rather than inside the
-             function, so the browser had no reason to treat it as a comment and printed it
-             on the Forward tab as text. A comment is only a comment in JS context. */
-    const cf=cashFlow();
-    if(!cash)return `<div class="pend" style="margin-top:13px"><h3>&#9432; The cash line is a movement, not a balance</h3><div class="dsc">By design (v180), this desk reports cash FLOW and never a balance: it knows what trading has moved (<b>${fmt0(cf.net)}</b> net to date) but not what you actually hold. Every cash figure below starts from zero today and shows the <b>change</b> from here.</div></div>`;
-    return '';})()}
   <h2 style="margin-top:18px">Stock, day by day <span class="rule"></span></h2>
-  <div class="dsc" style="margin-bottom:9px">Two lines, deliberately. <b>Committed</b> serves only what you have already promised and needs no forecast at all. <b>Committed plus rate</b> adds the ${kg(f.rate)} a day you have actually been shipping. The second is an estimate; the first is not.</div>
+  <div class="dsc" style="margin-bottom:9px">Three lines. <b>Committed</b> serves only what you have already promised and needs no forecast at all. <b>Committed plus rate</b> adds the ${kg(f.rate)} a day you have actually been shipping, so it is an estimate where the first is not. <b>Still owed out</b>, dashed, is what remains promised and unserved once the shelf has given what it can.</div>
   <div class="chartbox"><canvas id="fwdStockChart"></canvas></div>
   <h2 style="margin-top:18px">Cash, day by day <span class="rule"></span></h2>
   <div class="dsc" style="margin-bottom:9px">Receivables land at ${RULES.creditDays} days from their order date and are valued <b>net of provisioning</b>, so an old debt contributes what it is realistically worth rather than its face value. Anything already past term sits on today.</div>
@@ -5661,8 +5745,8 @@ function tabForward(){
   <h2 style="margin-top:18px">What lands, and when <span class="rule"></span></h2>
   <div class="card">${evRows.length?`<table><thead><tr><th class="l">When</th><th class="l">What</th><th class="l">Kind</th><th>Amount</th></tr></thead><tbody>
     ${evRows.map(e=>`<tr><td class="l">${e.day===0?'<b>today</b>':iso(e.day)+` <span style="color:var(--dim)">d+${e.day}</span>`}</td><td class="l">${e.what}</td><td class="l"><span class="tag ${e.kind==='cash out'?'unpaid':e.kind==='stock in'?'prov':'paid'}">${e.kind}</span></td><td style="color:${e.rm<0?'var(--crim)':'var(--grn)'}">${e.rm<0?'&minus;':''}${fmt0(Math.abs(e.rm))}</td></tr>`).join('')}
-    </tbody></table><div class="dsc" style="margin-top:8px">Cash-in figures are <b>net of provisioning</b>. ${f.cin.filter(x=>x.gross>x.rm).map(x=>`${ID(x.who)} is ${x.age} days out, so ${fmt0(x.gross)} counts as ${fmt0(x.rm)}`).join('; ')||'Nothing is discounted.'}</div>`
-    :'<div class="dsc">Nothing scheduled either way inside the window.</div>'}</div>
+    </tbody></table><div class="dsc" style="margin-top:8px">Cash-in figures are <b>net of provisioning</b>. ${provNote.length?provNote.join('; ')+'.':'Nothing is discounted.'}</div>`
+    :'<div class="pchips" style="margin:0"><span class="pchip">nothing scheduled either way inside the window</span></div>'}</div>
   <div class="dsc" style="margin-top:14px">Where a line runs flat it is because nothing is dated there, not because nothing will happen. An order placed tomorrow appears in neither chart until it is recorded.</div>`;
 }
 let fwdStockObj=null,fwdCashObj=null;
@@ -5678,8 +5762,8 @@ function drawFwdCharts(){
                  title:{display:true,text:t,color:'#f4f5f7',font:{size:12}}},
         scales:{x:{grid:{color:'rgba(255,255,255,0.07)'},ticks:{color:'rgba(244,245,247,0.66)',maxTicksLimit:12}},
                 y:{grid:{color:'rgba(255,255,255,0.07)'},ticks:{color:'rgba(244,245,247,0.66)',callback:v=>pre+v}}}});
-      if(fwdStockObj){try{fwdStockObj.destroy();}catch(e){}}
-      if(fwdCashObj){try{fwdCashObj.destroy();}catch(e){}}
+      if(fwdStockObj){try{fwdStockObj.destroy();}catch(e){}fwdStockObj=null;}
+      if(fwdCashObj){try{fwdCashObj.destroy();}catch(e){}fwdCashObj=null;}
       fwdStockObj=new Chart(s,{type:'line',data:{labels:labs,datasets:[
         {label:'Committed only',data:f.rows.map(r=>r.stockCom),borderColor:'#7fd7e8',backgroundColor:'transparent',tension:.2,pointRadius:0,borderWidth:2},
         {label:'Committed plus rate',data:f.rows.map(r=>r.stock),borderColor:'#b3a6f5',backgroundColor:'transparent',tension:.2,pointRadius:0,borderWidth:2},
@@ -5688,7 +5772,12 @@ function drawFwdCharts(){
       fwdCashObj=new Chart(k,{type:'line',data:{labels:labs,datasets:[
         {label:f.cashKnown?'Cash held':'Cash movement from today',data:f.rows.map(r=>r.cash),borderColor:'#ffcf7a',backgroundColor:'transparent',tension:.2,pointRadius:0,borderWidth:2}
       ]},options:opt(f.cashKnown?'Cash position (RM)':'Cash movement from today (RM)','')});
-    }catch(e){}
+    }catch(e){                                     /* v385: same empty catch as Today's, same probe */
+      try{console.error('drawFwdCharts threw',e);}catch(_){}
+      const m=esc((e&&e.message)||String(e));
+      if(!fwdStockObj)chartEmpty(s,'This chart could not be drawn: '+m+'. Every figure it draws is in the tables on this part.');
+      if(!fwdCashObj)chartEmpty(k,'This chart could not be drawn: '+m+'. Every figure it draws is in the tables on this part.');
+    }
   });
 }
 
@@ -10629,13 +10718,28 @@ function actions(){
       +(f.cashKnown?` ${fmt0(cashFlow().free)} free.`:'');
     add(sev,'buy',title,Math.max(refill,short?f.promRM:0),why,'sourcing');
   }
-  /* 3. money out with other people, each at its own age and provision */
-  arList.forEach(s=>{const g=outstandingOf(s),age=dbet(s.date),pr=provRate(age);
-    if(g<=0.009)return;
-    const sev=age>=RULES.fullProvDays?'now':age>=RULES.creditDays?'now':age>=RULES.creditDays-3?'soon':'watch';
-    add(sev,'collect',`Chase ${ID(s.customer)} for ${fmt0(g)}`,g,
-      `${age}d out on a ${RULES.creditDays}d term, ${(pr*100).toFixed(0)}% provisioned, ${fmt0(g*(1-pr))} realistic.`
-      +(isBanned(s.customer)?' Banned from sale; the ban ends the trade, not the debt.':''),'receivables');});
+  /* ============ 3. MONEY OUT WITH OTHER PEOPLE, ONE ROW PER PERSON (v385) ============
+     It was one row per DEBT, and a party carrying two open rows was listed twice. CR3-DAM
+     stood at RM 80 under This week and again at RM 80 under Watch: the same man, ranked in
+     two places, with neither row stating that he actually owes RM 160. A reader who chased
+     the first figure would have collected half of it and ticked the item off.
+     It is one phone call, so it is one row, on exactly the reasoning that grouped the rule
+     breaches at v163. The row carries the WHOLE balance, sits at the sharpest severity any
+     one of his debts earns, and names each debt with its own age and provision, because the
+     ladder is what makes one of them urgent and the total is what makes the call worth it. */
+  const chase={};
+  arList.forEach(s=>{const g=outstandingOf(s);if(g<=0.009)return;const age=dbet(s.date);
+    (chase[s.customer]=chase[s.customer]||[]).push({g,age,pr:provRate(age)});});
+  Object.keys(chase).forEach(who=>{
+    const ds=chase[who].sort((a,b)=>b.age-a.age), oldest=ds[0].age;
+    const gross=+ds.reduce((t,x)=>t+x.g,0).toFixed(2);
+    const net=+ds.reduce((t,x)=>t+x.g*(1-x.pr),0).toFixed(2);
+    const sev=oldest>=RULES.creditDays?'now':oldest>=RULES.creditDays-3?'soon':'watch';
+    add(sev,'collect',`Chase ${ID(who)} for ${fmt0(gross)}`,gross,
+      `On a ${RULES.creditDays}d term: `
+      +ds.map(x=>`${fmt0(x.g)} at ${x.age}d${x.pr>0?`, ${(x.pr*100).toFixed(0)}% provisioned`:''}`).join('; ')
+      +`. ${fmt0(net)} realistic.`
+      +(isBanned(who)?' Banned from sale; the ban ends the trade, not the debt.':''),'receivables');});
   if(typeof supplierReceivable!=='undefined'&&supplierReceivable&&supplierReceivable.status==='recoverable'){
     const age=dbet(supplierReceivable.since),pr=provRate(age);
     add(age>=RULES.fullProvDays?'now':'soon','collect',`Settle the ${ID(supplierReceivable.party)} default, ${fmt0(supplierReceivable.amount)}`,
