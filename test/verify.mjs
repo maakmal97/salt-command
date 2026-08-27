@@ -2175,6 +2175,20 @@ section("Silence — four things that failed without saying so (v384)");
   }
 }
 
+section("Drafter — a lot that has not arrived does not say it has (v385)");
+{
+  const d = readFileSync(join(REPO, "src", "drafter.js"), "utf8");
+  /* An absent receivedQty on a SETTLED lot means received in full, by the book's own
+     convention and by poRecvKg. So a paid-and-unarrived lot drafted with neither
+     receivedQty nor inTransit asserts the goods landed, and approving it walks the whole
+     lot into stock and into the cost basis. Both fields, matching the fold's v146 guard. */
+  ok(/else \{ row\.receivedQty = 0; row\.inTransit = true; \}/.test(d),
+     "a BUY that moved nothing states the zero AND says the lot is on order");
+  const f = readFileSync(join(REPO, "tools", "fold.mjs"), "utf8");
+  ok(/row\.receivedQty = 0; row\.inTransit = true;/.test(f),
+     "and the fold's correction road writes the same pair, so both roads make the same shape");
+}
+
 /* ---- done ----------------------------------------------------------------------- */
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
