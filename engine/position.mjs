@@ -1,4 +1,4 @@
-/* engine/position.mjs — THE POSITION ENGINE, OUT OF THE DESK (move 1 of the rebuild, session 2, 22 Aug 2026).
+/* engine/position.mjs: THE POSITION ENGINE, OUT OF THE DESK (move 1 of the rebuild, session 2, 22 Aug 2026).
  *
  * ONE DEFINITION of the transaction model and the ledger walk. The row helpers (what a row has
  * paid, delivered, deferred, pending, its state and its dates; what a lot has received and paid;

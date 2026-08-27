@@ -1,4 +1,4 @@
-/* drafter.js — turn a queued entry into a proposed ledger ROW, in the cloud.
+/* drafter.js: turn a queued entry into a proposed ledger ROW, in the cloud.
  *
  * This is the piece that removes the laptop from the loop. It reads the queue from KV and the
  * book from D1, writes a proposed row per entry into the `draft` table, and stops. It never
@@ -267,6 +267,14 @@ export function costFor(book, product) {
 export function floorFor(book, product, qty) {
   const snap = book.pricing && book.pricing.byProduct && book.pricing.byProduct[product || "salt"];
   if (!snap || !snap.floors) return null;
+  /* v385: WHAT THE FLOOR CHARGES FOR HIS TIME, READ OFF THE POLICY AND NEVER TYPED HERE. The
+     flag has to say what the floor is made of now that the markup leg is gone, and the one
+     figure in it that is a stated policy rather than a cost is timePerOrder. Computed on both
+     roads, since a snapshot without inputs still carries carded floors that mean the same
+     thing. Null on an older snapshot, and the flag then leaves the clause out rather than
+     guessing at RM25. */
+  const time = snap.inputs && snap.inputs.policy && isNum(snap.inputs.policy.timePerOrder)
+    ? +snap.inputs.policy.timePerOrder : null;
   /* v337: THE ENGINE ANSWERS THE EXACT SIZE when the snapshot carries its inputs, which it does
      from v337. It is the same module the desk runs, fed the same inputs, so the figure is the
      desk's figure at that size and not an interpolation of it. An older snapshot without
@@ -276,7 +284,7 @@ export function floorFor(book, product, qty) {
       const C = PRICING_ENGINE.costStack(snap.inputs.cost);
       const d = PRICING_ENGINE.floorTotal(qty, C, snap.inputs.policy);
       const c = PRICING_ENGINE.floorTotal(qty, C, snap.inputs.policy, null, { collects: true });
-      if (isNum(d) && isNum(c)) return { delivered: +d.toFixed(2), collected: +c.toFixed(2), at: qty, exact: true };
+      if (isNum(d) && isNum(c)) return { delivered: +d.toFixed(2), collected: +c.toFixed(2), at: qty, exact: true, time };
     } catch (e) { /* fall through to the carded sizes */ }
   }
   /* the carded sizes are what the snapshot holds; an odd size takes the nearest carded one
@@ -284,11 +292,11 @@ export function floorFor(book, product, qty) {
   const sizes = Object.keys(snap.floors).map(Number).filter((n) => Number.isFinite(n)).sort((a, b) => a - b);
   if (!sizes.length) return null;
   const exact = snap.floors[String(qty)];
-  if (exact && isNum(exact.delivered)) return { ...exact, at: qty, exact: true };
+  if (exact && isNum(exact.delivered)) return { ...exact, at: qty, exact: true, time };
   let pick = sizes[0];
   for (const s of sizes) if (s <= qty) pick = s;
   const f = snap.floors[String(pick)];
-  return f && isNum(f.delivered) ? { ...f, at: pick, exact: false } : null;
+  return f && isNum(f.delivered) ? { ...f, at: pick, exact: false, time } : null;
 }
 
 /* ---- the comparisons an entry cannot make against itself --------------------------- */
@@ -343,13 +351,28 @@ export function flagsFor(entry, row, book, priced) {
   }
 
   /* 3. AGAINST THE LIVE FLOOR, which moves with the cost and is the reason a printed floor is
-        refused anywhere on this desk. Sales only: there is no floor on what you pay a supplier. */
+        refused anywhere on this desk. Sales only: there is no floor on what you pay a supplier.
+        v385: THE FLOOR STOPPED MEANING THIN MARGIN AND THIS SENTENCE IS THE ONLY PLACE ANYONE
+        FINDS OUT. The markup leg is gone, so floorTotal is the cost leg alone and a row AT the
+        floor now earns nothing whatever: it returns the goods, the run out and the stated
+        charge for his time, and not a ringgit above them. The old wording said "under the
+        delivered floor" and left the reader to supply a meaning that had just changed under it,
+        which on a screen whose whole product is the flags is the worst place to be quietly out
+        of date. Removing the leg moves no ask on either book, so this refusal line IS the
+        change rather than a caption on it.
+        AND IT NAMES WHICH FLOOR. RM10 separates delivered from collected where RM50 used to,
+        so "the floor" now reads as one thing when it is two. */
   const fl = isSale ? floorFor(book, p, qty) : null;
   if (fl && isNum(total)) {
     if (total < fl.delivered - 0.005) {
-      const collected = isNum(fl.collected) && total >= fl.collected - 0.005;
-      flags.push(`RM ${round(total)} is under the delivered floor of RM ${round(fl.delivered)}${fl.exact ? "" : ` (read at ${fl.at} unit, the nearest carded size)`}`
-        + (collected ? `, though it clears the collected floor of RM ${round(fl.collected)}.` : `, and under the collected floor of RM ${round(fl.collected)} too.`));
+      const clears = isNum(fl.collected) && total >= fl.collected - 0.005;
+      const at = fl.exact ? "" : ` (read at ${fl.at} unit, the nearest carded size)`;
+      const made = isNum(fl.time) && fl.time > 0
+        ? `the goods, the run out, and RM ${round(fl.time)} for your time`
+        : "the goods and the run out";
+      flags.push(clears
+        ? `RM ${round(total)} is RM ${round(fl.delivered - total)} under the DELIVERED floor of RM ${round(fl.delivered)}${at}, which is what the order costs to take out: ${made}, with nothing above them. It clears the COLLECTED floor of RM ${round(fl.collected)}, so it covers itself if they come to you and not if you drive it.`
+        : `RM ${round(total)} is RM ${round(fl.delivered - total)} under the DELIVERED floor of RM ${round(fl.delivered)}${at}, and RM ${round(fl.collected - total)} under the COLLECTED floor of RM ${round(fl.collected)} as well. The delivered floor is what the order costs to take out, ${made}, with nothing above them, so this covers itself neither way.`);
     }
   }
 
@@ -913,7 +936,17 @@ export function draftRow(entry, book) {
       if (moved > 0.005) row.deliveredOn = row.date;
       if (paidInFull) row.paidOn = row.date;
     } else {
+      /* v385: A LOT THAT IS PAID AND HAS NOT ARRIVED USED TO BE DRAFTED AS THOUGH IT HAD.
+         The SELL branch above states what moved including a zero; this one stated it only when
+         something did, so a settled lot came out with no receivedQty and no inTransit. By the
+         book's own convention an absent receivedQty on a settled lot means received IN FULL,
+         and poRecvKg agrees, so the row asserted the salt had landed: approve it and the fold
+         walks the whole lot into stock and into the cost basis.
+         BOTH FIELDS ARE SET, not one, because that is what the fold's own v146 guard does on
+         the correction road for exactly this case. A row drafted here and a row corrected there
+         have to come out the same shape or the book holds two kinds of unarrived lot. */
       if (moved > 0.005) { row.receivedOn = row.date; row.receivedQty = moved; }
+      else { row.receivedQty = 0; row.inTransit = true; }
       if (paidInFull) row.paidOn = row.date;
     }
   } else if (dir === "SELL") {
