@@ -1,5 +1,17 @@
 [
  {
+  "v": "v386",
+  "d": "27 Aug 2026",
+  "t": "THE FOLD MERGED SIX BRANCHES AND REPORTED SEVEN, AND NOTHING IT CHECKED COULD HAVE NOTICED",
+  "n": [
+   "<b>ORDERS AND MONEY WAS NEVER MERGED INTO v385.</b> The branch was in every survey the fold ran and in none of its merge commands. Six went in, seven were reported, and the whole of that view's second pass, 417 lines across the master and the suite, stayed on its branch. It is in now.",
+   "<b>WHAT SHOULD HAVE CAUGHT IT AND DID NOT, WHICH IS THE PART WORTH RECORDING.</b> The fold verified 608 assertions passing, four generated blocks byte for byte, and sixteen parts rendering clean on both books with no undefined, NaN or Infinity and no chart reporting a failure. <b>Every one of those passes perfectly well with a branch missing</b>, because a branch that is absent breaks nothing: it simply is not there. The one signal that existed was read backwards. A post-fold survey printed <code>elegant-poitras-2a6ed1 ahead:9 behind:0</code>, and <code>behind:0</code> means master holds nothing that branch does not, which is the definition of unmerged. It was read as &quot;they have committed since&quot;. <b>The check that was missing is one line and it is now the habit: after a fold, assert every branch is an ancestor of master.</b>",
+   "<b>AND IT WAS CAUGHT BY THE SESSION WHOSE WORK WAS DROPPED, BEHAVIOURALLY RATHER THAN BY GREP.</b> Their reasoning is the lesson: a reformat can hide a string match, so they went and read the rendered output. On the shipped v385 the oil Order book still said <b>&quot;Salt you owe&quot;</b>, oil's closing stock still read 20 unit at RM50 for RM1,000 against a shelf holding RM153, the oil P&amp;L still opened a July column with no oil trade in it, and both of that view's draw functions still swallowed a throw whole. Confirming the repair the same way mattered too: grepping the merged master finds both of those strings STILL PRESENT, in comments describing the behaviour that was fixed.",
+   "<b>AND v385 BROKE A SENTENCE OF THEIRS, WHICH IS WHAT A PARALLEL FOLD PRODUCES.</b> The board now shows five oil sizes rather than fourteen, and from 20 unit up an oil order is under its own cost, so the contribution at the big end went NEGATIVE and the cost panel read <b>&quot;takes -0.6% off what a 50 unit order earns&quot;</b>. A share of a loss is not a sensitivity and it is not a thing that can happen. The guard there covered an infinity and not a minus, which is the narrower half of the same fault. Where an end is under water the sentence now says so, which is the more important finding of the two: oil reads <b>&quot;takes 200.0% off what a 10 unit order earns, and a 50 unit one does not cover its own cost&quot;</b>. Salt is unchanged at 7.9% against 0.6%, twelve times harder at the small end.",
+   "<b>651 ASSERTIONS, up from 608</b>, including one that neither book states a negative share of what an order earns, mutation-checked by forcing the guard true so that it fails on oil and only oil. All seven branches are now proved ancestors of master, by assertion rather than by memory."
+  ]
+ },
+ {
   "v": "v385",
   "d": "27 Aug 2026",
   "t": "SEVEN VIEWS READ IN PARALLEL, AND MOST OF WHAT THEY FOUND WAS HIDING BEHIND PROSE NOBODY COULD READ",
