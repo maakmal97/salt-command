@@ -235,13 +235,15 @@ function applyAmend(row, pay, dir, note) {
       assoc: attr.assoc, stream: attr.stream, downstream: attr.downstream,
     });
     const asked = (k) => Object.prototype.hasOwnProperty.call(f, k) && f[k] !== undefined;
-    const said = [];
-    for (const k of Object.keys(f)) {
-      if (f[k] === undefined) continue;
-      const was = before[k] === undefined ? null : before[k];
-      if (JSON.stringify(f[k]) === JSON.stringify(was)) continue;
-      said.push(`${k} ${was == null ? "(unset)" : was} to ${f[k] == null ? "(cleared)" : f[k]}`);
-    }
+    /* v385: `said` IS BUILT AT THE FOOT OF THIS BLOCK, FROM WHAT WAS WRITTEN, NOT FROM WHAT WAS
+       ASKED. It used to be built here, by walking Object.keys(f), while the writes below walk
+       CORRECTABLE. Two lists, no check that they agreed, and at v381 they did not: a correction
+       naming `customer` wrote nothing and claimed a re-key anyway, on two rows. v383 made the
+       fold REFUSE an unknown field, which stops the known case; building the claim from the
+       write makes the whole class impossible, because a field nothing wrote cannot be claimed.
+       Reasons carry the one thing a diff cannot know: WHY a value the editor did not name
+       moved. */
+    const reasons = {};
 
     /* THE PLAIN FIELDS: set, or delete when cleared. Everything numeric, dated or textual goes
        through here, so adding a field to the drafter's table is all it takes to make it
@@ -264,7 +266,7 @@ function applyAmend(row, pay, dir, note) {
        a second tap to say so, and the trail records that it happened. */
     if (!asked("unpriced") && asked("total") && f.total > 0.005 && row.unpriced) {
       delete row.unpriced;
-      said.push("unpriced (cleared: a real total was set)");
+      reasons.unpriced = "a real total was set";
     }
     /* THE v146 GUARD, on the correction road too. poRecvKg reads an ABSENT receivedQty as
        fully received, which is how every settled historical lot is stored. So clearing
@@ -273,6 +275,8 @@ function applyAmend(row, pay, dir, note) {
        lot is on order. ovAmend's fulfilment path does exactly this, for exactly this reason. */
     if (dir === "BUY" && asked("pending") && f.pending !== true && row.receivedQty == null) {
       row.receivedQty = 0; row.inTransit = true;
+      reasons.receivedQty = "the lot is on order and nothing has arrived";
+      reasons.inTransit = "the lot is on order and nothing has arrived";
     }
     if (asked("product")) { if (f.product === "salt") delete row.product; else row.product = f.product; }
 
@@ -304,6 +308,25 @@ function applyAmend(row, pay, dir, note) {
     if (dir === "BUY" && (asked("cash") || asked("total"))) {
       const paid = row.cash != null ? row.cash : 0;
       row.status = paid >= (row.total || 0) - 0.009 ? "paid" : (paid <= 0.009 ? "unpaid" : "partial");
+    }
+
+    /* NOW READ THE ROW BACK AND SAY WHAT ACTUALLY MOVED. attributionOf is the same function the
+       desk, the payload and the fold all use to answer who a row books to, so the three stated
+       attribution fields are compared the way they are READ rather than the way they were
+       stored, which is the only comparison that can be trusted after the R2/R3 rewrite above. */
+    const attrNow = E.attributionOf(row, partyKey);
+    const after = Object.assign({}, row, {
+      product: row.product || "salt",
+      party: attrNow.stream === "R2" ? (attrNow.downstream || null) : (row[partyKey] || null),
+      assoc: attrNow.assoc, stream: attrNow.stream, downstream: attrNow.downstream,
+    });
+    const said = [];
+    for (const k of E.CORRECTABLE) {
+      const was = before[k] === undefined ? null : before[k];
+      const now = after[k] === undefined ? null : after[k];
+      if (JSON.stringify(was) === JSON.stringify(now)) continue;
+      const why = reasons[k] ? `, ${reasons[k]}` : "";
+      said.push(`${k} ${was == null ? "(unset)" : was} to ${now == null ? "(cleared)" : now}${why}`);
     }
 
     if (said.length) {
