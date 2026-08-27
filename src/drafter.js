@@ -913,7 +913,17 @@ export function draftRow(entry, book) {
       if (moved > 0.005) row.deliveredOn = row.date;
       if (paidInFull) row.paidOn = row.date;
     } else {
+      /* v385: A LOT THAT IS PAID AND HAS NOT ARRIVED USED TO BE DRAFTED AS THOUGH IT HAD.
+         The SELL branch above states what moved including a zero; this one stated it only when
+         something did, so a settled lot came out with no receivedQty and no inTransit. By the
+         book's own convention an absent receivedQty on a settled lot means received IN FULL,
+         and poRecvKg agrees, so the row asserted the salt had landed: approve it and the fold
+         walks the whole lot into stock and into the cost basis.
+         BOTH FIELDS ARE SET, not one, because that is what the fold's own v146 guard does on
+         the correction road for exactly this case. A row drafted here and a row corrected there
+         have to come out the same shape or the book holds two kinds of unarrived lot. */
       if (moved > 0.005) { row.receivedOn = row.date; row.receivedQty = moved; }
+      else { row.receivedQty = 0; row.inTransit = true; }
       if (paidInFull) row.paidOn = row.date;
     }
   } else if (dir === "SELL") {
