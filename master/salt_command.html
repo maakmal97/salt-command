@@ -4305,8 +4305,21 @@ function enginePrice(q,tierCode,opts){
      out of the arithmetic rather than set to 1 in three places; `rel` and `wanted` are still
      returned as what the retired engine WOULD have asked, which is the only honest way to show
      what changed on the day the two are compared. */
+  /* ============ AND THE SECOND LIFT WAS AGAINST THE WRONG FLOOR ============
+     `Math.max(L.ask.total, ladderRound(floor))` lifted the ask to clear the DELIVERED floor, while
+     ladderWalk had already lifted it to clear the COLLECTED one. Two floors, two answers, and on
+     this book they part company at exactly one cell: salt at half a unit, where the board asks
+     RM60 and this returned RM70. The board is a COLLECTION price and delivery is quoted on top per
+     order (v352, his instruction), so baking one delivery into the price of a lot nobody has said
+     is being delivered is not a policy, it is an artefact of where the two floors cross the ask.
+     Worse, it fired at exactly the sizes the board tags as collect only: the table says quote half
+     a unit at the counter, and pxQuote quoted it as though it were going out on a van.
+     THE MAX IS DROPPED RATHER THAN REBASED, because on the collected basis it can never bind.
+     ladderWalk guarantees the ask already clears the collected floor at the next grid step above
+     it, so a second lift on that basis is arithmetic that cannot change the answer. `floor` is
+     still returned DELIVERED, because that is what the walk-away is and what the board prints. */
   const L=priceLadder(q,{collects:opts.collects});
-  const p=Math.max(L.ask.total,ladderRound(floor));
+  const p=L.ask.total;
   return {q,code:T.code,name:T.name,goods,delivery,leak,base,credit,badDebt:bd,
     target:+m.toFixed(4),fitted:MC.fitted,load,raw:+raw.toFixed(2),rel:+rel.toFixed(2),
     lift,wanted:+wanted.toFixed(2),floor:+floor.toFixed(2),price:p,
@@ -10220,10 +10233,12 @@ function pxSnap(total,walkTotal){
    the 12.5 commentary and the floor column. The board said RM95 for a unit to Tier I
    and this said RM130. Every rule added since v245, the ringgit floor, the cover guard, the
    strict ordering, bound one of the two and not the other.
-   IT IS NOW A THIN WRAPPER ON THE BOARD and computes no price of its own. On a carded size
-   it returns the board cell; off the board it calls enginePrice, which is the SAME engine
-   that built the board, under the same floors and the same laws. Nothing else is left that
-   can invent a number.
+   IT IS A THIN WRAPPER ON THE BOARD and computes no price of its own. It calls enginePrice at
+   every size, on and off the board alike; the older claim here that a carded size returned the
+   board cell was never true of the code, and the distinction died with the cards at v326 anyway.
+   enginePrice is the SAME engine that built the board, under the same laws. Until 27 Aug it was
+   NOT under the same floor, and that one gap is what let this return RM70 for half a unit of salt
+   while the board two panes up asked RM60. Nothing is left that can invent a number.
    sigNet AND partyNet ARE IGNORED, and the arguments are kept only so nine call sites did
    not have to be rewritten to prove it. The signal engine was found dead at v241, computing
    a -5% adjustment that PRICE_MODEL.useDemand discarded; the party adjustment was a second
@@ -12206,7 +12221,7 @@ function tabPricing(){
     <!-- v381: was hardcoded to 12.5 in three places and asserted that the best rate ever paid
          "was the one-off" whether or not the book has one. It reads the size the table is
          actually about, and it says nothing about a median it has not got. -->
-    <div class="dsc" style="margin-top:8px">The board currently quotes <b>${fmt0(pxQuote(AT,net,pn).total)}</b> for ${kg(AT)}. ${h.n?`The median that size has actually cleared at is <b>${fmt(h.med)}/unit</b> across ${h.n} order${h.n===1?'':'s'}, and the best ever paid is <b>${fmt(h.best)}/unit</b>${nOff>0?', which was a one-off':''}. ${targets.filter(t=>t.vsMed!=null&&t.vsMed>0).length?`<b>A ${targets.filter(t=>t.vsMed!=null&&t.vsMed>0)[0].m}% margin already needs a rate above that median.</b> `:''}That is the honest reading: at this cost structure wholesale is not a pricing problem you can reprice your way out of, because the market has already shown what it pays.`:`<b>That size has never been sold</b>, so there is no median to test the rates above against. They are arithmetic on the cost, not evidence about the trade.`}</div></div>`;})()}
+    <div class="dsc" style="margin-top:8px">The board currently quotes <b>${fmt0(priceLadder(AT).ask.total)}</b> for ${kg(AT)}. ${h.n?`The median that size has actually cleared at is <b>${fmt(h.med)}/unit</b> across ${h.n} order${h.n===1?'':'s'}, and the best ever paid is <b>${fmt(h.best)}/unit</b>${nOff>0?', which was a one-off':''}. ${targets.filter(t=>t.vsMed!=null&&t.vsMed>0).length?`<b>A ${targets.filter(t=>t.vsMed!=null&&t.vsMed>0)[0].m}% margin already needs a rate above that median.</b> `:''}That is the honest reading: at this cost structure wholesale is not a pricing problem you can reprice your way out of, because the market has already shown what it pays.`:`<b>That size has never been sold</b>, so there is no median to test the rates above against. They are arithmetic on the cost, not evidence about the trade.`}</div></div>`;})()}
     <!-- v281: two stray closing divs removed here. They closed nothing in this template;
          the HTML parser answered them by popping the open <details> AND the .prodblock
          wrapper, so everything from Shrinkage onwards rendered OUTSIDE the product block
