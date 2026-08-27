@@ -2367,7 +2367,7 @@ const PEOPLE={
       "since": "2026-07-26",
       "reason": "personal reasons",
       "memorial": "Co-Founder",
-      "note": "Departed the business for personal reasons. Memorialised as Co-Founder, a title held by him alone and not passed on. His RM2,090 of introductions and the five customers behind them stay attributed to him."
+      "note": "Memorialised as Co-Founder, a title held by him alone and not passed on. His introductions and the customers behind them stay attributed to him. The figures are read live off the network rather than typed here, because a total typed into a note goes silently wrong the first time a referred order is corrected, and this one is rendered on a public page."
     }
   ],
   "roles": [
@@ -5201,7 +5201,13 @@ function boundaryScan(){
       'no lot of '+PRODUCTS[PROD].name.toLowerCase()+' has ever been recorded as bought, so the shelf reconstructs to '+kg(ledgerStock)+' and neither stock nor cost basis means anything yet. Record the purchase from the supplier and it resolves');
   else if(!stockCounted)
     add('watch','Never counted',PRODUCTS[PROD].name,kg(currentStock)+' derived, not counted',
-      'the shelf is what the ledger implies rather than what anyone has seen; a count would beat it, as it does for salt');
+      /* v385: the comparison named salt outright, two lines above the idiom that fixes it, so
+         on the salt tab it compared salt to itself. It names the OTHER book, and says nothing
+         at all when that one has not been counted either. Latent as it stands, since COUNT_ON
+         now carries a date for both, but a new product would fire it on the day it is added. */
+      'the shelf is what the ledger implies rather than what anyone has seen; a count would beat it'
+        +(()=>{const o=Object.keys(PRODUCTS).find(k=>k!==PROD&&COUNT_ON&&COUNT_ON[k]);
+               return o?', as it does for '+PRODUCTS[o].name.toLowerCase():'';})());
   /* 2d. THE BOARD HAS REPRICED ITSELF (v233). The basis is frozen to a lot, so a purchase is
      the one thing that moves it, and that should be a deliberate moment rather than a silent
      shift. A newer lot than the locked one means the desk is quoting a basis nobody signed. */
