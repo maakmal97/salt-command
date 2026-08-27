@@ -6802,7 +6802,7 @@ function edSubmit(){
   const why=document.getElementById('edWhy');
   const say=m=>{if(why)why.innerHTML='<span style="color:var(--amber)">'+m+'</span>';};
   if(!Object.keys(fields).length)return say('Nothing changed, so there is nothing to queue.');
-  /* v384: THE FOLD REFUSES A FIELD CORRECTABLE DOES NOT HOLD, SO THE SCREEN SAYS SO FIRST.
+  /* v385: THE FOLD REFUSES A FIELD CORRECTABLE DOES NOT HOLD, SO THE SCREEN SAYS SO FIRST.
      v383 folded two corrections naming <code>customer</code> where the correctable field is
      <code>party</code>: applyAmend wrote nothing and still built the mod line out of the keys it
      was handed, so both rows recorded a re-key that never happened. EDFORM cannot emit that
@@ -10536,7 +10536,7 @@ function nextBest(id){
     due:cad?since-cad.med:null,                     // positive means overdue by his own habit
     delta:(paid!=null&&paid>0.009)?+((r.perKg-paid)/paid*100).toFixed(0):null};
 }
-/* ============ WHAT IS ACTUALLY WAITING (v381) ============
+/* ============ WHAT IS ACTUALLY WAITING (v385) ============
    Three places asked the same question three times and two of them answered it wrongly.
    A hushed observation rides the queue exactly as a filed plan does -- both are pushed by
    the Whiteboard, applyOverlay returns on both, and neither can move a figure -- but only
@@ -11387,7 +11387,7 @@ const WB_NO_PROD={amend:1,contact:1,addid:1};
    Cloud only: the laptop server has no drafts table. */
 let AP_DRAFTS=[],AP_REFUSED=[],apNeedKey=false,apBusy={},apMsg='';
 function tabApprove(){
-  /* v381: THE LAPTOP COPY WAS A DEAD END. One sentence saying the decision happens somewhere
+  /* v385: THE LAPTOP COPY WAS A DEAD END. One sentence saying the decision happens somewhere
      else, and no way to tell whether anything was waiting or what to do about it. It cannot
      reach the drafts table and should not pretend to, but it knows exactly what it is
      holding: the entries typed HERE that have not been handed to the drafter yet. That is
@@ -11424,28 +11424,33 @@ async function apLoad(quiet){
   apDraw();
 }
 function apCard(d){
+  /* v385: EVERY FIGURE ON THIS CARD IS EXACT. fmt0 rounds to the whole ringgit, so a queued
+     RM11.50 read back as "RM 12" beside a Rate cell that correctly said RM 11.50, on the one
+     screen whose entire job is reading a figure right, and the RM115 oil unit this card exists
+     for was corrected to exactly RM11.50. fmt prints the sen only when there are sen, so a salt
+     order in whole hundreds is no noisier than it was. */
   const r=d.row||{}, col=d.collection||'sales', cell=(k,v,cls)=>`<div class="kpi ${cls||''}"><div class="l">${k}</div><div class="v" style="font-size:17px">${v}</div></div>`;
   let head='',grid='';
   if(col==='count'){const dr=r.drift;head=`Count of <b>${esc(r.product||'salt')}</b> on ${esc(r.date||'-')}`;
     grid=cell('Book says',r.was==null?'&mdash;':kg(r.was))+cell('You counted',kg(r.qty))+cell('Drift',dr==null?'&mdash;':(dr>0?'+':'')+kg(dr),dr==null?'':Math.abs(dr)<0.005?'g':'r');}
   else if(col==='loss'||col==='lostDemand'){const lost=col==='lostDemand';head=`${lost?'Lost sale':'Loss'} of <b>${esc(r.product||'salt')}</b> on ${esc(r.date||'-')}`;
-    grid=cell(lost?'Wanted':'Left the shelf',kg(r.kg))+(lost?cell('Who',esc(codeOf(r.party||'')||'walk-up'))+cell('Asked',r.rm?fmt0(r.rm):'&mdash;'):'')+cell('Why',esc(r.why||'-'));}
+    grid=cell(lost?'Wanted':'Left the shelf',kg(r.kg))+(lost?cell('Who',esc(codeOf(r.party||'')||'walk-up'))+cell('Asked',r.rm?fmt(r.rm):'&mdash;'):'')+cell('Why',esc(r.why||'-'));}
   else if(col==='roster'){head=`Register <b>${esc(r.code||'?')}</b>`;grid=cell('Kind',esc(r.kind||'customer'))+(r.parent?cell('Under',esc(codeOf(r.parent))):'');}
   else if(d.amends&&d.amendKind==='Correction'){
     /* WHAT IS APPROVED IS WHAT CHANGED. The generic amendment grid below leads with cash and
        units moving, both of which are zero on a correction by definition, so it answered a
        question nobody asked and hid the one being asked. The phone got this card at v361;
        the desk showed zeros until the 25 Aug audit. */
-    head=`Correct <b>${esc(codeOf(r.customer||r.supplier||'?'))}</b>, the ${d.collection==='purchases'?'lot':'order'} of ${kg(r.qty)} for ${fmt0(r.total)} ${r.date?`dated ${esc(r.date)}`:'pending, undated'}${r.rid?` <span class="mono" style="color:var(--dim)">${esc(r.rid)}</span>`:''}`;
+    head=`Correct <b>${esc(codeOf(r.customer||r.supplier||'?'))}</b>, the ${d.collection==='purchases'?'lot':'order'} of ${kg(r.qty)} for ${fmt(r.total)} ${r.date?`dated ${esc(r.date)}`:'pending, undated'}${r.rid?` <span class="mono" style="color:var(--dim)">${esc(r.rid)}</span>`:''}`;
     grid=(r.changes||[]).map(c=>`<div class="kpi"><div class="l">${esc(c.field)}</div><div class="v" style="font-size:14px"><span style="color:var(--dim);text-decoration:line-through">${esc(c.from==null?'unset':String(c.from).slice(0,28))}</span> <span style="color:var(--gold)">${esc(c.to==null?'cleared':String(c.to).slice(0,28))}</span></div></div>`).join('')
       ||cell('Changes','none');}
-  else if(d.amends){const e=(d.entry&&d.entry.payload)||{};head=`${esc(d.amendKind||'Amendment')} on <b>${esc(codeOf(r.customer||r.supplier||'?'))}</b>, the order of ${kg(r.qty)} for ${fmt0(r.total)} agreed ${esc(r.date||'undated')}`;
-    grid=cell('Cash moving',fmt0(e.cash||0))+cell('Units moving',kg(e.kg||0))+cell('On',esc(e.date||'-'))+cell('Already in',fmt0(r.cash||0));}
+  else if(d.amends){const e=(d.entry&&d.entry.payload)||{};head=`${esc(d.amendKind||'Amendment')} on <b>${esc(codeOf(r.customer||r.supplier||'?'))}</b>, the order of ${kg(r.qty)} for ${fmt(r.total)} agreed ${esc(r.date||'undated')}`;
+    grid=cell('Cash moving',fmt(e.cash||0))+cell('Units moving',kg(e.kg||0))+cell('On',esc(e.date||'-'))+cell('Already in',fmt(r.cash||0));}
   else{const buy=col==='purchases',qty=+r.qty||0,total=+r.total||0,cost=r.cost,per=qty?total/qty:null;
     const mar=(!buy&&total>0&&cost!=null&&qty)?((total-cost*qty)/total*100):null;
-    head=`${buy?'Buy from':'Sell to'} <b>${esc(codeOf(r.supplier||r.customer||'?'))}</b>: ${kg(qty)} ${esc(r.product||'salt')} for <b>${fmt0(total)}</b> on ${esc(r.date||'undated')}`;
+    head=`${buy?'Buy from':'Sell to'} <b>${esc(codeOf(r.supplier||r.customer||'?'))}</b>: ${kg(qty)} ${esc(r.product||'salt')} for <b>${fmt(total)}</b> on ${esc(r.date||'undated')}`;
     /* a flagged row never gets a green margin: the RM115 oil unit banded as excellent */
-    /* v381: COST AND MARGIN LEAD, AND THE RATE SITS BESIDE THEM. The phone has read this way
+    /* v385: COST AND MARGIN LEAD, AND THE RATE SITS BESIDE THEM. The phone has read this way
        since v302 and the desk led with the Rate, which is the entry's own figure and the one
        thing an entry cannot be checked against. RM115 a unit is a plausible rate to read
        first; RM115 a unit against RM7 of cost is not. A purchase has neither, so it keeps
@@ -11455,8 +11460,8 @@ function apCard(d){
       :cell('Cost drawn',cost==null?'&mdash;':fmt(cost)+'/unit')
         +cell('Margin',mar==null?'&mdash;':mar.toFixed(1)+'%',mar==null?'':(d.flags&&d.flags.length)?'gold':mar<20?'r':'g')
         +rate)
-      +cell('Cash',fmt0(r.cash||0))+cell(buy?'Received':'Delivered',kg(buy?(r.receivedQty!=null?r.receivedQty:qty):(r.deliveredQty||0)));}
-  /* v384: A DRAFT'S FLAGS ARE FROZEN AT DRAFT TIME AND THE ROSTER IS NOT. v381 re-keyed
+      +cell('Cash',fmt(r.cash||0))+cell(buy?'Received':'Delivered',kg(buy?(r.receivedQty!=null?r.receivedQty:qty):(r.deliveredQty||0)));}
+  /* v385: A DRAFT'S FLAGS ARE FROZEN AT DRAFT TIME AND THE ROSTER IS NOT. v381 re-keyed
      CZ4-TBC to CZ4-MK and CH6-TBC to CH6-SET and purged both placeholders. A row drafted
      before that names a code that WAS on the roster when the drafter read it, so no roster
      flag was ever written into it, and nothing can reach back into a pending draft to add
@@ -11604,7 +11609,7 @@ function tabWorkbench(){
     </div>
 
     <div id="wbPaneNew" style="margin-top:13px">
-      <!-- v381: THE FULLER SHEET SAYS SO ON THE FORM IT SUPERSEDES. v377 made entering an
+      <!-- v385: THE FULLER SHEET SAYS SO ON THE FORM IT SUPERSEDES. v377 made entering an
            order the same sheet as editing one, and put it behind the + in the bottom right,
            which carries a title and an aria-label and no visible word. So the part whose
            whole job is entering an order led with the smaller of the two ways to do it and
@@ -13698,7 +13703,7 @@ function navCounts(){
     if(!c){c=document.createElement('span');c.className='navct';b.appendChild(c);}
     c.textContent=n;};
   put('money',openN);
-  /* v381: the Enter badge has ONE writer, and it is not this one. planN was computed here
+  /* v385: the Enter badge has ONE writer, and it is not this one. planN was computed here
      and never used, so the comment that stood above it -- plans must not inflate the count
      -- described an intention the line below it did not carry out. apBadge() counts what a
      visit to Enter can actually clear: entries waiting to be committed, plus rows waiting
@@ -13970,7 +13975,7 @@ applyOverlay();                            // uncommitted entries fold in before
    address that names a tab is honoured, which is what lets a reload resume in place. */
 recompute();drawProdSw();
 (function(){const h=(location.hash||'').slice(1);switchTab(VIEW_OF[h]?h:'today');})();
-/* v381: THE RAIL KNOWS BEFORE APPROVE IS OPENED. A row is drafted within a second of an
+/* v385: THE RAIL KNOWS BEFORE APPROVE IS OPENED. A row is drafted within a second of an
    entry landing, and until now nothing on this desk said so until you happened to open the
    one part that fetches them, which is the wrong way round for a step that is not optional.
    One read on load: cloud only, and only where a write key is already stored, so a stranger

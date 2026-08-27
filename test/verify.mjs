@@ -1009,7 +1009,7 @@ section("Drafter — rows, refusals and flags");
   const cut = draftRow(entry({ direction: "SELL", party: "CC5-OKR", qty: 1, total: 80, cash: 80, kg: 1, date: "2026-08-16" }), book);
   ok(cut.flags.some(f => /has paid RM 90/.test(f)), "a party who has always paid RM90 being charged RM80 is flagged");
   ok(buyNoFloor.flags.every(f => !/floor/.test(f)), "a PURCHASE is never measured against a selling floor");
-  /* v384: THE FLOOR IS THE COST LEG ALONE, so a row at it earns nothing at all rather than a
+  /* v385: THE FLOOR IS THE COST LEG ALONE, so a row at it earns nothing at all rather than a
      thin margin, and this sentence is the only place a reader is ever told. Both floors are
      NAMED, because RM10 separates delivered from collected where RM50 used to and "the floor"
      had quietly become two things. */
@@ -1511,7 +1511,7 @@ section("App — an unapproved entry can be corrected and resent");
   ok(app.includes("id=\"editCancel\""), "and there is an explicit way to cancel one without switching modes");
 }
 
-/* ---- 21. The correction sheet may name only what the fold accepts (v384) ---------- */
+/* ---- 21. The correction sheet may name only what the fold accepts (v385) ---------- */
 section("Desk — the row editor names only fields CORRECTABLE holds");
 {
   const master = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");

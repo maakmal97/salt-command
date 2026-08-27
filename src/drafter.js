@@ -267,7 +267,7 @@ export function costFor(book, product) {
 export function floorFor(book, product, qty) {
   const snap = book.pricing && book.pricing.byProduct && book.pricing.byProduct[product || "salt"];
   if (!snap || !snap.floors) return null;
-  /* v384: WHAT THE FLOOR CHARGES FOR HIS TIME, READ OFF THE POLICY AND NEVER TYPED HERE. The
+  /* v385: WHAT THE FLOOR CHARGES FOR HIS TIME, READ OFF THE POLICY AND NEVER TYPED HERE. The
      flag has to say what the floor is made of now that the markup leg is gone, and the one
      figure in it that is a stated policy rather than a cost is timePerOrder. Computed on both
      roads, since a snapshot without inputs still carries carded floors that mean the same
@@ -352,7 +352,7 @@ export function flagsFor(entry, row, book, priced) {
 
   /* 3. AGAINST THE LIVE FLOOR, which moves with the cost and is the reason a printed floor is
         refused anywhere on this desk. Sales only: there is no floor on what you pay a supplier.
-        v384: THE FLOOR STOPPED MEANING THIN MARGIN AND THIS SENTENCE IS THE ONLY PLACE ANYONE
+        v385: THE FLOOR STOPPED MEANING THIN MARGIN AND THIS SENTENCE IS THE ONLY PLACE ANYONE
         FINDS OUT. The markup leg is gone, so floorTotal is the cost leg alone and a row AT the
         floor now earns nothing whatever: it returns the goods, the run out and the stated
         charge for his time, and not a ringgit above them. The old wording said "under the
