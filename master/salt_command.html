@@ -6547,9 +6547,14 @@ function tabInventory(){
     ? `No trade in the last four weeks, so there is no rate to measure cover against.`
     : CS.split
     /* the warning has to be the FIRST sentence: stripMethod cuts an insight there, so a caveat
-       in sentence two is a caveat nobody reads. This is the v385 lesson from the shelf call. */
-    ? `Cover is <b>${CS.d14.toFixed(1)} days</b> read off the fortnight and <b>${CS.d28.toFixed(1)}</b> read off the four weeks, so the life of this shelf is a range rather than a date and every figure above is the fortnight half of it. `
-      +`The two windows part company when trade stops and starts again inside one of them, which is exactly when cover matters most, so plan on the shorter of the two until they converge.`
+       in sentence two is a caveat nobody reads.
+       AND THAT SENTENCE HAS TO BE SHORT, WHICH IS THE HARDER HALF. Under NOTE_MIN is a property
+       of the template PLUS today's figures, so a long first sentence has bought headroom rather
+       than safety: it survives on this book on this day. The warning is its own short sentence
+       here, ninety-odd characters against a limit of 140 whatever the two day counts do, and
+       the reasoning follows in sentences that are meant to be cut. Split, never trim. */
+    ? `Cover is a range and not a date: <b>${CS.d14.toFixed(1)} days</b> on the fortnight rate against <b>${CS.d28.toFixed(1)}</b> on the four weeks. `
+      +`Every figure above is the fortnight half of it, and the two windows part company when trade stops and starts again inside one of them, which is exactly when cover matters most, so plan on the shorter until they converge.`
     : `At the last fortnight&rsquo;s <b>${kg(cv.rate)} a day</b>, the <b>${kg(Math.max(0,cv.free))}</b> free to sell runs out <b>${cv.days<1?'today':'on '+cv.zero.toLocaleDateString('en-GB',{day:'2-digit',month:'short'})}</b>. `
       +`${cv.below?`That is <b>${kg(cv.shortBy)} below the ${kg(cv.reorderAt)} trigger</b>, so buying is already overdue rather than approaching. `:''}`
       +`A stockout never appears in any figure on this desk, because an order you could not fill was never recorded, which makes cover the one number here that warns you before the loss instead of after it.`}</div>
@@ -7824,7 +7829,7 @@ function drawOutlookChart(){
           scales:{x:{stacked:true,grid:{display:false},ticks:{color:'rgba(244,245,247,0.66)',font:{size:10}}},
                   y:{stacked:true,grid:{color:'rgba(255,255,255,0.07)'},ticks:{color:'rgba(244,245,247,0.66)',callback:v=>Number(v).toLocaleString('en-MY',{maximumFractionDigits:0})}}}}});
     /* v385: was `catch(e){}`, same fault and same fix as the lot chart below. */
-    }catch(err){chartEmpty(el,'The lot outlook chart could not be drawn: '+((err&&err.message)||err));}
+    }catch(err){chartEmpty(el,'This chart could not be drawn: '+((err&&err.message)||err)+'. Every figure it draws is in the tables on this part.');}
   });
 }
 
@@ -7880,7 +7885,7 @@ function drawSourcingCharts(){
     /* v385: was `catch(e){}`. v384 opened drawPerProduct's empty catch for the same reason and
        this one sat one level inside it, so a throw here was still silent: the canvas stayed
        blank and the caption underneath went on describing bars nobody could see. */
-    }catch(err){chartEmpty(el,'The lot chart could not be drawn: '+((err&&err.message)||err));}
+    }catch(err){chartEmpty(el,'This chart could not be drawn: '+((err&&err.message)||err)+'. Every figure it draws is in the tables on this part.');}
   });
 }
 /* AN EMPTY CHART SHOULD TAKE UP NO ROOM (v233). Every one of these guards replaced the
@@ -10870,8 +10875,11 @@ function trackCharts(){
   const ic=blkEl('invChart');
   if(!ic)return;
   ensureChart(ok=>{
-    if(!ok){ const h=ic.parentNode; if(h)h.innerHTML='<div class="dsc">Chart unavailable. Every figure it draws is in the tables on this tab.</div>'; return; }
-    try{ drawInvChart(ic); }catch(e){ const h=ic.parentNode; if(h)h.innerHTML='<div class="dsc">The movement chart could not be drawn: '+(e&&e.message||e)+'</div>'; }
+    /* v385: onto chartEmpty and the one agreed wording. Writing the parent's innerHTML by hand
+       skipped chartEmpty's own handling of a card that is nothing but a chart, and gave this
+       view a third phrasing for what the rest of the desk says one way. */
+    if(!ok){ chartEmpty(ic,'Chart unavailable. Every figure it draws is in the tables on this part.'); return; }
+    try{ drawInvChart(ic); }catch(err){ chartEmpty(ic,'This chart could not be drawn: '+((err&&err.message)||err)+'. Every figure it draws is in the tables on this part.'); }
   });
 }
 function drawInvChart(ic){
