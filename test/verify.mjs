@@ -2127,14 +2127,14 @@ section("Payload — the people, the next thirty days and the age of a debt (v34
   ok(!/show\(3\)/.test(app) && /show\('p-add'\)/.test(app), "a tab is addressed by its id, not its position");
 }
 
-/* ---- 25. Orders and money: a figure is stated where it is true, and once (v384) ----
+/* ---- 25. Orders and money: a figure is stated where it is true, and once (v385) ----
    Both faults this locks down were silent for weeks and every exit code was zero.
    cashFlow() is whole-book by construction and says so in its own comment, and tabFinancials
    drew it INSIDE perProduct(), so the same four figures appeared under Salt and again under
    Oil, each heading claiming them. riskRates()'s supplier legs did the same. And ifrsPanel()
    carried two Owner's use rows, so a statement of profit or loss reported one drawing twice.
    A duplicated figure reads exactly like a counted one, which is why this is a test. */
-section("Orders and money — whole-book figures sit above the repeat, and once (v384)");
+section("Orders and money — whole-book figures sit above the repeat, and once (v385)");
 {
   const { openMaster } = await import("../tools/payload.mjs");
   const { w } = await openMaster();
@@ -2195,7 +2195,7 @@ section("Orders and money — whole-book figures sit above the repeat, and once 
   try { w.close(); } catch (e) { }
 }
 
-/* ---- 26. Orders and money: the basis moved under the figures (v384) ----------------
+/* ---- 26. Orders and money: the basis moved under the figures (v385) ----------------
    v382 halved a trip to RM30 and moved its divisor from the latest lot to the average one,
    and took a delivery from RM50 to RM10. Nothing on this view holds a frozen number, so
    nothing went stale. What the pass found instead was three things a moving basis makes
@@ -2209,7 +2209,7 @@ section("Orders and money — whole-book figures sit above the repeat, and once 
    v382 was written. That is luck, not design, and the next change to either need not be so
    kind. The two are asserted equal.
    THE THIRD IS THE WORD. This part is drawn once per book and six labels said "Salt". */
-section("Orders and money — every basis is named where the figure is stated (v384)");
+section("Orders and money — every basis is named where the figure is stated (v385)");
 {
   const { openMaster } = await import("../tools/payload.mjs");
   const { w } = await openMaster();
@@ -2221,7 +2221,7 @@ section("Orders and money — every basis is named where the figure is stated (v
   for (const pr of ids) {
     setP(pr);
     const nm = names[pr].name, other = ids.filter((x) => x !== pr).map((x) => names[x].name);
-    /* the book names itself. "Salt you owe 1.54 unit" stood over an oil row until v384. */
+    /* the book names itself. "Salt you owe 1.54 unit" stood over an oil row until v385. */
     const rec = html("tabReceivables()");
     ok(rec.includes(`${nm} you owe`) || !rec.includes("you owe them"),
       `${pr}: the Order book calls what is owed in goods by this book's name`);
@@ -2258,9 +2258,66 @@ section("Orders and money — every basis is named where the figure is stated (v
     const unc = (fin.match(/Still uncollected<\/td>(.*?)<\/tr>/) || [, ""])[1];
     ok((unc.match(/RM\s*-/g) || []).length === (unc.match(/held against goods/g) || []).length,
       `${pr}: a negative uncollected figure says it is goods owed out, not cash owed back`);
+
+    /* THE CLOSING STOCK IS THIS BOOK'S, AT THIS BOOK'S RATE. It read the salt-wide
+       STOCK_COST inside a per-product block, so the oil book valued 20 unit of oil at
+       salt's RM50 and reported RM1,000 on a shelf holding RM153. Invisible from v372,
+       when stripMethod began deleting the sentence, until v384 put it back. */
+    const right = html("fmt0(currentStock*stockCostFor(PROD))"), wrong = html("fmt0(currentStock*STOCK_COST)");
+    ok(fin.includes(`${right}</b> on the shelf`), `${pr}: closing stock is valued at this book's own shelf rate (${right})`);
+    if (right !== wrong) ok(!fin.includes(`${wrong}</b> on the shelf`), `${pr}: and never at another book's (${wrong})`);
+
+    /* THE RATE OF TRADE IS ORDERS PER MONTH AND THE MONTHS ARE COUNTED, NOT ASSUMED. */
+    const per = html("fmt(100/Math.max(1,pricedSales.length/Math.max(1,finRows().length)))");
+    ok(fin.includes(`<b>${per}</b> an order`), `${pr}: a standing cost is spread over the orders this book actually places in a month (${per})`);
   }
   setP(keep);
   try { w.close(); } catch (e) { }
+}
+
+section("Silence — four things that failed without saying so (v384)");
+{
+  const m = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+  const eng = readFileSync(join(REPO, "engine", "pricing.mjs"), "utf8");
+
+  /* 1. NO EMPTY CATCH ON A DRAW. Both of these swallowed a throw whole, so a broken chart was
+     indistinguishable from a chart with nothing to draw and every fault was found by eye. */
+  ok(/fns\.forEach\(f=>\{try\{f\(\);\}catch\(e\)\{drawFailed\(b,f,e\);\}\}\)/.test(m),
+     "a draw that throws inside drawPerProduct is reported, not swallowed");
+  ok(/function drawFailed\(b,f,e\)\{/.test(m) && /b\.insertBefore\(n,b\.firstChild\)/.test(m),
+     "and the report goes to the top of the block, where the eye lands");
+  ok(!/if\(PART_DRAW\[tab\]\)PART_DRAW\[tab\]\(\);\}catch\(e\)\{\}/.test(m),
+     "renderPart no longer eats a whole part's draw pass in an empty catch");
+
+  /* 2. stripMethod. Three scope faults, each of which deleted something that was not method. */
+  ok(/const blks=\[\.\.\.el\.querySelectorAll\('\.prodblock\[data-prod\]'\)\];/.test(m)
+     && /\(blks\.length\?blks:\[el\]\)\.forEach\(scope=>\{/.test(m),
+     "stripMethod keeps one note per PRODUCT BLOCK, so the second product keeps its lead");
+  ok(/&&!b\.id&&!FIGURE\.test\(txt\(b\)\)\);/.test(m),
+     "and leaves alone a block carrying a figure, or one another function addresses by id");
+  ok(/const FIGURE=\/RM\\s\?\\d\|/.test(m), "FIGURE says what a figure is: money, a quantity or a percentage");
+  ok(/<div id="plOk" class="dsc"/.test(m), "the div planAdd writes into is still there to be found, and now survives");
+
+  /* 3. THE LOCK SWITCH. lockBase is populated whether the lock is on or off, so guarding on it
+     alone froze freight and delivery under any cost override while the leak stayed live. */
+  const guards = eng.match(/\(I\.lockOn&&LKb&&pxOver\.cost!=null\)/g) || [];
+  ok(guards.length === 2, `freight and delivery both obey the lock switch, as the leak already did (${guards.length}/2)`);
+  ok(!/\((?<!I\.lockOn&&)LKb&&pxOver\.cost!=null\)/.test(eng), "and nothing in the cost stack reads the frozen basis on a lock that is off");
+
+  /* 4. OIL'S SHELF COST IS DERIVED FROM THE BOOK, NOT PINNED. v381 rolled salt RM44 to RM50 and
+     left oil at the rate of lots long gone. Read the newest RECEIVED oil lot rather than assert
+     a number, which is the same lesson the shelf-cost assertion above learned. */
+  const bk = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const oilLots = (bk.purchases || []).filter((p) => p.product === "oil" && p.receivedOn && p.qty > 0);
+  if (!oilLots.length) ok(true, "no received oil lot on the book, so the check is skipped");
+  else {
+    oilLots.sort((a, b) => String(a.receivedOn).localeCompare(String(b.receivedOn)));
+    const newest = oilLots[oilLots.length - 1];
+    const rate = newest.total / newest.qty;
+    const stated = +(/const PROD_STOCK_COST=\{salt:null, oil:([\d.]+)\}/.exec(m) || [])[1];
+    ok(Math.abs(stated - rate) < 1e-6,
+       `oil's shelf cost is the newest received lot's rate, RM${rate.toFixed(4)} (stated RM${stated}). A genuine blend would fail this, which is the point: it should be a decision, not a default`);
+  }
 }
 
 /* ---- done ----------------------------------------------------------------------- */

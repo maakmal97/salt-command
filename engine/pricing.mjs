@@ -71,7 +71,13 @@ function costStack(I){
      back to the lot, so nothing is undefined on the first purchase of a new book. */
   const lotQty=(pxOver.cost!=null&&L)?L.qty:(L?L.qty:null);
   const freightQty=(I.meanLot>0)?I.meanLot:lotQty;
-  const freight=(LKb&&pxOver.cost!=null)?LKb.freight:(freightQty?COST_BASIS.freightPerTrip.rm/freightQty:0);
+  /* v384: AND THE LOCK SWITCH IS OBEYED HERE, WHICH IT WAS NOT. lockBase is populated whether the
+     lock is on or off, so LKb is truthy on both books, and this line and the delivery one below
+     guarded only on `LKb && an override`. The leak two steps down guards on `I.lockOn && LKb`.
+     So any probe that set a cost silently took the 06 Aug lock's FROZEN freight and delivery while
+     the leak stayed live: one cost stack, two components frozen and one not, on a lock switched
+     OFF. v382 is what made it visible, by moving live freight away from the frozen figure. */
+  const freight=(I.lockOn&&LKb&&pxOver.cost!=null)?LKb.freight:(freightQty?COST_BASIS.freightPerTrip.rm/freightQty:0);
   const landed=lot+freight;                   // <- IAS 2 inventoriable cost, and nothing below this line is
   /* 3. THE UNITS THAT NEVER REACH A PAYING CUSTOMER. It divides rather than adds: losing 8% of
      what you buy means the 92% that sells has to return the cost of 100%. When a lock exists and
@@ -81,7 +87,7 @@ function costStack(I){
   const sh=raw*SHRINK_ATTRIB;
   const yielded=landed/Math.max(0.01,1-sh);
   /* 4. GETTING THEM TO THE CUSTOMER. Per order, so divided by what an average order carries. */
-  const del=(LKb&&pxOver.cost!=null)?{n:LKb.delN,mean:LKb.avgDel}:I.avgDel;
+  const del=(I.lockOn&&LKb&&pxOver.cost!=null)?{n:LKb.delN,mean:LKb.avgDel}:I.avgDel;   // v384: see the freight note above
   const txn=del.mean?(COST_BASIS.deliveredShare.v*COST_BASIS.txnPerDelivery.rm)/del.mean:0;
   const eff=yielded+txn;
   return {repl:+lot.toFixed(2),lot:+lot.toFixed(4),freight:+freight.toFixed(4),

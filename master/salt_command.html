@@ -1799,7 +1799,13 @@ function costStack(I){
      back to the lot, so nothing is undefined on the first purchase of a new book. */
   const lotQty=(pxOver.cost!=null&&L)?L.qty:(L?L.qty:null);
   const freightQty=(I.meanLot>0)?I.meanLot:lotQty;
-  const freight=(LKb&&pxOver.cost!=null)?LKb.freight:(freightQty?COST_BASIS.freightPerTrip.rm/freightQty:0);
+  /* v384: AND THE LOCK SWITCH IS OBEYED HERE, WHICH IT WAS NOT. lockBase is populated whether the
+     lock is on or off, so LKb is truthy on both books, and this line and the delivery one below
+     guarded only on `LKb && an override`. The leak two steps down guards on `I.lockOn && LKb`.
+     So any probe that set a cost silently took the 06 Aug lock's FROZEN freight and delivery while
+     the leak stayed live: one cost stack, two components frozen and one not, on a lock switched
+     OFF. v382 is what made it visible, by moving live freight away from the frozen figure. */
+  const freight=(I.lockOn&&LKb&&pxOver.cost!=null)?LKb.freight:(freightQty?COST_BASIS.freightPerTrip.rm/freightQty:0);
   const landed=lot+freight;                   // <- IAS 2 inventoriable cost, and nothing below this line is
   /* 3. THE UNITS THAT NEVER REACH A PAYING CUSTOMER. It divides rather than adds: losing 8% of
      what you buy means the 92% that sells has to return the cost of 100%. When a lock exists and
@@ -1809,7 +1815,7 @@ function costStack(I){
   const sh=raw*SHRINK_ATTRIB;
   const yielded=landed/Math.max(0.01,1-sh);
   /* 4. GETTING THEM TO THE CUSTOMER. Per order, so divided by what an average order carries. */
-  const del=(LKb&&pxOver.cost!=null)?{n:LKb.delN,mean:LKb.avgDel}:I.avgDel;
+  const del=(I.lockOn&&LKb&&pxOver.cost!=null)?{n:LKb.delN,mean:LKb.avgDel}:I.avgDel;   // v384: see the freight note above
   const txn=del.mean?(COST_BASIS.deliveredShare.v*COST_BASIS.txnPerDelivery.rm)/del.mean:0;
   const eff=yielded+txn;
   return {repl:+lot.toFixed(2),lot:+lot.toFixed(4),freight:+freight.toFixed(4),
@@ -2530,7 +2536,15 @@ const openingFor=p=>PROD_OPENING[p||PROD]||{qty:0,costPerKg:null,stated:null,unc
    first by the only sale, so RM7 is the rate of what is actually there rather than an
    average of what was. Same test STOCK_COST answers for salt: which lots is the remnant
    from, not what did everything cost on average. */
-const PROD_STOCK_COST={salt:null, oil:7};   // null = use STOCK_COST, the salt roll
+/* v384: OIL'S ROLL WAS MISSED ON THE 26TH. Salt rolled RM44 to RM50 that day and oil did not,
+   so this stood at the RM7 of lots long gone while the shelf held nothing but the 26 Aug lot at
+   RM7.6667: the 23 Aug count put oil at zero, 30 unit landed and 10 went out, so all 20 on hand
+   came off that one lot and there is no blend to solve, exactly as salt had none. It is STATED
+   rather than left null: null falls through to the opening, which reads 7.6667 today only
+   because two separate lots were bought at the same rate, and a figure that is right by
+   coincidence is not right. It feeds Financials' closing stock, the PRICING snapshot the
+   drafter approves against, and the Stock value card. */
+const PROD_STOCK_COST={salt:null, oil:7.666666666666667};   // null = use STOCK_COST, the salt roll
 function stockCostFor(p){const k=p||PROD,v=PROD_STOCK_COST[k];
   if(v!=null)return v;
   if(k===DEFAULT_PROD&&typeof STOCK_COST!=='undefined'&&STOCK_COST!=null)return STOCK_COST;
@@ -2965,7 +2979,7 @@ const BASEMAP=[
    party the desk could place was reported as unknown. The locality it stands for is in the
    directory on the laptop, and is deliberately not written here: this file is inlined into a
    page served publicly, and naming a neighbourhood beside a suffix identifies its customer. */
-const PLACES={"KLC":{"lat":3.16,"lng":101.71},"OKR":{"lat":3.09,"lng":101.67},"PJ":{"lat":3.11,"lng":101.61},"CS":{"lat":3.06,"lng":101.75},"MK":{"lat":3.17,"lng":101.65},"BK":{"lat":3.05,"lng":101.64},"WM":{"lat":3.21,"lng":101.74},"KLS":{"lat":3.13,"lng":101.69},"SEN":{"lat":3.18,"lng":101.68},"SB":{"lat":3.05,"lng":101.71},"BJ":{"lat":3.06,"lng":101.69},"DAM":{"lat":3.15,"lng":101.66},"PER":{"lat":3.1,"lng":101.72},"CHE":{"lat":3.11,"lng":101.72},"SK":{"lat":3.02,"lng":101.7},"BS":{"lat":3.11,"lng":101.67},"KER":{"lat":3.11,"lng":101.67},"AD":{"lat":3.06,"lng":101.74},"BTR":{"lat":3.09,"lng":101.71},"KEP":{"lat":3.21,"lng":101.64},"PUD":{"lat":3.14,"lng":101.71},"MLR":{"lat":3.13,"lng":101.73},"TAI":{"lat":4.85,"lng":100.74},"NIL":{"lat":2.81,"lng":101.8},"HCM":{"lat":10.78,"lng":106.7}};
+const PLACES={"KLC":{"lat":3.16,"lng":101.71},"OKR":{"lat":3.09,"lng":101.67},"PJ":{"lat":3.11,"lng":101.61},"CS":{"lat":3.06,"lng":101.75},"MK":{"lat":3.17,"lng":101.65},"SET":{"lat":3.2,"lng":101.72},"BK":{"lat":3.05,"lng":101.64},"WM":{"lat":3.21,"lng":101.74},"KLS":{"lat":3.13,"lng":101.69},"SEN":{"lat":3.18,"lng":101.68},"SB":{"lat":3.05,"lng":101.71},"BJ":{"lat":3.06,"lng":101.69},"DAM":{"lat":3.15,"lng":101.66},"PER":{"lat":3.1,"lng":101.72},"CHE":{"lat":3.11,"lng":101.72},"SK":{"lat":3.02,"lng":101.7},"BS":{"lat":3.11,"lng":101.67},"KER":{"lat":3.11,"lng":101.67},"AD":{"lat":3.06,"lng":101.74},"BTR":{"lat":3.09,"lng":101.71},"KEP":{"lat":3.21,"lng":101.64},"PUD":{"lat":3.14,"lng":101.71},"MLR":{"lat":3.13,"lng":101.73},"TAI":{"lat":4.85,"lng":100.74},"NIL":{"lat":2.81,"lng":101.8},"HCM":{"lat":10.78,"lng":106.7}};
 /* The drawn map is a KLANG VALLEY schematic and stays one. Parties far outside it are listed
    with a real distance and bearing rather than plotted, because a canvas wide enough to hold
    them would compress every metro point into a single smudge: arithmetically correct and
@@ -3287,7 +3301,7 @@ const whiteboard=[
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{"v":"v383","d":"27 Aug 2026","t":"A CORRECTION RECORDED A CHANGE IT DID NOT MAKE, WHICH IS THE ONE THING A LEDGER MUST NEVER DO","n":["<b>v381 RE-KEYED TWO PARTIES AND NEITHER ROW MOVED.</b> The two corrections named the field <code>customer</code>. The correctable field is <code>party</code>. <code>applyAmend</code> writes only what is in the CORRECTABLE table, so nothing was written, but it builds the <code>mod</code> line and the trail note from <b>whatever keys the caller supplied</b>, so both rows came out of the fold saying &quot;corrected on 2026-08-26: customer CZ4-TBC to CZ4-MK&quot;, carrying a Correction in the trail, and still booked to the old code.","<b>THE RECORD AND THE WRITE WERE BUILT FROM DIFFERENT LISTS AND NOTHING CHECKED THEY AGREED.</b> That is the whole fault in one line. A row that asserts a change it did not make is worse than a refusal and worse than a gap, because every later reader takes it as done: the roster would have gained two codes nothing booked to, and the two parties would have kept their placeholder suffix behind a note saying they had not.","<b>THE FOLD REFUSES AN UNKNOWN CORRECTION FIELD NOW.</b> <code>plan()</code> checks every key against <code>CORRECTABLE</code> before anything is applied, so it lands as a refusal, and a refusal folds nothing. The message names the right field rather than only the wrong one. Proved against the batch that caused it.","<b>THE TWO ROWS ARE REPAIRED AND THEIR TRAILS WERE ALREADY RIGHT.</b> s046 books to <b>CZ4-MK</b> and s032 to <b>CH6-SET</b>. Neither <code>mod</code> line nor trail entry needed changing: both described the correction accurately all along, and what was missing was the correction. Both rows keep their R3 attribution, CI4-OKR and CS6-PER, untouched.","<b>AND THE RE-KEY IS FINISHED PROPERLY.</b> CZ4-TBC and CH6-TBC are purged from the roster, which v381 flagged it could not do because the fold has no operation for retiring a code. That completes the one-identifier rule s046&rsquo;s own note cites from the last re-key on this desk. The roster is back to 39 codes, and no row books to a party that is not on it.","<b>IT WAS FOUND BY READING THE FOLDED ROWS BACK, NOT BY A TEST.</b> Every check passed: the plan described both corrections correctly, the apply reported success, the suite was green at 577 and CI would have been too. Nothing in the repository could see it, because every one of those reads the same supplied key list the mod line was built from."]},
+const evolution=[{"v":"v384","d":"27 Aug 2026","t":"FOUR THINGS THAT FAILED WITHOUT SAYING SO, AND A SHELF COST THAT WAS ROLLED FOR ONE PRODUCT ONLY","n":["<b>TWO EMPTY CATCHES MEANT A BROKEN CHART LOOKED EXACTLY LIKE A CHART WITH NOTHING TO DRAW.</b> <code>drawPerProduct</code> ran every draw function inside <code>try{f();}catch(e){}</code> and <code>renderPart</code> wrapped the whole pass for a part in another one. So a chart that threw left its canvas blank and reported nothing, anywhere. The desk already has a sentence for an empty data set, which is why this survived: the two conditions were indistinguishable on screen, and every chart fault ever found on this desk was found by eye. A throw now says which draw, which product, and what it said, at the TOP of the block where the eye lands. It stays per function, so one bad draw still cannot take the rest of the block with it.","<b><code>stripMethod</code> WAS DELETING THE FIGURES, THE SECOND PRODUCT&rsquo;S LEAD, AND A DIV ANOTHER FUNCTION WRITES INTO.</b> Measured on this book: <b>31 of 55</b> descriptive blocks gone from Pricing, 26 of 27 from Sourcing, 16 of 17 from Financials, 20 of 21 from Analysis. Among the deleted, <b>&quot;Closing stock 25.5 unit at RM 50/unit = RM 1,275 on the shelf&quot;</b> and <b>&quot;Shipping 4.82 unit a day over the last fortnight&quot;</b>. His instruction of 26 Aug was to remove <b>method and caveats</b>, and a figure is neither.","<b>THREE FAULTS, ALL SCOPE RATHER THAN POLICY, AND THE POLICY IS UNCHANGED.</b> One, the keep-one rule ran once per PART: a per-product part renders the same builder twice, so it holds two leads, and keeping the first deleted <b>oil&rsquo;s lead sentence outright on all six of them</b>. It runs once per block now. Two, the function&rsquo;s own comment has always promised that a block carrying a control or a figure is left alone; it implemented that for the control, by looking for a child element, and never for the figure, which is written as text and has no element to find. Three, a block something addresses BY ID is not prose.","<b>AND THE THIRD OF THOSE WAS SILENTLY LOSING A FILED PLAN.</b> <code>planAdd</code> writes into <code>&lt;div id=&quot;plOk&quot;&gt;</code>, which this deleted, so <code>planAdd</code> threw before it reached <code>saveQueue()</code> and the plan was never saved. One id guard fixes that and every other addressed slot on the desk at once, rather than one token in one builder. Six blocks are addressed by id today.","<b>THE COST STACK WAS OBEYING A LOCK THAT IS SWITCHED OFF.</b> <code>lockBase</code> is populated whether <code>PRICE_LOCK_ON</code> is true or not, so <code>LKb</code> is truthy on both books. The leak guards on <code>I.lockOn&amp;&amp;LKb</code>; freight and delivery guarded on <code>LKb</code> and an override alone. So <b>any probe that set a cost silently took the 06 Aug lock&rsquo;s frozen freight and delivery while the leak stayed live</b>: one cost stack, two components frozen and one not. Proof that isolates it: an override at exactly the live rate must return the live answer, and it did not. v382 is what made it visible, by moving live freight away from the frozen figure.","<b>OIL&rsquo;S SHELF COST WAS NEVER ROLLED ON THE 26TH.</b> Salt went RM44 to RM50 that day and oil stayed at the <b>RM7</b> of lots long gone, while every one of the 20 unit on the shelf came off the 26 Aug lot at <b>RM7.6667</b>: the 23 Aug count put oil at zero, 30 landed and 10 went out, so there is no blend to solve, exactly as salt had none. It is STATED rather than left to fall through to the opening, which reads the same figure today <b>only because two separate lots were bought at the same rate</b>, and a figure that is right by coincidence is not right. It feeds Financials&rsquo; closing stock, the PRICING snapshot the drafter approves against, and the Stock value card.","<b>SETAPAK IS ON THE MAP.</b> CH6-SET came off its placeholder at v381 and the gazetteer had no SET, so a party the desk could place was reported as genuinely unknown. v348 refused to add TBC and said these two would have a place the moment someone asked; someone asked. The directory on the laptop holds no coordinates, so this is sited from geography at the file&rsquo;s own two decimal places, about 1.1km, exactly as the other twenty-five were. The unknown count reads zero and the not-drawn table is gone.","<b>TEN NEW ASSERTIONS, AND THE ONE ABOUT OIL IS DERIVED RATHER THAN PINNED.</b> It reads the newest received oil lot out of the book and compares, so it survives the next lot instead of breaking on it, which is the lesson v381 learned on the salt side. A genuine blend will fail it, and that is deliberate: a blended shelf cost should be a decision, not a default."]},{"v":"v383","d":"27 Aug 2026","t":"A CORRECTION RECORDED A CHANGE IT DID NOT MAKE, WHICH IS THE ONE THING A LEDGER MUST NEVER DO","n":["<b>v381 RE-KEYED TWO PARTIES AND NEITHER ROW MOVED.</b> The two corrections named the field <code>customer</code>. The correctable field is <code>party</code>. <code>applyAmend</code> writes only what is in the CORRECTABLE table, so nothing was written, but it builds the <code>mod</code> line and the trail note from <b>whatever keys the caller supplied</b>, so both rows came out of the fold saying &quot;corrected on 2026-08-26: customer CZ4-TBC to CZ4-MK&quot;, carrying a Correction in the trail, and still booked to the old code.","<b>THE RECORD AND THE WRITE WERE BUILT FROM DIFFERENT LISTS AND NOTHING CHECKED THEY AGREED.</b> That is the whole fault in one line. A row that asserts a change it did not make is worse than a refusal and worse than a gap, because every later reader takes it as done: the roster would have gained two codes nothing booked to, and the two parties would have kept their placeholder suffix behind a note saying they had not.","<b>THE FOLD REFUSES AN UNKNOWN CORRECTION FIELD NOW.</b> <code>plan()</code> checks every key against <code>CORRECTABLE</code> before anything is applied, so it lands as a refusal, and a refusal folds nothing. The message names the right field rather than only the wrong one. Proved against the batch that caused it.","<b>THE TWO ROWS ARE REPAIRED AND THEIR TRAILS WERE ALREADY RIGHT.</b> s046 books to <b>CZ4-MK</b> and s032 to <b>CH6-SET</b>. Neither <code>mod</code> line nor trail entry needed changing: both described the correction accurately all along, and what was missing was the correction. Both rows keep their R3 attribution, CI4-OKR and CS6-PER, untouched.","<b>AND THE RE-KEY IS FINISHED PROPERLY.</b> CZ4-TBC and CH6-TBC are purged from the roster, which v381 flagged it could not do because the fold has no operation for retiring a code. That completes the one-identifier rule s046&rsquo;s own note cites from the last re-key on this desk. The roster is back to 39 codes, and no row books to a party that is not on it.","<b>IT WAS FOUND BY READING THE FOLDED ROWS BACK, NOT BY A TEST.</b> Every check passed: the plan described both corrections correctly, the apply reported success, the suite was green at 577 and CI would have been too. Nothing in the repository could see it, because every one of those reads the same supplied key list the mod line was built from."]},
 
 {"v":"v382","d":"27 Aug 2026","t":"A TRIP IS RM30 OVER THE AVERAGE LOT, A DELIVERY IS RM10, AND EVERY FLOOR MOVES","n":["<b>HIS INSTRUCTION OF 27 Aug, IN TWO PARTS, AND THE SECOND MATTERS MORE THAN THE FIRST.</b> <code>freightPerTrip</code> goes RM60 to RM30, and <code>txnPerDelivery</code> goes RM50 to RM10. But freight is now spread over the <b>AVERAGE lot this book has received</b> rather than over whichever lot happened to arrive last, and that is the change that stops a floor moving for no reason.","<b>THE OLD DIVISOR MADE A FLOOR SWING ON THE SIZE OF THE LAST PURCHASE.</b> Oil&rsquo;s freight went RM1.20 to RM2.00 a unit on 26 Aug because a 30-unit buy followed two 50-unit ones. Nothing about the trip had changed, nothing about the oil had changed, and every oil floor rose. That is drift of exactly the kind v233 froze the board to prevent, arriving through a door nobody had shut. The mean over every lot received settles as the book grows; the latest lot stays the fallback while a product has no history to average.","<b>v373 SAID THE RM50 WAS HIS TO STATE, AND IT HAS NOW BEEN STATED.</b> That entry recorded plainly that <code>freightPerTrip</code> was tied to a real trip on 22 Jul but <code>txnPerDelivery</code> had no derivation behind it at all, its reference being an IAS 2 citation about classification rather than about the amount. It stood at RM50 for a month on nobody&rsquo;s authority. It is RM10 on his.","<b>WHAT MOVED. SALT:</b> effective cost RM58.98 to <b>RM54.63</b> a unit; the floor at 1 unit RM80.03 to RM78.84 collected and <b>RM130.03 to RM88.84 delivered</b>. <b>OIL:</b> effective cost RM10.92 to <b>RM8.95</b>; the floor at 10 unit RM128.57 to <b>RM113.02</b>, which is RM12.86 to RM11.30 a unit, and delivered RM176.79 to RM123.02.","<b>THE DELIVERY RATE MOVES THE DELIVERED FLOOR AND NOTHING ELSE, WHICH IS WORTH SAYING BECAUSE IT IS COUNTER-INTUITIVE.</b> The collected floor is built from effective cost EX-delivery, and the board has carded a collection price since v352 with delivery quoted on top. So RM50 to RM10 takes RM42 off a delivered order at 1 unit of salt and leaves the board where it was. All of the board&rsquo;s movement here comes from the freight basis.","<b>AND IT REPAIRED THE OIL BOARD WITHOUT A SINGLE PRICE BEING SET.</b> At the v381 basis the oil ladder broke its own rate-may-not-rise law at 15, 25, 40, 80 and 100 unit: the RM130 anchor had dragged the ladder to RM13.00 falling to RM12.10, the risen floor of RM12.86 then sat ABOVE most of it, and the floor guard lifted those sizes unevenly. With the floor at RM11.12 the whole derived ladder clears it again and the board reads RM13.00 down to RM12.10 with no inversions. The suite goes 576 assertions to 577 and the rate-law test passes.","<b>NO LEDGER ROW CHANGES.</b> A row&rsquo;s cost is the lot rate it was drawn from and none of those move. What moves is what a unit costs to put in front of a customer, and therefore every floor."]},
 
@@ -3421,6 +3435,12 @@ function ledFact(t,am){
 }
 const LEDGER_NOISE=/^(as booked|as agreed|no change|opening|opened|booked)\.?$/i;
 const NOTE_MIN=140;   /* prose at or over this is method: cut to its first sentence (v372) */
+/* v384: WHAT MAKES A NOTE A FIGURE RATHER THAN PROSE. stripMethod has always claimed that a
+   block carrying a figure is left alone; it implemented that for a CONTROL, by looking for a
+   child element, and never for a figure, which is written as text and has no element to find.
+   Money, a quantity or a percentage. Deliberately narrow: "the unit price is deliberately
+   absent" carries no digit and is prose, "25.5 unit at RM 50/unit" is not. */
+const FIGURE=/RM\s?\d|\d[\d.,]*\s?unit\b|\d[\d.,]*\s?%/;
 const fmt=n=>CUR+' '+Number(n).toLocaleString('en-MY',{minimumFractionDigits:(Math.abs(n%1)>1e-9?2:0),maximumFractionDigits:2});
 const fmt0=n=>CUR+' '+Number(n).toLocaleString('en-MY',{maximumFractionDigits:0});
 const kg=n=>Number(n).toLocaleString('en-MY',{maximumFractionDigits:2})+' unit';
@@ -3448,7 +3468,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='27 Aug 2026, 03:45 KL';
+const LAST_UPDATED='27 Aug 2026, 14:30 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -7557,7 +7577,7 @@ function finRows(){
     bump(mo,'rev',(t.total||0)-txPendRM(t));bump(mo,'cogs',(t.qty-txPendKgRaw(t))*costOf(t));bump(mo,'cash',t.cash||0);bump(mo,'kg',t.qty-txPendKgRaw(t));
     bump(mo,'inkind',(t.waived||0)+((t.settle==='barter'||t.rebate)?(t.settledRM||0):0));
     bump(mo,'provAR',+(txAdvance(t)*provRate(dbet(t.date))).toFixed(2));});
-  /* v384: THE CLAIM IS SALT'S, SO ONLY SALT'S MONTHS MOVE. supRecovGross is nil on any other
+  /* v385: THE CLAIM IS SALT'S, SO ONLY SALT'S MONTHS MOVE. supRecovGross is nil on any other
      book by construction, but the bump fired regardless and CREATED the month it was keyed to:
      the oil P&L opened a July column with no oil trade in it, every cell a dash and a gross
      margin of RM 0 at 0.0%. A month is evidence that something happened in it. */
@@ -7601,7 +7621,7 @@ function drawRecvCharts(){
     try{
       const rows=arList.map(x=>({who:codeOf(x.customer),g:outstandingOf(x),age:dbet(x.date)}))
         .filter(x=>x.g>0.009);
-      /* v384: THE SUPPLIER CLAIM IS SALT'S, ON THE CHART AS IT ALREADY IS IN THE TABLE.
+      /* v385: THE SUPPLIER CLAIM IS SALT'S, ON THE CHART AS IT ALREADY IS IN THE TABLE.
          arList is scoped by recompute() and supRecovGross is salt-only by construction, so the
          Order book's own refund row only ever appears under Salt; the chart pushed the raw
          record with no such test and would have drawn the same bar under Oil. Latent while the
@@ -7768,7 +7788,7 @@ function tabFinancials(){
   const fy=rows.reduce((a,[,v])=>{Object.keys(v).forEach(k=>a[k]=(a[k]||0)+v[k]);return a;},{});
   const gm=v=>v.rev-v.cogs, gmp=v=>v.rev>0?gm(v)/v.rev*100:0, net=v=>gm(v)-v.provAR-v.provSup;
   const uncol=fy.rev-fy.cash-fy.inkind;
-  /* v384: A NEGATIVE HERE IS AN OVERTENDER AND READS AS A NEGATIVE DEBT WITHOUT A WORD ON IT.
+  /* v385: A NEGATIVE HERE IS AN OVERTENDER AND READS AS A NEGATIVE DEBT WITHOUT A WORD ON IT.
      CZ4-MK tendered RM150 against a RM130 oil order on the 26th, so oil collected RM20 more
      than it invoiced and this row went to RM -20. The arithmetic is right and the sign is
      right: what is missing is that the RM20 is not owed back in cash, it is 1.54 unit of oil
@@ -7803,7 +7823,7 @@ function tabFinancials(){
   <div class="card" style="overflow-x:auto">${pl}</div>
   <h2 style="margin-top:18px">Cash against invoiced <span class="rule"></span></h2>
   <div class="card" style="overflow-x:auto">${cash}
-    <div class="dsc" style="margin-top:8px">Uncollected = advances awaiting payment plus amounts folded into later orders. Closing stock <b>${kg(currentStock)}</b> at ${fmt(STOCK_COST)}/unit = <b>${fmt0(currentStock*STOCK_COST)}</b> on the shelf.</div></div>
+    <div class="dsc" style="margin-top:8px">Uncollected = advances awaiting payment plus amounts folded into later orders. Closing stock <b>${kg(currentStock)}</b> at ${fmt(stockCostFor(PROD))}/unit = <b>${fmt0(currentStock*stockCostFor(PROD))}</b> on the shelf, before freight in.</div></div>
 
   <h2 style="margin-top:22px">The cost of doing business <span class="rule"></span></h2>
   ${costPanel()}${ifrsPanel()}`;
@@ -8138,6 +8158,13 @@ function costPanel(){
 
   /* what one more ringgit of per-order cost does to each end of the ladder: the
      sensitivity is the argument, because it is the same ringgit either way */
+  /* v385: THE RATE OF TRADE IS ORDERS PER MONTH, AND THE MONTH COUNT WAS THE LITERAL 2.
+     A standing cost divided by half the orders EVER placed is a figure about a two-month
+     book and nothing else. Salt has traded three months and oil one, so the line said
+     RM1.96 an order where the answer is RM2.94, and RM33.33 where it is RM16.67: wrong on
+     both books and in opposite directions. It was deleted at render from v372 until v384,
+     which is why a hardcoded 2 outlived two months of trading unremarked. */
+  const months=Math.max(1,finRows().length);
   const small=sizes[0], big=sizes[sizes.length-1];
   const pS=tier.prices[0], pB=tier.prices[sizes.length-1];
   const cS=costToServe(small), cB=costToServe(big);
@@ -8158,7 +8185,7 @@ function costPanel(){
       ${dl.observed?`Delivery is the observed average over ${dl.n} logged trips.`:`Delivery falls back to the <b>${fmt(dl.rm)}</b> written into the tier basis and has <b>never been observed</b>; log a few trips and it derives itself.`}</div></div>
     <div class="card"><div class="cardh">Every month, whether anything sells</div>
       <table><thead><tr><th class="l">Line</th><th>RM</th><th class="l">What it is</th></tr></thead><tbody>${monthly}</tbody></table>
-      <div class="dsc" style="margin-top:8px">Spread over ${pricedSales.length} orders to date, every <b>RM100 a month</b> of standing cost is about <b>${fmt(100/Math.max(1,pricedSales.length/2))}</b> an order at the current rate of trade.</div></div>
+      <div class="dsc" style="margin-top:8px">Spread over ${pricedSales.length} orders across ${months} month${months===1?'':'s'}, every <b>RM100 a month</b> of standing cost is about <b>${fmt(100/Math.max(1,pricedSales.length/months))}</b> an order at the current rate of trade.</div></div>
   </div>
 
   <h3 style="margin-top:18px;font-size:14px">What an order is worth, once the trip is in it</h3>
@@ -8185,7 +8212,7 @@ function tabReceivables(){
   const _S=pSales(PROD), _B=pPurch(PROD);
   // ===== CUSTOMER SIDE =====
   // Cash they owe you: advance deliveries (goods out, cash short), aged + provisioned.
-  /* OLDEST FIRST, STATED HERE RATHER THAN INHERITED (v384). These tables come out in date
+  /* OLDEST FIRST, STATED HERE RATHER THAN INHERITED (v385). These tables come out in date
      order today, but only because the BOOK is in date order and CI proves it in a different
      file; nothing on this part asked for it. Age is what makes an open item urgent on either
      side, so the order every table on this part needs is now stated where the table is built:
@@ -8231,7 +8258,7 @@ function tabReceivables(){
   const refDays=dbet(supplierReceivable.since),refRate=provRate(refDays);
   const sRefBody=hasRef?`<tr><td class="l mono">${ID(supplierReceivable.party)}</td><td class="l">${supplierReceivable.since}</td><td>${refDays}d</td><td>${fmt0(supRecovGross)}</td><td>${(refRate*100).toFixed(0)}%</td><td>${fmt0(supRecovNet)}</td></tr>`:'';
   // Pending supplier orders: agreed to buy, nothing paid or received. Counts nowhere else.
-  /* v384: _B, not `purchases`. This was the one list on the part still reading the whole
+  /* v385: _B, not `purchases`. This was the one list on the part still reading the whole
      book while the comment at the head claimed all of them were scoped, so an agreed-but-unmoved
      oil buy would have printed under Salt and again under Oil. Latent only because nothing is
      pending today, which is exactly how the v272 duplicates survived as long as they did. */
@@ -8240,7 +8267,7 @@ function tabReceivables(){
   const sPenBody=sPen.map(p=>`<tr><td class="l mono">${ID(p.id)}</td><td class="l">${p.date}</td><td>${kg(p.k)}</td><td>${fmt0(p.rm)}</td></tr>`).join('');
   const sPenKg=+sPen.reduce((a,p)=>a+p.k,0).toFixed(2);
   const sPenRM=+sPen.reduce((a,p)=>a+p.rm,0).toFixed(2);
-  /* A CATEGORY WITH NO ROWS IS A FIGURE, NOT A FOLD (v384). Every one of these eight was
+  /* A CATEGORY WITH NO ROWS IS A FIGURE, NOT A FOLD (v385). Every one of these eight was
      drawn whatever it held, and an empty one was a disclosure control that opened onto the
      word "None." Salt carried five of them, so most of the taps on this part led nowhere.
      THE FOLD GOES AND THE STRIP ABOVE IT CARRIES THE ANSWER, which is why both strips widened
@@ -8251,20 +8278,20 @@ function tabReceivables(){
   const sec=(title,q,n,inner)=>n>0?`<details class="obsec" open><summary>${title} <span class="q">${q}</span><span class="ct">${n}</span></summary><div class="card">${inner}</div></details>`:'';
   // hero card: directional colour -> gold class is GREEN (owed to you), r is crimson (you owe), plain ice = neutral
   const hero=(cls,label,val,sub)=>`<div class="kpi ${cls}"><div class="l">${label}</div><div class="v">${val}</div><div class="n">${sub}</div></div>`;
-  /* v384: A CUSTOMER REFUND AND A SUPPLIER DEFAULT BELONG TO ONE BOOK AND SAY SO ON THE OTHER.
+  /* v385: A CUSTOMER REFUND AND A SUPPLIER DEFAULT BELONG TO ONE BOOK AND SAY SO ON THE OTHER.
      Both are carried on the default book by construction: cRef is gated on it above, and
      posInputs() passes supplierReceivable only when the book is salt. A tile reading RM 0
      under Oil would therefore state that nothing is owed when the answer is merely kept
      elsewhere, and a zero you can see is worse than a dash that says where to look. Null on
      the book that holds them, so each tile reads it as "no, show the figure". */
   const otherBook=PROD===DEFAULT_PROD?null:`carried on the ${esc(PRODUCTS[DEFAULT_PROD].name)} book`;
-  /* v384: THE BOOK NAMES ITSELF. Six labels on this part said "Salt" outright while the part
+  /* v385: THE BOOK NAMES ITSELF. Six labels on this part said "Salt" outright while the part
      is drawn once per product, so the Oil book reported "Salt you owe 1.54 unit" over an oil
      row. It was unreachable until the 26th: oil had nothing deferred, so the tile read zero
      and sec() drew no fold at all. CZ4-MK's overtender put 1.54 unit of oil in that column
      and the wrong noun came with it. The figure was right throughout; only the word was not. */
   const NM=codeOfProd(PROD), nm=NM.toLowerCase();
-  /* A BOOK WITH NOTHING OPEN SAYS SO IN ONE LINE (v384). Oil trades and settles on the spot,
+  /* A BOOK WITH NOTHING OPEN SAYS SO IN ONE LINE (v385). Oil trades and settles on the spot,
      so its block was two headings, six KPIs reading zero, an ageing chart with nothing to draw
      and EIGHT folds each saying "None." -- half the part, and none of it an answer to anything.
      The Order book lists what is OPEN, so a book with nothing open has one thing to report and
@@ -10616,13 +10643,32 @@ function freshChart(el,cfg){
   try{const old=Chart.getChart?Chart.getChart(el):null;if(old)old.destroy();}catch(e){}
   return new Chart(el,cfg);
 }
+/* v384: A DRAW THAT THROWS NOW SAYS SO, AND FOR FIVE DAYS NOTHING DID. The catch below was
+   empty, so a chart that failed left its canvas blank and reported nothing at all. That is the
+   worst possible reading, because the desk already has a sentence for an empty data set, so a
+   BROKEN chart and a chart with nothing to draw looked identical, and every chart fault found
+   on this desk was found by eye. renderPart's catch around the whole pass was empty for the
+   same reason and is now the same shape.
+   It stays PER FUNCTION, so one bad draw still cannot take the rest of the block with it, and
+   it names the draw AND the product, because drawPerProduct runs the same function once per
+   block and only one of the runs may be broken. The note goes at the top of the block where
+   the eye lands, not beside a canvas nobody can identify. */
+function drawFailed(b,f,e){
+  const who=(f&&f.name)||'A chart';
+  try{console.error('drawPerProduct: '+who+' threw on '+PROD,e);}catch(_){}
+  if(!b)return;
+  const n=document.createElement('div');
+  n.className='dsc'; n.style.color='var(--crim)';
+  n.textContent=who+' could not be drawn for '+PROD+': '+((e&&e.message)||e);
+  b.insertBefore(n,b.firstChild);
+}
 function drawPerProduct(fns){
   ensureChart(()=>{   /* load once here, so the fns' own ensureChart calls resolve synchronously */
     const keep=PROD;
     document.querySelectorAll('.sec.on .prodblock[data-prod]').forEach(b=>{
       const p=b.dataset.prod; if(!PRODUCTS[p])return;
       PROD=p; recompute(); DRAW_BLK=b;
-      fns.forEach(f=>{try{f();}catch(e){}});
+      fns.forEach(f=>{try{f();}catch(e){drawFailed(b,f,e);}});
     });
     DRAW_BLK=null; PROD=keep; recompute();
   });
@@ -13444,7 +13490,7 @@ function consoBlock(){
     +`</div></div>`;
 }
 const codeOfProd=id=>esc((PRODUCTS[id]&&PRODUCTS[id].name)||id);
-/* ============ THE WHOLE-BOOK HEAD (v384) ============
+/* ============ THE WHOLE-BOOK HEAD (v385) ============
    perProduct() repeats a builder once per book because a shelf, a cost basis and a price
    board cannot be ADDED across products. The mirror of that rule was never honoured and it
    put a wrong figure on the desk: there is ONE BANK ACCOUNT, so the cash position cannot be
@@ -13457,7 +13503,7 @@ const codeOfProd=id=>esc((PRODUCTS[id]&&PRODUCTS[id].name)||id);
    above the repeat and under its own heading; a figure that cannot be added stays in the
    product block. Nothing is recomputed to move it. */
 function consoHd(t,sub){return `<div class="prodhd"><span class="pd" style="background:none;box-shadow:inset 0 0 0 2px var(--ice)"></span>${t}<span class="sub">${esc(sub)}</span><span class="rule"></span></div>`;}
-/* THE ORDER BOOK'S OWN HEAD (v384). This part opened on consoBlock(): revenue, cash collected,
+/* THE ORDER BOOK'S OWN HEAD (v385). This part opened on consoBlock(): revenue, cash collected,
    gross margin, stock spend. Those are the right four figures for the Financials part beneath
    it and an answer to a question the Order book does not ask. Its question is who owes what,
    so it opens on that, added across both books because MONEY adds. Units do not, which is why
@@ -13486,7 +13532,7 @@ function consoOrderBlock(){
     +cell('','Agreed, nothing moved',fmt0(pend),pendB>0.009?`and ${fmt0(pendB)} of buying agreed the same way`:'no buying agreed the same way')
     +`</div></div>`;
 }
-/* THE CASH POSITION AND THE SUPPLIER LOSS, lifted out of tabFinancials by v384 unchanged.
+/* THE CASH POSITION AND THE SUPPLIER LOSS, lifted out of tabFinancials by v385 unchanged.
    Both are whole-book by construction, so both were being stated twice under two headings.
    The prose below is the tab's own and is kept verbatim; stripMethod() removes it on render
    exactly as it did where it stood before. */
@@ -13590,20 +13636,39 @@ const PART_DRAW={inventory:()=>drawPerProduct([trackCharts]),
    says what the part is for, and so does the first sentence of every insight, because that
    is the finding rather than the method. A block carrying a control or a figure is not prose
    and is left alone. The prose itself stays in the builders, where it documents them. */
+/* v384: IT WAS DELETING THE FIGURES, THE SECOND PRODUCT'S LEAD, AND A DIV ANOTHER FUNCTION
+   WRITES INTO. Measured on the current book: 31 of 55 descriptive blocks gone from Pricing,
+   26 of 27 from Sourcing, 16 of 17 from Financials, 20 of 21 from Analysis. Among them
+   "Closing stock 25.5 unit at RM 50/unit = RM 1,275 on the shelf" and "Shipping 4.82 unit a
+   day over the last fortnight". His instruction was to remove METHOD AND CAVEATS, and none of
+   those is either. Three faults, all of them scope rather than policy:
+   ONE, THE KEEP-ONE RULE RAN ONCE PER PART. A per-product part renders the same builder twice,
+   so it holds two leads and two of every note, and keeping the FIRST deleted oil's lead
+   sentence outright on all six of them while salt kept both. It now runs once per block.
+   TWO, THE FIGURE HALF OF ITS OWN RULE WAS NEVER WRITTEN. See FIGURE above.
+   THREE, A BLOCK SOMETHING ADDRESSES BY ID IS NOT PROSE. planAdd writes into <div id="plOk">,
+   which this deleted, so planAdd threw before saveQueue() and A FILED PLAN WAS NEVER SAVED.
+   One id guard fixes that and every other slot on the desk, rather than one token in one
+   builder. Six blocks are addressed by id today.
+   The policy is untouched: the lead is still cut to one sentence, an insight that has grown
+   into an essay is still cut to its first, and method prose carrying no figure still goes. */
 function stripMethod(el){
   const cut=t=>{const m=t.match(/^[\s\S]*?[.!?](?=\s|$)/);return m?m[0]:t;};
-  const trim=e=>{if(!e)return;const t=(e.textContent||'').replace(/\s+/g,' ').trim();
-    if(t.length>=NOTE_MIN)e.textContent=cut(t);};
-  el.querySelectorAll('.insight').forEach(trim);
-  /* the lead is cut whatever its length, which is what the fold did: one sentence saying
-     what the part is for. An insight is only cut when it has grown into an essay. */
-  const lead=el.querySelector('.dsclead');
-  if(lead){const t=(lead.textContent||'').replace(/\s+/g,' ').trim();if(t)lead.textContent=cut(t);}
-  const blocks=[...el.querySelectorAll('.dsc,.dsclead,.insight')].filter(b=>
-    !b.closest('table,details,.kpi,.act,.plan,.obs,.qfield')&&!b.querySelector('button,input,select,canvas,table,.kpi'));
-  if(blocks.length<2)return;
-  const keep=blocks.find(b=>b.classList.contains('dsclead'))||blocks[0];
-  blocks.forEach(b=>{if(b!==keep&&!b.classList.contains('insight')&&b.parentNode)b.parentNode.removeChild(b);});
+  const txt=e=>(e.textContent||'').replace(/\s+/g,' ').trim();
+  el.querySelectorAll('.insight').forEach(e=>{const t=txt(e);if(t.length>=NOTE_MIN)e.textContent=cut(t);});
+  const blks=[...el.querySelectorAll('.prodblock[data-prod]')];
+  (blks.length?blks:[el]).forEach(scope=>{
+    /* the lead is cut whatever its length, which is what the fold did: one sentence saying
+       what the part is for. An insight is only cut when it has grown into an essay. */
+    const lead=scope.querySelector('.dsclead');
+    if(lead){const t=txt(lead);if(t)lead.textContent=cut(t);}
+    const blocks=[...scope.querySelectorAll('.dsc,.dsclead,.insight')].filter(b=>
+      !b.closest('table,details,.kpi,.act,.plan,.obs,.qfield')&&!b.querySelector('button,input,select,canvas,table,.kpi')
+      &&!b.id&&!FIGURE.test(txt(b)));
+    if(blocks.length<2)return;
+    const keep=blocks.find(b=>b.classList.contains('dsclead'))||blocks[0];
+    blocks.forEach(b=>{if(b!==keep&&!b.classList.contains('insight')&&b.parentNode)b.parentNode.removeChild(b);});
+  });
 }
 function renderPart(tab,el,snap){
   el.innerHTML=builders[tab]();
@@ -13618,7 +13683,18 @@ function renderPart(tab,el,snap){
     wbApply();wbPreview();
   }
   stripMethod(el);
-  try{if(PART_DRAW[tab])PART_DRAW[tab]();}catch(e){}
+  /* v384: AND THE OUTER CATCH WAS EMPTY TOO, WHICH IS THE WORSE OF THE PAIR. This one wraps the
+     WHOLE draw pass for a part, so a throw before the first chart lost every chart on the tab
+     with no message anywhere. It reports where the part is rather than only in the console,
+     because the console is not where anyone reads this desk. */
+  try{if(PART_DRAW[tab])PART_DRAW[tab]();}
+  catch(e){
+    try{console.error('renderPart: the draw pass for '+tab+' threw',e);}catch(_){}
+    const n=document.createElement('div');
+    n.className='dsc'; n.style.color='var(--crim)';
+    n.textContent='The charts on this part could not be drawn: '+((e&&e.message)||e)+'. Every figure they draw is in the tables above.';
+    el.appendChild(n);
+  }
 }
 let curTab='today';   // v147: the desk opens on what to do, not on what happened
 let curAddr='today';  // v365: the PART showing, not just the view; #inventory and #sourcing share a view but not an address
