@@ -7134,6 +7134,15 @@ function edSubmit(){
   const why=document.getElementById('edWhy');
   const say=m=>{if(why)why.innerHTML='<span style="color:var(--amber)">'+m+'</span>';};
   if(!Object.keys(fields).length)return say('Nothing changed, so there is nothing to queue.');
+  /* v385: THE FOLD REFUSES A FIELD CORRECTABLE DOES NOT HOLD, SO THE SCREEN SAYS SO FIRST.
+     v383 folded two corrections naming <code>customer</code> where the correctable field is
+     <code>party</code>: applyAmend wrote nothing and still built the mod line out of the keys it
+     was handed, so both rows recorded a re-key that never happened. EDFORM cannot emit that
+     today, its keys and CORRECTABLE's being the same set in both directions; this is for the
+     next control added to the sheet. Checked against the engine's own table rather than a copy
+     of it, because a second list is how the two came apart in the first place. */
+  const edStray=Object.keys(fields).filter(k=>(POSITION_ENGINE.CORRECTABLE||[]).indexOf(k)<0);
+  if(edStray.length)return say('This sheet offered <b>'+esc(edStray.join(', '))+'</b>, which the fold does not accept as a correction field. Nothing was queued.');
   const has=k=>Object.prototype.hasOwnProperty.call(fields,k);
   const fa=has('assoc')?fields.assoc:now.assoc, fs=has('stream')?fields.stream:now.stream;
   if(fa&&!fs)return say('An associate needs a stream, R2 or R3, to say how the credit reaches them.');
@@ -9430,9 +9439,19 @@ function tabPlans(){
   const sec=s=>{const r=grp(s);return r.length?`<div class="cardh" style="margin:18px 0 8px">${PLAN_ST[s]} <span class="sub">${r.length}</span></div>${r.map(planCard).join('')}`:'';};
   const isoT=TODAY.toISOString().slice(0,10);
 
-  const rhythmLine=R.empty?'No priced order on the book yet, so there is no rhythm to read.'
-    :`${R.n} priced orders across ${R.days} days, ${R.from} to ${R.to}. `+
-     (R.all.orders>=40?'Enough to read a direction from, not enough to forecast with.'
+  /* v385: SPLIT, NOT SHORTENED, AND THE BRANCH NOBODY RENDERS TODAY WAS ALREADY OVER THE LINE.
+     stripMethod cuts an .insight past NOTE_MIN to its FIRST sentence, and here the caveat is the
+     second, so the half that says what the count is worth was the half that went. The thin-book
+     branch measures 151 characters at every size a book can be, one order or a thousand, so it
+     has never once reached the screen: a reader of a book under forty orders got the count and
+     no word that every item beneath it is damped before it becomes an instruction. The other
+     branch survives on twenty characters of headroom, which is not safety, it is the figures
+     being small today. Two blocks, one sentence each, and neither can be cut however the book
+     grows. Under NOTE_MIN is a property of a template AND its figures, never the template. */
+  const rhythmCount=R.empty?'No priced order on the book yet, so there is no rhythm to read.'
+    :`${R.n} priced orders across ${R.days} days, ${R.from} to ${R.to}.`;
+  const rhythmCaveat=R.empty?''
+    :(R.all.orders>=40?'Enough to read a direction from, not enough to forecast with.'
                       :'A thin book: every factor below is shrunk towards no effect before it reaches an instruction.');
 
   return `<h1>Whiteboard</h1>
@@ -9443,7 +9462,10 @@ function tabPlans(){
     <div class="kpi p"><div class="l">At stake</div><div class="v">${stake>0.009?fmt0(stake):'&mdash;'}</div><div class="n">where an item names a figure</div></div>
     <div class="kpi"><div class="l">Hushed</div><div class="v">${hushed.length}</div><div class="n">${hushed.length?'dismissed or snoozed':'nothing hidden'}</div></div>
   </div>
-  <div class="insight"><b>How to read this.</b> The money column is what the item itself exposes, and a dash means the item names no figure rather than that it is worth nothing. The tag beside it is sample honesty: <b>measured</b> stands on its own, <b>thin</b> is real but under-sampled and has been pulled towards no effect before it reached any instruction, <b>no sample</b> means nothing in this book bears on it and it is carried as calendar or arithmetic awareness. ${esc(rhythmLine)}</div>
+  <div class="insight">A dash means the item names no figure, not that it is worth nothing.</div>
+  <div class="insight">Tags: <b>measured</b>, <b>thin</b> (under-sampled), <b>no sample</b>.</div>
+  <div class="insight">${esc(rhythmCount)}</div>
+  ${rhythmCaveat?`<div class="insight">${esc(rhythmCaveat)}</div>`:''}
   ${fam('rhythm')}${fam('integrity')}${fam('customer')}${fam('pricing')}${fam('promo')}${fam('upkeep')}
   ${live.length?'':'<div class="dsc" style="margin-top:16px">Nothing to raise. Every rule ran and none of them found anything, which is not the same as nothing being wrong.</div>'}
   ${hushed.length?`<details class="obsec"><summary>Hushed <span class="q">dismissed or snoozed, kept so the decision is visible</span><span class="ct">${hushed.length}</span></summary><div style="padding-bottom:12px">${hushed.map(obsCard).join('')}</div></details>`:''}
@@ -9452,7 +9474,7 @@ function tabPlans(){
   <div class="dsc" style="margin-bottom:10px">The P-series was dropped at v273 because every one of those plans was a restatement of the book at a moment that had passed, and the engine above now derives all of it live. What belongs here is what the book cannot see: a promise made to somebody, a standing intention, a judgement with no figure behind it. ${openN?`${openN} live.`:'Nothing filed.'}</div>
   ${sec('committed')}${sec('idea')}${sec('done')}${sec('dropped')}
   <div class="card" style="margin-top:14px">
-    <div class="dsc" style="margin-bottom:10px">Saved beside the desk tagged as a plan, so it can never be mistaken for a transaction or fold itself into a figure. I file it into this tab and read it against the ledger on the next run.</div>
+    <div class="cardh" style="margin-bottom:10px">File a plan <span class="sub">tagged as a plan, so it can never fold itself into a figure</span></div>
     <div class="qrow" style="margin-bottom:10px">
       <div class="qfield" style="flex:2"><label>Plan</label><input id="plTitle" placeholder="what you intend to do"></div>
       <div class="qfield"><label>Status</label><select id="plStatus"><option value="idea">Idea</option><option value="committed">Committed</option><option value="done">Done</option><option value="dropped">Dropped</option></select></div>
@@ -9721,13 +9743,13 @@ function addParty(){
     const bcode=codeOf(parent)+'-Gen';
     if(roster.indexOf(bcode)>=0)return setM('<b>'+esc(bcode)+'</b> already exists and is selectable on the Transaction tab as an end customer.','var(--amber)');
     addedParties.push({code:bcode,kind:'bucket',parent:parent,at:new Date().toISOString()});
-    try{localStorage.setItem('saltAddedParties',JSON.stringify(addedParties));}catch(e){}
+    const bWarn=apPersist(bcode);
     roster.push(bcode);
     queue.push({at:new Date().toISOString(),type:'ADDID',party:bcode,qty:null,total:null,status:'addid',
       raw:'Add the general downsell bucket '+bcode+' under '+parent,
       payload:{mode:'addid',code:bcode,kind:'bucket',parent:parent,rev:null}});
-    try{saveQueue();renderQueue();}catch(e){}
-    apDone(kind,'<b>'+esc(bcode)+'</b> created. Record the sale on the <b>Transaction</b> tab with <b>'+esc(codeOf(parent))+'</b> as the associate on the <b>R2</b> stream, and pick this as the end customer. Nothing is written to the vault, because a bucket has no name to keep.','var(--grn)');
+    apDone(kind,'<b>'+esc(bcode)+'</b> created. Record the sale on the <b>Transaction</b> tab with <b>'+esc(codeOf(parent))+'</b> as the associate on the <b>R2</b> stream, and pick this as the end customer. Nothing is written to the vault, because a bucket has no name to keep.'+bWarn,bWarn?'var(--amber)':'var(--grn)');
+    apSaved();
     return;
   }
   if(!name)return setM('A name is needed.','var(--crim)');
@@ -9737,7 +9759,7 @@ function addParty(){
   if(!code)return setM('That does not derive a code. A downstream buyer needs an associate and a place.','var(--crim)');
   if(roster.indexOf(code)>=0)return setM('The code <b>'+esc(code)+'</b> already belongs to someone. Change the name or the location so it derives a free one.','var(--crim)');
   addedParties.push({code:code,kind:kind,parent:parent||null,at:new Date().toISOString()});
-  try{localStorage.setItem('saltAddedParties',JSON.stringify(addedParties));}catch(e){}
+  const mWarn=apPersist(code);
   roster.push(code);
   /* v306: THE NAME GOES INTO BIO, WHICH IS WHERE THE DIRECTORY ACTUALLY LIVES. It used to
      be written to `vaultNames` alone, and that was the second half of why this never worked:
@@ -9755,8 +9777,8 @@ function addParty(){
     raw:'Add '+code+' to the roster as a '+(kind==='downstream'?('downstream of '+parent):kind),
     payload:{mode:'addid',code:code,kind:kind,parent:parent||null,
              rev:kind==='reseller'?'R2':(kind==='referral'?'R3':null)}});
-  try{saveQueue();renderQueue();}catch(e){}
-  apDone(kind,'<b>'+esc(code)+'</b> created and selectable now, with the name already filled in below. Press <b>Save</b> to write it to the directory, then record his first transaction against him directly &mdash; there is no placeholder and no re-key. The phone shows names only after the vault is re-seeded, which the sync pass does when the directory changes.','var(--grn)');
+  apDone(kind,'<b>'+esc(code)+'</b> created and selectable now, with the name already filled in below. Press <b>Save</b> to write it to the directory, then record his first transaction against him directly &mdash; there is no placeholder and no re-key. The phone shows names only after the vault is re-seeded, which the sync pass does when the directory changes.'+mWarn,mWarn?'var(--amber)':'var(--grn)');
+  apSaved();
 }
 /* THE CONFIRMATION USED TO BE DESTROYED BY ITS OWN SUCCESS (v199). addParty set the
    message and then called renderReveal(), which rebuilds the panel from scratch: the
@@ -9765,6 +9787,27 @@ function addParty(){
    where you most need to be told a code was minted. Re-render FIRST, then re-open the
    box, restore the chosen kind so the fields do not snap back to Customer, and write the
    message into the new node. */
+/* v385: FOUR SWALLOWED FAILURES ON THIS PANEL AND ALL FOUR STILL SAID "created". Minting a
+   party writes in two places and neither was checked: localStorage, so the code is selectable
+   before the fold, and the queue file, which is the only copy that reaches the ledger. A private
+   window and a full store both refuse the first; a dead server makes the second fall back to a
+   download. Both were caught and dropped, so the confirmation promised a save that had not
+   happened. The queue write is the graver of the two and it is asynchronous, so it is reported
+   by amending the confirmation when it answers rather than before it has. */
+function apPersist(code){
+  try{localStorage.setItem('saltAddedParties',JSON.stringify(addedParties));return '';}
+  catch(e){return ' <b>'+esc(code)+'</b> is selectable now but was NOT remembered on this device, so it drops out of the pickers on the next load until the row is folded.';}
+}
+function apSaved(){
+  const say=t=>{const m=document.getElementById('apMsg');if(m){m.innerHTML+=t;m.style.color='var(--amber)';}};
+  const failed=e=>say(' The queue could not be saved: '+esc((e&&e.message)||e)+'. Record it again before closing the desk.');
+  try{
+    Promise.resolve(saveQueue()).then(res=>{
+      if(res===false)say(' Held in this tab, but NOT written to '+esc(QFILE)+'; a download was made instead.');
+    },failed);
+    renderQueue();
+  }catch(e){ failed(e); }
+}
 function apDone(kind,html,colour){
   renderReveal();
   const box=document.getElementById('apBox');if(box)box.open=true;
@@ -10838,7 +10881,7 @@ function actions(){
     if(free>0.009)add('soon','reward',`${ID(r.id)} has ${kg(free)} of reward waiting`,+(free*c.eff).toFixed(2),
       `Earned and not yet applied. Valued at ${fmt(c.eff)}/unit effective cost, which is what it costs you to honour it.`,'network');});
   /* 9. entries typed into the desk and not yet in the book */
-  const qn=queue.filter(q=>!(q.payload&&q.payload.mode==='plan')).length;
+  const qn=qTx().length;
   if(qn)add('soon','queue',`${qn} entr${qn===1?'y':'ies'} queued and not yet in the book`,0,
     'Typed into the Transaction tab and saved to the queue file. Until they are committed, no figure on this desk includes them.','add');
   /* 10. plans you committed to, past their own date */
@@ -10888,10 +10931,41 @@ function nextBest(id){
     due:cad?since-cad.med:null,                     // positive means overdue by his own habit
     delta:(paid!=null&&paid>0.009)?+((r.perKg-paid)/paid*100).toFixed(0):null};
 }
+/* ============ WHAT IS ACTUALLY WAITING (v385) ============
+   Three places asked the same question three times and two of them answered it wrongly.
+   A hushed observation rides the queue exactly as a filed plan does -- both are pushed by
+   the Whiteboard, applyOverlay returns on both, and neither can move a figure -- but only
+   the plan was ever filtered out. So snoozing an item put a row in the commit table
+   tagged like an unpaid transaction, and the rail's Enter badge counted it, directly under
+   a comment saying it must not.
+   THE BADGE ALSO CARRIES THE DRAFTS, which is the half that mattered more. A row drafted
+   from the queue and waiting on a tap is the whole of what the v305 gate exists to make
+   visible, and it was the one number that disappeared: apDraw set it, the next render
+   replaced it with the queue length alone, and before Approve had ever been opened it was
+   never set at all. One predicate, one count, one writer. */
+const qTx=()=>queue.filter(q=>!(q.payload&&(q.payload.mode==='plan'||q.payload.mode==='obs')));
+const enterCount=()=>qTx().length+AP_DRAFTS.length;
+function apBadge(){try{const b=document.querySelector('.tab[data-s="enter"]');if(!b)return;
+  let c=b.querySelector('.navct');const n=enterCount();
+  /* v385: AND WHERE THE DRAFTS COULD NOT BE READ THE BADGE SAYS SO RATHER THAN COUNTING THEM
+     AS NONE. This is the half of the failed read that is visible when Approve is NOT the part
+     on screen, which is most of the time, so it is the half that matters more. "3?" means at
+     least three; a bare "?" means it knows of nothing and could not check. The title carries
+     it in words, because a punctuation mark is not a signal on its own. */
+  const unread=cloudMode()&&(apNeedKey||!!apUnread);
+  if(!n&&!unread){if(c)c.remove();return;}
+  if(!c){c=document.createElement('span');c.className='navct';b.appendChild(c);}
+  c.textContent=unread?(n?n+'?':'?'):n;
+  c.title=unread?'The drafts could not be read, so this count is a floor and not a total.':'';
+}catch(e){
+  /* v385: NOT SWALLOWED. There is no element to paint a notice into, this being the rail and not
+     a part, so the console is all that is left; but a badge that throws leaves the LAST count
+     standing, and a stale count on the one chip that says how much is waiting is a worse lie
+     than no chip at all. Named so it can be found. */
+  try{console.error('apBadge: the Enter count could not be drawn, so the chip may be stale',e);}catch(_){}
+}}
 function renderQueue(){const b=document.getElementById('queueBox');if(!b)return;
-  /* plans share the queue file but are NOT transactions and are folded into no
-     figure, so they belong on the Whiteboard, never in this panel. */
-  const txq=queue.filter(q=>!(q.payload&&q.payload.mode==='plan'));
+  const txq=qTx();
   const cleared=queueCleared?`<div class="dsc" style="margin-top:10px">&#10003; ${queueCleared} committed entr${queueCleared===1?'y':'ies'} cleared automatically &mdash; already in the ledger.</div>`:'';
   if(!txq.length){b.innerHTML=cleared;return;}
   b.innerHTML=cleared;b.innerHTML+='<div style="margin-top:12px;font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:var(--gold)">Live in the desk, awaiting commit ('+txq.length+')— '+qLabel()+'</div>'
@@ -11900,67 +11974,139 @@ const WB_NO_PROD={amend:1,contact:1,addid:1};
    the phone. Same endpoints, same rule: what is approved is the ROW the drafter wrote, with
    the cost it draws and the margin it makes beside the price, and nothing is computed here.
    Cloud only: the laptop server has no drafts table. */
-let AP_DRAFTS=[],AP_REFUSED=[],apNeedKey=false,apBusy={},apMsg='';
+let AP_DRAFTS=[],AP_REFUSED=[],apNeedKey=false,apUnread='',apBusy={},apMsg='';
 function tabApprove(){
-  if(!cloudMode())return `<h1>Approve</h1><div class="dsc dsclead">Rows drafted from the queue are decided on the cloud desk or on the phone. This copy runs on the laptop, which has no drafts table: open <b>/desk</b> on the Worker to decide them.</div>`;
+  /* v385: THE LAPTOP COPY WAS A DEAD END. One sentence saying the decision happens somewhere
+     else, and no way to tell whether anything was waiting or what to do about it. It cannot
+     reach the drafts table and should not pretend to, but it knows exactly what it is
+     holding: the entries typed HERE that have not been handed to the drafter yet. That is
+     the half of the answer this copy owns, and naming the command is the way out. */
+  if(!cloudMode()){
+    const n=qTx().length;
+    return `<h1>Approve</h1>
+    <div class="dsc dsclead">A drafted row is decided on the cloud desk or on the phone; this copy runs on the laptop and has no drafts table.</div>
+    <div class="card">
+      <div class="cardh">Waiting on this laptop <span class="sub">${n?`${n} entr${n===1?'y':'ies'} in ${esc(QFILE)}`:'nothing'}</span></div>
+      <div class="insight">${n?'In front of nobody until they are drafted. Run this, then decide at <b>/desk</b> or on the phone.'
+        :'Every entry typed here has been handed over.'}</div>
+      ${n?`<div class="mono" style="margin-top:9px;padding:9px 11px;border-radius:8px;background:var(--wellbg);border:1px solid var(--brd);font-size:12px">node tools/drafts.mjs --from-queue</div>`:''}
+    </div>`;
+  }
   return `<h1>Approve</h1>
-  <div class="dsc dsclead">What you approve is the ROW the drafter wrote, not the entry that was typed: the cost it draws and the margin it makes are the things an entry cannot show. An approved row is folded by the next cloud fold; nothing is written here.</div>
+  <div class="dsc dsclead">What you approve is the ROW the drafter wrote, not the entry that was typed: the cost it draws and the margin it makes are the things an entry cannot show.</div>
+  <!-- v385: THIS WAS THE LEAD'S SECOND SENTENCE AND NOBODY HAS READ IT SINCE v372. stripMethod
+       cuts a .dsclead to its first sentence WHATEVER ITS LENGTH, so the one line telling a
+       person that a tap writes nothing to the book never reached the screen it belongs on. It
+       is only said elsewhere in apMsg, AFTER the tap, which is the wrong side of the decision.
+       An .insight is trimmed only past NOTE_MIN and is never deleted, so at 74 characters this
+       survives whole. -->
+  <div class="insight">An approved row is folded by the next cloud fold; nothing is written here.</div>
   <div id="apBox"><div style="font-size:12px;color:var(--dim)">Reading the drafts.</div></div>
   <div id="apMsg" style="margin-top:8px;font-size:12px;color:var(--mut)">${esc(apMsg)}</div>
   <div id="apRef"></div>`;
 }
-async function apLoad(){
-  if(!cloudMode()||!document.getElementById('apBox'))return;
+/* quiet=true reads the drafts without ever asking for a key. GET /drafts has been keyed
+   since 20 Aug (it returns each proposed row WITH its cost and margin), so a load-time read
+   that prompted would put a password box in front of every visitor to a public URL. The
+   panel's own load still asks, which is where asking belongs. It no longer requires #apBox:
+   the badge is drawn from this whether or not Approve is the part on screen. */
+async function apLoad(quiet){
+  if(!cloudMode())return;
   const go=()=>fetch('drafts?status=pending',{cache:'no-store',headers:qHeaders()});
-  try{ let r=await go(); if(r.status===401&&saltAskWriteKey())r=await go();
+  /* v385: A READ THAT FAILED USED TO SAY THE QUEUE WAS EMPTY. Every road out of here but the
+     401 emptied AP_DRAFTS and let apDraw print "Nothing waiting. Every drafted row has been
+     decided.", which is a confident statement about the ledger made by code that had just
+     learned nothing. A dead connection, a 500 from the Worker or a body that would not parse
+     all read as an approved-out queue, and the rail badge counted the drafts as zero to match.
+     The 401 branch was already honest, in those words; this makes the other two say the same
+     thing. Nothing here decides what to do about it: it records that it does not know. */
+  try{ let r=await go(); if(r.status===401&&!quiet&&saltAskWriteKey())r=await go();
     apNeedKey=(r.status===401); const j=r.ok?await r.json():null;
+    apUnread=(r.ok||r.status===401)?'':'the Worker answered http '+r.status;
     AP_DRAFTS=(j&&j.drafts)||[]; AP_REFUSED=(j&&j.refused)||[];
-  }catch(e){ AP_DRAFTS=[]; AP_REFUSED=[]; }
+  }catch(e){ apUnread=(e&&e.message)||'the request did not complete'; AP_DRAFTS=[]; AP_REFUSED=[]; }
   apDraw();
 }
 function apCard(d){
+  /* v385: EVERY FIGURE ON THIS CARD IS EXACT. fmt0 rounds to the whole ringgit, so a queued
+     RM11.50 read back as "RM 12" beside a Rate cell that correctly said RM 11.50, on the one
+     screen whose entire job is reading a figure right, and the RM115 oil unit this card exists
+     for was corrected to exactly RM11.50. fmt prints the sen only when there are sen, so a salt
+     order in whole hundreds is no noisier than it was. */
   const r=d.row||{}, col=d.collection||'sales', cell=(k,v,cls)=>`<div class="kpi ${cls||''}"><div class="l">${k}</div><div class="v" style="font-size:17px">${v}</div></div>`;
   let head='',grid='';
   if(col==='count'){const dr=r.drift;head=`Count of <b>${esc(r.product||'salt')}</b> on ${esc(r.date||'-')}`;
     grid=cell('Book says',r.was==null?'&mdash;':kg(r.was))+cell('You counted',kg(r.qty))+cell('Drift',dr==null?'&mdash;':(dr>0?'+':'')+kg(dr),dr==null?'':Math.abs(dr)<0.005?'g':'r');}
   else if(col==='loss'||col==='lostDemand'){const lost=col==='lostDemand';head=`${lost?'Lost sale':'Loss'} of <b>${esc(r.product||'salt')}</b> on ${esc(r.date||'-')}`;
-    grid=cell(lost?'Wanted':'Left the shelf',kg(r.kg))+(lost?cell('Who',esc(codeOf(r.party||'')||'walk-up'))+cell('Asked',r.rm?fmt0(r.rm):'&mdash;'):'')+cell('Why',esc(r.why||'-'));}
+    grid=cell(lost?'Wanted':'Left the shelf',kg(r.kg))+(lost?cell('Who',esc(codeOf(r.party||'')||'walk-up'))+cell('Asked',r.rm?fmt(r.rm):'&mdash;'):'')+cell('Why',esc(r.why||'-'));}
   else if(col==='roster'){head=`Register <b>${esc(r.code||'?')}</b>`;grid=cell('Kind',esc(r.kind||'customer'))+(r.parent?cell('Under',esc(codeOf(r.parent))):'');}
   else if(d.amends&&d.amendKind==='Correction'){
     /* WHAT IS APPROVED IS WHAT CHANGED. The generic amendment grid below leads with cash and
        units moving, both of which are zero on a correction by definition, so it answered a
        question nobody asked and hid the one being asked. The phone got this card at v361;
        the desk showed zeros until the 25 Aug audit. */
-    head=`Correct <b>${esc(codeOf(r.customer||r.supplier||'?'))}</b>, the ${d.collection==='purchases'?'lot':'order'} of ${kg(r.qty)} for ${fmt0(r.total)} ${r.date?`dated ${esc(r.date)}`:'pending, undated'}${r.rid?` <span class="mono" style="color:var(--dim)">${esc(r.rid)}</span>`:''}`;
+    head=`Correct <b>${esc(codeOf(r.customer||r.supplier||'?'))}</b>, the ${d.collection==='purchases'?'lot':'order'} of ${kg(r.qty)} for ${fmt(r.total)} ${r.date?`dated ${esc(r.date)}`:'pending, undated'}${r.rid?` <span class="mono" style="color:var(--dim)">${esc(r.rid)}</span>`:''}`;
     grid=(r.changes||[]).map(c=>`<div class="kpi"><div class="l">${esc(c.field)}</div><div class="v" style="font-size:14px"><span style="color:var(--dim);text-decoration:line-through">${esc(c.from==null?'unset':String(c.from).slice(0,28))}</span> <span style="color:var(--gold)">${esc(c.to==null?'cleared':String(c.to).slice(0,28))}</span></div></div>`).join('')
       ||cell('Changes','none');}
-  else if(d.amends){const e=(d.entry&&d.entry.payload)||{};head=`${esc(d.amendKind||'Amendment')} on <b>${esc(codeOf(r.customer||r.supplier||'?'))}</b>, the order of ${kg(r.qty)} for ${fmt0(r.total)} agreed ${esc(r.date||'undated')}`;
-    grid=cell('Cash moving',fmt0(e.cash||0))+cell('Units moving',kg(e.kg||0))+cell('On',esc(e.date||'-'))+cell('Already in',fmt0(r.cash||0));}
+  else if(d.amends){const e=(d.entry&&d.entry.payload)||{};head=`${esc(d.amendKind||'Amendment')} on <b>${esc(codeOf(r.customer||r.supplier||'?'))}</b>, the order of ${kg(r.qty)} for ${fmt(r.total)} agreed ${esc(r.date||'undated')}`;
+    grid=cell('Cash moving',fmt(e.cash||0))+cell('Units moving',kg(e.kg||0))+cell('On',esc(e.date||'-'))+cell('Already in',fmt(r.cash||0));}
   else{const buy=col==='purchases',qty=+r.qty||0,total=+r.total||0,cost=r.cost,per=qty?total/qty:null;
     const mar=(!buy&&total>0&&cost!=null&&qty)?((total-cost*qty)/total*100):null;
-    head=`${buy?'Buy from':'Sell to'} <b>${esc(codeOf(r.supplier||r.customer||'?'))}</b>: ${kg(qty)} ${esc(r.product||'salt')} for <b>${fmt0(total)}</b> on ${esc(r.date||'undated')}`;
+    head=`${buy?'Buy from':'Sell to'} <b>${esc(codeOf(r.supplier||r.customer||'?'))}</b>: ${kg(qty)} ${esc(r.product||'salt')} for <b>${fmt(total)}</b> on ${esc(r.date||'undated')}`;
     /* a flagged row never gets a green margin: the RM115 oil unit banded as excellent */
-    grid=cell('Rate',per==null?'&mdash;':fmt(per)+'/unit')+(buy?'':cell('Cost drawn',cost==null?'&mdash;':fmt(cost)+'/unit')+cell('Margin',mar==null?'&mdash;':mar.toFixed(1)+'%',mar==null?'':(d.flags&&d.flags.length)?'gold':mar<20?'r':'g'))
-      +cell('Cash',fmt0(r.cash||0))+cell(buy?'Received':'Delivered',kg(buy?(r.receivedQty!=null?r.receivedQty:qty):(r.deliveredQty||0)));}
+    /* v385: COST AND MARGIN LEAD, AND THE RATE SITS BESIDE THEM. The phone has read this way
+       since v302 and the desk led with the Rate, which is the entry's own figure and the one
+       thing an entry cannot be checked against. RM115 a unit is a plausible rate to read
+       first; RM115 a unit against RM7 of cost is not. A purchase has neither, so it keeps
+       the rate on its own. */
+    const rate=cell('Rate',per==null?'&mdash;':fmt(per)+'/unit');
+    grid=(buy?rate
+      :cell('Cost drawn',cost==null?'&mdash;':fmt(cost)+'/unit')
+        +cell('Margin',mar==null?'&mdash;':mar.toFixed(1)+'%',mar==null?'':(d.flags&&d.flags.length)?'gold':mar<20?'r':'g')
+        +rate)
+      +cell('Cash',fmt(r.cash||0))+cell(buy?'Received':'Delivered',kg(buy?poRecvKg(r):(r.deliveredQty||0)));}
+    /* v385: THE RECEIVED CELL WAS A SECOND ENGINE, AND IT HAD THE PENDING RULE WRONG. It read
+       "receivedQty==null means the whole lot", which is the book's convention for a SETTLED lot
+       and is not a rule that holds on a PENDING one, where nothing has moved by definition. So a
+       pending lot of 12.5 unit, agreed and nothing more, was drawn on this card as 12.5 unit
+       RECEIVED, on the screen a person reads before letting it into the book. poRecvKg is the one
+       definition of what a lot received and has carried the pending rule since v338, with a
+       comment saying what happens without it. The sale side is left alone: the drafter always
+       states deliveredQty, including a zero, so there is nothing there to infer. */
+  /* v385: A DRAFT'S FLAGS ARE FROZEN AT DRAFT TIME AND THE ROSTER IS NOT. v381 re-keyed
+     CZ4-TBC to CZ4-MK and CH6-TBC to CH6-SET and purged both placeholders. A row drafted
+     before that names a code that WAS on the roster when the drafter read it, so no roster
+     flag was ever written into it, and nothing can reach back into a pending draft to add
+     one. Only a reader holding today's book can see it, which is why this is the single
+     thing on this card the desk says for itself.
+     IT COMPUTES NO FIGURE. Not a cost, not a margin, not a floor: set membership against the
+     roster this desk already renders, and it can only ADD a caution, never alter one the
+     drafter wrote. Same class of fact as the drafter's own stale-snapshot flag. Not drawn on
+     a roster draft, where a code the book does not hold is the whole point of the row. */
+  const apGone=(col==='sales'||col==='purchases')&&d.party&&roster.indexOf(d.party)<0
+    ?`<div class="warnpill" style="display:block;margin:8px 0 0;background:rgba(255,122,138,.14);border-color:var(--crim);color:var(--crim)"><b>Read here, not from the draft.</b> ${esc(codeOf(d.party))} is not on the roster this book holds. The row was drafted ${esc((d.draftedAt||'').slice(0,10)||'earlier')} and the code has been retired or renamed since. Do not approve it against a code the book no longer has.</div>`:'';
   return `<div class="card" style="margin-top:10px" data-id="${esc(d.id)}">
     <div style="font-size:14px">${head}</div>
     <div class="kpis k4" style="margin-top:10px">${grid}</div>
     ${(d.flags||[]).map(f=>`<div class="warnpill" style="display:block;margin:8px 0 0;background:rgba(240,147,43,.14);border-color:var(--amber);color:#f5c98a">&#9888; ${esc(f)}</div>`).join('')}
+    ${apGone}
     ${d.reasoning?`<div class="dsc" style="margin-top:8px">${esc(d.reasoning)}</div>`:''}
-    <div style="display:flex;gap:8px;margin-top:10px"><button class="vbtn" data-ap="approve" data-id="${esc(d.id)}" style="border-color:var(--grn);color:var(--grn)">Approve</button><button class="vbtn" data-ap="reject" data-id="${esc(d.id)}" style="border-color:var(--crim);color:var(--crim)">Reject</button></div>
+    <div style="display:flex;gap:8px;margin-top:10px"><button class="vbtn" data-ap="approve" data-id="${esc(d.id)}" style="background:linear-gradient(135deg,#5fd6a0,#3fae82);border-color:transparent;color:#0c2018;box-shadow:none">Approve</button><button class="vbtn" data-ap="reject" data-id="${esc(d.id)}" style="background:rgba(255,122,138,.16);border-color:var(--crim);color:var(--crim);box-shadow:none">Reject</button></div>
   </div>`;
 }
 function apDraw(){
-  const box=document.getElementById('apBox'),ref=document.getElementById('apRef');if(!box)return;
+  const box=document.getElementById('apBox'),ref=document.getElementById('apRef');
+  /* the rail FIRST, before the early return: the count of rows waiting on a tap is most
+     needed on the loads where Approve is not the part on screen. */
+  apBadge();
+  if(!box)return;
   if(apNeedKey)box.innerHTML='<div class="warnpill" style="display:block">The write key is needed to read the drafts and it was not accepted. Reload to be asked again. <b>This is not an empty queue: rows may be waiting.</b></div>';
+  else if(apUnread)box.innerHTML='<div class="warnpill" style="display:block;background:rgba(255,122,138,.14);border-color:var(--crim);color:var(--crim)">The drafts could not be read: '+esc(apUnread)+'. <b>This is not an empty queue: rows may be waiting on a tap.</b> Open this part again once the connection is back.</div>';
   else if(!AP_DRAFTS.length)box.innerHTML='<div class="card"><div class="dsc">Nothing waiting. Every drafted row has been decided.</div></div>';
   else box.innerHTML=AP_DRAFTS.map(apCard).join('');
   box.querySelectorAll('button[data-ap]').forEach(b=>{b.onclick=()=>apDecide(b.dataset.id,b.dataset.ap,b);});
   if(ref)ref.innerHTML=AP_REFUSED.length?`<h2 style="margin-top:18px">Already queued, and not yours to approve <span class="rule"></span></h2><div class="dsc" style="margin-bottom:4px">In hand and needing a person at the laptop; shown so they are not entered twice.</div>`
     +AP_REFUSED.map(r=>{const e=r.entry||{};return `<div class="card" style="margin-top:8px"><div style="font-size:13px">${esc(e.raw||((e.type||'Entry')+' '+(r.party||'')))}</div><div class="dsc" style="margin-top:5px">${esc(r.why||'')}</div></div>`;}).join(''):'';
-  /* the rail counts what a click here can clear, beside what the queue holds */
-  try{const b=document.querySelector('.tab[data-s="enter"]');if(b){let c=b.querySelector('.navct');const n=queue.length+AP_DRAFTS.length;
-    if(!n){if(c)c.remove();}else{if(!c){c=document.createElement('span');c.className='navct';b.appendChild(c);}c.textContent=n;}}}catch(e){}
 }
 async function apDecide(id,action,btn){
   if(!id||apBusy[id])return;apBusy[id]=1;
@@ -12056,7 +12202,7 @@ function tabWorkbench(){
               .map(id=>`<option value="${id}">${ID(id)}</option>`).join('');
   const lbl='font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:var(--dim)';
   return `<h1>Transaction</h1>
-  <div class="dsc dsclead">Where everything on this desk gets entered. Nothing books until it is committed.</div>
+  <div class="dsc dsclead">Nothing here books a figure: an entry is queued, drafted into a row, and reaches the ledger only once that row is approved.</div>
   <h2>Record a transaction <span class="rule"></span></h2>
   <div class="dsc" style="margin-bottom:9px">One form for every entry: a new order, an amendment to one, or a stock count.</div>
   <div class="card">
@@ -12076,6 +12222,18 @@ function tabWorkbench(){
     </div>
 
     <div id="wbPaneNew" style="margin-top:13px">
+      <!-- v385: THE FULLER SHEET SAYS SO ON THE FORM IT SUPERSEDES. v377 made entering an
+           order the same sheet as editing one, and put it behind the + in the bottom right,
+           which carries a title and an aria-label and no visible word. So the part whose
+           whole job is entering an order led with the smaller of the two ways to do it and
+           said nothing about the other. It is offered here, on the pane it belongs to.
+           SELL ONLY, and that is why wbApply hides it on Buy: edSubmitNew reads
+           edFields('SELL') and queues direction SELL, so offering it beside Buy would turn
+           a lot into an order without saying so. -->
+      <div class="dsc" id="wbFullRow" style="display:flex;align-items:center;gap:11px;flex-wrap:wrap;margin-bottom:12px">
+        <button class="vbtn" type="button" onclick="ledNew()">Open the full sheet</button>
+        <span style="flex:1 1 240px;min-width:0">Same order, every field the book holds: cost, the four dates, the settlement flags, the row note. It queues for approval exactly as this form does.</span>
+      </div>
       <div class="qrow" style="margin-bottom:10px">
         <div class="qfield"><label>Direction</label><span class="viewsw" id="wbDirSw" style="display:flex"><button data-d="SELL" class="on">Sell</button><button data-d="BUY">Buy</button></span></div>
         <div class="qfield" id="wbPartyCell"><label id="wbPartyLbl">Party</label><select id="wbParty"></select></div>
@@ -12085,7 +12243,9 @@ function tabWorkbench(){
       <div class="qrow" id="wbNewBox" style="display:none;margin-bottom:10px"></div>
       <div class="qrow" style="margin-bottom:10px">
         <div class="qfield" style="flex:1 1 100%">
-          <div class="dsc">Not in the list? ${cloudMode()?'Use <b>Add ID</b> above: the code is typed here and queued for approval, and the name is typed into the directory at the laptop. Otherwise a':'A'} party is created by <b>naming</b> it: open <b>Names &amp; IDs</b> and use <b>+ Add ID</b>. Give the name and the place and the desk mints the code it will carry for good, selectable here at once. There is no placeholder to re-key afterwards, which is what used to make this four steps instead of one.</div></div>
+          <div class="dsc">Not in the list? ${cloudMode()
+            ?'Use <b>Add ID</b> above: a code typed by hand, queued for approval like any other entry. The name is typed into the directory at the laptop, where names live.'
+            :'Open <b>Names &amp; IDs</b> and use <b>+ Add ID</b>. Give the name and the place; the desk mints the code it will carry for good, selectable here at once.'}</div></div>
       </div>
       <div class="qrow" style="margin-bottom:10px">
         <div class="qfield qkg"><label>Quantity (unit)</label><input id="wbQty" type="number" step="0.5" min="0" inputmode="decimal"></div>
@@ -12160,7 +12320,7 @@ function tabWorkbench(){
         <div class="qfield"><label>Date</label><input id="wbLossDate" type="date"></div>
       </div>
       <div class="qrow" style="margin-bottom:10px"><div class="qfield" style="flex:1"><label>Note (optional)</label><input id="wbLossNote" type="text" placeholder="what happened"></div></div>
-      <div class="dsc">Shrinkage is the largest single leak on this desk and it is currently a <b>plug</b>: the gap between what the ledger implies and what you counted, with no idea how much is personal use and how much is loss. Recording it here does not change the count, which still wins. It attributes the gap, so next month you can see which part of it you control.</div>
+      <div class="dsc">The count still wins and this does not change it. It <b>attributes</b> the gap, so the part of shrinkage you control can be told from the part you cannot.</div>
     </div>
 
     <div id="wbPaneLost" style="display:none;margin-top:13px">
@@ -12176,7 +12336,7 @@ function tabWorkbench(){
         <div class="qfield"><label>Date</label><input id="wbLostDate" type="date"></div>
         <div class="qfield" style="flex:1"><label>Note (optional)</label><input id="wbLostNote" type="text" placeholder="what was said"></div>
       </div>
-      <div class="dsc">The one loss this desk is structurally blind to. An order you could not fill is never recorded anywhere, so a week of empty shelves looks identical to a week of no demand. Nothing here touches revenue, stock or margin; it sits beside the books as evidence of what the shortage actually cost.</div>
+      <div class="dsc">Nothing here touches revenue, stock or margin. It sits beside the books as the evidence of what a shortage cost, which is otherwise recorded nowhere at all.</div>
     </div>
 
     <div id="wbPaneContact" style="display:none;margin-top:13px">
@@ -12192,7 +12352,7 @@ function tabWorkbench(){
         <div class="qfield"><label>Next action due</label><input id="wbCtNext" type="date"></div>
         <div class="qfield" style="flex:1"><label>Note (optional)</label><input id="wbCtNote" type="text" placeholder="what was agreed"></div>
       </div>
-      <div class="dsc">12 of 20 customers have bought exactly once. The desk can already tell you who has gone quiet, but until now it had no memory of whether you had done anything about it, so the same names came back every day regardless. This moves no figure.</div>
+      <div class="dsc">This moves no figure. It is the desk&rsquo;s memory of who has been chased, so a name that has gone quiet stops coming back every day once you have acted on it.</div>
     </div>
 
     <!-- v343: ADD ID, ON THE CLOUD DESK. Names & IDs mints a code from a name and a place, and
@@ -12214,7 +12374,7 @@ function tabWorkbench(){
         <div class="qfield" id="wbApParentCell" style="display:none"><label>Under which associate</label><select id="wbApParent"></select></div>
         <div class="qfield" style="flex:1"><label>Note <span style="color:var(--dim)">optional</span></label><input id="wbApNote" type="text" placeholder="never the name or the place"></div>
       </div>
-      <div class="dsc">The code is the whole of what travels. Customers run <b>C</b>, suppliers <b>S</b>, then a digit or two and a place suffix, as in <b>CA4-DAM</b> or <b>SP7-PUD</b>. It is selectable on this desk at once, the cloud drafter writes it up for approval, and the name is typed into the directory at the laptop, where names live.</div>
+      <div class="dsc">Customers run <b>C</b>, suppliers <b>S</b>, then a digit or two and a place suffix: <b>CA4-DAM</b>, <b>SP7-PUD</b>. The name is typed into the directory at the laptop, never here.</div>
     </div>
 
     <div style="margin-top:13px;padding-top:11px;border-top:1px solid var(--line)">
@@ -12231,8 +12391,7 @@ function tabWorkbench(){
     </div>
     <div class="note" style="margin-top:10px" id="wbSync">${qNote()}</div>
   </div>
-  <div id="queueBox" style="margin-top:8px"></div>
-  <div class="dsc" style="margin-top:18px">Pricing now has <b>its own tab</b>. The two what-if simulators are retired: the quote board answers both of their questions at once, for every size the desk sells, and answers them against the floor floor rather than against a figure typed in hopefully.</div>`;
+  <div id="queueBox" style="margin-top:8px"></div>`;
 }
 /* ============ TAB: PRICING ============ */
 function pxMarket(){
@@ -13499,6 +13658,9 @@ function wbPreview(){
 }
 function wbRecord(){
   const ok=wbEl('wbOk');if(!ok)return;
+  /* v385: set where a device could not remember a newly registered code, so the confirmation
+     says so rather than claiming a save that did not happen. See the Add ID branch below. */
+  let wbUnremembered='';
   const note=(wbVal('wbNote')||'').trim();
   if(wbMode==='new'){
     const date=wbVal('wbDate'),qty=wbNum('wbQty'),total=wbNum('wbTotal'),cash=wbNum('wbCash'),kgd=wbNum('wbKg');
@@ -13629,9 +13791,15 @@ function wbRecord(){
     const code=(wbVal('wbApCode')||'').trim().toUpperCase(),kind=wbVal('wbApKind');
     const parent=(kind==='downstream'||kind==='bucket')?(wbVal('wbApParent')||null):null,an=(wbVal('wbApNote')||'').trim();
     if(!code||roster.indexOf(code)>=0){ok.textContent='Type a code that is not already on the roster.';ok.style.color='var(--crim)';return;}
-    /* selectable at once, and remembered on this device, exactly as Names & IDs does it */
+    /* selectable at once, and remembered on this device, exactly as Names & IDs does it.
+       v385: THAT SECOND CLAIM WAS ASSERTED AND NOTHING CHECKED IT. A private window and a full
+       store both refuse this write, and it was swallowed: the code stays selectable for the rest
+       of the session, because it is pushed into roster below, then drops out of every picker on
+       the next load and does not come back until the row is folded. The entry itself reaches the
+       queue either way, which is why this is a caveat on the confirmation and not a refusal. */
     addedParties.push({code:code,kind:kind,parent:parent,at:new Date().toISOString()});
-    try{localStorage.setItem('saltAddedParties',JSON.stringify(addedParties));}catch(e){}
+    try{localStorage.setItem('saltAddedParties',JSON.stringify(addedParties));}
+    catch(e){wbUnremembered=' '+code+' is selectable now but was NOT remembered on this device, so it drops out of the pickers on the next load until the row is folded.';}
     roster.push(code);
     queue.push({at:new Date().toISOString(),type:'ADDID',party:code,qty:null,total:null,status:'addid',
       raw:'Add '+code+' to the roster as: '+(ADDID_KIND_LABEL[kind]||kind)+(parent?' (under '+codeOf(parent)+')':'')+(an?' — '+an:''),
@@ -13656,8 +13824,9 @@ function wbRecord(){
   st().textContent='Recording…';st().style.color='var(--mut)';
   Promise.resolve(saveQueue()).then(res=>{
     const o=st();
-    if(res===false){o.textContent='Folded into the desk, but NOT saved to the folder — server gone; a download was made instead. Re-record if no file appeared.';o.style.color='var(--amber)';if(queue.length)qDownload();}
-    else{o.textContent='Recorded and folded into the desk — '+QFILE+' saved '+(qSyncState==='server'?'to this folder.':'to the download folder.');o.style.color='var(--grn)';}
+    if(res===false){o.textContent='Folded into the desk, but NOT saved to the folder — server gone; a download was made instead. Re-record if no file appeared.'+wbUnremembered;o.style.color='var(--amber)';if(queue.length)qDownload();}
+    else{o.textContent='Recorded and folded into the desk — '+QFILE+' saved '+(qSyncState==='server'?'to this folder.':'to the download folder.')+wbUnremembered;
+      o.style.color=wbUnremembered?'var(--amber)':'var(--grn)';}
     renderQueue();});
   wbPreview();
 }
@@ -13743,6 +13912,9 @@ function wbApply(){
   const cp=wbEl('wbCtParty');
   if(cp&&!cp.options.length)cp.innerHTML='<option value="">Choose a customer</option>'+custOpts;
   const aw=wbEl('wbAssocWrap');if(aw)aw.style.display=wbDir==='SELL'?'':'none';
+  /* the full sheet writes a SALE and only a sale, so it is offered only where it can
+     honour what it says. Same rule, same line, as the associate box above it. */
+  const fr=wbEl('wbFullRow');if(fr)fr.style.display=wbDir==='SELL'?'':'none';
   const sw=wbEl('wbStreamSw');if(sw)[...sw.querySelectorAll('button')].forEach(b=>b.classList.toggle('on',b.dataset.r===wbStream));
   /* close the R2 party trap: in R2 the sale books to the associate, so the top Party
      field is meaningless and used to be silently discarded. Hide it and point the
@@ -14153,9 +14325,13 @@ function navCounts(){
     if(!n){if(c)c.remove();return;}
     if(!c){c=document.createElement('span');c.className='navct';b.appendChild(c);}
     c.textContent=n;};
-  // plans ride the same queue but are not transactions, so they must not inflate the Workbench count
-  const planN=queue.filter(q=>q.payload&&q.payload.mode==='plan').length;
-  put('money',openN);put('enter',queue.length);
+  put('money',openN);
+  /* v385: the Enter badge has ONE writer, and it is not this one. planN was computed here
+     and never used, so the comment that stood above it -- plans must not inflate the count
+     -- described an intention the line below it did not carry out. apBadge() counts what a
+     visit to Enter can actually clear: entries waiting to be committed, plus rows waiting
+     on a tap. */
+  apBadge();
   /* v341: what is due now and what is breached, on the one view that carries both */
   put('today',actions().filter(x=>x.sev==='now').length+boundaryScan().filter(x=>x.sev==='breach').length);
 }
@@ -14422,6 +14598,12 @@ applyOverlay();                            // uncommitted entries fold in before
    address that names a tab is honoured, which is what lets a reload resume in place. */
 recompute();drawProdSw();
 (function(){const h=(location.hash||'').slice(1);switchTab(VIEW_OF[h]?h:'today');})();
+/* v385: THE RAIL KNOWS BEFORE APPROVE IS OPENED. A row is drafted within a second of an
+   entry landing, and until now nothing on this desk said so until you happened to open the
+   one part that fetches them, which is the wrong way round for a step that is not optional.
+   One read on load: cloud only, and only where a write key is already stored, so a stranger
+   with the URL is neither prompted nor served anything new. */
+try{if(cloudMode()&&saltWriteKey())apLoad(true);}catch(e){}
 window.addEventListener('hashchange',()=>{
   const h=(location.hash||'').slice(1);
   /* v365: was VIEW_OF[h]!==curTab, which only ever caught a jump between views. Two
