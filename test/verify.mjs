@@ -2274,6 +2274,40 @@ section("Orders and money — every basis is named where the figure is stated (v
     const per = html("fmt(100/Math.max(1,pricedSales.length/Math.max(1,finRows().length)))");
     ok(fin.includes(`<b>${per}</b> an order`), `${pr}: a standing cost is spread over the orders this book actually places in a month (${per})`);
   }
+
+  /* NEITHER DRAW SWALLOWS A THROW. Both held an empty catch INSIDE their ensureChart
+     callback, which fires before drawPerProduct's reporter and before ensureChart's, so a
+     broken chart left a blank canvas and said nothing anywhere. Found with a Chart that
+     throws, which is the only probe that sees through an inner catch: watching for a
+     failure notice sees nothing, because there was nothing to see. Both catches are gone
+     rather than replaced, since every road out now has a reporter on it. */
+  const src = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+  for (const fn of ["drawRecvCharts", "drawFinCharts"]) {
+    const at = src.indexOf(`function ${fn}()`), end = src.indexOf("\nfunction ", at + 12);
+    const body = src.slice(at, end > at ? end : at + 3000);
+    ok(!/\}catch\(e\)\{\}/.test(body), `${fn} does not swallow a throw, so a broken chart says so`);
+  }
+
+  /* THE FINDING IS ON THE PAGE, WHICH IT WAS NOT FROM v372 TO v385. stripMethod cuts every
+     .insight to its first sentence once it reaches NOTE_MIN, so three paragraphs rendered as
+     "Read the last two columns against each other" and the sensitivity was cut every time.
+     Asserted against the DOM AFTER the strip, because before it everything looks present. */
+  const noteMin = +(/const NOTE_MIN=(\d+)/.exec(src) || [])[1];
+  for (const pr of ids) {
+    setP(pr);
+    w.switchTab("financials");
+    const ins = [...w.document.querySelectorAll('.sec.on .prodblock[data-prod="' + pr + '"] .insight')];
+    ok(ins.length === 1, `${pr}: the cost panel states one finding`);
+    if (ins.length) {
+      const t = (ins[0].textContent || "").trim();
+      ok(/\d[\d.]*%/.test(t), `${pr}: and it survives the strip carrying its figures ("${t.slice(0, 60)}...")`);
+      /* the cut writes textContent, which destroys every child element, so surviving
+         emphasis is the proof that the block stayed under NOTE_MIN and was never cut.
+         Measuring the RENDERED length instead proves nothing: it is short either way. */
+      ok(ins[0].querySelectorAll("b").length > 0,
+        `${pr}: the cut never fired, so the emphasis on the figures is still there (${t.length} of ${noteMin} chars)`);
+    }
+  }
   setP(keep);
   try { w.close(); } catch (e) { }
 }

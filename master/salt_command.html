@@ -7626,28 +7626,26 @@ function drawRecvCharts(){
   if(!el)return;
   ensureChart(ok=>{
     if(!ok){chartEmpty(el,'Chart unavailable. Every figure it draws is in the tables on this tab.');return;}
-    try{
-      const rows=arList.map(x=>({who:codeOf(x.customer),g:outstandingOf(x),age:dbet(x.date)}))
-        .filter(x=>x.g>0.009);
-      /* v385: THE SUPPLIER CLAIM IS SALT'S, ON THE CHART AS IT ALREADY IS IN THE TABLE.
-         arList is scoped by recompute() and supRecovGross is salt-only by construction, so the
-         Order book's own refund row only ever appears under Salt; the chart pushed the raw
-         record with no such test and would have drawn the same bar under Oil. Latent while the
-         default is written off, and a written-off claim is not a receivable in any book. */
-      if(PROD===DEFAULT_PROD&&typeof supplierReceivable!=='undefined'&&supplierReceivable&&supplierReceivable.status==='recoverable')
-        rows.push({who:codeOf(supplierReceivable.party)+' (supplier)',g:supplierReceivable.amount,age:dbet(supplierReceivable.since)});
-      if(!rows.length){chartEmpty(el,'Nothing is owed either way. A rare and correct emptiness.');return;}
-      /* oldest first, matching the table beneath it: the chart's whole argument is what the
-         ladder has taken off with age, so age is the axis it should be read down. */
-      rows.sort((a,b)=>b.age-a.age||b.g-a.g);
-      freshChart(el,{type:'bar',data:{labels:rows.map(x=>x.who+' · '+x.age+'d'),datasets:[
-        {label:'Gross',data:rows.map(x=>+x.g.toFixed(2)),backgroundColor:'rgba(255,93,115,.35)',borderColor:'#ff7a8a',borderWidth:1,borderRadius:3},
-        {label:'Net of ladder',data:rows.map(x=>+(x.g*(1-provRate(x.age))).toFixed(2)),backgroundColor:'#7fd7e8',borderWidth:0,borderRadius:3}]},
-        options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
-          plugins:{legend:{labels:{color:CHART_INK.tick,boxWidth:12,font:{size:11}}}},
-          scales:{x:{grid:{color:CHART_INK.grid},ticks:{color:CHART_INK.tick}},
-                  y:{grid:{display:false},ticks:{color:CHART_INK.tick,font:{size:10}}}}}});
-    }catch(e){}
+    const rows=arList.map(x=>({who:codeOf(x.customer),g:outstandingOf(x),age:dbet(x.date)}))
+      .filter(x=>x.g>0.009);
+    /* v385: THE SUPPLIER CLAIM IS SALT'S, ON THE CHART AS IT ALREADY IS IN THE TABLE.
+       arList is scoped by recompute() and supRecovGross is salt-only by construction, so the
+       Order book's own refund row only ever appears under Salt; the chart pushed the raw
+       record with no such test and would have drawn the same bar under Oil. Latent while the
+       default is written off, and a written-off claim is not a receivable in any book. */
+    if(PROD===DEFAULT_PROD&&typeof supplierReceivable!=='undefined'&&supplierReceivable&&supplierReceivable.status==='recoverable')
+      rows.push({who:codeOf(supplierReceivable.party)+' (supplier)',g:supplierReceivable.amount,age:dbet(supplierReceivable.since)});
+    if(!rows.length){chartEmpty(el,'Nothing is owed either way. A rare and correct emptiness.');return;}
+    /* oldest first, matching the table beneath it: the chart's whole argument is what the
+       ladder has taken off with age, so age is the axis it should be read down. */
+    rows.sort((a,b)=>b.age-a.age||b.g-a.g);
+    freshChart(el,{type:'bar',data:{labels:rows.map(x=>x.who+' · '+x.age+'d'),datasets:[
+      {label:'Gross',data:rows.map(x=>+x.g.toFixed(2)),backgroundColor:'rgba(255,93,115,.35)',borderColor:'#ff7a8a',borderWidth:1,borderRadius:3},
+      {label:'Net of ladder',data:rows.map(x=>+(x.g*(1-provRate(x.age))).toFixed(2)),backgroundColor:'#7fd7e8',borderWidth:0,borderRadius:3}]},
+      options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{labels:{color:CHART_INK.tick,boxWidth:12,font:{size:11}}}},
+        scales:{x:{grid:{color:CHART_INK.grid},ticks:{color:CHART_INK.tick}},
+                y:{grid:{display:false},ticks:{color:CHART_INK.tick,font:{size:10}}}}}});
   });
 }
 function drawSourcingCharts(){
@@ -7741,21 +7739,19 @@ function drawFinCharts(){
   if(!el)return;
   ensureChart(ok=>{
     if(!ok){chartEmpty(el,'Chart unavailable. Every figure it draws is in the tables on this tab.');return;}
-    try{
-      const mo={};
-      pricedSales.filter(x=>!x.cancelled&&txPendKg(x)<x.qty-0.009).forEach(x=>{
-        const k=x.date.slice(0,7);(mo[k]=mo[k]||{rev:0,mar:0}).rev+=x.total;
-        mo[k].mar+=x.total-costOf(x)*x.qty;});
-      const keys=Object.keys(mo).sort();
-      const lab=keys.map(k=>new Date(k+'-01').toLocaleString('en-GB',{month:'short'}));
-      freshChart(el,{type:'bar',data:{labels:lab,datasets:[
-        {label:'Revenue',data:keys.map(k=>+mo[k].rev.toFixed(2)),backgroundColor:'#7fd7e8',borderWidth:0,borderRadius:4},
-        {label:'Gross margin',data:keys.map(k=>+mo[k].mar.toFixed(2)),backgroundColor:'#e8c66b',borderWidth:0,borderRadius:4}]},
-        options:{responsive:true,maintainAspectRatio:false,
-          plugins:{legend:{labels:{color:'rgba(244,245,247,0.66)',boxWidth:12,font:{size:11}}}},
-          scales:{x:{grid:{display:false},ticks:{color:'rgba(244,245,247,0.66)'}},
-                  y:{grid:{color:'rgba(255,255,255,0.07)'},ticks:{color:'rgba(244,245,247,0.66)',callback:v=>Number(v).toLocaleString('en-MY',{maximumFractionDigits:0})}}}}});
-    }catch(e){}
+    const mo={};
+    pricedSales.filter(x=>!x.cancelled&&txPendKg(x)<x.qty-0.009).forEach(x=>{
+      const k=x.date.slice(0,7);(mo[k]=mo[k]||{rev:0,mar:0}).rev+=x.total;
+      mo[k].mar+=x.total-costOf(x)*x.qty;});
+    const keys=Object.keys(mo).sort();
+    const lab=keys.map(k=>new Date(k+'-01').toLocaleString('en-GB',{month:'short'}));
+    freshChart(el,{type:'bar',data:{labels:lab,datasets:[
+      {label:'Revenue',data:keys.map(k=>+mo[k].rev.toFixed(2)),backgroundColor:'#7fd7e8',borderWidth:0,borderRadius:4},
+      {label:'Gross margin',data:keys.map(k=>+mo[k].mar.toFixed(2)),backgroundColor:'#e8c66b',borderWidth:0,borderRadius:4}]},
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{labels:{color:'rgba(244,245,247,0.66)',boxWidth:12,font:{size:11}}}},
+        scales:{x:{grid:{display:false},ticks:{color:'rgba(244,245,247,0.66)'}},
+                y:{grid:{color:'rgba(255,255,255,0.07)'},ticks:{color:'rgba(244,245,247,0.66)',callback:v=>Number(v).toLocaleString('en-MY',{maximumFractionDigits:0})}}}}});
   });
 }
 /* The statement, presented the way a reader who knows the standards expects to see it. */
@@ -8177,6 +8173,16 @@ function costPanel(){
   const pS=tier.prices[0], pB=tier.prices[sizes.length-1];
   const cS=costToServe(small), cB=costToServe(big);
   const shareS=pS>0?(1/(pS-cS.total)*100):0, shareB=pB>0?(1/(pB-cB.total)*100):0;
+  /* v385: THREE PARAGRAPHS OF THIS WERE NEVER ON THE PAGE. stripMethod cuts EVERY .insight
+     to its first sentence once it passes NOTE_MIN, so from v372 the only thing that rendered
+     was "Read the last two columns against each other" and the sensitivity, which is the
+     finding, was cut every time. One sentence now, carrying the figures, and short enough
+     that the cut does not fire and the emphasis survives with it. The two standing paragraphs
+     said the same thing on every render whatever the data, which is what v372 removed.
+     An order that earns nothing divides by nothing, so the share is guarded rather than
+     printed as an infinity; Price is about to move the oil sizes, which is what moves it. */
+  const pct=v=>Number.isFinite(v)?v.toFixed(1)+'%':'everything it earns';
+  const ratio=(Number.isFinite(shareS)&&shareB>0)?(shareS/shareB).toFixed(0):'many';
 
   return `<div class="dsc" style="margin-bottom:10px">Costs are grouped by <b>how they scale</b>, because that is what decides which order is worth taking. A <b>per-unit</b> cost doubles when the order doubles. A <b>per-order</b> cost lands whole on every order whatever its size, so it is the line that separates a half unit from six. Figures below are against the ${esc(tier.name)} card.</div>
 
@@ -8198,9 +8204,7 @@ function costPanel(){
 
   <h3 style="margin-top:18px;font-size:14px">What an order is worth, once the trip is in it</h3>
   <div class="card" style="margin-top:8px"><table><thead><tr><th class="l">Size</th><th>${esc(tier.code)} price</th><th>Goods</th><th>Per order</th><th>Order earns</th><th>Per unit</th><th>Pays your time to</th></tr></thead><tbody>${rows}</tbody></table>
-  <div class="insight" style="margin-top:10px"><b>Read the last two columns against each other.</b> Per unit falls as the order grows, which is the taper working as designed. Per order <b>rises steeply</b>, because the trip, the bag and the conversation cost the same either way.
-  <br><br>Which one matters depends on what you are short of. When the shelf was empty, a unit was the scarce thing and the per-unit column was the right one to read. You now hold <b>${kg(currentStock)}</b>, so units are not scarce; <b>trips and hours are</b>, and that makes the per-order column the one that decides.
-  <br><br>The sensitivity says it plainly: <b>one more ringgit</b> of per-order cost takes <b>${shareS.toFixed(1)}%</b> off what a ${kg(small)} order earns and <b>${shareB.toFixed(1)}%</b> off a ${kg(big)} one. Every line you have not measured hurts the small end ${shareB>0?(shareS/shareB).toFixed(0):'many'} times harder.</div></div>
+  <div class="insight" style="margin-top:10px">A ringgit more per order costs a ${kg(small)} order <b>${pct(shareS)}</b> of what it earns and a ${kg(big)} one <b>${pct(shareB)}</b>: ${ratio} times harder at the small end.</div></div>
 
   <div class="dsc" style="margin-top:12px"><b>Nothing here is invented.</b> Goods and the leak come off the book, the two risk figures are read from what has actually been written off and provisioned, and every line that has not been measured says so rather than carrying a plausible number. Set one in <b>COST_BOOK</b> and it appears in every figure above.</div>`;
 }
