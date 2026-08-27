@@ -9396,13 +9396,13 @@ function addParty(){
     const bcode=codeOf(parent)+'-Gen';
     if(roster.indexOf(bcode)>=0)return setM('<b>'+esc(bcode)+'</b> already exists and is selectable on the Transaction tab as an end customer.','var(--amber)');
     addedParties.push({code:bcode,kind:'bucket',parent:parent,at:new Date().toISOString()});
-    try{localStorage.setItem('saltAddedParties',JSON.stringify(addedParties));}catch(e){}
+    const bWarn=apPersist(bcode);
     roster.push(bcode);
     queue.push({at:new Date().toISOString(),type:'ADDID',party:bcode,qty:null,total:null,status:'addid',
       raw:'Add the general downsell bucket '+bcode+' under '+parent,
       payload:{mode:'addid',code:bcode,kind:'bucket',parent:parent,rev:null}});
-    try{saveQueue();renderQueue();}catch(e){}
-    apDone(kind,'<b>'+esc(bcode)+'</b> created. Record the sale on the <b>Transaction</b> tab with <b>'+esc(codeOf(parent))+'</b> as the associate on the <b>R2</b> stream, and pick this as the end customer. Nothing is written to the vault, because a bucket has no name to keep.','var(--grn)');
+    apDone(kind,'<b>'+esc(bcode)+'</b> created. Record the sale on the <b>Transaction</b> tab with <b>'+esc(codeOf(parent))+'</b> as the associate on the <b>R2</b> stream, and pick this as the end customer. Nothing is written to the vault, because a bucket has no name to keep.'+bWarn,bWarn?'var(--amber)':'var(--grn)');
+    apSaved();
     return;
   }
   if(!name)return setM('A name is needed.','var(--crim)');
@@ -9412,7 +9412,7 @@ function addParty(){
   if(!code)return setM('That does not derive a code. A downstream buyer needs an associate and a place.','var(--crim)');
   if(roster.indexOf(code)>=0)return setM('The code <b>'+esc(code)+'</b> already belongs to someone. Change the name or the location so it derives a free one.','var(--crim)');
   addedParties.push({code:code,kind:kind,parent:parent||null,at:new Date().toISOString()});
-  try{localStorage.setItem('saltAddedParties',JSON.stringify(addedParties));}catch(e){}
+  const mWarn=apPersist(code);
   roster.push(code);
   /* v306: THE NAME GOES INTO BIO, WHICH IS WHERE THE DIRECTORY ACTUALLY LIVES. It used to
      be written to `vaultNames` alone, and that was the second half of why this never worked:
@@ -9430,8 +9430,8 @@ function addParty(){
     raw:'Add '+code+' to the roster as a '+(kind==='downstream'?('downstream of '+parent):kind),
     payload:{mode:'addid',code:code,kind:kind,parent:parent||null,
              rev:kind==='reseller'?'R2':(kind==='referral'?'R3':null)}});
-  try{saveQueue();renderQueue();}catch(e){}
-  apDone(kind,'<b>'+esc(code)+'</b> created and selectable now, with the name already filled in below. Press <b>Save</b> to write it to the directory, then record his first transaction against him directly &mdash; there is no placeholder and no re-key. The phone shows names only after the vault is re-seeded, which the sync pass does when the directory changes.','var(--grn)');
+  apDone(kind,'<b>'+esc(code)+'</b> created and selectable now, with the name already filled in below. Press <b>Save</b> to write it to the directory, then record his first transaction against him directly &mdash; there is no placeholder and no re-key. The phone shows names only after the vault is re-seeded, which the sync pass does when the directory changes.'+mWarn,mWarn?'var(--amber)':'var(--grn)');
+  apSaved();
 }
 /* THE CONFIRMATION USED TO BE DESTROYED BY ITS OWN SUCCESS (v199). addParty set the
    message and then called renderReveal(), which rebuilds the panel from scratch: the
@@ -9440,6 +9440,27 @@ function addParty(){
    where you most need to be told a code was minted. Re-render FIRST, then re-open the
    box, restore the chosen kind so the fields do not snap back to Customer, and write the
    message into the new node. */
+/* v385: FOUR SWALLOWED FAILURES ON THIS PANEL AND ALL FOUR STILL SAID "created". Minting a
+   party writes in two places and neither was checked: localStorage, so the code is selectable
+   before the fold, and the queue file, which is the only copy that reaches the ledger. A private
+   window and a full store both refuse the first; a dead server makes the second fall back to a
+   download. Both were caught and dropped, so the confirmation promised a save that had not
+   happened. The queue write is the graver of the two and it is asynchronous, so it is reported
+   by amending the confirmation when it answers rather than before it has. */
+function apPersist(code){
+  try{localStorage.setItem('saltAddedParties',JSON.stringify(addedParties));return '';}
+  catch(e){return ' <b>'+esc(code)+'</b> is selectable now but was NOT remembered on this device, so it drops out of the pickers on the next load until the row is folded.';}
+}
+function apSaved(){
+  const say=t=>{const m=document.getElementById('apMsg');if(m){m.innerHTML+=t;m.style.color='var(--amber)';}};
+  const failed=e=>say(' The queue could not be saved: '+esc((e&&e.message)||e)+'. Record it again before closing the desk.');
+  try{
+    Promise.resolve(saveQueue()).then(res=>{
+      if(res===false)say(' Held in this tab, but NOT written to '+esc(QFILE)+'; a download was made instead.');
+    },failed);
+    renderQueue();
+  }catch(e){ failed(e); }
+}
 function apDone(kind,html,colour){
   renderReveal();
   const box=document.getElementById('apBox');if(box)box.open=true;
