@@ -10768,6 +10768,16 @@ function networkStats(){
     const direct=pricedSales.filter(s=>s.customer===id&&s.total!=null&&s.rev!=='R2').reduce((a,s)=>a+s.total,0);
     const indirect=pricedSales.filter(s=>ownerOf(s.customer)===id&&s.total!=null&&s.rev==='R2').reduce((a,s)=>a+s.total,0);
     const ds=new Set();sales.forEach(s=>{if(ownerOf(s.customer)===id&&s.rev==='R2'&&s.downstream)ds.add(s.downstream);});
+    /* v384: dsResell COUNTED THE WRONG THING, AND THE CARD CONTRADICTED ITSELF SAYING IT.
+       It was ds.size, the number of distinct NAMED downstream buyers, printed under a label
+       reading "N onward sales". Most onward sales go to a general bucket and carry no
+       `downstream` at all, so CS6-PER read "0 onward sales" directly above a table listing
+       three of them, and CS6-BS read "1" above ten. A figure that a reader can disprove by
+       looking six lines down is worse than no figure. It counts the rows the card itself
+       lists now, filtered identically, so the two cannot disagree. ds.size survives untouched
+       for the node badge, where a connection genuinely IS a distinct end customer; only the
+       count of SALES was ever wrong. */
+    const resellN=sales.filter(s=>s.total!=null&&s.rev==='R2'&&ownerOf(s.customer)===id).length;
     // referrals: rows this associate referred (ref:id) OR, for R0, the declared network
     let refs=[...new Set(pricedSales.filter(s=>s.ref===id).map(s=>s.customer))];
     if(isR0)refs=[...new Set(refs.concat([r0.referral.cust]).concat(r0.network||[]))];
@@ -10805,7 +10815,7 @@ function networkStats(){
        so a pure referrer like CS6-PER read "0" despite having introduced a buyer. */
     const conns=isR0?refs.length:(ds.size+refs.length);
     return {id,kind:isR0?'R0':'R2',direct,indirect,r3,referrals:refs,dsN:conns,connKind:isR0?'referred':(ds.size&&refs.length?'linked':refs.length?'referred':'end cust'),
-      dsResell:ds.size,total:direct+indirect,share,starN,
+      dsResell:resellN,total:direct+indirect,share,starN,
       earnedR2,earnedR3,earnedLot,lotN:0,earned,toNextR2,toNextR3,
       earnedOwn,toNextOwn,opening,bring,bringPct:bringM.pct,ownPct:ownM.pct,bringBand:bringBand.label,ownBand:ownBand.label,
       /* v384: THE BAND'S UNITS AND THE SCHEME'S OWN TURNOVER, both of which the card needed
@@ -11288,12 +11298,31 @@ function resellerCard(r){
      stream figures become a table, because six fields per stream is what a table is for
      and a table survives the strip. The button becomes a sibling, so nothing can eat it. */
   const bandPays=u=>u>0?kg(u):'nothing';
+  /* v384: THE BALANCE ROW PRINTED "-1 unit" UNDER A COLUMN HEADED "Per hurdle", on two cards
+     of five. Two faults in one cell. A balance is not a per-hurdle figure, and a bare negative
+     tells a reader nothing he can act on: it is the arithmetic of a deficit carried from the
+     rules the opening positions replaced, not salt anybody owes back. The deficit itself stays
+     on the page, in the words beside it, which is where it reads as a reason rather than as a
+     quantity. What is showable here is whether there is anything to draw, so that is what it
+     says. The figure is not touched, only how a negative one is stated: r.earned comes from
+     networkStats and the reason it can be negative sits in REWARD_OPENING against
+     rebateApplied, which is the book's question and not this card's. */
   const rewardTbl=`<table style="margin-top:10px"><thead><tr><th class="l">Reward stream</th><th>Turnover</th><th>Margin</th><th class="l">Band</th><th>Per hurdle</th><th>To next</th></tr></thead><tbody>
     <tr><td class="l">Brought in <span style="color:var(--dim)">R2 + R3</span></td><td>${fmt0(r.bring)}</td><td>${r.bringPct}%</td><td class="l">${r.bringBand}</td><td>${bandPays(r.bringUnits)}</td><td class="mono" style="color:var(--dim)">${fmt0(r.toNextR2)}</td></tr>
     <tr><td class="l">Bought himself <span style="color:var(--dim)">R1</span></td><td>${fmt0(r.own)}</td><td>${r.ownPct}%</td><td class="l">${r.ownBand}</td><td>${bandPays(r.ownUnits)}</td><td class="mono" style="color:var(--dim)">${fmt0(r.toNextOwn)}</td></tr>
-    <tr class="tot"><td class="l">Balance</td><td class="l" colspan="3" style="color:var(--dim)">${r.opening?`opening ${r.opening>0?'+':''}${kg(r.opening)} carried, `:''}${applied>0?`${kg(applied)} already drawn`:'nothing drawn yet'}</td><td>${kg(r.earned)}</td><td>${freeKg>0.009?`<b style="color:var(--gold)">${kg(freeKg)} free</b>`:'&mdash;'}</td></tr>
+    <tr class="tot"><td class="l">Balance</td><td class="l" colspan="3" style="color:var(--dim)">${r.opening?`opening ${r.opening>0?'+':''}${kg(r.opening)} carried, `:''}${applied>0?`${kg(applied)} already drawn`:'nothing drawn yet'}</td><td>${r.earned>0.009?kg(r.earned):'nothing'}</td><td>${freeKg>0.009?`<b style="color:var(--gold)">${kg(freeKg)} free</b>`:'&mdash;'}</td></tr>
   </tbody></table>`;
-  const rebateLine=`<div class="insight" style="margin-top:10px">Rated <b>${r.starN?starStr(r.starN):'unrated'}</b> on <b>${r.share.toFixed(1)}%</b> of revenue.</div>
+  /* v384: "Rated unrated on 9.1% of revenue." is what the first pass shipped, on all five
+     cards, because starN is 0 for every associate and the sentence was built to take a star
+     string. It is not a sentence. The rating is a share of ALL revenue with its first star at
+     10%, so an unstarred card says the share and says where the star begins, which is the
+     figure to act on; a starred one leads with the stars. Both stay well under NOTE_MIN, and
+     both sit inside details.rcard, so stripMethod keeps them whole. */
+  const starMin=10;
+  const rated=r.starN
+    ?`Rated <b>${starStr(r.starN)}</b> on <b>${r.share.toFixed(1)}%</b> of all revenue.`
+    :`Brought-in business is <b>${r.share.toFixed(1)}%</b> of all revenue. The first &#9733; starts at ${starMin}%.`;
+  const rebateLine=`<div class="insight" style="margin-top:10px">${rated}</div>
     ${rewardTbl}
     ${freeKg>0.009?`<div style="margin-top:9px"><button class="vbtn" onclick="redeemRebate('${r.id}')">${sales.some(s=>s.customer===r.id&&txAdvance(s)>0.009)?'Offset':'Redeem'} ${kg(freeKg)}</button></div>`:''}`;
   // ---- three uniform ledgers ----
