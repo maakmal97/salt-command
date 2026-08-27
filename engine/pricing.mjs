@@ -200,27 +200,36 @@ function lotCost(q,C,opts){
   const del=opts.collects?0:(C.delPerOrder!=null?C.delPerOrder:0);
   return +(per*q+del).toFixed(4);
 }
-/* ============ THE FLOOR ============
-   v234: built the way a price is, per LOT, so delivery is floored once per order and not once
-   per unit. v280: ONE FLOOR AT ONE MARKUP, ACROSS EVERY SIZE; a markup on the lot cost cannot
-   invert, because the lot cost only ever rises with quantity. v326: THE FLOOR IS ON THE SAME
-   BASIS AS THE ASK, which is cogs, at the markup the policy states; the collects option is
-   accepted and no longer changes the answer, since cogs carries no delivery. v245: whichever
-   bites harder, the percentage or the ringgit per unit. A named lot floor is kept as a
-   mechanism and is empty as a policy. */
+/* ============ THE FLOOR IS BREAK-EVEN, AND HAS NOTHING ABOVE IT ============
+   THE FLOOR CARRIED A 33% MARKUP AND THEREFORE WAS NOT A FLOOR. His instruction, 27 Aug 2026:
+   "Floor Price (based on derived cost only without margin)". Two legs used to be taken, whichever
+   bit harder: cogs at LADDER.floor, and the real cost of serving the order. The first is a MARGIN,
+   and a refusal line with a margin inside it refuses trades that make money. It is gone. What is
+   left is what an order actually costs: the salt after the leak, one delivery unless he collects,
+   his own time at timePerOrder, and minPerUnit where a policy sets one.
+   SO THE FLOOR NOW MEANS BREAK-EVEN AND AN ASK SITTING ON IT EARNS NOTHING. That is a different
+   sentence from the one this line used to carry, which was "the least you should accept", and
+   every surface printing the figure has to say the new one.
+   IT MOVED NOT ONE ASK ON EITHER BOOK, at any size, measured before it shipped. ladderWalk's floor
+   guard only ever RAISES an ask to clear the floor, and no ask is floor-lifted on this cost stack,
+   so lowering the line could only remove a lift that was not there. The change is purely to the
+   refusal line: the serving cost overtakes the old markup leg at 2.5 unit of salt, with the gap
+   reaching RM144 at 12.5, and at 20 unit of oil, reaching RM81 at 50.
+   LADDER.floor IS STILL READ, by ladderWalk, as the line a rate-law step-down may not pass
+   through. That is a different job from this one and it keeps the name.
+   v234: built per LOT, so delivery is floored once per order and not once per unit. A named lot
+   floor is kept as a mechanism and is empty as a policy. */
 function floorTotal(q,C,P,eff,opts){
   opts=opts||{};
   const per=eff!=null?eff:(C.effEx!=null?C.effEx:C.eff);
   const del=opts.collects?0:(C.delPerOrder!=null?C.delPerOrder:0);
-  /* v352: AN ORDER COSTS HIM TIME AND THE FLOOR NOW SAYS SO. Nothing in this stack has ever
-     paid him for the work: the whole margin was doing it, undifferentiated from the return on
-     his capital, so he could not tell profit from wages. timePerOrder is charged PER ORDER and
-     not per unit, because that is how the work actually falls: a half unit and a twelve and a
-     half take about the same handling. It sits in the mpu leg beside delivery for the same
-     reason, and like delivery it is a real cost that a small order struggles to carry. */
-  let t=ladderCogs(q,C)*(1+P.LADDER.floor);
-  const mpu=(per*q+del+(P.timePerOrder||0))+(P.minPerUnit||0)*q;
-  if(mpu>t)t=mpu;
+  /* v352: AN ORDER COSTS HIM TIME AND THE FLOOR SAYS SO. Nothing in this stack had ever paid him
+     for the work: the whole margin was doing it, undifferentiated from the return on his capital,
+     so he could not tell profit from wages. timePerOrder is charged PER ORDER and not per unit,
+     because that is how the work actually falls: a half unit and a twelve and a half take about
+     the same handling. It sits beside delivery for the same reason, and like delivery it is a
+     real cost that a small order struggles to carry. */
+  let t=(per*q+del+(P.timePerOrder||0))+(P.minPerUnit||0)*q;
   const named=(P.lotFloor||{})[String(q)];        // kept as a mechanism, empty as a policy
   if(named!=null&&named>t)t=named;
   return +t.toFixed(2);
