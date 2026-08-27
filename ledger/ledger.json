@@ -1,6 +1,6 @@
 {
- "v": "v383",
- "stamped": "27 Aug 2026, 03:45 KL",
+ "v": "v384",
+ "stamped": "27 Aug 2026, 14:30 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -2567,7 +2567,7 @@
      "since": "2026-07-26",
      "reason": "personal reasons",
      "memorial": "Co-Founder",
-     "note": "Departed the business for personal reasons. Memorialised as Co-Founder, a title held by him alone and not passed on. His RM2,090 of introductions and the five customers behind them stay attributed to him."
+     "note": "Memorialised as Co-Founder, a title held by him alone and not passed on. His introductions and the customers behind them stay attributed to him. The figures are read live off the network rather than typed here, because a total typed into a note goes silently wrong the first time a referred order is corrected, and this one is rendered on a public page."
     }
    ],
    "roles": [
@@ -2696,7 +2696,7 @@
   ],
   "QUEUE_COMMITTED": "2026-08-26T12:12:00.000Z",
   "PRICING": {
-   "takenAt": "2026-08-26T19:45:12.639Z",
+   "takenAt": "2026-08-27T09:33:12.263Z",
    "sizes": [
     0.5,
     1,
@@ -2916,8 +2916,8 @@
      }
     },
     "oil": {
-     "stockCost": 7,
-     "replCost": 7,
+     "stockCost": 7.6667,
+     "replCost": 7.67,
      "floors": {
       "1": {
        "delivered": 44.1,
@@ -3118,10 +3118,10 @@
      }
     }
    },
-   "v": "v383"
+   "v": "v384"
   },
   "OPEN": {
-   "at": "2026-08-26T19:45:12.660Z",
+   "at": "2026-08-27T09:33:12.307Z",
    "count": 6,
    "byKey": {
     "CJ4-BJ|2026-08-26|450": {
@@ -3242,7 +3242,7 @@
     "salt": "2026-08-24",
     "oil": "2026-08-23"
    },
-   "v": "v383"
+   "v": "v384"
   }
  }
 }
