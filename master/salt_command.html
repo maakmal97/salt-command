@@ -6022,6 +6022,8 @@ function supplierStats(){
       lastRate:o.rates.length?o.rates.slice().sort((a,b)=>a.d<b.d?1:-1)[0].r:null});
   }).sort((a,b)=>b.kg-a.kg);
 }
+function srcHead(){return `<h1>Sourcing</h1>
+  <div class="dsc dsclead">What you have bought, from whom, and what a refill costs today.</div>`;}
 function tabSourcing(){
   /* v236: the buy simulator is gone at his instruction, and with it every local that
      existed only to feed it: the quantity and rate overrides, the arrival day, the
@@ -6042,9 +6044,7 @@ function tabSourcing(){
   const SL=shrinkLevel('expected');
   const pend=pPurch(PROD).filter(p=>p.pending);
   const conc=ss.length?ss[0]:null;
-  return `<h1>Sourcing</h1>
-  <div class="dsc dsclead">What you have bought, from whom, and what a refill costs today.</div>
-  <div class="kpis k5">
+  return `<div class="kpis k5">
     <div class="kpi"><div class="l">Bought to date</div><div class="v">${kg(buyKg)}</div><div class="n">${fmt0(buyRM)} at ${fmt(wavgBuy)}/unit weighted</div></div>
     <div class="kpi ${conc&&conc.recentShare>80?'r':''}"><div class="l">Top supplier share</div><div class="v" style="${conc&&conc.recentShare>80?'color:var(--crim)':''}">${conc?conc.recentShare.toFixed(0)+'%':'&mdash;'}</div><div class="n">${conc?ID(conc.id)+` of ${ss.length} supplier${ss.length===1?'':'s'}, last ${conc.recentDays} days (${conc.share.toFixed(0)}% all time)`:'none yet'}</div></div>
     <div class="kpi gold"><div class="l">Effective cost</div><div class="v">${fmt(c.eff)}<span style="font-size:12px;color:var(--mut)">/unit</span></div><div class="n">${fmt(c.repl)} goods + ${fmt(c.freight)} freight, loaded ${(c.shrink*100).toFixed(1)}% for leak</div></div>
@@ -6749,6 +6749,8 @@ function shelfCall(cv,oversold,free){
     w:`${kg(free)} free to sell at ${kg(cv.rate)} a day. The ${kg(cv.reorderAt)} mark comes first; the shelf runs dry on ${dry}.${split}`};
 }
 /* ============ TAB: INVENTORY & MARGIN ============ */
+function invHead(){return `<h1>Inventory</h1>
+  <div class="dsc dsclead">What is on the shelf, what it cost, and how long it lasts.</div>`;}
 function tabInventory(){
   /* v365: openingFor(PROD), not the bare `opening` (Salt's alone). The KPI above these
      tables already used the product-aware helper, which is why it was right while these
@@ -6800,9 +6802,7 @@ function tabInventory(){
      "Still unexplained: none", which reads as fully explained when it is over-subscribed by
      half a unit. A decomposition that does not tie should say which way it misses. */
   const resid=+(selfUse-suKg).toFixed(2);
-  return `<h1>Inventory</h1>
-  <div class="dsc dsclead">What is on the shelf, what it cost, and how long it lasts.</div>
-  <div class="acts"><div class="act" style="--sev:${call.sev}">
+  return `<div class="acts"><div class="act" style="--sev:${call.sev}">
     <div class="actk">${call.k}</div>
     <div><div class="actt">${call.t}</div><div class="actw">${call.w}</div></div>
     <div class="actm">${call.f}</div>
@@ -14224,7 +14224,7 @@ function setProdView(pr){
   PROD=pr; try{localStorage.setItem('saltProd',pr);}catch(e){}
   recompute(); drawProdSw(); render();
 }
-const builders={today:tabToday,forward:tabForward,sourcing:()=>perProduct(tabSourcing,{skipEmpty:true}),analysis:()=>perProduct(tabAnalysis),map:tabMap,overview:tabOverview,inventory:()=>perProduct(tabInventory),financials:()=>consoBlock()+consoCashBlock()+perProduct(tabFinancials),ledger:tabLedger,concentration:tabConcentration,network:tabNetwork,receivables:()=>consoOrderBlock()+perProduct(tabReceivables),add:tabWorkbench,pricing:()=>perProduct(tabPricing),plans:tabPlans,approve:tabApprove};
+const builders={today:tabToday,forward:tabForward,sourcing:()=>srcHead()+perProduct(tabSourcing,{skipEmpty:true}),analysis:()=>perProduct(tabAnalysis),map:tabMap,overview:tabOverview,inventory:()=>invHead()+perProduct(tabInventory),financials:()=>consoBlock()+consoCashBlock()+perProduct(tabFinancials),ledger:tabLedger,concentration:tabConcentration,network:tabNetwork,receivables:()=>consoOrderBlock()+perProduct(tabReceivables),add:tabWorkbench,pricing:()=>perProduct(tabPricing),plans:tabPlans,approve:tabApprove};
 /* ============ SEVEN VIEWS OVER FIFTEEN TABS (v341, move 4 of the rebuild) ============
    The fifteen tabs were fifteen reports stacked: a megabyte to open for one figure, with the
    method prose standing open on every one. A view leads with one tab open, folds that tab's
