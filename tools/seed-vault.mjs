@@ -9,8 +9,11 @@
  * The crypto matches the desk byte for byte: PBKDF2-SHA256 x150000 over a random 16-byte
  * salt, AES-GCM-256, a fresh 12-byte iv, base64 throughout.
  *
- *   SALT_VAULT_PASS   your passphrase. Required. Never commit it, never pass it on a shared
- *                     command line where history is logged; prefer setting it for the one call.
+ *   SALT_VAULT_PASS   your passphrase. Optional in a terminal: run interactively and the tool
+ *                     PROMPTS for it, hidden, asked twice, held only in memory for the one run
+ *                     (added for the update-names-id workflow, 28 Aug 2026). Required only when
+ *                     there is no terminal to ask, e.g. an unattended run. Never commit it,
+ *                     never pass it on a shared command line where history is logged.
  *   SALT_DATA         override the 10_Data folder holding salt_bio.json.
  *
  *   node tools/seed-vault.mjs             encrypt the current names and push to KV
@@ -72,11 +75,49 @@ function wrPut(jsonPath) {
     { cwd: REPO, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], shell: process.platform === "win32" });
 }
 
+/* Ask for the passphrase at the terminal without echoing it. Raw mode, so nothing lands in
+   shell history, the screen or a transcript; the string lives only in this process. Returns
+   null when there is no terminal to ask, and the env-var road below still stands for that. */
+function promptHidden(question) {
+  if (!process.stdin.isTTY || !process.stdout.isTTY) return Promise.resolve(null);
+  return new Promise((res) => {
+    process.stdout.write(question);
+    const chars = [];
+    process.stdin.setRawMode(true);
+    process.stdin.resume();
+    const onData = (buf) => {
+      for (const ch of buf.toString("utf8")) {
+        if (ch === "\r" || ch === "\n") {
+          process.stdin.setRawMode(false);
+          process.stdin.pause();
+          process.stdin.off("data", onData);
+          process.stdout.write("\n");
+          return res(chars.join(""));
+        }
+        if (ch === "\u0003") { process.stdout.write("\n"); process.exit(130); }   // Ctrl-C
+        if (ch === "\u007f" || ch === "\b") { chars.pop(); continue; }
+        chars.push(ch);
+      }
+    };
+    process.stdin.on("data", onData);
+  });
+}
+
 async function main() {
   const dry = process.argv.includes("--dry-run");
-  const pass = process.env.SALT_VAULT_PASS;
+  let pass = process.env.SALT_VAULT_PASS;
   if (!pass) {
-    console.error("SET SALT_VAULT_PASS to your passphrase first. It is never stored or printed.");
+    /* Asked twice, because a typo here is silent until the phone cannot decrypt a single
+       name: the round-trip below proves the crypto, not the spelling. */
+    pass = await promptHidden("vault passphrase (hidden): ");
+    if (pass != null) {
+      const again = await promptHidden("again, to be sure: ");
+      if (pass !== again) { console.error("The two entries differ. Nothing was encrypted, nothing was pushed."); process.exit(2); }
+      if (!pass) { console.error("An empty passphrase is refused."); process.exit(2); }
+    }
+  }
+  if (!pass) {
+    console.error("No terminal to ask, so SET SALT_VAULT_PASS to your passphrase first. It is never stored or printed.");
     console.error('  PowerShell:  $env:SALT_VAULT_PASS="..."; node tools/seed-vault.mjs');
     process.exit(2);
   }
