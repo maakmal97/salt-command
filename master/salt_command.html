@@ -12708,14 +12708,6 @@ function tabPricing(){
         :`buying can reach ${fmt(hr.safeTo)}/unit before a live price fails, ${hr.pct}% above today; <b>${hr.firstTier}</b> falls first at ${fmt(hr.firstAt)}`}</div></div>
   </div>
 
-  <div class="card" style="margin-top:14px">
-    <div class="qrow">
-      <div class="qfield qkg"><label>Quote any size (unit)</label><input id="pxAnyIn" type="number" step="0.25" min="0" value="${esc(pxOver.anyQ)}" inputmode="decimal" placeholder="e.g. 7"></div>
-      <div class="qfield"><label>Markup at that size</label><div class="qask none" style="font-size:20px">${anyQ>0?ladderMarkup(anyQ).toFixed(2)+'x':'&mdash;'}</div></div>
-      <div class="qfield"><label>Price</label>${anyCell}</div>
-    </div>
-  </div>
-
   <h2 style="margin-top:18px">The board <span class="sub" style="font-weight:400">one ladder, tapered at the rate the supplier tapers</span> <span class="rule"></span></h2>
   ${(()=>{const tb=tierBoard();
     /* ============ THE ASK SAYS WHICH FLOOR IT CLEARS (v381) ============
@@ -12844,6 +12836,21 @@ function tabPricing(){
       <div class="insight">A typed price replaces the markup curve at that size and nothing else; the rate-may-not-rise walk still moves every larger lot down with it.</div>
     </details>
     </div>`;})()}
+
+  <!-- ============ THE BOARD COMES BEFORE THE CALCULATOR ============
+       Measured on the built desk at 375x812 with the safe insets forced: the board table began
+       764px down, so the first screen of a pricing view carried the heading, one tile and a
+       calculator and NOT ONE PRICE. Quote any size answers the uncommon question, an odd lot at
+       the counter; the board answers the common one and is what the lead sentence promises. His
+       brief names the order outright, the board and the floors and the asks first, so the tool
+       moves one section down and stays a scroll from the table it prices against. -->
+  <div class="card" style="margin-top:14px">
+    <div class="qrow">
+      <div class="qfield qkg"><label>Quote any size (unit)</label><input id="pxAnyIn" type="number" step="0.25" min="0" value="${esc(pxOver.anyQ)}" inputmode="decimal" placeholder="e.g. 7"></div>
+      <div class="qfield"><label>Markup at that size</label><div class="qask none" style="font-size:20px">${anyQ>0?ladderMarkup(anyQ).toFixed(2)+'x':'&mdash;'}</div></div>
+      <div class="qfield"><label>Price</label>${anyCell}</div>
+    </div>
+  </div>
 
   ${(()=>{const c=pxCost();if(!c.lotQty)return '';
     const r=(lab,v,tag,n)=>`<tr><td class="l">${lab}<div class="iref">${esc(n||'')}</div></td><td class="mono">${fmt(v)}</td><td><span class="tag ${tag==='inventory'?'paid':'prov'}">${tag==='inventory'?'Inventory':'Period'}</span></td></tr>`;
