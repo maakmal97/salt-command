@@ -5469,8 +5469,6 @@ const isOneOff=id=>ONE_OFFS.some(x=>x.id===id);
 
 /* ============ TAB: OVERVIEW ============ */
 function tabOverview(){
-  const rs=networkStats(),cs=custStats(),bm=custBadges(),bc=byCustomer();
-  const due=contactsDue();
   /* v385: SCOPED, because defKg above it always was. defRows was the whole ledger, so the
      salt tab listed an oil obligation beside a salt total that excluded it: four parties
      under a header counting three. It sat in prose nobody saw until the chips below made
@@ -5484,21 +5482,6 @@ function tabOverview(){
   const totDue=+(ar+supRecovNet).toFixed(2);
   const stockCost=stockCostFor(PROD);                          // v230: the ACTIVE product's shelf rate, not always salt's
   const stockVal=+(currentStock*stockCost).toFixed(2);
-  // VIP = loyal OR high-margin (go out of your way); NUDGE = no order in 21+ days
-  const marginOf={};bc.forEach(c=>marginOf[c.id]=c.margin);
-  const vip=cs.filter(c=>{const b=bm[c.id]||{};return (b.tier&&b.tier.l==='Loyal')||b.hi;})
-             .sort((a,b)=>(marginOf[b.id]||0)-(marginOf[a.id]||0));
-  /* v243: OUT OF AREA IS NOT LAPSED. Reconnect listed a customer overseas and one
-     up-country beside metro customers who had simply gone quiet, so the desk was asking him
-     to chase two people whose silence is geography rather than neglect. A party whose place
-     is KNOWN and sits outside the Klang Valley frame now drops off the list. An UNKNOWN place
-     is never grounds for dropping anyone, so those stay: the desk excludes on evidence, not on
-     absence of it. The number dropped is stated on the card, because a list that quietly got
-     shorter is a list you stop trusting. */
-  const outOfArea=c=>{const pl=placeOf(c.id);return !!pl&&!inMetro(pl);};
-  const nudgeAll=cs.filter(c=>dbet(c.last)>=21).sort((a,b)=>dbet(b.last)-dbet(a.last));
-  const nudgeOut=nudgeAll.filter(outOfArea);
-  const nudge=nudgeAll.filter(c=>!outOfArea(c));
   // ---- digest: the headline from every tab ----
   const con=concentration();
   const conRisk=con.hhi>3000?'high':con.hhi>1800?'moderate':'low';
@@ -5519,8 +5502,6 @@ function tabOverview(){
   const itKg=+_pP.filter(p=>!p.defaulted&&!p.pending).reduce((a,p)=>a+poOpenKg(p),0).toFixed(2);   // the balance still to arrive, not the whole lot
   const supBills=+_pP.filter(p=>p.status!=='paid'&&!p.defaulted&&!p.pending).reduce((a,p)=>a+(p.total-(p.cash||0)),0).toFixed(2);
   const uncollected=+(revTotal-revCollected).toFixed(2);
-  const miles=rs.map(r=>{const ap=rebateApplied(r.id);return Object.assign({},r,{ap,freeKg:+((r.earned||0)-ap).toFixed(2)});});
-  const readyM=miles.filter(m=>m.freeKg>0.009);
   /* v385: SCOPED, the same fault as defRows above and for the same reason. Latest ledger
      read the WHOLE ledger under a product badge, so the oil tab's three most recent orders
      were CZ4-MK's oil and then two salt rows, CS6-PER at RM 100 and CY2-NIL at RM 92 a unit,
@@ -5528,6 +5509,13 @@ function tabOverview(){
      and none of them appeared. The digest cards beside it are scoped, so this one panel was
      answering a different question from every neighbour without saying so. */
   const recent=pSales(PROD).slice().filter(s=>s.date).sort((a,b)=>a.date<b.date?1:-1).slice(0,3);
+  /* v401: FOUR TABLES WENT TO THE VIEW THAT OWNS THEM, and this is why nothing here
+     replaces them. Key accounts, Reconnect, Partner performance and Reseller milestones
+     were this part restating the Customers view: the sortable database, the approach
+     board and the reseller cards each carry the same subject in full, and Follow-ups due
+     was contactsDue() a second time, since actions() already puts every one of them on
+     Today as a Call. They were also the widest things on the part. Latest ledger stays
+     because three rows IS the headline this part promises, not another view in miniature. */
   /* ============ THE REGISTER LEADS (v385) ============
      This part is declared as "every rule the desk trades by, and the register of what is
      breached", and the rail badge on Today counts those breaches. A reader who taps a broken
@@ -5571,18 +5559,7 @@ function tabOverview(){
     <div class="kpi"><div class="l">Customers &middot; concentration</div><div class="v" style="color:${conCol}">${con.hhi.toFixed(0)}</div><div class="n">${conRisk}; top buyer ${con.top.toFixed(0)}% of ${con.n}</div></div>
     <div class="kpi g"><div class="l">Suppliers &middot; in transit</div><div class="v">${kg(itKg)}</div><div class="n">${supBills>0.009?`${fmt0(supBills)} bills unpaid`:'all lots paid'}${supRecovNet>0.009?`; ${fmt0(supRecovNet)} refund due`:''}</div></div>
   </div>
-  <div class="two">
-    <div class="card"><div class="cardh">&#127894; Reseller milestones <span class="sub">rewards &amp; ranking</span></div><table><thead><tr><th class="l">Associate</th><th>Made you</th><th>Reward</th><th>To next unit</th></tr></thead><tbody>${miles.map(m=>`<tr><td class="l mono">${ID(m.id)}${m.starN?` <span style="color:var(--gold)" title="${m.starN}-star by revenue share">${'&#9733;'.repeat(m.starN)}</span>`:''}</td><td>${fmt0(m.total)}</td><td>${m.freeKg>0.009?`<b style="color:var(--gold)">${kg(m.freeKg)} ready</b>`:(m.freeKg<-0.009?`<span style="color:var(--amber)" title="drawn before the milestone was reached; the next award is smaller by this much">${kg(-m.freeKg)} drawn early</span>`:(m.ap>0.009?`${kg(m.ap)} applied`:'&mdash;'))}</td><td>${fmt0(Math.min(m.toNextR2,m.toNextR3))}</td></tr>`).join('')}</tbody></table>${readyM.length?`<div class="dsc" style="margin-top:8px">${readyM.map(m=>`<b>${ID(m.id)}</b> has <b>${kg(m.freeKg)}</b> to apply. <button class="vbtn" onclick="redeemRebate('${m.id}')">${sales.some(s=>s.customer===m.id&&txAdvance(s)>0.009)?'Offset':'Redeem'} ${kg(m.freeKg)}</button>`).join('<br>')}</div>`:'<div class="pchips" style="margin:8px 0 0"><span class="pchip">no rewards waiting</span></div>'}</div>
-    <div class="card"><div class="cardh">&#128220; Latest ledger <span class="sub">most recent orders</span></div><table><thead><tr><th class="l">Date</th><th class="l">Party</th><th>Qty</th><th>Total</th><th>State</th></tr></thead><tbody>${recent.map(s=>{const si=txStat(s);return `<tr><td class="l">${s.date}</td><td class="l mono">${ID(s.customer)}</td><td>${kg(s.qty)}</td><td>${fmt0(s.total)}</td><td><span class="tag ${si.cls}">${si.order}</span></td></tr>`;}).join('')}</tbody></table></div>
-  </div>
-  ${rs.length?`<h2>Partner performance <span class="rule"></span></h2>
-  <div class="card"><table><thead><tr><th class="l">Partner</th><th>Made you</th><th>Bought</th><th>Sold for you</th><th>Brought you</th><th>Customers</th></tr></thead><tbody>${rs.map(r=>`<tr><td class="l mono">${ID(r.id)}${partnerBadge(r)}</td><td>${fmt0(r.total)}</td><td>${fmt0(r.direct)}</td><td>${fmt0(r.indirect)}</td><td>${fmt0(r.r3)}</td><td>${r.dsN}</td></tr>`).join('')}</tbody></table></div>`:''}
-  <h2>Key accounts <span class="rule"></span></h2>
-  <div class="two">
-    <div class="card"><div class="cardh">&#11088; Priority accounts <span class="sub">loyal or high-margin</span></div>${vip.length?`<table><thead><tr><th class="l">Customer</th><th>Orders</th><th>Margin</th><th>Last</th></tr></thead><tbody>${vip.map(c=>`<tr><td class="l mono">${ID(c.id)}${custBadgeHtml(bm,c.id)}</td><td>${c.n}</td><td>${fmt0(marginOf[c.id]||0)}</td><td>${dbet(c.last)}d ago</td></tr>`).join('')}</tbody></table>`:'<div class="pchips" style="margin:0"><span class="pchip">no loyal or high-margin customer yet</span></div>'}</div>
-    <div class="card"><div class="cardh">&#128276; Reconnect <span class="sub">no order in 21+ days${nudgeOut.length?`, ${nudgeOut.length} out of area not shown`:''}</span></div>${nudge.length?`<table><thead><tr><th class="l">Customer</th><th>Orders</th><th>Total unit</th><th>Last order</th><th class="l">Followed up</th></tr></thead><tbody>${nudge.map(c=>{const lc=lastContact(c.id);return `<tr><td class="l mono">${ID(c.id)}${custBadgeHtml(bm,c.id)}</td><td>${c.n}</td><td>${kg(c.kg)}</td><td>${c.last} (${dbet(c.last)}d)</td><td class="l">${lc?`<span class="tag ${dbet(lc.date)<=7?'paid':'open'}">${CONTACT_HOW[lc.how]} ${dbet(lc.date)}d ago</span>`:'<span class="tag unpaid">not yet</span>'}</td></tr>`;}).join('')}</tbody></table>`:'<div class="pchips" style="margin:0"><span class="pchip good">everyone has ordered within the last three weeks</span></div>'}</div>
-  </div>
-  ${due.length?`<div class="card" style="margin-top:14px"><div class="cardh">&#9200; Follow-ups due <span class="sub">${due.length} promised, on or before today</span></div><table><thead><tr><th class="l">Customer</th><th class="l">Due</th><th class="l">Last spoke</th><th class="l">Then</th></tr></thead><tbody>${due.map(c=>`<tr><td class="l mono">${ID(c.party)}</td><td class="l">${c.next}${dbet(c.next)>0?` <span class="risk">${dbet(c.next)}d late</span>`:''}</td><td class="l">${c.date} (${dbet(c.date)}d)</td><td class="l">${CONTACT_OUT[c.outcome]}${c.note?' &middot; '+esc(c.note):''}</td></tr>`).join('')}</tbody></table></div>`:''}`;
+  <div class="card"><div class="cardh">&#128220; Latest ledger <span class="sub">most recent orders</span></div><table><thead><tr><th class="l">Date</th><th class="l">Party</th><th>Qty</th><th>Total</th><th>State</th></tr></thead><tbody>${recent.map(s=>{const si=txStat(s);return `<tr><td class="l">${s.date}</td><td class="l mono">${ID(s.customer)}</td><td>${kg(s.qty)}</td><td>${fmt0(s.total)}</td><td><span class="tag ${si.cls}">${si.order}</span></td></tr>`;}).join('')}</tbody></table></div>`;
 }
 
 /* ============ TAB: TODAY (v147) ============ */
