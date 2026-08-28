@@ -1154,6 +1154,12 @@ details.obshush:hover{opacity:.85;}
      to this table, because every other table here is genuinely wide and scrolls in its own box by
      design. */
   .pxboard th,.pxboard td{padding-left:5px;padding-right:5px;}
+  /* v393: v330 won 30px and the board has since spent 41. The heading is what costs it:
+     "Floor, delivered" holds its column at 116px against 72px of figures under it, because
+     th is nowrap everywhere else for good reason. Let THIS table's headings wrap onto two
+     lines and the five columns come to 322px inside the 325px a card gives at 375px. Same
+     scope as the rule above, and .pxboard is used by nothing outside the board. */
+  .pxboard th{white-space:normal;}
   /* 16px exactly: below it Safari zooms the page on focus and does not zoom back */
   .qfield select,.qfield input{font-size:16px;padding:11px 10px;}
   .qrow{gap:9px;}
@@ -12578,6 +12584,20 @@ function tabProductQuote(){
     <div class="dsc" style="margin-top:7px"><b>Where ${esc(P.name.toLowerCase())} stands.</b> ${sum.n?`${fmt0(sum.rev)} sold across ${sum.n} order${sum.n===1?'':'s'} and ${kg(sum.qty)}${sum.margin!=null?`, ${fmt0(sum.margin)} margin at ${sum.pct}%`:', margin not computable'}. `:'Nothing sold yet. '}${sups.length?`Bought from ${sups.map(x=>ID(x)).join(', ')}.`:`<b style="color:var(--crim)">No purchase has ever been recorded</b>, so the shelf reconstructs to ${kg(ledgerStock)} and no stock figure on this product means anything until a lot is entered.`}</div>
   </div>`;
 }
+/* ============ THE HEAD IS EMITTED ONCE (v393) ============
+   pricing renders through perProduct(), so everything at the top of the builder came out once
+   per book: two <h1>Pricing</h1> in one document, and the lead sentence twice, the second one
+   arriving after seven thousand pixels of salt. The rule is consoOrderBlock's: what does not
+   vary by product sits ABOVE the repeat, under its own head. Nothing here is computed, so
+   nothing can differ between the two copies; the product name went out of the sentence because
+   perProduct already prints it on the block below. */
+function pxHead(){
+  return `<h1>Pricing</h1>
+  <!-- v385: "a printed card" is language from before v326, when the board was four frozen tier
+       cards. There are none: the board is one derived ladder and what goes stale is a price
+       already agreed with somebody. The sentence now names that. -->
+  <div class="dsc dsclead">What the board asks today, and how much room is left before a price already agreed stops paying.</div>`;
+}
 function tabPricing(){
   const c=pxCost(),sg=pxSignals(),pt=pxParty(pxOver.party),net=sg.net,pn=pt.net;
   const q=pxQuoteRate();                      // v385: r30 went with the dead board, unread since v326
@@ -12606,11 +12626,7 @@ function tabPricing(){
      panel, and went out with it. */
   const hr=boardHeadroom(false);
   const hrTone=hr.unbounded?'g':hr.headroom<0?'r':hr.pct!=null&&hr.pct<10?'r':hr.pct!=null&&hr.pct<20?'gold':'g';
-  return `<h1>Pricing</h1>
-  <!-- v385: "a printed card" is language from before v326, when the board was four frozen tier
-       cards. There are none: the board is one derived ladder and what goes stale is a price
-       already agreed with somebody. The sentence now names that. -->
-  <div class="dsc dsclead">What the board asks today for <b>${esc(PRODUCTS[PROD]?PRODUCTS[PROD].name:PROD)}</b>, and how much room is left before a price already agreed stops paying.</div>
+  return `
   ${(()=>{const A=anchorsFor(PROD);if(!A.derived)return '';
     const sold=pSales(PROD).filter(x=>!x.rebate&&x.total>0.009&&x.qty>0);
     const med=sold.length?(function(){const v=sold.map(x=>x.total/x.qty).sort((a,b)=>a-b);return v[Math.floor(v.length/2)];})():null;
@@ -12623,8 +12639,15 @@ function tabPricing(){
       +(med!=null?`Against it, the trade actually written cleared <b>${fmt(med)}/unit</b>, so treat this as a placeholder and give me three prices per tier when you have them.`
                  :`Nothing has traded yet, so there is nothing to check it against.`)
       +`</div>`;})()}
-  <div class="kpis k4">
-    <div class="kpi"><div class="l">Replacement cost</div><div class="v">${fmt(c.repl)}<span style="font-size:12px;color:var(--mut)">/unit</span></div><div class="n">${pxOver.cost!=null?'your override':'highest live quote tier'}</div></div>
+  <!-- ============ THREE OF THE FOUR TILES WERE THE TABLE BELOW THEM (v393) ============
+       Measured on both books, not assumed: Replacement cost was the cost stack's Lot rate to the
+       ringgit (RM 50 and RM 7.67), Shrinkage load was its Samples note (4.8% and 5.0%), Effective
+       cost was its Pricing basis (RM 54.83 and RM 8.95). A strip that restates the table under it
+       is 293px of the first screen spent saying nothing new, and it put a Watch register above
+       both Asks. The two clauses the tiles held and the table did not, where the rate comes from
+       and how much of the leak is charged, have moved onto the rows that carry those figures. What
+       is left is the one number that is not on the stack and is the reason this view exists. -->
+  <div class="kpis" style="grid-template-columns:1fr">
     <div class="kpi ${hrTone}"><div class="l">Room before a price fails</div><div class="v">${hr.unbounded?'&mdash;':hr.headroom<0?'none':fmt(hr.headroom)}${hr.unbounded||hr.headroom<0?'':'<span style="font-size:12px;color:var(--mut)">/unit</span>'}</div>
       <div class="n">${hr.unbounded?'no live price breaches within RM200 of the buying rate'
         /* v385: THE COPY READ "-2.3% UP" AND "GIVES FIRST" WHEN THE BREACH HAD ALREADY HAPPENED.
@@ -12636,8 +12659,6 @@ function tabPricing(){
            reader at the one table it does not measure. */
         :hr.headroom<0?`<b>${hr.nUnderFloor} live price${hr.nUnderFloor===1?'':'s'}</b> already under floor at today&rsquo;s ${fmt(hr.live)}${hr.nUnderReplace?`, ${hr.nUnderReplace} of them under replacement`:''}${hr.nUnderCost?`; <b>${hr.nUnderCost}</b> under what that stock cost`:'; none under what that stock cost'}`
         :`buying can reach ${fmt(hr.safeTo)}/unit before a live price fails, ${hr.pct}% above today; <b>${hr.firstTier}</b> falls first at ${fmt(hr.firstAt)}`}</div></div>
-    <div class="kpi r"><div class="l">Shrinkage load</div><div class="v">${(c.shrink*100).toFixed(1)}%</div><div class="n">${pxOver.shrink!=null?'your override':`<b>${(c.shrinkRaw*100).toFixed(1)}% observed</b>, ${(SHRINK_ATTRIB*100)}% of it charged`}</div></div>
-    <div class="kpi gold"><div class="l">Effective cost</div><div class="v">${fmt(c.eff)}<span style="font-size:12px;color:var(--mut)">/unit</span></div><div class="n">per unit that reaches a customer</div></div>
   </div>
 
   <div class="card" style="margin-top:14px">
@@ -12648,35 +12669,7 @@ function tabPricing(){
     </div>
   </div>
 
-  ${(()=>{const MC=marginCurve(),q=2,c=pxCost();
-    const R=enginePrice(q,'T2',{curve:MC});
-    const line=(lab,v,n)=>`<tr><td class="l">${lab}<div class="iref">${esc(n||'')}</div></td><td class="mono">${fmt(v)}</td></tr>`;
-    /* v242: the workings are an explanation, and an explanation is something you ask for.
-       It stood open as a full section on a tab whose job is to say what to charge, so it
-       now folds like every other method block. Nothing is deleted: opening it restores the
-       whole line-by-line build, and the summary carries the answer so the fold still says
-       something when shut. */
-    const LB=priceLadder(q);
-    return `<details class="obsec"><summary>How a price is built <span class="q">${kg(q)}, line by line</span><span class="ct">${fmt0(R.price)}</span></summary>
-    <div class="card"><table class="fintab istmt"><tbody>
-      ${line('Cogs',LB.cogs,`${fmt(c.landed)} landed, over ${kg(q)}`)}
-      ${line('Markup',LB.cogs*LB.markupX,`${LB.markupX.toFixed(3)}x at this size, tapered at ${(buyTaper().b!=null?buyTaper().b.toFixed(3):'0')} off ${esc(supplierQuote.supplier)}&rsquo;s own ladder`)}
-      <tr class="tot"><td class="l"><b>Ask</b><div class="iref">rounded up to the ${fmt0(LADDER.round.to)}, floor ${fmt0(R.floor)}</div></td><td class="mono"><b>${fmt0(R.price)}</b></td></tr>
-    </tbody></table>
-    <div class="dsc" style="margin-top:8px">That is the whole price and there is nothing else in it. What it has to PAY for is below, and the gap between the two is the margin.</div>
-    <table class="fintab istmt" style="margin-top:10px"><tbody>
-      ${line('Goods',R.goods,`${fmt(c.effEx)} landed and grossed for samples, over ${kg(q)}`)}
-      ${line('Delivery',R.delivery,'once per order, whatever the size')}
-      ${PRICE_ENGINE.recoverAbnormal>0?line('Unexplained leak',R.leak,`${(PRICE_ENGINE.recoverAbnormal*100).toFixed(0)}% of ${fmt(c.absorbed)}/unit recovered`):''}
-      ${line('Credit',R.credit,`${(PRICE_ENGINE.tiers.find(t=>t.code===R.code)||{}).days} days at ${(PRICE_ENGINE.moneyRate*100).toFixed(0)}% a year`)}
-      <tr class="tot"><td class="l"><b>Cost to serve</b></td><td class="mono"><b>${fmt(R.base+R.credit)}</b></td></tr>
-      <tr class="tot"><td class="l"><b>Margin</b><div class="iref">${(((R.price-R.base-R.credit)/R.price)*100).toFixed(1)}% of the ask</div></td><td class="mono"><b>${fmt(R.price-R.base-R.credit)}</b></td></tr>
-    </tbody></table>
-    <div class="dsc" style="margin-top:8px"><b>The markup is on cogs and the margin is on the cost to serve</b>, which is why they are different numbers. Cogs is the salt; the cost to serve adds the leak, one delivery and the money tied up while the invoice is out. <b>The retired engine would have asked ${fmt0(R.wanted)}</b> for this lot on its fitted curve, and that figure is kept beside the ladder so the day the two disagree is visible rather than argued about.</div></div></details>`;})()}
   <h2 style="margin-top:18px">The board <span class="sub" style="font-weight:400">one ladder, tapered at the rate the supplier tapers</span> <span class="rule"></span></h2>
-  <!-- v385: the taper paragraph moved INTO the fold below the table, beside the rest of the
-       method. It also said "weighted by the SALT this book actually trades" on the oil board,
-       which is the word hardcoded rather than read from PRODUCTS. -->
   ${(()=>{const tb=tierBoard();
     /* ============ THE ASK SAYS WHICH FLOOR IT CLEARS (v381) ============
        THE BOARD HAS BEEN PRINTING ASKS THAT DO NOT CLEAR THEIR OWN FLOOR, IN BLACK, WITH
@@ -12722,12 +12715,8 @@ function tabPricing(){
     const nUnderD=tb.filter(r=>priceLadder(r.q).ask.total<priceLadder(r.q).floor.total-0.009);
     const nUnderC=nUnderD.filter(r=>priceLadder(r.q).ask.total<floorTotal(r.q,null,{collects:true})-0.009);
     return `<div class="card"><table class="pxboard"><thead>${head}</thead><tbody>${rows}</tbody></table>
-    <!-- THE FLOOR CHANGED MEANING ON 27 Aug AND THE COLUMN HEADING CANNOT SAY SO. It used to be
-         cogs at a 33% markup, so it read as the least he should accept; it is now what the order
-         costs to serve and nothing above that. Kept to one sentence and under 140 characters for
-         the two reasons in the note below: stripMethod cuts an insight at the first full stop,
-         and it replaces the element with plain text once it passes that length, markup and all. -->
-    <div class="insight"><b>The floor is break-even, not a target</b>: an ask sitting on it earns nothing.</div>
+    <!-- v393: the break-even definition that stood here went with the rest of the standing
+         prose. The setup table below states it as a figure, which is the register this asks for. -->
     <!-- ============ IT IS AN INSIGHT, NOT A dsc, AND THAT IS LOAD-BEARING (v381) ============
          stripMethod() deletes every standing .dsc on a part except the first, so this finding
          written as one would have been REMOVED FROM THE DOM at render and never seen. .insight
@@ -12745,21 +12734,32 @@ function tabPricing(){
     ${nUnderD.length?`<div class="insight" style="border-left-color:var(--gold)"><b>${nUnderD.length} of ${tb.length} asks do not carry a delivery</b>: quote ${nUnderD.map(r=>kg(r.q)).join(', ')} at the counter.</div>`
       +(nUnderC.length?`<div class="insight" style="border-left-color:var(--crim)"><b>Do not quote ${nUnderC.map(r=>kg(r.q)).join(', ')} at all</b>: under both floors.</div>`:'')
       :`<div class="insight" style="border-left-color:var(--grn)">Every ask on the board clears its delivered floor.</div>`}
-    <!-- v385: THE 1,010-CHARACTER PARAGRAPH UNDER THE BOARD FOLDS. It is the single longest
-         block of standing prose on this view and it is Study in every line: what cogs is, what
-         the exponent is fitted to, what a markup is measured on, what the bounds do, how the
-         rounding works. All true, read once, then trusted. NOTHING IS CUT: opening it restores
-         the paragraph word for word, and the summary carries the answer so the shut state still
-         says something. What stands open in its place is the one thing that changes with the
-         book, which is whether the asks clear their floors. -->
-    <details class="obsec"><summary>How the ladder is set <span class="q">the level, the taper and the bounds</span><span class="ct">${LADDER.anchorX.toFixed(3)}x at ${kg(LADDER.anchorQ)}</span></summary>
-    <div class="dsc" style="margin-bottom:11px"><b>ONE LADDER, AND ITS SHAPE IS MEASURED RATHER THAN CHOSEN.</b> <b>Cogs</b> is the landed cost, ${fmt(c.landed)} a unit, being the lot rate plus freight and nothing else. <b>The volume discount given is proportionate to the volume discount received</b>: the ask per unit falls with size at the exponent fitted to ${esc(supplierQuote.supplier)}&rsquo;s live quote ladder, so a step up in size is worth to the customer what the same step is worth to this desk. Only the LEVEL is typed, one number, <b>${LADDER.anchorX.toFixed(3)}x at ${kg(LADDER.anchorQ)}</b>. Markups are on cost as he states the measure, <b>(sales less cogs) over cogs</b>, so ${LADDER.ceiling.toFixed(2)}x means the price is ${(1+LADDER.ceiling).toFixed(2)} times cogs. <b>The ${LADDER.ceiling.toFixed(2)}x ceiling is a bound, not a rung</b>: the curve is clamped under it and on this cost it does not bind at any board size. <b>THE FLOOR IS NOT A MARKUP AT ALL, since 27 Aug.</b> It carried ${LADDER.floor.toFixed(2)}x on cogs until he asked for a floor 'based on derived cost only without margin', and a refusal line with a margin inside it refuses trades that make money. What it holds now is what an order costs to serve: ${fmt(c.effEx)} a unit after the leak, one delivery of ${fmt0(c.delPerOrder||0)} unless he collects, and ${fmt0(PRICE_ENGINE.timePerOrder||0)} of his own time per order. <b>So an ask sitting on the floor earns nothing.</b> It moved not one ask on either book, because the guard beneath the ladder only ever lifts an ask to clear the floor and none was being lifted. ${LADDER.floor.toFixed(2)}x survives inside the ladder as the line a rate-law step-down may not pass through, which is a different job. Asks round <b>UP to the ten</b>; the floor is exact, because rounding a refusal line moves it. <b>The margin shown against each ask is struck on the LOT cost</b>, ${fmt(c.effEx)} after the leak plus one delivery of ${fmt0(c.delPerOrder||0)}, which is what the order really costs to serve and is a different number from cogs on purpose.</div>
-    ${(()=>{const T=buyTaper(),rz=ladderRealised();
-      return `<div class="dsc">The taper is <b>measured, not chosen</b>, since v327: the ask falls with size at <b>${T.b!=null?T.b.toFixed(3):'&mdash;'}</b>, which is the exponent ${esc(supplierQuote.supplier)}&rsquo;s own quote ladder falls at${T.r2!=null?` (r&sup2; ${T.r2.toFixed(2)} over ${T.n} tiers)`:''}, so the volume discount given is proportionate to the one received. Pinned at <b>${LADDER.anchorX.toFixed(3)}x</b> at ${kg(LADDER.anchorQ)} on cogs of ${fmt(c.landed)} a unit, clamped under a ${LADDER.ceiling.toFixed(2)}x ceiling. `
-        +(rz!=null?`<b>Weighted by the ${esc((PRODUCTS[PROD]&&PRODUCTS[PROD].name||PROD).toLowerCase())} this book actually trades it returns ${rz.toFixed(2)}x.</b> Move <b>anchorX</b> to charge more or less; it is the only level in the ladder.`:'')+`</div>`;})()}
-    </details>
-    <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--line)">
-      <div style="font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:var(--dim);margin-bottom:7px">Set the board</div>
+    <!-- v393: THE MARGIN SETUP IS THE BOARD'S DERIVATION, SO IT SITS IN THE BOARD'S CARD.
+         It was its own open h2 one section down, restating in prose what these six figures
+         say. The prose went; the figures are the ask's derivation and stay open. -->
+    ${(()=>{const sT=buyTaper(),sC=pxCost(),sRz=ladderRealised();
+      const sSZ=shownSizes(PROD).slice().sort((a,b)=>a-b), sMk=sSZ.map(q=>priceLadder(q));
+      const sLo=sMk[0], sHi=sMk[sMk.length-1], sFlat=sSZ.filter(q=>q>LADDER.at.hi+0.009).length;
+      const sSup=supplierQuote.supplier, sOwn=(latestLot(PROD)||{}).sup||null;
+      const sBor=!!(sOwn&&sSup&&sOwn!==sSup);
+      /* the note is NOT run through esc(): it carries entities. Data inside it is escaped. */
+      const sR=(lab,v,n)=>`<tr><td class="l">${lab}<div class="iref">${n||''}</div></td><td class="mono">${v}</td></tr>`;
+      return `<table class="fintab istmt" style="margin-top:12px"><tbody>
+      ${sR('Level',LADDER.anchorX.toFixed(3)+'x',`typed, at ${kg(LADDER.anchorQ)} on cogs`)}
+      ${sR('Taper',(sT.b!=null?sT.b.toFixed(3):'&mdash;'),sT.b!=null?`fitted to ${esc(sSup)}&rsquo;s quote ladder${sT.r2!=null?`, r&sup2; ${sT.r2.toFixed(2)}`:''}, ${kg(LADDER.at.lo)} to ${kg(LADDER.at.hi)}${sBor?`; <b>${esc(sOwn)}&rsquo;s own ladder is on the book and is not the one this is fitted to</b>`:''}`:'no supplier ladder to fit')}
+      ${sR('Ceiling',LADDER.ceiling.toFixed(2)+'x','does not bind at any printed size')}
+      ${sR('Floor','break-even',`${fmt(sC.effEx)} a unit after the leak, one delivery of ${fmt0(sC.delPerOrder||0)}, ${fmt0(PRICE_ENGINE.timePerOrder||0)} of his time an order`)}
+      <tr class="tot"><td class="l"><b>Markup across the board</b><div class="iref">${kg(sSZ[0])} down to ${kg(sSZ[sSZ.length-1])}</div></td><td class="mono"><b>${sLo.markupX.toFixed(2)}x to ${sHi.markupX.toFixed(2)}x</b></td></tr>
+      <tr class="tot"><td class="l"><b>Margin it returns</b><div class="iref">struck on the lot cost, not on cogs</div></td><td class="mono"><b>${sLo.ask.margin.toFixed(1)}% to ${sHi.ask.margin.toFixed(1)}%</b></td></tr>
+      ${sRz!=null?sR('Weighted by what he trades',sRz.toFixed(2)+'x','the level the book actually returns'):''}
+    </tbody></table>
+    ${sFlat>=2?`<div class="insight" style="border-left-color:var(--gold)"><b>The taper stops at ${kg(LADDER.at.hi)}, so ${sFlat} of the ${sSZ.length} printed sizes carry the same ${sHi.markupX.toFixed(2)}x.</b></div>`
+      :''}`;})()}
+    <!-- v393: THE EDITOR FOLDS. Seventeen tickboxes and nineteen number boxes were standing
+         open inside the board card, which on a 375px phone put the thing he acts on, the
+         board, above a screen and a half of controls he touches once a month. It is Do, so
+         it stays on this card and one tap away; it is not the Ask, so it is shut. -->
+    <details class="obsec" style="margin-top:12px"><summary>Set the board <span class="q">type a price, or take a size off</span><span class="ct">${tb.length} sizes</span></summary>
       ${(()=>{
         /* ============ THE ONE PLACE A PRICE IS TYPED (v356, narrowed with the reseller menu) ============
            This table came within a line of going out with the menu, because it was built as the SHEET
@@ -12780,8 +12780,8 @@ function tabPricing(){
           const fl=floorTotal(qq,null,{collects:true});
           return `<tr>
             <td class="l">${kg(qq)}</td>
-            <td><input type="checkbox" id="${id}s" ${shown?'checked':''} onchange="shDirty(this)"></td>
-            <td><input id="${id}p" type="number" step="10" min="0" value="${ask!=null?ask:''}" style="width:92px" oninput="shDirty(this)"></td>
+            <td><label style="display:flex;align-items:center;justify-content:center;min-height:var(--tap);margin:0;cursor:pointer"><input type="checkbox" id="${id}s" ${shown?'checked':''} onchange="shDirty(this)" style="width:20px;height:20px"></label></td>
+            <td><input id="${id}p" type="number" step="10" min="0" value="${ask!=null?ask:''}" style="width:92px;min-height:var(--tap)" oninput="shDirty(this)"></td>
             <td class="mono" style="color:var(--dim)">${fmt(fl)}</td></tr>`;
         }).join('');
         /* v385: the id sits on a plain wrapper and the class on the child. stripMethod removes
@@ -12794,70 +12794,70 @@ function tabPricing(){
         <button class="vbtn" onclick="shReset()">Back to the derived board</button>
       </div>
       <div class="insight" style="border-left-color:var(--gold)"><b>A typed price goes through the queue like a trade: drafted, approved and folded before it is the board.</b></div>
-      <details class="obsec"><summary>What a stated price does to the sizes above it <span class="q">and what it does not override</span></summary>
-      <div class="dsc">A price you type replaces the markup curve at that size and <b>nothing else</b>. The rate-may-not-rise walk still runs on it, so setting one price moves every larger lot down with it, which is the honest consequence rather than a fault. The floor guard still runs beneath it: a stated price under its own floor is lifted to the next step above rather than quoted. Untick a size to keep it off the board altogether.</div>
-      </details>
-    </div></div>`;})()}
+      <div class="insight">A typed price replaces the markup curve at that size and nothing else; the rate-may-not-rise walk still moves every larger lot down with it.</div>
+    </details>
+    </div>`;})()}
 
-  <!-- ============ THE MARGIN SETUP, SHOWN AND NOT CHANGED (his instruction, 27 Aug) ============
-       He asked to SEE it. Nothing here is a control and nothing here moves without his word.
-       IT IS TWO DIFFERENT THINGS AND PUTTING THEM IN ONE TABLE WOULD BE THE FAULT THIS DESK
-       KEEPS MAKING. What sets the ask is the level, the taper and the ceiling: three numbers,
-       and the board above is what they produce. marginCurve() sets NOTHING on the board; it
-       is a regression on what the book has already achieved, and it feeds one figure in one
-       fold. So the first table is the setup and the measurement is behind the disclosure,
-       labelled as measuring rather than pricing. -->
-  <h2 style="margin-top:18px">The margin setup <span class="sub" style="font-weight:400">what sets the ask, and what only measures it</span> <span class="rule"></span></h2>
-  ${(()=>{const T=buyTaper(),MC=marginCurve(),rz=ladderRealised(),c=pxCost();
-    const SZ=shownSizes(PROD).slice().sort((a,b)=>a-b);
-    const mk=SZ.map(q=>priceLadder(q));
-    const mLo=mk[0], mHi=mk[mk.length-1];
-    /* the markup curve is clamped to LADDER.at, which is salt's size range. Oil trades above
-       its top, so every oil size from 12.5 up carries one markup and the table has to say so
-       rather than let four identical figures read as a taper. */
-    const flat=SZ.filter(q=>q>LADDER.at.hi+0.009).length;
-    /* the note is NOT run through esc(): it carries entities, and escaping the whole string
-       printed &rsquo; and &sup2; on the page. Data inside it is escaped where it goes in. */
-    const r=(lab,v,n)=>`<tr><td class="l">${lab}<div class="iref">${n||''}</div></td><td class="mono">${v}</td></tr>`;
-    /* THERE ARE TWO SUPPLIER QUOTE LADDERS ON THE BOOK AND ONLY SALT'S IS READ. supplierQuote is
-       salt's; oilQuote is oil's, SP7-PUD, four tiers, and quoteFor(PROD) already resolves between
-       them. pxPolicy hands buyTaper the bare supplierQuote, so OIL'S VOLUME DISCOUNT IS
-       PROPORTIONATE TO A DISCOUNT SALT'S SUPPLIER OFFERS, which is the one rule this ladder is
-       built on, broken on one of the two books.
-       MEASURED, and it is one line in pxPolicy: fitted to oil's own ladder the taper goes -0.100
-       to -0.231, r-squared 0.97 over its own four tiers, a marginally BETTER fit than the borrowed
-       one, and oil's board falls 20 unit -20, 30 unit -30, 40 unit -30, 50 unit -40. Salt does not
-       move at all, because quoteFor('salt') IS supplierQuote. NOT DONE HERE: it reprices oil, and
-       a price is his. It is said in the row so it is his to decide rather than nobody's to find. */
-    const SUP=supplierQuote.supplier, own=(latestLot(PROD)||{}).sup||null;
-    const borrowed=!!(own&&SUP&&own!==SUP);
-    return `<div class="card"><table class="fintab istmt"><tbody>
-      ${r('Level',LADDER.anchorX.toFixed(3)+'x',`typed, at ${kg(LADDER.anchorQ)} on cogs; the only level in the ladder`)}
-      ${r('Taper',(T.b!=null?T.b.toFixed(3):'&mdash;'),T.b!=null?`fitted to ${esc(SUP)}&rsquo;s live quote ladder${T.r2!=null?`, r&sup2; ${T.r2.toFixed(2)} over ${T.n} tiers`:''}, between ${kg(LADDER.at.lo)} and ${kg(LADDER.at.hi)}${borrowed?`; he buys this from ${esc(own)}, <b>whose own quote ladder is on the book and is not the one this is fitted to</b>`:''}`:'no supplier ladder to fit')}
-      ${r('Ceiling',LADDER.ceiling.toFixed(2)+'x',`a bound on the curve; it does not bind at any printed size`)}
-      ${r('Floor','break-even',`${fmt(c.effEx)} a unit after the leak, one delivery of ${fmt0(c.delPerOrder||0)}, ${fmt0(PRICE_ENGINE.timePerOrder||0)} of his time per order`)}
-      <tr class="tot"><td class="l"><b>Markup across the board</b><div class="iref">${kg(SZ[0])} down to ${kg(SZ[SZ.length-1])}</div></td><td class="mono"><b>${mLo.markupX.toFixed(2)}x to ${mHi.markupX.toFixed(2)}x</b></td></tr>
-      <tr class="tot"><td class="l"><b>Margin it returns</b><div class="iref">struck on the lot cost, not on cogs</div></td><td class="mono"><b>${mLo.ask.margin.toFixed(1)}% to ${mHi.ask.margin.toFixed(1)}%</b></td></tr>
-      ${rz!=null?r('Weighted by what he trades',rz.toFixed(2)+'x','the level the book actually returns'):''}
+  ${(()=>{const c=pxCost();if(!c.lotQty)return '';
+    const r=(lab,v,tag,n)=>`<tr><td class="l">${lab}<div class="iref">${esc(n||'')}</div></td><td class="mono">${fmt(v)}</td><td><span class="tag ${tag==='inventory'?'paid':'prov'}">${tag==='inventory'?'Inventory':'Period'}</span></td></tr>`;
+    const LK=priceLockState(PROD);
+    const chip=c.locked?`<span class="tag paid">Frozen</span>`:(c.stale?`<span class="tag def">Repriced</span>`:`<span class="tag prov">Simulated</span>`);
+    return `<h2 style="margin-top:22px">What a unit costs ${chip} <span class="sub" style="font-weight:400">${c.locked?`held since ${LK.lock.lockedOn}`:'not the locked basis'}</span> <span class="rule"></span></h2>
+    <div class="card"><table class="fintab istmt"><tbody>
+      ${r('Lot rate',c.lot,'inventory',`${kg(c.lotQty)} on ${c.lotDate}, ${pxOver.cost!=null?'your override':'the highest live quote tier'}`)}
+      ${r('Collection',c.freight,'inventory',(()=>{
+        /* v382 moved the freight divisor from the LATEST lot to the AVERAGE lot received and this
+           sentence was left behind, printing "over 25 unit" for salt when the answer is 23.66 and
+           "over 30 unit" for oil when it is 43.33. The divisor is READ BACK OUT OF THE ANSWER
+           rather than recomputed here, the same discipline the floor markup follows, so it cannot
+           drift from the engine and it stays right under a lock, where the freight is frozen. */
+        const d=c.freight>0?+(COST_BASIS.freightPerTrip.rm/c.freight).toFixed(2):null;
+        return `${fmt0(COST_BASIS.freightPerTrip.rm)} a return trip, over ${d!=null?kg(d):'&mdash;'}, the average lot received`;})())}
+      <tr class="tot"><td class="l"><b>Landed</b><div class="iref">what the balance sheet carries</div></td><td class="mono"><b>${fmt(c.landed)}</b></td><td><span class="tag paid">Inventory</span></td></tr>
+      ${r('Samples and testers',c.sampleLoad,'period',pxOver.shrink!=null?`${(c.shrink*100).toFixed(1)}%, your override`:`${(c.shrinkRaw*100).toFixed(1)}% of what is bought never sells, ${(SHRINK_ATTRIB*100)}% of it charged`)}
+      ${r('Delivery and packaging',c.txn,'period',(()=>{const s=delShare(PROD);return `${fmt0(COST_BASIS.txnPerDelivery.rm)} on ${Math.round(s.v*100)}% of orders (${s.measured?s.delivered+' of '+s.said+' that say':'stated, no row says yet'}), over ${kg(c.avgDel)}, the average order`;})())}
+      <tr class="tot"><td class="l"><b>Pricing basis</b><div class="iref">what a price has to return</div></td><td class="mono"><b>${fmt(c.eff)}</b></td><td></td></tr>
     </tbody></table>
-    ${flat>=2?`<div class="insight" style="border-left-color:var(--gold)"><b>The taper stops at ${kg(LADDER.at.hi)}, so ${flat} of the ${SZ.length} printed sizes carry the same ${mHi.markupX.toFixed(2)}x.</b></div>`
-      :`<div class="insight">Move <b>anchorX</b> to charge more or less; it is the only level in the ladder.</div>`}
-    <details class="obsec"><summary>The measured margin curve <span class="q">what the book has achieved, which prices nothing</span><span class="ct">${MC.fitted?`fitted, r&sup2; ${MC.r2!=null?MC.r2.toFixed(2):'&mdash;'}`:`not fitted, ${MC.n} order${MC.n===1?'':'s'}`}</span></summary>
+    ${c.absorbed>0.009?`<div class="dsc" style="margin-top:8px">Absorbed and not recovered: ${fmt(c.absorbed)}/unit, the unexplained half of the leak.</div>`:''}
+    ${c.locked?`<div class="dsc" style="margin-top:7px">Frozen on the ${kg(c.lotQty)} lot of ${c.lotDate}. Selling, losing, counting and delivering do not move it; the next lot does.</div>`
+      :c.stale?`<div class="dsc" style="margin-top:7px"><b style="color:var(--crim)">A newer lot has landed and the board has repriced itself.</b> ${LK.cur?`${kg(LK.cur.qty)} at ${fmt(LK.cur.rate)} on ${LK.cur.date}`:''}, against the locked ${kg(LK.lock.lot.qty)} at ${fmt(LK.lock.lot.rate)}. Write the figures above into PRICE_LOCK to hold them.</div>`
+      :`<div class="dsc" style="margin-top:7px">Simulator override in force, so this is not the live basis.</div>`}</div>`;})()}
+
+  <h2 style="margin-top:22px">The book, measured <span class="sub" style="font-weight:400">what the ladder has achieved, which sets no ask</span> <span class="rule"></span></h2>
+  <div class="two">
+    <div class="chartbox"><canvas id="pxShapeChart"></canvas></div>
+    <div class="chartbox"><canvas id="pxTimeChart"></canvas></div>
+  </div>
+  </div>
+  ${(()=>{const MC=marginCurve(),q=2,c=pxCost();
+    const R=enginePrice(q,'T2',{curve:MC});
+    const line=(lab,v,n)=>`<tr><td class="l">${lab}<div class="iref">${esc(n||'')}</div></td><td class="mono">${fmt(v)}</td></tr>`;
+    /* v242: the workings are an explanation, and an explanation is something you ask for.
+       It stood open as a full section on a tab whose job is to say what to charge, so it
+       now folds like every other method block. Nothing is deleted: opening it restores the
+       whole line-by-line build, and the summary carries the answer so the fold still says
+       something when shut. */
+    const LB=priceLadder(q);
+    return `<details class="obsec"><summary>How a price is built <span class="q">${kg(q)}, line by line</span><span class="ct">${fmt0(R.price)}</span></summary>
+    <div class="card"><table class="fintab istmt"><tbody>
+      ${line('Cogs',LB.cogs,`${fmt(c.landed)} landed, over ${kg(q)}`)}
+      ${line('Markup',LB.cogs*LB.markupX,`${LB.markupX.toFixed(3)}x at this size, tapered at ${(buyTaper().b!=null?buyTaper().b.toFixed(3):'0')} off ${esc(supplierQuote.supplier)}&rsquo;s own ladder`)}
+      <tr class="tot"><td class="l"><b>Ask</b><div class="iref">rounded up to the ${fmt0(LADDER.round.to)}, floor ${fmt0(R.floor)}</div></td><td class="mono"><b>${fmt0(R.price)}</b></td></tr>
+    </tbody></table>
+    <div class="dsc" style="margin-top:8px">That is the whole price and there is nothing else in it. What it has to PAY for is below, and the gap between the two is the margin.</div>
+    <table class="fintab istmt" style="margin-top:10px"><tbody>
+      ${line('Goods',R.goods,`${fmt(c.effEx)} landed and grossed for samples, over ${kg(q)}`)}
+      ${line('Delivery',R.delivery,'once per order, whatever the size')}
+      ${PRICE_ENGINE.recoverAbnormal>0?line('Unexplained leak',R.leak,`${(PRICE_ENGINE.recoverAbnormal*100).toFixed(0)}% of ${fmt(c.absorbed)}/unit recovered`):''}
+      ${line('Credit',R.credit,`${(PRICE_ENGINE.tiers.find(t=>t.code===R.code)||{}).days} days at ${(PRICE_ENGINE.moneyRate*100).toFixed(0)}% a year`)}
+      <tr class="tot"><td class="l"><b>Cost to serve</b></td><td class="mono"><b>${fmt(R.base+R.credit)}</b></td></tr>
+      <tr class="tot"><td class="l"><b>Margin</b><div class="iref">${(((R.price-R.base-R.credit)/R.price)*100).toFixed(1)}% of the ask</div></td><td class="mono"><b>${fmt(R.price-R.base-R.credit)}</b></td></tr>
+    </tbody></table>
+    <div class="dsc" style="margin-top:8px"><b>The markup is on cogs and the margin is on the cost to serve</b>, which is why they are different numbers. Cogs is the salt; the cost to serve adds the leak, one delivery and the money tied up while the invoice is out. <b>The retired engine would have asked ${fmt0(R.wanted)}</b> for this lot on its fitted curve, and that figure is kept beside the ladder so the day the two disagree is visible rather than argued about.</div></div></details>`;})()}
+  ${(()=>{const MC=marginCurve();return `<details class="obsec"><summary>The measured margin curve <span class="q">what the book has achieved, which prices nothing</span><span class="ct">${MC.fitted?`fitted, r&sup2; ${MC.r2!=null?MC.r2.toFixed(2):'&mdash;'}`:`not fitted, ${MC.n} order${MC.n===1?'':'s'}`}</span></summary>
     <div class="dsc"><b>This is a measurement and not a setting, and no price on the board comes from it.</b> marginCurve() regresses realised margin on log size over ${MC.n} priced order${MC.n===1?'':'s'} of ${esc((PRODUCTS[PROD]&&PRODUCTS[PROD].name||PROD).toLowerCase())}. ${MC.fitted?`It is fitted here: intercept ${MC.a.toFixed(3)}, slope ${MC.b.toFixed(4)}, r&sup2; ${MC.r2!=null?MC.r2.toFixed(3):'&mdash;'}, giving ${(MC.spread.hi*100).toFixed(0)}% at ${kg(LADDER.at.lo)} falling to ${(MC.spread.lo*100).toFixed(0)}% at ${kg(LADDER.at.hi)}.`:`<b>It is NOT fitted here.</b> ${MC.n} order${MC.n===1?'':'s'} is under the ${PRICE_ENGINE.minPoints} it needs, so it refuses to fit and returns the stated fallback of ${(PRICE_ENGINE.fallbackMargin*100).toFixed(0)}% at every size, which is a declared number and not a finding.`} A rise with size is clamped to flat, because one large well-priced order on a thin book would otherwise quote bulk at a higher rate than retail. The result is bounded to ${(PRICE_ENGINE.clamp.lo*100).toFixed(0)}% and ${(PRICE_ENGINE.clamp.hi*100).toFixed(0)}%, shifted by ${(PRICE_ENGINE.marginShift*100).toFixed(0)}%, and ${PRICE_ENGINE.recoverAbnormal>0?`${(PRICE_ENGINE.recoverAbnormal*100).toFixed(0)}% of the unexplained leak is recovered in it`:`none of the unexplained leak is recovered in it`}.</div>
     <div class="dsc" style="margin-top:9px">Where it is read at all: the retired engine&rsquo;s figure in <b>How a price is built</b>, kept beside the ladder so the day the two disagree is visible rather than argued about. Changing any of these five numbers changes that comparison and changes no ask.</div>
-    </details></div>`;})()}
-  <!-- v255: SIZES OFF THE BOARD IS GONE. It was a whole section re-deciding a price the
-       board already sets: a quote, a rate, a margin, a profit and a floor for five sizes
-       nobody has ordered, on a tab whose first control already quotes ANY size against the
-       same engine. Every surface on this desk deciding what a price should be was the
-       complaint; this was the clearest instance of it. The quote panel at the top answers
-       the same question in three fields. -->
-
-  <!-- v242 STORYBOARD. A tab has three registers and they must not look alike. What the desk
-       ASKS is open, because that is the question the tab exists to answer. What the desk WATCHES
-       is open, because it changes the ask. What the desk STUDIES folds, because it is read once
-       and then trusted. These five sections are study: they are true, they are worth keeping,
-       and none of them is what you came here for. -->
+    </details>`;})()}
   <details class="obsec"><summary>What each size earns <span class="q">ringgit a unit, board against trade</span></summary>
   <div class="dsc" style="margin-bottom:9px">Margin as a percentage flatters a big lot. <b>Ringgit per unit</b> is the figure that decides which trade is worth doing, because a unit is the thing in short supply here, not a customer. Everything below is measured on the <b>effective cost of ${fmt(c.eff)}</b>, which is what the next unit costs to replace once shrinkage is carried.</div>
   ${(()=>{const E=earnedPerKg(),cap=capLot();
@@ -13037,20 +13037,9 @@ function tabPricing(){
     +(mk.needRate==null?'':`<br><br>For the realised wholesale price to clear its floor unchanged you would have to buy at <b>${fmt(mk.needRate)}/unit</b>, against the ${fmt(q)}/unit on the live quote. <b>That is the lever.</b> Wholesale on this desk is not a pricing problem, it is a buying problem: the price is set by what the trade will bear, so the only way it earns is if the stock is bought cheaper.`)}</div></div>
 
   </details>
-  <h2 style="margin-top:18px">The board, drawn <span class="sub" style="font-weight:400">the shape of the ladder, and what it has done over time</span> <span class="rule"></span></h2>
-  <div class="two">
-    <div class="chartbox"><canvas id="pxShapeChart"></canvas></div>
-    <div class="chartbox"><canvas id="pxTimeChart"></canvas></div>
-  </div>
-  <!-- v385: 631 characters of legend standing open under two charts that carry their own
-       axis titles and their own keys. What survives is the one line that says how to READ
-       them, which no axis can say; the rest folds. It also promised a dashed line "for that
-       band" which on the oil book was never drawn, because the bands were salt's. -->
-  <div class="dsc" style="margin-top:8px"><b>Where a dot sits below its dashed line, the board is asking more than that band has been paying.</b> Read that as resistance to come, not as revenue.</div>
   <details class="obsec"><summary>What the two charts plot <span class="q">and what is deliberately not on them</span><span class="ct">nothing fitted</span></summary>
   <div class="dsc">Left: the ask per unit at each printed size, against both floors and the effective cost. A flat line is a ladder that has stopped rewarding size; the gap between the ask and the floor it clears is all the room there is, and the two floors are one delivery apart per order. Right: every priced order ever written, plotted at the rate actually paid on the day it was agreed, grouped into three lot bands taken from this book&rsquo;s own board, with today&rsquo;s ask for each band drawn as a dashed line. There is no fitted curve on either chart and no elasticity anywhere on this desk.</div>
   </details>
-
   <details class="obsec"><summary>Price response <span class="q">what has sold at each price</span></summary>
   <div class="dsc" style="margin-bottom:9px">What you have actually sold at each price, carried over from the original Register. Observed trade only &mdash; <b>no fitted demand curve and no invented elasticity</b>. Volume tells you where the business really sits; revenue tells you which price is carrying it. Prices are grouped to the nearest ringgit, and the axis lists the prices you have traded at rather than a continuous scale, so the gaps are not to scale.</div>
   <div class="two">
@@ -13059,32 +13048,7 @@ function tabPricing(){
   </div>
   <div style="margin-top:10px">${priceNote()}</div>
   </details>
-  ${(()=>{const c=pxCost();if(!c.lotQty)return '';
-    const r=(lab,v,tag,n)=>`<tr><td class="l">${lab}<div class="iref">${esc(n||'')}</div></td><td class="mono">${fmt(v)}</td><td><span class="tag ${tag==='inventory'?'paid':'prov'}">${tag==='inventory'?'Inventory':'Period'}</span></td></tr>`;
-    const LK=priceLockState(PROD);
-    const chip=c.locked?`<span class="tag paid">Frozen</span>`:(c.stale?`<span class="tag def">Repriced</span>`:`<span class="tag prov">Simulated</span>`);
-    return `<h2 style="margin-top:22px">What a unit costs ${chip} <span class="sub" style="font-weight:400">${c.locked?`held since ${LK.lock.lockedOn}`:'not the locked basis'}</span> <span class="rule"></span></h2>
-    <div class="card"><table class="fintab istmt"><tbody>
-      ${r('Lot rate',c.lot,'inventory',`${kg(c.lotQty)} on ${c.lotDate}`)}
-      ${r('Collection',c.freight,'inventory',(()=>{
-        /* v382 moved the freight divisor from the LATEST lot to the AVERAGE lot received and this
-           sentence was left behind, printing "over 25 unit" for salt when the answer is 23.66 and
-           "over 30 unit" for oil when it is 43.33. The divisor is READ BACK OUT OF THE ANSWER
-           rather than recomputed here, the same discipline the floor markup follows, so it cannot
-           drift from the engine and it stays right under a lock, where the freight is frozen. */
-        const d=c.freight>0?+(COST_BASIS.freightPerTrip.rm/c.freight).toFixed(2):null;
-        return `${fmt0(COST_BASIS.freightPerTrip.rm)} a return trip, over ${d!=null?kg(d):'&mdash;'}, the average lot received`;})())}
-      <tr class="tot"><td class="l"><b>Landed</b><div class="iref">what the balance sheet carries</div></td><td class="mono"><b>${fmt(c.landed)}</b></td><td><span class="tag paid">Inventory</span></td></tr>
-      ${r('Samples and testers',c.sampleLoad,'period',`${(c.shrink*100).toFixed(1)}% of what is bought never sells`)}
-      ${r('Delivery and packaging',c.txn,'period',(()=>{const s=delShare(PROD);return `${fmt0(COST_BASIS.txnPerDelivery.rm)} on ${Math.round(s.v*100)}% of orders (${s.measured?s.delivered+' of '+s.said+' that say':'stated, no row says yet'}), over ${kg(c.avgDel)}, the average order`;})())}
-      <tr class="tot"><td class="l"><b>Pricing basis</b><div class="iref">what a price has to return</div></td><td class="mono"><b>${fmt(c.eff)}</b></td><td></td></tr>
-    </tbody></table>
-    ${c.absorbed>0.009?`<div class="dsc" style="margin-top:8px">Absorbed and not recovered: ${fmt(c.absorbed)}/unit, the unexplained half of the leak.</div>`:''}
-    ${c.locked?`<div class="dsc" style="margin-top:7px">Frozen on the ${kg(c.lotQty)} lot of ${c.lotDate}. Selling, losing, counting and delivering do not move it; the next lot does.</div>`
-      :c.stale?`<div class="dsc" style="margin-top:7px"><b style="color:var(--crim)">A newer lot has landed and the board has repriced itself.</b> ${LK.cur?`${kg(LK.cur.qty)} at ${fmt(LK.cur.rate)} on ${LK.cur.date}`:''}, against the locked ${kg(LK.lock.lot.qty)} at ${fmt(LK.lock.lot.rate)}. Write the figures above into PRICE_LOCK to hold them.</div>`
-      :`<div class="dsc" style="margin-top:7px">Simulator override in force, so this is not the live basis.</div>`}</div>`;})()}
-  ${tabProductQuote()}
-  <div class="dsc" style="margin-top:14px"><b>Nothing on this tab books anything.</b> A quote becomes a figure only when it is recorded on the Transaction tab.</div>`;
+`;
 }
 
 /* v365: THE PRICE PANELS RESOLVE THEIR OWN PRODUCT. tabPricing, and the price table inside it,
@@ -14240,7 +14204,7 @@ function setProdView(pr){
   PROD=pr; try{localStorage.setItem('saltProd',pr);}catch(e){}
   recompute(); drawProdSw(); render();
 }
-const builders={today:tabToday,forward:tabForward,sourcing:()=>perProduct(tabSourcing,{skipEmpty:true}),analysis:()=>perProduct(tabAnalysis),map:tabMap,overview:tabOverview,inventory:()=>perProduct(tabInventory),financials:()=>consoBlock()+consoCashBlock()+perProduct(tabFinancials),ledger:tabLedger,concentration:tabConcentration,network:tabNetwork,receivables:()=>consoOrderBlock()+perProduct(tabReceivables),add:tabWorkbench,pricing:()=>perProduct(tabPricing),plans:tabPlans,approve:tabApprove};
+const builders={today:tabToday,forward:tabForward,sourcing:()=>perProduct(tabSourcing,{skipEmpty:true}),analysis:()=>perProduct(tabAnalysis),map:tabMap,overview:tabOverview,inventory:()=>perProduct(tabInventory),financials:()=>consoBlock()+consoCashBlock()+perProduct(tabFinancials),ledger:tabLedger,concentration:tabConcentration,network:tabNetwork,receivables:()=>consoOrderBlock()+perProduct(tabReceivables),add:tabWorkbench,pricing:()=>pxHead()+perProduct(tabPricing),plans:tabPlans,approve:tabApprove};
 /* ============ SEVEN VIEWS OVER FIFTEEN TABS (v341, move 4 of the rebuild) ============
    The fifteen tabs were fifteen reports stacked: a megabyte to open for one figure, with the
    method prose standing open on every one. A view leads with one tab open, folds that tab's
