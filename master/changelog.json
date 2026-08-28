@@ -1,5 +1,13 @@
 [
  {
+  "v": "v398",
+  "d": "29 Aug 2026",
+  "t": "THE SHOW NAMES BUTTON CAN BE READ AGAIN",
+  "n": [
+   "<b>VIOLET TEXT ON A GOLD BUTTON, REPORTED FROM THE PHONE THE MOMENT THE NAMES FIRST SHOWED.</b> Every .vbtn paints the gold gradient by class, and the cloud panel's Show names button restyled only its border and text to violet, so the label sat violet on gold and could not be read. It now sets background:transparent, the outline treatment its laptop sibling Show and edit already used, and the laptop's Import old vault button, gold on the same gold, takes the same fix."
+  ]
+ },
+ {
   "v": "v397",
   "d": "28 Aug 2026",
   "t": "A CODE MINTED WRONG IS RETIRED, AND THE GAZETTEER LEARNS TWO SUFFIXES",
