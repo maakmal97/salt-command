@@ -1,5 +1,17 @@
 [
  {
+  "v": "v401",
+  "d": "29 Aug 2026",
+  "t": "SEVEN SESSIONS TAKE THE PROSE OFF THE DASHBOARD",
+  "n": [
+   "<b>ONE SESSION PER VIEW, ALL SEVEN AT ONCE, ON HIS BRIEF OF 29 AUG: THE FIGURES STAY, THE STORIES LIVE HERE, AND EVERY VIEW MUST WORK ON A PHONE.</b> Each view was cut on its own branch off v400 and the seven were merged and measured together; 608 assertions pass. Where a part restated a neighbour, one copy went; where prose restated the table beneath it, the prose went. The desk is a dashboard again and reads like one.",
+   "<b>THE CUTS, VIEW BY VIEW.</b> Analysis fell from eleven and a half screens to six. Orders and money fell from 11.9 to 5.1 screens and to one head, with a sensitivity assertion sweeping thirteen contributions either side of a ringgit so the 200.0% class of defect cannot return. Today's standing prose is down to a fifth after Overview stopped restating the Customers view in four tables, the widest things on it. Price lost three of four KPI tiles, each the cost stack beneath it restated, and three fifths of its prose. Stock's part head stopped printing once per book. Customers cut its standing copy and folded the narrative.",
+   "<b>NOTHING IS DELETED.</b> The v400 rule extends from the ledger to the desk itself: a story cut from a part is in this changelog, the fold notes or the archive, and the page keeps the figure with at most a one-line why.",
+   "<b>THE CHROME WAS MEASURED, NOT REVIEWED, AT 375PX WITH THE INSETS FORCED, THE v392 WAY.</b> The part pills stood 32px against the 44px tap token; they and every strip button and fold summary now read it, 18 summaries on Price alone. Card subtitles had inherited a rail button's block layout and overflowed every card by 7px, measured independently by four sessions before the one-line cause was found; they are inline text again. The five Ledger filter fields sat at 12 and 13px, under the 16px at which iOS Safari zooms on focus and never zooms back, and rise to 16px on the phone only. Today and the entry form now carry not one control under the tap height, and the copy says part where it said tab, because tabs stopped being the shape of the desk at v343.",
+   "<b>ENTER SHOWS WHAT THE DRAFTER REFUSED, ON HIS YES THIS ROUND.</b> The phone has had the v309 refused panel since it existed; the desk's Enter view now carries the same one, with the reason and which drafter saw it and no decision buttons, so a refusal is visible where the entry was typed. And the round's own guards earned their keep twice: a v385 assertion reversed a cut of closing stock from the P&L before it reached anyone, and the measuring pass found two Network blocks that had not rendered since v372 and repaired them."
+  ]
+ },
+ {
   "v": "v400",
   "d": "29 Aug 2026",
   "t": "THE PROSE LEAVES THE LEDGER",
