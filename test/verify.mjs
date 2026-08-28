@@ -607,7 +607,7 @@ section("Worker — drafts and approval");
      statements the Worker actually issues, and throws on anything else rather than
      quietly returning nothing, which is how a mock hides a broken query. */
   class D1 {
-    constructor() { this.rows = new Map(); }
+    constructor() { this.rows = new Map(); this.refusals = new Map(); }
     prepare(sql) {
       const self = this, s = sql.replace(/\s+/g, " ").trim();
       let binds = [];
@@ -621,6 +621,7 @@ section("Worker — drafts and approval");
           throw new Error("unmocked first(): " + s);
         },
         async all() {
+          if (/^SELECT .* FROM refused/.test(s)) return { results: [...self.refusals.values()] };
           if (!/^SELECT .* FROM draft/.test(s)) throw new Error("unmocked all(): " + s);
           let out = [...self.rows.values()];
           if (/status=\?/.test(s)) out = out.filter(r => r.status === binds[0]);
@@ -628,6 +629,12 @@ section("Worker — drafts and approval");
           return { results: out };
         },
         async run() {
+          if (/^INSERT OR REPLACE INTO refused/.test(s)) {
+            self.refusals.set(binds[0], {
+              id: binds[0], entry: binds[1], why: binds[2], party: binds[3], source: binds[4], seen_at: binds[5]
+            });
+            return { meta: { changes: 1 } };
+          }
           if (/^INSERT OR IGNORE INTO draft/.test(s)) {
             const id = binds[0];
             if (self.rows.has(id)) return { meta: { changes: 0 } };
@@ -756,6 +763,37 @@ section("Worker — drafts and approval");
   r = await worker.fetch(get("/drafts", KEY), gated);
   j = await r.json();
   ok(r.status === 401 && j.ok === false, "with Access on, /drafts answers 401 JSON rather than the locked page");
+
+  /* THE REFUSED HALF OF GET /drafts, WHICH WAS UNTESTED UNTIL v393. The worker reads the
+     `refused` table inside a try/catch, so a stub that did not know the table returned an
+     empty list and every assertion above still passed. It is the half that carries the raw
+     entry and the party code, so it is the half that most needs the gate proved. */
+  const rf = (id, why, party, source) => d1.prepare(
+    "INSERT OR REPLACE INTO refused (id,entry,why,party,source,seen_at) VALUES (?1,?2,?3,?4,?5,?6)"
+  ).bind(id, JSON.stringify({ at: id, raw: "Fulfilment " + party + " 5 unit", type: "AMEND" }),
+    why, party, source, "2026-08-29T02:00:01.000Z").run();
+  await rf("2026-08-29T02:00:00.000Z", "a Linked amendment names no figure the drafter can check", "CC5-OKR", "cloud-drafter");
+  await rf("2026-08-29T03:00:00.000Z", "a Rewarded amendment: which award applies is a judgement", "SA5-BTR", "laptop-queue");
+
+  r = await worker.fetch(get("/drafts", KEY), env);
+  j = await r.json();
+  ok(j.refusedCount === 2 && j.refused.length === 2, "GET /drafts carries the refusals beside the drafts");
+  const one = j.refused.find(x => x.party === "CC5-OKR");
+  ok(one && one.why && one.source === "cloud-drafter" && one.seenAt === "2026-08-29T02:00:01.000Z",
+     "a refusal comes back with its reason, the drafter that saw it and the date");
+  ok(one.entry && one.entry.raw === "Fulfilment CC5-OKR 5 unit", "the entry comes back parsed, not as a string");
+  ok(!("status" in one) && !("decided_at" in one) && !("decided_by" in one),
+     "a refusal has no decision column: there is nothing on it to approve");
+  ok(j.refused.some(x => x.source === "laptop-queue"), "a refusal from the laptop sweep is shown beside a cloud one");
+
+  /* the gate, on the half that carries the party code and the raw entry */
+  r = await worker.fetch(req("/drafts"), env);
+  ok(r.status === 401, "GET /drafts without the key discloses no refusal either");
+
+  /* only the pending read carries them: the commit run asks a different question */
+  r = await worker.fetch(get("/drafts?status=approved&uncommitted=1", KEY), env);
+  j = await r.json();
+  ok(!j.refused.length && j.refusedCount === 0, "the commit run's read is never handed a refusal");
 }
 
 /* ---- 9. The phone app's approval panel ------------------------------------------ */
@@ -2191,6 +2229,51 @@ section("Drafter — a lot that has not arrived does not say it has (v385)");
   const f = readFileSync(join(REPO, "tools", "fold.mjs"), "utf8");
   ok(/row\.receivedQty = 0; row\.inTransit = true;/.test(f),
      "and the fold's correction road writes the same pair, so both roads make the same shape");
+}
+
+section("Refused — shown so they are not entered twice, never so they can be approved (v309)");
+{
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  w.SALT_CLOUD = true;                                  // the panel is cloud-mode only
+  const d = w.document;
+  const el = d.createElement("div");
+  el.className = "vpart"; el.setAttribute("data-tab", "approve");
+  d.body.appendChild(el);
+  el.innerHTML = w.eval("builders").approve();
+
+  ok(!!d.getElementById("apRef"), "the Approve part draws a container for the refusals");
+
+  /* the shape the worker sends, verbatim */
+  w.eval("AP_DRAFTS = " + JSON.stringify([{
+    id: "d1", status: "pending", collection: "sales",
+    row: { customer: "CD3-SEG", product: "salt", qty: 10, total: 300, cost: 7, date: "2026-08-29" },
+    flags: [], reasoning: "test"
+  }]));
+  w.eval("AP_REFUSED = " + JSON.stringify([{
+    id: "2026-08-29T02:00:00.000Z",
+    entry: { raw: "Fulfilment CC5-OKR 5 unit", type: "AMEND" },
+    why: "a Linked amendment names no figure the drafter can check",
+    party: "CC5-OKR", source: "cloud-drafter", seenAt: "2026-08-29T02:00:01.000Z"
+  }]));
+  w.apDraw();
+
+  const ref = d.getElementById("apRef"), box = d.getElementById("apBox");
+  const txt = ref.textContent.replace(/\s+/g, " ");
+  ok(ref.querySelectorAll(".card").length === 1, "each refusal is one card");
+  ok(/a Linked amendment names no figure/.test(txt), "the card says why it was refused");
+  ok(/cloud-drafter/.test(txt), "and which drafter saw it");
+  ok(/2026-08-29/.test(txt) && !/T02:00:01/.test(txt), "and the date it was seen, as a date and not a timestamp");
+
+  /* THE THREE PROPERTIES OF v309, each asserted rather than assumed */
+  ok(ref.querySelectorAll("button").length === 0, "the panel renders no button");
+  ok(ref.querySelectorAll('button,input,select,textarea,a,[tabindex]:not([tabindex="-1"])').length === 0,
+     "and nothing on it can be reached by a keyboard, so nothing there can be decided even by accident");
+  ok(box.querySelectorAll("button[data-ap]").length === 2,
+     "while the draft beside it keeps its two decisions, so the absence above is the panel and not the render");
+  ok(w.eval("enterCount()") === w.eval("qTx().length + AP_DRAFTS.length"),
+     "the Enter badge counts drafts and the local queue, never a refusal");
+  ok(w.eval("enterCount()") === 1, "one pending draft and one refusal reads as one waiting");
 }
 
 /* ---- done ----------------------------------------------------------------------- */

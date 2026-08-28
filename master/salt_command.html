@@ -1169,6 +1169,23 @@ details.obshush:hover{opacity:.85;}
   .viewsw{display:flex;flex-wrap:nowrap;overflow-x:auto;max-width:100%;scrollbar-width:none;}
   .viewsw::-webkit-scrollbar{display:none;}
   .viewsw button{flex:0 0 auto;}
+  /* v401: THE ENTER FORM'S OWN STRIPS WRAP. The rule three lines up is right for chrome
+     and wrong for a form. Measured at 375px: #wbModeSw was 323px wide holding 584px of
+     buttons, so 261px of the seven modes sat behind a scroller with no bar drawn, which
+     on a desk with no other way to reach them reads as the modes not existing. Wrapping
+     puts all seven on screen, in three rows. THIS RULE IS LOAD-BEARING FOR THE HEIGHT
+     RULE BELOW: raising the buttons to --tap without wrapping makes #wbModeSw worse, a
+     taller strip hiding the same 261px. #wbAssoc is a 13px checkbox INSIDE a 169 by 50px
+     label, so the label is the tap target and the box is not. */
+  .vpart[data-tab="add"] .viewsw{flex-wrap:wrap;overflow-x:visible;}
+  #wbAssocWrap>label{min-height:var(--tap);}
+  /* v401: EVERY BUTTON ON THOSE STRIPS IS A FINGER TARGET, for the same reason the rail
+     got it at v392: 28px tall on a mode, and 32px wide on a quick-set, are a mouse's
+     measurements. Width is worth setting because the strip has 220px of slack, so
+     min-width costs no extra row. SCOPED ONLY BECAUSE .viewsw IS SHARED with #fwdSw on
+     Today's Forward part; these two lines and this comment are absorbed by the central
+     .viewsw button{min-height:var(--tap)} at fold time. The wrap rules above are not. */
+  .vpart[data-tab="add"] .viewsw button{min-height:var(--tap);min-width:var(--tap);}
   .sevh{flex-wrap:wrap;gap:6px;}
   .insight{padding:10px 12px;font-size:12.5px;}
   .dsc,.dsclead{font-size:11.5px;}
@@ -9499,14 +9516,13 @@ function tabPlans(){
                       :'A thin book: every factor below is shrunk towards no effect before it reaches an instruction.');
 
   return `<h1>Whiteboard</h1>
-  <div class="dsc dsclead" style="margin-bottom:12px">What the desk noticed, worked out from the book on this load. Nothing here moves a figure, and nothing here was typed: every item is recomputed each time the page opens, so it cannot go stale or disagree with the tab it came from.</div>
+  <div class="dsc dsclead" style="margin-bottom:12px">What the desk noticed, from the book on this load.</div>
   <div class="kpis k4">
     <div class="kpi ${acts?'r':'g'}"><div class="l">Act</div><div class="v">${acts}</div><div class="n">${acts?'costs something to ignore':'nothing pressing'}</div></div>
     <div class="kpi ${watch?'gold':'g'}"><div class="l">Watch</div><div class="v">${watch}</div><div class="n">${watch?'moving the wrong way':'nothing drifting'}</div></div>
     <div class="kpi p"><div class="l">At stake</div><div class="v">${stake>0.009?fmt0(stake):'&mdash;'}</div><div class="n">where an item names a figure</div></div>
     <div class="kpi"><div class="l">Hushed</div><div class="v">${hushed.length}</div><div class="n">${hushed.length?'dismissed or snoozed':'nothing hidden'}</div></div>
   </div>
-  <div class="insight">A dash means the item names no figure, not that it is worth nothing.</div>
   <div class="insight">Tags: <b>measured</b>, <b>thin</b> (under-sampled), <b>no sample</b>.</div>
   <div class="insight">${esc(rhythmCount)}</div>
   ${rhythmCaveat?`<div class="insight">${esc(rhythmCaveat)}</div>`:''}
@@ -9515,7 +9531,8 @@ function tabPlans(){
   ${hushed.length?`<details class="obsec"><summary>Hushed <span class="q">dismissed or snoozed, kept so the decision is visible</span><span class="ct">${hushed.length}</span></summary><div style="padding-bottom:12px">${hushed.map(obsCard).join('')}</div></details>`:''}
 
   <h2 style="margin-top:26px">Filed by hand <span class="rule"></span></h2>
-  <div class="dsc" style="margin-bottom:10px">The P-series was dropped at v273 because every one of those plans was a restatement of the book at a moment that had passed, and the engine above now derives all of it live. What belongs here is what the book cannot see: a promise made to somebody, a standing intention, a judgement with no figure behind it. ${openN?`${openN} live.`:'Nothing filed.'}</div>
+  <!-- v273 dropped the P-series: every one of those plans restated the book at a moment that had passed, and the engine above derives all of it live. What belongs here is what the book cannot see. The count is the point of this line, so it carries an id: stripMethod deletes a bare .dsc past the first in scope, and it was deleting this one, count and all. -->
+  <div class="dsc" id="planOpenN" style="margin-bottom:10px">${openN?`${openN} live.`:'Nothing filed.'} A promise, an intention, a judgement with no figure behind it.</div>
   ${sec('committed')}${sec('idea')}${sec('done')}${sec('dropped')}
   <div class="card" style="margin-top:14px">
     <div class="cardh" style="margin-bottom:10px">File a plan <span class="sub">tagged as a plan, so it can never fold itself into a figure</span></div>
@@ -12084,7 +12101,7 @@ function tabApprove(){
     </div>`;
   }
   return `<h1>Approve</h1>
-  <div class="dsc dsclead">What you approve is the ROW the drafter wrote, not the entry that was typed: the cost it draws and the margin it makes are the things an entry cannot show.</div>
+  <div class="dsc dsclead">The ROW is approved, not the entry: cost and margin are what an entry cannot show.</div>
   <!-- v385: THIS WAS THE LEAD'S SECOND SENTENCE AND NOBODY HAS READ IT SINCE v372. stripMethod
        cuts a .dsclead to its first sentence WHATEVER ITS LENGTH, so the one line telling a
        person that a tap writes nothing to the book never reached the screen it belongs on. It
@@ -12197,7 +12214,7 @@ function apDraw(){
   else box.innerHTML=AP_DRAFTS.map(apCard).join('');
   box.querySelectorAll('button[data-ap]').forEach(b=>{b.onclick=()=>apDecide(b.dataset.id,b.dataset.ap,b);});
   if(ref)ref.innerHTML=AP_REFUSED.length?`<h2 style="margin-top:18px">Already queued, and not yours to approve <span class="rule"></span></h2><div class="dsc" style="margin-bottom:4px">In hand and needing a person at the laptop; shown so they are not entered twice.</div>`
-    +AP_REFUSED.map(r=>{const e=r.entry||{};return `<div class="card" style="margin-top:8px"><div style="font-size:13px">${esc(e.raw||((e.type||'Entry')+' '+(r.party||'')))}</div><div class="dsc" style="margin-top:5px">${esc(r.why||'')}</div></div>`;}).join(''):'';
+    +AP_REFUSED.map(r=>{const e=r.entry||{},seen=(r.seenAt||'').slice(0,10);return `<div class="card" style="margin-top:8px"><div style="font-size:13px">${esc(e.raw||((e.type||'Entry')+' '+(r.party||'')))}</div><div class="dsc" style="margin-top:5px">${esc(r.why||'')}</div><div class="dsc" style="margin-top:3px;color:var(--dim)">${esc(r.source||'drafter')}${seen?', '+esc(seen):''}</div></div>`;}).join(''):'';
 }
 async function apDecide(id,action,btn){
   if(!id||apBusy[id])return;apBusy[id]=1;
@@ -12293,9 +12310,7 @@ function tabWorkbench(){
               .map(id=>`<option value="${id}">${ID(id)}</option>`).join('');
   const lbl='font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:var(--dim)';
   return `<h1>Transaction</h1>
-  <div class="dsc dsclead">Nothing here books a figure: an entry is queued, drafted into a row, and reaches the ledger only once that row is approved.</div>
-  <h2>Record a transaction <span class="rule"></span></h2>
-  <div class="dsc" style="margin-bottom:9px">One form for every entry: a new order, an amendment to one, or a stock count.</div>
+  <div class="dsc dsclead">Queued for approval, never booked here.</div>
   <div class="card">
     <span class="viewsw" id="wbModeSw"><button data-m="new" class="on">New order</button><button data-m="amend">Amend an order</button><button data-m="count">Stock count</button><button data-m="loss">Self-use or loss</button><button data-m="lost">Turned away</button><button data-m="contact">Follow-up</button>${cloudMode()?'<button data-m="addid">Add ID</button>':''}</span>
     <!-- v275: WHICH BOOK THE ENTRY LANDS ON. Until now there was no such control and no
@@ -12323,7 +12338,7 @@ function tabWorkbench(){
            a lot into an order without saying so. -->
       <div class="dsc" id="wbFullRow" style="display:flex;align-items:center;gap:11px;flex-wrap:wrap;margin-bottom:12px">
         <button class="vbtn" type="button" onclick="ledNew()">Open the full sheet</button>
-        <span style="flex:1 1 240px;min-width:0">Same order, every field the book holds: cost, the four dates, the settlement flags, the row note. It queues for approval exactly as this form does.</span>
+        <span style="flex:1 1 240px;min-width:0">Cost, the four dates, the settlement flags, the row note.</span>
       </div>
       <div class="qrow" style="margin-bottom:10px">
         <div class="qfield"><label>Direction</label><span class="viewsw" id="wbDirSw" style="display:flex"><button data-d="SELL" class="on">Sell</button><button data-d="BUY">Buy</button></span></div>
@@ -12335,8 +12350,8 @@ function tabWorkbench(){
       <div class="qrow" style="margin-bottom:10px">
         <div class="qfield" style="flex:1 1 100%">
           <div class="dsc">Not in the list? ${cloudMode()
-            ?'Use <b>Add ID</b> above: a code typed by hand, queued for approval like any other entry. The name is typed into the directory at the laptop, where names live.'
-            :'Open <b>Names &amp; IDs</b> and use <b>+ Add ID</b>. Give the name and the place; the desk mints the code it will carry for good, selectable here at once.'}</div></div>
+            ?'Use <b>Add ID</b> above: a code typed by hand. The name goes into the directory at the laptop.'
+            :'Open <b>Names &amp; IDs</b> and use <b>+ Add ID</b>: give the name and the place, and the code is selectable here at once.'}</div></div>
       </div>
       <div class="qrow" style="margin-bottom:10px">
         <div class="qfield qkg"><label>Quantity (unit)</label><input id="wbQty" type="number" step="0.5" min="0" inputmode="decimal"></div>
@@ -12356,8 +12371,7 @@ function tabWorkbench(){
         <div class="qfield qkg"><label>Cash received now (RM)</label><input id="wbCash" type="number" step="1" min="0" value="0" inputmode="decimal">
           <span class="viewsw mini" id="wbCashQ" style="margin-top:6px"><button type="button" tabindex="-1" data-c="none">None</button><button type="button" tabindex="-1" data-c="half">Half</button><button type="button" tabindex="-1" data-c="full">Full</button></span></div>
         <div class="qfield" id="wbHandCell"><label>Handover</label><select id="wbHand">
-          <option value="">Not stated</option><option value="collected">Collected by the customer</option><option value="delivered">Delivered by us</option></select>
-          <div class="dsc" style="margin-top:6px;font-size:10.5px">What the delivered share is measured from.</div></div>
+          <option value="">Not stated</option><option value="collected">Collected by the customer</option><option value="delivered">Delivered by us</option></select></div>
       </div>
       <div id="wbAssocWrap" style="margin-bottom:4px">
         <label style="font-size:12px;color:var(--mut);display:inline-flex;align-items:center;gap:7px;cursor:pointer"><input type="checkbox" id="wbAssoc" style="width:auto"> Sold through an associate?</label>
@@ -12370,7 +12384,7 @@ function tabWorkbench(){
           </div>
           <div class="qrow" id="wbDownRow">
             <div class="qfield"><label>End customer</label><select id="wbDown"><option value="">Onward sale, buyer not known &mdash; books to the reseller&rsquo;s own -R account</option>${dopts}</select>
-              <div class="dsc" style="margin-top:6px;font-size:11px">Name one only if <b>you</b> delivered to them. Otherwise it books to that reseller&rsquo;s own <b>-R account</b>, so his own buying still reads apart from what he moves onward.</div></div>
+              <div class="dsc" style="margin-top:6px;font-size:11px">Name one only if <b>you</b> delivered to them. Otherwise it books to that reseller&rsquo;s own <b>-R account</b>.</div></div>
             <div class="qfield"></div>
             <div class="qfield"></div>
           </div>
@@ -13886,10 +13900,10 @@ function wbApply(){
   if(prow)prow.style.display=WB_NO_PROD[wbMode]?'none':'';
   const pnote=wbEl('wbProdNote');
   if(pnote)pnote.innerHTML=WB_NO_PROD[wbMode]?''
-    :(wbMode==='count'?`Counts <b>${esc(wbProdName())}</b> only. Each product has its own shelf, so a count never touches another book.`
+    :(wbMode==='count'?`Counts <b>${esc(wbProdName())}</b> only; each product has its own shelf.`
      :wbMode==='loss'?`Comes off the <b>${esc(wbProdName())}</b> shelf.`
      :wbMode==='lost'?`Demand for <b>${esc(wbProdName())}</b> that was not met.`
-     :`Books to the <b>${esc(wbProdName())}</b> book. An entry lands where this says, not where the rail happens to be pointing.`);
+     :`Books to the <b>${esc(wbProdName())}</b> book, not where the rail points.`);
   /* the turned-away list is every customer plus a walk-up, because the person who
      asked and left is often someone with no code yet. Follow-up is customers only. */
   const custOpts=roster.filter(id=>!id.startsWith('S')).map(id=>`<option value="${id}">${codeOf(id)}</option>`).join('');
