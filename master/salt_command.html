@@ -6243,6 +6243,25 @@ function selfUseSplit(){
   const logged=+(R.sample+R.spillage+R.personal+R.other).toFixed(2);
   return Object.assign(R,{logged:logged,gap:+(selfUse-logged).toFixed(2)});
 }
+/* ============ THE HEAD SITS ABOVE THE REPEAT, ONCE (v401) ============
+   perProduct repeats its builder per product, so an <h1> inside it renders twice: two
+   "Analysis" headings and two copies of the standing lead, which is a duplicate h1 as well
+   as duplicate prose. It follows the shape financials already uses, consoBlock() before
+   perProduct(). The lead is ONE sentence by construction, because stripMethod only cuts a
+   .dsclead inside a .prodblock and this one now sits outside every block.
+
+   THE HOIST TOOK THE KEEPER OUT OF EACH BLOCK, SO THE SWEEP IS ARMED, NOT ABSENT. Measured
+   29 Aug 2026 after the hoist: salt leaves 2 candidates and oil 1, and EVERY one of them is
+   an .insight, which the deletion pass skips. So the cull deletes nothing today and the part
+   measures as sweep-free. Add ONE figure-less .dsc to either block and it wakes: oil crosses
+   the two-candidate early-return, salt already runs, and in both cases blocks[0] is an
+   .insight, so the block deleted is the one you just wrote. On this part the sweep can only
+   ever eat NEW copy, never anything established. New prose here must therefore be an
+   .insight, or sit inside a <details>, or carry an RM/unit/% figure. */
+function anaHead(){
+  return `<h1>Analysis</h1>
+  <div class="dsc dsclead" style="margin-bottom:12px">Observed trade only: no fitted curve, no elasticity, no seasonality.</div>`;
+}
 function tabAnalysis(){
   const c=pxCost(),sg=pxSignals(),mk=pxMarket(),cv=coverStats();
   const bc=byCustomer().slice().sort((a,b)=>b.rev-a.rev);
@@ -6256,9 +6275,7 @@ function tabAnalysis(){
   if(Math.abs(su.gap)>0.005)suBits.push(kg(Math.abs(su.gap))+(su.gap>0?' unattributed':' over-attributed'));
   const sh=stockHistory();
   const dry=sh.filter(r=>r.lvl<=0.05).length;
-  return `<h1>Analysis</h1>
-  <div class="dsc dsclead" style="margin-bottom:12px">Questions the desk has only ever answered in prose. Observed trade throughout: <b>no fitted curve, no elasticity and no seasonality</b>. Where a chart needs an assumption it is named on the chart rather than hidden in it.</div>
-  <div class="kpis k4">
+  return `<div class="kpis k4">
     <div class="kpi gold"><div class="l">Gross margin</div><div class="v">${fmt0(grossMargin)}</div><div class="n">${marginPct.toFixed(1)}% of ${fmt0(revTotal)}</div></div>
     <div class="kpi ${Math.abs(su.gap)>0.005?'r':'p'}"><div class="l">Out without a sale</div><div class="v">${fmt0(shrinkRM)}</div><div class="n">${kg(selfUse)} at ${fmt(wavgBuy)}${suBits.length?', '+suBits.join(', '):''}</div></div>
     <div class="kpi ${dry>0?'r':'g'}"><div class="l">Days with an empty shelf</div><div class="v">${dry}</div><div class="n">of ${sh.length} trading days reconstructed</div></div>
@@ -6293,8 +6310,7 @@ function tabAnalysis(){
       seen.push(t);
       cl.forEach(c=>{if(c.verdict==='unknown'||c.verdict==='differs')bad.push({t:t,c:c});});}));
     if(!seen.length)return '';
-    if(!bad.length)return `<div class="pend" style="margin-top:14px"><h3>Every stated correction reads back against its row <span class="cd">${seen.length} corrected</span></h3>
-      <div class="dsc">Each names a field the book can set, and the row carries the value it says it set. A claim made before a later step is not re-read: a fulfilment may legitimately have moved the same figure since.</div></div>`;
+    if(!bad.length)return `<div class="pend" style="margin-top:14px"><h3>Every stated correction reads back against its row <span class="cd">${seen.length} corrected</span></h3></div>`;
     return `<div class="pend def" style="margin-top:14px"><h3>${bad.length} stated correction${bad.length===1?'':'s'} do not hold <span class="cd crim">of ${seen.length} corrected</span></h3>
       <div class="insight">A row asserting a change it did not make is worse than a refusal, because every later reader takes it as done.</div>
       <table style="margin-top:10px"><thead><tr><th class="l">Row</th><th class="l">Party</th><th class="l">Stated</th><th class="l">What is wrong</th></tr></thead><tbody>
@@ -6306,11 +6322,9 @@ function tabAnalysis(){
       </tbody></table></div>`;})()}
 
   <h2 style="margin-top:20px">Where the money goes <span class="rule"></span></h2>
-  <div class="dsc" style="margin-bottom:9px">Revenue down to margin, then the two losses that sit outside it. <b>Shrinkage is shown beside the bridge, not inside it</b>, because it is already paid for in the cost of goods; putting it in the bridge would deduct it twice. The bar is what it would be worth if it were recovered.</div>
   <div class="chartbox"><canvas id="anBridge"></canvas></div>
 
   <h2 style="margin-top:20px">The board against what people actually pay <span class="rule"></span></h2>
-  <div class="dsc" style="margin-bottom:9px">Every priced order as a dot, with the current board drawn through it. A dot <b>under</b> the line is an order that would be quoted higher today. This is plans P2, P3 and P5 in one picture, and it is the chart to argue with rather than the averages.</div>
   <div class="chartbox"><canvas id="anScatter"></canvas></div>
   ${(()=>{
     /* ============ THE LINE THROUGH THE DOTS IS NOT ALWAYS THE BOARD ============
@@ -6338,55 +6352,56 @@ function tabAnalysis(){
   })()}
 
   <h2 style="margin-top:20px">The shelf, reconstructed <span class="rule"></span></h2>
-  <div class="dsc" style="margin-bottom:9px">Units on hand each day, rebuilt from lots received and units handed over, against the ${kg(RULES.reorderKg)} reorder trigger. It ties to the desk at both ends: it starts at the stated opening and finishes at the counted <b>${kg(currentStock)}</b>. Shrinkage is a plug with no date on it, so it is <b>spread evenly across the days</b>; the shape is right and any single day is not.</div>
+  <div class="dsc" style="margin-bottom:9px">Rebuilt daily against the ${kg(RULES.reorderKg)} trigger, ending on the counted <b>${kg(currentStock)}</b>. Shrinkage is undated and spread evenly, so the shape is right and a single day is not.</div>
   ${(()=>{const neg=sh.filter(r=>r.raw<-0.01);
     const d=sales.map(txDates), ds={};d.forEach(x=>ds[x.dSrc]=(ds[x.dSrc]||0)+1);
     if(neg.length)return `<div class="pend def" style="margin-bottom:11px"><h3>The line goes below zero on ${neg.length} days, and that is a finding <span class="cd crim">low ${kg(Math.min.apply(null,sh.map(r=>r.raw)))}</span></h3>
-      <div class="insight">Negative salt is impossible, so those days are a <b>dating artefact rather than a stockout</b>: an order with no delivery date falls back to its order date, which can put units out of the door before the lot supplying them arrived, and a <b>deliveredOn</b> on those orders corrects the line.</div></div>`;
-    return `<div class="pend" style="margin-bottom:11px"><h3>The walk is clean <span class="cd">low ${kg(Math.min.apply(null,sh.map(r=>r.raw)))}</span></h3>
-      <div class="dsc">It never goes below zero and it finishes on the counted <b>${kg(currentStock)}</b>, so every day is physically possible. It got there on <b>${ds.trail||0} orders dated from the amendment trail</b> and <b>${ds.stated||0} from an explicit deliveredOn</b> added where the date had only ever existed in a note. The remaining <b>${ds.assumed||0} are assumed</b>, meaning nothing was recorded and nothing is known to have moved later; each one is a small chance of a day's error and none of them currently breaks the line.</div></div>`;})()}
+      <div class="insight">A dating artefact, not a stockout: add a <b>deliveredOn</b> to the orders that fall back to their order date.</div></div>`;
+    /* THE CLEAN WALK IS PROVENANCE, SO IT FOLDS, and the summary still carries the answer.
+       Nothing is deleted to fold it: the three date sources are the sentence they always were,
+       and prose inside a details is exempt from stripMethod, so it survives verbatim. */
+    return `<details class="obsec" style="margin-bottom:11px"><summary>The walk is clean <span class="q">it never goes below zero</span><span class="ct">low ${kg(Math.min.apply(null,sh.map(r=>r.raw)))}</span></summary>
+      <div class="dsc" style="padding-bottom:12px">It finishes on the counted <b>${kg(currentStock)}</b>, so every day is physically possible. It got there on <b>${ds.trail||0} orders dated from the amendment trail</b> and <b>${ds.stated||0} from an explicit deliveredOn</b> added where the date had only ever existed in a note. The remaining <b>${ds.assumed||0} are assumed</b>, meaning nothing was recorded and nothing is known to have moved later; each one is a small chance of a day's error and none of them currently breaks the line.</div></details>`;})()}
   <div class="chartbox"><canvas id="anStock"></canvas></div>
 
-  <h2 style="margin-top:20px">How long between agreeing, delivering and being paid <span class="rule"></span></h2>
-  <div class="dsc" style="margin-bottom:9px">Now that orders carry a delivery and a payment date, the desk can measure its own working capital rather than describe it. A positive lag is days after the order was agreed. Orders where the date is assumed contribute a zero lag, so <b>these are floors, not averages</b>: the true gaps can only be longer.</div>
-  ${(()=>{const rows=pSales(PROD).map(s=>({s,d:txDates(s)})).filter(x=>x.d.dOn||x.d.pOn)
+  ${(()=>{
+    /* WORKING CAPITAL IS STUDY, SO IT FOLDS, AND ITS HEADING IS THE SUMMARY (v401). It was
+       four KPIs and a row per order, the longest open block on the part, above a caveat the
+       reader has to accept before any of it means anything. Folded, the collapsed state still
+       answers the question the heading asks, and the caveat is read at the moment the table
+       is. It carries no canvas, which is why it may fold at all: a Chart.js canvas sized
+       inside a closed details bakes the wrong width. */
+    const rows=pSales(PROD).map(s=>({s,d:txDates(s)})).filter(x=>x.d.dOn||x.d.pOn)
       .map(x=>({c:x.s.customer,date:x.s.date,rm:x.s.total,
         dl:lagDays(x.s.date,x.d.dOn),pl:lagDays(x.s.date,x.d.pOn),
         gap:(x.d.dOn&&x.d.pOn)?lagDays(x.d.dOn,x.d.pOn):null,dSrc:x.d.dSrc,pSrc:x.d.pSrc}));
     const dl=rows.filter(r=>r.dl!=null),pl=rows.filter(r=>r.pl!=null);
     const avg=a=>a.length?+(a.reduce((t,x)=>t+x,0)/a.length).toFixed(1):0;
     const slow=rows.filter(r=>r.dl>0||r.pl>0).sort((a,b)=>(b.pl||0)-(a.pl||0)||(b.dl||0)-(a.dl||0));
-    return `<div class="kpis k4" style="margin-bottom:12px">
+    return `<details class="obsec" style="margin-top:20px"><summary>How long between agreeing, delivering and being paid <span class="q">floors, not averages</span><span class="ct">${avg(pl.map(r=>r.pl))}d to payment</span></summary>
+    <div style="padding-bottom:12px">
+    <div class="dsc" style="margin-bottom:9px">Days after the order was agreed. A date the desk assumed rather than read is marked * and contributes a zero lag, so these are floors. Red marks payment after delivery.</div>
+    <div class="kpis k4" style="margin-bottom:12px">
       <div class="kpi"><div class="l">Order to delivery</div><div class="v">${avg(dl.map(r=>r.dl))}<span style="font-size:12px;color:var(--mut)">d</span></div><div class="n">across ${dl.length} delivered orders, longest ${Math.max.apply(null,dl.map(r=>r.dl))}d</div></div>
       <div class="kpi gold"><div class="l">Order to payment</div><div class="v">${avg(pl.map(r=>r.pl))}<span style="font-size:12px;color:var(--mut)">d</span></div><div class="n">across ${pl.length} settled orders, longest ${Math.max.apply(null,pl.map(r=>r.pl))}d</div></div>
       <div class="kpi ${rows.filter(r=>r.gap>0).length?'r':'g'}"><div class="l">Paid after delivery</div><div class="v">${rows.filter(r=>r.gap>0).length}</div><div class="n">orders where salt went first, ${fmt0(rows.filter(r=>r.gap>0).reduce((a,r)=>a+r.rm,0))} exposed</div></div>
       <div class="kpi p"><div class="l">Same day</div><div class="v">${rows.filter(r=>r.dl===0&&r.pl===0).length}</div><div class="n">agreed, delivered and paid together</div></div>
     </div>
-    ${slow.length?`<div class="card"><table><thead><tr><th class="l">Order</th><th class="l">Party</th><th>Value</th><th>To delivery</th><th>To payment</th><th>Salt before cash</th><th class="l">Dates from</th></tr></thead><tbody>
+    ${slow.length?`<div class="card"><table><thead><tr><th class="l">Order</th><th class="l">Party</th><th>Value</th><th>Deliver</th><th>Paid</th></tr></thead><tbody>
       ${slow.map(r=>`<tr><td class="l">${r.date}</td><td class="l mono">${ID(r.c)}</td><td>${fmt0(r.rm)}</td>
-        <td>${r.dl==null?'&mdash;':r.dl+'d'}</td><td>${r.pl==null?'&mdash;':r.pl+'d'}</td>
-        <td style="color:${r.gap>0?'var(--crim)':'var(--dim)'}">${r.gap==null?'&mdash;':r.gap>0?r.gap+'d':'no'}</td>
-        <td class="l" style="color:var(--mut)">${r.dSrc}${r.pSrc!==r.dSrc?' / '+r.pSrc:''}</td></tr>`).join('')}
-    </tbody></table></div>`:'<div class="card"><div class="dsc">Nothing has a recorded lag.</div></div>'}`;})()}
-
-  <h2 style="margin-top:20px">Who the book leans on <span class="rule"></span></h2>
-  <div class="dsc" style="margin-bottom:9px">Revenue by buyer, largest first, with the cumulative share running across. Where the line reaches 80% is how few customers the desk actually depends on.</div>
-  <div class="chartbox"><canvas id="anPareto"></canvas></div>
+        <td>${r.dl==null?'&mdash;':r.dl+'d'+(r.dSrc==='assumed'?'*':'')}</td>
+        <td style="color:${r.gap>0?'var(--crim)':'inherit'}">${r.pl==null?'&mdash;':r.pl+'d'+(r.pSrc==='assumed'?'*':'')}</td></tr>`).join('')}
+    </tbody></table></div>`:'<div class="card"><div class="dsc">No order took longer than a day at either step.</div></div>'}
+    </div></details>`;})()}
 
   <h2 style="margin-top:20px">Has buying in size actually got cheaper <span class="rule"></span></h2>
-  <div class="dsc" style="margin-bottom:9px">Every lot ever bought: size across, rate paid up, bubble by ringgit committed. The defaulted lot is marked. If size bought cheaper, the cloud should fall to the right, and plan P3 turns on whether the saving is bigger than the discount given away to sell it.</div>
-  <div class="chartbox"><canvas id="anBuys"></canvas></div>
-
-  <h2 style="margin-top:20px">When each customer buys <span class="rule"></span></h2>
-  <div class="dsc" style="margin-bottom:9px">One row per buyer, one dot per order, sized by value. Gaps are the point: a row that stops is a customer who stopped, and the desk had no way to see that at a glance before.</div>
-  <div class="chartbox tall"><canvas id="anCadence"></canvas></div>
-  <div class="dsc" style="margin-top:14px;padding-top:13px;border-top:1px solid var(--line)"><b>Nothing on this tab books anything.</b> Every figure is read from the ledger as it stands, including uncommitted entries, exactly as the rest of the desk reads it.</div>`;
+  <div class="chartbox"><canvas id="anBuys"></canvas></div>`;
 }
 /* v281: the anCharts registry is gone; a chart is keyed to its canvas via freshChart. */
 function drawAnalysis(){
   if(!blkEl('anBridge'))return;
   ensureChart(ok=>{
-    if(!ok){['anBridge','anScatter','anStock','anPareto','anBuys','anCadence'].forEach(id=>{const e=blkEl(id);
+    if(!ok){['anBridge','anScatter','anStock','anBuys'].forEach(id=>{const e=blkEl(id);
       chartEmpty(e,'Chart unavailable. Every figure it draws is in the tables on this tab.');});return;}
     /* WHICH CHART IS BEING BUILT. Set at the head of each section rather than at its freshChart
        call, so a throw in the figures a chart is built from is attributed to that chart and not
@@ -6403,7 +6418,7 @@ function drawAnalysis(){
       // 1. margin bridge. Floating bars, so each step starts where the last one ended.
       const cogsV=+cogs.toFixed(2), gm=+grossMargin.toFixed(2), shrinkRM=+(selfUse*wavgBuy).toFixed(2);
       freshChart(blkEl('anBridge'),{type:'bar',
-        data:{labels:['Revenue','Cost of goods','Gross margin','Shrinkage, if recovered'],
+        data:{labels:['Revenue','Cost of goods','Gross margin',['Shrinkage, if recovered','already inside cost of goods']],
           datasets:[{data:[[0,revTotal],[gm,revTotal],[0,gm],[gm,gm+shrinkRM]],
             backgroundColor:['#7fd7e8','#ff7a8a','#e8c66b','rgba(176,124,255,.45)'],
             borderColor:['#7fd7e8','#ff7a8a','#e8c66b','#b3a6f5'],borderWidth:1,borderRadius:6}]},
@@ -6445,23 +6460,10 @@ function drawAnalysis(){
           scales:{x:{grid:{color:GRID},ticks:{color:TICK,maxTicksLimit:14}},
                   y:{grid:{color:GRID},ticks:{color:TICK,callback:v=>v+' unit'}}}}});
 
-      cur='anPareto';
-      // 4. pareto
-      const bc=byCustomer().slice().sort((a,b)=>b.rev-a.rev),tot=bc.reduce((a,x)=>a+x.rev,0)||1;
-      let run=0;const cum=bc.map(x=>{run+=x.rev;return +(run/tot*100).toFixed(1);});
-      freshChart(blkEl('anPareto'),{
-        data:{labels:bc.map(x=>codeOf(x.id)),datasets:[
-          {type:'bar',label:'Revenue',data:bc.map(x=>+x.rev.toFixed(2)),backgroundColor:'#b3a6f5',borderRadius:5,yAxisID:'y'},
-          {type:'line',label:'Cumulative share',data:cum,borderColor:'#e8c66b',backgroundColor:'transparent',pointRadius:2,borderWidth:2,yAxisID:'y1',tension:.2}]},
-        options:{responsive:true,maintainAspectRatio:false,
-          plugins:{legend:{display:true,labels:{color:TICK,boxWidth:12,font:{size:11}}},
-            title:{display:true,text:'Revenue by buyer, with cumulative share',color:INK,font:{size:12}}},
-          scales:{x:{grid:{color:GRID},ticks:{color:TICK,maxRotation:70,minRotation:45,font:{size:9}}},
-                  y:{grid:{color:GRID},ticks:{color:TICK,callback:v=>'RM '+v},position:'left'},
-                  y1:{grid:{display:false},ticks:{color:'#e8c66b',callback:v=>v+'%'},position:'right',min:0,max:100}}}});
-
       cur='anBuys';
-      // 5. buy rate against lot size
+      /* 4. buy rate against lot size. WHAT THE BUBBLE MEANS IS ON THE CHART, not in a
+         paragraph above it: the title carries it, so it cannot be parted from the picture
+         it explains. */
       const buys=purchases.filter(p=>!p.pending&&p.qty>0).map(p=>({x:p.qty,y:+(p.total/p.qty).toFixed(2),
         r:6+Math.sqrt(p.total/Math.max(1,Math.max.apply(null,purchases.map(z=>z.total))))*14,
         d:p.date,who:p.supplier,def:!!p.defaulted}));
@@ -6471,32 +6473,17 @@ function drawAnalysis(){
           {label:'Defaulted',data:buys.filter(b=>b.def),backgroundColor:'rgba(255,93,115,.35)',borderColor:'#ff7a8a',borderWidth:1.5}]},
         options:{responsive:true,maintainAspectRatio:false,
           plugins:{legend:{display:true,labels:{color:TICK,boxWidth:12,font:{size:11}}},
-            title:{display:true,text:'Buying rate against lot size',color:INK,font:{size:12}},
+            title:{display:true,text:'Buying rate against lot size, bubble by ringgit committed',color:INK,font:{size:12}},
             tooltip:{callbacks:{label:i=>`${i.raw.d} ${i.raw.x} unit at RM ${i.raw.y}/unit`}}},
           scales:{x:{grid:{color:GRID},ticks:{color:TICK,callback:v=>v+' unit'}},
                   y:{grid:{color:GRID},ticks:{color:TICK,callback:v=>'RM '+v}}}}});
-
-      cur='anCadence';
-      // 6. cadence: one row per buyer, one dot per order
-      const ids=bc.map(x=>x.id);
-      const maxT=Math.max.apply(null,pricedSales.map(s=>s.total||0))||1;
-      const cad=pricedSales.filter(s=>!s.cancelled&&s.date&&ids.indexOf(s.customer)>=0)
-        .map(s=>({x:s.date,y:codeOf(s.customer),r:5+Math.sqrt((s.total||0)/maxT)*13,t:s.total,q:s.qty}));
-      freshChart(blkEl('anCadence'),{type:'bubble',
-        data:{datasets:[{label:'Orders',data:cad,backgroundColor:'rgba(99,230,224,.35)',borderColor:'#7fd7e8',borderWidth:1.4}]},
-        options:{responsive:true,maintainAspectRatio:false,
-          plugins:{legend:{display:false},title:{display:true,text:'Order dates by buyer, sized by value',color:INK,font:{size:12}},
-            tooltip:{callbacks:{label:i=>`${i.raw.y} on ${i.raw.x}: ${i.raw.q} unit, RM ${i.raw.t}`}}},
-          scales:{x:{type:'category',labels:[...new Set(pricedSales.map(s=>s.date).filter(Boolean))].sort(),
-                     grid:{color:GRID},ticks:{color:TICK,maxRotation:70,minRotation:45,font:{size:9}}},
-                  y:{type:'category',labels:ids.map(codeOf).reverse(),grid:{color:GRID},ticks:{color:TICK,font:{size:10}}}}}});
     }catch(e){
-      /* ONE try AROUND SIX CHARTS: a throw in the second takes the other four with it, and
-         the empty catch took them in silence. Probed with a Chart that refuses, all six boxes
-         on both product blocks came back blank with nothing said on any of them. It names the
+      /* ONE try AROUND FOUR CHARTS: a throw in the second takes the rest with it, and the
+         empty catch took them in silence. Probed with a Chart that refuses, every box on
+         both product blocks came back blank with nothing said on any of them. It names the
          one that stopped and says plainly that the rest never ran, which is the truth of a
          shared try and is better than six identical notices implying six separate faults. */
-      const ids=['anBridge','anScatter','anStock','anPareto','anBuys','anCadence'],i=Math.max(0,ids.indexOf(cur));
+      const ids=['anBridge','anScatter','anStock','anBuys'],i=Math.max(0,ids.indexOf(cur));
       chartEmpty(blkEl(ids[i]),'This chart could not be drawn: '+((e&&e.message)||e)+'. Every figure it draws is in the tables on this part.');
       ids.slice(i+1).forEach(id=>chartEmpty(blkEl(id),'Not drawn: the chart above it stopped first. Every figure it draws is in the tables on this part.'));
     }
@@ -14225,7 +14212,7 @@ function setProdView(pr){
   PROD=pr; try{localStorage.setItem('saltProd',pr);}catch(e){}
   recompute(); drawProdSw(); render();
 }
-const builders={today:tabToday,forward:tabForward,sourcing:()=>srcHead()+perProduct(tabSourcing,{skipEmpty:true}),analysis:()=>perProduct(tabAnalysis),map:tabMap,overview:tabOverview,inventory:()=>invHead()+perProduct(tabInventory),financials:()=>consoBlock()+consoCashBlock()+perProduct(tabFinancials),ledger:tabLedger,concentration:tabConcentration,network:tabNetwork,receivables:()=>consoOrderBlock()+perProduct(tabReceivables),add:tabWorkbench,pricing:()=>pxHead()+perProduct(tabPricing),plans:tabPlans,approve:tabApprove};
+const builders={today:tabToday,forward:tabForward,sourcing:()=>srcHead()+perProduct(tabSourcing,{skipEmpty:true}),analysis:()=>anaHead()+perProduct(tabAnalysis),map:tabMap,overview:tabOverview,inventory:()=>invHead()+perProduct(tabInventory),financials:()=>consoBlock()+consoCashBlock()+perProduct(tabFinancials),ledger:tabLedger,concentration:tabConcentration,network:tabNetwork,receivables:()=>consoOrderBlock()+perProduct(tabReceivables),add:tabWorkbench,pricing:()=>pxHead()+perProduct(tabPricing),plans:tabPlans,approve:tabApprove};
 /* ============ SEVEN VIEWS OVER FIFTEEN TABS (v341, move 4 of the rebuild) ============
    The fifteen tabs were fifteen reports stacked: a megabyte to open for one figure, with the
    method prose standing open on every one. A view leads with one tab open, folds that tab's
