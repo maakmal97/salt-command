@@ -291,7 +291,14 @@ function committed() {
   for (const id of ids) {
     const cur = query("SELECT status,committed_at FROM draft WHERE id=" + q(id));
     if (!cur) return;
-    if (!cur.length) { fail("no such draft: " + id); continue; }
+    /* v391: A FOLD STATED DIRECTLY HAS NO DRAFTS BEHIND IT, AND THAT IS NOT A FAILURE.
+       This step exists to mark the drafts a fold consumed. When he states the day's trade
+       instead of queueing it, the fold writes rows with no draft ids that mean anything, and
+       CI then tried to mark them and exited 1 on every push from 27 Aug. That failure sat
+       BEFORE the D1 re-seed in the same job, so the mirror went a week stale behind it: one
+       stale file, an inbox of failure mail, and a drafter reading a book from before the
+       26th. "There was no draft" is a valid answer to "mark the draft". */
+    if (!cur.length) { ok(id + ": no draft behind it, which is what a fold stated directly looks like"); continue; }
     if (cur[0].status !== "approved") { fail(id + " is " + cur[0].status + ", not approved; refusing to mark it committed"); continue; }
     if (cur[0].committed_at) { ok(id + " was already marked committed at " + cur[0].committed_at); continue; }
     const r = wrangler(["d1", "execute", DB, WHERE, "--json", "--command",
