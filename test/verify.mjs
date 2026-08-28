@@ -1953,14 +1953,49 @@ section("Orders and money — whole-book figures sit above the repeat, and once 
   const rec = html("builders.receivables()");
   ok(count(rec, 'class="ct zero"') === 0 && count(rec, ">None.<") === 0,
     "every fold on the Order book has a row behind it");
+  /* PER HALF, NOT PER PART. The rule is v385's unchanged: never a heading over nothing.
+     The old test read the whole part, so it could only ask the question once, and a book
+     with customers open and no supplier bill answered "it has folds" and was passed while
+     the Suppliers heading stood over four KPIs reading zero. Salt is in that state. Split
+     on the Suppliers heading and ask each half; the whole-part empty case is one half with
+     no heading at all, so the same rule covers it. */
   for (const pr of read("PROD_IDS")) {
     w.eval(`PROD=${JSON.stringify(pr)};recompute();`);
     const b = html("tabReceivables()");
-    ok(count(b, '<details class="obsec"') > 0 ? count(b, "Nothing open") === 0 : count(b, "Nothing open") === 1,
-      `${pr}: the book either lists what is open or says in one line that nothing is`);
+    const halves = b.split(/<h2[^>]*>Suppliers /);
+    halves.forEach((half, i) => {
+      const folds = count(half, '<details class="obsec"'), nil = count(half, "Nothing open");
+      const which = halves.length === 1 ? "the part" : i === 0 ? "customers" : "suppliers";
+      ok(nil <= 1 && (folds > 0) !== (nil === 1),
+        `${pr}: ${which} either lists what is open or says in one line that nothing is`);
+    });
   }
   w.eval(`PROD=${JSON.stringify(keep)};recompute();`);
   ok(!/>\s*(undefined|NaN|Infinity)/.test(rec + fin), "neither part renders an undefined, a NaN or an infinity");
+  try { w.close(); } catch (e) { }
+}
+
+section("Orders and money — a book with no month reports zeros, not RM NaN");
+{
+  /* REACHABLE, and it shipped: a product declared on the book before its first sale.
+     finRows() rightly returns no month, the FY reduce was seeded with {}, so every fy field
+     came back undefined and fmt0(undefined) is "RM NaN". Twelve of those, beside two
+     "null% of revenue" where ifrsPL() deliberately returns null at zero revenue and the two
+     consumers interpolated it raw. The book trading next to it was unaffected, which is why
+     it went unseen. Simulated by removing one book's sales and leaving the other whole. */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  const gone = w.eval(`(()=>{const b=sales.length;
+    for(let i=sales.length-1;i>=0;i--) if((sales[i].product||'')==='oil') sales.splice(i,1);
+    recompute(); return b-sales.length;})()`);
+  ok(gone > 0, `the probe emptied one book (${gone} rows) and left the other trading`);
+  w.eval("PROD='oil';recompute();");
+  ok(w.eval("finRows().length") === 0, "the empty book reports no month, which is the correct answer");
+  ok(String(w.eval("JSON.stringify(ifrsPL().grossPct)")) === "null", "and no percentage of no revenue is invented");
+  const fin = String(w.eval("builders.financials()"));
+  ok(!/RM\s*NaN/.test(fin), "so the part states RM 0, never RM NaN");
+  ok(!/null%/.test(fin), "and says in words that there is no revenue to measure against");
+  ok(!/>\s*(undefined|NaN|Infinity)/.test(fin), "and nothing else on the part goes undefined");
   try { w.close(); } catch (e) { }
 }
 
