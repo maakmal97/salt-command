@@ -163,7 +163,7 @@ h2 .rule{flex:1;height:1px;background:linear-gradient(90deg,var(--acc) -40%,var(
 .kpi{position:relative;border-radius:14px;padding:14px 15px;background:linear-gradient(160deg,var(--card2),var(--card));border:1px solid var(--line);overflow:hidden;}
 .kpi::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--ice);}
 .kpi.g::before{background:var(--gold);}.kpi.r::before{background:var(--crim);}.kpi.p::before{background:var(--vio);}.kpi.gold::before{background:var(--grn);}
-.cardh{font-size:13px;font-weight:800;color:var(--ink);margin-bottom:9px;}.cardh .sub{font-size:10px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;color:var(--dim);margin-left:7px;}
+.cardh{font-size:13px;font-weight:800;color:var(--ink);margin-bottom:9px;}.cardh .sub{font-size:10px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;color:var(--dim);margin-left:7px;display:inline;width:auto;padding:0;border:none;cursor:auto;}
 .kpi .l{font-size:10px;letter-spacing:.8px;text-transform:uppercase;color:var(--dim);}
 .kpi .v{font-size:22px;font-weight:800;margin-top:5px;letter-spacing:-.4px;}
 .kpi .n{font-size:11px;color:var(--mut);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -419,7 +419,7 @@ details.lmc[open]>summary .chev{transform:rotate(90deg);}
 .dsc{font-size:12px;color:var(--mut);line-height:1.5;}
 .attn{color:var(--amber);font-weight:700;}.risk{color:var(--crim);font-weight:700;}
 details.obsec{background:linear-gradient(160deg,var(--card2),var(--card));border:1px solid var(--line);border-radius:12px;padding:2px 16px;margin-top:11px;}
-details.obsec>summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:9px;padding:12px 0;font-size:13px;font-weight:700;color:var(--ink);}
+details.obsec>summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:9px;padding:12px 0;font-size:13px;font-weight:700;color:var(--ink);min-height:var(--tap);}
 details.obsec>summary::-webkit-details-marker{display:none;}
 details.obsec>summary::before{content:"\25B8";color:var(--dim);font-size:11px;transition:transform .15s;}
 details.obsec[open]>summary::before{transform:rotate(90deg);}
@@ -593,12 +593,11 @@ td.l{white-space:nowrap;}
 .badge{font-size:12px;font-weight:800;color:#1a1030;background:var(--gold);border-radius:8px;padding:4px 10px;}
 select{width:100%;border:1px solid var(--line);border-radius:8px;padding:8px 9px;font-size:14px;font-weight:600;color:var(--ink);background-color:#140c26;cursor:pointer;}
 .viewsw{display:inline-flex;background:#160c28;border:1px solid var(--line);border-radius:10px;padding:3px;gap:3px;}
-.viewsw button{background:none;border:none;color:var(--mut);font-size:12px;font-weight:700;padding:6px 11px;border-radius:7px;cursor:pointer;font-family:inherit;}
+.viewsw button{background:none;border:none;color:var(--mut);font-size:12px;font-weight:700;padding:6px 11px;border-radius:7px;cursor:pointer;font-family:inherit;min-height:var(--tap);}
 .viewsw button.on{background:linear-gradient(135deg,var(--gold),var(--amber));color:#1a1030;}
 .viewsw.mini button{font-size:11px;padding:4px 9px;}
 /* v401: Forward's day switch is a control on the only surface this desk has left, so it
    reads --tap. Scoped by id, because .viewsw is shared with the Whiteboard. */
-#fwdSw button{min-height:var(--tap);}
 .qkg input{font-variant-numeric:tabular-nums;}
 /* v242: the third cell of .qrow is an ANSWER, not a control. It matches the input boxes
    in height and radius so the row reads as one instrument, and carries the figure at the
@@ -1176,6 +1175,10 @@ details.obshush:hover{opacity:.85;}
   .viewsw{display:flex;flex-wrap:nowrap;overflow-x:auto;max-width:100%;scrollbar-width:none;}
   .viewsw::-webkit-scrollbar{display:none;}
   .viewsw button{flex:0 0 auto;}
+  .vpill{min-height:var(--tap);display:inline-flex;align-items:center;}
+  /* A field under 16px makes iOS Safari zoom on focus and never zoom back (v392). The
+     ledger filter strip sat at 12 and 13px; 16px on the phone only. */
+  #ledQ,#ledState,#ledParty,#ledMonth,#ledProduct{font-size:16px;}
   /* v401: THE ENTER FORM'S OWN STRIPS WRAP. The rule three lines up is right for chrome
      and wrong for a form. Measured at 375px: #wbModeSw was 323px wide holding 584px of
      buttons, so 261px of the seven modes sat behind a scroller with no bar drawn, which
@@ -1186,13 +1189,6 @@ details.obshush:hover{opacity:.85;}
      label, so the label is the tap target and the box is not. */
   .vpart[data-tab="add"] .viewsw{flex-wrap:wrap;overflow-x:visible;}
   #wbAssocWrap>label{min-height:var(--tap);}
-  /* v401: EVERY BUTTON ON THOSE STRIPS IS A FINGER TARGET, for the same reason the rail
-     got it at v392: 28px tall on a mode, and 32px wide on a quick-set, are a mouse's
-     measurements. Width is worth setting because the strip has 220px of slack, so
-     min-width costs no extra row. SCOPED ONLY BECAUSE .viewsw IS SHARED with #fwdSw on
-     Today's Forward part; these two lines and this comment are absorbed by the central
-     .viewsw button{min-height:var(--tap)} at fold time. The wrap rules above are not. */
-  .vpart[data-tab="add"] .viewsw button{min-height:var(--tap);min-width:var(--tap);}
   .sevh{flex-wrap:wrap;gap:6px;}
   .insight{padding:10px 12px;font-size:12.5px;}
   .dsc,.dsclead{font-size:11.5px;}
@@ -3248,7 +3244,7 @@ function prodJump(p){
     return;}
   /* this tab is consolidated already, so there is nothing to jump to and saying so beats
      a button that appears to do nothing */
-  qStatus('<b>'+esc(PRODUCTS[p].name)+'</b> is not split out on this tab &mdash; it reads both books together.');
+  qStatus('<b>'+esc(PRODUCTS[p].name)+'</b> is not split out on this part: it reads both books together.');
 }
 /* The switcher itself. Each button states the product's revenue, so choosing is informed
    rather than blind, and the footnote states the combined figure so the consolidated view
@@ -3276,8 +3272,8 @@ function markProdSw(){
   host.querySelectorAll('button[data-p]').forEach(b=>{
     const p=b.dataset.p, nm=PRODUCTS[p]?PRODUCTS[p].name:p, live=!!prodHead(p);
     b.classList.toggle('live',live);
-    b.title=live?('Jump to '+nm+' on this tab')
-                :(nm+' is not split out on this tab, which reads both books together');
+    b.title=live?('Jump to '+nm+' on this part')
+                :(nm+' is not split out on this part, which reads both books together');
   });
 }
 /* Per-product headline, computed WITHOUT disturbing the active book. Used by the switcher
@@ -5699,7 +5695,7 @@ function drawTodayCharts(){
   const k=document.getElementById('tdKindChart'),c=document.getElementById('tdCoverChart');
   if(!k&&!c)return;
   ensureChart(ok=>{
-    if(!ok){[k,c].forEach(el=>{chartEmpty(el,'Chart unavailable. Every figure it draws is in the tables on this tab.');});return;}
+    if(!ok){[k,c].forEach(el=>{chartEmpty(el,'Chart unavailable. Every figure it draws is in the tables on this part.');});return;}
     try{
       const a=actions(),cv=coverStats();
       const KIND={stock:'Shelf',buy:'Buy',collect:'Collect',pay:'Pay',rule:'Rule',
@@ -5825,7 +5821,7 @@ function drawFwdCharts(){
   const s=document.getElementById('fwdStockChart'),k=document.getElementById('fwdCashChart');
   if(!s||!k)return;
   ensureChart(ok=>{
-    if(!ok){[s,k].forEach(c=>{chartEmpty(c,'Chart unavailable. Every figure it draws is in the tables on this tab.');});return;}
+    if(!ok){[s,k].forEach(c=>{chartEmpty(c,'Chart unavailable. Every figure it draws is in the tables on this part.');});return;}
     try{
       const f=forecast(fwdOpts()),labs=f.rows.map(r=>r.d===0?'today':'d+'+r.d);
       const opt=(t,pre)=>({responsive:true,maintainAspectRatio:false,
@@ -6403,7 +6399,7 @@ function drawAnalysis(){
   if(!blkEl('anBridge'))return;
   ensureChart(ok=>{
     if(!ok){['anBridge','anScatter','anStock','anBuys'].forEach(id=>{const e=blkEl(id);
-      chartEmpty(e,'Chart unavailable. Every figure it draws is in the tables on this tab.');});return;}
+      chartEmpty(e,'Chart unavailable. Every figure it draws is in the tables on this part.');});return;}
     /* WHICH CHART IS BEING BUILT. Set at the head of each section rather than at its freshChart
        call, so a throw in the figures a chart is built from is attributed to that chart and not
        to the one before it. It sits OUTSIDE the try because `let` is block-scoped: declared
@@ -7923,7 +7919,7 @@ function drawOutlookChart(){
   const el=blkEl('srcOutlookChart');
   if(!el)return;
   ensureChart(ok=>{
-    if(!ok){chartEmpty(el,'Chart unavailable. Every figure it draws is in the tables on this tab.');return;}
+    if(!ok){chartEmpty(el,'Chart unavailable. Every figure it draws is in the tables on this part.');return;}
     try{
       const L=lotOutlook(), rows=L.rows.filter(r=>r.left>0.009);
       if(!rows.length){chartEmpty(el,'Nothing left on any lot to draw.');return;}
@@ -7947,7 +7943,7 @@ function drawRecvCharts(){
   const el=blkEl('rcAgeChart');
   if(!el)return;
   ensureChart(ok=>{
-    if(!ok){chartEmpty(el,'Chart unavailable. Every figure it draws is in the tables on this tab.');return;}
+    if(!ok){chartEmpty(el,'Chart unavailable. Every figure it draws is in the tables on this part.');return;}
     const rows=arList.map(x=>({who:codeOf(x.customer),g:outstandingOf(x),age:dbet(x.date)}))
       .filter(x=>x.g>0.009);
     /* v385: THE SUPPLIER CLAIM IS SALT'S, ON THE CHART AS IT ALREADY IS IN THE TABLE.
@@ -7974,7 +7970,7 @@ function drawSourcingCharts(){
   const el=blkEl('srcLotChart');
   if(!el)return;
   ensureChart(ok=>{
-    if(!ok){chartEmpty(el,'Chart unavailable. Every figure it draws is in the tables on this tab.');return;}
+    if(!ok){chartEmpty(el,'Chart unavailable. Every figure it draws is in the tables on this part.');return;}
     try{
       /* v385: pPurch(PROD), not the bare `purchases`. This is drawn once per product block and
          read every lot on the desk, so both charts carried all eighteen: oil's three lots at RM7
@@ -8025,7 +8021,7 @@ function drawNetworkCharts(){
   const el=document.getElementById('nwPartnerChart');
   if(!el)return;
   ensureChart(ok=>{
-    if(!ok){chartEmpty(el,'Chart unavailable. Every figure it draws is in the tables on this tab.');return;}
+    if(!ok){chartEmpty(el,'Chart unavailable. Every figure it draws is in the tables on this part.');return;}
     try{
       const rs=networkStats();
       if(lgOrEmpty(el,rs.length))return;
@@ -8051,7 +8047,7 @@ function drawLedgerCharts(){
   const el=document.getElementById('lgTimeChart');
   if(!el)return;
   ensureChart(ok=>{
-    if(!ok){chartEmpty(el,'Chart unavailable. Every figure it draws is in the tables on this tab.');return;}
+    if(!ok){chartEmpty(el,'Chart unavailable. Every figure it draws is in the tables on this part.');return;}
     try{
       const by={};
       /* THE CHART DREW THE WHOLE BOOK WHILE THE LIST BELOW IT SHOWED A SUBSET. It sat
@@ -8079,7 +8075,7 @@ function drawFinCharts(){
   const el=blkEl('finMonthChart');
   if(!el)return;
   ensureChart(ok=>{
-    if(!ok){chartEmpty(el,'Chart unavailable. Every figure it draws is in the tables on this tab.');return;}
+    if(!ok){chartEmpty(el,'Chart unavailable. Every figure it draws is in the tables on this part.');return;}
     const mo={};
     pricedSales.filter(x=>!x.cancelled&&txPendKg(x)<x.qty-0.009).forEach(x=>{
       const k=x.date.slice(0,7);(mo[k]=mo[k]||{rev:0,mar:0}).rev+=x.total;
@@ -10792,7 +10788,7 @@ function forecast(o){
   const lots=pPurch(PROD).filter(p=>poLive(p)&&poOpenKg(p)>0.0001)
     .map(p=>({day:0,kg:poOpenKg(p),who:p.supplier,label:'in transit',rm:Math.max(0,p.total-poCash(p))}));
   if(buy)lots.push({day:Math.max(0,+buy.onDay||0),kg:+buy.qty,who:buy.who||supplierQuote.supplier,
-                    label:'the buy on this tab',rm:+(+buy.qty*+buy.rate).toFixed(2)});
+                    label:'the buy on this part',rm:+(+buy.qty*+buy.rate).toFixed(2)});
 
   /* --- cash in: each receivable at its own credit date, net of provisioning --- */
   const cin=[];
@@ -10809,7 +10805,7 @@ function forecast(o){
   pPurch(PROD).forEach(p=>{if(p.pending)return;const b=+(p.total-poCash(p)).toFixed(2);
     if(b>0.009)cout.push({day:0,rm:b,who:p.supplier,label:'supplier bill'});});
   if(buy)cout.push({day:Math.max(0,buy.payDay!=null?+buy.payDay:(+buy.onDay||0)),
-                    rm:+(+buy.qty*+buy.rate).toFixed(2),who:buy.who||supplierQuote.supplier,label:'the buy on this tab'});
+                    rm:+(+buy.qty*+buy.rate).toFixed(2),who:buy.who||supplierQuote.supplier,label:'the buy on this part'});
   /* PLANNED drawings, off unless asked for. A leaveRM plan takes whatever sits above a
      floor on the day, so its size is not known until the walk reaches it; it is resolved
      during the walk rather than scheduled here. */
@@ -11733,7 +11729,7 @@ function drawConcCharts(){
   const p=document.getElementById('ccPareto'),s=document.getElementById('ccScatter');
   if(!p&&!s)return;
   ensureChart(ok=>{
-    if(!ok){[p,s].forEach(el=>{chartEmpty(el,'Chart unavailable. Every figure it draws is in the tables on this tab.');});return;}
+    if(!ok){[p,s].forEach(el=>{chartEmpty(el,'Chart unavailable. Every figure it draws is in the tables on this part.');});return;}
     try{
       const c=concentration();
       const GRID='rgba(255,255,255,0.07)',TICK='rgba(244,245,247,0.66)';
@@ -13198,7 +13194,7 @@ function wirePricing(){
 function drawEarnChart(){
   const el=blkEl('pxEarnChart');if(!el)return;
   ensureChart(ok=>{
-    if(!ok){chartEmpty(el,'Chart unavailable. Every figure it draws is in the tables on this tab.');return;}
+    if(!ok){chartEmpty(el,'Chart unavailable. Every figure it draws is in the tables on this part.');return;}
     try{
       const c=pxCost(),E=earnedPerKg();
       const GRID='rgba(255,255,255,0.07)',TICK='rgba(244,245,247,0.66)',INK='#f4f5f7';
@@ -13341,7 +13337,7 @@ function drawBoardCharts(){
   const a=blkEl('pxShapeChart'),b=blkEl('pxTimeChart');
   if(!a&&!b)return;
   ensureChart(ok=>{
-    if(!ok){[a,b].forEach(c=>{if(c)chartEmpty(c,'Chart unavailable. Every figure it draws is in the tables on this tab.');});return;}
+    if(!ok){[a,b].forEach(c=>{if(c)chartEmpty(c,'Chart unavailable. Every figure it draws is in the tables on this part.');});return;}
     const GRID='rgba(255,255,255,0.07)',TICK='rgba(244,245,247,0.66)',INK='#f4f5f7';
     const base=t=>({responsive:true,maintainAspectRatio:false,
       plugins:{legend:{labels:{color:TICK,boxWidth:10,font:{size:10}}},
@@ -13415,7 +13411,7 @@ function drawPriceCharts(){
   const q=blkEl('priceQtyChart'),r=blkEl('priceRevChart');
   if(!q||!r)return;
   ensureChart(ok=>{
-    if(!ok){[q,r].forEach(c=>{chartEmpty(c,'Chart unavailable. Every figure it draws is in the tables on this tab.');});return;}
+    if(!ok){[q,r].forEach(c=>{chartEmpty(c,'Chart unavailable. Every figure it draws is in the tables on this part.');});return;}
     try{
       const pts=priceBuckets(),labs=pts.map(x=>'RM '+x.p);
       const opt=t=>({responsive:true,maintainAspectRatio:false,
