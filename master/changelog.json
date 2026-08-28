@@ -1,5 +1,17 @@
 [
  {
+  "v": "v389",
+  "d": "28 Aug 2026",
+  "t": "THE FIGURES ON THE ENTRY FORM WERE SITTING DIAGONALLY FROM THEIR OWN LABELS, AND TAB TOOK SIXTEEN STOPS TO REACH THE FIRST FIELD",
+  "n": [
+   "<b>EVERY FIGURE ON THE NEW ORDER PANE WAS ONE COLUMN FROM ITS OWN LABEL.</b> <code>.qrow</code> is a fixed three-column grid, so the label above any cell is the one in its own column, and the pane had <b>Quantity (unit) above Cash (RM)</b> and <b>Total (RM) above Salt delivered (unit)</b>. Units and money each read down the wrong column. Column one is units now, ordered then moved; column two is money, agreed then paid. Measured in the browser rather than by eye: Quantity and Salt delivered share x=285, Total and Cash share x=658. The amend pane went the same way, for the same reason.",
+   "<b>TAB REACHED THE FIRST FIELD AFTER SIXTEEN STOPS AND BROKE THE RUN THREE TIMES.</b> The quick-set buttons are exact shortcuts for the input beside them, so they leave the tab order outright. Every switcher is one stop with the arrows moving inside it, on a roving tabindex rather than <code>tabindex=&quot;-1&quot;</code>, because direction, stream and side are choices that must stay reachable by keyboard. Seven stops to the first field, and the six typed fields are contiguous.",
+   "<b>AND THE PARTS STRIP IS IN THAT CHANGE, WHICH MAKES IT DESK-WIDE RATHER THAN THE ENTER VIEW&rsquo;S.</b> It already declared <code>role=&quot;tablist&quot;</code> and was not behaving like one: <b>a tablist whose every tab is a tab stop is the wrong control by its own declaration</b>. Only the roving stop is added; the role and <code>aria-selected</code> are untouched. Proved across all sixteen parts rather than on the one that prompted it: every strip is exactly one tab stop, keeps its role, and still marks a selected tab.",
+   "<b>WHAT WAS PROVED RATHER THAN ASSUMED.</b> Click still activates every switcher and both quick-set groups, the arrows move within a group, Enter is not intercepted, the strip still switches, and all sixteen parts render clean on both books. The probe that found the tab order was itself wrong first time, listing every button regardless of tabindex, so it reported the fix doing nothing; the fix was sound and the probe was not, which is worth recording because it is the third time this week a measurement has been the thing at fault rather than the code.",
+   "<b>AND ONE NOTE RE-CHECKED PROPERLY RATHER THAN WITH A NOD.</b> <code>#apBox</code> and <code>#apMsg</code> are shared by the cloud Approve tab and the laptop Names &amp; IDs panel, and retiring the phone app does not touch that, <b>because the gate was never the app</b>: it is <code>cloudMode()</code>, read from the <code>/queue/ping</code> response, so the SERVER decides and both surfaces still exist for the one file. Forced in every combination with both renderers run in each, including <code>SALT_CLOUD</code> undefined, which is the real first paint before the ping answers. Never two. The note stays, for the reason it was written: it is safe by a condition, not by naming."
+  ]
+ },
+ {
   "v": "v388",
   "d": "28 Aug 2026",
   "t": "THE LEDGER OPENS ON WHAT IS LIVE, A LONG PRESS REACHES THE ROW EDITOR, AND THE SUITE GOT BACK SIX LAWS IT SHOULD NEVER HAVE LOST",
