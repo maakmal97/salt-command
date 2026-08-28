@@ -1,0 +1,76 @@
+{
+ "ok": true,
+ "count": 5,
+ "approved": [
+  {
+   "id": "2026-08-27T23:59:01.000Z-stated-s092-paid",
+   "collection": "sales",
+   "row": {"rid": "s092", "qty": 1, "total": 80, "customer": "CR3-DAM", "changes": [{"field": "cash", "from": 0, "to": 80}]},
+   "reasoning": "Stated by the owner in chat on 28 Aug: CR3-DAM paid this RM80 yesterday, 27 Aug. Fulfilment of RM80 cash against the 18 Aug unit.",
+   "flags": [],
+   "amends": "s092",
+   "amendKind": "Fulfilment",
+   "entry": {"at": "2026-08-27T23:59:01.000Z-stated-s092-paid", "type": "AMEND", "party": "CR3-DAM",
+    "raw": "Fulfilment on CR3-DAM s092: RM80 cash on 2026-08-27, on his statement of 28 Aug",
+    "payload": {"mode": "amend", "direction": "SELL", "party": "CR3-DAM", "rid": "s092", "kind": "Fulfilment", "date": "2026-08-27", "cash": 80, "kg": 0}},
+   "decidedAt": "2026-08-28T14:20:00.000Z",
+   "decidedBy": "owner, stated in chat"
+  },
+  {
+   "id": "2026-08-27T23:59:02.000Z-stated-s106-paid",
+   "collection": "sales",
+   "row": {"rid": "s106", "qty": 1, "total": 80, "customer": "CR3-DAM", "changes": [{"field": "cash", "from": 0, "to": 80}]},
+   "reasoning": "Stated by the owner in chat on 28 Aug: CR3-DAM paid this RM80 yesterday, 27 Aug. Fulfilment of RM80 cash against the 24 Aug unit.",
+   "flags": [],
+   "amends": "s106",
+   "amendKind": "Fulfilment",
+   "entry": {"at": "2026-08-27T23:59:02.000Z-stated-s106-paid", "type": "AMEND", "party": "CR3-DAM",
+    "raw": "Fulfilment on CR3-DAM s106: RM80 cash on 2026-08-27, on his statement of 28 Aug",
+    "payload": {"mode": "amend", "direction": "SELL", "party": "CR3-DAM", "rid": "s106", "kind": "Fulfilment", "date": "2026-08-27", "cash": 80, "kg": 0}},
+   "decidedAt": "2026-08-28T14:20:00.000Z",
+   "decidedBy": "owner, stated in chat"
+  },
+  {
+   "id": "2026-08-27T23:59:03.000Z-stated-s065-rekey",
+   "collection": "sales",
+   "row": {"rid": "s065", "qty": 3, "total": 260, "customer": "CH4-KS", "changes": [{"field": "party", "from": "CH4-KS", "to": "CH4-KLS"}]},
+   "reasoning": "Stated by the owner in chat on 28 Aug: the CH4-KS ID is amended to CH4-KLS. His one row re-keys and the roster renames in the same fold, as CH6-SET and CZ4-MK did on 26 Aug.",
+   "flags": [],
+   "amends": "s065",
+   "amendKind": "Correction",
+   "entry": {"at": "2026-08-27T23:59:03.000Z-stated-s065-rekey", "type": "AMEND", "party": "CH4-KS",
+    "raw": "Correction on CH4-KS s065: party to CH4-KLS, on his instruction of 28 Aug",
+    "payload": {"mode": "amend", "direction": "SELL", "party": "CH4-KS", "rid": "s065", "kind": "Correction", "date": "2026-08-28", "fields": {"party": "CH4-KLS"}}},
+   "decidedAt": "2026-08-28T14:20:00.000Z",
+   "decidedBy": "owner, stated in chat"
+  },
+  {
+   "id": "2026-08-27T23:59:04.000Z-stated-ch4kls-pending",
+   "collection": "sales",
+   "row": {"customer": "CH4-KLS", "qty": 3, "total": 280, "cost": 50, "cash": 0, "deliveredQty": 0, "agreedOn": "2026-08-28"},
+   "reasoning": "Stated by the owner in chat on 28 Aug: a pending order, agreed, nothing moved and nothing paid, so no date. 3 unit for RM280, RM93.33 a unit, against his RM86.67 on the 07 Aug order. Costed at RM50 a unit off the current shelf lot.",
+   "flags": [],
+   "amends": null,
+   "amendKind": null,
+   "entry": {"at": "2026-08-27T23:59:04.000Z-stated-ch4kls-pending", "type": "SELL", "party": "CH4-KLS", "qty": 3, "total": 280,
+    "raw": "Pending order: CH4-KLS 3 unit for RM280, agreed 28 Aug, nothing moved",
+    "payload": {"mode": "new", "product": "salt", "direction": "SELL", "party": "CH4-KLS", "date": null, "qty": 3, "total": 280, "cash": 0, "kg": 0}},
+   "decidedAt": "2026-08-28T14:20:00.000Z",
+   "decidedBy": "owner, stated in chat"
+  },
+  {
+   "id": "2026-08-27T23:59:05.000Z-stated-cy2nil-pending",
+   "collection": "sales",
+   "row": {"customer": "CY2-NIL", "qty": 2.5, "total": 230, "cost": 50, "cash": 0, "deliveredQty": 0, "agreedOn": "2026-08-28"},
+   "reasoning": "Stated by the owner in chat on 28 Aug: a pending order, agreed, nothing moved and nothing paid, so no date. 2.5 unit for RM230, her fourth order at exactly this size and total after 11 Aug, 18 Aug and 26 Aug. Costed at RM50 a unit off the current shelf lot.",
+   "flags": [],
+   "amends": null,
+   "amendKind": null,
+   "entry": {"at": "2026-08-27T23:59:05.000Z-stated-cy2nil-pending", "type": "SELL", "party": "CY2-NIL", "qty": 2.5, "total": 230,
+    "raw": "Pending order: CY2-NIL 2.5 unit for RM230, agreed 28 Aug, nothing moved",
+    "payload": {"mode": "new", "product": "salt", "direction": "SELL", "party": "CY2-NIL", "date": null, "qty": 2.5, "total": 230, "cash": 0, "kg": 0}},
+   "decidedAt": "2026-08-28T14:20:00.000Z",
+   "decidedBy": "owner, stated in chat"
+  }
+ ]
+}

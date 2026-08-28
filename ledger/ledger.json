@@ -1,6 +1,6 @@
 {
- "v": "v395",
- "stamped": "28 Aug 2026, 21:11 KL",
+ "v": "v396",
+ "stamped": "28 Aug 2026, 21:24 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -1449,7 +1449,7 @@
    },
    {
     "date": "2026-08-07",
-    "customer": "CH4-KS",
+    "customer": "CH4-KLS",
     "qty": 3,
     "total": 260,
     "cost": 47,
@@ -1457,8 +1457,25 @@
     "deliveredQty": 3,
     "paidOn": "2026-08-08",
     "deliveredOn": "2026-08-08",
-    "note": "Quoted at RM300 on the 7th and REQUOTED at RM260 before anything moved, then paid and delivered in full on the 8th. It is restated rather than amended: a price re-agreed before any cash or salt moves is the price, not a movement, so the row carries the final terms and the history sits here. RM86.67 a unit, which is the TIER II ask at 3 unit given to a customer whose single order puts him in Tier III at RM300. A RM40 concession to open the account, RM49 clear of the RM211 floor and RM26.67 a unit of margin above replacement.",
-    "rid": "s065"
+    "note": "<b>RE-KEYED TO CH4-KLS ON 28 Aug 2026, ON HIS INSTRUCTION.</b>  <b>RE-KEYED TO CH4-KLS ON 28 AUG, ON HIS INSTRUCTION.</b> The code is amended, nothing else on the row moves; the roster renames in the same fold. Quoted at RM300 on the 7th and REQUOTED at RM260 before anything moved, then paid and delivered in full on the 8th. It is restated rather than amended: a price re-agreed before any cash or salt moves is the price, not a movement, so the row carries the final terms and the history sits here. RM86.67 a unit, which is the TIER II ask at 3 unit given to a customer whose single order puts him in Tier III at RM300. A RM40 concession to open the account, RM49 clear of the RM211 floor and RM26.67 a unit of margin above replacement.",
+    "rid": "s065",
+    "mod": "corrected on 2026-08-28: party CH4-KS to CH4-KLS",
+    "amend": [
+     {
+      "date": "2026-08-07",
+      "kind": "Fulfilment",
+      "cash": 260,
+      "kg": 3,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-08-28",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>RE-KEYED TO CH4-KLS ON 28 AUG, ON HIS INSTRUCTION.</b> The code is amended, nothing else on the row moves; the roster renames in the same fold."
+     }
+    ]
    },
    {
     "date": "2026-08-07",
@@ -1851,11 +1868,28 @@
     "qty": 1,
     "total": 80,
     "cost": 56,
-    "cash": 0,
+    "cash": 80,
     "deliveredQty": 1,
     "deliveredOn": "2026-08-18",
     "note": "<b>AMENDED AT v316 FROM 2 UNIT TO 1, ON HIS WORD, SO HALF THE RECEIVABLE AND HALF THE STOCK COME BACK.</b> 1 unit at RM80, delivered in full on the 18th and not paid, so RM80 sits in receivables rather than RM160. <b>THE AMENDMENT MOVES THE SIZE AND NOTHING ELSE.</b> RM80 a unit is his standing rate on both readings, and the margin on the price is untouched at <b>30.0%</b>: on the RM56 shelf a unit returns RM24, so the order returns RM24 where it returned RM48. What changed is that the row is now the size every order of his since 15 Jul has been. The 2 unit reading was the anomaly, and it is gone. <b>THE FLOOR ANSWER DOES NOT CHANGE, AND IT IS STILL THE UNFAVOURABLE ONE.</b> It was DELIVERED rather than collected, so it is measured against the delivered floor and sits under it; the collected floor it would have cleared does not apply. Both are derived live by floorTotal, so read the gap off the Pricing tab rather than off this sentence. <b>UNDER FLOOR IS NOT UNDER COST.</b> RM80 a unit is above the RM56 lot it drew, so it made money; it is short of what replacing that unit now costs once freight, shrinkage and delivery are in. Reported and not repriced; the price is his to set. <b>THE CREDIT READING IS WHERE THE AMENDMENT ACTUALLY BITES.</b> 2 unit out against a 1 unit retail cap was a breach; 1 unit out sits exactly AT the cap. Nothing further is handed over until it clears, but the book is no longer carrying a breach, and Boundaries should now read as at the line rather than over it. It remains the only balance on the book. <b>A UNIT RETURNS TO THE SHELF.</b> STATED_STOCK rolls from 7.05 to 8.05 and free to sell from 1.05 to 2.05, and the v314 walk is superseded with it: the three sales of the 18th draw 4 unit rather than 5, so the 4.80 unit standing that morning covered them and the SA5-BTR lot was not needed on the day to close the walk. That the lot landed anyway is unchanged and still the right thing to have done.",
-    "rid": "s092"
+    "rid": "s092",
+    "amend": [
+     {
+      "date": "2026-08-18",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 1,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-08-27",
+      "kind": "Fulfilment",
+      "cash": 80,
+      "kg": 0,
+      "note": "<b>PAID IN FULL ON 27 AUG, ON HIS STATEMENT OF 28 AUG.</b> RM80 cash against the 18 Aug unit, nine days out. Nothing outstanding on this row."
+     }
+    ],
+    "paidOn": "2026-08-27"
    },
    {
     "date": "2026-08-18",
@@ -2286,12 +2320,29 @@
     "qty": 1,
     "total": 80,
     "cost": 44,
-    "cash": 0,
+    "cash": 80,
     "date": "2026-08-24",
     "deliveredQty": 1,
     "deliveredOn": "2026-08-24",
     "note": "1 unit at RM80, his rate on every order this book has ever recorded for him, unbroken since June. Delivered 24 Aug with the RM80 still owed, an advance: check it against his credit cap if it stands alongside other unpaid orders, though nothing here suggests it should be refused, only watched.",
-    "rid": "s106"
+    "rid": "s106",
+    "amend": [
+     {
+      "date": "2026-08-24",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 1,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-08-27",
+      "kind": "Fulfilment",
+      "cash": 80,
+      "kg": 0,
+      "note": "<b>PAID IN FULL ON 27 AUG, ON HIS STATEMENT OF 28 AUG.</b> RM80 cash against the 24 Aug unit, three days out. Nothing outstanding on this row."
+     }
+    ],
+    "paidOn": "2026-08-27"
    },
    {
     "customer": "CJ4-BJ",
@@ -2490,6 +2541,28 @@
     "cancelled": true,
     "cancelledOn": "2026-08-24",
     "rid": "s109"
+   },
+   {
+    "customer": "CH4-KLS",
+    "qty": 3,
+    "total": 280,
+    "cost": 50,
+    "cash": 0,
+    "deliveredQty": 0,
+    "agreedOn": "2026-08-28",
+    "note": "<b>PENDING, AGREED 28 AUG, NOTHING MOVED AND NOTHING PAID.</b> His second order, at 3 unit again: RM280 against RM260 on 07 Aug, so RM93.33 a unit, up RM6.66 on his own last rate and clear of the collected floor on the Pricing tab. Costed at RM50 a unit, the current shelf lot; the cost restates if the shelf moves before this does. Entered under his new CH4-KLS code, re-keyed from CH4-KS in this same fold. It carries no date, draws no stock and raises no receivable until it moves.",
+    "rid": "s118"
+   },
+   {
+    "customer": "CY2-NIL",
+    "qty": 2.5,
+    "total": 230,
+    "cost": 50,
+    "cash": 0,
+    "deliveredQty": 0,
+    "agreedOn": "2026-08-28",
+    "note": "<b>PENDING, AGREED 28 AUG, NOTHING MOVED AND NOTHING PAID.</b> Her fourth order at exactly 2.5 unit for RM230, RM92 a unit, the same figure as 11, 18 and 26 Aug: the steadiest repeat habit on the book after CA4-DAM's anchor. Costed at RM50 a unit, the current shelf lot; the cost restates if the shelf moves before this does. It carries no date, draws no stock and raises no receivable until it moves.",
+    "rid": "s119"
    }
   ],
   "contacts": [
@@ -2620,7 +2693,7 @@
    "SA5-BTR",
    "SM4-KEP",
    "SP7-PUD",
-   "CH4-KS",
+   "CH4-KLS",
    "CS6-PER-R",
    "CY2-NIL",
    "CR3-PUD",
@@ -2787,7 +2860,7 @@
   ],
   "QUEUE_COMMITTED": "2026-08-28T09:59:51.414Z",
   "PRICING": {
-   "takenAt": "2026-08-28T13:11:13.664Z",
+   "takenAt": "2026-08-28T13:25:01.971Z",
    "sizes": [
     0.5,
     1,
@@ -3229,12 +3302,42 @@
      }
     }
    },
-   "v": "v395"
+   "v": "v396"
   },
   "OPEN": {
-   "at": "2026-08-28T13:11:13.723Z",
+   "at": "2026-08-28T13:25:02.038Z",
    "count": 7,
    "byKey": {
+    "CH4-KLS|undefined|280": {
+     "d": null,
+     "p": "CH4-KLS",
+     "dir": "S",
+     "q": 3,
+     "t": 280,
+     "cash": 0,
+     "mv": 0,
+     "st": "pend",
+     "oweRM": 280,
+     "oweKg": 3,
+     "rid": "s118",
+     "agreedOn": "2026-08-28",
+     "key": "CH4-KLS|undefined|280"
+    },
+    "CY2-NIL|undefined|230": {
+     "d": null,
+     "p": "CY2-NIL",
+     "dir": "S",
+     "q": 2.5,
+     "t": 230,
+     "cash": 0,
+     "mv": 0,
+     "st": "pend",
+     "oweRM": 230,
+     "oweKg": 2.5,
+     "rid": "s119",
+     "agreedOn": "2026-08-28",
+     "key": "CY2-NIL|undefined|230"
+    },
     "CA4-DAM|2026-08-28|100": {
      "d": "2026-08-28",
      "p": "CA4-DAM",
@@ -3269,22 +3372,6 @@
      "age": 1,
      "exp": 80
     },
-    "CR3-DAM|2026-08-24|80": {
-     "d": "2026-08-24",
-     "p": "CR3-DAM",
-     "dir": "S",
-     "q": 1,
-     "t": 80,
-     "cash": 0,
-     "mv": 1,
-     "st": "dueMoney",
-     "oweRM": 80,
-     "rid": "s106",
-     "deliveredOn": "2026-08-24",
-     "key": "CR3-DAM|2026-08-24|80",
-     "age": 4,
-     "exp": 60
-    },
     "CE4-AD|2026-08-20|435": {
      "d": "2026-08-20",
      "p": "CE4-AD",
@@ -3298,22 +3385,6 @@
      "rid": "s095",
      "paidOn": "2026-08-20",
      "key": "CE4-AD|2026-08-20|435"
-    },
-    "CR3-DAM|2026-08-18|80": {
-     "d": "2026-08-18",
-     "p": "CR3-DAM",
-     "dir": "S",
-     "q": 1,
-     "t": 80,
-     "cash": 0,
-     "mv": 1,
-     "st": "dueMoney",
-     "oweRM": 80,
-     "rid": "s092",
-     "deliveredOn": "2026-08-18",
-     "key": "CR3-DAM|2026-08-18|80",
-     "age": 10,
-     "exp": 40
     },
     "CE4-CHE|2026-08-18|500": {
      "d": "2026-08-18",
@@ -3353,8 +3424,8 @@
      "owedOut": 5.5,
      "coverDays": 2,
      "rate": 5.48,
-     "owedToYou": 340,
-     "promised": 5.5,
+     "owedToYou": 180,
+     "promised": 11,
      "short": 0
     },
     "oil": {
@@ -3373,7 +3444,7 @@
     "salt": "2026-08-24",
     "oil": "2026-08-23"
    },
-   "v": "v395"
+   "v": "v396"
   }
  }
 }

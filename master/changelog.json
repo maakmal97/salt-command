@@ -1,5 +1,16 @@
 [
  {
+  "v": "v396",
+  "d": "28 Aug 2026",
+  "t": "CR3-DAM SETTLES TWO OF THREE, TWO PENDING ORDERS JOIN THE BOOK, AND CH4-KS BECOMES CH4-KLS",
+  "n": [
+   "<b>CR3-DAM PAID THE 18 AUG AND 24 AUG UNITS ON THE 27TH, ON HIS STATEMENT OF 28 AUG IN CHAT.</b> RM160 lands as two RM80 fulfilments dated the 27th, so of his three units out only the 27 Aug unit (s116, corrected to unpaid at v395) still stands, RM80 on a one-day debt. He paid two and picked up a third the same day: the pattern is a rolling one-unit credit, not an arrears, and the receivable falls back inside anything the ladder provisions.",
+   "<b>TWO PENDING ORDERS JOIN THE BOOK, AGREED 28 AUG, NOTHING MOVED AND NOTHING PAID, SO NO DATE ON EITHER.</b> CH4-KLS takes 3 unit for RM280, RM93.33 a unit against his RM86.67 on 07 Aug. CY2-NIL takes 2.5 unit for RM230, her fourth order at exactly that size and total after 11, 18 and 26 Aug. Together they promise 5.5 unit against a stated shelf of 16.25; neither draws stock or raises a receivable until it moves.",
+   "<b>CH4-KS IS RE-KEYED TO CH4-KLS, ON HIS INSTRUCTION OF 28 AUG.</b> His one row (s065) re-keys by correction with the old code readable in mod, and the roster renames in the same fold: the CH6-SET and CZ4-MK treatment of 26 Aug. The name against the code is typed into the directory at the laptop, as always.",
+   "<b>STATED IN CHAT, SO NO DRAFTS BEHIND ANY OF THE FIVE,</b> and every stated id in this batch is ISO-shaped and dated the 27th, below the standing watermark, so QUEUE_COMMITTED cannot move: the v395 construction, held."
+  ]
+ },
+ {
   "v": "v395",
   "d": "28 Aug 2026",
   "t": "THE 27 AUG CR3-DAM ORDER WAS NOT PAID: AN ADVANCED PICKUP, AND HIS THIRD RM80 STANDING",
