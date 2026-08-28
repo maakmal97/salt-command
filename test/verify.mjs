@@ -586,6 +586,14 @@ section("Worker — /rev");
     const rx = new RegExp(apiLine.slice(1, apiLine.lastIndexOf("/")));
     ok(rx.test("/rev"), "sw.js never caches /rev");
     ok(rx.test("/rev.json"), "sw.js never caches /rev.json");
+    /* v387: THESE TWO LIVED IN THE APP'S SECTION AND ARE NOT ABOUT THE APP. A cached draft
+       list shows a row that has already been approved, and tapping it again is refused as a
+       409 with no way to know why; worse, an approved row keeps asking to be approved while
+       the one actually waiting stays invisible. The desk's Approve part reads the same
+       endpoints through the same service worker, so the rule outlived the surface that
+       happened to test it. */
+    ok(rx.test("/drafts"), "sw.js never caches /drafts");
+    ok(rx.test("/drafts/abc/approve"), "sw.js never caches a decision");
   }
 }
 
@@ -2035,6 +2043,55 @@ section("Orders and money — every basis is named where the figure is stated (v
   }
   setP(keep);
   try { w.close(); } catch (e) { }
+}
+
+section("The board — four laws, read off the engine (v387)");
+{
+  /* THESE ARE ENGINE INVARIANTS AND THEY WERE CHECKED THROUGH THE PHONE PAYLOAD. When the app
+     was retired at v387 the whole payload section went with it, and took these four with it:
+     they read d.board, so they LOOKED like payload-shape checks and they are nothing of the
+     kind. The rate law in particular is the one law a customer can check by hand, and it is
+     the law Price repriced the oil board against. Restored against ladderWalk and floorTotal
+     directly, so they no longer depend on a surface existing at all.
+     Found by the Stock view asking why the assertion count had fallen, which is the round's
+     own lesson pointed at the suite: a number that falls reads as fine and the reason matters. */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const E = (await import("../engine/pricing.mjs")).default;
+  const { w } = await openMaster();
+  w.perProduct(() => {
+    const P = w.pxPolicy(), C = w.pxCost();
+    const shown = (typeof w.shownSizes === "function") ? w.shownSizes() : P.boardSizes;
+    const pid = P.boardSizes[0] === 0.5 ? "salt" : "oil";
+    const walk = w.ladderWalk(P.boardSizes);
+    const priced = walk.filter((r) => r.p != null && r.p > 0);
+    ok(priced.length === walk.length, `${pid}: every size on the board has an ask (${priced.length} of ${walk.length})`);
+
+    /* THE ASK IS A COLLECTION PRICE and must clear the COLLECTED floor at every size. */
+    const under = walk.filter((r) => r.p < E.floorTotal(r.q, C, P, null, { collects: true }) - 0.009);
+    ok(under.length === 0, under.length
+      ? `${pid}: the ask is under its own collected floor at ${under.map((r) => r.q).join(", ")} unit`
+      : `${pid}: every ask clears the collected floor`);
+
+    /* delivered is collected plus exactly one delivery, and never less than collected. */
+    const badDel = P.boardSizes.filter((q) => {
+      const col = E.floorTotal(q, C, P, null, { collects: true });
+      const del = E.floorTotal(q, C, P, null, {});
+      return del < col - 0.02 || del > col + C.delPerOrder + 0.02;
+    });
+    ok(badDel.length === 0, badDel.length
+      ? `${pid}: the delivered floor is not within one delivery of the collected one at ${badDel.join(", ")} unit`
+      : `${pid}: every delivered floor is the collected floor plus at most one delivery`);
+
+    /* THE ONE LAW A CUSTOMER CAN CHECK BY HAND: the rate may not RISE with size. */
+    let prev = Infinity; const inverted = [];
+    walk.forEach((r) => { if (!(r.q > 0) || r.p == null) return;
+      const rate = r.p / r.q; if (rate > prev + 1e-9) inverted.push(r.q); prev = rate; });
+    ok(inverted.length === 0, inverted.length
+      ? `${pid}: the rate per unit RISES with size at ${inverted.join(", ")} unit`
+      : `${pid}: the rate per unit never rises with size`);
+    ok(shown.length > 0 && shown.every((q) => P.boardSizes.includes(q)),
+      `${pid}: every size the board PRINTS is a rung the walk actually priced (${shown.length} of ${P.boardSizes.length})`);
+  });
 }
 
 section("Silence — four things that failed without saying so (v384)");
