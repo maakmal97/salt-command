@@ -1,5 +1,17 @@
 [
  {
+  "v": "v397",
+  "d": "28 Aug 2026",
+  "t": "A CODE MINTED WRONG IS RETIRED, AND THE GAZETTEER LEARNS TWO SUFFIXES",
+  "n": [
+   "<b>CM3-OKR IS CH5-OUG NOW, ON EVERY ROW, IN EVERY NOTE AND ON THE ROSTER.</b> The code was minted against the wrong identity and every element of it was wrong for the party it names, so the code is corrected rather than the party re-registered: one man, one history, a new code, the same treatment CH4-KS took at v396. Both his rows, s085 and s096, keep their rids through the change, which is exactly what the rid is for; the ovKey a rename moves, the rid survives. Who he is lives in the directory on the laptop and reaches the cloud only as ciphertext, unchanged.",
+   "<b>THE PROSE MOVES WITH THE DATA, QUOTED WORDING INCLUDED.</b> Wherever a note cites this party, including the kept v329 roll wording, the retired code is replaced, because a book whose notes point at a code that exists nowhere is worse than a quote edited under a stated rule. This entry is the record that the old wording said CM3-OKR; the changelog keeps every earlier entry exactly as written.",
+   "<b>SEG AND OUG JOIN THE GAZETTEER.</b> CD3-SEG entered the roster at v391 with no place behind its suffix, and the rename mints a second unsited one, so both are sited in PLACES at two decimal places, a locality and not a doorstep. The map's heat now has somewhere to put both.",
+   "<b>THE OVERRIDE LIST IS EMPTY OF OVERRIDES FOR THE FIRST TIME.</b> LOCS existed for the party whose locality is not what its suffix says. v396 re-keyed CH4-KS, the one example, to CH4-KLS and left its override behind; this version removes that straggler and the one the retired code leaves, so every entry that remains agrees with its suffix and the codes carry the map themselves.",
+   "<b>THE DIRECTORY WORK IS INVISIBLE HERE BY DESIGN.</b> The names behind the new code and the renamed one were typed into the directory on the laptop, beside backfilled localities for the codes added since it was last tidied and the CH4-KLS re-key of v396, which had not yet reached it. Nothing of that is in this repo; the vault re-seed is what puts the names on the phone, behind a passphrase, and it is the owner's step."
+  ]
+ },
+ {
   "v": "v396",
   "d": "28 Aug 2026",
   "t": "CR3-DAM SETTLES TWO OF THREE, TWO PENDING ORDERS JOIN THE BOOK, AND CH4-KS BECOMES CH4-KLS",

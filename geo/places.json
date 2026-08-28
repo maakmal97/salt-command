@@ -93,6 +93,14 @@
    "lat": 3.13,
    "lng": 101.73
   },
+  "SEG": {
+   "lat": 3.19,
+   "lng": 101.66
+  },
+  "OUG": {
+   "lat": 3.07,
+   "lng": 101.67
+  },
   "TAI": {
    "lat": 4.85,
    "lng": 100.74
@@ -147,10 +155,8 @@
   "CA5-SEN": "SEN",
   "SP7-PUD": "PUD",
   "SM4-KEP": "KEP",
-  "CH4-KS": "KLS",
   "CR3-PUD": "PUD",
   "CH4-MLR": "MLR",
-  "CM3-OKR": "OKR",
   "CA11-SEN": "SEN",
   "CM6-PJ": "PJ"
  },
@@ -168,7 +174,7 @@
    "v348: A PLACEHOLDER IS NOT A GAZETTEER GAP, AND SAYING SO WRONGLY POINTS AT THE WRONG FIX.\n   CH6-TBC and CZ4-TBC were reported as `suffix \"TBC\" is not in the gazetteer`, which invites\n   exactly the wrong repair: putting TBC into PLACES would site two different people at one\n   invented spot and the map would look complete. TBC is to be confirmed. Nobody has asked them\n   yet, so there is nothing to look up.\n   THEY STILL COUNT AS GENUINE GAPS, not as excluded by rule. A reseller account will never have\n   a place of its own; these two will, the moment someone asks. Only the reason changes."
   ],
   "LOCS": [
-   "THE OVERRIDE, and only the override. From v347 locOf reads the locality out of the party\n   code itself, which is where v237 put it, so this list is no longer the only source and a\n   party added since it was last typed no longer falls off the map. It stays for the party\n   whose locality is NOT what its suffix says: CH4-KS sits at KLS. It still wins."
+   "THE OVERRIDE, and only the override. From v347 locOf reads the locality out of the party\n   code itself, which is where v237 put it, so this list is no longer the only source and a\n   party added since it was last typed no longer falls off the map. It stays for the party\n   whose locality is NOT what its suffix says, and it still wins. v397: no such party remains.\n   CH4-KS, the one example, was re-keyed to CH4-KLS at v396, so its override went, as did the\n   one left behind by the code retired at v397; the entries that stay simply agree with their\n   suffixes and are kept as a typed record rather than as overrides."
   ]
  }
 }

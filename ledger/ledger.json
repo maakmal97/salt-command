@@ -1,6 +1,6 @@
 {
- "v": "v396",
- "stamped": "28 Aug 2026, 21:24 KL",
+ "v": "v397",
+ "stamped": "28 Aug 2026, 23:58 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -1773,7 +1773,7 @@
    },
    {
     "date": "2026-08-15",
-    "customer": "CM3-OKR",
+    "customer": "CH5-OUG",
     "qty": 4,
     "total": 260,
     "cost": 56,
@@ -1781,7 +1781,7 @@
     "deliveredQty": 4,
     "deliveredOn": "2026-08-15",
     "paidOn": "2026-08-15",
-    "note": "<b>A NEW CUSTOMER OPENED AT CM3-OKR, AND HE OPENED RM64 UNDER FLOOR.</b> 4 unit for RM260, RM65 a unit, paid and collected on the 15th. On the RM56 shelf it returns RM36 on RM260, <b>13.8% on the price and a 16.1% markup on cost</b>, which is beneath the 25% the floor asks: the delivered floor at this size is RM324.24 and the collected one RM317.99, so it misses both by about RM64. <b>It is the thinnest salt margin this book has ever carried.</b> The next thinnest is CC5-OKR&rsquo;s RM80 unit two days later at 30.0%, and every other retail row since the restock sits between 44% and 49%. <b>THE FLAG WAS RAISED BEFORE IT WAS APPROVED, WHICH IS THE WHOLE POINT.</b> The drafter said in terms that RM260 was under both floors and that the party was not yet on the roster, and both statements were in front of him on the phone when he tapped approve. So this is a priced decision and not an accident, and the desk records it as one. A four unit opening at a keen rate is a recognisable trade: CM4-MK took 4 unit at RM90 once his cumulative buying passed RM1,000, so size has bought a discount here before. What is different is that this buyer has no history at all to price against, so the concession is being made on expectation rather than on record. <b>Worth watching rather than repeating.</b> If his second order comes in at RM65 too, RM65 is his price and the book should say so; if it comes in higher, this was an opening. <b>The party was registered separately and the two entries were coupled.</b> The ADDID adding CM3-OKR to the roster was queued a minute before the sale, refused by the drafter because registering a party is not a trade, and shown on the phone under the refused panel that v309 built. That coupling, a sale that cannot be committed until a registration is folded, is exactly what was invisible before that panel existed. The name and the location are in the directory and never in this file.",
+    "note": "<b>RENAMED AT v397: THIS PARTY WAS OPENED AS CM3-OKR AND THE CODE WAS MINTED WRONG; HE IS CH5-OUG ON EVERY ROW AND IN EVERY NOTE.</b> The identity behind the code is in the directory on the laptop, as ever. <b>A NEW CUSTOMER OPENED AT CH5-OUG, AND HE OPENED RM64 UNDER FLOOR.</b> 4 unit for RM260, RM65 a unit, paid and collected on the 15th. On the RM56 shelf it returns RM36 on RM260, <b>13.8% on the price and a 16.1% markup on cost</b>, which is beneath the 25% the floor asks: the delivered floor at this size is RM324.24 and the collected one RM317.99, so it misses both by about RM64. <b>It is the thinnest salt margin this book has ever carried.</b> The next thinnest is CC5-OKR&rsquo;s RM80 unit two days later at 30.0%, and every other retail row since the restock sits between 44% and 49%. <b>THE FLAG WAS RAISED BEFORE IT WAS APPROVED, WHICH IS THE WHOLE POINT.</b> The drafter said in terms that RM260 was under both floors and that the party was not yet on the roster, and both statements were in front of him on the phone when he tapped approve. So this is a priced decision and not an accident, and the desk records it as one. A four unit opening at a keen rate is a recognisable trade: CM4-MK took 4 unit at RM90 once his cumulative buying passed RM1,000, so size has bought a discount here before. What is different is that this buyer has no history at all to price against, so the concession is being made on expectation rather than on record. <b>Worth watching rather than repeating.</b> If his second order comes in at RM65 too, RM65 is his price and the book should say so; if it comes in higher, this was an opening. <b>The party was registered separately and the two entries were coupled.</b> The ADDID adding CH5-OUG to the roster was queued a minute before the sale, refused by the drafter because registering a party is not a trade, and shown on the phone under the refused panel that v309 built. That coupling, a sale that cannot be committed until a registration is folded, is exactly what was invisible before that panel existed. The name and the location are in the directory and never in this file.",
     "rid": "s085"
    },
    {
@@ -1820,7 +1820,7 @@
     "deliveredQty": 3,
     "deliveredOn": "2026-08-17",
     "paidOn": "2026-08-17",
-    "note": "<b>A NEW CUSTOMER OPENED AT CA11-SEN, AND HE OPENED THINNER THAN ANY SALT ORDER THIS BOOK HAS EVER CARRIED.</b> 3 unit for RM180, RM60 a unit, paid and collected on the 17th. On the RM56 shelf it returns RM4 a unit, <b>RM12 on the order at 6.7% on the price and a 7.1% markup on cost</b>, against the 15% the floor asks. The previous thinnest was CM3-OKR two days earlier at 13.8%, so the record has been broken twice in three days and both times by a new name. <b>THE FLAG WAS IN FRONT OF HIM AND HE APPROVED IT.</b> The drafter said the total sat under both the delivered and the collected floor and that the party had no committed salt order to price against; read the current gap off the Pricing tab rather than off this sentence, because both floors are derived live from cost. It earns nothing under the reward scheme, a margin under 30% sitting in the bottom band. <b>IT IS UNDER FLOOR, UNDER REPLACEMENT AND NOT UNDER COST, AND THE THREE ARE DIFFERENT FINDINGS.</b> RM60 a unit is above the RM56 lot it drew, so it made money; it is below what replacing that unit now costs the desk once freight, shrinkage and delivery are in, which is why boardHeadroom counts it under replacement alongside CS6-PER. <b>It is now the worst live price on the book by proportion</b>, short of its floor by more than any other, and it leaves four ringgit between the trade and the shelf, so the next rise in the buying rate takes it under cost outright without anything else changing. If his second order comes in at RM60 too, RM60 is his price and the book should say so. The name and the location are in the directory and never in this file.",
+    "note": "<b>A NEW CUSTOMER OPENED AT CA11-SEN, AND HE OPENED THINNER THAN ANY SALT ORDER THIS BOOK HAS EVER CARRIED.</b> 3 unit for RM180, RM60 a unit, paid and collected on the 17th. On the RM56 shelf it returns RM4 a unit, <b>RM12 on the order at 6.7% on the price and a 7.1% markup on cost</b>, against the 15% the floor asks. The previous thinnest was CH5-OUG two days earlier at 13.8%, so the record has been broken twice in three days and both times by a new name. <b>THE FLAG WAS IN FRONT OF HIM AND HE APPROVED IT.</b> The drafter said the total sat under both the delivered and the collected floor and that the party had no committed salt order to price against; read the current gap off the Pricing tab rather than off this sentence, because both floors are derived live from cost. It earns nothing under the reward scheme, a margin under 30% sitting in the bottom band. <b>IT IS UNDER FLOOR, UNDER REPLACEMENT AND NOT UNDER COST, AND THE THREE ARE DIFFERENT FINDINGS.</b> RM60 a unit is above the RM56 lot it drew, so it made money; it is below what replacing that unit now costs the desk once freight, shrinkage and delivery are in, which is why boardHeadroom counts it under replacement alongside CS6-PER. <b>It is now the worst live price on the book by proportion</b>, short of its floor by more than any other, and it leaves four ringgit between the trade and the shelf, so the next rise in the buying rate takes it under cost outright without anything else changing. If his second order comes in at RM60 too, RM60 is his price and the book should say so. The name and the location are in the directory and never in this file.",
     "rid": "s088"
    },
    {
@@ -1998,7 +1998,7 @@
    },
    {
     "date": "2026-08-20",
-    "customer": "CM3-OKR",
+    "customer": "CH5-OUG",
     "qty": 12.5,
     "total": 600,
     "cost": 44,
@@ -2698,7 +2698,7 @@
    "CY2-NIL",
    "CR3-PUD",
    "CH4-MLR",
-   "CM3-OKR",
+   "CH5-OUG",
    "CA11-SEN",
    "CM6-PJ",
    "CK4-SEN",
@@ -2860,7 +2860,7 @@
   ],
   "QUEUE_COMMITTED": "2026-08-28T09:59:51.414Z",
   "PRICING": {
-   "takenAt": "2026-08-28T13:25:01.971Z",
+   "takenAt": "2026-08-28T15:55:51.350Z",
    "sizes": [
     0.5,
     1,
@@ -3302,10 +3302,10 @@
      }
     }
    },
-   "v": "v396"
+   "v": "v397"
   },
   "OPEN": {
-   "at": "2026-08-28T13:25:02.038Z",
+   "at": "2026-08-28T15:55:51.376Z",
    "count": 7,
    "byKey": {
     "CH4-KLS|undefined|280": {
@@ -3444,7 +3444,7 @@
     "salt": "2026-08-24",
     "oil": "2026-08-23"
    },
-   "v": "v396"
+   "v": "v397"
   }
  }
 }
