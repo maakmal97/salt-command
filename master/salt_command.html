@@ -6499,8 +6499,18 @@ function drawAnalysis(){
       /* 4. buy rate against lot size. WHAT THE BUBBLE MEANS IS ON THE CHART, not in a
          paragraph above it: the title carries it, so it cannot be parted from the picture
          it explains. */
-      const buys=purchases.filter(p=>!p.pending&&p.qty>0).map(p=>({x:p.qty,y:+(p.total/p.qty).toFixed(2),
-        r:6+Math.sqrt(p.total/Math.max(1,Math.max.apply(null,purchases.map(z=>z.total))))*14,
+      /* IT READ THE WHOLE BOOK INSIDE A PER-PRODUCT BLOCK, so the oil block drew SALT's lots:
+         byte for byte the same seventeen points and the same default, at RM 48 to RM 64 a unit
+         on a product that costs about RM 7.50. Every other chart here is scoped without saying
+         so, because pricedSales, cogs and grossMargin are recompute() outputs and drawPerProduct
+         sets PROD and recomputes per block. `purchases` is the raw ledger array and no recompute
+         touches it, so it was the one source in the function that ignored the block it was drawn
+         in. The bubble scale is scoped with it: normalising oil's lots against salt's largest
+         would leave every oil bubble at the floor of the range. */
+      const lots=pPurch(PROD).filter(p=>!p.pending&&p.qty>0);
+      const maxLot=Math.max(1,...lots.map(z=>z.total));
+      const buys=lots.map(p=>({x:p.qty,y:+(p.total/p.qty).toFixed(2),
+        r:6+Math.sqrt(p.total/maxLot)*14,
         d:p.date,who:p.supplier,def:!!p.defaulted}));
       freshChart(blkEl('anBuys'),{type:'bubble',
         data:{datasets:[
