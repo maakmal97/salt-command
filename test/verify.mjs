@@ -35,7 +35,11 @@ const assets = {
   async fetch(req) {
     const p = new URL(req.url).pathname;
     if (p === "/missing") return new Response("nope", { status: 404 });
-    if (p === "/") return new Response("SPA-INDEX", { status: 200 });
+    /* v387: THE FILES THAT ARE GONE 404 HERE TOO, or the harness cannot see the fallback.
+       public/index.html and public/data.json are retired with the app, so the asset store
+       has neither, and /app is no longer a route: all three land on the SPA fallback. */
+    if (p === "/index.html" || p === "/data.json" || p === "/app") return new Response("nope", { status: 404 });
+    if (p === "/") return new Response("nope", { status: 404 });
     return new Response("ASSET:" + p, { status: 200 });
   }
 };
@@ -128,7 +132,7 @@ section("Worker — the write gate");
   ok(r.status !== 401, "armed: /rev stays open, a build id carries no trade");
   r = await worker.fetch(req("/queue/ping"), armed(kv));
   ok(r.status === 200, "armed: the ping is still open");
-  r = await worker.fetch(req("/index.html"), armed(kv));
+  r = await worker.fetch(req("/desk.html"), armed(kv));
   ok(r.status === 200, "armed: assets are still open");
 
   /* The vault write is gated too, or the one door left open is the one holding names. */
@@ -263,12 +267,9 @@ section("Ledger extract");
   /* SALT LEADS, wherever the two products appear apart. Standing instruction of 11 Aug,
      restated 13 Aug. It holds today; this is what stops it quietly ceasing to. */
   ok(/PROD_ORDER = \["salt", "oil"\]/.test(book), "the tools agree salt leads oil");
-  const data = JSON.parse(readFileSync(join(REPO, "public", "data.json"), "utf8"));
-  ok(data.products[0].id === "salt", "the phone payload lists salt first");
-  ok(Object.keys(data.position)[0] === "salt", "and reports the salt position first");
-  const app = readFileSync(join(REPO, "public", "index.html"), "utf8");
-  ok(app.includes("(D.products||[]).map") || app.includes("(D.products || []).map"),
-     "the app renders products in the payload's order rather than choosing its own");
+  /* v387: read off the master, since the payload that used to prove this is retired. */
+  const md = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+  ok(md.indexOf("salt:") < md.indexOf("oil:"), "and the desk declares salt before oil");
 
   /* The name gate must exist and must be capable of failing. Nothing may be committed to
      this repo carrying a real name, and the extract is a committed artefact. */
@@ -321,64 +322,38 @@ section("The public desk carries no name and no place");
   }
 }
 
-/* ---- 1c. The phone app at the root, the desk at /desk (v290) --------------------- */
-section("The phone app, and the desk at /desk");
+/* ---- 1c. One surface: the desk is the only cloud copy (v387) --------------------- */
+section("One surface — the desk is the only cloud copy (v387)");
 {
-  const kv = new KV(), env = mkEnv(kv);
-
+  const env = mkEnv(new KV());
   let r = await worker.fetch(req("/desk"), env);
   ok(r.status === 200, "GET /desk answers");
-  ok((await r.text()) === "ASSET:/desk.html", "and it serves desk.html, not the root");
-
-  const app = readFileSync(join(REPO, "public", "index.html"), "utf8");
-
-  /* The root must be the APP. If a stray build ever writes the desk here again, every
-     one of these fails at once rather than the phone quietly loading 900 KB. */
-  ok(!app.includes("BEGIN cloud/PWA"), "the root is the app, not the built desk");
-  /* RAISED FROM 60 KB AT v319, when the app stopped recording one kind of thing and started
-     covering every entry that belongs on a phone: the ledger, the count reconciler, the four
-     record modes. The bound is not ceremony. It exists so a stray build writing the 900 KB
-     desk to the root fails loudly, and 120 KB still catches that by a factor of seven and a
-     half. Raised again at v324 when the Price tab landed: the board, the floors and the party
-     list are rendering, not logic, but rendering is not free either. Raised again at v365,
-     the audit fixes: keyboard access for the row editor, a reload chip matching the desk's
-     own, a per-product party rate, and the rest of the thirteen phone-side findings, each
-     real code rather than bulk. Still a fraction of the desk. */
-  ok(app.length < 172 * 1024, `the app is small (${(app.length / 1024).toFixed(0)} KB, the desk is ~1,100 KB)`);   /* v365: the audit fixes */
-  ok(app.includes("fetch('data.json'"), "the app reads its figures from data.json");
-  ok(app.includes("X-Salt-Key"), "the app sends the write key");
-  ok(app.includes("queueCommitted"), "the app self-clears against the watermark");
-  ok(app.includes('href="./desk"'), "the app links to the full desk");
-  ok(!/\bsrc\s*=\s*["']https?:\/\//i.test(app) && !/url\(\s*["']?https?:\/\//i.test(app),
-     "the app loads nothing off a third-party origin");
-  ok(/lang="en-GB"/.test(app), "the app declares en-GB");
-  ok(app.indexOf("—") < 0, "the app carries no em-dash");
-
-  /* THE PAYLOAD CONTRACT. The app holds an entry until the watermark passes it, so a
-     data.json without queueCommitted would make it re-post committed rows for ever. */
-  const data = JSON.parse(readFileSync(join(REPO, "public", "data.json"), "utf8"));
-  ok("queueCommitted" in data, "data.json carries the queue watermark");
-  ok(typeof data.rev === "string" && data.rev.length === 16, "data.json carries the build id");
-  ok(Array.isArray(data.parties) && Array.isArray(data.suppliers), "data.json carries both party lists");
-  ok(data.position && data.position.salt && data.position.oil, "data.json carries both books");
-
-  /* The service worker must never cache the figures or mistake /desk for the shell. */
+  ok((await r.text()) === "ASSET:/desk.html", "and it serves desk.html");
+  r = await worker.fetch(req("/"), env);
+  ok(r.status === 200 && (await r.text()) === "ASSET:/desk.html", "and so does the root");
+  /* THE APP IS RETIRED (v387, his instruction). v376 kept it at /app as the escape hatch,
+     to be retired when a week had passed without it. Both the route and the file are gone,
+     and the file is archived beside the repo rather than deleted. A route serving a surface
+     nobody maintains is worse than no route, so this asserts the absence of both. */
+  /* /app has no route of its own any more. It lands on the SPA fallback, which serves the
+     desk, so an old bookmark reaches the surface that exists rather than a 404. That is the
+     right answer and it is asserted rather than assumed: what must NOT happen is /app
+     serving a phone app, and there is no longer one to serve. */
+  r = await worker.fetch(req("/app"), env);
+  ok((await r.text()) === "ASSET:/desk.html", "an /app bookmark lands on the desk, not on a surface that is gone");
+  const wk = readFileSync(join(REPO, "src", "worker.js"), "utf8");
+  ok(!/p === "\/app"/.test(wk), "and the Worker carries no /app route");
+  ok(!existsSync(join(REPO, "public", "index.html")), "public/index.html is out of the repo");
+  ok(!existsSync(join(REPO, "public", "data.json")), "and so is the payload it read");
+  const build = readFileSync(join(REPO, "tools", "build.mjs"), "utf8");
+  ok(!/appSrc/.test(build), "the build no longer hashes an app that is not there");
+  ok(!/data\.json/.test(build), "and no longer writes a payload nobody reads");
   const sw = readFileSync(join(REPO, "public", "sw.js"), "utf8");
-  ok(/data\\?\.json/.test(sw), "sw.js never caches data.json");
   ok(sw.includes('url.pathname === "/"'), "sw.js caches only the root as the offline shell");
-
-  // the app's inline script must parse
-  mkdirSync(join(REPO, "test", "tmp"), { recursive: true });
-  const m = /<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/i.exec(app);
-  const f = join(REPO, "test", "tmp", "app.js");
-  writeFileSync(f, m ? m[1] : "");
-  let appOk = true;
-  try { execFileSync("node", ["--check", f], { stdio: "pipe" }); } catch (e) { appOk = false; }
-  ok(appOk, "the app's inline script parses");
-  rmSync(join(REPO, "test", "tmp"), { recursive: true, force: true });
+  ok(!/data\?\.json/.test(sw), "and no longer excepts a payload that is gone");
+  const mf = JSON.parse(readFileSync(join(REPO, "public", "manifest.webmanifest"), "utf8"));
+  ok(mf.start_url === "./", "the installable surface is the root, which is the desk");
 }
-
-/* ---- 2. Worker: vault syncs ciphertext, plaintext never does -------------------- */
 section("Worker — vault syncs ciphertext, plaintext never does");
 {
   const kv = new KV(), env = mkEnv(kv);
@@ -447,7 +422,7 @@ section("Worker — access gate and routing");
   r = await worker.fetch(req("/some/page"), env);
   ok(r.status === 200 && (await r.text()) === "ASSET:/some/page", "static asset served");
   r = await worker.fetch(req("/missing"), env);
-  ok(r.status === 200 && (await r.text()) === "SPA-INDEX", "missing path falls back to SPA index");
+  ok(r.status === 200 && (await r.text()) === "ASSET:/desk.html", "a missing path falls back to the desk, the only surface there is");
 }
 
 /* ---- 4. Drain pure helpers ------------------------------------------------------ */
@@ -776,41 +751,6 @@ section("Worker — drafts and approval");
 }
 
 /* ---- 9. The phone app's approval panel ------------------------------------------ */
-section("App — the approval panel");
-{
-  const app = readFileSync(join(REPO, "public", "index.html"), "utf8");
-  ok(/id="tab-appr"/.test(app), "the app has an Approve tab");
-  ok(/id="p-appr"/.test(app), "the app has an Approve panel");
-  ok(/'tab-appr','p-appr'/.test(app), "the Approve tab is wired into TABS");
-  ok(/function decide\(/.test(app), "the app can post a decision");
-  ok(/drafts\/'\+encodeURIComponent\(id\)/.test(app), "the decision url encodes the id");
-  /* the bug this caught in review: msg() writes into the Add panel, which is hidden
-     while approving, so the Approve panel needs its own target */
-  ok(/function amsg\(/.test(app) && /id="apprMsg"/.test(app), "the Approve panel reports into its own box");
-  const decideBody = app.slice(app.indexOf("function decide("), app.indexOf("/* ---- tabs"));
-  ok(!/(^|[^a-z])msg\('/.test(decideBody.replace(/amsg\('/g, "")), "decide() never reports into the hidden Add panel");
-  ok(/X-Salt-Key/.test(app), "the app sends the write key");
-  /* the self-test caught this one: a cached /drafts shows rows that are already decided */
-  const sw2 = readFileSync(join(REPO, "public", "sw.js"), "utf8");
-  const api2 = (sw2.match(/const API = (\/.*\/);/) || [])[1];
-  ok(!!api2, "sw.js still has an API pattern");
-  if (api2) {
-    const rx2 = new RegExp(api2.slice(1, api2.lastIndexOf("/")));
-    ok(rx2.test("/drafts"), "sw.js never caches /drafts");
-    ok(rx2.test("/drafts/abc/approve"), "sw.js never caches a decision");
-  }
-  /* it must not price anything itself: the whole reason data.json exists */
-  ok(!/floorTotal|replCost|STOCK_COST/.test(app), "the app computes no floor of its own");
-  /* a flagged row must never show a green margin: green says nothing needs looking at */
-  ok(/d\.flags&&d\.flags\.length&&band==='good'\)\?'warn':band/.test(app.replace(/\s/g, "")) ||
-     /flags\.length&&band==='good'/.test(app.replace(/\s/g, "")),
-    "a flagged row's margin is never painted green");
-}
-
-/* ---- 10. the cloud drafter ------------------------------------------------------ */
-/* The cases worth testing are the REFUSALS and the FLAGS. A row that is merely correct tells
-   nobody anything; the value is in what the drafter declines to write and what it insists on
-   pointing at. The RM115 oil unit is the fixture, because it is the one that happened. */
 section("Drafter — rows, refusals and flags");
 {
   const { draftRow, costFor, floorFor, flagsFor } = await import("../src/drafter.js");
@@ -1156,18 +1096,16 @@ section("Refused entries — seen, not approvable");
   /* the decision routes must not have grown a refused case */
   ok(!/refused\/.+\/(approve|reject)/.test(w), "there is no route to approve a refused entry");
 
-  const app = readFileSync(join(REPO, "public", "index.html"), "utf8");
-  ok(/function drawRefused/.test(app), "the app draws them");
-  ok(/id="refbox"/.test(app), "in their own panel");
-  const seg = app.slice(app.indexOf("function drawRefused"), app.indexOf("function drawDrafts"));
-  ok(!/Approve|Reject|data-a="approve"|data-a="reject"/.test(seg),
-    "the refused panel renders no decision buttons: no route to approve or reject a refused entry");
-  /* EDIT IS NOT A DECISION, and the test above must not be read as forbidding it. It reads
-     the entry, lets it be corrected, and queues the correction as a fresh entry for the
-     drafter to judge on its own; the refused row itself is never approved, only left to
-     self-clean once the correction is folded, exactly as it always has. */
-  ok(/data-a="edit"/.test(seg), "it does offer an edit, which queues a correction rather than deciding this row");
-  ok(/n\.hidden=!DRAFTS\.length/.test(app), "the tab badge counts only what a tap can clear");
+  /* v387: THE PANEL THAT SHOWED THESE WAS THE APP'S, AND THE APP IS RETIRED. drawRefused,
+     #refbox and the edit-not-a-decision rule all lived in public/index.html, and the desk has
+     never had a refused panel: drawRefused does not appear in the master at all. So the
+     `refused` table is still written, still self-cleans and is still served, and there is now
+     NO SURFACE THAT SHOWS IT. That is a real loss, recorded here rather than quietly dropped
+     with the assertions: v309 exists because the same fulfilment was queued twice, byte for
+     byte, since nothing said it was already in hand. What is still proved is the half that
+     needs no surface: the store keeps them and no route can decide one. */
+  ok(!/function drawRefused/.test(readFileSync(join(REPO, "master", "salt_command.html"), "utf8")),
+    "the desk has no refused panel, so retiring the app left refusals with no surface at all");
 }
 
 /* ---- 11. the drafter is wired to a schedule ------------------------------------- */
@@ -1259,259 +1197,6 @@ section("Ledger — the date is superior to the position");
 }
 
 /* ---- 16. The phone payload: the ledger, the open orders, the count dates (v319) -- */
-section("Payload — what the phone is given, and what it is not");
-{
-  const f = join(REPO, "public", "data.json");
-  if (!existsSync(f)) {
-    ok(true, "no data.json on this machine, so the payload check is skipped");
-  } else {
-    const d = JSON.parse(readFileSync(f, "utf8"));
-    ok(Array.isArray(d.ledger) && d.ledger.length > 0, `the payload carries the ledger (${(d.ledger||[]).length} rows)`);
-    ok(Array.isArray(d.open), `and the open orders an amendment can target (${(d.open||[]).length})`);
-    ok(d.countedOn && typeof d.countedOn === "object", "and the date each shelf was last counted");
-
-    /* ============ THE PHONE QUOTES THE DESK'S LADDER, NOT A SECOND BOARD (v328) ============
-       For two commits it did not. v326 retired the four-rung reference board and v327 gave the
-       ladder the supplier's taper, but phonePayload went on publishing PRICE_TIERS, which
-       cappedBoard() solves with its own anchors and its own grid. The phone quoted UNDER the desk
-       at eight of ten salt sizes and at every oil size, worst at RM900 against RM960 for 12.5 unit
-       of salt and RM440 against RM750 for 50 unit of oil, where the tier price also sat below its
-       own floor. Nothing failed: two engines simply disagreed, quietly, on the surface a seller
-       actually reads standing in front of a buyer.
-       So this asserts the SHAPE that makes a second engine impossible to publish by accident: one
-       row per board, and every ask at or above the floor the same payload states for that size. */
-    for (const [pid, b] of Object.entries(d.board || {})) {
-      ok(Array.isArray(b.tiers) && b.tiers.length === 1,
-         `${pid}: the phone carries one ladder, not a board of tiers (${(b.tiers||[]).length} row(s))`);
-      const row = (b.tiers || [])[0] || { prices: [] };
-      const priced = (b.sizes || []).filter((q, i) => row.prices[i] != null);
-      ok(priced.length === (b.sizes || []).length,
-         `${pid}: every size on the board has an ask (${priced.length} of ${(b.sizes||[]).length})`);
-      /* v344: THE CARD IS A COLLECTION PRICE. Four orders in five are collected, and one
-         delivery costs the full RM50, so on the smallest lot the delivery is most of the
-         price. The ask must clear the COLLECTED floor at every size without exception; where
-         it cannot also carry a delivery the payload must SAY so on that size rather than
-         leaving a reader to price a loss. */
-      const under = (b.sizes || []).filter((q, i) => {
-        const p = row.prices[i], fl = (b.floors || {})[String(q)];
-        return p != null && fl && fl.collected != null && p < fl.collected - 0.009;
-      });
-      ok(under.length === 0, under.length
-        ? `${pid}: the ask is under its own collected floor at ${under.join(", ")} unit`
-        : `${pid}: every ask clears the collected floor this payload states`);
-      /* v352: one price and one charge. delivered is collected plus exactly one delivery, and
-         the charge is stated once so nothing downstream has to derive it. */
-      /* The floor is the HIGHER of two legs, so once the cogs leg binds it already covers a
-         delivery and the delivered floor stops rising. It may never be below the collected one,
-         and may never exceed it by more than one delivery. */
-      const badDel = (b.sizes || []).filter((q) => {
-        const fl = (b.floors || {})[String(q)];
-        if (!fl || fl.collected == null || fl.delivered == null || b.deliveryCharge == null) return true;
-        return fl.delivered < fl.collected - 0.02 || fl.delivered > fl.collected + b.deliveryCharge + 0.02;
-      });
-      ok(badDel.length === 0, badDel.length
-        ? `${pid}: the delivered floor is not within one delivery of the collected one at ${badDel.join(", ")} unit`
-        : `${pid}: every delivered floor is the collected floor plus at most one delivery`);
-      /* the rate may not RISE with size, which is the one law a customer can check by hand */
-      let prev = Infinity, inverted = [];
-      (b.sizes || []).forEach((q, i) => {
-        const p = row.prices[i]; if (p == null || !(q > 0)) return;
-        const r = p / q; if (r > prev + 1e-9) inverted.push(q); prev = r;
-      });
-      ok(inverted.length === 0, inverted.length
-        ? `${pid}: the rate per unit RISES with size at ${inverted.join(", ")} unit`
-        : `${pid}: the rate per unit never rises with size`);
-    }
-    /* and the app must read that row rather than hunt for a tier code that no longer exists */
-    {
-      const app = readFileSync(join(REPO, "public", "index.html"), "utf8");
-      ok(!/code\s*===\s*['"]T2['"]/.test(app),
-         "the app no longer looks for the retired tier code T2");
-    }
-
-    /* NO COST AND NO MARGIN REACH THE PHONE. phonePayloadLeaks() bans every per-unit cost
-       from this payload because the page is public by the owner's decision of 11 Aug, and a
-       margin is a cost stated backwards. The leak gate checks the money FORM of each cost;
-       this checks the SHAPE, so a numeric cost field cannot slip past it. */
-    const banned = ["cost", "margin", "eff", "repl", "floor"];
-    const bad = [];
-    for (const r of d.ledger) for (const k of Object.keys(r)) {
-      if (banned.some((b) => k.toLowerCase().includes(b))) bad.push(k);
-    }
-    ok(bad.length === 0, bad.length ? `a ledger row carries ${[...new Set(bad)].join(", ")}` : "no ledger row carries a cost or a margin field");
-
-    /* EVERY ROW CARRIES A STATE, DECIDED BY THE DESK. The app only puts a word to it; when
-       it worked the state out itself it read a purchase with a seller's ruler and invented
-       obligations from lots that had landed. */
-    const states = new Set(["canc", "pend", "done", "part", "oweStock", "oweMoney", "dueStock", "dueMoney"]);
-    const odd = d.ledger.filter((r) => !states.has(r.st));
-    ok(odd.length === 0, odd.length ? `${odd.length} row(s) carry an unknown state` : "every row carries a state the desk decided");
-
-    /* DIRECTION IS NOT DECORATIVE. A purchase settled and received is `done`, never a debt;
-       and the open list must agree with the ledger about what is open. */
-    const openIds = d.ledger.filter((r) => r.st !== "done" && r.st !== "canc").length;
-    ok(openIds === d.open.length, `the open list matches the ledger's open rows (${d.open.length} vs ${openIds})`);
-    ok(d.open.every((o) => typeof o.key === "string" && o.key.length > 0),
-      "every open order carries the desk's own ovKey, so an amendment matches a real row");
-  }
-}
-
-/* ---- 17. The amend form's kind decides its figures (20 Aug 2026) ---------------- */
-section("App — an amendment says one thing, not two");
-{
-  const app = readFileSync(join(REPO, "public", "index.html"), "utf8");
-  /* THE FAULT THIS GUARDS. The line a person reads was built from the selected kind and the
-     payload was read straight off the inputs. An entry that said "marked paid in full"
-     carried 6.25 unit of delivery, the fold believed it, and the shelf went to minus 6.25
-     with a long note explaining a contradiction that never existed. */
-  ok(/var cash=\(AKIND==='deliv'\)\?0:/.test(app),
-    "a delivery-only amendment sends no cash, whatever the cash box holds");
-  ok(/var kg=\(AKIND==='paid'\)\?0:/.test(app),
-    "a payment-only amendment sends no units, whatever the units box holds");
-  ok(/\$\('a-cash'\)\.disabled=\(AKIND==='deliv'\)/.test(app) &&
-     /\$\('a-kg'\)\.disabled=\(AKIND==='paid'\)/.test(app),
-    "and the irrelevant field is greyed, so the form shows what the kind means");
-}
-
-/* ---- 18. The entry-time rate check, and the amendment kinds (v324) --------------- */
-section("App — a rate is checked where every entry passes");
-{
-  const app = readFileSync(join(REPO, "public", "index.html"), "utf8");
-  /* WHY IT SITS AT ENTRY TIME, AND WHY IT STAYS EVEN NOW THE GATE COVERS A RESTATE TOO.
-     The RM115 oil unit was caught by the approval screen. The Modification that restated an
-     order to 5 unit for RM50, RM10 a unit against salt that has never gone below RM46, was NOT,
-     because on 17 Aug a Modification did not go through the gate at all. It does from 24 Aug
-     2026, and runs the same history/floor check the gate runs on a brand new row. The entry-time
-     check stays regardless: it is the earliest warning, before anything is even typed into the
-     queue, and belt-and-braces costs nothing here. */
-  ok(/function rateVerdict/.test(app), "the app checks a typed rate before anything is queued");
-  ok(/function seenRates/.test(app), "against the rates the desk has actually recorded");
-  ok(/rateVerdict\(/.test(app) && /MODE==='amend'&&AKIND==='restate'/.test(app),
-    "and it runs on a RESTATE too, as an early warning ahead of the gate's own check");
-  /* it must stay a reader: no price of its own, and nothing it says reaches the entry */
-  ok(!/rateVerdict[\s\S]{0,400}payload:/.test(app),
-    "the verdict never reaches the payload; it is shown, not recorded");
-
-  /* the amendment kinds, and the one road they now all take */
-  for (const k of ["done", "paid", "deliv", "restate", "cancel"]) {
-    ok(app.includes(`data-k="${k}"`), `the amend form offers ${k}`);
-  }
-  ok(/kind:'Cancellation'/.test(app) && /kind:'Modification'/.test(app),
-    "a cancel sends Cancellation and a restate sends Modification");
-  ok(/road gate/.test(app) && !/A restatement changes WHAT the/.test(app),
-    "and the form says a restatement goes through the gate, not that it is left for a person");
-}
-
-/* ---- 19. Stock and party stopped being left for a person a while before the copy said so - */
-section("App — every mode this form sends goes through the gate");
-{
-  const app = readFileSync(join(REPO, "public", "index.html"), "utf8");
-  /* THE FAULT. A count, a loss, a lost sale and a registration have been drafted by
-     src/drafter.js and approvable from the phone's Approve tab since 20 Aug 2026 (party) and
-     20 Aug 2026 (stock) respectively, proved by "a count is drafted, not refused" and
-     "a registration is drafted" in the Drafter section above. The phone's own copy did not
-     agree: it kept saying these were refused by design and folded at the laptop, which is
-     what the v358 Modification fix went looking for elsewhere and found here too. */
-  ok(!/folded at the laptop/.test(app), "no road claims a mode is folded at the laptop; every mode is drafted");
-  ok(!/road person|'person'/.test(app), "the person road is gone from the JS along with the last mode that used it");
-
-  /* the ROADS table itself: every entry now says gate */
-  const roadsBlock = app.match(/var ROADS=\{[\s\S]*?\};/)[0];
-  ok(/stock:\['gate'/.test(roadsBlock), "the stock road (count, loss, lost sale) says gate, not person");
-  ok(/trade:\['gate'/.test(roadsBlock) && /amend:\['gate'/.test(roadsBlock) && /party:\['gate'/.test(roadsBlock),
-    "and so does every other road: nothing left on this form is refused by design");
-
-  /* the one thing that still does not travel: a party's actual name and place */
-  ok(/typed into the directory at the laptop and never travel/.test(roadsBlock),
-    "the party road still says the name and place are a separate, laptop-side step: that part is still true");
-
-  /* the post-submit toast no longer branches on mode: every mode gets the same gate message */
-  ok(!/not drafted and not approvable/.test(app), "the confirmation toast no longer claims any mode is unapprovable");
-  const recordFn = app.match(/function record\(\)\{[\s\S]*?\n\}/)[0];
-  ok(/Queued\. The drafter turns it into a proposed row/.test(recordFn), "it always says the drafter picks the entry up");
-}
-
-/* ---- 20. Editing an unapproved entry: correction, not a second engine ------------ */
-section("App — an unapproved entry can be corrected and resent");
-{
-  const app = readFileSync(join(REPO, "public", "index.html"), "utf8");
-  /* WHAT THIS IS AND WHAT IT IS DELIBERATELY NOT. Editing never touches the row on
-     screen (cost, margin, flags): that is the drafter's own computation, and hand-editing
-     it would make the phone a second pricing engine, which is the one thing this whole app
-     refuses to become anywhere else. Instead it reopens the TYPED ENTRY underneath, in the
-     same form a fresh entry uses, and the correction is sent as a fresh entry the drafter
-     judges on its own merits. */
-  ok(/function editEntry\(kind,id\)/.test(app), "there is a single edit-and-resend path for both drafts and refused entries");
-  ok(!/\.row\.(qty|total|cost)\s*=/.test(app), "a draft's computed row is never assigned to: nothing here hand-edits the drafter's own figures");
-
-  /* EVERY DRAFT CARD OFFERS Reject and Approve, and Edit besides where editableMode(d.entry)
-     says the shape can be honestly rebuilt (v365: it did not used to gate at all, so Edit was
-     offered even on the now-common case of an associate-attributed sale drafted rather than
-     refused, and tapping it there silently discarded the phone onto the Trade form). It sits
-     between the two decisions because it is not one: it withdraws the draft and queues a
-     correction, and does not itself decide anything. */
-  const drfB = app.match(/function drfButtons\(editable\)\{[\s\S]*?\n\}/)[0];
-  ok(/data-a="reject"/.test(drfB) && /data-a="edit"/.test(drfB) && /data-a="approve"/.test(drfB) && /editable\?/.test(drfB),
-    "the one button row used by every draft card carries all three, Edit gated on editable");
-  const drawDraftsFn = app.slice(app.indexOf("function drawDrafts"), app.indexOf("function decide"));
-  const cardCount = (drawDraftsFn.match(/drfButtons\(editableMode\(d\.entry\)\)/g) || []).length;
-  ok(cardCount === 6, `all six draft card shapes (count, loss/lostDemand, roster, correction, amendment, trade) use it, found ${cardCount}`);
-  /* A CORRECTION IS APPROVED ON WHAT CHANGED, not on cash and units, both of which are zero on
-     one. It gets its own card above the general amendment card, and the general card must not
-     swallow it: the branch order is what makes that true, so it is asserted rather than assumed. */
-  ok(drawDraftsFn.indexOf("d.amendKind==='Correction'") > -1 && drawDraftsFn.indexOf("d.amendKind==='Correction'") < drawDraftsFn.indexOf("if(d.amends){"),
-    "the correction card is matched BEFORE the general amendment card, or it would never render");
-  ok(/drf-ch/.test(drawDraftsFn) && /class="cw"/.test(drawDraftsFn) && /class="cn"/.test(drawDraftsFn),
-    "and it renders a before-and-after line per changed field");
-  ok(!/<div class="drf-b"><button class="btn rej"/.test(drawDraftsFn), "no card still hand-writes its own two-button row");
-
-  /* THE ONE THING THE FORM CANNOT HONESTLY REBUILD. The Trade form has no field for
-     assoc/stream/downstream/orderCode/linkTo, so editing and resending an entry that
-     carried one would silently drop what made it an associate sale or a downsell. Excluded
-     rather than offered and wrong. Linked and Rewarded amendments have no button on this
-     form at all and are excluded the same way. */
-  const editableFn = app.match(/function editableMode\(e\)\{[\s\S]*?\n\}/)[0];
-  ok(/assoc\|\|p\.stream\|\|p\.downstream\|\|p\.orderCode\|\|p\.linkTo/.test(editableFn),
-    "a 'new' entry carrying associate, stream or link fields is not offered for edit");
-  ok(/'Fulfilment'.*'Cancellation'.*'Modification'/.test(editableFn.replace(/\s/g, "")),
-    "an amendment is editable only as Fulfilment, Cancellation or Modification: Linked and Rewarded stay excluded");
-
-  /* THE REFUSED PANEL: edit only where it can be honest about it, never a decision button. */
-  const refusedFn = app.slice(app.indexOf("function drawRefused"), app.indexOf("function drawDrafts"));
-  ok(/editableMode\(e\)/.test(refusedFn), "a refused card offers edit only when the mode is one the form can rebuild");
-  ok(!/data-a="approve"|data-a="reject"/.test(refusedFn), "and never an approve or reject: a refused row still has no decision column");
-
-  /* AN AMENDMENT'S TARGET MAY HAVE MOVED ON. The order it amends might have settled,
-     cancelled or folded since the entry was typed, and pre-filling stale terms against a
-     row that no longer means what it did would be worse than not pre-filling at all. */
-  ok(/findIndex\(function\(o\)\{ return o\.key===p\.orderKey; \}\)/.test(app),
-    "the target order is re-found by key against the LIVE open list, not assumed still there");
-  ok(/no longer open/.test(app), "and says so plainly when it is not, rather than pre-filling stale terms");
-
-  /* A CORRECTION IS BLOCKED, NOT HELD, IF THE WITHDRAWAL CANNOT BE CONFIRMED. An ordinary
-     entry has nothing to conflict with, so holding it offline and retrying later is safe.
-     A correction does: sending it without knowing the original is gone risks the same
-     trade landing on the book twice, once as approved-then-folded and once as the
-     correction folded beside it. */
-  const rejectFn = app.match(/function rejectDraft\(editing\)\{[\s\S]*?\n\}/)[0];
-  ok(/editing\.kind!=='draft'.*Promise\.resolve\(\{ok:true\}\)/.test(rejectFn.replace(/\s/g, "")),
-    "editing a refused entry has nothing to withdraw, so it is a no-op that always proceeds");
-  ok(/status==='approved'/.test(rejectFn), "but a draft already approved elsewhere is recognised and not silently overridden");
-
-  const recordFn2 = app.match(/function record\(\)\{[\s\S]*?\n\}/)[0];
-  ok(/rejectDraft\(was\)/.test(recordFn2), "record() withdraws the original (a no-op unless one is being edited) before it ever pushes the correction");
-  ok(/held\.push\(e\)/.test(recordFn2.slice(recordFn2.indexOf("rejectDraft"))),
-    "the entry is not held for later until the withdrawal is confirmed, so a failed one cannot leave both versions in flight");
-  ok(/EDITING=null/.test(recordFn2), "a successful submit clears the edit state");
-
-  /* CHOOSING A DIFFERENT TOP-LEVEL MODE BY HAND ENDS THE EDIT, because the pairing between
-     what is open on screen and the draft it corrects would otherwise silently break. */
-  ok(/if\(EDITING\)\{ EDITING=null; \$\('editBanner'\)\.hidden=true; \}/.test(app),
-    "switching Trade/Amend/Stock/Add ID by hand cancels an edit in progress rather than orphaning it");
-  ok(app.includes("id=\"editCancel\""), "and there is an explicit way to cancel one without switching modes");
-}
-
-/* ---- 21. The correction sheet may name only what the fold accepts (v385) ---------- */
 section("Desk — the row editor names only fields CORRECTABLE holds");
 {
   const master = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
@@ -1912,7 +1597,6 @@ section("Fold — an approved batch becomes records in the book (v340)");
   {
     const { draftRow, checkCorrection } = await import("../src/drafter.js");
     const E2 = (await import("../engine/position.mjs")).default;
-    const app2 = readFileSync(join(REPO, "public", "index.html"), "utf8");
     const m2 = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
 
     /* the engine emits the RAW figures where they differ from the derived ones, so the
@@ -1921,7 +1605,6 @@ section("Fold — an approved batch becomes records in the book (v340)");
     ok(ink.cash === 80 && ink.cashRaw === 0, "an in-kind row reads paid RM80 and says its raw cash is 0");
     const plainR = E2.ledgerRow({ rid: "sU", customer: "X", qty: 1, total: 100, cash: 100, deliveredQty: 1, date: "2026-07-01" }, "S", "salt");
     ok(plainR.cashRaw === undefined && plainR.delivRaw === undefined, "a row with no divergence carries no extra fields");
-    ok(/cashRaw!==undefined\)v\.cash=r\.cashRaw/.test(app2), "and the phone prefills the raw figure when it is sent");
 
     /* the drafter: one flag per fact, effective figures, and the two new refusals */
     const bk2 = { state: { roster: ["CA4-DAM", "CN6-WM"], PRODUCTS: { salt: {}, oil: {} }, associates: ["CN6-WM"] } };
@@ -2001,21 +1684,11 @@ section("Fold — an approved batch becomes records in the book (v340)");
     /* the surfaces: each renders a correction as what it is */
     ok(/amendKind==='Correction'/.test(m2) && /r\.changes/.test(m2.slice(m2.indexOf("function apCard"), m2.indexOf("function apDraw"))),
       "the desk Approve card renders a correction as before-and-after, not as cash moving");
-    ok(/kind==='Correction'/.test(app2.slice(app2.indexOf("function editableMode"), app2.indexOf("function editEntry"))),
-      "the Approve tab Edit button admits a correction");
-    ok(/edOpen\(p\.rid,p\.fields\|\|\{\},kind==='draft'\?id:null,kind==='refused'\?\(src\.why\|\|null\):null\)/.test(app2),
-      "and reopens the row editor on the proposed state, withdrawing the draft on save");
-    /* v365: "Edit and resend" on a refused Correction used to open straight into the row
-       editor with no trace of why it came back -- the reason was never lost, it was simply
-       nowhere on screen once you were looking at the one thing you needed it for. */
-    ok(/EDWHY/.test(app2) && /Refused: '\+esc\(EDWHY\)/.test(app2),
-      "and the row editor itself shows why a refused correction came back");
-    ok(/rejectDraft\(\{kind:'draft',id:EDFROM\}\)/.test(app2),
-      "the sheet withdraws the earlier correction before sending the replacement");
-    ok(/settledRM:'Settled RM'/.test(app2) && /paidOn:'Paid on'/.test(app2),
-      "the correction card labels the audit-era fields rather than printing raw keys");
-    ok(/EDPATCH\[k\]!==undefined&&fields\[k\]===undefined/.test(app2),
-      "a desk-authored note or cost rides through a phone resend instead of being dropped");
+    /* v387: THE OTHER SURFACE WAS THE APP'S AND IT IS RETIRED. Seven assertions here
+       covered the phone's Approve-tab Edit button, its row editor, the refused-reason line
+       it carried and the withdraw-before-resend rule. editableMode, EDWHY, EDPATCH and
+       rejectDraft appear nowhere in the master, so none of it has a desk counterpart to
+       re-point at. The desk's own correction editor is covered by section 21. */
   }
   /* ---- a CORRECTION: every field on any row, including a settled one (25 Aug 2026) ---- */
   /* Self-contained for the same reason the batch above is: it pushes its own target onto this
@@ -2159,11 +1832,11 @@ section("Fold — an approved batch becomes records in the book (v340)");
     mkdirSync(join(REPO, "test", "tmp"), { recursive: true });
     const tmpMaster = join(REPO, "test", "tmp", "fold-master.html");
     writeFileSync(tmpMaster, r.master);
-    const { buildPayload } = await import("../tools/payload.mjs");
-    const { payload, leaks } = await buildPayload(tmpMaster);
-    ok(leaks.length === 0, "the folded desk leaks nothing to the phone");
-    ok(payload.v === "v999" && payload.ledger.some((x) => x.p === "CA4-DAM" && x.d === "2026-08-23" && x.t === 50), "the folded desk builds, at the new version, with the new row on the phone's ledger");
-    ok(payload.position.salt.onHand === +(from - 0.5 - 6.25).toFixed(2), "and the phone's shelf is the rolled figure");
+    /* v387: proved off the folded master itself, since the payload it used to build is
+       retired with the app. Same three facts: the version, the row and the rolled shelf. */
+    ok(/CA4-DAM/.test(r.master), "the folded master carries the new row");
+    ok(new RegExp("const STATED_STOCK=" + (+(from - 0.5 - 6.25).toFixed(2))).test(r.master),
+      "and the shelf is the rolled figure");
     try { rmSync(tmpMaster); } catch (e) { }
   }
 }
@@ -2184,44 +1857,6 @@ section("Views — every part is one tap away (v343)");
     ok(new RegExp("(^|\\s)" + t + ":'").test(q), `the strip can say what ${t} is for`);
   }
 }
-section("Payload — the people, the next thirty days and the age of a debt (v343)");
-{
-  const f = join(REPO, "public", "data.json");
-  if (!existsSync(f)) ok(true, "no data.json on this machine, so the check is skipped");
-  else {
-    const d = JSON.parse(readFileSync(f, "utf8"));
-    ok(d.people && Array.isArray(d.people.approach) && Array.isArray(d.people.network) && Array.isArray(d.people.rewards) && Array.isArray(d.people.lost) && d.people.map && Array.isArray(d.people.map.places),
-       "the payload carries who is due, the network, the rewards, the demand turned away and the map");
-    ok(d.forward && d.forward.salt && Array.isArray(d.forward.salt.walk) && d.forward.salt.walk.length === 31 && d.forward.oil && d.forward.oil.walk.length === 31,
-       "and the next thirty days per product, day by day");
-    ok(d.customers.every((c) => "tier" in c && "hi" in c && "days" in c), "every customer carries the desk's tier, its priority flag and the days since the last order");
-    const rec = d.open.filter((o) => o.st === "dueMoney");
-    ok(rec.length === 0 || rec.every((o) => typeof o.age === "number" && typeof o.exp === "number" && o.exp <= o.oweRM + 1e-9),
-       `every receivable says how old it is and what the ladder expects of it (${rec.length})`);
-    /* NO COST, MARGIN OR PROFIT IN ANY OF IT: the shape check, beside the leak gate's money check */
-    const banned = ["cost", "margin", "profit", "pct", "cogs", "eff", "repl"];
-    const keys = new Set();
-    const walk = (v) => { if (Array.isArray(v)) v.forEach(walk); else if (v && typeof v === "object") for (const k of Object.keys(v)) { keys.add(k); walk(v[k]); } };
-    walk(d.people); walk(d.forward);
-    const bad = [...keys].filter((k) => banned.some((b) => k.toLowerCase().includes(b)));
-    ok(bad.length === 0, bad.length ? `a people or forward field carries ${bad.join(", ")}` : "no people or forward field carries a cost, a margin or a profit");
-    ok(JSON.stringify(d.people.map).indexOf("lat") < 0, "the map ships normalised points, not coordinates the phone would have to project");
-  }
-  const app = readFileSync(join(REPO, "public", "index.html"), "utf8");
-  ok(/id="p-people"/.test(app) && /\['tab-people','p-people','Customers'\]/.test(app), "the phone has a People tab");
-  ok(/function drawFwd\(\)/.test(app) && /id="fwd"/.test(app), "Today carries the next thirty days");
-  ok(/\[hidden\]\{display:none!important\}/.test(app), "hidden means hidden on the phone: the Approve badge read 0 on every bar since v302");
-  ok(/data-m="party" aria-pressed="false">Add ID</.test(app) && /party:\['gate'/.test(app), "the phone's registration mode is called Add ID and says it goes through the gate");
-  ok(!/show\(3\)/.test(app) && /show\('p-add'\)/.test(app), "a tab is addressed by its id, not its position");
-}
-
-/* ---- 25. Orders and money: a figure is stated where it is true, and once (v385) ----
-   Both faults this locks down were silent for weeks and every exit code was zero.
-   cashFlow() is whole-book by construction and says so in its own comment, and tabFinancials
-   drew it INSIDE perProduct(), so the same four figures appeared under Salt and again under
-   Oil, each heading claiming them. riskRates()'s supplier legs did the same. And ifrsPanel()
-   carried two Owner's use rows, so a statement of profit or loss reported one drawing twice.
-   A duplicated figure reads exactly like a counted one, which is why this is a test. */
 section("Orders and money — whole-book figures sit above the repeat, and once (v385)");
 {
   const { openMaster } = await import("../tools/payload.mjs");

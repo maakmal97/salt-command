@@ -562,21 +562,16 @@ export default {
     }
     if (p === "/bye") return json({ ok: true });            // no server to stop; answer so the beacon is quiet
 
-    /* ONE SURFACE (v376, his instruction). v290 split them: the root was the phone app and the
-     * desk sat at /desk, because a 1.3 MB page built for a laptop rail was not a phone app. That
-     * reason went with v371, when the rail became a menu and the desk started laying out like
-     * one. Two surfaces over one book was always two things to keep level, and the policy that
-     * justified the split, keeping cost and margin off a public app, protected nothing while
-     * /desk served all of it at the same public URL.
-     * THE DESK IS THE ROOT NOW, and /desk still answers so every link and bookmark holds.
-     * THE APP STAYS AT /app FOR THIS VERSION, deliberately: it is one route, it costs nothing,
-     * and if the desk turns out to be wrong on a phone it is the difference between a bad
-     * afternoon and no phone surface at all. Retire it when a week has passed without it. */
-    if (p === "/app") {
-      const res = await env.ASSETS.fetch(new Request(new URL("/index.html", url), { method: "GET" }));
-      if (res && res.ok) return new Response(res.body, { status: 200, headers: res.headers });
-      return json({ ok: false, error: "the app is not built" }, 404);
-    }
+    /* ONE SURFACE, AND NOW ONLY ONE (v387, his instruction). v290 split them: the root was
+     * the phone app and the desk sat at /desk, because a 1.3 MB page built for a laptop rail
+     * was not a phone app. That reason went with v371, when the rail became a menu and the
+     * desk started laying out like one. v376 made the desk the root and kept the app at /app
+     * deliberately, as the difference between a bad afternoon and no phone surface at all,
+     * to be retired when a week had passed without it.
+     * IT IS RETIRED. The desk is the sole and only cloud copy of this book. /desk still
+     * answers so every link and bookmark holds, and /app is gone rather than left to rot:
+     * a route serving a surface nobody maintains is worse than no route. public/index.html
+     * is archived beside the repo, not deleted. */
     if (p === "/desk" || p === "/") {
       const res = await env.ASSETS.fetch(new Request(new URL("/desk.html", url), { method: "GET" }));
       if (res && res.ok) return new Response(res.body, { status: 200, headers: res.headers });
@@ -703,7 +698,11 @@ export default {
     if (m === "GET" || m === "HEAD") {
       const res = await env.ASSETS.fetch(request);
       if (res.status === 404) {
-        return env.ASSETS.fetch(new Request(new URL("/", url), request));
+        /* v387: THE FALLBACK NAMES THE DESK RATHER THAN THE ROOT. It used to re-fetch "/",
+           which resolved through the asset store to index.html; that file is retired, so the
+           fallback would have 404'd and an old /app bookmark with it. There is one surface
+           and this is where every unknown path lands on it. */
+        return env.ASSETS.fetch(new Request(new URL("/desk.html", url), request));
       }
       return res;
     }

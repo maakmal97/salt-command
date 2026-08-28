@@ -18,12 +18,12 @@ import { fileURLToPath } from "node:url";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO = resolve(HERE, "..");
-/* THE BUILT DESK IS NO LONGER THE ROOT (v290). public/index.html is now the hand-written
-   phone app and is SOURCE, not output; the 900 KB desk built from the master lands here and
-   the Worker serves it at /desk. Editing public/desk.html by hand is still pointless, for
-   exactly the old reason: the next build overwrites it. */
+/* THE DESK IS THE ONLY SURFACE (v387, his instruction). v290 split them, the root being a
+   hand-written phone app and the desk sitting at /desk; v376 made the desk the root and kept
+   the app at /app as an escape hatch, to be retired if a week passed without it. It is
+   retired. There is one built file and one cloud copy of this book. Editing public/desk.html
+   by hand is still pointless, for the old reason: the next build overwrites it. */
 const OUT = resolve(REPO, "public", "desk.html");
-const APP = resolve(REPO, "public", "index.html");
 const REV = resolve(REPO, "public", "rev.json");
 
 /* The token the build id is written into. It is a placeholder while the hash is taken,
@@ -251,11 +251,10 @@ try {
   for (const f of readdirSync(dir).filter((n) => n.endsWith(".js")).sort())
     workerSrc += f + " " + readFileSync(resolve(dir, f), "utf8") + " ";
 } catch (e) { /* no src is not a build failure; the assets still deploy */ }
-let appSrc = "", swSrc = "";
-try { appSrc = readFileSync(APP, "utf8"); } catch (e) { /* first build, before the app exists */ }
+let swSrc = "";
 try { swSrc = readFileSync(resolve(REPO, "public", "sw.js"), "utf8"); } catch (e) { /* likewise */ }
 const BUILD_ID = createHash("sha256")
-  .update(src).update(" app ").update(appSrc).update(" sw ").update(swSrc).update(" worker ").update(workerSrc)
+  .update(src).update(" sw ").update(swSrc).update(" worker ").update(workerSrc)
   .digest("hex").slice(0, 16);
 if (src.split(IDTOKEN).length - 1 !== 1) {
   console.error(`BUILD FAILED: expected the build-id token exactly once, found ${src.split(IDTOKEN).length - 1}.`);
@@ -303,35 +302,3 @@ console.log(`  size:    ${kb} KB   eol: ${EOL === "\r\n" ? "CRLF" : "LF"}`);
 console.log(`  patches: ${applied.length} applied — ${applied.join(", ")}`);
 console.log(`  rev:     ${VER || "(no version found)"}  id ${BUILD_ID}  -> public/rev.json`);
 
-/* THE PHONE PAYLOAD. A separate phone app renders the desk's own figures rather than
-   loading 900 KB of laptop to show three of them, and it computes nothing itself, so the
-   two can never disagree about a price. This runs the master in jsdom, calls its
-   phonePayload(), and REFUSES to write anything that trips phonePayloadLeaks(): the
-   leak_test vocabulary, any per-unit cost, or any real name. The app is public by
-   decision, so that gate is the difference between a code and a name on the open web. */
-try {
-  const { buildPayload } = await import("./payload.mjs");
-  const { payload, leaks } = await buildPayload(MASTER);
-  if (leaks.length) {
-    console.error("BUILD FAILED: the phone payload carries things that must never leave the desk.");
-    leaks.forEach((l) => console.error("  - " + l));
-    process.exit(1);
-  }
-  /* THE WATERMARK AND THE BUILD ID RIDE ALONG (v290). The phone app holds an entry locally
-     until it has been committed, exactly as the desk does, and it needs the same mark to
-     know when to let one go; without it the app would re-post committed entries for ever,
-     because a device's KV key is a REPLACE of its whole queue. Added after the leak scan
-     deliberately and safely: both are read from the build itself, so one is an ISO stamp
-     and the other a hex hash by construction, and neither can carry a name or a cost. */
-  payload.queueCommitted = (src.match(/const QUEUE_COMMITTED='([^']*)'/) || [])[1] || null;
-  payload.rev = BUILD_ID;
-
-  const dataOut = resolve(REPO, "public", "data.json");
-  const json = JSON.stringify(payload);
-  writeFileSync(dataOut, json + "\n");
-  console.log(`  payload: ${(Buffer.byteLength(json) / 1024).toFixed(1)} KB -> public/data.json  (clean)`);
-} catch (e) {
-  console.error("BUILD FAILED: the phone payload could not be built.");
-  console.error("  " + (e && e.message ? e.message : e));
-  process.exit(1);
-}
