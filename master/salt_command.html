@@ -1161,19 +1161,23 @@ details.obshush:hover{opacity:.85;}
   .viewsw{display:flex;flex-wrap:nowrap;overflow-x:auto;max-width:100%;scrollbar-width:none;}
   .viewsw::-webkit-scrollbar{display:none;}
   .viewsw button{flex:0 0 auto;}
-  /* v401: THE ENTER FORM'S OWN STRIPS WRAP, AND EVERY BUTTON ON THEM IS A FINGER TARGET.
-     The rule three lines up is right for chrome and wrong for a form. Measured at 375px:
-     #wbModeSw was 323px wide holding 584px of buttons, so 261px of the seven modes sat
-     behind a scroller with no bar drawn, which on a desk with no other way to reach them
-     reads as the modes not existing. Wrapping puts all seven on screen, in three rows.
-     --tap for the same reason the rail got it at v392: 28px tall on a mode, and 32px wide
-     on a quick-set, are a mouse's measurements. Width is worth setting here because the
-     strip has 220px of slack, so min-width costs no extra row. The one control left
-     narrower than --tap is #wbAssoc, a 13px checkbox INSIDE a 169 by 50px label, so the
-     label is the target and the box is not. Scoped to this part, so no other view moves. */
+  /* v401: THE ENTER FORM'S OWN STRIPS WRAP. The rule three lines up is right for chrome
+     and wrong for a form. Measured at 375px: #wbModeSw was 323px wide holding 584px of
+     buttons, so 261px of the seven modes sat behind a scroller with no bar drawn, which
+     on a desk with no other way to reach them reads as the modes not existing. Wrapping
+     puts all seven on screen, in three rows. THIS RULE IS LOAD-BEARING FOR THE HEIGHT
+     RULE BELOW: raising the buttons to --tap without wrapping makes #wbModeSw worse, a
+     taller strip hiding the same 261px. #wbAssoc is a 13px checkbox INSIDE a 169 by 50px
+     label, so the label is the tap target and the box is not. */
   .vpart[data-tab="add"] .viewsw{flex-wrap:wrap;overflow-x:visible;}
-  .vpart[data-tab="add"] .viewsw button{min-height:var(--tap);min-width:var(--tap);}
   #wbAssocWrap>label{min-height:var(--tap);}
+  /* v401: EVERY BUTTON ON THOSE STRIPS IS A FINGER TARGET, for the same reason the rail
+     got it at v392: 28px tall on a mode, and 32px wide on a quick-set, are a mouse's
+     measurements. Width is worth setting because the strip has 220px of slack, so
+     min-width costs no extra row. SCOPED ONLY BECAUSE .viewsw IS SHARED with #fwdSw on
+     Today's Forward part; these two lines and this comment are absorbed by the central
+     .viewsw button{min-height:var(--tap)} at fold time. The wrap rules above are not. */
+  .vpart[data-tab="add"] .viewsw button{min-height:var(--tap);min-width:var(--tap);}
   .sevh{flex-wrap:wrap;gap:6px;}
   .insight{padding:10px 12px;font-size:12.5px;}
   .dsc,.dsclead{font-size:11.5px;}
