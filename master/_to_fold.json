@@ -1,0 +1,43 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-08-27T23:59:00.000Z-stated-s116",
+   "collection": "sales",
+   "row": {
+    "rid": "s116",
+    "qty": 1,
+    "total": 80,
+    "date": "2026-08-27",
+    "product": "salt",
+    "changes": [
+     {"field": "cash", "from": 80, "to": 0},
+     {"field": "paidOn", "from": "2026-08-27", "to": null}
+    ],
+    "customer": "CR3-DAM"
+   },
+   "reasoning": "Stated directly by the owner in chat on 28 Aug 2026, so there is no draft behind it: the 27 Aug CR3-DAM order was NOT paid. He collected the unit in advance of payment, as on the 18th and the 24th. cash is corrected from RM80 to 0 and paidOn is cleared, so the row reads Open with RM80 receivable, his third standing RM80 debt.",
+   "flags": [],
+   "amends": "s116",
+   "amendKind": "Correction",
+   "entry": {
+    "at": "2026-08-27T23:59:00.000Z-stated-s116",
+    "type": "AMEND",
+    "party": "CR3-DAM",
+    "raw": "Correction on CR3-DAM s116: cash to 0, paidOn cleared; advanced pickup, not paid, on his statement of 28 Aug",
+    "payload": {
+     "mode": "amend",
+     "direction": "SELL",
+     "party": "CR3-DAM",
+     "rid": "s116",
+     "kind": "Correction",
+     "date": "2026-08-28",
+     "fields": {"cash": 0, "paidOn": null}
+    }
+   },
+   "decidedAt": "2026-08-28T13:55:00.000Z",
+   "decidedBy": "owner, stated in chat"
+  }
+ ]
+}

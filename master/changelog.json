@@ -1,5 +1,14 @@
 [
  {
+  "v": "v395",
+  "d": "28 Aug 2026",
+  "t": "THE 27 AUG CR3-DAM ORDER WAS NOT PAID: AN ADVANCED PICKUP, AND HIS THIRD RM80 STANDING",
+  "n": [
+   "<b>S116 IS CORRECTED FROM PAID TO UNPAID, ON HIS STATEMENT OF 28 AUG, IN CHAT.</b> The 27 Aug CR3-DAM unit was an advanced pickup: he collected, he has not paid. cash goes RM80 to 0 and paidOn is cleared, so the row reads Open with an RM80 receivable. The narrative the v391 note carried, that he was paying again after the 18th and the 24th, is withdrawn with it: all three of his last three units are out unpaid, RM240 standing on his habit rate, the oldest now ten days old. No stock moves; the unit left on the 27th and the roll of that day stands.",
+   "<b>THE ID OF A STATED FOLD NOW RIDES BELOW THE WATERMARK BY CONSTRUCTION.</b> The v394 fold's made-up id moved QUEUE_COMMITTED to a non-timestamp, which would have had the drafter skipping every future queue entry as already committed; it was caught before the build and restored by hand. This fold's id is ISO-shaped and dated the 27th, below the standing watermark, so the comparison cannot move it and nothing needs repairing after."
+  ]
+ },
+ {
   "v": "v394",
   "d": "28 Aug 2026",
   "t": "THE RM20 ON S114 IS CASH OWED BACK, NOT OIL OWED OUT, ON HIS INSTRUCTION",

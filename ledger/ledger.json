@@ -1,6 +1,6 @@
 {
- "v": "v394",
- "stamped": "28 Aug 2026, 21:05 KL",
+ "v": "v395",
+ "stamped": "28 Aug 2026, 21:11 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -2431,14 +2431,30 @@
     "qty": 1,
     "total": 80,
     "cost": 50,
-    "cash": 80,
+    "cash": 0,
     "handover": "collected",
     "date": "2026-08-27",
     "deliveredQty": 1,
     "deliveredOn": "2026-08-27",
-    "paidOn": "2026-08-27",
-    "note": "<b>HIS SEVENTH ORDER RUNNING AT RM80, AND IT NOW CLEARS ITS FLOOR BY RM1.16.</b> Every order since 15 July has been 1 unit at RM80. The collected floor stands at RM78.84, so a rate that was comfortable in July is now RM1.16 clear of break-even, because the shelf went RM44 to RM50 on the 26th and the rate did not move. It returns <b>RM30 at 37.5%</b>. <b>It does not clear the delivered floor of RM88.84</b>, so it is a counter price and not a delivered one; the entry records it as collected, which is why it folds rather than being left for a decision. <b>AND HE IS PAYING AGAIN:</b> the 18th and the 24th both went out at RM80 with nothing paid, and this one is RM80 in cash on the day. Those two unpaid units are untouched by this row and still stand. Queued on the 27th, folded on the 28th, for the same reason as the row above.",
-    "rid": "s116"
+    "note": "<b>CORRECTED ON 28 AUG, ON HIS STATEMENT: NOT PAID. AN ADVANCED PICKUP, SO THE RM80 IS A RECEIVABLE AND THE PAYING-AGAIN LINE BELOW IS WITHDRAWN.</b> His third unit out unpaid in a row, RM240 standing across the 18th, the 24th and the 27th.  <b>NOT PAID: AN ADVANCED PICKUP, ON HIS STATEMENT OF 28 AUG.</b> cash corrected RM80 to 0, paidOn cleared. The unit went out on the 27th as recorded; the money did not come in. His third RM80 standing beside the 18th and the 24th. <b>HIS SEVENTH ORDER RUNNING AT RM80, AND IT NOW CLEARS ITS FLOOR BY RM1.16.</b> Every order since 15 July has been 1 unit at RM80. The collected floor stands at RM78.84, so a rate that was comfortable in July is now RM1.16 clear of break-even, because the shelf went RM44 to RM50 on the 26th and the rate did not move. It returns <b>RM30 at 37.5%</b>. <b>It does not clear the delivered floor of RM88.84</b>, so it is a counter price and not a delivered one; the entry records it as collected, which is why it folds rather than being left for a decision. <b>AND HE IS PAYING AGAIN:</b> the 18th and the 24th both went out at RM80 with nothing paid, and this one is RM80 in cash on the day. Those two unpaid units are untouched by this row and still stand. Queued on the 27th, folded on the 28th, for the same reason as the row above.",
+    "rid": "s116",
+    "mod": "corrected on 2026-08-28: cash 80 to 0; paidOn 2026-08-27 to (cleared)",
+    "amend": [
+     {
+      "date": "2026-08-27",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 1,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-08-28",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>NOT PAID: AN ADVANCED PICKUP, ON HIS STATEMENT OF 28 AUG.</b> cash corrected RM80 to 0, paidOn cleared. The unit went out on the 27th as recorded; the money did not come in. His third RM80 standing beside the 18th and the 24th."
+     }
+    ]
    },
    {
     "customer": "CA4-DAM",
@@ -2771,7 +2787,7 @@
   ],
   "QUEUE_COMMITTED": "2026-08-28T09:59:51.414Z",
   "PRICING": {
-   "takenAt": "2026-08-28T13:06:03.277Z",
+   "takenAt": "2026-08-28T13:11:13.664Z",
    "sizes": [
     0.5,
     1,
@@ -3213,11 +3229,11 @@
      }
     }
    },
-   "v": "v394"
+   "v": "v395"
   },
   "OPEN": {
-   "at": "2026-08-28T13:06:03.335Z",
-   "count": 6,
+   "at": "2026-08-28T13:11:13.723Z",
+   "count": 7,
    "byKey": {
     "CA4-DAM|2026-08-28|100": {
      "d": "2026-08-28",
@@ -3235,6 +3251,23 @@
      "key": "CA4-DAM|2026-08-28|100",
      "age": 0,
      "exp": 100
+    },
+    "CR3-DAM|2026-08-27|80": {
+     "d": "2026-08-27",
+     "p": "CR3-DAM",
+     "dir": "S",
+     "q": 1,
+     "t": 80,
+     "cash": 0,
+     "mv": 1,
+     "st": "dueMoney",
+     "oweRM": 80,
+     "rid": "s116",
+     "deliveredOn": "2026-08-27",
+     "handover": "collected",
+     "key": "CR3-DAM|2026-08-27|80",
+     "age": 1,
+     "exp": 80
     },
     "CR3-DAM|2026-08-24|80": {
      "d": "2026-08-24",
@@ -3320,7 +3353,7 @@
      "owedOut": 5.5,
      "coverDays": 2,
      "rate": 5.48,
-     "owedToYou": 260,
+     "owedToYou": 340,
      "promised": 5.5,
      "short": 0
     },
@@ -3340,7 +3373,7 @@
     "salt": "2026-08-24",
     "oil": "2026-08-23"
    },
-   "v": "v394"
+   "v": "v395"
   }
  }
 }
