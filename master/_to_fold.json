@@ -1,0 +1,123 @@
+{
+ "ok": true,
+ "approved": [
+  {
+   "id": "2026-08-27T16:06:18.360Z",
+   "collection": "roster",
+   "row": {
+    "code": "CD3-SEG",
+    "kind": "customer",
+    "parent": null,
+    "note": null
+   },
+   "entry": {
+    "at": "2026-08-27T16:06:18.360Z",
+    "type": "ADDID",
+    "party": "CD3-SEG",
+    "qty": null,
+    "total": null,
+    "status": "addid",
+    "raw": "Add CD3-SEG to the roster as: Customer, buys direct",
+    "payload": {
+     "mode": "addid",
+     "code": "CD3-SEG",
+     "kind": "customer",
+     "parent": null,
+     "rev": null,
+     "note": null
+    }
+   }
+  },
+  {
+   "id": "2026-08-27T16:06:51.233Z",
+   "collection": "sales",
+   "row": {
+    "customer": "CD3-SEG",
+    "qty": 1,
+    "total": 100,
+    "cost": 50,
+    "cash": 100,
+    "handover": "collected",
+    "date": "2026-08-27",
+    "deliveredQty": 1,
+    "deliveredOn": "2026-08-27",
+    "paidOn": "2026-08-27"
+   },
+   "entry": {
+    "at": "2026-08-27T16:06:51.233Z",
+    "type": "SELL",
+    "party": "CD3-SEG",
+    "qty": 1,
+    "total": 100,
+    "status": "paid",
+    "raw": "Sell 1 unit to CD3-SEG for RM 100 on 2026-08-27, RM 100 cash, 1 unit moved \u2192 Completed",
+    "payload": {
+     "mode": "new",
+     "product": "salt",
+     "direction": "SELL",
+     "party": "CD3-SEG",
+     "newId": null,
+     "date": "2026-08-27",
+     "qty": 1,
+     "total": 100,
+     "cash": 100,
+     "kg": 1,
+     "assoc": null,
+     "stream": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": null,
+     "handover": "collected"
+    }
+   }
+  },
+  {
+   "id": "2026-08-27T16:07:03.219Z",
+   "collection": "sales",
+   "row": {
+    "customer": "CR3-DAM",
+    "qty": 1,
+    "total": 80,
+    "cost": 50,
+    "cash": 80,
+    "handover": "collected",
+    "date": "2026-08-27",
+    "deliveredQty": 1,
+    "deliveredOn": "2026-08-27",
+    "paidOn": "2026-08-27"
+   },
+   "entry": {
+    "at": "2026-08-27T16:07:03.219Z",
+    "type": "SELL",
+    "party": "CR3-DAM",
+    "qty": 1,
+    "total": 80,
+    "status": "paid",
+    "raw": "Sell 1 unit to CR3-DAM for RM 80 on 2026-08-27, RM 80 cash, 1 unit moved \u2192 Completed",
+    "payload": {
+     "mode": "new",
+     "product": "salt",
+     "direction": "SELL",
+     "party": "CR3-DAM",
+     "newId": null,
+     "date": "2026-08-27",
+     "qty": 1,
+     "total": 80,
+     "cash": 80,
+     "kg": 1,
+     "assoc": null,
+     "stream": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": null,
+     "handover": "collected"
+    }
+   }
+  }
+ ],
+ "count": 3
+}

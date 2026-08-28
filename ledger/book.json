@@ -37,7 +37,7 @@
       "stated": 20
     }
   },
-  "STATED_STOCK": 25.5,
+  "STATED_STOCK": 23.5,
   "COUNT_ON": {
     "salt": "2026-08-24",
     "oil": "2026-08-23"
@@ -175,6 +175,8 @@
     {"customer":"CY2-NIL","qty":2.5,"total":230,"cost":44,"cash":230,"date":"2026-08-26","deliveredQty":2.5,"deliveredOn":"2026-08-26","paidOn":"2026-08-26","note":"<b>His THIRD order at exactly the same size and total: 2.5 unit for RM230.</b> The same as 11 Aug and 18 Aug, RM92 a unit on all three, so this is his rate and there is nothing to explain about the price. <b>What changes across the three is the cost, and it has now moved twice.</b> RM47 on the first returned RM112.50 at 48.9%; RM56 on the second returned RM90 at 39.1%; RM44 today returns <b>RM120 at 52.2%</b>, the best of the three. The supplier took ten points off him in August and has handed them back, at an unchanged price to the customer throughout.","rid":"s112"},
     {"customer":"CS6-PER","qty":1,"total":100,"cost":44,"cash":100,"date":"2026-08-26","deliveredQty":1,"deliveredOn":"2026-08-26","paidOn":"2026-08-26","note":"<b>THE BAN IS LIFTED, AND THIS IS THE ROW THAT RECORDS IT.</b> 1 unit for RM100, paid and collected on the day, RM56 of margin at 56.0% off the RM44 shelf. s016 banned him from sale on 30 Jul in terms that were not time-limited, and the desk then sold to him twice anyway, on 07 Aug and on the order cancelled on 24 Aug. On his instruction of 26 Aug the ban is lifted, so the restriction stops being a thing the book asserts and nothing enforces. <b>It does not settle his open position:</b> s068 still reads Open with salt owed out to him and RM80 uncollected, and this order neither draws on that nor pays it down.","rid":"s113"},
     {"customer":"CZ4-MK","product":"oil","qty":10,"total":130,"cost":7.666666666666667,"cash":150,"date":"2026-08-26","deliveredQty":10,"deliveredOn":"2026-08-26","paidOn":"2026-08-26","note":"<b>His first oil order, and the second time this desk has sold 10 unit for RM130.</b> The rate matches s062 of 06 Aug to the ringgit, RM13 a unit. <b>It is costed at RM7.67, not RM7</b>, because the 23 Aug count put oil at 0 and none of the cheaper stock was left: what he took came off the 30 unit that landed the same day. So it returns <b>RM53.33 at 41.0%</b>, and the RM60 it would have shown against the old lot cost was never available to earn. <b>RM150 was tendered against RM130 owed.</b> At RM13 a unit the RM150 buys 11.54 unit and 10 went out, so the row carries <b>1.54 unit of oil owed out</b> and nothing owed in money either way. Booked that way rather than as a cash balance because that is how this book already carries paid-ahead, and because a credit expressed in stock is the one that shows up in cover. Note that the 10-unit oil card currently sits under its own floor on the board; that is a pricing condition to settle on the Price view, not a fault in this row.","rid":"s114"},
+    {"customer":"CD3-SEG","qty":1,"total":100,"cost":50,"cash":100,"handover":"collected","date":"2026-08-27","deliveredQty":1,"deliveredOn":"2026-08-27","paidOn":"2026-08-27","note":"<b>A NEW PARTY'S FIRST ORDER, AT THE HOUSE RATE.</b> 1 unit for RM100, paid and collected on the day. Against the RM50 shelf it returns <b>RM50 at 50.0%</b>. RM100 a unit is the steadiest price on this book and a new party paying it without negotiation is the thing to note. It clears the collected floor of RM78.84 by RM21.16 and the delivered floor of RM88.84 by RM11.16, so it stands either way. Queued from the desk on the 27th and folded on the 28th: the entry was drained to disk out of KV, and the cloud drafter reads KV, so nothing drafted it. Folded on his instruction with the figures read back to him first.","rid":"s115"},
+    {"customer":"CR3-DAM","qty":1,"total":80,"cost":50,"cash":80,"handover":"collected","date":"2026-08-27","deliveredQty":1,"deliveredOn":"2026-08-27","paidOn":"2026-08-27","note":"<b>HIS SEVENTH ORDER RUNNING AT RM80, AND IT NOW CLEARS ITS FLOOR BY RM1.16.</b> Every order since 15 July has been 1 unit at RM80. The collected floor stands at RM78.84, so a rate that was comfortable in July is now RM1.16 clear of break-even, because the shelf went RM44 to RM50 on the 26th and the rate did not move. It returns <b>RM30 at 37.5%</b>. <b>It does not clear the delivered floor of RM88.84</b>, so it is a counter price and not a delivered one; the entry records it as collected, which is why it folds rather than being left for a decision. <b>AND HE IS PAYING AGAIN:</b> the 18th and the 24th both went out at RM80 with nothing paid, and this one is RM80 in cash on the day. Those two unpaid units are untouched by this row and still stand. Queued on the 27th, folded on the 28th, for the same reason as the row above.","rid":"s116"},
     {"customer":"CN6-WM","qty":1.5,"total":185,"cash":0,"deliveredQty":0,"note":"<b>CANCELLED 24 AUG, ON HIS WORD, WITH NOTHING EVER MOVED EITHER WAY.</b> 1.5 unit for RM185 was agreed on 22 Aug and never dated, paid or handed over, so cancelling it takes nothing back: it counted nowhere before and it counts nowhere now. The row is kept rather than deleted because the rate is the record worth having. RM123.33 a unit was his dearest direct rate by some way, against RM100 at half a unit on 21 Jul and 04 Aug, RM80 on the 6th and RM75 on the 2 unit of the 22nd, so the reversal it represented is now itself reversed. CN6-WM is an associate and his last four direct orders had fallen at every step; this one is off the book.","cancelled":true,"cancelledOn":"2026-08-24","rid":"s108"},
     {"customer":"CS6-PER","qty":6.25,"total":350,"cash":0,"deliveredQty":0,"note":"<b>CANCELLED 24 AUG, ON HIS WORD, WITH NOTHING EVER MOVED EITHER WAY.</b> 6.25 unit for RM350 was agreed on the 20th and never dated, paid or handed over, so it counted nowhere before and counts nowhere now. RM56 a unit was the sharpest rate on the book at that size and sat RM170 under the RM520 ask; it also sat under the v344 collected floor of RM375.73, so the order it cancels was one this desk could not have filled without a loss. CS6-PER is an associate. The row is kept rather than deleted because a price that low, agreed and withdrawn, is the record.","cancelled":true,"cancelledOn":"2026-08-24","rid":"s109"}
   ],
@@ -225,13 +227,11 @@
     "CI4-OKR",
     "CN6-WM",
     "CN6-WM-R",
-    
     "CZ6-WM",
     "CR4-PJ",
     "CD4-CS",
     "CA5-KER",
     "CE4-AD",
-    
     "SF6-KLC",
     "SA5-BTR",
     "SM4-KEP",
@@ -246,7 +246,8 @@
     "CM6-PJ",
     "CK4-SEN",
     "CZ4-MK",
-    "CH6-SET"
+    "CH6-SET",
+    "CD3-SEG"
   ],
   "associates": [
     "CS6-BS",
@@ -384,7 +385,7 @@
   "ONE_OFFS": [
     {"id":"CM6-HCM","date":"2026-07-14","note":"Judged a rare one-off. Treat the RM104/unit it paid as an outlier, not as evidence of what wholesale will bear."}
   ],
-  "QUEUE_COMMITTED": "2026-08-26T12:12:00.000Z",
+  "QUEUE_COMMITTED": "2026-08-27T16:07:03.219Z",
   "PRICE_SET": {
     "salt": {
       "prices": {},
@@ -410,6 +411,7 @@
       "COUNTED AGAIN ON 20 AUG AND IT CHANGED NOTHING, WHICH IS WHY IT IS WORTH WRITING DOWN (v331).\n     A second hand count of the oil shelf returned ZERO against a stated zero, so stated stays 0 and\n     COUNT_ON.oil stays 20 Aug: a count that agrees with the last one moves neither.\n     WHAT IT DOES NOT MEAN IS THAT NOTHING IS UNACCOUNTED FOR. The approval screen said so, and read\n     against the STATED figure it is true. Read against the LEDGER it is not: oil walks 5 unit of\n     opening plus 100 bought less 71 sold, which is 34 unit that the book says should be on a shelf\n     somebody has now looked at twice and found empty. The count confirms the shelf, not the walk.\n     The 34 unit gap is the finding and it is unchanged by counting again."
     ],
     "STATED_STOCK": [
+      "ROLLED AT v391: 1 unit to CD3-SEG on 2026-08-27, 1 unit to CR3-DAM on 2026-08-27, so 25.5 less 2 is 23.5. A ROLL AND NOT A COUNT; COUNT_ON is untouched.",
       "ROLLED AT v381: 1 unit to CH6-SET on 2026-08-26, 5 unit to CZ4-MK on 2026-08-26, 2.5 unit to CY2-NIL on 2026-08-26, 1 unit to CS6-PER on 2026-08-26, 25 unit from SA5-BTR on 2026-08-26, so 10 less 9.5 plus 25 is 25.5. A ROLL AND NOT A COUNT; COUNT_ON is untouched. 9.5 unit went out across four orders and 25 unit came in on the SA5-BTR lot, taking the shelf from 10 unit to 25.5 and cover off the floor it was sitting on.",
       "ROLLED AT v368: 2 unit to CE4-CHE on 2026-08-25, so 12 less 2 is 10. A ROLL AND NOT A COUNT; COUNT_ON is untouched. 2 unit to CE4-CHE, on his own delivery: the one movement in this pair that actually happened. s104's fulfilment is cash only.",
       "ROLLED AT v360: 0.5 unit to CA4-DAM on 2026-08-24, 4 unit to CM4-MK on 2026-08-24, 1 unit to CR3-DAM on 2026-08-24, so 17.5 less 5.5 is 12. A ROLL AND NOT A COUNT; COUNT_ON is untouched. 5.5 unit out across three orders, none of it a count: one settles a pending order already reflected in the promised figure, two are fresh demand.",

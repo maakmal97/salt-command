@@ -1,5 +1,19 @@
 [
  {
+  "v": "v391",
+  "d": "28 Aug 2026",
+  "t": "YESTERDAY'S TWO SALES, FOLDED A DAY LATE BECAUSE THE DEPLOY HAD BEEN FAILING SINCE THE 27TH",
+  "n": [
+   "<b>TWO SALES FROM THE 27TH AND A NEW PARTY, FOLDED ON THE 28TH.</b> Both were queued from the desk on the day and neither reached the book, because the entries were drained to disk out of KV and the cloud drafter reads KV. They are folded on his instruction, with the figures read back to him first.",
+   "<b>THEY SAT FOR A DAY BECAUSE ONE STALE FILE WAS FAILING THE DEPLOY.</b> <code>master/_folded.json</code> still named thirteen ids from the v381 fold, a fold stated directly and therefore with no drafts behind it, so the &quot;mark the folded rows committed&quot; step failed thirteen times and exited 1 on every push from the 27th. <b>The D1 re-seed sits after that step in the same job</b>, so it never ran and the mirror went a week stale behind it. One stale file explains the failure mail, the stale mirror and a drafter reading a book from before the 26th.",
+   "<b>CD3-SEG IS THE FORTIETH CODE ON THE ROSTER AND ITS FIRST ORDER IS AT THE HOUSE RATE.</b> 1 unit for RM100, paid and collected on the 27th. Against the RM50 shelf it returns <b>RM50 at 50.0%</b>. The roster gains the code and the directory is not touched: the name and the place are typed at the laptop and reach the cloud only as ciphertext, which is unchanged by the app being retired.",
+   "<b>CR3-DAM'S RM80 IS HIS SEVENTH ORDER RUNNING AT THAT RATE, AND IT NOW CLEARS ITS FLOOR BY RM1.16.</b> Every order since 15 July has been 1 unit at RM80. The collected floor stands at <b>RM78.84</b>, so the rate that was comfortable in July is now RM1.16 clear of break-even, because the shelf went RM44 to RM50 on the 26th and the rate did not move. It returns RM30 at 37.5%. <b>It does not clear the delivered floor of RM88.84</b>, so it is a counter price and not a delivered one; the entry records it as collected, which is why it folds.",
+   "<b>AND HE IS PAYING AGAIN.</b> The 18th and the 24th both went out at RM80 with nothing paid; this one is RM80 in cash on the day. His two unpaid units are untouched by this row and still stand.",
+   "<b>THE SHELF GOES 25.5 TO 23.5 AND NO COST BASIS MOVES.</b> Two units out, nothing in. Both rows are costed at the RM50 the 26 Aug lot set.",
+   "<b>ONE ENTRY FROM THE QUEUE IS DELIBERATELY NOT HERE.</b> The 28 Aug advance to CA4-DAM is drafted and PENDING, waiting on a tap, because it is an advance and the gate is exactly the thing that should show him one. It was re-drafted against the repaired mirror first: the old draft costed it at RM44 and flagged it RM22.66 under a delivered floor of RM122.66, both of which were the pre-v385 basis, and on the corrected figures it costs RM50, returns 50.0% and trips no floor flag at all."
+  ]
+ },
+ {
   "v": "v390",
   "d": "28 Aug 2026",
   "t": "THE LONG PRESS NOW SHOWS ITS OWN LENGTH, BECAUSE A GESTURE WITH NO FEEDBACK CANNOT BE TOLD APART FROM A DEAD CONTROL",
