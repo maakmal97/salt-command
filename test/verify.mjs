@@ -2033,8 +2033,11 @@ section("Orders and money — every basis is named where the figure is stated (v
        salt's RM50 and reported RM1,000 on a shelf holding RM153. Invisible from v372,
        when stripMethod began deleting the sentence, until v384 put it back. */
     const right = html("fmt0(currentStock*stockCostFor(PROD))"), wrong = html("fmt0(currentStock*STOCK_COST)");
-    ok(fin.includes(`${right}</b> on the shelf`), `${pr}: closing stock is valued at this book's own shelf rate (${right})`);
-    if (right !== wrong) ok(!fin.includes(`${wrong}</b> on the shelf`), `${pr}: and never at another book's (${wrong})`);
+    /* v401 states it as a P&L row rather than a sentence, so the check is the figure and its
+       rate, not the words around them. The invariant is the half that matters and it stands. */
+    ok(fin.includes(right) && fin.includes(html("fmt(stockCostFor(PROD))") + "/unit"),
+       `${pr}: closing stock is valued at this book's own shelf rate (${right})`);
+    if (right !== wrong) ok(!fin.includes(wrong), `${pr}: and never at another book's (${wrong})`);
 
     /* THE RATE OF TRADE IS ORDERS PER MONTH AND THE MONTHS ARE COUNTED, NOT ASSUMED. */
     const per = html("fmt(100/Math.max(1,pricedSales.length/Math.max(1,finRows().length)))");
@@ -2066,7 +2069,10 @@ section("Orders and money — every basis is named where the figure is stated (v
     ok(ins.length === 1, `${pr}: the cost panel states one finding`);
     if (ins.length) {
       const t = (ins[0].textContent || "").trim();
-      ok(/\d[\d.]*%/.test(t), `${pr}: and it survives the strip carrying its figures ("${t.slice(0, 60)}...")`);
+      /* a percentage OR a multiple: v401 states a ringgit as a multiple of any contribution
+         under a ringgit, because "200.0% of what it earns" is not a share. Either form is a
+         figure, and a figure is what the strip would have taken. */
+      ok(/\d[\d.]*\s?(%|times)/.test(t), `${pr}: and it survives the strip carrying its figures ("${t.slice(0, 60)}...")`);
       /* the cut writes textContent, which destroys every child element, so surviving
          emphasis is the proof that the block stayed under NOTE_MIN and was never cut.
          Measuring the RENDERED length instead proves nothing: it is short either way. */
@@ -2274,6 +2280,103 @@ section("Refused — shown so they are not entered twice, never so they can be a
   ok(w.eval("enterCount()") === w.eval("qTx().length + AP_DRAFTS.length"),
      "the Enter badge counts drafts and the local queue, never a refusal");
   ok(w.eval("enterCount()") === 1, "one pending draft and one refusal reads as one waiting");
+}
+
+section("Orders and money — the sensitivity sentence cannot read over 100% (v401)");
+{
+  /* THIS SENTENCE HAS BROKEN THREE TIMES, each time because the book moved rather than because
+     the code changed, so it is asserted against the whole reachable range and not against
+     today's figures. v386 caught a negative share and an infinity; the case left standing was
+     an end earning LESS than a ringgit, where a ringgit of standing cost is 200% of the
+     earning and the sentence said so, live on /desk. The rule is one rule for both ends: under
+     a ringgit of contribution a ringgit is a MULTIPLE of it, at or above a SHARE of it. */
+  const m = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+  const src = /const share=(c=>[^;]+);/.exec(m);
+  ok(!!src, "costPanel states the share through one helper, so both ends use the same rule");
+  if (src) {
+    const share = eval("(" + src[1] + ")");
+    /* every contribution a book could put in front of it, either side of the ringgit */
+    const cs = [0.001, 0.01, 0.1, 0.5, 0.9, 0.99, 1, 1.01, 1.5, 2, 7.9, 50, 1e4];
+    const over = cs.map((c) => ({ c, s: share(c).replace(/<[^>]+>/g, "") }))
+                   .filter((r) => { const p = /([\d.]+)%/.exec(r.s); return p && +p[1] > 100; });
+    ok(over.length === 0, over.length
+      ? `a ringgit reads as ${over[0].s} of a ${over[0].c} earning, which is not a share`
+      : "no contribution makes it state a share above 100%");
+    ok(/times/.test(share(0.5)) && /%/.test(share(2)),
+       "under a ringgit it reads as a multiple, at or above one as a percentage");
+  }
+}
+
+section("Orders and money — one heading, and the standing leads are gone (v401)");
+{
+  /* A heading inside perProduct renders once per book, so financials and receivables each
+     carried "Financials"/"Order book" twice, both times under a prodhd already naming the book
+     and a view pill already reading the same word. The head belongs above the repeat, where
+     consoBlock() sits. Counted by rendering rather than by grep, because the duplication only
+     exists once the builder has run. */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  for (const part of ["financials", "receivables"]) {
+    const el = w.document.createElement("div");
+    el.innerHTML = w.eval(`builders[${JSON.stringify(part)}]()`);
+    const h1 = [...el.querySelectorAll("h1")];
+    ok(h1.length === 1, `${part}: one h1, not one per book (${h1.length})`);
+    ok(el.querySelectorAll(".dsclead").length === 0,
+       `${part}: no standing lead restating the pill above it and the KPI labels below it`);
+
+    /* THE SWEEP'S TRAP, ASSERTED RATHER THAN REMEMBERED. stripMethod keeps one figure-less
+       prose block per product block and deletes the rest, electing the .dsclead when there is
+       one. With the leads gone there is no principled keeper, so any prose added to these two
+       parts must carry a figure, carry an id, or sit somewhere the sweep does not reach. */
+    const FIGURE = w.eval("FIGURE");
+    const bare = [...el.querySelectorAll(".dsc,.dsclead,.insight")].filter((b) =>
+      !b.closest("table,details,.kpi,.act,.plan,.obs,.qfield") &&
+      !b.querySelector("button,input,select,canvas,table,.kpi") &&
+      !b.id && !FIGURE.test((b.textContent || "").replace(/\s+/g, " ").trim()));
+    ok(bare.length < 2, bare.length < 2
+      ? `${part}: at most one block the sweep can elect, so it cannot delete one arbitrarily`
+      : `${part}: ${bare.length} figure-less blocks and no lead to elect a keeper; the sweep will eat one`);
+  }
+}
+
+section("Orders and money — the ageing tables fit a 375px phone (v401)");
+{
+  /* /desk IS the phone since v387, and these two tables were the last that did not fit: six
+     columns needing 336px inside a 317px card, so the reader scrolled a table sideways to
+     reach the Net it exists to state. Since and the code are one fact about one party, so the
+     date sits under the code and the column is gone. Asserted as a column count because that
+     is what the width is: nothing here can prove pixels without a browser. */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  const el = w.document.createElement("div");
+  el.innerHTML = w.eval('builders["receivables"]()');
+  const aged = [...el.querySelectorAll("table")].filter((t) => /Prov\./.test(t.textContent));
+  ok(aged.length > 0, "the ageing tables render");
+  for (const t of aged) {
+    const heads = [...t.querySelectorAll("thead th")].map((x) => x.textContent.trim());
+    ok(heads.length <= 5, `an aged table has ${heads.length} columns; six will not fit 375px`);
+    ok(!heads.includes("Since"), "the date is under the code, not in a column of its own");
+  }
+  const rows = [...el.querySelectorAll("table tbody tr")].map((r) => r.textContent);
+  ok(rows.some((r) => /\d{4}-\d{2}-\d{2}/.test(r)),
+     "and the date is still stated, which is the point of moving it rather than cutting it");
+}
+
+section("Orders and money — cash is stated in the P&L, once (v401)");
+{
+  /* The cash table's Invoiced row was byte for byte the P&L's Revenue row, one table below it,
+     so the two sat side by side saying the same figure twice. Cash is now three rows under the
+     revenue it belongs to and the duplicate is gone. */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  const el = w.document.createElement("div");
+  el.innerHTML = w.eval('builders["financials"]()');
+  const heads = [...el.querySelectorAll("table")].map((t) => t.textContent);
+  for (const want of ["Collected in cash", "Settled in kind", "Still uncollected"]) {
+    ok(heads.some((t) => t.includes(want)), `the P&L states "${want}"`);
+  }
+  ok(!heads.some((t) => /\bInvoiced\b/.test(t)),
+     "and states the revenue once, not as Revenue and again as Invoiced");
 }
 
 /* ---- done ----------------------------------------------------------------------- */
