@@ -1,27 +1,26 @@
-/* payload.mjs — the desk's own figures, extracted for a separate phone app.
+/* payload.mjs: open the master in jsdom, for anything that needs to RUN the desk.
  *
- * WHY THIS EXISTS
- * `public/index.html` is the whole laptop desk, 938 KB of it, and the phone loads all of
- * it to show three things. A separate phone app cannot simply be written against the
- * ledger, because the moment it computes a price itself there are two pricing engines and
- * they drift; that is the fault the desk spent v205 fixing when the board and the ladder
- * disagreed at 26 of 39 prices.
+ * WHAT IT WAS, AND WHY THE REST OF IT IS GONE (v387). This file used to build the phone
+ * app's payload: it ran the master, called its phonePayload(), refused to write anything
+ * that tripped phonePayloadLeaks(), and produced public/data.json. The app it fed is
+ * retired on his instruction, and the desk is the sole and only cloud copy of this book,
+ * so the payload had no reader and data.json was a second public copy of the position
+ * with nobody looking at it.
  *
- * So the phone app computes nothing. This runs the MASTER in jsdom, calls the master's own
- * `phonePayload()`, and writes the answers to `public/data.json`. One engine, one set of
- * figures, rendered twice.
+ * THE LEAK GATE WENT WITH IT, AND THAT IS A REDUCTION WORTH STATING PLAINLY.
+ * phonePayloadLeaks() banned the leak_test vocabulary, every per-unit cost on the book and
+ * every real name, and it earned its keep: the first payload ever built carried a real
+ * name out of actions(), because `revealed` defaults to true since v217. It was the
+ * difference between a code and a name on the open web FOR THE APP. It never guarded the
+ * desk, which serves cost, margin and the whole P&L at the same public URL, so removing it
+ * removes a gate on a road nobody travels rather than a gate on the book. The function is
+ * still in the master and still tested; nothing calls it in the build.
  *
- * IT REFUSES TO WRITE A PAYLOAD THAT LEAKS.
- * `phonePayloadLeaks()` in the master is the gate: the leak_test vocabulary, every per-unit
- * cost in the book, and every real name the directory can currently see. The first payload
- * ever built carried "Chase Chris for RM 90" out of actions(), because `revealed` defaults
- * to true since v217 and ID() therefore returns names. The app this feeds is public by the
- * owner's decision, so a leak here is a leak onto the open internet. A non-empty result
- * fails the build; it does not warn.
- *
- * Usage:  node tools/payload.mjs [--out public/data.json]
+ * WHAT IS LEFT is openMaster(), which is the shared jsdom harness. tools/ledger.mjs reads
+ * the ledger declarations out of the global scope through it, the suite runs the desk
+ * through it, and two copies of it would drift.
  */
-import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { JSDOM } from "jsdom";
@@ -31,11 +30,10 @@ const REPO = resolve(HERE, "..");
 const DEFAULT_MASTER =
   resolve(REPO, "master", "salt_command.html");
 const MASTER = process.env.SALT_MASTER || DEFAULT_MASTER;
-const OUT = resolve(REPO, "public", "data.json");
 
-/* OPEN THE MASTER IN A BROWSER THAT IS NOT A BROWSER. Exported because more than one tool
-   now needs the desk's own runtime: this file calls phonePayload(), and tools/ledger.mjs
-   reads the ledger declarations straight out of the global scope. Two copies of this
+/* OPEN THE MASTER IN A BROWSER THAT IS NOT A BROWSER. Exported because more than one thing
+   needs the desk's own runtime: tools/ledger.mjs reads the ledger declarations straight out
+   of the global scope, and the suite renders every part through it. Two copies of this
    harness would drift, and a build that priced a lot against a subtly different DOM is
    exactly the class of fault this repo keeps writing tests about. */
 export async function openMaster(masterPath = MASTER) {
@@ -74,36 +72,4 @@ export async function openMaster(masterPath = MASTER) {
     setTimeout(r, 8000);                                  // never hang a build on a stray listener
   });
   return { dom, w };
-}
-
-export async function buildPayload(masterPath = MASTER) {
-  const { dom, w } = await openMaster(masterPath);
-
-  if (typeof w.phonePayload !== "function") {
-    throw new Error("the master has no phonePayload(); it is the contract this build depends on");
-  }
-  const leaks = typeof w.phonePayloadLeaks === "function" ? w.phonePayloadLeaks() : ["phonePayloadLeaks() missing"];
-  const payload = w.phonePayload();
-  dom.window.close();
-  return { payload, leaks };
-}
-
-if (import.meta.url === `file://${process.argv[1]}` || process.argv[1]?.endsWith("payload.mjs")) {
-  const { payload, leaks } = await buildPayload();
-  if (leaks.length) {
-    console.error("PAYLOAD REFUSED: it carries things that must never leave the desk.");
-    leaks.forEach((l) => console.error("  - " + l));
-    process.exit(1);
-  }
-  mkdirSync(dirname(OUT), { recursive: true });
-  const json = JSON.stringify(payload);
-  writeFileSync(OUT, json + "\n");
-  const kb = (Buffer.byteLength(json) / 1024).toFixed(1);
-  console.log(`PAYLOAD OK: public/data.json`);
-  console.log(`  version: ${payload.v}  stamped ${payload.stamped}`);
-  console.log(`  size:    ${kb} KB   (the built desk is about 900 KB)`);
-  console.log(`  carries: ${payload.tiers.length} tiers x ${payload.sizes.length} sizes, ` +
-    `${payload.parties.length} parties, ${Object.keys(payload.position).length} products, ` +
-    `${payload.actions.length} actions`);
-  console.log(`  leaks:   none — vocabulary, cost figures and real names all clear`);
 }

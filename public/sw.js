@@ -19,16 +19,12 @@ const SHELL = [
    /rev and its manifest are here for the same reason and it is the sharpest case: a
    cached freshness check would report the build it was cached with for ever, so the
    poll would prove the phone current at the exact moment it went stale. */
-/* data.json joins the list at v290 and it matters as much as /rev does. The app reads its
-   whole position and action list from it, and it is not a navigation, so without this line
-   it would fall into the cache-first branch below and the phone would show one build's
-   figures for ever while cheerfully reporting itself up to date. */
 /* /drafts joins at v302 and it is the sharpest case yet. A cached draft list would show a
    row that has already been approved, and tapping it again would be refused as a 409 with
    no way for the phone to know why; worse, an approved row would keep asking to be approved
    while the one actually waiting stayed invisible. It was left out of this list at first and
    the self-test caught it: a deleted draft was still on screen after a reload. */
-const API = /^\/(queue|vault|bio|bye|menu|qr|rev|rev\.json|data\.json|drafts|push)(\/|$)/;
+const API = /^\/(queue|vault|bio|bye|menu|qr|rev|rev\.json|drafts|push)(\/|$)/;
 
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
@@ -52,11 +48,12 @@ self.addEventListener("fetch", (e) => {
   /* The shell is network first, so a fresh build reaches the phone without a CACHE
      bump. Falls back to the cached shell with no signal, which is the whole point. */
   if (req.mode === "navigate") {
-    /* ONLY THE ROOT IS THE SHELL (v290). This used to cache EVERY navigation under "./",
-       which was harmless while the root was the only page there was. With the desk now at
-       /desk, one visit there would have overwritten the app as the offline shell, so going
-       offline would silently hand you the wrong surface. */
-    const isRoot = url.pathname === "/" || url.pathname === "/index.html";
+    /* ONLY THE ROOT IS THE SHELL (v290). It used to cache EVERY navigation under "./", which
+       was harmless while the root was the only page there was, and became a hazard at v290
+       when a visit to /desk could overwrite the app as the offline shell. From v387 there is
+       one surface again and the desk IS the root, so the two can no longer disagree; the
+       check stays narrow because /desk is still a live route to the same page. */
+    const isRoot = url.pathname === "/";
     e.respondWith(
       fetch(req)
         .then((res) => {
