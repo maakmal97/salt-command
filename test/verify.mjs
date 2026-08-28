@@ -2178,6 +2178,39 @@ section("iPhone — the dead zones the desk draws under (v392)");
   ok(/100dvh/.test(m), "they use dvh, which is the height that is actually there");
 }
 
+section("Enter — the tap contract on the one view you type into");
+{
+  /* THIS SECTION EXISTS BECAUSE THE WIDTH HALF WAS LOST ONCE, IN THE FOLD THAT SHIPPED THE
+     HEIGHT HALF. The Enter form's strips got min-height AND min-width at the branch; the
+     central .viewsw button rule carries only the height, so absorbing the scoped rule put
+     five buttons back under 44px wide with every one of them 44px tall, which no height
+     assertion could see. Measured at 375px: Sell 42, Buy 43, All 32, Half 40, Full 37.
+
+     These read the master's source rather than the CSSOM on purpose. CSSOM re-serialises a
+     selector list with a space after every comma, so a check written against the authored
+     selector comes back false for a rule that is present. */
+  const m = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+
+  ok(/\.vpart\[data-tab="add"\] \.viewsw\{flex-wrap:wrap/.test(m),
+    "the Enter form's strips wrap, so no mode sits off the right edge of a phone");
+  ok(/\.vpart\[data-tab="add"\] \.viewsw button\{min-width:var\(--tap\)/.test(m),
+    "and every button on them is 44px WIDE, which the central height rule does not give");
+  ok(/\.viewsw button\{[^}]*min-height:var\(--tap\)/.test(m),
+    "the height half is the central rule, and it is still there");
+  ok(/#wbAssocWrap>label\{min-height:var\(--tap\)/.test(m),
+    "the associate checkbox is 13px, so its label is the target and the label reads --tap");
+
+  /* sixty of them on the Whiteboard, each one dismissing or deferring a finding, in a row
+     beside a .navlink that has been 44px since v392. */
+  ok(/\.obsbtn\{[^}]*min-height:var\(--tap\)/.test(m),
+    "the Whiteboard's hush controls read --tap, not the 27px they carried");
+
+  /* v387 retired the phone app: /desk is the one surface, and the laptop copy of Approve
+     was still sending the reader to a second one. */
+  ok(!/decided on the cloud desk or on the phone/.test(m),
+    "no copy on this view names the retired phone app as a place to go");
+}
+
 section("Silence — four things that failed without saying so (v384)");
 {
   const m = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
