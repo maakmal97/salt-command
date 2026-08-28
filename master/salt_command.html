@@ -6349,7 +6349,7 @@ function tabAnalysis(){
     return `<div class="pend def" style="margin-top:14px"><h3>${bad.length} stated correction${bad.length===1?'':'s'} do not hold <span class="cd crim">of ${seen.length} corrected</span></h3>
       <div class="insight">A row asserting a change it did not make is worse than a refusal, because every later reader takes it as done.</div>
       <table style="margin-top:10px"><thead><tr><th class="l">Row</th><th class="l">Party</th><th class="l">Stated</th><th class="l">What is wrong</th></tr></thead><tbody>
-      ${bad.map(b=>`<tr><td class="l mono">${esc(b.t.rid||'')}</td><td class="l mono">${ID(b.t.customer||b.t.supplier)}</td>
+      ${bad.map(b=>`<tr><td class="l mono">${b.t.rid?`<a class="eref elink" href="#ent" onclick="return goRid('${b.t.rid}')">${esc(b.t.rid)}</a>`:'&mdash;'}</td><td class="l mono">${ID(b.t.customer||b.t.supplier)}</td>
         <td class="l mono">${esc(b.c.field)} ${esc(b.c.was)} &rarr; ${esc(b.c.now)}</td>
         <td class="l">${b.c.verdict==='unknown'
           ?'<b>'+esc(b.c.field)+'</b> is not a field a correction may set, so nothing was written'
@@ -7451,11 +7451,23 @@ function ledQuick(what,type,who,date,total,qty){
 /* E-codes point at each other across the whole book, so half the targets now sit inside the
    fold. A jump that scrolled to a row inside a closed <details> would land on the summary and
    look like a broken link, so the jump opens whatever it has to open first. */
-function goEnt(code){const el=document.getElementById('ent-'+code);if(!el)return false;
+function goEl(el){if(!el)return false;
   let p=el.parentNode;
   while(p&&p!==document.body){if(p.tagName==='DETAILS')p.open=true;p=p.parentNode;}
   el.scrollIntoView({behavior:'smooth',block:'center'});el.classList.add('entflash');
   setTimeout(()=>el.classList.remove('entflash'),1200);return false;}
+function goEnt(code){return goEl(document.getElementById('ent-'+code));}
+/* ============ THE BOOK-WIDE AUDIT HAS TO REACH THE ROW IT NAMES ============
+   Analysis reports which stated corrections do not hold, and BOTH of the rows it named were
+   inside the Ledger's closed "earlier orders" fold, 117 deep. So the finding was visible and
+   the row was not, which on a phone means the breach cannot be acted on at all. This is the
+   same walk goEnt does, addressed by rid because the audit holds rids and the E-codes are
+   minted inside tabLedger; deriving them a second time here is the drift this desk keeps
+   refusing elsewhere. The part switch comes first, because scrollIntoView does nothing to an
+   element in a part that is not on screen, and the card is re-rendered by it, so the lookup
+   has to happen after. */
+function goRid(rid){switchTab('ledger');
+  return goEl(document.querySelector('.lcard[data-rid="'+rid+'"]'));}
 /* HOW MUCH OF THE BOOK THE LEDGER OPENS ON, in days back from today. Everything older folds
    unless it is still live or the reader has filtered. Three days is what he asked for and it
    leaves 15 of 132 on screen; it is one number here because the right answer moves with how
