@@ -2209,6 +2209,17 @@ section("Enter — the tap contract on the one view you type into");
      was still sending the reader to a second one. */
   ok(!/decided on the cloud desk or on the phone/.test(m),
     "no copy on this view names the retired phone app as a place to go");
+
+  /* AND COPY MUST NAME WHAT THE EYE CAN FIND, NOT WHAT THE DOM KNOWS. The form told the
+     reader to open "Names & IDs". That control is button#idBtn, 44x44 at x=268 y=127 on a
+     375px screen, drawn as a key glyph with no text on it at all: the words "Names & IDs"
+     live only in its title and aria-label, and a phone has no hover to show them. */
+  ok(!/Open <b>Names &amp; IDs<\/b> and use/.test(m),
+    "the form does not send the reader to a control by a name that is nowhere on screen");
+  ok(/The <b>key<\/b> icon, top right, then <b>\+ Add ID<\/b>/.test(m),
+    "it names the glyph and the place instead, both of which are on the screen");
+  ok(/title="Names &amp; IDs"/.test(m),
+    "the bar control keeps its title, which is what the copy stopped relying on");
 }
 
 section("Silence — four things that failed without saying so (v384)");
