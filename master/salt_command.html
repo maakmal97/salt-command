@@ -12902,7 +12902,6 @@ function tabPricing(){
     <div class="chartbox"><canvas id="pxShapeChart"></canvas></div>
     <div class="chartbox"><canvas id="pxTimeChart"></canvas></div>
   </div>
-  </div>
   ${(()=>{const MC=marginCurve(),q=2,c=pxCost();
     const R=enginePrice(q,'T2',{curve:MC});
     const line=(lab,v,n)=>`<tr><td class="l">${lab}<div class="iref">${esc(n||'')}</div></td><td class="mono">${fmt(v)}</td></tr>`;
