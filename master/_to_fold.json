@@ -1,0 +1,42 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "stated-2026-08-28-s114-rm20",
+   "collection": "sales",
+   "row": {
+    "rid": "s114",
+    "qty": 10,
+    "total": 130,
+    "date": "2026-08-26",
+    "product": "oil",
+    "changes": [
+     {"field": "cash", "from": 150, "to": 130}
+    ],
+    "customer": "CZ4-MK"
+   },
+   "reasoning": "Stated directly by the owner in chat on 28 Aug 2026, so there is no draft behind it: the RM20 tendered above the RM130 total on s114 is purely cash to set off against his future order, not oil owed out. cash is corrected to RM130 so the row is settled exactly, and the RM20 moves to customerRefunds as an account payable in the same fold, matching the CZ6-WM RM80 precedent.",
+   "flags": [],
+   "amends": "s114",
+   "amendKind": "Correction",
+   "entry": {
+    "at": "stated-2026-08-28-s114-rm20",
+    "type": "AMEND",
+    "party": "CZ4-MK",
+    "raw": "Correction on CZ4-MK s114: cash to 130; the RM20 over-tender is an account payable in customerRefunds, on his instruction of 28 Aug",
+    "payload": {
+     "mode": "amend",
+     "direction": "SELL",
+     "party": "CZ4-MK",
+     "rid": "s114",
+     "kind": "Correction",
+     "date": "2026-08-28",
+     "fields": {"cash": 130}
+    }
+   },
+   "decidedAt": "2026-08-28T13:30:00.000Z",
+   "decidedBy": "owner, stated in chat"
+  }
+ ]
+}

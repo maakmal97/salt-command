@@ -1,5 +1,14 @@
 [
  {
+  "v": "v394",
+  "d": "28 Aug 2026",
+  "t": "THE RM20 ON S114 IS CASH OWED BACK, NOT OIL OWED OUT, ON HIS INSTRUCTION",
+  "n": [
+   "<b>THE S114 OVER-TENDER IS RESTATED FROM STOCK OWED TO CASH OWED, ON HIS INSTRUCTION OF 28 AUG, STATED IN CHAT.</b> CZ4-MK tendered RM150 against his RM130 oil order of 26 Aug, and the RM20 was booked on the row as 1.54 unit of oil owed out. He says it is purely cash, to set off against his future order, so it moves to customerRefunds as an account payable: cash on s114 is corrected to RM130, the row settles exactly, and the RM20 stands as its own entry with no paidOn until it is set off. This is the CZ6-WM treatment of 24 Jul exactly, and the row's revenue stays RM130 for the same reason that one stayed RM100: a payable is not income.",
+   "<b>NOTHING MOVED AND NOTHING ROLLS.</b> The correction changes what the row says it collected; no salt, no oil and no cash crossed anyone's hands today. The deferred oil figure the desk computed from the over-tender disappears with the corrected cash, and the RM20 now shows in the cash promised away on the Financials view instead."
+  ]
+ },
+ {
   "v": "v393",
   "d": "28 Aug 2026",
   "t": "THE QUEUE CLEARED ON DEMAND: CJ4-BJ COMPLETES THE 20 AUG ORDER AND CA4-DAM TAKES HIS FIRST CREDIT",

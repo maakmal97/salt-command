@@ -1,6 +1,6 @@
 {
- "v": "v393",
- "stamped": "28 Aug 2026, 20:57 KL",
+ "v": "v394",
+ "stamped": "28 Aug 2026, 21:05 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -2387,13 +2387,30 @@
     "qty": 10,
     "total": 130,
     "cost": 7.666666666666667,
-    "cash": 150,
+    "cash": 130,
     "date": "2026-08-26",
     "deliveredQty": 10,
     "deliveredOn": "2026-08-26",
     "paidOn": "2026-08-26",
-    "note": "<b>His first oil order, and the second time this desk has sold 10 unit for RM130.</b> The rate matches s062 of 06 Aug to the ringgit, RM13 a unit. <b>It is costed at RM7.67, not RM7</b>, because the 23 Aug count put oil at 0 and none of the cheaper stock was left: what he took came off the 30 unit that landed the same day. So it returns <b>RM53.33 at 41.0%</b>, and the RM60 it would have shown against the old lot cost was never available to earn. <b>RM150 was tendered against RM130 owed.</b> At RM13 a unit the RM150 buys 11.54 unit and 10 went out, so the row carries <b>1.54 unit of oil owed out</b> and nothing owed in money either way. Booked that way rather than as a cash balance because that is how this book already carries paid-ahead, and because a credit expressed in stock is the one that shows up in cover. Note that the 10-unit oil card currently sits under its own floor on the board; that is a pricing condition to settle on the Price view, not a fault in this row.",
-    "rid": "s114"
+    "note": "<b>RESTATED ON 28 AUG, ON HIS INSTRUCTION: THE RM20 OVER-TENDER IS CASH TO SET OFF AGAINST HIS FUTURE ORDER, NOT OIL OWED OUT.</b> cash is corrected to RM130 and the RM20 sits in customerRefunds as an account payable, so the 1.54 unit line in the paragraph below is superseded.  <b>THE RM20 TENDERED ABOVE THE TOTAL LEAVES THE ROW AND BECOMES AN ACCOUNT PAYABLE, ON HIS INSTRUCTION OF 28 AUG.</b> cash corrected from RM150 to RM130 so the order settles exactly as agreed; the RM20 is carried in customerRefunds against his future order, not as oil owed out. Stated directly in chat, so no draft sits behind this correction. <b>His first oil order, and the second time this desk has sold 10 unit for RM130.</b> The rate matches s062 of 06 Aug to the ringgit, RM13 a unit. <b>It is costed at RM7.67, not RM7</b>, because the 23 Aug count put oil at 0 and none of the cheaper stock was left: what he took came off the 30 unit that landed the same day. So it returns <b>RM53.33 at 41.0%</b>, and the RM60 it would have shown against the old lot cost was never available to earn. <b>RM150 was tendered against RM130 owed.</b> At RM13 a unit the RM150 buys 11.54 unit and 10 went out, so the row carries <b>1.54 unit of oil owed out</b> and nothing owed in money either way. Booked that way rather than as a cash balance because that is how this book already carries paid-ahead, and because a credit expressed in stock is the one that shows up in cover. Note that the 10-unit oil card currently sits under its own floor on the board; that is a pricing condition to settle on the Price view, not a fault in this row.",
+    "rid": "s114",
+    "mod": "corrected on 2026-08-28: cash 150 to 130",
+    "amend": [
+     {
+      "date": "2026-08-26",
+      "kind": "Fulfilment",
+      "cash": 130,
+      "kg": 10,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-08-28",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>THE RM20 TENDERED ABOVE THE TOTAL LEAVES THE ROW AND BECOMES AN ACCOUNT PAYABLE, ON HIS INSTRUCTION OF 28 AUG.</b> cash corrected from RM150 to RM130 so the order settles exactly as agreed; the RM20 is carried in customerRefunds against his future order, not as oil owed out. Stated directly in chat, so no draft sits behind this correction."
+     }
+    ]
    },
    {
     "customer": "CD3-SEG",
@@ -2550,6 +2567,12 @@
     "since": "2026-07-24",
     "paidOn": "2026-07-31",
     "note": "Overpaid: paid RM180 against his RM100 order (1 unit at RM100), so RM80 was owed back as a cash refund. Flagged in the 24 Jul delivery audit, PAID on 31 Jul: the liability clears and the RM80 leaves cash on that date. The entry stays rather than being deleted, because a refund that vanished would also delete the only record of the overpayment."
+   },
+   {
+    "party": "CZ4-MK",
+    "amount": 20,
+    "since": "2026-08-26",
+    "note": "Overpaid: RM150 tendered against his RM130 oil order of 26 Aug (s114, 10 unit at RM13 a unit). First carried on the row as 1.54 unit of oil owed out; restated at v394 on his instruction of 28 Aug: the RM20 is purely cash, an account payable to set off against his future order, not stock owed. cash on s114 is corrected to RM130 to match. No paidOn until it is set off; while open it counts in the cash promised away on the Financials view, exactly as the CZ6-WM RM80 did."
    }
   ],
   "roster": [
@@ -2748,7 +2771,7 @@
   ],
   "QUEUE_COMMITTED": "2026-08-28T09:59:51.414Z",
   "PRICING": {
-   "takenAt": "2026-08-28T12:57:45.907Z",
+   "takenAt": "2026-08-28T13:06:03.277Z",
    "sizes": [
     0.5,
     1,
@@ -3190,10 +3213,10 @@
      }
     }
    },
-   "v": "v393"
+   "v": "v394"
   },
   "OPEN": {
-   "at": "2026-08-28T12:57:45.968Z",
+   "at": "2026-08-28T13:06:03.335Z",
    "count": 6,
    "byKey": {
     "CA4-DAM|2026-08-28|100": {
@@ -3304,12 +3327,12 @@
     "oil": {
      "name": "Oil",
      "onHand": 20,
-     "free": 18.46,
-     "owedOut": 1.54,
-     "coverDays": 23.5,
+     "free": 20,
+     "owedOut": 0,
+     "coverDays": 25.4,
      "rate": 0.79,
      "owedToYou": 0,
-     "promised": 1.54,
+     "promised": 0,
      "short": 0
     }
    },
@@ -3317,7 +3340,7 @@
     "salt": "2026-08-24",
     "oil": "2026-08-23"
    },
-   "v": "v393"
+   "v": "v394"
   }
  }
 }
