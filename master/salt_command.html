@@ -241,6 +241,10 @@ h2 .rule{flex:1;height:1px;background:linear-gradient(90deg,var(--acc) -40%,var(
 table{width:100%;border-collapse:collapse;font-size:13px;}
 th,td{padding:8px 10px;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;}
 thead th{position:sticky;top:0;background:#1c1338;color:var(--gold);font-size:10px;letter-spacing:.5px;text-transform:uppercase;border-bottom:1px solid var(--line);}
+/* v401: a header that SORTS is a control, so it obeys --tap like every other control. On a
+   cell, height is a minimum, so it grows with the token and never fights its own padding.
+   Measured at 375px: the six Customers sort headers were 30.9px against a 44px token. */
+table.sortt thead th{height:var(--tap);cursor:pointer;}
 th.l,td.l{text-align:left;color:var(--mut);font-weight:700;position:sticky;left:0;background:#191030;}
 tbody td{border-bottom:1px solid #271b45;color:var(--ink);font-weight:600;}
 tr.tot td{font-weight:800;background:#150e2b;}
@@ -6602,7 +6606,13 @@ function tabMap(){
        now the one worth having: what the picture is, and why it carries no label. The
        version history is in master/changelog.json, which is where a reader who wants it
        will look. -->
-  <div class="dsc dsclead" style="margin-bottom:12px">Where the book is concentrated, drawn as heat: parties summed to their locality with no label on the canvas, because a place name beside a party code identifies a customer and this desk is public.</div>
+  <!-- v401: THE LEAD SAID WHY THE CANVAS CARRIES NO LABEL, AND THAT IS A CODE RULE, NOT COPY.
+       A place name beside a party code identifies a customer, and this desk is served publicly
+       with no sign-in, which is why v293 stripped every label from this canvas and why
+       tools/geosync.mjs renders no feature names into the master. The rule is unchanged and
+       binds anyone editing this part; it belongs here, where it is read before the canvas is
+       touched, rather than on a screen where it is method prose the reader cannot act on. -->
+  <div class="dsc dsclead" style="margin-bottom:12px">Where the book is concentrated, drawn as heat.</div>
   <div class="kpis k4">
     <div class="kpi"><div class="l">Sited</div><div class="v">${pts.length+far.length}</div><div class="n">of ${roster.length} on the roster${far.length?`, ${far.length} beyond the frame`:''}</div></div>
     <div class="kpi ${miss.some(m=>!NON_PLACE[m.id.split('-').pop()])?'r':'g'}"><div class="l">Without a place</div><div class="v">${miss.length}</div><div class="n">${miss.filter(m=>NON_PLACE[m.id.split('-').pop()]).length} by rule, ${miss.filter(m=>!NON_PLACE[m.id.split('-').pop()]).length} genuinely unknown</div></div>
@@ -11549,7 +11559,7 @@ function customerRewards(){
   }).sort((a,b)=>b.rev-a.rev);
 }
 function tabConcentration(){
-  const c=concentration();const maxRev=c.bc[0]?c.bc[0].rev:1;const bm=custBadges();
+  const c=concentration();const bm=custBadges();
   const risk=c.hhi>3000?'high':c.hhi>1800?'moderate':'low';
   const riskCol=risk==='high'?'var(--crim)':risk==='moderate'?'var(--gold)':'var(--grn)';
   const ind=k=>concSort.key===k?(concSort.dir<0?' ↓':' ↑'):'';
@@ -11558,7 +11568,10 @@ function tabConcentration(){
   const ldStock=+ld.filter(r=>r.why==='nostock').reduce((a,r)=>a+r.kg,0).toFixed(2);
   const sv=x=>concSort.key==='id'?x.id:concSort.key==='marginpct'?(x.rev?x.margin/x.rev:0):concSort.key==='share'?x.rev:(x[concSort.key]||0);
   const rows=c.bc.slice().sort((a,b)=>{const av=sv(a),bv=sv(b);return typeof av==='string'?concSort.dir*(av<bv?-1:av>bv?1:0):concSort.dir*(av-bv);}).map(x=>{const mp=x.rev>0?x.margin/x.rev*100:0,thin=mp<20;return `<tr><td class="l mono">${ID(x.id)}${custBadgeHtml(bm,x.id)}</td><td>${fmt0(x.rev)}</td><td>${(x.rev/c.tot*100).toFixed(0)}%</td><td>${kg(x.kg)}</td><td>${fmt0(x.margin)}</td><td style="color:${thin?'var(--crim)':'var(--ink)'}">${mp.toFixed(0)}%${thin?' <span class="sbadge bthin">thin</span>':''}</td></tr>`;}).join('');
-  const bars=c.bc.slice(0,6).map(x=>`<div style="margin:9px 0"><div style="display:flex;justify-content:space-between;font-size:12px"><span class="mono">${ID(x.id)}</span><span style="color:var(--mut)">${fmt0(x.rev)} &middot; ${(x.rev/c.tot*100).toFixed(0)}%</span></div><div class="mbar"><span style="width:${Math.max(4,x.rev/maxRev*100)}%"></span></div></div>`).join('');
+  /* v401: THE SIX STATIC BARS WENT. Revenue by customer was on this part three times over:
+     the pareto, these bars and the Revenue and Share columns of the database at the foot.
+     The bars were the Chart.js-free copy, and the table is the better one of the two, since
+     it carries every name rather than six and needs no canvas either. */
   /* ---- the inference, computed BEFORE the layout so the lead can quote it (v165) ----
      The tab used to open with a sortable ledger of every customer and put the reading
      underneath it, which meant the first thing on screen was the raw data and the last
@@ -11604,7 +11617,12 @@ function tabConcentration(){
   const cr=customerRewards(), crReady=cr.filter(r=>r.earned>0.009);
   const crBody=cr.length?cr.map(r=>`<tr><td class="l mono">${ID(r.id)}</td><td>${fmt0(r.rev)}</td><td>${r.pct}%</td><td class="l">${r.band}${r.bandUnits>0?` <span style="color:var(--dim)">&middot; ${kg(r.bandUnits)}</span>`:` <span style="color:var(--dim)">&middot; nothing</span>`}</td><td>${r.earned>0.009?`<b style="color:var(--gold)">${kg(r.earned)}</b>`:'&mdash;'}</td><td class="mono" style="color:var(--dim)">${fmt0(r.toNext)}</td></tr>`).join('')
     :`<tr><td class="l" colspan="6" style="color:var(--dim)">Nothing since ${REWARD.since}. The scheme counts from the day it was adopted, because the opening positions already hold everything before it.</td></tr>`;
-  const crCard=`<div class="card"><div class="cardh">&#127873; Customer rewards <span class="sub">since ${REWARD.since} &middot; ${fmt0(rewardHurdle(PROD,'customer'))} a hurdle &middot; the band sets the units</span>${crReady.length?`<span class="sub" style="color:var(--gold)">${crReady.map(r=>ID(r.id)).join(', ')} waiting</span>`:''}</div>
+  /* v401: the sub lost "the band sets the units", which the Band pays column states per row
+     and in units. NOT for width: this header measures 332px inside a 325px box at 375px, and
+     the 7px is the .sub rule at :438, a full-width BUTTON style that lands on this span by
+     cascade (width:100% plus the 7px margin-left .cardh .sub adds). That is desk-wide, on
+     every card header with a sub, so it is not fixed from this view. */
+  const crCard=`<div class="card"><div class="cardh">&#127873; Customer rewards <span class="sub">since ${REWARD.since} &middot; ${fmt0(rewardHurdle(PROD,'customer'))} a hurdle</span>${crReady.length?`<span class="sub" style="color:var(--gold)">${crReady.map(r=>ID(r.id)).join(', ')} waiting</span>`:''}</div>
     <table><thead><tr><th class="l">Customer</th><th>Bought</th><th>Margin</th><th class="l">Band pays</th><th>Earned</th><th>To next</th></tr></thead><tbody>${crBody}</tbody></table></div>`;
   /* ============ v385: DO, THEN WATCH, THEN STUDY ============
      The order was rewards, tiles, read, two charts, the approach calendar, turned-away, the
@@ -11621,7 +11639,11 @@ function tabConcentration(){
      legend and tooltips, and what the calendar carries is in the card that opens on a chip.
      Deleting text that never reached a reader costs a reader nothing. */
   return `<h1>Customers</h1>
-  <div class="dsc dsclead" style="margin-bottom:13px">Who buys, who to approach next and the demand you could not serve, every figure of it observed trade rather than fitted demand or a scoring model.</div>
+  <!-- v401: the caveat that every figure here is observed trade rather than fitted demand or
+       a scoring model was half the lead, and it is method prose: it is true of every figure on
+       this desk, it never changes, and there is nothing a reader does differently for knowing
+       it. It still binds whoever edits this part, so it is said here instead. -->
+  <div class="dsc dsclead" style="margin-bottom:13px">Who buys, who to approach next, and the demand you could not serve.</div>
   <div class="kpis k5">
     <div class="kpi ${risk==='high'?'r':risk==='moderate'?'gold':'g'}"><div class="l">Concentration</div><div class="v" style="color:${riskCol}">${c.hhi.toFixed(0)}</div><div class="n">${risk} on the Herfindahl over ${c.n} buyers; ${c.hhi>2500?'widen the base before growing the top':'no single lapse decides the month'}</div></div>
     <div class="kpi"><div class="l">Carry 80% of revenue</div><div class="v">${to80}</div><div class="n">of ${c.n} names; top is ${topName} at ${c.top.toFixed(0)}%</div></div>
@@ -11649,7 +11671,6 @@ function tabConcentration(){
   <div class="chartbox" style="height:230px"><canvas id="ccPareto"></canvas></div>
   <div class="card" style="margin-top:14px"><div class="cardh">Revenue against margin <span class="sub">per order across, total revenue as the circle</span></div>
       <div class="chartbox" style="height:230px"><canvas id="ccScatter"></canvas></div></div>
-  <div class="card" style="margin-top:14px"><div style="font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:var(--dim);margin-bottom:4px">Revenue by customer <span style="text-transform:none;letter-spacing:0">&mdash; drawn without Chart.js, so it is always here</span></div>${bars}</div>
 
   <h2 style="margin-top:18px">Demand you could not serve <span class="rule"></span></h2>
   <!-- v385: THE EMPTY STATE RENDERED AS AN EMPTY BOX. It was a lone .dsc in a card, so the
@@ -11664,7 +11685,7 @@ function tabConcentration(){
     : `<tbody><tr><td class="l" style="color:var(--mut)"><b>Nothing recorded, and this is the only loss the desk is structurally blind to.</b> An order you could not fill leaves no trace anywhere, so a fortnight of empty shelves reads exactly like a fortnight of no demand. With free to sell at <b>${kg(Math.max(0,currentStock-defKg))}</b> against recent trade, that is not a hypothetical gap. Log one under <b>Enter &rarr; Transaction &rarr; Turned away</b>: nothing there touches revenue, stock or margin.</td></tr></tbody>`}</table></div>
 
   <h2 style="margin-top:22px">The database <span class="sub" style="font-weight:400">every customer, sortable on any column</span> <span class="rule"></span></h2>
-  <div class="card"><table><thead><tr><th class="l" style="cursor:pointer" onclick="sortConc('id')">Customer${ind('id')}</th><th style="cursor:pointer" onclick="sortConc('rev')">Revenue${ind('rev')}</th><th style="cursor:pointer" onclick="sortConc('share')">Share${ind('share')}</th><th style="cursor:pointer" onclick="sortConc('kg')">Volume${ind('kg')}</th><th style="cursor:pointer" onclick="sortConc('margin')">Margin${ind('margin')}</th><th style="cursor:pointer" onclick="sortConc('marginpct')">Margin %${ind('marginpct')}</th></tr></thead><tbody>${rows}<tr class="tot"><td class="l">All</td><td>${fmt0(c.tot)}</td><td>100%</td><td>${kg(c.bc.reduce((a,x)=>a+x.kg,0))}</td><td>${fmt0(c.bc.reduce((a,x)=>a+x.margin,0))}</td><td>${(c.tot>0?c.bc.reduce((a,x)=>a+x.margin,0)/c.tot*100:0).toFixed(0)}%</td></tr></tbody></table></div>`;
+  <div class="card"><table class="sortt"><thead><tr><th class="l" onclick="sortConc('id')">Customer${ind('id')}</th><th onclick="sortConc('rev')">Revenue${ind('rev')}</th><th onclick="sortConc('share')">Share${ind('share')}</th><th onclick="sortConc('kg')">Volume${ind('kg')}</th><th onclick="sortConc('margin')">Margin${ind('margin')}</th><th onclick="sortConc('marginpct')">Margin %${ind('marginpct')}</th></tr></thead><tbody>${rows}<tr class="tot"><td class="l">All</td><td>${fmt0(c.tot)}</td><td>100%</td><td>${kg(c.bc.reduce((a,x)=>a+x.kg,0))}</td><td>${fmt0(c.bc.reduce((a,x)=>a+x.margin,0))}</td><td>${(c.tot>0?c.bc.reduce((a,x)=>a+x.margin,0)/c.tot*100:0).toFixed(0)}%</td></tr></tbody></table></div>`;
 }
 /* ---- the three Customers charts (v165) -------------------------------------
    All three read the same numbers the tables do; none of them models anything. Pareto
@@ -11866,12 +11887,18 @@ function resellerCard(r){
   const resells=sales.filter(s=>s.total!=null&&s.rev==='R2'&&ownerOf(s.customer)===r.id);
   const resellRows=resells.map(s=>{const si=txStat(s);return `<tr><td class="l">${s.date}</td><td class="mono">${ID(s.downstream||s.customer)}</td><td>${kg(s.qty)}</td><td>${fmt0(s.total)}</td><td><span class="tag ${si.cls}">${si.order}</span></td></tr>`;}).join('');
   const refRows=r.referrals.map(c=>`<tr><td class="l mono">${ID(c)}</td><td>${fmt0(firstOrderOf(c))}</td></tr>`).join('');
-  const ledgerSec=(title,q,n,inner)=>`<details class="obsec"${n>0?' open':''}><summary>${title} <span class="q">${q}</span><span class="ct${n>0?'':' zero'}">${n>0?n:'none'}</span></summary><div class="card">${n>0?inner:'<div class="dsc">None.</div>'}</div></details>`;
+  /* v401: THESE OPEN SHUT NOW, and so does the card around them. Five associates with three
+     ledgers each shipped seventeen open sections and 9,795px of Network on a 375px screen,
+     twelve full phones for five people. The summary line above was written at v385 to be
+     exactly true WITH THE CARD SHUT, which is only worth doing if the card is ever shut. The
+     count is already on the summary, so a reader sees how many rows are behind it without
+     opening anything. */
+  const ledgerSec=(title,q,n,inner)=>`<details class="obsec"><summary>${title} <span class="q">${q}</span><span class="ct${n>0?'':' zero'}">${n>0?n:'none'}</span></summary><div class="card">${n>0?inner:'<div class="dsc">None.</div>'}</div></details>`;
   const body=`${rebateLine}
     ${ledgerSec('Buy (R1)','their own purchases',buys.length,`<table><thead><tr><th class="l">Date</th><th>Qty</th><th>Total</th><th>State</th></tr></thead><tbody>${buyRows}<tr class="tot"><td class="l">Total</td><td></td><td>${fmt0(r.direct)}</td><td></td></tr></tbody></table>`)}
     ${ledgerSec('Resell (R2)','sold on your behalf',resells.length,`<table><thead><tr><th class="l">Date</th><th>End customer</th><th>Qty</th><th>You received</th><th>State</th></tr></thead><tbody>${resellRows}<tr class="tot"><td class="l" colspan="3">Total</td><td>${fmt0(r.indirect)}</td><td></td></tr></tbody></table>`)}
     ${ledgerSec('Refer (R3)','customers introduced, first order',r.referrals.length,`<table><thead><tr><th class="l">Referred customer</th><th>First order (R3)</th></tr></thead><tbody>${refRows}<tr class="tot"><td class="l">Total</td><td>${fmt0(r.r3)}</td></tr></tbody></table>`)}`;
-  return `<details class="rcard" open>${summary}${kpis}${body}</details>`;
+  return `<details class="rcard">${summary}${kpis}${body}</details>`;
 }
 function tabNetwork(){
   const ns=networkStats();
@@ -11886,7 +11913,11 @@ function tabNetwork(){
      their parent would wrongly imply their trade runs through him. He is set APART
      instead: first on the left, and raised on a shorter stem so his standing reads at a
      glance while the line to you stays as direct as theirs. */
-  const node=(x,bc,title)=>`<div style="background:var(--card2);border:1px solid ${bc};border-radius:10px;padding:8px 12px;text-align:center;min-width:96px"><div class="mono" style="font-size:12px;color:var(--ink)">${ID(x.id)}</div><div style="font-size:10px;color:${bc};font-weight:700;letter-spacing:.4px">${title}</div><div style="font-size:11px;color:var(--mut)">${fmt0(x.total)} &middot; ${x.dsN} ${x.connKind}</div></div>`;
+  /* v401: THE NODE LOST ITS THIRD LINE, WHICH WAS THE PARTNER'S TOTAL. The tree's job is the
+     SHAPE of the network, and the ordering it encodes is already in the rank on line two. The
+     total was on this part three times: here, in the summary line of that partner's own card,
+     and in the partner chart. A figure lives once per view. */
+  const node=(x,bc,title)=>`<div style="background:var(--card2);border:1px solid ${bc};border-radius:10px;padding:8px 12px;text-align:center;min-width:96px"><div class="mono" style="font-size:12px;color:var(--ink)">${ID(x.id)}</div><div style="font-size:10px;color:${bc};font-weight:700;letter-spacing:.4px">${title}</div></div>`;
   const stem=(inner,h)=>`<div class="ncol"><div class="nstem" style="height:${h}px"></div>${inner}</div>`;
   const prin=ns.filter(isPrincipal), bench=ns.filter(x=>!isPrincipal(x));
   const cols=prin.map(x=>stem(node(x,'var(--gold)',(isDeparted(x.id)?PRINCIPAL_TITLE.toUpperCase()+' &middot; DEPARTED':PRINCIPAL_TITLE.toUpperCase())),12))
@@ -11898,19 +11929,27 @@ function tabNetwork(){
     <div style="display:inline-block;background:var(--card2);border:1px solid var(--gold);border-radius:10px;padding:8px 20px;font-weight:600;color:var(--gold)">You</div>
     <div style="height:16px;border-left:1px solid var(--line);width:0;margin:2px auto"></div>
     <div class="nrow">${cols}</div>
-    ${prin.length?`<div class="dsc" style="margin-top:10px;font-size:11px">All of them deal with <b>you</b> directly. ${ID(prin[0].id)} is set apart as <b>${PRINCIPAL_TITLE}</b> for standing, not because their trade passes through him.</div>`:''}
+    <!-- v401: THE STANDING NOTE UNDER THE TREE IS DELETED, AND IT HAD NOT RENDERED SINCE v372.
+         It was a .dsc carrying no figure, so stripMethod culled it on every render as the
+         second candidate in scope. Deleting text nobody has read costs a reader nothing. What
+         it said, that everyone deals with you directly and the founder is set apart for
+         standing rather than because trade passes through him, is what the tree DRAWS: one
+         stem each, straight to you, his shorter than theirs. -->
   </div>
   ${dep.length?dep.map(x=>{const dd=departOf(x.id);
-    /* v385: BOTH HALVES OF THIS BLOCK RENDER NOW, and read together they said the reason
-       twice: "Left the business on 2026-07-26, personal reasons. Departed the business for
-       personal reasons." The builder printed dd.reason and dd.note both, and this note
-       happens to open by restating it. Neither is deletable, since a later departure may
-       carry a note that does NOT state the reason and dropping it unconditionally would
-       lose a declared fact. So the builder prints the reason only where the note has not
-       already said it. */
-    const said=dd.note&&dd.reason&&dd.note.toLowerCase().indexOf(dd.reason.toLowerCase())>=0;
-    return `<div class="pend"><h3>&#9733; ${ID(x.id)} has departed <span class="cd gold">${esc(dd.memorial)}</span></h3><div class="dsc">Left the business on ${dd.since}${said?'':', '+esc(dd.reason)}. ${esc(dd.note)} His figures stay on this tab because they are earned history, not a live relationship: ${fmt0(x.r3)} brought in across ${x.referrals.length} customer${x.referrals.length===1?'':'s'}, against ${fmt0(x.direct)} he ever spent himself.</div></div>`;}).join(''):''}
-  ${vac.length?`<div class="pend def"><h3>&#9888; Vacant &mdash; ${esc(vac[0].title)} <span class="cd">${esc(vac[0].short||'')}</span></h3><div class="dsc">${esc(vac[0].note)} Open since ${vac[0].since}.${dep.length?` On the record so far this is the highest-leverage seat on the desk: the work it covers brought <b>${fmt0(dep[0].r3)}</b> against <b>${fmt0(dep[0].direct)}</b> of buying, and nobody is doing it today.`:''}</div></div>`:''}`;
+    /* v401: A DEPARTURE IS A STATE, NOT AN ESSAY. This was 569 rendered characters: the date,
+       the reason, the whole book note, and then his R1 and R3 again, which his own card and
+       the vacancy below both already carry. What is left is the state, the declared reason
+       and the note folded closed, verbatim, so nothing declared is lost.
+       IT IS AN .insight RATHER THAN A .dsc DELIBERATELY. Without the figures it no longer
+       matches FIGURE, so as a .dsc the strip would cull it; an insight is trimmed at
+       NOTE_MIN but never removed, and this one is comfortably under. */
+    return `<div class="pend"><h3>&#9733; ${ID(x.id)} has departed <span class="cd gold">${esc(dd.memorial)}</span></h3>
+      <div class="insight">Left ${dd.since}, ${esc(dd.reason)}. His referrals stay attributed to him.</div>
+      ${dd.note?`<details class="obsec"><summary>The note on the departure <span class="q">as declared in the book</span></summary><div class="card"><div class="dsc">${esc(dd.note)}</div></div></details>`:''}</div>`;}).join(''):''}
+  ${vac.length?`<div class="pend def"><h3>&#9888; Vacant &mdash; ${esc(vac[0].title)} <span class="cd">${esc(vac[0].short||'')}</span></h3>
+    <div class="insight">Open since ${vac[0].since}.${dep.length?` The seat brought <b>${fmt0(dep[0].r3)}</b> against <b>${fmt0(dep[0].direct)}</b> of buying, and nobody is doing it today.`:''}</div>
+    ${vac[0].note?`<details class="obsec"><summary>What the seat covers <span class="q">as declared in the book</span></summary><div class="card"><div class="dsc">${esc(vac[0].note)}</div></div></details>`:''}</div>`:''}`;
   // overall summary: total R1/R2/R3 across the network
   const tR1=ns.reduce((a,x)=>a+x.direct,0),tR2=ns.reduce((a,x)=>a+x.indirect,0),tR3=ns.reduce((a,x)=>a+x.r3,0);
   const nDs=ns.reduce((a,x)=>a+(x.dsResell||0),0);                       // end customers sold to on your behalf
@@ -11925,9 +11964,17 @@ function tabNetwork(){
   return `<h1>Network</h1>
   <div class="dsc dsclead">Who brings you business, what they have earned, and what it has been worth.</div>${tree}
   <h2>Overall <span class="rule"></span></h2>${summary}
-  <h2 style="margin-top:22px">What counts, and why <span class="rule"></span></h2>
+  <!-- v401: THE SCHEME IS STUDY, SO IT IS FOLDED. Every word of it is standing: the same
+       three streams, the same equation, the same bands, on every render regardless of the
+       book. That is the storyboard's tell for documentation rather than a dashboard. Nothing
+       is deleted to fold it, and the summary carries the two figures a reader comes back for,
+       so shut it still answers what a hurdle is. -->
+  <details class="obsec" style="margin-top:22px"><summary>What counts, and why <span class="q">customer hurdle ${fmt0(rewardHurdle(PROD,'customer'))} &middot; associate hurdle ${fmt0(rewardHurdle(PROD,'associate'))}</span></summary>
   <div class="card">
-    <div class="cardh">Three streams, one associate <span class="sub">what each counts &middot; what it earns</span></div>
+    <!-- v401: the sub went with the fold. "What each counts and what it earns" is what the
+         summary above now says, with the two hurdle figures in it, and a header that restates
+         its own fold's summary earns nothing. -->
+    <div class="cardh">Three streams, one associate</div>
     <div class="netmap">
       <div class="nstream nv">
         <div class="nsh"><span class="tag pendingt">R1</span> Bought from you</div>
@@ -11990,8 +12037,11 @@ function tabNetwork(){
     <div class="insight" style="margin:4px 0 0">
       <b>R3 is not:</b> a referred customer trades on his own line, so counting it here too would count the same ringgit twice.
     </div>
-  </div>
-  <div class="card" style="margin-top:14px"><div class="cardh">What each partner is made of <span class="sub">bought, sold for you, brought you</span></div><div class="chartbox" style="height:180px"><canvas id="nwPartnerChart"></canvas></div><div class="dsc" style="margin-top:7px">The same total, split by how it was earned. A partner who mostly <b>buys</b> is a customer with a title; one who mostly <b>brings</b> is doing the business development seat&rsquo;s work.</div></div>
+  </div></details>
+  <!-- v401: the caption under this chart is deleted, and like the note under the tree it had
+       not rendered since v372: a .dsc with no figure, culled on every render. The chart's own
+       legend names the three streams, which is what the caption was for. -->
+  <div class="card" style="margin-top:14px"><div class="cardh">What each partner is made of <span class="sub">bought, sold for you, brought you</span></div><div class="chartbox" style="height:180px"><canvas id="nwPartnerChart"></canvas></div></div>
   <h2 style="margin-top:22px">Associates <span class="rule"></span></h2>
   ${cards}`;
 }
