@@ -2094,6 +2094,46 @@ section("The board — four laws, read off the engine (v387)");
   });
 }
 
+section("iPhone — the dead zones the desk draws under (v392)");
+{
+  const m = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+  /* THE HEAD ASKS TO DRAW UNDER THE STATUS BAR AND THE ISLAND, AND NOTHING PADDED THE TOP.
+     apple-mobile-web-app-status-bar-style:black-translucent plus viewport-fit=cover is an
+     instruction to use the whole screen including the strip the clock and the Dynamic Island
+     occupy. Not one rule in 655 used safe-area-inset-top, so the desk bar sat at top:0 with
+     its two controls behind the status bar and he could not reach them. */
+  ok(/viewport-fit=cover/.test(m), "the desk still asks for the whole screen");
+  ok(/black-translucent/.test(m), "and still draws under the status bar, which is what makes the inset mandatory");
+  ok(/--safetop:env\(safe-area-inset-top,0px\)/.test(m), "the top inset is a variable the sheet reads");
+  ok(/--safebot:env\(safe-area-inset-bottom,0px\)/.test(m), "and so is the bottom one");
+  ok(/\.deskbar\{position:sticky;top:var\(--safetop\)/.test(m), "the sticky bar starts below the strip, not at zero");
+  ok(/\.exitfix\{position:fixed;top:calc\(10px \+ var\(--safetop\)\)/.test(m), "and so does the exit control");
+  /* the variables exist so this is TESTABLE: env() cannot be forced in a desktop browser, and
+     an untestable fix for a device nobody here has is a guess. Measured with --safetop 59px,
+     the iPhone 15 Pro figure: nothing interactive lands in the strip or under the island. */
+  const tops = (m.match(/var\(--safetop\)/g) || []).length;
+  ok(tops >= 5, `the top inset reaches every pinned surface (${tops} uses)`);
+
+  /* 44px IS APPLE'S MINIMUM AND THE TOKEN SAID 40. One token, four controls. */
+  ok(/--tap:44px/.test(m) && !/--tap:40px/.test(m), "the tap token is 44px, and there is only one of it");
+  ok(/\.deskbar \.fabtn\{position:static;width:var\(--tap\);height:var\(--tap\)/.test(m),
+    "the two bar controls read it rather than carrying 34px of their own");
+  ok(/\.rail button\{min-height:var\(--tap\)/.test(m), "and so do the rail's own buttons, which are the only way between views");
+
+  /* iOS ZOOMS INTO ANY FIELD UNDER 16px AND DOES NOT ZOOM BACK OUT. */
+  ok(/input,select,textarea\{font-size:max\(16px,1em\);\}/.test(m), "no field can be small enough to zoom the page");
+  /* the three other 13px sites are a flex row, a bordered box and a label, none of them a
+     field, which the browser confirmed: exactly one input was under 16px and it was vpass. */
+  ok(/id="vpass"[^>]*font-size:16px/.test(m), "and the one field that was 13px is 16px");
+
+  /* 100vh IS WRONG ON iOS SAFARI, whose toolbar changes the viewport under the page. */
+  /* v392: MATCH THE VALUE, NOT THE WORD. The first form of this searched the whole master for
+     "100vh" and tripped on the changelog entry that explains why 100vh was wrong, which is
+     prose and not a rule. A CSS use is always "…:100vh" or "…:calc(100vh". */
+  ok(!/:\s*(calc\()?100vh/.test(m), "nothing on the desk measures itself against 100vh");
+  ok(/100dvh/.test(m), "they use dvh, which is the height that is actually there");
+}
+
 section("Silence — four things that failed without saying so (v384)");
 {
   const m = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");

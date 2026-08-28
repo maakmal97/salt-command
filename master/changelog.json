@@ -1,5 +1,18 @@
 [
  {
+  "v": "v392",
+  "d": "28 Aug 2026",
+  "t": "THE DESK ASKED FOR THE WHOLE IPHONE SCREEN AND THEN PUT TWO CONTROLS BEHIND THE STATUS BAR",
+  "n": [
+   "<b>HE COULD NOT REACH THE TOP OF HIS OWN DESK, AND THE HEAD HAD BEEN ASKING FOR THAT SINCE v276.</b> <code>viewport-fit=cover</code> and <code>apple-mobile-web-app-status-bar-style:black-translucent</code> are together an instruction to draw UNDERNEATH the status bar and the Dynamic Island. Nothing then padded the top: <b>not one rule in 655 used <code>safe-area-inset-top</code></b>, only left, right and bottom. So the sticky bar sat at <code>top:0</code> with Names &amp; IDs and the menu at <b>y=23</b>, behind the clock, on the only surface this desk has left.",
+   "<b>THE ISLAND ITSELF NEVER COVERED THEM, AND THAT DOES NOT HELP.</b> It is centred and the two controls are on the right, so measured at 375px wide nothing was ever inside its rectangle. The whole strip above the inset is unreachable whatever sits in it, which is why the repair is the inset and not a nudge sideways.",
+   "<b>THE INSETS ARE VARIABLES BECAUSE THAT IS THE ONLY WAY TO TEST THEM.</b> <code>env()</code> returns zero on every browser here, so a fix written as bare <code>env()</code> is a fix nobody can measure for a device nobody has. <code>--safetop</code> and <code>--safebot</code> are declared once from <code>env()</code> and read everywhere, and a probe overrides them to the iPhone 15 Pro figures, 59px and 34px, and measures where every control lands. Before: two controls in the strip. After: <b>none in the strip and none under the island</b>, with the pair moved from y=23 to y=127.",
+   "<b>AND THE TAP TOKEN SAID 40 WHERE APPLE SAYS 44.</b> The desk already had a <code>--tap</code>, four hundred lines below where it should have been, set to 40px, and the two bar controls did not even read it: they carried <b>34px</b> of their own. It is one token at 44px now and four things read it, so the bar pair, the rail's own buttons, the to-top and every <code>.vbtn</code> moved together. Four points sounds like nothing and is the difference between a control you hit and one you hit on the second try.",
+   "<b>TWO MORE THAT ONLY BITE ON iOS.</b> A field under 16px makes Safari zoom the page in on focus and never zoom back out, and one field was 13px, so tapping it left the whole desk magnified; no field can be under 16px now. And <code>100vh</code> is not the height that is there on iOS Safari, whose toolbar changes the viewport under the page: five of them are <code>dvh</code>, including both full-height slide-overs, which also gained the two insets as padding so a panel the height of the screen clears the status bar and the home indicator at once.",
+   "<b>THE SUITE CAUGHT MY OWN INCOMPLETE FIX, WHICH IS THE POINT OF WRITING IT FIRST.</b> Thirteen assertions pin the contract, and three failed on the first run: one <code>100vh</code> I had missed in an inline style, then two more in the slide-overs, and an assertion of mine that claimed three fields were too small when the browser had already reported exactly one. The fix was incomplete and the test said so before the deploy did."
+  ]
+ },
+ {
   "v": "v391",
   "d": "28 Aug 2026",
   "t": "YESTERDAY'S TWO SALES, FOLDED A DAY LATE BECAUSE THE DEPLOY HAD BEEN FAILING SINCE THE 27TH",

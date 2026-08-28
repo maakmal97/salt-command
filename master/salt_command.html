@@ -46,7 +46,23 @@ body[data-sec="enter"]{--acc:#8aa0ff;--accB:#6377d6;}
 :root{--acc:#f5c451;--accB:#f0932b;color-scheme:dark;
  --bg0:#100a1c;--card:#1c1434;--card2:#231a40;--line:#382a58;
  --ink:#f4f5f7;--mut:#b6a6d6;--dim:#9689b8;
- --gold:#e8c66b;--amber:#ffcf7a;--ice:#7fd7e8;--rose:#ff7a8a;--grn:#6ee7a8;--crim:#ff7a8a;--vio:#b3a6f5;}
+ --gold:#e8c66b;--amber:#ffcf7a;--ice:#7fd7e8;--rose:#ff7a8a;--grn:#6ee7a8;--crim:#ff7a8a;--vio:#b3a6f5;
+ /* v392: THE PHONE'S DEAD ZONES, AS TWO NUMBERS THE WHOLE SHEET READS.
+    The head declares apple-mobile-web-app-status-bar-style:black-translucent and
+    viewport-fit=cover, which together are an instruction to draw UNDERNEATH the status bar and
+    the Dynamic Island. Nothing then padded the top: not one rule in 655 used
+    safe-area-inset-top, so the desk bar sat at top:0 with its two controls behind the clock,
+    and he could not reach them. The island is centred and the buttons are on the right, so the
+    island never covered them; the whole strip is unreachable regardless of what is in it.
+    They are VARIABLES rather than env() written out at each site so the layout can be TESTED:
+    a probe overrides --safetop to 59px, the iPhone 15 Pro figure, and measures where the
+    controls land. env() cannot be forced in a desktop browser and an untestable fix for a
+    device nobody here has is a guess. */
+ --safetop:env(safe-area-inset-top,0px);
+ --safebot:env(safe-area-inset-bottom,0px);
+ --safeleft:env(safe-area-inset-left,0px);
+ --saferight:env(safe-area-inset-right,0px);
+ }
 *{box-sizing:border-box;}
 body{margin:0;background:
   radial-gradient(1100px 620px at 84% -10%,#2a1650 0%,transparent 60%),
@@ -62,7 +78,7 @@ body{margin:0;background:
    height limit and its own scrollbar, so the content column and the rail scroll
    independently and neither one drags the other. */
 .rail{width:186px;flex:0 0 186px;position:sticky;top:22px;background:linear-gradient(165deg,#201142,#1a1030);border:1px solid var(--line);border-radius:18px;padding:16px 12px;box-shadow:0 24px 66px -40px #000;
-  max-height:calc(100vh - 44px);overflow-y:auto;overscroll-behavior:contain;
+  max-height:calc(100dvh - 44px - var(--safetop));overflow-y:auto;overscroll-behavior:contain;
   scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.22) transparent;}
 .rail::-webkit-scrollbar{width:7px;}
 .rail::-webkit-scrollbar-track{background:transparent;}
@@ -101,12 +117,15 @@ h1{margin:2px 0 0;font-size:28px;font-weight:800;letter-spacing:-.4px;background
    one surface since v376.
    THE TWO AT THE BOTTOM STAY FLOATING, because the bottom corners carry no content of their own
    and both controls have to be reachable mid-scroll. */
-.deskbar{position:sticky;top:0;z-index:60;display:flex;align-items:center;justify-content:space-between;
-  gap:12px;margin:0 -6px 8px;padding:9px 6px 8px;
+.deskbar{position:sticky;top:var(--safetop);z-index:60;display:flex;align-items:center;justify-content:space-between;
+  gap:12px;margin:calc(var(--safetop)*-1) -6px 8px;padding:calc(9px + var(--safetop)) 6px 8px;
   background:linear-gradient(180deg,var(--bg0) 72%,transparent);
   -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);}
 .dbtools{display:flex;align-items:center;gap:8px;flex:0 0 auto;margin-left:auto;}
-.deskbar .fabtn{position:static;width:34px;height:34px;box-shadow:var(--gloss);}
+/* v392: 34px WAS THE SIZE THAT PUT THEM OUT OF REACH TWICE OVER. They sat in the strip under
+   the status bar AND were ten points under the least a finger may be asked to hit. The glyph
+   stays 16px; the button grows around it, so nothing looks heavier and the target is real. */
+.deskbar .fabtn{position:static;width:var(--tap);height:var(--tap);box-shadow:var(--gloss);}
 .deskbar .fabtn svg{width:16px;height:16px;}
 .deskbar .navbtn .nbars{gap:3px;}
 .deskbar .navbtn .nbars span{width:15px;}
@@ -501,12 +520,12 @@ details.rcard>summary .rsum b{color:var(--ink);}
    that could be closed round the edges is worse than one that covers this.
    IT KEEPS ITS OWN KEYBOARD ROUTE. focus-visible lights it exactly as hover does, so tabbing
    to it does not land on something the eye cannot see. */
-.exitfix{position:fixed;top:10px;left:10px;z-index:70;opacity:.22;
+.exitfix{position:fixed;top:calc(10px + var(--safetop));left:calc(10px + var(--safeleft));z-index:70;opacity:.22;
   backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);background:rgba(20,12,38,.55);
   transition:opacity .18s ease,color .18s ease,border-color .18s ease,background .18s ease;}
 .exitfix:hover,.exitfix:focus-visible{opacity:1;background:rgba(255,93,115,.10);}
-@media (max-width:860px){.exitfix{top:6px;left:6px;padding:3px 9px;font-size:10px;}}
-.byewrap{min-height:70vh;display:flex;align-items:center;justify-content:center;padding:40px 20px;}
+@media (max-width:860px){.exitfix{top:calc(6px + var(--safetop));left:calc(6px + var(--safeleft));padding:3px 9px;font-size:10px;}}
+.byewrap{min-height:70dvh;display:flex;align-items:center;justify-content:center;padding:40px 20px;}
 .byecard{max-width:520px;text-align:center;}
 .byecard h1{font-size:22px;margin:0 0 10px;}
 .byecard p{color:var(--mut);font-size:14px;line-height:1.6;margin:0 0 8px;}
@@ -849,7 +868,12 @@ h2 .rule{opacity:.65;}
   --menu:#171029;                --menu-2:#241a3d;
   --chevron:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1.4 1.6 6 6.2l4.6-4.6' fill='none' stroke='%23b6a9cc' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   --ink-2:rgba(244,245,247,.66); --ink-3:rgba(244,245,247,.40);
-  --r:22px; --r-sm:14px; --pill:999px; --tap:40px; --measure:66ch;
+  --r:22px; --r-sm:14px; --pill:999px;
+  /* v392: 44px, WHICH IS APPLE'S FIGURE AND WAS 40. It is the one token four controls read, so
+     the deskbar pair, the rail's own buttons, the to-top and every .vbtn move together. Four
+     points sounds like nothing and is the difference between a control you hit and one you
+     hit on the second try, on the only surface this desk now has. */
+  --tap:44px; --measure:66ch;
   --sh:0 8px 40px rgba(0,0,0,.35);
   --t:200ms cubic-bezier(.4,0,.2,1);
 }
@@ -1040,7 +1064,7 @@ details.obshush:hover{opacity:.85;}
    right, where nothing else is drawn. It appears only once there is something to go back
    up to, which is why the default state is invisible AND non-interactive. Both matter:
    opacity alone would leave an invisible target sitting over the page. */
-.totop{position:fixed;left:22px;right:auto;bottom:22px;z-index:40;
+.totop{position:fixed;left:calc(22px + var(--safeleft));right:auto;bottom:calc(22px + var(--safebot));z-index:40;
   width:46px;height:46px;border-radius:50%;cursor:pointer;
   display:grid;place-items:center;
   background:rgba(255,255,255,.07);
@@ -1068,7 +1092,7 @@ details.obshush:hover{opacity:.85;}
     background:rgba(24,29,41,.97)!important;}}
 @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
   .totop{background:rgba(24,29,41,.94);}}
-@media(max-width:860px){.totop{left:14px;right:auto;bottom:14px;width:42px;height:42px;}}
+@media(max-width:860px){.totop{left:calc(14px + var(--safeleft));right:auto;bottom:calc(14px + var(--safebot));width:var(--tap);height:var(--tap);}}
 /* ============ v276: PORTRAIT ============
    Landscape was always fine because a phone on its side is 640 to 930px and lands in the
    860px rules, which are a narrow DESKTOP layout. Portrait is about 390px and had no rules
@@ -1099,8 +1123,16 @@ details.obshush:hover{opacity:.85;}
   pointer-events:none;background:linear-gradient(90deg,transparent,rgba(10,13,20,.85));}
 
 @media(max-width:560px){
-  .wrap{padding:14px 11px 84px;padding-left:max(11px,env(safe-area-inset-left));
-    padding-right:max(11px,env(safe-area-inset-right));}
+  /* v392: iOS ZOOMS INTO ANY FIELD UNDER 16px AND DOES NOT ZOOM BACK OUT. One field on this
+     desk was 13px, and the whole page stayed magnified after it was tapped, which on a page
+     this wide is the difference between a working app and a scroll puzzle. Stated once here
+     so a field added later cannot reintroduce it. */
+  input,select,textarea{font-size:max(16px,1em);}
+  .wrap{padding:calc(14px + var(--safetop)) 11px calc(84px + var(--safebot));
+    padding-left:max(11px,var(--safeleft));padding-right:max(11px,var(--saferight));}
+  /* v392: EVERY RAIL LINK IS A FINGER TARGET ON A PHONE. They were 25px tall, which is a
+     mouse's measurement. The rail is the only way between views now that the app is gone. */
+  .rail button{min-height:var(--tap);display:flex;align-items:center;}
   h1{font-size:22px;}
   h2{margin:18px 0 9px;}
   /* two columns still beat one here: a single column of KPI tiles turns a glance into a
@@ -1133,7 +1165,7 @@ details.obshush:hover{opacity:.85;}
   .insight{padding:10px 12px;font-size:12.5px;}
   .dsc,.dsclead{font-size:11.5px;}
   .pscope{gap:5px;}
-  .totop{left:max(12px,env(safe-area-inset-left));right:auto;bottom:max(12px,env(safe-area-inset-bottom));}
+  .totop{left:calc(12px + var(--safeleft));right:auto;bottom:calc(12px + var(--safebot));}
 }
 
 /* ============================================================================
@@ -1230,10 +1262,7 @@ body.navopen .wrap{z-index:97;}
 .navbtn{display:none;}
 /* lit when a name is showing, which is the one state worth seeing at a glance */
 .idfix.on{border-color:var(--gold);box-shadow:0 0 12px -4px var(--gold),var(--gloss);}
-.orderbtn{right:14px;bottom:14px;font-size:24px;font-weight:400;line-height:1;}
-@media(max-width:560px){
-  .orderbtn{right:max(11px,env(safe-area-inset-right));bottom:max(11px,env(safe-area-inset-bottom));}
-}
+.orderbtn{right:calc(14px + var(--saferight));bottom:calc(14px + var(--safebot));font-size:24px;font-weight:400;line-height:1;}
 .navbtn .nbars{display:grid;gap:4px;}
 .navbtn .nbars span{display:block;width:18px;height:2px;border-radius:2px;background:currentColor;
   transform-origin:center;transition:transform .2s ease,opacity .15s ease;}
@@ -1254,9 +1283,9 @@ body.navopen .navveil{opacity:1;pointer-events:auto;}
   /* every rule the upright rail already has is kept; this only takes it out of the flow
      and floats it. visibility, not just opacity, so a closed menu is out of the tab order
      as well as off the screen; the delay lets it fade rather than vanish. */
-  .rail{position:fixed;bottom:auto;left:auto;right:14px;top:64px;z-index:95;flex:none;
+  .rail{position:fixed;bottom:auto;left:auto;right:calc(14px + var(--saferight));top:calc(64px + var(--safetop));z-index:95;flex:none;
     width:min(272px,calc(100vw - 28px));
-    max-height:calc(100vh - 96px);max-height:calc(100dvh - 96px);
+    max-height:calc(100dvh - 96px - var(--safetop) - var(--safebot));padding-bottom:var(--safebot);
     opacity:0;visibility:hidden;pointer-events:none;
     transform:scale(.94) translateY(-12px);transform-origin:100% 0;
     transition:opacity .16s ease,transform .2s cubic-bezier(.2,.9,.3,1.25),visibility 0s linear .2s;}
@@ -3407,7 +3436,7 @@ const whiteboard=[
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{"v":"v391","d":"28 Aug 2026","t":"YESTERDAY'S TWO SALES, FOLDED A DAY LATE BECAUSE THE DEPLOY HAD BEEN FAILING SINCE THE 27TH","n":["<b>TWO SALES FROM THE 27TH AND A NEW PARTY, FOLDED ON THE 28TH.</b> Both were queued from the desk on the day and neither reached the book, because the entries were drained to disk out of KV and the cloud drafter reads KV. They are folded on his instruction, with the figures read back to him first.","<b>THEY SAT FOR A DAY BECAUSE ONE STALE FILE WAS FAILING THE DEPLOY.</b> <code>master/_folded.json</code> still named thirteen ids from the v381 fold, a fold stated directly and therefore with no drafts behind it, so the &quot;mark the folded rows committed&quot; step failed thirteen times and exited 1 on every push from the 27th. <b>The D1 re-seed sits after that step in the same job</b>, so it never ran and the mirror went a week stale behind it. One stale file explains the failure mail, the stale mirror and a drafter reading a book from before the 26th.","<b>CD3-SEG IS THE FORTIETH CODE ON THE ROSTER AND ITS FIRST ORDER IS AT THE HOUSE RATE.</b> 1 unit for RM100, paid and collected on the 27th. Against the RM50 shelf it returns <b>RM50 at 50.0%</b>. The roster gains the code and the directory is not touched: the name and the place are typed at the laptop and reach the cloud only as ciphertext, which is unchanged by the app being retired.","<b>CR3-DAM'S RM80 IS HIS SEVENTH ORDER RUNNING AT THAT RATE, AND IT NOW CLEARS ITS FLOOR BY RM1.16.</b> Every order since 15 July has been 1 unit at RM80. The collected floor stands at <b>RM78.84</b>, so the rate that was comfortable in July is now RM1.16 clear of break-even, because the shelf went RM44 to RM50 on the 26th and the rate did not move. It returns RM30 at 37.5%. <b>It does not clear the delivered floor of RM88.84</b>, so it is a counter price and not a delivered one; the entry records it as collected, which is why it folds.","<b>AND HE IS PAYING AGAIN.</b> The 18th and the 24th both went out at RM80 with nothing paid; this one is RM80 in cash on the day. His two unpaid units are untouched by this row and still stand.","<b>THE SHELF GOES 25.5 TO 23.5 AND NO COST BASIS MOVES.</b> Two units out, nothing in. Both rows are costed at the RM50 the 26 Aug lot set.","<b>ONE ENTRY FROM THE QUEUE IS DELIBERATELY NOT HERE.</b> The 28 Aug advance to CA4-DAM is drafted and PENDING, waiting on a tap, because it is an advance and the gate is exactly the thing that should show him one. It was re-drafted against the repaired mirror first: the old draft costed it at RM44 and flagged it RM22.66 under a delivered floor of RM122.66, both of which were the pre-v385 basis, and on the corrected figures it costs RM50, returns 50.0% and trips no floor flag at all."]},
+const evolution=[{"v":"v392","d":"28 Aug 2026","t":"THE DESK ASKED FOR THE WHOLE IPHONE SCREEN AND THEN PUT TWO CONTROLS BEHIND THE STATUS BAR","n":["<b>HE COULD NOT REACH THE TOP OF HIS OWN DESK, AND THE HEAD HAD BEEN ASKING FOR THAT SINCE v276.</b> <code>viewport-fit=cover</code> and <code>apple-mobile-web-app-status-bar-style:black-translucent</code> are together an instruction to draw UNDERNEATH the status bar and the Dynamic Island. Nothing then padded the top: <b>not one rule in 655 used <code>safe-area-inset-top</code></b>, only left, right and bottom. So the sticky bar sat at <code>top:0</code> with Names &amp; IDs and the menu at <b>y=23</b>, behind the clock, on the only surface this desk has left.","<b>THE ISLAND ITSELF NEVER COVERED THEM, AND THAT DOES NOT HELP.</b> It is centred and the two controls are on the right, so measured at 375px wide nothing was ever inside its rectangle. The whole strip above the inset is unreachable whatever sits in it, which is why the repair is the inset and not a nudge sideways.","<b>THE INSETS ARE VARIABLES BECAUSE THAT IS THE ONLY WAY TO TEST THEM.</b> <code>env()</code> returns zero on every browser here, so a fix written as bare <code>env()</code> is a fix nobody can measure for a device nobody has. <code>--safetop</code> and <code>--safebot</code> are declared once from <code>env()</code> and read everywhere, and a probe overrides them to the iPhone 15 Pro figures, 59px and 34px, and measures where every control lands. Before: two controls in the strip. After: <b>none in the strip and none under the island</b>, with the pair moved from y=23 to y=127.","<b>AND THE TAP TOKEN SAID 40 WHERE APPLE SAYS 44.</b> The desk already had a <code>--tap</code>, four hundred lines below where it should have been, set to 40px, and the two bar controls did not even read it: they carried <b>34px</b> of their own. It is one token at 44px now and four things read it, so the bar pair, the rail's own buttons, the to-top and every <code>.vbtn</code> moved together. Four points sounds like nothing and is the difference between a control you hit and one you hit on the second try.","<b>TWO MORE THAT ONLY BITE ON iOS.</b> A field under 16px makes Safari zoom the page in on focus and never zoom back out, and one field was 13px, so tapping it left the whole desk magnified; no field can be under 16px now. And <code>100vh</code> is not the height that is there on iOS Safari, whose toolbar changes the viewport under the page: five of them are <code>dvh</code>, including both full-height slide-overs, which also gained the two insets as padding so a panel the height of the screen clears the status bar and the home indicator at once.","<b>THE SUITE CAUGHT MY OWN INCOMPLETE FIX, WHICH IS THE POINT OF WRITING IT FIRST.</b> Thirteen assertions pin the contract, and three failed on the first run: one <code>100vh</code> I had missed in an inline style, then two more in the slide-overs, and an assertion of mine that claimed three fields were too small when the browser had already reported exactly one. The fix was incomplete and the test said so before the deploy did."]},{"v":"v391","d":"28 Aug 2026","t":"YESTERDAY'S TWO SALES, FOLDED A DAY LATE BECAUSE THE DEPLOY HAD BEEN FAILING SINCE THE 27TH","n":["<b>TWO SALES FROM THE 27TH AND A NEW PARTY, FOLDED ON THE 28TH.</b> Both were queued from the desk on the day and neither reached the book, because the entries were drained to disk out of KV and the cloud drafter reads KV. They are folded on his instruction, with the figures read back to him first.","<b>THEY SAT FOR A DAY BECAUSE ONE STALE FILE WAS FAILING THE DEPLOY.</b> <code>master/_folded.json</code> still named thirteen ids from the v381 fold, a fold stated directly and therefore with no drafts behind it, so the &quot;mark the folded rows committed&quot; step failed thirteen times and exited 1 on every push from the 27th. <b>The D1 re-seed sits after that step in the same job</b>, so it never ran and the mirror went a week stale behind it. One stale file explains the failure mail, the stale mirror and a drafter reading a book from before the 26th.","<b>CD3-SEG IS THE FORTIETH CODE ON THE ROSTER AND ITS FIRST ORDER IS AT THE HOUSE RATE.</b> 1 unit for RM100, paid and collected on the 27th. Against the RM50 shelf it returns <b>RM50 at 50.0%</b>. The roster gains the code and the directory is not touched: the name and the place are typed at the laptop and reach the cloud only as ciphertext, which is unchanged by the app being retired.","<b>CR3-DAM'S RM80 IS HIS SEVENTH ORDER RUNNING AT THAT RATE, AND IT NOW CLEARS ITS FLOOR BY RM1.16.</b> Every order since 15 July has been 1 unit at RM80. The collected floor stands at <b>RM78.84</b>, so the rate that was comfortable in July is now RM1.16 clear of break-even, because the shelf went RM44 to RM50 on the 26th and the rate did not move. It returns RM30 at 37.5%. <b>It does not clear the delivered floor of RM88.84</b>, so it is a counter price and not a delivered one; the entry records it as collected, which is why it folds.","<b>AND HE IS PAYING AGAIN.</b> The 18th and the 24th both went out at RM80 with nothing paid; this one is RM80 in cash on the day. His two unpaid units are untouched by this row and still stand.","<b>THE SHELF GOES 25.5 TO 23.5 AND NO COST BASIS MOVES.</b> Two units out, nothing in. Both rows are costed at the RM50 the 26 Aug lot set.","<b>ONE ENTRY FROM THE QUEUE IS DELIBERATELY NOT HERE.</b> The 28 Aug advance to CA4-DAM is drafted and PENDING, waiting on a tap, because it is an advance and the gate is exactly the thing that should show him one. It was re-drafted against the repaired mirror first: the old draft costed it at RM44 and flagged it RM22.66 under a delivered floor of RM122.66, both of which were the pre-v385 basis, and on the corrected figures it costs RM50, returns 50.0% and trips no floor flag at all."]},
 
 {"v":"v390","d":"28 Aug 2026","t":"THE LONG PRESS NOW SHOWS ITS OWN LENGTH, BECAUSE A GESTURE WITH NO FEEDBACK CANNOT BE TOLD APART FROM A DEAD CONTROL","n":["<b>HOLD, FOCUS, THEN OPEN.</b> v388 gave the row editor a long press, which was the only way in on an iPhone once the phone app was retired, and it was silent for the whole 450ms it was deciding. You hold, nothing happens, you let go early and conclude the row does not open. The card now carries all three beats itself: it <b>sinks</b> while a gold line sweeps its foot, it <b>lifts and rings gold</b> the moment the press takes, and the editor arrives a beat later.","<b>THE BAR IS DRIVEN FROM ED_HOLD RATHER THAN WRITTEN IN THE CSS.</b> A progress bar that finishes before or after the press it is reporting is worse than no bar, so the sweep's duration is set on the card in script from the same constant the timer uses. Changing the hold length moves both or neither.","<b>THE BEAT BETWEEN FOCUS AND OPEN IS THE POINT OF IT, NOT A DELAY.</b> 150ms, so the confirmation is seen rather than painted over by the panel on the same frame. It also fixed the case that would have broken the gesture in ordinary use: <b>the finger comes off between the confirmation and the editor on nearly every successful press</b>, so a release inside that window must not cancel what it has already been told took. Driven in a headless browser: held throughout, released at the confirmation, tapped, and scrolled away, all four correct.","<b>REDUCED MOTION KEEPS THE THREE STATES AND DROPS THE MOVEMENT.</b> The bar still says how much of the hold is left, because that is information rather than decoration."]},
 
@@ -3578,7 +3607,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='28 Aug 2026, 19:10 KL';
+const LAST_UPDATED='28 Aug 2026, 12:40 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -7247,7 +7276,7 @@ function renderEditor(){
   pn.setAttribute('role','dialog');pn.setAttribute('aria-modal','true');
   pn.setAttribute('aria-label','Edit the entry');pn.setAttribute('tabindex','-1');
   bd.setAttribute('style','display:'+(edOpen()?'block':'none')+';position:fixed;inset:0;background:rgba(8,4,18,.55);z-index:89');
-  pn.setAttribute('style','display:'+(edOpen()?'block':'none')+';position:fixed;top:0;right:0;height:100vh;width:min(470px,94vw);z-index:90;text-align:left;overflow-y:auto;background:linear-gradient(180deg,var(--card2),var(--card)),var(--bg0);border-left:1px solid var(--line);padding:15px 16px 30px;box-shadow:-18px 0 40px rgba(0,0,0,.45)');
+  pn.setAttribute('style','display:'+(edOpen()?'block':'none')+';position:fixed;top:0;right:0;height:100dvh;padding-top:var(--safetop);padding-bottom:var(--safebot);width:min(470px,94vw);z-index:90;text-align:left;overflow-y:auto;background:linear-gradient(180deg,var(--card2),var(--card)),var(--bg0);border-left:1px solid var(--line);padding:15px 16px 30px;box-shadow:-18px 0 40px rgba(0,0,0,.45)');
   pn.setAttribute('aria-label',edNew?'New order':'Edit the entry');
   if(!edOpen()){pn.innerHTML='';return;}
   const row=edNew?{}:edRowOf(edRid,edType);
@@ -10065,7 +10094,7 @@ function renderReveal(){
   }).join('');
   el.innerHTML=`<button id="idBtn" class="fabtn idfix${(idOpen||revealed)?' on':''}" type="button" title="Names &amp; IDs" aria-label="Names and IDs">${key}</button>
   <div id="idBackdrop" style="display:${idOpen?'block':'none'};position:fixed;inset:0;background:rgba(8,4,18,.55);z-index:79"></div>
-  <div id="idPanel" style="display:${idOpen?'block':'none'};position:fixed;top:0;right:0;height:100vh;width:min(430px,92vw);z-index:80;text-align:left;overflow-y:auto;background:linear-gradient(180deg,var(--card2),var(--card)),var(--bg0);border-left:1px solid var(--line);padding:15px 16px;box-shadow:-18px 0 40px rgba(0,0,0,.45)">
+  <div id="idPanel" style="display:${idOpen?'block':'none'};position:fixed;top:0;right:0;height:100dvh;padding-top:var(--safetop);padding-bottom:var(--safebot);width:min(430px,92vw);z-index:80;text-align:left;overflow-y:auto;background:linear-gradient(180deg,var(--card2),var(--card)),var(--bg0);border-left:1px solid var(--line);padding:15px 16px;box-shadow:-18px 0 40px rgba(0,0,0,.45)">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px"><div style="font-size:13px;font-weight:800;color:var(--gold);letter-spacing:.3px">Names &amp; IDs</div><button id="idClose" aria-label="Close" style="background:none;border:none;color:var(--dim);font-size:19px;line-height:1;cursor:pointer">&times;</button></div>
     ${cloudMode()?`
     <div class="note" style="margin:0 0 10px">Read only on this device. The directory is edited on the laptop, where it lives; this copy exists so a code on screen can be turned into a name when you need one.</div>
@@ -10088,7 +10117,7 @@ function renderReveal(){
       ${revealed?'<button id="vsave" class="vbtn" style="border-color:var(--grn);background:linear-gradient(135deg,#6ee7a8,#3fae82);color:#06301c">Save</button>':''}
       ${NAME_VAULT?'<button id="vimport" class="vbtn" style="border-color:var(--gold);color:var(--gold)">Import old vault</button>':''}
     </div>`}
-    ${NAME_VAULT?'<div id="vimpBox" style="display:none;gap:6px;margin-bottom:8px"><input id="vpass" type="password" placeholder="passphrase for the old vault" style="min-width:160px;border:1px solid var(--brd);border-radius:8px;padding:7px 9px;font-size:13px;color:var(--ink);background:var(--wellbg)"><button id="vdoimp" class="vbtn">Import</button></div>':''}
+    ${NAME_VAULT?'<div id="vimpBox" style="display:none;gap:6px;margin-bottom:8px"><input id="vpass" type="password" placeholder="passphrase for the old vault" style="min-width:160px;border:1px solid var(--brd);border-radius:8px;padding:8px 9px;font-size:16px;color:var(--ink);background:var(--wellbg)"><button id="vdoimp" class="vbtn">Import</button></div>':''}
     <div id="vmsg" style="font-size:12px;color:var(--mut);min-height:15px;margin-bottom:6px"></div>
     ${(open&&!cloudMode())?`<details id="apBox" style="margin-bottom:9px;border:1px solid var(--line);border-radius:9px;padding:9px 10px">
       <summary style="cursor:pointer;font-size:12px;font-weight:700;color:var(--gold)">+ Add ID</summary>
@@ -10111,7 +10140,7 @@ function renderReveal(){
       </div>
       <div id="apMsg" style="font-size:12px;color:var(--mut);margin-top:7px;min-height:14px"></div>
     </details>`:''}
-    <div style="max-height:calc(100vh - 250px);overflow:auto;border:1px solid var(--line);border-radius:9px"><table><thead><tr><th class="l">Code</th><th class="l">Real name</th><th>Role</th></tr></thead><tbody>${rows}</tbody></table></div>
+    <div style="max-height:calc(100dvh - 250px - var(--safetop) - var(--safebot));overflow:auto;border:1px solid var(--line);border-radius:9px"><table><thead><tr><th class="l">Code</th><th class="l">Real name</th><th>Role</th></tr></thead><tbody>${rows}</tbody></table></div>
     ${qServed()?'<div class="dsc" style="margin-top:8px">Saved changes are written to <b>salt_vault.json</b> beside the desk, encrypted.</div>':'<textarea id="vout" readonly placeholder="encrypted blob (backup)" style="width:100%;margin-top:8px;min-height:44px;display:none;border:1px solid var(--line);border-radius:8px;padding:8px;font-size:11px;color:var(--ink);background:#0f0820;font-family:ui-monospace,monospace"></textarea>'}
   </div>`;
   const btn=document.getElementById('idBtn');if(btn)btn.onclick=()=>{idOpen=!idOpen;renderReveal();};
