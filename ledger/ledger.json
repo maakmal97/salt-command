@@ -1,6 +1,6 @@
 {
- "v": "v391",
- "stamped": "28 Aug 2026, 19:10 KL",
+ "v": "v393",
+ "stamped": "28 Aug 2026, 20:57 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -41,7 +41,7 @@
     "stated": 20
    }
   },
-  "STATED_STOCK": 23.5,
+  "STATED_STOCK": 16.25,
   "COUNT_ON": {
    "salt": "2026-08-24",
    "oil": "2026-08-23"
@@ -2298,8 +2298,8 @@
     "qty": 6.25,
     "total": 450,
     "cash": 450,
-    "deliveredQty": 0,
-    "note": "<b>PENDING: THE SECOND 6.25 UNIT OF THE 12.5 UNIT ORDER AGREED ON 20 AUG, RM450, NOTHING PAID AND NOTHING MOVED.</b> Split out at v335 on his word; the first tranche is the RM400 row dated the 20th, paid that day and delivered on the 21st. RM72 a unit against RM64 on the first half. It carries no date, draws no stock and raises no receivable until it moves. The ladder asks RM520 at 6.25 unit and the delivered floor stands at RM382.38, so RM450 clears the floor by RM67.62 and sits RM70 under the ask; read the Pricing tab for the figure of the day.",
+    "deliveredQty": 6.25,
+    "note": "<b>COMPLETED: PAID 26 AUG, DELIVERED IN FULL 27 AUG (Correction, folded v393).</b>  <b>DELIVERED IN FULL ON 27 AUG, ON HIS OWN DELIVERY, AND THE ORDER COMPLETES.</b> The 6.25 unit paid for on the 26th went out the next day, closing the second tranche of the 12.5 unit agreed on 20 Aug; the first tranche was paid the 20th and delivered the 21st. Nothing outstanding either way. The shelf is rolled by hand in this fold, because a Correction moves nothing mechanically and the salt left all the same. <b>PENDING: THE SECOND 6.25 UNIT OF THE 12.5 UNIT ORDER AGREED ON 20 AUG, RM450, NOTHING PAID AND NOTHING MOVED.</b> Split out at v335 on his word; the first tranche is the RM400 row dated the 20th, paid that day and delivered on the 21st. RM72 a unit against RM64 on the first half. It carries no date, draws no stock and raises no receivable until it moves. The ladder asks RM520 at 6.25 unit and the delivered floor stands at RM382.38, so RM450 clears the floor by RM67.62 and sits RM70 under the ask; read the Pricing tab for the figure of the day.",
     "rid": "s107",
     "amend": [
      {
@@ -2314,10 +2314,20 @@
       "cash": 450,
       "kg": 0,
       "note": "<b>RM450 lands and the second tranche is PAID IN FULL WITH NOTHING HANDED OVER.</b> This is the 6.25 unit split out at v335 from the 12.5 unit agreed on 20 Aug; the first tranche was paid on the 20th and delivered on the 21st. The order now joins the deferred column: 6.25 unit owed out, no receivable, and no stock drawn until it moves. He is paid ahead on this desk for the second time in a week."
+     },
+     {
+      "date": "2026-08-27",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>DELIVERED IN FULL ON 27 AUG, ON HIS OWN DELIVERY, AND THE ORDER COMPLETES.</b> The 6.25 unit paid for on the 26th went out the next day, closing the second tranche of the 12.5 unit agreed on 20 Aug; the first tranche was paid the 20th and delivered the 21st. Nothing outstanding either way. The shelf is rolled by hand in this fold, because a Correction moves nothing mechanically and the salt left all the same."
      }
     ],
     "date": "2026-08-26",
-    "paidOn": "2026-08-26"
+    "paidOn": "2026-08-26",
+    "deliveredOn": "2026-08-27",
+    "handover": "delivered",
+    "mod": "corrected on 2026-08-27: deliveredQty 0 to 6.25; deliveredOn (unset) to 2026-08-27; handover (unset) to delivered"
    },
    {
     "customer": "CH6-SET",
@@ -2412,6 +2422,19 @@
     "paidOn": "2026-08-27",
     "note": "<b>HIS SEVENTH ORDER RUNNING AT RM80, AND IT NOW CLEARS ITS FLOOR BY RM1.16.</b> Every order since 15 July has been 1 unit at RM80. The collected floor stands at RM78.84, so a rate that was comfortable in July is now RM1.16 clear of break-even, because the shelf went RM44 to RM50 on the 26th and the rate did not move. It returns <b>RM30 at 37.5%</b>. <b>It does not clear the delivered floor of RM88.84</b>, so it is a counter price and not a delivered one; the entry records it as collected, which is why it folds rather than being left for a decision. <b>AND HE IS PAYING AGAIN:</b> the 18th and the 24th both went out at RM80 with nothing paid, and this one is RM80 in cash on the day. Those two unpaid units are untouched by this row and still stand. Queued on the 27th, folded on the 28th, for the same reason as the row above.",
     "rid": "s116"
+   },
+   {
+    "customer": "CA4-DAM",
+    "qty": 1,
+    "total": 100,
+    "cost": 50,
+    "cash": 0,
+    "handover": "collected",
+    "date": "2026-08-28",
+    "deliveredQty": 1,
+    "deliveredOn": "2026-08-28",
+    "note": "<b>HIS THIRTEENTH ORDER AND HIS FIRST ON CREDIT.</b> 1 unit at exactly RM100 a unit, the anchor he has held on eleven of thirteen orders (the exceptions: RM116.67 on 26 Jul, the Tier II RM90 on 06 Aug), collected on the day, RM100 outstanding. Every prior order was settled on the day or within one, so the advance sits against the cleanest paying record on the book. Costed at RM50 a unit off the shelf lot per the drafter's snapshot, 50% on the order. The drafter flagged the advance against his credit cap; approved from the desk on the day with the flag showing.",
+    "rid": "s117"
    },
    {
     "customer": "CN6-WM",
@@ -2723,9 +2746,9 @@
     "note": "Judged a rare one-off. Treat the RM104/unit it paid as an outlier, not as evidence of what wholesale will bear."
    }
   ],
-  "QUEUE_COMMITTED": "2026-08-27T16:07:03.219Z",
+  "QUEUE_COMMITTED": "2026-08-28T09:59:51.414Z",
   "PRICING": {
-   "takenAt": "2026-08-28T11:10:21.695Z",
+   "takenAt": "2026-08-28T12:57:45.907Z",
    "sizes": [
     0.5,
     1,
@@ -2880,15 +2903,15 @@
          "rm": 10
         },
         "deliveredShare": {
-         "v": 0
+         "v": 0.25
         }
        },
        "attrib": 1,
        "shrinkRate": 0.04777629034657148,
        "avgDel": {
-        "n": 103,
-        "kg": 257.95,
-        "mean": 2.5044
+        "n": 105,
+        "kg": 265.2,
+        "mean": 2.5257
        }
       },
       "policy": {
@@ -3167,25 +3190,28 @@
      }
     }
    },
-   "v": "v391"
+   "v": "v393"
   },
   "OPEN": {
-   "at": "2026-08-28T11:10:21.716Z",
+   "at": "2026-08-28T12:57:45.968Z",
    "count": 6,
    "byKey": {
-    "CJ4-BJ|2026-08-26|450": {
-     "d": "2026-08-26",
-     "p": "CJ4-BJ",
+    "CA4-DAM|2026-08-28|100": {
+     "d": "2026-08-28",
+     "p": "CA4-DAM",
      "dir": "S",
-     "q": 6.25,
-     "t": 450,
-     "cash": 450,
-     "mv": 0,
-     "st": "oweStock",
-     "oweKg": 6.25,
-     "rid": "s107",
-     "paidOn": "2026-08-26",
-     "key": "CJ4-BJ|2026-08-26|450"
+     "q": 1,
+     "t": 100,
+     "cash": 0,
+     "mv": 1,
+     "st": "dueMoney",
+     "oweRM": 100,
+     "rid": "s117",
+     "deliveredOn": "2026-08-28",
+     "handover": "collected",
+     "key": "CA4-DAM|2026-08-28|100",
+     "age": 0,
+     "exp": 100
     },
     "CR3-DAM|2026-08-24|80": {
      "d": "2026-08-24",
@@ -3266,13 +3292,13 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 23.5,
-     "free": 11.75,
-     "owedOut": 11.75,
-     "coverDays": 2.4,
-     "rate": 4.96,
-     "owedToYou": 160,
-     "promised": 11.75,
+     "onHand": 16.25,
+     "free": 10.75,
+     "owedOut": 5.5,
+     "coverDays": 2,
+     "rate": 5.48,
+     "owedToYou": 260,
+     "promised": 5.5,
      "short": 0
     },
     "oil": {
@@ -3291,7 +3317,7 @@
     "salt": "2026-08-24",
     "oil": "2026-08-23"
    },
-   "v": "v391"
+   "v": "v393"
   }
  }
 }

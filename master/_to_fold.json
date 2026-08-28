@@ -1,0 +1,126 @@
+{
+ "ok": true,
+ "count": 2,
+ "approved": [
+  {
+   "id": "2026-08-27T16:08:03.566Z",
+   "collection": "sales",
+   "row": {
+    "rid": "s107",
+    "qty": 6.25,
+    "total": 450,
+    "cash": 0,
+    "date": null,
+    "product": "salt",
+    "changes": [
+     {
+      "field": "deliveredQty",
+      "from": 0,
+      "to": 6.25
+     },
+     {
+      "field": "handover",
+      "from": null,
+      "to": "delivered"
+     },
+     {
+      "field": "deliveredOn",
+      "from": null,
+      "to": "2026-08-27"
+     }
+    ],
+    "customer": "CJ4-BJ"
+   },
+   "reasoning": "Correction against CJ4-BJ's order of 6.25 unit for RM 450, pending and undated (s107). Sets deliveredQty from 0 to 6.25, handover from unset to delivered, deliveredOn from unset to 2026-08-27. It moves no cash and no stock: it changes what the row says about itself. The row is not rewritten here. The fold applies the patch, so there is one definition of what a correction does rather than two.",
+   "flags": [],
+   "amends": "s107",
+   "amendKind": "Correction",
+   "entry": {
+    "at": "2026-08-27T16:08:03.566Z",
+    "type": "AMEND",
+    "party": "CJ4-BJ",
+    "qty": 0,
+    "total": 0,
+    "raw": "Correction on CJ4-BJ s107: deliveredQty to 6.25, handover to delivered, deliveredOn to 2026-08-27, recorded 2026-08-27",
+    "payload": {
+     "mode": "amend",
+     "direction": "SELL",
+     "party": "CJ4-BJ",
+     "rid": "s107",
+     "orderKey": "CJ4-BJ|2026-08-26|450",
+     "kind": "Correction",
+     "date": "2026-08-27",
+     "fields": {
+      "deliveredQty": 6.25,
+      "handover": "delivered",
+      "deliveredOn": "2026-08-27"
+     },
+     "assoc": null,
+     "downstream": null,
+     "orderCode": null,
+     "linkTo": null,
+     "sameDay": false,
+     "note": null,
+     "qty": 0,
+     "total": 0,
+     "cash": 0,
+     "kg": 0
+    }
+   },
+   "decidedAt": "2026-08-28T09:58:54.155Z",
+   "decidedBy": "desk"
+  },
+  {
+   "id": "2026-08-28T09:59:51.414Z",
+   "collection": "sales",
+   "row": {
+    "customer": "CA4-DAM",
+    "qty": 1,
+    "total": 100,
+    "cost": 50,
+    "cash": 0,
+    "handover": "collected",
+    "date": "2026-08-28",
+    "deliveredQty": 1,
+    "deliveredOn": "2026-08-28"
+   },
+   "reasoning": "Sold 1 unit of salt to CA4-DAM for RM 100, RM 100/unit. Costed at RM 50/unit from the desk's own shelf cost, so RM 50 on the order at 50%. RM 0 of RM 100 paid and delivered in full on 2026-08-28. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [
+    "This is an ADVANCE: 1 unit goes out with RM 100 unpaid. Check it against CA4-DAM's credit cap."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-08-28T09:59:51.414Z",
+    "type": "SELL",
+    "party": "CA4-DAM",
+    "qty": 1,
+    "total": 100,
+    "status": "unpaid",
+    "raw": "Sell 1 unit to CA4-DAM for RM 100 on 2026-08-28, RM 0 cash, 1 unit moved → Open · Advance",
+    "payload": {
+     "mode": "new",
+     "product": "salt",
+     "direction": "SELL",
+     "party": "CA4-DAM",
+     "newId": null,
+     "date": "2026-08-28",
+     "qty": 1,
+     "total": 100,
+     "cash": 0,
+     "kg": 1,
+     "assoc": null,
+     "stream": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": null,
+     "handover": "collected"
+    }
+   },
+   "decidedAt": "2026-08-28T12:51:52.396Z",
+   "decidedBy": "desk"
+  }
+ ]
+}

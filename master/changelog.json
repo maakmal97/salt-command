@@ -1,5 +1,16 @@
 [
  {
+  "v": "v393",
+  "d": "28 Aug 2026",
+  "t": "THE QUEUE CLEARED ON DEMAND: CJ4-BJ COMPLETES THE 20 AUG ORDER AND CA4-DAM TAKES HIS FIRST CREDIT",
+  "n": [
+   "<b>TWO APPROVED ROWS FOLDED ON DEMAND, ASKED FOR IN CHAT.</b> The hourly stage had not run since 05:18 UTC (GitHub drifting the cron), so the batch was staged by the folding agent from the same D1 query the stage job runs, then folded with the tool as docs/CLOUD_FOLD.md directs. Both decisions were taken on the desk: the s107 correction at 09:58 UTC, the CA4-DAM sale at 12:51 UTC.",
+   "<b>THE 12.5 UNIT ORDER AGREED ON 20 AUG IS NOW CLOSED IN FULL.</b> The s107 correction records the second tranche delivered on the 27th, on his own delivery, the day after it was paid. The first tranche (RM400) was paid on the 20th and delivered on the 21st. Nothing is outstanding either way with CJ4-BJ.",
+   "<b>CA4-DAM'S THIRTEENTH ORDER IS HIS FIRST ON CREDIT.</b> 1 unit at exactly his RM100 anchor, collected on the day, RM100 owed. Twelve prior orders, every one settled on the day or within one; the drafter flagged the advance against his credit cap and it was approved from the desk with that flag showing.",
+   "<b>THE SHELF IS ROLLED BY HAND FOR THE CORRECTED DELIVERY, AND THE FIGURE IS THE POINT.</b> A Correction moves no cash and no stock mechanically, by design, so the tool rolled only CA4-DAM's 1 unit (23.5 less 1 is 22.5). But the 6.25 unit the s107 correction records left the shelf physically on the 27th and nothing else will ever roll it, so it is rolled by hand in this same fold: 22.5 less 6.25 is 16.25. A roll and not a count; COUNT_ON is untouched."
+  ]
+ },
+ {
   "v": "v392",
   "d": "28 Aug 2026",
   "t": "THE DESK ASKED FOR THE WHOLE IPHONE SCREEN AND THEN PUT TWO CONTROLS BEHIND THE STATUS BAR",
