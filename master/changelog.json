@@ -1,5 +1,16 @@
 [
  {
+  "v": "v402",
+  "d": "29 Aug 2026",
+  "t": "ONE STRAY CLOSING TAG BLANKED SIX OF PRICE'S TEN CHARTS, AND EVERY FAULT CHANNEL STAYED QUIET",
+  "n": [
+   "<b>THE PARSER CLOSED THE BLOCK EARLY AND THE CHARTS FELL OUT OF IT.</b> v401's pricing rebuild left one unmatched <code>&lt;/div&gt;</code> in the per-product builder, so each book's product block ended early and everything after it was parsed as the block's SIBLINGS: on the live desk, sixteen of eighteen folds and six of ten canvases sat outside any block. Every draw finds its canvas through the block it is drawing, so pxEarnChart, priceQtyChart and priceRevChart were unfindable and each draw returned at its first line. Measured live before the fix: ten canvases, four drawn, six blank, and the blank six were exactly the detached six.",
+   "<b>NOTHING SAID SO, BECAUSE NOTHING THREW.</b> The draw-failed banner reports an exception and the empty-chart note reports a caught one; a lookup that finds nothing and a function that returns early raise neither, so a canvas never touched looks exactly like a canvas with an empty data set. The detached twins were also worse than blank: salt's and oil's canvases sat at the same level carrying the same ids, so any unscoped lookup would have answered salt for both books.",
+   "<b>THE FIX IS ONE DELETION, AND THE COUNT THAT FOUND IT NOW RUNS AT EVERY FOLD.</b> The census is a line: count canvases and folds without a product block above them, and expect zero and zero on every part. Pricing was the only part broken at v401; from this version no batch ships until that count is clean on all six per-product parts.",
+   "<b>AND ONE LINE OF v401'S RECORD IS CORRECTED.</b> Its closing note said two Network blocks that had not rendered since v372 were repaired. They were not: both were figure-less standing notes restating the tree beneath them, and the round deleted them deliberately, recording the finding in comments where they stood. The changelog keeps v401 as written; this entry is the record that repaired should have read deleted."
+  ]
+ },
+ {
   "v": "v401",
   "d": "29 Aug 2026",
   "t": "SEVEN SESSIONS TAKE THE PROSE OFF THE DASHBOARD",
