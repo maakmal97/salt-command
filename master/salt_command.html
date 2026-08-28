@@ -12848,8 +12848,16 @@ function tabPricing(){
   ${(()=>{const c=pxCost();if(!c.lotQty)return '';
     const r=(lab,v,tag,n)=>`<tr><td class="l">${lab}<div class="iref">${esc(n||'')}</div></td><td class="mono">${fmt(v)}</td><td><span class="tag ${tag==='inventory'?'paid':'prov'}">${tag==='inventory'?'Inventory':'Period'}</span></td></tr>`;
     const LK=priceLockState(PROD);
-    const chip=c.locked?`<span class="tag paid">Frozen</span>`:(c.stale?`<span class="tag def">Repriced</span>`:`<span class="tag prov">Simulated</span>`);
-    return `<h2 style="margin-top:22px">What a unit costs ${chip} <span class="sub" style="font-weight:400">${c.locked?`held since ${LK.lock.lockedOn}`:'not the locked basis'}</span> <span class="rule"></span></h2>
+    /* ============ THE CHIP HAD THREE STATES AND TWO OF THEM COULD NOT RENDER ============
+       PRICE_LOCK_ON has been false since the cost was unlocked, so pxCost().locked is always
+       false and Frozen was unreachable. stale is then always true, because it compares the
+       current lot against a snapshot frozen on 06 Aug that nothing keeps up to date, so it
+       shadowed Simulated as well: putting a cost override in force left the heading reading
+       Repriced and gave the reader NO sign the figures below were a simulation. Measured on
+       both books, override on and off. The order is now sim, then lock, then live, so the
+       state that changes what you are looking at is the one that shows. */
+    const chip=c.sim?`<span class="tag prov">Simulated</span>`:c.locked?`<span class="tag paid">Frozen</span>`:`<span class="tag def">Live</span>`;
+    return `<h2 style="margin-top:22px">What a unit costs ${chip} <span class="sub" style="font-weight:400">${c.sim?'an override is in force':c.locked?`held since ${LK.lock.lockedOn}`:'moves with the lot'}</span> <span class="rule"></span></h2>
     <div class="card"><table class="fintab istmt"><tbody>
       ${r('Lot rate',c.lot,'inventory',`${kg(c.lotQty)} on ${c.lotDate}, ${pxOver.cost!=null?'your override':'the highest live quote tier'}`)}
       ${r('Collection',c.freight,'inventory',(()=>{
@@ -12866,9 +12874,28 @@ function tabPricing(){
       <tr class="tot"><td class="l"><b>Pricing basis</b><div class="iref">what a price has to return</div></td><td class="mono"><b>${fmt(c.eff)}</b></td><td></td></tr>
     </tbody></table>
     ${c.absorbed>0.009?`<div class="dsc" style="margin-top:8px">Absorbed and not recovered: ${fmt(c.absorbed)}/unit, the unexplained half of the leak.</div>`:''}
-    ${c.locked?`<div class="dsc" style="margin-top:7px">Frozen on the ${kg(c.lotQty)} lot of ${c.lotDate}. Selling, losing, counting and delivering do not move it; the next lot does.</div>`
-      :c.stale?`<div class="dsc" style="margin-top:7px"><b style="color:var(--crim)">A newer lot has landed and the board has repriced itself.</b> ${LK.cur?`${kg(LK.cur.qty)} at ${fmt(LK.cur.rate)} on ${LK.cur.date}`:''}, against the locked ${kg(LK.lock.lot.qty)} at ${fmt(LK.lock.lot.rate)}. Write the figures above into PRICE_LOCK to hold them.</div>`
-      :`<div class="dsc" style="margin-top:7px">Simulator override in force, so this is not the live basis.</div>`}</div>`;})()}
+    ${(()=>{
+      /* ============ IT NAMED A LOT THREE LOTS OLD AND ASKED HIM TO EDIT THE SOURCE ============
+         This said "a newer lot has landed and the board has repriced itself", compared today's
+         rate against "the locked 100 unit at RM 47", and closed "write the figures above into
+         PRICE_LOCK to hold them". Three faults, all measured. The board reprices itself on every
+         render and has since the cost was unlocked, so that is the design and not news. The rate
+         it compared against was the lot the dead snapshot was taken on, 28 Jul: THREE salt lots
+         have landed since, at RM 56, RM 56 and RM 44, so the figure named as the one before was
+         not the one before. And PRICE_LOCK is a declaration in this file with no control anywhere
+         that writes it, so the instruction cannot be followed from the desk or the phone.
+         What is worth saying is the move that did happen, against the lot that did precede it. */
+      if(c.sim) return `<div class="dsc" style="margin-top:7px">An override is in force, so this is not the live basis: ${pxOver.cost!=null?`${fmt(pxOver.cost)} a unit assumed`:''}${pxOver.cost!=null&&pxOver.shrink!=null?', ':''}${pxOver.shrink!=null?`${(pxOver.shrink*100).toFixed(1)}% shrinkage assumed`:''}, giving ${fmt(c.eff)}.</div>`;
+      if(c.locked) return `<div class="dsc" style="margin-top:7px">Frozen on the ${kg(c.lotQty)} lot of ${c.lotDate}. Selling, losing, counting and delivering do not move it; the next lot does.</div>`;
+      /* the lot before the one the basis is built on. Same filter and sort as latestLot(), one
+         step back, so the two cannot name different lots. */
+      const ls=pPurch(PROD).filter(x=>poLive(x)&&x.qty>0)
+        .sort((a,b)=>((a.receivedOn||a.date)<(b.receivedOn||b.date))?-1:1);
+      const pv=ls[ls.length-2];
+      if(!pv) return '';
+      const pr=+(pv.total/pv.qty).toFixed(4), d=c.lot-pr;
+      const dir=Math.abs(d)<0.005?'held at':d>0?'up from':'down from';
+      return `<div class="dsc" style="margin-top:7px">The basis moves with the lot, and the last one ${dir} the one before it: ${fmt(c.lot)} on ${kg(c.lotQty)} of ${c.lotDate}, against ${fmt(pr)} on ${kg(pv.qty)} of ${esc(pv.receivedOn||pv.date)}${Math.abs(d)<0.005?'':`, ${d>0?'+':''}${(d/pr*100).toFixed(1)}%`}.</div>`;})()}</div>`;})()}
 
   <h2 style="margin-top:22px">The book, measured <span class="sub" style="font-weight:400">what the ladder has achieved, which sets no ask</span> <span class="rule"></span></h2>
   <div class="two">
