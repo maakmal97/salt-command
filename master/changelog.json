@@ -1,5 +1,19 @@
 [
  {
+  "v": "v388",
+  "d": "28 Aug 2026",
+  "t": "THE LEDGER OPENS ON WHAT IS LIVE, A LONG PRESS REACHES THE ROW EDITOR, AND THE SUITE GOT BACK SIX LAWS IT SHOULD NEVER HAVE LOST",
+  "n": [
+   "<b>THE LEDGER LEADS ON WHAT IS LIVE. 132 orders is an archive, not a list.</b> The lead is anything still owed or undelivered plus the last three days, 17 of 132; the other 115 fold behind a summary carrying the count and the date span, and a filter turns the fold off entirely. <code>goEnt</code> opens every ancestor before scrolling, because both E-code cross-references on this book now target rows inside the fold and the link would otherwise land on a closed summary.",
+   "<b>THE STATEMENT OF ACCOUNT IS REMOVED, on his instruction.</b> The panel and all five functions, 443 lines. Nothing else called them and no test covered them.",
+   "<b>A LONG PRESS OPENS THE ROW EDITOR, AND v387 IS WHAT MADE THAT LOAD-BEARING RATHER THAN A CONVENIENCE.</b> The comment claimed a long press raises <code>contextmenu</code> so there was no second gesture to write. That is true on Android Chrome and not dependable on iOS Safari. With the phone app retired the desk is the only surface, so <b>the row editor was reachable on an iPhone by nothing at all</b>. Written out: 450ms, cancelled past ten pixels of travel, yielding to any control inside the card, with a guarded <code>navigator.vibrate</code>. All four guards driven in jsdom rather than reasoned about.",
+   "<b>AND THE SUITE GOT BACK SIX ASSERTIONS THAT v387 SHOULD NEVER HAVE TAKEN.</b> Retiring the app removed about a hundred assertions, which is right, and the count fell from 651 to 548. The Stock view asked why, which is this round&rsquo;s own lesson pointed at the suite: <b>a number that falls reads as fine and the reason matters</b>. Reconciled properly, by capturing every assertion MESSAGE at both versions and diffing the sets rather than trusting the totals: 119 gone, 16 new, and six of the 119 were not the app&rsquo;s at all.",
+   "<b>FOUR OF THEM ARE ENGINE LAWS THAT HAPPENED TO BE CHECKED THROUGH THE PHONE PAYLOAD.</b> They read <code>d.board</code>, so they looked like payload-shape checks and are nothing of the kind: every size on the board has an ask, every ask clears its COLLECTED floor, the delivered floor is the collected floor plus at most one delivery, and <b>the rate per unit never rises with size</b>. That last is the one law a customer can check by hand, and it is the law the oil board was repriced against at v385. They read <code>ladderWalk</code> and <code>floorTotal</code> directly now, so they no longer depend on any surface existing, and a fifth asserts every size the board PRINTS is a rung the walk actually priced. Mutation-checked rather than assumed: a tripled top rung is caught on both books, and a RM1 ask is caught against its collected floor on both.",
+   "<b>THE OTHER TWO ARE SERVICE-WORKER RULES THAT LIVED IN THE APP&rsquo;S SECTION AND ARE NOT ABOUT THE APP.</b> A cached draft list shows a row that has already been approved, and tapping it again is refused as a 409 with no way to know why. The desk&rsquo;s Approve part reads the same endpoints through the same service worker, so the rule outlived the surface that happened to test it.",
+   "<b>THE SHAPE IS THE SAME ONE THIS ROUND KEEPS FINDING, AND THIS TIME IT WAS THE SUITE.</b> Nothing was a wrong value: every deleted assertion was correctly deleted <i>as an app assertion</i>, and six of them were not app assertions. The check that catches it is not a stronger assertion, it is asking a different question, which is also what the v386 miss needed. 560 passed."
+  ]
+ },
+ {
   "v": "v387",
   "d": "28 Aug 2026",
   "t": "THE PHONE APP IS RETIRED: ONE SURFACE, ONE CLOUD COPY, AND TWO THINGS THAT WENT WITH IT",
