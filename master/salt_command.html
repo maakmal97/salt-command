@@ -1029,7 +1029,10 @@ select[multiple],select[size]{background-image:none;padding-right:9px;}
   letter-spacing:.4px;text-transform:uppercase;color:var(--ink);
   border:1px solid var(--line);border-radius:999px;padding:3px 10px;margin-left:4px;}
 .pbadgeo{font-size:11px;color:var(--dim);margin-left:8px;}
-.pbadgeo .navlink{margin-left:3px;}
+/* the tap contract is width as well as height, and a short book name is not wide
+   enough to reach it on its own: "Oil" measured 33px against 44. Scoped to the book switch,
+   because a bare .navlink min-width would pad every jump button on the desk. */
+.pbadgeo .navlink{margin-left:3px;min-width:var(--tap);}
 /* ============ v273: OBSERVATION CARDS ============
    Built on the same collapsed-row idea as a plan card, because they do the same job: one
    line you can scan, and the reasoning underneath for when you want it. The severity colour
