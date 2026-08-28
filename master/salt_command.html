@@ -12742,10 +12742,17 @@ function tabWorkbench(){
         <div class="qfield"><label>Note <span style="color:var(--dim)">optional</span></label><input id="wbNote" placeholder="optional"></div>
       </div>
       <div class="qrow" style="margin-bottom:10px">
-        <div class="qfield qkg"><label>Cash received now (RM)</label><input id="wbCash" type="number" step="1" min="0" value="0" inputmode="decimal">
-          <span class="viewsw mini" id="wbCashQ" style="margin-top:6px"><button data-c="none">None</button><button data-c="half">Half</button><button data-c="full">Full</button></span></div>
+        <!-- v387: THESE TWO WERE THE WRONG WAY ROUND AND THE COLUMNS CROSSED. .qrow is a fixed
+             three-column grid, so the field above each of these is the one in its own column:
+             Quantity (unit) sat above Cash (RM) and Total (RM) above Salt delivered (unit),
+             which put every figure diagonally from its own pair and made the eye cross to read
+             either one. Swapped, so column one is the UNIT column, ordered then moved, and
+             column two is the MONEY column, agreed then paid. Nothing but the order changed:
+             wbRecord and wbPreview read these by id. -->
         <div class="qfield qkg"><label>Salt delivered now (unit)</label><input id="wbKg" type="number" step="0.5" min="0" value="0" inputmode="decimal">
-          <span class="viewsw mini" id="wbKgQ" style="margin-top:6px"><button data-k="none">None</button><button data-k="all">All</button></span></div>
+          <span class="viewsw mini" id="wbKgQ" style="margin-top:6px"><button type="button" tabindex="-1" data-k="none">None</button><button type="button" tabindex="-1" data-k="all">All</button></span></div>
+        <div class="qfield qkg"><label>Cash received now (RM)</label><input id="wbCash" type="number" step="1" min="0" value="0" inputmode="decimal">
+          <span class="viewsw mini" id="wbCashQ" style="margin-top:6px"><button type="button" tabindex="-1" data-c="none">None</button><button type="button" tabindex="-1" data-c="half">Half</button><button type="button" tabindex="-1" data-c="full">Full</button></span></div>
         <div class="qfield" id="wbHandCell"><label>Handover</label><select id="wbHand">
           <option value="">Not stated</option><option value="collected">Collected by the customer</option><option value="delivered">Delivered by us</option></select>
           <div class="dsc" style="margin-top:6px;font-size:10.5px">What the delivered share is measured from.</div></div>
@@ -12777,8 +12784,10 @@ function tabWorkbench(){
         <div class="qfield"><label>Kind</label><select id="wbKind"></select></div>
       </div>
       <div class="qrow" style="margin-bottom:10px">
-        <div class="qfield qkg"><label id="wbACashLbl">Cash moved (RM)</label><input id="wbACash" type="number" step="1" min="0" value="0" inputmode="decimal"></div>
+        <!-- v387: unit column then money column, the same way round as the new order pane
+             above, so a person who has learnt where to look on one does not relearn it here. -->
         <div class="qfield qkg"><label id="wbAKgLbl">Salt moved (unit)</label><input id="wbAKg" type="number" step="0.5" min="0" value="0" inputmode="decimal"></div>
+        <div class="qfield qkg"><label id="wbACashLbl">Cash moved (RM)</label><input id="wbACash" type="number" step="1" min="0" value="0" inputmode="decimal"></div>
         <div class="qfield"><label>Date</label><input id="wbADate" type="date"></div>
       </div>
       <div class="qrow" style="margin-bottom:10px">
@@ -14720,6 +14729,50 @@ const PART_DRAW={inventory:()=>drawPerProduct([trackCharts]),
    builder. Six blocks are addressed by id today.
    The policy is untouched: the lead is still cut to one sentence, an insight that has grown
    into an essay is still cut to its first, and method prose carrying no figure still goes. */
+/* v387: A SEGMENTED SWITCHER IS ONE CONTROL AND IT WAS COSTING ONE TAB STOP PER OPTION. Seven
+   buttons for the mode, two for the direction, two for the stream, two for the side: twenty-seven
+   stops stood between the top of the Transaction part and the last field a person types into,
+   and the run of fields itself was broken in three places. A roving tabindex is the ordinary
+   answer: the group takes ONE stop, the arrow keys move within it, and every option stays
+   reachable, which is why this is not tabindex="-1" on the lot.
+   ACTIVATION IS NOT MOVED TO FOCUS. Arrowing selects nothing; Enter and Space do, through the
+   click handler each group already carries, because every one of these re-renders the form and
+   arrowing through seven modes would rebuild it seven times.
+   role="group" and not "radiogroup": the behaviour here is a roving tab stop, not radio
+   selection-follows-focus, and claiming the role without the behaviour is worse than no role.
+   THE PARTS STRIP IS INCLUDED BECAUSE IT ALREADY SAYS role="tablist" AND WAS NOT BEHAVING LIKE
+   ONE. A tablist whose every tab is a tab stop is the wrong control by its own declaration, and
+   it was three more of the stops standing between the top of the part and the first field. Its
+   role is left alone; only the missing half, the roving stop, is added. */
+function wireSwitchers(el){
+  if(!el)return;
+  el.querySelectorAll('.viewsw,.vnav[role="tablist"]').forEach(g=>{
+    const btns=[...g.querySelectorAll('button')].filter(b=>b.tabIndex!==-1);
+    if(btns.length<2||g.dataset.rov)return;
+    g.dataset.rov='1';
+    if(g.getAttribute('role')!=='tablist')g.setAttribute('role','group');
+    if(!g.getAttribute('aria-label')){
+      const lab=g.closest('.qfield')&&g.closest('.qfield').querySelector('label');
+      if(lab)g.setAttribute('aria-label',lab.textContent.trim());
+    }
+    const stop=btns.find(b=>b.classList.contains('on'))||btns[0];
+    btns.forEach(b=>{b.tabIndex=(b===stop)?0:-1;});
+    g.addEventListener('focusin',e=>{
+      const b=e.target.closest&&e.target.closest('button');
+      if(b&&btns.indexOf(b)>=0)btns.forEach(x=>{x.tabIndex=(x===b)?0:-1;});
+    });
+    g.addEventListener('keydown',e=>{
+      const i=btns.indexOf(e.target); if(i<0)return;
+      const k=e.key;
+      let j=null;
+      if(k==='ArrowRight'||k==='ArrowDown')j=(i+1)%btns.length;
+      else if(k==='ArrowLeft'||k==='ArrowUp')j=(i-1+btns.length)%btns.length;
+      else if(k==='Home')j=0; else if(k==='End')j=btns.length-1;
+      if(j===null)return;
+      e.preventDefault(); btns[j].focus();
+    });
+  });
+}
 function stripMethod(el){
   const cut=t=>{const m=t.match(/^[\s\S]*?[.!?](?=\s|$)/);return m?m[0]:t;};
   const txt=e=>(e.textContent||'').replace(/\s+/g,' ').trim();
@@ -14751,6 +14804,7 @@ function renderPart(tab,el,snap){
     wbApply();wbPreview();
   }
   stripMethod(el);
+  wireSwitchers(el);
   /* v384: AND THE OUTER CATCH WAS EMPTY TOO, WHICH IS THE WORSE OF THE PAIR. This one wraps the
      WHOLE draw pass for a part, so a throw before the first chart lost every chart on the tab
      with no message anywhere. It reports where the part is rather than only in the console,
@@ -14808,6 +14862,7 @@ function render(){recompute();
     +`<div class="vpart" data-tab="${part}"></div>`;
   el.querySelectorAll('.vpill').forEach(b=>{b.onclick=()=>switchTab(b.dataset.s);});
   renderPart(part,el.querySelector('.vpart'),snap);
+  wireSwitchers(el);            // the parts strip: written here, not by renderPart
   renderQueue();renderProvBar();navCounts();railSubs();markProdSw();
   try{wrapTables();}catch(e){}}
 /* ============ KEY MESSAGE vs DATABASE (v210) ============
