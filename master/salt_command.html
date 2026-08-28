@@ -6253,7 +6253,16 @@ function selfUseSplit(){
    "Analysis" headings and two copies of the standing lead, which is a duplicate h1 as well
    as duplicate prose. It follows the shape financials already uses, consoBlock() before
    perProduct(). The lead is ONE sentence by construction, because stripMethod only cuts a
-   .dsclead inside a .prodblock and this one now sits outside every block. */
+   .dsclead inside a .prodblock and this one now sits outside every block.
+
+   THE HOIST TOOK THE KEEPER OUT OF EACH BLOCK, SO THE SWEEP IS ARMED, NOT ABSENT. Measured
+   29 Aug 2026 after the hoist: salt leaves 2 candidates and oil 1, and EVERY one of them is
+   an .insight, which the deletion pass skips. So the cull deletes nothing today and the part
+   measures as sweep-free. Add ONE figure-less .dsc to either block and it wakes: oil crosses
+   the two-candidate early-return, salt already runs, and in both cases blocks[0] is an
+   .insight, so the block deleted is the one you just wrote. On this part the sweep can only
+   ever eat NEW copy, never anything established. New prose here must therefore be an
+   .insight, or sit inside a <details>, or carry an RM/unit/% figure. */
 function anaHead(){
   return `<h1>Analysis</h1>
   <div class="dsc dsclead" style="margin-bottom:12px">Observed trade only: no fitted curve, no elasticity, no seasonality.</div>`;
