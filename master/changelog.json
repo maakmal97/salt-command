@@ -1,5 +1,22 @@
 [
  {
+  "v": "v400",
+  "d": "29 Aug 2026",
+  "t": "THE PROSE LEAVES THE LEDGER",
+  "n": [
+   "<b>EVERY ROW NOTE IS CUT TO A SHORT WHY, ON HIS INSTRUCTION OF 29 AUG: THE LEDGER READS AS CLEAN DATABASE ROWS AND THE STORY LIVES HERE.</b> 114 sales rows, 16 purchase lots, the self-use log, the loan, the refunds and the one-off were carrying some 120 KB of narrative that restated what the fields already say. Each keeps at most a few words of why (the correction, the offset, the ban, the default) and a row with nothing unusual keeps nothing. Not a figure moved: qty, total, cash, dates, mod and the amend structures are untouched, and each amend step keeps a one-line label.",
+   "<b>NOTHING IS DELETED.</b> Every retired note is verbatim in <b>ledger/archive.json</b>, keyed by rid, with the old NOTES blocks wholesale. The book's NOTES keeps only the current shelf roll and the paidSplit caveat, the two lines a reader of the figures still needs. From this version the changelog is where the story of a fold is told; the row carries the what, and a five-word why."
+  ]
+ },
+ {
+  "v": "v399",
+  "d": "29 Aug 2026",
+  "t": "S118 SETTLES ON THE DAY IT WAS AGREED, RESTATED TO RM300",
+  "n": [
+   "<b>CH4-KLS'S SECOND ORDER, RESTATED FROM RM280 TO RM300 AND SETTLED IN FULL ON 28 AUG, ON HIS INSTRUCTION IN CHAT.</b> RM300 paid and all 3 unit handed over the day the order was agreed. RM100 a unit, up RM6.67 on the figure struck earlier the same day and RM13.33 on his 07 Aug rate; off the RM50 shelf it returns RM150 at 50.0% and clears the 3 unit delivered floor of RM196.52, the harder of the two, by RM103.48. The shelf rolls 16.25 less 3 to 13.25. Stated in chat, so no draft behind it and the watermark holds."
+  ]
+ },
+ {
   "v": "v398",
   "d": "29 Aug 2026",
   "t": "THE SHOW NAMES BUTTON CAN BE READ AGAIN",
