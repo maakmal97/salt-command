@@ -585,6 +585,19 @@ select{width:100%;border:1px solid var(--line);border-radius:8px;padding:8px 9px
 .ledbar input{flex:1;min-width:170px;border:1px solid var(--line);border-radius:9px;padding:7px 10px;font-size:13px;color:var(--ink);background:#140c26;}
 .ledbar select{border:1px solid var(--line);border-radius:9px;padding:7px 34px 7px 8px;font-size:12px;color:var(--mut);background-color:#140c26;}
 .ledbar .ledct{font-size:11px;color:var(--dim);margin-left:auto;}
+/* THE FOLD OVER THE OLDER BOOK. A summary that says only "show more" makes the reader open it
+   to find out what is in there, so it carries the count and the span of dates it covers. */
+/* the long press belongs to the row editor on a touch screen, so the browser's own callout
+   must not open over it. Selection is left alone: a figure on a card is still copyable. */
+.lcard[data-rid]{-webkit-touch-callout:none;}
+.ledmore{margin-top:10px;border-top:1px dashed var(--line);}
+.ledmore>summary{cursor:pointer;list-style:none;padding:10px 2px 4px;font-size:12px;color:var(--mut);display:flex;align-items:center;gap:7px;}
+.ledmore>summary::-webkit-details-marker{display:none;}
+.ledmore>summary:hover{color:var(--ink);}
+.ledmore>summary .chev{transition:transform .15s;display:inline-block;}
+.ledmore[open]>summary .chev{transform:rotate(90deg);}
+.ledmore .lmspan{margin-left:auto;color:var(--dim);font-size:11px;font-variant-numeric:tabular-nums;}
+.ledmorebody{padding-top:6px;}
 /* What the filter comes to. One line of figures under the toolbar, in the ledger
    tuning: gold for what was bought, ice for what was written, amber for what is still
    between the two parties. No prose, because the labels are the sentence. */
@@ -7371,17 +7384,57 @@ function edSubmit(){
   applyOverlay();render();
 }
 /* Delegated and bound once, because the ledger repaints on every render and a listener on the
-   cards themselves would be thrown away with them. contextmenu is the right-click; a long press
-   on a touch screen raises the same event, so there is no second gesture to write. */
+   cards themselves would be thrown away with them. contextmenu is the right-click.
+   IT USED TO SAY a long press on a touch screen raises the same event, so there was no second
+   gesture to write. That is true of Android Chrome and it is NOT dependable on iOS Safari,
+   where a long press on a plain element raises the selection callout instead. So the desk was
+   reachable by right-click, and by Enter on a focused card, and on an iPhone by nothing at all:
+   the one row editor the owner would most want on a phone had no gesture there. The long press
+   below is written out rather than inherited, so it does not depend on a browser quirk. */
+const ED_HOLD=450;                              // long enough not to fire on a tap, short enough to feel deliberate
+const ED_SLOP=10;                               // a press that travels this far is a scroll, not a hold
+function edCardOf(e){const t=e&&e.target;return t&&t.closest?t.closest('.lcard[data-rid]'):null;}
 if(typeof document!=='undefined'&&!window.__edBound){
   window.__edBound=1;
   document.addEventListener('contextmenu',function(e){
-    const card=e.target&&e.target.closest?e.target.closest('.lcard[data-rid]'):null;
+    const card=edCardOf(e);
     if(!card)return;
     const rid=card.getAttribute('data-rid');if(!rid)return;
     e.preventDefault();
     ledEdit(rid,card.getAttribute('data-type')||'SELL');
   });
+  /* THE LONG PRESS, WRITTEN OUT. A hold that has not moved opens the same editor a right-click
+     does. It cancels on movement, so scrolling a long ledger with a finger resting on a card
+     never opens anything, which is the failure that would make the gesture worse than none.
+     A press starting on a control inside the card is that control's, not the card's.
+     THE BUZZ IS ANDROID ONLY. navigator.vibrate is not implemented in Safari on iOS at all,
+     so the guard is not defensive coding, it is the actual state of things: the gesture works
+     on an iPhone and is silent, and there is no web API that would change that. */
+  let hold=null,holdAt=null,fired=false;
+  const holdOff=()=>{if(hold)clearTimeout(hold);hold=null;holdAt=null;};
+  document.addEventListener('touchstart',function(e){
+    fired=false;
+    const card=edCardOf(e);
+    if(!card||!card.getAttribute('data-rid'))return;
+    if(e.target.closest('button,a,select,textarea,input,summary'))return;
+    const t=e.touches&&e.touches[0];if(!t)return;
+    holdAt={x:t.clientX,y:t.clientY};
+    hold=setTimeout(function(){
+      hold=null;fired=true;
+      try{if(navigator.vibrate)navigator.vibrate(12);}catch(_){}
+      ledEdit(card.getAttribute('data-rid'),card.getAttribute('data-type')||'SELL');
+    },ED_HOLD);
+  },{passive:true});
+  document.addEventListener('touchmove',function(e){
+    if(!hold||!holdAt)return;
+    const t=e.touches&&e.touches[0];if(!t)return;
+    if(Math.abs(t.clientX-holdAt.x)>ED_SLOP||Math.abs(t.clientY-holdAt.y)>ED_SLOP)holdOff();
+  },{passive:true});
+  document.addEventListener('touchend',holdOff,{passive:true});
+  document.addEventListener('touchcancel',holdOff,{passive:true});
+  /* the tap that ENDS a long press must not also be delivered as a click to whatever is now
+     under the finger, which after ledEdit is the editor panel. */
+  document.addEventListener('click',function(e){if(fired){fired=false;e.preventDefault();e.stopPropagation();}},true);
   /* v365: THE ROW EDITOR HAD NO KEYBOARD ENTRY POINT AT ALL. Right-click and long-press were
      the only roads in; tabbing through the page never landed on a row, and nothing here
      answered a keydown. Enter on a focused card (tabindex is set where the card carries a
@@ -7426,7 +7479,19 @@ function ledQuick(what,type,who,date,total,qty){
      on revTotal after a click rather than on the card repainting, which it did either way. */
   applyOverlay();saveQueue();render();
 }
-function goEnt(code){const el=document.getElementById('ent-'+code);if(el){el.scrollIntoView({behavior:'smooth',block:'center'});el.classList.add('entflash');setTimeout(()=>el.classList.remove('entflash'),1200);}return false;}
+/* E-codes point at each other across the whole book, so half the targets now sit inside the
+   fold. A jump that scrolled to a row inside a closed <details> would land on the summary and
+   look like a broken link, so the jump opens whatever it has to open first. */
+function goEnt(code){const el=document.getElementById('ent-'+code);if(!el)return false;
+  let p=el.parentNode;
+  while(p&&p!==document.body){if(p.tagName==='DETAILS')p.open=true;p=p.parentNode;}
+  el.scrollIntoView({behavior:'smooth',block:'center'});el.classList.add('entflash');
+  setTimeout(()=>el.classList.remove('entflash'),1200);return false;}
+/* HOW MUCH OF THE BOOK THE LEDGER OPENS ON, in days back from today. Everything older folds
+   unless it is still live or the reader has filtered. Three days is what he asked for and it
+   leaves 15 of 132 on screen; it is one number here because the right answer moves with how
+   busy the book is. */
+const LED_RECENT=3;
 let ledF={q:'',state:'',party:'',month:'',product:''};
 /* the rows tabLedger last matched. The day-by-day chart draws THIS rather than reaching for
    `sales`, so a chart sitting under the toolbar cannot show a different book from the list
@@ -7490,449 +7555,6 @@ function wireLedger(){
   const mo=document.getElementById('ledMonth');if(mo)mo.onchange=()=>{ledF.month=mo.value;rerun('ledMonth');};
   const pr=document.getElementById('ledProduct');if(pr)pr.onchange=()=>{ledF.product=pr.value;rerun('ledProduct');};
   const cl=document.getElementById('ledClear');if(cl)cl.onclick=()=>{ledF={q:'',state:'',party:'',month:'',product:''};rerun('ledQ');};
-}
-
-/* ============ STATEMENT OF ACCOUNT (v183) ============
-   A customer asked for his own record, so the desk can now hand one over. This is the
-   only artefact that leaves the desk describing a NAMED party's dealings, and the whole
-   design is about what it must NOT contain.
-
-   THE RULE: STRUCTURED FACTS ONLY, NEVER THE SELLER'S PROSE.
-   Every note in this ledger is written for him, not for the buyer, and several are about
-   his own bookkeeping: "recorded as 9.47 delivered in error", "the RM200 booked as
-   received was NEVER PAID", "delivery audit", "account audit". None of that is the
-   customer's business, and no filter over free text is safe enough to be trusted with
-   it. So the statement is BUILT rather than copied: date, quantity, unit price, total,
-   what was paid and when, what was collected and when, what remains. Nothing else.
-
-   NEVER LEAVES THE DESK, at any setting:
-     cost, margin, margin %       what the salt cost and what it earned
-     shrinkage, replacement cost  the desk's own economics
-     tier names, floors, cards    the pricing structure behind the number he paid
-     any other party              codes, names, or the fact that they exist
-     internal notes and audits    every free-text field on the order
-   A test greps a generated statement for each of these before it can be trusted.
-
-   WHAT HE ALREADY KNOWS, and therefore may have: what he ordered, what he agreed to
-   pay, what he handed over and when, what he collected and when, and what is still
-   between them. A settlement in kind is included because he agreed to it, but stated as
-   an amount and a date rather than with the reasoning that sits behind it here. */
-function stmtRows(party,o){
-  o=o||{};
-  const from=o.from?new Date(o.from):null, to=o.to?new Date(o.to):null;
-  return sales.filter(s=>s.customer===party).filter(s=>{
-    const d=new Date(s.date);
-    const st=txStat(s).order;
-    /* A PENDING ORDER IGNORES THE DATE WINDOW (v194). It is an open commitment, not an
-       event in a period, and it is still open on the day the statement is issued whatever
-       date sits on it. Leaving it to the window made inclusion arbitrary: CA5-KER's
-       pending order is dated 28 Jul so it appeared, CI4-OKR's is dated 03 Aug so the
-       02 Aug cut-off silently dropped it, and two customers in the same position got
-       different statements for no reason either of them could see. An order the customer
-       agreed to and has not yet acted on belongs on his statement, full stop. */
-    if(st!=='Pending'){
-      if(from&&d<from)return false;
-      if(to&&d>to)return false;
-    }
-    if(st==='Pending'&&!o.pending)return false;
-    if(st==='Completed'&&!o.completed)return false;
-    if(st!=='Pending'&&st!=='Completed'&&!o.open)return false;
-    return true;
-  }).sort((a,b)=>new Date(a.date)-new Date(b.date)).map(s=>{
-    const st=txStat(s), d=txDates(s);
-    const paidCash=+(s.cash||0), inKind=+(s.settledRM||0);
-    const got=+(s.deliveredQty||0), inKindKg=+(s.settledKg||0);
-    const owed=+(s.total-paidCash-inKind).toFixed(2);
-    /* a cross-reference is included ONLY when it points at another of HIS OWN orders;
-       anything pointing elsewhere is another party's business and is dropped */
-    const links=[];
-    (s.amend||[]).forEach(a=>{
-      (a.refKeys||[]).forEach(k=>{
-        const m=/^([^|]+)\|([^|]+)\|/.exec(k||'');
-        if(m&&m[1]===party)links.push(m[2]);
-      });
-    });
-    /* A GIFT MUST NOT READ AS A CHARGE (v187). Goodwill salt is booked in-kind at a
-       value so it does not fall out of the ledger as shrinkage, but the customer never
-       owed that money and showing him an amount he did not pay invites the exact
-       question the statement exists to prevent. So it carries nil and says why. */
-    const gift=!!s.rebate;
-    return {gift:gift,date:s.date,qty:s.qty,total:gift?0:s.total,
-      unit:s.qty>0?+(s.total/s.qty).toFixed(2):0,
-      paidCash:paidCash,inKind:inKind,got:got,inKindKg:inKindKg,
-      /* PENDING COUNTS NOWHERE, on a statement as everywhere else (v189). An order
-         agreed with nothing paid and nothing collected is an intention, not a debt, and
-         showing its value as OUTSTANDING would tell a customer he owes money for salt he
-         has never received. The desk has run on that rule since v111; the statement was
-         quietly breaking it, and these go out to people. */
-      owed:(st.order==='Pending'||st.order==='Cancelled')?0:(owed>0.009?owed:0),
-      pendingOrder:st.order==='Pending',
-      /* A CANCELLED ORDER IS NOT A BILL (v193). txStat has returned 'Cancelled' since
-         long before statements existed, and stmtRows simply never asked. So CC5-OKR's
-         20 Jul order -- agreed at RM90, cancelled the next day with nothing moved either
-         way, and carrying the note "counts nowhere" -- came out of the statement builder
-         as RM90 outstanding and 1 unit owed. It stays on the page, because he agreed to
-         it and remembers it, and a statement that silently drops it invites the question
-         it exists to answer. But it counts in nothing. */
-      cancelled:st.order==='Cancelled',
-      cancelledOn:(st.order==='Cancelled'
-        ? ((s.amend||[]).filter(a=>a.kind==='Cancellation')[0]||{}).date||null : null),
-      credit:owed<-0.009?-owed:0,
-      /* WHAT HE IS OWED IN SALT, which is the figure a dispute actually turns on.
-         deliverable = ordered LESS anything withheld by agreement to settle an earlier
-         balance; toGet = deliverable LESS what he has already carried away. */
-      deliverable:+(s.qty-inKindKg).toFixed(4),
-      toGet:+(s.qty-got-inKindKg).toFixed(4),
-      paidOn:d.pOn||null,gotOn:d.dOn||null,
-      state:gift?'No charge'
-            :st.order==='Pending'?'Agreed, nothing moved yet'
-            :(owed>0.009?'Balance outstanding'
-              :(+(s.qty-got-inKindKg).toFixed(4)>0.009?'Paid in full'
-                :'Settled')),
-      links:[...new Set(links)]};
-  });
-}
-/* ============ THE RECONCILIATION (v186) ============
-   A statement that states a figure is no use in a dispute; one that SHOWS how the figure
-   was reached settles it. When salt has been withheld to clear an earlier money balance,
-   the customer cannot check the result without seeing the whole chain: which orders were
-   short, by how much, what those shortfalls came to, and the rate at which that money was
-   turned into salt.
-   So this reconstructs it from the ledger rather than from anyone's memory. The Linked
-   step carries refKeys pointing at the orders it settled; each of those is read for what
-   was billed and what was actually paid, and the difference is the shortfall. The rate is
-   then derived by division rather than quoted, so it cannot disagree with the figures
-   above it.
-   IT REVEALS THE UNIT RATE, and that is a deliberate reversal of v184. You cannot prove a
-   conversion from money into goods without naming the rate used. It appears ONLY inside a
-   reconciliation, only for the order that carries the offset, and it is his own rate. */
-function stmtRecon(party,rows){
-  const out=[];
-  sales.filter(s=>s.customer===party&&(s.settledKg||0)>0.0001).forEach(s=>{
-    const kgOff=+s.settledKg;
-    const keys=[];
-    (s.amend||[]).forEach(a=>{(a.refKeys||[]).forEach(k=>{if(k&&k.indexOf(party+'|')===0)keys.push(k);});});
-    const legs=[...new Set(keys)].map(k=>{
-      const t=sales.find(x=>x.customer+'|'+x.date+'|'+x.total===k);
-      if(!t)return null;
-      const billed=+t.total, paidCash=+(t.cash||0);
-      return {date:t.date,qty:t.qty,billed:billed,paid:paidCash,short:+(billed-paidCash).toFixed(2)};
-    }).filter(Boolean).sort((a,b)=>new Date(a.date)-new Date(b.date));
-    const shortTot=+legs.reduce((a,x)=>a+x.short,0).toFixed(2);
-    const rate=kgOff>0?+(shortTot/kgOff).toFixed(2):0;
-    const collected=+(s.deliveredQty||0);
-    /* NOT EVERY OFFSET IS AGAINST AN EARLIER ORDER (v192). This walk was written for
-       the case where salt was withheld to clear unpaid balances on previous SALES, and
-       it assumes those sales exist. CS6-PER's 6.5 unit went against a cash advance,
-       which is not in the sales ledger at all, so the walk found no legs and printed a
-       table of zeros: "carried forward 0.00", "0.00 at 0.00 a unit is 6.5 unit". That
-       is not merely ugly, it is unintelligible, and it was in a file about to be sent.
-       So the no-leg case is flagged here and told plainly rather than tabulated. */
-    out.push({order:{date:s.date,qty:s.qty,total:s.total,paid:+(s.cash||0)},
-      noLegs:legs.length===0,
-      legs:legs,shortTot:shortTot,kgOff:kgOff,rate:rate,
-      deliverable:+(s.qty-kgOff).toFixed(4),
-      collected:collected,
-      owed:+(s.qty-kgOff-collected).toFixed(4),
-      payments:(s.amend||[]).filter(a=>+a.cash>0.009).map(a=>({date:a.date,rm:+a.cash}))});
-  });
-  return out;
-}
-/* A REFUND IS SOMETHING HE KNOWS ABOUT (v188), and the statement had no line for it.
-   If he overpaid and money came back, that is his record as much as any order, and a
-   statement that omits it is incomplete in the one direction that favours the seller. */
-function stmtRefunds(party,o){
-  o=o||{};
-  const from=o.from?new Date(o.from):null, to=o.to?new Date(o.to):null;
-  return (typeof customerRefunds!=='undefined'?customerRefunds:[])
-    .filter(r=>r.party===party)
-    .filter(r=>{const d=new Date(r.since);
-      if(from&&d<from)return false; if(to&&d>to)return false; return true;})
-    .map(r=>({date:r.since,amount:+r.amount,paidOn:r.paidOn||null}));
-}
-function stmtDoc(party,rows,o){
-  /* LESS, AND BETTER LOOKING (v184). The first cut carried a price-per-unit column and a
-     running prose commentary on every line: paid this, collected that, settled together
-     with the order of such a date. All of it was true and none of it was wanted. A
-     customer opening this wants three things -- WHAT he took, WHEN, and HOW MUCH -- and
-     every extra column asks him to work out which ones matter.
-     The unit price is gone with the rest. It told him nothing he did not know and it
-     made his own rate legible in a single portable document, which is the sort of thing
-     that ends up beside another buyer's. Totals say what he paid; the arithmetic behind
-     them is his to do if he wants it. */
-  const e=esc, n2=v=>Number(v).toLocaleString('en-MY',{maximumFractionDigits:2});
-  const money=v=>Number(v).toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2});
-  const dLong=d=>{try{return new Date(d).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});}catch(x){return d;}};
-  const who=(o.useName&&revealed&&vaultNames&&vaultNames[party])?nameOnly(vaultNames[party]):codeOf(party);
-  const T={qty:0,total:0,paid:0,owed:0};
-  T.toGet=0;T.kindKg=0;T.got=0;T.ordered=0;
-  /* a GIFT is not a payment. Its in-kind value exists so the salt does not fall out of
-     the ledger as shrinkage; counting it here made Paid exceed the total ordered, which
-     is the one arithmetic a reader would certainly catch. */
-  T.pendQty=0;T.pendVal=0;T.pendN=0;
-  T.cxN=0;
-  rows.forEach(r=>{
-    /* a cancelled order contributes NOTHING: not quantity, not value, not the count of
-       orders. Anything else makes the footer disagree with the word "cancelled". */
-    if(r.cancelled){T.cxN++;return;}
-    if(r.pendingOrder){T.pendQty+=r.qty;T.pendVal+=r.total;T.pendN++;}
-    T.qty+=r.qty;T.total+=r.total;T.paid+=r.gift?0:(r.paidCash+r.inKind);T.owed+=r.owed;
-    T.toGet+=(r.toGet>0&&!r.pendingOrder)?r.toGet:0;T.kindKg+=r.gift?0:r.inKindKg;T.got+=r.got;T.ordered+=r.qty;});
-  /* the row label has to agree with the walk printed below it. Where the offset went
-     against a separate arrangement rather than an unpaid earlier order, calling it an
-     "earlier balance" contradicts the explanation three inches further down the page. */
-  const noLegDates=new Set((o.recon||[]).filter(R=>R.noLegs).map(R=>R.order.date));
-  const body=rows.map(r=>{
-    const due=r.owed>0.009;
-    const when=(o.dates&&r.paidOn&&r.paidOn!==r.date)?'<div class="sub2">paid '+e(dLong(r.paidOn))+'</div>':'';
-    /* nor is it goods owed: nothing has been paid for, so nothing is being withheld */
-    const owedKg=r.toGet>0.009&&!r.pendingOrder;
-    let stat;
-    /* "no charge" and not "goodwill": the same flag covers a gift AND a reseller's
-       EARNED reward, and calling an earned reward a gift misdescribes it to the one
-       person who knows better. The customer knows which of the two his was. */
-    if(r.cancelled)stat='<span class="cx">cancelled</span>'
-      +(r.cancelledOn?'<div class="owedkg">'+e(dLong(r.cancelledOn))+'</div>':'');
-    else if(r.gift)stat='<span class="gift">no charge</span>';
-    /* AN AGREED ORDER IS NOT A SETTLED ONE (v189). Nothing has been paid and nothing
-       collected, so it is neither a debt nor a closed line. It still belongs on the
-       statement, because he agreed to it and will be asked for the money in due course,
-       but it must read as what it is: outstanding on BOTH sides, owing nothing yet. */
-    else if(r.pendingOrder)stat='<span class="pend">ordered</span>'
-      +'<div class="owedkg">to be collected and paid</div>';
-    else if(due)stat='<span class="due">'+money(r.owed)+' due</span>';
-    else if(owedKg)stat='<span class="ok">paid in full</span><div class="owedkg">'+n2(r.toGet)+' unit still to collect</div>';
-    else stat='<span class="ok">settled</span>';
-    return '<tr>'
-      +'<td class="l dt">'+e(dLong(r.date))+when+'</td>'
-      +'<td class="q'+(r.cancelled?' cxr':'')+'">'+n2(r.qty)+'<span class="u">unit</span>'
-        +(r.inKindKg>0.009?'<div class="sub2">'+n2(r.inKindKg)+' unit applied '
-          +(noLegDates.has(r.date)?'by agreement':'to an earlier balance')+'</div>':'')
-        +'</td>'
-      +'<td class="amt'+(r.cancelled?' cxr':'')+'">'+(r.gift?'<span class="nilamt">nil</span>':money(r.total))+'</td>'
-      +'<td class="r">'+stat+'</td></tr>';
-  }).join('');
-  return ['<!DOCTYPE html>','<html lang="en"><head><meta charset="utf-8">',
-   '<meta name="viewport" content="width=device-width,initial-scale=1">',
-   '<meta name="robots" content="noindex,nofollow">',
-   '<title>Statement of account</title>','<style>',
-   '*{box-sizing:border-box}',
-   'body{margin:0;padding:44px 20px 60px;background:#0f1115;color:#eef1f6;',
-   'font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Lato,Roboto,Helvetica,Arial,sans-serif;',
-   'font-size:15px;line-height:1.55;-webkit-text-size-adjust:100%}',
-   '.w{max-width:600px;margin:0 auto}',
-   '.eyebrow{font-size:11px;letter-spacing:.34em;color:#7fd7e8;font-weight:700;margin:0 0 8px}',
-   'h1{margin:0;font-size:30px;font-weight:900;letter-spacing:-.015em;line-height:1.1}',
-   '.meta{color:#6b7688;font-size:13px;margin:10px 0 0}',
-   '.who{margin:26px 0 4px;font-size:19px;font-weight:700;color:#eef1f6}',
-   '.whol{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#6b7688;font-weight:700}',
-   '.rule{height:1px;background:#2a3140;margin:26px 0 4px}',
-   'table{width:100%;border-collapse:collapse}',
-   'th{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:#6b7688;font-weight:700;',
-   'padding:0 0 10px;text-align:right}th.l{text-align:left}',
-   'td{padding:15px 0;border-bottom:1px solid rgba(42,49,64,.55);text-align:right;',
-   'font-variant-numeric:tabular-nums;vertical-align:top}',
-   'td.l{text-align:left}',
-   '.dt{font-size:15px;color:#eef1f6}',
-   '.sub2{font-size:12px;color:#6b7688;margin-top:3px}',
-   '.q{font-size:15px;color:#b9c2d0}.u{font-size:11px;color:#6b7688;margin-left:4px}',
-   '.amt{font-size:16px;font-weight:700}',
-   '.ok{font-size:12px;color:#5fd6a0;letter-spacing:.02em}',
-   '.due{font-size:13px;font-weight:700;color:#ffc75a;white-space:nowrap}',
-   '.tot{margin-top:30px}',
-   '.tr{display:flex;justify-content:space-between;align-items:baseline;padding:7px 0;',
-   'font-size:14px;color:#b9c2d0}',
-   '.tr span:last-child{font-variant-numeric:tabular-nums;color:#eef1f6}',
-   '.tr.big{margin-top:10px;padding-top:16px;border-top:1px solid #2a3140;font-size:19px;font-weight:800}',
-   '.tr.big span:last-child{color:#ffc75a}',
-   '.tr.big.clear span:last-child{color:#5fd6a0}',
-   '.tr.sub{color:#9aa4b6;font-size:13px}',
-   '.cxn{color:#7f8a9c;font-weight:600}',
-   '.cx{color:#7f8a9c;font-weight:800;font-size:13px;letter-spacing:.02em}',
-   '.cxr{text-decoration:line-through;text-decoration-thickness:1px;opacity:.5}',
-   '.pend{color:#c8b6ff;font-weight:800;font-size:13px;letter-spacing:.02em}',
-   '.owedkg{font-size:12px;color:#7fd7e8;margin-top:4px;font-weight:600;white-space:nowrap}',
-   '.gift{font-size:12px;color:#b07cff;letter-spacing:.02em;white-space:nowrap}',
-   '.nilamt{color:#6b7688;font-weight:400}',
-   '.owed{margin-top:26px;border:1px solid #2a5560;border-radius:12px;padding:20px 22px;',
-   'background:linear-gradient(180deg,rgba(18,40,46,.75),rgba(15,26,30,.75))}',
-   '.owedl{margin:0;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#7fd7e8;font-weight:700}',
-   '.owedv{margin:6px 0 0;font-size:34px;font-weight:900;color:#7fd7e8;letter-spacing:-.02em;',
-   'font-variant-numeric:tabular-nums}',
-   '.owedv span{font-size:15px;font-weight:600;margin-left:5px;color:#9fc9d4}',
-   '.owedn{margin:12px 0 0;font-size:12px;color:#8fb3bd;line-height:1.6}',
-   '.rec{margin-top:26px;border:1px solid #2a3140;border-radius:12px;padding:22px 22px 8px}',
-   '.recl{margin:0 0 18px;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#7d879a;font-weight:700}',
-   '.stp{display:flex;gap:14px;margin-bottom:20px}',
-   '.stpn{flex:0 0 22px;height:22px;border-radius:50%;border:1px solid #3a4356;color:#7fd7e8;',
-   'font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;line-height:1}',
-   '.stpb{flex:1 1 auto;min-width:0}',
-   '.stpt{margin:0;font-size:14px;font-weight:700;color:#eef1f6;line-height:1.45}',
-   '.stpd{margin:7px 0 0;font-size:13px;color:#8a93a3;line-height:1.6}',
-   'table.mini{width:100%;border-collapse:collapse;margin-top:10px}',
-   'table.mini th{font-size:10px;letter-spacing:.14em;padding:0 0 6px;color:#6b7688}',
-   'table.mini td{padding:7px 0;font-size:13px;border-bottom:1px solid rgba(42,49,64,.45);color:#b9c2d0}',
-   'table.mini tr.tot td{border-bottom:0;border-top:1px solid #2a3140;font-weight:800;color:#eef1f6;padding-top:9px}',
-   'table.mini tr.sub td{border-bottom:0;color:#eef1f6;font-weight:700}',
-   'table.mini.calc td{font-size:13px}',
-   'b.short{color:#ffc75a}',
-   '.recn{margin:2px 0 16px;font-size:12px;color:#8a93a3;line-height:1.6;border-top:1px solid rgba(42,49,64,.5);padding-top:14px}',
-   '.note{margin-top:34px;font-size:12px;color:#6b7688;line-height:1.65}',
-   '@media print{body{background:#fff;color:#111;padding:24px}',
-   '.eyebrow{color:#0b5f70}.q{color:#444}.ok{color:#186b45}.due{color:#8a5b00}',
-   '.tr span:last-child{color:#111}.tr.big span:last-child{color:#8a5b00}',
-   '.tr.big.clear span:last-child{color:#186b45}td{border-color:#ddd}.rule{background:#ccc}',
-   '.owed{background:#f2f8fa;border-color:#9dc4cf}.owedl,.owedv{color:#0b5f70}',
-   '.owedv span,.owedn{color:#3d6d78}.owedkg{color:#0b5f70}.gift{color:#5a3d8a}}',
-   '</style></head><body><div class="w">',
-   '<p class="eyebrow">'+e(o.brand||'Salt Command')+'</p>',
-   '<h1>Statement of account</h1>',
-   /* the period line has to survive the reader checking it against the rows. Once a
-      pending order can sit outside the window, a statement headed "to 02 Aug" can carry
-      a line dated 03 Aug, and saying nothing about that is the sort of small
-      contradiction that costs more trust than the figure it hides. */
-   '<p class="meta">Issued '+e(o.issued)+
-     (o.from||o.to?' &middot; '+e(o.from?dLong(o.from):'from the beginning')+' to '+e(o.to?dLong(o.to):'today')
-       +(T.pendN&&rows.some(r=>r.pendingOrder&&o.to&&new Date(r.date)>new Date(o.to))
-          ?', plus any order agreed and not yet actioned':''):'')+'</p>',
-   '<p class="whol" style="margin:26px 0 0">Account</p>',
-   '<div class="who">'+e(who)+'</div>',
-   '<div class="rule"></div>',
-   rows.length?('<table><thead><tr><th class="l">Date</th><th>Quantity</th><th>Amount</th><th class="r">Status</th></tr></thead>'
-     +'<tbody>'+body+'</tbody></table>')
-     :'<p class="meta">No orders in this period.</p>',
-   ((o.refunds||[]).length?'<p class="whol" style="margin:30px 0 0">Refunds</p>'
-     +'<table style="margin-top:10px"><thead><tr><th class="l">Date</th><th class="l">Reason</th><th>Amount</th><th class="r">Status</th></tr></thead><tbody>'
-     +o.refunds.map(r=>'<tr><td class="l dt">'+e(dLong(r.date))+'</td>'
-       +'<td class="l" style="font-size:13px;color:#b9c2d0">Overpayment returned to you</td>'
-       +'<td class="amt">'+money(r.amount)+'</td>'
-       +'<td class="r">'+(r.paidOn?'<span class="ok">paid '+e(dLong(r.paidOn))+'</span>'
-                                  :'<span class="due">owed to you</span>')+'</td></tr>').join('')
-     +'</tbody></table>':''),
-   '<div class="tot">',
-   /* the count must match what was actually totalled, or the footer says three orders
-      over a figure covering two, which is the first thing a careful reader checks */
-   '<div class="tr"><span>'+(rows.length-T.cxN)+' order'+((rows.length-T.cxN)===1?'':'s')
-     +', '+n2(T.qty)+' unit'
-     +(T.cxN?'<span class="cxn"> &middot; '+T.cxN+' cancelled, not counted</span>':'')
-     +'</span><span>'+money(T.total)+'</span></div>',
-   '<div class="tr"><span>Paid</span><span>'+money(T.paid)+'</span></div>',
-   /* say plainly which part of the total has not happened yet, so the ordered figure
-      and the paid figure can be reconciled without him having to ask why they differ */
-   (T.pendN?'<div class="tr sub"><span>of which not yet collected or paid</span><span>'
-      +money(T.pendVal)+'</span></div>':''),
-   '<div class="tr big'+(T.owed>0.009?'':' clear')+'"><span>'+(T.owed>0.009?'Outstanding':'Balance')+'</span><span>'
-     +(T.owed>0.009?money(T.owed):'nil')+'</span></div>',
-   '</div>',
-   /* GOODS OWED GET THEIR OWN BLOCK. A statement whose only large figure is money can
-      read as though nothing else is outstanding, which is exactly the misreading a
-      dispute about undelivered salt would turn on. */
-   (T.toGet>0.009?'<div class="owed"><p class="owedl">Still to collect</p>'
-     +'<p class="owedv">'+n2(T.toGet)+' <span>unit</span></p></div>':''),
-   /* THE WORKINGS, step by step, so nothing has to be taken on trust */
-   (o.recon||[]).map(R=>{
-     let st=0;
-     const step=(t,b)=>'<div class="stp"><div class="stpn">'+(++st)+'</div><div class="stpb">'
-       +'<p class="stpt">'+t+'</p>'+(b?'<p class="stpd">'+b+'</p>':'')+'</div></div>';
-     const legRows=R.legs.map(l=>'<tr><td class="l">'+e(dLong(l.date))+'</td><td>'+n2(l.qty)+' unit</td>'
-       +'<td>'+money(l.billed)+'</td><td>'+money(l.paid)+'</td>'
-       +'<td class="r"><b class="short">'+money(l.short)+'</b></td></tr>').join('');
-     const pays=R.payments.length?R.payments.map(x=>money(x.rm)+' on '+e(dLong(x.date))).join(', ')
-                              :money(R.order.paid);
-     /* once the salt has gone out the reconciliation is no longer a claim but a record,
-        and titling it "how the 0 unit is arrived at" would be nonsense. It is kept
-        either way, because the proof is worth more after a dispute than during one. */
-     /* the plain-language version, used when there are no earlier orders to show.
-        It states only what he already knows: what he ordered, what he paid, what he
-        took and what was held back by agreement. It does not name the arrangement the
-        salt went against, because a statement is not the place to restate a private
-        settlement, and it invites the question instead. */
-     if(R.noLegs){
-       const gone=R.kgOff, took=R.collected;
-       return '<div class="rec"><p class="recl">How your '+e(dLong(R.order.date))+' order was settled</p>'
-         +step('The order was paid in full.',
-               n2(R.order.qty)+' unit at '+money(R.order.total/R.order.qty)+' a unit is '
-               +money(R.order.total)+', received as '+pays+'.')
-         +step('Part of it was not handed over, by agreement.',
-               '<b>'+n2(gone)+' unit</b> of that order was held back and applied to a separate '
-               +'arrangement between us, rather than being collected or refunded. No money '
-               +'changed hands on it.')
-         +step(R.owed>0.009?'So the salt still due to you is what is left.'
-                           :'So the balance of the order was collected in full.',
-               '<table class="mini calc"><tbody>'
-               +'<tr><td class="l">Bought</td><td class="r">'+n2(R.order.qty)+' unit</td></tr>'
-               +'<tr><td class="l">Less applied by agreement</td><td class="r">&minus; '+n2(gone)+' unit</td></tr>'
-               +'<tr class="sub"><td class="l">Deliverable</td><td class="r">'+n2(R.deliverable)+' unit</td></tr>'
-               +'<tr><td class="l">Less already collected</td><td class="r">&minus; '+n2(took)+' unit</td></tr>'
-               +'<tr class="tot"><td class="l">'+(R.owed>0.009?'Still to collect':'Collected in full, nothing outstanding')
-               +'</td><td class="r">'+n2(R.owed)+' unit</td></tr>'
-               +'</tbody></table>')
-         +'<p class="recn">If your own record of that arrangement differs from this, say so '
-         +'and it will be gone through line by line.</p></div>';
-     }
-     return '<div class="rec"><p class="recl">'+(R.owed>0.009
-        ?'How the '+n2(R.owed)+' unit is arrived at'
-        :'How your '+e(dLong(R.order.date))+' order was settled')+'</p>'
-       +step('Earlier orders were not paid in full.',
-             '<table class="mini"><thead><tr><th class="l">Order</th><th>Quantity</th><th>Billed</th><th>Paid in cash</th><th class="r">Short</th></tr></thead><tbody>'
-             +legRows+'<tr class="tot"><td class="l" colspan="4">Carried forward</td><td class="r"><b class="short">'
-             +money(R.shortTot)+'</b></td></tr></tbody></table>')
-       +step('That '+money(R.shortTot)+' was settled out of your order of '+e(dLong(R.order.date))+', in salt rather than cash.',
-             money(R.shortTot)+' at '+money(R.rate)+' a unit is <b>'+n2(R.kgOff)+' unit</b>, withheld from that order by agreement. No money changed hands and that salt stayed on the shelf.')
-       +step('The '+e(dLong(R.order.date))+' order itself is paid in full.',
-             n2(R.order.qty)+' unit at '+money(R.order.total/R.order.qty)+' a unit is '+money(R.order.total)+', received as '+pays+'.')
-       +step(R.owed>0.009
-             ?'So the salt due to you is what you bought, less what settled the balance, less what you have taken.'
-             :'So the salt due to you was what you bought, less what settled the balance, less what you had already taken. All of it has since been handed over.',
-             '<table class="mini calc"><tbody>'
-             +'<tr><td class="l">Bought</td><td class="r">'+n2(R.order.qty)+' unit</td></tr>'
-             +'<tr><td class="l">Less applied to the '+money(R.shortTot)+' balance</td><td class="r">&minus; '+n2(R.kgOff)+' unit</td></tr>'
-             +'<tr class="sub"><td class="l">Deliverable</td><td class="r">'+n2(R.deliverable)+' unit</td></tr>'
-             +'<tr><td class="l">Less already collected</td><td class="r">&minus; '+n2(R.collected)+' unit</td></tr>'
-             +'<tr class="tot"><td class="l">'+(R.owed>0.009?'Still to collect':'Collected in full, nothing outstanding')+'</td><td class="r">'+n2(R.owed)+' unit</td></tr>'
-             +'</tbody></table>')
-       /* the one contradiction a careful reader would otherwise find, answered before he
-          finds it: those orders read as settled above yet show short here */
-       +'<p class="recn">'+R.legs.map(l=>e(dLong(l.date))).join(' and ')
-       +' show as settled at the top of this statement because that balance was cleared '
-       +'here, in salt, rather than in cash. Nothing about them is still owed in money.</p>'
-       +'</div>';}).join(''),
-   '<p class="note">Amounts in ringgit. This statement covers your own orders only, taken from the seller&rsquo;s records as at the issue date. If anything differs from your own, say so and it will be checked.</p>',
-   '</div></body></html>'].join('\n');
-}
-function stmtExport(){
-  const g=id=>{const el=document.getElementById(id);return el?el.value:'';};
-  const ck=id=>{const el=document.getElementById(id);return !!(el&&el.checked);};
-  const party=g('stParty');
-  const msg=(t,c)=>{const m=document.getElementById('stMsg');if(m){m.innerHTML=t;m.style.color=c||'var(--mut)';}};
-  if(!party)return msg('Choose whose statement this is.','var(--crim)');
-  const o={from:g('stFrom')||null,to:g('stTo')||null,
-    completed:ck('stDone'),open:ck('stOpen'),pending:ck('stPend'),
-    dates:ck('stDates'),links:ck('stLinks'),useName:ck('stName'),
-    brand:'Salt Command',
-    issued:new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})};
-  if(!o.completed&&!o.open&&!o.pending)return msg('Tick at least one kind of order to include.','var(--crim)');
-  const rows=stmtRows(party,o);
-  o.refunds=stmtRefunds(party,o);
-  if(!rows.length&&!o.refunds.length)return msg('Nothing matches those filters for '+esc(codeOf(party))+'.','var(--crim)');
-  /* only reconcile orders that are actually IN this statement, so a date filter cannot
-     leave a working referring to a line the reader cannot see */
-  o.recon=ck('stRecon')?stmtRecon(party,rows).filter(R=>rows.some(x=>x.date===R.order.date)):[];
-  const html=stmtDoc(party,rows,o);
-  const now=new Date(),pad=n=>(n<10?'0':'')+n;
-  const fname='statement_'+String(codeOf(party)).replace(/[^A-Za-z0-9._-]+/g,'-')+'_'
-    +now.getFullYear()+'-'+pad(now.getMonth()+1)+'-'+pad(now.getDate())+'.html';
-  try{
-    const blob=new Blob([html],{type:'text/html;charset=utf-8'});
-    const url=URL.createObjectURL(blob);
-    const a=document.createElement('a');a.href=url;a.download=fname;a.style.display='none';
-    document.body.appendChild(a);a.click();
-    setTimeout(()=>{URL.revokeObjectURL(url);a.remove();},1500);
-  }catch(err){return msg('Could not build the file: '+esc(err.message),'var(--crim)');}
-  const owed=rows.reduce((a,r)=>a+r.owed,0);
-  msg('<b>Saved '+esc(fname)+'</b> &mdash; '+rows.length+' order'+(rows.length===1?'':'s')+', '
-    +(owed>0.009?fmt(owed)+' outstanding':'nothing outstanding')
-    +'. It carries <b>no cost, no margin and no other party</b>, and none of the internal notes: every line is built from the order itself rather than copied from your book.','var(--grn)');
 }
 /* the product stamp for a ledger row, in that product's own accent */
 function prodTag(t){
@@ -8280,10 +7902,31 @@ function tabLedger(){
        keydown listener below is what turns a focused card's Enter into the same edit a
        right-click opens. */
     const rid=ridOf(t);
-    return `<div class="lcard ${cardCls}" id="ent-${code}"${rid?` data-rid="${rid}" data-type="${t.type}" tabindex="0"`:""}>${collapse?collapsedLine:(openLine+movePanel+closeLine)}${corrStrip(t,t.type,corrs)}${quickBar}</div>`;}).filter(Boolean);
-  const shown=rows.length,total=all.length,rowsHtml=rows.join('');
-  ledShown=shownTx;                       // the chart draws the same set the list shows
+    /* STILL YOURS TO DO, or merely old. An order with money or salt outstanding never folds,
+       whatever its date; In-Kind, Cancelled and Completed are terminal and a Default is
+       terminal but unpaid, so it stays out too. An undated row is agreed with nothing moved
+       and is the most open thing on the book. */
+    const live=!t.date||/^Open/.test(finalState)||finalState==='Pending'||finalState==='Default';
+    return {live:live,date:t.date||'',
+      h:`<div class="lcard ${cardCls}" id="ent-${code}"${rid?` data-rid="${rid}" data-type="${t.type}" tabindex="0"`:""}>${collapse?collapsedLine:(openLine+movePanel+closeLine)}${corrStrip(t,t.type,corrs)}${quickBar}</div>`};}).filter(Boolean);
+  const shown=rows.length,total=all.length;
   const filtered=!!(ledF.q||ledF.state||ledF.party||ledF.month||ledF.product);
+  /* ============ A HUNDRED AND THIRTY ORDERS IS NOT A LIST, IT IS AN ARCHIVE ============
+     Every row on the book still renders, and every one is still searchable, but the ledger
+     opens on the ones that are live: anything still owed or undelivered, plus everything
+     that moved in the last LED_RECENT days. On this book that is 15 of 132. The rest fold.
+     A FILTER TURNS THE FOLD OFF ENTIRELY. If you have asked for one party or one month you
+     have said what you want to see, and hiding four fifths of the answer behind a control
+     you did not touch would be the desk overruling the question. */
+  const cutoff=(function(){const d=new Date(TODAY);d.setDate(d.getDate()-LED_RECENT);return d.toISOString().slice(0,10);})();
+  const lead=filtered?rows:rows.filter(r=>r.live||r.date>=cutoff);
+  const rest=filtered?[]:rows.filter(r=>!(r.live||r.date>=cutoff));
+  const restDates=rest.map(r=>r.date).filter(Boolean).sort();
+  const rowsHtml=lead.map(r=>r.h).join('')
+    +(rest.length?`<details class="ledmore"><summary><span class="chev">&#9656;</span>Show the earlier ${rest.length} order${rest.length===1?'':'s'}`
+      +(restDates.length?`<span class="lmspan">${restDates[0]} to ${restDates[restDates.length-1]}</span>`:'')
+      +`</summary><div class="ledmorebody">${rest.map(r=>r.h).join('')}</div></details>`:'');
+  ledShown=shownTx;                       // the chart draws the same set the list shows
   const parties=[...new Set(all.map(t=>t.who))];
   /* v280: a PENDING order carries no date, because it is not firm until something moves.
      So the month index is built from the rows that have one, and undated rows fall through
@@ -8298,31 +7941,10 @@ function tabLedger(){
     <select id="ledMonth">${selOpt('',ledF.month,'All months')}${months.map(x=>selOpt(x,ledF.month,mLab(x))).join('')}</select>
     <select id="ledProduct">${selOpt('',ledF.product,'All products')}${PROD_IDS.map(p=>selOpt(p,ledF.product,PRODUCTS[p].name)).join('')}</select>
     ${filtered?'<button class="vbtn" id="ledClear" style="font-size:11px">Clear</button>':''}
-    <span class="ledct">${shown} of ${total}</span>
+    <span class="ledct">${lead.length} of ${total}${rest.length?`, ${rest.length} folded`:''}</span>
   </div>`;
   return `<h1>Ledger</h1>
   <div class="dsc dsclead">Every transaction the desk holds, oldest first, with the trail of what moved when.</div>
-  <h2 style="margin-top:20px">Statement of account <span class="sub" style="font-weight:400">what a customer may be given</span> <span class="rule"></span></h2>
-  <div class="dsc" style="margin-bottom:9px">A record of one party&rsquo;s own dealings, for handing to them. Deliberately spare: <b>what they took, when, and how much</b>, and nothing else. It is <b>built rather than copied</b>, so <b>no cost, no margin, no unit price, no other party and none of the notes in this ledger</b> can travel with it &mdash; the notes here are written for you, and several are about your own bookkeeping.</div>
-  <div class="card">
-    <div class="qrow">
-      <div class="qfield"><label>Whose statement</label><select id="stParty"><option value="">Choose a customer…</option>${[...new Set(sales.map(x=>x.customer))].sort().map(id=>`<option value="${id}">${codeOf(id)}</option>`).join('')}</select></div>
-      <div class="qfield qkg"><label>From <span style="color:var(--dim)">optional</span></label><input id="stFrom" type="date"></div>
-      <div class="qfield qkg"><label>To <span style="color:var(--dim)">optional</span></label><input id="stTo" type="date"></div>
-      <div class="qfield"><label>&nbsp;</label><button class="vbtn" onclick="stmtExport()">Export the statement</button></div>
-    </div>
-    <div style="display:flex;flex-wrap:wrap;gap:14px;margin-top:10px;font-size:12px;color:var(--mut)">
-      <label style="display:flex;align-items:center;gap:5px"><input type="checkbox" id="stDone" checked> Settled orders</label>
-      <label style="display:flex;align-items:center;gap:5px"><input type="checkbox" id="stOpen" checked> Open, with a balance</label>
-      <label style="display:flex;align-items:center;gap:5px"><input type="checkbox" id="stPend"> Agreed but nothing moved</label>
-      <label style="display:flex;align-items:center;gap:5px"><input type="checkbox" id="stDates" checked> Show payment date where it differs</label>
-      <label style="display:flex;align-items:center;gap:5px"><input type="checkbox" id="stRecon" checked> Show the workings where salt settled a balance</label>
-      <label style="display:flex;align-items:center;gap:5px"><input type="checkbox" id="stName"> Use their real name</label>
-    </div>
-    <div id="stMsg" style="font-size:12px;color:var(--mut);margin-top:10px;min-height:16px"></div>
-    <div class="dsc" style="margin-top:9px"><b>The unit price is deliberately absent.</b> It told them nothing they did not already know, and it made their own rate legible in a single portable document, which is the sort of thing that ends up beside another buyer&rsquo;s. Totals say what was paid; the arithmetic is theirs to do. <b>Their real name</b> is off by default and needs the vault unlocked, the code being used otherwise. It is the one name that belongs on the document, since it is going to them, and no other party appears at any setting.</div>
-  </div>
-
   <h2>Transactions ledger <span class="rule"></span></h2>
   <div class="note">One card per order, <b>Opened &rarr; movements &rarr; Closed</b>, with <b>bright</b> figures moved at that step and <b>grey</b> ones carried over.</div>
   ${toolbar}
