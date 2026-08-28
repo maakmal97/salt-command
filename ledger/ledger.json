@@ -1,6 +1,6 @@
 {
- "v": "v384",
- "stamped": "27 Aug 2026, 14:30 KL",
+ "v": "v390",
+ "stamped": "28 Aug 2026, 18:36 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -2696,7 +2696,7 @@
   ],
   "QUEUE_COMMITTED": "2026-08-26T12:12:00.000Z",
   "PRICING": {
-   "takenAt": "2026-08-27T09:33:12.263Z",
+   "takenAt": "2026-08-28T10:48:28.128Z",
    "sizes": [
     0.5,
     1,
@@ -2704,7 +2704,9 @@
     2,
     2.5,
     3,
+    3.5,
     4,
+    4.5,
     5,
     6.25,
     12.5
@@ -2729,19 +2731,19 @@
       },
       "2": {
        "delivered": 142.68,
-       "collected": 136.37
+       "collected": 132.68
       },
       "3": {
-       "delivered": 204.56,
-       "collected": 204.56
+       "delivered": 196.52,
+       "collected": 186.52
       },
       "4": {
-       "delivered": 272.75,
-       "collected": 272.75
+       "delivered": 250.36,
+       "collected": 240.36
       },
       "5": {
-       "delivered": 340.93,
-       "collected": 340.93
+       "delivered": 304.2,
+       "collected": 294.2
       },
       "0.5": {
        "delivered": 61.92,
@@ -2752,16 +2754,24 @@
        "collected": 105.76
       },
       "2.5": {
-       "delivered": 170.47,
-       "collected": 170.47
+       "delivered": 169.6,
+       "collected": 159.6
+      },
+      "3.5": {
+       "delivered": 223.44,
+       "collected": 213.44
+      },
+      "4.5": {
+       "delivered": 277.28,
+       "collected": 267.28
       },
       "6.25": {
-       "delivered": 426.16,
-       "collected": 426.16
+       "delivered": 371.5,
+       "collected": 361.5
       },
       "12.5": {
-       "delivered": 852.33,
-       "collected": 852.33
+       "delivered": 708,
+       "collected": 698
       }
      },
      "inputs": {
@@ -2797,8 +2807,8 @@
          "date": "2026-08-26",
          "sup": "SA5-BTR"
         },
-        "days": 21,
-        "sinceLot": 30
+        "days": 22,
+        "sinceLot": 31
        },
        "lockBase": {
         "lockedOn": "2026-08-06",
@@ -2907,7 +2917,9 @@
         2,
         2.5,
         3,
+        3.5,
         4,
+        4.5,
         5,
         6.25,
         12.5
@@ -2951,13 +2963,21 @@
        "delivered": 57.76,
        "collected": 47.76
       },
+      "3.5": {
+       "delivered": 66.86,
+       "collected": 56.86
+      },
+      "4.5": {
+       "delivered": 75.97,
+       "collected": 65.97
+      },
       "6.25": {
        "delivered": 91.9,
        "collected": 81.9
       },
       "12.5": {
        "delivered": 148.79,
-       "collected": 138.97
+       "collected": 138.79
       }
      },
      "inputs": {
@@ -2993,8 +3013,8 @@
          "date": "2026-08-26",
          "sup": "SP7-PUD"
         },
-        "days": 21,
-        "sinceLot": 21
+        "days": 22,
+        "sinceLot": 22
        },
        "lockBase": {
         "lockedOn": "2026-08-06",
@@ -3118,10 +3138,10 @@
      }
     }
    },
-   "v": "v384"
+   "v": "v390"
   },
   "OPEN": {
-   "at": "2026-08-27T09:33:12.307Z",
+   "at": "2026-08-28T10:48:28.160Z",
    "count": 6,
    "byKey": {
     "CJ4-BJ|2026-08-26|450": {
@@ -3151,8 +3171,8 @@
      "rid": "s106",
      "deliveredOn": "2026-08-24",
      "key": "CR3-DAM|2026-08-24|80",
-     "age": 3,
-     "exp": 80
+     "age": 4,
+     "exp": 60
     },
     "CE4-AD|2026-08-20|435": {
      "d": "2026-08-20",
@@ -3181,7 +3201,7 @@
      "rid": "s092",
      "deliveredOn": "2026-08-18",
      "key": "CR3-DAM|2026-08-18|80",
-     "age": 9,
+     "age": 10,
      "exp": 40
     },
     "CE4-CHE|2026-08-18|500": {
@@ -3242,7 +3262,7 @@
     "salt": "2026-08-24",
     "oil": "2026-08-23"
    },
-   "v": "v384"
+   "v": "v390"
   }
  }
 }

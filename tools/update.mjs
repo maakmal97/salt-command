@@ -297,8 +297,15 @@ if (DRY || has("--no-mirror")) {
 
 /* ---- 7. version ------------------------------------------------------------------- */
 step(7, "version");
-if (NO_PUSH) {
-  ok("skipped" + (DRY ? " (dry run)" : ""));
+/* v391: --no-push HOLDS THE PUSH AND NOT THE COMMIT, WHICH IS WHAT IT IS NAMED FOR. It used to
+   skip the whole step, so `update.mjs --no-push` DEPLOYED and left the tree dirty with the build
+   already live: the cloud carried a bundle the repo had no commit for, step 7 reported "skipped"
+   and step 8 reported every surface level, because live and the build on disk genuinely did
+   agree. That is the silent divergence ship-check exists to catch, one step earlier and inside
+   the tool written to prevent it. A deploy with no source of record is the thing to refuse;
+   holding the push is a choice. --dry still touches nothing at all. */
+if (DRY) {
+  ok("skipped (dry run)");
 } else {
   const dirty = git("status", "--porcelain");
   if (dirty) {
@@ -311,7 +318,9 @@ if (NO_PUSH) {
     ok("working tree already clean");
   }
   const ahead = git("rev-list", "--count", "origin/master..HEAD");
-  if (ahead !== "0") {
+  if (NO_PUSH) {
+    ok(ahead === "0" ? "not pushing, and nothing is waiting" : `not pushing: ${ahead} commit(s) held locally`);
+  } else if (ahead !== "0") {
     const p = sh("git", ["push"], { quiet: true });
     if (p.code !== 0) fail("push failed:\n        " + p.out);
   }
