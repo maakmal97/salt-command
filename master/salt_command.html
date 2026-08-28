@@ -5493,7 +5493,10 @@ const tierPill=id=>{
   const cls=t.code==='T1'?'t1':t.code==='T2'?'t2':'t3';
   return `<span class="tierpill ${cls}" title="${esc(t.name)} &mdash; ${esc(t.why||'')}"><span class="pd"></span>${esc(t.name)}</span>`;
 };
-const custBadgeHtml=(bm,id)=>{let h=tierPill(id);const b=bm&&bm[id];if(!b)return h;if(b.tier)h+=` <span class="sbadge ${b.tier.c}">${b.tier.l}</span>`;if(b.hi)h+=' <span class="sbadge bhi" title="top quarter by cumulative margin">High-margin</span>';return h;};
+/* noHi drops the High-margin badge. The database row prints cumulative margin in its own
+   column and sorts on it, so the badge there restates the neighbouring cell and costs 18px
+   of row height on a phone. The approach board has no margin column and keeps it. */
+const custBadgeHtml=(bm,id,noHi)=>{let h=tierPill(id);const b=bm&&bm[id];if(!b)return h;if(b.tier)h+=` <span class="sbadge ${b.tier.c}">${b.tier.l}</span>`;if(b.hi&&!noHi)h+=' <span class="sbadge bhi" title="top quarter by cumulative margin">High-margin</span>';return h;};
 const DIAMOND=['CJ4-OKR'];/* manually-awarded Diamond rank: top associate, special basis only */
 const R0_NETWORK={reseller:'CJ4-OKR',referral:{cust:'CG5-SB',kg:4},network:['CC5-OKR','CJ4-BJ','CE4-CHE','CS6-PER']};/* Reseller 0 referral + network attribution */
 
@@ -6668,17 +6671,19 @@ function tabMap(){
        have. The suffix is already inside every code and discloses nothing further. -->
   ${(far.length+miss.length)?(()=>{const byRule=miss.filter(m=>NON_PLACE[m.id.split('-').pop()]),unknown=miss.filter(m=>!NON_PLACE[m.id.split('-').pop()]);
   const bits=[far.length?`${far.length} off the frame`:'',unknown.length?`${unknown.length} unknown`:'',byRule.length?`${byRule.length} excluded by rule`:''].filter(Boolean);
-  return `<h2 style="margin-top:18px">Not drawn <span class="sub" style="font-weight:400">${bits.join(', ')}</span> <span class="rule"></span></h2>
+  /* Both tables here are lookups: read when a party is missing from the map, not on every
+     open. The heading already carried the count, so it reads as a fold summary unchanged. */
+  return `<details class="obsec"><summary>Not drawn <span class="q">${bits.join(', ')}</span></summary>
   <div class="card"><table><thead><tr><th class="l">Party</th><th class="l">Suffix to site</th><th>Worth</th><th class="l">Why it is not drawn</th></tr></thead><tbody>
     ${far.map(f=>`<tr><td class="l mono">${esc(codeOf(f.id))}</td><td style="color:var(--dim)">&mdash;</td><td>${fmt0(f.value)}</td><td class="l" style="color:var(--mut)">sited, but outside ${esc(METRO.name)}</td></tr>`).join('')}
     ${miss.map(m=>`<tr><td class="l mono">${esc(codeOf(m.id))}</td><td class="l mono" style="color:var(--dim)">${m.t?esc(m.t):'&mdash;'}</td><td style="color:var(--dim)">&mdash;</td><td class="l" style="color:var(--mut)">${esc(m.why)}</td></tr>`).join('')}
-  </tbody></table></div>`;})():''}
-  <h2 style="margin-top:18px">The gazetteer <span class="rule"></span></h2>
+  </tbody></table></div></details>`;})():''}
+  <details class="obsec"><summary>The gazetteer <span class="q">${Object.keys(PLACES).length} suffixes, ${heat.length} carrying trade</span></summary>
   <!-- v385: the 619-character footnote went with the rest of the deleted prose. Why the
        gazetteer carries a suffix and not a name is the lead's own sentence now, which is
        the one line of this part that actually renders; the rounding it also claimed is on
        the Places known tile, where a reader looking at the figure will see it. -->
-  <div class="card"><table><thead><tr><th class="l">Suffix</th><th>Parties</th><th class="l">Worth</th><th>Heat</th></tr></thead><tbody>${placedRows}</tbody></table></div>`;
+  <div class="card"><table><thead><tr><th class="l">Suffix</th><th>Parties</th><th class="l">Worth</th><th>Heat</th></tr></thead><tbody>${placedRows}</tbody></table></div></details>`;
 }
 
 /* v385: LOANS ARE PER PRODUCT AND loanDrawKg IS NOT. recompute() already guards it with
@@ -11396,6 +11401,9 @@ function networkStats(){
 function custBadges(){const m={};pricedSales.filter(s=>isPerson(s.customer)).forEach(s=>{if(!m[s.customer])m[s.customer]={id:s.customer,n:0,margin:0,last:s.date};const o=m[s.customer];o.n++;o.margin+=s.total-s.qty*costOf(s);if(s.date>o.last)o.last=s.date;});const arr=Object.values(m);const mg=arr.map(c=>c.margin).filter(x=>x>0).sort((a,b)=>b-a);const q=mg.length?mg[Math.max(0,Math.ceil(mg.length/4)-1)]:Infinity;const out={};arr.forEach(c=>{const rec=dbet(c.last);let tier=null;if(rec>30)tier={l:'Dormant',c:'bdorm'};else if(c.n>=3&&rec<=14)tier={l:'Loyal',c:'bloyal'};else if(c.n>=2&&rec<=21)tier={l:'Regular',c:'breg'};else if(c.n===1&&rec<=14)tier={l:'New',c:'bnew'};out[c.id]={tier,hi:c.margin>0&&c.margin>=q};});return out;}
 function concentration(){const bc=byCustomer(),tot=bc.reduce((a,c)=>a+c.rev,0)||1;const top=bc[0]?bc[0].rev/tot*100:0;const top3=bc.slice(0,3).reduce((a,c)=>a+c.rev,0)/tot*100;const hhi=bc.reduce((a,c)=>a+Math.pow(c.rev/tot*100,2),0);return{bc,tot,top,top3,hhi,n:bc.length};}
 let concSort={key:'rev',dir:-1};
+let concTail=false;/* the database shows its first eight and folds the rest; the control
+   that folds them carries their revenue and share, so the shut state still answers. */
+function concMore(){concTail=!concTail;render();}
 function sortConc(k){if(concSort.key===k)concSort.dir*=-1;else{concSort.key=k;concSort.dir=(k==='id')?1:-1;}render();}
 /* ============ THE APPROACH CALENDAR (v208) ============
    WHY THIS REPLACED A TABLE. "Who to approach next" was ten columns wide and sorted by
@@ -11600,7 +11608,18 @@ function tabConcentration(){
   const ldKg=+ld.reduce((a,r)=>a+r.kg,0).toFixed(2), ldRM=+ld.reduce((a,r)=>a+(r.rm||0),0).toFixed(2);
   const ldStock=+ld.filter(r=>r.why==='nostock').reduce((a,r)=>a+r.kg,0).toFixed(2);
   const sv=x=>concSort.key==='id'?x.id:concSort.key==='marginpct'?(x.rev?x.margin/x.rev:0):concSort.key==='share'?x.rev:(x[concSort.key]||0);
-  const rows=c.bc.slice().sort((a,b)=>{const av=sv(a),bv=sv(b);return typeof av==='string'?concSort.dir*(av<bv?-1:av>bv?1:0):concSort.dir*(av-bv);}).map(x=>{const mp=x.rev>0?x.margin/x.rev*100:0,thin=mp<20;return `<tr><td class="l mono">${ID(x.id)}${custBadgeHtml(bm,x.id)}</td><td>${fmt0(x.rev)}</td><td>${(x.rev/c.tot*100).toFixed(0)}%</td><td>${kg(x.kg)}</td><td>${fmt0(x.margin)}</td><td style="color:${thin?'var(--crim)':'var(--ink)'}">${mp.toFixed(0)}%${thin?' <span class="sbadge bthin">thin</span>':''}</td></tr>`;}).join('');
+  const CONC_HEAD=8;
+  const sortedBc=c.bc.slice().sort((a,b)=>{const av=sv(a),bv=sv(b);return typeof av==='string'?concSort.dir*(av<bv?-1:av>bv?1:0):concSort.dir*(av-bv);});
+  const concRow=x=>{const mp=x.rev>0?x.margin/x.rev*100:0,thin=mp<20;return `<tr><td class="l mono">${ID(x.id)}${custBadgeHtml(bm,x.id,true)}</td><td>${fmt0(x.rev)}</td><td>${(x.rev/c.tot*100).toFixed(0)}%</td><td>${kg(x.kg)}</td><td>${fmt0(x.margin)}</td><td style="color:${thin?'var(--crim)':'var(--ink)'}">${mp.toFixed(0)}%${thin?' <span class="sbadge bthin">thin</span>':''}</td></tr>`;};
+  /* The fold follows the active sort, so it is "the first eight" and never "the top eight":
+     sort on margin % ascending and the first eight are the worst. The figures beside the
+     label are the tail under that same sort, which is what the reader is choosing to open. */
+  const tailBc=sortedBc.slice(CONC_HEAD),tailRev=tailBc.reduce((a,x)=>a+x.rev,0);
+  const rows=(concTail?sortedBc:sortedBc.slice(0,CONC_HEAD)).map(concRow).join('');
+  /* The control sits BELOW the card, not in a row of the table: wrapTables puts every table
+     in a .tscroll, so a full-width button inside one is as wide as the table and its right
+     hand end is off a 375px screen, taking the figures with it. */
+  const tailBtn=tailBc.length?`<button onclick="concMore()" style="width:100%;min-height:var(--tap);margin-top:8px;border:1px solid var(--line);border-radius:8px;background:var(--card2);color:var(--ink);font-size:12px;font-weight:700;cursor:pointer">${concTail?`Show the first ${CONC_HEAD} only`:`Show the other ${tailBc.length} &middot; ${fmt0(tailRev)}, ${(tailRev/c.tot*100).toFixed(0)}% of revenue`}</button>`:'';
   /* v401: THE SIX STATIC BARS WENT. Revenue by customer was on this part three times over:
      the pareto, these bars and the Revenue and Share columns of the database at the foot.
      The bars were the Chart.js-free copy, and the table is the better one of the two, since
@@ -11617,6 +11636,9 @@ function tabConcentration(){
     .sort((a,b)=>{const ao=a.due==null?-1e9:a.due,bo=b.due==null?-1e9:b.due;
       return (bo-ao)||(b.profit-a.profit);});
   const owedBy={};arList.forEach(s=>{owedBy[s.customer]=+((owedBy[s.customer]||0)+outstandingOf(s)).toFixed(2);});
+  /* Bounded at three codes plus a count, so a book with thirty debtors cannot push this
+     insight past the trim threshold and lose the sentence that names the action. */
+  const owes=Object.keys(owedBy);
   const thin=c.bc.filter(x=>x.rev>0&&x.margin/x.rev<0.20);
   const overdue=approach.filter(r=>r.due!=null&&r.due>0);
   const overdueRM=+overdue.reduce((a,r)=>a+r.profit,0).toFixed(2);
@@ -11692,7 +11714,7 @@ function tabConcentration(){
        whole. Two insights, one claim each, so neither can push the other off the page.
        Trimming applies per block and an insight is never removed, so this is safe. -->
   <div class="insight" style="margin-top:12px">${read}</div>
-  ${Object.keys(owedBy).length?`<div class="insight" style="margin-top:4px;color:var(--mut)">${Object.keys(owedBy).length} owe${Object.keys(owedBy).length===1?'s':''} money; a chase comes before an offer.</div>`:''}
+  ${owes.length?`<div class="insight" style="margin-top:4px;color:var(--mut)">${owes.slice(0,3).map(ID).join(', ')}${owes.length>3?` and ${owes.length-3} more`:''} owe${owes.length===1?'s':''} money; a chase comes before an offer.</div>`:''}
 
   <h2 style="margin-top:18px">Who to approach next <span class="rule"></span></h2>
   ${approach.filter(r=>r.cad&&r.cad.last).length?approachBoard(approach,owedBy,bm)
@@ -11715,10 +11737,10 @@ function tabConcentration(){
       +ld.map(r=>`<tr><td class="l">${r.date}</td><td class="l mono">${r.party?ID(r.party):'walk-up'}</td><td>${kg(r.kg)}</td><td>${fmt0(r.rm)}</td><td>${r.kg>0&&r.rm>0?fmt(r.rm/r.kg):'&mdash;'}</td><td class="l">${LOST_LABEL[r.why]||r.why}${r.note?' &middot; '+esc(r.note):''}</td></tr>`).join('')
       +`<tr class="tot"><td class="l" colspan="2">Total turned away</td><td>${kg(ldKg)}</td><td>${fmt0(ldRM)}</td><td></td><td class="l">${ldStock>0.009?`${kg(ldStock)} of it for want of stock`:'none for want of stock'}</td></tr>`
       +`<tr><td class="l" colspan="6" style="color:var(--mut)">That is <b>${(ldRM/revTotal*100).toFixed(1)}%</b> of ${fmt0(revTotal)} of recorded revenue, asked for and refused. None of it appears in any other figure on this desk.</td></tr></tbody>`
-    : `<tbody><tr><td class="l" style="color:var(--mut)"><b>Nothing recorded, and this is the only loss the desk is structurally blind to.</b> An order you could not fill leaves no trace anywhere, so a fortnight of empty shelves reads exactly like a fortnight of no demand. With free to sell at <b>${kg(Math.max(0,currentStock-defKg))}</b> against recent trade, that is not a hypothetical gap. Log one under <b>Enter &rarr; Transaction &rarr; Turned away</b>: nothing there touches revenue, stock or margin.</td></tr></tbody>`}</table></div>
+    : `<tbody><tr><td class="l" style="color:var(--mut)"><b>Nothing recorded</b>, and an unfilled order leaves no trace, so empty shelves read as no demand. Free to sell <b>${kg(Math.max(0,currentStock-defKg))}</b>. Log one under <b>Enter &rarr; Transaction &rarr; Turned away</b>.</td></tr></tbody>`}</table></div>
 
   <h2 style="margin-top:22px">The database <span class="sub" style="font-weight:400">every customer, sortable on any column</span> <span class="rule"></span></h2>
-  <div class="card"><table class="sortt"><thead><tr><th class="l" onclick="sortConc('id')">Customer${ind('id')}</th><th onclick="sortConc('rev')">Revenue${ind('rev')}</th><th onclick="sortConc('share')">Share${ind('share')}</th><th onclick="sortConc('kg')">Volume${ind('kg')}</th><th onclick="sortConc('margin')">Margin${ind('margin')}</th><th onclick="sortConc('marginpct')">Margin %${ind('marginpct')}</th></tr></thead><tbody>${rows}<tr class="tot"><td class="l">All</td><td>${fmt0(c.tot)}</td><td>100%</td><td>${kg(c.bc.reduce((a,x)=>a+x.kg,0))}</td><td>${fmt0(c.bc.reduce((a,x)=>a+x.margin,0))}</td><td>${(c.tot>0?c.bc.reduce((a,x)=>a+x.margin,0)/c.tot*100:0).toFixed(0)}%</td></tr></tbody></table></div>`;
+  <div class="card"><table class="sortt"><thead><tr><th class="l" onclick="sortConc('id')">Customer${ind('id')}</th><th onclick="sortConc('rev')">Revenue${ind('rev')}</th><th onclick="sortConc('share')">Share${ind('share')}</th><th onclick="sortConc('kg')">Volume${ind('kg')}</th><th onclick="sortConc('margin')">Margin${ind('margin')}</th><th onclick="sortConc('marginpct')">Margin %${ind('marginpct')}</th></tr></thead><tbody>${rows}<tr class="tot"><td class="l">All</td><td>${fmt0(c.tot)}</td><td>100%</td><td>${kg(c.bc.reduce((a,x)=>a+x.kg,0))}</td><td>${fmt0(c.bc.reduce((a,x)=>a+x.margin,0))}</td><td>${(c.tot>0?c.bc.reduce((a,x)=>a+x.margin,0)/c.tot*100:0).toFixed(0)}%</td></tr></tbody></table></div>${tailBtn}`;
 }
 /* ---- the three Customers charts (v165) -------------------------------------
    All three read the same numbers the tables do; none of them models anything. Pareto
