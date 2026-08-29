@@ -3960,9 +3960,10 @@ const provOf=t=>t._prov||(t._buy&&t._buy._prov)||null;
    One retail cap of 1 unit was read across both books, so an oil buyer holding 5 of a
    product that sells in 10s stood in breach of a salt-sized rule. His correction: salt
    keeps 1 retail / 2 associate; oil's retail cap is 10 units (one minimum lot). He gave no
-   oil associate cap, so 20 is PROPOSED at twice retail, mirroring salt's ratio, and it is
-   his to restate. The reorder trigger goes per book the same way: salt keeps 15; oil's 10
-   (one minimum lot) is PROPOSED with the deltas reported. creditDays and fullProvDays stay
+   oil associate cap at first, so 20 was proposed at twice retail, mirroring salt's ratio,
+   and his answer later the same day confirmed it. The reorder trigger goes per book the
+   same way: salt keeps 15; oil's was proposed at 10 (one minimum lot) and his answer set
+   20, his figure over the proposal. creditDays and fullProvDays stay
    whole-book: time hurts the same whatever the unit. A product with no entry reads the
    default book's, the sizesBy fallback exactly. */
 const RULES={
@@ -12642,7 +12643,7 @@ function tabWorkbench(){
              either one. Swapped, so column one is the UNIT column, ordered then moved, and
              column two is the MONEY column, agreed then paid. Nothing but the order changed:
              wbRecord and wbPreview read these by id. -->
-        <div class="qfield qunits"><label>Salt delivered now (unit)</label><input id="wbUnits" type="number" step="0.5" min="0" value="0" inputmode="decimal">
+        <div class="qfield qunits"><label>Delivered now (unit)</label><input id="wbUnits" type="number" step="0.5" min="0" value="0" inputmode="decimal">
           <span class="viewsw mini" id="wbUnitsQ" style="margin-top:6px"><button type="button" tabindex="-1" data-k="none">None</button><button type="button" tabindex="-1" data-k="all">All</button></span></div>
         <div class="qfield qunits"><label>Cash received now (RM)</label><input id="wbCash" type="number" step="1" min="0" value="0" inputmode="decimal">
           <span class="viewsw mini" id="wbCashQ" style="margin-top:6px"><button type="button" tabindex="-1" data-c="none">None</button><button type="button" tabindex="-1" data-c="half">Half</button><button type="button" tabindex="-1" data-c="full">Full</button></span></div>
@@ -12678,7 +12679,7 @@ function tabWorkbench(){
       <div class="qrow" style="margin-bottom:10px">
         <!-- v387: unit column then money column, the same way round as the new order pane
              above, so a person who has learnt where to look on one does not relearn it here. -->
-        <div class="qfield qunits"><label id="wbAUnitsLbl">Salt moved (unit)</label><input id="wbAUnits" type="number" step="0.5" min="0" value="0" inputmode="decimal"></div>
+        <div class="qfield qunits"><label id="wbAUnitsLbl">Units moved (unit)</label><input id="wbAUnits" type="number" step="0.5" min="0" value="0" inputmode="decimal"></div>
         <div class="qfield qunits"><label id="wbACashLbl">Cash moved (RM)</label><input id="wbACash" type="number" step="1" min="0" value="0" inputmode="decimal"></div>
         <div class="qfield"><label>Date</label><input id="wbADate" type="date"></div>
       </div>
@@ -13879,7 +13880,7 @@ function wbPreview(){
       if(!isMod&&!isCancel){
         const outRM=+(t.total-sf.cash).toFixed(2),outUnits=+(t.qty-sf.kg).toFixed(2);
         if(ac>outRM+0.009)warns.push(`Cash moved exceeds the ${fmt0(outRM)} outstanding on ${o.code}.`);
-        if(ak>outUnits+0.009)warns.push(`Salt moved exceeds the ${units(outUnits)} outstanding on ${o.code}.`);
+        if(ak>outUnits+0.009)warns.push(`Units moved exceed the ${units(outUnits)} outstanding on ${o.code}.`);
         if(ac<=0.009&&ak<=0.009&&kind==='Fulfilment')warns.push('Nothing moves on this step.');
         /* the same boundaries the register holds, checked before the entry is made */
         const pr=txPrice(t);
@@ -14167,10 +14168,10 @@ function wbFillOrders(){
 function wbAmendLabels(){
   const cl=wbEl('wbACashLbl'),kl=wbEl('wbAUnitsLbl'),k=wbVal('wbKind');
   if(!cl||!kl)return;
-  if(wbASide==='BUY'){cl.textContent='Cash paid (RM)';kl.textContent='Salt received (unit)';return;}
+  if(wbASide==='BUY'){cl.textContent='Cash paid (RM)';kl.textContent='Received (unit)';return;}
   if(k==='Modification'){cl.textContent='NEW total (RM)';kl.textContent='NEW quantity (unit)';return;}
-  if(k==='Cancellation'){cl.textContent='Cash returned (RM)';kl.textContent='Salt returned (unit)';return;}
-  cl.textContent='Cash moved (RM)';kl.textContent='Salt moved (unit)';
+  if(k==='Cancellation'){cl.textContent='Cash returned (RM)';kl.textContent='Returned (unit)';return;}
+  cl.textContent='Cash moved (RM)';kl.textContent='Units moved (unit)';
 }
 function wbApply(){
   const ms=wbEl('wbModeSw');if(ms)[...ms.querySelectorAll('button')].forEach(b=>b.classList.toggle('on',b.dataset.m===wbMode));
