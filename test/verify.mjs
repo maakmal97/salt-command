@@ -282,7 +282,10 @@ section("The public desk carries no name and no place");
 {
   const BIO = `${DATA_DIR}/salt_bio.json`;
   if (!existsSync(BIO)) {
-    ok(true, "salt_bio.json is not on this machine, so the name scan is skipped");
+    /* a SKIP, not a pass: this line must not count as proof. The scan needs the plaintext
+       directory, which lives only on the laptop and may not be committed in any form, hashed
+       included (hard rule 3), so CI cannot carry it. It runs wherever the fold runs. */
+    console.log("  SKIP: salt_bio.json is not on this machine, so the public-desk name scan did not run here");
   } else {
     /* HARD RULE 3, ENFORCED RATHER THAN TRUSTED. public/desk.html is committed AND served
        publicly, so a customer's name or neighbourhood appearing anywhere in it, including
@@ -549,10 +552,25 @@ section("Build — patches, scripts, no externals");
     ok(html.includes("if(idle())location.reload(); else offer(j.v)"),
       "a reload only happens when the desk is idle, otherwise it offers");
 
-    /* the id must actually move when the master does, or the poll can never fire */
-    const bumped = html.replace("</body>", "<!-- x --></body>");
-    ok(createHash("sha256").update(bumped).digest("hex").slice(0, 16) !== rev.id,
-      "a changed build produces a different id");
+    /* the id must actually move when the master does, or the poll can never fire. Round six:
+       the old check hashed a mutated copy of the built desk alone and compared it to an id
+       computed over DIFFERENT inputs by a DIFFERENT recipe, so the two always differed and
+       the assertion could fail only on a hash collision; with the id pinned to a constant in
+       build.mjs, the poll, the deploy gate and CI's comparison all dead, the suite stayed
+       green. This recomputes the id by build.mjs's own recipe (the built source with the
+       placeholder restored, then sw.js and each sorted src/*.js, all NUL-separated exactly as
+       build.mjs concatenates them) and demands the recorded id reproduce exactly. */
+    const parts = html.split(rev.id);
+    ok(parts.length === 2, `the baked id appears exactly once in the built page (found ${parts.length - 1})`);
+    const fs2 = await import("node:fs");
+    let workerSrc = "";
+    for (const f of fs2.readdirSync(join(REPO, "src")).filter((n) => n.endsWith(".js")).sort())
+      workerSrc += f + " " + readFileSync(join(REPO, "src", f), "utf8") + " ";
+    const swSrc = readFileSync(join(REPO, "public", "sw.js"), "utf8");
+    const recomputed = createHash("sha256")
+      .update(parts.join("__SALT_BUILD_ID__")).update(" sw ").update(swSrc).update(" worker ").update(workerSrc)
+      .digest("hex").slice(0, 16);
+    ok(recomputed === rev.id, "rev.id reproduces from the build's own inputs by the build's own recipe");
   }
 }
 
@@ -2088,10 +2106,32 @@ section("Orders and money — every basis is named where the figure is stated (v
      failure notice sees nothing, because there was nothing to see. Both catches are gone
      rather than replaced, since every road out now has a reporter on it. */
   const src = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
-  for (const fn of ["drawRecvCharts", "drawFinCharts"]) {
-    const at = src.indexOf(`function ${fn}()`), end = src.indexOf("\nfunction ", at + 12);
-    const body = src.slice(at, end > at ? end : at + 3000);
-    ok(!/\}catch\(e\)\{\}/.test(body), `${fn} does not swallow a throw, so a broken chart says so`);
+  /* round six: the old scan banned the exact byte pattern }catch(e){} in two functions, so a
+     single added space defeated it and the other draw functions were never scanned. This one
+     covers every draw function and bans an empty catch whose TRY BODY spans a line or runs
+     long, which is the v384 class (a whole draw pass swallowed). A one-line guard like
+     try{obj.destroy()}catch(e){} or a per-point priceLadder probe is the designed null path
+     and stays legal. The existence check runs first so a renamed function fails loudly
+     instead of silently scanning nothing. */
+  const EMPTYCATCH = /catch\s*(\(\s*[A-Za-z_$][\w$]*\s*\))?\s*\{\s*\}/g;
+  for (const fn of ["trackCharts", "wirePricing", "drawPriceCharts", "drawEarnChart", "drawBoardCharts",
+                    "drawRecvCharts", "drawFinCharts", "drawSourcingCharts", "drawOutlookChart",
+                    "drawAnalysis", "drawTodayCharts", "drawFwdCharts"]) {
+    const at = src.indexOf(`function ${fn}(`);
+    ok(at >= 0, `${fn} exists for the empty-catch scan to cover`);
+    const end = src.indexOf("\nfunction ", at + 12);
+    const body = src.slice(at, end > at ? end : at + 4000);
+    const hazardous = [];
+    for (const m of body.matchAll(EMPTYCATCH)) {
+      const close = body.lastIndexOf("}", m.index);
+      if (close < 0 || /\S/.test(body.slice(close + 1, m.index))) continue;   /* not a try tail (a comment mentioning the pattern) */
+      let depth = 0, j = close;
+      for (; j >= 0; j--) { const ch = body[j]; if (ch === "}") depth++; else if (ch === "{") { depth--; if (!depth) break; } }
+      const tryBody = j >= 0 ? body.slice(j, close + 1) : "";
+      if (/\n/.test(tryBody) || tryBody.length > 80) hazardous.push(tryBody.replace(/\s+/g, " ").slice(0, 40));
+    }
+    ok(hazardous.length === 0, `${fn} has no empty catch over a multi-line body, so a broken chart says so`
+      + (hazardous.length ? " — " + hazardous.join(" | ") : ""));
   }
 
   /* THE FINDING IS ON THE PAGE, WHICH IT WAS NOT FROM v372 TO v385. stripMethod cuts every
@@ -2684,27 +2724,63 @@ section("Units — no new kg-named identifier, anywhere (round 5, his call 6)");
      "the formatter is units(), and the old kg() declaration is gone");
 }
 
-section("Every part renders on every book (round 5 fold)");
+section("Round 6 — book integrity");
+{
+  const book = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const allRows = [...(book.sales || []), ...(book.purchases || [])];
+  const rids = allRows.map((r) => r.rid).filter(Boolean);
+  const dup = rids.filter((v, i) => rids.indexOf(v) !== i);
+  ok(dup.length === 0, "every rid on the book is unique" + (dup.length ? " — duplicated: " + [...new Set(dup)].join(", ") : ""));
+  const pair = (book.sales || []).filter((r) => r.cancelled && +(r.deliveredQty || 0) > 0.009);
+  ok(pair.length === 0, "no cancelled row carries a delivered quantity" + (pair.length ? " — " + pair.map((r) => r.rid).join(", ") : ""));
+  const reg = book.PRODUCTS || {};
+  const orphan = allRows.filter((r) => r.product && !reg[r.product]);
+  ok(orphan.length === 0, "every row's product is registered in PRODUCTS" + (orphan.length ? " — " + orphan.map((r) => r.rid || r.date).join(", ") : ""));
+}
+
+section("Every part renders on every book (round 5 fold; content and census, round 6)");
 {
   /* Twice now a scope fault has blanked a whole part while the full suite passed: liveQ at
      v403 and LD at round five's own first commit, both on Price, both invisible here because
-     nothing rendered the part. So the suite now renders every registered part on every book
-     and a throw anywhere is a red line naming the part. Slow-ish (~2s), worth every one. */
+     nothing rendered the part. So the suite renders every registered part on every book
+     and a throw anywhere is a red line naming the part. Slow-ish (~2s), worth every one.
+     ROUND 6 ADDED THE TWO CLASSES A THROW CHECK CANNOT SEE: a part that renders EMPTY
+     without throwing (the whole Price builder returning '' rode this gate green), and the
+     v402 structural detach (a stray closing tag ends the .prodblock early, every canvas
+     after it parses as a sibling, and each draw returns at its first line with nothing
+     thrown). The content floor is 150 characters against a measured pristine minimum of 197
+     (Approve, both books); the census demands ZERO canvases and details outside a .prodblock
+     on the six per-product parts, the measured pristine count on both books. */
   const { openMaster } = await import("../tools/payload.mjs");
   const { w } = await openMaster();
   const tabs = JSON.parse(w.eval("JSON.stringify(Object.keys(TAB_LABEL))"));
   ok(tabs.length >= 16, `the tab registry lists ${tabs.length} parts (16 at v405; fewer means a part fell out)`);
-  const threw = [];
+  const PERPRODUCT = new Set(["sourcing", "analysis", "inventory", "financials", "receivables", "pricing"]);
+  const threw = [], thin = [], detached = [];
   for (const p of JSON.parse(w.eval("JSON.stringify(PROD_IDS)"))) {
     w.eval("setProd(" + JSON.stringify(p) + ")");
     for (const t of tabs) {
-      try { w.eval("switchTab(" + JSON.stringify(t) + ")"); }
-      catch (e) { threw.push(p + ":" + t + " -> " + ((e && e.message) || e)); }
+      try {
+        w.eval("switchTab(" + JSON.stringify(t) + ")");
+        const info = JSON.parse(w.eval("(function(){const el=document.querySelector('.sec.on');" +
+          "const tx=(el&&el.textContent||'').replace(/\\s+/g,' ').trim();" +
+          "const cv=el?[...el.querySelectorAll('canvas')]:[];const dt=el?[...el.querySelectorAll('details')]:[];" +
+          "return JSON.stringify({len:tx.length," +
+          "oc:cv.filter(x=>!x.closest('.prodblock')).length,od:dt.filter(x=>!x.closest('.prodblock')).length})})()"));
+        if (info.len < 150) thin.push(p + ":" + t + " (" + info.len + " chars)");
+        if (PERPRODUCT.has(t) && (info.oc || info.od)) detached.push(p + ":" + t + " (" + info.oc + " canvases, " + info.od + " details outside any .prodblock)");
+      } catch (e) { threw.push(p + ":" + t + " -> " + ((e && e.message) || e)); }
     }
   }
   ok(threw.length === 0, threw.length
     ? "parts threw on render: " + threw.join("; ")
     : "all " + tabs.length * 2 + " part renders complete without a throw");
+  ok(thin.length === 0, thin.length
+    ? "parts rendered near-empty (a builder returned nothing): " + thin.join("; ")
+    : "every part carries at least 150 characters of content on both books");
+  ok(detached.length === 0, detached.length
+    ? "structural detach — content outside its .prodblock: " + detached.join("; ")
+    : "zero canvases or details sit outside a .prodblock on the six per-product parts");
   ok(w.eval("units(-0)") === "0 unit" && w.eval("fmt0(-0.4)") === "RM 0" && w.eval("fmt(-0.001)") === "RM 0.00",
     "a figure that displays as zero never carries a minus (units, fmt0, fmt)");
 }

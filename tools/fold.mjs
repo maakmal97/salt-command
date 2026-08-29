@@ -99,6 +99,14 @@ export function plan(book, staged, notes) {
   for (const it of rows) {
     const entry = { id: it.id, what: describe(it), does: [] };
     const r = it.row || {};
+    /* round six: the fold took row.product verbatim, so a row folded under an unregistered
+       product shipped to the phone as a ledger line while every total excluded it. This is
+       the third-product bootstrap path (the drafter refuses the first lot, so it is
+       hand-folded, and hand-folding is where registration gets forgotten). */
+    if (!it.amends && ["sales", "purchases", "count", "loss", "lostDemand", "priceset"].includes(it.collection)) {
+      const pr = prodOf(r);
+      if (!((book.PRODUCTS || {})[pr])) { out.refused.push({ id: it.id, why: `${pr} is not a product on this book: register it in PRODUCTS and PROD_ORDER (and give it a quote) before its rows fold` }); continue; }
+    }
     if (it.amends) {
       if (it.amendKind !== "Fulfilment" && it.amendKind !== "Cancellation" && it.amendKind !== "Modification" && it.amendKind !== "Correction") { out.refused.push({ id: it.id, why: `${it.amendKind || "nameless"} amendment: what changed is a judgement, left for a person` }); continue; }
       const dir = (it.entry && it.entry.payload && it.entry.payload.direction) || "SELL";
@@ -139,6 +147,14 @@ export function plan(book, staged, notes) {
            refusal, and it is the one thing a ledger must never do. */
         const unknown = Object.keys(fields).filter((k) => !E.CORRECTABLE.includes(k));
         if (unknown.length) { out.refused.push({ id: it.id, why: `the correction on ${it.amends} names ${unknown.join(", ")}, which ${unknown.length > 1 ? "are not correctable fields" : "is not a correctable field"} (the party of a row is \`party\`, not \`customer\`)` }); continue; }
+        /* round six: the cancelled/delivered PAIR is a contradiction the desk then chases as
+           money owed. Both fields are individually correctable, so the pair is checked here
+           on the state the correction would leave. The drafter refuses it too; this gate is
+           for a correction that reaches the fold another way. */
+        if (fields.cancelled === true) {
+          const dq = fields.deliveredQty !== undefined ? +fields.deliveredQty : (+hits[0].deliveredQty || 0);
+          if (dq > 0.009) { out.refused.push({ id: it.id, why: `the correction on ${it.amends} would leave a cancelled row still carrying ${dq} unit delivered, which contradicts itself: restate qty by Modification, then cancel the remainder` }); continue; }
+        }
         entry.pay = { date: pay.date || null, kind: "Correction", cash: 0, kg: 0, fields };
         const words = Object.keys(fields).map((k) => `${k} to ${fields[k] === null ? "(cleared)" : fields[k]}`);
         entry.does.push(`correct ${dir === "BUY" ? "lot" : "order"} ${it.amends}: ${words.join(", ")}`);

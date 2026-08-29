@@ -1770,6 +1770,10 @@ function walk(I){
   W.stockCounted=_cnt!=null;
   W.currentStock=+((_cnt!=null?_cnt:W.ledgerStock)).toFixed(2);
   W.selfUse=W.stockCounted?Math.max(0,+(_op.qty+W.buyUnits-drawnUnits-W.currentStock).toFixed(2)):0;
+  /* the same difference the other way: a count ABOVE the ledger is a surplus, not shrinkage,
+     and flooring selfUse to zero hid it entirely (round six). The reconciliation prints it;
+     nothing else reads it, so pricing and the P&L are untouched. */
+  W.surplus=W.stockCounted?Math.max(0,+(W.currentStock-(_op.qty+W.buyUnits-drawnUnits)).toFixed(2)):0;
   W.revTotal=W.pricedSales.reduce((a,s)=>a+(s.total||0)-txPendRM(s),0);   // net of any pending tail on a part-moved order
   W.revCollected=_S.reduce((a,s)=>a+(s.cash||0),0);
   /* AR = advance only: pending unpaid-and-undelivered is not a receivable */
@@ -3548,6 +3552,10 @@ const LEDGER_CREDIT_DAYS=2;
 function ledFact(t,am){
   if(t.type!=='SELL'||!am.length)return '';
   const settle=Math.round((new Date(am[am.length-1].date)-new Date(t.date))/86400000);
+  /* round six: a settle dated before its own row is impossible data, and computing "N sooner
+     than his usual" from it compounds a typo into a confident falsehood. Say what the trail
+     says and stop. */
+  if(settle<0)return `settled ${-settle} day${-settle===1?'':'s'} before its own order date; check the amendment trail`;
   const peers=sales.filter(o=>o.customer===t.customer&&!o.cancelled&&o.amend&&o.amend.length&&ovKey(o)!==ovKey(t))
     .map(o=>{const a=o.amend.slice().sort((x,y)=>new Date(x.date)-new Date(y.date));
       return Math.round((new Date(a[a.length-1].date)-new Date(o.date))/86400000);})
@@ -3645,7 +3653,7 @@ const LAST_UPDATED='29 Aug 2026, 21:05 KL';
    above the old mark and the only one folded here. */
 /* QUEUE_COMMITTED: declared in the BOOK block near the top of this script, generated from ledger/book.json (v339). */
 
-var goodwillRM,receivedPO,defaultPO,pricedSales,buyUnits,buyRM,wavgBuy,soldUnits,ledgerStock,currentStock,selfUse,revTotal,outstandingOf,revCollected,arList,ar,arGross,cogs,grossMargin,marginPct,advTotal,defUnits,supRecovNet,supRecovGross;
+var goodwillRM,receivedPO,defaultPO,pricedSales,buyUnits,buyRM,wavgBuy,soldUnits,ledgerStock,currentStock,selfUse,surplus,revTotal,outstandingOf,revCollected,arList,ar,arGross,cogs,grossMargin,marginPct,advTotal,defUnits,supRecovNet,supRecovGross;
 /* ---- three-axis status engine (R1) ---- */
 function txPrice(s){return POSITION_ENGINE.txPrice(s);}
 function txPaid(s){return POSITION_ENGINE.txPaid(s);}          // cash + non-cash settled
@@ -5519,7 +5527,7 @@ function recompute(){
   const W=POSITION_ENGINE.walk(posInputs());
   receivedPO=W.receivedPO;defaultPO=W.defaultPO;pricedSales=W.pricedSales;goodwillRM=W.goodwillRM;
   buyUnits=W.buyUnits;buyRM=W.buyRM;wavgBuy=W.wavgBuy;soldUnits=W.soldUnits;ledgerStock=W.ledgerStock;
-  stockCounted=W.stockCounted;currentStock=W.currentStock;selfUse=W.selfUse;
+  stockCounted=W.stockCounted;currentStock=W.currentStock;selfUse=W.selfUse;surplus=W.surplus;
   revTotal=W.revTotal;revCollected=W.revCollected;
   outstandingOf=txAdvance;                     // AR = advance only (pending unpaid+undelivered is not a receivable)
   arList=W.arList;arGross=W.arGross;ar=W.ar;advTotal=W.advTotal;defUnits=W.defUnits;
@@ -5712,7 +5720,7 @@ function tabOverview(){
   ${boundaryPanel()}
   ${defUnits>0.009?`<div class="pend"><h3>&#128230; Deferred deliveries <span class="cd" style="color:var(--amber);border-color:var(--amber)">${units(defUnits)} owed out</span></h3><div class="pchips">${defRows.map(s=>`<span class="pchip"><b>${ID(s.customer)}</b> ${units(txDeferUnits(s))}</span>`).join('')}${defUnits>currentStock?`<span class="pchip bad">exceeds ${units(currentStock)} on hand</span>`:''}</div></div>`:''}
   ${advTotal>0.5?`<div class="pend"><h3>&#128179; Advances out <span class="cd" style="color:var(--amber);border-color:var(--amber)">${fmt0(advTotal)} owed to you</span></h3><div class="pchips">${advBy.map(a=>`<span class="pchip${a.over?' bad':''}"><b>${ID(a.who)}</b> ${fmt0(a.rm)}${a.over?' &middot; over the '+units(capForParty(a.who))+' cap':''}</span>`).join('')}<span class="pchip warn">${fmt0(ar)} net of provisioning</span></div></div>`:''}
-  ${(PROD===DEFAULT_PROD&&supplierReceivable.status!=='closed')?`<div class="pend def"><h3>&#9888; Supplier default &mdash; ${ID(supplierReceivable.party)} <span class="cd crim">${supplierReceivable.status==='writtenOff'?fmt0(supRecovGross)+' written off':fmt0(supRecovNet)+' net'}</span></h3><div class="dsc">${supplierReceivable.status==='writtenOff'?`Paid 08 Jul, lot never arrived. The ${fmt0(supRecovGross)} provision stays charged, so any recovery is upside.`:`Paid 08 Jul, lot never arrived. Recoverable pending the settlement meeting; ${fmt0(supRecovNet)} net.`}</div><div class="pchips">${supplierReceivable.status==='writtenOff'?`<span class="pchip bad">written off ${supplierReceivable.writtenOffOn}</span><span class="pchip">${dbet(supplierReceivable.since)} days out</span><span class="pchip bad">${fmt0(supRecovGross)} charged to margin</span>`:`<span class="pchip">${dbet(supplierReceivable.since)} days out</span><span class="pchip warn">${(provRate(dbet(supplierReceivable.since))*100).toFixed(0)}% provisioned</span><span class="pchip">${fmt0(supRecovGross)} gross</span><span class="pchip warn">${fmt0(supRecovNet)} net</span>`}</div></div>`:''}
+  ${(PROD===DEFAULT_PROD&&typeof supplierReceivable!=='undefined'&&supplierReceivable&&supplierReceivable.status!=='closed')?`<div class="pend def"><h3>&#9888; Supplier default &mdash; ${ID(supplierReceivable.party)} <span class="cd crim">${supplierReceivable.status==='writtenOff'?fmt0(supRecovGross)+' written off':fmt0(supRecovNet)+' net'}</span></h3><div class="dsc">${supplierReceivable.status==='writtenOff'?`Paid 08 Jul, lot never arrived. The ${fmt0(supRecovGross)} provision stays charged, so any recovery is upside.`:`Paid 08 Jul, lot never arrived. Recoverable pending the settlement meeting; ${fmt0(supRecovNet)} net.`}</div><div class="pchips">${supplierReceivable.status==='writtenOff'?`<span class="pchip bad">written off ${supplierReceivable.writtenOffOn}</span><span class="pchip">${dbet(supplierReceivable.since)} days out</span><span class="pchip bad">${fmt0(supRecovGross)} charged to margin</span>`:`<span class="pchip">${dbet(supplierReceivable.since)} days out</span><span class="pchip warn">${(provRate(dbet(supplierReceivable.since))*100).toFixed(0)}% provisioned</span><span class="pchip">${fmt0(supRecovGross)} gross</span><span class="pchip warn">${fmt0(supRecovNet)} net</span>`}</div></div>`:''}
   <h2>Position at a glance <span class="rule"></span></h2>
   <div class="kpis k3">
     <div class="kpi"><div class="l">Stock on hand</div><div class="v">${units(currentStock)}</div><div class="n">${defUnits>0.009?`owe out ${units(defUnits)} (deferred)`:'nothing owed out'}</div></div>
@@ -5893,7 +5901,7 @@ function tabForward(){
   const sw=[14,30,60].map(n=>`<button data-n="${n}"${fwdDays===n?' class="on"':''} onclick="fwdSet(${n})">${n} days</button>`).join('');
   const evRows=[];
   f.lots.forEach(x=>evRows.push({day:x.day,what:`${units(x.kg)} arrives from ${ID(x.who)}`,kind:'stock in',rm:x.rm}));
-  f.cin.forEach(x=>evRows.push({day:x.day,what:`${ID(x.who)} ${x.label}, ${fmt0(x.gross)} gross${x.age!=null?`, ${x.age}d out`:''}${x.gross>x.rm+0.009?`, ${((1-x.rm/x.gross)*100).toFixed(0)}% provisioned`:''}`,kind:'cash in',rm:x.rm}));
+  f.cin.forEach(x=>evRows.push({day:x.day,what:`${ID(x.who)} ${x.label}, ${fmt0(x.gross)} gross${x.age!=null?`, ${Math.max(0,x.age)}d out`:''}${x.gross>x.rm+0.009?`, ${((1-x.rm/x.gross)*100).toFixed(0)}% provisioned`:''}`,kind:'cash in',rm:x.rm}));
   f.cout.forEach(x=>evRows.push({day:x.day,what:`${ID(x.who)} ${x.label}`,kind:'cash out',rm:-x.rm}));
   (f.planRows||[]).forEach(x=>{if(x._taken)evRows.push({day:x.day,what:esc(x.label),kind:'drawing',rm:-x._taken});});
   evRows.sort((a,b)=>a.day-b.day||Math.abs(b.rm)-Math.abs(a.rm));
@@ -6244,7 +6252,7 @@ function tabSourcing(){
 
   <h2 style="margin-top:18px">Who you buy from <span class="rule"></span></h2>
   <div class="card">${stkCols('sup')}<div class="stkwrap"><table><thead><tr><th class="l">Supplier</th><th class="stkx">Lots</th><th class="stkx">Unit</th><th>Share, ${ss.length?ss[0].recentDays:90}d</th><th class="stkx">Share, all</th><th>Weighted</th><th class="stkx">Best</th><th class="stkx">Last paid</th><th class="stkx">Received<div style="font-size:10px;color:var(--dim);font-weight:400">landed of bought</div></th><th class="l">Standing</th></tr></thead><tbody>
-    ${ss.map(s=>`<tr><td class="l mono">${ID(s.id)}<div style="font-size:10px;color:${s.quiet>30?'var(--crim)':'var(--dim)'}">bought ${s.quiet}d ago</div></td>
+    ${ss.map(s=>`<tr><td class="l mono">${ID(s.id)}<div style="font-size:10px;color:${s.quiet>30?'var(--crim)':'var(--dim)'}">bought ${Math.max(0,s.quiet)}d ago</div></td>
       <td class="stkx">${s.lots}${s.pending?` <span style="color:var(--gold)">+${s.pending} agreed</span>`:''}</td>
       <td class="stkx">${units(s.kg)}</td><td style="color:${s.recentShare>80?'var(--crim)':'var(--ink)'}"><b>${s.recentShare.toFixed(0)}%</b></td>
       <td class="stkx" style="color:var(--dim)">${s.share.toFixed(0)}%</td>
@@ -6478,7 +6486,7 @@ function tabAnalysis(){
   <h2 style="margin-top:20px">The shelf, reconstructed <span class="rule"></span></h2>
   <div class="dsc" style="margin-bottom:9px">Rebuilt daily against the ${units(reorderFor(PROD))} trigger, ending on the counted <b>${units(currentStock)}</b>. Shrinkage is undated and spread evenly, so the shape is right and a single day is not.</div>
   ${(()=>{const neg=sh.filter(r=>r.raw<-0.01);
-    const d=sales.map(txDates), ds={};d.forEach(x=>ds[x.dSrc]=(ds[x.dSrc]||0)+1);
+    const d=pSales(PROD).map(txDates), ds={};d.forEach(x=>ds[x.dSrc]=(ds[x.dSrc]||0)+1);   /* round six: bare `sales` put whole-book counts inside every product block */
     if(neg.length)return `<div class="pend def" style="margin-bottom:11px"><h3>The line goes below zero on ${neg.length} days, and that is a finding <span class="cd crim">low ${units(Math.min.apply(null,sh.map(r=>r.raw)))}</span></h3>
       <div class="insight">A dating artefact, not a stockout: add a <b>deliveredOn</b> to the orders that fall back to their order date.</div></div>`;
     /* THE CLEAN WALK IS PROVENANCE, SO IT FOLDS, and the summary still carries the answer.
@@ -6506,9 +6514,9 @@ function tabAnalysis(){
     <div style="padding-bottom:12px">
     <div class="dsc" style="margin-bottom:9px">Days after the order was agreed. A date the desk assumed rather than read is marked * and contributes a zero lag, so these are floors. Red marks payment after delivery.</div>
     <div class="kpis k4" style="margin-bottom:12px">
-      <div class="kpi"><div class="l">Order to delivery</div><div class="v">${avg(dl.map(r=>r.dl))}<span style="font-size:12px;color:var(--mut)">d</span></div><div class="n">across ${dl.length} delivered orders, longest ${Math.max.apply(null,dl.map(r=>r.dl))}d</div></div>
-      <div class="kpi gold"><div class="l">Order to payment</div><div class="v">${avg(pl.map(r=>r.pl))}<span style="font-size:12px;color:var(--mut)">d</span></div><div class="n">across ${pl.length} settled orders, longest ${Math.max.apply(null,pl.map(r=>r.pl))}d</div></div>
-      <div class="kpi ${rows.filter(r=>r.gap>0).length?'r':'g'}"><div class="l">Paid after delivery</div><div class="v">${rows.filter(r=>r.gap>0).length}</div><div class="n">orders where salt went first, ${fmt0(rows.filter(r=>r.gap>0).reduce((a,r)=>a+r.rm,0))} exposed</div></div>
+      <div class="kpi"><div class="l">Order to delivery</div><div class="v">${avg(dl.map(r=>r.dl))}<span style="font-size:12px;color:var(--mut)">d</span></div><div class="n">${dl.length?`across ${dl.length} delivered orders, longest ${Math.max.apply(null,dl.map(r=>r.dl))}d`:'no delivered orders yet'}</div></div>
+      <div class="kpi gold"><div class="l">Order to payment</div><div class="v">${avg(pl.map(r=>r.pl))}<span style="font-size:12px;color:var(--mut)">d</span></div><div class="n">${pl.length?`across ${pl.length} settled orders, longest ${Math.max.apply(null,pl.map(r=>r.pl))}d`:'no settled orders yet'}</div></div>
+      <div class="kpi ${rows.filter(r=>r.gap>0).length?'r':'g'}"><div class="l">Paid after delivery</div><div class="v">${rows.filter(r=>r.gap>0).length}</div><div class="n">orders where the ${PRODUCTS[PROD].name.toLowerCase()} went first, ${fmt0(rows.filter(r=>r.gap>0).reduce((a,r)=>a+r.rm,0))} exposed</div></div>
       <div class="kpi p"><div class="l">Same day</div><div class="v">${rows.filter(r=>r.dl===0&&r.pl===0).length}</div><div class="n">agreed, delivered and paid together</div></div>
     </div>
     ${slow.length?`<div class="card"><table><thead><tr><th class="l">Order</th><th class="l">Party</th><th>Value</th><th>Deliver</th><th>Paid</th></tr></thead><tbody>
@@ -6901,7 +6909,7 @@ function tabInventory(){
   const recon=[
     ['Opening (pre-record)','+'+units(op.qty),op.costPerKg?fmt(op.costPerKg)+'/unit':'<span class="tag unpaid">TBC</span>'],
     ...receivedPO.map(p=>['Received '+p.date,'+'+units(p.qty),fmt(p.total/p.qty)+'/unit']),
-    ['Sold and delivered','-'+units(+(soldUnits-loanUnits).toFixed(2)),'&mdash;'],   // soldUnits already carries the loan; the loan gets its own line below
+    ['Sold and delivered',(v=>v>0.001?'-'+units(v):units(0))(+(soldUnits-loanUnits).toFixed(2)),'&mdash;'],   // soldUnits already carries the loan; the loan gets its own line below. The text minus sits outside units(), so it is guarded here (round six: "-0 unit")
     loanUnits>0?['Loan out (settled)','-'+units(loanUnits),'&mdash;']:null,
     selfUse>0?['Self-use / shrinkage','-'+units(selfUse),'&asymp; '+fmt0(selfUse*wavgBuy)]:null,
   ].filter(Boolean);
@@ -6965,7 +6973,7 @@ function tabInventory(){
   <h2 style="margin-top:18px">Where the shrinkage went <span class="rule"></span></h2>
   <div class="card">${suRows.length
     ? stkCols('leak')+`<div class="stkwrap"><table><thead><tr><th class="l">Date</th><th class="l">Where</th><th>Unit</th><th>At cost</th><th class="l stkx">Note</th></tr></thead><tbody>`
-      +suRows.map(r=>`<tr><td class="l">${r.date}</td><td class="l">${LOSS_LABEL[r.why]||r.why}</td><td>${units(r.kg)}</td><td>${fmt0(r.kg*wavgBuy)}</td><td class="l stkx">${esc(lead1(plain(r.note)))}</td></tr>`).join('')
+      +suRows.map(r=>`<tr><td class="l">${r.date}</td><td class="l">${LOSS_LABEL[r.why]||esc(r.why)+' (unrecognised cause)'}</td><td>${units(r.kg)}</td><td>${fmt0(r.kg*wavgBuy)}</td><td class="l stkx">${esc(lead1(plain(r.note)))}</td></tr>`).join('')
       +`<tr class="tot"><td class="l" colspan="2">Attributed</td><td>${units(suUnits)}</td><td>${fmt0(suUnits*wavgBuy)}</td><td class="stkx"></td></tr>`
       +(resid<-0.009
         ? `<tr class="tot"><td class="l" colspan="2">Over-attributed</td><td>${units(-resid)}</td><td>${fmt0(-resid*wavgBuy)}</td><td class="l stkx">the split was struck against a larger gap than the book now carries</td></tr>`
@@ -7000,11 +7008,11 @@ function tabInventory(){
       ? `<b>${(pxShrinkRate()*100).toFixed(1)}%</b> of the ${units(h)} handled is charged into the price, and each new lot lowers it, since the divisor is everything handled.`
       : `Nothing has been bought on this book, so there is no volume to measure the leak against.`;})()}</div>
   ${sec('Why each loss is booked where it is',suRows.length?`${units(suUnits)} attributed across ${suRows.length} entr${suRows.length===1?'y':'ies'}`:'nothing attributed yet',suRows.length,
-    suRows.map(r=>`<div class="dsc" style="margin-top:9px"><b>${r.date} &middot; ${LOSS_LABEL[r.why]||r.why} &middot; ${units(r.kg)}</b><br>${esc(plain(r.note))}</div>`).join(''))}
+    suRows.map(r=>`<div class="dsc" style="margin-top:9px"><b>${r.date} &middot; ${LOSS_LABEL[r.why]||esc(r.why)+' (unrecognised cause)'} &middot; ${units(r.kg)}</b><br>${esc(plain(r.note))}</div>`).join(''))}
 
   ${sec('Stock reconciliation',`opening to ${units(currentStock)} on hand, with ${units(selfUse)} booked to self-use and shrinkage`,recon.length,
     `<table><thead><tr><th class="l">Line</th><th>Qty</th><th>Cost</th></tr></thead><tbody>${recon.map(r=>`<tr><td class="l">${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join('')}<tr class="tot"><td class="l">On hand ${stockCounted?'(counted)':'(ledger, never counted)'}</td><td>${units(currentStock)}</td><td>${fmt(wavgBuy)}/unit avg</td></tr></tbody></table>
-    <div class="dsc" style="margin-top:9px">Ledger implies ${units(ledgerStock)}; the count is ${countedFor(PROD)!=null?units(countedFor(PROD)):'not taken on this book'}. The gap, <b>${units(selfUse)}</b>, is booked as self-use / shrinkage &mdash; the count always wins.${loanPre>0?` The ${units(loanPre)} lent on ${LN.filter(l=>l.preOpening)[0].date} does <b>not</b> appear as a deduction, because it went out before the ${units(op.qty)} opening was counted and is therefore already inside it. Subtracting it again would remove the same units twice and inflate shrinkage by exactly that much, which is what the desk did until 28 Jul.`:''}</div>`)}
+    <div class="dsc" style="margin-top:9px">Ledger implies ${units(ledgerStock)}; the count is ${countedFor(PROD)!=null?units(countedFor(PROD)):'not taken on this book'}. ${countedFor(PROD)==null?'With no count, the ledger figure stands and nothing is booked as shrinkage.':surplus>0.001?`The count stands <b>${units(surplus)}</b> above the ledger &mdash; a surplus, not shrinkage: goods are on the shelf that the book has not recorded, and an unfolded lot is the usual cause. The count still wins.`:`The gap, <b>${units(selfUse)}</b>, is booked as self-use / shrinkage &mdash; the count always wins.`}${loanPre>0?` The ${units(loanPre)} lent on ${LN.filter(l=>l.preOpening)[0].date} does <b>not</b> appear as a deduction, because it went out before the ${units(op.qty)} opening was counted and is therefore already inside it. Subtracting it again would remove the same units twice and inflate shrinkage by exactly that much, which is what the desk did until 28 Jul.`:''}</div>`)}
   ${sec('Lots and sourcing',`${fmt(wavgBuy)}/unit weighted over ${lotsIn.length} lot${lotsIn.length===1?'':'s'} in the basis`,lots.length,
     `<table><thead><tr><th class="l">Lot</th><th>Qty</th><th>Cost/unit</th><th>Basis</th></tr></thead><tbody>${lots.map(r=>`<tr><td class="l">${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td></tr>`).join('')}</tbody></table>
     <div class="dsc" style="margin-top:9px">Weighted-average cost <b>${fmt(wavgBuy)}/unit</b> over the received lots and opening. Defaulted and in-transit lots are excluded until (and unless) they arrive.</div>`)}
@@ -8301,7 +8309,9 @@ function tabFinancials(){
   /* v403: THREE COLUMNS, HIS CALL OF 29 AUG. A column per month overflowed the 375px scroll
      box by 91px and grew by one every month without bound. Last month, this month, FY to
      date; a month with no entry renders as dashes rather than as RM 0, and the FY column
-     still reduces over EVERY month, so nothing off screen leaves the year. */
+     reduces over every month OF THE CURRENT YEAR, so nothing off screen leaves the year and
+     nothing from another year enters it. Round six found it hardcoded to FY 2026 with no
+     year filter, which would have summed January 2027 into a column labelled 2026. */
   const thisMo=TODAY.toISOString().slice(0,7);
   const lastMo=new Date(TODAY.getTime()-TODAY.getUTCDate()*864e5).toISOString().slice(0,7);
   const rows=[lastMo,thisMo].map(mo=>{const e=all.find(x=>x[0]===mo);return [mo,e?e[1]:null];});
@@ -8312,7 +8322,9 @@ function tabFinancials(){
      printed RM NaN twelve times over. Reachable the day a product is declared before its
      first sale: the trading book beside it is unaffected, which is why it survived. The seed
      is finRows()'s own bump shape, so the two cannot drift apart without one being edited. */
-  const fy=all.reduce((a,[,v])=>{Object.keys(v).forEach(k=>a[k]=(a[k]||0)+v[k]);return a;},
+  const fyYear=TODAY.toISOString().slice(0,4);
+  const fyMonths=all.filter(([mo])=>mo.slice(0,4)===fyYear);
+  const fy=fyMonths.reduce((a,[,v])=>{Object.keys(v).forEach(k=>a[k]=(a[k]||0)+v[k]);return a;},
     {rev:0,cogs:0,cash:0,inkind:0,provAR:0,provSup:0,kg:0});
   const gm=v=>v.rev-v.cogs, gmp=v=>v.rev>0?gm(v)/v.rev*100:0, net=v=>gm(v)-v.provAR-v.provSup;
   const uncol=fy.rev-fy.cash-fy.inkind;
@@ -8326,7 +8338,7 @@ function tabFinancials(){
     return `<b>${fmt0(u)}</b>${u<-0.009?'<em class="finpct">held against goods</em>':''}`;};
   const col=(v,neg)=>`<td style="${neg&&v>0?'color:var(--crim)':''}">${v?fmt0(neg?-v:v):'&mdash;'}</td>`;
   const grp=lab=>`<tr class="grp"><td class="l" colspan="${rows.length+2}">${lab}</td></tr>`;
-  const pl=`<table class="fintab"><thead><tr><th class="l">Line</th>${rows.map(([mo])=>`<th>${mLab(mo).split(' ')[0]}</th>`).join('')}<th class="fy">FY 2026 to date</th></tr></thead><tbody>
+  const pl=`<table class="fintab"><thead><tr><th class="l">Line</th>${rows.map(([mo])=>`<th>${mLab(mo).split(' ')[0]}</th>`).join('')}<th class="fy">FY ${fyYear} to date</th></tr></thead><tbody>
     <tr><td class="l">Revenue</td>${mcell(v=>col(v.rev))}<td class="fy">${fmt0(fy.rev)}</td></tr>
     <tr><td class="l">Cost of goods</td>${mcell(v=>col(v.cogs,1))}<td class="fy" style="color:var(--crim)">${fmt0(-fy.cogs)}</td></tr>
     <tr class="tot"><td class="l">Gross margin</td>${mcell(v=>`<td><b>${fmt0(gm(v))}</b><em class="finpct">${gmp(v).toFixed(1)}%</em></td>`)}<td class="fy"><b>${fmt0(gm(fy))}</b><em class="finpct">${gmp(fy).toFixed(1)}%</em></td></tr>
@@ -8364,7 +8376,7 @@ function tabFinancials(){
      revenue KPI where the year is read, the middle two are on the P&L's own h2 sub where the
      basis belongs, and the fourth is the "Settled in kind" row the P&L gained this round. */
   return `<div class="kpis k3">
-    <div class="kpi gold"><div class="l">FY revenue</div><div class="v">${fmt0(fy.rev)}</div><div class="n">${units(fy.kg)} sold &middot; ${all.length} month${all.length===1?'':'s'} to 31 Dec 2026</div></div>
+    <div class="kpi gold"><div class="l">FY revenue</div><div class="v">${fmt0(fy.rev)}</div><div class="n">${units(fy.kg)} sold &middot; ${fyMonths.length} month${fyMonths.length===1?'':'s'} to 31 Dec ${fyYear}</div></div>
     <div class="kpi"><div class="l">FY gross margin</div><div class="v">${fmt0(gm(fy))}</div><div class="n">${gmp(fy).toFixed(1)}% of revenue, before freight in</div></div>
     <div class="kpi r"><div class="l">Provisions carried</div><div class="v">${fmt0(fy.provAR+fy.provSup)}</div><div class="n">debtors ${fmt0(fy.provAR)} &middot; supplier ${fmt0(fy.provSup)}</div></div>
   </div>
@@ -8833,9 +8845,12 @@ function tabReceivables(){
   const sSaltBody=sSalt.map(p=>`<tr><td class="l mono">${ID(p.id)}</td><td class="l">${p.date}</td><td>${units(p.k)}</td><td>${fmt0(p.rm)}</td></tr>`).join('');
   const sSaltUnits=+sSalt.reduce((a,p)=>a+p.k,0).toFixed(2);
   // Refunds suppliers owe you: the recoverable default, aged + provisioned.
-  const hasRef=supplierReceivable.status==='recoverable'&&supRecovGross>0;
-  const refDays=dbet(supplierReceivable.since),refRate=provRate(refDays);
-  const sRefBody=hasRef?`<tr><td class="l mono">${ID(supplierReceivable.party)}<div style="font-size:11px;font-weight:400;color:var(--mut)">${supplierReceivable.since}</div></td><td>${refDays}d</td><td>${fmt0(supRecovGross)}</td><td>${(refRate*100).toFixed(0)}%</td><td>${fmt0(supRecovNet)}</td></tr>`:'';
+  /* round six: a fresh book carries supplierReceivable as null, the shape the engine
+     documents, and an unguarded .status blanked this whole part. */
+  const SR=(typeof supplierReceivable!=='undefined'&&supplierReceivable)?supplierReceivable:null;
+  const hasRef=!!SR&&SR.status==='recoverable'&&supRecovGross>0;
+  const refDays=SR?dbet(SR.since):0,refRate=provRate(refDays);
+  const sRefBody=hasRef?`<tr><td class="l mono">${ID(SR.party)}<div style="font-size:11px;font-weight:400;color:var(--mut)">${SR.since}</div></td><td>${refDays}d</td><td>${fmt0(supRecovGross)}</td><td>${(refRate*100).toFixed(0)}%</td><td>${fmt0(supRecovNet)}</td></tr>`:'';
   // Pending supplier orders: agreed to buy, nothing paid or received. Counts nowhere else.
   /* v385: _B, not `purchases`. This was the one list on the part still reading the whole
      book while the comment at the head claimed all of them were scoped, so an agreed-but-unmoved
@@ -11162,7 +11177,7 @@ function actions(){
       +`${(supplierReceivable.amount/Math.max(1,grossMargin)*100).toFixed(0)}% of all margin ever earned.`,'receivables');}
   /* 4. money you owe back */
   customerRefunds.filter(r=>!r.paidOn).forEach(r=>add('soon','pay',`Refund ${ID(r.party)} ${fmt0(r.amount)}`,r.amount,
-    `Owed since ${r.since}, ${dbet(r.since)} days. ${esc(r.note||'')}`,'receivables'));
+    `Owed since ${r.since}, ${Math.max(0,dbet(r.since))} days. ${esc(r.note||'')}`,'receivables'));
   /* 5. rules already broken, grouped by person. Four separate rows about one man is a
      list you stop reading; one row naming all four rules is a decision about him. */
   const br={};boundaryScan().filter(x=>x.sev==='breach').forEach(x=>{(br[x.who]=br[x.who]||[]).push(x);});
@@ -11983,7 +11998,7 @@ function tabConcentration(){
     : `<tbody><tr><td class="l" style="color:var(--mut)"><b>Nothing recorded</b>, and an unfilled order leaves no trace, so empty shelves read as no demand. Free to sell <b>${units(Math.max(0,currentStock-defUnits))}</b>. Log one under <b>Enter &rarr; Transaction &rarr; Turned away</b>.</td></tr></tbody>`}</table></div>
 
   <h2 style="margin-top:22px">The database <span class="sub" style="font-weight:400">every customer, sortable on any column</span> <span class="rule"></span></h2>
-  <div class="card"><table class="sortt"><thead><tr><th class="l" onclick="sortConc('id')">Customer${ind('id')}</th><th onclick="sortConc('rev')">Revenue${ind('rev')}</th><th onclick="sortConc('share')">Share${ind('share')}</th><th onclick="sortConc('kg')">Volume${ind('kg')}</th><th onclick="sortConc('margin')">Margin${ind('margin')}</th><th onclick="sortConc('marginpct')">Margin %${ind('marginpct')}</th></tr></thead><tbody>${rows}<tr class="tot"><td class="l">All</td><td>${fmt0(c.tot)}</td><td>100%</td><td>${units(c.bc.reduce((a,x)=>a+x.kg,0))}</td><td>${fmt0(c.bc.reduce((a,x)=>a+x.margin,0))}</td><td>${(c.tot>0?c.bc.reduce((a,x)=>a+x.margin,0)/c.tot*100:0).toFixed(0)}%</td></tr></tbody></table></div>${tailBtn}`;
+  <div class="card"><table class="sortt"><thead><tr><th class="l" onclick="sortConc('id')">Customer${ind('id')}</th><th onclick="sortConc('rev')">Revenue${ind('rev')}</th><th onclick="sortConc('share')">Share${ind('share')}</th><th onclick="sortConc('kg')">Volume${ind('kg')}</th><th onclick="sortConc('margin')">Margin${ind('margin')}</th><th onclick="sortConc('marginpct')">Margin %${ind('marginpct')}</th></tr></thead><tbody>${rows}<tr class="tot"><td class="l">All</td><td>${fmt0(c.n?c.tot:0)}</td><td>100%</td><td>${units(c.bc.reduce((a,x)=>a+x.kg,0))}</td><td>${fmt0(c.bc.reduce((a,x)=>a+x.margin,0))}</td><td>${(c.tot>0?c.bc.reduce((a,x)=>a+x.margin,0)/c.tot*100:0).toFixed(0)}%</td></tr></tbody></table></div>${tailBtn}`;
 }
 /* ---- the three Customers charts (v165) -------------------------------------
    All three read the same numbers the tables do; none of them models anything. Pareto
@@ -12050,6 +12065,9 @@ function drawConcCharts(){
           return {x:+x.per.toFixed(2),y:+x.pct.toFixed(1),
             r:Math.max(4,Math.min(20,Math.sqrt(x.rev/Math.max(1,rMax))*20)),
             id:codeOf(x.id),kg:x.kg,rev:x.rev,n:x.n,q:q,band:band(q)};});
+        /* round six: with no priced order the axis bounds were Math.min/max over an empty
+           list, so the chart was built with x at plus and minus Infinity and nothing threw. */
+        if(!pts.length){chartEmpty(s,'No priced orders on this book yet.');return;}
         const xs=pts.map(z=>z.x), xlo=Math.min.apply(null,xs)*0.9, xhi=Math.max.apply(null,xs)*1.05;
         const ord=n=>n+((n%100>=11&&n%100<=13)?'th':({1:'st',2:'nd',3:'rd'})[n%10]||'th');
         ccScatterObj=new Chart(s,{data:{datasets:[
@@ -13153,7 +13171,7 @@ function tabPricing(){
            lot on the book the old chain took the LOT's rate; the quote was the no-lot fallback).
            RM 48.50 under a caption naming a RM 56 tier is the kind of line that teaches the
            reader to ignore captions. The row says what the figure is on each branch instead. -->
-      ${r('Replacement rate',c.lot,'inventory',pxOver.cost!=null?'your override':c.locked?`the locked lot, ${units(c.lotQty)} on ${c.lotDate}`:`trailing 30-day average of this book's lots; latest ${units(c.lotQty)} on ${c.lotDate}`)}
+      ${r('Replacement rate',c.lot,'inventory',pxOver.cost!=null?'your override':c.locked?`the locked lot, ${units(c.lotQty)} on ${c.lotDate}`:pxRecentBuyRate(30)==null?`no lot inside 30 days, so this is the latest lot's own rate: ${units(c.lotQty)} on ${c.lotDate}`:`trailing 30-day average of this book's lots; latest ${units(c.lotQty)} on ${c.lotDate}`)}
       ${r('Collection',c.freight,'inventory',(()=>{
         /* v382 moved the freight divisor from the LATEST lot to the AVERAGE lot received and this
            sentence was left behind, printing "over 25 unit" for salt when the answer is 23.66 and
@@ -13208,7 +13226,7 @@ function tabPricing(){
     return `<details class="obsec"><summary>How a price is built <span class="q">${units(q)}, line by line</span><span class="ct">${fmt0(R.price)}</span></summary>
     <div class="card"><table class="fintab istmt"><tbody>
       ${line('Cogs',LB.cogs,`${fmt(c.landed)} landed, over ${units(q)}`)}
-      ${line('Markup',LB.cogs*LB.markupX,`${LB.markupX.toFixed(3)}x at this size, tapered at ${(buyTaper().b!=null?buyTaper().b.toFixed(3):'0')} off ${esc((quoteFor(PROD)||{}).supplier||'the supplier')}&rsquo;s own ladder`)}
+      ${line('Markup',LB.cogs*LB.markupX,`${LB.markupX.toFixed(3)}x at this size, tapered at ${(buyTaper().b!=null?buyTaper().b.toFixed(3):'0')} off ${esc((quoteFor(PROD)||{}).supplier||'the supplier')}’s own ladder`)}
       <tr class="tot"><td class="l"><b>Ask</b><div class="iref">rounded up to the ${fmt0(LD.round.to)}, floor ${fmt0(R.floor)}</div></td><td class="mono"><b>${fmt0(R.price)}</b></td></tr>
     </tbody></table>
     <div class="dsc" style="margin-top:8px">That is the whole price and there is nothing else in it. What it has to PAY for is below, and the gap between the two is the margin.</div>
@@ -13298,7 +13316,7 @@ function tabPricing(){
 
     <div class="card" style="margin-top:12px"><div class="cardh">What the book has actually earned <span class="sub">every priced order, by band</span></div>
     <table><thead><tr><th class="l">Band</th><th>Orders</th><th>Unit</th><th>Realised</th><th>Profit/unit on lot cost</th><th>Profit/unit to replace</th><th>Profit to replace</th><th>Flag</th></tr></thead><tbody>${bandRows}</tbody></table>
-    <div class="dsc" style="margin-top:8px"><b>Two costs, two questions.</b> <b>Lot cost</b> is what that salt actually cost, and it judges a trade already done. <b>Replacement</b> is what the next unit costs including shrinkage, and it is the only basis for deciding whether to do it again. A trade can be profitable on the first and a loss on the second, and on this book several are.</div></div>
+    <div class="dsc" style="margin-top:8px"><b>Two costs, two questions.</b> <b>Lot cost</b> is what that ${PRODUCTS[PROD].name.toLowerCase()} actually cost, and it judges a trade already done. <b>Replacement</b> is what the next unit costs including shrinkage, and it is the only basis for deciding whether to do it again. A trade can be profitable on the first and a loss on the second, and on this book several are.</div></div>
     <div class="chartbox" style="margin-top:12px"><canvas id="pxEarnChart"></canvas></div>`;})()}
 
   </details>
@@ -14528,7 +14546,7 @@ function consoOrderBlock(){
   return `<h1>Order book</h1>`+consoHd('Both books')
     +`<div class="conso"><div class="kpis k4">`
     +cell('gold','Owed to you',fmt0(n),g>0.009?`${fmt0(g)} gross; the ladder has already discounted ${fmt0(+(g-n).toFixed(2))}`:'nothing owed to you')
-    +cell(o&&provRate(o.d)>=0.5?'r':'','Chase first',o?ID(o.who):'&mdash;',o?`${o.d} days &middot; ${fmt0(o.g)} gross, ${(provRate(o.d)*100).toFixed(0)}% of it already written off by the ladder`:'nothing is owed to you')
+    +cell(o&&provRate(o.d)>=0.5?'r':'','Chase first',o?ID(o.who):'&mdash;',o?`${Math.max(0,o.d)} days &middot; ${fmt0(o.g)} gross, ${(provRate(o.d)*100).toFixed(0)}% of it already written off by the ladder`:'nothing is owed to you')
     +cell('r','You owe, in cash',fmt0(cf.dueOut),cf.dueOut>0.009?`${fmt0(cf.billsOut)} of supplier bills &middot; ${fmt0(cf.refundsOut)} of refunds`:'no bill and no refund outstanding')
     +cell('','Agreed, nothing moved',fmt0(pend),pendB>0.009?`and ${fmt0(pendB)} of buying agreed the same way`:'no buying agreed the same way')
     +`</div></div>`;
@@ -14601,7 +14619,7 @@ function setProdView(pr){
   PROD=pr; try{localStorage.setItem('saltProd',pr);}catch(e){}
   recompute(); drawProdSw(); render();
 }
-const builders={today:tabToday,forward:tabForward,sourcing:()=>srcHead()+perProduct(tabSourcing,{skipEmpty:true}),analysis:()=>anaHead()+perProduct(tabAnalysis),map:tabMap,overview:tabOverview,inventory:()=>invHead()+perProduct(tabInventory),financials:()=>consoBlock()+consoCashBlock()+perProduct(tabFinancials),ledger:tabLedger,concentration:tabConcentration,network:tabNetwork,receivables:()=>consoOrderBlock()+perProduct(tabReceivables),add:tabWorkbench,pricing:()=>pxHead()+perProduct(tabPricing),plans:tabPlans,approve:tabApprove};
+const builders={today:tabToday,forward:tabForward,sourcing:()=>{const b=perProduct(tabSourcing,{skipEmpty:true});return srcHead()+(b||'<div class="card"><div class="dsc">No purchases or sales on any book yet, so there is nothing to source against.</div></div>');},analysis:()=>anaHead()+perProduct(tabAnalysis),map:tabMap,overview:tabOverview,inventory:()=>invHead()+perProduct(tabInventory),financials:()=>consoBlock()+consoCashBlock()+perProduct(tabFinancials),ledger:tabLedger,concentration:tabConcentration,network:tabNetwork,receivables:()=>consoOrderBlock()+perProduct(tabReceivables),add:tabWorkbench,pricing:()=>pxHead()+perProduct(tabPricing),plans:tabPlans,approve:tabApprove};
 /* ============ SEVEN VIEWS OVER FIFTEEN TABS (v341, move 4 of the rebuild) ============
    The fifteen tabs were fifteen reports stacked: a megabyte to open for one figure, with the
    method prose standing open on every one. A view leads with one tab open, folds that tab's

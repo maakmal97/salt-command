@@ -172,6 +172,12 @@ export function checkCorrection(fields, book, target, isSale) {
     if (fields[k] === undefined) continue;
     if (fields[k] === null) delete after[k]; else after[k] = fields[k];
   }
+  /* round six: cancelled-and-delivered is a contradiction the desk then chases as money owed
+     while the delivered unit leaves the shelf uncosted. The two fields are individually
+     correctable, so the PAIR is checked here, on the state the correction would leave. */
+  if (after.cancelled === true && +after.deliveredQty > 0.009) {
+    errs.push("the corrected row would be cancelled AND carry a delivery, which contradicts itself: restate qty by Modification for what was delivered, then cancel the remainder");
+  }
 
   /* AN ATTRIBUTION IS THREE FIELDS THAT ONLY MEAN ANYTHING TOGETHER, and the desk's own rule is
      that R2 books the sale to the associate with the buyer behind it, while R3 leaves the buyer
@@ -321,7 +327,10 @@ export function flagsFor(entry, row, book, priced) {
         it is first because it is the one that would have caught it: RM115 against a book whose
         oil had never left the RM6 to RM13 band. A factor rather than a fixed band, so it
         scales with whatever the product actually trades at. */
-  const seen = committed.filter((s) => prodOf(s) === p && isNum(s.total) && isNum(s.qty) && s.qty > 0)
+  /* s.total > 0: a committed zero-value row (a free unit, a goodwill settlement) is not a
+     price anyone paid, and one of them pulled salt's observed low to RM0, which made the
+     low-side check `rate < lo/2` unfireable (round six). */
+  const seen = committed.filter((s) => prodOf(s) === p && isNum(s.total) && s.total > 0 && isNum(s.qty) && s.qty > 0)
     .map((s) => s.total / s.qty);
   if (rate != null && seen.length >= 3) {
     const lo = Math.min(...seen), hi = Math.max(...seen);
@@ -816,7 +825,9 @@ export function draftRow(entry, book) {
       return { skip: "the edit sets no price and hides no size, so there is nothing to fold" };
     }
     const px = (book.state && book.state.PRICING) || {};
-    const floors = (px.floors && px.floors[product]) || {};
+    /* round six: the snapshot nests floors at byProduct[product].floors; a read of px.floors
+       was always empty, so the under-floor warning below had never once fired. */
+    const floors = (px.byProduct && px.byProduct[product] && px.byProduct[product].floors) || {};
     const flags = [];
     for (const k of Object.keys(prices)) {
       const f = floors[k] && (floors[k].collected != null ? floors[k].collected : floors[k].delivered);
@@ -880,7 +891,9 @@ export function draftRow(entry, book) {
   const cash = isNum(pay.cash) ? pay.cash : 0;
   const moved = isNum(pay.kg) ? pay.kg : 0;
   const priced = costFor(book, product);
-  if (priced.cost == null) return { skip: `nothing on the book says what ${product} costs, so the row cannot be priced` };
+  if (priced.cost == null) return { skip: dir === "BUY"
+    ? `the book has no cost for ${product} yet, so this first lot has nothing to be checked against: fold it by hand to establish the cost, then later lots go through this gate`
+    : `nothing on the book says what ${product} costs, so the row cannot be priced` };
 
   const paidInFull = cash >= total - 0.005;
   const deliveredInFull = moved >= qty - 0.005;

@@ -134,6 +134,10 @@ function walk(I){
   W.stockCounted=_cnt!=null;
   W.currentStock=+((_cnt!=null?_cnt:W.ledgerStock)).toFixed(2);
   W.selfUse=W.stockCounted?Math.max(0,+(_op.qty+W.buyUnits-drawnUnits-W.currentStock).toFixed(2)):0;
+  /* the same difference the other way: a count ABOVE the ledger is a surplus, not shrinkage,
+     and flooring selfUse to zero hid it entirely (round six). The reconciliation prints it;
+     nothing else reads it, so pricing and the P&L are untouched. */
+  W.surplus=W.stockCounted?Math.max(0,+(W.currentStock-(_op.qty+W.buyUnits-drawnUnits)).toFixed(2)):0;
   W.revTotal=W.pricedSales.reduce((a,s)=>a+(s.total||0)-txPendRM(s),0);   // net of any pending tail on a part-moved order
   W.revCollected=_S.reduce((a,s)=>a+(s.cash||0),0);
   /* AR = advance only: pending unpaid-and-undelivered is not a receivable */
