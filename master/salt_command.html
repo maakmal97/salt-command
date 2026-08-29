@@ -6115,9 +6115,14 @@ function tabSourcing(){
       <div class="kpi"><div class="l">Lost to both</div><div class="v">${fmt0(T.lostBoth)}</div><div class="n">the better price on the units the leak ate, which is why the first two do not sum to the ${fmt0(gap)} gap</div></div>
     </div>
     ${stkCols('lot')}<div class="stkwrap"><table><thead><tr><th class="l">Lot</th><th>Left</th><th class="stkx">Cost of it</th><th>Ceiling</th><th>Expected</th><th class="stkx">Leak cost</th><th class="stkx">Price cost</th></tr></thead><tbody>${rows}</tbody></table></div>
-    <div class="dsc" style="margin-top:9px"><b>The mix behind the ceiling:</b> ${L.bands.slice(0,5).map(x=>`${x.k==='bulk'?'over '+kg(BULK_OVER):kg(x.k)} at ${(x.share*100).toFixed(0)}%, best ${fmt(x.best)} against ${fmt(x.mean)} over ${x.n}`).join('; ')}.${L.bands.length&&L.bands[0].share>=0.8?` <b>${(L.bands[0].share*100).toFixed(0)}% of it sits in one band</b>, so the mix is saying little on this book.`:''}</div>
-    <div class="chartbox" style="height:210px;margin-top:12px"><canvas id="srcOutlookChart"></canvas></div>
-    <div class="dsc" style="margin-top:7px">Per lot: what the ${PN} left cost, the margin the ${fmt(L.mean)}/unit average adds, then the margin the ceiling would add.</div>
+    <div class="cardh" style="margin-top:14px">The mix behind the ceiling <span class="sub">the order sizes this book actually writes, each at its own best and average</span></div>
+    <table><thead><tr><th class="l">Order size</th><th>Share</th><th>Best</th><th>Average</th></tr></thead><tbody>
+    ${L.bands.slice(0,5).map(x=>`<tr><td class="l">${x.k==='bulk'?'over '+kg(BULK_OVER):kg(x.k)}</td>
+      <td><b>${(x.share*100).toFixed(0)}%</b></td><td style="color:var(--gold)">${fmt(x.best)}</td>
+      <td>${fmt(x.mean)}<div style="font-size:10px;color:var(--dim)">over ${x.n}</div></td></tr>`).join('')}
+    </tbody></table>${L.bands.length&&L.bands[0].share>=0.8?`<div class="dsc" style="margin-top:8px"><b>${(L.bands[0].share*100).toFixed(0)}% of it sits in one band</b>, so the mix is saying little on this book.</div>`:''}
+    <div class="cardh" style="margin-top:14px">What each lot still holds <span class="sub">cost of the ${PN} left, then the margin at the ${fmt(L.mean)}/unit average and at the ceiling</span></div>
+    <div class="chartbox" style="height:210px"><canvas id="srcOutlookChart"></canvas></div>
     </div>`;})()}
 
   <h2 style="margin-top:18px">Who you buy from <span class="rule"></span></h2>
@@ -6130,7 +6135,12 @@ function tabSourcing(){
       <td class="stkx" style="color:${s.fill!=null&&s.fill<100?'var(--crim)':'var(--grn)'}">${s.fill==null?'&mdash;':s.fill+'%'}</td>
       <td class="l">${s.defaults?`<span class="tag def">defaulted ${fmt0(s.defaultRM)}</span>`:'<span class="tag paid">clean</span>'}</td></tr>`).join('')}
   </tbody></table></div>
-  ${conc&&conc.recentShare>80?`<div class="dsc" style="margin-top:8px"><b style="color:var(--crim)">${ID(conc.id)} is ${conc.recentShare.toFixed(0)}% of every unit bought in the last ${conc.recentDays} days</b>, and the last name that carried this book took ${fmt0(supplierReceivable.amount)} and delivered nothing${pend.length?`; <b>${fmt0(pend.reduce((a,p)=>a+p.total,0))}</b> is agreed with that same supplier now`:''}.</div>`:''}</div>
+  ${(()=>{if(!(conc&&conc.recentShare>80))return'';
+    const bits=[];
+    if(PROD===DEFAULT_PROD&&supplierReceivable.status!=='closed')
+      bits.push(`the last name that carried this book took ${fmt0(supplierReceivable.amount)} and delivered nothing`);
+    if(pend.length)bits.push(`<b>${fmt0(pend.reduce((a,p)=>a+p.total,0))}</b> is agreed with that same supplier now`);
+    return `<div class="dsc" style="margin-top:8px"><b style="color:var(--crim)">${ID(conc.id)} is ${conc.recentShare.toFixed(0)}% of every unit bought in the last ${conc.recentDays} days</b>${bits.length?', and '+bits.join('; '):''}.</div>`;})()}</div>
 
   <div class="card" style="margin-top:14px"><div class="cardh">Every lot, at the rate it landed <span class="sub">by landing date, RM/unit; the defaulted lot drawn hollow</span></div><div class="chartbox" style="height:190px"><canvas id="srcLotChart"></canvas></div></div>
   ${(()=>{/* v385: THE PROFIT COLUMN WAS INVERTED, AND THE PROSE UNDER IT CLAIMED THE OPPOSITE.
@@ -6731,7 +6741,7 @@ function shelfCall(cv,oversold,free){
      Nothing here recomputes cover: coverStats returns both rates and this only says so when
      they part company. Salt's two readings are within 2% of each other and it stays silent. */
   const S=coverSpread(cv,free);
-  const split=S.split?` The four-week rate of ${kg(cv.rate28)} a day reads ${S.d28.toFixed(1)} days instead, so the two windows do not agree and this is the ${S.d14>S.d28?'kinder':'harsher'} of them.`:'';
+  const split=S.split?` On the four-week rate it is ${S.d28.toFixed(1)} days, not ${cv.days}.`:'';
   if(oversold)return {sev:'var(--crim)',k:'Oversold',f:kg(-free),
     t:`You owe ${kg(-free)} more than is on the shelf`,
     w:`${kg(defKg)} owed out against ${kg(currentStock)} on hand. Nothing more can be promised until a lot lands.`};
@@ -6806,7 +6816,7 @@ function tabInventory(){
     <div class="actk">${call.k}</div>
     <div><div class="actt">${call.t}</div><div class="actw">${call.w}</div></div>
     <div class="actm">${call.f}</div>
-    <div class="actb"><button class="navlink" onclick="switchTab('sourcing')">Sourcing &rarr;</button></div>
+    ${(call.k==='Clear'||call.k==='Quiet')?'':`<div class="actb"><button class="navlink" onclick="switchTab('sourcing')">Sourcing &rarr;</button></div>`}
   </div></div>
   <h2 style="margin-top:18px">What is on the shelf <span class="rule"></span></h2>
   <div class="kpis k3">
