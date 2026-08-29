@@ -1095,9 +1095,12 @@ details.obs>summary:hover{background:#ffffff08;border-radius:8px;}
 .obsev ul{margin:0;padding-left:17px;}
 .obsev li{font-size:12px;color:var(--mut);margin-bottom:3px;}
 .obsact{display:flex;flex-wrap:wrap;align-items:center;gap:7px;margin-top:11px;}
+/* the three hush controls sit in a row beside a .navlink that has read --tap since v392,
+   so the row was 44px tall with three 27px buttons in it. Sixty of them on the Whiteboard,
+   and each one dismisses or defers a finding. Opening a section costs 17px for this. */
 .obsbtn{background:transparent;border:1px solid var(--line);color:var(--dim);font-weight:600;font-size:11px;
   padding:5px 10px;border-radius:8px;cursor:pointer;font-family:inherit;white-space:nowrap;
-  transition:border-color .15s,color .15s;}
+  min-height:var(--tap);transition:border-color .15s,color .15s;}
 .obsbtn:hover{border-color:var(--dim);color:var(--ink);}
 details.obshush{opacity:.5;border-left-color:var(--line);}
 details.obshush:hover{opacity:.85;}
@@ -1228,6 +1231,12 @@ details.obshush:hover{opacity:.85;}
      label, so the label is the tap target and the box is not. */
   .vpart[data-tab="add"] .viewsw{flex-wrap:wrap;overflow-x:visible;}
   #wbAssocWrap>label{min-height:var(--tap);}
+  /* THE WIDTH HALF, which the central .viewsw button rule does not carry. Measured at
+     375px: Sell 42, Buy 43, All 32, Half 40, Full 37, all of them 44 tall and none of
+     them 44 wide. Their strips are 325px holding at most 110px of buttons, so this
+     costs no row. Scoped because #fwdSw's own buttons already clear 44 and a global
+     rule would be a rule for one form. */
+  .vpart[data-tab="add"] .viewsw button{min-width:var(--tap);}
   .sevh{flex-wrap:wrap;gap:6px;}
   .insight{padding:10px 12px;font-size:12.5px;}
   .dsc,.dsclead{font-size:11.5px;}
@@ -12216,7 +12225,7 @@ function tabApprove(){
   if(!cloudMode()){
     const n=qTx().length;
     return `<h1>Approve</h1>
-    <div class="dsc dsclead">A drafted row is decided on the cloud desk or on the phone; this copy runs on the laptop and has no drafts table.</div>
+    <div class="dsc dsclead">Decided on the cloud desk; this laptop copy has no drafts table.</div>
     <div class="card">
       <div class="cardh">Waiting on this laptop <span class="sub">${n?`${n} entr${n===1?'y':'ies'} in ${esc(QFILE)}`:'nothing'}</span></div>
       <div class="insight">${n?'In front of nobody until they are drafted. Run this, then decide at <b>/desk</b> or on the phone.'
@@ -12475,7 +12484,7 @@ function tabWorkbench(){
         <div class="qfield" style="flex:1 1 100%">
           <div class="dsc">Not in the list? ${cloudMode()
             ?'Use <b>Add ID</b> above: a code typed by hand. The name goes into the directory at the laptop.'
-            :'Open <b>Names &amp; IDs</b> and use <b>+ Add ID</b>: give the name and the place, and the code is selectable here at once.'}</div></div>
+            :'The <b>key</b> icon, top right, then <b>+ Add ID</b>: the code is selectable here at once.'}</div></div>
       </div>
       <div class="qrow" style="margin-bottom:10px">
         <div class="qfield qkg"><label>Quantity (unit)</label><input id="wbQty" type="number" step="0.5" min="0" inputmode="decimal"></div>
