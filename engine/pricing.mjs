@@ -103,7 +103,11 @@ function costStack(I){
              prices a specific quantity uses effEx and adds delivery once. */
           effEx:+yielded.toFixed(6),delPerOrder:COST_BASIS.txnPerDelivery.rm,
           locked:false,lockedOn:null,lockAge:null,
-          stale:(LK.state==='stale'),sim:(pxOver.cost!=null||pxOver.shrink!=null)};
+          /* v403: gated on lockOn. With the lock off there is nothing to be stale AGAINST,
+             and the ungated read was a constant true on this desk since PRICE_LOCK_ON went
+             false: a flag that always fires teaches its reader to ignore it. No current
+             consumer reads it; the gate is so the first one that does is not lied to. */
+          stale:(I.lockOn&&LK.state==='stale'),sim:(pxOver.cost!=null||pxOver.shrink!=null)};
 }
 
 /* ============ THE SUPPLIER'S OWN ELASTICITY, FITTED RATHER THAN TYPED ============
