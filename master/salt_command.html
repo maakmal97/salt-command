@@ -318,7 +318,30 @@ tr.tot td{font-weight:800;background:#150e2b;}
 .lmove .lmdate{font-size:11px;color:var(--dim);font-variant-numeric:tabular-nums;min-width:46px;white-space:nowrap;}
 .lmove .lmnote{font-size:11px;color:var(--dim);}
 .eref{font-size:11px;color:var(--ice);border:1px solid rgba(99,230,224,.4);border-radius:5px;padding:0 5px;margin-left:2px;white-space:nowrap;}
-.eref.elink{cursor:pointer;text-decoration:none;}
+/* ============ A TAP HAS TWO DIMENSIONS, AND THE SECOND ONE COSTS SPACING ============
+   THE HIT AREA IS EXTENDED, THE LINK IS NOT. An eref sits INLINE inside a note, so padding
+   would paint: the pill has a border and a radius, and 13px of it would put a box the height
+   of a finger around two characters in the middle of a sentence. The pseudo is not painted
+   and is out of flow, so the glyph, the line box and the note's wrapping are all untouched
+   while the tappable box reads --tap. It is clipped by .lcard's overflow, so it may only be
+   used where the target is not against a card edge; measured at 58px above, 129px below.
+
+   THE WIDTH IS REAL AND THE HEIGHT IS A PSEUDO, AND THAT ASYMMETRY IS THE WHOLE POINT.
+   Height alone is half a tap: the two refs on E31 measured 23px and 29px WIDE, 6px apart,
+   and centring a 44px BAND on each overlapped them by 12px. The later one paints on top, so
+   a tap on the right edge of E4 opened E10. That is a mis-tap, and a mis-tap is worse than a
+   small target because it acts instead of missing. Spacing them did not settle it either:
+   with margins the real book measured clean, but a probe of the two SHORTEST codes the book
+   can mint, adjacent, still put 9px of E1's band on top of E2. A guard that holds only for
+   today's data is not a guard.
+   An inline-block CANNOT overlap its siblings, because the flow reserves its width, so the
+   horizontal half is bought with min-width and is safe for every pair of codes that can ever
+   exist. Vertically it stays a pseudo: the box has no vertical padding, so the line box and
+   the note's wrapping are untouched. */
+.eref.elink{cursor:pointer;text-decoration:none;position:relative;
+  display:inline-block;min-width:var(--tap);text-align:center;}
+.eref.elink::after{content:"";position:absolute;left:0;right:0;top:50%;
+  height:var(--tap);transform:translateY(-50%);}
 .eref.elink:hover{background:rgba(99,230,224,.14);}
 .etype{font-size:11px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;padding:2px 8px;border-radius:6px;white-space:nowrap;}
 .etype.efulfil{background:rgba(99,230,224,.14);color:var(--ice);}
@@ -366,7 +389,8 @@ tr.tot td{font-weight:800;background:#150e2b;}
 .lcard.s-cancelled .lparty{text-decoration:line-through;text-decoration-color:rgba(255,93,115,.7);}
 .lopen,.lclose{border-left:0;}
 details.lmc{margin:0;}
-details.lmc>summary{list-style:none;cursor:pointer;user-select:none;padding:6px 13px 7px 61px;font-size:11px;font-weight:600;color:var(--vio);position:relative;}
+details.lmc>summary{list-style:none;cursor:pointer;user-select:none;padding:6px 13px 7px 61px;font-size:11px;font-weight:600;color:var(--vio);position:relative;
+  display:flex;align-items:center;min-height:var(--tap);}
 details.lmc>summary::-webkit-details-marker{display:none;}
 details.lmc>summary::before{content:"";position:absolute;left:44px;top:0;bottom:0;width:2px;background:rgba(176,124,255,.4);}
 details.lmc>summary:hover{color:#cdb6f6;}
@@ -502,8 +526,22 @@ details.rcard>summary .rsum b{color:var(--ink);}
 .lcorr.bad .clab{color:var(--crim);}
 .lcorr .cclaim.unknown,.lcorr .cclaim.differs,.lcorr .cclaim.unreadable{color:var(--crim);}
 .lcorr .cclaim.unknown em,.lcorr .cclaim.differs em,.lcorr .cclaim.unreadable em{color:var(--crim);font-weight:600;}
-.lcorr .cwhy{margin-top:5px;}
-.lcorr .cwhy summary{cursor:pointer;color:var(--dim);font-size:11px;list-style:none;}
+.lcorr .cwhy{margin-top:0;}
+/* ============ THE CLAIM IS THE SUMMARY, SO THERE IS NO "why" ROW TO HIT ============
+   It was a 17px control saying one word, sitting under the line it belonged to, and every
+   way of padding it to --tap was worse than removing it. Growing it DOWN is capped at 9px by
+   a card edge that clips (.lcard is overflow:hidden) and breaks the open state, because a
+   negative bottom margin drags .cnote up over the summary. Growing it UP was measured and
+   does not work at all: inline content paints above a non-positioned block whatever the DOM
+   order says, so the claim above kept the taps and two of the ten lost even their centre.
+   The head IS the disclosure now. The target is the claim line at --tap, the fold carries
+   the answer rather than the word "why", and the ledger is SHORTER by a line per correction
+   rather than taller. When there are no notes the head stays a plain div. */
+.lcorr summary.chead{cursor:pointer;list-style:none;min-height:var(--tap);align-content:center;}
+.lcorr summary.chead::-webkit-details-marker{display:none;}
+.lcorr .chev{color:var(--dim);display:inline-block;transition:transform .15s;}
+.lcorr .cwhy[open] .chev{transform:rotate(90deg);}
+.lcorr .cwhyq{margin-left:auto;font-size:10px;letter-spacing:.5px;text-transform:uppercase;color:var(--dim);}
 .lcorr .cwhy summary::-webkit-details-marker{display:none;}
 .lcorr .cnote{margin-top:5px;color:var(--mut);line-height:1.5;}
 .lcorr .cnote p{margin:0 0 6px;}
@@ -567,7 +605,7 @@ td.l{white-space:nowrap;}
 .lagreed{font-size:11px;color:var(--dim);}
 .lqlab{font-size:10px;letter-spacing:.8px;text-transform:uppercase;color:var(--dim);margin-right:2px;}
 .lqb{font-family:inherit;font-size:11px;font-weight:700;letter-spacing:.3px;cursor:pointer;
-  padding:9px 14px;min-height:34px;border-radius:999px;background:transparent;border:1px solid var(--line);color:var(--mut);}
+  padding:9px 14px;min-height:var(--tap);border-radius:999px;background:transparent;border:1px solid var(--line);color:var(--mut);}
 .lqb:hover{border-color:currentColor;}
 .lqb.qpaid{color:#9ee6c8;}
 .lqb.qdeliv{color:#8fe9ff;}
@@ -649,7 +687,7 @@ select{width:100%;border:1px solid var(--line);border-radius:8px;padding:8px 9px
   .lcard.lpressed::after{animation:none;opacity:0;}
 }
 .ledmore{margin-top:10px;border-top:1px dashed var(--line);}
-.ledmore>summary{cursor:pointer;list-style:none;padding:10px 2px 4px;font-size:12px;color:var(--mut);display:flex;align-items:center;gap:7px;}
+.ledmore>summary{cursor:pointer;list-style:none;padding:10px 2px 4px;font-size:12px;color:var(--mut);display:flex;align-items:center;gap:7px;min-height:var(--tap);}
 .ledmore>summary::-webkit-details-marker{display:none;}
 .ledmore>summary:hover{color:var(--ink);}
 .ledmore>summary .chev{transition:transform .15s;display:inline-block;}
@@ -6324,7 +6362,7 @@ function tabAnalysis(){
     return `<div class="pend def" style="margin-top:14px"><h3>${bad.length} stated correction${bad.length===1?'':'s'} do not hold <span class="cd crim">of ${seen.length} corrected</span></h3>
       <div class="insight">A row asserting a change it did not make is worse than a refusal, because every later reader takes it as done.</div>
       <table style="margin-top:10px"><thead><tr><th class="l">Row</th><th class="l">Party</th><th class="l">Stated</th><th class="l">What is wrong</th></tr></thead><tbody>
-      ${bad.map(b=>`<tr><td class="l mono">${esc(b.t.rid||'')}</td><td class="l mono">${ID(b.t.customer||b.t.supplier)}</td>
+      ${bad.map(b=>`<tr><td class="l mono">${b.t.rid?`<a class="eref elink" href="#ent" onclick="return goRid('${b.t.rid}')">${esc(b.t.rid)}</a>`:'&mdash;'}</td><td class="l mono">${ID(b.t.customer||b.t.supplier)}</td>
         <td class="l mono">${esc(b.c.field)} ${esc(b.c.was)} &rarr; ${esc(b.c.now)}</td>
         <td class="l">${b.c.verdict==='unknown'
           ?'<b>'+esc(b.c.field)+'</b> is not a field a correction may set, so nothing was written'
@@ -7438,11 +7476,23 @@ function ledQuick(what,type,who,date,total,qty){
 /* E-codes point at each other across the whole book, so half the targets now sit inside the
    fold. A jump that scrolled to a row inside a closed <details> would land on the summary and
    look like a broken link, so the jump opens whatever it has to open first. */
-function goEnt(code){const el=document.getElementById('ent-'+code);if(!el)return false;
+function goEl(el){if(!el)return false;
   let p=el.parentNode;
   while(p&&p!==document.body){if(p.tagName==='DETAILS')p.open=true;p=p.parentNode;}
   el.scrollIntoView({behavior:'smooth',block:'center'});el.classList.add('entflash');
   setTimeout(()=>el.classList.remove('entflash'),1200);return false;}
+function goEnt(code){return goEl(document.getElementById('ent-'+code));}
+/* ============ THE BOOK-WIDE AUDIT HAS TO REACH THE ROW IT NAMES ============
+   Analysis reports which stated corrections do not hold, and BOTH of the rows it named were
+   inside the Ledger's closed "earlier orders" fold, 117 deep. So the finding was visible and
+   the row was not, which on a phone means the breach cannot be acted on at all. This is the
+   same walk goEnt does, addressed by rid because the audit holds rids and the E-codes are
+   minted inside tabLedger; deriving them a second time here is the drift this desk keeps
+   refusing elsewhere. The part switch comes first, because scrollIntoView does nothing to an
+   element in a part that is not on screen, and the card is re-rendered by it, so the lookup
+   has to happen after. */
+function goRid(rid){switchTab('ledger');
+  return goEl(document.querySelector('.lcard[data-rid="'+rid+'"]'));}
 /* HOW MUCH OF THE BOOK THE LEDGER OPENS ON, in days back from today. Everything older folds
    unless it is still live or the reader has filtered. Three days is what he asked for and it
    leaves 15 of 132 on screen; it is one number here because the right answer moves with how
@@ -7677,8 +7727,10 @@ function corrStrip(t,dir,corrs){
     ?'<span class="cclaim unreadable"><em>this row was corrected and the desk could not read the trail: check tools/fold.mjs against modClaims</em></span>':'';
   const notes=(corrs||[]).filter(a=>a.note).map(a=>`<p>${a.note}</p>`).join('');
   return `<div class="lcorr${bad.length||blind?' bad':''}">`
-    +`<div class="chead"><span class="clab">${lab}${when?' '+when:''}</span>${claims.map(chip).join('')}${later}${blind}</div>`
-    +(notes?`<details class="cwhy"><summary><span class="chev">&#9656;</span>why</summary><div class="cnote">${notes}</div></details>`:'')
+    +(()=>{const head=`<span class="clab">${lab}${when?' '+when:''}</span>${claims.map(chip).join('')}${later}${blind}`;
+       return notes
+         ?`<details class="cwhy"><summary class="chead"><span class="chev">&#9656;</span>${head}<span class="cwhyq">why</span></summary><div class="cnote">${notes}</div></details>`
+         :`<div class="chead">${head}</div>`;})()
     +'</div>';
 }
 function tabLedger(){
