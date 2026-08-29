@@ -2195,6 +2195,41 @@ section("Pricing — stale is a statement about the lock, not a constant (v403)"
     "lock on and current: stale is false");
 }
 
+section("Pricing — each book prices off its own quote (round 5, his call 1)");
+{
+  /* pxQuoteRate and pxPolicy().tiers read bare supplierQuote until this round, so oil's
+     engine inputs carried salt's RM 56 rate and oil's taper walked at salt's exponent.
+     The owner's answer 1 of 29 Aug scopes every engine input through quoteFor(PROD). */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  const read = (expr) => JSON.parse(w.eval("JSON.stringify(" + expr + ")"));
+  w.eval("setProd('salt');recompute();");
+  ok(read("pxInputs().quoteRate") === 56, "salt's quoteRate is its own dearest tier, RM56");
+  ok(JSON.stringify(read("pxPolicy().tiers")) === JSON.stringify(read("supplierQuote.tiers")),
+    "salt's policy tiers are the salt quote's");
+  const saltB = read("buyTaper()");
+  w.eval("setProd('oil');recompute();");
+  ok(read("pxInputs().quoteRate") === 10, "oil's quoteRate is its OWN dearest tier, RM10, not salt's 56");
+  ok(JSON.stringify(read("pxPolicy().tiers")) === JSON.stringify(read("oilQuote.tiers")),
+    "oil's policy tiers are the oil quote's");
+  const oilB = read("buyTaper()");
+  ok(oilB.b != null && oilB.b < 0, "oil's taper is fitted and falls with size");
+  ok(saltB.b != null && Math.abs(oilB.b - saltB.b) > 1e-6,
+    "the two books fit different exponents, so the taper is genuinely per book");
+  /* his call 4: the board sizes are what he sells, and the ladder anchor is the book's own */
+  ok(JSON.stringify(read("sizesFor('oil')")) === JSON.stringify([10, 20, 30, 40, 50]),
+    "oil's grid is his: 10 to 50 in tens, no fives, no 60 to 100 tail");
+  ok(JSON.stringify(read("sizesFor('salt')")) === JSON.stringify([0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 6.25, 12.5]),
+    "salt's grid is untouched");
+  const oilL = read("ladderFor('oil')"), saltL = read("ladderFor('salt')");
+  ok(oilL.at.lo === 10 && oilL.at.hi === 50 && oilL.anchorQ === 10,
+    "oil's taper span and anchor sit on oil's own board");
+  ok(saltL.anchorQ === 2.5 && saltL.anchorX === 0.958 && saltL.at.lo === 0.5 && saltL.at.hi === 12.5 && saltL.floor === 0.33,
+    "salt's ladder is LADDER itself, to the value");
+  w.eval("setProd('salt');recompute();");
+  try { w.close(); } catch (e) { }
+}
+
 section("iPhone — the dead zones the desk draws under (v392)");
 {
   const m = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");

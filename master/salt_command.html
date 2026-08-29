@@ -3226,7 +3226,7 @@ function sourcingPlan(){
     q,rt,lvl,lossKg,usable,cash,eff,newWavg,cover,monthly,monthly28,top,lost,biggest,
     multiple:biggest?+(q/biggest.qty).toFixed(1):null,
     lostMultiple:lost>0?+(cash/lost).toFixed(1):null,
-    quoted:(supplierQuote&&supplierQuote.tiers||[]).some(t=>t.qty>=q)};
+    quoted:((quoteFor(PROD)||{}).tiers||[]).some(t=>t.qty>=q)};
 }
 /* ============ PRODUCTS: THE DESK BECOMES MULTI-COMMODITY (v228) ============
    v226 bolted oil on beside the salt books because one sale did not justify a refactor.
@@ -4201,15 +4201,24 @@ const PRICE_ENGINE={
      THE SIZE LADDER IS PER PRODUCT. Salt runs half a unit to 12.5; oil starts at a 10 unit
      minimum, steps by 5 to 50, then by 10 to 100. Quoting oil on salt's sizes produced a board
      whose smallest lot was a twentieth of the minimum order.
-     sizesBy IS THE WALK'S RUNG GRID, NOT THE PRINTED BOARD, and conflating the two is a trap
-     that has to be written down. ladderWalk goes forward and each rung is clamped to the rate
+     sizesBy WAS THE WALK'S RUNG GRID, NOT THE PRINTED BOARD, and the split existed because
+     conflating the two was a trap. ladderWalk goes forward and each rung is clamped to the rate
      of the rung below it, so the ONLY thing that ratchets a rate DOWN is an intermediate rung
      landing on a cheaper ten. He asked for an oil board of 10 to 50 in tens. Taking that as the
      rung grid measured out at RM13.00 a unit at every size, dead flat, because nine dropped
      rungs are nine chances to step down removed; 50 unit would have risen from RM610 to RM650
-     and oil's volume discount would have gone. So the rungs stay fine and boardBy says which of
-     them are PRINTED. Measured with the split in place: 130 / 250 / 370 / 490 / 610, taper
+     and oil's volume discount would have gone. So the rungs stayed fine and boardBy said which
+     of them were PRINTED. Measured with the split in place: 130 / 250 / 370 / 490 / 610, taper
      intact, not one price moved.
+     ROUND 5 RETIRES OIL'S SPLIT, AND THE TRAP WITH IT. The flatness above was never a property
+     of his grid: it was salt's ladder clamp handing every oil size past 12.5 unit ONE markup,
+     so nothing but a rounding accident could taper, and the intermediate rungs were those
+     accidents. With the taper fitted to oil's own quote and the anchor span on oil's own board
+     (LADDER_BY), the curve tapers by itself and his 10-to-50-in-tens grid holds the rate law
+     with no rungs between: measured at 130 / 240 / 320 / 400 / 470 on the current cost basis,
+     strictly falling per unit. The 15 to 45 fives and the 60 to 100 tail leave the walk grid
+     on his call 4 of 29 Aug: the board quotes what he sells, and a size he does not sell is
+     priced off-board by ladderAsk against the rungs beneath it, exactly as salt's 7 unit is.
      SALT NEEDS NO SPLIT, because his list is a superset of the rungs it already had. 3.5 and 4.5
      are real rungs, and adding them moves three prices down by RM10 each: 4 unit 390 to 380,
      5 unit 470 to 460, 6.25 unit 580 to 570. That is not a discount anyone chose. 3.5 unit asks
@@ -4218,12 +4227,11 @@ const PRICE_ENGINE={
      the rung exposes the rate law rather than changing it. */
   sizesBy:{
     salt:[0.5,1,1.5,2,2.5,3,3.5,4,4.5,5,6.25,12.5],
-    oil:[10,15,20,25,30,35,40,45,50,60,70,80,90,100]
-  },
-  /* which rungs are PRINTED. A product with no entry prints every rung it has. */
-  boardBy:{
     oil:[10,20,30,40,50]
   },
+  /* which rungs are PRINTED. A product with no entry prints every rung it has. Empty since
+     round 5: oil's grid IS its board now, so the mechanism stands and nothing uses it. */
+  boardBy:{},
   /* TENS FIRST, FIVES ONLY WHERE TENS CANNOT HOLD HIS ANCHORS (v251). His instruction was
      nearest tens all across, and on Tier I that is arithmetically impossible: the rate is
      RM80 a unit at the 1 unit anchor, the only ten-grid prices at 1.5 unit are RM110 and
@@ -5059,8 +5067,29 @@ const LADDER={
   at:{lo:0.5, hi:12.5}, // outside these the taper is clamped, never extrapolated
   basis:'cogs',         // landed cost, per unit, times the quantity
   round:{to:10, up:true},// his instruction: to the nearest ten, ROUNDED UP
-  taper:'supplier'      // 'supplier' measures it off supplierQuote; a number here overrides
+  taper:'supplier'      // 'supplier' measures it off the book's own quote, quoteFor(PROD); a number here overrides
 };
+/* ============ ROUND 5, his call 1: THE LADDER ANCHOR IS PER BOOK ============
+   LADDER above is SALT'S, untouched: anchorQ 2.5 is salt's geometric middle and the 0.5 to
+   12.5 span is salt's board. Feeding those to oil clamped every size above 12.5 unit to ONE
+   markup, which is why oil's curve read nearly flat, and the moment the taper fitted oil's
+   own quote (this round) the flat clamp plus the 0.33 step-guard broke the rate law: the
+   walk's step-down is refused below 1.33x cogs, and oil's own stated prices live BELOW that
+   line (his RM450 at 50 is about 1.08x cogs), so salt's guard would outlaw his own board.
+   Oil therefore carries its own entry here. The span is its board's ends. The level is
+   pinned at the 10 unit minimum, where his one stated price sits, and anchorX is the level
+   lever exactly as salt's is: 0.62 is set so the derived ask at 10 reproduces his stated
+   RM130 on the trailing-average cost basis of call 2 (78.5 cogs x 1.62 = 127.1, rounded up
+   to 130), and so that every derived rung clears its own floor withOUT a floor lift, because
+   a lift lands on the ten above the floor with no regard for the rate law and is where the
+   law broke in every rejected calibration. floor 0 means a rate-law step-down may fall as
+   far as cogs; the REAL refusal line is unchanged, floorTotal's break-even, which the walk
+   still enforces after every step.
+   A product with no entry inherits LADDER whole, exactly as sizesBy and anchors fall back. */
+const LADDER_BY={
+  oil:{anchorQ:10, anchorX:0.62, at:{lo:10, hi:50}, floor:0}
+};
+function ladderFor(p){const o=LADDER_BY[p||PROD];return o?{...LADDER,...o}:LADDER;}
 /* THE SUPPLIER'S OWN ELASTICITY, FITTED RATHER THAN TYPED. Least squares of ln(rate) on ln(qty)
    across every tier of the live quote. It returns the exponent and the r-squared, and the r-squared
    is reported on the tab rather than hidden: a ladder that does not actually follow a power law
@@ -10371,10 +10400,14 @@ let pxOver={cost:null,shrink:null,party:'',anyQ:'',tier:'T2',cap:''};   // cost/
 
 /* the highest tier on the live quote, because that is what restocking in the size
    usually bought actually costs. Cheaper tiers are chosen deliberately, never assumed.
-   v385: said "dearest", the word retired from this view at v379. */
+   v385: said "dearest", the word retired from this view at v379.
+   ROUND 5, his call 1 of 29 Aug: THE BOOK'S OWN QUOTE, through quoteFor(PROD). This read
+   was bare supplierQuote, which is salt's, so oil's engine inputs carried RM56 a unit
+   from a ladder for a different commodity. Oil reads its own RM10 now. */
 function pxQuoteRate(){
-  if(!supplierQuote||!supplierQuote.tiers||!supplierQuote.tiers.length)return replCost();
-  return Math.max.apply(null,supplierQuote.tiers.map(t=>t.total/t.qty));
+  const q=quoteFor(PROD);
+  if(!q||!q.tiers||!q.tiers.length)return replCost();
+  return Math.max.apply(null,q.tiers.map(t=>t.total/t.qty));
 }
 function pxRecentBuyRate(days){
   const from=new Date(TODAY.getTime()-days*86400000);
@@ -10686,9 +10719,14 @@ function pxInputs(){
     attrib:SHRINK_ATTRIB, shrinkRate:pxShrinkRate(), avgDel:avgDelivery(PROD)};
 }
 function pxPolicy(){
-  return {LADDER:LADDER, minPerUnit:PRICE_ENGINE.minPerUnit||0, timePerOrder:PRICE_ENGINE.timePerOrder||0, lotFloor:PRICE.lotFloor||{},
+  /* ROUND 5, his call 1: the taper fits the BOOK'S OWN quote and walks the BOOK'S OWN
+     ladder. tiers was bare supplierQuote and LADDER was salt's alone, so oil's curve ran
+     at salt's exponent inside salt's clamp. quoteFor(PROD) and ladderFor(PROD) hand each
+     book its own; salt's values are untouched. */
+  const pq=(typeof quoteFor==='function')?quoteFor(PROD):null;
+  return {LADDER:ladderFor(PROD), minPerUnit:PRICE_ENGINE.minPerUnit||0, timePerOrder:PRICE_ENGINE.timePerOrder||0, lotFloor:PRICE.lotFloor||{},
     stated:setPricesFor(PROD),
-    tiers:(typeof supplierQuote!=='undefined'&&supplierQuote&&supplierQuote.tiers)?supplierQuote.tiers:[],
+    tiers:(pq&&pq.tiers)?pq.tiers:[],
     boardSizes:(typeof sizesFor==='function')?sizesFor(PROD):[]};
 }
 function pxCost(){ return PRICING_ENGINE.costStack(pxInputs()); }
@@ -10895,7 +10933,7 @@ function forecast(o){
   /* --- salt arriving --- */
   const lots=pPurch(PROD).filter(p=>poLive(p)&&poOpenKg(p)>0.0001)
     .map(p=>({day:0,kg:poOpenKg(p),who:p.supplier,label:'in transit',rm:Math.max(0,p.total-poCash(p))}));
-  if(buy)lots.push({day:Math.max(0,+buy.onDay||0),kg:+buy.qty,who:buy.who||supplierQuote.supplier,
+  if(buy)lots.push({day:Math.max(0,+buy.onDay||0),kg:+buy.qty,who:buy.who||((quoteFor(PROD)||{}).supplier||''),
                     label:'the buy on this part',rm:+(+buy.qty*+buy.rate).toFixed(2)});
 
   /* --- cash in: each receivable at its own credit date, net of provisioning --- */
@@ -10913,7 +10951,7 @@ function forecast(o){
   pPurch(PROD).forEach(p=>{if(p.pending)return;const b=+(p.total-poCash(p)).toFixed(2);
     if(b>0.009)cout.push({day:0,rm:b,who:p.supplier,label:'supplier bill'});});
   if(buy)cout.push({day:Math.max(0,buy.payDay!=null?+buy.payDay:(+buy.onDay||0)),
-                    rm:+(+buy.qty*+buy.rate).toFixed(2),who:buy.who||supplierQuote.supplier,label:'the buy on this part'});
+                    rm:+(+buy.qty*+buy.rate).toFixed(2),who:buy.who||((quoteFor(PROD)||{}).supplier||''),label:'the buy on this part'});
   /* PLANNED drawings, off unless asked for. A leaveRM plan takes whatever sits above a
      floor on the day, so its size is not known until the walk reaches it; it is resolved
      during the walk rather than scheduled here. */
@@ -12773,10 +12811,11 @@ function tabPricing(){
   const c=pxCost(),sg=pxSignals(),pt=pxParty(pxOver.party),net=sg.net,pn=pt.net;
   const q=pxQuoteRate();                      // v385: r30 went with the dead board, unread since v326
   /* v403: THE BOOK'S OWN QUOTE, FOUND BY THE CROSS-BOOK PROBE. The lever sentence read q
-     above, which is pxQuoteRate() on the bare supplierQuote, so oil's lever compared its
+     above, which was pxQuoteRate() on the bare supplierQuote, so oil's lever compared its
      needed buy rate against SALT's RM 56 quote. quoteFor(PROD) is the resolver the desk has
-     had since the oil quote joined the book; pxQuoteRate itself is untouched because it feeds
-     pxInputs and the taper, and re-scoping the ENGINE's read is the owner-gated question. */
+     had since the oil quote joined the book. Round 5 closed the loop: the owner answered the
+     gated question on 29 Aug and pxQuoteRate itself now reads quoteFor(PROD), so q and liveQ
+     agree; liveQ stays because it is null with no quote where q falls back to replCost(). */
   const liveQ=(()=>{const sq=quoteFor(PROD);return (sq&&sq.tiers&&sq.tiers.length)?Math.max.apply(null,sq.tiers.map(t=>t.total/t.qty)):null;})();
   const mk=pxMarket();
   /* v385: A NINE-COLUMN TABLE THAT NOTHING RENDERED. `board` built a row per off-card size,
@@ -12906,23 +12945,23 @@ function tabPricing(){
     <!-- v393: THE MARGIN SETUP IS THE BOARD'S DERIVATION, SO IT SITS IN THE BOARD'S CARD.
          It was its own open h2 one section down, restating in prose what these six figures
          say. The prose went; the figures are the ask's derivation and stay open. -->
-    ${(()=>{const sT=buyTaper(),sC=pxCost(),sRz=ladderRealised();
+    ${(()=>{const sT=buyTaper(),sC=pxCost(),sRz=ladderRealised(),LD=ladderFor(PROD);
       const sSZ=shownSizes(PROD).slice().sort((a,b)=>a-b), sMk=sSZ.map(q=>priceLadder(q));
-      const sLo=sMk[0], sHi=sMk[sMk.length-1], sFlat=sSZ.filter(q=>q>LADDER.at.hi+0.009).length;
-      const sSup=supplierQuote.supplier, sOwn=(latestLot(PROD)||{}).sup||null;
+      const sLo=sMk[0], sHi=sMk[sMk.length-1], sFlat=sSZ.filter(q=>q>LD.at.hi+0.009).length;
+      const sSup=(quoteFor(PROD)||{}).supplier||'', sOwn=(latestLot(PROD)||{}).sup||null;
       const sBor=!!(sOwn&&sSup&&sOwn!==sSup);
       /* the note is NOT run through esc(): it carries entities. Data inside it is escaped. */
       const sR=(lab,v,n)=>`<tr><td class="l">${lab}<div class="iref">${n||''}</div></td><td class="mono">${v}</td></tr>`;
       return `<table class="fintab istmt" style="margin-top:12px"><tbody>
-      ${sR('Level',LADDER.anchorX.toFixed(3)+'x',`typed, at ${kg(LADDER.anchorQ)} on cogs`)}
-      ${sR('Taper',(sT.b!=null?sT.b.toFixed(3):'&mdash;'),sT.b!=null?`fitted to ${esc(sSup)}&rsquo;s quote ladder${sT.r2!=null?`, r&sup2; ${sT.r2.toFixed(2)}`:''}, ${kg(LADDER.at.lo)} to ${kg(LADDER.at.hi)}${sBor?`; <b>${esc(sOwn)}&rsquo;s own ladder is on the book and is not the one this is fitted to</b>`:''}`:'no supplier ladder to fit')}
-      ${sR('Ceiling',LADDER.ceiling.toFixed(2)+'x','does not bind at any printed size')}
+      ${sR('Level',LD.anchorX.toFixed(3)+'x',`typed, at ${kg(LD.anchorQ)} on cogs`)}
+      ${sR('Taper',(sT.b!=null?sT.b.toFixed(3):'&mdash;'),sT.b!=null?`fitted to ${esc(sSup)}&rsquo;s quote ladder${sT.r2!=null?`, r&sup2; ${sT.r2.toFixed(2)}`:''}, ${kg(LD.at.lo)} to ${kg(LD.at.hi)}${sBor?`; <b>${esc(sOwn)}&rsquo;s own ladder is on the book and is not the one this is fitted to</b>`:''}`:'no supplier ladder to fit')}
+      ${sR('Ceiling',LD.ceiling.toFixed(2)+'x','does not bind at any printed size')}
       ${sR('Floor','break-even',`${fmt(sC.effEx)} a unit after the leak, one delivery of ${fmt0(sC.delPerOrder||0)}, ${fmt0(PRICE_ENGINE.timePerOrder||0)} of his time an order`)}
       <tr class="tot"><td class="l"><b>Markup across the board</b><div class="iref">${kg(sSZ[0])} down to ${kg(sSZ[sSZ.length-1])}</div></td><td class="mono"><b>${sLo.markupX.toFixed(2)}x to ${sHi.markupX.toFixed(2)}x</b></td></tr>
       <tr class="tot"><td class="l"><b>Margin it returns</b><div class="iref">struck on the lot cost, not on cogs</div></td><td class="mono"><b>${sLo.ask.margin.toFixed(1)}% to ${sHi.ask.margin.toFixed(1)}%</b></td></tr>
       ${sRz!=null?sR('Weighted by what he trades',sRz.toFixed(2)+'x','the level the book actually returns'):''}
     </tbody></table>
-    ${sFlat>=2?`<div class="insight" style="border-left-color:var(--gold)"><b>The taper stops at ${kg(LADDER.at.hi)}, so ${sFlat} of the ${sSZ.length} printed sizes carry the same ${sHi.markupX.toFixed(2)}x.</b></div>`
+    ${sFlat>=2?`<div class="insight" style="border-left-color:var(--gold)"><b>The taper stops at ${kg(LD.at.hi)}, so ${sFlat} of the ${sSZ.length} printed sizes carry the same ${sHi.markupX.toFixed(2)}x.</b></div>`
       :''}`;})()}
     <!-- v393: THE EDITOR FOLDS. Seventeen tickboxes and nineteen number boxes were standing
          open inside the board card, which on a 375px phone put the thing he acts on, the
@@ -13039,7 +13078,7 @@ function tabPricing(){
     <div class="chartbox"><canvas id="pxShapeChart"></canvas></div>
     <div class="chartbox"><canvas id="pxTimeChart"></canvas></div>
   </div>
-  ${(()=>{const MC=marginCurve(),q=2,c=pxCost();
+  ${(()=>{const MC=marginCurve(),q=2,c=pxCost(),LD=ladderFor(PROD);
     const R=enginePrice(q,'T2',{curve:MC});
     const line=(lab,v,n)=>`<tr><td class="l">${lab}<div class="iref">${esc(n||'')}</div></td><td class="mono">${fmt(v)}</td></tr>`;
     /* v242: the workings are an explanation, and an explanation is something you ask for.
@@ -13051,8 +13090,8 @@ function tabPricing(){
     return `<details class="obsec"><summary>How a price is built <span class="q">${kg(q)}, line by line</span><span class="ct">${fmt0(R.price)}</span></summary>
     <div class="card"><table class="fintab istmt"><tbody>
       ${line('Cogs',LB.cogs,`${fmt(c.landed)} landed, over ${kg(q)}`)}
-      ${line('Markup',LB.cogs*LB.markupX,`${LB.markupX.toFixed(3)}x at this size, tapered at ${(buyTaper().b!=null?buyTaper().b.toFixed(3):'0')} off ${esc(supplierQuote.supplier)}&rsquo;s own ladder`)}
-      <tr class="tot"><td class="l"><b>Ask</b><div class="iref">rounded up to the ${fmt0(LADDER.round.to)}, floor ${fmt0(R.floor)}</div></td><td class="mono"><b>${fmt0(R.price)}</b></td></tr>
+      ${line('Markup',LB.cogs*LB.markupX,`${LB.markupX.toFixed(3)}x at this size, tapered at ${(buyTaper().b!=null?buyTaper().b.toFixed(3):'0')} off ${esc((quoteFor(PROD)||{}).supplier||'the supplier')}&rsquo;s own ladder`)}
+      <tr class="tot"><td class="l"><b>Ask</b><div class="iref">rounded up to the ${fmt0(LD.round.to)}, floor ${fmt0(R.floor)}</div></td><td class="mono"><b>${fmt0(R.price)}</b></td></tr>
     </tbody></table>
     <div class="dsc" style="margin-top:8px">That is the whole price and there is nothing else in it. What it has to PAY for is below, and the gap between the two is the margin.</div>
     <table class="fintab istmt" style="margin-top:10px"><tbody>
@@ -13065,7 +13104,7 @@ function tabPricing(){
     </tbody></table>
     <div class="dsc" style="margin-top:8px"><b>The markup is on cogs and the margin is on the cost to serve</b>, which is why they are different numbers. Cogs is the ${esc((PRODUCTS[PROD]||{name:'goods'}).name.toLowerCase())}; the cost to serve adds the leak, one delivery and the money tied up while the invoice is out. <b>The retired engine would have asked ${fmt0(R.wanted)}</b> for this lot on its fitted curve, and that figure is kept beside the ladder so the day the two disagree is visible rather than argued about.</div></div></details>`;})()}
   ${(()=>{const MC=marginCurve();return `<details class="obsec"><summary>The measured margin curve <span class="q">what the book has achieved, which prices nothing</span><span class="ct">${MC.fitted?`fitted, r&sup2; ${MC.r2!=null?MC.r2.toFixed(2):'&mdash;'}`:`not fitted, ${MC.n} order${MC.n===1?'':'s'}`}</span></summary>
-    <div class="dsc"><b>This is a measurement and not a setting, and no price on the board comes from it.</b> The curve regresses realised margin on log size over ${MC.n} priced order${MC.n===1?'':'s'} of ${esc((PRODUCTS[PROD]&&PRODUCTS[PROD].name||PROD).toLowerCase())}. ${MC.fitted?`It is fitted here: intercept ${MC.a.toFixed(3)}, slope ${MC.b.toFixed(4)}, r&sup2; ${MC.r2!=null?MC.r2.toFixed(3):'&mdash;'}, giving ${(MC.spread.hi*100).toFixed(0)}% at ${kg(LADDER.at.lo)} falling to ${(MC.spread.lo*100).toFixed(0)}% at ${kg(LADDER.at.hi)}.`:`<b>It is NOT fitted here.</b> ${MC.n} order${MC.n===1?'':'s'} is under the ${PRICE_ENGINE.minPoints} it needs, so it refuses to fit and returns the stated fallback of ${(PRICE_ENGINE.fallbackMargin*100).toFixed(0)}% at every size, which is a declared number and not a finding.`} A rise with size is clamped to flat, because one large well-priced order on a thin book would otherwise quote bulk at a higher rate than retail. The result is bounded to ${(PRICE_ENGINE.clamp.lo*100).toFixed(0)}% and ${(PRICE_ENGINE.clamp.hi*100).toFixed(0)}%, shifted by ${(PRICE_ENGINE.marginShift*100).toFixed(0)}%, and ${PRICE_ENGINE.recoverAbnormal>0?`${(PRICE_ENGINE.recoverAbnormal*100).toFixed(0)}% of the unexplained leak is recovered in it`:`none of the unexplained leak is recovered in it`}.</div>
+    <div class="dsc"><b>This is a measurement and not a setting, and no price on the board comes from it.</b> The curve regresses realised margin on log size over ${MC.n} priced order${MC.n===1?'':'s'} of ${esc((PRODUCTS[PROD]&&PRODUCTS[PROD].name||PROD).toLowerCase())}. ${MC.fitted?`It is fitted here: intercept ${MC.a.toFixed(3)}, slope ${MC.b.toFixed(4)}, r&sup2; ${MC.r2!=null?MC.r2.toFixed(3):'&mdash;'}, giving ${(MC.spread.hi*100).toFixed(0)}% at ${kg(LD.at.lo)} falling to ${(MC.spread.lo*100).toFixed(0)}% at ${kg(LD.at.hi)}.`:`<b>It is NOT fitted here.</b> ${MC.n} order${MC.n===1?'':'s'} is under the ${PRICE_ENGINE.minPoints} it needs, so it refuses to fit and returns the stated fallback of ${(PRICE_ENGINE.fallbackMargin*100).toFixed(0)}% at every size, which is a declared number and not a finding.`} A rise with size is clamped to flat, because one large well-priced order on a thin book would otherwise quote bulk at a higher rate than retail. The result is bounded to ${(PRICE_ENGINE.clamp.lo*100).toFixed(0)}% and ${(PRICE_ENGINE.clamp.hi*100).toFixed(0)}%, shifted by ${(PRICE_ENGINE.marginShift*100).toFixed(0)}%, and ${PRICE_ENGINE.recoverAbnormal>0?`${(PRICE_ENGINE.recoverAbnormal*100).toFixed(0)}% of the unexplained leak is recovered in it`:`none of the unexplained leak is recovered in it`}.</div>
     <!-- this pointed at How a price is built and then repeated that fold's own justification
          word for word, the only restatement left inside a book on this view. The fold it names
          carries the figure and the reason; what is left here is the part that is only true of
@@ -14401,7 +14440,10 @@ function consoCashBlock(){
        was fixed here is only the copy: it named "the buy in P1", and the P-series was
        dropped whole, so it pointed at a plan the desk no longer has. */
     ? (()=>{/* read the top tier off the live quote rather than hardcoding it: this line
-              sat at RM4,800 for two days after the quote was corrected to RM4,700 */
+              sat at RM4,800 for two days after the quote was corrected to RM4,700.
+              Round 5 note: this block is a WHOLE-BOOK head, proven identical across books
+              by the suite, so it deliberately reads salt's quote as the reference lot
+              rather than quoteFor(PROD), which would make it flap with the selector. */
        const bt=((supplierQuote&&supplierQuote.tiers)||[]).slice().sort((a,b)=>b.qty-a.qty)[0];
        const lead=`After the <b>${fmt0(cf.dueOut)}</b> already promised away, <b>${fmt0(cf.free)}</b> is yours to commit.`;
        if(!bt) return lead;
