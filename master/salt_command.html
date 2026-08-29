@@ -2615,6 +2615,9 @@ const PRICE_SET={
   "oil": {
     "prices": {
       "10": 130,
+      "20": 240,
+      "30": 330,
+      "40": 400,
       "50": 450
     },
     "hide": []
@@ -3966,7 +3969,7 @@ const RULES={
   creditUnits:{salt:{retail:1,associate:2}, oil:{retail:10,associate:20}},
   creditDays:10,
   fullProvDays:21,
-  reorderUnits:{salt:15, oil:10}
+  reorderUnits:{salt:15, oil:20}
 };
 function creditCapFor(prod,tier){const c=RULES.creditUnits[prod||PROD]||RULES.creditUnits[DEFAULT_PROD];return c[tier==='associate'?'associate':'retail'];}
 function reorderFor(prod){const r=RULES.reorderUnits;const v=r[prod||PROD];return v!=null?v:r[DEFAULT_PROD];}

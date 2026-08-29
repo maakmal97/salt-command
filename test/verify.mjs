@@ -2291,11 +2291,11 @@ section("Boundaries — the caps and the trigger are per book (round 5, his call
   ok(read("creditCapFor('salt','retail')") === 1 && read("creditCapFor('salt','associate')") === 2,
     "salt keeps 1 unit retail and 2 associate");
   ok(read("creditCapFor('oil','retail')") === 10 && read("creditCapFor('oil','associate')") === 20,
-    "oil reads 10 retail (his correction) and 20 associate (PROPOSED at twice retail)");
-  ok(read("reorderFor('salt')") === 15 && read("reorderFor('oil')") === 10,
-    "the reorder trigger is per book: salt 15, oil 10 (PROPOSED, one minimum lot)");
+    "oil reads 10 retail (his correction) and 20 associate (confirmed by him, 29 Aug)");
+  ok(read("reorderFor('salt')") === 15 && read("reorderFor('oil')") === 20,
+    "the reorder trigger is per book: salt 15, oil 20 (his call of 29 Aug)");
   w.eval("setProd('oil');recompute();");
-  ok(read("coverStats().reorderAt") === 10, "oil's cover is judged against oil's own trigger");
+  ok(read("coverStats().reorderAt") === 20, "oil's cover is judged against oil's own trigger");
   w.eval("setProd('salt');recompute();");
   ok(read("coverStats().reorderAt") === 15, "and salt's against salt's");
   /* the per-book credit totals PARTITION the old whole-book figure: proven for every
@@ -2319,15 +2319,16 @@ section("Boundaries — the caps and the trigger are per book (round 5, his call
 
 section("Oil — pinned at both ends and lawful between (round 5, his call 5)");
 {
-  /* His stated prices, 29 Aug in chat: RM130 at the 10 unit minimum (standing since v261)
-     and RM450 at the 50 unit lot, against a 50-unit buy of RM350 on the quote. The board
-     must honour both and taper strictly between. Two of these read TODAY'S cost basis on
-     purpose: if a dear enough lot ever lifts the 50 unit floor above RM450, or ties two
-     rates, the right outcome is a red line here saying his stated price needs his decision,
-     not a board that quietly moves it. */
+  /* His stated board, 29 Aug in chat: 13, 12, 11, 10 and 9 ringgit a unit down the five
+     sizes, so 130, 240, 330, 400 and 450, with the ends pinned against a 50-unit buy of
+     RM350 on the quote. Every size is stated, none derived. The floor checks read TODAY'S
+     cost basis on purpose: if a dear enough lot ever lifts the 50 unit floor above RM450,
+     or ties two rates, the right outcome is a red line here saying his stated price needs
+     his decision, not a board that quietly moves it. */
   const book = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
-  ok(JSON.stringify(book.PRICE_SET.oil.prices) === JSON.stringify({ "10": 130, "50": 450 }),
-    "the book records his two stated oil prices, 130 at 10 and 450 at 50");
+  ok(JSON.stringify(book.PRICE_SET.oil.prices) ===
+    JSON.stringify({ "10": 130, "20": 240, "30": 330, "40": 400, "50": 450 }),
+    "the book records his stated oil board, 13 down to 9 ringgit a unit");
   const { openMaster } = await import("../tools/payload.mjs");
   const { w } = await openMaster();
   const read = (expr) => JSON.parse(w.eval("JSON.stringify(" + expr + ")"));
@@ -2336,6 +2337,8 @@ section("Oil — pinned at both ends and lawful between (round 5, his call 5)");
   const a10 = rows.find((r) => r.q === 10), a50 = rows.find((r) => r.q === 50);
   ok(a10.ask === 130, "the board asks his RM130 at 10");
   ok(a50.ask === 450, "and his RM450 at 50; if this reads higher, the floor has overtaken his price and he must decide");
+  ok(JSON.stringify(rows.map((r) => r.ask)) === JSON.stringify([130, 240, 330, 400, 450]),
+    "the whole board is his stated one: 130, 240, 330, 400, 450");
   ok(a50.fd <= 450 + 1e-9 && a50.fc <= 450 + 1e-9,
     `RM450 clears both 50 unit floors (delivered ${a50.fd}, collected ${a50.fc}); red here means the tension of v404 is back`);
   let strict = true, dearer = true;
