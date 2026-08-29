@@ -37,7 +37,7 @@
       "stated": 20
     }
   },
-  "STATED_STOCK": 13.25,
+  "STATED_STOCK": 8.25,
   "COUNT_ON": {
     "salt": "2026-08-24",
     "oil": "2026-08-23"
@@ -157,7 +157,7 @@
     {"date":"2026-08-18","customer":"CR3-DAM","qty":1,"total":80,"cost":56,"cash":80,"deliveredQty":1,"deliveredOn":"2026-08-18","note":"Amended 2 unit to 1.","rid":"s092","amend":[{"date":"2026-08-18","kind":"Fulfilment","cash":0,"kg":1,"note":"as booked"},{"date":"2026-08-27","kind":"Fulfilment","cash":80,"kg":0,"note":"RM80 paid 27 Aug, nine days out"}],"paidOn":"2026-08-27"},
     {"date":"2026-08-18","customer":"CE4-CHE","qty":5.75,"total":500,"cost":56,"cash":500,"deliveredQty":5.25,"deliveredOn":"2026-08-18","paidOn":"2026-08-18","amend":[{"date":"2026-08-18","kind":"Fulfilment","cash":500,"kg":0.25},{"date":"2026-08-20","kind":"Fulfilment","cash":0,"kg":3,"note":"3 unit found by the 20 Aug count"},{"date":"2026-08-25","kind":"Fulfilment","cash":0,"kg":2,"note":"2 unit found 25 Aug"},{"date":"2026-08-25","kind":"Correction","cash":0,"kg":0,"note":"corrected to 5.75 unit"}],"note":"Corrected to 5.75 unit; deliveries found late.","rid":"s093","mod":"corrected on 2026-08-25: qty 6.25 to 5.75"},
     {"date":"2026-08-20","customer":"CJ4-BJ","qty":6.25,"total":400,"cost":44,"cash":400,"deliveredQty":6.25,"deliveredOn":"2026-08-21","paidOn":"2026-08-20","amend":[{"kind":"Fulfilment","cash":0,"kg":0,"note":"as booked, pending and undated"},{"date":"2026-08-20","kind":"Fulfilment","cash":400,"kg":0,"note":"RM400 paid, nothing delivered"},{"date":"2026-08-21","kind":"Fulfilment","cash":0,"kg":6.25,"note":"6.25 unit delivered, nothing paid"}],"note":"First half of split 12.5 unit order.","rid":"s094"},
-    {"date":"2026-08-20","customer":"CE4-AD","qty":5,"total":435,"cost":56,"cash":435,"deliveredQty":0,"paidOn":"2026-08-20","amend":[{"kind":"Fulfilment","cash":0,"kg":0,"note":"as booked, pending and undated"},{"date":"2026-08-20","kind":"Fulfilment","cash":435,"kg":0,"note":"paid in full with nothing handed over"}],"note":"Paid in full; delivery still owed.","rid":"s095"},
+    {"date":"2026-08-20","customer":"CE4-AD","qty":5,"total":435,"cost":56,"cash":435,"deliveredQty":5,"paidOn":"2026-08-20","amend":[{"kind":"Fulfilment","cash":0,"kg":0,"note":"as booked, pending and undated"},{"date":"2026-08-20","kind":"Fulfilment","cash":435,"kg":0,"note":"paid in full with nothing handed over"},{"date":"2026-08-29","kind":"Fulfilment","cash":0,"kg":5,"note":"<b>DELIVERED IN FULL ON 29 AUG, ON HIS STATEMENT, AND THE ORDER COMPLETES.</b> The 5 unit paid for on 20 Aug went out nine days later, as planned the day before. Nothing outstanding either way."}],"note":"<b>COMPLETED: PAID 20 AUG, DELIVERED IN FULL 29 AUG (folded v404).</b>  Paid in full; delivery still owed.","rid":"s095","deliveredOn":"2026-08-29"},
     {"date":"2026-08-20","customer":"CH5-OUG","qty":12.5,"total":600,"cost":44,"cash":600,"deliveredQty":12.5,"deliveredOn":"2026-08-20","paidOn":"2026-08-20","note":"Cheapest salt ever sold.","rid":"s096"},
     {"date":"2026-08-20","customer":"CA4-DAM","qty":0.5,"total":50,"cost":44,"cash":50,"deliveredQty":0.5,"deliveredOn":"2026-08-20","paidOn":"2026-08-20","orderCode":"E111","amend":[{"kind":"Fulfilment","cash":0,"kg":0,"note":"as booked, 1 unit for RM100"},{"date":"2026-08-20","kind":"Modification","cash":0,"kg":0,"note":"restated to 0.5 unit for RM50"},{"date":"2026-08-20","kind":"Fulfilment","cash":50,"kg":0.5,"note":"RM50 paid, half unit delivered"}],"note":"Queued three times before folding.","rid":"s097"},
     {"date":"2026-08-21","customer":"CS6-BS","qty":1.5,"total":190,"cost":44,"cash":190,"deliveredQty":1.5,"deliveredOn":"2026-08-21","paidOn":"2026-08-21","amend":[{"date":"2026-08-21","kind":"Fulfilment","cash":120,"kg":1,"note":"as booked: 1 unit for RM120"},{"date":"2026-08-21","kind":"Modification","cash":70,"kg":0.5,"note":"restated to 1.5 unit / RM190"}],"note":"Restated: RM190 replaced RM120 entry.","rid":"s098"},
@@ -404,6 +404,7 @@
   },
   "NOTES": {
     "STATED_STOCK": [
+      "ROLLED AT v404: 5 unit to CE4-AD on 2026-08-29, so 13.25 less 5 is 8.25. A ROLL AND NOT A COUNT; COUNT_ON is untouched.",
       "ROLLED AT v399: 3 unit to CH4-KLS on 2026-08-28, so 16.25 less 3 is 13.25. A ROLL AND NOT A COUNT; COUNT_ON is untouched."
     ],
     "sales": [

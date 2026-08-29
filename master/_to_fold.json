@@ -1,0 +1,20 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-08-28T00:00:01.000Z-stated-s095-delivered",
+   "collection": "sales",
+   "row": {"rid": "s095", "qty": 5, "total": 435, "customer": "CE4-AD", "changes": [{"field": "deliveredQty", "from": 0, "to": 5}]},
+   "reasoning": "Stated by the owner in chat on 29 Aug: CE4-AD's 5 unit, paid in full on 20 Aug, was delivered today as planned the day before. Fulfilment of 5 unit, no cash, dated 2026-08-29. The order completes and the deferred column drops to CE4-CHE's half unit. First staged against the v396 book; refolded against v403 after round four landed.",
+   "flags": [],
+   "amends": "s095",
+   "amendKind": "Fulfilment",
+   "entry": {"at": "2026-08-28T00:00:01.000Z-stated-s095-delivered", "type": "AMEND", "party": "CE4-AD",
+    "raw": "Fulfilment on CE4-AD s095: 5 unit delivered on 2026-08-29, on his statement of 29 Aug",
+    "payload": {"mode": "amend", "direction": "SELL", "party": "CE4-AD", "rid": "s095", "kind": "Fulfilment", "date": "2026-08-29", "cash": 0, "kg": 5}},
+   "decidedAt": "2026-08-29T02:15:00.000Z",
+   "decidedBy": "owner, stated in chat"
+  }
+ ]
+}

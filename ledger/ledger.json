@@ -1,6 +1,6 @@
 {
- "v": "v402",
- "stamped": "29 Aug 2026, 03:20 KL",
+ "v": "v404",
+ "stamped": "29 Aug 2026, 10:17 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -41,7 +41,7 @@
     "stated": 20
    }
   },
-  "STATED_STOCK": 13.25,
+  "STATED_STOCK": 8.25,
   "COUNT_ON": {
    "salt": "2026-08-24",
    "oil": "2026-08-23"
@@ -1922,7 +1922,7 @@
     "total": 435,
     "cost": 56,
     "cash": 435,
-    "deliveredQty": 0,
+    "deliveredQty": 5,
     "paidOn": "2026-08-20",
     "amend": [
      {
@@ -1937,10 +1937,18 @@
       "cash": 435,
       "kg": 0,
       "note": "paid in full with nothing handed over"
+     },
+     {
+      "date": "2026-08-29",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 5,
+      "note": "<b>DELIVERED IN FULL ON 29 AUG, ON HIS STATEMENT, AND THE ORDER COMPLETES.</b> The 5 unit paid for on 20 Aug went out nine days later, as planned the day before. Nothing outstanding either way."
      }
     ],
-    "note": "Paid in full; delivery still owed.",
-    "rid": "s095"
+    "note": "<b>COMPLETED: PAID 20 AUG, DELIVERED IN FULL 29 AUG (folded v404).</b>  Paid in full; delivery still owed.",
+    "rid": "s095",
+    "deliveredOn": "2026-08-29"
    },
    {
     "date": "2026-08-20",
@@ -2823,7 +2831,7 @@
   ],
   "QUEUE_COMMITTED": "2026-08-28T09:59:51.414Z",
   "PRICING": {
-   "takenAt": "2026-08-29T00:38:38.493Z",
+   "takenAt": "2026-08-29T02:17:55.647Z",
    "sizes": [
     0.5,
     1,
@@ -2984,9 +2992,9 @@
        "attrib": 1,
        "shrinkRate": 0.04777629034657148,
        "avgDel": {
-        "n": 106,
-        "kg": 268.2,
-        "mean": 2.5302
+        "n": 107,
+        "kg": 273.2,
+        "mean": 2.5533
        }
       },
       "policy": {
@@ -3265,11 +3273,11 @@
      }
     }
    },
-   "v": "v402"
+   "v": "v404"
   },
   "OPEN": {
-   "at": "2026-08-29T00:38:38.516Z",
-   "count": 6,
+   "at": "2026-08-29T02:17:55.716Z",
+   "count": 5,
    "byKey": {
     "CY2-NIL|undefined|230": {
      "d": null,
@@ -3320,20 +3328,6 @@
      "age": 2,
      "exp": 80
     },
-    "CE4-AD|2026-08-20|435": {
-     "d": "2026-08-20",
-     "p": "CE4-AD",
-     "dir": "S",
-     "q": 5,
-     "t": 435,
-     "cash": 435,
-     "mv": 0,
-     "st": "oweStock",
-     "oweKg": 5,
-     "rid": "s095",
-     "paidOn": "2026-08-20",
-     "key": "CE4-AD|2026-08-20|435"
-    },
     "CE4-CHE|2026-08-18|500": {
      "d": "2026-08-18",
      "p": "CE4-CHE",
@@ -3367,13 +3361,13 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 13.25,
+     "onHand": 8.25,
      "free": 7.75,
-     "owedOut": 5.5,
-     "coverDays": 1.4,
-     "rate": 5.45,
+     "owedOut": 0.5,
+     "coverDays": 1.3,
+     "rate": 5.8,
      "owedToYou": 180,
-     "promised": 8,
+     "promised": 3,
      "short": 0
     },
     "oil": {
@@ -3392,7 +3386,7 @@
     "salt": "2026-08-24",
     "oil": "2026-08-23"
    },
-   "v": "v402"
+   "v": "v404"
   }
  }
 }
