@@ -6561,7 +6561,7 @@ function drawAnalysis(){
           plugins:{legend:{display:true,labels:{color:TICK,boxWidth:12,font:{size:11}}},
             title:{display:true,text:'Price paid against lot size (RM/unit)',color:INK,font:{size:12}},
             tooltip:{callbacks:{label:i=>i.dataset.label==='Orders'
-              ?`${i.raw.d} ${i.raw.x} unit at RM ${i.raw.y}/unit`:`${i.raw.x} kg: RM ${i.raw.y}/unit`}}},
+              ?`${i.raw.d} ${i.raw.x} unit at RM ${i.raw.y}/unit`:`${i.raw.x} unit: RM ${i.raw.y}/unit`}}},   /* round 5: said "kg", the mass symbol the desk retired at v161; drawEarnChart's twin was fixed at v385 and this one was missed */
           scales:{x:{type:'logarithmic',grid:{color:GRID},ticks:{color:TICK,callback:v=>v+' unit'},title:{display:true,text:'lot size, log scale',color:TICK}},
                   y:{grid:{color:GRID},ticks:{color:TICK,callback:v=>'RM '+v}}}}});
 
