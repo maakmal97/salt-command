@@ -198,7 +198,7 @@ export function checkCorrection(fields, book, target, isSale) {
   }
   if (changes.some((c) => c.field === "date" && c.to === null)) {
     const eff = isSale ? POSITION_ENGINE.txPaid(target) : POSITION_ENGINE.poCash(target);
-    const mvd = isSale ? POSITION_ENGINE.txEffDeliv(target) : POSITION_ENGINE.poRecvKg(target);
+    const mvd = isSale ? POSITION_ENGINE.txEffDeliv(target) : POSITION_ENGINE.poRecvUnits(target);
     if (eff > 0.005 || mvd > 0.005) {
       errs.push("the date cannot be cleared: money or stock has moved against this row, and an undated row reads as pending, which a row with movement is not");
     }
@@ -501,7 +501,7 @@ export function draftRow(entry, book) {
          in-kind settlement, and s010 (cash 0, settledRM 80) proved it by raising nothing when
          its total was corrected below what had actually been paid. */
       const paid = isSale ? POSITION_ENGINE.txPaid(target) : POSITION_ENGINE.poCash(target);
-      const movedQty = isSale ? POSITION_ENGINE.txEffDeliv(target) : POSITION_ENGINE.poRecvKg(target);
+      const movedQty = isSale ? POSITION_ENGINE.txEffDeliv(target) : POSITION_ENGINE.poRecvUnits(target);
       if (isNum(after.total) && after.total < paid - 0.005) {
         flags.push(`The corrected total of RM ${round(after.total)} is under the RM ${round(paid)} already paid against this row.`);
       }
@@ -621,7 +621,7 @@ export function draftRow(entry, book) {
     row[dir2 === "BUY" ? "supplier" : "customer"] = t.p;
     if (t.pr) row.product = t.pr;
 
-    const oweRM = +(t.oweRM || 0), oweKg = +(t.oweKg || 0);
+    const oweRM = +(t.oweRM || 0), oweUnits = +(t.oweUnits || 0);
     const flags = [];
     /* THE COMPARISONS AN AMENDMENT CANNOT MAKE AGAINST ITSELF, which is the same idea as the
        flags on a new row: everything here is the entry measured against the order it targets. */
@@ -629,13 +629,13 @@ export function draftRow(entry, book) {
       if (cash > oweRM + 0.005) {
         flags.push(`This pays RM ${round(cash)} against RM ${round(oweRM)} outstanding, so RM ${round(cash - oweRM)} more than the order is owed.`);
       }
-      if (moved > oweKg + 0.005) {
-        flags.push(`This hands over ${round(moved)} unit against ${round(oweKg)} still to move, so ${round(moved - oweKg)} unit more than the order calls for.`);
+      if (moved > oweUnits + 0.005) {
+        flags.push(`This hands over ${round(moved)} unit against ${round(oweUnits)} still to move, so ${round(moved - oweUnits)} unit more than the order calls for.`);
       }
       if (t.d && when && when < t.d) {
         flags.push(`Dated ${when}, which is before the order's own date of ${t.d}.`);
       }
-      if (cash >= oweRM - 0.005 && moved >= oweKg - 0.005) {
+      if (cash >= oweRM - 0.005 && moved >= oweUnits - 0.005) {
         flags.push(`This SETTLES the order in full: nothing is left outstanding after it.`);
       }
     } else {
@@ -648,13 +648,13 @@ export function draftRow(entry, book) {
     }
 
     const left = kind === "Fulfilment"
-      ? `Leaves RM ${round(Math.max(0, oweRM - cash))} and ${round(Math.max(0, oweKg - moved))} unit outstanding.`
+      ? `Leaves RM ${round(Math.max(0, oweRM - cash))} and ${round(Math.max(0, oweUnits - moved))} unit outstanding.`
       : "The order is withdrawn and counts nowhere.";
     const reasoning = [
       `${kind} against ${t.p}'s ${dir2 === "BUY" ? "lot" : "order"} of ${round(t.q)} unit for RM ${round(t.t)}`,
       t.d ? `agreed ${t.d}.` : "which is pending and undated.",
       kind === "Fulfilment"
-        ? `RM ${round(cash)} and ${round(moved)} unit move on ${when}, against RM ${round(oweRM)} and ${round(oweKg)} unit outstanding. ${left}`
+        ? `RM ${round(cash)} and ${round(moved)} unit move on ${when}, against RM ${round(oweRM)} and ${round(oweUnits)} unit outstanding. ${left}`
         : left,
       "The row itself is NOT recomputed here: ovAmend in the master applies it, so there is one definition of what a fulfilment does rather than two.",
     ].join(" ");
@@ -940,7 +940,7 @@ export function draftRow(entry, book) {
          The SELL branch above states what moved including a zero; this one stated it only when
          something did, so a settled lot came out with no receivedQty and no inTransit. By the
          book's own convention an absent receivedQty on a settled lot means received IN FULL,
-         and poRecvKg agrees, so the row asserted the salt had landed: approve it and the fold
+         and poRecvUnits agrees, so the row asserted the salt had landed: approve it and the fold
          walks the whole lot into stock and into the cost basis.
          BOTH FIELDS ARE SET, not one, because that is what the fold's own v146 guard does on
          the correction road for exactly this case. A row drafted here and a row corrected there

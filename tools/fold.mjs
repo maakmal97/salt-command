@@ -268,7 +268,7 @@ function applyAmend(row, pay, dir, note) {
       delete row.unpriced;
       reasons.unpriced = "a real total was set";
     }
-    /* THE v146 GUARD, on the correction road too. poRecvKg reads an ABSENT receivedQty as
+    /* THE v146 GUARD, on the correction road too. poRecvUnits reads an ABSENT receivedQty as
        fully received, which is how every settled historical lot is stored. So clearing
        `pending` alone would walk the whole lot into stock and the cost basis the moment a
        deposit is recorded; the receipt has to be stated explicitly: nothing has arrived, the

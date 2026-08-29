@@ -15,12 +15,12 @@ function txPrice(s){return s.qty>0?s.total/s.qty:0;}
 function txPaid(s){return (s.cash||0)+(s.settledRM||0);}
 function txDeliv(s){return (s.deliveredQty||0)+(s.settledKg||0);}
 function txPhys(s){return (s.deliveredQty||0);}
-function txEffDeliv(s){return txDeliv(s)+(s.advanceKg||0);}
+function txEffDeliv(s){return txDeliv(s)+(s.advanceUnits||0);}
 function txAdvance(s){return Math.max(0,(s.deliveredQty||0)*txPrice(s)-txPaid(s));}
-function txDeferKg(s){const p=txPrice(s);if(!(p>0))return 0;return Math.max(0,txPaid(s)/p-txEffDeliv(s));}
-function txPendKg(s){if(s.cancelled)return 0;return Math.max(0,+(s.qty-txEffDeliv(s)-txDeferKg(s)).toFixed(2));}
-function txPendKgRaw(s){if(s.cancelled)return 0;return Math.max(0,s.qty-txEffDeliv(s)-txDeferKg(s));}
-function txPendRM(s){if(s.cancelled)return 0;const p=txPrice(s);if(!(p>0))return 0;return +(Math.max(0,s.qty-txEffDeliv(s)-txDeferKg(s))*p).toFixed(2);}
+function txDeferUnits(s){const p=txPrice(s);if(!(p>0))return 0;return Math.max(0,txPaid(s)/p-txEffDeliv(s));}
+function txPendUnits(s){if(s.cancelled)return 0;return Math.max(0,+(s.qty-txEffDeliv(s)-txDeferUnits(s)).toFixed(2));}
+function txPendUnitsRaw(s){if(s.cancelled)return 0;return Math.max(0,s.qty-txEffDeliv(s)-txDeferUnits(s));}
+function txPendRM(s){if(s.cancelled)return 0;const p=txPrice(s);if(!(p>0))return 0;return +(Math.max(0,s.qty-txEffDeliv(s)-txDeferUnits(s))*p).toFixed(2);}
 function txStat(t){
   if(t.cancelled)return {order:'Cancelled',cls:'def',pay:(t.cash||0)>0.009?'Refund due':'Unpaid',deliv:'Undelivered'};
   const paid=(t.cash||0)+(t.settledRM||0), del=(t.deliveredQty||0)+(t.settledKg||0);
@@ -50,7 +50,7 @@ function txStat(t){
 }
 function txDates(s){
   const am=s.amend||[];
-  const kgSteps=am.filter(a=>a.kind==='Fulfilment'&&+a.kg>0.0001);
+  const unitSteps=am.filter(a=>a.kind==='Fulfilment'&&+a.kg>0.0001);
   const cashSteps=am.filter(a=>+a.cash>0.0001);
   const phys=txPhys(s), eff=txEffDeliv(s), paid=txPaid(s);
   const full=s.qty>0&&eff>=s.qty-0.01, fullPaid=s.total>0&&paid>=s.total-0.01;
@@ -58,7 +58,7 @@ function txDates(s){
   if(s.cancelled){return {dOn:null,dSrc:'cancelled',pOn:null,pSrc:'cancelled',full:false,fullPaid:false};}
   if(eff>0.0001){
     if(!full){dSrc='partial';}
-    else if(kgSteps.length){dOn=kgSteps[kgSteps.length-1].date||s.date;dSrc='trail';}
+    else if(unitSteps.length){dOn=unitSteps[unitSteps.length-1].date||s.date;dSrc='trail';}
     else if(s.deliveredOn){dOn=s.deliveredOn;dSrc='stated';}
     else if(phys>0.0001||eff>0.0001){dOn=s.date;dSrc='assumed';}
   }else{dSrc='undelivered';}
@@ -70,7 +70,7 @@ function txDates(s){
   }else{pSrc='unpaid';}
   return {dOn,dSrc,pOn,pSrc,full,fullPaid};
 }
-function poRecvKg(p){
+function poRecvUnits(p){
   if(p.defaulted)return 0;
   /* a PENDING lot is agreed and nothing more: no money has moved and no salt has landed,
      so it must not be read as received. Without this it defaults to fully received and
@@ -86,7 +86,7 @@ function poCash(p){
 }
 function poLive(p){return !p.pending&&!p.defaulted;}
 function poRate(p){return p.qty>0?p.total/p.qty:0;}
-function poOpenKg(p){return +(p.qty-poRecvKg(p)).toFixed(4);}
+function poOpenUnits(p){return +(p.qty-poRecvUnits(p)).toFixed(4);}
 function provRate(days){return days>=21?1:days>=14?0.75:days>=8?0.5:days>=4?0.25:0;}
 /* ============ THE WALK (was recompute) ============
    Everything the desk's tabs read about a product is set by one pass over that product's
@@ -96,7 +96,7 @@ function provRate(days){return days>=21?1:days>=14?0.75:days>=8?0.5:days>=4?0.25
      sales, purchases   this product's rows only, or oil sold would eat salt off the shelf
      opening            {qty, costPerKg, stated, uncounted} for the product
      isSalt             loans and the supplier receivable are salt arrangements
-     loanKg             units drawn against loans (salt only; pre-opening loans are inside the opening count)
+     loanUnits             units drawn against loans (salt only; pre-opening loans are inside the opening count)
      counted            the hand count that beats the ledger, or null when this book was never counted
      supplierReceivable {amount, since, status} or null
      today              the as-of date, for ageing the receivables
@@ -109,7 +109,7 @@ function walk(I){
   const today=(I.today instanceof Date)?I.today:new Date(I.today);
   const dbet=d=>daysBetween(today,d);
   const W={};
-  W.receivedPO=_B.filter(p=>!p.defaulted&&poRecvKg(p)>0.0001);
+  W.receivedPO=_B.filter(p=>!p.defaulted&&poRecvUnits(p)>0.0001);
   W.defaultPO=_B.filter(p=>p.defaulted);
   /* v280, HIS RULING: goodwill is an EXPENSE, not a sale. The row stays in sales so the salt it
      moved still leaves the shelf; it is only kept out of the priced set. */
@@ -117,23 +117,23 @@ function walk(I){
   W.goodwillRM=+_S.filter(s=>s.goodwill).reduce((a,s)=>a+(s.qty||0)*(s.cost!=null?s.cost:I.wavgBuyPrev),0).toFixed(2);
   /* the cost basis follows the units ACTUALLY ON THE SHELF, valued at the rate of the lot they
      came off: a part-delivered lot enters as it lands, not whole on the first unit */
-  W.buyKg=W.receivedPO.reduce((s,p)=>s+poRecvKg(p),0);
-  W.buyRM=W.receivedPO.reduce((s,p)=>s+poRecvKg(p)*poRate(p),0);
+  W.buyUnits=W.receivedPO.reduce((s,p)=>s+poRecvUnits(p),0);
+  W.buyRM=W.receivedPO.reduce((s,p)=>s+poRecvUnits(p)*poRate(p),0);
   const _op=I.opening||{qty:0,costPerKg:null,stated:null,uncounted:true};
   const openInCost=_op.costPerKg!=null;
-  const costKg=W.buyKg+(openInCost?_op.qty:0);
+  const costUnits=W.buyUnits+(openInCost?_op.qty:0);
   const costRM=W.buyRM+(openInCost?_op.qty*_op.costPerKg:0);
-  W.wavgBuy=costKg>0?costRM/costKg:0;                 // no lots yet is not a division by nothing
-  const loanKg=I.isSalt?(+I.loanKg||0):0;
-  const drawnKg=_S.reduce((a,s)=>a+txPhys(s),0)+loanKg;
-  W.soldKg=drawnKg;
-  W.ledgerStock=+(_op.qty+W.buyKg-drawnKg).toFixed(2);
+  W.wavgBuy=costUnits>0?costRM/costUnits:0;                 // no lots yet is not a division by nothing
+  const loanUnits=I.isSalt?(+I.loanUnits||0):0;
+  const drawnUnits=_S.reduce((a,s)=>a+txPhys(s),0)+loanUnits;
+  W.soldUnits=drawnUnits;
+  W.ledgerStock=+(_op.qty+W.buyUnits-drawnUnits).toFixed(2);
   /* A COUNT AND A ZERO ARE DIFFERENT CLAIMS: a counted shelf beats the ledger; a book never
      counted falls back to what the ledger says rather than inventing a count. */
   const _cnt=I.counted;
   W.stockCounted=_cnt!=null;
   W.currentStock=+((_cnt!=null?_cnt:W.ledgerStock)).toFixed(2);
-  W.selfUse=W.stockCounted?Math.max(0,+(_op.qty+W.buyKg-drawnKg-W.currentStock).toFixed(2)):0;
+  W.selfUse=W.stockCounted?Math.max(0,+(_op.qty+W.buyUnits-drawnUnits-W.currentStock).toFixed(2)):0;
   W.revTotal=W.pricedSales.reduce((a,s)=>a+(s.total||0)-txPendRM(s),0);   // net of any pending tail on a part-moved order
   W.revCollected=_S.reduce((a,s)=>a+(s.cash||0),0);
   /* AR = advance only: pending unpaid-and-undelivered is not a receivable */
@@ -141,13 +141,13 @@ function walk(I){
   W.arGross=W.arList.reduce((a,s)=>a+txAdvance(s),0);
   W.ar=Math.max(0,+W.arList.reduce((a,s)=>a+txAdvance(s)*(1-provRate(dbet(s.date))),0).toFixed(2)); // net of provisioning
   W.advTotal=W.arGross;
-  W.defKg=+_S.reduce((a,s)=>a+txDeferKg(s),0).toFixed(2);
+  W.defUnits=+_S.reduce((a,s)=>a+txDeferUnits(s),0).toFixed(2);
   const _sr=I.isSalt?(I.supplierReceivable||null):null;
   W.supRecovGross=_sr?_sr.amount:0;
   const srDays=_sr?dbet(_sr.since):0;
   W.supRecovNet=(_sr&&_sr.status==='writtenOff')?0
     :+(W.supRecovGross*(1-provRate(srDays))).toFixed(2);
-  W.cogs=W.pricedSales.reduce((a,s)=>a+(s.qty-txPendKgRaw(s))*(s.cost!=null?s.cost:W.wavgBuy),0);  // no cost against salt not yet moved
+  W.cogs=W.pricedSales.reduce((a,s)=>a+(s.qty-txPendUnitsRaw(s))*(s.cost!=null?s.cost:W.wavgBuy),0);  // no cost against salt not yet moved
   W.grossMargin=W.revTotal-W.cogs;W.marginPct=W.revTotal>0?W.grossMargin/W.revTotal*100:0;
   return W;
 }
@@ -157,29 +157,29 @@ function coverStats(S){
   const rows=S.pricedSales||[];
   const win=n=>{const from=new Date(today.getTime()-n*MS);
     return +rows.filter(s=>new Date(s.date)>=from).reduce((a,s)=>a+txPhys(s),0).toFixed(2);};
-  const kg14=win(14),kg28=win(28);
-  const rate14=+(kg14/14).toFixed(3),rate28=+(kg28/28).toFixed(3);
+  const units14=win(14),units28=win(28);
+  const rate14=+(units14/14).toFixed(3),rate28=+(units28/28).toFixed(3);
   const rate=rate14>0?rate14:rate28;
-  const free=+(S.currentStock-S.defKg).toFixed(2),usable=Math.max(0,free);
+  const free=+(S.currentStock-S.defUnits).toFixed(2),usable=Math.max(0,free);
   const days=rate>0?+(usable/rate).toFixed(1):null;
   const zero=days!=null?new Date(today.getTime()+days*MS):null;
-  return {kg14,kg28,rate14,rate28,rate,free,days,zero,
-    reorderAt:S.reorderKg,below:free<S.reorderKg,shortBy:+(S.reorderKg-usable).toFixed(2)};
+  return {units14,units28,rate14,rate28,rate,free,days,zero,
+    reorderAt:S.reorderUnits,below:free<S.reorderUnits,shortBy:+(S.reorderUnits-usable).toFixed(2)};
 }
 /* ============ COMMITMENTS ============ what is owed out (paid ahead of delivery) and promised
    (agreed, nothing moved), which is the part of the forecast the phone and the drafter read */
 function commitments(sales,currentStock){
   const rows=sales||[];
-  const defRows=rows.filter(s=>txDeferKg(s)>0.009)
-    .map(s=>({id:s.customer,kg:+txDeferKg(s).toFixed(2),rm:0,why:'paid ahead of delivery'}));
-  const pendRows=rows.filter(s=>txPendKg(s)>0.009)
-    .map(s=>({id:s.customer,kg:+txPendKg(s).toFixed(2),rm:txPendRM(s),why:'agreed, nothing moved'}));
-  const owedKg=+defRows.reduce((a,r)=>a+r.kg,0).toFixed(2);
-  const promKg=+pendRows.reduce((a,r)=>a+r.kg,0).toFixed(2);
+  const defRows=rows.filter(s=>txDeferUnits(s)>0.009)
+    .map(s=>({id:s.customer,kg:+txDeferUnits(s).toFixed(2),rm:0,why:'paid ahead of delivery'}));
+  const pendRows=rows.filter(s=>txPendUnits(s)>0.009)
+    .map(s=>({id:s.customer,kg:+txPendUnits(s).toFixed(2),rm:txPendRM(s),why:'agreed, nothing moved'}));
+  const owedUnits=+defRows.reduce((a,r)=>a+r.kg,0).toFixed(2);
+  const promUnits=+pendRows.reduce((a,r)=>a+r.kg,0).toFixed(2);
   const promRM=+pendRows.reduce((a,r)=>a+r.rm,0).toFixed(2);
-  const commitKg=+(owedKg+promKg).toFixed(2);
-  return {defRows,pendRows,owedKg,promKg,promRM,commitKg,
-    shortKg:+Math.max(0,commitKg-currentStock).toFixed(2), coverable:currentStock>=commitKg};
+  const commitUnits=+(owedUnits+promUnits).toFixed(2);
+  return {defRows,pendRows,owedUnits,promUnits,promRM,commitUnits,
+    shortUnits:+Math.max(0,commitUnits-currentStock).toFixed(2), coverable:currentStock>=commitUnits};
 }
 /* ============ A ROW AS THE PHONE SEES IT ============ the ledger and open-order shape of the
    payload: what was traded, what moved, what is still to be handed over each way, and a state
@@ -188,20 +188,20 @@ function ledgerRow(t,dir,defaultProd){
   const q=+t.qty||0, tot=+t.total||0;
   const buy=(dir==='B');
   const paidRM=buy?poCash(t):txPaid(t);
-  const mv=buy?poRecvKg(t):txEffDeliv(t);
+  const mv=buy?poRecvUnits(t):txEffDeliv(t);
   const oweRM=+Math.max(0,tot-paidRM).toFixed(2);      // money still to be handed over
-  const oweKg=+Math.max(0,q-mv).toFixed(2);            // goods still to be handed over
+  const oweUnits=+Math.max(0,q-mv).toFixed(2);            // goods still to be handed over
   let st;
   if(t.cancelled) st='canc';
   else if(!t.date||t.pending) st='pend';
-  else if(oweRM<0.005&&oweKg<0.005) st='done';
-  else if(oweKg>=0.005&&oweRM>=0.005) st='part';
-  else if(oweKg>=0.005) st=buy?'dueStock':'oweStock';
+  else if(oweRM<0.005&&oweUnits<0.005) st='done';
+  else if(oweUnits>=0.005&&oweRM>=0.005) st='part';
+  else if(oweUnits>=0.005) st=buy?'dueStock':'oweStock';
   else st=buy?'oweMoney':'dueMoney';
   const r={ d:t.date||null, p:t.customer||t.supplier||'', dir:dir,
     q:q, t:tot, cash:+paidRM.toFixed(2), mv:+mv.toFixed(2), st:st };
   if(oweRM>=0.005) r.oweRM=oweRM;
-  if(oweKg>=0.005) r.oweKg=oweKg;
+  if(oweUnits>=0.005) r.oweUnits=oweUnits;
   const pr=t.product||defaultProd;
   if(pr!==defaultProd) r.pr=pr;
   /* v362: THE ID AND THE ATTRIBUTION, so the phone can name a row and prefill an edit of it.
@@ -299,8 +299,8 @@ function attributionOf(row,partyKey){
 function ovKey(t){return (t.customer||t.supplier)+'|'+t.date+'|'+t.total;}
 
 return {txPrice:txPrice,txPaid:txPaid,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:txEffDeliv,txAdvance:txAdvance,
-        txDeferKg:txDeferKg,txPendKg:txPendKg,txPendKgRaw:txPendKgRaw,txPendRM:txPendRM,txStat:txStat,txDates:txDates,
-        poRecvKg:poRecvKg,poCash:poCash,poLive:poLive,poRate:poRate,poOpenKg:poOpenKg,provRate:provRate,
+        txDeferUnits:txDeferUnits,txPendUnits:txPendUnits,txPendUnitsRaw:txPendUnitsRaw,txPendRM:txPendRM,txStat:txStat,txDates:txDates,
+        poRecvUnits:poRecvUnits,poCash:poCash,poLive:poLive,poRate:poRate,poOpenUnits:poOpenUnits,provRate:provRate,
         daysBetween:daysBetween,walk:walk,coverStats:coverStats,commitments:commitments,
         ledgerRow:ledgerRow,openable:openable,ovKey:ovKey,attributionOf:attributionOf,
         CORRECTABLE:CORRECTABLE,CORRECT_REQUIRED:CORRECT_REQUIRED,CORRECT_NUM_POS:CORRECT_NUM_POS,

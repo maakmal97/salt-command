@@ -2832,7 +2832,7 @@
   ],
   "QUEUE_COMMITTED": "2026-08-28T09:59:51.414Z",
   "PRICING": {
-   "takenAt": "2026-08-29T10:57:01.579Z",
+   "takenAt": "2026-08-29T11:16:20.458Z",
    "sizes": [
     0.5,
     1,
@@ -3266,7 +3266,7 @@
    "v": "v404"
   },
   "OPEN": {
-   "at": "2026-08-29T10:57:01.609Z",
+   "at": "2026-08-29T11:16:20.486Z",
    "count": 5,
    "byKey": {
     "CY2-NIL|undefined|230": {
@@ -3279,7 +3279,7 @@
      "mv": 0,
      "st": "pend",
      "oweRM": 230,
-     "oweKg": 2.5,
+     "oweUnits": 2.5,
      "rid": "s119",
      "agreedOn": "2026-08-28",
      "key": "CY2-NIL|undefined|230"
@@ -3327,7 +3327,7 @@
      "cash": 500,
      "mv": 5.25,
      "st": "oweStock",
-     "oweKg": 0.5,
+     "oweUnits": 0.5,
      "rid": "s093",
      "paidOn": "2026-08-18",
      "deliveredOn": "2026-08-18",
@@ -3342,7 +3342,7 @@
      "cash": 750,
      "mv": 0,
      "st": "dueStock",
-     "oweKg": 12.5,
+     "oweUnits": 12.5,
      "rid": "p003",
      "defaulted": true,
      "key": "SF6-KLC|2026-07-08|750"

@@ -859,7 +859,7 @@ section("Drafter — rows, refusals and flags");
 
   /* With a key, a Fulfilment kind and a matching OPEN snapshot, it drafts. */
   const openBook = { ...book, version: "vTEST", state: { ...(book.state || {}), OPEN: { v: "vTEST", byKey: {
-    "CC5-OKR|2026-08-01|90": { p: "CC5-OKR", dir: "S", q: 1, t: 90, cash: 0, mv: 0, d: "2026-08-01", st: "dueMoney", oweRM: 90, oweKg: 1 },
+    "CC5-OKR|2026-08-01|90": { p: "CC5-OKR", dir: "S", q: 1, t: 90, cash: 0, mv: 0, d: "2026-08-01", st: "dueMoney", oweRM: 90, oweUnits: 1 },
   } } } };
   const amend = draftRow({ at: "x", payload: { mode: "amend", kind: "Fulfilment", direction: "SELL",
     party: "CC5-OKR", orderKey: "CC5-OKR|2026-08-01|90", date: "2026-08-20", cash: 90, kg: 1 } }, openBook);
@@ -1409,9 +1409,9 @@ section("Engine — the position, out of the desk (v338)");
   ok(/Deferred/.test(X.txStat({ qty: 2, total: 200, cash: 200, deliveredQty: 1 }).order), "paid ahead of delivery is deferred");
   ok(X.txStat({ qty: 1, total: 100, cash: 0, settledRM: 100, rebate: true, deliveredQty: 1 }).order === "In-Kind", "a settled rebate is In-Kind");
   ok(X.txAdvance({ qty: 2, total: 200, cash: 100, deliveredQty: 2 }) === 100, "the advance is what has been delivered and not paid for");
-  ok(X.txDeferKg({ qty: 2, total: 200, cash: 200, deliveredQty: 1 }) === 1, "the deferral is what has been paid for and not delivered");
-  ok(X.poRecvKg({ qty: 10, pending: true }) === 0 && X.poRecvKg({ qty: 10, defaulted: true }) === 0
-     && X.poRecvKg({ qty: 10, inTransit: true }) === 0 && X.poRecvKg({ qty: 10, receivedQty: 14 }) === 10 && X.poRecvKg({ qty: 10 }) === 10,
+  ok(X.txDeferUnits({ qty: 2, total: 200, cash: 200, deliveredQty: 1 }) === 1, "the deferral is what has been paid for and not delivered");
+  ok(X.poRecvUnits({ qty: 10, pending: true }) === 0 && X.poRecvUnits({ qty: 10, defaulted: true }) === 0
+     && X.poRecvUnits({ qty: 10, inTransit: true }) === 0 && X.poRecvUnits({ qty: 10, receivedQty: 14 }) === 10 && X.poRecvUnits({ qty: 10 }) === 10,
      "a lot receives nothing while pending, defaulted or in transit, a stated receipt capped at the lot, else the whole lot");
   ok(X.provRate(0) === 0 && X.provRate(4) === 0.25 && X.provRate(8) === 0.5 && X.provRate(14) === 0.75 && X.provRate(21) === 1, "the ageing ladder");
 
@@ -1421,23 +1421,23 @@ section("Engine — the position, out of the desk (v338)");
       { customer: "CB", qty: 3, total: 300, cash: 0, deliveredQty: 0 },
       { date: "2026-08-15", customer: "CC", qty: 1, total: 100, cash: 0, deliveredQty: 1 } ],
     purchases: [ { date: "2026-08-01", qty: 50, total: 2200, supplier: "SA", status: "paid", cash: 2200 } ],
-    opening: { qty: 10, costPerKg: 50, stated: null }, isSalt: true, loanKg: 0, counted: null,
+    opening: { qty: 10, costPerKg: 50, stated: null }, isSalt: true, loanUnits: 0, counted: null,
     supplierReceivable: null, today: new Date("2026-08-22"), wavgBuyPrev: 0 });
-  ok(W.buyKg === 50 && Math.abs(W.wavgBuy - 45) < 1e-9, "50 at RM44 over an opening 10 at RM50 averages RM45");
+  ok(W.buyUnits === 50 && Math.abs(W.wavgBuy - 45) < 1e-9, "50 at RM44 over an opening 10 at RM50 averages RM45");
   ok(W.ledgerStock === 57 && W.currentStock === 57 && W.stockCounted === false, "uncounted, the ledger stands: 60 in, 3 out");
   ok(W.pricedSales.length === 2 && W.revTotal === 300, "the pending order counts nowhere; revenue is the two that moved");
   ok(Math.abs(W.cogs - 135) < 1e-9 && Math.abs(W.grossMargin - 165) < 1e-9, "cost of goods at the average for rows with no cost of their own");
   ok(W.arList.length === 1 && W.arGross === 100 && Math.abs(W.ar - 75) < 1e-9, "one advance of RM100, seven days old, provisioned a quarter");
-  ok(W.defKg === 0, "nothing paid ahead of delivery");
+  ok(W.defUnits === 0, "nothing paid ahead of delivery");
   const cm = X.commitments([{ customer: "CB", qty: 3, total: 300, cash: 0, deliveredQty: 0 }, { customer: "CD", qty: 2, total: 200, cash: 200, deliveredQty: 0 }], 4);
-  ok(cm.owedKg === 2 && cm.promKg === 3 && cm.commitKg === 5 && cm.shortKg === 1 && !cm.coverable, "owed, promised, and one short of the shelf");
+  ok(cm.owedUnits === 2 && cm.promUnits === 3 && cm.commitUnits === 5 && cm.shortUnits === 1 && !cm.coverable, "owed, promised, and one short of the shelf");
 
   /* THE GATE: the desk's own inputs, both books, and the record comes back equal */
   const { openMaster } = await import("../tools/payload.mjs");
   const { w } = await openMaster();
   const read = (expr) => JSON.parse(w.eval("JSON.stringify(" + expr + ")"));
-  const NUMS = ["buyKg", "buyRM", "wavgBuy", "soldKg", "ledgerStock", "stockCounted", "currentStock", "selfUse", "revTotal", "revCollected",
-    "arGross", "ar", "advTotal", "defKg", "supRecovGross", "supRecovNet", "cogs", "grossMargin", "marginPct", "goodwillRM"];
+  const NUMS = ["buyUnits", "buyRM", "wavgBuy", "soldUnits", "ledgerStock", "stockCounted", "currentStock", "selfUse", "revTotal", "revCollected",
+    "arGross", "ar", "advTotal", "defUnits", "supRecovGross", "supRecovNet", "cogs", "grossMargin", "marginPct", "goodwillRM"];
   for (const p of ["salt", "oil"]) {
     w.eval(`setProd(${JSON.stringify(p)});`);
     const mine = X.walk(read("posInputs()"));
@@ -1446,11 +1446,11 @@ section("Engine — the position, out of the desk (v338)");
       `${p}: the walk reproduces the desk's position to the last decimal`);
     /* round 5: the trigger is per book, so the gate hands the engine the book's own figure,
        exactly as the desk's coverStats() wrapper does */
-    const cv = X.coverStats({ pricedSales: mine.pricedSales, currentStock: mine.currentStock, defKg: mine.defKg, today: new Date(read("TODAY")), reorderKg: read("reorderFor(PROD)") });
+    const cv = X.coverStats({ pricedSales: mine.pricedSales, currentStock: mine.currentStock, defUnits: mine.defUnits, today: new Date(read("TODAY")), reorderUnits: read("reorderFor(PROD)") });
     const dcv = read("coverStats()");
     ok(cv.rate === dcv.rate && cv.free === dcv.free && cv.days === dcv.days && cv.shortBy === dcv.shortBy, `${p}: cover agrees`);
     const c2 = X.commitments(read("pSales(PROD)"), mine.currentStock), f = read("forecast()");
-    ok(c2.commitKg === f.commitKg && c2.shortKg === f.shortKg && c2.owedKg === f.owedKg && c2.promKg === f.promKg, `${p}: the commitments agree with the forecast`);
+    ok(c2.commitUnits === f.commitUnits && c2.shortUnits === f.shortUnits && c2.owedUnits === f.owedUnits && c2.promUnits === f.promUnits, `${p}: the commitments agree with the forecast`);
   }
   try { w.close(); } catch (e) { }
 }
@@ -1711,7 +1711,7 @@ section("Fold — an approved batch becomes records in the book (v340)");
         const row = B2.purchases.find((x) => x.rid === "pX02");
         ok(!row.pending && row.receivedQty === 0 && row.inTransit === true,
           "and the receipt is stated explicitly: nothing arrived, the lot is on order (the v146 guard)");
-        ok(E2.poRecvKg(row) === 0, "so the walk books no phantom stock from it");
+        ok(E2.poRecvUnits(row) === 0, "so the walk books no phantom stock from it");
       }
 
       /* F3: a real total on an unpriced row clears the flag, as a Modification has since
@@ -2049,8 +2049,8 @@ section("Orders and money — every basis is named where the figure is stated (v
        a price lock legitimately freezes the desk's copy, so that is the one exemption. */
     const c = read("pxCost()");
     if (!c.locked && F.lots > 0)
-      ok(F.freightPerKg === c.freight,
-        `${pr}: the statement's freight per unit is the pricing engine's (${F.freightPerKg})`);
+      ok(F.freightPerUnit === c.freight,
+        `${pr}: the statement's freight per unit is the pricing engine's (${F.freightPerUnit})`);
     /* and the cell names the live rate, so moving the rate without the copy fails here */
     if (F.lots > 0) ok(panel.includes(html("fmt0(COST_BASIS.freightPerTrip.rm)") + " a trip"),
       `${pr}: the freight line names the rate it was struck at`);
@@ -2302,7 +2302,7 @@ section("Boundaries — the caps and the trigger are per book (round 5, his call
      customer on the book, so the split cannot drop or double a unit */
   const parts = read(`(()=>{const ids=[...new Set(sales.map(s=>s.customer))];
     return ids.map(id=>{let whole=0;sales.forEach(s=>{if(s.customer!==id||s.cancelled)return;const p=txPrice(s);if(!(p>0))return;whole+=Math.max(0,(s.deliveredQty||0)-txPaid(s)/p);});
-    return {id,whole:+whole.toFixed(2),split:+(PROD_IDS.reduce((a,pr)=>a+wbCreditKg(id,0,pr),0)).toFixed(2)};});})()`);
+    return {id,whole:+whole.toFixed(2),split:+(PROD_IDS.reduce((a,pr)=>a+wbCreditUnits(id,0,pr),0)).toFixed(2)};});})()`);
   ok(parts.length > 10 && parts.every((x) => Math.abs(x.whole - x.split) < 0.02),
     "per-book delivered-and-unpaid sums to the whole-book figure for every party");
   /* his call 4(e): a suggested restock is priced at the book's own tier, lots bought whole */
@@ -2482,7 +2482,7 @@ section("Drafter — a lot that has not arrived does not say it has (v385)");
 {
   const d = readFileSync(join(REPO, "src", "drafter.js"), "utf8");
   /* An absent receivedQty on a SETTLED lot means received in full, by the book's own
-     convention and by poRecvKg. So a paid-and-unarrived lot drafted with neither
+     convention and by poRecvUnits. So a paid-and-unarrived lot drafted with neither
      receivedQty nor inTransit asserts the goods landed, and approving it walks the whole
      lot into stock and into the cost basis. Both fields, matching the fold's v146 guard. */
   ok(/else \{ row\.receivedQty = 0; row\.inTransit = true; \}/.test(d),
@@ -2632,6 +2632,53 @@ section("Orders and money — cash is stated in the P&L, once (v401)");
   }
   ok(!heads.some((t) => /\bInvoiced\b/.test(t)),
      "and states the revenue once, not as Revenue and again as Invoiced");
+}
+
+section("Units — no new kg-named identifier, anywhere (round 5, his call 6)");
+{
+  /* The desk retired the mass symbol at v161 and sells by the unit, but the code still spoke
+     kg internally: the buy, sold and reorder totals, the formatter and ninety more. Round 5
+     renamed every internal identifier to unit language. What stays, and MUST stay, is the
+     data: the five row keys the book already carries (in ALLOW below), and the bare field
+     `kg` (ledger rows, amend steps, loans, and the phone queue's pay field, which the
+     drafter dual-reads against qty). Renaming those breaks every stored row. This scan bans
+     NEW kg-named identifiers so the split cannot blur again. The evolution array is
+     excluded: it is history and describes the code as it was. The banned fragments are
+     built by concatenation so this section does not report itself. */
+  const fs = await import("node:fs");
+  const KG = "K" + "g", kg = "k" + "g";
+  const ALLOW = new Set(["settled", "rebate", "ref", "costPer", "value"].map((p) => p + KG));
+  const bannedWord = (w) => {
+    if (w === kg || ALLOW.has(w)) return false;
+    return w.includes(KG) || (w.startsWith(kg) && w.length > 2) || (w.endsWith(kg) && w.length > 2);
+  };
+  const files = [
+    "master/salt_command.html",
+    ...fs.readdirSync("engine").filter((f) => f.endsWith(".mjs")).map((f) => "engine/" + f),
+    ...fs.readdirSync("src").filter((f) => f.endsWith(".js")).map((f) => "src/" + f),
+    ...fs.readdirSync("tools").filter((f) => f.endsWith(".mjs")).map((f) => "tools/" + f),
+    "test/verify.mjs",
+  ];
+  const offenders = [];
+  for (const f of files) {
+    let text = fs.readFileSync(f, "utf8");
+    if (f === "master/salt_command.html") {
+      const lines = text.split("\n");
+      const ev = lines.findIndex((l) => l.startsWith("const evolution=["));
+      let end = ev;
+      while (end < lines.length && !lines[end].trimEnd().endsWith("}];")) end++;
+      text = lines.filter((_, i) => i < ev || i > end).join("\n");
+    }
+    for (const m of text.matchAll(/[A-Za-z_$][A-Za-z0-9_$]*/g)) {
+      if (bannedWord(m[0])) offenders.push(f + ": " + m[0]);
+    }
+  }
+  ok(offenders.length === 0,
+     "no kg-named identifier outside the persisted allowlist" +
+     (offenders.length ? " — " + [...new Set(offenders)].slice(0, 8).join(", ") : ""));
+  const masterText = fs.readFileSync("master/salt_command.html", "utf8");
+  ok(masterText.includes("const units=n=>") && !masterText.includes("const kg=n=>"),
+     "the formatter is units(), and the old kg() declaration is gone");
 }
 
 /* ---- done ----------------------------------------------------------------------- */
