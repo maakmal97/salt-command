@@ -2317,6 +2317,38 @@ section("Boundaries — the caps and the trigger are per book (round 5, his call
   try { w.close(); } catch (e) { }
 }
 
+section("Oil — pinned at both ends and lawful between (round 5, his call 5)");
+{
+  /* His stated prices, 29 Aug in chat: RM130 at the 10 unit minimum (standing since v261)
+     and RM450 at the 50 unit lot, against a 50-unit buy of RM350 on the quote. The board
+     must honour both and taper strictly between. Two of these read TODAY'S cost basis on
+     purpose: if a dear enough lot ever lifts the 50 unit floor above RM450, or ties two
+     rates, the right outcome is a red line here saying his stated price needs his decision,
+     not a board that quietly moves it. */
+  const book = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  ok(JSON.stringify(book.PRICE_SET.oil.prices) === JSON.stringify({ "10": 130, "50": 450 }),
+    "the book records his two stated oil prices, 130 at 10 and 450 at 50");
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  const read = (expr) => JSON.parse(w.eval("JSON.stringify(" + expr + ")"));
+  w.eval("setProd('oil');recompute();");
+  const rows = read("sizesFor('oil').map(q=>({q,ask:priceLadder(q).ask.total,fd:floorTotal(q),fc:floorTotal(q,null,{collects:true})}))");
+  const a10 = rows.find((r) => r.q === 10), a50 = rows.find((r) => r.q === 50);
+  ok(a10.ask === 130, "the board asks his RM130 at 10");
+  ok(a50.ask === 450, "and his RM450 at 50; if this reads higher, the floor has overtaken his price and he must decide");
+  ok(a50.fd <= 450 + 1e-9 && a50.fc <= 450 + 1e-9,
+    `RM450 clears both 50 unit floors (delivered ${a50.fd}, collected ${a50.fc}); red here means the tension of v404 is back`);
+  let strict = true, dearer = true;
+  for (let i = 1; i < rows.length; i++) {
+    if (!(rows[i].ask / rows[i].q < rows[i - 1].ask / rows[i - 1].q - 1e-9)) strict = false;
+    if (!(rows[i].ask > rows[i - 1].ask + 1e-9)) dearer = false;
+  }
+  ok(strict, "every larger oil size is STRICTLY cheaper per unit, 130 at 10 down to 450 at 50");
+  ok(dearer, "and strictly dearer in total, so no lot is beaten by buying smaller");
+  w.eval("setProd('salt');recompute();");
+  try { w.close(); } catch (e) { }
+}
+
 section("iPhone — the dead zones the desk draws under (v392)");
 {
   const m = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
