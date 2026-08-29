@@ -1978,6 +1978,15 @@ const PRICING_ENGINE=(function(){
 /* ============ THE COST STACK (v232, v233, v240, v280) ============
    What a unit costs to put in front of a customer, in four components, each tagged for IAS 2.
    1. the rate on the latest lot, not a 30-day average: a price set today has to replace today;
+      REVERSED, ROUND 5, HIS CALL 2 OF 29 AUG: replacement is the TRAILING 30-DAY
+      QUANTITY-WEIGHTED AVERAGE purchase rate, per book, handed in as I.repl (the desk's
+      pxInputs computes it; pxRecentBuyRate over lots received in the window, falling back
+      to the most recent lot's rate when nothing was bought in 30 days, never undefined).
+      The old argument above stays because it is the case against this setting: a single
+      cheap lot no longer drops the whole board the day it lands, and a single dear one no
+      longer spikes it, which is what the average buys; what it costs is that the board can
+      sit under the latest lot for up to a month after a genuine rise. The latest lot's rate
+      remains the fallback when no I.repl is supplied, so the stack cannot go undefined;
    2. freight, spread over the AVERAGE lot this book has received rather than over whichever
       one arrived last (v381, his instruction): a trip is a recurring cost and the lots keep
       coming, so pinning it to the last purchase made the figure swing on nothing. Oil's
@@ -2009,9 +2018,10 @@ function costStack(I){
             delPerOrder:COST_BASIS.txnPerDelivery.rm,
             locked:true,lockedOn:L.lockedOn,lockAge:LK.days};
   }
-  /* 1. WHAT THE GOODS COST. The rate on the latest lot, else the highest live quote. */
+  /* 1. WHAT THE GOODS COST. Round 5: the trailing average where the desk supplies one
+     (I.repl), else the rate on the latest lot, else the highest live quote. */
   const L=I.lot;
-  const lot=pxOver.cost!=null?+pxOver.cost:(L?L.rate:I.quoteRate);
+  const lot=pxOver.cost!=null?+pxOver.cost:(I.repl!=null?+I.repl:(L?L.rate:I.quoteRate));
   /* 2. GETTING THEM HERE. Spread over the AVERAGE lot received, not the latest one (v381).
      lotQty stays the latest lot because the rest of the stack reports on the lot in hand;
      only the freight divisor moves to the mean. A product with no averaged history falls
@@ -2625,7 +2635,9 @@ const openingFor=p=>PROD_OPENING[p||PROD]||{qty:0,costPerKg:null,stated:null,unc
    sitting on the SALT shelf and five places read it. Every one of them would have valued
    45 unit of oil at RM47.47 and reported a RM2,136 shelf worth about RM315, and it would
    have looked entirely plausible: no NaN, no throw, just a confident wrong number, which is
-   the worst kind. It also feeds replCost() and therefore the pricing engine.
+   the worst kind. Until round 5 it also fed replCost(); replacement now reads the trailing
+   30-day average (his call 2 of 29 Aug) and the shelf rate here is a deep fallback only,
+   still feeding Financials' closing stock and the Stock value card.
    Oil's 45 unit are all off the 50 unit lot, because the 5 unit of opening were consumed
    first by the only sale, so RM7 is the rate of what is actually there rather than an
    average of what was. Same test STOCK_COST answers for salt: which lots is the remnant
@@ -3143,10 +3155,11 @@ let NAME_VAULT=null;
    appears for the first time, so this is a cheaper ladder at every size the desk actually buys.
 
    WHAT IT DOES NOT DO IS MOVE A SINGLE FLOOR, AND THAT IS WORTH STATING BECAUSE IT LOOKS AS
-   IF IT SHOULD. Replacement cost is read off the newest lot actually RECEIVED (pxCost falls
-   back to pxQuoteRate only when no lot exists), and the newest received lot is still the
-   12.5 unit that landed on 18 Aug at RM56. A quote is what salt WOULD cost; a floor is built
-   on what the shelf DID cost. Nothing here is booked until a lot is recorded as a buy.
+   IF IT SHOULD. Replacement cost was then read off the newest lot actually RECEIVED (from
+   round 5 it is the trailing 30-day weighted average of lots received, his call 2 of 29 Aug;
+   pxCost falls back to pxQuoteRate only when no lot exists), and the newest received lot was
+   still the 12.5 unit that landed on 18 Aug at RM56. A quote is what salt WOULD cost; a floor
+   is built on what the shelf DID cost. Nothing here is booked until a lot is recorded as a buy.
 
    AND pxQuoteRate() DOES NOT MOVE EITHER, which is a coincidence worth writing down rather
    than a bug. It takes the DEAREST tier, because restocking in the size usually bought is the
@@ -10327,12 +10340,20 @@ function computeNewIds(vn){
 /* single cost basis, defaulted to the live ledger weighted-average.
    54.26 is the static fallback only; recompute() always sets wavgBuy first. */
 function costBasis(){return +(wavgBuy||54.26).toFixed(2);}
-/* REPLACEMENT COST -- what it costs to put a unit back on the shelf today, which is
-   the lot the salt would actually ship from. This, not the historical weighted
-   average, is the number a pricing decision turns on: a RM55 average flatters a sale
-   that will be filled out of a RM64 lot. costBasis() remains the book/reporting
-   basis for what was earned; replCost() is the forward-looking pricing basis. */
-function replCost(){const c=stockCostFor(PROD);return +((c!=null?c:wavgBuy)).toFixed(2);}
+/* REPLACEMENT COST -- what it costs to put a unit back on the shelf today. Until round 5
+   this read the shelf (stockCostFor), the lot the salt would actually ship from; his call 2
+   of 29 Aug makes replacement the TRAILING 30-DAY weighted average purchase rate, per book,
+   the same figure the cost stack now prices off, so the coach, the floor line and the board
+   cannot carry two different "replacement" numbers again. The old argument stays: an average
+   can flatter a sale filled out of a dearer lot, and that is the price of a board that does
+   not jump on every single lot. costBasis() remains the book/reporting basis for what was
+   earned. Fallbacks, in order, so it is never undefined: trailing average, most recent lot,
+   the shelf cost, the all-time weighted average. */
+function replCost(){
+  const r=(typeof pxReplRate==='function')?pxReplRate():null;
+  if(r!=null)return +r.toFixed(2);
+  const c=stockCostFor(PROD);return +((c!=null?c:wavgBuy)).toFixed(2);
+}
 /* the total that clears the margin floor at replacement cost, rounded up to end in 5/0 */
 /* the total that clears the floor FOR THAT ORDER SIZE, rounded up to the nearest RM5
    so a quote lands on a number you can say out loud. Called with no size it answers
@@ -10412,10 +10433,25 @@ function pxQuoteRate(){
 function pxRecentBuyRate(days){
   const from=new Date(TODAY.getTime()-days*86400000);
   /* poLive, not !defaulted: an agreed-only lot is a rate you have not paid, and quoting
-     off it would price the board against a purchase that may never happen. */
-  const ps=purchases.filter(p=>poLive(p)&&new Date(p.receivedOn||p.date)>=from);
+     off it would price the board against a purchase that may never happen.
+     ROUND 5: pPurch(PROD), not the raw ledger. This read blended both books' lots, so
+     salt's 30-day average carried oil's RM7 lots and vice versa; the same class of fault
+     the buys chart had at v402. Each book averages its own lots now. */
+  const ps=pPurch(PROD).filter(p=>poLive(p)&&new Date(p.receivedOn||p.date)>=from);
   const k=ps.reduce((a,p)=>a+p.qty,0);
   return k>0?+(ps.reduce((a,p)=>a+p.total,0)/k).toFixed(2):null;
+}
+/* ============ ROUND 5, HIS CALL 2 OF 29 AUG: REPLACEMENT IS THE TRAILING AVERAGE ============
+   The quantity-weighted average rate over this book's lots received in the trailing 30 days,
+   received dates first (receivedOn, falling back to date), live lots only. Fallback when
+   nothing landed in the window: the most recent lot's rate, so a quiet book still prices,
+   and never undefined. This feeds costStack as I.repl and replCost() below, so the board,
+   the floors, the coach and the drafter's snapshot all move off one figure per book. */
+function pxReplRate(){
+  const r=pxRecentBuyRate(30);
+  if(r!=null)return r;
+  const L=latestLot(PROD);
+  return L?+L.rate.toFixed(2):null;
 }
 /* ============ PROMOTION IS NOT A LEAK, AND FROM v353 THE PRICE STOPS TREATING IT AS ONE ============
    His instruction of 24 Aug: promotion is not priced in. Until now every unit that failed to reach
@@ -10714,6 +10750,7 @@ function ifrsPL(p){
 function pxInputs(){
   return {prod:PROD, lockOn:PRICE_LOCK_ON, lockState:priceLockState(PROD), lockBase:PRICE_LOCK[PROD]||null,
     over:{cost:pxOver.cost,shrink:pxOver.shrink}, lot:latestLot(PROD), meanLot:meanLotQty(PROD), quoteRate:pxQuoteRate(),
+    repl:pxReplRate(),   /* round 5, call 2: the trailing 30-day weighted average, per book */
     costBasis:{freightPerTrip:{rm:COST_BASIS.freightPerTrip.rm},txnPerDelivery:{rm:COST_BASIS.txnPerDelivery.rm},
       deliveredShare:{v:delShare(PROD).v}},
     attrib:SHRINK_ATTRIB, shrinkRate:pxShrinkRate(), avgDel:avgDelivery(PROD)};
@@ -10749,7 +10786,8 @@ function pxSignals(){
   out.push({k:'Demand',v:sd,read:dch==null?'no prior fortnight to compare':`${kg(d0)} ordered against ${kg(d1)} the fortnight before, ${dch>=0?'+':''}${dch.toFixed(0)}%`});
   // 3 purchase cost. ASYMMETRIC on purpose: a rise passes on in full, a fall at half weight.
   const c0=pxRecentBuyRate(30),c1=(()=>{const a=new Date(TODAY.getTime()-120*MS),b=new Date(TODAY.getTime()-30*MS);
-    const ps=purchases.filter(poLive).filter(p=>{const d=new Date(p.receivedOn||p.date);return d>=a&&d<b;});
+    /* round 5: pPurch(PROD), the same scoping pxRecentBuyRate itself took */
+    const ps=pPurch(PROD).filter(poLive).filter(p=>{const d=new Date(p.receivedOn||p.date);return d>=a&&d<b;});
     const k=ps.reduce((x,p)=>x+p.qty,0);return k>0?ps.reduce((x,p)=>x+p.total,0)/k:null;})();
   const cch=(c0!=null&&c1!=null&&c1>0)?(c0-c1)/c1*100:null;
   const sp=cch==null?0:cch>=5?2:cch>=2?1:cch<=-5?-1:cch<=-2?-0.5:0;

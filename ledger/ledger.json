@@ -2831,7 +2831,7 @@
   ],
   "QUEUE_COMMITTED": "2026-08-28T09:59:51.414Z",
   "PRICING": {
-   "takenAt": "2026-08-29T02:17:55.647Z",
+   "takenAt": "2026-08-29T10:45:59.533Z",
    "sizes": [
     0.5,
     1,
@@ -2858,55 +2858,55 @@
    "byProduct": {
     "salt": {
      "stockCost": 50,
-     "replCost": 50,
+     "replCost": 48.5,
      "floors": {
       "1": {
-       "delivered": 88.84,
-       "collected": 78.84
+       "delivered": 87.26,
+       "collected": 77.26
       },
       "2": {
-       "delivered": 142.68,
-       "collected": 132.68
+       "delivered": 139.53,
+       "collected": 129.53
       },
       "3": {
-       "delivered": 196.52,
-       "collected": 186.52
+       "delivered": 191.79,
+       "collected": 181.79
       },
       "4": {
-       "delivered": 250.36,
-       "collected": 240.36
+       "delivered": 244.06,
+       "collected": 234.06
       },
       "5": {
-       "delivered": 304.2,
-       "collected": 294.2
+       "delivered": 296.32,
+       "collected": 286.32
       },
       "0.5": {
-       "delivered": 61.92,
-       "collected": 51.92
+       "delivered": 61.13,
+       "collected": 51.13
       },
       "1.5": {
-       "delivered": 115.76,
-       "collected": 105.76
+       "delivered": 113.4,
+       "collected": 103.4
       },
       "2.5": {
-       "delivered": 169.6,
-       "collected": 159.6
+       "delivered": 165.66,
+       "collected": 155.66
       },
       "3.5": {
-       "delivered": 223.44,
-       "collected": 213.44
+       "delivered": 217.93,
+       "collected": 207.93
       },
       "4.5": {
-       "delivered": 277.28,
-       "collected": 267.28
+       "delivered": 270.19,
+       "collected": 260.19
       },
       "6.25": {
-       "delivered": 371.5,
-       "collected": 361.5
+       "delivered": 361.66,
+       "collected": 351.66
       },
       "12.5": {
-       "delivered": 708,
-       "collected": 698
+       "delivered": 688.31,
+       "collected": 678.31
       }
      },
      "inputs": {
@@ -2978,6 +2978,7 @@
        },
        "meanLot": 23.660714285714285,
        "quoteRate": 56,
+       "repl": 48.5,
        "costBasis": {
         "freightPerTrip": {
          "rm": 30
@@ -3064,55 +3065,55 @@
     },
     "oil": {
      "stockCost": 7.6667,
-     "replCost": 7.67,
+     "replCost": 7.15,
      "floors": {
       "1": {
-       "delivered": 44.1,
-       "collected": 34.1
+       "delivered": 43.54,
+       "collected": 33.54
       },
       "2": {
-       "delivered": 53.21,
-       "collected": 43.21
+       "delivered": 52.08,
+       "collected": 42.08
       },
       "3": {
-       "delivered": 62.31,
-       "collected": 52.31
+       "delivered": 60.62,
+       "collected": 50.62
       },
       "4": {
-       "delivered": 71.41,
-       "collected": 61.41
+       "delivered": 69.16,
+       "collected": 59.16
       },
       "5": {
-       "delivered": 80.52,
-       "collected": 70.52
+       "delivered": 77.7,
+       "collected": 67.7
       },
       "0.5": {
-       "delivered": 39.55,
-       "collected": 29.55
+       "delivered": 39.27,
+       "collected": 29.27
       },
       "1.5": {
-       "delivered": 48.66,
-       "collected": 38.66
+       "delivered": 47.81,
+       "collected": 37.81
       },
       "2.5": {
-       "delivered": 57.76,
-       "collected": 47.76
+       "delivered": 56.35,
+       "collected": 46.35
       },
       "3.5": {
-       "delivered": 66.86,
-       "collected": 56.86
+       "delivered": 64.89,
+       "collected": 54.89
       },
       "4.5": {
-       "delivered": 75.97,
-       "collected": 65.97
+       "delivered": 73.43,
+       "collected": 63.43
       },
       "6.25": {
-       "delivered": 91.9,
-       "collected": 81.9
+       "delivered": 88.38,
+       "collected": 78.38
       },
       "12.5": {
-       "delivered": 148.79,
-       "collected": 138.79
+       "delivered": 141.76,
+       "collected": 131.76
       }
      },
      "inputs": {
@@ -3183,7 +3184,8 @@
         "sup": "SP7-PUD"
        },
        "meanLot": 43.333333333333336,
-       "quoteRate": 56,
+       "quoteRate": 10,
+       "repl": 7.15,
        "costBasis": {
         "freightPerTrip": {
          "rm": 30
@@ -3205,13 +3207,13 @@
       },
       "policy": {
        "LADDER": {
-        "floor": 0.33,
+        "floor": 0,
         "ceiling": 2,
-        "anchorQ": 2.5,
-        "anchorX": 0.958,
+        "anchorQ": 10,
+        "anchorX": 0.62,
         "at": {
-         "lo": 0.5,
-         "hi": 12.5
+         "lo": 10,
+         "hi": 50
         },
         "basis": "cogs",
         "round": {
@@ -3228,46 +3230,32 @@
        },
        "tiers": [
         {
-         "qty": 6.25,
-         "total": 350,
-         "note": "RM56/unit. The smallest lot has never been quoted as its own tier before, and it comes in at the rate the 12.5 unit step used to cost."
+         "qty": 10,
+         "total": 100,
+         "note": "RM10/unit, the smallest lot he sells and the highest rate"
         },
         {
-         "qty": 12.5,
-         "total": 650,
-         "note": "RM52/unit, RM50 off the RM700 this size has cost on every lot since 08 Jul."
+         "qty": 20,
+         "total": 180,
+         "note": "RM9/unit"
         },
         {
-         "qty": 25,
-         "total": 1250,
-         "note": "RM50/unit. The 25 unit agreed on the 20th was struck at RM1,300 against the old ladder and is RM50 above this."
+         "qty": 30,
+         "total": 230,
+         "note": "RM7.67/unit"
         },
         {
          "qty": 50,
-         "total": 2200,
-         "note": "RM44/unit, back to exactly the RM2,200 quoted on 10 Jul after this tier moved up."
-        },
-        {
-         "qty": 100,
-         "total": 4300,
-         "note": "RM43/unit, cheaper than any rate this desk has ever been quoted or has ever paid."
+         "total": 350,
+         "note": "RM7/unit, the sharpest, and the tier the first lot was bought on"
         }
        ],
        "boardSizes": [
         10,
-        15,
         20,
-        25,
         30,
-        35,
         40,
-        45,
-        50,
-        60,
-        70,
-        80,
-        90,
-        100
+        50
        ]
       }
      }
@@ -3276,7 +3264,7 @@
    "v": "v404"
   },
   "OPEN": {
-   "at": "2026-08-29T02:17:55.716Z",
+   "at": "2026-08-29T10:45:59.560Z",
    "count": 5,
    "byKey": {
     "CY2-NIL|undefined|230": {

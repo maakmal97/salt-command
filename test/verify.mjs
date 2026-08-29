@@ -2226,6 +2226,37 @@ section("Pricing — each book prices off its own quote (round 5, his call 1)");
     "oil's taper span and anchor sit on oil's own board");
   ok(saltL.anchorQ === 2.5 && saltL.anchorX === 0.958 && saltL.at.lo === 0.5 && saltL.at.hi === 12.5 && saltL.floor === 0.33,
     "salt's ladder is LADDER itself, to the value");
+
+  /* his call 2: replacement is the trailing 30-day quantity-weighted average, per book.
+     The expectation is computed here from the page's own lots and TODAY, never typed, so
+     the assertion holds whichever day the suite runs. */
+  const expRepl = (p) => {
+    w.eval(`setProd(${JSON.stringify(p)});recompute();`);
+    const rows = read("pPurch(PROD).filter(x=>poLive(x)&&x.qty>0)");
+    const from = read("TODAY.getTime()") - 30 * 86400000;
+    const win = rows.filter((x) => new Date(x.receivedOn || x.date).getTime() >= from);
+    const k = win.reduce((a, x) => a + x.qty, 0);
+    if (k > 0) return +(win.reduce((a, x) => a + x.total, 0) / k).toFixed(2);
+    const last = rows.slice().sort((a, b) => ((a.receivedOn || a.date) < (b.receivedOn || b.date) ? -1 : 1)).pop();
+    return last ? +(last.total / last.qty).toFixed(2) : null;
+  };
+  for (const p of ["salt", "oil"]) {
+    const want = expRepl(p);
+    ok(read("pxInputs().repl") === want, `${p}: pxInputs().repl is the book's own trailing average, ${want}`);
+    ok(read("pxCost().repl") === want, `${p}: and the cost stack prices off it`);
+    ok(read("replCost()") === want, `${p}: and replCost() is the same figure, so there is one replacement number`);
+  }
+  /* the engine's fallback order: an absent repl falls to the lot rate, never undefined */
+  {
+    const E = (await import("../engine/pricing.mjs")).default;
+    const I0 = { prod: "x", lockOn: false, lockState: { state: "none", lock: null }, lockBase: null,
+      over: { cost: null, shrink: null }, lot: { qty: 10, total: 90, rate: 9, date: "2026-08-01" },
+      quoteRate: 12, costBasis: { freightPerTrip: { rm: 30 }, txnPerDelivery: { rm: 10 }, deliveredShare: { v: 0.2 } },
+      attrib: 1, shrinkRate: 0, avgDel: { n: 1, mean: 10 } };
+    ok(E.costStack({ ...I0, repl: 8.5 }).repl === 8.5, "a supplied trailing average is the goods cost");
+    ok(E.costStack(I0).repl === 9, "without one the latest lot's rate stands, so nothing is undefined");
+    ok(E.costStack({ ...I0, repl: null, lot: null }).repl === 12, "and with no lot at all the quote rate holds the floor up");
+  }
   w.eval("setProd('salt');recompute();");
   try { w.close(); } catch (e) { }
 }
