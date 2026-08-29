@@ -1444,7 +1444,9 @@ section("Engine — the position, out of the desk (v338)");
     const desk = read("({" + NUMS.join(",") + ",nPriced:pricedSales.length,nAR:arList.length,nRecv:receivedPO.length})");
     ok(NUMS.every((k) => mine[k] === desk[k]) && mine.pricedSales.length === desk.nPriced && mine.arList.length === desk.nAR && mine.receivedPO.length === desk.nRecv,
       `${p}: the walk reproduces the desk's position to the last decimal`);
-    const cv = X.coverStats({ pricedSales: mine.pricedSales, currentStock: mine.currentStock, defKg: mine.defKg, today: new Date(read("TODAY")), reorderKg: read("RULES.reorderKg") });
+    /* round 5: the trigger is per book, so the gate hands the engine the book's own figure,
+       exactly as the desk's coverStats() wrapper does */
+    const cv = X.coverStats({ pricedSales: mine.pricedSales, currentStock: mine.currentStock, defKg: mine.defKg, today: new Date(read("TODAY")), reorderKg: read("reorderFor(PROD)") });
     const dcv = read("coverStats()");
     ok(cv.rate === dcv.rate && cv.free === dcv.free && cv.days === dcv.days && cv.shortBy === dcv.shortBy, `${p}: cover agrees`);
     const c2 = X.commitments(read("pSales(PROD)"), mine.currentStock), f = read("forecast()");
@@ -2278,6 +2280,40 @@ section("Rewards — redemption reads the earning window (round 5, his call 3)")
     "the guard: CS6-BS's three redeemed units are all before adoption, so the next assertion cannot pass vacuously");
   ok(read("rebateApplied('CS6-BS')") === 0, "a redemption before REWARD.since belongs to the opening, not the running net");
   ok(read("rebateApplied('CJ4-OKR')") === 4, "the boundary day itself counts, both sides: the 10 Aug backfill is in, the 09 Jul unit is not");
+  try { w.close(); } catch (e) { }
+}
+
+section("Boundaries — the caps and the trigger are per book (round 5, his call 4)");
+{
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  const read = (expr) => JSON.parse(w.eval("JSON.stringify(" + expr + ")"));
+  ok(read("creditCapFor('salt','retail')") === 1 && read("creditCapFor('salt','associate')") === 2,
+    "salt keeps 1 unit retail and 2 associate");
+  ok(read("creditCapFor('oil','retail')") === 10 && read("creditCapFor('oil','associate')") === 20,
+    "oil reads 10 retail (his correction) and 20 associate (PROPOSED at twice retail)");
+  ok(read("reorderFor('salt')") === 15 && read("reorderFor('oil')") === 10,
+    "the reorder trigger is per book: salt 15, oil 10 (PROPOSED, one minimum lot)");
+  w.eval("setProd('oil');recompute();");
+  ok(read("coverStats().reorderAt") === 10, "oil's cover is judged against oil's own trigger");
+  w.eval("setProd('salt');recompute();");
+  ok(read("coverStats().reorderAt") === 15, "and salt's against salt's");
+  /* the per-book credit totals PARTITION the old whole-book figure: proven for every
+     customer on the book, so the split cannot drop or double a unit */
+  const parts = read(`(()=>{const ids=[...new Set(sales.map(s=>s.customer))];
+    return ids.map(id=>{let whole=0;sales.forEach(s=>{if(s.customer!==id||s.cancelled)return;const p=txPrice(s);if(!(p>0))return;whole+=Math.max(0,(s.deliveredQty||0)-txPaid(s)/p);});
+    return {id,whole:+whole.toFixed(2),split:+(PROD_IDS.reduce((a,pr)=>a+wbCreditKg(id,0,pr),0)).toFixed(2)};});})()`);
+  ok(parts.length > 10 && parts.every((x) => Math.abs(x.whole - x.split) < 0.02),
+    "per-book delivered-and-unpaid sums to the whole-book figure for every party");
+  /* his call 4(e): a suggested restock is priced at the book's own tier, lots bought whole */
+  ok(JSON.stringify(read("restockQuote(7.25)")) === JSON.stringify({ qty: 12.5, total: 650, rate: 52, lots: 1, quoted: true }),
+    "salt: 7.25 unit needed is covered by the 12.5 tier at its RM650 total, not 7.25 at a flat rate");
+  ok(JSON.stringify(read("restockQuote(130)")) === JSON.stringify({ qty: 200, total: 8600, rate: 43, lots: 2, quoted: true }),
+    "beyond the top tier it takes whole top-tier lots: 130 needs two 100s at RM8,600");
+  w.eval("setProd('oil');recompute();");
+  ok(JSON.stringify(read("restockQuote(3)")) === JSON.stringify({ qty: 10, total: 100, rate: 10, lots: 1, quoted: true }),
+    "oil: 3 unit needed is covered by its own 10 unit tier at RM100");
+  w.eval("setProd('salt');recompute();");
   try { w.close(); } catch (e) { }
 }
 

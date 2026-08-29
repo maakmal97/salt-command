@@ -3198,7 +3198,7 @@ function sourcingPlan(){
   const dryD28=r28>0?+(free/r28).toFixed(1):null;
   const dry  =dryD!=null?iso(new Date(TODAY.getTime()+dryD*MS)):null;
   const dry28=dryD28!=null?iso(new Date(TODAY.getTime()+dryD28*MS)):null;
-  const reD  =rate>0?+((free-RULES.reorderKg)/rate).toFixed(1):null;
+  const reD  =rate>0?+((free-reorderFor(PROD))/rate).toFixed(1):null;
   const reorder=reD!=null?iso(new Date(TODAY.getTime()+Math.max(0,reD)*MS)):null;
   /* the gap is the whole point: days the shelf is empty between running dry and the
      stated lot landing. Negative means the lot lands before the shelf empties. */
@@ -3952,12 +3952,23 @@ const provOf=t=>t._prov||(t._buy&&t._buy._prov)||null;
    run in opposite directions: buying big saves RM8 to RM16/unit, while selling big was
    handing back about RM30/unit against a single flat 20% floor. That gap is where the
    RM1,123 went. Floors are margin ON REVENUE, not markup on cost. */
+/* ============ ROUND 5, HIS CALL 4 OF 29 AUG: THE CAPS AND THE TRIGGER ARE PER BOOK ============
+   One retail cap of 1 unit was read across both books, so an oil buyer holding 5 of a
+   product that sells in 10s stood in breach of a salt-sized rule. His correction: salt
+   keeps 1 retail / 2 associate; oil's retail cap is 10 units (one minimum lot). He gave no
+   oil associate cap, so 20 is PROPOSED at twice retail, mirroring salt's ratio, and it is
+   his to restate. The reorder trigger goes per book the same way: salt keeps 15; oil's 10
+   (one minimum lot) is PROPOSED with the deltas reported. creditDays and fullProvDays stay
+   whole-book: time hurts the same whatever the unit. A product with no entry reads the
+   default book's, the sizesBy fallback exactly. */
 const RULES={
-  creditKg:{retail:1,associate:2},
+  creditKg:{salt:{retail:1,associate:2}, oil:{retail:10,associate:20}},
   creditDays:10,
   fullProvDays:21,
-  reorderKg:15
+  reorderKg:{salt:15, oil:10}
 };
+function creditCapFor(prod,tier){const c=RULES.creditKg[prod||PROD]||RULES.creditKg[DEFAULT_PROD];return c[tier==='associate'?'associate':'retail'];}
+function reorderFor(prod){const r=RULES.reorderKg;const v=r[prod||PROD];return v!=null?v:r[DEFAULT_PROD];}
 /* ============ ONE PRICE POLICY (v139) ============
    There were two margin systems on this desk and they disagreed: a size-banded floor
    driving Boundaries and the Transaction check, and a separate log taper driving the
@@ -5312,29 +5323,31 @@ function ladderRate(q){
   const k=Math.log(W/R)/Math.log(PRICE.wholesaleFrom/PRICE.retailTo);   // the cliff between the two
   return R*Math.pow(q/PRICE.retailTo,k);
 }
-const capForParty=id=>{try{return associateIds().indexOf(id)>=0?RULES.creditKg.associate:RULES.creditKg.retail;}catch(e){return RULES.creditKg.retail;}};
+/* round 5: the cap is per PERSON per BOOK. The tier (retail or associate) is the person's;
+   the figure is the book's, so the same man may hold 1 unit of salt and 10 of oil. */
+const capForParty=(id,prod)=>{try{return creditCapFor(prod,associateIds().indexOf(id)>=0?'associate':'retail');}catch(e){return creditCapFor(prod,'retail');}};
 function boundaryScan(){
   const out=[],add=(sev,rule,who,what,why)=>out.push({sev,rule,who,what,why});
-  // 1. credit cap: units delivered but not yet paid for, totalled per customer
+  // 1. credit cap: units delivered but not yet paid for, totalled per customer PER BOOK
   const credit={};
-  sales.forEach(s=>{if(s.cancelled||s.exemptCap)return;   // exemptCap orders sit outside the 1 unit cap, as the Order book and Advances panel already treat them
+  sales.forEach(s=>{if(s.cancelled||s.exemptCap)return;   // exemptCap orders sit outside the cap, as the Order book and Advances panel already treat them
     const p=txPrice(s);if(!(p>0))return;
     const owed=Math.max(0,(s.deliveredQty||0)-txPaid(s)/p);
-    if(owed>0.009)credit[s.customer]=+((credit[s.customer]||0)+owed).toFixed(2);});
-  /* v385: AND IT SAYS THAT IT IS THE WHOLE BOOK, BECAUSE IT SITS UNDER A PRODUCT BADGE. The
-     loop above reads bare `sales` on purpose: a credit cap is about a PERSON, and the
-     Whiteboard reads it at the moment of a trade to name someone already in breach, which
-     wants his whole exposure and not this tab's slice. Scoping it would be wrong. Saying
-     nothing was also wrong: on the oil tab this ranked a SALT debt at the sharpest severity
-     with nothing on the row admitting where it came from, while the two rules beside it in the
-     same table are product-scoped, so one debt fired under one rule and not the other on one
-     screen. The caveat about what it is denominated in is stated once, on the panel. */
-  Object.keys(credit).forEach(c=>{
-    const cap=capForParty(c),tier=cap===RULES.creditKg.associate?'associate':'retail';
-    if(credit[c]>cap+0.009)
-      add('breach','Credit cap',c,kg(credit[c])+' out and unpaid across both books','over the '+kg(cap)+' '+tier+' cap, so hand over nothing further until it clears');
-    else if(credit[c]>=cap-0.009)
-      add('watch','Credit cap',c,kg(credit[c])+' out and unpaid across both books','exactly at the '+kg(cap)+' '+tier+' cap, so the next unit breaches it');});
+    if(owed>0.009){const k=s.customer+'|'+prodOf(s);
+      (credit[k]=credit[k]||{who:s.customer,prod:prodOf(s),kg:0}).kg=+(credit[k].kg+owed).toFixed(2);}});
+  /* v385 said the whole-book read was on purpose: a credit cap was about a PERSON, one
+     figure whatever he held. ROUND 5 REVERSES IT, on his call 4: the cap is per book (salt
+     1 retail / 2 associate, oil 10 / 20), and units of different products do not add, so
+     the totalling is per person PER BOOK and each total meets its own book's cap. The rule
+     still reads every book's rows whichever tab draws it, so a salt breach is named on the
+     oil tab exactly as before; what changed is only that it is named as salt's. */
+  Object.values(credit).forEach(e=>{
+    const cap=capForParty(e.who,e.prod),tier=cap===creditCapFor(e.prod,'associate')?'associate':'retail';
+    const pn=(PRODUCTS[e.prod]&&PRODUCTS[e.prod].name||e.prod).toLowerCase();
+    if(e.kg>cap+0.009)
+      add('breach','Credit cap',e.who,kg(e.kg)+' of '+pn+' out and unpaid','over the '+kg(cap)+' '+tier+' cap on this book, so hand over nothing further until it clears');
+    else if(e.kg>=cap-0.009)
+      add('watch','Credit cap',e.who,kg(e.kg)+' of '+pn+' out and unpaid','exactly at the '+kg(cap)+' '+tier+' cap on this book, so the next unit breaches it');});
   /* 1a. standing. A ban is a decision, not a reading, so it sits at the top and stays
      until it is lifted. The debt behind it is shown here too, because a ban that made
      the money invisible would quietly become a write-off. */
@@ -5472,12 +5485,12 @@ function boundaryPanel(){
   /* v403: THE WHY COLUMN WENT, HIS CALL OF 29 AUG. At 115px wide it wrapped to six lines a
      row and made the table 596px tall at 375px. Each x.why still exists where the rule is
      built, so restoring it is one cell, and the rule names stay self-stating. */
-  if(!all.length)return head+`<div class="card">${chips(`<span class="pchip good">no breaches</span>`)}<div class="dsc">All clear. Nobody past the ${kg(RULES.creditKg.retail)} retail cap or ${RULES.creditDays} days, nothing under its band floor, nothing owed out beyond the shelf.</div></div>`;
+  if(!all.length)return head+`<div class="card">${chips(`<span class="pchip good">no breaches</span>`)}<div class="dsc">All clear. Nobody past their book's retail cap (${PROD_IDS.map(p=>PRODUCTS[p].name.toLowerCase()+' '+kg(creditCapFor(p,'retail'))).join(', ')}) or ${RULES.creditDays} days, nothing under its band floor, nothing owed out beyond the shelf.</div></div>`;
   return head+`<div class="card">
     ${chips((nb?`<span class="pchip bad">${nb} breach${nb===1?'':'es'}</span>`:`<span class="pchip good">no breaches</span>`)
       +(nw?`<span class="pchip warn">${nw} to watch</span>`:'')
       +(r.length?`<span class="pchip">${r.length} provisional</span>`:''))}
-    <div class="dsc" style="margin-bottom:9px">Nothing is blocked; a breach is held here until it is resolved. The ${kg(RULES.creditKg.retail)} retail cap is read across both books.</div>
+    <div class="dsc" style="margin-bottom:9px">Nothing is blocked; a breach is held here until it is resolved. Credit caps are per book since round 5 (${PROD_IDS.map(p=>PRODUCTS[p].name.toLowerCase()+' '+kg(creditCapFor(p,'retail'))+' retail / '+kg(creditCapFor(p,'associate'))+' associate').join('; ')}), and units of different products do not add.</div>
     <table><thead><tr><th class="l">Rule</th><th class="l">Party</th><th class="l">Position</th></tr></thead><tbody>
     ${all.map(x=>`<tr><td class="l">${bSevTag[x.sev]||''} ${x.rule}</td><td class="l mono">${x.who==='stock'?'&mdash;':ID(x.who)}</td><td class="l">${x.what}</td></tr>`).join('')}
     </tbody></table></div>`;
@@ -5571,7 +5584,7 @@ function cashFlow(){
    The trailing fortnight leads because it is what the shelf faces now; the four-week
    read sits beside it so one big lot cannot pass itself off as a trend. Physical
    units only, since a set-off moves no salt. */
-function coverStats(){return POSITION_ENGINE.coverStats({pricedSales:pricedSales,currentStock:currentStock,defKg:defKg,today:TODAY,reorderKg:RULES.reorderKg});}
+function coverStats(){return POSITION_ENGINE.coverStats({pricedSales:pricedSales,currentStock:currentStock,defKg:defKg,today:TODAY,reorderKg:reorderFor(PROD)});}
 const dbet=d=>Math.floor((TODAY-new Date(d))/86400000+1e-9);  // floor: ageing stepsonly on a full day
 /* ONE LABEL MAP FOR THE WHOLE DESK (hoisted at v273 out of tabToday, which owned it while
    the Whiteboard needed it too). Every jump button anywhere reads this. */
@@ -5624,7 +5637,7 @@ function tabOverview(){
      RM 80 and RM 80, while Today one tap away now states the RM 160 he actually owes. */
   const defRows=sales.filter(s=>prodOf(s)===PROD&&txDeferKg(s)>0.009);
   const advBy=(()=>{const by={};arList.forEach(s=>{const e=by[s.customer]=by[s.customer]||{rm:0,over:false};
-    e.rm+=outstandingOf(s);e.over=e.over||((s.deliveredQty||0)>1&&!s.exemptCap);});
+    e.rm+=outstandingOf(s);e.over=e.over||((s.deliveredQty||0)>capForParty(s.customer)+0.009&&!s.exemptCap);});
     return Object.keys(by).map(k=>({who:k,rm:+by[k].rm.toFixed(2),over:by[k].over}));})();
   const totDue=+(ar+supRecovNet).toFixed(2);
   const stockCost=stockCostFor(PROD);                          // v230: the ACTIVE product's shelf rate, not always salt's
@@ -5689,7 +5702,7 @@ function tabOverview(){
   </div>
   ${boundaryPanel()}
   ${defKg>0.009?`<div class="pend"><h3>&#128230; Deferred deliveries <span class="cd" style="color:var(--amber);border-color:var(--amber)">${kg(defKg)} owed out</span></h3><div class="pchips">${defRows.map(s=>`<span class="pchip"><b>${ID(s.customer)}</b> ${kg(txDeferKg(s))}</span>`).join('')}${defKg>currentStock?`<span class="pchip bad">exceeds ${kg(currentStock)} on hand</span>`:''}</div></div>`:''}
-  ${advTotal>0.5?`<div class="pend"><h3>&#128179; Advances out <span class="cd" style="color:var(--amber);border-color:var(--amber)">${fmt0(advTotal)} owed to you</span></h3><div class="pchips">${advBy.map(a=>`<span class="pchip${a.over?' bad':''}"><b>${ID(a.who)}</b> ${fmt0(a.rm)}${a.over?' &middot; over the '+kg(RULES.creditKg.retail)+' cap':''}</span>`).join('')}<span class="pchip warn">${fmt0(ar)} net of provisioning</span></div></div>`:''}
+  ${advTotal>0.5?`<div class="pend"><h3>&#128179; Advances out <span class="cd" style="color:var(--amber);border-color:var(--amber)">${fmt0(advTotal)} owed to you</span></h3><div class="pchips">${advBy.map(a=>`<span class="pchip${a.over?' bad':''}"><b>${ID(a.who)}</b> ${fmt0(a.rm)}${a.over?' &middot; over the '+kg(capForParty(a.who))+' cap':''}</span>`).join('')}<span class="pchip warn">${fmt0(ar)} net of provisioning</span></div></div>`:''}
   ${(PROD===DEFAULT_PROD&&supplierReceivable.status!=='closed')?`<div class="pend def"><h3>&#9888; Supplier default &mdash; ${ID(supplierReceivable.party)} <span class="cd crim">${supplierReceivable.status==='writtenOff'?fmt0(supRecovGross)+' written off':fmt0(supRecovNet)+' net'}</span></h3><div class="dsc">${supplierReceivable.status==='writtenOff'?`Paid 08 Jul, lot never arrived. The ${fmt0(supRecovGross)} provision stays charged, so any recovery is upside.`:`Paid 08 Jul, lot never arrived. Recoverable pending the settlement meeting; ${fmt0(supRecovNet)} net.`}</div><div class="pchips">${supplierReceivable.status==='writtenOff'?`<span class="pchip bad">written off ${supplierReceivable.writtenOffOn}</span><span class="pchip">${dbet(supplierReceivable.since)} days out</span><span class="pchip bad">${fmt0(supRecovGross)} charged to margin</span>`:`<span class="pchip">${dbet(supplierReceivable.since)} days out</span><span class="pchip warn">${(provRate(dbet(supplierReceivable.since))*100).toFixed(0)}% provisioned</span><span class="pchip">${fmt0(supRecovGross)} gross</span><span class="pchip warn">${fmt0(supRecovNet)} net</span>`}</div></div>`:''}
   <h2>Position at a glance <span class="rule"></span></h2>
   <div class="kpis k3">
@@ -6165,8 +6178,8 @@ function tabSourcing(){
             ? `Under the reorder mark already, and the stated lot lands before the shelf empties.`
             : `Covered to ${s.dry}, and the stated lot lands before that.`}</b>
       ${kg(s.free)} free to sell${(late||s.reD==null)?''
-        :s.reD<=0?` against a ${kg(RULES.reorderKg)} mark`
-        :`; the ${kg(RULES.reorderKg)} mark is not reached until <b>${s.reorder}</b>`}.</div>
+        :s.reD<=0?` against a ${kg(reorderFor(PROD))} mark`
+        :`; the ${kg(reorderFor(PROD))} mark is not reached until <b>${s.reorder}</b>`}.</div>
     ${late?`<div class="kpis k2" style="margin-top:11px">
       <div class="kpi gold"><div class="l">Pull it forward</div><div class="v">${s.pullTo}</div><div class="n">${kg(s.q)} landing when the shelf hits the reorder mark. One lot, one trip; ${s.cover} days of cover, to ${s.pullDry}.</div></div>
       <div class="kpi p"><div class="l">Or hold the date and bridge it</div><div class="v">${kg(s.bridge)}</div><div class="n">by ${s.reorder}, on top of the ${kg(s.q)}. Two trips; ${fmt0(s.bridge*s.rt+s.cash)} committed inside four weeks, ${s.bridgeCover} days of cover on ${s.P.by}.</div></div>
@@ -6451,7 +6464,7 @@ function tabAnalysis(){
   })()}
 
   <h2 style="margin-top:20px">The shelf, reconstructed <span class="rule"></span></h2>
-  <div class="dsc" style="margin-bottom:9px">Rebuilt daily against the ${kg(RULES.reorderKg)} trigger, ending on the counted <b>${kg(currentStock)}</b>. Shrinkage is undated and spread evenly, so the shape is right and a single day is not.</div>
+  <div class="dsc" style="margin-bottom:9px">Rebuilt daily against the ${kg(reorderFor(PROD))} trigger, ending on the counted <b>${kg(currentStock)}</b>. Shrinkage is undated and spread evenly, so the shape is right and a single day is not.</div>
   ${(()=>{const neg=sh.filter(r=>r.raw<-0.01);
     const d=sales.map(txDates), ds={};d.forEach(x=>ds[x.dSrc]=(ds[x.dSrc]||0)+1);
     if(neg.length)return `<div class="pend def" style="margin-bottom:11px"><h3>The line goes below zero on ${neg.length} days, and that is a finding <span class="cd crim">low ${kg(Math.min.apply(null,sh.map(r=>r.raw)))}</span></h3>
@@ -6551,7 +6564,7 @@ function drawAnalysis(){
       freshChart(blkEl('anStock'),{type:'line',
         data:{labels:sh.map(r=>r.iso.slice(5)),datasets:[
           {label:'On hand',data:sh.map(r=>r.lvl),borderColor:'#7fd7e8',backgroundColor:'rgba(99,230,224,.10)',fill:true,pointRadius:0,borderWidth:2,tension:.15},
-          {label:'Reorder trigger',data:sh.map(()=>RULES.reorderKg),borderColor:'#e8c66b',backgroundColor:'transparent',pointRadius:0,borderWidth:1.5,borderDash:[5,4]},
+          {label:'Reorder trigger',data:sh.map(()=>reorderFor(PROD)),borderColor:'#e8c66b',backgroundColor:'transparent',pointRadius:0,borderWidth:1.5,borderDash:[5,4]},
           {label:'Impossible below here',data:sh.map(()=>0),borderColor:'#ff7a8a',backgroundColor:'transparent',pointRadius:0,borderWidth:1.5}]},
         options:{responsive:true,maintainAspectRatio:false,
           plugins:{legend:{display:true,labels:{color:TICK,boxWidth:12,font:{size:11}}},
@@ -8765,9 +8778,9 @@ function tabReceivables(){
      THE CHART IS THE ONE THAT VISIBLY MOVED. It sorted by size while the table beside it sat
      in date order, so the pair could not be read across. Both read down the ladder now. */
   const oldest=(a,b)=>(a.date||'9999-99-99')<(b.date||'9999-99-99')?-1:(a.date===b.date?0:1);
-  const cCash=arList.map(s=>{const d=dbet(s.date),g=outstandingOf(s),rate=provRate(d),n=+(g*(1-rate)).toFixed(2),over=(s.deliveredQty||0)>1&&!s.exemptCap;return {id:s.customer,date:s.date,d,g,rate,n,over};})
+  const cCash=arList.map(s=>{const d=dbet(s.date),g=outstandingOf(s),rate=provRate(d),n=+(g*(1-rate)).toFixed(2),over=(s.deliveredQty||0)>capForParty(s.customer)+0.009&&!s.exemptCap;return {id:s.customer,date:s.date,d,g,rate,n,over};})
     .sort((a,b)=>b.d-a.d||b.g-a.g);
-  const cCashBody=cCash.map(r=>`<tr><td class="l mono">${ID(r.id)}${r.over?' <span class="attn" title="advance over the 1 unit credit cap">over cap</span>':''}<div style="font-size:11px;font-weight:400;color:var(--mut)">${r.date}</div></td><td>${r.d}d</td><td>${fmt0(r.g)}</td><td>${(r.rate*100).toFixed(0)}%</td><td>${fmt0(r.n)}</td></tr>`).join('');
+  const cCashBody=cCash.map(r=>`<tr><td class="l mono">${ID(r.id)}${r.over?` <span class="attn" title="advance over their ${kg(capForParty(r.id))} credit cap on this book">over cap</span>`:''}<div style="font-size:11px;font-weight:400;color:var(--mut)">${r.date}</div></td><td>${r.d}d</td><td>${fmt0(r.g)}</td><td>${(r.rate*100).toFixed(0)}%</td><td>${fmt0(r.n)}</td></tr>`).join('');
   // Goods you owe them: deferred (paid ahead of delivery).
   const cSalt=_S.map(s=>{const k=txDeferKg(s);if(k<=0.009)return null;return {id:s.customer,date:s.date,k:+k.toFixed(2),rm:+(k*txPrice(s)).toFixed(2)};}).filter(Boolean).sort(oldest);
   const cSaltKg=+cSalt.reduce((a,r)=>a+r.k,0).toFixed(2),cSaltRm=+cSalt.reduce((a,r)=>a+r.rm,0).toFixed(2);
@@ -10460,6 +10473,22 @@ function pxReplRate(){
   const L=latestLot(PROD);
   return L?+L.rate.toFixed(2):null;
 }
+/* ============ ROUND 5, HIS CALL 4: A RESTOCK IS PRICED AT ITS OWN TIER ============
+   The suggested restock used to be priced at a flat per-unit rate, which is not a price
+   anyone is quoted: lots are bought whole, off a tier ladder. This prices a suggestion at
+   the BOOK'S OWN quote: the smallest tier that covers it, at that tier's total; beyond the
+   top tier, as many top-tier lots as cover it. With no quote on the book the trailing
+   average stands in, marked so the caller can say it is not a quote. */
+function restockQuote(needKg){
+  if(!(needKg>0))return null;
+  const q=quoteFor(PROD), tiers=((q&&q.tiers)||[]).slice().sort((a,b)=>a.qty-b.qty);
+  if(!tiers.length){const r=replCost();
+    return r!=null?{qty:+(+needKg).toFixed(2),total:+(needKg*r).toFixed(2),rate:+r.toFixed(2),lots:null,quoted:false}:null;}
+  const t=tiers.find(x=>x.qty>=needKg-0.009);
+  if(t)return {qty:t.qty,total:t.total,rate:+(t.total/t.qty).toFixed(2),lots:1,quoted:true};
+  const top=tiers[tiers.length-1], n=Math.ceil((needKg-0.009)/top.qty);
+  return {qty:+(n*top.qty).toFixed(2),total:+(n*top.total).toFixed(2),rate:+(top.total/top.qty).toFixed(2),lots:n,quoted:true};
+}
 /* ============ PROMOTION IS NOT A LEAK, AND FROM v353 THE PRICE STOPS TREATING IT AS ONE ============
    His instruction of 24 Aug: promotion is not priced in. Until now every unit that failed to reach
    a paying customer divided the cost of the ones that did, whatever the reason, so a deliberate
@@ -11064,14 +11093,20 @@ function actions(){
   const short=f.shortKg>0.009, low=cv.below;
   if(short||low){
     const sev=(short||(cv.days!=null&&cv.days<2))?'now':'soon';
-    const refill=+(Math.max(cv.shortBy,f.shortKg)*c.eff).toFixed(2);
+    /* round 5, his call 4: the refill is priced at the book's own quote tier, the smallest
+       lot that covers the need, because that is a price somebody will actually quote him.
+       The old flat needKg x effective-cost figure priced a lot nobody sells. */
+    const needKg=Math.max(cv.shortBy,f.shortKg);
+    const rq=restockQuote(needKg);
+    const refill=rq?rq.total:+(needKg*c.eff).toFixed(2);
     const title=short&&low?`Buy: ${kg(f.shortKg)} short on promises, ${kg(cv.shortBy)} under trigger`
       :short?`Buy: ${kg(f.shortKg)} short of what is promised`
       :`Reorder: ${kg(cv.free)} free, ${cv.days==null?'no rate to read':cv.days+' days cover'}`;
     const why=(short?`<b>${kg(f.commitKg)} owed out</b> against ${kg(currentStock)} held, ${kg(f.unmet)} unmet. `
         +`${f.pendRows.map(r=>ID(r.id)+' '+kg(r.kg)).join(', ')}${f.defRows.length?'; deferred '+f.defRows.map(r=>ID(r.id)+' '+kg(r.kg)).join(', '):''}. `:'')
       +(low?`${kg(cv.shortBy)} under the ${kg(cv.reorderAt)} trigger, ${kg(cv.rate)}/day. `:'')
-      +`Refill ${fmt0(refill)} at ${fmt(c.eff)}/unit.`
+      +(rq&&rq.quoted?`Refill: the ${kg(rq.qty)} tier${rq.lots>1?` (${rq.lots} lots)`:''} covers the ${kg(+needKg.toFixed(2))} needed, ${fmt0(rq.total)} at ${fmt(rq.rate)}/unit quoted.`
+        :`Refill ${fmt0(refill)} at ${fmt(rq?rq.rate:c.eff)}/unit, no quote on this book.`)
       +(f.cashKnown?` ${fmt0(cashFlow().free)} free.`:'');
     add(sev,'buy',title,Math.max(refill,short?f.promRM:0),why,'sourcing');
   }
@@ -12492,10 +12527,11 @@ function wbBuyOrders(){const out=[];wbLedgerAll().forEach((t,i)=>{if(t.type==='B
 function wbAmendList(){return wbASide==='BUY'?wbBuyOrders():wbSellOrders();}
 /* purchases carry no amend[]: progress is read straight off the row. Cash is the part
    payment if one is recorded, else the whole total once paid; a lot arrives whole or not at all. */
-/* units a customer holds delivered but unpaid, across every order, plus a hypothetical extra */
-function wbCreditKg(cust,extra){
-  let t=+extra||0;
-  sales.forEach(s=>{if(s.customer!==cust||s.cancelled)return;const p=txPrice(s);if(!(p>0))return;
+/* units a customer holds delivered but unpaid, plus a hypothetical extra. Round 5: per
+   BOOK, because the cap it is compared against is per book now; the caller names which. */
+function wbCreditKg(cust,extra,prod){
+  let t=+extra||0;const P=prod||PROD;
+  sales.forEach(s=>{if(s.customer!==cust||s.cancelled||prodOf(s)!==P)return;const p=txPrice(s);if(!(p>0))return;
     t+=Math.max(0,(s.deliveredQty||0)-txPaid(s)/p);});
   return +t.toFixed(2);
 }
@@ -13733,8 +13769,8 @@ function wbPreview(){
          recorded as an amendment to his existing order, not as a new sale. */
       if(isBanned(pv)){const b=banOf(pv);
         errs.push(`<b>${ID(pv)} is permanently banned from sale</b> since ${b.since}. Record a payment against his existing order under Amend instead; ${fmt0(b.pursue)} is still being pursued.`);}
-      const tot=wbCreditKg(pv,advKg),cap=capForParty(pv);
-      if(tot>cap+0.009)warns.push(`Takes this customer to ${kg(tot)} delivered and unpaid, over their ${kg(cap)} credit cap.`);
+      const tot=wbCreditKg(pv,advKg,wbProdVal()),cap=capForParty(pv,wbProdVal());
+      if(tot>cap+0.009)warns.push(`Takes this customer to ${kg(tot)} of ${((PRODUCTS[wbProdVal()]||{}).name||wbProdVal()).toLowerCase()} delivered and unpaid, over their ${kg(cap)} credit cap on this book.`);
       /* the Boundaries panel is only worth having if it reaches the moment of the
          trade. A party already in breach is named here, before you record another. */
       const bb=boundaryScan().filter(b=>b.sev==='breach'&&b.who===pv);
@@ -13813,8 +13849,8 @@ function wbPreview(){
         if(pr>0){
           const nowOwed=Math.max(0,(t.deliveredQty||0)-txPaid(t)/pr);
           const nextOwed=Math.max(0,((t.deliveredQty||0)+ak)-(txPaid(t)+ac)/pr);
-          const tot=+(wbCreditKg(t.customer,0)-nowOwed+nextOwed).toFixed(2),acap=capForParty(t.customer);
-          if(tot>acap+0.009)warns.push(`Takes this customer to ${kg(tot)} delivered and unpaid, over their ${kg(acap)} credit cap.`);
+          const tot=+(wbCreditKg(t.customer,0,prodOf(t))-nowOwed+nextOwed).toFixed(2),acap=capForParty(t.customer,prodOf(t));
+          if(tot>acap+0.009)warns.push(`Takes this customer to ${kg(tot)} of ${((PRODUCTS[prodOf(t)]||{}).name||prodOf(t)).toLowerCase()} delivered and unpaid, over their ${kg(acap)} credit cap on this book.`);
         }
         if(ak>0.009){const fr=+(currentStock-defKg).toFixed(2);
           if(ak>fr+0.009)warns.push(`Only ${kg(fr)} is free to sell &mdash; short by ${kg(+(ak-fr).toFixed(2))}.`);}
