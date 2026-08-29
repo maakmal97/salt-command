@@ -2173,6 +2173,28 @@ section("The board — four laws, read off the engine (v387)");
   });
 }
 
+section("Pricing — stale is a statement about the lock, not a constant (v403)");
+{
+  /* While PRICE_LOCK_ON is false there is nothing to be stale AGAINST, and the ungated read
+     had been a constant true on this desk since the lock went off: a flag that always fires
+     teaches its reader to tap through, which is the drafter's own lesson. Nothing consumes
+     the field today; the gate is so the first consumer that does is not lied to. Proven both
+     directions with the desk's own inputs, and the third assertion is what keeps the first
+     from being vacuous: the lock state on this desk IS 'stale', so only the gate can make
+     the flag read false. */
+  const E = (await import("../engine/pricing.mjs")).default;
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  const I = w.pxInputs();
+  ok(I.lockOn === false, "the price lock is off on this desk, the case that made the flag constant");
+  ok(I.lockState && I.lockState.state === "stale", "and the lock state reads 'stale', so the gate alone decides the flag");
+  ok(w.pxCost().stale === false, "lock off: stale is false whatever the lock state says");
+  ok(E.costStack({ ...I, lockOn: true, lockState: { state: "stale", lock: null, days: 99 } }).stale === true,
+    "lock on over a stale lock: stale is true");
+  ok(E.costStack({ ...I, lockOn: true, lockState: { state: "none", lock: null, days: null } }).stale === false,
+    "lock on and current: stale is false");
+}
+
 section("iPhone — the dead zones the desk draws under (v392)");
 {
   const m = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");

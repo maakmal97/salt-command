@@ -1041,10 +1041,6 @@ select[multiple],select[size]{background-image:none;padding-right:9px;}
 .prodsw button:not(.live):hover{opacity:.75;}
 .prodsw .pall{font-size:10px;color:var(--dim);margin:1px 2px 0;line-height:1.45;}
 @media print{.prodsw{display:none!important;}}
-.pstrip .pon{background:rgba(99,230,224,.06);}
-.pstrip .pon td{font-weight:600;}
-.pstrip .ptot td{border-top:1px solid var(--line);color:var(--mut);}
-.pstrip .pdot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;}
 .sub2{font-size:10px;color:var(--dim);}
 .vbtn.tiny{padding:1px 7px;font-size:10px;margin-left:6px;}
 .iref{font-size:9.5px;color:var(--dim);letter-spacing:.3px;margin-top:1px;}
@@ -2054,7 +2050,11 @@ function costStack(I){
              prices a specific quantity uses effEx and adds delivery once. */
           effEx:+yielded.toFixed(6),delPerOrder:COST_BASIS.txnPerDelivery.rm,
           locked:false,lockedOn:null,lockAge:null,
-          stale:(LK.state==='stale'),sim:(pxOver.cost!=null||pxOver.shrink!=null)};
+          /* v403: gated on lockOn. With the lock off there is nothing to be stale AGAINST,
+             and the ungated read was a constant true on this desk since PRICE_LOCK_ON went
+             false: a flag that always fires teaches its reader to ignore it. No current
+             consumer reads it; the gate is so the first one that does is not lied to. */
+          stale:(I.lockOn&&LK.state==='stale'),sim:(pxOver.cost!=null||pxOver.shrink!=null)};
 }
 
 /* ============ THE SUPPLIER'S OWN ELASTICITY, FITTED RATHER THAN TYPED ============
@@ -2484,7 +2484,7 @@ const PEOPLE={
       "since": "2026-07-26",
       "reason": "personal reasons",
       "memorial": "Co-Founder",
-      "note": "Memorialised as Co-Founder, a title held by him alone and not passed on. His introductions and the customers behind them stay attributed to him. The figures are read live off the network rather than typed here, because a total typed into a note goes silently wrong the first time a referred order is corrected, and this one is rendered on a public page."
+      "note": "Title held by him alone, not passed on."
     }
   ],
   "roles": [
@@ -2493,7 +2493,7 @@ const PEOPLE={
       "short": "CBDO",
       "holder": null,
       "since": "2026-07-26",
-      "note": "Vacant. The work CJ4-OKR did in substance is now a named position rather than a personal arrangement, so it can be filled by someone else without inheriting his title."
+      "note": "A named position, fillable without inheriting his title."
     }
   ]
 };
@@ -2584,7 +2584,7 @@ const SOURCING_PLAN={
   "cadence": "monthly, on the ceiling reset",
   "basis": "His decision of 24 Aug. The purchase ceiling of RM4,500 resets on the 28th of each month and anything beyond it comes out of rolling cash. 50 unit at RM2,200 plus the RM60 collection trip is RM2,260, well inside the ceiling.",
   "assumedRate": 44,
-  "rateBasis": "the 50 unit tier on the 20 Aug ladder, quoted AND paid on that date, so it is a rate achieved rather than a rate on offer.",
+  "rateBasis": "quoted and paid on the 20 Aug ladder's 50 unit tier",
   "note": "THE 100 UNIT TIER WAS THE RECOMMENDATION AND HE HAS TAKEN THE 50. Landed cost is RM45.20 a unit against RM43.60, so this lot costs RM80 more than the same salt bought at the top tier, and it covers about a fortnight rather than three weeks. RM4,360 would have fitted the ceiling with RM140 to spare. Recorded as his call, not as an error."
 };
 const CASH_COUNT_RETIRED={
@@ -5424,14 +5424,17 @@ function boundaryPanel(){
      branch rendered as an EMPTY card. A chip is a field, so it survives, and it is what the
      Watch register asked for anyway. The reasoning under each rule stays where it was. */
   const chips=c=>`<div class="pchips" style="margin:0 0 9px">${c}</div>`;
+  /* v403: THE WHY COLUMN WENT, HIS CALL OF 29 AUG. At 115px wide it wrapped to six lines a
+     row and made the table 596px tall at 375px. Each x.why still exists where the rule is
+     built, so restoring it is one cell, and the rule names stay self-stating. */
   if(!all.length)return head+`<div class="card">${chips(`<span class="pchip good">no breaches</span>`)}<div class="dsc">All clear. Nobody past the ${kg(RULES.creditKg.retail)} retail cap or ${RULES.creditDays} days, nothing under its band floor, nothing owed out beyond the shelf.</div></div>`;
   return head+`<div class="card">
     ${chips((nb?`<span class="pchip bad">${nb} breach${nb===1?'':'es'}</span>`:`<span class="pchip good">no breaches</span>`)
       +(nw?`<span class="pchip warn">${nw} to watch</span>`:'')
       +(r.length?`<span class="pchip">${r.length} provisional</span>`:''))}
     <div class="dsc" style="margin-bottom:9px">Nothing is blocked; a breach is held here until it is resolved. The ${kg(RULES.creditKg.retail)} retail cap is read across both books.</div>
-    <table><thead><tr><th class="l">Rule</th><th class="l">Party</th><th class="l">Position</th><th class="l">Why it matters</th></tr></thead><tbody>
-    ${all.map(x=>`<tr><td class="l">${bSevTag[x.sev]||''} ${x.rule}</td><td class="l mono">${x.who==='stock'?'&mdash;':ID(x.who)}</td><td class="l">${x.what}</td><td class="l" style="color:var(--mut)">${x.why}</td></tr>`).join('')}
+    <table><thead><tr><th class="l">Rule</th><th class="l">Party</th><th class="l">Position</th></tr></thead><tbody>
+    ${all.map(x=>`<tr><td class="l">${bSevTag[x.sev]||''} ${x.rule}</td><td class="l mono">${x.who==='stock'?'&mdash;':ID(x.who)}</td><td class="l">${x.what}</td></tr>`).join('')}
     </tbody></table></div>`;
 }
 /* ============ THE WALK IS A MODULE (v338) ============
@@ -5621,10 +5624,24 @@ function tabOverview(){
      rule on Today arrives here and used to land on a six-card position strip and a product
      table, with Boundaries a screen below. That is the v343 fault again: a thing you have to
      scroll for reads as a thing that is not there. Boundaries and the three standing
-     exposures lead now, and the position follows them as context. */
+     exposures led from v385 to v402.
+     v403, HIS CALL OF 29 AUG: THE DIGEST LEADS. The desk's headline row sat 1,890px down its
+     own overview; it opens the part now, and a reader arriving from a breach tap still meets
+     Boundaries within the first screen after it. THE SIX-COLUMN PER-PRODUCT TABLE THAT SAT
+     BELOW THE KPIS IS CUT the same day, the round's queued strip: its figures already live on
+     the rail switcher (name and revenue), in Position at a glance (the active book) and on
+     the Stock view (shelf and value per book), so at 375px it was the desk restating three of
+     its own surfaces sideways. */
   return `<h1>Overview</h1>
   <div class="pscope">${prodBadge()}</div>
   <div class="dsc dsclead">Where the desk stands right now, with one headline lifted from every other tab.</div>
+  <h2>Desk digest <span class="sub" style="font-weight:400">the headline from every tab</span> <span class="rule"></span></h2>
+  <div class="kpis k4">
+    <div class="kpi"><div class="l">Order book &middot; pending</div><div class="v">${kg(pendKg)}</div><div class="n">${pendN?`${pendN} order${pendN===1?'':'s'} worth ${fmt0(pendRM)}, off the books`:'nothing pending'}</div></div>
+    <div class="kpi p"><div class="l">Financials &middot; still to come in</div><div class="v">${fmt0(arGross)}</div><div class="n">${(uncollected-arGross)>0.009?`${fmt0(uncollected-arGross)} of what is sold settled in kind`:(uncollected>0.009?'all of it a cash receivable':'everything sold is collected')}</div></div>
+    <div class="kpi"><div class="l">Customers &middot; concentration</div><div class="v" style="color:${conCol}">${con.hhi.toFixed(0)}</div><div class="n">${conRisk}; top buyer ${con.top.toFixed(0)}% of ${con.n}</div></div>
+    <div class="kpi g"><div class="l">Suppliers &middot; in transit</div><div class="v">${kg(itKg)}</div><div class="n">${supBills>0.009?`${fmt0(supBills)} bills unpaid`:'all lots paid'}${supRecovNet>0.009?`; ${fmt0(supRecovNet)} refund due`:''}</div></div>
+  </div>
   ${boundaryPanel()}
   ${defKg>0.009?`<div class="pend"><h3>&#128230; Deferred deliveries <span class="cd" style="color:var(--amber);border-color:var(--amber)">${kg(defKg)} owed out</span></h3><div class="pchips">${defRows.map(s=>`<span class="pchip"><b>${ID(s.customer)}</b> ${kg(txDeferKg(s))}</span>`).join('')}${defKg>currentStock?`<span class="pchip bad">exceeds ${kg(currentStock)} on hand</span>`:''}</div></div>`:''}
   ${advTotal>0.5?`<div class="pend"><h3>&#128179; Advances out <span class="cd" style="color:var(--amber);border-color:var(--amber)">${fmt0(advTotal)} owed to you</span></h3><div class="pchips">${advBy.map(a=>`<span class="pchip${a.over?' bad':''}"><b>${ID(a.who)}</b> ${fmt0(a.rm)}${a.over?' &middot; over the '+kg(RULES.creditKg.retail)+' cap':''}</span>`).join('')}<span class="pchip warn">${fmt0(ar)} net of provisioning</span></div></div>`:''}
@@ -5637,26 +5654,6 @@ function tabOverview(){
     <div class="kpi gold"><div class="l">Margin</div><div class="v">${fmt0(grossMargin)}</div><div class="n">${marginPct.toFixed(1)}% on ${fmt0(revTotal)} sold</div></div>
     <div class="kpi r"><div class="l">Receivables (net)</div><div class="v">${fmt0(totDue)}</div><div class="n">${(ar>0.009||supRecovNet>0.009)?`${fmt0(ar)} trade${supRecovNet>0.009?` + ${fmt0(supRecovNet)} refund`:''}`:'nothing owed to you'}</div></div>
     <div class="kpi"><div class="l">Bought to date</div><div class="v">${kg(buyKg)}</div><div class="n">${buyKg>0.009?`${fmt0(buyRM)} at ${fmt(buyRM/buyKg)}/unit avg`:`no lot recorded yet`}</div></div>
-  </div>
-  ${(()=>{const sums=PROD_IDS.map(p=>prodSummary(p));if(sums.length<2)return '';
-    return `<div class="card pstrip" style="margin-top:12px"><table><thead><tr><th class="l">Product</th><th>Revenue</th><th>Margin</th><th>Shelf</th><th>Value</th><th>Spent</th></tr></thead><tbody>
-      ${sums.map(x=>{const o=openingFor(x.id),sc=stockCostFor(x.id);
-        const sk=x.id===PROD?currentStock:(x.id===DEFAULT_PROD?STATED_STOCK:(o.stated!=null?o.stated:null));
-        return `<tr class="${x.id===PROD?'pon':''}">
-        <td class="l"><span class="pdot" style="background:${PRODUCTS[x.id].accent}"></span> ${esc(x.name)}${x.id===PROD?'':` <button class="vbtn tiny" onclick="setProd('${x.id}')">open</button>`}</td>
-        <td>${fmt0(x.rev)}</td><td>${x.margin==null?'&mdash;':`${fmt0(x.margin)}<span class="sub2"> ${x.pct}%</span>`}</td>
-        <td>${sk==null?'&mdash;':kg(sk)}</td><td>${sk==null?'&mdash;':fmt0(sk*sc)}</td>
-        <td>${kg(x.bought)}<span class="sub2"> ${fmt0(x.spend)}</span></td></tr>`;}).join('')}
-      <tr class="ptot"><td class="l">All</td><td>${fmt0(sums.reduce((a,x)=>a+x.rev,0))}</td>
-        <td>${sums.every(x=>x.margin!=null)?fmt0(sums.reduce((a,x)=>a+x.margin,0)):'&mdash;'}</td>
-        <td>&mdash;</td><td>&mdash;</td><td>${fmt0(sums.reduce((a,x)=>a+x.spend,0))}</td></tr>
-    </tbody></table></div>`;})()}
-  <h2>Desk digest <span class="sub" style="font-weight:400">the headline from every tab</span> <span class="rule"></span></h2>
-  <div class="kpis k4">
-    <div class="kpi"><div class="l">Order book &middot; pending</div><div class="v">${kg(pendKg)}</div><div class="n">${pendN?`${pendN} order${pendN===1?'':'s'} worth ${fmt0(pendRM)}, off the books`:'nothing pending'}</div></div>
-    <div class="kpi p"><div class="l">Financials &middot; still to come in</div><div class="v">${fmt0(arGross)}</div><div class="n">${(uncollected-arGross)>0.009?`${fmt0(uncollected-arGross)} of what is sold settled in kind`:(uncollected>0.009?'all of it a cash receivable':'everything sold is collected')}</div></div>
-    <div class="kpi"><div class="l">Customers &middot; concentration</div><div class="v" style="color:${conCol}">${con.hhi.toFixed(0)}</div><div class="n">${conRisk}; top buyer ${con.top.toFixed(0)}% of ${con.n}</div></div>
-    <div class="kpi g"><div class="l">Suppliers &middot; in transit</div><div class="v">${kg(itKg)}</div><div class="n">${supBills>0.009?`${fmt0(supBills)} bills unpaid`:'all lots paid'}${supRecovNet>0.009?`; ${fmt0(supRecovNet)} refund due`:''}</div></div>
   </div>
   <div class="card"><div class="cardh">&#128220; Latest ledger <span class="sub">most recent orders</span></div><table><thead><tr><th class="l">Date</th><th class="l">Party</th><th>Qty</th><th>Total</th><th>State</th></tr></thead><tbody>${recent.map(s=>{const si=txStat(s);return `<tr><td class="l">${s.date}</td><td class="l mono">${ID(s.customer)}</td><td>${kg(s.qty)}</td><td>${fmt0(s.total)}</td><td><span class="tag ${si.cls}">${si.order}</span></td></tr>`;}).join('')}</tbody></table></div>`;
 }
@@ -8220,14 +8217,22 @@ function ifrsPanel(){
   </div></details>`;
 }
 function tabFinancials(){
-  const rows=finRows();
+  const all=finRows();
+  /* v403: THREE COLUMNS, HIS CALL OF 29 AUG. A column per month overflowed the 375px scroll
+     box by 91px and grew by one every month without bound. Last month, this month, FY to
+     date; a month with no entry renders as dashes rather than as RM 0, and the FY column
+     still reduces over EVERY month, so nothing off screen leaves the year. */
+  const thisMo=TODAY.toISOString().slice(0,7);
+  const lastMo=new Date(TODAY.getTime()-TODAY.getUTCDate()*864e5).toISOString().slice(0,7);
+  const rows=[lastMo,thisMo].map(mo=>{const e=all.find(x=>x[0]===mo);return [mo,e?e[1]:null];});
+  const mcell=f=>rows.map(([,v])=>v?f(v):'<td>&mdash;</td>').join('');
   const mLab=mo=>new Date(mo+'-01').toLocaleDateString('en-GB',{month:'long',year:'numeric'});
   /* SEEDED WITH THE SHAPE, NOT WITH {}. A book with no month reduces to an empty object, so
      fy.rev is undefined, fmt0(undefined) is "RM NaN", and the FY strip and both P&L columns
      printed RM NaN twelve times over. Reachable the day a product is declared before its
      first sale: the trading book beside it is unaffected, which is why it survived. The seed
      is finRows()'s own bump shape, so the two cannot drift apart without one being edited. */
-  const fy=rows.reduce((a,[,v])=>{Object.keys(v).forEach(k=>a[k]=(a[k]||0)+v[k]);return a;},
+  const fy=all.reduce((a,[,v])=>{Object.keys(v).forEach(k=>a[k]=(a[k]||0)+v[k]);return a;},
     {rev:0,cogs:0,cash:0,inkind:0,provAR:0,provSup:0,kg:0});
   const gm=v=>v.rev-v.cogs, gmp=v=>v.rev>0?gm(v)/v.rev*100:0, net=v=>gm(v)-v.provAR-v.provSup;
   const uncol=fy.rev-fy.cash-fy.inkind;
@@ -8241,17 +8246,17 @@ function tabFinancials(){
     return `<b>${fmt0(u)}</b>${u<-0.009?'<em class="finpct">held against goods</em>':''}`;};
   const col=(v,neg)=>`<td style="${neg&&v>0?'color:var(--crim)':''}">${v?fmt0(neg?-v:v):'&mdash;'}</td>`;
   const grp=lab=>`<tr class="grp"><td class="l" colspan="${rows.length+2}">${lab}</td></tr>`;
-  const pl=`<table class="fintab"><thead><tr><th class="l">Line</th>${rows.map(([mo])=>`<th>${mLab(mo).split(' ')[0]}</th>`).join('')}<th class="fy">FY 2026</th></tr></thead><tbody>
-    <tr><td class="l">Revenue</td>${rows.map(([,v])=>col(v.rev)).join('')}<td class="fy">${fmt0(fy.rev)}</td></tr>
-    <tr><td class="l">Cost of goods</td>${rows.map(([,v])=>col(v.cogs,1)).join('')}<td class="fy" style="color:var(--crim)">${fmt0(-fy.cogs)}</td></tr>
-    <tr class="tot"><td class="l">Gross margin</td>${rows.map(([,v])=>`<td><b>${fmt0(gm(v))}</b><em class="finpct">${gmp(v).toFixed(1)}%</em></td>`).join('')}<td class="fy"><b>${fmt0(gm(fy))}</b><em class="finpct">${gmp(fy).toFixed(1)}%</em></td></tr>
-    <tr><td class="l">Provision &mdash; debtors</td>${rows.map(([,v])=>col(v.provAR,1)).join('')}<td class="fy" style="color:var(--crim)">${fy.provAR?fmt0(-fy.provAR):'&mdash;'}</td></tr>
-    <tr><td class="l">Provision &mdash; supplier default</td>${rows.map(([,v])=>col(v.provSup,1)).join('')}<td class="fy" style="color:var(--crim)">${fy.provSup?fmt0(-fy.provSup):'&mdash;'}</td></tr>
-    <tr class="tot"><td class="l">Result after provisions</td>${rows.map(([,v])=>`<td><b>${fmt0(net(v))}</b></td>`).join('')}<td class="fy"><b>${fmt0(net(fy))}</b></td></tr>
+  const pl=`<table class="fintab"><thead><tr><th class="l">Line</th>${rows.map(([mo])=>`<th>${mLab(mo).split(' ')[0]}</th>`).join('')}<th class="fy">FY 2026 to date</th></tr></thead><tbody>
+    <tr><td class="l">Revenue</td>${mcell(v=>col(v.rev))}<td class="fy">${fmt0(fy.rev)}</td></tr>
+    <tr><td class="l">Cost of goods</td>${mcell(v=>col(v.cogs,1))}<td class="fy" style="color:var(--crim)">${fmt0(-fy.cogs)}</td></tr>
+    <tr class="tot"><td class="l">Gross margin</td>${mcell(v=>`<td><b>${fmt0(gm(v))}</b><em class="finpct">${gmp(v).toFixed(1)}%</em></td>`)}<td class="fy"><b>${fmt0(gm(fy))}</b><em class="finpct">${gmp(fy).toFixed(1)}%</em></td></tr>
+    <tr><td class="l">Provision &mdash; debtors</td>${mcell(v=>col(v.provAR,1))}<td class="fy" style="color:var(--crim)">${fy.provAR?fmt0(-fy.provAR):'&mdash;'}</td></tr>
+    <tr><td class="l">Provision &mdash; supplier default</td>${mcell(v=>col(v.provSup,1))}<td class="fy" style="color:var(--crim)">${fy.provSup?fmt0(-fy.provSup):'&mdash;'}</td></tr>
+    <tr class="tot"><td class="l">Result after provisions</td>${mcell(v=>`<td><b>${fmt0(net(v))}</b></td>`)}<td class="fy"><b>${fmt0(net(fy))}</b></td></tr>
     ${grp('Cash against it')}
-    <tr><td class="l">Collected in cash</td>${rows.map(([,v])=>col(v.cash)).join('')}<td class="fy">${fmt0(fy.cash)}</td></tr>
-    <tr><td class="l">Settled in kind</td>${rows.map(([,v])=>col(v.inkind)).join('')}<td class="fy">${fmt0(fy.inkind)}</td></tr>
-    <tr class="tot"><td class="l">Still uncollected</td>${rows.map(([,v])=>`<td>${unc(v)}</td>`).join('')}<td class="fy">${unc(fy)}</td></tr>
+    <tr><td class="l">Collected in cash</td>${mcell(v=>col(v.cash))}<td class="fy">${fmt0(fy.cash)}</td></tr>
+    <tr><td class="l">Settled in kind</td>${mcell(v=>col(v.inkind))}<td class="fy">${fmt0(fy.inkind)}</td></tr>
+    <tr class="tot"><td class="l">Still uncollected</td>${mcell(v=>`<td>${unc(v)}</td>`)}<td class="fy">${unc(fy)}</td></tr>
     ${grp('Stock behind it')}
     <tr class="tot"><td class="l">Closing stock<div style="font-size:11px;font-weight:400;color:var(--mut)">${kg(currentStock)} at ${fmt(stockCostFor(PROD))}/unit, before freight in</div></td><td colspan="${rows.length}"></td><td class="fy">${fmt0(currentStock*stockCostFor(PROD))}</td></tr>
   </tbody></table>`;
@@ -8279,7 +8284,7 @@ function tabFinancials(){
      revenue KPI where the year is read, the middle two are on the P&L's own h2 sub where the
      basis belongs, and the fourth is the "Settled in kind" row the P&L gained this round. */
   return `<div class="kpis k3">
-    <div class="kpi gold"><div class="l">FY revenue</div><div class="v">${fmt0(fy.rev)}</div><div class="n">${kg(fy.kg)} sold &middot; ${rows.length} month${rows.length===1?'':'s'} to 31 Dec 2026</div></div>
+    <div class="kpi gold"><div class="l">FY revenue</div><div class="v">${fmt0(fy.rev)}</div><div class="n">${kg(fy.kg)} sold &middot; ${all.length} month${all.length===1?'':'s'} to 31 Dec 2026</div></div>
     <div class="kpi"><div class="l">FY gross margin</div><div class="v">${fmt0(gm(fy))}</div><div class="n">${gmp(fy).toFixed(1)}% of revenue, before freight in</div></div>
     <div class="kpi r"><div class="l">Provisions carried</div><div class="v">${fmt0(fy.provAR+fy.provSup)}</div><div class="n">debtors ${fmt0(fy.provAR)} &middot; supplier ${fmt0(fy.provSup)}</div></div>
   </div>
@@ -12090,16 +12095,15 @@ function tabNetwork(){
     /* v401: A DEPARTURE IS A STATE, NOT AN ESSAY. This was 569 rendered characters: the date,
        the reason, the whole book note, and then his R1 and R3 again, which his own card and
        the vacancy below both already carry. What is left is the state, the declared reason
-       and the note folded closed, verbatim, so nothing declared is lost.
+       and, from v403 on his call of 29 Aug, NO FOLDED ESSAY: the book note is one clause
+       and this changelog holds the story that was cut.
        IT IS AN .insight RATHER THAN A .dsc DELIBERATELY. Without the figures it no longer
        matches FIGURE, so as a .dsc the strip would cull it; an insight is trimmed at
        NOTE_MIN but never removed, and this one is comfortably under. */
     return `<div class="pend"><h3>&#9733; ${ID(x.id)} has departed <span class="cd gold">${esc(dd.memorial)}</span></h3>
-      <div class="insight">Left ${dd.since}, ${esc(dd.reason)}. His referrals stay attributed to him.</div>
-      ${dd.note?`<details class="obsec"><summary>The note on the departure <span class="q">as declared in the book</span></summary><div class="card"><div class="dsc">${esc(dd.note)}</div></div></details>`:''}</div>`;}).join(''):''}
+      <div class="insight">Left ${dd.since}, ${esc(dd.reason)}. His referrals stay attributed to him.</div></div>`;}).join(''):''}
   ${vac.length?`<div class="pend def"><h3>&#9888; Vacant &mdash; ${esc(vac[0].title)} <span class="cd">${esc(vac[0].short||'')}</span></h3>
-    <div class="insight">Open since ${vac[0].since}.${dep.length?` The seat brought <b>${fmt0(dep[0].r3)}</b> against <b>${fmt0(dep[0].direct)}</b> of buying, and nobody is doing it today.`:''}</div>
-    ${vac[0].note?`<details class="obsec"><summary>What the seat covers <span class="q">as declared in the book</span></summary><div class="card"><div class="dsc">${esc(vac[0].note)}</div></div></details>`:''}</div>`:''}`;
+    <div class="insight">Open since ${vac[0].since}.${dep.length?` The seat brought <b>${fmt0(dep[0].r3)}</b> against <b>${fmt0(dep[0].direct)}</b> of buying, and nobody is doing it today.`:''}</div></div>`:''}`;
   // overall summary: total R1/R2/R3 across the network
   const tR1=ns.reduce((a,x)=>a+x.direct,0),tR2=ns.reduce((a,x)=>a+x.indirect,0),tR3=ns.reduce((a,x)=>a+x.r3,0);
   const nDs=ns.reduce((a,x)=>a+(x.dsResell||0),0);                       // end customers sold to on your behalf
@@ -12765,6 +12769,12 @@ function pxHead(){
 function tabPricing(){
   const c=pxCost(),sg=pxSignals(),pt=pxParty(pxOver.party),net=sg.net,pn=pt.net;
   const q=pxQuoteRate();                      // v385: r30 went with the dead board, unread since v326
+  /* v403: THE BOOK'S OWN QUOTE, FOUND BY THE CROSS-BOOK PROBE. The lever sentence read q
+     above, which is pxQuoteRate() on the bare supplierQuote, so oil's lever compared its
+     needed buy rate against SALT's RM 56 quote. quoteFor(PROD) is the resolver the desk has
+     had since the oil quote joined the book; pxQuoteRate itself is untouched because it feeds
+     pxInputs and the taper, and re-scoping the ENGINE's read is the owner-gated question. */
+  const liveQ=(()=>{const sq=quoteFor(PROD);return (sq&&sq.tiers&&sq.tiers.length)?Math.max.apply(null,sq.tiers.map(t=>t.total/t.qty)):null;})();
   const mk=pxMarket();
   /* v385: A NINE-COLUMN TABLE THAT NOTHING RENDERED. `board` built a row per off-card size,
      and `inverted` and `chip` were filled and read nowhere; the template has not carried any
@@ -13050,7 +13060,7 @@ function tabPricing(){
       <tr class="tot"><td class="l"><b>Cost to serve</b></td><td class="mono"><b>${fmt(R.base+R.credit)}</b></td></tr>
       <tr class="tot"><td class="l"><b>Margin</b><div class="iref">${(((R.price-R.base-R.credit)/R.price)*100).toFixed(1)}% of the ask</div></td><td class="mono"><b>${fmt(R.price-R.base-R.credit)}</b></td></tr>
     </tbody></table>
-    <div class="dsc" style="margin-top:8px"><b>The markup is on cogs and the margin is on the cost to serve</b>, which is why they are different numbers. Cogs is the salt; the cost to serve adds the leak, one delivery and the money tied up while the invoice is out. <b>The retired engine would have asked ${fmt0(R.wanted)}</b> for this lot on its fitted curve, and that figure is kept beside the ladder so the day the two disagree is visible rather than argued about.</div></div></details>`;})()}
+    <div class="dsc" style="margin-top:8px"><b>The markup is on cogs and the margin is on the cost to serve</b>, which is why they are different numbers. Cogs is the ${esc((PRODUCTS[PROD]||{name:'goods'}).name.toLowerCase())}; the cost to serve adds the leak, one delivery and the money tied up while the invoice is out. <b>The retired engine would have asked ${fmt0(R.wanted)}</b> for this lot on its fitted curve, and that figure is kept beside the ladder so the day the two disagree is visible rather than argued about.</div></div></details>`;})()}
   ${(()=>{const MC=marginCurve();return `<details class="obsec"><summary>The measured margin curve <span class="q">what the book has achieved, which prices nothing</span><span class="ct">${MC.fitted?`fitted, r&sup2; ${MC.r2!=null?MC.r2.toFixed(2):'&mdash;'}`:`not fitted, ${MC.n} order${MC.n===1?'':'s'}`}</span></summary>
     <div class="dsc"><b>This is a measurement and not a setting, and no price on the board comes from it.</b> The curve regresses realised margin on log size over ${MC.n} priced order${MC.n===1?'':'s'} of ${esc((PRODUCTS[PROD]&&PRODUCTS[PROD].name||PROD).toLowerCase())}. ${MC.fitted?`It is fitted here: intercept ${MC.a.toFixed(3)}, slope ${MC.b.toFixed(4)}, r&sup2; ${MC.r2!=null?MC.r2.toFixed(3):'&mdash;'}, giving ${(MC.spread.hi*100).toFixed(0)}% at ${kg(LADDER.at.lo)} falling to ${(MC.spread.lo*100).toFixed(0)}% at ${kg(LADDER.at.hi)}.`:`<b>It is NOT fitted here.</b> ${MC.n} order${MC.n===1?'':'s'} is under the ${PRICE_ENGINE.minPoints} it needs, so it refuses to fit and returns the stated fallback of ${(PRICE_ENGINE.fallbackMargin*100).toFixed(0)}% at every size, which is a declared number and not a finding.`} A rise with size is clamped to flat, because one large well-priced order on a thin book would otherwise quote bulk at a higher rate than retail. The result is bounded to ${(PRICE_ENGINE.clamp.lo*100).toFixed(0)}% and ${(PRICE_ENGINE.clamp.hi*100).toFixed(0)}%, shifted by ${(PRICE_ENGINE.marginShift*100).toFixed(0)}%, and ${PRICE_ENGINE.recoverAbnormal>0?`${(PRICE_ENGINE.recoverAbnormal*100).toFixed(0)}% of the unexplained leak is recovered in it`:`none of the unexplained leak is recovered in it`}.</div>
     <!-- this pointed at How a price is built and then repeated that fold's own justification
@@ -13234,8 +13244,8 @@ function tabPricing(){
     +(mk.small.none?`<b>Retail</b> has never traded on this book. `
       :`<b>Retail</b> has cleared <b>${fmt(mk.small.p)}/unit</b> at <b>${mk.small.m==null?'&mdash;':mk.small.m.toFixed(1)+'%'}</b> against a ${PRICE.floorPct.retail}% floor, ${mk.small.thin?`on <b>${mk.small.n} order${mk.small.n===1?'':'s'}</b>, which is too few to call it either way. `:`so it is <b>${mk.small.m>=PRICE.floorPct.retail?'ahead of':'under'}</b> policy. `}`)
     +(mk.bulk.none?`<b>Wholesale</b> has never traded on this book, so the buying lever below cannot be worked out yet.`
-      :`<b>Wholesale</b> has cleared <b>${fmt(mk.bulk.p)}/unit</b> at <b>${mk.bulk.m==null?'&mdash;':mk.bulk.m.toFixed(1)+'%'}</b> against a ${PRICE.floorPct.wholesale}% floor, ${mk.bulk.thin?`on <b>${mk.bulk.n} order${mk.bulk.n===1?'':'s'}</b>, which is too few to call it either way.`:`so it is <b>${mk.bulk.m>=PRICE.floorPct.wholesale?'ahead of':'under'}</b> policy but earning very little: at ${fmt0(PRICE.aWhole.total)} a ${kg(PRICE.aWhole.q)} lot returns about ${fmt0((PRICE.aWhole.total/PRICE.aWhole.q-mk.c.eff)*PRICE.aWhole.q)} of profit against ${fmt0((mk.small.p-mk.c.eff)*PRICE.aRetail.q)} on a ${kg(PRICE.aRetail.q)} retail lot.`}`)
-    +(mk.needRate==null?'':`<br><br>For the realised wholesale price to clear its floor unchanged you would have to buy at <b>${fmt(mk.needRate)}/unit</b>, against the ${fmt(q)}/unit on the live quote. <b>That is the lever.</b> Wholesale on this desk is not a pricing problem, it is a buying problem: the price is set by what the trade will bear, so the only way it earns is if the stock is bought cheaper.`)}</div></div>
+      :`<b>Wholesale</b> has cleared <b>${fmt(mk.bulk.p)}/unit</b> at <b>${mk.bulk.m==null?'&mdash;':mk.bulk.m.toFixed(1)+'%'}</b> against a ${PRICE.floorPct.wholesale}% floor, ${mk.bulk.thin?`on <b>${mk.bulk.n} order${mk.bulk.n===1?'':'s'}</b>, which is too few to call it either way.`:`so it is <b>${mk.bulk.m>=PRICE.floorPct.wholesale?'ahead of':'under'}</b> policy but earning very little: at the realised ${fmt(mk.bulk.p)}/unit a ${kg(PRICE.aWhole.q)} lot returns about ${fmt0((mk.bulk.p-mk.c.eff)*PRICE.aWhole.q)} of profit against ${fmt0((mk.small.p-mk.c.eff)*PRICE.aRetail.q)} on a ${kg(PRICE.aRetail.q)} retail lot.`}`)
+    +(mk.needRate==null?'':`<br><br>For the realised wholesale price to clear its floor unchanged you would have to buy at <b>${fmt(mk.needRate)}/unit</b>, against the ${liveQ==null?'&mdash;':fmt(liveQ)}/unit on this book&rsquo;s live quote. <b>That is the lever.</b> Wholesale on this desk is not a pricing problem, it is a buying problem: the price is set by what the trade will bear, so the only way it earns is if the stock is bought cheaper.`)}</div></div>
 
   </details>
   <details class="obsec"><summary>What the two charts plot <span class="q">and what is deliberately not on them</span><span class="ct">nothing fitted</span></summary>

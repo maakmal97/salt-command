@@ -1,6 +1,6 @@
 {
- "v": "v400",
- "stamped": "29 Aug 2026, 00:23 KL",
+ "v": "v402",
+ "stamped": "29 Aug 2026, 03:20 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -2694,7 +2694,7 @@
      "since": "2026-07-26",
      "reason": "personal reasons",
      "memorial": "Co-Founder",
-     "note": "Memorialised as Co-Founder, a title held by him alone and not passed on. His introductions and the customers behind them stay attributed to him. The figures are read live off the network rather than typed here, because a total typed into a note goes silently wrong the first time a referred order is corrected, and this one is rendered on a public page."
+     "note": "Title held by him alone, not passed on."
     }
    ],
    "roles": [
@@ -2703,7 +2703,7 @@
      "short": "CBDO",
      "holder": null,
      "since": "2026-07-26",
-     "note": "Vacant. The work CJ4-OKR did in substance is now a named position rather than a personal arrangement, so it can be filled by someone else without inheriting his title."
+     "note": "A named position, fillable without inheriting his title."
     }
    ]
   },
@@ -2794,7 +2794,7 @@
    "cadence": "monthly, on the ceiling reset",
    "basis": "His decision of 24 Aug. The purchase ceiling of RM4,500 resets on the 28th of each month and anything beyond it comes out of rolling cash. 50 unit at RM2,200 plus the RM60 collection trip is RM2,260, well inside the ceiling.",
    "assumedRate": 44,
-   "rateBasis": "the 50 unit tier on the 20 Aug ladder, quoted AND paid on that date, so it is a rate achieved rather than a rate on offer.",
+   "rateBasis": "quoted and paid on the 20 Aug ladder's 50 unit tier",
    "note": "THE 100 UNIT TIER WAS THE RECOMMENDATION AND HE HAS TAKEN THE 50. Landed cost is RM45.20 a unit against RM43.60, so this lot costs RM80 more than the same salt bought at the top tier, and it covers about a fortnight rather than three weeks. RM4,360 would have fitted the ceiling with RM140 to spare. Recorded as his call, not as an error."
   },
   "PRICE_SET": {
@@ -2823,7 +2823,7 @@
   ],
   "QUEUE_COMMITTED": "2026-08-28T09:59:51.414Z",
   "PRICING": {
-   "takenAt": "2026-08-28T16:23:25.886Z",
+   "takenAt": "2026-08-29T00:38:38.493Z",
    "sizes": [
     0.5,
     1,
@@ -3265,10 +3265,10 @@
      }
     }
    },
-   "v": "v400"
+   "v": "v402"
   },
   "OPEN": {
-   "at": "2026-08-28T16:23:25.910Z",
+   "at": "2026-08-29T00:38:38.516Z",
    "count": 6,
    "byKey": {
     "CY2-NIL|undefined|230": {
@@ -3392,7 +3392,7 @@
     "salt": "2026-08-24",
     "oil": "2026-08-23"
    },
-   "v": "v400"
+   "v": "v402"
   }
  }
 }
