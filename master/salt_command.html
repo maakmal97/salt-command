@@ -12998,7 +12998,12 @@ function tabPricing(){
       return `<tr${underD?' style="background:rgba(255,93,115,.07)"':''}><td class="l">${units(r.q)}`
       +(underC?' <span class="tag def">under floor</span>':underD?' <span class="tag prov">collect only</span>':'')+`</td>`
       +`<td class="mono" style="color:var(--dim)">${fmt0(L.cogs)}</td>`
-      +`<td class="mono" style="color:var(--dim)">${L.markupX.toFixed(2)}x</td>`
+      /* round 5: the ask's OWN markup, read back from the answer, never the curve's. The column
+         printed ladderMarkup(q), which equals the ask only while the ask is derived; with the oil
+         board stated whole the two parted company on four of five rows, 0.38x beside a stated
+         RM 240 that is 0.53x on its own cogs, and nothing on the row said which one it meant.
+         Reading the figure back out of the answer is the v382 Collection rule, applied here. */
+      +`<td class="mono" style="color:var(--dim)">${L.ask.markupX.toFixed(2)}x</td>`
       /* v330: THE RATE AND THE MARGIN GO ON SEPARATE LINES, and it is a phone fix rather than a
          style one. On one line this sub-label read "RM 120.00 - 32% margin" and forced the Ask
          column to 160px of the 325px the board has on a 375px screen, which pushed the ASK ITSELF
@@ -13055,7 +13060,9 @@ function tabPricing(){
       ${sR('Taper',(sT.b!=null?sT.b.toFixed(3):'&mdash;'),sT.b!=null?`fitted to ${esc(sSup)}&rsquo;s quote ladder${sT.r2!=null?`, r&sup2; ${sT.r2.toFixed(2)}`:''}, ${units(LD.at.lo)} to ${units(LD.at.hi)}${sBor?`; <b>${esc(sOwn)}&rsquo;s own ladder is on the book and is not the one this is fitted to</b>`:''}`:'no supplier ladder to fit')}
       ${sR('Ceiling',LD.ceiling.toFixed(2)+'x','does not bind at any printed size')}
       ${sR('Floor','break-even',`${fmt(sC.effEx)} a unit after the leak, one delivery of ${fmt0(sC.delPerOrder||0)}, ${fmt0(PRICE_ENGINE.timePerOrder||0)} of his time an order`)}
-      <tr class="tot"><td class="l"><b>Markup across the board</b><div class="iref">${units(sSZ[0])} down to ${units(sSZ[sSZ.length-1])}</div></td><td class="mono"><b>${sLo.markupX.toFixed(2)}x to ${sHi.markupX.toFixed(2)}x</b></td></tr>
+      <!-- round 5: the asks' own markups, for the board-column reason: the curve ends read
+           0.62x to 0.12x on oil while the stated board actually runs 0.62x to 0.15x. -->
+      <tr class="tot"><td class="l"><b>Markup across the board</b><div class="iref">${units(sSZ[0])} down to ${units(sSZ[sSZ.length-1])}</div></td><td class="mono"><b>${sLo.ask.markupX.toFixed(2)}x to ${sHi.ask.markupX.toFixed(2)}x</b></td></tr>
       <tr class="tot"><td class="l"><b>Margin it returns</b><div class="iref">struck on the lot cost, not on cogs</div></td><td class="mono"><b>${sLo.ask.margin.toFixed(1)}% to ${sHi.ask.margin.toFixed(1)}%</b></td></tr>
       ${sRz!=null?sR('Weighted by what he trades',sRz.toFixed(2)+'x','the level the book actually returns'):''}
     </tbody></table>
@@ -13094,7 +13101,10 @@ function tabPricing(){
            every standing .dsc on a part but the first, and this element is the whole feedback
            channel: with the class on it, changing a price said nothing and neither did saving. */
         return `<table class="pxboard" style="margin-bottom:9px"><thead><tr><th class="l">Size</th><th>On the board</th><th>Price</th><th>Floor, collected</th></tr></thead><tbody>${rows}</tbody></table>
-        <div id="shOut" style="margin-bottom:8px"><div class="insight">Prefilled from the derived board; change a price or untick a size, then <b>Make it the house board</b>.</div></div>`;})()}
+        <!-- round 5: was "the derived board", which the prefill stopped being the day a stated
+             price won: it is priceLadder's ask, stated where he has stated. "As it stands" is
+             true on both books; the reset button below still says derived because reset IS. -->
+        <div id="shOut" style="margin-bottom:8px"><div class="insight">Prefilled from the board as it stands; change a price or untick a size, then <b>Make it the house board</b>.</div></div>`;})()}
       <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center">
         <button class="vbtn" style="border-color:var(--acc)" onclick="shQueueHouse(this)">Make it the house board</button>
         <button class="vbtn" onclick="shReset()">Back to the derived board</button>
@@ -13133,7 +13143,12 @@ function tabPricing(){
     const chip=c.sim?`<span class="tag prov">Simulated</span>`:c.locked?`<span class="tag paid">Frozen</span>`:`<span class="tag def">Live</span>`;
     return `<h2 style="margin-top:22px">What a unit costs ${chip} <span class="sub" style="font-weight:400">${c.sim?'an override is in force':c.locked?`held since ${LK.lock.lockedOn}`:'moves with the lot'}</span> <span class="rule"></span></h2>
     <div class="card"><table class="fintab istmt"><tbody>
-      ${r('Lot rate',c.lot,'inventory',`${units(c.lotQty)} on ${c.lotDate}, ${pxOver.cost!=null?'your override':'the highest live quote tier'}`)}
+      <!-- round 5, his call 2: the figure is the trailing 30-day average now, and this caption
+           still said "the highest live quote tier", which the figure was not even before (with a
+           lot on the book the old chain took the LOT's rate; the quote was the no-lot fallback).
+           RM 48.50 under a caption naming a RM 56 tier is the kind of line that teaches the
+           reader to ignore captions. The row says what the figure is on each branch instead. -->
+      ${r('Replacement rate',c.lot,'inventory',pxOver.cost!=null?'your override':c.locked?`the locked lot, ${units(c.lotQty)} on ${c.lotDate}`:`trailing 30-day average of this book's lots; latest ${units(c.lotQty)} on ${c.lotDate}`)}
       ${r('Collection',c.freight,'inventory',(()=>{
         /* v382 moved the freight divisor from the LATEST lot to the AVERAGE lot received and this
            sentence was left behind, printing "over 25 unit" for salt when the answer is 23.66 and
@@ -13201,7 +13216,12 @@ function tabPricing(){
       <tr class="tot"><td class="l"><b>Margin</b><div class="iref">${(((R.price-R.base-R.credit)/R.price)*100).toFixed(1)}% of the ask</div></td><td class="mono"><b>${fmt(R.price-R.base-R.credit)}</b></td></tr>
     </tbody></table>
     <div class="dsc" style="margin-top:8px"><b>The markup is on cogs and the margin is on the cost to serve</b>, which is why they are different numbers. Cogs is the ${esc((PRODUCTS[PROD]||{name:'goods'}).name.toLowerCase())}; the cost to serve adds the leak, one delivery and the money tied up while the invoice is out. <b>The retired engine would have asked ${fmt0(R.wanted)}</b> for this lot on its fitted curve, and that figure is kept beside the ladder so the day the two disagree is visible rather than argued about.</div></div></details>`;})()}
-  ${(()=>{const MC=marginCurve();return `<details class="obsec"><summary>The measured margin curve <span class="q">what the book has achieved, which prices nothing</span><span class="ct">${MC.fitted?`fitted, r&sup2; ${MC.r2!=null?MC.r2.toFixed(2):'&mdash;'}`:`not fitted, ${MC.n} order${MC.n===1?'':'s'}`}</span></summary>
+  ${(()=>{const MC=marginCurve(),LD=ladderFor(PROD);
+    /* round 5 pointed this fold at the book's own ladder and declared LD in the NEIGHBOURING
+       IIFE only, so the fitted branch threw ReferenceError and took the whole part with it:
+       the v403 lever fault again, caught the same way, by rendering. Salt is the book that
+       fits, so the throw was on the first block and nothing on this view drew. */
+    return `<details class="obsec"><summary>The measured margin curve <span class="q">what the book has achieved, which prices nothing</span><span class="ct">${MC.fitted?`fitted, r&sup2; ${MC.r2!=null?MC.r2.toFixed(2):'&mdash;'}`:`not fitted, ${MC.n} order${MC.n===1?'':'s'}`}</span></summary>
     <div class="dsc"><b>This is a measurement and not a setting, and no price on the board comes from it.</b> The curve regresses realised margin on log size over ${MC.n} priced order${MC.n===1?'':'s'} of ${esc((PRODUCTS[PROD]&&PRODUCTS[PROD].name||PROD).toLowerCase())}. ${MC.fitted?`It is fitted here: intercept ${MC.a.toFixed(3)}, slope ${MC.b.toFixed(4)}, r&sup2; ${MC.r2!=null?MC.r2.toFixed(3):'&mdash;'}, giving ${(MC.spread.hi*100).toFixed(0)}% at ${units(LD.at.lo)} falling to ${(MC.spread.lo*100).toFixed(0)}% at ${units(LD.at.hi)}.`:`<b>It is NOT fitted here.</b> ${MC.n} order${MC.n===1?'':'s'} is under the ${PRICE_ENGINE.minPoints} it needs, so it refuses to fit and returns the stated fallback of ${(PRICE_ENGINE.fallbackMargin*100).toFixed(0)}% at every size, which is a declared number and not a finding.`} A rise with size is clamped to flat, because one large well-priced order on a thin book would otherwise quote bulk at a higher rate than retail. The result is bounded to ${(PRICE_ENGINE.clamp.lo*100).toFixed(0)}% and ${(PRICE_ENGINE.clamp.hi*100).toFixed(0)}%, shifted by ${(PRICE_ENGINE.marginShift*100).toFixed(0)}%, and ${PRICE_ENGINE.recoverAbnormal>0?`${(PRICE_ENGINE.recoverAbnormal*100).toFixed(0)}% of the unexplained leak is recovered in it`:`none of the unexplained leak is recovered in it`}.</div>
     <!-- this pointed at How a price is built and then repeated that fold's own justification
          word for word, the only restatement left inside a book on this view. The fold it names
