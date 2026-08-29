@@ -2684,6 +2684,31 @@ section("Units — no new kg-named identifier, anywhere (round 5, his call 6)");
      "the formatter is units(), and the old kg() declaration is gone");
 }
 
+section("Every part renders on every book (round 5 fold)");
+{
+  /* Twice now a scope fault has blanked a whole part while the full suite passed: liveQ at
+     v403 and LD at round five's own first commit, both on Price, both invisible here because
+     nothing rendered the part. So the suite now renders every registered part on every book
+     and a throw anywhere is a red line naming the part. Slow-ish (~2s), worth every one. */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  const tabs = JSON.parse(w.eval("JSON.stringify(Object.keys(TAB_LABEL))"));
+  ok(tabs.length >= 16, `the tab registry lists ${tabs.length} parts (16 at v405; fewer means a part fell out)`);
+  const threw = [];
+  for (const p of JSON.parse(w.eval("JSON.stringify(PROD_IDS)"))) {
+    w.eval("setProd(" + JSON.stringify(p) + ")");
+    for (const t of tabs) {
+      try { w.eval("switchTab(" + JSON.stringify(t) + ")"); }
+      catch (e) { threw.push(p + ":" + t + " -> " + ((e && e.message) || e)); }
+    }
+  }
+  ok(threw.length === 0, threw.length
+    ? "parts threw on render: " + threw.join("; ")
+    : "all " + tabs.length * 2 + " part renders complete without a throw");
+  ok(w.eval("units(-0)") === "0 unit" && w.eval("fmt0(-0.4)") === "RM 0" && w.eval("fmt(-0.001)") === "RM 0.00",
+    "a figure that displays as zero never carries a minus (units, fmt0, fmt)");
+}
+
 /* ---- done ----------------------------------------------------------------------- */
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

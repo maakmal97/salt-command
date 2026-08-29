@@ -3569,9 +3569,13 @@ const NOTE_MIN=140;   /* prose at or over this is method: cut to its first sente
    Money, a quantity or a percentage. Deliberately narrow: "the unit price is deliberately
    absent" carries no digit and is prose, "25.5 unit at RM 50/unit" is not. */
 const FIGURE=/RM\s?\d|\d[\d.,]*\s?unit\b|\d[\d.,]*\s?%/;
-const fmt=n=>CUR+' '+Number(n).toLocaleString('en-MY',{minimumFractionDigits:(Math.abs(n%1)>1e-9?2:0),maximumFractionDigits:2});
-const fmt0=n=>CUR+' '+Number(n).toLocaleString('en-MY',{maximumFractionDigits:0});
-const units=n=>Number(n).toLocaleString('en-MY',{maximumFractionDigits:2})+' unit';
+/* A figure that DISPLAYS as zero never carries a minus: -0, and negatives smaller than the
+   format's own precision, all read "-0" before, which prints "clear by -0 unit" beside a
+   shelf sitting exactly at its mark. */
+const noNegZero=s=>/^-0(\.0+)?$/.test(s)?s.slice(1):s;
+const fmt=n=>CUR+' '+noNegZero(Number(n).toLocaleString('en-MY',{minimumFractionDigits:(Math.abs(n%1)>1e-9?2:0),maximumFractionDigits:2}));
+const fmt0=n=>CUR+' '+noNegZero(Number(n).toLocaleString('en-MY',{maximumFractionDigits:0}));
+const units=n=>noNegZero(Number(n).toLocaleString('en-MY',{maximumFractionDigits:2}))+' unit';
 let revealed=true,newIds={},newLocs={};   /* v217: no lock, so the directory opens readable. The Hide button is a screen-privacy toggle, not encryption. */const esc=x=>(''+(x==null?'':x)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');const costOf=x=>x.cost!=null?x.cost:wavgFor(prodOf(x));const nameOnly=s=>{s=(s||'')+'';const m=s.replace(/\s*\([^)]*\)\s*$/,'').trim();return m||s;};const _cmask=n=>{let h=0,s=''+n;for(let i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))>>>0;return '#'+h.toString(36).slice(-3).toUpperCase();};const codeOf=n=>newIds[n]||n;/* ids are codes post-rekey; identity fallback */const ID=n=>{try{return revealed?((vaultNames&&vaultNames[n])?esc(nameOnly(vaultNames[n])):codeOf(n)):codeOf(n);}catch(e){return _cmask(n);}};
 /* TODAY is read off the clock at every load, in KL time, so ageing, provisioning, cover
    and the demand windows roll on their own without a push. The instant is shifted by
@@ -5912,7 +5916,7 @@ function tabForward(){
        entry to appear at all. Same fault as priceNote. */''}${(fwdBuy||fwdPlans)?`<div class="insight" style="margin-top:11px"><b>Scenario, not the book</b>: ${[fwdBuy?`the agreed ${units(pend.reduce((a,p)=>a+p.qty,0))} at ${fmt(pend.reduce((a,p)=>a+p.total,0)/pend.reduce((a,p)=>a+p.qty,0))}/unit, drawn as though it lands and is paid for today`:'',fwdPlans?`${PLANS_CASH.map(p=>esc(p.label)).join('; ')}${taken>0.009?`, taking ${fmt0(taken)} out on this path`:''}`:''].filter(Boolean).join('; and ')}. Nothing here is recorded anywhere, and turning the switch off removes it entirely.</div>`:''}
   <div class="kpis k2" style="margin-top:13px">
     <div class="kpi ${f.dry===0?'r':f.dry!=null?'gold':'g'}"><div class="l">Shelf empty</div><div class="v">${f.dry==null?'&mdash;':f.dry===0?'today':'day '+f.dry}</div><div class="n">${f.dry==null?`holds past ${f.days} days`:f.dry===0?'nothing on the shelf now':`on ${f.dryDate}`}</div></div>
-    <div class="kpi ${f.cashEnd<0?'r':'p'}"><div class="l">Cash ${cash?`at day ${f.days}`:`movement, ${f.days} days`}</div><div class="v">${f.cashEnd<0?'&minus;':''}${fmt0(Math.abs(f.cashEnd))}</div><div class="n">${cash?`low ${fmt0(f.cashLow.rm)} on ${iso(f.cashLow.day)}`:`a change from today, never a balance${f.cashLow.rm<-0.009?`; ${fmt0(f.cashLow.rm)} at its worst on ${iso(f.cashLow.day)}`:''}`}</div></div>
+    <div class="kpi ${f.cashEnd<0?'r':'p'}"><div class="l">Cash ${cash?`at day ${f.days}`:`movement, ${f.days} days`}</div><div class="v">${f.cashEnd<0?'&minus;':''}${fmt0(Math.abs(f.cashEnd))}</div><div class="n">${cash?`low ${f.cashLow.rm<0?'&minus;':''}${fmt0(Math.abs(f.cashLow.rm))} on ${iso(f.cashLow.day)}`:`a change from today, never a balance${f.cashLow.rm<-0.009?`; ${f.cashLow.rm<0?'&minus;':''}${fmt0(Math.abs(f.cashLow.rm))} at its worst on ${iso(f.cashLow.day)}`:''}`}</div></div>
   </div>
   <h2 style="margin-top:18px">Stock, day by day <span class="rule"></span></h2>
   <div class="dsc" style="margin-bottom:9px"><b>Committed</b> serves only what you have promised; <b>plus rate</b> adds the daily rate and is therefore an estimate.</div>
