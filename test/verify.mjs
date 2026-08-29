@@ -2261,6 +2261,26 @@ section("Pricing — each book prices off its own quote (round 5, his call 1)");
   try { w.close(); } catch (e) { }
 }
 
+section("Rewards — redemption reads the earning window (round 5, his call 3)");
+{
+  /* Earnings count from REWARD.since; redemptions counted from the beginning of time, so a
+     unit redeemed before the scheme existed was netted against earnings that started after
+     it. One window, both sides. The two parties named here are the book's own facts: CS6-BS
+     redeemed 3 units in July, all before adoption; CJ4-OKR redeemed 1 in July and the 4-unit
+     backfill ON the adoption day, which the window includes exactly as the earning side
+     includes 10 Aug turnover. */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  const read = (expr) => JSON.parse(w.eval("JSON.stringify(" + expr + ")"));
+  const since = read("REWARD.since");
+  const pre = read("sales.filter(s=>s.customer==='CS6-BS'&&s.rebate).map(s=>({date:s.date,kg:(s.rebateKg!=null?+s.rebateKg:s.qty)}))");
+  ok(pre.length === 3 && pre.every((r) => r.date < since) && pre.reduce((a, r) => a + r.kg, 0) === 3,
+    "the guard: CS6-BS's three redeemed units are all before adoption, so the next assertion cannot pass vacuously");
+  ok(read("rebateApplied('CS6-BS')") === 0, "a redemption before REWARD.since belongs to the opening, not the running net");
+  ok(read("rebateApplied('CJ4-OKR')") === 4, "the boundary day itself counts, both sides: the 10 Aug backfill is in, the 09 Jul unit is not");
+  try { w.close(); } catch (e) { }
+}
+
 section("iPhone — the dead zones the desk draws under (v392)");
 {
   const m = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");

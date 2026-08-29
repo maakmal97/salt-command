@@ -9788,7 +9788,14 @@ const bioPhoto=id=>((BIO[id]||{}).photo)||null;
    every rebate row was wholly a rebate. E64 is one free unit inside a two unit order, so
    rebateKg states the applied part and the whole row is assumed only when it is absent. */
 const rebKg=s=>s.rebate?(s.rebateKg!=null?+s.rebateKg:s.qty):0;
-const rebateApplied=id=>+sales.filter(s=>s.customer===id&&s.rebate).reduce((a,s)=>a+rebKg(s),0).toFixed(2);
+/* ROUND 5, HIS CALL 3 OF 29 AUG: THE REDEMPTION WINDOW IS THE EARNING WINDOW. Earnings
+   count from REWARD.since because the openings he ruled on 10 Aug already settle everything
+   before; redemptions counted from the beginning of time, so a unit redeemed BEFORE the
+   scheme existed was netted against earnings that started AFTER it, and CS6-BS stood 3
+   units in silent deficit for salt handed over in July that his own opening ruling had
+   already settled. One window now, both sides: a redemption before REWARD.since belongs to
+   the opening, exactly as the earning it settled does. */
+const rebateApplied=id=>+sales.filter(s=>s.customer===id&&s.rebate&&s.date>=REWARD.since).reduce((a,s)=>a+rebKg(s),0).toFixed(2);
 /* what the free text appears to contain. The seed of the structured fields: every run
    can look at what this finds across the book and promote a pattern into its own box. */
 function bioScan(txt){
