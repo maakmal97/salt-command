@@ -6167,7 +6167,7 @@ function tabSourcing(){
     const late=s.gapDays!=null&&s.gapDays>0;
     return `<div class="card">
     <div class="kpis k6">
-      <div class="kpi"><div class="l">Stated lot</div><div class="v">${units(s.q)}</div><div class="n">${s.P.label}, by ${s.P.by}, ${s.daysToTarget} days out</div></div>
+      <div class="kpi"><div class="l">Stated lot</div><div class="v">${units(s.q)}</div><div class="n">${s.P.label}, by ${s.P.by}, ${s.daysToTarget<0?`${-s.daysToTarget} day${s.daysToTarget===-1?'':'s'} past its date`:`${s.daysToTarget} day${s.daysToTarget===1?'':'s'} out`}</div></div>
       <div class="kpi ${late?'r':'g'}"><div class="l">Shelf runs dry</div><div class="v" style="${late?'color:var(--crim)':''}">${s.dry||'&mdash;'}</div><div class="n">${s.dryD==null?'no sell rate':`${s.dryD} days at ${units(s.rate)}/day; ${s.dry28} at the four-week rate`}</div></div>
       <div class="kpi ${late?'r':'g'}"><div class="l">${late?'Gap to cover':'Lands in time'}</div><div class="v" style="${late?'color:var(--crim)':'color:var(--grn)'}">${late?s.gapDays+'d':'none'}</div><div class="n">${late?`${units(s.gapUnits)} of demand with an empty shelf`:'the lot lands before the shelf empties'}</div></div>
       <div class="kpi gold"><div class="l">Cover it buys</div><div class="v">${s.cover==null?'&mdash;':s.cover+'d'}</div><div class="n">${units(s.usable)} usable of ${units(s.q)}, at the ${s.lvl}% ${SL.label} level, not the ${(c.shrink*100).toFixed(1)}% charged today</div></div>
@@ -6188,7 +6188,10 @@ function tabSourcing(){
       <div class="kpi gold"><div class="l">Pull it forward</div><div class="v">${s.pullTo}</div><div class="n">${units(s.q)} landing when the shelf hits the reorder mark. One lot, one trip; ${s.cover} days of cover, to ${s.pullDry}.</div></div>
       <div class="kpi p"><div class="l">Or hold the date and bridge it</div><div class="v">${units(s.bridge)}</div><div class="n">by ${s.reorder}, on top of the ${units(s.q)}. Two trips; ${fmt0(s.bridge*s.rt+s.cash)} committed inside four weeks, ${s.bridgeCover} days of cover on ${s.P.by}.</div></div>
     </div>`:''}
-    <div class="dsc" style="margin-top:9px"><b>${fmt(s.rt)}/unit is an assumption:</b> ${esc(s.P.rateBasis)}${s.quoted?'':' <b>Get a quote at this size before treating any of it as real.</b>'}</div>
+    ${''/* round 5: the lead called the rate an assumption even when s.quoted was true and the
+       basis beside it said "quoted and paid". A quoted rate keeps the figure and lets the
+       basis speak; only an unquoted one is called an assumption and told to get a quote. */}
+    <div class="dsc" style="margin-top:9px"><b>${fmt(s.rt)}/unit${s.quoted?'':' is an assumption'}:</b> ${esc(s.P.rateBasis)}${s.quoted?'':' <b>Get a quote at this size before treating any of it as real.</b>'}</div>
     </div>`;})()}
 
   ${(()=>{const L=lotOutlook();
@@ -6865,9 +6868,13 @@ function shelfCall(cv,oversold,free){
   if(cv.below)return {sev:cv.days<3?'var(--crim)':'var(--gold)',k:'Buy',f:cv.days+' d',
     t:`Buying is overdue by ${units(cv.shortBy)}`,
     w:`${units(free)} free to sell at ${units(cv.rate)} a day, already under the ${units(cv.reorderAt)} mark. The shelf runs dry ${cv.days<1?'today':'on '+dry}.${split}`};
+  /* round 5: at EXACTLY the mark, shortBy is 0 and units(-0) printed "Clear by -0 unit
+     above the reorder mark" while "comes first" promised a future the shelf was already
+     at. The engine keeps the boundary on the not-below side; the words now match it. */
+  const at=Math.abs(cv.shortBy)<0.005;
   return {sev:'var(--grn)',k:'Clear',f:cv.days+' d',
-    t:`Clear by ${units(-cv.shortBy)} above the reorder mark`,
-    w:`${units(free)} free to sell at ${units(cv.rate)} a day. The ${units(cv.reorderAt)} mark comes first; the shelf runs dry on ${dry}.${split}`};
+    t:at?'Exactly at the reorder mark':`Clear by ${units(-cv.shortBy)} above the reorder mark`,
+    w:`${units(free)} free to sell at ${units(cv.rate)} a day. ${at?`The next sale puts it under the ${units(cv.reorderAt)} mark`:`The ${units(cv.reorderAt)} mark comes first`}; the shelf runs dry on ${dry}.${split}`};
 }
 /* ============ TAB: INVENTORY & MARGIN ============ */
 function invHead(){return `<h1>Inventory</h1>
@@ -6944,7 +6951,10 @@ function tabInventory(){
     <div class="kpi ${cv.days!=null&&cv.days<3?'r':'gold'}"><div class="l">Cover</div><div class="v">${cv.days==null?'&mdash;':cv.days+' d'}</div><div class="n">${cv.rate>0?`at ${units(cv.rate)}/day, the fortnight rate`:'no recent trade to rate against'}</div></div>
     <div class="kpi"><div class="l">Sold last 14 days</div><div class="v">${units(cv.units14)}</div><div class="n">${units(cv.rate14)}/day &middot; the rate the shelf faces now</div></div>
     <div class="kpi p"><div class="l">Sold last 28 days</div><div class="v">${units(cv.units28)}</div><div class="n">${units(cv.rate28)}/day &middot; the steadier read</div></div>
-    <div class="kpi ${cv.below?'r':'g'}"><div class="l">Reorder trigger</div><div class="v">${units(cv.reorderAt)}</div><div class="n">${cv.below?`${units(cv.shortBy)} below it now`:`clear by ${units(-cv.shortBy)}`}</div></div>
+    ${''/* round 5: a shelf sitting EXACTLY on its trigger has shortBy 0, and units(-0)
+       prints "-0 unit", so oil at 20 on a 20 mark read "clear by -0 unit". The engine
+       places the boundary case on the not-below side; the copy now says so in words. */}
+    <div class="kpi ${cv.below?'r':'g'}"><div class="l">Reorder trigger</div><div class="v">${units(cv.reorderAt)}</div><div class="n">${cv.below?`${units(cv.shortBy)} below it now`:Math.abs(cv.shortBy)<0.005?'at the mark exactly':`clear by ${units(-cv.shortBy)}`}</div></div>
   </div>
 
   <h2 style="margin-top:18px">Where the shrinkage went <span class="rule"></span></h2>
@@ -8068,9 +8078,12 @@ function drawOutlookChart(){
     try{
       const L=lotOutlook(), rows=L.rows.filter(r=>r.left>0.009);
       if(!rows.length){chartEmpty(el,'Nothing left on any lot to draw.');return;}
+      /* round 5: the label said "salt" on both books, the one survivor of the v385 sweep
+         that scoped this block's copy per product; the table beside it already speaks the
+         product's own name and the legend now does too. */
       freshChart(el,{type:'bar',data:{labels:rows.map(r=>r.date.slice(5)+' · '+units(r.left)),
         datasets:[
-          {label:'What the salt cost',data:rows.map(r=>r.costLeft),backgroundColor:'rgba(244,245,247,0.40)',borderWidth:0},
+          {label:'What the '+PRODUCTS[PROD].name.toLowerCase()+' cost',data:rows.map(r=>r.costLeft),backgroundColor:'rgba(244,245,247,0.40)',borderWidth:0},
           {label:'Margin, expected',data:rows.map(r=>Math.max(0,r.expMar)),backgroundColor:'#6ee7a8',borderWidth:0},
           {label:'Further margin at your best rate',data:rows.map(r=>Math.max(0,+(r.maxMar-r.expMar).toFixed(2))),backgroundColor:'#e8c66b',borderWidth:0}]},
         options:{responsive:true,maintainAspectRatio:false,
