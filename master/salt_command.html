@@ -596,8 +596,6 @@ select{width:100%;border:1px solid var(--line);border-radius:8px;padding:8px 9px
 .viewsw button{background:none;border:none;color:var(--mut);font-size:12px;font-weight:700;padding:6px 11px;border-radius:7px;cursor:pointer;font-family:inherit;min-height:var(--tap);}
 .viewsw button.on{background:linear-gradient(135deg,var(--gold),var(--amber));color:#1a1030;}
 .viewsw.mini button{font-size:11px;padding:4px 9px;}
-/* v401: Forward's day switch is a control on the only surface this desk has left, so it
-   reads --tap. Scoped by id, because .viewsw is shared with the Whiteboard. */
 .qkg input{font-variant-numeric:tabular-nums;}
 /* v242: the third cell of .qrow is an ANSWER, not a control. It matches the input boxes
    in height and radius so the row reads as one instrument, and carries the figure at the
@@ -1031,7 +1029,10 @@ select[multiple],select[size]{background-image:none;padding-right:9px;}
   letter-spacing:.4px;text-transform:uppercase;color:var(--ink);
   border:1px solid var(--line);border-radius:999px;padding:3px 10px;margin-left:4px;}
 .pbadgeo{font-size:11px;color:var(--dim);margin-left:8px;}
-.pbadgeo .navlink{margin-left:3px;}
+/* the tap contract is width as well as height, and a short book name is not wide
+   enough to reach it on its own: "Oil" measured 33px against 44. Scoped to the book switch,
+   because a bare .navlink min-width would pad every jump button on the desk. */
+.pbadgeo .navlink{margin-left:3px;min-width:var(--tap);}
 /* ============ v273: OBSERVATION CARDS ============
    Built on the same collapsed-row idea as a plan card, because they do the same job: one
    line you can scan, and the reasoning underneath for when you want it. The severity colour
@@ -5584,7 +5585,7 @@ function tabOverview(){
     <div class="kpi g"><div class="l">Stock cost</div><div class="v">${fmt(stockCost)}<span style="font-size:12px;color:var(--mut)">/unit</span></div><div class="n">${fmt0(stockVal)} on the shelf</div></div>
     <div class="kpi p"><div class="l">Revenue</div><div class="v">${fmt0(revTotal)}</div><div class="n">${fmt0(revCollected)} collected${revCollected>revTotal+0.009?`, ${fmt0(revCollected-revTotal)} of it paid ahead of delivery`:''}</div></div>
     <div class="kpi gold"><div class="l">Margin</div><div class="v">${fmt0(grossMargin)}</div><div class="n">${marginPct.toFixed(1)}% on ${fmt0(revTotal)} sold</div></div>
-    <div class="kpi r"><div class="l">Receivables (net)</div><div class="v">${fmt0(totDue)}</div><div class="n">${fmt0(ar)} trade + ${fmt0(supRecovNet)} refund</div></div>
+    <div class="kpi r"><div class="l">Receivables (net)</div><div class="v">${fmt0(totDue)}</div><div class="n">${(ar>0.009||supRecovNet>0.009)?`${fmt0(ar)} trade${supRecovNet>0.009?` + ${fmt0(supRecovNet)} refund`:''}`:'nothing owed to you'}</div></div>
     <div class="kpi"><div class="l">Bought to date</div><div class="v">${kg(buyKg)}</div><div class="n">${buyKg>0.009?`${fmt0(buyRM)} at ${fmt(buyRM/buyKg)}/unit avg`:`no lot recorded yet`}</div></div>
   </div>
   ${(()=>{const sums=PROD_IDS.map(p=>prodSummary(p));if(sums.length<2)return '';
@@ -5602,8 +5603,8 @@ function tabOverview(){
     </tbody></table></div>`;})()}
   <h2>Desk digest <span class="sub" style="font-weight:400">the headline from every tab</span> <span class="rule"></span></h2>
   <div class="kpis k4">
-    <div class="kpi"><div class="l">Order book &middot; pending</div><div class="v">${kg(pendKg)}</div><div class="n">${pendN} order${pendN===1?'':'s'} worth ${fmt0(pendRM)}, off the books</div></div>
-    <div class="kpi p"><div class="l">Financials &middot; still to come in</div><div class="v">${fmt0(arGross)}</div><div class="n">${fmt0(Math.max(0,uncollected-arGross))} of what is sold settled in kind</div></div>
+    <div class="kpi"><div class="l">Order book &middot; pending</div><div class="v">${kg(pendKg)}</div><div class="n">${pendN?`${pendN} order${pendN===1?'':'s'} worth ${fmt0(pendRM)}, off the books`:'nothing pending'}</div></div>
+    <div class="kpi p"><div class="l">Financials &middot; still to come in</div><div class="v">${fmt0(arGross)}</div><div class="n">${(uncollected-arGross)>0.009?`${fmt0(uncollected-arGross)} of what is sold settled in kind`:(uncollected>0.009?'all of it a cash receivable':'everything sold is collected')}</div></div>
     <div class="kpi"><div class="l">Customers &middot; concentration</div><div class="v" style="color:${conCol}">${con.hhi.toFixed(0)}</div><div class="n">${conRisk}; top buyer ${con.top.toFixed(0)}% of ${con.n}</div></div>
     <div class="kpi g"><div class="l">Suppliers &middot; in transit</div><div class="v">${kg(itKg)}</div><div class="n">${supBills>0.009?`${fmt0(supBills)} bills unpaid`:'all lots paid'}${supRecovNet>0.009?`; ${fmt0(supRecovNet)} refund due`:''}</div></div>
   </div>
@@ -5612,7 +5613,7 @@ function tabOverview(){
 
 /* ============ TAB: TODAY (v147) ============ */
 function tabToday(){
-  const a=actions(),f=forecast(),cv=coverStats(),c=pxCost();
+  const a=actions(),f=forecast(),cv=coverStats();
   const now=a.filter(x=>x.sev==='now'),soon=a.filter(x=>x.sev==='soon'),watch=a.filter(x=>x.sev==='watch');
   const money=s=>+a.filter(x=>x.sev===s).reduce((t,x)=>t+x.rm,0).toFixed(2);
   /* A word, not a picture. The kind is scanning furniture, so it should read at a glance
@@ -5639,13 +5640,12 @@ function tabToday(){
      "nothing to watch" heading would be noise. Nothing at all outstanding is answered by
      the card below the list instead, so the clear lines stand down for it. */
   const CLEARQ={now:'nothing overdue, nothing broken',soon:'nothing falls due this week'};
-  const block=(list,title,note,sev)=>{
+  const block=(list,title,sev)=>{
     if(!list.length)return (sev&&a.length)?`
     <div class="sevh"><h2 style="color:${ACTSEV[sev].c};opacity:.5">${title}</h2><span class="cnt" style="color:var(--grn)">clear &middot; ${CLEARQ[sev]}</span><span class="rule"></span></div>`:'';
     return `
     <div class="sevh"><h2 style="color:${ACTSEV[list[0].sev].c}">${title}</h2><span class="cnt" title="At stake is the money the item itself exposes: the balance for a chase, the refill cost for a reorder, the profit a quiet customer would earn back at today&rsquo;s board.">${list.length} item${list.length===1?'':'s'}${money(list[0].sev)>0?' &middot; '+fmt0(money(list[0].sev))+' at stake':''}</span><span class="rule"></span></div>
-    <div class="acts">${list.map(row).join('')}</div>
-    ${note?`<div class="dsc" style="margin-top:9px">${note}</div>`:''}`;};
+    <div class="acts">${list.map(row).join('')}</div>`;};
   const dryLine=f.dry===0
     ? `<b style="color:var(--crim)">The shelf is empty today.</b>`
     : f.dry!=null?`Runs dry on <b>${f.dryDate}</b>, ${f.dry} day${f.dry===1?'':'s'} out.`
@@ -5663,9 +5663,9 @@ function tabToday(){
      itself. Nothing is removed but the two duplicate counts. */
   return `<h1>Today</h1>
   <div class="pscope">${prodBadge()}</div>
-  ${block(now,'Now','','now')}
-  ${block(soon,'This week','','soon')}
-  ${block(watch,'Watch','')}
+  ${block(now,'Now','now')}
+  ${block(soon,'This week','soon')}
+  ${block(watch,'Watch')}
   ${a.length?'':'<div class="card"><div class="dsc">Nothing is outstanding. No debt past term, no rule broken, no promise unkept, and the shelf is above its trigger.</div></div>'}
   <h2 style="margin-top:26px">Where the desk stands <span class="sub" style="font-weight:400">shelf, promises and cash</span> <span class="rule"></span></h2>
   <div class="kpis k3">
@@ -5805,7 +5805,7 @@ function tabForward(){
     <div class="kpi ${f.cashEnd<0?'r':'p'}"><div class="l">Cash ${cash?`at day ${f.days}`:`movement, ${f.days} days`}</div><div class="v">${f.cashEnd<0?'&minus;':''}${fmt0(Math.abs(f.cashEnd))}</div><div class="n">${cash?`low ${fmt0(f.cashLow.rm)} on ${iso(f.cashLow.day)}`:`a change from today, never a balance${f.cashLow.rm<-0.009?`; ${fmt0(f.cashLow.rm)} at its worst on ${iso(f.cashLow.day)}`:''}`}</div></div>
   </div>
   <h2 style="margin-top:18px">Stock, day by day <span class="rule"></span></h2>
-  <div class="dsc" style="margin-bottom:9px"><b>Committed</b> serves only what you have promised; <b>plus rate</b> adds the ${kg(f.rate)} a day and is therefore an estimate.</div>
+  <div class="dsc" style="margin-bottom:9px"><b>Committed</b> serves only what you have promised; <b>plus rate</b> adds the daily rate and is therefore an estimate.</div>
   <div class="chartbox"><canvas id="fwdStockChart"></canvas></div>
   <h2 style="margin-top:18px">Cash, day by day <span class="rule"></span></h2>
   <div class="chartbox"><canvas id="fwdCashChart"></canvas></div>
