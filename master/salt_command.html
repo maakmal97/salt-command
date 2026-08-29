@@ -11898,7 +11898,7 @@ function tabConcentration(){
   const read=overdue.length
     ? `<b>${overdue.length}</b> ${overdue.length===1?'buyer is':'buyers are'} past their own habit, worth <b>${fmt0(overdueRM)}</b>. That is a message, not a decision.`
     : thin.length
-    ? `<b>${thin.length}</b> customer${thin.length===1?'':'s'} under a 20% margin: the same salt earns more elsewhere on this book.`
+    ? `<b>${thin.length}</b> customer${thin.length===1?'':'s'} under a 20% margin: the same ${PRODUCTS[PROD].name.toLowerCase()} earns more elsewhere on this book.`
     : `Nobody is past their own habit and nobody is under a 20% margin.`;
   /* ---- v385: THE BAND COLUMN NAMED A BAND AND NEVER SAID WHAT ONE WAS WORTH ----
      The rule was in the paragraph under the table, and that paragraph is a .dsc, which
