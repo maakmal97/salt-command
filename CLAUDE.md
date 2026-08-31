@@ -471,6 +471,7 @@ Per-Crm01 master (a Cowork/master session); once it lands, the sync above alread
 | `tools/changelog.mjs` | Prepends the master's current `evolution[0]` to `master/changelog.json`. Never rewrites an entry that exists. |
 | `.github/workflows/` | CI with no secrets: date order, changelog, tests, build-matches-master, and a daily check that the live Worker serves what the repo committed. |
 | `tools/update.mjs` | **The whole "update" chain in one command**, ending in proof that every surface is level. See below. |
+| `tools/make_statements.mjs` | **THE MONTHLY STATEMENTS** (29 Aug 2026): one statement of account per customer, plus the review sheet. The v387 desk's own `stmtRows`/`stmtRecon`/`stmtRefunds`/`stmtDoc`, lifted verbatim when v388 removed them from the master, proven byte-identical against the desk's own output on the v387 book. Figures come from `ledger/book.json` and `engine/position.mjs`, the book and engine the desk itself runs, so they cannot drift from it; what lives here alone is the statement's own law. Plain node, no jsdom, and the master is not an input. `docs/STATEMENTS.md` is the routine that runs it. |
 | `tools/make_icons.py` | Regenerate the crystal icons. |
 | `test/verify.mjs` | Smoke suite: Worker contract, name-drop, access gate, drain helpers, build integrity. |
 
