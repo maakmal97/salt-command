@@ -10571,9 +10571,14 @@ function replCost(){
    for a single unit, which is the commonest question at the point of sale. */
 function floorPrice(q){return Math.ceil(replCost()/(1-floorPct(q==null?1:q)/100)/5)*5;}
 function median(a){if(!a.length)return 0;const m=Math.floor(a.length/2);return a.length%2?a[m]:(a[m-1]+a[m])/2;}
+/* v409: WAS BARE `sales`, so a party's SALT history priced their OIL order. Surfaced the moment
+   the Enter sheet could be on oil while the party's record was salt's: a RM 10.37/unit oil sale
+   was flagged "90% below their usual RM 108/unit", which is true of a book this party never
+   bought on. A flag that fires when nothing is wrong is worse than no flag, and this is the
+   fifth recurrence of the whole-book-inside-one-book class. */
 function custPrices(id){
   if(!id||id==='__new__')return [];
-  return sales.filter(s=>s.customer===id&&!s.cancelled&&s.qty>0&&s.total>0).map(s=>s.total/s.qty).sort((a,b)=>a-b);
+  return pSales(PROD).filter(s=>s.customer===id&&!s.cancelled&&s.qty>0&&s.total>0).map(s=>s.total/s.qty).sort((a,b)=>a-b);
 }
 /* LIVE PRICING COACH for the entry form. Judges the typed price against what it costs
    to replace the salt and against what this party has actually paid before. Advisory
@@ -10583,10 +10588,10 @@ function priceCoach(party,price,qty){
   const out=[];if(!(price>0))return out;
   const rc=replCost(),m=(price-rc)/price*100;
   const bandQ=qty>0?qty:1, fl=floorPct(bandQ), fp=floorPrice(bandQ);
-  const all=sales.filter(s=>!s.cancelled&&s.qty>0&&s.total>0).map(s=>s.total/s.qty);
+  const all=pSales(PROD).filter(s=>!s.cancelled&&s.qty>0&&s.total>0).map(s=>s.total/s.qty);   /* v409: was bare `sales`, so oil was measured against salt's best rate */
   const best=all.length?Math.max.apply(null,all):0;
   if(price<rc-0.009)
-    out.push({sev:'err',msg:`<b>${fmt(price)}/unit is below the ${fmt(rc)}/unit it costs to replace this salt.</b> Every unit loses ${fmt(rc-price)}. ${fmt0(fp)}/unit clears the ${fl}% floor for ${BAND_LABEL[sizeBand(bandQ)]}.`});
+    out.push({sev:'err',msg:`<b>${fmt(price)}/unit is below the ${fmt(rc)}/unit it costs to replace this ${PRODUCTS[PROD].name.toLowerCase()}.</b> Every unit loses ${fmt(rc-price)}. ${fmt0(fp)}/unit clears the ${fl}% floor for ${BAND_LABEL[sizeBand(bandQ)]}.`});
   else if(m<fl-0.009)
     out.push({sev:'warn',msg:`Only <b>${m.toFixed(0)}%</b> against the ${fmt(rc)}/unit replacement cost, under the <b>${fl}% floor for ${BAND_LABEL[sizeBand(bandQ)]}</b>. <b>${fmt0(fp)}/unit</b> would clear it.`});
   if(best>0&&price>best+0.009)
@@ -12520,10 +12525,12 @@ let wbMode='new', wbDir='SELL', wbASide='SELL', wbStream='R2';
    that is almost always the one being worked on, but it is a DELIBERATE field on the payload
    rather than an implicit read of PROD at commit time: PROD can change between typing and
    committing, and an entry must land where it was told to, not where the page drifted to. */
-let wbProd=DEFAULT_PROD;
-try{if(PRODUCTS[PROD])wbProd=PROD;}catch(e){}
 /* read from the control if it is on screen, else from state. Never from PROD. */
-function wbProdVal(){const e=wbEl('wbProd');const v=(e&&e.value)||wbProd;return PRODUCTS[v]?v:DEFAULT_PROD;}
+/* v409: ONE PRODUCT, AND IT IS THE DESK'S. This used to return the SELECT'S value while every
+   guard beside it on the sheet read the ACTIVE book, so the form booked to one product and was
+   priced against another. The select moves the book now (see wbApply), so there is one answer
+   and the payload records the book the entry was actually checked against. */
+function wbProdVal(){return PRODUCTS[PROD]?PROD:DEFAULT_PROD;}
 function wbProdName(){return (PRODUCTS[wbProdVal()]||{}).name||wbProdVal();}
 /* the two modes with no product of their own, and why. An amendment inherits the product of
    the order it attaches to; a follow-up is a conversation with a person. */
@@ -14368,8 +14375,16 @@ function wbApply(){
       pr.innerHTML=PROD_IDS.map(id=>`<option value="${id}">${esc(PRODUCTS[id].name)}</option>`).join('');
       pr.dataset.built=want;
     }
-    if(!PRODUCTS[pr.value])pr.value=wbProd;
-    wbProd=pr.value;
+    /* v409, ROUND SEVEN MATERIAL: the select held a product of its own while the margin, the
+       free-stock warning and priceCoach all read the ACTIVE book. The sheet therefore said
+       "books to the oil book" and then measured the order against salt's cost, salt's free
+       stock and salt's floors: a healthy 45% oil sale read as a -273% below-cost error, and a
+       genuine salt loss read as a 45% profit with both guards silent. TWO PRODUCTS IN ONE FORM
+       WAS THE FAULT. There is one now and it is the desk's, so nothing downstream has to be
+       threaded and nothing can drift. render() snapshots and restores the sheet's inputs, so
+       changing the book mid-entry keeps what has been typed. */
+    pr.value=PROD;
+    pr.onchange=function(){if(PRODUCTS[pr.value]&&pr.value!==PROD)setProdView(pr.value);};
   }
   const prow=wbEl('wbProdRow');
   if(prow)prow.style.display=WB_NO_PROD[wbMode]?'none':'';
@@ -14378,7 +14393,7 @@ function wbApply(){
     :(wbMode==='count'?`Counts <b>${esc(wbProdName())}</b> only; each product has its own shelf.`
      :wbMode==='loss'?`Comes off the <b>${esc(wbProdName())}</b> shelf.`
      :wbMode==='lost'?`Demand for <b>${esc(wbProdName())}</b> that was not met.`
-     :`Books to the <b>${esc(wbProdName())}</b> book, not where the rail points.`);
+     :`Books to the <b>${esc(wbProdName())}</b> book, and the rail moves with it, so the margin, the free stock and the price coach are all this book's.`);
   /* the turned-away list is every customer plus a walk-up, because the person who
      asked and left is often someone with no code yet. Follow-up is customers only. */
   const custOpts=roster.filter(id=>!id.startsWith('S')).map(id=>`<option value="${id}">${codeOf(id)}</option>`).join('');

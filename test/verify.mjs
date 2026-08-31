@@ -2860,6 +2860,61 @@ section("v408: the update panel does the arithmetic so a tap cannot overpay");
   for (const f of [M, B]) { try { rm(f); } catch (e) { /* best effort */ } }
 }
 
+
+section("v409: the Enter sheet is priced against the book it books to");
+{
+  /* ROUND SEVEN, MATERIAL. The sheet held a product of its own while the margin, the free-stock
+     warning and priceCoach all read the ACTIVE book, and its own note said "books to the oil
+     book, not where the rail points". So a healthy oil sale was measured against salt's
+     replacement cost and read as a large loss. The select moves the book now, which is why this
+     asserts the MARGIN and not the wiring: the wiring can be rewritten, the figure cannot be
+     wrong. Proved red against v408, where the same entry read a negative margin. */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  const prods = JSON.parse(w.eval("JSON.stringify(PROD_ORDER)"));
+  if (prods.length < 2) { ok(true, "one book only, so the cross-book entry case cannot arise (skipped)"); }
+  else {
+    const [a, b] = prods;
+    w.eval("setProdView(" + JSON.stringify(a) + ");");
+    const replA = +w.eval("replCost()");
+    w.eval("setProdView(" + JSON.stringify(b) + ");");
+    const replB = +w.eval("replCost()");
+    w.eval("setProdView(" + JSON.stringify(a) + ");");
+    ok(replA > 0 && replB > 0, `both books have a replacement cost (${a} RM ${replA}, ${b} RM ${replB})`);
+
+    /* an order on book B, entered while the desk is on book A, priced healthily for B */
+    const qty = 2, total = +(replB * qty * 1.45).toFixed(2), rate = total / qty;
+    w.eval("switchTab('add');");
+    w.eval("(function(){var p=document.getElementById('wbProd');p.value=" + JSON.stringify(b) + ";if(p.onchange)p.onchange();})();");
+    ok(w.eval("PROD") === b, "choosing a product on the sheet moves the desk to that book");
+    ok(w.eval("wbProdVal()") === b, "and the sheet's product is the desk's, so the payload records what was checked");
+
+    w.eval(`(function(){var set=function(i,v){var e=document.getElementById(i);if(e)e.value=v;};
+      set('wbQty',${qty});set('wbTotal',${total});set('wbCash',${total});set('wbUnits',${qty});set('wbDate','2026-08-31');
+      var ps=document.getElementById('wbParty');
+      if(ps&&ps.options.length>1){for(var i=0;i<ps.options.length;i++){var v=ps.options[i].value;if(v&&v.indexOf('S')!==0){ps.value=v;break;}}}
+      wbApply();wbPreview();})();`);
+    const prev = (w.eval("(document.getElementById('wbPrev')||{}).textContent||''") || "").replace(/\s+/g, " ");
+    const m = prev.match(/margin\s*(-?\d+)%/);
+    ok(!!m, "the preview states a margin for the entry");
+    if (m) {
+      const shown = +m[1], wantB = Math.round((rate - replB) / rate * 100), wouldBeA = Math.round((rate - replA) / rate * 100);
+      ok(Math.abs(shown - wantB) <= 1,
+        `the margin is ${b}'s ${shown}% against its own RM ${replB} replacement, not ${a}'s ${wouldBeA}%`);
+    }
+    w.eval("setProdView(" + JSON.stringify(a) + ");");
+  }
+
+  /* the coach compares like with like: both its history reads scope to the book on screen */
+  const src = (await import("node:fs")).readFileSync((await import("node:path")).join(REPO, "master", "salt_command.html"), "utf8");
+  const cp = src.slice(src.indexOf("function custPrices("), src.indexOf("function custPrices(") + 420);
+  ok(/pSales\(PROD\)/.test(cp) && !/\breturn sales\.filter/.test(cp),
+    "custPrices reads the book on screen, so a party's other-book history cannot price this order");
+  const pc = src.slice(src.indexOf("function priceCoach("), src.indexOf("function priceCoach(") + 700);
+  ok(!/const all=sales\.filter/.test(pc),
+    "the coach's best-rate comparison is scoped to the book, not the whole ledger");
+}
+
 /* ---- done ----------------------------------------------------------------------- */
 
 section("Round 7: the states no suite check had ever rendered");
