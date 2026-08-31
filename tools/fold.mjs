@@ -153,7 +153,7 @@ export function plan(book, staged, notes) {
            for a correction that reaches the fold another way. */
         if (fields.cancelled === true) {
           const dq0 = fields.deliveredQty !== undefined ? +fields.deliveredQty : (+hits[0].deliveredQty || 0);
-          const rq0 = fields.receivedQty !== undefined ? +fields.receivedQty : (+hits[0].receivedQty || 0);
+          const rq0 = fields.receivedQty !== undefined ? +fields.receivedQty : E.poRecvUnits(hits[0]);   /* v413: absent means received in full */
           const dq = Math.max(dq0 || 0, rq0 || 0);   /* v407: a lot records receivedQty */
           if (dq > 0.009) { out.refused.push({ id: it.id, why: `the correction on ${it.amends} would leave a cancelled row still carrying ${dq} unit delivered, which contradicts itself: restate qty by Modification, then cancel the remainder` }); continue; }
         }
@@ -226,7 +226,7 @@ function skeleton(book, staged, p) {
    the drift the engine exists to stop. */
 const attributionOf = E.attributionOf;
 
-function applyAmend(row, pay, dir, note) {
+export function applyAmend(row, pay, dir, note) {   /* v413: exported so the suite can FOLD a cancellation rather than grep the source for one */
   /* A CORRECTION REWRITES WHAT THE ROW SAYS, and nothing else. It moves no cash and no stock,
      so cash, deliveredQty, receivedQty and the shelf are untouched by design: those move by
      fulfilment, and letting an editor set them directly would put two writers on one figure.
@@ -384,6 +384,15 @@ function applyAmend(row, pay, dir, note) {
   }
   if (dir === "BUY") {
     if (pay.kind === "Default") { row.defaulted = true; delete row.receivedOn; delete row.pending; return; }
+    /* v413, ROUND EIGHT, MATERIAL: this branch RETURNED before the Cancellation handler below, so
+       cancelling a lot set nothing, fell through to the status recompute, and rewrote a lot stored
+       status:"paid" to unpaid. One right-click and an approval, and the chip, the panel, the draft
+       reasoning, plan(), apply() and the desk overlay all reported success. */
+    if (pay.kind === "Cancellation") {
+      const movedB = E.poRecvUnits(row);
+      if (movedB > 0.009) throw new Error(`cancelling this lot would leave it carrying ${movedB} unit already received, which contradicts itself: restate qty by Modification for what arrived, then cancel the remainder`);
+      row.cancelled = true; return;
+    }
     const wasPending = !!row.pending;
     if (((+pay.cash || 0) > 0.009) || ((+pay.kg || 0) > 0.009)) {
       delete row.pending;
@@ -399,7 +408,10 @@ function applyAmend(row, pay, dir, note) {
       row.receivedQty = Math.max(0, Math.min(had + (+pay.kg || 0), row.qty));
       if (row.receivedQty >= row.qty - 0.0001) delete row.inTransit; else row.inTransit = true;
     }
-    const paid = row.cash != null ? row.cash : 0;
+    /* v413: the accumulator nine lines above honours status:"paid" as meaning the total, and this
+       did not, so ANY unit-only fulfilment on a settled lot rewrote it to unpaid and invented
+       supplier bills that had been settled. One convention, read by both. */
+    const paid = E.poCash(row);
     row.status = paid >= row.total - 0.009 ? "paid" : (paid <= 0.009 ? "unpaid" : "partial");
     if (!row.date) row.date = pay.date;
     if (!row.paidOn && row.status === "paid" && (+pay.cash || 0) > 0.009) row.paidOn = pay.date;
@@ -416,7 +428,7 @@ function applyAmend(row, pay, dir, note) {
      left the shelf carrying neither revenue nor cost, and the money was still chased. The fold is
      all or nothing by contract, so a contradictory row stops the batch rather than landing. */
   if (pay.kind === "Cancellation") {
-    const moved = Math.max(+row.deliveredQty || 0, +row.receivedQty || 0);
+    const moved = Math.max(+row.deliveredQty || 0, E.poRecvUnits(row));   /* v413: absent means received in full */
     if (moved > 0.009) throw new Error(`cancelling this row would leave it carrying ${moved} unit already moved, which contradicts itself: restate qty by Modification for what moved, then cancel the remainder`);
     row.cancelled = true; return;
   }

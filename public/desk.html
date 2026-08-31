@@ -60,7 +60,7 @@ document.addEventListener('visibilitychange',function(){
    focused, no dialog open. Otherwise it offers a chip and waits to be tapped.
    The same tick retries a held entry, which is what gets a phone write to the cloud
    without waiting for the next open. */
-var SALT_BUILD_ID="c37ba6de9336f819";
+var SALT_BUILD_ID="94dd45385e172bd0";
 var SALT_REV_MS=10000;
 (function(){
   var chip=null,timer=null;
@@ -7537,7 +7537,14 @@ function edSubmitNew(){
    a restatement queues a Correction, which are the three the drafter and the fold already take.
    Nothing here writes a row: it queues, and it is drafted, flagged and approved like the rest. */
 function updOut(row,dir){
-  const paid=txPaid(row), moved=dir==='BUY'?(+row.receivedQty||0):txDeliv(row);
+  /* v413, ROUND EIGHT, MATERIAL AND MINE. A LOT IS NOT MEASURED LIKE A SALE. The book's
+     convention for a fully landed lot is an ABSENT receivedQty, and for a settled one an absent
+     cash beside status:"paid"; poRecvUnits and poCash are what read that, and the engine's own
+     walk already says buy?poCash(t):txPaid(t) at position.mjs:194. This read the raw fields, so
+     TEN of eighteen lots were wrong and FIVE offered their whole total as outstanding behind a
+     "Paid in full" chip: p001 to p005, RM 5,450 of liability that does not exist. Same shape as
+     the overpay v408 was written to fix, on the other direction of the book. */
+  const paid=dir==='BUY'?poCash(row):txPaid(row), moved=dir==='BUY'?poRecvUnits(row):txDeliv(row);
   const total=+row.total||0, qty=+row.qty||0;
   return {paid,moved,total,qty,
     cashLeft:+Math.max(0,total-paid).toFixed(2),
@@ -7576,10 +7583,20 @@ function updSay(){
     const over=[];
     if(c>o.cashLeft+0.009)over.push('<b style="color:var(--amber)">'+fmt0(c)+' is more than the '+fmt0(o.cashLeft)+' outstanding</b>, so this '+noun+' would be over-tendered');
     if(k>o.unitLeft+0.009)over.push('<b style="color:var(--amber)">'+units(k)+' is more than the '+units(o.unitLeft)+' left to move</b>');
-    const proj=Object.assign({},row);
-    proj.cash=(+row.cash||0)+c;
-    if(edType==='BUY')proj.receivedQty=o.moved+k; else proj.deliveredQty=(+row.deliveredQty||0)+k;
-    const st=txStat(proj);
+    /* v413: txStat reads deliveredQty and settledKg and knows nothing about receivedQty, so on a
+       lot it called every receipt undelivered and printed "Pending" over a completed card. A lot
+       is described by what it has paid and received against its own total and quantity. */
+    let st;
+    if(edType==='BUY'){
+      const np=o.paid+c, nm=o.moved+k;
+      const payFull=o.total<=0.009||np>=o.total-0.009, recvFull=o.qty>0&&nm>=o.qty-0.009;
+      st={order:row.cancelled?'Cancelled':(payFull&&recvFull)?'Completed':(np<=0.009&&nm<=0.009)?'Pending':'Open'};
+    }else{
+      const proj=Object.assign({},row);
+      proj.cash=(+row.cash||0)+c;
+      proj.deliveredQty=(+row.deliveredQty||0)+k;
+      st=txStat(proj);
+    }
     const bits=[];
     if(c>0.009)bits.push(fmt0(c)+(edType==='BUY'?' paid':' received'));
     if(k>0.009)bits.push(units(k)+(edType==='BUY'?' received':' handed over'));
@@ -7635,8 +7652,11 @@ function updQueue(){
     entry={qty:0,total:0,raw:'Cancellation on '+codeOf(who)+' '+edRid+', recorded '+d,
       payload:Object.assign({},base,{kind:'Cancellation',date:d,qty:0,total:0,cash:0,kg:0})};
   }else if(updMode==='pending'||updMode==='default'){
+    /* v413: the chip is OFFERED on txPaid and txDeliv, which count settledRM and settledKg, and
+       the correction zeroed only cash and the moved quantity, so a row settled in kind was left
+       standing and was not pending at all. It clears what it is offered on. */
     const fields=updMode==='pending'
-      ? (edType==='BUY'?{cash:0,receivedQty:0}:{cash:0,deliveredQty:0})
+      ? (edType==='BUY'?{cash:0,receivedQty:0}:{cash:0,deliveredQty:0,settledRM:0,settledKg:0})
       : {defaulted:true};
     const words=Object.keys(fields).map(k=>k+' to '+fields[k]);
     entry={qty:0,total:0,raw:'Correction on '+codeOf(who)+' '+edRid+': '+words.join(', ')+', recorded '+d,

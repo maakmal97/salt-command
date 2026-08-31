@@ -3029,6 +3029,79 @@ section("v411: the Worker's SQL run against the real schema");
   }
 }
 
+
+section("v413: a lot is not measured like a sale");
+{
+  /* ROUND EIGHT, MATERIAL, AND MINE. The book's convention for a fully landed lot is an ABSENT
+     receivedQty, and for a settled one an absent cash beside status:"paid". poRecvUnits and poCash
+     are what read that, and the engine's own walk already says buy?poCash(t):txPaid(t). The v408
+     panel read the RAW fields, so TEN of eighteen lots reported a false outstanding and FIVE
+     offered their whole total behind a "Paid in full" chip: RM 5,450 of liability that does not
+     exist. The fold had two faults of the same family: its BUY branch RETURNED before the
+     Cancellation handler, so cancelling a lot set nothing and then rewrote a settled lot to
+     unpaid, and its status recompute ignored the convention its own accumulator nine lines above
+     honours, so any unit-only receipt on a settled lot wiped the payment.
+     These assert the CONTRACT against the engine's own helpers, never against a formula retyped
+     here: my first probe reimplemented poRecvUnits, omitted its defaulted case, and reported a
+     correct panel as wrong. */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { applyAmend } = await import("../tools/fold.mjs");
+  const { readFileSync: rf } = await import("node:fs");
+  const { join } = await import("node:path");
+  const { w } = await openMaster();
+  w.eval("setProd('salt');recompute();");
+  const bk = JSON.parse(rf(join(REPO, "ledger", "book.json"), "utf8"));
+
+  /* 1. the panel's outstanding is total-minus-poCash and qty-minus-poRecvUnits, on every lot */
+  const wrong = [];
+  for (const p of (bk.purchases || [])) {
+    if (!p.rid) continue;
+    const q = JSON.stringify(p.rid);
+    const o = JSON.parse(w.eval("JSON.stringify(updOut(purchases.find(x=>x.rid===" + q + "),'BUY'))"));
+    const paid = +w.eval("poCash(purchases.find(x=>x.rid===" + q + "))");
+    const recv = +w.eval("poRecvUnits(purchases.find(x=>x.rid===" + q + "))");
+    const wantC = +Math.max(0, (+p.total || 0) - paid).toFixed(2);
+    const wantU = +Math.max(0, (+p.qty || 0) - recv).toFixed(2);
+    if (Math.abs(o.cashLeft - wantC) > 0.01 || Math.abs(o.unitLeft - wantU) > 0.01) {
+      wrong.push(p.rid + ": panel " + o.cashLeft + "/" + o.unitLeft + " vs " + wantC + "/" + wantU);
+    }
+  }
+  ok(wrong.length === 0,
+    "every lot's outstanding is measured by the purchase convention -- " + wrong.slice(0, 4).join(" | "));
+
+  /* 2. a settled, landed lot has nothing to offer */
+  const settled = (bk.purchases || []).find((p) => p.rid && p.status === "paid" && p.cash == null
+    && p.receivedQty == null && !p.pending && !p.inTransit && !p.defaulted);
+  if (settled) {
+    w.eval("ledEdit(" + JSON.stringify(settled.rid) + ",'BUY');");
+    const chips = JSON.parse(w.eval("JSON.stringify([].map.call(document.querySelectorAll('.updchip'),b=>b.textContent))"));
+    ok(!chips.some((c) => /Paid in full|Received in full/.test(c)),
+      "a settled and landed lot offers neither Paid in full nor Received in full (" + (chips.join(" / ") || "none") + ")");
+    w.eval("document.getElementById('updCash').value='1';document.getElementById('updCash').oninput();");
+    ok(!/Pending/.test(w.eval("document.getElementById('updSay').textContent")),
+      "and the sentence does not call a landed lot Pending, which txStat cannot help but do");
+  } else ok(true, "no settled landed lot on the book to check the panel against (skipped)");
+
+  /* 3. the fold, on lots it is handed rather than on its own source text */
+  const lot = (over) => Object.assign({ date: "2026-08-01", qty: 10, total: 500, supplier: "SF6-KLC",
+    inTransit: true, receivedQty: 0, rid: "t" }, over);
+  const a = lot({ status: "paid" });
+  applyAmend(a, { kind: "Fulfilment", date: "2026-08-31", cash: 0, kg: 10 }, "BUY", null);
+  ok(a.status === "paid" && a.receivedQty === 10,
+    "a unit-only receipt on a lot settled by status leaves it paid and records the receipt");
+  const b2 = lot({ status: "unpaid" });
+  applyAmend(b2, { kind: "Fulfilment", date: "2026-08-31", cash: 0, kg: 10 }, "BUY", null);
+  ok(b2.status === "unpaid", "and an unpaid lot is not turned into a paid one by a receipt");
+  const c2 = lot({ status: "paid", receivedQty: null, inTransit: false });
+  let refused = false;
+  try { applyAmend(c2, { kind: "Cancellation", date: "2026-08-31" }, "BUY", null); } catch (e) { refused = true; }
+  ok(refused, "cancelling a LANDED lot is refused, on the absent-receivedQty convention");
+  const d2 = lot({ status: "unpaid" });
+  applyAmend(d2, { kind: "Cancellation", date: "2026-08-31" }, "BUY", null);
+  ok(d2.cancelled === true, "cancelling a lot that received nothing actually marks it cancelled, which it never did");
+  ok(d2.status !== "paid", "and does not invent a payment state on the way out");
+}
+
 /* ---- done ----------------------------------------------------------------------- */
 
 section("Round 7: the states no suite check had ever rendered");
@@ -3151,10 +3224,27 @@ section("Round 7: the states no suite check had ever rendered");
     const d = rf(join(REPO, "src", "drafter.js"), "utf8");
     const theirs = d.slice(d.indexOf("const theirs"), d.indexOf("const theirs") + 900);
     ok(/s\.total > 0/.test(theirs), "the party-median set excludes zero-value rows, as the observed range does");
-    const f = rf(join(REPO, "tools", "fold.mjs"), "utf8");
-    const canc = f.slice(f.indexOf('pay.kind === "Cancellation"') - 100, f.indexOf('pay.kind === "Cancellation"') + 600);
-    ok(/receivedQty/.test(canc) && /already moved/.test(canc),
-      "the fold's Cancellation branch refuses a row that has already moved goods");
+    /* v413: this used to slice the source around the Cancellation branch and grep it. There are TWO
+       branches now, one per direction, so the slice found the wrong one and the assertion broke on
+       a fix rather than on a fault. Asserting on source text is how a check ends up measuring its
+       own phrasing; it FOLDS a cancellation on each direction instead and reads what happens. */
+    const { applyAmendForTest } = await import("../tools/fold.mjs").then((m) => ({ applyAmendForTest: m.applyAmend || null }));
+    const bk2 = JSON.parse(rf(join(REPO, "ledger", "book.json"), "utf8"));
+    const soldRow = (bk2.sales || []).find((r) => !r.cancelled && (+r.deliveredQty || 0) > 0.009);
+    const lotRow = (bk2.purchases || []).find((r) => !r.cancelled && !r.pending && r.receivedQty == null);
+    const refuses = (row, dir) => {
+      if (!applyAmendForTest || !row) return null;
+      try { applyAmendForTest(row, { kind: "Cancellation", date: "2026-08-31" }, dir, null); return false; }
+      catch (e) { return /already (moved|received)/.test(String(e.message || e)); }
+    };
+    const rs = refuses(soldRow, "SELL"), rl = refuses(lotRow, "BUY");
+    if (rs === null && rl === null) {
+      ok(/E\.poRecvUnits\(row\)/.test(rf(join(REPO, "tools", "fold.mjs"), "utf8")),
+        "the fold's cancellation gates read a lot by poRecvUnits (applyAmend is not exported, checked by source)");
+    } else {
+      ok(rs !== false, "cancelling a SALE that has delivered goods is refused by the fold");
+      ok(rl !== false, "cancelling a LOT that has been received is refused too, on the absent-receivedQty convention");
+    }
   }
 
   for (const f of [TMP, TMPB, TMP + ".run.html"]) { try { rm(f); } catch (e) { /* best effort */ } }
