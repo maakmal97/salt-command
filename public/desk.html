@@ -60,7 +60,7 @@ document.addEventListener('visibilitychange',function(){
    focused, no dialog open. Otherwise it offers a chip and waits to be tapped.
    The same tick retries a held entry, which is what gets a phone write to the cloud
    without waiting for the next open. */
-var SALT_BUILD_ID="78add7f64b46996e";
+var SALT_BUILD_ID="3c756269ecfeb88c";
 var SALT_REV_MS=10000;
 (function(){
   var chip=null,timer=null;
@@ -591,6 +591,17 @@ details.rcard>summary .rsum b{color:var(--ink);}
    next action is obvious, so the card offers it rather than making him cross to Transaction,
    find the order in a dropdown and retype figures the desk already holds. */
 .lquick{display:flex;align-items:center;gap:7px;padding:8px 12px 10px;border-top:1px dashed var(--line);}
+/* v408: the update panel. Chips are 44px so a finger gets them, per the tap contract. */
+.updbox{border:1px solid var(--brd);border-radius:12px;padding:13px 13px 14px;margin:2px 0 6px;background:var(--wellbg);}
+.updchips{display:flex;flex-wrap:wrap;gap:7px;}
+.updchip{font-family:inherit;font-size:12px;font-weight:700;letter-spacing:.2px;cursor:pointer;
+  min-height:44px;padding:6px 13px;border-radius:999px;border:1px solid var(--brd);
+  background:transparent;color:var(--ink);}
+.updchip:hover{border-color:var(--gold);color:var(--gold);}
+.updchip.on{border-color:var(--gold);color:var(--gold);background:rgba(232,198,107,.13);}
+.updmore{margin-top:14px;}
+.updmore>summary{cursor:pointer;font-size:10.5px;text-transform:uppercase;letter-spacing:1px;
+  color:var(--mut);font-weight:700;margin-bottom:8px;min-height:44px;display:flex;align-items:center;}
 /* A CORRECTION, AND WHETHER IT HOLDS. Quiet while every claim reads back against the row,
    crimson the moment one does not: a claim the book cannot have written has to show as a
    contradiction rather than as prose. */
@@ -7262,7 +7273,7 @@ function deskExit(){
    states is typeable again. His instruction of 25 Aug: "I need to be able to edit every attribute
    of an entry on the ledger."
 
-   IT QUEUES, IT DOES NOT POST. Exactly like ledQuick below, and like every other entry on this
+   IT QUEUES, IT DOES NOT POST. Exactly like the update panel above, and like every other entry on this
    desk: the correction becomes a queued entry, the drafter turns it into a proposed change with
    its flags beside it, and it reaches the book only once it is approved. Nothing here writes to
    the ledger. That is the whole architecture: an editor that wrote straight through would be the
@@ -7428,7 +7439,10 @@ function renderEditor(){
         ?'Queues an <b>order</b>. Drafted, checked and back at Approve for a tap.'
         :'Queues a <b>correction</b>. Drafted, checked and back at Approve for a tap.')+'</div>')
     +'<datalist id="edCodes">'+codes.map(c=>'<option value="'+edEsc(c)+'"></option>').join('')+'</datalist>'
-    +html
+    /* v408: the six states first, because they are what a row does. The thirty fields are
+       still here and still complete, one fold down, for the corrections a state cannot say. */
+    +(edNew?'':updBlock(row,edType,canc))
+    +(edNew?html:'<details class="updmore"><summary>Change what the row says</summary>'+html+'</details>')
     +'<div style="display:flex;gap:8px;margin-top:16px">'
     +(canc?'':'<button id="edSave" class="vbtn" style="flex:1">'+(edNew?'Queue the order':'Queue the correction')+'</button>')
     +'<button id="edCancel" class="vbtn" style="flex:0 0 auto">Cancel</button></div>'
@@ -7437,6 +7451,12 @@ function renderEditor(){
   document.getElementById('edCancel').onclick=edClose;
   bd.onclick=edClose;
   const sv=document.getElementById('edSave'); if(sv)sv.onclick=edSubmit;
+  /* v408: the update panel binds after its own markup lands, and the sentence recomputes on
+     every keystroke so nobody has to guess what a figure will do to the state. */
+  const ug=document.getElementById('updGo'); if(ug)ug.onclick=updQueue;
+  ['updCash','updUnit','updDate'].forEach(id=>{const e=document.getElementById(id);
+    if(e)e.oninput=function(){if(id!=='updDate')updMode=null;updSay();};});
+  if(document.getElementById('updSay')){updMode=null;updSay();}
   /* v365: renderEditor only ever runs on open (ledEdit) or close (edClose), never mid-edit,
      so moving focus here happens once per open (wasOpen reads the panel's OWN display style
      from before this call, not edRid, which the caller has already overwritten) and never
@@ -7492,6 +7512,139 @@ function edSubmitNew(){
      would count in the Transaction badge and change nothing on the books. */
   applyOverlay();render();
 }
+/* ================= UPDATING A ROW IS ONE TAP, NOT THIRTY FIELDS (v408) =================
+   HIS INSTRUCTION, 31 Aug 2026: the states a row moves through should be one tap each and
+   should FILL THEIR OWN FIGURES; the date should already say today and be ready to edit; and
+   the partial cases should ASK for the one number they need. "As little need to type and
+   search through forms as possible" is the ethos, and it is now the shape of this panel.
+
+   WHAT IT REPLACES. The Ledger carried three buttons, Paid, Delivered and Completed, and they
+   rendered ON PENDING ROWS ONLY, so the part-paid order, which is the one most often updated,
+   had no quick action at all and went through the thirty-field sheet. Worse, they queued the
+   row's FULL TOTAL as a Fulfilment, and a Fulfilment is a DELTA the fold adds: tapping Paid on
+   a row already carrying RM 50 of RM 100 queued another RM 100 and took it to RM 150. Every
+   figure here is the OUTSTANDING one, computed from the row, so the same tap cannot overpay.
+
+   IT INVENTS NO KIND. A movement queues a Fulfilment, a cancellation queues a Cancellation and
+   a restatement queues a Correction, which are the three the drafter and the fold already take.
+   Nothing here writes a row: it queues, and it is drafted, flagged and approved like the rest. */
+function updOut(row,dir){
+  const paid=txPaid(row), moved=dir==='BUY'?(+row.receivedQty||0):txDeliv(row);
+  const total=+row.total||0, qty=+row.qty||0;
+  return {paid,moved,total,qty,
+    cashLeft:+Math.max(0,total-paid).toFixed(2),
+    unitLeft:+Math.max(0,qty-moved).toFixed(2)};
+}
+let updMode=null;                       /* null = a movement; else 'pending' | 'cancel' | 'default' */
+function updEl(id){return document.getElementById(id);}
+function updSet(mode,c,k){
+  updMode=mode;
+  const ci=updEl('updCash'), ki=updEl('updUnit');
+  if(ci)ci.value=c==null?'':String(c);
+  if(ki)ki.value=k==null?'':String(k);
+  const amt=updEl('updAmts'); if(amt)amt.style.display=mode?'none':'';
+  [].forEach.call(document.querySelectorAll('.updchip'),b=>{
+    b.classList.toggle('on',b.getAttribute('data-m')===(mode||'')+'|'+(c==null?'':c)+'|'+(k==null?'':k));});
+  updSay();
+}
+function updSay(){
+  const row=edRowOf(edRid,edType); const el=updEl('updSay'); if(!row||!el)return;
+  const o=updOut(row,edType);
+  const c=+((updEl('updCash')||{}).value||0)||0, k=+((updEl('updUnit')||{}).value||0)||0;
+  const d=(updEl('updDate')||{}).value||'';
+  const noun=edType==='BUY'?'lot':'order';
+  let t;
+  if(updMode==='cancel')
+    t=o.moved>0.009
+      ? '<b style="color:var(--crim)">The fold refuses this.</b> '+units(o.moved)+' has already moved on this '+noun+', and a cancelled row carrying a delivery contradicts itself. Restate the quantity by Modification first, then cancel the remainder.'
+      : 'Cancels this '+noun+'. It leaves every figure on the desk: the revenue, the stock it drew and anything owed on it.';
+  else if(updMode==='pending')
+    t='Restates the '+noun+' as <b>pending</b>: nothing paid, nothing moved. It draws no stock and books no revenue until it does. This is a correction, so it moves no cash and no goods, it says what is true.';
+  else if(updMode==='default')
+    t='Marks this lot <b>defaulted</b>. It stops counting as stock to come, and the money against it is written down by the ladder.';
+  else if(c<=0.009&&k<=0.009)
+    t='Tap a state above, or type an amount. Nothing is queued yet.';
+  else{
+    const over=[];
+    if(c>o.cashLeft+0.009)over.push('<b style="color:var(--amber)">'+fmt0(c)+' is more than the '+fmt0(o.cashLeft)+' outstanding</b>, so this '+noun+' would be over-tendered');
+    if(k>o.unitLeft+0.009)over.push('<b style="color:var(--amber)">'+units(k)+' is more than the '+units(o.unitLeft)+' left to move</b>');
+    const proj=Object.assign({},row);
+    proj.cash=(+row.cash||0)+c;
+    if(edType==='BUY')proj.receivedQty=o.moved+k; else proj.deliveredQty=(+row.deliveredQty||0)+k;
+    const st=txStat(proj);
+    const bits=[];
+    if(c>0.009)bits.push(fmt0(c)+(edType==='BUY'?' paid':' received'));
+    if(k>0.009)bits.push(units(k)+(edType==='BUY'?' received':' handed over'));
+    t='Records <b>'+bits.join('</b> and <b>')+'</b> on '+(d||'<span style="color:var(--amber)">no date</span>')
+      +'. The '+noun+' reads <b>'+esc(st.order)+'</b> after it.'+(over.length?' '+over.join('; ')+'.':'');
+  }
+  el.innerHTML=t;
+}
+function updBlock(row,dir,canc){
+  if(canc)return '';
+  const o=updOut(row,dir), noun=dir==='BUY'?'lot':'order';
+  const today=TODAY.toISOString().slice(0,10);
+  const chip=(lab,mode,c,k,on)=>on?'<button type="button" class="updchip" data-m="'+((mode||'')+'|'+(c==null?'':c)+'|'+(k==null?'':k))+'" onclick="updSet('+(mode?"'"+mode+"'":'null')+','+(c==null?'null':c)+','+(k==null?'null':k)+')">'+lab+'</button>':'';
+  const chips=[
+    chip(dir==='BUY'?'Paid in full':'Paid in full',null,o.cashLeft,0,o.cashLeft>0.009),
+    chip(dir==='BUY'?'Received in full':'Delivered in full',null,0,o.unitLeft,o.unitLeft>0.009),
+    chip('Completed',null,o.cashLeft,o.unitLeft,o.cashLeft>0.009||o.unitLeft>0.009),
+    chip('Back to pending','pending',null,null,o.paid>0.009||o.moved>0.009),
+    chip('Cancel the '+noun,'cancel',null,null,true),
+    chip('Defaulted','default',null,null,dir==='BUY'&&!row.defaulted),
+  ].filter(Boolean).join('');
+  const bx='width:100%;border:1px solid var(--brd);border-radius:8px;padding:9px 10px;font-size:14px;color:var(--ink);background:var(--wellbg)';
+  const lb='display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.8px;color:var(--mut);font-weight:700;margin-bottom:4px';
+  return '<div class="updbox">'
+    +'<p style="font-size:10.5px;text-transform:uppercase;letter-spacing:1px;color:var(--gold);font-weight:700;margin:0 0 8px">Update</p>'
+    +'<div class="updchips">'+chips+'</div>'
+    +'<div id="updAmts" style="display:flex;gap:10px;margin-top:11px">'
+      +'<div style="flex:1"><label for="updCash" style="'+lb+'">'+(dir==='BUY'?'Cash paid':'Cash received')+', RM</label>'
+        +'<input id="updCash" type="number" step="0.01" min="0" placeholder="0" style="'+bx+'">'
+        +'<div style="font-size:11px;color:var(--dim);margin-top:3px">'+fmt0(o.cashLeft)+' outstanding</div></div>'
+      +'<div style="flex:1"><label for="updUnit" style="'+lb+'">'+(dir==='BUY'?'Received':'Handed over')+', unit</label>'
+        +'<input id="updUnit" type="number" step="0.01" min="0" placeholder="0" style="'+bx+'">'
+        +'<div style="font-size:11px;color:var(--dim);margin-top:3px">'+units(o.unitLeft)+' left to move</div></div>'
+    +'</div>'
+    +'<div style="margin-top:11px"><label for="updDate" style="'+lb+'">Date</label>'
+      +'<input id="updDate" type="date" value="'+today+'" style="'+bx+'"></div>'
+    +'<div id="updSay" style="font-size:12px;color:var(--dim);margin-top:10px;line-height:1.5"></div>'
+    +'<button id="updGo" class="vbtn" style="width:100%;margin-top:10px">Queue the update</button>'
+    +'</div>';
+}
+function updQueue(){
+  const row=edRowOf(edRid,edType); if(!row)return;
+  const el=updEl('updSay');
+  const say=m=>{if(el)el.innerHTML='<span style="color:var(--amber)">'+m+'</span>';};
+  const o=updOut(row,edType), partyKey=edType==='BUY'?'supplier':'customer';
+  const d=(updEl('updDate')||{}).value||'';
+  if(!d)return say('A date is needed: it is when this is recorded as having happened.');
+  const who=row[partyKey], base={mode:'amend',direction:edType,party:who,rid:edRid,orderKey:ovKey(row),
+    assoc:null,downstream:null,orderCode:null,linkTo:null,sameDay:false,note:null};
+  let entry=null;
+  if(updMode==='cancel'){
+    if(o.moved>0.009)return say('The fold refuses to cancel a row that has already moved '+units(o.moved)+'. Restate the quantity first.');
+    entry={qty:0,total:0,raw:'Cancellation on '+codeOf(who)+' '+edRid+', recorded '+d,
+      payload:Object.assign({},base,{kind:'Cancellation',date:d,qty:0,total:0,cash:0,kg:0})};
+  }else if(updMode==='pending'||updMode==='default'){
+    const fields=updMode==='pending'
+      ? (edType==='BUY'?{cash:0,receivedQty:0}:{cash:0,deliveredQty:0})
+      : {defaulted:true};
+    const words=Object.keys(fields).map(k=>k+' to '+fields[k]);
+    entry={qty:0,total:0,raw:'Correction on '+codeOf(who)+' '+edRid+': '+words.join(', ')+', recorded '+d,
+      payload:Object.assign({},base,{kind:'Correction',date:d,fields:fields,qty:0,total:0,cash:0,kg:0})};
+  }else{
+    const c=+((updEl('updCash')||{}).value||0)||0, k=+((updEl('updUnit')||{}).value||0)||0;
+    if(c<=0.009&&k<=0.009)return say('Nothing stated, so there is nothing to queue. Tap a state above, or type an amount.');
+    if(c<0||k<0)return say('A movement cannot be negative. To take something back, correct the figure on the sheet below.');
+    entry={qty:k,total:c,status:c>0.009?'paid':'unpaid',
+      raw:'Fulfilment on '+codeOf(who)+' '+edRid+': '+[c>0.009?fmt0(c)+' cash':'',k>0.009?units(k)+' moved':''].filter(Boolean).join(', ')+', recorded '+d,
+      payload:Object.assign({},base,{kind:'Fulfilment',date:d,qty:k,total:c,cash:c,kg:k})};
+  }
+  queue.push(Object.assign({at:new Date().toISOString(),type:'AMEND',party:codeOf(who)},entry));
+  edClose();
+  applyOverlay();saveQueue();render();
+}
 function edSubmit(){
   if(edNew)return edSubmitNew();
   const row=edRowOf(edRid,edType);if(!row)return;
@@ -7535,7 +7688,7 @@ function edSubmit(){
       assoc:null,downstream:null,orderCode:null,linkTo:null,sameDay:false,note:null,
       qty:0,total:0,cash:0,kg:0}});
   edClose();
-  /* applyOverlay BEFORE render, exactly as ledQuick and wbRecord do. render() only recomputes;
+  /* applyOverlay BEFORE render, exactly as updQueue and wbRecord do. render() only recomputes;
      it does not rebuild the rows from BASE and re-apply the queue, so a queued entry that
      skipped this line would show in the Transaction count and change nothing on the books. */
   applyOverlay();render();
@@ -7628,31 +7781,6 @@ if(typeof document!=='undefined'&&!window.__edBound){
       edClose();
     }
   });
-}
-function ledQuick(what,type,who,date,total,qty){
-  const arr=(type==='BUY')?purchases:sales;
-  const key=who+'|'+date+'|'+total;
-  if(!ovFind(arr,key)){alert('That order could not be matched. It may already have been committed under a different key.');return;}
-  const cash=(what==='paid'||what==='done')?+total:0;
-  const moved=(what==='deliv'||what==='done')?+qty:0;
-  const today=TODAY.toISOString().slice(0,10);
-  const lab=what==='paid'?'paid in full':what==='deliv'?'delivered in full':'paid and delivered in full';
-  const raw='Fulfilment on '+codeOf(who)+', '+(type==='BUY'?'lot ':'order ')+units(qty)+' of '+fmt0(total)
-    /* an undated row is PLANNED rather than agreed, and its key really does contain the
-       string "undefined" on both sides, so it matches and the button works. Only the
-       human-readable line needs to stop saying "agreed undefined". */
-    +(date&&date!=='undefined'?' agreed '+date:' planned, undated')+' marked '+lab+' on '+today;
-  queue.push({at:new Date().toISOString(),type:'AMEND',party:codeOf(who),qty:moved,total:cash,
-    status:what==='deliv'?'unpaid':(what==='paid'?'paid':'paid'),raw:raw,
-    payload:{mode:'amend',direction:type,party:who,orderKey:key,date:today,
-      assoc:null,downstream:null,kind:'Fulfilment',orderCode:null,linkTo:null,sameDay:false,
-      note:null,
-      qty:moved,total:cash,cash:cash,kg:moved}});
-  /* applyOverlay BEFORE render, exactly as wbRecord does. render() only recomputes; it does
-     NOT rebuild the rows from BASE and re-apply the queue, so a queued entry that skipped this
-     line showed in the Transaction count and changed nothing on the books. Caught by asserting
-     on revTotal after a click rather than on the card repainting, which it did either way. */
-  applyOverlay();saveQueue();render();
 }
 /* E-codes point at each other across the whole book, so half the targets now sit inside the
    fold. A jump that scrolled to a row inside a closed <details> would land on the summary and
@@ -8078,9 +8206,14 @@ function tabLedger(){
     shownTx.push(t);
     const cardCls=finalState==='Completed'?'s-completed':finalState==='Pending'?'s-pending':finalState==='In-Kind'?'s-inkind':finalState==='Default'?'s-default':finalState==='Cancelled'?'s-cancelled':'s-open';
     /* v253: a pending order carries its own next action */
-    const q=(w,c,l)=>`<button class="lqb ${c}" onclick="ledQuick('${w}','${t.type}','${String(t.who).replace(/'/g,"\\'")}','${t.date}',${+t.total},${+t.qty})">${l}</button>`;
-    const quickBar=(finalState==='Pending'&&!provOf(t))
-      ? `<div class="lquick"><span class="lqlab">Mark</span>${q('paid','qpaid','Paid')}${q('deliv','qdeliv','Delivered')}${q('done','qdone','Completed')}<span class="lqnote">${fmt0(t.total)} &middot; ${units(t.qty)} &middot; queues, does not post</span></div>`
+    /* v408: WAS THREE BUTTONS ON PENDING ROWS ONLY, and they queued the row's FULL TOTAL as a
+       Fulfilment, which the fold ADDS: tapping Paid on a row already carrying RM 50 of RM 100
+       queued another RM 100 and took it to RM 150. The part-paid order, the row most often
+       updated, had no quick action at all and went through the thirty-field sheet instead.
+       One control now, on every live row, opening the panel that computes the OUTSTANDING
+       figures from the row itself and therefore cannot overpay. ledQuick is retired with it. */
+    const quickBar=(finalState!=='Cancelled'&&t.rid&&!provOf(t))
+      ? `<div class="lquick"><span class="lqlab">${finalState==='Pending'?'Mark':'Update'}</span><button class="lqb qdone" onclick="ledEdit('${t.rid}','${t.type}')">Paid, delivered, cancelled&hellip;</button><span class="lqnote">${fmt0(t.total)} &middot; ${units(t.qty)} &middot; queues, does not post</span></div>`
       : '';
     /* data-rid is what the row editor right-clicks onto (25 Aug 2026). A row with no rid yet
        renders without the attribute rather than with an empty one, so the delegated listener

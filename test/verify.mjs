@@ -1285,7 +1285,7 @@ section("Desk — the row editor names only fields CORRECTABLE holds");
 
   /* ONE TABLE, READ, NEVER COPIED. A second copy of the list is how the write and the record
      came apart in the first place, so the guard reads the engine's own export. */
-  const edSubmit = master.slice(master.indexOf("function edSubmit(){"), master.indexOf("function ledQuick("));
+  const edSubmit = master.slice(master.indexOf("function edSubmit(){"), master.indexOf("function goEl("));
   ok(edSubmit.includes("POSITION_ENGINE.CORRECTABLE"), "the guard checks against the engine's own table");
   ok(edSubmit.indexOf("edStray.length") < edSubmit.indexOf("queue.push"),
     "and refuses BEFORE the push, so a field the fold would refuse is never queued");
@@ -2783,6 +2783,78 @@ section("Every part renders on every book (round 5 fold; content and census, rou
     : "zero canvases or details sit outside a .prodblock on the six per-product parts");
   ok(w.eval("units(-0)") === "0 unit" && w.eval("fmt0(-0.4)") === "RM 0" && w.eval("fmt(-0.001)") === "RM 0.00",
     "a figure that displays as zero never carries a minus (units, fmt0, fmt)");
+}
+
+
+section("v408: the update panel does the arithmetic so a tap cannot overpay");
+{
+  /* THE BUG THIS SECTION EXISTS FOR. The Ledger's three quick buttons queued the row's FULL
+     TOTAL as a Fulfilment, and a Fulfilment is a DELTA the fold ADDS, so tapping Paid on a row
+     already carrying RM 50 of RM 100 took it to RM 150. It was reachable on any part-paid row
+     and nothing anywhere caught it. The panel computes the OUTSTANDING from the row, so the
+     same tap cannot overpay, and this asserts the arithmetic rather than the button. The book
+     carries no part-paid sale today, so one is built: the assertion must not be able to pass
+     by there being nothing to test. */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { readFileSync: rf, writeFileSync: wf, unlinkSync: rm } = await import("node:fs");
+  const { execSync } = await import("node:child_process");
+  const { join } = await import("node:path");
+  const M = join(REPO, "test", ".v408.html"), B = join(REPO, "test", ".v408.json");
+  const bk = JSON.parse(rf(join(REPO, "ledger", "book.json"), "utf8"));
+  const seed = (bk.sales || []).find((r) => r.rid && !r.cancelled && (+r.total || 0) > 40 && (+r.qty || 0) > 1 && r.date);
+  ok(!!seed, "a sale exists to build the part-paid case from");
+  if (seed) {
+    seed.cash = +(seed.total / 2).toFixed(2);
+    seed.deliveredQty = 0;
+    wf(B, JSON.stringify(bk, null, 1));
+    wf(M, rf(join(REPO, "master", "salt_command.html"), "utf8"));
+    execSync("node tools/booksync.mjs --sync", { cwd: REPO, env: { ...process.env, SALT_BOOK: B, SALT_MASTER: M }, stdio: "pipe" });
+    const { w } = await openMaster(M);
+    w.eval("setProd(" + JSON.stringify(seed.product || "salt") + ");recompute();");
+    const outstanding = +(seed.total - seed.cash).toFixed(2);
+
+    w.eval("ledEdit(" + JSON.stringify(seed.rid) + ",'SELL');");
+    const chips = JSON.parse(w.eval("JSON.stringify([].map.call(document.querySelectorAll('.updchip'),b=>b.textContent))"));
+    ok(chips.length >= 4, `the panel offers the row's states (${chips.length}): ${chips.join(" / ")}`);
+    ok(!chips.some((c) => /Defaulted/.test(c)), "Defaulted is not offered on a sale, because the engine reads it on lots only");
+    ok(w.eval("document.getElementById('updDate').value") === w.eval("TODAY.toISOString().slice(0,10)"),
+      "the date is filled with today and is an editable input");
+
+    w.eval("updSet(null," + outstanding + ",0);");
+    const filled = +w.eval("document.getElementById('updCash').value");
+    ok(Math.abs(filled - outstanding) < 0.005 && filled < seed.total - 0.005,
+      `Paid in full fills the outstanding RM ${filled}, not the total RM ${seed.total}`);
+
+    const before = +w.eval("queue.length");
+    w.eval("updQueue();");
+    const q = JSON.parse(w.eval("JSON.stringify(queue[queue.length-1]||{})"));
+    ok(+w.eval("queue.length") === before + 1, "one entry is queued");
+    ok(q.payload && q.payload.kind === "Fulfilment" && q.payload.rid === seed.rid,
+      "it queues a Fulfilment addressed by rid, a kind the drafter and the fold already take");
+    ok(q.payload && Math.abs(q.payload.cash - outstanding) < 0.005,
+      `the queued cash is the outstanding RM ${q.payload && q.payload.cash}, so the fold's delta cannot overpay`);
+
+    /* the panel refuses on screen what v407 made the fold refuse, so nobody queues a dead row */
+    const dl = JSON.parse(w.eval("JSON.stringify((function(){var r=sales.filter(s=>!s.cancelled&&s.rid&&txDeliv(s)>0.009)[0];return r?{rid:r.rid}:null;})())"));
+    if (dl) {
+      w.eval("ledEdit(" + JSON.stringify(dl.rid) + ",'SELL');");
+      w.eval("updSet('cancel',null,null);");
+      ok(/refuses/.test(w.eval("document.getElementById('updSay').textContent")),
+        "cancelling a row that has moved goods is refused on screen before it is queued");
+      const qb = +w.eval("queue.length");
+      w.eval("updQueue();");
+      ok(+w.eval("queue.length") === qb, "and nothing is queued by it");
+    }
+
+    w.eval("ledEdit(" + JSON.stringify(seed.rid) + ",'SELL');");
+    ok(w.eval("!!document.querySelector('.updmore') && !document.querySelector('.updmore').open"),
+      "the thirty-field sheet is still there, closed, one fold below the panel");
+    ok(w.eval("!!document.getElementById('ed_party') && !!document.getElementById('ed_cost')"),
+      "and every EDFORM control is still in the DOM for edSubmit to read");
+    ok(w.eval("getComputedStyle(document.querySelector('.updchip')).minHeight") === "44px",
+      "the chips meet the 44px tap contract");
+  }
+  for (const f of [M, B]) { try { rm(f); } catch (e) { /* best effort */ } }
 }
 
 /* ---- done ----------------------------------------------------------------------- */
