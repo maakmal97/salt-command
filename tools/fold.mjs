@@ -152,9 +152,12 @@ export function plan(book, staged, notes) {
            on the state the correction would leave. The drafter refuses it too; this gate is
            for a correction that reaches the fold another way. */
         if (fields.cancelled === true) {
-          const dq0 = fields.deliveredQty !== undefined ? +fields.deliveredQty : (+hits[0].deliveredQty || 0);
-          const rq0 = fields.receivedQty !== undefined ? +fields.receivedQty : E.poRecvUnits(hits[0]);   /* v413: absent means received in full */
-          const dq = Math.max(dq0 || 0, rq0 || 0);   /* v407: a lot records receivedQty */
+          /* v415: the same ruler fault as the Cancellation gate below, and the same fix. A sale
+             carries deliveredQty; a lot carries receivedQty and means "in full" by omitting it. */
+          const isBuy = (hits[0].supplier !== undefined) || it.collection === "purchases";
+          const dq = isBuy
+            ? (fields.receivedQty !== undefined ? +fields.receivedQty || 0 : E.poRecvUnits(hits[0]))
+            : (fields.deliveredQty !== undefined ? +fields.deliveredQty || 0 : E.txEffDeliv(hits[0]));
           if (dq > 0.009) { out.refused.push({ id: it.id, why: `the correction on ${it.amends} would leave a cancelled row still carrying ${dq} unit delivered, which contradicts itself: restate qty by Modification, then cancel the remainder` }); continue; }
         }
         entry.pay = { date: pay.date || null, kind: "Correction", cash: 0, kg: 0, fields };
@@ -428,7 +431,12 @@ export function applyAmend(row, pay, dir, note) {   /* v413: exported so the sui
      left the shelf carrying neither revenue nor cost, and the money was still chased. The fold is
      all or nothing by contract, so a contradictory row stops the batch rather than landing. */
   if (pay.kind === "Cancellation") {
-    const moved = Math.max(+row.deliveredQty || 0, E.poRecvUnits(row));   /* v413: absent means received in full */
+    /* v415: A SALE IS NOT MEASURED WITH THE LOT'S RULER, and v413 measured it with one. poRecvUnits
+       falls through to "received in full" when receivedQty is absent, which is TRUE of a lot and
+       true of EVERY SALE EVER WRITTEN, because a sale has no receivedQty at all. So from v413 every
+       sale cancellation was refused, on the only road into one. The direction picks the ruler, as
+       the walk itself does at position.mjs:195. */
+    const moved = dir === "BUY" ? E.poRecvUnits(row) : Math.max(+row.deliveredQty || 0, E.txEffDeliv(row));
     if (moved > 0.009) throw new Error(`cancelling this row would leave it carrying ${moved} unit already moved, which contradicts itself: restate qty by Modification for what moved, then cancel the remainder`);
     row.cancelled = true; return;
   }

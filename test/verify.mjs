@@ -3096,6 +3096,22 @@ section("v413: a lot is not measured like a sale");
   let refused = false;
   try { applyAmend(c2, { kind: "Cancellation", date: "2026-08-31" }, "BUY", null); } catch (e) { refused = true; }
   ok(refused, "cancelling a LANDED lot is refused, on the absent-receivedQty convention");
+
+  /* v415: THE ALLOWED DIRECTION, WHICH IS WHAT WAS MISSING. Every assertion on this gate tested
+     that it REFUSES, so v413 could apply the lot's ruler to a sale, refuse EVERY sale
+     cancellation ever, and ride the suite green. A gate is two claims and both must be asserted:
+     poRecvUnits falls through to "received in full" when receivedQty is absent, which is true of
+     a lot and true of every sale that has ever existed. */
+  const sale = (over) => Object.assign({ date: "2026-08-01", qty: 2, total: 200,
+    customer: "CN6-WM", rid: "s999" }, over);
+  const cancels = (row, dir) => {
+    try { applyAmend(row, { kind: "Cancellation", date: "2026-08-31" }, dir, null); return row.cancelled === true; }
+    catch (e) { return false; }
+  };
+  ok(cancels(sale({ cash: 0 }), "SELL"), "a sale that has delivered NOTHING can be cancelled");
+  ok(!cancels(sale({ deliveredQty: 1 }), "SELL"), "a sale that has delivered something cannot");
+  ok(!cancels(sale({ settledKg: 2 }), "SELL"), "nor one settled in kind, which the raw field read missed");
+  ok(cancels(lot({ status: "unpaid" }), "BUY"), "a lot that has received nothing can be cancelled");
   const d2 = lot({ status: "unpaid" });
   applyAmend(d2, { kind: "Cancellation", date: "2026-08-31" }, "BUY", null);
   ok(d2.cancelled === true, "cancelling a lot that received nothing actually marks it cancelled, which it never did");
