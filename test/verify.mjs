@@ -2915,6 +2915,41 @@ section("v409: the Enter sheet is priced against the book it books to");
     "the coach's best-rate comparison is scoped to the book, not the whole ledger");
 }
 
+
+section("v410: the P&L says which period each of its three columns covers");
+{
+  /* ROUND SEVEN. The month columns are last month and this month with no year on them, the FY
+     column is the calendar year to date, and the IFRS statement below is the whole book since it
+     opened. On 1 January that reads as a contradiction: an empty FY column beside a full December
+     and a much larger IFRS revenue three rows down, with nothing on screen saying why. Calendar
+     year is the owner's, confirmed 31 Aug 2026, so the arithmetic was right and the labelling was
+     not. Proved red against v409, where seven of these fail. */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { readFileSync: rf, writeFileSync: wf, unlinkSync: rm } = await import("node:fs");
+  const { join } = await import("node:path");
+  const T = join(REPO, "test", ".v410.html");
+  const paneAt = async (clock) => {
+    const src = rf(join(REPO, "master", "salt_command.html"), "utf8")
+      .replace(/const TODAY=[^\n]*\n/, "const TODAY=new Date('" + clock + "T12:00:00+08:00');\n");
+    wf(T, src);
+    const { w } = await openMaster(T);
+    w.eval("setProd('salt');recompute();switchTab('financials');");
+    const el = w.document.querySelector(".sec.on");
+    return (el ? el.innerHTML : "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+  };
+  const jan = await paneAt("2027-01-01");
+  ok(/FY 2027 to date, nothing yet/.test(jan), "on 1 January the FY column names its year and says it is empty");
+  ok(/December 2026/.test(jan), "the month column outside the FY year carries that year, so it cannot be read as part of it");
+  ok(/Three periods sit in this part/.test(jan), "the period line reaches the screen and survives stripMethod");
+  ok(/whole book since it opened/.test(jan), "the IFRS statement names its own period, which is not the P&L's");
+  ok(/on the revenue in this column/.test(jan), "Still uncollected names the revenue it is measured on");
+  ok(/as at today, not a movement in the period/.test(jan), "Closing stock says it is a point in time, not a flow");
+  ok(/Provision charged/.test(jan), "the provisions say they are the period's charge");
+  const mid = await paneAt("2026-08-31");
+  ok(!/July 2026|August 2026/.test(mid), "a month inside the FY year is NOT year-stamped, so nothing is added for nothing");
+  try { rm(T); } catch (e) { /* best effort */ }
+}
+
 /* ---- done ----------------------------------------------------------------------- */
 
 section("Round 7: the states no suite check had ever rendered");
