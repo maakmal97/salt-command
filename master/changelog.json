@@ -1,5 +1,16 @@
 [
  {
+  "v": "v409",
+  "d": "31 Aug 2026",
+  "t": "THE ENTRY SHEET BOOKED TO ONE PRODUCT AND WAS PRICED AGAINST ANOTHER, AND FIXING IT FOUND THREE MORE OF THE SAME CLASS",
+  "n": [
+   "<b>A HEALTHY 45% OIL SALE READ AS A 368% LOSS, ON THE FLOW THE DESK'S OWN COPY RECOMMENDS.</b> The Enter sheet carried a product select of its own, and its note said so in as many words: books to the oil book, not where the rail points. Every guard beside it read the ACTIVE book. So the margin was measured against salt's replacement cost, the free-stock warning counted salt's shelf and the price coach used salt's floors, while the row booked to oil. The reverse was worse: a genuine salt loss read as a profit with both guards silent. Measured rather than argued, the same entry now reads 31% against oil's own RM 7.15.",
+   "<b>TWO PRODUCTS IN ONE FORM WAS THE FAULT, SO THERE IS ONE NOW AND IT IS THE DESK'S.</b> Choosing a product on the sheet moves the book, the sheet's own product state is deleted, and nothing downstream needed threading. That is four lines instead of a refactor of the whole pricing chain, and it is the stronger fix: there is no second value left to drift from. The sheet keeps what has been typed across the change, because the render already snapshots and restores its inputs, and the probe asserts that rather than assuming it.",
+   "<b>AND IT SURFACED THREE MORE, EACH REACHABLE ONLY ONCE THE SHEET COULD SIT ON A BOOK THE RAIL WAS NOT ON.</b> The party price history read the whole ledger, so a party's SALT record priced their OIL order: a RM 10.37 per unit oil sale was flagged 90% below their usual RM 108, which is true of a book they have never bought on. The coach's best rate ever taken compared oil against salt's best. And it costs to replace this salt printed on every book. A flag that fires when nothing is wrong is worse than no flag, because it teaches the reader to tap through, and this is the fifth recurrence of the whole-book-inside-one-book class.",
+   "<b>THE ASSERTIONS ARE ON THE FIGURE, NOT THE WIRING.</b> The suite enters an order on the second book while the desk sits on the first and checks the MARGIN it is shown, because the wiring can be rewritten and the figure cannot be wrong. Proved red three ways before it was trusted: restoring the sheet's own product fails three assertions, and unscoping either history read fails its own. 731 assertions from 724."
+  ]
+ },
+ {
   "v": "v408",
   "d": "31 Aug 2026",
   "t": "UPDATING A ROW IS ONE TAP AND THE DESK DOES THE ARITHMETIC, WHICH IS ALSO HOW THE OVERPAY WENT",
