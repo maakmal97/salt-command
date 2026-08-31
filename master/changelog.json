@@ -1,5 +1,15 @@
 [
  {
+  "v": "v412",
+  "d": "31 Aug 2026",
+  "t": "THE LAST TWO OF ROUND SEVEN'S FIFTEEN, BOTH OF WHICH I HAD LEFT AND ONE OF WHICH HAD NEVER BEEN ASSERTED AT ALL",
+  "n": [
+   "<b>THE SENTINEL WAS THE TOTAL.</b> The divide-by-zero guard in the customer concentration walk was also the figure printed on the All row, so a book whose customers have bought nothing showed <b>All RM 1, 100%</b> and divided the real margin by that one ringgit. v406 guarded the DISPLAY on the customer count, which is not what makes the sentinel: a book with customers and nil revenue still showed it. The sum and the divisor are two fields now, one printed and one dividing. It had no assertion of any kind; it has one, and putting the sentinel back fails it by name.",
+   "<b>A COMMENT WAS NOT A HANDLER AND THE SCAN COULD NOT TELL.</b> The empty-catch check required a body of pure WHITESPACE, so a catch holding only a comment was invisible to it and a swallowed chart error could be written straight past. And its list of twelve draw functions missed three, two of which are exactly where this fault was found and fixed at v385. Both are closed, and widening it produced no false positives on the real desk.",
+   "<b>ROUND SEVEN'S FIFTEEN ARE NOW ALL CLOSED,</b> across v407, v409, v410, v411 and this. Two of them had sat open through four folds because I had reported them fixed as a class while leaving the twin, which is the same fault the round itself was about. 755 assertions from 747."
+  ]
+ },
+ {
   "v": "v411",
   "d": "31 Aug 2026",
   "t": "THE CLOUD LEG, EXERCISED AT LAST, AND A CRITIC'S CLAIM THAT TURNED OUT TO BE FALSE",
