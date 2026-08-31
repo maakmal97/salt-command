@@ -1,5 +1,16 @@
 [
  {
+  "v": "v417",
+  "d": "01 Sep 2026",
+  "t": "A CANCELLED LOT COUNTED EVERYWHERE, INCLUDING AS A BILL FOR SALT NOBODY WILL SEND",
+  "n": [
+   "<b>FOLD 3 OF ROUND NINE, AND THE STATE v413 CREATED BY GIVING PURCHASES A WORKING CANCELLATION AT ALL.</b> The ledger strip filtered a cancelled SALE out of its totals and did not filter a cancelled LOT out of the other half; poRecvUnits, poLive and poOpenUnits had no cancelled test between them. So a cancelled lot kept its whole quantity in still to arrive and its whole total in bills outstanding, while the control that cancelled it promised in its own hint that the row leaves every figure on the desk. Cancelling an unpaid lot BOOKED a payable rather than removing one.",
+   "<b>poCash DELIBERATELY KEEPS COUNTING, AND THAT IS THE ONE OF THE FOUR THE ROUND GOT WRONG.</b> Money that left the bank still left it: the desk already states that rule beside its cash-out line, a defaulted lot was still paid for. A cancelled lot that was paid for is a refund due from the supplier, which is what the sale side calls it, and zeroing the payment would erase the fact rather than record the claim. What a cancelled lot must not look like is an unpaid bill, and that is fixed where bills are counted. The suite asserts BOTH halves, so a future tidy-up that zeroes poCash on a cancelled lot fails rather than quietly erasing a payment.",
+   "<b>NO FIGURE MOVED ON THE REAL BOOK, PROVED RATHER THAN ASSUMED.</b> A full dump of the walk, the cost stack, the policy, six floors at both collection modes, the ladder, every lot's four readings and the monthly P&L, on both books before and after: zero differences. No lot on this book is cancelled, so the change reaches only the state the gate admits, and that state was measured separately: an in-transit lot of 25 unit at RM 1,250 goes from 25 still to arrive and RM 1,250 of bills to none of either, with stock and the cost basis untouched because it had not arrived.",
+   "<b>AND ONE OF MY OWN ASSERTIONS COULD NOT FAIL.</b> The cancelled test on poRecvUnits bites only where a row would otherwise read received in full, and I asserted it on an in-transit lot, which returns nothing through a different branch either way. Deleting the guard rode the section green until the mutation said so. It is asserted on the state the guard bites on now, with the uncancelled twin beside it so it cannot become a blanket zero. Four mutations, four reds. 794 assertions from 784."
+  ]
+ },
+ {
   "v": "v416",
   "d": "01 Sep 2026",
   "t": "A CORRECTION STATES A FIGURE, IT DOES NOT UN-PAY A LOT, AND THE FIX IS NOT THE ONE-WORD SWAP IT LOOKS LIKE",

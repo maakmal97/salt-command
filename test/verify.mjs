@@ -3221,6 +3221,53 @@ section("v416: a correction states a figure, it does not un-pay a lot");
     "ovAmend captures the payment before the field writes, as the fold does");
 }
 
+
+section("v417: a cancelled lot counts nowhere in stock, and is not a bill");
+{
+  /* ROUND NINE, TWIN CLASS 4. The SELL half of the ledger strip filtered !cancelled and the BUY
+     half did not, and poRecvUnits, poLive and poOpenUnits had no cancelled test at all, so a
+     cancelled lot kept its units in "still to arrive" and its total in bills outstanding while
+     the control that cancelled it promised the row leaves every figure on the desk. v413 made
+     that state reachable by giving purchases a working cancellation in the first place.
+     poCash deliberately keeps counting: money that left the bank still left it, which is the rule
+     the desk already states beside outRM for a defaulted lot. Both halves are asserted here, so a
+     future "tidy-up" that zeroes poCash on a cancelled lot fails rather than quietly erasing a
+     payment. */
+  const E = (await import("../engine/position.mjs")).default;
+  const lot = (o) => Object.assign({ date: "2026-08-20", qty: 25, total: 1250,
+    supplier: "SF6-KLC", status: "unpaid", inTransit: true, receivedQty: 0, rid: "pX01" }, o);
+
+  const open = lot({});
+  const canc = lot({ cancelled: true });
+  ok(E.poOpenUnits(open) === 25, "an open in-transit lot has its whole quantity still to arrive");
+  ok(E.poOpenUnits(canc) === 0, "a cancelled one has none, rather than its whole quantity");
+  /* the guard bites only where the row would otherwise read RECEIVED IN FULL, which is a lot with
+     no receivedQty and not in transit. Asserting it on the in-transit row above proves nothing:
+     that returns 0 through the receivedQty branch whether the cancelled test is there or not, and
+     deleting the test rode this section green until the mutation said so. The fold refuses to
+     cancel a landed lot, so this state arrives only by a hand edit, which is a road the book
+     integrity assertions already exist for. */
+  ok(E.poRecvUnits(lot({ cancelled: true, receivedQty: null, inTransit: false })) === 0,
+    "a cancelled lot that would otherwise read received-in-full receives nothing");
+  ok(E.poRecvUnits(lot({ receivedQty: null, inTransit: false })) === 25,
+    "while the same lot uncancelled still reads received in full, so the test is not a blanket zero");
+  ok(E.poLive(canc) === false, "and it is not a live lot");
+  ok(E.poLive(open) === true, "while an open one still is, so the test did not simply switch it off");
+
+  const paidCanc = lot({ cancelled: true, cash: 1250, status: "paid" });
+  ok(E.poCash(paidCanc) === 1250,
+    "a cancelled lot that WAS paid still reports the money as having left the bank, as a defaulted one does");
+  ok(E.poRecvUnits(paidCanc) === 0, "while still counting nowhere in stock");
+
+  /* the desk half: the strip and the bill line */
+  const src = (await import("node:fs")).readFileSync(
+    (await import("node:path")).join(REPO, "master", "salt_command.html"), "utf8");
+  ok(/t\.type==='BUY'&&!t\.cancelled/.test(src),
+    "the ledger strip excludes a cancelled lot from the BUY half, as it already did from the SELL half");
+  ok(/\(p\.pending\|\|p\.cancelled\)\?0:Math\.max\(0,\(\+p\.total\)-poCash\(p\)\)/.test(src),
+    "and cancelling an unpaid lot removes a payable rather than booking one");
+}
+
 /* ---- done ----------------------------------------------------------------------- */
 
 section("Round 7: the states no suite check had ever rendered");

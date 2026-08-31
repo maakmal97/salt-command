@@ -71,6 +71,12 @@ function txDates(s){
   return {dOn,dSrc,pOn,pSrc,full,fullPaid};
 }
 function poRecvUnits(p){
+  /* v417: A CANCELLED LOT IS NOT A LOT. Nothing here tested it, so a cancelled purchase kept its
+     units in stock, its cost in the basis and its quantity in "still to arrive", while the control
+     that cancelled it promised in its own hint that the row leaves every figure on the desk. The
+     cancellation gate only lets a lot be cancelled when nothing has arrived, so on today's book
+     this changes no figure; it is the state the gate ADMITS that this closes. */
+  if(p.cancelled)return 0;
   if(p.defaulted)return 0;
   /* a PENDING lot is agreed and nothing more: no money has moved and no salt has landed,
      so it must not be read as received. Without this it defaults to fully received and
@@ -79,14 +85,22 @@ function poRecvUnits(p){
   if(p.receivedQty!=null)return Math.max(0,Math.min(+p.receivedQty,p.qty));
   return p.inTransit?0:p.qty;
 }
+/* v417: DELIBERATELY NO CANCELLED TEST, and this is the one of the four that must not have one.
+   Money that left the bank still left it: the desk already states that rule beside outRM, "a
+   defaulted lot was still paid for". A cancelled lot that was paid for is a REFUND DUE from the
+   supplier, which is what the sale side calls it, and zeroing the payment here would erase the
+   fact rather than record the claim. What a cancelled lot must not do is look like an unpaid
+   BILL, and billsOut is where that is handled. */
 function poCash(p){
   if(p.pending)return 0;                       // agreed only: no money has moved
   if(p.cash!=null)return +p.cash;              // an explicit figure always wins
   return p.status==='paid'?+p.total:0;         // only a row that SAYS paid is assumed paid
 }
-function poLive(p){return !p.pending&&!p.defaulted;}
+function poLive(p){return !p.pending&&!p.defaulted&&!p.cancelled;}   /* v417 */
 function poRate(p){return p.qty>0?p.total/p.qty:0;}
-function poOpenUnits(p){return +(p.qty-poRecvUnits(p)).toFixed(4);}
+/* v417: without the cancelled test this returned the WHOLE quantity as still to arrive, because
+   poRecvUnits reads nothing received and the subtraction then has nothing to take away. */
+function poOpenUnits(p){return p.cancelled?0:+(p.qty-poRecvUnits(p)).toFixed(4);}
 function provRate(days){return days>=21?1:days>=14?0.75:days>=8?0.5:days>=4?0.25:0;}
 /* ============ THE WALK (was recompute) ============
    Everything the desk's tabs read about a product is set by one pass over that product's
