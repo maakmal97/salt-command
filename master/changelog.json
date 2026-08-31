@@ -1,5 +1,16 @@
 [
  {
+  "v": "v413",
+  "d": "31 Aug 2026",
+  "t": "A LOT IS NOT MEASURED LIKE A SALE, AND FOR TWO VERSIONS THE PANEL SAID FIVE SETTLED LOTS OWED RM 5,450",
+  "n": [
+   "<b>ROUND EIGHT RETURNED NOT DRY WITH THIRTY-FOUR MATERIALS, AND THIS CLOSES THE ONE THAT WAS LIVE ON THE MONEY PATH.</b> Three of the six are mine, from the update panel two versions ago. The book's convention for a fully landed lot is an ABSENT receivedQty, and for a settled one an absent cash beside a status of paid; poRecvUnits and poCash are what read that, and the walk already says buy ? poCash : txPaid in the engine's own words. The panel read the raw fields instead. Ten of eighteen lots therefore reported a false outstanding, and five offered their whole total behind a <b>Paid in full</b> chip: RM 5,450 of supplier liability that does not exist. It is the same shape as the overpay the panel was written to fix, on the other direction of the book, which I did not check.",
+   "<b>THE FOLD CARRIED TWO OF THE SAME FAMILY, AND ONE OF THEM MADE A CONTROL THAT DID NOTHING BUT DAMAGE.</b> The purchase branch RETURNED before the cancellation handler, so cancelling a lot set no flag at all and then fell into the status recompute, which rewrote a lot stored as paid to unpaid. One right-click and an approval, and the chip, the panel copy, the draft reasoning, the plan, the apply and the desk overlay every one reported success. That same recompute ignored the convention its own accumulator nine lines above honours, so any receipt carrying no cash wiped a settled lot's payment and invented supplier bills that had already been met.",
+   "<b>AND THE SENTENCE WAS DESCRIBING A LOT WITH A SALE'S VOCABULARY.</b> The panel projected a receipt through txStat, which reads deliveredQty and knows nothing of receivedQty, so it called a completed lot Pending on a card the Ledger itself labels Completed. <b>Back to pending</b> is offered on figures that count a settlement in kind and cleared only the cash and the moved quantity, so a row settled in kind was left standing. All three cancelled-and-moved gates read the raw field, so nine live lots holding 131.25 unit could each be cancelled while holding stock.",
+   "<b>THE CHECKS COMPARE AGAINST THE ENGINE'S OWN HELPERS, NEVER A FORMULA RETYPED IN THE TEST, AND THAT MATTERED WITHIN THE HOUR.</b> My first probe reimplemented the receipt rule, left out its defaulted case, and reported a correct panel as wrong; a supplier default receives nothing by definition. One older test was replaced rather than repaired: the v407 check for the cancellation gate sliced the source and grepped it, so adding a second branch broke it on a fix rather than on a fault. applyAmend is exported now and the suite folds a cancellation in each direction instead of reading about one. 764 assertions from 756."
+  ]
+ },
+ {
   "v": "v412",
   "d": "31 Aug 2026",
   "t": "THE LAST TWO OF ROUND SEVEN'S FIFTEEN, BOTH OF WHICH I HAD LEFT AND ONE OF WHICH HAD NEVER BEEN ASSERTED AT ALL",
