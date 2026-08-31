@@ -247,6 +247,11 @@ export function applyAmend(row, pay, dir, note) {   /* v413: exported so the sui
      is the record: a row whose price or party changed without saying so is worse than no row,
      so every correction leaves its old values readable in `mod`. */
   if (pay.kind === "Correction") {
+    /* v416: CAPTURE THE PAYMENT BEFORE ANY FIELD IS WRITTEN. poCash reads status:"paid" as
+       meaning the row's TOTAL, so calling it after a total correction returns the NEW total as
+       the amount paid, and a RM 10 price fix would read as RM 10 already paid. Read once, at
+       the top, off the row as it arrived. */
+    const paidBefore = E.poCash(row);
     const f = pay.fields || {};
     const partyKey = dir === "BUY" ? "supplier" : "customer";
     const attr = E.attributionOf(row, partyKey);
@@ -327,7 +332,10 @@ export function applyAmend(row, pay, dir, note) {   /* v413: exported so the sui
        status only when cash or total moved, and read what was asked rather than a raw field
        that is legitimately absent. */
     if (dir === "BUY" && (asked("cash") || asked("total"))) {
-      const paid = row.cash != null ? row.cash : 0;
+      /* v416: was a raw read, so a lot stored status:"paid" with no cash field read as nothing
+         paid and a price correction alone rewrote it to unpaid, inventing a payable for money
+         already handed over. Five lots on the book are stored that way, RM 5,450 of them. */
+      const paid = asked("cash") ? (row.cash != null ? +row.cash : 0) : paidBefore;
       row.status = paid >= (row.total || 0) - 0.009 ? "paid" : (paid <= 0.009 ? "unpaid" : "partial");
     }
 
@@ -363,12 +371,17 @@ export function applyAmend(row, pay, dir, note) {   /* v413: exported so the sui
   }
   if (pay.kind === "Modification") {
     const wasQty = row.qty, wasTotal = row.total;
+    /* v416: CAPTURE THE PAYMENT BEFORE ANY FIELD IS WRITTEN. poCash reads status:"paid" as
+       meaning the row's TOTAL, so calling it after a total correction returns the NEW total as
+       the amount paid, and a RM 10 price fix would read as RM 10 already paid. Read once, at
+       the top, off the row as it arrived. */
+    const paidBefore = E.poCash(row);
     const modLine = `restated${pay.date ? " on " + pay.date : ""} from ${wasQty} unit / RM${wasTotal} to ${pay.newQty} unit / RM${pay.newTotal}`;
     row.mod = row.mod ? row.mod + ", then " + modLine : modLine;
     if (dir === "BUY") {
       row.qty = pay.newQty;
       row.total = pay.newTotal;
-      const paid = row.cash != null ? row.cash : 0;
+      const paid = paidBefore;                       /* v416: what was paid, not what is now owed */
       row.status = paid >= row.total - 0.009 ? "paid" : (paid <= 0.009 ? "unpaid" : "partial");
       if (note) row.note = note + " " + (row.note || "");
       return;

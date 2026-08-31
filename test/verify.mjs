@@ -3174,6 +3174,53 @@ section("v413: a lot is not measured like a sale");
   ok(d2.status !== "paid", "and does not invent a payment state on the way out");
 }
 
+
+section("v416: a correction states a figure, it does not un-pay a lot");
+{
+  /* ROUND NINE, TWIN CLASS 1. v413 taught the Fulfilment path that a lot stored status:"paid"
+     with no cash field is SETTLED, and left the Correction and Modification paths reading the raw
+     field. So a RM 10 price correction on any of the five lots stored that way rewrote it to
+     unpaid and invented a payable for money already handed over, up to RM 5,450 of them.
+     THE TRAP, and it is why this is not a one-word swap: poCash reads a paid status as meaning the
+     row's TOTAL, so calling it AFTER a total correction returns the NEW total as the amount paid.
+     The payment is captured at the top of the branch, off the row as it arrived.
+     Both directions are asserted: a correction that genuinely says nothing was paid must still
+     leave the lot unpaid, or the fix would be a different way of lying. */
+  const { applyAmend } = await import("../tools/fold.mjs");
+  const E = (await import("../engine/position.mjs")).default;
+  const lot = (o) => Object.assign({ date: "2026-07-08", qty: 12.5, total: 750,
+    supplier: "SF6-KLC", status: "paid", rid: "p003" }, o);
+
+  const a = lot({});
+  applyAmend(a, { kind: "Correction", date: "2026-09-01", fields: { total: 740 } }, "BUY", null);
+  ok(a.total === 740 && a.status === "paid",
+    "a price correction on a settled lot leaves it paid, inventing no payable (status " + a.status + ")");
+  ok(E.poCash(a) >= 739.99, "and poCash still reads it settled, at RM " + E.poCash(a));
+
+  const b2 = lot({});
+  applyAmend(b2, { kind: "Correction", date: "2026-09-01", fields: { cash: 100 } }, "BUY", null);
+  ok(b2.status === "partial", "stating RM 100 against RM 750 leaves it partial, as asked");
+  const c2 = lot({});
+  applyAmend(c2, { kind: "Correction", date: "2026-09-01", fields: { cash: 0 } }, "BUY", null);
+  ok(c2.status === "unpaid", "and stating RM 0 leaves it UNPAID, so the fix did not simply stop listening");
+
+  const d2 = lot({});
+  applyAmend(d2, { kind: "Modification", date: "2026-09-01", newQty: 12, newTotal: 720 }, "BUY", null);
+  ok(d2.status === "paid", "a Modification restating qty and total keeps what was actually paid");
+  const e2 = lot({ status: "unpaid" });
+  applyAmend(e2, { kind: "Modification", date: "2026-09-01", newQty: 12, newTotal: 720 }, "BUY", null);
+  ok(e2.status === "unpaid", "and an unpaid lot restated stays unpaid, so no payment is invented");
+  const f2 = lot({ cash: 300, status: "partial" });
+  applyAmend(f2, { kind: "Modification", date: "2026-09-01", newQty: 12, newTotal: 300 }, "BUY", null);
+  ok(f2.status === "paid", "a lot carrying an explicit cash figure is measured against the new total");
+
+  /* the desk must give the same answer as the fold, which is the whole reason ovAmend exists */
+  const src = (await import("node:fs")).readFileSync(
+    (await import("node:path")).join(REPO, "master", "salt_command.html"), "utf8");
+  ok(/const paidBefore=poCash\(row\);/.test(src) && /paid=asked\(.cash.\)\?\(row\.cash!=null/.test(src),
+    "ovAmend captures the payment before the field writes, as the fold does");
+}
+
 /* ---- done ----------------------------------------------------------------------- */
 
 section("Round 7: the states no suite check had ever rendered");
