@@ -2786,5 +2786,123 @@ section("Every part renders on every book (round 5 fold; content and census, rou
 }
 
 /* ---- done ----------------------------------------------------------------------- */
+
+section("Round 7: the states no suite check had ever rendered");
+{
+  /* ROUND SEVEN'S BIGGEST HOLE WAS NOT A FAULT, IT WAS A BLIND SPOT: every one of the suite's
+     openMaster() calls ran the LIVE book, so no assertion had ever seen an empty book, a fresh
+     product or a stepped-back clock. A probe reverted a complete v406 guard and the suite still
+     read 700 passed. These checks render MUTATED books, and each was proved red against v406
+     before it was written: the undated row threw, the fallback never reached the screen, the
+     empty history printed an infinity and five surfaces printed a negative day count. */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { readFileSync: rf, writeFileSync: wf, unlinkSync: rm } = await import("node:fs");
+  const { execSync } = await import("node:child_process");
+  const { join } = await import("node:path");
+  const TMP = join(REPO, "test", ".r7tmp.html");
+  const TMPB = join(REPO, "test", ".r7tmp.json");
+  const bookNow = JSON.parse(rf(join(REPO, "ledger", "book.json"), "utf8"));
+
+  const withBook = (obj) => {
+    wf(TMPB, JSON.stringify(obj, null, 1));
+    wf(TMP, rf(join(REPO, "master", "salt_command.html"), "utf8"));
+    execSync("node tools/booksync.mjs --sync", { cwd: REPO, env: { ...process.env, SALT_BOOK: TMPB, SALT_MASTER: TMP }, stdio: "pipe" });
+    return TMP;
+  };
+  const paneOf = async (path, tab, prod, clock) => {
+    let src = rf(path, "utf8");
+    if (clock) src = src.replace(/const TODAY=[^\n]*\n/, `const TODAY=new Date('${clock}T12:00:00+08:00');\n`);
+    wf(TMP + ".run.html", src);
+    const { w } = await openMaster(TMP + ".run.html");
+    w.eval(`setProd(${JSON.stringify(prod)});recompute();`);
+    let html = "", threw = null;
+    try {
+      w.eval(`switchTab(${JSON.stringify(tab)});`);
+      const el = w.document.querySelector(".sec.on") || w.document.querySelector("#sec-" + tab);
+      html = el ? el.innerHTML : "";
+    } catch (e) { threw = String((e && e.message) || e); }
+    return { w, html, text: html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim(), threw };
+  };
+
+  /* 1. an undated row carrying cash must not blank the whole statement. s119 is undated on the
+        live book and a Correction putting cash on it passes every gate, so this is one tap. */
+  {
+    const b = JSON.parse(JSON.stringify(bookNow));
+    const row = (b.sales || []).find((r) => !r.date && !r.cancelled && (r.product || "salt") === "salt");
+    if (!row) { ok(true, "no live undated sale to test the finRows guard with (skipped)"); }
+    else {
+      row.cash = 100;
+      const r = await paneOf(withBook(b), "financials", "salt");
+      ok(!r.threw, `Financials renders with cash on an undated row (${row.rid}) -- ${r.threw}`);
+      ok(r.text.length > 400, `Financials is not blank with cash on an undated row (${r.text.length} chars)`);
+      let u = null; try { u = r.w.eval("finRows().undated.length"); } catch (e) { u = "threw"; }
+      ok(u === 1, `finRows holds the undated row out and counts it (got ${u})`);
+    }
+  }
+
+  /* 2 and 3. the fresh-book path: the fallback must survive stripMethod, and an empty stock
+        history must not print an infinity. Both fired on v406. */
+  {
+    const b = JSON.parse(JSON.stringify(bookNow));
+    b.sales = []; b.purchases = [];
+    const m = withBook(b);
+    const src = await paneOf(m, "sourcing", "salt");
+    ok(!src.threw, `Sourcing renders on an all-empty book -- ${src.threw}`);
+    ok(/nothing to source against/i.test(src.text), "the Sourcing fallback reaches the screen and is not culled by stripMethod");
+    const ana = await paneOf(m, "analysis", "salt");
+    ok(!ana.threw, `Analysis renders on an all-empty book -- ${ana.threw}`);
+    ok(!/Infinity|\u221e/.test(ana.text), "Analysis prints no infinity on a book with no stock history");
+  }
+
+  /* 4. one rule for a day count. v406 floored four surfaces and left four, so the same money
+        read "-16d" on Today and "0d out" on Forward. Nothing may print a negative age. */
+  {
+    const dated = (bookNow.sales || []).filter((r) => r.date).map((r) => r.date).sort();
+    const back = dated[Math.floor(dated.length / 2)];
+    const negs = [];
+    for (const t of ["today", "forward", "receivables", "sourcing", "concentration", "overview"]) {
+      for (const p of ["salt", "oil"]) {
+        const r = await paneOf(join(REPO, "master", "salt_command.html"), t, p, back);
+        if (r.threw) negs.push(`${t}/${p} threw`);
+        const m = r.text.match(/(?<![\d-])-\d+\s*(d\b|days?\b)/g);
+        if (m) negs.push(`${t}/${p}: ${m.slice(0, 2).join(", ")}`);
+      }
+    }
+    ok(negs.length === 0, `no surface prints a negative day count at a clock behind the book -- ${negs.join(" | ")}`);
+  }
+
+  /* 5. the snapshot the drafter approves against must be taken on the book it names. */
+  {
+    const { pricingSnapshot } = await import("../tools/book.mjs");
+    const { w } = await openMaster();
+    const snap = pricingSnapshot(w);
+    const prods = JSON.parse(w.eval("JSON.stringify(PROD_ORDER)"));
+    const off = [];
+    for (const p of prods) {
+      w.eval(`PROD=${JSON.stringify(p)};recompute();`);
+      for (const q of [1, 2.5]) {
+        const desk = w.eval(`floorTotal(${q})`);
+        const snapped = snap.byProduct[p] && snap.byProduct[p].floors && snap.byProduct[p].floors[q]
+          ? snap.byProduct[p].floors[q].delivered : null;
+        if (snapped == null || Math.abs(snapped - desk) > 0.005) off.push(`${p}@${q}: snapshot ${snapped} vs desk ${desk}`);
+      }
+    }
+    ok(off.length === 0, `every snapshot floor is taken on its own book's walk -- ${off.join("; ")}`);
+  }
+
+  /* 6. the two gates round seven found open. */
+  {
+    const d = rf(join(REPO, "src", "drafter.js"), "utf8");
+    const theirs = d.slice(d.indexOf("const theirs"), d.indexOf("const theirs") + 900);
+    ok(/s\.total > 0/.test(theirs), "the party-median set excludes zero-value rows, as the observed range does");
+    const f = rf(join(REPO, "tools", "fold.mjs"), "utf8");
+    const canc = f.slice(f.indexOf('pay.kind === "Cancellation"') - 100, f.indexOf('pay.kind === "Cancellation"') + 600);
+    ok(/receivedQty/.test(canc) && /already moved/.test(canc),
+      "the fold's Cancellation branch refuses a row that has already moved goods");
+  }
+
+  for (const f of [TMP, TMPB, TMP + ".run.html"]) { try { rm(f); } catch (e) { /* best effort */ } }
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

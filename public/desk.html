@@ -60,7 +60,7 @@ document.addEventListener('visibilitychange',function(){
    focused, no dialog open. Otherwise it offers a chip and waits to be tapped.
    The same tick retries a held entry, which is what gets a phone write to the cloud
    without waiting for the next open. */
-var SALT_BUILD_ID="54fdd936f501329a";
+var SALT_BUILD_ID="b83dd8b08c8e6788";
 var SALT_REV_MS=10000;
 (function(){
   var chip=null,timer=null;
@@ -5683,6 +5683,15 @@ function cashFlow(){
    units only, since a set-off moves no salt. */
 function coverStats(){return POSITION_ENGINE.coverStats({pricedSales:pricedSales,currentStock:currentStock,defUnits:defUnits,today:TODAY,reorderUnits:reorderFor(PROD)});}
 const dbet=d=>Math.floor((TODAY-new Date(d))/86400000+1e-9);  // floor: ageing stepsonly on a full day
+/* ONE RULE FOR A DAY COUNT (v407, round seven). A date ahead of the clock is either a mistyped
+   row or a clock stepped back. v406 floored four surfaces and left four, so the SAME money read
+   "-16d" on Today and "0d out" on Forward. dAge is the one rule and it floors AT THE SOURCE, so
+   every consumer of an age agrees and a provision ladder can never be fed a negative. It takes a
+   date or a day count, because half the sites hold one and half the other. What the floor hides,
+   dAhead surfaces: Today carries a line naming any row dated ahead of the clock, because a
+   silently floored zero reading as "due today" is the fault v406 swapped in for the negative. */
+const dAge=d=>Math.max(0,typeof d==='number'?d:dbet(d));
+const dAhead=d=>(typeof d==='number'?d:dbet(d))<0;
 /* ONE LABEL MAP FOR THE WHOLE DESK (hoisted at v273 out of tabToday, which owned it while
    the Whiteboard needed it too). Every jump button anywhere reads this. */
 const TAB_LABEL={today:'Today',forward:'Forward',overview:'Overview',receivables:'Order book',
@@ -5981,7 +5990,7 @@ function tabForward(){
   const sw=[14,30,60].map(n=>`<button data-n="${n}"${fwdDays===n?' class="on"':''} onclick="fwdSet(${n})">${n} days</button>`).join('');
   const evRows=[];
   f.lots.forEach(x=>evRows.push({day:x.day,what:`${units(x.kg)} arrives from ${ID(x.who)}`,kind:'stock in',rm:x.rm}));
-  f.cin.forEach(x=>evRows.push({day:x.day,what:`${ID(x.who)} ${x.label}, ${fmt0(x.gross)} gross${x.age!=null?`, ${Math.max(0,x.age)}d out`:''}${x.gross>x.rm+0.009?`, ${((1-x.rm/x.gross)*100).toFixed(0)}% provisioned`:''}`,kind:'cash in',rm:x.rm}));
+  f.cin.forEach(x=>evRows.push({day:x.day,what:`${ID(x.who)} ${x.label}, ${fmt0(x.gross)} gross${x.age!=null?`, ${dAge(x.age)}d out`:''}${x.gross>x.rm+0.009?`, ${((1-x.rm/x.gross)*100).toFixed(0)}% provisioned`:''}`,kind:'cash in',rm:x.rm}));
   f.cout.forEach(x=>evRows.push({day:x.day,what:`${ID(x.who)} ${x.label}`,kind:'cash out',rm:-x.rm}));
   (f.planRows||[]).forEach(x=>{if(x._taken)evRows.push({day:x.day,what:esc(x.label),kind:'drawing',rm:-x._taken});});
   evRows.sort((a,b)=>a.day-b.day||Math.abs(b.rm)-Math.abs(a.rm));
@@ -6213,7 +6222,7 @@ function supplierStats(){
       share:+(o.kg/tot*100).toFixed(1),
       recentShare:+(o.recentUnits/rtot*100).toFixed(1),
       recentDays:RECENT,
-      quiet:dbet(o.last),
+      quiet:dAge(o.last),
       wavg:o.kg>0?+(o.rm/o.kg).toFixed(2):null,
       best:o.rates.length?Math.min.apply(null,o.rates.map(r=>r.r)):null,
       worst:o.rates.length?Math.max.apply(null,o.rates.map(r=>r.r)):null,
@@ -6332,7 +6341,7 @@ function tabSourcing(){
 
   <h2 style="margin-top:18px">Who you buy from <span class="rule"></span></h2>
   <div class="card">${stkCols('sup')}<div class="stkwrap"><table><thead><tr><th class="l">Supplier</th><th class="stkx">Lots</th><th class="stkx">Unit</th><th>Share, ${ss.length?ss[0].recentDays:90}d</th><th class="stkx">Share, all</th><th>Weighted</th><th class="stkx">Best</th><th class="stkx">Last paid</th><th class="stkx">Received<div style="font-size:10px;color:var(--dim);font-weight:400">landed of bought</div></th><th class="l">Standing</th></tr></thead><tbody>
-    ${ss.map(s=>`<tr><td class="l mono">${ID(s.id)}<div style="font-size:10px;color:${s.quiet>30?'var(--crim)':'var(--dim)'}">bought ${Math.max(0,s.quiet)}d ago</div></td>
+    ${ss.map(s=>`<tr><td class="l mono">${ID(s.id)}<div style="font-size:10px;color:${s.quiet>30?'var(--crim)':'var(--dim)'}">bought ${s.quiet}d ago</div></td>
       <td class="stkx">${s.lots}${s.pending?` <span style="color:var(--gold)">+${s.pending} agreed</span>`:''}</td>
       <td class="stkx">${units(s.kg)}</td><td style="color:${s.recentShare>80?'var(--crim)':'var(--ink)'}"><b>${s.recentShare.toFixed(0)}%</b></td>
       <td class="stkx" style="color:var(--dim)">${s.share.toFixed(0)}%</td>
@@ -6342,7 +6351,7 @@ function tabSourcing(){
   </tbody></table></div>
   ${(()=>{if(!(conc&&conc.recentShare>80))return'';
     const bits=[];
-    if(PROD===DEFAULT_PROD&&supplierReceivable.status!=='closed')
+    if(PROD===DEFAULT_PROD&&typeof supplierReceivable!=='undefined'&&supplierReceivable&&supplierReceivable.status!=='closed')
       bits.push(`the last name that carried this book took ${fmt0(supplierReceivable.amount)} and delivered nothing`);
     if(pend.length)bits.push(`<b>${fmt0(pend.reduce((a,p)=>a+p.total,0))}</b> is agreed with that same supplier now`);
     return `<div class="dsc" style="margin-top:8px"><b style="color:var(--crim)">${ID(conc.id)} is ${conc.recentShare.toFixed(0)}% of every unit bought in the last ${conc.recentDays} days</b>${bits.length?', and '+bits.join('; '):''}.</div>`;})()}</div>
@@ -6567,12 +6576,12 @@ function tabAnalysis(){
   <div class="dsc" style="margin-bottom:9px">Rebuilt daily against the ${units(reorderFor(PROD))} trigger, ending on the counted <b>${units(currentStock)}</b>. Shrinkage is undated and spread evenly, so the shape is right and a single day is not.</div>
   ${(()=>{const neg=sh.filter(r=>r.raw<-0.01);
     const d=pSales(PROD).map(txDates), ds={};d.forEach(x=>ds[x.dSrc]=(ds[x.dSrc]||0)+1);   /* round six: bare `sales` put whole-book counts inside every product block */
-    if(neg.length)return `<div class="pend def" style="margin-bottom:11px"><h3>The line goes below zero on ${neg.length} days, and that is a finding <span class="cd crim">low ${units(Math.min.apply(null,sh.map(r=>r.raw)))}</span></h3>
+    if(neg.length)return `<div class="pend def" style="margin-bottom:11px"><h3>The line goes below zero on ${neg.length} days, and that is a finding <span class="cd crim">low ${units((sh.length?Math.min.apply(null,sh.map(r=>r.raw)):0))}</span></h3>
       <div class="insight">A dating artefact, not a stockout: add a <b>deliveredOn</b> to the orders that fall back to their order date.</div></div>`;
     /* THE CLEAN WALK IS PROVENANCE, SO IT FOLDS, and the summary still carries the answer.
        Nothing is deleted to fold it: the three date sources are the sentence they always were,
        and prose inside a details is exempt from stripMethod, so it survives verbatim. */
-    return `<details class="obsec" style="margin-bottom:11px"><summary>The walk is clean <span class="q">it never goes below zero</span><span class="ct">low ${units(Math.min.apply(null,sh.map(r=>r.raw)))}</span></summary>
+    return `<details class="obsec" style="margin-bottom:11px"><summary>The walk is clean <span class="q">it never goes below zero</span><span class="ct">low ${units((sh.length?Math.min.apply(null,sh.map(r=>r.raw)):0))}</span></summary>
       <div class="dsc" style="padding-bottom:12px">It finishes on the counted <b>${units(currentStock)}</b>, so every day is physically possible. It got there on <b>${ds.trail||0} orders dated from the amendment trail</b> and <b>${ds.stated||0} from an explicit deliveredOn</b> added where the date had only ever existed in a note. The remaining <b>${ds.assumed||0} are assumed</b>, meaning nothing was recorded and nothing is known to have moved later; each one is a small chance of a day's error and none of them currently breaks the line.</div></details>`;})()}
   <div class="chartbox"><canvas id="anStock"></canvas></div>
 
@@ -8146,7 +8155,14 @@ function finRows(){
   /* net of the pending tail, exactly as recompute() does. Without this the P&L reported
      a different revenue from the Overview on the same desk: a part-pending order was
      dropped from neither, so its unmoved slice was counted here and nowhere else. */
-  pricedSales.forEach(t=>{const mo=t.date.slice(0,7);
+  /* ROUND SEVEN, MATERIAL: t.date was sliced unguarded, so ONE undated row carrying cash blanked
+     the whole Financials part on BOTH books, consolidated head and all. It is reachable in a tap:
+     s108, s109 and s119 are undated on this book today, and a Correction putting cash on any of
+     them passes checkCorrection with no error and no flag and folds. A month is the only key this
+     statement has, so a row with no date cannot be bucketed; it is held out and COUNTED, because
+     silently dropping revenue is the fault this review exists to catch. */
+  const undated=[];
+  pricedSales.forEach(t=>{if(!t.date){undated.push(t);return;}const mo=t.date.slice(0,7);
     bump(mo,'rev',(t.total||0)-txPendRM(t));bump(mo,'cogs',(t.qty-txPendUnitsRaw(t))*costOf(t));bump(mo,'cash',t.cash||0);bump(mo,'kg',t.qty-txPendUnitsRaw(t));
     bump(mo,'inkind',(t.waived||0)+((t.settle==='barter'||t.rebate)?(t.settledRM||0):0));
     bump(mo,'provAR',+(txAdvance(t)*provRate(dbet(t.date))).toFixed(2));});
@@ -8156,7 +8172,9 @@ function finRows(){
      margin of RM 0 at 0.0%. A month is evidence that something happened in it. */
   if(typeof supplierReceivable!=='undefined'&&supplierReceivable&&supRecovGross>0.009)
     bump(supplierReceivable.since.slice(0,7),'provSup',+(supRecovGross*provRate(dbet(supplierReceivable.since))).toFixed(2));
-  return Object.entries(m).sort((a,b)=>a[0]<b[0]?-1:1);
+  const out=Object.entries(m).sort((a,b)=>a[0]<b[0]?-1:1);
+  out.undated=undated;
+  return out;
 }
 
 /* ---- v170 charts: Order book, Sourcing, Network, Ledger --------------------
@@ -8195,7 +8213,7 @@ function drawRecvCharts(){
   if(!el)return;
   ensureChart(ok=>{
     if(!ok){chartEmpty(el,'Chart unavailable. Every figure it draws is in the tables on this part.');return;}
-    const rows=arList.map(x=>({who:codeOf(x.customer),g:outstandingOf(x),age:dbet(x.date)}))
+    const rows=arList.map(x=>({who:codeOf(x.customer),g:outstandingOf(x),age:dAge(x.date)}))
       .filter(x=>x.g>0.009);
     /* v385: THE SUPPLIER CLAIM IS SALT'S, ON THE CHART AS IT ALREADY IS IN THE TABLE.
        arList is scoped by recompute() and supRecovGross is salt-only by construction, so the
@@ -8203,7 +8221,7 @@ function drawRecvCharts(){
        record with no such test and would have drawn the same bar under Oil. Latent while the
        default is written off, and a written-off claim is not a receivable in any book. */
     if(PROD===DEFAULT_PROD&&typeof supplierReceivable!=='undefined'&&supplierReceivable&&supplierReceivable.status==='recoverable')
-      rows.push({who:codeOf(supplierReceivable.party)+' (supplier)',g:supplierReceivable.amount,age:dbet(supplierReceivable.since)});
+      rows.push({who:codeOf(supplierReceivable.party)+' (supplier)',g:supplierReceivable.amount,age:dAge(supplierReceivable.since)});
     if(!rows.length){chartEmpty(el,'Nothing is owed either way. A rare and correct emptiness.');return;}
     /* oldest first, matching the table beneath it: the chart's whole argument is what the
        ladder has taken off with age, so age is the axis it should be read down. */
@@ -8418,7 +8436,7 @@ function tabFinancials(){
     return `<b>${fmt0(u)}</b>${u<-0.009?'<em class="finpct">held against goods</em>':''}`;};
   const col=(v,neg)=>`<td style="${neg&&v>0?'color:var(--crim)':''}">${v?fmt0(neg?-v:v):'&mdash;'}</td>`;
   const grp=lab=>`<tr class="grp"><td class="l" colspan="${rows.length+2}">${lab}</td></tr>`;
-  const pl=`<table class="fintab"><thead><tr><th class="l">Line</th>${rows.map(([mo])=>`<th>${mLab(mo).split(' ')[0]}</th>`).join('')}<th class="fy">FY ${fyYear} to date</th></tr></thead><tbody>
+  const pl=`<table class="fintab"><thead><tr><th class="l">Line</th>${rows.map(([mo])=>`<th>${mLab(mo).split(' ')[0]}</th>`).join('')}<th class="fy">FY ${fyYear} to date${fyMonths.length?'':', nothing yet'}</th></tr></thead><tbody>
     <tr><td class="l">Revenue</td>${mcell(v=>col(v.rev))}<td class="fy">${fmt0(fy.rev)}</td></tr>
     <tr><td class="l">Cost of goods</td>${mcell(v=>col(v.cogs,1))}<td class="fy" style="color:var(--crim)">${fmt0(-fy.cogs)}</td></tr>
     <tr class="tot"><td class="l">Gross margin</td>${mcell(v=>`<td><b>${fmt0(gm(v))}</b><em class="finpct">${gmp(v).toFixed(1)}%</em></td>`)}<td class="fy"><b>${fmt0(gm(fy))}</b><em class="finpct">${gmp(fy).toFixed(1)}%</em></td></tr>
@@ -8892,7 +8910,7 @@ function tabReceivables(){
      THE CHART IS THE ONE THAT VISIBLY MOVED. It sorted by size while the table beside it sat
      in date order, so the pair could not be read across. Both read down the ladder now. */
   const oldest=(a,b)=>(a.date||'9999-99-99')<(b.date||'9999-99-99')?-1:(a.date===b.date?0:1);
-  const cCash=arList.map(s=>{const d=dbet(s.date),g=outstandingOf(s),rate=provRate(d),n=+(g*(1-rate)).toFixed(2),over=(s.deliveredQty||0)>capForParty(s.customer)+0.009&&!s.exemptCap;return {id:s.customer,date:s.date,d,g,rate,n,over};})
+  const cCash=arList.map(s=>{const d=dAge(s.date),g=outstandingOf(s),rate=provRate(d),n=+(g*(1-rate)).toFixed(2),over=(s.deliveredQty||0)>capForParty(s.customer)+0.009&&!s.exemptCap;return {id:s.customer,date:s.date,d,g,rate,n,over};})
     .sort((a,b)=>b.d-a.d||b.g-a.g);
   const cCashBody=cCash.map(r=>`<tr><td class="l mono">${ID(r.id)}${r.over?` <span class="attn" title="advance over their ${units(capForParty(r.id))} credit cap on this book">over cap</span>`:''}<div style="font-size:11px;font-weight:400;color:var(--mut)">${r.date}</div></td><td>${r.d}d</td><td>${fmt0(r.g)}</td><td>${(r.rate*100).toFixed(0)}%</td><td>${fmt0(r.n)}</td></tr>`).join('');
   // Goods you owe them: deferred (paid ahead of delivery).
@@ -9574,7 +9592,7 @@ function observations(){
     gaps.sort((a,b)=>a-b);
     const med=gaps.length%2?gaps[(gaps.length-1)/2]:(gaps[gaps.length/2-1]+gaps[gaps.length/2])/2;
     if(!(med>0))return;
-    const since=dbet(rows[rows.length-1].date);
+    const since=dAge(rows[rows.length-1].date);
     if(since>med*1.5&&since>=7){
       const avg=obsDiv(rows.reduce((a,r)=>a+(+r.total||0),0),rows.length)||0;
       /* HOW LONG THE RHYTHM ITSELF TOOK TO SET. Three orders inside one week give a median
@@ -11237,7 +11255,7 @@ function actions(){
      one of his debts earns, and names each debt with its own age and provision, because the
      ladder is what makes one of them urgent and the total is what makes the call worth it. */
   const chase={};
-  arList.forEach(s=>{const g=outstandingOf(s);if(g<=0.009)return;const age=dbet(s.date);
+  arList.forEach(s=>{const g=outstandingOf(s);if(g<=0.009)return;const age=dAge(s.date);
     (chase[s.customer]=chase[s.customer]||[]).push({g,age,pr:provRate(age)});});
   Object.keys(chase).forEach(who=>{
     const ds=chase[who].sort((a,b)=>b.age-a.age), oldest=ds[0].age;
@@ -11257,7 +11275,7 @@ function actions(){
       +`${(supplierReceivable.amount/Math.max(1,grossMargin)*100).toFixed(0)}% of all margin ever earned.`,'receivables');}
   /* 4. money you owe back */
   customerRefunds.filter(r=>!r.paidOn).forEach(r=>add('soon','pay',`Refund ${ID(r.party)} ${fmt0(r.amount)}`,r.amount,
-    `Owed since ${r.since}, ${Math.max(0,dbet(r.since))} days. ${esc(r.note||'')}`,'receivables'));
+    `Owed since ${r.since}, ${dAge(r.since)} days. ${esc(r.note||'')}`,'receivables'));
   /* 5. rules already broken, grouped by person. Four separate rows about one man is a
      list you stop reading; one row naming all four rules is a decision about him. */
   const br={};boundaryScan().filter(x=>x.sev==='breach').forEach(x=>{(br[x.who]=br[x.who]||[]).push(x);});
@@ -11352,7 +11370,7 @@ function nextBest(id){
      pxQuote is kept for the floor figure, which the board does not carry. */
   const tr=custTier(id);
   const r=pxQuote(q,0,0,tr?tr.code:'T2');   // v248: the customer's own tier, off the one board
-  const cad=custCadence(id),since=dbet(rows.map(s=>s.date).sort().slice(-1)[0]);
+  const cad=custCadence(id),since=dAge(rows.map(s=>s.date).sort().slice(-1)[0]);
   return {q,paid:paid!=null?+paid.toFixed(2):null,total:r.total,perUnit:r.perUnit,profit:r.profit,margin:r.margin,
     walkTotal:r.walkTotal,cad,since,
     due:cad?since-cad.med:null,                     // positive means overdue by his own habit
@@ -13472,7 +13490,7 @@ function tabPricing(){
     return `<div class="dsc" style="margin-bottom:9px">Shrinkage is expected to fall to <b>${tgt.map(t=>t.pct+'%').join(' and then ')}</b>. Those are an <b>expectation, not a measurement</b>, so the board still prices off the observed figure; this table exists so a decision can be tested against where the desk is trying to get to. Selling prices are held at what each band has actually realised, and only the cost moves.</div>
     <div class="card"><table><thead><tr><th class="l">Shrinkage</th><th>Effective cost</th><th>&le;1 unit</th><th>1 to ${PRICE.retailTo} unit</th><th>Over ${PRICE.retailTo} unit</th><th>Small less bulk</th><th>Bulk on ${units(C.unitsEx)}</th></tr></thead><tbody>${rows}</tbody></table>
     <div class="dsc" style="margin-top:9px"><b>Look down the "small less bulk" column: it does not move.</b> A cost improvement subtracts the same ringgit from every band, so it lifts them all equally and changes the gap between them by nothing at all. At ${fmt(repl)} buying, wholesale turns positive at <b>${tgt[0].pct}%</b> shrinkage, earning ${fmt(bkT)} a unit against ${fmt(bandsNow.small.perUnit-effT)} on a small pack.
-    <br><br>So the two questions are separate and should be decided separately. <b>Is wholesale viable</b> is a cost question, and cheaper salt or less shrinkage both answer it yes. <b>Is wholesale the best use of a unit</b> is a price question, and nothing on the cost side touches it: only the ${fmt(bandsNow.small.perUnit-C.perUnitEx)} a unit between what small packs realise and what bulk realises does, and that gap is set by buyers, not by suppliers.</div></div>`;})()}
+    <br><br>So the two questions are separate and should be decided separately. <b>Is wholesale viable</b> is a cost question, and cheaper ${PRODUCTS[PROD].name.toLowerCase()} or less shrinkage both answer it yes. <b>Is wholesale the best use of a unit</b> is a price question, and nothing on the cost side touches it: only the ${fmt(bandsNow.small.perUnit-C.perUnitEx)} a unit between what small packs realise and what bulk realises does, and that gap is set by buyers, not by suppliers.</div></div>`;})()}
 
   </details>
   <details class="obsec"><summary>Against the market <span class="q">the board beside what is actually paid</span></summary>
@@ -14613,7 +14631,7 @@ function consoHd(t,sub){return `<div class="prodhd"><span class="pd" style="back
    is the first row of the same list the tables below are built from. */
 function obClaims(){
   const sr=(typeof supplierReceivable!=='undefined'&&supplierReceivable&&supplierReceivable.status==='recoverable')?supplierReceivable:null;
-  const row=(who,date,g)=>{const d=dbet(date);return {who:who,d:d,g:+(+g).toFixed(2),n:+(g*(1-provRate(d))).toFixed(2)};};
+  const row=(who,date,g)=>{const d=dAge(date);return {who:who,d:d,g:+(+g).toFixed(2),n:+(g*(1-provRate(d))).toFixed(2)};};
   return sales.filter(s=>txAdvance(s)>0.009).map(s=>row(s.customer,s.date,txAdvance(s)))
     .concat(sr?[row(sr.party,sr.since,sr.amount)]:[])
     .sort((a,b)=>b.d-a.d||b.g-a.g);
@@ -14627,7 +14645,7 @@ function consoOrderBlock(){
   return `<h1>Order book</h1>`+consoHd('Both books')
     +`<div class="conso"><div class="kpis k4">`
     +cell('gold','Owed to you',fmt0(n),g>0.009?`${fmt0(g)} gross; the ladder has already discounted ${fmt0(+(g-n).toFixed(2))}`:'nothing owed to you')
-    +cell(o&&provRate(o.d)>=0.5?'r':'','Chase first',o?ID(o.who):'&mdash;',o?`${Math.max(0,o.d)} days &middot; ${fmt0(o.g)} gross, ${(provRate(o.d)*100).toFixed(0)}% of it already written off by the ladder`:'nothing is owed to you')
+    +cell(o&&provRate(o.d)>=0.5?'r':'','Chase first',o?ID(o.who):'&mdash;',o?`${o.d} days &middot; ${fmt0(o.g)} gross, ${(provRate(o.d)*100).toFixed(0)}% of it already written off by the ladder`:'nothing is owed to you')
     +cell('r','You owe, in cash',fmt0(cf.dueOut),cf.dueOut>0.009?`${fmt0(cf.billsOut)} of supplier bills &middot; ${fmt0(cf.refundsOut)} of refunds`:'no bill and no refund outstanding')
     +cell('','Agreed, nothing moved',fmt0(pend),pendB>0.009?`and ${fmt0(pendB)} of buying agreed the same way`:'no buying agreed the same way')
     +`</div></div>`;
@@ -14700,7 +14718,7 @@ function setProdView(pr){
   PROD=pr; try{localStorage.setItem('saltProd',pr);}catch(e){}
   recompute(); drawProdSw(); render();
 }
-const builders={today:tabToday,forward:tabForward,sourcing:()=>{const b=perProduct(tabSourcing,{skipEmpty:true});return srcHead()+(b||'<div class="card"><div class="dsc">No purchases or sales on any book yet, so there is nothing to source against.</div></div>');},analysis:()=>anaHead()+perProduct(tabAnalysis),map:tabMap,overview:tabOverview,inventory:()=>invHead()+perProduct(tabInventory),financials:()=>consoBlock()+consoCashBlock()+perProduct(tabFinancials),ledger:tabLedger,concentration:tabConcentration,network:tabNetwork,receivables:()=>consoOrderBlock()+perProduct(tabReceivables),add:tabWorkbench,pricing:()=>pxHead()+perProduct(tabPricing),plans:tabPlans,approve:tabApprove};
+const builders={today:tabToday,forward:tabForward,sourcing:()=>{const b=perProduct(tabSourcing,{skipEmpty:true});return srcHead()+(b||'<div class="card"><div class="insight">No purchases or sales on any book yet, so there is nothing to source against.</div></div>');},analysis:()=>anaHead()+perProduct(tabAnalysis),map:tabMap,overview:tabOverview,inventory:()=>invHead()+perProduct(tabInventory),financials:()=>consoBlock()+consoCashBlock()+perProduct(tabFinancials),ledger:tabLedger,concentration:tabConcentration,network:tabNetwork,receivables:()=>consoOrderBlock()+perProduct(tabReceivables),add:tabWorkbench,pricing:()=>pxHead()+perProduct(tabPricing),plans:tabPlans,approve:tabApprove};
 /* ============ SEVEN VIEWS OVER FIFTEEN TABS (v341, move 4 of the rebuild) ============
    The fifteen tabs were fifteen reports stacked: a megabyte to open for one figure, with the
    method prose standing open on every one. A view leads with one tab open, folds that tab's

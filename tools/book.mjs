@@ -182,7 +182,11 @@ export function pricingSnapshot(w) {
     const before = call("PROD");
     let floors = null, repl = null, stockCost = null, inputs = null;
     try {
-      w.eval("PROD=" + JSON.stringify(p));
+      /* v407, round seven, MATERIAL: PROD was assigned bare and the walk was never re-run, so
+         every walk-derived global stayed on the PREVIOUS book and all twenty-four oil floors came
+         out wrong. This is the production path: it is what the D1 mirror carries and what the
+         below-floor flag is read against, so the snapshot must be taken on the book it names. */
+      w.eval("PROD=" + JSON.stringify(p) + ";if(typeof recompute==='function')recompute();");
       stockCost = numOrNull(call("stockCostFor(" + JSON.stringify(p) + ")"));
       repl = numOrNull(call("replCost()"));
       /* v337: THE ENGINE'S OWN INPUTS, so the drafter can price any size with the module rather
@@ -196,7 +200,7 @@ export function pricingSnapshot(w) {
         };
       }
     } catch (e) { /* a product the desk cannot price yields nulls, which the drafter must handle */ }
-    finally { if (before != null) { try { w.eval("PROD=" + JSON.stringify(before)); } catch (e) { } } }
+    finally { if (before != null) { try { w.eval("PROD=" + JSON.stringify(before) + ";if(typeof recompute==='function')recompute();"); } catch (e) { } } }
     byProduct[p] = { stockCost, replCost: repl, floors, inputs };
   }
 

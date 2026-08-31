@@ -175,8 +175,13 @@ export function checkCorrection(fields, book, target, isSale) {
   /* round six: cancelled-and-delivered is a contradiction the desk then chases as money owed
      while the delivered unit leaves the shelf uncosted. The two fields are individually
      correctable, so the PAIR is checked here, on the state the correction would leave. */
-  if (after.cancelled === true && +after.deliveredQty > 0.009) {
-    errs.push("the corrected row would be cancelled AND carry a delivery, which contradicts itself: restate qty by Modification for what was delivered, then cancel the remainder");
+  /* v407, round seven: a LOT records receivedQty, so a Correction cancelling a landed lot walked
+     past a gate that tested deliveredQty alone, kept its units on the shelf and its cost in the
+     basis, and therefore moved wavgBuy and every floor beneath it. Whichever field the direction
+     uses, the contradiction is the same one. */
+  const movedOnRow = Math.max(+after.deliveredQty || 0, +after.receivedQty || 0);
+  if (after.cancelled === true && movedOnRow > 0.009) {
+    errs.push(`the corrected row would be cancelled AND carry ${movedOnRow} unit already moved, which contradicts itself: restate qty by Modification for what moved, then cancel the remainder`);
   }
 
   /* AN ATTRIBUTION IS THREE FIELDS THAT ONLY MEAN ANYTHING TOGETHER, and the desk's own rule is
@@ -346,7 +351,11 @@ export function flagsFor(entry, row, book, priced) {
         that it is a typical rate rather than a rule. */
   const party = row.customer || row.supplier;
   const theirs = isSale
-    ? committed.filter((s) => s.customer === party && prodOf(s) === p && isNum(s.total) && isNum(s.qty) && s.qty > 0)
+    /* v407, round seven: the TWIN of the fix sixteen lines above. v406 added the zero-total
+       filter to the observed range and not to the party's own history, so one free unit still
+       dragged a party's median down: CS6-BS read RM 108.50 against a real RM 110, which misfires
+       at a rate they have actually paid and stays silent 10.9% adrift. Same rule, both sets. */
+    ? committed.filter((s) => s.customer === party && prodOf(s) === p && isNum(s.total) && s.total > 0 && isNum(s.qty) && s.qty > 0)
       .map((s) => s.total / s.qty).sort((a, b) => a - b)
     : [];
   if (rate != null && theirs.length >= 2) {
@@ -387,8 +396,14 @@ export function flagsFor(entry, row, book, priced) {
 
   /* 4. BELOW COST. Separate from the floor because it is a different fact and the book has
         actually done it: the RM6 oil resell of 11 Aug. */
-  if (isSale && isNum(priced.cost) && rate != null && rate < priced.cost) {
-    flags.push(`This sells at RM ${round(rate)}/unit against a lot that cost RM ${round(priced.cost)}: it loses money on every unit.`);
+  /* v407, round seven: a cost typed on the full order sheet reached the row and not this flag,
+     which priced off the shelf, so an under-water row drew no flag and the prose beside it called
+     it profitable while the card's own KPI grid printed the opposite number. The row's own stated
+     cost wins where there is one, because that is what every margin on the row is measured
+     against once it lands. */
+  const ownCost = isNum(row && row.cost) ? +row.cost : (isNum(priced.cost) ? priced.cost : null);
+  if (isSale && ownCost != null && rate != null && rate < ownCost) {
+    flags.push(`This sells at RM ${round(rate)}/unit against a cost of RM ${round(ownCost)}${isNum(row && row.cost) ? " stated on the row itself" : " from the shelf"}: it loses money on every unit.`);
   }
 
   /* 5. A BLENDED SHELF. The cost given is an average and the row may in truth draw two lots. */
