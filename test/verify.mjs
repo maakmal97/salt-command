@@ -2820,7 +2820,10 @@ section("v408: the update panel does the arithmetic so a tap cannot overpay");
     ok(w.eval("document.getElementById('updDate').value") === w.eval("TODAY.toISOString().slice(0,10)"),
       "the date is filled with today and is an editable input");
 
-    w.eval("updSet(null," + outstanding + ",0);");
+    /* CLICK THE CHIP. Passing the outstanding into updSet() would assert this test's own
+       arithmetic, not the panel's: a mutation that sent the row's TOTAL rode this check green
+       until the chip was clicked instead. The control has to be the thing under test. */
+    w.eval("[].filter.call(document.querySelectorAll('.updchip'),b=>/Paid in full/.test(b.textContent))[0].click();");
     const filled = +w.eval("document.getElementById('updCash').value");
     ok(Math.abs(filled - outstanding) < 0.005 && filled < seed.total - 0.005,
       `Paid in full fills the outstanding RM ${filled}, not the total RM ${seed.total}`);

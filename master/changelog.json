@@ -1,5 +1,17 @@
 [
  {
+  "v": "v408",
+  "d": "31 Aug 2026",
+  "t": "UPDATING A ROW IS ONE TAP AND THE DESK DOES THE ARITHMETIC, WHICH IS ALSO HOW THE OVERPAY WENT",
+  "n": [
+   "<b>HIS INSTRUCTION: THE STATES A ROW MOVES THROUGH SHOULD BE ONE TAP EACH, FILLING THEIR OWN FIGURES,</b> with the date already saying today and ready to edit, and the partial cases asking for the one number they need. As little typing and searching through forms as possible, stated as the ethos of the desk and not just of this panel. The row editor now opens on six states rather than thirty fields: Paid in full, Delivered in full, Completed, Back to pending, Cancel, and Defaulted. Each is offered only where it means something, so Defaulted appears on lots alone, because the engine reads that flag on purchases and nowhere else, and a control that does nothing is worse than no control.",
+   "<b>AND IT FOUND AN OVERPAY THAT HAD BEEN LIVE ON EVERY PART-PAID ROW.</b> The three buttons this replaces queued the row's FULL TOTAL as a Fulfilment, and a Fulfilment is a DELTA the fold ADDS: tapping Paid on a row already carrying RM 50 of RM 100 queued another RM 100 and took the row to RM 150. Nothing caught it, at any layer. Every figure the panel offers is the OUTSTANDING one, computed from the row itself, so the same tap cannot overpay; both boxes stay editable for the partial cases; and an amount above what is outstanding is called out on screen rather than silently accepted.",
+   "<b>THE ROW MOST OFTEN UPDATED HAD NO QUICK ACTION AT ALL.</b> The old bar rendered on PENDING rows only, so a part-paid order, which is the ordinary state of a live debt, went through the thirty-field sheet. The control is on every live row now, and the sheet is one fold below the panel, unchanged and complete, for the corrections a state cannot say.",
+   "<b>IT INVENTS NO KIND AND SKIPS NO GATE.</b> A movement queues a Fulfilment, a cancellation a Cancellation, a restatement a Correction, which are the three the drafter and the fold already take, addressed by rid rather than the party-date-total key that has collided before. It queues; the drafter flags it; Approve takes the tap. A sentence under the panel says what the row will read after the update, which is the part that removes the need to go and check, and it refuses on screen what v407 taught the fold to refuse, so nobody queues a row the fold will throw back.",
+   "<b>THE ASSERTION THAT MATTERED MOST DID NOT FIRE, AND THAT IS WORTH RECORDING.</b> The first version of the suite check passed the outstanding figure into the panel's own setter and then asserted the panel had it, which tests the test. Reintroducing the overpay rode it green. It clicks the chip now, and the same mutation fails two assertions by name. An instrument whose inputs are computed by the code it is checking cannot fail, and this is the third round in a row that lesson has had to be learnt on a real one. 724 assertions from 711."
+  ]
+ },
+ {
   "v": "v407",
   "d": "30 Aug 2026",
   "t": "ROUND SEVEN SAID NOT DRY, AND NINE OF ITS FIFTEEN CLOSE HERE: THE TWIN SITES v406 LEFT, AND THE FIRST CHECKS THAT RENDER A BOOK THAT IS NOT THIS ONE",
