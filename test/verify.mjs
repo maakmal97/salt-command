@@ -2683,6 +2683,62 @@ section("Orders and money — cash is stated in the P&L, once (v401)");
      "and states the revenue once, not as Revenue and again as Invoiced");
 }
 
+section("Monthly statements: one home, and the laws a sent document lives by (29 Aug 2026)");
+{
+  /* v388 removed the desk's statement panel and all five functions as uncalled, and
+     tools/make_statements.cjs called four of them: the monthly statements broke with
+     nothing here to say so, exactly the blindness the v388 entry recorded ("no test
+     covered them"). The rules live in tools/make_statements.mjs now, proven
+     byte-identical to the v387 desk's own output on the v387 book when they moved.
+     What this section keeps is not the bytes but the laws: the tool builds, the desk
+     stays out of it, and nothing on a statement is anything a customer must not see. */
+  const { stmtRows, stmtDoc, makeStatements } = await import("../tools/make_statements.mjs");
+  const master = readFileSync(resolve(REPO, "master", "salt_command.html"), "utf8");
+  ok(!master.includes("function stmtRows"),
+     "the desk carries no statement functions: one home, and it is the module (if a panel returns, inline the module like the engines)");
+
+  const dir = join(REPO, "test", "tmp", "statements");
+  rmSync(dir, { recursive: true, force: true });
+  const quiet = console.log; console.log = () => { };
+  let run;
+  try { run = makeStatements(dir, "2026-08-29"); } finally { console.log = quiet; }
+  rmSync(dir, { recursive: true, force: true });
+  ok(run.made > 0 && run.made === run.sheets.length, `the tool builds (${run.made} statements)`);
+
+  const book = JSON.parse(readFileSync(resolve(REPO, "ledger", "book.json"), "utf8"));
+  const codes = [...new Set([...book.sales.map(s => s.customer), ...book.purchases.map(p => p.supplier)])].filter(Boolean);
+  const alone = (html, c) => new RegExp("(^|[^A-Za-z0-9-])" + c + "($|[^A-Za-z0-9-])").test(html);
+  /* the vocabulary law is about the document's WORDS, so the stylesheet and the markup
+     come off first: margin:0 is CSS, "margin" in a sentence is a leak. Tested in both
+     directions when written: "margin call" in a doctored text does trip it. */
+  const words = (html) => html.replace(/<style>[\s\S]*?<\/style>/g, " ").replace(/<[^>]+>/g, " ");
+  let vocab = 0, cross = 0, invalid = 0, noted = 0;
+  for (const s of run.sheets) {
+    const text = words(s.html);
+    if (/\b(cost|margin|tier|floor|shrink|profit)/i.test(text)) { vocab++; console.log("  leak vocabulary on " + s.who); }
+    for (const c of codes) if (c !== s.who && alone(s.html, c)) { cross++; console.log("  " + s.who + " carries " + c); }
+    if (s.html.includes("Invalid Date")) invalid++;
+    for (const row of book.sales) if (row.customer === s.who && row.note
+      && (s.html.includes(row.note) || text.includes(row.note))) noted++;
+  }
+  ok(vocab === 0, "no statement speaks the seller's vocabulary: cost, margin, tier, floor, shrinkage, profit");
+  ok(cross === 0, "no statement names any other party, buyer or supplier");
+  ok(invalid === 0, "no statement prints Invalid Date: an undated row shows an empty date cell and its state says what it is");
+  ok(noted === 0, "no ledger note travels: the statement is built from the order, never copied from the book's prose");
+
+  /* the cancelled law (v193): the row stays on the page and counts in nothing */
+  const cxParty = (book.sales.find(s => s.cancelled) || {}).customer;
+  if (cxParty) {
+    const o = { from: null, to: "2026-08-29", completed: true, open: true, pending: true, dates: true, brand: "Salt Command", issued: "29 Aug 2026" };
+    const rows = stmtRows(cxParty, o);
+    const cx = rows.filter(r => r.cancelled);
+    ok(cx.length > 0 && cx.every(r => r.owed === 0), `a cancelled order is shown and owes nothing (${cxParty})`);
+    const html = stmtDoc(cxParty, rows, o);
+    const counted = rows.filter(r => !r.cancelled).length;
+    ok(html.includes(">" + counted + " order"), "and the footer counts only the orders that stand");
+  }
+}
+
 section("Units — no new kg-named identifier, anywhere (round 5, his call 6)");
 {
   /* The desk retired the mass symbol at v161 and sells by the unit, but the code still spoke

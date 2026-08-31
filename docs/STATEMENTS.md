@@ -44,23 +44,30 @@ reconcile them.
 
 ## How to produce them
 
-Do NOT write a new generator and do NOT reimplement the statement rules. They live in the desk
-itself (`stmtRows`, `stmtRefunds`, `stmtRecon`, `stmtDoc` in `master/salt_command.html`), and a
-second copy would drift the first time either changed. That is the same rule `data.json` obeys
-and for the same reason.
+Do NOT write a new generator and do NOT reimplement the statement rules. They live in
+`tools/make_statements.mjs` and nowhere else. Until v388 they lived in the desk and the tool
+drove it headlessly; v388 removed the desk's statement panel and all five functions on his
+instruction, so the module now carries the v387 text itself, proven byte-identical against the
+v387 desk's own output when it moved (29 Aug 2026). Every figure still comes from
+`ledger/book.json` and `engine/position.mjs`, the same book and engine the desk runs, so the
+arithmetic cannot drift; what lives in the module alone is the statement's own law. If the desk
+ever regains a statements panel, inline the module the way `tools/engine.mjs` inlines the
+engines: one copy, wherever it lives.
 
 ```bash
-node tools/make_statements.cjs master/salt_command.html statements/<YYYY-MM> <YYYY-MM-DD>
+node tools/make_statements.mjs statements/<YYYY-MM> <YYYY-MM-DD>
 ```
 
-jsdom is already a devDependency, so `npm ci` is all the setup there is.
+Plain node, no jsdom, no network, and the master is not an input.
 
 ## Before committing
 
 **Statements carry desk CODES and never a real name.** That is checked, not assumed: the
-generator reads only the desk, and the desk holds no names. A scan of a full run against the
-plaintext directory on 20 Aug found nothing, once `sans-serif` in the font stack was excluded
-from the crude substring test that first flagged it.
+generator reads only the book and the engine, and neither holds a name. A scan of a full run
+against the plaintext directory on 20 Aug found nothing, once `sans-serif` in the font stack
+was excluded from the crude substring test that first flagged it, and since 29 Aug the suite's
+statements section builds a full run and greps every statement for the seller's vocabulary,
+for any other party's code and for the ledger's own notes.
 
 Commit the folder and push. Nothing deploys and nothing touches the ledger: this task reads the
 desk and writes files beside it.
