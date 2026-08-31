@@ -2950,6 +2950,79 @@ section("v410: the P&L says which period each of its three columns covers");
   try { rm(T); } catch (e) { /* best effort */ }
 }
 
+
+section("v411: the Worker's SQL run against the real schema");
+{
+  /* WHAT THIS ADDS, AND WHAT IT DELIBERATELY DOES NOT. "Worker - drafts and approval" above
+     already covers the key gate, created/existed, the listing, the card's contents, the 409 on a
+     second decision and the uncommitted filter, against a hand-rolled D1 mock that throws on any
+     statement it does not know. That mock is honest and it works. The ONE thing it cannot do is
+     execute the Worker's SQL against the ACTUAL SCHEMA, so a column that does not exist, a
+     constraint that does not hold or a NOT NULL the migrations declare would pass it. This runs
+     the real migrations in a real SQLite and drives the real Worker over them.
+     It also covers four edges the section above leaves: an unknown id, a reject AFTER an approve,
+     committing something still pending, and committing twice.
+     No credential, no network, and production D1 is never touched. */
+  let DatabaseSync = null;
+  try { ({ DatabaseSync } = await import("node:sqlite")); } catch (e) { /* older runtime */ }
+  if (!DatabaseSync) {
+    console.log("  SKIP: node:sqlite is unavailable here, so the Worker's SQL was NOT run against the real schema.");
+    console.log("        Everything else about /drafts is still covered by the mock above. Needs node 22.5+ or 24.");
+  } else {
+    const { readFileSync: rf, readdirSync: rd } = await import("node:fs");
+    const { join } = await import("node:path");
+    const db = new DatabaseSync(":memory:");
+    for (const f of rd(join(REPO, "migrations")).filter((x) => /^\d+_.*\.sql$/.test(x)).sort()) {
+      db.exec(rf(join(REPO, "migrations", f), "utf8"));
+    }
+    const D1 = { prepare(sql) {
+      const st = db.prepare(sql);
+      const mk = (a2) => ({
+        run() { const r = st.run(...a2); return { meta: { changes: Number(r.changes || 0) } }; },
+        first() { const r = st.get(...a2); return r === undefined ? null : r; },
+        all() { return { results: st.all(...a2) }; },
+      });
+      const self = mk([]); self.bind = (...a2) => mk(a2); return self;
+    } };
+    const KEY = "suite-key";
+    const env = { SALT_LEDGER: D1, SALT_WRITE_KEY: KEY, REQUIRE_ACCESS: "0", SALT_QUEUE: null };
+    const call = async (method, path, body) => {
+      const res = await worker.fetch(new Request("https://x.workers.dev" + path, {
+        method, headers: { "Content-Type": "application/json", "X-Salt-Key": KEY },
+        body: body === undefined ? undefined : JSON.stringify(body) }), env, { waitUntil() {} });
+      let j = null; try { j = JSON.parse(await res.text()); } catch (e) { /* not json */ }
+      return { status: res.status, j };
+    };
+    /* a bad statement throws out of SQLite rather than returning a value, and a throw here would
+       take the rest of the suite with it, so it is caught and named. */
+    const guard = async (label, fn) => { try { return await fn(); } catch (e) { ok(false, label + " -- " + String(e.message || e).slice(0, 90)); return null; } };
+    const ID = "suite-sql-1";
+    const D = { id: ID, collection: "sales",
+      entry: { at: "2026-08-31T00:00:00.000Z", party: "CG5-SB", qty: 1, total: 90 },
+      row: { customer: "CG5-SB", product: "salt", date: "2026-08-31", qty: 1, total: 90, cost: 48.5 },
+      reasoning: "one unit at the house rate", flags: ["a flag"], drafter: "suite" };
+
+    /* the point of the section: every statement the Worker issues must run on the real schema */
+    const made = await guard("the Worker's INSERT runs against the migrations' own draft table", () => call("POST", "/drafts", D));
+    ok(made && made.status === 200 && made.j.created === true,
+      "the Worker's INSERT runs against the migrations' own draft table");
+    const listed = await guard("the Worker's SELECT names only columns the schema has", () => call("GET", "/drafts?status=pending"));
+    ok(listed && listed.status === 200 && listed.j.drafts.some((d) => d.id === ID),
+      "and its SELECT reads the row back, so every column it names exists");
+
+    ok((await call("POST", "/drafts/no-such-id/approve", {})).status === 404,
+      "deciding an id that is not there is 404, not a silent success");
+    ok((await call("POST", "/drafts/" + ID + "/committed", {})).status === 409,
+      "a PENDING draft cannot be marked committed");
+    ok((await call("POST", "/drafts/" + ID + "/approve", {})).status === 200, "it approves");
+    ok((await call("POST", "/drafts/" + ID + "/reject", {})).status === 409,
+      "a reject AFTER an approve is refused, so a double tap cannot flip a decision");
+    ok((await call("POST", "/drafts/" + ID + "/committed", {})).j.committedAt, "an approved draft commits");
+    ok((await call("POST", "/drafts/" + ID + "/committed", {})).j.alreadyCommitted === true,
+      "and committing it twice is reported rather than applied twice");
+  }
+}
+
 /* ---- done ----------------------------------------------------------------------- */
 
 section("Round 7: the states no suite check had ever rendered");
