@@ -1,5 +1,16 @@
 [
  {
+  "v": "v411",
+  "d": "31 Aug 2026",
+  "t": "THE CLOUD LEG, EXERCISED AT LAST, AND A CRITIC'S CLAIM THAT TURNED OUT TO BE FALSE",
+  "n": [
+   "<b>ROUND SEVEN'S CRITIC SAID NOTHING HAD EVER EXERCISED THE WORKER. IT IS FALSE, AND I REPEATED IT BEFORE CHECKING.</b> The suite has seven Worker sections, and one of them already drives the whole approval contract against a hand-rolled D1 mock: the key gate, the created and existed pair, the listing, the card's contents, the 409 on a second decision and the uncommitted filter. That mock is honest, it throws on any statement it does not recognise, and it works. The first version of this section duplicated nineteen of its assertions before the duplication was noticed. It is trimmed to the part that earns its place.",
+   "<b>WHAT A MOCK CANNOT DO IS RUN THE SQL AGAINST THE REAL SCHEMA.</b> Its regex matches the statement and hands back the row it was already holding, so a column that does not exist, a constraint that does not hold or a NOT NULL the migrations declare would all pass it. This applies the real migrations to a real SQLite and drives the real Worker over them. Proved by renaming one column in the select list to something the schema has not got: the mock is blind to it and this fails naming it. Four edges the older section leaves are covered too: an unknown id, a reject AFTER an approve, committing something still pending, and committing twice.",
+   "<b>CI MOVES TO NODE 24 SO IT ACTUALLY RUNS.</b> node:sqlite is not available unflagged on 22, and a check that quietly skips in CI is exactly what round seven called out about the name scan. If the runtime ever lacks it the section says so loudly instead of passing. A bad statement throws out of SQLite rather than returning a value, and a throw would take the rest of the suite with it, so it is caught and named.",
+   "<b>THE REST OF THE LEG WAS VERIFIED BY HAND AND READ-ONLY.</b> The live revision matches the committed one; an unkeyed write to the queue is refused; the directory endpoint returns an empty object; the vault returns its envelope and nothing else, with an id map carrying party codes and no name-shaped string anywhere in it. The update chain's dry run reports every surface level and the replay check clean. The stand-down guard was tested in a throwaway repository in both directions, and the silent bug it was written for reproduced on the way: a plain diff does not see an untracked file and a porcelain status does. What could NOT be reached from here is anything going through wrangler, which has no API token in a non-interactive session, so the drain and the mirror seed still need his machine. 747 assertions from 739."
+  ]
+ },
+ {
   "v": "v410",
   "d": "31 Aug 2026",
   "t": "THREE PERIODS SAT IN ONE PART AND NONE OF THEM SAID WHICH IT WAS",
