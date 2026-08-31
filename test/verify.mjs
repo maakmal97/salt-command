@@ -2113,10 +2113,16 @@ section("Orders and money — every basis is named where the figure is stated (v
      try{obj.destroy()}catch(e){} or a per-point priceLadder probe is the designed null path
      and stays legal. The existence check runs first so a renamed function fails loudly
      instead of silently scanning nothing. */
-  const EMPTYCATCH = /catch\s*(\(\s*[A-Za-z_$][\w$]*\s*\))?\s*\{\s*\}/g;
+  /* v412, ROUND SEVEN #13: the body had to be WHITESPACE, so a catch holding only a block
+     comment was invisible to the scan and a swallow could be written straight past it. A
+     comment is not a handler, so a catch whose only body is one now counts as empty. */
+  const EMPTYCATCH = /catch\s*(\(\s*[A-Za-z_$][\w$]*\s*\))?\s*\{\s*(?:\/\*[\s\S]*?\*\/|\/\/[^\n]*\n)?\s*\}/g;
+  /* v412: the twelve missed drawConcCharts, drawNetworkCharts and drawLedgerCharts, and TWO of
+     the four sites where this fault was actually found and fixed at v385 are among them. */
   for (const fn of ["trackCharts", "wirePricing", "drawPriceCharts", "drawEarnChart", "drawBoardCharts",
                     "drawRecvCharts", "drawFinCharts", "drawSourcingCharts", "drawOutlookChart",
-                    "drawAnalysis", "drawTodayCharts", "drawFwdCharts"]) {
+                    "drawAnalysis", "drawTodayCharts", "drawFwdCharts",
+                    "drawConcCharts", "drawNetworkCharts", "drawLedgerCharts"]) {
     const at = src.indexOf(`function ${fn}(`);
     ok(at >= 0, `${fn} exists for the empty-catch scan to cover`);
     const end = src.indexOf("\nfunction ", at + 12);
@@ -3090,6 +3096,18 @@ section("Round 7: the states no suite check had ever rendered");
     const ana = await paneOf(m, "analysis", "salt");
     ok(!ana.threw, `Analysis renders on an all-empty book -- ${ana.threw}`);
     ok(!/Infinity|\u221e/.test(ana.text), "Analysis prints no infinity on a book with no stock history");
+  }
+
+  /* 3b. v412: a book whose customers have bought NOTHING must not print RM 1 of revenue. The
+        ||1 is a divide-by-zero guard and it was the displayed total too; v406 guarded the display
+        on the customer COUNT, which is not what makes the sentinel. */
+  {
+    const b3 = JSON.parse(JSON.stringify(bookNow));
+    (b3.sales || []).forEach((r) => { r.total = 0; r.cash = 0; });
+    const r3 = await paneOf(withBook(b3), "concentration", "salt");
+    ok(!r3.threw, `Customers renders on a book with customers and nil revenue -- ${r3.threw}`);
+    ok(!/All RM 1/.test(r3.text) && !/>RM 1</.test(r3.html || ""),
+      "the All row prints the real revenue total, not the divide-by-zero sentinel");
   }
 
   /* 4. one rule for a day count. v406 floored four surfaces and left four, so the same money

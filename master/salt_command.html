@@ -11823,7 +11823,12 @@ function networkStats(){
   return out;
 }
 function custBadges(){const m={};pricedSales.filter(s=>isPerson(s.customer)).forEach(s=>{if(!m[s.customer])m[s.customer]={id:s.customer,n:0,margin:0,last:s.date};const o=m[s.customer];o.n++;o.margin+=s.total-s.qty*costOf(s);if(s.date>o.last)o.last=s.date;});const arr=Object.values(m);const mg=arr.map(c=>c.margin).filter(x=>x>0).sort((a,b)=>b-a);const q=mg.length?mg[Math.max(0,Math.ceil(mg.length/4)-1)]:Infinity;const out={};arr.forEach(c=>{const rec=dbet(c.last);let tier=null;if(rec>30)tier={l:'Dormant',c:'bdorm'};else if(c.n>=3&&rec<=14)tier={l:'Loyal',c:'bloyal'};else if(c.n>=2&&rec<=21)tier={l:'Regular',c:'breg'};else if(c.n===1&&rec<=14)tier={l:'New',c:'bnew'};out[c.id]={tier,hi:c.margin>0&&c.margin>=q};});return out;}
-function concentration(){const bc=byCustomer(),tot=bc.reduce((a,c)=>a+c.rev,0)||1;const top=bc[0]?bc[0].rev/tot*100:0;const top3=bc.slice(0,3).reduce((a,c)=>a+c.rev,0)/tot*100;const hhi=bc.reduce((a,c)=>a+Math.pow(c.rev/tot*100,2),0);return{bc,tot,top,top3,hhi,n:bc.length};}
+/* v412, ROUND SEVEN #3: `||1` is a divide-by-zero guard and it was also the DISPLAYED total,
+   so a book with customers who have bought nothing printed "All RM 1, 100%" and divided the
+   real margin by it. v406 guarded the display on the customer COUNT, but the sentinel is made
+   by the revenue SUM, so a book with customers and nil revenue still showed it. The sum and
+   the divisor are two different things now: revSum is what is printed, tot is what divides. */
+function concentration(){const bc=byCustomer(),revSum=+bc.reduce((a,c)=>a+c.rev,0).toFixed(2),tot=revSum||1;const top=bc[0]?bc[0].rev/tot*100:0;const top3=bc.slice(0,3).reduce((a,c)=>a+c.rev,0)/tot*100;const hhi=bc.reduce((a,c)=>a+Math.pow(c.rev/tot*100,2),0);return{bc,tot,revSum,top,top3,hhi,n:bc.length};}
 let concSort={key:'rev',dir:-1};
 let concTail=false;/* the database shows its first eight and folds the rest; the control
    that folds them carries their revenue and share, so the shut state still answers. */
@@ -12164,7 +12169,7 @@ function tabConcentration(){
     : `<tbody><tr><td class="l" style="color:var(--mut)"><b>Nothing recorded</b>, and an unfilled order leaves no trace, so empty shelves read as no demand. Free to sell <b>${units(Math.max(0,currentStock-defUnits))}</b>. Log one under <b>Enter &rarr; Transaction &rarr; Turned away</b>.</td></tr></tbody>`}</table></div>
 
   <h2 style="margin-top:22px">The database <span class="sub" style="font-weight:400">every customer, sortable on any column</span> <span class="rule"></span></h2>
-  <div class="card"><table class="sortt"><thead><tr><th class="l" onclick="sortConc('id')">Customer${ind('id')}</th><th onclick="sortConc('rev')">Revenue${ind('rev')}</th><th onclick="sortConc('share')">Share${ind('share')}</th><th onclick="sortConc('kg')">Volume${ind('kg')}</th><th onclick="sortConc('margin')">Margin${ind('margin')}</th><th onclick="sortConc('marginpct')">Margin %${ind('marginpct')}</th></tr></thead><tbody>${rows}<tr class="tot"><td class="l">All</td><td>${fmt0(c.n?c.tot:0)}</td><td>100%</td><td>${units(c.bc.reduce((a,x)=>a+x.kg,0))}</td><td>${fmt0(c.bc.reduce((a,x)=>a+x.margin,0))}</td><td>${(c.tot>0?c.bc.reduce((a,x)=>a+x.margin,0)/c.tot*100:0).toFixed(0)}%</td></tr></tbody></table></div>${tailBtn}`;
+  <div class="card"><table class="sortt"><thead><tr><th class="l" onclick="sortConc('id')">Customer${ind('id')}</th><th onclick="sortConc('rev')">Revenue${ind('rev')}</th><th onclick="sortConc('share')">Share${ind('share')}</th><th onclick="sortConc('kg')">Volume${ind('kg')}</th><th onclick="sortConc('margin')">Margin${ind('margin')}</th><th onclick="sortConc('marginpct')">Margin %${ind('marginpct')}</th></tr></thead><tbody>${rows}<tr class="tot"><td class="l">All</td><td>${fmt0(c.revSum)}</td><td>100%</td><td>${units(c.bc.reduce((a,x)=>a+x.kg,0))}</td><td>${fmt0(c.bc.reduce((a,x)=>a+x.margin,0))}</td><td>${(c.tot>0?c.bc.reduce((a,x)=>a+x.margin,0)/c.tot*100:0).toFixed(0)}%</td></tr></tbody></table></div>${tailBtn}`;
 }
 /* ---- the three Customers charts (v165) -------------------------------------
    All three read the same numbers the tables do; none of them models anything. Pareto
