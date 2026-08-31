@@ -282,7 +282,10 @@ section("The public desk carries no name and no place");
 {
   const BIO = `${DATA_DIR}/salt_bio.json`;
   if (!existsSync(BIO)) {
-    ok(true, "salt_bio.json is not on this machine, so the name scan is skipped");
+    /* a SKIP, not a pass: this line must not count as proof. The scan needs the plaintext
+       directory, which lives only on the laptop and may not be committed in any form, hashed
+       included (hard rule 3), so CI cannot carry it. It runs wherever the fold runs. */
+    console.log("  SKIP: salt_bio.json is not on this machine, so the public-desk name scan did not run here");
   } else {
     /* HARD RULE 3, ENFORCED RATHER THAN TRUSTED. public/desk.html is committed AND served
        publicly, so a customer's name or neighbourhood appearing anywhere in it, including
@@ -549,10 +552,25 @@ section("Build — patches, scripts, no externals");
     ok(html.includes("if(idle())location.reload(); else offer(j.v)"),
       "a reload only happens when the desk is idle, otherwise it offers");
 
-    /* the id must actually move when the master does, or the poll can never fire */
-    const bumped = html.replace("</body>", "<!-- x --></body>");
-    ok(createHash("sha256").update(bumped).digest("hex").slice(0, 16) !== rev.id,
-      "a changed build produces a different id");
+    /* the id must actually move when the master does, or the poll can never fire. Round six:
+       the old check hashed a mutated copy of the built desk alone and compared it to an id
+       computed over DIFFERENT inputs by a DIFFERENT recipe, so the two always differed and
+       the assertion could fail only on a hash collision; with the id pinned to a constant in
+       build.mjs, the poll, the deploy gate and CI's comparison all dead, the suite stayed
+       green. This recomputes the id by build.mjs's own recipe (the built source with the
+       placeholder restored, then sw.js and each sorted src/*.js, all NUL-separated exactly as
+       build.mjs concatenates them) and demands the recorded id reproduce exactly. */
+    const parts = html.split(rev.id);
+    ok(parts.length === 2, `the baked id appears exactly once in the built page (found ${parts.length - 1})`);
+    const fs2 = await import("node:fs");
+    let workerSrc = "";
+    for (const f of fs2.readdirSync(join(REPO, "src")).filter((n) => n.endsWith(".js")).sort())
+      workerSrc += f + " " + readFileSync(join(REPO, "src", f), "utf8") + " ";
+    const swSrc = readFileSync(join(REPO, "public", "sw.js"), "utf8");
+    const recomputed = createHash("sha256")
+      .update(parts.join("__SALT_BUILD_ID__")).update(" sw ").update(swSrc).update(" worker ").update(workerSrc)
+      .digest("hex").slice(0, 16);
+    ok(recomputed === rev.id, "rev.id reproduces from the build's own inputs by the build's own recipe");
   }
 }
 
@@ -859,7 +877,7 @@ section("Drafter — rows, refusals and flags");
 
   /* With a key, a Fulfilment kind and a matching OPEN snapshot, it drafts. */
   const openBook = { ...book, version: "vTEST", state: { ...(book.state || {}), OPEN: { v: "vTEST", byKey: {
-    "CC5-OKR|2026-08-01|90": { p: "CC5-OKR", dir: "S", q: 1, t: 90, cash: 0, mv: 0, d: "2026-08-01", st: "dueMoney", oweRM: 90, oweKg: 1 },
+    "CC5-OKR|2026-08-01|90": { p: "CC5-OKR", dir: "S", q: 1, t: 90, cash: 0, mv: 0, d: "2026-08-01", st: "dueMoney", oweRM: 90, oweUnits: 1 },
   } } } };
   const amend = draftRow({ at: "x", payload: { mode: "amend", kind: "Fulfilment", direction: "SELL",
     party: "CC5-OKR", orderKey: "CC5-OKR|2026-08-01|90", date: "2026-08-20", cash: 90, kg: 1 } }, openBook);
@@ -1267,7 +1285,7 @@ section("Desk — the row editor names only fields CORRECTABLE holds");
 
   /* ONE TABLE, READ, NEVER COPIED. A second copy of the list is how the write and the record
      came apart in the first place, so the guard reads the engine's own export. */
-  const edSubmit = master.slice(master.indexOf("function edSubmit(){"), master.indexOf("function ledQuick("));
+  const edSubmit = master.slice(master.indexOf("function edSubmit(){"), master.indexOf("function goEl("));
   ok(edSubmit.includes("POSITION_ENGINE.CORRECTABLE"), "the guard checks against the engine's own table");
   ok(edSubmit.indexOf("edStray.length") < edSubmit.indexOf("queue.push"),
     "and refuses BEFORE the push, so a field the fold would refuse is never queued");
@@ -1409,9 +1427,9 @@ section("Engine — the position, out of the desk (v338)");
   ok(/Deferred/.test(X.txStat({ qty: 2, total: 200, cash: 200, deliveredQty: 1 }).order), "paid ahead of delivery is deferred");
   ok(X.txStat({ qty: 1, total: 100, cash: 0, settledRM: 100, rebate: true, deliveredQty: 1 }).order === "In-Kind", "a settled rebate is In-Kind");
   ok(X.txAdvance({ qty: 2, total: 200, cash: 100, deliveredQty: 2 }) === 100, "the advance is what has been delivered and not paid for");
-  ok(X.txDeferKg({ qty: 2, total: 200, cash: 200, deliveredQty: 1 }) === 1, "the deferral is what has been paid for and not delivered");
-  ok(X.poRecvKg({ qty: 10, pending: true }) === 0 && X.poRecvKg({ qty: 10, defaulted: true }) === 0
-     && X.poRecvKg({ qty: 10, inTransit: true }) === 0 && X.poRecvKg({ qty: 10, receivedQty: 14 }) === 10 && X.poRecvKg({ qty: 10 }) === 10,
+  ok(X.txDeferUnits({ qty: 2, total: 200, cash: 200, deliveredQty: 1 }) === 1, "the deferral is what has been paid for and not delivered");
+  ok(X.poRecvUnits({ qty: 10, pending: true }) === 0 && X.poRecvUnits({ qty: 10, defaulted: true }) === 0
+     && X.poRecvUnits({ qty: 10, inTransit: true }) === 0 && X.poRecvUnits({ qty: 10, receivedQty: 14 }) === 10 && X.poRecvUnits({ qty: 10 }) === 10,
      "a lot receives nothing while pending, defaulted or in transit, a stated receipt capped at the lot, else the whole lot");
   ok(X.provRate(0) === 0 && X.provRate(4) === 0.25 && X.provRate(8) === 0.5 && X.provRate(14) === 0.75 && X.provRate(21) === 1, "the ageing ladder");
 
@@ -1421,34 +1439,36 @@ section("Engine — the position, out of the desk (v338)");
       { customer: "CB", qty: 3, total: 300, cash: 0, deliveredQty: 0 },
       { date: "2026-08-15", customer: "CC", qty: 1, total: 100, cash: 0, deliveredQty: 1 } ],
     purchases: [ { date: "2026-08-01", qty: 50, total: 2200, supplier: "SA", status: "paid", cash: 2200 } ],
-    opening: { qty: 10, costPerKg: 50, stated: null }, isSalt: true, loanKg: 0, counted: null,
+    opening: { qty: 10, costPerKg: 50, stated: null }, isSalt: true, loanUnits: 0, counted: null,
     supplierReceivable: null, today: new Date("2026-08-22"), wavgBuyPrev: 0 });
-  ok(W.buyKg === 50 && Math.abs(W.wavgBuy - 45) < 1e-9, "50 at RM44 over an opening 10 at RM50 averages RM45");
+  ok(W.buyUnits === 50 && Math.abs(W.wavgBuy - 45) < 1e-9, "50 at RM44 over an opening 10 at RM50 averages RM45");
   ok(W.ledgerStock === 57 && W.currentStock === 57 && W.stockCounted === false, "uncounted, the ledger stands: 60 in, 3 out");
   ok(W.pricedSales.length === 2 && W.revTotal === 300, "the pending order counts nowhere; revenue is the two that moved");
   ok(Math.abs(W.cogs - 135) < 1e-9 && Math.abs(W.grossMargin - 165) < 1e-9, "cost of goods at the average for rows with no cost of their own");
   ok(W.arList.length === 1 && W.arGross === 100 && Math.abs(W.ar - 75) < 1e-9, "one advance of RM100, seven days old, provisioned a quarter");
-  ok(W.defKg === 0, "nothing paid ahead of delivery");
+  ok(W.defUnits === 0, "nothing paid ahead of delivery");
   const cm = X.commitments([{ customer: "CB", qty: 3, total: 300, cash: 0, deliveredQty: 0 }, { customer: "CD", qty: 2, total: 200, cash: 200, deliveredQty: 0 }], 4);
-  ok(cm.owedKg === 2 && cm.promKg === 3 && cm.commitKg === 5 && cm.shortKg === 1 && !cm.coverable, "owed, promised, and one short of the shelf");
+  ok(cm.owedUnits === 2 && cm.promUnits === 3 && cm.commitUnits === 5 && cm.shortUnits === 1 && !cm.coverable, "owed, promised, and one short of the shelf");
 
   /* THE GATE: the desk's own inputs, both books, and the record comes back equal */
   const { openMaster } = await import("../tools/payload.mjs");
   const { w } = await openMaster();
   const read = (expr) => JSON.parse(w.eval("JSON.stringify(" + expr + ")"));
-  const NUMS = ["buyKg", "buyRM", "wavgBuy", "soldKg", "ledgerStock", "stockCounted", "currentStock", "selfUse", "revTotal", "revCollected",
-    "arGross", "ar", "advTotal", "defKg", "supRecovGross", "supRecovNet", "cogs", "grossMargin", "marginPct", "goodwillRM"];
+  const NUMS = ["buyUnits", "buyRM", "wavgBuy", "soldUnits", "ledgerStock", "stockCounted", "currentStock", "selfUse", "revTotal", "revCollected",
+    "arGross", "ar", "advTotal", "defUnits", "supRecovGross", "supRecovNet", "cogs", "grossMargin", "marginPct", "goodwillRM"];
   for (const p of ["salt", "oil"]) {
     w.eval(`setProd(${JSON.stringify(p)});`);
     const mine = X.walk(read("posInputs()"));
     const desk = read("({" + NUMS.join(",") + ",nPriced:pricedSales.length,nAR:arList.length,nRecv:receivedPO.length})");
     ok(NUMS.every((k) => mine[k] === desk[k]) && mine.pricedSales.length === desk.nPriced && mine.arList.length === desk.nAR && mine.receivedPO.length === desk.nRecv,
       `${p}: the walk reproduces the desk's position to the last decimal`);
-    const cv = X.coverStats({ pricedSales: mine.pricedSales, currentStock: mine.currentStock, defKg: mine.defKg, today: new Date(read("TODAY")), reorderKg: read("RULES.reorderKg") });
+    /* round 5: the trigger is per book, so the gate hands the engine the book's own figure,
+       exactly as the desk's coverStats() wrapper does */
+    const cv = X.coverStats({ pricedSales: mine.pricedSales, currentStock: mine.currentStock, defUnits: mine.defUnits, today: new Date(read("TODAY")), reorderUnits: read("reorderFor(PROD)") });
     const dcv = read("coverStats()");
     ok(cv.rate === dcv.rate && cv.free === dcv.free && cv.days === dcv.days && cv.shortBy === dcv.shortBy, `${p}: cover agrees`);
     const c2 = X.commitments(read("pSales(PROD)"), mine.currentStock), f = read("forecast()");
-    ok(c2.commitKg === f.commitKg && c2.shortKg === f.shortKg && c2.owedKg === f.owedKg && c2.promKg === f.promKg, `${p}: the commitments agree with the forecast`);
+    ok(c2.commitUnits === f.commitUnits && c2.shortUnits === f.shortUnits && c2.owedUnits === f.owedUnits && c2.promUnits === f.promUnits, `${p}: the commitments agree with the forecast`);
   }
   try { w.close(); } catch (e) { }
 }
@@ -1709,7 +1729,7 @@ section("Fold — an approved batch becomes records in the book (v340)");
         const row = B2.purchases.find((x) => x.rid === "pX02");
         ok(!row.pending && row.receivedQty === 0 && row.inTransit === true,
           "and the receipt is stated explicitly: nothing arrived, the lot is on order (the v146 guard)");
-        ok(E2.poRecvKg(row) === 0, "so the walk books no phantom stock from it");
+        ok(E2.poRecvUnits(row) === 0, "so the walk books no phantom stock from it");
       }
 
       /* F3: a real total on an unpriced row clears the flag, as a Modification has since
@@ -2047,8 +2067,8 @@ section("Orders and money — every basis is named where the figure is stated (v
        a price lock legitimately freezes the desk's copy, so that is the one exemption. */
     const c = read("pxCost()");
     if (!c.locked && F.lots > 0)
-      ok(F.freightPerKg === c.freight,
-        `${pr}: the statement's freight per unit is the pricing engine's (${F.freightPerKg})`);
+      ok(F.freightPerUnit === c.freight,
+        `${pr}: the statement's freight per unit is the pricing engine's (${F.freightPerUnit})`);
     /* and the cell names the live rate, so moving the rate without the copy fails here */
     if (F.lots > 0) ok(panel.includes(html("fmt0(COST_BASIS.freightPerTrip.rm)") + " a trip"),
       `${pr}: the freight line names the rate it was struck at`);
@@ -2086,10 +2106,38 @@ section("Orders and money — every basis is named where the figure is stated (v
      failure notice sees nothing, because there was nothing to see. Both catches are gone
      rather than replaced, since every road out now has a reporter on it. */
   const src = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
-  for (const fn of ["drawRecvCharts", "drawFinCharts"]) {
-    const at = src.indexOf(`function ${fn}()`), end = src.indexOf("\nfunction ", at + 12);
-    const body = src.slice(at, end > at ? end : at + 3000);
-    ok(!/\}catch\(e\)\{\}/.test(body), `${fn} does not swallow a throw, so a broken chart says so`);
+  /* round six: the old scan banned the exact byte pattern }catch(e){} in two functions, so a
+     single added space defeated it and the other draw functions were never scanned. This one
+     covers every draw function and bans an empty catch whose TRY BODY spans a line or runs
+     long, which is the v384 class (a whole draw pass swallowed). A one-line guard like
+     try{obj.destroy()}catch(e){} or a per-point priceLadder probe is the designed null path
+     and stays legal. The existence check runs first so a renamed function fails loudly
+     instead of silently scanning nothing. */
+  /* v412, ROUND SEVEN #13: the body had to be WHITESPACE, so a catch holding only a block
+     comment was invisible to the scan and a swallow could be written straight past it. A
+     comment is not a handler, so a catch whose only body is one now counts as empty. */
+  const EMPTYCATCH = /catch\s*(\(\s*[A-Za-z_$][\w$]*\s*\))?\s*\{\s*(?:\/\*[\s\S]*?\*\/|\/\/[^\n]*\n)?\s*\}/g;
+  /* v412: the twelve missed drawConcCharts, drawNetworkCharts and drawLedgerCharts, and TWO of
+     the four sites where this fault was actually found and fixed at v385 are among them. */
+  for (const fn of ["trackCharts", "wirePricing", "drawPriceCharts", "drawEarnChart", "drawBoardCharts",
+                    "drawRecvCharts", "drawFinCharts", "drawSourcingCharts", "drawOutlookChart",
+                    "drawAnalysis", "drawTodayCharts", "drawFwdCharts",
+                    "drawConcCharts", "drawNetworkCharts", "drawLedgerCharts"]) {
+    const at = src.indexOf(`function ${fn}(`);
+    ok(at >= 0, `${fn} exists for the empty-catch scan to cover`);
+    const end = src.indexOf("\nfunction ", at + 12);
+    const body = src.slice(at, end > at ? end : at + 4000);
+    const hazardous = [];
+    for (const m of body.matchAll(EMPTYCATCH)) {
+      const close = body.lastIndexOf("}", m.index);
+      if (close < 0 || /\S/.test(body.slice(close + 1, m.index))) continue;   /* not a try tail (a comment mentioning the pattern) */
+      let depth = 0, j = close;
+      for (; j >= 0; j--) { const ch = body[j]; if (ch === "}") depth++; else if (ch === "{") { depth--; if (!depth) break; } }
+      const tryBody = j >= 0 ? body.slice(j, close + 1) : "";
+      if (/\n/.test(tryBody) || tryBody.length > 80) hazardous.push(tryBody.replace(/\s+/g, " ").slice(0, 40));
+    }
+    ok(hazardous.length === 0, `${fn} has no empty catch over a multi-line body, so a broken chart says so`
+      + (hazardous.length ? " — " + hazardous.join(" | ") : ""));
   }
 
   /* THE FINDING IS ON THE PAGE, WHICH IT WAS NOT FROM v372 TO v385. stripMethod cuts every
@@ -2193,6 +2241,161 @@ section("Pricing — stale is a statement about the lock, not a constant (v403)"
     "lock on over a stale lock: stale is true");
   ok(E.costStack({ ...I, lockOn: true, lockState: { state: "none", lock: null, days: null } }).stale === false,
     "lock on and current: stale is false");
+}
+
+section("Pricing — each book prices off its own quote (round 5, his call 1)");
+{
+  /* pxQuoteRate and pxPolicy().tiers read bare supplierQuote until this round, so oil's
+     engine inputs carried salt's RM 56 rate and oil's taper walked at salt's exponent.
+     The owner's answer 1 of 29 Aug scopes every engine input through quoteFor(PROD). */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  const read = (expr) => JSON.parse(w.eval("JSON.stringify(" + expr + ")"));
+  w.eval("setProd('salt');recompute();");
+  ok(read("pxInputs().quoteRate") === 56, "salt's quoteRate is its own dearest tier, RM56");
+  ok(JSON.stringify(read("pxPolicy().tiers")) === JSON.stringify(read("supplierQuote.tiers")),
+    "salt's policy tiers are the salt quote's");
+  const saltB = read("buyTaper()");
+  w.eval("setProd('oil');recompute();");
+  ok(read("pxInputs().quoteRate") === 10, "oil's quoteRate is its OWN dearest tier, RM10, not salt's 56");
+  ok(JSON.stringify(read("pxPolicy().tiers")) === JSON.stringify(read("oilQuote.tiers")),
+    "oil's policy tiers are the oil quote's");
+  const oilB = read("buyTaper()");
+  ok(oilB.b != null && oilB.b < 0, "oil's taper is fitted and falls with size");
+  ok(saltB.b != null && Math.abs(oilB.b - saltB.b) > 1e-6,
+    "the two books fit different exponents, so the taper is genuinely per book");
+  /* his call 4: the board sizes are what he sells, and the ladder anchor is the book's own */
+  ok(JSON.stringify(read("sizesFor('oil')")) === JSON.stringify([10, 20, 30, 40, 50]),
+    "oil's grid is his: 10 to 50 in tens, no fives, no 60 to 100 tail");
+  ok(JSON.stringify(read("sizesFor('salt')")) === JSON.stringify([0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 6.25, 12.5]),
+    "salt's grid is untouched");
+  const oilL = read("ladderFor('oil')"), saltL = read("ladderFor('salt')");
+  ok(oilL.at.lo === 10 && oilL.at.hi === 50 && oilL.anchorQ === 10,
+    "oil's taper span and anchor sit on oil's own board");
+  ok(saltL.anchorQ === 2.5 && saltL.anchorX === 0.958 && saltL.at.lo === 0.5 && saltL.at.hi === 12.5 && saltL.floor === 0.33,
+    "salt's ladder is LADDER itself, to the value");
+
+  /* his call 2: replacement is the trailing 30-day quantity-weighted average, per book.
+     The expectation is computed here from the page's own lots and TODAY, never typed, so
+     the assertion holds whichever day the suite runs. */
+  const expRepl = (p) => {
+    w.eval(`setProd(${JSON.stringify(p)});recompute();`);
+    const rows = read("pPurch(PROD).filter(x=>poLive(x)&&x.qty>0)");
+    const from = read("TODAY.getTime()") - 30 * 86400000;
+    const win = rows.filter((x) => new Date(x.receivedOn || x.date).getTime() >= from);
+    const k = win.reduce((a, x) => a + x.qty, 0);
+    if (k > 0) return +(win.reduce((a, x) => a + x.total, 0) / k).toFixed(2);
+    const last = rows.slice().sort((a, b) => ((a.receivedOn || a.date) < (b.receivedOn || b.date) ? -1 : 1)).pop();
+    return last ? +(last.total / last.qty).toFixed(2) : null;
+  };
+  for (const p of ["salt", "oil"]) {
+    const want = expRepl(p);
+    ok(read("pxInputs().repl") === want, `${p}: pxInputs().repl is the book's own trailing average, ${want}`);
+    ok(read("pxCost().repl") === want, `${p}: and the cost stack prices off it`);
+    ok(read("replCost()") === want, `${p}: and replCost() is the same figure, so there is one replacement number`);
+  }
+  /* the engine's fallback order: an absent repl falls to the lot rate, never undefined */
+  {
+    const E = (await import("../engine/pricing.mjs")).default;
+    const I0 = { prod: "x", lockOn: false, lockState: { state: "none", lock: null }, lockBase: null,
+      over: { cost: null, shrink: null }, lot: { qty: 10, total: 90, rate: 9, date: "2026-08-01" },
+      quoteRate: 12, costBasis: { freightPerTrip: { rm: 30 }, txnPerDelivery: { rm: 10 }, deliveredShare: { v: 0.2 } },
+      attrib: 1, shrinkRate: 0, avgDel: { n: 1, mean: 10 } };
+    ok(E.costStack({ ...I0, repl: 8.5 }).repl === 8.5, "a supplied trailing average is the goods cost");
+    ok(E.costStack(I0).repl === 9, "without one the latest lot's rate stands, so nothing is undefined");
+    ok(E.costStack({ ...I0, repl: null, lot: null }).repl === 12, "and with no lot at all the quote rate holds the floor up");
+  }
+  w.eval("setProd('salt');recompute();");
+  try { w.close(); } catch (e) { }
+}
+
+section("Rewards — redemption reads the earning window (round 5, his call 3)");
+{
+  /* Earnings count from REWARD.since; redemptions counted from the beginning of time, so a
+     unit redeemed before the scheme existed was netted against earnings that started after
+     it. One window, both sides. The two parties named here are the book's own facts: CS6-BS
+     redeemed 3 units in July, all before adoption; CJ4-OKR redeemed 1 in July and the 4-unit
+     backfill ON the adoption day, which the window includes exactly as the earning side
+     includes 10 Aug turnover. */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  const read = (expr) => JSON.parse(w.eval("JSON.stringify(" + expr + ")"));
+  const since = read("REWARD.since");
+  const pre = read("sales.filter(s=>s.customer==='CS6-BS'&&s.rebate).map(s=>({date:s.date,kg:(s.rebateKg!=null?+s.rebateKg:s.qty)}))");
+  ok(pre.length === 3 && pre.every((r) => r.date < since) && pre.reduce((a, r) => a + r.kg, 0) === 3,
+    "the guard: CS6-BS's three redeemed units are all before adoption, so the next assertion cannot pass vacuously");
+  ok(read("rebateApplied('CS6-BS')") === 0, "a redemption before REWARD.since belongs to the opening, not the running net");
+  ok(read("rebateApplied('CJ4-OKR')") === 4, "the boundary day itself counts, both sides: the 10 Aug backfill is in, the 09 Jul unit is not");
+  try { w.close(); } catch (e) { }
+}
+
+section("Boundaries — the caps and the trigger are per book (round 5, his call 4)");
+{
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  const read = (expr) => JSON.parse(w.eval("JSON.stringify(" + expr + ")"));
+  ok(read("creditCapFor('salt','retail')") === 1 && read("creditCapFor('salt','associate')") === 2,
+    "salt keeps 1 unit retail and 2 associate");
+  ok(read("creditCapFor('oil','retail')") === 10 && read("creditCapFor('oil','associate')") === 20,
+    "oil reads 10 retail (his correction) and 20 associate (confirmed by him, 29 Aug)");
+  ok(read("reorderFor('salt')") === 15 && read("reorderFor('oil')") === 20,
+    "the reorder trigger is per book: salt 15, oil 20 (his call of 29 Aug)");
+  w.eval("setProd('oil');recompute();");
+  ok(read("coverStats().reorderAt") === 20, "oil's cover is judged against oil's own trigger");
+  w.eval("setProd('salt');recompute();");
+  ok(read("coverStats().reorderAt") === 15, "and salt's against salt's");
+  /* the per-book credit totals PARTITION the old whole-book figure: proven for every
+     customer on the book, so the split cannot drop or double a unit */
+  const parts = read(`(()=>{const ids=[...new Set(sales.map(s=>s.customer))];
+    return ids.map(id=>{let whole=0;sales.forEach(s=>{if(s.customer!==id||s.cancelled)return;const p=txPrice(s);if(!(p>0))return;whole+=Math.max(0,(s.deliveredQty||0)-txPaid(s)/p);});
+    return {id,whole:+whole.toFixed(2),split:+(PROD_IDS.reduce((a,pr)=>a+wbCreditUnits(id,0,pr),0)).toFixed(2)};});})()`);
+  ok(parts.length > 10 && parts.every((x) => Math.abs(x.whole - x.split) < 0.02),
+    "per-book delivered-and-unpaid sums to the whole-book figure for every party");
+  /* his call 4(e): a suggested restock is priced at the book's own tier, lots bought whole */
+  ok(JSON.stringify(read("restockQuote(7.25)")) === JSON.stringify({ qty: 12.5, total: 650, rate: 52, lots: 1, quoted: true }),
+    "salt: 7.25 unit needed is covered by the 12.5 tier at its RM650 total, not 7.25 at a flat rate");
+  ok(JSON.stringify(read("restockQuote(130)")) === JSON.stringify({ qty: 200, total: 8600, rate: 43, lots: 2, quoted: true }),
+    "beyond the top tier it takes whole top-tier lots: 130 needs two 100s at RM8,600");
+  w.eval("setProd('oil');recompute();");
+  ok(JSON.stringify(read("restockQuote(3)")) === JSON.stringify({ qty: 10, total: 100, rate: 10, lots: 1, quoted: true }),
+    "oil: 3 unit needed is covered by its own 10 unit tier at RM100");
+  w.eval("setProd('salt');recompute();");
+  try { w.close(); } catch (e) { }
+}
+
+section("Oil — pinned at both ends and lawful between (round 5, his call 5)");
+{
+  /* His stated board, 29 Aug in chat: 13, 12, 11, 10 and 9 ringgit a unit down the five
+     sizes, so 130, 240, 330, 400 and 450, with the ends pinned against a 50-unit buy of
+     RM350 on the quote. Every size is stated, none derived. The floor checks read TODAY'S
+     cost basis on purpose: if a dear enough lot ever lifts the 50 unit floor above RM450,
+     or ties two rates, the right outcome is a red line here saying his stated price needs
+     his decision, not a board that quietly moves it. */
+  const book = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  ok(JSON.stringify(book.PRICE_SET.oil.prices) ===
+    JSON.stringify({ "10": 130, "20": 240, "30": 330, "40": 400, "50": 450 }),
+    "the book records his stated oil board, 13 down to 9 ringgit a unit");
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  const read = (expr) => JSON.parse(w.eval("JSON.stringify(" + expr + ")"));
+  w.eval("setProd('oil');recompute();");
+  const rows = read("sizesFor('oil').map(q=>({q,ask:priceLadder(q).ask.total,fd:floorTotal(q),fc:floorTotal(q,null,{collects:true})}))");
+  const a10 = rows.find((r) => r.q === 10), a50 = rows.find((r) => r.q === 50);
+  ok(a10.ask === 130, "the board asks his RM130 at 10");
+  ok(a50.ask === 450, "and his RM450 at 50; if this reads higher, the floor has overtaken his price and he must decide");
+  ok(JSON.stringify(rows.map((r) => r.ask)) === JSON.stringify([130, 240, 330, 400, 450]),
+    "the whole board is his stated one: 130, 240, 330, 400, 450");
+  ok(a50.fd <= 450 + 1e-9 && a50.fc <= 450 + 1e-9,
+    `RM450 clears both 50 unit floors (delivered ${a50.fd}, collected ${a50.fc}); red here means the tension of v404 is back`);
+  let strict = true, dearer = true;
+  for (let i = 1; i < rows.length; i++) {
+    if (!(rows[i].ask / rows[i].q < rows[i - 1].ask / rows[i - 1].q - 1e-9)) strict = false;
+    if (!(rows[i].ask > rows[i - 1].ask + 1e-9)) dearer = false;
+  }
+  ok(strict, "every larger oil size is STRICTLY cheaper per unit, 130 at 10 down to 450 at 50");
+  ok(dearer, "and strictly dearer in total, so no lot is beaten by buying smaller");
+  w.eval("setProd('salt');recompute();");
+  try { w.close(); } catch (e) { }
 }
 
 section("iPhone — the dead zones the desk draws under (v392)");
@@ -2328,7 +2531,7 @@ section("Drafter — a lot that has not arrived does not say it has (v385)");
 {
   const d = readFileSync(join(REPO, "src", "drafter.js"), "utf8");
   /* An absent receivedQty on a SETTLED lot means received in full, by the book's own
-     convention and by poRecvKg. So a paid-and-unarrived lot drafted with neither
+     convention and by poRecvUnits. So a paid-and-unarrived lot drafted with neither
      receivedQty nor inTransit asserts the goods landed, and approving it walks the whole
      lot into stock and into the cost basis. Both fields, matching the fold's v146 guard. */
   ok(/else \{ row\.receivedQty = 0; row\.inTransit = true; \}/.test(d),
@@ -2480,7 +2683,7 @@ section("Orders and money — cash is stated in the P&L, once (v401)");
      "and states the revenue once, not as Revenue and again as Invoiced");
 }
 
-section("Monthly statements — one home, and the laws a sent document lives by (29 Aug 2026)");
+section("Monthly statements: one home, and the laws a sent document lives by (29 Aug 2026)");
 {
   /* v388 removed the desk's statement panel and all five functions as uncalled, and
      tools/make_statements.cjs called four of them: the monthly statements broke with
@@ -2536,6 +2739,572 @@ section("Monthly statements — one home, and the laws a sent document lives by 
   }
 }
 
+section("Units — no new kg-named identifier, anywhere (round 5, his call 6)");
+{
+  /* The desk retired the mass symbol at v161 and sells by the unit, but the code still spoke
+     kg internally: the buy, sold and reorder totals, the formatter and ninety more. Round 5
+     renamed every internal identifier to unit language. What stays, and MUST stay, is the
+     data: the five row keys the book already carries (in ALLOW below), and the bare field
+     `kg` (ledger rows, amend steps, loans, and the phone queue's pay field, which the
+     drafter dual-reads against qty). Renaming those breaks every stored row. This scan bans
+     NEW kg-named identifiers so the split cannot blur again. The evolution array is
+     excluded: it is history and describes the code as it was. The banned fragments are
+     built by concatenation so this section does not report itself. */
+  const fs = await import("node:fs");
+  const KG = "K" + "g", kg = "k" + "g";
+  const ALLOW = new Set(["settled", "rebate", "ref", "costPer", "value"].map((p) => p + KG));
+  const bannedWord = (w) => {
+    if (w === kg || ALLOW.has(w)) return false;
+    return w.includes(KG) || (w.startsWith(kg) && w.length > 2) || (w.endsWith(kg) && w.length > 2);
+  };
+  const files = [
+    "master/salt_command.html",
+    ...fs.readdirSync("engine").filter((f) => f.endsWith(".mjs")).map((f) => "engine/" + f),
+    ...fs.readdirSync("src").filter((f) => f.endsWith(".js")).map((f) => "src/" + f),
+    ...fs.readdirSync("tools").filter((f) => f.endsWith(".mjs")).map((f) => "tools/" + f),
+    "test/verify.mjs",
+  ];
+  const offenders = [];
+  for (const f of files) {
+    let text = fs.readFileSync(f, "utf8");
+    if (f === "master/salt_command.html") {
+      const lines = text.split("\n");
+      const ev = lines.findIndex((l) => l.startsWith("const evolution=["));
+      let end = ev;
+      while (end < lines.length && !lines[end].trimEnd().endsWith("}];")) end++;
+      text = lines.filter((_, i) => i < ev || i > end).join("\n");
+    }
+    for (const m of text.matchAll(/[A-Za-z_$][A-Za-z0-9_$]*/g)) {
+      if (bannedWord(m[0])) offenders.push(f + ": " + m[0]);
+    }
+  }
+  ok(offenders.length === 0,
+     "no kg-named identifier outside the persisted allowlist" +
+     (offenders.length ? " — " + [...new Set(offenders)].slice(0, 8).join(", ") : ""));
+  const masterText = fs.readFileSync("master/salt_command.html", "utf8");
+  ok(masterText.includes("const units=n=>") && !masterText.includes("const kg=n=>"),
+     "the formatter is units(), and the old kg() declaration is gone");
+}
+
+section("Round 6 — book integrity");
+{
+  const book = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const allRows = [...(book.sales || []), ...(book.purchases || [])];
+  const rids = allRows.map((r) => r.rid).filter(Boolean);
+  const dup = rids.filter((v, i) => rids.indexOf(v) !== i);
+  ok(dup.length === 0, "every rid on the book is unique" + (dup.length ? " — duplicated: " + [...new Set(dup)].join(", ") : ""));
+  const pair = (book.sales || []).filter((r) => r.cancelled && +(r.deliveredQty || 0) > 0.009);
+  ok(pair.length === 0, "no cancelled row carries a delivered quantity" + (pair.length ? " — " + pair.map((r) => r.rid).join(", ") : ""));
+  const reg = book.PRODUCTS || {};
+  const orphan = allRows.filter((r) => r.product && !reg[r.product]);
+  ok(orphan.length === 0, "every row's product is registered in PRODUCTS" + (orphan.length ? " — " + orphan.map((r) => r.rid || r.date).join(", ") : ""));
+}
+
+section("Every part renders on every book (round 5 fold; content and census, round 6)");
+{
+  /* Twice now a scope fault has blanked a whole part while the full suite passed: liveQ at
+     v403 and LD at round five's own first commit, both on Price, both invisible here because
+     nothing rendered the part. So the suite renders every registered part on every book
+     and a throw anywhere is a red line naming the part. Slow-ish (~2s), worth every one.
+     ROUND 6 ADDED THE TWO CLASSES A THROW CHECK CANNOT SEE: a part that renders EMPTY
+     without throwing (the whole Price builder returning '' rode this gate green), and the
+     v402 structural detach (a stray closing tag ends the .prodblock early, every canvas
+     after it parses as a sibling, and each draw returns at its first line with nothing
+     thrown). The content floor is 150 characters against a measured pristine minimum of 197
+     (Approve, both books); the census demands ZERO canvases and details outside a .prodblock
+     on the six per-product parts, the measured pristine count on both books. */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  const tabs = JSON.parse(w.eval("JSON.stringify(Object.keys(TAB_LABEL))"));
+  ok(tabs.length >= 16, `the tab registry lists ${tabs.length} parts (16 at v405; fewer means a part fell out)`);
+  const PERPRODUCT = new Set(["sourcing", "analysis", "inventory", "financials", "receivables", "pricing"]);
+  const threw = [], thin = [], detached = [];
+  for (const p of JSON.parse(w.eval("JSON.stringify(PROD_IDS)"))) {
+    w.eval("setProd(" + JSON.stringify(p) + ")");
+    for (const t of tabs) {
+      try {
+        w.eval("switchTab(" + JSON.stringify(t) + ")");
+        const info = JSON.parse(w.eval("(function(){const el=document.querySelector('.sec.on');" +
+          "const tx=(el&&el.textContent||'').replace(/\\s+/g,' ').trim();" +
+          "const cv=el?[...el.querySelectorAll('canvas')]:[];const dt=el?[...el.querySelectorAll('details')]:[];" +
+          "return JSON.stringify({len:tx.length," +
+          "oc:cv.filter(x=>!x.closest('.prodblock')).length,od:dt.filter(x=>!x.closest('.prodblock')).length})})()"));
+        if (info.len < 150) thin.push(p + ":" + t + " (" + info.len + " chars)");
+        if (PERPRODUCT.has(t) && (info.oc || info.od)) detached.push(p + ":" + t + " (" + info.oc + " canvases, " + info.od + " details outside any .prodblock)");
+      } catch (e) { threw.push(p + ":" + t + " -> " + ((e && e.message) || e)); }
+    }
+  }
+  ok(threw.length === 0, threw.length
+    ? "parts threw on render: " + threw.join("; ")
+    : "all " + tabs.length * 2 + " part renders complete without a throw");
+  ok(thin.length === 0, thin.length
+    ? "parts rendered near-empty (a builder returned nothing): " + thin.join("; ")
+    : "every part carries at least 150 characters of content on both books");
+  ok(detached.length === 0, detached.length
+    ? "structural detach — content outside its .prodblock: " + detached.join("; ")
+    : "zero canvases or details sit outside a .prodblock on the six per-product parts");
+  ok(w.eval("units(-0)") === "0 unit" && w.eval("fmt0(-0.4)") === "RM 0" && w.eval("fmt(-0.001)") === "RM 0.00",
+    "a figure that displays as zero never carries a minus (units, fmt0, fmt)");
+}
+
+
+section("v408: the update panel does the arithmetic so a tap cannot overpay");
+{
+  /* THE BUG THIS SECTION EXISTS FOR. The Ledger's three quick buttons queued the row's FULL
+     TOTAL as a Fulfilment, and a Fulfilment is a DELTA the fold ADDS, so tapping Paid on a row
+     already carrying RM 50 of RM 100 took it to RM 150. It was reachable on any part-paid row
+     and nothing anywhere caught it. The panel computes the OUTSTANDING from the row, so the
+     same tap cannot overpay, and this asserts the arithmetic rather than the button. The book
+     carries no part-paid sale today, so one is built: the assertion must not be able to pass
+     by there being nothing to test. */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { readFileSync: rf, writeFileSync: wf, unlinkSync: rm } = await import("node:fs");
+  const { execSync } = await import("node:child_process");
+  const { join } = await import("node:path");
+  const M = join(REPO, "test", ".v408.html"), B = join(REPO, "test", ".v408.json");
+  const bk = JSON.parse(rf(join(REPO, "ledger", "book.json"), "utf8"));
+  const seed = (bk.sales || []).find((r) => r.rid && !r.cancelled && (+r.total || 0) > 40 && (+r.qty || 0) > 1 && r.date);
+  ok(!!seed, "a sale exists to build the part-paid case from");
+  if (seed) {
+    seed.cash = +(seed.total / 2).toFixed(2);
+    seed.deliveredQty = 0;
+    wf(B, JSON.stringify(bk, null, 1));
+    wf(M, rf(join(REPO, "master", "salt_command.html"), "utf8"));
+    execSync("node tools/booksync.mjs --sync", { cwd: REPO, env: { ...process.env, SALT_BOOK: B, SALT_MASTER: M }, stdio: "pipe" });
+    const { w } = await openMaster(M);
+    w.eval("setProd(" + JSON.stringify(seed.product || "salt") + ");recompute();");
+    const outstanding = +(seed.total - seed.cash).toFixed(2);
+
+    w.eval("ledEdit(" + JSON.stringify(seed.rid) + ",'SELL');");
+    const chips = JSON.parse(w.eval("JSON.stringify([].map.call(document.querySelectorAll('.updchip'),b=>b.textContent))"));
+    ok(chips.length >= 4, `the panel offers the row's states (${chips.length}): ${chips.join(" / ")}`);
+    ok(!chips.some((c) => /Defaulted/.test(c)), "Defaulted is not offered on a sale, because the engine reads it on lots only");
+    ok(w.eval("document.getElementById('updDate').value") === w.eval("TODAY.toISOString().slice(0,10)"),
+      "the date is filled with today and is an editable input");
+
+    /* CLICK THE CHIP. Passing the outstanding into updSet() would assert this test's own
+       arithmetic, not the panel's: a mutation that sent the row's TOTAL rode this check green
+       until the chip was clicked instead. The control has to be the thing under test. */
+    w.eval("[].filter.call(document.querySelectorAll('.updchip'),b=>/Paid in full/.test(b.textContent))[0].click();");
+    const filled = +w.eval("document.getElementById('updCash').value");
+    ok(Math.abs(filled - outstanding) < 0.005 && filled < seed.total - 0.005,
+      `Paid in full fills the outstanding RM ${filled}, not the total RM ${seed.total}`);
+
+    const before = +w.eval("queue.length");
+    w.eval("updQueue();");
+    const q = JSON.parse(w.eval("JSON.stringify(queue[queue.length-1]||{})"));
+    ok(+w.eval("queue.length") === before + 1, "one entry is queued");
+    ok(q.payload && q.payload.kind === "Fulfilment" && q.payload.rid === seed.rid,
+      "it queues a Fulfilment addressed by rid, a kind the drafter and the fold already take");
+    ok(q.payload && Math.abs(q.payload.cash - outstanding) < 0.005,
+      `the queued cash is the outstanding RM ${q.payload && q.payload.cash}, so the fold's delta cannot overpay`);
+
+    /* the panel refuses on screen what v407 made the fold refuse, so nobody queues a dead row */
+    const dl = JSON.parse(w.eval("JSON.stringify((function(){var r=sales.filter(s=>!s.cancelled&&s.rid&&txDeliv(s)>0.009)[0];return r?{rid:r.rid}:null;})())"));
+    if (dl) {
+      w.eval("ledEdit(" + JSON.stringify(dl.rid) + ",'SELL');");
+      w.eval("updSet('cancel',null,null);");
+      ok(/refuses/.test(w.eval("document.getElementById('updSay').textContent")),
+        "cancelling a row that has moved goods is refused on screen before it is queued");
+      const qb = +w.eval("queue.length");
+      w.eval("updQueue();");
+      ok(+w.eval("queue.length") === qb, "and nothing is queued by it");
+    }
+
+    w.eval("ledEdit(" + JSON.stringify(seed.rid) + ",'SELL');");
+    ok(w.eval("!!document.querySelector('.updmore') && !document.querySelector('.updmore').open"),
+      "the thirty-field sheet is still there, closed, one fold below the panel");
+    ok(w.eval("!!document.getElementById('ed_party') && !!document.getElementById('ed_cost')"),
+      "and every EDFORM control is still in the DOM for edSubmit to read");
+    ok(w.eval("getComputedStyle(document.querySelector('.updchip')).minHeight") === "44px",
+      "the chips meet the 44px tap contract");
+  }
+  for (const f of [M, B]) { try { rm(f); } catch (e) { /* best effort */ } }
+}
+
+
+section("v409: the Enter sheet is priced against the book it books to");
+{
+  /* ROUND SEVEN, MATERIAL. The sheet held a product of its own while the margin, the free-stock
+     warning and priceCoach all read the ACTIVE book, and its own note said "books to the oil
+     book, not where the rail points". So a healthy oil sale was measured against salt's
+     replacement cost and read as a large loss. The select moves the book now, which is why this
+     asserts the MARGIN and not the wiring: the wiring can be rewritten, the figure cannot be
+     wrong. Proved red against v408, where the same entry read a negative margin. */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  const prods = JSON.parse(w.eval("JSON.stringify(PROD_ORDER)"));
+  if (prods.length < 2) { ok(true, "one book only, so the cross-book entry case cannot arise (skipped)"); }
+  else {
+    const [a, b] = prods;
+    w.eval("setProdView(" + JSON.stringify(a) + ");");
+    const replA = +w.eval("replCost()");
+    w.eval("setProdView(" + JSON.stringify(b) + ");");
+    const replB = +w.eval("replCost()");
+    w.eval("setProdView(" + JSON.stringify(a) + ");");
+    ok(replA > 0 && replB > 0, `both books have a replacement cost (${a} RM ${replA}, ${b} RM ${replB})`);
+
+    /* an order on book B, entered while the desk is on book A, priced healthily for B */
+    const qty = 2, total = +(replB * qty * 1.45).toFixed(2), rate = total / qty;
+    w.eval("switchTab('add');");
+    w.eval("(function(){var p=document.getElementById('wbProd');p.value=" + JSON.stringify(b) + ";if(p.onchange)p.onchange();})();");
+    ok(w.eval("PROD") === b, "choosing a product on the sheet moves the desk to that book");
+    ok(w.eval("wbProdVal()") === b, "and the sheet's product is the desk's, so the payload records what was checked");
+
+    w.eval(`(function(){var set=function(i,v){var e=document.getElementById(i);if(e)e.value=v;};
+      set('wbQty',${qty});set('wbTotal',${total});set('wbCash',${total});set('wbUnits',${qty});set('wbDate','2026-08-31');
+      var ps=document.getElementById('wbParty');
+      if(ps&&ps.options.length>1){for(var i=0;i<ps.options.length;i++){var v=ps.options[i].value;if(v&&v.indexOf('S')!==0){ps.value=v;break;}}}
+      wbApply();wbPreview();})();`);
+    const prev = (w.eval("(document.getElementById('wbPrev')||{}).textContent||''") || "").replace(/\s+/g, " ");
+    const m = prev.match(/margin\s*(-?\d+)%/);
+    ok(!!m, "the preview states a margin for the entry");
+    if (m) {
+      const shown = +m[1], wantB = Math.round((rate - replB) / rate * 100), wouldBeA = Math.round((rate - replA) / rate * 100);
+      ok(Math.abs(shown - wantB) <= 1,
+        `the margin is ${b}'s ${shown}% against its own RM ${replB} replacement, not ${a}'s ${wouldBeA}%`);
+    }
+    w.eval("setProdView(" + JSON.stringify(a) + ");");
+  }
+
+  /* the coach compares like with like: both its history reads scope to the book on screen */
+  const src = (await import("node:fs")).readFileSync((await import("node:path")).join(REPO, "master", "salt_command.html"), "utf8");
+  const cp = src.slice(src.indexOf("function custPrices("), src.indexOf("function custPrices(") + 420);
+  ok(/pSales\(PROD\)/.test(cp) && !/\breturn sales\.filter/.test(cp),
+    "custPrices reads the book on screen, so a party's other-book history cannot price this order");
+  const pc = src.slice(src.indexOf("function priceCoach("), src.indexOf("function priceCoach(") + 700);
+  ok(!/const all=sales\.filter/.test(pc),
+    "the coach's best-rate comparison is scoped to the book, not the whole ledger");
+}
+
+
+section("v410: the P&L says which period each of its three columns covers");
+{
+  /* ROUND SEVEN. The month columns are last month and this month with no year on them, the FY
+     column is the calendar year to date, and the IFRS statement below is the whole book since it
+     opened. On 1 January that reads as a contradiction: an empty FY column beside a full December
+     and a much larger IFRS revenue three rows down, with nothing on screen saying why. Calendar
+     year is the owner's, confirmed 31 Aug 2026, so the arithmetic was right and the labelling was
+     not. Proved red against v409, where seven of these fail. */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { readFileSync: rf, writeFileSync: wf, unlinkSync: rm } = await import("node:fs");
+  const { join } = await import("node:path");
+  const T = join(REPO, "test", ".v410.html");
+  const paneAt = async (clock) => {
+    const src = rf(join(REPO, "master", "salt_command.html"), "utf8")
+      .replace(/const TODAY=[^\n]*\n/, "const TODAY=new Date('" + clock + "T12:00:00+08:00');\n");
+    wf(T, src);
+    const { w } = await openMaster(T);
+    w.eval("setProd('salt');recompute();switchTab('financials');");
+    const el = w.document.querySelector(".sec.on");
+    return (el ? el.innerHTML : "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+  };
+  const jan = await paneAt("2027-01-01");
+  ok(/FY 2027 to date, nothing yet/.test(jan), "on 1 January the FY column names its year and says it is empty");
+  ok(/December 2026/.test(jan), "the month column outside the FY year carries that year, so it cannot be read as part of it");
+  ok(/Three periods sit in this part/.test(jan), "the period line reaches the screen and survives stripMethod");
+  ok(/whole book since it opened/.test(jan), "the IFRS statement names its own period, which is not the P&L's");
+  ok(/on the revenue in this column/.test(jan), "Still uncollected names the revenue it is measured on");
+  ok(/as at today, not a movement in the period/.test(jan), "Closing stock says it is a point in time, not a flow");
+  ok(/Provision charged/.test(jan), "the provisions say they are the period's charge");
+  const mid = await paneAt("2026-08-31");
+  ok(!/July 2026|August 2026/.test(mid), "a month inside the FY year is NOT year-stamped, so nothing is added for nothing");
+  try { rm(T); } catch (e) { /* best effort */ }
+}
+
+
+section("v411: the Worker's SQL run against the real schema");
+{
+  /* WHAT THIS ADDS, AND WHAT IT DELIBERATELY DOES NOT. "Worker - drafts and approval" above
+     already covers the key gate, created/existed, the listing, the card's contents, the 409 on a
+     second decision and the uncommitted filter, against a hand-rolled D1 mock that throws on any
+     statement it does not know. That mock is honest and it works. The ONE thing it cannot do is
+     execute the Worker's SQL against the ACTUAL SCHEMA, so a column that does not exist, a
+     constraint that does not hold or a NOT NULL the migrations declare would pass it. This runs
+     the real migrations in a real SQLite and drives the real Worker over them.
+     It also covers four edges the section above leaves: an unknown id, a reject AFTER an approve,
+     committing something still pending, and committing twice.
+     No credential, no network, and production D1 is never touched. */
+  let DatabaseSync = null;
+  try { ({ DatabaseSync } = await import("node:sqlite")); } catch (e) { /* older runtime */ }
+  if (!DatabaseSync) {
+    console.log("  SKIP: node:sqlite is unavailable here, so the Worker's SQL was NOT run against the real schema.");
+    console.log("        Everything else about /drafts is still covered by the mock above. Needs node 22.5+ or 24.");
+  } else {
+    const { readFileSync: rf, readdirSync: rd } = await import("node:fs");
+    const { join } = await import("node:path");
+    const db = new DatabaseSync(":memory:");
+    for (const f of rd(join(REPO, "migrations")).filter((x) => /^\d+_.*\.sql$/.test(x)).sort()) {
+      db.exec(rf(join(REPO, "migrations", f), "utf8"));
+    }
+    const D1 = { prepare(sql) {
+      const st = db.prepare(sql);
+      const mk = (a2) => ({
+        run() { const r = st.run(...a2); return { meta: { changes: Number(r.changes || 0) } }; },
+        first() { const r = st.get(...a2); return r === undefined ? null : r; },
+        all() { return { results: st.all(...a2) }; },
+      });
+      const self = mk([]); self.bind = (...a2) => mk(a2); return self;
+    } };
+    const KEY = "suite-key";
+    const env = { SALT_LEDGER: D1, SALT_WRITE_KEY: KEY, REQUIRE_ACCESS: "0", SALT_QUEUE: null };
+    const call = async (method, path, body) => {
+      const res = await worker.fetch(new Request("https://x.workers.dev" + path, {
+        method, headers: { "Content-Type": "application/json", "X-Salt-Key": KEY },
+        body: body === undefined ? undefined : JSON.stringify(body) }), env, { waitUntil() {} });
+      let j = null; try { j = JSON.parse(await res.text()); } catch (e) { /* not json */ }
+      return { status: res.status, j };
+    };
+    /* a bad statement throws out of SQLite rather than returning a value, and a throw here would
+       take the rest of the suite with it, so it is caught and named. */
+    const guard = async (label, fn) => { try { return await fn(); } catch (e) { ok(false, label + " -- " + String(e.message || e).slice(0, 90)); return null; } };
+    const ID = "suite-sql-1";
+    const D = { id: ID, collection: "sales",
+      entry: { at: "2026-08-31T00:00:00.000Z", party: "CG5-SB", qty: 1, total: 90 },
+      row: { customer: "CG5-SB", product: "salt", date: "2026-08-31", qty: 1, total: 90, cost: 48.5 },
+      reasoning: "one unit at the house rate", flags: ["a flag"], drafter: "suite" };
+
+    /* the point of the section: every statement the Worker issues must run on the real schema */
+    const made = await guard("the Worker's INSERT runs against the migrations' own draft table", () => call("POST", "/drafts", D));
+    ok(made && made.status === 200 && made.j.created === true,
+      "the Worker's INSERT runs against the migrations' own draft table");
+    const listed = await guard("the Worker's SELECT names only columns the schema has", () => call("GET", "/drafts?status=pending"));
+    ok(listed && listed.status === 200 && listed.j.drafts.some((d) => d.id === ID),
+      "and its SELECT reads the row back, so every column it names exists");
+
+    ok((await call("POST", "/drafts/no-such-id/approve", {})).status === 404,
+      "deciding an id that is not there is 404, not a silent success");
+    ok((await call("POST", "/drafts/" + ID + "/committed", {})).status === 409,
+      "a PENDING draft cannot be marked committed");
+    ok((await call("POST", "/drafts/" + ID + "/approve", {})).status === 200, "it approves");
+    ok((await call("POST", "/drafts/" + ID + "/reject", {})).status === 409,
+      "a reject AFTER an approve is refused, so a double tap cannot flip a decision");
+    ok((await call("POST", "/drafts/" + ID + "/committed", {})).j.committedAt, "an approved draft commits");
+    ok((await call("POST", "/drafts/" + ID + "/committed", {})).j.alreadyCommitted === true,
+      "and committing it twice is reported rather than applied twice");
+  }
+}
+
+
+section("v413: a lot is not measured like a sale");
+{
+  /* ROUND EIGHT, MATERIAL, AND MINE. The book's convention for a fully landed lot is an ABSENT
+     receivedQty, and for a settled one an absent cash beside status:"paid". poRecvUnits and poCash
+     are what read that, and the engine's own walk already says buy?poCash(t):txPaid(t). The v408
+     panel read the RAW fields, so TEN of eighteen lots reported a false outstanding and FIVE
+     offered their whole total behind a "Paid in full" chip: RM 5,450 of liability that does not
+     exist. The fold had two faults of the same family: its BUY branch RETURNED before the
+     Cancellation handler, so cancelling a lot set nothing and then rewrote a settled lot to
+     unpaid, and its status recompute ignored the convention its own accumulator nine lines above
+     honours, so any unit-only receipt on a settled lot wiped the payment.
+     These assert the CONTRACT against the engine's own helpers, never against a formula retyped
+     here: my first probe reimplemented poRecvUnits, omitted its defaulted case, and reported a
+     correct panel as wrong. */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { applyAmend } = await import("../tools/fold.mjs");
+  const { readFileSync: rf } = await import("node:fs");
+  const { join } = await import("node:path");
+  const { w } = await openMaster();
+  w.eval("setProd('salt');recompute();");
+  const bk = JSON.parse(rf(join(REPO, "ledger", "book.json"), "utf8"));
+
+  /* 1. the panel's outstanding is total-minus-poCash and qty-minus-poRecvUnits, on every lot */
+  const wrong = [];
+  for (const p of (bk.purchases || [])) {
+    if (!p.rid) continue;
+    const q = JSON.stringify(p.rid);
+    const o = JSON.parse(w.eval("JSON.stringify(updOut(purchases.find(x=>x.rid===" + q + "),'BUY'))"));
+    const paid = +w.eval("poCash(purchases.find(x=>x.rid===" + q + "))");
+    const recv = +w.eval("poRecvUnits(purchases.find(x=>x.rid===" + q + "))");
+    const wantC = +Math.max(0, (+p.total || 0) - paid).toFixed(2);
+    const wantU = +Math.max(0, (+p.qty || 0) - recv).toFixed(2);
+    if (Math.abs(o.cashLeft - wantC) > 0.01 || Math.abs(o.unitLeft - wantU) > 0.01) {
+      wrong.push(p.rid + ": panel " + o.cashLeft + "/" + o.unitLeft + " vs " + wantC + "/" + wantU);
+    }
+  }
+  ok(wrong.length === 0,
+    "every lot's outstanding is measured by the purchase convention -- " + wrong.slice(0, 4).join(" | "));
+
+  /* 2. a settled, landed lot has nothing to offer */
+  const settled = (bk.purchases || []).find((p) => p.rid && p.status === "paid" && p.cash == null
+    && p.receivedQty == null && !p.pending && !p.inTransit && !p.defaulted);
+  if (settled) {
+    w.eval("ledEdit(" + JSON.stringify(settled.rid) + ",'BUY');");
+    const chips = JSON.parse(w.eval("JSON.stringify([].map.call(document.querySelectorAll('.updchip'),b=>b.textContent))"));
+    ok(!chips.some((c) => /Paid in full|Received in full/.test(c)),
+      "a settled and landed lot offers neither Paid in full nor Received in full (" + (chips.join(" / ") || "none") + ")");
+    w.eval("document.getElementById('updCash').value='1';document.getElementById('updCash').oninput();");
+    ok(!/Pending/.test(w.eval("document.getElementById('updSay').textContent")),
+      "and the sentence does not call a landed lot Pending, which txStat cannot help but do");
+  } else ok(true, "no settled landed lot on the book to check the panel against (skipped)");
+
+  /* 3. the fold, on lots it is handed rather than on its own source text */
+  const lot = (over) => Object.assign({ date: "2026-08-01", qty: 10, total: 500, supplier: "SF6-KLC",
+    inTransit: true, receivedQty: 0, rid: "t" }, over);
+  const a = lot({ status: "paid" });
+  applyAmend(a, { kind: "Fulfilment", date: "2026-08-31", cash: 0, kg: 10 }, "BUY", null);
+  ok(a.status === "paid" && a.receivedQty === 10,
+    "a unit-only receipt on a lot settled by status leaves it paid and records the receipt");
+  const b2 = lot({ status: "unpaid" });
+  applyAmend(b2, { kind: "Fulfilment", date: "2026-08-31", cash: 0, kg: 10 }, "BUY", null);
+  ok(b2.status === "unpaid", "and an unpaid lot is not turned into a paid one by a receipt");
+  const c2 = lot({ status: "paid", receivedQty: null, inTransit: false });
+  let refused = false;
+  try { applyAmend(c2, { kind: "Cancellation", date: "2026-08-31" }, "BUY", null); } catch (e) { refused = true; }
+  ok(refused, "cancelling a LANDED lot is refused, on the absent-receivedQty convention");
+  const d2 = lot({ status: "unpaid" });
+  applyAmend(d2, { kind: "Cancellation", date: "2026-08-31" }, "BUY", null);
+  ok(d2.cancelled === true, "cancelling a lot that received nothing actually marks it cancelled, which it never did");
+  ok(d2.status !== "paid", "and does not invent a payment state on the way out");
+}
+
 /* ---- done ----------------------------------------------------------------------- */
+
+section("Round 7: the states no suite check had ever rendered");
+{
+  /* ROUND SEVEN'S BIGGEST HOLE WAS NOT A FAULT, IT WAS A BLIND SPOT: every one of the suite's
+     openMaster() calls ran the LIVE book, so no assertion had ever seen an empty book, a fresh
+     product or a stepped-back clock. A probe reverted a complete v406 guard and the suite still
+     read 700 passed. These checks render MUTATED books, and each was proved red against v406
+     before it was written: the undated row threw, the fallback never reached the screen, the
+     empty history printed an infinity and five surfaces printed a negative day count. */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { readFileSync: rf, writeFileSync: wf, unlinkSync: rm } = await import("node:fs");
+  const { execSync } = await import("node:child_process");
+  const { join } = await import("node:path");
+  const TMP = join(REPO, "test", ".r7tmp.html");
+  const TMPB = join(REPO, "test", ".r7tmp.json");
+  const bookNow = JSON.parse(rf(join(REPO, "ledger", "book.json"), "utf8"));
+
+  const withBook = (obj) => {
+    wf(TMPB, JSON.stringify(obj, null, 1));
+    wf(TMP, rf(join(REPO, "master", "salt_command.html"), "utf8"));
+    execSync("node tools/booksync.mjs --sync", { cwd: REPO, env: { ...process.env, SALT_BOOK: TMPB, SALT_MASTER: TMP }, stdio: "pipe" });
+    return TMP;
+  };
+  const paneOf = async (path, tab, prod, clock) => {
+    let src = rf(path, "utf8");
+    if (clock) src = src.replace(/const TODAY=[^\n]*\n/, `const TODAY=new Date('${clock}T12:00:00+08:00');\n`);
+    wf(TMP + ".run.html", src);
+    const { w } = await openMaster(TMP + ".run.html");
+    w.eval(`setProd(${JSON.stringify(prod)});recompute();`);
+    let html = "", threw = null;
+    try {
+      w.eval(`switchTab(${JSON.stringify(tab)});`);
+      const el = w.document.querySelector(".sec.on") || w.document.querySelector("#sec-" + tab);
+      html = el ? el.innerHTML : "";
+    } catch (e) { threw = String((e && e.message) || e); }
+    return { w, html, text: html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim(), threw };
+  };
+
+  /* 1. an undated row carrying cash must not blank the whole statement. s119 is undated on the
+        live book and a Correction putting cash on it passes every gate, so this is one tap. */
+  {
+    const b = JSON.parse(JSON.stringify(bookNow));
+    const row = (b.sales || []).find((r) => !r.date && !r.cancelled && (r.product || "salt") === "salt");
+    if (!row) { ok(true, "no live undated sale to test the finRows guard with (skipped)"); }
+    else {
+      row.cash = 100;
+      const r = await paneOf(withBook(b), "financials", "salt");
+      ok(!r.threw, `Financials renders with cash on an undated row (${row.rid}) -- ${r.threw}`);
+      ok(r.text.length > 400, `Financials is not blank with cash on an undated row (${r.text.length} chars)`);
+      let u = null; try { u = r.w.eval("finRows().undated.length"); } catch (e) { u = "threw"; }
+      ok(u === 1, `finRows holds the undated row out and counts it (got ${u})`);
+    }
+  }
+
+  /* 2 and 3. the fresh-book path: the fallback must survive stripMethod, and an empty stock
+        history must not print an infinity. Both fired on v406. */
+  {
+    const b = JSON.parse(JSON.stringify(bookNow));
+    b.sales = []; b.purchases = [];
+    const m = withBook(b);
+    const src = await paneOf(m, "sourcing", "salt");
+    ok(!src.threw, `Sourcing renders on an all-empty book -- ${src.threw}`);
+    ok(/nothing to source against/i.test(src.text), "the Sourcing fallback reaches the screen and is not culled by stripMethod");
+    const ana = await paneOf(m, "analysis", "salt");
+    ok(!ana.threw, `Analysis renders on an all-empty book -- ${ana.threw}`);
+    ok(!/Infinity|\u221e/.test(ana.text), "Analysis prints no infinity on a book with no stock history");
+  }
+
+  /* 3b. v412: a book whose customers have bought NOTHING must not print RM 1 of revenue. The
+        ||1 is a divide-by-zero guard and it was the displayed total too; v406 guarded the display
+        on the customer COUNT, which is not what makes the sentinel. */
+  {
+    const b3 = JSON.parse(JSON.stringify(bookNow));
+    (b3.sales || []).forEach((r) => { r.total = 0; r.cash = 0; });
+    const r3 = await paneOf(withBook(b3), "concentration", "salt");
+    ok(!r3.threw, `Customers renders on a book with customers and nil revenue -- ${r3.threw}`);
+    ok(!/All RM 1/.test(r3.text) && !/>RM 1</.test(r3.html || ""),
+      "the All row prints the real revenue total, not the divide-by-zero sentinel");
+  }
+
+  /* 4. one rule for a day count. v406 floored four surfaces and left four, so the same money
+        read "-16d" on Today and "0d out" on Forward. Nothing may print a negative age. */
+  {
+    const dated = (bookNow.sales || []).filter((r) => r.date).map((r) => r.date).sort();
+    const back = dated[Math.floor(dated.length / 2)];
+    const negs = [];
+    for (const t of ["today", "forward", "receivables", "sourcing", "concentration", "overview"]) {
+      for (const p of ["salt", "oil"]) {
+        const r = await paneOf(join(REPO, "master", "salt_command.html"), t, p, back);
+        if (r.threw) negs.push(`${t}/${p} threw`);
+        const m = r.text.match(/(?<![\d-])-\d+\s*(d\b|days?\b)/g);
+        if (m) negs.push(`${t}/${p}: ${m.slice(0, 2).join(", ")}`);
+      }
+    }
+    ok(negs.length === 0, `no surface prints a negative day count at a clock behind the book -- ${negs.join(" | ")}`);
+  }
+
+  /* 5. the snapshot the drafter approves against must be taken on the book it names. */
+  {
+    const { pricingSnapshot } = await import("../tools/book.mjs");
+    const { w } = await openMaster();
+    const snap = pricingSnapshot(w);
+    const prods = JSON.parse(w.eval("JSON.stringify(PROD_ORDER)"));
+    const off = [];
+    for (const p of prods) {
+      w.eval(`PROD=${JSON.stringify(p)};recompute();`);
+      for (const q of [1, 2.5]) {
+        const desk = w.eval(`floorTotal(${q})`);
+        const snapped = snap.byProduct[p] && snap.byProduct[p].floors && snap.byProduct[p].floors[q]
+          ? snap.byProduct[p].floors[q].delivered : null;
+        if (snapped == null || Math.abs(snapped - desk) > 0.005) off.push(`${p}@${q}: snapshot ${snapped} vs desk ${desk}`);
+      }
+    }
+    ok(off.length === 0, `every snapshot floor is taken on its own book's walk -- ${off.join("; ")}`);
+  }
+
+  /* 6. the two gates round seven found open. */
+  {
+    const d = rf(join(REPO, "src", "drafter.js"), "utf8");
+    const theirs = d.slice(d.indexOf("const theirs"), d.indexOf("const theirs") + 900);
+    ok(/s\.total > 0/.test(theirs), "the party-median set excludes zero-value rows, as the observed range does");
+    /* v413: this used to slice the source around the Cancellation branch and grep it. There are TWO
+       branches now, one per direction, so the slice found the wrong one and the assertion broke on
+       a fix rather than on a fault. Asserting on source text is how a check ends up measuring its
+       own phrasing; it FOLDS a cancellation on each direction instead and reads what happens. */
+    const { applyAmendForTest } = await import("../tools/fold.mjs").then((m) => ({ applyAmendForTest: m.applyAmend || null }));
+    const bk2 = JSON.parse(rf(join(REPO, "ledger", "book.json"), "utf8"));
+    const soldRow = (bk2.sales || []).find((r) => !r.cancelled && (+r.deliveredQty || 0) > 0.009);
+    const lotRow = (bk2.purchases || []).find((r) => !r.cancelled && !r.pending && r.receivedQty == null);
+    const refuses = (row, dir) => {
+      if (!applyAmendForTest || !row) return null;
+      try { applyAmendForTest(row, { kind: "Cancellation", date: "2026-08-31" }, dir, null); return false; }
+      catch (e) { return /already (moved|received)/.test(String(e.message || e)); }
+    };
+    const rs = refuses(soldRow, "SELL"), rl = refuses(lotRow, "BUY");
+    if (rs === null && rl === null) {
+      ok(/E\.poRecvUnits\(row\)/.test(rf(join(REPO, "tools", "fold.mjs"), "utf8")),
+        "the fold's cancellation gates read a lot by poRecvUnits (applyAmend is not exported, checked by source)");
+    } else {
+      ok(rs !== false, "cancelling a SALE that has delivered goods is refused by the fold");
+      ok(rl !== false, "cancelling a LOT that has been received is refused too, on the absent-receivedQty convention");
+    }
+  }
+
+  for (const f of [TMP, TMPB, TMP + ".run.html"]) { try { rm(f); } catch (e) { /* best effort */ } }
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

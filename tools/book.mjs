@@ -140,7 +140,7 @@ export const NAME_COLLISIONS = new Set(["max", "min"]);
  *
  * Same rule and same reason as pricingSnapshot above: the drafter needs to know what is still
  * outstanding against a row before it can describe an amendment to it, and working that out in
- * a Worker would put a second copy of txPaid, txEffDeliv, poCash and poRecvKg in a second file.
+ * a Worker would put a second copy of txPaid, txEffDeliv, poCash and poRecvUnits in a second file.
  * Three separate attempts at exactly that arithmetic were wrong on the first real rows on 20
  * Aug, all in the same way: raw fields read with the wrong ruler. So it is not recomputed. The
  * desk answers, during the extract, and the answer is stored.
@@ -182,7 +182,11 @@ export function pricingSnapshot(w) {
     const before = call("PROD");
     let floors = null, repl = null, stockCost = null, inputs = null;
     try {
-      w.eval("PROD=" + JSON.stringify(p));
+      /* v407, round seven, MATERIAL: PROD was assigned bare and the walk was never re-run, so
+         every walk-derived global stayed on the PREVIOUS book and all twenty-four oil floors came
+         out wrong. This is the production path: it is what the D1 mirror carries and what the
+         below-floor flag is read against, so the snapshot must be taken on the book it names. */
+      w.eval("PROD=" + JSON.stringify(p) + ";if(typeof recompute==='function')recompute();");
       stockCost = numOrNull(call("stockCostFor(" + JSON.stringify(p) + ")"));
       repl = numOrNull(call("replCost()"));
       /* v337: THE ENGINE'S OWN INPUTS, so the drafter can price any size with the module rather
@@ -196,7 +200,7 @@ export function pricingSnapshot(w) {
         };
       }
     } catch (e) { /* a product the desk cannot price yields nulls, which the drafter must handle */ }
-    finally { if (before != null) { try { w.eval("PROD=" + JSON.stringify(before)); } catch (e) { } } }
+    finally { if (before != null) { try { w.eval("PROD=" + JSON.stringify(before) + ";if(typeof recompute==='function')recompute();"); } catch (e) { } } }
     byProduct[p] = { stockCost, replCost: repl, floors, inputs };
   }
 

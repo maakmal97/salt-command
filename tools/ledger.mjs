@@ -67,7 +67,8 @@ const NOT_LEDGER = new Set([
      editable attributes: presentation of the book, never the book. It is data-shaped because a
      table beats thirty hand-written fields that would drift, which is the same reason VIEWS is
      data-shaped and equally not a fact about any trade. */, "PRICE_TIERS", "PRICE_MODEL", "PRICE_LOCK", "PXBANDS", "PX",
-  "REF", "REF_POINTS", "LADDER", "BAND_LABEL", "BAND_NAME", "COST_BASIS", "COST_BOOK", "SALES_POLICY",
+  "REF", "REF_POINTS", "LADDER", "LADDER_BY" /* round 5: the per-book ladder anchors; a rule, like LADDER itself */,
+  "BAND_LABEL", "BAND_NAME", "COST_BASIS", "COST_BOOK", "SALES_POLICY",
   "RULES", "SHRINK", "R0_NETWORK", "REBATE", "REWARD", "FWD", "PROD_STOCK_COST", "PROD_IDS",
   "TIERS", "SIZES", "PRICES", "BANDS", "HURDLES", "REWARDS", "CADENCE", "THRESHOLDS",
 

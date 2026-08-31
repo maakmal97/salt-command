@@ -88,7 +88,7 @@ function stmtRows(party,o){
   }).sort((a,b)=>new Date(a.date)-new Date(b.date)).map(s=>{
     const st=txStat(s), d=txDates(s);
     const paidCash=+(s.cash||0), inKind=+(s.settledRM||0);
-    const got=+(s.deliveredQty||0), inKindKg=+(s.settledKg||0);
+    const got=+(s.deliveredQty||0), inKindUnits=+(s.settledKg||0);
     const owed=+(s.total-paidCash-inKind).toFixed(2);
     /* a cross-reference is included ONLY when it points at another of HIS OWN orders;
        anything pointing elsewhere is another party's business and is dropped */
@@ -106,7 +106,7 @@ function stmtRows(party,o){
     const gift=!!s.rebate;
     return {gift:gift,date:s.date,qty:s.qty,total:gift?0:s.total,
       unit:s.qty>0?+(s.total/s.qty).toFixed(2):0,
-      paidCash:paidCash,inKind:inKind,got:got,inKindKg:inKindKg,
+      paidCash:paidCash,inKind:inKind,got:got,inKindUnits:inKindUnits,
       /* PENDING COUNTS NOWHERE, on a statement as everywhere else (v189). An order
          agreed with nothing paid and nothing collected is an intention, not a debt, and
          showing its value as OUTSTANDING would tell a customer he owes money for salt he
@@ -128,13 +128,13 @@ function stmtRows(party,o){
       /* WHAT HE IS OWED IN SALT, which is the figure a dispute actually turns on.
          deliverable = ordered LESS anything withheld by agreement to settle an earlier
          balance; toGet = deliverable LESS what he has already carried away. */
-      deliverable:+(s.qty-inKindKg).toFixed(4),
-      toGet:+(s.qty-got-inKindKg).toFixed(4),
+      deliverable:+(s.qty-inKindUnits).toFixed(4),
+      toGet:+(s.qty-got-inKindUnits).toFixed(4),
       paidOn:d.pOn||null,gotOn:d.dOn||null,
       state:gift?'No charge'
             :st.order==='Pending'?'Agreed, nothing moved yet'
             :(owed>0.009?'Balance outstanding'
-              :(+(s.qty-got-inKindKg).toFixed(4)>0.009?'Paid in full'
+              :(+(s.qty-got-inKindUnits).toFixed(4)>0.009?'Paid in full'
                 :'Settled')),
       links:[...new Set(links)]};
   });
@@ -156,7 +156,7 @@ function stmtRows(party,o){
 function stmtRecon(party,rows){
   const out=[];
   sales.filter(s=>s.customer===party&&(s.settledKg||0)>0.0001).forEach(s=>{
-    const kgOff=+s.settledKg;
+    const unitsOff=+s.settledKg;
     const keys=[];
     (s.amend||[]).forEach(a=>{(a.refKeys||[]).forEach(k=>{if(k&&k.indexOf(party+'|')===0)keys.push(k);});});
     const legs=[...new Set(keys)].map(k=>{
@@ -166,7 +166,7 @@ function stmtRecon(party,rows){
       return {date:t.date,qty:t.qty,billed:billed,paid:paidCash,short:+(billed-paidCash).toFixed(2)};
     }).filter(Boolean).sort((a,b)=>new Date(a.date)-new Date(b.date));
     const shortTot=+legs.reduce((a,x)=>a+x.short,0).toFixed(2);
-    const rate=kgOff>0?+(shortTot/kgOff).toFixed(2):0;
+    const rate=unitsOff>0?+(shortTot/unitsOff).toFixed(2):0;
     const collected=+(s.deliveredQty||0);
     /* NOT EVERY OFFSET IS AGAINST AN EARLIER ORDER (v192). This walk was written for
        the case where salt was withheld to clear unpaid balances on previous SALES, and
@@ -177,10 +177,10 @@ function stmtRecon(party,rows){
        So the no-leg case is flagged here and told plainly rather than tabulated. */
     out.push({order:{date:s.date,qty:s.qty,total:s.total,paid:+(s.cash||0)},
       noLegs:legs.length===0,
-      legs:legs,shortTot:shortTot,kgOff:kgOff,rate:rate,
-      deliverable:+(s.qty-kgOff).toFixed(4),
+      legs:legs,shortTot:shortTot,unitsOff:unitsOff,rate:rate,
+      deliverable:+(s.qty-unitsOff).toFixed(4),
       collected:collected,
-      owed:+(s.qty-kgOff-collected).toFixed(4),
+      owed:+(s.qty-unitsOff-collected).toFixed(4),
       payments:(s.amend||[]).filter(a=>+a.cash>0.009).map(a=>({date:a.date,rm:+a.cash}))});
   });
   return out;
@@ -222,7 +222,7 @@ function stmtDoc(party,rows,o){
      cannot carry a real name because nothing here holds one. */
   const who=codeOf(party);
   const T={qty:0,total:0,paid:0,owed:0};
-  T.toGet=0;T.kindKg=0;T.got=0;T.ordered=0;
+  T.toGet=0;T.kindUnits=0;T.got=0;T.ordered=0;
   /* a GIFT is not a payment. Its in-kind value exists so the salt does not fall out of
      the ledger as shrinkage; counting it here made Paid exceed the total ordered, which
      is the one arithmetic a reader would certainly catch. */
@@ -234,7 +234,7 @@ function stmtDoc(party,rows,o){
     if(r.cancelled){T.cxN++;return;}
     if(r.pendingOrder){T.pendQty+=r.qty;T.pendVal+=r.total;T.pendN++;}
     T.qty+=r.qty;T.total+=r.total;T.paid+=r.gift?0:(r.paidCash+r.inKind);T.owed+=r.owed;
-    T.toGet+=(r.toGet>0&&!r.pendingOrder)?r.toGet:0;T.kindKg+=r.gift?0:r.inKindKg;T.got+=r.got;T.ordered+=r.qty;});
+    T.toGet+=(r.toGet>0&&!r.pendingOrder)?r.toGet:0;T.kindUnits+=r.gift?0:r.inKindUnits;T.got+=r.got;T.ordered+=r.qty;});
   /* the row label has to agree with the walk printed below it. Where the offset went
      against a separate arrangement rather than an unpaid earlier order, calling it an
      "earlier balance" contradicts the explanation three inches further down the page. */
@@ -243,27 +243,27 @@ function stmtDoc(party,rows,o){
     const due=r.owed>0.009;
     const when=(o.dates&&r.paidOn&&r.paidOn!==r.date)?'<div class="sub2">paid '+e(dLong(r.paidOn))+'</div>':'';
     /* nor is it goods owed: nothing has been paid for, so nothing is being withheld */
-    const owedKg=r.toGet>0.009&&!r.pendingOrder;
+    const owedUnits=r.toGet>0.009&&!r.pendingOrder;
     let stat;
     /* "no charge" and not "goodwill": the same flag covers a gift AND a reseller's
        EARNED reward, and calling an earned reward a gift misdescribes it to the one
        person who knows better. The customer knows which of the two his was. */
     if(r.cancelled)stat='<span class="cx">cancelled</span>'
-      +(r.cancelledOn?'<div class="owedkg">'+e(dLong(r.cancelledOn))+'</div>':'');
+      +(r.cancelledOn?'<div class="owedunits">'+e(dLong(r.cancelledOn))+'</div>':'');
     else if(r.gift)stat='<span class="gift">no charge</span>';
     /* AN AGREED ORDER IS NOT A SETTLED ONE (v189). Nothing has been paid and nothing
        collected, so it is neither a debt nor a closed line. It still belongs on the
        statement, because he agreed to it and will be asked for the money in due course,
        but it must read as what it is: outstanding on BOTH sides, owing nothing yet. */
     else if(r.pendingOrder)stat='<span class="pend">ordered</span>'
-      +'<div class="owedkg">to be collected and paid</div>';
+      +'<div class="owedunits">to be collected and paid</div>';
     else if(due)stat='<span class="due">'+money(r.owed)+' due</span>';
-    else if(owedKg)stat='<span class="ok">paid in full</span><div class="owedkg">'+n2(r.toGet)+' unit still to collect</div>';
+    else if(owedUnits)stat='<span class="ok">paid in full</span><div class="owedunits">'+n2(r.toGet)+' unit still to collect</div>';
     else stat='<span class="ok">settled</span>';
     return '<tr>'
       +'<td class="l dt">'+e(dLong(r.date))+when+'</td>'
       +'<td class="q'+(r.cancelled?' cxr':'')+'">'+n2(r.qty)+'<span class="u">unit</span>'
-        +(r.inKindKg>0.009?'<div class="sub2">'+n2(r.inKindKg)+' unit applied '
+        +(r.inKindUnits>0.009?'<div class="sub2">'+n2(r.inKindUnits)+' unit applied '
           +(noLegDates.has(r.date)?'by agreement':'to an earlier balance')+'</div>':'')
         +'</td>'
       +'<td class="amt'+(r.cancelled?' cxr':'')+'">'+(r.gift?'<span class="nilamt">nil</span>':money(r.total))+'</td>'
@@ -308,7 +308,7 @@ function stmtDoc(party,rows,o){
    '.cx{color:#7f8a9c;font-weight:800;font-size:13px;letter-spacing:.02em}',
    '.cxr{text-decoration:line-through;text-decoration-thickness:1px;opacity:.5}',
    '.pend{color:#c8b6ff;font-weight:800;font-size:13px;letter-spacing:.02em}',
-   '.owedkg{font-size:12px;color:#7fd7e8;margin-top:4px;font-weight:600;white-space:nowrap}',
+   '.owedunits{font-size:12px;color:#7fd7e8;margin-top:4px;font-weight:600;white-space:nowrap}',
    '.gift{font-size:12px;color:#b07cff;letter-spacing:.02em;white-space:nowrap}',
    '.nilamt{color:#6b7688;font-weight:400}',
    '.owed{margin-top:26px;border:1px solid #2a5560;border-radius:12px;padding:20px 22px;',
@@ -340,7 +340,7 @@ function stmtDoc(party,rows,o){
    '.tr span:last-child{color:#111}.tr.big span:last-child{color:#8a5b00}',
    '.tr.big.clear span:last-child{color:#186b45}td{border-color:#ddd}.rule{background:#ccc}',
    '.owed{background:#f2f8fa;border-color:#9dc4cf}.owedl,.owedv{color:#0b5f70}',
-   '.owedv span,.owedn{color:#3d6d78}.owedkg{color:#0b5f70}.gift{color:#5a3d8a}}',
+   '.owedv span,.owedn{color:#3d6d78}.owedunits{color:#0b5f70}.gift{color:#5a3d8a}}',
    '</style></head><body><div class="w">',
    '<p class="eyebrow">'+e(o.brand||'Salt Command')+'</p>',
    '<h1>Statement of account</h1>',
@@ -405,7 +405,7 @@ function stmtDoc(party,rows,o){
         salt went against, because a statement is not the place to restate a private
         settlement, and it invites the question instead. */
      if(R.noLegs){
-       const gone=R.kgOff, took=R.collected;
+       const gone=R.unitsOff, took=R.collected;
        return '<div class="rec"><p class="recl">How your '+e(dLong(R.order.date))+' order was settled</p>'
          +step('The order was paid in full.',
                n2(R.order.qty)+' unit at '+money(R.order.total/R.order.qty)+' a unit is '
@@ -435,7 +435,7 @@ function stmtDoc(party,rows,o){
              +legRows+'<tr class="tot"><td class="l" colspan="4">Carried forward</td><td class="r"><b class="short">'
              +money(R.shortTot)+'</b></td></tr></tbody></table>')
        +step('That '+money(R.shortTot)+' was settled out of your order of '+e(dLong(R.order.date))+', in salt rather than cash.',
-             money(R.shortTot)+' at '+money(R.rate)+' a unit is <b>'+n2(R.kgOff)+' unit</b>, withheld from that order by agreement. No money changed hands and that salt stayed on the shelf.')
+             money(R.shortTot)+' at '+money(R.rate)+' a unit is <b>'+n2(R.unitsOff)+' unit</b>, withheld from that order by agreement. No money changed hands and that salt stayed on the shelf.')
        +step('The '+e(dLong(R.order.date))+' order itself is paid in full.',
              n2(R.order.qty)+' unit at '+money(R.order.total/R.order.qty)+' a unit is '+money(R.order.total)+', received as '+pays+'.')
        +step(R.owed>0.009
@@ -443,7 +443,7 @@ function stmtDoc(party,rows,o){
              :'So the salt due to you was what you bought, less what settled the balance, less what you had already taken. All of it has since been handed over.',
              '<table class="mini calc"><tbody>'
              +'<tr><td class="l">Bought</td><td class="r">'+n2(R.order.qty)+' unit</td></tr>'
-             +'<tr><td class="l">Less applied to the '+money(R.shortTot)+' balance</td><td class="r">&minus; '+n2(R.kgOff)+' unit</td></tr>'
+             +'<tr><td class="l">Less applied to the '+money(R.shortTot)+' balance</td><td class="r">&minus; '+n2(R.unitsOff)+' unit</td></tr>'
              +'<tr class="sub"><td class="l">Deliverable</td><td class="r">'+n2(R.deliverable)+' unit</td></tr>'
              +'<tr><td class="l">Less already collected</td><td class="r">&minus; '+n2(R.collected)+' unit</td></tr>'
              +'<tr class="tot"><td class="l">'+(R.owed>0.009?'Still to collect':'Collected in full, nothing outstanding')+'</td><td class="r">'+n2(R.owed)+' unit</td></tr>'

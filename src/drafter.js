@@ -172,6 +172,21 @@ export function checkCorrection(fields, book, target, isSale) {
     if (fields[k] === undefined) continue;
     if (fields[k] === null) delete after[k]; else after[k] = fields[k];
   }
+  /* round six: cancelled-and-delivered is a contradiction the desk then chases as money owed
+     while the delivered unit leaves the shelf uncosted. The two fields are individually
+     correctable, so the PAIR is checked here, on the state the correction would leave. */
+  /* v407, round seven: a LOT records receivedQty, so a Correction cancelling a landed lot walked
+     past a gate that tested deliveredQty alone, kept its units on the shelf and its cost in the
+     basis, and therefore moved wavgBuy and every floor beneath it. Whichever field the direction
+     uses, the contradiction is the same one. */
+  /* v413: an absent receivedQty on a landed lot MEANS received in full, so a raw read called
+     nine of the book's lots empty and let every one of them be cancelled while holding stock. */
+  const recvOnRow = after.receivedQty != null ? Math.max(0, +after.receivedQty)
+    : ((after.pending || after.inTransit) ? 0 : (+after.qty || 0));
+  const movedOnRow = Math.max(+after.deliveredQty || 0, !isSale ? recvOnRow : 0);
+  if (after.cancelled === true && movedOnRow > 0.009) {
+    errs.push(`the corrected row would be cancelled AND carry ${movedOnRow} unit already moved, which contradicts itself: restate qty by Modification for what moved, then cancel the remainder`);
+  }
 
   /* AN ATTRIBUTION IS THREE FIELDS THAT ONLY MEAN ANYTHING TOGETHER, and the desk's own rule is
      that R2 books the sale to the associate with the buyer behind it, while R3 leaves the buyer
@@ -198,7 +213,7 @@ export function checkCorrection(fields, book, target, isSale) {
   }
   if (changes.some((c) => c.field === "date" && c.to === null)) {
     const eff = isSale ? POSITION_ENGINE.txPaid(target) : POSITION_ENGINE.poCash(target);
-    const mvd = isSale ? POSITION_ENGINE.txEffDeliv(target) : POSITION_ENGINE.poRecvKg(target);
+    const mvd = isSale ? POSITION_ENGINE.txEffDeliv(target) : POSITION_ENGINE.poRecvUnits(target);
     if (eff > 0.005 || mvd > 0.005) {
       errs.push("the date cannot be cleared: money or stock has moved against this row, and an undated row reads as pending, which a row with movement is not");
     }
@@ -321,7 +336,10 @@ export function flagsFor(entry, row, book, priced) {
         it is first because it is the one that would have caught it: RM115 against a book whose
         oil had never left the RM6 to RM13 band. A factor rather than a fixed band, so it
         scales with whatever the product actually trades at. */
-  const seen = committed.filter((s) => prodOf(s) === p && isNum(s.total) && isNum(s.qty) && s.qty > 0)
+  /* s.total > 0: a committed zero-value row (a free unit, a goodwill settlement) is not a
+     price anyone paid, and one of them pulled salt's observed low to RM0, which made the
+     low-side check `rate < lo/2` unfireable (round six). */
+  const seen = committed.filter((s) => prodOf(s) === p && isNum(s.total) && s.total > 0 && isNum(s.qty) && s.qty > 0)
     .map((s) => s.total / s.qty);
   if (rate != null && seen.length >= 3) {
     const lo = Math.min(...seen), hi = Math.max(...seen);
@@ -337,7 +355,11 @@ export function flagsFor(entry, row, book, priced) {
         that it is a typical rate rather than a rule. */
   const party = row.customer || row.supplier;
   const theirs = isSale
-    ? committed.filter((s) => s.customer === party && prodOf(s) === p && isNum(s.total) && isNum(s.qty) && s.qty > 0)
+    /* v407, round seven: the TWIN of the fix sixteen lines above. v406 added the zero-total
+       filter to the observed range and not to the party's own history, so one free unit still
+       dragged a party's median down: CS6-BS read RM 108.50 against a real RM 110, which misfires
+       at a rate they have actually paid and stays silent 10.9% adrift. Same rule, both sets. */
+    ? committed.filter((s) => s.customer === party && prodOf(s) === p && isNum(s.total) && s.total > 0 && isNum(s.qty) && s.qty > 0)
       .map((s) => s.total / s.qty).sort((a, b) => a - b)
     : [];
   if (rate != null && theirs.length >= 2) {
@@ -378,8 +400,14 @@ export function flagsFor(entry, row, book, priced) {
 
   /* 4. BELOW COST. Separate from the floor because it is a different fact and the book has
         actually done it: the RM6 oil resell of 11 Aug. */
-  if (isSale && isNum(priced.cost) && rate != null && rate < priced.cost) {
-    flags.push(`This sells at RM ${round(rate)}/unit against a lot that cost RM ${round(priced.cost)}: it loses money on every unit.`);
+  /* v407, round seven: a cost typed on the full order sheet reached the row and not this flag,
+     which priced off the shelf, so an under-water row drew no flag and the prose beside it called
+     it profitable while the card's own KPI grid printed the opposite number. The row's own stated
+     cost wins where there is one, because that is what every margin on the row is measured
+     against once it lands. */
+  const ownCost = isNum(row && row.cost) ? +row.cost : (isNum(priced.cost) ? priced.cost : null);
+  if (isSale && ownCost != null && rate != null && rate < ownCost) {
+    flags.push(`This sells at RM ${round(rate)}/unit against a cost of RM ${round(ownCost)}${isNum(row && row.cost) ? " stated on the row itself" : " from the shelf"}: it loses money on every unit.`);
   }
 
   /* 5. A BLENDED SHELF. The cost given is an average and the row may in truth draw two lots. */
@@ -501,7 +529,7 @@ export function draftRow(entry, book) {
          in-kind settlement, and s010 (cash 0, settledRM 80) proved it by raising nothing when
          its total was corrected below what had actually been paid. */
       const paid = isSale ? POSITION_ENGINE.txPaid(target) : POSITION_ENGINE.poCash(target);
-      const movedQty = isSale ? POSITION_ENGINE.txEffDeliv(target) : POSITION_ENGINE.poRecvKg(target);
+      const movedQty = isSale ? POSITION_ENGINE.txEffDeliv(target) : POSITION_ENGINE.poRecvUnits(target);
       if (isNum(after.total) && after.total < paid - 0.005) {
         flags.push(`The corrected total of RM ${round(after.total)} is under the RM ${round(paid)} already paid against this row.`);
       }
@@ -621,7 +649,7 @@ export function draftRow(entry, book) {
     row[dir2 === "BUY" ? "supplier" : "customer"] = t.p;
     if (t.pr) row.product = t.pr;
 
-    const oweRM = +(t.oweRM || 0), oweKg = +(t.oweKg || 0);
+    const oweRM = +(t.oweRM || 0), oweUnits = +(t.oweUnits || 0);
     const flags = [];
     /* THE COMPARISONS AN AMENDMENT CANNOT MAKE AGAINST ITSELF, which is the same idea as the
        flags on a new row: everything here is the entry measured against the order it targets. */
@@ -629,13 +657,13 @@ export function draftRow(entry, book) {
       if (cash > oweRM + 0.005) {
         flags.push(`This pays RM ${round(cash)} against RM ${round(oweRM)} outstanding, so RM ${round(cash - oweRM)} more than the order is owed.`);
       }
-      if (moved > oweKg + 0.005) {
-        flags.push(`This hands over ${round(moved)} unit against ${round(oweKg)} still to move, so ${round(moved - oweKg)} unit more than the order calls for.`);
+      if (moved > oweUnits + 0.005) {
+        flags.push(`This hands over ${round(moved)} unit against ${round(oweUnits)} still to move, so ${round(moved - oweUnits)} unit more than the order calls for.`);
       }
       if (t.d && when && when < t.d) {
         flags.push(`Dated ${when}, which is before the order's own date of ${t.d}.`);
       }
-      if (cash >= oweRM - 0.005 && moved >= oweKg - 0.005) {
+      if (cash >= oweRM - 0.005 && moved >= oweUnits - 0.005) {
         flags.push(`This SETTLES the order in full: nothing is left outstanding after it.`);
       }
     } else {
@@ -648,13 +676,13 @@ export function draftRow(entry, book) {
     }
 
     const left = kind === "Fulfilment"
-      ? `Leaves RM ${round(Math.max(0, oweRM - cash))} and ${round(Math.max(0, oweKg - moved))} unit outstanding.`
+      ? `Leaves RM ${round(Math.max(0, oweRM - cash))} and ${round(Math.max(0, oweUnits - moved))} unit outstanding.`
       : "The order is withdrawn and counts nowhere.";
     const reasoning = [
       `${kind} against ${t.p}'s ${dir2 === "BUY" ? "lot" : "order"} of ${round(t.q)} unit for RM ${round(t.t)}`,
       t.d ? `agreed ${t.d}.` : "which is pending and undated.",
       kind === "Fulfilment"
-        ? `RM ${round(cash)} and ${round(moved)} unit move on ${when}, against RM ${round(oweRM)} and ${round(oweKg)} unit outstanding. ${left}`
+        ? `RM ${round(cash)} and ${round(moved)} unit move on ${when}, against RM ${round(oweRM)} and ${round(oweUnits)} unit outstanding. ${left}`
         : left,
       "The row itself is NOT recomputed here: ovAmend in the master applies it, so there is one definition of what a fulfilment does rather than two.",
     ].join(" ");
@@ -816,7 +844,9 @@ export function draftRow(entry, book) {
       return { skip: "the edit sets no price and hides no size, so there is nothing to fold" };
     }
     const px = (book.state && book.state.PRICING) || {};
-    const floors = (px.floors && px.floors[product]) || {};
+    /* round six: the snapshot nests floors at byProduct[product].floors; a read of px.floors
+       was always empty, so the under-floor warning below had never once fired. */
+    const floors = (px.byProduct && px.byProduct[product] && px.byProduct[product].floors) || {};
     const flags = [];
     for (const k of Object.keys(prices)) {
       const f = floors[k] && (floors[k].collected != null ? floors[k].collected : floors[k].delivered);
@@ -880,7 +910,9 @@ export function draftRow(entry, book) {
   const cash = isNum(pay.cash) ? pay.cash : 0;
   const moved = isNum(pay.kg) ? pay.kg : 0;
   const priced = costFor(book, product);
-  if (priced.cost == null) return { skip: `nothing on the book says what ${product} costs, so the row cannot be priced` };
+  if (priced.cost == null) return { skip: dir === "BUY"
+    ? `the book has no cost for ${product} yet, so this first lot has nothing to be checked against: fold it by hand to establish the cost, then later lots go through this gate`
+    : `nothing on the book says what ${product} costs, so the row cannot be priced` };
 
   const paidInFull = cash >= total - 0.005;
   const deliveredInFull = moved >= qty - 0.005;
@@ -940,7 +972,7 @@ export function draftRow(entry, book) {
          The SELL branch above states what moved including a zero; this one stated it only when
          something did, so a settled lot came out with no receivedQty and no inTransit. By the
          book's own convention an absent receivedQty on a settled lot means received IN FULL,
-         and poRecvKg agrees, so the row asserted the salt had landed: approve it and the fold
+         and poRecvUnits agrees, so the row asserted the salt had landed: approve it and the fold
          walks the whole lot into stock and into the cost basis.
          BOTH FIELDS ARE SET, not one, because that is what the fold's own v146 guard does on
          the correction road for exactly this case. A row drafted here and a row corrected there
