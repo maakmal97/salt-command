@@ -47,11 +47,14 @@ row is approved on the phone.
    **What did NOT move, and must never:** `10_Data\salt_bio.json` (the plaintext directory),
    `salt_vault.json`, `menu_secret.txt` and the queue files. They stay in the project folder.
 
-   **`public/index.html` is the opposite: it is SOURCE.** Since v291 the root is the phone app,
-   hand-written and owned by this repo, and the built desk moved to `public/desk.html` (served
-   at `/desk`). Edit the app here freely. It reads every figure from `data.json` and computes
-   nothing, and that is not a style preference: the moment it prices anything itself there are
-   two engines and they drift, which is the fault v205 and v284 exist to prevent.
+   **THE PHONE APP IS RETIRED (v387) AND SO IS `public/data.json`.** This file described both as
+   live for twenty-five versions after they were deleted, which round eight found and which is
+   why it is corrected here rather than trimmed: a rules file that names a file nobody can open
+   teaches an agent to look for it. There is ONE surface now, the built desk at
+   `public/desk.html`, served at `/desk` and read on the phone at the same URL. The reason the
+   app existed still stands and still governs the desk: nothing outside the master may price
+   anything, because the moment a second surface prices it there are two engines and they
+   drift, which is the fault v205 and v284 exist to prevent.
 2. **Plaintext names never reach the cloud; the encrypted vault may.** `/bio` (the plaintext
    directory) is answered but **dropped**, so `salt_bio.json` never ships. `/vault` DOES sync,
    but only the AES-GCM envelope `{v,salt,iv,ct}` (`tools/seed-vault.mjs` puts it there); the
@@ -109,8 +112,7 @@ git push
 |---|---|---|
 | **Master** | `master/salt_command.html` | The only editable source. No cloud or PWA code in it. |
 | **Built desk** | `public/desk.html`, served at `/desk` | Built from the master by `tools/build.mjs`. Never a source. |
-| **Phone app** | `public/index.html` | Hand-written SOURCE. Reads `data.json`, computes nothing. |
-| **Payload** | `public/data.json` | The master's own `phonePayload()`, run in jsdom by `tools/payload.mjs`. |
+| ~~Phone app~~ | ~~`public/index.html`~~ | **Retired at v387**, with `public/data.json`. The desk is the only surface. |
 
 The build **only adds**: a PWA head, a service worker, a per-device id, and cloud-mode copy.
 It changes no ledger figure. Every patch anchors on one unique line and the build aborts if an
@@ -382,7 +384,7 @@ nothing is wrong is worse than no flag**, because it teaches the reader to tap t
 
 ## Continuous sync (v279)
 
-The ledger is baked into `public/index.html` at build time, so a phone is only ever as current
+The ledger is baked into `public/desk.html` at build time, so a phone is only ever as current
 as its last load. Three things close that gap, and none of them commits anything:
 
 1. **The phone polls `/rev` every ten seconds** while it is on screen, and compares the returned
@@ -439,15 +441,15 @@ Per-Crm01 master (a Cowork/master session); once it lands, the sync above alread
 |---|---|
 | `src/worker.js` | The Worker. Cloud stand-in for `serve_desk.py`: `/queue`, `/vault` (ciphertext), `/bio` (dropped), static assets. KV-backed. |
 | `tools/seed-vault.mjs` | Encrypt the current names with your passphrase and push the ciphertext to KV. Never writes plaintext anywhere. |
-| `public/index.html` | **The phone app (v291, six tabs since v343). SOURCE, hand-written, edit it here.** 123 KB. Reads `data.json`, computes nothing, writes queue entries. Liquid Glass, Ledger tuning. |
+| ~~`public/index.html`~~ | **Retired at v387** along with `public/data.json`. Neither file exists; do not go looking. |
 | `public/desk.html` | The built desk, served at `/desk`. **Derived from the master, do not hand-edit.** Committed on purpose. |
 | `public/data.json` | The phone payload: position, actions, party lists, the queue watermark and the build id. Written by the build via `payload.mjs`, which runs the master in jsdom. |
 | `public/sw.js` | Service worker. Shell network-first; the `/queue` API is never cached. |
 | `public/manifest.webmanifest`, `public/icon-*.png` | Home-screen install. Icons from `tools/make_icons.py`. |
 | `public/_headers` | CSP and security headers, applied by Cloudflare to the assets. |
 | `wrangler.jsonc` | Worker + assets + the `SALT_QUEUE` KV binding. |
-| `tools/build.mjs` | Master → `public/index.html`, with fail-loud patch anchors. Also writes `public/rev.json`. |
-| `public/rev.json` | `{v,id,built}` for the build on disk. `id` hashes the master, `public/index.html`, `public/sw.js` AND every `src/*.js`, NUL-separated. **Written by the build, never by hand.** Anything that ships and changes behaviour must be in that hash: a change outside it does not move the id, so `update.mjs` compares equal, skips the deploy and reports the phone current while the old file is still served. That is exactly what happened to the v302 sw.js fix before sw.js was added. It is still true of `wrangler.jsonc`, which must be deployed by hand. |
+| `tools/build.mjs` | Master → `public/desk.html`, with fail-loud patch anchors. Also writes `public/rev.json`. |
+| `public/rev.json` | `{v,id,built}` for the build on disk. `id` is `sha256` over the PATCHED MASTER (the bytes that become `public/desk.html`, with the id token still in place), then a literal NUL, `sw`, a NUL and `public/sw.js`, then a NUL, `worker`, a NUL and every `src/*.js` sorted and NUL-joined. **The separators are real NUL bytes and print invisibly, which has cost a session before.** It does NOT hash the master separately, and round eight recorded that it omits `public/_headers`, `manifest.webmanifest` and the vendored `chart.umd.js`. **Written by the build, never by hand.** Anything that ships and changes behaviour must be in that hash: a change outside it does not move the id, so `update.mjs` compares equal, skips the deploy and reports the phone current while the old file is still served. That is exactly what happened to the v302 sw.js fix before sw.js was added. It is still true of `wrangler.jsonc`, which must be deployed by hand. |
 | `.deployed.json` | `{id,v,at}` for the build that last DEPLOYED successfully. Written by `salt_sync.ps1` on a reported success and nowhere else. |
 | `tools/drain.mjs` | KV → `06_Data\salt_queue_cloud.json`; `--committed <ISO>` prunes; `--status` inspects. |
 | `src/drafter.js` | The cloud drafter: queue + mirror -> a proposed row in `draft`. Runs on the cron and at `POST /draft-now`. Never writes to `entry`. |
@@ -474,11 +476,41 @@ Per-Crm01 master (a Cowork/master session); once it lands, the sync above alread
 | `tools/make_icons.py` | Regenerate the crystal icons. |
 | `test/verify.mjs` | Smoke suite: Worker contract, name-drop, access gate, drain helpers, build integrity. |
 
+## How a fold is sized, and where a round points (his instruction, 31 Aug 2026)
+
+Eight adversarial rounds produced a stable pattern, and these two rules are the answer to it.
+Round eight measured it plainly: the desk itself is sound and getting sounder, and nearly every
+material finding now comes from **code written in the last two versions**, or from a fix that
+landed on the one line it was given and left its twin a few lines away. The review had stopped
+finding old faults and was mostly finding the ones the review itself created.
+
+**SMALLER FOLDS.** A fold changes one thing and ships. The v406 batch carried twenty-two master
+edits, four new instruments and six guards in one version, and three of its own fixes were
+faults; the v408 panel shipped a whole new control and carried an unmeasured purchase side that
+told the owner five settled lots owed RM 5,450. A fold that cannot be described in one sentence
+is two folds. Ship the first, prove it, then start the second.
+
+**AND WHEN A FIX LANDS, SWEEP ITS CLASS BEFORE SHIPPING IT.** Every partial in round eight was a
+twin: the printed sentinel fixed and the divisor beside it left, the observed range filtered and
+the party median not, the fold's cancellation gate fixed and the desk's identical `ovAmend` left
+for the next version. Grep the pattern across the whole file before committing the one site the
+finding named. This is cheaper than a round.
+
+**A ROUND POINTS AT THE NEWEST CODE.** A sweep of the whole desk costs a fortune and returns
+findings about code that has been stable for months. The next round probes the diff since the
+last round, fold by fold, and every probe attacks the FIX rather than the desk it sits in.
+Anything older is regression only: rebuild the last round's materials, and leave the rest listed.
+
+**AN INSTRUMENT IS PROVED RED BEFORE ITS GREEN IS TRUSTED.** Standing since round six and now
+without exception, because it has caught a real fault in a new check in each of the last four
+folds. Two forms that do not count: an assertion that reads source text rather than running the
+code, and one whose inputs are computed by the code it is checking.
+
 ## Working on it
 
 ```
 npm install                 # once, for wrangler
-npm run build               # master -> public/index.html (run after any master edit)
+npm run build               # master -> public/desk.html (run after any master edit)
 npm run dev                 # build, then wrangler dev on a local port
 npm test                    # the smoke suite, ~2s, no network
 ```
