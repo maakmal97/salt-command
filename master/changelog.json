@@ -1,5 +1,16 @@
 [
  {
+  "v": "v415",
+  "d": "01 Sep 2026",
+  "t": "I BROKE SALE CANCELLATION IN v413 AND SHIPPED IT, AND THE SUITE ASSERTED ONLY THE HALF THAT STILL WORKED",
+  "n": [
+   "<b>ROUND NINE WAS POINTED AT THE NEWEST CODE ON HIS INSTRUCTION, AND THE FIRST THING IT FOUND WAS YESTERDAY'S FOLD.</b> poRecvUnits falls through to received in full when receivedQty is absent. That is the convention for a landed lot, and it is also true of EVERY SALE EVER WRITTEN, because a sale carries no receivedQty at all. v413 used it on both directions, so from v413 the gate read every sale as fully moved and refused every cancellation, on the only road into one. Nothing caught it for a day.",
+   "<b>THE DIRECTION PICKS THE RULER NOW, WHICH IS WHAT THE WALK ITSELF DOES.</b> poRecvUnits for a lot, txEffDeliv for a sale, at both gates: the apply-time one and the plan-time one. Five states measured rather than argued: an undelivered sale cancels, a part-delivered one does not, one settled in kind does not, a landed lot does not, an in-transit lot holding nothing does.",
+   "<b>AND THE SUITE WOULD HAVE CAUGHT IT IF IT HAD ASSERTED BOTH HALVES OF THE GATE.</b> Every assertion written about this gate since v407 tested that it REFUSES. A gate is two claims and the second one is what broke. The allowed direction is asserted now on both sides. The general lesson is worth more than the fix: a guard needs a test that it lets the right thing through, or it can be tightened to a full stop and read green.",
+   "<b>ONE THING, PROVED, SHIPPED.</b> This is the first fold under his rule of 31 August, after v406 carried twenty-two edits and v408 shipped an unmeasured half. Sixteen more folds are queued from round nine and each will land on its own. A bonus from using the right helper: txEffDeliv counts a settlement in kind, so a sale settled that way is refused too, which the raw field read had missed."
+  ]
+ },
+ {
   "v": "v414",
   "d": "31 Aug 2026",
   "t": "THE DESK CARRIED THE SAME TWO FAULTS THE FOLD DID, WHICH IS THE ONE THING THAT MAKES TWO BOOKS",
