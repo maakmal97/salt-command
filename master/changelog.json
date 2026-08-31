@@ -1,5 +1,15 @@
 [
  {
+  "v": "v414",
+  "d": "31 Aug 2026",
+  "t": "THE DESK CARRIED THE SAME TWO FAULTS THE FOLD DID, WHICH IS THE ONE THING THAT MAKES TWO BOOKS",
+  "n": [
+   "<b>v413 FIXED THE FOLD AND LEFT ITS TWIN ON THE DESK, WHICH IS THE FAULT THIS REVIEW KEEPS FINDING AND I KEEP COMMITTING.</b> ovAmend is the desk's own replay of an approved amendment and it is written to be the same code as the fold's applyAmend, because a desk and a fold that disagree about what an edit does is two books. Both of the purchase faults were in it verbatim: the branch RETURNED before the cancellation handler, so cancelling a lot set nothing and fell into a status recompute that read a raw cash where the accumulator four lines above honours a status of paid. So the overlay would have shown a settled lot turning unpaid the moment the entry was queued, before any approval.",
+   "<b>IT DECLINES RATHER THAN THROWS, AND THAT IS THE DIFFERENCE BETWEEN THE TWO.</b> The fold is all or nothing and stops the batch; the desk is drawing a preview and must not take the screen down, so it records a provenance note saying the cancellation was not applied and why, and leaves every field alone. Measured on p001: the lot is unchanged, its status is still paid, and the note names the 12.5 unit already received.",
+   "<b>THE ROUND ITSELF IS NOT DRY AND THIS DOES NOT CHANGE THAT.</b> Round eight returned thirty-four confirmed materials against v412 and this closes the last of the six on the money path. The rest are recorded and unfixed."
+  ]
+ },
+ {
   "v": "v413",
   "d": "31 Aug 2026",
   "t": "A LOT IS NOT MEASURED LIKE A SALE, AND FOR TWO VERSIONS THE PANEL SAID FIVE SETTLED LOTS OWED RM 5,450",
