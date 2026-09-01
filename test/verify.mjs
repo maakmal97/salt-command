@@ -3009,6 +3009,19 @@ section("v410: the P&L says which period each of its three columns covers");
   ok(/Provision charged/.test(jan), "the provisions say they are the period's charge");
   const mid = await paneAt("2026-08-31");
   ok(!/July 2026|August 2026/.test(mid), "a month inside the FY year is NOT year-stamped, so nothing is added for nothing");
+
+  /* v427: AND A CARRIED BALANCE IS NOT A PERIOD CHARGE. The tile reads "Provisions carried" and was
+     fed the year-filtered figure, so on 1 January it read RM 0 while RM 930 was genuinely carried
+     three panels below. The ROW in the statement is the period's charge and says so since v410;
+     the TILE is the balance and takes the whole book. Not asserted as identical across the year:
+     the provision ladder ages, so a carried balance grows as debts get older, which is right. What
+     must not happen is a reset because the calendar turned. */
+  const rmOf = (t) => { const m = String(t).match(/Provisions carried\s*RM ([0-9,]+)/); return m ? +m[1].replace(/,/g, "") : -1; };
+  const carriedJan = rmOf(jan), carriedMid = rmOf(mid);
+  ok(carriedJan > 0, "the carried-provisions tile is not nil on 1 January (RM " + carriedJan + ")");
+  ok(carriedJan >= carriedMid && carriedMid > 0,
+    "and it is at least mid-year's (RM " + carriedMid + "), because ageing only adds to it");
+  ok(/whole book, not the FY column/.test(jan), "and it states the basis it is on");
   try { rm(T); } catch (e) { /* best effort */ }
 }
 

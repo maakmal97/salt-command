@@ -1,5 +1,15 @@
 [
  {
+  "v": "v427",
+  "d": "02 Sep 2026",
+  "t": "PROVISIONS CARRIED WAS FED THE PERIOD'S CHARGE, SO ON 1 JANUARY IT READ NIL WHILE RM 930 WAS CARRIED",
+  "n": [
+   "<b>FOLD 13 OF ROUND NINE, AND THE HALF v410 DID NOT FINISH.</b> v410 established that three periods sit in this part and labelled the rows accordingly: the statement's provision rows are the period's <b>charge</b> and say so. The KPI tile above them says <b>carried</b>, which is a balance, and it was reading the same year-filtered figure. On 1 January it would have printed RM 0 while RM 930 was genuinely carried three panels below. Measured at that clock: nil before, RM 930 after.",
+   "<b>TWO QUESTIONS, TWO REDUCTIONS, AND THE TILE NAMES ITS OWN BASIS.</b> The row keeps the calendar year because a charge belongs to the period it was made in; the tile takes the whole book because a balance does not reset when the calendar turns. It prints <b>whole book, not the FY column</b> beside the figure, so the two can be read together without arithmetic.",
+   "<b>AND MY FIRST ASSERTION WAS WRONG RATHER THAN THE CODE.</b> I asserted the tile must read the SAME at both clocks, and it reads RM 795 today and RM 930 in January. That is correct: the provision ladder ages, so a carried balance grows as debts get older. The check says what actually must hold, which is that it never resets to nil and never falls, and it goes red at RM 0 when the year filter is put back. 839 assertions from 836."
+  ]
+ },
+ {
   "v": "v426",
   "d": "02 Sep 2026",
   "t": "THE GUARD AND THE DIVISOR WERE THE SAME SENTINEL, SO THE GUARD COULD NEVER BE FALSE",
