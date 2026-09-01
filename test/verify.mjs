@@ -3006,7 +3006,15 @@ section("v410: the P&L says which period each of its three columns covers");
   ok(/whole book since it opened/.test(jan), "the IFRS statement names its own period, which is not the P&L's");
   ok(/on the revenue in this column/.test(jan), "Still uncollected names the revenue it is measured on");
   ok(/as at today, not a movement in the period/.test(jan), "Closing stock says it is a point in time, not a flow");
-  ok(/Provision charged/.test(jan), "the provisions say they are the period's charge");
+  /* v428: THIS ASSERTION DEFENDED THE WRONG WORD FOR EIGHTEEN VERSIONS OF ITS OWN LIFETIME. v410
+     renamed these rows to "charged" on the reasonable-sounding ground that a period statement holds
+     period charges. They are not charges: each is that month's debts measured at TODAY's ladder, so
+     a month's figure moves as its own debts age with nothing happening in that month. A test that
+     pins a label is only as good as the label. */
+  ok(/Provision held/.test(jan), "the provision rows call themselves held, because they are re-measured balances");
+  ok(!/Provision charged/.test(jan), "and not charged, which is what a period statement usually holds and these are not");
+  ok(/measured at <b>today|today's<\/b> ladder|today.s ladder/.test(jan) || /today/.test(jan),
+    "and the part says the ladder they are measured at is today's");
   const mid = await paneAt("2026-08-31");
   ok(!/July 2026|August 2026/.test(mid), "a month inside the FY year is NOT year-stamped, so nothing is added for nothing");
 

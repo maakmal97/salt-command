@@ -1,5 +1,15 @@
 [
  {
+  "v": "v428",
+  "d": "02 Sep 2026",
+  "t": "v410 RENAMED THESE ROWS TO CHARGES ON A REASONABLE-SOUNDING GROUND THAT WAS WRONG, AND WROTE A TEST TO DEFEND IT",
+  "n": [
+   "<b>FOLD 14 OF ROUND NINE, AND IT UNDOES A LABEL I SHIPPED FIFTEEN VERSIONS AGO.</b> v410 called the statement's two provision rows <b>charged</b>, because a period statement usually holds period charges and the rows sit in month columns. They are not charges. Each is that month's debts measured at <b>today's</b> ladder, so a past month's figure moves as its own debts age with nothing whatever happening in that month. Measured: the August column reads RM 20 at the end of August and the same book reads RM 180 in October, with no new trade.",
+   "<b>AND THE ASSERTION I WROTE AT v410 DEFENDED THE WRONG WORD.</b> A test that pins a label is only ever as good as the label, and this one made the mistake permanent rather than catching it. It asserts the true word now, asserts the false one is absent, and the period line explains what the rows actually measure, which is a fourth basis in a part that already had three.",
+   "<b>THIS IS THE HAZARD OF THE PREVIOUS FOLD STATED PLAINLY.</b> v427 moved the carried-provisions tile off the year filter because a balance does not reset with the calendar; the same reasoning, followed one step further, says these rows were never charges either. Two folds on the same part, one correcting the other, which is what small folds are for. 841 assertions from 839."
+  ]
+ },
+ {
   "v": "v427",
   "d": "02 Sep 2026",
   "t": "PROVISIONS CARRIED WAS FED THE PERIOD'S CHARGE, SO ON 1 JANUARY IT READ NIL WHILE RM 930 WAS CARRIED",
