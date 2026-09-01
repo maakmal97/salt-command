@@ -3307,6 +3307,72 @@ section("v417: a cancelled lot counts nowhere in stock, and is not a bill");
     "and cancelling an unpaid lot removes a payable rather than booking one");
 }
 
+
+section("v419: cancelling a delivered sale is refused everywhere it is offered");
+{
+  /* ROUND NINE, TWIN CLASS 7. The fold has thrown on this since v407 and v415 gave it the right
+     ruler. The DESK had the gate on its BUY branch only, added at v414, so ovAmend replayed a
+     cancellation on a delivered SALE happily and previewed a row the book can never hold; and the
+     Workbench amend pane offered Cancellation on the sell side with no gate and no warning at all,
+     drawing a confident "Cancelled" pill for a state the fold refuses. Three places offer this
+     action and only one of them knew the rule.
+     The desk DECLINES where the fold THROWS, on purpose: the fold is all or nothing and stops the
+     batch, the desk is drawing a preview and must not take the screen down.
+     Both directions are asserted, which is what v415 paid for: an undelivered sale must still
+     cancel, or the gate is a full stop wearing a guard's coat. */
+  const { openMaster: om3 } = await import("../tools/payload.mjs");
+  const { w: w3 } = await om3();
+  w3.eval("setProd('salt');recompute();");
+
+  const delivered = JSON.parse(w3.eval("JSON.stringify((sales.find(s=>!s.cancelled&&s.rid&&txEffDeliv(s)>0.009)||{}).rid||null)"));
+  const untouched = JSON.parse(w3.eval("JSON.stringify((sales.find(s=>!s.cancelled&&s.rid&&txEffDeliv(s)<=0.009&&txPaid(s)<=0.009)||{}).rid||null)"));
+  ok(!!delivered && !!untouched, "the book carries both a delivered and an untouched sale to test with");
+
+  if (delivered) {
+    w3.eval("ovAmend({kind:'Cancellation',date:'2026-09-01',direction:'SELL',rid:" + JSON.stringify(delivered) + "},{at:'t1'})");
+    const row = JSON.parse(w3.eval("JSON.stringify(sales.find(s=>s.rid===" + JSON.stringify(delivered) + "))"));
+    ok(row.cancelled !== true, "the overlay does not cancel a delivered sale, as the fold does not");
+    ok(/not applied/.test(w3.eval("JSON.stringify(provNotes.slice(-1))")),
+      "and it records WHY rather than failing silently");
+  }
+  if (untouched) {
+    w3.eval("ovAmend({kind:'Cancellation',date:'2026-09-01',direction:'SELL',rid:" + JSON.stringify(untouched) + "},{at:'t2'})");
+    const row = JSON.parse(w3.eval("JSON.stringify(sales.find(s=>s.rid===" + JSON.stringify(untouched) + "))"));
+    ok(row.cancelled === true, "while an untouched sale still cancels, so the gate is not a full stop");
+  }
+
+  /* the Workbench pane, driven rather than grepped */
+  if (delivered) {
+    const { w: w4 } = await om3();
+    w4.eval("setProd('salt');recompute();switchTab('add');");
+    /* THE ORDER IS TAKEN FROM THE PANE'S OWN LIST, not from the book. The list filters by status,
+       so a completed order is not in it and asserting against one proved nothing but the filter.
+       Three open orders on this book have already delivered something, s117 among them, which is
+       the row round eight named as the live risk. */
+    const drove = w4.eval(`(function(){
+      try{
+        var set=function(id,v){var e=document.getElementById(id);if(!e)return false;e.value=v;return true;};
+        if(typeof wbMode!=="undefined"){wbMode="amend";}
+        if(typeof wbASide!=="undefined"){wbASide="SELL";}
+        if(typeof wbApply==="function")wbApply();
+        var list=(typeof wbAmendList==="function")?wbAmendList():[];
+        var hit=list.filter(function(x){return x.t&&txEffDeliv(x.t)>0.009;})[0];
+        if(!hit)return "no-order";
+        set("wbOrder",hit.code); set("wbKind","Cancellation"); set("wbADate","2026-09-01");
+        if(typeof wbPreview==="function")wbPreview();
+        var m=document.getElementById("wbMsgs");
+        return m?(m.textContent||""):"no-msgs";
+      }catch(e){return "threw: "+(e&&e.message);}
+    })()`);
+    if (drove === "no-order" || drove === "no-msgs" || /^threw/.test(String(drove))) {
+      ok(false, "the Workbench amend pane could not be driven: " + drove);
+    } else {
+      ok(/already been delivered/.test(String(drove)),
+        "the Workbench pane refuses a Cancellation on a delivered order: " + String(drove).slice(0, 90));
+    }
+  }
+}
+
 /* ---- done ----------------------------------------------------------------------- */
 
 section("Round 7: the states no suite check had ever rendered");

@@ -1,5 +1,16 @@
 [
  {
+  "v": "v419",
+  "d": "01 Sep 2026",
+  "t": "THREE PLACES OFFER A CANCELLATION AND ONLY ONE OF THEM KNEW THE RULE",
+  "n": [
+   "<b>FOLD 5 OF ROUND NINE. THE FOLD HAS REFUSED A CANCELLATION ON A DELIVERED SALE SINCE v407, AND THE DESK HAS NOT.</b> ovAmend got the gate on its purchase branch at v414 and its sale branch was left, so the overlay replayed the cancellation happily and previewed a row the book can never hold: the entry queued, the preview showed it cancelled, and the batch died at the fold. And the Workbench amend pane offered Cancellation on the sell side with <b>no gate and no warning at all</b>, drawing a confident Cancelled pill for a state that would be refused. One action, three places to reach it, one of them knowing the rule.",
+   "<b>THE DESK DECLINES WHERE THE FOLD THROWS, AND THAT DIFFERENCE IS DELIBERATE.</b> The fold is all or nothing and stopping the batch is the correct answer there. The desk is drawing a preview and must not take the screen down, so it leaves every field alone and records a provenance note naming the row and the quantity already delivered. Measured on s001: not cancelled, and the note says one unit has already been delivered.",
+   "<b>BOTH DIRECTIONS ASSERTED, WHICH IS WHAT v415 PAID FOR.</b> An untouched sale must still cancel, or the gate is a full stop wearing a guard's coat. And the Workbench half is <b>driven rather than grepped</b>: the test opens the pane, takes an order from the pane's OWN list, chooses Cancellation and reads the message. That mattered within the minute: my first version picked a delivered order out of the book, which the pane does not offer because it filters by status, so the check proved nothing but the filter. Three of the four open orders the pane does offer have already delivered something, s117 among them, which is the row round eight named as the live risk.",
+   "<b>TWO MUTATIONS, TWO REDS, AND THE RESTORE INSIDE A FINALLY</b> after the last fold left a master mutated on disk when a reporting line threw. 806 assertions from 801."
+  ]
+ },
+ {
   "v": "v418",
   "d": "01 Sep 2026",
   "t": "BACK TO PENDING ON A LOT BOOKED A PAYABLE FOR SALT NEVER BOUGHT, BECAUSE THE PAYLOAD WAS ONE FIELD SHORT",
