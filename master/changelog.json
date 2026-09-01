@@ -1,5 +1,16 @@
 [
  {
+  "v": "v432",
+  "d": "02 Sep 2026",
+  "t": "THE STATEMENTS TOLD THREE CUSTOMERS AN ORDER THEY HAD PAID FOR WAS FREE",
+  "n": [
+   "<b>ROUND TEN, AND THE FIRST FIX IS THE ONE THING THIS DESK SENDS TO OTHER PEOPLE.</b> The monthly statement read the rebate flag as <b>the whole row was free</b>. An award can settle PART of an order, and three live rows are part cash and part award: RM 17 against RM 107, RM 90 against RM 180, RM 160 against RM 240. Each printed as <b>nil</b> and <b>no charge</b>, and the footer dropped both the charge and the customer's own money. CI4-OKR's document said an order he had paid RM 90 for was free. RM 527 of charges and RM 267 of their cash, wrong, on paper, going out on Sunday.",
+   "<b>A GIFT IS A ROW THE CUSTOMER PAID NOTHING FOR,</b> which is the rule the original comment describes and not the one it implemented. Goodwill joins it, because that is a separate flag the engine's own table carries and the walk drops from revenue, and the tool read only rebate: the single goodwill row on the book happens to carry rebate as well, which is what has been hiding it. A full award with no cash still prints nil and says why; a part-paid order now carries its real total and its real payment, and CI4-OKR reads RM 365 ordered, RM 365 paid, balance nil.",
+   "<b>AND NOTHING WAS CHECKING THE ARITHMETIC ON THESE DOCUMENTS AT ALL.</b> The suite's statements section holds eight assertions and not one of them read a ringgit or a unit: round ten proved all eight still pass with every total doubled, Paid forced to zero and every row turned into a gift. Every figure on every statement is now reconciled to the book row by row, matched by <b>rid</b> rather than by party and date and quantity, because that match is ambiguous on this very book, CH4-MLR having two orders of one unit on 14 August at RM 110 and RM 11.50, and the first version of the check reported a correct statement as wrong. The three mutations round ten used to expose the old section are the three the new one now fails on.",
+   "<b>THE OTHER FIVE FINDINGS ON THIS TOOL ARE RECORDED AND NOT YET FIXED,</b> the nearest being three cancelled orders that print with no date at all because the tool reads the cancellation date only from the amendment trail and ignores the book's own field. 872 assertions across 64 sections."
+  ]
+ },
+ {
   "v": "v431",
   "d": "02 Sep 2026",
   "t": "THE LAST FOLD OF ROUND NINE IS THE INSTRUMENTS, AND THIRTY ASSERTIONS COULD STILL VANISH WITHOUT A WORD",

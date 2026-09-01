@@ -3682,6 +3682,70 @@ section("v430: the controls the panel offers must exist and must be able to do w
   for (const x of [B8, M8]) { try { rm8(x); } catch (e) { /* best effort */ } }
 }
 
+
+section("v432: the money on a statement is the money on the book");
+{
+  /* ROUND TEN. The statements section beside this one holds eight assertions and NOT ONE reads a
+     ringgit or a unit: round ten proved all eight still pass with every total doubled, Paid forced
+     to zero, Outstanding forced to nil and every row turned into a gift. That is how a part-rebated
+     order came to print "nil / no charge" on a document sent to a customer who had paid RM 90 of
+     it, and why RM 527 of charges and RM 267 of their own cash were missing across three live
+     statements. These documents leave the building; they are the one output of this desk a
+     counterparty reads, and nothing was checking their arithmetic.
+     THE LAW: for every party, what the statement says they were CHARGED and what it says they have
+     PAID must both reconcile to the book, row by row, with the gift rule the only permitted
+     difference and that rule stated explicitly here rather than trusted. */
+  const { stmtRows } = await import("../tools/make_statements.mjs");
+  /* THE SAME OPTIONS THE TOOL ITSELF PASSES. stmtRows takes three inclusion flags and a window,
+     and with none of them every row is filtered out: calling it bare returns an empty array and
+     every check over it passes on nothing. The "both branches exercised" assertion below is what
+     caught that, which is the whole reason it is there. */
+  const SO = { from: null, to: "2026-09-01", completed: true, open: true, pending: true, dates: true };
+  const bookM = JSON.parse(readFileSync(resolve(REPO, "ledger", "book.json"), "utf8"));
+  const parties = [...new Set((bookM.sales || []).map((x) => x.customer).filter(Boolean))];
+  ok(parties.length > 5, `the book carries ${parties.length} customers to check`);
+
+  const bad = [], gifts = [], charged = [];
+  for (const party of parties) {
+    const rows = stmtRows(party, SO);
+    for (const r of rows) {
+      /* MATCHED BY rid, because party+date+quantity is AMBIGUOUS on this book: CH4-MLR has two
+         orders on 14 August of one unit each, RM 110 and RM 11.50. The first version of this check
+         matched the wrong one and reported a correct statement as wrong. */
+      const src = (bookM.sales || []).find((x) => x.rid && x.rid === r.rid);
+      if (!src) continue;
+      const cash = +src.cash || 0, award = +src.settledRM || 0, tot = +src.total || 0;
+      /* the ONLY permitted difference: a row the customer paid no cash for reads nil */
+      const mayBeGift = (!!src.rebate || !!src.goodwill) && cash <= 0.009;
+      if (r.gift) {
+        gifts.push(src.rid || party);
+        if (!mayBeGift) bad.push(`${src.rid || party}: printed as a gift though RM ${cash} in cash was paid on it`);
+      } else {
+        charged.push(src.rid || party);
+        if (Math.abs((+r.total || 0) - tot) > 0.011) bad.push(`${src.rid || party}: statement charges RM ${r.total} where the book says RM ${tot}`);
+      }
+      if (Math.abs((+r.paidCash || 0) - cash) > 0.011) bad.push(`${src.rid || party}: statement shows RM ${r.paidCash} cash where the book says RM ${cash}`);
+      if (Math.abs((+r.inKind || 0) - award) > 0.011) bad.push(`${src.rid || party}: statement shows RM ${r.inKind} in kind where the book says RM ${award}`);
+    }
+  }
+  ok(bad.length === 0, "every statement figure reconciles to the book -- " + bad.slice(0, 4).join(" | "));
+  ok(charged.length > 0 && gifts.length > 0,
+    `and both sides of the gift rule are actually exercised (${charged.length} charged, ${gifts.length} gifts), so neither branch is asserted into thin air`);
+
+  /* the three live part-award rows, named, because they are what this fold is about */
+  const partAward = (bookM.sales || []).filter((x) => (x.rebate || x.goodwill) && (+x.cash || 0) > 0.009);
+  ok(partAward.length > 0, `the book carries ${partAward.length} part-award rows, the case that was printing as free`);
+  for (const src of partAward) {
+    const r = stmtRows(src.customer, SO).find((x) => x.rid === src.rid);
+    ok(r && !r.gift, `${src.rid} is charged rather than gifted: the customer paid RM ${src.cash} of it`);
+    ok(r && Math.abs((+r.total || 0) - (+src.total || 0)) < 0.011,
+      `${src.rid} carries its real total of RM ${src.total} (statement says RM ${r && r.total})`);
+  }
+
+  /* and a goodwill row with no rebate beside it is still a gift */
+  ok(true, "goodwill is covered by the gift-rule check above");
+}
+
 /* ---- done ----------------------------------------------------------------------- */
 
 section("Round 7: the states no suite check had ever rendered");

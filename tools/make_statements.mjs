@@ -103,8 +103,26 @@ function stmtRows(party,o){
        value so it does not fall out of the ledger as shrinkage, but the customer never
        owed that money and showing him an amount he did not pay invites the exact
        question the statement exists to prevent. So it carries nil and says why. */
-    const gift=!!s.rebate;
-    return {gift:gift,date:s.date,qty:s.qty,total:gift?0:s.total,
+    /* v432, ROUND TEN: A GIFT IS A ROW THE CUSTOMER PAID NOTHING FOR, and the rebate flag alone
+       does not say that. It says the order was settled by redeeming an award, and an award can
+       settle PART of an order: three live rows are part cash and part award, s025 at RM 17 against
+       RM 107, s053 at RM 90 against RM 180, s068 at RM 160 against RM 240. Reading the flag as "the
+       whole row was free" printed each of them as nil and "no charge", and dropped BOTH the charge
+       and the customer's own cash out of the footer: RM 527 of charges and RM 267 of money they had
+       actually paid, on statements that go to them. CI4-OKR's document said an order he paid RM 90
+       for was free.
+       AND goodwill IS THE OTHER HALF OF THE SAME RULE. It is a separate flag in the engine's own
+       correctable table, the walk drops those rows from revenue, and the editor's hint says
+       "excluded from revenue everywhere"; the tool read only rebate, so a goodwill gift with no
+       rebate beside it would have been billed at full value. The only goodwill row on the book
+       today carries rebate as well, which is what has been hiding it. */
+    const gift=(!!s.rebate||!!s.goodwill)&&paidCash<=0.009;
+    /* v432: THE ROW CARRIES ITS OWN rid. Nothing on the document prints it, but without it a
+       statement row cannot be traced back to the book row it came from, and any check over these
+       figures has to match on party, date and quantity: CH4-MLR has two orders on 14 August of one
+       unit each, RM 110 and RM 11.50, so that match is ambiguous on this very book and the first
+       assertion written over it reported a correct statement as wrong. */
+    return {rid:s.rid||null,gift:gift,date:s.date,qty:s.qty,total:gift?0:s.total,
       unit:s.qty>0?+(s.total/s.qty).toFixed(2):0,
       paidCash:paidCash,inKind:inKind,got:got,inKindUnits:inKindUnits,
       /* PENDING COUNTS NOWHERE, on a statement as everywhere else (v189). An order
