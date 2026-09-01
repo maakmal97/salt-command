@@ -3439,6 +3439,40 @@ section("v420: the desk and the fold leave a row in the same state");
   for (const f of [B5, M5]) { try { rm5(f); } catch (e) { /* best effort */ } }
 }
 
+
+section("v421: the drafter calls the rule instead of retyping it");
+{
+  /* ROUND NINE, TWIN CLASS 3. v413 hand-rolled the received-in-full convention inside the drafter
+     and dropped its defaulted case, so the drafter refused a DEFAULTED lot's cancellation with a
+     message asserting 12.5 unit had arrived from a supplier who delivered nothing. A probe made
+     the identical mistake against this same rule three folds ago and reported correct code as
+     wrong. The rule lives in one place; every reader calls it.
+
+     AND THE GATE MUST IGNORE THE CANCELLATION IT IS TESTING. v417 taught poRecvUnits that a
+     cancelled lot received nothing, which is right, and this gate measures the state the
+     correction WOULD leave, which is cancelled by definition. So it asked how much a cancelled row
+     had received, was told none, and let every landed lot straight through: fold 3 silently
+     disarmed this gate and fold 7 found it. Eight states are asserted, five that must pass the
+     gate and three that must not, because a gate is two claims and only asserting the refusals is
+     how v415 shipped a full stop. */
+  const { checkCorrection: cc } = await import("../src/drafter.js");
+  const bkA = JSON.parse((await import("node:fs")).readFileSync(
+    (await import("node:path")).join(REPO, "ledger", "book.json"), "utf8"));
+  const blocked = (row, isSale) => cc({ cancelled: true }, bkA, row, isSale).errs.filter((e) => /already moved/.test(e)).length > 0;
+  const lotA = (o) => Object.assign({ date: "2026-07-08", qty: 12.5, total: 750, supplier: "SF6-KLC", rid: "p9" }, o);
+  const saleA = (o) => Object.assign({ date: "2026-08-01", qty: 2, total: 200, customer: "CN6-WM", rid: "s9" }, o);
+
+  ok(blocked(lotA({ status: "paid" }), false), "a landed lot cannot be cancelled");
+  ok(!blocked(lotA({ defaulted: true, status: "paid" }), false),
+    "a DEFAULTED lot can be: the supplier delivered nothing, and the hand-rolled copy said otherwise");
+  ok(!blocked(lotA({ pending: true }), false), "a pending lot can be cancelled");
+  ok(!blocked(lotA({ inTransit: true, receivedQty: 0 }), false), "an in-transit lot holding nothing can");
+  ok(blocked(lotA({ inTransit: true, receivedQty: 5 }), false), "one holding five cannot");
+  ok(!blocked(saleA({}), true), "an untouched sale can be cancelled");
+  ok(blocked(saleA({ deliveredQty: 1 }), true), "a part-delivered sale cannot");
+  ok(blocked(saleA({ settledKg: 2 }), true), "nor one settled in kind, which a raw deliveredQty read misses");
+}
+
 /* ---- done ----------------------------------------------------------------------- */
 
 section("Round 7: the states no suite check had ever rendered");

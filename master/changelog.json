@@ -1,5 +1,15 @@
 [
  {
+  "v": "v421",
+  "d": "02 Sep 2026",
+  "t": "THE DRAFTER RETYPED A RULE AND DROPPED A CASE, AND FOLD 3 HAD SILENTLY DISARMED THE GATE THAT CHECKS IT",
+  "n": [
+   "<b>FOLD 7 OF ROUND NINE, AND BOTH FAULTS IN IT ARE MINE FROM THE LAST TEN DAYS.</b> v413 hand-rolled the received-in-full convention inside the drafter instead of calling the engine, and dropped its defaulted case. So the drafter refused a DEFAULTED lot's cancellation with a message asserting 12.5 unit had arrived from a supplier who delivered nothing. A probe made the identical mistake against this same rule three folds ago and reported correct code as wrong; the rule lives in one place and every reader calls it now.",
+   "<b>AND THE GATE WAS MEASURING THE FLAG IT WAS TESTING.</b> v417 taught poRecvUnits that a cancelled lot received nothing, which is right. This gate measures the state a correction WOULD leave, which is cancelled by definition. So it asked how much a cancelled row had received, was told none, and let every landed lot straight through. Fold 3 disarmed it and fold 7 found it, three folds later, only because the fix was proved on eight states rather than on the one the finding named. The gate strips the flag before it measures.",
+   "<b>EIGHT STATES ASSERTED, FIVE THAT MUST PASS AND THREE THAT MUST NOT.</b> A gate is two claims and asserting only the refusals is exactly how v415 shipped a full stop. The sale side got the same sweep while it was open: it read deliveredQty raw and missed a settlement in kind, which the fold has read correctly since v415. Three mutations, three reds, each naming its own state. 816 assertions from 808."
+  ]
+ },
+ {
   "v": "v420",
   "d": "01 Sep 2026",
   "t": "THE DESK MADE TWO WRITES WHERE THE FOLD MAKES FIVE, AND A DIFFERENTIAL FOUND A SIXTH NOBODY HAD NAMED",

@@ -179,11 +179,21 @@ export function checkCorrection(fields, book, target, isSale) {
      past a gate that tested deliveredQty alone, kept its units on the shelf and its cost in the
      basis, and therefore moved wavgBuy and every floor beneath it. Whichever field the direction
      uses, the contradiction is the same one. */
-  /* v413: an absent receivedQty on a landed lot MEANS received in full, so a raw read called
-     nine of the book's lots empty and let every one of them be cancelled while holding stock. */
-  const recvOnRow = after.receivedQty != null ? Math.max(0, +after.receivedQty)
-    : ((after.pending || after.inTransit) ? 0 : (+after.qty || 0));
-  const movedOnRow = Math.max(+after.deliveredQty || 0, !isSale ? recvOnRow : 0);
+  /* v421: CALL THE RULE, DO NOT RETYPE IT. v413 hand-rolled the received-in-full convention here
+     and dropped its defaulted case, so the drafter refused a DEFAULTED lot's cancellation with a
+     message asserting 12.5 unit had arrived from a supplier who delivered nothing. A probe made
+     the identical mistake against this same rule three folds ago and reported correct code as
+     wrong; the rule lives in one place and both readers now call it.
+     The sale side gets the same treatment: deliveredQty alone misses a settlement in kind, which
+     is why the fold reads txEffDeliv since v415. */
+  /* AND IT MUST IGNORE THE CANCELLATION IT IS TESTING. v417 taught poRecvUnits that a cancelled
+     lot received nothing, which is right, and this gate measures the state the correction WOULD
+     leave, which is cancelled by definition. So it asked how much a cancelled row had received,
+     was told none, and let every landed lot through: fold 3 silently disarmed this gate and fold 7
+     found it. The question here is what the row carries REGARDLESS of the flag being set. */
+  const moved0 = Object.assign({}, after);
+  delete moved0.cancelled;
+  const movedOnRow = isSale ? POSITION_ENGINE.txEffDeliv(moved0) : POSITION_ENGINE.poRecvUnits(moved0);
   if (after.cancelled === true && movedOnRow > 0.009) {
     errs.push(`the corrected row would be cancelled AND carry ${movedOnRow} unit already moved, which contradicts itself: restate qty by Modification for what moved, then cancel the remainder`);
   }
