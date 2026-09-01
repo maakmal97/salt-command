@@ -58,7 +58,7 @@
     {"date":"2026-08-11","product":"oil","qty":50,"total":350,"supplier":"SP7-PUD","status":"paid","cash":350,"paidOn":"2026-08-11","receivedOn":"2026-08-11","receivedQty":50,"note":"The missing oil lot, backfilled.","rid":"p013"},
     {"date":"2026-08-13","qty":12.5,"total":700,"supplier":"SA5-BTR","status":"paid","cash":700,"paidOn":"2026-08-13","receivedOn":"2026-08-13","receivedQty":12.5,"rid":"p014"},
     {"date":"2026-08-18","qty":12.5,"total":700,"supplier":"SA5-BTR","status":"paid","cash":700,"paidOn":"2026-08-18","receivedOn":"2026-08-18","receivedQty":12.5,"rid":"p015"},
-    {"date":"2026-08-20","qty":50,"total":2200,"supplier":"SA5-BTR","status":"paid","cash":2200,"paidOn":"2026-08-20","receivedOn":"2026-08-20","receivedQty":50,"amend":[{"date":"2026-08-20","kind":"Modification","cash":0,"kg":0,"note":"re-agreed to 50 unit / RM2,200"}],"rid":"p016"},
+    {"date":"2026-08-20","qty":50,"total":2200,"supplier":"SA5-BTR","status":"paid","cash":2200,"paidOn":"2026-08-20","receivedOn":"2026-08-20","receivedQty":50,"amend":[{"date":"2026-08-20","kind":"Fulfilment","cash":2200,"kg":50,"note":"as booked"},{"date":"2026-08-20","kind":"Modification","cash":0,"kg":0,"note":"re-agreed to 50 unit / RM2,200"}],"rid":"p016"},
     {"date":"2026-08-26","qty":25,"total":1250,"supplier":"SA5-BTR","status":"paid","cash":1250,"paidOn":"2026-08-26","receivedOn":"2026-08-26","receivedQty":25,"rid":"p017"},
     {"date":"2026-08-26","product":"oil","qty":30,"total":230,"supplier":"SP7-PUD","status":"paid","cash":230,"paidOn":"2026-08-26","receivedOn":"2026-08-26","receivedQty":30,"rid":"p018"}
   ],

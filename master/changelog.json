@@ -1,5 +1,17 @@
 [
  {
+  "v": "v450",
+  "d": "02 Sep 2026",
+  "t": "A LOT KEEPS A TRAIL: THE FOLD AND THE DESK SEED AND STEP A LOT AS THEY DO A SALE, AND P016 IS BROUGHT UNDER THE CONTRACT",
+  "n": [
+   "<b>THE TRAIL A LOT NEVER HAD.</b> A sale's amendments seed the trail with the row as booked and append a step before the figures move, and the Ledger replays those steps into a card. Both engines' BUY branches returned before either write, so a lot restated or fulfilled through the fold carried no trail at all. The one lot with a step, p016, had its Modification written by hand with no seed, and would have replayed as Pending on a lot paid and received in full. Nothing drew it, so nothing showed it; v449 made the seed read a lot with the lot's ruler, and this fold makes the seed and the step happen.",
+   "<b>THE SAME WRITES, IN THE SAME ORDER, ON BOTH SIDES.</b> In tools/fold.mjs and in the desk's ovAmend, the BUY Modification branch seeds and appends a Modification step before it restates the figures, and the movement branch seeds and appends the step before the Default, Cancellation and receipt handlers, exactly where the SELL tail does. The v420 differential now polices a lot's trail as it polices a sale's, because it compares the whole row.",
+   "<b>P016 GETS ITS SEED.</b> One step added at the head of its trail in ledger/book.json, the lot as booked: RM 2,200 and 50 unit on 20 Aug, the figures seedStep would have written. Its trail now sums to the row. ledger/ledger.json was regenerated with it, which the fold routine does and a hand edit had to remember to.",
+   "<b>THE LEDGER STILL DRAWS NO LOT TRAIL.</b> That is the next fold, on purpose: the data had to be right before it became visible, and the two are separately provable.",
+   "<b>PROVED BY FOLDING.</b> A first movement and a restatement on lots through the fold, the trail read back and summed against poCash and poRecvUnits; the same two amendments on two of the book's own lots through the desk, the desk's trail equal to the fold's byte for byte; p016 read off the file. Five mutations, each side's seed and step and p016's seed, every one red. 1102 assertions across 76 sections."
+  ]
+ },
+ {
   "v": "v449",
   "d": "02 Sep 2026",
   "t": "A LOT'S TRAIL OPENS WITH THE LOT AS BOOKED, READ WITH THE LOT'S RULER, ON THE FOLD AND ON THE DESK",

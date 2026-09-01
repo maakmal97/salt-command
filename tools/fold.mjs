@@ -393,6 +393,12 @@ export function applyAmend(row, pay, dir, note) {   /* v413: exported so the sui
     const modLine = `restated${pay.date ? " on " + pay.date : ""} from ${wasQty} unit / RM${wasTotal} to ${pay.newQty} unit / RM${pay.newTotal}`;
     row.mod = row.mod ? row.mod + ", then " + modLine : modLine;
     if (dir === "BUY") {
+      /* v450: A LOT KEEPS A TRAIL. This branch and the movement branch below returned before the seed
+         and the step, so a lot restated or fulfilled through the fold carried no trail at all, the one
+         lot with a step (p016) had it written by hand, and the Ledger had nothing to draw. The same
+         seed and the same step the SELL tail writes, in the same order: before the figures move. */
+      if (!row.amend || !row.amend.length) row.amend = [seedStep(row, dir)];
+      { const step = { date: pay.date, kind: "Modification", cash: 0, kg: 0 }; if (note) step.note = note; row.amend = row.amend.concat([step]); }
       row.qty = pay.newQty;
       row.total = pay.newTotal;
       const paid = paidBefore;                       /* v416: what was paid, not what is now owed */
@@ -438,6 +444,9 @@ export function applyAmend(row, pay, dir, note) {   /* v413: exported so the sui
        cancelling a lot set nothing, fell through to the status recompute, and rewrote a lot stored
        status:"paid" to unpaid. One right-click and an approval, and the chip, the panel, the draft
        reasoning, plan(), apply() and the desk overlay all reported success. */
+    /* v450: the seed and the step, before anything moves; see the Modification branch. */
+    if (!row.amend || !row.amend.length) row.amend = [seedStep(row, dir)];
+    { const step = { date: pay.date, kind: pay.kind, cash: +pay.cash || 0, kg: +pay.kg || 0 }; if (note) step.note = note; row.amend = row.amend.concat([step]); }
     if (pay.kind === "Cancellation") {
       const movedB = E.poRecvUnits(row);
       if (movedB > 0.009) throw new Error(`cancelling this lot would leave it carrying ${movedB} unit already received, which contradicts itself: restate qty by Modification for what arrived, then cancel the remainder`);

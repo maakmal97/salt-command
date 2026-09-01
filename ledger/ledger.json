@@ -1,6 +1,6 @@
 {
- "v": "v439",
- "stamped": "01 Sep 2026, 21:35 KL",
+ "v": "v449",
+ "stamped": "02 Sep 2026, 05:45 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -216,6 +216,13 @@
     "receivedOn": "2026-08-20",
     "receivedQty": 50,
     "amend": [
+     {
+      "date": "2026-08-20",
+      "kind": "Fulfilment",
+      "cash": 2200,
+      "kg": 50,
+      "note": "as booked"
+     },
      {
       "date": "2026-08-20",
       "kind": "Modification",
@@ -2896,7 +2903,7 @@
   ],
   "QUEUE_COMMITTED": "2026-08-28T09:59:51.414Z",
   "PRICING": {
-   "takenAt": "2026-09-01T13:35:28.644Z",
+   "takenAt": "2026-09-01T22:16:28.248Z",
    "sizes": [
     0.5,
     1,
@@ -3007,8 +3014,8 @@
          "date": "2026-08-26",
          "sup": "SA5-BTR"
         },
-        "days": 26,
-        "sinceLot": 35
+        "days": 27,
+        "sinceLot": 36
        },
        "lockBase": {
         "lockedOn": "2026-08-06",
@@ -3214,8 +3221,8 @@
          "date": "2026-08-26",
          "sup": "SP7-PUD"
         },
-        "days": 26,
-        "sinceLot": 26
+        "days": 27,
+        "sinceLot": 27
        },
        "lockBase": {
         "lockedOn": "2026-08-06",
@@ -3330,10 +3337,10 @@
      }
     }
    },
-   "v": "v439"
+   "v": "v449"
   },
   "OPEN": {
-   "at": "2026-09-01T13:35:28.711Z",
+   "at": "2026-09-01T22:16:28.277Z",
    "count": 6,
    "byKey": {
     "CY2-NIL|undefined|230": {
@@ -3365,7 +3372,7 @@
      "deliveredOn": "2026-09-01",
      "handover": "delivered",
      "key": "CR3-DAM|2026-09-01|80",
-     "age": 0,
+     "age": 1,
      "exp": 80
     },
     "CA4-DAM|2026-08-28|100": {
@@ -3382,7 +3389,7 @@
      "deliveredOn": "2026-08-28",
      "handover": "collected",
      "key": "CA4-DAM|2026-08-28|100",
-     "age": 4,
+     "age": 5,
      "exp": 75
     },
     "CR3-DAM|2026-08-27|80": {
@@ -3399,7 +3406,7 @@
      "deliveredOn": "2026-08-27",
      "handover": "collected",
      "key": "CR3-DAM|2026-08-27|80",
-     "age": 5,
+     "age": 6,
      "exp": 60
     },
     "CE4-CHE|2026-08-18|500": {
@@ -3439,7 +3446,7 @@
      "free": -0.25,
      "owedOut": 0.5,
      "coverDays": 0,
-     "rate": 5.63,
+     "rate": 4.96,
      "owedToYou": 260,
      "promised": 3,
      "short": 2.75
@@ -3460,7 +3467,7 @@
     "salt": "2026-08-24",
     "oil": "2026-08-23"
    },
-   "v": "v439"
+   "v": "v449"
   }
  }
 }

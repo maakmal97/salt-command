@@ -4708,6 +4708,53 @@ section("v449: a lot's trail opens with the lot as booked, read with the lot's r
   } else skipData("no paid lot without a trail on the book to drive the desk half with");
 }
 
+
+section("v450: a lot keeps a trail, on the fold and on the desk");
+{
+  /* Both engines returned from their BUY branches before the seed and the step, so a lot restated
+     or fulfilled through the fold carried no trail, and the one lot with a step (p016) had it written
+     by hand without a seed. Now: the seed and the step, in the same order as a sale, on both sides,
+     and p016 brought under the contract. */
+  const { applyAmend: aa0 } = await import("../tools/fold.mjs");
+  const P0 = (await import("../engine/position.mjs")).default;
+  const sum = (A, k) => A.reduce((t, a) => t + (+a[k] || 0), 0);
+  const lotA = { rid: "t0a", date: "2026-08-01", qty: 10, total: 500, supplier: "SF6-KLC", inTransit: true, receivedQty: 0 };
+  aa0(lotA, { kind: "Fulfilment", date: "2026-08-05", cash: 250, kg: 5 }, "BUY", null);
+  const A = lotA.amend || [];
+  ok(A.length === 2 && A[0].note === "as booked" && A[0].cash === 0 && A[0].kg === 0 && A[1].kind === "Fulfilment" && A[1].cash === 250 && A[1].kg === 5,
+    `a lot's first movement seeds the trail and appends the step: ${JSON.stringify(A)}`);
+  ok(Math.abs(sum(A, "cash") - P0.poCash(lotA)) < 0.01 && Math.abs(sum(A, "kg") - P0.poRecvUnits(lotA)) < 0.01,
+    `and the trail sums to what the lot has paid and received (RM ${sum(A, "cash")}, ${sum(A, "kg")} unit)`);
+  const lotB = { rid: "t0b", date: "2026-08-01", qty: 10, total: 500, supplier: "SF6-KLC", status: "paid" };
+  aa0(lotB, { kind: "Modification", date: "2026-08-05", newQty: 8, newTotal: 400 }, "BUY", null);
+  const B = lotB.amend || [];
+  ok(B.length === 2 && B[0].cash === 500 && B[0].kg === 10 && B[1].kind === "Modification" && B[1].cash === 0 && B[1].kg === 0,
+    `a restatement on a lot leaves a Modification step after the row as booked: ${JSON.stringify(B)}`);
+  /* the desk, against the fold, on the book's own lots: same row, same amendment, same trail */
+  const { openMaster: om0 } = await import("../tools/payload.mjs");
+  const { w: w0 } = await om0();
+  w0.eval("setProd('salt');recompute();");
+  const lots0 = JSON.parse(w0.eval("JSON.stringify(purchases.filter(function(p){return p.rid&&!p.cancelled&&!p.defaulted&&!p.pending&&!(p.amend&&p.amend.length);}).slice(0,2))"));
+  const TRIALS = [{ kind: "Fulfilment", date: "2026-09-01", cash: 100, kg: 0 }, { kind: "Modification", date: "2026-09-01", newQty: 12, newTotal: 900 }];
+  if (lots0.length === 2) {
+    lots0.forEach((lot, i) => {
+      const pay = TRIALS[i];
+      const clone = JSON.parse(JSON.stringify(lot));
+      aa0(clone, pay, "BUY", null);
+      w0.eval("ovAmend(" + JSON.stringify(Object.assign({ direction: "BUY", rid: lot.rid }, pay)) + ",{at:'t0'})");
+      const deskA = JSON.parse(w0.eval("JSON.stringify((purchases.find(function(p){return p.rid===" + JSON.stringify(lot.rid) + ";})||{}).amend||[])"));
+      ok(deskA.length === 2 && JSON.stringify(deskA) === JSON.stringify(clone.amend), `${lot.rid} ${pay.kind}: the desk writes the trail the fold writes (${JSON.stringify(deskA)})`);
+    });
+  } else skipData("fewer than two trail-less lots on the book to drive the desk with");
+  /* p016, the one lot that already carried a step */
+  const { readFileSync: rf0 } = await import("node:fs");
+  const { join: j0 } = await import("node:path");
+  const p016 = JSON.parse(rf0(j0(REPO, "ledger", "book.json"), "utf8")).purchases.find((p) => p.rid === "p016");
+  const T = (p016 && p016.amend) || [];
+  ok(T.length >= 2 && T[0].note === "as booked" && Math.abs(sum(T, "cash") - P0.poCash(p016)) < 0.01 && Math.abs(sum(T, "kg") - P0.poRecvUnits(p016)) < 0.01,
+    `p016 opens with the lot as booked and its trail sums to the row: RM ${sum(T, "cash")} of ${p016 && P0.poCash(p016)}, ${sum(T, "kg")} of ${p016 && P0.poRecvUnits(p016)} unit`);
+}
+
 /* ---- done ----------------------------------------------------------------------- */
 
 section("Round 7: the states no suite check had ever rendered");
@@ -4942,7 +4989,7 @@ section("Round 7: the states no suite check had ever rendered");
    the live count was 879, so thirty-nine assertions could have vanished under a guard written to
    stop exactly that. The margin is four, which covers the book-dependent branches that legitimately
    skip; it is not room for a section to fall out. */
-const FLOOR_ASSERTIONS = 1078, FLOOR_SECTIONS = 75;
+const FLOOR_ASSERTIONS = 1084, FLOOR_SECTIONS = 76;
 ok(pass + fail - offMachine >= FLOOR_ASSERTIONS,
   `the suite ran ${pass + fail - offMachine} assertions everywhere (${pass + fail} here, ${offMachine} of them needing files that live off this repo), below its floor of ${FLOOR_ASSERTIONS}: a section has stopped running`);
 ok(sections >= FLOOR_SECTIONS,
