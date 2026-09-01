@@ -1,5 +1,15 @@
 [
  {
+  "v": "v425",
+  "d": "02 Sep 2026",
+  "t": "NULL IS A WORSE ABSENT DATE THAN UNDEFINED, BECAUSE new Date(null) IS A PERFECTLY GOOD DAY IN 1970",
+  "n": [
+   "<b>FOLD 11 OF ROUND NINE.</b> dAge was written at v407 to be the one rule for a day count, and it had no answer for a row with no date at all: dbet of undefined is NaN, Math.max of zero and NaN is NaN, and NaN printed as <b>NaNd ago</b> and compared false against every threshold. So a party holding an undated order did not read wrong on the overdue tile, they fell out of it silently, which is the harder fault to notice.",
+   "<b>AND null IS THE CASE THAT ACTUALLY OCCURS.</b> An undated row on this book stores null, not undefined, and new Date(null) is the epoch, so dbet returns a perfectly finite twenty thousand days. A finiteness test alone waves it straight through. The guard names all three of null, undefined and empty, and the suite asserts the null case specifically, because it is the one a reasonable-looking fix misses.",
+   "<b>THE TWIN WAS TWO FUNCTIONS AWAY.</b> custCadence filters for a date before it measures a buying habit and nextBest, twenty-eight lines below it, did not, so an undated row sorted last and became when they last bought. The pair read the same rows now. That half only bites on a book where an undated row carries cash, so it is asserted on such a book rather than on the live one, where it would have passed for ever. 832 assertions from 824."
+  ]
+ },
+ {
   "v": "v424",
   "d": "02 Sep 2026",
   "t": "HELD OUT AND COUNTED, THE COMMENT SAID, AND THE COUNTING REACHED NOBODY",

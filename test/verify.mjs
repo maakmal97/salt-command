@@ -3573,6 +3573,21 @@ section("Round 7: the states no suite check had ever rendered");
         "the statement names the undated row it held out");
       ok(/no date and a month is the only key/.test(String(paneTxt)), "and says why");
       ok(/[0-9]+ order[s]? carrying RM/.test(String(paneTxt)), "with the count and the figure");
+
+      /* v425: AND nextBest MUST NOT READ THAT UNDATED ROW AS THE LAST PURCHASE. custCadence filters
+         s.date and nextBest did not, so the undated row sorted last and became "when they last
+         bought". Only reachable on a book where an undated row is priced, which is this one. */
+      const party = JSON.parse(wc.eval("JSON.stringify((sales.find(s=>!s.date&&(s.cash||0)>0)||{}).customer||null)"));
+      if (party) {
+        const nb = JSON.parse(wc.eval("JSON.stringify(nextBest(" + JSON.stringify(party) + ")||null)"));
+        ok(nb && Number.isFinite(nb.since),
+          "the party holding the undated row still has a finite last-bought reading (" + (nb && nb.since) + ")");
+        const lastDated = JSON.parse(wc.eval("JSON.stringify(pricedSales.filter(s=>s.customer===" + JSON.stringify(party) + "&&s.date).map(s=>s.date).sort().slice(-1)[0]||null)"));
+        if (lastDated) {
+          ok(nb.since === wc.eval("dAge(" + JSON.stringify(lastDated) + ")"),
+            "and it is measured from their last DATED order, as custCadence measures");
+        }
+      }
       try { rm(M2); } catch (e) { /* best effort */ }
     }
   }
@@ -3618,6 +3633,23 @@ section("Round 7: the states no suite check had ever rendered");
       }
     }
     ok(negs.length === 0, `no surface prints a negative day count at a clock behind the book -- ${negs.join(" | ")}`);
+  {
+    /* v425: AND AN ABSENT DATE IS NOT A DAY COUNT. dbet(undefined) is NaN, so dAge returned NaN,
+       which printed as "NaNd ago" and compared false against every threshold, dropping a party out
+       of the overdue tile rather than showing wrong. null is the worse case and the one that
+       actually occurs on this book: new Date(null) is the epoch, so dbet returns a perfectly finite
+       twenty thousand days and a finiteness test alone waves it through. */
+    const { w: wd } = await openMaster();
+    wd.eval("setProd('salt');recompute();");
+    ok(wd.eval("dAge(undefined)") === 0, "dAge of an absent date is 0, not NaN");
+    ok(wd.eval("dAge(null)") === 0, "dAge of a null date is 0, not twenty thousand days");
+    ok(wd.eval("dAge('')") === 0, "dAge of an empty date is 0");
+    ok(wd.eval("dAge(5)") === 5 && wd.eval("dAge(-3)") === 0,
+      "while a real count passes through and a negative is still floored");
+    ok(wd.eval("dAhead(null)") === false, "and dAhead does not read an absent date as ahead of the clock");
+    ok(wd.eval("JSON.stringify((function(){var o=[];byCustomer().forEach(function(c){var nb=nextBest(c.id);if(nb&&!Number.isFinite(nb.since))o.push(c.id);});return o;})())") === "[]",
+      "no party's last-bought reading is non-finite");
+  }
   {
     /* v424: and the held-out line must be ABSENT on the live book, where no priced row is undated */
     const liveFin = await paneOf(join(REPO, "master", "salt_command.html"), "financials", "salt");
