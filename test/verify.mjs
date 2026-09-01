@@ -4755,6 +4755,45 @@ section("v450: a lot keeps a trail, on the fold and on the desk");
     `p016 opens with the lot as booked and its trail sums to the row: RM ${sum(T, "cash")} of ${p016 && P0.poCash(p016)}, ${sum(T, "kg")} of ${p016 && P0.poRecvUnits(p016)} unit`);
 }
 
+
+section("v451: the Ledger draws a lot's trail");
+{
+  /* The card map gated steps and corrections to SELL and read them off the wrapper, which has no
+     amend, so no lot ever showed a trail or a correction strip. Two lots the fold could now write,
+     rendered through booksync into a scratch master and read back off the cards. */
+  const { openMaster: om1 } = await import("../tools/payload.mjs");
+  const { readFileSync: rf1, writeFileSync: wf1, unlinkSync: rm1 } = await import("node:fs");
+  const { execSync: ex1 } = await import("node:child_process");
+  const { join: j1 } = await import("node:path");
+  const bk1 = JSON.parse(rf1(j1(REPO, "ledger", "book.json"), "utf8"));
+  const sup1 = bk1.purchases.find((x) => x.supplier).supplier;
+  bk1.purchases.push({ rid: "f6", date: "2026-08-10", supplier: sup1, product: "salt", qty: 10, total: 500, cash: 500, receivedQty: 10, paidOn: "2026-08-10", receivedOn: "2026-08-20",
+    amend: [{ date: "2026-08-10", kind: "Fulfilment", cash: 500, kg: 0, note: "as booked" }, { date: "2026-08-20", kind: "Fulfilment", cash: 0, kg: 10 }] });
+  bk1.purchases.push({ rid: "f7", date: "2026-08-25", supplier: sup1, product: "salt", qty: 4, total: 220, cash: 220, receivedQty: 4, mod: "corrected on 2026-08-30: total 200 to 220; cash 200 to 220",
+    amend: [{ date: "2026-08-25", kind: "Fulfilment", cash: 200, kg: 4, note: "as booked" }, { date: "2026-08-30", kind: "Correction", cash: 0, kg: 0, note: "corrected on 2026-08-30: total 200 to 220; cash 200 to 220" }] });
+  const B1 = j1(REPO, "test", ".v451.json"), M1 = j1(REPO, "test", ".v451.html");
+  wf1(B1, JSON.stringify(bk1, null, 1)); wf1(M1, rf1(j1(REPO, "master", "salt_command.html"), "utf8"));
+  ex1("node tools/booksync.mjs --sync", { cwd: REPO, env: { ...process.env, SALT_BOOK: B1, SALT_MASTER: M1 }, stdio: "pipe" });
+  try {
+    const { w } = await om1(M1);
+    w.eval("setProd('salt');recompute();ledF.q='';switchTab('ledger');");
+    const card = (rid) => JSON.parse(w.eval("JSON.stringify((function(){var c=document.querySelector('.lcard[data-rid=\"" + rid + "\"]');if(!c)return null;var rows=[].map.call(c.querySelectorAll('.lrow,.lmove'),function(r){return {cls:r.className,date:(r.querySelector('.ldate,.lmdate')||{}).textContent||'',pill:(r.querySelector('.lstate .tag')||{}).textContent||''};});var k=c.querySelector('.lcorr');return {rows:rows,corr:k?{cls:k.className,why:!!k.querySelector('.cwhy'),text:k.textContent.replace(/\s+/g,' ').trim()}:null};})())"));
+    const f6 = card("f6"), f7 = card("f7"), p16 = card("p016");
+    ok(f6 && f6.rows.length === 2 && /\blopen\b/.test(f6.rows[0].cls) && /\blclose\b/.test(f6.rows[1].cls),
+      `a lot paid on the 10th and received on the 20th opens and closes on two lines (${f6 && f6.rows.map((r) => r.cls).join(" | ")})`);
+    ok(f6 && f6.rows[0].pill === "Open \u00b7 Deferred" && f6.rows[1].pill === "Completed" && f6.rows[1].date === "2026-08-20",
+      `paid ahead on the head, Completed on the close, dated by the receipt (${f6 && f6.rows.map((r) => r.pill + " " + r.date).join(" | ")})`);
+    ok(f7 && f7.corr && /Corrected 2026-08-30/.test(f7.corr.text) && !/\bbad\b/.test(f7.corr.cls) && f7.corr.why,
+      `a corrected lot carries the correction strip, quiet because every claim reads back, its own note behind why (${f7 && f7.corr && f7.corr.text.slice(0, 60)})`);
+    ok(p16 && p16.rows.length === 1 && /\blclose\b/.test(p16.rows[0].cls) && p16.rows[0].pill === "Completed",
+      `p016, restated the day it was booked, still folds to one Completed line (${p16 && p16.rows.map((r) => r.cls + " " + r.pill).join(" | ")})`);
+    w.eval("ledF.q='corrected on 2026-08-30';switchTab('ledger');");
+    const hit = JSON.parse(w.eval("JSON.stringify([!!document.querySelector('.lcard[data-rid=\"f7\"]'),!!document.querySelector('.lcard[data-rid=\"f6\"]')])"));
+    ok(hit[0] && !hit[1], "and the search reads a lot's mod: the corrected lot is found and the other is not");
+    w.eval("ledF.q='';");
+  } finally { for (const f of [B1, M1]) { try { rm1(f); } catch (e) { /* best effort */ } } }
+}
+
 /* ---- done ----------------------------------------------------------------------- */
 
 section("Round 7: the states no suite check had ever rendered");
@@ -4989,7 +5028,7 @@ section("Round 7: the states no suite check had ever rendered");
    the live count was 879, so thirty-nine assertions could have vanished under a guard written to
    stop exactly that. The margin is four, which covers the book-dependent branches that legitimately
    skip; it is not room for a section to fall out. */
-const FLOOR_ASSERTIONS = 1084, FLOOR_SECTIONS = 76;
+const FLOOR_ASSERTIONS = 1089, FLOOR_SECTIONS = 77;
 ok(pass + fail - offMachine >= FLOOR_ASSERTIONS,
   `the suite ran ${pass + fail - offMachine} assertions everywhere (${pass + fail} here, ${offMachine} of them needing files that live off this repo), below its floor of ${FLOOR_ASSERTIONS}: a section has stopped running`);
 ok(sections >= FLOOR_SECTIONS,
