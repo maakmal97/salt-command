@@ -34,10 +34,10 @@
     "oil": {
       "qty": 5,
       "costPerKg": 7.666666666666667,
-      "stated": 20
+      "stated": 15
     }
   },
-  "STATED_STOCK": 8.25,
+  "STATED_STOCK": 0.25,
   "COUNT_ON": {
     "salt": "2026-08-24",
     "oil": "2026-08-23"
@@ -179,6 +179,10 @@
     {"customer":"CR3-DAM","qty":1,"total":80,"cost":50,"cash":0,"handover":"collected","date":"2026-08-27","deliveredQty":1,"deliveredOn":"2026-08-27","note":"Advanced pickup; corrected to unpaid.","rid":"s116","mod":"corrected on 2026-08-28: cash 80 to 0; paidOn 2026-08-27 to (cleared)","amend":[{"date":"2026-08-27","kind":"Fulfilment","cash":0,"kg":1,"note":"as booked"},{"date":"2026-08-28","kind":"Correction","cash":0,"kg":0,"note":"corrected to unpaid; advanced pickup"}]},
     {"customer":"CA4-DAM","qty":1,"total":100,"cost":50,"cash":0,"handover":"collected","date":"2026-08-28","deliveredQty":1,"deliveredOn":"2026-08-28","note":"First credit in thirteen orders.","rid":"s117"},
     {"customer":"CH4-KLS","qty":3,"total":300,"cost":50,"cash":300,"deliveredQty":3,"agreedOn":"2026-08-28","date":"2026-08-28","deliveredOn":"2026-08-28","paidOn":"2026-08-28","note":"Restated to RM300; settled same day.","mod":"restated on 2026-08-28 from 3 unit / RM280 to 3 unit / RM300","amend":[{"kind":"Fulfilment","cash":0,"kg":0,"note":"as booked, pending and undated"},{"date":"2026-08-28","kind":"Modification","cash":0,"kg":0,"note":"total restated RM280 to RM300, his instruction"},{"date":"2026-08-28","kind":"Fulfilment","cash":300,"kg":3,"note":"paid and delivered in full"}],"rid":"s118"},
+    {"customer":"CA7-JTR","qty":1,"total":135,"cost":50,"cash":135,"handover":"collected","date":"2026-09-01","deliveredQty":1,"deliveredOn":"2026-09-01","paidOn":"2026-09-01","ref":"CE4-AD","refKg":1,"note":"<b>A NEW PARTY'S FIRST ORDER, AT THE HIGHEST SINGLE-UNIT RATE THIS BOOK HAS RECORDED.</b> 1 unit for RM135, collected and paid on the day. Against the 1-unit collected floor of RM77.26 it clears by RM57.74, and it returns RM85 at 63.0% on the RM50 shelf lot: the best margin on any unit sold this month, and RM35 above the RM100 house anchor that eleven of CA4-DAM's thirteen orders sit on. <b>CE4-AD'S FIRST REFERRAL, CREDITED R3:</b> the row books to CA7-JTR and the introduction is credited beside it, so the buyer is the counterparty and CE4-AD earns the attribution without taking the row.","rid":"s120"},
+    {"customer":"CA7-JTR","product":"oil","qty":5,"total":65,"cost":7.666666666666667,"cash":65,"handover":"collected","date":"2026-09-01","deliveredQty":5,"deliveredOn":"2026-09-01","paidOn":"2026-09-01","ref":"CE4-AD","refKg":5,"note":"<b>THE SAME PARTY'S SECOND ROW ON THE SAME DAY, AND THE FIRST OIL SOLD SINCE 26 AUG.</b> 5 unit for RM65, RM13 a unit, collected and paid. RM13 is exactly the rate on the 10-unit rung of the oil board and the rate CZ4-MK paid on 26 Aug, so the per-unit figure is the house rate; what is unusual is the size, since 5 unit is not a rung the board shows. <b>It sits RM2.70 UNDER the 5-unit collected floor of RM67.70</b>, which the board's own taper explains rather than excuses: the floor rises faster than the rate below 10 unit. Costed at RM7.67 from the 30-unit lot of 26 Aug, so it returns RM26.67 at 41.0%. Same R3 leg as the salt row, credited at this row's own size.","rid":"s121"},
+    {"customer":"CK4-SEN","qty":6,"total":440,"cost":50,"cash":440,"date":"2026-09-01","deliveredQty":6,"deliveredOn":"2026-09-01","paidOn":"2026-09-01","note":"<b>HIS FIRST ORDER, AND THE SECOND LARGEST SINGLE SALE ON THE BOOK.</b> 6 unit for RM440, RM73.33 a unit, paid and delivered in full on the day. The per-unit rate reads low beside the RM100 anchor and is not: the floor tapers with size, so 6 unit collected asks about RM338.59 and RM440 clears it by roughly RM101. It returns RM140 at 31.8% on the RM50 shelf lot. He has been on the roster without a row until today. Handover is not stated, so the field is left unset: the share of orders delivered is measured over the rows that say, and a row that was never asked must stay distinguishable from one that answered.","rid":"s122"},
+    {"customer":"CR3-DAM","qty":1,"total":80,"cost":50,"cash":0,"handover":"delivered","date":"2026-09-01","deliveredQty":1,"deliveredOn":"2026-09-01","note":"<b>HIS ELEVENTH UNIT AT RM80 AND HIS SECOND STANDING ADVANCE.</b> 1 unit handed over on 1 Sep with nothing paid, beside the RM80 still owed on s116 of 27 Aug, so RM160 now stands against him. He cleared RM160 on 27 Aug covering the 18th and the 24th, which is the pattern this row continues: a rolling one or two unit credit, settled in batches, never yet defaulted across eleven orders since 15 July. Recorded as DELIVERED on the wording used; at RM80 that is RM7.26 under the RM87.26 delivered floor, where the same unit collected clears RM77.26. Costed at RM50, so it returns RM30 at 37.5% whichever way it travelled.","rid":"s123"},
     {"customer":"CN6-WM","qty":1.5,"total":185,"cash":0,"deliveredQty":0,"cancelled":true,"cancelledOn":"2026-08-24","rid":"s108"},
     {"customer":"CS6-PER","qty":6.25,"total":350,"cash":0,"deliveredQty":0,"cancelled":true,"cancelledOn":"2026-08-24","rid":"s109"},
     {"customer":"CY2-NIL","qty":2.5,"total":230,"cost":50,"cash":0,"deliveredQty":0,"agreedOn":"2026-08-28","rid":"s119"}
@@ -251,14 +255,16 @@
     "CK4-SEN",
     "CZ4-MK",
     "CH6-SET",
-    "CD3-SEG"
+    "CD3-SEG",
+    "CA7-JTR"
   ],
   "associates": [
     "CS6-BS",
     "CJ4-OKR",
     "CS6-PER",
     "CN6-WM",
-    "CI4-OKR"
+    "CI4-OKR",
+    "CE4-AD"
   ],
   "PEOPLE": {
     "banned": [
@@ -408,11 +414,15 @@
   },
   "NOTES": {
     "STATED_STOCK": [
+      "ROLLED AT v439: 1 unit to CA7-JTR on 2026-09-01, 6 unit to CK4-SEN on 2026-09-01, 1 unit to CR3-DAM on 2026-09-01, so 8.25 less 8 is 0.25. A ROLL AND NOT A COUNT; COUNT_ON is untouched. Eight of the eight and a quarter unit on the shelf went out today across four rows, leaving 0.25 unit against 3 unit already promised: CE4-CHE's half unit owed out and CY2-NIL's 2.5 unit pending. The book is 2.75 unit short of its own commitments and sourcing is now the first decision on it.",
       "ROLLED AT v404: 5 unit to CE4-AD on 2026-08-29, so 13.25 less 5 is 8.25. A ROLL AND NOT A COUNT; COUNT_ON is untouched.",
       "ROLLED AT v399: 3 unit to CH4-KLS on 2026-08-28, so 16.25 less 3 is 13.25. A ROLL AND NOT A COUNT; COUNT_ON is untouched."
     ],
     "sales": [
       "paidSplit: cash landed either side of the 28 Jul count; RM200 inside it, the rest after. Without the split the walk double-counted the RM200."
+    ],
+    "PROD_OPENING": [
+      "ROLLED AT v439 (oil): 5 unit to CA7-JTR on 2026-09-01, so 20 less 5 is 15. A ROLL AND NOT A COUNT; COUNT_ON is untouched."
     ]
   }
 }

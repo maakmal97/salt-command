@@ -1,6 +1,6 @@
 {
- "v": "v404",
- "stamped": "29 Aug 2026, 10:17 KL",
+ "v": "v439",
+ "stamped": "01 Sep 2026, 21:35 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -38,10 +38,10 @@
    "oil": {
     "qty": 5,
     "costPerKg": 7.666666666666667,
-    "stated": 20
+    "stated": 15
    }
   },
-  "STATED_STOCK": 8.25,
+  "STATED_STOCK": 0.25,
   "COUNT_ON": {
    "salt": "2026-08-24",
    "oil": "2026-08-23"
@@ -2506,6 +2506,65 @@
     "rid": "s118"
    },
    {
+    "customer": "CA7-JTR",
+    "qty": 1,
+    "total": 135,
+    "cost": 50,
+    "cash": 135,
+    "handover": "collected",
+    "date": "2026-09-01",
+    "deliveredQty": 1,
+    "deliveredOn": "2026-09-01",
+    "paidOn": "2026-09-01",
+    "ref": "CE4-AD",
+    "refKg": 1,
+    "note": "<b>A NEW PARTY'S FIRST ORDER, AT THE HIGHEST SINGLE-UNIT RATE THIS BOOK HAS RECORDED.</b> 1 unit for RM135, collected and paid on the day. Against the 1-unit collected floor of RM77.26 it clears by RM57.74, and it returns RM85 at 63.0% on the RM50 shelf lot: the best margin on any unit sold this month, and RM35 above the RM100 house anchor that eleven of CA4-DAM's thirteen orders sit on. <b>CE4-AD'S FIRST REFERRAL, CREDITED R3:</b> the row books to CA7-JTR and the introduction is credited beside it, so the buyer is the counterparty and CE4-AD earns the attribution without taking the row.",
+    "rid": "s120"
+   },
+   {
+    "customer": "CA7-JTR",
+    "product": "oil",
+    "qty": 5,
+    "total": 65,
+    "cost": 7.666666666666667,
+    "cash": 65,
+    "handover": "collected",
+    "date": "2026-09-01",
+    "deliveredQty": 5,
+    "deliveredOn": "2026-09-01",
+    "paidOn": "2026-09-01",
+    "ref": "CE4-AD",
+    "refKg": 5,
+    "note": "<b>THE SAME PARTY'S SECOND ROW ON THE SAME DAY, AND THE FIRST OIL SOLD SINCE 26 AUG.</b> 5 unit for RM65, RM13 a unit, collected and paid. RM13 is exactly the rate on the 10-unit rung of the oil board and the rate CZ4-MK paid on 26 Aug, so the per-unit figure is the house rate; what is unusual is the size, since 5 unit is not a rung the board shows. <b>It sits RM2.70 UNDER the 5-unit collected floor of RM67.70</b>, which the board's own taper explains rather than excuses: the floor rises faster than the rate below 10 unit. Costed at RM7.67 from the 30-unit lot of 26 Aug, so it returns RM26.67 at 41.0%. Same R3 leg as the salt row, credited at this row's own size.",
+    "rid": "s121"
+   },
+   {
+    "customer": "CK4-SEN",
+    "qty": 6,
+    "total": 440,
+    "cost": 50,
+    "cash": 440,
+    "date": "2026-09-01",
+    "deliveredQty": 6,
+    "deliveredOn": "2026-09-01",
+    "paidOn": "2026-09-01",
+    "note": "<b>HIS FIRST ORDER, AND THE SECOND LARGEST SINGLE SALE ON THE BOOK.</b> 6 unit for RM440, RM73.33 a unit, paid and delivered in full on the day. The per-unit rate reads low beside the RM100 anchor and is not: the floor tapers with size, so 6 unit collected asks about RM338.59 and RM440 clears it by roughly RM101. It returns RM140 at 31.8% on the RM50 shelf lot. He has been on the roster without a row until today. Handover is not stated, so the field is left unset: the share of orders delivered is measured over the rows that say, and a row that was never asked must stay distinguishable from one that answered.",
+    "rid": "s122"
+   },
+   {
+    "customer": "CR3-DAM",
+    "qty": 1,
+    "total": 80,
+    "cost": 50,
+    "cash": 0,
+    "handover": "delivered",
+    "date": "2026-09-01",
+    "deliveredQty": 1,
+    "deliveredOn": "2026-09-01",
+    "note": "<b>HIS ELEVENTH UNIT AT RM80 AND HIS SECOND STANDING ADVANCE.</b> 1 unit handed over on 1 Sep with nothing paid, beside the RM80 still owed on s116 of 27 Aug, so RM160 now stands against him. He cleared RM160 on 27 Aug covering the 18th and the 24th, which is the pattern this row continues: a rolling one or two unit credit, settled in batches, never yet defaulted across eleven orders since 15 July. Recorded as DELIVERED on the wording used; at RM80 that is RM7.26 under the RM87.26 delivered floor, where the same unit collected clears RM77.26. Costed at RM50, so it returns RM30 at 37.5% whichever way it travelled.",
+    "rid": "s123"
+   },
+   {
     "customer": "CN6-WM",
     "qty": 1.5,
     "total": 185,
@@ -2675,14 +2734,16 @@
    "CK4-SEN",
    "CZ4-MK",
    "CH6-SET",
-   "CD3-SEG"
+   "CD3-SEG",
+   "CA7-JTR"
   ],
   "associates": [
    "CS6-BS",
    "CJ4-OKR",
    "CS6-PER",
    "CN6-WM",
-   "CI4-OKR"
+   "CI4-OKR",
+   "CE4-AD"
   ],
   "PEOPLE": {
    "banned": [
@@ -2835,7 +2896,7 @@
   ],
   "QUEUE_COMMITTED": "2026-08-28T09:59:51.414Z",
   "PRICING": {
-   "takenAt": "2026-08-29T11:55:12.358Z",
+   "takenAt": "2026-09-01T13:35:28.644Z",
    "sizes": [
     0.5,
     1,
@@ -2946,8 +3007,8 @@
          "date": "2026-08-26",
          "sup": "SA5-BTR"
         },
-        "days": 23,
-        "sinceLot": 32
+        "days": 26,
+        "sinceLot": 35
        },
        "lockBase": {
         "lockedOn": "2026-08-06",
@@ -2991,15 +3052,15 @@
          "rm": 10
         },
         "deliveredShare": {
-         "v": 0.25
+         "v": 0.3333333333333333
         }
        },
        "attrib": 1,
        "shrinkRate": 0.04777629034657148,
        "avgDel": {
-        "n": 107,
-        "kg": 273.2,
-        "mean": 2.5533
+        "n": 110,
+        "kg": 281.2,
+        "mean": 2.5564
        }
       },
       "policy": {
@@ -3072,52 +3133,52 @@
      "replCost": 7.15,
      "floors": {
       "1": {
-       "delivered": 43.54,
-       "collected": 33.54
+       "delivered": 43.26,
+       "collected": 33.26
       },
       "2": {
-       "delivered": 52.08,
-       "collected": 42.08
+       "delivered": 51.52,
+       "collected": 41.52
       },
       "3": {
-       "delivered": 60.62,
-       "collected": 50.62
+       "delivered": 59.77,
+       "collected": 49.77
       },
       "4": {
-       "delivered": 69.16,
-       "collected": 59.16
+       "delivered": 68.03,
+       "collected": 58.03
       },
       "5": {
-       "delivered": 77.7,
-       "collected": 67.7
+       "delivered": 76.29,
+       "collected": 66.29
       },
       "0.5": {
-       "delivered": 39.27,
-       "collected": 29.27
+       "delivered": 39.13,
+       "collected": 29.13
       },
       "1.5": {
-       "delivered": 47.81,
-       "collected": 37.81
+       "delivered": 47.39,
+       "collected": 37.39
       },
       "2.5": {
-       "delivered": 56.35,
-       "collected": 46.35
+       "delivered": 55.65,
+       "collected": 45.65
       },
       "3.5": {
-       "delivered": 64.89,
-       "collected": 54.89
+       "delivered": 63.9,
+       "collected": 53.9
       },
       "4.5": {
-       "delivered": 73.43,
-       "collected": 63.43
+       "delivered": 72.16,
+       "collected": 62.16
       },
       "6.25": {
-       "delivered": 88.38,
-       "collected": 78.38
+       "delivered": 86.61,
+       "collected": 76.61
       },
       "12.5": {
-       "delivered": 141.76,
-       "collected": 131.76
+       "delivered": 138.23,
+       "collected": 128.23
       }
      },
      "inputs": {
@@ -3153,8 +3214,8 @@
          "date": "2026-08-26",
          "sup": "SP7-PUD"
         },
-        "days": 23,
-        "sinceLot": 23
+        "days": 26,
+        "sinceLot": 26
        },
        "lockBase": {
         "lockedOn": "2026-08-06",
@@ -3198,15 +3259,15 @@
          "rm": 10
         },
         "deliveredShare": {
-         "v": 0.2
+         "v": 0
         }
        },
        "attrib": 1,
-       "shrinkRate": 0.08178438661710039,
+       "shrinkRate": 0.05037037037037038,
        "avgDel": {
-        "n": 6,
-        "kg": 81,
-        "mean": 13.5
+        "n": 7,
+        "kg": 86,
+        "mean": 12.2857
        }
       },
       "policy": {
@@ -3269,11 +3330,11 @@
      }
     }
    },
-   "v": "v404"
+   "v": "v439"
   },
   "OPEN": {
-   "at": "2026-08-29T11:55:12.391Z",
-   "count": 5,
+   "at": "2026-09-01T13:35:28.711Z",
+   "count": 6,
    "byKey": {
     "CY2-NIL|undefined|230": {
      "d": null,
@@ -3290,6 +3351,23 @@
      "agreedOn": "2026-08-28",
      "key": "CY2-NIL|undefined|230"
     },
+    "CR3-DAM|2026-09-01|80": {
+     "d": "2026-09-01",
+     "p": "CR3-DAM",
+     "dir": "S",
+     "q": 1,
+     "t": 80,
+     "cash": 0,
+     "mv": 1,
+     "st": "dueMoney",
+     "oweRM": 80,
+     "rid": "s123",
+     "deliveredOn": "2026-09-01",
+     "handover": "delivered",
+     "key": "CR3-DAM|2026-09-01|80",
+     "age": 0,
+     "exp": 80
+    },
     "CA4-DAM|2026-08-28|100": {
      "d": "2026-08-28",
      "p": "CA4-DAM",
@@ -3304,8 +3382,8 @@
      "deliveredOn": "2026-08-28",
      "handover": "collected",
      "key": "CA4-DAM|2026-08-28|100",
-     "age": 1,
-     "exp": 100
+     "age": 4,
+     "exp": 75
     },
     "CR3-DAM|2026-08-27|80": {
      "d": "2026-08-27",
@@ -3321,8 +3399,8 @@
      "deliveredOn": "2026-08-27",
      "handover": "collected",
      "key": "CR3-DAM|2026-08-27|80",
-     "age": 2,
-     "exp": 80
+     "age": 5,
+     "exp": 60
     },
     "CE4-CHE|2026-08-18|500": {
      "d": "2026-08-18",
@@ -3357,22 +3435,22 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 8.25,
-     "free": 7.75,
+     "onHand": 0.25,
+     "free": -0.25,
      "owedOut": 0.5,
-     "coverDays": 1.3,
-     "rate": 5.8,
-     "owedToYou": 180,
+     "coverDays": 0,
+     "rate": 5.63,
+     "owedToYou": 260,
      "promised": 3,
-     "short": 0
+     "short": 2.75
     },
     "oil": {
      "name": "Oil",
-     "onHand": 20,
-     "free": 20,
+     "onHand": 15,
+     "free": 15,
      "owedOut": 0,
-     "coverDays": 28,
-     "rate": 0.71,
+     "coverDays": 14,
+     "rate": 1.07,
      "owedToYou": 0,
      "promised": 0,
      "short": 0
@@ -3382,7 +3460,7 @@
     "salt": "2026-08-24",
     "oil": "2026-08-23"
    },
-   "v": "v404"
+   "v": "v439"
   }
  }
 }
