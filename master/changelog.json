@@ -1,5 +1,16 @@
 [
  {
+  "v": "v438",
+  "d": "03 Sep 2026",
+  "t": "FIVE READERS ANSWERED WHAT A LOT OWES ITS SUPPLIER, AND NO TWO OF THEM AGREED",
+  "n": [
+   "<b>FOLD 4 OF ROUND TEN.</b> Each of the five excluded a different subset of pending, cancelled and defaulted. billsOut dropped a pending and a cancelled lot but billed a defaulted one. supBills and sCash dropped a pending and a defaulted lot but billed a cancelled one, read p.cash raw rather than through poCash, and had no floor at zero, so an overpaid lot subtracted from what the others owed. The forecast dropped only pending. Lots in transit was the one that was right. On the book as it stands all five read RM 0, which is why nothing had shown.",
+   "<b>BUILD THE STATES AND THEY GIVE THREE DIFFERENT ANSWERS TO ONE QUESTION.</b> With a cancelled lot, a defaulted lot and one real bill on the book, the honest figure is RM 1,200. The Suppliers card said RM 2,450, the Order book card said RM 2,500 and the forecast drained RM 3,750 on day 0. The forecast is the one that mattered most: the other two put a wrong number on a card, that one moved the day the cash runs out.",
+   "<b>ONE RULE: POSITION_ENGINE.poOwed, WHICH IS poLive AND A SUBTRACTION.</b> poLive already knew all three legs. Six readers call it now, the sixth being a fourth spelling of the same predicate on the units side of the Order book, which moves no figure because poOpenUnits has answered nothing for a cancelled or defaulted lot since v422. A latent divergence in a payable is what put five settled lots and RM 5,450 in front of the owner at v408, so it is fixed while it is still latent.",
+   "<b>AND ONE INSTRUMENT REPLACED RATHER THAN UPDATED.</b> v417's bill-line check MATCHED THE SOURCE for a literal, which is one of the two forms round ten ruled out. Routing that line through poOwed changed nothing about its behaviour and the assertion went red anyway, because the bytes it was reading had moved. It runs the rule now. Six mutations, six reds. 935 assertions across 66 sections."
+  ]
+ },
+ {
   "v": "v437",
   "d": "03 Sep 2026",
   "t": "THE ASSERTION FLOOR WAS MEASURED ON THE LAPTOP AND ENFORCED ON CI, SO CI HAD BEEN RED FOR FOUR FOLDS",
