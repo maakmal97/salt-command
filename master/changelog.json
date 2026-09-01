@@ -1,5 +1,16 @@
 [
  {
+  "v": "v455",
+  "d": "02 Sep 2026",
+  "t": "THE RECONCILIATION READ A LEG'S SHORTFALL FROM THE FIELD THE SETTLEMENT HAD ALREADY FILLED, AND TABULATED ZEROS",
+  "n": [
+   "<b>FOLD 13 OF ROUND TEN, IN tools/make_statements.mjs.</b> When salt is withheld from an order to clear earlier balances, the statement reconstructs the chain: each earlier order billed, paid in cash, and short. It read short as billed less cash. The fold credits an in-kind settlement INTO the leg's cash, as a Fulfilment step carrying ref to the order that settled it, so by statement time every settled leg read Short 0.00, Carried forward 0.00, 0.00 at 0.00 a unit is 2.06 unit; and the v192 no-leg guard did not fire, because the legs existed.",
+   "<b>THE SHORTFALL IS WHAT THE CREDIT SAYS IT WAS.</b> A leg carrying such steps reads its shortfall off them, and Paid in cash becomes billed less that, which is what the column names. A leg with no such step is still unpaid and reads billed less cash as before. Legs that carry no shortfall between them explain nothing, so the offset is told plainly through the no-leg branch rather than tabulated.",
+   "<b>WHAT CHANGES ON THE BOOK TODAY: NOTHING.</b> The one row with settledKg has no legs and the one with legs has no settledKg, so the legged branch does not run on any live statement. It is the case v186 was written for.",
+   "<b>PROVED THREE WAYS.</b> The live CJ4-BJ rows with the 15 Jul order carrying its 2.0588 unit as settledKg: legs credited as the fold writes them read RM 50 and RM 90, carried forward RM 140 at RM 68 a unit, and the document prints it; legs left unpaid read the same through the old road; legs paid in cash go to the plain telling. Three mutations, every one red. 1132 assertions across 81 sections."
+  ]
+ },
+ {
   "v": "v454",
   "d": "02 Sep 2026",
   "t": "THE STATEMENT STATES A CANCELLED PAID ORDER'S MONEY: PAID COUNTS IT, THE FOOTER SAYS OWED TO YOU, THE REFUNDS TABLE SAYS WHY",

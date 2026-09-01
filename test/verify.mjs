@@ -4934,6 +4934,52 @@ section("v454: a cancelled paid order's money is stated on the statement");
   ok(rev4.indexOf("450.00 to them") >= 0 || cls4 === "owes", "and its index shows the money owed to them");
 }
 
+
+section("v455: the reconciliation reads the shortfall the settlement credited");
+{
+  /* The walk read a leg's shortfall as billed less cash, and the fold credits an in-kind
+     settlement INTO the leg's cash, so every settled leg read Short 0.00 and the table was zeros.
+     Three books, each the live CJ4-BJ rows with the 15 Jul order carrying its 2.0588 unit as
+     settledKg: legs credited as the fold writes them; legs left unpaid; legs paid in cash with
+     nothing to explain. */
+  const { readFileSync: rf5, writeFileSync: wf5, rmSync: rm5 } = await import("node:fs");
+  const { join: j5 } = await import("node:path");
+  const { pathToFileURL: pu5 } = await import("node:url");
+  const base5 = JSON.parse(rf5(j5(REPO, "ledger", "book.json"), "utf8"));
+  const s018 = base5.sales.find((x) => x.rid === "s018"), s003 = base5.sales.find((x) => x.rid === "s003"), s008 = base5.sales.find((x) => x.rid === "s008");
+  ok(s018 && s003 && s008 && s018.amend.some((a) => a.kind === "Linked" && (a.refKeys || []).length === 2) && s003.amend.some((a) => a.ref && a.cash === 50) && s008.amend.some((a) => a.ref && a.cash === 90),
+    "the book still holds the case: s018 links s003 and s008, and both legs carry the credited step");
+  const run5 = async (tag, shape) => {
+    const b = JSON.parse(JSON.stringify(base5));
+    shape(b.sales.find((x) => x.rid === "s018"), b.sales.find((x) => x.rid === "s003"), b.sales.find((x) => x.rid === "s008"));
+    const B = j5(REPO, "test", ".v455-" + tag + ".json");
+    wf5(B, JSON.stringify(b, null, 1));
+    const prev = process.env.SALT_BOOK; process.env.SALT_BOOK = B;
+    try {
+      const m = await import(pu5(j5(REPO, "tools", "make_statements.mjs")).href + "?v455-" + tag);
+      const o = { from: null, to: "2026-09-01", completed: true, open: true, pending: true, dates: true, brand: "Salt Command", issued: "01 Sep 2026" };
+      const rows = m.stmtRows("CJ4-BJ", o);
+      o.refunds = m.stmtRefunds("CJ4-BJ", o);
+      o.recon = m.stmtRecon("CJ4-BJ", rows).filter((R) => rows.some((x) => x.date === R.order.date));
+      const R = o.recon.find((x) => x.order.date === "2026-07-15");
+      const txt = m.stmtDoc("CJ4-BJ", rows, o).replace(/<[^>]+>/g, " ").replace(/&minus;/g, "-").replace(/\s+/g, " ");
+      return { R, txt };
+    } finally { if (prev === undefined) delete process.env.SALT_BOOK; else process.env.SALT_BOOK = prev; try { rm5(B); } catch (e) { /* best effort */ } }
+  };
+  const A = await run5("credited", (l) => { l.settledKg = 2.0588; });
+  ok(A.R && !A.R.noLegs && A.R.legs.length === 2 && A.R.legs[0].short === 50 && A.R.legs[1].short === 90 && A.R.legs[0].paid === 550 && A.R.legs[1].paid === 0,
+    `legs credited as the fold writes them read their shortfall off the credit: ${A.R && JSON.stringify(A.R.legs.map((x) => [x.paid, x.short]))}`);
+  ok(A.R && A.R.shortTot === 140 && A.R.rate === 68, `carried forward 140 at 68 a unit (${A.R && A.R.shortTot} at ${A.R && A.R.rate})`);
+  ok(A.txt.indexOf("Carried forward 140.00") >= 0 && A.txt.indexOf("140.00 at 68.00 a unit is 2.06 unit") >= 0 && A.txt.indexOf("0.00 at 0.00") < 0,
+    "and the document prints the walk with those figures, not zeros");
+  const B = await run5("unpaid", (l, a, b) => { l.settledKg = 2.0588; a.cash = 550; a.amend = a.amend.filter((x) => !x.ref); b.cash = 0; b.amend = b.amend.filter((x) => !x.ref); });
+  ok(B.R && B.R.shortTot === 140 && B.R.rate === 68 && B.txt.indexOf("Carried forward 140.00") >= 0,
+    `legs still unpaid read billed less cash, as before (${B.R && B.R.shortTot} at ${B.R && B.R.rate})`);
+  const C = await run5("cashed", (l, a, b) => { l.settledKg = 2.0588; a.amend = a.amend.filter((x) => !x.ref); b.amend = b.amend.filter((x) => !x.ref); });
+  ok(C.R && C.R.noLegs && C.txt.indexOf("Carried forward") < 0 && C.txt.indexOf("applied to a separate arrangement") >= 0,
+    `legs paid in cash explain nothing, so the offset is told plainly rather than tabulated (noLegs ${C.R && C.R.noLegs})`);
+}
+
 /* ---- done ----------------------------------------------------------------------- */
 
 section("Round 7: the states no suite check had ever rendered");
@@ -5168,7 +5214,7 @@ section("Round 7: the states no suite check had ever rendered");
    the live count was 879, so thirty-nine assertions could have vanished under a guard written to
    stop exactly that. The margin is four, which covers the book-dependent branches that legitimately
    skip; it is not room for a section to fall out. */
-const FLOOR_ASSERTIONS = 1108, FLOOR_SECTIONS = 80;
+const FLOOR_ASSERTIONS = 1114, FLOOR_SECTIONS = 81;
 ok(pass + fail - offMachine >= FLOOR_ASSERTIONS,
   `the suite ran ${pass + fail - offMachine} assertions everywhere (${pass + fail} here, ${offMachine} of them needing files that live off this repo), below its floor of ${FLOOR_ASSERTIONS}: a section has stopped running`);
 ok(sections >= FLOOR_SECTIONS,

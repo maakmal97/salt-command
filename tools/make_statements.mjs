@@ -194,7 +194,17 @@ function stmtRecon(party,rows){
       const t=sales.find(x=>x.customer+'|'+x.date+'|'+x.total===k);
       if(!t)return null;
       const billed=+t.total, paidCash=+(t.cash||0);
-      return {date:t.date,qty:t.qty,billed:billed,paid:paidCash,short:+(billed-paidCash).toFixed(2)};
+      /* v455: THE SHORTFALL IS READ FROM A FIELD THE SETTLEMENT HAS ALREADY FILLED. The fold
+         credits an in-kind settlement INTO the leg's cash, as a Fulfilment step carrying `ref` to
+         the order that settled it: s003 holds cash 600 with a step of RM 50 ref 15 Jul order. So by
+         statement time billed less cash is 0 on every settled leg, the table printed Short 0.00
+         twice, Carried forward 0.00 and 0.00 at 0.00 a unit, and noLegs did not fire because the
+         legs existed. The shortfall the walk explains is what those steps credited; a leg with no
+         such step is still unpaid and reads billed less cash as before. Paid in cash is then what
+         was paid in money, which is the figure the column names. */
+      const settledHere=+(t.amend||[]).filter(a=>a.ref&&+a.cash>0.009).reduce((a,x)=>a+(+x.cash),0).toFixed(2);
+      const short=settledHere>0.009?settledHere:+(billed-paidCash).toFixed(2);
+      return {date:t.date,qty:t.qty,billed:billed,paid:+(billed-short).toFixed(2),short:short};
     }).filter(Boolean).sort((a,b)=>new Date(a.date)-new Date(b.date));
     const shortTot=+legs.reduce((a,x)=>a+x.short,0).toFixed(2);
     const rate=unitsOff>0?+(shortTot/unitsOff).toFixed(2):0;
@@ -207,7 +217,7 @@ function stmtRecon(party,rows){
        is not merely ugly, it is unintelligible, and it was in a file about to be sent.
        So the no-leg case is flagged here and told plainly rather than tabulated. */
     out.push({order:{date:s.date,qty:s.qty,total:s.total,paid:+(s.cash||0)},
-      noLegs:legs.length===0,
+      noLegs:legs.length===0||shortTot<=0.009,   // v455: legs that carry no shortfall explain nothing, and are told plainly
       legs:legs,shortTot:shortTot,unitsOff:unitsOff,rate:rate,
       deliverable:+(s.qty-unitsOff).toFixed(4),
       collected:collected,
