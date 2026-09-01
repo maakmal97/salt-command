@@ -1,5 +1,16 @@
 [
  {
+  "v": "v439",
+  "d": "03 Sep 2026",
+  "t": "THE DESK DREW A ROW WHOSE TRAIL CLAIMED A RESTATEMENT ITS OWN FIGURES DENIED",
+  "n": [
+   "<b>FOLD 5 OF ROUND TEN.</b> ovAmend had no Modification branch at all and applyAmend has had one since v358. A Modification carries newQty and newTotal and moves no cash and no goods, so it fell through to the movement path and applied a movement of nothing. On a lot that left the row untouched. On an ORDER it was worse than nothing: the trail seeding at the foot of that path appended a Modification step, so the desk drew a row whose trail asserted a restatement while its quantity and total still read the old figures. A row asserting a change it did not make is the one thing a ledger must never do, which is v383's own sentence about the same shape. The branch is now the fold's, line for line.",
+   "<b>THE INSTRUMENT THAT SHOULD HAVE CAUGHT IT WAS DRIVING ONE KIND OF FIVE.</b> The v420 differential says the desk and the fold leave EVERY row in the same state, and its table held four Fulfilments and nothing else. It drives all five kinds now, fifty pairs against five seeds, on one window rather than a fresh master per pair, which is what had kept the table small.",
+   "<b>AND IT FOUND TWO MORE THE MOMENT IT COULD SEE THEM, BOTH IN THE WORDS.</b> The fold's Correction branch seeded its trail with a bare `as booked` where its two siblings have carried `, pending and undated` since v420, so a correction on an undated row seeded a step that did not say the row was pending. And the desk pushed its unpriced-cleared claim as free prose rather than the field-was-to-now shape modClaims parses, so a corrected row rendered on the desk's OWN Ledger strip with the verdict `unreadable`, which is the one verdict a claim checker must not reach on its own output.",
+   "<b>THE DIFFERENTIAL CANNOT CATCH THAT LAST ONE and the check says so:</b> two roads agreeing on an unreadable sentence still agree, so readability is asserted separately, through modClaims itself. Four mutations, four reds; the status check was moved onto a lot booked paid with no cash field after the mutation proved its first fixture could not fail. 949 assertions across 67 sections."
+  ]
+ },
+ {
   "v": "v438",
   "d": "03 Sep 2026",
   "t": "FIVE READERS ANSWERED WHAT A LOT OWES ITS SUPPLIER, AND NO TWO OF THEM AGREED",

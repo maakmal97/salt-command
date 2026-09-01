@@ -3598,9 +3598,21 @@ section("v420: the desk and the fold leave a row in the same state");
     { rid: "t201", date: null, qty: 10, total: 500, supplier: "SF6-KLC", pending: true },
     { rid: "t202", date: "2026-08-01", qty: 10, total: 500, supplier: "SF6-KLC", inTransit: true, receivedQty: 0 },
   ];
+  /* EVERY KIND THE FOLD HAS A BRANCH FOR (v439). This table held four Fulfilments and nothing
+     else, while the sentence beneath it claimed the desk and the fold leave EVERY row in the same
+     state. They did not: ovAmend had no Modification branch at all, so a restatement fell through
+     to the movement path, applied a movement of nothing, and on an ORDER still appended a
+     Modification step to the trail -- drawing a row whose trail asserted a restatement while its
+     quantity and total read the old figures. Five kinds reach applyAmend and now five reach both. */
   const AMENDS = [
     { kind: "Fulfilment", cash: 100, kg: 1 }, { kind: "Fulfilment", cash: 200, kg: 2 },
     { kind: "Fulfilment", cash: 0, kg: 2 },   { kind: "Fulfilment", cash: 200, kg: 0 },
+    { kind: "Modification", newQty: 4, newTotal: 400 },
+    { kind: "Modification", newQty: 1, newTotal: 0 },
+    { kind: "Cancellation" },
+    { kind: "Default" },
+    { kind: "Correction", fields: { total: 640 } },
+    { kind: "Correction", fields: { note: "restated by hand" } },
   ];
 
   const bk5 = JSON.parse(rf5(j5(REPO, "ledger", "book.json"), "utf8"));
@@ -3612,6 +3624,8 @@ section("v420: the desk and the fold leave a row in the same state");
   ex5("node tools/booksync.mjs --sync", { cwd: REPO, env: { ...process.env, SALT_BOOK: B5, SALT_MASTER: M5 }, stdio: "pipe" });
 
   const strip = (r) => { const o = JSON.parse(JSON.stringify(r)); delete o._prov; return o; };
+  const { w: wq } = await om5(M5);
+  wq.eval("setProd('salt');recompute();");
   let compared = 0; const differed = [];
   for (const [rows, dir] of [[SALES, "SELL"], [LOTS, "BUY"]]) {
     for (const seed of rows) {
@@ -3619,10 +3633,11 @@ section("v420: the desk and the fold leave a row in the same state");
         const pay = Object.assign({ date: "2026-09-01" }, am);
         const fr = JSON.parse(JSON.stringify(seed));
         try { fold5(fr, pay, dir, null); } catch (e) { /* a refusal is a state too; the desk must decline */ }
-        const { w: wq } = await om5(M5);
-        wq.eval("setProd('salt');recompute();");
-        wq.eval("ovAmend(" + JSON.stringify(Object.assign({ direction: dir, rid: seed.rid }, pay)) + ",{at:'x'})");
+        /* ONE window for the whole matrix, with the row put back to the seed before each pair.
+           It used to open a fresh master per pair, which is what kept the table at four. */
         const arr = dir === "BUY" ? "purchases" : "sales";
+        wq.eval("(function(){var i=" + arr + ".findIndex(function(r){return r.rid===" + JSON.stringify(seed.rid) + ";});" + arr + "[i]=" + JSON.stringify(seed) + ";})()");
+        wq.eval("ovAmend(" + JSON.stringify(Object.assign({ direction: dir, rid: seed.rid }, pay)) + ",{at:'x'})");
         const dr = JSON.parse(wq.eval("JSON.stringify(" + arr + ".find(r=>r.rid===" + JSON.stringify(seed.rid) + "))"));
         compared++;
         const a = JSON.stringify(strip(fr)), b = JSON.stringify(strip(dr));
@@ -3630,7 +3645,9 @@ section("v420: the desk and the fold leave a row in the same state");
       }
     }
   }
-  ok(compared === 20, "twenty row-and-amendment pairs were put through both engines (" + compared + ")");
+  ok(compared === 50, "fifty row-and-amendment pairs were put through both engines (" + compared + "), five kinds against five seeds");
+  ok(new Set(AMENDS.map((a) => a.kind)).size === 5,
+    "and the five are every kind applyAmend has a branch for, so the sentence below is about all of them");
   ok(differed.length === 0,
     "the desk and the fold leave every one in the same state -- " + differed.slice(0, 2).join(" || "));
   for (const f of [B5, M5]) { try { rm5(f); } catch (e) { /* best effort */ } }
@@ -4075,6 +4092,84 @@ section("v438: one rule for what a lot owes its supplier, read by every reader o
   for (const x of [BA, MA]) { try { rmA(x); } catch (e) { /* best effort */ } }
 }
 
+
+section("v439: the desk restates a row, and every claim it writes is one its own strip can read");
+{
+  /* ROUND TEN. ovAmend had NO Modification branch and applyAmend has had one since v358. A
+     Modification carries newQty and newTotal and moves no cash and no goods, so it fell through to
+     the movement path and applied a movement of nothing. On a lot that left the row untouched. On
+     an ORDER it was worse than nothing: the trail seeding at the foot of that path appended a
+     Modification step, so the desk drew a row whose trail asserted a restatement WHILE ITS QUANTITY
+     AND TOTAL STILL READ THE OLD FIGURES. A row asserting a change it did not make is the one thing
+     a ledger must never do, which is v383's own sentence about the same shape.
+     THE DIFFERENTIAL BESIDE THIS ONE now drives all five kinds and proves the two roads agree. It
+     cannot prove they agree on something READABLE, so that is here: the mod line is a contract that
+     modClaims parses, and the desk was writing one line that broke it. */
+  const { openMaster: omB } = await import("../tools/payload.mjs");
+  const { readFileSync: rfB, writeFileSync: wfB, unlinkSync: rmB } = await import("node:fs");
+  const { execSync: exB } = await import("node:child_process");
+  const { join: jB } = await import("node:path");
+
+  const seed = { rid: "y1", date: null, qty: 2, total: 200, customer: "CN6-WM", unpriced: true };
+  const lot = { rid: "y2", date: "2026-08-01", qty: 10, total: 500, supplier: "SF6-KLC", inTransit: true, receivedQty: 0, cash: 100 };
+  const settled = { rid: "y3", date: "2026-07-01", qty: 10, total: 500, supplier: "SF6-KLC", status: "paid" };
+  const bkB = JSON.parse(rfB(jB(REPO, "ledger", "book.json"), "utf8"));
+  bkB.sales = bkB.sales.concat([Object.assign({}, seed)]);
+  bkB.purchases = bkB.purchases.concat([Object.assign({}, lot), Object.assign({}, settled)]);
+  const BB = jB(REPO, "test", ".v439.json"), MB = jB(REPO, "test", ".v439.html");
+  wfB(BB, JSON.stringify(bkB, null, 1));
+  wfB(MB, rfB(jB(REPO, "master", "salt_command.html"), "utf8"));
+  exB("node tools/booksync.mjs --sync", { cwd: REPO, env: { ...process.env, SALT_BOOK: BB, SALT_MASTER: MB }, stdio: "pipe" });
+  const { w: wB } = await omB(MB);
+  wB.eval("setProd('salt');recompute();");
+
+  /* THE ORDER: restated, and the trail no longer claims what the figures deny */
+  wB.eval("ovAmend({kind:'Modification',date:'2026-09-01',direction:'SELL',rid:'y1',newQty:4,newTotal:400},{at:'x'})");
+  const y1 = JSON.parse(wB.eval("JSON.stringify(sales.find(function(r){return r.rid==='y1';}))"));
+  ok(+y1.qty === 4 && +y1.total === 400, `the order is restated to 4 unit / RM 400 (${y1.qty} / ${y1.total}), where it used to read 2 / 200 with a Modification step beside it`);
+  ok((y1.amend || []).some((a) => a.kind === "Modification"), "the trail records the restatement");
+  ok(/restated on 2026-09-01 from 2 unit \/ RM200 to 4 unit \/ RM400/.test(y1.mod || ""), `and mod says so in the fold's words (${y1.mod})`);
+  ok(!y1.unpriced, "and a restatement to a real total clears unpriced, as it has in the fold since v358");
+
+  /* THE LOT: the branch that used to leave the row entirely untouched */
+  wB.eval("ovAmend({kind:'Modification',date:'2026-09-01',direction:'BUY',rid:'y2',newQty:3,newTotal:100},{at:'x'})");
+  const y2 = JSON.parse(wB.eval("JSON.stringify(purchases.find(function(r){return r.rid==='y2';}))"));
+  ok(+y2.qty === 3 && +y2.total === 100, `the lot is restated to 3 unit / RM 100 (${y2.qty} / ${y2.total})`);
+  /* THE STATUS MUST COME FROM WHAT WAS ALREADY PAID, NOT FROM THE NEW TOTAL, and the state that
+     proves it is a lot booked status:"paid" with NO cash field, which is how every settled
+     historical lot is stored. poCash reads that as meaning the row TOTAL, so asking it after the
+     write returns the NEW total and the lot reads fully paid at any price. The first version of
+     this check used a lot carrying an explicit cash figure, where poCash is unaffected by the
+     total and the mutation was neutral: the assertion could not fail, and the mutation said so. */
+  wB.eval("ovAmend({kind:'Modification',date:'2026-09-01',direction:'BUY',rid:'y3',newQty:20,newTotal:900},{at:'x'})");
+  const y3 = JSON.parse(wB.eval("JSON.stringify(purchases.find(function(r){return r.rid==='y3';}))"));
+  ok(+y3.qty === 20 && +y3.total === 900, `a settled lot restated upward carries the new figures (${y3.qty} / ${y3.total})`);
+  ok(y3.status === "partial", `and reads partial, because RM 500 was paid against a new RM 900 (${y3.status})`);
+  ok(y2.status === "paid", `while a lot restated down to what it had already paid reads paid (${y2.status})`);
+
+  /* A RESTATEMENT CARRYING NO FIGURES IS DECLINED RATHER THAN APPLIED */
+  const n0 = +wB.eval("provNotes.length");
+  const was = wB.eval("JSON.stringify(sales.find(function(r){return r.rid==='y1';}))");
+  wB.eval("ovAmend({kind:'Modification',date:'2026-09-01',direction:'SELL',rid:'y1',newQty:0,newTotal:0},{at:'x'})");
+  ok(wB.eval("JSON.stringify(sales.find(function(r){return r.rid==='y1';}))") === was, "a restatement to nothing leaves the row alone");
+  ok(+wB.eval("provNotes.length") > n0, "and says why, rather than failing quietly");
+
+  /* EVERY CLAIM THE DESK WRITES MUST BE ONE modClaims CAN READ. The unpriced line was pushed as
+     free prose, so the strip on the desk's own Ledger rendered a corrected row's claim as
+     `unreadable`, which is the one verdict a claim checker must not reach on its own output. The
+     differential cannot catch this: two roads agreeing on an unreadable sentence still agree. */
+  wB.eval("(function(){var i=sales.findIndex(function(r){return r.rid==='y1';});sales[i]=" + JSON.stringify(seed) + ";})()");
+  wB.eval("ovAmend({kind:'Correction',date:'2026-09-01',direction:'SELL',rid:'y1',fields:{total:640}},{at:'x'})");
+  const claims = JSON.parse(wB.eval("JSON.stringify(modClaims(Object.assign({type:'SELL'},sales.find(function(r){return r.rid==='y1';})),'SELL'))"));
+  const flat = [].concat(...(Array.isArray(claims) ? claims : [claims]).map((c) => c && c.rows ? c.rows : [c])).filter(Boolean);
+  ok(flat.length > 0, `the strip reads claims off the corrected row at all (${flat.length})`);
+  ok(!flat.some((c) => c.verdict === "unreadable"),
+    "and none of them is unreadable -- " + JSON.stringify(flat.filter((c) => c.verdict === "unreadable")).slice(0, 140));
+  ok(flat.some((c) => c.field === "unpriced"),
+    "including the unpriced line the fold writes a reason onto, which is the one that broke the shape");
+  for (const x of [BB, MB]) { try { rmB(x); } catch (e) { /* best effort */ } }
+}
+
 /* ---- done ----------------------------------------------------------------------- */
 
 section("Round 7: the states no suite check had ever rendered");
@@ -4309,7 +4404,7 @@ section("Round 7: the states no suite check had ever rendered");
    the live count was 879, so thirty-nine assertions could have vanished under a guard written to
    stop exactly that. The margin is four, which covers the book-dependent branches that legitimately
    skip; it is not room for a section to fall out. */
-const FLOOR_ASSERTIONS = 916, FLOOR_SECTIONS = 66;
+const FLOOR_ASSERTIONS = 930, FLOOR_SECTIONS = 67;
 ok(pass + fail - offMachine >= FLOOR_ASSERTIONS,
   `the suite ran ${pass + fail - offMachine} assertions everywhere (${pass + fail} here, ${offMachine} of them needing files that live off this repo), below its floor of ${FLOOR_ASSERTIONS}: a section has stopped running`);
 ok(sections >= FLOOR_SECTIONS,

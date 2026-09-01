@@ -363,7 +363,10 @@ export function applyAmend(row, pay, dir, note) {   /* v413: exported so the sui
       const line = `corrected${pay.date ? " on " + pay.date : ""}: ${said.join("; ")}`;
       row.mod = row.mod ? row.mod + ", then " + line : line;
       if (!row.amend || !row.amend.length) {
-        row.amend = [{ date: row.date, kind: "Fulfilment", cash: E.txPaid(row), kg: E.txDeliv(row), note: "as booked" }];
+        /* v439: the undated suffix its two siblings have carried since v420. This was the third
+           site of the same seeding and the only one without it, so a correction on an undated row
+           seeded a step that did not say the row was pending. The desk had it; the fold did not. */
+        row.amend = [{ date: row.date, kind: "Fulfilment", cash: E.txPaid(row), kg: E.txDeliv(row), note: "as booked" + (row.date ? "" : ", pending and undated") }];
       }
       row.amend = row.amend.concat([{ date: pay.date || null, kind: "Correction", cash: 0, kg: 0, note: note || line }]);
     }
