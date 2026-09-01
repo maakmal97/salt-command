@@ -4645,6 +4645,40 @@ section("v447: the figure carries the state");
   } finally { for (const f of [B7, M7]) { try { rm7(f); } catch (e) { /* best effort */ } } }
 }
 
+
+section("v448: the editor opens on the chips, and one button");
+{
+  /* HIS INSTRUCTION, 02 Sep 2026: the row editor was two forms and three buttons, with a Cancel
+     one chip away from Cancel the order. It opens on the six states and Queue the update now; the
+     sheet, its own save and its reasons sit behind one fold, shut; the cross is the only way out;
+     and the state reads Cancelled, beside Completed and Defaulted. Read off the rendered panel. */
+  const { openMaster: om8 } = await import("../tools/payload.mjs");
+  const { readFileSync: rf8 } = await import("node:fs");
+  const { join: j8 } = await import("node:path");
+  const bk8 = JSON.parse(rf8(j8(REPO, "ledger", "book.json"), "utf8"));
+  const sale = bk8.sales.find((x) => x.rid && x.date && !x.cancelled), lot = bk8.purchases.find((x) => x.rid && !x.cancelled && !x.defaulted);
+  const { w } = await om8(j8(REPO, "master", "salt_command.html"));
+  w.eval("setProd('salt');recompute();switchTab('ledger');");
+  const shape = () => JSON.parse(w.eval("JSON.stringify((function(){var pn=document.querySelector('[role=dialog]');var f=function(e){return !!e.closest('.updmore')};return {out:[].filter.call(pn.querySelectorAll('button.vbtn'),function(b){return !f(b)}).map(function(b){return b.textContent.trim()}),inFold:[].filter.call(pn.querySelectorAll('button.vbtn'),f).map(function(b){return b.id}),chips:[].map.call(pn.querySelectorAll('.updchip'),function(b){return b.textContent.trim()}),dismiss:pn.querySelectorAll('#edX,#edCancel,[aria-label=Close]').length,summary:(pn.querySelector('.updmore>summary')||{}).textContent||null,open:(pn.querySelector('.updmore')||{}).open,whyInFold:(function(){var e=pn.querySelector('#edWhy');return e?f(e):null})()};})())"));
+  for (const [rid, type, lab] of [[sale.rid, "SELL", "an order"], [lot.rid, "BUY", "a lot"]]) {
+    w.eval("ledEdit(" + JSON.stringify(rid) + "," + JSON.stringify(type) + ");");
+    const p = shape();
+    ok(p.out.length === 1 && p.out[0] === "Queue the update", `${lab} opens on ONE button, Queue the update (${p.out.join(" / ")})`);
+    ok(p.inFold.length === 1 && p.inFold[0] === "edSave" && p.open === false, `the sheet's own save is behind the fold, and the fold is shut (${p.inFold.join(",")}, open=${p.open})`);
+    ok(p.summary === "Change something else", `the fold says what it is for: ${p.summary}`);
+    ok(p.whyInFold === true, "and the sheet's reasons land beside the sheet, not under the chips");
+    ok(p.dismiss === 1, `one way out, the cross (${p.dismiss} dismiss controls)`);
+    ok(p.chips.includes("Cancelled") && !p.chips.some((c) => /^Cancel the/.test(c)), `the state is Cancelled, not Cancel the ${lab.slice(2)} (${p.chips.join(", ")})`);
+    w.eval("[].filter.call(document.querySelectorAll('.updchip'),function(b){return b.textContent.trim()==='Cancelled'})[0].click();");
+    ok(w.eval("updMode") === "cancel", "and tapping it arms the cancellation, as the old chip did");
+    w.eval("edClose();");
+  }
+  w.eval("ledNew();");
+  const n = shape();
+  ok(n.out.length === 1 && n.out[0] === "Queue the order" && n.summary === null && n.dismiss === 1, `a new order has no fold to hide its sheet in: one button, Queue the order, and the cross (${n.out.join(" / ")}, fold=${n.summary})`);
+  w.eval("edClose();");
+}
+
 /* ---- done ----------------------------------------------------------------------- */
 
 section("Round 7: the states no suite check had ever rendered");
@@ -4879,7 +4913,7 @@ section("Round 7: the states no suite check had ever rendered");
    the live count was 879, so thirty-nine assertions could have vanished under a guard written to
    stop exactly that. The margin is four, which covers the book-dependent branches that legitimately
    skip; it is not room for a section to fall out. */
-const FLOOR_ASSERTIONS = 1060, FLOOR_SECTIONS = 73;
+const FLOOR_ASSERTIONS = 1075, FLOOR_SECTIONS = 74;
 ok(pass + fail - offMachine >= FLOOR_ASSERTIONS,
   `the suite ran ${pass + fail - offMachine} assertions everywhere (${pass + fail} here, ${offMachine} of them needing files that live off this repo), below its floor of ${FLOOR_ASSERTIONS}: a section has stopped running`);
 ok(sections >= FLOOR_SECTIONS,
