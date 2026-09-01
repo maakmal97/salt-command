@@ -1,5 +1,16 @@
 [
  {
+  "v": "v437",
+  "d": "03 Sep 2026",
+  "t": "THE ASSERTION FLOOR WAS MEASURED ON THE LAPTOP AND ENFORCED ON CI, SO CI HAD BEEN RED FOR FOUR FOLDS",
+  "n": [
+   "<b>THE INSTRUMENT FAILED, NOT THE DESK.</b> Two blocks of the suite read files that live outside this repo and can never enter it: the plaintext directory, which hard rule 3 forbids in any form, and serve_desk.py. The laptop therefore runs assertions CI cannot. The floor is raised to the live count with every fold, that count is taken on the laptop, and at v434 it crossed what CI can reach. v434, v435 and v436 each failed CI on that one line while every substantive check passed, and each was reported here as shipped and green.",
+   "<b>AND A RED RUN NOBODY READS IS THE SAME AS NO RUN.</b> The Cloud commit workflow runs npm test BEFORE it deploys, so for four folds its later steps did not run: marking the folded rows committed, waking the phone, clearing the handoff files and re-seeding the D1 mirror from the master just shipped. That last one is the step whose absence makes the drafter refuse everything against a stale mirror, which is a fault this repo has already had twice.",
+   "<b>THE FLOOR NOW COUNTS WHAT EVERY MACHINE REACHES.</b> An assertion inside an off-repo block is declared with okOff rather than ok: it passes and fails exactly as before and is subtracted from the floor alone. Measured both ways, the guarded figure is 901 on the laptop and 901 with the off-repo paths pointed at nothing, so CI and the laptop can now agree on it.",
+   "<b>PROVED IN BOTH DIRECTIONS.</b> The two runs are compared against each other rather than against a number written down, and the v436 block is then removed whole: the figure drops to 881 and the floor catches it. The first attempt at that proof disabled only the section's LABEL and left its assertions running, which reported the floor as blind when it was not, so the mutation was corrected rather than the code."
+  ]
+ },
+ {
   "v": "v436",
   "d": "03 Sep 2026",
   "t": "THE ROW EDITOR PREVIEWED AS APPLIED THE VERY CORRECTION THE QUEUE THEN REFUSED",

@@ -19,6 +19,18 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO = resolve(HERE, "..");
 let pass = 0, fail = 0;
 const ok = (c, m) => { if (c) { pass++; } else { fail++; console.log("  FAIL: " + m); } };
+/* AN ASSERTION THAT CANNOT RUN ON EVERY MACHINE IS NOT PART OF THE FLOOR (v437). Two blocks read
+   files that live outside this repo and can never enter it: the plaintext directory (hard rule 3)
+   and serve_desk.py. So the laptop runs ten checks CI cannot, the floor was raised to the laptop's
+   count at v434, and CI has failed on that one line ever since -- through v434, v435 and v436, each
+   of which was reported as shipped and green. Nothing substantive failed; the instrument did. Both
+   halves of that are the round-ten lesson: a floor calibrated on one machine and enforced on
+   another is not a floor, and a red run nobody reads is the same as no run.
+   okOff counts as a pass or a fail exactly as ok does. It is subtracted from the FLOOR only, so
+   the floor measures what every machine reaches and CI and the laptop can agree on it. */
+let offMachine = 0;
+const okOff = (c, m) => { offMachine++; ok(c, m); };
+const skipOff = (m) => { console.log("  SKIP: " + m); };
 let sections = 0;
 const section = (s) => { sections++; console.log("\n" + s); };
 
@@ -286,7 +298,7 @@ section("The public desk carries no name and no place");
     /* a SKIP, not a pass: this line must not count as proof. The scan needs the plaintext
        directory, which lives only on the laptop and may not be committed in any form, hashed
        included (hard rule 3), so CI cannot carry it. It runs wherever the fold runs. */
-    console.log("  SKIP: salt_bio.json is not on this machine, so the public-desk name scan did not run here");
+    skipOff("salt_bio.json is not on this machine, so the public-desk name scan did not run here");
   } else {
     /* HARD RULE 3, ENFORCED RATHER THAN TRUSTED. public/desk.html is committed AND served
        publicly, so a customer's name or neighbourhood appearing anywhere in it, including
@@ -316,13 +328,13 @@ section("The public desk carries no name and no place");
       for (;;) { const i = hay.indexOf(x, f); if (i < 0) return false; f = i + x.length;
         if (!word(hay[i - 1]) && !word(hay[i + x.length])) return true; }
     });
-    ok(hits.length === 0, `no directory name or place appears in the public desk (${words.size} checked, ${hits.length} found)`);
+    okOff(hits.length === 0, `no directory name or place appears in the public desk (${words.size} checked, ${hits.length} found)`);
 
     /* The map is a heatmap and must stay one: no per-party label, no coordinates on screen. */
-    ok(desk.includes("url(#heat"), "the map draws heat blobs");
-    ok(desk.includes("mix-blend-mode:screen"), "overlapping localities brighten rather than stack");
-    ok(!desk.includes("place.name"), "nothing on the map reads a place name");
-    ok(!/PLACES\[[^\]]*\]\.(name|src)/.test(desk), "the gazetteer table carries neither name nor provenance");
+    okOff(desk.includes("url(#heat"), "the map draws heat blobs");
+    okOff(desk.includes("mix-blend-mode:screen"), "overlapping localities brighten rather than stack");
+    okOff(!desk.includes("place.name"), "nothing on the map reads a place name");
+    okOff(!/PLACES\[[^\]]*\]\.(name|src)/.test(desk), "the gazetteer table carries neither name nor provenance");
   }
 }
 
@@ -1101,8 +1113,8 @@ section("The gate is the only road in");
   const desk = `${PROJECT_DIR}/30_Published/serve_desk.py`;
   if (existsSync(desk)) {
     const py = readFileSync(desk, "utf8");
-    ok(!/_run_sync\("-PullOnly"/.test(py), "serve_desk.py no longer drains the cloud queue on a timer");
-    ok(!/next_drain/.test(py), "and the drain timer is gone rather than merely unused");
+    okOff(!/_run_sync\("-PullOnly"/.test(py), "serve_desk.py no longer drains the cloud queue on a timer");
+    okOff(!/next_drain/.test(py), "and the drain timer is gone rather than merely unused");
     /* AND THE DRAIN INSIDE THE SYNC PASS, which the first removal missed entirely: the
        timer went but salt_sync.ps1 still ran the drain on every pass, so the log kept
        printing "drained the phone queue" and the road stayed open. */
@@ -1111,13 +1123,13 @@ section("The gate is the only road in");
       const sync = readFileSync(ps1, "utf8");
       /* the EXECUTABLE form, not the word: the comment explaining the removal names the
          command, so a naive substring search would fail on the very text that documents it */
-      ok(!/&\s*node\s+'tools\/drain\.mjs'/.test(sync), "salt_sync.ps1 does not invoke the drain on a sync pass");
-      ok(!/Say\s*\(\s*"drained the phone queue"/.test(sync), "and it can no longer report having drained one");
+      okOff(!/&\s*node\s+'tools\/drain\.mjs'/.test(sync), "salt_sync.ps1 does not invoke the drain on a sync pass");
+      okOff(!/Say\s*\(\s*"drained the phone queue"/.test(sync), "and it can no longer report having drained one");
     } else {
-      ok(true, "salt_sync.ps1 is not on this machine, so its pull could not be checked");
+      okOff(true, "salt_sync.ps1 is not on this machine, so its pull could not be checked");
     }
   } else {
-    ok(true, "serve_desk.py is not on this machine, so its drain could not be checked");
+    okOff(true, "serve_desk.py is not on this machine, so its drain could not be checked");
   }
 }
 
@@ -4170,9 +4182,9 @@ section("Round 7: the states no suite check had ever rendered");
    the live count was 879, so thirty-nine assertions could have vanished under a guard written to
    stop exactly that. The margin is four, which covers the book-dependent branches that legitimately
    skip; it is not room for a section to fall out. */
-const FLOOR_ASSERTIONS = 908, FLOOR_SECTIONS = 65;
-ok(pass + fail >= FLOOR_ASSERTIONS,
-  `the suite ran ${pass + fail} assertions, below its floor of ${FLOOR_ASSERTIONS}: a section has stopped running`);
+const FLOOR_ASSERTIONS = 893, FLOOR_SECTIONS = 65;
+ok(pass + fail - offMachine >= FLOOR_ASSERTIONS,
+  `the suite ran ${pass + fail - offMachine} assertions everywhere (${pass + fail} here, ${offMachine} of them needing files that live off this repo), below its floor of ${FLOOR_ASSERTIONS}: a section has stopped running`);
 ok(sections >= FLOOR_SECTIONS,
   `the suite ran ${sections} sections, below its floor of ${FLOOR_SECTIONS}: a section has stopped running`);
 
