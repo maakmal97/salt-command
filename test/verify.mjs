@@ -4593,6 +4593,58 @@ section("v446: what a lot is, answered beside what a sale is");
   } finally { for (const f of [B6, M6]) { try { rm6(f); } catch (e) { /* best effort */ } } }
 }
 
+
+section("v447: the figure carries the state");
+{
+  /* HIS MODEL, 02 Sep 2026. An entry is a date, a party, a product, a quantity and a sum, and
+     its state is which of them has happened: grey not yet, white done, white below the agreed
+     figure when partly, struck when off; a replaced figure shows the old one struck, grey for a
+     modification and white for a correction. Drawn on the line that says where the order is
+     now. Five fixtures the editor admits plus three real rows, read back off the rendered card
+     by CLASS and TEXT, which is what a reader sees. */
+  const { openMaster: om7 } = await import("../tools/payload.mjs");
+  const { readFileSync: rf7, writeFileSync: wf7, unlinkSync: rm7 } = await import("node:fs");
+  const { execSync: ex7 } = await import("node:child_process");
+  const { join: j7 } = await import("node:path");
+  const bk = JSON.parse(rf7(j7(REPO, "ledger", "book.json"), "utf8"));
+  const cust = bk.sales.find((x) => x.customer).customer, sup = bk.purchases.find((x) => x.supplier).supplier;
+  bk.sales.push({ rid: "f1", date: null, customer: cust, product: "salt", qty: 4, total: 400, cash: 0, deliveredQty: 0 });
+  bk.sales.push({ rid: "f2", date: "2026-08-29", customer: cust, product: "salt", qty: 4, total: 400, cash: 150, deliveredQty: 4 });
+  bk.sales.push({ rid: "f3", date: "2026-08-29", customer: cust, product: "salt", qty: 4, total: 400, cash: 400, deliveredQty: 0 });
+  bk.sales.push({ rid: "f4", date: "2026-08-29", customer: cust, product: "salt", qty: 4, total: 400, cash: 400, deliveredQty: 0, cancelled: true });
+  bk.purchases.push({ rid: "f5", date: "2026-08-29", supplier: sup, product: "salt", qty: 10, total: 500, cash: 200, receivedQty: 0 });
+  const B7 = j7(REPO, "test", ".v447.json"), M7 = j7(REPO, "test", ".v447.html");
+  wf7(B7, JSON.stringify(bk, null, 1)); wf7(M7, rf7(j7(REPO, "master", "salt_command.html"), "utf8"));
+  ex7("node tools/booksync.mjs --sync", { cwd: REPO, env: { ...process.env, SALT_BOOK: B7, SALT_MASTER: M7 }, stdio: "pipe" });
+  try {
+    const { w } = await om7(M7);
+    w.eval("setProd('salt');recompute();switchTab('ledger');");
+    const cell = (rid) => JSON.parse(w.eval("JSON.stringify((function(){var c=document.querySelector('.lcard[data-rid=\"" + rid + "\"]');if(!c)return null;var f=function(sel){var e=c.querySelector(sel);if(!e)return null;var g=e.querySelector('.lfig'),o=e.querySelector('.lof'),ws=e.querySelector('.lwas');return {cls:g?g.className:'',fig:g?g.textContent:'',of:o?o.textContent:'',was:ws?ws.textContent:'',wasCls:ws?ws.className:''};};return {q:f('.lcol.cqty'),t:f('.lcol.ctot')};})())"));
+    const grey = (x) => /\bcarried\b/.test(x.cls), white = (x) => x.cls === "lfig", struck = (x) => /\bstruck\b/.test(x.cls);
+    const f1 = cell("f1"), f2 = cell("f2"), f3 = cell("f3"), f4 = cell("f4"), f5 = cell("f5"), p3 = cell("p003");
+    ok(f1 && f2 && f3 && f4 && f5 && p3, "every fixture reaches the Ledger as a card with both figure cells");
+    if (f1 && f2 && f3 && f4 && f5 && p3) {
+      ok(grey(f1.q) && grey(f1.t), `pending: both figures grey (${f1.q.cls} / ${f1.t.cls})`);
+      ok(white(f2.q) && white(f2.t), `delivered and part-paid: both white (${f2.q.cls} / ${f2.t.cls})`);
+      ok(f2.t.fig === "RM 150" && f2.t.of === "of RM 400", `and the money reads the PAID figure with the agreed one beneath: ${f2.t.fig} ${f2.t.of}`);
+      ok(f2.q.of === "", "while a fully delivered quantity carries no `of`");
+      ok(grey(f3.q) && white(f3.t), `paid ahead: salt grey, money white (${f3.q.cls} / ${f3.t.cls})`);
+      ok(struck(f4.q) && struck(f4.t), `cancelled: both struck (${f4.q.cls} / ${f4.t.cls})`);
+      ok(grey(f5.q) && white(f5.t) && f5.t.fig === "RM 200" && f5.t.of === "of RM 500", `a lot reads the same way, through poCash and poRecvUnits: ${f5.t.fig} ${f5.t.of}`);
+      ok(struck(p3.q) && white(p3.t), `the defaulted lot: units struck, money white because it left (${p3.q.cls} / ${p3.t.cls})`);
+    }
+    /* replaced figures, on the book's own rows */
+    const s105 = cell("s105"), s016 = cell("s016"), s093 = cell("s093");
+    ok(s105 && s105.t.was === "RM 360" && s105.t.wasCls === "lwas corr", `s105's corrected total shows the old RM 360 struck WHITE (${s105 && s105.t.was}, ${s105 && s105.t.wasCls})`);
+    ok(s016 && s016.q.was === "12.5 unit" && s016.q.wasCls === "lwas mod", `s016's modified quantity shows the old 12.5 unit struck GREY (${s016 && s016.q.was}, ${s016 && s016.q.wasCls})`);
+    ok(s016 && s016.t.was === "RM 750" && s016.t.wasCls === "lwas mod", `and its old RM 750 (${s016 && s016.t.was})`);
+    ok(s093 && s093.q.was === "6.25 unit" && s093.q.wasCls === "lwas corr", `s093's corrected quantity shows 6.25 unit struck white (${s093 && s093.q.was})`);
+    /* no hue: the drawing adds no colour class anywhere */
+    const hued = +w.eval("document.querySelectorAll('.lfig[style], .lwas[style], .lof[style]').length");
+    ok(hued === 0, "the drawing carries no inline colour");
+  } finally { for (const f of [B7, M7]) { try { rm7(f); } catch (e) { /* best effort */ } } }
+}
+
 /* ---- done ----------------------------------------------------------------------- */
 
 section("Round 7: the states no suite check had ever rendered");
@@ -4827,7 +4879,7 @@ section("Round 7: the states no suite check had ever rendered");
    the live count was 879, so thirty-nine assertions could have vanished under a guard written to
    stop exactly that. The margin is four, which covers the book-dependent branches that legitimately
    skip; it is not room for a section to fall out. */
-const FLOOR_ASSERTIONS = 1045, FLOOR_SECTIONS = 72;
+const FLOOR_ASSERTIONS = 1060, FLOOR_SECTIONS = 73;
 ok(pass + fail - offMachine >= FLOOR_ASSERTIONS,
   `the suite ran ${pass + fail - offMachine} assertions everywhere (${pass + fail} here, ${offMachine} of them needing files that live off this repo), below its floor of ${FLOOR_ASSERTIONS}: a section has stopped running`);
 ok(sections >= FLOOR_SECTIONS,
