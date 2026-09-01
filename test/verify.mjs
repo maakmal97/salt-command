@@ -3485,6 +3485,50 @@ section("v421: the drafter calls the rule instead of retyping it");
   ok(blocked(saleA({ settledKg: 2 }), true), "nor one settled in kind, which a raw deliveredQty read misses");
 }
 
+
+section("v426: the guard and the divisor cannot be the same sentinel");
+{
+  /* ROUND NINE, TWIN CLASS 14. concentration() computes tot = revSum || 1 so a share can be taken
+     without dividing by zero, and the All row then wrote (c.tot > 0 ? margin / c.tot * 100 : 0).
+     c.tot is never zero by construction, so the guard could never be false: with no revenue the
+     division was by one ringgit and the cell printed the margin as a percentage of it. A book whose
+     customers hold cost but no revenue, which one free unit gives you, read -1,427,966%.
+     The three other readers of c.tot are shares of REVENUE, where zero over the sentinel is a
+     correct 0%; this was the only one dividing a different quantity by it, and that is the sweep.
+     READ AS TABLE CELLS, not as pane text: the first version of this check scanned textContent for
+     a long number and matched two adjacent cells run together, which is the concatenation trap this
+     project has recorded before. */
+  const { openMaster: om6 } = await import("../tools/payload.mjs");
+  const { readFileSync: rf6, writeFileSync: wf6, unlinkSync: rm6 } = await import("node:fs");
+  const { execSync: ex6 } = await import("node:child_process");
+  const { join: j6 } = await import("node:path");
+
+  const allRow = (w) => JSON.parse(w.eval("JSON.stringify((function(){var r=[].slice.call(document.querySelectorAll('.sec.on tr.tot')).filter(function(x){return /^All/.test((x.cells[0]||{}).textContent||'');})[0];return r?[].map.call(r.cells,function(c){return c.textContent.trim();}):null;})())"));
+
+  /* the live book keeps a real figure */
+  const { w: wl } = await om6();
+  wl.eval("setProd('salt');recompute();switchTab('concentration');");
+  const live = allRow(wl);
+  ok(live && /^-?[0-9]{1,3}%$/.test(live[5]),
+    "the live book prints a plausible margin percentage on the All row (" + (live && live[5]) + ")");
+
+  /* a book whose customers hold cost and no revenue */
+  const bk6 = JSON.parse(rf6(j6(REPO, "ledger", "book.json"), "utf8"));
+  bk6.sales = [{ date: "2026-08-01", customer: "CN6-WM", qty: 2, total: 0, cash: 0, deliveredQty: 2, rid: "z1" }];
+  const B6 = j6(REPO, "test", ".v426.json"), M6 = j6(REPO, "test", ".v426.html");
+  wf6(B6, JSON.stringify(bk6, null, 1));
+  wf6(M6, rf6(j6(REPO, "master", "salt_command.html"), "utf8"));
+  ex6("node tools/booksync.mjs --sync", { cwd: REPO, env: { ...process.env, SALT_BOOK: B6, SALT_MASTER: M6 }, stdio: "pipe" });
+  const { w: wn } = await om6(M6);
+  wn.eval("setProd('salt');recompute();switchTab('concentration');");
+  const nil = allRow(wn);
+  ok(nil, "the All row still renders on a nil-revenue book");
+  ok(nil && !/[0-9]{4}/.test(nil[5]),
+    "and its margin cell is not a percentage of the sentinel (" + (nil && nil[5]) + ")");
+  ok(nil && nil[1] === "RM 0", "while the revenue it printed is still RM 0, not the sentinel");
+  for (const f of [B6, M6]) { try { rm6(f); } catch (e) { /* best effort */ } }
+}
+
 /* ---- done ----------------------------------------------------------------------- */
 
 section("Round 7: the states no suite check had ever rendered");
