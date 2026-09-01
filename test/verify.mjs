@@ -4679,6 +4679,35 @@ section("v448: the editor opens on the chips, and one button");
   w.eval("edClose();");
 }
 
+
+section("v449: a lot's trail opens with the lot as booked, read with the lot's ruler");
+{
+  /* Six sites seeded the first step of a trail with txPaid and txDeliv, the sale's rulers, which read
+     RM 0 and 0 unit on a lot paid in full and received. p001 is that lot. A Correction is the one
+     amendment that reaches the seed on a lot, so one is folded on both engines and the seed read back. */
+  const { applyAmend: aa9 } = await import("../tools/fold.mjs");
+  const lot9 = { date: "2026-06-27", qty: 12.5, total: 800, supplier: "SF6-KLC", status: "paid", rid: "t9" };
+  aa9(lot9, { kind: "Correction", date: "2026-09-01", fields: { note: "x" } }, "BUY", null);
+  const seed9 = (lot9.amend || [])[0] || {};
+  ok(seed9.note === "as booked" && Math.abs(seed9.cash - 800) < 0.01 && Math.abs(seed9.kg - 12.5) < 0.01,
+    `the fold seeds a paid, received lot as paid and received: RM ${seed9.cash}, ${seed9.kg} unit`);
+  const sale9 = { date: "2026-06-27", qty: 4, total: 400, cash: 300, settledRM: 100, deliveredQty: 4, customer: "CJ4-BJ", rid: "t9s" };
+  aa9(sale9, { kind: "Correction", date: "2026-09-01", fields: { note: "x" } }, "SELL", null);
+  const sseed = (sale9.amend || [])[0] || {};
+  ok(Math.abs(sseed.cash - 400) < 0.01 && Math.abs(sseed.kg - 4) < 0.01, `and a sale settled partly in kind still seeds with txPaid, cash and kind together: RM ${sseed.cash}, ${sseed.kg} unit`);
+  const { openMaster: om9 } = await import("../tools/payload.mjs");
+  const { w: w9 } = await om9();
+  w9.eval("setProd('salt');recompute();");
+  const p9 = JSON.parse(w9.eval("JSON.stringify((purchases.find(function(p){return p.status==='paid'&&p.cash==null&&!(p.amend&&p.amend.length)&&!p.cancelled&&!p.defaulted&&p.rid;})||{}).rid||null)"));
+  if (p9) {
+    w9.eval("ovAmend({kind:'Correction',date:'2026-09-01',direction:'BUY',rid:" + JSON.stringify(p9) + ",fields:{note:'x'}},{at:'t9'})");
+    const d9 = JSON.parse(w9.eval("JSON.stringify(((purchases.find(function(p){return p.rid===" + JSON.stringify(p9) + ";})||{}).amend||[])[0]||{})"));
+    const want = JSON.parse(w9.eval("JSON.stringify((function(p){return {cash:poCash(p),kg:poRecvUnits(p)};})(purchases.find(function(p){return p.rid===" + JSON.stringify(p9) + ";})))"));
+    ok(Math.abs(d9.cash - want.cash) < 0.01 && Math.abs(d9.kg - want.kg) < 0.01 && want.cash > 0.009 && want.kg > 0.009,
+      `the desk seeds ${p9} the same way: RM ${d9.cash} of ${want.cash}, ${d9.kg} of ${want.kg} unit`);
+  } else skipData("no paid lot without a trail on the book to drive the desk half with");
+}
+
 /* ---- done ----------------------------------------------------------------------- */
 
 section("Round 7: the states no suite check had ever rendered");
@@ -4913,7 +4942,7 @@ section("Round 7: the states no suite check had ever rendered");
    the live count was 879, so thirty-nine assertions could have vanished under a guard written to
    stop exactly that. The margin is four, which covers the book-dependent branches that legitimately
    skip; it is not room for a section to fall out. */
-const FLOOR_ASSERTIONS = 1075, FLOOR_SECTIONS = 74;
+const FLOOR_ASSERTIONS = 1078, FLOOR_SECTIONS = 75;
 ok(pass + fail - offMachine >= FLOOR_ASSERTIONS,
   `the suite ran ${pass + fail - offMachine} assertions everywhere (${pass + fail} here, ${offMachine} of them needing files that live off this repo), below its floor of ${FLOOR_ASSERTIONS}: a section has stopped running`);
 ok(sections >= FLOOR_SECTIONS,

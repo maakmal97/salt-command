@@ -225,6 +225,16 @@ function skeleton(book, staged, p) {
    the drift the engine exists to stop. */
 const attributionOf = E.attributionOf;
 
+/* v449: THE FIRST STEP OF A TRAIL IS THE ROW AS BOOKED, READ WITH THE ROW'S OWN RULER. Three sites
+   seeded it with txPaid and txDeliv, which read cash, settledRM, deliveredQty and settledKg and know
+   nothing of a lot: on p001, paid in full and 12.5 unit received, they read RM 0 and 0 unit, so the
+   first Correction on any lot would have opened its trail with "as booked: nothing paid, nothing
+   received". The same twin as v441 and v446, in the seed rather than the status. One helper now,
+   and the desk's ovSeed is its mirror. */
+function seedStep(row, dir) {
+  return { date: row.date, kind: "Fulfilment", cash: dir === "BUY" ? E.poCash(row) : E.txPaid(row),
+    kg: dir === "BUY" ? E.poRecvUnits(row) : E.txDeliv(row), note: "as booked" + (row.date ? "" : ", pending and undated") };
+}
 export function applyAmend(row, pay, dir, note) {   /* v413: exported so the suite can FOLD a cancellation rather than grep the source for one */
   /* A CORRECTION REWRITES WHAT THE ROW SAYS, and nothing else. It moves no cash and no stock,
      so cash, deliveredQty, receivedQty and the shelf are untouched by design: those move by
@@ -366,7 +376,7 @@ export function applyAmend(row, pay, dir, note) {   /* v413: exported so the sui
         /* v439: the undated suffix its two siblings have carried since v420. This was the third
            site of the same seeding and the only one without it, so a correction on an undated row
            seeded a step that did not say the row was pending. The desk had it; the fold did not. */
-        row.amend = [{ date: row.date, kind: "Fulfilment", cash: E.txPaid(row), kg: E.txDeliv(row), note: "as booked" + (row.date ? "" : ", pending and undated") }];
+        row.amend = [seedStep(row, dir)];
       }
       row.amend = row.amend.concat([{ date: pay.date || null, kind: "Correction", cash: 0, kg: 0, note: note || line }]);
     }
@@ -393,7 +403,7 @@ export function applyAmend(row, pay, dir, note) {   /* v413: exported so the sui
     /* SELL: qty and total are REPLACED, not added to, which is what "restate" means and what
        tells this apart from a Fulfilment. Nothing moves, so cash/deliveredQty are untouched. */
     if (!row.amend || !row.amend.length)
-      row.amend = [{ date: row.date, kind: "Fulfilment", cash: E.txPaid(row), kg: E.txDeliv(row), note: "as booked" + (row.date ? "" : ", pending and undated") }];
+      row.amend = [seedStep(row, dir)];
     const step = { date: pay.date, kind: "Modification", cash: 0, kg: 0 };
     if (note) step.note = note;
     row.amend = row.amend.concat([step]);
@@ -458,7 +468,7 @@ export function applyAmend(row, pay, dir, note) {   /* v413: exported so the sui
     return;
   }
   if (!row.amend || !row.amend.length)
-    row.amend = [{ date: row.date, kind: "Fulfilment", cash: E.txPaid(row), kg: E.txDeliv(row), note: "as booked" + (row.date ? "" : ", pending and undated") }];
+    row.amend = [seedStep(row, dir)];
   const step = { date: pay.date, kind: pay.kind, cash: +pay.cash || 0, kg: +pay.kg || 0 };
   if (note) step.note = note;
   row.amend = row.amend.concat([step]);

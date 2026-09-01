@@ -1,5 +1,16 @@
 [
  {
+  "v": "v449",
+  "d": "02 Sep 2026",
+  "t": "A LOT'S TRAIL OPENS WITH THE LOT AS BOOKED, READ WITH THE LOT'S RULER, ON THE FOLD AND ON THE DESK",
+  "n": [
+   "<b>THE TWIN OF v441 AND v446, IN THE SEED RATHER THAN THE STATUS.</b> The first step of every trail, `as booked`, was written at six sites, three in tools/fold.mjs and three in the desk's ovAmend, and all six read the row with txPaid and txDeliv: cash, settledRM, deliveredQty and settledKg, the sale's fields. A lot has none of them. On p001, RM 800 paid in full and 12.5 unit received, both read zero, so the first Correction folded against any lot would have opened its trail with nothing paid and nothing received, and every replay after it would have summed from there.",
+   "<b>WHY NOTHING ON THE BOOK SHOWS IT.</b> A Fulfilment or a Modification on a lot returns before the seed, so a lot reaches it through a Correction alone, and no lot has been corrected yet. p016's Modification step was written by hand. The Ledger also draws no trail for a lot at all, which is the next fold, and is why this one had to land first: a trail nobody could see was about to become one everybody could.",
+   "<b>ONE HELPER A SIDE.</b> seedStep(row, dir) in the fold and ovSeed(row, dir) on the desk, each reading poCash and poRecvUnits for a lot and txPaid and txDeliv for a sale; the six lines are calls. A helper used three times on each side is the one abstraction this fold earns.",
+   "<b>PROVED BY FOLDING ONE.</b> A Correction on a paid, received lot on both engines, the seed read back: RM 800 and 12.5 unit, and a sale exactly as before. Five mutations, each side's money and units and a sale reading the lot's ruler, every one red. 1096 assertions across 75 sections."
+  ]
+ },
+ {
   "v": "v448",
   "d": "02 Sep 2026",
   "t": "THE ROW EDITOR OPENS ON THE SIX STATES AND ONE BUTTON; THE SHEET, ITS SAVE AND ITS REASONS SIT BEHIND ONE FOLD",
