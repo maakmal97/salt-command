@@ -1,5 +1,16 @@
 [
  {
+  "v": "v453",
+  "d": "02 Sep 2026",
+  "t": "A LINE PRINTS THE MEASURE ITS SUM USED: THE STOCK WALK'S RECEIVED ROW, THE LOT LIST AND THE HELD-OUT ORDER",
+  "n": [
+   "<b>THE SAME CLASS, THREE SITES.</b> An itemised line printed a whole-row figure beside a sum that had netted it. The stock reconciliation's Received row and the lot list printed a lot's ORDERED quantity, where buyUnits, and so the ledger figure the walk closes to, sums what LANDED: a lot six of ten received would have walked in as ten, listed its four again under Still to arrive, and the lines would not have summed to the figure printed beneath them. The held-out line on Financials said an order carried RM 200 of revenue in its headline, then named it at RM 400, because the headline nets the pending tail and the name did not.",
+   "<b>WHAT CHANGES ON THE BOOK TODAY: NOTHING.</b> No lot on the book is part received, and the one undated order is unpriced, so neither line renders differently. The change is for the next lot that lands in two deliveries and the next undated order half delivered.",
+   "<b>EACH SITE NOW PRINTS THE RULER ITS SUM USED.</b> The walk and the lot list print poRecvUnits at poRate; the held-out order is named by its delivered revenue, with what was ordered beside it when the two differ: RM 200 of RM 400 ordered.",
+   "<b>PROVED ON BOTH PARTS.</b> A lot six of ten received and an undated order half delivered, both fixtures through booksync into a scratch master: the Received row reads 6 unit, the lot list 6 in the basis and 4 still to arrive, the walk sums to its own On hand line, and the held-out line reads RM 200 in the headline and RM 200 of RM 400 ordered in the name. Three mutations, one per site, every one red. 1117 assertions across 79 sections."
+  ]
+ },
+ {
   "v": "v452",
   "d": "02 Sep 2026",
   "t": "THE FINANCIALS MONTH CHART DRAWS THE TABLE'S OWN FIGURES, AND NAMES THE YEAR WHEN THE MONTHS SPAN TWO",

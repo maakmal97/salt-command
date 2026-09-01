@@ -4842,6 +4842,43 @@ section("v452: the month chart draws the table");
   }
 }
 
+
+section("v453: a line prints the measure its sum used");
+{
+  /* Two itemisations printed a whole-row figure beside a sum that used the netted one: the stock
+     walk's Received row (and the lot list) printed a lot's ordered quantity where buyUnits sums
+     what landed, and the held-out line named an order by its whole total where its headline nets
+     the pending tail. A lot six of ten received and an undated order half delivered, both fixtures. */
+  const { openMaster: om3 } = await import("../tools/payload.mjs");
+  const { readFileSync: rf3, writeFileSync: wf3, unlinkSync: rm3 } = await import("node:fs");
+  const { execSync: ex3 } = await import("node:child_process");
+  const { join: j3 } = await import("node:path");
+  const bk3 = JSON.parse(rf3(j3(REPO, "ledger", "book.json"), "utf8"));
+  const sup3 = bk3.purchases.find((x) => x.supplier).supplier, cus3 = bk3.sales.find((x) => x.customer && x.date).customer;
+  bk3.purchases.push({ rid: "f10", date: "2026-08-15", supplier: sup3, product: "salt", qty: 10, total: 500, cash: 500, receivedQty: 6 });
+  bk3.sales.push({ rid: "f11", customer: cus3, product: "salt", qty: 4, total: 400, cost: 64, cash: 200, deliveredQty: 2 });
+  const B3 = j3(REPO, "test", ".v453.json"), M3 = j3(REPO, "test", ".v453.html");
+  wf3(B3, JSON.stringify(bk3, null, 1)); wf3(M3, rf3(j3(REPO, "master", "salt_command.html"), "utf8"));
+  ex3("node tools/booksync.mjs --sync", { cwd: REPO, env: { ...process.env, SALT_BOOK: B3, SALT_MASTER: M3 }, stdio: "pipe" });
+  try {
+    const { w } = await om3(M3);
+    w.eval("setProd('salt');recompute();switchTab('inventory');");
+    const walk = JSON.parse(w.eval("JSON.stringify((function(){var out=[];[].forEach.call(document.querySelectorAll('.sec.on tr'),function(tr){var td=tr.querySelectorAll('td');if(td.length>=2)out.push([td[0].textContent.trim(),td[1].textContent.trim()]);});return out;})())"));
+    const num = (t) => +String(t).replace(/[^0-9.+-]/g, "");
+    const recv = walk.find(([a]) => a === "Received 2026-08-15"), lot = walk.find(([a]) => a === "Purchase 2026-08-15"), open = walk.find(([a]) => a === "Still to arrive 2026-08-15");
+    ok(recv && num(recv[1]) === 6, `the walk's Received row prints what landed, 6 of 10 unit (${recv && recv[1]})`);
+    ok(lot && num(lot[1]) === 6 && open && num(open[1]) === 4, `the lot list prints the 6 in the basis and the 4 still to arrive (${lot && lot[1]}, ${open && open[1]})`);
+    const tot = walk.find(([a]) => /^On hand/.test(a));
+    const i0 = walk.findIndex(([a]) => /^Opening/.test(a)), i1 = walk.findIndex(([a]) => /^On hand/.test(a));
+    const sum = walk.slice(i0, i1).reduce((a, r) => a + num(r[1]), 0);
+    ok(tot && i0 >= 0 && i1 > i0 && Math.abs(sum - num(tot[1])) < 0.01, `and the walk sums to the figure beneath it (${sum.toFixed(2)} against ${tot && tot[1]})`);
+    w.eval("switchTab('financials');");
+    const fin = String(w.eval("(function(){var e=document.querySelector('.sec.on');return e?e.textContent.replace(/\\s+/g,' '):'';})()"));
+    ok(/1 order carrying RM 200 of revenue is held out/.test(fin), "the held-out line nets the pending half from its headline");
+    ok(/RM 200 of RM 400 ordered./.test(fin), `and names the order by the same measure, with what was ordered beside it (${(fin.match(/held out[^.]*.[^.]*./) || [""])[0].slice(0, 160)})`);
+  } finally { for (const f of [B3, M3]) { try { rm3(f); } catch (e) { /* best effort */ } } }
+}
+
 /* ---- done ----------------------------------------------------------------------- */
 
 section("Round 7: the states no suite check had ever rendered");
@@ -5076,7 +5113,7 @@ section("Round 7: the states no suite check had ever rendered");
    the live count was 879, so thirty-nine assertions could have vanished under a guard written to
    stop exactly that. The margin is four, which covers the book-dependent branches that legitimately
    skip; it is not room for a section to fall out. */
-const FLOOR_ASSERTIONS = 1094, FLOOR_SECTIONS = 78;
+const FLOOR_ASSERTIONS = 1099, FLOOR_SECTIONS = 79;
 ok(pass + fail - offMachine >= FLOOR_ASSERTIONS,
   `the suite ran ${pass + fail - offMachine} assertions everywhere (${pass + fail} here, ${offMachine} of them needing files that live off this repo), below its floor of ${FLOOR_ASSERTIONS}: a section has stopped running`);
 ok(sections >= FLOOR_SECTIONS,
