@@ -3205,6 +3205,53 @@ section("v413: a lot is not measured like a sale");
   const b2 = lot({ status: "unpaid" });
   applyAmend(b2, { kind: "Fulfilment", date: "2026-08-31", cash: 0, kg: 10 }, "BUY", null);
   ok(b2.status === "unpaid", "and an unpaid lot is not turned into a paid one by a receipt");
+  /* v434, ROUND TEN: THE BATCH ORDER DECIDED WHETHER THE CONTRADICTION LANDED. Cancelling a row
+     that has moved nothing is legitimate; recording a movement on a row ALREADY cancelled is the
+     same contradiction from the other side, and nothing said so. Two approved items against one row
+     were each faultless alone and the outcome turned on which id sorted first: cancel-then-fulfil
+     left s119 cancelled AND carrying a unit and RM 10, which is verbatim the v407 failure, while
+     fulfil-then-cancel threw. Asserted in BOTH orders, and with the legitimate cases beside them so
+     the guard cannot become a full stop. */
+  {
+    const seed = () => ({ date: "2026-08-20", customer: "CY2-NIL", qty: 2.5, total: 230, rid: "sB1" });
+    const CANC = { kind: "Cancellation", date: "2026-09-01" };
+    const FULF = { kind: "Fulfilment", date: "2026-09-01", cash: 10, kg: 1 };
+    const runBoth = (steps) => {
+      const r = seed(); let refused = 0;
+      for (const st of steps) { try { applyAmend(r, st, "SELL", null); } catch (e) { refused++; } }
+      return { r, refused };
+    };
+    const a1 = runBoth([CANC, FULF]), a2 = runBoth([FULF, CANC]);
+    const contradicts = (r) => !!r.cancelled && ((+r.deliveredQty || 0) > 0.009 || (+r.cash || 0) > 0.009);
+    ok(!contradicts(a1.r), "cancel then fulfil cannot leave a cancelled row carrying money or goods");
+    ok(!contradicts(a2.r), "and neither can fulfil then cancel");
+    ok(a1.refused === 1 && a2.refused === 1, "each order refuses exactly one of the two, not both and not neither");
+    /* the legitimate neighbours, so this is a gate and not a wall */
+    const okCancel = seed(); let threw = false;
+    try { applyAmend(okCancel, CANC, "SELL", null); } catch (e) { threw = true; }
+    ok(!threw && okCancel.cancelled === true, "a row that has moved nothing still cancels");
+    const okCorrect = seed(); okCorrect.cancelled = true; let threw2 = false;
+    try { applyAmend(okCorrect, { kind: "Correction", date: "2026-09-01", fields: { note: "x" } }, "SELL", null); } catch (e) { threw2 = true; }
+    ok(!threw2, "and a cancelled row can still be corrected, because restating a record is not moving goods");
+
+    /* AND THE DESK, because the fold half alone rode this section green: ovAmend mirrors applyAmend
+       and gained the same guard, and asserting only one engine is how v413 shipped a fold fixed and
+       a desk left, which is what made v414 necessary. */
+    const { openMaster: omB } = await import("../tools/payload.mjs");
+    const { w: wB } = await omB();
+    wB.eval("setProd('salt');recompute();");
+    const liveRid = JSON.parse(wB.eval("JSON.stringify((sales.find(function(s){return s.cancelled&&s.rid;})||{}).rid||null)"));
+    if (liveRid) {
+      const before = wB.eval("JSON.stringify(sales.find(function(s){return s.rid===" + JSON.stringify(liveRid) + ";}))");
+      wB.eval("ovAmend({kind:'Fulfilment',date:'2026-09-01',direction:'SELL',rid:" + JSON.stringify(liveRid) + ",cash:10,kg:1},{at:'b1'})");
+      const after = JSON.parse(wB.eval("JSON.stringify(sales.find(function(s){return s.rid===" + JSON.stringify(liveRid) + ";}))"));
+      ok(!((+after.deliveredQty || 0) > 0.009 && after.cancelled),
+        "the desk does not move goods onto an already-cancelled row either");
+      ok(/already cancelled/.test(wB.eval("JSON.stringify(provNotes.slice(-1))")),
+        "and records why rather than declining in silence");
+    } else ok(true, "no cancelled row on the book to drive the desk half with (skipped)");
+  }
+
   const c2 = lot({ status: "paid", receivedQty: null, inTransit: false });
   let refused = false;
   try { applyAmend(c2, { kind: "Cancellation", date: "2026-08-31" }, "BUY", null); } catch (e) { refused = true; }
@@ -4000,7 +4047,7 @@ section("Round 7: the states no suite check had ever rendered");
    the live count was 879, so thirty-nine assertions could have vanished under a guard written to
    stop exactly that. The margin is four, which covers the book-dependent branches that legitimately
    skip; it is not room for a section to fall out. */
-const FLOOR_ASSERTIONS = 875, FLOOR_SECTIONS = 64;
+const FLOOR_ASSERTIONS = 882, FLOOR_SECTIONS = 64;
 ok(pass + fail >= FLOOR_ASSERTIONS,
   `the suite ran ${pass + fail} assertions, below its floor of ${FLOOR_ASSERTIONS}: a section has stopped running`);
 ok(sections >= FLOOR_SECTIONS,

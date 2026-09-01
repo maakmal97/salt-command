@@ -398,6 +398,17 @@ export function applyAmend(row, pay, dir, note) {   /* v413: exported so the sui
     if (row.unpriced && pay.newTotal > 0) delete row.unpriced;
     return;
   }
+  /* v434, ROUND TEN: THE GATE MEASURED THE ROW AND NOT THE ORDER OF THE BATCH. Cancelling a row that
+     has moved nothing is legitimate and passes; recording a movement on a row that is ALREADY
+     cancelled is the same contradiction from the other side, and nothing said so. So two approved
+     items against one row were each faultless alone and the outcome turned on which id sorted
+     first: cancel-then-fulfil left s119 {cancelled:true, cash:10, deliveredQty:1} with a unit off
+     the shelf carrying neither revenue nor cost, which is verbatim the v407 failure, while
+     fulfil-then-cancel threw. Both orders refuse now. A Correction, a Modification and a repeat
+     Cancellation are still allowed on a cancelled row, because restating the record of one is not
+     the same as moving goods against it. */
+  if (row.cancelled && ((+pay.cash || 0) > 0.009 || (+pay.kg || 0) > 0.009))
+    throw new Error(`this row is already cancelled, so ${(+pay.cash || 0) > 0.009 ? "RM " + (+pay.cash) + " " : ""}${(+pay.kg || 0) > 0.009 ? (+pay.kg) + " unit " : ""}cannot be recorded against it: revive it by Correction first, or record the movement on the row that actually carries it`);
   if (dir === "BUY") {
     if (pay.kind === "Default") { row.defaulted = true; delete row.receivedOn; delete row.pending; return; }
     /* v413, ROUND EIGHT, MATERIAL: this branch RETURNED before the Cancellation handler below, so
