@@ -1,5 +1,16 @@
 [
  {
+  "v": "v444",
+  "d": "02 Sep 2026",
+  "t": "A CANCELLED ORDER THAT WAS PAID FOR IS NOW A PAYABLE, RECORDED EXACTLY LIKE AN OVERPAYMENT",
+  "n": [
+   "<b>HIS INSTRUCTION, 02 Sep 2026:</b> record it exactly like an overpayment, cash to be returned to the customer as soon as possible. customerRefunds IS that mechanism and its two existing rows are literally overpayments, so this writes the same shape rather than inventing a second one: party, amount, since and a note, with paidOn absent until the money actually goes back. Until now the money had no record at all. v443 stopped the desk claiming the customer was owed SALT; this is the other half, which is that they are owed their money.",
+   "<b>SIX READERS ALREADY UNDERSTAND IT AND NOT ONE OF THEM CHANGES.</b> refundsOut, the cash-flow walk, the Order book's open-refunds list, the forecast's day-0 cash out, the action list and the statement's own stmtRefunds. Writing the row is what makes the payable appear in all six, which is the whole reason for using the mechanism that exists rather than adding a seventh reader to a new one. One rule in the engine, refundOnCancel, called by the fold's apply loop and by the desk, because the payable belongs to the BOOK and applyAmend is only ever handed a ROW. It covers both roads to a cancelled sale, the Cancellation kind and a Correction setting the flag, because it asks the row what it is rather than asking the amendment what it was called.",
+   "<b>THE AMOUNT IS txPaid, NOT row.cash.</b> What the customer put in is cash plus anything settled in kind, which is how txStat has read it since v441, and the note records the split when there is one because returning a set-off is not the same act as handing back notes. The threshold reads the money before rounding: rounding first turns RM 0.005 into RM 0.01, which then clears the test and books a one-cent payable out of a crumb. It is idempotent, because the desk rebuilds its overlay on every pass and the fold can be re-run.",
+   "<b>AND TWO CONSEQUENCES THE INSTRUMENTS CAUGHT RATHER THAN THE AUTHOR.</b> applyOverlay rebuilds five arrays and the price board so that a withdrawn entry takes its effect with it; customerRefunds was the only list this pass now touches that was not being rebuilt, so a preview would have kept a refund the queue no longer had. And the ledger extract read the LIVE list, which was safe only while nothing wrote to it: the census refused to call the extract complete and the fix is to take the committed copy, as sales and the board already do. Eight mutations, eight reds. 992 assertions across 70 sections."
+  ]
+ },
+ {
   "v": "v443",
   "d": "01 Sep 2026",
   "t": "CANCELLING A PAID ORDER TOLD THE DESK IT OWED THE CUSTOMER SALT, AND IT WENT SHOPPING",

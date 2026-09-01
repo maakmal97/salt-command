@@ -4337,6 +4337,95 @@ section("v443: a cancelled order owes no salt, and the desk does not buy to cove
   }
 }
 
+
+section("v444: a cancelled order that was paid for is a payable, recorded like an overpayment");
+{
+  /* HIS INSTRUCTION, 02 Sep 2026: record it exactly like an overpayment, cash to be returned to the
+     customer as soon as possible. customerRefunds IS that mechanism, and its two existing rows are
+     literally overpayments, so this writes the same shape rather than inventing a second one. Six
+     readers already understand it and NONE of them changes: refundsOut, the cash-flow walk, the
+     Order book's open list, the forecast's day-0 cash out, the action list and stmtRefunds.
+     Writing the row is what makes the payable appear in all six, which is the point of using the
+     mechanism that exists rather than adding a seventh reader. */
+  const { default: PEe } = await import("../engine/position.mjs");
+  const mkRow = (o) => Object.assign({ rid: "r9", date: "2026-08-01", customer: "CY2-NIL", qty: 2.5, total: 230 }, o);
+
+  /* THE RULE, both directions */
+  {
+    const list = [];
+    const rec = PEe.refundOnCancel(list, mkRow({ cash: 230, cancelled: true }), "2026-09-02");
+    ok(!!rec && list.length === 1, "cancelling a paid order books one payable");
+    ok(rec.party === "CY2-NIL" && rec.amount === 230 && rec.since === "2026-09-02",
+      `carrying the party, the money and the day (${JSON.stringify({ p: rec.party, a: rec.amount, s: rec.since })})`);
+    ok(rec.rid === "r9", "and the row it came from, so the two can be tied together later");
+    ok(!("paidOn" in rec), "with no paidOn, which is what makes it OUTSTANDING to all six readers");
+    ok(PEe.refundOnCancel(list, mkRow({ cash: 230, cancelled: true }), "2026-09-02") === null && list.length === 1,
+      "a second call adds nothing: the desk rebuilds its overlay on every pass and the fold can be re-run");
+  }
+  ok(PEe.refundOnCancel([], mkRow({ cash: 230 }), "2026-09-02") === null, "an order that is NOT cancelled books no payable");
+  ok(PEe.refundOnCancel([], mkRow({ cancelled: true }), "2026-09-02") === null, "and a cancelled order nobody paid for books none either");
+  ok(PEe.refundOnCancel([], mkRow({ cash: 0.005, cancelled: true }), "2026-09-02") === null, "a rounding crumb is not a payable");
+  {
+    const list = [];
+    const rec = PEe.refundOnCancel(list, mkRow({ cash: 140, settledRM: 90, cancelled: true }), "2026-09-02");
+    ok(rec && rec.amount === 230,
+      `the amount is txPaid, cash plus what was settled in kind (${rec && rec.amount}), because that is what the customer put in`);
+    ok(rec && /settled in kind/.test(rec.note), `and the note says so, since returning a set-off is not handing back notes (${rec && rec.note})`);
+  }
+
+  /* THE FOLD ROAD, driven through apply() rather than asserted of the helper */
+  {
+    const { apply: foldApply } = await import("../tools/fold.mjs");
+    const { readFileSync: rfE } = await import("node:fs");
+    const { join: jE } = await import("node:path");
+    const bookE = JSON.parse(rfE(jE(REPO, "ledger", "book.json"), "utf8"));
+    const paid = { rid: "z9", date: "2026-08-01", customer: "CY2-NIL", qty: 2.5, total: 230, cash: 230, deliveredQty: 0 };
+    bookE.sales = bookE.sales.concat([paid]);
+    const nRef = (bookE.customerRefunds || []).length;
+    const staged = { approved: [{ id: "x1", amends: "z9", amendKind: "Cancellation", collection: "sales",
+      entry: { payload: { direction: "SELL", kind: "Cancellation", date: "2026-09-02" } },
+      row: paid, pay: { kind: "Cancellation", date: "2026-09-02" } }] };
+    const notes = { version: "v999", title: "t", notes: ["n"], rows: { x1: { note: "cancelled" } } };
+    const res = foldApply(bookE, staged, notes, rfE(jE(REPO, "master", "salt_command.html"), "utf8"));
+    ok(res && res.ok !== false, `the fold applies the cancellation (${res && res.problems ? res.problems.join("; ").slice(0, 120) : "ok"})`);
+    const added = (bookE.customerRefunds || []).length - nRef;
+    ok(added === 1, `and the fold road books the payable too (${added} added), not just the desk`);
+    const rec = (bookE.customerRefunds || [])[bookE.customerRefunds.length - 1];
+    ok(rec && rec.rid === "z9" && rec.amount === 230, `naming the row and the money (${JSON.stringify(rec)})`);
+  }
+
+  /* THE DESK ROAD, and the reset that a withdrawn entry needs */
+  {
+    const { openMaster: omE } = await import("../tools/payload.mjs");
+    const { w: wE } = await omE();
+    wE.eval("setProd('salt');recompute();");
+    const committed = +wE.eval("customerRefunds.length");
+    const out0 = +wE.eval("+customerRefunds.filter(function(r){return !r.paidOn;}).reduce(function(a,r){return a+ +r.amount;},0).toFixed(2)");
+    wE.eval("(function(){var r=sales.find(function(s){return s.rid==='s119';});if(r)r.cash=230;})()");
+    wE.eval("ovAmend({kind:'Cancellation',date:'2026-09-02',direction:'SELL',rid:'s119'},{at:'r1'})");
+    ok(+wE.eval("customerRefunds.length") === committed + 1, "a previewed cancellation books the payable on the desk too");
+    ok(/refund payable/.test(String(wE.eval("provNotes.join(' | ')"))), "and says so in the provenance rather than appearing unexplained");
+    const out1 = +wE.eval("+customerRefunds.filter(function(r){return !r.paidOn;}).reduce(function(a,r){return a+ +r.amount;},0).toFixed(2)");
+    ok(Math.abs(out1 - (out0 + 230)) < 0.011, `refunds outstanding rises by the RM 230 (RM ${out0} to RM ${out1})`);
+
+    /* THE WITHDRAWAL. This list was the only one of the six the overlay touched that was not being
+       rebuilt, so without the reset the preview would keep a refund the queue no longer has. It is
+       the same fault v354 fixed for the price board, one line above it in applyOverlay. */
+    wE.eval("applyOverlay();");
+    ok(+wE.eval("customerRefunds.length") === committed,
+      `and an empty queue takes it away again (${wE.eval("customerRefunds.length")} against the committed ${committed})`);
+  }
+
+  /* AND THE EXTRACT MUST TAKE THE COMMITTED COPY. Until this fold the overlay never touched this
+     list, so reading it live was safe; now a queued-but-unapproved cancellation would put a
+     provisional refund into the extract and from there into the store. The census caught it. */
+  {
+    const { LEDGER } = await import("../tools/book.mjs");
+    ok(LEDGER.customerRefunds === "BASE_REFUNDS",
+      `the extract reads the committed refunds (${LEDGER.customerRefunds}), as it does for sales and the board`);
+  }
+}
+
 /* ---- done ----------------------------------------------------------------------- */
 
 section("Round 7: the states no suite check had ever rendered");
@@ -4571,7 +4660,7 @@ section("Round 7: the states no suite check had ever rendered");
    the live count was 879, so thirty-nine assertions could have vanished under a guard written to
    stop exactly that. The margin is four, which covers the book-dependent branches that legitimately
    skip; it is not room for a section to fall out. */
-const FLOOR_ASSERTIONS = 955, FLOOR_SECTIONS = 69;
+const FLOOR_ASSERTIONS = 973, FLOOR_SECTIONS = 70;
 ok(pass + fail - offMachine >= FLOOR_ASSERTIONS,
   `the suite ran ${pass + fail - offMachine} assertions everywhere (${pass + fail} here, ${offMachine} of them needing files that live off this repo), below its floor of ${FLOOR_ASSERTIONS}: a section has stopped running`);
 ok(sections >= FLOOR_SECTIONS,

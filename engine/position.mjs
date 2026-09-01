@@ -402,6 +402,44 @@ function correctionFaults(row,fields,isSale){
     out.push('a stream or a downstream without an associate credits nobody');
   return out;
 }
+/* ====== A CANCELLED ORDER THAT WAS PAID FOR IS A PAYABLE (v444) =====================
+   HIS INSTRUCTION, 02 Sep 2026: record it exactly like an overpayment, cash to be returned to
+   the customer as soon as possible. customerRefunds IS that mechanism and its two existing rows
+   are literally overpayments, so this writes the same shape rather than inventing a second one:
+   {party, amount, since, note}, with paidOn absent until the money actually goes back. Six
+   readers already understand it and none of them changes: refundsOut, the cash-flow walk, the
+   Order book's open-refunds list, the forecast's day-0 cash out, the action list, and the
+   statement's own stmtRefunds. Writing the row is what makes the payable appear in all six.
+   THE AMOUNT IS txPaid, NOT row.cash, because what the customer put in is cash plus anything
+   settled in kind, and txStat has read it that way since v441. The note records the split when
+   there is one, since returning a set-off is not the same act as handing back notes.
+   IT IS IDEMPOTENT ON PURPOSE. The desk rebuilds its overlay on every recompute and the fold can
+   be re-run, so a second call for the same row must add nothing. rid names the row; where a row
+   predates rids, party, amount and since together do.
+   THE CALLER OWNS THE LIST. The fold passes book.customerRefunds and the desk passes its own
+   array, which is why this takes a list rather than reaching for one. */
+function refundOnCancel(list,row,date){
+  if(!list||!row||!row.cancelled)return null;
+  /* THE THRESHOLD TESTS THE MONEY, NOT THE ROUNDED FIGURE. Rounding first turns RM 0.005 into
+     RM 0.01, which then clears 0.009 and books a one-cent payable out of a rounding crumb. Read the
+     raw value, decide, then round for storage. */
+  const raw=+txPaid(row);
+  if(!(raw>0.009))return null;
+  const amt=+raw.toFixed(2);
+  const party=row.customer||null;
+  if(!party)return null;
+  const since=date||row.cancelledOn||row.date||null;
+  const has=list.some(r=>r&&((row.rid&&r.rid===row.rid)||
+    (r.party===party&&Math.abs((+r.amount||0)-amt)<0.011&&(r.since||null)===since)));
+  if(has)return null;
+  const inKind=+(+(row.settledRM||0)).toFixed(2);
+  const rec={party:party,amount:amt,since:since,
+    note:'cancelled order'+(row.rid?' '+row.rid:'')+': RM '+amt+' payable back to the customer'
+      +(inKind>0.009?', of which RM '+inKind+' was settled in kind':'')+'.'};
+  if(row.rid)rec.rid=row.rid;
+  list.push(rec);
+  return rec;
+}
 /* the key an amendment names a row by, shared with the phone and the drafter */
 function ovKey(t){return (t.customer||t.supplier)+'|'+t.date+'|'+t.total;}
 
@@ -409,7 +447,7 @@ return {txPrice:txPrice,txPaid:txPaid,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:t
         txDeferUnits:txDeferUnits,txPendUnits:txPendUnits,txPendUnitsRaw:txPendUnitsRaw,txPendRM:txPendRM,txStat:txStat,txDates:txDates,
         poRecvUnits:poRecvUnits,poCash:poCash,poLive:poLive,poOwed:poOwed,poRate:poRate,poOpenUnits:poOpenUnits,provRate:provRate,
         daysBetween:daysBetween,walk:walk,coverStats:coverStats,commitments:commitments,
-        ledgerRow:ledgerRow,openable:openable,ovKey:ovKey,attributionOf:attributionOf,correctionFaults:correctionFaults,
+        ledgerRow:ledgerRow,openable:openable,ovKey:ovKey,attributionOf:attributionOf,correctionFaults:correctionFaults,refundOnCancel:refundOnCancel,
         CORRECTABLE:CORRECTABLE,CORRECT_REQUIRED:CORRECT_REQUIRED,CORRECT_NUM_POS:CORRECT_NUM_POS,
         CORRECT_NUM_NN:CORRECT_NUM_NN,CORRECT_DATE:CORRECT_DATE,CORRECT_BOOL:CORRECT_BOOL,
         CORRECT_CODE:CORRECT_CODE,CORRECT_TEXT:CORRECT_TEXT,HANDOVER:HANDOVER};

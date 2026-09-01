@@ -509,6 +509,16 @@ export function apply(book, staged, notes, masterText) {
     const n = (notes.rows && notes.rows[it.id]) || {};
     if (it.target) {
       applyAmend(it.target, it.pay, it.dir, String(n.note || "").trim() || undefined);
+      /* v444, HIS INSTRUCTION: a cancelled order that was paid for is a payable, recorded exactly
+         like an overpayment. This sits after applyAmend rather than inside it because applyAmend
+         is handed a ROW and the payable belongs to the BOOK, and it covers BOTH roads to a
+         cancelled sale, the Cancellation kind and a Correction setting the flag, because it asks
+         the row what it is rather than asking the amendment what it was called. */
+      if (it.dir !== "BUY") {
+        book.customerRefunds = book.customerRefunds || [];
+        const rec = E.refundOnCancel(book.customerRefunds, it.target, (it.pay && it.pay.date) || null);
+        if (rec) moves.push(`refund payable: ${rec.party} RM ${rec.amount}`);
+      }
       if (it.dir !== "BUY" && it.pay.kg > 0.009 && it.target.cost == null && prodOf(it.target) === "salt" && stockCost != null) it.target.cost = stockCost;
       if (n.cost != null) it.target.cost = +n.cost;
       if (n.rowNote) it.target.note = String(n.rowNote) + " " + (it.target.note || "");

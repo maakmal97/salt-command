@@ -31,7 +31,11 @@ export const LEDGER = {
   lostDemand: "BASE_LOST",
   loans: "loans",
   supplierReceivable: "supplierReceivable",
-  customerRefunds: "customerRefunds",
+  /* v444: READ THE COMMITTED COPY, like sales and the board. Until this version the overlay
+     never touched this list, so reading it live was safe. A cancelled paid order now books a
+     payable into it, which means a queued-but-unapproved cancellation would otherwise put a
+     provisional refund into the extract and from there into the store. The census caught it. */
+  customerRefunds: "BASE_REFUNDS",
   roster: "roster", associates: "associates", PEOPLE: "PEOPLE",
   REWARD_OPENING: "REWARD_OPENING", CUSTOMER_REWARD_OPENING: "CUSTOMER_REWARD_OPENING",
   AWARDS: "AWARDS",
