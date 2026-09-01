@@ -3537,6 +3537,34 @@ section("Round 7: the states no suite check had ever rendered");
       ok(r.text.length > 400, `Financials is not blank with cash on an undated row (${r.text.length} chars)`);
       let u = null; try { u = r.w.eval("finRows().undated.length"); } catch (e) { u = "threw"; }
       ok(u === 1, `finRows holds the undated row out and counts it (got ${u})`);
+
+      /* v423: AND THE CHART OVER THE SAME SET. This check rendered the part and never installed a
+         Chart, so every draw callback returned at its first line and the assertion could not see
+         that drawFinCharts still sliced the date raw, 185 lines below the guard v407 added. With a
+         recording stub the callback runs and the configs can be read. */
+      const M2 = TMP + ".chart.html";
+      wf(M2, rf(withBook(b), "utf8"));
+      const { w: wc } = await openMaster(M2);
+      /* KEYED BY CANVAS ID, not by hunting a dataset label. The first version searched the
+         recorded configs for one carrying a "Revenue" dataset, which matches other charts, and
+         when the month chart failed to construct at all the search returned undefined rather than
+         null and the comparison against the string "null" passed on nothing. The draw pass is
+         wrapped in a catch since v384, so a throw here never reaches switchTab: the only honest
+         question is whether THIS canvas got a config. */
+      wc.eval("window.__charts={};window.Chart=function(c,cfg){var id=(c&&c.canvas&&c.canvas.id)||(c&&c.id)||'?';window.__charts[id]=cfg;this.destroy=function(){};};window.Chart.register=function(){};");
+      wc.eval("setProd('salt');recompute();");
+      let cThrew = null;
+      try { wc.eval("switchTab('financials');"); } catch (e) { cThrew = String(e.message || e); }
+      ok(!cThrew, "Financials renders with a Chart installed and cash on an undated row -- " + cThrew);
+      ok(wc.eval("!!blkEl('finMonthChart')"), "the month chart's canvas is on the part");
+      /* THE SIGNAL IS THE BANNER THE READER SEES. The draw pass is wrapped in a catch since v384,
+         so a throw never reaches switchTab, and the canvas can be recorded by an earlier draw even
+         when a later one fails: two ways this check read green over a live fault before it was
+         pointed at the thing a person actually looks at. */
+      const paneTxt = wc.eval("(function(){var e=document.querySelector('.sec.on');return e?e.textContent.replace(/[ \\t\\n\\r]+/g,' '):'';})()");
+      const banner = (String(paneTxt).match(/could not be drawn[^.]*\./) || [])[0] || "";
+      ok(!banner, "and no chart on Financials reports a failure to draw -- " + banner.slice(0, 90));
+      try { rm(M2); } catch (e) { /* best effort */ }
     }
   }
 

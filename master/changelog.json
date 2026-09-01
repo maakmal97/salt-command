@@ -1,5 +1,15 @@
 [
  {
+  "v": "v423",
+  "d": "02 Sep 2026",
+  "t": "THE GUARD v407 PUT ON THE TABLE, 185 LINES ABOVE THE CHART THAT READS THE SAME SET",
+  "n": [
+   "<b>FOLD 9 OF ROUND NINE, AND THE QUIETER HALF OF A FAULT ALREADY FIXED.</b> v407 stopped an undated priced row blanking the whole Financials part, and the month chart 185 lines below kept the raw date slice over the same rows. So the same row that used to take the part down now takes only its chart down: the tables render, the chart does not, and the reader is told <b>could not be drawn for salt</b> with no way to know why. Reachable in one tap today, on s119, the same row as before.",
+   "<b>THE CHECK THAT SHOULD HAVE CAUGHT IT WAS BLIND FOR THE PLAINEST REASON: IT NEVER INSTALLED A CHART.</b> Chart.js is loaded on demand and there is none in the test harness, so every draw callback returned at its first line and the assertion was reading a part whose charts had never been attempted. It stubs Chart now, so the callback runs.",
+   "<b>AND IT TOOK THREE TRIES TO WRITE AN ASSERTION THAT COULD FAIL, WHICH IS THE REAL RECORD OF THIS FOLD.</b> The first searched the recorded configs for a dataset labelled Revenue, which other charts also carry, and when the month chart failed to build at all the search returned undefined while the test compared against the string null, so it passed on nothing. The second keyed on the canvas id and still passed, because the draw pass runs more than once and an earlier success had already registered that canvas. The third reads what a person reads: the failure banner the part prints. That one goes red, naming the row and the error. Three attempts, two of which looked perfectly reasonable, on a fault I had already confirmed by hand. 820 assertions from 817."
+  ]
+ },
+ {
   "v": "v422",
   "d": "02 Sep 2026",
   "t": "THE PANEL OFFERED TO RECEIVE 12.5 UNIT FROM A SUPPLIER WHO TOOK THE MONEY AND SENT NOTHING",
