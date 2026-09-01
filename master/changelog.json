@@ -1,5 +1,15 @@
 [
  {
+  "v": "v424",
+  "d": "02 Sep 2026",
+  "t": "HELD OUT AND COUNTED, THE COMMENT SAID, AND THE COUNTING REACHED NOBODY",
+  "n": [
+   "<b>FOLD 10 OF ROUND NINE, AND IT IS A PROMISE THE CODE MADE TO ITSELF.</b> v407 stopped an undated priced row taking the whole Financials part down, and held those rows out of the month buckets with a comment saying they were <b>held out and COUNTED</b>. They were held out. The counting reached nobody: the statement simply showed less revenue than Overview, with nothing on screen saying so, which is the same class as the fault it was fixing rather than a cure for it.",
+   "<b>THE PART NAMES THEM NOW, AND SAYS WHY THE TWO FIGURES DIFFER BY EXACTLY THAT MUCH.</b> How many orders, what they carry, whose they are, and the reason: a month is the only key this statement has, and a row with no date has no month. It also says what to do, which is to give the row a date. The line is in a class the prose cull does not touch, which this desk has now been caught by twice.",
+   "<b>BOTH DIRECTIONS ASSERTED.</b> A line that always prints is a different fault from one that never does, so the suite checks it appears on a book with an undated priced row and is absent on the live book, which has none. Removing it fails three assertions by name. 824 assertions from 820."
+  ]
+ },
+ {
   "v": "v423",
   "d": "02 Sep 2026",
   "t": "THE GUARD v407 PUT ON THE TABLE, 185 LINES ABOVE THE CHART THAT READS THE SAME SET",

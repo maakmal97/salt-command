@@ -3564,6 +3564,15 @@ section("Round 7: the states no suite check had ever rendered");
       const paneTxt = wc.eval("(function(){var e=document.querySelector('.sec.on');return e?e.textContent.replace(/[ \\t\\n\\r]+/g,' '):'';})()");
       const banner = (String(paneTxt).match(/could not be drawn[^.]*\./) || [])[0] || "";
       ok(!banner, "and no chart on Financials reports a failure to draw -- " + banner.slice(0, 90));
+
+      /* v424: AND THE HELD-OUT ROW HAS A READER. v407's comment promised the undated rows were
+         "held out and COUNTED", and the counting reached nobody: the statement simply showed less
+         revenue than Overview with nothing saying why. Both directions asserted, because a line
+         that always prints is a different fault from one that never does. */
+      ok(/held out of this statement/.test(String(paneTxt)),
+        "the statement names the undated row it held out");
+      ok(/no date and a month is the only key/.test(String(paneTxt)), "and says why");
+      ok(/[0-9]+ order[s]? carrying RM/.test(String(paneTxt)), "with the count and the figure");
       try { rm(M2); } catch (e) { /* best effort */ }
     }
   }
@@ -3609,6 +3618,12 @@ section("Round 7: the states no suite check had ever rendered");
       }
     }
     ok(negs.length === 0, `no surface prints a negative day count at a clock behind the book -- ${negs.join(" | ")}`);
+  {
+    /* v424: and the held-out line must be ABSENT on the live book, where no priced row is undated */
+    const liveFin = await paneOf(join(REPO, "master", "salt_command.html"), "financials", "salt");
+    ok(!/held out of this statement/.test(liveFin),
+      "the held-out line does not print on a book that has nothing held out");
+  }
   }
 
   /* 5. the snapshot the drafter approves against must be taken on the book it names. */
