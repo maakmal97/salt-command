@@ -2736,8 +2736,49 @@ section("Monthly statements: one home, and the laws a sent document lives by (29
   }
   ok(vocab === 0, "no statement speaks the seller's vocabulary: cost, margin, tier, floor, shrinkage, profit");
   ok(cross === 0, "no statement names any other party, buyer or supplier");
-  ok(invalid === 0, "no statement prints Invalid Date: an undated row shows an empty date cell and its state says what it is");
+  ok(invalid === 0, "no statement prints Invalid Date, which is what an undated row put on customer paper until 29 Aug");
   ok(noted === 0, "no ledger note travels: the statement is built from the order, never copied from the book's prose");
+
+  /* HIS RULING, 1 Sep 2026: AN UNDATED ROW'S DATE CELL CARRIES THE DATE THE ROW DOES HAVE.
+     Three rows on the book have no `date`: two cancelled, one agreed and not yet actioned.
+     The cell printed "Invalid Date" until 29 Aug and nothing after it, which left CY2-NIL
+     reading an order with no date anywhere on the row, because a pending row's status says
+     only "ordered". The cell now names the event and the date together, and where the date
+     moves into the cell the status drops its now-duplicate copy. Only rows that HAVE a date
+     cell are examined: the header carries none, and the reconciliation's mini tables use a
+     different class. */
+  const rowsOf = (html) => [...html.matchAll(/<tr>([\s\S]*?)<\/tr>/g)].map((m) => m[1])
+    .filter((tr) => tr.includes('class="l dt"'));
+  const dateCellOf = (tr) => (tr.match(/<td class="l dt">([\s\S]*?)<\/td>/) || [, ""])[1];
+  const bare = (cell) => !cell.replace(/<[^>]+>/g, "").trim();
+  let blank = 0, twice = 0;
+  for (const s of run.sheets) {
+    for (const tr of rowsOf(s.html)) {
+      if (bare(dateCellOf(tr))) { blank++; console.log("  dateless row on " + s.who); }
+      const ds = tr.match(/\d{2} [A-Z][a-z]{2} \d{4}/g) || [];
+      if (new Set(ds).size !== ds.length) { twice++; console.log("  " + s.who + " states a date twice: " + ds.join(", ")); }
+    }
+  }
+  ok(blank === 0, "every row on every statement carries a date, so no order reaches a customer he cannot identify");
+  ok(twice === 0, "and no row states the same date twice, so the reader has no difference to hunt for");
+
+  /* each undated row names the RIGHT event, not merely some date */
+  for (const row of book.sales.filter((x) => !x.date)) {
+    const sheet = run.sheets.find((x) => x.who === row.customer);
+    const want = row.cancelled ? "cancelled " : "agreed ";
+    ok(!!sheet && sheet.html.includes('class="nodt">' + want),
+       `${row.rid} ${row.customer} has no date, so its cell says when it was ${row.cancelled ? "cancelled" : "agreed"}`);
+  }
+
+  /* PROVED IN BOTH DIRECTIONS, because an assertion that cannot fail passes: a row with no
+     date AND nothing to put in its place still renders an empty cell, and the check sees it. */
+  const dateless = stmtDoc("CX-TEST", [{ gift: false, date: null, qty: 1, total: 10, unit: 10,
+    paidCash: 0, inKind: 0, got: 0, inKindUnits: 0, owed: 0, pendingOrder: true, cancelled: false,
+    cancelledOn: null, agreedOn: null, credit: 0, deliverable: 1, toGet: 1, paidOn: null,
+    gotOn: null, state: "x", links: [] }], { brand: "Salt Command", issued: "06 Sep 2026" });
+  const datelessCells = rowsOf(dateless).map(dateCellOf);
+  ok(datelessCells.length === 1 && bare(datelessCells[0]),
+     "and the check CAN fail: a row with no date, no agreedOn and no cancelledOn renders an empty cell");
 
   /* the cancelled law (v193): the row stays on the page and counts in nothing */
   const cxParty = (book.sales.find(s => s.cancelled) || {}).customer;

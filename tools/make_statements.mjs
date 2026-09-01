@@ -149,6 +149,12 @@ function stmtRows(party,o){
          is the event and the field is the summary of it. */
       cancelledOn:(st.order==='Cancelled'
         ? (((s.amend||[]).filter(a=>a.kind==='Cancellation')[0]||{}).date||s.cancelledOn||null) : null),
+      /* AGREED ON IS EXPOSED BECAUSE AN UNDATED PENDING ROW HAS NO OTHER DATE (his ruling,
+         1 Sep 2026). It is not a substitute for `date` and must not be used as one: on
+         three of its four rows on the book it sits beside `date` and equals it, so it is
+         its own fact rather than a fallback. Only the date CELL of an undated row reads
+         it, and only because such a row otherwise reaches a customer with no date at all. */
+      agreedOn:s.agreedOn||null,
       credit:owed<-0.009?-owed:0,
       /* WHAT HE IS OWED IN SALT, which is the figure a dispute actually turns on.
          deliverable = ordered LESS anything withheld by agreement to settle an earlier
@@ -267,6 +273,21 @@ function stmtDoc(party,rows,o){
   const body=rows.map(r=>{
     const due=r.owed>0.009;
     const when=(o.dates&&r.paidOn&&r.paidOn!==r.date)?'<div class="sub2">paid '+e(dLong(r.paidOn))+'</div>':'';
+    /* THE DATE CELL OF AN UNDATED ROW CARRIES THE DATE THE ROW DOES HAVE (his ruling,
+       1 Sep 2026). Three rows on the book carry no `date`: two cancelled, one agreed and
+       not yet actioned. Until 29 Aug that cell printed "Invalid Date" on a document sent
+       to a customer; it then printed nothing, which is honest and still leaves CY2-NIL
+       reading an order with NO DATE ANYWHERE ON THE ROW, because a pending row's status
+       says only "ordered".
+       IT IS MARKED, because a bare date in that column reads as the date the order was
+       placed and this is not that: it is when the order was cancelled, or when it was
+       agreed. The word travels with the date for exactly that reason.
+       AND IT IS NOT PRINTED TWICE. A cancelled row already carries its cancellation date
+       under the status word, so where the date has moved into the cell the sub-line goes:
+       the same date stated twice in one row invites the reader to look for the difference
+       between them. A row that HAS a `date` is untouched, sub-line and all. */
+    const moved=!r.date?(r.cancelled&&r.cancelledOn?'cancelled '+e(dLong(r.cancelledOn))
+                        :(r.pendingOrder&&r.agreedOn?'agreed '+e(dLong(r.agreedOn)):'')):'';
     /* nor is it goods owed: nothing has been paid for, so nothing is being withheld */
     const owedUnits=r.toGet>0.009&&!r.pendingOrder;
     let stat;
@@ -274,7 +295,7 @@ function stmtDoc(party,rows,o){
        EARNED reward, and calling an earned reward a gift misdescribes it to the one
        person who knows better. The customer knows which of the two his was. */
     if(r.cancelled)stat='<span class="cx">cancelled</span>'
-      +(r.cancelledOn?'<div class="owedunits">'+e(dLong(r.cancelledOn))+'</div>':'');
+      +((r.cancelledOn&&!moved)?'<div class="owedunits">'+e(dLong(r.cancelledOn))+'</div>':'');
     else if(r.gift)stat='<span class="gift">no charge</span>';
     /* AN AGREED ORDER IS NOT A SETTLED ONE (v189). Nothing has been paid and nothing
        collected, so it is neither a debt nor a closed line. It still belongs on the
@@ -286,7 +307,7 @@ function stmtDoc(party,rows,o){
     else if(owedUnits)stat='<span class="ok">paid in full</span><div class="owedunits">'+n2(r.toGet)+' unit still to collect</div>';
     else stat='<span class="ok">settled</span>';
     return '<tr>'
-      +'<td class="l dt">'+e(dLong(r.date))+when+'</td>'
+      +'<td class="l dt">'+(r.date?e(dLong(r.date)):(moved?'<span class="nodt">'+moved+'</span>':''))+when+'</td>'
       +'<td class="q'+(r.cancelled?' cxr':'')+'">'+n2(r.qty)+'<span class="u">unit</span>'
         +(r.inKindUnits>0.009?'<div class="sub2">'+n2(r.inKindUnits)+' unit applied '
           +(noLegDates.has(r.date)?'by agreement':'to an earlier balance')+'</div>':'')
@@ -317,6 +338,7 @@ function stmtDoc(party,rows,o){
    'td.l{text-align:left}',
    '.dt{font-size:15px;color:#eef1f6}',
    '.sub2{font-size:12px;color:#6b7688;margin-top:3px}',
+   '.nodt{font-size:13px;color:#8a93a3;font-style:italic}',
    '.q{font-size:15px;color:#b9c2d0}.u{font-size:11px;color:#6b7688;margin-left:4px}',
    '.amt{font-size:16px;font-weight:700}',
    '.ok{font-size:12px;color:#5fd6a0;letter-spacing:.02em}',
@@ -362,6 +384,7 @@ function stmtDoc(party,rows,o){
    '.note{margin-top:34px;font-size:12px;color:#6b7688;line-height:1.65}',
    '@media print{body{background:#fff;color:#111;padding:24px}',
    '.eyebrow{color:#0b5f70}.q{color:#444}.ok{color:#186b45}.due{color:#8a5b00}',
+   '.nodt{color:#555}',
    '.tr span:last-child{color:#111}.tr.big span:last-child{color:#8a5b00}',
    '.tr.big.clear span:last-child{color:#186b45}td{border-color:#ddd}.rule{background:#ccc}',
    '.owed{background:#f2f8fa;border-color:#9dc4cf}.owedl,.owedv{color:#0b5f70}',
