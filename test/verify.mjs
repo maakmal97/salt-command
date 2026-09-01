@@ -3732,6 +3732,26 @@ section("v432: the money on a statement is the money on the book");
   ok(charged.length > 0 && gifts.length > 0,
     `and both sides of the gift rule are actually exercised (${charged.length} charged, ${gifts.length} gifts), so neither branch is asserted into thin air`);
 
+  /* v433: EVERY CANCELLED ROW CARRIES THE DATE THE BOOK HOLDS. The book stores it in two places:
+     a row cancelled through the trail carries a Cancellation step, and a row cancelled by a
+     Correction carries a top-level cancelledOn and no trail. The tool read the trail alone, so
+     three of the five printed a struck-through quantity and an amount against no date at all, two
+     of them on rows with no order date either. Asserted on both kinds, so a fix that reads only the
+     field would fail as surely as one that reads only the trail. */
+  const cxRows = (bookM.sales || []).filter((x) => x.cancelled);
+  ok(cxRows.length >= 4, `the book carries ${cxRows.length} cancelled orders to check`);
+  let fromTrail = 0, fromField = 0;
+  for (const src of cxRows) {
+    const r = stmtRows(src.customer, SO).find((x) => x.rid === src.rid);
+    const trail = ((src.amend || []).filter((a) => a.kind === "Cancellation")[0] || {}).date;
+    const want = trail || src.cancelledOn || null;
+    if (trail) fromTrail++; else if (src.cancelledOn) fromField++;
+    ok(r && r.cancelledOn === want,
+      `${src.rid} states its cancellation date (${r && r.cancelledOn}) as the book holds it (${want})`);
+  }
+  ok(fromTrail > 0 && fromField > 0,
+    `and both kinds are exercised (${fromTrail} from the trail, ${fromField} from the field), so neither source is asserted into thin air`);
+
   /* the three live part-award rows, named, because they are what this fold is about */
   const partAward = (bookM.sales || []).filter((x) => (x.rebate || x.goodwill) && (+x.cash || 0) > 0.009);
   ok(partAward.length > 0, `the book carries ${partAward.length} part-award rows, the case that was printing as free`);
@@ -3976,7 +3996,11 @@ section("Round 7: the states no suite check had ever rendered");
    They sit a little below the live count because four blocks branch on what the book happens to
    hold and skip legitimately; the point is to catch a section falling out, not to pin a total.
    Raise them when the suite grows. */
-const FLOOR_ASSERTIONS = 840, FLOOR_SECTIONS = 60;
+/* RAISED WITH EVERY FOLD, or it stops being a floor. v431 set 840 against a live 861 and by v433
+   the live count was 879, so thirty-nine assertions could have vanished under a guard written to
+   stop exactly that. The margin is four, which covers the book-dependent branches that legitimately
+   skip; it is not room for a section to fall out. */
+const FLOOR_ASSERTIONS = 875, FLOOR_SECTIONS = 64;
 ok(pass + fail >= FLOOR_ASSERTIONS,
   `the suite ran ${pass + fail} assertions, below its floor of ${FLOOR_ASSERTIONS}: a section has stopped running`);
 ok(sections >= FLOOR_SECTIONS,

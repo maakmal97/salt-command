@@ -140,8 +140,15 @@ function stmtRows(party,o){
          it and remembers it, and a statement that silently drops it invites the question
          it exists to answer. But it counts in nothing. */
       cancelled:st.order==='Cancelled',
+      /* v433, ROUND TEN: THE BOOK STORES THIS DATE IN TWO PLACES AND THE TOOL READ ONE. A row
+         cancelled through the amendment trail carries a Cancellation step; a row cancelled by a
+         Correction carries a top-level cancelledOn and no trail at all. Three of the five cancelled
+         rows on the book are the second kind, and two of those carry no order date either, so the
+         customer received a struck-through quantity, an amount and the bare word cancelled against
+         an order he had no way to identify. The trail wins where both exist, because a folded step
+         is the event and the field is the summary of it. */
       cancelledOn:(st.order==='Cancelled'
-        ? ((s.amend||[]).filter(a=>a.kind==='Cancellation')[0]||{}).date||null : null),
+        ? (((s.amend||[]).filter(a=>a.kind==='Cancellation')[0]||{}).date||s.cancelledOn||null) : null),
       credit:owed<-0.009?-owed:0,
       /* WHAT HE IS OWED IN SALT, which is the figure a dispute actually turns on.
          deliverable = ordered LESS anything withheld by agreement to settle an earlier

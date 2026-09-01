@@ -1,5 +1,16 @@
 [
  {
+  "v": "v433",
+  "d": "02 Sep 2026",
+  "t": "THE BOOK STORES A CANCELLATION DATE IN TWO PLACES AND THE STATEMENT READ ONE",
+  "n": [
+   "<b>THREE OF THE FIVE CANCELLED ORDERS WENT OUT WITH NO DATE AT ALL.</b> A row cancelled through the amendment trail carries a Cancellation step; a row cancelled by a Correction carries a top-level cancelledOn and no trail. The tool read the trail alone, so s049, s108 and s109 printed a struck-through quantity, an amount and the bare word cancelled against an order the customer had no way to identify, and two of those three carry no order date either. They read 05 Aug, 24 Aug and 24 Aug now, and the two that always worked are byte-identical.",
+   "<b>BOTH SOURCES ARE ASSERTED, WHICH IS THE POINT.</b> A check that read only the field would pass a tool that had stopped reading the trail, and the trail is where a folded cancellation actually records itself. Removing the fallback fails three rows by name; ignoring the trail fails the other two. The suite counts how many rows came from each source and refuses if either count is nil, so neither branch can be asserted into thin air.",
+   "<b>AND THE FLOOR v431 ADDED HAD ALREADY DRIFTED THIRTY-NINE ASSERTIONS BEHIND.</b> It was set at 840 against a live 861 and the live count is now 879, so a guard written to stop a section vanishing silently would have let one vanish. It is raised with every fold from here, with a margin of four for the branches that legitimately skip on what the book holds. A floor that is not maintained is not a floor.",
+   "<b>THE JUDGEMENT ON THE TOOL, FROM THE ROUND ITSELF:</b> it is safe to send what it produces, on two conditions. Do not send to a customer holding a cancelled order that was PAID for, because that money appears in no line and no total and the word refund appears nowhere; no such row exists today. And treat any statement carrying a settled-in-kind row beside a linked amendment as unproved, because that branch has never once rendered with real data. Both are recorded and neither is fixed."
+  ]
+ },
+ {
   "v": "v432",
   "d": "02 Sep 2026",
   "t": "THE STATEMENTS TOLD THREE CUSTOMERS AN ORDER THEY HAD PAID FOR WAS FREE",
