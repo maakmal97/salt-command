@@ -3596,6 +3596,68 @@ section("v429: the reconciliation foots to the total printed beneath it");
   for (const x of [B7, M7]) { try { rm7(x); } catch (e) { /* best effort */ } }
 }
 
+
+section("v430: the controls the panel offers must exist and must be able to do what they say");
+{
+  /* ROUND NINE, THREE AFFORDANCE FAULTS IN ONE PASS.
+     ONE. v408 gated the Ledger Update control on t.rid, and a purchase card carries its row under
+     a _buy wrapper, so t.rid is undefined on every lot and the control rendered on NONE of the
+     eighteen. The data-rid attribute eleven lines below had always used ridOf; that line was
+     written without looking at it.
+     TWO. A new order opened on salt whatever book the desk was on, because the empty row it builds
+     has no product and edView defaults one.
+     THREE. An unpriced row was offered Completed. It cannot be: with no agreed price the total is
+     zero, so the chip was offered on the quantity alone, and tapping it left the row reading
+     "Open, Advance" -- which the panel's own sentence said, one line under the chip promising
+     Completed. */
+  const { openMaster: om8 } = await import("../tools/payload.mjs");
+  const { readFileSync: rf8, writeFileSync: wf8, unlinkSync: rm8 } = await import("node:fs");
+  const { execSync: ex8 } = await import("node:child_process");
+  const { join: j8 } = await import("node:path");
+
+  const { w: w8 } = await om8();
+  w8.eval("setProd('salt');recompute();switchTab('ledger');");
+  /* KEYED ON THE CARD'S OWN TYPE. Matching the word "lot" in a card's text also matched sale cards
+     carrying "Usual lot", so the count stayed above zero with the fault reintroduced and the check
+     read green over it. */
+  const onBuy = +w8.eval("document.querySelectorAll('.sec.on .lcard[data-type=BUY] .lquick').length");
+  const buyCards = +w8.eval("document.querySelectorAll('.sec.on .lcard[data-type=BUY]').length");
+  ok(buyCards > 0, "the ledger renders purchase cards at all (" + buyCards + ")");
+  ok(onBuy > 0, "the Update control renders on purchase cards (" + onBuy + "), which carried none at v408");
+  ok(+w8.eval("document.querySelectorAll('.sec.on .lquick').length") > onBuy,
+    "and on sale cards too, so unwrapping the lot did not move the control off the sales");
+
+  w8.eval("setProd('oil');recompute();ledNew();");
+  ok(w8.eval("(document.getElementById('ed_product')||{}).value") === "oil",
+    "a new order opens on the book the desk is showing");
+  w8.eval("edClose();setProd('salt');recompute();ledNew();");
+  ok(w8.eval("(document.getElementById('ed_product')||{}).value") === "salt",
+    "and follows it back, so it is not simply pinned to the other one");
+  w8.eval("edClose();");
+
+  /* an unpriced row, built because the book has none */
+  const bk8 = JSON.parse(rf8(j8(REPO, "ledger", "book.json"), "utf8"));
+  bk8.sales = bk8.sales.concat([{ date: "2026-08-20", customer: "CN6-WM", qty: 3, total: 0, unpriced: true, cash: 0, deliveredQty: 0, rid: "u1" }]);
+  const B8 = j8(REPO, "test", ".v430.json"), M8 = j8(REPO, "test", ".v430.html");
+  wf8(B8, JSON.stringify(bk8, null, 1));
+  wf8(M8, rf8(j8(REPO, "master", "salt_command.html"), "utf8"));
+  ex8("node tools/booksync.mjs --sync", { cwd: REPO, env: { ...process.env, SALT_BOOK: B8, SALT_MASTER: M8 }, stdio: "pipe" });
+  const { w: wu } = await om8(M8);
+  wu.eval("setProd('salt');recompute();ledEdit('u1','SELL');");
+  const uc = JSON.parse(wu.eval("JSON.stringify([].map.call(document.querySelectorAll('.updchip'),function(b){return b.textContent;}))"));
+  ok(!uc.some((c) => /Completed|Paid in full/.test(c)),
+    "an unpriced row is offered neither Completed nor Paid in full (" + uc.join(" / ") + ")");
+  ok(uc.some((c) => /Delivered in full/.test(c)), "but goods can still be handed over on it");
+  ok(/No price is agreed/.test(wu.eval("document.querySelector('.updbox').textContent")), "and it says why");
+  const pRid = JSON.parse(wu.eval("JSON.stringify((sales.find(function(s){return !s.cancelled&&s.rid&&!s.unpriced&&(s.total||0)>0&&txPaid(s)<(s.total||0)-0.009;})||{}).rid||null)"));
+  if (pRid) {
+    wu.eval("ledEdit(" + JSON.stringify(pRid) + ",'SELL');");
+    const pc = JSON.parse(wu.eval("JSON.stringify([].map.call(document.querySelectorAll('.updchip'),function(b){return b.textContent;}))"));
+    ok(pc.some((c) => /Paid in full/.test(c)), "while a priced row still offers Paid in full");
+  }
+  for (const x of [B8, M8]) { try { rm8(x); } catch (e) { /* best effort */ } }
+}
+
 /* ---- done ----------------------------------------------------------------------- */
 
 section("Round 7: the states no suite check had ever rendered");

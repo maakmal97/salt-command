@@ -3451,7 +3451,8 @@ const whiteboard=[
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{"v": "v429", "d": "02 Sep 2026", "t": "THE RECONCILIATION DID NOT RECONCILE, BECAUSE v406 GAVE THE SURPLUS A SENTENCE AND NOT A ROW", "n": ["<b>FOLD 15 OF ROUND NINE.</b> v406 taught the walk that a count taken ABOVE the ledger is a surplus rather than a gap of nothing, and wrote a sentence saying so. It did not give the reconciliation table a line. So on exactly the state it was written for, the rows summed to less than the counted total printed beneath them: a table whose whole job is to show a figure being arrived at, not arriving at it. The row is the mirror of the self-use line and sits beside it, with its quantity and its value at cost.", "<b>MEASURED ON A COUNT FIFTEEN ABOVE THE LEDGER:</b> opening 4.9 plus 331.25 received less 273.2 delivered plus 15 surplus is 77.95, which is the counted figure the part prints. Removing the row again fails three assertions by name.", "<b>AND THE FOOTING IS CHECKED AGAINST THE ENGINE RATHER THAN BY ADDING UP THE SCREEN.</b> My first version summed every matching row on the part, which collected both product blocks and a second table underneath, and reported a correct fix as broken by thirty units. Scraping a total off a rendered page is a measurement of the page; the claim here is about the walk, so the walk is what is measured, and the DOM check is only that the row exists and carries the walk's own figure. 848 assertions from 841."]},
+const evolution=[{"v": "v430", "d": "02 Sep 2026", "t": "THE UPDATE CONTROL v408 PROMISED ON EVERY LIVE ROW HAD NEVER ONCE DRAWN ON A LOT", "n": ["<b>FOLD 16 OF ROUND NINE, AND THE FIRST OF ITS THREE IS THE PLAINEST AFFORDANCE FAULT YET.</b> v408 gated the Ledger's Update control on the card's rid, and a purchase card carries its row under a wrapper, so that field is undefined on every lot: the control rendered on NONE of the eighteen. The data-rid attribute eleven lines below has always unwrapped it properly; that line was written without looking at this one. Nineteen purchase cards carry the control now and had none for twenty-two versions.", "<b>A NEW ORDER OPENED ON SALT WHATEVER BOOK YOU WERE LOOKING AT,</b> because the empty row it builds carries no product and the sheet defaults one. It follows the rail now, as v409 taught the Enter sheet to.", "<b>AND AN UNPRICED ROW WAS OFFERED COMPLETED, WHICH IT CANNOT BE.</b> With no agreed price the total is zero, so the outstanding cash is zero and the chip was offered on the quantity alone; tapping it delivered the goods and left the row reading Open, Advance, which is what the panel's own sentence said one line beneath the chip promising Completed. Neither payment nor completion is offered until a price exists, and the panel says why. Goods can still be handed over, because that part is true.", "<b>AND ONE OF THE THREE CHECKS COUNTED THE WRONG CARDS.</b> It looked for cards whose text mentioned a lot, which also matches a sale card carrying the words <b>usual lot</b>, so the count stayed above zero with the fault put back and the check read green over it. It keys on the card's own type attribute now. Three mutations, three reds. 857 assertions from 848."]},
+{"v": "v429", "d": "02 Sep 2026", "t": "THE RECONCILIATION DID NOT RECONCILE, BECAUSE v406 GAVE THE SURPLUS A SENTENCE AND NOT A ROW", "n": ["<b>FOLD 15 OF ROUND NINE.</b> v406 taught the walk that a count taken ABOVE the ledger is a surplus rather than a gap of nothing, and wrote a sentence saying so. It did not give the reconciliation table a line. So on exactly the state it was written for, the rows summed to less than the counted total printed beneath them: a table whose whole job is to show a figure being arrived at, not arriving at it. The row is the mirror of the self-use line and sits beside it, with its quantity and its value at cost.", "<b>MEASURED ON A COUNT FIFTEEN ABOVE THE LEDGER:</b> opening 4.9 plus 331.25 received less 273.2 delivered plus 15 surplus is 77.95, which is the counted figure the part prints. Removing the row again fails three assertions by name.", "<b>AND THE FOOTING IS CHECKED AGAINST THE ENGINE RATHER THAN BY ADDING UP THE SCREEN.</b> My first version summed every matching row on the part, which collected both product blocks and a second table underneath, and reported a correct fix as broken by thirty units. Scraping a total off a rendered page is a measurement of the page; the claim here is about the walk, so the walk is what is measured, and the DOM check is only that the row exists and carries the walk's own figure. 848 assertions from 841."]},
 {"v": "v428", "d": "02 Sep 2026", "t": "v410 RENAMED THESE ROWS TO CHARGES ON A REASONABLE-SOUNDING GROUND THAT WAS WRONG, AND WROTE A TEST TO DEFEND IT", "n": ["<b>FOLD 14 OF ROUND NINE, AND IT UNDOES A LABEL I SHIPPED FIFTEEN VERSIONS AGO.</b> v410 called the statement's two provision rows <b>charged</b>, because a period statement usually holds period charges and the rows sit in month columns. They are not charges. Each is that month's debts measured at <b>today's</b> ladder, so a past month's figure moves as its own debts age with nothing whatever happening in that month. Measured: the August column reads RM 20 at the end of August and the same book reads RM 180 in October, with no new trade.", "<b>AND THE ASSERTION I WROTE AT v410 DEFENDED THE WRONG WORD.</b> A test that pins a label is only ever as good as the label, and this one made the mistake permanent rather than catching it. It asserts the true word now, asserts the false one is absent, and the period line explains what the rows actually measure, which is a fourth basis in a part that already had three.", "<b>THIS IS THE HAZARD OF THE PREVIOUS FOLD STATED PLAINLY.</b> v427 moved the carried-provisions tile off the year filter because a balance does not reset with the calendar; the same reasoning, followed one step further, says these rows were never charges either. Two folds on the same part, one correcting the other, which is what small folds are for. 841 assertions from 839."]},
 {"v": "v427", "d": "02 Sep 2026", "t": "PROVISIONS CARRIED WAS FED THE PERIOD'S CHARGE, SO ON 1 JANUARY IT READ NIL WHILE RM 930 WAS CARRIED", "n": ["<b>FOLD 13 OF ROUND NINE, AND THE HALF v410 DID NOT FINISH.</b> v410 established that three periods sit in this part and labelled the rows accordingly: the statement's provision rows are the period's <b>charge</b> and say so. The KPI tile above them says <b>carried</b>, which is a balance, and it was reading the same year-filtered figure. On 1 January it would have printed RM 0 while RM 930 was genuinely carried three panels below. Measured at that clock: nil before, RM 930 after.", "<b>TWO QUESTIONS, TWO REDUCTIONS, AND THE TILE NAMES ITS OWN BASIS.</b> The row keeps the calendar year because a charge belongs to the period it was made in; the tile takes the whole book because a balance does not reset when the calendar turns. It prints <b>whole book, not the FY column</b> beside the figure, so the two can be read together without arithmetic.", "<b>AND MY FIRST ASSERTION WAS WRONG RATHER THAN THE CODE.</b> I asserted the tile must read the SAME at both clocks, and it reads RM 795 today and RM 930 in January. That is correct: the provision ladder ages, so a carried balance grows as debts get older. The check says what actually must hold, which is that it never resets to nil and never falls, and it goes red at RM 0 when the year filter is put back. 839 assertions from 836."]},
 {"v": "v426", "d": "02 Sep 2026", "t": "THE GUARD AND THE DIVISOR WERE THE SAME SENTINEL, SO THE GUARD COULD NEVER BE FALSE", "n": ["<b>FOLD 12 OF ROUND NINE.</b> The Customers table computes a divisor as <b>revSum or one</b> so that a share can be taken without dividing by zero, and the All row then asked whether that divisor was above zero before using it. It never is not. So on a book with no revenue the division was by one ringgit and the cell printed the margin as a percentage of it: a book whose customers hold cost and no revenue, which a single free unit gives you, read <b>-10,152%</b> where the measurement here reproduced it.", "<b>THE SWEEP FOUND ONE SITE, AND SAYS WHY THE OTHER THREE ARE RIGHT.</b> Three more readers divide by the same sentinel, and all three are shares of REVENUE: with no revenue every numerator is zero too, so zero over one is a correct nought per cent and the sentinel is doing exactly its job. This was the only one dividing a DIFFERENT quantity by it, which is the distinction worth keeping rather than a rule about sentinels.", "<b>AND THE FIRST CHECK MATCHED TWO CELLS RUN TOGETHER.</b> It scanned the pane's text for a long number and found one that was the end of one cell and the start of the next, which is the concatenation trap this project has recorded before. It reads the All row's table CELLS now, so the assertion is about the figure in the cell rather than about a string on the page. Live book unchanged at 39%; the nil-revenue book prints an em-dash. 836 assertions from 832."]},
@@ -3664,7 +3665,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='02 Sep 2026, 16:20 KL';
+const LAST_UPDATED='02 Sep 2026, 18:00 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -7370,7 +7371,11 @@ const edOpen=()=>!!(edRid||edNew);
    than a correction. The Workbench form stays where it is and still takes an amendment, a
    count, a loss and the rest; what this replaces is having to reach it for the ONE thing
    done most often, and having that form offer eleven fields where the editor offers thirty. */
-function ledNew(){edNew=true;edRid=null;edType='SELL';renderEditor();}
+/* v430: a new order opened on salt whatever book the desk was on, because the empty row it builds
+   has no product and edView defaults one. The sheet follows the rail, as v409 made the Enter sheet
+   follow it. */
+let edSeed=null;
+function ledNew(){edNew=true;edRid=null;edType='SELL';edSeed={product:PROD};renderEditor();}
 function edRowOf(rid,type){return ovFind(type==='BUY'?purchases:sales,rid);}
 function ledEdit(rid,type){
   if(!rid){alert('This row has no id yet, so nothing can name it for an edit. It will have one after the next fold.');return;}
@@ -7393,7 +7398,7 @@ function renderEditor(){
   pn.setAttribute('style','display:'+(edOpen()?'block':'none')+';position:fixed;top:0;right:0;height:100dvh;padding-top:var(--safetop);padding-bottom:var(--safebot);width:min(470px,94vw);z-index:90;text-align:left;overflow-y:auto;background:linear-gradient(180deg,var(--card2),var(--card)),var(--bg0);border-left:1px solid var(--line);padding:15px 16px 30px;box-shadow:-18px 0 40px rgba(0,0,0,.45)');
   pn.setAttribute('aria-label',edNew?'New order':'Edit the entry');
   if(!edOpen()){pn.innerHTML='';return;}
-  const row=edNew?{}:edRowOf(edRid,edType);
+  const row=edNew?(edSeed||{}):edRowOf(edRid,edType);   /* v430: the seed carries the desk's product */
   if(!row){pn.innerHTML='<div class="stand-note warn">That row could not be found. It may have been folded under a different id since this page loaded.</div>';return;}
   const partyKey=edType==='BUY'?'supplier':'customer';
   const canc=!!row.cancelled;
@@ -7623,10 +7628,16 @@ function updBlock(row,dir,canc){
   const o=updOut(row,dir), noun=dir==='BUY'?'lot':'order';
   const today=TODAY.toISOString().slice(0,10);
   const chip=(lab,mode,c,k,on)=>on?'<button type="button" class="updchip" data-m="'+((mode||'')+'|'+(c==null?'':c)+'|'+(k==null?'':k))+'" onclick="updSet('+(mode?"'"+mode+"'":'null')+','+(c==null?'null':c)+','+(k==null?'null':k)+')">'+lab+'</button>':'';
+  /* v430: AN UNPRICED ROW CANNOT BE COMPLETED, and the chip said it could. A row whose price is not
+     agreed has a zero total, so the outstanding cash is zero and Completed was offered on the
+     quantity alone; tapping it delivered the goods and left the row reading Open, Advance, which is
+     what the panel's own sentence said one line below the chip promising Completed. Nothing can pay
+     what has not been priced, so neither chip is offered until it is. */
+  const unpriced=!!row.unpriced;
   const chips=[
-    chip(dir==='BUY'?'Paid in full':'Paid in full',null,o.cashLeft,0,o.cashLeft>0.009),
+    chip(dir==='BUY'?'Paid in full':'Paid in full',null,o.cashLeft,0,!unpriced&&o.cashLeft>0.009),
     chip(dir==='BUY'?'Received in full':'Delivered in full',null,0,o.unitLeft,o.unitLeft>0.009),
-    chip('Completed',null,o.cashLeft,o.unitLeft,o.cashLeft>0.009||o.unitLeft>0.009),
+    chip('Completed',null,o.cashLeft,o.unitLeft,!unpriced&&(o.cashLeft>0.009||o.unitLeft>0.009)),
     chip('Back to pending','pending',null,null,o.paid>0.009||o.moved>0.009),
     chip('Cancel the '+noun,'cancel',null,null,true),
     chip('Defaulted','default',null,null,dir==='BUY'&&!row.defaulted),
@@ -7636,6 +7647,7 @@ function updBlock(row,dir,canc){
   return '<div class="updbox">'
     +'<p style="font-size:10.5px;text-transform:uppercase;letter-spacing:1px;color:var(--gold);font-weight:700;margin:0 0 8px">Update</p>'
     +'<div class="updchips">'+chips+'</div>'
+    +(unpriced?'<div style="font-size:11.5px;color:var(--amber);margin-top:8px">No price is agreed on this '+noun+' yet, so there is nothing to pay and it cannot be completed. Set the total on the sheet below first.</div>':'')
     +'<div id="updAmts" style="display:flex;gap:10px;margin-top:11px">'
       +'<div style="flex:1"><label for="updCash" style="'+lb+'">'+(dir==='BUY'?'Cash paid':'Cash received')+', RM</label>'
         +'<input id="updCash" type="number" step="0.01" min="0" placeholder="0" style="'+bx+'">'
@@ -8261,8 +8273,13 @@ function tabLedger(){
        updated, had no quick action at all and went through the thirty-field sheet instead.
        One control now, on every live row, opening the panel that computes the OUTSTANDING
        figures from the row itself and therefore cannot overpay. ledQuick is retired with it. */
-    const quickBar=(finalState!=='Cancelled'&&t.rid&&!provOf(t))
-      ? `<div class="lquick"><span class="lqlab">${finalState==='Pending'?'Mark':'Update'}</span><button class="lqb qdone" onclick="ledEdit('${t.rid}','${t.type}')">Paid, delivered, cancelled&hellip;</button><span class="lqnote">${fmt0(t.total)} &middot; ${units(t.qty)} &middot; queues, does not post</span></div>`
+    /* v430: ridOf, NOT t.rid. A purchase card carries its row under a _buy wrapper, so t.rid is
+       undefined on every one of them and this control rendered on no lot at all: eighteen rows
+       whose Update button v408 promised and never drew. The data-rid attribute eleven lines below
+       has always used ridOf; this line was written without looking at it. */
+    const qRid=ridOf(t);
+    const quickBar=(finalState!=='Cancelled'&&qRid&&!provOf(t))
+      ? `<div class="lquick"><span class="lqlab">${finalState==='Pending'?'Mark':'Update'}</span><button class="lqb qdone" onclick="ledEdit('${qRid}','${t.type}')">Paid, delivered, cancelled&hellip;</button><span class="lqnote">${fmt0(t.total)} &middot; ${units(t.qty)} &middot; queues, does not post</span></div>`
       : '';
     /* data-rid is what the row editor right-clicks onto (25 Aug 2026). A row with no rid yet
        renders without the attribute rather than with an empty one, so the delegated listener
