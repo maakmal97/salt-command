@@ -4522,6 +4522,77 @@ section("v445: one floored ruler for every age, and the engine has it too");
   ok(PEf.dayAge(T, -5) === 0 && PEf.dayAge(T, 7) === 7, "and it takes a day count as well as a date, because half the sites hold one");
 }
 
+
+section("v446: what a lot is, answered beside what a sale is");
+{
+  /* ROUND TEN, FOLD 9. txStat has been in the engine since v338 and ledgerBuy stayed on the desk,
+     which is why v441 fixed the sale's cancelled branch and the lot's never existed. Driven, not
+     read: a cancelled lot already paid for read Open - Deferred (the supplier owes you SALT), an
+     unpriced lot read Paid and then Completed once the salt landed, and a defaulted lot read Paid
+     whether or not it was. poStat is the engine's answer now and ledgerBuy is its wrapper. */
+  const { default: PE } = await import("../engine/position.mjs");
+  ok(typeof PE.poStat === "function", "the engine answers what a lot is");
+  const st = (p) => PE.poStat(p);
+  const live = st({ qty: 10, total: 500, cash: 500, receivedQty: 10 });
+  ok(live.order === "Completed" && live.pay === "Paid" && live.deliv === "Delivered", `a paid, received lot is Completed (${live.order})`);
+  const cp = st({ qty: 10, total: 500, cash: 500, receivedQty: 0, cancelled: true });
+  ok(cp.order === "Cancelled", `a cancelled lot is Cancelled (${cp.order})`);
+  ok(cp.pay === "Refund due", `and one already paid for says the money is owed back (${cp.pay}), the sale's word since v441`);
+  const cs = st({ qty: 10, total: 500, status: "paid", receivedQty: 0, cancelled: true });
+  ok(cs.pay === "Refund due", `a lot booked status:paid with no cash field is read through poCash, so it too says ${cs.pay}`);
+  const cu = st({ qty: 10, total: 500, cash: 0, receivedQty: 0, cancelled: true });
+  ok(cu.order === "Cancelled" && cu.pay === "Unpaid", `a cancelled lot never paid for is Cancelled and Unpaid (${cu.order}/${cu.pay}), not Pending`);
+  const u0 = st({ qty: 10, total: 0, unpriced: true, cash: 0, receivedQty: 0 });
+  ok(u0.pay === "Unpriced", `a lot agreed before its price is struck says ${u0.pay}, not Paid`);
+  ok(u0.order === "Pending", `and with nothing moved it is Pending (${u0.order}), the sale's reading since v345`);
+  const u1 = st({ qty: 10, total: 0, unpriced: true, cash: 0, receivedQty: 10 });
+  ok(u1.order === "Open \u00b7 Advance" && u1.pay === "Unpriced", `once the salt lands it is Open - Advance and still Unpriced (${u1.order}/${u1.pay}), never Completed`);
+  const d0 = st({ qty: 10, total: 500, cash: 0, receivedQty: 0, defaulted: true });
+  ok(d0.order === "Default" && d0.pay === "Unpaid", `a defaulted lot that never paid is measured Unpaid (${d0.pay}), not asserted Paid`);
+  const d1 = st({ qty: 10, total: 500, status: "paid", defaulted: true });
+  ok(d1.order === "Default" && d1.pay === "Paid", `while p003's shape, paid and defaulted, still reads Paid (${d1.pay})`);
+
+  /* AND THE SAME STATES READ THE SAME WAY ON EITHER SIDE OF THE BOOK, which is the point of
+     putting the two functions in one file. */
+  const same = (lot, sale) => { const a = st(lot), b = PE.txStat(sale); return a.order === b.order && a.pay === b.pay && a.deliv === b.deliv; };
+  ok(same({ qty: 10, total: 500, cash: 500, receivedQty: 0, cancelled: true }, { qty: 10, total: 500, cash: 500, deliveredQty: 0, cancelled: true }), "a cancelled paid lot and a cancelled paid sale read identically");
+  ok(same({ qty: 10, total: 0, unpriced: true, cash: 0, receivedQty: 10 }, { qty: 10, total: 0, unpriced: true, cash: 0, deliveredQty: 10 }), "an unpriced delivered lot and an unpriced delivered sale read identically");
+
+  /* THE DESK RENDERS IT. Two lots the editor admits, written into a copy of the book, and the
+     Ledger card read back. The render has tested for a Cancelled lot since v365 (ledFinal,
+     stateCls, the completed test) and could never be given one. */
+  const { openMaster: om6 } = await import("../tools/payload.mjs");
+  const { readFileSync: rf6, writeFileSync: wf6, unlinkSync: rm6 } = await import("node:fs");
+  const { execSync: ex6 } = await import("node:child_process");
+  const { join: j6 } = await import("node:path");
+  const bk = JSON.parse(rf6(j6(REPO, "ledger", "book.json"), "utf8"));
+  const sup = (bk.purchases.find((p) => p.supplier) || {}).supplier;
+  ok(!!sup, "the book has a supplier to hang the fixtures on");
+  bk.purchases.push({ rid: "p9c", date: "2026-08-30", supplier: sup, product: "salt", qty: 10, total: 500, cash: 500, receivedQty: 0, cancelled: true, note: "fixture: cancelled after paying; an explicit cash figure and no status, the shape the old picker rule listed" });
+  bk.purchases.push({ rid: "p9u", date: "2026-08-31", supplier: sup, product: "salt", qty: 10, total: 0, unpriced: true, cash: 0, receivedQty: 0, note: "fixture: agreed, unpriced" });
+  const B6 = j6(REPO, "test", ".v446.json"), M6 = j6(REPO, "test", ".v446.html");
+  wf6(B6, JSON.stringify(bk, null, 1)); wf6(M6, rf6(j6(REPO, "master", "salt_command.html"), "utf8"));
+  ex6("node tools/booksync.mjs --sync", { cwd: REPO, env: { ...process.env, SALT_BOOK: B6, SALT_MASTER: M6 }, stdio: "pipe" });
+  try {
+    const { w } = await om6(M6);
+    w.eval("setProd('salt');recompute();switchTab('ledger');");
+    const card = (rid) => String(w.eval("(function(){var e=document.querySelector('.lcard[data-rid=\"" + rid + "\"]');return e?e.textContent:'';})()")).replace(/\s+/g, " ");
+    const c = card("p9c"), u = card("p9u");
+    ok(c.length > 0 && u.length > 0, "both fixture lots reach the Ledger");
+    ok(/Cancelled/.test(c), `the cancelled lot's card says Cancelled: ${c.slice(0, 90)}`);
+    ok(String(w.eval("ledgerBuy(purchases.find(function(p){return p.rid==='p9c';})).pay")) === "Refund due", "and the desk reads its money as owed back, which the Whiteboard pills print");
+    ok(!/Open . Deferred/.test(c), "and never that the supplier owes you salt on an order that is off");
+    ok(/Pending/.test(u), `the unpriced lot's card says Pending: ${u.slice(0, 90)}`);
+    ok(String(w.eval("ledgerBuy(purchases.find(function(p){return p.rid==='p9u';})).pay")) === "Unpriced", "and the desk reads its price as not yet struck");
+    ok(!/Completed/.test(u) && !/\bPaid\b/.test(u), "and neither Paid nor Completed on a figure that is not decided");
+    const picked = JSON.parse(w.eval("JSON.stringify(wbBuyOrders().map(function(o){return o.t._buy.rid;}))"));
+    ok(!picked.includes("p9c"), `a cancelled lot is not offered for amendment (${JSON.stringify(picked)})`);
+    ok(picked.includes("p9u"), "while the unpriced, pending one is");
+    const real = JSON.parse(w.eval("JSON.stringify(purchases.filter(function(p){return p.rid!=='p9c'&&p.rid!=='p9u';}).map(function(p){return ledgerBuy(p).order;}))"));
+    ok(real.length >= 18 && real.every((o) => o === "Completed" || o === "Default"), `the ${real.length} real lots read Completed or Default as before (${[...new Set(real)].join(", ")})`);
+  } finally { for (const f of [B6, M6]) { try { rm6(f); } catch (e) { /* best effort */ } } }
+}
+
 /* ---- done ----------------------------------------------------------------------- */
 
 section("Round 7: the states no suite check had ever rendered");
@@ -4756,7 +4827,7 @@ section("Round 7: the states no suite check had ever rendered");
    the live count was 879, so thirty-nine assertions could have vanished under a guard written to
    stop exactly that. The margin is four, which covers the book-dependent branches that legitimately
    skip; it is not room for a section to fall out. */
-const FLOOR_ASSERTIONS = 1020, FLOOR_SECTIONS = 71;
+const FLOOR_ASSERTIONS = 1045, FLOOR_SECTIONS = 72;
 ok(pass + fail - offMachine >= FLOOR_ASSERTIONS,
   `the suite ran ${pass + fail - offMachine} assertions everywhere (${pass + fail} here, ${offMachine} of them needing files that live off this repo), below its floor of ${FLOOR_ASSERTIONS}: a section has stopped running`);
 ok(sections >= FLOOR_SECTIONS,

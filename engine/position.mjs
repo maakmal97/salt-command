@@ -118,6 +118,44 @@ function poCash(p){
   return p.status==='paid'?+p.total:0;         // only a row that SAYS paid is assumed paid
 }
 function poLive(p){return !p.pending&&!p.defaulted&&!p.cancelled;}   /* v417 */
+/* ====== WHAT A LOT IS (v446) ====================================================
+   txStat has been in this module since v338 and ledgerBuy stayed on the desk, and that
+   split IS the reason the pair drifted. v441 gave the SALE's cancelled branch a paid figure
+   it measures rather than asserts; the lot half of the identical question was in another
+   file three thousand lines away and got nothing. So the lot's status comes here, beside the
+   sale's, and the desk's ledgerBuy becomes the one-line wrapper txStat already was.
+   WHAT IT WAS GETTING WRONG. Both found by driving states this book can hold, not by reading:
+     CANCELLED: there was no branch at all. poCash is deliberately unguarded, because money
+     that left the bank has left it, so a cancelled lot already paid for read Paid and
+     Undelivered and fell through to `Open - Deferred`, which on a purchase says the supplier
+     owes you SALT on an order that is off. The supplier owes you the MONEY. Same fault, same
+     shape and now the same words as v441 on the sale. Three sites in the Ledger's own card
+     render already test for si.order==='Cancelled' -- ledFinal, `completed`, stateCls -- so
+     the render has been ready for an answer the status function could never give.
+     UNPRICED: `paid>=total-0.009` on a total of nothing is `0>=-0.009`, which is true, so a
+     lot agreed before its price was struck read Paid, and once the salt landed it read
+     Completed: settled, nothing owed, on a row whose whole point is that the figure is not
+     decided. txStat has answered `Unpriced` here since v345. Only the two pay predicates
+     move; every label a priced lot has ever shown is the same expression it was.
+   `deliv` IS HARDCODED ON BOTH TERMINAL BRANCHES, deliberately, and on the same footing as
+   txStat's: applyAmend refuses to cancel a lot that has received (v415 picks the ruler by
+   direction) and correctionFaults refuses cancelled-and-moved on either side (v436), so a
+   cancelled lot carrying delivery cannot be written. If those guards come off, this goes
+   with them.
+   AND `pay` ON THE DEFAULT BRANCH IS MEASURED NOW, not asserted. It read a flat 'Paid',
+   which is the exact shape v441 had to undo on the sale: true of the one defaulted lot on
+   the book, and false the moment someone sets the flag on a lot that never paid. */
+function poStat(p){
+  const paid=poCash(p);
+  if(p.defaulted)return {order:'Default',cls:'def',pay:paid>0.009?'Paid':'Unpaid',deliv:'Undelivered'};
+  if(p.cancelled)return {order:'Cancelled',cls:'def',pay:paid>0.009?'Refund due':'Unpaid',deliv:'Undelivered'};
+  const payFull=p.unpriced?false:paid>=p.total-0.009, payNone=paid<=0.009;
+  const pay=p.unpriced?'Unpriced':payFull?'Paid':payNone?'Unpaid':'Partial';
+  const r=poRecvUnits(p);
+  const deliv=r<=0.0001?'Undelivered':(r>=p.qty-0.0001?'Delivered':'Partial');
+  const order=(payFull&&deliv==='Delivered')?'Completed':(payNone&&deliv==='Undelivered')?'Pending':(deliv==='Delivered'?'Open · Advance':'Open · Deferred');
+  return {order,cls:order==='Completed'?'paid':/^Open/.test(order)?'open':'pendingt',pay,deliv};
+}
 function poRate(p){return p.qty>0?p.total/p.qty:0;}
 /* ====== WHAT A LOT STILL OWES ITS SUPPLIER (v438) ===============================
    FIVE readers answered this and each excluded a DIFFERENT subset of {pending, cancelled,
@@ -464,7 +502,7 @@ function ovKey(t){return (t.customer||t.supplier)+'|'+t.date+'|'+t.total;}
 
 return {txPrice:txPrice,txPaid:txPaid,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:txEffDeliv,txAdvance:txAdvance,
         txDeferUnits:txDeferUnits,txPendUnits:txPendUnits,txPendUnitsRaw:txPendUnitsRaw,txPendRM:txPendRM,txStat:txStat,txDates:txDates,
-        poRecvUnits:poRecvUnits,poCash:poCash,poLive:poLive,poOwed:poOwed,poRate:poRate,poOpenUnits:poOpenUnits,provRate:provRate,
+        poRecvUnits:poRecvUnits,poCash:poCash,poLive:poLive,poOwed:poOwed,poRate:poRate,poOpenUnits:poOpenUnits,poStat:poStat,provRate:provRate,
         daysBetween:daysBetween,dayAge:dayAge,walk:walk,coverStats:coverStats,commitments:commitments,
         ledgerRow:ledgerRow,openable:openable,ovKey:ovKey,attributionOf:attributionOf,correctionFaults:correctionFaults,refundOnCancel:refundOnCancel,
         CORRECTABLE:CORRECTABLE,CORRECT_REQUIRED:CORRECT_REQUIRED,CORRECT_NUM_POS:CORRECT_NUM_POS,
