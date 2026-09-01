@@ -1,5 +1,15 @@
 [
  {
+  "v": "v429",
+  "d": "02 Sep 2026",
+  "t": "THE RECONCILIATION DID NOT RECONCILE, BECAUSE v406 GAVE THE SURPLUS A SENTENCE AND NOT A ROW",
+  "n": [
+   "<b>FOLD 15 OF ROUND NINE.</b> v406 taught the walk that a count taken ABOVE the ledger is a surplus rather than a gap of nothing, and wrote a sentence saying so. It did not give the reconciliation table a line. So on exactly the state it was written for, the rows summed to less than the counted total printed beneath them: a table whose whole job is to show a figure being arrived at, not arriving at it. The row is the mirror of the self-use line and sits beside it, with its quantity and its value at cost.",
+   "<b>MEASURED ON A COUNT FIFTEEN ABOVE THE LEDGER:</b> opening 4.9 plus 331.25 received less 273.2 delivered plus 15 surplus is 77.95, which is the counted figure the part prints. Removing the row again fails three assertions by name.",
+   "<b>AND THE FOOTING IS CHECKED AGAINST THE ENGINE RATHER THAN BY ADDING UP THE SCREEN.</b> My first version summed every matching row on the part, which collected both product blocks and a second table underneath, and reported a correct fix as broken by thirty units. Scraping a total off a rendered page is a measurement of the page; the claim here is about the walk, so the walk is what is measured, and the DOM check is only that the row exists and carries the walk's own figure. 848 assertions from 841."
+  ]
+ },
+ {
   "v": "v428",
   "d": "02 Sep 2026",
   "t": "v410 RENAMED THESE ROWS TO CHARGES ON A REASONABLE-SOUNDING GROUND THAT WAS WRONG, AND WROTE A TEST TO DEFEND IT",

@@ -3550,6 +3550,52 @@ section("v426: the guard and the divisor cannot be the same sentinel");
   for (const f of [B6, M6]) { try { rm6(f); } catch (e) { /* best effort */ } }
 }
 
+
+section("v429: the reconciliation foots to the total printed beneath it");
+{
+  /* ROUND NINE. v406 gave the walk a surplus, for a count taken ABOVE the ledger, and gave the
+     PROSE a sentence about it. It did not give the reconciliation table a row, so on that state the
+     lines summed to less than the counted total printed under them and the reconciliation did not
+     reconcile. It is the exact mirror of the self-use line and belongs beside it.
+     THE FOOTING IS CHECKED AGAINST THE ENGINE, not by summing rows scraped from the pane: the first
+     version of this check swept every matching row on the part and collected both product blocks
+     and a second table, and reported a real fix as broken. */
+  const { openMaster: om7 } = await import("../tools/payload.mjs");
+  const { readFileSync: rf7, writeFileSync: wf7, unlinkSync: rm7 } = await import("node:fs");
+  const { execSync: ex7 } = await import("node:child_process");
+  const { join: j7 } = await import("node:path");
+
+  const { w: w0 } = await om7();
+  w0.eval("setProd('salt');recompute();");
+  const ledger = +w0.eval("ledgerStock");
+  ok(+w0.eval("surplus") === 0, "the live book carries no surplus");
+  w0.eval("switchTab('inventory');");
+  ok(!/Surplus \(count above ledger\)/.test(w0.document.querySelector(".sec.on").textContent),
+    "and prints no surplus row, so the row is not simply always there");
+
+  const bk7 = JSON.parse(rf7(j7(REPO, "ledger", "book.json"), "utf8"));
+  bk7.STATED_STOCK = +(ledger + 15).toFixed(2);          /* counted fifteen above the ledger */
+  const B7 = j7(REPO, "test", ".v429.json"), M7 = j7(REPO, "test", ".v429.html");
+  wf7(B7, JSON.stringify(bk7, null, 1));
+  wf7(M7, rf7(j7(REPO, "master", "salt_command.html"), "utf8"));
+  ex7("node tools/booksync.mjs --sync", { cwd: REPO, env: { ...process.env, SALT_BOOK: B7, SALT_MASTER: M7 }, stdio: "pipe" });
+  const { w: w7 } = await om7(M7);
+  w7.eval("setProd('salt');recompute();switchTab('inventory');");
+
+  const f = JSON.parse(w7.eval("JSON.stringify({op:openingFor(PROD).qty,recv:receivedPO.reduce(function(a,p){return a+poRecvUnits(p);},0),sold:soldUnits,selfUse:selfUse,surplus:surplus,counted:currentStock})"));
+  ok(f.surplus > 0, "the built book carries a surplus (" + f.surplus + " unit)");
+  const walk = f.op + f.recv - f.sold - f.selfUse + f.surplus;
+  ok(Math.abs(walk - f.counted) < 0.02,
+    "and the walk foots to the counted total (" + walk.toFixed(2) + " against " + f.counted + ")");
+
+  const row = JSON.parse(w7.eval("JSON.stringify((function(){var b=document.querySelector('.sec.on .prodblock[data-prod=salt]')||document.querySelector('.sec.on');var r=[].slice.call(b.querySelectorAll('tr')).filter(function(x){return /Surplus/.test((x.cells[0]||{}).textContent||'');})[0];return r?[].map.call(r.cells,function(c){return c.textContent.trim();}):null;})())"));
+  ok(!!row, "the surplus row is on the salt block");
+  ok(row && row[1] === "+" + f.surplus + " unit",
+    "carrying the walk's own figure (" + (row && row[1]) + ")");
+  ok(row && /RM/.test(row[2]), "and its ringgit value (" + (row && row[2]) + ")");
+  for (const x of [B7, M7]) { try { rm7(x); } catch (e) { /* best effort */ } }
+}
+
 /* ---- done ----------------------------------------------------------------------- */
 
 section("Round 7: the states no suite check had ever rendered");
