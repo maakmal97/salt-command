@@ -22,7 +22,17 @@ function txPendUnits(s){if(s.cancelled)return 0;return Math.max(0,+(s.qty-txEffD
 function txPendUnitsRaw(s){if(s.cancelled)return 0;return Math.max(0,s.qty-txEffDeliv(s)-txDeferUnits(s));}
 function txPendRM(s){if(s.cancelled)return 0;const p=txPrice(s);if(!(p>0))return 0;return +(Math.max(0,s.qty-txEffDeliv(s)-txDeferUnits(s))*p).toFixed(2);}
 function txStat(t){
-  if(t.cancelled)return {order:'Cancelled',cls:'def',pay:(t.cash||0)>0.009?'Refund due':'Unpaid',deliv:'Undelivered'};
+  /* THE SAME MONEY, SETTLED TWO WAYS, MUST READ THE SAME WAY. This branch measured a cancelled
+     row's money as t.cash alone, while the line DIRECTLY BENEATH IT has read cash plus settledRM
+     for every other row since the settlement-in-kind fields existed, and txPaid is the one rule
+     for it. So a cancelled order the customer had settled in kind reported `Unpaid`, which says
+     the business owes nothing, when it holds RM 100 of that customer's value and owes it back.
+     Cash said `Refund due` on the identical figure.
+     `deliv` STAYS HARDCODED and that is deliberate rather than an oversight: v434 refuses to
+     record a movement against a cancelled row and v436 refuses to cancel a row that has moved, so
+     a cancelled row carrying delivery cannot be written any more, and no row on the book has one.
+     If those guards ever come off, this is the line that goes with them. */
+  if(t.cancelled)return {order:'Cancelled',cls:'def',pay:txPaid(t)>0.009?'Refund due':'Unpaid',deliv:'Undelivered'};
   const paid=(t.cash||0)+(t.settledRM||0), del=(t.deliveredQty||0)+(t.settledKg||0);
   /* A ZERO-VALUE ROW IS PAID IN FULL BY DEFINITION. payFull required total>0, so the
      first free unit ever handed over read as Open - Advance: salt out, nothing in,

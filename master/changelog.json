@@ -1,5 +1,16 @@
 [
  {
+  "v": "v441",
+  "d": "01 Sep 2026",
+  "t": "THE SAME MONEY, SETTLED TWO WAYS, GOT TWO DIFFERENT ANSWERS ON A CANCELLED ORDER",
+  "n": [
+   "<b>FOLD 6 OF ROUND TEN, THE ENGINE HALF.</b> txStat measured a cancelled row's money as t.cash alone, while the line DIRECTLY BENEATH IT has read cash plus settledRM for every other row since those fields existed, and txPaid is the one rule for it. So RM 100 handed over in cash reported `Refund due`, and the identical RM 100 settled in kind reported `Unpaid`, which tells the owner the business owes nothing while it holds that customer's value. One line, one character of distance from the rule it should have been using.",
+   "<b>WHY IT MATTERS BEYOND THE LABEL.</b> This is the engine's own name for the state the statement drops. A cancelled order that was paid for is money the business holds and owes back, and txStat is where the desk asks whether that is true. An engine that could not see a settlement in kind is why the question was never asked properly downstream.",
+   "<b>THE HARDCODED `deliv` STAYS, AND THAT IS A DECISION.</b> A cancelled row cannot carry delivery any more: v434 refuses to record a movement against one and v436 refuses to cancel a row that has moved. The suite asserts no cancelled row on the book carries any, so Undelivered is true by construction rather than by hope, and the line that would have to change with those guards is named.",
+   "<b>LATENT, SO THE CHECK BUILDS THE STATES,</b> and drives them through the DESK as well as the module, because the master carries an inlined copy and a check that only ever reads the module would pass on a desk that had drifted. Three mutations, three reds: cash alone, a blanket Refund due, and a threshold dropped to zero. 958 assertions across 68 sections."
+  ]
+ },
+ {
   "v": "v440",
   "d": "01 Sep 2026",
   "t": "THE DESK DREW A ROW WHOSE TRAIL CLAIMED A RESTATEMENT ITS OWN FIGURES DENIED",

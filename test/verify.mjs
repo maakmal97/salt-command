@@ -4170,6 +4170,52 @@ section("v439: the desk restates a row, and every claim it writes is one its own
   for (const x of [BB, MB]) { try { rmB(x); } catch (e) { /* best effort */ } }
 }
 
+
+section("v441: the same money, settled two ways, reads the same way on a cancelled order");
+{
+  /* ROUND TEN. txStat measured a cancelled row's money as t.cash ALONE, while the line directly
+     beneath it has read cash plus settledRM for every other row since those fields existed, and
+     txPaid is the one rule for it. So the identical RM 100, handed over as cash, reported
+     `Refund due`, and settled in kind reported `Unpaid` -- which tells the owner the business owes
+     nothing while it holds that customer's value.
+     LATENT ON TODAY'S BOOK: all five cancelled rows carry cash 0 and settledRM 0, so the check
+     builds the states. It also drives them through the DESK, because an engine that is right and a
+     desk that never asks it is the shape this round keeps finding. */
+  const { default: PEc } = await import("../engine/position.mjs");
+  const mk = (o) => Object.assign({ rid: "k1", date: "2026-08-01", customer: "CN6-WM", qty: 1, total: 100, cancelled: true }, o);
+
+  ok(PEc.txStat(mk({ cash: 100 })).pay === "Refund due", "a cancelled order paid in cash is a refund due");
+  ok(PEc.txStat(mk({ settledRM: 100 })).pay === "Refund due",
+    `and so is one settled in kind, which read Unpaid until this fold (${PEc.txStat(mk({ settledRM: 100 })).pay})`);
+  ok(PEc.txStat(mk({ cash: 50, settledRM: 50 })).pay === "Refund due", "and one settled half each way");
+  ok(PEc.txStat(mk({})).pay === "Unpaid", "while a cancelled order nobody paid for owes nothing back, so the rule is not a blanket Refund due");
+  ok(PEc.txStat(mk({ settledRM: 0.005 })).pay === "Unpaid", "and a rounding crumb is not a refund: the threshold is the same 0.009 it always was");
+
+  /* IT IS txPaid THAT DECIDES, not a second copy of the same sum written out here. */
+  ok(PEc.txPaid(mk({ settledRM: 100 })) === 100 && PEc.txPaid(mk({ cash: 100 })) === 100,
+    "txPaid answers the same for both, which is why it is the ruler this branch now uses");
+
+  /* THE STATE THE GUARDS FORBID, asserted so the hardcoded `deliv` is a fact rather than a hope.
+     v434 refuses a movement against a cancelled row and v436 refuses to cancel a row that has
+     moved, so a cancelled row carrying delivery cannot be written. If that ever changes, the
+     Undelivered on this line changes with it. */
+  const { readFileSync: rfC } = await import("node:fs");
+  const { join: jC } = await import("node:path");
+  const bkC = JSON.parse(rfC(jC(REPO, "ledger", "book.json"), "utf8"));
+  const moved = (bkC.sales || []).filter((x) => x.cancelled && PEc.txEffDeliv(x) > 0.009);
+  ok(moved.length === 0, `no cancelled row on the book carries delivery (${moved.map((x) => x.rid).join(", ") || "none"}), which is what makes Undelivered true by construction`);
+
+  /* AND THE DESK ASKS THE ENGINE. Driven through the built master rather than asserted of the
+     module alone, because the master carries an inlined COPY and CI proves the copy byte for byte;
+     a check that only ever reads the module would pass on a desk that had drifted. */
+  const { openMaster: omC } = await import("../tools/payload.mjs");
+  const { w: wC } = await omC();
+  wC.eval("setProd('salt');recompute();");
+  const deskSays = (o) => wC.eval("txStat(" + JSON.stringify(mk(o)) + ").pay");
+  ok(deskSays({ settledRM: 100 }) === "Refund due", `the desk says Refund due on a cancelled order settled in kind (${deskSays({ settledRM: 100 })})`);
+  ok(deskSays({}) === "Unpaid", "and Unpaid on one nobody paid for");
+}
+
 /* ---- done ----------------------------------------------------------------------- */
 
 section("Round 7: the states no suite check had ever rendered");
@@ -4404,7 +4450,7 @@ section("Round 7: the states no suite check had ever rendered");
    the live count was 879, so thirty-nine assertions could have vanished under a guard written to
    stop exactly that. The margin is four, which covers the book-dependent branches that legitimately
    skip; it is not room for a section to fall out. */
-const FLOOR_ASSERTIONS = 930, FLOOR_SECTIONS = 67;
+const FLOOR_ASSERTIONS = 939, FLOOR_SECTIONS = 68;
 ok(pass + fail - offMachine >= FLOOR_ASSERTIONS,
   `the suite ran ${pass + fail - offMachine} assertions everywhere (${pass + fail} here, ${offMachine} of them needing files that live off this repo), below its floor of ${FLOOR_ASSERTIONS}: a section has stopped running`);
 ok(sections >= FLOOR_SECTIONS,
