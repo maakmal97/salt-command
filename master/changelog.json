@@ -1,5 +1,16 @@
 [
  {
+  "v": "v445",
+  "d": "02 Sep 2026",
+  "t": "THE ENGINE HAD NO FLOORED DAY COUNT AT ALL, AND TWENTY MORE AGES ON THE DESK STILL USED THE SIGNED ONE",
+  "n": [
+   "<b>FOLD 8 OF ROUND TEN.</b> The desk has had dAge since v407, the rule that floors an age at zero and answers zero for an absent date. The ENGINE never did, so every age computed inside the walk used the raw signed difference. Twenty more raw ages sat on the desk itself: seven feeding provRate, which is a monotone ladder with no floor of its own; four compared against a threshold, where a negative passes a test it should fail; two setting WHEN money is expected, where the figure does not merely print wrong but moves; and the rest printed or stored.",
+   "<b>ONE COPY, NOT TWO.</b> Writing a second floor inside the module would be the drift this repo keeps folding against, so the rule moved into engine/position.mjs as dayAge and the desk's dAge became a one-line wrapper over it. The walk gained a floored alias beside the signed one, named so the difference is visible at the call site: dbet is for a countdown to a future date, dage is for how long ago, which is what a ladder eats. dAhead is untouched and still reads the raw sign, because that is the whole of its job.",
+   "<b>THE CHECK IS A DIFFERENTIAL, NOT A TABLE OF LITERALS.</b> The plan this came from carried figures like `ar must be 240`, computed from the ladder on the day it ran; a day later the ladder has stepped and the literal is wrong while the code is right. What dAge actually promises is that a date the desk cannot read counts as zero days old, so an undated row and a row dated TODAY must produce the identical desk, and that claim survives the calendar. Four bad dates are driven through it, ahead of the clock, null, absent and empty, against a control dated today, and every part is rendered and searched for a NaN, a negative age or an epoch-sized one.",
+   "<b>SIX MUTATIONS RED, AND ONE GREEN THAT IS RECORDED RATHER THAN HIDDEN.</b> Removing the floor, removing the absent-date case, reverting the walk's ladder feed, the desk's, the forecast's, and flooring dAhead all fail the suite. The twentieth substitution, the contact card's `last ordered N days ago`, does not: it is reached only through a form the suite does not drive, and pricedSales excludes pending rows so its input can never be absent, leaving it reachable only by a future-dated row and the book has none. It is correct by the same rule and it is listed here as UNPROVED rather than counted as covered. 1040 assertions across 71 sections."
+  ]
+ },
+ {
   "v": "v444",
   "d": "02 Sep 2026",
   "t": "A CANCELLED ORDER THAT WAS PAID FOR IS NOW A PAYABLE, RECORDED EXACTLY LIKE AN OVERPAYMENT",

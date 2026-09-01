@@ -4426,6 +4426,102 @@ section("v444: a cancelled order that was paid for is a payable, recorded like a
   }
 }
 
+
+section("v445: one floored ruler for every age, and the engine has it too");
+{
+  /* ROUND TEN, FOLD 8. The desk has had dAge since v407 and the ENGINE never did, so every age
+     computed inside the walk used the raw signed difference. Twenty more raw ages sat on the desk
+     itself: seven feeding provRate, which is a monotone ladder with no floor of its own; four
+     compared against a threshold, where a negative passes a test it should fail; two setting WHEN
+     money is expected, where the figure does not merely print wrong but MOVES; and the rest printed
+     or stored. dAge is now one function, in the engine, wrapped by the desk.
+     THE CHECK IS A DIFFERENTIAL, NOT A TABLE OF LITERALS. The plan this came from carried figures
+     like "ar must be 240", computed from the ladder on the day it ran; a day later the ladder has
+     stepped and the literal is wrong while the code is right. What dAge actually PROMISES is that a
+     date the desk cannot read counts as zero days old, so an undated row and a row dated TODAY must
+     produce the identical desk. That claim survives the calendar. */
+  const { openMaster: omF } = await import("../tools/payload.mjs");
+  const { readFileSync: rfF, writeFileSync: wfF, unlinkSync: rmF } = await import("node:fs");
+  const { execSync: exF } = await import("node:child_process");
+  const { join: jF } = await import("node:path");
+
+  const bk0 = JSON.parse(rfF(jF(REPO, "ledger", "book.json"), "utf8"));
+  const victim = (bk0.sales || []).find((x) => x.rid === "s117") || (bk0.sales || []).find((x) => x.date && (+x.total || 0) > 0 && !x.cancelled);
+  ok(!!victim, "the book carries a dated receivable to drive the four bad dates through");
+
+  /* the desk's own clock, so "today" here is the same day the desk thinks it is */
+  const { w: wNow } = await omF();
+  const todayISO = String(wNow.eval("(function(){var d=TODAY;return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');})()"));
+  ok(/^\d{4}-\d{2}-\d{2}$/.test(todayISO), `read the desk's own clock (${todayISO}) rather than this process's`);
+
+  const build = async (mutate, tag) => {
+    const bk = JSON.parse(rfF(jF(REPO, "ledger", "book.json"), "utf8"));
+    const row = (bk.sales || []).find((x) => x.rid === victim.rid);
+    mutate(row);
+    const B = jF(REPO, "test", `.v445.${tag}.json`), M = jF(REPO, "test", `.v445.${tag}.html`);
+    wfF(B, JSON.stringify(bk, null, 1));
+    wfF(M, rfF(jF(REPO, "master", "salt_command.html"), "utf8"));
+    exF("node tools/booksync.mjs --sync", { cwd: REPO, env: { ...process.env, SALT_BOOK: B, SALT_MASTER: M }, stdio: "pipe" });
+    const { w } = await omF(M);
+    w.eval("setProd('salt');recompute();");
+    const read = () => JSON.parse(w.eval("JSON.stringify({ar:ar,dueIn:cashFlow().dueIn,cashEnd:(forecast({days:30})||{}).cashEnd,age:(function(){var r=sales.find(function(s){return s.rid===" + JSON.stringify(victim.rid) + ";});return r?dAge(r.date):null;})()})"));
+    return { w, read, files: [B, M] };
+  };
+
+  /* THE CONTROL: the same row dated today. An age of zero, honestly arrived at. */
+  const ctl = await build((r) => { r.date = todayISO; }, "ctl");
+  const control = ctl.read();
+  ok(control.age === 0, `a row dated today is zero days old (${control.age})`);
+  ok(Number.isFinite(control.ar) && control.ar > 0, `and the control desk has a real receivable total (RM ${control.ar})`);
+
+  const BAD = [
+    ["a date ahead of the clock", (r) => { r.date = "2027-01-20"; }],
+    ["a null date", (r) => { r.date = null; }],
+    ["an absent date", (r) => { delete r.date; }],
+    ["an empty date", (r) => { r.date = ""; }],
+  ];
+  const tmp = [].concat(ctl.files);
+  for (const [label, mut] of BAD) {
+    const t = await build(mut, label.replace(/[^a-z]/gi, ""));
+    tmp.push(...t.files);
+    let got = null, threw = null;
+    try { got = t.read(); } catch (e) { threw = e.message; }
+    ok(!threw, `${label}: the desk computes at all (${threw || "no throw"})`);
+    if (!got) continue;
+    ok(got.age === 0, `${label}: the row reads zero days old, not a negative or twenty thousand (${got.age})`);
+    ok(Math.abs(got.ar - control.ar) < 0.011,
+      `${label}: the receivable total matches the row dated today, RM ${got.ar} against RM ${control.ar}`);
+    ok(Math.abs(got.dueIn - control.dueIn) < 0.011, `${label}: and so does cash due in (RM ${got.dueIn})`);
+    ok(got.cashEnd == null ? control.cashEnd == null : Math.abs(got.cashEnd - control.cashEnd) < 0.011,
+      `${label}: and the forecast ends on the same cash (${got.cashEnd} against ${control.cashEnd})`);
+
+    /* AND NOTHING ABSURD REACHES THE PAGE. Rendered, across every part, because an age that is
+       merely printed wrong is still wrong on the one screen he reads. */
+    const text = String(t.w.eval("(function(){var out=[];for(var k in PART_Q){try{switchTab(k);var e=document.querySelector('.sec.on');if(e)out.push(e.textContent);}catch(x){out.push('THREW '+k+': '+x.message);}}return out.join(' ');})()"));
+    ok(!/THREW/.test(text), `${label}: every part renders (${(text.match(/THREW [^ ]+/) || [""])[0]})`);
+    ok(!/NaN/.test(text), `${label}: no NaN reaches the page (${(text.match(/.{0,28}NaN.{0,20}/) || [""])[0]})`);
+    ok(!/-\d+ ?(d ago|days ago|d out)/.test(text), `${label}: no negative age is printed (${(text.match(/-\d+ ?(d ago|days ago|d out)/) || [""])[0]})`);
+    ok(!/\b2\d{4} days\b/.test(text), `${label}: no epoch-sized age is printed (${(text.match(/\b2\d{4} days\b/) || [""])[0]})`);
+  }
+  for (const f of tmp) { try { rmF(f); } catch (e) { /* best effort */ } }
+
+  /* AND THE SIGN IS STILL THERE WHERE IT IS THE ANSWER. A countdown to a future date is not an
+     age, and flooring one would break it; dAhead exists precisely to read that sign. */
+  ok(wNow.eval("dAhead('2027-01-20')") === true, "a date ahead of the clock is still recognised as ahead");
+  ok(wNow.eval("dAhead('2026-01-20')") === false, "and a past one is not, so dAhead was left on the raw signed rule on purpose");
+  ok(+wNow.eval("dAge('2027-01-20')") === 0, "while dAge floors the same date to zero, which is the pair working as designed");
+
+  /* ONE COPY OF THE RULE, not two. The desk wraps the engine rather than keeping its own floor. */
+  const { default: PEf } = await import("../engine/position.mjs");
+  const T = new Date("2026-09-02T12:00:00+08:00");
+  ok(typeof PEf.dayAge === "function", "the engine exports the rule");
+  ok(PEf.dayAge(T, null) === 0 && PEf.dayAge(T, undefined) === 0 && PEf.dayAge(T, "") === 0,
+    "answering zero for every shape of absent date, which is the v425 case that printed NaNd ago");
+  ok(PEf.dayAge(T, "2027-01-20") === 0, "and zero for a date ahead of the clock, which is the v406 case that printed -16d");
+  ok(PEf.dayAge(T, "2026-08-28") === 5, "while a real age is a real age");
+  ok(PEf.dayAge(T, -5) === 0 && PEf.dayAge(T, 7) === 7, "and it takes a day count as well as a date, because half the sites hold one");
+}
+
 /* ---- done ----------------------------------------------------------------------- */
 
 section("Round 7: the states no suite check had ever rendered");
@@ -4660,7 +4756,7 @@ section("Round 7: the states no suite check had ever rendered");
    the live count was 879, so thirty-nine assertions could have vanished under a guard written to
    stop exactly that. The margin is four, which covers the book-dependent branches that legitimately
    skip; it is not room for a section to fall out. */
-const FLOOR_ASSERTIONS = 973, FLOOR_SECTIONS = 70;
+const FLOOR_ASSERTIONS = 1020, FLOOR_SECTIONS = 71;
 ok(pass + fail - offMachine >= FLOOR_ASSERTIONS,
   `the suite ran ${pass + fail - offMachine} assertions everywhere (${pass + fail} here, ${offMachine} of them needing files that live off this repo), below its floor of ${FLOOR_ASSERTIONS}: a section has stopped running`);
 ok(sections >= FLOOR_SECTIONS,

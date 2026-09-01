@@ -157,10 +157,29 @@ function provRate(days){return days>=21?1:days>=14?0.75:days>=8?0.5:days>=4?0.25
                         valued with it, exactly as the desk always has, because that line runs
                         before the rate is recomputed */
 function daysBetween(today,d){return Math.floor((today-new Date(d))/86400000+1e-9);}
+/* ONE RULE FOR AN AGE, AND NOW ONE COPY OF IT (v445). The desk has had dAge since v407 and the
+   engine has not, so every age computed inside the walk used the raw signed difference. Writing a
+   second floor inside this module would be the drift this repo keeps folding against, so the rule
+   moves HERE and the desk's dAge becomes a one-line wrapper over it.
+   WHAT IT IS FOR, kept from the desk's own comment. A date ahead of the clock is either a mistyped
+   row or a clock stepped back; v406 floored four surfaces and left four, so the same money read
+   -16d on Today and 0d out on Forward. AND AN ABSENT DATE IS NOT A DAY COUNT (v425): dbet(undefined)
+   is NaN, Math.max(0,NaN) is NaN, and NaN printed as NaNd ago and compared false against every
+   threshold, so a party with an undated order fell out of the overdue tile rather than showing
+   wrong. null is the trap and it is worse than undefined, because new Date(null) is the epoch and a
+   finiteness test waves twenty thousand days straight through; an undated row on this book stores
+   null, not undefined, so that is the case that actually occurs.
+   It takes a date or a day count, because half the sites hold one and half the other. */
+function dayAge(today,d){
+  if(d===null||d===undefined||d==='')return 0;
+  const n=(typeof d==='number')?d:daysBetween(today,d);
+  return Number.isFinite(n)?Math.max(0,n):0;
+}
 function walk(I){
   const _S=I.sales||[], _B=I.purchases||[];
   const today=(I.today instanceof Date)?I.today:new Date(I.today);
-  const dbet=d=>daysBetween(today,d);
+  const dbet=d=>daysBetween(today,d);          /* SIGNED: for a countdown to a future date */
+  const dage=d=>dayAge(today,d);               /* FLOORED: for how long ago, which is what a ladder eats */
   const W={};
   W.receivedPO=_B.filter(p=>!p.defaulted&&poRecvUnits(p)>0.0001);
   W.defaultPO=_B.filter(p=>p.defaulted);
@@ -196,12 +215,12 @@ function walk(I){
   /* AR = advance only: pending unpaid-and-undelivered is not a receivable */
   W.arList=_S.filter(s=>txAdvance(s)>0.009);
   W.arGross=W.arList.reduce((a,s)=>a+txAdvance(s),0);
-  W.ar=Math.max(0,+W.arList.reduce((a,s)=>a+txAdvance(s)*(1-provRate(dbet(s.date))),0).toFixed(2)); // net of provisioning
+  W.ar=Math.max(0,+W.arList.reduce((a,s)=>a+txAdvance(s)*(1-provRate(dage(s.date))),0).toFixed(2)); // net of provisioning
   W.advTotal=W.arGross;
   W.defUnits=+_S.reduce((a,s)=>a+txDeferUnits(s),0).toFixed(2);
   const _sr=I.isSalt?(I.supplierReceivable||null):null;
   W.supRecovGross=_sr?_sr.amount:0;
-  const srDays=_sr?dbet(_sr.since):0;
+  const srDays=_sr?dage(_sr.since):0;
   W.supRecovNet=(_sr&&_sr.status==='writtenOff')?0
     :+(W.supRecovGross*(1-provRate(srDays))).toFixed(2);
   W.cogs=W.pricedSales.reduce((a,s)=>a+(s.qty-txPendUnitsRaw(s))*(s.cost!=null?s.cost:W.wavgBuy),0);  // no cost against salt not yet moved
@@ -446,7 +465,7 @@ function ovKey(t){return (t.customer||t.supplier)+'|'+t.date+'|'+t.total;}
 return {txPrice:txPrice,txPaid:txPaid,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:txEffDeliv,txAdvance:txAdvance,
         txDeferUnits:txDeferUnits,txPendUnits:txPendUnits,txPendUnitsRaw:txPendUnitsRaw,txPendRM:txPendRM,txStat:txStat,txDates:txDates,
         poRecvUnits:poRecvUnits,poCash:poCash,poLive:poLive,poOwed:poOwed,poRate:poRate,poOpenUnits:poOpenUnits,provRate:provRate,
-        daysBetween:daysBetween,walk:walk,coverStats:coverStats,commitments:commitments,
+        daysBetween:daysBetween,dayAge:dayAge,walk:walk,coverStats:coverStats,commitments:commitments,
         ledgerRow:ledgerRow,openable:openable,ovKey:ovKey,attributionOf:attributionOf,correctionFaults:correctionFaults,refundOnCancel:refundOnCancel,
         CORRECTABLE:CORRECTABLE,CORRECT_REQUIRED:CORRECT_REQUIRED,CORRECT_NUM_POS:CORRECT_NUM_POS,
         CORRECT_NUM_NN:CORRECT_NUM_NN,CORRECT_DATE:CORRECT_DATE,CORRECT_BOOL:CORRECT_BOOL,
