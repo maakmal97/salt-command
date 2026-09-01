@@ -4794,6 +4794,54 @@ section("v451: the Ledger draws a lot's trail");
   } finally { for (const f of [B1, M1]) { try { rm1(f); } catch (e) { /* best effort */ } } }
 }
 
+
+section("v452: the month chart draws the table");
+{
+  /* The Financials part draws one block per product, so the stub keys by canvas id AND product.
+     drawFinCharts kept its own accumulators over pricedSales: a row partly pending counted its
+     whole total and quantity where finRows nets the pending tail, and the labels carried no year.
+     Two fixture sales, one half pending in August and one in the January after, rendered through
+     booksync into a scratch master with a recording Chart, and the datasets read back. */
+  const { openMaster: om2 } = await import("../tools/payload.mjs");
+  const { readFileSync: rf2, writeFileSync: wf2, unlinkSync: rm2 } = await import("node:fs");
+  const { execSync: ex2 } = await import("node:child_process");
+  const { join: j2 } = await import("node:path");
+  const bk2 = JSON.parse(rf2(j2(REPO, "ledger", "book.json"), "utf8"));
+  const cus2 = bk2.sales.find((x) => x.customer && x.date).customer;
+  bk2.sales.push({ rid: "f8", date: "2026-08-12", customer: cus2, product: "salt", qty: 4, total: 400, cost: 64, cash: 200, deliveredQty: 2 });
+  bk2.sales.push({ rid: "f9", date: "2027-01-05", customer: cus2, product: "salt", qty: 2, total: 200, cost: 64, cash: 200, deliveredQty: 2 });
+  const B2 = j2(REPO, "test", ".v452.json"), M2 = j2(REPO, "test", ".v452.html");
+  wf2(B2, JSON.stringify(bk2, null, 1)); wf2(M2, rf2(j2(REPO, "master", "salt_command.html"), "utf8"));
+  ex2("node tools/booksync.mjs --sync", { cwd: REPO, env: { ...process.env, SALT_BOOK: B2, SALT_MASTER: M2 }, stdio: "pipe" });
+  const STUB = "window.__charts={};window.Chart=function(c,cfg){var id=(c&&c.canvas&&c.canvas.id)||(c&&c.id)||'?';window.__charts[id+':'+PROD]=cfg;this.destroy=function(){};};window.Chart.register=function(){};";
+  const READ = "JSON.stringify((function(){var c=window.__charts['finMonthChart:salt'];if(!c)return null;var d=c.data;return {labels:d.labels,rev:d.datasets[0].data,mar:d.datasets[1].data,names:d.datasets.map(function(x){return x.label;})};})())";
+  const TABLE = "JSON.stringify(finRows().map(function(r){return [r[0],+r[1].rev.toFixed(2),+(r[1].rev-r[1].cogs).toFixed(2)];}))";
+  const OLD = "JSON.stringify((function(){var mo={};pricedSales.filter(function(x){return !x.cancelled&&x.date&&txPendUnits(x)<x.qty-0.009;}).forEach(function(x){var k=x.date.slice(0,7);mo[k]=(mo[k]||0)+x.total;});return mo;})())";
+  try {
+    const { w } = await om2(M2);
+    w.eval(STUB + "setProd('salt');recompute();switchTab('financials');");
+    const ch = JSON.parse(w.eval(READ)), tb = JSON.parse(w.eval(TABLE)), old = JSON.parse(w.eval(OLD));
+    ok(ch && ch.names[0] === "Revenue" && ch.names[1] === "Gross margin" && ch.rev.length === tb.length && tb.length >= 2,
+      `the month chart draws one bar pair per finRows month (${ch && ch.rev.length} against ${tb.length})`);
+    const off = tb.filter(([k, rev, mar], i) => ch.rev[i] !== rev || ch.mar[i] !== mar).map(([k, rev, mar], i) => k);
+    ok(ch && off.length === 0, `and every month's revenue and gross margin equal the table's (off: ${off.join(", ") || "none"})`);
+    const iA = tb.findIndex(([k]) => k === "2026-08");
+    ok(ch && iA >= 0 && Math.abs(old["2026-08"] - ch.rev[iA] - 200) < 0.005,
+      `a sale half pending draws its delivered half: RM ${ch && ch.rev[iA]} where the old accumulator counted RM ${old["2026-08"]}`);
+    ok(ch && ch.labels.length === tb.length && ch.labels.every((l) => /^[A-Z][a-z]{2,3} \d\d$/.test(l)) && ch.labels[tb.findIndex(([k]) => k === "2027-01")] === "Jan 27",
+      `when the months span two years every label carries the year (${ch && ch.labels.join(", ")})`);
+  } finally { for (const f of [B2, M2]) { try { rm2(f); } catch (e) { /* best effort */ } } }
+  /* And on the book as it stands, one year, the labels stay bare. */
+  {
+    const { w } = await om2(join(REPO, "master", "salt_command.html"));
+    w.eval(STUB + "setProd('salt');recompute();switchTab('financials');");
+    const ch = JSON.parse(w.eval(READ)), tb = JSON.parse(w.eval(TABLE));
+    const years = new Set(tb.map(([k]) => k.slice(0, 4)));
+    ok(ch && years.size === 1 && ch.labels.length === tb.length && ch.labels.every((l) => /^[A-Z][a-z]{2,3}$/.test(l)),
+      `within one year the labels are the bare months (${ch && ch.labels.join(", ")})`);
+  }
+}
+
 /* ---- done ----------------------------------------------------------------------- */
 
 section("Round 7: the states no suite check had ever rendered");
@@ -5028,7 +5076,7 @@ section("Round 7: the states no suite check had ever rendered");
    the live count was 879, so thirty-nine assertions could have vanished under a guard written to
    stop exactly that. The margin is four, which covers the book-dependent branches that legitimately
    skip; it is not room for a section to fall out. */
-const FLOOR_ASSERTIONS = 1089, FLOOR_SECTIONS = 77;
+const FLOOR_ASSERTIONS = 1094, FLOOR_SECTIONS = 78;
 ok(pass + fail - offMachine >= FLOOR_ASSERTIONS,
   `the suite ran ${pass + fail - offMachine} assertions everywhere (${pass + fail} here, ${offMachine} of them needing files that live off this repo), below its floor of ${FLOOR_ASSERTIONS}: a section has stopped running`);
 ok(sections >= FLOOR_SECTIONS,
