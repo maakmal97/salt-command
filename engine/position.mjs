@@ -98,6 +98,20 @@ function poCash(p){
 }
 function poLive(p){return !p.pending&&!p.defaulted&&!p.cancelled;}   /* v417 */
 function poRate(p){return p.qty>0?p.total/p.qty:0;}
+/* ====== WHAT A LOT STILL OWES ITS SUPPLIER (v438) ===============================
+   FIVE readers answered this and each excluded a DIFFERENT subset of {pending, cancelled,
+   defaulted}, so the desk could tell the owner three different figures for one question:
+     billsOut          pending, cancelled          (not defaulted)
+     supBills, sCash   pending, defaulted          (not cancelled), and read p.cash raw
+     the forecast      pending                     (neither of the others)
+     lots in transit   poLive                      (the only one that was right)
+   On the book as it stands all of them read RM 0, which is why nothing had shown: the
+   divergence is latent, and a latent divergence in a payable is what put five settled lots and
+   RM 5,450 in front of the owner at v408. poLive is already the rule for whether a lot is live;
+   what it owes is that rule and a subtraction, and it lives here now.
+   THE FLOOR AT ZERO IS PART OF THE RULE. supBills and sCash had no Math.max, so an overpaid lot
+   subtracted from what the other lots owed and quietly reduced the total. */
+function poOwed(p){return poLive(p)?Math.max(0,+(+p.total-poCash(p)).toFixed(2)):0;}
 /* v417: without the cancelled test this returned the WHOLE quantity as still to arrive, because
    poRecvUnits reads nothing received and the subtraction then has nothing to take away.
    v422: AND A DEFAULTED LOT IS NOT STILL TO ARRIVE EITHER, for the same arithmetic and a plainer
@@ -372,7 +386,7 @@ function ovKey(t){return (t.customer||t.supplier)+'|'+t.date+'|'+t.total;}
 
 return {txPrice:txPrice,txPaid:txPaid,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:txEffDeliv,txAdvance:txAdvance,
         txDeferUnits:txDeferUnits,txPendUnits:txPendUnits,txPendUnitsRaw:txPendUnitsRaw,txPendRM:txPendRM,txStat:txStat,txDates:txDates,
-        poRecvUnits:poRecvUnits,poCash:poCash,poLive:poLive,poRate:poRate,poOpenUnits:poOpenUnits,provRate:provRate,
+        poRecvUnits:poRecvUnits,poCash:poCash,poLive:poLive,poOwed:poOwed,poRate:poRate,poOpenUnits:poOpenUnits,provRate:provRate,
         daysBetween:daysBetween,walk:walk,coverStats:coverStats,commitments:commitments,
         ledgerRow:ledgerRow,openable:openable,ovKey:ovKey,attributionOf:attributionOf,correctionFaults:correctionFaults,
         CORRECTABLE:CORRECTABLE,CORRECT_REQUIRED:CORRECT_REQUIRED,CORRECT_NUM_POS:CORRECT_NUM_POS,

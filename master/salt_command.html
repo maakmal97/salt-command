@@ -1748,6 +1748,20 @@ function poCash(p){
 }
 function poLive(p){return !p.pending&&!p.defaulted&&!p.cancelled;}   /* v417 */
 function poRate(p){return p.qty>0?p.total/p.qty:0;}
+/* ====== WHAT A LOT STILL OWES ITS SUPPLIER (v438) ===============================
+   FIVE readers answered this and each excluded a DIFFERENT subset of {pending, cancelled,
+   defaulted}, so the desk could tell the owner three different figures for one question:
+     billsOut          pending, cancelled          (not defaulted)
+     supBills, sCash   pending, defaulted          (not cancelled), and read p.cash raw
+     the forecast      pending                     (neither of the others)
+     lots in transit   poLive                      (the only one that was right)
+   On the book as it stands all of them read RM 0, which is why nothing had shown: the
+   divergence is latent, and a latent divergence in a payable is what put five settled lots and
+   RM 5,450 in front of the owner at v408. poLive is already the rule for whether a lot is live;
+   what it owes is that rule and a subtraction, and it lives here now.
+   THE FLOOR AT ZERO IS PART OF THE RULE. supBills and sCash had no Math.max, so an overpaid lot
+   subtracted from what the other lots owed and quietly reduced the total. */
+function poOwed(p){return poLive(p)?Math.max(0,+(+p.total-poCash(p)).toFixed(2)):0;}
 /* v417: without the cancelled test this returned the WHOLE quantity as still to arrive, because
    poRecvUnits reads nothing received and the subtraction then has nothing to take away.
    v422: AND A DEFAULTED LOT IS NOT STILL TO ARRIVE EITHER, for the same arithmetic and a plainer
@@ -2022,7 +2036,7 @@ function ovKey(t){return (t.customer||t.supplier)+'|'+t.date+'|'+t.total;}
 
 return {txPrice:txPrice,txPaid:txPaid,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:txEffDeliv,txAdvance:txAdvance,
         txDeferUnits:txDeferUnits,txPendUnits:txPendUnits,txPendUnitsRaw:txPendUnitsRaw,txPendRM:txPendRM,txStat:txStat,txDates:txDates,
-        poRecvUnits:poRecvUnits,poCash:poCash,poLive:poLive,poRate:poRate,poOpenUnits:poOpenUnits,provRate:provRate,
+        poRecvUnits:poRecvUnits,poCash:poCash,poLive:poLive,poOwed:poOwed,poRate:poRate,poOpenUnits:poOpenUnits,provRate:provRate,
         daysBetween:daysBetween,walk:walk,coverStats:coverStats,commitments:commitments,
         ledgerRow:ledgerRow,openable:openable,ovKey:ovKey,attributionOf:attributionOf,correctionFaults:correctionFaults,
         CORRECTABLE:CORRECTABLE,CORRECT_REQUIRED:CORRECT_REQUIRED,CORRECT_NUM_POS:CORRECT_NUM_POS,
@@ -3814,6 +3828,7 @@ function poOpenUnits(p){return POSITION_ENGINE.poOpenUnits(p);}   // still to ar
    books the whole agreed value as spent. That is the v146 leak: the 100 unit buy took
    RM4,700 out of a bank it had never touched. */
 function poCash(p){return POSITION_ENGINE.poCash(p);}
+function poOwed(p){return POSITION_ENGINE.poOwed(p);}
 /* a lot that is genuinely in the pipeline: agreed-only and defaulted lots are neither */
 function poLive(p){return POSITION_ENGINE.poLive(p);}
 function provRate(days){return POSITION_ENGINE.provRate(days);} // R2 aged provisioning ladder: 0-3d 0%, 4-7 25%, 8-13 50%, 14-20 75%, 21+ 100%
@@ -5756,7 +5771,11 @@ function cashFlow(){
     +((typeof supplierReceivable!=='undefined'&&supplierReceivable&&supplierReceivable.status!=='writtenOff'&&supplierReceivable.status!=='closed')
         ?supplierReceivable.amount*(1-provRate(dbet(supplierReceivable.since))):0)
   ).toFixed(2);                                               // net of provisioning, so it is what you can reasonably expect
-  const billsOut=+purchases.reduce((a,p)=>a+((p.pending||p.cancelled)?0:Math.max(0,(+p.total)-poCash(p))),0).toFixed(2);   // a pending lot is not a bill: nothing has been bought yet. v417: nor is a cancelled one, or cancelling an unpaid lot would BOOK a payable rather than remove one
+  /* v438: one payable rule. This line had two of the three legs (a pending lot has bought nothing;
+     v417 added cancelled, or cancelling an unpaid lot would BOOK a payable rather than remove one)
+     and never had the third: a DEFAULTED lot is not a bill either, because you do not pay a supplier
+     for goods they never sent. poLive already carries all three. */
+  const billsOut=+purchases.reduce((a,p)=>a+poOwed(p),0).toFixed(2);
   const refundsOut=+customerRefunds.filter(r=>!r.paidOn).reduce((a,r)=>a+ +r.amount,0).toFixed(2);   // a paid refund is no longer promised away
   const dueOut=+(billsOut+refundsOut).toFixed(2);
   return {inRM,outRM,inj,spend,refPaid,net,onHand:null,dueIn,dueOut,billsOut,refundsOut,
@@ -5862,7 +5881,10 @@ function tabOverview(){
      book only. Without this guard an agreed order books a payable for salt never bought. */
   const _pP=pPurch(PROD);   // v385: scoped. 18 lots on the book, 3 of them oil's
   const itUnits=+_pP.filter(p=>!p.defaulted&&!p.pending).reduce((a,p)=>a+poOpenUnits(p),0).toFixed(2);   // the balance still to arrive, not the whole lot
-  const supBills=+_pP.filter(p=>p.status!=='paid'&&!p.defaulted&&!p.pending).reduce((a,p)=>a+(p.total-(p.cash||0)),0).toFixed(2);
+  /* v438: was status!=='paid' && !defaulted && !pending, over p.cash read raw and with no floor at
+     zero, so a cancelled lot was billed, a paid-by-status lot was measured by a field it does not
+     carry, and an overpaid one subtracted from what the others owed. */
+  const supBills=+_pP.reduce((a,p)=>a+poOwed(p),0).toFixed(2);
   const uncollected=+(revTotal-revCollected).toFixed(2);
   /* v385: SCOPED, the same fault as defRows above and for the same reason. Latest ledger
      read the WHOLE ledger under a product badge, so the oil tab's three most recent orders
@@ -9221,11 +9243,14 @@ function tabReceivables(){
   // Cash you owe suppliers: bills for salt delivered to you, unpaid.
   /* an unpaid lot is a bill whether or not it has landed: excluding in-transit hid a
      real payable, and the panel opposite was simultaneously calling it "paid for" */
-  const sCash=_B.filter(p=>p.status!=='paid'&&!p.defaulted&&!p.pending).map(p=>({id:p.supplier,date:p.date,rm:+(p.total-(p.cash||0)).toFixed(2)})).sort(oldest);
+  /* v438: the same rule as supBills and billsOut, which is the point: it was a third spelling. */
+  const sCash=_B.filter(p=>poOwed(p)>0.009).map(p=>({id:p.supplier,date:p.date,rm:poOwed(p)})).sort(oldest);
   const sCashBody=sCash.map(p=>`<tr><td class="l mono">${ID(p.id)}</td><td class="l">${p.date}</td><td>${fmt0(p.rm)}</td></tr>`).join('');
   const sCashTot=+sCash.reduce((a,p)=>a+p.rm,0).toFixed(2);
   // Salt suppliers owe you: paid (or part-paid) but not yet received (in transit).
-  const sSalt=_B.filter(p=>poOpenUnits(p)>0.0001&&!p.defaulted&&!p.pending)
+  /* v438: a fourth spelling of the same predicate. poOpenUnits already answers nothing for a
+     cancelled or defaulted lot (v417, v422), so this moves no figure; it removes the disagreement. */
+  const sSalt=_B.filter(p=>poLive(p)&&poOpenUnits(p)>0.0001)
     .map(p=>({id:p.supplier,date:p.date,k:poOpenUnits(p),rm:+(poOpenUnits(p)*poRate(p)).toFixed(2),paid:poCash(p)>=p.total-0.009})).sort(oldest);
   const sSaltBody=sSalt.map(p=>`<tr><td class="l mono">${ID(p.id)}</td><td class="l">${p.date}</td><td>${units(p.k)}</td><td>${fmt0(p.rm)}</td></tr>`).join('');
   const sSaltUnits=+sSalt.reduce((a,p)=>a+p.k,0).toFixed(2);
@@ -11433,7 +11458,7 @@ function forecast(o){
 
   /* --- salt arriving --- */
   const lots=pPurch(PROD).filter(p=>poLive(p)&&poOpenUnits(p)>0.0001)
-    .map(p=>({day:0,kg:poOpenUnits(p),who:p.supplier,label:'in transit',rm:Math.max(0,p.total-poCash(p))}));
+    .map(p=>({day:0,kg:poOpenUnits(p),who:p.supplier,label:'in transit',rm:poOwed(p)}));   /* v438: this one was already right; it now says so in the shared words */
   if(buy)lots.push({day:Math.max(0,+buy.onDay||0),kg:+buy.qty,who:buy.who||((quoteFor(PROD)||{}).supplier||''),
                     label:'the buy on this part',rm:+(+buy.qty*+buy.rate).toFixed(2)});
 
@@ -11449,7 +11474,10 @@ function forecast(o){
   /* --- cash out --- */
   const cout=[];
   customerRefunds.filter(r=>!r.paidOn).forEach(r=>cout.push({day:0,rm:+r.amount,who:r.party,label:'refund you owe'}));
-  pPurch(PROD).forEach(p=>{if(p.pending)return;const b=+(p.total-poCash(p)).toFixed(2);
+  /* v438: this excluded only pending, so a cancelled or defaulted lot with an unpaid balance was
+     forecast as cash leaving the bank on day 0. It is the reader that mattered most: the other two
+     put a wrong number on a card, this one moved the dry-out day. */
+  pPurch(PROD).forEach(p=>{const b=poOwed(p);
     if(b>0.009)cout.push({day:0,rm:b,who:p.supplier,label:'supplier bill'});});
   if(buy)cout.push({day:Math.max(0,buy.payDay!=null?+buy.payDay:(+buy.onDay||0)),
                     rm:+(+buy.qty*+buy.rate).toFixed(2),who:buy.who||((quoteFor(PROD)||{}).supplier||''),label:'the buy on this part'});

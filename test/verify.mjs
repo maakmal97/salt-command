@@ -3455,8 +3455,12 @@ section("v417: a cancelled lot counts nowhere in stock, and is not a bill");
     (await import("node:path")).join(REPO, "master", "salt_command.html"), "utf8");
   ok(/t\.type==='BUY'&&!t\.cancelled/.test(src),
     "the ledger strip excludes a cancelled lot from the BUY half, as it already did from the SELL half");
-  ok(/\(p\.pending\|\|p\.cancelled\)\?0:Math\.max\(0,\(\+p\.total\)-poCash\(p\)\)/.test(src),
+  /* v438: this READ THE SOURCE for a literal, which is one of the two forms round ten ruled out,
+     and it proved it: routing the line through poOwed changed nothing about its behaviour and the
+     assertion went red anyway, because the bytes it was matching had moved. It runs the rule now. */
+  ok(E.poOwed(lot({ cancelled: true })) === 0,
     "and cancelling an unpaid lot removes a payable rather than booking one");
+  ok(E.poOwed(lot({})) === 1250, "while an open unpaid lot still owes its whole total, so it is not a blanket zero");
 }
 
 
@@ -3946,6 +3950,88 @@ section("v436: one ruler decides whether a correction is legal, and all four rea
   }
   ok(seen > 100, `swept ${seen} rows on the live book`);
   ok(walled === 0, `and a note correction is refused on none of them (${walled}), so the gate is a rule and not a wall`);
+}
+
+
+section("v438: one rule for what a lot owes its supplier, read by every reader of it");
+{
+  /* ROUND TEN. FIVE readers answered this question and each excluded a DIFFERENT subset of
+     {pending, cancelled, defaulted}, so the desk could put three different figures in front of the
+     owner for one question:
+       billsOut          pending, cancelled          (not defaulted)
+       supBills, sCash   pending, defaulted          (not cancelled), over p.cash read raw
+       the forecast      pending                     (neither of the others)
+       lots in transit   poLive                      (the only one that was right)
+     On the book as it stands every one of them reads RM 0, which is why nothing had shown. THE
+     CHECK THEREFORE BUILDS THE STATES, because a latent divergence in a payable is what put five
+     settled lots and RM 5,450 in front of the owner at v408. */
+  const { default: PEa } = await import("../engine/position.mjs");
+  const L = (o) => Object.assign({ date: "2026-08-20", qty: 25, total: 1250, supplier: "SF6-KLC" }, o);
+
+  /* the rule itself, in both directions, one leg at a time */
+  ok(PEa.poOwed(L({})) === 1250, "an open lot with nothing paid owes its whole total");
+  ok(PEa.poOwed(L({ cash: 400 })) === 850, "one part paid owes the remainder");
+  ok(PEa.poOwed(L({ status: "paid" })) === 0, "one booked paid with no cash field owes nothing: poCash reads the status");
+  ok(PEa.poOwed(L({ pending: true })) === 0, "an agreed-only lot owes nothing: nothing has been bought yet");
+  ok(PEa.poOwed(L({ cancelled: true })) === 0, "a cancelled lot owes nothing, or cancelling would BOOK a payable");
+  ok(PEa.poOwed(L({ defaulted: true })) === 0, "and a defaulted lot owes nothing: you do not pay for goods never sent");
+  ok(PEa.poOwed(L({ cash: 1400 })) === 0, "an OVERPAID lot owes nothing rather than a negative, which used to reduce what the others owed");
+
+  /* and the desk agrees with it, on a book carrying exactly the states that divided the readers */
+  const { openMaster: omA } = await import("../tools/payload.mjs");
+  const { readFileSync: rfA, writeFileSync: wfA, unlinkSync: rmA } = await import("node:fs");
+  const { execSync: exA } = await import("node:child_process");
+  const { join: jA } = await import("node:path");
+  const bkA = JSON.parse(rfA(jA(REPO, "ledger", "book.json"), "utf8"));
+  bkA.purchases = bkA.purchases.concat([
+    { date: "2026-08-20", supplier: "SF6-KLC", qty: 25, total: 1250, cash: 0, cancelled: true, rid: "z1" },
+    { date: "2026-08-20", supplier: "SF6-KLC", qty: 25, total: 1300, cash: 0, defaulted: true, rid: "z2" },
+    { date: "2026-08-20", supplier: "SF6-KLC", qty: 25, total: 1400, cash: 200, rid: "z3" },
+  ]);
+  const BA = jA(REPO, "test", ".v438.json"), MA = jA(REPO, "test", ".v438.html");
+  wfA(BA, JSON.stringify(bkA, null, 1));
+  wfA(MA, rfA(jA(REPO, "master", "salt_command.html"), "utf8"));
+  exA("node tools/booksync.mjs --sync", { cwd: REPO, env: { ...process.env, SALT_BOOK: BA, SALT_MASTER: MA }, stdio: "pipe" });
+  const { w: wA } = await omA(MA);
+  wA.eval("setProd('salt');recompute();");
+
+  /* RM 1,200 is the ONLY honest answer: z3 alone owes anything. z1 is cancelled and z2 defaulted,
+     and each was billed by some readers and not others before this fold. */
+  const WANT = 1200;
+  ok(+wA.eval("poOwed(purchases.find(function(p){return p.rid==='z1';}))") === 0, "the desk says a cancelled lot owes nothing");
+  ok(+wA.eval("poOwed(purchases.find(function(p){return p.rid==='z2';}))") === 0, "and a defaulted one owes nothing");
+  ok(+wA.eval("poOwed(purchases.find(function(p){return p.rid==='z3';}))") === WANT, "and the one real bill owes RM " + WANT);
+
+  wA.eval("switchTab('financials');");
+  const billsOut = +wA.eval("+purchases.reduce(function(a,p){return a+poOwed(p);},0).toFixed(2)");
+  ok(billsOut === WANT, `the bills outstanding line reads RM ${billsOut}, which must be RM ${WANT}`);
+
+  /* the two cards, read off the rendered pane rather than recomputed here */
+  /* TWO CARDS, TWO DIFFERENT READERS, READ OFF THE RENDERED PANE. The first version of this
+     scraped `.kpi` matching /Suppliers/ on the part `inventory` and got an empty string, so it
+     failed loudly rather than passing on nothing; the Suppliers card is on the Overview and the
+     Order book's own line is worded `You owe, in cash`. Both are named here so a rename fails
+     rather than silently matching zero elements. */
+  const card = (part, needle) => {
+    wA.eval("switchTab('" + part + "');");
+    const t = wA.eval("(function(){var k=[].slice.call(document.querySelectorAll('.sec.on .kpi')).filter(function(x){return " + needle + ".test(x.textContent);})[0];return k?k.textContent.replace(/[ \\t\\n\\r]+/g,' ').trim():'';})()");
+    return t;
+  };
+  const owe = card("receivables", "/You owe, in cash/");
+  ok(owe !== "", "the Order book carries a `You owe, in cash` card at all, so the check below is not reading an empty string");
+  ok(/1,200|1200/.test(owe), `and it says RM 1,200 of supplier bills (${owe.slice(0, 96)})`);
+
+  const sup = card("overview", "/Suppliers/");
+  ok(sup !== "", "the Overview carries a Suppliers card at all");
+  ok(/1,200|1200/.test(sup), `and it says RM 1,200 of bills unpaid (${sup.slice(0, 96)})`);
+
+  /* THE FORECAST IS THE READER THAT MATTERED MOST: the other two put a wrong number on a card,
+     this one moved the day the cash runs out. */
+  const cout = JSON.parse(wA.eval("JSON.stringify((forecast({days:30})||{}).cout||[])"));
+  const bills = cout.filter((c) => /supplier bill/.test(c.label || ""));
+  const billRM = +bills.reduce((a, c) => a + (+c.rm || 0), 0).toFixed(2);
+  ok(billRM === WANT, `the forecast drains RM ${billRM} of supplier bills, which must be RM ${WANT}: it used to drain the cancelled and defaulted lots too`);
+  for (const x of [BA, MA]) { try { rmA(x); } catch (e) { /* best effort */ } }
 }
 
 /* ---- done ----------------------------------------------------------------------- */
