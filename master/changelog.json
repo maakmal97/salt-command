@@ -1,5 +1,16 @@
 [
  {
+  "v": "v418",
+  "d": "01 Sep 2026",
+  "t": "BACK TO PENDING ON A LOT BOOKED A PAYABLE FOR SALT NEVER BOUGHT, BECAUSE THE PAYLOAD WAS ONE FIELD SHORT",
+  "n": [
+   "<b>FOLD 4 OF ROUND NINE, AND THE SMALLEST FIX YET: ONE FIELD.</b> A lot says nothing has happened yet with <b>pending</b>, and the panel's payload zeroed the cash and the received quantity without it. So the row stayed not pending: the walk read nothing paid while the total still stood, and the lot became an outstanding BILL. Restating a settled RM 750 lot booked a RM 750 payable for salt never bought, and on p001 the measured figure was RM 800. The fold and the walk both already honoured the flag; only the payload was short of it.",
+   "<b>THE SALE SIDE IS DELIBERATELY DIFFERENT AND STAYS SO.</b> A sale has no pending flag: it IS pending when nothing has been paid and nothing has moved, which is why that branch clears the settlement in kind instead. The suite asserts both branches so the two cannot be made the same by someone tidying.",
+   "<b>THE ASSERTION DRIVES THE CHIP, WHICH IS THE THIRD TIME THIS MONTH THAT DISTINCTION HAS MATTERED.</b> The first version folded a payload typed into the test, which proves only that the FOLD honours pending: dropping the flag from the panel left it green and failed a source grep alone. It taps the chip now and folds whatever the chip queued, and the same mutation fails with the figure in the message, RM 800 of bill on a RM 800 lot.",
+   "<b>AND A PROCESS FAULT WORTH RECORDING.</b> A mutation script threw on its reporting line after writing the mutated master and before its restore, so the master sat mutated while I read a failure I had misattributed to the regex. The restore is inside a finally now. The tell was the assertion failing for a reason that made no sense, which is worth more than the fix: an unexplained failure is a fact about the world, not noise to route around. 801 assertions from 794."
+  ]
+ },
+ {
   "v": "v417",
   "d": "01 Sep 2026",
   "t": "A CANCELLED LOT COUNTED EVERYWHERE, INCLUDING AS A BILL FOR SALT NOBODY WILL SEND",

@@ -3172,6 +3172,45 @@ section("v413: a lot is not measured like a sale");
   applyAmend(d2, { kind: "Cancellation", date: "2026-08-31" }, "BUY", null);
   ok(d2.cancelled === true, "cancelling a lot that received nothing actually marks it cancelled, which it never did");
   ok(d2.status !== "paid", "and does not invent a payment state on the way out");
+
+  /* v418: "BACK TO PENDING" ON A LOT MUST SAY pending. A lot says nothing has happened yet with
+     that flag, and the payload zeroed cash and receivedQty without it, so the row stayed not
+     pending: poCash read nothing paid while the total still stood, and the lot became an
+     outstanding BILL. Restating a settled RM 750 lot booked a RM 750 payable for salt never
+     bought. Asserted by FOLDING what the panel queues, not by reading the payload. */
+  const Eng = (await import("../engine/position.mjs")).default;
+  const bill = (r) => (r.pending || r.cancelled) ? 0 : Math.max(0, (+r.total) - Eng.poCash(r));
+  const settledLot = { date: "2026-07-08", qty: 12.5, total: 750, supplier: "SF6-KLC", status: "paid", rid: "pB1" };
+  const asPanel = JSON.parse(JSON.stringify(settledLot));
+  applyAmend(asPanel, { kind: "Correction", date: "2026-09-01",
+    fields: { cash: 0, receivedQty: 0, pending: true } }, "BUY", null);
+  ok(asPanel.pending === true, "restating a lot to pending sets the flag the walk reads");
+  ok(bill(asPanel) === 0, "so it books no payable, where the old payload booked RM " + (+settledLot.total));
+  ok(Eng.poRecvUnits(asPanel) === 0 && Eng.poCash(asPanel) === 0, "and it holds no stock and no payment");
+  const short = JSON.parse(JSON.stringify(settledLot));
+  applyAmend(short, { kind: "Correction", date: "2026-09-01", fields: { cash: 0, receivedQty: 0 } }, "BUY", null);
+  ok(bill(short) === 750, "and the payload WITHOUT pending still books the bill, so this asserts the flag and not the zeroes");
+  /* AND THE PANEL ITSELF IS DRIVEN, because folding a payload typed here proves only that the
+     FOLD honours pending. Dropping the flag from the panel left the behavioural assertion above
+     green and failed only a source grep, which is the weak form this review keeps retiring. The
+     chip is tapped and whatever it queues is folded. */
+  const { openMaster: om2 } = await import("../tools/payload.mjs");
+  const { w: w2 } = await om2();
+  w2.eval("setProd('salt');recompute();");
+  const lotRid = JSON.parse(w2.eval("JSON.stringify((purchases.find(p=>p.status==='paid'&&p.cash==null&&p.receivedQty==null&&!p.pending&&!p.defaulted)||{}).rid||null)"));
+  if (lotRid) {
+    w2.eval("ledEdit(" + JSON.stringify(lotRid) + ",'BUY');");
+    w2.eval("updSet('pending',null,null);");
+    const qn = +w2.eval("queue.length");
+    w2.eval("updQueue();");
+    ok(+w2.eval("queue.length") === qn + 1, "tapping Back to pending on a lot queues one entry");
+    const qp = JSON.parse(w2.eval("JSON.stringify((queue[queue.length-1]||{}).payload||{})"));
+    const target = JSON.parse(w2.eval("JSON.stringify(purchases.find(p=>p.rid===" + JSON.stringify(lotRid) + "))"));
+    applyAmend(target, { kind: "Correction", date: "2026-09-01", fields: qp.fields || {} }, "BUY", null);
+    ok(bill(target) === 0,
+      "and folding WHAT THE CHIP QUEUED books no payable (bill RM " + bill(target) + ", total RM " + target.total + ")");
+    ok(target.pending === true, "because the chip queued the pending flag itself");
+  } else ok(true, "no settled landed lot to drive the pending chip on (skipped)");
 }
 
 
