@@ -1967,6 +1967,56 @@ function attributionOf(row,partyKey){
   if(row.ref)return {assoc:row.ref,stream:'R3',downstream:null};
   return {assoc:null,stream:null,downstream:null};
 }
+/* ====== ONE RULER FOR WHETHER A CORRECTION IS LEGAL (v436) ======================
+   FOUR readers decide this and only two ever held a rule. The drafter refused at the gate,
+   tools/fold.mjs refused again in --plan with a rule of its own, applyAmend wrote whatever it
+   was handed, and the desk's ovAmend PREVIEWED whatever it was handed. So the row editor drew a
+   cancelled-and-delivered order as done, and the queue then refused the very edit the desk had
+   just shown the owner as applied. A desk and a fold that disagree about what an edit does is two
+   books. The cross-field refusals live here now and all four callers read them from one place.
+   WHAT STAYS WITH THE DRAFTER: the per-field type and roster checks. It is the only reader taking
+   untyped input off the wire; the other three are handed values the drafter has already typed. */
+function correctionFaults(row,fields,isSale){
+  const f=fields||{};const out=[];
+  const partyKey=isSale?'customer':'supplier';
+  const at=attributionOf(row,partyKey);
+  const now=Object.assign({},row,{party:at.stream==='R2'?(at.downstream||null):(row[partyKey]||null),
+    assoc:at.assoc,stream:at.stream,downstream:at.downstream});
+  const after=Object.assign({},now);
+  Object.keys(f).forEach(k=>{if(f[k]===undefined)return;if(f[k]===null)delete after[k];else after[k]=f[k];});
+  /* THE CONTRADICTION, MEASURED WITH THE FLAG STRIPPED. poRecvUnits and txEffDeliv both answer
+     nothing for a cancelled row, which is right, and the question here is what the row CARRIES
+     regardless of the flag this correction is setting. Measuring the flag's own effect is exactly
+     how v417 silently disarmed the drafter's copy of this gate, and round ten found it. */
+  const bare=Object.assign({},after);delete bare.cancelled;
+  const moved=isSale?txEffDeliv(bare):poRecvUnits(bare);
+  if(after.cancelled===true&&moved>0.009)
+    out.push('the corrected row would be cancelled AND carry '+moved+' unit already moved, which contradicts itself: restate qty by Modification for what moved, then cancel the remainder');
+  /* AN UNDATED ROW READS AS PENDING EVERYWHERE, which a row with movement is not. Measured on the
+     row as it stands, and only when the row actually HAS a date to clear. */
+  if(f.date===null&&row.date){
+    const eff=isSale?txPaid(row):poCash(row);
+    const mvd=isSale?txEffDeliv(row):poRecvUnits(row);
+    if(eff>0.005||mvd>0.005)
+      out.push('the date cannot be cleared: money or stock has moved against this row, and an undated row reads as pending, which a row with movement is not');}
+  /* AN ATTRIBUTION IS THREE FIELDS THAT ONLY MEAN ANYTHING TOGETHER: R2 books the row to the
+     associate with the buyer behind it, R3 leaves the buyer on the row and credits the
+     introduction. One leg without the others is how a downsell reaches a bucket owed by nobody. */
+  /* READ THE LEGS THE WAY THE WRITER WRITES THEM. Both the fold's applyAmend and the desk's
+     ovAmend take `no associate` to mean no attribution at all: they delete rev, ref, refKg and
+     downstream outright. So a stream left over on the BEFORE state of a row whose associate is
+     being cleared is not a contradiction, it is a leg about to be deleted. Lifting the drafter's
+     wording literally refused every attribution clear the moment the fold started reading it, and
+     the fold's own suite caught it: `clearing an attribution applies` went red. What the rule is
+     actually for is a leg being ASSERTED with nobody to credit. */
+  const askd=k=>Object.prototype.hasOwnProperty.call(f,k)&&f[k]!==undefined;
+  const effAssoc=askd('assoc')?f.assoc:now.assoc;
+  const effStream=askd('stream')?f.stream:(effAssoc?now.stream:null);
+  if(effAssoc&&!effStream)out.push('an associate needs a stream, R2 or R3, to say how the credit reaches them');
+  if(!effAssoc&&((askd('stream')&&f.stream)||(askd('downstream')&&f.downstream)))
+    out.push('a stream or a downstream without an associate credits nobody');
+  return out;
+}
 /* the key an amendment names a row by, shared with the phone and the drafter */
 function ovKey(t){return (t.customer||t.supplier)+'|'+t.date+'|'+t.total;}
 
@@ -1974,7 +2024,7 @@ return {txPrice:txPrice,txPaid:txPaid,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:t
         txDeferUnits:txDeferUnits,txPendUnits:txPendUnits,txPendUnitsRaw:txPendUnitsRaw,txPendRM:txPendRM,txStat:txStat,txDates:txDates,
         poRecvUnits:poRecvUnits,poCash:poCash,poLive:poLive,poRate:poRate,poOpenUnits:poOpenUnits,provRate:provRate,
         daysBetween:daysBetween,walk:walk,coverStats:coverStats,commitments:commitments,
-        ledgerRow:ledgerRow,openable:openable,ovKey:ovKey,attributionOf:attributionOf,
+        ledgerRow:ledgerRow,openable:openable,ovKey:ovKey,attributionOf:attributionOf,correctionFaults:correctionFaults,
         CORRECTABLE:CORRECTABLE,CORRECT_REQUIRED:CORRECT_REQUIRED,CORRECT_NUM_POS:CORRECT_NUM_POS,
         CORRECT_NUM_NN:CORRECT_NUM_NN,CORRECT_DATE:CORRECT_DATE,CORRECT_BOOL:CORRECT_BOOL,
         CORRECT_CODE:CORRECT_CODE,CORRECT_TEXT:CORRECT_TEXT,HANDOVER:HANDOVER};
@@ -3451,7 +3501,7 @@ const whiteboard=[
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{"v": "v435", "d": "03 Sep 2026", "t": "MARKING A LANDED LOT AS A SUPPLIER DEFAULT DID NOT MISLABEL IT, IT ERASED THE GOODS", "n": ["<b>FOLD 2 OF ROUND TEN, AND IT IS WORSE THAN THE ROUND REPORTED.</b> The defaulted flag means the supplier took the money and sent nothing, and poRecvUnits short-circuits on it. So setting it on a lot that has ARRIVED does not merely put a wrong word on the card: it walks the goods out of the book. Defaulting p001 took its received quantity from 12.5 to nothing, with 12.5 unit sitting physically on the shelf. Seventeen lots were offerable, the chip was on every one of them, and not one of the four readers refused it.", "<b>THE FOLD REFUSES IT, THE DESK DECLINES IT, AND THE PANEL NO LONGER OFFERS IT.</b> The refusal says what to do instead: restate the quantity by Modification for what did arrive, then default the remainder. A lot that has received nothing still defaults, and so does a pending one, both asserted, because a guard that stops the legitimate case is a wall and this desk has shipped one of those before.", "<b>THE SWEEP, LISTED:</b> the fold's Default branch and the desk's are the only two places the flag is set, and the update panel and the Workbench amend pane are the only two that offer it. Three are fixed; the Workbench offers Default only on the BUY side and reaches the same fold gate, so it is refused where it lands rather than where it is typed. Two mutations, two reds. 892 assertions."]},
+const evolution=[{"v":"v436","d":"03 Sep 2026","t":"THE ROW EDITOR PREVIEWED AS APPLIED THE VERY CORRECTION THE QUEUE THEN REFUSED","n":["<b>FOLD 3 OF ROUND TEN.</b> Four readers decide whether a correction is legal and only two ever held a rule. The drafter refused at the gate. tools/fold.mjs refused again in --plan, with a rule of its own that had drifted from the drafter's. applyAmend wrote whatever it was handed. And the desk's ovAmend PREVIEWED whatever it was handed, with no gate of any kind: cancel a delivered order from the row editor and the desk drew it cancelled, showed the money as no longer owed, and the queue then refused the same edit an hour later. A desk and a fold that disagree about what an edit does is two books.","<b>ONE RULER: POSITION_ENGINE.correctionFaults, AND ALL FOUR READ IT.</b> The cross-field refusals live in the engine now: the cancelled-and-moved contradiction, an undated row that has money or stock against it, and an attribution leg with nobody to credit. The per-field type and roster checks stay with the drafter, which is the only reader taking untyped input off the wire. Measured with the cancelled flag STRIPPED, because poRecvUnits and txEffDeliv both answer nothing for a cancelled row and this gate asks what the row carries regardless of the flag being set: that is precisely how v417 silently disarmed the drafter's copy and went four folds unnoticed.","<b>LIFTING THE DRAFTER'S WORDING LITERALLY BROKE ATTRIBUTION CLEARING, AND THE FOLD'S OWN SUITE CAUGHT IT.</b> Both writers take no associate to mean no attribution at all and delete rev, ref, refKg and downstream outright, so a stream left on the before-state of a row whose associate is being cleared is a leg about to be deleted, not a contradiction. The rule is restated on the writer's semantics: it fires on a leg being ASSERTED with nobody to credit. Setting an associate with no stream is still refused; setting one with a stream is allowed; clearing one applies.","<b>PROVED IN BOTH DIRECTIONS AND ON THE WHOLE BOOK.</b> Five mutations, five reds, including one that put the ruler back on the flag it is setting and one that took the drafter off the shared rule. The gate is a rule and not a wall: a note correction is refused on none of the 137 rows the book carries, and the untouched order and the unlanded lot may both still be cancelled. 912 assertions across 65 sections."]},{"v": "v435", "d": "03 Sep 2026", "t": "MARKING A LANDED LOT AS A SUPPLIER DEFAULT DID NOT MISLABEL IT, IT ERASED THE GOODS", "n": ["<b>FOLD 2 OF ROUND TEN, AND IT IS WORSE THAN THE ROUND REPORTED.</b> The defaulted flag means the supplier took the money and sent nothing, and poRecvUnits short-circuits on it. So setting it on a lot that has ARRIVED does not merely put a wrong word on the card: it walks the goods out of the book. Defaulting p001 took its received quantity from 12.5 to nothing, with 12.5 unit sitting physically on the shelf. Seventeen lots were offerable, the chip was on every one of them, and not one of the four readers refused it.", "<b>THE FOLD REFUSES IT, THE DESK DECLINES IT, AND THE PANEL NO LONGER OFFERS IT.</b> The refusal says what to do instead: restate the quantity by Modification for what did arrive, then default the remainder. A lot that has received nothing still defaults, and so does a pending one, both asserted, because a guard that stops the legitimate case is a wall and this desk has shipped one of those before.", "<b>THE SWEEP, LISTED:</b> the fold's Default branch and the desk's are the only two places the flag is set, and the update panel and the Workbench amend pane are the only two that offer it. Three are fixed; the Workbench offers Default only on the BUY side and reaches the same fold gate, so it is refused where it lands rather than where it is typed. Two mutations, two reds. 892 assertions."]},
 {"v": "v434", "d": "02 Sep 2026", "t": "WHICH OF TWO APPROVED AMENDMENTS SORTED FIRST DECIDED WHETHER THE BOOK TOOK A CONTRADICTION", "n": ["<b>FOLD 1 OF ROUND TEN'S SEQUENCE, AND IT CLOSES THE ROAD INTO THE BOOK.</b> Cancelling a row that has moved nothing is legitimate and passes every gate. Recording a movement on a row that is ALREADY cancelled is the same contradiction from the other side, and nothing anywhere said so. Two approved items against one row were therefore each faultless alone, and the outcome turned on nothing but which id sorted first: cancel then fulfil left s119 <b>cancelled and carrying a unit and RM 10</b>, a unit off the shelf with neither revenue nor cost against it, which is verbatim the failure v407 was written for. Fulfil then cancel threw, which is the control proving the gate was alive and the ordering alone defeated it.", "<b>THE GATES ALL MEASURED THE ROW AND NONE MEASURED THE BATCH.</b> plan() reads the book as it stood before any item was applied, so it refuses a cancelled TARGET correctly and cannot see a row cancelled by an earlier item in the same batch. applyAmend measures at its turn, which is right, and only asked one of the two questions. It asks both now, and so does the desk.", "<b>THE SWEEP, LISTED RATHER THAN CLAIMED,</b> which is round ten's own prescription after it found the class rule was being read and not executed: applyAmend fixed, ovAmend fixed, plan() already refuses a cancelled target from the book and needs nothing, and the drafter drafts such an entry and plan refuses it, which is the layer where it belongs.", "<b>AND THE FOLD HALF ALONE RODE THE SUITE GREEN.</b> The first assertion drove applyAmend only, so removing the desk's guard changed nothing: asserting one engine is precisely how v413 shipped a fold fixed and a desk left, which is what made v414 necessary two days later. Both are driven now and both go red. A Correction, a Modification and a repeat Cancellation are all still allowed on a cancelled row, because restating the record of one is not the same as moving goods against it, and those are asserted too so the guard cannot become a wall. 886 assertions."]},
 {"v": "v433", "d": "02 Sep 2026", "t": "THE BOOK STORES A CANCELLATION DATE IN TWO PLACES AND THE STATEMENT READ ONE", "n": ["<b>THREE OF THE FIVE CANCELLED ORDERS WENT OUT WITH NO DATE AT ALL.</b> A row cancelled through the amendment trail carries a Cancellation step; a row cancelled by a Correction carries a top-level cancelledOn and no trail. The tool read the trail alone, so s049, s108 and s109 printed a struck-through quantity, an amount and the bare word cancelled against an order the customer had no way to identify, and two of those three carry no order date either. They read 05 Aug, 24 Aug and 24 Aug now, and the two that always worked are byte-identical.", "<b>BOTH SOURCES ARE ASSERTED, WHICH IS THE POINT.</b> A check that read only the field would pass a tool that had stopped reading the trail, and the trail is where a folded cancellation actually records itself. Removing the fallback fails three rows by name; ignoring the trail fails the other two. The suite counts how many rows came from each source and refuses if either count is nil, so neither branch can be asserted into thin air.", "<b>AND THE FLOOR v431 ADDED HAD ALREADY DRIFTED THIRTY-NINE ASSERTIONS BEHIND.</b> It was set at 840 against a live 861 and the live count is now 879, so a guard written to stop a section vanishing silently would have let one vanish. It is raised with every fold from here, with a margin of four for the branches that legitimately skip on what the book holds. A floor that is not maintained is not a floor.", "<b>THE JUDGEMENT ON THE TOOL, FROM THE ROUND ITSELF:</b> it is safe to send what it produces, on two conditions. Do not send to a customer holding a cancelled order that was PAID for, because that money appears in no line and no total and the word refund appears nowhere; no such row exists today. And treat any statement carrying a settled-in-kind row beside a linked amendment as unproved, because that branch has never once rendered with real data. Both are recorded and neither is fixed."]},
 {"v": "v432", "d": "02 Sep 2026", "t": "THE STATEMENTS TOLD THREE CUSTOMERS AN ORDER THEY HAD PAID FOR WAS FREE", "n": ["<b>ROUND TEN, AND THE FIRST FIX IS THE ONE THING THIS DESK SENDS TO OTHER PEOPLE.</b> The monthly statement read the rebate flag as <b>the whole row was free</b>. An award can settle PART of an order, and three live rows are part cash and part award: RM 17 against RM 107, RM 90 against RM 180, RM 160 against RM 240. Each printed as <b>nil</b> and <b>no charge</b>, and the footer dropped both the charge and the customer's own money. CI4-OKR's document said an order he had paid RM 90 for was free. RM 527 of charges and RM 267 of their cash, wrong, on paper, going out on Sunday.", "<b>A GIFT IS A ROW THE CUSTOMER PAID NOTHING FOR,</b> which is the rule the original comment describes and not the one it implemented. Goodwill joins it, because that is a separate flag the engine's own table carries and the walk drops from revenue, and the tool read only rebate: the single goodwill row on the book happens to carry rebate as well, which is what has been hiding it. A full award with no cash still prints nil and says why; a part-paid order now carries its real total and its real payment, and CI4-OKR reads RM 365 ordered, RM 365 paid, balance nil.", "<b>AND NOTHING WAS CHECKING THE ARITHMETIC ON THESE DOCUMENTS AT ALL.</b> The suite's statements section holds eight assertions and not one of them read a ringgit or a unit: round ten proved all eight still pass with every total doubled, Paid forced to zero and every row turned into a gift. Every figure on every statement is now reconciled to the book row by row, matched by <b>rid</b> rather than by party and date and quantity, because that match is ambiguous on this very book, CH4-MLR having two orders of one unit on 14 August at RM 110 and RM 11.50, and the first version of the check reported a correct statement as wrong. The three mutations round ten used to expose the old section are the three the new one now fails on.", "<b>THE OTHER FIVE FINDINGS ON THIS TOOL ARE RECORDED AND NOT YET FIXED,</b> the nearest being three cancelled orders that print with no date at all because the tool reads the cancellation date only from the amendment trail and ignores the book's own field. 872 assertions across 64 sections."]},
@@ -3670,7 +3720,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='03 Sep 2026, 01:40 KL';
+const LAST_UPDATED='03 Sep 2026, 02:35 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -3920,6 +3970,14 @@ function ovAmend(p,q){
        TOTAL, so it must be read before a total correction rewrites it. */
     const paidBefore=poCash(row);
     const f=p.fields||{};
+    /* v436: THE PREVIEW REFUSES WHAT THE BOOK REFUSES. This branch had no gate of any kind, so
+       the row editor drew a cancelled-and-delivered order as done and the queue then refused the
+       same edit at the drafter. One ruler now, POSITION_ENGINE.correctionFaults, read here, by the
+       drafter, by the fold's plan and by applyAmend. DECLINES rather than throws, as every other
+       refusal in this function does, because it is drawing a preview. */
+    const cfaults=POSITION_ENGINE.correctionFaults(row,f,p.direction!=='BUY');
+    if(cfaults.length){
+      provNotes.push('a correction on '+(row.rid||'a row')+' was not applied: '+cfaults[0]);return;}
     const partyKey=p.direction==='BUY'?'supplier':'customer';
     const attr=ovAttribution(row,partyKey);
     const buyerNow=attr.stream==='R2'?(attr.downstream||null):(row[partyKey]||null);

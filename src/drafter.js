@@ -191,20 +191,18 @@ export function checkCorrection(fields, book, target, isSale) {
      leave, which is cancelled by definition. So it asked how much a cancelled row had received,
      was told none, and let every landed lot through: fold 3 silently disarmed this gate and fold 7
      found it. The question here is what the row carries REGARDLESS of the flag being set. */
-  const moved0 = Object.assign({}, after);
-  delete moved0.cancelled;
-  const movedOnRow = isSale ? POSITION_ENGINE.txEffDeliv(moved0) : POSITION_ENGINE.poRecvUnits(moved0);
-  if (after.cancelled === true && movedOnRow > 0.009) {
-    errs.push(`the corrected row would be cancelled AND carry ${movedOnRow} unit already moved, which contradicts itself: restate qty by Modification for what moved, then cancel the remainder`);
-  }
+  /* v436: ONE RULER. Every cross-field refusal on this road is now POSITION_ENGINE.correctionFaults,
+     because the desk previewed as applied the very edits this function refuses (round ten). The
+     comments above are kept: they are why each rule exists, and the rule now lives in one place.
+     What stays here is everything above -- the per-field type and roster checks -- because this is
+     the only reader taking untyped input off the wire. */
+  for (const why of POSITION_ENGINE.correctionFaults(target, fields, isSale)) errs.push(why);
 
   /* AN ATTRIBUTION IS THREE FIELDS THAT ONLY MEAN ANYTHING TOGETHER, and the desk's own rule is
      that R2 books the sale to the associate with the buyer behind it, while R3 leaves the buyer
      on the row and credits the introduction. Setting one leg and not the others is how a
      downsell ends up booked to a bucket owed money by nobody, which is the 02 Aug CS6-BS-R
      failure the desk already guards against at entry. */
-  if (after.assoc && !after.stream) errs.push("an associate needs a stream, R2 or R3, to say how the credit reaches them");
-  if (!after.assoc && (after.stream || after.downstream)) errs.push("a stream or a downstream without an associate credits nobody");
   if (after.stream === "R2" && after.assoc && !after.downstream) {
     flags.push("R2 books the row to the associate, so without a downstream the end buyer is recorded nowhere.");
   }
@@ -220,13 +218,6 @@ export function checkCorrection(fields, book, target, isSale) {
   }
   if (num(after.receivedQty) > num(after.qty) + 0.005) {
     flags.push(`${round(after.receivedQty)} unit is recorded as received against a lot of ${round(after.qty)} unit.`);
-  }
-  if (changes.some((c) => c.field === "date" && c.to === null)) {
-    const eff = isSale ? POSITION_ENGINE.txPaid(target) : POSITION_ENGINE.poCash(target);
-    const mvd = isSale ? POSITION_ENGINE.txEffDeliv(target) : POSITION_ENGINE.poRecvUnits(target);
-    if (eff > 0.005 || mvd > 0.005) {
-      errs.push("the date cannot be cleared: money or stock has moved against this row, and an undated row reads as pending, which a row with movement is not");
-    }
   }
   const touchedFigure = changes.some((c) => c.field === "cash" || c.field === "deliveredQty" || c.field === "receivedQty");
   if (touchedFigure && (target.amend || []).length) {

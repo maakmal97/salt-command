@@ -3849,6 +3849,93 @@ section("v432: the money on a statement is the money on the book");
   ok(true, "goodwill is covered by the gift-rule check above");
 }
 
+
+section("v436: one ruler decides whether a correction is legal, and all four readers read it");
+{
+  /* ROUND TEN, MATERIAL. FOUR readers decide this and only two ever held a rule. The drafter
+     refused at the gate; tools/fold.mjs refused again in --plan with a rule of its own; applyAmend
+     wrote whatever it was handed; and the desk's ovAmend PREVIEWED whatever it was handed. So the
+     row editor drew a cancelled-and-delivered order as done, and the queue then refused the very
+     edit the desk had just shown as applied. A desk and a fold that disagree about what an edit
+     does is two books.
+     THE CHECK IS AN IDENTITY ACROSS ALL FOUR ROADS, not four separate assertions, because the
+     fault was never that one reader was wrong: it was that they disagreed. */
+  const { openMaster: om9 } = await import("../tools/payload.mjs");
+  const { applyAmend: aa9 } = await import("../tools/fold.mjs");
+  const { checkCorrection: cc9 } = await import("../src/drafter.js");
+  const { default: PE9 } = await import("../engine/position.mjs");
+  const bk9 = JSON.parse(readFileSync(resolve(REPO, "ledger", "book.json"), "utf8"));
+  const { w: w9 } = await om9();
+  w9.eval("setProd('salt');recompute();");
+
+  /* ovAmend stamps _prov on the row BEFORE it reaches any branch, so a whole-row comparison reads
+     a clean refusal as an application. The first version of this probe did exactly that and
+     reported a working guard as a gap. */
+  const bare9 = (j) => { const o = JSON.parse(j); delete o._prov; return JSON.stringify(o); };
+  const deskSays = (rid, fields) => {
+    const F = JSON.stringify(rid);
+    const before = bare9(w9.eval("JSON.stringify(sales.find(function(s){return s.rid===" + F + ";}))"));
+    const n0 = +w9.eval("provNotes.length");
+    w9.eval("ovAmend({kind:'Correction',date:'2026-09-01',direction:'SELL',rid:" + F + ",fields:" + JSON.stringify(fields) + "},{at:'v436'})");
+    const after = bare9(w9.eval("JSON.stringify(sales.find(function(s){return s.rid===" + F + ";}))"));
+    const n1 = +w9.eval("provNotes.length");
+    w9.eval("(function(){var i=sales.findIndex(function(s){return s.rid===" + F + ";});sales[i]=" + before + ";})()");
+    return after !== before ? "applied" : (n1 > n0 ? "REFUSE" : "no-op");
+  };
+  const foldSays = (row, fields) => {
+    try { aa9(JSON.parse(JSON.stringify(row)), { kind: "Correction", date: "2026-09-01", fields }, row.supplier !== undefined ? "BUY" : "SELL", null); return "applied"; }
+    catch (e) { return "REFUSE"; }
+  };
+
+  const delivered = (bk9.sales || []).find((x) => !x.cancelled && x.rid && PE9.txEffDeliv(x) > 0.009);
+  const clean = (bk9.sales || []).find((x) => !x.cancelled && x.rid && PE9.txEffDeliv(x) <= 0.009);
+  ok(!!delivered && !!clean, "the book carries both a delivered order and an untouched one to drive");
+
+  /* THE REFUSAL, down all four roads at once */
+  const CAN = { cancelled: true };
+  ok(PE9.correctionFaults(delivered, CAN, true).length > 0, "the engine refuses cancelling a delivered order by Correction");
+  ok(cc9(CAN, bk9, delivered, true).errs.length > 0, "and so does the drafter, which is the gate a phone edit meets");
+  ok(foldSays(delivered, CAN) === "REFUSE", "and so does the fold's applyAmend, which is what writes the book");
+  ok(deskSays(delivered.rid, CAN) === "REFUSE", "and so does the desk's ovAmend, which is what the owner is shown (it applied it at v435)");
+
+  /* THE SAME IDENTITY ON THE PERMISSION, so the gate is a rule and not a wall */
+  ok(PE9.correctionFaults(clean, CAN, true).length === 0, "an order with nothing moved against it may still be cancelled by Correction");
+  ok(cc9(CAN, bk9, clean, true).errs.length === 0, "the drafter allows it");
+  ok(foldSays(clean, CAN) === "applied", "the fold applies it");
+  ok(deskSays(clean.rid, CAN) === "applied", "and the desk previews it as applied");
+
+  /* THE RULER MEASURES THE ROW, NOT THE FLAG IT IS SETTING. poRecvUnits and txEffDeliv both answer
+     nothing for a cancelled row, and this gate looks at the state the correction WOULD leave, which
+     is cancelled by definition: v417 disarmed the drafter's copy of this gate that way and it went
+     four folds unnoticed. Driven on a LOT, the direction that failure was found on. */
+  const landed = (bk9.purchases || []).find((p) => !p.cancelled && PE9.poRecvUnits(p) > 0.009);
+  const unlanded = (bk9.purchases || []).find((p) => !p.cancelled && PE9.poRecvUnits(p) <= 0.009);
+  ok(!!landed, "the book carries a landed lot");
+  ok(PE9.correctionFaults(landed, CAN, false).length > 0, "a landed lot cannot be cancelled by Correction either");
+  ok(foldSays(landed, CAN) === "REFUSE", "and the writer refuses it, whichever road it arrived by");
+  if (unlanded) ok(PE9.correctionFaults(unlanded, CAN, false).length === 0, "while a lot with nothing arrived still can be");
+
+  /* THE ATTRIBUTION LEGS, read the way the WRITER writes them. Lifting the drafter's wording
+     literally into the fold refused every attribution clear, because clearing the associate leaves
+     a stream on the before-state that the writer is about to delete. The fold's own suite caught
+     it. What the rule is for is a leg ASSERTED with nobody to credit. */
+  const r2row = (bk9.sales || []).find((x) => x.rev === "R2") || { customer: "CY2-NIL", rev: "R2", downstream: "CZ4-MK", date: "2026-08-01", qty: 1, total: 100 };
+  const plain9 = (bk9.sales || []).find((x) => !x.rev && !x.ref);
+  ok(PE9.correctionFaults(r2row, { assoc: null }, true).length === 0, "clearing the associate on an R2 row is allowed: its legs go with it");
+  ok(PE9.correctionFaults(plain9, { stream: "R2" }, true).length > 0, "asserting a stream with nobody to credit is refused");
+  ok(PE9.correctionFaults(plain9, { downstream: "CZ4-MK" }, true).length > 0, "and so is a downstream with nobody to credit");
+  ok(PE9.correctionFaults(plain9, { assoc: "CY2-NIL" }, true).length > 0, "an associate with no stream is refused: nothing says how the credit reaches them");
+  ok(PE9.correctionFaults(plain9, { assoc: "CY2-NIL", stream: "R2" }, true).length === 0, "an associate WITH a stream is allowed, so the rule is not simply refusing the field");
+
+  /* AND IT WALLS NOTHING THAT IS ON THE BOOK TODAY */
+  let walled = 0, seen = 0;
+  for (const [coll, isSale] of [["sales", true], ["purchases", false]]) {
+    for (const r of bk9[coll] || []) { seen++; if (PE9.correctionFaults(r, { note: "x" }, isSale).length) walled++; }
+  }
+  ok(seen > 100, `swept ${seen} rows on the live book`);
+  ok(walled === 0, `and a note correction is refused on none of them (${walled}), so the gate is a rule and not a wall`);
+}
+
 /* ---- done ----------------------------------------------------------------------- */
 
 section("Round 7: the states no suite check had ever rendered");
@@ -4083,7 +4170,7 @@ section("Round 7: the states no suite check had ever rendered");
    the live count was 879, so thirty-nine assertions could have vanished under a guard written to
    stop exactly that. The margin is four, which covers the book-dependent branches that legitimately
    skip; it is not room for a section to fall out. */
-const FLOOR_ASSERTIONS = 888, FLOOR_SECTIONS = 64;
+const FLOOR_ASSERTIONS = 908, FLOOR_SECTIONS = 65;
 ok(pass + fail >= FLOOR_ASSERTIONS,
   `the suite ran ${pass + fail} assertions, below its floor of ${FLOOR_ASSERTIONS}: a section has stopped running`);
 ok(sections >= FLOOR_SECTIONS,

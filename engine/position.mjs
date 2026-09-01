@@ -317,6 +317,56 @@ function attributionOf(row,partyKey){
   if(row.ref)return {assoc:row.ref,stream:'R3',downstream:null};
   return {assoc:null,stream:null,downstream:null};
 }
+/* ====== ONE RULER FOR WHETHER A CORRECTION IS LEGAL (v436) ======================
+   FOUR readers decide this and only two ever held a rule. The drafter refused at the gate,
+   tools/fold.mjs refused again in --plan with a rule of its own, applyAmend wrote whatever it
+   was handed, and the desk's ovAmend PREVIEWED whatever it was handed. So the row editor drew a
+   cancelled-and-delivered order as done, and the queue then refused the very edit the desk had
+   just shown the owner as applied. A desk and a fold that disagree about what an edit does is two
+   books. The cross-field refusals live here now and all four callers read them from one place.
+   WHAT STAYS WITH THE DRAFTER: the per-field type and roster checks. It is the only reader taking
+   untyped input off the wire; the other three are handed values the drafter has already typed. */
+function correctionFaults(row,fields,isSale){
+  const f=fields||{};const out=[];
+  const partyKey=isSale?'customer':'supplier';
+  const at=attributionOf(row,partyKey);
+  const now=Object.assign({},row,{party:at.stream==='R2'?(at.downstream||null):(row[partyKey]||null),
+    assoc:at.assoc,stream:at.stream,downstream:at.downstream});
+  const after=Object.assign({},now);
+  Object.keys(f).forEach(k=>{if(f[k]===undefined)return;if(f[k]===null)delete after[k];else after[k]=f[k];});
+  /* THE CONTRADICTION, MEASURED WITH THE FLAG STRIPPED. poRecvUnits and txEffDeliv both answer
+     nothing for a cancelled row, which is right, and the question here is what the row CARRIES
+     regardless of the flag this correction is setting. Measuring the flag's own effect is exactly
+     how v417 silently disarmed the drafter's copy of this gate, and round ten found it. */
+  const bare=Object.assign({},after);delete bare.cancelled;
+  const moved=isSale?txEffDeliv(bare):poRecvUnits(bare);
+  if(after.cancelled===true&&moved>0.009)
+    out.push('the corrected row would be cancelled AND carry '+moved+' unit already moved, which contradicts itself: restate qty by Modification for what moved, then cancel the remainder');
+  /* AN UNDATED ROW READS AS PENDING EVERYWHERE, which a row with movement is not. Measured on the
+     row as it stands, and only when the row actually HAS a date to clear. */
+  if(f.date===null&&row.date){
+    const eff=isSale?txPaid(row):poCash(row);
+    const mvd=isSale?txEffDeliv(row):poRecvUnits(row);
+    if(eff>0.005||mvd>0.005)
+      out.push('the date cannot be cleared: money or stock has moved against this row, and an undated row reads as pending, which a row with movement is not');}
+  /* AN ATTRIBUTION IS THREE FIELDS THAT ONLY MEAN ANYTHING TOGETHER: R2 books the row to the
+     associate with the buyer behind it, R3 leaves the buyer on the row and credits the
+     introduction. One leg without the others is how a downsell reaches a bucket owed by nobody. */
+  /* READ THE LEGS THE WAY THE WRITER WRITES THEM. Both the fold's applyAmend and the desk's
+     ovAmend take `no associate` to mean no attribution at all: they delete rev, ref, refKg and
+     downstream outright. So a stream left over on the BEFORE state of a row whose associate is
+     being cleared is not a contradiction, it is a leg about to be deleted. Lifting the drafter's
+     wording literally refused every attribution clear the moment the fold started reading it, and
+     the fold's own suite caught it: `clearing an attribution applies` went red. What the rule is
+     actually for is a leg being ASSERTED with nobody to credit. */
+  const askd=k=>Object.prototype.hasOwnProperty.call(f,k)&&f[k]!==undefined;
+  const effAssoc=askd('assoc')?f.assoc:now.assoc;
+  const effStream=askd('stream')?f.stream:(effAssoc?now.stream:null);
+  if(effAssoc&&!effStream)out.push('an associate needs a stream, R2 or R3, to say how the credit reaches them');
+  if(!effAssoc&&((askd('stream')&&f.stream)||(askd('downstream')&&f.downstream)))
+    out.push('a stream or a downstream without an associate credits nobody');
+  return out;
+}
 /* the key an amendment names a row by, shared with the phone and the drafter */
 function ovKey(t){return (t.customer||t.supplier)+'|'+t.date+'|'+t.total;}
 
@@ -324,7 +374,7 @@ return {txPrice:txPrice,txPaid:txPaid,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:t
         txDeferUnits:txDeferUnits,txPendUnits:txPendUnits,txPendUnitsRaw:txPendUnitsRaw,txPendRM:txPendRM,txStat:txStat,txDates:txDates,
         poRecvUnits:poRecvUnits,poCash:poCash,poLive:poLive,poRate:poRate,poOpenUnits:poOpenUnits,provRate:provRate,
         daysBetween:daysBetween,walk:walk,coverStats:coverStats,commitments:commitments,
-        ledgerRow:ledgerRow,openable:openable,ovKey:ovKey,attributionOf:attributionOf,
+        ledgerRow:ledgerRow,openable:openable,ovKey:ovKey,attributionOf:attributionOf,correctionFaults:correctionFaults,
         CORRECTABLE:CORRECTABLE,CORRECT_REQUIRED:CORRECT_REQUIRED,CORRECT_NUM_POS:CORRECT_NUM_POS,
         CORRECT_NUM_NN:CORRECT_NUM_NN,CORRECT_DATE:CORRECT_DATE,CORRECT_BOOL:CORRECT_BOOL,
         CORRECT_CODE:CORRECT_CODE,CORRECT_TEXT:CORRECT_TEXT,HANDOVER:HANDOVER};

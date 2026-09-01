@@ -1,5 +1,16 @@
 [
  {
+  "v": "v436",
+  "d": "03 Sep 2026",
+  "t": "THE ROW EDITOR PREVIEWED AS APPLIED THE VERY CORRECTION THE QUEUE THEN REFUSED",
+  "n": [
+   "<b>FOLD 3 OF ROUND TEN.</b> Four readers decide whether a correction is legal and only two ever held a rule. The drafter refused at the gate. tools/fold.mjs refused again in --plan, with a rule of its own that had drifted from the drafter's. applyAmend wrote whatever it was handed. And the desk's ovAmend PREVIEWED whatever it was handed, with no gate of any kind: cancel a delivered order from the row editor and the desk drew it cancelled, showed the money as no longer owed, and the queue then refused the same edit an hour later. A desk and a fold that disagree about what an edit does is two books.",
+   "<b>ONE RULER: POSITION_ENGINE.correctionFaults, AND ALL FOUR READ IT.</b> The cross-field refusals live in the engine now: the cancelled-and-moved contradiction, an undated row that has money or stock against it, and an attribution leg with nobody to credit. The per-field type and roster checks stay with the drafter, which is the only reader taking untyped input off the wire. Measured with the cancelled flag STRIPPED, because poRecvUnits and txEffDeliv both answer nothing for a cancelled row and this gate asks what the row carries regardless of the flag being set: that is precisely how v417 silently disarmed the drafter's copy and went four folds unnoticed.",
+   "<b>LIFTING THE DRAFTER'S WORDING LITERALLY BROKE ATTRIBUTION CLEARING, AND THE FOLD'S OWN SUITE CAUGHT IT.</b> Both writers take no associate to mean no attribution at all and delete rev, ref, refKg and downstream outright, so a stream left on the before-state of a row whose associate is being cleared is a leg about to be deleted, not a contradiction. The rule is restated on the writer's semantics: it fires on a leg being ASSERTED with nobody to credit. Setting an associate with no stream is still refused; setting one with a stream is allowed; clearing one applies.",
+   "<b>PROVED IN BOTH DIRECTIONS AND ON THE WHOLE BOOK.</b> Five mutations, five reds, including one that put the ruler back on the flag it is setting and one that took the drafter off the shared rule. The gate is a rule and not a wall: a note correction is refused on none of the 137 rows the book carries, and the untouched order and the unlanded lot may both still be cancelled. 912 assertions across 65 sections."
+  ]
+ },
+ {
   "v": "v435",
   "d": "03 Sep 2026",
   "t": "MARKING A LANDED LOT AS A SUPPLIER DEFAULT DID NOT MISLABEL IT, IT ERASED THE GOODS",

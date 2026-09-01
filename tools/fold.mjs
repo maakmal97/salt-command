@@ -151,15 +151,11 @@ export function plan(book, staged, notes) {
            money owed. Both fields are individually correctable, so the pair is checked here
            on the state the correction would leave. The drafter refuses it too; this gate is
            for a correction that reaches the fold another way. */
-        if (fields.cancelled === true) {
-          /* v415: the same ruler fault as the Cancellation gate below, and the same fix. A sale
-             carries deliveredQty; a lot carries receivedQty and means "in full" by omitting it. */
-          const isBuy = (hits[0].supplier !== undefined) || it.collection === "purchases";
-          const dq = isBuy
-            ? (fields.receivedQty !== undefined ? +fields.receivedQty || 0 : E.poRecvUnits(hits[0]))
-            : (fields.deliveredQty !== undefined ? +fields.deliveredQty || 0 : E.txEffDeliv(hits[0]));
-          if (dq > 0.009) { out.refused.push({ id: it.id, why: `the correction on ${it.amends} would leave a cancelled row still carrying ${dq} unit delivered, which contradicts itself: restate qty by Modification, then cancel the remainder` }); continue; }
-        }
+        /* v436: ONE RULER. This gate had a rule of its own, the drafter had a second, and the two
+           readers BELOW -- applyAmend and the desk's ovAmend -- had none at all, so the row editor
+           previewed as applied the correction this line refuses. All four call the engine now. */
+        const cf = E.correctionFaults(hits[0], fields, !((hits[0].supplier !== undefined) || it.collection === "purchases"));
+        if (cf.length) { out.refused.push({ id: it.id, why: `the correction on ${it.amends} was refused: ${cf[0]}` }); continue; }
         entry.pay = { date: pay.date || null, kind: "Correction", cash: 0, kg: 0, fields };
         const words = Object.keys(fields).map((k) => `${k} to ${fields[k] === null ? "(cleared)" : fields[k]}`);
         entry.does.push(`correct ${dir === "BUY" ? "lot" : "order"} ${it.amends}: ${words.join(", ")}`);
@@ -253,6 +249,11 @@ export function applyAmend(row, pay, dir, note) {   /* v413: exported so the sui
        the top, off the row as it arrived. */
     const paidBefore = E.poCash(row);
     const f = pay.fields || {};
+    /* v436: and the WRITER refuses too, rather than trusting the plan above to have looked. A
+       correction reaching applyAmend by any other road -- a hand-written _to_fold.json, the
+       differential test, a future caller -- got no check at all before this line. */
+    const faults = E.correctionFaults(row, f, dir !== "BUY");
+    if (faults.length) throw new Error(faults[0]);
     const partyKey = dir === "BUY" ? "supplier" : "customer";
     const attr = E.attributionOf(row, partyKey);
     const buyerNow = attr.stream === "R2" ? (attr.downstream || null) : (row[partyKey] || null);
