@@ -99,8 +99,12 @@ function poCash(p){
 function poLive(p){return !p.pending&&!p.defaulted&&!p.cancelled;}   /* v417 */
 function poRate(p){return p.qty>0?p.total/p.qty:0;}
 /* v417: without the cancelled test this returned the WHOLE quantity as still to arrive, because
-   poRecvUnits reads nothing received and the subtraction then has nothing to take away. */
-function poOpenUnits(p){return p.cancelled?0:+(p.qty-poRecvUnits(p)).toFixed(4);}
+   poRecvUnits reads nothing received and the subtraction then has nothing to take away.
+   v422: AND A DEFAULTED LOT IS NOT STILL TO ARRIVE EITHER, for the same arithmetic and a plainer
+   reason: the supplier took the money and sent nothing, which is the definition of the flag. Every
+   caller in the desk already filtered defaulted by hand, so no total moves; what changes is that
+   a reader who does NOT filter, such as the update panel, is no longer told 12.5 unit is coming. */
+function poOpenUnits(p){return (p.cancelled||p.defaulted)?0:+(p.qty-poRecvUnits(p)).toFixed(4);}
 function provRate(days){return days>=21?1:days>=14?0.75:days>=8?0.5:days>=4?0.25:0;}
 /* ============ THE WALK (was recompute) ============
    Everything the desk's tabs read about a product is set by one pass over that product's

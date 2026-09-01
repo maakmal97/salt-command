@@ -3117,7 +3117,10 @@ section("v413: a lot is not measured like a sale");
     const paid = +w.eval("poCash(purchases.find(x=>x.rid===" + q + "))");
     const recv = +w.eval("poRecvUnits(purchases.find(x=>x.rid===" + q + "))");
     const wantC = +Math.max(0, (+p.total || 0) - paid).toFixed(2);
-    const wantU = +Math.max(0, (+p.qty || 0) - recv).toFixed(2);
+    /* v422: qty-minus-received was the contract until poOpenUnits learnt that a defaulted or
+       cancelled lot has nothing coming. The panel must report what the ENGINE says is outstanding,
+       not a subtraction retyped here, which is the same lesson as fold 7. */
+    const wantU = +w.eval("poOpenUnits(purchases.find(x=>x.rid===" + q + "))");
     if (Math.abs(o.cashLeft - wantC) > 0.01 || Math.abs(o.unitLeft - wantU) > 0.01) {
       wrong.push(p.rid + ": panel " + o.cashLeft + "/" + o.unitLeft + " vs " + wantC + "/" + wantU);
     }
@@ -3133,6 +3136,15 @@ section("v413: a lot is not measured like a sale");
     const chips = JSON.parse(w.eval("JSON.stringify([].map.call(document.querySelectorAll('.updchip'),b=>b.textContent))"));
     ok(!chips.some((c) => /Paid in full|Received in full/.test(c)),
       "a settled and landed lot offers neither Paid in full nor Received in full (" + (chips.join(" / ") || "none") + ")");
+    /* v422: and the DEFAULTED lot, driven rather than reasoned about. p003's supplier took RM 750
+       and delivered nothing, and the panel offered to receive 12.5 unit of it. */
+    const dRid = JSON.parse(w.eval("JSON.stringify((purchases.find(p=>p.defaulted)||{}).rid||null)"));
+    if (dRid) {
+      w.eval("ledEdit(" + JSON.stringify(dRid) + ",'BUY');");
+      const dChips = JSON.parse(w.eval("JSON.stringify([].map.call(document.querySelectorAll('.updchip'),b=>b.textContent))"));
+      ok(!dChips.some((c) => /Received in full|Completed/.test(c)),
+        "a defaulted lot is offered neither Received in full nor Completed (" + (dChips.join(" / ") || "none") + ")");
+    }
     w.eval("document.getElementById('updCash').value='1';document.getElementById('updCash').oninput();");
     ok(!/Pending/.test(w.eval("document.getElementById('updSay').textContent")),
       "and the sentence does not call a landed lot Pending, which txStat cannot help but do");

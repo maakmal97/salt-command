@@ -1,5 +1,15 @@
 [
  {
+  "v": "v422",
+  "d": "02 Sep 2026",
+  "t": "THE PANEL OFFERED TO RECEIVE 12.5 UNIT FROM A SUPPLIER WHO TOOK THE MONEY AND SENT NOTHING",
+  "n": [
+   "<b>FOLD 8 OF ROUND NINE. p003 IS A DEFAULTED LOT: RM 750 paid, nothing delivered, and the Ledger card says Default in as many words.</b> The update panel offered <b>Received in full</b> and <b>Completed</b> on it, and the sentence promised the lot would read Completed after receiving 12.5 unit that are never coming. Tapping it would have written a receipt date into the book for goods that do not exist.",
+   "<b>THE RULE BELONGS IN THE ENGINE AND THE PANEL SHOULD ASK IT, WHICH IS FOLD 7'S LESSON AGAIN.</b> poOpenUnits subtracted received from ordered, which is right until a lot is defaulted or cancelled and then it is a promise of goods that are not coming. It answers zero for both now. Every caller in the desk already filtered defaulted by hand, so no total moved and the walk is byte-identical on both books; the reader that did NOT filter was the panel, and it takes the engine's answer now instead of retyping the subtraction.",
+   "<b>AND THE OLD RULE WAS WRITTEN INTO THE TEST ITSELF.</b> The check that guards this contract computed the outstanding quantity with the same subtraction and compared it to the panel, so it failed the moment the engine got smarter and would have passed for ever if the panel and the test stayed wrong together. It asks the engine now. That is the third instrument this round to have encoded a rule rather than checked one, and the mutation pass is what found each of them. Two mutations, two reds, and the defaulted lot is DRIVEN in the suite rather than reasoned about. 817 assertions from 816."
+  ]
+ },
+ {
   "v": "v421",
   "d": "02 Sep 2026",
   "t": "THE DRAFTER RETYPED A RULE AND DROPPED A CASE, AND FOLD 3 HAD SILENTLY DISARMED THE GATE THAT CHECKS IT",
