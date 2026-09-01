@@ -4879,6 +4879,61 @@ section("v453: a line prints the measure its sum used");
   } finally { for (const f of [B3, M3]) { try { rm3(f); } catch (e) { /* best effort */ } } }
 }
 
+
+section("v454: a cancelled paid order's money is stated on the statement");
+{
+  /* v444 books the refund; the statement dropped the row whole, so Paid was short by the money
+     the customer had actually handed over, Balance read nil beneath a refund still owed to them,
+     the Refunds table called it an overpayment, and the review sheet flagged the account clear.
+     One fixture: an order paid RM 450 and cancelled before collection, with the refund record
+     the engine writes for it. */
+  const { readFileSync: rf4, writeFileSync: wf4, rmSync: rm4 } = await import("node:fs");
+  const { join: j4 } = await import("node:path");
+  const { pathToFileURL: pu4 } = await import("node:url");
+  const E4 = (await import("../engine/position.mjs")).default;
+  const bk4 = JSON.parse(rf4(j4(REPO, "ledger", "book.json"), "utf8"));
+  const live4 = bk4.sales.find((x) => x.customer && x.date && !x.cancelled && (x.cash || 0) > 0);
+  const who4 = live4.customer;
+  const cx4 = { rid: "f12", date: "2026-08-20", customer: who4, product: "salt", qty: 4.5, total: 450, cost: 64, cash: 450, deliveredQty: 0, cancelled: true, cancelledOn: "2026-08-22" };
+  bk4.sales.push(cx4);
+  bk4.customerRefunds = bk4.customerRefunds || [];
+  const rec4 = E4.refundOnCancel(bk4.customerRefunds, cx4, "2026-08-22");
+  ok(rec4 && rec4.amount === 450 && rec4.rid === "f12", `the engine books the RM 450 payable for the fixture (${JSON.stringify(rec4)})`);
+  const B4 = j4(REPO, "test", ".v454.json"), O4 = j4(REPO, "test", ".v454-out");
+  wf4(B4, JSON.stringify(bk4, null, 1));
+  const fname4 = (p) => "statement_" + p.replace(/[^A-Za-z0-9._-]+/g, "-") + "_2026-09-01.html";
+  const prev4 = process.env.SALT_BOOK; process.env.SALT_BOOK = B4;
+  let html4 = "", rev4 = "", other4 = "";
+  try {
+    const m4 = await import(pu4(j4(REPO, "tools", "make_statements.mjs")).href + "?v454");
+    const log4 = console.log; console.log = () => {};
+    try { m4.makeStatements(O4, "2026-09-01"); } finally { console.log = log4; }
+    html4 = rf4(j4(O4, fname4(who4)), "utf8");
+    rev4 = rf4(j4(O4, "_review_2026-09-01.html"), "utf8");
+    const oth4 = bk4.sales.find((x) => x.customer && x.customer !== who4 && x.date && !bk4.customerRefunds.some((r) => r.party === x.customer && !r.paidOn)).customer;
+    other4 = rf4(j4(O4, fname4(oth4)), "utf8");
+  } finally {
+    if (prev4 === undefined) delete process.env.SALT_BOOK; else process.env.SALT_BOOK = prev4;
+    try { rm4(B4); } catch (e) { /* best effort */ }
+    try { rm4(O4, { recursive: true, force: true }); } catch (e) { /* best effort */ }
+  }
+  const strip4 = (h) => h.replace(/<[^>]+>/g, " ").replace(/&middot;/g, "|").replace(/\s+/g, " ");
+  const txt4 = strip4(html4);
+  const paidLive = bk4.sales.filter((x) => x.customer === who4 && !x.cancelled).reduce((a, x) => a + (x.cash || 0) + (x.settledRM || 0), 0);
+  const mny = (v) => Number(v).toLocaleString("en-MY", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const wantPaid = "Paid " + mny(paidLive + 450);
+  ok(txt4.indexOf(wantPaid) >= 0, `Paid counts the RM 450 they handed over on the cancelled order (want ${wantPaid}; got ${(txt4.match(/Paid [0-9,.]+/) || [""])[0]})`);
+  ok(txt4.indexOf("of which on cancelled orders 450.00") >= 0, "and names the cancelled part on its own line");
+  ok(txt4.indexOf("Owed to you 450.00") >= 0, `the footer states the refund as Owed to you (${(txt4.match(/(Balance|Outstanding) [a-z0-9,.]+ ?(Owed to you [0-9,.]+)?/) || [""])[0]})`);
+  ok(txt4.indexOf("Cancelled order, money returned to you") >= 0 && txt4.indexOf("450.00 owed to you") >= 0, "the Refunds table says it is a cancelled order, still owed");
+  ok(txt4.indexOf("450.00 paid, see Refunds") >= 0, "and the struck row points at it");
+  ok(strip4(other4).indexOf("Owed to you") < 0, "a customer owed no refund has no Owed to you line");
+  const at4 = rev4.indexOf("#s-" + who4 + "\"");
+  const cls4 = at4 < 0 ? null : (rev4.slice(Math.max(0, at4 - 80), at4).match(/class="f-([a-z]+)"/) || [])[1];
+  ok(cls4 === "refund" || cls4 === "owes" || cls4 === "goods", `the review sheet flags the account rather than calling it clear (${cls4})`);
+  ok(rev4.indexOf("450.00 to them") >= 0 || cls4 === "owes", "and its index shows the money owed to them");
+}
+
 /* ---- done ----------------------------------------------------------------------- */
 
 section("Round 7: the states no suite check had ever rendered");
@@ -5113,7 +5168,7 @@ section("Round 7: the states no suite check had ever rendered");
    the live count was 879, so thirty-nine assertions could have vanished under a guard written to
    stop exactly that. The margin is four, which covers the book-dependent branches that legitimately
    skip; it is not room for a section to fall out. */
-const FLOOR_ASSERTIONS = 1099, FLOOR_SECTIONS = 79;
+const FLOOR_ASSERTIONS = 1108, FLOOR_SECTIONS = 80;
 ok(pass + fail - offMachine >= FLOOR_ASSERTIONS,
   `the suite ran ${pass + fail - offMachine} assertions everywhere (${pass + fail} here, ${offMachine} of them needing files that live off this repo), below its floor of ${FLOOR_ASSERTIONS}: a section has stopped running`);
 ok(sections >= FLOOR_SECTIONS,

@@ -1,5 +1,16 @@
 [
  {
+  "v": "v454",
+  "d": "02 Sep 2026",
+  "t": "THE STATEMENT STATES A CANCELLED PAID ORDER'S MONEY: PAID COUNTS IT, THE FOOTER SAYS OWED TO YOU, THE REFUNDS TABLE SAYS WHY",
+  "n": [
+   "<b>FOLD 12 OF ROUND TEN, IN tools/make_statements.mjs ALONE.</b> v444 books the refund on a cancelled paid order as a payable in customerRefunds, and the statement's own stmtRefunds reads that list, so the Refunds table already listed it. Everything around it still treated the row as if no money had moved: the totals dropped the cancelled row whole, so Paid was short by the RM 450 the customer had actually handed over; Balance read nil directly above a refund still owed to them; the Refunds table called it an overpayment, its one label being fixed text from the two live rows; and the review sheet flagged the account clear.",
+   "<b>WHAT IT SAYS NOW.</b> Paid is what they handed over, cancelled orders included, with the cancelled part named on its own line beneath it. The footer carries Owed to you for any refund not yet returned, beside Outstanding or Balance rather than netted into either, because the engine records them separately. The Refunds table says Cancelled order, money returned to you, read off the record's rid and note. The struck row says what was paid on it and points at the table. The review sheet flags such an account refund and shows the sum owed to them in the Owed column.",
+   "<b>WHAT CHANGES ON THE BOOK TODAY: NOTHING.</b> No cancelled order on the book was paid for, and the two refund rows are overpayments and keep their label. The change is for the case v443 and v444 were written for.",
+   "<b>PROVED ON THE DOCUMENT.</b> An order paid RM 450 and cancelled before collection, with the refund record refundOnCancel writes, through makeStatements on a fixture book: Paid up by RM 450 against the live rows, the two footer lines, the table label, the struck row's pointer, the review flag, and a customer owed nothing carrying no Owed to you. Seven mutations, one per site, every one red. 1126 assertions across 80 sections."
+  ]
+ },
+ {
   "v": "v453",
   "d": "02 Sep 2026",
   "t": "A LINE PRINTS THE MEASURE ITS SUM USED: THE STOCK WALK'S RECEIVED ROW, THE LOT LIST AND THE HELD-OUT ORDER",

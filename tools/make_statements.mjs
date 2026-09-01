@@ -226,7 +226,12 @@ function stmtRefunds(party,o){
     .filter(r=>r.party===party)
     .filter(r=>{const d=new Date(r.since);
       if(from&&d<from)return false; if(to&&d>to)return false; return true;})
-    .map(r=>({date:r.since,amount:+r.amount,paidOn:r.paidOn||null}));
+        /* v454: WHICH KIND OF REFUND. v444 books a cancelled paid order as a payable in this same
+       list, so the document has to say which it is printing: the two live rows are overpayments
+       and the label was fixed text. The record carries the cancelled row's rid, and the note
+       names it; either says cancelled. */
+    .map(r=>({date:r.since,amount:+r.amount,paidOn:r.paidOn||null,
+      cancelled:!!((r.rid&&sales.some(s=>s.rid===r.rid&&s.cancelled))||/^cancelled order/.test(r.note||''))}));
 }
 function stmtDoc(party,rows,o){
   /* LESS, AND BETTER LOOKING (v184). The first cut carried a price-per-unit column and a
@@ -240,6 +245,7 @@ function stmtDoc(party,rows,o){
      them is his to do if he wants it. */
   const e=esc, n2=v=>Number(v).toLocaleString('en-MY',{maximumFractionDigits:2});
   const money=v=>Number(v).toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2});
+  const refundOwed=(o.refunds||[]).filter(r=>!r.paidOn).reduce((a,r)=>a+(+r.amount||0),0);   // v454
   /* AN UNDATED ROW PRINTS AN EMPTY CELL, NOT "Invalid Date" (29 Aug 2026, the one
      behavioural change from the v387 text). The book now carries undated rows (a
      cancelled order with no action date, an agreed order not yet moved), and the v387
@@ -258,11 +264,16 @@ function stmtDoc(party,rows,o){
      the ledger as shrinkage; counting it here made Paid exceed the total ordered, which
      is the one arithmetic a reader would certainly catch. */
   T.pendQty=0;T.pendVal=0;T.pendN=0;
-  T.cxN=0;
+  T.cxN=0;T.cxPaid=0;
   rows.forEach(r=>{
     /* a cancelled order contributes NOTHING: not quantity, not value, not the count of
        orders. Anything else makes the footer disagree with the word "cancelled". */
-    if(r.cancelled){T.cxN++;return;}
+    /* v454: EXCEPT THE MONEY THEY PAID ON IT, which is real and is theirs. Dropping the row whole
+       told a customer who had paid RM 450 for an order later cancelled that they had paid RM 450
+       less than they had, and said Balance nil beneath a refund still owed to them. Paid is what
+       they handed over; the cancelled part is named on its own line, and the refund the engine
+       booked at v444 is stated as Owed to you rather than left to the Refunds table alone. */
+    if(r.cancelled){T.cxN++;T.cxPaid+=r.gift?0:(r.paidCash+r.inKind);T.paid+=r.gift?0:(r.paidCash+r.inKind);return;}
     if(r.pendingOrder){T.pendQty+=r.qty;T.pendVal+=r.total;T.pendN++;}
     T.qty+=r.qty;T.total+=r.total;T.paid+=r.gift?0:(r.paidCash+r.inKind);T.owed+=r.owed;
     T.toGet+=(r.toGet>0&&!r.pendingOrder)?r.toGet:0;T.kindUnits+=r.gift?0:r.inKindUnits;T.got+=r.got;T.ordered+=r.qty;});
@@ -295,7 +306,8 @@ function stmtDoc(party,rows,o){
        EARNED reward, and calling an earned reward a gift misdescribes it to the one
        person who knows better. The customer knows which of the two his was. */
     if(r.cancelled)stat='<span class="cx">cancelled</span>'
-      +((r.cancelledOn&&!moved)?'<div class="owedunits">'+e(dLong(r.cancelledOn))+'</div>':'');
+      +((r.cancelledOn&&!moved)?'<div class="owedunits">'+e(dLong(r.cancelledOn))+'</div>':'')
+      +((r.paidCash+r.inKind)>0.009?'<div class="owedunits">'+money(r.paidCash+r.inKind)+' paid, see Refunds</div>':'');
     else if(r.gift)stat='<span class="gift">no charge</span>';
     /* AN AGREED ORDER IS NOT A SETTLED ONE (v189). Nothing has been paid and nothing
        collected, so it is neither a debt nor a closed line. It still belongs on the
@@ -409,7 +421,7 @@ function stmtDoc(party,rows,o){
    ((o.refunds||[]).length?'<p class="whol" style="margin:30px 0 0">Refunds</p>'
      +'<table style="margin-top:10px"><thead><tr><th class="l">Date</th><th class="l">Reason</th><th>Amount</th><th class="r">Status</th></tr></thead><tbody>'
      +o.refunds.map(r=>'<tr><td class="l dt">'+e(dLong(r.date))+'</td>'
-       +'<td class="l" style="font-size:13px;color:#b9c2d0">Overpayment returned to you</td>'
+       +'<td class="l" style="font-size:13px;color:#b9c2d0">'+(r.cancelled?'Cancelled order, money returned to you':'Overpayment returned to you')+'</td>'
        +'<td class="amt">'+money(r.amount)+'</td>'
        +'<td class="r">'+(r.paidOn?'<span class="ok">paid '+e(dLong(r.paidOn))+'</span>'
                                   :'<span class="due">owed to you</span>')+'</td></tr>').join('')
@@ -422,12 +434,14 @@ function stmtDoc(party,rows,o){
      +(T.cxN?'<span class="cxn"> &middot; '+T.cxN+' cancelled, not counted</span>':'')
      +'</span><span>'+money(T.total)+'</span></div>',
    '<div class="tr"><span>Paid</span><span>'+money(T.paid)+'</span></div>',
+   (T.cxPaid>0.009?'<div class="tr sub"><span>of which on cancelled orders</span><span>'+money(T.cxPaid)+'</span></div>':''),
    /* say plainly which part of the total has not happened yet, so the ordered figure
       and the paid figure can be reconciled without him having to ask why they differ */
    (T.pendN?'<div class="tr sub"><span>of which not yet collected or paid</span><span>'
       +money(T.pendVal)+'</span></div>':''),
    '<div class="tr big'+(T.owed>0.009?'':' clear')+'"><span>'+(T.owed>0.009?'Outstanding':'Balance')+'</span><span>'
      +(T.owed>0.009?money(T.owed):'nil')+'</span></div>',
+   (refundOwed>0.009?'<div class="tr big"><span>Owed to you</span><span>'+money(refundOwed)+'</span></div>':''),
    '</div>',
    /* GOODS OWED GET THEIR OWN BLOCK. A statement whose only large figure is money can
       read as though nothing else is outstanding, which is exactly the misreading a
@@ -534,7 +548,8 @@ export function makeStatements(outDir, issue) {
     /* the index must agree with each statement's own footer: a cancelled order is
        not an order for counting purposes, so it is out of n as well as out of the money */
     const t = { n: rows.filter(r => !r.cancelled).length, qty: 0, total: 0, paid: 0, owed: 0, toGet: 0, pend: 0, cx: 0 };
-    rows.forEach(r => { if (r.cancelled) { t.cx++; return; }
+    t.refund = o.refunds.filter(r => !r.paidOn).reduce((a, r) => a + (+r.amount || 0), 0);   // v454: what is owed TO them
+    rows.forEach(r => { if (r.cancelled) { t.cx++; t.paid += r.gift ? 0 : (r.paidCash + r.inKind); return; }
                         t.qty += r.qty; t.total += r.total; t.paid += r.gift ? 0 : (r.paidCash + r.inKind);
                         t.owed += r.owed;
                         t.toGet += (r.toGet > 0 && !r.pendingOrder) ? r.toGet : 0;
@@ -565,12 +580,12 @@ export function makeStatements(outDir, issue) {
     /* PENDING IS ITS OWN STATE, not a quiet 'clear'. An agreed order nobody has acted
        on is the one line most likely to need chasing, so the index says so rather than
        letting it sit among the finished accounts looking settled. */
-    const flag = t => t.owed > 0.009 ? 'owes' : (t.toGet > 0.009 ? 'goods' : (t.pend > 0.009 ? 'pend' : 'clear'));
+    const flag = t => t.owed > 0.009 ? 'owes' : (t.toGet > 0.009 ? 'goods' : (t.refund > 0.009 ? 'refund' : (t.pend > 0.009 ? 'pend' : 'clear')));
     const rowsIdx = sheets.map(x => {
       const f = flag(x.t);
       return '<tr class="f-' + f + '"><td class="l"><a href="#s-' + esc(x.who) + '">' + esc(x.who) + '</a></td>'
         + '<td>' + x.t.n + '</td><td>' + n2(x.t.qty) + '</td><td>' + m2(x.t.total) + '</td><td>' + m2(x.t.paid) + '</td>'
-        + '<td class="r">' + (x.t.owed > 0.009 ? '<b class="owe">' + m2(x.t.owed) + '</b>' : '&mdash;') + '</td>'
+        + '<td class="r">' + (x.t.owed > 0.009 ? '<b class="owe">' + m2(x.t.owed) + '</b>' : x.t.refund > 0.009 ? '<b class="rf">' + m2(x.t.refund) + ' to them</b>' : '&mdash;') + '</td>'
         + '<td class="r">' + (x.t.toGet > 0.009 ? '<b class="gd">' + n2(x.t.toGet) + ' unit</b>' : '&mdash;') + '</td>'
         + '<td class="r">' + (x.t.pend > 0.009 ? '<b class="pd">' + m2(x.t.pend) + '</b>' : '&mdash;') + '</td></tr>';
     }).join('');
@@ -591,7 +606,7 @@ export function makeStatements(outDir, issue) {
       + 'font-variant-numeric:tabular-nums;font-size:13.5px}.idx td.l{text-align:left}.idx td.r{text-align:right}'
       + '.idx a{color:#7fd7e8;text-decoration:none;font-weight:700}.idx a:hover{text-decoration:underline}'
       + '.idx tr.f-owes{background:rgba(255,199,90,.05)}.idx tr.f-goods{background:rgba(127,215,232,.05)}'
-      + '.idx tr.f-pend{background:rgba(200,182,255,.05)}'
+      + '.idx tr.f-pend{background:rgba(200,182,255,.05)}.idx tr.f-refund{background:rgba(110,231,168,.05)}b.rf{color:#6ee7a8}'
       + 'b.owe{color:#ffc75a}b.gd{color:#7fd7e8}b.pd{color:#c8b6ff}'
       + '.cut{margin:0;border:0;border-top:1px dashed #2a3140;padding:0}'
       + '.slab{max-width:900px;margin:34px auto 6px;font-size:11px;letter-spacing:.24em;'
