@@ -4268,6 +4268,75 @@ section("v441: the same money, settled two ways, reads the same way on a cancell
   ok(deskSays({}) === "Unpaid", "and Unpaid on one nobody paid for");
 }
 
+
+section("v443: a cancelled order owes no salt, and the desk does not buy to cover one");
+{
+  /* ROUND TEN, and it is the most expensive thing this round has found. txDeferUnits asks how much
+     salt has been paid for and not yet handed over. The three lines DIRECTLY BELOW IT --
+     txPendUnits, txPendUnitsRaw and txPendRM -- have opened with `if(s.cancelled)return 0` since
+     they were written. This one never did, and it is the one that turns MONEY into a claim on the
+     shelf: on a cancelled order paid in full it answered the whole quantity.
+     So the desk held two contradictory claims about one row. txStat said `Refund due`, meaning give
+     the money back, while txDeferUnits said 2.5 unit of salt was owed to the same party. The more
+     expensive of the two drove a purchase: the Buy action read `2.75 unit short on promises` where
+     the truth was 0.25, which is a decision about spending money and not a label.
+     THE PURCHASE SIDE TOOK THIS EXACT SHAPE FIRST, poRecvUnits at v417 and poOpenUnits at v422,
+     with poCash deliberately left alone because money that left the bank still left it. This is the
+     sale-side mirror and txPaid stays unguarded for the same reason. */
+  const { default: PEd } = await import("../engine/position.mjs");
+  const paidCanc = { customer: "CY2-NIL", qty: 2.5, total: 230, cash: 230, deliveredQty: 0, cancelled: true };
+  const live = { customer: "CY2-NIL", qty: 2.5, total: 230, cash: 230, deliveredQty: 0 };
+
+  ok(PEd.txDeferUnits(paidCanc) === 0, `a cancelled order paid in full owes no salt (${PEd.txDeferUnits(paidCanc)})`);
+  ok(PEd.txDeferUnits(live) === 2.5,
+    `while the SAME row uncancelled still owes its 2.5 unit (${PEd.txDeferUnits(live)}), so the guard is a guard and not a blanket zero`);
+  ok(PEd.commitments([paidCanc], 0).owedUnits === 0, "and the commitments walk carries none of it");
+  ok(PEd.commitments([live], 0).owedUnits === 2.5, "while it carries the live one, so the walk is reading the guard rather than ignoring its input");
+  ok(PEd.txStat(paidCanc).pay === "Refund due", "the money is still a refund due: the guard removes the SALT claim, not the money claim");
+  ok(PEd.txPaid(paidCanc) === 230, "and txPaid still reports RM 230 as having been handed over, because it was");
+  ok(PEd.txPendUnits(paidCanc) === 0 && PEd.txPendRM(paidCanc) === 0,
+    "its three neighbours answer nothing too, which is the rule this line was missing");
+
+  /* AND WHAT THE OWNER SEES, rendered, because an engine that is right and a desk that never asks
+     it is the shape this round keeps finding. Built on the book's own s119 so the figures are the
+     desk's real ones rather than a fixture's. */
+  const { openMaster: omD } = await import("../tools/payload.mjs");
+  const { readFileSync: rfD, writeFileSync: wfD, unlinkSync: rmD } = await import("node:fs");
+  const { execSync: exD } = await import("node:child_process");
+  const { join: jD } = await import("node:path");
+  const bkD = JSON.parse(rfD(jD(REPO, "ledger", "book.json"), "utf8"));
+  const target = (bkD.sales || []).find((x) => x.rid === "s119" && !x.cancelled && +x.qty === 2.5);
+  if (!target) skipData("s119 is no longer the 2.5 unit live order this check drives");
+  else {
+    Object.assign(target, { cash: 230, deliveredQty: 0, cancelled: true, cancelledOn: "2026-09-01" });
+    const BD = jD(REPO, "test", ".v443.json"), MD = jD(REPO, "test", ".v443.html");
+    wfD(BD, JSON.stringify(bkD, null, 1));
+    wfD(MD, rfD(jD(REPO, "master", "salt_command.html"), "utf8"));
+    exD("node tools/booksync.mjs --sync", { cwd: REPO, env: { ...process.env, SALT_BOOK: BD, SALT_MASTER: MD }, stdio: "pipe" });
+    const { w: wD } = await omD(MD);
+    wD.eval("setProd('salt');recompute();");
+
+    ok(+wD.eval("defUnits") === 0.5,
+      `the desk owes 0.5 unit out, not the 3 it read with the cancelled order counted (${wD.eval("defUnits")})`);
+    ok(+wD.eval("txDeferUnits(sales.find(function(s){return s.rid==='s119';}))") === 0,
+      "and the cancelled row itself contributes none of it, read through the desk's own copy of the engine");
+
+    /* THE BUY ACTION, which is a decision about spending money */
+    const buy = wD.eval("(function(){var a=actions();var b=a.filter(function(x){return /Buy/.test(x.title||'');})[0];return b?(b.title+' || '+(b.why||'')).replace(/[ \\t\\n\\r]+/g,' '):'';})()");
+    ok(buy !== "", "the desk raises a Buy action at all on this state, so the checks below are not reading an empty string");
+    ok(/0\.25 unit short on promises/.test(buy), `it is 0.25 unit short, not 2.75 (${buy.slice(0, 96)})`);
+    ok(!/CY2-NIL/.test(buy), "and the cancelled party is not named among the deferrals it is buying to cover");
+
+    /* THE SEPARATOR BELONGS TO THE JOIN. With no pending rows the sentence used to read
+       "unmet. ; deferred ...", a semicolon opening a clause after a full stop. Guarding
+       txDeferUnits is exactly what empties the pending list, so this is the ordinary case now. */
+    ok(!/\.\s*;/.test(buy), `the sentence never opens a clause with a semicolon (${(buy.match(/unmet[^|]{0,40}/) || [""])[0]})`);
+    ok(/deferred CE4-CHE/.test(buy), "while the genuine deferral is still named, so the clause was not simply deleted");
+
+    for (const x of [BD, MD]) { try { rmD(x); } catch (e) { /* best effort */ } }
+  }
+}
+
 /* ---- done ----------------------------------------------------------------------- */
 
 section("Round 7: the states no suite check had ever rendered");
@@ -4502,7 +4571,7 @@ section("Round 7: the states no suite check had ever rendered");
    the live count was 879, so thirty-nine assertions could have vanished under a guard written to
    stop exactly that. The margin is four, which covers the book-dependent branches that legitimately
    skip; it is not room for a section to fall out. */
-const FLOOR_ASSERTIONS = 941, FLOOR_SECTIONS = 68;
+const FLOOR_ASSERTIONS = 955, FLOOR_SECTIONS = 69;
 ok(pass + fail - offMachine >= FLOOR_ASSERTIONS,
   `the suite ran ${pass + fail - offMachine} assertions everywhere (${pass + fail} here, ${offMachine} of them needing files that live off this repo), below its floor of ${FLOOR_ASSERTIONS}: a section has stopped running`);
 ok(sections >= FLOOR_SECTIONS,

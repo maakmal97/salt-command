@@ -17,7 +17,18 @@ function txDeliv(s){return (s.deliveredQty||0)+(s.settledKg||0);}
 function txPhys(s){return (s.deliveredQty||0);}
 function txEffDeliv(s){return txDeliv(s)+(s.advanceUnits||0);}
 function txAdvance(s){return Math.max(0,(s.deliveredQty||0)*txPrice(s)-txPaid(s));}
-function txDeferUnits(s){const p=txPrice(s);if(!(p>0))return 0;return Math.max(0,txPaid(s)/p-txEffDeliv(s));}
+/* A CANCELLED ORDER OWES NO SALT. txPendUnits, txPendUnitsRaw and txPendRM, the three lines
+   directly below, have opened with this guard since they were written; this one never did, and
+   it is the one that turns MONEY into a claim on the shelf. txDeferUnits asks how much salt has
+   been paid for and not yet handed over, so on a cancelled order paid in full it answered the
+   whole quantity: the desk then told the owner it owed CY2-NIL 2.5 unit while txStat on the
+   SAME ROW said `Refund due`. Two contradictory claims on one row, and the more expensive one
+   drove a purchase: the Buy action read `2.75 unit short on promises` against a true 0.25.
+   THE PURCHASE SIDE TOOK THIS EXACT SHAPE FIRST: poRecvUnits at v417 and poOpenUnits at v422,
+   with poCash deliberately left unguarded because money that left the bank still left it. This
+   is the sale-side mirror, and txPaid stays unguarded for the same reason: the cash is real, it
+   is simply a refund due rather than salt owed. */
+function txDeferUnits(s){if(s.cancelled)return 0;const p=txPrice(s);if(!(p>0))return 0;return Math.max(0,txPaid(s)/p-txEffDeliv(s));}
 function txPendUnits(s){if(s.cancelled)return 0;return Math.max(0,+(s.qty-txEffDeliv(s)-txDeferUnits(s)).toFixed(2));}
 function txPendUnitsRaw(s){if(s.cancelled)return 0;return Math.max(0,s.qty-txEffDeliv(s)-txDeferUnits(s));}
 function txPendRM(s){if(s.cancelled)return 0;const p=txPrice(s);if(!(p>0))return 0;return +(Math.max(0,s.qty-txEffDeliv(s)-txDeferUnits(s))*p).toFixed(2);}

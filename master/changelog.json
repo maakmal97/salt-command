@@ -1,5 +1,16 @@
 [
  {
+  "v": "v443",
+  "d": "01 Sep 2026",
+  "t": "CANCELLING A PAID ORDER TOLD THE DESK IT OWED THE CUSTOMER SALT, AND IT WENT SHOPPING",
+  "n": [
+   "<b>FOLD 6 OF ROUND TEN, THE EXPENSIVE HALF.</b> txDeferUnits asks how much salt has been paid for and not yet handed over. The three lines DIRECTLY BELOW IT, txPendUnits, txPendUnitsRaw and txPendRM, have opened with if(s.cancelled)return 0 since they were written. This one never did, and it is the one that turns MONEY into a claim on the shelf: on a cancelled order paid in full it answered the whole quantity.",
+   "<b>SO THE DESK HELD TWO CONTRADICTORY CLAIMS ABOUT ONE ROW.</b> txStat said `Refund due`, meaning give the money back. txDeferUnits said 2.5 unit of salt was owed to the same party. Measured on the book's own s119 with RM 230 paid and nothing delivered: salt owed out read 3 unit against a true 0.5, the Order book listed CY2-NIL among the people owed goods, and the Buy action read `2.75 unit short on promises` where the truth was 0.25. That last one is not a label. It is a decision about spending money, made on a promise that had been cancelled.",
+   "<b>THE PURCHASE SIDE TOOK THIS EXACT SHAPE FIRST</b>, poRecvUnits at v417 and poOpenUnits at v422, with poCash deliberately left unguarded because money that left the bank still left it. This is the sale-side mirror, four months late, and txPaid stays unguarded for the same reason: the cash is real, it is simply a refund due rather than salt owed. Everything else on the sale side was swept and is already right or safe by construction, and the ones that are safe by construction rather than guarded are named, because they depend on v434 and v436 staying.",
+   "<b>AND THE TWIN IN THE SENTENCE THE FIX MOVES.</b> The Buy action put its separator on the second clause rather than in the join, so with no pending rows it read `unmet. ; deferred CE4-CHE 0.5 unit.` Guarding txDeferUnits is exactly what empties that list, so a cosmetic fault that was merely reachable became the ordinary case. Four mutations, four reds, including one that guards the money as well as the salt and must stay red. 974 assertions across 69 sections."
+  ]
+ },
+ {
   "v": "v442",
   "d": "01 Sep 2026",
   "t": "AN ASSERTION THAT READ THE SOURCE TEXT HID A FIX THAT HAD NEVER FIRED",
