@@ -31,6 +31,17 @@ const ok = (c, m) => { if (c) { pass++; } else { fail++; console.log("  FAIL: " 
 let offMachine = 0;
 const okOff = (c, m) => { offMachine++; ok(c, m); };
 const skipOff = (m) => { console.log("  SKIP: " + m); };
+/* A SKIP IS NOT A PASS (v442). Nine assertions were written as ok(true, "... (skipped)") for a
+   state the book happens not to carry. Each was counted as proof, and each is an assertion that
+   CANNOT FAIL, which is the fault this whole round is about: a green tick for a check that never
+   ran. None of them is firing today, so nothing was actually being covered up, and that is
+   exactly why it was worth fixing now rather than after a book change made one fire silently.
+   skipData prints and counts NOTHING, so a section that goes quiet takes the assertion floor
+   down with it and CI says so. It is deliberately NOT okOff: okOff is for a check this MACHINE
+   cannot run, which is a property of where you are, and this is a check the BOOK cannot feed,
+   which is a property of the data and can change under you.
+   The floor keeps a margin for these, and the margin is not room for a section to fall out. */
+const skipData = (m) => { console.log("  SKIP (no data): " + m); };
 let sections = 0;
 const section = (s) => { sections++; console.log("\n" + s); };
 
@@ -1221,7 +1232,7 @@ section("Ledger — the date is superior to the position");
   const MASTER = process.env.SALT_MASTER ||
     join(REPO, "master", "salt_command.html");
   if (!existsSync(MASTER)) {
-    ok(true, "the master is not on this machine, so the order check is skipped");
+    skipData("the master is not on this machine, so the order check is skipped");
   } else {
     /* ROWS ARE APPENDED IN THE ORDER THEY WERE FOLDED, WHICH IS NOT THE ORDER THINGS HAPPENED.
        A row agreed on the 17th and fulfilled on the 18th lands after rows dated the 18th, and
@@ -2529,7 +2540,7 @@ section("Silence — four things that failed without saying so (v384)");
      a number, which is the same lesson the shelf-cost assertion above learned. */
   const bk = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
   const oilLots = (bk.purchases || []).filter((p) => p.product === "oil" && p.receivedOn && p.qty > 0);
-  if (!oilLots.length) ok(true, "no received oil lot on the book, so the check is skipped");
+  if (!oilLots.length) skipData("no received oil lot on the book, so the check is skipped");
   else {
     oilLots.sort((a, b) => String(a.receivedOn).localeCompare(String(b.receivedOn)));
     const newest = oilLots[oilLots.length - 1];
@@ -2988,7 +2999,7 @@ section("v409: the Enter sheet is priced against the book it books to");
   const { openMaster } = await import("../tools/payload.mjs");
   const { w } = await openMaster();
   const prods = JSON.parse(w.eval("JSON.stringify(PROD_ORDER)"));
-  if (prods.length < 2) { ok(true, "one book only, so the cross-book entry case cannot arise (skipped)"); }
+  if (prods.length < 2) { skipData("one book only, so the cross-book entry case cannot arise"); }
   else {
     const [a, b] = prods;
     w.eval("setProdView(" + JSON.stringify(a) + ");");
@@ -3040,7 +3051,7 @@ section("v409: the Enter sheet is priced against the book it books to");
         "and the coach says so rather than quoting their other book");
       ok(!said.some(function (m) { return /below their usual|above their usual/.test(m); }),
         "with no comparison against a rate they never paid on this book");
-    } else ok(true, "every party has traded on both books, so the cross-book case cannot arise (skipped)");
+    } else skipData("every party has traded on both books, so the cross-book case cannot arise");
     /* A RATE BETWEEN THE TWO BOOKS' BEST, which is the only value that tells them apart: oil's best
        is RM 13 and the whole ledger's is RM 210, so RM 50 is a record on oil and unremarkable
        against salt. Asserting an impossible RM 99,999 would have passed either way, and did. */
@@ -3049,7 +3060,7 @@ section("v409: the Enter sheet is priced against the book it books to");
       const best = JSON.parse(wc2.eval("JSON.stringify(priceCoach(null," + mid + ",1).map(function(c){return c.msg;}))"));
       ok(best.some(function (m) { return /Best rate the desk has ever taken/.test(m); }),
         "a rate above THIS book's best is called a record, though the other book has beaten it (RM " + Math.round(mid) + ")");
-    } else ok(true, "the two books share a best rate, so this comparison cannot be told apart (skipped)");
+    } else skipData("the two books share a best rate, so this comparison cannot be told apart");
     wc2.eval("setProdView(" + JSON.stringify(prods2[0]) + ");");
   }
 }
@@ -3246,7 +3257,7 @@ section("v413: a lot is not measured like a sale");
     w.eval("document.getElementById('updCash').value='1';document.getElementById('updCash').oninput();");
     ok(!/Pending/.test(w.eval("document.getElementById('updSay').textContent")),
       "and the sentence does not call a landed lot Pending, which txStat cannot help but do");
-  } else ok(true, "no settled landed lot on the book to check the panel against (skipped)");
+  } else skipData("no settled landed lot on the book to check the panel against");
 
   /* 3. the fold, on lots it is handed rather than on its own source text */
   const lot = (over) => Object.assign({ date: "2026-08-01", qty: 10, total: 500, supplier: "SF6-KLC",
@@ -3338,7 +3349,7 @@ section("v413: a lot is not measured like a sale");
         "the desk does not move goods onto an already-cancelled row either");
       ok(/already cancelled/.test(wB.eval("JSON.stringify(provNotes.slice(-1))")),
         "and records why rather than declining in silence");
-    } else ok(true, "no cancelled row on the book to drive the desk half with (skipped)");
+    } else skipData("no cancelled row on the book to drive the desk half with");
   }
 
   const c2 = lot({ status: "paid", receivedQty: null, inTransit: false });
@@ -3403,7 +3414,7 @@ section("v413: a lot is not measured like a sale");
     ok(bill(target) === 0,
       "and folding WHAT THE CHIP QUEUED books no payable (bill RM " + bill(target) + ", total RM " + target.total + ")");
     ok(target.pending === true, "because the chip queued the pending flag itself");
-  } else ok(true, "no settled landed lot to drive the pending chip on (skipped)");
+  } else skipData("no settled landed lot to drive the pending chip on");
 }
 
 
@@ -3447,10 +3458,25 @@ section("v416: a correction states a figure, it does not un-pay a lot");
   ok(f2.status === "paid", "a lot carrying an explicit cash figure is measured against the new total");
 
   /* the desk must give the same answer as the fold, which is the whole reason ovAmend exists */
-  const src = (await import("node:fs")).readFileSync(
-    (await import("node:path")).join(REPO, "master", "salt_command.html"), "utf8");
-  ok(/const paidBefore=poCash\(row\);/.test(src) && /paid=asked\(.cash.\)\?\(row\.cash!=null/.test(src),
-    "ovAmend captures the payment before the field writes, as the fold does");
+  /* v442: THIS MATCHED THE SOURCE FOR TWO LITERALS, which is one of the two forms round ten ruled
+     out, and it could not tell a working capture from a deleted one that happened to leave the
+     text behind. It DRIVES the desk now, on the state the fault needs: a lot booked status "paid"
+     with NO cash field, which is how every settled historical lot is stored. poCash reads that as
+     meaning the row TOTAL, so a capture taken after the write returns the NEW total and a price
+     correction reads as already paid at any figure. */
+  const { openMaster: om16 } = await import("../tools/payload.mjs");
+  const { w: w16 } = await om16();
+  w16.eval("setProd('salt');recompute();");
+  const settled16 = { rid: "q1", date: "2026-07-01", qty: 10, total: 500, supplier: "SF6-KLC", status: "paid" };
+  w16.eval("purchases.push(" + JSON.stringify(settled16) + ");");
+  w16.eval("ovAmend({kind:'Correction',date:'2026-09-01',direction:'BUY',rid:'q1',fields:{total:900}},{at:'x'})");
+  const q1 = JSON.parse(w16.eval("JSON.stringify(purchases.find(function(p){return p.rid==='q1';}))"));
+  ok(+q1.total === 900, `the correction sets the total (${q1.total})`);
+  ok(q1.status === "partial",
+    `and the lot reads partial, because RM 500 was paid against a new RM 900 (${q1.status}). A capture taken after the write reads paid at any figure.`);
+  const f16 = Object.assign({}, settled16);
+  applyAmend(f16, { kind: "Correction", date: "2026-09-01", fields: { total: 900 } }, "BUY", null);
+  ok(f16.status === q1.status, `and the fold says the same word (${f16.status} against ${q1.status}), which is the whole reason ovAmend exists`);
 }
 
 
@@ -3492,10 +3518,26 @@ section("v417: a cancelled lot counts nowhere in stock, and is not a bill");
   ok(E.poRecvUnits(paidCanc) === 0, "while still counting nowhere in stock");
 
   /* the desk half: the strip and the bill line */
-  const src = (await import("node:fs")).readFileSync(
-    (await import("node:path")).join(REPO, "master", "salt_command.html"), "utf8");
-  ok(/t\.type==='BUY'&&!t\.cancelled/.test(src),
-    "the ledger strip excludes a cancelled lot from the BUY half, as it already did from the SELL half");
+  /* v442: THIS MATCHED THE SOURCE FOR A LITERAL and named the wrong thing while it was at it:
+     the predicate lives in ledTotals, not in a strip. It RUNS ledTotals now, on a list holding one
+     live lot and one cancelled lot of identical size, so the cancelled one is excluded by its flag
+     and not by being empty. */
+  const { openMaster: om17 } = await import("../tools/payload.mjs");
+  const { w: w17 } = await om17();
+  w17.eval("setProd('salt');recompute();");
+  /* THE LIST WRAPS A PURCHASE, and reading the flag off the wrapper rather than the row is the
+     whole fault: t.cancelled on a BUY is undefined always, so v417's exclusion never fired. The
+     fixture is built the way the desk builds it, wrapper and all, or the check would pass on a
+     shape the desk never makes. */
+  const mkLot = (o) => { const p = Object.assign({ date: "2026-08-01", supplier: "SF6-KLC", qty: 10, total: 500, cash: 500, status: "paid", receivedQty: 10 }, o);
+    return { date: p.date, type: "BUY", who: p.supplier, qty: p.qty, total: p.total, _buy: p }; };
+  const both = JSON.parse(w17.eval("JSON.stringify(ledTotals(" + JSON.stringify([mkLot({}), mkLot({ cancelled: true })]) + "))"));
+  const oneOnly = JSON.parse(w17.eval("JSON.stringify(ledTotals(" + JSON.stringify([mkLot({})]) + "))"));
+  ok(JSON.stringify(both) === JSON.stringify(oneOnly),
+    "a cancelled lot adds nothing to the BUY half: the totals over one live lot and over that lot plus a cancelled twin are identical");
+  const twoLive = JSON.parse(w17.eval("JSON.stringify(ledTotals(" + JSON.stringify([mkLot({}), mkLot({})]) + "))"));
+  ok(JSON.stringify(twoLive) !== JSON.stringify(oneOnly),
+    "while a SECOND LIVE lot does move them, so the comparison above is about the flag and not about ledTotals ignoring its input");
   /* v438: this READ THE SOURCE for a literal, which is one of the two forms round ten ruled out,
      and it proved it: routing the line through poOwed changed nothing about its behaviour and the
      assertion went red anyway, because the bytes it was matching had moved. It runs the rule now. */
@@ -3919,8 +3961,18 @@ section("v432: the money on a statement is the money on the book");
       `${src.rid} carries its real total of RM ${src.total} (statement says RM ${r && r.total})`);
   }
 
-  /* and a goodwill row with no rebate beside it is still a gift */
-  ok(true, "goodwill is covered by the gift-rule check above");
+  /* v442: THIS ASSERTED NOTHING. It was written as ok(true) with a sentence saying the case was
+     covered elsewhere, which is a claim about the suite rather than about the book, and it is the
+     purest form of the fault this round is about. The goodwill leg is checked here on its own. */
+  const gw = (bookM.sales || []).filter((x) => x.goodwill && !x.rebate);
+  if (!gw.length) skipData("no goodwill row without a rebate beside it on the book");
+  for (const src of gw) {
+    const r = stmtRows(src.customer, SO).find((x) => x.rid === src.rid);
+    const cash = +src.cash || 0;
+    if (!r) continue;
+    ok(!!r.gift === (cash <= 0.009),
+      `${src.rid}: a goodwill row is a gift exactly when no cash was paid on it (cash RM ${cash}, printed as ${r.gift ? "a gift" : "charged"})`);
+  }
 }
 
 
@@ -4260,7 +4312,7 @@ section("Round 7: the states no suite check had ever rendered");
   {
     const b = JSON.parse(JSON.stringify(bookNow));
     const row = (b.sales || []).find((r) => !r.date && !r.cancelled && (r.product || "salt") === "salt");
-    if (!row) { ok(true, "no live undated sale to test the finRows guard with (skipped)"); }
+    if (!row) { skipData("no live undated sale to test the finRows guard with"); }
     else {
       row.cash = 100;
       const r = await paneOf(withBook(b), "financials", "salt");
@@ -4450,7 +4502,7 @@ section("Round 7: the states no suite check had ever rendered");
    the live count was 879, so thirty-nine assertions could have vanished under a guard written to
    stop exactly that. The margin is four, which covers the book-dependent branches that legitimately
    skip; it is not room for a section to fall out. */
-const FLOOR_ASSERTIONS = 939, FLOOR_SECTIONS = 68;
+const FLOOR_ASSERTIONS = 941, FLOOR_SECTIONS = 68;
 ok(pass + fail - offMachine >= FLOOR_ASSERTIONS,
   `the suite ran ${pass + fail - offMachine} assertions everywhere (${pass + fail} here, ${offMachine} of them needing files that live off this repo), below its floor of ${FLOOR_ASSERTIONS}: a section has stopped running`);
 ok(sections >= FLOOR_SECTIONS,

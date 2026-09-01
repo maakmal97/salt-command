@@ -1,5 +1,16 @@
 [
  {
+  "v": "v442",
+  "d": "01 Sep 2026",
+  "t": "AN ASSERTION THAT READ THE SOURCE TEXT HID A FIX THAT HAD NEVER FIRED",
+  "n": [
+   "<b>FOLD 7 OF ROUND TEN, AND IT IS THE ROUND'S OWN THESIS CAUGHT IN THE ACT.</b> v417 gave ledTotals' BUY half the SELL half's !t.cancelled. The list wraps a purchase as {date,type,who,qty,total,_buy}, so t.cancelled on a BUY is undefined always and the exclusion has never fired, through four folds. The line directly below it in the same function already knew, reading t._buy.defaulted off the INNER row: one function, two rulers. What defended it was an assertion matching the SOURCE TEXT, so it passed on the strength of the words being present rather than the code working.",
+   "<b>WHAT IT COST, MEASURED.</b> A cancelled lot added its total to `bought` while poRecvUnits correctly kept it out of `inUnits`, so the strip read RM 1,000 bought for 10 unit received and contradicted itself. Latent today, since no cancelled lot is on the book. Every other consumer of that list unwraps correctly, checked one at a time: isPend, the card render, wbBuyOrders and wbSoFarBuy. This was the only site, and both halves of the surviving line now read through one helper so they cannot drift apart again.",
+   "<b>THREE ASSERTIONS THAT MATCHED SOURCE TEXT ARE NOW RUN.</b> v416's grep for two literals became a Correction driven through the desk on a lot booked paid with no cash field, which is the state where a capture taken after the write reads paid at any figure; it asserts the fold says the same word. v417's became a call to ledTotals over a live lot and a cancelled twin of identical size, with a second live lot proving the comparison is about the flag and not about the function ignoring its input.",
+   "<b>AND A SKIP IS NOT A PASS.</b> Nine assertions were written as ok(true, \"... (skipped)\") for states the book happens not to carry, each counted as proof and none able to fail. They print and count nothing now, so a section going quiet takes the floor down with it. One more asserted nothing at all, saying only that the case was covered elsewhere, which is a claim about the suite and not about the book; it is a real goodwill check now, and it reports honestly that the book carries no row to drive it. Four mutations, four reds. 960 assertions across 68 sections."
+  ]
+ },
+ {
   "v": "v441",
   "d": "01 Sep 2026",
   "t": "THE SAME MONEY, SETTLED TWO WAYS, GOT TWO DIFFERENT ANSWERS ON A CANCELLED ORDER",
