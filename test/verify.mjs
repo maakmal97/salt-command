@@ -19,7 +19,8 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO = resolve(HERE, "..");
 let pass = 0, fail = 0;
 const ok = (c, m) => { if (c) { pass++; } else { fail++; console.log("  FAIL: " + m); } };
-const section = (s) => console.log("\n" + s);
+let sections = 0;
+const section = (s) => { sections++; console.log("\n" + s); };
 
 /* ---- KV + env mocks ------------------------------------------------------------- */
 class KV {
@@ -2967,14 +2968,37 @@ section("v409: the Enter sheet is priced against the book it books to");
     w.eval("setProdView(" + JSON.stringify(a) + ");");
   }
 
-  /* the coach compares like with like: both its history reads scope to the book on screen */
-  const src = (await import("node:fs")).readFileSync((await import("node:path")).join(REPO, "master", "salt_command.html"), "utf8");
-  const cp = src.slice(src.indexOf("function custPrices("), src.indexOf("function custPrices(") + 420);
-  ok(/pSales\(PROD\)/.test(cp) && !/\breturn sales\.filter/.test(cp),
-    "custPrices reads the book on screen, so a party's other-book history cannot price this order");
-  const pc = src.slice(src.indexOf("function priceCoach("), src.indexOf("function priceCoach(") + 700);
-  ok(!/const all=sales\.filter/.test(pc),
-    "the coach's best-rate comparison is scoped to the book, not the whole ledger");
+  /* v431: THE COACH IS RUN, NOT GREPPED. These were two source searches, which is the form this
+     review keeps retiring: they pass on the presence of a string and survive any rewrite that keeps
+     the words. The coach is called on the NON-LEAD book against a party whose history is on the
+     other one, and the answer is read. If custPrices leaked across books, that party would have a
+     median here and the coach would speak of it. */
+  {
+    const { w: wc2 } = await openMaster();
+    const prods2 = JSON.parse(wc2.eval("JSON.stringify(PROD_ORDER)"));
+    const other = prods2[1] || prods2[0];
+    wc2.eval("setProdView(" + JSON.stringify(other) + ");");
+    const stranger = JSON.parse(wc2.eval("JSON.stringify((function(){var here={};pSales(PROD).forEach(function(s){here[s.customer]=1;});var all=sales.filter(function(s){return !s.cancelled&&s.customer&&(s.total||0)>0;});for(var i=0;i<all.length;i++){if(!here[all[i].customer])return all[i].customer;}return null;})())"));
+    if (stranger) {
+      const hist = +wc2.eval("custPrices(" + JSON.stringify(stranger) + ").length");
+      ok(hist === 0, "a party with no history on THIS book has none in the coach's eyes (" + stranger + ")");
+      const said = JSON.parse(wc2.eval("JSON.stringify(priceCoach(" + JSON.stringify(stranger) + ",10,1).map(function(c){return c.msg;}))"));
+      ok(said.some(function (m) { return /No price history here/.test(m); }),
+        "and the coach says so rather than quoting their other book");
+      ok(!said.some(function (m) { return /below their usual|above their usual/.test(m); }),
+        "with no comparison against a rate they never paid on this book");
+    } else ok(true, "every party has traded on both books, so the cross-book case cannot arise (skipped)");
+    /* A RATE BETWEEN THE TWO BOOKS' BEST, which is the only value that tells them apart: oil's best
+       is RM 13 and the whole ledger's is RM 210, so RM 50 is a record on oil and unremarkable
+       against salt. Asserting an impossible RM 99,999 would have passed either way, and did. */
+    const mid = JSON.parse(wc2.eval("JSON.stringify((function(){var here=pSales(PROD).filter(function(s){return !s.cancelled&&s.qty>0&&s.total>0;}).map(function(s){return s.total/s.qty;});var all=sales.filter(function(s){return !s.cancelled&&s.qty>0&&s.total>0;}).map(function(s){return s.total/s.qty;});var hb=here.length?Math.max.apply(null,here):0;var ab=Math.max.apply(null,all);return ab>hb+1?(hb+ab)/2:null;})())"));
+    if (mid) {
+      const best = JSON.parse(wc2.eval("JSON.stringify(priceCoach(null," + mid + ",1).map(function(c){return c.msg;}))"));
+      ok(best.some(function (m) { return /Best rate the desk has ever taken/.test(m); }),
+        "a rate above THIS book's best is called a record, though the other book has beaten it (RM " + Math.round(mid) + ")");
+    } else ok(true, "the two books share a best rate, so this comparison cannot be told apart (skipped)");
+    wc2.eval("setProdView(" + JSON.stringify(prods2[0]) + ");");
+  }
 }
 
 
@@ -3881,5 +3905,18 @@ section("Round 7: the states no suite check had ever rendered");
   for (const f of [TMP, TMPB, TMP + ".run.html"]) { try { rm(f); } catch (e) { /* best effort */ } }
 }
 
-console.log(`\n${pass} passed, ${fail} failed`);
+/* ============ THE FLOOR (v431) ============
+   Round eight made THIRTY assertions vanish and the suite still read a clean pass, because nothing
+   compares the count: a section that stops running, or a block that returns early on a book that
+   has changed, reads exactly like a section with nothing to say. These two numbers are the guard.
+   They sit a little below the live count because four blocks branch on what the book happens to
+   hold and skip legitimately; the point is to catch a section falling out, not to pin a total.
+   Raise them when the suite grows. */
+const FLOOR_ASSERTIONS = 840, FLOOR_SECTIONS = 60;
+ok(pass + fail >= FLOOR_ASSERTIONS,
+  `the suite ran ${pass + fail} assertions, below its floor of ${FLOOR_ASSERTIONS}: a section has stopped running`);
+ok(sections >= FLOOR_SECTIONS,
+  `the suite ran ${sections} sections, below its floor of ${FLOOR_SECTIONS}: a section has stopped running`);
+
+console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
 process.exit(fail ? 1 : 0);
