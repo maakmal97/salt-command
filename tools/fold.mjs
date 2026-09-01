@@ -410,7 +410,16 @@ export function applyAmend(row, pay, dir, note) {   /* v413: exported so the sui
   if (row.cancelled && ((+pay.cash || 0) > 0.009 || (+pay.kg || 0) > 0.009))
     throw new Error(`this row is already cancelled, so ${(+pay.cash || 0) > 0.009 ? "RM " + (+pay.cash) + " " : ""}${(+pay.kg || 0) > 0.009 ? (+pay.kg) + " unit " : ""}cannot be recorded against it: revive it by Correction first, or record the movement on the row that actually carries it`);
   if (dir === "BUY") {
-    if (pay.kind === "Default") { row.defaulted = true; delete row.receivedOn; delete row.pending; return; }
+    /* v435, ROUND TEN: A LOT THAT HAS ARRIVED CANNOT HAVE BEEN DEFAULTED ON. The flag means the supplier
+     took the money and sent nothing, and poRecvUnits short-circuits on it, so setting it on a
+     landed lot does not merely mislabel the row: it ERASES the goods. Defaulting p001 took its
+     received quantity from 12.5 to 0, walking stock that is physically on the shelf out of the
+     book. Seventeen lots were offerable. */
+    if (pay.kind === "Default") {
+      const arrived = E.poRecvUnits(row);
+      if (arrived > 0.009) throw new Error(`this lot has received ${arrived} unit, so it cannot be recorded as a supplier default: a default means nothing arrived. Restate the quantity by Modification for what did arrive, then default the remainder`);
+      row.defaulted = true; delete row.receivedOn; delete row.pending; return;
+    }
     /* v413, ROUND EIGHT, MATERIAL: this branch RETURNED before the Cancellation handler below, so
        cancelling a lot set nothing, fell through to the status recompute, and rewrote a lot stored
        status:"paid" to unpaid. One right-click and an approval, and the chip, the panel, the draft

@@ -1,5 +1,15 @@
 [
  {
+  "v": "v435",
+  "d": "03 Sep 2026",
+  "t": "MARKING A LANDED LOT AS A SUPPLIER DEFAULT DID NOT MISLABEL IT, IT ERASED THE GOODS",
+  "n": [
+   "<b>FOLD 2 OF ROUND TEN, AND IT IS WORSE THAN THE ROUND REPORTED.</b> The defaulted flag means the supplier took the money and sent nothing, and poRecvUnits short-circuits on it. So setting it on a lot that has ARRIVED does not merely put a wrong word on the card: it walks the goods out of the book. Defaulting p001 took its received quantity from 12.5 to nothing, with 12.5 unit sitting physically on the shelf. Seventeen lots were offerable, the chip was on every one of them, and not one of the four readers refused it.",
+   "<b>THE FOLD REFUSES IT, THE DESK DECLINES IT, AND THE PANEL NO LONGER OFFERS IT.</b> The refusal says what to do instead: restate the quantity by Modification for what did arrive, then default the remainder. A lot that has received nothing still defaults, and so does a pending one, both asserted, because a guard that stops the legitimate case is a wall and this desk has shipped one of those before.",
+   "<b>THE SWEEP, LISTED:</b> the fold's Default branch and the desk's are the only two places the flag is set, and the update panel and the Workbench amend pane are the only two that offer it. Three are fixed; the Workbench offers Default only on the BUY side and reaches the same fold gate, so it is refused where it lands rather than where it is typed. Two mutations, two reds. 892 assertions."
+  ]
+ },
+ {
   "v": "v434",
   "d": "02 Sep 2026",
   "t": "WHICH OF TWO APPROVED AMENDMENTS SORTED FIRST DECIDED WHETHER THE BOOK TOOK A CONTRADICTION",

@@ -3234,6 +3234,42 @@ section("v413: a lot is not measured like a sale");
     try { applyAmend(okCorrect, { kind: "Correction", date: "2026-09-01", fields: { note: "x" } }, "SELL", null); } catch (e) { threw2 = true; }
     ok(!threw2, "and a cancelled row can still be corrected, because restating a record is not moving goods");
 
+    /* v435, ROUND TEN: A LOT THAT HAS ARRIVED CANNOT HAVE BEEN DEFAULTED ON. The flag means the
+       supplier took the money and sent nothing, and poRecvUnits short-circuits on it, so setting it
+       on a landed lot does not merely mislabel the row, it ERASES the goods: defaulting p001 took
+       its received quantity from 12.5 to 0, walking stock that is physically on the shelf out of
+       the book. Seventeen lots were offerable and nothing in the chain refused it. */
+    {
+      const bkD = JSON.parse(readFileSync(resolve(REPO, "ledger", "book.json"), "utf8"));
+      const Eng2 = (await import("../engine/position.mjs")).default;
+      const landed = JSON.parse(JSON.stringify((bkD.purchases || []).find((p) => !p.defaulted && !p.cancelled && Eng2.poRecvUnits(p) > 0.009)));
+      ok(!!landed, "the book carries a landed lot to test with");
+      if (landed) {
+        const had = Eng2.poRecvUnits(landed);
+        let refusedD = false;
+        try { applyAmend(landed, { kind: "Default", date: "2026-09-01" }, "BUY", null); } catch (e) { refusedD = true; }
+        ok(refusedD, `a landed lot cannot be recorded as a supplier default (${had} unit had arrived)`);
+        ok(Eng2.poRecvUnits(landed) === had, "and its goods are still on the book rather than erased by the flag");
+      }
+      const inT = { date: "2026-08-01", qty: 10, total: 500, supplier: "SF6-KLC", inTransit: true, receivedQty: 0, rid: "pT" };
+      applyAmend(inT, { kind: "Default", date: "2026-09-01" }, "BUY", null);
+      ok(inT.defaulted === true, "while a lot that received nothing still defaults, so the guard is not a wall");
+      const pend = { date: "2026-08-01", qty: 10, total: 500, supplier: "SF6-KLC", pending: true, rid: "pP" };
+      applyAmend(pend, { kind: "Default", date: "2026-09-01" }, "BUY", null);
+      ok(pend.defaulted === true, "and so does a pending one");
+      /* and the panel does not offer what the book will not take */
+      const { openMaster: omD } = await import("../tools/payload.mjs");
+      const { w: wD } = await omD();
+      wD.eval("setProd('salt');recompute();");
+      const lRid = JSON.parse(wD.eval("JSON.stringify((purchases.find(function(p){return !p.defaulted&&!p.cancelled&&poRecvUnits(p)>0.009;})||{}).rid||null)"));
+      if (lRid) {
+        wD.eval("ledEdit(" + JSON.stringify(lRid) + ",'BUY');");
+        const dChips2 = JSON.parse(wD.eval("JSON.stringify([].map.call(document.querySelectorAll('.updchip'),function(x){return x.textContent;}))"));
+        ok(!dChips2.some((c) => /Defaulted/.test(c)),
+          "and the panel does not offer Defaulted on a landed lot (" + dChips2.join(" / ") + ")");
+      }
+    }
+
     /* AND THE DESK, because the fold half alone rode this section green: ovAmend mirrors applyAmend
        and gained the same guard, and asserting only one engine is how v413 shipped a fold fixed and
        a desk left, which is what made v414 necessary. */
@@ -4047,7 +4083,7 @@ section("Round 7: the states no suite check had ever rendered");
    the live count was 879, so thirty-nine assertions could have vanished under a guard written to
    stop exactly that. The margin is four, which covers the book-dependent branches that legitimately
    skip; it is not room for a section to fall out. */
-const FLOOR_ASSERTIONS = 882, FLOOR_SECTIONS = 64;
+const FLOOR_ASSERTIONS = 888, FLOOR_SECTIONS = 64;
 ok(pass + fail >= FLOOR_ASSERTIONS,
   `the suite ran ${pass + fail} assertions, below its floor of ${FLOOR_ASSERTIONS}: a section has stopped running`);
 ok(sections >= FLOOR_SECTIONS,
