@@ -3373,6 +3373,72 @@ section("v419: cancelling a delivered sale is refused everywhere it is offered")
   }
 }
 
+
+section("v420: the desk and the fold leave a row in the same state");
+{
+  /* ROUND NINE, TWIN CLASS 8. ovAmend is written to BE applyAmend: the repo says in three places
+     that a desk and a fold disagreeing about what an edit does is two books. It had drifted. The
+     fold makes five writes in its SELL tail and the desk made two, so the overlay previewed an
+     order paid in full with no paid-on date, and a first movement on an undated row left it
+     undated on screen and dated in the book.
+     THIS IS A DIFFERENTIAL, not three named assertions, and that is the point: the same row and
+     the same amendment go through BOTH engines and the results must be identical. It cannot be
+     defeated by a comment, its inputs are not computed by either engine, and it covers writes
+     nobody thought to name. It earned that immediately: it caught a FOURTH drift I had not fixed,
+     the trail seed saying "as booked" where the fold says "as booked, pending and undated". */
+  const { openMaster: om5 } = await import("../tools/payload.mjs");
+  const { applyAmend: fold5 } = await import("../tools/fold.mjs");
+  const { readFileSync: rf5, writeFileSync: wf5, unlinkSync: rm5 } = await import("node:fs");
+  const { execSync: ex5 } = await import("node:child_process");
+  const { join: j5 } = await import("node:path");
+
+  const SALES = [
+    { rid: "t101", date: null, qty: 2, total: 200, customer: "CN6-WM" },
+    { rid: "t102", date: "2026-08-01", qty: 2, total: 200, customer: "CN6-WM", cash: 100, deliveredQty: 1 },
+    { rid: "t103", date: "2026-08-01", qty: 2, total: 200, customer: "CN6-WM", cash: 0, deliveredQty: 0 },
+  ];
+  const LOTS = [
+    { rid: "t201", date: null, qty: 10, total: 500, supplier: "SF6-KLC", pending: true },
+    { rid: "t202", date: "2026-08-01", qty: 10, total: 500, supplier: "SF6-KLC", inTransit: true, receivedQty: 0 },
+  ];
+  const AMENDS = [
+    { kind: "Fulfilment", cash: 100, kg: 1 }, { kind: "Fulfilment", cash: 200, kg: 2 },
+    { kind: "Fulfilment", cash: 0, kg: 2 },   { kind: "Fulfilment", cash: 200, kg: 0 },
+  ];
+
+  const bk5 = JSON.parse(rf5(j5(REPO, "ledger", "book.json"), "utf8"));
+  bk5.sales = bk5.sales.concat(SALES.map((r) => Object.assign({}, r)));
+  bk5.purchases = bk5.purchases.concat(LOTS.map((r) => Object.assign({}, r)));
+  const B5 = j5(REPO, "test", ".v420.json"), M5 = j5(REPO, "test", ".v420.html");
+  wf5(B5, JSON.stringify(bk5, null, 1));
+  wf5(M5, rf5(j5(REPO, "master", "salt_command.html"), "utf8"));
+  ex5("node tools/booksync.mjs --sync", { cwd: REPO, env: { ...process.env, SALT_BOOK: B5, SALT_MASTER: M5 }, stdio: "pipe" });
+
+  const strip = (r) => { const o = JSON.parse(JSON.stringify(r)); delete o._prov; return o; };
+  let compared = 0; const differed = [];
+  for (const [rows, dir] of [[SALES, "SELL"], [LOTS, "BUY"]]) {
+    for (const seed of rows) {
+      for (const am of AMENDS) {
+        const pay = Object.assign({ date: "2026-09-01" }, am);
+        const fr = JSON.parse(JSON.stringify(seed));
+        try { fold5(fr, pay, dir, null); } catch (e) { /* a refusal is a state too; the desk must decline */ }
+        const { w: wq } = await om5(M5);
+        wq.eval("setProd('salt');recompute();");
+        wq.eval("ovAmend(" + JSON.stringify(Object.assign({ direction: dir, rid: seed.rid }, pay)) + ",{at:'x'})");
+        const arr = dir === "BUY" ? "purchases" : "sales";
+        const dr = JSON.parse(wq.eval("JSON.stringify(" + arr + ".find(r=>r.rid===" + JSON.stringify(seed.rid) + "))"));
+        compared++;
+        const a = JSON.stringify(strip(fr)), b = JSON.stringify(strip(dr));
+        if (a !== b) differed.push(seed.rid + " " + dir + " cash " + am.cash + " kg " + am.kg + " | fold " + a.slice(0, 150) + " | desk " + b.slice(0, 150));
+      }
+    }
+  }
+  ok(compared === 20, "twenty row-and-amendment pairs were put through both engines (" + compared + ")");
+  ok(differed.length === 0,
+    "the desk and the fold leave every one in the same state -- " + differed.slice(0, 2).join(" || "));
+  for (const f of [B5, M5]) { try { rm5(f); } catch (e) { /* best effort */ } }
+}
+
 /* ---- done ----------------------------------------------------------------------- */
 
 section("Round 7: the states no suite check had ever rendered");
