@@ -51,3 +51,4 @@ master/_fold_notes.json
 # open, so it is untracked here rather than deleted. Generated pages are never hand-edited
 # and never versioned; this one was the exception and should not have been.
 _Open.html
+test/_render/

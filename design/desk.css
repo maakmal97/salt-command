@@ -41,13 +41,14 @@ body[data-sec]{--acc:var(--salt-brass);--accB:var(--salt-copper);}
 
 /* ---- 2. THE GROUND AND THE LIGHT. Flat obsidian; the two orbs are the aurora, copper
    upper left and brass lower right, as SaltProvider draws it. The third orb, which took
-   the view's hue, goes with the hues. ---- */
+   the view's hue, went with the hues at v473, and so did the page-level colour system it
+   belonged to: the per-view accents, the root palette, the register palette and its two
+   body grounds, the diamond logo and the headline gradient. This section owns the ground. ---- */
 html[data-tod="register"] body,body{background:var(--salt-obsidian);color:var(--salt-salt);
   font-family:var(--salt-font-display);font-size:14px;line-height:1.55;}
-.orb{filter:blur(100px);opacity:.30;}
-.orb.a{width:55vw;height:55vw;min-width:380px;min-height:380px;top:-22vh;left:-18vw;right:auto;background:var(--salt-copper);}
-.orb.b{width:45vw;height:45vw;min-width:320px;min-height:320px;bottom:-18vh;right:-12vw;left:auto;background:var(--salt-brass);}
-.orb.c{display:none;}
+.orb{position:fixed;border-radius:50%;filter:blur(100px);z-index:0;pointer-events:none;opacity:.30;}
+.orb.a{width:55vw;height:55vw;min-width:380px;min-height:380px;top:-22vh;left:-18vw;background:var(--salt-copper);}
+.orb.b{width:45vw;height:45vw;min-width:320px;min-height:320px;bottom:-18vh;right:-12vw;background:var(--salt-brass);}
 
 /* ---- 3. TYPE. Every figure, code, label and control is mono; every sentence inherits
    the display face from body. The list is the desk's whole figure vocabulary. ---- */

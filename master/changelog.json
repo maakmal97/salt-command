@@ -1,5 +1,16 @@
 [
  {
+  "v": "v474",
+  "d": "02 Sep 2026",
+  "t": "THE PAGE-LEVEL COLOUR SYSTEM v472 REPLACED IS RETIRED",
+  "n": [
+   "<b>HIS INSTRUCTION, 02 SEP 2026: retire the older material layers, in smaller folds.</b> This is the first, and it takes the page-level colour system alone: the twenty-three per-view accent rules, the root palette that named ice, gold, violet, green and crimson, the register palette and both of its body grounds, the three orb rules and the third orb itself, the diamond logo that left the markup at v472, and the two headline gradients. 5,231 bytes of rules the v472 layer had already overridden in full, and the ground now has one owner: section 2 of design/desk.css.",
+   "<b>NOTHING VISIBLE MOVED, AND THAT IS MEASURED IN PIXELS.</b> tools/renderdiff.mjs renders every part at 1280 and 375 with motion off, the stamp and the version hidden and the journal's version entries removed, and compares two renders shot for shot. It was proved red first: brass turned to red in one rule read as differing on all 34 shots, and two renders of the same build read identical on 32 with 3 pixels of chart antialiasing on two, which is the noise floor. This fold reads as the same on every shot against v473.",
+   "<b>THE QUEUE WAS ASKED FIRST.</b> Nothing pending; the three approved rows of the morning are the v473 fold, and the deploy marks them committed when it lands.",
+   "<b>WHAT STAYS FOR THE NEXT FOLDS.</b> The v108 frost and its gradients, the v213 material fills and fallbacks, the v281 motion and colour rules, and the colour declarations inside component rules that desk.css overrides one by one. Each is its own fold, each measured the same way."
+  ]
+ },
+ {
   "v": "v473",
   "d": "02 Sep 2026",
   "t": "CF5-WM JOINS THE ROSTER AND BUYS TWO, AND THE SALT SHELF IS COUNTED AT 10.5",

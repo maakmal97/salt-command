@@ -60,7 +60,7 @@ document.addEventListener('visibilitychange',function(){
    focused, no dialog open. Otherwise it offers a chip and waits to be tapped.
    The same tick retries a held entry, which is what gets a phone write to the cloud
    without waiting for the next open. */
-var SALT_BUILD_ID="5141f472ccdfe60d";
+var SALT_BUILD_ID="5a50abc4e372c587";
 var SALT_REV_MS=10000;
 (function(){
   var chip=null,timer=null;
@@ -102,30 +102,7 @@ var SALT_REV_MS=10000;
      that draws something is opened. The desk is a local tool; it should not need the
      internet to show a figure it already has. -->
 <style>
-/* Section accents: each tab owns one hue from the desk palette. Directional and
-   semantic colours (green=owed to you, crimson=owe/risk, amber=attention) are NOT
-   affected; the accent only drives chrome: active tab, headings, section rules. */
-body[data-sec="overview"]{--acc:#c5a059;--accB:#b87333;}
-body[data-sec="receivables"]{--acc:#e4e9ec;--accB:#8ea2b6;}
-body[data-sec="inventory"]{--acc:#6fae97;--accB:#4f8f7a;}
-body[data-sec="financials"]{--acc:#d4694c;--accB:#b4563d;}
-body[data-sec="concentration"]{--acc:#d4694c;--accB:#b4563d;}
-body[data-sec="network"]{--acc:#8ea2b6;--accB:#6f8398;}
-body[data-sec="ledger"]{--acc:#b87333;--accB:#9a5f2a;}
-body[data-sec="add"]{--acc:#8ea2b6;--accB:#6f8398;}
-body[data-sec="plans"]{--acc:#a6afb5;--accB:#7a8690;}
-body[data-sec="changelog"]{--acc:#6f8398;--accB:#5a6d80;}
-/* v341: the seven views own the hues their lead tabs did */
-body[data-sec="money"]{--acc:#e4e9ec;--accB:#8ea2b6;}
-body[data-sec="stock"]{--acc:#6fae97;--accB:#4f8f7a;}
-body[data-sec="price"]{--acc:#c5a059;--accB:#b87333;}
-body[data-sec="people"]{--acc:#d4694c;--accB:#b4563d;}
-body[data-sec="book"]{--acc:#b87333;--accB:#9a5f2a;}
-body[data-sec="enter"]{--acc:#8ea2b6;--accB:#6f8398;}
-:root{--acc:#c5a059;--accB:#b87333;color-scheme:dark;
- --bg0:#05080a;--card:#0b1215;--card2:#0e171b;--line:#2a3a3a;
- --ink:#f2f4f5;--mut:#a6afb5;--dim:#7a8690;
- --gold:#c5a059;--amber:#b87333;--ice:#e4e9ec;--rose:#d4694c;--grn:#6fae97;--crim:#d4694c;--vio:#8ea2b6;
+:root{color-scheme:dark;
  /* v392: THE PHONE'S DEAD ZONES, AS TWO NUMBERS THE WHOLE SHEET READS.
     The head declares apple-mobile-web-app-status-bar-style:black-translucent and
     viewport-fit=cover, which together are an instruction to draw UNDERNEATH the status bar and
@@ -143,11 +120,7 @@ body[data-sec="enter"]{--acc:#8ea2b6;--accB:#6f8398;}
  --saferight:env(safe-area-inset-right,0px);
  }
 *{box-sizing:border-box;}
-body{margin:0;background:
-  radial-gradient(1100px 620px at 84% -10%,#0b1215 0%,transparent 60%),
-  radial-gradient(880px 560px at -8% 8%,#0b1215 0%,transparent 55%),
-  linear-gradient(180deg,var(--bg0),#05080a);
-  color:var(--ink);font-family:'Segoe UI',system-ui,-apple-system,Roboto,Helvetica,Arial,sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased;}
+body{margin:0;-webkit-font-smoothing:antialiased;}
 .wrap{max-width:1180px;margin:0 auto;padding:22px 18px 80px;}
 .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);}
 .shell{display:flex;gap:20px;align-items:flex-start;}
@@ -164,7 +137,6 @@ body{margin:0;background:
 .rail::-webkit-scrollbar-thumb{background:rgba(255,255,255,.16);border-radius:999px;}
 .rail:hover::-webkit-scrollbar-thumb{background:rgba(255,255,255,.28);}
 .railbrand{display:flex;align-items:center;gap:11px;padding:2px 4px 14px;border-bottom:1px solid var(--line);margin-bottom:12px;}
-.logo{width:38px;height:38px;border-radius:11px;flex:0 0 auto;display:grid;place-items:center;font-size:19px;font-weight:800;color:#05080a;background:conic-gradient(from 210deg,var(--gold),var(--rose),var(--ice),var(--gold));box-shadow:0 8px 22px -8px var(--gold);}
 .kick{font-size:10px;letter-spacing:2.4px;text-transform:uppercase;color:var(--gold);font-weight:700;}
 .railtitle{font-size:14px;font-weight:800;letter-spacing:-.2px;color:var(--ink);margin-top:1px;}
 .railgroup{margin-bottom:12px;}
@@ -177,7 +149,7 @@ body{margin:0;background:
 .navct{flex:0 0 auto;min-width:17px;text-align:center;font-size:10px;font-weight:800;padding:1px 5px;border-radius:8px;background:#ffffff14;color:var(--mut);}
 .tab.on .navct{background:rgba(5,8,10,.33);color:#05080a;}
 .main{flex:1;min-width:0;}
-h1{margin:2px 0 0;font-size:28px;font-weight:800;letter-spacing:-.4px;background:linear-gradient(92deg,#fff,#d8c79c 55%,#e4e9ec);-webkit-background-clip:text;background-clip:text;color:transparent;}
+h1{margin:2px 0 0;font-size:28px;}
 .meta{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;}
 .chip{font-size:11px;padding:4px 10px;border-radius:999px;background:#140b26cc;border:1px solid var(--line);color:var(--mut);}
 .chip.stamp{margin-left:6px;color:var(--dim);font-variant-numeric:tabular-nums;}
@@ -227,7 +199,6 @@ body.navopen .deskbar .navbtn .nb3{transform:translateY(-5px) rotate(-45deg);}
 .metarow{justify-content:flex-start;}
 .dhbrand{display:flex;align-items:center;gap:10px;min-width:0;}
 .dhname{font-size:15px;font-weight:800;letter-spacing:-.2px;color:var(--ink);}
-.logo.sm{width:30px;height:30px;font-size:15px;border-radius:9px;}
 .chip.ver{color:var(--gold);border-color:rgba(197,160,89,.42);font-weight:800;letter-spacing:.6px;
   font-variant-numeric:tabular-nums;flex:0 0 auto;}
 @media(min-width:861px){.dhbrand{display:none;}}
@@ -986,7 +957,6 @@ select{width:100%;border:1px solid var(--line);border-radius:8px;padding:8px 9px
 .rail{background:linear-gradient(165deg,var(--railA),var(--railB));
   -webkit-backdrop-filter:blur(26px) saturate(1.6);backdrop-filter:blur(26px) saturate(1.6);
   box-shadow:var(--glassShadow),var(--gloss);}
-.logo{box-shadow:0 8px 22px -8px var(--gold),inset 0 1px 0 rgba(255,255,255,.45);}
 /* tables ride the card glass; sticky header and first column get a frosted backing */
 thead th{background:var(--panel);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);}
 th.l,td.l{background:var(--panel);}
@@ -996,12 +966,6 @@ tbody td{border-bottom-color:var(--hair);}
 /* inputs and small pills, translucent */
 .qfield input,.qfield select,select,.ledbar input,.ledbar select{background-color:var(--field);}
 .viewsw,.chip,.pend .cd,details.obsec>summary .ct,.navct{background:var(--pill);}
-/* four dark palettes: shift the page glow, surface tint and hairlines by time of day */
-/* "Register" -- the palette of the original Salt Trading Register: near-black slate with
-   a cool-blue and warm-violet aurora, cyan and gold accents. Cooler and flatter than the
-   time-of-day bands, and the one that reads most like a printed financial page. */
-html[data-tod="register"]{--bg0:#05080a;--card:rgba(11,18,21,.62);--card2:rgba(5,8,10,.66);--line:#2a3140;--panel:rgba(5,8,10,.82);--totbg:rgba(5,8,10,.75);--hair:rgba(228,233,236,.13);--field:rgba(5,8,10,.7);--pill:rgba(11,18,21,.62);--railA:rgba(11,18,21,.6);--railB:rgba(5,8,10,.7);}
-html[data-tod="register"] body{background:radial-gradient(1200px 600px at 80% -10%,#0b1215 0%,transparent 60%),radial-gradient(900px 500px at -10% 10%,#0b1215 0%,transparent 55%),#05080a;}
 @media (prefers-reduced-motion:no-preference){body{transition:background .6s ease;}.kpi,.card,.rail,.pend,.lcard,details.obsec,details.rcard{transition:background .6s ease,border-color .6s ease;}}
 /* ============ v109 - consistent box geometry and vertical rhythm ============ */
 /* the glass restyle exposed mismatched corners and paddings; unify every panel */
@@ -1070,20 +1034,6 @@ h2 .rule{opacity:.65;}
   --sh:0 8px 40px rgba(0,0,0,.35);
   --t:200ms cubic-bezier(.4,0,.2,1);
 }
-/* THE LIGHT: Ledger. Steel, violet and abyss, the third wash carrying the lower page. */
-html[data-tod="register"] body{
-  background:
-    radial-gradient(1200px 700px at 82% -10%, #0b1215 0%, rgba(11,18,21,0) 58%),
-    radial-gradient(1000px 620px at -8% 8%, #0b1215 0%, rgba(11,18,21,0) 55%),
-    radial-gradient(1100px 900px at 45% 118%, #0b1215 0%, rgba(11,18,21,0) 56%),
-    linear-gradient(160deg,#05080a 0%,#05080a 60%,#05080a 100%);
-  background-attachment:fixed;
-}
-/* ORBS. Fixed, blurred, behind everything, no pointer surface. */
-.orb{position:fixed;border-radius:50%;filter:blur(64px);z-index:0;pointer-events:none;opacity:.34;}
-.orb.a{width:420px;height:420px;top:-120px;right:-90px;background:#e4e9ec;}
-.orb.b{width:380px;height:380px;bottom:-140px;left:-110px;background:#8ea2b6;}
-.orb.c{width:300px;height:300px;top:44%;left:58%;background:#c5a059;opacity:.15;}
 .wrap{position:relative;z-index:1;}
 /* THE MATERIAL. One blur layer per stack; the fill is declared so it stands alone when
    backdrop-filter is unavailable. */
@@ -1556,22 +1506,6 @@ body.navopen .navveil{opacity:1;pointer-events:auto;}
    completes the accent map, gives the desk its motion grammar, and makes the phone's
    navigation permanent. Reduced motion is honoured by the global kill above.
    ------------------------------------------------------------------------------ */
-/* EVERY TAB OWNS AN ACCENT. Six tabs had none and fell back to gold, so Today, Forward,
-   Sourcing, Analysis, Map and Pricing all wore the same chrome and the rail said nothing
-   about where you were. Hues sit in the desk's own families; semantic colours untouched. */
-body[data-sec="today"]{--acc:#c5a059;--accB:#b87333;}
-body[data-sec="forward"]{--acc:#8ea2b6;--accB:#6f8398;}
-body[data-sec="sourcing"]{--acc:#b87333;--accB:#b87333;}
-body[data-sec="analysis"]{--acc:#8ea2b6;--accB:#6f8398;}
-body[data-sec="map"]{--acc:#8ea2b6;--accB:#379e96;}
-body[data-sec="pricing"]{--acc:#c5a059;--accB:#b87333;}
-body[data-sec="changelog"]{--acc:#8ea2b6;--accB:#6f8398;}   /* brightened: 7c6aa0 sat under 4.5:1 as text */
-/* the headline and the table headers carry the tab's accent, so a tab reads as one place */
-h1{background:linear-gradient(92deg,#fff,var(--acc) 58%,var(--ice));-webkit-background-clip:text;background-clip:text;}
-thead th{color:var(--acc);}
-/* THE LIGHT FOLLOWS YOU: the third orb takes the tab's accent, so switching tabs moves
-   the aurora a little without repainting the page. */
-.orb.c{background:var(--acc);transition:background .8s ease;}
 /* MOTION GRAMMAR. One easing family; the section settles, its first cards follow. The
    .switching class is set only on a tab CHANGE, so a mid-tab re-render never replays it. */
 .sec.on{animation:secin .26s cubic-bezier(.22,.8,.36,1);}
@@ -3016,13 +2950,14 @@ body[data-sec]{--acc:var(--salt-brass);--accB:var(--salt-copper);}
 
 /* ---- 2. THE GROUND AND THE LIGHT. Flat obsidian; the two orbs are the aurora, copper
    upper left and brass lower right, as SaltProvider draws it. The third orb, which took
-   the view's hue, goes with the hues. ---- */
+   the view's hue, went with the hues at v473, and so did the page-level colour system it
+   belonged to: the per-view accents, the root palette, the register palette and its two
+   body grounds, the diamond logo and the headline gradient. This section owns the ground. ---- */
 html[data-tod="register"] body,body{background:var(--salt-obsidian);color:var(--salt-salt);
   font-family:var(--salt-font-display);font-size:14px;line-height:1.55;}
-.orb{filter:blur(100px);opacity:.30;}
-.orb.a{width:55vw;height:55vw;min-width:380px;min-height:380px;top:-22vh;left:-18vw;right:auto;background:var(--salt-copper);}
-.orb.b{width:45vw;height:45vw;min-width:320px;min-height:320px;bottom:-18vh;right:-12vw;left:auto;background:var(--salt-brass);}
-.orb.c{display:none;}
+.orb{position:fixed;border-radius:50%;filter:blur(100px);z-index:0;pointer-events:none;opacity:.30;}
+.orb.a{width:55vw;height:55vw;min-width:380px;min-height:380px;top:-22vh;left:-18vw;background:var(--salt-copper);}
+.orb.b{width:45vw;height:45vw;min-width:320px;min-height:320px;bottom:-18vh;right:-12vw;background:var(--salt-brass);}
 
 /* ---- 3. TYPE. Every figure, code, label and control is mono; every sentence inherits
    the display face from body. The list is the desk's whole figure vocabulary. ---- */
@@ -3385,7 +3320,7 @@ details.obs>summary:hover{background:var(--salt-glass);}
 </style>
 </head>
 <body>
-<div class="orb a"></div><div class="orb b"></div><div class="orb c"></div>
+<div class="orb a"></div><div class="orb b"></div>
 <div class="wrap">
 <button class="fabtn orderbtn" id="orderbtn" type="button" title="Enter an order"
   aria-label="Enter an order">+</button>
@@ -5454,7 +5389,9 @@ const whiteboard=[
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{"v":"v473","d":"02 Sep 2026","t":"CF5-WM JOINS THE ROSTER AND BUYS TWO, AND THE SALT SHELF IS COUNTED AT 10.5","n":["<b>THREE ROWS FROM THE PHONE, APPROVED ON THE DESK WITHIN A MINUTE OF EACH OTHER ON 02 SEP.</b> CF5-WM is registered as a customer who buys direct; the name and the place are typed at the laptop and never travel. Then CF5-WM's first order: 2 unit of salt for RM230, RM115 a unit, paid and collected on the day, costed at RM48 from the shelf's latest lot (p019, SA5-BTR, landed the same morning). That is above the board's two-unit ask of RM100 a unit and clear of every floor, so the margin on the order is 58%.","<b>THE COUNT WINS, AND IT IS 8.25 BELOW THE ROLL.</b> He counted 10.5 unit of salt on hand on 02 Sep against 18.75 on the book, and approved the count with that gap in front of him. A count always wins: the stated shelf is 10.5 and COUNT_ON.salt moves to 02 Sep. The 2 unit to CF5-WM had already left the roll, so measured after the sale the drift is 6.25 unit, and it books as shrinkage across every unit sold. <b>ONE THING TO SETTLE ON THE NEXT COUNT:</b> the 25-unit lot p019 landed the same morning, so if the shelf was counted before it was stacked, the true figure is 35.5 and the drift runs the other way. The book carries what he approved; the note is here so the next count is read against it.","<b>FOLDED ON HIS RULE OF 02 SEP 2026:</b> a version bump asks about the queue first and folds what is approved. This fold is the ledger alone; the retirement of the older material layers follows it as its own version, measured against this book."]},
+const evolution=[{"v": "v474", "d": "02 Sep 2026", "t": "THE PAGE-LEVEL COLOUR SYSTEM v472 REPLACED IS RETIRED", "n": ["<b>HIS INSTRUCTION, 02 SEP 2026: retire the older material layers, in smaller folds.</b> This is the first, and it takes the page-level colour system alone: the twenty-three per-view accent rules, the root palette that named ice, gold, violet, green and crimson, the register palette and both of its body grounds, the three orb rules and the third orb itself, the diamond logo that left the markup at v472, and the two headline gradients. 5,231 bytes of rules the v472 layer had already overridden in full, and the ground now has one owner: section 2 of design/desk.css.", "<b>NOTHING VISIBLE MOVED, AND THAT IS MEASURED IN PIXELS.</b> tools/renderdiff.mjs renders every part at 1280 and 375 with motion off, the stamp and the version hidden and the journal's version entries removed, and compares two renders shot for shot. It was proved red first: brass turned to red in one rule read as differing on all 34 shots, and two renders of the same build read identical on 32 with 3 pixels of chart antialiasing on two, which is the noise floor. This fold reads as the same on every shot against v473.", "<b>THE QUEUE WAS ASKED FIRST.</b> Nothing pending; the three approved rows of the morning are the v473 fold, and the deploy marks them committed when it lands.", "<b>WHAT STAYS FOR THE NEXT FOLDS.</b> The v108 frost and its gradients, the v213 material fills and fallbacks, the v281 motion and colour rules, and the colour declarations inside component rules that desk.css overrides one by one. Each is its own fold, each measured the same way."]},
+
+{"v":"v473","d":"02 Sep 2026","t":"CF5-WM JOINS THE ROSTER AND BUYS TWO, AND THE SALT SHELF IS COUNTED AT 10.5","n":["<b>THREE ROWS FROM THE PHONE, APPROVED ON THE DESK WITHIN A MINUTE OF EACH OTHER ON 02 SEP.</b> CF5-WM is registered as a customer who buys direct; the name and the place are typed at the laptop and never travel. Then CF5-WM's first order: 2 unit of salt for RM230, RM115 a unit, paid and collected on the day, costed at RM48 from the shelf's latest lot (p019, SA5-BTR, landed the same morning). That is above the board's two-unit ask of RM100 a unit and clear of every floor, so the margin on the order is 58%.","<b>THE COUNT WINS, AND IT IS 8.25 BELOW THE ROLL.</b> He counted 10.5 unit of salt on hand on 02 Sep against 18.75 on the book, and approved the count with that gap in front of him. A count always wins: the stated shelf is 10.5 and COUNT_ON.salt moves to 02 Sep. The 2 unit to CF5-WM had already left the roll, so measured after the sale the drift is 6.25 unit, and it books as shrinkage across every unit sold. <b>ONE THING TO SETTLE ON THE NEXT COUNT:</b> the 25-unit lot p019 landed the same morning, so if the shelf was counted before it was stacked, the true figure is 35.5 and the drift runs the other way. The book carries what he approved; the note is here so the next count is read against it.","<b>FOLDED ON HIS RULE OF 02 SEP 2026:</b> a version bump asks about the queue first and folds what is approved. This fold is the ledger alone; the retirement of the older material layers follows it as its own version, measured against this book."]},
 
 {"v": "v472", "d": "02 Sep 2026", "t": "THE DESK IN THE SALT IDENTITY", "n": ["<b>HIS INSTRUCTION, 02 SEP 2026: redesign the whole desk with the Salt design system.</b> The identity of 29 Aug (obsidian ground, brass and copper light, glass once, figures in mono and sentences in the display face) is now the desk's own. It arrives as a LAST-WINS LAYER, as v213 and v281 did: not one class is renamed, not one figure moves, and every geometry rule the phone passes stands. Two blocks at the foot of the stylesheet, both generated and both proved by CI: DESIGN base is the design system's stylesheet vendored from Code/salt-ds, and DESIGN desk binds the desk's own vocabulary to its tokens. tools/designsync.mjs pulls, syncs and checks them, the way engine.mjs and booksync.mjs do.", "<b>ONE ACCENT.</b> The seven view hues are retired: a view is known by its name and its figures. Brass leads, copper marks the exception, and three words carry meaning and nothing else does: verdigris for what is settled or owed to you, ember for what you owe, defaulted or breached, steel for what is pending. The two books keep a hue each, salt the pale one and oil the golden one, declared in the book as PRODUCTS.accent, which is where the extract read them.", "<b>EVERY COLOUR LITERAL IN THE DESK'S OWN CSS AND JS WAS MAPPED, NOT RESTYLED AROUND.</b> 252 hex and 180 rgba values, from the ice, gold, violet, green and crimson families into the identity, with the generated ENGINE, BOOK and GEO blocks held out byte for byte. The charts therefore draw in brass, salt, verdigris, ember and steel without a second palette, and Chart.js is told once that figures are mono and hairlines are brass. The mapping table is in docs/DESIGN.md.", "<b>THE MARK.</b> The crystal replaces the diamond glyph in the rail, the bar and the favicon, and the home-screen icons are the brand's own from salt-ds/brand. The rail is glass with a brass hairline; a tab is mono caps and the active one is glass, not a gradient. The one filled control is the brass-to-copper pill, kept for what books or produces; everything that navigates is a ghost.", "<b>NO WEB FONT, BY THE CSP.</b> The desk loads nothing, so Fraunces and JetBrains Mono are asked for and Georgia and Consolas answer. The design system's font import moved out of its styles.css into fonts.css for exactly this, and the pull refuses a stylesheet that carries a remote import.", "<b>PROVED BY DRIVING IT.</b> Rendered at 1280 and at 375 with the rail floated out of its button; no console error; every tab measures 44; the ledger's filters, the board, the order book, the map and Today all read in the new material. A new section proves the two blocks are their files, that no retired hex survives outside the generated blocks, that the crystal is in the rail and the books carry the identity's hues; its regexes were proved red against the v471 master before they were trusted."]},
 
@@ -5685,7 +5622,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='02 Sep 2026, 17:17 KL';
+const LAST_UPDATED='02 Sep 2026, 17:22 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
