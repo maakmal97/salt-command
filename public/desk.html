@@ -60,7 +60,7 @@ document.addEventListener('visibilitychange',function(){
    focused, no dialog open. Otherwise it offers a chip and waits to be tapped.
    The same tick retries a held entry, which is what gets a phone write to the cloud
    without waiting for the next open. */
-var SALT_BUILD_ID="0a6eeec92ce50665";
+var SALT_BUILD_ID="b778b4af798c49a8";
 var SALT_REV_MS=10000;
 (function(){
   var chip=null,timer=null;
@@ -2838,7 +2838,7 @@ a.salt-journal__ref:hover { text-decoration: underline; text-underline-offset: 2
 html[data-tod="register"],:root{
   --bg0:var(--salt-obsidian);
   --card:var(--salt-glass);--card2:rgba(255,255,255,.045);--line:var(--salt-line);
-  --ink:var(--salt-salt);--mut:var(--salt-mist-light);--dim:var(--salt-mist);
+  --ink:var(--salt-salt);--mut:#b4bcc2;--dim:var(--salt-mist);
   --gold:var(--salt-brass);--amber:var(--salt-copper);--ice:var(--salt-product-salt);
   --rose:var(--salt-ember);--crim:var(--salt-ember);--grn:var(--salt-verdigris);--vio:var(--salt-steel);
   --acc:var(--salt-brass);--accB:var(--salt-copper);
@@ -2863,7 +2863,7 @@ body[data-sec]{--acc:var(--salt-brass);--accB:var(--salt-copper);}
    belonged to: the per-view accents, the root palette, the register palette and its two
    body grounds, the diamond logo and the headline gradient. This section owns the ground. ---- */
 html[data-tod="register"] body,body{background:var(--salt-obsidian);color:var(--salt-salt);
-  font-family:var(--salt-font-display);font-size:14px;line-height:1.55;}
+  font-family:var(--salt-font-display);font-size:15px;line-height:1.6;}
 .orb{position:fixed;border-radius:50%;filter:blur(100px);z-index:0;pointer-events:none;opacity:.30;}
 .orb.a{width:55vw;height:55vw;min-width:380px;min-height:380px;top:-22vh;left:-18vw;background:var(--salt-copper);}
 .orb.b{width:45vw;height:45vw;min-width:320px;min-height:320px;bottom:-18vh;right:-12vw;background:var(--salt-brass);}
@@ -2888,7 +2888,7 @@ details.rcard>summary .rname,.kpi .n,.prodhd .sub,.appop .apact,.lcorr .cprose,.
 h1,.byecard h1{font-family:var(--salt-font-display);font-weight:300;letter-spacing:.04em;line-height:1.1;
   background:var(--salt-gradient-title);-webkit-background-clip:text;background-clip:text;color:transparent;}
 /* the section label is an eyebrow: copper mono caps and a brass rule running out */
-h2{font-size:11px;font-weight:500;letter-spacing:.22em;color:var(--salt-copper);margin:30px 0 12px;white-space:nowrap;}
+h2{font-size:11.5px;font-weight:500;letter-spacing:.18em;color:var(--salt-copper);margin:30px 0 12px;white-space:nowrap;}
 h2 .rule{min-width:16px;}
 h2 .rule{opacity:1;background:linear-gradient(90deg,var(--salt-line),transparent);}
 .sevh h2{margin:0;}
@@ -2917,30 +2917,30 @@ h2 .rule{opacity:1;background:linear-gradient(90deg,var(--salt-line),transparent
 .kpi.r::before{background:var(--salt-ember);}
 .kpi.p::before{background:var(--salt-steel);}
 .kpi.gold::before{background:var(--salt-verdigris);}
-.kpi .l{font-size:10px;font-weight:500;letter-spacing:.16em;color:var(--salt-copper);}
-.kpi .v{font-size:22px;font-weight:500;letter-spacing:0;margin-top:6px;color:var(--salt-salt);}
-.kpi .n{font-size:12.5px;color:var(--salt-mist-light);margin-top:4px;}
-.cardh{font-size:15px;font-weight:500;color:var(--salt-salt);}
-.cardh .sub{font-size:10px;font-weight:500;letter-spacing:.16em;color:var(--salt-copper);}
-.dsclead,.dsc{color:var(--salt-mist-light);font-size:13px;}
+.kpi .l{font-size:11px;font-weight:500;letter-spacing:.14em;color:var(--salt-copper);}
+.kpi .v{font-size:24px;font-weight:500;letter-spacing:0;margin-top:6px;color:var(--salt-salt);}
+.kpi .n{font-size:13.5px;color:var(--mut);margin-top:4px;}
+.cardh{font-size:16px;font-weight:500;color:var(--salt-salt);}
+.cardh .sub{font-size:11px;font-weight:500;letter-spacing:.14em;color:var(--salt-copper);}
+.dsclead,.dsc{color:var(--mut);font-size:14px;line-height:1.6;}
 /* a finding is one sentence with a brass rule to its left, not a box */
 .insight{background:none;border:0;border-left:2px solid var(--salt-brass);border-radius:0;
-  padding:4px 0 4px 14px;margin:12px 0;font-size:13.5px;color:var(--salt-salt);box-shadow:none;}
+  padding:4px 0 4px 14px;margin:12px 0;font-size:14.5px;line-height:1.6;color:var(--salt-salt);box-shadow:none;}
 .insight b{color:var(--salt-brass);font-weight:500;}
 .note,.stand-note{background:none;border:0;border-left:2px solid var(--salt-copper);border-radius:0;
-  padding:4px 0 4px 14px;font-size:13px;color:var(--salt-mist-light);box-shadow:none;
+  padding:4px 0 4px 14px;font-size:14px;line-height:1.6;color:var(--mut);box-shadow:none;
   -webkit-backdrop-filter:none;backdrop-filter:none;}
 .note b,.stand-note b{color:var(--salt-copper);font-weight:500;}
 .pend{border:1px dashed rgba(197,160,89,.45);}
 .pend.def{border-color:rgba(212,105,76,.55);}
-.pend h3{font-size:11px;font-weight:500;letter-spacing:.16em;text-transform:uppercase;color:var(--salt-brass);}
+.pend h3{font-size:11.5px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--salt-brass);}
 .pend.def h3{color:var(--salt-ember);}
 .pend .cd{background:var(--salt-well);border-color:var(--salt-line);color:var(--salt-brass);}
 .pend .cd.crim{color:var(--salt-ember);border-color:rgba(212,105,76,.55);}
-details.obsec>summary{font-size:14px;font-weight:500;}
-details.obsec>summary .q{font-size:10px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;}
+details.obsec>summary{font-size:15px;font-weight:500;}
+details.obsec>summary .q{font-size:11px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;}
 details.obsec>summary .ct{background:transparent;border-color:var(--salt-line-faint);color:var(--salt-mist);font-weight:500;}
-details.rcard>summary .rname{font-size:15px;font-weight:500;}
+details.rcard>summary .rname{font-size:16px;font-weight:500;}
 .rtag{font-weight:500;letter-spacing:.14em;border-color:var(--salt-line-faint);}
 
 /* ---- 5. THE RAIL AND THE BAR ---- */
@@ -2952,20 +2952,20 @@ details.rcard>summary .rname{font-size:15px;font-weight:500;}
 .railbrand .mark{width:34px;height:34px;flex:0 0 auto;display:block;}
 .railtitle{font-family:var(--salt-font-display);font-weight:300;font-size:22px;letter-spacing:.04em;line-height:1;
   background:var(--salt-gradient-title);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;margin:0;}
-.kick{font-size:9.5px;font-weight:500;letter-spacing:.26em;color:var(--salt-brass);margin-top:4px;}
-.grouplbl{font-size:9.5px;font-weight:500;letter-spacing:.2em;color:var(--salt-mist);padding:0 10px;margin-bottom:4px;}
-.tab{font-size:10.5px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--salt-mist);
+.kick{font-size:10px;font-weight:500;letter-spacing:.24em;color:var(--salt-brass);margin-top:4px;}
+.grouplbl{font-size:10px;font-weight:500;letter-spacing:.18em;color:var(--salt-mist);padding:0 10px;margin-bottom:4px;}
+.tab{font-size:11.5px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--salt-mist);
   border-radius:var(--salt-radius-sm);padding:8px 10px;}
 .tab:hover{background:var(--salt-glass);color:var(--salt-salt);}
 .tab.on{background:var(--salt-glass);border-color:var(--salt-line);color:var(--salt-salt);font-weight:500;box-shadow:none;}
-.navct{font-size:10px;font-weight:500;background:none;color:var(--salt-copper);padding:0;}
+.navct{font-size:11px;font-weight:500;background:none;color:var(--salt-copper);padding:0;}
 .tab.on .navct{background:none;color:var(--salt-copper);}
 .subs{border-left-color:var(--salt-line-faint);}
-.sub{font-size:10.5px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--salt-mist);min-height:32px;}
+.sub{font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--salt-mist);min-height:32px;}
 .sub.on{color:var(--salt-salt);background:var(--salt-glass);}
 .railfoot{border-top-color:var(--salt-line-faint);}
-.prodsw .plbl{font-size:9.5px;font-weight:500;letter-spacing:.2em;color:var(--salt-mist);}
-.prodsw button{font-size:10.5px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;
+.prodsw .plbl{font-size:10px;font-weight:500;letter-spacing:.18em;color:var(--salt-mist);}
+.prodsw button{font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;
   border-radius:var(--salt-radius-sm);border-color:var(--salt-line-faint);background:transparent;color:var(--salt-mist);}
 .prodsw button:hover{background:var(--salt-glass);}
 .prodsw button.live{box-shadow:none;border-color:var(--pacc);color:var(--salt-salt);}
@@ -2974,8 +2974,8 @@ details.rcard>summary .rname{font-size:15px;font-weight:500;}
 .prodsw .pall{font-family:var(--salt-font-display);color:var(--salt-mist);}
 .deskbar{background:linear-gradient(180deg,var(--salt-veil) 70%,transparent);}
 .dhbrand .mark{width:26px;height:26px;display:block;}
-.dhname{font-size:11px;font-weight:500;letter-spacing:.24em;text-transform:uppercase;color:var(--salt-brass);}
-.chip{font-size:10.5px;letter-spacing:.06em;background:var(--salt-glass);border-color:var(--salt-line-faint);color:var(--salt-mist);}
+.dhname{font-size:11.5px;font-weight:500;letter-spacing:.22em;text-transform:uppercase;color:var(--salt-brass);}
+.chip{font-size:11px;letter-spacing:.05em;background:var(--salt-glass);border-color:var(--salt-line-faint);color:var(--salt-mist);}
 .chip b{color:var(--salt-salt);font-weight:500;}
 .chip.ver{color:var(--salt-brass);border-color:rgba(197,160,89,.45);font-weight:500;letter-spacing:.12em;}
 .fabtn{background:var(--salt-pane);border:1px solid var(--salt-line);color:var(--salt-brass);
@@ -3000,22 +3000,22 @@ details.rcard>summary .rname{font-size:15px;font-weight:500;}
 
 /* ---- 6. THE PARTS STRIP AND THE SWITCHERS: the TabStrip pill, the active one in glass ---- */
 .vnav{gap:8px;margin:0 0 16px;}
-.vpill{font-size:11px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--salt-mist);
+.vpill{font-size:11.5px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--salt-mist);
   background:transparent;border:1px solid var(--salt-line-faint);padding:8px 16px;}
 .vpill:hover{color:var(--salt-brass);border-color:var(--salt-line);}
 .vpill.on{color:var(--salt-salt);background:var(--salt-glass);border-color:var(--salt-line);}
 .viewsw{background:var(--salt-glass-faint);border-color:var(--salt-line-faint);border-radius:999px;padding:3px;}
-.viewsw button{font-size:10.5px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--salt-mist);border-radius:999px;}
+.viewsw button{font-size:11px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--salt-mist);border-radius:999px;}
 .viewsw button.on{background:rgba(255,255,255,.08);color:var(--salt-salt);}
-.viewsw.mini button{font-size:10px;}
+.viewsw.mini button{font-size:10.5px;}
 
 /* ---- 7. BUTTONS. The pill books or produces; everything else is a ghost. ---- */
-.vbtn{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--salt-obsidian);
+.vbtn{font-size:11.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--salt-obsidian);
   background:var(--salt-gradient);border:0;border-radius:999px;padding:10px 20px;
   box-shadow:0 8px 24px rgba(184,115,51,.3);}
 .vbtn:hover{box-shadow:0 12px 32px rgba(184,115,51,.4);}
 .vbtn.tiny{padding:3px 10px;font-size:9.5px;}
-.navlink,.ubtn,.obsbtn,.lqb,.updchip,.menu button{font-size:10.5px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;
+.navlink,.ubtn,.obsbtn,.lqb,.updchip,.menu button{font-size:11px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;
   color:var(--salt-mist);background:transparent;border:1px solid var(--salt-line-faint);border-radius:999px;}
 .menu button{border:0;border-radius:8px;letter-spacing:.08em;color:var(--salt-salt);}
 .menu button[aria-checked="true"]::after{color:var(--salt-brass);}
@@ -3026,8 +3026,8 @@ details.rcard>summary .rname{font-size:15px;font-weight:500;}
 .lqb.qdeliv{color:var(--salt-product-salt);}
 .lqb.qdone{color:var(--salt-brass);border-color:rgba(197,160,89,.45);}
 .lqb.qdone:hover{background:rgba(197,160,89,.10);}
-.badge{color:var(--salt-obsidian);background:var(--salt-brass);border-radius:999px;font-weight:700;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;}
-.warnpill{font-size:10.5px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;background:transparent;
+.badge{color:var(--salt-obsidian);background:var(--salt-brass);border-radius:999px;font-weight:700;font-size:11px;letter-spacing:.1em;text-transform:uppercase;}
+.warnpill{font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;background:transparent;
   border:1px solid rgba(212,105,76,.55);color:var(--salt-ember);border-radius:999px;}
 .stkcolsl::before{border-color:var(--salt-line);}
 .stkcols:checked+.stkcolsl::before{border-color:var(--salt-brass);background:var(--salt-brass);}
@@ -3040,7 +3040,7 @@ input,select,textarea,.qfield input,.qfield select,.ledbar input,.ledbar select{
   color:var(--salt-salt);font-weight:400;}
 .qfield select:focus,.qfield input:focus,.ledbar input:focus,.ledbar select:focus,input:focus,select:focus,textarea:focus{
   border-color:var(--salt-brass);box-shadow:0 0 0 3px rgba(197,160,89,.18);}
-.qfield label{font-size:10px;font-weight:500;letter-spacing:.16em;color:var(--salt-copper);}
+.qfield label{font-size:11px;font-weight:500;letter-spacing:.14em;color:var(--salt-copper);}
 .qask{background:var(--salt-well);border-color:var(--salt-line-faint);color:var(--salt-brass);font-weight:500;}
 .qask.none{color:var(--salt-mist);}
 .qask.under{color:var(--salt-ember);border-color:rgba(212,105,76,.45);}
@@ -3050,19 +3050,19 @@ option:checked{background-color:#16211f;}
 input::placeholder{color:var(--salt-mist);opacity:.7;}
 
 /* ---- 9. TABLES: mist caps heads over a brass rule, salt figures, faint hairlines ---- */
-table{font-size:12.5px;}
-thead th{font-size:10px;font-weight:500;letter-spacing:.16em;color:var(--salt-mist);background:var(--salt-veil);border-bottom:1px solid var(--salt-line);
+table{font-size:13px;}
+thead th{font-size:11px;font-weight:500;letter-spacing:.12em;color:var(--salt-mist);background:var(--salt-veil);border-bottom:1px solid var(--salt-line);
   -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);}
 th.l,td.l{background:var(--salt-veil);color:var(--salt-mist-light);font-weight:500;}
 tbody td{color:var(--salt-salt);font-weight:400;border-bottom-color:var(--salt-line-faint);}
 tr.tot td{font-weight:500;background:rgba(197,160,89,.07);}
 tbody tr:hover td:not(.l){background:rgba(255,255,255,.03);}
-.fintab th{font-weight:500;letter-spacing:.16em;color:var(--salt-mist);}
+.fintab th{font-weight:500;letter-spacing:.12em;color:var(--salt-mist);}
 .fintab .fy{background:var(--salt-glass);font-weight:500;}
 .fintab tr.tot td{border-top-color:var(--salt-brass);}
-.fintab tr.grp td{color:var(--salt-mist);letter-spacing:.16em;}
+.fintab tr.grp td{color:var(--salt-mist);letter-spacing:.12em;}
 .istmt .tot td{border-top-color:var(--salt-line);font-weight:500;}
-.lhead{font-size:10px;font-weight:500;letter-spacing:.14em;color:var(--salt-mist);border-bottom-color:var(--salt-line);}
+.lhead{font-size:11px;font-weight:500;letter-spacing:.1em;color:var(--salt-mist);border-bottom-color:var(--salt-line);}
 .lhead .lcol,.lhead .lstate{font-weight:500;color:var(--salt-mist);}
 .lsb:hover,.lsb.on{color:var(--salt-salt);}
 .lsb:focus-visible{outline-color:var(--salt-brass);}
@@ -3092,8 +3092,8 @@ tbody tr:hover td:not(.l){background:rgba(255,255,255,.03);}
 .lcard.lpressing::after{background:var(--salt-gradient);}
 .lcard.lpressed{border-color:var(--salt-brass);box-shadow:0 0 0 1px var(--salt-brass),0 6px 22px rgba(197,160,89,.22);}
 .lcard.lpressed::after{background:radial-gradient(120% 80% at 50% 50%,rgba(197,160,89,.18),transparent 70%);}
-.ledsum .l{font-weight:500;letter-spacing:.16em;color:var(--salt-copper);}
-.ledsum .v{font-weight:500;}
+.ledsum .l{font-size:11px;font-weight:500;letter-spacing:.14em;color:var(--salt-copper);}
+.ledsum .v{font-size:18px;font-weight:500;}
 .ledsum .v.ice{color:var(--salt-product-salt);}
 .ledsum .v.gold{color:var(--salt-brass);}
 .ledsum .v.warn{color:var(--salt-copper);}
@@ -3106,18 +3106,18 @@ tbody tr:hover td:not(.l){background:rgba(255,255,255,.03);}
 .lcorr.bad{background:rgba(212,105,76,.07);border-top-color:rgba(212,105,76,.45);}
 .lcorr.bad .clab,.lcorr .cclaim.unknown,.lcorr .cclaim.differs,.lcorr .cclaim.unreadable{color:var(--salt-ember);}
 .jent{border-bottom-color:var(--salt-line-faint);}
-.jmeta{letter-spacing:.08em;color:var(--salt-mist);}
-.jmeta .jkind{font-weight:500;letter-spacing:.16em;font-size:10px;}
-.jtext{color:var(--salt-mist-light);font-size:13.5px;}
+.jmeta{font-size:11.5px;letter-spacing:.06em;color:var(--salt-mist);}
+.jmeta .jkind{font-weight:500;letter-spacing:.14em;font-size:10.5px;}
+.jtext{color:var(--mut);font-size:14.5px;line-height:1.6;}
 .jtext b{color:var(--salt-salt);font-weight:500;}
 .evo .row{border-bottom-color:var(--salt-line-faint);}
 .evo .dot{background:var(--salt-brass);box-shadow:0 0 0 3px rgba(197,160,89,.15);}
 .evo .v{color:var(--salt-brass);}
-.evo .txt{color:var(--salt-mist-light);}
+.evo .txt{color:var(--mut);font-size:14px;line-height:1.6;}
 .evo .txt b{color:var(--salt-salt);font-weight:500;}
 
 /* ---- 10. STATES: a word in its colour with a hairline, never a fill ---- */
-.tag{font-size:10px;font-weight:500;letter-spacing:.14em;background:transparent;border:1px solid currentColor;padding:2px 9px;}
+.tag{font-size:10.5px;font-weight:500;letter-spacing:.12em;background:transparent;border:1px solid currentColor;padding:2px 9px;}
 .paid{color:var(--salt-verdigris);}
 .unpaid,.open{color:var(--salt-copper);}
 .buy{color:var(--salt-steel);}
@@ -3130,7 +3130,7 @@ tbody tr:hover td:not(.l){background:rgba(255,255,255,.03);}
 .provbar{font-size:11px;letter-spacing:.06em;background:rgba(197,160,89,.08);border:1px dashed rgba(197,160,89,.45);color:var(--salt-brass);}
 .provbar b{color:var(--salt-salt);}
 .ubtn{border-color:rgba(197,160,89,.5);color:var(--salt-brass);}
-.tierpill{font-weight:500;letter-spacing:.16em;background:transparent;animation:none!important;}
+.tierpill{font-size:10.5px;font-weight:500;letter-spacing:.14em;background:transparent;animation:none!important;}
 .tierpill.t1{color:var(--salt-salt);box-shadow:0 0 10px -2px rgba(242,244,245,.55);}
 .tierpill.t2{color:var(--salt-brass-soft);box-shadow:none;}
 .tierpill.t3{color:var(--salt-brass);box-shadow:none;opacity:.85;}
@@ -3140,60 +3140,60 @@ tbody tr:hover td:not(.l){background:rgba(255,255,255,.03);}
 .starpill.s1{background:linear-gradient(135deg,#d8c79c,#c5a059);box-shadow:none;}
 .starpill.s2{background:linear-gradient(135deg,#c5a059,#b87333);box-shadow:none;}
 .starpill.s3{background:linear-gradient(135deg,#b87333,#d4694c);box-shadow:none;}
-.prodtag{font-weight:500;letter-spacing:.16em;background:transparent;box-shadow:none;text-shadow:none;
+.prodtag{font-size:10px;font-weight:500;letter-spacing:.14em;background:transparent;box-shadow:none;text-shadow:none;
   border:1px solid var(--salt-line-faint);border-radius:6px;}
 .prodtag .gl{box-shadow:0 0 6px -1px currentColor;}
-.sbadge{font-weight:500;letter-spacing:.12em;}
+.sbadge{font-size:10px;font-weight:500;letter-spacing:.1em;}
 .bloyal{--bc:var(--salt-verdigris);}
 .breg{--bc:var(--salt-product-salt);}
 .bnew{--bc:var(--salt-steel);}
 .bhi{--bc:var(--salt-brass);}
 .bthin{--bc:var(--salt-ember);color:var(--salt-ember);}
 .bdorm{--bc:var(--salt-mist);}
-.prodhd{font-weight:500;letter-spacing:.16em;color:var(--salt-salt);}
+.prodhd{font-size:12.5px;font-weight:500;letter-spacing:.14em;color:var(--salt-salt);}
 .prodhd .sub{letter-spacing:0;color:var(--salt-mist);}
 .prodhd .rule{background:linear-gradient(90deg,var(--salt-line),transparent);}
 .prodblock+.prodblock{border-top-color:var(--salt-line-faint);}
 .pbadge{font-weight:500;letter-spacing:.14em;border-color:var(--salt-line-faint);}
-.pscope,.pscopen,.pbadgeo{font-size:10.5px;color:var(--salt-mist);}
-.pchip{background:transparent;border-color:var(--salt-line-faint);color:var(--salt-mist);}
+.pscope,.pscopen,.pbadgeo{font-size:11px;color:var(--salt-mist);}
+.pchip{font-size:12px;background:transparent;border-color:var(--salt-line-faint);color:var(--salt-mist);}
 .pchip b{color:var(--salt-salt);font-weight:500;}
 .pchip.good{color:var(--salt-verdigris);border-color:rgba(111,174,151,.5);}
 .pchip.warn{color:var(--salt-copper);border-color:rgba(184,115,51,.55);}
 .pchip.bad{color:var(--salt-ember);border-color:rgba(212,105,76,.55);}
-.rchip{font-weight:500;letter-spacing:.14em;}
+.rchip{font-size:10.5px;font-weight:500;letter-spacing:.12em;}
 
 /* ---- 11. THE ACTION LIST, THE OBSERVATIONS, THE PLANS ---- */
 .act{background:var(--salt-glass);border:1px solid var(--salt-line);border-left:2px solid var(--sev,var(--salt-brass));
   box-shadow:inset 0 1px 0 var(--salt-highlight);}
-.actk{font-weight:500;letter-spacing:.16em;}
-.actt{font-size:15px;font-weight:400;}
-.actw{color:var(--salt-mist-light);}
+.actk{font-size:11px;font-weight:500;letter-spacing:.14em;}
+.actt{font-size:16px;font-weight:400;}
+.actw{color:var(--mut);font-size:13.5px;line-height:1.55;}
 .actw b{color:var(--salt-salt);font-weight:500;}
-.actm{font-weight:500;}
+.actm{font-size:16px;font-weight:500;}
 .actm.nil{color:var(--salt-mist);}
 .actbar{background:var(--salt-well);}
 .actbar i{box-shadow:none;opacity:.6;}
 .sevh .cnt{letter-spacing:.16em;}
 details.obs{background:var(--salt-glass-faint);border-color:var(--salt-line-faint);border-left:2px solid var(--sev,var(--salt-steel));}
 details.obs>summary:hover{background:var(--salt-glass);}
-.obsk{font-weight:500;letter-spacing:.16em;}
-.obst{font-weight:400;}
+.obsk{font-size:10px;font-weight:500;letter-spacing:.14em;}
+.obst{font-size:14px;font-weight:400;}
 .obsm{color:var(--salt-brass);font-weight:500;}
 .obsc{font-weight:500;letter-spacing:.14em;border-color:var(--salt-line-faint);}
-.obsb{color:var(--salt-mist-light);}
+.obsb{color:var(--mut);font-size:13.5px;line-height:1.6;}
 .obsev{border-top-color:var(--salt-line-faint);}
 .obsevh{font-weight:500;letter-spacing:.16em;}
-.obsbtn{font-size:10px;}
+.obsbtn{font-size:10.5px;}
 .plan{background:var(--salt-glass-faint);border-color:var(--salt-line-faint);}
 .plan>summary:hover{background:var(--salt-glass);}
 .plan[open]>summary{border-bottom-color:var(--salt-line-faint);}
 .plan .plid{font-weight:500;letter-spacing:.12em;}
-.plan .plt{font-weight:400;font-size:14px;}
+.plan .plt{font-weight:400;font-size:15px;}
 .plan .plst{font-weight:500;letter-spacing:.16em;}
 .plan.planlate{border-color:rgba(197,160,89,.45);}
 .plan.planlate .plst{color:var(--salt-brass);}
-.plbody{color:var(--salt-mist-light);font-size:13px;}
+.plbody{color:var(--mut);font-size:14px;line-height:1.6;}
 
 /* ---- 12. THE NETWORK, THE MAP, THE CALENDAR, THE METERS ---- */
 .nstream{border-top-color:var(--salt-line);}
@@ -3227,9 +3227,17 @@ details.obs>summary:hover{background:var(--salt-glass);}
 /* ---- 13. THE PHONE: the same vocabulary; only the floors the old layer sets stand ---- */
 @media(max-width:560px){
   h2{white-space:normal;}
-  .kick,.grouplbl{font-size:11px !important;letter-spacing:.2em;}
-  .tab{font-size:11px;}
-  .kpi .v{font-size:19px;}
+  .kick,.grouplbl{font-size:11px !important;letter-spacing:.18em;}
+  .tab{font-size:11.5px;}
+  /* the As-at stamp is one chip that may not break inside itself (v333); at 11px it is 372px wide
+     and carries the page to 383, so it keeps 10.5px here. Measured at v477. */
+  .metarow .chip{font-size:10.5px;letter-spacing:.04em;}
+  .kpi .v{font-size:20px;}
+  /* THE BOARD FITS ITS CARD WITHOUT A SCROLL, measured at v477: 337px of table in a 325px card since
+     the mono face arrived at v472, and the width is the figures', not the type's (12.5, 12, 11.5 and
+     11px all measure 337). Three-pixel gutters bring it to 325, exactly the card. */
+  .pxboard{font-size:12.5px;}
+  .pxboard th,.pxboard td{padding-left:3px;padding-right:3px;}
 }
 /* ---- 14. PRINT: the page is white; the layer above already strips the frost ---- */
 @media print{
@@ -5309,7 +5317,9 @@ const whiteboard=[
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{"v": "v476", "d": "02 Sep 2026", "t": "THE v281 COLOUR RULES AND THE RAIL'S OLD ACTIVE TAB ARE RETIRED", "n": ["<b>THE THIRD RETIREMENT FOLD, AND THE LAST OF THE MATERIAL LAYERS.</b> v281's colour rules go: the primary's gold glow and its hover, the active tab's cast, the ice glow on a meter's fill, the severity glow on an action's bar, the row hover, the accent focus ring with its colour-mix, and the fade colour on both scroll hints. With them, the base rail's active tab (the gradient fill, the dark count) and its hover, which the layer draws as glass with a brass hairline. What v281 owns and keeps is its motion: the section settle, the staggered children, the press transforms, the meters' fill-from-zero.", "<b>MEASURED:</b> 34 shots against v475, all the same within the noise floor; the base layer's hover and focus states are not in a still render and were read instead. The queue was asked first: nothing pending, nothing newly approved.", "<b>WHAT IS LEFT, AND IS NOT A MATERIAL LAYER.</b> The base layer still declares a colour inside most component rules (a tag's fill, a tier's glow, a badge's gradient), each overridden by the layer. They are the original desk, not a material pass, and retiring them is tidiness with a rising risk per rule; they are listed as a later fold rather than taken now."]},
+const evolution=[{"v": "v477", "d": "02 Sep 2026", "t": "LEGIBILITY: A POINT UP ON EVERY FIGURE AND LABEL, A POINT AND MORE LEADING ON PROSE", "n": ["<b>HIS INSTRUCTION, 02 SEP 2026: consider easier legibility.</b> v472 set the identity's type at the design system's sizes, which were drawn for a brand page read at leisure, and the desk is read for a figure at a stall. So every mono figure and label steps up half a point to a point: KPI labels 10 to 11, their figures 22 to 24, table heads 10 to 11, tables 12.5 to 13, the rail's tabs 10.5 to 11.5, the parts strip 11 to 11.5, buttons 10.5 to 11, chips and tags half a point each, the ledger's summary figures 17 to 18, and nothing on a control or a label below 10 on a desk or 11 on the phone. Prose steps up a point with more leading: the body 14 to 15 at 1.6, leads and descriptions 13 to 14, insights 13.5 to 14.5, notes 13 to 14, the journal 13.5 to 14.5, actions' reasons and observations 12.5 to 13.5.", "<b>TRACKING EASES AND RUNNING PROSE LIGHTENS.</b> Mono caps at 0.14 to 0.22em read as a texture at a distance and as a puzzle up close; the longer labels drop to 0.08 to 0.14em, the eyebrow to 0.18em. Running prose, which the layer had set in mist light, moves one step lighter to #b4bcc2 through the desk's own --mut token, so a paragraph reads without leaning in while labels keep their mist.", "<b>THE ONE TABLE THAT MUST FIT IS HELD WHERE IT WAS MEASURED.</b> v393 measured the board at three pixels inside a 325px card at 375. It keeps 12.5px on the phone while every other table goes to 13; measured again after this fold: the board's width against its card, the page never wider than 375, every rail tab on one line and 44 tall with the menu open. The queue was asked first: nothing pending."]},
+
+{"v": "v476", "d": "02 Sep 2026", "t": "THE v281 COLOUR RULES AND THE RAIL'S OLD ACTIVE TAB ARE RETIRED", "n": ["<b>THE THIRD RETIREMENT FOLD, AND THE LAST OF THE MATERIAL LAYERS.</b> v281's colour rules go: the primary's gold glow and its hover, the active tab's cast, the ice glow on a meter's fill, the severity glow on an action's bar, the row hover, the accent focus ring with its colour-mix, and the fade colour on both scroll hints. With them, the base rail's active tab (the gradient fill, the dark count) and its hover, which the layer draws as glass with a brass hairline. What v281 owns and keeps is its motion: the section settle, the staggered children, the press transforms, the meters' fill-from-zero.", "<b>MEASURED:</b> 34 shots against v475, all the same within the noise floor; the base layer's hover and focus states are not in a still render and were read instead. The queue was asked first: nothing pending, nothing newly approved.", "<b>WHAT IS LEFT, AND IS NOT A MATERIAL LAYER.</b> The base layer still declares a colour inside most component rules (a tag's fill, a tier's glow, a badge's gradient), each overridden by the layer. They are the original desk, not a material pass, and retiring them is tidiness with a rising risk per rule; they are listed as a later fold rather than taken now."]},
 
 {"v": "v475", "d": "02 Sep 2026", "t": "THE v108 FROST AND THE v213 MATERIAL ARE RETIRED; THE LAYER OWNS THE MATERIAL", "n": ["<b>THE SECOND RETIREMENT FOLD, AND IT TAKES THE MATERIAL.</b> The v108 frost on the panes, the rail's old gradient and blur, the frosted table backings, the translucent inputs and pills, the v109 radii v213 had already restated, the v111 heading bar and its gloss, the v213 token block, its material fill, its well and veil colours, the dropdown fills and the hover fills: every one of them a rule section 4 or 8 of design/desk.css re-declares in full. The base rail keeps its geometry (sticky, its own scrollbar) and loses its material.", "<b>TWO THINGS MOVED RATHER THAN WENT, because the layer had not carried them.</b> The frost itself (24px blur, saturate 1.15, on the nine pane classes v108 frosted and no others) and the 10px blur on a sticky table head now live in the layer, with the two fallbacks for a renderer with no backdrop-filter and for prefers-reduced-transparency. A pane inside a pane stays flat by the v213 never-frost rule, which is structural and stays.", "<b>MEASURED, AND ONE ACCIDENT RETIRED ON PURPOSE.</b> 32 of 34 shots against v474 read the same. The Ledger and Enter parts did not, and the cause was run down rather than waved through: v108 had frosted .note along with the panes and given it a pane's shadow and gloss, v213's never-frost list omitted .note, and v472 cancelled its background and border but not the shadow, so a note with no box was casting a 40px shadow and saturating what lay behind it. With that accident put back by hand the two parts read 0 pixels apart, so everything else is the same; with it gone, 43,000 pixels under the queue card's note and 19,000 on the ledger's move by up to twelve units, which is the shadow lifting. The layer now says so in as many words: a note casts no shadow and carries no frost. The queue was asked first: nothing pending, nothing newly approved."]},
 
@@ -5546,7 +5556,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='02 Sep 2026, 17:46 KL';
+const LAST_UPDATED='02 Sep 2026, 17:50 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */

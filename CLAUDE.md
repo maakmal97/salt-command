@@ -74,7 +74,12 @@ row is approved on the phone.
    One accent (brass; copper for the exception), three semantic words (verdigris owed to you or
    settled, ember owed by you or breached, steel pending), figures in mono, sentences in the
    display face, glass once. **A colour or type change is an edit to `design/desk.css`, then
-   `--sync`, then build; never a hex in the master's older layers.** The two books' hues are
+   `--sync`, then build; never a hex in the master's older layers.** From v474 to v476 the older
+   material layers are retired: the page-level colour system, the v108 frost, the v213 material and
+   the v281 colour rules are gone, each fold proved the same on every shot by `tools/renderdiff.mjs`.
+   What the base layer still declares inside component rules (a tag's fill, a tier's glow) is
+   overridden by the layer and listed for a later fold, not taken. v477 is the legibility pass:
+   sizes and tracking live in the layer alone. The two books' hues are
    `PRODUCTS.accent` in `ledger/book.json`, because that block is generated. Chart series read
    the identity's hexes directly (`salt-ds/src/tokens.ts` is the shadow of the stylesheet), so a
    palette change is a change in both places. No web font: the CSP is self-only, so Georgia and
@@ -492,6 +497,7 @@ Per-Crm01 master (a Cowork/master session); once it lands, the sync above alread
 | `tools/changelog.mjs` | Prepends the master's current `evolution[0]` to `master/changelog.json`. Never rewrites an entry that exists. |
 | `design/salt-ds.css` | **THE DESIGN SYSTEM'S STYLESHEET** (v472, 02 Sep 2026), vendored from `Code\salt-ds\src\styles.css` by `node tools/designsync.mjs --pull`. Tokens and the `salt-` recipes; no font import, because the CSP is self-only and the pull refuses one. |
 | `design/desk.css` | **THE DESK'S DESIGN LAYER** (v472): a last-wins layer, as v213 and v281 were, binding the desk's own class vocabulary to the design system's tokens. Edit this for any change of material, type or colour; never the rules above it in the master. The ethos is `salt-ds/DESIGN.md`, the concept `docs/DESIGN.md`. |
+| `tools/renderdiff.mjs` | **THE RENDER DIFF** (v474): `--shoot <label>` renders every part at 1280 and 375 with motion off, the stamp, the version chip, the entry counts and the journal's version entries masked; `--compare <a> <b>` counts the pixels that move by more than two units per channel, shot for shot, and reads the same up to 16 of them. A fold that claims to change nothing visible ships when every shot reads the same. Playwright from `Code\salt-ds\.ds-sync`, PIL for the compare; by hand, never CI. Proved red on a one-line colour change before it was trusted. |
 | `tools/designsync.mjs` | `--pull` vendors the design system's stylesheet; `--sync` renders both design files into the master between the `DESIGN` markers at the foot of its `<style>`; `--check` fails if either block is not its file. Same rule as the engine, the book and the geography, and CI runs it. |
 | `.github/workflows/` | CI with no secrets: date order, changelog, tests, build-matches-master, and a daily check that the live Worker serves what the repo committed. |
 | `tools/update.mjs` | **The whole "update" chain in one command**, ending in proof that every surface is level. See below. |

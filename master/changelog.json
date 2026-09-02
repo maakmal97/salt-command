@@ -1,5 +1,15 @@
 [
  {
+  "v": "v477",
+  "d": "02 Sep 2026",
+  "t": "LEGIBILITY: A POINT UP ON EVERY FIGURE AND LABEL, A POINT AND MORE LEADING ON PROSE",
+  "n": [
+   "<b>HIS INSTRUCTION, 02 SEP 2026: consider easier legibility.</b> v472 set the identity's type at the design system's sizes, which were drawn for a brand page read at leisure, and the desk is read for a figure at a stall. So every mono figure and label steps up half a point to a point: KPI labels 10 to 11, their figures 22 to 24, table heads 10 to 11, tables 12.5 to 13, the rail's tabs 10.5 to 11.5, the parts strip 11 to 11.5, buttons 10.5 to 11, chips and tags half a point each, the ledger's summary figures 17 to 18, and nothing on a control or a label below 10 on a desk or 11 on the phone. Prose steps up a point with more leading: the body 14 to 15 at 1.6, leads and descriptions 13 to 14, insights 13.5 to 14.5, notes 13 to 14, the journal 13.5 to 14.5, actions' reasons and observations 12.5 to 13.5.",
+   "<b>TRACKING EASES AND RUNNING PROSE LIGHTENS.</b> Mono caps at 0.14 to 0.22em read as a texture at a distance and as a puzzle up close; the longer labels drop to 0.08 to 0.14em, the eyebrow to 0.18em. Running prose, which the layer had set in mist light, moves one step lighter to #b4bcc2 through the desk's own --mut token, so a paragraph reads without leaning in while labels keep their mist.",
+   "<b>THE ONE TABLE THAT MUST FIT IS HELD WHERE IT WAS MEASURED.</b> v393 measured the board at three pixels inside a 325px card at 375. It keeps 12.5px on the phone while every other table goes to 13; measured again after this fold: the board's width against its card, the page never wider than 375, every rail tab on one line and 44 tall with the menu open. The queue was asked first: nothing pending."
+  ]
+ },
+ {
   "v": "v476",
   "d": "02 Sep 2026",
   "t": "THE v281 COLOUR RULES AND THE RAIL'S OLD ACTIVE TAB ARE RETIRED",

@@ -127,9 +127,14 @@ master first and read red.
 
 ## What is proposed, and not in v472
 
-- **Retire the older material layers.** v108, v213 and v281 still declare fills, glows and
-  tab hues that v472 overrides. A later fold can delete what is now dead, rule by rule, with
-  the render measured before and after. Smaller folds.
+- **Retire the older material layers.** Done, v474 to v476, in three folds: the page-level
+  colour system, then the v108 frost and v213 material (one accident found and retired on
+  purpose: a note casting a pane's shadow), then the v281 colour rules and the rail's old active
+  tab. Each read the same on every shot of `tools/renderdiff.mjs`. What remains is the base
+  layer's per-component colour declarations, overridden and listed rather than taken.
+- **Legibility.** Done at v477: a point up on every figure and label, a point and more leading
+  on prose, tracking eased, running prose one step lighter; the phone board given three-pixel
+  gutters so it fits its card, the stamp chip held at 10.5px so the page stays 375 wide.
 - **Embed the brand fonts.** See above; the owner's call.
 - **The Approve part on the `ApproveCard` recipe.** The draft cards already lead with cost and
   margin; the recipe gives them the identity's shape. One part, one fold.
