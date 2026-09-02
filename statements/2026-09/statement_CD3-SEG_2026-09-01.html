@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Statement of account</title>
+<style>
+:root {
+  /* The six colours of the identity */
+  --salt-obsidian: #05080a;   /* the ground; every surface sits on it */
+  --salt-slate: #0b1215;      /* deep panels, and the QR ink */
+  --salt-brass: #c5a059;      /* the leading accent */
+  --salt-copper: #b87333;     /* the closing accent; gradients end on it */
+  --salt-salt: #f2f4f5;       /* text, and the field behind the QR */
+  --salt-mist: #7a8690;       /* muted labels and captions */
+  --salt-mist-light: #a6afb5; /* mist for running prose at 13px, where mist itself is too dark */
+
+  /* The desk's semantic colours, added 02 Sep 2026. Direction and risk need hues the six
+     brand colours do not carry, and each sits in the identity's temperature: verdigris is
+     copper's patina, ember is copper under heat, steel is slate lit. Copper stays the one
+     accent that marks the exception, so attention is copper and never a fourth hue. */
+  --salt-verdigris: #6fae97;  /* settled, owed to you, in cover */
+  --salt-ember: #d4694c;      /* owed by you, defaulted, breached */
+  --salt-steel: #8ea2b6;      /* pending, neutral, the cool second series */
+  --salt-brass-soft: #d8c79c; /* pale brass for a second tier */
+
+  /* The two books: salt is the pale one, oil the golden one */
+  --salt-product-salt: #e4e9ec;
+  --salt-product-oil: #c5a059;
+
+  /* Materials */
+  --salt-glass: rgba(255, 255, 255, 0.03);
+  --salt-glass-faint: rgba(255, 255, 255, 0.02);
+  --salt-line: rgba(197, 160, 89, 0.22);
+  --salt-line-faint: rgba(255, 255, 255, 0.06);
+  --salt-highlight: rgba(255, 255, 255, 0.08);
+  --salt-shadow: 0 32px 64px rgba(0, 0, 0, 0.55);
+  --salt-shadow-desk: 0 18px 40px rgba(0, 0, 0, 0.42); /* lighter, for a page of many panes */
+  --salt-well: rgba(0, 0, 0, 0.28);      /* inset: fields and meter tracks */
+  --salt-veil: rgba(5, 8, 10, 0.86);     /* sticky and floating surfaces over content */
+  --salt-pane: rgba(11, 18, 21, 0.66);   /* the glass fill when there is no backdrop to blur */
+  --salt-tap: 44px;                      /* the least a control may measure, either way */
+
+  /* Gradients. Brass to copper for marks and fills; white to copper for titles. */
+  --salt-gradient: linear-gradient(135deg, var(--salt-brass), var(--salt-copper));
+  --salt-gradient-title: linear-gradient(135deg, #ffffff 30%, var(--salt-copper) 100%);
+
+  /* Semantic aliases */
+  --salt-surface: var(--salt-obsidian);
+  --salt-text: var(--salt-salt);
+  --salt-text-muted: var(--salt-mist);
+  --salt-text-label: var(--salt-copper);
+
+  /* Typography */
+  --salt-font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
+  --salt-font-mono: 'JetBrains Mono', 'Cascadia Mono', Consolas, monospace;
+
+  --salt-text-xs: 11px;
+  --salt-text-sm: 13px;
+  --salt-text-md: 15px;
+  --salt-text-lg: 17px;
+  --salt-text-xl: 24px;
+  --salt-text-2xl: 34px;
+  --salt-text-3xl: 48px;
+  --salt-text-4xl: 64px;
+  --salt-text-5xl: 88px;
+
+  /* Space, radius */
+  --salt-space-1: 4px;
+  --salt-space-2: 8px;
+  --salt-space-3: 12px;
+  --salt-space-4: 16px;
+  --salt-space-5: 24px;
+  --salt-space-6: 32px;
+  --salt-space-7: 48px;
+
+  --salt-radius-sm: 12px;
+  --salt-radius-md: 16px;
+  --salt-radius-lg: 24px;
+  --salt-radius-xl: 36px;
+  --salt-radius-pill: 100px;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;padding:44px 20px 60px;
+  color:var(--salt-text);
+  background:
+    radial-gradient(1200px 640px at 82% -12%, rgba(184,115,51,.16) 0%, transparent 62%),
+    radial-gradient(900px 560px at -10% 6%, rgba(197,160,89,.10) 0%, transparent 58%),
+    var(--salt-obsidian);
+  background-attachment:fixed;
+  font-family:var(--salt-font-display);
+  font-size:var(--salt-text-md);line-height:1.6;-webkit-font-smoothing:antialiased}
+
+/* FIGURES IN MONO, SENTENCES IN THE DISPLAY FACE. Decision 3 of the identity, and the whole
+   figure vocabulary of a statement is listed here once. */
+.dt,.q,.amt,.u,.tr span:last-child,.owedv,.who,.idx td,.mini td,.mini th,.pw,
+.ok,.due,.pend,.cx,.owedunits,.gift,.nilamt,.eyebrow,.whol,th,.rvh,.slab
+  {font-family:var(--salt-font-mono);font-variant-numeric:tabular-nums}
+
+.w{max-width:620px;margin:0 auto}
+.eyebrow{font-size:var(--salt-text-xs);letter-spacing:.32em;color:var(--salt-copper);
+  font-weight:700;margin:0 0 10px;text-transform:uppercase}
+h1{margin:0;font-size:var(--salt-text-2xl);font-weight:600;letter-spacing:-.01em;line-height:1.12;
+  font-family:var(--salt-font-display)}
+.meta{color:var(--salt-text-muted);font-size:var(--salt-text-sm);margin:10px 0 0}
+.whol{font-size:var(--salt-text-xs);letter-spacing:.2em;text-transform:uppercase;
+  color:var(--salt-copper);font-weight:700;margin:0}
+.whol.gap1{margin:26px 0 0}.whol.gap2{margin:30px 0 0}
+.who{margin:8px 0 4px;font-size:var(--salt-text-lg);font-weight:700;color:var(--salt-text);
+  letter-spacing:.06em}
+/* brass leads the hairlines: decision 1 */
+.rule{height:1px;background:var(--salt-line);margin:24px 0 4px;border:0}
+
+.tblw{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:collapse;min-width:340px}
+table.rft{margin-top:10px}
+th{font-size:var(--salt-text-xs);letter-spacing:.16em;text-transform:uppercase;
+  color:var(--salt-text-muted);font-weight:700;padding:0 0 10px;text-align:right;white-space:nowrap}
+th.l{text-align:left}
+td{padding:15px 0;border-bottom:1px solid var(--salt-line-faint);text-align:right;vertical-align:top}
+td.l{text-align:left}
+.dt{font-size:var(--salt-text-md);color:var(--salt-text)}
+.nodt{color:var(--salt-text-muted)}
+.sub2{font-size:var(--salt-text-sm);color:var(--salt-text-muted);margin-top:4px;
+  font-family:var(--salt-font-display)}
+.rsn{font-size:var(--salt-text-sm);color:var(--salt-text-muted);font-family:var(--salt-font-display)}
+.q{font-size:var(--salt-text-md);color:var(--salt-mist-light)}
+.u{font-size:var(--salt-text-xs);color:var(--salt-text-muted);margin-left:5px}
+.amt{font-size:var(--salt-text-lg);font-weight:700;color:var(--salt-text)}
+
+/* THE THREE WORDS. Each is a mono word in its colour; nothing here is a filled badge. */
+.ok{font-size:var(--salt-text-sm);color:var(--salt-verdigris);letter-spacing:.02em}
+.due{font-size:var(--salt-text-sm);font-weight:700;color:var(--salt-ember);white-space:nowrap}
+.pend{color:var(--salt-steel);font-weight:700;font-size:var(--salt-text-sm);letter-spacing:.02em}
+.owedunits{font-size:var(--salt-text-sm);color:var(--salt-verdigris);margin-top:5px;
+  font-weight:600;white-space:nowrap}
+.cx{color:var(--salt-text-muted);font-weight:700;font-size:var(--salt-text-sm);letter-spacing:.02em}
+.cxn{color:var(--salt-text-muted);font-weight:600}
+.cxr{text-decoration:line-through;text-decoration-thickness:1px;opacity:.45}
+.gift{font-size:var(--salt-text-sm);color:var(--salt-mist-light);letter-spacing:.02em;white-space:nowrap}
+.nilamt{color:var(--salt-text-muted);font-weight:400}
+
+.tot{margin-top:30px}
+.tr{display:flex;justify-content:space-between;align-items:baseline;gap:14px;padding:8px 0;
+  font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
+.tr span:last-child{color:var(--salt-text);white-space:nowrap}
+.tr.big{margin-top:10px;padding-top:16px;border-top:1px solid var(--salt-line);
+  font-size:var(--salt-text-xl);font-weight:700;color:var(--salt-text)}
+.tr.big span:last-child{color:var(--salt-ember)}
+.tr.big.clear span:last-child{color:var(--salt-verdigris)}
+.tr.sub{color:var(--salt-text-muted);font-size:var(--salt-text-sm)}
+
+/* GLASS ONCE: a pane is white 3% with a brass hairline. A pane inside a pane is flat. */
+.owed,.rec{margin-top:26px;border:1px solid var(--salt-line);border-radius:var(--salt-radius-md);
+  background:var(--salt-glass)}
+.owed{padding:20px 22px}
+.owedl{margin:0;font-size:var(--salt-text-xs);letter-spacing:.2em;text-transform:uppercase;
+  color:var(--salt-copper);font-weight:700}
+.owedv{margin:8px 0 0;font-size:var(--salt-text-2xl);font-weight:700;color:var(--salt-verdigris);
+  letter-spacing:-.01em}
+.owedv span{font-size:var(--salt-text-md);font-weight:600;margin-left:6px;color:var(--salt-text-muted)}
+.owedn{margin:12px 0 0;font-size:var(--salt-text-sm);color:var(--salt-text-muted);line-height:1.6}
+.rec{padding:22px 22px 8px}
+.recl{margin:0 0 18px;font-size:var(--salt-text-xs);letter-spacing:.2em;text-transform:uppercase;
+  color:var(--salt-copper);font-weight:700}
+.stp{display:flex;gap:14px;margin-bottom:20px}
+.stpn{flex:0 0 24px;height:24px;border-radius:var(--salt-radius-pill);border:1px solid var(--salt-line);
+  color:var(--salt-brass);font-size:var(--salt-text-xs);font-weight:700;font-family:var(--salt-font-mono);
+  display:flex;align-items:center;justify-content:center;line-height:1}
+.stpb{flex:1 1 auto;min-width:0}
+.stpt{margin:0;font-size:var(--salt-text-md);font-weight:600;color:var(--salt-text);line-height:1.5}
+.stpd{margin:7px 0 0;font-size:var(--salt-text-sm);color:var(--salt-text-muted);line-height:1.65}
+table.mini{width:100%;border-collapse:collapse;margin-top:10px;min-width:0}
+table.mini th{font-size:var(--salt-text-xs);letter-spacing:.14em;padding:0 0 6px;color:var(--salt-text-muted)}
+table.mini td{padding:8px 0;font-size:var(--salt-text-sm);border-bottom:1px solid var(--salt-line-faint);
+  color:var(--salt-mist-light)}
+table.mini tr.tot td{border-bottom:0;border-top:1px solid var(--salt-line);font-weight:700;
+  color:var(--salt-text);padding-top:9px}
+table.mini tr.sub td{border-bottom:0;color:var(--salt-text);font-weight:700}
+b.short{color:var(--salt-ember)}
+.recn{margin:2px 0 16px;font-size:var(--salt-text-sm);color:var(--salt-text-muted);line-height:1.65;
+  border-top:1px solid var(--salt-line-faint);padding-top:14px}
+.note{margin-top:34px;font-size:var(--salt-text-sm);color:var(--salt-text-muted);line-height:1.7}
+
+/* The QR block. A code on paper is only useful if what it opens is written beside it. */
+.qrb{margin-top:34px;display:flex;gap:20px;align-items:center;
+  border-top:1px solid var(--salt-line);padding-top:26px}
+.qrb svg{border-radius:var(--salt-radius-sm);display:block;flex:0 0 auto}
+.qrt{margin:0;font-size:var(--salt-text-sm);color:var(--salt-text-muted);line-height:1.7}
+.qrt code{font-family:var(--salt-font-mono);font-size:var(--salt-text-xs);color:var(--salt-brass);
+  word-break:break-all}
+@media (max-width:460px){.qrb{flex-direction:column;align-items:flex-start}}
+
+@media print{
+  body{background:#fff;color:#111;padding:24px}
+  .eyebrow,.whol,.owedl,.recl{color:#8a5a20}
+  .meta,.note,.sub2,.u,.nilamt,.cxn,.cx,.stpd,.recn,.qrt,.rsn,.nodt{color:#555}
+  .q,.mini td{color:#333}
+  .ok,.owedunits,.tr.big.clear span:last-child,.owedv{color:#1d6b52}
+  .due,.tr.big span:last-child,b.short{color:#a8442c}
+  .pend{color:#41586e}
+  .gift{color:#555}
+  td{border-color:#ddd}.rule,.tr.big{border-color:#c9ad74}
+  .tr{color:#333}.tr span:last-child,.amt,.dt{color:#111}
+  .owed,.rec{background:#fbfaf7;border-color:#d8c79c}
+  .stpn{color:#8a5a20;border-color:#d8c79c}
+  .stpt{color:#111}
+  .qrb{border-color:#ddd}.qrt code{color:#8a5a20}
+}
+</style></head><body><div class="w">
+<p class="eyebrow">Salt Command</p>
+<h1>Statement of account</h1>
+<p class="meta">Issued 01 Sept 2026 &middot; from the beginning to 01 Sept 2026</p>
+<p class="whol" style="margin:26px 0 0">Account</p>
+<div class="who">CD3-SEG</div>
+<div class="rule"></div>
+<table><thead><tr><th class="l">Date</th><th>Quantity</th><th>Amount</th><th class="r">Status</th></tr></thead><tbody><tr><td class="l dt">27 Aug 2026</td><td class="q">1<span class="u">unit</span></td><td class="amt">100.00</td><td class="r"><span class="ok">settled</span></td></tr></tbody></table>
+
+<div class="tot">
+<div class="tr"><span>1 order, 1 unit</span><span>100.00</span></div>
+<div class="tr"><span>Paid</span><span>100.00</span></div>
+
+
+<div class="tr big clear"><span>Balance</span><span>nil</span></div>
+
+</div>
+
+
+<p class="note">Amounts in ringgit. This statement covers your own orders only, taken from the seller&rsquo;s records as at the issue date. If anything differs from your own, say so and it will be checked.</p>
+<div class="qrb"><svg xmlns="http://www.w3.org/2000/svg" width="132" height="132" viewBox="0 0 41 41" shape-rendering="crispEdges" role="img" aria-label="Statement link for CD3-SEG"><rect width="41" height="41" fill="#ffffff"/><path d="M4 4h7v1h-7zM14 4h2v1h-2zM18 4h1v1h-1zM23 4h3v1h-3zM27 4h1v1h-1zM30 4h7v1h-7zM4 5h1v1h-1zM10 5h1v1h-1zM15 5h1v1h-1zM19 5h4v1h-4zM26 5h1v1h-1zM30 5h1v1h-1zM36 5h1v1h-1zM4 6h1v1h-1zM6 6h3v1h-3zM10 6h1v1h-1zM12 6h3v1h-3zM18 6h1v1h-1zM20 6h1v1h-1zM23 6h3v1h-3zM30 6h1v1h-1zM32 6h3v1h-3zM36 6h1v1h-1zM4 7h1v1h-1zM6 7h3v1h-3zM10 7h1v1h-1zM12 7h1v1h-1zM14 7h2v1h-2zM19 7h1v1h-1zM23 7h2v1h-2zM27 7h1v1h-1zM30 7h1v1h-1zM32 7h3v1h-3zM36 7h1v1h-1zM4 8h1v1h-1zM6 8h3v1h-3zM10 8h1v1h-1zM12 8h2v1h-2zM15 8h1v1h-1zM18 8h3v1h-3zM22 8h1v1h-1zM24 8h2v1h-2zM27 8h1v1h-1zM30 8h1v1h-1zM32 8h3v1h-3zM36 8h1v1h-1zM4 9h1v1h-1zM10 9h1v1h-1zM12 9h1v1h-1zM14 9h4v1h-4zM22 9h1v1h-1zM24 9h1v1h-1zM30 9h1v1h-1zM36 9h1v1h-1zM4 10h7v1h-7zM12 10h1v1h-1zM14 10h1v1h-1zM16 10h1v1h-1zM18 10h1v1h-1zM20 10h1v1h-1zM22 10h1v1h-1zM24 10h1v1h-1zM26 10h1v1h-1zM28 10h1v1h-1zM30 10h7v1h-7zM12 11h1v1h-1zM14 11h3v1h-3zM20 11h1v1h-1zM24 11h3v1h-3zM4 12h1v1h-1zM6 12h5v1h-5zM17 12h2v1h-2zM20 12h2v1h-2zM23 12h1v1h-1zM26 12h1v1h-1zM28 12h1v1h-1zM30 12h5v1h-5zM8 13h1v1h-1zM12 13h1v1h-1zM14 13h1v1h-1zM17 13h1v1h-1zM23 13h1v1h-1zM27 13h2v1h-2zM30 13h2v1h-2zM33 13h2v1h-2zM36 13h1v1h-1zM9 14h2v1h-2zM14 14h2v1h-2zM17 14h3v1h-3zM26 14h1v1h-1zM28 14h2v1h-2zM32 14h1v1h-1zM34 14h1v1h-1zM4 15h2v1h-2zM7 15h3v1h-3zM11 15h3v1h-3zM16 15h2v1h-2zM19 15h1v1h-1zM24 15h3v1h-3zM29 15h1v1h-1zM32 15h5v1h-5zM6 16h1v1h-1zM9 16h4v1h-4zM14 16h1v1h-1zM18 16h1v1h-1zM20 16h1v1h-1zM26 16h1v1h-1zM28 16h2v1h-2zM31 16h3v1h-3zM35 16h1v1h-1zM4 17h1v1h-1zM7 17h1v1h-1zM9 17h1v1h-1zM12 17h1v1h-1zM15 17h1v1h-1zM17 17h1v1h-1zM19 17h1v1h-1zM21 17h3v1h-3zM26 17h2v1h-2zM29 17h2v1h-2zM33 17h1v1h-1zM35 17h2v1h-2zM4 18h1v1h-1zM7 18h1v1h-1zM9 18h2v1h-2zM12 18h1v1h-1zM14 18h1v1h-1zM19 18h2v1h-2zM22 18h1v1h-1zM24 18h1v1h-1zM26 18h1v1h-1zM28 18h3v1h-3zM32 18h1v1h-1zM35 18h1v1h-1zM5 19h2v1h-2zM8 19h1v1h-1zM11 19h4v1h-4zM16 19h2v1h-2zM19 19h1v1h-1zM23 19h1v1h-1zM25 19h2v1h-2zM29 19h6v1h-6zM4 20h1v1h-1zM8 20h1v1h-1zM10 20h1v1h-1zM12 20h3v1h-3zM16 20h1v1h-1zM19 20h1v1h-1zM21 20h1v1h-1zM26 20h1v1h-1zM29 20h1v1h-1zM31 20h3v1h-3zM36 20h1v1h-1zM6 21h1v1h-1zM9 21h1v1h-1zM12 21h1v1h-1zM15 21h4v1h-4zM20 21h1v1h-1zM23 21h3v1h-3zM27 21h1v1h-1zM29 21h3v1h-3zM33 21h2v1h-2zM36 21h1v1h-1zM5 22h2v1h-2zM8 22h1v1h-1zM10 22h3v1h-3zM17 22h1v1h-1zM19 22h3v1h-3zM28 22h1v1h-1zM31 22h2v1h-2zM34 22h2v1h-2zM12 23h2v1h-2zM15 23h2v1h-2zM18 23h3v1h-3zM23 23h4v1h-4zM30 23h6v1h-6zM6 24h1v1h-1zM8 24h1v1h-1zM10 24h1v1h-1zM14 24h2v1h-2zM18 24h1v1h-1zM22 24h3v1h-3zM27 24h3v1h-3zM31 24h3v1h-3zM36 24h1v1h-1zM4 25h1v1h-1zM9 25h1v1h-1zM13 25h2v1h-2zM16 25h1v1h-1zM19 25h2v1h-2zM22 25h2v1h-2zM27 25h1v1h-1zM29 25h2v1h-2zM33 25h2v1h-2zM36 25h1v1h-1zM4 26h1v1h-1zM7 26h5v1h-5zM14 26h2v1h-2zM18 26h1v1h-1zM25 26h2v1h-2zM28 26h1v1h-1zM31 26h3v1h-3zM35 26h1v1h-1zM4 27h1v1h-1zM9 27h1v1h-1zM15 27h3v1h-3zM20 27h1v1h-1zM22 27h1v1h-1zM24 27h4v1h-4zM29 27h3v1h-3zM33 27h4v1h-4zM4 28h1v1h-1zM6 28h5v1h-5zM12 28h1v1h-1zM15 28h2v1h-2zM18 28h1v1h-1zM21 28h1v1h-1zM26 28h7v1h-7zM35 28h1v1h-1zM12 29h2v1h-2zM17 29h1v1h-1zM20 29h2v1h-2zM23 29h2v1h-2zM28 29h1v1h-1zM32 29h1v1h-1zM34 29h3v1h-3zM4 30h7v1h-7zM13 30h1v1h-1zM15 30h5v1h-5zM21 30h1v1h-1zM24 30h1v1h-1zM26 30h3v1h-3zM30 30h1v1h-1zM32 30h1v1h-1zM34 30h2v1h-2zM4 31h1v1h-1zM10 31h1v1h-1zM12 31h1v1h-1zM14 31h2v1h-2zM17 31h3v1h-3zM21 31h2v1h-2zM25 31h4v1h-4zM32 31h5v1h-5zM4 32h1v1h-1zM6 32h3v1h-3zM10 32h1v1h-1zM12 32h1v1h-1zM14 32h2v1h-2zM17 32h1v1h-1zM20 32h1v1h-1zM25 32h2v1h-2zM28 32h6v1h-6zM36 32h1v1h-1zM4 33h1v1h-1zM6 33h3v1h-3zM10 33h1v1h-1zM12 33h2v1h-2zM15 33h3v1h-3zM19 33h1v1h-1zM22 33h1v1h-1zM24 33h1v1h-1zM27 33h3v1h-3zM32 33h2v1h-2zM35 33h2v1h-2zM4 34h1v1h-1zM6 34h3v1h-3zM10 34h1v1h-1zM12 34h5v1h-5zM19 34h4v1h-4zM24 34h3v1h-3zM28 34h1v1h-1zM30 34h2v1h-2zM33 34h1v1h-1zM4 35h1v1h-1zM10 35h1v1h-1zM14 35h1v1h-1zM16 35h1v1h-1zM19 35h1v1h-1zM23 35h1v1h-1zM25 35h2v1h-2zM32 35h3v1h-3zM4 36h7v1h-7zM12 36h4v1h-4zM17 36h1v1h-1zM19 36h4v1h-4zM26 36h1v1h-1zM28 36h4v1h-4zM33 36h1v1h-1zM35 36h1v1h-1z" fill="#000000"/></svg><p class="qrt">Scan to open this statement on your phone at any time.<br>It asks for the password sent to you separately, then stays open for ten minutes.<br><code>https://salt-command.qyts8mh72kyg.workers.dev/s/CD3-SEG</code></p></div>
+</div></body></html>

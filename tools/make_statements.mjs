@@ -497,7 +497,16 @@ export { stmtRows, stmtRecon, stmtRefunds, stmtDoc };
    Ported from the retired make_statements.cjs: the same options, the same totals, the
    same files and the same review sheet, minus the jsdom drive of a desk that no longer
    carries the functions. */
-export async function makeStatements(outDir, issue) {
+/* `archive` produces a HISTORICAL issue: the documents and the review sheet, and nothing else.
+   No QR, no password, no encrypted record.
+
+   THE REASON IS THAT A BACK-ISSUE'S QR WOULD LIE. The code points at /s/<CODE> and the Worker
+   serves whichever month was published last, so a code printed on a July statement opens
+   September's ciphertext, which the July password cannot decrypt. The reader would be told his
+   password was not accepted, on a document that looks perfectly current. A record of a past
+   position is worth keeping; a dead code on it is not. */
+export async function makeStatements(outDir, issue, opts) {
+  const archive = !!(opts && opts.archive);
   /* THE RE-ISSUE GUARD, before a byte is written. The generator used to overwrite in silence,
      and docs/STATEMENTS.md carried the rule as an instruction to the reader instead: check the
      folder first, a different issue date means a second issue in one month. An instruction a
@@ -519,7 +528,8 @@ export async function makeStatements(outDir, issue) {
   const pwFile = join(outDir, "_passwords.json");
   const priorPw = (prior.length && existsSync(pwFile)) ? JSON.parse(readFileSync(pwFile, "utf8")) : {};
 
-  mkdirSync(join(outDir, "_kv"), { recursive: true });
+  if (archive) mkdirSync(outDir, { recursive: true });
+  else mkdirSync(join(outDir, "_kv"), { recursive: true });
   const parties = [...new Set(sales.map(s => s.customer))].sort();
   const issued = new Date(issue + 'T00:00:00').toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
   let made = 0; const skipped = [], sheets = [], kv = [], passwords = {};
@@ -554,24 +564,28 @@ export async function makeStatements(outDir, issue) {
        WHAT IS ENCRYPTED IS THE DOCUMENT'S BODY, not the whole page: the unlock page already
        carries the stylesheet, so shipping it again inside every envelope would multiply the
        ciphertext for nothing. */
-    const url = BASE_URL + '/s/' + encodeURIComponent(p);
-    const qr = qrSvg(url, { size: 132, label: 'Statement link for ' + p });
-    const qrBlock = '<div class="qrb">' + qr
-      + '<p class="qrt">Scan to open this statement on your phone at any time.<br>'
-      + 'It asks for the password sent to you separately, then stays open for ten minutes.<br>'
-      + '<code>' + esc(url) + '</code></p></div>';
     const baseDoc = stmtDoc(p, rows, o);
-    const html = baseDoc.replace('</div></body></html>', qrBlock + '\n</div></body></html>');
-
-    const pw = priorPw[p] || newPassword();
-    passwords[p] = pw;
+    let html = baseDoc, url = null, pw = null;
+    if (!archive) {
+      url = BASE_URL + '/s/' + encodeURIComponent(p);
+      const qr = qrSvg(url, { size: 132, label: 'Statement link for ' + p });
+      const qrBlock = '<div class="qrb">' + qr
+        + '<p class="qrt">Scan to open this statement on your phone at any time.<br>'
+        + 'It asks for the password sent to you separately, then stays open for ten minutes.<br>'
+        + '<code>' + esc(url) + '</code></p></div>';
+      html = baseDoc.replace('</div></body></html>', qrBlock + '\n</div></body></html>');
+      pw = priorPw[p] || newPassword();
+      passwords[p] = pw;
+    }
     /* THE ENVELOPE CARRIES THE DOCUMENT WITHOUT ITS QR, and the file on disk carries it with.
        A reader who reached the page by scanning the code is already where the code points, so
        printing it back at him is furniture; encrypting it as well quadrupled the ciphertext,
        295KB across the run against 81KB, for a picture nobody on that page can use. */
-    const bodyOnly = (baseDoc.match(/<div class="w">([\s\S]*?)<\/div><\/body>/) || [, baseDoc])[1];
-    kv.push({ code: p, month: issue.slice(0, 7), issued: issue,
-              verifier: await makeVerifier(pw), env: await encryptText(pw, bodyOnly) });
+    if (!archive) {
+      const bodyOnly = (baseDoc.match(/<div class="w">([\s\S]*?)<\/div><\/body>/) || [, baseDoc])[1];
+      kv.push({ code: p, month: issue.slice(0, 7), issued: issue,
+                verifier: await makeVerifier(pw), env: await encryptText(pw, bodyOnly) });
+    }
 
     const file = join(outDir, 'statement_' + p.replace(/[^A-Za-z0-9._-]+/g, '-') + '_' + issue + '.html');
     writeFileSync(file, html);
@@ -616,7 +630,7 @@ export async function makeStatements(outDir, issue) {
     const rowsIdx = sheets.map(x => {
       const f = flag(x.t);
       return '<tr class="f-' + f + '"><td class="l"><a href="#s-' + esc(x.who) + '">' + esc(x.who) + '</a></td>'
-        + '<td class="l pw">' + esc(x.pw) + '</td>'
+        + (archive ? '' : '<td class="l pw">' + esc(x.pw) + '</td>')
         + '<td>' + x.t.n + '</td><td>' + n2(x.t.qty) + '</td><td>' + m2(x.t.total) + '</td><td>' + m2(x.t.paid) + '</td>'
         + '<td class="r">' + (x.t.owed > 0.009 ? '<b class="owe">' + m2(x.t.owed) + '</b>' : x.t.refund > 0.009 ? '<b class="rf">' + m2(x.t.refund) + ' to them</b>' : '&mdash;') + '</td>'
         + '<td class="r">' + (x.t.toGet > 0.009 ? '<b class="gd">' + n2(x.t.toGet) + ' unit</b>' : '&mdash;') + '</td>'
@@ -630,9 +644,14 @@ export async function makeStatements(outDir, issue) {
       + '<title>Statements to review · ' + esc(issue) + '</title><style>' + css
       + REVIEW_CSS
       + '</style></head><body>'
-      + '<div class="warn"><b>This page carries the passwords.</b> It is the only file in the run '
-      + 'that does, and it is why this one is never sent, never left open and never forwarded. '
-      + 'Each password opens exactly one account, and a fresh set is issued next month.</div>'
+      + (archive
+        ? '<div class="warn"><b>A record of a past issue.</b> These statements carry no QR and no '
+          + 'password: the code would point at whatever month was published last, so on a back-issue '
+          + 'it would open a different statement and the reader would be told his password was '
+          + 'refused. Kept as the position as the book now understands it on that date.</div>'
+        : '<div class="warn"><b>This page carries the passwords.</b> It is the only file in the run '
+          + 'that does, and it is why this one is never sent, never left open and never forwarded. '
+          + 'Each password opens exactly one account, and a fresh set is issued next month.</div>')
       + '<div class="rv"><p class="rvh">For review, not for sending</p>'
       + '<h1 class="rvt">' + sheets.length + ' statements</h1>'
       + '<p class="rvs">Issued ' + esc(issued) + '. Every statement below is exactly the file that would go to that '
@@ -643,11 +662,11 @@ export async function makeStatements(outDir, issue) {
       + (pnd.length ? ' <b>' + pnd.length + '</b> hold' + (pnd.length === 1 ? 's' : '') + ' an order agreed but not yet '
         + 'collected or paid, which is money to chase rather than money owed.' : '')
       + '</p>'
-      + '<table class="idx"><thead><tr><th class="l">Account</th><th class="l">Password</th><th>Orders</th><th>Quantity</th>'
+      + '<table class="idx"><thead><tr><th class="l">Account</th>' + (archive ? '' : '<th class="l">Password</th>') + '<th>Orders</th><th>Quantity</th>'
       + '<th>Ordered</th><th>Paid</th><th class="r">Outstanding</th><th class="r">Owed goods</th>'
       + '<th class="r">Not actioned</th></tr></thead>'
       + '<tbody>' + rowsIdx + '</tbody>'
-      + '<tfoot><tr><td class="l"><b>All</b></td><td></td><td>' + sumT('n') + '</td><td>' + n2(sumT('qty')) + '</td>'
+      + '<tfoot><tr><td class="l"><b>All</b></td>' + (archive ? '' : '<td></td>') + '<td>' + sumT('n') + '</td><td>' + n2(sumT('qty')) + '</td>'
       + '<td>' + m2(sumT('total')) + '</td><td>' + m2(sumT('paid')) + '</td>'
       + '<td class="r"><b class="owe">' + m2(sumT('owed')) + '</b></td>'
       + '<td class="r"><b class="gd">' + n2(sumT('toGet')) + ' unit</b></td>'
@@ -663,22 +682,29 @@ export async function makeStatements(outDir, issue) {
   /* The passwords and the encrypted records. _passwords.json is gitignored: it is credentials,
      and a credential committed is a credential in the history for ever. The _kv records are
      ciphertext plus a verifier, and those ARE committed, because the deploy uploads them. */
-  writeFileSync(pwFile, JSON.stringify(passwords, null, 2) + '\n');
-  for (const r of kv) writeFileSync(join(outDir, '_kv', r.code + '.json'), JSON.stringify(r) + '\n');
+  if (!archive) {
+    writeFileSync(pwFile, JSON.stringify(passwords, null, 2) + '\n');
+    for (const r of kv) writeFileSync(join(outDir, '_kv', r.code + '.json'), JSON.stringify(r) + '\n');
+  }
 
   console.log('\nwrote ' + made + ' statement' + (made === 1 ? '' : 's') + ' to ' + outDir);
-  console.log('passwords:    ' + pwFile + '  (gitignored, never commit)');
-  console.log('for the KV upload: ' + join(outDir, '_kv') + '  (' + kv.length + ' records)');
+  if (archive) console.log('archive issue: no QR, no password, no KV record');
+  else {
+    console.log('passwords:    ' + pwFile + '  (gitignored, never commit)');
+    console.log('for the KV upload: ' + join(outDir, '_kv') + '  (' + kv.length + ' records)');
+  }
   if (skipped.length) console.log('nothing to show for: ' + skipped.join(', '));
   return { made, skipped, sheets, kv, passwords };
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  const outDir = process.argv[2], issue = process.argv[3] || new Date().toISOString().slice(0, 10);
+  const args = process.argv.slice(2).filter(a => a !== '--archive');
+  const archive = process.argv.includes('--archive');
+  const outDir = args[0], issue = args[1] || new Date().toISOString().slice(0, 10);
   if (!outDir || /\.html?$/i.test(outDir)) {
     console.error('usage: node tools/make_statements.mjs <outDir> [YYYY-MM-DD issue date]');
     if (outDir) console.error('the desk is no longer an input: statements build from ledger/book.json and engine/position.mjs (v388 removed the statement functions from the desk).');
     process.exit(2);
   }
-  makeStatements(outDir, issue).catch(e => { console.error(String(e && e.message || e)); process.exit(1); });
+  makeStatements(outDir, issue, { archive }).catch(e => { console.error(String(e && e.message || e)); process.exit(1); });
 }

@@ -67,6 +67,19 @@ node tools/make_statements.mjs statements/<YYYY-MM> <YYYY-MM-DD>
 
 Plain node, no jsdom, no network, and the master is not an input.
 
+**A BACK-DATED SET IS AN ARCHIVE, and it takes `--archive`.**
+
+```bash
+node tools/make_statements.mjs statements/<YYYY-MM> <YYYY-MM-DD> --archive
+```
+
+It writes the statements and the review sheet and nothing else: no QR, no password, no
+encrypted record. The QR is the reason. It points at `/s/<CODE>`, and the Worker serves
+whichever month was published last, so a code printed on a July statement opens September's
+ciphertext and the reader is told his password was refused, on a document that looks perfectly
+current. A record of a past position is worth keeping; a dead code on it is not. The KV publish
+step skips a folder with no `_kv`, so an archive never becomes the live set.
+
 **The re-issue guard is in the tool, not in this file.** Same issue date is a clean retry and
 regenerates in place, keeping the passwords already issued, because minting fresh ones would
 invalidate every password already sent. A *different* issue date means a second issue in one

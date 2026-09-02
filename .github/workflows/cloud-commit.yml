@@ -205,8 +205,14 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
         run: |
           set -euo pipefail
-          latest=$(ls -1d statements/[0-9][0-9][0-9][0-9]-[0-9][0-9] 2>/dev/null | sort | tail -1 || true)
-          if [ -z "$latest" ] || [ ! -d "$latest/_kv" ]; then
+          # The newest folder that actually HAS records. An archive issue (a back-dated set kept
+          # as a record) carries no _kv at all, so picking the newest folder blindly would find
+          # one with nothing to upload and publish nothing at all.
+          latest=""
+          for d in $(ls -1d statements/[0-9][0-9][0-9][0-9]-[0-9][0-9] 2>/dev/null | sort); do
+            [ -d "$d/_kv" ] && latest="$d"
+          done
+          if [ -z "$latest" ]; then
             echo "no statement set to publish; normal for a build with no issue in it"
             exit 0
           fi

@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Statement of account</title>
+<style>
+:root {
+  /* The six colours of the identity */
+  --salt-obsidian: #05080a;   /* the ground; every surface sits on it */
+  --salt-slate: #0b1215;      /* deep panels, and the QR ink */
+  --salt-brass: #c5a059;      /* the leading accent */
+  --salt-copper: #b87333;     /* the closing accent; gradients end on it */
+  --salt-salt: #f2f4f5;       /* text, and the field behind the QR */
+  --salt-mist: #7a8690;       /* muted labels and captions */
+  --salt-mist-light: #a6afb5; /* mist for running prose at 13px, where mist itself is too dark */
+
+  /* The desk's semantic colours, added 02 Sep 2026. Direction and risk need hues the six
+     brand colours do not carry, and each sits in the identity's temperature: verdigris is
+     copper's patina, ember is copper under heat, steel is slate lit. Copper stays the one
+     accent that marks the exception, so attention is copper and never a fourth hue. */
+  --salt-verdigris: #6fae97;  /* settled, owed to you, in cover */
+  --salt-ember: #d4694c;      /* owed by you, defaulted, breached */
+  --salt-steel: #8ea2b6;      /* pending, neutral, the cool second series */
+  --salt-brass-soft: #d8c79c; /* pale brass for a second tier */
+
+  /* The two books: salt is the pale one, oil the golden one */
+  --salt-product-salt: #e4e9ec;
+  --salt-product-oil: #c5a059;
+
+  /* Materials */
+  --salt-glass: rgba(255, 255, 255, 0.03);
+  --salt-glass-faint: rgba(255, 255, 255, 0.02);
+  --salt-line: rgba(197, 160, 89, 0.22);
+  --salt-line-faint: rgba(255, 255, 255, 0.06);
+  --salt-highlight: rgba(255, 255, 255, 0.08);
+  --salt-shadow: 0 32px 64px rgba(0, 0, 0, 0.55);
+  --salt-shadow-desk: 0 18px 40px rgba(0, 0, 0, 0.42); /* lighter, for a page of many panes */
+  --salt-well: rgba(0, 0, 0, 0.28);      /* inset: fields and meter tracks */
+  --salt-veil: rgba(5, 8, 10, 0.86);     /* sticky and floating surfaces over content */
+  --salt-pane: rgba(11, 18, 21, 0.66);   /* the glass fill when there is no backdrop to blur */
+  --salt-tap: 44px;                      /* the least a control may measure, either way */
+
+  /* Gradients. Brass to copper for marks and fills; white to copper for titles. */
+  --salt-gradient: linear-gradient(135deg, var(--salt-brass), var(--salt-copper));
+  --salt-gradient-title: linear-gradient(135deg, #ffffff 30%, var(--salt-copper) 100%);
+
+  /* Semantic aliases */
+  --salt-surface: var(--salt-obsidian);
+  --salt-text: var(--salt-salt);
+  --salt-text-muted: var(--salt-mist);
+  --salt-text-label: var(--salt-copper);
+
+  /* Typography */
+  --salt-font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
+  --salt-font-mono: 'JetBrains Mono', 'Cascadia Mono', Consolas, monospace;
+
+  --salt-text-xs: 11px;
+  --salt-text-sm: 13px;
+  --salt-text-md: 15px;
+  --salt-text-lg: 17px;
+  --salt-text-xl: 24px;
+  --salt-text-2xl: 34px;
+  --salt-text-3xl: 48px;
+  --salt-text-4xl: 64px;
+  --salt-text-5xl: 88px;
+
+  /* Space, radius */
+  --salt-space-1: 4px;
+  --salt-space-2: 8px;
+  --salt-space-3: 12px;
+  --salt-space-4: 16px;
+  --salt-space-5: 24px;
+  --salt-space-6: 32px;
+  --salt-space-7: 48px;
+
+  --salt-radius-sm: 12px;
+  --salt-radius-md: 16px;
+  --salt-radius-lg: 24px;
+  --salt-radius-xl: 36px;
+  --salt-radius-pill: 100px;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;padding:44px 20px 60px;
+  color:var(--salt-text);
+  background:
+    radial-gradient(1200px 640px at 82% -12%, rgba(184,115,51,.16) 0%, transparent 62%),
+    radial-gradient(900px 560px at -10% 6%, rgba(197,160,89,.10) 0%, transparent 58%),
+    var(--salt-obsidian);
+  background-attachment:fixed;
+  font-family:var(--salt-font-display);
+  font-size:var(--salt-text-md);line-height:1.6;-webkit-font-smoothing:antialiased}
+
+/* FIGURES IN MONO, SENTENCES IN THE DISPLAY FACE. Decision 3 of the identity, and the whole
+   figure vocabulary of a statement is listed here once. */
+.dt,.q,.amt,.u,.tr span:last-child,.owedv,.who,.idx td,.mini td,.mini th,.pw,
+.ok,.due,.pend,.cx,.owedunits,.gift,.nilamt,.eyebrow,.whol,th,.rvh,.slab
+  {font-family:var(--salt-font-mono);font-variant-numeric:tabular-nums}
+
+.w{max-width:620px;margin:0 auto}
+.eyebrow{font-size:var(--salt-text-xs);letter-spacing:.32em;color:var(--salt-copper);
+  font-weight:700;margin:0 0 10px;text-transform:uppercase}
+h1{margin:0;font-size:var(--salt-text-2xl);font-weight:600;letter-spacing:-.01em;line-height:1.12;
+  font-family:var(--salt-font-display)}
+.meta{color:var(--salt-text-muted);font-size:var(--salt-text-sm);margin:10px 0 0}
+.whol{font-size:var(--salt-text-xs);letter-spacing:.2em;text-transform:uppercase;
+  color:var(--salt-copper);font-weight:700;margin:0}
+.whol.gap1{margin:26px 0 0}.whol.gap2{margin:30px 0 0}
+.who{margin:8px 0 4px;font-size:var(--salt-text-lg);font-weight:700;color:var(--salt-text);
+  letter-spacing:.06em}
+/* brass leads the hairlines: decision 1 */
+.rule{height:1px;background:var(--salt-line);margin:24px 0 4px;border:0}
+
+.tblw{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:collapse;min-width:340px}
+table.rft{margin-top:10px}
+th{font-size:var(--salt-text-xs);letter-spacing:.16em;text-transform:uppercase;
+  color:var(--salt-text-muted);font-weight:700;padding:0 0 10px;text-align:right;white-space:nowrap}
+th.l{text-align:left}
+td{padding:15px 0;border-bottom:1px solid var(--salt-line-faint);text-align:right;vertical-align:top}
+td.l{text-align:left}
+.dt{font-size:var(--salt-text-md);color:var(--salt-text)}
+.nodt{color:var(--salt-text-muted)}
+.sub2{font-size:var(--salt-text-sm);color:var(--salt-text-muted);margin-top:4px;
+  font-family:var(--salt-font-display)}
+.rsn{font-size:var(--salt-text-sm);color:var(--salt-text-muted);font-family:var(--salt-font-display)}
+.q{font-size:var(--salt-text-md);color:var(--salt-mist-light)}
+.u{font-size:var(--salt-text-xs);color:var(--salt-text-muted);margin-left:5px}
+.amt{font-size:var(--salt-text-lg);font-weight:700;color:var(--salt-text)}
+
+/* THE THREE WORDS. Each is a mono word in its colour; nothing here is a filled badge. */
+.ok{font-size:var(--salt-text-sm);color:var(--salt-verdigris);letter-spacing:.02em}
+.due{font-size:var(--salt-text-sm);font-weight:700;color:var(--salt-ember);white-space:nowrap}
+.pend{color:var(--salt-steel);font-weight:700;font-size:var(--salt-text-sm);letter-spacing:.02em}
+.owedunits{font-size:var(--salt-text-sm);color:var(--salt-verdigris);margin-top:5px;
+  font-weight:600;white-space:nowrap}
+.cx{color:var(--salt-text-muted);font-weight:700;font-size:var(--salt-text-sm);letter-spacing:.02em}
+.cxn{color:var(--salt-text-muted);font-weight:600}
+.cxr{text-decoration:line-through;text-decoration-thickness:1px;opacity:.45}
+.gift{font-size:var(--salt-text-sm);color:var(--salt-mist-light);letter-spacing:.02em;white-space:nowrap}
+.nilamt{color:var(--salt-text-muted);font-weight:400}
+
+.tot{margin-top:30px}
+.tr{display:flex;justify-content:space-between;align-items:baseline;gap:14px;padding:8px 0;
+  font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
+.tr span:last-child{color:var(--salt-text);white-space:nowrap}
+.tr.big{margin-top:10px;padding-top:16px;border-top:1px solid var(--salt-line);
+  font-size:var(--salt-text-xl);font-weight:700;color:var(--salt-text)}
+.tr.big span:last-child{color:var(--salt-ember)}
+.tr.big.clear span:last-child{color:var(--salt-verdigris)}
+.tr.sub{color:var(--salt-text-muted);font-size:var(--salt-text-sm)}
+
+/* GLASS ONCE: a pane is white 3% with a brass hairline. A pane inside a pane is flat. */
+.owed,.rec{margin-top:26px;border:1px solid var(--salt-line);border-radius:var(--salt-radius-md);
+  background:var(--salt-glass)}
+.owed{padding:20px 22px}
+.owedl{margin:0;font-size:var(--salt-text-xs);letter-spacing:.2em;text-transform:uppercase;
+  color:var(--salt-copper);font-weight:700}
+.owedv{margin:8px 0 0;font-size:var(--salt-text-2xl);font-weight:700;color:var(--salt-verdigris);
+  letter-spacing:-.01em}
+.owedv span{font-size:var(--salt-text-md);font-weight:600;margin-left:6px;color:var(--salt-text-muted)}
+.owedn{margin:12px 0 0;font-size:var(--salt-text-sm);color:var(--salt-text-muted);line-height:1.6}
+.rec{padding:22px 22px 8px}
+.recl{margin:0 0 18px;font-size:var(--salt-text-xs);letter-spacing:.2em;text-transform:uppercase;
+  color:var(--salt-copper);font-weight:700}
+.stp{display:flex;gap:14px;margin-bottom:20px}
+.stpn{flex:0 0 24px;height:24px;border-radius:var(--salt-radius-pill);border:1px solid var(--salt-line);
+  color:var(--salt-brass);font-size:var(--salt-text-xs);font-weight:700;font-family:var(--salt-font-mono);
+  display:flex;align-items:center;justify-content:center;line-height:1}
+.stpb{flex:1 1 auto;min-width:0}
+.stpt{margin:0;font-size:var(--salt-text-md);font-weight:600;color:var(--salt-text);line-height:1.5}
+.stpd{margin:7px 0 0;font-size:var(--salt-text-sm);color:var(--salt-text-muted);line-height:1.65}
+table.mini{width:100%;border-collapse:collapse;margin-top:10px;min-width:0}
+table.mini th{font-size:var(--salt-text-xs);letter-spacing:.14em;padding:0 0 6px;color:var(--salt-text-muted)}
+table.mini td{padding:8px 0;font-size:var(--salt-text-sm);border-bottom:1px solid var(--salt-line-faint);
+  color:var(--salt-mist-light)}
+table.mini tr.tot td{border-bottom:0;border-top:1px solid var(--salt-line);font-weight:700;
+  color:var(--salt-text);padding-top:9px}
+table.mini tr.sub td{border-bottom:0;color:var(--salt-text);font-weight:700}
+b.short{color:var(--salt-ember)}
+.recn{margin:2px 0 16px;font-size:var(--salt-text-sm);color:var(--salt-text-muted);line-height:1.65;
+  border-top:1px solid var(--salt-line-faint);padding-top:14px}
+.note{margin-top:34px;font-size:var(--salt-text-sm);color:var(--salt-text-muted);line-height:1.7}
+
+/* The QR block. A code on paper is only useful if what it opens is written beside it. */
+.qrb{margin-top:34px;display:flex;gap:20px;align-items:center;
+  border-top:1px solid var(--salt-line);padding-top:26px}
+.qrb svg{border-radius:var(--salt-radius-sm);display:block;flex:0 0 auto}
+.qrt{margin:0;font-size:var(--salt-text-sm);color:var(--salt-text-muted);line-height:1.7}
+.qrt code{font-family:var(--salt-font-mono);font-size:var(--salt-text-xs);color:var(--salt-brass);
+  word-break:break-all}
+@media (max-width:460px){.qrb{flex-direction:column;align-items:flex-start}}
+
+@media print{
+  body{background:#fff;color:#111;padding:24px}
+  .eyebrow,.whol,.owedl,.recl{color:#8a5a20}
+  .meta,.note,.sub2,.u,.nilamt,.cxn,.cx,.stpd,.recn,.qrt,.rsn,.nodt{color:#555}
+  .q,.mini td{color:#333}
+  .ok,.owedunits,.tr.big.clear span:last-child,.owedv{color:#1d6b52}
+  .due,.tr.big span:last-child,b.short{color:#a8442c}
+  .pend{color:#41586e}
+  .gift{color:#555}
+  td{border-color:#ddd}.rule,.tr.big{border-color:#c9ad74}
+  .tr{color:#333}.tr span:last-child,.amt,.dt{color:#111}
+  .owed,.rec{background:#fbfaf7;border-color:#d8c79c}
+  .stpn{color:#8a5a20;border-color:#d8c79c}
+  .stpt{color:#111}
+  .qrb{border-color:#ddd}.qrt code{color:#8a5a20}
+}
+</style></head><body><div class="w">
+<p class="eyebrow">Salt Command</p>
+<h1>Statement of account</h1>
+<p class="meta">Issued 01 Aug 2026 &middot; from the beginning to 01 Aug 2026</p>
+<p class="whol" style="margin:26px 0 0">Account</p>
+<div class="who">CM4-SK</div>
+<div class="rule"></div>
+<table><thead><tr><th class="l">Date</th><th>Quantity</th><th>Amount</th><th class="r">Status</th></tr></thead><tbody><tr><td class="l dt">14 Jul 2026</td><td class="q">12.5<span class="u">unit</span></td><td class="amt">825.00</td><td class="r"><span class="ok">settled</span></td></tr></tbody></table>
+
+<div class="tot">
+<div class="tr"><span>1 order, 12.5 unit</span><span>825.00</span></div>
+<div class="tr"><span>Paid</span><span>825.00</span></div>
+
+
+<div class="tr big clear"><span>Balance</span><span>nil</span></div>
+
+</div>
+
+
+<p class="note">Amounts in ringgit. This statement covers your own orders only, taken from the seller&rsquo;s records as at the issue date. If anything differs from your own, say so and it will be checked.</p>
+</div></body></html>

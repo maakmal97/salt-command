@@ -5884,9 +5884,35 @@ section("Statements — the QR, the sort and the Salt identity");
   const genCss = (await import("../src/statement-css.js")).STATEMENT_CSS;
   ok(genCss === statementCss(),
     "src/statement-css.js is what tools/stmt-style.mjs produces (run --sync if this fails)");
+
+  /* AN ARCHIVE ISSUE CARRIES NO QR, AND THE REASON IS THAT ONE WOULD LIE. /s/<CODE> serves
+     whichever month was published last, so a code on a back-dated statement opens a different
+     month's ciphertext and the reader is told his password was refused, on a document that
+     looks current. A record of a past position is worth keeping; a dead code on it is not. */
+  {
+    const { makeStatements } = await import("../tools/make_statements.mjs");
+    const dirA = join(REPO, "test", "tmp", "stmt-archive");
+    rmSync(dirA, { recursive: true, force: true });
+    const quiet = console.log; console.log = () => { };
+    let runA;
+    try { runA = await makeStatements(dirA, "2026-08-01", { archive: true }); } finally { console.log = quiet; }
+    const files = readdirSync(dirA);
+    ok(runA.made > 0, `an archive issue still writes its statements (${runA.made})`);
+    ok(!files.includes("_kv") && !files.includes("_passwords.json"),
+      "and writes no _kv records and no passwords");
+    ok(runA.kv.length === 0 && Object.keys(runA.passwords).length === 0,
+      "and mints no password and no envelope at all");
+    const one = readFileSync(join(dirA, files.filter(f => f.startsWith("statement_"))[0]), "utf8");
+    ok(!/class="qrb"/.test(one) && !/<svg/.test(one) && !/\/s\//.test(one),
+      "no QR, no SVG and no statement link reaches a back-issue");
+    const rev = readFileSync(join(dirA, "_review_2026-08-01.html"), "utf8");
+    ok(!/Password<\/th>/.test(rev) && /record of a past issue/i.test(rev),
+      "its review sheet drops the password column and says what it is");
+    rmSync(dirA, { recursive: true, force: true });
+  }
 }
 
-const FLOOR_ASSERTIONS = 1238, FLOOR_SECTIONS = 97;   /* statements QR + password over v479: 1242 everywhere, 1243 here */
+const FLOOR_ASSERTIONS = 1243, FLOOR_SECTIONS = 97;   /* archive issues: 1247 everywhere, 1248 here */
 ok(pass + fail - offMachine >= FLOOR_ASSERTIONS,
   `the suite ran ${pass + fail - offMachine} assertions everywhere (${pass + fail} here, ${offMachine} of them needing files that live off this repo), below its floor of ${FLOOR_ASSERTIONS}: a section has stopped running`);
 ok(sections >= FLOOR_SECTIONS,
