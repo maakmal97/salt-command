@@ -37,7 +37,7 @@
       "stated": 15
     }
   },
-  "STATED_STOCK": 0.25,
+  "STATED_STOCK": -2.25,
   "COUNT_ON": {
     "salt": "2026-08-24",
     "oil": "2026-08-23"
@@ -183,9 +183,9 @@
     {"customer":"CA7-JTR","product":"oil","qty":5,"total":65,"cost":7.666666666666667,"cash":65,"handover":"collected","date":"2026-09-01","deliveredQty":5,"deliveredOn":"2026-09-01","paidOn":"2026-09-01","ref":"CE4-AD","refKg":5,"note":"<b>THE SAME PARTY'S SECOND ROW ON THE SAME DAY, AND THE FIRST OIL SOLD SINCE 26 AUG.</b> 5 unit for RM65, RM13 a unit, collected and paid. RM13 is exactly the rate on the 10-unit rung of the oil board and the rate CZ4-MK paid on 26 Aug, so the per-unit figure is the house rate; what is unusual is the size, since 5 unit is not a rung the board shows. <b>It sits RM2.70 UNDER the 5-unit collected floor of RM67.70</b>, which the board's own taper explains rather than excuses: the floor rises faster than the rate below 10 unit. Costed at RM7.67 from the 30-unit lot of 26 Aug, so it returns RM26.67 at 41.0%. Same R3 leg as the salt row, credited at this row's own size.","rid":"s121"},
     {"customer":"CK4-SEN","qty":6,"total":440,"cost":50,"cash":440,"date":"2026-09-01","deliveredQty":6,"deliveredOn":"2026-09-01","paidOn":"2026-09-01","note":"<b>HIS FIRST ORDER, AND THE SECOND LARGEST SINGLE SALE ON THE BOOK.</b> 6 unit for RM440, RM73.33 a unit, paid and delivered in full on the day. The per-unit rate reads low beside the RM100 anchor and is not: the floor tapers with size, so 6 unit collected asks about RM338.59 and RM440 clears it by roughly RM101. It returns RM140 at 31.8% on the RM50 shelf lot. He has been on the roster without a row until today. Handover is not stated, so the field is left unset: the share of orders delivered is measured over the rows that say, and a row that was never asked must stay distinguishable from one that answered.","rid":"s122"},
     {"customer":"CR3-DAM","qty":1,"total":80,"cost":50,"cash":0,"handover":"delivered","date":"2026-09-01","deliveredQty":1,"deliveredOn":"2026-09-01","note":"<b>HIS ELEVENTH UNIT AT RM80 AND HIS SECOND STANDING ADVANCE.</b> 1 unit handed over on 1 Sep with nothing paid, beside the RM80 still owed on s116 of 27 Aug, so RM160 now stands against him. He cleared RM160 on 27 Aug covering the 18th and the 24th, which is the pattern this row continues: a rolling one or two unit credit, settled in batches, never yet defaulted across eleven orders since 15 July. Recorded as DELIVERED on the wording used; at RM80 that is RM7.26 under the RM87.26 delivered floor, where the same unit collected clears RM77.26. Costed at RM50, so it returns RM30 at 37.5% whichever way it travelled.","rid":"s123"},
+    {"customer":"CY2-NIL","qty":2.5,"total":230,"cost":50,"cash":230,"deliveredQty":2.5,"agreedOn":"2026-08-28","rid":"s119","amend":[{"kind":"Fulfilment","cash":0,"kg":0,"note":"as booked, pending and undated"},{"date":"2026-09-01","kind":"Fulfilment","cash":230,"kg":2.5,"note":"<b>SETTLED IN FULL ON 1 SEP.</b> RM230 and 2.5 unit against RM230 and 2.5 unit outstanding, leaving nothing. The fourth identical order from CY2-NIL: 2.5 unit for RM230 on 11 Aug, 18 Aug, 26 Aug and now 1 Sep, each paid and collected on the day. RM105 at 45.7% against the RM50 shelf cost the row carries. Queued from the phone on 31 Aug, approved on his instruction in a Code session on 2 Sep. This fold takes the stated shelf below zero (0.25 to -2.25): the salt moved, so the shelf is behind the book, and a count or a missing lot is what puts it right."}],"date":"2026-09-01","deliveredOn":"2026-09-01","paidOn":"2026-09-01"},
     {"customer":"CN6-WM","qty":1.5,"total":185,"cash":0,"deliveredQty":0,"cancelled":true,"cancelledOn":"2026-08-24","rid":"s108"},
-    {"customer":"CS6-PER","qty":6.25,"total":350,"cash":0,"deliveredQty":0,"cancelled":true,"cancelledOn":"2026-08-24","rid":"s109"},
-    {"customer":"CY2-NIL","qty":2.5,"total":230,"cost":50,"cash":0,"deliveredQty":0,"agreedOn":"2026-08-28","rid":"s119"}
+    {"customer":"CS6-PER","qty":6.25,"total":350,"cash":0,"deliveredQty":0,"cancelled":true,"cancelledOn":"2026-08-24","rid":"s109"}
   ],
   "contacts": [
     {"date":"2026-08-06","party":"CM4-SK","how":"message","outcome":"noreply","next":null,"note":"said hello"},
@@ -395,7 +395,7 @@
   "ONE_OFFS": [
     {"id":"CM6-HCM","date":"2026-07-14","note":"One-off; RM104/unit is an outlier."}
   ],
-  "QUEUE_COMMITTED": "2026-08-28T09:59:51.414Z",
+  "QUEUE_COMMITTED": "2026-08-31T19:23:00.955Z",
   "PRICE_SET": {
     "salt": {
       "prices": {},
@@ -414,6 +414,7 @@
   },
   "NOTES": {
     "STATED_STOCK": [
+      "ROLLED AT v464: 2.5 unit to CY2-NIL on 2026-09-01, so 0.25 less 2.5 is -2.25. A ROLL AND NOT A COUNT; COUNT_ON is untouched. The shelf is now stated below zero. Salt went out on 1 Sep, so the figure is behind the physical shelf: a lot since the 24 Aug count is unrecorded, or that count was low. A count, or the lot entered, puts it right; this roll invents neither.",
       "ROLLED AT v439: 1 unit to CA7-JTR on 2026-09-01, 6 unit to CK4-SEN on 2026-09-01, 1 unit to CR3-DAM on 2026-09-01, so 8.25 less 8 is 0.25. A ROLL AND NOT A COUNT; COUNT_ON is untouched. Eight of the eight and a quarter unit on the shelf went out today across four rows, leaving 0.25 unit against 3 unit already promised: CE4-CHE's half unit owed out and CY2-NIL's 2.5 unit pending. The book is 2.75 unit short of its own commitments and sourcing is now the first decision on it.",
       "ROLLED AT v404: 5 unit to CE4-AD on 2026-08-29, so 13.25 less 5 is 8.25. A ROLL AND NOT A COUNT; COUNT_ON is untouched.",
       "ROLLED AT v399: 3 unit to CH4-KLS on 2026-08-28, so 16.25 less 3 is 13.25. A ROLL AND NOT A COUNT; COUNT_ON is untouched."

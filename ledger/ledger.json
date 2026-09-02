@@ -1,6 +1,6 @@
 {
- "v": "v449",
- "stamped": "02 Sep 2026, 05:45 KL",
+ "v": "v464",
+ "stamped": "02 Sep 2026, 09:38 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -41,7 +41,7 @@
     "stated": 15
    }
   },
-  "STATED_STOCK": 0.25,
+  "STATED_STOCK": -2.25,
   "COUNT_ON": {
    "salt": "2026-08-24",
    "oil": "2026-08-23"
@@ -2572,6 +2572,34 @@
     "rid": "s123"
    },
    {
+    "customer": "CY2-NIL",
+    "qty": 2.5,
+    "total": 230,
+    "cost": 50,
+    "cash": 230,
+    "deliveredQty": 2.5,
+    "agreedOn": "2026-08-28",
+    "rid": "s119",
+    "amend": [
+     {
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 0,
+      "note": "as booked, pending and undated"
+     },
+     {
+      "date": "2026-09-01",
+      "kind": "Fulfilment",
+      "cash": 230,
+      "kg": 2.5,
+      "note": "<b>SETTLED IN FULL ON 1 SEP.</b> RM230 and 2.5 unit against RM230 and 2.5 unit outstanding, leaving nothing. The fourth identical order from CY2-NIL: 2.5 unit for RM230 on 11 Aug, 18 Aug, 26 Aug and now 1 Sep, each paid and collected on the day. RM105 at 45.7% against the RM50 shelf cost the row carries. Queued from the phone on 31 Aug, approved on his instruction in a Code session on 2 Sep. This fold takes the stated shelf below zero (0.25 to -2.25): the salt moved, so the shelf is behind the book, and a count or a missing lot is what puts it right."
+     }
+    ],
+    "date": "2026-09-01",
+    "deliveredOn": "2026-09-01",
+    "paidOn": "2026-09-01"
+   },
+   {
     "customer": "CN6-WM",
     "qty": 1.5,
     "total": 185,
@@ -2590,16 +2618,6 @@
     "cancelled": true,
     "cancelledOn": "2026-08-24",
     "rid": "s109"
-   },
-   {
-    "customer": "CY2-NIL",
-    "qty": 2.5,
-    "total": 230,
-    "cost": 50,
-    "cash": 0,
-    "deliveredQty": 0,
-    "agreedOn": "2026-08-28",
-    "rid": "s119"
    }
   ],
   "contacts": [
@@ -2901,9 +2919,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-08-28T09:59:51.414Z",
+  "QUEUE_COMMITTED": "2026-08-31T19:23:00.955Z",
   "PRICING": {
-   "takenAt": "2026-09-01T22:16:28.248Z",
+   "takenAt": "2026-09-02T01:38:29.871Z",
    "sizes": [
     0.5,
     1,
@@ -3065,9 +3083,9 @@
        "attrib": 1,
        "shrinkRate": 0.04777629034657148,
        "avgDel": {
-        "n": 110,
-        "kg": 281.2,
-        "mean": 2.5564
+        "n": 111,
+        "kg": 283.7,
+        "mean": 2.5559
        }
       },
       "policy": {
@@ -3337,27 +3355,12 @@
      }
     }
    },
-   "v": "v449"
+   "v": "v464"
   },
   "OPEN": {
-   "at": "2026-09-01T22:16:28.277Z",
-   "count": 6,
+   "at": "2026-09-02T01:38:29.897Z",
+   "count": 5,
    "byKey": {
-    "CY2-NIL|undefined|230": {
-     "d": null,
-     "p": "CY2-NIL",
-     "dir": "S",
-     "q": 2.5,
-     "t": 230,
-     "cash": 0,
-     "mv": 0,
-     "st": "pend",
-     "oweRM": 230,
-     "oweUnits": 2.5,
-     "rid": "s119",
-     "agreedOn": "2026-08-28",
-     "key": "CY2-NIL|undefined|230"
-    },
     "CR3-DAM|2026-09-01|80": {
      "d": "2026-09-01",
      "p": "CR3-DAM",
@@ -3442,13 +3445,13 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 0.25,
-     "free": -0.25,
+     "onHand": -2.25,
+     "free": -2.75,
      "owedOut": 0.5,
      "coverDays": 0,
-     "rate": 4.96,
+     "rate": 5.14,
      "owedToYou": 260,
-     "promised": 3,
+     "promised": 0.5,
      "short": 2.75
     },
     "oil": {
@@ -3467,7 +3470,7 @@
     "salt": "2026-08-24",
     "oil": "2026-08-23"
    },
-   "v": "v449"
+   "v": "v464"
   }
  }
 }

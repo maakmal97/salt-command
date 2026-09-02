@@ -3564,8 +3564,11 @@ section("v419: cancelling a delivered sale is refused everywhere it is offered")
   w3.eval("setProd('salt');recompute();");
 
   const delivered = JSON.parse(w3.eval("JSON.stringify((sales.find(s=>!s.cancelled&&s.rid&&txEffDeliv(s)>0.009)||{}).rid||null)"));
-  const untouched = JSON.parse(w3.eval("JSON.stringify((sales.find(s=>!s.cancelled&&s.rid&&txEffDeliv(s)<=0.009&&txPaid(s)<=0.009)||{}).rid||null)"));
-  ok(!!delivered && !!untouched, "the book carries both a delivered and an untouched sale to test with");
+  /* v464: the book stopped carrying an untouched sale when s119 was fulfilled, so a fixture stands
+     in for it. The test is about the gate, not about what happens to be on the book today. */
+  const untouched = JSON.parse(w3.eval("JSON.stringify((sales.find(s=>!s.cancelled&&s.rid&&txEffDeliv(s)<=0.009&&txPaid(s)<=0.009)||{}).rid||null)"))
+    || w3.eval("sales.push({customer:'CY2-NIL',qty:2.5,total:230,cost:50,cash:0,deliveredQty:0,rid:'fx-untouched'});recompute();'fx-untouched'");
+  ok(!!delivered && !!untouched, "the book carries a delivered sale, and an untouched one or a fixture standing in for it");
 
   if (delivered) {
     w3.eval("ovAmend({kind:'Cancellation',date:'2026-09-01',direction:'SELL',rid:" + JSON.stringify(delivered) + "},{at:'t1'})");
@@ -4014,8 +4017,10 @@ section("v436: one ruler decides whether a correction is legal, and all four rea
   };
 
   const delivered = (bk9.sales || []).find((x) => !x.cancelled && x.rid && PE9.txEffDeliv(x) > 0.009);
-  const clean = (bk9.sales || []).find((x) => !x.cancelled && x.rid && PE9.txEffDeliv(x) <= 0.009);
-  ok(!!delivered && !!clean, "the book carries both a delivered order and an untouched one to drive");
+  /* v464: same fixture as v419's, for the same reason; it is pushed into the book copy and the desk alike */
+  const clean = (bk9.sales || []).find((x) => !x.cancelled && x.rid && PE9.txEffDeliv(x) <= 0.009)
+    || (() => { const fx = {customer:"CY2-NIL",qty:2.5,total:230,cost:50,cash:0,deliveredQty:0,rid:"fx-untouched"}; bk9.sales.push(fx); w9.eval("sales.push(" + JSON.stringify(fx) + ");recompute();"); return fx; })();
+  ok(!!delivered && !!clean, "the book carries a delivered order, and an untouched one or a fixture standing in for it");
 
   /* THE REFUSAL, down all four roads at once */
   const CAN = { cancelled: true };
@@ -4309,6 +4314,10 @@ section("v443: a cancelled order owes no salt, and the desk does not buy to cove
   if (!target) skipData("s119 is no longer the 2.5 unit live order this check drives");
   else {
     Object.assign(target, { cash: 230, deliveredQty: 0, cancelled: true, cancelledOn: "2026-09-01" });
+    /* v464: s119 was fulfilled on 1 Sep and the shelf rolled to -2.25, so the row is put back to the
+       pending shape this check reasons about and the shelf is pinned at the 0.25 it assumed. */
+    for (const k of ["amend", "date", "deliveredOn", "paidOn"]) delete target[k];
+    bkD.STATED_STOCK = 0.25;
     const BD = jD(REPO, "test", ".v443.json"), MD = jD(REPO, "test", ".v443.html");
     wfD(BD, JSON.stringify(bkD, null, 1));
     wfD(MD, rfD(jD(REPO, "master", "salt_command.html"), "utf8"));
@@ -4401,8 +4410,9 @@ section("v444: a cancelled order that was paid for is a payable, recorded like a
     wE.eval("setProd('salt');recompute();");
     const committed = +wE.eval("customerRefunds.length");
     const out0 = +wE.eval("+customerRefunds.filter(function(r){return !r.paidOn;}).reduce(function(a,r){return a+ +r.amount;},0).toFixed(2)");
-    wE.eval("(function(){var r=sales.find(function(s){return s.rid==='s119';});if(r)r.cash=230;})()");
-    wE.eval("ovAmend({kind:'Cancellation',date:'2026-09-02',direction:'SELL',rid:'s119'},{at:'r1'})");
+    /* v464: s119 is delivered now and its cancellation is rightly refused, so a paid, undelivered fixture carries the check */
+    wE.eval("sales.push({rid:'fx-refund',customer:'CY2-NIL',qty:2.5,total:230,cost:50,cash:230,deliveredQty:0});recompute();");
+    wE.eval("ovAmend({kind:'Cancellation',date:'2026-09-02',direction:'SELL',rid:'fx-refund'},{at:'r1'})");
     ok(+wE.eval("customerRefunds.length") === committed + 1, "a previewed cancellation books the payable on the desk too");
     ok(/refund payable/.test(String(wE.eval("provNotes.join(' | ')"))), "and says so in the provenance rather than appearing unexplained");
     const out1 = +wE.eval("+customerRefunds.filter(function(r){return !r.paidOn;}).reduce(function(a,r){return a+ +r.amount;},0).toFixed(2)");
@@ -5018,7 +5028,7 @@ section("v456: an undated row says so wherever its date is printed");
       const u = count(txt, "undefined"); if (u) undef.push(t + " x" + u);
     }
     ok(tabs.length >= 16 && (seen.receivables || "").length > 400, `every tab renders on the fixture book (${tabs.length} tabs)`);
-    ok(count(seen.receivables || "", "not dated") >= 6, `the Order book says not dated on each undated row (${count(seen.receivables || "", "not dated")} cells, five fixtures)`);
+    ok(count(seen.receivables || "", "not dated") >= 5, `the Order book says not dated on each undated row (${count(seen.receivables || "", "not dated")} cells, five fixtures)`);
     ok(undef.length === 0, `and no tab prints the word undefined: ${undef.join("; ") || "none"}`);
     ok(count(seen.today || "", "landed not dated") === 1 && nd >= 14, `the lock rule on Today says so too, ${nd} cells across the desk`);
   } finally { for (const f of [B6, M6]) { try { rm6(f); } catch (e) { /* best effort */ } } }
@@ -5276,9 +5286,10 @@ section("Round 7: the states no suite check had ever rendered");
         live book and a Correction putting cash on it passes every gate, so this is one tap. */
   {
     const b = JSON.parse(JSON.stringify(bookNow));
-    const row = (b.sales || []).find((r) => !r.date && !r.cancelled && (r.product || "salt") === "salt");
-    if (!row) { skipData("no live undated sale to test the finRows guard with"); }
-    else {
+    /* v464: the live book has no undated sale since s119 was fulfilled, so a fixture stands in rather than the check skipping */
+    const row = (b.sales || []).find((r) => !r.date && !r.cancelled && (r.product || "salt") === "salt")
+      || (() => { const fx = { rid: "fx-undated", customer: (b.sales.find((r) => r.customer) || {}).customer || "CY2-NIL", qty: 2.5, total: 230, cost: 50, cash: 0, deliveredQty: 0 }; b.sales.push(fx); return fx; })();
+    {
       row.cash = 100;
       const r = await paneOf(withBook(b), "financials", "salt");
       ok(!r.threw, `Financials renders with cash on an undated row (${row.rid}) -- ${r.threw}`);
