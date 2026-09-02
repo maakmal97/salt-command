@@ -5024,6 +5024,62 @@ section("v456: an undated row says so wherever its date is printed");
   } finally { for (const f of [B6, M6]) { try { rm6(f); } catch (e) { /* best effort */ } } }
 }
 
+
+section("v457: a cancellation on the whiteboard asks for nothing and previews the refund");
+{
+  /* The amend pane labelled its two fields Cash returned and Returned on a Cancellation, and
+     nothing reads them: the desk, the fold and the drafter each mark the row and return, and the
+     refund is what was paid, read off the row. A figure typed there was queued as a movement and
+     dropped. The preview showed a bare Cancelled pill where the book will hold a refund payable.
+     Driven, not grepped: one order paid ahead, one pending, on a copy of the book. */
+  const { openMaster: om7 } = await import("../tools/payload.mjs");
+  const { readFileSync: rf7, writeFileSync: wf7, unlinkSync: rm7 } = await import("node:fs");
+  const { execSync: ex7 } = await import("node:child_process");
+  const { join: j7 } = await import("node:path");
+  const bk7 = JSON.parse(rf7(j7(REPO, "ledger", "book.json"), "utf8"));
+  const cus7 = bk7.sales.find((x) => x.customer && x.date).customer;
+  bk7.sales.push({ rid: "f18", date: "2026-08-30", customer: cus7, product: "salt", qty: 2, total: 450, cost: 64, cash: 450, deliveredQty: 0 });
+  bk7.sales.push({ rid: "f19", customer: cus7, product: "salt", qty: 1, total: 100, cost: 64, pending: true });
+  const B7 = j7(REPO, "test", ".v457.json"), M7 = j7(REPO, "test", ".v457.html");
+  wf7(B7, JSON.stringify(bk7, null, 1)); wf7(M7, rf7(j7(REPO, "master", "salt_command.html"), "utf8"));
+  ex7("node tools/booksync.mjs --sync", { cwd: REPO, env: { ...process.env, SALT_BOOK: B7, SALT_MASTER: M7 }, stdio: "pipe" });
+  const DRIVE = (rid, record) => `(function(){
+    try{
+      var set=function(id,v){var e=document.getElementById(id);if(!e)return false;e.value=v;return true;};
+      wbMode="amend"; wbASide="SELL"; wbApply();
+      var hit=wbAmendList().filter(function(x){return x.t&&x.t.rid===${JSON.stringify(rid)};})[0];
+      if(!hit)return JSON.stringify({no:"no-order"});
+      set("wbOrder",hit.code); set("wbKind","Cancellation"); set("wbADate","2026-09-01");
+      wbAmendLabels(); wbPreview();
+      var ci=document.getElementById("wbACash"),ui=document.getElementById("wbAUnits");
+      var r={lbl:document.getElementById("wbACashLbl").textContent+" | "+document.getElementById("wbAUnitsLbl").textContent,
+             dis:!!(ci.disabled&&ui.disabled),prev:(document.getElementById("wbPrev")||{}).textContent||""};
+      if(${record ? "true" : "false"}){
+        ci.disabled=false;ci.value="400";ui.disabled=false;ui.value="1";
+        var n0=queue.length; try{wbRecord();}catch(e){r.threw=String(e&&e.message);}
+        var q=queue[queue.length-1]; r.pushed=(queue.length===n0+1);
+        r.q=q?{qty:q.qty,total:q.total,status:q.status,kind:q.payload.kind,pc:q.payload.cash,pk:q.payload.kg,pq:q.payload.qty,pt:q.payload.total}:null;
+      }
+      return JSON.stringify(r);
+    }catch(e){return JSON.stringify({no:"threw: "+(e&&e.message)});}
+  })()`;
+  try {
+    const { w } = await om7(M7);
+    w.eval("setProd('salt');recompute();switchTab('add');");
+    const A = JSON.parse(String(w.eval(DRIVE("f18", true))));
+    ok(!A.no && /not used/.test(A.lbl) && A.lbl.split("not used").length === 3 && A.dis === true,
+      `on an order paid ahead the two fields are disabled and say so: ${A.no || A.lbl + " disabled " + A.dis}`);
+    ok(!A.no && /Refund due/.test(A.prev) && /Undelivered/.test(A.prev) && /Cancelled/.test(A.prev) && /RM 450 already paid becomes a refund payable/.test(A.prev),
+      `the preview shows Refund due, Undelivered, Cancelled and names the RM 450: ${A.no || A.prev.replace(/\s+/g, " ").slice(0, 160)}`);
+    ok(!A.no && A.pushed && A.q && A.q.status === "cancelled" && A.q.kind === "Cancellation" && A.q.pc === null && A.q.pk === null && A.q.pq === null && A.q.pt === null,
+      `a stale RM 400 and 1 unit in the fields reach the payload as nothing: ${A.no || JSON.stringify(A.q) + (A.threw ? " threw " + A.threw : "")}`);
+    ok(!A.no && A.q && A.q.qty === null && A.q.total === null, `and the queued entry itself carries no figures: ${A.no || JSON.stringify(A.q)}`);
+    const B = JSON.parse(String(w.eval(DRIVE("f19", false))));
+    ok(!B.no && /Unpaid/.test(B.prev) && /Cancelled/.test(B.prev) && !/refund payable/.test(B.prev),
+      `on a pending order the preview reads Unpaid and names no refund: ${B.no || B.prev.replace(/\s+/g, " ").slice(0, 160)}`);
+  } finally { for (const f of [B7, M7]) { try { rm7(f); } catch (e) { /* best effort */ } } }
+}
+
 /* ---- done ----------------------------------------------------------------------- */
 
 section("Round 7: the states no suite check had ever rendered");
@@ -5258,7 +5314,7 @@ section("Round 7: the states no suite check had ever rendered");
    the live count was 879, so thirty-nine assertions could have vanished under a guard written to
    stop exactly that. The margin is four, which covers the book-dependent branches that legitimately
    skip; it is not room for a section to fall out. */
-const FLOOR_ASSERTIONS = 1118, FLOOR_SECTIONS = 82;
+const FLOOR_ASSERTIONS = 1123, FLOOR_SECTIONS = 83;
 ok(pass + fail - offMachine >= FLOOR_ASSERTIONS,
   `the suite ran ${pass + fail - offMachine} assertions everywhere (${pass + fail} here, ${offMachine} of them needing files that live off this repo), below its floor of ${FLOOR_ASSERTIONS}: a section has stopped running`);
 ok(sections >= FLOOR_SECTIONS,

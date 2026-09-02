@@ -1,5 +1,17 @@
 [
  {
+  "v": "v457",
+  "d": "02 Sep 2026",
+  "t": "A CANCELLATION ON THE WHITEBOARD ASKED FOR A FIGURE NOTHING READS, AND PREVIEWED A PILL WHERE THE BOOK HOLDS A REFUND",
+  "n": [
+   "<b>FOLD 15 OF ROUND TEN.</b> The amend pane's two fields were labelled Cash returned and Returned on a Cancellation. Nothing reads them: ovAmend, the fold's applyAmend and the drafter each mark the row and return, and since v444 what is owed back is what was paid, read off the row. A figure typed there was queued as a movement, qty and total on the entry and cash and kg in the payload, and then dropped, so RM 400 returned typed against RM 450 paid vanished without a word.",
+   "<b>THE FIELDS ARE DISABLED AND SAY SO.</b> Cash (not used), Units (not used), held at zero while the kind is Cancellation, re-enabled the moment it is not. The queued entry and its payload carry no figures on a cancellation, the way a Modification already carries none of a movement's, so a stale value in the field cannot travel.",
+   "<b>THE PREVIEW SHOWS WHAT THE BOOK WILL HOLD.</b> Refund due when anything was paid, Unpaid otherwise, Undelivered, Cancelled: the three axes txStat reads, where the bare Cancelled pill said only the last. The note names the figure: the RM 450 already paid becomes a refund payable back to the customer.",
+   "<b>WHAT CHANGES ON THE BOOK TODAY: NOTHING.</b> Nothing on the book is a cancellation queued from this pane with a figure in the field; the fault was in what the pane invited, not in any row.",
+   "<b>PROVED BY DRIVING THE PANE.</b> An order paid ahead and a pending order on a copy of the book: labels, disabled state, preview text, and a record with RM 400 and 1 unit forced into the fields reaching the queue as nothing. Six mutations, every one red. 1141 assertions across 83 sections."
+  ]
+ },
+ {
   "v": "v456",
   "d": "02 Sep 2026",
   "t": "AN UNDATED ROW SAYS SO WHEREVER ITS DATE IS PRINTED, NOT ON THE ONE TABLE THAT WAS GUARDED",
