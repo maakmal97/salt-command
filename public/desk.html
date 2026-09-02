@@ -60,7 +60,7 @@ document.addEventListener('visibilitychange',function(){
    focused, no dialog open. Otherwise it offers a chip and waits to be tapped.
    The same tick retries a held entry, which is what gets a phone write to the cloud
    without waiting for the next open. */
-var SALT_BUILD_ID="2e5220dad73a795d";
+var SALT_BUILD_ID="1977395eaf096b49";
 var SALT_REV_MS=10000;
 (function(){
   var chip=null,timer=null;
@@ -8568,7 +8568,7 @@ function tabJournal(){
   const isoOf=d=>{const m=/^(\d{1,2}) (\w{3}) (\d{4})$/.exec(String(d||''));return m?`${m[3]}-${MON[m[2]]||'01'}-${m[1].padStart(2,'0')}`:'';};
   const vers=(evolution||[]).map(e=>({date:isoOf(e.d),code:e.v,kind:'Version',head:`<span class="ecode">${esc(e.v)}</span>`,text:`<b>${e.t}</b> ${(e.n||[]).join(' ')}`}));
   const q=jrnF.q.trim().toLowerCase();
-  const hit=x=>!q||[x.date,x.who,x.kind,x.text].join(' ').toLowerCase().replace(/<[^>]+>/g,' ').indexOf(q)>=0;
+  const hit=x=>!q||[x.date,x.code,x.who,x.kind,x.text].join(' ').toLowerCase().replace(/<[^>]+>/g,' ').indexOf(q)>=0;
   const byDate=(a,b)=>{if(!a.date!==!b.date)return a.date?-1:1;return a.date<b.date?1:a.date>b.date?-1:0;};
   const rows=ents.filter(hit).sort(byDate),vs=vers.filter(hit).sort(byDate);
   const ent=x=>`<div class="jent"${x.rid?` data-rid="${x.rid}"`:''}>`
