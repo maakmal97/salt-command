@@ -5839,8 +5839,22 @@ section("Statements — the QR, the sort and the Salt identity");
   /* v472 put the identity on the desk and left the statement in the old scheme. These are the
      hexes it used to carry; none may come back, or the one document a customer sees is again
      the only surface not drawn in the product's material. */
-  for (const dead of ["#0f1115", "#2a3140", "#ffc75a", "#7fd7e8", "#eef1f6", "#6b7688"]) {
-    ok(!css.includes(dead), `the pre-identity colour ${dead} is gone from the statement`);
+  const DEAD = ["#0f1115", "#2a3140", "#ffc75a", "#7fd7e8", "#eef1f6", "#6b7688", "#b9c2d0"];
+  for (const dead of DEAD) {
+    ok(!css.includes(dead), `the pre-identity colour ${dead} is gone from the stylesheet`);
+  }
+  /* AND FROM THE MARKUP, which is a different place and was where one of them was still
+     hiding: a refund's reason cell carried style="font-size:13px;color:#b9c2d0" inline, so the
+     stylesheet check above passed while a document still rendered a retired colour. Inline
+     style attributes are doubly wrong here, because the unlock page serves a nonce CSP and a
+     nonce blocks a style attribute as surely as it blocks a stray script. */
+  {
+    const src = readFileSync(join(REPO, "tools", "make_statements.mjs"), "utf8");
+    ok(!/style="/.test(src),
+      "no inline style attribute survives in the markup: a nonce CSP would drop it");
+    for (const dead of DEAD) {
+      ok(!src.includes(dead), `the pre-identity colour ${dead} is gone from the markup too`);
+    }
   }
   ok(/--salt-font-mono/.test(css) && /--salt-font-display/.test(css),
     "figures are mono and sentences are the display face, as the identity requires");
@@ -5908,11 +5922,24 @@ section("Statements — the QR, the sort and the Salt identity");
     const rev = readFileSync(join(dirA, "_review_2026-08-01.html"), "utf8");
     ok(!/Password<\/th>/.test(rev) && /record of a past issue/i.test(rev),
       "its review sheet drops the password column and says what it is");
+    /* AND IT DOES NOT CLAIM A CUT-OFF IT CANNOT HONOUR. The book is current state, so a
+       back-issue filters by order date and shows each row as it stands today: the 1 Aug set
+       carried a payment dated 6 Aug and a cancellation dated 24 Aug on six of its documents.
+       The heading says what the document actually is rather than implying a snapshot. */
+    ok(/shown as the account stands today/.test(one) && !/from the beginning to/.test(one),
+      "a back-issue states that it shows the account as it stands, not a position as at a date");
+    const q2 = console.log; console.log = () => { };
+    let live;
+    try { live = await makeStatements(join(REPO, "test", "tmp", "stmt-live"), "2026-08-01"); }
+    finally { console.log = q2; }
+    ok(/from the beginning to/.test(live.sheets[0].html),
+      "and a current issue still reads as a period, which is what it is");
+    rmSync(join(REPO, "test", "tmp", "stmt-live"), { recursive: true, force: true });
     rmSync(dirA, { recursive: true, force: true });
   }
 }
 
-const FLOOR_ASSERTIONS = 1243, FLOOR_SECTIONS = 97;   /* archive issues: 1247 everywhere, 1248 here */
+const FLOOR_ASSERTIONS = 1254, FLOOR_SECTIONS = 97;   /* archive issues: 1258 everywhere, 1259 here */
 ok(pass + fail - offMachine >= FLOOR_ASSERTIONS,
   `the suite ran ${pass + fail - offMachine} assertions everywhere (${pass + fail} here, ${offMachine} of them needing files that live off this repo), below its floor of ${FLOOR_ASSERTIONS}: a section has stopped running`);
 ok(sections >= FLOOR_SECTIONS,

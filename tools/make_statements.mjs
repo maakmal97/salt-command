@@ -373,20 +373,30 @@ function stmtDoc(party,rows,o){
       pending order can sit outside the window, a statement headed "to 02 Aug" can carry
       a line dated 03 Aug, and saying nothing about that is the sort of small
       contradiction that costs more trust than the figure it hides. */
+   /* A BACK-ISSUE MUST NOT CLAIM A CUT-OFF IT DOES NOT HONOUR (02 Sep 2026). The book stores
+      CURRENT state with an amendment trail, not a snapshot, so a back-dated run filters rows by
+      their ORDER date and then shows each one as it stands TODAY. On the 1 Aug archive that put
+      a payment dated 6 Aug and a cancellation dated 24 Aug under a heading reading "to 01 Aug
+      2026", on six of twenty-six documents. That is the v194 fault again: a statement headed to
+      one date carrying a line dated after it is the small contradiction that costs more trust
+      than the figure it hides. Reconstructing the true position as at a past date would need an
+      event-sourced book, which this is not, so the archive states what it actually is instead. */
    '<p class="meta">Issued '+e(o.issued)+
-     (o.from||o.to?' &middot; '+e(o.from?dLong(o.from):'from the beginning')+' to '+e(o.to?dLong(o.to):'today')
-       +(T.pendN&&rows.some(r=>r.pendingOrder&&o.to&&new Date(r.date)>new Date(o.to))
-          ?', plus any order agreed and not yet actioned':''):'')+'</p>',
-   '<p class="whol" style="margin:26px 0 0">Account</p>',
+     (o.archive
+       ? ' &middot; every order placed up to '+e(dLong(o.to))+', shown as the account stands today'
+       : (o.from||o.to?' &middot; '+e(o.from?dLong(o.from):'from the beginning')+' to '+e(o.to?dLong(o.to):'today')
+         +(T.pendN&&rows.some(r=>r.pendingOrder&&o.to&&new Date(r.date)>new Date(o.to))
+            ?', plus any order agreed and not yet actioned':''):''))+'</p>',
+   '<p class="whol gap1">Account</p>',
    '<div class="who">'+e(who)+'</div>',
    '<div class="rule"></div>',
    rows.length?('<table><thead><tr><th class="l">Date</th><th>Quantity</th><th>Amount</th><th class="r">Status</th></tr></thead>'
      +'<tbody>'+body+'</tbody></table>')
      :'<p class="meta">No orders in this period.</p>',
-   ((o.refunds||[]).length?'<p class="whol" style="margin:30px 0 0">Refunds</p>'
-     +'<table style="margin-top:10px"><thead><tr><th class="l">Date</th><th class="l">Reason</th><th>Amount</th><th class="r">Status</th></tr></thead><tbody>'
+   ((o.refunds||[]).length?'<p class="whol gap2">Refunds</p>'
+     +'<table class="rft"><thead><tr><th class="l">Date</th><th class="l">Reason</th><th>Amount</th><th class="r">Status</th></tr></thead><tbody>'
      +o.refunds.map(r=>'<tr><td class="l dt">'+e(dLong(r.date))+'</td>'
-       +'<td class="l" style="font-size:13px;color:#b9c2d0">'+(r.cancelled?'Cancelled order, money returned to you':'Overpayment returned to you')+'</td>'
+       +'<td class="l rsn">'+(r.cancelled?'Cancelled order, money returned to you':'Overpayment returned to you')+'</td>'
        +'<td class="amt">'+money(r.amount)+'</td>'
        +'<td class="r">'+(r.paidOn?'<span class="ok">paid '+e(dLong(r.paidOn))+'</span>'
                                   :'<span class="due">owed to you</span>')+'</td></tr>').join('')
@@ -538,7 +548,7 @@ export async function makeStatements(outDir, issue, opts) {
        complete position than as a slice, and it removes the brought-forward problem
        entirely. The month is what the folder records, not what the statement covers. */
     const o = { from: null, to: issue, completed: true, open: true, pending: true,
-                dates: true, brand: 'Salt Command', issued: issued };
+                dates: true, brand: 'Salt Command', issued: issued, archive: archive };
     const rows = stmtRows(p, o);
     o.refunds = stmtRefunds(p, o);
     /* only reconcile orders that are actually IN this statement, so the date window
