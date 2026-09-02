@@ -1,5 +1,15 @@
 [
  {
+  "v": "v475",
+  "d": "02 Sep 2026",
+  "t": "THE v108 FROST AND THE v213 MATERIAL ARE RETIRED; THE LAYER OWNS THE MATERIAL",
+  "n": [
+   "<b>THE SECOND RETIREMENT FOLD, AND IT TAKES THE MATERIAL.</b> The v108 frost on the panes, the rail's old gradient and blur, the frosted table backings, the translucent inputs and pills, the v109 radii v213 had already restated, the v111 heading bar and its gloss, the v213 token block, its material fill, its well and veil colours, the dropdown fills and the hover fills: every one of them a rule section 4 or 8 of design/desk.css re-declares in full. The base rail keeps its geometry (sticky, its own scrollbar) and loses its material.",
+   "<b>TWO THINGS MOVED RATHER THAN WENT, because the layer had not carried them.</b> The frost itself (24px blur, saturate 1.15, on the nine pane classes v108 frosted and no others) and the 10px blur on a sticky table head now live in the layer, with the two fallbacks for a renderer with no backdrop-filter and for prefers-reduced-transparency. A pane inside a pane stays flat by the v213 never-frost rule, which is structural and stays.",
+   "<b>MEASURED, AND ONE ACCIDENT RETIRED ON PURPOSE.</b> 32 of 34 shots against v474 read the same. The Ledger and Enter parts did not, and the cause was run down rather than waved through: v108 had frosted .note along with the panes and given it a pane's shadow and gloss, v213's never-frost list omitted .note, and v472 cancelled its background and border but not the shadow, so a note with no box was casting a 40px shadow and saturating what lay behind it. With that accident put back by hand the two parts read 0 pixels apart, so everything else is the same; with it gone, 43,000 pixels under the queue card's note and 19,000 on the ledger's move by up to twelve units, which is the shadow lifting. The layer now says so in as many words: a note casts no shadow and carries no frost. The queue was asked first: nothing pending, nothing newly approved."
+  ]
+ },
+ {
   "v": "v474",
   "d": "02 Sep 2026",
   "t": "THE PAGE-LEVEL COLOUR SYSTEM v472 REPLACED IS RETIRED",

@@ -34,7 +34,6 @@ html[data-tod="register"],:root{
   --railA:rgba(255,255,255,.035);--railB:rgba(255,255,255,.02);
   --panel:var(--salt-veil);--totbg:rgba(197,160,89,.07);--hair:var(--salt-line-faint);
   --field:var(--salt-well);
-  --glassBlur:24px;--glassSat:1.15;
 }
 /* the seven view hues are retired: a view is known by its name and its figures */
 body[data-sec]{--acc:var(--salt-brass);--accB:var(--salt-copper);}
@@ -72,7 +71,6 @@ h1,.byecard h1{font-family:var(--salt-font-display);font-weight:300;letter-spaci
 /* the section label is an eyebrow: copper mono caps and a brass rule running out */
 h2{font-size:11px;font-weight:500;letter-spacing:.22em;color:var(--salt-copper);margin:30px 0 12px;white-space:nowrap;}
 h2 .rule{min-width:16px;}
-h2::before{display:none;}
 h2 .rule{opacity:1;background:linear-gradient(90deg,var(--salt-line),transparent);}
 .sevh h2{margin:0;}
 .attn{color:var(--salt-copper);font-weight:500;}
@@ -80,10 +78,20 @@ h2 .rule{opacity:1;background:linear-gradient(90deg,var(--salt-line),transparent
 .mono{color:var(--salt-product-salt);}
 
 /* ---- 4. THE MATERIAL. Glass once, at white 3% with a brass hairline; a pane inside a
-   pane stays flat, which the v213 rule already enforces. ---- */
+   pane stays flat, which the v213 never-frost rule still enforces. From v475 this section is
+   the material's only owner: the v108 frost and the v213 fills are retired, and the frost, the
+   frosted table head and the two fallbacks for a renderer with no backdrop-filter live here. ---- */
 .kpi,.card,.chartbox,.quotecard,.evo,.pend,.lcard,details.obsec,details.rcard,.apcal,.apside,.ledsum,.updbox{
   background:var(--salt-glass);border:1px solid var(--salt-line);
   box-shadow:var(--salt-shadow-desk),inset 0 1px 0 var(--salt-highlight);}
+.kpi,.card,.chartbox,.quotecard,.evo,.pend,.lcard,details.obsec,details.rcard{
+  -webkit-backdrop-filter:blur(24px) saturate(1.15);backdrop-filter:blur(24px) saturate(1.15);}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  .kpi,.card,.chartbox,.quotecard,.evo,.pend,.lcard,details.obsec,details.rcard,.apcal,.apside,.rail{background:rgba(11,18,21,.96)!important;}}
+@media (prefers-reduced-transparency:reduce){
+  .kpi,.card,.chartbox,.quotecard,.evo,.pend,.lcard,details.obsec,details.rcard,.apcal,.apside,.rail{
+    -webkit-backdrop-filter:none!important;backdrop-filter:none!important;background:rgba(11,18,21,.97)!important;}
+  .orb{display:none;}}
 .kpi{border-radius:var(--salt-radius-md);padding:14px 16px 13px 18px;}
 .kpi::before{width:2px;top:12px;bottom:12px;border-radius:2px;background:var(--salt-brass);opacity:.85;}
 .kpi.g::before{background:var(--salt-brass);}
@@ -101,7 +109,8 @@ h2 .rule{opacity:1;background:linear-gradient(90deg,var(--salt-line),transparent
   padding:4px 0 4px 14px;margin:12px 0;font-size:13.5px;color:var(--salt-salt);box-shadow:none;}
 .insight b{color:var(--salt-brass);font-weight:500;}
 .note,.stand-note{background:none;border:0;border-left:2px solid var(--salt-copper);border-radius:0;
-  padding:4px 0 4px 14px;font-size:13px;color:var(--salt-mist-light);}
+  padding:4px 0 4px 14px;font-size:13px;color:var(--salt-mist-light);box-shadow:none;
+  -webkit-backdrop-filter:none;backdrop-filter:none;}
 .note b,.stand-note b{color:var(--salt-copper);font-weight:500;}
 .pend{border:1px dashed rgba(197,160,89,.45);}
 .pend.def{border-color:rgba(212,105,76,.55);}
@@ -223,7 +232,8 @@ input::placeholder{color:var(--salt-mist);opacity:.7;}
 
 /* ---- 9. TABLES: mist caps heads over a brass rule, salt figures, faint hairlines ---- */
 table{font-size:12.5px;}
-thead th{font-size:10px;font-weight:500;letter-spacing:.16em;color:var(--salt-mist);background:var(--salt-veil);border-bottom:1px solid var(--salt-line);}
+thead th{font-size:10px;font-weight:500;letter-spacing:.16em;color:var(--salt-mist);background:var(--salt-veil);border-bottom:1px solid var(--salt-line);
+  -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);}
 th.l,td.l{background:var(--salt-veil);color:var(--salt-mist-light);font-weight:500;}
 tbody td{color:var(--salt-salt);font-weight:400;border-bottom-color:var(--salt-line-faint);}
 tr.tot td{font-weight:500;background:rgba(197,160,89,.07);}

@@ -60,7 +60,7 @@ document.addEventListener('visibilitychange',function(){
    focused, no dialog open. Otherwise it offers a chip and waits to be tapped.
    The same tick retries a held entry, which is what gets a phone write to the cloud
    without waiting for the next open. */
-var SALT_BUILD_ID="5a50abc4e372c587";
+var SALT_BUILD_ID="a286c3a2ae1bb58e";
 var SALT_REV_MS=10000;
 (function(){
   var chip=null,timer=null;
@@ -129,7 +129,7 @@ body{margin:0;-webkit-font-smoothing:antialiased;}
    Whiteboard button underneath it could not be reached at all. It now carries its own
    height limit and its own scrollbar, so the content column and the rail scroll
    independently and neither one drags the other. */
-.rail{width:186px;flex:0 0 186px;position:sticky;top:22px;background:linear-gradient(165deg,#0b1215,#05080a);border:1px solid var(--line);border-radius:18px;padding:16px 12px;box-shadow:0 24px 66px -40px #000;
+.rail{position:sticky;top:22px;
   max-height:calc(100dvh - 44px - var(--safetop));overflow-y:auto;overscroll-behavior:contain;
   scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.22) transparent;}
 .rail::-webkit-scrollbar{width:7px;}
@@ -945,32 +945,7 @@ select{width:100%;border:1px solid var(--line);border-radius:8px;padding:8px 9px
   /* v371: the rail is no longer laid flat here. It stays upright and hides behind a
      button; everything it needs is in THE RAIL ON A NARROW SCREEN, further down. */
   .shell{display:block;}}
-/* ============ v108 - LIQUID GLASS + TIME-OF-DAY (four dark bands) ============ */
-:root{--glassBlur:18px;--glassSat:1.5;
-  --gloss:inset 0 1px 0 rgba(255,255,255,.14),inset 0 0 0 1px rgba(255,255,255,.045);
-  --glassShadow:0 12px 36px -16px rgba(0,0,0,.72);}
-/* frost every panel; the palettes below make --card/--card2 translucent so the blur shows through */
-.kpi,.card,.chartbox,.quotecard,.evo,.pend,.insight,.note,.lcard,details.obsec,details.rcard{
-  -webkit-backdrop-filter:blur(var(--glassBlur)) saturate(var(--glassSat));
-  backdrop-filter:blur(var(--glassBlur)) saturate(var(--glassSat));
-  box-shadow:var(--glassShadow),var(--gloss);}
-.rail{background:linear-gradient(165deg,var(--railA),var(--railB));
-  -webkit-backdrop-filter:blur(26px) saturate(1.6);backdrop-filter:blur(26px) saturate(1.6);
-  box-shadow:var(--glassShadow),var(--gloss);}
-/* tables ride the card glass; sticky header and first column get a frosted backing */
-thead th{background:var(--panel);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);}
-th.l,td.l{background:var(--panel);}
-tr.tot td{background:var(--totbg);}
-tbody td{border-bottom-color:var(--hair);}
-.evo .row{border-bottom-color:var(--hair);}
-/* inputs and small pills, translucent */
-.qfield input,.qfield select,select,.ledbar input,.ledbar select{background-color:var(--field);}
-.viewsw,.chip,.pend .cd,details.obsec>summary .ct,.navct{background:var(--pill);}
-@media (prefers-reduced-motion:no-preference){body{transition:background .6s ease;}.kpi,.card,.rail,.pend,.lcard,details.obsec,details.rcard{transition:background .6s ease,border-color .6s ease;}}
 /* ============ v109 - consistent box geometry and vertical rhythm ============ */
-/* the glass restyle exposed mismatched corners and paddings; unify every panel */
-.kpi,.card,.chartbox,.quotecard,.evo,.lcard,.pend,details.obsec,details.rcard{border-radius:14px;}
-.insight,.note{border-radius:12px;}
 .card,.pend,.quotecard{padding:15px 17px;}
 .kpi{padding:14px 16px;}
 details.obsec{padding:2px 17px;margin-top:14px;}
@@ -988,13 +963,6 @@ th.l,td.l{white-space:normal;overflow-wrap:break-word;}
 details.obsec .card,details.rcard .card{-webkit-backdrop-filter:none;backdrop-filter:none;box-shadow:none;}
 /* long words or codes never punch out of a cell */
 td,th,.dsc,.evo .txt,.n,.rsum,.pend h3{overflow-wrap:break-word;}
-/* ============ v111 - clearer section hierarchy so each block reads on its own ============ */
-h2{font-size:13px;letter-spacing:1.1px;margin:32px 0 14px;font-weight:800;}
-h2::before{content:"";width:4px;align-self:stretch;min-height:14px;border-radius:3px;background:linear-gradient(var(--acc),var(--accB));box-shadow:0 0 12px -2px var(--acc);flex:0 0 auto;}
-h2 .rule{opacity:.65;}
-/* firmer panel edges so translucent boxes do not merge into one another */
-:root{--gloss:inset 0 1px 0 rgba(255,255,255,.16),inset 0 0 0 1px rgba(255,255,255,.08);}
-.kpi,.card,.pend,.chartbox,.quotecard,.evo,.lcard,details.obsec,details.rcard{box-shadow:var(--glassShadow),var(--gloss);}
 /* ============ v213 - LIQUID GLASS, LEDGER TUNING ============================
    The house visual language, applied as a LAST-WINS layer rather than a rewrite. Every
    class name in the markup below is untouched; only the material and the light change.
@@ -1016,56 +984,15 @@ h2 .rule{opacity:.65;}
        :focus-visible against 28 buttons, a form on every tab and a keyboard-only path
        through all of it. The single worst fault found in this pass.
    ------------------------------------------------------------------------------ */
-:root{
-  --glass:rgba(255,255,255,.10); --glass-2:rgba(255,255,255,.16);
-  --brd:rgba(255,255,255,.13);   --brd-2:rgba(255,255,255,.24);
-  --wellbg:rgba(0,0,0,.30);      --veil:rgba(5,8,10,.62);
-  /* MENU: a select's option list is drawn by the browser OUTSIDE the document and
-     composites against the desktop, not the page glow, so it must be OPAQUE. */
-  --menu:#0b1215;                --menu-2:#16211f;
-  --chevron:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1.4 1.6 6 6.2l4.6-4.6' fill='none' stroke='%23b6a9cc' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-  --ink-2:rgba(242,244,245,.66); --ink-3:rgba(242,244,245,.40);
-  --r:22px; --r-sm:14px; --pill:999px;
-  /* v392: 44px, WHICH IS APPLE'S FIGURE AND WAS 40. It is the one token four controls read, so
-     the deskbar pair, the rail's own buttons, the to-top and every .vbtn move together. Four
-     points sounds like nothing and is the difference between a control you hit and one you
-     hit on the second try, on the only surface this desk now has. */
-  --tap:44px; --measure:66ch;
-  --sh:0 8px 40px rgba(0,0,0,.35);
-  --t:200ms cubic-bezier(.4,0,.2,1);
-}
 .wrap{position:relative;z-index:1;}
-/* THE MATERIAL. One blur layer per stack; the fill is declared so it stands alone when
-   backdrop-filter is unavailable. */
-.kpi,.card,.chartbox,.quotecard,.evo,.pend,.lcard,details.obsec,details.rcard,.apcal,.apside{
-  background-color:rgba(11,18,21,.72);
-  border-color:var(--brd);
-  box-shadow:var(--sh),inset 0 1px 0 rgba(255,255,255,.16);
-}
-@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
-  .kpi,.card,.chartbox,.quotecard,.evo,.pend,.lcard,details.obsec,details.rcard,.apcal,.apside,.rail{
-    background:rgba(11,18,21,.96)!important;}
-}
-@media (prefers-reduced-transparency:reduce){
-  .kpi,.card,.chartbox,.quotecard,.evo,.pend,.lcard,details.obsec,details.rcard,.apcal,.apside,.rail{
-    -webkit-backdrop-filter:none!important;backdrop-filter:none!important;
-    background:rgba(11,18,21,.97)!important;}
-  .orb{display:none;}
-}
 /* NEVER FROST INSIDE FROST. Children of a pane get flat translucent fills. */
 .card .card,.lcard .card,details.obsec .card,details.rcard .card,.pend .card,
 .apday,.apchip,.plan,.item,.insight{
   -webkit-backdrop-filter:none!important;backdrop-filter:none!important;}
 .insight{box-shadow:none;}
-/* WELL: inset areas and every input. */
-.qfield input,.qfield select,select,.ledbar input,.ledbar select,input,textarea{
-  background-color:var(--wellbg);border:1px solid var(--brd);border-radius:var(--r-sm);
-  color:var(--ink);min-height:var(--tap);}
-input::placeholder{color:var(--ink-3);}
-/* VEIL: sticky and floating surfaces, dark tinted so content beneath never fights them. */
-thead th{background:var(--veil);}
-.appop{background:var(--veil);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);
-  border-color:var(--brd-2);}
+/* every input is a finger target; its material is the layer's */
+.qfield input,.qfield select,select,.ledbar input,.ledbar select,input,textarea{min-height:var(--tap);}
+.appop{-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);}
 /* GEOMETRY: one radius per class of box. Panes 22, nested 14, pills round. */
 .card,.chartbox,.quotecard,.evo,.pend,.lcard,details.obsec,details.rcard,.apcal,.apside{border-radius:var(--r);}
 .kpi{border-radius:var(--r-sm);}
@@ -1089,11 +1016,9 @@ thead th{background:var(--veil);}
 select{appearance:none;-webkit-appearance:none;-moz-appearance:none;cursor:pointer;
   background-image:var(--chevron);background-repeat:no-repeat;
   background-position:right 12px center;background-size:11px 8px;padding-right:34px;}
-select:hover{background-color:var(--glass);}
 select:disabled{opacity:.5;cursor:not-allowed;}
-option,optgroup{background-color:var(--menu);color:var(--ink);}
 option{padding:9px 12px;}
-option:checked{background-color:var(--menu-2);font-weight:600;}
+option:checked{font-weight:600;}
 optgroup{font-size:11px;text-transform:uppercase;letter-spacing:1px;font-weight:700;color:var(--dim);}
 select[multiple],select[size]{background-image:none;padding-right:9px;}
 @media(forced-colors:active){select{background-image:none;padding-right:9px;}}
@@ -1113,7 +1038,6 @@ select[multiple],select[size]{background-image:none;padding-right:9px;}
 /* Print: a dropdown is a screen control, so it prints as its chosen value. */
 @media print{select{background-image:none;padding-right:9px;}.menu{display:none;}}
 .tab,.navlink,.ubtn,.vbtn{min-height:var(--tap);}
-.tab:hover,.navlink:hover{background:var(--glass);}
 /* PRODUCT SWITCHER (v228). It sits at the top of the rail, above the tab groups, because
    it governs them: choosing a product changes what nine of the fifteen tabs are ABOUT, and
    a control that powerful belongs above the thing it changes rather than beside it. Each
@@ -2943,7 +2867,6 @@ html[data-tod="register"],:root{
   --railA:rgba(255,255,255,.035);--railB:rgba(255,255,255,.02);
   --panel:var(--salt-veil);--totbg:rgba(197,160,89,.07);--hair:var(--salt-line-faint);
   --field:var(--salt-well);
-  --glassBlur:24px;--glassSat:1.15;
 }
 /* the seven view hues are retired: a view is known by its name and its figures */
 body[data-sec]{--acc:var(--salt-brass);--accB:var(--salt-copper);}
@@ -2981,7 +2904,6 @@ h1,.byecard h1{font-family:var(--salt-font-display);font-weight:300;letter-spaci
 /* the section label is an eyebrow: copper mono caps and a brass rule running out */
 h2{font-size:11px;font-weight:500;letter-spacing:.22em;color:var(--salt-copper);margin:30px 0 12px;white-space:nowrap;}
 h2 .rule{min-width:16px;}
-h2::before{display:none;}
 h2 .rule{opacity:1;background:linear-gradient(90deg,var(--salt-line),transparent);}
 .sevh h2{margin:0;}
 .attn{color:var(--salt-copper);font-weight:500;}
@@ -2989,10 +2911,20 @@ h2 .rule{opacity:1;background:linear-gradient(90deg,var(--salt-line),transparent
 .mono{color:var(--salt-product-salt);}
 
 /* ---- 4. THE MATERIAL. Glass once, at white 3% with a brass hairline; a pane inside a
-   pane stays flat, which the v213 rule already enforces. ---- */
+   pane stays flat, which the v213 never-frost rule still enforces. From v475 this section is
+   the material's only owner: the v108 frost and the v213 fills are retired, and the frost, the
+   frosted table head and the two fallbacks for a renderer with no backdrop-filter live here. ---- */
 .kpi,.card,.chartbox,.quotecard,.evo,.pend,.lcard,details.obsec,details.rcard,.apcal,.apside,.ledsum,.updbox{
   background:var(--salt-glass);border:1px solid var(--salt-line);
   box-shadow:var(--salt-shadow-desk),inset 0 1px 0 var(--salt-highlight);}
+.kpi,.card,.chartbox,.quotecard,.evo,.pend,.lcard,details.obsec,details.rcard{
+  -webkit-backdrop-filter:blur(24px) saturate(1.15);backdrop-filter:blur(24px) saturate(1.15);}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  .kpi,.card,.chartbox,.quotecard,.evo,.pend,.lcard,details.obsec,details.rcard,.apcal,.apside,.rail{background:rgba(11,18,21,.96)!important;}}
+@media (prefers-reduced-transparency:reduce){
+  .kpi,.card,.chartbox,.quotecard,.evo,.pend,.lcard,details.obsec,details.rcard,.apcal,.apside,.rail{
+    -webkit-backdrop-filter:none!important;backdrop-filter:none!important;background:rgba(11,18,21,.97)!important;}
+  .orb{display:none;}}
 .kpi{border-radius:var(--salt-radius-md);padding:14px 16px 13px 18px;}
 .kpi::before{width:2px;top:12px;bottom:12px;border-radius:2px;background:var(--salt-brass);opacity:.85;}
 .kpi.g::before{background:var(--salt-brass);}
@@ -3010,7 +2942,8 @@ h2 .rule{opacity:1;background:linear-gradient(90deg,var(--salt-line),transparent
   padding:4px 0 4px 14px;margin:12px 0;font-size:13.5px;color:var(--salt-salt);box-shadow:none;}
 .insight b{color:var(--salt-brass);font-weight:500;}
 .note,.stand-note{background:none;border:0;border-left:2px solid var(--salt-copper);border-radius:0;
-  padding:4px 0 4px 14px;font-size:13px;color:var(--salt-mist-light);}
+  padding:4px 0 4px 14px;font-size:13px;color:var(--salt-mist-light);box-shadow:none;
+  -webkit-backdrop-filter:none;backdrop-filter:none;}
 .note b,.stand-note b{color:var(--salt-copper);font-weight:500;}
 .pend{border:1px dashed rgba(197,160,89,.45);}
 .pend.def{border-color:rgba(212,105,76,.55);}
@@ -3132,7 +3065,8 @@ input::placeholder{color:var(--salt-mist);opacity:.7;}
 
 /* ---- 9. TABLES: mist caps heads over a brass rule, salt figures, faint hairlines ---- */
 table{font-size:12.5px;}
-thead th{font-size:10px;font-weight:500;letter-spacing:.16em;color:var(--salt-mist);background:var(--salt-veil);border-bottom:1px solid var(--salt-line);}
+thead th{font-size:10px;font-weight:500;letter-spacing:.16em;color:var(--salt-mist);background:var(--salt-veil);border-bottom:1px solid var(--salt-line);
+  -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);}
 th.l,td.l{background:var(--salt-veil);color:var(--salt-mist-light);font-weight:500;}
 tbody td{color:var(--salt-salt);font-weight:400;border-bottom-color:var(--salt-line-faint);}
 tr.tot td{font-weight:500;background:rgba(197,160,89,.07);}
@@ -5389,7 +5323,9 @@ const whiteboard=[
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{"v": "v474", "d": "02 Sep 2026", "t": "THE PAGE-LEVEL COLOUR SYSTEM v472 REPLACED IS RETIRED", "n": ["<b>HIS INSTRUCTION, 02 SEP 2026: retire the older material layers, in smaller folds.</b> This is the first, and it takes the page-level colour system alone: the twenty-three per-view accent rules, the root palette that named ice, gold, violet, green and crimson, the register palette and both of its body grounds, the three orb rules and the third orb itself, the diamond logo that left the markup at v472, and the two headline gradients. 5,231 bytes of rules the v472 layer had already overridden in full, and the ground now has one owner: section 2 of design/desk.css.", "<b>NOTHING VISIBLE MOVED, AND THAT IS MEASURED IN PIXELS.</b> tools/renderdiff.mjs renders every part at 1280 and 375 with motion off, the stamp and the version hidden and the journal's version entries removed, and compares two renders shot for shot. It was proved red first: brass turned to red in one rule read as differing on all 34 shots, and two renders of the same build read identical on 32 with 3 pixels of chart antialiasing on two, which is the noise floor. This fold reads as the same on every shot against v473.", "<b>THE QUEUE WAS ASKED FIRST.</b> Nothing pending; the three approved rows of the morning are the v473 fold, and the deploy marks them committed when it lands.", "<b>WHAT STAYS FOR THE NEXT FOLDS.</b> The v108 frost and its gradients, the v213 material fills and fallbacks, the v281 motion and colour rules, and the colour declarations inside component rules that desk.css overrides one by one. Each is its own fold, each measured the same way."]},
+const evolution=[{"v": "v475", "d": "02 Sep 2026", "t": "THE v108 FROST AND THE v213 MATERIAL ARE RETIRED; THE LAYER OWNS THE MATERIAL", "n": ["<b>THE SECOND RETIREMENT FOLD, AND IT TAKES THE MATERIAL.</b> The v108 frost on the panes, the rail's old gradient and blur, the frosted table backings, the translucent inputs and pills, the v109 radii v213 had already restated, the v111 heading bar and its gloss, the v213 token block, its material fill, its well and veil colours, the dropdown fills and the hover fills: every one of them a rule section 4 or 8 of design/desk.css re-declares in full. The base rail keeps its geometry (sticky, its own scrollbar) and loses its material.", "<b>TWO THINGS MOVED RATHER THAN WENT, because the layer had not carried them.</b> The frost itself (24px blur, saturate 1.15, on the nine pane classes v108 frosted and no others) and the 10px blur on a sticky table head now live in the layer, with the two fallbacks for a renderer with no backdrop-filter and for prefers-reduced-transparency. A pane inside a pane stays flat by the v213 never-frost rule, which is structural and stays.", "<b>MEASURED, AND ONE ACCIDENT RETIRED ON PURPOSE.</b> 32 of 34 shots against v474 read the same. The Ledger and Enter parts did not, and the cause was run down rather than waved through: v108 had frosted .note along with the panes and given it a pane's shadow and gloss, v213's never-frost list omitted .note, and v472 cancelled its background and border but not the shadow, so a note with no box was casting a 40px shadow and saturating what lay behind it. With that accident put back by hand the two parts read 0 pixels apart, so everything else is the same; with it gone, 43,000 pixels under the queue card's note and 19,000 on the ledger's move by up to twelve units, which is the shadow lifting. The layer now says so in as many words: a note casts no shadow and carries no frost. The queue was asked first: nothing pending, nothing newly approved."]},
+
+{"v": "v474", "d": "02 Sep 2026", "t": "THE PAGE-LEVEL COLOUR SYSTEM v472 REPLACED IS RETIRED", "n": ["<b>HIS INSTRUCTION, 02 SEP 2026: retire the older material layers, in smaller folds.</b> This is the first, and it takes the page-level colour system alone: the twenty-three per-view accent rules, the root palette that named ice, gold, violet, green and crimson, the register palette and both of its body grounds, the three orb rules and the third orb itself, the diamond logo that left the markup at v472, and the two headline gradients. 5,231 bytes of rules the v472 layer had already overridden in full, and the ground now has one owner: section 2 of design/desk.css.", "<b>NOTHING VISIBLE MOVED, AND THAT IS MEASURED IN PIXELS.</b> tools/renderdiff.mjs renders every part at 1280 and 375 with motion off, the stamp and the version hidden and the journal's version entries removed, and compares two renders shot for shot. It was proved red first: brass turned to red in one rule read as differing on all 34 shots, and two renders of the same build read identical on 32 with 3 pixels of chart antialiasing on two, which is the noise floor. This fold reads as the same on every shot against v473.", "<b>THE QUEUE WAS ASKED FIRST.</b> Nothing pending; the three approved rows of the morning are the v473 fold, and the deploy marks them committed when it lands.", "<b>WHAT STAYS FOR THE NEXT FOLDS.</b> The v108 frost and its gradients, the v213 material fills and fallbacks, the v281 motion and colour rules, and the colour declarations inside component rules that desk.css overrides one by one. Each is its own fold, each measured the same way."]},
 
 {"v":"v473","d":"02 Sep 2026","t":"CF5-WM JOINS THE ROSTER AND BUYS TWO, AND THE SALT SHELF IS COUNTED AT 10.5","n":["<b>THREE ROWS FROM THE PHONE, APPROVED ON THE DESK WITHIN A MINUTE OF EACH OTHER ON 02 SEP.</b> CF5-WM is registered as a customer who buys direct; the name and the place are typed at the laptop and never travel. Then CF5-WM's first order: 2 unit of salt for RM230, RM115 a unit, paid and collected on the day, costed at RM48 from the shelf's latest lot (p019, SA5-BTR, landed the same morning). That is above the board's two-unit ask of RM100 a unit and clear of every floor, so the margin on the order is 58%.","<b>THE COUNT WINS, AND IT IS 8.25 BELOW THE ROLL.</b> He counted 10.5 unit of salt on hand on 02 Sep against 18.75 on the book, and approved the count with that gap in front of him. A count always wins: the stated shelf is 10.5 and COUNT_ON.salt moves to 02 Sep. The 2 unit to CF5-WM had already left the roll, so measured after the sale the drift is 6.25 unit, and it books as shrinkage across every unit sold. <b>ONE THING TO SETTLE ON THE NEXT COUNT:</b> the 25-unit lot p019 landed the same morning, so if the shelf was counted before it was stacked, the true figure is 35.5 and the drift runs the other way. The book carries what he approved; the note is here so the next count is read against it.","<b>FOLDED ON HIS RULE OF 02 SEP 2026:</b> a version bump asks about the queue first and folds what is approved. This fold is the ledger alone; the retirement of the older material layers follows it as its own version, measured against this book."]},
 
@@ -5622,7 +5558,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='02 Sep 2026, 17:22 KL';
+const LAST_UPDATED='02 Sep 2026, 17:30 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */

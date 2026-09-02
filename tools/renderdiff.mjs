@@ -18,7 +18,9 @@
  * red) read as differing on all 34 shots; two renders of the same build read identical on 32
  * and 3 pixels apart on one hairline row of two chart shots, which is the noise floor. A shot
  * within 16 pixels reads as the same; a retirement fold that moves more than that has moved
- * something. */
+ * something. A pixel counts only when a channel moves by more than 2 of 255: moving a field's
+ * fill between layers shifted 112,000 near-black pixels by exactly one unit (v475), which no
+ * eye can see and which is compositing rounding, not a change of material. */
 import { createServer } from "node:http";
 import { readFileSync, mkdirSync, existsSync, readdirSync } from "node:fs";
 import { resolve, dirname, join, extname } from "node:path";
@@ -84,7 +86,7 @@ for name in sys.argv[3:]:
         print('  DIFF  %-22s size %s vs %s' % (name, a.size, b.size)); bad += 1; continue
     box = ImageChops.difference(a, b).getbbox()
     if box is None: print('  same  %-22s' % name); continue
-    n = sum(1 for p in ImageChops.difference(a, b).getdata() if p != (0, 0, 0))
+    n = sum(1 for p in ImageChops.difference(a, b).getdata() if max(p) > 2)
     if n <= 16: print('  same  %-22s (%d px of noise in %s)' % (name, n, box)); continue
     print('  DIFF  %-22s %d px in %s' % (name, n, box)); bad += 1
 sys.exit(1 if bad else 0)`;

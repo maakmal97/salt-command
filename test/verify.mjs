@@ -2443,7 +2443,8 @@ section("iPhone — the dead zones the desk draws under (v392)");
   ok(tops >= 5, `the top inset reaches every pinned surface (${tops} uses)`);
 
   /* 44px IS APPLE'S MINIMUM AND THE TOKEN SAID 40. One token, four controls. */
-  ok(/--tap:44px/.test(m) && !/--tap:40px/.test(m), "the tap token is 44px, and there is only one of it");
+  /* v475: the token moved into the design system as --salt-tap, and --tap aliases it */
+  ok((/--tap:44px/.test(m) || (/--salt-tap:\s*44px/.test(m) && /--tap:var\(--salt-tap\)/.test(m))) && !/--tap:40px/.test(m) && !/--salt-tap:\s*40px/.test(m), "the tap token is 44px, and there is only one of it");
   ok(/\.deskbar \.fabtn\{position:static;width:var\(--tap\);height:var\(--tap\)/.test(m),
     "the two bar controls read it rather than carrying 34px of their own");
   ok(/\.rail button\{min-height:var\(--tap\)/.test(m), "and so do the rail's own buttons, which are the only way between views");
