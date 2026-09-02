@@ -303,8 +303,13 @@ function ledgerRow(t,dir,defaultProd){
   const buy=(dir==='B');
   const paidRM=buy?poCash(t):txPaid(t);
   const mv=buy?poRecvUnits(t):txEffDeliv(t);
-  const oweRM=+Math.max(0,tot-paidRM).toFixed(2);      // money still to be handed over
-  const oweUnits=+Math.max(0,q-mv).toFixed(2);            // goods still to be handed over
+  /* v460: A CANCELLED ROW OWES NOTHING, EITHER WAY. txPendRM and txPendUnits have said so since
+     they were written and txDeferUnits since v443; this shape said a cancelled order still owed
+     its whole total and its whole quantity, on all five cancelled sales on the book, beside a
+     state that says canc. Money the customer had paid on a cancelled order is a refund, which is
+     customerRefunds' shape (v444), not a negative here. */
+  const oweRM=t.cancelled?0:+Math.max(0,tot-paidRM).toFixed(2);      // money still to be handed over
+  const oweUnits=t.cancelled?0:+Math.max(0,q-mv).toFixed(2);          // goods still to be handed over
   let st;
   if(t.cancelled) st='canc';
   else if(!t.date||t.pending) st='pend';

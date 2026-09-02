@@ -1,5 +1,16 @@
 [
  {
+  "v": "v460",
+  "d": "02 Sep 2026",
+  "t": "THE ROW SHAPE SAID A CANCELLED ORDER STILL OWED ITS WHOLE TOTAL AND ITS WHOLE QUANTITY",
+  "n": [
+   "<b>FOLD 18 OF ROUND TEN, IN engine/position.mjs.</b> ledgerRow, the row shape the payload builds for every sale and lot, attached oweRM and oweUnits to a cancelled row beside a state that says canc: RM 90, 80, 120, 185 and 350, and 1, 0.5, 1, 1.5 and 6.25 unit, on the five cancelled sales on the book, as money and goods still to be handed over. txPendRM and txPendUnits have said a cancelled order owes nothing since they were written, and txDeferUnits since v443.",
+   "<b>A CANCELLED ROW OWES NOTHING, EITHER WAY.</b> Both figures are zero on a cancelled row and so are not attached. Money the customer had paid on one is a refund, which is customerRefunds' shape since v444, not a negative here.",
+   "<b>WHAT CHANGES ON THE BOOK TODAY: NOTHING ON SCREEN.</b> The open list already filters canc through openable, so the drafter never read these; the full ledger list carried them into a payload whose only reader was retired at v387. The rule was wrong in the one place every row shape is minted, and that is reason enough.",
+   "<b>PROVED ON THE LIVE ROWS AND A CONTROL.</b> All five cancelled sales carry neither figure; the same synthetic row owes 200 and 2 uncancelled and nothing cancelled; the master's inlined engine says the same, so the sync is proved. Two mutations, each with the engine re-synced, both red. 1151 assertions across 86 sections."
+  ]
+ },
+ {
   "v": "v459",
   "d": "02 Sep 2026",
   "t": "THE ROW EDITOR MEASURES WHAT HAS MOVED WITH THE RULER ITS OWN GATE USES",

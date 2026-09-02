@@ -5137,6 +5137,32 @@ section("v459: the editor measures what has moved with the ruler the gate uses")
   ok(r.seed === 1, `and the overlay seed carries the same figure (${r.seed})`);
 }
 
+
+section("v460: the row shape attaches no debt to a cancelled row");
+{
+  /* ledgerRow said a cancelled order still owed its whole total and quantity, oweRM and oweUnits
+     beside st canc, on every cancelled sale on the book. The three pending rulers and txDeferUnits
+     have said a cancelled order owes nothing since v443. Read through the master's inlined engine
+     as well as the module, so the sync is proved too. */
+  const { readFileSync: rf10 } = await import("node:fs");
+  const { join: j10 } = await import("node:path");
+  const { pathToFileURL: pu10 } = await import("node:url");
+  const E10 = (await import(pu10(j10(REPO, "engine", "position.mjs")).href + "?v460")).default;
+  const bk10 = JSON.parse(rf10(j10(REPO, "ledger", "book.json"), "utf8"));
+  const canc = bk10.sales.filter((x) => x.cancelled);
+  ok(canc.length >= 5, `the book still holds the case: ${canc.length} cancelled sales`);
+  const bad = canc.map((x) => E10.ledgerRow(x, "S", "salt")).filter((r) => r.oweRM != null || r.oweUnits != null || r.st !== "canc");
+  ok(bad.length === 0, `none of them carries oweRM or oweUnits (${bad.length} did: ${bad.map((r) => r.rid + " " + r.oweRM + "/" + r.oweUnits).join(", ")})`);
+  const ctl = E10.ledgerRow({ customer: "F10", product: "salt", date: "2026-08-30", qty: 2, total: 200, cost: 64, cash: 0, deliveredQty: 0 }, "S", "salt");
+  const cx = E10.ledgerRow({ customer: "F10", product: "salt", date: "2026-08-30", qty: 2, total: 200, cost: 64, cash: 0, deliveredQty: 0, cancelled: true }, "S", "salt");
+  ok(ctl.oweRM === 200 && ctl.oweUnits === 2 && ctl.st === "part" && cx.oweRM == null && cx.oweUnits == null && cx.st === "canc",
+    `the same row uncancelled owes 200 and 2, cancelled owes nothing (${JSON.stringify([ctl.oweRM, ctl.oweUnits, cx.oweRM, cx.oweUnits])})`);
+  const { openMaster: om10 } = await import("../tools/payload.mjs");
+  const { w: w10 } = await om10(j10(REPO, "master", "salt_command.html"));
+  const viaMaster = JSON.parse(String(w10.eval("JSON.stringify(POSITION_ENGINE.ledgerRow({customer:'F10',product:'salt',date:'2026-08-30',qty:2,total:200,cost:64,cash:0,deliveredQty:0,cancelled:true},'S','salt'))")));
+  ok(viaMaster.oweRM == null && viaMaster.oweUnits == null && viaMaster.st === "canc", `and the master's inlined engine says the same (${JSON.stringify(viaMaster)})`);
+}
+
 /* ---- done ----------------------------------------------------------------------- */
 
 section("Round 7: the states no suite check had ever rendered");
@@ -5371,7 +5397,7 @@ section("Round 7: the states no suite check had ever rendered");
    the live count was 879, so thirty-nine assertions could have vanished under a guard written to
    stop exactly that. The margin is four, which covers the book-dependent branches that legitimately
    skip; it is not room for a section to fall out. */
-const FLOOR_ASSERTIONS = 1129, FLOOR_SECTIONS = 85;
+const FLOOR_ASSERTIONS = 1133, FLOOR_SECTIONS = 86;
 ok(pass + fail - offMachine >= FLOOR_ASSERTIONS,
   `the suite ran ${pass + fail - offMachine} assertions everywhere (${pass + fail} here, ${offMachine} of them needing files that live off this repo), below its floor of ${FLOOR_ASSERTIONS}: a section has stopped running`);
 ok(sections >= FLOOR_SECTIONS,
