@@ -1,5 +1,15 @@
 [
  {
+  "v": "v478",
+  "d": "02 Sep 2026",
+  "t": "THE 25-UNIT LOT WAS PURCHASED ON 31 AUGUST, AND THE COUNT'S CAVEAT CLOSES",
+  "n": [
+   "<b>HIS CORRECTION, IN CHAT, 02 SEP 2026: the 25 unit lot was purchased on 31 August.</b> p019, SA5-BTR, 25 unit for RM1200, had been booked on 2 Sep from his dictation that morning. Its date moves to 31 Aug by a Correction drafted through the gate, approved on his word and folded here; the row keeps its receipt and payment on 2 Sep, because he stated the purchase date and nothing else, so the lot still lands on the shelf on the morning of the count. The drafter's flag is the one worth reading: money and stock had already moved against this row, so redating it moves when that counts as having happened, and here it moves the purchase into August's books and the receipt stays in September's.",
+   "<b>THE COUNT'S CAVEAT CLOSES.</b> v473 left open whether the lot was on the shelf when he counted 10.5 that morning. It was: bought two days before and received that morning, it had been stacked by the time the count was taken fifty seconds after the CF5-WM sale. So 10.5 is the shelf, the drift against the roll is a real 6.25 unit, and it books as shrinkage across every unit sold.",
+   "<b>TWO REPAIRS TO THE LAPTOP ROAD, found by driving it.</b> A draft staged from this machine carried no amends or amend_kind, so the fold read every laptop Correction as a nameless amendment and would have refused it; both inserts carry them now, as the Worker's does. And the INSERT went to wrangler on the command line, where Windows reads the | in an order key as a pipe and the staging failed with a shell error; writes go through a file now, which is safe because a write wants no rows back."
+  ]
+ },
+ {
   "v": "v477",
   "d": "02 Sep 2026",
   "t": "LEGIBILITY: A POINT UP ON EVERY FIGURE AND LABEL, A POINT AND MORE LEADING ON PROSE",

@@ -1,6 +1,6 @@
 {
-  "v": "v473",
-  "derivedFrom": "145bbb1ab3094947",
+  "v": "v478",
+  "derivedFrom": "34b5d1ca730910ba",
   "tables": {
     "sales": {
       "rows": 127,
@@ -259,7 +259,7 @@
       "rows": 19,
       "fields": {
         "amend": {
-          "present": 1,
+          "present": 2,
           "of": 19,
           "optional": true,
           "types": [
@@ -288,6 +288,14 @@
           "optional": true,
           "types": [
             "boolean"
+          ]
+        },
+        "mod": {
+          "present": 1,
+          "of": 19,
+          "optional": true,
+          "types": [
+            "string"
           ]
         },
         "note": {

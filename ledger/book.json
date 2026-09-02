@@ -61,7 +61,7 @@
     {"date":"2026-08-20","qty":50,"total":2200,"supplier":"SA5-BTR","status":"paid","cash":2200,"paidOn":"2026-08-20","receivedOn":"2026-08-20","receivedQty":50,"amend":[{"date":"2026-08-20","kind":"Fulfilment","cash":2200,"kg":50,"note":"as booked"},{"date":"2026-08-20","kind":"Modification","cash":0,"kg":0,"note":"re-agreed to 50 unit / RM2,200"}],"rid":"p016"},
     {"date":"2026-08-26","qty":25,"total":1250,"supplier":"SA5-BTR","status":"paid","cash":1250,"paidOn":"2026-08-26","receivedOn":"2026-08-26","receivedQty":25,"rid":"p017"},
     {"date":"2026-08-26","product":"oil","qty":30,"total":230,"supplier":"SP7-PUD","status":"paid","cash":230,"paidOn":"2026-08-26","receivedOn":"2026-08-26","receivedQty":30,"rid":"p018"},
-    {"qty":25,"total":1200,"cash":1200,"supplier":"SA5-BTR","status":"paid","date":"2026-09-02","receivedOn":"2026-09-02","receivedQty":25,"paidOn":"2026-09-02","note":"<b>THE LOT THE SHELF WAS MISSING.</b> 25 unit for RM1200, RM48 a unit, paid and received on 2 Sep. The v464 roll had the stated shelf below zero and said a lot since the 24 Aug count was unrecorded; this is it. The cost basis moves from RM50 to RM48. Dictated in a Code session on 2 Sep 2026 and folded on his word.","rid":"p019"}
+    {"qty":25,"total":1200,"cash":1200,"supplier":"SA5-BTR","status":"paid","date":"2026-08-31","receivedOn":"2026-09-02","receivedQty":25,"paidOn":"2026-09-02","note":"<b>DATE CORRECTED TO 31 AUG on his word, 02 Sep.</b> Purchased 31 Aug; received and paid 2 Sep as booked. The lot was on the shelf when the 2 Sep count was taken. <b>THE LOT THE SHELF WAS MISSING.</b> 25 unit for RM1200, RM48 a unit, paid and received on 2 Sep. The v464 roll had the stated shelf below zero and said a lot since the 24 Aug count was unrecorded; this is it. The cost basis moves from RM50 to RM48. Dictated in a Code session on 2 Sep 2026 and folded on his word.","rid":"p019","mod":"corrected on 2026-09-02: date 2026-09-02 to 2026-08-31","amend":[{"date":"2026-08-31","kind":"Fulfilment","cash":1200,"kg":25,"note":"as booked"},{"date":"2026-09-02","kind":"Correction","cash":0,"kg":0,"note":"<b>DATE CORRECTED TO 31 AUG on his word, 02 Sep.</b> Purchased 31 Aug; received and paid 2 Sep as booked. The lot was on the shelf when the 2 Sep count was taken."}]}
   ],
   "sales": [
     {"date":"2026-06-26","customer":"CG5-SB","qty":1,"total":100,"cost":64,"cash":100,"deliveredQty":1,"ref":"CJ4-OKR","refKg":1,"rid":"s001"},
@@ -401,7 +401,7 @@
   "ONE_OFFS": [
     {"id":"CM6-HCM","date":"2026-07-14","note":"One-off; RM104/unit is an outlier."}
   ],
-  "QUEUE_COMMITTED": "2026-09-02T08:10:45.706Z",
+  "QUEUE_COMMITTED": "2026-09-02T10:40:00.000Z",
   "PRICE_SET": {
     "salt": {
       "prices": {},
