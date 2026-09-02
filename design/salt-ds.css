@@ -1,0 +1,1282 @@
+/* Salt Commodities design system
+   Built to the Business Identity of 29 Aug 2026: obsidian ground, brass and
+   copper light, liquid glass surfaces, Fraunces display over JetBrains Mono. */
+
+:root {
+  /* The six colours of the identity */
+  --salt-obsidian: #05080a;   /* the ground; every surface sits on it */
+  --salt-slate: #0b1215;      /* deep panels, and the QR ink */
+  --salt-brass: #c5a059;      /* the leading accent */
+  --salt-copper: #b87333;     /* the closing accent; gradients end on it */
+  --salt-salt: #f2f4f5;       /* text, and the field behind the QR */
+  --salt-mist: #7a8690;       /* muted labels and captions */
+  --salt-mist-light: #a6afb5; /* mist for running prose at 13px, where mist itself is too dark */
+
+  /* The desk's semantic colours, added 02 Sep 2026. Direction and risk need hues the six
+     brand colours do not carry, and each sits in the identity's temperature: verdigris is
+     copper's patina, ember is copper under heat, steel is slate lit. Copper stays the one
+     accent that marks the exception, so attention is copper and never a fourth hue. */
+  --salt-verdigris: #6fae97;  /* settled, owed to you, in cover */
+  --salt-ember: #d4694c;      /* owed by you, defaulted, breached */
+  --salt-steel: #8ea2b6;      /* pending, neutral, the cool second series */
+  --salt-brass-soft: #d8c79c; /* pale brass for a second tier */
+
+  /* The two books: salt is the pale one, oil the golden one */
+  --salt-product-salt: #e4e9ec;
+  --salt-product-oil: #c5a059;
+
+  /* Materials */
+  --salt-glass: rgba(255, 255, 255, 0.03);
+  --salt-glass-faint: rgba(255, 255, 255, 0.02);
+  --salt-line: rgba(197, 160, 89, 0.22);
+  --salt-line-faint: rgba(255, 255, 255, 0.06);
+  --salt-highlight: rgba(255, 255, 255, 0.08);
+  --salt-shadow: 0 32px 64px rgba(0, 0, 0, 0.55);
+  --salt-shadow-desk: 0 18px 40px rgba(0, 0, 0, 0.42); /* lighter, for a page of many panes */
+  --salt-well: rgba(0, 0, 0, 0.28);      /* inset: fields and meter tracks */
+  --salt-veil: rgba(5, 8, 10, 0.86);     /* sticky and floating surfaces over content */
+  --salt-pane: rgba(11, 18, 21, 0.66);   /* the glass fill when there is no backdrop to blur */
+  --salt-tap: 44px;                      /* the least a control may measure, either way */
+
+  /* Gradients. Brass to copper for marks and fills; white to copper for titles. */
+  --salt-gradient: linear-gradient(135deg, var(--salt-brass), var(--salt-copper));
+  --salt-gradient-title: linear-gradient(135deg, #ffffff 30%, var(--salt-copper) 100%);
+
+  /* Semantic aliases */
+  --salt-surface: var(--salt-obsidian);
+  --salt-text: var(--salt-salt);
+  --salt-text-muted: var(--salt-mist);
+  --salt-text-label: var(--salt-copper);
+
+  /* Typography */
+  --salt-font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
+  --salt-font-mono: 'JetBrains Mono', 'Cascadia Mono', Consolas, monospace;
+
+  --salt-text-xs: 11px;
+  --salt-text-sm: 13px;
+  --salt-text-md: 15px;
+  --salt-text-lg: 17px;
+  --salt-text-xl: 24px;
+  --salt-text-2xl: 34px;
+  --salt-text-3xl: 48px;
+  --salt-text-4xl: 64px;
+  --salt-text-5xl: 88px;
+
+  /* Space, radius */
+  --salt-space-1: 4px;
+  --salt-space-2: 8px;
+  --salt-space-3: 12px;
+  --salt-space-4: 16px;
+  --salt-space-5: 24px;
+  --salt-space-6: 32px;
+  --salt-space-7: 48px;
+
+  --salt-radius-sm: 12px;
+  --salt-radius-md: 16px;
+  --salt-radius-lg: 24px;
+  --salt-radius-xl: 36px;
+  --salt-radius-pill: 100px;
+}
+
+/* ---- Root ---- */
+
+.salt-root {
+  position: relative;
+  overflow: hidden;
+  background: var(--salt-obsidian);
+  color: var(--salt-text);
+  font-family: var(--salt-font-display);
+  font-weight: 340;
+  font-size: var(--salt-text-lg);
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100%;
+  box-sizing: border-box;
+}
+.salt-root *,
+.salt-root *::before,
+.salt-root *::after {
+  box-sizing: border-box;
+}
+.salt-root--padded {
+  padding: var(--salt-space-6);
+}
+.salt-root__content {
+  position: relative;
+  z-index: 1;
+}
+
+/* ---- Aurora ---- */
+
+.salt-aurora {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+.salt-aurora__blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(100px);
+  opacity: 0.32;
+}
+.salt-aurora__blob--copper { background: var(--salt-copper); }
+.salt-aurora__blob--brass { background: var(--salt-brass); }
+.salt-aurora--page .salt-aurora__blob--copper { width: 55vw; height: 55vw; min-width: 380px; min-height: 380px; top: -22%; left: -18%; }
+.salt-aurora--page .salt-aurora__blob--brass { width: 45vw; height: 45vw; min-width: 320px; min-height: 320px; bottom: -18%; right: -12%; }
+.salt-aurora--card .salt-aurora__blob--copper { width: 60%; height: 60%; top: -25%; left: -20%; filter: blur(80px); opacity: 0.35; }
+.salt-aurora--card .salt-aurora__blob--brass { width: 55%; height: 55%; bottom: -20%; right: -15%; filter: blur(80px); opacity: 0.35; }
+.salt-aurora--header .salt-aurora__blob--copper { width: 55%; height: 160%; top: -60%; left: 5%; filter: blur(110px); opacity: 0.35; }
+.salt-aurora--header .salt-aurora__blob--brass { width: 40%; height: 120%; bottom: -40%; right: 12%; filter: blur(95px); opacity: 0.35; }
+
+/* ---- Glass card ---- */
+
+.salt-glass-card {
+  position: relative;
+  z-index: 1;
+  background: var(--salt-glass);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  border: 1px solid var(--salt-line);
+  box-shadow: var(--salt-shadow), inset 0 1px 0 var(--salt-highlight);
+}
+.salt-glass-card--radius-md { border-radius: var(--salt-radius-md); }
+.salt-glass-card--radius-lg { border-radius: var(--salt-radius-lg); }
+.salt-glass-card--radius-xl { border-radius: var(--salt-radius-xl); }
+.salt-glass-card--radius-round { border-radius: 50%; }
+.salt-glass-card--pad-none { padding: 0; }
+.salt-glass-card--pad-sm { padding: var(--salt-space-4); }
+.salt-glass-card--pad-md { padding: var(--salt-space-6); }
+.salt-glass-card--pad-lg { padding: var(--salt-space-7) 52px; }
+@media (max-width: 720px) {
+  .salt-glass-card--pad-lg { padding: var(--salt-space-6) var(--salt-space-5); }
+}
+
+/* ---- Brand title ---- */
+
+.salt-title {
+  font-family: var(--salt-font-display);
+  font-weight: 300;
+  letter-spacing: 0.05em;
+  line-height: 1.05;
+  margin: 0;
+  background: var(--salt-gradient-title);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  text-wrap: balance;
+}
+.salt-title--sm { font-size: var(--salt-text-2xl); }
+.salt-title--md { font-size: var(--salt-text-3xl); }
+.salt-title--lg { font-size: var(--salt-text-4xl); }
+.salt-title--xl { font-size: var(--salt-text-5xl); }
+
+/* ---- Wordmark ---- */
+
+.salt-wordmark {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--salt-space-2);
+  text-align: center;
+}
+.salt-wordmark--left { align-items: flex-start; text-align: left; }
+.salt-wordmark__subtitle {
+  font-family: var(--salt-font-mono);
+  font-weight: 500;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--salt-brass);
+  margin: 0;
+}
+.salt-wordmark--sm .salt-wordmark__subtitle { font-size: 10px; }
+.salt-wordmark--md .salt-wordmark__subtitle { font-size: 12px; }
+.salt-wordmark--lg .salt-wordmark__subtitle { font-size: 14px; letter-spacing: 0.28em; }
+
+/* ---- Eyebrow ---- */
+
+.salt-eyebrow {
+  font-family: var(--salt-font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  margin: 0;
+}
+.salt-eyebrow--copper { color: var(--salt-copper); }
+.salt-eyebrow--brass { color: var(--salt-brass); }
+.salt-eyebrow--mist { color: var(--salt-mist); }
+
+/* ---- Metric row ---- */
+
+.salt-metrics {
+  display: flex;
+  gap: var(--salt-space-7);
+  flex-wrap: wrap;
+  font-family: var(--salt-font-mono);
+  color: #a0aab0;
+  font-variant-numeric: tabular-nums;
+}
+.salt-metrics--sm { font-size: var(--salt-text-sm); gap: var(--salt-space-6); }
+.salt-metrics__label {
+  display: block;
+  color: var(--salt-copper);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin: 0 0 var(--salt-space-1);
+}
+.salt-metrics--sm .salt-metrics__label { font-size: 10px; }
+.salt-metrics__value { color: var(--salt-salt); font-weight: 500; }
+
+/* ---- Volume ladder ---- */
+
+.salt-ladder {
+  display: flex;
+  align-items: flex-end;
+  gap: 14px;
+}
+.salt-ladder__bar {
+  background: linear-gradient(to top, var(--salt-copper), var(--salt-brass));
+  border-radius: 4px;
+  opacity: 0.82;
+}
+
+/* ---- Rung table ---- */
+
+.salt-rungs {
+  font-family: var(--salt-font-mono);
+  font-size: var(--salt-text-sm);
+  font-variant-numeric: tabular-nums;
+}
+.salt-rungs--2col {
+  columns: 2;
+  column-gap: 28px;
+}
+@media (max-width: 480px) {
+  .salt-rungs--2col { columns: 1; }
+}
+.salt-rungs__row {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--salt-space-4);
+  padding: 6px 0;
+  border-bottom: 1px solid var(--salt-line-faint);
+  break-inside: avoid;
+}
+.salt-rungs__label { color: var(--salt-mist); letter-spacing: 0.08em; text-transform: uppercase; }
+.salt-rungs__value { color: var(--salt-salt); font-weight: 500; }
+
+/* ---- QR panel. The one white surface in the identity: slate ink on white,
+   never recoloured, never on glass. ---- */
+
+.salt-qr {
+  background: #ffffff;
+  border-radius: var(--salt-radius-md);
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.45);
+  box-sizing: border-box;
+}
+.salt-qr__code { width: 100%; }
+.salt-qr__code svg,
+.salt-qr__code img {
+  width: 100%;
+  height: auto;
+  display: block;
+  shape-rendering: crispEdges;
+}
+.salt-qr__placeholder {
+  width: 100%;
+  aspect-ratio: 1;
+  background: var(--salt-salt);
+  border: 2px dashed rgba(122, 134, 144, 0.45);
+  border-radius: var(--salt-radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--salt-font-mono);
+  font-size: 12px;
+  color: var(--salt-mist);
+}
+.salt-qr__meta { text-align: center; }
+.salt-qr__title {
+  font-family: var(--salt-font-display);
+  font-weight: 600;
+  font-size: var(--salt-text-xl);
+  color: var(--salt-slate);
+  margin: 0;
+}
+.salt-qr__caption {
+  font-family: var(--salt-font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--salt-mist);
+}
+
+/* ---- Pill button ---- */
+
+.salt-pill {
+  display: inline-block;
+  text-decoration: none;
+  text-align: center;
+  background: var(--salt-gradient);
+  color: var(--salt-obsidian);
+  border: none;
+  border-radius: var(--salt-radius-pill);
+  font-family: var(--salt-font-mono);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(184, 115, 51, 0.3);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.salt-pill--md { padding: 16px 40px; font-size: 14px; }
+.salt-pill--sm { padding: 10px 24px; font-size: 12px; }
+.salt-pill:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(184, 115, 51, 0.4); }
+.salt-pill:active { transform: translateY(0); box-shadow: 0 8px 24px rgba(184, 115, 51, 0.3); }
+.salt-pill:focus-visible { outline: 2px solid var(--salt-brass); outline-offset: 3px; }
+.salt-pill:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .salt-pill { transition: none; }
+  .salt-pill:hover { transform: none; }
+}
+
+/* ---- Voice line ---- */
+
+.salt-voice {
+  display: inline-block;
+  font-family: var(--salt-font-mono);
+  font-size: var(--salt-text-sm);
+  font-weight: 400;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--salt-brass);
+  border: 1px solid var(--salt-line-faint);
+  border-radius: var(--salt-radius-sm);
+  padding: var(--salt-space-3) 18px;
+  max-width: 100%;
+}
+
+/* ---- Swatch ---- */
+
+.salt-swatch {
+  border: 1px solid var(--salt-line-faint);
+  border-radius: 18px;
+  overflow: hidden;
+  background: rgba(5, 8, 10, 0.5);
+}
+.salt-swatch__chip { height: 84px; border-bottom: 1px solid var(--salt-line-faint); }
+.salt-swatch__meta { padding: var(--salt-space-3) 14px 14px; }
+.salt-swatch__name {
+  font-family: var(--salt-font-mono);
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--salt-salt);
+  display: block;
+}
+.salt-swatch__hex {
+  font-family: var(--salt-font-mono);
+  font-size: 12px;
+  color: var(--salt-mist);
+}
+.salt-swatch__role {
+  font-family: var(--salt-font-display);
+  font-size: var(--salt-text-sm);
+  color: var(--salt-mist);
+  display: block;
+  margin-top: 6px;
+  line-height: 1.45;
+}
+
+/* ---- Section header ---- */
+
+.salt-section-head { display: flex; flex-direction: column; gap: var(--salt-space-3); }
+.salt-section-head__lede { margin: 0; color: var(--salt-mist); max-width: 62ch; font-size: var(--salt-text-lg); }
+
+/* ---- Ledger list ---- */
+
+.salt-ledger {
+  font-family: var(--salt-font-mono);
+  font-size: var(--salt-text-sm);
+  font-variant-numeric: tabular-nums;
+}
+.salt-ledger__row { padding: 10px 0; border-bottom: 1px solid var(--salt-line-faint); }
+.salt-ledger__line { display: flex; justify-content: space-between; gap: var(--salt-space-4); }
+.salt-ledger__label { color: var(--salt-mist); letter-spacing: 0.08em; text-transform: uppercase; }
+.salt-ledger__value { color: var(--salt-salt); font-weight: 500; }
+.salt-ledger__flag {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--salt-mist);
+  opacity: 0.8;
+}
+
+/* ---- Status chip ---- */
+
+.salt-status {
+  display: inline-block;
+  font-family: var(--salt-font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  border: 1px solid;
+  border-radius: var(--salt-radius-pill);
+  padding: 4px 12px;
+}
+.salt-status--brass { color: var(--salt-brass); border-color: rgba(197, 160, 89, 0.45); }
+.salt-status--copper { color: var(--salt-copper); border-color: rgba(184, 115, 51, 0.55); }
+.salt-status--mist { color: var(--salt-mist); border-color: var(--salt-line-faint); }
+.salt-status--salt { color: var(--salt-salt); border-color: rgba(242, 244, 245, 0.35); }
+
+/* ---- Rule ---- */
+
+.salt-rule { border: none; border-top: 1px solid var(--salt-line); margin: 0; }
+.salt-rule--labelled { display: flex; align-items: center; gap: var(--salt-space-4); border-top: none; }
+.salt-rule__line { flex: 1; border-top: 1px solid var(--salt-line); }
+.salt-rule__label {
+  font-family: var(--salt-font-mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--salt-mist);
+}
+
+/* ---- Fields ---- */
+
+.salt-field { display: flex; flex-direction: column; gap: var(--salt-space-2); }
+.salt-field__label {
+  font-family: var(--salt-font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--salt-copper);
+}
+.salt-field__input {
+  background: var(--salt-glass-faint);
+  border: 1px solid var(--salt-line-faint);
+  border-radius: var(--salt-radius-sm);
+  padding: 12px 16px;
+  color: var(--salt-salt);
+  font-family: var(--salt-font-display);
+  font-size: var(--salt-text-md);
+  line-height: 1.4;
+  color-scheme: dark;
+  width: 100%;
+}
+.salt-field__input::placeholder { color: var(--salt-mist); opacity: 0.7; }
+.salt-field__input:focus-visible { outline: none; border-color: var(--salt-brass); }
+.salt-field__input--mono { font-family: var(--salt-font-mono); font-variant-numeric: tabular-nums; }
+.salt-field__input--error { border-color: rgba(184, 115, 51, 0.7); }
+.salt-field__input.salt-field__select {
+  appearance: none;
+  -webkit-appearance: none;
+  font-family: var(--salt-font-mono);
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23C5A059' stroke-width='1.5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  padding-right: 40px;
+}
+.salt-field__select option { background: var(--salt-slate); color: var(--salt-salt); }
+.salt-field__hint { font-family: var(--salt-font-mono); font-size: 11px; color: var(--salt-mist); }
+.salt-field__error { font-family: var(--salt-font-mono); font-size: 11px; color: var(--salt-copper); }
+
+/* ---- Statement table ---- */
+
+.salt-table-wrap { overflow-x: auto; }
+.salt-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--salt-font-mono);
+  font-size: var(--salt-text-sm);
+  font-variant-numeric: tabular-nums;
+}
+.salt-table th {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--salt-mist);
+  text-align: left;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--salt-line);
+}
+.salt-table td { color: var(--salt-salt); padding: 10px 12px; border-bottom: 1px solid var(--salt-line-faint); }
+.salt-table .salt-table__cell--right { text-align: right; }
+.salt-table td:first-child, .salt-table th:first-child { padding-left: 0; }
+.salt-table td:last-child, .salt-table th:last-child { padding-right: 0; }
+
+/* ---- Logo ---- */
+
+.salt-logo { display: inline-flex; align-items: center; justify-content: center; }
+.salt-logo--stacked { flex-direction: column; gap: var(--salt-space-4); }
+.salt-logo--horizontal { flex-direction: row; gap: var(--salt-space-4); }
+/* Single-element lockups and the size steps carry their styling on their
+   children; the classes exist as stable hooks for consumers. */
+.salt-logo--crystal, .salt-logo--wordmark { flex-direction: row; }
+.salt-logo--sm, .salt-logo--md, .salt-logo--lg { line-height: 1; }
+
+/* Reversed lockups. The identity's ground is obsidian, so these exist only
+   for white grounds and one-colour print, and they change nothing else. */
+.salt-logo--light .salt-title,
+.salt-logo--ink .salt-title {
+  background: none;
+  -webkit-background-clip: initial;
+  background-clip: initial;
+  -webkit-text-fill-color: initial;
+  color: var(--salt-slate);
+}
+.salt-logo--light .salt-wordmark__subtitle { color: var(--salt-copper); }
+.salt-logo--ink .salt-wordmark__subtitle { color: var(--salt-slate); }
+
+/* ---- Nav bar ---- */
+
+.salt-nav {
+  display: flex;
+  align-items: center;
+  gap: var(--salt-space-6);
+  padding: var(--salt-space-4) 0;
+  border-bottom: 1px solid var(--salt-line-faint);
+}
+.salt-nav__links { display: flex; gap: var(--salt-space-5); flex: 1; flex-wrap: wrap; }
+.salt-nav__link {
+  font-family: var(--salt-font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--salt-mist);
+  text-decoration: none;
+}
+.salt-nav__link:hover { color: var(--salt-brass); }
+.salt-nav__link--active { color: var(--salt-salt); }
+.salt-nav__link--active:hover { color: var(--salt-salt); }
+.salt-nav__action { flex-shrink: 0; }
+
+/* ---- Site footer ---- */
+
+.salt-footer { display: flex; flex-direction: column; gap: var(--salt-space-6); }
+.salt-footer__columns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: var(--salt-space-6);
+}
+.salt-footer__column { display: flex; flex-direction: column; gap: var(--salt-space-2); }
+.salt-footer__title {
+  font-family: var(--salt-font-mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--salt-copper);
+  margin-bottom: var(--salt-space-1);
+}
+.salt-footer__link {
+  font-family: var(--salt-font-mono);
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--salt-mist);
+  text-decoration: none;
+}
+.salt-footer__link:hover { color: var(--salt-brass); }
+.salt-footer__line {
+  font-family: var(--salt-font-mono);
+  font-size: 12px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--salt-mist);
+  text-align: center;
+  margin: 0;
+}
+
+/* ---- Tab strip ---- */
+
+.salt-tabs { display: flex; gap: var(--salt-space-2); flex-wrap: wrap; }
+.salt-tabs__pill {
+  font-family: var(--salt-font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--salt-mist);
+  background: transparent;
+  border: 1px solid var(--salt-line-faint);
+  border-radius: var(--salt-radius-pill);
+  padding: 8px 16px;
+  cursor: pointer;
+}
+.salt-tabs__pill:hover { color: var(--salt-brass); border-color: var(--salt-line); }
+.salt-tabs__pill--active { color: var(--salt-salt); background: var(--salt-glass); border-color: var(--salt-line); }
+.salt-tabs__pill--active:hover { color: var(--salt-salt); }
+.salt-tabs__pill:focus-visible { outline: 2px solid var(--salt-brass); outline-offset: 2px; }
+.salt-tabs__count { color: var(--salt-copper); margin-left: 8px; }
+
+/* ---- Slides ---- */
+
+.salt-slide {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: var(--salt-obsidian);
+  border: 1px solid var(--salt-line-faint);
+  border-radius: var(--salt-radius-md);
+}
+.salt-slide__content {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 56px 64px;
+  box-sizing: border-box;
+}
+.salt-slide__content--cover {
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: var(--salt-space-5);
+}
+.salt-slide__meta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--salt-space-1);
+  font-family: var(--salt-font-mono);
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--salt-mist);
+}
+.salt-slide__head { display: flex; flex-direction: column; gap: var(--salt-space-2); margin-bottom: var(--salt-space-5); }
+.salt-slide__body { flex: 1; min-height: 0; overflow: hidden; }
+@media (max-width: 720px) {
+  .salt-slide__content { padding: 28px 32px; }
+}
+.salt-slide__foot {
+  display: flex;
+  justify-content: flex-end;
+  font-family: var(--salt-font-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--salt-mist);
+  border-top: 1px solid var(--salt-line-faint);
+  padding-top: var(--salt-space-3);
+  margin-top: var(--salt-space-4);
+}
+.salt-slide--break .salt-slide__content { justify-content: center; }
+/* The cover's styling lives on __content--cover; the class is a stable hook. */
+.salt-slide--cover { border-color: var(--salt-line); }
+
+/* ---- Document page ---- */
+
+.salt-page {
+  position: relative;
+  background: var(--salt-obsidian);
+  border: 1px solid var(--salt-line-faint);
+  border-radius: var(--salt-radius-sm);
+  padding: 48px 56px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--salt-space-6);
+  width: 100%;
+  box-sizing: border-box;
+}
+.salt-page--paper { aspect-ratio: 210 / 297; overflow: hidden; }
+.salt-page__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--salt-space-4);
+  border-bottom: 1px solid var(--salt-line);
+  padding-bottom: var(--salt-space-4);
+}
+.salt-page__title {
+  font-family: var(--salt-font-mono);
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--salt-mist);
+}
+.salt-page__body { flex: 1; min-height: 0; }
+.salt-page__foot {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--salt-space-4);
+  font-family: var(--salt-font-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--salt-mist);
+  border-top: 1px solid var(--salt-line-faint);
+  padding-top: var(--salt-space-3);
+}
+
+/* ---- Footnote ---- */
+
+.salt-footnote {
+  font-family: var(--salt-font-display);
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--salt-mist);
+  margin: 0;
+  max-width: 62ch;
+}
+.salt-footnote__marker {
+  font-family: var(--salt-font-mono);
+  font-size: 10px;
+  color: var(--salt-copper);
+  margin-right: 8px;
+}
+
+/* ---- Layout glue ---- */
+
+.salt-stack { display: flex; flex-direction: column; gap: var(--salt-space-4); }
+.salt-stack--tight { gap: var(--salt-space-2); }
+.salt-row { display: flex; gap: var(--salt-space-2); align-items: center; flex-wrap: wrap; }
+.salt-grid { display: grid; gap: var(--salt-space-4); }
+.salt-grid--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.salt-grid--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.salt-grid--4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+@media (max-width: 720px) {
+  .salt-grid--3, .salt-grid--4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 480px) {
+  .salt-grid--2, .salt-grid--3, .salt-grid--4 { grid-template-columns: 1fr; }
+}
+
+/* ======================================================================================
+   THE DESK SET, ROUND TWO (02 Sep 2026). Recipes for the instruments the Salt Command desk
+   is made of: a figure tile, an action, a product band, a meter, an ageing ladder, a draft
+   awaiting approval, an insight, a queue state, a tier, a plan, a journal entry, the rail
+   and the bar. Every figure is mono; every sentence is the display face; tone is carried
+   by one hairline or one word, never by a filled box. Copper marks the exception, once.
+   ====================================================================================== */
+
+/* ---- Ghost button: the quiet control. The pill books or produces; this navigates,
+   filters and dismisses. ---- */
+
+.salt-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: var(--salt-tap);
+  min-width: var(--salt-tap);
+  padding: 8px 16px;
+  background: transparent;
+  border: 1px solid var(--salt-line-faint);
+  border-radius: var(--salt-radius-pill);
+  color: var(--salt-mist);
+  font-family: var(--salt-font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+  text-decoration: none;
+  transition: color 0.16s, border-color 0.16s, background 0.16s;
+}
+.salt-ghost:hover { color: var(--salt-brass); border-color: var(--salt-line); }
+.salt-ghost--on { color: var(--salt-salt); background: var(--salt-glass); border-color: var(--salt-line); }
+.salt-ghost--sm { min-height: 32px; padding: 4px 12px; font-size: 10px; }
+.salt-ghost:focus-visible { outline: 2px solid var(--salt-brass); outline-offset: 2px; }
+.salt-ghost:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* ---- KPI tile: one figure, its label above, one quiet line beneath. The tone rides a
+   2px rule on the left and nowhere else. ---- */
+
+.salt-kpi {
+  position: relative;
+  background: var(--salt-glass);
+  border: 1px solid var(--salt-line);
+  border-radius: var(--salt-radius-md);
+  padding: 14px 16px 13px 18px;
+  box-shadow: inset 0 1px 0 var(--salt-highlight);
+  overflow: hidden;
+  min-width: 0;
+}
+.salt-kpi::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 12px; bottom: 12px;
+  width: 2px;
+  border-radius: 2px;
+  background: var(--salt-kpi-tone, var(--salt-brass));
+  opacity: 0.85;
+}
+.salt-kpi--brass { --salt-kpi-tone: var(--salt-brass); }
+.salt-kpi--copper { --salt-kpi-tone: var(--salt-copper); }
+.salt-kpi--verdigris { --salt-kpi-tone: var(--salt-verdigris); }
+.salt-kpi--ember { --salt-kpi-tone: var(--salt-ember); }
+.salt-kpi--steel { --salt-kpi-tone: var(--salt-steel); }
+.salt-kpi--mist { --salt-kpi-tone: rgba(122, 134, 144, 0.6); }
+.salt-kpi__label {
+  display: block;
+  font-family: var(--salt-font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--salt-copper);
+}
+.salt-kpi__value {
+  display: block;
+  margin-top: 6px;
+  font-family: var(--salt-font-mono);
+  font-size: 22px;
+  font-weight: 500;
+  line-height: 1.1;
+  color: var(--salt-salt);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+.salt-kpi__note {
+  display: block;
+  margin-top: 4px;
+  font-family: var(--salt-font-display);
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--salt-mist-light);
+}
+
+/* ---- Action: something to do, with the money at stake. Kind, title, why, money, the
+   rules it breaks as chips, and its share of the money as a bar. ---- */
+
+.salt-action {
+  --salt-sev: var(--salt-brass);
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr) auto;
+  gap: 6px 16px;
+  align-items: start;
+  background: var(--salt-glass);
+  border: 1px solid var(--salt-line);
+  border-left: 2px solid var(--salt-sev);
+  border-radius: var(--salt-radius-md);
+  padding: 13px 16px;
+  box-shadow: inset 0 1px 0 var(--salt-highlight);
+}
+.salt-action--now { --salt-sev: var(--salt-copper); }
+.salt-action--soon { --salt-sev: var(--salt-brass); }
+.salt-action--watch { --salt-sev: var(--salt-steel); }
+.salt-action--breach { --salt-sev: var(--salt-ember); }
+.salt-action--done { --salt-sev: var(--salt-verdigris); }
+.salt-action__kind {
+  font-family: var(--salt-font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--salt-sev);
+  padding-top: 3px;
+}
+.salt-action__title {
+  font-family: var(--salt-font-display);
+  font-size: 15px;
+  line-height: 1.4;
+  color: var(--salt-salt);
+}
+.salt-action__why {
+  font-family: var(--salt-font-display);
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--salt-mist-light);
+  margin-top: 4px;
+}
+.salt-action__money {
+  font-family: var(--salt-font-mono);
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--salt-salt);
+  white-space: nowrap;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  padding-top: 2px;
+}
+.salt-action__money--nil { color: var(--salt-mist); font-weight: 400; font-size: 13px; }
+.salt-action__body { min-width: 0; }
+.salt-action__chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; grid-column: 2 / 3; }
+.salt-action__bar {
+  grid-column: 1 / -1;
+  height: 3px;
+  border-radius: 99px;
+  background: var(--salt-well);
+  overflow: hidden;
+  margin-top: 6px;
+}
+.salt-action__bar i { display: block; height: 100%; border-radius: 99px; background: var(--salt-sev); opacity: 0.6; }
+@media (max-width: 720px) {
+  .salt-action { grid-template-columns: minmax(0, 1fr) auto; }
+  .salt-action__kind { grid-column: 1 / -1; padding-top: 0; }
+  .salt-action__chips { grid-column: 1 / -1; }
+}
+
+/* ---- Status chip, the added tones ---- */
+
+.salt-status--verdigris { color: var(--salt-verdigris); border-color: rgba(111, 174, 151, 0.5); }
+.salt-status--ember { color: var(--salt-ember); border-color: rgba(212, 105, 76, 0.55); }
+.salt-status--steel { color: var(--salt-steel); border-color: rgba(142, 162, 182, 0.5); }
+.salt-status--dashed { border-style: dashed; }
+
+/* ---- Product band: the heading that says which book a block draws. A dot in the
+   product's hue, the name in mono caps, a quiet sub, a rule running out. ---- */
+
+.salt-product {
+  --salt-hue: var(--salt-product-salt);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 10px;
+  font-family: var(--salt-font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--salt-salt);
+}
+.salt-product--salt { --salt-hue: var(--salt-product-salt); }
+.salt-product--oil { --salt-hue: var(--salt-product-oil); }
+.salt-product__dot { width: 9px; height: 9px; border-radius: 50%; background: var(--salt-hue); box-shadow: 0 0 8px -1px var(--salt-hue); flex: 0 0 auto; }
+.salt-product__sub { font-family: var(--salt-font-display); font-size: 12.5px; letter-spacing: 0; text-transform: none; color: var(--salt-mist); }
+.salt-product__rule { flex: 1; height: 1px; background: linear-gradient(90deg, var(--salt-line), transparent); }
+
+/* ---- Product tag: the stamp on a row ---- */
+
+.salt-producttag {
+  --salt-hue: var(--salt-product-salt);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--salt-font-mono);
+  font-size: 9.5px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--salt-salt);
+  border: 1px solid var(--salt-line-faint);
+  border-radius: 6px;
+  padding: 2px 8px;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+.salt-producttag--salt { --salt-hue: var(--salt-product-salt); }
+.salt-producttag--oil { --salt-hue: var(--salt-product-oil); }
+.salt-producttag::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--salt-hue); }
+
+/* ---- Meter: a bar is a figure. A well-inset track, a lit fill, an optional marker
+   for a threshold. The fill is set as --salt-fill on the element, 0 to 100. ---- */
+
+.salt-meter { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.salt-meter__line { display: flex; justify-content: space-between; gap: 12px; font-family: var(--salt-font-mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--salt-mist); }
+.salt-meter__line b { color: var(--salt-salt); font-weight: 500; }
+.salt-meter__track {
+  position: relative;
+  height: 8px;
+  border-radius: 99px;
+  background: var(--salt-well);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+  overflow: hidden;
+}
+.salt-meter__fill {
+  position: absolute; left: 0; top: 0; bottom: 0;
+  width: calc(var(--salt-fill, 0) * 1%);
+  border-radius: 99px;
+  background: linear-gradient(90deg, var(--salt-copper), var(--salt-brass));
+}
+.salt-meter--verdigris .salt-meter__fill { background: var(--salt-verdigris); }
+.salt-meter--ember .salt-meter__fill { background: var(--salt-ember); }
+.salt-meter--steel .salt-meter__fill { background: var(--salt-steel); }
+.salt-meter__mark {
+  position: absolute; top: -2px; bottom: -2px;
+  left: calc(var(--salt-mark, 0) * 1%);
+  width: 2px;
+  background: var(--salt-salt);
+  opacity: 0.8;
+}
+
+/* ---- Ageing ladder: the book's debts by age, as segments whose width is their share.
+   Each segment carries its band and its sum; the oldest band is ember, the newest salt. ---- */
+
+.salt-ageing { display: flex; flex-direction: column; gap: 8px; }
+.salt-ageing__bar { display: flex; height: 10px; border-radius: 99px; overflow: hidden; background: var(--salt-well); gap: 2px; }
+.salt-ageing__seg { flex: var(--salt-share, 1) 1 0; min-width: 2px; }
+.salt-ageing__seg--0 { background: var(--salt-product-salt); }
+.salt-ageing__seg--1 { background: var(--salt-brass); }
+.salt-ageing__seg--2 { background: var(--salt-copper); }
+.salt-ageing__seg--3 { background: var(--salt-ember); }
+.salt-ageing__legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-family: var(--salt-font-mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--salt-mist); font-variant-numeric: tabular-nums; }
+.salt-ageing__legend > span { display: inline-flex; align-items: center; gap: 7px; }
+.salt-ageing__legend b { color: var(--salt-salt); font-weight: 500; }
+.salt-ageing__swatch { width: 8px; height: 8px; border-radius: 2px; }
+
+/* ---- Approve card: a drafted row, put in front of a person. The figures that decide it
+   (cost, margin, price) lead; the entry as typed sits beneath; the flags are chips; two
+   controls, and the pill is Approve because approving books a row. ---- */
+
+.salt-approve {
+  background: var(--salt-glass);
+  border: 1px solid var(--salt-line);
+  border-radius: var(--salt-radius-lg);
+  padding: 18px 20px;
+  box-shadow: var(--salt-shadow-desk), inset 0 1px 0 var(--salt-highlight);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.salt-approve__head { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; flex-wrap: wrap; }
+.salt-approve__party { font-family: var(--salt-font-mono); font-size: 15px; font-weight: 500; color: var(--salt-salt); }
+.salt-approve__entry { font-family: var(--salt-font-mono); font-size: 12px; color: var(--salt-mist); font-variant-numeric: tabular-nums; }
+.salt-approve__flags { display: flex; flex-wrap: wrap; gap: 6px; }
+.salt-approve__reason { font-family: var(--salt-font-display); font-size: 13px; line-height: 1.5; color: var(--salt-mist-light); margin: 0; }
+.salt-approve__actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.salt-approve--decided { opacity: 0.6; }
+
+/* ---- Insight: the one-sentence finding beside the figures it explains ---- */
+
+.salt-insight {
+  font-family: var(--salt-font-display);
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--salt-salt);
+  border-left: 2px solid var(--salt-brass);
+  padding: 4px 0 4px 14px;
+  margin: 12px 0;
+}
+.salt-insight b { color: var(--salt-brass); font-weight: 500; }
+.salt-insight--copper { border-left-color: var(--salt-copper); }
+.salt-insight--copper b { color: var(--salt-copper); }
+.salt-insight--ember { border-left-color: var(--salt-ember); }
+.salt-insight--ember b { color: var(--salt-ember); }
+
+/* ---- Queue chip: where a phone entry is. A dot and a word. ---- */
+
+.salt-queue {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--salt-font-mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--salt-mist);
+  border: 1px solid var(--salt-line-faint);
+  border-radius: var(--salt-radius-pill);
+  padding: 4px 12px;
+  white-space: nowrap;
+}
+.salt-queue::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--salt-mist); }
+.salt-queue--pushed::before { background: var(--salt-verdigris); box-shadow: 0 0 6px var(--salt-verdigris); }
+.salt-queue--held::before { background: var(--salt-copper); box-shadow: 0 0 6px var(--salt-copper); }
+.salt-queue--syncing::before { background: var(--salt-brass); }
+.salt-queue--offline::before { background: var(--salt-ember); }
+
+/* ---- Tier pill: I, II, III, brightest first because that is the order they earn ---- */
+
+.salt-tier {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--salt-font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  padding: 2px 9px;
+  border-radius: var(--salt-radius-pill);
+  border: 1px solid currentColor;
+  line-height: 1.5;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+.salt-tier--1 { color: var(--salt-salt); box-shadow: 0 0 10px -2px rgba(242, 244, 245, 0.55); }
+.salt-tier--2 { color: var(--salt-brass-soft); }
+.salt-tier--3 { color: var(--salt-brass); opacity: 0.85; }
+
+/* ---- Plan: a headline with the reasoning behind it, folded ---- */
+
+.salt-plan {
+  border: 1px solid var(--salt-line-faint);
+  border-radius: var(--salt-radius-sm);
+  background: var(--salt-glass-faint);
+  margin-bottom: 7px;
+}
+.salt-plan > summary {
+  list-style: none;
+  cursor: pointer;
+  min-height: var(--salt-tap);
+  padding: 9px 14px;
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) auto auto;
+  gap: 12px;
+  align-items: baseline;
+}
+.salt-plan > summary::-webkit-details-marker { display: none; }
+.salt-plan > summary::marker { content: ''; }
+.salt-plan[open] > summary { border-bottom: 1px solid var(--salt-line-faint); }
+.salt-plan__id { font-family: var(--salt-font-mono); font-size: 10px; letter-spacing: 0.12em; color: var(--salt-mist); }
+.salt-plan__title { font-family: var(--salt-font-display); font-size: 14px; color: var(--salt-salt); }
+.salt-plan__money { grid-column: 3; font-family: var(--salt-font-mono); font-size: 12px; color: var(--salt-mist-light); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.salt-plan__state { grid-column: 4; font-family: var(--salt-font-mono); font-size: 9.5px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--salt-mist); white-space: nowrap; }
+.salt-plan--late { border-color: rgba(197, 160, 89, 0.45); }
+.salt-plan--late .salt-plan__state { color: var(--salt-brass); }
+.salt-plan--done { opacity: 0.55; }
+.salt-plan__body { padding: 10px 14px 12px; font-family: var(--salt-font-display); font-size: 13px; line-height: 1.55; color: var(--salt-mist-light); }
+@media (max-width: 720px) { .salt-plan > summary { grid-template-columns: 40px minmax(0, 1fr); row-gap: 3px; } }
+
+/* ---- Journal entry: a dated note, linked to its row ---- */
+
+.salt-journal { padding: 10px 0; border-bottom: 1px solid var(--salt-line-faint); }
+.salt-journal__meta { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; font-family: var(--salt-font-mono); font-size: 11px; letter-spacing: 0.08em; color: var(--salt-mist); margin-bottom: 4px; }
+.salt-journal__date { font-variant-numeric: tabular-nums; min-width: 82px; }
+.salt-journal__ref { color: var(--salt-brass); text-decoration: none; }
+a.salt-journal__ref:hover { text-decoration: underline; text-underline-offset: 2px; }
+.salt-journal__kind { margin-left: auto; text-transform: uppercase; letter-spacing: 0.16em; font-size: 10px; }
+.salt-journal__text { font-family: var(--salt-font-display); font-size: 13.5px; line-height: 1.55; color: var(--salt-mist-light); overflow-wrap: anywhere; }
+.salt-journal__text b { color: var(--salt-salt); font-weight: 500; }
+
+/* ---- Desk rail: the way between views. The mark and the wordmark, then groups of
+   destinations in mono caps, the active one in glass with a brass hairline. ---- */
+
+.salt-rail {
+  width: 196px;
+  flex: 0 0 196px;
+  position: sticky;
+  top: 22px;
+  background: var(--salt-glass);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  border: 1px solid var(--salt-line);
+  border-radius: var(--salt-radius-lg);
+  padding: 18px 12px 14px;
+  box-shadow: var(--salt-shadow-desk), inset 0 1px 0 var(--salt-highlight);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.salt-rail__brand { display: flex; align-items: center; gap: 11px; padding: 0 4px 14px; border-bottom: 1px solid var(--salt-line-faint); }
+.salt-rail__brand .salt-title { font-size: 22px; letter-spacing: 0.04em; }
+.salt-rail__brand .salt-wordmark__subtitle { font-size: 9.5px; letter-spacing: 0.26em; }
+.salt-rail__group { display: flex; flex-direction: column; gap: 2px; }
+.salt-rail__label {
+  font-family: var(--salt-font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--salt-mist);
+  padding: 0 10px;
+  margin-bottom: 4px;
+}
+.salt-rail__tab {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  min-height: var(--salt-tap);
+  text-align: left;
+  padding: 8px 11px;
+  border-radius: var(--salt-radius-sm);
+  border: 1px solid transparent;
+  background: none;
+  color: var(--salt-mist);
+  font-family: var(--salt-font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+}
+.salt-rail__tab:hover { background: var(--salt-glass); color: var(--salt-salt); }
+.salt-rail__tab--on { color: var(--salt-salt); background: var(--salt-glass); border-color: var(--salt-line); }
+.salt-rail__tab:focus-visible { outline: 2px solid var(--salt-brass); outline-offset: 2px; }
+.salt-rail__count { font-size: 10px; color: var(--salt-copper); font-variant-numeric: tabular-nums; }
+.salt-rail__parts { margin: 0 0 6px 12px; padding-left: 9px; border-left: 1px solid var(--salt-line-faint); display: flex; flex-direction: column; }
+.salt-rail__part {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 6px 8px;
+  min-height: 32px;
+  color: var(--salt-mist);
+  font-family: var(--salt-font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.salt-rail__part:hover { color: var(--salt-salt); }
+.salt-rail__part--on { color: var(--salt-salt); background: var(--salt-glass); }
+.salt-rail__foot { border-top: 1px solid var(--salt-line-faint); padding-top: 10px; font-family: var(--salt-font-mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--salt-mist); }
+
+/* ---- Desk bar: sticky, one row, holds the version and the controls. It draws only a
+   veil beneath itself so the aurora shows through. ---- */
+
+.salt-deskbar {
+  position: sticky;
+  top: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 6px 8px;
+  background: linear-gradient(180deg, var(--salt-veil) 70%, transparent);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+.salt-deskbar__brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.salt-deskbar__name { font-family: var(--salt-font-mono); font-size: 11px; letter-spacing: 0.24em; text-transform: uppercase; color: var(--salt-brass); }
+.salt-deskbar__tools { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+.salt-version {
+  font-family: var(--salt-font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  color: var(--salt-brass);
+  border: 1px solid rgba(197, 160, 89, 0.45);
+  border-radius: var(--salt-radius-pill);
+  padding: 4px 10px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.salt-orb {
+  width: var(--salt-tap);
+  height: var(--salt-tap);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--salt-glass);
+  border: 1px solid var(--salt-line);
+  color: var(--salt-brass);
+  cursor: pointer;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: inset 0 1px 0 var(--salt-highlight), 0 10px 30px -12px rgba(0, 0, 0, 0.8);
+  padding: 0;
+}
+.salt-orb:hover { border-color: rgba(197, 160, 89, 0.55); }
+.salt-orb:focus-visible { outline: 2px solid var(--salt-brass); outline-offset: 3px; }

@@ -59,6 +59,12 @@ jobs:
       - name: The geography in the master is geo/basemap.json and geo/places.json
         run: node tools/geosync.mjs --check
 
+      # THE DESIGN IN THE MASTER IS THE FILES (v472). design/salt-ds.css is the design system's
+      # stylesheet vendored from Code/salt-ds, design/desk.css the desk's own layer over it; the
+      # master carries both at the foot of its <style>. Same rule again: the copy is proved.
+      - name: The design in the master is design/salt-ds.css and design/desk.css
+        run: node tools/designsync.mjs --check
+
       - name: Tests
         run: npm test
 

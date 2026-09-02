@@ -68,6 +68,17 @@ row is approved on the phone.
    `public/_headers` is `connect-src 'self'` (for the queue) and otherwise self-only.
 5. **British English, no em-dashes,** in code, docs and UI copy alike. RM and **unit** only;
    the desk retired the mass symbol at v161.
+6. **The desk's look is the Salt design system, applied as a layer (v472, 02 Sep 2026).** Material,
+   type and colour are decided in `design/desk.css` over the vendored `design/salt-ds.css`, both
+   rendered into the master between `DESIGN` markers by `tools/designsync.mjs` and proved by CI.
+   One accent (brass; copper for the exception), three semantic words (verdigris owed to you or
+   settled, ember owed by you or breached, steel pending), figures in mono, sentences in the
+   display face, glass once. **A colour or type change is an edit to `design/desk.css`, then
+   `--sync`, then build; never a hex in the master's older layers.** The two books' hues are
+   `PRODUCTS.accent` in `ledger/book.json`, because that block is generated. Chart series read
+   the identity's hexes directly (`salt-ds/src/tokens.ts` is the shadow of the stylesheet), so a
+   palette change is a change in both places. No web font: the CSP is self-only, so Georgia and
+   Consolas answer for Fraunces and JetBrains Mono.
 
 ## NEVER RUN GIT AGAINST THIS REPO FROM A MOUNTED SANDBOX
 
@@ -471,10 +482,13 @@ Per-Crm01 master (a Cowork/master session); once it lands, the sync above alread
 | `tools/geofetch.mjs` | Re-fetch and re-simplify the basemap from source. Run BY HAND. Never run by CI or by the build, and the only thing here that touches the network. |
 | `tools/geosync.mjs` | `--sync` renders `geo/*.json` into the master between its markers; `--check` fails if the block is not the files. Same rule as the engine and the book. **Feature names are NOT rendered**: the desk is public and draws no label. |
 | `tools/changelog.mjs` | Prepends the master's current `evolution[0]` to `master/changelog.json`. Never rewrites an entry that exists. |
+| `design/salt-ds.css` | **THE DESIGN SYSTEM'S STYLESHEET** (v472, 02 Sep 2026), vendored from `Code\salt-ds\src\styles.css` by `node tools/designsync.mjs --pull`. Tokens and the `salt-` recipes; no font import, because the CSP is self-only and the pull refuses one. |
+| `design/desk.css` | **THE DESK'S DESIGN LAYER** (v472): a last-wins layer, as v213 and v281 were, binding the desk's own class vocabulary to the design system's tokens. Edit this for any change of material, type or colour; never the rules above it in the master. The ethos is `salt-ds/DESIGN.md`, the concept `docs/DESIGN.md`. |
+| `tools/designsync.mjs` | `--pull` vendors the design system's stylesheet; `--sync` renders both design files into the master between the `DESIGN` markers at the foot of its `<style>`; `--check` fails if either block is not its file. Same rule as the engine, the book and the geography, and CI runs it. |
 | `.github/workflows/` | CI with no secrets: date order, changelog, tests, build-matches-master, and a daily check that the live Worker serves what the repo committed. |
 | `tools/update.mjs` | **The whole "update" chain in one command**, ending in proof that every surface is level. See below. |
 | `tools/make_statements.mjs` | **THE MONTHLY STATEMENTS** (29 Aug 2026): one statement of account per customer, plus the review sheet. The v387 desk's own `stmtRows`/`stmtRecon`/`stmtRefunds`/`stmtDoc`, lifted verbatim when v388 removed them from the master, proven byte-identical against the desk's own output on the v387 book. Figures come from `ledger/book.json` and `engine/position.mjs`, the book and engine the desk itself runs, so they cannot drift from it; what lives here alone is the statement's own law. Plain node, no jsdom, and the master is not an input. `docs/STATEMENTS.md` is the routine that runs it. |
-| `tools/make_icons.py` | Regenerate the crystal icons. |
+| `tools/make_icons.py` | The OLD icon generator, superseded at v472: the home-screen icons are the brand's own plates, copied from `Code\salt-dsrandssets` (`salt-icon-512.png` for both 512s, `salt-icon-192.png`, and the 180 scaled from the 512). Regenerate there, then copy. |
 | `test/verify.mjs` | Smoke suite: Worker contract, name-drop, access gate, drain helpers, build integrity. |
 
 ## How a fold is sized, and where a round points (his instruction, 31 Aug 2026)

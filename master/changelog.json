@@ -1,5 +1,18 @@
 [
  {
+  "v": "v472",
+  "d": "02 Sep 2026",
+  "t": "THE DESK IN THE SALT IDENTITY",
+  "n": [
+   "<b>HIS INSTRUCTION, 02 SEP 2026: redesign the whole desk with the Salt design system.</b> The identity of 29 Aug (obsidian ground, brass and copper light, glass once, figures in mono and sentences in the display face) is now the desk's own. It arrives as a LAST-WINS LAYER, as v213 and v281 did: not one class is renamed, not one figure moves, and every geometry rule the phone passes stands. Two blocks at the foot of the stylesheet, both generated and both proved by CI: DESIGN base is the design system's stylesheet vendored from Code/salt-ds, and DESIGN desk binds the desk's own vocabulary to its tokens. tools/designsync.mjs pulls, syncs and checks them, the way engine.mjs and booksync.mjs do.",
+   "<b>ONE ACCENT.</b> The seven view hues are retired: a view is known by its name and its figures. Brass leads, copper marks the exception, and three words carry meaning and nothing else does: verdigris for what is settled or owed to you, ember for what you owe, defaulted or breached, steel for what is pending. The two books keep a hue each, salt the pale one and oil the golden one, declared in the book as PRODUCTS.accent, which is where the extract read them.",
+   "<b>EVERY COLOUR LITERAL IN THE DESK'S OWN CSS AND JS WAS MAPPED, NOT RESTYLED AROUND.</b> 252 hex and 180 rgba values, from the ice, gold, violet, green and crimson families into the identity, with the generated ENGINE, BOOK and GEO blocks held out byte for byte. The charts therefore draw in brass, salt, verdigris, ember and steel without a second palette, and Chart.js is told once that figures are mono and hairlines are brass. The mapping table is in docs/DESIGN.md.",
+   "<b>THE MARK.</b> The crystal replaces the diamond glyph in the rail, the bar and the favicon, and the home-screen icons are the brand's own from salt-ds/brand. The rail is glass with a brass hairline; a tab is mono caps and the active one is glass, not a gradient. The one filled control is the brass-to-copper pill, kept for what books or produces; everything that navigates is a ghost.",
+   "<b>NO WEB FONT, BY THE CSP.</b> The desk loads nothing, so Fraunces and JetBrains Mono are asked for and Georgia and Consolas answer. The design system's font import moved out of its styles.css into fonts.css for exactly this, and the pull refuses a stylesheet that carries a remote import.",
+   "<b>PROVED BY DRIVING IT.</b> Rendered at 1280 and at 375 with the rail floated out of its button; no console error; every tab measures 44; the ledger's filters, the board, the order book, the map and Today all read in the new material. A new section proves the two blocks are their files, that no retired hex survives outside the generated blocks, that the crystal is in the rail and the books carry the identity's hues; its regexes were proved red against the v471 master before they were trusted."
+  ]
+ },
+ {
   "v": "v471",
   "d": "02 Sep 2026",
   "t": "THE LEDGER IS KEYED ENTRIES ONLY, AND THE PROSE IS IN THE JOURNAL",

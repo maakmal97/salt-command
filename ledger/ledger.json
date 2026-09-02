@@ -8,7 +8,7 @@
     "id": "salt",
     "name": "Salt",
     "unit": "unit",
-    "accent": "var(--ice)",
+    "accent": "var(--salt-product-salt)",
     "since": "2026-05-12",
     "note": "The original book. Everything before v228 is salt whether or not it says so."
    },
@@ -16,7 +16,7 @@
     "id": "oil",
     "name": "Oil",
     "unit": "unit",
-    "accent": "var(--gold)",
+    "accent": "var(--salt-product-oil)",
     "since": "2026-08-06",
     "note": "Second product. Two suppliers named 06 Aug, one live quote, one sale."
    }
@@ -3050,7 +3050,7 @@
   ],
   "QUEUE_COMMITTED": "2026-09-02T06:40:01.000Z",
   "PRICING": {
-   "takenAt": "2026-09-02T05:28:07.322Z",
+   "takenAt": "2026-09-02T06:18:08.433Z",
    "sizes": [
     0.5,
     1,
@@ -3487,7 +3487,7 @@
    "v": "v471"
   },
   "OPEN": {
-   "at": "2026-09-02T05:28:07.352Z",
+   "at": "2026-09-02T06:18:08.479Z",
    "count": 6,
    "byKey": {
     "CY2-NIL|undefined|230": {

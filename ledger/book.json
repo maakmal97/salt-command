@@ -4,7 +4,7 @@
       "id": "salt",
       "name": "Salt",
       "unit": "unit",
-      "accent": "var(--ice)",
+      "accent": "var(--salt-product-salt)",
       "since": "2026-05-12",
       "note": "The original book. Everything before v228 is salt whether or not it says so."
     },
@@ -12,7 +12,7 @@
       "id": "oil",
       "name": "Oil",
       "unit": "unit",
-      "accent": "var(--gold)",
+      "accent": "var(--salt-product-oil)",
       "since": "2026-08-06",
       "note": "Second product. Two suppliers named 06 Aug, one live quote, one sale."
     }

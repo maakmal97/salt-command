@@ -5586,6 +5586,48 @@ section("Round 7: the states no suite check had ever rendered");
   for (const f of [TMP, TMPB, TMP + ".run.html"]) { try { rm(f); } catch (e) { /* best effort */ } }
 }
 
+section("v472: the desk in the Salt identity");
+{
+  /* His instruction of 02 Sep 2026: redesign the desk with the Salt design system. It lands as
+     a last-wins layer in two generated blocks at the foot of the stylesheet, and every figure
+     here was proved RED against the v471 master before it was trusted. */
+  const m472 = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+  let dchk = "";
+  try { dchk = execFileSync("node", [join(REPO, "tools", "designsync.mjs"), "--check"], { encoding: "utf8" }); }
+  catch (e) { dchk = String((e && e.stdout) || e); }
+  ok(/ok\s+base:/.test(dchk) && /ok\s+desk:/.test(dchk), "tools/designsync.mjs --check: both design blocks in the master are their files");
+  const styleClose = m472.indexOf("</style>"), deskEnd = m472.indexOf("/* ==== END DESIGN desk ==== */"), baseAt = m472.indexOf("/* ==== DESIGN base:");
+  ok(deskEnd > 0 && m472.slice(deskEnd, styleClose).trim() === "/* ==== END DESIGN desk ==== */", "the desk layer is the last rule in the stylesheet, so it wins");
+  ok(baseAt > m472.indexOf("<style>") && baseAt < deskEnd, "the design system's stylesheet sits inside <style>, before the desk layer");
+  ok(/--salt-brass:\s*#c5a059/.test(m472) && /--salt-verdigris:/.test(m472) && /--salt-ember:/.test(m472) && /--salt-steel:/.test(m472), "the identity's tokens are in the page, the three semantic words included");
+  ok(!/@import\s+url\(/.test(m472), "and no font import came with them: the CSP is self-only");
+  ok(/body\[data-sec\]\{--acc:var\(--salt-brass\);--accB:var\(--salt-copper\);\}/.test(m472), "the seven view hues are retired by one rule: brass leads, copper marks the exception");
+  /* the retired palette: none of it survives outside the generated blocks */
+  let own = m472;
+  for (const [a, b] of [["/* ==== ENGINE position", "/* ==== END ENGINE position ==== */"], ["/* ==== ENGINE pricing", "/* ==== END ENGINE pricing ==== */"], ["/* ==== BOOK:", "/* ==== END BOOK ==== */"], ["/* ==== GEO:", "/* ==== END GEO ==== */"]]) {
+    const i = own.indexOf(a), j = own.indexOf(b, i);
+    if (i >= 0 && j > i) own = own.slice(0, i) + own.slice(j + b.length);
+  }
+  const RETIRED = ["#7fd7e8", "#e8c66b", "#b3a6f5", "#6ee7a8", "#ff7a8a", "#ffcf7a", "#f5c451", "#63e6e0", "#5fd6a0", "#b07cff", "#ff6f9c", "#f0932b", "#1a1030", "#140c26", "#100a1c"];
+  const survivors = RETIRED.filter((h) => own.toLowerCase().includes(h));
+  ok(survivors.length === 0, `no retired hex survives in the desk's own css and js (found ${survivors.join(" ") || "none"})`);
+  ok(!/rgba\(\s*99\s*,\s*230\s*,\s*224/.test(own) && !/rgba\(\s*245\s*,\s*196\s*,\s*81/.test(own) && !/rgba\(\s*255\s*,\s*93\s*,\s*115/.test(own), "nor the retired rgba fills");
+  /* the mark */
+  ok((m472.match(/aria-label="Salt crystal"/g) || []).length === 2, "the crystal is drawn in the rail and in the bar");
+  ok(!m472.includes('class="logo">&#9670;') && !m472.includes('class="logo sm">&#9670;'), "and the diamond glyph is gone");
+  ok(/<link rel="icon" href="data:image\/svg\+xml,[^>]*%2305080a[^>]*%23c5a059/.test(m472), "the favicon is the crystal in brass on obsidian");
+  /* the books' hues come from the identity, through the book, which is where the extract reads them */
+  const bk472 = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  ok(bk472.PRODUCTS.salt.accent === "var(--salt-product-salt)" && bk472.PRODUCTS.oil.accent === "var(--salt-product-oil)", "salt is the pale book and oil the golden one, declared in ledger/book.json");
+  ok(m472.includes("D.font.family=\"'JetBrains Mono','Cascadia Mono',Consolas,monospace\"") && m472.includes("D.borderColor='rgba(197,160,89,0.14)'"), "Chart.js is told once that figures are mono and hairlines are brass");
+  /* the built desk and the install surface carry it too */
+  const built472 = readFileSync(join(REPO, "public", "desk.html"), "utf8");
+  ok(built472.includes("/* ==== END DESIGN desk ==== */") && built472.includes('aria-label="Salt crystal"'), "the built desk carries the layer and the mark");
+  ok(JSON.parse(readFileSync(join(REPO, "public", "manifest.webmanifest"), "utf8")).theme_color === "#05080a", "the manifest's theme colour is obsidian");
+  const i512 = readFileSync(join(REPO, "public", "icon-512.png")), im = readFileSync(join(REPO, "public", "icon-512-maskable.png"));
+  ok(i512.length > 60000 && Buffer.compare(i512, im) === 0, "the home-screen icons are the brand plate, the same bytes for any and maskable");
+}
+
 /* ============ THE FLOOR (v431) ============
    Round eight made THIRTY assertions vanish and the suite still read a clean pass, because nothing
    compares the count: a section that stops running, or a block that returns early on a book that
@@ -5597,7 +5639,7 @@ section("Round 7: the states no suite check had ever rendered");
    the live count was 879, so thirty-nine assertions could have vanished under a guard written to
    stop exactly that. The margin is four, which covers the book-dependent branches that legitimately
    skip; it is not room for a section to fall out. */
-const FLOOR_ASSERTIONS = 1169, FLOOR_SECTIONS = 92;
+const FLOOR_ASSERTIONS = 1199, FLOOR_SECTIONS = 93;   /* v472: 1203 live */
 ok(pass + fail - offMachine >= FLOOR_ASSERTIONS,
   `the suite ran ${pass + fail - offMachine} assertions everywhere (${pass + fail} here, ${offMachine} of them needing files that live off this repo), below its floor of ${FLOOR_ASSERTIONS}: a section has stopped running`);
 ok(sections >= FLOOR_SECTIONS,
