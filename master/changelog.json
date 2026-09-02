@@ -1,5 +1,15 @@
 [
  {
+  "v": "v459",
+  "d": "02 Sep 2026",
+  "t": "THE ROW EDITOR MEASURES WHAT HAS MOVED WITH THE RULER ITS OWN GATE USES",
+  "n": [
+   "<b>FOLD 17 OF ROUND TEN, A TWIN.</b> updOut, which tells the editor what is left to move on a sale, and ovSeed, which seeds the overlay's as-booked step, read txDeliv: delivered plus settled in kind. The cancellation gate beside them (v436), the whiteboard and the engine's own walk read txEffDeliv, which adds advanceUnits. Both now read txEffDeliv, and no caller of txDeliv is left in the desk outside its definition.",
+   "<b>WHAT CHANGES ON THE BOOK TODAY: NOTHING, AND THAT IS THE POINT.</b> Nothing writes advanceUnits: the field is described in a comment and set nowhere, so the two rulers agree on every row that exists. That is exactly the condition under which a twin goes unnoticed until something does write it, and the day it does the editor would have offered to deliver a unit already advanced.",
+   "<b>PROVED ON THE ONE ROW THAT DISAGREES.</b> A synthetic sale carrying advanceUnits 1 and nothing delivered: updOut reads 1 moved and 1 left, the seed carries 1, and the two rulers read 1 and 0 to show the fixture is real. Two mutations, both red. 1147 assertions across 85 sections."
+  ]
+ },
+ {
   "v": "v458",
   "d": "02 Sep 2026",
   "t": "THE RECONCILIATION'S PAYMENT LIST IS A NARRATIVE BESIDE THE FIGURE, AND PRINTS ONLY WHEN IT SUMS TO IT",

@@ -5117,6 +5117,26 @@ section("v458: the reconciliation's payment list prints only when it sums to the
     `with the row corrected to 700 beside a step of 750, the row's figure prints and the step does not: ${B.indexOf("750.00 on") >= 0 ? "step printed" : "ok"}`);
 }
 
+
+section("v459: the editor measures what has moved with the ruler the gate uses");
+{
+  /* updOut and ovSeed read txDeliv; the cancellation gate, the whiteboard and the engine walk
+     read txEffDeliv, which adds advanceUnits. Nothing writes that field today, so the fixture
+     is the only row on which the two rulers disagree, and it is what makes this provable. */
+  const { openMaster: om9 } = await import("../tools/payload.mjs");
+  const { join: j9 } = await import("node:path");
+  const { w } = await om9(j9(REPO, "master", "salt_command.html"));
+  w.eval("setProd('salt');recompute();");
+  const r = JSON.parse(String(w.eval(`(function(){
+    var row={customer:"F9",product:"salt",qty:2,total:200,cost:64,cash:200,deliveredQty:0,advanceUnits:1};
+    var o=updOut(row,"SELL"), sd=ovSeed(row,"SELL");
+    return JSON.stringify({moved:o.moved,left:o.unitLeft,seed:sd.kg,eff:txEffDeliv(row),raw:txDeliv(row)});
+  })()`)));
+  ok(r.eff === 1 && r.raw === 0, `the fixture is the row on which the rulers disagree (eff ${r.eff}, raw ${r.raw})`);
+  ok(r.moved === 1 && r.left === 1, `updOut reads the unit advanced as moved, one left (moved ${r.moved}, left ${r.left})`);
+  ok(r.seed === 1, `and the overlay seed carries the same figure (${r.seed})`);
+}
+
 /* ---- done ----------------------------------------------------------------------- */
 
 section("Round 7: the states no suite check had ever rendered");
@@ -5351,7 +5371,7 @@ section("Round 7: the states no suite check had ever rendered");
    the live count was 879, so thirty-nine assertions could have vanished under a guard written to
    stop exactly that. The margin is four, which covers the book-dependent branches that legitimately
    skip; it is not room for a section to fall out. */
-const FLOOR_ASSERTIONS = 1126, FLOOR_SECTIONS = 84;
+const FLOOR_ASSERTIONS = 1129, FLOOR_SECTIONS = 85;
 ok(pass + fail - offMachine >= FLOOR_ASSERTIONS,
   `the suite ran ${pass + fail - offMachine} assertions everywhere (${pass + fail} here, ${offMachine} of them needing files that live off this repo), below its floor of ${FLOOR_ASSERTIONS}: a section has stopped running`);
 ok(sections >= FLOOR_SECTIONS,
