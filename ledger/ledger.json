@@ -1,6 +1,6 @@
 {
- "v": "v473",
- "stamped": "02 Sep 2026, 17:17 KL",
+ "v": "v479",
+ "stamped": "02 Sep 2026, 18:20 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -264,12 +264,29 @@
     "cash": 1200,
     "supplier": "SA5-BTR",
     "status": "paid",
-    "date": "2026-09-02",
+    "date": "2026-08-31",
     "receivedOn": "2026-09-02",
     "receivedQty": 25,
     "paidOn": "2026-09-02",
-    "note": "<b>THE LOT THE SHELF WAS MISSING.</b> 25 unit for RM1200, RM48 a unit, paid and received on 2 Sep. The v464 roll had the stated shelf below zero and said a lot since the 24 Aug count was unrecorded; this is it. The cost basis moves from RM50 to RM48. Dictated in a Code session on 2 Sep 2026 and folded on his word.",
-    "rid": "p019"
+    "note": "<b>DATE CORRECTED TO 31 AUG on his word, 02 Sep.</b> Purchased 31 Aug; received and paid 2 Sep as booked. The lot was on the shelf when the 2 Sep count was taken. <b>THE LOT THE SHELF WAS MISSING.</b> 25 unit for RM1200, RM48 a unit, paid and received on 2 Sep. The v464 roll had the stated shelf below zero and said a lot since the 24 Aug count was unrecorded; this is it. The cost basis moves from RM50 to RM48. Dictated in a Code session on 2 Sep 2026 and folded on his word.",
+    "rid": "p019",
+    "mod": "corrected on 2026-09-02: date 2026-09-02 to 2026-08-31",
+    "amend": [
+     {
+      "date": "2026-08-31",
+      "kind": "Fulfilment",
+      "cash": 1200,
+      "kg": 25,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-09-02",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>DATE CORRECTED TO 31 AUG on his word, 02 Sep.</b> Purchased 31 Aug; received and paid 2 Sep as booked. The lot was on the shelf when the 2 Sep count was taken."
+     }
+    ]
    }
   ],
   "sales": [
@@ -3063,9 +3080,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-02T08:10:45.706Z",
+  "QUEUE_COMMITTED": "2026-09-02T10:40:00.000Z",
   "PRICING": {
-   "takenAt": "2026-09-02T09:19:24.067Z",
+   "takenAt": "2026-09-02T10:20:52.185Z",
    "sizes": [
     0.5,
     1,
@@ -3499,10 +3516,10 @@
      }
     }
    },
-   "v": "v473"
+   "v": "v479"
   },
   "OPEN": {
-   "at": "2026-09-02T09:19:24.103Z",
+   "at": "2026-09-02T10:20:52.226Z",
    "count": 6,
    "byKey": {
     "CY2-NIL|undefined|230": {
@@ -3632,7 +3649,7 @@
     "salt": "2026-09-02",
     "oil": "2026-08-23"
    },
-   "v": "v473"
+   "v": "v479"
   }
  }
 }

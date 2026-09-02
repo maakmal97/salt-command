@@ -60,7 +60,7 @@ document.addEventListener('visibilitychange',function(){
    focused, no dialog open. Otherwise it offers a chip and waits to be tapped.
    The same tick retries a held entry, which is what gets a phone write to the cloud
    without waiting for the next open. */
-var SALT_BUILD_ID="6300eb6418c8f08e";
+var SALT_BUILD_ID="1e1d2f393f08b251";
 var SALT_REV_MS=10000;
 (function(){
   var chip=null,timer=null;
@@ -4216,7 +4216,7 @@ const purchases=[
   {"date":"2026-08-20","qty":50,"total":2200,"supplier":"SA5-BTR","status":"paid","cash":2200,"paidOn":"2026-08-20","receivedOn":"2026-08-20","receivedQty":50,"amend":[{"date":"2026-08-20","kind":"Fulfilment","cash":2200,"kg":50,"note":"as booked"},{"date":"2026-08-20","kind":"Modification","cash":0,"kg":0,"note":"re-agreed to 50 unit / RM2,200"}],"rid":"p016"},
   {"date":"2026-08-26","qty":25,"total":1250,"supplier":"SA5-BTR","status":"paid","cash":1250,"paidOn":"2026-08-26","receivedOn":"2026-08-26","receivedQty":25,"rid":"p017"},
   {"date":"2026-08-26","product":"oil","qty":30,"total":230,"supplier":"SP7-PUD","status":"paid","cash":230,"paidOn":"2026-08-26","receivedOn":"2026-08-26","receivedQty":30,"rid":"p018"},
-  {"qty":25,"total":1200,"cash":1200,"supplier":"SA5-BTR","status":"paid","date":"2026-09-02","receivedOn":"2026-09-02","receivedQty":25,"paidOn":"2026-09-02","note":"<b>THE LOT THE SHELF WAS MISSING.</b> 25 unit for RM1200, RM48 a unit, paid and received on 2 Sep. The v464 roll had the stated shelf below zero and said a lot since the 24 Aug count was unrecorded; this is it. The cost basis moves from RM50 to RM48. Dictated in a Code session on 2 Sep 2026 and folded on his word.","rid":"p019"}
+  {"qty":25,"total":1200,"cash":1200,"supplier":"SA5-BTR","status":"paid","date":"2026-08-31","receivedOn":"2026-09-02","receivedQty":25,"paidOn":"2026-09-02","note":"<b>DATE CORRECTED TO 31 AUG on his word, 02 Sep.</b> Purchased 31 Aug; received and paid 2 Sep as booked. The lot was on the shelf when the 2 Sep count was taken. <b>THE LOT THE SHELF WAS MISSING.</b> 25 unit for RM1200, RM48 a unit, paid and received on 2 Sep. The v464 roll had the stated shelf below zero and said a lot since the 24 Aug count was unrecorded; this is it. The cost basis moves from RM50 to RM48. Dictated in a Code session on 2 Sep 2026 and folded on his word.","rid":"p019","mod":"corrected on 2026-09-02: date 2026-09-02 to 2026-08-31","amend":[{"date":"2026-08-31","kind":"Fulfilment","cash":1200,"kg":25,"note":"as booked"},{"date":"2026-09-02","kind":"Correction","cash":0,"kg":0,"note":"<b>DATE CORRECTED TO 31 AUG on his word, 02 Sep.</b> Purchased 31 Aug; received and paid 2 Sep as booked. The lot was on the shelf when the 2 Sep count was taken."}]}
 ];
 /* paidSplit: cash landed either side of the 28 Jul count; RM200 inside it, the rest after. Without the split the walk double-counted the RM200. */
 const sales=[
@@ -4507,7 +4507,7 @@ const CASH_COUNT_RETIRED={
 const ONE_OFFS=[
   {"id":"CM6-HCM","date":"2026-07-14","note":"One-off; RM104/unit is an outlier."}
 ];
-const QUEUE_COMMITTED="2026-09-02T08:10:45.706Z";
+const QUEUE_COMMITTED="2026-09-02T10:40:00.000Z";
 const PRICE_SET={
   "salt": {
     "prices": {},
@@ -5317,7 +5317,11 @@ const whiteboard=[
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{"v": "v477", "d": "02 Sep 2026", "t": "LEGIBILITY: A POINT UP ON EVERY FIGURE AND LABEL, A POINT AND MORE LEADING ON PROSE", "n": ["<b>HIS INSTRUCTION, 02 SEP 2026: consider easier legibility.</b> v472 set the identity's type at the design system's sizes, which were drawn for a brand page read at leisure, and the desk is read for a figure at a stall. So every mono figure and label steps up half a point to a point: KPI labels 10 to 11, their figures 22 to 24, table heads 10 to 11, tables 12.5 to 13, the rail's tabs 10.5 to 11.5, the parts strip 11 to 11.5, buttons 10.5 to 11, chips and tags half a point each, the ledger's summary figures 17 to 18, and nothing on a control or a label below 10 on a desk or 11 on the phone. Prose steps up a point with more leading: the body 14 to 15 at 1.6, leads and descriptions 13 to 14, insights 13.5 to 14.5, notes 13 to 14, the journal 13.5 to 14.5, actions' reasons and observations 12.5 to 13.5.", "<b>TRACKING EASES AND RUNNING PROSE LIGHTENS.</b> Mono caps at 0.14 to 0.22em read as a texture at a distance and as a puzzle up close; the longer labels drop to 0.08 to 0.14em, the eyebrow to 0.18em. Running prose, which the layer had set in mist light, moves one step lighter to #b4bcc2 through the desk's own --mut token, so a paragraph reads without leaning in while labels keep their mist.", "<b>THE ONE TABLE THAT MUST FIT IS HELD WHERE IT WAS MEASURED.</b> v393 measured the board at three pixels inside a 325px card at 375. It keeps 12.5px on the phone while every other table goes to 13; measured again after this fold: the board's width against its card, the page never wider than 375, every rail tab on one line and 44 tall with the menu open. The queue was asked first: nothing pending."]},
+const evolution=[{"v": "v479", "d": "02 Sep 2026", "t": "THE RETIRED PRICE LOCK NO LONGER BREAKS A RULE; A LOT THAT MOVES THE RATE IS A WATCH", "n": ["<b>HIS QUESTION, 02 SEP 2026: what is this rule that salt keeps on breaking.</b> The v233 boundary <b>Board unpriced</b> compared the locked pricing snapshot against the latest lot and raised a breach whenever a newer lot had landed, with the advice to re-lock on the Pricing tab. v280 switched the lock off on his instruction and the board has priced live off the latest lot ever since, but the check kept reading the dead snapshot: salt's lock still names the 28 Jul lot, so every lot since 6 Aug read as a breach, and Today carried a red row for a retired policy pointing at a control the cloud desk does not have.", "<b>GATED ON THE LOCK, AND WHAT THE RULE WAS FOR SURVIVES AS A WATCH.</b> With the lock on, the breach is exactly what it was. With it off, the desk raises a watch for the week after a lot lands that moves the rate, saying what moved: today, 25 unit at RM 48 landed 2 Sep, from RM 50. A purchase is the moment a price should move, and the row asks for the board to be read once rather than shouting until a snapshot nobody uses is rewritten. It prices nothing: the two rates are the lots' own.", "<b>PROVED RED FIRST.</b> The v478 master run in the same harness raises the breach; this one raises the watch with the move in it. The suite gains three assertions, the watch's expectation computed from the book and today's date rather than from the desk, so on a week with no lot the section proves the absence instead. The queue was asked first: nothing pending, nothing approved and uncommitted."]},
+
+{"v":"v478","d":"02 Sep 2026","t":"THE 25-UNIT LOT WAS PURCHASED ON 31 AUGUST, AND THE COUNT'S CAVEAT CLOSES","n":["<b>HIS CORRECTION, IN CHAT, 02 SEP 2026: the 25 unit lot was purchased on 31 August.</b> p019, SA5-BTR, 25 unit for RM1200, had been booked on 2 Sep from his dictation that morning. Its date moves to 31 Aug by a Correction drafted through the gate, approved on his word and folded here; the row keeps its receipt and payment on 2 Sep, because he stated the purchase date and nothing else, so the lot still lands on the shelf on the morning of the count. The drafter's flag is the one worth reading: money and stock had already moved against this row, so redating it moves when that counts as having happened, and here it moves the purchase into August's books and the receipt stays in September's.","<b>THE COUNT'S CAVEAT CLOSES.</b> v473 left open whether the lot was on the shelf when he counted 10.5 that morning. It was: bought two days before and received that morning, it had been stacked by the time the count was taken fifty seconds after the CF5-WM sale. So 10.5 is the shelf, the drift against the roll is a real 6.25 unit, and it books as shrinkage across every unit sold.","<b>TWO REPAIRS TO THE LAPTOP ROAD, found by driving it.</b> A draft staged from this machine carried no amends or amend_kind, so the fold read every laptop Correction as a nameless amendment and would have refused it; both inserts carry them now, as the Worker's does. And the INSERT went to wrangler on the command line, where Windows reads the | in an order key as a pipe and the staging failed with a shell error; writes go through a file now, which is safe because a write wants no rows back."]},
+
+{"v": "v477", "d": "02 Sep 2026", "t": "LEGIBILITY: A POINT UP ON EVERY FIGURE AND LABEL, A POINT AND MORE LEADING ON PROSE", "n": ["<b>HIS INSTRUCTION, 02 SEP 2026: consider easier legibility.</b> v472 set the identity's type at the design system's sizes, which were drawn for a brand page read at leisure, and the desk is read for a figure at a stall. So every mono figure and label steps up half a point to a point: KPI labels 10 to 11, their figures 22 to 24, table heads 10 to 11, tables 12.5 to 13, the rail's tabs 10.5 to 11.5, the parts strip 11 to 11.5, buttons 10.5 to 11, chips and tags half a point each, the ledger's summary figures 17 to 18, and nothing on a control or a label below 10 on a desk or 11 on the phone. Prose steps up a point with more leading: the body 14 to 15 at 1.6, leads and descriptions 13 to 14, insights 13.5 to 14.5, notes 13 to 14, the journal 13.5 to 14.5, actions' reasons and observations 12.5 to 13.5.", "<b>TRACKING EASES AND RUNNING PROSE LIGHTENS.</b> Mono caps at 0.14 to 0.22em read as a texture at a distance and as a puzzle up close; the longer labels drop to 0.08 to 0.14em, the eyebrow to 0.18em. Running prose, which the layer had set in mist light, moves one step lighter to #b4bcc2 through the desk's own --mut token, so a paragraph reads without leaning in while labels keep their mist.", "<b>THE ONE TABLE THAT MUST FIT IS HELD WHERE IT WAS MEASURED.</b> v393 measured the board at three pixels inside a 325px card at 375. It keeps 12.5px on the phone while every other table goes to 13; measured again after this fold: the board's width against its card, the page never wider than 375, every rail tab on one line and 44 tall with the menu open. The queue was asked first: nothing pending."]},
 
 {"v": "v476", "d": "02 Sep 2026", "t": "THE v281 COLOUR RULES AND THE RAIL'S OLD ACTIVE TAB ARE RETIRED", "n": ["<b>THE THIRD RETIREMENT FOLD, AND THE LAST OF THE MATERIAL LAYERS.</b> v281's colour rules go: the primary's gold glow and its hover, the active tab's cast, the ice glow on a meter's fill, the severity glow on an action's bar, the row hover, the accent focus ring with its colour-mix, and the fade colour on both scroll hints. With them, the base rail's active tab (the gradient fill, the dark count) and its hover, which the layer draws as glass with a brass hairline. What v281 owns and keeps is its motion: the section settle, the staggered children, the press transforms, the meters' fill-from-zero.", "<b>MEASURED:</b> 34 shots against v475, all the same within the noise floor; the base layer's hover and focus states are not in a still render and were read instead. The queue was asked first: nothing pending, nothing newly approved.", "<b>WHAT IS LEFT, AND IS NOT A MATERIAL LAYER.</b> The base layer still declares a colour inside most component rules (a tag's fill, a tier's glow, a badge's gradient), each overridden by the layer. They are the original desk, not a material pass, and retiring them is tidiness with a rising risk per rule; they are listed as a later fold rather than taken now."]},
 
@@ -5556,7 +5560,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='02 Sep 2026, 17:50 KL';
+const LAST_UPDATED='02 Sep 2026, 18:20 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -7506,13 +7510,28 @@ function boundaryScan(){
       'the shelf is what the ledger implies rather than what anyone has seen; a count would beat it'
         +(()=>{const o=Object.keys(PRODUCTS).find(k=>k!==PROD&&COUNT_ON&&COUNT_ON[k]);
                return o?', as it does for '+PRODUCTS[o].name.toLowerCase():'';})());
-  /* 2d. THE BOARD HAS REPRICED ITSELF (v233). The basis is frozen to a lot, so a purchase is
-     the one thing that moves it, and that should be a deliberate moment rather than a silent
-     shift. A newer lot than the locked one means the desk is quoting a basis nobody signed. */
-  (function(){const LK=priceLockState(PROD);if(LK.state!=='stale'||!LK.cur)return;
-    add('breach','Board unpriced',PRODUCTS[PROD].name,
-      units(LK.cur.qty)+' at '+fmt(LK.cur.rate)+' landed '+(LK.cur.date||'not dated'),
-      'the basis is locked to the '+units(LK.lock.lot.qty)+' lot of '+LK.lock.lot.date+'; every floor has moved with the new lot, so re-lock it on the Pricing tab');})();
+  /* 2d. THE BOARD HAS REPRICED ITSELF (v233), AND ONLY WHILE THE LOCK IS ON (v479). The basis
+     was a snapshot frozen to a lot, so a newer lot meant the desk was quoting a basis nobody had
+     signed, and the breach said re-lock it. v280 switched the lock off on his instruction and the
+     board reprices live from the latest lot, but this check kept reading the dead snapshot: salt's
+     lock still names the 28 Jul lot, every lot since was "newer", and Today carried a red row for a
+     policy that had been retired, pointing at a control the cloud desk does not have. Gated on the
+     lock now. What the rule was FOR survives as a watch: a purchase is the moment a price should
+     move, so for the week after a lot lands that moves the rate, the desk says what moved and asks
+     for the board to be read once. Nothing here prices anything: the rates are the lots' own. */
+  (function(){
+    if(PRICE_LOCK_ON){const LK=priceLockState(PROD);if(LK.state!=='stale'||!LK.cur)return;
+      add('breach','Board unpriced',PRODUCTS[PROD].name,
+        units(LK.cur.qty)+' at '+fmt(LK.cur.rate)+' landed '+(LK.cur.date||'not dated'),
+        'the basis is locked to the '+units(LK.lock.lot.qty)+' lot of '+LK.lock.lot.date+'; every floor has moved with the new lot, so re-lock it on the Pricing tab');return;}
+    const ls=pPurch(PROD).filter(x=>poLive(x)&&x.qty>0).sort((a,b)=>((a.receivedOn||a.date)<(b.receivedOn||b.date))?-1:1);
+    if(ls.length<2)return;
+    const L=ls[ls.length-1],Pv=ls[ls.length-2],lr=+(L.total/L.qty).toFixed(2),pr=+(Pv.total/Pv.qty).toFixed(2);
+    const when=L.receivedOn||L.date; if(!when||dAge(when)>7||Math.abs(lr-pr)<0.005)return;
+    add('watch','Cost basis moved',PRODUCTS[PROD].name,
+      units(L.qty)+' at '+fmt(lr)+' landed '+when+', from '+fmt(pr),
+      'the shelf cost moved from '+fmt(pr)+' to '+fmt(lr)+' a unit with this lot, and every floor and ask moved with it; a purchase is the moment a price should move, so read the board once');
+  })();
   // 3. you cannot owe out more than you hold
   const free=+(currentStock-defUnits).toFixed(2);
   /* v228: only where a shelf is meaningful. A product with no purchases on the book has

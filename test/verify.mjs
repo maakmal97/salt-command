@@ -5045,7 +5045,10 @@ section("v456: an undated row says so wherever its date is printed");
     ok(tabs.length >= 16 && (seen.receivables || "").length > 400, `every tab renders on the fixture book (${tabs.length} tabs)`);
     ok(count(seen.receivables || "", "not dated") >= 5, `the Order book says not dated on each undated row (${count(seen.receivables || "", "not dated")} cells, five fixtures)`);
     ok(undef.length === 0, `and no tab prints the word undefined: ${undef.join("; ") || "none"}`);
-    ok(count(seen.today || "", "landed not dated") === 1 && nd >= 14, `the lock rule on Today says so too, ${nd} cells across the desk`);
+    /* v479: the lock rule prints its undated lot only while the lock is on; with it off (v280) the
+       breach is gated and Today prints nothing for it, which is the point, and no undefined either */
+    const lockOn6 = String(w.eval("String(PRICE_LOCK_ON)")) === "true";
+    ok(count(seen.today || "", "landed not dated") === (lockOn6 ? 1 : 0) && nd >= 14, `the lock rule on Today ${lockOn6 ? "says so too" : "is gated with the lock off, and stays silent"}, ${nd} cells across the desk`);
   } finally { for (const f of [B6, M6]) { try { rm6(f); } catch (e) { /* best effort */ } } }
 }
 
@@ -5635,6 +5638,29 @@ section("v472: the desk in the Salt identity");
   ok(i512.length > 60000 && Buffer.compare(i512, im) === 0, "the home-screen icons are the brand plate, the same bytes for any and maskable");
 }
 
+section("v479: the retired price lock no longer breaks a rule; a lot that moves the rate is a watch");
+{
+  /* The v233 breach compared a lock the desk stopped pricing from at v280 against the latest lot,
+     so every salt lot since 6 Aug read as a breach. Gated on the lock now; the week after a lot
+     lands that moves the rate, a watch says what moved. Expected from the book, not from the desk. */
+  const { openMaster: om19 } = await import("../tools/payload.mjs");
+  const { w: w19 } = await om19();
+  w19.eval("setProd('salt');recompute();");
+  const rules19 = JSON.parse(String(w19.eval("JSON.stringify(boundaryScan().map(function(x){return [x.sev,x.rule,x.what||''];}))")));
+  ok(String(w19.eval("String(PRICE_LOCK_ON)")) === "false" && !rules19.some((r) => r[1] === "Board unpriced"), "with the lock off, Board unpriced never fires");
+  const bk19 = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const lots19 = bk19.purchases.filter((p) => !p.cancelled && !p.pending && !p.defaulted && (p.product || "salt") === "salt" && p.qty > 0)
+    .sort((a, b) => ((a.receivedOn || a.date) < (b.receivedOn || b.date) ? -1 : 1));
+  const L19 = lots19[lots19.length - 1], P19 = lots19[lots19.length - 2];
+  const rate = (p) => +(p.total / p.qty).toFixed(2);
+  const days19 = Math.round((Date.now() - new Date((L19.receivedOn || L19.date) + "T00:00:00Z").getTime()) / 86400000);
+  const expect19 = lots19.length >= 2 && days19 <= 7 && Math.abs(rate(L19) - rate(P19)) >= 0.005;
+  const watch19 = rules19.find((r) => r[1] === "Cost basis moved");
+  ok(expect19 ? (!!watch19 && watch19[0] === "watch" && watch19[2].includes("from RM")) : !watch19,
+    expect19 ? `a lot that moved the rate landed ${days19} day(s) ago, so the watch names it and what it moved from` : "no lot moved the rate this week, so no watch");
+  ok(!rules19.some((r) => r[1] === "Cost basis moved" && r[0] !== "watch"), "and the moved rate is never more than a watch");
+}
+
 /* ============ THE FLOOR (v431) ============
    Round eight made THIRTY assertions vanish and the suite still read a clean pass, because nothing
    compares the count: a section that stops running, or a block that returns early on a book that
@@ -5860,7 +5886,7 @@ section("Statements — the QR, the sort and the Salt identity");
     "src/statement-css.js is what tools/stmt-style.mjs produces (run --sync if this fails)");
 }
 
-const FLOOR_ASSERTIONS = 1235, FLOOR_SECTIONS = 96;   /* statements QR + password: 1239 everywhere, 1240 here */
+const FLOOR_ASSERTIONS = 1238, FLOOR_SECTIONS = 97;   /* statements QR + password over v479: 1242 everywhere, 1243 here */
 ok(pass + fail - offMachine >= FLOOR_ASSERTIONS,
   `the suite ran ${pass + fail - offMachine} assertions everywhere (${pass + fail} here, ${offMachine} of them needing files that live off this repo), below its floor of ${FLOOR_ASSERTIONS}: a section has stopped running`);
 ok(sections >= FLOOR_SECTIONS,

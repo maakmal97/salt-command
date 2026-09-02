@@ -21,10 +21,10 @@
  *   node tools/drafts.mjs --committed <id>...  mark rows as folded into the master
  *   --local                                    act on the local D1 rather than the remote one
  */
-import { readFileSync, existsSync } from "node:fs";
+import { readFileSync, existsSync, writeFileSync, mkdirSync, rmSync } from "node:fs";
 import { DATA_DIR } from "./book.mjs";
 import { spawnSync } from "node:child_process";
-import { resolve, dirname } from "node:path";
+import { resolve, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -46,6 +46,18 @@ function wrangler(args, { quiet = false } = {}) {
   const out = ((r.stdout || "") + (r.stderr || "")).trim();
   if (!quiet && out) console.log(out.split("\n").map((l) => "        " + l).join("\n"));
   return { code: r.status === null ? 1 : r.status, out };
+}
+/* WRITES GO THROUGH --file (v478). An INSERT carries the entry, the row and the reasoning as
+   JSON on the command line, and on Windows the shell reads a | in an order key as a pipe: the
+   first Correction staged from this machine failed with "'2026-09-02' is not recognized as an
+   internal or external command". A write wants no rows back, so the file form is safe for it. */
+function execFile(sql) {
+  const f = join(REPO, "test", "tmp", `d1-${Date.now()}.sql`);
+  mkdirSync(dirname(f), { recursive: true });
+  writeFileSync(f, sql + ";" + String.fromCharCode(10), "utf8");
+  const r = wrangler(["d1", "execute", DB, WHERE, "--json", "--file", JSON.stringify(f)], { quiet: true });
+  try { rmSync(f, { force: true }); } catch (e) { /* best effort */ }
+  return r;
 }
 /* Reads go through --command, not --file: given a file wrangler returns an execution summary
    rather than the rows, so a SELECT run that way looks successful and carries no data. The
@@ -118,13 +130,16 @@ function draft() {
   }
   const collection = d.collection === "purchases" ? "purchases" : "sales";
   const row = d.row;
-  const sql = "INSERT OR IGNORE INTO draft (id,status,collection,entry,row,reasoning,flags,party,product,date,qty,total,cost,drafter,drafted_at) VALUES ("
+  /* v478: amends and amend_kind travel with the draft, as they do from the Worker. Without them the
+     fold reads an amendment as nameless and refuses it, which is what the laptop road had done to
+     every Correction it staged. */
+  const sql = "INSERT OR IGNORE INTO draft (id,status,collection,entry,row,reasoning,flags,party,product,date,qty,total,cost,amends,amend_kind,drafter,drafted_at) VALUES ("
     + [q(d.id), "'pending'", q(collection), q(JSON.stringify(d.entry)), q(JSON.stringify(row)), q(d.reasoning),
        q(JSON.stringify(d.flags || [])), q(row.customer || row.supplier || null),
        q(row.product || (collection === "sales" ? "salt" : null)), q(row.date || null),
-       num(row.qty), num(row.total), num(row.cost), q(d.drafter || "laptop"), q(new Date().toISOString())].join(",")
+       num(row.qty), num(row.total), num(row.cost), q(d.amends || null), q(d.amendKind || null), q(d.drafter || "laptop"), q(new Date().toISOString())].join(",")
     + ")";
-  const r = wrangler(["d1", "execute", DB, WHERE, "--json", "--command", JSON.stringify(sql)], { quiet: true });
+  const r = execFile(sql);
   if (r.code !== 0) { fail("the insert failed:\n        " + r.out.split("\n").slice(0, 6).join("\n        ")); return; }
   ok("staged " + d.id + " for approval. It is PENDING until it is approved on the phone.");
 }
@@ -199,18 +214,18 @@ async function fromQueue() {
         const rsql = "INSERT OR REPLACE INTO refused (id,entry,why,party,source,seen_at) VALUES ("
           + [q(entry.at), q(JSON.stringify(entry)), q(d.skip), q(entry.party || null),
              q("laptop-queue"), q(new Date().toISOString())].join(",") + ")";
-        const rr = wrangler(["d1", "execute", DB, WHERE, "--json", "--command", JSON.stringify(rsql)], { quiet: true });
+        const rr = execFile(rsql);
         if (rr.code !== 0) fail("could not record the refusal of " + entry.at + "; it will not show on the phone");
         continue;
       }
       const row = d.row;
-      const sql = "INSERT OR IGNORE INTO draft (id,status,collection,entry,row,reasoning,flags,party,product,date,qty,total,cost,drafter,drafted_at) VALUES ("
+      const sql = "INSERT OR IGNORE INTO draft (id,status,collection,entry,row,reasoning,flags,party,product,date,qty,total,cost,amends,amend_kind,drafter,drafted_at) VALUES ("
         + [q(entry.at), "'pending'", q(d.collection), q(JSON.stringify(entry)), q(JSON.stringify(row)), q(d.reasoning),
            q(JSON.stringify(d.flags)), q(row.customer || row.supplier || null),
            q(row.product || (d.collection === "sales" ? "salt" : null)), q(row.date || null),
-           num(row.qty), num(row.total), num(row.cost), q("laptop-queue"), q(new Date().toISOString())].join(",")
+           num(row.qty), num(row.total), num(row.cost), q(d.amends || null), q(d.amendKind || null), q("laptop-queue"), q(new Date().toISOString())].join(",")
         + ")";
-      const r = wrangler(["d1", "execute", DB, WHERE, "--json", "--command", JSON.stringify(sql)], { quiet: true });
+      const r = execFile(sql);
       if (r.code !== 0) { fail("could not stage " + entry.at); continue; }
       already.add(entry.at);
       drafted++;
