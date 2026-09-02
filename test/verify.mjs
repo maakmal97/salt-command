@@ -8,7 +8,7 @@
 import { execFileSync } from "node:child_process";
 import { DATA_DIR, PROJECT_DIR } from "../tools/book.mjs";
 import { createHash } from "node:crypto";
-import { readFileSync, writeFileSync, mkdirSync, rmSync, existsSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync, rmSync, existsSync, readdirSync } from "node:fs";
 import { dirname, resolve, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import worker from "../src/worker.js";
@@ -49,7 +49,13 @@ const section = (s) => { sections++; console.log("\n" + s); };
 class KV {
   constructor() { this.m = new Map(); }
   async put(k, v) { this.m.set(k, v); }
-  async get(k) { return this.m.has(k) ? this.m.get(k) : null; }
+  /* Real KV takes a type argument and "json" parses for you. The statement route uses it, so
+     the stand-in has to as well, or a call that works here fails in production. */
+  async get(k, type) {
+    if (!this.m.has(k)) return null;
+    const raw = this.m.get(k);
+    return type === "json" ? JSON.parse(raw) : raw;
+  }
   async delete(k) { this.m.delete(k); }
   async list({ prefix = "" } = {}) {
     return { keys: [...this.m.keys()].filter(k => k.startsWith(prefix)).map(name => ({ name })), list_complete: true };
@@ -2726,7 +2732,7 @@ section("Monthly statements: one home, and the laws a sent document lives by (29
   rmSync(dir, { recursive: true, force: true });
   const quiet = console.log; console.log = () => { };
   let run;
-  try { run = makeStatements(dir, "2026-08-29"); } finally { console.log = quiet; }
+  try { run = await makeStatements(dir, "2026-08-29"); } finally { console.log = quiet; }
   rmSync(dir, { recursive: true, force: true });
   ok(run.made > 0 && run.made === run.sheets.length, `the tool builds (${run.made} statements)`);
 
@@ -4925,7 +4931,7 @@ section("v454: a cancelled paid order's money is stated on the statement");
   try {
     const m4 = await import(pu4(j4(REPO, "tools", "make_statements.mjs")).href + "?v454");
     const log4 = console.log; console.log = () => {};
-    try { m4.makeStatements(O4, "2026-09-01"); } finally { console.log = log4; }
+    try { await m4.makeStatements(O4, "2026-09-01"); } finally { console.log = log4; }
     html4 = rf4(j4(O4, fname4(who4)), "utf8");
     rev4 = rf4(j4(O4, "_review_2026-09-01.html"), "utf8");
     const oth4 = bk4.sales.find((x) => x.customer && x.customer !== who4 && x.date && !bk4.customerRefunds.some((r) => r.party === x.customer && !r.paidOn)).customer;
@@ -5666,7 +5672,221 @@ section("v479: the retired price lock no longer breaks a rule; a lot that moves 
    the live count was 879, so thirty-nine assertions could have vanished under a guard written to
    stop exactly that. The margin is four, which covers the book-dependent branches that legitimately
    skip; it is not room for a section to fall out. */
-const FLOOR_ASSERTIONS = 1191, FLOOR_SECTIONS = 94;   /* v479: 1195 everywhere, 1204 here */
+
+/* ---- QR: proved against an independent encoder ----------------------------------- *
+   The twelve hashes below were produced by the `qrcode` npm package, NOT by tools/qr.mjs,
+   and pasted in. That package is deliberately not a dependency of this repo (tools/qr.mjs
+   says why), so this is how its verdict is kept: the encoder was checked against it over
+   1,736 symbols covering every length from 1 to 213 bytes at all eight masks plus UTF-8, and
+   these twelve stay behind as the evidence. A mask is FORCED in each case, because the two
+   implementations legitimately differ on rule 4 of the mask penalty: this one follows the
+   specification (the smaller of the two neighbouring multiples of five), the package rounds
+   one way only, and on about one symbol in a hundred they choose differently. Both are valid,
+   since the format bits declare the mask. Forcing it isolates everything that must be
+   identical: the bit stream, the Reed-Solomon, the interleave, the function patterns and the
+   format bits. */
+section("QR — proved against an independent encoder");
+{
+  const { qrMatrix, qrSvg } = await import("../tools/qr.mjs");
+  const { createHash } = await import("node:crypto");
+  const GOLDEN = [
+    { t: "A", mask: 3, size: 21, sha: "2092585037e9da56" },
+    { t: "HELLO WORLD", mask: 0, size: 21, sha: "a28227450c6dd5ab" },
+    { t: "https://salt-command.qyts8mh72kyg.workers.dev/s/CE4-AD", mask: 2, size: 33, sha: "72c5b8c3b466568b" },
+    { t: "x".repeat(14), mask: 0, size: 21, sha: "759a539d1bf76152" },
+    { t: "y".repeat(40), mask: 1, size: 29, sha: "67e1e440f1a3a504" },
+    { t: "z".repeat(80), mask: 5, size: 37, sha: "18a14025bc6f6fe5" },
+    { t: "p".repeat(106), mask: 7, size: 41, sha: "6a0c32ba77fe649f" },
+    { t: "r".repeat(122), mask: 2, size: 45, sha: "136975006484508a" },
+    { t: "q".repeat(150), mask: 1, size: 49, sha: "a53f2dbaa0559886" },
+    { t: "s".repeat(180), mask: 4, size: 53, sha: "abd5791ac6d8e716" },
+    { t: "w".repeat(213), mask: 6, size: 57, sha: "737113d5b1cccf47" },
+    { t: "café ☕ RM12.50", mask: 3, size: 25, sha: "29650b02bfb80b35" }
+  ];
+  const bad = [];
+  for (const g of GOLDEN) {
+    const mm = qrMatrix(g.t, { mask: g.mask });
+    const sha = createHash("sha256").update(mm.map(r => r.join("")).join("")).digest("hex").slice(0, 16);
+    if (mm.length !== g.size || sha !== g.sha) bad.push(g.t.slice(0, 12) + " (v" + ((mm.length - 17) / 4) + ")");
+  }
+  ok(bad.length === 0, bad.length
+    ? "these symbols no longer match the reference encoder: " + bad.join(", ")
+    : "all twelve golden symbols match the reference encoder, versions 1 to 10");
+
+  const m = qrMatrix("https://salt-command.example/s/CX0-AA");
+  const n = m.length;
+  const finderAt = (r0, c0) => m[r0][c0] === 1 && m[r0 + 1][c0 + 1] === 0
+    && m[r0 + 2][c0 + 2] === 1 && m[r0 + 3][c0 + 3] === 1 && m[r0 + 6][c0 + 6] === 1;
+  ok(finderAt(0, 0) && finderAt(0, n - 7) && finderAt(n - 7, 0), "three finder patterns, one per corner");
+  ok(m[6].slice(8, n - 8).every((v, i) => v === (i % 2 === 0 ? 1 : 0)), "the horizontal timing pattern alternates");
+  ok(m[n - 8][8] === 1, "the dark module is set");
+  ok(m.every(r => r.every(v => v === 0 || v === 1)), "every module resolved, none left unplaced");
+
+  let threw = null;
+  try { qrMatrix("z".repeat(214)); } catch (e) { threw = e; }
+  ok(threw && /exceeds version 10/.test(threw.message), "a payload past version 10 is refused rather than truncated");
+
+  const svg = qrSvg("https://salt-command.example/s/CX0-AA", { size: 120 });
+  ok(/^<svg [^>]*viewBox="0 0 \d+ \d+"/.test(svg) && svg.includes('width="120"'),
+    "the SVG carries a viewBox and the asked-for size");
+  ok(!/<script|href=|xlink|<image/i.test(svg), "the SVG is inert: no script, nothing external");
+  ok((svg.match(/<path/g) || []).length === 1, "one path for the whole symbol");
+
+  /* The matrix being right does not make the DRAWING right: qrSvg emits one run-length path
+     and an off-by-one there would produce a clean-looking symbol encoding something else. */
+  {
+    const quiet = 4, back = Array.from({ length: n }, () => new Array(n).fill(0));
+    const d = (/ d="([^"]*)"/.exec(svg) || [, ""])[1];
+    const re = /M(\d+) (\d+)h(\d+)v1h-\3z/g;
+    let hit, cells = 0;
+    while ((hit = re.exec(d))) {
+      const c0 = +hit[1] - quiet, r0 = +hit[2] - quiet, w = +hit[3];
+      for (let i = 0; i < w; i++) { back[r0][c0 + i] = 1; cells++; }
+    }
+    ok(cells > 0 && back.every((row, r) => row.every((v, c) => v === m[r][c])),
+      "the drawn path re-reads as exactly the matrix it was drawn from");
+    ok((d.match(/M/g) || []).length < cells, "and it is run-length encoded, not one command per module");
+  }
+}
+
+/* ---- the statement password, the envelope and the Worker route ------------------- */
+section("Statements — the password, the envelope and the Worker route");
+{
+  const C = await import("../tools/stmt-crypto.mjs");
+  const pw = C.newPassword();
+  ok(/^[23456789abcdefghjkmnpqrstvwxyz]{4}(-[23456789abcdefghjkmnpqrstvwxyz]{4}){3}$/.test(pw),
+    "a password is four readable groups of four, with no character mistaken for another");
+  ok(new Set(Array.from({ length: 40 }, () => C.newPassword())).size === 40, "and each one is fresh");
+
+  const env1 = await C.encryptText(pw, '<div class="w">CX0-AA owes RM180</div>');
+  ok(C.isEnvelope(env1) && env1.v === 1, "the envelope is the vault's shape, {v,salt,iv,ct}");
+  ok(!JSON.stringify(env1).includes("CX0-AA") && !JSON.stringify(env1).includes(pw),
+    "and carries neither the statement nor the password in the clear");
+  ok((await C.decryptText(pw, env1)).includes("CX0-AA"), "the right password opens it");
+  let badPw = false;
+  try { await C.decryptText(C.newPassword(), env1); } catch (e) { badPw = true; }
+  ok(badPw, "a wrong password fails at the decryption, not merely at the gate");
+
+  const ver = await C.makeVerifier(pw);
+  ok(await C.checkVerifier(pw, ver), "the verifier accepts the password it was made from");
+  ok(!(await C.checkVerifier(C.newPassword(), ver)), "and rejects any other");
+  ok(ver.rounds === C.VERIFIER_ROUNDS && ver.rounds < C.PBKDF2_ROUNDS,
+    "its round count travels with it and sits below the encryption key's, deliberately");
+  ok(!JSON.stringify(ver).includes(pw), "the verifier does not contain the password");
+
+  const kv = new KV();
+  const rec = { code: "CX0-AA", month: "2026-09", issued: "2026-09-01", verifier: ver, env: env1 };
+  await kv.put("stmt:CX0-AA", JSON.stringify(rec));
+  const wenv = { SALT_QUEUE: kv, ASSETS: assets, REQUIRE_ACCESS: "0", SALT_WRITE_KEY: "k", SALT_STMT_MASTER: "master-pass" };
+  const post = (code, body) => req("/s/" + code, {
+    method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body)
+  });
+
+  let r = await worker.fetch(req("/s/CX0-AA"), wenv);
+  const html = await r.text();
+  ok(r.status === 200 && /text\/html/.test(r.headers.get("content-type")), "GET /s/<code> serves the unlock page");
+  ok(html.includes("CX0-AA") && !html.includes(pw) && !html.includes(env1.ct),
+    "the page names the account but carries neither the password nor the ciphertext");
+  ok(/nonce-/.test(r.headers.get("content-security-policy") || "")
+    && !/unsafe-inline/.test(r.headers.get("content-security-policy") || ""),
+    "and declares a nonce CSP rather than allowing inline script wholesale");
+  ok((r.headers.get("x-robots-tag") || "").includes("noindex")
+    && (r.headers.get("cache-control") || "").includes("no-store"), "it is not indexed and not cached");
+
+  r = await worker.fetch(post("CX0-AA", { password: pw }), wenv);
+  const j = await r.json();
+  ok(r.status === 200 && j.ok === true && j.env && j.env.ct === env1.ct, "the right password returns the envelope");
+
+  r = await worker.fetch(post("CX0-AA", { password: "wrong-pass-here" }), wenv);
+  ok(r.status === 401 && !(await r.json()).env, "a wrong password returns 401 and no envelope");
+
+  r = await worker.fetch(post("CX0-AA", { master: "master-pass" }), wenv);
+  ok(r.status === 200 && (await r.json()).ok === true, "the master password is the owner's override");
+  r = await worker.fetch(post("CX0-AA", { master: "not-the-master" }), wenv);
+  ok(r.status === 401, "and a wrong master password is refused like any other");
+
+  /* An unpublished account must answer exactly as an unknown one, or the route becomes a way
+     to enumerate the roster. */
+  const r404 = await worker.fetch(post("CZ9-ZZ", { password: pw }), wenv);
+  const rBad = await worker.fetch(post("CX0-AA-NOPE", { password: pw }), wenv);
+  ok(r404.status === 404 && rBad.status === 404, "an unpublished account and an unknown one answer alike");
+
+  const kv2 = new KV();
+  await kv2.put("stmt:CX0-AA", JSON.stringify(rec));
+  const wenv2 = Object.assign({}, wenv, { SALT_QUEUE: kv2 });
+  let locked = 0;
+  for (let i = 0; i < 12; i++) {
+    const rr = await worker.fetch(post("CX0-AA", { password: "wrong-pass-here" }), wenv2);
+    if (rr.status === 429) locked++;
+  }
+  ok(locked >= 2, "ten failed attempts lock the account, so a guessable code is not a grindable one");
+  ok((await worker.fetch(post("CX0-AA", { password: pw }), wenv2)).status === 429,
+    "and the lock holds even against the right password, for the fifteen minutes");
+
+  ok(JSON.parse(await kv.get("stmtseen:CX0-AA")).opens >= 1,
+    "an open is recorded, so he can tell whether a statement was ever read");
+}
+
+/* ---- the statement in the Salt identity, and what the QR carries ----------------- */
+section("Statements — the QR, the sort and the Salt identity");
+{
+  const { statementCss, saltTokens } = await import("../tools/stmt-style.mjs");
+  const css = statementCss();
+  const dsRoot = saltTokens();
+  ok(dsRoot.includes("--salt-brass") && dsRoot.includes("--salt-verdigris"),
+    "the tokens are read out of design/salt-ds.css rather than transcribed");
+  ok(css.startsWith(dsRoot), "and the statement's stylesheet is built on that exact block");
+  /* v472 put the identity on the desk and left the statement in the old scheme. These are the
+     hexes it used to carry; none may come back, or the one document a customer sees is again
+     the only surface not drawn in the product's material. */
+  for (const dead of ["#0f1115", "#2a3140", "#ffc75a", "#7fd7e8", "#eef1f6", "#6b7688"]) {
+    ok(!css.includes(dead), `the pre-identity colour ${dead} is gone from the statement`);
+  }
+  ok(/--salt-font-mono/.test(css) && /--salt-font-display/.test(css),
+    "figures are mono and sentences are the display face, as the identity requires");
+
+  /* UNDATED ROWS SORT LAST. Three rows on the book carry no date; comparing them by date
+     yields NaN, which makes the comparator inconsistent and leaves their position to the
+     sort implementation, so the same book could print two orderings. */
+  const { stmtRows } = await import("../tools/make_statements.mjs");
+  const bookS = JSON.parse(readFileSync(resolve(REPO, "ledger", "book.json"), "utf8"));
+  const undatedParties = [...new Set(bookS.sales.filter(x => !x.date).map(x => x.customer))].filter(Boolean);
+  ok(undatedParties.length > 0, `the book still carries undated rows (${undatedParties.length} parties), so this is not a dead check`);
+  let sortedLast = true;
+  for (const party of undatedParties) {
+    const rows = stmtRows(party, { from: null, to: "2026-09-01", completed: true, open: true, pending: true });
+    const firstUndated = rows.findIndex(r => !r.date);
+    if (firstUndated >= 0 && rows.slice(firstUndated).some(r => r.date)) sortedLast = false;
+  }
+  ok(sortedLast, "an undated row sorts after every dated one, rather than wherever the engine leaves it");
+  ok(!stmtRows(undatedParties[0], { from: null, to: "2026-09-01", completed: true, open: true, pending: true })
+    .some(r => String(r.date) === "Invalid Date"), "and no row carries an unparseable date");
+
+  /* THE WORKER HAS NO FILESYSTEM, and the first cut of the unlock page forgot it:
+     src/statement-page.js imported tools/stmt-style.mjs, which reads design/salt-ds.css, so the
+     bundle pulled in node:fs and the Cloudflare build failed. Had it bundled, readFileSync
+     would have thrown on every /s/ request instead. This is the guard: nothing under src/ may
+     reach for a node builtin or into tools/, whatever it needs. */
+  const srcFiles = readdirSync(join(REPO, "src")).filter(f => f.endsWith(".js"));
+  const reaching = [];
+  for (const f of srcFiles) {
+    const t = readFileSync(join(REPO, "src", f), "utf8");
+    for (const m of t.matchAll(/^\s*import\s[^;]*?from\s+["']([^"']+)["']/gm)) {
+      if (/^node:/.test(m[1]) || m[1].includes("../tools/")) reaching.push(f + " -> " + m[1]);
+    }
+  }
+  ok(reaching.length === 0, reaching.length
+    ? "these Worker sources reach outside the runtime: " + reaching.join(", ")
+    : `all ${srcFiles.length} Worker sources import only from within src/`);
+
+  /* and the generated stylesheet is the one the module produces, or a design retune silently
+     leaves the page a customer opens on the old material */
+  const genCss = (await import("../src/statement-css.js")).STATEMENT_CSS;
+  ok(genCss === statementCss(),
+    "src/statement-css.js is what tools/stmt-style.mjs produces (run --sync if this fails)");
+}
+
+const FLOOR_ASSERTIONS = 1238, FLOOR_SECTIONS = 97;   /* statements QR + password over v479: 1242 everywhere, 1243 here */
 ok(pass + fail - offMachine >= FLOOR_ASSERTIONS,
   `the suite ran ${pass + fail - offMachine} assertions everywhere (${pass + fail} here, ${offMachine} of them needing files that live off this repo), below its floor of ${FLOOR_ASSERTIONS}: a section has stopped running`);
 ok(sections >= FLOOR_SECTIONS,
