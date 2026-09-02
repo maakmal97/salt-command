@@ -4318,6 +4318,9 @@ section("v443: a cancelled order owes no salt, and the desk does not buy to cove
        pending shape this check reasons about and the shelf is pinned at the 0.25 it assumed. */
     for (const k of ["amend", "date", "deliveredOn", "paidOn"]) delete target[k];
     bkD.STATED_STOCK = 0.25;
+    /* v467: CE4-CHE's half unit was handed over on 30 Aug, so the deferral this check reads is put
+       back on the fixture copy: the check is about a cancelled order not counting, not about today. */
+    { const che = bkD.sales.find((x) => x.rid === "s093"); che.deliveredQty = 5.25; che.amend = (che.amend || []).filter((x) => x.date !== "2026-08-30"); }
     const BD = jD(REPO, "test", ".v443.json"), MD = jD(REPO, "test", ".v443.html");
     wfD(BD, JSON.stringify(bkD, null, 1));
     wfD(MD, rfD(jD(REPO, "master", "salt_command.html"), "utf8"));

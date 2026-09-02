@@ -1,0 +1,491 @@
+{
+ "ok": true,
+ "count": 9,
+ "approved": [
+  {
+   "id": "2026-09-02T04:10:01.000Z",
+   "collection": "sales",
+   "row": {
+    "customer": "CN6-WM",
+    "qty": 1,
+    "total": 110,
+    "cost": 50,
+    "cash": 0,
+    "handover": "delivered",
+    "date": "2026-08-30",
+    "deliveredQty": 1,
+    "deliveredOn": "2026-08-30"
+   },
+   "reasoning": "Sold 1 unit of salt to CN6-WM for RM 110, RM 110/unit. Costed at RM 50/unit from the desk's own shelf cost, so RM 60 on the order at 54.5%. RM 0 of RM 110 paid and delivered in full on 2026-08-30. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [
+    "CN6-WM typically pays about RM 90/unit for salt across 4 orders; this one is RM 110, 22.2% above that.",
+    "This is an ADVANCE: 1 unit goes out with RM 110 unpaid. Check it against CN6-WM's credit cap."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-09-02T04:10:01.000Z",
+    "type": "SELL",
+    "party": "CN6-WM",
+    "qty": 1,
+    "total": 110,
+    "status": "unpaid",
+    "raw": "Sell 1 unit to CN6-WM for RM 110 on 2026-08-30, RM 0 cash, 1 unit moved (advanced delivery) -, Advance. Dictated in a Code session 02 Sep 2026.",
+    "payload": {
+     "mode": "new",
+     "product": "salt",
+     "direction": "SELL",
+     "party": "CN6-WM",
+     "newId": null,
+     "date": "2026-08-30",
+     "qty": 1,
+     "total": 110,
+     "cash": 0,
+     "kg": 1,
+     "assoc": null,
+     "stream": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": null,
+     "handover": "delivered"
+    }
+   },
+   "decidedAt": "2026-09-02T03:50:52.280Z",
+   "decidedBy": "owner, dictated in a Code session 02 Sep 2026"
+  },
+  {
+   "id": "2026-09-02T04:10:02.000Z",
+   "collection": "sales",
+   "row": {
+    "qty": 5.75,
+    "total": 500,
+    "cash": 500,
+    "date": "2026-08-18",
+    "customer": "CE4-CHE"
+   },
+   "reasoning": "Fulfilment against CE4-CHE's order of 5.75 unit for RM 500 agreed 2026-08-18. RM 0 and 0.5 unit move on 2026-08-30, against RM 0 and 0.5 unit outstanding. Leaves RM 0 and 0 unit outstanding. The row itself is NOT recomputed here: ovAmend in the master applies it, so there is one definition of what a fulfilment does rather than two.",
+   "flags": [
+    "This SETTLES the order in full: nothing is left outstanding after it."
+   ],
+   "amends": "CE4-CHE|2026-08-18|500",
+   "amendKind": "Fulfilment",
+   "entry": {
+    "at": "2026-09-02T04:10:02.000Z",
+    "type": "AMEND",
+    "party": "CE4-CHE",
+    "qty": 0.5,
+    "total": 0,
+    "status": "amend",
+    "raw": "Fulfilment on CE4-CHE s093: the 0.5 unit balance of the deferred delivery handed over on 2026-08-30, completing the sale. Dictated in a Code session 02 Sep 2026.",
+    "payload": {
+     "mode": "amend",
+     "kind": "Fulfilment",
+     "direction": "SELL",
+     "product": "salt",
+     "rid": "s093",
+     "orderKey": "CE4-CHE|2026-08-18|500",
+     "party": "CE4-CHE",
+     "date": "2026-08-30",
+     "cash": 0,
+     "kg": 0.5,
+     "note": null
+    }
+   },
+   "decidedAt": "2026-09-02T03:50:52.280Z",
+   "decidedBy": "owner, dictated in a Code session 02 Sep 2026"
+  },
+  {
+   "id": "2026-09-02T04:10:03.000Z",
+   "collection": "sales",
+   "row": {
+    "rid": "s120",
+    "qty": 1,
+    "total": 135,
+    "cash": 135,
+    "date": "2026-09-01",
+    "product": "salt",
+    "changes": [
+     {
+      "field": "date",
+      "from": "2026-09-01",
+      "to": "2026-08-31"
+     },
+     {
+      "field": "deliveredOn",
+      "from": "2026-09-01",
+      "to": "2026-08-31"
+     },
+     {
+      "field": "paidOn",
+      "from": "2026-09-01",
+      "to": "2026-08-31"
+     }
+    ],
+    "customer": "CA7-JTR"
+   },
+   "reasoning": "Correction against CA7-JTR's order of 1 unit for RM 135 dated 2026-09-01 (s120). Sets date from 2026-09-01 to 2026-08-31, deliveredOn from 2026-09-01 to 2026-08-31, paidOn from 2026-09-01 to 2026-08-31. It moves no cash and no stock: it changes what the row says about itself. The row is not rewritten here. The fold applies the patch, so there is one definition of what a correction does rather than two.",
+   "flags": [
+    "Money or stock has already moved against this row, so redating it moves when that counts as having happened."
+   ],
+   "amends": "s120",
+   "amendKind": "Correction",
+   "entry": {
+    "at": "2026-09-02T04:10:03.000Z",
+    "type": "AMEND",
+    "party": "CA7-JTR",
+    "qty": null,
+    "total": null,
+    "status": "amend",
+    "raw": "Correction on CA7-JTR s120: dated 2026-08-31, not 2026-09-01. Dictated in a Code session 02 Sep 2026.",
+    "payload": {
+     "mode": "amend",
+     "kind": "Correction",
+     "direction": "SELL",
+     "rid": "s120",
+     "party": "CA7-JTR",
+     "date": "2026-09-02",
+     "fields": {
+      "date": "2026-08-31",
+      "deliveredOn": "2026-08-31",
+      "paidOn": "2026-08-31"
+     }
+    }
+   },
+   "decidedAt": "2026-09-02T03:50:52.280Z",
+   "decidedBy": "owner, dictated in a Code session 02 Sep 2026"
+  },
+  {
+   "id": "2026-09-02T04:10:04.000Z",
+   "collection": "sales",
+   "row": {
+    "rid": "s121",
+    "qty": 5,
+    "total": 65,
+    "cash": 65,
+    "date": "2026-09-01",
+    "product": "oil",
+    "changes": [
+     {
+      "field": "date",
+      "from": "2026-09-01",
+      "to": "2026-08-31"
+     },
+     {
+      "field": "deliveredOn",
+      "from": "2026-09-01",
+      "to": "2026-08-31"
+     },
+     {
+      "field": "paidOn",
+      "from": "2026-09-01",
+      "to": "2026-08-31"
+     }
+    ],
+    "customer": "CA7-JTR"
+   },
+   "reasoning": "Correction against CA7-JTR's order of 5 unit for RM 65 dated 2026-09-01 (s121). Sets date from 2026-09-01 to 2026-08-31, deliveredOn from 2026-09-01 to 2026-08-31, paidOn from 2026-09-01 to 2026-08-31. It moves no cash and no stock: it changes what the row says about itself. The row is not rewritten here. The fold applies the patch, so there is one definition of what a correction does rather than two.",
+   "flags": [
+    "Money or stock has already moved against this row, so redating it moves when that counts as having happened.",
+    "RM 65 is RM 11.29 under the DELIVERED floor of RM 76.29, and RM 1.29 under the COLLECTED floor of RM 66.29 as well. The delivered floor is what the order costs to take out, the goods, the run out, and RM 25 for your time, with nothing above them, so this covers itself neither way."
+   ],
+   "amends": "s121",
+   "amendKind": "Correction",
+   "entry": {
+    "at": "2026-09-02T04:10:04.000Z",
+    "type": "AMEND",
+    "party": "CA7-JTR",
+    "qty": null,
+    "total": null,
+    "status": "amend",
+    "raw": "Correction on CA7-JTR s121: dated 2026-08-31, not 2026-09-01. Dictated in a Code session 02 Sep 2026.",
+    "payload": {
+     "mode": "amend",
+     "kind": "Correction",
+     "direction": "SELL",
+     "rid": "s121",
+     "party": "CA7-JTR",
+     "date": "2026-09-02",
+     "fields": {
+      "date": "2026-08-31",
+      "deliveredOn": "2026-08-31",
+      "paidOn": "2026-08-31"
+     }
+    }
+   },
+   "decidedAt": "2026-09-02T03:50:52.280Z",
+   "decidedBy": "owner, dictated in a Code session 02 Sep 2026"
+  },
+  {
+   "id": "2026-09-02T04:10:05.000Z",
+   "collection": "sales",
+   "row": {
+    "rid": "s122",
+    "qty": 6,
+    "total": 440,
+    "cash": 440,
+    "date": "2026-09-01",
+    "product": "salt",
+    "changes": [
+     {
+      "field": "date",
+      "from": "2026-09-01",
+      "to": "2026-08-31"
+     },
+     {
+      "field": "deliveredOn",
+      "from": "2026-09-01",
+      "to": "2026-08-31"
+     },
+     {
+      "field": "paidOn",
+      "from": "2026-09-01",
+      "to": "2026-08-31"
+     }
+    ],
+    "customer": "CK4-SEN"
+   },
+   "reasoning": "Correction against CK4-SEN's order of 6 unit for RM 440 dated 2026-09-01 (s122). Sets date from 2026-09-01 to 2026-08-31, deliveredOn from 2026-09-01 to 2026-08-31, paidOn from 2026-09-01 to 2026-08-31. It moves no cash and no stock: it changes what the row says about itself. The row is not rewritten here. The fold applies the patch, so there is one definition of what a correction does rather than two.",
+   "flags": [
+    "Money or stock has already moved against this row, so redating it moves when that counts as having happened."
+   ],
+   "amends": "s122",
+   "amendKind": "Correction",
+   "entry": {
+    "at": "2026-09-02T04:10:05.000Z",
+    "type": "AMEND",
+    "party": "CK4-SEN",
+    "qty": null,
+    "total": null,
+    "status": "amend",
+    "raw": "Correction on CK4-SEN s122: dated 2026-08-31, not 2026-09-01. Dictated in a Code session 02 Sep 2026.",
+    "payload": {
+     "mode": "amend",
+     "kind": "Correction",
+     "direction": "SELL",
+     "rid": "s122",
+     "party": "CK4-SEN",
+     "date": "2026-09-02",
+     "fields": {
+      "date": "2026-08-31",
+      "deliveredOn": "2026-08-31",
+      "paidOn": "2026-08-31"
+     }
+    }
+   },
+   "decidedAt": "2026-09-02T03:50:52.280Z",
+   "decidedBy": "owner, dictated in a Code session 02 Sep 2026"
+  },
+  {
+   "id": "2026-09-02T04:10:06.000Z",
+   "collection": "sales",
+   "row": {
+    "rid": "s123",
+    "qty": 1,
+    "total": 80,
+    "cash": 0,
+    "date": "2026-09-01",
+    "product": "salt",
+    "changes": [
+     {
+      "field": "date",
+      "from": "2026-09-01",
+      "to": "2026-08-31"
+     },
+     {
+      "field": "deliveredOn",
+      "from": "2026-09-01",
+      "to": "2026-08-31"
+     }
+    ],
+    "customer": "CR3-DAM"
+   },
+   "reasoning": "Correction against CR3-DAM's order of 1 unit for RM 80 dated 2026-09-01 (s123). Sets date from 2026-09-01 to 2026-08-31, deliveredOn from 2026-09-01 to 2026-08-31. It moves no cash and no stock: it changes what the row says about itself. The row is not rewritten here. The fold applies the patch, so there is one definition of what a correction does rather than two.",
+   "flags": [
+    "Money or stock has already moved against this row, so redating it moves when that counts as having happened.",
+    "RM 80 is RM 7.26 under the DELIVERED floor of RM 87.26, which is what the order costs to take out: the goods, the run out, and RM 25 for your time, with nothing above them. It clears the COLLECTED floor of RM 77.26, so it covers itself if they come to you and not if you drive it.",
+    "This is an ADVANCE: 1 unit goes out with RM 80 unpaid. Check it against CR3-DAM's credit cap."
+   ],
+   "amends": "s123",
+   "amendKind": "Correction",
+   "entry": {
+    "at": "2026-09-02T04:10:06.000Z",
+    "type": "AMEND",
+    "party": "CR3-DAM",
+    "qty": null,
+    "total": null,
+    "status": "amend",
+    "raw": "Correction on CR3-DAM s123: dated 2026-08-31, not 2026-09-01. Dictated in a Code session 02 Sep 2026.",
+    "payload": {
+     "mode": "amend",
+     "kind": "Correction",
+     "direction": "SELL",
+     "rid": "s123",
+     "party": "CR3-DAM",
+     "date": "2026-09-02",
+     "fields": {
+      "date": "2026-08-31",
+      "deliveredOn": "2026-08-31"
+     }
+    }
+   },
+   "decidedAt": "2026-09-02T03:50:52.280Z",
+   "decidedBy": "owner, dictated in a Code session 02 Sep 2026"
+  },
+  {
+   "id": "2026-09-02T04:10:07.000Z",
+   "collection": "sales",
+   "row": {
+    "customer": "CI4-OKR",
+    "qty": 3,
+    "total": 290,
+    "cost": 50,
+    "cash": 290,
+    "handover": "collected",
+    "date": "2026-09-02",
+    "deliveredQty": 3,
+    "deliveredOn": "2026-09-02",
+    "paidOn": "2026-09-02"
+   },
+   "reasoning": "Sold 3 unit of salt to CI4-OKR for RM 290, RM 96.67/unit. Costed at RM 50/unit from the desk's own shelf cost, so RM 140 on the order at 48.3%. Paid in full and delivered in full on 2026-09-02. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-09-02T04:10:07.000Z",
+    "type": "SELL",
+    "party": "CI4-OKR",
+    "qty": 3,
+    "total": 290,
+    "status": "paid",
+    "raw": "Sell 3 unit to CI4-OKR for RM 290 on 2026-09-02, RM 290 cash, 3 unit moved -> Completed. Dictated in a Code session 02 Sep 2026.",
+    "payload": {
+     "mode": "new",
+     "product": "salt",
+     "direction": "SELL",
+     "party": "CI4-OKR",
+     "newId": null,
+     "date": "2026-09-02",
+     "qty": 3,
+     "total": 290,
+     "cash": 290,
+     "kg": 3,
+     "assoc": null,
+     "stream": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": null,
+     "handover": "collected"
+    }
+   },
+   "decidedAt": "2026-09-02T03:50:52.280Z",
+   "decidedBy": "owner, dictated in a Code session 02 Sep 2026"
+  },
+  {
+   "id": "2026-09-02T04:10:08.000Z",
+   "collection": "purchases",
+   "row": {
+    "qty": 25,
+    "total": 1200,
+    "cash": 1200,
+    "supplier": "SA5-BTR",
+    "status": "paid",
+    "date": "2026-09-02",
+    "receivedOn": "2026-09-02",
+    "receivedQty": 25,
+    "paidOn": "2026-09-02"
+   },
+   "reasoning": "Bought 25 unit of salt from SA5-BTR for RM 1200, RM 48/unit. Paid in full and delivered in full on 2026-09-02. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-09-02T04:10:08.000Z",
+    "type": "BUY",
+    "party": "SA5-BTR",
+    "qty": 25,
+    "total": 1200,
+    "status": "paid",
+    "raw": "Buy 25 unit from SA5-BTR for RM 1200 on 2026-09-02, RM 1200 cash, 25 unit received. Dictated in a Code session 02 Sep 2026.",
+    "payload": {
+     "mode": "new",
+     "product": "salt",
+     "direction": "BUY",
+     "party": "SA5-BTR",
+     "newId": null,
+     "date": "2026-09-02",
+     "qty": 25,
+     "total": 1200,
+     "cash": 1200,
+     "kg": 25,
+     "assoc": null,
+     "stream": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": null,
+     "handover": null
+    }
+   },
+   "decidedAt": "2026-09-02T03:50:52.280Z",
+   "decidedBy": "owner, dictated in a Code session 02 Sep 2026"
+  },
+  {
+   "id": "2026-09-02T04:10:09.000Z",
+   "collection": "sales",
+   "row": {
+    "customer": "CE4-CHE",
+    "qty": 2,
+    "total": 215,
+    "cost": 50,
+    "cash": 215,
+    "handover": "collected",
+    "date": "2026-09-02",
+    "deliveredQty": 2,
+    "deliveredOn": "2026-09-02",
+    "paidOn": "2026-09-02"
+   },
+   "reasoning": "Sold 2 unit of salt to CE4-CHE for RM 215, RM 107.5/unit. Costed at RM 50/unit from the desk's own shelf cost, so RM 115 on the order at 53.5%. Paid in full and delivered in full on 2026-09-02. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [
+    "CE4-CHE typically pays about RM 92/unit for salt across 6 orders; this one is RM 107.5, 16.8% above that."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-09-02T04:10:09.000Z",
+    "type": "SELL",
+    "party": "CE4-CHE",
+    "qty": 2,
+    "total": 215,
+    "status": "paid",
+    "raw": "Sell 2 unit to CE4-CHE for RM 215 on 2026-09-02, RM 215 cash, 2 unit moved -> Completed. Dictated in a Code session 02 Sep 2026.",
+    "payload": {
+     "mode": "new",
+     "product": "salt",
+     "direction": "SELL",
+     "party": "CE4-CHE",
+     "newId": null,
+     "date": "2026-09-02",
+     "qty": 2,
+     "total": 215,
+     "cash": 215,
+     "kg": 2,
+     "assoc": null,
+     "stream": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": null,
+     "handover": "collected"
+    }
+   },
+   "decidedAt": "2026-09-02T03:50:52.280Z",
+   "decidedBy": "owner, dictated in a Code session 02 Sep 2026"
+  }
+ ]
+}
