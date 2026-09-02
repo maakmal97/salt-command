@@ -5629,6 +5629,29 @@ section("v472: the desk in the Salt identity");
   ok(i512.length > 60000 && Buffer.compare(i512, im) === 0, "the home-screen icons are the brand plate, the same bytes for any and maskable");
 }
 
+section("v479: the retired price lock no longer breaks a rule; a lot that moves the rate is a watch");
+{
+  /* The v233 breach compared a lock the desk stopped pricing from at v280 against the latest lot,
+     so every salt lot since 6 Aug read as a breach. Gated on the lock now; the week after a lot
+     lands that moves the rate, a watch says what moved. Expected from the book, not from the desk. */
+  const { openMaster: om19 } = await import("../tools/payload.mjs");
+  const { w: w19 } = await om19();
+  w19.eval("setProd('salt');recompute();");
+  const rules19 = JSON.parse(String(w19.eval("JSON.stringify(boundaryScan().map(function(x){return [x.sev,x.rule,x.what||''];}))")));
+  ok(String(w19.eval("String(PRICE_LOCK_ON)")) === "false" && !rules19.some((r) => r[1] === "Board unpriced"), "with the lock off, Board unpriced never fires");
+  const bk19 = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const lots19 = bk19.purchases.filter((p) => !p.cancelled && !p.pending && !p.defaulted && (p.product || "salt") === "salt" && p.qty > 0)
+    .sort((a, b) => ((a.receivedOn || a.date) < (b.receivedOn || b.date) ? -1 : 1));
+  const L19 = lots19[lots19.length - 1], P19 = lots19[lots19.length - 2];
+  const rate = (p) => +(p.total / p.qty).toFixed(2);
+  const days19 = Math.round((Date.now() - new Date((L19.receivedOn || L19.date) + "T00:00:00Z").getTime()) / 86400000);
+  const expect19 = lots19.length >= 2 && days19 <= 7 && Math.abs(rate(L19) - rate(P19)) >= 0.005;
+  const watch19 = rules19.find((r) => r[1] === "Cost basis moved");
+  ok(expect19 ? (!!watch19 && watch19[0] === "watch" && watch19[2].includes("from RM")) : !watch19,
+    expect19 ? `a lot that moved the rate landed ${days19} day(s) ago, so the watch names it and what it moved from` : "no lot moved the rate this week, so no watch");
+  ok(!rules19.some((r) => r[1] === "Cost basis moved" && r[0] !== "watch"), "and the moved rate is never more than a watch");
+}
+
 /* ============ THE FLOOR (v431) ============
    Round eight made THIRTY assertions vanish and the suite still read a clean pass, because nothing
    compares the count: a section that stops running, or a block that returns early on a book that
@@ -5640,7 +5663,7 @@ section("v472: the desk in the Salt identity");
    the live count was 879, so thirty-nine assertions could have vanished under a guard written to
    stop exactly that. The margin is four, which covers the book-dependent branches that legitimately
    skip; it is not room for a section to fall out. */
-const FLOOR_ASSERTIONS = 1188, FLOOR_SECTIONS = 93;   /* v472: 1192 everywhere, 1201 here */
+const FLOOR_ASSERTIONS = 1191, FLOOR_SECTIONS = 94;   /* v479: 1195 everywhere, 1204 here */
 ok(pass + fail - offMachine >= FLOOR_ASSERTIONS,
   `the suite ran ${pass + fail - offMachine} assertions everywhere (${pass + fail} here, ${offMachine} of them needing files that live off this repo), below its floor of ${FLOOR_ASSERTIONS}: a section has stopped running`);
 ok(sections >= FLOOR_SECTIONS,
