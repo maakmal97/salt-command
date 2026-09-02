@@ -640,7 +640,6 @@ export async function makeStatements(outDir, issue, opts) {
     const rowsIdx = sheets.map(x => {
       const f = flag(x.t);
       return '<tr class="f-' + f + '"><td class="l"><a href="#s-' + esc(x.who) + '">' + esc(x.who) + '</a></td>'
-        + (archive ? '' : '<td class="l pw">' + esc(x.pw) + '</td>')
         + '<td>' + x.t.n + '</td><td>' + n2(x.t.qty) + '</td><td>' + m2(x.t.total) + '</td><td>' + m2(x.t.paid) + '</td>'
         + '<td class="r">' + (x.t.owed > 0.009 ? '<b class="owe">' + m2(x.t.owed) + '</b>' : x.t.refund > 0.009 ? '<b class="rf">' + m2(x.t.refund) + ' to them</b>' : '&mdash;') + '</td>'
         + '<td class="r">' + (x.t.toGet > 0.009 ? '<b class="gd">' + n2(x.t.toGet) + ' unit</b>' : '&mdash;') + '</td>'
@@ -654,14 +653,20 @@ export async function makeStatements(outDir, issue, opts) {
       + '<title>Statements to review · ' + esc(issue) + '</title><style>' + css
       + REVIEW_CSS
       + '</style></head><body>'
+      /* THE PASSWORDS ARE NOT ON THIS PAGE, and that is a correction rather than an omission.
+         They were, in a column beside each account, while _passwords.json was gitignored on the
+         grounds that a credential committed is a credential in the history for ever. The review
+         sheet IS committed, so the same thirty-seven passwords went into git anyway and the
+         ignore rule protected nothing. They now live in exactly one place, and that place is
+         not the repository. */
       + (archive
         ? '<div class="warn"><b>A record of a past issue.</b> These statements carry no QR and no '
           + 'password: the code would point at whatever month was published last, so on a back-issue '
           + 'it would open a different statement and the reader would be told his password was '
           + 'refused. Kept as the position as the book now understands it on that date.</div>'
-        : '<div class="warn"><b>This page carries the passwords.</b> It is the only file in the run '
-          + 'that does, and it is why this one is never sent, never left open and never forwarded. '
-          + 'Each password opens exactly one account, and a fresh set is issued next month.</div>')
+        : '<div class="warn"><b>For review, never for sending.</b> This page puts every account '
+          + 'beside every other, which is exactly what a statement must never do. The passwords '
+          + 'are not here: they are in _passwords.json, which is not committed.</div>')
       + '<div class="rv"><p class="rvh">For review, not for sending</p>'
       + '<h1 class="rvt">' + sheets.length + ' statements</h1>'
       + '<p class="rvs">Issued ' + esc(issued) + '. Every statement below is exactly the file that would go to that '
@@ -672,11 +677,11 @@ export async function makeStatements(outDir, issue, opts) {
       + (pnd.length ? ' <b>' + pnd.length + '</b> hold' + (pnd.length === 1 ? 's' : '') + ' an order agreed but not yet '
         + 'collected or paid, which is money to chase rather than money owed.' : '')
       + '</p>'
-      + '<table class="idx"><thead><tr><th class="l">Account</th>' + (archive ? '' : '<th class="l">Password</th>') + '<th>Orders</th><th>Quantity</th>'
+      + '<table class="idx"><thead><tr><th class="l">Account</th>' + '<th>Orders</th><th>Quantity</th>'
       + '<th>Ordered</th><th>Paid</th><th class="r">Outstanding</th><th class="r">Owed goods</th>'
       + '<th class="r">Not actioned</th></tr></thead>'
       + '<tbody>' + rowsIdx + '</tbody>'
-      + '<tfoot><tr><td class="l"><b>All</b></td>' + (archive ? '' : '<td></td>') + '<td>' + sumT('n') + '</td><td>' + n2(sumT('qty')) + '</td>'
+      + '<tfoot><tr><td class="l"><b>All</b></td>' + '<td>' + sumT('n') + '</td><td>' + n2(sumT('qty')) + '</td>'
       + '<td>' + m2(sumT('total')) + '</td><td>' + m2(sumT('paid')) + '</td>'
       + '<td class="r"><b class="owe">' + m2(sumT('owed')) + '</b></td>'
       + '<td class="r"><b class="gd">' + n2(sumT('toGet')) + ' unit</b></td>'

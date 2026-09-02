@@ -5920,8 +5920,7 @@ section("Statements — the QR, the sort and the Salt identity");
     ok(!/class="qrb"/.test(one) && !/<svg/.test(one) && !/\/s\//.test(one),
       "no QR, no SVG and no statement link reaches a back-issue");
     const rev = readFileSync(join(dirA, "_review_2026-08-01.html"), "utf8");
-    ok(!/Password<\/th>/.test(rev) && /record of a past issue/i.test(rev),
-      "its review sheet drops the password column and says what it is");
+    ok(/record of a past issue/i.test(rev), "its review sheet says what it is");
     /* AND IT DOES NOT CLAIM A CUT-OFF IT CANNOT HONOUR. The book is current state, so a
        back-issue filters by order date and shows each row as it stands today: the 1 Aug set
        carried a payment dated 6 Aug and a cancellation dated 24 Aug on six of its documents.
@@ -5937,9 +5936,36 @@ section("Statements — the QR, the sort and the Salt identity");
     rmSync(join(REPO, "test", "tmp", "stmt-live"), { recursive: true, force: true });
     rmSync(dirA, { recursive: true, force: true });
   }
+
+  /* NO PASSWORD REACHES ANYTHING THE REPOSITORY KEEPS, and this was wrong once. The review
+     sheet carried a password column while _passwords.json was gitignored on the grounds that a
+     credential committed is a credential in the history for ever. The review sheet IS committed,
+     so the same passwords went into git anyway and the ignore rule protected nothing. They live
+     in one place now, and this is what proves it stays one place. */
+  {
+    const { makeStatements } = await import("../tools/make_statements.mjs");
+    const dirP = join(REPO, "test", "tmp", "stmt-pw");
+    rmSync(dirP, { recursive: true, force: true });
+    const q3 = console.log; console.log = () => { };
+    let runP;
+    try { runP = await makeStatements(dirP, "2026-08-01"); } finally { console.log = q3; }
+    const secrets = Object.values(runP.passwords);
+    ok(secrets.length > 0, `the run minted passwords to check (${secrets.length})`);
+    const leaked = [];
+    for (const f of readdirSync(dirP).filter(x => x.endsWith(".html"))) {
+      const h = readFileSync(join(dirP, f), "utf8");
+      for (const pw of secrets) if (h.includes(pw)) leaked.push(f);
+    }
+    ok(leaked.length === 0, leaked.length
+      ? "passwords reached these generated pages: " + [...new Set(leaked)].join(", ")
+      : "no password reaches any generated page, only _passwords.json");
+    ok(readFileSync(join(dirP, "_passwords.json"), "utf8").includes(secrets[0]),
+      "and _passwords.json, the one gitignored file, is where they are");
+    rmSync(dirP, { recursive: true, force: true });
+  }
 }
 
-const FLOOR_ASSERTIONS = 1254, FLOOR_SECTIONS = 97;   /* archive issues: 1258 everywhere, 1259 here */
+const FLOOR_ASSERTIONS = 1256, FLOOR_SECTIONS = 97;   /* archive issues: 1260 everywhere, 1261 here */
 ok(pass + fail - offMachine >= FLOOR_ASSERTIONS,
   `the suite ran ${pass + fail - offMachine} assertions everywhere (${pass + fail} here, ${offMachine} of them needing files that live off this repo), below its floor of ${FLOOR_ASSERTIONS}: a section has stopped running`);
 ok(sections >= FLOOR_SECTIONS,
