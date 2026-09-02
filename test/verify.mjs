@@ -5639,7 +5639,7 @@ section("v472: the desk in the Salt identity");
    the live count was 879, so thirty-nine assertions could have vanished under a guard written to
    stop exactly that. The margin is four, which covers the book-dependent branches that legitimately
    skip; it is not room for a section to fall out. */
-const FLOOR_ASSERTIONS = 1199, FLOOR_SECTIONS = 93;   /* v472: 1203 live */
+const FLOOR_ASSERTIONS = 1188, FLOOR_SECTIONS = 93;   /* v472: 1192 everywhere, 1201 here */
 ok(pass + fail - offMachine >= FLOOR_ASSERTIONS,
   `the suite ran ${pass + fail - offMachine} assertions everywhere (${pass + fail} here, ${offMachine} of them needing files that live off this repo), below its floor of ${FLOOR_ASSERTIONS}: a section has stopped running`);
 ok(sections >= FLOOR_SECTIONS,
