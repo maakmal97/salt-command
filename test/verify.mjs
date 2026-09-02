@@ -5198,6 +5198,29 @@ section("v461: a lot's step is named the way the whiteboard took it");
   } finally { for (const f of [B11, M11]) { try { rm11(f); } catch (e) { /* best effort */ } } }
 }
 
+
+section("v462: a cancelled-on date needs a cancellation, and cannot precede the order");
+{
+  /* cancelledOn is a correctable date and correctionFaults never read it, so a Correction could
+     stamp one on a live row, revive a cancelled row and leave the date behind, or date the
+     cancellation before the order. The engine is asked directly, then the master's inlined copy. */
+  const { join: j12 } = await import("node:path");
+  const { pathToFileURL: pu12 } = await import("node:url");
+  const E12 = (await import(pu12(j12(REPO, "engine", "position.mjs")).href + "?v462")).default;
+  const live = { customer: "F12", product: "salt", date: "2026-08-01", qty: 2, total: 200, cost: 64, cash: 0, deliveredQty: 0 };
+  const gone = Object.assign({}, live, { cancelled: true, cancelledOn: "2026-08-05" });
+  const has = (out, re) => out.some((x) => re.test(x));
+  ok(has(E12.correctionFaults(live, { cancelledOn: "2026-08-05" }, true), /without being cancelled/), "a cancelled-on date on a row that is not cancelled is refused");
+  ok(E12.correctionFaults(live, { cancelled: true, cancelledOn: "2026-08-05" }, true).length === 0, "cancelling a clean row with its date is not");
+  ok(has(E12.correctionFaults(live, { cancelled: true, cancelledOn: "2026-07-20" }, true), /before it was agreed/), "a cancellation dated before the order is refused");
+  ok(has(E12.correctionFaults(gone, { cancelled: null }, true), /without being cancelled/) && E12.correctionFaults(gone, { cancelled: null, cancelledOn: null }, true).length === 0,
+    "reviving a cancelled row must clear its date too, and does so cleanly");
+  const { openMaster: om12 } = await import("../tools/payload.mjs");
+  const { w: w12 } = await om12(j12(REPO, "master", "salt_command.html"));
+  const via = JSON.parse(String(w12.eval("JSON.stringify(POSITION_ENGINE.correctionFaults({customer:'F12',product:'salt',date:'2026-08-01',qty:2,total:200,cost:64,cash:0,deliveredQty:0},{cancelledOn:'2026-08-05'},true))")));
+  ok(has(via, /without being cancelled/), "and the master's inlined engine refuses it the same way");
+}
+
 /* ---- done ----------------------------------------------------------------------- */
 
 section("Round 7: the states no suite check had ever rendered");
@@ -5432,7 +5455,7 @@ section("Round 7: the states no suite check had ever rendered");
    the live count was 879, so thirty-nine assertions could have vanished under a guard written to
    stop exactly that. The margin is four, which covers the book-dependent branches that legitimately
    skip; it is not room for a section to fall out. */
-const FLOOR_ASSERTIONS = 1136, FLOOR_SECTIONS = 87;
+const FLOOR_ASSERTIONS = 1141, FLOOR_SECTIONS = 88;
 ok(pass + fail - offMachine >= FLOOR_ASSERTIONS,
   `the suite ran ${pass + fail - offMachine} assertions everywhere (${pass + fail} here, ${offMachine} of them needing files that live off this repo), below its floor of ${FLOOR_ASSERTIONS}: a section has stopped running`);
 ok(sections >= FLOOR_SECTIONS,

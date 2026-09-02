@@ -439,6 +439,15 @@ function correctionFaults(row,fields,isSale){
   const moved=isSale?txEffDeliv(bare):poRecvUnits(bare);
   if(after.cancelled===true&&moved>0.009)
     out.push('the corrected row would be cancelled AND carry '+moved+' unit already moved, which contradicts itself: restate qty by Modification for what moved, then cancel the remainder');
+  /* v462: A CANCELLED-ON DATE NEEDS A CANCELLATION, AND CANNOT PRECEDE THE ORDER. cancelledOn is
+     a correctable date (v363) and nothing here read it: a Correction could stamp one on a row that
+     is not cancelled, or revive a cancelled row and leave the date behind, or date the
+     cancellation before the order was agreed. refundOnCancel dates the refund from it and the
+     statement prints it, so the row has to carry it consistently or not at all. */
+  if(after.cancelledOn&&after.cancelled!==true)
+    out.push('the corrected row would carry a cancelled-on date of '+after.cancelledOn+' without being cancelled: clear the date, or cancel the row with it');
+  if(after.cancelled===true&&after.cancelledOn&&after.date&&after.cancelledOn<after.date)
+    out.push('the corrected row would be cancelled on '+after.cancelledOn+', before it was agreed on '+after.date);
   /* AN UNDATED ROW READS AS PENDING EVERYWHERE, which a row with movement is not. Measured on the
      row as it stands, and only when the row actually HAS a date to clear. */
   if(f.date===null&&row.date){

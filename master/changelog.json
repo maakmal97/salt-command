@@ -1,5 +1,16 @@
 [
  {
+  "v": "v462",
+  "d": "02 Sep 2026",
+  "t": "A CANCELLED-ON DATE NEEDS A CANCELLATION, AND CANNOT PRECEDE THE ORDER",
+  "n": [
+   "<b>FOLD 20 OF ROUND TEN, IN engine/position.mjs.</b> cancelledOn has been a correctable date since v363 and correctionFaults, the one gate every Correction passes through on the drafter, the fold and the desk, never read it. A Correction could stamp a cancelled-on date on a row that is not cancelled, revive a cancelled row and leave the date behind, or date the cancellation before the order was agreed. refundOnCancel dates the refund from it and the statement prints it.",
+   "<b>TWO RULES.</b> A cancelled-on date without the cancelled flag is refused, with the way out named: clear the date, or cancel the row with it. A cancellation dated before the order's own date is refused. Cancelling a clean row with its date passes, and so does reviving one when the date goes with the flag.",
+   "<b>WHAT CHANGES ON THE BOOK TODAY: NOTHING.</b> The three rows carrying cancelledOn are cancelled and dated after their orders. The gate only reads what a correction would leave behind.",
+   "<b>PROVED ON THE ENGINE AND THE MASTER'S COPY.</b> Five cases through the module and the inlined engine. Three mutations, each with the engine re-synced, all red, including the one that reads the row before the correction instead of after it. 1159 assertions across 88 sections."
+  ]
+ },
+ {
   "v": "v461",
   "d": "02 Sep 2026",
   "t": "A LOT'S STEP ON THE LEDGER IS NAMED THE WAY THE WHITEBOARD TOOK IT",
