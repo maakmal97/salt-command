@@ -4980,6 +4980,50 @@ section("v455: the reconciliation reads the shortfall the settlement credited");
     `legs paid in cash explain nothing, so the offset is told plainly rather than tabulated (noLegs ${C.R && C.R.noLegs})`);
 }
 
+
+
+section("v456: an undated row says so wherever its date is printed");
+{
+  /* The pending table printed `not dated` for an undated row; the five Order book tables beside
+     it printed the raw field, the word undefined under a heading that says Since, and a census of
+     every tab found the same on eight more sites. Five undated fixtures, one per table: a sale paid
+     ahead, a sale delivered unpaid, a lot paid ahead, a lot landed unpaid, a lot agreed and
+     unmoved. The census is the proof: every tab, on the fixture book, prints undefined nowhere. */
+  const { openMaster: om6 } = await import("../tools/payload.mjs");
+  const { readFileSync: rf6, writeFileSync: wf6, unlinkSync: rm6 } = await import("node:fs");
+  const { execSync: ex6 } = await import("node:child_process");
+  const { join: j6 } = await import("node:path");
+  const bk6 = JSON.parse(rf6(j6(REPO, "ledger", "book.json"), "utf8"));
+  const sup6 = bk6.purchases.find((x) => x.supplier).supplier, cus6 = bk6.sales.find((x) => x.customer && x.date).customer;
+  bk6.sales.push({ rid: "f13", customer: cus6, product: "salt", qty: 2, total: 200, cost: 64, cash: 200, deliveredQty: 0 });
+  bk6.sales.push({ rid: "f16", customer: cus6, product: "salt", qty: 1, total: 100, cost: 64, cash: 0, deliveredQty: 1 });
+  bk6.purchases.push({ rid: "f14", supplier: sup6, product: "salt", qty: 10, total: 500, cash: 500, receivedQty: 0 });
+  bk6.purchases.push({ rid: "f15", supplier: sup6, product: "salt", qty: 5, total: 250, cash: 0, receivedQty: 5 });
+  bk6.purchases.push({ rid: "f17", supplier: sup6, product: "salt", qty: 3, total: 150, pending: true });
+  const B6 = j6(REPO, "test", ".v456.json"), M6 = j6(REPO, "test", ".v456.html");
+  wf6(B6, JSON.stringify(bk6, null, 1)); wf6(M6, rf6(j6(REPO, "master", "salt_command.html"), "utf8"));
+  ex6("node tools/booksync.mjs --sync", { cwd: REPO, env: { ...process.env, SALT_BOOK: B6, SALT_MASTER: M6 }, stdio: "pipe" });
+  const READ6 = "(function(){var e=document.querySelector('.sec.on');return e?e.textContent:'';})()";
+  const count = (t, w) => t.split(w).length - 1;
+  try {
+    const { w } = await om6(M6);
+    const tabs = JSON.parse(w.eval("JSON.stringify(Object.keys(builders||{}))"));
+    w.eval("setProd('salt');recompute();");
+    const seen = {}, undef = [];
+    let nd = 0;
+    for (const t of tabs) {
+      let txt = "";
+      try { w.eval("switchTab('" + t + "');"); txt = String(w.eval(READ6)); } catch (e) { undef.push(t + " threw " + String(e.message || e).slice(0, 60)); continue; }
+      seen[t] = txt; nd += count(txt, "not dated");
+      const u = count(txt, "undefined"); if (u) undef.push(t + " x" + u);
+    }
+    ok(tabs.length >= 16 && (seen.receivables || "").length > 400, `every tab renders on the fixture book (${tabs.length} tabs)`);
+    ok(count(seen.receivables || "", "not dated") >= 6, `the Order book says not dated on each undated row (${count(seen.receivables || "", "not dated")} cells, five fixtures)`);
+    ok(undef.length === 0, `and no tab prints the word undefined: ${undef.join("; ") || "none"}`);
+    ok(count(seen.today || "", "landed not dated") === 1 && nd >= 14, `the lock rule on Today says so too, ${nd} cells across the desk`);
+  } finally { for (const f of [B6, M6]) { try { rm6(f); } catch (e) { /* best effort */ } } }
+}
+
 /* ---- done ----------------------------------------------------------------------- */
 
 section("Round 7: the states no suite check had ever rendered");
@@ -5214,7 +5258,7 @@ section("Round 7: the states no suite check had ever rendered");
    the live count was 879, so thirty-nine assertions could have vanished under a guard written to
    stop exactly that. The margin is four, which covers the book-dependent branches that legitimately
    skip; it is not room for a section to fall out. */
-const FLOOR_ASSERTIONS = 1114, FLOOR_SECTIONS = 81;
+const FLOOR_ASSERTIONS = 1118, FLOOR_SECTIONS = 82;
 ok(pass + fail - offMachine >= FLOOR_ASSERTIONS,
   `the suite ran ${pass + fail - offMachine} assertions everywhere (${pass + fail} here, ${offMachine} of them needing files that live off this repo), below its floor of ${FLOOR_ASSERTIONS}: a section has stopped running`);
 ok(sections >= FLOOR_SECTIONS,
