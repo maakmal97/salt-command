@@ -6,27 +6,34 @@ where the two disagree this file wins.
 
 ## The gate, first and most important
 
-The routine fires **every Sunday** because cron cannot express "first Sunday of the month":
-day-of-month and day-of-week are OR'd in most implementations, not AND'd. The gate that stops
-most runs is the design working, not a fault.
+**From 01 Sep 2026 the routine fires on the first of the month, not the first Sunday.** The
+old schedule needed the gate because cron cannot express "first Sunday". The new one still
+needs it, for a different reason: routine crons are UTC, midnight in Kuala Lumpur is 16:00 UTC
+on the *previous* day, and which day that is changes with the length of the month. So the
+trigger fires on the 28th to the 31st and the gate keeps exactly one run a month. Verified
+against every month length, February and leap February included.
 
-Establish the date and weekday in Asia/Kuala_Lumpur before anything else:
+Establish the date in Asia/Kuala_Lumpur before anything else:
 
 ```bash
-TZ=Asia/Kuala_Lumpur date '+%u %d'     # %u is ISO weekday: SUNDAY IS 7, NOT 0
+TZ=Asia/Kuala_Lumpur date '+%d'
 ```
 
-- **Day of month greater than 7:** not the first Sunday. Stop immediately, produce nothing,
-  write nothing, say in one line that no statements were due.
-- **Day 1 to 7 but not Sunday:** a manual or retried run on the wrong day. Stop on the same
-  terms, saying which day it actually is.
-- **Day 1 to 7 and Sunday:** continue.
+- **Not 01:** stop immediately, produce nothing, write nothing, say in one line that no
+  statements were due. Most fires stop here and that is the design working.
+- **01:** continue. The issue date is that day, `YYYY-MM-01`.
+
+There is no longer a weekday test. If you find one, it is left over from the Sunday schedule.
+Folders issued before Sep 2026 are named by first-Sunday dates, because that is when they were
+issued; they are not renamed.
 
 ## What to produce
 
 ```
-statements/<YYYY-MM>/statement_<CODE>_<YYYY-MM-DD>.html
-statements/<YYYY-MM>/_review_<YYYY-MM-DD>.html
+statements/<YYYY-MM>/statement_<CODE>_<YYYY-MM-DD>.html   his copy, one per customer
+statements/<YYYY-MM>/_review_<YYYY-MM-DD>.html            every account in one pass
+statements/<YYYY-MM>/_kv/<CODE>.json                      ciphertext + verifier, for the Worker
+statements/<YYYY-MM>/_passwords.json                      GITIGNORED, never committed
 ```
 
 One per customer with anything to show, named by code so the folder sorts alphabetically, plus
@@ -60,6 +67,39 @@ node tools/make_statements.mjs statements/<YYYY-MM> <YYYY-MM-DD>
 
 Plain node, no jsdom, no network, and the master is not an input.
 
+**The re-issue guard is in the tool, not in this file.** Same issue date is a clean retry and
+regenerates in place, keeping the passwords already issued, because minting fresh ones would
+invalidate every password already sent. A *different* issue date means a second issue in one
+month and the tool refuses. Do not talk it out of that.
+
+## How a customer reads it
+
+Each statement carries a QR code, and the password goes by a different channel. The code opens
+`https://salt-command.qyts8mh72kyg.workers.dev/s/<CODE>`, which asks for the password, decrypts
+the statement in his own browser, and locks the screen after ten minutes. Entering the password
+again reopens it.
+
+**Four things stand between an account and the public, and none is trusted alone:**
+
+1. The statement is AES-GCM ciphertext at rest under that customer's password, with the same
+   crypto as the name vault. The Worker holds no key and could not read one.
+2. A PBKDF2 verifier decides whether the envelope is handed over at all.
+3. Ten failed attempts lock an account for fifteen minutes. The codes are guessable, so the
+   password is the whole secret and an unthrottled endpoint would let anyone grind at it.
+4. `SALT_STMT_MASTER` is his override, for a customer who has lost his before the next issue.
+
+**What none of it does is stop a statement being forwarded.** A password shared is a password
+shared, and an open page can be photographed. The ten minutes stop a phone being left on a
+table with an account on it. Nothing in the copy should promise more than that.
+
+Statements reach the Worker through the `Publish the newest statements to KV` step in
+`cloud-commit.yml`, on push. It uploads the newest month only, so **issuing a new set retires
+last month's**, and it clears the attempt counters so nobody starts a month locked out.
+
+If `REQUIRE_ACCESS` is ever set back to `"1"`, `/s/` goes behind Cloudflare Access with
+everything else and **no customer will be able to open a statement**. That is a consequence of
+restoring Access, not a fault in this route.
+
 ## Before committing
 
 **Statements carry desk CODES and never a real name.** That is checked, not assumed: the
@@ -69,11 +109,14 @@ was excluded from the crude substring test that first flagged it, and since 29 A
 statements section builds a full run and greps every statement for the seller's vocabulary,
 for any other party's code and for the ledger's own notes.
 
-Commit the folder and push. Nothing deploys and nothing touches the ledger: this task reads the
-desk and writes files beside it.
+Commit the folder and push. `_passwords.json` is gitignored; confirm `git status` does not
+offer it. The `_kv` records are ciphertext and a verifier, and those ARE committed, because the
+deploy is what uploads them. Nothing touches the ledger: this task reads `ledger/book.json` and
+writes files beside it.
 
 ## What this task must never do
 
-- **Never edit the master.** It is read-only here.
+- **Never edit the master or the book.** Both are read-only here.
+- **Never commit `_passwords.json`.**
 - **Never send anything.** He sends these himself, so they must be right before they are sent.
 - **Never regenerate a past month** to match a later code scheme.

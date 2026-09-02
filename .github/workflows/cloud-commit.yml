@@ -190,6 +190,38 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
         run: npx wrangler deploy
 
+      # THE STATEMENTS GO INTO KV, NOT INTO public/. Under public/ they would be served by the
+      # asset store, which knows nothing about a password: the ciphertext would be fetchable by
+      # anyone who guessed a filename and the whole gate would be decoration. This step is the
+      # only thing that publishes a statement, and it holds no secret of its own: it reuses the
+      # Cloudflare token this workflow already needs in order to deploy.
+      #
+      # It uploads the NEWEST month only. Last month's statements stop resolving when this
+      # runs, which is the monthly rotation working: a password that has been passed around for
+      # four weeks stops opening anything the moment a new one is issued.
+      - name: Publish the newest statements to KV
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          latest=$(ls -1d statements/[0-9][0-9][0-9][0-9]-[0-9][0-9] 2>/dev/null | sort | tail -1 || true)
+          if [ -z "$latest" ] || [ ! -d "$latest/_kv" ]; then
+            echo "no statement set to publish; normal for a build with no issue in it"
+            exit 0
+          fi
+          n=0
+          for f in "$latest"/_kv/*.json; do
+            [ -e "$f" ] || continue
+            code=$(basename "$f" .json)
+            npx wrangler kv key put --remote --binding SALT_QUEUE "stmt:$code" --path "$f"
+            # A new issue clears the old attempt counter, or a customer locked out last month
+            # is still locked out against a password he has only just been given.
+            npx wrangler kv key delete --remote --binding SALT_QUEUE "stmtfail:$code" 2>/dev/null || true
+            n=$((n+1))
+          done
+          echo "published $n statements from $latest"
+
       - name: The phone is serving it
         run: |
           set -euo pipefail

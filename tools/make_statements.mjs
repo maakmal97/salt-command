@@ -22,13 +22,18 @@
  * has anything to show, named by code so the folder sorts alphabetically, plus the review
  * sheet. SALT_BOOK overrides the book path, which is how the tests run it on copies.
  */
-import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync, existsSync, readdirSync } from "node:fs";
 import { resolve, dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import POSITION_ENGINE from "../engine/position.mjs";
+import { statementCss, REVIEW_CSS } from "./stmt-style.mjs";
+import { qrSvg } from "./qr.mjs";
+import { newPassword, makeVerifier, encryptText } from "./stmt-crypto.mjs";
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const BOOK = process.env.SALT_BOOK || resolve(REPO, "ledger", "book.json");
+/* Where a scanned code lands. Overridable so a rehearsal can point somewhere else. */
+const BASE_URL = (process.env.SALT_BASE_URL || "https://salt-command.qyts8mh72kyg.workers.dev").replace(/\/+$/, "");
 const book = JSON.parse(readFileSync(BOOK, "utf8"));
 
 /* the desk globals the lifted functions read, bound to the same sources the desk binds
@@ -85,7 +90,21 @@ function stmtRows(party,o){
     if(st==='Completed'&&!o.completed)return false;
     if(st!=='Pending'&&st!=='Completed'&&!o.open)return false;
     return true;
-  }).sort((a,b)=>new Date(a.date)-new Date(b.date)).map(s=>{
+  })
+  /* UNDATED ROWS SORT LAST, they do not sort at random (02 Sep 2026). A row may carry no
+     date: three do on the book today, two cancelled and one live. new Date(undefined) is an
+     Invalid Date and every comparison with it yields NaN, so the comparator is inconsistent
+     and where those rows land is left to the sort implementation, which means the same book
+     can print two different orderings. tools/sort-ledger.mjs puts undated pending rows last
+     for the same reason; this agrees with it. */
+  .sort((a,b)=>{
+    const ta=a.date?new Date(a.date).getTime():NaN, tb=b.date?new Date(b.date).getTime():NaN;
+    const na=isNaN(ta), nb=isNaN(tb);
+    if(na&&nb)return 0;
+    if(na)return 1;
+    if(nb)return -1;
+    return ta-tb;
+  }).map(s=>{
     const st=txStat(s), d=txDates(s);
     const paidCash=+(s.cash||0), inKind=+(s.settledRM||0);
     const got=+(s.deliveredQty||0), inKindUnits=+(s.settledKg||0);
@@ -340,76 +359,13 @@ function stmtDoc(party,rows,o){
    '<meta name="viewport" content="width=device-width,initial-scale=1">',
    '<meta name="robots" content="noindex,nofollow">',
    '<title>Statement of account</title>','<style>',
-   '*{box-sizing:border-box}',
-   'body{margin:0;padding:44px 20px 60px;background:#0f1115;color:#eef1f6;',
-   'font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Lato,Roboto,Helvetica,Arial,sans-serif;',
-   'font-size:15px;line-height:1.55;-webkit-text-size-adjust:100%}',
-   '.w{max-width:600px;margin:0 auto}',
-   '.eyebrow{font-size:11px;letter-spacing:.34em;color:#7fd7e8;font-weight:700;margin:0 0 8px}',
-   'h1{margin:0;font-size:30px;font-weight:900;letter-spacing:-.015em;line-height:1.1}',
-   '.meta{color:#6b7688;font-size:13px;margin:10px 0 0}',
-   '.who{margin:26px 0 4px;font-size:19px;font-weight:700;color:#eef1f6}',
-   '.whol{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#6b7688;font-weight:700}',
-   '.rule{height:1px;background:#2a3140;margin:26px 0 4px}',
-   'table{width:100%;border-collapse:collapse}',
-   'th{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:#6b7688;font-weight:700;',
-   'padding:0 0 10px;text-align:right}th.l{text-align:left}',
-   'td{padding:15px 0;border-bottom:1px solid rgba(42,49,64,.55);text-align:right;',
-   'font-variant-numeric:tabular-nums;vertical-align:top}',
-   'td.l{text-align:left}',
-   '.dt{font-size:15px;color:#eef1f6}',
-   '.sub2{font-size:12px;color:#6b7688;margin-top:3px}',
-   '.nodt{font-size:13px;color:#8a93a3;font-style:italic}',
-   '.q{font-size:15px;color:#b9c2d0}.u{font-size:11px;color:#6b7688;margin-left:4px}',
-   '.amt{font-size:16px;font-weight:700}',
-   '.ok{font-size:12px;color:#5fd6a0;letter-spacing:.02em}',
-   '.due{font-size:13px;font-weight:700;color:#ffc75a;white-space:nowrap}',
-   '.tot{margin-top:30px}',
-   '.tr{display:flex;justify-content:space-between;align-items:baseline;padding:7px 0;',
-   'font-size:14px;color:#b9c2d0}',
-   '.tr span:last-child{font-variant-numeric:tabular-nums;color:#eef1f6}',
-   '.tr.big{margin-top:10px;padding-top:16px;border-top:1px solid #2a3140;font-size:19px;font-weight:800}',
-   '.tr.big span:last-child{color:#ffc75a}',
-   '.tr.big.clear span:last-child{color:#5fd6a0}',
-   '.tr.sub{color:#9aa4b6;font-size:13px}',
-   '.cxn{color:#7f8a9c;font-weight:600}',
-   '.cx{color:#7f8a9c;font-weight:800;font-size:13px;letter-spacing:.02em}',
-   '.cxr{text-decoration:line-through;text-decoration-thickness:1px;opacity:.5}',
-   '.pend{color:#c8b6ff;font-weight:800;font-size:13px;letter-spacing:.02em}',
-   '.owedunits{font-size:12px;color:#7fd7e8;margin-top:4px;font-weight:600;white-space:nowrap}',
-   '.gift{font-size:12px;color:#b07cff;letter-spacing:.02em;white-space:nowrap}',
-   '.nilamt{color:#6b7688;font-weight:400}',
-   '.owed{margin-top:26px;border:1px solid #2a5560;border-radius:12px;padding:20px 22px;',
-   'background:linear-gradient(180deg,rgba(18,40,46,.75),rgba(15,26,30,.75))}',
-   '.owedl{margin:0;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#7fd7e8;font-weight:700}',
-   '.owedv{margin:6px 0 0;font-size:34px;font-weight:900;color:#7fd7e8;letter-spacing:-.02em;',
-   'font-variant-numeric:tabular-nums}',
-   '.owedv span{font-size:15px;font-weight:600;margin-left:5px;color:#9fc9d4}',
-   '.owedn{margin:12px 0 0;font-size:12px;color:#8fb3bd;line-height:1.6}',
-   '.rec{margin-top:26px;border:1px solid #2a3140;border-radius:12px;padding:22px 22px 8px}',
-   '.recl{margin:0 0 18px;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#7d879a;font-weight:700}',
-   '.stp{display:flex;gap:14px;margin-bottom:20px}',
-   '.stpn{flex:0 0 22px;height:22px;border-radius:50%;border:1px solid #3a4356;color:#7fd7e8;',
-   'font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;line-height:1}',
-   '.stpb{flex:1 1 auto;min-width:0}',
-   '.stpt{margin:0;font-size:14px;font-weight:700;color:#eef1f6;line-height:1.45}',
-   '.stpd{margin:7px 0 0;font-size:13px;color:#8a93a3;line-height:1.6}',
-   'table.mini{width:100%;border-collapse:collapse;margin-top:10px}',
-   'table.mini th{font-size:10px;letter-spacing:.14em;padding:0 0 6px;color:#6b7688}',
-   'table.mini td{padding:7px 0;font-size:13px;border-bottom:1px solid rgba(42,49,64,.45);color:#b9c2d0}',
-   'table.mini tr.tot td{border-bottom:0;border-top:1px solid #2a3140;font-weight:800;color:#eef1f6;padding-top:9px}',
-   'table.mini tr.sub td{border-bottom:0;color:#eef1f6;font-weight:700}',
-   'table.mini.calc td{font-size:13px}',
-   'b.short{color:#ffc75a}',
-   '.recn{margin:2px 0 16px;font-size:12px;color:#8a93a3;line-height:1.6;border-top:1px solid rgba(42,49,64,.5);padding-top:14px}',
-   '.note{margin-top:34px;font-size:12px;color:#6b7688;line-height:1.65}',
-   '@media print{body{background:#fff;color:#111;padding:24px}',
-   '.eyebrow{color:#0b5f70}.q{color:#444}.ok{color:#186b45}.due{color:#8a5b00}',
-   '.nodt{color:#555}',
-   '.tr span:last-child{color:#111}.tr.big span:last-child{color:#8a5b00}',
-   '.tr.big.clear span:last-child{color:#186b45}td{border-color:#ddd}.rule{background:#ccc}',
-   '.owed{background:#f2f8fa;border-color:#9dc4cf}.owedl,.owedv{color:#0b5f70}',
-   '.owedv span,.owedn{color:#3d6d78}.owedunits{color:#0b5f70}.gift{color:#5a3d8a}}',
+   /* THE STATEMENT IN THE SALT IDENTITY (02 Sep 2026). v472 put the design system onto the
+      desk and left this document behind, still in the pre-identity hexes. The stylesheet is
+      now one shared string built on design/salt-ds.css own :root, so a retune of the system
+      reaches the statement, the review sheet and the unlock page with nothing to keep in
+      step by hand. See tools/stmt-style.mjs, including why the three semantic colours are
+      read from the customer side here and not the desk s. */
+   statementCss(),
    '</style></head><body><div class="w">',
    '<p class="eyebrow">'+e(o.brand||'Salt Command')+'</p>',
    '<h1>Statement of account</h1>',
@@ -541,11 +497,32 @@ export { stmtRows, stmtRecon, stmtRefunds, stmtDoc };
    Ported from the retired make_statements.cjs: the same options, the same totals, the
    same files and the same review sheet, minus the jsdom drive of a desk that no longer
    carries the functions. */
-export function makeStatements(outDir, issue) {
-  mkdirSync(outDir, { recursive: true });
+export async function makeStatements(outDir, issue) {
+  /* THE RE-ISSUE GUARD, before a byte is written. The generator used to overwrite in silence,
+     and docs/STATEMENTS.md carried the rule as an instruction to the reader instead: check the
+     folder first, a different issue date means a second issue in one month. An instruction a
+     tool could enforce is a rule waiting to be forgotten at the one moment it matters, which
+     is a run at speed on the first of the month. Same date is a clean retry and regenerates in
+     place; a different one stops. */
+  const prior = existsSync(outDir)
+    ? [...new Set(readdirSync(outDir)
+        .map(f => (/^(?:statement_.+?|_review)_(\d{4}-\d{2}-\d{2})\.html$/.exec(f) || [])[1])
+        .filter(Boolean))].sort()
+    : [];
+  if (prior.length && !prior.includes(issue)) {
+    throw new Error("refusing to write a second issue into " + outDir + ": it already holds a set "
+      + "issued " + prior.join(", ") + ", and those files may have been sent. Nothing was written.");
+  }
+
+  /* A RETRY KEEPS THE PASSWORDS IT ALREADY ISSUED. Minting fresh ones would invalidate every
+     password already sent, which is the one thing a retry must not do. */
+  const pwFile = join(outDir, "_passwords.json");
+  const priorPw = (prior.length && existsSync(pwFile)) ? JSON.parse(readFileSync(pwFile, "utf8")) : {};
+
+  mkdirSync(join(outDir, "_kv"), { recursive: true });
   const parties = [...new Set(sales.map(s => s.customer))].sort();
   const issued = new Date(issue + 'T00:00:00').toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
-  let made = 0; const skipped = [], sheets = [];
+  let made = 0; const skipped = [], sheets = [], kv = [], passwords = {};
   for (const p of parties) {
     /* EVERYTHING to date, not just the month: a customer's statement is more use as a
        complete position than as a slice, and it removes the brought-forward problem
@@ -569,12 +546,50 @@ export function makeStatements(outDir, issue) {
                         t.owed += r.owed;
                         t.toGet += (r.toGet > 0 && !r.pendingOrder) ? r.toGet : 0;
                         t.pend += r.pendingOrder ? r.total : 0; });
-    const html = stmtDoc(p, rows, o);
+    /* THE QR AND THE PASSWORD (02 Sep 2026). The code opens /s/<CODE> on the Worker, which
+       asks for a password sent by a different channel and decrypts in the reader's browser.
+       Two channels rather than one secret link: a QR can be photographed off a printed page,
+       and on its own it opens nothing.
+
+       WHAT IS ENCRYPTED IS THE DOCUMENT'S BODY, not the whole page: the unlock page already
+       carries the stylesheet, so shipping it again inside every envelope would multiply the
+       ciphertext for nothing. */
+    const url = BASE_URL + '/s/' + encodeURIComponent(p);
+    const qr = qrSvg(url, { size: 132, label: 'Statement link for ' + p });
+    const qrBlock = '<div class="qrb">' + qr
+      + '<p class="qrt">Scan to open this statement on your phone at any time.<br>'
+      + 'It asks for the password sent to you separately, then stays open for ten minutes.<br>'
+      + '<code>' + esc(url) + '</code></p></div>';
+    const baseDoc = stmtDoc(p, rows, o);
+    const html = baseDoc.replace('</div></body></html>', qrBlock + '\n</div></body></html>');
+
+    const pw = priorPw[p] || newPassword();
+    passwords[p] = pw;
+    /* THE ENVELOPE CARRIES THE DOCUMENT WITHOUT ITS QR, and the file on disk carries it with.
+       A reader who reached the page by scanning the code is already where the code points, so
+       printing it back at him is furniture; encrypting it as well quadrupled the ciphertext,
+       295KB across the run against 81KB, for a picture nobody on that page can use. */
+    const bodyOnly = (baseDoc.match(/<div class="w">([\s\S]*?)<\/div><\/body>/) || [, baseDoc])[1];
+    kv.push({ code: p, month: issue.slice(0, 7), issued: issue,
+              verifier: await makeVerifier(pw), env: await encryptText(pw, bodyOnly) });
+
     const file = join(outDir, 'statement_' + p.replace(/[^A-Za-z0-9._-]+/g, '-') + '_' + issue + '.html');
     writeFileSync(file, html);
     console.log('  ' + p.padEnd(14) + rows.length + ' order' + (rows.length === 1 ? '' : 's'));
     made++;
-    sheets.push({ who: p, html: html, t: t });
+    sheets.push({ who: p, html: html, t: t, pw: pw, url: url });
+  }
+
+  /* THE LEAK GATE, checked rather than asserted. The rules are fed a code and have no route to
+     a name, and one customer's document must not name another. Both are true by construction
+     and both are the sort of thing that stays true until a signature changes.
+     A WHOLE CODE, NOT A SUBSTRING: CN6-WM is a prefix of CN6-WM-R, and matching loosely refuses
+     a perfectly good run over a party containing its own name. Same trap as the 20 Aug scan
+     that flagged "sans-serif" as a leak. */
+  const whole = code => new RegExp("(?<![A-Za-z0-9-])" + code.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "(?![A-Za-z0-9-])");
+  for (const s of sheets) {
+    const others = parties.filter(x => x !== s.who && whole(x).test(s.html));
+    if (others.length) throw new Error(s.who + "'s statement names another party: " + others.join(", "));
   }
 
   /* ---- THE REVIEW SHEET, for him and not for a customer --------------------
@@ -588,9 +603,11 @@ export function makeStatements(outDir, issue) {
     const esc = x => String(x == null ? '' : x).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
     const m2 = v => Number(v).toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     const n2 = v => Number(v).toLocaleString('en-MY', { maximumFractionDigits: 2 });
-    /* one shared stylesheet, lifted from the first statement so the two can never
-       diverge: if the statement is restyled the review sheet follows automatically */
-    const css = (sheets[0].html.match(/<style>([\s\S]*?)<\/style>/) || [, ''])[1];
+    /* ONE SHARED STYLESHEET, IMPORTED RATHER THAN LIFTED. This used to pull the <style>
+       block out of the first statement with a regular expression so the two could not
+       diverge, which worked and depended on a document's markup never changing shape.
+       Both now call the same function. */
+    const css = statementCss();
     const bodyOf = h => { const m = h.match(/<body>([\s\S]*?)<\/body>/); return m ? m[1] : ''; };
     /* PENDING IS ITS OWN STATE, not a quiet 'clear'. An agreed order nobody has acted
        on is the one line most likely to need chasing, so the index says so rather than
@@ -599,6 +616,7 @@ export function makeStatements(outDir, issue) {
     const rowsIdx = sheets.map(x => {
       const f = flag(x.t);
       return '<tr class="f-' + f + '"><td class="l"><a href="#s-' + esc(x.who) + '">' + esc(x.who) + '</a></td>'
+        + '<td class="l pw">' + esc(x.pw) + '</td>'
         + '<td>' + x.t.n + '</td><td>' + n2(x.t.qty) + '</td><td>' + m2(x.t.total) + '</td><td>' + m2(x.t.paid) + '</td>'
         + '<td class="r">' + (x.t.owed > 0.009 ? '<b class="owe">' + m2(x.t.owed) + '</b>' : x.t.refund > 0.009 ? '<b class="rf">' + m2(x.t.refund) + ' to them</b>' : '&mdash;') + '</td>'
         + '<td class="r">' + (x.t.toGet > 0.009 ? '<b class="gd">' + n2(x.t.toGet) + ' unit</b>' : '&mdash;') + '</td>'
@@ -610,24 +628,11 @@ export function makeStatements(outDir, issue) {
     const review = '<!DOCTYPE html>\n<html lang="en"><head><meta charset="utf-8">'
       + '<meta name="viewport" content="width=device-width,initial-scale=1">'
       + '<title>Statements to review · ' + esc(issue) + '</title><style>' + css
-      + '\n.rv{max-width:900px;margin:0 auto 40px}'
-      + '.rvh{font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:#ffc75a;font-weight:700;margin:0 0 8px}'
-      + '.rvt{margin:0 0 6px;font-size:32px;font-weight:900;letter-spacing:-.015em}'
-      + '.rvs{color:#6b7688;font-size:13px;margin:0 0 26px}'
-      + '.idx{width:100%;border-collapse:collapse;margin-bottom:14px}'
-      + '.idx th{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#6b7688;font-weight:700;'
-      + 'padding:0 10px 9px;text-align:right;border-bottom:1px solid #2a3140}.idx th.l{text-align:left}'
-      + '.idx td{padding:10px;border-bottom:1px solid rgba(42,49,64,.5);text-align:right;'
-      + 'font-variant-numeric:tabular-nums;font-size:13.5px}.idx td.l{text-align:left}.idx td.r{text-align:right}'
-      + '.idx a{color:#7fd7e8;text-decoration:none;font-weight:700}.idx a:hover{text-decoration:underline}'
-      + '.idx tr.f-owes{background:rgba(255,199,90,.05)}.idx tr.f-goods{background:rgba(127,215,232,.05)}'
-      + '.idx tr.f-pend{background:rgba(200,182,255,.05)}.idx tr.f-refund{background:rgba(110,231,168,.05)}b.rf{color:#6ee7a8}'
-      + 'b.owe{color:#ffc75a}b.gd{color:#7fd7e8}b.pd{color:#c8b6ff}'
-      + '.cut{margin:0;border:0;border-top:1px dashed #2a3140;padding:0}'
-      + '.slab{max-width:900px;margin:34px auto 6px;font-size:11px;letter-spacing:.24em;'
-      + 'text-transform:uppercase;color:#6b7688;font-weight:700}'
-      + '@media print{.rv,.slab{color:#111}.idx a{color:#0b5f70}.sheet{page-break-after:always}}'
+      + REVIEW_CSS
       + '</style></head><body>'
+      + '<div class="warn"><b>This page carries the passwords.</b> It is the only file in the run '
+      + 'that does, and it is why this one is never sent, never left open and never forwarded. '
+      + 'Each password opens exactly one account, and a fresh set is issued next month.</div>'
       + '<div class="rv"><p class="rvh">For review, not for sending</p>'
       + '<h1 class="rvt">' + sheets.length + ' statements</h1>'
       + '<p class="rvs">Issued ' + esc(issued) + '. Every statement below is exactly the file that would go to that '
@@ -638,11 +643,11 @@ export function makeStatements(outDir, issue) {
       + (pnd.length ? ' <b>' + pnd.length + '</b> hold' + (pnd.length === 1 ? 's' : '') + ' an order agreed but not yet '
         + 'collected or paid, which is money to chase rather than money owed.' : '')
       + '</p>'
-      + '<table class="idx"><thead><tr><th class="l">Account</th><th>Orders</th><th>Quantity</th>'
+      + '<table class="idx"><thead><tr><th class="l">Account</th><th class="l">Password</th><th>Orders</th><th>Quantity</th>'
       + '<th>Ordered</th><th>Paid</th><th class="r">Outstanding</th><th class="r">Owed goods</th>'
       + '<th class="r">Not actioned</th></tr></thead>'
       + '<tbody>' + rowsIdx + '</tbody>'
-      + '<tfoot><tr><td class="l"><b>All</b></td><td>' + sumT('n') + '</td><td>' + n2(sumT('qty')) + '</td>'
+      + '<tfoot><tr><td class="l"><b>All</b></td><td></td><td>' + sumT('n') + '</td><td>' + n2(sumT('qty')) + '</td>'
       + '<td>' + m2(sumT('total')) + '</td><td>' + m2(sumT('paid')) + '</td>'
       + '<td class="r"><b class="owe">' + m2(sumT('owed')) + '</b></td>'
       + '<td class="r"><b class="gd">' + n2(sumT('toGet')) + ' unit</b></td>'
@@ -655,9 +660,17 @@ export function makeStatements(outDir, issue) {
     console.log('review sheet: ' + rf);
   }
 
+  /* The passwords and the encrypted records. _passwords.json is gitignored: it is credentials,
+     and a credential committed is a credential in the history for ever. The _kv records are
+     ciphertext plus a verifier, and those ARE committed, because the deploy uploads them. */
+  writeFileSync(pwFile, JSON.stringify(passwords, null, 2) + '\n');
+  for (const r of kv) writeFileSync(join(outDir, '_kv', r.code + '.json'), JSON.stringify(r) + '\n');
+
   console.log('\nwrote ' + made + ' statement' + (made === 1 ? '' : 's') + ' to ' + outDir);
+  console.log('passwords:    ' + pwFile + '  (gitignored, never commit)');
+  console.log('for the KV upload: ' + join(outDir, '_kv') + '  (' + kv.length + ' records)');
   if (skipped.length) console.log('nothing to show for: ' + skipped.join(', '));
-  return { made, skipped, sheets };
+  return { made, skipped, sheets, kv, passwords };
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
@@ -667,5 +680,5 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     if (outDir) console.error('the desk is no longer an input: statements build from ledger/book.json and engine/position.mjs (v388 removed the statement functions from the desk).');
     process.exit(2);
   }
-  makeStatements(outDir, issue);
+  makeStatements(outDir, issue).catch(e => { console.error(String(e && e.message || e)); process.exit(1); });
 }
