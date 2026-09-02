@@ -288,24 +288,44 @@ tr.tot td{font-weight:800;background:#150e2b;}
    Nothing is dropped, folded or hidden at any width: a cell moves, it does not go. */
 .ledwrap{container-type:inline-size;container-name:ledger;margin-top:12px;}
 .lcards{display:flex;flex-direction:column;gap:6px;margin-top:0;}
-.lrow,.lmove,.lhead{display:grid;grid-template-columns:28px 104px 72px 38px 56px 72px minmax(66px,1fr) 60px 64px 108px 108px 60px;column-gap:6px;row-gap:2px;align-items:center;}
+/* v471: KEYED ENTRIES ONLY, on his instruction. The note column, the captions, the step notes and
+   the correction strip leave the sheet for the Journal part beside it; a row here is a date, a
+   party, a product, a quantity, a sum and a state. Eleven tracks. Flat: no card, no rail, no pill,
+   a hairline between orders and coloured text where a state was a pill. */
+.lrow,.lmove,.lhead{display:grid;grid-template-columns:28px 104px 72px 38px 56px minmax(72px,1fr) 60px 64px 108px 108px 60px;column-gap:6px;row-gap:2px;align-items:center;}
+.ledwrap .lcard{background:none;border:0;border-radius:0;border-bottom:1px solid var(--line);}
+.ledwrap .lcard.s-completed,.ledwrap .lcard.s-open,.ledwrap .lcard.s-pending,.ledwrap .lcard.s-inkind,.ledwrap .lcard.s-default,.ledwrap .lcard.s-cancelled{border-left:0;background:none;}
+.ledwrap .lcards{gap:0;}
+.ledwrap .lrow{padding:6px 8px;}
+.ledwrap .lmove{padding:3px 8px;}
+.ledwrap .lmoves{margin:0;}
+.ledwrap .lclose{background:none;border-left:0;}
+.ledwrap .lopen{border-left:0;}
+.ledwrap .lcard>.lclose:not(:first-child){border-top:1px dashed var(--line);}
+.ledwrap .tag{background:none;border:0;padding:0;border-radius:0;font-size:11px;letter-spacing:.4px;}
+.ledwrap .tag.buy{color:var(--vio);} .ledwrap .tag.sell{color:var(--ice);}
+.ledwrap .tag.paid{color:var(--grn);} .ledwrap .tag.open{color:var(--amber);} .ledwrap .tag.pendingt{color:var(--vio);}
+.ledwrap .tag.inkind{color:var(--gold);} .ledwrap .tag.def{color:var(--crim);} .ledwrap .tag.prov{color:var(--gold);}
+.ledwrap .etype{background:none;padding:0;border-radius:0;}
+.ledwrap .prodtag{background:none;border:0;padding:0;box-shadow:none;}
+.ledwrap .lqb{border:0;padding:0;background:none;font-weight:500;text-decoration:underline;text-underline-offset:2px;}
+.ledwrap .lqb:hover{background:none;}
 .lgroup{display:contents;}
 .lc{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:clip;}
-.lc.lnote{white-space:normal;}
 /* the step cell holds the role (Opened, Open, Closed) and, on a step line or a closing line, the kind
    of the step; on a closing line it holds both, and they wrap within the column */
 .lc.lc-step{display:flex;flex-wrap:wrap;align-items:center;gap:2px 6px;white-space:normal;overflow:visible;}
 @container ledger (max-width:935px){
   .lrow,.lmove,.lhead{grid-template-columns:30px 74px minmax(72px,1fr) 60px 64px 108px 108px;
-    grid-template-areas:"e date party qty price tot state" "step step type prod note note act";}
+    grid-template-areas:"e date party qty price tot state" "step step type prod act act act";}
   .lc-e{grid-area:e;} .lc-step{grid-area:step;} .lc-date{grid-area:date;} .lc-type{grid-area:type;}
-  .lc-prod{grid-area:prod;} .lc-party{grid-area:party;} .lc-note{grid-area:note;}
+  .lc-prod{grid-area:prod;} .lc-party{grid-area:party;}
   .cqty{grid-area:qty;} .cprc{grid-area:price;} .ctot{grid-area:tot;} .lstate{grid-area:state;} .lc-act{grid-area:act;}
   .lstate .tag{white-space:normal;}
 }
 @container ledger (max-width:599px){
   .lrow,.lmove,.lhead{grid-template-columns:56px 74px minmax(60px,1fr) 108px;
-    grid-template-areas:"e date party state" "step step qty tot" "type prod price act" "note note note note";}
+    grid-template-areas:"e date party state" "step step qty tot" "type prod price act";}
 }
 .lsb{all:unset;cursor:pointer;font:inherit;color:inherit;letter-spacing:inherit;text-transform:inherit;display:inline-flex;align-items:center;gap:3px;min-height:var(--tap);}
 .lsb:hover,.lsb.on{color:var(--ink);}
@@ -693,6 +713,15 @@ select{width:100%;border:1px solid var(--line);border-radius:8px;padding:8px 9px
 .qask.none{color:var(--dim);font-size:15px;font-weight:700;}
 .qask.under{color:var(--crim);border-color:rgba(255,93,115,.45);}
 .ledbar{display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin:10px 0 12px;}
+/* v471: the Journal, one entry per note, dated and linked to its row */
+.jent{padding:9px 2px;border-bottom:1px solid var(--line);font-size:13px;}
+.jmeta{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:11px;color:var(--dim);margin-bottom:3px;}
+.jmeta .jdate{font-variant-numeric:tabular-nums;min-width:78px;}
+.jmeta .jkind{margin-left:auto;text-transform:uppercase;letter-spacing:.4px;font-weight:700;}
+.jtext{color:var(--mut);line-height:1.5;overflow-wrap:anywhere;}
+.jtext b{color:var(--ink);}
+.jtext .lcorr{padding:0;border:0;}
+.jsec{margin-top:22px;}
 .ledbar input{flex:1;min-width:170px;border:1px solid var(--line);border-radius:9px;padding:7px 10px;font-size:13px;color:var(--ink);background:#140c26;}
 .ledbar select{border:1px solid var(--line);border-radius:9px;padding:7px 34px 7px 8px;font-size:12px;color:var(--mut);background-color:#140c26;}
 .ledbar .ledct{font-size:11px;color:var(--dim);margin-left:auto;}
@@ -3649,7 +3678,7 @@ const whiteboard=[
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{"v":"v470","d":"02 Sep 2026","t":"CA4-DAM DEFAULTS ON THE 28 AUG UNIT","n":["<b>HIS INSTRUCTION, 02 SEP 2026.</b> The 1 unit handed over to CA4-DAM on 28 Aug for RM100, nothing paid, is marked defaulted: the money will not come. It was his first credit in thirteen orders and the row's note said so. A Correction sets the flag; the row keeps its figures so the loss is visible where it happened. Drafted through the gate, approved on his word, folded from the staged batch.","<b>WHAT MOVES.</b> Owed to you falls from RM370 to RM270 across three rows (CR3-DAM twice, CN6-WM). The unit is out and stays out; nothing returns to the shelf."]},
+const evolution=[{"v":"v471","d":"02 Sep 2026","t":"THE LEDGER IS KEYED ENTRIES ONLY, AND THE PROSE IS IN THE JOURNAL","n":["<b>HIS INSTRUCTION, 02 SEP 2026.</b> Prose goes into a journal; the ledger should be key in, key in, key in, done. The note column, the captions on collapsed orders, the notes on trail steps and the correction strip all leave the sheet. A ledger line is now an E-number, a step, a date, a type, a product, a party, a quantity, a price, a total with its margin, a state and the update control. Eleven columns, and the two narrower tiers re-flow the same eleven.","<b>FLAT.</b> No card, no coloured rail, no pill: a hairline between orders, a dashed line before a closing line, and coloured text where a state, a type or a step kind was a pill. The update control is a text link. The sheet reads down a column the way a sheet does.","<b>THE JOURNAL, BESIDE IT IN THE BOOK.</b> A new part. Every note a person wrote on a row, every note on a step of its trail with its cross-references, and every correction strip with its claims read back, dated, newest first, each linked to its row by E-number and rid so a tap lands on the line. Below them, the version entries the folds wrote. A search narrows both lists. Nothing in the Journal is computed: it repeats what was written and comments on nothing.","<b>ONE SOURCE FOR THE ORDER.</b> The ledger and the journal mint E-numbers from the same ledgerAll(), so E12 in the journal is E12 on the sheet. The extract lists jrnF as desk state.","<b>PROVED BY DRIVING IT.</b> Nothing prose-shaped on the sheet; every noted row has an entry; newest first and undated last; every entry names rid and E-number; row notes, step notes and corrections all present; every version entry present; the link lands on the row; the search narrows to one E-number. The v451 correction-strip check reads the Journal now, and v461 finds a step through its card's party rather than its note. 1187 assertions across 92 sections."]},{"v":"v470","d":"02 Sep 2026","t":"CA4-DAM DEFAULTS ON THE 28 AUG UNIT","n":["<b>HIS INSTRUCTION, 02 SEP 2026.</b> The 1 unit handed over to CA4-DAM on 28 Aug for RM100, nothing paid, is marked defaulted: the money will not come. It was his first credit in thirteen orders and the row's note said so. A Correction sets the flag; the row keeps its figures so the loss is visible where it happened. Drafted through the gate, approved on his word, folded from the staged batch.","<b>WHAT MOVES.</b> Owed to you falls from RM370 to RM270 across three rows (CR3-DAM twice, CN6-WM). The unit is out and stays out; nothing returns to the shelf."]},
 
 {"v":"v469","d":"02 Sep 2026","t":"v468 REVERSED: THE CZ4-MK RM20 PAYABLE STANDS AGAIN","n":["<b>HIS INSTRUCTION, 02 SEP 2026, MINUTES AFTER v468.</b> The withdrawal of the RM20 over-tender payable on CZ4-MK (s114) read his message wrongly and is reversed: the payable is back on the book as it stood at v467, since 26 Aug, and the row note is as it was. Nothing else in v468 touched the book."]},{"v":"v468","d":"02 Sep 2026","t":"THE CZ4-MK RM20 IS NOT A PAYABLE: IT WAS NEVER TENDERED","n":["<b>HIS INSTRUCTION, 02 SEP 2026.</b> The RM20 recorded on 26 Aug as an over-tender on CZ4-MK's oil order (s114) and moved to a customer payable on 28 Aug is withdrawn: the RM20 was never handed over, so there is nothing to refund and nothing to set off. RM130 was paid for RM130. The payable is removed from the book and the row's note says so; the 28 Aug correction of cash from 150 to 130 stands, because that is what was paid.","<b>REFUNDS PAYABLE NOW STAND AT NIL.</b> The one other record, CZ6-WM's RM80 refunded on 31 Jul, is history and untouched.","<b>SF6-KLC'S LOT IS ALREADY WRITTEN OFF.</b> p003 (12.5 unit, RM750, 8 Jul) has carried the default since it was recorded and the desk counts nothing open on it; a summary read to him on 2 Sep listed it among lots not received because it did not filter the write-off. No change to the book."]},{"v":"v467","d":"02 Sep 2026","t":"SEVEN DAYS DICTATED: A LOT LANDS, THE SHELF COMES BACK ABOVE ZERO, s119 IS PENDING AGAIN AND FOUR ROWS MOVE TO 31 AUG","n":["<b>DICTATED IN A CODE SESSION ON 02 SEP 2026 AND FOLDED ON HIS WORD.</b> Nine entries went through the same drafter the phone uses, run against the master's own book because the mirror's reads are key-gated from the laptop, staged into D1 as pending, approved on his instruction and folded from the staged batch. Every cost is the RM50 shelf; every flag the drafter raised is in the row's note.","<b>THE MISSING LOT.</b> 25 unit from SA5-BTR for RM1200, RM48 a unit, paid and received on 2 Sep. This is the lot the v464 roll said was unrecorded when the stated shelf went below zero. <b>The shelf goes 0.25 to 18.75</b>: 6.5 unit out across five sales and this fulfilment, 25 in. The cost basis moves from RM50 to RM48, the newest lot, two ringgit under the 26 Aug lot and eight under the 18 Aug one.","<b>s119 IS PENDING AGAIN, AND THE v464 FULFILMENT IS WITHDRAWN.</b> CY2-NIL's 2.5 unit for RM230 has not moved and has not been paid; the v464 fold read his approval of the draft as the event, and he has said it is still a pending order. The row is put back exactly as it stood at v463: agreed 28 Aug, undated, nothing paid, nothing delivered. The 2.5 unit the v464 roll took off the shelf is put back in the same roll. The D1 draft stays approved and committed, as history of what was queued.","<b>THREE SALES AND A FULFILMENT.</b> CN6-WM, 1 unit for RM110 on 30 Aug, delivered ahead of payment, so an advance, and RM20 above the RM90 he usually pays. CE4-CHE, the 0.5 unit still owed from the 18 Aug order handed over on 30 Aug, which settles that order in full after twelve days. CI4-OKR, 3 unit for RM290 on 2 Sep, paid and collected. CE4-CHE again on 2 Sep, 2 unit for RM215, paid and collected, RM107.50 a unit against the RM92 he usually pays. <b>He dictated the two CHE rows as CA5-CHE; there is no such code on the roster, CE4-CHE is the only party with a deferred balance to complete, so both are folded to CE4-CHE.</b> If that reading is wrong, a Correction on the party moves them.","<b>FOUR ROWS RE-DATED TO 31 AUG.</b> s120 and s121 (CA7-JTR), s122 (CK4-SEN) and s123 (CR3-DAM) were entered as 1 Sep and happened on 31 Aug. Date, delivered-on and paid-on move together; no figure changes. The drafter flagged each, rightly, that redating a row with movement moves when the movement counts."]},
 
@@ -3876,7 +3905,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='02 Sep 2026, 13:08 KL';
+const LAST_UPDATED='02 Sep 2026, 15:20 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -6011,7 +6040,7 @@ const dAhead=d=>(typeof d==='number'?d:dbet(d))<0;
    the Whiteboard needed it too). Every jump button anywhere reads this. */
 const TAB_LABEL={today:'Today',forward:'Forward',overview:'Overview',receivables:'Order book',
   inventory:'Inventory',financials:'Financials',analysis:'Analysis',concentration:'Customers',
-  network:'Network',map:'Map',ledger:'Ledger',add:'Transaction',sourcing:'Sourcing',
+  network:'Network',map:'Map',ledger:'Ledger',journal:'Journal',add:'Transaction',sourcing:'Sourcing',
   pricing:'Pricing',plans:'Whiteboard',approve:'Approve'};
 const starStr=n=>'★'.repeat(n)+'☆'.repeat(3-n);
 /* v245: THE PRICE TIER LEADS. custBadges() carries a RECENCY badge, Dormant/Loyal/Regular/New,
@@ -8415,12 +8444,77 @@ function corrStrip(t,dir,corrs){
          :`<div class="chead">${head}</div>`;})()
     +'</div>';
 }
-function tabLedger(){
-  // a fully pending order (agreed, nothing moved) carries no meaningful date and sits at the very bottom
-  const isPend=t=>t.type==='BUY'?(ledgerBuy(t._buy).order==='Pending'):(txStat(t).order==='Pending');
-  const all=[...purchases.map(p=>({date:p.date,type:'BUY',who:p.supplier,qty:p.qty,total:p.total,_buy:p})),
+/* ============ THE LEDGER'S ORDER, ONE SOURCE (v471) ============
+   tabLedger and tabJournal both mint E-numbers from this list, so a journal entry names the
+   same E12 the ledger draws. A fully pending order carries no meaningful date and sits last. */
+function ledIsPend(t){return t.type==='BUY'?(ledgerBuy(t._buy).order==='Pending'):(txStat(t).order==='Pending');}
+function ledgerAll(){
+  return [...purchases.map(p=>({date:p.date,type:'BUY',who:p.supplier,qty:p.qty,total:p.total,_buy:p})),
     ...sales.map(s=>Object.assign({type:'SELL',who:s.customer},s))]
-    .sort((a,b)=>{const pa=isPend(a),pb=isPend(b);if(pa!==pb)return pa?1:-1;return new Date(a.date)-new Date(b.date);});
+    .sort((a,b)=>{const pa=ledIsPend(a),pb=ledIsPend(b);if(pa!==pb)return pa?1:-1;return new Date(a.date)-new Date(b.date);});
+}
+/* ============ TAB: JOURNAL (v471) ============
+   HIS INSTRUCTION, 02 SEP 2026: prose goes into a journal; the ledger is keyed entries only.
+   Everything the ledger used to print beside a figure lives here, dated, newest first, and
+   linked to the row it belongs to: the note a person wrote on a row, the note on each step of
+   its trail, the correction strip with its claims read back, and the version entries the folds
+   wrote. Nothing here is computed: the journal repeats what was written, it does not comment. */
+let jrnF={q:''};
+function tabJournal(){
+  const all=ledgerAll();
+  const codes=all.map((t,i)=>'E'+(i+1));
+  const codeByKey={};all.forEach((t,i)=>{const k=t.who+'|'+t.date+'|'+t.total;if(!(k in codeByKey))codeByKey[k]=codes[i];});
+  const refHtml=a=>{const bits=[];
+    (a.refKeys||[]).forEach(k=>{const c=codeByKey[k];
+      bits.push(c?`<a class="eref elink" href="#ent-${c}" onclick="return goEnt('${c}')">${c}</a>`:`<span class="eref">${k}</span>`);});
+    if(a.ref)bits.push(`<span class="eref">${a.ref}</span>`);
+    return bits.length?'see '+bits.join(' '):'';};
+  const ents=[];
+  all.forEach((t,i)=>{
+    const raw=t._buy||t,code=codes[i],rid=ridOf(t);
+    const link=`<a class="eref elink" href="#ent-${code}" onclick="return goEnt('${code}')">${code}</a>`;
+    const who=`<span class="lparty">${ID(t.who)}</span>`;
+    if(raw.note)ents.push({date:t.date||raw.agreedOn||'',rid,code,who:t.who,kind:'Row',head:`${link} ${who}`,text:raw.note});
+    (raw.amend||[]).forEach(a=>{
+      if(a.kind==='Correction')return;
+      const bits=[];if(a.note)bits.push(a.note);const rh=refHtml(a);if(rh)bits.push(rh);
+      if(bits.length)ents.push({date:a.date||t.date||'',rid,code,who:t.who,kind:a.kind==='Linked'?'Linked orders':a.kind,head:`${link} ${who}`,text:bits.join(' ')});
+    });
+    const corrs=(raw.amend||[]).filter(a=>a.kind==='Correction');
+    const strip=corrStrip(raw,t.type,corrs);
+    if(strip){const when=(corrs.length&&corrs[corrs.length-1].date)||t.date||'';
+      ents.push({date:when,rid,code,who:t.who,kind:'Correction',head:`${link} ${who}`,text:strip});}
+  });
+  const MON={Jan:'01',Feb:'02',Mar:'03',Apr:'04',May:'05',Jun:'06',Jul:'07',Aug:'08',Sep:'09',Oct:'10',Nov:'11',Dec:'12'};
+  const isoOf=d=>{const m=/^(\d{1,2}) (\w{3}) (\d{4})$/.exec(String(d||''));return m?`${m[3]}-${MON[m[2]]||'01'}-${m[1].padStart(2,'0')}`:'';};
+  const vers=(evolution||[]).map(e=>({date:isoOf(e.d),code:e.v,kind:'Version',head:`<span class="ecode">${esc(e.v)}</span>`,text:`<b>${e.t}</b> ${(e.n||[]).join(' ')}`}));
+  const q=jrnF.q.trim().toLowerCase();
+  const hit=x=>!q||[x.date,x.code,x.who,x.kind,x.text].join(' ').toLowerCase().replace(/<[^>]+>/g,' ').indexOf(q)>=0;
+  const byDate=(a,b)=>{if(!a.date!==!b.date)return a.date?-1:1;return a.date<b.date?1:a.date>b.date?-1:0;};
+  const rows=ents.filter(hit).sort(byDate),vs=vers.filter(hit).sort(byDate);
+  const ent=x=>`<div class="jent"${x.rid?` data-rid="${x.rid}"`:''}>`
+    +`<div class="jmeta"><span class="jdate">${x.date||'undated'}</span>${x.head}<span class="jkind">${x.kind}</span></div>`
+    +`<div class="jtext${x.kind==='Version'?' jquote':''}">${x.text}</div></div>`;
+  return `<h1>Journal</h1>
+  <div class="dsc dsclead">Every note written beside a figure, newest first, and the version entries the folds wrote.</div>
+  <div class="ledbar"><input id="jrnQ" placeholder="Search party, E-code, version, text&hellip;" value="${esc(jrnF.q)}"><span class="ledct">${rows.length} note${rows.length===1?'':'s'}, ${vs.length} version${vs.length===1?'':'s'}</span></div>
+  <h2>Rows and steps <span class="rule"></span></h2>
+  <div class="jlist">${rows.map(ent).join('')||'<div class="dsc" style="padding:14px 4px">Nothing matches.</div>'}</div>
+  <h2 class="jsec">Versions <span class="rule"></span></h2>
+  <div class="jlist">${vs.map(ent).join('')||'<div class="dsc" style="padding:14px 4px">Nothing matches.</div>'}</div>`;
+}
+function wireJournal(){
+  const q=document.getElementById('jrnQ');if(!q)return;
+  q.oninput=()=>{jrnF.q=q.value;
+    const host=document.querySelector('#sec-book .vpart[data-tab="journal"]');if(!host)return;
+    renderPart('journal',host);
+    const el=document.getElementById('jrnQ');if(!el)return;
+    try{el.focus();if(el.setSelectionRange)el.setSelectionRange(el.value.length,el.value.length);}catch(e){}};
+}
+
+function tabLedger(){
+  const isPend=ledIsPend;
+  const all=ledgerAll();
   const nil='<span class="pnil">&mdash;</span>';
   const pill=(lab,cls)=>lab?`<span class="tag ${cls}">${lab}</span>`:nil;
   const stateCls=st=>st==='Completed'?'paid':st==='Pending'?'pendingt':st==='In-Kind'?'inkind':(st==='Default'||st==='Cancelled')?'def':/^Open/.test(st)?'open':'open';
@@ -8553,7 +8647,6 @@ function tabLedger(){
         +`<span class="lc lc-type">${o.type||''}</span>`
         +`<span class="lc lc-prod">${o.product||''}</span>`
         +`<span class="lc lc-party">${o.party||''}</span>`
-        +`<span class="lc lnote lc-note">${o.note||''}</span>`
       +`</span>`;
     const openLine=`<div class="lrow l${headRole==='close'?'close':'open'}">`
       +cells({code:code,
@@ -8571,11 +8664,10 @@ function tabLedger(){
     // the movement lines and the closing line
     const stepLine=(a,cls,lead)=>{
       const mk=a.kg>0.0001,mc=a.cash>0.0001,isMod=a.kind==='Modification';
-      const noteBits=[];if(a.note)noteBits.push(a.note);const rh=refHtml(a);if(rh)noteBits.push(rh);
+      /* v471: the step's note and its cross-references are in the Journal, not here */
       return `<div class="${cls}">`
         +cells({code:'',step:lead.step||'',date:lead.date||'',
-          kind:`<span class="etype ${kindCls[a.kind]||'efulfil'}">${kindLab(a.kind,t.type==='BUY',a)}</span>`,
-          note:noteBits.length?`<span class="lmnote">${noteBits.join(' ')}</span>`:''})
+          kind:`<span class="etype ${kindCls[a.kind]||'efulfil'}">${kindLab(a.kind,t.type==='BUY',a)}</span>`})
         +qCell(mk,mk?a.kg:t.qty)
         +pCell(isMod)
         +tCell(mc,mc?a.cash:t.total,isMod)
@@ -8621,15 +8713,13 @@ function tabLedger(){
        no longer do is print on a card that collapsed precisely because nothing happened worth
        three lines. What prints instead is the one thing the desk can say and he cannot see:
        how this order compares with how that party usually behaves. */
-    const caption=collapse?ledFact(t,am):'';
-    const collapsedLine=collapse?`<div class="lrow lclose">`
+      const collapsedLine=collapse?`<div class="lrow lclose">`
       +cells({code:code,
         step:`<span class="lclabel roleclose">Closed</span>`,
         date:`<span class="ldate">${ledDate(closeA.date)}</span>`,
         type:`<span class="tag ${t.type==='BUY'?'buy':'sell'}">${t.type}</span>`,
         product:prodTag(t)+(provOf(t)?`<span class="tag prov" title="recorded but not yet committed">Provisional</span>`:''),
-        party:`<span class="lparty">${ID(t.who)}</span>`,
-        note:`<span class="lagreed">${t.date?'agreed '+t.date:'planned, undated'}</span>`+(caption?` <span class="lmnote">${caption}</span>`:'')})
+        party:`<span class="lparty">${ID(t.who)}</span>`})
       +figNow.qty()+pCell(true)+figNow.tot()
       +`<span class="lstate">${pill(finalState,stateCls(finalState))}</span>`
       +actCell
@@ -8667,7 +8757,7 @@ function tabLedger(){
     const kProd=(PRODUCTS[prodOf(rowT)]||{}).name||'';
     return {live:live,date:t.date||'',
       k:{e:idx,date:t.date||null,type:t.type,product:kProd,party:ID(t.who),qty:+t.qty||0,price:price,total:+t.total||0,margin:margin,state:finalState},
-      h:`<div class="lcard ${cardCls}" id="ent-${code}"${rid?` data-rid="${rid}" data-type="${t.type}" tabindex="0"`:""}>${collapse?collapsedLine:(openLine+movePanel+closeLine)}${corrStrip(rowT,t.type,corrs)}</div>`};}).filter(Boolean);
+      h:`<div class="lcard ${cardCls}" id="ent-${code}"${rid?` data-rid="${rid}" data-type="${t.type}" tabindex="0"`:""}>${collapse?collapsedLine:(openLine+movePanel+closeLine)}</div>`};}).filter(Boolean);
   const shown=rows.length,total=all.length;
   const filtered=!!(ledF.q||ledF.state||ledF.party||ledF.month||ledF.product);
   /* v465: THE WHOLE BOOK, IN THE ORDER ASKED FOR. A blank key sorts last in both directions, as a
@@ -8698,13 +8788,13 @@ function tabLedger(){
   return `<h1>Ledger</h1>
   <div class="dsc dsclead">Every transaction the desk holds, first to latest, with the trail of what moved when.</div>
   <h2>Transactions ledger <span class="rule"></span></h2>
-  <div class="note">One card per order, <b>Opened &rarr; movements &rarr; Closed</b>, with <b>bright</b> figures moved at that step and <b>grey</b> ones carried over. Sort by any column from its heading, and again to reverse; the E-numbers keep their place in the book.</div>
+  <div class="note">One line per order, <b>Opened &rarr; steps &rarr; Closed</b>, figures only; the notes are in the Journal. Sort by any column from its heading, and again to reverse; the E-numbers keep their place in the book.</div>
   ${toolbar}
   ${ledSumBar(shownTx,total)}
   <div class="card" style="margin:0 0 6px"><div class="cardh">The book, day by day <span class="sub">RM written and units moved${filtered?', across the rows shown':''}</span></div><div class="chartbox" style="height:180px"><canvas id="lgTimeChart"></canvas></div></div>
   ${(()=>{const hb=(key,lab)=>`<button type="button" class="lsb${ledSort.key===key?' on':''}" data-lsort="${key}" id="lsort-${key}">${lab}${ledSort.key===key?`<span class="larr">${ledSort.dir>0?'&#9650;':'&#9660;'}</span>`:''}</button>`;
     return `<div class="ledwrap"><div class="lhead">`
-      +`<span class="lc lc-e">${hb('e','E')}</span><span class="lc lc-step">Step</span><span class="lc lc-date">${hb('date','Date')}</span><span class="lc lc-type">${hb('type','Type')}</span><span class="lc lc-prod">${hb('product','Product')}</span><span class="lc lc-party">${hb('party','Party')}</span><span class="lc lc-note">Note</span>`
+      +`<span class="lc lc-e">${hb('e','E')}</span><span class="lc lc-step">Step</span><span class="lc lc-date">${hb('date','Date')}</span><span class="lc lc-type">${hb('type','Type')}</span><span class="lc lc-prod">${hb('product','Product')}</span><span class="lc lc-party">${hb('party','Party')}</span>`
       +`<span class="lcol cqty">${hb('qty','Qty')}</span><span class="lcol cprc">${hb('price','Price/unit')}</span><span class="lcol ctot">${hb('total','Total')}${hb('margin','margin')}</span><span class="lstate">${hb('state','State')}</span><span class="lc lc-act">Act</span></div>`;})()}
   <div class="lcards">${rowsHtml||'<div class="dsc" style="padding:14px 4px">Nothing matches this filter.</div>'}</div></div>
   ${supplierQuote&&supplierQuote.tiers?`<h2 style="margin-top:24px">Supplier bulk quote <span class="rule"></span></h2><div class="card"><div style="font-size:12px;color:var(--mut);margin-bottom:8px">Indicative from ${ID(supplierQuote.supplier)} &mdash; not a purchase.</div><table><thead><tr><th class="l">Order</th><th>Price</th><th>Cost/unit</th></tr></thead><tbody>${supplierQuote.tiers.map(t=>`<tr><td class="l">${units(t.qty)}</td><td>${fmt(t.total)}</td><td class="mono">${fmt(t.total/t.qty)}</td></tr>`).join('')}</tbody></table></div>`:''}`;
@@ -15371,7 +15461,7 @@ function setProdView(pr){
   PROD=pr; try{localStorage.setItem('saltProd',pr);}catch(e){}
   recompute(); drawProdSw(); render();
 }
-const builders={today:tabToday,forward:tabForward,sourcing:()=>{const b=perProduct(tabSourcing,{skipEmpty:true});return srcHead()+(b||'<div class="card"><div class="insight">No purchases or sales on any book yet, so there is nothing to source against.</div></div>');},analysis:()=>anaHead()+perProduct(tabAnalysis),map:tabMap,overview:tabOverview,inventory:()=>invHead()+perProduct(tabInventory),financials:()=>consoBlock()+consoCashBlock()+perProduct(tabFinancials),ledger:tabLedger,concentration:tabConcentration,network:tabNetwork,receivables:()=>consoOrderBlock()+perProduct(tabReceivables),add:tabWorkbench,pricing:()=>pxHead()+perProduct(tabPricing),plans:tabPlans,approve:tabApprove};
+const builders={today:tabToday,forward:tabForward,sourcing:()=>{const b=perProduct(tabSourcing,{skipEmpty:true});return srcHead()+(b||'<div class="card"><div class="insight">No purchases or sales on any book yet, so there is nothing to source against.</div></div>');},analysis:()=>anaHead()+perProduct(tabAnalysis),map:tabMap,overview:tabOverview,inventory:()=>invHead()+perProduct(tabInventory),financials:()=>consoBlock()+consoCashBlock()+perProduct(tabFinancials),ledger:tabLedger,journal:tabJournal,concentration:tabConcentration,network:tabNetwork,receivables:()=>consoOrderBlock()+perProduct(tabReceivables),add:tabWorkbench,pricing:()=>pxHead()+perProduct(tabPricing),plans:tabPlans,approve:tabApprove};
 /* ============ SEVEN VIEWS OVER FIFTEEN TABS (v341, move 4 of the rebuild) ============
    The fifteen tabs were fifteen reports stacked: a megabyte to open for one figure, with the
    method prose standing open on every one. A view leads with one tab open, folds that tab's
@@ -15386,7 +15476,7 @@ const VIEWS=[
   {id:'stock', name:'Stock',            lead:'inventory',     parts:['sourcing']},
   {id:'price', name:'Price',            lead:'pricing',       parts:[]},
   {id:'people',name:'Customers',        lead:'concentration', parts:['network','map']},
-  {id:'book',  name:'The book',         lead:'ledger',        parts:['analysis']},
+  {id:'book',  name:'The book',         lead:'ledger',        parts:['journal','analysis']},
   {id:'enter', name:'Enter',            lead:'add',           parts:['approve','plans']}
 ];
 const VIEW_OF={}; VIEWS.forEach(v=>{VIEW_OF[v.id]=v.id;VIEW_OF[v.lead]=v.id;v.parts.forEach(p=>{VIEW_OF[p]=v.id;});});
@@ -15402,6 +15492,7 @@ const PART_Q={today:'what needs doing, ranked by the money at stake',
   network:'associates, their downstream buckets and the rewards',
   map:'where the book is concentrated, drawn as heat',
   ledger:'every row on the book, and a statement of account for any party',
+  journal:'the prose beside the figures: every note, step, correction and version, dated',
   analysis:'the month read twelve ways',
   add:'record an order, an amendment, a count, a loss, a lost sale or a follow-up',
   approve:'the rows drafted from the queue, waiting on a decision',
@@ -15411,7 +15502,7 @@ const PART_DRAW={inventory:()=>drawPerProduct([trackCharts]),
   pricing:()=>drawPerProduct([wirePricing,drawPriceCharts,drawEarnChart,drawBoardCharts]),
   today:()=>drawTodayCharts(), concentration:()=>drawConcCharts(),
   receivables:()=>drawPerProduct([drawRecvCharts]), financials:()=>drawPerProduct([drawFinCharts]),
-  network:()=>drawNetworkCharts(), ledger:()=>{drawLedgerCharts();wireLedger();},
+  network:()=>drawNetworkCharts(), ledger:()=>{drawLedgerCharts();wireLedger();}, journal:()=>wireJournal(),
   sourcing:()=>drawPerProduct([drawSourcingCharts,drawOutlookChart]), forward:()=>drawFwdCharts(),
   analysis:()=>drawPerProduct([drawAnalysis]), approve:()=>apLoad()};
 /* THE METHOD PROSE GOES (v372). HIS INSTRUCTION OF 26 Aug: Method and caveats is useless,

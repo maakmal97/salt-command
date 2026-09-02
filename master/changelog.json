@@ -1,5 +1,17 @@
 [
  {
+  "v": "v471",
+  "d": "02 Sep 2026",
+  "t": "THE LEDGER IS KEYED ENTRIES ONLY, AND THE PROSE IS IN THE JOURNAL",
+  "n": [
+   "<b>HIS INSTRUCTION, 02 SEP 2026.</b> Prose goes into a journal; the ledger should be key in, key in, key in, done. The note column, the captions on collapsed orders, the notes on trail steps and the correction strip all leave the sheet. A ledger line is now an E-number, a step, a date, a type, a product, a party, a quantity, a price, a total with its margin, a state and the update control. Eleven columns, and the two narrower tiers re-flow the same eleven.",
+   "<b>FLAT.</b> No card, no coloured rail, no pill: a hairline between orders, a dashed line before a closing line, and coloured text where a state, a type or a step kind was a pill. The update control is a text link. The sheet reads down a column the way a sheet does.",
+   "<b>THE JOURNAL, BESIDE IT IN THE BOOK.</b> A new part. Every note a person wrote on a row, every note on a step of its trail with its cross-references, and every correction strip with its claims read back, dated, newest first, each linked to its row by E-number and rid so a tap lands on the line. Below them, the version entries the folds wrote. A search narrows both lists. Nothing in the Journal is computed: it repeats what was written and comments on nothing.",
+   "<b>ONE SOURCE FOR THE ORDER.</b> The ledger and the journal mint E-numbers from the same ledgerAll(), so E12 in the journal is E12 on the sheet. The extract lists jrnF as desk state.",
+   "<b>PROVED BY DRIVING IT.</b> Nothing prose-shaped on the sheet; every noted row has an entry; newest first and undated last; every entry names rid and E-number; row notes, step notes and corrections all present; every version entry present; the link lands on the row; the search narrows to one E-number. The v451 correction-strip check reads the Journal now, and v461 finds a step through its card's party rather than its note. 1187 assertions across 92 sections."
+  ]
+ },
+ {
   "v": "v470",
   "d": "02 Sep 2026",
   "t": "CA4-DAM DEFAULTS ON THE 28 AUG UNIT",

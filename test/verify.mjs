@@ -4510,7 +4510,7 @@ section("v445: one floored ruler for every age, and the engine has it too");
 
     /* AND NOTHING ABSURD REACHES THE PAGE. Rendered, across every part, because an age that is
        merely printed wrong is still wrong on the one screen he reads. */
-    const text = String(t.w.eval("(function(){var out=[];for(var k in PART_Q){try{switchTab(k);var e=document.querySelector('.sec.on');if(e)out.push(e.textContent);}catch(x){out.push('THREW '+k+': '+x.message);}}return out.join(' ');})()"));
+    const text = String(t.w.eval("(function(){var out=[];for(var k in PART_Q){try{switchTab(k);var e=document.querySelector('.sec.on');if(e){var c=e.cloneNode(true);[].slice.call(c.querySelectorAll('.jquote')).forEach(function(q){q.parentNode.removeChild(q);});out.push(c.textContent);}}catch(x){out.push('THREW '+k+': '+x.message);}}return out.join(' ');})()"));
     ok(!/THREW/.test(text), `${label}: every part renders (${(text.match(/THREW [^ ]+/) || [""])[0]})`);
     ok(!/NaN/.test(text), `${label}: no NaN reaches the page (${(text.match(/.{0,28}NaN.{0,20}/) || [""])[0]})`);
     ok(!/-\d+ ?(d ago|days ago|d out)/.test(text), `${label}: no negative age is printed (${(text.match(/-\d+ ?(d ago|days ago|d out)/) || [""])[0]})`);
@@ -4792,12 +4792,16 @@ section("v451: the Ledger draws a lot's trail");
     w.eval("setProd('salt');recompute();ledF.q='';switchTab('ledger');");
     const card = (rid) => JSON.parse(w.eval("JSON.stringify((function(){var c=document.querySelector('.lcard[data-rid=\"" + rid + "\"]');if(!c)return null;var rows=[].map.call(c.querySelectorAll('.lrow,.lmove'),function(r){return {cls:r.className,date:(r.querySelector('.ldate,.lmdate')||{}).textContent||'',pill:(r.querySelector('.lstate .tag')||{}).textContent||''};});var k=c.querySelector('.lcorr');return {rows:rows,corr:k?{cls:k.className,why:!!k.querySelector('.cwhy'),text:k.textContent.replace(/\s+/g,' ').trim()}:null};})())"));
     const f6 = card("f6"), f7 = card("f7"), p16 = card("p016");
+    /* v471: the correction strip lives in the Journal beside the ledger, keyed by the same rid */
+    w.eval("switchTab('journal');");
+    const f7c = JSON.parse(w.eval("JSON.stringify((function(){var k=document.querySelector('.jent[data-rid=\"f7\"] .lcorr');return k?{cls:k.className,why:!!k.querySelector('.cwhy'),text:k.textContent.replace(/[ \\t\\n\\r]+/g,' ').trim()}:null;})())"));
+    w.eval("switchTab('ledger');");
     ok(f6 && f6.rows.length === 2 && /\blopen\b/.test(f6.rows[0].cls) && /\blclose\b/.test(f6.rows[1].cls),
       `a lot paid on the 10th and received on the 20th opens and closes on two lines (${f6 && f6.rows.map((r) => r.cls).join(" | ")})`);
     ok(f6 && f6.rows[0].pill === "Open \u00b7 Deferred" && f6.rows[1].pill === "Completed" && f6.rows[1].date === "2026-08-20",
       `paid ahead on the head, Completed on the close, dated by the receipt (${f6 && f6.rows.map((r) => r.pill + " " + r.date).join(" | ")})`);
-    ok(f7 && f7.corr && /Corrected 2026-08-30/.test(f7.corr.text) && !/\bbad\b/.test(f7.corr.cls) && f7.corr.why,
-      `a corrected lot carries the correction strip, quiet because every claim reads back, its own note behind why (${f7 && f7.corr && f7.corr.text.slice(0, 60)})`);
+    ok(f7 && f7c && /Corrected 2026-08-30/.test(f7c.text) && !/\bbad\b/.test(f7c.cls) && f7c.why,
+      `a corrected lot carries the correction strip in the Journal, quiet because every claim reads back, its own note behind why (${f7c && f7c.text.slice(0, 60)})`);
     ok(p16 && p16.rows.length === 1 && /\blclose\b/.test(p16.rows[0].cls) && p16.rows[0].pill === "Completed",
       `p016, restated the day it was booked, still folds to one Completed line (${p16 && p16.rows.map((r) => r.cls + " " + r.pill).join(" | ")})`);
     w.eval("ledF.q='corrected on 2026-08-30';switchTab('ledger');");
@@ -5016,7 +5020,8 @@ section("v456: an undated row says so wherever its date is printed");
   const B6 = j6(REPO, "test", ".v456.json"), M6 = j6(REPO, "test", ".v456.html");
   wf6(B6, JSON.stringify(bk6, null, 1)); wf6(M6, rf6(j6(REPO, "master", "salt_command.html"), "utf8"));
   ex6("node tools/booksync.mjs --sync", { cwd: REPO, env: { ...process.env, SALT_BOOK: B6, SALT_MASTER: M6 }, stdio: "pipe" });
-  const READ6 = "(function(){var e=document.querySelector('.sec.on');return e?e.textContent:'';})()";
+  /* v471: the Journal quotes the version history verbatim, and that prose names the words this census hunts; quoted history is not desk output, so it is cut before reading */
+  const READ6 = "(function(){var e=document.querySelector('.sec.on');if(!e)return '';var c=e.cloneNode(true);[].slice.call(c.querySelectorAll('.jquote')).forEach(function(q){q.parentNode.removeChild(q);});return c.textContent;})()";
   const count = (t, w) => t.split(w).length - 1;
   try {
     const { w } = await om6(M6);
@@ -5200,7 +5205,8 @@ section("v461: a lot's step is named the way the whiteboard took it");
   const B11 = j11(REPO, "test", ".v461.json"), M11 = j11(REPO, "test", ".v461.html");
   wf11(B11, JSON.stringify(bk11, null, 1)); wf11(M11, rf11(j11(REPO, "master", "salt_command.html"), "utf8"));
   ex11("node tools/booksync.mjs --sync", { cwd: REPO, env: { ...process.env, SALT_BOOK: B11, SALT_MASTER: M11 }, stdio: "pipe" });
-  const LABELS = (tag) => `(function(){return JSON.stringify([].slice.call(document.querySelectorAll(".sec.on .lgroup")).filter(function(g){return g.textContent.indexOf(${JSON.stringify(tag)})>=0;}).map(function(g){var e=g.querySelector(".etype");return e?e.textContent:"(no label)";}));})()`;
+  /* v471: notes left the sheet, so a step is found through its card's rid rather than its note */
+  const LABELS = (tag) => `(function(){var out=[];[].slice.call(document.querySelectorAll(".sec.on .lcard")).forEach(function(c){if(c.getAttribute("data-rid")!==${JSON.stringify(tag.toLowerCase())})return;[].slice.call(c.querySelectorAll(".lmove .etype, .lrow.lclose .etype")).forEach(function(e){out.push(e.textContent);});});return JSON.stringify(out);})()`;
   try {
     const { w } = await om11(M11);
     w.eval("setProd('salt');recompute();switchTab('ledger');");
@@ -5261,8 +5267,8 @@ section("v465: the ledger is a table, whole and sortable");
   ok(rows15 > 100 && cards15 === rows15, `every row on the book is on screen (${cards15} of ${rows15}), none folded`);
   ok(+w15.eval("document.querySelectorAll('.sec.on .ledmore, .sec.on details.lmc, .sec.on details .lmove').length") === 0 && +w15.eval("document.querySelectorAll('.sec.on .lmove').length") > 0,
     "no fold and no disclosure: every interim step is a visible line");
-  ok(+w15.eval("document.querySelectorAll('.sec.on .lhead > *').length") === 12 && +w15.eval("document.querySelectorAll('.sec.on .lhead [data-lsort]').length") === 10,
-    "twelve headed columns, ten of them sortable");
+  ok(+w15.eval("document.querySelectorAll('.sec.on .lhead > *').length") === 11 && +w15.eval("document.querySelectorAll('.sec.on .lhead [data-lsort]').length") === 10,
+    "eleven headed columns, ten of them sortable");
   const ids15 = J15("JSON.stringify([].slice.call(document.querySelectorAll('.sec.on .lcard')).map(function(c){return +c.id.replace('ent-E','');}))");
   ok(ids15[0] === 1 && ids15.every((x, i) => !i || ids15[i - 1] < x), "it opens first to latest: E1 at the top and every E-number after the one before it");
   const rids15 = () => J15("JSON.stringify([].slice.call(document.querySelectorAll('.sec.on .lcard')).map(function(c){return c.getAttribute('data-rid');}))");
@@ -5284,8 +5290,8 @@ section("v465: the ledger is a table, whole and sortable");
   ok(blanks > 0 && dd.slice(0, dated.length).every(Boolean) && mono(dated, false), `Date descending keeps the ${blanks} undated rows last, as a sheet keeps blank cells`);
   ok(/Date/.test(String(w15.eval("document.querySelector('.sec.on .lhead .lsb.on').textContent"))) && +w15.eval("document.querySelectorAll('.sec.on .lhead .larr').length") === 1,
     "the active heading carries the one arrow");
-  ok(+w15.eval("document.querySelector('.sec.on .lcard .lrow .lgroup').children.length") === 7 && +w15.eval("document.querySelector('.sec.on .lcard .lrow').children.length") === 6,
-    "an order line is seven labelled cells, the four figures and its control, the same tracks as the heading");
+  ok(+w15.eval("document.querySelector('.sec.on .lcard .lrow .lgroup').children.length") === 6 && +w15.eval("document.querySelector('.sec.on .lcard .lrow').children.length") === 6,
+    "an order line is six labelled cells, the four figures and its control, the same tracks as the heading");
   w15.eval("ledSort={key:'e',dir:1};");
 }
 
@@ -5304,11 +5310,11 @@ section("v466: the ledger never scrolls sideways; a narrower screen re-flows the
   ok(+w16.eval("document.querySelectorAll('.sec.on .ledscroll').length") === 0 && +w16.eval("document.querySelectorAll('.sec.on .ledwrap').length") === 1
     && +w16.eval("document.querySelectorAll('.sec.on .ledwrap .lhead, .sec.on .ledwrap .lcards').length") === 2,
     "the scroller is gone and one container holds the heading and the rows");
-  const AREAS = ["lc-e", "lc-step", "lc-date", "lc-type", "lc-prod", "lc-party", "lc-note", "cqty", "cprc", "ctot", "lstate", "lc-act"];
+  const AREAS = ["lc-e", "lc-step", "lc-date", "lc-type", "lc-prod", "lc-party", "cqty", "cprc", "ctot", "lstate", "lc-act"];
   const areasOf = (sel) => JSON.parse(String(w16.eval("JSON.stringify([].slice.call(document.querySelectorAll('" + sel + "')).map(function(l){return " + JSON.stringify(AREAS) + ".filter(function(a){return !!l.querySelector('.'+a);}).length;}))")));
   const lines = areasOf(".sec.on .lcard .lrow, .sec.on .lcard .lmove"), head = areasOf(".sec.on .lhead");
-  ok(lines.length > 140 && lines.every((x) => x === 12), `every one of the ${lines.length} lines carries all twelve areas (min ${Math.min(...lines)})`);
-  ok(head.length === 1 && head[0] === 12, "and so does the heading, so it re-flows with them");
+  ok(lines.length > 140 && lines.every((x) => x === 11), `every one of the ${lines.length} lines carries all eleven areas (min ${Math.min(...lines)})`);
+  ok(head.length === 1 && head[0] === 11, "and so does the heading, so it re-flows with them");
   /* the kind rides in the step column: a step line's step cell holds the kind pill, an order line's holds its role */
   ok(+w16.eval("document.querySelectorAll('.sec.on .lmove .lc-step .etype').length") > 0 && +w16.eval("document.querySelectorAll('.sec.on .lmove .lc-step .etype').length") === +w16.eval("document.querySelectorAll('.sec.on .lmove').length")
     && +w16.eval("document.querySelectorAll('.sec.on .lcard > .lrow:first-child .lc-step .lclabel').length") === +w16.eval("document.querySelectorAll('.sec.on .lcard').length"),
@@ -5318,6 +5324,42 @@ section("v466: the ledger never scrolls sideways; a narrower screen re-flows the
     "the wrap is a size container and two width tiers are declared against it");
   ok(!/\.lcard[^{]*\{[^}]*min-width:\s*1\d{3}px/.test(css) && !/overflow-x:\s*auto[^}]*\}[^@]*\.lcards/.test(css), "no card carries a four-figure minimum width any more");
   ok(!/.lheads*{s*display:s*none/.test(css), "and no rule hides the heading at any width: the v307 phone stack that did is retired");
+}
+
+
+section("v471: the ledger is keyed entries only, and the prose is in the Journal");
+{
+  /* His instruction of 02 Sep 2026: prose goes into a journal; the ledger should be key in, key
+     in, key in, done. The note column, captions, step notes and the correction strip leave the
+     sheet; a Journal part beside it carries every one of them, dated, newest first, linked to its
+     row by rid and E-number, plus the version entries. Driven on the live book. */
+  const { openMaster: om17 } = await import("../tools/payload.mjs");
+  const { w: w17 } = await om17();
+  w17.eval("setProd('salt');recompute();ledF={q:'',state:'',party:'',month:'',product:''};ledSort={key:'e',dir:1};jrnF={q:''};switchTab('ledger');");
+  const J17 = (x) => JSON.parse(String(w17.eval(x)));
+  ok(+w17.eval("document.querySelectorAll('.sec.on .lmnote, .sec.on .lagreed, .sec.on .lcorr, .sec.on .lc-note').length") === 0, "no note, caption or correction strip prints on the sheet");
+  const noted17 = +w17.eval("sales.concat(purchases).filter(function(r){return !!r.note;}).length");
+  const cards17 = +w17.eval("document.querySelectorAll('.sec.on .lcard').length");
+  w17.eval("switchTab('journal');");
+  ok(/^journal$/.test(String(w17.eval("(document.querySelector('.sec.on .vpart')||{}).getAttribute('data-tab')"))) || +w17.eval("document.querySelectorAll('.sec.on .jent').length") > 0,
+    "the Journal opens as a part of The book");
+  const ents17 = J17("JSON.stringify([].slice.call(document.querySelectorAll('.sec.on .jlist')[0].querySelectorAll('.jent')).map(function(e){return {rid:e.getAttribute('data-rid'),date:(e.querySelector('.jdate')||{}).textContent||'',kind:(e.querySelector('.jkind')||{}).textContent||'',code:(e.querySelector('.eref')||{}).textContent||''};}))");
+  ok(ents17.length >= noted17 && noted17 > 50, `every written row note is an entry (${ents17.length} entries for ${noted17} noted rows, plus step notes and corrections)`);
+  const dated17 = ents17.map((e) => e.date).filter((d) => d !== "undated");
+  ok(dated17.every((d, i) => !i || dated17[i - 1] >= d) && ents17.slice(0, dated17.length).every((e) => e.date !== "undated"), "newest first, undated last");
+  ok(ents17.every((e) => e.rid && /^E\d+$/.test(e.code)), "every entry names its row by rid and E-number");
+  const kinds17 = new Set(ents17.map((e) => e.kind));
+  ok(kinds17.has("Row") && kinds17.has("Fulfilment") && kinds17.has("Correction"), `row notes, step notes and corrections are all there (${[...kinds17].join(", ")})`);
+  const vers17 = +w17.eval("document.querySelectorAll('.sec.on .jlist')[1].querySelectorAll('.jent').length");
+  ok(vers17 === +w17.eval("evolution.length") && vers17 > 100, `and every version entry, ${vers17} of them`);
+  const first17 = ents17[0];
+  w17.eval("switchTab('ledger');");
+  ok(!!w17.eval("document.querySelector('.sec.on .lcard[data-rid='+JSON.stringify(" + JSON.stringify(first17.rid) + ")+']')"), "and the row an entry names is on the sheet, so the link lands");
+  w17.eval("switchTab('journal');jrnF.q='" + first17.code + "';switchTab('journal');");
+  const hits17 = J17("JSON.stringify([].slice.call(document.querySelectorAll('.sec.on .jlist')[0].querySelectorAll('.jent .eref')).map(function(e){return e.textContent;}))");
+  ok(hits17.length > 0 && hits17.every((c) => c === first17.code), `the search narrows to one E-number (${hits17.length} entries for ${first17.code})`);
+  w17.eval("jrnF.q='';");
+  ok(cards17 > 140, `and the sheet still shows every row (${cards17})`);
 }
 
 /* ---- done ----------------------------------------------------------------------- */
@@ -5555,7 +5597,7 @@ section("Round 7: the states no suite check had ever rendered");
    the live count was 879, so thirty-nine assertions could have vanished under a guard written to
    stop exactly that. The margin is four, which covers the book-dependent branches that legitimately
    skip; it is not room for a section to fall out. */
-const FLOOR_ASSERTIONS = 1156, FLOOR_SECTIONS = 91;
+const FLOOR_ASSERTIONS = 1169, FLOOR_SECTIONS = 92;
 ok(pass + fail - offMachine >= FLOOR_ASSERTIONS,
   `the suite ran ${pass + fail - offMachine} assertions everywhere (${pass + fail} here, ${offMachine} of them needing files that live off this repo), below its floor of ${FLOOR_ASSERTIONS}: a section has stopped running`);
 ok(sections >= FLOOR_SECTIONS,
