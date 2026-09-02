@@ -64,11 +64,8 @@ body{margin:0;-webkit-font-smoothing:antialiased;}
 .grouplbl{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--dim);padding:0 8px;margin-bottom:5px;}
 .railfoot{border-top:1px solid var(--line);padding-top:10px;margin-top:4px;}
 .tab{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;text-align:left;font-size:13px;font-weight:600;letter-spacing:.2px;padding:8px 11px;border-radius:9px;cursor:pointer;background:none;border:1px solid transparent;color:var(--mut);user-select:none;margin-bottom:2px;font-family:inherit;transition:background .12s,color .12s;}
-.tab:hover{background:#ffffff0c;color:var(--ink);}
-.tab.on{color:#05080a;border-color:transparent;background:linear-gradient(135deg,var(--acc),var(--accB));font-weight:800;}
 .tabghost{color:var(--dim);font-weight:600;}
 .navct{flex:0 0 auto;min-width:17px;text-align:center;font-size:10px;font-weight:800;padding:1px 5px;border-radius:8px;background:#ffffff14;color:var(--mut);}
-.tab.on .navct{background:rgba(5,8,10,.33);color:#05080a;}
 .main{flex:1;min-width:0;}
 h1{margin:2px 0 0;font-size:28px;}
 .meta{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;}
@@ -1110,7 +1107,7 @@ details.obshush:hover{opacity:.85;}
 /* there is more to the right, and on a touch screen nothing else says so */
 .tscroll.more{position:relative;}
 .tscroll.more::after{content:"";position:absolute;top:0;right:0;bottom:6px;width:26px;
-  pointer-events:none;background:linear-gradient(90deg,transparent,rgba(5,8,10,.85));}
+  pointer-events:none;}
 
 @media(max-width:560px){
   /* v392: iOS ZOOMS INTO ANY FIELD UNDER 16px AND DOES NOT ZOOM BACK OUT. One field on this
@@ -1370,41 +1367,30 @@ body.navopen .navveil{opacity:1;pointer-events:auto;}
   transition:background .16s ease,background-color .16s ease,border-color .16s ease,
              color .16s ease,transform .12s ease,box-shadow .16s ease;}
 .navlink:hover,.vbtn:hover,.ubtn:hover{transform:translateY(-1px);}
-.vbtn{box-shadow:0 6px 16px -9px var(--gold);}
-.vbtn:hover{box-shadow:0 10px 22px -9px var(--gold);}
 .tab:active,.navlink:active,.vbtn:active,.ubtn:active,.lqb:active,.viewsw button:active,
 .prodsw button:active,.obsbtn:active{transform:translateY(0) scale(.98);}
-.tab.on{box-shadow:0 6px 18px -9px var(--acc);}
 /* panes acknowledge the pointer without jumping */
 .kpi,.lcard{transition:border-color .18s ease,box-shadow .18s ease;}
 .kpi:hover,.lcard:hover{border-color:var(--brd-2);}
 .kpi .v{font-variant-numeric:tabular-nums;}
 /* wide tables: the row under the pointer lifts, except the sticky label cell, whose
    solid backing is what stops scrolled content bleeding through it */
-tbody tr:hover td:not(.l){background:rgba(255,255,255,.03);}
 /* METERS. A bar is a figure, so it gets the same care: a well-inset track, a lit fill,
    and a fill-from-zero settle. scaleX, not width, so nothing reflows. */
 .mbar{height:10px;border-radius:999px;background:var(--wellbg);
   box-shadow:inset 0 1px 3px rgba(0,0,0,.5),inset 0 0 0 1px rgba(255,255,255,.05);}
-.mbar>span{border-radius:999px;box-shadow:0 0 10px -2px var(--ice);
-  transform-origin:left;animation:barin .6s cubic-bezier(.22,1,.36,1);}
+.mbar>span{border-radius:999px;transform-origin:left;animation:barin .6s cubic-bezier(.22,1,.36,1);}
 .actbar{height:4px;}
-.actbar i{transform-origin:left;animation:barin .6s cubic-bezier(.22,1,.36,1);
-  box-shadow:0 0 8px -2px var(--sev,var(--dim));}
+.actbar i{transform-origin:left;animation:barin .6s cubic-bezier(.22,1,.36,1);}
 @keyframes barin{from{transform:scaleX(0)}}
 /* SCROLL HINTS, BOTH SIDES: .more (right) has said so since v276; .morel says there is
    hidden content BEHIND you once a table is mid-scroll. */
 .tscroll.morel{position:relative;}
 .tscroll.morel::before{content:"";position:absolute;top:0;left:0;bottom:6px;width:26px;
-  pointer-events:none;z-index:1;background:linear-gradient(270deg,transparent,rgba(5,8,10,.85));}
+  pointer-events:none;z-index:1;}
 /* in-page jumps glide (the eref links, the product jump); tab switches stay instant
    because switchTab passes behavior:auto explicitly */
 @media (prefers-reduced-motion:no-preference){html{scroll-behavior:smooth;}}
-/* focus and fields take the tab's accent where colour-mix exists; the gold ring above
-   remains the fallback */
-.qfield select:focus,.qfield input:focus,.ledbar input:focus,.ledbar select:focus{
-  border-color:var(--acc);
-  box-shadow:0 0 0 3px color-mix(in srgb,var(--acc) 20%,transparent);}
 /* v371: THE v281 PHONE BLOCK IS GONE, whole. It pinned the flat strip to the top of a
    phone on the Veil, moved the Close button off the corner the strip had taken, gave
    headings 70px of scroll clearance beneath it, and squashed the product switcher into two
@@ -5244,7 +5230,9 @@ const whiteboard=[
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{"v": "v475", "d": "02 Sep 2026", "t": "THE v108 FROST AND THE v213 MATERIAL ARE RETIRED; THE LAYER OWNS THE MATERIAL", "n": ["<b>THE SECOND RETIREMENT FOLD, AND IT TAKES THE MATERIAL.</b> The v108 frost on the panes, the rail's old gradient and blur, the frosted table backings, the translucent inputs and pills, the v109 radii v213 had already restated, the v111 heading bar and its gloss, the v213 token block, its material fill, its well and veil colours, the dropdown fills and the hover fills: every one of them a rule section 4 or 8 of design/desk.css re-declares in full. The base rail keeps its geometry (sticky, its own scrollbar) and loses its material.", "<b>TWO THINGS MOVED RATHER THAN WENT, because the layer had not carried them.</b> The frost itself (24px blur, saturate 1.15, on the nine pane classes v108 frosted and no others) and the 10px blur on a sticky table head now live in the layer, with the two fallbacks for a renderer with no backdrop-filter and for prefers-reduced-transparency. A pane inside a pane stays flat by the v213 never-frost rule, which is structural and stays.", "<b>MEASURED, AND ONE ACCIDENT RETIRED ON PURPOSE.</b> 32 of 34 shots against v474 read the same. The Ledger and Enter parts did not, and the cause was run down rather than waved through: v108 had frosted .note along with the panes and given it a pane's shadow and gloss, v213's never-frost list omitted .note, and v472 cancelled its background and border but not the shadow, so a note with no box was casting a 40px shadow and saturating what lay behind it. With that accident put back by hand the two parts read 0 pixels apart, so everything else is the same; with it gone, 43,000 pixels under the queue card's note and 19,000 on the ledger's move by up to twelve units, which is the shadow lifting. The layer now says so in as many words: a note casts no shadow and carries no frost. The queue was asked first: nothing pending, nothing newly approved."]},
+const evolution=[{"v": "v476", "d": "02 Sep 2026", "t": "THE v281 COLOUR RULES AND THE RAIL'S OLD ACTIVE TAB ARE RETIRED", "n": ["<b>THE THIRD RETIREMENT FOLD, AND THE LAST OF THE MATERIAL LAYERS.</b> v281's colour rules go: the primary's gold glow and its hover, the active tab's cast, the ice glow on a meter's fill, the severity glow on an action's bar, the row hover, the accent focus ring with its colour-mix, and the fade colour on both scroll hints. With them, the base rail's active tab (the gradient fill, the dark count) and its hover, which the layer draws as glass with a brass hairline. What v281 owns and keeps is its motion: the section settle, the staggered children, the press transforms, the meters' fill-from-zero.", "<b>MEASURED:</b> 34 shots against v475, all the same within the noise floor; the base layer's hover and focus states are not in a still render and were read instead. The queue was asked first: nothing pending, nothing newly approved.", "<b>WHAT IS LEFT, AND IS NOT A MATERIAL LAYER.</b> The base layer still declares a colour inside most component rules (a tag's fill, a tier's glow, a badge's gradient), each overridden by the layer. They are the original desk, not a material pass, and retiring them is tidiness with a rising risk per rule; they are listed as a later fold rather than taken now."]},
+
+{"v": "v475", "d": "02 Sep 2026", "t": "THE v108 FROST AND THE v213 MATERIAL ARE RETIRED; THE LAYER OWNS THE MATERIAL", "n": ["<b>THE SECOND RETIREMENT FOLD, AND IT TAKES THE MATERIAL.</b> The v108 frost on the panes, the rail's old gradient and blur, the frosted table backings, the translucent inputs and pills, the v109 radii v213 had already restated, the v111 heading bar and its gloss, the v213 token block, its material fill, its well and veil colours, the dropdown fills and the hover fills: every one of them a rule section 4 or 8 of design/desk.css re-declares in full. The base rail keeps its geometry (sticky, its own scrollbar) and loses its material.", "<b>TWO THINGS MOVED RATHER THAN WENT, because the layer had not carried them.</b> The frost itself (24px blur, saturate 1.15, on the nine pane classes v108 frosted and no others) and the 10px blur on a sticky table head now live in the layer, with the two fallbacks for a renderer with no backdrop-filter and for prefers-reduced-transparency. A pane inside a pane stays flat by the v213 never-frost rule, which is structural and stays.", "<b>MEASURED, AND ONE ACCIDENT RETIRED ON PURPOSE.</b> 32 of 34 shots against v474 read the same. The Ledger and Enter parts did not, and the cause was run down rather than waved through: v108 had frosted .note along with the panes and given it a pane's shadow and gloss, v213's never-frost list omitted .note, and v472 cancelled its background and border but not the shadow, so a note with no box was casting a 40px shadow and saturating what lay behind it. With that accident put back by hand the two parts read 0 pixels apart, so everything else is the same; with it gone, 43,000 pixels under the queue card's note and 19,000 on the ledger's move by up to twelve units, which is the shadow lifting. The layer now says so in as many words: a note casts no shadow and carries no frost. The queue was asked first: nothing pending, nothing newly approved."]},
 
 {"v": "v474", "d": "02 Sep 2026", "t": "THE PAGE-LEVEL COLOUR SYSTEM v472 REPLACED IS RETIRED", "n": ["<b>HIS INSTRUCTION, 02 SEP 2026: retire the older material layers, in smaller folds.</b> This is the first, and it takes the page-level colour system alone: the twenty-three per-view accent rules, the root palette that named ice, gold, violet, green and crimson, the register palette and both of its body grounds, the three orb rules and the third orb itself, the diamond logo that left the markup at v472, and the two headline gradients. 5,231 bytes of rules the v472 layer had already overridden in full, and the ground now has one owner: section 2 of design/desk.css.", "<b>NOTHING VISIBLE MOVED, AND THAT IS MEASURED IN PIXELS.</b> tools/renderdiff.mjs renders every part at 1280 and 375 with motion off, the stamp and the version hidden and the journal's version entries removed, and compares two renders shot for shot. It was proved red first: brass turned to red in one rule read as differing on all 34 shots, and two renders of the same build read identical on 32 with 3 pixels of chart antialiasing on two, which is the noise floor. This fold reads as the same on every shot against v473.", "<b>THE QUEUE WAS ASKED FIRST.</b> Nothing pending; the three approved rows of the morning are the v473 fold, and the deploy marks them committed when it lands.", "<b>WHAT STAYS FOR THE NEXT FOLDS.</b> The v108 frost and its gradients, the v213 material fills and fallbacks, the v281 motion and colour rules, and the colour declarations inside component rules that desk.css overrides one by one. Each is its own fold, each measured the same way."]},
 
@@ -5479,7 +5467,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='02 Sep 2026, 17:30 KL';
+const LAST_UPDATED='02 Sep 2026, 17:46 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */

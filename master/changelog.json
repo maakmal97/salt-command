@@ -1,5 +1,15 @@
 [
  {
+  "v": "v476",
+  "d": "02 Sep 2026",
+  "t": "THE v281 COLOUR RULES AND THE RAIL'S OLD ACTIVE TAB ARE RETIRED",
+  "n": [
+   "<b>THE THIRD RETIREMENT FOLD, AND THE LAST OF THE MATERIAL LAYERS.</b> v281's colour rules go: the primary's gold glow and its hover, the active tab's cast, the ice glow on a meter's fill, the severity glow on an action's bar, the row hover, the accent focus ring with its colour-mix, and the fade colour on both scroll hints. With them, the base rail's active tab (the gradient fill, the dark count) and its hover, which the layer draws as glass with a brass hairline. What v281 owns and keeps is its motion: the section settle, the staggered children, the press transforms, the meters' fill-from-zero.",
+   "<b>MEASURED:</b> 34 shots against v475, all the same within the noise floor; the base layer's hover and focus states are not in a still render and were read instead. The queue was asked first: nothing pending, nothing newly approved.",
+   "<b>WHAT IS LEFT, AND IS NOT A MATERIAL LAYER.</b> The base layer still declares a colour inside most component rules (a tag's fill, a tier's glow, a badge's gradient), each overridden by the layer. They are the original desk, not a material pass, and retiring them is tidiness with a rising risk per rule; they are listed as a later fold rather than taken now."
+  ]
+ },
+ {
   "v": "v475",
   "d": "02 Sep 2026",
   "t": "THE v108 FROST AND THE v213 MATERIAL ARE RETIRED; THE LAYER OWNS THE MATERIAL",
