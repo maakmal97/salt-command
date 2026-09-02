@@ -5163,6 +5163,41 @@ section("v460: the row shape attaches no debt to a cancelled row");
   ok(viaMaster.oweRM == null && viaMaster.oweUnits == null && viaMaster.st === "canc", `and the master's inlined engine says the same (${JSON.stringify(viaMaster)})`);
 }
 
+
+section("v461: a lot's step is named the way the whiteboard took it");
+{
+  /* v451 drew a lot's trail through the sale's renderer, and every step kept the sale's word,
+     Fulfilment, where the pane that took it offered Payment and Receipt. The one lot with steps
+     today has both on its own agreed date, so nothing renders; the fixture is a lot with a
+     deposit, a receipt four days on and the balance five days after that, beside a sale with a
+     movement as the control. */
+  const { openMaster: om11 } = await import("../tools/payload.mjs");
+  const { readFileSync: rf11, writeFileSync: wf11, unlinkSync: rm11 } = await import("node:fs");
+  const { execSync: ex11 } = await import("node:child_process");
+  const { join: j11 } = await import("node:path");
+  const bk11 = JSON.parse(rf11(j11(REPO, "ledger", "book.json"), "utf8"));
+  const sup11 = bk11.purchases.find((x) => x.supplier).supplier, cus11 = bk11.sales.find((x) => x.customer && x.date).customer;
+  bk11.purchases.push({ rid: "f20", date: "2026-08-01", supplier: sup11, product: "salt", qty: 10, total: 500, status: "paid", amend: [
+    { date: "2026-08-01", kind: "Fulfilment", cash: 200, kg: 0, note: "as booked" },
+    { date: "2026-08-05", kind: "Fulfilment", cash: 0, kg: 10, note: "F20 landed" },
+    { date: "2026-08-10", kind: "Fulfilment", cash: 300, kg: 0, note: "F20 balance" } ] });
+  bk11.sales.push({ rid: "f21", date: "2026-08-01", customer: cus11, product: "salt", qty: 2, total: 200, cost: 64, cash: 100, deliveredQty: 1, amend: [
+    { date: "2026-08-01", kind: "Fulfilment", cash: 0, kg: 0, note: "as booked" },
+    { date: "2026-08-05", kind: "Fulfilment", cash: 100, kg: 1, note: "F21 moved" } ] });
+  const B11 = j11(REPO, "test", ".v461.json"), M11 = j11(REPO, "test", ".v461.html");
+  wf11(B11, JSON.stringify(bk11, null, 1)); wf11(M11, rf11(j11(REPO, "master", "salt_command.html"), "utf8"));
+  ex11("node tools/booksync.mjs --sync", { cwd: REPO, env: { ...process.env, SALT_BOOK: B11, SALT_MASTER: M11 }, stdio: "pipe" });
+  const LABELS = (tag) => `(function(){return JSON.stringify([].slice.call(document.querySelectorAll(".sec.on .lgroup")).filter(function(g){return g.textContent.indexOf(${JSON.stringify(tag)})>=0;}).map(function(g){var e=g.querySelector(".etype");return e?e.textContent:"(no label)";}));})()`;
+  try {
+    const { w } = await om11(M11);
+    w.eval("setProd('salt');recompute();switchTab('ledger');");
+    const lot = JSON.parse(String(w.eval(LABELS("F20")))), sale = JSON.parse(String(w.eval(LABELS("F21"))));
+    ok(lot.length === 2 && lot[0] === "Receipt" && lot[1] === "Payment", `the lot's two steps read Receipt then Payment (${JSON.stringify(lot)})`);
+    ok(lot.indexOf("Fulfilment") < 0, "and the sale's word is nowhere on the lot");
+    ok(sale.length === 1 && sale[0] === "Fulfilment", `while the sale's step still reads Fulfilment (${JSON.stringify(sale)})`);
+  } finally { for (const f of [B11, M11]) { try { rm11(f); } catch (e) { /* best effort */ } } }
+}
+
 /* ---- done ----------------------------------------------------------------------- */
 
 section("Round 7: the states no suite check had ever rendered");
@@ -5397,7 +5432,7 @@ section("Round 7: the states no suite check had ever rendered");
    the live count was 879, so thirty-nine assertions could have vanished under a guard written to
    stop exactly that. The margin is four, which covers the book-dependent branches that legitimately
    skip; it is not room for a section to fall out. */
-const FLOOR_ASSERTIONS = 1133, FLOOR_SECTIONS = 86;
+const FLOOR_ASSERTIONS = 1136, FLOOR_SECTIONS = 87;
 ok(pass + fail - offMachine >= FLOOR_ASSERTIONS,
   `the suite ran ${pass + fail - offMachine} assertions everywhere (${pass + fail} here, ${offMachine} of them needing files that live off this repo), below its floor of ${FLOOR_ASSERTIONS}: a section has stopped running`);
 ok(sections >= FLOOR_SECTIONS,
