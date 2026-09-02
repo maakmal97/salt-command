@@ -15,7 +15,12 @@
  * screenshot it, and once the envelope has been fetched a copy exists. What the timer actually
  * prevents is the ordinary thing: a phone put down on a table with an account still on it.
  */
-import { statementCss } from "../tools/stmt-style.mjs";
+/* The GENERATED stylesheet, not tools/stmt-style.mjs. That module reads design/salt-ds.css
+   with node:fs, and importing it here pulled node:fs, node:path and node:url into the
+   Worker bundle: the Cloudflare build failed on it, and had it bundled, readFileSync would
+   have thrown on every /s/ request. `node tools/stmt-style.mjs --sync` writes this file and
+   CI runs --check, so there is still one source. */
+import { STATEMENT_CSS } from "./statement-css.js";
 
 const PAGE_CSS = `
 /* The gate, in the same material as the document behind it. One filled control, the
@@ -64,7 +69,7 @@ export function statementPage(code, nonce) {
     + '<meta name="robots" content="noindex,nofollow,noarchive">'
     + '<meta name="referrer" content="no-referrer">'
     + "<title>Statement of account</title>"
-    + '<style nonce="' + nonce + '">' + statementCss() + PAGE_CSS + "</style></head><body>"
+    + '<style nonce="' + nonce + '">' + STATEMENT_CSS + PAGE_CSS + "</style></head><body>"
     + '<div id="gate" class="gate">'
     + '<p class="eyebrow">Salt Command</p>'
     + "<h1>Statement of account</h1>"

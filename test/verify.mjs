@@ -8,7 +8,7 @@
 import { execFileSync } from "node:child_process";
 import { DATA_DIR, PROJECT_DIR } from "../tools/book.mjs";
 import { createHash } from "node:crypto";
-import { readFileSync, writeFileSync, mkdirSync, rmSync, existsSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync, rmSync, existsSync, readdirSync } from "node:fs";
 import { dirname, resolve, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import worker from "../src/worker.js";
@@ -5835,9 +5835,32 @@ section("Statements — the QR, the sort and the Salt identity");
   ok(sortedLast, "an undated row sorts after every dated one, rather than wherever the engine leaves it");
   ok(!stmtRows(undatedParties[0], { from: null, to: "2026-09-01", completed: true, open: true, pending: true })
     .some(r => String(r.date) === "Invalid Date"), "and no row carries an unparseable date");
+
+  /* THE WORKER HAS NO FILESYSTEM, and the first cut of the unlock page forgot it:
+     src/statement-page.js imported tools/stmt-style.mjs, which reads design/salt-ds.css, so the
+     bundle pulled in node:fs and the Cloudflare build failed. Had it bundled, readFileSync
+     would have thrown on every /s/ request instead. This is the guard: nothing under src/ may
+     reach for a node builtin or into tools/, whatever it needs. */
+  const srcFiles = readdirSync(join(REPO, "src")).filter(f => f.endsWith(".js"));
+  const reaching = [];
+  for (const f of srcFiles) {
+    const t = readFileSync(join(REPO, "src", f), "utf8");
+    for (const m of t.matchAll(/^\s*import\s[^;]*?from\s+["']([^"']+)["']/gm)) {
+      if (/^node:/.test(m[1]) || m[1].includes("../tools/")) reaching.push(f + " -> " + m[1]);
+    }
+  }
+  ok(reaching.length === 0, reaching.length
+    ? "these Worker sources reach outside the runtime: " + reaching.join(", ")
+    : `all ${srcFiles.length} Worker sources import only from within src/`);
+
+  /* and the generated stylesheet is the one the module produces, or a design retune silently
+     leaves the page a customer opens on the old material */
+  const genCss = (await import("../src/statement-css.js")).STATEMENT_CSS;
+  ok(genCss === statementCss(),
+    "src/statement-css.js is what tools/stmt-style.mjs produces (run --sync if this fails)");
 }
 
-const FLOOR_ASSERTIONS = 1233, FLOOR_SECTIONS = 96;   /* statements QR + password: 1237 everywhere, 1238 here */
+const FLOOR_ASSERTIONS = 1235, FLOOR_SECTIONS = 96;   /* statements QR + password: 1239 everywhere, 1240 here */
 ok(pass + fail - offMachine >= FLOOR_ASSERTIONS,
   `the suite ran ${pass + fail - offMachine} assertions everywhere (${pass + fail} here, ${offMachine} of them needing files that live off this repo), below its floor of ${FLOOR_ASSERTIONS}: a section has stopped running`);
 ok(sections >= FLOOR_SECTIONS,
