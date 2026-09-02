@@ -1,6 +1,6 @@
 {
- "v": "v469",
- "stamped": "02 Sep 2026, 14:35 KL",
+ "v": "v470",
+ "stamped": "02 Sep 2026, 13:08 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -2492,8 +2492,26 @@
     "date": "2026-08-28",
     "deliveredQty": 1,
     "deliveredOn": "2026-08-28",
-    "note": "First credit in thirteen orders.",
-    "rid": "s117"
+    "note": "<b>DEFAULTED.</b> 1 unit handed over on 28 Aug for RM100, nothing paid, and on his word on 2 Sep the money will not come. The first credit in thirteen orders, and the last. The figures stay on the row so the loss is read where it happened. First credit in thirteen orders.",
+    "rid": "s117",
+    "defaulted": true,
+    "mod": "corrected on 2026-09-02: defaulted (unset) to true",
+    "amend": [
+     {
+      "date": "2026-08-28",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 1,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-09-02",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>DEFAULTED.</b> 1 unit handed over on 28 Aug for RM100, nothing paid, and on his word on 2 Sep the money will not come. The first credit in thirteen orders, and the last. The figures stay on the row so the loss is read where it happened."
+     }
+    ]
    },
    {
     "customer": "CH4-KLS",
@@ -3030,9 +3048,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-02T04:10:09.000Z",
+  "QUEUE_COMMITTED": "2026-09-02T06:40:01.000Z",
   "PRICING": {
-   "takenAt": "2026-09-02T04:36:00.613Z",
+   "takenAt": "2026-09-02T05:08:41.480Z",
    "sizes": [
     0.5,
     1,
@@ -3466,10 +3484,10 @@
      }
     }
    },
-   "v": "v469"
+   "v": "v470"
   },
   "OPEN": {
-   "at": "2026-09-02T04:36:00.649Z",
+   "at": "2026-09-02T05:08:41.531Z",
    "count": 6,
    "byKey": {
     "CY2-NIL|undefined|230": {
@@ -3534,6 +3552,7 @@
      "rid": "s117",
      "deliveredOn": "2026-08-28",
      "handover": "collected",
+     "defaulted": true,
      "key": "CA4-DAM|2026-08-28|100",
      "age": 5,
      "exp": 75
@@ -3598,7 +3617,7 @@
     "salt": "2026-08-24",
     "oil": "2026-08-23"
    },
-   "v": "v469"
+   "v": "v470"
   }
  }
 }

@@ -1,0 +1,54 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-09-02T06:40:01.000Z",
+   "collection": "sales",
+   "row": {
+    "rid": "s117",
+    "qty": 1,
+    "total": 100,
+    "cash": 0,
+    "date": "2026-08-28",
+    "product": "salt",
+    "changes": [
+     {
+      "field": "defaulted",
+      "from": false,
+      "to": true
+     }
+    ],
+    "customer": "CA4-DAM"
+   },
+   "reasoning": "Correction against CA4-DAM's order of 1 unit for RM 100 dated 2026-08-28 (s117). Sets defaulted from false to true. It moves no cash and no stock: it changes what the row says about itself. The row is not rewritten here. The fold applies the patch, so there is one definition of what a correction does rather than two.",
+   "flags": [
+    "This is an ADVANCE: 1 unit goes out with RM 100 unpaid. Check it against CA4-DAM's credit cap."
+   ],
+   "amends": "s117",
+   "amendKind": "Correction",
+   "entry": {
+    "at": "2026-09-02T06:40:01.000Z",
+    "type": "AMEND",
+    "party": "CA4-DAM",
+    "qty": null,
+    "total": null,
+    "status": "amend",
+    "raw": "Correction on CA4-DAM s117: defaulted. The 1 unit handed over on 2026-08-28 for RM 100 will not be paid. Dictated in a Code session 02 Sep 2026.",
+    "payload": {
+     "mode": "amend",
+     "kind": "Correction",
+     "direction": "SELL",
+     "rid": "s117",
+     "party": "CA4-DAM",
+     "date": "2026-09-02",
+     "fields": {
+      "defaulted": true
+     }
+    }
+   },
+   "decidedAt": "2026-09-02T05:08:02.113Z",
+   "decidedBy": "owner, dictated in a Code session 02 Sep 2026"
+  }
+ ]
+}
