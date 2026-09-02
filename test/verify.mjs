@@ -5039,7 +5039,10 @@ section("v456: an undated row says so wherever its date is printed");
     ok(tabs.length >= 16 && (seen.receivables || "").length > 400, `every tab renders on the fixture book (${tabs.length} tabs)`);
     ok(count(seen.receivables || "", "not dated") >= 5, `the Order book says not dated on each undated row (${count(seen.receivables || "", "not dated")} cells, five fixtures)`);
     ok(undef.length === 0, `and no tab prints the word undefined: ${undef.join("; ") || "none"}`);
-    ok(count(seen.today || "", "landed not dated") === 1 && nd >= 14, `the lock rule on Today says so too, ${nd} cells across the desk`);
+    /* v479: the lock rule prints its undated lot only while the lock is on; with it off (v280) the
+       breach is gated and Today prints nothing for it, which is the point, and no undefined either */
+    const lockOn6 = String(w.eval("String(PRICE_LOCK_ON)")) === "true";
+    ok(count(seen.today || "", "landed not dated") === (lockOn6 ? 1 : 0) && nd >= 14, `the lock rule on Today ${lockOn6 ? "says so too" : "is gated with the lock off, and stays silent"}, ${nd} cells across the desk`);
   } finally { for (const f of [B6, M6]) { try { rm6(f); } catch (e) { /* best effort */ } } }
 }
 
