@@ -1,6 +1,6 @@
 {
- "v": "v467",
- "stamped": "02 Sep 2026, 11:52 KL",
+ "v": "v468",
+ "stamped": "02 Sep 2026, 14:20 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -2419,7 +2419,7 @@
     "deliveredQty": 10,
     "deliveredOn": "2026-08-26",
     "paidOn": "2026-08-26",
-    "note": "RM20 over-tender moved to payable.",
+    "note": "RM20 over-tender moved to payable on 28 Aug and withdrawn on 2 Sep 2026 on his instruction: the RM20 was never tendered, so nothing is owed back. RM130 paid for RM130.",
     "rid": "s114",
     "mod": "corrected on 2026-08-28: cash 150 to 130",
     "amend": [
@@ -2822,12 +2822,6 @@
     "since": "2026-07-24",
     "paidOn": "2026-07-31",
     "note": "RM80 overpayment, refunded 31 Jul."
-   },
-   {
-    "party": "CZ4-MK",
-    "amount": 20,
-    "since": "2026-08-26",
-    "note": "RM20 over-tender, cash payable to set off."
    }
   ],
   "roster": [
@@ -3032,7 +3026,7 @@
   ],
   "QUEUE_COMMITTED": "2026-09-02T04:10:09.000Z",
   "PRICING": {
-   "takenAt": "2026-09-02T03:52:25.129Z",
+   "takenAt": "2026-09-02T04:30:48.659Z",
    "sizes": [
     0.5,
     1,
@@ -3466,10 +3460,10 @@
      }
     }
    },
-   "v": "v467"
+   "v": "v468"
   },
   "OPEN": {
-   "at": "2026-09-02T03:52:25.155Z",
+   "at": "2026-09-02T04:30:48.683Z",
    "count": 6,
    "byKey": {
     "CY2-NIL|undefined|230": {
@@ -3598,7 +3592,7 @@
     "salt": "2026-08-24",
     "oil": "2026-08-23"
    },
-   "v": "v467"
+   "v": "v468"
   }
  }
 }

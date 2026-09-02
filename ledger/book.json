@@ -175,7 +175,7 @@
     {"customer":"CZ4-MK","qty":5,"total":420,"cost":44,"cash":420,"date":"2026-08-26","deliveredQty":5,"deliveredOn":"2026-08-26","paidOn":"2026-08-26","rid":"s111"},
     {"customer":"CY2-NIL","qty":2.5,"total":230,"cost":44,"cash":230,"date":"2026-08-26","deliveredQty":2.5,"deliveredOn":"2026-08-26","paidOn":"2026-08-26","rid":"s112"},
     {"customer":"CS6-PER","qty":1,"total":100,"cost":44,"cash":100,"date":"2026-08-26","deliveredQty":1,"deliveredOn":"2026-08-26","paidOn":"2026-08-26","note":"The s016 ban is lifted.","rid":"s113"},
-    {"customer":"CZ4-MK","product":"oil","qty":10,"total":130,"cost":7.666666666666667,"cash":130,"date":"2026-08-26","deliveredQty":10,"deliveredOn":"2026-08-26","paidOn":"2026-08-26","note":"RM20 over-tender moved to payable.","rid":"s114","mod":"corrected on 2026-08-28: cash 150 to 130","amend":[{"date":"2026-08-26","kind":"Fulfilment","cash":130,"kg":10,"note":"as booked"},{"date":"2026-08-28","kind":"Correction","cash":0,"kg":0,"note":"RM20 over-tender moved to payable"}]},
+    {"customer":"CZ4-MK","product":"oil","qty":10,"total":130,"cost":7.666666666666667,"cash":130,"date":"2026-08-26","deliveredQty":10,"deliveredOn":"2026-08-26","paidOn":"2026-08-26","note":"RM20 over-tender moved to payable on 28 Aug and withdrawn on 2 Sep 2026 on his instruction: the RM20 was never tendered, so nothing is owed back. RM130 paid for RM130.","rid":"s114","mod":"corrected on 2026-08-28: cash 150 to 130","amend":[{"date":"2026-08-26","kind":"Fulfilment","cash":130,"kg":10,"note":"as booked"},{"date":"2026-08-28","kind":"Correction","cash":0,"kg":0,"note":"RM20 over-tender moved to payable"}]},
     {"customer":"CD3-SEG","qty":1,"total":100,"cost":50,"cash":100,"handover":"collected","date":"2026-08-27","deliveredQty":1,"deliveredOn":"2026-08-27","paidOn":"2026-08-27","rid":"s115"},
     {"customer":"CR3-DAM","qty":1,"total":80,"cost":50,"cash":0,"handover":"collected","date":"2026-08-27","deliveredQty":1,"deliveredOn":"2026-08-27","note":"Advanced pickup; corrected to unpaid.","rid":"s116","mod":"corrected on 2026-08-28: cash 80 to 0; paidOn 2026-08-27 to (cleared)","amend":[{"date":"2026-08-27","kind":"Fulfilment","cash":0,"kg":1,"note":"as booked"},{"date":"2026-08-28","kind":"Correction","cash":0,"kg":0,"note":"corrected to unpaid; advanced pickup"}]},
     {"customer":"CA4-DAM","qty":1,"total":100,"cost":50,"cash":0,"handover":"collected","date":"2026-08-28","deliveredQty":1,"deliveredOn":"2026-08-28","note":"First credit in thirteen orders.","rid":"s117"},
@@ -216,8 +216,7 @@
     "note": "Paid for 12.5 unit that never arrived. 12 Jul: he was found to have had an accident and an in-person meeting was requested. He has since gone unresponsive, so on 31 Jul, 23 days out and already 100% provisioned, the desk WROTE IT OFF. The provision stays charged; what changes is that the desk no longer counts it as expected cash. Any recovery is upside against a book that has already taken the hit."
   },
   "customerRefunds": [
-    {"party":"CZ6-WM","amount":80,"since":"2026-07-24","paidOn":"2026-07-31","note":"RM80 overpayment, refunded 31 Jul."},
-    {"party":"CZ4-MK","amount":20,"since":"2026-08-26","note":"RM20 over-tender, cash payable to set off."}
+    {"party":"CZ6-WM","amount":80,"since":"2026-07-24","paidOn":"2026-07-31","note":"RM80 overpayment, refunded 31 Jul."}
   ],
   "roster": [
     "CA5-SEN",
