@@ -1,5 +1,16 @@
 [
  {
+  "v": "v466",
+  "d": "02 Sep 2026",
+  "t": "THE LEDGER NEVER SCROLLS SIDEWAYS: A NARROWER SCREEN RE-FLOWS THE SAME TWELVE CELLS",
+  "n": [
+   "<b>HIS INSTRUCTION, 02 SEP 2026, AN HOUR AFTER v465.</b> No scrollable ledger to the right. v465 had made the table one line of thirteen columns and let a narrow screen scroll it sideways, which on a phone is a table with its right half out of sight. The scroller goes.",
+   "<b>THREE WIDTHS, ONE TABLE.</b> The one-line layout needs about 915px, and the desk's content column is 938px on a laptop, so it fits there and nowhere narrower. Below that the same twelve cells re-flow onto two lines: E, date, party, quantity, price, total and state on the first; step, type, product, the note and the update control on the second. Below 600px, on a phone, four lines: E, date, party and state; step, quantity and total; type, product, price and the control; then the note across the width. <b>Twelve, not thirteen, on his instruction:</b> the kind of a step (Fulfilment, Modification, Correction, Linked orders) sits in the step column beside Opened and Closed, not in a column of its own. The v307 phone stack, which hid the heading and boxed the figures with CSS labels, is retired: the heading means something at every width now. Each cell names its area, so a column still lines up down the whole table and the heading re-flows with the rows and still sits over them.",
+   "<b>NOTHING IS DROPPED, FOLDED OR HIDDEN AT ANY WIDTH.</b> A cell moves; it does not go. Sorting, the filters, the totals strip, the chart, the editor and the row control are unchanged.",
+   "<b>PROVED IN A BROWSER AND IN THE SUITE.</b> Measured at 375, 640 and 1300px: the wrap and the document each have no width to scroll. Five assertions keep the structure the layout depends on: no scroller, one container, every line and the heading carrying all twelve areas, two width tiers declared, no rule hiding the heading. 1174 assertions across 91 sections."
+  ]
+ },
+ {
   "v": "v465",
   "d": "02 Sep 2026",
   "t": "THE LEDGER IS A TABLE: FIRST TO LATEST, EVERY ROW, EVERY STEP, SORTED FROM ITS HEADINGS",

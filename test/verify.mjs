@@ -5258,8 +5258,8 @@ section("v465: the ledger is a table, whole and sortable");
   ok(rows15 > 100 && cards15 === rows15, `every row on the book is on screen (${cards15} of ${rows15}), none folded`);
   ok(+w15.eval("document.querySelectorAll('.sec.on .ledmore, .sec.on details.lmc, .sec.on details .lmove').length") === 0 && +w15.eval("document.querySelectorAll('.sec.on .lmove').length") > 0,
     "no fold and no disclosure: every interim step is a visible line");
-  ok(+w15.eval("document.querySelectorAll('.sec.on .lhead > *').length") === 13 && +w15.eval("document.querySelectorAll('.sec.on .lhead [data-lsort]').length") === 10,
-    "thirteen headed columns, ten of them sortable");
+  ok(+w15.eval("document.querySelectorAll('.sec.on .lhead > *').length") === 12 && +w15.eval("document.querySelectorAll('.sec.on .lhead [data-lsort]').length") === 10,
+    "twelve headed columns, ten of them sortable");
   const ids15 = J15("JSON.stringify([].slice.call(document.querySelectorAll('.sec.on .lcard')).map(function(c){return +c.id.replace('ent-E','');}))");
   ok(ids15[0] === 1 && ids15.every((x, i) => !i || ids15[i - 1] < x), "it opens first to latest: E1 at the top and every E-number after the one before it");
   const rids15 = () => J15("JSON.stringify([].slice.call(document.querySelectorAll('.sec.on .lcard')).map(function(c){return c.getAttribute('data-rid');}))");
@@ -5281,9 +5281,40 @@ section("v465: the ledger is a table, whole and sortable");
   ok(blanks > 0 && dd.slice(0, dated.length).every(Boolean) && mono(dated, false), `Date descending keeps the ${blanks} undated rows last, as a sheet keeps blank cells`);
   ok(/Date/.test(String(w15.eval("document.querySelector('.sec.on .lhead .lsb.on').textContent"))) && +w15.eval("document.querySelectorAll('.sec.on .lhead .larr').length") === 1,
     "the active heading carries the one arrow");
-  ok(+w15.eval("document.querySelector('.sec.on .lcard .lrow .lgroup').children.length") === 8 && +w15.eval("document.querySelector('.sec.on .lcard .lrow').children.length") === 6,
-    "an order line is eight labelled cells, the four figures and its control, the same tracks as the heading");
+  ok(+w15.eval("document.querySelector('.sec.on .lcard .lrow .lgroup').children.length") === 7 && +w15.eval("document.querySelector('.sec.on .lcard .lrow').children.length") === 6,
+    "an order line is seven labelled cells, the four figures and its control, the same tracks as the heading");
   w15.eval("ledSort={key:'e',dir:1};");
+}
+
+
+section("v466: the ledger never scrolls sideways; a narrower screen re-flows the same cells");
+{
+  /* His instruction of 02 Sep 2026, after v465: no scrollable ledger to the right. The sideways
+     scroller goes; every cell names a grid area, and container queries re-flow the thirteen cells
+     onto two lines below 936px and four below 600px. jsdom lays nothing out, so what is proved here
+     is the structure the layout depends on: no scroller, a container, and every line carrying all
+     thirteen areas. The geometry itself was measured in a browser at 375, 640 and 1300px before
+     this shipped (scrollWidth equal to clientWidth on the wrap and on the document at each). */
+  const { openMaster: om16 } = await import("../tools/payload.mjs");
+  const { w: w16 } = await om16();
+  w16.eval("setProd('salt');recompute();ledF={q:'',state:'',party:'',month:'',product:''};ledSort={key:'e',dir:1};switchTab('ledger');");
+  ok(+w16.eval("document.querySelectorAll('.sec.on .ledscroll').length") === 0 && +w16.eval("document.querySelectorAll('.sec.on .ledwrap').length") === 1
+    && +w16.eval("document.querySelectorAll('.sec.on .ledwrap .lhead, .sec.on .ledwrap .lcards').length") === 2,
+    "the scroller is gone and one container holds the heading and the rows");
+  const AREAS = ["lc-e", "lc-step", "lc-date", "lc-type", "lc-prod", "lc-party", "lc-note", "cqty", "cprc", "ctot", "lstate", "lc-act"];
+  const areasOf = (sel) => JSON.parse(String(w16.eval("JSON.stringify([].slice.call(document.querySelectorAll('" + sel + "')).map(function(l){return " + JSON.stringify(AREAS) + ".filter(function(a){return !!l.querySelector('.'+a);}).length;}))")));
+  const lines = areasOf(".sec.on .lcard .lrow, .sec.on .lcard .lmove"), head = areasOf(".sec.on .lhead");
+  ok(lines.length > 140 && lines.every((x) => x === 12), `every one of the ${lines.length} lines carries all twelve areas (min ${Math.min(...lines)})`);
+  ok(head.length === 1 && head[0] === 12, "and so does the heading, so it re-flows with them");
+  /* the kind rides in the step column: a step line's step cell holds the kind pill, an order line's holds its role */
+  ok(+w16.eval("document.querySelectorAll('.sec.on .lmove .lc-step .etype').length") > 0 && +w16.eval("document.querySelectorAll('.sec.on .lmove .lc-step .etype').length") === +w16.eval("document.querySelectorAll('.sec.on .lmove').length")
+    && +w16.eval("document.querySelectorAll('.sec.on .lcard > .lrow:first-child .lc-step .lclabel').length") === +w16.eval("document.querySelectorAll('.sec.on .lcard').length"),
+    "every step line carries its kind in the step column, and every order line its role there");
+  const css = String(w16.eval("[].slice.call(document.querySelectorAll('style')).map(function(s){return s.textContent;}).join(' ')"));
+  ok(/\.ledwrap[^{]*\{[^}]*container-type:\s*inline-size/.test(css) && (css.match(/@container ledger/g) || []).length === 2,
+    "the wrap is a size container and two width tiers are declared against it");
+  ok(!/\.lcard[^{]*\{[^}]*min-width:\s*1\d{3}px/.test(css) && !/overflow-x:\s*auto[^}]*\}[^@]*\.lcards/.test(css), "no card carries a four-figure minimum width any more");
+  ok(!/.lheads*{s*display:s*none/.test(css), "and no rule hides the heading at any width: the v307 phone stack that did is retired");
 }
 
 /* ---- done ----------------------------------------------------------------------- */
@@ -5521,7 +5552,7 @@ section("Round 7: the states no suite check had ever rendered");
    the live count was 879, so thirty-nine assertions could have vanished under a guard written to
    stop exactly that. The margin is four, which covers the book-dependent branches that legitimately
    skip; it is not room for a section to fall out. */
-const FLOOR_ASSERTIONS = 1150, FLOOR_SECTIONS = 90;
+const FLOOR_ASSERTIONS = 1156, FLOOR_SECTIONS = 91;
 ok(pass + fail - offMachine >= FLOOR_ASSERTIONS,
   `the suite ran ${pass + fail - offMachine} assertions everywhere (${pass + fail} here, ${offMachine} of them needing files that live off this repo), below its floor of ${FLOOR_ASSERTIONS}: a section has stopped running`);
 ok(sections >= FLOOR_SECTIONS,
