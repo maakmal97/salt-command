@@ -466,7 +466,13 @@ function stmtDoc(party,rows,o){
      const legRows=R.legs.map(l=>'<tr><td class="l">'+e(dLong(l.date))+'</td><td>'+n2(l.qty)+' unit</td>'
        +'<td>'+money(l.billed)+'</td><td>'+money(l.paid)+'</td>'
        +'<td class="r"><b class="short">'+money(l.short)+'</b></td></tr>').join('');
-     const pays=R.payments.length?R.payments.map(x=>money(x.rm)+' on '+e(dLong(x.date))).join(', ')
+     /* v458: THE PAYMENT LIST IS A NARRATIVE BESIDE THE FIGURE, NEVER ITS SOURCE. The dated list is
+        read off the amend trail, and v363 lets a Correction set the row's cash directly while the
+        trail stays as it was written, so the steps can add up to money the order never carried:
+        s018 holds cash 710 after its audit with steps of 650 and 200 beside it. The dated list is
+        printed only when it sums to what the row says was paid; otherwise the row's figure alone. */
+     const stepSum=+R.payments.reduce((a,x)=>a+x.rm,0).toFixed(2);
+     const pays=(R.payments.length&&Math.abs(stepSum-R.order.paid)<=0.009)?R.payments.map(x=>money(x.rm)+' on '+e(dLong(x.date))).join(', ')
                               :money(R.order.paid);
      /* once the salt has gone out the reconciliation is no longer a claim but a record,
         and titling it "how the 0 unit is arrived at" would be nonsense. It is kept

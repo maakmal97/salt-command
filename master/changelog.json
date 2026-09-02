@@ -1,5 +1,16 @@
 [
  {
+  "v": "v458",
+  "d": "02 Sep 2026",
+  "t": "THE RECONCILIATION'S PAYMENT LIST IS A NARRATIVE BESIDE THE FIGURE, AND PRINTS ONLY WHEN IT SUMS TO IT",
+  "n": [
+   "<b>FOLD 16 OF ROUND TEN, IN tools/make_statements.mjs.</b> Inside a reconciliation the statement lists the payments on the offset order by date, read off the amend trail. A Correction (v363) sets a row's cash directly and leaves the trail as it was written, so the dated list could add up to money the order never carried: s018 holds cash 710 after its audit with steps of 650 and 200 beside it, and a customer adding the list would reach 850.",
+   "<b>THE ROW IS THE FIGURE.</b> The dated list prints only when its steps sum to what the row says was paid; otherwise the row's own figure prints alone, which is what the sentence printed already when no step existed.",
+   "<b>WHAT CHANGES ON THE BOOK TODAY: NOTHING.</b> The one live offset order, s009, carries a single step of RM 750 against cash of RM 750, so its statement is byte for byte what it was.",
+   "<b>PROVED ON TWO BOOKS.</b> The live one still prints 750.00 on 08 Jul 2026; a copy with s009 corrected to 700 beside the same step prints 700.00 and not the step. Two mutations, both red. 1144 assertions across 84 sections."
+  ]
+ },
+ {
   "v": "v457",
   "d": "02 Sep 2026",
   "t": "A CANCELLATION ON THE WHITEBOARD ASKED FOR A FIGURE NOTHING READS, AND PREVIEWED A PILL WHERE THE BOOK HOLDS A REFUND",

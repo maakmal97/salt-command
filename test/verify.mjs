@@ -5080,6 +5080,43 @@ section("v457: a cancellation on the whiteboard asks for nothing and previews th
   } finally { for (const f of [B7, M7]) { try { rm7(f); } catch (e) { /* best effort */ } } }
 }
 
+
+section("v458: the reconciliation's payment list prints only when it sums to the row");
+{
+  /* The dated list of payments inside a reconciliation is read off the amend trail, and a
+     Correction (v363) sets a row's cash directly while the trail stays as written, so the list
+     could add up to money the order never carried. The one live offset order, s009, sums exactly,
+     which is why this was latent. Two books: the live one, and one where s009's cash is corrected
+     to 700 beside a step that still says 750. */
+  const { readFileSync: rf8, writeFileSync: wf8, rmSync: rm8 } = await import("node:fs");
+  const { join: j8 } = await import("node:path");
+  const { pathToFileURL: pu8 } = await import("node:url");
+  const base8 = JSON.parse(rf8(j8(REPO, "ledger", "book.json"), "utf8"));
+  const s009 = base8.sales.find((x) => x.rid === "s009");
+  ok(s009 && s009.customer === "CS6-PER" && s009.cash === 750 && (s009.settledKg || 0) > 0 && (s009.amend || []).filter((a) => +a.cash > 0.009).length === 1,
+    "the book still holds the case: s009 is the offset order, cash 750 with one cash step beside it");
+  const run8 = async (tag, shape) => {
+    const b = JSON.parse(JSON.stringify(base8));
+    shape(b.sales.find((x) => x.rid === "s009"));
+    const B = j8(REPO, "test", ".v458-" + tag + ".json");
+    wf8(B, JSON.stringify(b, null, 1));
+    const prev = process.env.SALT_BOOK; process.env.SALT_BOOK = B;
+    try {
+      const m = await import(pu8(j8(REPO, "tools", "make_statements.mjs")).href + "?v458-" + tag);
+      const o = { from: null, to: "2026-09-01", completed: true, open: true, pending: true, dates: true, brand: "Salt Command", issued: "01 Sep 2026" };
+      const rows = m.stmtRows("CS6-PER", o);
+      o.refunds = m.stmtRefunds("CS6-PER", o);
+      o.recon = m.stmtRecon("CS6-PER", rows).filter((R) => rows.some((x) => x.date === R.order.date));
+      return m.stmtDoc("CS6-PER", rows, o).replace(/<[^>]+>/g, " ").replace(/&minus;/g, "-").replace(/\s+/g, " ");
+    } finally { if (prev === undefined) delete process.env.SALT_BOOK; else process.env.SALT_BOOK = prev; try { rm8(B); } catch (e) { /* best effort */ } }
+  };
+  const A = await run8("live", () => {});
+  ok(A.indexOf("750.00 on 08 Jul 2026") >= 0, "on the live book the dated list still prints, because it sums to the row");
+  const B = await run8("corrected", (r) => { r.cash = 700; });
+  ok(B.indexOf("750.00 on 08 Jul 2026") < 0 && B.indexOf("700.00") >= 0,
+    `with the row corrected to 700 beside a step of 750, the row's figure prints and the step does not: ${B.indexOf("750.00 on") >= 0 ? "step printed" : "ok"}`);
+}
+
 /* ---- done ----------------------------------------------------------------------- */
 
 section("Round 7: the states no suite check had ever rendered");
@@ -5314,7 +5351,7 @@ section("Round 7: the states no suite check had ever rendered");
    the live count was 879, so thirty-nine assertions could have vanished under a guard written to
    stop exactly that. The margin is four, which covers the book-dependent branches that legitimately
    skip; it is not room for a section to fall out. */
-const FLOOR_ASSERTIONS = 1123, FLOOR_SECTIONS = 83;
+const FLOOR_ASSERTIONS = 1126, FLOOR_SECTIONS = 84;
 ok(pass + fail - offMachine >= FLOOR_ASSERTIONS,
   `the suite ran ${pass + fail - offMachine} assertions everywhere (${pass + fail} here, ${offMachine} of them needing files that live off this repo), below its floor of ${FLOOR_ASSERTIONS}: a section has stopped running`);
 ok(sections >= FLOOR_SECTIONS,
