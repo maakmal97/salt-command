@@ -37,9 +37,9 @@
       "stated": 15
     }
   },
-  "STATED_STOCK": 18.75,
+  "STATED_STOCK": 10.5,
   "COUNT_ON": {
-    "salt": "2026-08-24",
+    "salt": "2026-09-02",
     "oil": "2026-08-23"
   },
   "purchases": [
@@ -187,6 +187,7 @@
     {"customer":"CR3-DAM","qty":1,"total":80,"cost":50,"cash":0,"handover":"delivered","date":"2026-08-31","deliveredQty":1,"deliveredOn":"2026-08-31","note":"Entered as 1 Sep; happened on 31 Aug. Date and delivered-on move together, no figure changes; the RM80 is still owed. Dictated in a Code session on 2 Sep 2026. <b>HIS ELEVENTH UNIT AT RM80 AND HIS SECOND STANDING ADVANCE.</b> 1 unit handed over on 1 Sep with nothing paid, beside the RM80 still owed on s116 of 27 Aug, so RM160 now stands against him. He cleared RM160 on 27 Aug covering the 18th and the 24th, which is the pattern this row continues: a rolling one or two unit credit, settled in batches, never yet defaulted across eleven orders since 15 July. Recorded as DELIVERED on the wording used; at RM80 that is RM7.26 under the RM87.26 delivered floor, where the same unit collected clears RM77.26. Costed at RM50, so it returns RM30 at 37.5% whichever way it travelled.","rid":"s123","mod":"corrected on 2026-09-02: date 2026-09-01 to 2026-08-31; deliveredOn 2026-09-01 to 2026-08-31","amend":[{"date":"2026-08-31","kind":"Fulfilment","cash":0,"kg":1,"note":"as booked"},{"date":"2026-09-02","kind":"Correction","cash":0,"kg":0,"note":"Entered as 1 Sep; happened on 31 Aug. Date and delivered-on move together, no figure changes; the RM80 is still owed. Dictated in a Code session on 2 Sep 2026."}]},
     {"customer":"CI4-OKR","qty":3,"total":290,"cost":50,"cash":290,"handover":"collected","date":"2026-09-02","deliveredQty":3,"deliveredOn":"2026-09-02","paidOn":"2026-09-02","note":"<b>3 UNIT AT RM96.67, PAID AND COLLECTED ON THE DAY.</b> Against the RM50 shelf it returns RM140 at 48.3%. Inside his own range and clear of every floor: the drafter raised no flag. Dictated in a Code session on 2 Sep 2026 and folded on his word.","rid":"s125"},
     {"customer":"CE4-CHE","qty":2,"total":215,"cost":50,"cash":215,"handover":"collected","date":"2026-09-02","deliveredQty":2,"deliveredOn":"2026-09-02","paidOn":"2026-09-02","note":"<b>2 UNIT AT RM107.50, PAID AND COLLECTED ON THE DAY.</b> CE4-CHE has paid about RM92 a unit across six orders; this one is 17% above that. Against the RM50 shelf it returns RM115 at 53.5%. Dictated as CA5-CHE, not a code on the roster; folded to CE4-CHE, the party he named in the same breath for the deferred balance. Dictated in a Code session on 2 Sep 2026 and folded on his word.","rid":"s126"},
+    {"customer":"CF5-WM","qty":2,"total":230,"cost":48,"cash":230,"handover":"delivered","date":"2026-09-02","deliveredQty":2,"deliveredOn":"2026-09-02","paidOn":"2026-09-02","note":"<b>FIRST ORDER FROM CF5-WM,</b> registered a minute earlier from the phone. RM115 a unit, above the board's two-unit ask of RM100 and clear of the floors; paid in full and collected on the day. Costed at RM48 from p019, the SA5-BTR lot that landed the same morning.","rid":"s127"},
     {"customer":"CY2-NIL","qty":2.5,"total":230,"cost":50,"cash":0,"deliveredQty":0,"agreedOn":"2026-08-28","rid":"s119"},
     {"customer":"CN6-WM","qty":1.5,"total":185,"cash":0,"deliveredQty":0,"cancelled":true,"cancelledOn":"2026-08-24","rid":"s108"},
     {"customer":"CS6-PER","qty":6.25,"total":350,"cash":0,"deliveredQty":0,"cancelled":true,"cancelledOn":"2026-08-24","rid":"s109"}
@@ -260,7 +261,8 @@
     "CZ4-MK",
     "CH6-SET",
     "CD3-SEG",
-    "CA7-JTR"
+    "CA7-JTR",
+    "CF5-WM"
   ],
   "associates": [
     "CS6-BS",
@@ -399,7 +401,7 @@
   "ONE_OFFS": [
     {"id":"CM6-HCM","date":"2026-07-14","note":"One-off; RM104/unit is an outlier."}
   ],
-  "QUEUE_COMMITTED": "2026-09-02T06:40:01.000Z",
+  "QUEUE_COMMITTED": "2026-09-02T08:10:45.706Z",
   "PRICE_SET": {
     "salt": {
       "prices": {},
@@ -418,6 +420,8 @@
   },
   "NOTES": {
     "STATED_STOCK": [
+      "ROLLED AT v473: 2 unit to CF5-WM on 2026-09-02 had already left when he counted fifty seconds later, so the count of 10.5 STANDS as the shelf and this roll takes nothing off it. The drift measured after that sale is 6.25 unit, not 8.25. A ROLL AND NOT A COUNT; COUNT_ON is untouched. The count was approved with the gap in front of him; whether the same-morning lot p019 was on the shelf when he counted is for the next count to settle.",
+      "COUNTED AT v473 on 2026-09-02: the salt shelf held 10.5 against 18.75 on the roll, a drift of -8.25. A COUNT AND NOT A ROLL, so COUNT_ON.salt moves to 2026-09-02. <b>COUNTED AT 10.5 AGAINST 18.75 ON THE BOOK,</b> approved with the gap shown. The 25-unit lot p019 landed the same morning; if it was not yet stacked when he counted, the next count will show a surplus of that size.",
       "ROLLED AT v467: 1 unit to CN6-WM on 2026-08-30, 0.5 unit to CE4-CHE on 2026-08-30, 3 unit to CI4-OKR on 2026-09-02, 25 unit from SA5-BTR on 2026-09-02, 2 unit to CE4-CHE on 2026-09-02, so 0.25 less 6.5 plus 25 is 18.75. A ROLL AND NOT A COUNT; COUNT_ON is untouched. The 25 unit lot is the one the v464 roll said was missing, and the 2.5 unit the withdrawn s119 fulfilment took off is back. The shelf is above zero again and the book is level with the physical stock as far as he has stated it; the 24 Aug count still stands as the last count.",
       "REVERSED AT v467: the v464 fulfilment of 2.5 unit to CY2-NIL on 2026-09-01 was folded on a misreading of his approval and is withdrawn on his instruction of 02 Sep 2026: s119 is still pending, undated, nothing paid and nothing moved. So -2.25 plus 2.5 is 0.25. A ROLL AND NOT A COUNT; COUNT_ON is untouched.",
       "ROLLED AT v464: 2.5 unit to CY2-NIL on 2026-09-01, so 0.25 less 2.5 is -2.25. A ROLL AND NOT A COUNT; COUNT_ON is untouched. The shelf is now stated below zero. Salt went out on 1 Sep, so the figure is behind the physical shelf: a lot since the 24 Aug count is unrecorded, or that count was low. A count, or the lot entered, puts it right; this roll invents neither.",

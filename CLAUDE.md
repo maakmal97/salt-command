@@ -205,6 +205,14 @@ the fold's minute of its own accord. A schedule whose safety depends on another 
 keeping the minute you asked for is not safe, so the guard lives in the job: if
 `master/_to_fold.json` is still in HEAD, the last batch is unfolded and this tick stands down.
 
+**A VERSION ASKS ABOUT THE QUEUE FIRST (his instruction, 02 Sep 2026).** Before any version
+bump, a design or retirement fold included, check what is waiting: `node tools/drain.mjs --status`
+(the phone queue above the watermark), `node tools/drafts.mjs --list` and `--approved` (pending, and
+approved but uncommitted), and `git fetch` for a staged `master/_to_fold.json`. Ask him, one line per
+item, whether he wants to approve anything pending; never approve for him. Rows already approved,
+or approved on his answer, are folded into that version, so a version never ships with an approved
+row left behind.
+
 **The fold stays a judgement and therefore stays with an agent.** Folding an approved row is
 mechanical, but rolling `STATED_STOCK`, writing the row's NOTE, writing the `evolution` entry
 and deciding what an amendment amends are not, and the notes are most of what makes this book

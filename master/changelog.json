@@ -1,5 +1,15 @@
 [
  {
+  "v": "v473",
+  "d": "02 Sep 2026",
+  "t": "CF5-WM JOINS THE ROSTER AND BUYS TWO, AND THE SALT SHELF IS COUNTED AT 10.5",
+  "n": [
+   "<b>THREE ROWS FROM THE PHONE, APPROVED ON THE DESK WITHIN A MINUTE OF EACH OTHER ON 02 SEP.</b> CF5-WM is registered as a customer who buys direct; the name and the place are typed at the laptop and never travel. Then CF5-WM's first order: 2 unit of salt for RM230, RM115 a unit, paid and collected on the day, costed at RM48 from the shelf's latest lot (p019, SA5-BTR, landed the same morning). That is above the board's two-unit ask of RM100 a unit and clear of every floor, so the margin on the order is 58%.",
+   "<b>THE COUNT WINS, AND IT IS 8.25 BELOW THE ROLL.</b> He counted 10.5 unit of salt on hand on 02 Sep against 18.75 on the book, and approved the count with that gap in front of him. A count always wins: the stated shelf is 10.5 and COUNT_ON.salt moves to 02 Sep. The 2 unit to CF5-WM had already left the roll, so measured after the sale the drift is 6.25 unit, and it books as shrinkage across every unit sold. <b>ONE THING TO SETTLE ON THE NEXT COUNT:</b> the 25-unit lot p019 landed the same morning, so if the shelf was counted before it was stacked, the true figure is 35.5 and the drift runs the other way. The book carries what he approved; the note is here so the next count is read against it.",
+   "<b>FOLDED ON HIS RULE OF 02 SEP 2026:</b> a version bump asks about the queue first and folds what is approved. This fold is the ledger alone; the retirement of the older material layers follows it as its own version, measured against this book."
+  ]
+ },
+ {
   "v": "v472",
   "d": "02 Sep 2026",
   "t": "THE DESK IN THE SALT IDENTITY",

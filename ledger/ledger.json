@@ -1,6 +1,6 @@
 {
- "v": "v471",
- "stamped": "02 Sep 2026, 15:20 KL",
+ "v": "v473",
+ "stamped": "02 Sep 2026, 17:17 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -41,9 +41,9 @@
     "stated": 15
    }
   },
-  "STATED_STOCK": 18.75,
+  "STATED_STOCK": 10.5,
   "COUNT_ON": {
-   "salt": "2026-08-24",
+   "salt": "2026-09-02",
    "oil": "2026-08-23"
   },
   "purchases": [
@@ -2719,6 +2719,20 @@
     "rid": "s126"
    },
    {
+    "customer": "CF5-WM",
+    "qty": 2,
+    "total": 230,
+    "cost": 48,
+    "cash": 230,
+    "handover": "delivered",
+    "date": "2026-09-02",
+    "deliveredQty": 2,
+    "deliveredOn": "2026-09-02",
+    "paidOn": "2026-09-02",
+    "note": "<b>FIRST ORDER FROM CF5-WM,</b> registered a minute earlier from the phone. RM115 a unit, above the board's two-unit ask of RM100 and clear of the floors; paid in full and collected on the day. Costed at RM48 from p019, the SA5-BTR lot that landed the same morning.",
+    "rid": "s127"
+   },
+   {
     "customer": "CY2-NIL",
     "qty": 2.5,
     "total": 230,
@@ -2889,7 +2903,8 @@
    "CZ4-MK",
    "CH6-SET",
    "CD3-SEG",
-   "CA7-JTR"
+   "CA7-JTR",
+   "CF5-WM"
   ],
   "associates": [
    "CS6-BS",
@@ -3048,9 +3063,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-02T06:40:01.000Z",
+  "QUEUE_COMMITTED": "2026-09-02T08:10:45.706Z",
   "PRICING": {
-   "takenAt": "2026-09-02T06:18:08.433Z",
+   "takenAt": "2026-09-02T09:19:24.067Z",
    "sizes": [
     0.5,
     1,
@@ -3080,52 +3095,52 @@
      "replCost": 48.4,
      "floors": {
       "1": {
-       "delivered": 86.97,
-       "collected": 76.97
+       "delivered": 87.93,
+       "collected": 77.93
       },
       "2": {
-       "delivered": 138.95,
-       "collected": 128.95
+       "delivered": 140.87,
+       "collected": 130.87
       },
       "3": {
-       "delivered": 190.92,
-       "collected": 180.92
+       "delivered": 193.8,
+       "collected": 183.8
       },
       "4": {
-       "delivered": 242.9,
-       "collected": 232.9
+       "delivered": 246.73,
+       "collected": 236.73
       },
       "5": {
-       "delivered": 294.87,
-       "collected": 284.87
+       "delivered": 299.67,
+       "collected": 289.67
       },
       "0.5": {
-       "delivered": 60.99,
-       "collected": 50.99
+       "delivered": 61.47,
+       "collected": 51.47
       },
       "1.5": {
-       "delivered": 112.96,
-       "collected": 102.96
+       "delivered": 114.4,
+       "collected": 104.4
       },
       "2.5": {
-       "delivered": 164.94,
-       "collected": 154.94
+       "delivered": 167.33,
+       "collected": 157.33
       },
       "3.5": {
-       "delivered": 216.91,
-       "collected": 206.91
+       "delivered": 220.27,
+       "collected": 210.27
       },
       "4.5": {
-       "delivered": 268.88,
-       "collected": 258.88
+       "delivered": 273.2,
+       "collected": 263.2
       },
       "6.25": {
-       "delivered": 359.84,
-       "collected": 349.84
+       "delivered": 365.83,
+       "collected": 355.83
       },
       "12.5": {
-       "delivered": 684.68,
-       "collected": 674.68
+       "delivered": 696.66,
+       "collected": 686.66
       }
      },
      "inputs": {
@@ -3206,15 +3221,15 @@
          "rm": 10
         },
         "deliveredShare": {
-         "v": 0.3333333333333333
+         "v": 0.4
         }
        },
        "attrib": 1,
-       "shrinkRate": 0.04446905717845771,
+       "shrinkRate": 0.06177488578153123,
        "avgDel": {
-        "n": 113,
-        "kg": 287.7,
-        "mean": 2.546
+        "n": 114,
+        "kg": 289.7,
+        "mean": 2.5412
        }
       },
       "policy": {
@@ -3484,10 +3499,10 @@
      }
     }
    },
-   "v": "v471"
+   "v": "v473"
   },
   "OPEN": {
-   "at": "2026-09-02T06:18:08.479Z",
+   "at": "2026-09-02T09:19:24.103Z",
    "count": 6,
    "byKey": {
     "CY2-NIL|undefined|230": {
@@ -3592,11 +3607,11 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 18.75,
-     "free": 18.75,
+     "onHand": 10.5,
+     "free": 10.5,
      "owedOut": 0,
-     "coverDays": 3.5,
-     "rate": 5.39,
+     "coverDays": 1.9,
+     "rate": 5.54,
      "owedToYou": 370,
      "promised": 2.5,
      "short": 0
@@ -3614,10 +3629,10 @@
     }
    },
    "countedOn": {
-    "salt": "2026-08-24",
+    "salt": "2026-09-02",
     "oil": "2026-08-23"
    },
-   "v": "v471"
+   "v": "v473"
   }
  }
 }
