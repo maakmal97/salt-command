@@ -5243,6 +5243,49 @@ section("v463: the statement row carries no field nothing reads");
   ok(rows13.length > 0 && rows13.every((r) => !Object.prototype.hasOwnProperty.call(r, "credit")), `no row carries credit (${rows13.length} rows)`);
 }
 
+
+section("v465: the ledger is a table, whole and sortable");
+{
+  /* His instruction of 02 Sep 2026: first to latest, sortable like a sheet, a table, nothing folded
+     or hidden. The three-day window and the "earlier orders" fold go, the interim-steps disclosure
+     goes, every line is the same twelve cells, and a heading sorts: once ascending, again descending,
+     blanks last either way. Driven on the live book through the desk itself. */
+  const { openMaster: om15 } = await import("../tools/payload.mjs");
+  const { w: w15 } = await om15();
+  w15.eval("setProd('salt');recompute();ledF={q:'',state:'',party:'',month:'',product:''};ledSort={key:'e',dir:1};switchTab('ledger');");
+  const J15 = (x) => JSON.parse(String(w15.eval(x)));
+  const rows15 = +w15.eval("sales.length+purchases.length"), cards15 = +w15.eval("document.querySelectorAll('.sec.on .lcard').length");
+  ok(rows15 > 100 && cards15 === rows15, `every row on the book is on screen (${cards15} of ${rows15}), none folded`);
+  ok(+w15.eval("document.querySelectorAll('.sec.on .ledmore, .sec.on details.lmc, .sec.on details .lmove').length") === 0 && +w15.eval("document.querySelectorAll('.sec.on .lmove').length") > 0,
+    "no fold and no disclosure: every interim step is a visible line");
+  ok(+w15.eval("document.querySelectorAll('.sec.on .lhead > *').length") === 13 && +w15.eval("document.querySelectorAll('.sec.on .lhead [data-lsort]').length") === 10,
+    "thirteen headed columns, ten of them sortable");
+  const ids15 = J15("JSON.stringify([].slice.call(document.querySelectorAll('.sec.on .lcard')).map(function(c){return +c.id.replace('ent-E','');}))");
+  ok(ids15[0] === 1 && ids15.every((x, i) => !i || ids15[i - 1] < x), "it opens first to latest: E1 at the top and every E-number after the one before it");
+  const rids15 = () => J15("JSON.stringify([].slice.call(document.querySelectorAll('.sec.on .lcard')).map(function(c){return c.getAttribute('data-rid');}))");
+  const bk15 = JSON.parse(readFileSync(resolve(REPO, "ledger", "book.json"), "utf8"));
+  const byRid15 = {}; for (const r of bk15.sales.concat(bk15.purchases)) byRid15[r.rid] = r;
+  const mono = (a, up) => a.every((x, i) => !i || (up ? a[i - 1] <= x : a[i - 1] >= x));
+  w15.eval("document.getElementById('lsort-total').click()");
+  const ta = rids15().map((r) => +byRid15[r].total || 0);
+  ok(ta.length === rows15 && mono(ta, true), `one tap on Total sorts ascending, read back off the book (${ta.slice(0, 3)} ... ${ta.slice(-2)})`);
+  w15.eval("document.getElementById('lsort-total').click()");
+  const td = rids15().map((r) => +byRid15[r].total || 0);
+  ok(td.length === rows15 && mono(td, false) && td[0] === ta[ta.length - 1], `a second tap reverses it (${td.slice(0, 3)})`);
+  w15.eval("document.getElementById('lsort-party').click()");
+  const pa = J15("JSON.stringify([].slice.call(document.querySelectorAll('.sec.on .lcard .lparty')).map(function(e){return e.textContent;}))");
+  ok(pa.length === rows15 && pa.every((x, i) => !i || pa[i - 1].localeCompare(x) <= 0), `Party sorts by code (${pa[0]} first, ${pa[pa.length - 1]} last)`);
+  w15.eval("document.getElementById('lsort-date').click();document.getElementById('lsort-date').click();");
+  const dd = rids15().map((r) => byRid15[r].date || "");
+  const dated = dd.filter(Boolean), blanks = dd.length - dated.length;
+  ok(blanks > 0 && dd.slice(0, dated.length).every(Boolean) && mono(dated, false), `Date descending keeps the ${blanks} undated rows last, as a sheet keeps blank cells`);
+  ok(/Date/.test(String(w15.eval("document.querySelector('.sec.on .lhead .lsb.on').textContent"))) && +w15.eval("document.querySelectorAll('.sec.on .lhead .larr').length") === 1,
+    "the active heading carries the one arrow");
+  ok(+w15.eval("document.querySelector('.sec.on .lcard .lrow .lgroup').children.length") === 8 && +w15.eval("document.querySelector('.sec.on .lcard .lrow').children.length") === 6,
+    "an order line is eight labelled cells, the four figures and its control, the same tracks as the heading");
+  w15.eval("ledSort={key:'e',dir:1};");
+}
+
 /* ---- done ----------------------------------------------------------------------- */
 
 section("Round 7: the states no suite check had ever rendered");
@@ -5478,7 +5521,7 @@ section("Round 7: the states no suite check had ever rendered");
    the live count was 879, so thirty-nine assertions could have vanished under a guard written to
    stop exactly that. The margin is four, which covers the book-dependent branches that legitimately
    skip; it is not room for a section to fall out. */
-const FLOOR_ASSERTIONS = 1142, FLOOR_SECTIONS = 89;
+const FLOOR_ASSERTIONS = 1150, FLOOR_SECTIONS = 90;
 ok(pass + fail - offMachine >= FLOOR_ASSERTIONS,
   `the suite ran ${pass + fail - offMachine} assertions everywhere (${pass + fail} here, ${offMachine} of them needing files that live off this repo), below its floor of ${FLOOR_ASSERTIONS}: a section has stopped running`);
 ok(sections >= FLOOR_SECTIONS,

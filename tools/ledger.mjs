@@ -81,7 +81,7 @@ const NOT_LEDGER = new Set([
   "LEAK_TEST", "BIO_FIELDS", "PROD_META", "builders",
 
   /* transient UI state, not persisted anywhere */
-  "ledF", "concSort", "mnOver", "pxOver",
+  "ledF", "ledSort", "concSort", "mnOver", "pxOver",
 
   /* v359: A MEMOISATION CACHE, NOT A FACT. _wavgMemo holds wavgFor()'s answer per product for
      the life of one page load, so a second call in the same run does not re-walk every

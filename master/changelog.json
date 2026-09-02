@@ -1,5 +1,17 @@
 [
  {
+  "v": "v465",
+  "d": "02 Sep 2026",
+  "t": "THE LEDGER IS A TABLE: FIRST TO LATEST, EVERY ROW, EVERY STEP, SORTED FROM ITS HEADINGS",
+  "n": [
+   "<b>HIS INSTRUCTION, 02 SEP 2026.</b> Show the ledger from the first entry to the latest, sort it like a sheet on any column, make it a table, and fold or hide nothing. The three-day window and the &quot;earlier orders&quot; fold go: a folded row reads as a missing one, and this desk has been told so before. The disclosure that hid three or more interim steps goes with it. All 141 rows show, in book order.",
+   "<b>THIRTEEN FIXED TRACKS FROM THE HEADING DOWN.</b> E, step, date, type, product, party, kind, note, then quantity, price, total with margin, state, and the order's update control, which sat on a bar beneath every row and now sits on the row. An order line, a step line and the closing line are the same thirteen cells, a cell a line has no use for left empty in place, so the eye reads down a column. The rail and the wrapping left group are retired; on a narrow screen the table scrolls sideways rather than wrapping, because a wrapped table is not a table.",
+   "<b>A HEADING SORTS.</b> Once ascending, again descending, an arrow on the active one. Ten of the thirteen sort: E, date, type, product, party, quantity, price, total, margin and state. A blank key (an undated row, a pending or cancelled row's margin) sorts last in both directions, as a sheet treats an empty cell, and ties keep book order. The E-numbers are minted in book order and keep it whatever the sort, so a cross-reference still names the same entry.",
+   "<b>WHAT STAYS.</b> The search and the four filters, the totals strip, the day chart, the right-click and long-press editor, the update button on every live row, the correction strip, and his v447 model of a settled order as one Closed line carrying its figures.",
+   "<b>PROVED BY DRIVING IT.</b> Ten assertions on the live book through the desk itself: every row on screen, no fold or disclosure, thirteen headed columns, E1 first, Total ascending then descending read back off the book, Party by code, Date descending with the undated rows last, one arrow. 1168 assertions across 90 sections."
+  ]
+ },
+ {
   "v": "v464",
   "d": "02 Sep 2026",
   "t": "CY2-NIL'S PENDING 2.5 UNIT SETTLED IN FULL ON 1 SEP, AND THE STATED SHELF GOES BELOW ZERO",
