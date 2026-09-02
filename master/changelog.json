@@ -1,5 +1,15 @@
 [
  {
+  "v": "v463",
+  "d": "02 Sep 2026",
+  "t": "THE STATEMENT ROW CARRIED A FIELD NOTHING READ",
+  "n": [
+   "<b>FOLD 21 OF ROUND TEN, IN tools/make_statements.mjs, AND THE LAST OF THE LEFTOVERS.</b> stmtRows minted a credit on every row, the negative of what was owed, and nothing in the tool read it: the overpayment it stood for is stmtRefunds' shape, which is what the document prints. A figure computed and never read is a figure a later reader trusts without anyone having checked it, so it goes.",
+   "<b>WHAT CHANGES ON THE BOOK TODAY: NOTHING, BYTE FOR BYTE.</b> All 37 live statements and the review sheet were rendered before and after the line went and compared as files: identical.",
+   "<b>KEPT HONEST.</b> One assertion that no row carries the field, red with the line restored. 1160 assertions across 89 sections."
+  ]
+ },
+ {
   "v": "v462",
   "d": "02 Sep 2026",
   "t": "A CANCELLED-ON DATE NEEDS A CANCELLATION, AND CANNOT PRECEDE THE ORDER",

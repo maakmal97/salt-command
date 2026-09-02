@@ -155,7 +155,6 @@ function stmtRows(party,o){
          its own fact rather than a fallback. Only the date CELL of an undated row reads
          it, and only because such a row otherwise reaches a customer with no date at all. */
       agreedOn:s.agreedOn||null,
-      credit:owed<-0.009?-owed:0,
       /* WHAT HE IS OWED IN SALT, which is the figure a dispute actually turns on.
          deliverable = ordered LESS anything withheld by agreement to settle an earlier
          balance; toGet = deliverable LESS what he has already carried away. */

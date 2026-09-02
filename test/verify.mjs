@@ -5221,6 +5221,18 @@ section("v462: a cancelled-on date needs a cancellation, and cannot precede the 
   ok(has(via, /without being cancelled/), "and the master's inlined engine refuses it the same way");
 }
 
+
+section("v463: the statement row carries no field nothing reads");
+{
+  /* stmtRows minted a `credit` on every row, the negative of what was owed, and nothing in the
+     tool read it: the overpayment it stood for is stmtRefunds' shape. Proved byte-identical on
+     all 37 live statements when it went; this keeps the shape honest. */
+  const { stmtRows: sr13 } = await import("../tools/make_statements.mjs");
+  const o13 = { from: null, to: "2026-09-01", completed: true, open: true, pending: true, dates: true, brand: "Salt Command", issued: "01 Sep 2026" };
+  const rows13 = sr13("CJ4-BJ", o13);
+  ok(rows13.length > 0 && rows13.every((r) => !Object.prototype.hasOwnProperty.call(r, "credit")), `no row carries credit (${rows13.length} rows)`);
+}
+
 /* ---- done ----------------------------------------------------------------------- */
 
 section("Round 7: the states no suite check had ever rendered");
@@ -5455,7 +5467,7 @@ section("Round 7: the states no suite check had ever rendered");
    the live count was 879, so thirty-nine assertions could have vanished under a guard written to
    stop exactly that. The margin is four, which covers the book-dependent branches that legitimately
    skip; it is not room for a section to fall out. */
-const FLOOR_ASSERTIONS = 1141, FLOOR_SECTIONS = 88;
+const FLOOR_ASSERTIONS = 1142, FLOOR_SECTIONS = 89;
 ok(pass + fail - offMachine >= FLOOR_ASSERTIONS,
   `the suite ran ${pass + fail - offMachine} assertions everywhere (${pass + fail} here, ${offMachine} of them needing files that live off this repo), below its floor of ${FLOOR_ASSERTIONS}: a section has stopped running`);
 ok(sections >= FLOOR_SECTIONS,
