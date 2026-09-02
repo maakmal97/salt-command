@@ -1,0 +1,137 @@
+{
+ "ok": true,
+ "count": 3,
+ "approved": [
+  {
+   "id": "2026-09-02T08:09:07.226Z",
+   "collection": "roster",
+   "row": {
+    "code": "CF5-WM",
+    "kind": "customer",
+    "parent": null,
+    "note": null
+   },
+   "reasoning": "Registers CF5-WM as a customer. It touches no figure: the fold appends the code to the roster. THE NAME AND THE PLACE ARE NOT HERE AND MUST NOT BE: the directory is typed at the laptop and never travels.",
+   "flags": [],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-09-02T08:09:07.226Z",
+    "type": "ADDID",
+    "party": "CF5-WM",
+    "qty": null,
+    "total": null,
+    "status": "addid",
+    "raw": "Add CF5-WM to the roster as: Customer, buys direct",
+    "payload": {
+     "mode": "addid",
+     "code": "CF5-WM",
+     "kind": "customer",
+     "parent": null,
+     "rev": null,
+     "note": null
+    }
+   },
+   "decidedAt": "2026-09-02T08:09:17.155Z",
+   "decidedBy": "desk"
+  },
+  {
+   "id": "2026-09-02T08:09:55.839Z",
+   "collection": "sales",
+   "row": {
+    "customer": "CF5-WM",
+    "qty": 2,
+    "total": 230,
+    "cost": 48,
+    "cash": 230,
+    "handover": "delivered",
+    "date": "2026-09-02",
+    "deliveredQty": 2,
+    "deliveredOn": "2026-09-02",
+    "paidOn": "2026-09-02"
+   },
+   "reasoning": "Sold 2 unit of salt to CF5-WM for RM 230, RM 115/unit. Costed at RM 48/unit from the desk's own shelf cost, so RM 134 on the order at 58.3%. Paid in full and delivered in full on 2026-09-02. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [
+    "CF5-WM is not on the roster. A new party needs a code and a directory entry before this row is committed."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-09-02T08:09:55.839Z",
+    "type": "SELL",
+    "party": "CF5-WM",
+    "qty": 2,
+    "total": 230,
+    "status": "paid",
+    "raw": "Sell 2 unit to CF5-WM for RM 230 on 2026-09-02, RM 230 cash, 2 unit moved → Completed",
+    "payload": {
+     "mode": "new",
+     "product": "salt",
+     "direction": "SELL",
+     "party": "CF5-WM",
+     "newId": null,
+     "date": "2026-09-02",
+     "qty": 2,
+     "total": 230,
+     "cash": 230,
+     "kg": 2,
+     "assoc": null,
+     "stream": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": null,
+     "handover": "delivered"
+    }
+   },
+   "decidedAt": "2026-09-02T08:11:00.994Z",
+   "decidedBy": "desk"
+  },
+  {
+   "id": "2026-09-02T08:10:45.706Z",
+   "collection": "count",
+   "row": {
+    "product": "salt",
+    "qty": 10.5,
+    "date": "2026-09-02",
+    "was": 18.75,
+    "drift": -8.25
+   },
+   "reasoning": "Counted 10.5 unit of salt by hand on 2026-09-02, against 18.75 on the book: a drift of -8.25. The last count was 2026-08-24. A count wins over the ledger, and the fold sets the stated stock and moves COUNT_ON to this date.",
+   "flags": [
+    "The book says 18.75 and you counted 10.5: -8.25 unit unaccounted for. A COUNT ALWAYS WINS, so this becomes the shelf and the gap books as shrinkage across every unit sold."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-09-02T08:10:45.706Z",
+    "type": "COUNT",
+    "party": "stock count",
+    "qty": 10.5,
+    "total": null,
+    "status": "count",
+    "raw": "Stock count: 10.5 unit Salt on hand on 2026-09-02",
+    "payload": {
+     "mode": "count",
+     "product": "salt",
+     "direction": null,
+     "party": null,
+     "date": "2026-09-02",
+     "qty": 10.5,
+     "total": null,
+     "cash": null,
+     "kg": 10.5,
+     "assoc": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": null
+    }
+   },
+   "decidedAt": "2026-09-02T08:11:02.451Z",
+   "decidedBy": "desk"
+  }
+ ]
+}
