@@ -1,5 +1,16 @@
 [
  {
+  "v": "v482",
+  "d": "03 Sep 2026",
+  "t": "A QUEUED ENTRY NO LONGER BLOCKS THE RELOAD THAT WOULD CLEAR IT",
+  "n": [
+   "<b>HIS REPORT, 03 SEP 2026: after approving a row on the phone, the other tabs did not move.</b> The approval itself was faultless, and the whole chain behind it ran: the row was staged, folded as v481, deployed and marked committed within minutes. What did not happen was the phone loading the build that carried it, so the Approve tab moved on while every ledger tab held the figures from before the fold.",
+   "<b>THE FRESHNESS POLL WAS REFUSING TO RELOAD BECAUSE AN ENTRY WAS QUEUED, AND THAT REFUSAL WAS CIRCULAR.</b> The ten-second tick reloads only when the desk is idle, and <code>idle()</code> counted any entry in the local queue as unsent work. In cloud mode that queue is emptied only by a LOAD whose <code>QUEUE_COMMITTED</code> has passed the entry. So recording an entry disabled the auto-reload until the very reload it was blocking, which is exactly the case the poll exists for: a fold lands, the build id moves, and the desk offers a chip nobody had been told to watch for.",
+   "<b>NOTHING IS LOST BY RELOADING WITH A QUEUE, WHICH IS WHY THE CLAUSE COULD SIMPLY GO.</b> <code>saveQueue()</code> writes <code>localStorage</code> before it posts anything, and the load reads it straight back, so a held entry survives a reload and the tick retries its post afterwards. The two guards that do protect something are untouched: a focused field and an open dialogue both still stand the reload down, because those are the only states a reload would actually throw away.",
+   "<b>THE RULE IS NOW RUN RATHER THAN READ.</b> The assertion calls the shipped <code>idle()</code> with a stubbed document instead of grepping for the deleted line: a queued entry reads idle, a focused field does not, an open dialogue does not, and a throw reads as not idle rather than as idle. Proved red against the old rule before it was trusted."
+  ]
+ },
+ {
   "v": "v481",
   "d": "03 Sep 2026",
   "t": "ONE SALE ON 3 SEP: CM6-PJ TAKES 3 UNIT COLLECTED AND PAYS ON THE DAY",
