@@ -566,7 +566,47 @@ async function handleDraftPost(request, env) {
   return json({ ok: true, id, created, existed: !created });
 }
 
-async function handleDraftDecide(request, env, id, decision) {
+/* AN APPROVAL RINGS THE STAGE (03 Sep 2026, his instruction: approve, stage, fold, commit,
+ * push and deploy together, or within minutes).
+ *
+ * A tap used to flip a row to approved and stop; the hourly stage found it within the hour and
+ * a fold happened when someone asked. Now the tap also dispatches cloud-commit.yml, which
+ * stages the approved rows at once and rings the fold routine by pushing the `stage` branch.
+ * The fold, the deploy and the mark-committed step are unchanged and still hold the judgement
+ * and the credentials; this Worker only starts the clock.
+ *
+ * GitHub, not the routine API, because the stage has to run first in any case, and because
+ * the token that can fire a routine is the owner's claude.ai identity, which does not belong in
+ * a Worker. A fine-grained GitHub token scoped to this repo's Actions can do nothing else.
+ *
+ * waitUntil, not await, for the reason the drafter gives: the phone must get its 200 for the
+ * DECISION at once, and a dispatch fault must never undo one. Silent when SALT_GITHUB_TOKEN is
+ * unset, so the gate is safe to deploy before the secret exists: the hourly stage still runs,
+ * and a fold on request still works. Five taps in a row are five dispatches; the workflow's
+ * concurrency group queues them and the stage's own guard stands the extras down. */
+const STAGE_REPO = "maakmal97/salt-command";
+function stageOnApproval(env, ctx) {
+  if (!ctx || typeof ctx.waitUntil !== "function" || !env.SALT_GITHUB_TOKEN) return;
+  ctx.waitUntil((async () => {
+    try {
+      const r = await fetch("https://api.github.com/repos/" + STAGE_REPO + "/actions/workflows/cloud-commit.yml/dispatches", {
+        method: "POST",
+        headers: {
+          authorization: "Bearer " + env.SALT_GITHUB_TOKEN,
+          accept: "application/vnd.github+json",
+          "content-type": "application/json",
+          "user-agent": "salt-command"
+        },
+        body: JSON.stringify({ ref: "master", inputs: { stage_only: "true" } })
+      });
+      console.log("stage dispatch: " + r.status);
+    } catch (e) {
+      console.log("stage dispatch FAILED, the hourly stage will catch it: " + String((e && e.message) || e));
+    }
+  })());
+}
+
+async function handleDraftDecide(request, env, ctx, id, decision) {
   if (!env.SALT_LEDGER) return json({ ok: false, error: "no ledger binding" }, 503);
   if (!writeOk(request, env)) return needsKey();
   let by = "phone";
@@ -581,6 +621,7 @@ async function handleDraftDecide(request, env, id, decision) {
   await env.SALT_LEDGER.prepare(
     "UPDATE draft SET status=?1, decided_at=?2, decided_by=?3 WHERE id=?4 AND status='pending'"
   ).bind(decision, new Date().toISOString(), by, id).run();
+  if (decision === "approved") stageOnApproval(env, ctx);
   const row = await env.SALT_LEDGER.prepare(`SELECT ${DRAFT_COLS} FROM draft WHERE id=?1`).bind(id).first();
   return json({ ok: true, draft: row ? draftOut(row) : null });
 }
@@ -599,7 +640,7 @@ async function handleDraftCommitted(request, env, id) {
   return json({ ok: true, id, committedAt: at });
 }
 
-async function handleDrafts(request, env, url, p, m) {
+async function handleDrafts(request, env, ctx, url, p, m) {
   if (p === "/drafts") {
     if (m === "GET") return handleDraftsGet(env, url);
     if (m === "POST") return handleDraftPost(request, env);
@@ -610,7 +651,7 @@ async function handleDrafts(request, env, url, p, m) {
   if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
   const id = decodeURIComponent(mm[1]);
   if (mm[2] === "committed") return handleDraftCommitted(request, env, id);
-  return handleDraftDecide(request, env, id, mm[2] === "approve" ? "approved" : "rejected");
+  return handleDraftDecide(request, env, ctx, id, mm[2] === "approve" ? "approved" : "rejected");
 }
 
 export default {
@@ -749,7 +790,7 @@ export default {
       return json({ ok: false, error: "the ledger store is read-only; the master is still the source" }, 405);
     }
     /* The approval step. Reads open, decisions write-gated, same posture as everything else. */
-    if (p === "/drafts" || p.startsWith("/drafts/")) return handleDrafts(request, env, url, p, m);
+    if (p === "/drafts" || p.startsWith("/drafts/")) return handleDrafts(request, env, ctx, url, p, m);
     /* Run the drafter on demand rather than waiting for the cron: needed to prove it from
        outside, and needed the moment an entry is queued and you want the row now. Write-gated,
        because it writes rows into `draft`. `?dry=1` reports what it would draft and stores
