@@ -6159,6 +6159,24 @@ section("Statements — the QR, the sort and the Salt identity");
     ok(JSON.parse(plan.puts.find(p => p.key === "u:" + u).value).live.at === now.toISOString(),
       "and what it puts is the record with the live statement in it");
 
+    /* A RECORD FROM BEFORE THE SITE has no username, and the first deploy after the site went
+       up put thirty-seven of them under the one key "u:undefined", which the store refused and
+       which turned the deploy red. They are reported and left; and an issue with nothing
+       publishable retires nothing, or a botched regeneration would take every account down. */
+    writeFileSync(join(root, "2026-09", "_kv", "CX0-AA.json"),
+      JSON.stringify({ code: "CX0-AA", month: "2026-09", issued: "2026-09-01", verifier: {}, env: {} }) + "\n");
+    const plan3 = await planPublish(root, "test-secret", now, ["u:zzzz-zzzz"], null);
+    ok(plan3.stale.length === 1 && plan3.stale[0] === "CX0-AA.json" && plan3.puts.length === sep.made + 1
+      && !plan3.puts.some(p => p.key === "u:undefined"),
+      "a record with no username is reported as stale and never becomes a key");
+    const old = join(root, "2026-10");
+    mkdirSync(join(old, "_kv"), { recursive: true });
+    writeFileSync(join(old, "_kv", "CX0-AA.json"), JSON.stringify({ code: "CX0-AA", issued: "2026-10-01" }) + "\n");
+    const plan4 = await planPublish(root, "test-secret", now, ["u:" + u, "fail:" + u], null);
+    ok(plan4.latest === "2026-10" && plan4.puts.length === 0 && plan4.deletes.length === 0,
+      "an issue with nothing publishable puts nothing and retires nothing");
+    rmSync(old, { recursive: true, force: true });
+
     ok(both.html.includes("?u=" + u) && both.html.includes("<code>" + u + "</code>") && both.html.includes("three minutes"),
       "the QR opens the site with the username filled in, the username is printed beside it, and the copy says three minutes");
     ok(!/salt-command\./.test(both.html) && !/\/s\//.test(both.html),
@@ -6235,7 +6253,7 @@ section("Statements — the QR, the sort and the Salt identity");
   }
 }
 
-const FLOOR_ASSERTIONS = 1328, FLOOR_SECTIONS = 97;   /* live statements on v482: 1332 everywhere, 1333 here */
+const FLOOR_ASSERTIONS = 1330, FLOOR_SECTIONS = 97;   /* stale records skipped: 1334 everywhere, 1335 here */
 ok(pass + fail - offMachine >= FLOOR_ASSERTIONS,
   `the suite ran ${pass + fail - offMachine} assertions everywhere (${pass + fail} here, ${offMachine} of them needing files that live off this repo), below its floor of ${FLOOR_ASSERTIONS}: a section has stopped running`);
 ok(sections >= FLOOR_SECTIONS,

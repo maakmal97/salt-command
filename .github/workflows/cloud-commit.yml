@@ -63,6 +63,8 @@ on:
       # so a change to it deploys on its own paths. See the two steps at the foot of deploy.
       - 'stmt/**'
       - 'wrangler.stmt.jsonc'
+      - 'tools/stmt-publish.mjs'
+      - 'tools/make_statements.mjs'
   workflow_dispatch:
     inputs:
       # THE WORKER DISPATCHES THIS ON EVERY APPROVAL (03 Sep 2026), with stage_only set, so

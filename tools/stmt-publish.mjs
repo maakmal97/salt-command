@@ -34,12 +34,16 @@ export async function planPublish(root, key, now, existingKeys, storedIssue) {
   const issued = r.records.length ? r.records[0].issued : null;
   const newIssue = !!issued && storedIssue !== issued;
   const deletes = [];
-  for (const k of existingKeys || []) {
-    if (k.startsWith("u:") && !keep.has(k)) deletes.push(k);
-    if (newIssue && k.startsWith("fail:")) deletes.push(k);
+  /* NOTHING PUBLISHABLE MEANS NOTHING TOUCHED: an issue of stale records must not retire what
+     is already in the store, or a botched regeneration would take every account down. */
+  if (r.records.length) {
+    for (const k of existingKeys || []) {
+      if (k.startsWith("u:") && !keep.has(k)) deletes.push(k);
+      if (newIssue && k.startsWith("fail:")) deletes.push(k);
+    }
+    puts.push({ key: "issue", value: issued });
   }
-  if (issued) puts.push({ key: "issue", value: issued });
-  return { latest: r.latest, issued, newIssue, live: r.live, unmatched: r.unmatched, puts, deletes };
+  return { latest: r.latest, issued, newIssue, live: r.live, unmatched: r.unmatched, stale: r.stale, puts, deletes };
 }
 
 function wrangler(args, opts = {}) {
@@ -66,11 +70,17 @@ async function main() {
   let existing = [], storedIssue = null;
   if (!dry) {
     existing = [...listKeys("u:"), ...listKeys("fail:")];
-    try { storedIssue = wrangler(["kv", "key", "get", "--remote", "--binding", "STMT", "issue"]).trim() || null; }
+    /* absent on a fresh store, which wrangler reports as a 404 on stderr; that is not news */
+    try { storedIssue = wrangler(["kv", "key", "get", "--remote", "--binding", "STMT", "issue"], { stdio: ["ignore", "pipe", "ignore"] }).trim() || null; }
     catch (e) { storedIssue = null; }
   }
   const plan = await planPublish(root, key, new Date(), existing, storedIssue);
   if (!plan.latest) { console.log("no statement set to publish; normal for a build with no issue in it"); return; }
+  if (plan.stale.length) {
+    console.log("::warning::" + plan.stale.length + " record(s) in " + plan.latest + " carry no username and are from before the site: "
+      + plan.stale.join(", ") + ". Regenerate the issue on the laptop; they are not published.");
+  }
+  if (!plan.puts.length) { console.log("nothing publishable in " + plan.latest + "; the store is left as it is"); return; }
 
   mkdirSync(outDir, { recursive: true });
   const putFile = join(outDir, "put.json"), delFile = join(outDir, "delete.json");

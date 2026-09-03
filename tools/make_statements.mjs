@@ -622,14 +622,19 @@ export async function liveRecords(root, key, now) {
   for (const d of readdirSync(root).filter(x => /^\d{4}-\d{2}$/.test(x)).sort()) {
     if (existsSync(join(root, d, "_kv"))) latest = d;
   }
-  if (!latest) return { latest: null, records: [], live: 0, unmatched: [] };
+  if (!latest) return { latest: null, records: [], live: 0, unmatched: [], stale: [] };
   const users = loadUsers(join(root, "_users.json"));
   const byUser = {};
   for (const c of Object.keys(users)) byUser[users[c]] = c;
-  const records = [], unmatched = [];
+  const records = [], unmatched = [], stale = [];
   let live = 0;
   for (const f of readdirSync(join(root, latest, "_kv")).filter(x => x.endsWith(".json")).sort()) {
     const rec = JSON.parse(readFileSync(join(root, latest, "_kv", f), "utf8"));
+    /* A RECORD WITH NO USERNAME IS FROM BEFORE 03 SEP 2026 and cannot be published: the first
+       deploy after the site went up found thirty-seven of them and put them all under the one
+       key "u:undefined", which the store refused. They are reported and left, and the issue is
+       regenerated on the laptop, which is the only place the passwords are. */
+    if (!rec || !USERNAME_RE.test(String(rec.u || "")) || !rec.wrap || !rec.env) { stale.push(f); continue; }
     const code = byUser[rec.u];
     if (key && code) {
       const doc = liveStatement(code, now);
@@ -640,7 +645,7 @@ export async function liveRecords(root, key, now) {
     } else if (key) unmatched.push(rec.u);
     records.push(rec);
   }
-  return { latest, records, live, unmatched };
+  return { latest, records, live, unmatched, stale };
 }
 
 /* `archive` produces a HISTORICAL issue: the documents and the review sheet, and nothing else.
