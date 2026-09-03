@@ -1,5 +1,16 @@
 [
  {
+  "v": "v481",
+  "d": "03 Sep 2026",
+  "t": "ONE SALE ON 3 SEP: CM6-PJ TAKES 3 UNIT COLLECTED AND PAYS ON THE DAY",
+  "n": [
+   "<b>ONE ROW FOLDED, SALT, DATED 3 SEP 2026.</b> 3 unit collected by CM6-PJ for RM 270, RM 90 a unit, paid in full and taken in full on the day, so the row closes on arrival and leaves nothing outstanding. Queued from the phone at 00:50 KL on 3 Sep and approved at 14:50 the same day. The drafter raised no flag on it.",
+   "<b>THE COST IS THE SHELF'S OWN, SO NO OVERRIDE WAS NEEDED.</b> The draft carries RM 48 a unit, which is what the desk's own <code>stockCostFor('salt')</code> returns against p019, the 25 unit lot bought from SA5-BTR for RM 1,200 on 31 Aug and the latest on the book. That is RM 144 of cost against RM 270, RM 126 on the order at 46.7%.",
+   "<b>THE RATE SITS WELL CLEAR OF THE FLOOR AND IS THE TAPER DOING ITS WORK.</b> The desk's own ladder puts the floor for 3 unit at RM 183.80 collected and RM 193.80 delivered; RM 270 is RM 86.20 above the collected floor, which is the one that applies here. Against his own history, CM6-PJ has one prior row, s100 of 21 Aug, 1 unit at RM 100, itself restated from RM 120 with R3 credited. RM 90 a unit is below that rate on three times the size, which is what the ladder expects rather than a concession.",
+   "<b>THE SHELF GOES FROM 7 TO 4 AND THE 2 SEP COUNT STILL STANDS.</b> The entry was queued after the 12:05 watermark that batch carried, so these 3 unit come off the count of 10.5 rather than sitting inside it. Against 4 unit the only standing commitment is still s119, 2.5 unit to CY2-NIL, pending and undated."
+  ]
+ },
+ {
   "v": "v480",
   "d": "03 Sep 2026",
   "t": "TWO SALES ON 2 SEP: CM4-MK PAYS ON THE DAY, CA4-DAM TAKES A SECOND CREDIT",
