@@ -12,15 +12,22 @@
 # the evolution entry and deciding what an amendment amends are not arithmetic, and a job that
 # folded rows and dropped the prose would be a worse ledger.
 #
-#   09:30 MYT  stage    this file    D1 -> master/_to_fold.json, committed
-#   10:00 MYT  fold     the agent    reads that file, folds, bumps, builds, tests, pushes
-#   on push    deploy   this file    wrangler deploy, then mark those ids committed
-#   11:00 MYT  prove    ship-check.yml
+#   on a tap, and hourly   stage    this file    D1 -> master/_to_fold.json, committed
+#   same run, if staged    fold     the agent    the Claude Code action: folds, bumps, builds, tests, pushes
+#   same run, and on push  deploy   this file    wrangler deploy, then mark those ids committed
+#   11:00 MYT              prove    ship-check.yml
+#
+# (Until 03 Sep 2026 the fold was a cloud routine, six-hourly and then on demand; see the
+# fold job below for why it moved in here.)
 #
 # SETUP, AND IT IS THE ONE THING ONLY HE CAN DO:
 #   gh secret set CLOUDFLARE_API_TOKEN
 # The token needs Workers Scripts:Edit, Workers KV:Edit and D1:Edit on the account. Nothing
 # here runs until it exists; both jobs check for it and say so rather than failing obscurely.
+# Two more since 03 Sep 2026:
+#   claude setup-token, then  gh secret set CLAUDE_CODE_OAUTH_TOKEN     (the fold job's agent)
+#   npx wrangler secret put SALT_GITHUB_TOKEN                            (the Worker's dispatch:
+#     a fine-grained GitHub token on this repo alone, Actions read and write, nothing else)
 name: Cloud commit
 
 on:
@@ -45,6 +52,13 @@ on:
       - 'public/rev.json'
   workflow_dispatch:
     inputs:
+      # THE WORKER DISPATCHES THIS ON EVERY APPROVAL (03 Sep 2026), with stage_only set, so
+      # a tap on the phone stages within a minute instead of within the hour. On such a run
+      # the deploy job runs only if the fold job pushed something to deploy.
+      stage_only:
+        description: 'Stage the approved rows and stop; do not deploy'
+        type: boolean
+        default: false
       test_push:
         description: 'Send a test push, even with no fold in this build'
         type: boolean
@@ -64,6 +78,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    outputs:
+      staged: ${{ steps.commit.outputs.staged }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -129,9 +145,11 @@ jobs:
       # the file is actually in HEAD when there was anything to stage. A step that reports
       # success without checking its own effect is the fault this repo keeps writing tests for.
       - name: Commit it, and prove it
+        id: commit
         if: steps.guard.outputs.skip == '0'
         run: |
           set -euo pipefail
+          echo "staged=0" >> "$GITHUB_OUTPUT"
           count=$(node -p "require('./master/_to_fold.json').count")
           if [ "$count" = "0" ]; then
             # Deliberately NOT committed. Its absence is the signal the agent stops on, and a
@@ -155,6 +173,7 @@ jobs:
             exit 1
           fi
           echo "Staged $count row(s) and confirmed the file is in HEAD."
+          echo "staged=1" >> "$GITHUB_OUTPUT"
 
   # ---------------------------------------------------------------------------
   # DEPLOY: the phone gets what was just pushed, and only then are the folded
@@ -162,13 +181,113 @@ jobs:
   # deploy would leave a row recorded as shipped while the phone still shows the
   # old book, which is the exact silent failure of 10 and 19 Aug.
   # ---------------------------------------------------------------------------
+  # ---------------------------------------------------------------------------
+  # FOLD: the judgement, run by an agent INSIDE this workflow (his instruction, 03 Sep 2026:
+  # approve, stage, fold, commit, push and deploy together, or within minutes).
+  #
+  # The fold was a cloud routine on a six-hourly clock, then on demand. Neither is "within
+  # minutes of the tap". A routine webhook cannot do it either: the routine API fires on pull
+  # request and release events only, never a push. So the agent runs here, between the stage
+  # and the deploy, as the Claude Code action on the owner's subscription token. It follows
+  # docs/CLOUD_FOLD.md exactly as the routine did, and holds no Cloudflare credential: this
+  # job's secret can fold a book and push a commit, and nothing else.
+  #
+  # Its push is made with the checkout's GITHUB_TOKEN, and GitHub does not start a workflow
+  # from a push made with that token. That is why the deploy job follows in THIS run rather
+  # than waiting for a push event, and why it checks out master's tip rather than the sha
+  # the run began on.
+  # ---------------------------------------------------------------------------
+  fold:
+    needs: stage
+    if: needs.stage.outputs.staged == '1'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+        with: { ref: master }
+      - uses: actions/setup-node@v4
+        with: { node-version: '24', cache: npm }
+      - run: npm ci
+
+      - name: The credential exists
+        env:
+          TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+        run: |
+          if [ -z "${TOKEN:-}" ]; then
+            echo "::error::CLAUDE_CODE_OAUTH_TOKEN is not set. Run: claude setup-token, then gh secret set CLAUDE_CODE_OAUTH_TOKEN. The batch stays staged; fold it by hand or fire the backup routine."
+            exit 1
+          fi
+          git config user.name  "salt-command fold"
+          git config user.email "noreply@github.com"
+
+      - name: Fold
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          claude_args: '--allowedTools "Bash,Read,Write,Edit,Glob,Grep" --max-turns 80'
+          prompt: |
+            You are the fold for the Salt Command trading book, running as the fold job of
+            .github/workflows/cloud-commit.yml. This is a real ledger with real money in it; be
+            exact and never guess a figure.
+
+            The stage job has just written master/_to_fold.json to master and this checkout is
+            master's tip. Two stops come first. If master/_to_fold.json is absent, nothing is
+            staged: say so in one line and stop. If master/_folded.json is present, the last batch
+            is folded and waiting for its deploy: say so in one line and stop.
+
+            Read these next, in this order, and follow them:
+              1. docs/CLOUD_FOLD.md  - your procedure. It is authoritative and short. The book is
+                 ledger/book.json and the fold is done by a tool; the rows in
+                 master/salt_command.html are a generated copy and are never edited by hand.
+              2. CLAUDE.md           - the repo's hard rules.
+
+            In one line: run `node tools/fold.mjs --plan`. If it says there is nothing to fold, say
+            so in one line and stop without bumping a version. Otherwise read the plan, fill in
+            master/_fold_notes.json (a note for every new row written as a person auditing it
+            would need, a trail note for every amendment, the next version, a title in capitals,
+            the notes array, and your sentence on the roll), run `node tools/fold.mjs --apply`,
+            then `node tools/ledger.mjs`, then `npm run build && npm test`, then commit
+            everything it wrote with a message naming the version and what was folded, and push
+            with `git push origin HEAD:master`. Git identity is already configured. The deploy
+            job that follows in this run deploys, marks the rows committed and clears the
+            handoff files; do not run npm run deploy, do not mark anything committed and do not
+            delete the handoff files yourself.
+
+            A refusal folds nothing: if --plan or --apply refuses anything, report it plainly and
+            stop. Never edit the rows in the master, never write a real name: codes only,
+            everywhere, including in a note. A Modification and a Correction are mechanical and
+            fold like any other amendment; a Linked or Rewarded amendment is refused by the tool
+            and left for a person.
+
+            You have no Cloudflare credential and must not look for one. House style, and it is
+            not optional: British English, no em-dashes, RM and 'unit' only (never kg or kilo),
+            codes only and never a real name.
+
+            Before you push, state plainly what you folded, what you refused and why, and any
+            figure you were unsure of. If anything looks wrong, fold nothing and say so: a day
+            with no commit is cheap and a wrong row is not.
+
+      - name: Say whether the fold pushed
+        run: |
+          set -euo pipefail
+          git fetch -q origin master
+          if git cat-file -e origin/master:master/_folded.json 2>/dev/null; then
+            echo "Folded: master/_folded.json is on origin/master. The deploy follows."
+          else
+            echo "::warning::The fold job pushed no fold. The batch stays staged for the next run, a fold by hand, or the backup routine; read the step above for why."
+          fi
+
   deploy:
-    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    needs: [stage, fold]
+    if: ${{ !cancelled() && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && !inputs.stage_only) || needs.fold.result == 'success') }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
       - uses: actions/checkout@v4
+        with: { ref: master }
       - uses: actions/setup-node@v4
         with: { node-version: '24', cache: npm }
       - run: npm ci

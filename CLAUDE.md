@@ -180,8 +180,8 @@ chain is cloud-reachable and the laptop is off the critical path.
 | Queue an entry | KV, from the phone | on tap |
 | Draft the row | Worker | on arrival, 15-min cron as the net |
 | Approve | D1, from the phone | on tap |
-| Stage the approved rows | Actions, `cloud-commit.yml` | hourly, cron `5 * * * *` (GitHub drifts it) |
-| **Fold, bump, build, test, push** | **on demand, `docs/CLOUD_FOLD.md`, an agent asked to** | no schedule; see below |
+| Stage the approved rows | Actions, `cloud-commit.yml` | **on every approval** (the Worker dispatches it), and hourly as the net |
+| **Fold, bump, build, test, push** | **the `fold` job in `cloud-commit.yml`: the Claude Code action, following `docs/CLOUD_FOLD.md`**; or an agent asked to | **in the same run, whenever the stage staged rows**; or on demand |
 | Deploy, prove, mark committed, **re-seed the D1 mirror** | Actions, `cloud-commit.yml` | on push |
 | Prove repo and live agree | Actions, `ship-check.yml` | 11:00 MYT |
 | Monthly statements | cloud routine, `docs/STATEMENTS.md` | the 1st, gated in Kuala Lumpur time |
@@ -203,6 +203,23 @@ anything is waiting (`approved and uncommitted: 0` means nothing was approved, w
 22 Aug meant the drafter had refused everything against a stale mirror; see the re-seed step in
 `cloud-commit.yml`). To re-arm the routine: `RemoteTrigger` (or the `schedule` skill) with
 `action: "update"`, `{"enabled": true}`, on trig_01UrnjQMWA3f6GXN5R6Dzi4S.
+
+**AN APPROVAL NOW RUNS THE WHOLE CHAIN (his instruction, 03 Sep 2026: approve, stage, fold,
+commit, push and deploy together, or within minutes).** The clock is not back; the trigger is
+the tap. `POST /drafts/<id>/approve` dispatches `cloud-commit.yml` with `stage_only` (the
+Worker holds a fine-grained GitHub token, `SALT_GITHUB_TOKEN`, scoped to this repo's Actions
+and nothing else; unset, the tap changes nothing and the hourly stage remains). The run is
+three jobs in a row: **stage** writes `master/_to_fold.json` to master as before; **fold**, new,
+checks out master's tip and runs the Claude Code action on the subscription token
+(`CLAUDE_CODE_OAUTH_TOKEN`, a repo secret) with the fold routine's prompt, so the judgement
+still sits with an agent following `docs/CLOUD_FOLD.md`, and it commits and pushes; **deploy**
+then runs as it always has, marks the rows committed and clears the handoff. The routine
+`Salt fold (manual backup)` (trig_01UrnjQMWA3f6GXN5R6Dzi4S) is DISABLED with no cron and is
+what to fire by hand if the fold job fails; a fold from a Code session still works too. The
+hourly stage folds as well, in the same way, so nothing approved waits longer than an hour
+even if the Worker's dispatch is lost. Why inside the workflow and not a routine webhook: the
+routine API fires on pull request and release events only, never a push, and the chain is
+one run in one place this way, serialised by the concurrency group it already had.
 
 **THE STAGE STANDS DOWN RATHER THAN TRAMPLING AN UNFOLDED BATCH,** and the clock is not what
 makes that safe. The stage was first offset to clear the fold, and the routine API then jittered
@@ -463,7 +480,7 @@ Per-Crm01 master (a Cowork/master session); once it lands, the sync above alread
 
 | Path | What it is |
 |---|---|
-| `src/worker.js` | The Worker. Cloud stand-in for `serve_desk.py`: `/queue`, `/vault` (ciphertext), `/bio` (dropped), static assets. KV-backed. |
+| `src/worker.js` | The Worker. Cloud stand-in for `serve_desk.py`: `/queue`, `/vault` (ciphertext), `/bio` (dropped), static assets. KV-backed. From 03 Sep 2026 an approval also dispatches the stage (`stageOnApproval`, needs the `SALT_GITHUB_TOKEN` secret). |
 | `tools/seed-vault.mjs` | Encrypt the current names with your passphrase and push the ciphertext to KV. Never writes plaintext anywhere. |
 | ~~`public/index.html`~~ | **Retired at v387** along with `public/data.json`. Neither file exists; do not go looking. |
 | `public/desk.html` | The built desk, served at `/desk`. **Derived from the master, do not hand-edit.** Committed on purpose. |

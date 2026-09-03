@@ -6,8 +6,14 @@ Rewritten 23 Aug 2026 for the book as data (v339) and the fold tool (v340). The 
 once ran this four times a day (`Salt daily fold`, trig_01UrnjQMWA3f6GXN5R6Dzi4S) was disabled
 24 Aug 2026: a fold reached on request lands inside a minute, faster than the six-hourly slot
 ever did, so the clock was adding a race (see CLAUDE.md, "Retiring Cowork") without adding
-speed. This procedure is unchanged and still what any agent follows, whether that is a Code
-session asked to fold, or the routine re-armed and fired again. The laptop-era procedure is
+speed. **From 03 Sep 2026 the fold runs as the `fold` job of `cloud-commit.yml`: an approval
+on the phone dispatches the stage, and the Claude Code action folds in the same run, before the
+deploy** (CLAUDE.md, "An approval now runs the whole chain"). The routine is kept, disabled,
+as the manual backup. Whoever folds: if `master/_to_fold.json` is not in master, nothing is
+staged, say so in one line and stop; if `master/_folded.json` is present, the last batch is
+folded and waiting for its deploy to clear it, stop likewise.
+This procedure is unchanged and still what any agent follows, whether that is the fold job, a
+Code session asked to fold, or the routine fired by hand. The laptop-era procedure is
 kept verbatim beside this as `DAILY_FOLD.md` for its context; where the two disagree, this file
 wins.
 

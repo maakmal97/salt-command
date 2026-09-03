@@ -771,6 +771,54 @@ section("Worker — drafts and approval");
   ok(r.status === 200 && j.draft.status === "approved", "approving with the key sets status approved");
   ok(j.draft.decidedAt && j.draft.decidedBy === "phone", "the decision records when and by whom");
 
+  /* an approval rings the stage (03 Sep 2026): one dispatch of cloud-commit.yml, stage only.
+     Its own D1, so the counts the commit-run tests below rely on are untouched. */
+  {
+    const own = { ...env, SALT_LEDGER: new D1() };
+    const armed = { ...own, SALT_GITHUB_TOKEN: "ghp-test" };
+    const calls = [];
+    const realFetch = globalThis.fetch;
+    globalThis.fetch = async (u, o) => { calls.push({ url: String(u), opts: o }); return new Response(null, { status: 204 }); };
+    const jobs = [];
+    const ctx = { waitUntil(p) { jobs.push(p); } };
+    const draftNo = async (n) => {
+      const d = { ...goodDraft, id: goodDraft.id + "-ring-" + n };
+      await worker.fetch(post("/drafts", d, KEY), own);
+      return encodeURIComponent(d.id);
+    };
+    const decide = async (id, what, e) => {
+      const res = await worker.fetch(post("/drafts/" + id + "/" + what, {}, KEY), e, ctx);
+      await Promise.allSettled(jobs);
+      return { status: res.status, j: await res.json() };
+    };
+    let d = await decide(await draftNo(1), "reject", armed);
+    ok(d.status === 200 && calls.length === 0, "a rejection dispatches nothing: there is nothing to stage");
+    d = await decide(await draftNo(2), "approve", own);
+    ok(d.status === 200 && d.j.draft.status === "approved" && calls.length === 0,
+       "with no SALT_GITHUB_TOKEN an approval dispatches nothing and still succeeds: safe to deploy before the secret");
+    d = await decide(await draftNo(3), "approve", armed);
+    ok(d.status === 200 && d.j.draft.status === "approved", "the approval itself is unchanged by the dispatch");
+    ok(calls.length === 1 && /\/repos\/maakmal97\/salt-command\/actions\/workflows\/cloud-commit\.yml\/dispatches$/.test(calls[0].url),
+       "an approval with the token dispatches cloud-commit.yml once");
+    const o = calls[0].opts, b = JSON.parse(o.body);
+    ok(o.method === "POST" && o.headers.authorization === "Bearer ghp-test" && o.headers["user-agent"], "as a POST, with the token as a bearer and a user agent, which GitHub requires");
+    ok(b.ref === "master" && b.inputs.stage_only === "true", "on master, stage only: the deploy waits for the fold's push");
+    globalThis.fetch = async () => { throw new Error("github is down"); };
+    d = await decide(await draftNo(4), "approve", armed);
+    ok(d.status === 200 && d.j.draft.status === "approved", "a dispatch fault never fails the approval");
+    globalThis.fetch = realFetch;
+
+    /* the workflow's half, read as text because YAML cannot be run here */
+    const wf = readFileSync("./.github/workflows/cloud-commit.yml", "utf8");
+    ok(/stage_only:\n\s+description/.test(wf), "cloud-commit.yml accepts stage_only");
+    ok(/\n  fold:\n    needs: stage\n    if: needs\.stage\.outputs\.staged == '1'/.test(wf), "a fold job follows the stage, only when rows were staged");
+    ok(/uses: anthropics\/claude-code-action@v1/.test(wf) && /claude_code_oauth_token: \$\{\{ secrets\.CLAUDE_CODE_OAUTH_TOKEN \}\}/.test(wf),
+       "the fold is the Claude Code action on the subscription token, so the judgement stays with an agent");
+    ok(/\n  deploy:\n    needs: \[stage, fold\]\n    if: \$\{\{ !cancelled\(\) && \(github\.event_name == 'push' \|\| \(github\.event_name == 'workflow_dispatch' && !inputs\.stage_only\) \|\| needs\.fold\.result == 'success'\) \}\}/.test(wf),
+       "the deploy follows a fold in the same run, still runs on a push, and stands aside on a stage-only dispatch that folded nothing");
+    ok((wf.match(/ref: master/g) || []).length >= 2, "the fold and the deploy check out master's tip, not the sha the run started on");
+  }
+
   /* the double tap */
   r = await worker.fetch(post("/drafts/" + encodeURIComponent(goodDraft.id) + "/reject", {}, KEY), env);
   ok(r.status === 409, "a second decision on a decided row is refused, not applied");
