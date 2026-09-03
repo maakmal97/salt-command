@@ -212,8 +212,9 @@ and nothing else; unset, the tap changes nothing and the hourly stage remains). 
 three jobs in a row: **stage** writes `master/_to_fold.json` to master as before; **fold**, new,
 checks out master's tip and runs the Claude Code action on the subscription token
 (`CLAUDE_CODE_OAUTH_TOKEN`, a repo secret) with the fold routine's prompt, so the judgement
-still sits with an agent following `docs/CLOUD_FOLD.md`, and it commits and pushes; **deploy**
-then runs as it always has, marks the rows committed and clears the handoff. The routine
+still sits with an agent following `docs/CLOUD_FOLD.md`, and it commits and pushes as the
+Claude GitHub App; that push starts the **deploy** run as any push does, which deploys, marks
+the rows committed and clears the handoff. Proved end to end on v480, 03 Sep 2026. The routine
 `Salt fold (manual backup)` (trig_01UrnjQMWA3f6GXN5R6Dzi4S) is DISABLED with no cron and is
 what to fire by hand if the fold job fails; a fold from a Code session still works too. The
 hourly stage folds as well, in the same way, so nothing approved waits longer than an hour

@@ -816,8 +816,10 @@ section("Worker — drafts and approval");
        "a batch already staged counts as staged, so a batch a failed fold left behind is folded on the next tick rather than never");
     ok(/uses: anthropics\/claude-code-action@v1/.test(wf) && /claude_code_oauth_token: \$\{\{ secrets\.CLAUDE_CODE_OAUTH_TOKEN \}\}/.test(wf),
        "the fold is the Claude Code action on the subscription token, so the judgement stays with an agent");
-    ok(/\n  deploy:\n    needs: \[stage, fold\]\n    if: \$\{\{ !cancelled\(\) && \(github\.event_name == 'push' \|\| \(github\.event_name == 'workflow_dispatch' && !inputs\.stage_only\) \|\| needs\.fold\.result == 'success'\) \}\}/.test(wf),
-       "the deploy follows a fold in the same run, still runs on a push, and stands aside on a stage-only dispatch that folded nothing");
+    ok(/\n  deploy:\n    if: github\.event_name == 'push' \|\| \(github\.event_name == 'workflow_dispatch' && !inputs\.stage_only\)/.test(wf),
+       "the deploy runs on a push, which the fold's own push is, and stands aside on a stage-only dispatch");
+    ok(!/needs\.fold/.test(wf), "and is not chained onto the fold job, or a fold would deploy and wake the phone twice");
+    ok(/git pull -q --rebase origin master\n\s+git push/.test(wf), "the handoff clear rebases before it pushes, because master moved under it once");
     ok((wf.match(/ref: master/g) || []).length >= 2, "the fold and the deploy check out master's tip, not the sha the run started on");
   }
 

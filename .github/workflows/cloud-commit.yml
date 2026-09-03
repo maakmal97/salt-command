@@ -53,8 +53,8 @@ on:
   workflow_dispatch:
     inputs:
       # THE WORKER DISPATCHES THIS ON EVERY APPROVAL (03 Sep 2026), with stage_only set, so
-      # a tap on the phone stages within a minute instead of within the hour. On such a run
-      # the deploy job runs only if the fold job pushed something to deploy.
+      # a tap on the phone stages within a minute instead of within the hour. Such a run is
+      # stage and fold only: the fold's own push is what starts the deploy run.
       stage_only:
         description: 'Stage the approved rows and stop; do not deploy'
         type: boolean
@@ -196,10 +196,13 @@ jobs:
   # docs/CLOUD_FOLD.md exactly as the routine did, and holds no Cloudflare credential: this
   # job's secret can fold a book and push a commit, and nothing else.
   #
-  # Its push is made with the checkout's GITHUB_TOKEN, and GitHub does not start a workflow
-  # from a push made with that token. That is why the deploy job follows in THIS run rather
-  # than waiting for a push event, and why it checks out master's tip rather than the sha
-  # the run began on.
+  # THE ACTION PUSHES AS THE CLAUDE GITHUB APP, NOT AS THE RUNNER, and that push starts the
+  # deploy run like any other. The first version of this job assumed the opposite (a push
+  # made with GITHUB_TOKEN starts nothing) and chained a deploy onto this run as well, which
+  # would have deployed and woken the phone twice per fold. Proved on the first real fold,
+  # 03 Sep 2026: the action's push started run 33717101758, which deployed v480. So this job
+  # ends when the agent has pushed, and nothing here reads the remote afterwards, because the
+  # action rewrites the remote's credentials for its own push and revokes them on the way out.
   # ---------------------------------------------------------------------------
   fold:
     needs: stage
@@ -274,19 +277,8 @@ jobs:
             figure you were unsure of. If anything looks wrong, fold nothing and say so: a day
             with no commit is cheap and a wrong row is not.
 
-      - name: Say whether the fold pushed
-        run: |
-          set -euo pipefail
-          git fetch -q origin master
-          if git cat-file -e origin/master:master/_folded.json 2>/dev/null; then
-            echo "Folded: master/_folded.json is on origin/master. The deploy follows."
-          else
-            echo "::warning::The fold job pushed no fold. The batch stays staged for the next run, a fold by hand, or the backup routine; read the step above for why."
-          fi
-
   deploy:
-    needs: [stage, fold]
-    if: ${{ !cancelled() && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && !inputs.stage_only) || needs.fold.result == 'success') }}
+    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && !inputs.stage_only)
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -447,6 +439,10 @@ jobs:
           git config user.name  "salt-command CI"
           git config user.email "noreply@github.com"
           git commit -m "Clear the fold handoff: the rows are on the phone and marked committed"
+          # Master can move while this job runs (on 03 Sep 2026 a merge landed in the same
+          # minute and this push was refused), so rebase onto its tip first. Nothing else
+          # touches these two files, so the rebase cannot conflict.
+          git pull -q --rebase origin master
           git push
 
       # KEEP THE MIRROR LEVEL WITH THE BOOK, added 22 Aug 2026.
