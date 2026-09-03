@@ -50,6 +50,15 @@ on:
     branches: [master]
     paths:
       - 'public/rev.json'
+      # A STATEMENTS COMMIT NEVER MOVES THE BUILD ID, AND THAT LEFT THE FIRST ISSUE UNPUBLISHED
+      # (03 Sep 2026). rev.json hashes the master, sw.js and src/*.js; an issue writes under
+      # statements/ and touches none of them, so the merge that carried thirty-seven encrypted
+      # September records fired nothing, the publish step below never ran, and every QR code
+      # answered "no statement published". The step existed and was correct; nothing ever
+      # reached it. A commit under statements/ now deploys, which on a push runs only the
+      # deploy job: stage and fold are gated to schedule and dispatch, and the handoff step
+      # leaves a staged batch alone when no fold happened.
+      - 'statements/**'
   workflow_dispatch:
     inputs:
       # THE WORKER DISPATCHES THIS ON EVERY APPROVAL (03 Sep 2026), with stage_only set, so
