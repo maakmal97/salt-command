@@ -22,18 +22,21 @@
  * has anything to show, named by code so the folder sorts alphabetically, plus the review
  * sheet. SALT_BOOK overrides the book path, which is how the tests run it on copies.
  */
-import { readFileSync, writeFileSync, mkdirSync, existsSync, readdirSync } from "node:fs";
-import { resolve, dirname, join } from "node:path";
+import { readFileSync, writeFileSync, mkdirSync, existsSync, readdirSync, rmSync } from "node:fs";
+import { resolve, dirname, join, basename } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import POSITION_ENGINE from "../engine/position.mjs";
 import { statementCss, REVIEW_CSS } from "./stmt-style.mjs";
 import { qrSvg } from "./qr.mjs";
-import { newPassword, makeVerifier, encryptText } from "./stmt-crypto.mjs";
+import { newPassword, newUsername, USERNAME_RE, makeVerifier, encryptText } from "./stmt-crypto.mjs";
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const BOOK = process.env.SALT_BOOK || resolve(REPO, "ledger", "book.json");
-/* Where a scanned code lands. Overridable so a rehearsal can point somewhere else. */
-const BASE_URL = (process.env.SALT_BASE_URL || "https://salt-command.qyts8mh72kyg.workers.dev").replace(/\/+$/, "");
+/* WHERE A SCANNED CODE LANDS: the statements site, NOT the desk's address (his instruction,
+   03 Sep 2026). It is the Worker named in wrangler.stmt.jsonc on the account's workers.dev
+   subdomain; the two must agree, and a custom domain replaces both together. Overridable so a
+   rehearsal can point somewhere else. */
+const BASE_URL = (process.env.SALT_BASE_URL || "https://k7m3p2.qyts8mh72kyg.workers.dev").replace(/\/+$/, "");
 const book = JSON.parse(readFileSync(BOOK, "utf8"));
 
 /* the desk globals the lifted functions read, bound to the same sources the desk binds
@@ -507,14 +510,73 @@ export { stmtRows, stmtRecon, stmtRefunds, stmtDoc };
    Ported from the retired make_statements.cjs: the same options, the same totals, the
    same files and the same review sheet, minus the jsdom drive of a desk that no longer
    carries the functions. */
+/* ---- the username, the record, and the history --------------------------------------
+   THE USERNAME IS NOT THE CODE (his instruction, 03 Sep 2026). statements/_users.json maps each
+   desk code to a random username minted the first time that customer is issued a statement and
+   kept for life, so a new name on the roster gets a username the month it first appears and an
+   old one never changes. It is committed: a username is an address, not a secret, and the
+   passwords beside it are what stay out of the repository. It sits beside the month folders,
+   because it belongs to every issue rather than to one. */
+const longDate = iso => new Date(iso + 'T00:00:00').toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+function usersFileFor(outDir) {
+  if (process.env.SALT_USERS_FILE) return process.env.SALT_USERS_FILE;
+  const here = resolve(outDir);
+  /* beside the month folders when this is one; inside the folder for a rehearsal anywhere
+     else, so a scratch run never drops a file where it was not asked to */
+  return /^\d{4}-\d{2}$/.test(basename(here)) ? join(dirname(here), "_users.json") : join(here, "_users.json");
+}
+function loadUsers(file) {
+  if (!existsSync(file)) return {};
+  const u = JSON.parse(readFileSync(file, "utf8"));
+  for (const k of Object.keys(u)) if (!USERNAME_RE.test(u[k])) throw new Error(file + ": " + k + " has a malformed username " + u[k]);
+  return u;
+}
+function userFor(users, code) {
+  if (users[code]) return users[code];
+  const taken = new Set(Object.values(users));
+  let u;
+  do { u = newUsername(); } while (taken.has(u));
+  users[code] = u;
+  return u;
+}
+/* THE BODY OF A DOCUMENT, without its QR block: what an envelope carries. A reader who reached
+   the page by scanning the code is already where the code points, so printing it back at him
+   is furniture; encrypting it as well quadrupled the ciphertext for a picture nobody on that
+   page can use. */
+const docBody = html => {
+  const m = html.match(/<div class="w">([\s\S]*?)<\/div><\/body>/);
+  return m ? m[1].replace(/<div class="qrb">[\s\S]*?<\/p><\/div>\s*/, '') : null;
+};
+/* EVERY EARLIER ISSUE THE CUSTOMER HAS (his instruction, 03 Sep 2026): the password of the
+   month opens this month and every month before it. The earlier documents are read back off
+   disk exactly as they were issued, archives included, from the month folders beside this one,
+   so nothing is regenerated and a past statement never changes under a customer. A folder that
+   is not a month, or a run into a directory that is not a month folder, has no history. Codes
+   have been re-keyed before; an earlier folder under an old code scheme simply holds no file
+   for the new code, and that month is absent rather than wrong. */
+function priorIssues(outDir, code, issue) {
+  const here = resolve(outDir), me = basename(here), root = dirname(here);
+  if (!/^\d{4}-\d{2}$/.test(me) || !existsSync(root)) return [];
+  const safe = code.replace(/[^A-Za-z0-9._-]+/g, '-').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const re = new RegExp('^statement_' + safe + '_(\\d{4}-\\d{2}-\\d{2})\\.html$');
+  const out = [];
+  for (const d of readdirSync(root).filter(x => /^\d{4}-\d{2}$/.test(x) && x < me).sort().reverse()) {
+    const f = readdirSync(join(root, d)).map(x => re.exec(x)).filter(Boolean)[0];
+    if (!f || f[1] >= issue) continue;
+    const body = docBody(readFileSync(join(root, d, f[0]), 'utf8'));
+    if (body) out.push({ month: d, issued: f[1], body });
+  }
+  return out;
+}
+
 /* `archive` produces a HISTORICAL issue: the documents and the review sheet, and nothing else.
    No QR, no password, no encrypted record.
 
-   THE REASON IS THAT A BACK-ISSUE'S QR WOULD LIE. The code points at /s/<CODE> and the Worker
-   serves whichever month was published last, so a code printed on a July statement opens
-   September's ciphertext, which the July password cannot decrypt. The reader would be told his
-   password was not accepted, on a document that looks perfectly current. A record of a past
-   position is worth keeping; a dead code on it is not. */
+   THE REASON IS THAT A BACK-ISSUE'S QR WOULD LIE. The site opens whichever issue was published
+   last, so a code printed on a July statement asks for September's password, and the reader
+   would be told his password was not accepted on a document that looks perfectly current. A
+   record of a past position is worth keeping; a dead code on it is not. The archive is still
+   read back as history by every later issue, which is how it reaches the customer. */
 export async function makeStatements(outDir, issue, opts) {
   const archive = !!(opts && opts.archive);
   /* THE RE-ISSUE GUARD, before a byte is written. The generator used to overwrite in silence,
@@ -538,10 +600,15 @@ export async function makeStatements(outDir, issue, opts) {
   const pwFile = join(outDir, "_passwords.json");
   const priorPw = (prior.length && existsSync(pwFile)) ? JSON.parse(readFileSync(pwFile, "utf8")) : {};
 
+  /* THE RECORDS ARE REWRITTEN WHOLE. They are named by username now and were named by code
+     until 03 Sep 2026, and a stale file left beside the new ones would be published as an
+     account nobody can open. */
   if (archive) mkdirSync(outDir, { recursive: true });
-  else mkdirSync(join(outDir, "_kv"), { recursive: true });
+  else { rmSync(join(outDir, "_kv"), { recursive: true, force: true }); mkdirSync(join(outDir, "_kv"), { recursive: true }); }
+  const usersFile = archive ? null : usersFileFor(outDir);
+  const users = archive ? {} : loadUsers(usersFile);
   const parties = [...new Set(sales.map(s => s.customer))].sort();
-  const issued = new Date(issue + 'T00:00:00').toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+  const issued = longDate(issue);
   let made = 0; const skipped = [], sheets = [], kv = [], passwords = {};
   for (const p of parties) {
     /* EVERYTHING to date, not just the month: a customer's statement is more use as a
@@ -566,42 +633,46 @@ export async function makeStatements(outDir, issue, opts) {
                         t.owed += r.owed;
                         t.toGet += (r.toGet > 0 && !r.pendingOrder) ? r.toGet : 0;
                         t.pend += r.pendingOrder ? r.total : 0; });
-    /* THE QR AND THE PASSWORD (02 Sep 2026). The code opens /s/<CODE> on the Worker, which
-       asks for a password sent by a different channel and decrypts in the reader's browser.
-       Two channels rather than one secret link: a QR can be photographed off a printed page,
-       and on its own it opens nothing.
+    /* THE QR, THE USERNAME AND THE PASSWORD (03 Sep 2026). The code opens the statements site
+       with the username filled in; the site asks for the password, which goes by a different
+       channel, and decrypts in the reader's browser. Two channels rather than one secret link:
+       a QR can be photographed off a printed page, and on its own it opens nothing. The
+       username is printed beside the code because a customer on another device types it.
 
-       WHAT IS ENCRYPTED IS THE DOCUMENT'S BODY, not the whole page: the unlock page already
-       carries the stylesheet, so shipping it again inside every envelope would multiply the
-       ciphertext for nothing. */
+       WHAT IS ENCRYPTED IS A BUNDLE OF BODIES, not pages: this issue's document and every
+       earlier one the customer has, newest first, as JSON. The site already carries the
+       stylesheet, so shipping it inside every envelope would multiply the ciphertext for
+       nothing, and the site draws the strip of issue dates from the bundle. */
     const baseDoc = stmtDoc(p, rows, o);
-    let html = baseDoc, url = null, pw = null;
+    let html = baseDoc, url = null, pw = null, u = null;
     if (!archive) {
-      url = BASE_URL + '/s/' + encodeURIComponent(p);
-      const qr = qrSvg(url, { size: 132, label: 'Statement link for ' + p });
+      u = userFor(users, p);
+      url = BASE_URL + '/?u=' + encodeURIComponent(u);
+      const qr = qrSvg(url, { size: 132, label: 'Statement link' });
       const qrBlock = '<div class="qrb">' + qr
-        + '<p class="qrt">Scan to open this statement on your phone at any time.<br>'
-        + 'It asks for the password sent to you separately, then stays open for ten minutes.<br>'
+        + '<p class="qrt">Scan to open your statements on your phone at any time, this one and every earlier one.<br>'
+        + 'Your username is <code>' + esc(u) + '</code>. The password is sent to you separately. '
+        + 'The page stays open for three minutes, then locks; the same password opens it again.<br>'
         + '<code>' + esc(url) + '</code></p></div>';
       html = baseDoc.replace('</div></body></html>', qrBlock + '\n</div></body></html>');
       pw = priorPw[p] || newPassword();
       passwords[p] = pw;
-    }
-    /* THE ENVELOPE CARRIES THE DOCUMENT WITHOUT ITS QR, and the file on disk carries it with.
-       A reader who reached the page by scanning the code is already where the code points, so
-       printing it back at him is furniture; encrypting it as well quadrupled the ciphertext,
-       295KB across the run against 81KB, for a picture nobody on that page can use. */
-    if (!archive) {
-      const bodyOnly = (baseDoc.match(/<div class="w">([\s\S]*?)<\/div><\/body>/) || [, baseDoc])[1];
-      kv.push({ code: p, month: issue.slice(0, 7), issued: issue,
-                verifier: await makeVerifier(pw), env: await encryptText(pw, bodyOnly) });
+      const history = priorIssues(outDir, p, issue);
+      const bundle = { v: 1, issued: issue, statements: [
+        { issued: issue, label: issued, body: docBody(baseDoc) },
+        ...history.map(h => ({ issued: h.issued, label: longDate(h.issued), body: h.body }))
+      ] };
+      /* THE RECORD CARRIES NO CODE. The Worker never needs one, and the file is named by the
+         username so nothing in the store or its listing pairs an address with an account. */
+      kv.push({ u: u, issued: issue, issues: bundle.statements.map(s => s.issued),
+                verifier: await makeVerifier(pw), env: await encryptText(pw, JSON.stringify(bundle)) });
     }
 
     const file = join(outDir, 'statement_' + p.replace(/[^A-Za-z0-9._-]+/g, '-') + '_' + issue + '.html');
     writeFileSync(file, html);
     console.log('  ' + p.padEnd(14) + rows.length + ' order' + (rows.length === 1 ? '' : 's'));
     made++;
-    sheets.push({ who: p, html: html, t: t, pw: pw, url: url });
+    sheets.push({ who: p, user: u, html: html, t: t, pw: pw, url: url });
   }
 
   /* THE LEAK GATE, checked rather than asserted. The rules are fed a code and have no route to
@@ -640,6 +711,7 @@ export async function makeStatements(outDir, issue, opts) {
     const rowsIdx = sheets.map(x => {
       const f = flag(x.t);
       return '<tr class="f-' + f + '"><td class="l"><a href="#s-' + esc(x.who) + '">' + esc(x.who) + '</a></td>'
+        + (archive ? '' : '<td class="l pw">' + esc(x.user) + '</td>')
         + '<td>' + x.t.n + '</td><td>' + n2(x.t.qty) + '</td><td>' + m2(x.t.total) + '</td><td>' + m2(x.t.paid) + '</td>'
         + '<td class="r">' + (x.t.owed > 0.009 ? '<b class="owe">' + m2(x.t.owed) + '</b>' : x.t.refund > 0.009 ? '<b class="rf">' + m2(x.t.refund) + ' to them</b>' : '&mdash;') + '</td>'
         + '<td class="r">' + (x.t.toGet > 0.009 ? '<b class="gd">' + n2(x.t.toGet) + ' unit</b>' : '&mdash;') + '</td>'
@@ -665,8 +737,9 @@ export async function makeStatements(outDir, issue, opts) {
           + 'it would open a different statement and the reader would be told his password was '
           + 'refused. Kept as the position as the book now understands it on that date.</div>'
         : '<div class="warn"><b>For review, never for sending.</b> This page puts every account '
-          + 'beside every other, which is exactly what a statement must never do. The passwords '
-          + 'are not here: they are in _passwords.json, which is not committed.</div>')
+          + 'beside every other, which is exactly what a statement must never do. The usernames are '
+          + 'here because they are addresses; the passwords are not: they are in _passwords.json, '
+          + 'which is not committed.</div>')
       + '<div class="rv"><p class="rvh">For review, not for sending</p>'
       + '<h1 class="rvt">' + sheets.length + ' statements</h1>'
       + '<p class="rvs">Issued ' + esc(issued) + '. Every statement below is exactly the file that would go to that '
@@ -677,11 +750,12 @@ export async function makeStatements(outDir, issue, opts) {
       + (pnd.length ? ' <b>' + pnd.length + '</b> hold' + (pnd.length === 1 ? 's' : '') + ' an order agreed but not yet '
         + 'collected or paid, which is money to chase rather than money owed.' : '')
       + '</p>'
-      + '<table class="idx"><thead><tr><th class="l">Account</th>' + '<th>Orders</th><th>Quantity</th>'
+      + '<table class="idx"><thead><tr><th class="l">Account</th>' + (archive ? '' : '<th class="l">Username</th>')
+      + '<th>Orders</th><th>Quantity</th>'
       + '<th>Ordered</th><th>Paid</th><th class="r">Outstanding</th><th class="r">Owed goods</th>'
       + '<th class="r">Not actioned</th></tr></thead>'
       + '<tbody>' + rowsIdx + '</tbody>'
-      + '<tfoot><tr><td class="l"><b>All</b></td>' + '<td>' + sumT('n') + '</td><td>' + n2(sumT('qty')) + '</td>'
+      + '<tfoot><tr><td class="l"><b>All</b></td>' + (archive ? '' : '<td></td>') + '<td>' + sumT('n') + '</td><td>' + n2(sumT('qty')) + '</td>'
       + '<td>' + m2(sumT('total')) + '</td><td>' + m2(sumT('paid')) + '</td>'
       + '<td class="r"><b class="owe">' + m2(sumT('owed')) + '</b></td>'
       + '<td class="r"><b class="gd">' + n2(sumT('toGet')) + ' unit</b></td>'
@@ -699,17 +773,22 @@ export async function makeStatements(outDir, issue, opts) {
      ciphertext plus a verifier, and those ARE committed, because the deploy uploads them. */
   if (!archive) {
     writeFileSync(pwFile, JSON.stringify(passwords, null, 2) + '\n');
-    for (const r of kv) writeFileSync(join(outDir, '_kv', r.code + '.json'), JSON.stringify(r) + '\n');
+    for (const r of kv) writeFileSync(join(outDir, '_kv', r.u + '.json'), JSON.stringify(r) + '\n');
+    /* sorted by code, one line each, so a new customer is one added line in the diff */
+    const sorted = {};
+    for (const k of Object.keys(users).sort()) sorted[k] = users[k];
+    writeFileSync(usersFile, JSON.stringify(sorted, null, 2) + '\n');
   }
 
   console.log('\nwrote ' + made + ' statement' + (made === 1 ? '' : 's') + ' to ' + outDir);
   if (archive) console.log('archive issue: no QR, no password, no KV record');
   else {
+    console.log('usernames:    ' + usersFile + '  (committed; a new customer is a new line)');
     console.log('passwords:    ' + pwFile + '  (gitignored, never commit)');
     console.log('for the KV upload: ' + join(outDir, '_kv') + '  (' + kv.length + ' records)');
   }
   if (skipped.length) console.log('nothing to show for: ' + skipped.join(', '));
-  return { made, skipped, sheets, kv, passwords };
+  return { made, skipped, sheets, kv, passwords, users };
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {

@@ -32,9 +32,16 @@ issued; they are not renamed.
 ```
 statements/<YYYY-MM>/statement_<CODE>_<YYYY-MM-DD>.html   his copy, one per customer
 statements/<YYYY-MM>/_review_<YYYY-MM-DD>.html            every account in one pass
-statements/<YYYY-MM>/_kv/<CODE>.json                      ciphertext + verifier, for the Worker
+statements/<YYYY-MM>/_kv/<username>.json                  ciphertext + verifier, for the site
 statements/<YYYY-MM>/_passwords.json                      GITIGNORED, never committed
+statements/_users.json                                    code -> username, for life; committed
 ```
+
+**The username is minted once and kept for life.** `_users.json` sits beside the month folders
+because it belongs to every issue, not to one. A customer new to the roster gets a line the first
+month a statement is made for them, and no line ever changes: a username is the address a
+customer keeps, so re-keying one would strand everything they were ever sent. It is committed,
+because an address is not a secret; the password beside it is, and that stays out.
 
 One per customer with anything to show, named by code so the folder sorts alphabetically, plus
 a review sheet stitching every account together. **The review sheet is not for sending.** It puts
@@ -80,47 +87,88 @@ node tools/make_statements.mjs statements/<YYYY-MM> <YYYY-MM-DD> --archive
 ```
 
 It writes the statements and the review sheet and nothing else: no QR, no password, no
-encrypted record. The QR is the reason. It points at `/s/<CODE>`, and the Worker serves
-whichever month was published last, so a code printed on a July statement opens September's
-ciphertext and the reader is told his password was refused, on a document that looks perfectly
-current. A record of a past position is worth keeping; a dead code on it is not. The KV publish
-step skips a folder with no `_kv`, so an archive never becomes the live set.
+encrypted record. The QR is the reason. The site opens whichever issue was published last, so
+a code printed on a July statement asks for September's password and the reader is told his
+was refused, on a document that looks perfectly current. A record of a past position is worth
+keeping; a dead code on it is not. The publish step skips a folder with no `_kv`, so an archive
+never becomes the live set. **It still reaches the customer**: every later issue reads the
+archive back as history and carries it inside that month's record.
 
 **The re-issue guard is in the tool, not in this file.** Same issue date is a clean retry and
 regenerates in place, keeping the passwords already issued, because minting fresh ones would
 invalidate every password already sent. A *different* issue date means a second issue in one
 month and the tool refuses. Do not talk it out of that.
 
-## How a customer reads it
+## How a customer reads it (03 Sep 2026, his instruction)
 
-Each statement carries a QR code, and the password goes by a different channel. The code opens
-`https://salt-command.qyts8mh72kyg.workers.dev/s/<CODE>`, which asks for the password, decrypts
-the statement in his own browser, and locks the screen after ten minutes. Entering the password
-again reopens it.
+**The statements live on their own site, away from the desk.** Until 03 Sep they were a route
+on `salt-command` itself, which put the one address a customer ever holds one path segment from
+an open ledger. They are a second Worker now, `stmt/worker.js` under `wrangler.stmt.jsonc`, with
+a cryptic name that says nothing about salt, a KV store of its own, and no access to the queue,
+the vault, D1 or the desk. Nothing a customer holds points at the desk's address, and the suite
+checks that no statement does either.
+
+Each statement carries a QR code and prints the customer's **username**. The QR opens
+`https://k7m3p2.qyts8mh72kyg.workers.dev/?u=<username>`, one landing page for every account,
+with the username filled in; the password goes by a different channel. The page checks the
+pair, decrypts in his own browser, and shows **this month's statement and every earlier one**,
+newest first, on a strip of issue dates. It locks after **three minutes**; the same password
+opens it again as often as he likes.
+
+**One live password a month, and it cannot be changed.** Each issue mints a fresh password per
+customer and re-encrypts their whole history under it, so last month's password stops opening
+anything the moment the new issue publishes. There is no change-password control anywhere: a
+customer who has lost his asks for it again, and it is read back from `_passwords.json`.
 
 **Four things stand between an account and the public, and none is trusted alone:**
 
-1. The statement is AES-GCM ciphertext at rest under that customer's password, with the same
-   crypto as the name vault. The Worker holds no key and could not read one.
+1. The statements are AES-GCM ciphertext at rest under that customer's password, with the
+   same crypto as the name vault. The site holds no key and could not read one.
 2. A PBKDF2 verifier decides whether the envelope is handed over at all.
-3. Ten failed attempts lock an account for fifteen minutes. The codes are guessable, so the
-   password is the whole secret and an unthrottled endpoint would let anyone grind at it.
-4. `SALT_STMT_MASTER` is his override, for a customer who has lost his before the next issue.
+3. Ten failed attempts lock a username for fifteen minutes. A username is random rather than
+   a desk code, so it cannot be guessed from a roster, and an unknown username answers byte
+   for byte as a wrong password does, so the list cannot be walked.
+4. `STMT_MASTER`, a secret on the statements Worker, is his override.
 
 **What none of it does is stop a statement being forwarded.** A password shared is a password
-shared, and an open page can be photographed. The ten minutes stop a phone being left on a
+shared, and an open page can be photographed. The three minutes stop a phone being left on a
 table with an account on it. Nothing in the copy should promise more than that.
 
-Statements reach the Worker through the `Publish the newest statements to KV` step in
-`cloud-commit.yml`, on any push to master that touches `statements/`. That path is in the
-workflow's trigger for a reason: the deploy used to fire only when `public/rev.json` changed,
-an issue never changes it, and the first September merge published nothing while every check
-read green. It uploads the newest month only, so **issuing a new set retires
-last month's**, and it clears the attempt counters so nobody starts a month locked out.
+**The address shares the account's `workers.dev` subdomain with the desk**, which is the one
+thing a curious customer could still notice. A custom domain on the statements Worker is the
+fix: a `routes` block in `wrangler.stmt.jsonc`, and `SALT_BASE_URL` (or the default at the top
+of `tools/make_statements.mjs`) changed to match before the next issue, since the QR carries it.
 
-If `REQUIRE_ACCESS` is ever set back to `"1"`, `/s/` goes behind Cloudflare Access with
-everything else and **no customer will be able to open a statement**. That is a consequence of
-restoring Access, not a fault in this route.
+### Publishing, and the one-time setup
+
+Statements reach the site through the two steps at the foot of the `deploy` job in
+`cloud-commit.yml`, `Deploy the statements site` and `Publish the newest statements`, on any
+push to master that touches `statements/`, `stmt/` or `wrangler.stmt.jsonc`. They run after
+every step the ledger needs, so a fault in the statements can never leave a folded row
+unmarked. The publish uploads the newest month only and retires every record that month does
+not carry, so **issuing a new set retires last month's**, and it clears the attempt counters so
+nobody starts a month locked out.
+
+Both steps stand down while `wrangler.stmt.jsonc` still carries `PLACEHOLDER_STMT_KV_ID`, so
+the site does not exist until the store does. Creating it is one-time work on the laptop, in
+**Command Prompt**, from the repo folder:
+
+```
+cd /d C:\Users\maakm\Claude\Code\salt-command
+npx wrangler kv namespace create stmt -c wrangler.stmt.jsonc
+```
+
+It prints an `id`. Paste it into `wrangler.stmt.jsonc` in place of `PLACEHOLDER_STMT_KV_ID`,
+commit and push; the next deploy creates the site and publishes. Then the override:
+
+```
+npx wrangler secret put STMT_MASTER -c wrangler.stmt.jsonc
+```
+
+Every wrangler command for this site takes `-c wrangler.stmt.jsonc`; without it, wrangler
+addresses the desk.
+
+`REQUIRE_ACCESS` on the desk does not touch this site, and never will: the two share nothing.
 
 ## Before committing
 
@@ -133,8 +181,9 @@ for any other party's code and for the ledger's own notes.
 
 Commit the folder and push. `_passwords.json` is gitignored; confirm `git status` does not
 offer it. The `_kv` records are ciphertext and a verifier, and those ARE committed, because the
-deploy is what uploads them. Nothing touches the ledger: this task reads `ledger/book.json` and
-writes files beside it.
+deploy is what uploads them; so is `statements/_users.json`, which the run may have added a
+line to. Nothing touches the ledger: this task reads `ledger/book.json` and writes files beside
+it.
 
 ## What this task must never do
 
@@ -142,3 +191,4 @@ writes files beside it.
 - **Never commit `_passwords.json`.**
 - **Never send anything.** He sends these himself, so they must be right before they are sent.
 - **Never regenerate a past month** to match a later code scheme.
+- **Never change a line in `_users.json`.** A username is an address a customer keeps.

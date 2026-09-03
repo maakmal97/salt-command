@@ -12,6 +12,7 @@ import { readFileSync, writeFileSync, mkdirSync, rmSync, existsSync, readdirSync
 import { dirname, resolve, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import worker from "../src/worker.js";
+import stmtWorker, { normUser } from "../stmt/worker.js";
 import { unionByAt, pruneCommitted } from "../tools/drain.mjs";
 import { NAME_STOPWORDS, NAME_COLLISIONS } from "../tools/book.mjs";
 
@@ -5801,14 +5802,25 @@ section("QR — proved against an independent encoder");
   }
 }
 
-/* ---- the statement password, the envelope and the Worker route ------------------- */
-section("Statements — the password, the envelope and the Worker route");
+/* ---- the statement password, the envelope and the site's own Worker --------------- */
+section("Statements — the password, the username, the envelope and the site's own Worker");
 {
   const C = await import("../tools/stmt-crypto.mjs");
   const pw = C.newPassword();
   ok(/^[23456789abcdefghjkmnpqrstvwxyz]{4}(-[23456789abcdefghjkmnpqrstvwxyz]{4}){3}$/.test(pw),
     "a password is four readable groups of four, with no character mistaken for another");
   ok(new Set(Array.from({ length: 40 }, () => C.newPassword())).size === 40, "and each one is fresh");
+
+  /* THE USERNAME IS NOT THE CODE (his instruction, 03 Sep 2026). Random, lower case, from the
+     password's own alphabet, so it is neither guessable from a roster nor mistakable for a code. */
+  const un = C.newUsername();
+  ok(C.USERNAME_RE.test(un) && un === un.toLowerCase(),
+    "a username is two readable groups of four from the same alphabet, in lower case");
+  ok(new Set(Array.from({ length: 40 }, () => C.newUsername())).size === 40, "and each one is fresh");
+  ok(normUser(" " + un.toUpperCase().replace("-", " ") + " ") === un,
+    "the site forgives case, spaces and punctuation in a typed username");
+  ok(normUser(un.slice(0, 8)) === "" && normUser(un + "2") === "" && normUser("K7M3-P2X1") === "" && normUser("") === "",
+    "and refuses anything that is not eight symbols of the alphabet");
 
   const env1 = await C.encryptText(pw, '<div class="w">CX0-AA owes RM180</div>');
   ok(C.isEnvelope(env1) && env1.v === 1, "the envelope is the vault's shape, {v,salt,iv,ct}");
@@ -5826,57 +5838,84 @@ section("Statements — the password, the envelope and the Worker route");
     "its round count travels with it and sits below the encryption key's, deliberately");
   ok(!JSON.stringify(ver).includes(pw), "the verifier does not contain the password");
 
+  /* THE SITE. Its own Worker, its own binding, no ASSETS, no ledger, no write key: the env it
+     is given here is the whole of what it may have. */
+  const bundle = JSON.stringify({ v: 1, issued: "2026-09-01", statements: [
+    { issued: "2026-09-01", label: "01 Sep 2026", body: '<p class="who">CX0-AA</p>' }] });
+  const envB = await C.encryptText(pw, bundle);
   const kv = new KV();
-  const rec = { code: "CX0-AA", month: "2026-09", issued: "2026-09-01", verifier: ver, env: env1 };
-  await kv.put("stmt:CX0-AA", JSON.stringify(rec));
-  const wenv = { SALT_QUEUE: kv, ASSETS: assets, REQUIRE_ACCESS: "0", SALT_WRITE_KEY: "k", SALT_STMT_MASTER: "master-pass" };
-  const post = (code, body) => req("/s/" + code, {
+  const rec = { u: un, issued: "2026-09-01", issues: ["2026-09-01"], verifier: ver, env: envB };
+  await kv.put("u:" + un, JSON.stringify(rec));
+  const senv = { STMT: kv, STMT_MASTER: "master-pass" };
+  const sreq = (path, opts = {}) => new Request("https://k7m3p2.example" + path, opts);
+  const open = (body) => sreq("/open", {
     method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body)
   });
 
-  let r = await worker.fetch(req("/s/CX0-AA"), wenv);
+  let r = await stmtWorker.fetch(sreq("/?u=" + un.toUpperCase()), senv);
   const html = await r.text();
-  ok(r.status === 200 && /text\/html/.test(r.headers.get("content-type")), "GET /s/<code> serves the unlock page");
-  ok(html.includes("CX0-AA") && !html.includes(pw) && !html.includes(env1.ct),
-    "the page names the account but carries neither the password nor the ciphertext");
-  ok(/nonce-/.test(r.headers.get("content-security-policy") || "")
-    && !/unsafe-inline/.test(r.headers.get("content-security-policy") || ""),
+  const csp = r.headers.get("content-security-policy") || "";
+  ok(r.status === 200 && /text\/html/.test(r.headers.get("content-type")), "GET / serves the landing page");
+  ok(html.includes('value="' + un + '"'), "and fills in the username the QR carried, normalised");
+  ok(!html.includes(pw) && !html.includes(envB.ct) && !html.includes("CX0-AA"),
+    "the page carries no password, no ciphertext and no account code");
+  ok(html.includes("three minutes") && html.includes('id="un"') && html.includes('id="pw"'),
+    "it asks for a username and a password, and says three minutes");
+  ok(/nonce-/.test(csp) && !/unsafe-inline/.test(csp) && /connect-src 'self'/.test(csp),
     "and declares a nonce CSP rather than allowing inline script wholesale");
   ok((r.headers.get("x-robots-tag") || "").includes("noindex")
     && (r.headers.get("cache-control") || "").includes("no-store"), "it is not indexed and not cached");
+  ok((await (await stmtWorker.fetch(sreq("/?u=nobody"), senv)).text()).includes('value=""'),
+    "a username that does not parse is simply not filled in");
+  ok((await stmtWorker.fetch(sreq("/s/CX0-AA"), senv)).status === 404
+    && (await stmtWorker.fetch(sreq("/desk"), senv)).status === 404
+    && (await stmtWorker.fetch(sreq("/u:" + un), senv)).status === 404,
+    "nothing else on the site answers: the old /s/ route, the desk's paths and a key name are all 404");
+  ok((await stmtWorker.fetch(sreq("/open"), senv)).status === 405, "and /open is POST only");
 
-  r = await worker.fetch(post("CX0-AA", { password: pw }), wenv);
+  r = await stmtWorker.fetch(open({ u: un, password: pw }), senv);
   const j = await r.json();
-  ok(r.status === 200 && j.ok === true && j.env && j.env.ct === env1.ct, "the right password returns the envelope");
+  ok(r.status === 200 && j.ok === true && j.env && j.env.ct === envB.ct, "the right username and password return the envelope");
+  ok(JSON.parse(await C.decryptText(pw, j.env)).statements[0].body.includes("CX0-AA"), "and it decrypts to the bundle");
+  ok((await stmtWorker.fetch(open({ u: un.toUpperCase(), password: pw }), senv)).status === 200,
+    "a username typed in capitals is the same username");
 
-  r = await worker.fetch(post("CX0-AA", { password: "wrong-pass-here" }), wenv);
-  ok(r.status === 401 && !(await r.json()).env, "a wrong password returns 401 and no envelope");
+  /* ONE ANSWER FOR EVERY REFUSAL. An unknown username must answer byte for byte as a wrong
+     password does, or the site becomes a way to find out which usernames exist. */
+  const wrong = await stmtWorker.fetch(open({ u: un, password: "wrong-pass-here" }), senv);
+  const wrongBody = await wrong.text();
+  ok(wrong.status === 401 && !JSON.parse(wrongBody).env, "a wrong password returns 401 and no envelope");
+  const unknown = await stmtWorker.fetch(open({ u: C.newUsername(), password: pw }), senv);
+  const malformed = await stmtWorker.fetch(open({ u: "CX0-AA", password: pw }), senv);
+  ok(unknown.status === 401 && (await unknown.text()) === wrongBody
+    && malformed.status === 401 && (await malformed.text()) === wrongBody,
+    "an unknown username and a desk code answer byte for byte as a wrong password does, so the list cannot be walked");
 
-  r = await worker.fetch(post("CX0-AA", { master: "master-pass" }), wenv);
+  r = await stmtWorker.fetch(open({ u: un, master: "master-pass" }), senv);
   ok(r.status === 200 && (await r.json()).ok === true, "the master password is the owner's override");
-  r = await worker.fetch(post("CX0-AA", { master: "not-the-master" }), wenv);
-  ok(r.status === 401, "and a wrong master password is refused like any other");
-
-  /* An unpublished account must answer exactly as an unknown one, or the route becomes a way
-     to enumerate the roster. */
-  const r404 = await worker.fetch(post("CZ9-ZZ", { password: pw }), wenv);
-  const rBad = await worker.fetch(post("CX0-AA-NOPE", { password: pw }), wenv);
-  ok(r404.status === 404 && rBad.status === 404, "an unpublished account and an unknown one answer alike");
+  ok((await stmtWorker.fetch(open({ u: un, master: "not-the-master" }), senv)).status === 401,
+    "and a wrong master password is refused like any other");
+  ok((await stmtWorker.fetch(open({ u: un, master: "master-pass" }), { STMT: kv })).status === 401,
+    "with no STMT_MASTER set the override is simply off");
 
   const kv2 = new KV();
-  await kv2.put("stmt:CX0-AA", JSON.stringify(rec));
-  const wenv2 = Object.assign({}, wenv, { SALT_QUEUE: kv2 });
+  await kv2.put("u:" + un, JSON.stringify(rec));
+  const senv2 = { STMT: kv2, STMT_MASTER: "master-pass" };
   let locked = 0;
   for (let i = 0; i < 12; i++) {
-    const rr = await worker.fetch(post("CX0-AA", { password: "wrong-pass-here" }), wenv2);
+    const rr = await stmtWorker.fetch(open({ u: un, password: "wrong-pass-here" }), senv2);
     if (rr.status === 429) locked++;
   }
-  ok(locked >= 2, "ten failed attempts lock the account, so a guessable code is not a grindable one");
-  ok((await worker.fetch(post("CX0-AA", { password: pw }), wenv2)).status === 429,
-    "and the lock holds even against the right password, for the fifteen minutes");
+  ok(locked >= 2, "ten failed attempts lock the username for fifteen minutes");
+  ok((await stmtWorker.fetch(open({ u: un, password: pw }), senv2)).status === 429,
+    "and the lock holds even against the right password");
 
-  ok(JSON.parse(await kv.get("stmtseen:CX0-AA")).opens >= 1,
+  ok(JSON.parse(await kv.get("seen:" + un)).opens >= 1,
     "an open is recorded, so he can tell whether a statement was ever read");
+  ok(!(await kv.list({ prefix: "stmt:" })).keys.length && !(await kv.list({ prefix: "q:" })).keys.length,
+    "and the site's store holds nothing of the desk's: no queue, no vault, no old-route key");
+  ok(!readFileSync(join(REPO, "src", "worker.js"), "utf8").includes('startsWith("/s/")'),
+    "the desk's own Worker no longer serves a statement route at all");
 }
 
 /* ---- the statement in the Salt identity, and what the QR carries ----------------- */
@@ -5945,16 +5984,93 @@ section("Statements — the QR, the sort and the Salt identity");
     ? "these Worker sources reach outside the runtime: " + reaching.join(", ")
     : `all ${srcFiles.length} Worker sources import only from within src/`);
 
+  /* AND THE STATEMENTS SITE STANDS ALONE. It must bundle with no filesystem, and it must not be
+     able to reach the ledger's code even by accident: nothing under stmt/ imports a node
+     builtin, anything under src/ or anything under tools/. Only a sibling file will do. */
+  const stmtFiles = readdirSync(join(REPO, "stmt")).filter(f => f.endsWith(".js"));
+  const outside = [];
+  for (const f of stmtFiles) {
+    const t = readFileSync(join(REPO, "stmt", f), "utf8");
+    for (const m of t.matchAll(/^\s*import\s[^;]*?from\s+["']([^"']+)["']/gm)) {
+      if (!/^\.\/[^/]+\.js$/.test(m[1])) outside.push(f + " -> " + m[1]);
+    }
+  }
+  ok(stmtFiles.length >= 3 && outside.length === 0, outside.length
+    ? "the statements site reaches outside itself: " + outside.join(", ")
+    : `all ${stmtFiles.length} statements-site sources import only a sibling`);
+  ok(!existsSync(join(REPO, "src", "statement-page.js")) && !existsSync(join(REPO, "src", "statement-css.js")),
+    "and nothing of the statements remains under src/");
+
   /* and the generated stylesheet is the one the module produces, or a design retune silently
      leaves the page a customer opens on the old material */
-  const genCss = (await import("../src/statement-css.js")).STATEMENT_CSS;
+  const genCss = (await import("../stmt/statement-css.js")).STATEMENT_CSS;
   ok(genCss === statementCss(),
-    "src/statement-css.js is what tools/stmt-style.mjs produces (run --sync if this fails)");
+    "stmt/statement-css.js is what tools/stmt-style.mjs produces (run --sync if this fails)");
 
-  /* AN ARCHIVE ISSUE CARRIES NO QR, AND THE REASON IS THAT ONE WOULD LIE. /s/<CODE> serves
-     whichever month was published last, so a code on a back-dated statement opens a different
-     month's ciphertext and the reader is told his password was refused, on a document that
-     looks current. A record of a past position is worth keeping; a dead code on it is not. */
+  /* THE SITE, THE USERNAME AND THE HISTORY (his instruction, 03 Sep 2026). An August archive
+     and a September issue are made side by side, the way the real folders sit, and the
+     September record is opened with the September password. */
+  {
+    const { makeStatements } = await import("../tools/make_statements.mjs");
+    const C = await import("../tools/stmt-crypto.mjs");
+    const root = join(REPO, "test", "tmp", "site");
+    rmSync(root, { recursive: true, force: true });
+    const q = console.log; console.log = () => { };
+    let aug, sep, sep2;
+    try {
+      aug = await makeStatements(join(root, "2026-08"), "2026-08-01", { archive: true });
+      sep = await makeStatements(join(root, "2026-09"), "2026-09-01");
+      sep2 = await makeStatements(join(root, "2026-09"), "2026-09-01");
+    } finally { console.log = q; }
+    const users = JSON.parse(readFileSync(join(root, "_users.json"), "utf8"));
+    const codes = Object.keys(users), names = Object.values(users);
+    ok(codes.length === sep.made && names.every(u => C.USERNAME_RE.test(u)),
+      "every customer issued a statement has a username in _users.json beside the month folders, two groups of four");
+    ok(new Set(names).size === names.length && names.every(u => !codes.includes(u)),
+      "no two customers share one, and none is a desk code");
+    ok(!existsSync(join(root, "2026-08", "_users.json")) && !readdirSync(join(root, "2026-08")).includes("_kv"),
+      "an archive issue mints no username and no record");
+    ok(JSON.stringify(sep2.users) === JSON.stringify(sep.users) && JSON.stringify(sep2.passwords) === JSON.stringify(sep.passwords),
+      "a retry of the same issue keeps every username and every password");
+    const files = readdirSync(join(root, "2026-09", "_kv"));
+    ok(files.length === sep.made && files.every(f => names.includes(f.replace(/\.json$/, ""))),
+      "the records are named by username, never by code");
+
+    const both = sep.sheets.find(s => aug.sheets.some(a => a.who === s.who));
+    const u = users[both.who];
+    const rec = JSON.parse(readFileSync(join(root, "2026-09", "_kv", u + ".json"), "utf8"));
+    ok(!JSON.stringify(rec).includes(both.who) && rec.u === u && rec.issued === "2026-09-01",
+      "a record names its username and issue date and carries no code");
+    const b = JSON.parse(await C.decryptText(sep.passwords[both.who], rec.env));
+    ok(b.statements.length === 2 && b.statements[0].issued === "2026-09-01" && b.statements[1].issued === "2026-08-01",
+      `${both.who}'s September password opens September and August, newest first`);
+    ok(b.statements[0].body.includes(both.who) && !b.statements[0].body.includes('class="qrb"'),
+      "the September body is the document without its QR block");
+    ok(b.statements[1].body.includes("shown as the account stands today") && !b.statements[1].body.includes("<svg"),
+      "and the August body is the archive exactly as issued");
+    ok(JSON.stringify(rec.issues) === JSON.stringify(["2026-09-01", "2026-08-01"]),
+      "the record lists the issues it carries, so the publish log can say so without decrypting anything");
+    const only = sep.sheets.find(s => !aug.sheets.some(a => a.who === s.who));
+    if (only) {
+      const rec1 = JSON.parse(readFileSync(join(root, "2026-09", "_kv", users[only.who] + ".json"), "utf8"));
+      const b1 = JSON.parse(await C.decryptText(sep.passwords[only.who], rec1.env));
+      ok(b1.statements.length === 1, `${only.who}, new since August, has only September`);
+    } else skipData("every September customer was also in August, so the one-issue bundle went unchecked");
+
+    ok(both.html.includes("?u=" + u) && both.html.includes("<code>" + u + "</code>") && both.html.includes("three minutes"),
+      "the QR opens the site with the username filled in, the username is printed beside it, and the copy says three minutes");
+    ok(!/salt-command\./.test(both.html) && !/\/s\//.test(both.html),
+      "and nothing on a statement points at the desk's address or the old route");
+    const rv = readFileSync(join(root, "2026-09", "_review_2026-09-01.html"), "utf8");
+    ok(rv.includes('<th class="l">Username</th>') && rv.includes(u) && !rv.includes(sep.passwords[both.who]),
+      "the review sheet lists the usernames and still no password");
+    rmSync(root, { recursive: true, force: true });
+  }
+
+  /* AN ARCHIVE ISSUE CARRIES NO QR, AND THE REASON IS THAT ONE WOULD LIE. The site opens
+     whichever issue was published last, so a code on a back-dated statement asks for a later
+     month's password and the reader is told his was refused, on a document that looks current.
+     A record of a past position is worth keeping; a dead code on it is not. */
   {
     const { makeStatements } = await import("../tools/make_statements.mjs");
     const dirA = join(REPO, "test", "tmp", "stmt-archive");
@@ -5969,7 +6085,7 @@ section("Statements — the QR, the sort and the Salt identity");
     ok(runA.kv.length === 0 && Object.keys(runA.passwords).length === 0,
       "and mints no password and no envelope at all");
     const one = readFileSync(join(dirA, files.filter(f => f.startsWith("statement_"))[0]), "utf8");
-    ok(!/class="qrb"/.test(one) && !/<svg/.test(one) && !/\/s\//.test(one),
+    ok(!/class="qrb"/.test(one) && !/<svg/.test(one) && !/\?u=/.test(one),
       "no QR, no SVG and no statement link reaches a back-issue");
     const rev = readFileSync(join(dirA, "_review_2026-08-01.html"), "utf8");
     ok(/record of a past issue/i.test(rev), "its review sheet says what it is");
@@ -6017,7 +6133,7 @@ section("Statements — the QR, the sort and the Salt identity");
   }
 }
 
-const FLOOR_ASSERTIONS = 1256, FLOOR_SECTIONS = 97;   /* archive issues: 1260 everywhere, 1261 here */
+const FLOOR_ASSERTIONS = 1304, FLOOR_SECTIONS = 97;   /* the statements site: 1308 everywhere, 1309 here */
 ok(pass + fail - offMachine >= FLOOR_ASSERTIONS,
   `the suite ran ${pass + fail - offMachine} assertions everywhere (${pass + fail} here, ${offMachine} of them needing files that live off this repo), below its floor of ${FLOOR_ASSERTIONS}: a section has stopped running`);
 ok(sections >= FLOOR_SECTIONS,

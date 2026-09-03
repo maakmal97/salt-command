@@ -15,9 +15,9 @@ salt_bio.json
 salt_vault.json
 *.vault
 
-# THE STATEMENT PASSWORDS. One per customer, plaintext, printed on the review sheet so he can
-# re-send one, and written to disk so a retry of the same issue reuses them rather than
-# invalidating every password already sent. They are credentials: this repo is private, but a
+# THE STATEMENT PASSWORDS. One per customer, plaintext, in this one file and nowhere else, so
+# he can read one back to a customer who has lost it, and so a retry of the same issue reuses
+# them rather than invalidating every password already sent. They are credentials: this repo is private, but a
 # credential committed is a credential in the history for ever, and these are re-issued monthly
 # precisely so nothing has to live that long. The Worker never sees them either; it holds only
 # a PBKDF2 verifier. The encrypted statements beside them (statements/*/_kv/) ARE committed on

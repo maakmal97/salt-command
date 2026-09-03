@@ -60,6 +60,24 @@ export function newPassword() {
   return out;
 }
 
+/* THE USERNAME (03 Sep 2026, his instruction): NOT THE DESK CODE, AND NOT DERIVED FROM IT.
+   The first cut used the code as the username, so the address of a statement was the address
+   of an account on the desk, and a code is guessable from a roster. A username is two groups of
+   four from the same alphabet, minted at random the first time a customer is issued a statement
+   and kept for life in statements/_users.json. Random rather than a hash of the code, because a
+   hash needs a key the generator must hold, and the routine that runs it holds no secrets.
+   Lower case, so it can never be mistaken for a code on the page it sits beside. */
+export function newUsername() {
+  const bytes = wc.getRandomValues(new Uint8Array(8));
+  let out = "";
+  for (let i = 0; i < 8; i++) {
+    out += ALPHABET[bytes[i] % ALPHABET.length];
+    if (i === 3) out += "-";
+  }
+  return out;
+}
+export const USERNAME_RE = /^[23456789abcdefghjkmnpqrstvwxyz]{4}-[23456789abcdefghjkmnpqrstvwxyz]{4}$/;
+
 async function deriveBits(pass, salt, bits, rounds) {
   const base = await wc.subtle.importKey("raw", new TextEncoder().encode(pass), "PBKDF2", false, ["deriveBits"]);
   return new Uint8Array(await wc.subtle.deriveBits(

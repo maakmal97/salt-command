@@ -31,7 +31,6 @@
 
 import { runDrafter, dryRunDrafter } from "./drafter.js";
 import { sendPush, listSubs } from "./push.js";
-import { statementPage } from "./statement-page.js";
 
 /* X-Robots-Tag matches public/_headers, which sets it on the static assets. It was missing
    here, so GET /queue and GET /rev carried no noindex at all. That mattered little behind
@@ -277,155 +276,11 @@ async function handleVaultPost(request, env) {
  * There is no write path on purpose. Adding one before the proof would create exactly the
  * second source of truth this whole exercise exists to remove.
  */
-/* ============ STATEMENTS OF ACCOUNT (02 Sep 2026) ====================================
- *
- * THE ONLY ROUTE ON THIS WORKER MEANT FOR SOMEBODY WHO IS NOT THE OWNER, which is why it is
- * built the opposite way round from everything else here. The rest of this file protects
- * figures by keeping them off the wire; this one hands a document to a stranger and has to be
- * sure it is the right stranger.
- *
- * FOUR THINGS STAND BETWEEN AN ACCOUNT AND THE PUBLIC, and none is trusted alone:
- *   1. The statement is AES-GCM ciphertext at rest, encrypted under the customer's own
- *      password with the vault's crypto. This Worker holds no key and could not read one if
- *      the route were wrong. A mistake here leaks noise.
- *   2. A PBKDF2 verifier decides whether the envelope is handed over at all.
- *   3. Ten failed attempts lock an account for fifteen minutes. The usernames are desk codes
- *      and therefore guessable, so the password is the whole secret and an unthrottled POST
- *      would let anyone grind at it for as long as they liked.
- *   4. The master password is the owner's override, for a customer who has lost his own
- *      before the next issue.
- *
- * WHAT IS DELIBERATELY NOT HERE: any check that the reader is the right person. A password
- * shared is a password shared, and an open statement can be photographed. This route makes an
- * account hard to reach by accident or by grinding. It cannot make a document
- * un-forwardable, and nothing in the copy should imply otherwise.
- *
- * THE READ IS OPEN, and that is not an oversight against the 20 Aug rule that keyed the reads
- * carrying the book. A customer holds no write key and never will. What keeps this from being
- * the hole that rule closed is that it serves ONE account's own orders, encrypted, to someone
- * who already has the password, and never a cost, a margin or another party.
- */
-const SKEY = (code) => "stmt:" + code;
-const SFAIL = (code) => "stmtfail:" + code;
-const SSEEN = (code) => "stmtseen:" + code;
-const MAX_FAILS = 10;
-const FAIL_TTL = 900;                                   // fifteen minutes; the KV minimum is 60
-const CODE_RE = /^[A-Za-z0-9][A-Za-z0-9-]{1,23}$/;
-
-const sB64d = (s) => {
-  const raw = atob(s), a = new Uint8Array(raw.length);
-  for (let i = 0; i < raw.length; i++) a[i] = raw.charCodeAt(i);
-  return a;
-};
-const sB64e = (buf) => {
-  let s = ""; const a = new Uint8Array(buf);
-  for (let i = 0; i < a.length; i++) s += String.fromCharCode(a[i]);
-  return btoa(s);
-};
-function ctEq(a, b) {
-  a = String(a); b = String(b);
-  if (a.length !== b.length) return false;
-  let diff = 0;
-  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  return diff === 0;
-}
-
-/* The round count travels WITH each record, so raising it later does not strand statements
-   already issued. It is far below the 150,000 the encryption key uses, deliberately: this one
-   runs on every attempt inside a Worker's CPU budget, and the passwords it guards are sixteen
-   random symbols rather than anything a person chose. tools/stmt-crypto.mjs states the whole
-   argument, including when it would stop being true. */
-async function verifierOk(pass, verifier) {
-  if (!verifier || !verifier.salt || !verifier.hash) return false;
-  const base = await crypto.subtle.importKey("raw", new TextEncoder().encode(pass), "PBKDF2", false, ["deriveBits"]);
-  const bits = await crypto.subtle.deriveBits(
-    { name: "PBKDF2", salt: sB64d(verifier.salt), iterations: verifier.rounds || 10000, hash: "SHA-256" }, base, 256);
-  return ctEq(sB64e(bits), verifier.hash);
-}
-
-async function handleStatement(request, env, url, p, m) {
-  const code = decodeURIComponent(p.slice(3).split("/")[0] || "");
-  if (!code || !CODE_RE.test(code)) {
-    return (m === "GET" || m === "HEAD")
-      ? new Response("Not found", { status: 404, headers: { "content-type": "text/plain; charset=utf-8" } })
-      : json({ ok: false, error: "not found" }, 404);
-  }
-
-  if (m === "GET" || m === "HEAD") {
-    /* Generated per request so the inline style and script can carry a nonce rather than
-       needing 'unsafe-inline'. public/_headers governs the asset store and does not reach a
-       Worker response, so this route states its own policy. */
-    const nonce = sB64e(crypto.getRandomValues(new Uint8Array(16))).replace(/[^A-Za-z0-9]/g, "");
-    return new Response(statementPage(code, nonce), {
-      headers: {
-        "content-type": "text/html; charset=utf-8",
-        "cache-control": "no-store",
-        "x-robots-tag": "noindex, nofollow, noarchive",
-        "referrer-policy": "no-referrer",
-        "x-content-type-options": "nosniff",
-        "content-security-policy":
-          "default-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; "
-          + "img-src 'self' data:; connect-src 'self'; "
-          + "style-src 'nonce-" + nonce + "'; script-src 'nonce-" + nonce + "'"
-      }
-    });
-  }
-
-  if (m !== "POST") return json({ ok: false }, 405);
-  if (!env.SALT_QUEUE) return json({ ok: false, error: "no KV binding" }, 500);
-
-  const rec = await env.SALT_QUEUE.get(SKEY(code), "json");
-  /* The same answer for "no such account" as for "nothing published yet", so this route
-     cannot be walked to enumerate the roster. The codes are guessable in any case; there is
-     no reason to confirm a guess. */
-  if (!rec || !rec.env) return json({ ok: false, error: "no statement published" }, 404);
-
-  const fails = parseInt(await env.SALT_QUEUE.get(SFAIL(code)) || "0", 10) || 0;
-  if (fails >= MAX_FAILS) {
-    return json({ ok: false, error: "Too many attempts. Try again in fifteen minutes." }, 429);
-  }
-
-  let body = {};
-  try { body = await request.json(); } catch (e) { body = {}; }
-  const pass = typeof body.password === "string" ? body.password.trim() : "";
-  const master = typeof body.master === "string" ? body.master.trim() : "";
-
-  const masterKey = String(env.SALT_STMT_MASTER || "");
-  const byMaster = !!(master && masterKey && ctEq(master, masterKey));
-  const byPass = !byMaster && !!pass && await verifierOk(pass, rec.verifier);
-
-  if (!byMaster && !byPass) {
-    /* KV counts are eventually consistent, so someone racing many requests can land a few
-       more than ten before the count catches up. That is a brake, not a lock, and it is sized
-       for the threat that exists: a person with the URL trying passwords. The password's own
-       78 bits are what make the arithmetic hopeless either way. */
-    await env.SALT_QUEUE.put(SFAIL(code), String(fails + 1), { expirationTtl: FAIL_TTL });
-    return json({ ok: false, error: "That password was not accepted." }, 401);
-  }
-
-  if (fails) await env.SALT_QUEUE.delete(SFAIL(code));
-
-  /* Recorded so he can tell whether a statement was ever opened, which is the question he
-     actually asks after sending thirty-seven of them. It gates nothing. */
-  if (!byMaster) {
-    const seen = await env.SALT_QUEUE.get(SSEEN(code), "json");
-    await env.SALT_QUEUE.put(SSEEN(code), JSON.stringify({
-      first: (seen && seen.first) || new Date().toISOString(),
-      last: new Date().toISOString(),
-      opens: ((seen && seen.opens) || 0) + 1,
-      month: rec.month || null
-    }));
-  }
-
-  return new Response(JSON.stringify({ ok: true, env: rec.env, issued: rec.issued || null, month: rec.month || null }), {
-    status: 200,
-    headers: {
-      "content-type": "application/json; charset=utf-8",
-      "cache-control": "no-store, private",
-      "x-robots-tag": "noindex, nofollow, noarchive"
-    }
-  });
-}
+/* STATEMENTS OF ACCOUNT ARE NOT SERVED HERE (03 Sep 2026, his instruction). From 02 to 03 Sep
+ * they were, at /s/<CODE>, and that put the one address a customer ever holds one path segment
+ * from an open desk. They live on their own Worker now, with a cryptic name of its own and its
+ * own KV store: stmt/worker.js and wrangler.stmt.jsonc. Nothing on this Worker is meant for
+ * anyone but the owner, and nothing a customer holds points at it. */
 
 async function handleLedger(env, url) {
   if (!env.SALT_LEDGER) return json({ ok: false, error: "no ledger binding" }, 503);
@@ -885,8 +740,6 @@ export default {
     if (p === "/menu/publish" || p === "/menu/mint" || p === "/qr") {
       return json({ ok: false, error: "the reseller menu is laptop-only" }, 501);
     }
-
-    if (p === "/s" || p.startsWith("/s/")) return handleStatement(request, env, url, p, m);
 
     // --- static assets, with SPA fallback the Worker owns ------------------------
     if (m === "GET" || m === "HEAD") {

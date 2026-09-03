@@ -59,6 +59,10 @@ on:
       # deploy job: stage and fold are gated to schedule and dispatch, and the handoff step
       # leaves a staged batch alone when no fold happened.
       - 'statements/**'
+      # THE STATEMENTS SITE IS ITS OWN WORKER (03 Sep 2026) and nothing in rev.json hashes it,
+      # so a change to it deploys on its own paths. See the two steps at the foot of deploy.
+      - 'stmt/**'
+      - 'wrangler.stmt.jsonc'
   workflow_dispatch:
     inputs:
       # THE WORKER DISPATCHES THIS ON EVERY APPROVAL (03 Sep 2026), with stage_only set, so
@@ -315,44 +319,6 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
         run: npx wrangler deploy
 
-      # THE STATEMENTS GO INTO KV, NOT INTO public/. Under public/ they would be served by the
-      # asset store, which knows nothing about a password: the ciphertext would be fetchable by
-      # anyone who guessed a filename and the whole gate would be decoration. This step is the
-      # only thing that publishes a statement, and it holds no secret of its own: it reuses the
-      # Cloudflare token this workflow already needs in order to deploy.
-      #
-      # It uploads the NEWEST month only. Last month's statements stop resolving when this
-      # runs, which is the monthly rotation working: a password that has been passed around for
-      # four weeks stops opening anything the moment a new one is issued.
-      - name: Publish the newest statements to KV
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
-        run: |
-          set -euo pipefail
-          # The newest folder that actually HAS records. An archive issue (a back-dated set kept
-          # as a record) carries no _kv at all, so picking the newest folder blindly would find
-          # one with nothing to upload and publish nothing at all.
-          latest=""
-          for d in $(ls -1d statements/[0-9][0-9][0-9][0-9]-[0-9][0-9] 2>/dev/null | sort); do
-            [ -d "$d/_kv" ] && latest="$d"
-          done
-          if [ -z "$latest" ]; then
-            echo "no statement set to publish; normal for a build with no issue in it"
-            exit 0
-          fi
-          n=0
-          for f in "$latest"/_kv/*.json; do
-            [ -e "$f" ] || continue
-            code=$(basename "$f" .json)
-            npx wrangler kv key put --remote --binding SALT_QUEUE "stmt:$code" --path "$f"
-            # A new issue clears the old attempt counter, or a customer locked out last month
-            # is still locked out against a password he has only just been given.
-            npx wrangler kv key delete --remote --binding SALT_QUEUE "stmtfail:$code" 2>/dev/null || true
-            n=$((n+1))
-          done
-          echo "published $n statements from $latest"
-
       - name: The phone is serving it
         run: |
           set -euo pipefail
@@ -464,8 +430,9 @@ jobs:
       # typed each one again, and three drafts in a row carried a shelf rate that had moved.
       # Nine queue entries for three events and one sale, all found on 22 Aug.
       #
-      # LAST, so a failure here leaves the deploy and the committed marks standing. It still
-      # fails the run, because a stale mirror is exactly the silent fault this job exists to end.
+      # LAST OF THE LEDGER'S STEPS, so a failure here leaves the deploy and the committed marks
+      # standing. It still fails the run, because a stale mirror is exactly the silent fault
+      # this job exists to end.
       - name: Re-seed the mirror from the master just shipped
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -474,3 +441,97 @@ jobs:
           set -euo pipefail
           node tools/ledger.mjs
           node tools/d1.mjs --seed
+
+      # ---- THE STATEMENTS SITE, after everything the ledger needs ------------------------
+      # A second Worker on its own cryptic address (stmt/worker.js, wrangler.stmt.jsonc), with
+      # its own KV store. Both steps come AFTER the ledger's, so a fault in the statements can
+      # never leave a folded row unmarked or the mirror stale, and both stand down while the
+      # store has not been created yet (the placeholder id is still in the config), so an
+      # unfinished setup cannot turn a ledger deploy red.
+      - name: Deploy the statements site
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          if grep -q PLACEHOLDER_STMT_KV_ID wrangler.stmt.jsonc; then
+            echo "::warning::wrangler.stmt.jsonc still carries the placeholder KV id; the statements site is not deployed. Create the store and commit its id (docs/STATEMENTS.md)."
+            exit 0
+          fi
+          npx wrangler deploy -c wrangler.stmt.jsonc
+
+      # THE STATEMENTS GO INTO THE SITE'S OWN KV, NOT INTO public/. Under public/ they would be
+      # served by an asset store, which knows nothing about a password: the ciphertext would be
+      # fetchable by anyone who guessed a filename and the whole gate would be decoration. This
+      # step is the only thing that publishes a statement, and it holds no secret of its own: it
+      # reuses the Cloudflare token this workflow already needs in order to deploy.
+      #
+      # It uploads the NEWEST issue only and retires every record that issue does not carry, so
+      # last month's password stops opening anything the moment a new one is issued: that is
+      # the monthly rotation working. Each record already holds the customer's earlier
+      # statements, so nothing a customer is entitled to see goes with the old record.
+      - name: Publish the newest statements
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          if grep -q PLACEHOLDER_STMT_KV_ID wrangler.stmt.jsonc; then
+            echo "the statements store is not created yet; nothing published"
+            exit 0
+          fi
+          # The newest folder that actually HAS records. An archive issue (a back-dated set kept
+          # as a record) carries no _kv at all, so picking the newest folder blindly would find
+          # one with nothing to upload and publish nothing at all.
+          latest=""
+          for d in $(ls -1d statements/[0-9][0-9][0-9][0-9]-[0-9][0-9] 2>/dev/null | sort); do
+            [ -d "$d/_kv" ] && latest="$d"
+          done
+          if [ -z "$latest" ]; then
+            echo "no statement set to publish; normal for a build with no issue in it"
+            exit 0
+          fi
+          W="npx wrangler -c wrangler.stmt.jsonc"
+          n=0; keep=""
+          for f in "$latest"/_kv/*.json; do
+            [ -e "$f" ] || continue
+            u=$(basename "$f" .json)
+            $W kv key put --remote --binding STMT "u:$u" --path "$f"
+            # A new issue clears the old attempt counter, or a customer locked out last month
+            # is still locked out against a password he has only just been given.
+            $W kv key delete --remote --binding STMT "fail:$u" 2>/dev/null || true
+            keep="$keep $u"
+            n=$((n+1))
+          done
+          echo "published $n statements from $latest"
+          # RETIRE WHAT THIS ISSUE DOES NOT CARRY. wrangler prints the listing as JSON; anything
+          # before the array is its banner.
+          $W kv key list --remote --binding STMT --prefix "u:" > .stmt-keys.json || true
+          for u in $(node -e "
+            const t=require('fs').readFileSync('.stmt-keys.json','utf8'); const i=t.indexOf('[');
+            const keep=new Set(process.argv[1].trim().split(/\s+/));
+            if(i<0)process.exit(0);
+            for(const k of JSON.parse(t.slice(i))){const u=String(k.name).replace(/^u:/,''); if(!keep.has(u))console.log(u);}
+          " "$keep"); do
+            $W kv key delete --remote --binding STMT "u:$u" && echo "retired $u"
+          done
+          rm -f .stmt-keys.json
+
+      # THE OLD ROUTE'S KEYS ON THE DESK'S STORE (stmt:, stmtfail:, stmtseen:) are gone with the
+      # route. Deleted here rather than by hand, once; later runs find nothing. Best effort:
+      # the desk never reads them again either way.
+      - name: Retire the old statement keys from the desk's store
+        continue-on-error: true
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          npx wrangler kv key list --remote --binding SALT_QUEUE --prefix "stmt" > .old-keys.json || true
+          for k in $(node -e "
+            const t=require('fs').readFileSync('.old-keys.json','utf8'); const i=t.indexOf('[');
+            if(i>=0) for(const k of JSON.parse(t.slice(i))) console.log(k.name);
+          "); do
+            npx wrangler kv key delete --remote --binding SALT_QUEUE "$k" && echo "retired $k"
+          done
+          rm -f .old-keys.json
