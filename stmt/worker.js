@@ -24,6 +24,12 @@
  *      customer who has lost his asks for it again, and the owner reads it back from
  *      _passwords.json.
  *
+ * WHAT A RECORD HOLDS (03 Sep 2026, live statements): a verifier; the content key wrapped under
+ * the password and, when the issue was made with it, under the master; the monthly bundle
+ * sealed under that content key; and, once the deploy has run, the live document sealed under
+ * the same key with the moment it was written. The deploy rewrites the live document after every
+ * fold. This Worker reads none of it: it hands the record over or it does not.
+ *
  * WHAT IS DELIBERATELY NOT HERE: any check that the reader is the right person. A password
  * shared is a password shared, and an open page can be photographed. This route makes an
  * account hard to reach by accident or by grinding. It cannot make a document un-forwardable,
@@ -140,7 +146,14 @@ async function handleOpen(request, env) {
     }));
   }
 
-  return new Response(JSON.stringify({ ok: true, env: rec.env, issued: rec.issued || null }), {
+  /* THE WRAPS TRAVEL WITH THE ENVELOPE, and which one the page opens is which secret was typed.
+     The live document, when the deploy has written one, comes too; the page decides what to
+     draw. Nothing here is plaintext and nothing here is a key. */
+  return new Response(JSON.stringify({
+    ok: true, byMaster, issued: rec.issued || null, issues: rec.issues || null,
+    wrap: rec.wrap || null, wrapMaster: rec.wrapMaster || null,
+    env: rec.env, live: rec.live || null
+  }), {
     status: 200,
     headers: Object.assign({ "content-type": "application/json; charset=utf-8", "cache-control": "no-store, private" }, HEADERS)
   });

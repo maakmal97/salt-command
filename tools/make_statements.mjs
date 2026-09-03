@@ -28,7 +28,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import POSITION_ENGINE from "../engine/position.mjs";
 import { statementCss, REVIEW_CSS } from "./stmt-style.mjs";
 import { qrSvg } from "./qr.mjs";
-import { newPassword, newUsername, USERNAME_RE, makeVerifier, encryptText } from "./stmt-crypto.mjs";
+import { newPassword, newUsername, USERNAME_RE, makeVerifier, contentKey, wrapKey, encryptWith } from "./stmt-crypto.mjs";
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const BOOK = process.env.SALT_BOOK || resolve(REPO, "ledger", "book.json");
@@ -384,12 +384,18 @@ function stmtDoc(party,rows,o){
       one date carrying a line dated after it is the small contradiction that costs more trust
       than the figure it hides. Reconstructing the true position as at a past date would need an
       event-sourced book, which this is not, so the archive states what it actually is instead. */
-   '<p class="meta">Issued '+e(o.issued)+
+   /* A LIVE STATEMENT SAYS IT IS ONE (03 Sep 2026, his instruction). It is written again by
+      the deploy after every fold, so it covers every entry from the start to the moment it was
+      written, and the moment is printed to the minute so a reader can tell two of them apart. */
+   (o.live
+     ? '<p class="meta">Live statement &middot; as at '+e(o.issued)+' &middot; every entry from the beginning to today, '
+       +'updated whenever an entry is approved</p>'
+     : '<p class="meta">Issued '+e(o.issued)+
      (o.archive
        ? ' &middot; every order placed up to '+e(dLong(o.to))+', shown as the account stands today'
        : (o.from||o.to?' &middot; '+e(o.from?dLong(o.from):'from the beginning')+' to '+e(o.to?dLong(o.to):'today')
          +(T.pendN&&rows.some(r=>r.pendingOrder&&o.to&&new Date(r.date)>new Date(o.to))
-            ?', plus any order agreed and not yet actioned':''):''))+'</p>',
+            ?', plus any order agreed and not yet actioned':''):''))+'</p>'),
    '<p class="whol gap1">Account</p>',
    '<div class="who">'+e(who)+'</div>',
    '<div class="rule"></div>',
@@ -569,6 +575,74 @@ function priorIssues(outDir, code, issue) {
   return out;
 }
 
+/* ---- the secrets: one key, and the master beside it -----------------------------------
+   THE KEY IS NEVER IN THE REPOSITORY. On the laptop it sits in statements/_secrets.json, which
+   is gitignored, as {"key": "<hex>", "master": "<the same passphrase as STMT_MASTER>"}; in the
+   cloud it is the STMT_KEY secret of the deploy job. An environment variable of either name
+   overrides the file, and a test passes both in `opts`. A run that would mint a record and has
+   no key stops before writing anything, because a record wrapped under nothing opens nothing. */
+function loadSecrets(outDir, opts) {
+  const out = { key: (opts && opts.key) || process.env.STMT_KEY || "", master: (opts && opts.master) || process.env.STMT_MASTER || "" };
+  if (out.key) return out;
+  const here = resolve(outDir);
+  const file = process.env.SALT_STMT_SECRETS
+    || (/^\d{4}-\d{2}$/.test(basename(here)) ? join(dirname(here), "_secrets.json") : join(here, "_secrets.json"));
+  if (existsSync(file)) {
+    const s = JSON.parse(readFileSync(file, "utf8"));
+    out.key = out.key || String(s.key || "");
+    out.master = out.master || String(s.master || "");
+  }
+  return out;
+}
+
+/* ---- the live statement ------------------------------------------------------------
+   EVERY ENTRY FROM THE START TO NOW (his instruction, 03 Sep 2026). The same rows, the same
+   document and the same laws as an issue, with no cut-off: whatever the book holds when it is
+   written. It is written by the deploy after every fold, so it changes as the book does, and
+   its heading says so to the minute in Kuala Lumpur time. It is not written to disk anywhere
+   and never has a QR: the QR on the issued statement already opens it. */
+export function liveStatement(party, now) {
+  const at = now instanceof Date ? now : new Date(now || Date.now());
+  const kl = at.toLocaleString('en-GB', { timeZone: 'Asia/Kuala_Lumpur', day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false });
+  const today = at.toLocaleDateString('en-CA', { timeZone: 'Asia/Kuala_Lumpur' });
+  const o = { from: null, to: today, completed: true, open: true, pending: true,
+              dates: true, brand: 'Salt Command', issued: kl.replace(',', ''), live: true };
+  const rows = stmtRows(party, o);
+  o.refunds = stmtRefunds(party, o);
+  o.recon = stmtRecon(party, rows).filter(R => rows.some(x => x.date === R.order.date));
+  if (!rows.length && !o.refunds.length) return null;
+  return { at: at.toISOString(), body: docBody(stmtDoc(party, rows, o)) };
+}
+
+/* THE RECORDS AS THE DEPLOY PUBLISHES THEM: the newest issue's records, each with the live
+   document sealed under the same content key. `root` is the statements folder. Without a key
+   the records go up as issued and no live document is written, and the caller says so. */
+export async function liveRecords(root, key, now) {
+  let latest = null;
+  for (const d of readdirSync(root).filter(x => /^\d{4}-\d{2}$/.test(x)).sort()) {
+    if (existsSync(join(root, d, "_kv"))) latest = d;
+  }
+  if (!latest) return { latest: null, records: [], live: 0, unmatched: [] };
+  const users = loadUsers(join(root, "_users.json"));
+  const byUser = {};
+  for (const c of Object.keys(users)) byUser[users[c]] = c;
+  const records = [], unmatched = [];
+  let live = 0;
+  for (const f of readdirSync(join(root, latest, "_kv")).filter(x => x.endsWith(".json")).sort()) {
+    const rec = JSON.parse(readFileSync(join(root, latest, "_kv", f), "utf8"));
+    const code = byUser[rec.u];
+    if (key && code) {
+      const doc = liveStatement(code, now);
+      if (doc) {
+        rec.live = Object.assign({ at: doc.at }, await encryptWith(await contentKey(key, rec.u), JSON.stringify(doc)));
+        live++;
+      }
+    } else if (key) unmatched.push(rec.u);
+    records.push(rec);
+  }
+  return { latest, records, live, unmatched };
+}
+
 /* `archive` produces a HISTORICAL issue: the documents and the review sheet, and nothing else.
    No QR, no password, no encrypted record.
 
@@ -599,6 +673,14 @@ export async function makeStatements(outDir, issue, opts) {
      password already sent, which is the one thing a retry must not do. */
   const pwFile = join(outDir, "_passwords.json");
   const priorPw = (prior.length && existsSync(pwFile)) ? JSON.parse(readFileSync(pwFile, "utf8")) : {};
+
+  /* THE KEY, before a byte is written: a record wrapped under nothing opens nothing. */
+  const secrets = archive ? { key: "", master: "" } : loadSecrets(outDir, opts);
+  if (!archive && !secrets.key) {
+    throw new Error("no STMT_KEY: put {\"key\": ...} in " + join(dirname(resolve(outDir)), "_secrets.json")
+      + " or set STMT_KEY. Without it no record can be wrapped and nothing was written.");
+  }
+  if (!archive && !secrets.master) console.log("note: no master passphrase given, so the owner's override will not open these records");
 
   /* THE RECORDS ARE REWRITTEN WHOLE. They are named by username now and were named by code
      until 03 Sep 2026, and a stale file left beside the new ones would be published as an
@@ -663,9 +745,15 @@ export async function makeStatements(outDir, issue, opts) {
         ...history.map(h => ({ issued: h.issued, label: longDate(h.issued), body: h.body }))
       ] };
       /* THE RECORD CARRIES NO CODE. The Worker never needs one, and the file is named by the
-         username so nothing in the store or its listing pairs an address with an account. */
-      kv.push({ u: u, issued: issue, issues: bundle.statements.map(s => s.issued),
-                verifier: await makeVerifier(pw), env: await encryptText(pw, JSON.stringify(bundle)) });
+         username so nothing in the store or its listing pairs an address with an account.
+         The bundle is sealed under the content key; the password and the master each hold a
+         wrap of that key, and nothing else. */
+      const ck = await contentKey(secrets.key, u);
+      const rec = { u: u, issued: issue, issues: bundle.statements.map(s => s.issued),
+                    verifier: await makeVerifier(pw), wrap: await wrapKey(pw, ck) };
+      if (secrets.master) rec.wrapMaster = await wrapKey(secrets.master, ck);
+      rec.env = await encryptWith(ck, JSON.stringify(bundle));
+      kv.push(rec);
     }
 
     const file = join(outDir, 'statement_' + p.replace(/[^A-Za-z0-9._-]+/g, '-') + '_' + issue + '.html');
@@ -802,3 +890,6 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   }
   makeStatements(outDir, issue, { archive }).catch(e => { console.error(String(e && e.message || e)); process.exit(1); });
 }
+
+/** The body of an issued document, without its QR: what the publish tool and the suite read. */
+export { docBody };

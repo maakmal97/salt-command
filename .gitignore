@@ -23,6 +23,12 @@ salt_vault.json
 # a PBKDF2 verifier. The encrypted statements beside them (statements/*/_kv/) ARE committed on
 # purpose: that is ciphertext, and it is what the deploy uploads to KV.
 statements/*/_passwords.json
+# THE KEY AND THE MASTER, on the laptop (03 Sep 2026). {"key": <STMT_KEY as hex>, "master": <the
+# STMT_MASTER passphrase>}. The key derives every customer's content key, and the cloud holds it
+# as a GitHub Actions secret; it is never in the tree. The publish scratch beside it is what the
+# deploy hands to wrangler and is rewritten every run.
+statements/_secrets.json
+statements/.publish/
 
 # Test scratch
 shot-*.png

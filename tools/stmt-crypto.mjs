@@ -118,6 +118,67 @@ export async function decryptText(pass, blob) {
   return new TextDecoder().decode(pt);
 }
 
+/* ---- THE CONTENT KEY, AND WHY THERE IS ONE (03 Sep 2026, his instruction: live statements) ----
+ *
+ * A statement that updates with every approved entry is written by the deploy job, in the
+ * cloud, minutes after a fold. That job has no customer password and must never have one: the
+ * passwords live in one gitignored file on the laptop. So the content is not encrypted under
+ * the password at all. Each customer has a CONTENT KEY, derived from one secret (STMT_KEY,
+ * held as a GitHub Actions secret and in statements/_secrets.json on the laptop) and the
+ * username, and everything the customer reads is AES-GCM under that key: the monthly bundle
+ * and the live document alike. The password's only job is to unwrap the content key, and the
+ * wrap is made once a month on the laptop, where the password is. Rotating the password
+ * re-wraps the same key; the content never has to be re-encrypted for a new password.
+ *
+ * WHAT THIS CHANGES ABOUT THE ARGUMENT ABOVE: nothing for the Worker, which still holds no key
+ * and still serves ciphertext after a verifier check. What it adds is one secret in two places,
+ * and a rule: STMT_KEY lost means every account re-issued, because no wrap can be remade
+ * without it. It is derived per username with HMAC rather than stored per customer, so a new
+ * customer needs no new secret anywhere.
+ *
+ * THE MASTER WRAP is how the owner's override actually opens a page. The first cut returned the
+ * envelope on the master password and left the browser to decrypt it with a password it did not
+ * have, so the override could never have shown a statement. Now the content key is wrapped a
+ * second time under the master passphrase when the issue is made, and the page unwraps with
+ * whichever was typed. The Worker still never sees the master as a key; it compares it. */
+export async function contentKey(secret, username) {
+  const k = await wc.subtle.importKey("raw", new TextEncoder().encode(String(secret)), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  return new Uint8Array(await wc.subtle.sign("HMAC", k, new TextEncoder().encode("salt-statement-key:" + username)));
+}
+
+/** The content key wrapped under a password: PBKDF2 at the encryption count, then AES-GCM over the raw key. */
+export async function wrapKey(pass, ck) {
+  const salt = wc.getRandomValues(new Uint8Array(16));
+  const iv = wc.getRandomValues(new Uint8Array(12));
+  const kek = await deriveKey(pass, salt);
+  const ct = await wc.subtle.encrypt({ name: "AES-GCM", iv }, kek, ck);
+  return { v: 2, salt: b64e(salt), iv: b64e(iv), ct: b64e(new Uint8Array(ct)) };
+}
+
+export async function unwrapKey(pass, wrap) {
+  const kek = await deriveKey(pass, b64d(wrap.salt));
+  return new Uint8Array(await wc.subtle.decrypt({ name: "AES-GCM", iv: b64d(wrap.iv) }, kek, b64d(wrap.ct)));
+}
+
+/** AES-GCM under a raw content key. No salt: the key is not derived from anything here. */
+export async function encryptWith(ck, text) {
+  const iv = wc.getRandomValues(new Uint8Array(12));
+  const key = await wc.subtle.importKey("raw", ck, { name: "AES-GCM" }, false, ["encrypt"]);
+  const ct = await wc.subtle.encrypt({ name: "AES-GCM", iv }, key, new TextEncoder().encode(String(text)));
+  return { v: 2, iv: b64e(iv), ct: b64e(new Uint8Array(ct)) };
+}
+
+export async function decryptWith(ck, blob) {
+  const key = await wc.subtle.importKey("raw", ck, { name: "AES-GCM" }, false, ["decrypt"]);
+  const pt = await wc.subtle.decrypt({ name: "AES-GCM", iv: b64d(blob.iv) }, key, b64d(blob.ct));
+  return new TextDecoder().decode(pt);
+}
+
+/** A fresh STMT_KEY, for the one-time setup: 32 random bytes as hex. */
+export function newSecret() {
+  return Buffer.from(wc.getRandomValues(new Uint8Array(32))).toString("hex");
+}
+
 /** The shape the Worker will accept, so a malformed record is refused before it is stored. */
 export function isEnvelope(x) {
   return !!x && x.v === 1 && typeof x.salt === "string" && typeof x.iv === "string"

@@ -32,9 +32,10 @@ issued; they are not renamed.
 ```
 statements/<YYYY-MM>/statement_<CODE>_<YYYY-MM-DD>.html   his copy, one per customer
 statements/<YYYY-MM>/_review_<YYYY-MM-DD>.html            every account in one pass
-statements/<YYYY-MM>/_kv/<username>.json                  ciphertext + verifier, for the site
+statements/<YYYY-MM>/_kv/<username>.json                  verifier, wraps and ciphertext, for the site
 statements/<YYYY-MM>/_passwords.json                      GITIGNORED, never committed
 statements/_users.json                                    code -> username, for life; committed
+statements/_secrets.json                                  GITIGNORED: the key and the master
 ```
 
 **The username is minted once and kept for life.** `_users.json` sits beside the month folders
@@ -111,24 +112,53 @@ checks that no statement does either.
 Each statement carries a QR code and prints the customer's **username**. The QR opens
 `https://k7m3p2.qyts8mh72kyg.workers.dev/?u=<username>`, one landing page for every account,
 with the username filled in; the password goes by a different channel. The page checks the
-pair, decrypts in his own browser, and shows **this month's statement and every earlier one**,
-newest first, on a strip of issue dates. It locks after **three minutes**; the same password
-opens it again as often as he likes.
+pair, decrypts in his own browser, and shows a strip: **"Now"**, then every issue by its date,
+newest first. It locks after **three minutes**; the same password opens it again as often as
+he likes.
+
+**"Now" is live (his instruction, 03 Sep 2026): every entry from the start to the minute it was
+written.** The deploy rewrites it after every fold, so an approved row reaches the customer's
+page in the same run that reaches the phone. Its heading names that minute in Kuala Lumpur
+time. The dated issues beside it are the monthly statements exactly as sent, the August archive
+included, and they never change.
 
 **One live password a month, and it cannot be changed.** Each issue mints a fresh password per
-customer and re-encrypts their whole history under it, so last month's password stops opening
-anything the moment the new issue publishes. There is no change-password control anywhere: a
-customer who has lost his asks for it again, and it is read back from `_passwords.json`.
+customer and re-wraps their key under it, so last month's password stops opening anything the
+moment the new issue publishes. There is no change-password control anywhere: a customer who
+has lost his asks for it again, and it is read back from `_passwords.json`.
 
 **Four things stand between an account and the public, and none is trusted alone:**
 
-1. The statements are AES-GCM ciphertext at rest under that customer's password, with the
-   same crypto as the name vault. The site holds no key and could not read one.
-2. A PBKDF2 verifier decides whether the envelope is handed over at all.
+1. Everything a customer reads is AES-GCM ciphertext at rest under a **content key** of his
+   own, derived from `STMT_KEY` and his username. The password's only job is to unwrap that
+   key, and the wrap is made on the laptop, where the password is. That is what lets the deploy
+   write a new live document in the cloud without ever holding a password. The site holds no
+   key and could not read anything.
+2. A PBKDF2 verifier decides whether the record is handed over at all.
 3. Ten failed attempts lock a username for fifteen minutes. A username is random rather than
    a desk code, so it cannot be guessed from a roster, and an unknown username answers byte
    for byte as a wrong password does, so the list cannot be walked.
-4. `STMT_MASTER`, a secret on the statements Worker, is his override.
+4. `STMT_MASTER`, a secret on the statements Worker, is his override. Typed into the page's one
+   password field it opens any account, because each issue carries a second wrap of the key
+   under it, made from the same passphrase in `_secrets.json`.
+
+### The secrets, and where each one lives
+
+| Secret | Laptop | Cloud | What it does |
+|---|---|---|---|
+| `STMT_KEY` | `statements\_secrets.json`, `"key"` | GitHub Actions secret `STMT_KEY` | Derives every customer's content key. The same string in both places. **Lose it and every account is re-issued.** |
+| `STMT_MASTER` | `statements\_secrets.json`, `"master"` | Cloudflare secret on the site | His override. The Worker compares it; the laptop wraps the key under it at issue time. |
+| the passwords | `statements\<YYYY-MM>\_passwords.json` | nowhere | One per customer, one live month. |
+
+`_secrets.json` is gitignored and looks like
+`{"key": "<64 hex characters>", "master": "<the passphrase>"}`. An environment variable of
+either name overrides the file, which is how the deploy gets the key. A run that would mint a
+record and has no key stops before writing anything.
+
+**The monthly issue runs on the laptop, not in a cloud session.** It needs the key to wrap and
+it writes the passwords, and a cloud session has neither the key nor anywhere to keep what it
+mints: a September run in a cloud container on 02 Sep produced thirty-seven passwords that
+died with the container. The routine's job on the 1st is to say the issue is due.
 
 **What none of it does is stop a statement being forwarded.** A password shared is a password
 shared, and an open page can be photographed. The three minutes stop a phone being left on a
@@ -142,28 +172,39 @@ of `tools/make_statements.mjs`) changed to match before the next issue, since th
 ### Publishing, and the one-time setup
 
 Statements reach the site through the two steps at the foot of the `deploy` job in
-`cloud-commit.yml`, `Deploy the statements site` and `Publish the newest statements`, on any
-push to master that touches `statements/`, `stmt/` or `wrangler.stmt.jsonc`. They run after
-every step the ledger needs, so a fault in the statements can never leave a folded row
-unmarked. The publish uploads the newest month only and retires every record that month does
-not carry, so **issuing a new set retires last month's**, and it clears the attempt counters so
-nobody starts a month locked out.
+`cloud-commit.yml`, `Deploy the statements site` and `Publish the statements, live`, on every
+push that deploys: every fold, and any push touching `statements/`, `stmt/` or
+`wrangler.stmt.jsonc`. They run after every step the ledger needs, so a fault in the
+statements can never leave a folded row unmarked. The publish is `tools/stmt-publish.mjs`: it
+seals the live statement into each of the newest issue's records under the content key, puts
+them all in **one bulk call**, retires every record the issue does not carry (so **issuing a
+new set retires last month's**), and clears the attempt counters on a new issue only. Without
+`STMT_KEY` in the cloud the records go up as issued and "Now" is simply absent; the step warns.
+`node tools/stmt-publish.mjs --dry <dir>` writes the bulk files and touches nothing.
 
 Both steps stand down while `wrangler.stmt.jsonc` still carries `PLACEHOLDER_STMT_KV_ID`, so
-the site does not exist until the store does. Creating it is one-time work on the laptop, in
-**Command Prompt**, from the repo folder:
+the site does not exist until the store does. The one-time setup, in **Command Prompt** from
+the repo folder:
 
-```
-cd /d C:\Users\maakm\Claude\Code\salt-command
-npx wrangler kv namespace create stmt -c wrangler.stmt.jsonc
-```
-
-It prints an `id`. Paste it into `wrangler.stmt.jsonc` in place of `PLACEHOLDER_STMT_KV_ID`,
-commit and push; the next deploy creates the site and publishes. Then the override:
-
-```
-npx wrangler secret put STMT_MASTER -c wrangler.stmt.jsonc
-```
+1. Create the store, and paste the printed `id` into `wrangler.stmt.jsonc` in place of the
+   placeholder:
+   ```
+   cd /d C:\Users\maakm\Claude\Code\salt-command
+   npx wrangler kv namespace create stmt -c wrangler.stmt.jsonc
+   ```
+2. Mint the key, once, and keep the printed line:
+   ```
+   node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+   ```
+3. Write `statements\_secrets.json` in Notepad with the key and your master passphrase.
+4. Set the master on the site, typing the same passphrase:
+   ```
+   npx wrangler secret put STMT_MASTER -c wrangler.stmt.jsonc
+   ```
+5. On GitHub: Settings, Secrets and variables, Actions, New repository secret. Name `STMT_KEY`,
+   value the key from step 2.
+6. Regenerate the current issue so its records carry the wraps, then commit and push. The push
+   deploys the site and publishes, live.
 
 Every wrangler command for this site takes `-c wrangler.stmt.jsonc`; without it, wrangler
 addresses the desk.
@@ -188,7 +229,7 @@ it.
 ## What this task must never do
 
 - **Never edit the master or the book.** Both are read-only here.
-- **Never commit `_passwords.json`.**
+- **Never commit `_passwords.json`, and never `_secrets.json`.**
 - **Never send anything.** He sends these himself, so they must be right before they are sent.
 - **Never regenerate a past month** to match a later code scheme.
 - **Never change a line in `_users.json`.** A username is an address a customer keeps.

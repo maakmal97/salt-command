@@ -2785,7 +2785,7 @@ section("Monthly statements: one home, and the laws a sent document lives by (29
   rmSync(dir, { recursive: true, force: true });
   const quiet = console.log; console.log = () => { };
   let run;
-  try { run = await makeStatements(dir, "2026-08-29"); } finally { console.log = quiet; }
+  try { run = await makeStatements(dir, "2026-08-29", { key: "test-secret" }); } finally { console.log = quiet; }
   rmSync(dir, { recursive: true, force: true });
   ok(run.made > 0 && run.made === run.sheets.length, `the tool builds (${run.made} statements)`);
 
@@ -4984,7 +4984,7 @@ section("v454: a cancelled paid order's money is stated on the statement");
   try {
     const m4 = await import(pu4(j4(REPO, "tools", "make_statements.mjs")).href + "?v454");
     const log4 = console.log; console.log = () => {};
-    try { await m4.makeStatements(O4, "2026-09-01"); } finally { console.log = log4; }
+    try { await m4.makeStatements(O4, "2026-09-01", { key: "test-secret" }); } finally { console.log = log4; }
     html4 = rf4(j4(O4, fname4(who4)), "utf8");
     rev4 = rf4(j4(O4, "_review_2026-09-01.html"), "utf8");
     const oth4 = bk4.sales.find((x) => x.customer && x.customer !== who4 && x.date && !bk4.customerRefunds.some((r) => r.party === x.customer && !r.paidOn)).customer;
@@ -5840,11 +5840,31 @@ section("Statements — the password, the username, the envelope and the site's 
 
   /* THE SITE. Its own Worker, its own binding, no ASSETS, no ledger, no write key: the env it
      is given here is the whole of what it may have. */
+  /* THE CONTENT KEY (live statements, 03 Sep 2026). Derived from one secret and the username,
+     wrapped under the password and under the master; everything the customer reads is sealed
+     under it, so the deploy can write a new live document without ever holding a password. */
+  const ck = await C.contentKey("test-secret", un);
+  const same = (a, b) => Buffer.from(a).equals(Buffer.from(b));
+  ok(ck.length === 32 && same(ck, await C.contentKey("test-secret", un))
+    && !same(ck, await C.contentKey("test-secret", C.newUsername())) && !same(ck, await C.contentKey("other-secret", un)),
+    "a content key is 32 bytes, the same for the same secret and username, and different if either changes");
+  ok(/^[0-9a-f]{64}$/.test(C.newSecret()), "a fresh STMT_KEY is 32 random bytes as hex");
+  const wrap = await C.wrapKey(pw, ck), wrapMaster = await C.wrapKey("master-pass", ck);
+  ok(same(await C.unwrapKey(pw, wrap), ck) && same(await C.unwrapKey("master-pass", wrapMaster), ck),
+    "the password and the master each unwrap the same content key");
+  let badWrap = false;
+  try { await C.unwrapKey(C.newPassword(), wrap); } catch (e) { badWrap = true; }
+  ok(badWrap && !JSON.stringify(wrap).includes(Buffer.from(ck).toString("base64")),
+    "a wrong password unwraps nothing, and the wrap is not the key in the clear");
   const bundle = JSON.stringify({ v: 1, issued: "2026-09-01", statements: [
     { issued: "2026-09-01", label: "01 Sep 2026", body: '<p class="who">CX0-AA</p>' }] });
-  const envB = await C.encryptText(pw, bundle);
+  const envB = await C.encryptWith(ck, bundle);
+  const liveAt = "2026-09-03T06:20:00.000Z";
+  const liveB = Object.assign({ at: liveAt }, await C.encryptWith(ck, JSON.stringify({ at: liveAt, body: "<p>live CX0-AA</p>" })));
+  ok((await C.decryptWith(ck, envB)).includes("CX0-AA") && !JSON.stringify(envB).includes("CX0-AA") && !envB.salt,
+    "the content key seals and opens a document, with no salt because nothing is derived");
   const kv = new KV();
-  const rec = { u: un, issued: "2026-09-01", issues: ["2026-09-01"], verifier: ver, env: envB };
+  const rec = { u: un, issued: "2026-09-01", issues: ["2026-09-01"], verifier: ver, wrap, wrapMaster, env: envB, live: liveB };
   await kv.put("u:" + un, JSON.stringify(rec));
   const senv = { STMT: kv, STMT_MASTER: "master-pass" };
   const sreq = (path, opts = {}) => new Request("https://k7m3p2.example" + path, opts);
@@ -5875,8 +5895,12 @@ section("Statements — the password, the username, the envelope and the site's 
 
   r = await stmtWorker.fetch(open({ u: un, password: pw }), senv);
   const j = await r.json();
-  ok(r.status === 200 && j.ok === true && j.env && j.env.ct === envB.ct, "the right username and password return the envelope");
-  ok(JSON.parse(await C.decryptText(pw, j.env)).statements[0].body.includes("CX0-AA"), "and it decrypts to the bundle");
+  ok(r.status === 200 && j.ok === true && j.env && j.env.ct === envB.ct && j.wrap && j.live && j.byMaster === false,
+    "the right username and password return the record: wrap, envelope and live document");
+  const ckOut = await C.unwrapKey(pw, j.wrap);
+  ok(JSON.parse(await C.decryptWith(ckOut, j.env)).statements[0].body.includes("CX0-AA")
+    && JSON.parse(await C.decryptWith(ckOut, j.live)).body.includes("live CX0-AA"),
+    "and the password unwraps the key that opens both the bundle and the live statement");
   ok((await stmtWorker.fetch(open({ u: un.toUpperCase(), password: pw }), senv)).status === 200,
     "a username typed in capitals is the same username");
 
@@ -5891,8 +5915,13 @@ section("Statements — the password, the username, the envelope and the site's 
     && malformed.status === 401 && (await malformed.text()) === wrongBody,
     "an unknown username and a desk code answer byte for byte as a wrong password does, so the list cannot be walked");
 
-  r = await stmtWorker.fetch(open({ u: un, master: "master-pass" }), senv);
-  ok(r.status === 200 && (await r.json()).ok === true, "the master password is the owner's override");
+  /* the page has one field and sends what was typed as both; the Worker says which matched */
+  r = await stmtWorker.fetch(open({ u: un, password: "master-pass", master: "master-pass" }), senv);
+  const jm = await r.json();
+  ok(r.status === 200 && jm.ok === true && jm.byMaster === true && jm.wrapMaster,
+    "the master passphrase, typed into the one field the page has, is the owner's override");
+  ok(JSON.parse(await C.decryptWith(await C.unwrapKey("master-pass", jm.wrapMaster), jm.env)).statements.length === 1,
+    "and it actually opens the statement, which the first cut's override never could");
   ok((await stmtWorker.fetch(open({ u: un, master: "not-the-master" }), senv)).status === 401,
     "and a wrong master password is refused like any other");
   ok((await stmtWorker.fetch(open({ u: un, master: "master-pass" }), { STMT: kv })).status === 401,
@@ -6016,12 +6045,15 @@ section("Statements — the QR, the sort and the Salt identity");
     const root = join(REPO, "test", "tmp", "site");
     rmSync(root, { recursive: true, force: true });
     const q = console.log; console.log = () => { };
-    let aug, sep, sep2;
+    let aug, sep, sep2, noKey = null;
     try {
       aug = await makeStatements(join(root, "2026-08"), "2026-08-01", { archive: true });
-      sep = await makeStatements(join(root, "2026-09"), "2026-09-01");
-      sep2 = await makeStatements(join(root, "2026-09"), "2026-09-01");
+      try { await makeStatements(join(root, "2026-07"), "2026-07-01"); } catch (e) { noKey = e; }
+      sep = await makeStatements(join(root, "2026-09"), "2026-09-01", { key: "test-secret", master: "mp" });
+      sep2 = await makeStatements(join(root, "2026-09"), "2026-09-01", { key: "test-secret", master: "mp" });
     } finally { console.log = q; }
+    ok(noKey && /STMT_KEY/.test(noKey.message) && !existsSync(join(root, "2026-07")),
+      "a run with no key refuses before writing anything: a record wrapped under nothing opens nothing");
     const users = JSON.parse(readFileSync(join(root, "_users.json"), "utf8"));
     const codes = Object.keys(users), names = Object.values(users);
     ok(codes.length === sep.made && names.every(u => C.USERNAME_RE.test(u)),
@@ -6039,9 +6071,12 @@ section("Statements — the QR, the sort and the Salt identity");
     const both = sep.sheets.find(s => aug.sheets.some(a => a.who === s.who));
     const u = users[both.who];
     const rec = JSON.parse(readFileSync(join(root, "2026-09", "_kv", u + ".json"), "utf8"));
-    ok(!JSON.stringify(rec).includes(both.who) && rec.u === u && rec.issued === "2026-09-01",
-      "a record names its username and issue date and carries no code");
-    const b = JSON.parse(await C.decryptText(sep.passwords[both.who], rec.env));
+    ok(!JSON.stringify(rec).includes(both.who) && rec.u === u && rec.issued === "2026-09-01" && rec.wrap && rec.wrapMaster && !rec.live,
+      "a record names its username and issue date, carries both wraps and no code, and no live document until the deploy writes one");
+    const ckB = await C.unwrapKey(sep.passwords[both.who], rec.wrap);
+    ok(Buffer.from(await C.unwrapKey("mp", rec.wrapMaster)).equals(Buffer.from(ckB)),
+      "the master wrap in the record unwraps the same key as the password does");
+    const b = JSON.parse(await C.decryptWith(ckB, rec.env));
     ok(b.statements.length === 2 && b.statements[0].issued === "2026-09-01" && b.statements[1].issued === "2026-08-01",
       `${both.who}'s September password opens September and August, newest first`);
     ok(b.statements[0].body.includes(both.who) && !b.statements[0].body.includes('class="qrb"'),
@@ -6053,9 +6088,55 @@ section("Statements — the QR, the sort and the Salt identity");
     const only = sep.sheets.find(s => !aug.sheets.some(a => a.who === s.who));
     if (only) {
       const rec1 = JSON.parse(readFileSync(join(root, "2026-09", "_kv", users[only.who] + ".json"), "utf8"));
-      const b1 = JSON.parse(await C.decryptText(sep.passwords[only.who], rec1.env));
+      const b1 = JSON.parse(await C.decryptWith(await C.unwrapKey(sep.passwords[only.who], rec1.wrap), rec1.env));
       ok(b1.statements.length === 1, `${only.who}, new since August, has only September`);
     } else skipData("every September customer was also in August, so the one-issue bundle went unchecked");
+
+    /* THE LIVE STATEMENT (his instruction, 03 Sep 2026): every entry from the start to now,
+       sealed into the record by the deploy after every fold under the same content key. */
+    const { liveStatement, liveRecords } = await import("../tools/make_statements.mjs");
+    const { planPublish } = await import("../tools/stmt-publish.mjs");
+    const now = new Date("2026-09-03T06:20:00Z");
+    const lv = liveStatement(both.who, now);
+    ok(lv && lv.at === now.toISOString() && /Live statement/.test(lv.body) && /as at 03 Sept? 2026 14:20/.test(lv.body)
+      && /every entry from the beginning to today/.test(lv.body) && !/class="qrb"/.test(lv.body) && !/>Issued /.test(lv.body),
+      "a live statement says it is one, to the minute in Kuala Lumpur time, covers everything, and carries no QR");
+    ok(lv.body.includes(both.who), "and it is that customer's");
+    const bookL = JSON.parse(readFileSync(resolve(REPO, "ledger", "book.json"), "utf8"));
+    const afterIssue = bookL.sales.find(s => s.date && s.date > "2026-09-01" && !s.cancelled);
+    if (afterIssue) {
+      const nRows = h => (h.match(/<td class="l dt">/g) || []).length;
+      const issuedDoc = sep.sheets.find(s => s.who === afterIssue.customer);
+      const lvA = liveStatement(afterIssue.customer, now);
+      ok(issuedDoc && lvA && nRows(lvA.body) > nRows(issuedDoc.html),
+        `${afterIssue.customer}'s live statement carries the ${afterIssue.date} entry the 1 Sep issue does not`);
+    } else skipData("no dated row after 1 Sep on the book, so the live-versus-issued difference went unchecked");
+
+    const lr = await liveRecords(root, "test-secret", now);
+    ok(lr.latest === "2026-09" && lr.records.length === sep.made && lr.live === sep.made && lr.unmatched.length === 0,
+      "the deploy's records are the newest issue's, each with a live statement sealed in");
+    const lrec = lr.records.find(x => x.u === u);
+    let lvOut = null;
+    try { lvOut = lrec.live ? JSON.parse(await C.decryptWith(ckB, lrec.live)) : null; } catch (e) { lvOut = null; }
+    ok(!!lrec.live && lrec.live.at === now.toISOString() && !!lvOut && lvOut.body === lv.body
+      && !JSON.stringify(lrec.live).includes(both.who),
+      "the live statement opens under the key the password unwraps, and is ciphertext in the record");
+    const lr0 = await liveRecords(root, "", now);
+    ok(lr0.records.length === sep.made && lr0.live === 0 && lr0.records.every(x => !x.live),
+      "without the key the records go up as issued and no live document is written");
+
+    const plan = await planPublish(root, "test-secret", now, ["u:" + u, "u:zzzz-zzzz", "fail:" + u, "fail:aaaa-aaaa"], null);
+    ok(plan.puts.length === sep.made + 1 && plan.puts.some(p => p.key === "u:" + u)
+      && plan.puts.some(p => p.key === "issue" && p.value === "2026-09-01"),
+      "the publish plan puts every record and the issue marker, in one bulk file");
+    ok(plan.newIssue && plan.deletes.includes("u:zzzz-zzzz") && !plan.deletes.includes("u:" + u)
+      && plan.deletes.includes("fail:" + u) && plan.deletes.includes("fail:aaaa-aaaa"),
+      "a new issue retires the record it does not carry and clears every attempt counter");
+    const plan2 = await planPublish(root, "test-secret", now, ["u:zzzz-zzzz", "fail:" + u], "2026-09-01");
+    ok(!plan2.newIssue && plan2.deletes.includes("u:zzzz-zzzz") && !plan2.deletes.includes("fail:" + u),
+      "a re-publish of the same issue, which every fold is, retires stale records but leaves the counters alone");
+    ok(JSON.parse(plan.puts.find(p => p.key === "u:" + u).value).live.at === now.toISOString(),
+      "and what it puts is the record with the live statement in it");
 
     ok(both.html.includes("?u=" + u) && both.html.includes("<code>" + u + "</code>") && both.html.includes("three minutes"),
       "the QR opens the site with the username filled in, the username is printed beside it, and the copy says three minutes");
@@ -6097,7 +6178,7 @@ section("Statements — the QR, the sort and the Salt identity");
       "a back-issue states that it shows the account as it stands, not a position as at a date");
     const q2 = console.log; console.log = () => { };
     let live;
-    try { live = await makeStatements(join(REPO, "test", "tmp", "stmt-live"), "2026-08-01"); }
+    try { live = await makeStatements(join(REPO, "test", "tmp", "stmt-live"), "2026-08-01", { key: "test-secret" }); }
     finally { console.log = q2; }
     ok(/from the beginning to/.test(live.sheets[0].html),
       "and a current issue still reads as a period, which is what it is");
@@ -6116,7 +6197,7 @@ section("Statements — the QR, the sort and the Salt identity");
     rmSync(dirP, { recursive: true, force: true });
     const q3 = console.log; console.log = () => { };
     let runP;
-    try { runP = await makeStatements(dirP, "2026-08-01"); } finally { console.log = q3; }
+    try { runP = await makeStatements(dirP, "2026-08-01", { key: "test-secret" }); } finally { console.log = q3; }
     const secrets = Object.values(runP.passwords);
     ok(secrets.length > 0, `the run minted passwords to check (${secrets.length})`);
     const leaked = [];
@@ -6133,7 +6214,7 @@ section("Statements — the QR, the sort and the Salt identity");
   }
 }
 
-const FLOOR_ASSERTIONS = 1304, FLOOR_SECTIONS = 97;   /* the statements site: 1308 everywhere, 1309 here */
+const FLOOR_ASSERTIONS = 1322, FLOOR_SECTIONS = 97;   /* live statements: 1326 everywhere, 1327 here */
 ok(pass + fail - offMachine >= FLOOR_ASSERTIONS,
   `the suite ran ${pass + fail - offMachine} assertions everywhere (${pass + fail} here, ${offMachine} of them needing files that live off this repo), below its floor of ${FLOOR_ASSERTIONS}: a section has stopped running`);
 ok(sections >= FLOOR_SECTIONS,

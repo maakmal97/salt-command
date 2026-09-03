@@ -463,59 +463,26 @@ jobs:
       # THE STATEMENTS GO INTO THE SITE'S OWN KV, NOT INTO public/. Under public/ they would be
       # served by an asset store, which knows nothing about a password: the ciphertext would be
       # fetchable by anyone who guessed a filename and the whole gate would be decoration. This
-      # step is the only thing that publishes a statement, and it holds no secret of its own: it
-      # reuses the Cloudflare token this workflow already needs in order to deploy.
+      # step is the only thing that publishes a statement, and it holds one secret beyond the
+      # Cloudflare token the job already has: STMT_KEY, from which every customer's content key
+      # is derived. With it, every record goes up with a LIVE statement sealed inside, every
+      # entry from the start to this minute, so an approved row reaches the customer's page in
+      # the same run that reaches the phone. Without it the records go up exactly as issued.
       #
-      # It uploads the NEWEST issue only and retires every record that issue does not carry, so
-      # last month's password stops opening anything the moment a new one is issued: that is
-      # the monthly rotation working. Each record already holds the customer's earlier
-      # statements, so nothing a customer is entitled to see goes with the old record.
-      - name: Publish the newest statements
+      # tools/stmt-publish.mjs does the rest: the newest issue only, one bulk call, every record
+      # the issue does not carry retired (so last month's password stops opening anything the
+      # moment a new one is issued), and the attempt counters cleared on a new issue only.
+      - name: Publish the statements, live
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          STMT_KEY: ${{ secrets.STMT_KEY }}
         run: |
           set -euo pipefail
-          if grep -q PLACEHOLDER_STMT_KV_ID wrangler.stmt.jsonc; then
-            echo "the statements store is not created yet; nothing published"
-            exit 0
+          if [ -z "${STMT_KEY:-}" ]; then
+            echo "::warning::STMT_KEY is not set, so no live statement is written. Add it as a repository secret (docs/STATEMENTS.md)."
           fi
-          # The newest folder that actually HAS records. An archive issue (a back-dated set kept
-          # as a record) carries no _kv at all, so picking the newest folder blindly would find
-          # one with nothing to upload and publish nothing at all.
-          latest=""
-          for d in $(ls -1d statements/[0-9][0-9][0-9][0-9]-[0-9][0-9] 2>/dev/null | sort); do
-            [ -d "$d/_kv" ] && latest="$d"
-          done
-          if [ -z "$latest" ]; then
-            echo "no statement set to publish; normal for a build with no issue in it"
-            exit 0
-          fi
-          W="npx wrangler -c wrangler.stmt.jsonc"
-          n=0; keep=""
-          for f in "$latest"/_kv/*.json; do
-            [ -e "$f" ] || continue
-            u=$(basename "$f" .json)
-            $W kv key put --remote --binding STMT "u:$u" --path "$f"
-            # A new issue clears the old attempt counter, or a customer locked out last month
-            # is still locked out against a password he has only just been given.
-            $W kv key delete --remote --binding STMT "fail:$u" 2>/dev/null || true
-            keep="$keep $u"
-            n=$((n+1))
-          done
-          echo "published $n statements from $latest"
-          # RETIRE WHAT THIS ISSUE DOES NOT CARRY. wrangler prints the listing as JSON; anything
-          # before the array is its banner.
-          $W kv key list --remote --binding STMT --prefix "u:" > .stmt-keys.json || true
-          for u in $(node -e "
-            const t=require('fs').readFileSync('.stmt-keys.json','utf8'); const i=t.indexOf('[');
-            const keep=new Set(process.argv[1].trim().split(/\s+/));
-            if(i<0)process.exit(0);
-            for(const k of JSON.parse(t.slice(i))){const u=String(k.name).replace(/^u:/,''); if(!keep.has(u))console.log(u);}
-          " "$keep"); do
-            $W kv key delete --remote --binding STMT "u:$u" && echo "retired $u"
-          done
-          rm -f .stmt-keys.json
+          node tools/stmt-publish.mjs
 
       # THE OLD ROUTE'S KEYS ON THE DESK'S STORE (stmt:, stmtfail:, stmtseen:) are gone with the
       # route. Deleted here rather than by hand, once; later runs find nothing. Best effort:

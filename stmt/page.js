@@ -87,9 +87,10 @@ export function landingPage(user, nonce) {
     + '<div id="gate" class="gate">'
     + '<p class="eyebrow">Salt Command</p>'
     + "<h1>Statement of account</h1>"
-    + '<p class="lead">Sign in with the username and the password sent to you. Your statements '
-    + "then stay on screen for three minutes and lock themselves, so they are not left open on "
-    + "a phone. The same password opens them again as often as you like.</p>"
+    + '<p class="lead">Sign in with the username and the password sent to you. Your statement is '
+    + "live: every entry from the start to today, updated as soon as an entry is approved, with "
+    + "each monthly statement as sent beside it. The page locks after three minutes so it is not "
+    + "left open on a phone; the same password opens it again as often as you like.</p>"
     + '<form id="f" autocomplete="off">'
     + '<label class="lbl" for="un">Username</label>'
     + '<input class="fld" id="un" type="text" inputmode="text" autocapitalize="none" '
@@ -128,15 +129,26 @@ const CLIENT_JS = `
   function norm(s){ s=String(s||'').toLowerCase().replace(/[^a-z0-9]/g,'');
     return s.length===8 ? s.slice(0,4)+'-'+s.slice(4) : ''; }
 
-  /* The same derivation the vault uses, and the same the generator encrypted with:
-     PBKDF2-SHA256 x150000, AES-GCM-256. A mismatch anywhere here is indistinguishable
-     from a wrong password, which is why the round trip is tested rather than eyeballed. */
-  async function decrypt(pass, env){
+  /* THE PASSWORD UNWRAPS A KEY, AND THE KEY OPENS EVERYTHING. The same derivation the vault
+     uses, PBKDF2-SHA256 x150000 into AES-GCM-256, but over the wrap rather than the content:
+     the content key comes out of the wrap, and the monthly bundle and the live document are
+     both sealed under it. The master passphrase holds a second wrap of the same key. A
+     mismatch anywhere here is indistinguishable from a wrong password, which is why the
+     round trip is tested rather than eyeballed. */
+  async function unwrap(pass, w){
     var base=await crypto.subtle.importKey('raw', new TextEncoder().encode(pass), 'PBKDF2', false, ['deriveKey']);
-    var key=await crypto.subtle.deriveKey({name:'PBKDF2',salt:b64d(env.salt),iterations:150000,hash:'SHA-256'},
+    var kek=await crypto.subtle.deriveKey({name:'PBKDF2',salt:b64d(w.salt),iterations:150000,hash:'SHA-256'},
       base, {name:'AES-GCM',length:256}, false, ['decrypt']);
-    var pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:b64d(env.iv)}, key, b64d(env.ct));
+    var raw=await crypto.subtle.decrypt({name:'AES-GCM',iv:b64d(w.iv)}, kek, b64d(w.ct));
+    return crypto.subtle.importKey('raw', raw, {name:'AES-GCM'}, false, ['decrypt']);
+  }
+  async function open(ck, blob){
+    var pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:b64d(blob.iv)}, ck, b64d(blob.ct));
     return new TextDecoder().decode(pt);
+  }
+  function stamp(iso){
+    try{ return new Date(iso).toLocaleString('en-GB',{timeZone:'Asia/Kuala_Lumpur',day:'2-digit',month:'short',
+      hour:'2-digit',minute:'2-digit',hour12:false}); }catch(e){ return ''; }
   }
 
   function lock(){
@@ -163,13 +175,19 @@ const CLIENT_JS = `
     window.scrollTo(0,0);
   }
 
+  /* THE STRIP: the live document first, as "Now" with the minute it was written, then every
+     issue by its date, newest first. One statement shows at a time. */
   function show(b){
     bundle=b; mos.textContent='';
     if(b.statements.length>1){
+      var firstIssue=true;
       for(var i=0;i<b.statements.length;i++){
-        var bt=document.createElement('button'); bt.type='button';
-        bt.textContent=b.statements[i].label||b.statements[i].issued;
-        if(i===0){ var sm=document.createElement('small'); sm.textContent='latest'; bt.appendChild(sm); }
+        var s=b.statements[i], bt=document.createElement('button'); bt.type='button';
+        bt.textContent=s.label||s.issued;
+        var sm=document.createElement('small');
+        if(s.live){ sm.textContent='live, '+stamp(s.at); }
+        else if(firstIssue){ sm.textContent='latest issue'; firstIssue=false; }
+        if(sm.textContent) bt.appendChild(sm);
         (function(j){ bt.addEventListener('click', function(){ pick(j); }); })(i);
         mos.appendChild(bt);
       }
@@ -190,9 +208,11 @@ const CLIENT_JS = `
     un.value=u;
     go.disabled=true; say('Checking...','wait');
     var r, body;
+    /* the one field carries either secret: the Worker says which it matched, and the page
+       unwraps with the matching wrap. A customer never knows there is a second one. */
     try{
       r=await fetch('/open', {method:'POST',
-        headers:{'content-type':'application/json'}, body:JSON.stringify({u:u, password:pass})});
+        headers:{'content-type':'application/json'}, body:JSON.stringify({u:u, password:pass, master:pass})});
       body=await r.json();
     }catch(e){ go.disabled=false; say('No connection. Try again in a moment.','bad'); return; }
     go.disabled=false;
@@ -202,11 +222,21 @@ const CLIENT_JS = `
       return;
     }
     say('Opening...','wait');
-    var text, b;
-    try{ text=await decrypt(pass, body.env); }
+    var w=body.byMaster?body.wrapMaster:body.wrap;
+    if(!w){
+      say(body.byMaster?'This account was issued without the master key. Open it with the customer\\'s own password.'
+        :'This account has no key to open it with. Ask for it to be re-issued.','bad');
+      return;
+    }
+    var ck, b;
+    try{ ck=await unwrap(pass, w); b=JSON.parse(await open(ck, body.env)); }
     catch(e){ say('That password did not open the statement.','bad'); return; }
-    try{ b=JSON.parse(text); }catch(e){ b=null; }
-    if(!b||!b.statements||!b.statements.length){ b={statements:[{issued:'',label:'',body:text}]}; }
+    if(!b||!b.statements||!b.statements.length){ say('The statement could not be read. Ask for it to be re-issued.','bad'); return; }
+    if(body.live){
+      try{ var l=JSON.parse(await open(ck, body.live));
+        b.statements.unshift({issued:'now', label:'Now', live:true, at:l.at||body.live.at, body:l.body}); }
+      catch(e){ /* the issued statements still open; the live one is simply absent */ }
+    }
     say('');
     show(b);
   });
