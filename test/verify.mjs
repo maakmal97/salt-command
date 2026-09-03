@@ -811,7 +811,9 @@ section("Worker — drafts and approval");
     /* the workflow's half, read as text because YAML cannot be run here */
     const wf = readFileSync("./.github/workflows/cloud-commit.yml", "utf8");
     ok(/stage_only:\n\s+description/.test(wf), "cloud-commit.yml accepts stage_only");
-    ok(/\n  fold:\n    needs: stage\n    if: needs\.stage\.outputs\.staged == '1'/.test(wf), "a fold job follows the stage, only when rows were staged");
+    ok(/\n  fold:\n    needs: stage\n    if: needs\.stage\.outputs\.staged == 'true'/.test(wf), "a fold job follows the stage, only when a batch is staged");
+    ok(/staged: \$\{\{ steps\.guard\.outputs\.staged == '1' \|\| steps\.commit\.outputs\.staged == '1' \}\}/.test(wf) && /echo "skip=1" >> "\$GITHUB_OUTPUT"\n(?:\s+#[^\n]*\n)*\s+echo "staged=1"/.test(wf),
+       "a batch already staged counts as staged, so a batch a failed fold left behind is folded on the next tick rather than never");
     ok(/uses: anthropics\/claude-code-action@v1/.test(wf) && /claude_code_oauth_token: \$\{\{ secrets\.CLAUDE_CODE_OAUTH_TOKEN \}\}/.test(wf),
        "the fold is the Claude Code action on the subscription token, so the judgement stays with an agent");
     ok(/\n  deploy:\n    needs: \[stage, fold\]\n    if: \$\{\{ !cancelled\(\) && \(github\.event_name == 'push' \|\| \(github\.event_name == 'workflow_dispatch' && !inputs\.stage_only\) \|\| needs\.fold\.result == 'success'\) \}\}/.test(wf),

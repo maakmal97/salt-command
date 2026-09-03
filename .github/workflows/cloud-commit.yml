@@ -79,7 +79,7 @@ jobs:
     permissions:
       contents: write
     outputs:
-      staged: ${{ steps.commit.outputs.staged }}
+      staged: ${{ steps.guard.outputs.staged == '1' || steps.commit.outputs.staged == '1' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -113,6 +113,10 @@ jobs:
             n=$(git show HEAD:master/_to_fold.json | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).count")
             echo "::notice::A batch of $n row(s) is staged and not yet folded. Standing down rather than overwriting it."
             echo "skip=1" >> "$GITHUB_OUTPUT"
+            # A batch that is already staged is still a batch to fold, so the fold job runs on
+            # this tick too. That is how a batch left behind by a failed fold job, or staged
+            # before the fold job existed, is picked up within the hour rather than never.
+            echo "staged=1" >> "$GITHUB_OUTPUT"
           else
             echo "skip=0" >> "$GITHUB_OUTPUT"
           fi
@@ -199,7 +203,7 @@ jobs:
   # ---------------------------------------------------------------------------
   fold:
     needs: stage
-    if: needs.stage.outputs.staged == '1'
+    if: needs.stage.outputs.staged == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: write
