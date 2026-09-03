@@ -112,7 +112,10 @@ shared, and an open page can be photographed. The ten minutes stop a phone being
 table with an account on it. Nothing in the copy should promise more than that.
 
 Statements reach the Worker through the `Publish the newest statements to KV` step in
-`cloud-commit.yml`, on push. It uploads the newest month only, so **issuing a new set retires
+`cloud-commit.yml`, on any push to master that touches `statements/`. That path is in the
+workflow's trigger for a reason: the deploy used to fire only when `public/rev.json` changed,
+an issue never changes it, and the first September merge published nothing while every check
+read green. It uploads the newest month only, so **issuing a new set retires
 last month's**, and it clears the attempt counters so nobody starts a month locked out.
 
 If `REQUIRE_ACCESS` is ever set back to `"1"`, `/s/` goes behind Cloudflare Access with
