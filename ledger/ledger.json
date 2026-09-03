@@ -1,6 +1,6 @@
 {
- "v": "v480",
- "stamped": "03 Sep 2026, 12:57 KL",
+ "v": "v481",
+ "stamped": "03 Sep 2026, 14:53 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -41,7 +41,7 @@
     "stated": 15
    }
   },
-  "STATED_STOCK": 7,
+  "STATED_STOCK": 4,
   "COUNT_ON": {
    "salt": "2026-09-02",
    "oil": "2026-08-23"
@@ -2777,6 +2777,20 @@
     "rid": "s129"
    },
    {
+    "customer": "CM6-PJ",
+    "qty": 3,
+    "total": 270,
+    "cost": 48,
+    "cash": 270,
+    "handover": "collected",
+    "date": "2026-09-03",
+    "deliveredQty": 3,
+    "deliveredOn": "2026-09-03",
+    "paidOn": "2026-09-03",
+    "note": "Collected by CM6-PJ on 3 Sep 2026, 3 unit for RM 270, RM 90 a unit, paid RM 270 and taken in full on the day, so nothing is owed and nothing is left to move. Costed at RM 48 a unit off p019, the 31 Aug SA5-BTR lot that is the current shelf, which the desk's own stock cost confirms, so the draft was not written against a stale rate: RM 144 of cost, RM 126 gross, 46.7%. The floor for 3 unit collected is RM 183.80, so the order is RM 86.20 clear of it. His second row on the book: the first was s100 on 21 Aug, 1 unit at RM 100 after that row was restated down from RM 120. The lower unit rate here is the size taper, not a discount granted.",
+    "rid": "s130"
+   },
+   {
     "customer": "CY2-NIL",
     "qty": 2.5,
     "total": 230,
@@ -3107,9 +3121,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-02T12:05:40.066Z",
+  "QUEUE_COMMITTED": "2026-09-02T16:50:58.174Z",
   "PRICING": {
-   "takenAt": "2026-09-03T04:57:42.448Z",
+   "takenAt": "2026-09-03T06:53:36.408Z",
    "sizes": [
     0.5,
     1,
@@ -3265,15 +3279,15 @@
          "rm": 10
         },
         "deliveredShare": {
-         "v": 0.4166666666666667
+         "v": 0.38461538461538464
         }
        },
        "attrib": 1,
        "shrinkRate": 0.06177488578153123,
        "avgDel": {
-        "n": 116,
-        "kg": 293.2,
-        "mean": 2.5276
+        "n": 117,
+        "kg": 296.2,
+        "mean": 2.5316
        }
       },
       "policy": {
@@ -3543,10 +3557,10 @@
      }
     }
    },
-   "v": "v480"
+   "v": "v481"
   },
   "OPEN": {
-   "at": "2026-09-03T04:57:42.503Z",
+   "at": "2026-09-03T06:53:36.486Z",
    "count": 7,
    "byKey": {
     "CY2-NIL|undefined|230": {
@@ -3668,11 +3682,11 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 7,
-     "free": 7,
+     "onHand": 4,
+     "free": 4,
      "owedOut": 0,
-     "coverDays": 1.2,
-     "rate": 5.79,
+     "coverDays": 0.7,
+     "rate": 6,
      "owedToYou": 530,
      "promised": 2.5,
      "short": 0
@@ -3693,7 +3707,7 @@
     "salt": "2026-09-02",
     "oil": "2026-08-23"
    },
-   "v": "v480"
+   "v": "v481"
   }
  }
 }

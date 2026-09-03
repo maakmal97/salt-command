@@ -416,8 +416,11 @@ jobs:
           git commit -m "Clear the fold handoff: the rows are on the phone and marked committed"
           # Master can move while this job runs (on 03 Sep 2026 a merge landed in the same
           # minute and this push was refused), so rebase onto its tip first. Nothing else
-          # touches these two files, so the rebase cannot conflict.
-          git pull -q --rebase origin master
+          # touches these two files, so the rebase cannot conflict. --autostash because
+          # `npm test` above rebuilds public/ and leaves it dirty, which refuses a rebase
+          # outright: that is what failed the step on the v481 deploy and took the mirror
+          # re-seed down with it.
+          git pull -q --rebase --autostash origin master
           git push
 
       # KEEP THE MIRROR LEVEL WITH THE BOOK, added 22 Aug 2026.

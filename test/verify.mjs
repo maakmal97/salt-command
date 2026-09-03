@@ -583,6 +583,26 @@ section("Build — patches, scripts, no externals");
     ok(html.includes("if(idle())location.reload(); else offer(j.v)"),
       "a reload only happens when the desk is idle, otherwise it offers");
 
+    /* IDLE IS RUN, NOT READ (v482). The rule counted a queued entry as unsent work, and in
+       cloud mode the queue is emptied only by a load whose watermark has passed the entry, so
+       recording one disabled the auto-reload until the reload it was itself blocking. That is
+       a behaviour, so it is proved by calling the shipped function with a stubbed document
+       rather than by grepping for the line that was deleted. */
+    const idleSrc = (html.match(/function idle\(\)\{[\s\S]*?\}catch\(e\)\{return false;\}\}/) || [])[0];
+    ok(!!idleSrc, "the built desk carries the freshness idle test");
+    if (idleSrc) {
+      const runIdle = (q, doc) => new Function("queue", "document", idleSrc + "\nreturn idle();")(q, doc);
+      const quiet = { activeElement: null, querySelector: () => null };
+      ok(runIdle([{ at: "2026-09-03T00:50:58.174Z" }], quiet) === true,
+        "a queued entry does not block the auto-reload: it is in localStorage and survives one");
+      ok(runIdle([], quiet) === true, "an empty queue with nothing focused is idle");
+      ok(runIdle([{ at: "x" }], { activeElement: { tagName: "INPUT" }, querySelector: () => null }) === false,
+        "a focused field still blocks the reload, which is what the rule is for");
+      ok(runIdle([], { activeElement: null, querySelector: () => ({}) }) === false,
+        "an open dialog still blocks it");
+      ok(runIdle([], null) === false, "and a throw reads as not idle, never as idle");
+    }
+
     /* the id must actually move when the master does, or the poll can never fire. Round six:
        the old check hashed a mutated copy of the built desk alone and compared it to an id
        computed over DIFFERENT inputs by a DIFFERENT recipe, so the two always differed and
@@ -820,7 +840,8 @@ section("Worker — drafts and approval");
     ok(/\n  deploy:\n    if: github\.event_name == 'push' \|\| \(github\.event_name == 'workflow_dispatch' && !inputs\.stage_only\)/.test(wf),
        "the deploy runs on a push, which the fold's own push is, and stands aside on a stage-only dispatch");
     ok(!/needs\.fold/.test(wf), "and is not chained onto the fold job, or a fold would deploy and wake the phone twice");
-    ok(/git pull -q --rebase origin master\n\s+git push/.test(wf), "the handoff clear rebases before it pushes, because master moved under it once");
+    ok(/git pull -q --rebase --autostash origin master\n\s+git push/.test(wf),
+       "the handoff clear rebases before it pushes, autostashing what npm test rebuilt: master moved under it once, and the dirty tree refused the rebase the next time");
     ok((wf.match(/ref: master/g) || []).length >= 2, "the fold and the deploy check out master's tip, not the sha the run started on");
   }
 
@@ -6214,7 +6235,7 @@ section("Statements — the QR, the sort and the Salt identity");
   }
 }
 
-const FLOOR_ASSERTIONS = 1322, FLOOR_SECTIONS = 97;   /* live statements: 1326 everywhere, 1327 here */
+const FLOOR_ASSERTIONS = 1328, FLOOR_SECTIONS = 97;   /* live statements on v482: 1332 everywhere, 1333 here */
 ok(pass + fail - offMachine >= FLOOR_ASSERTIONS,
   `the suite ran ${pass + fail - offMachine} assertions everywhere (${pass + fail} here, ${offMachine} of them needing files that live off this repo), below its floor of ${FLOOR_ASSERTIONS}: a section has stopped running`);
 ok(sections >= FLOOR_SECTIONS,

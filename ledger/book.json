@@ -37,7 +37,7 @@
       "stated": 15
     }
   },
-  "STATED_STOCK": 7,
+  "STATED_STOCK": 4,
   "COUNT_ON": {
     "salt": "2026-09-02",
     "oil": "2026-08-23"
@@ -190,6 +190,7 @@
     {"customer":"CF5-WM","qty":2,"total":230,"cost":48,"cash":230,"handover":"delivered","date":"2026-09-02","deliveredQty":2,"deliveredOn":"2026-09-02","paidOn":"2026-09-02","note":"<b>FIRST ORDER FROM CF5-WM,</b> registered a minute earlier from the phone. RM115 a unit, above the board's two-unit ask of RM100 and clear of the floors; paid in full and collected on the day. Costed at RM48 from p019, the SA5-BTR lot that landed the same morning.","rid":"s127"},
     {"customer":"CA4-DAM","qty":1.5,"total":160,"cost":48,"cash":0,"handover":"collected","date":"2026-09-02","deliveredQty":1.5,"deliveredOn":"2026-09-02","note":"<b>1.5 UNIT COLLECTED ON CREDIT, NOTHING PAID.</b> RM 160 at RM 106.67 a unit, above CA4-DAM's median of RM 100 across thirteen earlier orders and inside his own range, whose top is RM 116.67 on 26 Jul. Clear of the collected floor of RM 104.40 at this size. Costed at RM 48 from p019, the shelf's own rate, returning RM 88 at 55.0%. <b>THIS IS HIS SECOND CREDIT AND IT FOLLOWS THE FIRST BY FOUR DAYS.</b> s117 of 28 Aug is RM 100 handed over, unpaid and marked defaulted on his word on 2 Sep, and its note says that credit was to be the last. The drafter raised the advance and asked for the cap against it; the row was approved two minutes after it was queued, so the flag was read before the decision. Total out to this party is now RM 260.","rid":"s128"},
     {"customer":"CM4-MK","qty":2,"total":220,"cost":48,"cash":220,"handover":"delivered","date":"2026-09-02","deliveredQty":2,"deliveredOn":"2026-09-02","paidOn":"2026-09-02","note":"<b>2 UNIT DELIVERED, PAID IN FULL ON THE DAY.</b> RM 220 at RM 110 a unit, which is his median and the same figure he paid on each of his three previous two-unit orders, on 23 Jul, 5 Aug and 17 Aug. Clear of the delivered floor of RM 140.87 on the order. Costed at RM 48 from p019, the shelf's own rate, returning RM 124 at 56.4%. The drafter raised no flag and there is nothing unusual on it: his seventh order, and like most of the six before it, it settled on the day it was placed.","rid":"s129"},
+    {"customer":"CM6-PJ","qty":3,"total":270,"cost":48,"cash":270,"handover":"collected","date":"2026-09-03","deliveredQty":3,"deliveredOn":"2026-09-03","paidOn":"2026-09-03","note":"Collected by CM6-PJ on 3 Sep 2026, 3 unit for RM 270, RM 90 a unit, paid RM 270 and taken in full on the day, so nothing is owed and nothing is left to move. Costed at RM 48 a unit off p019, the 31 Aug SA5-BTR lot that is the current shelf, which the desk's own stock cost confirms, so the draft was not written against a stale rate: RM 144 of cost, RM 126 gross, 46.7%. The floor for 3 unit collected is RM 183.80, so the order is RM 86.20 clear of it. His second row on the book: the first was s100 on 21 Aug, 1 unit at RM 100 after that row was restated down from RM 120. The lower unit rate here is the size taper, not a discount granted.","rid":"s130"},
     {"customer":"CY2-NIL","qty":2.5,"total":230,"cost":50,"cash":0,"deliveredQty":0,"agreedOn":"2026-08-28","rid":"s119"},
     {"customer":"CN6-WM","qty":1.5,"total":185,"cash":0,"deliveredQty":0,"cancelled":true,"cancelledOn":"2026-08-24","rid":"s108"},
     {"customer":"CS6-PER","qty":6.25,"total":350,"cash":0,"deliveredQty":0,"cancelled":true,"cancelledOn":"2026-08-24","rid":"s109"}
@@ -403,7 +404,7 @@
   "ONE_OFFS": [
     {"id":"CM6-HCM","date":"2026-07-14","note":"One-off; RM104/unit is an outlier."}
   ],
-  "QUEUE_COMMITTED": "2026-09-02T12:05:40.066Z",
+  "QUEUE_COMMITTED": "2026-09-02T16:50:58.174Z",
   "PRICE_SET": {
     "salt": {
       "prices": {},
@@ -422,6 +423,7 @@
   },
   "NOTES": {
     "STATED_STOCK": [
+      "ROLLED AT v481: 3 unit to CM6-PJ on 2026-09-03, so 7 less 3 is 4. A ROLL AND NOT A COUNT; COUNT_ON is untouched. The 3 unit went to CM6-PJ on 3 Sep, the day after the 2 Sep count of 10.5, and the entry sits above that batch's 12:05 watermark, so it comes off the count rather than inside it. The count of 2 Sep therefore stands as the last count and 4 unit is the shelf. The only commitment against it is s119, 2.5 unit to CY2-NIL, still pending and undated.",
       "ROLLED AT v480: 1.5 unit to CA4-DAM on 2026-09-02, 2 unit to CM4-MK on 2026-09-02, so 10.5 less 3.5 is 7. A ROLL AND NOT A COUNT; COUNT_ON is untouched. Both sales were queued at 12:05 on 2 Sep, after the batch that carried the 2 Sep count of 10.5, whose watermark is 10:40 the same day, so they come off that count rather than sitting inside it as the CF5-WM sale did at v473. The count of 10.5 therefore stands and these 3.5 unit are taken off it. That leaves 7 unit, against which the only standing commitment is s119, 2.5 unit to CY2-NIL, pending and undated.",
       "ROLLED AT v473: 2 unit to CF5-WM on 2026-09-02 had already left when he counted fifty seconds later, so the count of 10.5 STANDS as the shelf and this roll takes nothing off it. The drift measured after that sale is 6.25 unit, not 8.25. A ROLL AND NOT A COUNT; COUNT_ON is untouched. The count was approved with the gap in front of him; whether the same-morning lot p019 was on the shelf when he counted is for the next count to settle.",
       "COUNTED AT v473 on 2026-09-02: the salt shelf held 10.5 against 18.75 on the roll, a drift of -8.25. A COUNT AND NOT A ROLL, so COUNT_ON.salt moves to 2026-09-02. <b>COUNTED AT 10.5 AGAINST 18.75 ON THE BOOK,</b> approved with the gap shown. The 25-unit lot p019 landed the same morning; if it was not yet stacked when he counted, the next count will show a surplus of that size.",
