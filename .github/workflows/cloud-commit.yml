@@ -230,7 +230,8 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          claude_args: '--allowedTools "Bash,Read,Write,Edit,Glob,Grep" --max-turns 80'
+          show_full_output: true
+          claude_args: '--model claude-opus-5 --allowedTools "Bash,Read,Write,Edit,Glob,Grep" --max-turns 80'
           prompt: |
             You are the fold for the Salt Command trading book, running as the fold job of
             .github/workflows/cloud-commit.yml. This is a real ledger with real money in it; be
