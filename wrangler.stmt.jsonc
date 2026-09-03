@@ -1,0 +1,36 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	// THE STATEMENTS SITE (03 Sep 2026): a second Worker, on its own address, holding nothing but
+	// ciphertext. See stmt/worker.js for why it is not a route on salt-command. Deploy and address
+	// it with `-c wrangler.stmt.jsonc` on every wrangler command; the default config is the desk's.
+	//
+	// THE NAME IS THE ADDRESS, and it is cryptic on purpose (his instruction): a customer scans a
+	// code that opens https://<name>.<account>.workers.dev, and nothing in that name says salt,
+	// statement or ledger. Change it here and rebuild the statements, because the QR carries it
+	// (SALT_BASE_URL in tools/make_statements.mjs must agree). A custom domain on this Worker is
+	// the stronger version of the same idea, and goes in a "routes" block here when there is one.
+	"name": "k7m3p2",
+	"main": "stmt/worker.js",
+	"compatibility_date": "2026-08-08",
+	// ITS OWN STORE. One key per username (u:<username>) holding that customer's envelope and
+	// verifier, plus the attempt counters (fail:) and the opened marks (seen:). Nothing from the
+	// desk's namespace is bound here, so this Worker cannot read the queue or the vault even by
+	// a bug. Create with:
+	//   npx wrangler kv namespace create stmt -c wrangler.stmt.jsonc
+	// then paste the printed id below in place of the placeholder. The deploy job stands down
+	// while the placeholder is still here, so an unfinished setup cannot break a ledger deploy.
+	"kv_namespaces":
+	[
+		{
+			"binding": "STMT",
+			"id": "PLACEHOLDER_STMT_KV_ID",
+			"remote": true
+		}
+	],
+	// The owner's override lives in the STMT_MASTER secret:
+	//   npx wrangler secret put STMT_MASTER -c wrangler.stmt.jsonc
+	// Unset, the override is simply off and every open needs the customer's own password.
+	"observability": {
+		"enabled": true
+	}
+}

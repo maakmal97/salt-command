@@ -65,9 +65,9 @@ jobs:
       - name: The design in the master is design/salt-ds.css and design/desk.css
         run: node tools/designsync.mjs --check
 
-      # THE STATEMENT STYLESHEET THE WORKER SERVES IS THE ONE THE GENERATOR WRITES. The unlock
-      # page at /s/<CODE> is served by the Worker, which has no filesystem, so it cannot read
-      # design/salt-ds.css the way tools/stmt-style.mjs does; src/statement-css.js is that
+      # THE STATEMENT STYLESHEET THE SITE SERVES IS THE ONE THE GENERATOR WRITES. The landing
+      # page is served by the statements Worker, which has no filesystem, so it cannot read
+      # design/salt-ds.css the way tools/stmt-style.mjs does; stmt/statement-css.js is that
       # stylesheet baked flat. Same rule as the four checks above: the copy is proved, never
       # trusted, so a retune of the design system cannot leave a customer's page behind.
       - name: The statement stylesheet the Worker serves is the one the generator writes
