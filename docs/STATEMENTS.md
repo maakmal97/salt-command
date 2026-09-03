@@ -37,8 +37,14 @@ statements/<YYYY-MM>/_passwords.json                      GITIGNORED, never comm
 ```
 
 One per customer with anything to show, named by code so the folder sorts alphabetically, plus
-a review sheet stitching every account together. **The review sheet is not for sending.** It is
-labelled internally and exists so a whole run can be checked in one pass.
+a review sheet stitching every account together. **The review sheet is not for sending.** It puts
+every account beside every other, which is exactly what a statement must never do, and it exists
+so a whole run can be checked in one pass.
+
+**The passwords are in `_passwords.json` and nowhere else.** They were briefly in a column on the
+review sheet as well, which made the gitignore rule pointless: the review sheet is committed, so
+the same passwords went into git anyway. One place, and that place is not the repository. The
+suite asserts that no generated page contains one.
 
 **Check the folder before writing into it.** The generator overwrites silently and has no
 re-run guard. If `statements/<YYYY-MM>` already holds a set: same issue date is a clean retry
@@ -66,6 +72,19 @@ node tools/make_statements.mjs statements/<YYYY-MM> <YYYY-MM-DD>
 ```
 
 Plain node, no jsdom, no network, and the master is not an input.
+
+**A BACK-DATED SET IS AN ARCHIVE, and it takes `--archive`.**
+
+```bash
+node tools/make_statements.mjs statements/<YYYY-MM> <YYYY-MM-DD> --archive
+```
+
+It writes the statements and the review sheet and nothing else: no QR, no password, no
+encrypted record. The QR is the reason. It points at `/s/<CODE>`, and the Worker serves
+whichever month was published last, so a code printed on a July statement opens September's
+ciphertext and the reader is told his password was refused, on a document that looks perfectly
+current. A record of a past position is worth keeping; a dead code on it is not. The KV publish
+step skips a folder with no `_kv`, so an archive never becomes the live set.
 
 **The re-issue guard is in the tool, not in this file.** Same issue date is a clean retry and
 regenerates in place, keeping the passwords already issued, because minting fresh ones would

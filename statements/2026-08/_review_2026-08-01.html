@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Statements to review · 2026-08-01</title><style>:root {
+  /* The six colours of the identity */
+  --salt-obsidian: #05080a;   /* the ground; every surface sits on it */
+  --salt-slate: #0b1215;      /* deep panels, and the QR ink */
+  --salt-brass: #c5a059;      /* the leading accent */
+  --salt-copper: #b87333;     /* the closing accent; gradients end on it */
+  --salt-salt: #f2f4f5;       /* text, and the field behind the QR */
+  --salt-mist: #7a8690;       /* muted labels and captions */
+  --salt-mist-light: #a6afb5; /* mist for running prose at 13px, where mist itself is too dark */
+
+  /* The desk's semantic colours, added 02 Sep 2026. Direction and risk need hues the six
+     brand colours do not carry, and each sits in the identity's temperature: verdigris is
+     copper's patina, ember is copper under heat, steel is slate lit. Copper stays the one
+     accent that marks the exception, so attention is copper and never a fourth hue. */
+  --salt-verdigris: #6fae97;  /* settled, owed to you, in cover */
+  --salt-ember: #d4694c;      /* owed by you, defaulted, breached */
+  --salt-steel: #8ea2b6;      /* pending, neutral, the cool second series */
+  --salt-brass-soft: #d8c79c; /* pale brass for a second tier */
+
+  /* The two books: salt is the pale one, oil the golden one */
+  --salt-product-salt: #e4e9ec;
+  --salt-product-oil: #c5a059;
+
+  /* Materials */
+  --salt-glass: rgba(255, 255, 255, 0.03);
+  --salt-glass-faint: rgba(255, 255, 255, 0.02);
+  --salt-line: rgba(197, 160, 89, 0.22);
+  --salt-line-faint: rgba(255, 255, 255, 0.06);
+  --salt-highlight: rgba(255, 255, 255, 0.08);
+  --salt-shadow: 0 32px 64px rgba(0, 0, 0, 0.55);
+  --salt-shadow-desk: 0 18px 40px rgba(0, 0, 0, 0.42); /* lighter, for a page of many panes */
+  --salt-well: rgba(0, 0, 0, 0.28);      /* inset: fields and meter tracks */
+  --salt-veil: rgba(5, 8, 10, 0.86);     /* sticky and floating surfaces over content */
+  --salt-pane: rgba(11, 18, 21, 0.66);   /* the glass fill when there is no backdrop to blur */
+  --salt-tap: 44px;                      /* the least a control may measure, either way */
+
+  /* Gradients. Brass to copper for marks and fills; white to copper for titles. */
+  --salt-gradient: linear-gradient(135deg, var(--salt-brass), var(--salt-copper));
+  --salt-gradient-title: linear-gradient(135deg, #ffffff 30%, var(--salt-copper) 100%);
+
+  /* Semantic aliases */
+  --salt-surface: var(--salt-obsidian);
+  --salt-text: var(--salt-salt);
+  --salt-text-muted: var(--salt-mist);
+  --salt-text-label: var(--salt-copper);
+
+  /* Typography */
+  --salt-font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
+  --salt-font-mono: 'JetBrains Mono', 'Cascadia Mono', Consolas, monospace;
+
+  --salt-text-xs: 11px;
+  --salt-text-sm: 13px;
+  --salt-text-md: 15px;
+  --salt-text-lg: 17px;
+  --salt-text-xl: 24px;
+  --salt-text-2xl: 34px;
+  --salt-text-3xl: 48px;
+  --salt-text-4xl: 64px;
+  --salt-text-5xl: 88px;
+
+  /* Space, radius */
+  --salt-space-1: 4px;
+  --salt-space-2: 8px;
+  --salt-space-3: 12px;
+  --salt-space-4: 16px;
+  --salt-space-5: 24px;
+  --salt-space-6: 32px;
+  --salt-space-7: 48px;
+
+  --salt-radius-sm: 12px;
+  --salt-radius-md: 16px;
+  --salt-radius-lg: 24px;
+  --salt-radius-xl: 36px;
+  --salt-radius-pill: 100px;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;padding:44px 20px 60px;
+  color:var(--salt-text);
+  background:
+    radial-gradient(1200px 640px at 82% -12%, rgba(184,115,51,.16) 0%, transparent 62%),
+    radial-gradient(900px 560px at -10% 6%, rgba(197,160,89,.10) 0%, transparent 58%),
+    var(--salt-obsidian);
+  background-attachment:fixed;
+  font-family:var(--salt-font-display);
+  font-size:var(--salt-text-md);line-height:1.6;-webkit-font-smoothing:antialiased}
+
+/* FIGURES IN MONO, SENTENCES IN THE DISPLAY FACE. Decision 3 of the identity, and the whole
+   figure vocabulary of a statement is listed here once. */
+.dt,.q,.amt,.u,.tr span:last-child,.owedv,.who,.idx td,.mini td,.mini th,.pw,
+.ok,.due,.pend,.cx,.owedunits,.gift,.nilamt,.eyebrow,.whol,th,.rvh,.slab
+  {font-family:var(--salt-font-mono);font-variant-numeric:tabular-nums}
+
+.w{max-width:620px;margin:0 auto}
+.eyebrow{font-size:var(--salt-text-xs);letter-spacing:.32em;color:var(--salt-copper);
+  font-weight:700;margin:0 0 10px;text-transform:uppercase}
+h1{margin:0;font-size:var(--salt-text-2xl);font-weight:600;letter-spacing:-.01em;line-height:1.12;
+  font-family:var(--salt-font-display)}
+.meta{color:var(--salt-text-muted);font-size:var(--salt-text-sm);margin:10px 0 0}
+.whol{font-size:var(--salt-text-xs);letter-spacing:.2em;text-transform:uppercase;
+  color:var(--salt-copper);font-weight:700;margin:0}
+.whol.gap1{margin:26px 0 0}.whol.gap2{margin:30px 0 0}
+.who{margin:8px 0 4px;font-size:var(--salt-text-lg);font-weight:700;color:var(--salt-text);
+  letter-spacing:.06em}
+/* brass leads the hairlines: decision 1 */
+.rule{height:1px;background:var(--salt-line);margin:24px 0 4px;border:0}
+
+.tblw{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:collapse;min-width:340px}
+table.rft{margin-top:10px}
+th{font-size:var(--salt-text-xs);letter-spacing:.16em;text-transform:uppercase;
+  color:var(--salt-text-muted);font-weight:700;padding:0 0 10px;text-align:right;white-space:nowrap}
+th.l{text-align:left}
+td{padding:15px 0;border-bottom:1px solid var(--salt-line-faint);text-align:right;vertical-align:top}
+td.l{text-align:left}
+.dt{font-size:var(--salt-text-md);color:var(--salt-text)}
+.nodt{color:var(--salt-text-muted)}
+.sub2{font-size:var(--salt-text-sm);color:var(--salt-text-muted);margin-top:4px;
+  font-family:var(--salt-font-display)}
+.rsn{font-size:var(--salt-text-sm);color:var(--salt-text-muted);font-family:var(--salt-font-display)}
+.q{font-size:var(--salt-text-md);color:var(--salt-mist-light)}
+.u{font-size:var(--salt-text-xs);color:var(--salt-text-muted);margin-left:5px}
+.amt{font-size:var(--salt-text-lg);font-weight:700;color:var(--salt-text)}
+
+/* THE THREE WORDS. Each is a mono word in its colour; nothing here is a filled badge. */
+.ok{font-size:var(--salt-text-sm);color:var(--salt-verdigris);letter-spacing:.02em}
+.due{font-size:var(--salt-text-sm);font-weight:700;color:var(--salt-ember);white-space:nowrap}
+.pend{color:var(--salt-steel);font-weight:700;font-size:var(--salt-text-sm);letter-spacing:.02em}
+.owedunits{font-size:var(--salt-text-sm);color:var(--salt-verdigris);margin-top:5px;
+  font-weight:600;white-space:nowrap}
+.cx{color:var(--salt-text-muted);font-weight:700;font-size:var(--salt-text-sm);letter-spacing:.02em}
+.cxn{color:var(--salt-text-muted);font-weight:600}
+.cxr{text-decoration:line-through;text-decoration-thickness:1px;opacity:.45}
+.gift{font-size:var(--salt-text-sm);color:var(--salt-mist-light);letter-spacing:.02em;white-space:nowrap}
+.nilamt{color:var(--salt-text-muted);font-weight:400}
+
+.tot{margin-top:30px}
+.tr{display:flex;justify-content:space-between;align-items:baseline;gap:14px;padding:8px 0;
+  font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
+.tr span:last-child{color:var(--salt-text);white-space:nowrap}
+.tr.big{margin-top:10px;padding-top:16px;border-top:1px solid var(--salt-line);
+  font-size:var(--salt-text-xl);font-weight:700;color:var(--salt-text)}
+.tr.big span:last-child{color:var(--salt-ember)}
+.tr.big.clear span:last-child{color:var(--salt-verdigris)}
+.tr.sub{color:var(--salt-text-muted);font-size:var(--salt-text-sm)}
+
+/* GLASS ONCE: a pane is white 3% with a brass hairline. A pane inside a pane is flat. */
+.owed,.rec{margin-top:26px;border:1px solid var(--salt-line);border-radius:var(--salt-radius-md);
+  background:var(--salt-glass)}
+.owed{padding:20px 22px}
+.owedl{margin:0;font-size:var(--salt-text-xs);letter-spacing:.2em;text-transform:uppercase;
+  color:var(--salt-copper);font-weight:700}
+.owedv{margin:8px 0 0;font-size:var(--salt-text-2xl);font-weight:700;color:var(--salt-verdigris);
+  letter-spacing:-.01em}
+.owedv span{font-size:var(--salt-text-md);font-weight:600;margin-left:6px;color:var(--salt-text-muted)}
+.owedn{margin:12px 0 0;font-size:var(--salt-text-sm);color:var(--salt-text-muted);line-height:1.6}
+.rec{padding:22px 22px 8px}
+.recl{margin:0 0 18px;font-size:var(--salt-text-xs);letter-spacing:.2em;text-transform:uppercase;
+  color:var(--salt-copper);font-weight:700}
+.stp{display:flex;gap:14px;margin-bottom:20px}
+.stpn{flex:0 0 24px;height:24px;border-radius:var(--salt-radius-pill);border:1px solid var(--salt-line);
+  color:var(--salt-brass);font-size:var(--salt-text-xs);font-weight:700;font-family:var(--salt-font-mono);
+  display:flex;align-items:center;justify-content:center;line-height:1}
+.stpb{flex:1 1 auto;min-width:0}
+.stpt{margin:0;font-size:var(--salt-text-md);font-weight:600;color:var(--salt-text);line-height:1.5}
+.stpd{margin:7px 0 0;font-size:var(--salt-text-sm);color:var(--salt-text-muted);line-height:1.65}
+table.mini{width:100%;border-collapse:collapse;margin-top:10px;min-width:0}
+table.mini th{font-size:var(--salt-text-xs);letter-spacing:.14em;padding:0 0 6px;color:var(--salt-text-muted)}
+table.mini td{padding:8px 0;font-size:var(--salt-text-sm);border-bottom:1px solid var(--salt-line-faint);
+  color:var(--salt-mist-light)}
+table.mini tr.tot td{border-bottom:0;border-top:1px solid var(--salt-line);font-weight:700;
+  color:var(--salt-text);padding-top:9px}
+table.mini tr.sub td{border-bottom:0;color:var(--salt-text);font-weight:700}
+b.short{color:var(--salt-ember)}
+.recn{margin:2px 0 16px;font-size:var(--salt-text-sm);color:var(--salt-text-muted);line-height:1.65;
+  border-top:1px solid var(--salt-line-faint);padding-top:14px}
+.note{margin-top:34px;font-size:var(--salt-text-sm);color:var(--salt-text-muted);line-height:1.7}
+
+/* The QR block. A code on paper is only useful if what it opens is written beside it. */
+.qrb{margin-top:34px;display:flex;gap:20px;align-items:center;
+  border-top:1px solid var(--salt-line);padding-top:26px}
+.qrb svg{border-radius:var(--salt-radius-sm);display:block;flex:0 0 auto}
+.qrt{margin:0;font-size:var(--salt-text-sm);color:var(--salt-text-muted);line-height:1.7}
+.qrt code{font-family:var(--salt-font-mono);font-size:var(--salt-text-xs);color:var(--salt-brass);
+  word-break:break-all}
+@media (max-width:460px){.qrb{flex-direction:column;align-items:flex-start}}
+
+@media print{
+  body{background:#fff;color:#111;padding:24px}
+  .eyebrow,.whol,.owedl,.recl{color:#8a5a20}
+  .meta,.note,.sub2,.u,.nilamt,.cxn,.cx,.stpd,.recn,.qrt,.rsn,.nodt{color:#555}
+  .q,.mini td{color:#333}
+  .ok,.owedunits,.tr.big.clear span:last-child,.owedv{color:#1d6b52}
+  .due,.tr.big span:last-child,b.short{color:#a8442c}
+  .pend{color:#41586e}
+  .gift{color:#555}
+  td{border-color:#ddd}.rule,.tr.big{border-color:#c9ad74}
+  .tr{color:#333}.tr span:last-child,.amt,.dt{color:#111}
+  .owed,.rec{background:#fbfaf7;border-color:#d8c79c}
+  .stpn{color:#8a5a20;border-color:#d8c79c}
+  .stpt{color:#111}
+  .qrb{border-color:#ddd}.qrt code{color:#8a5a20}
+}
+.rv{max-width:960px;margin:0 auto 40px}
+.rvh{font-size:var(--salt-text-xs);letter-spacing:.3em;text-transform:uppercase;
+  color:var(--salt-copper);font-weight:700;margin:0 0 10px}
+.rvt{margin:0 0 8px;font-size:var(--salt-text-2xl);font-weight:600;letter-spacing:-.01em}
+.rvs{color:var(--salt-text-muted);font-size:var(--salt-text-sm);margin:0 0 26px;line-height:1.7}
+.rvs b{color:var(--salt-text)}
+.idxw{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.idx{width:100%;border-collapse:collapse;margin-bottom:14px;min-width:760px}
+.idx th{font-size:var(--salt-text-xs);letter-spacing:.16em;text-transform:uppercase;
+  color:var(--salt-text-muted);font-weight:700;padding:0 10px 9px;text-align:right;
+  border-bottom:1px solid var(--salt-line);white-space:nowrap}
+.idx th.l{text-align:left}
+.idx td{padding:11px 10px;border-bottom:1px solid var(--salt-line-faint);text-align:right;
+  font-size:var(--salt-text-sm)}
+.idx td.l{text-align:left}.idx td.r{text-align:right}
+.idx a{color:var(--salt-brass);text-decoration:none;font-weight:700}
+.idx a:hover{text-decoration:underline}
+.idx tr.f-owes{background:rgba(212,105,76,.07)}
+.idx tr.f-goods{background:rgba(111,174,151,.07)}
+.idx tr.f-pend{background:rgba(142,162,182,.07)}
+/* v454's fourth flag: money owed back TO a customer. It is the owner's liability, so it takes
+   ember like anything else he owes, and the row tint follows the same reading. */
+.idx tr.f-refund{background:rgba(212,105,76,.07)}
+b.owe{color:var(--salt-ember)}b.gd{color:var(--salt-verdigris)}b.pd{color:var(--salt-steel)}
+b.rf{color:var(--salt-ember)}
+.pw{font-size:var(--salt-text-sm);color:var(--salt-brass);letter-spacing:.04em;white-space:nowrap}
+.cut{margin:0;border:0;border-top:1px dashed var(--salt-line);padding:0}
+.slab{max-width:960px;margin:34px auto 6px;font-size:var(--salt-text-xs);letter-spacing:.24em;
+  text-transform:uppercase;color:var(--salt-copper);font-weight:700}
+.warn{max-width:960px;margin:0 auto 26px;border:1px solid rgba(212,105,76,.4);
+  border-radius:var(--salt-radius-md);padding:16px 20px;background:rgba(212,105,76,.08);
+  color:var(--salt-mist-light);font-size:var(--salt-text-sm);line-height:1.7}
+.warn b{color:var(--salt-ember)}
+@media print{
+  .rv,.slab{color:#111}.idx a{color:#8a5a20}.sheet{page-break-after:always}
+  .rvs,.idx td{color:#333}.pw{color:#000}
+  .warn{background:#fdf4f1;border-color:#e0a894;color:#333}
+  .idx tr.f-owes,.idx tr.f-goods,.idx tr.f-pend{background:transparent}
+}</style></head><body><div class="warn"><b>A record of a past issue.</b> These statements carry no QR and no password: the code would point at whatever month was published last, so on a back-issue it would open a different statement and the reader would be told his password was refused. Kept as the position as the book now understands it on that date.</div><div class="rv"><p class="rvh">For review, not for sending</p><h1 class="rvt">26 statements</h1><p class="rvs">Issued 01 Aug 2026. Every statement below is exactly the file that would go to that customer, stitched together so they can be read in one pass. None carries a balance. <b>1</b> holds an order agreed but not yet collected or paid, which is money to chase rather than money owed.</p><table class="idx"><thead><tr><th class="l">Account</th><th>Orders</th><th>Quantity</th><th>Ordered</th><th>Paid</th><th class="r">Outstanding</th><th class="r">Owed goods</th><th class="r">Not actioned</th></tr></thead><tbody><tr class="f-clear"><td class="l"><a href="#s-CA4-DAM">CA4-DAM</a></td><td>5</td><td>4.5</td><td>475.00</td><td>475.00</td><td class="r">&mdash;</td><td class="r">&mdash;</td><td class="r">&mdash;</td></tr><tr class="f-clear"><td class="l"><a href="#s-CA5-KER">CA5-KER</a></td><td>1</td><td>1</td><td>120.00</td><td>120.00</td><td class="r">&mdash;</td><td class="r">&mdash;</td><td class="r">&mdash;</td></tr><tr class="f-clear"><td class="l"><a href="#s-CA5-SEN">CA5-SEN</a></td><td>1</td><td>2.5</td><td>270.00</td><td>270.00</td><td class="r">&mdash;</td><td class="r">&mdash;</td><td class="r">&mdash;</td></tr><tr class="f-clear"><td class="l"><a href="#s-CC5-OKR">CC5-OKR</a></td><td>2</td><td>2</td><td>180.00</td><td>180.00</td><td class="r">&mdash;</td><td class="r">&mdash;</td><td class="r">&mdash;</td></tr><tr class="f-clear"><td class="l"><a href="#s-CD4-CS">CD4-CS</a></td><td>1</td><td>1</td><td>150.00</td><td>150.00</td><td class="r">&mdash;</td><td class="r">&mdash;</td><td class="r">&mdash;</td></tr><tr class="f-clear"><td class="l"><a href="#s-CE4-AD">CE4-AD</a></td><td>1</td><td>5</td><td>400.00</td><td>400.00</td><td class="r">&mdash;</td><td class="r">&mdash;</td><td class="r">&mdash;</td></tr><tr class="f-clear"><td class="l"><a href="#s-CE4-CHE">CE4-CHE</a></td><td>3</td><td>7.5</td><td>710.00</td><td>710.00</td><td class="r">&mdash;</td><td class="r">&mdash;</td><td class="r">&mdash;</td></tr><tr class="f-clear"><td class="l"><a href="#s-CG5-SB">CG5-SB</a></td><td>3</td><td>7</td><td>700.00</td><td>700.00</td><td class="r">&mdash;</td><td class="r">&mdash;</td><td class="r">&mdash;</td></tr><tr class="f-clear"><td class="l"><a href="#s-CH5-KLC">CH5-KLC</a></td><td>1</td><td>0.5</td><td>105.00</td><td>105.00</td><td class="r">&mdash;</td><td class="r">&mdash;</td><td class="r">&mdash;</td></tr><tr class="f-clear"><td class="l"><a href="#s-CH6-SET">CH6-SET</a></td><td>1</td><td>2</td><td>230.00</td><td>230.00</td><td class="r">&mdash;</td><td class="r">&mdash;</td><td class="r">&mdash;</td></tr><tr class="f-clear"><td class="l"><a href="#s-CI4-OKR">CI4-OKR</a></td><td>1</td><td>2</td><td>185.00</td><td>185.00</td><td class="r">&mdash;</td><td class="r">&mdash;</td><td class="r">&mdash;</td></tr><tr class="f-clear"><td class="l"><a href="#s-CJ4-BJ">CJ4-BJ</a></td><td>4</td><td>18</td><td>1,400.00</td><td>1,400.00</td><td class="r">&mdash;</td><td class="r">&mdash;</td><td class="r">&mdash;</td></tr><tr class="f-clear"><td class="l"><a href="#s-CJ4-OKR">CJ4-OKR</a></td><td>1</td><td>1</td><td>0.00</td><td>0.00</td><td class="r">&mdash;</td><td class="r">&mdash;</td><td class="r">&mdash;</td></tr><tr class="f-clear"><td class="l"><a href="#s-CM4-MK">CM4-MK</a></td><td>2</td><td>4.2</td><td>430.00</td><td>430.00</td><td class="r">&mdash;</td><td class="r">&mdash;</td><td class="r">&mdash;</td></tr><tr class="f-clear"><td class="l"><a href="#s-CM4-SK">CM4-SK</a></td><td>1</td><td>12.5</td><td>825.00</td><td>825.00</td><td class="r">&mdash;</td><td class="r">&mdash;</td><td class="r">&mdash;</td></tr><tr class="f-clear"><td class="l"><a href="#s-CM6-HCM">CM6-HCM</a></td><td>1</td><td>12.5</td><td>1,300.00</td><td>1,300.00</td><td class="r">&mdash;</td><td class="r">&mdash;</td><td class="r">&mdash;</td></tr><tr class="f-clear"><td class="l"><a href="#s-CN5-TAI">CN5-TAI</a></td><td>1</td><td>2</td><td>200.00</td><td>200.00</td><td class="r">&mdash;</td><td class="r">&mdash;</td><td class="r">&mdash;</td></tr><tr class="f-clear"><td class="l"><a href="#s-CN6-WM">CN6-WM</a></td><td>1</td><td>0.5</td><td>0.00</td><td>0.00</td><td class="r">&mdash;</td><td class="r">&mdash;</td><td class="r">&mdash;</td></tr><tr class="f-clear"><td class="l"><a href="#s-CR3-DAM">CR3-DAM</a></td><td>5</td><td>5</td><td>415.00</td><td>415.00</td><td class="r">&mdash;</td><td class="r">&mdash;</td><td class="r">&mdash;</td></tr><tr class="f-clear"><td class="l"><a href="#s-CR4-PJ">CR4-PJ</a></td><td>1</td><td>12.5</td><td>830.00</td><td>830.00</td><td class="r">&mdash;</td><td class="r">&mdash;</td><td class="r">&mdash;</td></tr><tr class="f-clear"><td class="l"><a href="#s-CS6-BS">CS6-BS</a></td><td>4</td><td>4</td><td>202.00</td><td>202.00</td><td class="r">&mdash;</td><td class="r">&mdash;</td><td class="r">&mdash;</td></tr><tr class="f-clear"><td class="l"><a href="#s-CS6-BS-R">CS6-BS-R</a></td><td>4</td><td>12</td><td>1,100.00</td><td>1,100.00</td><td class="r">&mdash;</td><td class="r">&mdash;</td><td class="r">&mdash;</td></tr><tr class="f-clear"><td class="l"><a href="#s-CS6-PER">CS6-PER</a></td><td>2</td><td>19.75</td><td>1,370.00</td><td>1,370.00</td><td class="r">&mdash;</td><td class="r">&mdash;</td><td class="r">&mdash;</td></tr><tr class="f-pend"><td class="l"><a href="#s-CY2-NIL">CY2-NIL</a></td><td>1</td><td>2.5</td><td>230.00</td><td>0.00</td><td class="r">&mdash;</td><td class="r">&mdash;</td><td class="r"><b class="pd">230.00</b></td></tr><tr class="f-clear"><td class="l"><a href="#s-CZ4-MK">CZ4-MK</a></td><td>1</td><td>5</td><td>435.00</td><td>435.00</td><td class="r">&mdash;</td><td class="r">&mdash;</td><td class="r">&mdash;</td></tr><tr class="f-clear"><td class="l"><a href="#s-CZ6-WM">CZ6-WM</a></td><td>1</td><td>1</td><td>100.00</td><td>100.00</td><td class="r">&mdash;</td><td class="r">&mdash;</td><td class="r">&mdash;</td></tr></tbody><tfoot><tr><td class="l"><b>All</b></td><td>50</td><td>147.45</td><td>12,362.00</td><td>12,132.00</td><td class="r"><b class="owe">0.00</b></td><td class="r"><b class="gd">0 unit</b></td><td class="r"><b class="pd">230.00</b></td></tr></tfoot></table></div><p class="slab" id="s-CA4-DAM">CA4-DAM</p><hr class="cut"><div class="sheet"><div class="w">
+<p class="eyebrow">Salt Command</p>
+<h1>Statement of account</h1>
+<p class="meta">Issued 01 Aug 2026 &middot; every order placed up to 01 Aug 2026, shown as the account stands today</p>
+<p class="whol gap1">Account</p>
+<div class="who">CA4-DAM</div>
+<div class="rule"></div>
+<table><thead><tr><th class="l">Date</th><th>Quantity</th><th>Amount</th><th class="r">Status</th></tr></thead><tbody><tr><td class="l dt">12 Jul 2026</td><td class="q">1<span class="u">unit</span></td><td class="amt">100.00</td><td class="r"><span class="ok">settled</span></td></tr><tr><td class="l dt">20 Jul 2026<div class="sub2">paid 21 Jul 2026</div></td><td class="q">0.5<span class="u">unit</span></td><td class="amt">50.00</td><td class="r"><span class="ok">settled</span></td></tr><tr><td class="l dt">22 Jul 2026<div class="sub2">paid 23 Jul 2026</div></td><td class="q">0.5<span class="u">unit</span></td><td class="amt">50.00</td><td class="r"><span class="ok">settled</span></td></tr><tr><td class="l dt">26 Jul 2026<div class="sub2">paid 28 Jul 2026</div></td><td class="q">1.5<span class="u">unit</span></td><td class="amt">175.00</td><td class="r"><span class="ok">settled</span></td></tr><tr><td class="l dt">01 Aug 2026</td><td class="q">1<span class="u">unit</span></td><td class="amt">100.00</td><td class="r"><span class="ok">settled</span></td></tr></tbody></table>
+
+<div class="tot">
+<div class="tr"><span>5 orders, 4.5 unit</span><span>475.00</span></div>
+<div class="tr"><span>Paid</span><span>475.00</span></div>
+
+
+<div class="tr big clear"><span>Balance</span><span>nil</span></div>
+
+</div>
+
+
+<p class="note">Amounts in ringgit. This statement covers your own orders only, taken from the seller&rsquo;s records as at the issue date. If anything differs from your own, say so and it will be checked.</p>
+</div></div><p class="slab" id="s-CA5-KER">CA5-KER</p><hr class="cut"><div class="sheet"><div class="w">
+<p class="eyebrow">Salt Command</p>
+<h1>Statement of account</h1>
+<p class="meta">Issued 01 Aug 2026 &middot; every order placed up to 01 Aug 2026, shown as the account stands today</p>
+<p class="whol gap1">Account</p>
+<div class="who">CA5-KER</div>
+<div class="rule"></div>
+<table><thead><tr><th class="l">Date</th><th>Quantity</th><th>Amount</th><th class="r">Status</th></tr></thead><tbody><tr><td class="l dt">28 Jul 2026<div class="sub2">paid 03 Aug 2026</div></td><td class="q">1<span class="u">unit</span></td><td class="amt">120.00</td><td class="r"><span class="ok">settled</span></td></tr></tbody></table>
+
+<div class="tot">
+<div class="tr"><span>1 order, 1 unit</span><span>120.00</span></div>
+<div class="tr"><span>Paid</span><span>120.00</span></div>
+
+
+<div class="tr big clear"><span>Balance</span><span>nil</span></div>
+
+</div>
+
+
+<p class="note">Amounts in ringgit. This statement covers your own orders only, taken from the seller&rsquo;s records as at the issue date. If anything differs from your own, say so and it will be checked.</p>
+</div></div><p class="slab" id="s-CA5-SEN">CA5-SEN</p><hr class="cut"><div class="sheet"><div class="w">
+<p class="eyebrow">Salt Command</p>
+<h1>Statement of account</h1>
+<p class="meta">Issued 01 Aug 2026 &middot; every order placed up to 01 Aug 2026, shown as the account stands today</p>
+<p class="whol gap1">Account</p>
+<div class="who">CA5-SEN</div>
+<div class="rule"></div>
+<table><thead><tr><th class="l">Date</th><th>Quantity</th><th>Amount</th><th class="r">Status</th></tr></thead><tbody><tr><td class="l dt">31 Jul 2026</td><td class="q">2.5<span class="u">unit</span></td><td class="amt">270.00</td><td class="r"><span class="ok">settled</span></td></tr></tbody></table>
+
+<div class="tot">
+<div class="tr"><span>1 order, 2.5 unit</span><span>270.00</span></div>
+<div class="tr"><span>Paid</span><span>270.00</span></div>
+
+
+<div class="tr big clear"><span>Balance</span><span>nil</span></div>
+
+</div>
+
+
+<p class="note">Amounts in ringgit. This statement covers your own orders only, taken from the seller&rsquo;s records as at the issue date. If anything differs from your own, say so and it will be checked.</p>
+</div></div><p class="slab" id="s-CC5-OKR">CC5-OKR</p><hr class="cut"><div class="sheet"><div class="w">
+<p class="eyebrow">Salt Command</p>
+<h1>Statement of account</h1>
+<p class="meta">Issued 01 Aug 2026 &middot; every order placed up to 01 Aug 2026, shown as the account stands today</p>
+<p class="whol gap1">Account</p>
+<div class="who">CC5-OKR</div>
+<div class="rule"></div>
+<table><thead><tr><th class="l">Date</th><th>Quantity</th><th>Amount</th><th class="r">Status</th></tr></thead><tbody><tr><td class="l dt">09 Jul 2026</td><td class="q">1<span class="u">unit</span></td><td class="amt">90.00</td><td class="r"><span class="ok">settled</span></td></tr><tr><td class="l dt">15 Jul 2026</td><td class="q">1<span class="u">unit</span></td><td class="amt">90.00</td><td class="r"><span class="ok">settled</span></td></tr><tr><td class="l dt">20 Jul 2026</td><td class="q cxr">1<span class="u">unit</span></td><td class="amt cxr">90.00</td><td class="r"><span class="cx">cancelled</span><div class="owedunits">21 Jul 2026</div></td></tr></tbody></table>
+
+<div class="tot">
+<div class="tr"><span>2 orders, 2 unit<span class="cxn"> &middot; 1 cancelled, not counted</span></span><span>180.00</span></div>
+<div class="tr"><span>Paid</span><span>180.00</span></div>
+
+
+<div class="tr big clear"><span>Balance</span><span>nil</span></div>
+
+</div>
+
+
+<p class="note">Amounts in ringgit. This statement covers your own orders only, taken from the seller&rsquo;s records as at the issue date. If anything differs from your own, say so and it will be checked.</p>
+</div></div><p class="slab" id="s-CD4-CS">CD4-CS</p><hr class="cut"><div class="sheet"><div class="w">
+<p class="eyebrow">Salt Command</p>
+<h1>Statement of account</h1>
+<p class="meta">Issued 01 Aug 2026 &middot; every order placed up to 01 Aug 2026, shown as the account stands today</p>
+<p class="whol gap1">Account</p>
+<div class="who">CD4-CS</div>
+<div class="rule"></div>
+<table><thead><tr><th class="l">Date</th><th>Quantity</th><th>Amount</th><th class="r">Status</th></tr></thead><tbody><tr><td class="l dt">25 Jul 2026<div class="sub2">paid 06 Aug 2026</div></td><td class="q">1<span class="u">unit</span></td><td class="amt">150.00</td><td class="r"><span class="ok">settled</span></td></tr></tbody></table>
+
+<div class="tot">
+<div class="tr"><span>1 order, 1 unit</span><span>150.00</span></div>
+<div class="tr"><span>Paid</span><span>150.00</span></div>
+
+
+<div class="tr big clear"><span>Balance</span><span>nil</span></div>
+
+</div>
+
+
+<p class="note">Amounts in ringgit. This statement covers your own orders only, taken from the seller&rsquo;s records as at the issue date. If anything differs from your own, say so and it will be checked.</p>
+</div></div><p class="slab" id="s-CE4-AD">CE4-AD</p><hr class="cut"><div class="sheet"><div class="w">
+<p class="eyebrow">Salt Command</p>
+<h1>Statement of account</h1>
+<p class="meta">Issued 01 Aug 2026 &middot; every order placed up to 01 Aug 2026, shown as the account stands today</p>
+<p class="whol gap1">Account</p>
+<div class="who">CE4-AD</div>
+<div class="rule"></div>
+<table><thead><tr><th class="l">Date</th><th>Quantity</th><th>Amount</th><th class="r">Status</th></tr></thead><tbody><tr><td class="l dt">28 Jul 2026<div class="sub2">paid 29 Jul 2026</div></td><td class="q">5<span class="u">unit</span></td><td class="amt">400.00</td><td class="r"><span class="ok">settled</span></td></tr></tbody></table>
+
+<div class="tot">
+<div class="tr"><span>1 order, 5 unit</span><span>400.00</span></div>
+<div class="tr"><span>Paid</span><span>400.00</span></div>
+
+
+<div class="tr big clear"><span>Balance</span><span>nil</span></div>
+
+</div>
+
+
+<p class="note">Amounts in ringgit. This statement covers your own orders only, taken from the seller&rsquo;s records as at the issue date. If anything differs from your own, say so and it will be checked.</p>
+</div></div><p class="slab" id="s-CE4-CHE">CE4-CHE</p><hr class="cut"><div class="sheet"><div class="w">
+<p class="eyebrow">Salt Command</p>
+<h1>Statement of account</h1>
+<p class="meta">Issued 01 Aug 2026 &middot; every order placed up to 01 Aug 2026, shown as the account stands today</p>
+<p class="whol gap1">Account</p>
+<div class="who">CE4-CHE</div>
+<div class="rule"></div>
+<table><thead><tr><th class="l">Date</th><th>Quantity</th><th>Amount</th><th class="r">Status</th></tr></thead><tbody><tr><td class="l dt">20 Jul 2026</td><td class="q">2.5<span class="u">unit</span></td><td class="amt">250.00</td><td class="r"><span class="ok">settled</span></td></tr><tr><td class="l dt">23 Jul 2026</td><td class="q">2.5<span class="u">unit</span></td><td class="amt">230.00</td><td class="r"><span class="ok">settled</span></td></tr><tr><td class="l dt">31 Jul 2026</td><td class="q">2.5<span class="u">unit</span></td><td class="amt">230.00</td><td class="r"><span class="ok">settled</span></td></tr></tbody></table>
+
+<div class="tot">
+<div class="tr"><span>3 orders, 7.5 unit</span><span>710.00</span></div>
+<div class="tr"><span>Paid</span><span>710.00</span></div>
+
+
+<div class="tr big clear"><span>Balance</span><span>nil</span></div>
+
+</div>
+
+
+<p class="note">Amounts in ringgit. This statement covers your own orders only, taken from the seller&rsquo;s records as at the issue date. If anything differs from your own, say so and it will be checked.</p>
+</div></div><p class="slab" id="s-CG5-SB">CG5-SB</p><hr class="cut"><div class="sheet"><div class="w">
+<p class="eyebrow">Salt Command</p>
+<h1>Statement of account</h1>
+<p class="meta">Issued 01 Aug 2026 &middot; every order placed up to 01 Aug 2026, shown as the account stands today</p>
+<p class="whol gap1">Account</p>
+<div class="who">CG5-SB</div>
+<div class="rule"></div>
+<table><thead><tr><th class="l">Date</th><th>Quantity</th><th>Amount</th><th class="r">Status</th></tr></thead><tbody><tr><td class="l dt">26 Jun 2026</td><td class="q">1<span class="u">unit</span></td><td class="amt">100.00</td><td class="r"><span class="ok">settled</span></td></tr><tr><td class="l dt">27 Jun 2026</td><td class="q">3<span class="u">unit</span></td><td class="amt">300.00</td><td class="r"><span class="ok">settled</span></td></tr><tr><td class="l dt">01 Jul 2026</td><td class="q">3<span class="u">unit</span></td><td class="amt">300.00</td><td class="r"><span class="ok">settled</span></td></tr></tbody></table>
+
+<div class="tot">
+<div class="tr"><span>3 orders, 7 unit</span><span>700.00</span></div>
+<div class="tr"><span>Paid</span><span>700.00</span></div>
+
+
+<div class="tr big clear"><span>Balance</span><span>nil</span></div>
+
+</div>
+
+
+<p class="note">Amounts in ringgit. This statement covers your own orders only, taken from the seller&rsquo;s records as at the issue date. If anything differs from your own, say so and it will be checked.</p>
+</div></div><p class="slab" id="s-CH5-KLC">CH5-KLC</p><hr class="cut"><div class="sheet"><div class="w">
+<p class="eyebrow">Salt Command</p>
+<h1>Statement of account</h1>
+<p class="meta">Issued 01 Aug 2026 &middot; every order placed up to 01 Aug 2026, shown as the account stands today</p>
+<p class="whol gap1">Account</p>
+<div class="who">CH5-KLC</div>
+<div class="rule"></div>
+<table><thead><tr><th class="l">Date</th><th>Quantity</th><th>Amount</th><th class="r">Status</th></tr></thead><tbody><tr><td class="l dt">17 Jul 2026</td><td class="q">0.5<span class="u">unit</span></td><td class="amt">105.00</td><td class="r"><span class="ok">settled</span></td></tr><tr><td class="l dt">31 Jul 2026</td><td class="q cxr">0.5<span class="u">unit</span></td><td class="amt cxr">80.00</td><td class="r"><span class="cx">cancelled</span><div class="owedunits">05 Aug 2026</div></td></tr></tbody></table>
+
+<div class="tot">
+<div class="tr"><span>1 order, 0.5 unit<span class="cxn"> &middot; 1 cancelled, not counted</span></span><span>105.00</span></div>
+<div class="tr"><span>Paid</span><span>105.00</span></div>
+
+
+<div class="tr big clear"><span>Balance</span><span>nil</span></div>
+
+</div>
+
+
+<p class="note">Amounts in ringgit. This statement covers your own orders only, taken from the seller&rsquo;s records as at the issue date. If anything differs from your own, say so and it will be checked.</p>
+</div></div><p class="slab" id="s-CH6-SET">CH6-SET</p><hr class="cut"><div class="sheet"><div class="w">
+<p class="eyebrow">Salt Command</p>
+<h1>Statement of account</h1>
+<p class="meta">Issued 01 Aug 2026 &middot; every order placed up to 01 Aug 2026, shown as the account stands today</p>
+<p class="whol gap1">Account</p>
+<div class="who">CH6-SET</div>
+<div class="rule"></div>
+<table><thead><tr><th class="l">Date</th><th>Quantity</th><th>Amount</th><th class="r">Status</th></tr></thead><tbody><tr><td class="l dt">21 Jul 2026</td><td class="q">2<span class="u">unit</span></td><td class="amt">230.00</td><td class="r"><span class="ok">settled</span></td></tr></tbody></table>
+
+<div class="tot">
+<div class="tr"><span>1 order, 2 unit</span><span>230.00</span></div>
+<div class="tr"><span>Paid</span><span>230.00</span></div>
+
+
+<div class="tr big clear"><span>Balance</span><span>nil</span></div>
+
+</div>
+
+
+<p class="note">Amounts in ringgit. This statement covers your own orders only, taken from the seller&rsquo;s records as at the issue date. If anything differs from your own, say so and it will be checked.</p>
+</div></div><p class="slab" id="s-CI4-OKR">CI4-OKR</p><hr class="cut"><div class="sheet"><div class="w">
+<p class="eyebrow">Salt Command</p>
+<h1>Statement of account</h1>
+<p class="meta">Issued 01 Aug 2026 &middot; every order placed up to 01 Aug 2026, shown as the account stands today</p>
+<p class="whol gap1">Account</p>
+<div class="who">CI4-OKR</div>
+<div class="rule"></div>
+<table><thead><tr><th class="l">Date</th><th>Quantity</th><th>Amount</th><th class="r">Status</th></tr></thead><tbody><tr><td class="l dt">21 Jul 2026</td><td class="q">2<span class="u">unit</span></td><td class="amt">185.00</td><td class="r"><span class="ok">settled</span></td></tr></tbody></table>
+
+<div class="tot">
+<div class="tr"><span>1 order, 2 unit</span><span>185.00</span></div>
+<div class="tr"><span>Paid</span><span>185.00</span></div>
+
+
+<div class="tr big clear"><span>Balance</span><span>nil</span></div>
+
+</div>
+
+
+<p class="note">Amounts in ringgit. This statement covers your own orders only, taken from the seller&rsquo;s records as at the issue date. If anything differs from your own, say so and it will be checked.</p>
+</div></div><p class="slab" id="s-CJ4-BJ">CJ4-BJ</p><hr class="cut"><div class="sheet"><div class="w">
+<p class="eyebrow">Salt Command</p>
+<h1>Statement of account</h1>
+<p class="meta">Issued 01 Aug 2026 &middot; every order placed up to 01 Aug 2026, shown as the account stands today</p>
+<p class="whol gap1">Account</p>
+<div class="who">CJ4-BJ</div>
+<div class="rule"></div>
+<table><thead><tr><th class="l">Date</th><th>Quantity</th><th>Amount</th><th class="r">Status</th></tr></thead><tbody><tr><td class="l dt">28 Jun 2026<div class="sub2">paid 01 Aug 2026</div></td><td class="q">6<span class="u">unit</span></td><td class="amt">600.00</td><td class="r"><span class="ok">settled</span></td></tr><tr><td class="l dt">05 Jul 2026<div class="sub2">paid 01 Aug 2026</div></td><td class="q">1<span class="u">unit</span></td><td class="amt">90.00</td><td class="r"><span class="ok">settled</span></td></tr><tr><td class="l dt">15 Jul 2026<div class="sub2">paid 01 Aug 2026</div></td><td class="q">10.44<span class="u">unit</span></td><td class="amt">710.00</td><td class="r"><span class="ok">settled</span></td></tr><tr><td class="l dt">01 Aug 2026</td><td class="q">0.56<span class="u">unit</span></td><td class="amt"><span class="nilamt">nil</span></td><td class="r"><span class="gift">no charge</span></td></tr></tbody></table>
+
+<div class="tot">
+<div class="tr"><span>4 orders, 18 unit</span><span>1,400.00</span></div>
+<div class="tr"><span>Paid</span><span>1,400.00</span></div>
+
+
+<div class="tr big clear"><span>Balance</span><span>nil</span></div>
+
+</div>
+
+
+<p class="note">Amounts in ringgit. This statement covers your own orders only, taken from the seller&rsquo;s records as at the issue date. If anything differs from your own, say so and it will be checked.</p>
+</div></div><p class="slab" id="s-CJ4-OKR">CJ4-OKR</p><hr class="cut"><div class="sheet"><div class="w">
+<p class="eyebrow">Salt Command</p>
+<h1>Statement of account</h1>
+<p class="meta">Issued 01 Aug 2026 &middot; every order placed up to 01 Aug 2026, shown as the account stands today</p>
+<p class="whol gap1">Account</p>
+<div class="who">CJ4-OKR</div>
+<div class="rule"></div>
+<table><thead><tr><th class="l">Date</th><th>Quantity</th><th>Amount</th><th class="r">Status</th></tr></thead><tbody><tr><td class="l dt">09 Jul 2026</td><td class="q">1<span class="u">unit</span></td><td class="amt"><span class="nilamt">nil</span></td><td class="r"><span class="gift">no charge</span></td></tr></tbody></table>
+
+<div class="tot">
+<div class="tr"><span>1 order, 1 unit</span><span>0.00</span></div>
+<div class="tr"><span>Paid</span><span>0.00</span></div>
+
+
+<div class="tr big clear"><span>Balance</span><span>nil</span></div>
+
+</div>
+
+
+<p class="note">Amounts in ringgit. This statement covers your own orders only, taken from the seller&rsquo;s records as at the issue date. If anything differs from your own, say so and it will be checked.</p>
+</div></div><p class="slab" id="s-CM4-MK">CM4-MK</p><hr class="cut"><div class="sheet"><div class="w">
+<p class="eyebrow">Salt Command</p>
+<h1>Statement of account</h1>
+<p class="meta">Issued 01 Aug 2026 &middot; every order placed up to 01 Aug 2026, shown as the account stands today</p>
+<p class="whol gap1">Account</p>
+<div class="who">CM4-MK</div>
+<div class="rule"></div>
+<table><thead><tr><th class="l">Date</th><th>Quantity</th><th>Amount</th><th class="r">Status</th></tr></thead><tbody><tr><td class="l dt">23 Jul 2026</td><td class="q">2<span class="u">unit</span></td><td class="amt">220.00</td><td class="r"><span class="ok">settled</span></td></tr><tr><td class="l dt">30 Jul 2026</td><td class="q">2.2<span class="u">unit</span></td><td class="amt">210.00</td><td class="r"><span class="ok">settled</span></td></tr></tbody></table>
+
+<div class="tot">
+<div class="tr"><span>2 orders, 4.2 unit</span><span>430.00</span></div>
+<div class="tr"><span>Paid</span><span>430.00</span></div>
+
+
+<div class="tr big clear"><span>Balance</span><span>nil</span></div>
+
+</div>
+
+
+<p class="note">Amounts in ringgit. This statement covers your own orders only, taken from the seller&rsquo;s records as at the issue date. If anything differs from your own, say so and it will be checked.</p>
+</div></div><p class="slab" id="s-CM4-SK">CM4-SK</p><hr class="cut"><div class="sheet"><div class="w">
+<p class="eyebrow">Salt Command</p>
+<h1>Statement of account</h1>
+<p class="meta">Issued 01 Aug 2026 &middot; every order placed up to 01 Aug 2026, shown as the account stands today</p>
+<p class="whol gap1">Account</p>
+<div class="who">CM4-SK</div>
+<div class="rule"></div>
+<table><thead><tr><th class="l">Date</th><th>Quantity</th><th>Amount</th><th class="r">Status</th></tr></thead><tbody><tr><td class="l dt">14 Jul 2026</td><td class="q">12.5<span class="u">unit</span></td><td class="amt">825.00</td><td class="r"><span class="ok">settled</span></td></tr></tbody></table>
+
+<div class="tot">
+<div class="tr"><span>1 order, 12.5 unit</span><span>825.00</span></div>
+<div class="tr"><span>Paid</span><span>825.00</span></div>
+
+
+<div class="tr big clear"><span>Balance</span><span>nil</span></div>
+
+</div>
+
+
+<p class="note">Amounts in ringgit. This statement covers your own orders only, taken from the seller&rsquo;s records as at the issue date. If anything differs from your own, say so and it will be checked.</p>
+</div></div><p class="slab" id="s-CM6-HCM">CM6-HCM</p><hr class="cut"><div class="sheet"><div class="w">
+<p class="eyebrow">Salt Command</p>
+<h1>Statement of account</h1>
+<p class="meta">Issued 01 Aug 2026 &middot; every order placed up to 01 Aug 2026, shown as the account stands today</p>
+<p class="whol gap1">Account</p>
+<div class="who">CM6-HCM</div>
+<div class="rule"></div>
+<table><thead><tr><th class="l">Date</th><th>Quantity</th><th>Amount</th><th class="r">Status</th></tr></thead><tbody><tr><td class="l dt">14 Jul 2026</td><td class="q">12.5<span class="u">unit</span></td><td class="amt">1,300.00</td><td class="r"><span class="ok">settled</span></td></tr></tbody></table>
+
+<div class="tot">
+<div class="tr"><span>1 order, 12.5 unit</span><span>1,300.00</span></div>
+<div class="tr"><span>Paid</span><span>1,300.00</span></div>
+
+
+<div class="tr big clear"><span>Balance</span><span>nil</span></div>
+
+</div>
+
+
+<p class="note">Amounts in ringgit. This statement covers your own orders only, taken from the seller&rsquo;s records as at the issue date. If anything differs from your own, say so and it will be checked.</p>
+</div></div><p class="slab" id="s-CN5-TAI">CN5-TAI</p><hr class="cut"><div class="sheet"><div class="w">
+<p class="eyebrow">Salt Command</p>
+<h1>Statement of account</h1>
+<p class="meta">Issued 01 Aug 2026 &middot; every order placed up to 01 Aug 2026, shown as the account stands today</p>
+<p class="whol gap1">Account</p>
+<div class="who">CN5-TAI</div>
+<div class="rule"></div>
+<table><thead><tr><th class="l">Date</th><th>Quantity</th><th>Amount</th><th class="r">Status</th></tr></thead><tbody><tr><td class="l dt">02 Jul 2026</td><td class="q">2<span class="u">unit</span></td><td class="amt">200.00</td><td class="r"><span class="ok">settled</span></td></tr></tbody></table>
+
+<div class="tot">
+<div class="tr"><span>1 order, 2 unit</span><span>200.00</span></div>
+<div class="tr"><span>Paid</span><span>200.00</span></div>
+
+
+<div class="tr big clear"><span>Balance</span><span>nil</span></div>
+
+</div>
+
+
+<p class="note">Amounts in ringgit. This statement covers your own orders only, taken from the seller&rsquo;s records as at the issue date. If anything differs from your own, say so and it will be checked.</p>
+</div></div><p class="slab" id="s-CN6-WM">CN6-WM</p><hr class="cut"><div class="sheet"><div class="w">
+<p class="eyebrow">Salt Command</p>
+<h1>Statement of account</h1>
+<p class="meta">Issued 01 Aug 2026 &middot; every order placed up to 01 Aug 2026, shown as the account stands today</p>
+<p class="whol gap1">Account</p>
+<div class="who">CN6-WM</div>
+<div class="rule"></div>
+<table><thead><tr><th class="l">Date</th><th>Quantity</th><th>Amount</th><th class="r">Status</th></tr></thead><tbody><tr><td class="l dt">21 Jul 2026</td><td class="q">0.5<span class="u">unit</span></td><td class="amt"><span class="nilamt">nil</span></td><td class="r"><span class="gift">no charge</span></td></tr><tr><td class="l dt"><span class="nodt">cancelled 24 Aug 2026</span></td><td class="q cxr">1.5<span class="u">unit</span></td><td class="amt cxr">185.00</td><td class="r"><span class="cx">cancelled</span></td></tr></tbody></table>
+
+<div class="tot">
+<div class="tr"><span>1 order, 0.5 unit<span class="cxn"> &middot; 1 cancelled, not counted</span></span><span>0.00</span></div>
+<div class="tr"><span>Paid</span><span>0.00</span></div>
+
+
+<div class="tr big clear"><span>Balance</span><span>nil</span></div>
+
+</div>
+
+
+<p class="note">Amounts in ringgit. This statement covers your own orders only, taken from the seller&rsquo;s records as at the issue date. If anything differs from your own, say so and it will be checked.</p>
+</div></div><p class="slab" id="s-CR3-DAM">CR3-DAM</p><hr class="cut"><div class="sheet"><div class="w">
+<p class="eyebrow">Salt Command</p>
+<h1>Statement of account</h1>
+<p class="meta">Issued 01 Aug 2026 &middot; every order placed up to 01 Aug 2026, shown as the account stands today</p>
+<p class="whol gap1">Account</p>
+<div class="who">CR3-DAM</div>
+<div class="rule"></div>
+<table><thead><tr><th class="l">Date</th><th>Quantity</th><th>Amount</th><th class="r">Status</th></tr></thead><tbody><tr><td class="l dt">29 Jun 2026</td><td class="q">1<span class="u">unit</span></td><td class="amt">85.00</td><td class="r"><span class="ok">settled</span></td></tr><tr><td class="l dt">03 Jul 2026<div class="sub2">paid 09 Jul 2026</div></td><td class="q">1<span class="u">unit</span></td><td class="amt">90.00</td><td class="r"><span class="ok">settled</span></td></tr><tr><td class="l dt">15 Jul 2026</td><td class="q">1<span class="u">unit</span></td><td class="amt">80.00</td><td class="r"><span class="ok">settled</span></td></tr><tr><td class="l dt">20 Jul 2026<div class="sub2">paid 24 Jul 2026</div></td><td class="q">1<span class="u">unit</span></td><td class="amt">80.00</td><td class="r"><span class="ok">settled</span></td></tr><tr><td class="l dt">30 Jul 2026</td><td class="q">1<span class="u">unit</span></td><td class="amt">80.00</td><td class="r"><span class="ok">settled</span></td></tr></tbody></table>
+
+<div class="tot">
+<div class="tr"><span>5 orders, 5 unit</span><span>415.00</span></div>
+<div class="tr"><span>Paid</span><span>415.00</span></div>
+
+
+<div class="tr big clear"><span>Balance</span><span>nil</span></div>
+
+</div>
+
+
+<p class="note">Amounts in ringgit. This statement covers your own orders only, taken from the seller&rsquo;s records as at the issue date. If anything differs from your own, say so and it will be checked.</p>
+</div></div><p class="slab" id="s-CR4-PJ">CR4-PJ</p><hr class="cut"><div class="sheet"><div class="w">
+<p class="eyebrow">Salt Command</p>
+<h1>Statement of account</h1>
+<p class="meta">Issued 01 Aug 2026 &middot; every order placed up to 01 Aug 2026, shown as the account stands today</p>
+<p class="whol gap1">Account</p>
+<div class="who">CR4-PJ</div>
+<div class="rule"></div>
+<table><thead><tr><th class="l">Date</th><th>Quantity</th><th>Amount</th><th class="r">Status</th></tr></thead><tbody><tr><td class="l dt">22 Jul 2026<div class="sub2">paid 23 Jul 2026</div></td><td class="q">12.5<span class="u">unit</span></td><td class="amt">830.00</td><td class="r"><span class="ok">settled</span></td></tr></tbody></table>
+
+<div class="tot">
+<div class="tr"><span>1 order, 12.5 unit</span><span>830.00</span></div>
+<div class="tr"><span>Paid</span><span>830.00</span></div>
+
+
+<div class="tr big clear"><span>Balance</span><span>nil</span></div>
+
+</div>
+
+
+<p class="note">Amounts in ringgit. This statement covers your own orders only, taken from the seller&rsquo;s records as at the issue date. If anything differs from your own, say so and it will be checked.</p>
+</div></div><p class="slab" id="s-CS6-BS">CS6-BS</p><hr class="cut"><div class="sheet"><div class="w">
+<p class="eyebrow">Salt Command</p>
+<h1>Statement of account</h1>
+<p class="meta">Issued 01 Aug 2026 &middot; every order placed up to 01 Aug 2026, shown as the account stands today</p>
+<p class="whol gap1">Account</p>
+<div class="who">CS6-BS</div>
+<div class="rule"></div>
+<table><thead><tr><th class="l">Date</th><th>Quantity</th><th>Amount</th><th class="r">Status</th></tr></thead><tbody><tr><td class="l dt">12 Jul 2026</td><td class="q">1<span class="u">unit</span></td><td class="amt">95.00</td><td class="r"><span class="ok">settled</span></td></tr><tr><td class="l dt">15 Jul 2026</td><td class="q">1<span class="u">unit</span></td><td class="amt"><span class="nilamt">nil</span></td><td class="r"><span class="gift">no charge</span></td></tr><tr><td class="l dt">20 Jul 2026<div class="sub2">paid 22 Jul 2026</div></td><td class="q">1<span class="u">unit</span></td><td class="amt">107.00</td><td class="r"><span class="ok">settled</span></td></tr><tr><td class="l dt">29 Jul 2026</td><td class="q">1<span class="u">unit</span></td><td class="amt"><span class="nilamt">nil</span></td><td class="r"><span class="gift">no charge</span></td></tr></tbody></table>
+
+<div class="tot">
+<div class="tr"><span>4 orders, 4 unit</span><span>202.00</span></div>
+<div class="tr"><span>Paid</span><span>202.00</span></div>
+
+
+<div class="tr big clear"><span>Balance</span><span>nil</span></div>
+
+</div>
+
+
+<p class="note">Amounts in ringgit. This statement covers your own orders only, taken from the seller&rsquo;s records as at the issue date. If anything differs from your own, say so and it will be checked.</p>
+</div></div><p class="slab" id="s-CS6-BS-R">CS6-BS-R</p><hr class="cut"><div class="sheet"><div class="w">
+<p class="eyebrow">Salt Command</p>
+<h1>Statement of account</h1>
+<p class="meta">Issued 01 Aug 2026 &middot; every order placed up to 01 Aug 2026, shown as the account stands today</p>
+<p class="whol gap1">Account</p>
+<div class="who">CS6-BS-R</div>
+<div class="rule"></div>
+<table><thead><tr><th class="l">Date</th><th>Quantity</th><th>Amount</th><th class="r">Status</th></tr></thead><tbody><tr><td class="l dt">15 Jul 2026</td><td class="q">3<span class="u">unit</span></td><td class="amt">285.00</td><td class="r"><span class="ok">settled</span></td></tr><tr><td class="l dt">16 Jul 2026</td><td class="q">1<span class="u">unit</span></td><td class="amt">120.00</td><td class="r"><span class="ok">settled</span></td></tr><tr><td class="l dt">17 Jul 2026</td><td class="q">1<span class="u">unit</span></td><td class="amt">115.00</td><td class="r"><span class="ok">settled</span></td></tr><tr><td class="l dt">21 Jul 2026</td><td class="q">7<span class="u">unit</span></td><td class="amt">580.00</td><td class="r"><span class="ok">settled</span></td></tr></tbody></table>
+
+<div class="tot">
+<div class="tr"><span>4 orders, 12 unit</span><span>1,100.00</span></div>
+<div class="tr"><span>Paid</span><span>1,100.00</span></div>
+
+
+<div class="tr big clear"><span>Balance</span><span>nil</span></div>
+
+</div>
+
+
+<p class="note">Amounts in ringgit. This statement covers your own orders only, taken from the seller&rsquo;s records as at the issue date. If anything differs from your own, say so and it will be checked.</p>
+</div></div><p class="slab" id="s-CS6-PER">CS6-PER</p><hr class="cut"><div class="sheet"><div class="w">
+<p class="eyebrow">Salt Command</p>
+<h1>Statement of account</h1>
+<p class="meta">Issued 01 Aug 2026 &middot; every order placed up to 01 Aug 2026, shown as the account stands today</p>
+<p class="whol gap1">Account</p>
+<div class="who">CS6-PER</div>
+<div class="rule"></div>
+<table><thead><tr><th class="l">Date</th><th>Quantity</th><th>Amount</th><th class="r">Status</th></tr></thead><tbody><tr><td class="l dt">08 Jul 2026</td><td class="q">12.5<span class="u">unit</span><div class="sub2">6.5 unit applied by agreement</div></td><td class="amt">750.00</td><td class="r"><span class="ok">settled</span></td></tr><tr><td class="l dt">14 Jul 2026<div class="sub2">paid 30 Jul 2026</div></td><td class="q">7.25<span class="u">unit</span></td><td class="amt">620.00</td><td class="r"><span class="ok">settled</span></td></tr><tr><td class="l dt"><span class="nodt">cancelled 24 Aug 2026</span></td><td class="q cxr">6.25<span class="u">unit</span></td><td class="amt cxr">350.00</td><td class="r"><span class="cx">cancelled</span></td></tr></tbody></table>
+
+<div class="tot">
+<div class="tr"><span>2 orders, 19.75 unit<span class="cxn"> &middot; 1 cancelled, not counted</span></span><span>1,370.00</span></div>
+<div class="tr"><span>Paid</span><span>1,370.00</span></div>
+
+
+<div class="tr big clear"><span>Balance</span><span>nil</span></div>
+
+</div>
+
+<div class="rec"><p class="recl">How your 08 Jul 2026 order was settled</p><div class="stp"><div class="stpn">1</div><div class="stpb"><p class="stpt">The order was paid in full.</p><p class="stpd">12.5 unit at 60.00 a unit is 750.00, received as 750.00 on 08 Jul 2026.</p></div></div><div class="stp"><div class="stpn">2</div><div class="stpb"><p class="stpt">Part of it was not handed over, by agreement.</p><p class="stpd"><b>6.5 unit</b> of that order was held back and applied to a separate arrangement between us, rather than being collected or refunded. No money changed hands on it.</p></div></div><div class="stp"><div class="stpn">3</div><div class="stpb"><p class="stpt">So the balance of the order was collected in full.</p><p class="stpd"><table class="mini calc"><tbody><tr><td class="l">Bought</td><td class="r">12.5 unit</td></tr><tr><td class="l">Less applied by agreement</td><td class="r">&minus; 6.5 unit</td></tr><tr class="sub"><td class="l">Deliverable</td><td class="r">6 unit</td></tr><tr><td class="l">Less already collected</td><td class="r">&minus; 6 unit</td></tr><tr class="tot"><td class="l">Collected in full, nothing outstanding</td><td class="r">0 unit</td></tr></tbody></table></p></div></div><p class="recn">If your own record of that arrangement differs from this, say so and it will be gone through line by line.</p></div>
+<p class="note">Amounts in ringgit. This statement covers your own orders only, taken from the seller&rsquo;s records as at the issue date. If anything differs from your own, say so and it will be checked.</p>
+</div></div><p class="slab" id="s-CY2-NIL">CY2-NIL</p><hr class="cut"><div class="sheet"><div class="w">
+<p class="eyebrow">Salt Command</p>
+<h1>Statement of account</h1>
+<p class="meta">Issued 01 Aug 2026 &middot; every order placed up to 01 Aug 2026, shown as the account stands today</p>
+<p class="whol gap1">Account</p>
+<div class="who">CY2-NIL</div>
+<div class="rule"></div>
+<table><thead><tr><th class="l">Date</th><th>Quantity</th><th>Amount</th><th class="r">Status</th></tr></thead><tbody><tr><td class="l dt"><span class="nodt">agreed 28 Aug 2026</span></td><td class="q">2.5<span class="u">unit</span></td><td class="amt">230.00</td><td class="r"><span class="pend">ordered</span><div class="owedunits">to be collected and paid</div></td></tr></tbody></table>
+
+<div class="tot">
+<div class="tr"><span>1 order, 2.5 unit</span><span>230.00</span></div>
+<div class="tr"><span>Paid</span><span>0.00</span></div>
+
+<div class="tr sub"><span>of which not yet collected or paid</span><span>230.00</span></div>
+<div class="tr big clear"><span>Balance</span><span>nil</span></div>
+
+</div>
+
+
+<p class="note">Amounts in ringgit. This statement covers your own orders only, taken from the seller&rsquo;s records as at the issue date. If anything differs from your own, say so and it will be checked.</p>
+</div></div><p class="slab" id="s-CZ4-MK">CZ4-MK</p><hr class="cut"><div class="sheet"><div class="w">
+<p class="eyebrow">Salt Command</p>
+<h1>Statement of account</h1>
+<p class="meta">Issued 01 Aug 2026 &middot; every order placed up to 01 Aug 2026, shown as the account stands today</p>
+<p class="whol gap1">Account</p>
+<div class="who">CZ4-MK</div>
+<div class="rule"></div>
+<table><thead><tr><th class="l">Date</th><th>Quantity</th><th>Amount</th><th class="r">Status</th></tr></thead><tbody><tr><td class="l dt">30 Jul 2026</td><td class="q">5<span class="u">unit</span></td><td class="amt">435.00</td><td class="r"><span class="ok">settled</span></td></tr></tbody></table>
+
+<div class="tot">
+<div class="tr"><span>1 order, 5 unit</span><span>435.00</span></div>
+<div class="tr"><span>Paid</span><span>435.00</span></div>
+
+
+<div class="tr big clear"><span>Balance</span><span>nil</span></div>
+
+</div>
+
+
+<p class="note">Amounts in ringgit. This statement covers your own orders only, taken from the seller&rsquo;s records as at the issue date. If anything differs from your own, say so and it will be checked.</p>
+</div></div><p class="slab" id="s-CZ6-WM">CZ6-WM</p><hr class="cut"><div class="sheet"><div class="w">
+<p class="eyebrow">Salt Command</p>
+<h1>Statement of account</h1>
+<p class="meta">Issued 01 Aug 2026 &middot; every order placed up to 01 Aug 2026, shown as the account stands today</p>
+<p class="whol gap1">Account</p>
+<div class="who">CZ6-WM</div>
+<div class="rule"></div>
+<table><thead><tr><th class="l">Date</th><th>Quantity</th><th>Amount</th><th class="r">Status</th></tr></thead><tbody><tr><td class="l dt">21 Jul 2026</td><td class="q">1<span class="u">unit</span></td><td class="amt">100.00</td><td class="r"><span class="ok">settled</span></td></tr></tbody></table>
+<p class="whol gap2">Refunds</p><table class="rft"><thead><tr><th class="l">Date</th><th class="l">Reason</th><th>Amount</th><th class="r">Status</th></tr></thead><tbody><tr><td class="l dt">24 Jul 2026</td><td class="l rsn">Overpayment returned to you</td><td class="amt">80.00</td><td class="r"><span class="ok">paid 31 Jul 2026</span></td></tr></tbody></table>
+<div class="tot">
+<div class="tr"><span>1 order, 1 unit</span><span>100.00</span></div>
+<div class="tr"><span>Paid</span><span>100.00</span></div>
+
+
+<div class="tr big clear"><span>Balance</span><span>nil</span></div>
+
+</div>
+
+
+<p class="note">Amounts in ringgit. This statement covers your own orders only, taken from the seller&rsquo;s records as at the issue date. If anything differs from your own, say so and it will be checked.</p>
+</div></div></body></html>

@@ -5889,8 +5889,22 @@ section("Statements — the QR, the sort and the Salt identity");
   /* v472 put the identity on the desk and left the statement in the old scheme. These are the
      hexes it used to carry; none may come back, or the one document a customer sees is again
      the only surface not drawn in the product's material. */
-  for (const dead of ["#0f1115", "#2a3140", "#ffc75a", "#7fd7e8", "#eef1f6", "#6b7688"]) {
-    ok(!css.includes(dead), `the pre-identity colour ${dead} is gone from the statement`);
+  const DEAD = ["#0f1115", "#2a3140", "#ffc75a", "#7fd7e8", "#eef1f6", "#6b7688", "#b9c2d0"];
+  for (const dead of DEAD) {
+    ok(!css.includes(dead), `the pre-identity colour ${dead} is gone from the stylesheet`);
+  }
+  /* AND FROM THE MARKUP, which is a different place and was where one of them was still
+     hiding: a refund's reason cell carried style="font-size:13px;color:#b9c2d0" inline, so the
+     stylesheet check above passed while a document still rendered a retired colour. Inline
+     style attributes are doubly wrong here, because the unlock page serves a nonce CSP and a
+     nonce blocks a style attribute as surely as it blocks a stray script. */
+  {
+    const src = readFileSync(join(REPO, "tools", "make_statements.mjs"), "utf8");
+    ok(!/style="/.test(src),
+      "no inline style attribute survives in the markup: a nonce CSP would drop it");
+    for (const dead of DEAD) {
+      ok(!src.includes(dead), `the pre-identity colour ${dead} is gone from the markup too`);
+    }
   }
   ok(/--salt-font-mono/.test(css) && /--salt-font-display/.test(css),
     "figures are mono and sentences are the display face, as the identity requires");
@@ -5934,9 +5948,74 @@ section("Statements — the QR, the sort and the Salt identity");
   const genCss = (await import("../src/statement-css.js")).STATEMENT_CSS;
   ok(genCss === statementCss(),
     "src/statement-css.js is what tools/stmt-style.mjs produces (run --sync if this fails)");
+
+  /* AN ARCHIVE ISSUE CARRIES NO QR, AND THE REASON IS THAT ONE WOULD LIE. /s/<CODE> serves
+     whichever month was published last, so a code on a back-dated statement opens a different
+     month's ciphertext and the reader is told his password was refused, on a document that
+     looks current. A record of a past position is worth keeping; a dead code on it is not. */
+  {
+    const { makeStatements } = await import("../tools/make_statements.mjs");
+    const dirA = join(REPO, "test", "tmp", "stmt-archive");
+    rmSync(dirA, { recursive: true, force: true });
+    const quiet = console.log; console.log = () => { };
+    let runA;
+    try { runA = await makeStatements(dirA, "2026-08-01", { archive: true }); } finally { console.log = quiet; }
+    const files = readdirSync(dirA);
+    ok(runA.made > 0, `an archive issue still writes its statements (${runA.made})`);
+    ok(!files.includes("_kv") && !files.includes("_passwords.json"),
+      "and writes no _kv records and no passwords");
+    ok(runA.kv.length === 0 && Object.keys(runA.passwords).length === 0,
+      "and mints no password and no envelope at all");
+    const one = readFileSync(join(dirA, files.filter(f => f.startsWith("statement_"))[0]), "utf8");
+    ok(!/class="qrb"/.test(one) && !/<svg/.test(one) && !/\/s\//.test(one),
+      "no QR, no SVG and no statement link reaches a back-issue");
+    const rev = readFileSync(join(dirA, "_review_2026-08-01.html"), "utf8");
+    ok(/record of a past issue/i.test(rev), "its review sheet says what it is");
+    /* AND IT DOES NOT CLAIM A CUT-OFF IT CANNOT HONOUR. The book is current state, so a
+       back-issue filters by order date and shows each row as it stands today: the 1 Aug set
+       carried a payment dated 6 Aug and a cancellation dated 24 Aug on six of its documents.
+       The heading says what the document actually is rather than implying a snapshot. */
+    ok(/shown as the account stands today/.test(one) && !/from the beginning to/.test(one),
+      "a back-issue states that it shows the account as it stands, not a position as at a date");
+    const q2 = console.log; console.log = () => { };
+    let live;
+    try { live = await makeStatements(join(REPO, "test", "tmp", "stmt-live"), "2026-08-01"); }
+    finally { console.log = q2; }
+    ok(/from the beginning to/.test(live.sheets[0].html),
+      "and a current issue still reads as a period, which is what it is");
+    rmSync(join(REPO, "test", "tmp", "stmt-live"), { recursive: true, force: true });
+    rmSync(dirA, { recursive: true, force: true });
+  }
+
+  /* NO PASSWORD REACHES ANYTHING THE REPOSITORY KEEPS, and this was wrong once. The review
+     sheet carried a password column while _passwords.json was gitignored on the grounds that a
+     credential committed is a credential in the history for ever. The review sheet IS committed,
+     so the same passwords went into git anyway and the ignore rule protected nothing. They live
+     in one place now, and this is what proves it stays one place. */
+  {
+    const { makeStatements } = await import("../tools/make_statements.mjs");
+    const dirP = join(REPO, "test", "tmp", "stmt-pw");
+    rmSync(dirP, { recursive: true, force: true });
+    const q3 = console.log; console.log = () => { };
+    let runP;
+    try { runP = await makeStatements(dirP, "2026-08-01"); } finally { console.log = q3; }
+    const secrets = Object.values(runP.passwords);
+    ok(secrets.length > 0, `the run minted passwords to check (${secrets.length})`);
+    const leaked = [];
+    for (const f of readdirSync(dirP).filter(x => x.endsWith(".html"))) {
+      const h = readFileSync(join(dirP, f), "utf8");
+      for (const pw of secrets) if (h.includes(pw)) leaked.push(f);
+    }
+    ok(leaked.length === 0, leaked.length
+      ? "passwords reached these generated pages: " + [...new Set(leaked)].join(", ")
+      : "no password reaches any generated page, only _passwords.json");
+    ok(readFileSync(join(dirP, "_passwords.json"), "utf8").includes(secrets[0]),
+      "and _passwords.json, the one gitignored file, is where they are");
+    rmSync(dirP, { recursive: true, force: true });
+  }
 }
 
-const FLOOR_ASSERTIONS = 1238, FLOOR_SECTIONS = 97;   /* statements QR + password over v479: 1242 everywhere, 1243 here */
+const FLOOR_ASSERTIONS = 1256, FLOOR_SECTIONS = 97;   /* archive issues: 1260 everywhere, 1261 here */
 ok(pass + fail - offMachine >= FLOOR_ASSERTIONS,
   `the suite ran ${pass + fail - offMachine} assertions everywhere (${pass + fail} here, ${offMachine} of them needing files that live off this repo), below its floor of ${FLOOR_ASSERTIONS}: a section has stopped running`);
 ok(sections >= FLOOR_SECTIONS,
