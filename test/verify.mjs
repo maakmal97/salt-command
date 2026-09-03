@@ -819,7 +819,8 @@ section("Worker — drafts and approval");
     ok(/\n  deploy:\n    if: github\.event_name == 'push' \|\| \(github\.event_name == 'workflow_dispatch' && !inputs\.stage_only\)/.test(wf),
        "the deploy runs on a push, which the fold's own push is, and stands aside on a stage-only dispatch");
     ok(!/needs\.fold/.test(wf), "and is not chained onto the fold job, or a fold would deploy and wake the phone twice");
-    ok(/git pull -q --rebase origin master\n\s+git push/.test(wf), "the handoff clear rebases before it pushes, because master moved under it once");
+    ok(/git pull -q --rebase --autostash origin master\n\s+git push/.test(wf),
+       "the handoff clear rebases before it pushes, autostashing what npm test rebuilt: master moved under it once, and the dirty tree refused the rebase the next time");
     ok((wf.match(/ref: master/g) || []).length >= 2, "the fold and the deploy check out master's tip, not the sha the run started on");
   }
 
