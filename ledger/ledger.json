@@ -1,6 +1,6 @@
 {
- "v": "v479",
- "stamped": "02 Sep 2026, 18:20 KL",
+ "v": "v480",
+ "stamped": "03 Sep 2026, 12:57 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -41,7 +41,7 @@
     "stated": 15
    }
   },
-  "STATED_STOCK": 10.5,
+  "STATED_STOCK": 7,
   "COUNT_ON": {
    "salt": "2026-09-02",
    "oil": "2026-08-23"
@@ -2750,6 +2750,33 @@
     "rid": "s127"
    },
    {
+    "customer": "CA4-DAM",
+    "qty": 1.5,
+    "total": 160,
+    "cost": 48,
+    "cash": 0,
+    "handover": "collected",
+    "date": "2026-09-02",
+    "deliveredQty": 1.5,
+    "deliveredOn": "2026-09-02",
+    "note": "<b>1.5 UNIT COLLECTED ON CREDIT, NOTHING PAID.</b> RM 160 at RM 106.67 a unit, above CA4-DAM's median of RM 100 across thirteen earlier orders and inside his own range, whose top is RM 116.67 on 26 Jul. Clear of the collected floor of RM 104.40 at this size. Costed at RM 48 from p019, the shelf's own rate, returning RM 88 at 55.0%. <b>THIS IS HIS SECOND CREDIT AND IT FOLLOWS THE FIRST BY FOUR DAYS.</b> s117 of 28 Aug is RM 100 handed over, unpaid and marked defaulted on his word on 2 Sep, and its note says that credit was to be the last. The drafter raised the advance and asked for the cap against it; the row was approved two minutes after it was queued, so the flag was read before the decision. Total out to this party is now RM 260.",
+    "rid": "s128"
+   },
+   {
+    "customer": "CM4-MK",
+    "qty": 2,
+    "total": 220,
+    "cost": 48,
+    "cash": 220,
+    "handover": "delivered",
+    "date": "2026-09-02",
+    "deliveredQty": 2,
+    "deliveredOn": "2026-09-02",
+    "paidOn": "2026-09-02",
+    "note": "<b>2 UNIT DELIVERED, PAID IN FULL ON THE DAY.</b> RM 220 at RM 110 a unit, which is his median and the same figure he paid on each of his three previous two-unit orders, on 23 Jul, 5 Aug and 17 Aug. Clear of the delivered floor of RM 140.87 on the order. Costed at RM 48 from p019, the shelf's own rate, returning RM 124 at 56.4%. The drafter raised no flag and there is nothing unusual on it: his seventh order, and like most of the six before it, it settled on the day it was placed.",
+    "rid": "s129"
+   },
+   {
     "customer": "CY2-NIL",
     "qty": 2.5,
     "total": 230,
@@ -3080,9 +3107,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-02T10:40:00.000Z",
+  "QUEUE_COMMITTED": "2026-09-02T12:05:40.066Z",
   "PRICING": {
-   "takenAt": "2026-09-02T10:20:52.185Z",
+   "takenAt": "2026-09-03T04:57:42.448Z",
    "sizes": [
     0.5,
     1,
@@ -3193,8 +3220,8 @@
          "date": "2026-09-02",
          "sup": "SA5-BTR"
         },
-        "days": 27,
-        "sinceLot": 36
+        "days": 28,
+        "sinceLot": 37
        },
        "lockBase": {
         "lockedOn": "2026-08-06",
@@ -3238,15 +3265,15 @@
          "rm": 10
         },
         "deliveredShare": {
-         "v": 0.4
+         "v": 0.4166666666666667
         }
        },
        "attrib": 1,
        "shrinkRate": 0.06177488578153123,
        "avgDel": {
-        "n": 114,
-        "kg": 289.7,
-        "mean": 2.5412
+        "n": 116,
+        "kg": 293.2,
+        "mean": 2.5276
        }
       },
       "policy": {
@@ -3400,8 +3427,8 @@
          "date": "2026-08-26",
          "sup": "SP7-PUD"
         },
-        "days": 27,
-        "sinceLot": 27
+        "days": 28,
+        "sinceLot": 28
        },
        "lockBase": {
         "lockedOn": "2026-08-06",
@@ -3516,11 +3543,11 @@
      }
     }
    },
-   "v": "v479"
+   "v": "v480"
   },
   "OPEN": {
-   "at": "2026-09-02T10:20:52.226Z",
-   "count": 6,
+   "at": "2026-09-03T04:57:42.503Z",
+   "count": 7,
    "byKey": {
     "CY2-NIL|undefined|230": {
      "d": null,
@@ -3537,6 +3564,23 @@
      "agreedOn": "2026-08-28",
      "key": "CY2-NIL|undefined|230"
     },
+    "CA4-DAM|2026-09-02|160": {
+     "d": "2026-09-02",
+     "p": "CA4-DAM",
+     "dir": "S",
+     "q": 1.5,
+     "t": 160,
+     "cash": 0,
+     "mv": 1.5,
+     "st": "dueMoney",
+     "oweRM": 160,
+     "rid": "s128",
+     "deliveredOn": "2026-09-02",
+     "handover": "collected",
+     "key": "CA4-DAM|2026-09-02|160",
+     "age": 1,
+     "exp": 160
+    },
     "CR3-DAM|2026-08-31|80": {
      "d": "2026-08-31",
      "p": "CR3-DAM",
@@ -3551,7 +3595,7 @@
      "deliveredOn": "2026-08-31",
      "handover": "delivered",
      "key": "CR3-DAM|2026-08-31|80",
-     "age": 2,
+     "age": 3,
      "exp": 80
     },
     "CN6-WM|2026-08-30|110": {
@@ -3568,8 +3612,8 @@
      "deliveredOn": "2026-08-30",
      "handover": "delivered",
      "key": "CN6-WM|2026-08-30|110",
-     "age": 3,
-     "exp": 110
+     "age": 4,
+     "exp": 82.5
     },
     "CA4-DAM|2026-08-28|100": {
      "d": "2026-08-28",
@@ -3586,7 +3630,7 @@
      "handover": "collected",
      "defaulted": true,
      "key": "CA4-DAM|2026-08-28|100",
-     "age": 5,
+     "age": 6,
      "exp": 75
     },
     "CR3-DAM|2026-08-27|80": {
@@ -3603,7 +3647,7 @@
      "deliveredOn": "2026-08-27",
      "handover": "collected",
      "key": "CR3-DAM|2026-08-27|80",
-     "age": 6,
+     "age": 7,
      "exp": 60
     },
     "SF6-KLC|2026-07-08|750": {
@@ -3624,12 +3668,12 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 10.5,
-     "free": 10.5,
+     "onHand": 7,
+     "free": 7,
      "owedOut": 0,
-     "coverDays": 1.9,
-     "rate": 5.54,
-     "owedToYou": 370,
+     "coverDays": 1.2,
+     "rate": 5.79,
+     "owedToYou": 530,
      "promised": 2.5,
      "short": 0
     },
@@ -3649,7 +3693,7 @@
     "salt": "2026-09-02",
     "oil": "2026-08-23"
    },
-   "v": "v479"
+   "v": "v480"
   }
  }
 }
