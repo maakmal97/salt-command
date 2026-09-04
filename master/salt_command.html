@@ -4275,7 +4275,7 @@ const sales=[
   {"customer":"CM6-PJ","qty":3,"total":270,"cost":48,"cash":270,"handover":"collected","date":"2026-09-03","deliveredQty":3,"deliveredOn":"2026-09-03","paidOn":"2026-09-03","note":"Collected by CM6-PJ on 3 Sep 2026, 3 unit for RM 270, RM 90 a unit, paid RM 270 and taken in full on the day, so nothing is owed and nothing is left to move. Costed at RM 48 a unit off p019, the 31 Aug SA5-BTR lot that is the current shelf, which the desk's own stock cost confirms, so the draft was not written against a stale rate: RM 144 of cost, RM 126 gross, 46.7%. The floor for 3 unit collected is RM 183.80, so the order is RM 86.20 clear of it. His second row on the book: the first was s100 on 21 Aug, 1 unit at RM 100 after that row was restated down from RM 120. The lower unit rate here is the size taper, not a discount granted.","rid":"s130"},
   {"customer":"CS6-BS","qty":2,"total":200,"cost":48,"cash":200,"handover":"delivered","date":"2026-09-03","deliveredQty":2,"deliveredOn":"2026-09-03","paidOn":"2026-09-03","note":"2 unit delivered to CS6-BS for RM 200, RM 100 a unit, paid in full and delivered in full on 3 Sep, so the row closes on arrival and leaves nothing outstanding. Costed at the shelf's own RM 48 a unit, RM 96 against RM 200, RM 104 on the order at 52%. The floor for 2 unit delivered is RM 140.87, so the rate is RM 59.13 clear of it. His own six salt rows run RM 95 to RM 126.67 a unit on 1 to 1.5 unit, plus a free unit on 24 Aug; this is his largest salt order to date, and RM 100 a unit on double the size is the taper rather than a concession. No flag from the drafter.","rid":"s131"},
   {"customer":"CM4-MK","qty":4,"total":360,"cost":48,"cash":300,"date":"2026-09-04","deliveredQty":4,"deliveredOn":"2026-09-04","note":"CM4-MK takes 4 unit at RM 360, RM 90/unit, delivered in full on 4 Sep with RM 300 paid and RM 60 left owing. Two flags came with the draft and both were read. The rate flag calls RM 90/unit 18.2% under this party's RM 110/unit median over seven orders; the median is the wrong ruler, because RM 110/unit is what CM4-MK's 2 unit orders cost and both of its 4 unit orders were struck at this grade, RM 360 on 10 Aug and RM 380 on 24 Aug. This is the 10 Aug price repeated, and it sits well clear of the live floor of RM 245.52 delivered for 4 unit. The cost is the shelf's own RM 48/unit, from the 25 unit SA5-BTR lot of 3 Sep at RM 1,200, and it is the same figure the desk's pricing snapshot carries, so no override was needed: RM 192 of cost against RM 360 leaves RM 168, 46.7%. The advance flag is the one that stands: RM 60 goes out against delivered stock, and it is the first balance CM4-MK has carried, every one of its seven earlier orders having settled on the day.","rid":"s132"},
-  {"customer":"CY2-NIL","qty":2.5,"total":230,"cost":50,"cash":0,"deliveredQty":0,"agreedOn":"2026-08-28","rid":"s119"},
+  {"customer":"CY2-NIL","qty":2.5,"total":230,"cost":50,"cash":0,"deliveredQty":0,"agreedOn":"2026-08-28","rid":"s119","amend":[{"kind":"Fulfilment","cash":0,"kg":0,"note":"as booked, pending and undated"},{"date":"2026-09-04","kind":"Cancellation","cash":0,"kg":0,"note":"<b>WITHDRAWN UNFULFILLED.</b> A pending CY2-NIL order of 2.5 unit at RM 230, never delivered and never paid, cancelled on 4 Sep. It moves no cash and no stock and returns 2.5 unit of commitment to the shelf. The three CY2-NIL orders before it, on 11, 18 and 26 Aug, were each 2.5 unit at RM 230 delivered and paid in full on the day, so this reads as one order not taken up and says nothing about the party's grade, price or standing. <b>THE AGREEMENT DATE IS UNRESOLVED.</b> This row carries agreedOn 28 Aug; he states the pending order was placed on 31 Aug and that the 28 Aug order was delivered and paid. The book holds no 31 Aug row and no paid 28 Aug row, so the two accounts cannot both stand. The cancellation is not in doubt and is folded; the date is left for a Correction rather than rewritten here on a recollection."}],"cancelled":true},
   {"customer":"CN6-WM","qty":1.5,"total":185,"cash":0,"deliveredQty":0,"cancelled":true,"cancelledOn":"2026-08-24","rid":"s108"},
   {"customer":"CS6-PER","qty":6.25,"total":350,"cash":0,"deliveredQty":0,"cancelled":true,"cancelledOn":"2026-08-24","rid":"s109"}
 ];
@@ -4438,7 +4438,7 @@ const CASH_COUNT_RETIRED={
 const ONE_OFFS=[
   {"id":"CM6-HCM","date":"2026-07-14","note":"One-off; RM104/unit is an outlier."}
 ];
-const QUEUE_COMMITTED="2026-09-04T12:02:38.650Z";
+const QUEUE_COMMITTED="2026-09-04T12:03:40.929Z";
 const PRICE_SET={
   "salt": {
     "prices": {},
@@ -5248,7 +5248,9 @@ const whiteboard=[
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{"v":"v484","d":"04 Sep 2026","t":"ONE SALE ON 4 SEP: CM4-MK TAKES 4 UNIT AT THE SIZE IT ALWAYS PAYS AND LEAVES RM 60 OWING","n":["<b>One row folded.</b> CM4-MK takes 4 unit of salt on 4 Sep at RM 360, RM 90/unit, delivered in full on the day against RM 300 paid. Costed on the shelf's own RM 48/unit, so RM 192 of cost and RM 168 on the order, 46.7%.","<b>The rate flag reads low against the wrong comparison.</b> The drafter measured RM 90/unit against CM4-MK's RM 110/unit median across seven orders and called it 18.2% under. That median is dominated by its 2 unit orders, which have gone out at RM 110/unit four times out of four. Both of this party's earlier 4 unit orders were struck at this grade, RM 360 on 10 Aug and RM 380 on 24 Aug, so RM 90/unit is the 10 Aug price repeated and not a discount. It clears the live floor for 4 unit, RM 245.52 delivered and RM 235.52 collected, by a wide margin.","<b>The advance is real and it is a first.</b> RM 60 of the RM 360 is unpaid with all 4 unit already delivered. Every one of CM4-MK's seven earlier orders settled in full on the day, so this is the first balance the party has carried and the first thing to chase on the next visit.","<b>Not a replay.</b> The row matches the 10 Aug sale in party, size and total and differs only in date. The 10 Aug row is fully paid and unamended; this is a fresh order, and the fold's replay guard passed on the date for that reason."]},
+const evolution=[{"v":"v485","d":"04 Sep 2026","t":"AN ENTRY THE CLOUD NEVER TOOK IS NO LONGER CLEARED AS COMMITTED, AND CY2-NIL'S UNFULFILLED ORDER IS WITHDRAWN","n":["<b>THE v482 AUDIT'S CRITIC TRACED A LOST SALE, AND IT WAS THERE.</b> The load clears a held entry once QUEUE_COMMITTED has passed it, on the reading that the watermark passing an entry means the fold has taken it. That is a fact about the LEDGER, not about this device. An entry recorded with no signal is held in localStorage, never reaches KV, is never drafted and never folded; when a fold elsewhere then carried the watermark past its stamp, the next load dropped it and said nothing. Proved red against the shipped filter before a line was changed: one sale of RM 360, one load, gone, with a control showing the same entry above the watermark surviving.","<b>THE RULE NOW ASKS BOTH QUESTIONS.</b> An entry goes only when the ledger has folded past it AND this device saw the server acknowledge it. qSentThrough is the newest stamp this device has had confirmed, and because qPayload() sends the WHOLE queue every time, one confirmed post covers every entry then held. qKeepOnLoad is a named function so the rule is run rather than grepped for, which is what v482 taught on the very poll that made this reachable.","<b>THE MARK IS SEEDED FROM THE WATERMARK, NOT FROM NOTHING, AND THAT IS THE CARE IN IT.</b> Defaulting to nothing-was-sent would retain entries the ledger already carries, and applyOverlay() folds a held entry into the figures, so the desk would have shown those sales TWICE: a wrong figure in place of a silent loss, which is no bargain. Seeding at the watermark keeps today's treatment of what is already folded and asks only what is recorded from now on to earn its clearance. The seed is WRITTEN on first use, because re-seeding from a watermark that had since moved would drop the very entry this protects.","<b>RETAINING IT FOR ONE LOAD WAS NOT ENOUGH, AND ONLY DRIVING IT SHOWED THAT.</b> The first fix kept the stranded entry, then qInit posted the held queue on the next open, the server took it, the mark advanced over it, and the load after that cleared it. Meanwhile the drafter skips everything at or below the watermark by design, so that post could never become a row: the sale was still lost, one load later and just as quietly. An entry that survives while the fold has already passed it is now flagged stuck, kept for ever, and named on screen, because only a person can settle it. Two further faults in the fix itself were caught the same way: q.at>null reads false rather than throwing, so the terser rule silently dropped the entry when the watermark was missing, and the notice counted only what had just become stuck, so it showed once and vanished while the entry sat there.","<b>BOTH DELIVERED ROUTES ARE MARKED, SWEPT RATHER THAN LEFT FOR THE NEXT VERSION.</b> qDownload writes the file the daily run reads, which is the same guarantee the server route gives; unmarked, a download-route entry that WAS folded would be retained by the new rule and shown twice. The clipboard route is deliberately not marked, because copying is not delivery.","<b>ONE ROW FOLDED WITH IT, AND ITS DATE IS LEFT OPEN ON PURPOSE.</b> A pending CY2-NIL order of 2.5 unit at RM 230, never delivered and never paid, is withdrawn: no cash and no stock move, and 2.5 unit of committed salt returns to the shelf. The row carries agreedOn 28 Aug, he states the pending order was placed on 31 Aug and that the 28 Aug order was delivered and paid, and the book holds neither a 31 Aug row nor a paid 28 Aug one. The cancellation is not in doubt, so it is folded; the date wants a Correction through the gate and is not rewritten here on a recollection."]},
+
+{"v":"v484","d":"04 Sep 2026","t":"ONE SALE ON 4 SEP: CM4-MK TAKES 4 UNIT AT THE SIZE IT ALWAYS PAYS AND LEAVES RM 60 OWING","n":["<b>One row folded.</b> CM4-MK takes 4 unit of salt on 4 Sep at RM 360, RM 90/unit, delivered in full on the day against RM 300 paid. Costed on the shelf's own RM 48/unit, so RM 192 of cost and RM 168 on the order, 46.7%.","<b>The rate flag reads low against the wrong comparison.</b> The drafter measured RM 90/unit against CM4-MK's RM 110/unit median across seven orders and called it 18.2% under. That median is dominated by its 2 unit orders, which have gone out at RM 110/unit four times out of four. Both of this party's earlier 4 unit orders were struck at this grade, RM 360 on 10 Aug and RM 380 on 24 Aug, so RM 90/unit is the 10 Aug price repeated and not a discount. It clears the live floor for 4 unit, RM 245.52 delivered and RM 235.52 collected, by a wide margin.","<b>The advance is real and it is a first.</b> RM 60 of the RM 360 is unpaid with all 4 unit already delivered. Every one of CM4-MK's seven earlier orders settled in full on the day, so this is the first balance the party has carried and the first thing to chase on the next visit.","<b>Not a replay.</b> The row matches the 10 Aug sale in party, size and total and differs only in date. The 10 Aug row is fully paid and unamended; this is a fresh order, and the fold's replay guard passed on the date for that reason."]},
 
 {"v":"v483","d":"04 Sep 2026","t":"TWO ROWS ON 3 SEP: A 25 UNIT LOT FROM SA5-BTR LANDS AND CS6-BS TAKES 2","n":["<b>TWO ROWS FOLDED, BOTH SALT, BOTH DATED 3 SEP 2026.</b> A lot in and a sale out: 25 unit from SA5-BTR for RM 1,200, and 2 unit to CS6-BS for RM 200. Both were queued from the phone at 09:50 KL on 4 Sep and approved a minute later, and the drafter raised no flag on either.","<b>THE LOT HOLDS RM 48 A UNIT, SO THE COST BASIS DOES NOT MOVE.</b> RM 1,200 for 25 unit is RM 50 under the RM 1,250 the 20 Aug live quote puts on this tier, and it is the second lot running at that rate after p019 of 31 Aug. The desk's own <code>stockCostFor('salt')</code> already returns RM 48 against p019, so the shelf cost is unchanged at RM 48 and no override was needed on the sale beside it. Paid in full and received in full on the day, so the lot closes on arrival.","<b>THE SALE SITS RM 59.13 CLEAR OF THE FLOOR AND IS THE TAPER DOING ITS WORK.</b> The desk's own ladder puts the floor for 2 unit delivered at RM 140.87, and this went out delivered, so that is the floor that applies. Costed at the shelf's RM 48 a unit that is RM 96 against RM 200, RM 104 on the order at 52%. CS6-BS has six salt rows before this one, five priced between RM 95 and RM 126.67 a unit and a free unit on 24 Aug, every one of them 1 to 1.5 unit. RM 100 a unit on 2 unit is his largest salt order to date at his lowest rate, which is what the ladder expects on the size rather than a concession.","<b>THE SHELF GOES FROM 4 TO 27 AND THE 2 SEP COUNT STILL STANDS.</b> Both movements fall after that count, so they roll the stated shelf rather than restate it and <code>COUNT_ON</code> is untouched. The lot was bought against a shelf of 4 unit, the lowest it has stood since the count, which is the reason to read a second RM 1,200 lot three days after the first as a restock and not a replay: the dates differ, the queue ids differ, and the fold's replay guard passed. Against the 27 the only standing commitment is still s119, 2.5 unit to CY2-NIL, pending and undated."]},
 
@@ -5501,7 +5503,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='04 Sep 2026, 20:06 KL';
+const LAST_UPDATED='04 Sep 2026, 22:22 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -13716,8 +13718,12 @@ function apBadge(){try{const b=document.querySelector('.tab[data-s="enter"]');if
 function renderQueue(){const b=document.getElementById('queueBox');if(!b)return;
   const txq=qTx();
   const cleared=queueCleared?`<div class="dsc" style="margin-top:10px">&#10003; ${queueCleared} committed entr${queueCleared===1?'y':'ies'} cleared automatically &mdash; already in the ledger.</div>`:'';
-  if(!txq.length){b.innerHTML=cleared;return;}
-  b.innerHTML=cleared;b.innerHTML+='<div style="margin-top:12px;font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:var(--gold)">Live in the desk, awaiting commit ('+txq.length+'), '+qLabel()+'</div>'
+  /* v485: A STUCK ENTRY IS NAMED, because it is the one case here that nothing else will
+     resolve. It never reached the cloud, the fold has since passed its stamp, and the drafter
+     skips anything at or below the watermark, so it can never become a row on its own. */
+  const stuck=queueStuck?`<div class="dsc" style="margin-top:10px;color:var(--ember)"><b>&#9888; ${queueStuck} entr${queueStuck===1?'y':'ies'} never reached the cloud</b>, and the ledger has since been folded past ${queueStuck===1?'it':'them'}. ${queueStuck===1?'It is':'They are'} held here and folded into the figures below, but ${queueStuck===1?'it':'they'} cannot be committed automatically. Re-record the ${queueStuck===1?'sale':'sales'} to put ${queueStuck===1?'it':'them'} in the book, then Undo the copy held here.</div>`:'';
+  if(!txq.length){b.innerHTML=cleared+stuck;return;}
+  b.innerHTML=cleared+stuck;b.innerHTML+='<div style="margin-top:12px;font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:var(--gold)">Live in the desk, awaiting commit ('+txq.length+'), '+qLabel()+'</div>'
     +'<div class="dsc" style="margin-top:5px">These are already folded into every figure on the desk. Undo removes an entry and rebuilds; once committed it is in the ledger and can only be reversed by a new entry.</div>'
     +'<table style="margin-top:6px"><thead><tr><th class="l">Entry</th><th>Type</th><th>Party</th><th>Qty</th><th>RM</th><th>Status</th><th></th></tr></thead><tbody>'+txq.map(q=>`<tr><td class="l" style="max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(q.raw||'')}</td><td>${q.type}</td><td class="mono">${esc(q.party)||'&mdash;'}</td><td>${q.qty!=null?q.qty+'unit':'&mdash;'}</td><td>${q.total!=null?fmt0(q.total):'&mdash;'}</td><td><span class="tag ${q.status==='paid'?'paid':q.status==='inkind'?'inkind':q.status==='modified'?'mod':q.status==='cancelled'?'def':q.status==='count'?'inkind':'unpaid'}">${({paid:'Paid',unpaid:'Unpaid',partial:'Partial',inkind:'In-Kind',modified:'Modified',cancelled:'Cancelled',credit:'Unpaid',count:'Count'})[q.status]||q.status}</span></td><td><button class="ubtn" onclick="undoEntry('${esc(q.at)}')">Undo</button></td></tr>`).join('')+'</tbody></table>';}
 
@@ -16774,6 +16780,47 @@ function wireWorkbench(){
    Copy queue is the manual fallback in both cases. */
 const QFILE='salt_queue.json';
 let qSyncState='download';                  // server | download | clipboard
+/* ============ WHAT THIS DEVICE HAS ACTUALLY SENT (v485) ============
+   THE LOAD CLEARS AN ENTRY THE WATERMARK HAS PASSED, AND IT USED TO ASK ONLY THE WATERMARK.
+   QUEUE_COMMITTED is the newest entry the fold folded, so anything below it was taken to be
+   in the ledger already. That reasoning reads across from one device to another, and it is
+   only sound for an entry the cloud actually received. An entry recorded with no signal is
+   held here, never reaches KV, is never drafted and never folded. If a fold elsewhere then
+   carries the watermark past it, the next load dropped it as committed: nothing warned,
+   nothing was logged, and a real sale left the book. Traced by the v482 audit's critic,
+   proved against the shipped filter before it was touched.
+
+   qSentThrough is the newest `at` this device has had acknowledged. qPayload() sends the
+   WHOLE queue every time, so one confirmed post covers every entry then held and the newest
+   of them is a sound mark for all of them.
+
+   IT IS SEEDED FROM THE WATERMARK ON FIRST USE, AND PERSISTED THERE AND THEN. Defaulting to
+   "nothing was sent" would retain entries the ledger already carries, and applyOverlay()
+   folds a held entry into the figures, so the desk would show those sales TWICE. Seeding at
+   the watermark keeps today's treatment of what is already folded and asks every entry
+   recorded from now on to earn its clearance. The seed must be WRITTEN, not merely computed:
+   re-seeding from a watermark that has since moved would drop the very entry this protects. */
+let qSentThrough=(function(){
+  try{const v=localStorage.getItem('saltQueueSent');if(v)return v;}catch(e){}
+  const seed=QUEUE_COMMITTED||'';
+  try{localStorage.setItem('saltQueueSent',seed);}catch(e){}
+  return seed;})();
+function qSentMark(v){qSentThrough=v;try{localStorage.setItem('saltQueueSent',v);}catch(e){}}
+/* the newest stamp the queue is carrying, which is what a payload delivers */
+function qNewestAt(){return queue.reduce((m,q)=>(q&&q.at&&q.at>m)?q.at:m,'');}
+/* AN ENTRY GOES ONLY WHEN BOTH ARE TRUE: the ledger has folded past it, and this device saw
+   it acknowledged. Named so the rule is RUN rather than grepped for, which is the v482
+   lesson. A throw keeps the entry, because losing a sale is the fault being fixed. */
+function qKeepOnLoad(q,mark,sent){try{
+  if(!q||!q.at)return false;                        // no stamp: predates the mechanism, as before
+  if(q.stuck)return true;                           // named below, and it is never cleared again
+  if(typeof mark!=='string'||!mark)return true;     // nothing to judge it by, so it stays
+  /* covered means this device SAW it acknowledged. Written as a test on sent rather than as
+     q.at>sent because a missing mark must read as "not covered", and `q.at>null` is false,
+     not a throw: the terser form silently dropped the entry it exists to keep. */
+  const covered=(typeof sent==='string'&&!!sent&&q.at<=sent);
+  return q.at>mark||!covered;
+}catch(e){return true;}}
 function qPayload(){return JSON.stringify({updated:new Date().toISOString(),desk:LAST_UPDATED,queue},null,1);}
 /* ask the local server whether it accepts the queue; only meaningful when served */
 async function qInit(){
@@ -16871,13 +16918,17 @@ function qHeaders(){
   return h;
 }
 async function qPost(){
+  /* what THIS payload carries, read BEFORE the await: an entry recorded while the request is
+     in flight is not covered by its answer, so it must not be marked by it. */
+  let sending=qNewestAt();
   try{ let r=await fetch('queue',{method:'POST',headers:qHeaders(),body:qPayload()});
     /* 401 means the gate is armed and this device has no key, or the wrong one. Ask, then
        try once more. Once only: a wrong key looping would just ask for ever. */
-    if(r.status===401&&saltAskWriteKey()){ r=await fetch('queue',{method:'POST',headers:qHeaders(),body:qPayload()}); }
+    if(r.status===401&&saltAskWriteKey()){ sending=qNewestAt(); r=await fetch('queue',{method:'POST',headers:qHeaders(),body:qPayload()}); }
     if(r.status===401){ qStatus('<b style="color:var(--crim)">The write key was not accepted</b> &mdash; the entry is held on this device. Reopen the desk to try again.'); return false; }
     if(!r.ok)throw new Error('server replied '+r.status);
     const j=await r.json();
+    if(sending&&sending>qSentThrough)qSentMark(sending);   // it is on the server; the load may now clear it once the fold passes it
     qStatus('Saved <b>'+QFILE+'</b> to this folder &mdash; '+j.entries+' queued.');
     return true;
   }catch(e){
@@ -16892,6 +16943,11 @@ function qDownload(){
     const a=document.createElement('a');a.href=url;a.download=QFILE;a.style.display='none';
     document.body.appendChild(a);a.click();
     setTimeout(()=>{try{URL.revokeObjectURL(url);a.remove();}catch(e){}},1500);
+    /* THE SAME MARK ON THE OTHER DELIVERED ROUTE, swept with it rather than left for the next
+       version. The file lands in the folder the daily run reads, which is the same guarantee
+       the server route gives. Left unmarked, a download-route entry that WAS folded would be
+       retained by the new rule and applyOverlay() would show that sale twice. */
+    const m=qNewestAt(); if(m&&m>qSentThrough)qSentMark(m);
     return true;
   }catch(e){ qStatus('Could not save the file: '+(e&&e.message||e)+' Use Copy queue instead.'); return false; }
 }
@@ -17501,14 +17557,33 @@ try{const _lni=localStorage.getItem('saltNewIds');if(_lni)newIds=JSON.parse(_lni
 try{const _lnl=localStorage.getItem('saltNewLocs');if(_lnl)newLocs=JSON.parse(_lnl);}catch(e){}
 try{const _lq=localStorage.getItem('saltQueue');if(_lq)queue=JSON.parse(_lq);}catch(e){}
 /* self-clearing queue: an entry with no stamp predates this mechanism, so a watermark
-   means it too has been committed */
-let queueCleared=0;
+   means it too has been committed.
+   v485: AND THE WATERMARK IS NO LONGER ASKED ON ITS OWN. It says what the FOLD has taken,
+   which is a fact about the ledger, not about this device; an entry that never reached the
+   cloud is not in the ledger however far the watermark has moved. qKeepOnLoad wants both. */
+let queueCleared=0,queueStuck=0;
 if(QUEUE_COMMITTED&&queue.length){
   const before=queue.length;
-  queue=queue.filter(q=>q.at&&q.at>QUEUE_COMMITTED);
+  queue=queue.filter(q=>qKeepOnLoad(q,QUEUE_COMMITTED,qSentThrough));
   queueCleared=before-queue.length;
   if(queueCleared){try{localStorage.setItem('saltQueue',JSON.stringify(queue));}catch(e){}}
+  /* AND WHAT SURVIVED WHILE THE FOLD HAS ALREADY PASSED IT IS STUCK, PERMANENTLY.
+     Retaining it for one load is not enough and the browser showed why: qInit posts the held
+     queue on the next open, the server takes it, the mark advances over it, and the load after
+     that clears it. Meanwhile the drafter skips everything at or below the watermark by
+     design, so that post can never become a row. The entry would have been lost anyway, one
+     load later and just as quietly. Flagged once, kept for ever, and shown: only a person can
+     settle it, by re-recording the sale or withdrawing it with drain.mjs --forget. */
+  let newlyStuck=0;
+  queue.forEach(q=>{if(q&&q.at&&q.at<=QUEUE_COMMITTED&&!q.stuck){q.stuck=true;newlyStuck++;}});
+  if(newlyStuck){try{localStorage.setItem('saltQueue',JSON.stringify(queue));}catch(e){}}
 }
+/* COUNT WHAT IS STUCK, NOT WHAT JUST BECAME STUCK, and count it outside the block above.
+   Flagging increments only on the load that first sees the entry, so a counter fed by that
+   loop reads one on that load and zero for ever after, and the warning vanished while the
+   entry was still sitting there. The screen was checked, which is the only reason this was
+   caught: the flag was right and the notice was not. */
+queueStuck=queue.filter(q=>q&&q.stuck).length;
 try{qInit().then(()=>{if(queueCleared&&qSyncState==='server')qPost();});}catch(e){}   // ask the server for the queue route, then sync any self-clearing
 applyOverlay();                            // uncommitted entries fold in before anything is drawn
 /* v281: a fresh open still lands on Today (v147: the desk opens on what to do), but an

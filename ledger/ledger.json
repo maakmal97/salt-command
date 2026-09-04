@@ -1,6 +1,6 @@
 {
- "v": "v484",
- "stamped": "04 Sep 2026, 20:06 KL",
+ "v": "v485",
+ "stamped": "04 Sep 2026, 22:22 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -2837,7 +2837,23 @@
     "cash": 0,
     "deliveredQty": 0,
     "agreedOn": "2026-08-28",
-    "rid": "s119"
+    "rid": "s119",
+    "amend": [
+     {
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 0,
+      "note": "as booked, pending and undated"
+     },
+     {
+      "date": "2026-09-04",
+      "kind": "Cancellation",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>WITHDRAWN UNFULFILLED.</b> A pending CY2-NIL order of 2.5 unit at RM 230, never delivered and never paid, cancelled on 4 Sep. It moves no cash and no stock and returns 2.5 unit of commitment to the shelf. The three CY2-NIL orders before it, on 11, 18 and 26 Aug, were each 2.5 unit at RM 230 delivered and paid in full on the day, so this reads as one order not taken up and says nothing about the party's grade, price or standing. <b>THE AGREEMENT DATE IS UNRESOLVED.</b> This row carries agreedOn 28 Aug; he states the pending order was placed on 31 Aug and that the 28 Aug order was delivered and paid. The book holds no 31 Aug row and no paid 28 Aug row, so the two accounts cannot both stand. The cancellation is not in doubt and is folded; the date is left for a Correction rather than rewritten here on a recollection."
+     }
+    ],
+    "cancelled": true
    },
    {
     "customer": "CN6-WM",
@@ -3160,9 +3176,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-04T12:02:38.650Z",
+  "QUEUE_COMMITTED": "2026-09-04T12:03:40.929Z",
   "PRICING": {
-   "takenAt": "2026-09-04T12:06:09.755Z",
+   "takenAt": "2026-09-04T14:28:38.124Z",
    "sizes": [
     0.5,
     1,
@@ -3596,27 +3612,12 @@
      }
     }
    },
-   "v": "v484"
+   "v": "v485"
   },
   "OPEN": {
-   "at": "2026-09-04T12:06:09.820Z",
-   "count": 8,
+   "at": "2026-09-04T14:28:38.148Z",
+   "count": 7,
    "byKey": {
-    "CY2-NIL|undefined|230": {
-     "d": null,
-     "p": "CY2-NIL",
-     "dir": "S",
-     "q": 2.5,
-     "t": 230,
-     "cash": 0,
-     "mv": 0,
-     "st": "pend",
-     "oweRM": 230,
-     "oweUnits": 2.5,
-     "rid": "s119",
-     "agreedOn": "2026-08-28",
-     "key": "CY2-NIL|undefined|230"
-    },
     "CM4-MK|2026-09-04|360": {
      "d": "2026-09-04",
      "p": "CM4-MK",
@@ -3743,7 +3744,7 @@
      "coverDays": 4.9,
      "rate": 4.7,
      "owedToYou": 590,
-     "promised": 2.5,
+     "promised": 0,
      "short": 0
     },
     "oil": {
@@ -3762,7 +3763,7 @@
     "salt": "2026-09-02",
     "oil": "2026-08-23"
    },
-   "v": "v484"
+   "v": "v485"
   }
  }
 }

@@ -603,6 +603,63 @@ section("Build — patches, scripts, no externals");
       ok(runIdle([], null) === false, "and a throw reads as not idle, never as idle");
     }
 
+    /* THE LOAD MAY NOT CLEAR WHAT THE CLOUD NEVER TOOK (v485). v482 freed the reload to happen
+       with an entry held, which made the load's self-clearing rule reachable far more often.
+       That rule asked only the watermark, which says what the FOLD has taken and nothing about
+       whether THIS device ever got its entry to the cloud. An entry recorded with no signal is
+       held here, never drafted, never folded; once a fold elsewhere carried the watermark past
+       it, the load dropped it as committed and the sale was gone in silence.
+       Run, not read: the shipped predicate is called over the sequence the audit's critic
+       traced. Proved red against the old one-question rule before it was trusted. */
+    const keepSrc = (html.match(/function qKeepOnLoad\(q,mark,sent\)\{try\{[\s\S]*?\}catch\(e\)\{return true;\}\}/) || [])[0];
+    ok(!!keepSrc, "the built desk carries the load's self-clearing rule as a named function");
+    if (keepSrc) {
+      const keep = (q, mark, sent) =>
+        new Function("q", "mark", "sent", keepSrc + "\nreturn qKeepOnLoad(q,mark,sent);")(q, mark, sent);
+      const stranded = { at: "2026-09-04T14:00:00.000Z", type: "SELL", total: 360 };
+      const folded = "2026-09-04T18:00:00.000Z";   // a fold elsewhere carried the mark past it
+
+      ok(keep(stranded, folded, "2026-09-04T13:00:00.000Z") === true,
+        "an entry the cloud never acknowledged survives a watermark that has passed it");
+      ok(keep(stranded, folded, folded) === false,
+        "an entry that WAS acknowledged and has been folded is cleared, so the overlay cannot show it twice");
+      ok(keep(stranded, "2026-09-04T13:00:00.000Z", folded) === true,
+        "an entry the fold has not reached survives even when it was acknowledged");
+      ok(keep({ type: "SELL" }, folded, "") === false,
+        "an entry with no stamp predates the mechanism and still goes");
+      ok(keep(null, folded, "") === false, "a hole in the queue is not kept");
+      /* THE ONE-LOAD HOLE, found by running the sequence in a browser rather than trusting the
+         unit above. Retaining a stranded entry is not enough: qInit posts the held queue on the
+         next open, the server takes it, the mark advances over it, and the load after that
+         clears it. The drafter skips anything at or below the watermark, so that post can never
+         become a row. A stuck entry is therefore kept even once acknowledged. */
+      ok(keep({ at: "2026-09-04T14:00:00.000Z", stuck: true }, folded, folded) === true,
+        "a stuck entry survives even after a later post acknowledges it, or it is lost one load later");
+      ok(keep(stranded, null, null) === true,
+        "with no watermark to judge by the entry stays: q.at>null is false, not a throw, and the terser rule dropped it");
+      ok(keep(stranded, folded, "") === true,
+        "an empty mark reads as nothing acknowledged, never as everything acknowledged");
+      /* a REAL throw, not a comparison that quietly returns false */
+      const boom = Object.defineProperty({}, "at", { get() { throw new Error("boom"); } });
+      ok(keep(boom, folded, "") === true, "and a throw keeps the entry, never drops it");
+    }
+
+    /* the two halves of the evidence, at the sites that produce it */
+    ok(html.includes("function qSentMark(v){qSentThrough=v;"),
+      "a confirmed post is recorded on this device");
+    ok(html.includes("if(sending&&sending>qSentThrough)qSentMark(sending);"),
+      "the server route marks only what its own payload carried");
+    ok(html.includes("const m=qNewestAt(); if(m&&m>qSentThrough)qSentMark(m);"),
+      "the download route is marked too: it feeds the daily run, so an unmarked one would show twice");
+    ok(/let qSentThrough=\(function\(\)\{[\s\S]*?localStorage\.setItem\('saltQueueSent',seed\)/.test(html),
+      "the mark is seeded from the watermark AND written, so a moved watermark cannot re-seed over it");
+    ok(html.includes("if(q&&q.at&&q.at<=QUEUE_COMMITTED&&!q.stuck){q.stuck=true;newlyStuck++;}"),
+      "an entry that survived while the fold had passed it is flagged stuck at load");
+    ok(html.includes("queueStuck=queue.filter(q=>q&&q.stuck).length;"),
+      "the notice counts what IS stuck, not what just became stuck, or it shows once and never again");
+    ok(html.includes("never reached the cloud</b>, and the ledger has since been folded past"),
+      "and a stuck entry is named on screen, because only a person can settle it");
+
     /* the id must actually move when the master does, or the poll can never fire. Round six:
        the old check hashed a mutated copy of the built desk alone and compared it to an id
        computed over DIFFERENT inputs by a DIFFERENT recipe, so the two always differed and
