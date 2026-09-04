@@ -33,6 +33,23 @@ statements/.publish/
 # Test scratch
 shot-*.png
 test/tmp/
+# THE SUITE'S OWN SCRATCH UNDER test/, AS A CLASS (04 Sep 2026).
+#
+# Several blocks write a MUTATED COPY OF THE WHOLE BOOK and of the master into test/ under fixed
+# dot-names, run the desk against it, and delete them at the end: .v408.*, .v410.*, .r7tmp.*,
+# .v445.<tag>.*, and a .run.html the build leaves beside one of them. A run that dies before its
+# cleanup line, or two suites running at once (which is exactly what an audit does), leaves them on
+# disk. Nothing ignored them, and tools/update.mjs step 7 runs `git add -A`, so a mutated copy of
+# the book was one interrupted test run away from being committed AS the book.
+#
+# IGNORED AS A CLASS AND NOT ONE BY ONE, because the names are the fault: each is minted by the
+# fold that needed it (v408, v410, v445, round seven) and the next fold will mint another that
+# nobody remembers to add here. Every dot-file directly under test/ is scratch by this repo's
+# convention; a deliberate one would need `git add -f` and a negation beneath this line.
+#
+# This is the containment, not the repair: the blocks should write under test/tmp/ (already
+# ignored) and clean up in a finally, so a dead run leaves nothing at all.
+test/.*
 
 # Local Claude Code settings, personal to this machine
 .claude/settings.local.json
