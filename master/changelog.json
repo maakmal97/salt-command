@@ -1,5 +1,16 @@
 [
  {
+  "v": "v483",
+  "d": "04 Sep 2026",
+  "t": "TWO ROWS ON 3 SEP: A 25 UNIT LOT FROM SA5-BTR LANDS AND CS6-BS TAKES 2",
+  "n": [
+   "<b>TWO ROWS FOLDED, BOTH SALT, BOTH DATED 3 SEP 2026.</b> A lot in and a sale out: 25 unit from SA5-BTR for RM 1,200, and 2 unit to CS6-BS for RM 200. Both were queued from the phone at 09:50 KL on 4 Sep and approved a minute later, and the drafter raised no flag on either.",
+   "<b>THE LOT HOLDS RM 48 A UNIT, SO THE COST BASIS DOES NOT MOVE.</b> RM 1,200 for 25 unit is RM 50 under the RM 1,250 the 20 Aug live quote puts on this tier, and it is the second lot running at that rate after p019 of 31 Aug. The desk's own <code>stockCostFor('salt')</code> already returns RM 48 against p019, so the shelf cost is unchanged at RM 48 and no override was needed on the sale beside it. Paid in full and received in full on the day, so the lot closes on arrival.",
+   "<b>THE SALE SITS RM 59.13 CLEAR OF THE FLOOR AND IS THE TAPER DOING ITS WORK.</b> The desk's own ladder puts the floor for 2 unit delivered at RM 140.87, and this went out delivered, so that is the floor that applies. Costed at the shelf's RM 48 a unit that is RM 96 against RM 200, RM 104 on the order at 52%. CS6-BS has six salt rows before this one, five priced between RM 95 and RM 126.67 a unit and a free unit on 24 Aug, every one of them 1 to 1.5 unit. RM 100 a unit on 2 unit is his largest salt order to date at his lowest rate, which is what the ladder expects on the size rather than a concession.",
+   "<b>THE SHELF GOES FROM 4 TO 27 AND THE 2 SEP COUNT STILL STANDS.</b> Both movements fall after that count, so they roll the stated shelf rather than restate it and <code>COUNT_ON</code> is untouched. The lot was bought against a shelf of 4 unit, the lowest it has stood since the count, which is the reason to read a second RM 1,200 lot three days after the first as a restock and not a replay: the dates differ, the queue ids differ, and the fold's replay guard passed. Against the 27 the only standing commitment is still s119, 2.5 unit to CY2-NIL, pending and undated."
+  ]
+ },
+ {
   "v": "v482",
   "d": "03 Sep 2026",
   "t": "A QUEUED ENTRY NO LONGER BLOCKS THE RELOAD THAT WOULD CLEAR IT",

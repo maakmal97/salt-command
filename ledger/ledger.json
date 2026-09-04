@@ -1,6 +1,6 @@
 {
- "v": "v481",
- "stamped": "03 Sep 2026, 14:53 KL",
+ "v": "v483",
+ "stamped": "04 Sep 2026, 10:04 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -41,7 +41,7 @@
     "stated": 15
    }
   },
-  "STATED_STOCK": 4,
+  "STATED_STOCK": 27,
   "COUNT_ON": {
    "salt": "2026-09-02",
    "oil": "2026-08-23"
@@ -287,6 +287,19 @@
       "note": "<b>DATE CORRECTED TO 31 AUG on his word, 02 Sep.</b> Purchased 31 Aug; received and paid 2 Sep as booked. The lot was on the shelf when the 2 Sep count was taken."
      }
     ]
+   },
+   {
+    "qty": 25,
+    "total": 1200,
+    "cash": 1200,
+    "supplier": "SA5-BTR",
+    "status": "paid",
+    "date": "2026-09-03",
+    "receivedOn": "2026-09-03",
+    "receivedQty": 25,
+    "paidOn": "2026-09-03",
+    "note": "25 unit from SA5-BTR for RM 1,200, RM 48 a unit, paid in full and received in full on 3 Sep. RM 50 under the RM 1,250 the 20 Aug live quote puts on the 25 unit tier, and the second lot running at RM 48 after p019 of 31 Aug, so the shelf cost stays at RM 48 and the cost basis does not move. Bought against a shelf of 4 unit, the lowest it has stood since the 2 Sep count. Same size and same total as p019 three days earlier; separate lots on separate dates, and the replay guard passed on both.",
+    "rid": "p020"
    }
   ],
   "sales": [
@@ -2791,6 +2804,20 @@
     "rid": "s130"
    },
    {
+    "customer": "CS6-BS",
+    "qty": 2,
+    "total": 200,
+    "cost": 48,
+    "cash": 200,
+    "handover": "delivered",
+    "date": "2026-09-03",
+    "deliveredQty": 2,
+    "deliveredOn": "2026-09-03",
+    "paidOn": "2026-09-03",
+    "note": "2 unit delivered to CS6-BS for RM 200, RM 100 a unit, paid in full and delivered in full on 3 Sep, so the row closes on arrival and leaves nothing outstanding. Costed at the shelf's own RM 48 a unit, RM 96 against RM 200, RM 104 on the order at 52%. The floor for 2 unit delivered is RM 140.87, so the rate is RM 59.13 clear of it. His own six salt rows run RM 95 to RM 126.67 a unit on 1 to 1.5 unit, plus a free unit on 24 Aug; this is his largest salt order to date, and RM 100 a unit on double the size is the taper rather than a concession. No flag from the drafter.",
+    "rid": "s131"
+   },
+   {
     "customer": "CY2-NIL",
     "qty": 2.5,
     "total": 230,
@@ -3121,9 +3148,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-02T16:50:58.174Z",
+  "QUEUE_COMMITTED": "2026-09-04T01:50:40.964Z",
   "PRICING": {
-   "takenAt": "2026-09-03T06:53:36.408Z",
+   "takenAt": "2026-09-04T02:04:32.177Z",
    "sizes": [
     0.5,
     1,
@@ -3150,55 +3177,55 @@
    "byProduct": {
     "salt": {
      "stockCost": 48,
-     "replCost": 48.4,
+     "replCost": 48.33,
      "floors": {
       "1": {
-       "delivered": 87.93,
-       "collected": 77.93
+       "delivered": 87.63,
+       "collected": 77.63
       },
       "2": {
-       "delivered": 140.87,
-       "collected": 130.87
+       "delivered": 140.26,
+       "collected": 130.26
       },
       "3": {
-       "delivered": 193.8,
-       "collected": 183.8
+       "delivered": 192.89,
+       "collected": 182.89
       },
       "4": {
-       "delivered": 246.73,
-       "collected": 236.73
+       "delivered": 245.52,
+       "collected": 235.52
       },
       "5": {
-       "delivered": 299.67,
-       "collected": 289.67
+       "delivered": 298.15,
+       "collected": 288.15
       },
       "0.5": {
-       "delivered": 61.47,
-       "collected": 51.47
+       "delivered": 61.31,
+       "collected": 51.31
       },
       "1.5": {
-       "delivered": 114.4,
-       "collected": 104.4
+       "delivered": 113.94,
+       "collected": 103.94
       },
       "2.5": {
-       "delivered": 167.33,
-       "collected": 157.33
+       "delivered": 166.57,
+       "collected": 156.57
       },
       "3.5": {
-       "delivered": 220.27,
-       "collected": 210.27
+       "delivered": 219.2,
+       "collected": 209.2
       },
       "4.5": {
-       "delivered": 273.2,
-       "collected": 263.2
+       "delivered": 271.83,
+       "collected": 261.83
       },
       "6.25": {
-       "delivered": 365.83,
-       "collected": 355.83
+       "delivered": 363.94,
+       "collected": 353.94
       },
       "12.5": {
-       "delivered": 696.66,
-       "collected": 686.66
+       "delivered": 692.87,
+       "collected": 682.87
       }
      },
      "inputs": {
@@ -3231,11 +3258,11 @@
          "qty": 25,
          "total": 1200,
          "rate": 48,
-         "date": "2026-09-02",
+         "date": "2026-09-03",
          "sup": "SA5-BTR"
         },
-        "days": 28,
-        "sinceLot": 37
+        "days": 29,
+        "sinceLot": 38
        },
        "lockBase": {
         "lockedOn": "2026-08-06",
@@ -3265,12 +3292,12 @@
         "qty": 25,
         "total": 1200,
         "rate": 48,
-        "date": "2026-09-02",
+        "date": "2026-09-03",
         "sup": "SA5-BTR"
        },
-       "meanLot": 23.75,
+       "meanLot": 23.828125,
        "quoteRate": 56,
-       "repl": 48.4,
+       "repl": 48.33,
        "costBasis": {
         "freightPerTrip": {
          "rm": 30
@@ -3279,15 +3306,15 @@
          "rm": 10
         },
         "deliveredShare": {
-         "v": 0.38461538461538464
+         "v": 0.42857142857142855
         }
        },
        "attrib": 1,
-       "shrinkRate": 0.06177488578153123,
+       "shrinkRate": 0.05777547585135311,
        "avgDel": {
-        "n": 117,
-        "kg": 296.2,
-        "mean": 2.5316
+        "n": 118,
+        "kg": 298.2,
+        "mean": 2.5271
        }
       },
       "policy": {
@@ -3441,8 +3468,8 @@
          "date": "2026-08-26",
          "sup": "SP7-PUD"
         },
-        "days": 28,
-        "sinceLot": 28
+        "days": 29,
+        "sinceLot": 29
        },
        "lockBase": {
         "lockedOn": "2026-08-06",
@@ -3557,10 +3584,10 @@
      }
     }
    },
-   "v": "v481"
+   "v": "v483"
   },
   "OPEN": {
-   "at": "2026-09-03T06:53:36.486Z",
+   "at": "2026-09-04T02:04:32.231Z",
    "count": 7,
    "byKey": {
     "CY2-NIL|undefined|230": {
@@ -3592,7 +3619,7 @@
      "deliveredOn": "2026-09-02",
      "handover": "collected",
      "key": "CA4-DAM|2026-09-02|160",
-     "age": 1,
+     "age": 2,
      "exp": 160
     },
     "CR3-DAM|2026-08-31|80": {
@@ -3609,8 +3636,8 @@
      "deliveredOn": "2026-08-31",
      "handover": "delivered",
      "key": "CR3-DAM|2026-08-31|80",
-     "age": 3,
-     "exp": 80
+     "age": 4,
+     "exp": 60
     },
     "CN6-WM|2026-08-30|110": {
      "d": "2026-08-30",
@@ -3626,7 +3653,7 @@
      "deliveredOn": "2026-08-30",
      "handover": "delivered",
      "key": "CN6-WM|2026-08-30|110",
-     "age": 4,
+     "age": 5,
      "exp": 82.5
     },
     "CA4-DAM|2026-08-28|100": {
@@ -3644,7 +3671,7 @@
      "handover": "collected",
      "defaulted": true,
      "key": "CA4-DAM|2026-08-28|100",
-     "age": 6,
+     "age": 7,
      "exp": 75
     },
     "CR3-DAM|2026-08-27|80": {
@@ -3661,8 +3688,8 @@
      "deliveredOn": "2026-08-27",
      "handover": "collected",
      "key": "CR3-DAM|2026-08-27|80",
-     "age": 7,
-     "exp": 60
+     "age": 8,
+     "exp": 40
     },
     "SF6-KLC|2026-07-08|750": {
      "d": "2026-07-08",
@@ -3682,11 +3709,11 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 4,
-     "free": 4,
+     "onHand": 27,
+     "free": 27,
      "owedOut": 0,
-     "coverDays": 0.7,
-     "rate": 6,
+     "coverDays": 6.1,
+     "rate": 4.41,
      "owedToYou": 530,
      "promised": 2.5,
      "short": 0
@@ -3707,7 +3734,7 @@
     "salt": "2026-09-02",
     "oil": "2026-08-23"
    },
-   "v": "v481"
+   "v": "v483"
   }
  }
 }
