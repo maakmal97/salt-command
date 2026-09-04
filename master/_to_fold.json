@@ -1,0 +1,58 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-09-04T12:02:38.650Z",
+   "collection": "sales",
+   "row": {
+    "customer": "CM4-MK",
+    "qty": 4,
+    "total": 360,
+    "cost": 48,
+    "cash": 300,
+    "date": "2026-09-04",
+    "deliveredQty": 4,
+    "deliveredOn": "2026-09-04"
+   },
+   "reasoning": "Sold 4 unit of salt to CM4-MK for RM 360, RM 90/unit. Costed at RM 48/unit from the desk's own shelf cost, so RM 168 on the order at 46.7%. RM 300 of RM 360 paid and delivered in full on 2026-09-04. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [
+    "CM4-MK typically pays about RM 110/unit for salt across 7 orders; this one is RM 90, 18.2% below that.",
+    "This is an ADVANCE: 4 unit goes out with RM 60 unpaid. Check it against CM4-MK's credit cap."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-09-04T12:02:38.650Z",
+    "type": "SELL",
+    "party": "CM4-MK",
+    "qty": 4,
+    "total": 360,
+    "status": "partial",
+    "raw": "Sell 4 unit to CM4-MK for RM 360 on 2026-09-04, RM 300 cash, 4 unit moved → Open · Advance",
+    "payload": {
+     "mode": "new",
+     "product": "salt",
+     "direction": "SELL",
+     "party": "CM4-MK",
+     "newId": null,
+     "date": "2026-09-04",
+     "qty": 4,
+     "total": 360,
+     "cash": 300,
+     "kg": 4,
+     "assoc": null,
+     "stream": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": null,
+     "handover": null
+    }
+   },
+   "decidedAt": "2026-09-04T12:03:10.960Z",
+   "decidedBy": "desk"
+  }
+ ]
+}
