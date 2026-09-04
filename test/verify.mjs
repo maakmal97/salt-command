@@ -1421,6 +1421,51 @@ section("Ledger — the date is superior to the position");
   }
 }
 
+/* ---- EVERY LEDGER ROW CARRIES A DATE, and the check CI runs is what says so ----------------
+   His instruction of 04 Sep 2026. The sort has always put an undated row last, which kept the
+   order stable but accommodated the row for ever: s108 and s109 sat undated from 24 Aug and
+   s119 from 4 Sep, and because all three were cancelled the fold refused every repair until the
+   Correction gate was narrowed the same day.
+   THE CHECK IS SPAWNED, NOT IMPORTED, because the thing that must fail is the exit code CI reads,
+   not a function the suite happens to call. Both directions are asserted against the same tool on
+   the same day: the real book passes, and a copy carrying one undated row fails and names it. */
+section("Ledger — the book carries no undated row, and --check is what proves it");
+{
+  const { undated } = await import("../tools/sort-ledger.mjs");
+  const live = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  for (const name of ["sales", "purchases"]) {
+    const bad = undated(live[name] || []);
+    ok(bad.length === 0, bad.length
+      ? `${name} carries ${bad.length} undated row(s): ${bad.map((x) => x.rid || "row " + (x.i + 1)).join(", ")}`
+      : `${name}: all ${(live[name] || []).length} rows carry a date`);
+  }
+
+  const dir = join(REPO, "test", "tmp");
+  mkdirSync(dir, { recursive: true });
+  const run = (bookPath) => {
+    try {
+      const out = execFileSync("node", ["tools/sort-ledger.mjs", "--check"],
+        { cwd: REPO, encoding: "utf8", stdio: "pipe", env: { ...process.env, SALT_BOOK: bookPath } });
+      return { code: 0, out };
+    } catch (e) { return { code: e.status == null ? -1 : e.status, out: String(e.stdout || "") + String(e.stderr || "") }; }
+  };
+
+  const good = join(dir, "book-dated.json");
+  writeFileSync(good, JSON.stringify(live));
+  const g = run(good);
+  ok(g.code === 0, "--check passes on the book as it stands" + (g.code === 0 ? "" : ": " + g.out.trim().slice(0, 160)));
+
+  /* the same book with ONE date removed from a row that has one: nothing else differs */
+  const copy = JSON.parse(JSON.stringify(live));
+  const victim = (copy.sales || []).find((r) => r && r.date);
+  if (victim) delete victim.date;
+  const bad = join(dir, "book-undated.json");
+  writeFileSync(bad, JSON.stringify(copy));
+  const b = run(bad);
+  ok(b.code === 1, "and fails on a copy carrying one undated row, which is the guard doing its job");
+  ok(/carry no date/.test(b.out), "the failure says the row carries no date, so the fix is obvious from the message");
+}
+
 /* ---- 16. The phone payload: the ledger, the open orders, the count dates (v319) -- */
 section("Desk — the row editor names only fields CORRECTABLE holds");
 {
@@ -2029,17 +2074,26 @@ section("Fold — an approved batch becomes records in the book (v340)");
       ok(N.sales.filter((x) => x.rid === fresh.rid).length === 1, "and the rid it is given is not one already in use");
     }
   }
-  /* v347: a cancelled order is not a target. Its key still matches, so only the guard stops it. */
+  /* v347: a cancelled order is not a target. Its key still matches, so only the guard stops it.
+     SYNTHETIC FROM 04 Sep 2026, and the reason is the v359 lesson one paragraph up, arriving
+     again. This pinned the real cancelled CS6-PER row and the literal key CS6-PER|undefined|350,
+     which held only while that row had no date. Dating s108, s109 and s119 the same day moved
+     every one of those keys, and this assertion then failed for the wrong reason: the fulfilment
+     was still refused, but as "no row on the book matches" rather than by the cancelled guard,
+     so a broken guard would have read as a pass. The fixture owns its target now. */
   {
-    const canc = book.sales.find((r) => r.cancelled && r.customer === "CS6-PER" && r.total === 350);
-    ok(!!canc, "the book carries the cancelled CS6-PER order");
+    const CB = JSON.parse(JSON.stringify(book));
+    CB.sales.push({ customer: "CX9-TESTCANC2", qty: 6.25, total: 350, cash: 0, deliveredQty: 0,
+      date: "2026-08-20", cancelled: true, cancelledOn: "2026-08-24" });
+    const cKey = "CX9-TESTCANC2|2026-08-20|350";
     const one = { ok: true, count: 1, approved: [{ id: ID("02:00"), collection: "sales",
-      amends: `CS6-PER|undefined|350`, amendKind: "Fulfilment",
-      row: { customer: "CS6-PER", qty: 6.25, total: 350, cash: 0, date: null },
-      entry: { at: ID("02:00"), payload: { mode: "amend", direction: "SELL", kind: "Fulfilment", date: "2026-08-23", cash: 350, kg: 6.25 } } }] };
-    const pc = plan(JSON.parse(JSON.stringify(book)), one, null);
+      amends: cKey, amendKind: "Fulfilment",
+      row: { customer: "CX9-TESTCANC2", qty: 6.25, total: 350, cash: 0 },
+      entry: { at: ID("02:00"), payload: { mode: "amend", direction: "SELL", orderKey: cKey, kind: "Fulfilment", date: "2026-08-23", cash: 350, kg: 6.25 } } }] };
+    const pc = plan(CB, one, null);
     ok(pc.items.length === 0 && pc.refused.length === 1 && /cancelled/.test(pc.refused[0].why),
-      "a fulfilment against a cancelled order is refused, not folded onto it");
+      "a fulfilment against a cancelled order is refused, not folded onto it"
+      + (pc.refused.length ? ", by: " + pc.refused[0].why.slice(0, 60) : ""));
   }
   /* the plan refuses what it must and describes the rest */
   let p = plan(JSON.parse(JSON.stringify(book)), staged, null);
@@ -5466,7 +5520,12 @@ section("v465: the ledger is a table, whole and sortable");
   w15.eval("document.getElementById('lsort-date').click();document.getElementById('lsort-date').click();");
   const dd = rids15().map((r) => byRid15[r].date || "");
   const dated = dd.filter(Boolean), blanks = dd.length - dated.length;
-  ok(blanks > 0 && dd.slice(0, dated.length).every(Boolean) && mono(dated, false), `Date descending keeps the ${blanks} undated rows last, as a sheet keeps blank cells`);
+  /* v456 required blanks > 0 and took the book's own undated rows as its fixture. From 04 Sep
+     2026 the book carries none and sort-ledger --check keeps it that way, so demanding one would
+     be demanding a fault. What is asserted is the ORDERING itself: every dated row precedes every
+     blank and the dated run descends. That holds at zero blanks and still holds if one ever
+     appears mid-fold, which is the only way one can now appear at all. */
+  ok(dd.slice(0, dated.length).every(Boolean) && mono(dated, false), `Date descending runs latest first and keeps the ${blanks} undated rows last, as a sheet keeps blank cells`);
   ok(/Date/.test(String(w15.eval("document.querySelector('.sec.on .lhead .lsb.on').textContent"))) && +w15.eval("document.querySelectorAll('.sec.on .lhead .larr').length") === 1,
     "the active heading carries the one arrow");
   ok(+w15.eval("document.querySelector('.sec.on .lcard .lrow .lgroup').children.length") === 6 && +w15.eval("document.querySelector('.sec.on .lcard .lrow').children.length") === 6,
@@ -6156,21 +6215,23 @@ section("Statements — the QR, the sort and the Salt identity");
   ok(/--salt-font-mono/.test(css) && /--salt-font-display/.test(css),
     "figures are mono and sentences are the display face, as the identity requires");
 
-  /* UNDATED ROWS SORT LAST. Three rows on the book carry no date; comparing them by date
-     yields NaN, which makes the comparator inconsistent and leaves their position to the
-     sort implementation, so the same book could print two orderings. */
+  /* NO STATEMENT CAN PRINT AN UNDATED ROW, because the book carries none.
+     This block used to assert the opposite premise: that three rows on the book had no date, and
+     that stmtRows sorted them last rather than leaving them wherever the comparator's NaN put
+     them. Its own message said "so this is not a dead check", which was the right instinct and
+     the wrong fixture. On 04 Sep 2026 the three were dated on his instruction, and the loop then
+     ran over an empty set and passed while proving nothing at all: exactly the assertion that
+     cannot fail. So the invariant is asserted directly instead. stmtRows' sort-last handling
+     stays in the tool as a defence, but the thing that keeps it unreachable is the guard in
+     sort-ledger.mjs --check, proved in both directions in its own section above. */
   const { stmtRows } = await import("../tools/make_statements.mjs");
   const bookS = JSON.parse(readFileSync(resolve(REPO, "ledger", "book.json"), "utf8"));
-  const undatedParties = [...new Set(bookS.sales.filter(x => !x.date).map(x => x.customer))].filter(Boolean);
-  ok(undatedParties.length > 0, `the book still carries undated rows (${undatedParties.length} parties), so this is not a dead check`);
-  let sortedLast = true;
-  for (const party of undatedParties) {
-    const rows = stmtRows(party, { from: null, to: "2026-09-01", completed: true, open: true, pending: true });
-    const firstUndated = rows.findIndex(r => !r.date);
-    if (firstUndated >= 0 && rows.slice(firstUndated).some(r => r.date)) sortedLast = false;
-  }
-  ok(sortedLast, "an undated row sorts after every dated one, rather than wherever the engine leaves it");
-  ok(!stmtRows(undatedParties[0], { from: null, to: "2026-09-01", completed: true, open: true, pending: true })
+  const undatedSales = bookS.sales.filter(x => !x.date);
+  ok(undatedSales.length === 0, undatedSales.length
+    ? `the book carries ${undatedSales.length} undated sale(s) (${undatedSales.map(r => r.rid || "?").join(", ")}), so a statement can print a row with no date`
+    : "no sale on the book is undated, so no statement can print a row with no date");
+  const anyParty = bookS.sales.find(x => x.customer && x.date);
+  ok(!!anyParty && !stmtRows(anyParty.customer, { from: null, to: "2026-09-01", completed: true, open: true, pending: true })
     .some(r => String(r.date) === "Invalid Date"), "and no row carries an unparseable date");
 
   /* THE WORKER HAS NO FILESYSTEM, and the first cut of the unlock page forgot it:

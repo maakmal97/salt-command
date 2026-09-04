@@ -1,6 +1,6 @@
 {
- "v": "v486",
- "stamped": "04 Sep 2026, 23:02 KL",
+ "v": "v487",
+ "stamped": "04 Sep 2026, 23:53 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -2057,6 +2057,35 @@
     "rid": "s097"
    },
    {
+    "customer": "CS6-PER",
+    "qty": 6.25,
+    "total": 350,
+    "cash": 0,
+    "deliveredQty": 0,
+    "cancelled": true,
+    "cancelledOn": "2026-08-24",
+    "rid": "s109",
+    "date": "2026-08-20",
+    "mod": "corrected on 2026-09-04: date (unset) to 2026-08-20",
+    "amend": [
+     {
+      "date": "2026-08-20",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 0,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-09-04",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>DATED 20 AUG on his word, 04 Sep.</b> The order carried no date at all: it was cancelled on 24 Aug and the cancellation was recorded while the order date never was. v381 states it outright, that two orders went to CS6-PER after the 30 Jul ban, s068 on 07 Aug and the cancelled s109 on 20 Aug. No figure moves: nothing was paid and nothing was delivered."
+     }
+    ],
+    "note": "<b>DATED 20 AUG on his word, 04 Sep.</b> The order carried no date at all: it was cancelled on 24 Aug and the cancellation was recorded while the order date never was. v381 states it outright, that two orders went to CS6-PER after the 30 Jul ban, s068 on 07 Aug and the cancelled s109 on 20 Aug. No figure moves: nothing was paid and nothing was delivered. "
+   },
+   {
     "date": "2026-08-21",
     "customer": "CS6-BS",
     "qty": 1.5,
@@ -2178,6 +2207,35 @@
      }
     ],
     "rid": "s101"
+   },
+   {
+    "customer": "CN6-WM",
+    "qty": 1.5,
+    "total": 185,
+    "cash": 0,
+    "deliveredQty": 0,
+    "cancelled": true,
+    "cancelledOn": "2026-08-24",
+    "rid": "s108",
+    "date": "2026-08-22",
+    "mod": "corrected on 2026-09-04: date (unset) to 2026-08-22",
+    "amend": [
+     {
+      "date": "2026-08-22",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 0,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-09-04",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>DATED 22 AUG on his word, 04 Sep.</b> The order carried no date at all: it was cancelled on 24 Aug and the cancellation was recorded while the order date never was. v334 of 22 Aug describes this row, CN6-WM 1.5 unit for RM185 at RM123.33 a unit, which is where the date comes from. No figure moves: nothing was paid and nothing was delivered."
+     }
+    ],
+    "note": "<b>DATED 22 AUG on his word, 04 Sep.</b> The order carried no date at all: it was cancelled on 24 Aug and the cancellation was recorded while the order date never was. v334 of 22 Aug describes this row, CN6-WM 1.5 unit for RM185 at RM123.33 a unit, which is where the date comes from. No figure moves: nothing was paid and nothing was delivered. "
    },
    {
     "customer": "CS6-BS-R",
@@ -2581,6 +2639,42 @@
     "rid": "s118"
    },
    {
+    "customer": "CY2-NIL",
+    "qty": 2.5,
+    "total": 230,
+    "cost": 50,
+    "cash": 0,
+    "deliveredQty": 0,
+    "agreedOn": "2026-08-28",
+    "rid": "s119",
+    "amend": [
+     {
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 0,
+      "note": "as booked, pending and undated"
+     },
+     {
+      "date": "2026-09-04",
+      "kind": "Cancellation",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>WITHDRAWN UNFULFILLED.</b> A pending CY2-NIL order of 2.5 unit at RM 230, agreed 28 Aug, never delivered and never paid, cancelled on 4 Sep. It moves no cash and no stock and returns 2.5 unit of commitment to the shelf. The three CY2-NIL orders before it, on 11, 18 and 26 Aug, were each 2.5 unit at RM 230 delivered and paid in full on the day, so this reads as one order not taken up and says nothing about the party's grade, price or standing. <b>THE DATE WAS QUERIED ON 4 SEP AND THE BOOK IS RIGHT, WHICH IS WHY THE ANSWER IS KEPT HERE.</b> It was put that this order was placed on 31 Aug and that a 28 Aug order had been delivered and paid. The 31 Aug artefact is an AMENDMENT TO THIS ROW, not a second order: a Fulfilment on s119 for RM 230 and 2.5 unit, queued at 19:23 on 31 Aug and dated 1 Sep, which v464 folded and v467 withdrew on his word that the order was still pending. So both halves of the query describe a state this row has already been through and left. D1 holds three CY2-NIL drafts in all and no refusals, and the book holds four CY2-NIL rows: there is no fifth order, and none is missing. This is the fourth and last."
+     },
+     {
+      "date": "2026-09-04",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>DATED 28 AUG on his word, 04 Sep.</b> The order carried agreedOn 2026-08-28 and no date, so it read as undated everywhere the desk asks for one. v396 records the order that day and v486 answered the 31 Aug query against this row and upheld the book, so 28 Aug is the agreed date twice over. No figure moves: nothing was paid and nothing was delivered."
+     }
+    ],
+    "cancelled": true,
+    "date": "2026-08-28",
+    "mod": "corrected on 2026-09-04: date (unset) to 2026-08-28",
+    "note": "<b>DATED 28 AUG on his word, 04 Sep.</b> The order carried agreedOn 2026-08-28 and no date, so it read as undated everywhere the desk asks for one. v396 records the order that day and v486 answered the 31 Aug query against this row and upheld the book, so 28 Aug is the agreed date twice over. No figure moves: nothing was paid and nothing was delivered. "
+   },
+   {
     "customer": "CN6-WM",
     "qty": 1,
     "total": 110,
@@ -2828,52 +2922,6 @@
     "deliveredOn": "2026-09-04",
     "note": "CM4-MK takes 4 unit at RM 360, RM 90/unit, delivered in full on 4 Sep with RM 300 paid and RM 60 left owing. Two flags came with the draft and both were read. The rate flag calls RM 90/unit 18.2% under this party's RM 110/unit median over seven orders; the median is the wrong ruler, because RM 110/unit is what CM4-MK's 2 unit orders cost and both of its 4 unit orders were struck at this grade, RM 360 on 10 Aug and RM 380 on 24 Aug. This is the 10 Aug price repeated, and it sits well clear of the live floor of RM 245.52 delivered for 4 unit. The cost is the shelf's own RM 48/unit, from the 25 unit SA5-BTR lot of 3 Sep at RM 1,200, and it is the same figure the desk's pricing snapshot carries, so no override was needed: RM 192 of cost against RM 360 leaves RM 168, 46.7%. The advance flag is the one that stands: RM 60 goes out against delivered stock, and it is the first balance CM4-MK has carried, every one of its seven earlier orders having settled on the day.",
     "rid": "s132"
-   },
-   {
-    "customer": "CY2-NIL",
-    "qty": 2.5,
-    "total": 230,
-    "cost": 50,
-    "cash": 0,
-    "deliveredQty": 0,
-    "agreedOn": "2026-08-28",
-    "rid": "s119",
-    "amend": [
-     {
-      "kind": "Fulfilment",
-      "cash": 0,
-      "kg": 0,
-      "note": "as booked, pending and undated"
-     },
-     {
-      "date": "2026-09-04",
-      "kind": "Cancellation",
-      "cash": 0,
-      "kg": 0,
-      "note": "<b>WITHDRAWN UNFULFILLED.</b> A pending CY2-NIL order of 2.5 unit at RM 230, agreed 28 Aug, never delivered and never paid, cancelled on 4 Sep. It moves no cash and no stock and returns 2.5 unit of commitment to the shelf. The three CY2-NIL orders before it, on 11, 18 and 26 Aug, were each 2.5 unit at RM 230 delivered and paid in full on the day, so this reads as one order not taken up and says nothing about the party's grade, price or standing. <b>THE DATE WAS QUERIED ON 4 SEP AND THE BOOK IS RIGHT, WHICH IS WHY THE ANSWER IS KEPT HERE.</b> It was put that this order was placed on 31 Aug and that a 28 Aug order had been delivered and paid. The 31 Aug artefact is an AMENDMENT TO THIS ROW, not a second order: a Fulfilment on s119 for RM 230 and 2.5 unit, queued at 19:23 on 31 Aug and dated 1 Sep, which v464 folded and v467 withdrew on his word that the order was still pending. So both halves of the query describe a state this row has already been through and left. D1 holds three CY2-NIL drafts in all and no refusals, and the book holds four CY2-NIL rows: there is no fifth order, and none is missing. This is the fourth and last."
-     }
-    ],
-    "cancelled": true
-   },
-   {
-    "customer": "CN6-WM",
-    "qty": 1.5,
-    "total": 185,
-    "cash": 0,
-    "deliveredQty": 0,
-    "cancelled": true,
-    "cancelledOn": "2026-08-24",
-    "rid": "s108"
-   },
-   {
-    "customer": "CS6-PER",
-    "qty": 6.25,
-    "total": 350,
-    "cash": 0,
-    "deliveredQty": 0,
-    "cancelled": true,
-    "cancelledOn": "2026-08-24",
-    "rid": "s109"
    }
   ],
   "contacts": [
@@ -3178,7 +3226,7 @@
   ],
   "QUEUE_COMMITTED": "2026-09-04T12:03:40.929Z",
   "PRICING": {
-   "takenAt": "2026-09-04T15:02:21.780Z",
+   "takenAt": "2026-09-04T15:55:05.652Z",
    "sizes": [
     0.5,
     1,
@@ -3612,10 +3660,10 @@
      }
     }
    },
-   "v": "v486"
+   "v": "v487"
   },
   "OPEN": {
-   "at": "2026-09-04T15:02:21.803Z",
+   "at": "2026-09-04T15:55:05.679Z",
    "count": 7,
    "byKey": {
     "CM4-MK|2026-09-04|360": {
@@ -3763,7 +3811,7 @@
     "salt": "2026-09-02",
     "oil": "2026-08-23"
    },
-   "v": "v486"
+   "v": "v487"
   }
  }
 }

@@ -1,6 +1,6 @@
 {
-  "v": "v486",
-  "derivedFrom": "1376308a8cbc2549",
+  "v": "v487",
+  "derivedFrom": "5595035efb40a5ac",
   "tables": {
     "sales": {
       "rows": 132,
@@ -14,7 +14,7 @@
           ]
         },
         "amend": {
-          "present": 47,
+          "present": 49,
           "of": 132,
           "optional": true,
           "types": [
@@ -62,9 +62,9 @@
           ]
         },
         "date": {
-          "present": 129,
+          "present": 132,
           "of": 132,
-          "optional": true,
+          "optional": false,
           "types": [
             "string"
           ]
@@ -118,7 +118,7 @@
           ]
         },
         "mod": {
-          "present": 20,
+          "present": 23,
           "of": 132,
           "optional": true,
           "types": [
@@ -126,7 +126,7 @@
           ]
         },
         "note": {
-          "present": 77,
+          "present": 80,
           "of": 132,
           "optional": true,
           "types": [

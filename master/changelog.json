@@ -1,5 +1,16 @@
 [
  {
+  "v": "v487",
+  "d": "04 Sep 2026",
+  "t": "EVERY ROW ON THE LEDGER IS DATED, AND THE CHECK THAT SAYS SO CAN NOW FAIL",
+  "n": [
+   "<b>HIS INSTRUCTION, 04 SEP 2026: no undated row may stand on the ledger.</b> Three carried no date at all. s108 CN6-WM 1.5 unit RM185 is dated 22 Aug, the day v334 describes the order at RM123.33 a unit. s109 CS6-PER 6.25 unit RM350 is dated 20 Aug, which v381 states outright when it records that two orders went to him after the 30 Jul ban, s068 on 07 Aug and the cancelled s109 on 20 Aug. s119 CY2-NIL 2.5 unit RM230 is dated 28 Aug, which the row already carried as agreedOn and which v486 upheld the same day against a query putting it at 31 Aug. <b>NO FIGURE MOVES.</b> All three have nothing paid and nothing delivered, so revenue, cost, the shelf, every receivable and every party's standing are exactly what they were. What changes is that the desk, the Journal and a statement stop printing three rows with no date on them.",
+   "<b>THE TRAIL IS WRITTEN BY applyAmend, NOT BY HAND,</b> so each row carries the mod line and the amend entry a Correction folded through the gate would have produced: \"corrected on 2026-09-04: date (unset) to ...\". That matters because the three could not have been folded through the gate until the same day. All three were cancelled, and the fold refused every amendment against a cancelled row, so from the moment each was cancelled there was no route to date it. The narrowing that opened that road is the commit before this one, and it is what makes this fold possible rather than a hand edit standing in for one.",
+   "<b>AND THE CHECK CI RUNS NOW FAILS ON AN UNDATED ROW RATHER THAN SORTING IT LAST.</b> tools/sort-ledger.mjs has always put an undated row at the end, which kept the order stable and accommodated the row for ever: that is how three of them sat there, one since 24 Aug. The sort is unchanged, because it is still what holds the order steady mid-fold. What changed is --check, which is the thing ci.yml runs: it reports any row carrying no date and exits 1. Proved in both directions by spawning the real tool, not by importing a function: the book as it stands passes, and a copy of that same book with one date removed fails with exit 1 and names the row.",
+   "<b>FOUR ASSERTIONS HAD BEEN USING THE FAULT AS THEIR FIXTURE, AND ALL FOUR ARE REBUILT.</b> Dating the rows turned the suite red in four places, every one of them a test that only passed because the book was wrong. The v347 guard test pinned the real cancelled CS6-PER row and the literal key CS6-PER|undefined|350, so dating s109 moved the key and the fulfilment was then refused as \"no row on the book matches\" rather than by the cancelled guard: a broken guard would have read as a pass. It owns a synthetic target now, which is the v359 lesson arriving for the third time. The Ledger's date-descending test demanded blanks > 0, so it required a fault to exist; it asserts the ordering itself instead. The statement's undated-sort loop ran over an empty set and passed while proving nothing, the assertion that cannot fail, and now asserts the invariant directly. The extract in ledger/ledger.json was regenerated."
+  ]
+ },
+ {
   "v": "v486",
   "d": "04 Sep 2026",
   "t": "THE QUERY AGAINST s119'S DATE IS ANSWERED IN THE ROW, AND THE BOOK IS UPHELD",
