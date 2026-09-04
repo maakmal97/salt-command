@@ -5918,6 +5918,13 @@ section("Statements — the password, the username, the envelope and the site's 
   const j = await r.json();
   ok(r.status === 200 && j.ok === true && j.env && j.env.ct === envB.ct && j.wrap && j.live && j.byMaster === false,
     "the right username and password return the record: wrap, envelope and live document");
+  /* THE MASTER WRAP NEVER TRAVELS TO A CUSTOMER (04 Sep 2026 audit). It is his content key sealed
+     under STMT_MASTER, so handing it to every customer every month was handing out a self-verifying
+     offline crack target against the one passphrase that opens every account: an auditor recovered
+     a five-word master from a returned wrap in a single pass. Proved red against the code as
+     shipped on 03 Sep, which returned both wraps to everyone. */
+  ok(j.wrapMaster == null,
+    "and NOT the master wrap, which would be an offline crack target against every account at once");
   const ckOut = await C.unwrapKey(pw, j.wrap);
   ok(JSON.parse(await C.decryptWith(ckOut, j.env)).statements[0].body.includes("CX0-AA")
     && JSON.parse(await C.decryptWith(ckOut, j.live)).body.includes("live CX0-AA"),
@@ -5943,29 +5950,83 @@ section("Statements — the password, the username, the envelope and the site's 
     "the master passphrase, typed into the one field the page has, is the owner's override");
   ok(JSON.parse(await C.decryptWith(await C.unwrapKey("master-pass", jm.wrapMaster), jm.env)).statements.length === 1,
     "and it actually opens the statement, which the first cut's override never could");
+  ok(jm.wrap == null, "while the customer's own wrap does not travel back on an override");
   ok((await stmtWorker.fetch(open({ u: un, master: "not-the-master" }), senv)).status === 401,
     "and a wrong master password is refused like any other");
   ok((await stmtWorker.fetch(open({ u: un, master: "master-pass" }), { STMT: kv })).status === 401,
     "with no STMT_MASTER set the override is simply off");
 
+  /* JSON ONLY. request.json() ignores the content type, so a text/plain POST was a CORS-safelisted
+     simple request: any page a customer visited could spend his attempts from his own browser with
+     no preflight. Proved red against the code as shipped, which accepted it. */
+  ok((await stmtWorker.fetch(new Request("https://k7m3p2.example/open", {
+    method: "POST", headers: { "content-type": "text/plain" }, body: JSON.stringify({ u: un, password: pw })
+  }), senv)).status === 401, "a POST that is not application/json is refused, so the no-preflight path closes");
+
+  /* THE LOCKOUT BRAKES THE CALLER, NOT THE ACCOUNT (04 Sep 2026 audit). Keyed on the username
+     alone, ten unauthenticated POSTs locked ANY customer out for fifteen minutes and locked the
+     owner's override out with him: forty requests an hour held one account shut for ever, and one
+     review sheet took the whole site down for the price of a shell loop. Proved red against the
+     code as shipped, where the customer's own password returned 429 after the attacker's ten. */
   const kv2 = new KV();
   await kv2.put("u:" + un, JSON.stringify(rec));
   const senv2 = { STMT: kv2, STMT_MASTER: "master-pass" };
+  const from = (ip, body) => new Request("https://k7m3p2.example/open", {
+    method: "POST", headers: { "content-type": "application/json", "CF-Connecting-IP": ip },
+    body: JSON.stringify(body)
+  });
   let locked = 0;
   for (let i = 0; i < 12; i++) {
-    const rr = await stmtWorker.fetch(open({ u: un, password: "wrong-pass-here" }), senv2);
+    const rr = await stmtWorker.fetch(from("1.2.3.4", { u: un, password: "wrong-pass-here" }), senv2);
     if (rr.status === 429) locked++;
   }
-  ok(locked >= 2, "ten failed attempts lock the username for fifteen minutes");
-  ok((await stmtWorker.fetch(open({ u: un, password: pw }), senv2)).status === 429,
-    "and the lock holds even against the right password");
+  ok(locked >= 2, "ten failed attempts from one caller lock that caller out for fifteen minutes");
+  ok((await stmtWorker.fetch(from("1.2.3.4", { u: un, password: pw }), senv2)).status === 429,
+    "and the lock holds against that caller even with the right password");
+  ok((await stmtWorker.fetch(from("5.6.7.8", { u: un, password: pw }), senv2)).status === 200,
+    "but the customer, at his own address, opens his statement while the attacker is still locked out");
+  ok((await stmtWorker.fetch(from("9.9.9.9", { u: un, master: "master-pass" }), senv2)).status === 200,
+    "and the owner's override still works, which a shared counter had shut with the customer");
+  /* one caller sweeping many accounts is braked too, on its own key */
+  const kv3 = new KV(); await kv3.put("u:" + un, JSON.stringify(rec));
+  const senv3 = { STMT: kv3, STMT_MASTER: "master-pass" };
+  let swept = 0;
+  for (let i = 0; i < 34; i++) {
+    const rr = await stmtWorker.fetch(from("7.7.7.7", { u: C.newUsername(), password: "x" }), senv3);
+    if (rr.status === 429) swept++;
+  }
+  ok(swept >= 2, "and a caller sweeping many usernames is braked on its address, not on theirs");
+  ok((await stmtWorker.fetch(from("8.8.8.8", { u: un, password: pw }), senv3)).status === 200,
+    "while a real customer is untouched by that sweep");
 
   ok(JSON.parse(await kv.get("seen:" + un)).opens >= 1,
     "an open is recorded, so he can tell whether a statement was ever read");
   ok(!(await kv.list({ prefix: "stmt:" })).keys.length && !(await kv.list({ prefix: "q:" })).keys.length,
     "and the site's store holds nothing of the desk's: no queue, no vault, no old-route key");
-  ok(!readFileSync(join(REPO, "src", "worker.js"), "utf8").includes('startsWith("/s/")'),
-    "the desk's own Worker no longer serves a statement route at all");
+  /* THE RETIRED ROUTE IS A DEAD END, AND THIS IS A FETCH BECAUSE THE GREP WAS A LIE (04 Sep 2026).
+     The assertion here used to read the SOURCE of src/worker.js for the deleted route and pass
+     because it was gone. Deleting a route on that Worker does not close it: every unmatched GET
+     falls to the SPA fallback, which serves the desk. So /s/<CODE> answered 200 with the WHOLE
+     PUBLIC LEDGER, at REQUIRE_ACCESS "0", while this assertion was green, and thirty-seven
+     September statements were already in customers' hands printing that exact URL under the words
+     "Scan to open this statement". Proved red against the build of 03 Sep before the handler
+     landed: /s/CA4-DAM returned 200 and the desk's body. */
+  {
+    const deskEnv = mkEnv(new KV());
+    for (const path of ["/s/CA4-DAM", "/s/", "/s", "/s/CA4-DAM?x=1"]) {
+      const rr = await worker.fetch(req(path), deskEnv);
+      const body = await rr.text();
+      ok(rr.status === 410 && !/ASSET:/.test(body),
+        `${path} on the desk is a dead end (${rr.status}), not the desk itself`);
+    }
+    const rp = await worker.fetch(req("/s/CA4-DAM", { method: "POST" }), deskEnv);
+    ok(rp.status === 410, "and a POST to the old route is gone too, not a 200 from the asset store");
+    /* the copy must not hand the statements site's address to whoever scanned an old sheet */
+    const gone = await (await worker.fetch(req("/s/CE4-AD"), deskEnv)).text();
+    const site = (await import("../tools/make_statements.mjs")).siteBaseUrl();
+    ok(!gone.includes(site) && !gone.includes(new URL(site).hostname),
+      "and the page it serves names no address, so an old code cannot be trimmed into the new site");
+  }
 }
 
 /* ---- the statement in the Salt identity, and what the QR carries ----------------- */
@@ -6159,6 +6220,41 @@ section("Statements — the QR, the sort and the Salt identity");
     ok(JSON.parse(plan.puts.find(p => p.key === "u:" + u).value).live.at === now.toISOString(),
       "and what it puts is the record with the live statement in it");
 
+    /* A WRONG STMT_KEY IS CAUGHT BEFORE ANYTHING IS SEALED WITH IT (04 Sep 2026 audit). The content
+       key is derived in the CLOUD from the deploy's secret; the record was sealed on the LAPTOP
+       from its own copy. Nothing compared them, so a secret differing by one character sealed every
+       live statement under a key no password unwraps, the publish logged "37 with a live statement",
+       and the browser swallowed the failure as "simply absent": the whole feature dead for every
+       customer with three layers reporting success. rec.env was sealed with the true key, so
+       opening it is a cross-check the deploy cannot fake. Proved red by removing the check. */
+    const bad = await liveRecords(root, "not-the-laptops-key", now);
+    ok(bad.wrongKey.length === sep.made && bad.live === 0 && bad.records.every(x => !x.live),
+      "a key that does not match the issue seals nothing and is reported, rather than sealing rubbish");
+    const goodK = await liveRecords(root, "test-secret", now);
+    ok(goodK.wrongKey.length === 0 && goodK.live === sep.made,
+      "and the right key still seals every one, so the check is not simply refusing everything");
+    const planBad = await planPublish(root, "not-the-laptops-key", now, [], null);
+    ok(planBad.wrongKey.length === sep.made && planBad.puts.length === sep.made + 1,
+      "the publish still puts the monthly statements, which open under the customer's own password, and reports the key");
+
+    /* AND THE PUBLISH ASSERTS ITS OWN EFFECT rather than reporting one. Every deploy on master was
+       publishing nothing and exiting 0 because every committed record was of the pre-username
+       shape: all thirty-seven accounts were absent from the site, any customer was told his
+       password was not accepted, and the only trace was a warning line in a log nobody reads. */
+    const stale = join(REPO, "test", "tmp", "site-stale");
+    mkdirSync(join(stale, "2026-09", "_kv"), { recursive: true });
+    writeFileSync(join(stale, "2026-09", "_kv", "CX0-AA.json"),
+      JSON.stringify({ code: "CX0-AA", month: "2026-09", issued: "2026-09-01", verifier: {}, env: {} }) + "\n");
+    let code = 0, out = "";
+    try {
+      out = execFileSync(process.execPath, [join(REPO, "tools", "stmt-publish.mjs"), "--dry", join(stale, "out")],
+        { cwd: REPO, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"],
+          env: { ...process.env, SALT_STATEMENTS_DIR: stale, STMT_KEY: "test-secret" } });
+    } catch (e) { code = e.status; out = String(e.stdout || "") + String(e.stderr || ""); }
+    ok(code === 1 && /NONE is publishable/.test(out),
+      "an issue whose records are all unpublishable turns the deploy RED and says which folder to regenerate");
+    rmSync(stale, { recursive: true, force: true });
+
     /* A RECORD FROM BEFORE THE SITE has no username, and the first deploy after the site went
        up put thirty-seven of them under the one key "u:undefined", which the store refused and
        which turned the deploy red. They are reported and left; and an issue with nothing
@@ -6184,6 +6280,20 @@ section("Statements — the QR, the sort and the Salt identity");
     const rv = readFileSync(join(root, "2026-09", "_review_2026-09-01.html"), "utf8");
     ok(rv.includes('<th class="l">Username</th>') && rv.includes(u) && !rv.includes(sep.passwords[both.who]),
       "the review sheet lists the usernames and still no password");
+
+    /* THE ADDRESS ON THE PAPER NAMES THE WORKER THIS REPO DEPLOYS. It was a hand-copied constant,
+       and a QR is printed and handed over: rename the Worker without editing the constant and
+       thirty-seven codes point at a hostname that answers nothing, with every check green and the
+       paper already in customers' hands. That is exactly what had just happened to /s/, one rename
+       earlier. Proved red by pointing the config at another name. */
+    const { siteBaseUrl } = await import("../tools/make_statements.mjs");
+    const cfgName = (/^\s*"name"\s*:\s*"([^"]+)"/m.exec(readFileSync(join(REPO, "wrangler.stmt.jsonc"), "utf8")) || [])[1];
+    ok(!!cfgName && siteBaseUrl().startsWith("https://" + cfgName + "."),
+      `the statement address names the Worker wrangler.stmt.jsonc deploys (${cfgName})`);
+    ok(both.html.includes(siteBaseUrl() + "/?u=" + u),
+      "and the URL printed and encoded on the statement is that address");
+    ok(!siteBaseUrl().includes("salt-command"),
+      "and it is not the desk's, which is the whole reason the statements moved");
     rmSync(root, { recursive: true, force: true });
   }
 

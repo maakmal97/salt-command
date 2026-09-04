@@ -28,15 +28,26 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import POSITION_ENGINE from "../engine/position.mjs";
 import { statementCss, REVIEW_CSS } from "./stmt-style.mjs";
 import { qrSvg } from "./qr.mjs";
-import { newPassword, newUsername, USERNAME_RE, makeVerifier, contentKey, wrapKey, encryptWith } from "./stmt-crypto.mjs";
+import { newPassword, newUsername, USERNAME_RE, makeVerifier, contentKey, wrapKey, encryptWith, decryptWith } from "./stmt-crypto.mjs";
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const BOOK = process.env.SALT_BOOK || resolve(REPO, "ledger", "book.json");
 /* WHERE A SCANNED CODE LANDS: the statements site, NOT the desk's address (his instruction,
-   03 Sep 2026). It is the Worker named in wrangler.stmt.jsonc on the account's workers.dev
-   subdomain; the two must agree, and a custom domain replaces both together. Overridable so a
-   rehearsal can point somewhere else. */
-const BASE_URL = (process.env.SALT_BASE_URL || "https://k7m3p2.qyts8mh72kyg.workers.dev").replace(/\/+$/, "");
+   03 Sep 2026). It is READ OUT OF wrangler.stmt.jsonc rather than restated here, because a QR is
+   printed on paper and handed over: get the two out of step and thirty-seven codes point at a
+   hostname that answers nothing, with every check green and the paper already in customers' hands.
+   That is not hypothetical, it is what had just happened to /s/ one rename earlier. The account's
+   workers.dev subdomain cannot be read from the config, so it stays here; SALT_BASE_URL overrides
+   the whole address for a rehearsal or once a custom domain exists. */
+const WORKERS_SUBDOMAIN = "qyts8mh72kyg";
+export function siteBaseUrl() {
+  if (process.env.SALT_BASE_URL) return process.env.SALT_BASE_URL.replace(/\/+$/, "");
+  const cfg = readFileSync(resolve(REPO, "wrangler.stmt.jsonc"), "utf8");
+  const m = /^\s*"name"\s*:\s*"([^"]+)"/m.exec(cfg);
+  if (!m) throw new Error("wrangler.stmt.jsonc names no Worker, so no statement address can be built");
+  return "https://" + m[1] + "." + WORKERS_SUBDOMAIN + ".workers.dev";
+}
+const BASE_URL = siteBaseUrl();
 const book = JSON.parse(readFileSync(BOOK, "utf8"));
 
 /* the desk globals the lifted functions read, bound to the same sources the desk binds
@@ -582,15 +593,21 @@ function priorIssues(outDir, code, issue) {
    overrides the file, and a test passes both in `opts`. A run that would mint a record and has
    no key stops before writing anything, because a record wrapped under nothing opens nothing. */
 function loadSecrets(outDir, opts) {
-  const out = { key: (opts && opts.key) || process.env.STMT_KEY || "", master: (opts && opts.master) || process.env.STMT_MASTER || "" };
+  /* TRIMMED AT EVERY DOOR. A secret pasted into a web form, echoed from a file, or piped from a
+     shell picks up whitespace that is invisible in every log, and an untrimmed byte here is a key
+     that derives a different content key from the laptop's. */
+  const tr = (v) => String(v == null ? "" : v).trim();
+  const out = { key: tr((opts && opts.key) || process.env.STMT_KEY), master: tr((opts && opts.master) || process.env.STMT_MASTER) };
   if (out.key) return out;
   const here = resolve(outDir);
   const file = process.env.SALT_STMT_SECRETS
     || (/^\d{4}-\d{2}$/.test(basename(here)) ? join(dirname(here), "_secrets.json") : join(here, "_secrets.json"));
   if (existsSync(file)) {
-    const s = JSON.parse(readFileSync(file, "utf8"));
-    out.key = out.key || String(s.key || "");
-    out.master = out.master || String(s.master || "");
+    /* stripped of a byte-order mark first: Notepad on Windows writes one by default, and
+       JSON.parse rejects it with "Unexpected token" naming a character nobody can see. */
+    const s = JSON.parse(readFileSync(file, "utf8").replace(/^\uFEFF/, ""));
+    out.key = out.key || tr(s.key);
+    out.master = out.master || tr(s.master);
   }
   return out;
 }
@@ -626,7 +643,7 @@ export async function liveRecords(root, key, now) {
   const users = loadUsers(join(root, "_users.json"));
   const byUser = {};
   for (const c of Object.keys(users)) byUser[users[c]] = c;
-  const records = [], unmatched = [], stale = [];
+  const records = [], unmatched = [], stale = [], wrongKey = [];
   let live = 0;
   for (const f of readdirSync(join(root, latest, "_kv")).filter(x => x.endsWith(".json")).sort()) {
     const rec = JSON.parse(readFileSync(join(root, latest, "_kv", f), "utf8"));
@@ -637,15 +654,31 @@ export async function liveRecords(root, key, now) {
     if (!rec || !USERNAME_RE.test(String(rec.u || "")) || !rec.wrap || !rec.env) { stale.push(f); continue; }
     const code = byUser[rec.u];
     if (key && code) {
+      /* THE KEY IS PROVED AGAINST THE RECORD BEFORE ANYTHING IS SEALED WITH IT (04 Sep 2026 audit).
+         The content key is derived here from the DEPLOY'S copy of STMT_KEY, and the record was
+         sealed on the laptop from ITS copy. Nothing compared the two, so a secret that differed by
+         one character sealed every live statement under a key no password on earth unwraps: the
+         publish counted them and logged "37 with a live statement", the browser opened the monthly
+         bundle perfectly and then swallowed the live one as simply absent, and the whole feature
+         was dead for every customer with three layers reporting success. That is precisely the
+         silent-green failure this repository keeps writing tests for.
+         rec.env was sealed with the TRUE content key, so opening it is a cross-check the deploy
+         cannot fake: if it parses, the two copies of the secret agree. */
+      let ck = null;
+      try {
+        ck = await contentKey(key, rec.u);
+        JSON.parse(await decryptWith(ck, rec.env));
+      } catch (e) { ck = null; }
+      if (!ck) { wrongKey.push(rec.u); records.push(rec); continue; }
       const doc = liveStatement(code, now);
       if (doc) {
-        rec.live = Object.assign({ at: doc.at }, await encryptWith(await contentKey(key, rec.u), JSON.stringify(doc)));
+        rec.live = Object.assign({ at: doc.at }, await encryptWith(ck, JSON.stringify(doc)));
         live++;
       }
     } else if (key) unmatched.push(rec.u);
     records.push(rec);
   }
-  return { latest, records, live, unmatched, stale };
+  return { latest, records, live, unmatched, stale, wrongKey };
 }
 
 /* `archive` produces a HISTORICAL issue: the documents and the review sheet, and nothing else.

@@ -43,12 +43,17 @@ export async function planPublish(root, key, now, existingKeys, storedIssue) {
     }
     puts.push({ key: "issue", value: issued });
   }
-  return { latest: r.latest, issued, newIssue, live: r.live, unmatched: r.unmatched, stale: r.stale, puts, deletes };
+  return { latest: r.latest, issued, newIssue, live: r.live, unmatched: r.unmatched, stale: r.stale, wrongKey: r.wrongKey || [], puts, deletes };
 }
 
+/* shell:true, and NOT an npx.cmd branch. Node refuses to spawn a .cmd without a shell on Windows
+   (EINVAL since the 2024 argument-injection hardening), so the hand-run path died at the first
+   call on the one machine it exists for: the day the deploy is down and the store has to be
+   repaired by hand. With shell:true Node quotes the argv array itself, so nothing in a path or a
+   value becomes shell syntax. tools/d1.mjs and tools/drafts.mjs already do it this way. */
 function wrangler(args, opts = {}) {
-  return execFileSync(process.platform === "win32" ? "npx.cmd" : "npx",
-    ["wrangler", "-c", CONFIG, ...args], { cwd: REPO, encoding: "utf8", stdio: ["ignore", "pipe", "inherit"], ...opts });
+  return execFileSync("npx", ["wrangler", "-c", CONFIG, ...args],
+    { cwd: REPO, encoding: "utf8", stdio: ["ignore", "pipe", "inherit"], shell: true, ...opts });
 }
 function listKeys(prefix) {
   const t = wrangler(["kv", "key", "list", "--remote", "--binding", "STMT", "--prefix", prefix]);
@@ -76,6 +81,20 @@ async function main() {
   }
   const plan = await planPublish(root, key, new Date(), existing, storedIssue);
   if (!plan.latest) { console.log("no statement set to publish; normal for a build with no issue in it"); return; }
+
+  /* THE STEP ASSERTS ITS OWN EFFECT, and does not merely report one (04 Sep 2026 audit). Every
+     deploy on master was publishing NOTHING and exiting 0: the committed records were all of the
+     pre-username shape, so every one was stale, all thirty-seven accounts were absent from the
+     store, any customer reaching the site was told his password was not accepted, and the only
+     trace was one warning line in a log nobody reads. That is the same shape as the 10 Aug deploy
+     and the 19 Aug ship, which is why the stage job grew its own "Commit it, and prove it" step.
+     An issue that carries records but can publish none of them is a broken site, so it is red. */
+  if (plan.stale.length && !plan.puts.length) {
+    console.error("::error::" + plan.latest + " carries " + plan.stale.length + " record(s) and NONE is publishable, "
+      + "so every account is absent from the site. Regenerate the issue on the laptop: "
+      + "node tools/make_statements.mjs statements/" + plan.latest + " <issue date>");
+    process.exit(1);
+  }
   if (plan.stale.length) {
     console.log("::warning::" + plan.stale.length + " record(s) in " + plan.latest + " carry no username and are from before the site: "
       + plan.stale.join(", ") + ". Regenerate the issue on the laptop; they are not published.");
@@ -93,11 +112,36 @@ async function main() {
   if (dry) { console.log("wrote " + putFile + " and " + delFile); return; }
 
   wrangler(["kv", "bulk", "put", putFile, "--remote", "--binding", "STMT"], { stdio: "inherit" });
+
+  /* AND THE EFFECT IS READ BACK. A bulk put that reported success and stored nothing would be
+     invisible otherwise, which is the whole class of fault this file was rewritten for. */
+  const probe = plan.puts.find((x) => x.key.startsWith("u:"));
+  const got = wrangler(["kv", "key", "get", "--remote", "--binding", "STMT", probe.key],
+    { stdio: ["ignore", "pipe", "ignore"] });
+  if (String(got).indexOf('"u"') < 0) {
+    console.error("::error::the bulk put reported success but " + probe.key + " does not read back from the store.");
+    process.exit(1);
+  }
+  console.log("read back " + probe.key + " from the store");
+  console.log("published " + (plan.puts.length - 1) + " records");
+
   if (plan.deletes.length) {
     wrangler(["kv", "bulk", "delete", delFile, "--remote", "--binding", "STMT", "--force"], { stdio: "inherit" });
     console.log("retired " + plan.deletes.length + " key(s)");
   }
-  console.log("published " + (plan.puts.length - 1) + " records");
+
+  /* THE KEY MISMATCH IS REPORTED AFTER THE PUBLISH, NOT INSTEAD OF IT. The monthly statements open
+     under the customer's own password whatever the deploy's secret is, so refusing to publish would
+     take a working site down to punish a wrong secret. What is missing is the live document, and
+     that is worth a red run: correcting STMT_KEY and letting the next fold deploy restores it with
+     nothing to re-issue. */
+  if (plan.wrongKey.length) {
+    console.error("::error::STMT_KEY here is not the key this issue was sealed with on the laptop, so no live "
+      + "statement could be written for " + plan.wrongKey.length + " account(s). The monthly statements ARE "
+      + "published and open normally. Set the STMT_KEY secret to exactly the \"key\" in "
+      + "statements/_secrets.json; the next deploy writes the live statements.");
+    process.exit(1);
+  }
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {

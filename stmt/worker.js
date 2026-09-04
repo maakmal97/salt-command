@@ -41,9 +41,12 @@
 import { landingPage } from "./page.js";
 
 const UKEY = (u) => "u:" + u;
-const FKEY = (u) => "fail:" + u;
+const FKEY = (k) => "fail:" + k;          // keyed on address AND username; see handleOpen
+const IPKEY = (ip) => "ipfail:" + ip;     // one caller sweeping many accounts
+const MKEY = (ip) => "mfail:" + ip;       // the override's own brake, so a locked account cannot shut it
 const SKEY = (u) => "seen:" + u;
 const MAX_FAILS = 10;
+const MAX_IP_FAILS = 30;
 const FAIL_TTL = 900;                                   // fifteen minutes; the KV minimum is 60
 const USER_RE = /^[23456789abcdefghjkmnpqrstvwxyz]{4}-[23456789abcdefghjkmnpqrstvwxyz]{4}$/;
 
@@ -106,33 +109,68 @@ const REFUSED = "That username and password were not accepted.";
 
 async function handleOpen(request, env) {
   if (!env.STMT) return json({ ok: false, error: "no KV binding" }, 500);
+
+  /* JSON ONLY, AND THE CONTENT TYPE IS THE GATE (04 Sep 2026 audit). request.json() ignores the
+     header, so a POST sent as text/plain was a CORS-safelisted SIMPLE request: any page a customer
+     happened to visit could spend his attempts from his own browser, with no preflight and without
+     the attacker ever reading the reply. Demanding application/json forces a preflight, which this
+     Worker answers for nobody. */
+  const ctype = String(request.headers.get("content-type") || "");
+  if (!/^application\/json\b/i.test(ctype)) return json({ ok: false, error: REFUSED }, 401);
+
   let body = {};
   try { body = await request.json(); } catch (e) { body = {}; }
   const u = normUser(body.u);
   const pass = typeof body.password === "string" ? body.password.trim() : "";
   const master = typeof body.master === "string" ? body.master.trim() : "";
-  if (!u) return json({ ok: false, error: REFUSED }, 401);
 
-  const fails = parseInt(await env.STMT.get(FKEY(u)) || "0", 10) || 0;
-  if (fails >= MAX_FAILS) {
-    return json({ ok: false, error: "Too many attempts. Try again in fifteen minutes." }, 429);
-  }
+  /* THE COUNTER IS KEYED ON THE CALLER AS WELL AS THE ACCOUNT, and that is the whole point.
+     Keyed on the username alone, ten unauthenticated POSTs locked ANY customer out for fifteen
+     minutes, and locked the owner's override out with him: about forty requests an hour held one
+     account shut for ever, and thirty-seven usernames off one review sheet took the site down for
+     the price of a shell loop. Found by audit on 04 Sep. An attacker can now only ever spend his
+     OWN allowance: fail:<address>:<username> brakes grinding one account from one place,
+     ipfail:<address> brakes sweeping many accounts from one place, and neither key is one a
+     stranger can reach on the customer's behalf.
+     WHAT THIS DOES NOT DO, stated rather than implied: someone with many addresses can still make
+     attempts, and nothing here stops that. What makes it pointless is the password itself, sixteen
+     random symbols, about 78 bits. The lockout is a brake on a person with the address, never the
+     thing the secrecy rests on. */
+  const who = String(request.headers.get("CF-Connecting-IP") || "local");
+  const readN = async (k) => parseInt(await env.STMT.get(k) || "0", 10) || 0;
+  const bump = async (k, n) => env.STMT.put(k, String(n + 1), { expirationTtl: FAIL_TTL });
+  const uKey = FKEY(who + ":" + u), ipKey = IPKEY(who), mKey = MKEY(who);
+  const tooMany = () => json({ ok: false, error: "Too many attempts. Try again in fifteen minutes." }, 429);
+
+  const ipFails = await readN(ipKey);
+  if (ipFails >= MAX_IP_FAILS) return tooMany();
+  if (!u) { await bump(ipKey, ipFails); return json({ ok: false, error: REFUSED }, 401); }
 
   const rec = await env.STMT.get(UKEY(u), "json");
   const masterKey = String(env.STMT_MASTER || "");
-  const byMaster = !!(rec && rec.env && master && masterKey && ctEq(master, masterKey));
+
+  /* THE OVERRIDE IS WEIGHED BEFORE THE CUSTOMER'S LOCKOUT, on its own counter. It is the
+     break-glass: the one moment it is needed is the moment a customer cannot get in, which under
+     a shared counter was exactly when it had also stopped working. */
+  const mFails = await readN(mKey);
+  const byMaster = !!(rec && rec.env && master && masterKey && mFails < MAX_FAILS && ctEq(master, masterKey));
+
+  const uFails = await readN(uKey);
+  if (!byMaster && uFails >= MAX_FAILS) return tooMany();
+
   const byPass = !byMaster && !!(rec && rec.env) && !!pass && await verifierOk(pass, rec.verifier);
 
   if (!byMaster && !byPass) {
     /* KV counts are eventually consistent, so someone racing many requests can land a few
-       more than ten before the count catches up. That is a brake, not a lock, and it is sized
-       for the threat that exists: a person with the address trying passwords. The password's
-       own 78 bits are what make the arithmetic hopeless either way. */
-    await env.STMT.put(FKEY(u), String(fails + 1), { expirationTtl: FAIL_TTL });
+       more than ten before the count catches up. That is a brake, not a lock. */
+    await bump(uKey, uFails);
+    await bump(ipKey, ipFails);
+    if (master && masterKey) await bump(mKey, mFails);
     return json({ ok: false, error: REFUSED }, 401);
   }
 
-  if (fails) await env.STMT.delete(FKEY(u));
+  if (uFails) await env.STMT.delete(uKey);
+  if (mFails && byMaster) await env.STMT.delete(mKey);
 
   /* Recorded so he can tell whether a statement was ever opened, which is the question he
      actually asks after sending thirty-seven of them. It gates nothing. */
@@ -146,12 +184,21 @@ async function handleOpen(request, env) {
     }));
   }
 
-  /* THE WRAPS TRAVEL WITH THE ENVELOPE, and which one the page opens is which secret was typed.
-     The live document, when the deploy has written one, comes too; the page decides what to
-     draw. Nothing here is plaintext and nothing here is a key. */
+  /* ONLY THE WRAP THAT MATCHED TRAVELS BACK, and the reason is the sharpest finding of the 04 Sep
+     audit. This returned BOTH wraps to everyone. wrapMaster is the customer's content key sealed
+     under STMT_MASTER, so every customer signing in with his own password was handed, once a
+     month, a self-verifying offline crack target against the one passphrase that opens EVERY
+     account: PBKDF2 then AES-GCM over 32 bytes, where the tag says immediately when a guess is
+     right, with no rate limit, no lockout and no trace. An auditor recovered a five-word master
+     from a returned wrap in a single pass. Recovering it would defeat the site outright, because
+     the master branch above needs only a username, and usernames are printed in the clear on every
+     paper statement.
+     Nothing else in the record is a secret to the holder of a correct password: the envelope and
+     the live document are his own account, and both are ciphertext he now has the key for. */
   return new Response(JSON.stringify({
     ok: true, byMaster, issued: rec.issued || null, issues: rec.issues || null,
-    wrap: rec.wrap || null, wrapMaster: rec.wrapMaster || null,
+    wrap: byMaster ? null : (rec.wrap || null),
+    wrapMaster: byMaster ? (rec.wrapMaster || null) : null,
     env: rec.env, live: rec.live || null
   }), {
     status: 200,

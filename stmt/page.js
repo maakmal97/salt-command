@@ -69,6 +69,11 @@ const PAGE_CSS = `
 .mos button.on{color:var(--salt-obsidian);background:var(--salt-brass);border-color:var(--salt-brass);
   font-weight:700}
 .mos button small{margin-left:6px;font-weight:400;letter-spacing:.02em;text-transform:uppercase}
+/* THE DOCUMENT KEEPS THE GEOMETRY IT WAS PROOFED IN. What is injected is the INSIDE of the
+   statement's own .w wrapper, so without this the page rendered the tables full-bleed to the
+   window while the lock bar and the issue strip stayed pinned at 620px above them: on a laptop
+   the sheet the customer opens and the sheet he was sent were different documents. */
+#out{max-width:620px;margin:0 auto}
 @media print{.bar,.mos{display:none}}
 `;
 
@@ -116,7 +121,14 @@ export function landingPage(user, nonce) {
    single nonce, and so nothing about a statement is ever a fetchable asset. */
 const CLIENT_JS = `
 (function(){
-  var WINDOW_MS=__WINDOW__, timer=null, ends=0, bundle=null, at=0;
+  /* THE TICKET INVALIDATES A FLOW THAT IS NO LONGER WANTED (04 Sep 2026 audit). A submit takes
+     about a second in PBKDF2, and go.disabled does not stop the Enter key submitting a form at
+     all, so a reader who pressed Enter twice had two flows in the air. Measured: he taps Lock now,
+     the page locks, and three seconds later the second response lands and puts the whole statement
+     back on screen with the countdown restarted, on a phone he has put down. The same thing
+     happened through the natural three-minute expiry. Every await below is followed by a ticket
+     check, and lock() bumps the ticket, so anything still in flight lands on nothing. */
+  var WINDOW_MS=__WINDOW__, timer=null, ends=0, bundle=null, at=0, ticket=0, busy=false;
   var gate=document.getElementById('gate'), out=document.getElementById('out'),
       msg=document.getElementById('msg'), pw=document.getElementById('pw'),
       un=document.getElementById('un'), go=document.getElementById('go'),
@@ -152,6 +164,7 @@ const CLIENT_JS = `
   }
 
   function lock(){
+    ticket++; busy=false; go.disabled=false;
     if(timer){ clearInterval(timer); timer=null; }
     bundle=null; out.textContent=''; mos.textContent=''; mos.hidden=true;
     barw.hidden=true; gate.hidden=false;
@@ -206,7 +219,10 @@ const CLIENT_JS = `
     if(!u){ say('Enter your username: two groups of four.','bad'); try{un.focus();}catch(e){} return; }
     if(!pass){ say('Enter the password sent to you.','bad'); try{pw.focus();}catch(e){} return; }
     un.value=u;
-    go.disabled=true; say('Checking...','wait');
+    var mine=++ticket;
+    var stale=function(){ return mine!==ticket; };
+    var done=function(){ if(!stale()){ busy=false; go.disabled=false; } };
+    busy=true; go.disabled=true; say('Checking...','wait');
     var r, body;
     /* the one field carries either secret: the Worker says which it matched, and the page
        unwraps with the matching wrap. A customer never knows there is a second one. */
@@ -214,9 +230,10 @@ const CLIENT_JS = `
       r=await fetch('/open', {method:'POST',
         headers:{'content-type':'application/json'}, body:JSON.stringify({u:u, password:pass, master:pass})});
       body=await r.json();
-    }catch(e){ go.disabled=false; say('No connection. Try again in a moment.','bad'); return; }
-    go.disabled=false;
+    }catch(e){ if(stale())return; done(); say('No connection. Try again in a moment.','bad'); return; }
+    if(stale()) return;
     if(!r.ok||!body.ok){
+      done();
       if(r.status===429) say(body.error||'Too many attempts. Try again later.','bad');
       else say(body.error||'That username and password were not accepted.','bad');
       return;
@@ -224,19 +241,24 @@ const CLIENT_JS = `
     say('Opening...','wait');
     var w=body.byMaster?body.wrapMaster:body.wrap;
     if(!w){
+      done();
       say(body.byMaster?'This account was issued without the master key. Open it with the customer\\'s own password.'
         :'This account has no key to open it with. Ask for it to be re-issued.','bad');
       return;
     }
     var ck, b;
     try{ ck=await unwrap(pass, w); b=JSON.parse(await open(ck, body.env)); }
-    catch(e){ say('That password did not open the statement.','bad'); return; }
-    if(!b||!b.statements||!b.statements.length){ say('The statement could not be read. Ask for it to be re-issued.','bad'); return; }
+    catch(e){ if(stale())return; done(); say('That password did not open the statement.','bad'); return; }
+    if(stale()) return;
+    if(!b||!b.statements||!b.statements.length){ done(); say('The statement could not be read. Ask for it to be re-issued.','bad'); return; }
     if(body.live){
       try{ var l=JSON.parse(await open(ck, body.live));
+        if(stale()) return;
         b.statements.unshift({issued:'now', label:'Now', live:true, at:l.at||body.live.at, body:l.body}); }
       catch(e){ /* the issued statements still open; the live one is simply absent */ }
     }
+    if(stale()) return;
+    done();
     say('');
     show(b);
   });

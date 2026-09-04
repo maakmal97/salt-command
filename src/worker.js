@@ -741,6 +741,50 @@ export default {
       return json({ ok: false, error: "the reseller menu is laptop-only" }, 501);
     }
 
+    /* ============ THE RETIRED STATEMENT ROUTE, AND WHY IT IS A HANDLER AND NOT A DELETION ====
+     *
+     * DELETING A ROUTE ON THIS WORKER DOES NOT CLOSE IT. Every unmatched GET falls to the SPA
+     * fallback below, which serves the desk. So when /s/<CODE> was removed on 03 Sep 2026 and the
+     * statements moved to their own site, that path did not start answering 404: it started
+     * answering with the WHOLE PUBLIC LEDGER, at REQUIRE_ACCESS "0", with no sign-in. Thirty-seven
+     * September statements were already in customers' hands printing
+     * "https://salt-command.qyts8mh72kyg.workers.dev/s/<CODE>" under the words "Scan to open this
+     * statement", so every one of those QR codes led to every other customer's code and balance,
+     * every cost and margin, the P&L and the sourcing plan. Found by audit on 04 Sep, closed here.
+     *
+     * The suite's guard on the removal read the SOURCE TEXT of this file for the deleted route, so
+     * it went green BECAUSE the route was gone and could not see what replaced it. That assertion
+     * is now a fetch; see "the retired route is a dead end" in test/verify.mjs.
+     *
+     * 410, NOT A REDIRECT, AND THE COPY NAMES NO ADDRESS. A redirect would hand the statements
+     * site's address to anyone who scanned an old code off a photographed sheet, which is the one
+     * thing moving the statements off this Worker was meant to prevent. A reader who gets here is
+     * told the sheet is out of date and to ask for a current one, and nothing else. */
+    if (p === "/s" || p.startsWith("/s/")) {
+      const gone = '<!doctype html><html lang="en"><meta charset="utf-8">'
+        + '<meta name="viewport" content="width=device-width,initial-scale=1">'
+        + '<meta name="robots" content="noindex,nofollow,noarchive">'
+        + "<title>This statement link has expired</title>"
+        + '<body style="margin:0;min-height:100vh;display:grid;place-items:center;'
+        + 'background:#05080a;color:#f2f4f5;font:15px/1.7 system-ui,sans-serif">'
+        + '<div style="max-width:26em;padding:2em;text-align:center">'
+        + '<h1 style="font-size:1.1em;margin:0 0 .6em;color:#c5a059">This statement link has expired</h1>'
+        + '<p style="color:#a6afb5;margin:0">The sheet you scanned is out of date. Please ask for a '
+        + "current statement, which carries a new code and a username.</p>"
+        + "</div></body></html>";
+      const html = (m === "GET" || m === "HEAD");
+      return new Response(html ? gone : JSON.stringify({ ok: false, error: "gone" }), {
+        status: 410,
+        headers: {
+          "content-type": html ? "text/html; charset=utf-8" : "application/json; charset=utf-8",
+          "cache-control": "no-store",
+          "x-robots-tag": "noindex, nofollow, noarchive",
+          "referrer-policy": "no-referrer",
+          "content-security-policy": "default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
+        }
+      });
+    }
+
     // --- static assets, with SPA fallback the Worker owns ------------------------
     if (m === "GET" || m === "HEAD") {
       const res = await env.ASSETS.fetch(request);
