@@ -1,5 +1,15 @@
 [
  {
+  "v": "v486",
+  "d": "04 Sep 2026",
+  "t": "THE QUERY AGAINST s119'S DATE IS ANSWERED IN THE ROW, AND THE BOOK IS UPHELD",
+  "n": [
+   "<b>HIS CORRECTION, 04 SEP 2026: the 28 Aug order is paid and delivered, and the pending one now cancelled was placed on 31 Aug.</b> v485 declined to rewrite the date on a recollection and folded the cancellation with the question left open, which was right at the time and is the wrong thing to leave in a ledger. The check is done and the book is upheld: <b>the 31 Aug artefact is an amendment to s119, not a second order.</b> It is a Fulfilment on s119 for RM 230 and 2.5 unit, queued from the phone at 19:23 on 31 Aug and dated 1 Sep, which v464 folded so that the order read paid and delivered, and which v467 withdrew two days later on his word that it was still pending. Both halves of the query therefore describe a state this row has already been through and left.",
+   "<b>NO ROW IS MISSING, AND THAT WAS CHECKED RATHER THAN ASSUMED.</b> D1 holds three CY2-NIL drafts in the whole of its history, the original sale, the 31 Aug fulfilment and the 4 Sep cancellation, and no refused entry for the party at all, so nothing was queued and lost. The book holds four CY2-NIL rows, and v464's own note calls s119 the fourth: 11 Aug, 18 Aug, 26 Aug and this one. There is no fifth order to find.",
+   "<b>THE ANSWER IS WRITTEN INTO THE ROW, NOT ONLY INTO THIS ENTRY.</b> A question raised against a row belongs beside the row, because the next person to read s119 will read the ledger and not the changelog. v485's entry is left exactly as it was: the date really was unresolved when it was written, and rewriting a version entry to look wiser than it was would cost more than it saves."
+  ]
+ },
+ {
   "v": "v485",
   "d": "04 Sep 2026",
   "t": "AN ENTRY THE CLOUD NEVER TOOK IS NO LONGER CLEARED AS COMMITTED, AND CY2-NIL'S UNFULFILLED ORDER IS WITHDRAWN",
