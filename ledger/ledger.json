@@ -1,6 +1,6 @@
 {
- "v": "v483",
- "stamped": "04 Sep 2026, 10:04 KL",
+ "v": "v484",
+ "stamped": "04 Sep 2026, 20:06 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -41,7 +41,7 @@
     "stated": 15
    }
   },
-  "STATED_STOCK": 27,
+  "STATED_STOCK": 23,
   "COUNT_ON": {
    "salt": "2026-09-02",
    "oil": "2026-08-23"
@@ -2818,6 +2818,18 @@
     "rid": "s131"
    },
    {
+    "customer": "CM4-MK",
+    "qty": 4,
+    "total": 360,
+    "cost": 48,
+    "cash": 300,
+    "date": "2026-09-04",
+    "deliveredQty": 4,
+    "deliveredOn": "2026-09-04",
+    "note": "CM4-MK takes 4 unit at RM 360, RM 90/unit, delivered in full on 4 Sep with RM 300 paid and RM 60 left owing. Two flags came with the draft and both were read. The rate flag calls RM 90/unit 18.2% under this party's RM 110/unit median over seven orders; the median is the wrong ruler, because RM 110/unit is what CM4-MK's 2 unit orders cost and both of its 4 unit orders were struck at this grade, RM 360 on 10 Aug and RM 380 on 24 Aug. This is the 10 Aug price repeated, and it sits well clear of the live floor of RM 245.52 delivered for 4 unit. The cost is the shelf's own RM 48/unit, from the 25 unit SA5-BTR lot of 3 Sep at RM 1,200, and it is the same figure the desk's pricing snapshot carries, so no override was needed: RM 192 of cost against RM 360 leaves RM 168, 46.7%. The advance flag is the one that stands: RM 60 goes out against delivered stock, and it is the first balance CM4-MK has carried, every one of its seven earlier orders having settled on the day.",
+    "rid": "s132"
+   },
+   {
     "customer": "CY2-NIL",
     "qty": 2.5,
     "total": 230,
@@ -3148,9 +3160,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-04T01:50:40.964Z",
+  "QUEUE_COMMITTED": "2026-09-04T12:02:38.650Z",
   "PRICING": {
-   "takenAt": "2026-09-04T02:04:32.177Z",
+   "takenAt": "2026-09-04T12:06:09.755Z",
    "sizes": [
     0.5,
     1,
@@ -3312,9 +3324,9 @@
        "attrib": 1,
        "shrinkRate": 0.05777547585135311,
        "avgDel": {
-        "n": 118,
-        "kg": 298.2,
-        "mean": 2.5271
+        "n": 119,
+        "kg": 302.2,
+        "mean": 2.5395
        }
       },
       "policy": {
@@ -3584,11 +3596,11 @@
      }
     }
    },
-   "v": "v483"
+   "v": "v484"
   },
   "OPEN": {
-   "at": "2026-09-04T02:04:32.231Z",
-   "count": 7,
+   "at": "2026-09-04T12:06:09.820Z",
+   "count": 8,
    "byKey": {
     "CY2-NIL|undefined|230": {
      "d": null,
@@ -3604,6 +3616,22 @@
      "rid": "s119",
      "agreedOn": "2026-08-28",
      "key": "CY2-NIL|undefined|230"
+    },
+    "CM4-MK|2026-09-04|360": {
+     "d": "2026-09-04",
+     "p": "CM4-MK",
+     "dir": "S",
+     "q": 4,
+     "t": 360,
+     "cash": 300,
+     "mv": 4,
+     "st": "dueMoney",
+     "oweRM": 60,
+     "rid": "s132",
+     "deliveredOn": "2026-09-04",
+     "key": "CM4-MK|2026-09-04|360",
+     "age": 0,
+     "exp": 60
     },
     "CA4-DAM|2026-09-02|160": {
      "d": "2026-09-02",
@@ -3709,12 +3737,12 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 27,
-     "free": 27,
+     "onHand": 23,
+     "free": 23,
      "owedOut": 0,
-     "coverDays": 6.1,
-     "rate": 4.41,
-     "owedToYou": 530,
+     "coverDays": 4.9,
+     "rate": 4.7,
+     "owedToYou": 590,
      "promised": 2.5,
      "short": 0
     },
@@ -3734,7 +3762,7 @@
     "salt": "2026-09-02",
     "oil": "2026-08-23"
    },
-   "v": "v483"
+   "v": "v484"
   }
  }
 }
