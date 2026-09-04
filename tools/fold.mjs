@@ -124,8 +124,32 @@ export function plan(book, staged, notes) {
          quietly bring it back: cash, units and a date on a row the book says did not happen.
          Nothing has hit it yet, but v345 cancelled two live pending orders, so the road is
          open. Reviving a cancelled order is a judgement in any case, which is the same test
-         every other amendment here is measured by. */
-      if (hits[0].cancelled) { out.refused.push({ id: it.id, why: `the row at ${it.amends} is cancelled; reviving it is a judgement, left for a person` }); continue; }
+         every other amendment here is measured by.
+
+         NARROWED TO EXCLUDE A CORRECTION, 04 Sep 2026, on his instruction that no undated row
+         may stand on the ledger. The danger v347 named is a movement: cash, units, a date that
+         asserts the order happened. A Correction carries none of those. It moves nothing, and
+         the comment eight lines below says so in terms: "A CORRECTION MOVES NOTHING, so it adds
+         nothing to out.moves and needs no date to be valid: what it changes is what the row SAYS
+         about itself." Refusing it bought no safety and cost the book two rows it could not
+         repair: s108 and s109 were cancelled undated on 24 Aug 2026, and from that moment there
+         was no route to date them. Queue the correction, the plan refuses it, every time.
+
+         THE TWO GUARDS FOR THIS QUESTION ALREADY DISAGREED, which is what makes this a fix
+         rather than a loosening. applyAmend below refuses only cash or units on a cancelled row,
+         and its v434 comment states the policy outright: "A Correction, a Modification and a
+         repeat Cancellation are still allowed on a cancelled row, because restating the record
+         of one is not the same as moving goods against it." The suite has asserted that at the
+         apply layer since v434. This guard sat in front of it and blocked the call, so the
+         stated policy could never run. v347 was written first and never swept when v434 refined
+         it: the twin, again.
+
+         MODIFICATION AND REPEAT CANCELLATION STAY REFUSED HERE, which is narrower than v434's
+         comment describes, and deliberately so. A Modification restates qty and total, which is
+         a figure and not a record, and nothing on the book needs it today. The gap between the
+         two guards is left listed rather than taken, because widening it further has no reason
+         behind it yet and this fold has one. */
+      if (hits[0].cancelled && it.amendKind !== "Correction") { out.refused.push({ id: it.id, why: `the row at ${it.amends} is cancelled; reviving it is a judgement, left for a person` }); continue; }
       const pay = (it.entry && it.entry.payload) || {};
       entry.target = hits[0]; entry.dir = dir;
       /* v358: A MODIFICATION CARRIES newQty/newTotal, NOT cash/kg. It moves nothing, so it adds

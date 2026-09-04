@@ -1761,6 +1761,44 @@ section("Fold — an approved batch becomes records in the book (v340)");
     const bp = plan(JSON.parse(JSON.stringify(book)), bad, null);
     ok(bp.items.length === 0 && /not a product/.test(bp.refused[0].why || ""), "a price edit for a product that does not exist is refused");
   }
+  /* ---- A CANCELLED ROW IS STILL CORRECTABLE, because restating a record is not reviving it ----
+     v347 refused EVERY amendment against a cancelled row, to stop a fulfilment queued before the
+     cancellation folding onto it afterwards and quietly bringing it back with cash, units and a
+     date. That danger is real and the guard stays for it. But the guard was written wider than the
+     danger: a Correction moves nothing, and fold.mjs's own comment six lines below says so, so it
+     was refused for no reason. The cost was not theoretical. s108 and s109 were cancelled undated
+     on 24 Aug 2026 and there was no route to date them afterwards: queue the correction, the plan
+     refuses it, every time. applyAmend already holds the right policy, asserted above at "a
+     cancelled row can still be corrected", and plan() blocked the call before it could ever run.
+     Two guards for one question, disagreeing.
+     BOTH DIRECTIONS ARE ASSERTED HERE, because a gate that opened for everything would be worse
+     than the one that was shut: the Correction must plan, and the Fulfilment beside it must still
+     be refused BY THIS GUARD, checked on the reason and not merely on the count. */
+  {
+    const CB = JSON.parse(JSON.stringify(book));
+    CB.sales.push({ customer: "CX9-TESTCANC", qty: 2, total: 200, cash: 0, deliveredQty: 0,
+      cancelled: true, cancelledOn: "2026-08-24" });
+    const cKey = "CX9-TESTCANC|undefined|200";
+    const mk = (hhmm, kind, payload) => ({ id: ID(hhmm), collection: "sales", amends: cKey,
+      amendKind: kind, row: { customer: "CX9-TESTCANC", qty: 2, total: 200 },
+      entry: { at: ID(hhmm), payload: { mode: "amend", direction: "SELL", orderKey: cKey, kind, ...payload } } });
+
+    const corr = plan(JSON.parse(JSON.stringify(CB)), { ok: true, count: 1, approved: [
+      mk("04:00", "Correction", { date: "2026-09-04", fields: { date: "2026-08-24" } }) ] }, null);
+    ok(corr.items.length === 1 && corr.refused.length === 0,
+      "a cancelled row accepts a Correction, so a date can still be put right after cancellation"
+      + (corr.refused.length ? ": " + corr.refused[0].why : ""));
+
+    const ful = plan(JSON.parse(JSON.stringify(CB)), { ok: true, count: 1, approved: [
+      mk("04:05", "Fulfilment", { date: "2026-09-04", cash: 200, kg: 2 }) ] }, null);
+    ok(ful.items.length === 0 && /cancelled/.test(ful.refused[0] && ful.refused[0].why || ""),
+      "and a Fulfilment against the same cancelled row is still refused, by the cancelled guard");
+
+    const mod = plan(JSON.parse(JSON.stringify(CB)), { ok: true, count: 1, approved: [
+      mk("04:10", "Modification", { date: "2026-09-04", newQty: 3, newTotal: 300 }) ] }, null);
+    ok(mod.items.length === 0 && /cancelled/.test(mod.refused[0] && mod.refused[0].why || ""),
+      "and so is a Modification, which restates the figures rather than only the record");
+  }
   /* ---- a CORRECTION reaches EVERY attribute a person states (v363) ---- */
   {
     const { checkCorrection, CORRECTABLE } = await import("../src/drafter.js");
