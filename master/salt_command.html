@@ -5278,7 +5278,9 @@ const whiteboard=[
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{"v":"v491","d":"05 Sep 2026","t":"THE LEDGER CARD CARRIES ONE STATE, THE ENGINE'S, AND A STEP IS ONE ROW","n":["<b>HIS INSTRUCTION, 05 SEP 2026, ON A SCREENSHOT OF s107:</b> a completed order whose card read PENDING on its opening line and OPEN . DEFERRED on its fulfilment step, and many others like it. Two things, and they had one cause. The card's states came from replayAmend, a second copy of the state ladder that sums cash and units across the trail. Line 10203 filtered Corrections out before the replay ran, so a delivery that arrived as a Correction, which is how s107's 6.25 unit arrived on 27 Aug, was invisible to it. Line 10209 took the opening line's state from the replay's FIRST step, which on an auto-built trail is \"as booked\", so every multi-step order opened as Pending whatever it had become. And ledFinal took the closing state from the replay's LAST step for anything not terminal. Three rows read wrong at the close (s103, s104, s107, each Completed in the engine), every multi-step order read wrong at the open, and s117 and s128 read Advance on the step where the engine has read Default since v488: the twin of that fold, unswept.","<b>ONE STATE PER ENTRY, AND IT IS txStat'S.</b> ledFinal is the engine's order and nothing else. The opening line carries it. The step lines and the closing line carry an empty state cell so the grid keeps its track, and nothing on them says what the entry is, because the entry says that once. replayAmend stays, because the collapse rule reads it for how long someone carried the other, a fact about the trail; nothing reads it for display any more. The same reader decided whether a card was completed at all (10230) and so whether it drew a close or collapsed, and it was swept in the same pass: s107 would otherwise have read Completed on its opening line above an unclosed trail. The Ledger's state filter goes through ledFinal too, so Default now matches the two rows it exists to find.","<b>A STEP IS ONE ROW.</b> Under 935px the card's grid had two rows for every line, \"e date party qty price tot state\" over \"step step type prod act act act\", because the opening line carries a party, a type, a product and a control. A step carries none of those, so it was spending a second row on four empty cells. A step's kind now takes the party's track and the cells a step never fills are not laid out; the closing line goes through the same builder and is classed as a step for the same reason. Above 935px nothing changes, and under 600px, the phone, a step still wraps, because four columns cannot hold a date, a kind, a quantity and a sum on one line.","<b>PROVED ON THE RENDERED CARD, RED FIRST.</b> The new assertion reads every card off the Ledger as rendered and demands exactly one non-empty state, the engine's, and none on a step. Against the unchanged desk it failed on s107 with the screenshot's own words, Pending / Open . Deferred. The v451 lot test asserted the old shape, paid ahead on the head and Completed on the close, and is rewritten to the new one. tools/renderdiff.mjs shot every part before and after: 32 of 34 shots identical, the Ledger the only part that moved at either width, shorter by 1,039px at 1280 for the close lines it no longer draws twice."]},
+const evolution=[{"v":"v492","d":"05 Sep 2026","t":"THE ENTER PART'S PREVIEW ASKS THE ENGINE: THE FOURTH COPY OF THE STATE LADDER IS RETIRED","n":["<b>HIS INSTRUCTION, 05 SEP 2026: INCLUDE IT IN THE FIX.</b> v491 put one state on each Ledger card and made it the engine's. The Enter part's preview, the Now and After pills a person reads before recording an amendment, still derived its state by hand: wbState took four scalars and re-ran the three-axis rule itself, so it knew nothing of unpriced, cancelled, in-kind, the zero-total rule or defaulted. The audit had measured it disagreeing with txStat on 18 of 130 sales; on today's book, with two declared defaults, it was 21 of 134. And its callers spelled a supplier default's preview 'Defaulted', a fifth word for one state.","<b>wbState IS A WRAPPER NOW.</b> It builds the row the four scalars describe, carries the flags of the row being amended when there is one, and asks the engine that reads every other row on the desk: txStat for a sale, poStat for a lot, because a lot's state is the lot engine's and the buy side of the form previews lots. Status is stripped on that side so poCash reads the cash given rather than 'paid' meaning the whole total, and the in-kind and advance fields are zeroed so the scalars are the whole truth of the hypothetical. The cancel preview, which hand-coded exactly what txStat's cancelled branch returns since v444, goes through that branch instead. The default preview goes through the engine and reads Default. wbStCls, a fifth copy of the class map that knew three of six states, is gone: the pills take the class the engine returns, the same one the Ledger uses.","<b>PROVED RED ON THE DESK'S OWN ROWS.</b> The assertion runs wbState over every sale on the book, as it stands, and demands the engine's word each time; against the unchanged desk it named 21 disagreements, the first three all in-kind rows previewing as Completed. A second assertion asks for a defaulted preview and demanded Default; it read Open . Advance. Both green. tools/renderdiff.mjs shot every part before and after: 32 of 34 shots identical, the Enter part the only one that moved, a 270 by 23 pixel strip at each width where the preview pills sit.","<b>WHAT REMAINS OF T1.3.</b> Six copies were counted. txStat is the authority; replayAmend feeds only the Ledger's collapse rule now and nothing reads it for a state; ledFinal, the card's cardCls and wbState all read the engine. Two small class maps are left, stateCls in the Ledger and wbPayCls in Enter, each mapping a word the engine already chose to a class name, and neither can produce a state."]},
+
+{"v":"v491","d":"05 Sep 2026","t":"THE LEDGER CARD CARRIES ONE STATE, THE ENGINE'S, AND A STEP IS ONE ROW","n":["<b>HIS INSTRUCTION, 05 SEP 2026, ON A SCREENSHOT OF s107:</b> a completed order whose card read PENDING on its opening line and OPEN . DEFERRED on its fulfilment step, and many others like it. Two things, and they had one cause. The card's states came from replayAmend, a second copy of the state ladder that sums cash and units across the trail. Line 10203 filtered Corrections out before the replay ran, so a delivery that arrived as a Correction, which is how s107's 6.25 unit arrived on 27 Aug, was invisible to it. Line 10209 took the opening line's state from the replay's FIRST step, which on an auto-built trail is \"as booked\", so every multi-step order opened as Pending whatever it had become. And ledFinal took the closing state from the replay's LAST step for anything not terminal. Three rows read wrong at the close (s103, s104, s107, each Completed in the engine), every multi-step order read wrong at the open, and s117 and s128 read Advance on the step where the engine has read Default since v488: the twin of that fold, unswept.","<b>ONE STATE PER ENTRY, AND IT IS txStat'S.</b> ledFinal is the engine's order and nothing else. The opening line carries it. The step lines and the closing line carry an empty state cell so the grid keeps its track, and nothing on them says what the entry is, because the entry says that once. replayAmend stays, because the collapse rule reads it for how long someone carried the other, a fact about the trail; nothing reads it for display any more. The same reader decided whether a card was completed at all (10230) and so whether it drew a close or collapsed, and it was swept in the same pass: s107 would otherwise have read Completed on its opening line above an unclosed trail. The Ledger's state filter goes through ledFinal too, so Default now matches the two rows it exists to find.","<b>A STEP IS ONE ROW.</b> Under 935px the card's grid had two rows for every line, \"e date party qty price tot state\" over \"step step type prod act act act\", because the opening line carries a party, a type, a product and a control. A step carries none of those, so it was spending a second row on four empty cells. A step's kind now takes the party's track and the cells a step never fills are not laid out; the closing line goes through the same builder and is classed as a step for the same reason. Above 935px nothing changes, and under 600px, the phone, a step still wraps, because four columns cannot hold a date, a kind, a quantity and a sum on one line.","<b>PROVED ON THE RENDERED CARD, RED FIRST.</b> The new assertion reads every card off the Ledger as rendered and demands exactly one non-empty state, the engine's, and none on a step. Against the unchanged desk it failed on s107 with the screenshot's own words, Pending / Open . Deferred. The v451 lot test asserted the old shape, paid ahead on the head and Completed on the close, and is rewritten to the new one. tools/renderdiff.mjs shot every part before and after: 32 of 34 shots identical, the Ledger the only part that moved at either width, shorter by 1,039px at 1280 for the close lines it no longer draws twice."]},
 
 {"v":"v490","d":"05 Sep 2026","t":"ONE SALE ON 5 SEP: CH5-KLC TAKES HALF A UNIT AT RM 75, COLLECTED AND PAID ON THE DAY","n":["<b>ONE ROW FOLDED ON HIS WORD, SALT, DATED 5 SEP 2026.</b> CH5-KLC takes 0.5 unit for RM 75, RM 150 a unit, collected and paid in full on the day, so the row closes on arrival and leaves nothing outstanding. Row s134. Entered by the fold as the four rows of v489 were, after the phone entries did not arrive; the figure is his.","<b>HIS SECOND COMPLETED ORDER AND HIS FIRST SINCE JULY.</b> s024 of 17 Jul was 0.5 unit at RM 105; the 0.5 at RM 80 he agreed on 31 Jul was cancelled on 5 Aug. RM 150 a unit is RM 60 under the July rate and RM 23.69 over the 0.5-unit collected floor of RM 51.31. Costed at the shelf's RM 48, RM 24 against RM 75, RM 51 on the order at 68%: a small order carrying the RM 25 time charge comfortably, which is what the floor at this size is for.","<b>THE SHELF GOES FROM 9.8 TO 9.3.</b> The first movement off the 4 Sep count. Live credit is unchanged at RM 170: this row was paid on the day."]},
 
@@ -5544,7 +5546,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='05 Sep 2026, 14:30 KL';
+const LAST_UPDATED='05 Sep 2026, 15:10 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -15067,19 +15069,27 @@ function wbCreditUnits(cust,extra,prod){
 function wbSoFarBuy(t){const p=t._buy||t;
   return {cash:poCash(p),kg:poRecvUnits(p)};}
 const wbRecvLbl=s=>s==='Delivered'?'Received':s==='Undelivered'?'Not received':s;
-/* the same three-axis rules as txStat / replayAmend, applied to a hypothetical entry */
-function wbState(total,qty,cash,unitsD){
-  // a zero/blank total must not read as "Paid", nor a zero qty as "Delivered", that hid Pending orders
-  const payFull=total>0&&cash>=total-0.009,payNone=cash<=0.009,delFull=qty>0&&unitsD>=qty-0.009,delNone=unitsD<=0.009;
-  const pay=payFull?'Paid':payNone?'Unpaid':'Partial';
-  const deliv=delFull?'Delivered':delNone?'Undelivered':'Partial';
-  let state=(payFull&&delFull)?'Completed':(payNone&&delNone)?'Pending':'Open';
-  if(state==='Open'){const pf=total>0?cash/total:0,df=qty>0?unitsD/qty:0;
-    if(df>pf+1e-9)state='Open · Advance';else if(pf>df+1e-9)state='Open · Deferred';}
-  return {pay,deliv,state};
+/* v492: THE PREVIEW ASKS THE ENGINE, on his instruction of 05 Sep 2026, extending v491's sweep to
+   the fourth copy of the state ladder. This used to re-derive the three axes by hand from four
+   scalars, so it knew nothing of unpriced, cancelled, in-kind, the zero-total rule or defaulted,
+   and disagreed with txStat on 18 of 130 sales. It builds the row the scalars describe and asks
+   the engine that reads every other row on the desk. `flags` is the row being amended, or any
+   object carrying the fields that change the answer (unpriced, cancelled, defaulted, settle,
+   waived, rebate); pass nothing for a brand-new entry. `flags.buy` routes to poStat, because a
+   lot's state is the lot engine's: status is stripped there so poCash reads the cash given rather
+   than "paid" meaning the whole total, and the in-kind and advance fields are zeroed so the four
+   scalars are the whole truth of the hypothetical. Returns the engine's cls as well, so the
+   pills take the class the Ledger uses and a fifth copy of that map is not needed. */
+function wbState(total,qty,cash,unitsD,flags){
+  const f=flags||{};
+  if(f.buy){
+    const p=Object.assign({},f,{total:total,qty:qty,cash:cash,receivedQty:unitsD,status:undefined,settledRM:0,settledKg:0});
+    delete p.buy; const st=poStat(p); return {pay:st.pay,deliv:st.deliv,state:st.order,cls:st.cls};
+  }
+  const t=Object.assign({},f,{total:total,qty:qty,cash:cash,deliveredQty:unitsD,settledRM:0,settledKg:0,advanceUnits:0});
+  const st=txStat(t); return {pay:st.pay,deliv:st.deliv,state:st.order,cls:st.cls};
 }
 const wbPayCls=p=>p==='Paid'||p==='Delivered'?'paid':(p==='Unpaid'||p==='Undelivered')?'unpaid':'open';
-const wbStCls=s=>s==='Completed'?'paid':s==='Pending'?'pendingt':'open';
 const wbPill=(l,c)=>`<span class="tag ${c}">${l}</span>`;
 const lbl0=()=>'font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:var(--dim)';
 const wbErr=t=>`<span class="warnpill">&#9888; ${t}</span>`;
@@ -16287,7 +16297,7 @@ function wbPreview(){
     const st=wbState(total,qty,cash,unitsD),price=qty>0?total/qty:0;
     const mar=(wbDir==='SELL'&&price>0)?` &middot; margin <b>${((price-replCost())/price*100).toFixed(0)}%</b> on ${fmt(replCost())}/unit replacement <span style="color:var(--dim)">(${((price-costBasis())/price*100).toFixed(0)}% on the ${fmt(costBasis())}/unit book average)</span>`:'';
     body=`<div style="display:flex;gap:7px;align-items:center;flex-wrap:wrap">`
-      +wbPill(st.pay,wbPayCls(st.pay))+wbPill(st.deliv,wbPayCls(st.deliv))+wbPill(st.state,wbStCls(st.state))
+      +wbPill(st.pay,wbPayCls(st.pay))+wbPill(st.deliv,wbPayCls(st.deliv))+wbPill(st.state,st.cls)
       +`<span style="font-size:13px;color:var(--mut)">${price>0?fmt(price)+'/unit':'&mdash;'}${mar}</span></div>`
       +(st.state==='Completed'?`<div class="dsc" style="margin-top:6px">Settles in one &mdash; records as a <b>single line</b>, no movements.</div>`:'')
       +(st.state==='Pending'?`<div class="dsc" style="margin-top:6px">Nothing has moved yet &mdash; recorded as a <b>pending order</b>.</div>`:'');
@@ -16337,12 +16347,14 @@ function wbPreview(){
     if(!o){body='<div class="dsc">Pick an order.</div>';errs.push('Pick an order to amend.');}
     else if(wbASide==='BUY'){
       const t=o.t,sf=wbSoFarBuy(t),ac=wbNum('wbACash'),ak=wbNum('wbAUnits'),kind=wbVal('wbKind');
-      const now=wbState(t.total,t.qty,sf.cash,sf.kg);
-      const nxt=(kind==='Default')?{pay:now.pay,deliv:'Undelivered',state:'Defaulted'}:wbState(t.total,t.qty,sf.cash+ac,sf.kg+ak);
+      const lot=Object.assign({buy:true},t);
+      const now=wbState(t.total,t.qty,sf.cash,sf.kg,lot);
+      /* v492: a default previews through the engine, in the engine's word, not a fifth spelling */
+      const nxt=(kind==='Default')?wbState(t.total,t.qty,sf.cash,sf.kg,Object.assign({},lot,{defaulted:true})):wbState(t.total,t.qty,sf.cash+ac,sf.kg+ak,lot);
       body=`<div style="display:flex;gap:7px;align-items:center;flex-wrap:wrap;font-size:13px;color:var(--mut)">`
-        +`<span style="${lbl0()}">Now</span>`+wbPill(now.pay,wbPayCls(now.pay))+wbPill(wbRecvLbl(now.deliv),wbPayCls(now.deliv))+wbPill(now.state,wbStCls(now.state))
+        +`<span style="${lbl0()}">Now</span>`+wbPill(now.pay,wbPayCls(now.pay))+wbPill(wbRecvLbl(now.deliv),wbPayCls(now.deliv))+wbPill(now.state,now.cls)
         +`<span style="color:var(--dim)">&rarr;</span>`
-        +`<span style="${lbl0()}">After</span>`+wbPill(nxt.pay,wbPayCls(nxt.pay))+wbPill(wbRecvLbl(nxt.deliv),wbPayCls(nxt.deliv))+wbPill(nxt.state,wbStCls(nxt.state))
+        +`<span style="${lbl0()}">After</span>`+wbPill(nxt.pay,wbPayCls(nxt.pay))+wbPill(wbRecvLbl(nxt.deliv),wbPayCls(nxt.deliv))+wbPill(nxt.state,nxt.cls)
         +`</div><div style="font-size:13px;color:var(--mut);margin-top:6px">${o.code} &middot; lot from ${ID(t.who)} &middot; ${units(t.qty)} for ${fmt0(t.total)} at ${fmt(t.qty>0?t.total/t.qty:0)}/unit &mdash; ${fmt0(sf.cash)} paid, ${units(sf.kg)} received so far.</div>`;
       const outRM=+(t.total-sf.cash).toFixed(2),outUnits=+(t.qty-sf.kg).toFixed(2);
       if(kind==='Payment'){
@@ -16382,16 +16394,17 @@ function wbPreview(){
          cancelled outright (ovAmend, kind==='Cancellation') and none of ac/ak is applied, so
          a Now->After movement pill was previewing a movement that was never going to happen. */
       const isMod=(kind==='Modification'),isCancel=(kind==='Cancellation');
-      const now=wbState(t.total,t.qty,sf.cash,sf.kg);
+      const now=wbState(t.total,t.qty,sf.cash,sf.kg,t);
       /* v457: THE PREVIEW SHOWS WHAT THE BOOK WILL HOLD. A cancelled row reads Refund due when
-         anything was paid (txStat, v444), Undelivered, Cancelled; the bare pill said only the last. */
-      const nxt=isCancel?{pay:sf.cash>0.009?'Refund due':'Unpaid',deliv:'Undelivered',state:'Cancelled'}
-        :isMod?wbState(ac,ak,sf.cash,sf.kg):wbState(t.total,t.qty,sf.cash+ac,sf.kg+ak);
+         anything was paid (txStat, v444), Undelivered, Cancelled; the bare pill said only the last.
+         v492: and it is txStat's own cancelled branch that says so now, rather than a copy of it. */
+      const nxt=isCancel?wbState(t.total,t.qty,sf.cash,sf.kg,Object.assign({},t,{cancelled:true}))
+        :isMod?wbState(ac,ak,sf.cash,sf.kg,t):wbState(t.total,t.qty,sf.cash+ac,sf.kg+ak,t);
       body=`<div style="display:flex;gap:7px;align-items:center;flex-wrap:wrap;font-size:13px;color:var(--mut)">`
-        +`<span style="${lbl0()}">Now</span>`+wbPill(now.pay,wbPayCls(now.pay))+wbPill(now.deliv,wbPayCls(now.deliv))+wbPill(now.state,wbStCls(now.state))
+        +`<span style="${lbl0()}">Now</span>`+wbPill(now.pay,wbPayCls(now.pay))+wbPill(now.deliv,wbPayCls(now.deliv))+wbPill(now.state,now.cls)
         +`<span style="color:var(--dim)">&rarr;</span>`
         +(isCancel?`<span style="${lbl0()}">After</span>`+wbPill(nxt.pay,wbPayCls(nxt.pay))+wbPill(nxt.deliv,wbPayCls(nxt.deliv))+`<span class="pill" style="background:var(--crim);color:#fff">Cancelled</span>`
-          :`<span style="${lbl0()}">After</span>`+wbPill(nxt.pay,wbPayCls(nxt.pay))+wbPill(nxt.deliv,wbPayCls(nxt.deliv))+wbPill(nxt.state,wbStCls(nxt.state)))
+          :`<span style="${lbl0()}">After</span>`+wbPill(nxt.pay,wbPayCls(nxt.pay))+wbPill(nxt.deliv,wbPayCls(nxt.deliv))+wbPill(nxt.state,nxt.cls))
         +`</div><div style="font-size:13px;color:var(--mut);margin-top:6px">${o.code} &middot; ${ID(t.who)} &middot; ${units(t.qty)} for ${fmt0(t.total)} &mdash; ${fmt0(sf.cash)} paid, ${units(+sf.kg.toFixed(2))} delivered so far.</div>`
         +(isCancel?`<div class="dsc" style="margin-top:6px">The row is marked <b>cancelled</b> outright${sf.cash>0.009?`, and the <b>${fmt0(sf.cash)} already paid becomes a refund payable</b> back to ${ID(t.who)}`:''}. Cash and units are not used here: what is owed back is what was paid.</div>`
           :(wbVal('wbADate')===t.date)?`<div class="dsc" style="margin-top:6px">Same day as the order &mdash; this <b>folds into the opening</b> as one transaction rather than a separate movement.</div>`:'');
@@ -16547,8 +16560,8 @@ function wbRecord(){
     const o=wbAmendList().find(x=>x.code===wbVal('wbOrder'));if(!o){ok.textContent='Pick an order.';ok.style.color='var(--crim)';return;}
     const t=o.t,kind=wbVal('wbKind'),date=wbVal('wbADate'),ac=wbNum('wbACash'),ak=wbNum('wbAUnits'),an=(wbVal('wbANote')||'').trim();
     if(wbASide==='BUY'){
-      const sf=wbSoFarBuy(t);
-      const nxt=(kind==='Default')?{pay:'',deliv:'',state:'Defaulted'}:wbState(t.total,t.qty,sf.cash+ac,sf.kg+ak);
+      const sf=wbSoFarBuy(t),lot=Object.assign({buy:true},t);
+      const nxt=(kind==='Default')?wbState(t.total,t.qty,sf.cash,sf.kg,Object.assign({},lot,{defaulted:true})):wbState(t.total,t.qty,sf.cash+ac,sf.kg+ak,lot);
       const status=(kind==='Default')?'defaulted':(nxt.pay==='Paid'?'paid':nxt.pay==='Unpaid'?'unpaid':'partial');
       const raw=kind+' on '+o.code+' · lot from '+codeOf(t.who)+', '+fmt0(ac)+' paid and '+units(ak)+' received on '+date
         +(kind==='Default'?' → supplier default; cash already paid becomes a recoverable':' → '+nxt.state)+(an?', '+an:'');
@@ -16568,7 +16581,7 @@ function wbRecord(){
          the form used to do for every kind alike, turned "this order is now 2 unit at
          RM185" into "2 unit were handed over", and then reported it as Deferred. */
       const isMod=(kind==='Modification'),isCancel=(kind==='Cancellation');
-      const nxt=isMod?wbState(ac,ak,sf.cash,sf.kg):wbState(t.total,t.qty,sf.cash+ac,sf.kg+ak);
+      const nxt=isMod?wbState(ac,ak,sf.cash,sf.kg,t):wbState(t.total,t.qty,sf.cash+ac,sf.kg+ak,t);
       const status=isCancel?'cancelled':isMod?'modified':(nxt.pay==='Paid'?'paid':nxt.pay==='Unpaid'?'unpaid':'partial');
       const sameDay=(date===t.date);         // settled the same day -> fold into the opening, not a movement
       /* v365: A CANCELLATION HAS ITS OWN LINE TOO, same reasoning as the isMod split above

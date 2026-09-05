@@ -1730,6 +1730,26 @@ section("Engine — the position, out of the desk (v338)");
       `s107, the card the instruction was given on, reads Completed once (${s107 ? s107.pills.join(" / ") : "not rendered"})`);
   }
 
+  /* THE ENTER PART'S PREVIEW ANSWERS THE SAME QUESTION THE ENGINE DOES. His instruction of 05 Sep
+     2026, extending the v491 sweep to the fourth copy of the ladder. wbState took four scalars for a
+     hypothetical entry and re-derived the state by hand, so it knew nothing of unpriced, cancelled,
+     in-kind, the zero-total rule or defaulted, and its callers spelled a default preview
+     'Defaulted', a fifth word for one state. The audit measured it disagreeing with txStat on 18 of
+     130 sales. Asserted on the desk's own function against the desk's own rows: for every sale,
+     the preview of the row as it stands must read what the engine reads. */
+  {
+    const { openMaster: omW } = await import("../tools/payload.mjs");
+    const { w: wW } = await omW();
+    const dis = JSON.parse(wW.eval(`JSON.stringify((function(){var out=[];sales.forEach(function(s){
+      var st=txStat(s), pv=wbState(s.total,s.qty,txPaid(s),txEffDeliv(s),s);
+      if(pv.state!==st.order) out.push(s.rid+' preview '+pv.state+' engine '+st.order);});return out;})())`));
+    ok(dis.length === 0, dis.length
+      ? `wbState disagrees with txStat on ${dis.length} of the book's sales, e.g. ${dis.slice(0, 3).join("; ")}`
+      : "the Enter part's preview reads every sale on the book exactly as the engine does");
+    const dflt = JSON.parse(wW.eval(`JSON.stringify(wbState(100,1,0,1,{defaulted:true}))`));
+    ok(dflt.state === "Default", `a defaulted preview reads Default, the engine's word, not a fifth spelling (${dflt.state})`);
+  }
+
   /* THE GATE: the desk's own inputs, both books, and the record comes back equal */
   const { openMaster } = await import("../tools/payload.mjs");
   const { w } = await openMaster();

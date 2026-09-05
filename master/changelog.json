@@ -1,5 +1,16 @@
 [
  {
+  "v": "v492",
+  "d": "05 Sep 2026",
+  "t": "THE ENTER PART'S PREVIEW ASKS THE ENGINE: THE FOURTH COPY OF THE STATE LADDER IS RETIRED",
+  "n": [
+   "<b>HIS INSTRUCTION, 05 SEP 2026: INCLUDE IT IN THE FIX.</b> v491 put one state on each Ledger card and made it the engine's. The Enter part's preview, the Now and After pills a person reads before recording an amendment, still derived its state by hand: wbState took four scalars and re-ran the three-axis rule itself, so it knew nothing of unpriced, cancelled, in-kind, the zero-total rule or defaulted. The audit had measured it disagreeing with txStat on 18 of 130 sales; on today's book, with two declared defaults, it was 21 of 134. And its callers spelled a supplier default's preview 'Defaulted', a fifth word for one state.",
+   "<b>wbState IS A WRAPPER NOW.</b> It builds the row the four scalars describe, carries the flags of the row being amended when there is one, and asks the engine that reads every other row on the desk: txStat for a sale, poStat for a lot, because a lot's state is the lot engine's and the buy side of the form previews lots. Status is stripped on that side so poCash reads the cash given rather than 'paid' meaning the whole total, and the in-kind and advance fields are zeroed so the scalars are the whole truth of the hypothetical. The cancel preview, which hand-coded exactly what txStat's cancelled branch returns since v444, goes through that branch instead. The default preview goes through the engine and reads Default. wbStCls, a fifth copy of the class map that knew three of six states, is gone: the pills take the class the engine returns, the same one the Ledger uses.",
+   "<b>PROVED RED ON THE DESK'S OWN ROWS.</b> The assertion runs wbState over every sale on the book, as it stands, and demands the engine's word each time; against the unchanged desk it named 21 disagreements, the first three all in-kind rows previewing as Completed. A second assertion asks for a defaulted preview and demanded Default; it read Open . Advance. Both green. tools/renderdiff.mjs shot every part before and after: 32 of 34 shots identical, the Enter part the only one that moved, a 270 by 23 pixel strip at each width where the preview pills sit.",
+   "<b>WHAT REMAINS OF T1.3.</b> Six copies were counted. txStat is the authority; replayAmend feeds only the Ledger's collapse rule now and nothing reads it for a state; ledFinal, the card's cardCls and wbState all read the engine. Two small class maps are left, stateCls in the Ledger and wbPayCls in Enter, each mapping a word the engine already chose to a class name, and neither can produce a state."
+  ]
+ },
+ {
   "v": "v491",
   "d": "05 Sep 2026",
   "t": "THE LEDGER CARD CARRIES ONE STATE, THE ENGINE'S, AND A STEP IS ONE ROW",
