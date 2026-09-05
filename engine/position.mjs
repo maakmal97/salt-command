@@ -466,6 +466,23 @@ function correctionFaults(row,fields,isSale){
     out.push('the corrected row would carry a cancelled-on date of '+after.cancelledOn+' without being cancelled: clear the date, or cancel the row with it');
   if(after.cancelled===true&&after.cancelledOn&&after.date&&after.cancelledOn<after.date)
     out.push('the corrected row would be cancelled on '+after.cancelledOn+', before it was agreed on '+after.date);
+  /* v494: A DEFAULT IS AN ORDER WITH GOODS OUT AND MONEY OWED, on his instruction of 05 Sep 2026
+     that a sale in Advance can be moved to Default from the editor. The Defaulted tick had been
+     buy-only on the desk, though every reader of CORRECT_BOOL already carried the flag for a sale;
+     showing it needs the rule that the lot side's Default kind has had since v435, on both sides:
+     a sale that has handed nothing over is cancelled, not defaulted; a sale paid in full has
+     nothing to default on; a lot that has received its salt cannot be defaulted on. It fires on
+     a correction that SETS the flag, not on a row that already carries it, or a note edit on the
+     book's one defaulted lot would be refused. Measured with the flag stripped, as the
+     cancellation rule above is: a defaulted lot answers nothing received by design, so measuring
+     it with the flag on would pass every lot. Both found by the suite before it shipped. A
+     defaulted lot may still be cancelled, as v421 decided. */
+  if(f.defaulted===true){
+    const bareD=Object.assign({},after);delete bareD.defaulted;
+    if(isSale){
+      if(txEffDeliv(bareD)<=0.009)out.push('a sale nothing has been handed over on cannot default: cancel it instead');
+      else if(!after.unpriced&&txPaid(bareD)>=(+after.total||0)-0.009)out.push('a sale paid in full has nothing to default on');}
+    else{const rcv=poRecvUnits(bareD);if(rcv>0.009)out.push('a lot that has received '+rcv+' unit cannot be defaulted on');}}
   /* AN UNDATED ROW READS AS PENDING EVERYWHERE, which a row with movement is not. Measured on the
      row as it stands, and only when the row actually HAS a date to clear. */
   if(f.date===null&&row.date){

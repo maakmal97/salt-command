@@ -2234,6 +2234,46 @@ section("Fold — an approved batch becomes records in the book (v340)");
       "a fulfilment against a cancelled order is refused, not folded onto it"
       + (pc.refused.length ? ", by: " + pc.refused[0].why.slice(0, 60) : ""));
   }
+
+  /* A SALE IN ADVANCE CAN BE MOVED TO DEFAULT FROM THE EDITOR. His instruction of 05 Sep 2026:
+     on updating a ledger entry, Pending can move to Cancelled, Open or Completed, and the move
+     missing is Default from Advance. The Defaulted tick was buy-only on the desk (EDFORM), though
+     every reader of CORRECT_BOOL already carried the flag for a sale, so the chain could fold a
+     default it could not be asked for. Showing the tick needs the rule the lot side has had since
+     v435, so a Default stays an order with goods out and money owed. Asserted through the fold's
+     own plan, which reads the shared guard, and on the desk's field table. */
+  {
+    const { default: X } = await import("../engine/position.mjs");
+    const DB = JSON.parse(JSON.stringify(book));
+    DB.sales.push({ rid: "sX40", customer: "CX9-TESTDEF", qty: 2, total: 200, cash: 0, deliveredQty: 2, date: "2026-08-20", deliveredOn: "2026-08-20", product: "salt", note: "fixture." },
+      { rid: "sX41", customer: "CX9-TESTDEF", qty: 2, total: 200, cash: 0, deliveredQty: 0, date: "2026-08-20", product: "salt", note: "fixture." },
+      { rid: "sX42", customer: "CX9-TESTDEF", qty: 2, total: 200, cash: 200, deliveredQty: 2, date: "2026-08-20", product: "salt", note: "fixture." });
+    DB.purchases.push({ rid: "pX40", date: "2026-07-02", supplier: "SA5-BTR", qty: 5, total: 250, status: "paid", note: "fixture." });
+    const dcorr = (at, rid, coll, dirn, fields) => ({ ok: true, count: 1, approved: [{
+      id: ID(at), collection: coll, amends: rid, amendKind: "Correction",
+      row: { rid }, entry: { at: ID(at), payload: { mode: "amend", direction: dirn, rid, kind: "Correction", date: "2026-09-05", fields } } }] });
+    const why = (r) => (r.refused.length ? r.refused[0].why : "");
+    const adv = plan(JSON.parse(JSON.stringify(DB)), dcorr("05:00", "sX40", "sales", "SELL", { defaulted: true }), null);
+    ok(adv.items.length === 1 && adv.refused.length === 0, "a default on a sale in Advance, goods out and money owed, is planned" + (adv.refused.length ? ": " + why(adv).slice(0, 90) : ""));
+    const pend = plan(JSON.parse(JSON.stringify(DB)), dcorr("05:01", "sX41", "sales", "SELL", { defaulted: true }), null);
+    ok(pend.items.length === 0 && /cancel it instead/.test(why(pend)), "a default on a sale nothing was handed over on is refused, to be cancelled instead" + (pend.items.length ? " (it was planned)" : ""));
+    const paid = plan(JSON.parse(JSON.stringify(DB)), dcorr("05:02", "sX42", "sales", "SELL", { defaulted: true }), null);
+    ok(paid.items.length === 0 && /paid in full/.test(why(paid)), "a default on a sale paid in full is refused: there is nothing to default on");
+    const already = (DB.purchases || []).find((p) => p.defaulted);
+    ok(!!already && X.correctionFaults(already, { note: "x" }, false).length === 0, "and a note edit on the book's defaulted lot is not refused: the rule reads the flag being set, not the flag carried");
+    const lot = plan(JSON.parse(JSON.stringify(DB)), dcorr("05:04", "pX40", "purchases", "BUY", { defaulted: true }), null);
+    ok(lot.items.length === 0 && /cannot be defaulted on/.test(why(lot)), "a default on a lot that has received its salt is refused, the v435 rule through the correction road");
+    const A = JSON.parse(JSON.stringify(DB));
+    const ar = apply(A, dcorr("05:05", "sX40", "sales", "SELL", { defaulted: true }),
+      { version: "v999", date: "05 Sep 2026", title: "TEST", notes: ["<b>TEST.</b>"], rows: { [ID("05:05")]: { note: "defaulted in the suite." } }, stockNote: "" }, master);
+    const r = A.sales.find((x) => x.rid === "sX40");
+    ok(ar.ok && !!r && r.defaulted === true && X.txStat(r).order === "Default" && X.saleProvRate(r, 0) === 1,
+      "applied, the row reads Default and provisions in full" + (ar.ok ? "" : ": " + ar.problems.join("; ")));
+    const { openMaster: omD } = await import("../tools/payload.mjs");
+    const { w: wD } = await omD();
+    const shown = JSON.parse(wD.eval("JSON.stringify([edFields('SELL').some(function(f){return f.k==='defaulted';}),edFields('BUY').some(function(f){return f.k==='defaulted';})])"));
+    ok(shown[0] && shown[1], `the editor offers the Defaulted tick on a sale as on a lot (sale ${shown[0]}, lot ${shown[1]})`);
+  }
   /* the plan refuses what it must and describes the rest */
   let p = plan(JSON.parse(JSON.stringify(book)), staged, null);
   ok(p.refused.length === 1 && /Linked/.test(p.refused[0].why), "a Linked amendment is refused as a judgement; a Modification is not");

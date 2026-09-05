@@ -1,5 +1,15 @@
 [
  {
+  "v": "v494",
+  "d": "05 Sep 2026",
+  "t": "A SALE IN ADVANCE CAN BE MOVED TO DEFAULT FROM THE EDITOR",
+  "n": [
+   "<b>HIS INSTRUCTION, 05 SEP 2026:</b> on updating a ledger entry, Pending can move to Cancelled, Open or Completed, and the move missing is Default from Advance. The Defaulted tick sat in the editor's field table marked buy-only, so a sale's editor never drew it, though every reader of CORRECT_BOOL, the drafter, the fold and the desk's own preview, already carried the flag for a sale: the chain could fold a default it could not be asked for. The tick now shows on both sides, with a hint saying what a default on a sale means, that what they still owe is written off and provisioned in full and the goods stay handed over.",
+   "<b>THE RULE THAT COMES WITH IT, IN THE ONE RULER.</b> The lot side's Default kind has refused a default on a lot that has received its salt since v435. correctionFaults, which the drafter, the fold and the desk all read, now carries the same shape for the correction road on both sides: a sale nothing has been handed over on cannot default and is cancelled instead; a sale paid in full has nothing to default on; a lot that has received its salt cannot be defaulted on. It fires on a correction that sets the flag, not on a row that already carries it, and it measures the row with the flag stripped, because a defaulted lot answers nothing received by design. Both of those were found by the suite before this shipped: the first draft refused a note edit on the book's one defaulted lot, and measured that lot with its flag on and passed it. A defaulted lot may still be cancelled, as v421 decided; a rule against that was drafted and withdrawn.",
+   "<b>PROVED RED THROUGH THE FOLD'S OWN PLAN.</b> Three planted sales and a planted settled lot go through plan() as Corrections setting defaulted. Against the unchanged engine the pending sale, the paid sale and the landed lot were all planned; now each is refused with its reason, the Advance sale is planned, and applied it reads Default and provisions in full. The desk's field table is read from the rendered master and offers the tick on a sale as on a lot. Nothing visible moves: the editor is a dialog, and every shot reads the same."
+  ]
+ },
+ {
   "v": "v493",
   "d": "05 Sep 2026",
   "t": "THE LEDGER CARD CARRIES ITS STATE AS A HINT OF COLOUR",
