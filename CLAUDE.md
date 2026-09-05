@@ -454,6 +454,19 @@ so the next pass retries by itself.
 The desk shows **codes by default**. Real names are synced only as ciphertext and shown only
 after a password.
 
+**A NAME AND ID IS COMMITTED EVERY TIME, LIKE AN APPROVED ROW (his instruction, 05 Sep 2026).**
+A code that reaches the roster with no name behind it is half a record, and the half that is
+missing is the half only he can supply. So when a new code appears through Add ID, or a fold
+finds a roster code the directory does not carry, ask him for the **name and the location**
+before the ID commits, and then, in this order: write both to `10_Data\salt_bio.json` on the
+laptop (rule 2: plaintext never reaches the cloud, and this file never leaves the project
+folder), seed the vault so the phone can show the name after a password, and commit the
+statement username in `statements/_users.json`, which is an address and not a secret. The
+username is minted once and kept for life, so a username on the laptop alone is one
+regeneration from being minted twice: CF5-WM's sat uncommitted for three days after the
+October run minted it, and that is the case this rule was written on. The three `-R` reseller
+sub-accounts are aliases of named parties and are the one exception.
+
 **What is built and proven (cloud side):**
 - The Worker stores and returns the encrypted vault at `/vault` (ciphertext only; a plaintext
   POST is refused). `/bio` is always dropped.
