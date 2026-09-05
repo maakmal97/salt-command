@@ -1,5 +1,16 @@
 [
  {
+  "v": "v489",
+  "d": "05 Sep 2026",
+  "t": "FOUR ROWS ON HIS WORD: CH5-OUG TAKES 12.5 BELOW THE FLOOR, THE SHELF IS COUNTED AT 9.8, AND CR3-DAM SETTLES BOTH ADVANCES",
+  "n": [
+   "<b>ENTERED BY THE FOLD ON HIS WORD, 05 SEP 2026, AFTER THE PHONE ENTRIES DID NOT ARRIVE.</b> Twice in two days an entry recorded on the phone reached neither KV nor the drafter, and every figure here was dictated by him in the same conversation, so he chose to have the fold write them rather than queue them a third time. That choice has a cost and it is stated: no draft was made, so no drafter flag was raised, and the one row that would have carried one has its floor figure written into its own note instead. Each trail says on his word.",
+   "<b>CH5-OUG TAKES 12.5 UNIT FOR RM 650, RM 52 A UNIT, COLLECTED AND PAID ON 4 SEP, RM 32.87 UNDER THE COLLECTED FLOOR.</b> The desk's snapshot that morning put the floor for 12.5 unit at RM 682.87 collected and RM 692.87 delivered. Loaded cost is RM 52.63 a unit against RM 52.00 sold, so the order loses RM 0.63 a unit before the RM 25 timePerOrder charges for the work; at the shelf's RM 48 it shows RM 50 on the order at 7.7%, the thinnest salt margin this month. He took it with the figure in front of him. Beside the decision: CH5-OUG paid RM 600 for 12.5 unit on 20 Aug, so this is RM 50 more than his own last order at the size; he is the only customer buying 12.5 unit at wholesale, the other four such orders on the book running RM 750 to RM 1,300; and RM 650 is exactly SA5-BTR's live quote for 12.5 unit, so the lot goes out at what it costs to replace. Row s133.",
+   "<b>THE SHELF IS COUNTED AT 9.8, AND THE COUNT IS ENTERED NET OF A SALE THE BOOK HAD ALREADY ROLLED.</b> He counted 13.8 on 4 Sep, after CH5-OUG's 12.5 had gone and before CM4-MK's 4 did. v484 had already rolled CM4-MK's 4 off the shelf, and the fold sets the shelf to the counted figure rather than re-rolling what came after it, so 13.8 entered as counted would have stood 4 unit high and read as a surplus. The sale rolls first, 23 less 12.5 is 10.5, and the count then sets 9.8: a drift of 0.7, real shrinkage against the shelf as it stood, RM 36.84 at loaded cost, the first this book has booked since the 2 Sep count. COUNT_ON.salt moves to 4 Sep.",
+   "<b>CR3-DAM PAID RM 160 ON 5 SEP AND BOTH HIS ADVANCES CLOSE.</b> RM 80 on s116 of 27 Aug and RM 80 on s123 of 31 Aug, each a 1-unit advance with nothing paid; the units went out on their own dates and nothing moves on the shelf. Both rows read Completed. CR3-DAM comes off the receivable and out of the cap breach he had stood in since 31 Aug, 2 unit against a retail cap of 1, and s116 settles one day before it would have hit the 10-day term. Live credit falls from RM 330 to RM 170, CN6-WM's RM 110 and CM4-MK's RM 60; the next row to reach the term is CN6-WM's s124 on 9 Sep."
+  ]
+ },
+ {
   "v": "v488",
   "d": "05 Sep 2026",
   "t": "A DECLARED DEFAULT PROVISIONS IN FULL: CA4-DAM'S RM 260 IS WRITTEN OFF, AS SF6-KLC'S RM 750 WAS",

@@ -1,6 +1,6 @@
 {
- "v": "v488",
- "stamped": "05 Sep 2026, 11:21 KL",
+ "v": "v489",
+ "stamped": "05 Sep 2026, 11:37 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -41,9 +41,9 @@
     "stated": 15
    }
   },
-  "STATED_STOCK": 23,
+  "STATED_STOCK": 9.8,
   "COUNT_ON": {
-   "salt": "2026-09-02",
+   "salt": "2026-09-04",
    "oil": "2026-08-23"
   },
   "purchases": [
@@ -2545,7 +2545,7 @@
     "qty": 1,
     "total": 80,
     "cost": 50,
-    "cash": 0,
+    "cash": 80,
     "handover": "collected",
     "date": "2026-08-27",
     "deliveredQty": 1,
@@ -2567,8 +2567,16 @@
       "cash": 0,
       "kg": 0,
       "note": "corrected to unpaid; advanced pickup"
+     },
+     {
+      "date": "2026-09-05",
+      "kind": "Fulfilment",
+      "cash": 80,
+      "kg": 0,
+      "note": "<b>RM 80 PAID ON 5 SEP, on his word.</b> Half of the RM 160 CR3-DAM paid today against his two standing advances of 1 unit each. Nothing moves on the shelf: the unit went out on 2026-08-27. The row closes, and with both closed CR3-DAM is off the receivable and clear of the 1-unit retail cap he had stood 2 unit over since 31 Aug."
      }
-    ]
+    ],
+    "paidOn": "2026-09-05"
    },
    {
     "customer": "CA4-DAM",
@@ -2789,7 +2797,7 @@
     "qty": 1,
     "total": 80,
     "cost": 50,
-    "cash": 0,
+    "cash": 80,
     "handover": "delivered",
     "date": "2026-08-31",
     "deliveredQty": 1,
@@ -2811,8 +2819,16 @@
       "cash": 0,
       "kg": 0,
       "note": "Entered as 1 Sep; happened on 31 Aug. Date and delivered-on move together, no figure changes; the RM80 is still owed. Dictated in a Code session on 2 Sep 2026."
+     },
+     {
+      "date": "2026-09-05",
+      "kind": "Fulfilment",
+      "cash": 80,
+      "kg": 0,
+      "note": "<b>RM 80 PAID ON 5 SEP, on his word.</b> Half of the RM 160 CR3-DAM paid today against his two standing advances of 1 unit each. Nothing moves on the shelf: the unit went out on 2026-08-31. The row closes, and with both closed CR3-DAM is off the receivable and clear of the 1-unit retail cap he had stood 2 unit over since 31 Aug."
      }
-    ]
+    ],
+    "paidOn": "2026-09-05"
    },
    {
     "customer": "CI4-OKR",
@@ -2940,6 +2956,20 @@
     "deliveredOn": "2026-09-04",
     "note": "CM4-MK takes 4 unit at RM 360, RM 90/unit, delivered in full on 4 Sep with RM 300 paid and RM 60 left owing. Two flags came with the draft and both were read. The rate flag calls RM 90/unit 18.2% under this party's RM 110/unit median over seven orders; the median is the wrong ruler, because RM 110/unit is what CM4-MK's 2 unit orders cost and both of its 4 unit orders were struck at this grade, RM 360 on 10 Aug and RM 380 on 24 Aug. This is the 10 Aug price repeated, and it sits well clear of the live floor of RM 245.52 delivered for 4 unit. The cost is the shelf's own RM 48/unit, from the 25 unit SA5-BTR lot of 3 Sep at RM 1,200, and it is the same figure the desk's pricing snapshot carries, so no override was needed: RM 192 of cost against RM 360 leaves RM 168, 46.7%. The advance flag is the one that stands: RM 60 goes out against delivered stock, and it is the first balance CM4-MK has carried, every one of its seven earlier orders having settled on the day.",
     "rid": "s132"
+   },
+   {
+    "customer": "CH5-OUG",
+    "qty": 12.5,
+    "total": 650,
+    "cost": 48,
+    "cash": 650,
+    "handover": "collected",
+    "date": "2026-09-04",
+    "deliveredQty": 12.5,
+    "deliveredOn": "2026-09-04",
+    "paidOn": "2026-09-04",
+    "note": "<b>12.5 UNIT COLLECTED AND PAID IN FULL ON 4 SEP, RM 650 AT RM 52 A UNIT, BELOW THE FLOOR ON HIS WORD.</b> The desk's own snapshot that morning put the collected floor for 12.5 unit at RM 682.87 and the delivered floor at RM 692.87, so this clears neither: it is RM 32.87 under the one that applies. The loaded cost is RM 52.63 a unit against RM 52.00 sold, so the order loses RM 0.63 a unit before the RM 25 that timePerOrder charges for the work; costed at the shelf's RM 48 it shows RM 50 on the order at 7.7%, which is the thinnest margin on any salt row this month. He took it with the figure in front of him, and three things stand beside the decision: CH5-OUG bought 12.5 unit at RM 600 on 20 Aug, RM 48 a unit, so RM 650 is RM 50 more than his own last order at this size; he is the only customer buying 12.5 unit at wholesale rates, the other four such orders on the book being RM 750 to RM 1,300; and RM 650 for 12.5 unit is exactly SA5-BTR's live quote tier, so the lot goes out at what it costs to replace. Entered by the fold on his word, 05 Sep, after the phone entry did not arrive twice: no drafter flag was raised because no draft was made, which is why the floor figure is written here instead.",
+    "rid": "s133"
    }
   ],
   "contacts": [
@@ -3244,7 +3274,7 @@
   ],
   "QUEUE_COMMITTED": "2026-09-04T12:03:40.929Z",
   "PRICING": {
-   "takenAt": "2026-09-05T03:21:41.386Z",
+   "takenAt": "2026-09-05T03:37:11.065Z",
    "sizes": [
     0.5,
     1,
@@ -3274,52 +3304,52 @@
      "replCost": 48.33,
      "floors": {
       "1": {
-       "delivered": 87.63,
-       "collected": 77.63
+       "delivered": 87.73,
+       "collected": 77.73
       },
       "2": {
-       "delivered": 140.26,
-       "collected": 130.26
+       "delivered": 140.46,
+       "collected": 130.46
       },
       "3": {
-       "delivered": 192.89,
-       "collected": 182.89
+       "delivered": 193.19,
+       "collected": 183.19
       },
       "4": {
-       "delivered": 245.52,
-       "collected": 235.52
+       "delivered": 245.92,
+       "collected": 235.92
       },
       "5": {
-       "delivered": 298.15,
-       "collected": 288.15
+       "delivered": 298.66,
+       "collected": 288.66
       },
       "0.5": {
-       "delivered": 61.31,
-       "collected": 51.31
+       "delivered": 61.37,
+       "collected": 51.37
       },
       "1.5": {
-       "delivered": 113.94,
-       "collected": 103.94
+       "delivered": 114.1,
+       "collected": 104.1
       },
       "2.5": {
-       "delivered": 166.57,
-       "collected": 156.57
+       "delivered": 166.83,
+       "collected": 156.83
       },
       "3.5": {
-       "delivered": 219.2,
-       "collected": 209.2
+       "delivered": 219.56,
+       "collected": 209.56
       },
       "4.5": {
-       "delivered": 271.83,
-       "collected": 261.83
+       "delivered": 272.29,
+       "collected": 262.29
       },
       "6.25": {
-       "delivered": 363.94,
-       "collected": 353.94
+       "delivered": 364.57,
+       "collected": 354.57
       },
       "12.5": {
-       "delivered": 692.87,
-       "collected": 682.87
+       "delivered": 694.14,
+       "collected": 684.14
       }
      },
      "inputs": {
@@ -3400,15 +3430,15 @@
          "rm": 10
         },
         "deliveredShare": {
-         "v": 0.42857142857142855
+         "v": 0.4
         }
        },
        "attrib": 1,
-       "shrinkRate": 0.05777547585135311,
+       "shrinkRate": 0.05958824291078596,
        "avgDel": {
-        "n": 119,
-        "kg": 302.2,
-        "mean": 2.5395
+        "n": 120,
+        "kg": 314.7,
+        "mean": 2.6225
        }
       },
       "policy": {
@@ -3678,11 +3708,11 @@
      }
     }
    },
-   "v": "v488"
+   "v": "v489"
   },
   "OPEN": {
-   "at": "2026-09-05T03:21:41.413Z",
-   "count": 7,
+   "at": "2026-09-05T03:37:11.092Z",
+   "count": 5,
    "byKey": {
     "CM4-MK|2026-09-04|360": {
      "d": "2026-09-04",
@@ -3717,23 +3747,6 @@
      "key": "CA4-DAM|2026-09-02|160",
      "age": 3,
      "exp": 0
-    },
-    "CR3-DAM|2026-08-31|80": {
-     "d": "2026-08-31",
-     "p": "CR3-DAM",
-     "dir": "S",
-     "q": 1,
-     "t": 80,
-     "cash": 0,
-     "mv": 1,
-     "st": "dueMoney",
-     "oweRM": 80,
-     "rid": "s123",
-     "deliveredOn": "2026-08-31",
-     "handover": "delivered",
-     "key": "CR3-DAM|2026-08-31|80",
-     "age": 5,
-     "exp": 60
     },
     "CN6-WM|2026-08-30|110": {
      "d": "2026-08-30",
@@ -3770,23 +3783,6 @@
      "age": 8,
      "exp": 0
     },
-    "CR3-DAM|2026-08-27|80": {
-     "d": "2026-08-27",
-     "p": "CR3-DAM",
-     "dir": "S",
-     "q": 1,
-     "t": 80,
-     "cash": 0,
-     "mv": 1,
-     "st": "dueMoney",
-     "oweRM": 80,
-     "rid": "s116",
-     "deliveredOn": "2026-08-27",
-     "handover": "collected",
-     "key": "CR3-DAM|2026-08-27|80",
-     "age": 9,
-     "exp": 40
-    },
     "SF6-KLC|2026-07-08|750": {
      "d": "2026-07-08",
      "p": "SF6-KLC",
@@ -3805,12 +3801,12 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 23,
-     "free": 23,
+     "onHand": 9.8,
+     "free": 9.8,
      "owedOut": 0,
-     "coverDays": 5.3,
-     "rate": 4.38,
-     "owedToYou": 590,
+     "coverDays": 1.9,
+     "rate": 5.27,
+     "owedToYou": 430,
      "promised": 0,
      "short": 0
     },
@@ -3827,10 +3823,10 @@
     }
    },
    "countedOn": {
-    "salt": "2026-09-02",
+    "salt": "2026-09-04",
     "oil": "2026-08-23"
    },
-   "v": "v488"
+   "v": "v489"
   }
  }
 }
