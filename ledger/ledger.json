@@ -1,6 +1,6 @@
 {
- "v": "v489",
- "stamped": "05 Sep 2026, 11:37 KL",
+ "v": "v490",
+ "stamped": "05 Sep 2026, 12:31 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -41,7 +41,7 @@
     "stated": 15
    }
   },
-  "STATED_STOCK": 9.8,
+  "STATED_STOCK": 9.3,
   "COUNT_ON": {
    "salt": "2026-09-04",
    "oil": "2026-08-23"
@@ -2970,6 +2970,20 @@
     "paidOn": "2026-09-04",
     "note": "<b>12.5 UNIT COLLECTED AND PAID IN FULL ON 4 SEP, RM 650 AT RM 52 A UNIT, BELOW THE FLOOR ON HIS WORD.</b> The desk's own snapshot that morning put the collected floor for 12.5 unit at RM 682.87 and the delivered floor at RM 692.87, so this clears neither: it is RM 32.87 under the one that applies. The loaded cost is RM 52.63 a unit against RM 52.00 sold, so the order loses RM 0.63 a unit before the RM 25 that timePerOrder charges for the work; costed at the shelf's RM 48 it shows RM 50 on the order at 7.7%, which is the thinnest margin on any salt row this month. He took it with the figure in front of him, and three things stand beside the decision: CH5-OUG bought 12.5 unit at RM 600 on 20 Aug, RM 48 a unit, so RM 650 is RM 50 more than his own last order at this size; he is the only customer buying 12.5 unit at wholesale rates, the other four such orders on the book being RM 750 to RM 1,300; and RM 650 for 12.5 unit is exactly SA5-BTR's live quote tier, so the lot goes out at what it costs to replace. Entered by the fold on his word, 05 Sep, after the phone entry did not arrive twice: no drafter flag was raised because no draft was made, which is why the floor figure is written here instead.",
     "rid": "s133"
+   },
+   {
+    "customer": "CH5-KLC",
+    "qty": 0.5,
+    "total": 75,
+    "cost": 48,
+    "cash": 75,
+    "handover": "collected",
+    "date": "2026-09-05",
+    "deliveredQty": 0.5,
+    "deliveredOn": "2026-09-05",
+    "paidOn": "2026-09-05",
+    "note": "<b>0.5 UNIT COLLECTED AND PAID IN FULL ON 5 SEP, RM 75 AT RM 150 A UNIT.</b> His second completed order and his first since July: s024 of 17 Jul was 0.5 unit at RM 105, and the 0.5 at RM 80 he agreed on 31 Jul was cancelled on 5 Aug. RM 150 a unit is RM 60 under that July rate and clears the 0.5-unit collected floor of RM 51.31 by RM 23.69. Costed at the shelf's RM 48, RM 24 against RM 75, RM 51 on the order at 68%. Entered by the fold on his word, 05 Sep, as the four rows of v489 were.",
+    "rid": "s134"
    }
   ],
   "contacts": [
@@ -3274,7 +3288,7 @@
   ],
   "QUEUE_COMMITTED": "2026-09-04T12:03:40.929Z",
   "PRICING": {
-   "takenAt": "2026-09-05T03:37:11.065Z",
+   "takenAt": "2026-09-05T04:31:26.871Z",
    "sizes": [
     0.5,
     1,
@@ -3430,15 +3444,15 @@
          "rm": 10
         },
         "deliveredShare": {
-         "v": 0.4
+         "v": 0.375
         }
        },
        "attrib": 1,
        "shrinkRate": 0.05958824291078596,
        "avgDel": {
-        "n": 120,
-        "kg": 314.7,
-        "mean": 2.6225
+        "n": 121,
+        "kg": 315.2,
+        "mean": 2.605
        }
       },
       "policy": {
@@ -3708,10 +3722,10 @@
      }
     }
    },
-   "v": "v489"
+   "v": "v490"
   },
   "OPEN": {
-   "at": "2026-09-05T03:37:11.092Z",
+   "at": "2026-09-05T04:31:26.896Z",
    "count": 5,
    "byKey": {
     "CM4-MK|2026-09-04|360": {
@@ -3801,11 +3815,11 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 9.8,
-     "free": 9.8,
+     "onHand": 9.3,
+     "free": 9.3,
      "owedOut": 0,
-     "coverDays": 1.9,
-     "rate": 5.27,
+     "coverDays": 1.8,
+     "rate": 5.3,
      "owedToYou": 430,
      "promised": 0,
      "short": 0
@@ -3826,7 +3840,7 @@
     "salt": "2026-09-04",
     "oil": "2026-08-23"
    },
-   "v": "v489"
+   "v": "v490"
   }
  }
 }
