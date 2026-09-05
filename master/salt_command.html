@@ -290,6 +290,13 @@ tr.tot td{font-weight:800;background:#0b1215;}
   .lc-prod{grid-area:prod;} .lc-party{grid-area:party;}
   .cqty{grid-area:qty;} .cprc{grid-area:price;} .ctot{grid-area:tot;} .lstate{grid-area:state;} .lc-act{grid-area:act;}
   .lstate .tag{white-space:normal;}
+  /* v491: A STEP IS ONE ROW, on his instruction. The two-row shape above exists for the opening
+     line, which carries a party, a type, a product and a control; a step carries none of those,
+     so it was spending a second row on four empty cells. Its kind takes the party's track, and the
+     cells a step never fills are not laid out at all. The closing line goes through the same
+     builder and is classed as a step for the same reason. */
+  .lmove{grid-template-areas:"e date step qty price tot state";}
+  .lmove .lc-type,.lmove .lc-prod,.lmove .lc-party,.lmove .lc-act{display:none;}
 }
 @container ledger (max-width:599px){
   .lrow,.lmove,.lhead{grid-template-columns:56px 74px minmax(60px,1fr) 108px;
@@ -5271,7 +5278,9 @@ const whiteboard=[
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{"v":"v490","d":"05 Sep 2026","t":"ONE SALE ON 5 SEP: CH5-KLC TAKES HALF A UNIT AT RM 75, COLLECTED AND PAID ON THE DAY","n":["<b>ONE ROW FOLDED ON HIS WORD, SALT, DATED 5 SEP 2026.</b> CH5-KLC takes 0.5 unit for RM 75, RM 150 a unit, collected and paid in full on the day, so the row closes on arrival and leaves nothing outstanding. Row s134. Entered by the fold as the four rows of v489 were, after the phone entries did not arrive; the figure is his.","<b>HIS SECOND COMPLETED ORDER AND HIS FIRST SINCE JULY.</b> s024 of 17 Jul was 0.5 unit at RM 105; the 0.5 at RM 80 he agreed on 31 Jul was cancelled on 5 Aug. RM 150 a unit is RM 60 under the July rate and RM 23.69 over the 0.5-unit collected floor of RM 51.31. Costed at the shelf's RM 48, RM 24 against RM 75, RM 51 on the order at 68%: a small order carrying the RM 25 time charge comfortably, which is what the floor at this size is for.","<b>THE SHELF GOES FROM 9.8 TO 9.3.</b> The first movement off the 4 Sep count. Live credit is unchanged at RM 170: this row was paid on the day."]},
+const evolution=[{"v":"v491","d":"05 Sep 2026","t":"THE LEDGER CARD CARRIES ONE STATE, THE ENGINE'S, AND A STEP IS ONE ROW","n":["<b>HIS INSTRUCTION, 05 SEP 2026, ON A SCREENSHOT OF s107:</b> a completed order whose card read PENDING on its opening line and OPEN . DEFERRED on its fulfilment step, and many others like it. Two things, and they had one cause. The card's states came from replayAmend, a second copy of the state ladder that sums cash and units across the trail. Line 10203 filtered Corrections out before the replay ran, so a delivery that arrived as a Correction, which is how s107's 6.25 unit arrived on 27 Aug, was invisible to it. Line 10209 took the opening line's state from the replay's FIRST step, which on an auto-built trail is \"as booked\", so every multi-step order opened as Pending whatever it had become. And ledFinal took the closing state from the replay's LAST step for anything not terminal. Three rows read wrong at the close (s103, s104, s107, each Completed in the engine), every multi-step order read wrong at the open, and s117 and s128 read Advance on the step where the engine has read Default since v488: the twin of that fold, unswept.","<b>ONE STATE PER ENTRY, AND IT IS txStat'S.</b> ledFinal is the engine's order and nothing else. The opening line carries it. The step lines and the closing line carry an empty state cell so the grid keeps its track, and nothing on them says what the entry is, because the entry says that once. replayAmend stays, because the collapse rule reads it for how long someone carried the other, a fact about the trail; nothing reads it for display any more. The same reader decided whether a card was completed at all (10230) and so whether it drew a close or collapsed, and it was swept in the same pass: s107 would otherwise have read Completed on its opening line above an unclosed trail. The Ledger's state filter goes through ledFinal too, so Default now matches the two rows it exists to find.","<b>A STEP IS ONE ROW.</b> Under 935px the card's grid had two rows for every line, \"e date party qty price tot state\" over \"step step type prod act act act\", because the opening line carries a party, a type, a product and a control. A step carries none of those, so it was spending a second row on four empty cells. A step's kind now takes the party's track and the cells a step never fills are not laid out; the closing line goes through the same builder and is classed as a step for the same reason. Above 935px nothing changes, and under 600px, the phone, a step still wraps, because four columns cannot hold a date, a kind, a quantity and a sum on one line.","<b>PROVED ON THE RENDERED CARD, RED FIRST.</b> The new assertion reads every card off the Ledger as rendered and demands exactly one non-empty state, the engine's, and none on a step. Against the unchanged desk it failed on s107 with the screenshot's own words, Pending / Open . Deferred. The v451 lot test asserted the old shape, paid ahead on the head and Completed on the close, and is rewritten to the new one. tools/renderdiff.mjs shot every part before and after: 32 of 34 shots identical, the Ledger the only part that moved at either width, shorter by 1,039px at 1280 for the close lines it no longer draws twice."]},
+
+{"v":"v490","d":"05 Sep 2026","t":"ONE SALE ON 5 SEP: CH5-KLC TAKES HALF A UNIT AT RM 75, COLLECTED AND PAID ON THE DAY","n":["<b>ONE ROW FOLDED ON HIS WORD, SALT, DATED 5 SEP 2026.</b> CH5-KLC takes 0.5 unit for RM 75, RM 150 a unit, collected and paid in full on the day, so the row closes on arrival and leaves nothing outstanding. Row s134. Entered by the fold as the four rows of v489 were, after the phone entries did not arrive; the figure is his.","<b>HIS SECOND COMPLETED ORDER AND HIS FIRST SINCE JULY.</b> s024 of 17 Jul was 0.5 unit at RM 105; the 0.5 at RM 80 he agreed on 31 Jul was cancelled on 5 Aug. RM 150 a unit is RM 60 under the July rate and RM 23.69 over the 0.5-unit collected floor of RM 51.31. Costed at the shelf's RM 48, RM 24 against RM 75, RM 51 on the order at 68%: a small order carrying the RM 25 time charge comfortably, which is what the floor at this size is for.","<b>THE SHELF GOES FROM 9.8 TO 9.3.</b> The first movement off the 4 Sep count. Live credit is unchanged at RM 170: this row was paid on the day."]},
 
 {"v":"v489","d":"05 Sep 2026","t":"FOUR ROWS ON HIS WORD: CH5-OUG TAKES 12.5 BELOW THE FLOOR, THE SHELF IS COUNTED AT 9.8, AND CR3-DAM SETTLES BOTH ADVANCES","n":["<b>ENTERED BY THE FOLD ON HIS WORD, 05 SEP 2026, AFTER THE PHONE ENTRIES DID NOT ARRIVE.</b> Twice in two days an entry recorded on the phone reached neither KV nor the drafter, and every figure here was dictated by him in the same conversation, so he chose to have the fold write them rather than queue them a third time. That choice has a cost and it is stated: no draft was made, so no drafter flag was raised, and the one row that would have carried one has its floor figure written into its own note instead. Each trail says on his word.","<b>CH5-OUG TAKES 12.5 UNIT FOR RM 650, RM 52 A UNIT, COLLECTED AND PAID ON 4 SEP, RM 32.87 UNDER THE COLLECTED FLOOR.</b> The desk's snapshot that morning put the floor for 12.5 unit at RM 682.87 collected and RM 692.87 delivered. Loaded cost is RM 52.63 a unit against RM 52.00 sold, so the order loses RM 0.63 a unit before the RM 25 timePerOrder charges for the work; at the shelf's RM 48 it shows RM 50 on the order at 7.7%, the thinnest salt margin this month. He took it with the figure in front of him. Beside the decision: CH5-OUG paid RM 600 for 12.5 unit on 20 Aug, so this is RM 50 more than his own last order at the size; he is the only customer buying 12.5 unit at wholesale, the other four such orders on the book running RM 750 to RM 1,300; and RM 650 is exactly SA5-BTR's live quote for 12.5 unit, so the lot goes out at what it costs to replace. Row s133.","<b>THE SHELF IS COUNTED AT 9.8, AND THE COUNT IS ENTERED NET OF A SALE THE BOOK HAD ALREADY ROLLED.</b> He counted 13.8 on 4 Sep, after CH5-OUG's 12.5 had gone and before CM4-MK's 4 did. v484 had already rolled CM4-MK's 4 off the shelf, and the fold sets the shelf to the counted figure rather than re-rolling what came after it, so 13.8 entered as counted would have stood 4 unit high and read as a surplus. The sale rolls first, 23 less 12.5 is 10.5, and the count then sets 9.8: a drift of 0.7, real shrinkage against the shelf as it stood, RM 36.84 at loaded cost, the first this book has booked since the 2 Sep count. COUNT_ON.salt moves to 4 Sep.","<b>CR3-DAM PAID RM 160 ON 5 SEP AND BOTH HIS ADVANCES CLOSE.</b> RM 80 on s116 of 27 Aug and RM 80 on s123 of 31 Aug, each a 1-unit advance with nothing paid; the units went out on their own dates and nothing moves on the shelf. Both rows read Completed. CR3-DAM comes off the receivable and out of the cap breach he had stood in since 31 Aug, 2 unit against a retail cap of 1, and s116 settles one day before it would have hit the 10-day term. Live credit falls from RM 330 to RM 170, CN6-WM's RM 110 and CM4-MK's RM 60; the next row to reach the term is CN6-WM's s124 on 9 Sep."]},
 
@@ -5535,7 +5544,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='05 Sep 2026, 12:31 KL';
+const LAST_UPDATED='05 Sep 2026, 14:30 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -9855,8 +9864,15 @@ const ledgerProdOf=t=>prodOf(t.type==='BUY'?(t._buy||t):t);
    happened to end on, and the Cancelled option returned three rows of five while Pending
    returned three where only one is pending. In-Kind, Default and Cancelled are terminal
    headlines and win at the close even where the last arithmetic step reads Completed. */
-const ledFinal=(si,am)=>(si.order==='In-Kind'||si.order==='Default'||si.order==='Cancelled')
-  ?si.order:(am.length?am[am.length-1].state:si.order);
+/* v491: THE ENGINE, AND ONLY THE ENGINE. The line above kept the replay's last step for anything
+   not terminal, which is the drift the comment describes, still running. The replay cannot see a
+   Correction (10203 filters them out before it runs, and a Correction carries no cash or units),
+   so s107, delivered in full by a Correction on 27 Aug, closed as Open . Deferred on a card whose
+   row the engine has read as Completed since that day. Three rows read wrong at the close and every
+   multi-step order opened as Pending. One state per entry, on his instruction, and it is txStat's.
+   `am` is still passed because the collapse rule below reads the replay for how long someone
+   carried the other, which is a fact about the trail and not about the state. */
+const ledFinal=(si,am)=>si.order;
 /* an undated row is PLANNED rather than agreed, and printing t.date on one put the literal
    word "undefined" in the date column of three cards. */
 const ledDate=d=>d&&d!=='undefined'?d:'undated';
@@ -10206,11 +10222,18 @@ function tabLedger(){
     if(am.length){const rawA=steps.slice().sort((a,b)=>new Date(a.date)-new Date(b.date));
       am.forEach((s,i)=>{if(rawA[i]&&rawA[i].refKeys)s.refKeys=rawA[i].refKeys;});}
     // opening / closing state resolution
-    const openState=am.length?am[0].state:si.order;
+    /* v491: the opening line carries the ENTRY'S state, not the replay's first step. Taking the
+       first step put PENDING on the opening line of every completed multi-step order, because
+       the first step of an auto-built trail is "as booked". One state per entry, the engine's. */
+    const openState=si.order;
     /* In-Kind (barter/rebate) and Default are terminal even when the replay's last
        arithmetic step reads Completed/Open: the special headline wins at close. */
     const finalState=ledFinal(si,am);
-    const completed=am.length?(am[am.length-1].state==='Completed'||si.order==='In-Kind'||si.order==='Default'||si.order==='Cancelled'):(si.order==='Completed'||si.order==='In-Kind'||si.order==='Default'||si.order==='Cancelled');
+    /* v491: DECIDED BY THE ENGINE, as the state now is. The replay's last step said Completed only when
+       the trail's own sums reached the row's figures, which a Correction never adds to, so s107 drew no
+       close and did not collapse while its opening line read Completed. Same fault, same reader. */
+    const completed=si.order==='Completed'||si.order==='In-Kind'||si.order==='Default'||si.order==='Cancelled';
+
     const closeState=finalState;
     const moves=am.length?am.slice(1,completed?am.length-1:am.length):[];
     const single=!am.length;                                             // no movements -> one line only
@@ -10317,7 +10340,9 @@ function tabLedger(){
         +qCell(mk,mk?a.kg:t.qty)
         +pCell(isMod)
         +tCell(mc,mc?a.cash:t.total,isMod)
-        +`<span class="lstate">${pill(a.state,a.cls)}</span>`
+        /* v491: NO STATE ON A STEP, on his instruction. A step is a movement; the state is the
+           entry's and sits on its opening line. The cell stays so the grid keeps its track. */
+        +`<span class="lstate"></span>`
         +'<span class="lc lc-act"></span>'
         +`</div>`;};
     const moveLines=moves.map(a=>stepLine(a,'lmove',{date:`<span class="lmdate">${ledDate(a.date)}</span>`})).join('');
@@ -10327,7 +10352,7 @@ function tabLedger(){
     // closing line (full strength) when a multi-step order has completed. Opening->Closing with no
     // middle is fine (moves may be empty). A single-line order carries its close on the head row instead.
     const closeA=am.length?Object.assign({},am[am.length-1],{state:finalState,cls:stateCls(finalState)}):null;
-    const closeLine=(completed&&am.length)?stepLine(closeA,'lrow lclose',
+    const closeLine=(completed&&am.length)?stepLine(closeA,'lmove lclose',
        {step:`<span class="lclabel roleclose">Closed</span>`,date:`<span class="ldate">${ledDate(closeA.date)}</span>`}):'';
     /* ============ A PENDING ORDER IS A NOTE TO SELF, NOT AN EVENT (v254) ============
        An order agreed on Monday and settled on Wednesday was rendering as three lines:

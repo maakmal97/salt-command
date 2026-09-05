@@ -1690,6 +1690,46 @@ section("Engine — the position, out of the desk (v338)");
     ok(X.poStat({ qty: 10, total: 500, status: "paid", defaulted: true }).order === "Default", "and a defaulted lot still reads Default, so the two sides of the book agree");
   }
 
+  /* ONE STATE PER ENTRY, AND IT IS THE ENGINE'S. His instruction of 05 Sep 2026, on a screenshot
+     of s107: a completed order whose card read PENDING on its opening line and OPEN . DEFERRED on
+     its step. The card's states came from replayAmend, a second copy of the state ladder that
+     sums cash and units across the trail. Line 10203 filtered Corrections out before the replay,
+     so a delivery that arrived as a Correction was invisible to it; line 10209 took the opening
+     line's state from the replay's FIRST step, so every multi-step order opened as Pending
+     whatever it had become; and ledFinal took the closing state from the replay's LAST step for
+     anything not terminal. Three rows read wrong at the close, every completed multi-step order
+     read wrong at the open, and s117 and s128 read Advance on the step where the engine has said
+     Default since v488: the twin of that fold, unswept.
+     THE RULE IS ASSERTED ON THE RENDERED CARD, not on the function, because the card is what he
+     reads. Every card carries exactly one non-empty state, it is the engine's, and no step carries
+     one. s107 is named because it is the case the instruction was given on; the general assertion
+     covers the rest. */
+  {
+    const { openMaster: omL } = await import("../tools/payload.mjs");
+    const { w: wL } = await omL();
+    wL.eval("setProd('salt');recompute();switchTab('ledger');");
+    const cards = JSON.parse(wL.eval(`JSON.stringify([].slice.call(document.querySelectorAll('.sec.on .lcard[data-rid]')).map(function(c){
+      var pills=[].slice.call(c.querySelectorAll('.lstate')).map(function(s){return s.textContent.trim();}).filter(Boolean);
+      var steps=[].slice.call(c.querySelectorAll('.lmove .lstate')).map(function(s){return s.textContent.trim();}).filter(Boolean);
+      return {rid:c.getAttribute('data-rid'), pills:pills, stepPills:steps};}))`));
+    ok(cards.length > 100, `the Ledger rendered ${cards.length} cards to check`);
+    const multi = cards.filter((c) => c.pills.length !== 1);
+    ok(multi.length === 0, multi.length
+      ? `${multi.length} card(s) carry ${multi[0].pills.length} states, e.g. ${multi[0].rid}: ${multi[0].pills.join(" / ")}`
+      : "every card carries exactly one state");
+    const stepped = cards.filter((c) => c.stepPills.length);
+    ok(stepped.length === 0, stepped.length ? `${stepped.length} card(s) still put a state on a step, e.g. ${stepped[0].rid}` : "and no step carries one");
+    const bookL = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+    const eng = (rid) => X.txStat(bookL.sales.find((s) => s.rid === rid)).order;
+    const wrong = cards.filter((c) => c.pills.length === 1 && bookL.sales.some((s) => s.rid === c.rid) && c.pills[0].toLowerCase() !== eng(c.rid).toLowerCase());
+    ok(wrong.length === 0, wrong.length
+      ? `${wrong.length} card(s) disagree with the engine, e.g. ${wrong[0].rid} shows ${wrong[0].pills[0]} where the engine says ${eng(wrong[0].rid)}`
+      : "and every one is the engine's own reading");
+    const s107 = cards.find((c) => c.rid === "s107");
+    ok(!!s107 && s107.pills.length === 1 && /completed/i.test(s107.pills[0]),
+      `s107, the card the instruction was given on, reads Completed once (${s107 ? s107.pills.join(" / ") : "not rendered"})`);
+  }
+
   /* THE GATE: the desk's own inputs, both books, and the record comes back equal */
   const { openMaster } = await import("../tools/payload.mjs");
   const { w } = await openMaster();
@@ -5067,8 +5107,13 @@ section("v451: the Ledger draws a lot's trail");
     w.eval("switchTab('ledger');");
     ok(f6 && f6.rows.length === 2 && /\blopen\b/.test(f6.rows[0].cls) && /\blclose\b/.test(f6.rows[1].cls),
       `a lot paid on the 10th and received on the 20th opens and closes on two lines (${f6 && f6.rows.map((r) => r.cls).join(" | ")})`);
-    ok(f6 && f6.rows[0].pill === "Open \u00b7 Deferred" && f6.rows[1].pill === "Completed" && f6.rows[1].date === "2026-08-20",
-      `paid ahead on the head, Completed on the close, dated by the receipt (${f6 && f6.rows.map((r) => r.pill + " " + r.date).join(" | ")})`);
+    /* v491: ONE STATE PER ENTRY, ON THE HEAD, on his instruction. This asserted "paid ahead" on
+       the head and Completed on the close, one state per line, which is the shape he rejected on a
+       screenshot of s107. The head now carries the entry's state, the engine's, and the close
+       carries the receipt date and no state: the paid-ahead history is on the steps, where the
+       cash of the 10th and the units of the 20th are each their own row. */
+    ok(f6 && f6.rows[0].pill === "Completed" && f6.rows[1].pill === "" && f6.rows[1].date === "2026-08-20",
+      `Completed once on the head, the close dated by the receipt and carrying no state (${f6 && f6.rows.map((r) => (r.pill || "-") + " " + r.date).join(" | ")})`);
     ok(f7 && f7c && /Corrected 2026-08-30/.test(f7c.text) && !/\bbad\b/.test(f7c.cls) && f7c.why,
       `a corrected lot carries the correction strip in the Journal, quiet because every claim reads back, its own note behind why (${f7c && f7c.text.slice(0, 60)})`);
     ok(p16 && p16.rows.length === 1 && /\blclose\b/.test(p16.rows[0].cls) && p16.rows[0].pill === "Completed",
