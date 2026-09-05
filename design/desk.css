@@ -262,6 +262,23 @@ tbody tr:hover td:not(.l){background:rgba(255,255,255,.03);}
 .etype{font-weight:500;letter-spacing:.12em;}
 .ledwrap .lcard{border-bottom-color:var(--salt-line-faint);}
 .ledwrap .lcard>.lclose:not(:first-child){border-top-color:var(--salt-line-faint);}
+/* ---- THE CARD'S STATE AS A HINT OF COLOUR (v493, 05 Sep 2026, his instruction). One stripe and one
+   wash per state, in the identity's own words: verdigris settled (Completed, In-Kind), copper for
+   Advance (they owe him cash), brass for Deferred (he owes salt), ember for Default, steel for
+   Pending, and a cancelled entry fades rather than colours. The class is the engine's order, set
+   once per card in the Ledger's render; the pill inside a Deferred card takes the stripe's colour
+   so the word and the tint agree. The base layer's own tint rules (v-old .lcard.s-*), which the
+   .ledwrap list mode had switched off since v465, are retired with this. ---- */
+.ledwrap .lcard{border-left:3px solid transparent;}
+.ledwrap .lcard.s-completed,.ledwrap .lcard.s-inkind{border-left-color:var(--salt-verdigris);background:rgba(111,174,151,.06);}
+.ledwrap .lcard.s-advance{border-left-color:var(--salt-copper);background:rgba(184,115,51,.07);}
+.ledwrap .lcard.s-deferred{border-left-color:var(--salt-brass);background:rgba(197,160,89,.07);}
+.ledwrap .lcard.s-deferred .tag.open{color:var(--salt-brass);}
+.ledwrap .lcard.s-default{border-left-color:var(--salt-ember);background:rgba(212,105,76,.08);}
+.ledwrap .lcard.s-pending{border-left-color:var(--salt-steel);background:rgba(142,162,182,.07);}
+.ledwrap .lcard.s-cancelled{border-left-color:var(--salt-mist);opacity:.5;filter:saturate(.4);transition:opacity .13s,filter .13s;}
+.ledwrap .lcard.s-cancelled:hover,.ledwrap .lcard.s-cancelled:focus-within{opacity:.94;filter:none;}
+.ledwrap .lcard.s-cancelled .lparty{text-decoration:line-through;text-decoration-color:rgba(122,134,144,.8);}
 .ledwrap .tag.buy{color:var(--salt-steel);}
 .ledwrap .tag.sell{color:var(--salt-product-salt);}
 .ledwrap .tag.paid{color:var(--salt-verdigris);}

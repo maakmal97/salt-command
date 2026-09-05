@@ -1730,6 +1730,51 @@ section("Engine — the position, out of the desk (v338)");
       `s107, the card the instruction was given on, reads Completed once (${s107 ? s107.pills.join(" / ") : "not rendered"})`);
   }
 
+  /* THE CARD CARRIES ITS STATE AS A HINT OF COLOUR. His instruction of 05 Sep 2026: completed green,
+     open advance amber, open deferred yellow, defaulted red, pending blue, cancelled faded. The
+     card's class had known one word for both Open states (s-open), and the base layer's tint rules
+     had been switched off inside the Ledger's list mode since v465, so no card carried any colour.
+     Asserted on the rendered card: every real card's class is the engine's order under the map,
+     and six planted sales, one per state, each render with their own class and resolve their own
+     stripe colour through the cascade, which proves the layer's rule wins over the base rules it
+     retires. Planted because the book need not hold every state on any given day: it held no
+     Deferred and no Pending sale on the day this was written, and a check that fails on a clean
+     book is checking the book. */
+  {
+    const MAP = { "Completed": "s-completed", "Open · Advance": "s-advance", "Open · Deferred": "s-deferred",
+      "Pending": "s-pending", "Default": "s-default", "Cancelled": "s-cancelled", "In-Kind": "s-inkind" };
+    const { openMaster: omC } = await import("../tools/payload.mjs");
+    const { w: wC } = await omC();
+    const PLANT = {
+      "s-completed": { cash: 100, deliveredQty: 2 }, "s-advance": { cash: 0, deliveredQty: 2 },
+      "s-deferred": { cash: 100, deliveredQty: 0 }, "s-pending": { cash: 0, deliveredQty: 0 },
+      "s-default": { cash: 0, deliveredQty: 2, defaulted: true }, "s-cancelled": { cash: 0, deliveredQty: 0, cancelled: true, cancelledOn: "2026-09-02" } };
+    Object.keys(PLANT).forEach((k) => wC.eval(`sales.push(Object.assign({customer:'CX9-TINT',qty:2,total:100,date:'2026-09-01',rid:'x-${k.slice(2)}'},${JSON.stringify(PLANT[k])}))`));
+    wC.eval("setProd('salt');recompute();switchTab('ledger');");
+    const bookC = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+    const got = JSON.parse(wC.eval(`JSON.stringify([].slice.call(document.querySelectorAll('.sec.on .lcard[data-rid]')).map(function(c){
+      var st=[].filter.call(c.classList,function(k){return k.slice(0,2)==='s-';});
+      var cs=getComputedStyle(c);
+      return {rid:c.getAttribute('data-rid'),cls:st,stripe:cs.borderLeftColor,op:cs.opacity};}))`));
+    const rowOf = (rid) => bookC.sales.find((s) => s.rid === rid);
+    const real = got.filter((c) => rowOf(c.rid));
+    ok(real.length > 100, `${real.length} real sale cards carry a state class to check`);
+    const bad = real.filter((c) => c.cls.length !== 1 || c.cls[0] !== MAP[X.txStat(rowOf(c.rid)).order]);
+    ok(bad.length === 0, bad.length
+      ? `${bad.length} card(s) carry the wrong state class, e.g. ${bad[0].rid} has ${bad[0].cls.join(" ")} where the engine says ${X.txStat(rowOf(bad[0].rid)).order}`
+      : "every real card's class is the engine's order");
+    const planted = Object.keys(PLANT).map((k) => [k, got.find((c) => c.rid === "x-" + k.slice(2))]);
+    const unplanted = planted.filter(([k, c]) => !c || c.cls.join(" ") !== k);
+    ok(unplanted.length === 0, unplanted.length
+      ? `planted ${unplanted[0][0]} rendered as ${unplanted[0][1] ? unplanted[0][1].cls.join(" ") || "no class" : "no card"}`
+      : "six planted sales render in six classes, Advance and Deferred told apart");
+    const stripes = planted.map(([, c]) => c && c.stripe);
+    ok(stripes.every(Boolean) && new Set(stripes).size === 6,
+      `each state resolves its own stripe colour (${planted.map(([k, c]) => k.slice(2) + ": " + (c && c.stripe)).join("; ")})`);
+    const canc = got.find((c) => c.rid === "x-cancelled");
+    ok(!!canc && +canc.op < 1, `a cancelled entry is faded (opacity ${canc ? canc.op : "?"})`);
+  }
+
   /* THE ENTER PART'S PREVIEW ANSWERS THE SAME QUESTION THE ENGINE DOES. His instruction of 05 Sep
      2026, extending the v491 sweep to the fourth copy of the ladder. wbState took four scalars for a
      hypothetical entry and re-derived the state by hand, so it knew nothing of unpriced, cancelled,

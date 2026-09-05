@@ -1,5 +1,16 @@
 [
  {
+  "v": "v493",
+  "d": "05 Sep 2026",
+  "t": "THE LEDGER CARD CARRIES ITS STATE AS A HINT OF COLOUR",
+  "n": [
+   "<b>HIS INSTRUCTION, 05 SEP 2026, TO MAKE THE LEDGER MORE LEGIBLE:</b> each card tinted by its state. Completed green, Open . Advance amber, Open . Deferred yellow, Default red, Pending blue, and a cancelled entry faded. In the identity's own words: verdigris for settled, which is Completed and In-Kind alike; copper for Advance, where they owe him cash; brass for Deferred, where he owes salt; ember for Default; steel for Pending; and a cancelled card at half opacity with a mist stripe and the party struck through. One stripe on the left edge and one wash behind the card, nothing else moves.",
+   "<b>THE TINT EXISTED AND WAS SWITCHED OFF.</b> The base layer had carried .lcard.s-* rules since the card was drawn, and the Ledger's list mode of v465 had a rule that set border-left:0 and background:none on every one of them, so no card in the Ledger had shown a colour since. The class itself knew one word, s-open, for both Open states, so Advance and Deferred could not have been told apart by any rule. The card's class now reads the engine's order in full: s-advance and s-deferred, beside the five it had. The pill inside a Deferred card takes brass so the word and the stripe agree; an Advance pill keeps the copper it had.",
+   "<b>THE LAYER OWNS THE COLOUR, AS RULE 6 SAYS.</b> The eight base rules and the list mode's off switch are retired from the master; the tint is written once in design/desk.css and rendered between the DESIGN markers by the sync. Nothing in the master's older layers names a state colour any more.",
+   "<b>PROVED RED ON THE RENDERED CARD.</b> The assertion plants six sales, one per state, renders the Ledger and reads each card's class and computed stripe through the cascade. Against the unchanged desk it named s124 carrying s-open where the engine says Open . Advance, the planted Advance rendering as s-open, and all six stripes resolving to transparent, the off switch's own value. Green now, and the check does not depend on the book holding every state on the day it runs, which it did not: no Deferred and no Pending sale stood on 5 Sep. tools/renderdiff.mjs shot every part before and after: the Ledger is the only part that moves, at either width."
+  ]
+ },
+ {
   "v": "v492",
   "d": "05 Sep 2026",
   "t": "THE ENTER PART'S PREVIEW ASKS THE ENGINE: THE FOURTH COPY OF THE STATE LADDER IS RETIRED",
