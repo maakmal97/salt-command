@@ -67,6 +67,14 @@ function txStat(t){
   }
   let cls=order==='Completed'?'paid':order==='Pending'?'pendingt':'open';
   if((t.settle==='barter'||t.waived||t.rebate)&&payFull&&delFull){order='In-Kind';cls='inkind';}
+  /* A DEFAULTED SALE READS Default, AS A DEFAULTED LOT HAS SINCE poStat WAS WRITTEN (05 Sep 2026).
+     The flag was set on s117 on 2 Sep and this function never read it, so the row stayed
+     Open . Advance, the Ledger's Default filter could match nothing, and the Approve card
+     painted a debt he had written off in the design system's word for settled. pay and deliv
+     are left as computed, because they are still true: unpaid, and delivered. Only the order
+     word and its class change. It sits AFTER cancelled, which returns above and wins, and after
+     In-Kind, which cannot coincide with it because In-Kind requires payFull. */
+  if(t.defaulted){order='Default';cls='def';}
   return {order,cls,pay,deliv};
 }
 function txDates(s){
@@ -179,6 +187,16 @@ function poOwed(p){return poLive(p)?Math.max(0,+(+p.total-poCash(p)).toFixed(2))
    a reader who does NOT filter, such as the update panel, is no longer told 12.5 unit is coming. */
 function poOpenUnits(p){return (p.cancelled||p.defaulted)?0:+(p.qty-poRecvUnits(p)).toFixed(4);}
 function provRate(days){return days>=21?1:days>=14?0.75:days>=8?0.5:days>=4?0.25:0;}
+/* A DECLARED DEFAULT PROVISIONS IN FULL (05 Sep 2026, his instruction: CA4-DAM's outstanding is
+   defaulted, with the same treatment as SF6-KLC). The ladder measures how likely money is to come
+   by how long it has been out; a default is his statement that it will not come at all, and it
+   beats the ladder the way the supplier write-off beats it four lines below in the walk. This is
+   the ONE reader of that fact for the sale side. Every net-of-ladder figure on the desk goes
+   through it, so gross keeps the number everywhere (the record of what was traded and lost, the
+   numerator of the provision, the reason pxParty penalises the party's next quote) and net goes
+   to zero everywhere (what the desk expects to collect). The supplier readers keep calling
+   provRate directly: that side has its own rule and its own record. */
+function saleProvRate(s,days){return (s&&s.defaulted)?1:provRate(days);}
 /* ============ THE WALK (was recompute) ============
    Everything the desk's tabs read about a product is set by one pass over that product's
    rows: what arrived, what left, what the shelf carries, what is owed each way, and what the
@@ -253,7 +271,7 @@ function walk(I){
   /* AR = advance only: pending unpaid-and-undelivered is not a receivable */
   W.arList=_S.filter(s=>txAdvance(s)>0.009);
   W.arGross=W.arList.reduce((a,s)=>a+txAdvance(s),0);
-  W.ar=Math.max(0,+W.arList.reduce((a,s)=>a+txAdvance(s)*(1-provRate(dage(s.date))),0).toFixed(2)); // net of provisioning
+  W.ar=Math.max(0,+W.arList.reduce((a,s)=>a+txAdvance(s)*(1-saleProvRate(s,dage(s.date))),0).toFixed(2)); // net of provisioning; a declared default nets to zero
   W.advTotal=W.arGross;
   W.defUnits=+_S.reduce((a,s)=>a+txDeferUnits(s),0).toFixed(2);
   const _sr=I.isSalt?(I.supplierReceivable||null):null;
@@ -516,7 +534,7 @@ function ovKey(t){return (t.customer||t.supplier)+'|'+t.date+'|'+t.total;}
 
 return {txPrice:txPrice,txPaid:txPaid,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:txEffDeliv,txAdvance:txAdvance,
         txDeferUnits:txDeferUnits,txPendUnits:txPendUnits,txPendUnitsRaw:txPendUnitsRaw,txPendRM:txPendRM,txStat:txStat,txDates:txDates,
-        poRecvUnits:poRecvUnits,poCash:poCash,poLive:poLive,poOwed:poOwed,poRate:poRate,poOpenUnits:poOpenUnits,poStat:poStat,provRate:provRate,
+        poRecvUnits:poRecvUnits,poCash:poCash,poLive:poLive,poOwed:poOwed,poRate:poRate,poOpenUnits:poOpenUnits,poStat:poStat,provRate:provRate,saleProvRate:saleProvRate,
         daysBetween:daysBetween,dayAge:dayAge,walk:walk,coverStats:coverStats,commitments:commitments,
         ledgerRow:ledgerRow,openable:openable,ovKey:ovKey,attributionOf:attributionOf,correctionFaults:correctionFaults,refundOnCancel:refundOnCancel,
         CORRECTABLE:CORRECTABLE,CORRECT_REQUIRED:CORRECT_REQUIRED,CORRECT_NUM_POS:CORRECT_NUM_POS,

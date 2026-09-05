@@ -1656,6 +1656,40 @@ section("Engine — the position, out of the desk (v338)");
   const cm = X.commitments([{ customer: "CB", qty: 3, total: 300, cash: 0, deliveredQty: 0 }, { customer: "CD", qty: 2, total: 200, cash: 200, deliveredQty: 0 }], 4);
   ok(cm.owedUnits === 2 && cm.promUnits === 3 && cm.commitUnits === 5 && cm.shortUnits === 1 && !cm.coverable, "owed, promised, and one short of the shelf");
 
+  /* A DECLARED DEFAULT PROVISIONS IN FULL. His instruction of 05 Sep 2026: CA4-DAM's outstanding
+     is defaulted, with the same treatment as SF6-KLC. That treatment already exists on the supplier
+     side, four lines apart in the walk: supRecovGross keeps the RM 750, supRecovNet goes to zero
+     when status is writtenOff, and the note on the record says why: "the provision stays charged;
+     what changes is that the desk no longer counts it as expected cash." The sale side had no such
+     rule. txStat ignored the defaulted flag entirely, so s117 read Open . Advance with the flag set,
+     and every net-of-ladder reader priced its RM 100 at a two-day-old row's 0% provision.
+     THE SHAPE IS GROSS KEEPS, NET ZEROES, and it is asserted on the real walk with a book small
+     enough to check by hand. Gross must keep the number: it is the numerator of provision =
+     arGross - ar, it is what pxParty reads to penalise the party's next quote, and it is what the
+     Order book and the statement print. Net must go to zero: it is what the desk expects to
+     collect. The supplier path is asserted beside it so the two sides cannot drift apart again. */
+  {
+    const dflt = { date: "2026-08-28", customer: "CX", qty: 1, total: 100, cash: 0, deliveredQty: 1, defaulted: true };
+    const st = X.txStat(dflt);
+    ok(st.order === "Default" && st.pay === "Unpaid" && st.deliv === "Delivered",
+      "a defaulted sale reads Default, unpaid, delivered, as a defaulted lot reads Default" + (st.order === "Default" ? "" : " (got " + st.order + ")"));
+    ok(X.txStat({ ...dflt, defaulted: false }).order === "Open · Advance", "and the same row without the flag is the advance it was");
+    ok(X.txStat({ ...dflt, cancelled: true }).order === "Cancelled", "cancelled still wins, because it is checked first and a cancelled row cannot default");
+    ok(typeof X.saleProvRate === "function"
+      && X.saleProvRate(dflt, 0) === 1 && X.saleProvRate(dflt, 30) === 1
+      && X.saleProvRate({ ...dflt, defaulted: false }, 0) === 0 && X.saleProvRate({ ...dflt, defaulted: false }, 8) === 0.5,
+      "saleProvRate is the ladder for a live row and 1 for a declared default, whatever its age");
+    const W2 = X.walk({ sales: [
+        { date: "2026-08-15", customer: "CC", qty: 1, total: 100, cash: 0, deliveredQty: 1 },
+        { date: "2026-08-20", customer: "CD", qty: 1, total: 160, cash: 0, deliveredQty: 1, defaulted: true } ],
+      purchases: [ { date: "2026-08-01", qty: 50, total: 2200, supplier: "SA", status: "paid", cash: 2200 } ],
+      opening: { qty: 10, costPerKg: 50, stated: null }, isSalt: true, loanUnits: 0, counted: null,
+      supplierReceivable: null, today: new Date("2026-08-22"), wavgBuyPrev: 0 });
+    ok(W2.arList.length === 2 && W2.arGross === 260, `gross keeps the number: both advances stay on the list and RM 260 is still owed (${W2.arGross})`);
+    ok(Math.abs(W2.ar - 75) < 1e-9, `net goes to zero on the default: RM 100 at seven days is RM 75, and the RM 160 counts for nothing (${W2.ar})`);
+    ok(X.poStat({ qty: 10, total: 500, status: "paid", defaulted: true }).order === "Default", "and a defaulted lot still reads Default, so the two sides of the book agree");
+  }
+
   /* THE GATE: the desk's own inputs, both books, and the record comes back equal */
   const { openMaster } = await import("../tools/payload.mjs");
   const { w } = await openMaster();
@@ -4689,7 +4723,12 @@ section("v445: one floored ruler for every age, and the engine has it too");
   const { join: jF } = await import("node:path");
 
   const bk0 = JSON.parse(rfF(jF(REPO, "ledger", "book.json"), "utf8"));
-  const victim = (bk0.sales || []).find((x) => x.rid === "s117") || (bk0.sales || []).find((x) => x.date && (+x.total || 0) > 0 && !x.cancelled);
+  /* NOT s117 BY NAME, from 05 Sep 2026. This pinned s117 as its victim, and on that day s117
+     became a declared default: its advance provisions in full whatever its date, so the four bad
+     dates and the control would all have produced the same ar and the differential would have
+     passed while proving nothing about dAge. The victim is any live, dated, priced advance that
+     is neither cancelled nor defaulted, so the date it is given can still move a figure. */
+  const victim = (bk0.sales || []).find((x) => x.date && (+x.total || 0) > 0 && !x.cancelled && !x.defaulted && (x.deliveredQty || 0) > 0 && (x.cash || 0) < (x.total || 0));
   ok(!!victim, "the book carries a dated receivable to drive the four bad dates through");
 
   /* the desk's own clock, so "today" here is the same day the desk thinks it is */

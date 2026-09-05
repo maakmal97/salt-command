@@ -1,6 +1,6 @@
 {
- "v": "v487",
- "stamped": "04 Sep 2026, 23:53 KL",
+ "v": "v488",
+ "stamped": "05 Sep 2026, 11:21 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -2866,8 +2866,26 @@
     "date": "2026-09-02",
     "deliveredQty": 1.5,
     "deliveredOn": "2026-09-02",
-    "note": "<b>1.5 UNIT COLLECTED ON CREDIT, NOTHING PAID.</b> RM 160 at RM 106.67 a unit, above CA4-DAM's median of RM 100 across thirteen earlier orders and inside his own range, whose top is RM 116.67 on 26 Jul. Clear of the collected floor of RM 104.40 at this size. Costed at RM 48 from p019, the shelf's own rate, returning RM 88 at 55.0%. <b>THIS IS HIS SECOND CREDIT AND IT FOLLOWS THE FIRST BY FOUR DAYS.</b> s117 of 28 Aug is RM 100 handed over, unpaid and marked defaulted on his word on 2 Sep, and its note says that credit was to be the last. The drafter raised the advance and asked for the cap against it; the row was approved two minutes after it was queued, so the flag was read before the decision. Total out to this party is now RM 260.",
-    "rid": "s128"
+    "note": "<b>DEFAULTED on his word, 05 Sep.</b> 1.5 unit collected on 2 Sep for RM 160 with nothing paid, and on 5 Sep he said the money will not come: CA4-DAM's whole outstanding, this row and s117 before it, is written off. The figures stay on the row so the loss is read where it happened. Gross keeps the RM 160 and the ladder now provisions it in full, the same treatment SF6-KLC's RM 750 has had since 31 Jul: the provision is charged, and the desk no longer counts this as expected cash. Not banned. <b>1.5 UNIT COLLECTED ON CREDIT, NOTHING PAID.</b> RM 160 at RM 106.67 a unit, above CA4-DAM's median of RM 100 across thirteen earlier orders and inside his own range, whose top is RM 116.67 on 26 Jul. Clear of the collected floor of RM 104.40 at this size. Costed at RM 48 from p019, the shelf's own rate, returning RM 88 at 55.0%. <b>THIS IS HIS SECOND CREDIT AND IT FOLLOWS THE FIRST BY FOUR DAYS.</b> s117 of 28 Aug is RM 100 handed over, unpaid and marked defaulted on his word on 2 Sep, and its note says that credit was to be the last. The drafter raised the advance and asked for the cap against it; the row was approved two minutes after it was queued, so the flag was read before the decision. Total out to this party is now RM 260.",
+    "rid": "s128",
+    "defaulted": true,
+    "mod": "corrected on 2026-09-05: defaulted (unset) to true",
+    "amend": [
+     {
+      "date": "2026-09-02",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 1.5,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-09-05",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>DEFAULTED on his word, 05 Sep.</b> 1.5 unit collected on 2 Sep for RM 160 with nothing paid, and on 5 Sep he said the money will not come: CA4-DAM's whole outstanding, this row and s117 before it, is written off. The figures stay on the row so the loss is read where it happened. Gross keeps the RM 160 and the ladder now provisions it in full, the same treatment SF6-KLC's RM 750 has had since 31 Jul: the provision is charged, and the desk no longer counts this as expected cash. Not banned."
+     }
+    ]
    },
    {
     "customer": "CM4-MK",
@@ -3226,7 +3244,7 @@
   ],
   "QUEUE_COMMITTED": "2026-09-04T12:03:40.929Z",
   "PRICING": {
-   "takenAt": "2026-09-04T15:55:05.652Z",
+   "takenAt": "2026-09-05T03:21:41.386Z",
    "sizes": [
     0.5,
     1,
@@ -3337,8 +3355,8 @@
          "date": "2026-09-03",
          "sup": "SA5-BTR"
         },
-        "days": 29,
-        "sinceLot": 38
+        "days": 30,
+        "sinceLot": 39
        },
        "lockBase": {
         "lockedOn": "2026-08-06",
@@ -3544,8 +3562,8 @@
          "date": "2026-08-26",
          "sup": "SP7-PUD"
         },
-        "days": 29,
-        "sinceLot": 29
+        "days": 30,
+        "sinceLot": 30
        },
        "lockBase": {
         "lockedOn": "2026-08-06",
@@ -3660,10 +3678,10 @@
      }
     }
    },
-   "v": "v487"
+   "v": "v488"
   },
   "OPEN": {
-   "at": "2026-09-04T15:55:05.679Z",
+   "at": "2026-09-05T03:21:41.413Z",
    "count": 7,
    "byKey": {
     "CM4-MK|2026-09-04|360": {
@@ -3679,7 +3697,7 @@
      "rid": "s132",
      "deliveredOn": "2026-09-04",
      "key": "CM4-MK|2026-09-04|360",
-     "age": 0,
+     "age": 1,
      "exp": 60
     },
     "CA4-DAM|2026-09-02|160": {
@@ -3695,9 +3713,10 @@
      "rid": "s128",
      "deliveredOn": "2026-09-02",
      "handover": "collected",
+     "defaulted": true,
      "key": "CA4-DAM|2026-09-02|160",
-     "age": 2,
-     "exp": 160
+     "age": 3,
+     "exp": 0
     },
     "CR3-DAM|2026-08-31|80": {
      "d": "2026-08-31",
@@ -3713,7 +3732,7 @@
      "deliveredOn": "2026-08-31",
      "handover": "delivered",
      "key": "CR3-DAM|2026-08-31|80",
-     "age": 4,
+     "age": 5,
      "exp": 60
     },
     "CN6-WM|2026-08-30|110": {
@@ -3730,7 +3749,7 @@
      "deliveredOn": "2026-08-30",
      "handover": "delivered",
      "key": "CN6-WM|2026-08-30|110",
-     "age": 5,
+     "age": 6,
      "exp": 82.5
     },
     "CA4-DAM|2026-08-28|100": {
@@ -3748,8 +3767,8 @@
      "handover": "collected",
      "defaulted": true,
      "key": "CA4-DAM|2026-08-28|100",
-     "age": 7,
-     "exp": 75
+     "age": 8,
+     "exp": 0
     },
     "CR3-DAM|2026-08-27|80": {
      "d": "2026-08-27",
@@ -3765,7 +3784,7 @@
      "deliveredOn": "2026-08-27",
      "handover": "collected",
      "key": "CR3-DAM|2026-08-27|80",
-     "age": 8,
+     "age": 9,
      "exp": 40
     },
     "SF6-KLC|2026-07-08|750": {
@@ -3789,8 +3808,8 @@
      "onHand": 23,
      "free": 23,
      "owedOut": 0,
-     "coverDays": 4.9,
-     "rate": 4.7,
+     "coverDays": 5.3,
+     "rate": 4.38,
      "owedToYou": 590,
      "promised": 0,
      "short": 0
@@ -3811,7 +3830,7 @@
     "salt": "2026-09-02",
     "oil": "2026-08-23"
    },
-   "v": "v487"
+   "v": "v488"
   }
  }
 }

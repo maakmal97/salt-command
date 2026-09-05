@@ -3293,6 +3293,14 @@ function txStat(t){
   }
   let cls=order==='Completed'?'paid':order==='Pending'?'pendingt':'open';
   if((t.settle==='barter'||t.waived||t.rebate)&&payFull&&delFull){order='In-Kind';cls='inkind';}
+  /* A DEFAULTED SALE READS Default, AS A DEFAULTED LOT HAS SINCE poStat WAS WRITTEN (05 Sep 2026).
+     The flag was set on s117 on 2 Sep and this function never read it, so the row stayed
+     Open . Advance, the Ledger's Default filter could match nothing, and the Approve card
+     painted a debt he had written off in the design system's word for settled. pay and deliv
+     are left as computed, because they are still true: unpaid, and delivered. Only the order
+     word and its class change. It sits AFTER cancelled, which returns above and wins, and after
+     In-Kind, which cannot coincide with it because In-Kind requires payFull. */
+  if(t.defaulted){order='Default';cls='def';}
   return {order,cls,pay,deliv};
 }
 function txDates(s){
@@ -3405,6 +3413,16 @@ function poOwed(p){return poLive(p)?Math.max(0,+(+p.total-poCash(p)).toFixed(2))
    a reader who does NOT filter, such as the update panel, is no longer told 12.5 unit is coming. */
 function poOpenUnits(p){return (p.cancelled||p.defaulted)?0:+(p.qty-poRecvUnits(p)).toFixed(4);}
 function provRate(days){return days>=21?1:days>=14?0.75:days>=8?0.5:days>=4?0.25:0;}
+/* A DECLARED DEFAULT PROVISIONS IN FULL (05 Sep 2026, his instruction: CA4-DAM's outstanding is
+   defaulted, with the same treatment as SF6-KLC). The ladder measures how likely money is to come
+   by how long it has been out; a default is his statement that it will not come at all, and it
+   beats the ladder the way the supplier write-off beats it four lines below in the walk. This is
+   the ONE reader of that fact for the sale side. Every net-of-ladder figure on the desk goes
+   through it, so gross keeps the number everywhere (the record of what was traded and lost, the
+   numerator of the provision, the reason pxParty penalises the party's next quote) and net goes
+   to zero everywhere (what the desk expects to collect). The supplier readers keep calling
+   provRate directly: that side has its own rule and its own record. */
+function saleProvRate(s,days){return (s&&s.defaulted)?1:provRate(days);}
 /* ============ THE WALK (was recompute) ============
    Everything the desk's tabs read about a product is set by one pass over that product's
    rows: what arrived, what left, what the shelf carries, what is owed each way, and what the
@@ -3479,7 +3497,7 @@ function walk(I){
   /* AR = advance only: pending unpaid-and-undelivered is not a receivable */
   W.arList=_S.filter(s=>txAdvance(s)>0.009);
   W.arGross=W.arList.reduce((a,s)=>a+txAdvance(s),0);
-  W.ar=Math.max(0,+W.arList.reduce((a,s)=>a+txAdvance(s)*(1-provRate(dage(s.date))),0).toFixed(2)); // net of provisioning
+  W.ar=Math.max(0,+W.arList.reduce((a,s)=>a+txAdvance(s)*(1-saleProvRate(s,dage(s.date))),0).toFixed(2)); // net of provisioning; a declared default nets to zero
   W.advTotal=W.arGross;
   W.defUnits=+_S.reduce((a,s)=>a+txDeferUnits(s),0).toFixed(2);
   const _sr=I.isSalt?(I.supplierReceivable||null):null;
@@ -3742,7 +3760,7 @@ function ovKey(t){return (t.customer||t.supplier)+'|'+t.date+'|'+t.total;}
 
 return {txPrice:txPrice,txPaid:txPaid,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:txEffDeliv,txAdvance:txAdvance,
         txDeferUnits:txDeferUnits,txPendUnits:txPendUnits,txPendUnitsRaw:txPendUnitsRaw,txPendRM:txPendRM,txStat:txStat,txDates:txDates,
-        poRecvUnits:poRecvUnits,poCash:poCash,poLive:poLive,poOwed:poOwed,poRate:poRate,poOpenUnits:poOpenUnits,poStat:poStat,provRate:provRate,
+        poRecvUnits:poRecvUnits,poCash:poCash,poLive:poLive,poOwed:poOwed,poRate:poRate,poOpenUnits:poOpenUnits,poStat:poStat,provRate:provRate,saleProvRate:saleProvRate,
         daysBetween:daysBetween,dayAge:dayAge,walk:walk,coverStats:coverStats,commitments:commitments,
         ledgerRow:ledgerRow,openable:openable,ovKey:ovKey,attributionOf:attributionOf,correctionFaults:correctionFaults,refundOnCancel:refundOnCancel,
         CORRECTABLE:CORRECTABLE,CORRECT_REQUIRED:CORRECT_REQUIRED,CORRECT_NUM_POS:CORRECT_NUM_POS,
@@ -4273,7 +4291,7 @@ const sales=[
   {"customer":"CI4-OKR","qty":3,"total":290,"cost":50,"cash":290,"handover":"collected","date":"2026-09-02","deliveredQty":3,"deliveredOn":"2026-09-02","paidOn":"2026-09-02","note":"<b>3 UNIT AT RM96.67, PAID AND COLLECTED ON THE DAY.</b> Against the RM50 shelf it returns RM140 at 48.3%. Inside his own range and clear of every floor: the drafter raised no flag. Dictated in a Code session on 2 Sep 2026 and folded on his word.","rid":"s125"},
   {"customer":"CE4-CHE","qty":2,"total":215,"cost":50,"cash":215,"handover":"collected","date":"2026-09-02","deliveredQty":2,"deliveredOn":"2026-09-02","paidOn":"2026-09-02","note":"<b>2 UNIT AT RM107.50, PAID AND COLLECTED ON THE DAY.</b> CE4-CHE has paid about RM92 a unit across six orders; this one is 17% above that. Against the RM50 shelf it returns RM115 at 53.5%. Dictated as CA5-CHE, not a code on the roster; folded to CE4-CHE, the party he named in the same breath for the deferred balance. Dictated in a Code session on 2 Sep 2026 and folded on his word.","rid":"s126"},
   {"customer":"CF5-WM","qty":2,"total":230,"cost":48,"cash":230,"handover":"delivered","date":"2026-09-02","deliveredQty":2,"deliveredOn":"2026-09-02","paidOn":"2026-09-02","note":"<b>FIRST ORDER FROM CF5-WM,</b> registered a minute earlier from the phone. RM115 a unit, above the board's two-unit ask of RM100 and clear of the floors; paid in full and collected on the day. Costed at RM48 from p019, the SA5-BTR lot that landed the same morning.","rid":"s127"},
-  {"customer":"CA4-DAM","qty":1.5,"total":160,"cost":48,"cash":0,"handover":"collected","date":"2026-09-02","deliveredQty":1.5,"deliveredOn":"2026-09-02","note":"<b>1.5 UNIT COLLECTED ON CREDIT, NOTHING PAID.</b> RM 160 at RM 106.67 a unit, above CA4-DAM's median of RM 100 across thirteen earlier orders and inside his own range, whose top is RM 116.67 on 26 Jul. Clear of the collected floor of RM 104.40 at this size. Costed at RM 48 from p019, the shelf's own rate, returning RM 88 at 55.0%. <b>THIS IS HIS SECOND CREDIT AND IT FOLLOWS THE FIRST BY FOUR DAYS.</b> s117 of 28 Aug is RM 100 handed over, unpaid and marked defaulted on his word on 2 Sep, and its note says that credit was to be the last. The drafter raised the advance and asked for the cap against it; the row was approved two minutes after it was queued, so the flag was read before the decision. Total out to this party is now RM 260.","rid":"s128"},
+  {"customer":"CA4-DAM","qty":1.5,"total":160,"cost":48,"cash":0,"handover":"collected","date":"2026-09-02","deliveredQty":1.5,"deliveredOn":"2026-09-02","note":"<b>DEFAULTED on his word, 05 Sep.</b> 1.5 unit collected on 2 Sep for RM 160 with nothing paid, and on 5 Sep he said the money will not come: CA4-DAM's whole outstanding, this row and s117 before it, is written off. The figures stay on the row so the loss is read where it happened. Gross keeps the RM 160 and the ladder now provisions it in full, the same treatment SF6-KLC's RM 750 has had since 31 Jul: the provision is charged, and the desk no longer counts this as expected cash. Not banned. <b>1.5 UNIT COLLECTED ON CREDIT, NOTHING PAID.</b> RM 160 at RM 106.67 a unit, above CA4-DAM's median of RM 100 across thirteen earlier orders and inside his own range, whose top is RM 116.67 on 26 Jul. Clear of the collected floor of RM 104.40 at this size. Costed at RM 48 from p019, the shelf's own rate, returning RM 88 at 55.0%. <b>THIS IS HIS SECOND CREDIT AND IT FOLLOWS THE FIRST BY FOUR DAYS.</b> s117 of 28 Aug is RM 100 handed over, unpaid and marked defaulted on his word on 2 Sep, and its note says that credit was to be the last. The drafter raised the advance and asked for the cap against it; the row was approved two minutes after it was queued, so the flag was read before the decision. Total out to this party is now RM 260.","rid":"s128","defaulted":true,"mod":"corrected on 2026-09-05: defaulted (unset) to true","amend":[{"date":"2026-09-02","kind":"Fulfilment","cash":0,"kg":1.5,"note":"as booked"},{"date":"2026-09-05","kind":"Correction","cash":0,"kg":0,"note":"<b>DEFAULTED on his word, 05 Sep.</b> 1.5 unit collected on 2 Sep for RM 160 with nothing paid, and on 5 Sep he said the money will not come: CA4-DAM's whole outstanding, this row and s117 before it, is written off. The figures stay on the row so the loss is read where it happened. Gross keeps the RM 160 and the ladder now provisions it in full, the same treatment SF6-KLC's RM 750 has had since 31 Jul: the provision is charged, and the desk no longer counts this as expected cash. Not banned."}]},
   {"customer":"CM4-MK","qty":2,"total":220,"cost":48,"cash":220,"handover":"delivered","date":"2026-09-02","deliveredQty":2,"deliveredOn":"2026-09-02","paidOn":"2026-09-02","note":"<b>2 UNIT DELIVERED, PAID IN FULL ON THE DAY.</b> RM 220 at RM 110 a unit, which is his median and the same figure he paid on each of his three previous two-unit orders, on 23 Jul, 5 Aug and 17 Aug. Clear of the delivered floor of RM 140.87 on the order. Costed at RM 48 from p019, the shelf's own rate, returning RM 124 at 56.4%. The drafter raised no flag and there is nothing unusual on it: his seventh order, and like most of the six before it, it settled on the day it was placed.","rid":"s129"},
   {"customer":"CM6-PJ","qty":3,"total":270,"cost":48,"cash":270,"handover":"collected","date":"2026-09-03","deliveredQty":3,"deliveredOn":"2026-09-03","paidOn":"2026-09-03","note":"Collected by CM6-PJ on 3 Sep 2026, 3 unit for RM 270, RM 90 a unit, paid RM 270 and taken in full on the day, so nothing is owed and nothing is left to move. Costed at RM 48 a unit off p019, the 31 Aug SA5-BTR lot that is the current shelf, which the desk's own stock cost confirms, so the draft was not written against a stale rate: RM 144 of cost, RM 126 gross, 46.7%. The floor for 3 unit collected is RM 183.80, so the order is RM 86.20 clear of it. His second row on the book: the first was s100 on 21 Aug, 1 unit at RM 100 after that row was restated down from RM 120. The lower unit rate here is the size taper, not a discount granted.","rid":"s130"},
   {"customer":"CS6-BS","qty":2,"total":200,"cost":48,"cash":200,"handover":"delivered","date":"2026-09-03","deliveredQty":2,"deliveredOn":"2026-09-03","paidOn":"2026-09-03","note":"2 unit delivered to CS6-BS for RM 200, RM 100 a unit, paid in full and delivered in full on 3 Sep, so the row closes on arrival and leaves nothing outstanding. Costed at the shelf's own RM 48 a unit, RM 96 against RM 200, RM 104 on the order at 52%. The floor for 2 unit delivered is RM 140.87, so the rate is RM 59.13 clear of it. His own six salt rows run RM 95 to RM 126.67 a unit on 1 to 1.5 unit, plus a free unit on 24 Aug; this is his largest salt order to date, and RM 100 a unit on double the size is the taper rather than a concession. No flag from the drafter.","rid":"s131"},
@@ -5248,7 +5266,9 @@ const whiteboard=[
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{"v":"v487","d":"04 Sep 2026","t":"EVERY ROW ON THE LEDGER IS DATED, AND THE CHECK THAT SAYS SO CAN NOW FAIL","n":["<b>HIS INSTRUCTION, 04 SEP 2026: no undated row may stand on the ledger.</b> Three carried no date at all. s108 CN6-WM 1.5 unit RM185 is dated 22 Aug, the day v334 describes the order at RM123.33 a unit. s109 CS6-PER 6.25 unit RM350 is dated 20 Aug, which v381 states outright when it records that two orders went to him after the 30 Jul ban, s068 on 07 Aug and the cancelled s109 on 20 Aug. s119 CY2-NIL 2.5 unit RM230 is dated 28 Aug, which the row already carried as agreedOn and which v486 upheld the same day against a query putting it at 31 Aug. <b>NO FIGURE MOVES.</b> All three have nothing paid and nothing delivered, so revenue, cost, the shelf, every receivable and every party's standing are exactly what they were. What changes is that the desk, the Journal and a statement stop printing three rows with no date on them.","<b>THE TRAIL IS WRITTEN BY applyAmend, NOT BY HAND,</b> so each row carries the mod line and the amend entry a Correction folded through the gate would have produced: \"corrected on 2026-09-04: date (unset) to ...\". That matters because the three could not have been folded through the gate until the same day. All three were cancelled, and the fold refused every amendment against a cancelled row, so from the moment each was cancelled there was no route to date it. The narrowing that opened that road is the commit before this one, and it is what makes this fold possible rather than a hand edit standing in for one.","<b>AND THE CHECK CI RUNS NOW FAILS ON AN UNDATED ROW RATHER THAN SORTING IT LAST.</b> tools/sort-ledger.mjs has always put an undated row at the end, which kept the order stable and accommodated the row for ever: that is how three of them sat there, one since 24 Aug. The sort is unchanged, because it is still what holds the order steady mid-fold. What changed is --check, which is the thing ci.yml runs: it reports any row carrying no date and exits 1. Proved in both directions by spawning the real tool, not by importing a function: the book as it stands passes, and a copy of that same book with one date removed fails with exit 1 and names the row.","<b>FOUR ASSERTIONS HAD BEEN USING THE FAULT AS THEIR FIXTURE, AND ALL FOUR ARE REBUILT.</b> Dating the rows turned the suite red in four places, every one of them a test that only passed because the book was wrong. The v347 guard test pinned the real cancelled CS6-PER row and the literal key CS6-PER|undefined|350, so dating s109 moved the key and the fulfilment was then refused as \"no row on the book matches\" rather than by the cancelled guard: a broken guard would have read as a pass. It owns a synthetic target now, which is the v359 lesson arriving for the third time. The Ledger's date-descending test demanded blanks > 0, so it required a fault to exist; it asserts the ordering itself instead. The statement's undated-sort loop ran over an empty set and passed while proving nothing, the assertion that cannot fail, and now asserts the invariant directly. The extract in ledger/ledger.json was regenerated."]},
+const evolution=[{"v":"v488","d":"05 Sep 2026","t":"A DECLARED DEFAULT PROVISIONS IN FULL: CA4-DAM'S RM 260 IS WRITTEN OFF, AS SF6-KLC'S RM 750 WAS","n":["<b>HIS INSTRUCTION, 05 SEP 2026: CA4-DAM's outstanding is defaulted, with the same treatment as SF6-KLC, and he is not banned.</b> Two rows carry it: s117, 1 unit for RM 100 handed over on 28 Aug and flagged defaulted on 2 Sep when he said the money would not come, and s128, 1.5 unit for RM 160 collected on 2 Sep, flagged today on his word through applyAmend so the row carries the trail a gate-folded Correction would have written. <b>THE TREATMENT IS THE SUPPLIER'S, MIRRORED.</b> supplierReceivable has said since 31 Jul that a write-off keeps the gross and zeroes the net: the provision stays charged, and the desk stops counting the money as expected cash. The sale side had no such rule at all.","<b>THE FLAG WAS SET AND NOTHING READ IT.</b> txStat ignored defaulted on a sale, so s117 stood as Open . Advance with the flag on it, the Ledger's Default filter could match nothing, and every net-of-ladder figure priced a debt he had written off at the ladder rate for its age: RM 160 two days old provisioned at 0%, counted at face. poStat has honoured the identical field on a lot since it was written. Two sides of one book, disagreeing about one word. txStat now reads Default after cancelled and after In-Kind; pay and deliv stay as computed, because unpaid and delivered are still true.","<b>ONE READER, NINE SITES, AND THE SUPPLIER'S SEVEN LEFT ALONE.</b> saleProvRate(s,days) in engine/position.mjs is the ladder for a live row and 1 for a declared default, and it is the only place the sale side reads that fact. The nine net-of-ladder readers of a sale's advance go through it: the walk's ar, the thirty-day cash in, the monthly provisioning, the ageing chart, the phone's ageing payload, the Order book's cash table, the forecast's cash-in leg, Today's chase action and the Order book's claim rows. The seven supplier readers keep calling provRate, because that side has its own record and its own rule. The sweep was by grep on provRate( over the desk region, and what is left is the wrapper and the supplier: it was not done by the twelve-name list the first design carried, which the alias outstandingOf=txAdvance had hidden twelve more readers behind.","<b>WHAT MOVES, MEASURED ON THE BUILT DESK.</b> Salt's receivable list still holds 6 rows and its gross is still RM 590.00, of which CA4-DAM's RM 260.00 stays on it: that is the record of what was traded and lost, the numerator of provision = arGross - ar, and what pxParty reads to penalise his next quote. Net of the ladder is RM 242.50: the RM 260 now counts for nothing. The IFRS statement's expected credit loss, which is arGross - ar, rises by the same amount and feeds opex, which is the loss landing where an accountant would put it. <b>THE PRICE BOARD DOES NOT MOVE</b>, at any size. Since v326 the ask is the ladder and engine/pricing.mjs never reads badDebt; badDebtPct reaches riskRates and a retired figure at the foot of the Price part, and nothing else. The first design claimed the loss would load the price, and the adversary that measured it false is why that sentence is not in this note.","<b>PROVED RED BEFORE GREEN, ON THE REAL WALK.</b> Three assertions failed against the unchanged engine, each for the reason the fix exists: a defaulted sale read Open . Advance, saleProvRate was undefined, and a two-row walk netted RM 235 where RM 75 was right. Four neighbours passed before and after, so the gate opened for one thing: the same row without the flag is still an advance, cancelled still wins, gross still keeps both rows, and a defaulted lot still reads Default. The v445 date regression had pinned s117 by rid as its victim; a defaulted row provisions in full whatever its date, so its four bad dates and the control would all have produced one ar and the differential would have passed while proving nothing. It picks a live, dated, unpaid advance now."]},
+
+{"v":"v487","d":"04 Sep 2026","t":"EVERY ROW ON THE LEDGER IS DATED, AND THE CHECK THAT SAYS SO CAN NOW FAIL","n":["<b>HIS INSTRUCTION, 04 SEP 2026: no undated row may stand on the ledger.</b> Three carried no date at all. s108 CN6-WM 1.5 unit RM185 is dated 22 Aug, the day v334 describes the order at RM123.33 a unit. s109 CS6-PER 6.25 unit RM350 is dated 20 Aug, which v381 states outright when it records that two orders went to him after the 30 Jul ban, s068 on 07 Aug and the cancelled s109 on 20 Aug. s119 CY2-NIL 2.5 unit RM230 is dated 28 Aug, which the row already carried as agreedOn and which v486 upheld the same day against a query putting it at 31 Aug. <b>NO FIGURE MOVES.</b> All three have nothing paid and nothing delivered, so revenue, cost, the shelf, every receivable and every party's standing are exactly what they were. What changes is that the desk, the Journal and a statement stop printing three rows with no date on them.","<b>THE TRAIL IS WRITTEN BY applyAmend, NOT BY HAND,</b> so each row carries the mod line and the amend entry a Correction folded through the gate would have produced: \"corrected on 2026-09-04: date (unset) to ...\". That matters because the three could not have been folded through the gate until the same day. All three were cancelled, and the fold refused every amendment against a cancelled row, so from the moment each was cancelled there was no route to date it. The narrowing that opened that road is the commit before this one, and it is what makes this fold possible rather than a hand edit standing in for one.","<b>AND THE CHECK CI RUNS NOW FAILS ON AN UNDATED ROW RATHER THAN SORTING IT LAST.</b> tools/sort-ledger.mjs has always put an undated row at the end, which kept the order stable and accommodated the row for ever: that is how three of them sat there, one since 24 Aug. The sort is unchanged, because it is still what holds the order steady mid-fold. What changed is --check, which is the thing ci.yml runs: it reports any row carrying no date and exits 1. Proved in both directions by spawning the real tool, not by importing a function: the book as it stands passes, and a copy of that same book with one date removed fails with exit 1 and names the row.","<b>FOUR ASSERTIONS HAD BEEN USING THE FAULT AS THEIR FIXTURE, AND ALL FOUR ARE REBUILT.</b> Dating the rows turned the suite red in four places, every one of them a test that only passed because the book was wrong. The v347 guard test pinned the real cancelled CS6-PER row and the literal key CS6-PER|undefined|350, so dating s109 moved the key and the fulfilment was then refused as \"no row on the book matches\" rather than by the cancelled guard: a broken guard would have read as a pass. It owns a synthetic target now, which is the v359 lesson arriving for the third time. The Ledger's date-descending test demanded blanks > 0, so it required a fault to exist; it asserts the ordering itself instead. The statement's undated-sort loop ran over an empty set and passed while proving nothing, the assertion that cannot fail, and now asserts the invariant directly. The extract in ledger/ledger.json was regenerated."]},
 
 {"v":"v486","d":"04 Sep 2026","t":"THE QUERY AGAINST s119'S DATE IS ANSWERED IN THE ROW, AND THE BOOK IS UPHELD","n":["<b>HIS CORRECTION, 04 SEP 2026: the 28 Aug order is paid and delivered, and the pending one now cancelled was placed on 31 Aug.</b> v485 declined to rewrite the date on a recollection and folded the cancellation with the question left open, which was right at the time and is the wrong thing to leave in a ledger. The check is done and the book is upheld: <b>the 31 Aug artefact is an amendment to s119, not a second order.</b> It is a Fulfilment on s119 for RM 230 and 2.5 unit, queued from the phone at 19:23 on 31 Aug and dated 1 Sep, which v464 folded so that the order read paid and delivered, and which v467 withdrew two days later on his word that it was still pending. Both halves of the query therefore describe a state this row has already been through and left.","<b>NO ROW IS MISSING, AND THAT WAS CHECKED RATHER THAN ASSUMED.</b> D1 holds three CY2-NIL drafts in the whole of its history, the original sale, the 31 Aug fulfilment and the 4 Sep cancellation, and no refused entry for the party at all, so nothing was queued and lost. The book holds four CY2-NIL rows, and v464's own note calls s119 the fourth: 11 Aug, 18 Aug, 26 Aug and this one. There is no fifth order to find.","<b>THE ANSWER IS WRITTEN INTO THE ROW, NOT ONLY INTO THIS ENTRY.</b> A question raised against a row belongs beside the row, because the next person to read s119 will read the ledger and not the changelog. v485's entry is left exactly as it was: the date really was unresolved when it was written, and rewriting a version entry to look wiser than it was would cost more than it saves."]},
 {"v":"v485","d":"04 Sep 2026","t":"AN ENTRY THE CLOUD NEVER TOOK IS NO LONGER CLEARED AS COMMITTED, AND CY2-NIL'S UNFULFILLED ORDER IS WITHDRAWN","n":["<b>THE v482 AUDIT'S CRITIC TRACED A LOST SALE, AND IT WAS THERE.</b> The load clears a held entry once QUEUE_COMMITTED has passed it, on the reading that the watermark passing an entry means the fold has taken it. That is a fact about the LEDGER, not about this device. An entry recorded with no signal is held in localStorage, never reaches KV, is never drafted and never folded; when a fold elsewhere then carried the watermark past its stamp, the next load dropped it and said nothing. Proved red against the shipped filter before a line was changed: one sale of RM 360, one load, gone, with a control showing the same entry above the watermark surviving.","<b>THE RULE NOW ASKS BOTH QUESTIONS.</b> An entry goes only when the ledger has folded past it AND this device saw the server acknowledge it. qSentThrough is the newest stamp this device has had confirmed, and because qPayload() sends the WHOLE queue every time, one confirmed post covers every entry then held. qKeepOnLoad is a named function so the rule is run rather than grepped for, which is what v482 taught on the very poll that made this reachable.","<b>THE MARK IS SEEDED FROM THE WATERMARK, NOT FROM NOTHING, AND THAT IS THE CARE IN IT.</b> Defaulting to nothing-was-sent would retain entries the ledger already carries, and applyOverlay() folds a held entry into the figures, so the desk would have shown those sales TWICE: a wrong figure in place of a silent loss, which is no bargain. Seeding at the watermark keeps today's treatment of what is already folded and asks only what is recorded from now on to earn its clearance. The seed is WRITTEN on first use, because re-seeding from a watermark that had since moved would drop the very entry this protects.","<b>RETAINING IT FOR ONE LOAD WAS NOT ENOUGH, AND ONLY DRIVING IT SHOWED THAT.</b> The first fix kept the stranded entry, then qInit posted the held queue on the next open, the server took it, the mark advanced over it, and the load after that cleared it. Meanwhile the drafter skips everything at or below the watermark by design, so that post could never become a row: the sale was still lost, one load later and just as quietly. An entry that survives while the fold has already passed it is now flagged stuck, kept for ever, and named on screen, because only a person can settle it. Two further faults in the fix itself were caught the same way: q.at>null reads false rather than throwing, so the terser rule silently dropped the entry when the watermark was missing, and the notice counted only what had just become stuck, so it showed once and vanished while the entry sat there.","<b>BOTH DELIVERED ROUTES ARE MARKED, SWEPT RATHER THAN LEFT FOR THE NEXT VERSION.</b> qDownload writes the file the daily run reads, which is the same guarantee the server route gives; unmarked, a download-route entry that WAS folded would be retained by the new rule and shown twice. The clipboard route is deliberately not marked, because copying is not delivery.","<b>ONE ROW FOLDED WITH IT, AND ITS DATE IS LEFT OPEN ON PURPOSE.</b> A pending CY2-NIL order of 2.5 unit at RM 230, never delivered and never paid, is withdrawn: no cash and no stock move, and 2.5 unit of committed salt returns to the shelf. The row carries agreedOn 28 Aug, he states the pending order was placed on 31 Aug and that the 28 Aug order was delivered and paid, and the book holds neither a 31 Aug row nor a paid 28 Aug one. The cancellation is not in doubt, so it is folded; the date wants a Correction through the gate and is not rewritten here on a recollection."]},
@@ -5506,7 +5526,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='04 Sep 2026, 23:53 KL';
+const LAST_UPDATED='05 Sep 2026, 11:21 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -5603,7 +5623,8 @@ function poCash(p){return POSITION_ENGINE.poCash(p);}
 function poOwed(p){return POSITION_ENGINE.poOwed(p);}
 /* a lot that is genuinely in the pipeline: agreed-only and defaulted lots are neither */
 function poLive(p){return POSITION_ENGINE.poLive(p);}
-function provRate(days){return POSITION_ENGINE.provRate(days);} // R2 aged provisioning ladder: 0-3d 0%, 4-7 25%, 8-13 50%, 14-20 75%, 21+ 100%
+function provRate(days){return POSITION_ENGINE.provRate(days);}
+function saleProvRate(s,days){return POSITION_ENGINE.saleProvRate(s,days);} // a declared default provisions in full; the supplier side keeps provRate // R2 aged provisioning ladder: 0-3d 0%, 4-7 25%, 8-13 50%, 14-20 75%, 21+ 100%
 /* ============ PROVISIONAL OVERLAY ============
    An entry recorded in the Workbench folds into the whole desk at once instead of
    waiting to be committed. The baked arrays are kept pristine in BASE_*; every
@@ -7614,7 +7635,7 @@ function cashFlow(){
      supplier recoverable is added once, from its own record, because it belongs to the book
      it happened on and there is exactly one of it. */
   const dueIn=+(sales.filter(s=>txAdvance(s)>0.009)
-      .reduce((a,s)=>a+txAdvance(s)*(1-provRate(dAge(s.date))),0)
+      .reduce((a,s)=>a+txAdvance(s)*(1-saleProvRate(s,dAge(s.date))),0)
     +((typeof supplierReceivable!=='undefined'&&supplierReceivable&&supplierReceivable.status!=='writtenOff'&&supplierReceivable.status!=='closed')
         ?supplierReceivable.amount*(1-provRate(dAge(supplierReceivable.since))):0)
   ).toFixed(2);                                               // net of provisioning, so it is what you can reasonably expect
@@ -10438,7 +10459,7 @@ function finRows(){
   pricedSales.forEach(t=>{if(!t.date){undated.push(t);return;}const mo=t.date.slice(0,7);
     bump(mo,'rev',(t.total||0)-txPendRM(t));bump(mo,'cogs',(t.qty-txPendUnitsRaw(t))*costOf(t));bump(mo,'cash',t.cash||0);bump(mo,'kg',t.qty-txPendUnitsRaw(t));
     bump(mo,'inkind',(t.waived||0)+((t.settle==='barter'||t.rebate)?(t.settledRM||0):0));
-    bump(mo,'provAR',+(txAdvance(t)*provRate(dAge(t.date))).toFixed(2));});
+    bump(mo,'provAR',+(txAdvance(t)*saleProvRate(t,dAge(t.date))).toFixed(2));});
   /* v385: THE CLAIM IS SALT'S, SO ONLY SALT'S MONTHS MOVE. supRecovGross is nil on any other
      book by construction, but the bump fired regardless and CREATED the month it was keyed to:
      the oil P&L opened a July column with no oil trade in it, every cell a dash and a gross
@@ -10486,7 +10507,7 @@ function drawRecvCharts(){
   if(!el)return;
   ensureChart(ok=>{
     if(!ok){chartEmpty(el,'Chart unavailable. Every figure it draws is in the tables on this part.');return;}
-    const rows=arList.map(x=>({who:codeOf(x.customer),g:outstandingOf(x),age:dAge(x.date)}))
+    const rows=arList.map(x=>({who:codeOf(x.customer),g:outstandingOf(x),age:dAge(x.date),pr:saleProvRate(x,dAge(x.date))}))
       .filter(x=>x.g>0.009);
     /* v385: THE SUPPLIER CLAIM IS SALT'S, ON THE CHART AS IT ALREADY IS IN THE TABLE.
        arList is scoped by recompute() and supRecovGross is salt-only by construction, so the
@@ -10494,14 +10515,14 @@ function drawRecvCharts(){
        record with no such test and would have drawn the same bar under Oil. Latent while the
        default is written off, and a written-off claim is not a receivable in any book. */
     if(PROD===DEFAULT_PROD&&typeof supplierReceivable!=='undefined'&&supplierReceivable&&supplierReceivable.status==='recoverable')
-      rows.push({who:codeOf(supplierReceivable.party)+' (supplier)',g:supplierReceivable.amount,age:dAge(supplierReceivable.since)});
+      rows.push({who:codeOf(supplierReceivable.party)+' (supplier)',g:supplierReceivable.amount,age:dAge(supplierReceivable.since),pr:provRate(dAge(supplierReceivable.since))});
     if(!rows.length){chartEmpty(el,'Nothing is owed either way. A rare and correct emptiness.');return;}
     /* oldest first, matching the table beneath it: the chart's whole argument is what the
        ladder has taken off with age, so age is the axis it should be read down. */
     rows.sort((a,b)=>b.age-a.age||b.g-a.g);
     freshChart(el,{type:'bar',data:{labels:rows.map(x=>x.who+' · '+x.age+'d'),datasets:[
       {label:'Gross',data:rows.map(x=>+x.g.toFixed(2)),backgroundColor:'rgba(212,105,76,.35)',borderColor:'#d4694c',borderWidth:1,borderRadius:3},
-      {label:'Net of ladder',data:rows.map(x=>+(x.g*(1-provRate(x.age))).toFixed(2)),backgroundColor:'#e4e9ec',borderWidth:0,borderRadius:3}]},
+      {label:'Net of ladder',data:rows.map(x=>+(x.g*(1-x.pr)).toFixed(2)),backgroundColor:'#e4e9ec',borderWidth:0,borderRadius:3}]},
       options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
         plugins:{legend:{labels:{color:CHART_INK.tick,boxWidth:12,font:{size:11}}}},
         scales:{x:{grid:{color:CHART_INK.grid},ticks:{color:CHART_INK.tick}},
@@ -10835,7 +10856,7 @@ function phonePayloadBuild(){
         walk:f.rows.map(r=>({d:r.d,iso:r.iso,stock:r.stock,cash:r.cash,arr:r.arr}))};
       /* ---- v343: THE AGE OF EACH RECEIVABLE and what the ladder says it is worth, keyed as
          the open rows are, so the phone's who-owes-what can carry both beside the gross */
-      arList.forEach(s=>{const g=outstandingOf(s);if(g>0.009){const a=dAge(s.date);ageing[ovKey(s)]={age:a,exp:+(g*(1-provRate(a))).toFixed(2)};}});
+      arList.forEach(s=>{const g=outstandingOf(s);if(g>0.009){const a=dAge(s.date);ageing[ovKey(s)]={age:a,exp:+(g*(1-saleProvRate(s,a))).toFixed(2)};}});
       pos[pid]={
         name:PRODUCTS[pid].name,
         onHand:+currentStock.toFixed(2),
@@ -11194,7 +11215,7 @@ function tabReceivables(){
      THE CHART IS THE ONE THAT VISIBLY MOVED. It sorted by size while the table beside it sat
      in date order, so the pair could not be read across. Both read down the ladder now. */
   const oldest=(a,b)=>(a.date||'9999-99-99')<(b.date||'9999-99-99')?-1:(a.date===b.date?0:1);
-  const cCash=arList.map(s=>{const d=dAge(s.date),g=outstandingOf(s),rate=provRate(d),n=+(g*(1-rate)).toFixed(2),over=(s.deliveredQty||0)>capForParty(s.customer)+0.009&&!s.exemptCap;return {id:s.customer,date:s.date,d,g,rate,n,over};})
+  const cCash=arList.map(s=>{const d=dAge(s.date),g=outstandingOf(s),rate=saleProvRate(s,d),n=+(g*(1-rate)).toFixed(2),over=(s.deliveredQty||0)>capForParty(s.customer)+0.009&&!s.exemptCap;return {id:s.customer,date:s.date,d,g,rate,n,over};})
     .sort((a,b)=>b.d-a.d||b.g-a.g);
   const cCashBody=cCash.map(r=>`<tr><td class="l mono">${ID(r.id)}${r.over?` <span class="attn" title="advance over their ${units(capForParty(r.id))} credit cap on this book">over cap</span>`:''}<div style="font-size:11px;font-weight:400;color:var(--mut)">${r.date||'not dated'}</div></td><td>${r.d}d</td><td>${fmt0(r.g)}</td><td>${(r.rate*100).toFixed(0)}%</td><td>${fmt0(r.n)}</td></tr>`).join('');
   // Goods you owe them: deferred (paid ahead of delivery).
@@ -13448,7 +13469,7 @@ function forecast(o){
   /* --- cash in: each receivable at its own credit date, net of provisioning --- */
   const cin=[];
   arList.forEach(s=>{const g=outstandingOf(s),age=dAge(s.date);
-    const net=+(g*(1-provRate(age))).toFixed(2);
+    const net=+(g*(1-saleProvRate(s,age))).toFixed(2);
     if(net>0.009)cin.push({day:Math.max(0,RULES.creditDays-age),rm:net,gross:g,who:s.customer,age,label:'receivable'});});
   if(typeof supplierReceivable!=='undefined'&&supplierReceivable&&supplierReceivable.status==='recoverable'){
     const age=dAge(supplierReceivable.since),net=+(supplierReceivable.amount*(1-provRate(age))).toFixed(2);
@@ -13563,7 +13584,7 @@ function actions(){
      ladder is what makes one of them urgent and the total is what makes the call worth it. */
   const chase={};
   arList.forEach(s=>{const g=outstandingOf(s);if(g<=0.009)return;const age=dAge(s.date);
-    (chase[s.customer]=chase[s.customer]||[]).push({g,age,pr:provRate(age)});});
+    (chase[s.customer]=chase[s.customer]||[]).push({g,age,pr:saleProvRate(s,age)});});
   Object.keys(chase).forEach(who=>{
     const ds=chase[who].sort((a,b)=>b.age-a.age), oldest=ds[0].age;
     const gross=+ds.reduce((t,x)=>t+x.g,0).toFixed(2);
@@ -17044,9 +17065,11 @@ function consoHd(t,sub){return `<div class="prodhd"><span class="pd" style="back
    is the first row of the same list the tables below are built from. */
 function obClaims(){
   const sr=(typeof supplierReceivable!=='undefined'&&supplierReceivable&&supplierReceivable.status==='recoverable')?supplierReceivable:null;
-  const row=(who,date,g)=>{const d=dAge(date);return {who:who,d:d,g:+(+g).toFixed(2),n:+(g*(1-provRate(d))).toFixed(2)};};
-  return sales.filter(s=>txAdvance(s)>0.009).map(s=>row(s.customer,s.date,txAdvance(s)))
-    .concat(sr?[row(sr.party,sr.since,sr.amount)]:[])
+  /* pr is passed in rather than derived here, because a sale's rate honours a declared default
+     and the supplier's does not: one row shape, two rules, and the caller says which. */
+  const row=(who,date,g,pr)=>{const d=dAge(date);return {who:who,d:d,g:+(+g).toFixed(2),pr:pr,n:+(g*(1-pr)).toFixed(2)};};
+  return sales.filter(s=>txAdvance(s)>0.009).map(s=>row(s.customer,s.date,txAdvance(s),saleProvRate(s,dAge(s.date))))
+    .concat(sr?[row(sr.party,sr.since,sr.amount,provRate(dAge(sr.since)))]:[])
     .sort((a,b)=>b.d-a.d||b.g-a.g);
 }
 function consoOrderBlock(){
@@ -17058,7 +17081,7 @@ function consoOrderBlock(){
   return `<h1>Order book</h1>`+consoHd('Both books')
     +`<div class="conso"><div class="kpis k4">`
     +cell('gold','Owed to you',fmt0(n),g>0.009?`${fmt0(g)} gross; the ladder has already discounted ${fmt0(+(g-n).toFixed(2))}`:'nothing owed to you')
-    +cell(o&&provRate(o.d)>=0.5?'r':'','Chase first',o?ID(o.who):'&mdash;',o?`${o.d} days &middot; ${fmt0(o.g)} gross, ${(provRate(o.d)*100).toFixed(0)}% of it already written off by the ladder`:'nothing is owed to you')
+    +cell(o&&o.pr>=0.5?'r':'','Chase first',o?ID(o.who):'&mdash;',o?`${o.d} days &middot; ${fmt0(o.g)} gross, ${(o.pr*100).toFixed(0)}% of it already written off by the ladder`:'nothing is owed to you')
     +cell('r','You owe, in cash',fmt0(cf.dueOut),cf.dueOut>0.009?`${fmt0(cf.billsOut)} of supplier bills &middot; ${fmt0(cf.refundsOut)} of refunds`:'no bill and no refund outstanding')
     +cell('','Agreed, nothing moved',fmt0(pend),pendB>0.009?`and ${fmt0(pendB)} of buying agreed the same way`:'no buying agreed the same way')
     +`</div></div>`;
