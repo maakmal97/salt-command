@@ -285,6 +285,13 @@ tbody tr:hover td:not(.l){background:rgba(255,255,255,.03);}
 .ledwrap .tag.open{color:var(--salt-copper);}
 .ledwrap .tag.pendingt{color:var(--salt-steel);}
 .ledwrap .tag.inkind,.ledwrap .tag.prov{color:var(--salt-brass);}
+/* v495, his instruction: the sheet in the system's ledger recipe. Figures tabular; the Provisional
+   pill is the status chip's shape with a dotted line and nothing behind it; Update is a button in
+   the same shape rather than an underlined word. Both sit at the end of the entry's second row. */
+.ledwrap{font-variant-numeric:tabular-nums;}
+.ledwrap .tag.prov{border:1px dotted rgba(197,160,89,.6);border-radius:var(--salt-radius-pill);padding:3px 10px;background:transparent;}
+.ledwrap .lqb{border:1px solid rgba(197,160,89,.45);border-radius:var(--salt-radius-pill);padding:3px 12px;text-decoration:none;color:var(--salt-brass);}
+.ledwrap .lqb:hover{background:rgba(197,160,89,.10);border-color:var(--salt-brass);}
 .ledwrap .tag.def{color:var(--salt-ember);}
 .entflash{outline-color:var(--salt-brass);}
 .lcard.lpressing::after{background:var(--salt-gradient);}

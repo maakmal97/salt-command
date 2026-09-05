@@ -1,5 +1,17 @@
 [
  {
+  "v": "v495",
+  "d": "05 Sep 2026",
+  "t": "AN ENTRY IS TWO ROWS, AND THE SHEET IS IN THE SYSTEM'S LEDGER RECIPE",
+  "n": [
+   "<b>HIS INSTRUCTION, 05 SEP 2026, ON A SCREENSHOT OF THE HEADING:</b> the entry, its date, party, product, quantity, price, total and state on the first row; the step and the type on the second, running to the end, where the Provisional pill and the Update button sit; the pill dotted and transparent, Update a button; and the desk redone to the design system. The heading he shot had Qty running into Price/unit and the product on the second row beside the control.",
+   "<b>ONE SHAPE ABOVE THE PHONE.</b> The sheet had three layouts: eleven tracks on one row above 935px, two rows under it, three rows under 600px. On his own screen the rail leaves the sheet under 935px, so the two-row shape is what he reads, and the single row above it was a second design he never saw. The 935px tier is gone: its shape, re-laid to his order, is the sheet at every width above the phone, and the phone keeps its three rows. The product moves up beside the figures; the type spans the middle of the second row; the act cell spans the last two tracks so it ends the line. The price track is 84px so the heading's word fits it. A step stays one row, its kind on the party's and product's tracks.",
+   "<b>THE ACT CELL SAYS WHAT CAN BE DONE, OR WHY NOT.</b> The Provisional pill sat inside the product cell. A provisional row has no rid yet and so no Update, and the act cell was empty on exactly those rows; the pill sits there now, in the status chip's shape with a dotted line and nothing behind it, so the end of the second row reads Update on a row that can be edited and Provisional on one that cannot. Update is a bordered pill button rather than an underlined word, in the same shape, brass line, brass wash on hover. Figures on the sheet are tabular. All three are the layer's, in design/desk.css.",
+   "<b>WHAT REDOING THE DESK MEANS HERE.</b> The vendored stylesheet is byte for byte the design system's, so nothing was pulled; the whole desk was re-skinned to this system at v472 to v477. What the system adds for a list of the book is its ledger recipe, label in mist caps, value in salt, hairline between, tabular figures, and the sheet is laid to it. A change to the system itself would be a pull and a render diff, not this fold.",
+   "<b>PROVED RED, TWICE.</b> tools/ledger-probe.mjs, new and run by hand like the render diff, measures the sheet in a real browser: on the v494 build at 1280 the product sat 39px below the entry, the act cell 6px below the first row's foot, and Update was underlined; on this build the product shares the first row's top with the party and the state, the step, type and act cell all sit below it, the act cell ends where the state ends, and Qty ends before Price/unit begins. The suite reads the declared areas through the cascade, plants a provisional row and finds its pill in the act cell, dotted, and finds Update a solid bordered pill. Two faults in the instruments were found before the desk was trusted: a heredoc ate the backslash from a regex and the test then read every word with its s removed, and the probe compared cell tops on a row that centres cells of different heights. The render diff: the Ledger is the only part that moves, at either width."
+  ]
+ },
+ {
   "v": "v494",
   "d": "05 Sep 2026",
   "t": "A SALE IN ADVANCE CAN BE MOVED TO DEFAULT FROM THE EDITOR",

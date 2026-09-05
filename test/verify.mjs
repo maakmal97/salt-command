@@ -5747,10 +5747,35 @@ section("v466: the ledger never scrolls sideways; a narrower screen re-flows the
     && +w16.eval("document.querySelectorAll('.sec.on .lcard > .lrow:first-child .lc-step .lclabel').length") === +w16.eval("document.querySelectorAll('.sec.on .lcard').length"),
     "every step line carries its kind in the step column, and every order line its role there");
   const css = String(w16.eval("[].slice.call(document.querySelectorAll('style')).map(function(s){return s.textContent;}).join(' ')"));
-  ok(/\.ledwrap[^{]*\{[^}]*container-type:\s*inline-size/.test(css) && (css.match(/@container ledger/g) || []).length === 2,
-    "the wrap is a size container and two width tiers are declared against it");
+  ok(/\.ledwrap[^{]*\{[^}]*container-type:\s*inline-size/.test(css) && (css.match(/@container ledger/g) || []).length === 1,
+    "the wrap is a size container and one width tier, the phone, is declared against it (v495: the 935px tier became the shape at every width above it)");
   ok(!/\.lcard[^{]*\{[^}]*min-width:\s*1\d{3}px/.test(css) && !/overflow-x:\s*auto[^}]*\}[^@]*\.lcards/.test(css), "no card carries a four-figure minimum width any more");
   ok(!/.lheads*{s*display:s*none/.test(css), "and no rule hides the heading at any width: the v307 phone stack that did is retired");
+}
+
+
+section("v495: an entry is two rows, and the act cell ends the second");
+{
+  /* His instruction of 05 Sep 2026, on a screenshot of the heading: the entry, date, party, product,
+     quantity, price, total and state on one row; the step and type on a second, running to the end,
+     where a dotted transparent Provisional pill or an Update button sits. Asserted through the
+     cascade jsdom runs (the declared areas the opening line and a step resolve) and on the rendered
+     markup (where the pill is); the pixel geometry is measured by tools/ledger-probe by hand. */
+  const { openMaster: om19 } = await import("../tools/payload.mjs");
+  const { w: w19 } = await om19();
+  w19.eval("sales.push({customer:'CX9-PROV',qty:1,total:100,cash:100,deliveredQty:1,date:'2026-09-01',rid:'x-prov',_prov:true});setProd('salt');recompute();switchTab('ledger');");
+  const rowsOf = (sel) => String(w19.eval("getComputedStyle(document.querySelector('" + sel + "')).gridTemplateAreas")).split('"').filter((x, i) => i % 2 === 1).map((r) => r.trim().split(/\s+/));
+  const open = rowsOf(".sec.on .lcard .lrow"), step = rowsOf(".sec.on .lcard .lmove");
+  ok(open.length === 2 && ["e", "date", "party", "prod", "qty", "price", "tot", "state"].every((k) => open[0].includes(k)),
+    "the opening line's first row is entry, date, party, product, quantity, price, total and state (" + open.map((r) => r.join(" ")).join(" / ") + ")");
+  ok(open.length === 2 && open[1][0] === "step" && open[1].includes("type") && open[1][open[1].length - 1] === "act" && !open[1].includes("prod"),
+    "and its second row opens with the step and ends with the act cell, with the product no longer on it");
+  ok(step.length === 1 && step[0].includes("step") && !step[0].includes("act"), "a step stays one row (" + step.map((r) => r.join(" ")).join(" / ") + ")");
+  const prov = JSON.parse(String(w19.eval("JSON.stringify((function(){var c=document.querySelector('.lcard[data-rid=x-prov]');return {inAct:!!c.querySelector('.lc-act .tag.prov'),inProd:!!c.querySelector('.lc-prod .tag.prov'),button:!!c.querySelector('.lc-act button'),border:getComputedStyle(c.querySelector('.tag.prov')).borderTopStyle,bg:getComputedStyle(c.querySelector('.tag.prov')).backgroundColor};})())")));
+  ok(prov.inAct && !prov.inProd && !prov.button, "a provisional row carries its pill in the act cell, where the button would be, and no button");
+  ok(prov.border === "dotted" && /transparent|rgba\(0, 0, 0, 0\)/.test(prov.bg), "and the pill is dotted with nothing behind it (" + prov.border + ", " + prov.bg + ")");
+  const btn = JSON.parse(String(w19.eval("JSON.stringify((function(){var b=document.querySelector('.sec.on .lcard .lc-act button');var s=getComputedStyle(b);return {border:s.borderTopStyle,radius:s.borderRadius,deco:s.textDecorationLine||s.textDecoration};})())")));
+  ok(btn.border === "solid" && /100px|999px|var\(--salt-radius-pill\)/.test(btn.radius) && !/underline/.test(btn.deco), "Update is a bordered pill button, not an underlined word (" + JSON.stringify(btn) + ")");
 }
 
 

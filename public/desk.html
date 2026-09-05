@@ -68,7 +68,7 @@ document.addEventListener('visibilitychange',function(){
    localStorage before it posts anything and the load reads it straight back.
    The same tick retries a held entry, which is what gets a phone write to the cloud
    without waiting for the next open. */
-var SALT_BUILD_ID="98de7041f6bb460e";
+var SALT_BUILD_ID="b448b4a98aa710b7";
 var SALT_REV_MS=10000;
 (function(){
   var chip=null,timer=null;
@@ -346,7 +346,23 @@ tr.tot td{font-weight:800;background:#0b1215;}
    the correction strip leave the sheet for the Journal part beside it; a row here is a date, a
    party, a product, a quantity, a sum and a state. Eleven tracks. Flat: no card, no rail, no pill,
    a hairline between orders and coloured text where a state was a pill. */
-.lrow,.lmove,.lhead{display:grid;grid-template-columns:28px 104px 72px 38px 56px minmax(72px,1fr) 60px 64px 108px 108px 60px;column-gap:6px;row-gap:2px;align-items:center;}
+/* v495: AN ENTRY IS TWO ROWS, on his instruction of 05 Sep 2026: the entry, its date, party, product,
+   quantity, price, total and state on the first; the step and the type on the second, running to
+   the end, where the Provisional pill or the Update button sits. One shape at every width above the
+   phone: the eleven-track single row that stood above 935px is gone, and the 935px tier with it,
+   because the rail leaves the sheet under that width on his own screen and the two shapes read as
+   two designs. The price track is 84px so the heading's word fits it; at 64px it ran into Qty. */
+.lrow,.lmove,.lhead{display:grid;grid-template-columns:30px 74px minmax(72px,1fr) 56px 60px 84px 108px 108px;
+  grid-template-areas:"e date party prod qty price tot state" "step step type type type type act act";column-gap:6px;row-gap:2px;align-items:center;}
+.lc-e{grid-area:e;} .lc-step{grid-area:step;} .lc-date{grid-area:date;} .lc-type{grid-area:type;}
+.lc-prod{grid-area:prod;} .lc-party{grid-area:party;}
+.cqty{grid-area:qty;} .cprc{grid-area:price;} .ctot{grid-area:tot;} .lstate{grid-area:state;} .lc-act{grid-area:act;}
+.lstate .tag{white-space:normal;}
+/* v491: A STEP IS ONE ROW, on his instruction. Its kind takes the party's and product's tracks, and the
+   cells a step never fills are not laid out at all. The closing line goes through the same builder
+   and is classed as a step for the same reason. */
+.lmove{grid-template-areas:"e date step step qty price tot state";}
+.lmove .lc-type,.lmove .lc-prod,.lmove .lc-party,.lmove .lc-act{display:none;}
 .ledwrap .lcard{background:none;border:0;border-radius:0;border-bottom:1px solid var(--line);}
 .ledwrap .lcards{gap:0;}
 .ledwrap .lrow{padding:6px 8px;}
@@ -368,21 +384,6 @@ tr.tot td{font-weight:800;background:#0b1215;}
 /* the step cell holds the role (Opened, Open, Closed) and, on a step line or a closing line, the kind
    of the step; on a closing line it holds both, and they wrap within the column */
 .lc.lc-step{display:flex;flex-wrap:wrap;align-items:center;gap:2px 6px;white-space:normal;overflow:visible;}
-@container ledger (max-width:935px){
-  .lrow,.lmove,.lhead{grid-template-columns:30px 74px minmax(72px,1fr) 60px 64px 108px 108px;
-    grid-template-areas:"e date party qty price tot state" "step step type prod act act act";}
-  .lc-e{grid-area:e;} .lc-step{grid-area:step;} .lc-date{grid-area:date;} .lc-type{grid-area:type;}
-  .lc-prod{grid-area:prod;} .lc-party{grid-area:party;}
-  .cqty{grid-area:qty;} .cprc{grid-area:price;} .ctot{grid-area:tot;} .lstate{grid-area:state;} .lc-act{grid-area:act;}
-  .lstate .tag{white-space:normal;}
-  /* v491: A STEP IS ONE ROW, on his instruction. The two-row shape above exists for the opening
-     line, which carries a party, a type, a product and a control; a step carries none of those,
-     so it was spending a second row on four empty cells. Its kind takes the party's track, and the
-     cells a step never fills are not laid out at all. The closing line goes through the same
-     builder and is classed as a step for the same reason. */
-  .lmove{grid-template-areas:"e date step qty price tot state";}
-  .lmove .lc-type,.lmove .lc-prod,.lmove .lc-party,.lmove .lc-act{display:none;}
-}
 @container ledger (max-width:599px){
   .lrow,.lmove,.lhead{grid-template-columns:56px 74px minmax(60px,1fr) 108px;
     grid-template-areas:"e date party state" "step step qty tot" "type prod price act";}
@@ -3110,6 +3111,13 @@ tbody tr:hover td:not(.l){background:rgba(255,255,255,.03);}
 .ledwrap .tag.open{color:var(--salt-copper);}
 .ledwrap .tag.pendingt{color:var(--salt-steel);}
 .ledwrap .tag.inkind,.ledwrap .tag.prov{color:var(--salt-brass);}
+/* v495, his instruction: the sheet in the system's ledger recipe. Figures tabular; the Provisional
+   pill is the status chip's shape with a dotted line and nothing behind it; Update is a button in
+   the same shape rather than an underlined word. Both sit at the end of the entry's second row. */
+.ledwrap{font-variant-numeric:tabular-nums;}
+.ledwrap .tag.prov{border:1px dotted rgba(197,160,89,.6);border-radius:var(--salt-radius-pill);padding:3px 10px;background:transparent;}
+.ledwrap .lqb{border:1px solid rgba(197,160,89,.45);border-radius:var(--salt-radius-pill);padding:3px 12px;text-decoration:none;color:var(--salt-brass);}
+.ledwrap .lqb:hover{background:rgba(197,160,89,.10);border-color:var(--salt-brass);}
 .ledwrap .tag.def{color:var(--salt-ember);}
 .entflash{outline-color:var(--salt-brass);}
 .lcard.lpressing::after{background:var(--salt-gradient);}
@@ -5390,7 +5398,8 @@ const whiteboard=[
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{"v":"v494","d":"05 Sep 2026","t":"A SALE IN ADVANCE CAN BE MOVED TO DEFAULT FROM THE EDITOR","n":["<b>HIS INSTRUCTION, 05 SEP 2026:</b> on updating a ledger entry, Pending can move to Cancelled, Open or Completed, and the move missing is Default from Advance. The Defaulted tick sat in the editor's field table marked buy-only, so a sale's editor never drew it, though every reader of CORRECT_BOOL, the drafter, the fold and the desk's own preview, already carried the flag for a sale: the chain could fold a default it could not be asked for. The tick now shows on both sides, with a hint saying what a default on a sale means, that what they still owe is written off and provisioned in full and the goods stay handed over.","<b>THE RULE THAT COMES WITH IT, IN THE ONE RULER.</b> The lot side's Default kind has refused a default on a lot that has received its salt since v435. correctionFaults, which the drafter, the fold and the desk all read, now carries the same shape for the correction road on both sides: a sale nothing has been handed over on cannot default and is cancelled instead; a sale paid in full has nothing to default on; a lot that has received its salt cannot be defaulted on. It fires on a correction that sets the flag, not on a row that already carries it, and it measures the row with the flag stripped, because a defaulted lot answers nothing received by design. Both of those were found by the suite before this shipped: the first draft refused a note edit on the book's one defaulted lot, and measured that lot with its flag on and passed it. A defaulted lot may still be cancelled, as v421 decided; a rule against that was drafted and withdrawn.","<b>PROVED RED THROUGH THE FOLD'S OWN PLAN.</b> Three planted sales and a planted settled lot go through plan() as Corrections setting defaulted. Against the unchanged engine the pending sale, the paid sale and the landed lot were all planned; now each is refused with its reason, the Advance sale is planned, and applied it reads Default and provisions in full. The desk's field table is read from the rendered master and offers the tick on a sale as on a lot. Nothing visible moves: the editor is a dialog, and every shot reads the same."]},
+const evolution=[{"v":"v495","d":"05 Sep 2026","t":"AN ENTRY IS TWO ROWS, AND THE SHEET IS IN THE SYSTEM'S LEDGER RECIPE","n":["<b>HIS INSTRUCTION, 05 SEP 2026, ON A SCREENSHOT OF THE HEADING:</b> the entry, its date, party, product, quantity, price, total and state on the first row; the step and the type on the second, running to the end, where the Provisional pill and the Update button sit; the pill dotted and transparent, Update a button; and the desk redone to the design system. The heading he shot had Qty running into Price/unit and the product on the second row beside the control.","<b>ONE SHAPE ABOVE THE PHONE.</b> The sheet had three layouts: eleven tracks on one row above 935px, two rows under it, three rows under 600px. On his own screen the rail leaves the sheet under 935px, so the two-row shape is what he reads, and the single row above it was a second design he never saw. The 935px tier is gone: its shape, re-laid to his order, is the sheet at every width above the phone, and the phone keeps its three rows. The product moves up beside the figures; the type spans the middle of the second row; the act cell spans the last two tracks so it ends the line. The price track is 84px so the heading's word fits it. A step stays one row, its kind on the party's and product's tracks.","<b>THE ACT CELL SAYS WHAT CAN BE DONE, OR WHY NOT.</b> The Provisional pill sat inside the product cell. A provisional row has no rid yet and so no Update, and the act cell was empty on exactly those rows; the pill sits there now, in the status chip's shape with a dotted line and nothing behind it, so the end of the second row reads Update on a row that can be edited and Provisional on one that cannot. Update is a bordered pill button rather than an underlined word, in the same shape, brass line, brass wash on hover. Figures on the sheet are tabular. All three are the layer's, in design/desk.css.","<b>WHAT REDOING THE DESK MEANS HERE.</b> The vendored stylesheet is byte for byte the design system's, so nothing was pulled; the whole desk was re-skinned to this system at v472 to v477. What the system adds for a list of the book is its ledger recipe, label in mist caps, value in salt, hairline between, tabular figures, and the sheet is laid to it. A change to the system itself would be a pull and a render diff, not this fold.","<b>PROVED RED, TWICE.</b> tools/ledger-probe.mjs, new and run by hand like the render diff, measures the sheet in a real browser: on the v494 build at 1280 the product sat 39px below the entry, the act cell 6px below the first row's foot, and Update was underlined; on this build the product shares the first row's top with the party and the state, the step, type and act cell all sit below it, the act cell ends where the state ends, and Qty ends before Price/unit begins. The suite reads the declared areas through the cascade, plants a provisional row and finds its pill in the act cell, dotted, and finds Update a solid bordered pill. Two faults in the instruments were found before the desk was trusted: a heredoc ate the backslash from a regex and the test then read every word with its s removed, and the probe compared cell tops on a row that centres cells of different heights. The render diff: the Ledger is the only part that moves, at either width."]},
+{"v":"v494","d":"05 Sep 2026","t":"A SALE IN ADVANCE CAN BE MOVED TO DEFAULT FROM THE EDITOR","n":["<b>HIS INSTRUCTION, 05 SEP 2026:</b> on updating a ledger entry, Pending can move to Cancelled, Open or Completed, and the move missing is Default from Advance. The Defaulted tick sat in the editor's field table marked buy-only, so a sale's editor never drew it, though every reader of CORRECT_BOOL, the drafter, the fold and the desk's own preview, already carried the flag for a sale: the chain could fold a default it could not be asked for. The tick now shows on both sides, with a hint saying what a default on a sale means, that what they still owe is written off and provisioned in full and the goods stay handed over.","<b>THE RULE THAT COMES WITH IT, IN THE ONE RULER.</b> The lot side's Default kind has refused a default on a lot that has received its salt since v435. correctionFaults, which the drafter, the fold and the desk all read, now carries the same shape for the correction road on both sides: a sale nothing has been handed over on cannot default and is cancelled instead; a sale paid in full has nothing to default on; a lot that has received its salt cannot be defaulted on. It fires on a correction that sets the flag, not on a row that already carries it, and it measures the row with the flag stripped, because a defaulted lot answers nothing received by design. Both of those were found by the suite before this shipped: the first draft refused a note edit on the book's one defaulted lot, and measured that lot with its flag on and passed it. A defaulted lot may still be cancelled, as v421 decided; a rule against that was drafted and withdrawn.","<b>PROVED RED THROUGH THE FOLD'S OWN PLAN.</b> Three planted sales and a planted settled lot go through plan() as Corrections setting defaulted. Against the unchanged engine the pending sale, the paid sale and the landed lot were all planned; now each is refused with its reason, the Advance sale is planned, and applied it reads Default and provisions in full. The desk's field table is read from the rendered master and offers the tick on a sale as on a lot. Nothing visible moves: the editor is a dialog, and every shot reads the same."]},
 {"v":"v493","d":"05 Sep 2026","t":"THE LEDGER CARD CARRIES ITS STATE AS A HINT OF COLOUR","n":["<b>HIS INSTRUCTION, 05 SEP 2026, TO MAKE THE LEDGER MORE LEGIBLE:</b> each card tinted by its state. Completed green, Open . Advance amber, Open . Deferred yellow, Default red, Pending blue, and a cancelled entry faded. In the identity's own words: verdigris for settled, which is Completed and In-Kind alike; copper for Advance, where they owe him cash; brass for Deferred, where he owes salt; ember for Default; steel for Pending; and a cancelled card at half opacity with a mist stripe and the party struck through. One stripe on the left edge and one wash behind the card, nothing else moves.","<b>THE TINT EXISTED AND WAS SWITCHED OFF.</b> The base layer had carried .lcard.s-* rules since the card was drawn, and the Ledger's list mode of v465 had a rule that set border-left:0 and background:none on every one of them, so no card in the Ledger had shown a colour since. The class itself knew one word, s-open, for both Open states, so Advance and Deferred could not have been told apart by any rule. The card's class now reads the engine's order in full: s-advance and s-deferred, beside the five it had. The pill inside a Deferred card takes brass so the word and the stripe agree; an Advance pill keeps the copper it had.","<b>THE LAYER OWNS THE COLOUR, AS RULE 6 SAYS.</b> The eight base rules and the list mode's off switch are retired from the master; the tint is written once in design/desk.css and rendered between the DESIGN markers by the sync. Nothing in the master's older layers names a state colour any more.","<b>PROVED RED ON THE RENDERED CARD.</b> The assertion plants six sales, one per state, renders the Ledger and reads each card's class and computed stripe through the cascade. Against the unchanged desk it named s124 carrying s-open where the engine says Open . Advance, the planted Advance rendering as s-open, and all six stripes resolving to transparent, the off switch's own value. Green now, and the check does not depend on the book holding every state on the day it runs, which it did not: no Deferred and no Pending sale stood on 5 Sep. tools/renderdiff.mjs shot every part before and after: the Ledger is the only part that moves, at either width."]},
 {"v":"v492","d":"05 Sep 2026","t":"THE ENTER PART'S PREVIEW ASKS THE ENGINE: THE FOURTH COPY OF THE STATE LADDER IS RETIRED","n":["<b>HIS INSTRUCTION, 05 SEP 2026: INCLUDE IT IN THE FIX.</b> v491 put one state on each Ledger card and made it the engine's. The Enter part's preview, the Now and After pills a person reads before recording an amendment, still derived its state by hand: wbState took four scalars and re-ran the three-axis rule itself, so it knew nothing of unpriced, cancelled, in-kind, the zero-total rule or defaulted. The audit had measured it disagreeing with txStat on 18 of 130 sales; on today's book, with two declared defaults, it was 21 of 134. And its callers spelled a supplier default's preview 'Defaulted', a fifth word for one state.","<b>wbState IS A WRAPPER NOW.</b> It builds the row the four scalars describe, carries the flags of the row being amended when there is one, and asks the engine that reads every other row on the desk: txStat for a sale, poStat for a lot, because a lot's state is the lot engine's and the buy side of the form previews lots. Status is stripped on that side so poCash reads the cash given rather than 'paid' meaning the whole total, and the in-kind and advance fields are zeroed so the scalars are the whole truth of the hypothetical. The cancel preview, which hand-coded exactly what txStat's cancelled branch returns since v444, goes through that branch instead. The default preview goes through the engine and reads Default. wbStCls, a fifth copy of the class map that knew three of six states, is gone: the pills take the class the engine returns, the same one the Ledger uses.","<b>PROVED RED ON THE DESK'S OWN ROWS.</b> The assertion runs wbState over every sale on the book, as it stands, and demands the engine's word each time; against the unchanged desk it named 21 disagreements, the first three all in-kind rows previewing as Completed. A second assertion asks for a defaulted preview and demanded Default; it read Open . Advance. Both green. tools/renderdiff.mjs shot every part before and after: 32 of 34 shots identical, the Enter part the only one that moved, a 270 by 23 pixel strip at each width where the preview pills sit.","<b>WHAT REMAINS OF T1.3.</b> Six copies were counted. txStat is the authority; replayAmend feeds only the Ledger's collapse rule now and nothing reads it for a state; ledFinal, the card's cardCls and wbState all read the engine. Two small class maps are left, stateCls in the Ledger and wbPayCls in Enter, each mapping a word the engine already chose to a class name, and neither can produce a state."]},
 
@@ -5660,7 +5669,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='05 Sep 2026, 21:35 KL';
+const LAST_UPDATED='05 Sep 2026, 22:15 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -10416,6 +10425,9 @@ function tabLedger(){
     const actRid=ridOf(t);
     const actCell=(finalState!=='Cancelled'&&actRid&&!provOf(t))
       ?`<span class="lquick lc-act"><button class="lqb qdone" onclick="ledEdit('${actRid}','${t.type}')" title="Paid, delivered, cancelled: update this order">${finalState==='Pending'?'Mark':'Update'}</button></span>`
+      /* v495: a provisional row cannot be edited, since it has no rid yet, so the act cell says why
+         instead: the Provisional pill sits where the button would, at the end of the second row. */
+      :provOf(t)?`<span class="lquick lc-act"><span class="tag prov" title="recorded but not yet committed">Provisional</span></span>`
       :'<span class="lc lc-act"></span>';
     const h=single?null:am[0];                                   // the step the opening line records
     const hUnits=single||h.kg>0.0001,hCash=single||h.cash>0.0001;
@@ -10438,7 +10450,7 @@ function tabLedger(){
         step:`<span class="lclabel ${headLabelCls}">${headLabel}</span>`,
         date:`<span class="ldate">${isPend(t)?'':ledDate(t.date)}</span>`,
         type:`<span class="tag ${t.type==='BUY'?'buy':'sell'}">${t.type}</span>`,
-        product:prodTag(t)+(provOf(t)?`<span class="tag prov" title="recorded but not yet committed">Provisional</span>`:''),
+        product:prodTag(t),
         party:`<span class="lparty">${ID(t.who)}</span>`})
       +(single?figNow.qty():qCell(hUnits,hUnits?h.kg:t.qty,figNow.wasQ()))
       +pCell(true)
@@ -10505,7 +10517,7 @@ function tabLedger(){
         step:`<span class="lclabel roleclose">Closed</span>`,
         date:`<span class="ldate">${ledDate(closeA.date)}</span>`,
         type:`<span class="tag ${t.type==='BUY'?'buy':'sell'}">${t.type}</span>`,
-        product:prodTag(t)+(provOf(t)?`<span class="tag prov" title="recorded but not yet committed">Provisional</span>`:''),
+        product:prodTag(t),
         party:`<span class="lparty">${ID(t.who)}</span>`})
       +figNow.qty()+pCell(true)+figNow.tot()
       +`<span class="lstate">${pill(finalState,stateCls(finalState))}</span>`
