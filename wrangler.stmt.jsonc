@@ -37,7 +37,7 @@
 	//   STMT_VAPID_PRIVATE_JWK  the site's own Web Push signing key, for waking a customer's
 	//                           phone when his order moves; the public half is the var below
 	"vars": {
-		"STMT_VAPID_PUBLIC_KEY": "",
+		"STMT_VAPID_PUBLIC_KEY": "BDIvD4Y6s-Ucr6twgOkmcYPZiUhGLaXMNzAqFrBKhdNCNy-Iyr9xYl7iWLTEAfL1rtQOJJg7g-m8ZeokZqM493c",
 		"STMT_VAPID_SUBJECT": "mailto:maakmal97@icloud.com"
 	},
 	"observability": {
