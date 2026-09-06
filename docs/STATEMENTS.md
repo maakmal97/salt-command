@@ -180,8 +180,10 @@ it in the same publish, under the same content key, so the site still holds noth
 read. `tools/pricelist.mjs` is the whole rule: the customer's rate on a product is the median
 unit rate of his last four committed orders of it, read from orders dated before the week's
 Monday in Kuala Lumpur, so the rate he is shown cannot move inside a week; each board size is
-that rate times the size, lifted to the engine's collected floor for the size and rounded up
-to the ringgit, with one delivery on top for a delivered order, as the board quotes. A customer
+that rate times the size, lifted to the engine's floor for the size and rounded up to the
+ringgit. One price per size, for the goods (v502): delivery is not on the list. It is a figure
+he types when he marks an order ready to deliver, the customer sees goods plus delivery as the
+sum to pay, and the sale carries it as its own field, `delivery`, inside the total. A customer
 with no history on a product sees the board's ask. Nothing outside the engine prices: the
 publish opens the master in jsdom for the desk's PRICING inputs (the same the drafter reads)
 and calls `floorTotal` and `priceLadder`. `node tools/pricelist.mjs --show <CODE>` prints what

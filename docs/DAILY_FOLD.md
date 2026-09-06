@@ -86,7 +86,7 @@ Everything in the pricing section below still holds. These are the changes on to
 
     priceLadder(q) -> floor, good, great, ceiling
     at 15%, 33.33%, 66.67% and 100% MARKUP ON COST (not margin on price)
-    base = lotCost(q) = effEx * q + one delivery per ORDER
+    base = lotCost(q) = effEx * q            (v502: no delivery in it; delivery is typed on the order)
 
 `REF` and `REF_POINTS` hold the markups. `tierBoard()` still returns rows with `cells`, now the four ladder points. **Reference, never policy**: it refuses nothing and moves no figure. `enginePrice(q, tier)` survives for quoting, unchanged.
 

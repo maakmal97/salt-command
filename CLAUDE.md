@@ -67,11 +67,11 @@ desk shows, cost and margin included, is served at the public URL.
 
 | Step | Where | When |
 |---|---|---|
-| Queue an entry | KV `q:<deviceId>`, `POST /queue` from the phone | on tap; held in `localStorage` offline and retried every ten seconds |
+| Queue an entry | KV `q:<deviceId>`, `POST /queue` from the phone | on tap; held offline, retried every ten seconds |
 | Draft the row | Worker `src/drafter.js` | on arrival via `waitUntil`, plus a `*/15` cron as the net |
 | Approve or reject | D1 `draft`, `POST /drafts/<id>/approve` | on tap; a decided row returns 409 |
 | Stage approved rows | Actions `cloud-commit.yml`, job `stage` | dispatched by every approval (Worker holds `SALT_GITHUB_TOKEN`), hourly as the net |
-| **Fold, bump, build, test, push** | job `fold`: the Claude Code action on `CLAUDE_CODE_OAUTH_TOKEN` following `docs/CLOUD_FOLD.md`; or any agent asked to | same run, whenever the stage staged rows; or on demand |
+| **Fold, bump, build, test, push** | job `fold`: the Claude Code action (`CLAUDE_CODE_OAUTH_TOKEN`) per `docs/CLOUD_FOLD.md`; or any agent asked | same run when rows were staged; or on demand |
 | Deploy, prove, mark committed, re-seed the D1 mirror, publish statements | job `deploy` | on push |
 | Prove repo and live agree | `ship-check.yml` | 11:00 MYT |
 | Monthly statements | `docs/STATEMENTS.md` routine | the 1st, gated in Kuala Lumpur time |
@@ -104,10 +104,8 @@ desk shows, cost and margin included, is served at the public URL.
   `POST /drafts/<id>/approve|reject|committed`, `POST /draft-now?dry=1` with the write
   key. Schema `migrations/0002_draft.sql`, `0003_refused.sql`. `draft` is the first table
   the cloud owns; nothing writes to `entry`.
-- **Cowork:** the file's own position since 20 Aug 2026 is that Salt left Cowork
-  entirely, yet root section 6 still lists `salt-daily-price-brief` at 10:00 daily, and
-  Code cannot see that registry. The SKILL edit to fold `--approved` rows only is on disk
-  and not pushed. Settle it from Cowork.
+- **Cowork:** Salt left Cowork on 20 Aug 2026, yet root section 6 still lists
+  `salt-daily-price-brief`; Code cannot see that registry. Settle it from Cowork.
 
 ## Sync and proof
 
@@ -141,17 +139,14 @@ directory lacks, ask him for the name and the location before the ID commits, th
 both to `10_Data\salt_bio.json`, seed the vault, and commit the statement username in
 `statements/_users.json` (minted once, kept for life; an address, not a secret). The three
 `-R` reseller sub-accounts are the one exception. His own route is the `update-names-id`
-skill in `.claude/skills`, laptop only. Still a master change: a phone-facing
-"Show names" control; `NAME_VAULT` is a lexical `let` the build cannot re-wire.
+skill in `.claude/skills`, laptop only.
 
 ## Access and the write gate
 
 - **`REQUIRE_ACCESS` is `"0"` on his instruction of 11 Aug 2026 and the Access
   application was removed.** Setting it to `"1"` without recreating the application
   locks him out. To restore: first the Access application (Self-hosted, Workers,
-  `salt-command`, production and preview URLs, policy Allow for
-  `maakmal97@icloud.com` and `maakmal1997@gmail.com`; an application with no policy denies
-  everyone), then the var, then deploy by hand.
+  `salt-command`, policy Allow for his two addresses), then the var, then deploy by hand.
 - **Reads are open; writes need `X-Salt-Key` = `SALT_WRITE_KEY`, armed 16 Aug 2026.**
   Unkeyed `POST /queue` or `/vault` returns 401. Change it with
   `npx wrangler secret put SALT_WRITE_KEY`, then clear `saltWriteKey` from the phone's
@@ -168,12 +163,12 @@ or a node builtin; the suite checks. Config `wrangler.stmt.jsonc` (every command
 under a content key derived from `STMT_KEY`. `statements/_secrets.json` is laptop only,
 gitignored: `{"key","master"}`; the key is the same string as the Actions secret, and
 losing it re-issues every account. `tools/make_statements.mjs` (the v387 desk's
-statement code lifted verbatim, plain node) and `tools/qr.mjs` (byte mode, level M,
-versions 1 to 10, proved over 1,736 symbols) feed it.
+statement code, plain node) and `tools/qr.mjs` (byte mode, level M, versions 1 to 10) feed it.
 
 **Behind the password since v499 (06 Sep 2026): statements, prices, order.** The price
 list (`tools/pricelist.mjs`: median of the last four orders before the week's Monday, never
-below the engine's collected floor; no history means the board's ask) is sealed in by the
+below the engine's one floor; no history means the board's ask; delivery is typed per order
+and rides on the row as `delivery`, inside the total, since v502) is sealed in by the
 publish, which opens the master in jsdom for the PRICING inputs. Orders live in the site's
 KV (`stmt/orders.js`) on a session `/open` mints; payment at `ready` only, one QR Command
 link per rail, accounts from `stmt/pay.js` (`tools/paysync.mjs`, no number ships). The desk
@@ -194,10 +189,10 @@ sets the desk key and the site's push pair. Detail: `docs/STATEMENTS.md`.
 | `tools/drain.mjs` | KV to `06_Data\salt_queue_cloud.json`; `--committed <ISO>`, `--status`, `--forget` |
 | `tools/sort-ledger.mjs` | Date order, undated pending last; asserts a permutation |
 | `tools/changelog.mjs` | Prepends `evolution[0]` to `master/changelog.json`; never rewrites |
-| `tools/renderdiff.mjs` | `--shoot <label>` every part at 1280 and 375, `--compare <a> <b>` pixel counts; Playwright from `Code\salt-ds\.ds-sync`; by hand, proved red first |
+| `tools/renderdiff.mjs` | `--shoot <label>` every part at 1280 and 375, `--compare <a> <b>`; Playwright from `Code\salt-ds\.ds-sync`; by hand |
 | `tools/send-sheet.cmd` | Opens the newest `_send_*.html`; the Desktop shortcut `Send Statement` points here |
-| `geo/basemap.json`, `geo/places.json`, `tools/geofetch.mjs` | Basemap (geoBoundaries, ODbL, credit printed) and gazetteer; `geofetch` is the only tool that touches the network, by hand only; feature names are never rendered |
-| `public/sw.js`, `public/_headers`, `manifest.webmanifest`, `icon-*.png` | Shell network-first, `/queue` never cached; CSP; icons are the brand's plates from `Code\salt-ds` (`make_icons.py` is superseded) |
+| `geo/*.json`, `tools/geofetch.mjs` | Basemap (geoBoundaries, ODbL) and gazetteer; `geofetch` alone touches the network, by hand; feature names never rendered |
+| `public/sw.js`, `public/_headers`, `manifest.webmanifest`, `icon-*.png` | Shell network-first, `/queue` never cached; CSP; icons from `Code\salt-ds` |
 | `.deployed.json` | `{id,v,at}` of the last successful deploy |
 | `test/verify.mjs` | About 250 assertions, no network or browser; add one per behavioural change to the Worker, build patches or drain |
 

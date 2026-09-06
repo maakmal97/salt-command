@@ -986,8 +986,8 @@ section("Drafter — rows, refusals and flags");
     pricing: {
       v: "v302",
       byProduct: {
-        salt: { stockCost: 56, replCost: 56, floors: { "1": { delivered: 85.75, collected: 79.5 }, "2.5": { delivered: 204.99, collected: 198.74 } } },
-        oil: { stockCost: 7, replCost: 7, floors: { "1": { delivered: 14.75, collected: 8.5 } } }
+        salt: { stockCost: 56, replCost: 56, floors: { "1": { floor: 79.5 }, "2.5": { floor: 198.74 } } },
+        oil: { stockCost: 7, replCost: 7, floors: { "1": { floor: 8.5 } } }
       }
     },
     purchases: [
@@ -1178,12 +1178,17 @@ section("Drafter — rows, refusals and flags");
      thin margin, and this sentence is the only place a reader is ever told. Both floors are
      NAMED, because RM10 separates delivered from collected where RM50 used to and "the floor"
      had quietly become two things. */
-  ok(cut.flags.some(f => /RM 5.75 under the DELIVERED floor of RM 85.75/.test(f)), "RM80 is flagged as RM5.75 under the RM85.75 delivered floor, by how much and not only that it is");
-  ok(cut.flags.some(f => /clears the COLLECTED floor of RM 79.5/.test(f)), "the collected floor is named and reported, because it does clear that");
-  ok(cut.flags.some(f => /what the order costs to take out/.test(f)), "and the flag says what the floor IS, so a row at it is not read as thin margin");
+  /* v502: one floor per size, the goods after the leak; RM80 at 1 unit clears the RM79.5 floor. */
+  ok(cut.flags.every(f => !/under the floor/.test(f)), "RM80 against a RM79.5 floor is not flagged: there is one floor now, and it clears it");
   const under = draftRow(entry({ direction: "SELL", party: "CC5-OKR", qty: 1, total: 70, cash: 70, kg: 1, date: "2026-08-16" }), book);
-  ok(under.flags.some(f => /under the COLLECTED floor of RM 79.5 as well/.test(f) && /neither way/.test(f)),
-    "a price under both floors says so, and says it covers itself neither way");
+  ok(under.flags.some(f => /RM 9.5 under the floor of RM 79.5/.test(f)) && under.flags.some(f => /what the order costs to take out/.test(f)),
+    "RM70 is flagged as RM9.5 under the RM79.5 floor, by how much, and the flag says what the floor IS");
+  /* v502: a delivery charge inside the total is taken out before the floor is read */
+  const withDel = draftRow(entry({ direction: "SELL", party: "CC5-OKR", qty: 1, total: 95, delivery: 20, cash: 95, kg: 1, date: "2026-08-16" }), book);
+  ok(!withDel.skip && withDel.row.delivery === 20 && withDel.row.total === 95 && withDel.flags.some(f => /RM 75 for the goods is RM 4.5 under the floor of RM 79.5/.test(f)),
+    "RM95 with RM20 of delivery inside it is RM75 for the goods, and that is what the floor is read against");
+  ok(!!draftRow(entry({ direction: "SELL", party: "CC5-OKR", qty: 1, total: 50, delivery: 60, cash: 50, kg: 1, date: "2026-08-16" }), book).skip,
+    "a delivery charge larger than its total is refused");
 
   /* THE TIME CHARGE IS READ OFF THE POLICY AND NEVER TYPED INTO THE FLAG. An older snapshot
      carries no policy, and the clause then comes out rather than asserting a figure the
@@ -1192,7 +1197,7 @@ section("Drafter — rows, refusals and flags");
   timed.pricing.byProduct.salt.inputs = { policy: { timePerOrder: 25 } };
   ok(floorFor(timed, "salt", 1).time === 25 && floorFor(book, "salt", 1).time === null,
     "floorFor reports the stated time charge, and null where the snapshot has no policy");
-  const timedCut = draftRow(entry({ direction: "SELL", party: "CC5-OKR", qty: 1, total: 80, cash: 80, kg: 1, date: "2026-08-16" }), timed);
+  const timedCut = draftRow(entry({ direction: "SELL", party: "CC5-OKR", qty: 1, total: 70, cash: 70, kg: 1, date: "2026-08-16" }), timed);
   ok(timedCut.flags.some(f => /RM 25 for your time/.test(f)), "and the flag names it where it is stated");
   ok(cut.flags.every(f => !/for your time/.test(f)), "and leaves the clause out where it is not, rather than guessing at RM25");
 
@@ -1562,15 +1567,17 @@ section("Engine — one definition, out of the desk (v337)");
   let law = true;
   for (let i = 1; i < asks.length; i++) if (asks[i] / P.boardSizes[i] > asks[i - 1] / P.boardSizes[i - 1] + 1e-9) law = false;
   ok(law, "the rate never rises with size");
-  ok(P.boardSizes.every((q, i) => B.floors[q].collected <= asks[i] + 1e-9), "no ask sits under its own collected floor");
+  ok(P.boardSizes.every((q, i) => B.floors[q].floor <= asks[i] + 1e-9), "no ask sits under its own floor");
   /* v344: the card is a COLLECTION price, because four orders in five are collected. Where the
      ask cannot also carry a RM50 delivery the board says so rather than quietly pricing a loss. */
   /* v352: the board states one delivery charge and one time charge rather than flagging each size */
-  ok(B.deliveryCharge === C.delPerOrder && B.timePerOrder === P.timePerOrder,
-    "the board states the delivery charge and the time charge once");
-  ok(P.boardSizes.every((q) => B.floors[q].delivered >= B.floors[q].collected - 0.02
-      && B.floors[q].delivered <= B.floors[q].collected + B.deliveryCharge + 0.02),
-    "a delivered floor is the collected floor plus at most one delivery");
+  /* v502: ONE FLOOR PER SIZE and no delivery in it: the board publishes floors[q].floor and no
+     deliveryCharge, and the collects option, still accepted, changes nothing. */
+  ok(B.timePerOrder === P.timePerOrder && !("deliveryCharge" in B) && P.boardSizes.every((q) => "floor" in B.floors[q] && !("delivered" in B.floors[q])),
+    "the board states one floor per size and no delivery charge");
+  ok(P.boardSizes.every((q) => Math.abs(E.floorTotal(q, C, P) - E.floorTotal(q, C, P, null, { collects: true })) < 1e-9
+      && Math.abs(E.floorTotal(q, C, P) - (C.effEx * q + P.timePerOrder)) < 0.02),
+    "the floor is the goods after the leak plus the time charge, and collecting or delivering does not move it");
   /* HIS TIME IS PER ORDER AND NEVER PER UNIT. Raising it by T lifts a floor by at most T,
      whatever the size; a per-unit charge would lift a 12.5 lot by 12.5 times as much. */
   const T = 40, more = { ...P, timePerOrder: (P.timePerOrder || 0) + T };
@@ -1588,10 +1595,10 @@ section("Engine — one definition, out of the desk (v337)");
     let law = true;
     for (let i = 1; i < sa.length; i++) if (sa[i] / P.boardSizes[i] > sa[i-1] / P.boardSizes[i-1] + 1e-9) law = false;
     ok(law, "and the rate still never rises with size, so setting one price moves the sizes above it");
-    ok(P.boardSizes.every((q, i) => sa[i] >= SB.floors[q].collected - 0.009), "and no stated price sits under its own floor");
+    ok(P.boardSizes.every((q, i) => sa[i] >= SB.floors[q].floor - 0.009), "and no stated price sits under its own floor");
     /* set one absurdly low and the floor guard must lift it rather than honour it */
     const lowB = E.board(P.boardSizes, C, { ...P, stated: { "12.5": 1 } });
-    ok(lowB.tiers[0].prices[P.boardSizes.indexOf(12.5)] >= lowB.floors[12.5].collected - 0.009,
+    ok(lowB.tiers[0].prices[P.boardSizes.indexOf(12.5)] >= lowB.floors[12.5].floor - 0.009,
       "a price set under the floor is lifted, never honoured");
   }
 
@@ -1606,10 +1613,9 @@ section("Engine — one definition, out of the desk (v337)");
     const sizes = read("PRICE_TIERS.sizes");
     const mine = E.board(sizes, E.costStack(read("pxInputs()")), read("pxPolicy()"));
     const deskAsks = read("PRICE_TIERS.sizes.map(q=>priceLadder(q).ask.total)");
-    const deskFloors = read("PRICE_TIERS.sizes.map(q=>[floorTotal(q),floorTotal(q,null,{collects:true})])");
+    const deskFloors = read("PRICE_TIERS.sizes.map(q=>floorTotal(q))");
     ok(JSON.stringify(mine.tiers[0].prices) === JSON.stringify(deskAsks), `${p}: the module's asks are the desk's asks at every size`);
-    ok(sizes.every((q, i) => mine.floors[q].delivered === +deskFloors[i][0].toFixed(2)
-      && mine.floors[q].collected === +deskFloors[i][1].toFixed(2)), `${p}: the module's floors are the desk's floors at every size`);
+    ok(sizes.every((q, i) => mine.floors[q].floor === +deskFloors[i].toFixed(2)), `${p}: the module's floors are the desk's floors at every size`);
     const off = 7;
     ok(Math.abs(E.floorTotal(off, E.costStack(read("pxInputs()")), read("pxPolicy()")) - read(`floorTotal(${off})`)) < 1e-9,
       `${p}: an off-board size prices the same in both`);
@@ -1992,7 +1998,8 @@ section("Fold — an approved batch becomes records in the book (v340)");
     /* v373: thirty-one. handover joined the table so the delivered share could be measured
        from the rows rather than stated at 0.20. The count is pinned rather than derived on
        purpose: a table that quietly gains a field is exactly what this assertion is for. */
-    ok(E.CORRECTABLE.length === 31, `thirty-one attributes are editable, found ${E.CORRECTABLE.length}`);
+    /* v502: thirty-two. delivery joined, the charge inside a sale's total, typed per order. */
+    ok(E.CORRECTABLE.length === 32, `thirty-two attributes are editable, found ${E.CORRECTABLE.length}`);
     ok(E.CORRECTABLE.includes('handover'), 'handover is one of them');
     ok(Array.isArray(E.HANDOVER) && E.HANDOVER.join(',') === 'delivered,collected',
        `handover takes two values, found ${JSON.stringify(E.HANDOVER)}`);
@@ -2635,15 +2642,11 @@ section("The board — four laws, read off the engine (v387)");
       ? `${pid}: the ask is under its own collected floor at ${under.map((r) => r.q).join(", ")} unit`
       : `${pid}: every ask clears the collected floor`);
 
-    /* delivered is collected plus exactly one delivery, and never less than collected. */
-    const badDel = P.boardSizes.filter((q) => {
-      const col = E.floorTotal(q, C, P, null, { collects: true });
-      const del = E.floorTotal(q, C, P, null, {});
-      return del < col - 0.02 || del > col + C.delPerOrder + 0.02;
-    });
+    /* v502: one floor; the collects option changes nothing */
+    const badDel = P.boardSizes.filter((q) => Math.abs(E.floorTotal(q, C, P, null, { collects: true }) - E.floorTotal(q, C, P)) > 1e-9);
     ok(badDel.length === 0, badDel.length
-      ? `${pid}: the delivered floor is not within one delivery of the collected one at ${badDel.join(", ")} unit`
-      : `${pid}: every delivered floor is the collected floor plus at most one delivery`);
+      ? `${pid}: the floor differs by handover at ${badDel.join(", ")} unit`
+      : `${pid}: the floor is one figure whatever the handover`);
 
     /* THE ONE LAW A CUSTOMER CAN CHECK BY HAND: the rate may not RISE with size. */
     let prev = Infinity; const inverted = [];
@@ -2815,14 +2818,14 @@ section("Oil — pinned at both ends and lawful between (round 5, his call 5)");
   const { w } = await openMaster();
   const read = (expr) => JSON.parse(w.eval("JSON.stringify(" + expr + ")"));
   w.eval("setProd('oil');recompute();");
-  const rows = read("sizesFor('oil').map(q=>({q,ask:priceLadder(q).ask.total,fd:floorTotal(q),fc:floorTotal(q,null,{collects:true})}))");
+  const rows = read("sizesFor('oil').map(q=>({q,ask:priceLadder(q).ask.total,fl:floorTotal(q)}))");
   const a10 = rows.find((r) => r.q === 10), a50 = rows.find((r) => r.q === 50);
   ok(a10.ask === 130, "the board asks his RM130 at 10");
   ok(a50.ask === 450, "and his RM450 at 50; if this reads higher, the floor has overtaken his price and he must decide");
   ok(JSON.stringify(rows.map((r) => r.ask)) === JSON.stringify([130, 240, 330, 400, 450]),
     "the whole board is his stated one: 130, 240, 330, 400, 450");
-  ok(a50.fd <= 450 + 1e-9 && a50.fc <= 450 + 1e-9,
-    `RM450 clears both 50 unit floors (delivered ${a50.fd}, collected ${a50.fc}); red here means the tension of v404 is back`);
+  ok(a50.fl <= 450 + 1e-9,
+    `RM450 clears the 50 unit floor (${a50.fl}); red here means the floor has overtaken his price and he must decide`);
   let strict = true, dearer = true;
   for (let i = 1; i < rows.length; i++) {
     if (!(rows[i].ask / rows[i].q < rows[i - 1].ask / rows[i - 1].q - 1e-9)) strict = false;
@@ -6024,7 +6027,7 @@ section("Round 7: the states no suite check had ever rendered");
       for (const q of [1, 2.5]) {
         const desk = w.eval(`floorTotal(${q})`);
         const snapped = snap.byProduct[p] && snap.byProduct[p].floors && snap.byProduct[p].floors[q]
-          ? snap.byProduct[p].floors[q].delivered : null;
+          ? snap.byProduct[p].floors[q].floor : null;
         if (snapped == null || Math.abs(snapped - desk) > 0.005) off.push(`${p}@${q}: snapshot ${snapped} vs desk ${desk}`);
       }
     }
@@ -6486,15 +6489,15 @@ section("Statements — the price list, the order book and the desk's relay (v49
   ok(list.week.monday === "2026-08-31" && list.products.length === 2 && saltL && saltL.basis === "yours" && saltL.rate === 115 && saltL.orders === 4,
     "the list is stamped with the week and carries both products, salt on the customer's own rate");
   const Cs = PE.costStack(snap.byProduct.salt.inputs.cost), Ps = snap.byProduct.salt.inputs.policy;
-  const floorC = q => PE.floorTotal(q, Cs, Ps, null, { collects: true });
-  const wrong = saltL.sizes.filter(x => x.collected !== Math.ceil(Math.max(115 * x.q, floorC(x.q))) || Math.abs(x.delivered - (x.collected + saltL.delivery)) > 0.005);
-  ok(wrong.length === 0 && saltL.sizes.length === snap.sizes.length && saltL.delivery === +(Cs.delPerOrder || 0).toFixed(2),
-    "every board size is his rate times the size, lifted to the engine's collected floor and rounded up to the ringgit, with one delivery on top for delivered");
+  const floorC = q => PE.floorTotal(q, Cs, Ps);
+  const wrong = saltL.sizes.filter(x => x.price !== Math.ceil(Math.max(115 * x.q, floorC(x.q))) || "delivered" in x);
+  ok(wrong.length === 0 && saltL.sizes.length === snap.sizes.length && !("delivery" in saltL),
+    "every board size is his rate times the size, lifted to the engine's floor and rounded up to the ringgit; one price, no delivery on the list (v502)");
   const cheap = PL.priceList("CX0-CH", { ...bookP, sales: [{ date: "2026-07-01", customer: "CX0-CH", qty: 1, total: 1 }] }, snap, nowP).products[0];
-  ok(cheap.rate === 1 && cheap.sizes.every(x => x.collected === Math.ceil(floorC(x.q))),
+  ok(cheap.rate === 1 && cheap.sizes.every(x => x.price === Math.ceil(floorC(x.q))),
     "a customer whose old rate is under the floor is quoted the floor at every size, never a loss");
   const board = PL.priceList("CX0-ZZ", bookP, snap, nowP).products[0];
-  ok(board.basis === "board" && board.sizes.every(x => x.collected === PE.priceLadder(x.q, Cs, Ps, { collects: true }).ask.total),
+  ok(board.basis === "board" && board.sizes.every(x => x.price === PE.priceLadder(x.q, Cs, Ps).ask.total),
     "and a customer with no history is quoted the board's ask, the engine's, at every size");
 
   /* THE RAILS SHIP WITHOUT A NUMBER. */
@@ -6577,8 +6580,8 @@ section("Statements — the price list, the order book and the desk's relay (v49
   b = await (await stmtWorker.fetch(sj("/desk/orders/" + un + "/" + id, { status: "acknowledged" }, D), senv)).json();
   ok(b.ok && b.order.status === "acknowledged" && b.push && b.push.sent === 0 && /not configured/.test(b.push.error || ""),
     "acknowledged from the desk; with no push key on the site the wake is reported as not configured, not thrown");
-  b = await (await stmtWorker.fetch(sj("/desk/orders/" + un + "/" + id, { status: "ready", mode: "deliver" }, D), senv)).json();
-  ok(b.ok && b.order.status === "ready" && b.order.mode === "deliver", "ready to deliver, the desk's word on the mode");
+  b = await (await stmtWorker.fetch(sj("/desk/orders/" + un + "/" + id, { status: "ready", mode: "deliver", delivery: 12 }, D), senv)).json();
+  ok(b.ok && b.order.status === "ready" && b.order.mode === "deliver" && b.order.delivery === 12, "ready to deliver, the desk's word on the mode and the delivery charge (v502)");
   ok((await stmtWorker.fetch(sj("/orders/" + id + "/cancel", {}, S), senv)).status === 409, "a customer cannot withdraw an order that is ready");
   ok((await stmtWorker.fetch(sj("/orders/" + id + "/method", { method: "qr", account: "wise" }, S), senv)).status === 400
     && (await stmtWorker.fetch(sj("/orders/" + id + "/method", { method: "paypal" }, S), senv)).status === 400
@@ -6619,16 +6622,16 @@ section("Statements — the price list, the order book and the desk's relay (v49
     "Completed moves the order and queues one entry under q:orders");
   const e = q.queue[0];
   ok(e.type === "SELL" && e.party === "CX0-AA" && e.payload.mode === "new" && e.payload.direction === "SELL" && e.payload.party === "CX0-AA"
-    && e.payload.product === "salt" && e.payload.qty === 2.5 && e.payload.total === 288 && e.payload.cash === 288 && e.payload.kg === 2.5
+    && e.payload.product === "salt" && e.payload.qty === 2.5 && e.payload.total === 300 && e.payload.delivery === 12 && e.payload.cash === 300 && e.payload.kg === 2.5
     && e.payload.handover === "delivered" && /order [0-9]{14}-/.test(e.payload.note) && /tngbiz/.test(e.payload.note) && !JSON.stringify(e).includes(un),
     "the entry is the Workbench's shape: a sale to the code, paid and handed over in full, dated, noting the order and the rail, and naming no username");
   ok(saleEntry({ id: "x", qty: 1, total: 10, mode: "collect", product: "oil" }, "CX0-AA", new Date("2026-09-06T17:00:00Z")).payload.date === "2026-09-07",
     "the sale is dated in Kuala Lumpur, so a completion after midnight there is tomorrow's row");
   const { draftRow } = await import("../src/drafter.js");
-  const bookD = { version: "v499", pricing: { v: "v499", byProduct: { salt: { stockCost: 48, replCost: 48, floors: { "2.5": { delivered: 167.3, collected: 157.3 } } } } },
+  const bookD = { version: "v499", pricing: { v: "v499", byProduct: { salt: { stockCost: 48, replCost: 48, floors: { "2.5": { floor: 157.3 } } } } },
     purchases: [{ date: "2026-08-13", qty: 12.5, total: 650, receivedOn: "2026-08-13" }], sales, state: { roster: ["CX0-AA"], QUEUE_COMMITTED: "2026-09-01T00:00:00.000Z" } };
   const d = draftRow(e, bookD);
-  ok(!d.skip && d.collection === "sales" && d.row.customer === "CX0-AA" && d.row.qty === 2.5 && d.row.total === 288 && d.row.cash === 288
+  ok(!d.skip && d.collection === "sales" && d.row.customer === "CX0-AA" && d.row.qty === 2.5 && d.row.total === 300 && d.row.delivery === 12 && d.row.cash === 300
     && d.row.deliveredQty === 2.5 && d.row.paidOn === d.row.date && d.row.handover === "delivered",
     "and the drafter drafts it as a completed sale, which the phone then approves like any other row");
   const unmapped = C.newUsername();
@@ -6661,7 +6664,7 @@ section("Statements — the price list, the order book and the desk's relay (v49
     let opened = null;
     try { opened = JSON.parse(await C.decryptWith(ckR, recR.prices)); } catch (e) { opened = null; }
     ok(lr.priced === 1 && recR.prices && recR.prices.week === "2026-08-31" && opened && opened.week.monday === "2026-08-31" && opened.products.length >= 1
-      && opened.products[0].sizes.length === snap.sizes.length,
+      && opened.products[0].sizes.length === snap.sizes.length && "price" in opened.products[0].sizes[0],
       "liveRecords seals " + code + "'s price list into the record for the week, opening under the same content key as the statement");
     const lr0 = await liveRecords(tmp, "test-secret", nowP);
     ok(lr0.priced === 0 && !lr0.records[0].prices, "and without a snapshot no list is written");

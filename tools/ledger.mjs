@@ -200,7 +200,7 @@ ledger.OPEN = { ...openSnapshot(w), v: (Array.isArray(meta.evolution) && meta.ev
 {
   const P = ledger.PRICING, salt = P.byProduct && P.byProduct.salt;
   if (!salt || salt.stockCost == null || !salt.floors) fail("the pricing snapshot came back without a salt cost or floors; the drafter cannot price a row without it");
-  else ok(`pricing snapshot taken: salt at ${salt.stockCost}/unit, floor at 1 unit ${salt.floors["1"] && salt.floors["1"].delivered}, ${Object.keys(P.byProduct).length} product(s)`);
+  else ok(`pricing snapshot taken: salt at ${salt.stockCost}/unit, floor at 1 unit ${salt.floors["1"] && salt.floors["1"].floor}, ${Object.keys(P.byProduct).length} product(s)`);
 }
 
 /* ---- 2. prove it is complete -------------------------------------------------------- */

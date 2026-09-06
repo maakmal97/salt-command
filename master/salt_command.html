@@ -3263,6 +3263,9 @@ const POSITION_ENGINE=(function(){
 /* ---- the row helpers, verbatim from the desk ---- */
 function txPrice(s){return s.qty>0?s.total/s.qty:0;}
 function txPaid(s){return (s.cash||0)+(s.settledRM||0);}
+/* v502: the goods half of a sale's total, its delivery charge taken out; the rate a unit was
+   sold at is this over the quantity, never the total over it. */
+function txGoods(s){return +(s.total||0)-(+s.delivery||0);}
 function txDeliv(s){return (s.deliveredQty||0)+(s.settledKg||0);}
 /* ====== COST IS ABSOLUTE (v496, his instruction of 05 Sep 2026) ================
    A sale's `cost` is the cost of the order in RM, stored as a person states it, and the cost
@@ -3669,8 +3672,11 @@ const CORRECT_NUM_POS=['qty'];
    rebateKg. Both sat here as numeric until an untouched Save on a rebate-settled phone row
    queued a boolean coerced into a blank number box back out as null, silently clearing the
    flag. Kept out of CORRECT_NUM_NN and into CORRECT_BOOL instead. */
+/* v502: `delivery` is the RM of an order's total that is the delivery charge, typed per order
+   (his instruction, 07 Sep 2026). It is INSIDE the total, so nothing that reads what is owed or
+   paid changes; what changes is the rate, which is struck on the goods: txGoods below. */
 const CORRECT_NUM_NN=['total','cash','deliveredQty','receivedQty','cost',
-  'settledRM','settledKg','rebateKg'];
+  'settledRM','settledKg','rebateKg','delivery'];
 const CORRECT_DATE=['date','agreedOn','paidOn','deliveredOn','receivedOn','cancelledOn'];
 const CORRECT_BOOL=['unpriced','cancelled','pending','inTransit','defaulted','rebate','goodwill'];
 const CORRECT_CODE=['party','assoc','downstream'];
@@ -3810,7 +3816,7 @@ function refundOnCancel(list,row,date){
 function ovKey(t){return (t.customer||t.supplier)+'|'+t.date+'|'+t.total;}
 
 return {txPrice:txPrice,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:txEffDeliv,txAdvance:txAdvance,
-        txDeferUnits:txDeferUnits,txPendUnits:txPendUnits,txPendUnitsRaw:txPendUnitsRaw,txPendRM:txPendRM,txStat:txStat,txDates:txDates,
+        txDeferUnits:txDeferUnits,txPendUnits:txPendUnits,txPendUnitsRaw:txPendUnitsRaw,txPendRM:txPendRM,txStat:txStat,txDates:txDates,txGoods:txGoods,
         poRecvUnits:poRecvUnits,poCash:poCash,poLive:poLive,poOwed:poOwed,poRate:poRate,poOpenUnits:poOpenUnits,poStat:poStat,provRate:provRate,saleProvRate:saleProvRate,
         daysBetween:daysBetween,dayAge:dayAge,walk:walk,coverStats:coverStats,commitments:commitments,
         ledgerRow:ledgerRow,openable:openable,ovKey:ovKey,attributionOf:attributionOf,correctionFaults:correctionFaults,refundOnCancel:refundOnCancel,
@@ -4029,12 +4035,13 @@ function ladderAsk(q,C,P){
   const walked=ladderWalk(upTo,C,P);
   return walked[walked.length-1].p;
 }
-/* The lot cost a price has to beat: the salt, after the leak, plus ONE delivery for the order. */
+/* The lot cost a price has to beat: the salt, after the leak. DELIVERY IS NOT IN IT (v502, his
+   instruction of 07 Sep 2026): delivery is a figure typed on the order, not a cost the floor
+   carries, and there is one floor per size, not a collected one and a delivered one. `opts` is
+   still accepted so the desk's older callers run; it changes nothing. */
 function lotCost(q,C,opts){
-  opts=opts||{};
   const per=(C.effEx!=null?C.effEx:C.eff);
-  const del=opts.collects?0:(C.delPerOrder!=null?C.delPerOrder:0);
-  return +(per*q+del).toFixed(4);
+  return +(per*q).toFixed(4);
 }
 /* ============ THE FLOOR IS BREAK-EVEN, AND HAS NOTHING ABOVE IT ============
    THE FLOOR CARRIED A 33% MARKUP AND THEREFORE WAS NOT A FLOOR. His instruction, 27 Aug 2026:
@@ -4056,9 +4063,8 @@ function lotCost(q,C,opts){
    v234: built per LOT, so delivery is floored once per order and not once per unit. A named lot
    floor is kept as a mechanism and is empty as a policy. */
 function floorTotal(q,C,P,eff,opts){
-  opts=opts||{};
   const per=eff!=null?eff:(C.effEx!=null?C.effEx:C.eff);
-  const del=opts.collects?0:(C.delPerOrder!=null?C.delPerOrder:0);
+  const del=0;   // v502: delivery is an input per order, never part of the floor; see lotCost
   /* v352: AN ORDER COSTS HIM TIME AND THE FLOOR SAYS SO. Nothing in this stack had ever paid him
      for the work: the whole margin was doing it, undifferentiated from the return on his capital,
      so he could not tell profit from wages. timePerOrder is charged PER ORDER and not per unit,
@@ -4117,18 +4123,19 @@ function ladderRow(sizes,C,P){
    basis the ask is struck on. `delivered` is that plus one delivery, which is what to quote when
    he is driving. `deliveryCharge` states the figure once so nothing has to derive it. The flag and
    the collectOnly list are gone: a flag whose answer never varies is noise. */
+/* v502: ONE FLOOR PER SIZE. The collected/delivered pair and deliveryCharge are gone with the
+   delivery cost: a floor is the goods after the leak, and what an order carries for delivery is
+   typed on the order. `floors[q].floor` is the one figure. */
 function board(sizes,C,P){
   const f={};
   const asks=ladderRow(sizes,C,P);
   sizes.forEach(q=>{
     try{
-      const d=floorTotal(q,C,P), c=floorTotal(q,C,P,null,{collects:true});
-      f[q]={collected:(typeof c==='number')?+c.toFixed(2):null,
-            delivered:(typeof d==='number')?+d.toFixed(2):null};
+      const x=floorTotal(q,C,P);
+      f[q]={floor:(typeof x==='number')?+x.toFixed(2):null};
     }catch(e){ f[q]=null; }
   });
   return {floors:f, sizes:sizes.slice(), tiers:asks,
-          deliveryCharge:(C.delPerOrder!=null?+C.delPerOrder.toFixed(2):null),
           timePerOrder:+(P.timePerOrder||0).toFixed(2)};
 }
 
@@ -5324,7 +5331,9 @@ const whiteboard=[
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{"v": "v501", "d": "07 Sep 2026", "t": "HIS TIME IS NOT CHARGED INTO THE FLOOR", "n": ["<b>HIS INSTRUCTION, 07 SEP 2026: do not charge for my time.</b> Given on reading how the salt floor and ask are struck at 1, 1.5 and 2 units, where the RM 25 per order was the whole of the gap between the leak-adjusted cost and the floor. PRICE_ENGINE.timePerOrder is 0.", "<b>WHAT MOVES.</b> Every floor on both books falls by RM 25, at every size, collected and delivered alike, since v500 already took delivery out: the floor is now the leak-adjusted cost times the units and nothing per order. Salt at 1 unit reads RM 52.92 against RM 77.92 before; the ask is untouched, because his time was never in the margin curve, and no ask was floor-lifted so none moves. The customer price list lifts a rate to this floor, so a customer's own rate is now bounded by a lower line.", "<b>WHAT STAYS.</b> The mechanism, the per-order argument and the measurement behind RM 25 are kept in the declaration for the day he states a figure again; the copy on the Price part names the figure it is given, which is now nil."]},
+const evolution=[{"v": "v502", "d": "07 Sep 2026", "t": "ONE FLOOR PER SIZE, AND DELIVERY IS TYPED ON THE ORDER", "n": ["<b>HIS INSTRUCTION, 07 SEP 2026: do not name it floor delivered; delivery will be an input per order.</b> The engine returned two floors per size, collected and delivered, the second the first plus one delivery. There is one now: the goods after the leak. floorTotal and lotCost carry no delivery, board() publishes floors[q].floor and no deliveryCharge, the snapshot, the drafter and the price list read the one figure, and the copy on the Price part says so.", "<b>DELIVERY IS A FIELD ON THE ROW, INSIDE THE TOTAL.</b> A sale carries `delivery` in RM, typed per order on the Workbench, the phone (Of which delivery), the row editor and the order sheet, and carried by the drafter into the row. It is part of the total, so nothing that reads what is owed or paid changes: the statement prints \"incl. delivery\" under the amount, the total to pay is the total. What changes is the rate: txGoods() is the total less the delivery, and the drafter's flags, the party's usual, the Approve card, the Orders card and the customer price list all strike the rate on the goods. A delivery charge larger than its total is refused by the drafter.", "<b>ON THE STATEMENTS SITE</b> the list shows one price per size, for the goods. A customer who asks for delivery is told the charge when the order is marked ready: Ready to deliver on the Orders card asks for the figure, the customer sees goods plus delivery as the sum to pay, and Completed queues the sale with the delivery as its own field."]},
+
+{"v": "v501", "d": "07 Sep 2026", "t": "HIS TIME IS NOT CHARGED INTO THE FLOOR", "n": ["<b>HIS INSTRUCTION, 07 SEP 2026: do not charge for my time.</b> Given on reading how the salt floor and ask are struck at 1, 1.5 and 2 units, where the RM 25 per order was the whole of the gap between the leak-adjusted cost and the floor. PRICE_ENGINE.timePerOrder is 0.", "<b>WHAT MOVES.</b> Every floor on both books falls by RM 25, at every size, collected and delivered alike, since v500 already took delivery out: the floor is now the leak-adjusted cost times the units and nothing per order. Salt at 1 unit reads RM 52.92 against RM 77.92 before; the ask is untouched, because his time was never in the margin curve, and no ask was floor-lifted so none moves. The customer price list lifts a rate to this floor, so a customer's own rate is now bounded by a lower line.", "<b>WHAT STAYS.</b> The mechanism, the per-order argument and the measurement behind RM 25 are kept in the declaration for the day he states a figure again; the copy on the Price part names the figure it is given, which is now nil."]},
 
 {"v": "v500", "d": "06 Sep 2026", "t": "DELIVERY IS NOT CHARGED INTO THE FLOOR", "n": ["<b>HIS INSTRUCTION, 06 SEP 2026: remove delivery cost.</b> Every run since v498 stopped at the suite's gate on the oil board: the engine's floor at 50 units had reached RM 453.18 delivered against his stated RM 450, and the RM 10 of delivery per order was the whole of the excess (collected, the floor was RM 443.18). Asked whether to raise the price or gate on the collected floor, he chose neither: the delivery cost goes.", "<b>ONE FIGURE, IN THE COST BASIS.</b> COST_BASIS.txnPerDelivery.rm is 0. Everything downstream reads it: delPerOrder is 0, so the delivered floor is the collected floor at every size on both books; the blended txn in eff is 0; the board's deliveryCharge is 0; the customer price list's delivered column equals its collected column and the page says delivery is not charged. deliveredShare stays as a measured fact. Nothing in the engine changed; the input did.", "<b>WHAT THIS DOES NOT SAY.</b> A delivery still costs him the trip. It is no longer recovered in the floor, which is the position he has taken; the P&L's delivery line reads RM 0 per delivery until he states a figure again, and the desk's copy names the figure it is given rather than assuming one."]},
 
@@ -5605,7 +5614,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='07 Sep 2026, 07:29 KL';
+const LAST_UPDATED='07 Sep 2026, 07:47 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -9364,6 +9373,7 @@ const EDFORM=[
   {k:'party',   l:'Supplier',           kind:'code', only:'B'},
   {k:'qty',     l:'Quantity, unit',     kind:'num'},
   {k:'total',   l:'Total, RM',          kind:'num'},
+  {k:'delivery',l:'Of which delivery, RM', kind:'num', only:'S', hint:'The delivery charge inside the total, typed per order (v502). The rate per unit is struck on the total less this; nothing owed or paid changes.'},
   {k:'unpriced',l:'Price not agreed yet', kind:'bool', hint:'A zero total on an unpriced row is not the same as paid in full. This is what tells them apart.'},
   {g:'Attribution', only:'S'},
   {k:'assoc',     l:'Associate',  kind:'code', only:'S', hint:'Leave it empty to take an attribution off the row.'},
@@ -9573,7 +9583,7 @@ function edSubmitNew(){
     raw:'New order: '+codeOf(all.party)+' '+units(all.qty)+' for '+fmt0(all.total||0)
         +(all.date?' on '+all.date:'')+', recorded '+today,
     payload:{mode:'new',product:all.product||'salt',direction:'SELL',party:all.party,newId:null,
-      date:all.date||null,qty:all.qty,total:all.total||0,cash:all.cash||0,kg:all.deliveredQty||0,
+      date:all.date||null,qty:all.qty,total:all.total||0,delivery:all.delivery||0,cash:all.cash||0,kg:all.deliveredQty||0,
       assoc:all.assoc||null,stream:all.stream||null,downstream:all.downstream||null,
       kind:null,orderCode:all.orderCode||null,linkTo:null,note:all.note||null,
       handover:all.handover||null,
@@ -15015,7 +15025,7 @@ function apCard(d){
       ||cell('Changes','none');}
   else if(d.amends){const e=(d.entry&&d.entry.payload)||{};head=`${esc(d.amendKind||'Amendment')} on <b>${esc(codeOf(r.customer||r.supplier||'?'))}</b>, the order of ${units(r.qty)} for ${fmt(r.total)} agreed ${esc(r.date||'undated')}`;
     grid=cell('Cash moving',fmt(e.cash||0))+cell('Units moving',units(e.kg||0))+cell('On',esc(e.date||'-'))+cell('Already in',fmt(r.cash||0));}
-  else{const buy=col==='purchases',qty=+r.qty||0,total=+r.total||0,cost=r.cost,per=qty?total/qty:null;
+  else{const buy=col==='purchases',qty=+r.qty||0,total=+r.total||0,cost=r.cost,per=qty?(total-(+r.delivery||0))/qty:null;   /* v502: the rate is on the goods */
     const mar=(!buy&&total>0&&cost!=null&&qty)?((total-cost)/total*100):null;   /* v496: cost is the order's, absolute */
     head=`${buy?'Buy from':'Sell to'} <b>${esc(codeOf(r.supplier||r.customer||'?'))}</b>: ${units(qty)} ${esc(r.product||'salt')} for <b>${fmt(total)}</b> on ${esc(r.date||'undated')}`;
     /* a flagged row never gets a green margin: the RM115 oil unit banded as excellent */
@@ -15125,7 +15135,7 @@ async function ordLoad(quiet){
 }
 function ordUsual(code,product){
   const rows=sales.filter(s=>s.customer===code&&((s.product||'salt')===(product||'salt'))&&!s.cancelled&&s.date&&s.total>0&&s.qty>0)
-    .sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0).slice(-4).map(s=>s.total/s.qty).sort((a,b)=>a-b);
+    .sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0).slice(-4).map(s=>(s.total-(+s.delivery||0))/s.qty).sort((a,b)=>a-b);
   if(!rows.length)return null;
   const n=rows.length;return n%2?rows[(n-1)/2]:(rows[n/2-1]+rows[n/2])/2;
 }
@@ -15145,7 +15155,7 @@ function ordCard(o){
   else if(o.status==='acknowledged')acts=btn('ready','Ready to collect','','collect')+btn('ready','Ready to deliver','','deliver')+btn('declined','Decline',red);
   else if(o.status==='ready')acts=btn('done','Completed: handed over and paid',green)+btn('declined','Decline',red);
   return `<div class="card" style="margin-top:10px" data-id="${esc(o.id)}">
-    <div style="font-size:14px"><b>${who}</b> orders ${units(o.qty)} ${esc(o.product||'salt')} for <b>${fmt(o.total)}</b>, ${o.mode==='deliver'?'delivered':'collected'} <span class="sub">${esc(ORD_WORD[o.status]||o.status)}, ${when((last&&last.at)||o.at)}</span></div>
+    <div style="font-size:14px"><b>${who}</b> orders ${units(o.qty)} ${esc(o.product||'salt')} for <b>${fmt(o.total)}</b>${o.delivery>0?` plus ${fmt(o.delivery)} delivery`:''}, ${o.mode==='deliver'?'delivered':'collected'} <span class="sub">${esc(ORD_WORD[o.status]||o.status)}, ${when((last&&last.at)||o.at)}</span></div>
     <div class="kpis k4" style="margin-top:10px">${cell('Rate',rate==null?'&mdash;':fmt(rate)+'/unit')
       +cell('Their usual',usual==null?'&mdash;':fmt(usual)+'/unit',off==null?'':Math.abs(off)>=0.10?'r':'g')
       +cell('Paying by',esc(pay))+cell('Placed',when(o.at))}</div>
@@ -15165,7 +15175,9 @@ function ordDraw(){
 async function ordAct(b){
   const id=b.dataset.id,u=b.dataset.u,st=b.dataset.ord;if(!id||ordBusy[id])return;ordBusy[id]=1;
   const card=b.closest('.card');if(card)card.querySelectorAll('button').forEach(x=>x.disabled=true);
-  const body=JSON.stringify(Object.assign({status:st},b.dataset.mode?{mode:b.dataset.mode}:{}));
+  let delivery=0;
+  if(st==='ready'&&b.dataset.mode==='deliver'){const t=prompt('Delivery charge for this order, RM (0 for none)','0');if(t===null){delete ordBusy[id];ordDraw();return;}delivery=parseFloat(t);if(!(delivery>=0)){ordMsg='That is not a delivery figure; nothing moved.';delete ordBusy[id];ordDraw();const m0=document.getElementById('ordMsg');if(m0)m0.textContent=ordMsg;return;}}
+  const body=JSON.stringify(Object.assign({status:st},b.dataset.mode?{mode:b.dataset.mode,delivery:delivery}:{}));
   const url='orders/'+encodeURIComponent(u)+'/'+encodeURIComponent(id);
   try{ let r=await fetch(url,{method:'POST',headers:qHeaders(),body});
     if(r.status===401&&saltAskWriteKey())r=await fetch(url,{method:'POST',headers:qHeaders(),body});
@@ -15324,6 +15336,7 @@ function tabWorkbench(){
       <div class="qrow" style="margin-bottom:10px">
         <div class="qfield qunits"><label>Quantity (unit)</label><input id="wbQty" type="number" step="0.5" min="0" inputmode="decimal"></div>
         <div class="qfield qunits"><label>Total (RM)</label><input id="wbTotal" type="number" step="1" min="0" inputmode="decimal"></div>
+        <div class="qfield qunits"><label>Of which delivery (RM)</label><input id="wbDelivery" type="number" step="1" min="0" value="0" inputmode="decimal"></div>
         <div class="qfield"><label>Note <span style="color:var(--dim)">optional</span></label><input id="wbNote" placeholder="optional"></div>
       </div>
       <div class="qrow" style="margin-bottom:10px">
@@ -15736,7 +15749,7 @@ function tabPricing(){
          neither can grow into the limit. The definition of the two floors is in the fold below. -->
     ${nUnderD.length?`<div class="insight" style="border-left-color:var(--gold)"><b>${nUnderD.length} of ${tb.length} asks do not carry a delivery</b>: quote ${nUnderD.map(r=>units(r.q)).join(', ')} at the counter.</div>`
       +(nUnderC.length?`<div class="insight" style="border-left-color:var(--crim)"><b>Do not quote ${nUnderC.map(r=>units(r.q)).join(', ')} at all</b>: under both floors.</div>`:'')
-      :`<div class="insight" style="border-left-color:var(--grn)">Every ask on the board clears its delivered floor.</div>`}
+      :`<div class="insight" style="border-left-color:var(--grn)">Every ask on the board clears its floor.</div>`}
     <!-- v393: THE MARGIN SETUP IS THE BOARD'S DERIVATION, SO IT SITS IN THE BOARD'S CARD.
          It was its own open h2 one section down, restating in prose what these six figures
          say. The prose went; the figures are the ask's derivation and stay open. -->
@@ -15751,7 +15764,7 @@ function tabPricing(){
       ${sR('Level',LD.anchorX.toFixed(3)+'x',`typed, at ${units(LD.anchorQ)} on cogs`)}
       ${sR('Taper',(sT.b!=null?sT.b.toFixed(3):'&mdash;'),sT.b!=null?`fitted to ${esc(sSup)}&rsquo;s quote ladder${sT.r2!=null?`, r&sup2; ${sT.r2.toFixed(2)}`:''}, ${units(LD.at.lo)} to ${units(LD.at.hi)}${sBor?`; <b>${esc(sOwn)}&rsquo;s own ladder is on the book and is not the one this is fitted to</b>`:''}`:'no supplier ladder to fit')}
       ${sR('Ceiling',LD.ceiling.toFixed(2)+'x','does not bind at any printed size')}
-      ${sR('Floor','break-even',`${fmt(sC.effEx)} a unit after the leak, one delivery of ${fmt0(sC.delPerOrder||0)}, ${fmt0(PRICE_ENGINE.timePerOrder||0)} of his time an order`)}
+      ${sR('Floor','break-even',`${fmt(sC.effEx)} a unit after the leak; delivery is typed on the order and his time is not charged (v502)`)}
       <!-- round 5: the asks' own markups, for the board-column reason: the curve ends read
            0.62x to 0.12x on oil while the stated board actually runs 0.62x to 0.15x. -->
       <tr class="tot"><td class="l"><b>Markup across the board</b><div class="iref">${units(sSZ[0])} down to ${units(sSZ[sSZ.length-1])}</div></td><td class="mono"><b>${sLo.ask.markupX.toFixed(2)}x to ${sHi.ask.markupX.toFixed(2)}x</b></td></tr>
@@ -16710,10 +16723,10 @@ function wbRecord(){
       +(useA?(isR2?' (R2 via '+codeOf(assoc)+')':' (R3 referred by '+codeOf(assoc)+')'):'')+(note?', '+note:'');
     queue.push({at:new Date().toISOString(),type:wbDir,party:label,qty:qty,total:total,status:status,raw:raw,
       payload:{mode:'new',product:wbProdVal(),direction:wbDir,party:party,newId:null,
-        date:date,qty:qty,total:total,cash:cash,kg:unitsD,assoc:assoc,stream:useA?wbStream:null,downstream:down,kind:null,orderCode:null,linkTo:null,note:note||null,
+        date:date,qty:qty,total:total,delivery:(wbDir==='SELL'?wbNum('wbDelivery'):0),cash:cash,kg:unitsD,assoc:assoc,stream:useA?wbStream:null,downstream:down,kind:null,orderCode:null,linkTo:null,note:note||null,
         handover:(wbDir==='SELL'&&wbEl('wbHand')?wbEl('wbHand').value||null:null)}});
     ['wbQty','wbTotal','wbNote'].forEach(id=>{const e=wbEl(id);if(e)e.value='';});
-    ['wbCash','wbUnits'].forEach(id=>{const e=wbEl(id);if(e)e.value='0';});
+    ['wbCash','wbUnits','wbDelivery'].forEach(id=>{const e=wbEl(id);if(e)e.value='0';});
     const nb=wbEl('wbNewBox');if(nb)nb.style.display='none';
     /* clear the party after every record: the next entry must be chosen deliberately,
        so a second sale cannot inherit the first one's buyer */

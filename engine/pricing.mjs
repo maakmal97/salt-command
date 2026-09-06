@@ -207,12 +207,13 @@ function ladderAsk(q,C,P){
   const walked=ladderWalk(upTo,C,P);
   return walked[walked.length-1].p;
 }
-/* The lot cost a price has to beat: the salt, after the leak, plus ONE delivery for the order. */
+/* The lot cost a price has to beat: the salt, after the leak. DELIVERY IS NOT IN IT (v502, his
+   instruction of 07 Sep 2026): delivery is a figure typed on the order, not a cost the floor
+   carries, and there is one floor per size, not a collected one and a delivered one. `opts` is
+   still accepted so the desk's older callers run; it changes nothing. */
 function lotCost(q,C,opts){
-  opts=opts||{};
   const per=(C.effEx!=null?C.effEx:C.eff);
-  const del=opts.collects?0:(C.delPerOrder!=null?C.delPerOrder:0);
-  return +(per*q+del).toFixed(4);
+  return +(per*q).toFixed(4);
 }
 /* ============ THE FLOOR IS BREAK-EVEN, AND HAS NOTHING ABOVE IT ============
    THE FLOOR CARRIED A 33% MARKUP AND THEREFORE WAS NOT A FLOOR. His instruction, 27 Aug 2026:
@@ -234,9 +235,8 @@ function lotCost(q,C,opts){
    v234: built per LOT, so delivery is floored once per order and not once per unit. A named lot
    floor is kept as a mechanism and is empty as a policy. */
 function floorTotal(q,C,P,eff,opts){
-  opts=opts||{};
   const per=eff!=null?eff:(C.effEx!=null?C.effEx:C.eff);
-  const del=opts.collects?0:(C.delPerOrder!=null?C.delPerOrder:0);
+  const del=0;   // v502: delivery is an input per order, never part of the floor; see lotCost
   /* v352: AN ORDER COSTS HIM TIME AND THE FLOOR SAYS SO. Nothing in this stack had ever paid him
      for the work: the whole margin was doing it, undifferentiated from the return on his capital,
      so he could not tell profit from wages. timePerOrder is charged PER ORDER and not per unit,
@@ -295,18 +295,19 @@ function ladderRow(sizes,C,P){
    basis the ask is struck on. `delivered` is that plus one delivery, which is what to quote when
    he is driving. `deliveryCharge` states the figure once so nothing has to derive it. The flag and
    the collectOnly list are gone: a flag whose answer never varies is noise. */
+/* v502: ONE FLOOR PER SIZE. The collected/delivered pair and deliveryCharge are gone with the
+   delivery cost: a floor is the goods after the leak, and what an order carries for delivery is
+   typed on the order. `floors[q].floor` is the one figure. */
 function board(sizes,C,P){
   const f={};
   const asks=ladderRow(sizes,C,P);
   sizes.forEach(q=>{
     try{
-      const d=floorTotal(q,C,P), c=floorTotal(q,C,P,null,{collects:true});
-      f[q]={collected:(typeof c==='number')?+c.toFixed(2):null,
-            delivered:(typeof d==='number')?+d.toFixed(2):null};
+      const x=floorTotal(q,C,P);
+      f[q]={floor:(typeof x==='number')?+x.toFixed(2):null};
     }catch(e){ f[q]=null; }
   });
   return {floors:f, sizes:sizes.slice(), tiers:asks,
-          deliveryCharge:(C.delPerOrder!=null?+C.delPerOrder.toFixed(2):null),
           timePerOrder:+(P.timePerOrder||0).toFixed(2)};
 }
 

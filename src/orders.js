@@ -60,14 +60,17 @@ export function saleEntry(order, code, now) {
   const at = now instanceof Date ? now : new Date(now || Date.now());
   const date = at.toLocaleDateString("en-CA", { timeZone: "Asia/Kuala_Lumpur" });
   const method = order.method ? (order.method + (order.account ? " via " + order.account : "")) : "not stated";
+  /* v502: the total to pay is the goods plus the delivery typed at ready; delivery rides as its own field */
+  const delivery = +(order.delivery || 0);
+  const total = +(order.total + delivery).toFixed(2);
   const note = "Ordered on the statements site, order " + order.id + ", " + (order.mode === "deliver" ? "delivered" : "collected")
-    + ", paid by " + method + ".";
-  const raw = "SELL " + code + " " + order.qty + " " + (order.product || "salt") + " RM " + order.total
-    + ", RM " + order.total + " cash, " + order.qty + " moved (order " + order.id + ")";
+    + (delivery > 0 ? ", delivery RM " + delivery : "") + ", paid by " + method + ".";
+  const raw = "SELL " + code + " " + order.qty + " " + (order.product || "salt") + " RM " + total
+    + ", RM " + total + " cash, " + order.qty + " moved (order " + order.id + ")";
   return {
-    at: at.toISOString(), type: "SELL", party: code, qty: order.qty, total: order.total, status: "Completed", raw,
+    at: at.toISOString(), type: "SELL", party: code, qty: order.qty, total, status: "Completed", raw,
     payload: { mode: "new", product: order.product || "salt", direction: "SELL", party: code, newId: null,
-      date, qty: order.qty, total: order.total, cash: order.total, kg: order.qty,
+      date, qty: order.qty, total, delivery, cash: total, kg: order.qty,
       assoc: null, stream: null, downstream: null, kind: null, orderCode: null, linkTo: null, note,
       handover: order.mode === "deliver" ? "delivered" : "collected" }
   };

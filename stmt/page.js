@@ -325,23 +325,21 @@ const CLIENT_JS = `
       pPrices.appendChild(el('p','lead','No price list has been written for your account yet. It is written with the next update and changes weekly.'));
       return;
     }
-    pPrices.appendChild(el('p','lead','For the week of '+(prices.week&&prices.week.label||'')+'. Collected is what you pay when you pick up; delivered adds one delivery to the order. The list is written from your own history and changes weekly.'));
+    pPrices.appendChild(el('p','lead','For the week of '+(prices.week&&prices.week.label||'')+'. The price is for the goods; if you ask for delivery, the charge is added when Salt Command marks the order ready and you see it then. The list is written from your own history and changes weekly.'));
     prices.products.forEach(function(p){
       var pane=el('div','pane');
       pane.appendChild(el('h3',null,p.name));
-      var delivery=p.delivery>0?'Delivery '+rm(p.delivery)+' per order.':'Delivery is not charged.';
       pane.appendChild(el('p','sub2', (p.basis==='yours'
         ? 'Your rate: '+rm(p.rate)+' per '+(p.unit||'unit')+', from your last '+p.orders+' order'+(p.orders===1?'':'s')+'. '
-        : 'The board price; your own rate follows your first order. ')+delivery));
+        : 'The board price; your own rate follows your first order. ')));
       var t=el('table'), th=el('thead'), tr=el('tr');
-      [['Size','l'],['Collected',''],['Delivered','']].forEach(function(c){ var x=el('th',c[1]||null,c[0]); tr.appendChild(x); });
+      [['Size','l'],['Price','']].forEach(function(c){ var x=el('th',c[1]||null,c[0]); tr.appendChild(x); });
       th.appendChild(tr); t.appendChild(th);
       var tb=el('tbody');
       p.sizes.forEach(function(r){
         var row=el('tr');
         row.appendChild(el('td','l',unitsOf(r.q,p.unit)));
-        row.appendChild(el('td',null,rm(r.collected)));
-        row.appendChild(el('td',null,rm(r.delivered)));
+        row.appendChild(el('td',null,rm(r.price)));
         tb.appendChild(row);
       });
       t.appendChild(tb); pane.appendChild(t); pPrices.appendChild(pane);
@@ -361,7 +359,7 @@ const CLIENT_JS = `
     if(!p) return null;
     var r=p.sizes.filter(function(x){return String(x.q)===String(draft.q);})[0];
     if(!r) return null;
-    var total=draft.mode==='deliver'?r.delivered:r.collected;
+    var total=r.price;
     return {p:p, q:r.q, total:total, unit:+(total/r.q).toFixed(2)};
   }
   function drawOrder(){
@@ -393,7 +391,7 @@ const CLIENT_JS = `
       form.appendChild(seg);
       var qt=quoteFor();
       form.appendChild(el('div','quote',qt?rm(qt.total):''));
-      form.appendChild(el('div','sub2',qt?(unitsOf(qt.q,P.unit)+' of '+P.name.toLowerCase()+', '+(draft.mode==='deliver'?'delivered':'collected')+', at '+rm(qt.unit)+' per '+(P.unit||'unit')):''));
+      form.appendChild(el('div','sub2',qt?(unitsOf(qt.q,P.unit)+' of '+P.name.toLowerCase()+' at '+rm(qt.unit)+' per '+(P.unit||'unit')+(draft.mode==='deliver'?'; delivery is added when the order is marked ready':', to collect')):''));
       var go2=el('button','btn','Place this order'); go2.type='button'; go2.disabled=!qt||!!draft.busy;
       go2.addEventListener('click', async function(){
         if(!qt||draft.busy) return; draft.busy=true; drawOrder();
@@ -437,7 +435,8 @@ const CLIENT_JS = `
     var P=prices&&prices.products&&prices.products.filter(function(x){return x.product===o.product;})[0];
     var unit=P?P.unit:'unit', name=P?P.name:o.product;
     pane.appendChild(el('div','state '+o.status, STATE_WORDS[o.status]||o.status));
-    pane.appendChild(el('div','quote', rm(o.total)));
+    pane.appendChild(el('div','quote', rm(o.total+(o.delivery||0))));
+    if(o.delivery>0) pane.appendChild(el('div','sub2', rm(o.total)+' for the goods and '+rm(o.delivery)+' delivery'));
     pane.appendChild(el('div','sub2', unitsOf(o.qty,unit)+' of '+String(name).toLowerCase()+', '+(o.mode==='deliver'?'to be delivered':'to collect')+', placed '+stamp(o.at)));
     var line='';
     if(o.status==='placed') line='Waiting to be acknowledged. You will see it change here.';
@@ -473,7 +472,7 @@ const CLIENT_JS = `
      QR Command carries, and the page shows only those that run that rail. */
   function payChooser(o){
     var box=el('div','pay');
-    box.appendChild(el('p','sub2','How will you pay '+rm(o.total)+'?'));
+    box.appendChild(el('p','sub2','How will you pay '+rm(o.total+(o.delivery||0))+'?'));
     var cur=pick[o.id]||{};
     var opts=[['cod', o.mode==='deliver'?'Cash on delivery':'Cash when I collect'],
               ['transfer','DuitNow Transfer, to an account number'],
@@ -510,12 +509,12 @@ const CLIENT_JS = `
      behind its Copy button, the code to save, the biller and reference. Nothing here repeats it. */
   function payLink(o){
     var box=el('div','pay');
-    var a=acct(o.account);
-    var word={cod:(o.mode==='deliver'?'Pay '+rm(o.total)+' in cash on delivery.':'Pay '+rm(o.total)+' in cash when you collect.'),
-      transfer:'Transfer '+rm(o.total)+' by DuitNow Transfer to '+(a?a.name:'the account')+'. The page that opens has the account number behind Copy account number; paste it into your banking app.',
-      qr:'Pay '+rm(o.total)+' by scanning the '+(a?a.name:'')+' code. On the page that opens, tap the code to save it as an image, then scan it from your banking app.',
-      jompay:'Pay '+rm(o.total)+' by JomPAY. The page that opens has the biller code and the reference behind Copy; enter them in your banking app under JomPAY.',
-      tngbiz:'Pay '+rm(o.total)+" by scanning the Touch 'n Go Business code on the page that opens, or save it and scan it from the Touch 'n Go app."}[o.method]||'';
+    var a=acct(o.account), due=o.total+(o.delivery||0);
+    var word={cod:(o.mode==='deliver'?'Pay '+rm(due)+' in cash on delivery.':'Pay '+rm(due)+' in cash when you collect.'),
+      transfer:'Transfer '+rm(due)+' by DuitNow Transfer to '+(a?a.name:'the account')+'. The page that opens has the account number behind Copy account number; paste it into your banking app.',
+      qr:'Pay '+rm(due)+' by scanning the '+(a?a.name:'')+' code. On the page that opens, tap the code to save it as an image, then scan it from your banking app.',
+      jompay:'Pay '+rm(due)+' by JomPAY. The page that opens has the biller code and the reference behind Copy; enter them in your banking app under JomPAY.',
+      tngbiz:'Pay '+rm(due)+" by scanning the Touch 'n Go Business code on the page that opens, or save it and scan it from the Touch 'n Go app."}[o.method]||'';
     box.appendChild(el('p','sub2','Paying by '+methodWord(o.method,o.account)+'. '+word));
     if(o.method!=='cod'&&o.account){
       var l=el('a','btn lnk','Open '+(a?a.name:'the account')+' in QR Command');

@@ -198,10 +198,7 @@ export function pricingSnapshot(w) {
       inputs = { cost: JSON.parse(w.eval("JSON.stringify(pxInputs())")), policy: JSON.parse(w.eval("JSON.stringify(pxPolicy())")) };
       floors = {};
       for (const q of sizes) {
-        floors[q] = {
-          delivered: numOrNull(call("floorTotal(" + q + ")")),
-          collected: numOrNull(call("floorTotal(" + q + ",null,{collects:true})"))
-        };
+        floors[q] = { floor: numOrNull(call("floorTotal(" + q + ")")) };   // v502: one floor per size
       }
     } catch (e) { /* a product the desk cannot price yields nulls, which the drafter must handle */ }
     finally { if (before != null) { try { w.eval("PROD=" + JSON.stringify(before) + ";if(typeof recompute==='function')recompute();"); } catch (e) { } } }

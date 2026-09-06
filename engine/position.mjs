@@ -13,6 +13,9 @@ const POSITION_ENGINE=(function(){
 /* ---- the row helpers, verbatim from the desk ---- */
 function txPrice(s){return s.qty>0?s.total/s.qty:0;}
 function txPaid(s){return (s.cash||0)+(s.settledRM||0);}
+/* v502: the goods half of a sale's total, its delivery charge taken out; the rate a unit was
+   sold at is this over the quantity, never the total over it. */
+function txGoods(s){return +(s.total||0)-(+s.delivery||0);}
 function txDeliv(s){return (s.deliveredQty||0)+(s.settledKg||0);}
 /* ====== COST IS ABSOLUTE (v496, his instruction of 05 Sep 2026) ================
    A sale's `cost` is the cost of the order in RM, stored as a person states it, and the cost
@@ -419,8 +422,11 @@ const CORRECT_NUM_POS=['qty'];
    rebateKg. Both sat here as numeric until an untouched Save on a rebate-settled phone row
    queued a boolean coerced into a blank number box back out as null, silently clearing the
    flag. Kept out of CORRECT_NUM_NN and into CORRECT_BOOL instead. */
+/* v502: `delivery` is the RM of an order's total that is the delivery charge, typed per order
+   (his instruction, 07 Sep 2026). It is INSIDE the total, so nothing that reads what is owed or
+   paid changes; what changes is the rate, which is struck on the goods: txGoods below. */
 const CORRECT_NUM_NN=['total','cash','deliveredQty','receivedQty','cost',
-  'settledRM','settledKg','rebateKg'];
+  'settledRM','settledKg','rebateKg','delivery'];
 const CORRECT_DATE=['date','agreedOn','paidOn','deliveredOn','receivedOn','cancelledOn'];
 const CORRECT_BOOL=['unpriced','cancelled','pending','inTransit','defaulted','rebate','goodwill'];
 const CORRECT_CODE=['party','assoc','downstream'];
@@ -560,7 +566,7 @@ function refundOnCancel(list,row,date){
 function ovKey(t){return (t.customer||t.supplier)+'|'+t.date+'|'+t.total;}
 
 return {txPrice:txPrice,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:txEffDeliv,txAdvance:txAdvance,
-        txDeferUnits:txDeferUnits,txPendUnits:txPendUnits,txPendUnitsRaw:txPendUnitsRaw,txPendRM:txPendRM,txStat:txStat,txDates:txDates,
+        txDeferUnits:txDeferUnits,txPendUnits:txPendUnits,txPendUnitsRaw:txPendUnitsRaw,txPendRM:txPendRM,txStat:txStat,txDates:txDates,txGoods:txGoods,
         poRecvUnits:poRecvUnits,poCash:poCash,poLive:poLive,poOwed:poOwed,poRate:poRate,poOpenUnits:poOpenUnits,poStat:poStat,provRate:provRate,saleProvRate:saleProvRate,
         daysBetween:daysBetween,dayAge:dayAge,walk:walk,coverStats:coverStats,commitments:commitments,
         ledgerRow:ledgerRow,openable:openable,ovKey:ovKey,attributionOf:attributionOf,correctionFaults:correctionFaults,refundOnCancel:refundOnCancel,

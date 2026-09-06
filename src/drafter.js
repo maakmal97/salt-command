@@ -298,28 +298,33 @@ export function floorFor(book, product, qty) {
   if (snap.inputs && snap.inputs.cost && snap.inputs.policy && isNum(qty) && qty > 0) {
     try {
       const C = PRICING_ENGINE.costStack(snap.inputs.cost);
-      const d = PRICING_ENGINE.floorTotal(qty, C, snap.inputs.policy);
-      const c = PRICING_ENGINE.floorTotal(qty, C, snap.inputs.policy, null, { collects: true });
-      if (isNum(d) && isNum(c)) return { delivered: +d.toFixed(2), collected: +c.toFixed(2), at: qty, exact: true, time };
+      const x = PRICING_ENGINE.floorTotal(qty, C, snap.inputs.policy);
+      if (isNum(x)) return { floor: +x.toFixed(2), at: qty, exact: true, time };
     } catch (e) { /* fall through to the carded sizes */ }
   }
   /* the carded sizes are what the snapshot holds; an odd size takes the nearest carded one
-     BELOW it, because rounding up would report a floor the desk never quoted */
+     BELOW it, because rounding up would report a floor the desk never quoted. v502: one floor per
+     size; a snapshot from before v502 carried a collected/delivered pair and is read by its
+     collected figure, which is what the floor now is. */
+  const one = (f) => f && (isNum(f.floor) ? f.floor : (isNum(f.collected) ? f.collected : null));
   const sizes = Object.keys(snap.floors).map(Number).filter((n) => Number.isFinite(n)).sort((a, b) => a - b);
   if (!sizes.length) return null;
-  const exact = snap.floors[String(qty)];
-  if (exact && isNum(exact.delivered)) return { ...exact, at: qty, exact: true, time };
+  const exact = one(snap.floors[String(qty)]);
+  if (exact != null) return { floor: exact, at: qty, exact: true, time };
   let pick = sizes[0];
   for (const s of sizes) if (s <= qty) pick = s;
-  const f = snap.floors[String(pick)];
-  return f && isNum(f.delivered) ? { ...f, at: pick, exact: false, time } : null;
+  const f = one(snap.floors[String(pick)]);
+  return f != null ? { floor: f, at: pick, exact: false, time } : null;
 }
 
 /* ---- the comparisons an entry cannot make against itself --------------------------- */
 export function flagsFor(entry, row, book, priced) {
   const flags = [];
   const p = prodOf(row);
-  const qty = row.qty, total = row.total;
+  const qty = row.qty;
+  /* v502: the rate and the floor are read on the GOODS: the delivery charge inside the total is
+     not a price paid for salt, so it comes out before anything is compared. */
+  const total = isNum(row.total) ? row.total - (isNum(row.delivery) ? row.delivery : 0) : row.total;
   const rate = (isNum(total) && isNum(qty) && qty > 0) ? total / qty : null;
   /* A PURCHASE IS NOT A SALE and most of what follows is meaningless on one. The floor is a
      SELLING floor, "below cost" is circular when the row IS the cost, and a supplier has no
@@ -341,7 +346,7 @@ export function flagsFor(entry, row, book, priced) {
      price anyone paid, and one of them pulled salt's observed low to RM0, which made the
      low-side check `rate < lo/2` unfireable (round six). */
   const seen = committed.filter((s) => prodOf(s) === p && isNum(s.total) && s.total > 0 && isNum(s.qty) && s.qty > 0)
-    .map((s) => s.total / s.qty);
+    .map((s) => (s.total - (isNum(s.delivery) ? s.delivery : 0)) / s.qty);
   if (rate != null && seen.length >= 3) {
     const lo = Math.min(...seen), hi = Math.max(...seen);
     if (rate > hi * 2) flags.push(`RM ${round(rate)}/unit is more than double the highest ${p} rate this book has ever carried (RM ${round(hi)}). Check the figure before approving.`);
@@ -361,7 +366,7 @@ export function flagsFor(entry, row, book, priced) {
        dragged a party's median down: CS6-BS read RM 108.50 against a real RM 110, which misfires
        at a rate they have actually paid and stays silent 10.9% adrift. Same rule, both sets. */
     ? committed.filter((s) => s.customer === party && prodOf(s) === p && isNum(s.total) && s.total > 0 && isNum(s.qty) && s.qty > 0)
-      .map((s) => s.total / s.qty).sort((a, b) => a - b)
+      .map((s) => (s.total - (isNum(s.delivery) ? s.delivery : 0)) / s.qty).sort((a, b) => a - b)
     : [];
   if (rate != null && theirs.length >= 2) {
     const mid = theirs.length % 2 ? theirs[(theirs.length - 1) / 2] : (theirs[theirs.length / 2 - 1] + theirs[theirs.length / 2]) / 2;
@@ -386,17 +391,14 @@ export function flagsFor(entry, row, book, priced) {
         AND IT NAMES WHICH FLOOR. RM10 separates delivered from collected where RM50 used to,
         so "the floor" now reads as one thing when it is two. */
   const fl = isSale ? floorFor(book, p, qty) : null;
-  if (fl && isNum(total)) {
-    if (total < fl.delivered - 0.005) {
-      const clears = isNum(fl.collected) && total >= fl.collected - 0.005;
-      const at = fl.exact ? "" : ` (read at ${fl.at} unit, the nearest carded size)`;
-      const made = isNum(fl.time) && fl.time > 0
-        ? `the goods, the run out, and RM ${round(fl.time)} for your time`
-        : "the goods and the run out";
-      flags.push(clears
-        ? `RM ${round(total)} is RM ${round(fl.delivered - total)} under the DELIVERED floor of RM ${round(fl.delivered)}${at}, which is what the order costs to take out: ${made}, with nothing above them. It clears the COLLECTED floor of RM ${round(fl.collected)}, so it covers itself if they come to you and not if you drive it.`
-        : `RM ${round(total)} is RM ${round(fl.delivered - total)} under the DELIVERED floor of RM ${round(fl.delivered)}${at}, and RM ${round(fl.collected - total)} under the COLLECTED floor of RM ${round(fl.collected)} as well. The delivered floor is what the order costs to take out, ${made}, with nothing above them, so this covers itself neither way.`);
-    }
+  if (fl && isNum(total) && total < fl.floor - 0.005) {
+    /* v502: ONE FLOOR, and it is the goods after the leak. Delivery is a figure on the order,
+       taken out of the total before this comparison, and his time is not charged. */
+    const at = fl.exact ? "" : ` (read at ${fl.at} unit, the nearest carded size)`;
+    const made = isNum(fl.time) && fl.time > 0
+      ? `the goods after the leak and RM ${round(fl.time)} for your time`
+      : "the goods after the leak";
+    flags.push(`RM ${round(total)} for the goods is RM ${round(fl.floor - total)} under the floor of RM ${round(fl.floor)}${at}, which is what the order costs to take out: ${made}, with nothing above them.`);
   }
 
   /* 4. BELOW COST. Separate from the floor because it is a different fact and the book has
@@ -851,7 +853,7 @@ export function draftRow(entry, book) {
     const floors = (px.byProduct && px.byProduct[product] && px.byProduct[product].floors) || {};
     const flags = [];
     for (const k of Object.keys(prices)) {
-      const f = floors[k] && (floors[k].collected != null ? floors[k].collected : floors[k].delivered);
+      const f = floors[k] && (floors[k].floor != null ? floors[k].floor : (floors[k].collected != null ? floors[k].collected : floors[k].delivered));   /* v502: one floor; older snapshots by their collected figure */
       if (f != null && +prices[k] < f - 0.009) {
         flags.push(`RM${prices[k]} at ${k} unit is UNDER the floor of RM${f.toFixed(2)}. The board will lift it to the next step above the floor rather than quote it, so this is not the price it would set.`);
       }
@@ -922,6 +924,11 @@ export function draftRow(entry, book) {
 
   /* v496: the shelf prices per unit; the row's cost is the order's, absolute. */
   const row = { customer: party, qty, total, cost: round(priced.cost * qty), cash: round(cash) };
+  /* v502: the delivery charge inside the total, typed per order; absent or zero means none */
+  if (isNum(pay.delivery) && pay.delivery > 0.005) {
+    if (pay.delivery > total + 0.005) return { skip: `the delivery charge (RM ${round(pay.delivery)}) is more than the order's total (RM ${round(total)})` };
+    row.delivery = round(pay.delivery);
+  }
   /* v373: who moved the goods, when the entry says. A sale that does not say carries no key,
      because the measured delivered share counts the rows that answered and not the silent ones. */
   if (dir === "SELL" && HANDOVER.includes(pay.handover)) row.handover = pay.handover;

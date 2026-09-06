@@ -158,7 +158,7 @@ function stmtRows(party,o){
        unit each, RM 110 and RM 11.50, so that match is ambiguous on this very book and the first
        assertion written over it reported a correct statement as wrong. */
     return {rid:s.rid||null,gift:gift,date:s.date,qty:s.qty,total:gift?0:s.total,
-      unit:s.qty>0?+(s.total/s.qty).toFixed(2):0,
+      unit:s.qty>0?+((s.total-(+s.delivery||0))/s.qty).toFixed(2):0,delivery:+(s.delivery||0),   /* v502: the rate is on the goods */
       paidCash:paidCash,inKind:inKind,got:got,inKindUnits:inKindUnits,
       /* PENDING COUNTS NOWHERE, on a statement as everywhere else (v189). An order
          agreed with nothing paid and nothing collected is an intention, not a debt, and
@@ -368,7 +368,8 @@ function stmtDoc(party,rows,o){
         +(r.inKindUnits>0.009?'<div class="sub2">'+n2(r.inKindUnits)+' unit applied '
           +(noLegDates.has(r.date)?'by agreement':'to an earlier balance')+'</div>':'')
         +'</td>'
-      +'<td class="amt'+(r.cancelled?' cxr':'')+'">'+(r.gift?'<span class="nilamt">nil</span>':money(r.total))+'</td>'
+      +'<td class="amt'+(r.cancelled?' cxr':'')+'">'+(r.gift?'<span class="nilamt">nil</span>':money(r.total))
+        +(r.delivery>0.009?'<div class="sub2">incl. delivery '+money(r.delivery)+'</div>':'')+'</td>'
       +'<td class="r">'+stat+'</td></tr>';
   }).join('');
   return ['<!DOCTYPE html>','<html lang="en"><head><meta charset="utf-8">',

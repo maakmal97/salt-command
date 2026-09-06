@@ -1,5 +1,15 @@
 [
  {
+  "v": "v502",
+  "d": "07 Sep 2026",
+  "t": "ONE FLOOR PER SIZE, AND DELIVERY IS TYPED ON THE ORDER",
+  "n": [
+   "<b>HIS INSTRUCTION, 07 SEP 2026: do not name it floor delivered; delivery will be an input per order.</b> The engine returned two floors per size, collected and delivered, the second the first plus one delivery. There is one now: the goods after the leak. floorTotal and lotCost carry no delivery, board() publishes floors[q].floor and no deliveryCharge, the snapshot, the drafter and the price list read the one figure, and the copy on the Price part says so.",
+   "<b>DELIVERY IS A FIELD ON THE ROW, INSIDE THE TOTAL.</b> A sale carries `delivery` in RM, typed per order on the Workbench, the phone (Of which delivery), the row editor and the order sheet, and carried by the drafter into the row. It is part of the total, so nothing that reads what is owed or paid changes: the statement prints \"incl. delivery\" under the amount, the total to pay is the total. What changes is the rate: txGoods() is the total less the delivery, and the drafter's flags, the party's usual, the Approve card, the Orders card and the customer price list all strike the rate on the goods. A delivery charge larger than its total is refused by the drafter.",
+   "<b>ON THE STATEMENTS SITE</b> the list shows one price per size, for the goods. A customer who asks for delivery is told the charge when the order is marked ready: Ready to deliver on the Orders card asks for the figure, the customer sees goods plus delivery as the sum to pay, and Completed queues the sale with the delivery as its own field."
+  ]
+ },
+ {
   "v": "v501",
   "d": "07 Sep 2026",
   "t": "HIS TIME IS NOT CHARGED INTO THE FLOOR",

@@ -159,6 +159,12 @@ export async function deskMove(env, u, id, body) {
   if (!NEXT[status].includes(order.status)) return { error: "an order that is " + order.status + " cannot become " + status, status: 409 };
   const at = new Date().toISOString();
   if (status === "ready" && body && MODES.includes(body.mode)) order.mode = body.mode;
+  /* v502: delivery is a figure the owner types when he marks the order ready to deliver; it is
+     shown to the customer on top of the goods, and rides into the sale as its own field. */
+  if (status === "ready") {
+    const d = body && typeof body.delivery === "number" && Number.isFinite(body.delivery) && body.delivery >= 0 ? +body.delivery.toFixed(2) : 0;
+    order.delivery = order.mode === "deliver" ? d : 0;
+  }
   order.status = status;
   const ev = { at, status, by: "desk" };
   if (body && typeof body.note === "string" && body.note.trim()) ev.note = body.note.trim().slice(0, 200);

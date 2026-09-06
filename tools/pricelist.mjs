@@ -13,8 +13,8 @@
  * a stranger. The rule is the drafter's own "this party typically pays" test, read forward.
  *
  * THE FLOOR STILL HOLDS. A quoted total is never below what the engine says that size costs him
- * to sell, collected; so a customer whose old rate has fallen under a risen floor is lifted to
- * the floor rather than quoted a loss. Nothing here prices: floorTotal, priceLadder and the
+ * to sell; so a customer whose old rate has fallen under a risen floor is lifted to the floor
+ * rather than quoted a loss. Nothing here prices: floorTotal, priceLadder and the
  * cost stack are the engine's, fed the same PRICING inputs the desk and the drafter read.
  *
  * WEEKLY, AND WHAT THAT MEANS. The week runs Monday to Sunday in Kuala Lumpur. His own rate is
@@ -24,8 +24,8 @@
  * can move inside a week, and only ever upwards for him. That is deliberate: a floor that has
  * risen is a floor.
  *
- * DELIVERY IS QUOTED ON TOP, PER ORDER, as the board does (v352): one collected figure, one
- * delivered figure, and the charge stated once.
+ * DELIVERY IS NOT ON THE LIST (v502, his instruction of 07 Sep 2026): it is a figure he types on
+ * the order when he marks it ready to deliver, and the customer sees it then, on top of these.
  *
  *   node tools/pricelist.mjs --show <CODE>     print the list the customer would see, now
  */
@@ -57,16 +57,17 @@ export function ownRate(sales, code, product, before) {
   const rows = (sales || [])
     .filter((s) => s.customer === code && prodOf(s) === product && !s.cancelled && s.date && s.date < before
       && isNum(s.total) && s.total > 0 && isNum(s.qty) && s.qty > 0)
+    /* v502: the rate a customer paid is on the goods, the delivery charge inside the total taken out */
     .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0))
     .slice(-HISTORY_ORDERS)
-    .map((s) => s.total / s.qty).sort((a, b) => a - b);
+    .map((s) => (s.total - (isNum(s.delivery) ? s.delivery : 0)) / s.qty).sort((a, b) => a - b);
   if (!rows.length) return { rate: null, orders: 0 };
   const n = rows.length;
   const mid = n % 2 ? rows[(n - 1) / 2] : (rows[n / 2 - 1] + rows[n / 2]) / 2;
   return { rate: +mid.toFixed(2), orders: n };
 }
 
-/** The list: one block per product, every board size, collected and delivered. */
+/** The list: one block per product, every board size, one price each. */
 export function priceList(code, book, pricing, now) {
   const week = weekOf(now);
   const sizes = (pricing && pricing.sizes) || [];
@@ -78,20 +79,19 @@ export function priceList(code, book, pricing, now) {
     if (!inputs || !inputs.cost || !inputs.policy) continue;      // a product the desk cannot price is left off
     const C = PRICING_ENGINE.costStack(inputs.cost), P = inputs.policy;
     const own = ownRate(book.sales, code, p, week.monday);
-    const delivery = C.delPerOrder != null ? +C.delPerOrder.toFixed(2) : 0;
     const rows = sizes.map((q) => {
-      const floor = PRICING_ENGINE.floorTotal(q, C, P, null, { collects: true });
-      let collected;
-      if (own.rate != null) collected = Math.ceil(Math.max(own.rate * q, floor));
-      else collected = PRICING_ENGINE.priceLadder(q, C, P, { collects: true }).ask.total;
-      return { q, collected: +collected.toFixed(2), delivered: +(collected + delivery).toFixed(2) };
+      const floor = PRICING_ENGINE.floorTotal(q, C, P);
+      let price;
+      if (own.rate != null) price = Math.ceil(Math.max(own.rate * q, floor));
+      else price = PRICING_ENGINE.priceLadder(q, C, P).ask.total;
+      return { q, price: +price.toFixed(2) };
     });
     out.products.push({
       product: p,
       name: (book.PRODUCTS && book.PRODUCTS[p] && book.PRODUCTS[p].name) || p,
       unit: (book.PRODUCTS && book.PRODUCTS[p] && book.PRODUCTS[p].unit) || "unit",
       basis: own.rate != null ? "yours" : "board",
-      rate: own.rate, orders: own.orders, delivery, sizes: rows
+      rate: own.rate, orders: own.orders, sizes: rows
     });
   }
   return out;
@@ -108,8 +108,8 @@ async function main() {
   console.log(code + ", week " + list.week.label + " (history before " + list.week.monday + ")");
   for (const p of list.products) {
     console.log("\n" + p.name + ": " + (p.basis === "yours" ? "your rate RM " + p.rate + "/" + p.unit + " over " + p.orders + " order(s)" : "the board's ask; no history")
-      + ", delivery RM " + p.delivery + " per order");
-    for (const r of p.sizes) console.log("  " + String(r.q).padStart(5) + " " + p.unit + "  collected RM " + r.collected + "  delivered RM " + r.delivered);
+      );
+    for (const r of p.sizes) console.log("  " + String(r.q).padStart(5) + " " + p.unit + "  RM " + r.price);
   }
 }
 
