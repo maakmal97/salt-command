@@ -1,5 +1,15 @@
 [
  {
+  "v": "v500",
+  "d": "06 Sep 2026",
+  "t": "DELIVERY IS NOT CHARGED INTO THE FLOOR",
+  "n": [
+   "<b>HIS INSTRUCTION, 06 SEP 2026: remove delivery cost.</b> Every run since v498 stopped at the suite's gate on the oil board: the engine's floor at 50 units had reached RM 453.18 delivered against his stated RM 450, and the RM 10 of delivery per order was the whole of the excess (collected, the floor was RM 443.18). Asked whether to raise the price or gate on the collected floor, he chose neither: the delivery cost goes.",
+   "<b>ONE FIGURE, IN THE COST BASIS.</b> COST_BASIS.txnPerDelivery.rm is 0. Everything downstream reads it: delPerOrder is 0, so the delivered floor is the collected floor at every size on both books; the blended txn in eff is 0; the board's deliveryCharge is 0; the customer price list's delivered column equals its collected column and the page says delivery is not charged. deliveredShare stays as a measured fact. Nothing in the engine changed; the input did.",
+   "<b>WHAT THIS DOES NOT SAY.</b> A delivery still costs him the trip. It is no longer recovered in the floor, which is the position he has taken; the P&L's delivery line reads RM 0 per delivery until he states a figure again, and the desk's copy names the figure it is given rather than assuming one."
+  ]
+ },
+ {
   "v": "v499",
   "d": "06 Sep 2026",
   "t": "THE STATEMENTS SITE TAKES ORDERS, AND SHOWS EACH CUSTOMER HIS OWN PRICE LIST",

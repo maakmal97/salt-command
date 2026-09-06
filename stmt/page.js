@@ -329,9 +329,10 @@ const CLIENT_JS = `
     prices.products.forEach(function(p){
       var pane=el('div','pane');
       pane.appendChild(el('h3',null,p.name));
-      pane.appendChild(el('p','sub2', p.basis==='yours'
-        ? 'Your rate: '+rm(p.rate)+' per '+(p.unit||'unit')+', from your last '+p.orders+' order'+(p.orders===1?'':'s')+'. Delivery '+rm(p.delivery)+' per order.'
-        : 'The board price; your own rate follows your first order. Delivery '+rm(p.delivery)+' per order.'));
+      var delivery=p.delivery>0?'Delivery '+rm(p.delivery)+' per order.':'Delivery is not charged.';
+      pane.appendChild(el('p','sub2', (p.basis==='yours'
+        ? 'Your rate: '+rm(p.rate)+' per '+(p.unit||'unit')+', from your last '+p.orders+' order'+(p.orders===1?'':'s')+'. '
+        : 'The board price; your own rate follows your first order. ')+delivery));
       var t=el('table'), th=el('thead'), tr=el('tr');
       [['Size','l'],['Collected',''],['Delivered','']].forEach(function(c){ var x=el('th',c[1]||null,c[0]); tr.appendChild(x); });
       th.appendChild(tr); t.appendChild(th);
