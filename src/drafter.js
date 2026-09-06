@@ -406,7 +406,8 @@ export function flagsFor(entry, row, book, priced) {
      it profitable while the card's own KPI grid printed the opposite number. The row's own stated
      cost wins where there is one, because that is what every margin on the row is measured
      against once it lands. */
-  const ownCost = isNum(row && row.cost) ? +row.cost : (isNum(priced.cost) ? priced.cost : null);
+  /* v496: the row's cost is absolute; the unit figure is the engine's derivation, and the shelf's figure is already per unit. */
+  const ownCost = isNum(row && row.cost) ? POSITION_ENGINE.txUnitCost(row, priced.cost) : (isNum(priced.cost) ? priced.cost : null);
   if (isSale && ownCost != null && rate != null && rate < ownCost) {
     flags.push(`This sells at RM ${round(rate)}/unit against a cost of RM ${round(ownCost)}${isNum(row && row.cost) ? " stated on the row itself" : " from the shelf"}: it loses money on every unit.`);
   }
@@ -544,8 +545,8 @@ export function draftRow(entry, book) {
         && chk.changes.some((c) => c.field === "cash" || c.field === "receivedQty")) {
         flags.push("This lot is marked pending, which means nothing has moved, and this records money or stock against it. Untick pending if it is no longer agreed-only.");
       }
-      if (chk.changes.some((c) => c.field === "product") && isSale && priced.cost != null && isNum(target.cost) && Math.abs(priced.cost - target.cost) > 0.005) {
-        flags.push(`The row carries RM ${round(target.cost)}/unit of cost from its old product. ${product} costs RM ${round(priced.cost)}/unit off the shelf, so this row's margin moves when it is recosted.`);
+      if (chk.changes.some((c) => c.field === "product") && isSale && priced.cost != null && isNum(target.cost) && Math.abs(priced.cost - POSITION_ENGINE.txUnitCost(target, priced.cost)) > 0.005) {
+        flags.push(`The row carries RM ${round(POSITION_ENGINE.txUnitCost(target, priced.cost))}/unit of cost from its old product. ${product} costs RM ${round(priced.cost)}/unit off the shelf, so this row's margin moves when it is recosted.`);
       }
 
       const words = chk.changes.map((c) => `${c.field} from ${c.from == null ? "unset" : c.from} to ${c.to == null ? "cleared" : c.to}`);
@@ -919,7 +920,8 @@ export function draftRow(entry, book) {
   const deliveredInFull = moved >= qty - 0.005;
   const nothingMoved = cash < 0.005 && moved < 0.005;
 
-  const row = { customer: party, qty, total, cost: round(priced.cost), cash: round(cash) };
+  /* v496: the shelf prices per unit; the row's cost is the order's, absolute. */
+  const row = { customer: party, qty, total, cost: round(priced.cost * qty), cash: round(cash) };
   /* v373: who moved the goods, when the entry says. A sale that does not say carries no key,
      because the measured delivered share counts the rows that answered and not the silent ones. */
   if (dir === "SELL" && HANDOVER.includes(pay.handover)) row.handover = pay.handover;

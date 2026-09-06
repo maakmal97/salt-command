@@ -1,6 +1,6 @@
 {
- "v": "v495",
- "stamped": "05 Sep 2026, 22:15 KL",
+ "v": "v496",
+ "stamped": "06 Sep 2026, 20:45 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -320,7 +320,7 @@
     "customer": "CG5-SB",
     "qty": 3,
     "total": 300,
-    "cost": 64,
+    "cost": 192,
     "cash": 300,
     "deliveredQty": 3,
     "ref": "CJ4-OKR",
@@ -332,7 +332,7 @@
     "customer": "CJ4-BJ",
     "qty": 6,
     "total": 600,
-    "cost": 64,
+    "cost": 384,
     "cash": 600,
     "deliveredQty": 6,
     "amend": [
@@ -340,7 +340,8 @@
       "date": "2026-06-28",
       "kind": "Fulfilment",
       "cash": 550,
-      "kg": 6
+      "kg": 6,
+      "cost": 384
      },
      {
       "date": "2026-08-01",
@@ -369,7 +370,7 @@
     "customer": "CG5-SB",
     "qty": 3,
     "total": 300,
-    "cost": 64,
+    "cost": 192,
     "cash": 300,
     "deliveredQty": 3,
     "rid": "s005"
@@ -379,7 +380,7 @@
     "customer": "CN5-TAI",
     "qty": 2,
     "total": 200,
-    "cost": 64,
+    "cost": 128,
     "cash": 200,
     "deliveredQty": 2,
     "rid": "s006"
@@ -397,7 +398,8 @@
       "date": "2026-07-03",
       "kind": "Fulfilment",
       "cash": 0,
-      "kg": 1
+      "kg": 1,
+      "cost": 64
      },
      {
       "date": "2026-07-09",
@@ -421,7 +423,8 @@
       "date": "2026-07-05",
       "kind": "Fulfilment",
       "cash": 0,
-      "kg": 1
+      "kg": 1,
+      "cost": 64
      },
      {
       "date": "2026-08-01",
@@ -440,7 +443,7 @@
     "customer": "CS6-PER",
     "qty": 12.5,
     "total": 750,
-    "cost": 60,
+    "cost": 750,
     "cash": 750,
     "deliveredQty": 6,
     "settledKg": 6.5,
@@ -456,7 +459,8 @@
       "date": "2026-07-09",
       "kind": "Fulfilment",
       "cash": 0,
-      "kg": 6
+      "kg": 6,
+      "cost": 360
      },
      {
       "date": "2026-07-14",
@@ -464,7 +468,8 @@
       "cash": 0,
       "kg": 6.5,
       "ref": "12 May loan",
-      "note": "6 unit offsets the loan, 0.5 unit netted for delay"
+      "note": "6 unit offsets the loan, 0.5 unit netted for delay",
+      "cost": 390
      }
     ],
     "note": "Squared against the 12 May loan.",
@@ -486,7 +491,8 @@
       "date": "2026-07-09",
       "kind": "Fulfilment",
       "cash": 0,
-      "kg": 1
+      "kg": 1,
+      "cost": 64
      },
      {
       "date": "2026-07-09",
@@ -537,7 +543,7 @@
     "customer": "CM6-HCM",
     "qty": 12.5,
     "total": 1300,
-    "cost": 48,
+    "cost": 600,
     "cash": 1300,
     "deliveredQty": 12.5,
     "amend": [
@@ -551,7 +557,8 @@
       "date": "2026-07-16",
       "kind": "Fulfilment",
       "cash": 0,
-      "kg": 12.5
+      "kg": 12.5,
+      "cost": 600
      }
     ],
     "note": "Corrected from RM1,800.",
@@ -562,7 +569,7 @@
     "customer": "CM4-SK",
     "qty": 12.5,
     "total": 825,
-    "cost": 48,
+    "cost": 600,
     "cash": 825,
     "deliveredQty": 12.5,
     "rid": "s015"
@@ -572,7 +579,7 @@
     "customer": "CS6-PER",
     "qty": 7.25,
     "total": 620,
-    "cost": 48,
+    "cost": 348,
     "cash": 620,
     "deliveredQty": 7.25,
     "paidOn": "2026-07-30",
@@ -592,7 +599,8 @@
       "date": "2026-07-14",
       "kind": "Fulfilment",
       "cash": 200,
-      "kg": 6.25
+      "kg": 6.25,
+      "cost": 300
      },
      {
       "date": "2026-07-17",
@@ -613,7 +621,8 @@
       "kind": "Modification",
       "cash": 130,
       "kg": 1,
-      "note": "restated to 7.25 unit / RM620; buyer banned from sale"
+      "note": "restated to 7.25 unit / RM620; buyer banned from sale",
+      "cost": 48
      }
     ],
     "note": "Repriced; buyer later banned from sale.",
@@ -634,7 +643,7 @@
     "customer": "CJ4-BJ",
     "qty": 10.4412,
     "total": 710,
-    "cost": 47.6,
+    "cost": 497,
     "cash": 710,
     "paidOn": "2026-08-01",
     "deliveredQty": 10.4412,
@@ -645,7 +654,8 @@
       "kind": "Fulfilment",
       "cash": 650,
       "kg": 6.25,
-      "note": "RM650 cash against this order only"
+      "note": "RM650 cash against this order only",
+      "cost": 297.5
      },
      {
       "date": "2026-07-24",
@@ -670,7 +680,8 @@
        "CJ4-BJ|2026-06-28|600",
        "CJ4-BJ|2026-07-05|90"
       ],
-      "note": "RM140 offset by withholding 2.0588 unit"
+      "note": "RM140 offset by withholding 2.0588 unit",
+      "cost": 98
      },
      {
       "date": "2026-08-01",
@@ -684,7 +695,8 @@
       "kind": "Fulfilment",
       "cash": 0,
       "kg": 4.1912,
-      "note": "4.1912 unit handed over; account closed"
+      "note": "4.1912 unit handed over; account closed",
+      "cost": 199.5
      }
     ],
     "note": "Audited twice; offsets settled; closed in salt.",
@@ -708,7 +720,7 @@
     "customer": "CS6-BS-R",
     "qty": 3,
     "total": 285,
-    "cost": 56,
+    "cost": 168,
     "cash": 285,
     "deliveredQty": 3,
     "rev": "R2",
@@ -752,7 +764,7 @@
     "customer": "CH5-KLC",
     "qty": 0.5,
     "total": 105,
-    "cost": 50.4,
+    "cost": 25.2,
     "cash": 105,
     "deliveredQty": 0.5,
     "rid": "s024"
@@ -773,7 +785,8 @@
       "kind": "Fulfilment",
       "cash": 17,
       "kg": 1,
-      "note": "1 unit handed over, RM17 paid on the day"
+      "note": "1 unit handed over, RM17 paid on the day",
+      "cost": 48
      },
      {
       "date": "2026-07-22",
@@ -801,7 +814,8 @@
       "kind": "Fulfilment",
       "cash": 0,
       "kg": 1,
-      "note": "1 unit handed over on credit from the RM56/unit lot"
+      "note": "1 unit handed over on credit from the RM56/unit lot",
+      "cost": 56
      },
      {
       "date": "2026-07-24",
@@ -844,7 +858,7 @@
     "customer": "CA4-DAM",
     "qty": 0.5,
     "total": 50,
-    "cost": 56,
+    "cost": 28,
     "cash": 50,
     "deliveredQty": 0.5,
     "amend": [
@@ -860,7 +874,8 @@
       "kind": "Fulfilment",
       "cash": 50,
       "kg": 0.5,
-      "note": "paid and collected"
+      "note": "paid and collected",
+      "cost": 28
      }
     ],
     "rid": "s028"
@@ -870,7 +885,7 @@
     "customer": "CE4-CHE",
     "qty": 2.5,
     "total": 250,
-    "cost": 56,
+    "cost": 140,
     "cash": 250,
     "deliveredQty": 2.5,
     "note": "Entered as new party; is CE4-CHE.",
@@ -881,7 +896,7 @@
     "customer": "CI4-OKR",
     "qty": 2,
     "total": 185,
-    "cost": 56,
+    "cost": 112,
     "cash": 185,
     "deliveredQty": 2,
     "rid": "s030"
@@ -891,7 +906,7 @@
     "customer": "CN6-WM",
     "qty": 0.5,
     "total": 50,
-    "cost": 56,
+    "cost": 28,
     "cash": 0,
     "settledRM": 50,
     "rebate": true,
@@ -904,7 +919,7 @@
     "customer": "CH6-SET",
     "qty": 2,
     "total": 230,
-    "cost": 56,
+    "cost": 112,
     "cash": 230,
     "deliveredQty": 2,
     "note": "Re-keyed CH6-TBC to CH6-SET.",
@@ -918,7 +933,8 @@
       "kind": "Fulfilment",
       "cash": 230,
       "kg": 2,
-      "note": "as booked"
+      "note": "as booked",
+      "cost": 112
      },
      {
       "date": "2026-08-26",
@@ -946,7 +962,7 @@
     "customer": "CS6-BS-R",
     "qty": 7,
     "total": 580,
-    "cost": 56,
+    "cost": 392,
     "cash": 580,
     "deliveredQty": 7,
     "deliveredOn": "2026-07-23",
@@ -959,7 +975,7 @@
     "customer": "CA4-DAM",
     "qty": 0.5,
     "total": 50,
-    "cost": 56,
+    "cost": 28,
     "cash": 50,
     "deliveredQty": 0.5,
     "deliveredOn": "2026-07-23",
@@ -971,7 +987,7 @@
     "customer": "CR4-PJ",
     "qty": 12.5,
     "total": 830,
-    "cost": 56,
+    "cost": 700,
     "cash": 830,
     "deliveredQty": 12.5,
     "deliveredOn": "2026-07-23",
@@ -984,7 +1000,7 @@
     "customer": "CM4-MK",
     "qty": 2,
     "total": 220,
-    "cost": 64,
+    "cost": 128,
     "cash": 220,
     "deliveredQty": 2,
     "rid": "s037"
@@ -994,7 +1010,7 @@
     "customer": "CE4-CHE",
     "qty": 2.5,
     "total": 230,
-    "cost": 64,
+    "cost": 160,
     "cash": 230,
     "deliveredQty": 2.5,
     "rid": "s038"
@@ -1017,7 +1033,7 @@
     "customer": "CA4-DAM",
     "qty": 1.5,
     "total": 175,
-    "cost": 47,
+    "cost": 70.5,
     "cash": 175,
     "deliveredQty": 1.5,
     "paidOn": "2026-07-28",
@@ -1035,7 +1051,8 @@
       "kind": "Fulfilment",
       "cash": 175,
       "kg": 1.5,
-      "note": "paid and delivered together"
+      "note": "paid and delivered together",
+      "cost": 70.5
      }
     ],
     "rid": "s040"
@@ -1058,7 +1075,8 @@
       "kind": "Fulfilment",
       "cash": 120,
       "kg": 1,
-      "note": "paid and delivered together; order closes"
+      "note": "paid and delivered together; order closes",
+      "cost": 47
      }
     ],
     "rid": "s041"
@@ -1068,7 +1086,7 @@
     "customer": "CE4-AD",
     "qty": 5,
     "total": 400,
-    "cost": 47,
+    "cost": 235,
     "cash": 400,
     "deliveredQty": 5,
     "deliveredOn": "2026-07-29",
@@ -1093,7 +1111,8 @@
       "kind": "Fulfilment",
       "cash": 400,
       "kg": 5,
-      "note": "paid again and collected; completes"
+      "note": "paid again and collected; completes",
+      "cost": 235
      }
     ],
     "note": "Paid, refunded, then paid again.",
@@ -1131,7 +1150,7 @@
     "customer": "CM4-MK",
     "qty": 2.2,
     "total": 210,
-    "cost": 47,
+    "cost": 103.4,
     "cash": 210,
     "deliveredQty": 2.2,
     "deliveredOn": "2026-07-30",
@@ -1143,7 +1162,7 @@
     "customer": "CZ4-MK",
     "qty": 5,
     "total": 435,
-    "cost": 47,
+    "cost": 235,
     "cash": 435,
     "deliveredQty": 5,
     "deliveredOn": "2026-07-30",
@@ -1159,7 +1178,8 @@
       "kind": "Fulfilment",
       "cash": 435,
       "kg": 5,
-      "note": "as booked"
+      "note": "as booked",
+      "cost": 235
      },
      {
       "date": "2026-08-26",
@@ -1175,7 +1195,7 @@
     "customer": "CE4-CHE",
     "qty": 2.5,
     "total": 230,
-    "cost": 47,
+    "cost": 117.5,
     "cash": 230,
     "deliveredQty": 2.5,
     "deliveredOn": "2026-07-31",
@@ -1188,7 +1208,7 @@
     "customer": "CA5-SEN",
     "qty": 2.5,
     "total": 270,
-    "cost": 47,
+    "cost": 117.5,
     "cash": 270,
     "deliveredQty": 2.5,
     "deliveredOn": "2026-07-31",
@@ -1211,7 +1231,7 @@
     "customer": "CJ4-BJ",
     "qty": 0.5588,
     "total": 26.26,
-    "cost": 47,
+    "cost": 26.26,
     "cash": 0,
     "settledRM": 26.26,
     "rebate": true,
@@ -1267,7 +1287,7 @@
     "customer": "CI4-OKR",
     "qty": 2,
     "total": 180,
-    "cost": 47,
+    "cost": 94,
     "cash": 90,
     "paidOn": "2026-08-05",
     "settledRM": 90,
@@ -1296,7 +1316,7 @@
     "customer": "CS6-BS-R",
     "qty": 2.5,
     "total": 270,
-    "cost": 47,
+    "cost": 117.5,
     "cash": 270,
     "deliveredQty": 2.5,
     "deliveredOn": "2026-08-03",
@@ -1309,7 +1329,7 @@
     "customer": "CN6-WM-R",
     "qty": 6.5,
     "total": 440,
-    "cost": 47,
+    "cost": 305.5,
     "cash": 440,
     "deliveredQty": 6.5,
     "deliveredOn": "2026-08-03",
@@ -1323,7 +1343,7 @@
     "customer": "CN6-WM",
     "qty": 0.5,
     "total": 50,
-    "cost": 47,
+    "cost": 23.5,
     "cash": 0,
     "settledRM": 50,
     "rebate": true,
@@ -1337,7 +1357,7 @@
     "customer": "CS6-BS-R",
     "qty": 0.5,
     "total": 60,
-    "cost": 47,
+    "cost": 23.5,
     "cash": 60,
     "paidOn": "2026-08-04",
     "deliveredQty": 0.5,
@@ -1356,7 +1376,8 @@
       "kind": "Fulfilment",
       "cash": 0,
       "kg": 0.5,
-      "note": "collected; order closes"
+      "note": "collected; order closes",
+      "cost": 23.5
      }
     ],
     "rid": "s057"
@@ -1366,7 +1387,7 @@
     "customer": "CM4-MK",
     "qty": 2,
     "total": 220,
-    "cost": 47,
+    "cost": 94,
     "cash": 220,
     "deliveredQty": 2,
     "deliveredOn": "2026-08-05",
@@ -1378,7 +1399,7 @@
     "customer": "CS6-PER-R",
     "qty": 3,
     "total": 240,
-    "cost": 47,
+    "cost": 141,
     "cash": 240,
     "deliveredQty": 3,
     "deliveredOn": "2026-08-05",
@@ -1392,7 +1413,7 @@
     "customer": "CN6-WM-R",
     "qty": 2,
     "total": 250,
-    "cost": 47,
+    "cost": 94,
     "cash": 250,
     "deliveredQty": 2,
     "deliveredOn": "2026-08-06",
@@ -1421,7 +1442,7 @@
     "customer": "CS6-BS-R",
     "qty": 10,
     "total": 130,
-    "cost": 7.333333333333334,
+    "cost": 73.33,
     "cash": 130,
     "deliveredQty": 10,
     "deliveredOn": "2026-08-06",
@@ -1435,7 +1456,7 @@
     "customer": "CE4-CHE",
     "qty": 3,
     "total": 230,
-    "cost": 47,
+    "cost": 141,
     "cash": 230,
     "paidOn": "2026-08-08",
     "deliveredQty": 3,
@@ -1459,7 +1480,7 @@
     "customer": "CH4-KLS",
     "qty": 3,
     "total": 260,
-    "cost": 47,
+    "cost": 141,
     "cash": 260,
     "deliveredQty": 3,
     "paidOn": "2026-08-08",
@@ -1473,7 +1494,8 @@
       "kind": "Fulfilment",
       "cash": 260,
       "kg": 3,
-      "note": "as booked"
+      "note": "as booked",
+      "cost": 141
      },
      {
       "date": "2026-08-28",
@@ -1489,7 +1511,7 @@
     "customer": "CS6-PER-R",
     "qty": 2,
     "total": 160,
-    "cost": 47,
+    "cost": 94,
     "rev": "R2",
     "cash": 160,
     "deliveredQty": 2,
@@ -1503,7 +1525,7 @@
     "customer": "CS6-PER-R",
     "qty": 10,
     "total": 100,
-    "cost": 7,
+    "cost": 70,
     "rev": "R2",
     "cash": 100,
     "deliveredQty": 10,
@@ -1517,7 +1539,7 @@
     "customer": "CS6-PER",
     "qty": 3,
     "total": 240,
-    "cost": 47,
+    "cost": 141,
     "cash": 160,
     "settledRM": 80,
     "rebate": true,
@@ -1557,7 +1579,8 @@
       "kind": "Fulfilment",
       "cash": 0,
       "kg": 1,
-      "note": "1 unit handed over at RM90 with nothing paid"
+      "note": "1 unit handed over at RM90 with nothing paid",
+      "cost": 47
      },
      {
       "date": "2026-08-11",
@@ -1574,7 +1597,7 @@
     "customer": "CA4-DAM",
     "qty": 0.5,
     "total": 50,
-    "cost": 47,
+    "cost": 23.5,
     "cash": 50,
     "deliveredQty": 0.5,
     "deliveredOn": "2026-08-08",
@@ -1597,7 +1620,8 @@
       "kind": "Fulfilment",
       "cash": 0,
       "kg": 1,
-      "note": "1 unit handed over at RM80 with nothing paid"
+      "note": "1 unit handed over at RM80 with nothing paid",
+      "cost": 47
      },
      {
       "date": "2026-08-12",
@@ -1614,7 +1638,7 @@
     "customer": "CM4-MK",
     "qty": 4,
     "total": 360,
-    "cost": 47,
+    "cost": 188,
     "cash": 360,
     "deliveredQty": 4,
     "deliveredOn": "2026-08-10",
@@ -1627,7 +1651,7 @@
     "customer": "CJ4-OKR",
     "qty": 4,
     "total": 188,
-    "cost": 47,
+    "cost": 188,
     "cash": 0,
     "settledRM": 188,
     "rebate": true,
@@ -1642,7 +1666,7 @@
     "customer": "CE4-CHE",
     "qty": 2.5,
     "total": 230,
-    "cost": 47,
+    "cost": 117.5,
     "cash": 230,
     "deliveredQty": 2.5,
     "deliveredOn": "2026-08-12",
@@ -1655,7 +1679,7 @@
     "customer": "CS6-BS",
     "qty": 30,
     "total": 330,
-    "cost": 7,
+    "cost": 210,
     "cash": 330,
     "deliveredQty": 30,
     "deliveredOn": "2026-08-11",
@@ -1669,7 +1693,7 @@
     "customer": "CS6-BS-R",
     "qty": 20,
     "total": 120,
-    "cost": 7,
+    "cost": 140,
     "cash": 120,
     "deliveredQty": 20,
     "deliveredOn": "2026-08-11",
@@ -1683,7 +1707,7 @@
     "customer": "CY2-NIL",
     "qty": 2.5,
     "total": 230,
-    "cost": 47,
+    "cost": 117.5,
     "cash": 230,
     "deliveredQty": 2.5,
     "deliveredOn": "2026-08-11",
@@ -1696,7 +1720,7 @@
     "customer": "CA4-DAM",
     "qty": 0.5,
     "total": 50,
-    "cost": 47,
+    "cost": 23.5,
     "cash": 50,
     "deliveredQty": 0.5,
     "deliveredOn": "2026-08-12",
@@ -1735,7 +1759,7 @@
     "customer": "CN6-WM-R",
     "qty": 1.5,
     "total": 175,
-    "cost": 54.2,
+    "cost": 81.3,
     "cash": 175,
     "deliveredQty": 1.5,
     "deliveredOn": "2026-08-14",
@@ -1776,7 +1800,7 @@
     "customer": "CH5-OUG",
     "qty": 4,
     "total": 260,
-    "cost": 56,
+    "cost": 224,
     "cash": 260,
     "deliveredQty": 4,
     "deliveredOn": "2026-08-15",
@@ -1789,7 +1813,7 @@
     "customer": "CA4-DAM",
     "qty": 0.5,
     "total": 50,
-    "cost": 56,
+    "cost": 28,
     "cash": 50,
     "deliveredQty": 0.5,
     "deliveredOn": "2026-08-15",
@@ -1814,7 +1838,7 @@
     "customer": "CA11-SEN",
     "qty": 3,
     "total": 180,
-    "cost": 56,
+    "cost": 168,
     "cash": 180,
     "deliveredQty": 3,
     "deliveredOn": "2026-08-17",
@@ -1827,7 +1851,7 @@
     "customer": "CM4-MK",
     "qty": 2,
     "total": 220,
-    "cost": 56,
+    "cost": 112,
     "cash": 220,
     "deliveredQty": 2,
     "deliveredOn": "2026-08-17",
@@ -1839,7 +1863,7 @@
     "customer": "CA4-DAM",
     "qty": 0.5,
     "total": 50,
-    "cost": 56,
+    "cost": 28,
     "cash": 50,
     "deliveredQty": 0.5,
     "deliveredOn": "2026-08-18",
@@ -1851,7 +1875,7 @@
     "customer": "CY2-NIL",
     "qty": 2.5,
     "total": 230,
-    "cost": 56,
+    "cost": 140,
     "cash": 230,
     "deliveredQty": 2.5,
     "deliveredOn": "2026-08-18",
@@ -1875,7 +1899,8 @@
       "kind": "Fulfilment",
       "cash": 0,
       "kg": 1,
-      "note": "as booked"
+      "note": "as booked",
+      "cost": 56
      },
      {
       "date": "2026-08-27",
@@ -1892,7 +1917,7 @@
     "customer": "CE4-CHE",
     "qty": 5.75,
     "total": 500,
-    "cost": 56,
+    "cost": 322,
     "cash": 500,
     "deliveredQty": 5.75,
     "deliveredOn": "2026-08-30",
@@ -1902,21 +1927,24 @@
       "date": "2026-08-18",
       "kind": "Fulfilment",
       "cash": 500,
-      "kg": 0.25
+      "kg": 0.25,
+      "cost": 14
      },
      {
       "date": "2026-08-20",
       "kind": "Fulfilment",
       "cash": 0,
       "kg": 3,
-      "note": "3 unit found by the 20 Aug count"
+      "note": "3 unit found by the 20 Aug count",
+      "cost": 168
      },
      {
       "date": "2026-08-25",
       "kind": "Fulfilment",
       "cash": 0,
       "kg": 2,
-      "note": "2 unit found 25 Aug"
+      "note": "2 unit found 25 Aug",
+      "cost": 112
      },
      {
       "date": "2026-08-25",
@@ -1930,7 +1958,8 @@
       "kind": "Fulfilment",
       "cash": 0,
       "kg": 0.5,
-      "note": "<b>THE LAST HALF UNIT, TWELVE DAYS ON.</b> 0.5 unit handed over on 30 Aug against the 0.5 unit still owed on the 18 Aug order of 5.75 unit, paid in full on the day it was agreed. Nothing is left outstanding: the order is complete. Dictated as CA5-CHE, which is not a code on the roster; CE4-CHE is the only party with a deferred balance to complete, so it is folded here. Dictated in a Code session on 2 Sep 2026 and folded on his word."
+      "note": "<b>THE LAST HALF UNIT, TWELVE DAYS ON.</b> 0.5 unit handed over on 30 Aug against the 0.5 unit still owed on the 18 Aug order of 5.75 unit, paid in full on the day it was agreed. Nothing is left outstanding: the order is complete. Dictated as CA5-CHE, which is not a code on the roster; CE4-CHE is the only party with a deferred balance to complete, so it is folded here. Dictated in a Code session on 2 Sep 2026 and folded on his word.",
+      "cost": 28
      }
     ],
     "note": "Corrected to 5.75 unit; deliveries found late.",
@@ -1942,7 +1971,7 @@
     "customer": "CJ4-BJ",
     "qty": 6.25,
     "total": 400,
-    "cost": 44,
+    "cost": 275,
     "cash": 400,
     "deliveredQty": 6.25,
     "deliveredOn": "2026-08-21",
@@ -1966,7 +1995,8 @@
       "kind": "Fulfilment",
       "cash": 0,
       "kg": 6.25,
-      "note": "6.25 unit delivered, nothing paid"
+      "note": "6.25 unit delivered, nothing paid",
+      "cost": 275
      }
     ],
     "note": "First half of split 12.5 unit order.",
@@ -1977,7 +2007,7 @@
     "customer": "CE4-AD",
     "qty": 5,
     "total": 435,
-    "cost": 56,
+    "cost": 280,
     "cash": 435,
     "deliveredQty": 5,
     "paidOn": "2026-08-20",
@@ -2000,7 +2030,8 @@
       "kind": "Fulfilment",
       "cash": 0,
       "kg": 5,
-      "note": "<b>DELIVERED IN FULL ON 29 AUG, ON HIS STATEMENT, AND THE ORDER COMPLETES.</b> The 5 unit paid for on 20 Aug went out nine days later, as planned the day before. Nothing outstanding either way."
+      "note": "<b>DELIVERED IN FULL ON 29 AUG, ON HIS STATEMENT, AND THE ORDER COMPLETES.</b> The 5 unit paid for on 20 Aug went out nine days later, as planned the day before. Nothing outstanding either way.",
+      "cost": 280
      }
     ],
     "note": "<b>COMPLETED: PAID 20 AUG, DELIVERED IN FULL 29 AUG (folded v404).</b>  Paid in full; delivery still owed.",
@@ -2012,7 +2043,7 @@
     "customer": "CH5-OUG",
     "qty": 12.5,
     "total": 600,
-    "cost": 44,
+    "cost": 550,
     "cash": 600,
     "deliveredQty": 12.5,
     "deliveredOn": "2026-08-20",
@@ -2025,7 +2056,7 @@
     "customer": "CA4-DAM",
     "qty": 0.5,
     "total": 50,
-    "cost": 44,
+    "cost": 22,
     "cash": 50,
     "deliveredQty": 0.5,
     "deliveredOn": "2026-08-20",
@@ -2050,7 +2081,8 @@
       "kind": "Fulfilment",
       "cash": 50,
       "kg": 0.5,
-      "note": "RM50 paid, half unit delivered"
+      "note": "RM50 paid, half unit delivered",
+      "cost": 22
      }
     ],
     "note": "Queued three times before folding.",
@@ -2090,7 +2122,7 @@
     "customer": "CS6-BS",
     "qty": 1.5,
     "total": 190,
-    "cost": 44,
+    "cost": 66,
     "cash": 190,
     "deliveredQty": 1.5,
     "deliveredOn": "2026-08-21",
@@ -2101,14 +2133,16 @@
       "kind": "Fulfilment",
       "cash": 120,
       "kg": 1,
-      "note": "as booked: 1 unit for RM120"
+      "note": "as booked: 1 unit for RM120",
+      "cost": 44
      },
      {
       "date": "2026-08-21",
       "kind": "Modification",
       "cash": 70,
       "kg": 0.5,
-      "note": "restated to 1.5 unit / RM190"
+      "note": "restated to 1.5 unit / RM190",
+      "cost": 22
      }
     ],
     "note": "Restated: RM190 replaced RM120 entry.",
@@ -2119,7 +2153,7 @@
     "customer": "CN6-WM",
     "qty": 2,
     "total": 150,
-    "cost": 44,
+    "cost": 88,
     "cash": 150,
     "deliveredQty": 2,
     "deliveredOn": "2026-08-22",
@@ -2136,14 +2170,16 @@
       "kind": "Fulfilment",
       "cash": 0,
       "kg": 0.5,
-      "note": "half unit delivered"
+      "note": "half unit delivered",
+      "cost": 22
      },
      {
       "date": "2026-08-22",
       "kind": "Fulfilment",
       "cash": 150,
       "kg": 1.5,
-      "note": "RM150 paid, rest delivered"
+      "note": "RM150 paid, rest delivered",
+      "cost": 66
      }
     ],
     "note": "Folded late against a stale mirror.",
@@ -2170,7 +2206,8 @@
       "kind": "Fulfilment",
       "cash": 100,
       "kg": 1,
-      "note": "as booked"
+      "note": "as booked",
+      "cost": 44
      },
      {
       "date": "2026-08-25",
@@ -2203,7 +2240,8 @@
       "kind": "Fulfilment",
       "cash": 120,
       "kg": 1,
-      "note": "RM120 paid, unit delivered"
+      "note": "RM120 paid, unit delivered",
+      "cost": 44
      }
     ],
     "rid": "s101"
@@ -2266,13 +2304,14 @@
       "kind": "Fulfilment",
       "cash": 290,
       "kg": 3,
-      "note": "paid and delivered in full"
+      "note": "paid and delivered in full",
+      "cost": 132
      }
     ],
     "date": "2026-08-24",
     "deliveredOn": "2026-08-24",
     "paidOn": "2026-08-24",
-    "cost": 44,
+    "cost": 132,
     "rid": "s102"
    },
    {
@@ -2295,7 +2334,8 @@
       "kind": "Fulfilment",
       "cash": 0,
       "kg": 1,
-      "note": "free unit handed over"
+      "note": "free unit handed over",
+      "cost": 44
      }
     ],
     "date": "2026-08-24",
@@ -2322,7 +2362,8 @@
       "kind": "Fulfilment",
       "cash": 0,
       "kg": 0.5,
-      "note": "0.5 unit out, RM50 owed"
+      "note": "0.5 unit out, RM50 owed",
+      "cost": 22
      },
      {
       "date": "2026-08-25",
@@ -2350,7 +2391,7 @@
     "customer": "CM4-MK",
     "qty": 4,
     "total": 380,
-    "cost": 44,
+    "cost": 176,
     "cash": 380,
     "date": "2026-08-24",
     "deliveredQty": 4,
@@ -2365,7 +2406,8 @@
       "kind": "Fulfilment",
       "cash": 0,
       "kg": 4,
-      "note": "as booked"
+      "note": "as booked",
+      "cost": 176
      },
      {
       "date": "2026-08-25",
@@ -2399,7 +2441,8 @@
       "kind": "Fulfilment",
       "cash": 0,
       "kg": 1,
-      "note": "as booked"
+      "note": "as booked",
+      "cost": 44
      },
      {
       "date": "2026-08-27",
@@ -2417,7 +2460,7 @@
     "total": 450,
     "cash": 450,
     "deliveredQty": 6.25,
-    "note": "Second tranche of the split order.",
+    "note": "<b>COSTED AT v496.</b> No cost was stated on this row; it is stored at RM 315.03 for 6.25 unit, the product's weighted average buy price of RM 50.4042 a unit that the desk had been costing it at, so the margin it showed does not move. Second tranche of the split order.",
     "rid": "s107",
     "amend": [
      {
@@ -2445,7 +2488,8 @@
     "paidOn": "2026-08-26",
     "deliveredOn": "2026-08-27",
     "handover": "delivered",
-    "mod": "corrected on 2026-08-27: deliveredQty 0 to 6.25; deliveredOn (unset) to 2026-08-27; handover (unset) to delivered"
+    "mod": "corrected on 2026-08-27: deliveredQty 0 to 6.25; deliveredOn (unset) to 2026-08-27; handover (unset) to delivered",
+    "cost": 315.03
    },
    {
     "customer": "CH6-SET",
@@ -2463,7 +2507,7 @@
     "customer": "CZ4-MK",
     "qty": 5,
     "total": 420,
-    "cost": 44,
+    "cost": 220,
     "cash": 420,
     "date": "2026-08-26",
     "deliveredQty": 5,
@@ -2475,7 +2519,7 @@
     "customer": "CY2-NIL",
     "qty": 2.5,
     "total": 230,
-    "cost": 44,
+    "cost": 110,
     "cash": 230,
     "date": "2026-08-26",
     "deliveredQty": 2.5,
@@ -2501,7 +2545,7 @@
     "product": "oil",
     "qty": 10,
     "total": 130,
-    "cost": 7.666666666666667,
+    "cost": 76.67,
     "cash": 130,
     "date": "2026-08-26",
     "deliveredQty": 10,
@@ -2516,7 +2560,8 @@
       "kind": "Fulfilment",
       "cash": 130,
       "kg": 10,
-      "note": "as booked"
+      "note": "as booked",
+      "cost": 76.67
      },
      {
       "date": "2026-08-28",
@@ -2559,7 +2604,8 @@
       "kind": "Fulfilment",
       "cash": 0,
       "kg": 1,
-      "note": "as booked"
+      "note": "as booked",
+      "cost": 50
      },
      {
       "date": "2026-08-28",
@@ -2598,7 +2644,8 @@
       "kind": "Fulfilment",
       "cash": 0,
       "kg": 1,
-      "note": "as booked"
+      "note": "as booked",
+      "cost": 50
      },
      {
       "date": "2026-09-02",
@@ -2613,7 +2660,7 @@
     "customer": "CH4-KLS",
     "qty": 3,
     "total": 300,
-    "cost": 50,
+    "cost": 150,
     "cash": 300,
     "deliveredQty": 3,
     "agreedOn": "2026-08-28",
@@ -2641,7 +2688,8 @@
       "kind": "Fulfilment",
       "cash": 300,
       "kg": 3,
-      "note": "paid and delivered in full"
+      "note": "paid and delivered in full",
+      "cost": 150
      }
     ],
     "rid": "s118"
@@ -2650,7 +2698,7 @@
     "customer": "CY2-NIL",
     "qty": 2.5,
     "total": 230,
-    "cost": 50,
+    "cost": 125,
     "cash": 0,
     "deliveredQty": 0,
     "agreedOn": "2026-08-28",
@@ -2717,7 +2765,8 @@
       "kind": "Fulfilment",
       "cash": 135,
       "kg": 1,
-      "note": "as booked"
+      "note": "as booked",
+      "cost": 50
      },
      {
       "date": "2026-09-02",
@@ -2733,7 +2782,7 @@
     "product": "oil",
     "qty": 5,
     "total": 65,
-    "cost": 7.666666666666667,
+    "cost": 38.33,
     "cash": 65,
     "handover": "collected",
     "date": "2026-08-31",
@@ -2751,7 +2800,8 @@
       "kind": "Fulfilment",
       "cash": 65,
       "kg": 5,
-      "note": "as booked"
+      "note": "as booked",
+      "cost": 38.33
      },
      {
       "date": "2026-09-02",
@@ -2766,7 +2816,7 @@
     "customer": "CK4-SEN",
     "qty": 6,
     "total": 440,
-    "cost": 50,
+    "cost": 300,
     "cash": 440,
     "date": "2026-08-31",
     "deliveredQty": 6,
@@ -2781,7 +2831,8 @@
       "kind": "Fulfilment",
       "cash": 440,
       "kg": 6,
-      "note": "as booked"
+      "note": "as booked",
+      "cost": 300
      },
      {
       "date": "2026-09-02",
@@ -2811,7 +2862,8 @@
       "kind": "Fulfilment",
       "cash": 0,
       "kg": 1,
-      "note": "as booked"
+      "note": "as booked",
+      "cost": 50
      },
      {
       "date": "2026-09-02",
@@ -2834,7 +2886,7 @@
     "customer": "CI4-OKR",
     "qty": 3,
     "total": 290,
-    "cost": 50,
+    "cost": 150,
     "cash": 290,
     "handover": "collected",
     "date": "2026-09-02",
@@ -2848,7 +2900,7 @@
     "customer": "CE4-CHE",
     "qty": 2,
     "total": 215,
-    "cost": 50,
+    "cost": 100,
     "cash": 215,
     "handover": "collected",
     "date": "2026-09-02",
@@ -2862,7 +2914,7 @@
     "customer": "CF5-WM",
     "qty": 2,
     "total": 230,
-    "cost": 48,
+    "cost": 96,
     "cash": 230,
     "handover": "delivered",
     "date": "2026-09-02",
@@ -2876,7 +2928,7 @@
     "customer": "CA4-DAM",
     "qty": 1.5,
     "total": 160,
-    "cost": 48,
+    "cost": 72,
     "cash": 0,
     "handover": "collected",
     "date": "2026-09-02",
@@ -2892,7 +2944,8 @@
       "kind": "Fulfilment",
       "cash": 0,
       "kg": 1.5,
-      "note": "as booked"
+      "note": "as booked",
+      "cost": 72
      },
      {
       "date": "2026-09-05",
@@ -2907,7 +2960,7 @@
     "customer": "CM4-MK",
     "qty": 2,
     "total": 220,
-    "cost": 48,
+    "cost": 96,
     "cash": 220,
     "handover": "delivered",
     "date": "2026-09-02",
@@ -2921,7 +2974,7 @@
     "customer": "CM6-PJ",
     "qty": 3,
     "total": 270,
-    "cost": 48,
+    "cost": 144,
     "cash": 270,
     "handover": "collected",
     "date": "2026-09-03",
@@ -2935,7 +2988,7 @@
     "customer": "CS6-BS",
     "qty": 2,
     "total": 200,
-    "cost": 48,
+    "cost": 96,
     "cash": 200,
     "handover": "delivered",
     "date": "2026-09-03",
@@ -2949,7 +3002,7 @@
     "customer": "CM4-MK",
     "qty": 4,
     "total": 360,
-    "cost": 48,
+    "cost": 192,
     "cash": 300,
     "date": "2026-09-04",
     "deliveredQty": 4,
@@ -2961,7 +3014,7 @@
     "customer": "CH5-OUG",
     "qty": 12.5,
     "total": 650,
-    "cost": 48,
+    "cost": 600,
     "cash": 650,
     "handover": "collected",
     "date": "2026-09-04",
@@ -2975,7 +3028,7 @@
     "customer": "CH5-KLC",
     "qty": 0.5,
     "total": 75,
-    "cost": 48,
+    "cost": 24,
     "cash": 75,
     "handover": "collected",
     "date": "2026-09-05",
@@ -3288,7 +3341,7 @@
   ],
   "QUEUE_COMMITTED": "2026-09-04T12:03:40.929Z",
   "PRICING": {
-   "takenAt": "2026-09-05T14:00:33.871Z",
+   "takenAt": "2026-09-06T12:50:47.778Z",
    "sizes": [
     0.5,
     1,
@@ -3399,8 +3452,8 @@
          "date": "2026-09-03",
          "sup": "SA5-BTR"
         },
-        "days": 30,
-        "sinceLot": 39
+        "days": 31,
+        "sinceLot": 40
        },
        "lockBase": {
         "lockedOn": "2026-08-06",
@@ -3522,55 +3575,55 @@
     },
     "oil": {
      "stockCost": 7.6667,
-     "replCost": 7.15,
+     "replCost": 7.25,
      "floors": {
       "1": {
-       "delivered": 43.26,
-       "collected": 33.26
+       "delivered": 43.36,
+       "collected": 33.36
       },
       "2": {
-       "delivered": 51.52,
-       "collected": 41.52
+       "delivered": 51.73,
+       "collected": 41.73
       },
       "3": {
-       "delivered": 59.77,
-       "collected": 49.77
+       "delivered": 60.09,
+       "collected": 50.09
       },
       "4": {
-       "delivered": 68.03,
-       "collected": 58.03
+       "delivered": 68.45,
+       "collected": 58.45
       },
       "5": {
-       "delivered": 76.29,
-       "collected": 66.29
+       "delivered": 76.82,
+       "collected": 66.82
       },
       "0.5": {
-       "delivered": 39.13,
-       "collected": 29.13
+       "delivered": 39.18,
+       "collected": 29.18
       },
       "1.5": {
-       "delivered": 47.39,
-       "collected": 37.39
+       "delivered": 47.55,
+       "collected": 37.55
       },
       "2.5": {
-       "delivered": 55.65,
-       "collected": 45.65
+       "delivered": 55.91,
+       "collected": 45.91
       },
       "3.5": {
-       "delivered": 63.9,
-       "collected": 53.9
+       "delivered": 64.27,
+       "collected": 54.27
       },
       "4.5": {
-       "delivered": 72.16,
-       "collected": 62.16
+       "delivered": 72.64,
+       "collected": 62.64
       },
       "6.25": {
-       "delivered": 86.61,
-       "collected": 76.61
+       "delivered": 87.27,
+       "collected": 77.27
       },
       "12.5": {
-       "delivered": 138.23,
-       "collected": 128.23
+       "delivered": 139.54,
+       "collected": 129.54
       }
      },
      "inputs": {
@@ -3606,8 +3659,8 @@
          "date": "2026-08-26",
          "sup": "SP7-PUD"
         },
-        "days": 30,
-        "sinceLot": 30
+        "days": 31,
+        "sinceLot": 31
        },
        "lockBase": {
         "lockedOn": "2026-08-06",
@@ -3642,7 +3695,7 @@
        },
        "meanLot": 43.333333333333336,
        "quoteRate": 10,
-       "repl": 7.15,
+       "repl": 7.25,
        "costBasis": {
         "freightPerTrip": {
          "rm": 30
@@ -3722,10 +3775,10 @@
      }
     }
    },
-   "v": "v495"
+   "v": "v496"
   },
   "OPEN": {
-   "at": "2026-09-05T14:00:33.896Z",
+   "at": "2026-09-06T12:50:47.807Z",
    "count": 5,
    "byKey": {
     "CM4-MK|2026-09-04|360": {
@@ -3741,7 +3794,7 @@
      "rid": "s132",
      "deliveredOn": "2026-09-04",
      "key": "CM4-MK|2026-09-04|360",
-     "age": 1,
+     "age": 2,
      "exp": 60
     },
     "CA4-DAM|2026-09-02|160": {
@@ -3759,7 +3812,7 @@
      "handover": "collected",
      "defaulted": true,
      "key": "CA4-DAM|2026-09-02|160",
-     "age": 3,
+     "age": 4,
      "exp": 0
     },
     "CN6-WM|2026-08-30|110": {
@@ -3776,7 +3829,7 @@
      "deliveredOn": "2026-08-30",
      "handover": "delivered",
      "key": "CN6-WM|2026-08-30|110",
-     "age": 6,
+     "age": 7,
      "exp": 82.5
     },
     "CA4-DAM|2026-08-28|100": {
@@ -3794,7 +3847,7 @@
      "handover": "collected",
      "defaulted": true,
      "key": "CA4-DAM|2026-08-28|100",
-     "age": 8,
+     "age": 9,
      "exp": 0
     },
     "SF6-KLC|2026-07-08|750": {
@@ -3819,7 +3872,7 @@
      "free": 9.3,
      "owedOut": 0,
      "coverDays": 1.8,
-     "rate": 5.3,
+     "rate": 5.23,
      "owedToYou": 430,
      "promised": 0,
      "short": 0
@@ -3840,7 +3893,7 @@
     "salt": "2026-09-04",
     "oil": "2026-08-23"
    },
-   "v": "v495"
+   "v": "v496"
   }
  }
 }

@@ -437,6 +437,8 @@ export function applyAmend(row, pay, dir, note) {   /* v413: exported so the sui
     const step = { date: pay.date, kind: "Modification", cash: 0, kg: 0 };
     if (note) step.note = note;
     row.amend = row.amend.concat([step]);
+    /* v496: the order's cost is absolute and follows its quantity, so the unit cost it was costed at is kept. */
+    if (row.cost != null && row.qty > 0) row.cost = +(E.txUnitCost(row) * pay.newQty).toFixed(2);
     row.qty = pay.newQty;
     row.total = pay.newTotal;
     if (row.unpriced && pay.newTotal > 0) delete row.unpriced;
@@ -503,6 +505,9 @@ export function applyAmend(row, pay, dir, note) {   /* v413: exported so the sui
   if (!row.amend || !row.amend.length)
     row.amend = [seedStep(row, dir)];
   const step = { date: pay.date, kind: pay.kind, cash: +pay.cash || 0, kg: +pay.kg || 0 };
+  /* v496: a movement carries the cost of what it moved, in RM, from the row's own unit cost. A row
+     the shelf costs below (it.target.cost filled from stockCost) has its cost by the time this runs. */
+  if ((+pay.kg || 0) > 0.0001 && row.cost != null && row.qty > 0) step.cost = +(E.txUnitCost(row) * (+pay.kg)).toFixed(2);
   if (note) step.note = note;
   row.amend = row.amend.concat([step]);
   /* v407, round seven, MATERIAL: both v406 gates sat on the Correction path, and this branch set
@@ -562,8 +567,13 @@ export function apply(book, staged, notes, masterText) {
         const rec = E.refundOnCancel(book.customerRefunds, it.target, (it.pay && it.pay.date) || null);
         if (rec) moves.push(`refund payable: ${rec.party} RM ${rec.amount}`);
       }
-      if (it.dir !== "BUY" && it.pay.kg > 0.009 && it.target.cost == null && prodOf(it.target) === "salt" && stockCost != null) it.target.cost = stockCost;
+      /* v496: the shelf's figure is RM per unit; the order's cost is absolute, so it is the shelf times the order's units. */
+      if (it.dir !== "BUY" && it.pay.kg > 0.009 && it.target.cost == null && prodOf(it.target) === "salt" && stockCost != null) it.target.cost = +(stockCost * it.target.qty).toFixed(2);
       if (n.cost != null) it.target.cost = +n.cost;
+      /* v496: the step was written inside applyAmend before either fill above, so a movement on a row the
+         shelf costs, or one the notes recost, takes its cost here, from the order's unit cost as it now stands. */
+      { const last = it.target.amend && it.target.amend[it.target.amend.length - 1];
+        if (last && (+last.kg || 0) > 0.0001 && it.target.cost != null && it.target.qty > 0) last.cost = +(E.txUnitCost(it.target) * (+last.kg)).toFixed(2); }
       if (n.rowNote) it.target.note = String(n.rowNote) + " " + (it.target.note || "");
     } else if (it.append === "sales" || it.append === "purchases") {
       const row = { ...src.row };

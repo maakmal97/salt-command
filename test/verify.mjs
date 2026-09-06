@@ -2309,7 +2309,9 @@ section("Fold — an approved batch becomes records in the book (v340)");
        the master is where the fold itself reads the figure, so read it from the same place and
        the assertion survives every lot that lands. */
     const shelfCost = +(/const STOCK_COST=([\d.]+);/.exec(master) || [])[1];
-    ok(ful && ful.cost === shelfCost, `salt that left the shelf took the shelf's cost (RM${shelfCost})`);
+    /* v496: the order's cost is absolute, the shelf's unit figure times the units the order is for. */
+    ok(ful && ful.cost === +(shelfCost * 6.25).toFixed(2), `salt that left the shelf took the shelf's cost, RM${shelfCost} a unit on 6.25 unit (RM${ful && ful.cost})`);
+    ok(ful && ful.amend && ful.amend[1].cost === +(shelfCost * 6.25).toFixed(2), "and the movement carries the cost of what it moved");
     ok(B.PROD_OPENING.oil.stated === 3 && B.COUNT_ON.oil === "2026-08-23", "the oil count set the stated shelf and moved COUNT_ON");
     ok(B.roster.includes("CT7-KLC"), "the registration joined the roster");
     ok(Math.abs(B.STATED_STOCK - (from - 0.5 - 6.25)) < 1e-9, `the salt shelf rolled ${from} to ${B.STATED_STOCK}`);

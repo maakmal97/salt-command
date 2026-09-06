@@ -14,6 +14,16 @@ const POSITION_ENGINE=(function(){
 function txPrice(s){return s.qty>0?s.total/s.qty:0;}
 function txPaid(s){return (s.cash||0)+(s.settledRM||0);}
 function txDeliv(s){return (s.deliveredQty||0)+(s.settledKg||0);}
+/* ====== COST IS ABSOLUTE (v496, his instruction of 05 Sep 2026) ================
+   A sale's `cost` is the cost of the order in RM, stored as a person states it, and the cost
+   of a movement is stored on the step that moved it, `amend[i].cost`, also in RM. Until v496
+   `cost` was RM per unit, and every reader multiplied it by a quantity of its own choosing:
+   qty here, units moved there, and the audit of 04 Sep found COGS defined three ways. The
+   unit cost is DERIVED here, once, and nothing else divides. `fallback` is what a row with
+   no stated cost is costed at, the caller's shelf figure, so the fallback stays the caller's
+   and the derivation stays here. A row with no quantity has no unit cost. */
+function txCost(s){return s.cost!=null?+s.cost:null;}
+function txUnitCost(s,fallback){return (s.cost!=null&&s.qty>0)?+s.cost/s.qty:(fallback==null?null:fallback);}
 function txPhys(s){return (s.deliveredQty||0);}
 function txEffDeliv(s){return txDeliv(s)+(s.advanceUnits||0);}
 function txAdvance(s){return Math.max(0,(s.deliveredQty||0)*txPrice(s)-txPaid(s));}
@@ -242,7 +252,7 @@ function walk(I){
   /* v280, HIS RULING: goodwill is an EXPENSE, not a sale. The row stays in sales so the salt it
      moved still leaves the shelf; it is only kept out of the priced set. */
   W.pricedSales=_S.filter(s=>{const o=txStat(s).order;return o!=='Pending'&&o!=='Cancelled'&&!s.goodwill;});
-  W.goodwillRM=+_S.filter(s=>s.goodwill).reduce((a,s)=>a+(s.qty||0)*(s.cost!=null?s.cost:I.wavgBuyPrev),0).toFixed(2);
+  W.goodwillRM=+_S.filter(s=>s.goodwill).reduce((a,s)=>a+(s.qty||0)*txUnitCost(s,I.wavgBuyPrev),0).toFixed(2);
   /* the cost basis follows the units ACTUALLY ON THE SHELF, valued at the rate of the lot they
      came off: a part-delivered lot enters as it lands, not whole on the first unit */
   W.buyUnits=W.receivedPO.reduce((s,p)=>s+poRecvUnits(p),0);
@@ -279,7 +289,7 @@ function walk(I){
   const srDays=_sr?dage(_sr.since):0;
   W.supRecovNet=(_sr&&_sr.status==='writtenOff')?0
     :+(W.supRecovGross*(1-provRate(srDays))).toFixed(2);
-  W.cogs=W.pricedSales.reduce((a,s)=>a+(s.qty-txPendUnitsRaw(s))*(s.cost!=null?s.cost:W.wavgBuy),0);  // no cost against salt not yet moved
+  W.cogs=W.pricedSales.reduce((a,s)=>a+(s.qty-txPendUnitsRaw(s))*txUnitCost(s,W.wavgBuy),0);  // no cost against salt not yet moved
   W.grossMargin=W.revTotal-W.cogs;W.marginPct=W.revTotal>0?W.grossMargin/W.revTotal*100:0;
   return W;
 }
@@ -549,7 +559,7 @@ function refundOnCancel(list,row,date){
 /* the key an amendment names a row by, shared with the phone and the drafter */
 function ovKey(t){return (t.customer||t.supplier)+'|'+t.date+'|'+t.total;}
 
-return {txPrice:txPrice,txPaid:txPaid,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:txEffDeliv,txAdvance:txAdvance,
+return {txPrice:txPrice,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:txEffDeliv,txAdvance:txAdvance,
         txDeferUnits:txDeferUnits,txPendUnits:txPendUnits,txPendUnitsRaw:txPendUnitsRaw,txPendRM:txPendRM,txStat:txStat,txDates:txDates,
         poRecvUnits:poRecvUnits,poCash:poCash,poLive:poLive,poOwed:poOwed,poRate:poRate,poOpenUnits:poOpenUnits,poStat:poStat,provRate:provRate,saleProvRate:saleProvRate,
         daysBetween:daysBetween,dayAge:dayAge,walk:walk,coverStats:coverStats,commitments:commitments,

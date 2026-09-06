@@ -70,7 +70,7 @@ tool in `tools/`, the test suite, and `master/_to_fold.json` if there was anythi
      against the book: the party's history, the rate against the ladder and the floor (the Pricing
      tab, never a figure computed by hand), whether the cost the draft carries is the shelf's (the
      shelf is the latest lot; a draft written against a stale mirror may carry an older rate, and
-     `rows.<id>.cost` overrides it, with the reason in the note). Codes only, never a name.
+     `rows.<id>.cost` overrides it, in RM for the whole order since v496, never per unit, with the reason in the note). Codes only, never a name.
    - `rows.<id>.note` for an amendment is the trail note: what moved, when, what it leaves
      outstanding. `rows.<id>.rowNote`, if given, is prepended to the row's own note.
    - `version`: the next after the master's. `title`: in capitals, as every entry before it.
