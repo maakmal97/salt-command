@@ -1,5 +1,14 @@
 [
  {
+  "v": "v497",
+  "d": "06 Sep 2026",
+  "t": "A BREACH IS NAMED ON ITS OWN BOOK'S REGISTER ONLY",
+  "n": [
+   "<b>HIS INSTRUCTION, 06 SEP 2026: CA4-DAM breaks one rule in salt only, not in oil.</b> The Boundaries register on the oil tab listed his salt credit-cap breach, 2.5 unit of salt out and unpaid, and named it as salt's. Round 5 had made the cap per book and kept the whole-book read on purpose, so a salt breach was shown on every tab. That is reversed: the credit rows are filtered to the active book before they are named, so the oil register carries no salt breach and the salt register carries it once, under the one rule he breaks. Every other rule in the register was already the active book's: the shelf, the cost basis and the margin floor read the product on screen, the receivables ladder reads the walk's own list, and a ban is a person, not a book, and stays on both.",
+   "<b>PROVED ON THE LIVE BOOK.</b> The assertion asks the register for CA4-DAM's rules on each book: on salt, exactly one, Credit cap; on oil, none. The same expression on the unchanged desk returned the credit-cap breach on oil. The render diff moves nowhere, because every shot is taken on the salt book, where nothing changes."
+  ]
+ },
+ {
   "v": "v496",
   "d": "06 Sep 2026",
   "t": "COST IS THE ORDER'S, IN RINGGIT, AND A MOVEMENT CARRIES THE COST OF WHAT IT MOVED",

@@ -5756,6 +5756,21 @@ section("v466: the ledger never scrolls sideways; a narrower screen re-flows the
 }
 
 
+section("v497: a breach is named on its own book's register only");
+{
+  /* His instruction of 06 Sep 2026: CA4-DAM breaks one rule in salt only, not in oil. Round 5 had
+     the register name every book's credit breach on every tab, as salt's, so the oil tab listed a
+     salt breach. Driven on the live book, where CA4-DAM holds 2.5 unit of salt out and unpaid. */
+  const { openMaster: om21 } = await import("../tools/payload.mjs");
+  const { w: w21 } = await om21();
+  const reg = (p) => JSON.parse(String(w21.eval("setProd('" + p + "');recompute();JSON.stringify(boundaryScan().filter(function(x){return x.who==='CA4-DAM';}).map(function(x){return x.rule;}))")));
+  const salt = reg("salt"), oil = reg("oil");
+  ok(salt.length === 1 && salt[0] === "Credit cap", "on the salt book CA4-DAM breaks one rule, the credit cap (" + salt.join(", ") + ")");
+  ok(oil.length === 0, "and on the oil book he breaks none (" + (oil.join(", ") || "none") + ")");
+  w21.eval("setProd('salt');recompute();");
+}
+
+
 section("v495: an entry is two rows, and the act cell ends the second");
 {
   /* His instruction of 05 Sep 2026, on a screenshot of the heading: the entry, date, party, product,
