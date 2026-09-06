@@ -21,6 +21,9 @@
  * is drawn on a canvas from the matrix computed here, which is also what makes the image
  * shareable: the same canvas becomes the PNG the Share sheet carries.
  */
+import { readFileSync, writeFileSync, existsSync, readdirSync } from "node:fs";
+import { dirname, resolve, join, basename } from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { qrMatrix } from "./qr.mjs";
 import { saltTokens } from "./stmt-style.mjs";
 
@@ -294,4 +297,69 @@ export function sendSheet(rows, opts) {
     + "</div><script>"
     + JS.replace("__ROWS__", JSON.stringify(data)).replace("__ISSUE__", JSON.stringify(String(o.issue || "")))
     + "</script></body></html>";
+}
+
+/* ---- RUN IT ON ITS OWN, over an issue already made -----------------------------------
+   The sheet is normally written by the issue that mints the passwords. This is for the case that
+   put it here: an issue made BEFORE the sheet existed, or a sheet deleted after a send. It reads
+   the folder rather than making anything, so nothing is re-encrypted, no password is re-minted and
+   nothing in the repository changes. The statements and the records are not touched at all.
+
+     node tools/stmt-send.mjs statements/2026-09 2026-09-01
+*/
+/* AN ASYNC main() CALLED WITHOUT AWAITING IT, and the reason is a deadlock this hit at once.
+   make_statements.mjs imports THIS module statically, so when this file is the entry point a
+   TOP-LEVEL `await import("./make_statements.mjs")` asks for a module that is waiting for this one
+   to finish evaluating: node reports "unsettled top-level await" and exits 13. Letting evaluation
+   finish first, then running, breaks the cycle. */
+async function main() {
+  const outDir = process.argv[2];
+  const issue = process.argv[3];
+  if (!outDir || !/^\d{4}-\d{2}-\d{2}$/.test(String(issue || ""))) {
+    console.error("usage: node tools/stmt-send.mjs <statements/YYYY-MM> <YYYY-MM-DD issue date>");
+    process.exit(2);
+  }
+  const here = resolve(outDir);
+  const root = /^\d{4}-\d{2}$/.test(basename(here)) ? dirname(here) : here;
+  const pwFile = join(here, "_passwords.json");
+  const usersFile = join(root, "_users.json");
+  for (const [f, what] of [[pwFile, "the passwords"], [usersFile, "the usernames"]]) {
+    if (!existsSync(f)) {
+      console.error("cannot find " + what + " at " + f
+        + (f === pwFile ? "\nThat file is gitignored, so it exists only on the machine that made the issue." : ""));
+      process.exit(1);
+    }
+  }
+  const passwords = JSON.parse(readFileSync(pwFile, "utf8"));
+  const users = JSON.parse(readFileSync(usersFile, "utf8"));
+  const made = readdirSync(here)
+    .map((f) => (new RegExp("^statement_(.+?)_" + issue + "\\.html$").exec(f) || [])[1])
+    .filter(Boolean);
+  if (!made.length) { console.error("no statement dated " + issue + " in " + here); process.exit(1); }
+
+  const M = await import("./make_statements.mjs");
+  const base = M.siteBaseUrl();
+  const rows = [], missing = [];
+  for (const who of made.sort()) {
+    if (!users[who] || !passwords[who]) { missing.push(who); continue; }
+    /* the same totals the statement itself foots to, read off the same rows it was built from */
+    const o = { from: null, to: issue, completed: true, open: true, pending: true, dates: true };
+    const r = M.stmtRows(who, o);
+    const t = { n: r.filter((x) => !x.cancelled).length, total: 0, owed: 0 };
+    r.forEach((x) => { if (x.cancelled) return; t.total += x.total; t.owed += x.owed; });
+    rows.push({ who, user: users[who], pw: passwords[who], t,
+                url: base + "/?u=" + encodeURIComponent(users[who]) });
+  }
+  if (missing.length) console.log("::warning::no username or password for: " + missing.join(", "));
+  const file = join(here, "_send_" + issue + ".html");
+  writeFileSync(file, sendSheet(rows, {
+    issue,
+    monthName: new Date(issue + "T00:00:00").toLocaleDateString("en-GB", { month: "long", year: "numeric" })
+  }));
+  console.log("wrote " + file + "  (" + rows.length + " cards)");
+  console.log("It holds every password in the issue, so it is gitignored and is never the thing you send.");
+}
+
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  main().catch((e) => { console.error(String((e && e.stack) || e)); process.exit(1); });
 }
