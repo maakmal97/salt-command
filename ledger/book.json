@@ -37,9 +37,9 @@
       "stated": 15
     }
   },
-  "STATED_STOCK": 9.3,
+  "STATED_STOCK": 7,
   "COUNT_ON": {
-    "salt": "2026-09-04",
+    "salt": "2026-09-06",
     "oil": "2026-08-23"
   },
   "purchases": [
@@ -198,7 +198,8 @@
     {"customer":"CS6-BS","qty":2,"total":200,"cost":96,"cash":200,"handover":"delivered","date":"2026-09-03","deliveredQty":2,"deliveredOn":"2026-09-03","paidOn":"2026-09-03","note":"2 unit delivered to CS6-BS for RM 200, RM 100 a unit, paid in full and delivered in full on 3 Sep, so the row closes on arrival and leaves nothing outstanding. Costed at the shelf's own RM 48 a unit, RM 96 against RM 200, RM 104 on the order at 52%. The floor for 2 unit delivered is RM 140.87, so the rate is RM 59.13 clear of it. His own six salt rows run RM 95 to RM 126.67 a unit on 1 to 1.5 unit, plus a free unit on 24 Aug; this is his largest salt order to date, and RM 100 a unit on double the size is the taper rather than a concession. No flag from the drafter.","rid":"s131"},
     {"customer":"CM4-MK","qty":4,"total":360,"cost":192,"cash":300,"date":"2026-09-04","deliveredQty":4,"deliveredOn":"2026-09-04","note":"CM4-MK takes 4 unit at RM 360, RM 90/unit, delivered in full on 4 Sep with RM 300 paid and RM 60 left owing. Two flags came with the draft and both were read. The rate flag calls RM 90/unit 18.2% under this party's RM 110/unit median over seven orders; the median is the wrong ruler, because RM 110/unit is what CM4-MK's 2 unit orders cost and both of its 4 unit orders were struck at this grade, RM 360 on 10 Aug and RM 380 on 24 Aug. This is the 10 Aug price repeated, and it sits well clear of the live floor of RM 245.52 delivered for 4 unit. The cost is the shelf's own RM 48/unit, from the 25 unit SA5-BTR lot of 3 Sep at RM 1,200, and it is the same figure the desk's pricing snapshot carries, so no override was needed: RM 192 of cost against RM 360 leaves RM 168, 46.7%. The advance flag is the one that stands: RM 60 goes out against delivered stock, and it is the first balance CM4-MK has carried, every one of its seven earlier orders having settled on the day.","rid":"s132"},
     {"customer":"CH5-OUG","qty":12.5,"total":650,"cost":600,"cash":650,"handover":"collected","date":"2026-09-04","deliveredQty":12.5,"deliveredOn":"2026-09-04","paidOn":"2026-09-04","note":"<b>12.5 UNIT COLLECTED AND PAID IN FULL ON 4 SEP, RM 650 AT RM 52 A UNIT, BELOW THE FLOOR ON HIS WORD.</b> The desk's own snapshot that morning put the collected floor for 12.5 unit at RM 682.87 and the delivered floor at RM 692.87, so this clears neither: it is RM 32.87 under the one that applies. The loaded cost is RM 52.63 a unit against RM 52.00 sold, so the order loses RM 0.63 a unit before the RM 25 that timePerOrder charges for the work; costed at the shelf's RM 48 it shows RM 50 on the order at 7.7%, which is the thinnest margin on any salt row this month. He took it with the figure in front of him, and three things stand beside the decision: CH5-OUG bought 12.5 unit at RM 600 on 20 Aug, RM 48 a unit, so RM 650 is RM 50 more than his own last order at this size; he is the only customer buying 12.5 unit at wholesale rates, the other four such orders on the book being RM 750 to RM 1,300; and RM 650 for 12.5 unit is exactly SA5-BTR's live quote tier, so the lot goes out at what it costs to replace. Entered by the fold on his word, 05 Sep, after the phone entry did not arrive twice: no drafter flag was raised because no draft was made, which is why the floor figure is written here instead.","rid":"s133"},
-    {"customer":"CH5-KLC","qty":0.5,"total":75,"cost":24,"cash":75,"handover":"collected","date":"2026-09-05","deliveredQty":0.5,"deliveredOn":"2026-09-05","paidOn":"2026-09-05","note":"<b>0.5 UNIT COLLECTED AND PAID IN FULL ON 5 SEP, RM 75 AT RM 150 A UNIT.</b> His second completed order and his first since July: s024 of 17 Jul was 0.5 unit at RM 105, and the 0.5 at RM 80 he agreed on 31 Jul was cancelled on 5 Aug. RM 150 a unit is RM 60 under that July rate and clears the 0.5-unit collected floor of RM 51.31 by RM 23.69. Costed at the shelf's RM 48, RM 24 against RM 75, RM 51 on the order at 68%. Entered by the fold on his word, 05 Sep, as the four rows of v489 were.","rid":"s134"}
+    {"customer":"CH5-KLC","qty":0.5,"total":75,"cost":24,"cash":75,"handover":"collected","date":"2026-09-05","deliveredQty":0.5,"deliveredOn":"2026-09-05","paidOn":"2026-09-05","note":"<b>0.5 UNIT COLLECTED AND PAID IN FULL ON 5 SEP, RM 75 AT RM 150 A UNIT.</b> His second completed order and his first since July: s024 of 17 Jul was 0.5 unit at RM 105, and the 0.5 at RM 80 he agreed on 31 Jul was cancelled on 5 Aug. RM 150 a unit is RM 60 under that July rate and clears the 0.5-unit collected floor of RM 51.31 by RM 23.69. Costed at the shelf's RM 48, RM 24 against RM 75, RM 51 on the order at 68%. Entered by the fold on his word, 05 Sep, as the four rows of v489 were.","rid":"s134"},
+    {"customer":"CE5-TBC","qty":1,"total":110,"cash":110,"date":"2026-09-06","deliveredQty":1,"deliveredOn":"2026-09-06","paidOn":"2026-09-06","note":"<b>1 UNIT TO A NEW BUYER, PAID AND HANDED OVER ON THE DAY.</b> CE5-TBC is registered with a temporary suffix: the location is to be confirmed and the code is re-keyed when it is, on his word of 06 Sep 2026. RM 110 for 1 unit, costed off the shelf at RM 48.","rid":"s135","cost":48}
   ],
   "contacts": [
     {"date":"2026-08-06","party":"CM4-SK","how":"message","outcome":"noreply","next":null,"note":"said hello"},
@@ -270,7 +271,8 @@
     "CH6-SET",
     "CD3-SEG",
     "CA7-JTR",
-    "CF5-WM"
+    "CF5-WM",
+    "CE5-TBC"
   ],
   "associates": [
     "CS6-BS",
@@ -409,7 +411,7 @@
   "ONE_OFFS": [
     {"id":"CM6-HCM","date":"2026-07-14","note":"One-off; RM104/unit is an outlier."}
   ],
-  "QUEUE_COMMITTED": "2026-09-04T12:03:40.929Z",
+  "QUEUE_COMMITTED": "2026-09-06T13:42:00.000Z",
   "PRICE_SET": {
     "salt": {
       "prices": {},
@@ -428,6 +430,7 @@
   },
   "NOTES": {
     "STATED_STOCK": [
+      "COUNTED AT v498 on 2026-09-06, AFTER CE5-TBC's 1 unit had gone out: the salt shelf held 7 against 8.3 on the roll (9.3 less that 1 unit), a drift of -1.3. A COUNT, NOT A ROLL: STATED_STOCK is set to 7 outright and COUNT_ON.salt moves to 2026-09-06. The fold applied the count and then rolled the sale out of it, reading 6, because it takes a count as taken before the batch's movements; the count was taken after, so the shelf is 7, corrected by hand in the same version. The previous count was 9.8 on 2026-09-04.",
       "ROLLED AT v490: 0.5 unit to CH5-KLC on 2026-09-05, so 9.8 less 0.5 is 9.3. A ROLL AND NOT A COUNT; COUNT_ON is untouched. The first movement off the 9.8 counted on 4 Sep.",
       "COUNTED AT v489 on 2026-09-04: the salt shelf held 9.8 against 10.5 on the roll, a drift of -0.7. He physically counted 13.8 on 4 Sep, after CH5-OUG's 12.5 had gone and before CM4-MK's 4 did; v484 had already rolled CM4-MK's 4 off, and the fold sets the shelf to the counted figure rather than re-rolling what came after, so the count is entered net of that 4 at 9.8. The 0.7 is real shrinkage against the shelf as it stood at the moment of the count, the first this book has booked since the 2 Sep count of 10.5, and the ladder walk reads it as self-use at loaded cost, RM 36.84.",
       "ROLLED AT v489: 12.5 unit to CH5-OUG on 2026-09-04, so 23 less 12.5 is 10.5. A ROLL AND NOT A COUNT; COUNT_ON is untouched. This is the sale that went out before the count below was taken, and the roll is applied first so the count lands against the shelf as it stood.",

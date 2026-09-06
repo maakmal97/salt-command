@@ -1,6 +1,6 @@
 {
- "v": "v497",
- "stamped": "06 Sep 2026, 21:20 KL",
+ "v": "v498",
+ "stamped": "06 Sep 2026, 21:36 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -41,9 +41,9 @@
     "stated": 15
    }
   },
-  "STATED_STOCK": 9.3,
+  "STATED_STOCK": 7,
   "COUNT_ON": {
-   "salt": "2026-09-04",
+   "salt": "2026-09-06",
    "oil": "2026-08-23"
   },
   "purchases": [
@@ -3037,6 +3037,19 @@
     "paidOn": "2026-09-05",
     "note": "<b>0.5 UNIT COLLECTED AND PAID IN FULL ON 5 SEP, RM 75 AT RM 150 A UNIT.</b> His second completed order and his first since July: s024 of 17 Jul was 0.5 unit at RM 105, and the 0.5 at RM 80 he agreed on 31 Jul was cancelled on 5 Aug. RM 150 a unit is RM 60 under that July rate and clears the 0.5-unit collected floor of RM 51.31 by RM 23.69. Costed at the shelf's RM 48, RM 24 against RM 75, RM 51 on the order at 68%. Entered by the fold on his word, 05 Sep, as the four rows of v489 were.",
     "rid": "s134"
+   },
+   {
+    "customer": "CE5-TBC",
+    "qty": 1,
+    "total": 110,
+    "cash": 110,
+    "date": "2026-09-06",
+    "deliveredQty": 1,
+    "deliveredOn": "2026-09-06",
+    "paidOn": "2026-09-06",
+    "note": "<b>1 UNIT TO A NEW BUYER, PAID AND HANDED OVER ON THE DAY.</b> CE5-TBC is registered with a temporary suffix: the location is to be confirmed and the code is re-keyed when it is, on his word of 06 Sep 2026. RM 110 for 1 unit, costed off the shelf at RM 48.",
+    "rid": "s135",
+    "cost": 48
    }
   ],
   "contacts": [
@@ -3180,7 +3193,8 @@
    "CH6-SET",
    "CD3-SEG",
    "CA7-JTR",
-   "CF5-WM"
+   "CF5-WM",
+   "CE5-TBC"
   ],
   "associates": [
    "CS6-BS",
@@ -3339,9 +3353,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-04T12:03:40.929Z",
+  "QUEUE_COMMITTED": "2026-09-06T13:42:00.000Z",
   "PRICING": {
-   "takenAt": "2026-09-06T12:56:09.337Z",
+   "takenAt": "2026-09-06T13:38:05.576Z",
    "sizes": [
     0.5,
     1,
@@ -3371,52 +3385,52 @@
      "replCost": 48.33,
      "floors": {
       "1": {
-       "delivered": 87.73,
-       "collected": 77.73
+       "delivered": 87.92,
+       "collected": 77.92
       },
       "2": {
-       "delivered": 140.46,
-       "collected": 130.46
+       "delivered": 140.84,
+       "collected": 130.84
       },
       "3": {
-       "delivered": 193.19,
-       "collected": 183.19
+       "delivered": 193.76,
+       "collected": 183.76
       },
       "4": {
-       "delivered": 245.92,
-       "collected": 235.92
+       "delivered": 246.68,
+       "collected": 236.68
       },
       "5": {
-       "delivered": 298.66,
-       "collected": 288.66
+       "delivered": 299.6,
+       "collected": 289.6
       },
       "0.5": {
-       "delivered": 61.37,
-       "collected": 51.37
+       "delivered": 61.46,
+       "collected": 51.46
       },
       "1.5": {
-       "delivered": 114.1,
-       "collected": 104.1
+       "delivered": 114.38,
+       "collected": 104.38
       },
       "2.5": {
-       "delivered": 166.83,
-       "collected": 156.83
+       "delivered": 167.3,
+       "collected": 157.3
       },
       "3.5": {
-       "delivered": 219.56,
-       "collected": 209.56
+       "delivered": 220.22,
+       "collected": 210.22
       },
       "4.5": {
-       "delivered": 272.29,
-       "collected": 262.29
+       "delivered": 273.14,
+       "collected": 263.14
       },
       "6.25": {
-       "delivered": 364.57,
-       "collected": 354.57
+       "delivered": 365.75,
+       "collected": 355.75
       },
       "12.5": {
-       "delivered": 694.14,
-       "collected": 684.14
+       "delivered": 696.51,
+       "collected": 686.51
       }
      },
      "inputs": {
@@ -3501,11 +3515,11 @@
         }
        },
        "attrib": 1,
-       "shrinkRate": 0.05958824291078596,
+       "shrinkRate": 0.06295481030687558,
        "avgDel": {
-        "n": 121,
-        "kg": 315.2,
-        "mean": 2.605
+        "n": 122,
+        "kg": 316.2,
+        "mean": 2.5918
        }
       },
       "policy": {
@@ -3775,10 +3789,10 @@
      }
     }
    },
-   "v": "v497"
+   "v": "v498"
   },
   "OPEN": {
-   "at": "2026-09-06T12:56:09.363Z",
+   "at": "2026-09-06T13:38:05.606Z",
    "count": 5,
    "byKey": {
     "CM4-MK|2026-09-04|360": {
@@ -3868,11 +3882,11 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 9.3,
-     "free": 9.3,
+     "onHand": 7,
+     "free": 7,
      "owedOut": 0,
-     "coverDays": 1.8,
-     "rate": 5.23,
+     "coverDays": 1.3,
+     "rate": 5.3,
      "owedToYou": 430,
      "promised": 0,
      "short": 0
@@ -3890,10 +3904,10 @@
     }
    },
    "countedOn": {
-    "salt": "2026-09-04",
+    "salt": "2026-09-06",
     "oil": "2026-08-23"
    },
-   "v": "v497"
+   "v": "v498"
   }
  }
 }

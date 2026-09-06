@@ -1,5 +1,15 @@
 [
  {
+  "v": "v498",
+  "d": "06 Sep 2026",
+  "t": "A NEW BUYER TAKES 1 UNIT, AND THE SALT SHELF IS COUNTED AT 7",
+  "n": [
+   "<b>ENTERED BY THE FOLD ON HIS WORD, 06 SEP 2026.</b> A new customer is registered as CE5-TBC and takes 1 unit of salt for RM 110, paid and handed over on the day. The suffix is temporary: the code's place part is decided by the location, and the location is to be confirmed, so the code is re-keyed by Correction when it is, and the row keeps its id. The name and the location are on the laptop's directory only, as every name is.",
+   "<b>THE SHELF IS COUNTED AT 7.</b> After the unit went out the roll from 9.3 read 8.3; he counted 7, a drift of 1.3 unit. A count, not a roll: the stated salt shelf is set to 7 outright and the count date moves to 6 Sep. The last count was 9.8 on 4 Sep.",
+   "<b>THE STATEMENT USERNAME IS MINTED WITH THE ID</b>, as the rule of 05 Sep asks, and is kept for life under whatever code the party ends up with."
+  ]
+ },
+ {
   "v": "v497",
   "d": "06 Sep 2026",
   "t": "A BREACH IS NAMED ON ITS OWN BOOK'S REGISTER ONLY",
