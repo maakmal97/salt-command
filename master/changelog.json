@@ -1,5 +1,15 @@
 [
  {
+  "v": "v501",
+  "d": "07 Sep 2026",
+  "t": "HIS TIME IS NOT CHARGED INTO THE FLOOR",
+  "n": [
+   "<b>HIS INSTRUCTION, 07 SEP 2026: do not charge for my time.</b> Given on reading how the salt floor and ask are struck at 1, 1.5 and 2 units, where the RM 25 per order was the whole of the gap between the leak-adjusted cost and the floor. PRICE_ENGINE.timePerOrder is 0.",
+   "<b>WHAT MOVES.</b> Every floor on both books falls by RM 25, at every size, collected and delivered alike, since v500 already took delivery out: the floor is now the leak-adjusted cost times the units and nothing per order. Salt at 1 unit reads RM 52.92 against RM 77.92 before; the ask is untouched, because his time was never in the margin curve, and no ask was floor-lifted so none moves. The customer price list lifts a rate to this floor, so a customer's own rate is now bounded by a lower line.",
+   "<b>WHAT STAYS.</b> The mechanism, the per-order argument and the measurement behind RM 25 are kept in the declaration for the day he states a figure again; the copy on the Price part names the figure it is given, which is now nil."
+  ]
+ },
+ {
   "v": "v500",
   "d": "06 Sep 2026",
   "t": "DELIVERY IS NOT CHARGED INTO THE FLOOR",

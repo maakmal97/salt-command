@@ -5767,7 +5767,12 @@ section("v497: a breach is named on its own book's register only");
   const { w: w21 } = await om21();
   const reg = (p) => JSON.parse(String(w21.eval("setProd('" + p + "');recompute();JSON.stringify(boundaryScan().filter(function(x){return x.who==='CA4-DAM';}).map(function(x){return x.rule;}))")));
   const salt = reg("salt"), oil = reg("oil");
-  ok(salt.length === 1 && salt[0] === "Credit cap", "on the salt book CA4-DAM breaks one rule, the credit cap (" + salt.join(", ") + ")");
+  /* 07 Sep 2026: this asserted exactly one rule and went red at midnight in Kuala Lumpur, when the
+     same credit aged past the credit-age threshold on the clock alone. The point of the block is
+     WHERE the breach is named, not how many rules a living credit breaks, so it asks for the cap
+     and lets the age join it. */
+  ok(salt.includes("Credit cap") && salt.every((r) => /^Credit/.test(r)),
+    "on the salt book CA4-DAM breaks the credit cap, and nothing but credit rules (" + salt.join(", ") + ")");
   ok(oil.length === 0, "and on the oil book he breaks none (" + (oil.join(", ") || "none") + ")");
   w21.eval("setProd('salt');recompute();");
 }
