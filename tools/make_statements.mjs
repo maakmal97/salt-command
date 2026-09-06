@@ -28,6 +28,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import POSITION_ENGINE from "../engine/position.mjs";
 import { statementCss, REVIEW_CSS } from "./stmt-style.mjs";
 import { qrSvg } from "./qr.mjs";
+import { sendSheet } from "./stmt-send.mjs";
 import { newPassword, newUsername, USERNAME_RE, makeVerifier, contentKey, wrapKey, encryptWith, decryptWith } from "./stmt-crypto.mjs";
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -892,6 +893,21 @@ export async function makeStatements(outDir, issue, opts) {
     const rf = join(outDir, '_review_' + issue + '.html');
     writeFileSync(rf, review);
     console.log('review sheet: ' + rf);
+
+    /* THE SEND SHEET (04 Sep 2026, his instruction). One card per customer, with the QR, the
+       link-and-username message on a Share button and the password on a separate one, so a
+       month's sending is not thirty-seven trips between three files with a chance of pasting
+       one customer's password under another's name. It carries every password, so it is
+       gitignored exactly as _passwords.json is, and it says on its face that it is never the
+       thing you send. Archive issues have no password and no link, so they get none. */
+    if (!archive) {
+      const sf = join(outDir, '_send_' + issue + '.html');
+      writeFileSync(sf, sendSheet(sheets, {
+        issue: issue,
+        monthName: new Date(issue + 'T00:00:00').toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
+      }));
+      console.log('send sheet:   ' + sf + '  (gitignored: it holds every password)');
+    }
   }
 
   /* The passwords and the encrypted records. _passwords.json is gitignored: it is credentials,

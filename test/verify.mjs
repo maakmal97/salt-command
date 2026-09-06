@@ -6647,6 +6647,38 @@ section("Statements — the QR, the sort and the Salt identity");
       "the QR opens the site with the username filled in, the username is printed beside it, and the copy says three minutes");
     ok(!/salt-command\./.test(both.html) && !/\/s\//.test(both.html),
       "and nothing on a statement points at the desk's address or the old route");
+    /* THE SEND SHEET (04 Sep 2026, his instruction): the monthly send as one page, one card per
+       customer, the link-and-username message on a Share button and the password on a SECOND,
+       separate one. The split is the whole security design, so the thing to prove is that no
+       password reaches the shareable message, and that the sheet itself is gitignored: it holds
+       every password in the issue and puts every account beside every other. */
+    {
+      const send = readFileSync(join(root, "2026-09", "_send_2026-09-01.html"), "utf8");
+      const rows = JSON.parse(/var ROWS = (\[[\s\S]*?\]);\n/.exec(send)[1]);
+      ok(rows.length === sep.made, `the send sheet carries one card per customer (${rows.length})`);
+      const leaked = rows.filter(r => r.msg.includes(r.pw));
+      ok(leaked.length === 0, leaked.length
+        ? "the shareable message carries the password for: " + leaked.map(r => r.who).join(", ")
+        : "no shareable message carries its password: the two go by separate routes");
+      const mismatched = rows.filter(r => !r.msg.includes(r.url) || !r.msg.includes(r.user)
+        || sep.passwords[r.who] !== r.pw || users[r.who] !== r.user);
+      ok(mismatched.length === 0, mismatched.length
+        ? "these cards pair the wrong username, link or password: " + mismatched.map(r => r.who).join(", ")
+        : "every card pairs the customer with his own username, link and password");
+      ok(rows.every(r => r.qr.length === 33 && r.qr.every(line => /^[01]{33}$/.test(line))),
+        "each card ships a drawn QR matrix, so the code is the image the Share sheet carries");
+      /* the same laws the statements live by: no seller's vocabulary, and no other party's code */
+      const words = send.replace(/<style>[\s\S]*?<\/style>/g, " ");
+      ok(!/\b(cost|margin|tier|floor|shrink|profit)/i.test(words.replace(/[\s\S]*?var ROWS/, "")),
+        "and the sheet speaks none of the seller's vocabulary");
+      ok(!existsSync(join(root, "2026-08", "_send_2026-08-01.html")),
+        "an archive issue gets no send sheet, having no password and no link to send");
+      const ig = execFileSync("git", ["check-ignore", "statements/2026-09/_send_2026-09-01.html"],
+        { cwd: REPO, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
+      ok(ig === "statements/2026-09/_send_2026-09-01.html",
+        "and git ignores it, as it ignores _passwords.json, because it is one");
+    }
+
     const rv = readFileSync(join(root, "2026-09", "_review_2026-09-01.html"), "utf8");
     ok(rv.includes('<th class="l">Username</th>') && rv.includes(u) && !rv.includes(sep.passwords[both.who]),
       "the review sheet lists the usernames and still no password");
@@ -6719,14 +6751,24 @@ section("Statements — the QR, the sort and the Salt identity");
     try { runP = await makeStatements(dirP, "2026-08-01", { key: "test-secret" }); } finally { console.log = q3; }
     const secrets = Object.values(runP.passwords);
     ok(secrets.length > 0, `the run minted passwords to check (${secrets.length})`);
+    /* THE SEND SHEET IS THE ONE PAGE THAT MAY CARRY THEM, and it is named here rather than
+       skipped by pattern, so a NEW page that carries a password still trips this. It exists to be
+       read on the laptop while sending, it is gitignored exactly as _passwords.json is, and the
+       block above proves git ignores it. Everything else the run writes is committed, so a
+       password in it is a password in the history for ever. */
+    const SENDS = readdirSync(dirP).filter(x => /^_send_.*\.html$/.test(x));
+    ok(SENDS.length === 1, "the run writes exactly one send sheet, which is the one page allowed a password");
     const leaked = [];
-    for (const f of readdirSync(dirP).filter(x => x.endsWith(".html"))) {
+    for (const f of readdirSync(dirP).filter(x => x.endsWith(".html") && !SENDS.includes(x))) {
       const h = readFileSync(join(dirP, f), "utf8");
       for (const pw of secrets) if (h.includes(pw)) leaked.push(f);
     }
     ok(leaked.length === 0, leaked.length
-      ? "passwords reached these generated pages: " + [...new Set(leaked)].join(", ")
-      : "no password reaches any generated page, only _passwords.json");
+      ? "passwords reached these committed pages: " + [...new Set(leaked)].join(", ")
+      : "no password reaches any committed page: only _passwords.json and the gitignored send sheet");
+    const sendHas = readFileSync(join(dirP, SENDS[0]), "utf8");
+    ok(secrets.every(pw => sendHas.includes(pw)),
+      "and the send sheet does carry them, which is why it is gitignored and never sent");
     ok(readFileSync(join(dirP, "_passwords.json"), "utf8").includes(secrets[0]),
       "and _passwords.json, the one gitignored file, is where they are");
     rmSync(dirP, { recursive: true, force: true });

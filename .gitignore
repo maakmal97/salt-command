@@ -23,6 +23,12 @@ salt_vault.json
 # a PBKDF2 verifier. The encrypted statements beside them (statements/*/_kv/) ARE committed on
 # purpose: that is ciphertext, and it is what the deploy uploads to KV.
 statements/*/_passwords.json
+# THE SEND SHEET, for the same reason. It is the monthly send in one page, one card per customer
+# with the message on a Share button and the password on a second, so it carries every password in
+# the issue with a nice face on it. It also puts every account beside every other, which is the one
+# thing a statement must never do. It is written beside the statements, read on the laptop, and
+# never committed and never sent.
+statements/*/_send_*.html
 # THE KEY AND THE MASTER, on the laptop (03 Sep 2026). {"key": <STMT_KEY as hex>, "master": <the
 # STMT_MASTER passphrase>}. The key derives every customer's content key, and the cloud holds it
 # as a GitHub Actions secret; it is never in the tree. The publish scratch beside it is what the

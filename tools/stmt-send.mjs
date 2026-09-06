@@ -1,0 +1,297 @@
+/* tools/stmt-send.mjs: THE SEND SHEET. One page, one card per customer, for the monthly send.
+ *
+ * WHY IT EXISTS. Issuing thirty-seven statements is one command; SENDING them was thirty-seven
+ * trips between a folder of HTML files, _users.json for the username, and _passwords.json for the
+ * password, composing the same message by hand each time. That is where a month's care gets lost:
+ * the wrong password pasted under the wrong name, and a customer looking at somebody else's
+ * account. This page puts the three things that belong to one customer in one place and gives
+ * each card a button.
+ *
+ * IT IS LAPTOP-ONLY AND GITIGNORED, for the same reason _passwords.json is. It carries every
+ * password in the issue, so it is a credential store with a nice face on it. It is written beside
+ * the statements, never committed, and never sent: like the review sheet it puts every account
+ * beside every other, which is the one thing a statement must never do.
+ *
+ * TWO MESSAGES, AND THE SPLIT IS THE WHOLE POINT. The first carries the link and the username and
+ * no secret at all; the second carries the password and nothing else. They are separate buttons
+ * because they are meant to travel by separate routes, and a single button that sent both would
+ * quietly undo the reason the password exists. The copy on the page says so.
+ *
+ * NOTHING LOADS FROM OUTSIDE. Rule 4 of the repo: no CDN, no web font, no external script. The QR
+ * is drawn on a canvas from the matrix computed here, which is also what makes the image
+ * shareable: the same canvas becomes the PNG the Share sheet carries.
+ */
+import { qrMatrix } from "./qr.mjs";
+import { saltTokens } from "./stmt-style.mjs";
+
+const esc = (s) => String(s == null ? "" : s)
+  .replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+/** The message a customer gets: the link and the username, and no secret. */
+export function linkMessage(row, monthName) {
+  return "Your statement of account" + (monthName ? " for " + monthName : "") + " is ready.\n\n"
+    + "Open it here:\n" + row.url + "\n\n"
+    + "Username: " + row.user + "\n"
+    + "Your password is in a separate message.\n\n"
+    + "The page shows every order from the start to today, and each monthly statement as it was "
+    + "issued. It locks itself after three minutes; the same password opens it again.";
+}
+
+/** The second message: the password, and nothing that says which account it opens. */
+export function passwordMessage(row) {
+  return "Statement password: " + row.pw + "\n\n"
+    + "Please keep it to yourself. It opens the statement at the link in the previous message.";
+}
+
+const LAYER = `
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;padding:36px 20px 80px;color:var(--salt-text);
+  background:radial-gradient(1200px 640px at 82% -12%, rgba(184,115,51,.16) 0%, transparent 62%),
+    radial-gradient(900px 560px at -10% 6%, rgba(197,160,89,.10) 0%, transparent 58%),var(--salt-obsidian);
+  background-attachment:fixed;font-family:var(--salt-font-display);
+  font-size:var(--salt-text-md);line-height:1.6;-webkit-font-smoothing:antialiased}
+.w{max-width:1080px;margin:0 auto}
+.eyebrow{font-size:var(--salt-text-xs);letter-spacing:.32em;color:var(--salt-copper);
+  font-weight:700;margin:0 0 10px;text-transform:uppercase;font-family:var(--salt-font-mono)}
+h1{margin:0 0 8px;font-size:var(--salt-text-2xl);font-weight:600;letter-spacing:-.01em}
+.sub{color:var(--salt-text-muted);font-size:var(--salt-text-sm);margin:0 0 22px;line-height:1.7}
+.warn{border:1px solid rgba(212,105,76,.4);border-radius:var(--salt-radius-md);padding:14px 18px;
+  background:rgba(212,105,76,.08);color:var(--salt-mist-light);font-size:var(--salt-text-sm);
+  line-height:1.7;margin:0 0 24px}
+.warn b{color:var(--salt-ember)}
+/* the bar: a search and a count, sticky so it survives thirty-seven cards */
+.bar{position:sticky;top:0;z-index:5;display:flex;gap:12px;align-items:center;flex-wrap:wrap;
+  padding:12px 16px;margin:0 0 22px;background:var(--salt-veil);border:1px solid var(--salt-line);
+  border-radius:var(--salt-radius-sm);backdrop-filter:blur(10px)}
+.bar input{flex:1 1 220px;min-height:var(--salt-tap);padding:10px 14px;font-size:16px;
+  font-family:var(--salt-font-mono);color:var(--salt-text);background:var(--salt-well);
+  border:1px solid var(--salt-line);border-radius:var(--salt-radius-sm);outline:none}
+.bar input:focus{border-color:var(--salt-brass)}
+.bar .n{font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);color:var(--salt-text-muted);
+  font-variant-numeric:tabular-nums;white-space:nowrap}
+.bar .n b{color:var(--salt-brass)}
+.bar button{font-family:var(--salt-font-mono);font-size:var(--salt-text-xs);letter-spacing:.06em;
+  color:var(--salt-text-muted);background:none;border:1px solid var(--salt-line);
+  border-radius:var(--salt-radius-pill);padding:8px 14px;cursor:pointer}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:16px}
+/* a pane is white 3% with a brass hairline: glass once, decision 4 */
+.card{border:1px solid var(--salt-line);border-radius:var(--salt-radius-md);
+  background:var(--salt-glass);padding:18px 20px 20px;display:flex;flex-direction:column;gap:2px}
+.card.done{opacity:.5}
+.card.hide{display:none}
+.who{font-family:var(--salt-font-mono);font-size:var(--salt-text-lg);font-weight:700;
+  letter-spacing:.06em;color:var(--salt-text);margin:0}
+.un{font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);color:var(--salt-brass);
+  letter-spacing:.1em;margin:2px 0 0}
+.tot{font-family:var(--salt-font-mono);font-size:var(--salt-text-xs);color:var(--salt-text-muted);
+  margin:6px 0 0;font-variant-numeric:tabular-nums}
+.qrw{display:flex;gap:14px;align-items:center;margin:14px 0 4px}
+canvas{background:var(--salt-salt);border-radius:var(--salt-radius-sm);display:block;flex:0 0 auto;
+  width:104px;height:104px;image-rendering:pixelated}
+.qrn{font-size:var(--salt-text-xs);color:var(--salt-text-muted);line-height:1.6;margin:0}
+.btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+button.act{min-height:var(--salt-tap);padding:11px 15px;font-family:var(--salt-font-mono);
+  font-size:var(--salt-text-sm);font-weight:700;letter-spacing:.03em;cursor:pointer;
+  border-radius:var(--salt-radius-pill);border:1px solid var(--salt-line);
+  background:none;color:var(--salt-text)}
+button.act.lead{background:var(--salt-gradient);color:var(--salt-obsidian);border:0}
+button.act.pw{border-color:rgba(212,105,76,.45);color:var(--salt-ember)}
+button.act:active{transform:translateY(1px)}
+button.act.ok{border-color:var(--salt-verdigris);color:var(--salt-verdigris)}
+.tick{margin-top:12px;display:flex;align-items:center;gap:8px;font-size:var(--salt-text-sm);
+  color:var(--salt-text-muted);cursor:pointer;user-select:none}
+.tick input{width:18px;height:18px;accent-color:var(--salt-verdigris);cursor:pointer}
+.msg{margin:10px 0 0;font-size:var(--salt-text-xs);color:var(--salt-text-muted);min-height:1.3em;
+  font-family:var(--salt-font-mono)}
+.msg.ok{color:var(--salt-verdigris)}
+.msg.bad{color:var(--salt-ember)}
+details.peek{margin-top:10px}
+details.peek summary{font-size:var(--salt-text-xs);color:var(--salt-text-muted);cursor:pointer;
+  font-family:var(--salt-font-mono);letter-spacing:.04em}
+details.peek pre{white-space:pre-wrap;word-break:break-word;font-family:var(--salt-font-mono);
+  font-size:var(--salt-text-xs);color:var(--salt-mist-light);background:var(--salt-well);
+  border:1px solid var(--salt-line);border-radius:var(--salt-radius-sm);padding:10px 12px;margin:8px 0 0}
+@media print{body{display:none}}
+`;
+
+/* The page's script. Kept as one string so the sheet is a single self-contained file: it is opened
+   off the disk, so there is nothing to fetch it from. */
+const JS = `
+(function(){
+  var ROWS = __ROWS__;
+  var grid = document.getElementById('grid');
+  var q = document.getElementById('q');
+  var count = document.getElementById('count');
+  var KEY = 'salt-send-' + __ISSUE__;
+  var sent = {};
+  try { sent = JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch(e) { sent = {}; }
+  function save(){ try { localStorage.setItem(KEY, JSON.stringify(sent)); } catch(e){} }
+
+  /* THE QR IS DRAWN, NOT FETCHED. The matrix is computed at generation time and shipped as rows of
+     0 and 1; the canvas is both what you see and what the Share sheet carries as a PNG. */
+  function draw(cv, rows){
+    var n = rows.length, quiet = 4, side = n + quiet * 2, px = 8;
+    cv.width = side * px; cv.height = side * px;
+    var g = cv.getContext('2d');
+    g.fillStyle = '#f2f4f5'; g.fillRect(0, 0, cv.width, cv.height);
+    g.fillStyle = '#05080a';
+    for (var r = 0; r < n; r++) for (var c = 0; c < n; c++)
+      if (rows[r][c] === '1') g.fillRect((c + quiet) * px, (r + quiet) * px, px, px);
+  }
+
+  function flash(el, text, cls){
+    el.textContent = text; el.className = 'msg' + (cls ? ' ' + cls : '');
+    setTimeout(function(){ if (el.textContent === text) { el.textContent = ''; el.className = 'msg'; } }, 2600);
+  }
+
+  /* Two ways to copy, because a page opened from a file has no origin the Clipboard API trusts in
+     every browser, and the fallback is the one that has always worked. */
+  async function copy(text){
+    try { await navigator.clipboard.writeText(text); return true; } catch(e){}
+    try {
+      var ta = document.createElement('textarea');
+      ta.value = text; ta.setAttribute('readonly','');
+      ta.style.position = 'fixed'; ta.style.top = '-1000px';
+      document.body.appendChild(ta); ta.select();
+      var ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+      return ok;
+    } catch(e) { return false; }
+  }
+
+  function toBlob(cv){
+    return new Promise(function(res){
+      try { cv.toBlob(function(b){ res(b); }, 'image/png'); } catch(e) { res(null); }
+    });
+  }
+
+  ROWS.forEach(function(row, i){
+    var card = document.createElement('div');
+    card.className = 'card' + (sent[row.who] ? ' done' : '');
+    card.innerHTML =
+      '<p class="who"></p><p class="un"></p><p class="tot"></p>'
+      + '<div class="qrw"><canvas></canvas><p class="qrn">Scan or share the code.<br>It opens the '
+      + 'statement with the username filled in.</p></div>'
+      + '<div class="btns">'
+      + '<button class="act lead" data-a="share">Share</button>'
+      + '<button class="act" data-a="link">Copy message</button>'
+      + '<button class="act pw" data-a="pw">Copy password</button>'
+      + '</div>'
+      + '<p class="msg"></p>'
+      + '<label class="tick"><input type="checkbox"> Sent</label>'
+      + '<details class="peek"><summary>See the message</summary><pre></pre></details>';
+    card.querySelector('.who').textContent = row.who;
+    card.querySelector('.un').textContent = row.user;
+    card.querySelector('.tot').textContent = row.tot;
+    card.querySelector('pre').textContent = row.msg;
+    var cv = card.querySelector('canvas');
+    draw(cv, row.qr);
+    var msg = card.querySelector('.msg');
+    var box = card.querySelector('.tick input');
+    box.checked = !!sent[row.who];
+    box.addEventListener('change', function(){
+      if (box.checked) { sent[row.who] = 1; card.classList.add('done'); }
+      else { delete sent[row.who]; card.classList.remove('done'); }
+      save(); tally();
+    });
+    card.addEventListener('click', async function(ev){
+      var b = ev.target.closest('button[data-a]');
+      if (!b) return;
+      var a = b.getAttribute('data-a');
+      if (a === 'pw') {
+        var ok = await copy(row.pw);
+        flash(msg, ok ? 'password copied, send it on its own' : 'could not copy', ok ? 'ok' : 'bad');
+        return;
+      }
+      if (a === 'link') {
+        var ok2 = await copy(row.msg);
+        flash(msg, ok2 ? 'message copied' : 'could not copy', ok2 ? 'ok' : 'bad');
+        return;
+      }
+      /* SHARE CARRIES THE MESSAGE AND, WHERE THE BROWSER ALLOWS IT, THE CODE AS AN IMAGE. It never
+         carries the password: that is the other button, on purpose. */
+      var data = { text: row.msg };
+      try {
+        var blob = await toBlob(cv);
+        if (blob && navigator.canShare) {
+          var f = new File([blob], 'statement-' + row.user + '.png', { type: 'image/png' });
+          if (navigator.canShare({ files: [f] })) data.files = [f];
+        }
+      } catch(e){}
+      if (navigator.share) {
+        try { await navigator.share(data); flash(msg, 'shared', 'ok'); }
+        catch(e) { if (e && e.name !== 'AbortError') flash(msg, 'sharing was refused', 'bad'); }
+      } else {
+        var ok3 = await copy(row.msg);
+        flash(msg, ok3 ? 'this browser cannot share, so the message is copied' : 'could not copy', ok3 ? 'ok' : 'bad');
+      }
+    });
+    grid.appendChild(card);
+    row.el = card;
+  });
+
+  function tally(){
+    var shown = ROWS.filter(function(r){ return !r.el.classList.contains('hide'); });
+    var done = shown.filter(function(r){ return !!sent[r.who]; }).length;
+    count.innerHTML = '<b>' + done + '</b> of ' + shown.length + ' sent';
+  }
+  q.addEventListener('input', function(){
+    var t = q.value.trim().toLowerCase();
+    ROWS.forEach(function(r){
+      var hit = !t || r.who.toLowerCase().indexOf(t) >= 0 || r.user.indexOf(t) >= 0;
+      r.el.classList.toggle('hide', !hit);
+    });
+    tally();
+  });
+  document.getElementById('reset').addEventListener('click', function(){
+    if (!confirm('Clear every sent tick for this issue?')) return;
+    sent = {}; save();
+    ROWS.forEach(function(r){ r.el.classList.remove('done'); r.el.querySelector('.tick input').checked = false; });
+    tally();
+  });
+  tally();
+})();
+`;
+
+/** The whole send sheet. `rows` are the sheets makeStatements built, each with who, user, pw, url. */
+export function sendSheet(rows, opts) {
+  const o = opts || {};
+  const monthName = o.monthName || "";
+  const data = rows.map((r) => ({
+    who: r.who,
+    user: r.user,
+    pw: r.pw,
+    url: r.url,
+    /* the same totals the statement itself foots to, formatted here because the generator's own
+       formatter is not in scope at the point the rows are built */
+    tot: r.t ? (r.t.n + " order" + (r.t.n === 1 ? "" : "s") + ", RM "
+      + Number(r.t.total).toLocaleString("en-MY", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+      + (r.t.owed > 0 ? ", RM " + Number(r.t.owed).toLocaleString("en-MY", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " outstanding" : "")) : "",
+    msg: linkMessage(r, monthName),
+    qr: qrMatrix(r.url).map((line) => line.join(""))
+  }));
+  return '<!DOCTYPE html>\n<html lang="en"><head><meta charset="utf-8">'
+    + '<meta name="viewport" content="width=device-width,initial-scale=1">'
+    + '<meta name="robots" content="noindex,nofollow,noarchive">'
+    + "<title>Send the " + esc(o.issue || "") + " statements</title>"
+    + "<style>" + saltTokens() + LAYER + "</style></head><body><div class=\"w\">"
+    + '<p class="eyebrow">Salt Command</p>'
+    + "<h1>Send the " + esc(monthName || o.issue || "") + " statements</h1>"
+    + '<p class="sub">One card per customer. <b>Share</b> or <b>Copy message</b> sends the link and '
+    + "the username and no secret at all; <b>Copy password</b> is a second, separate message. Tick "
+    + "each one as it goes, and the count follows you.</p>"
+    + '<div class="warn"><b>This page is not for sending.</b> It holds every password in the issue '
+    + "and puts every account beside every other, which is exactly what a statement must never do. "
+    + "It stays on this machine: it is not committed and never leaves it. Send the two messages, "
+    + "not the sheet.</div>"
+    + '<div class="bar">'
+    + '<input id="q" type="search" placeholder="find a code or username" aria-label="Find a customer">'
+    + '<span class="n" id="count"></span>'
+    + '<button id="reset" type="button">Clear ticks</button>'
+    + "</div>"
+    + '<div class="grid" id="grid"></div>'
+    + "</div><script>"
+    + JS.replace("__ROWS__", JSON.stringify(data)).replace("__ISSUE__", JSON.stringify(String(o.issue || "")))
+    + "</script></body></html>";
+}
