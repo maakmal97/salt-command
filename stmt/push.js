@@ -1,0 +1,103 @@
+/* stmt/push.js: WEB PUSH TO A CUSTOMER'S PHONE, VAPID-signed and payload-free.
+ *
+ * A COPY OF THE DESK'S SENDER (src/push.js), NOT AN IMPORT OF IT. The statements site may import
+ * only a sibling file: nothing under stmt/ reaches into src/ or tools/, and the suite proves it.
+ * The signing is fifty lines of standard crypto that has not changed since it was written, so
+ * a second copy costs less than the first crack in that wall would. Keep the two the same.
+ *
+ * WHY NO PAYLOAD, in one line: a payload has to be encrypted per RFC 8291, and the text goes
+ * stale between being sent and being read. The push is a WAKE. The service worker this site
+ * serves at /sw.js shows a fixed banner, "your order has an update, open your statement page",
+ * and says nothing else: it holds no session and reads nothing, so it cannot leak an amount, a
+ * status or a username onto a lock screen.
+ *
+ * THE KEYS ARE THE SITE'S OWN. STMT_VAPID_PRIVATE_JWK (a secret) and STMT_VAPID_PUBLIC_KEY (a var)
+ * on THIS Worker, minted by tools/stmt-setup.mjs; the desk's pair is never reused here, because a
+ * subscription is bound to the key it was created with and the two sites must not be able to
+ * wake each other's phones.
+ *
+ * A subscription is push:<username>:<hash of the endpoint>, so one customer's phones are listed
+ * with one prefix and the endpoint, a capability URL, is not in the key name. Gone endpoints
+ * (404, 410) are deleted on the spot.
+ */
+
+const b64url = (buf) => btoa(String.fromCharCode(...new Uint8Array(buf)))
+  .replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+
+async function signingKey(env) {
+  const raw = env.STMT_VAPID_PRIVATE_JWK;
+  if (!raw) return null;
+  let jwk;
+  try { jwk = JSON.parse(raw); } catch { return null; }
+  return crypto.subtle.importKey("jwk", jwk, { name: "ECDSA", namedCurve: "P-256" }, false, ["sign"]);
+}
+
+async function vapidToken(env, key, origin) {
+  const header = b64url(new TextEncoder().encode(JSON.stringify({ typ: "JWT", alg: "ES256" })));
+  const body = b64url(new TextEncoder().encode(JSON.stringify({
+    aud: origin,
+    exp: Math.floor(Date.now() / 1000) + 12 * 3600,
+    sub: env.STMT_VAPID_SUBJECT || "mailto:salt@salt-command.invalid",
+  })));
+  const data = new TextEncoder().encode(`${header}.${body}`);
+  const sig = await crypto.subtle.sign({ name: "ECDSA", hash: "SHA-256" }, key, data);
+  return `${header}.${body}.${b64url(sig)}`;
+}
+
+/** The hash that names a subscription: the first twelve bytes of SHA-256 over the endpoint, as hex. */
+export async function endpointId(endpoint) {
+  const h = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(String(endpoint)));
+  return [...new Uint8Array(h)].slice(0, 12).map((x) => x.toString(16).padStart(2, "0")).join("");
+}
+
+export async function listSubs(env, u) {
+  const out = [];
+  let cursor;
+  do {
+    const page = await env.STMT.list({ prefix: "push:" + u + ":", cursor });
+    for (const k of page.keys) {
+      const v = await env.STMT.get(k.name);
+      if (!v) continue;
+      try { out.push({ key: k.name, ...JSON.parse(v) }); } catch { /* a corrupt record is skipped */ }
+    }
+    cursor = page.list_complete ? null : page.cursor;
+  } while (cursor);
+  return out;
+}
+
+/** Wake every phone one customer has subscribed. Never throws: a banner is not worth an error path. */
+export async function wakeCustomer(env, u) {
+  try {
+    const key = await signingKey(env);
+    const pub = env.STMT_VAPID_PUBLIC_KEY;
+    if (!key || !pub) return { ok: false, error: "push is not configured", sent: 0 };
+    const subs = await listSubs(env, u);
+    if (!subs.length) return { ok: true, sent: 0 };
+    const tokens = new Map();
+    let sent = 0, gone = 0, failed = 0;
+    for (const s of subs) {
+      let origin;
+      try { origin = new URL(s.endpoint).origin; } catch { failed++; continue; }
+      if (!tokens.has(origin)) tokens.set(origin, await vapidToken(env, key, origin));
+      let r;
+      try {
+        r = await fetch(s.endpoint, {
+          method: "POST",
+          headers: {
+            TTL: "3600",
+            Urgency: "high",
+            Topic: "salt-order",
+            Authorization: `vapid t=${tokens.get(origin)}, k=${pub}`,
+            "Content-Length": "0",
+          },
+        });
+      } catch { failed++; continue; }
+      if (r.status === 404 || r.status === 410) { await env.STMT.delete(s.key); gone++; }
+      else if (r.ok || r.status === 201) sent++;
+      else failed++;
+    }
+    return { ok: true, sent, gone, failed };
+  } catch (e) {
+    return { ok: false, error: String((e && e.message) || e), sent: 0 };
+  }
+}

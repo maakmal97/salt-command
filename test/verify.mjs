@@ -2347,7 +2347,9 @@ section("Views — every part is one tap away (v343)");
   const m = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
   ok(/const VIEW_PART=\{\}/.test(m) && /function railSubs\(\)/.test(m), "the master keeps the part each view shows and lists the parts under the rail");
   ok(/class="vnav"/.test(m) && !/details\.vfold/.test(m), "a view names its parts on a strip; the buried folds are gone");
-  ok(/parts:\['approve','plans'\]/.test(m) && /function tabApprove\(\)/.test(m) && /async function apDecide\(/.test(m), "Enter carries Approve, reading and deciding the same drafts the phone does");
+  ok(/parts:\['approve','orders','plans'\]/.test(m) && /function tabApprove\(\)/.test(m) && /async function apDecide\(/.test(m), "Enter carries Approve, reading and deciding the same drafts the phone does");
+  ok(/function tabOrders\(\)/.test(m) && /async function ordAct\(/.test(m) && /orders:\(\)=>ordLoad\(\)/.test(m) && /orders:'Orders'/.test(m),
+    "and Orders (v499), reading and moving the customer orders the statements site holds");
   ok(/data-m="addid">Add ID/.test(m) && /id="wbPaneAddid"/.test(m) && /wbMode==='addid'/.test(m), "the cloud desk's Workbench can register a party by code");
   ok(/mode:'addid',code:code,kind:kind,parent:parent/.test(m), "and queues it as the addid entry the drafter knows");
   ok(/class="warnpill" style="display:block;margin:8px 0 0/.test(m), "a draft's flags are pills the notes toggle cannot hide");
@@ -6316,6 +6318,21 @@ section("Statements — the password, the username, the envelope and the site's 
     "and the password unwraps the key that opens both the bundle and the live statement");
   ok((await stmtWorker.fetch(open({ u: un.toUpperCase(), password: pw }), senv)).status === 200,
     "a username typed in capitals is the same username");
+  /* THE PASSWORD IS FORGIVEN ITS HYPHENS AND ITS CASE (06 Sep 2026): the page groups the symbols as
+     they are typed, and the Worker applies the same rule at the door, so a paste without hyphens
+     opens. The master passphrase is compared as typed: it is not reshaped. */
+  {
+    const { normPass } = await import("../stmt/worker.js");
+    ok(normPass(pw.replace(/-/g, "").toUpperCase()) === pw && normPass(" " + pw + " ") === pw && normPass(pw.replace(/-/g, " ")) === pw,
+      "sixteen symbols without hyphens, in capitals, with spaces or padded reshape to the password");
+    ok(normPass("master-pass") === "master-pass" && normPass("correct horse battery staple") === "correct horse battery staple" && normPass("") === "",
+      "anything that is not sixteen symbols of the alphabet is left exactly as typed");
+    ok((await stmtWorker.fetch(open({ u: un, password: pw.replace(/-/g, "").toUpperCase() }), senv)).status === 200,
+      "so a password typed without hyphens and in capitals opens the statement");
+    const pageJs = html.slice(html.indexOf("<script"));
+    ok(/function shapeUser\(\)/.test(pageJs) && /function shapePw\(\)/.test(pageJs) && /addEventListener\(ev, shapeUser\)/.test(pageJs) && /autoPw=false/.test(pageJs),
+      "and the page groups both fields as they are typed, pasted or autofilled, stepping back on the password once it stops looking like one");
+  }
 
   /* ONE ANSWER FOR EVERY REFUSAL. An unknown username must answer byte for byte as a wrong
      password does, or the site becomes a way to find out which usernames exist. */
@@ -6415,6 +6432,246 @@ section("Statements — the password, the username, the envelope and the site's 
 }
 
 /* ---- the statement in the Salt identity, and what the QR carries ----------------- */
+/* ---- Statements: the price list, the order book and the desk's relay (06 Sep 2026) ---- */
+section("Statements — the price list, the order book and the desk's relay (v499)");
+{
+  const PL = await import("../tools/pricelist.mjs");
+  const { shipAccounts, renderPayJs, mastersPresent, payJs } = await import("../tools/paysync.mjs");
+  const { PAY_SITE, PAY_ACCOUNTS } = await import("../stmt/pay.js");
+  const { saleEntry, nudgeOrders, ordersWaiting } = await import("../src/orders.js");
+  const deskWorker = (await import("../src/worker.js")).default;
+  const PE = (await import("../engine/pricing.mjs")).default;
+
+  /* THE WEEK is Monday to Sunday in Kuala Lumpur, and the edge is midnight there, not UTC. */
+  const wk = PL.weekOf(new Date("2026-09-03T06:20:00Z"));
+  ok(wk.monday === "2026-08-31" && wk.sunday === "2026-09-06" && /31 Aug/.test(wk.label) && /2026$/.test(wk.label),
+    "Thursday 03 Sep 14:20 KL sits in the week of Monday 31 Aug, labelled by its two ends");
+  ok(PL.weekOf(new Date("2026-09-06T15:30:00Z")).monday === "2026-08-31"
+    && PL.weekOf(new Date("2026-09-06T16:30:00Z")).monday === "2026-09-07",
+    "Sunday 23:30 KL is still that week and Monday 00:30 KL is the next, though both are 06 Sep in UTC");
+
+  /* THE RATE IS THE MEDIAN OF THE LAST FOUR COMMITTED ORDERS BEFORE THE WEEK'S MONDAY. */
+  const sales = [
+    { date: "2026-07-01", customer: "CX0-AA", qty: 1, total: 100 },
+    { date: "2026-07-08", customer: "CX0-AA", qty: 1, total: 110 },
+    { date: "2026-07-15", customer: "CX0-AA", qty: 2, total: 240 },
+    { date: "2026-07-22", customer: "CX0-AA", qty: 1, total: 130 },
+    { date: "2026-06-01", customer: "CX0-AA", qty: 1, total: 500 },
+    { date: "2026-08-01", customer: "CX0-AA", qty: 1, total: 0 },
+    { date: "2026-09-02", customer: "CX0-AA", qty: 1, total: 200 },
+    { date: "2026-07-30", customer: "CX0-AA", qty: 1, total: 300, cancelled: true },
+    { customer: "CX0-AA", qty: 1, total: 400 },
+    { date: "2026-08-20", customer: "CX0-AA", product: "oil", qty: 10, total: 100 }
+  ];
+  const own = PL.ownRate(sales, "CX0-AA", "salt", "2026-08-31");
+  ok(own.orders === 4 && own.rate === 115,
+    "the last four dated salt orders before the Monday are 100, 110, 120 and 130 a unit, median 115: the RM500 fifth-oldest, the gift, the cancelled, the undated and this week's are all left out");
+  ok(PL.ownRate(sales, "CX0-AA", "oil", "2026-08-31").rate === 10 && PL.ownRate(sales, "CX0-ZZ", "salt", "2026-08-31").rate === null,
+    "per product, and a customer with no history has no rate");
+
+  /* THE LIST AGAINST THE ENGINE, on the real snapshot: never below the collected floor, delivery on top. */
+  const { pricingSnapshot } = await import("../tools/book.mjs");
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w: wP } = await openMaster();
+  const snap = pricingSnapshot(wP);
+  const bookP = { PRODUCTS: { salt: { name: "Salt", unit: "unit" }, oil: { name: "Oil", unit: "unit" } }, PROD_ORDER: ["salt", "oil"], sales };
+  const nowP = new Date("2026-09-03T06:20:00Z");
+  const list = PL.priceList("CX0-AA", bookP, snap, nowP);
+  const saltL = list.products.find(p => p.product === "salt");
+  ok(list.week.monday === "2026-08-31" && list.products.length === 2 && saltL && saltL.basis === "yours" && saltL.rate === 115 && saltL.orders === 4,
+    "the list is stamped with the week and carries both products, salt on the customer's own rate");
+  const Cs = PE.costStack(snap.byProduct.salt.inputs.cost), Ps = snap.byProduct.salt.inputs.policy;
+  const floorC = q => PE.floorTotal(q, Cs, Ps, null, { collects: true });
+  const wrong = saltL.sizes.filter(x => x.collected !== Math.ceil(Math.max(115 * x.q, floorC(x.q))) || Math.abs(x.delivered - (x.collected + saltL.delivery)) > 0.005);
+  ok(wrong.length === 0 && saltL.sizes.length === snap.sizes.length && saltL.delivery === +(Cs.delPerOrder || 0).toFixed(2),
+    "every board size is his rate times the size, lifted to the engine's collected floor and rounded up to the ringgit, with one delivery on top for delivered");
+  const cheap = PL.priceList("CX0-CH", { ...bookP, sales: [{ date: "2026-07-01", customer: "CX0-CH", qty: 1, total: 1 }] }, snap, nowP).products[0];
+  ok(cheap.rate === 1 && cheap.sizes.every(x => x.collected === Math.ceil(floorC(x.q))),
+    "a customer whose old rate is under the floor is quoted the floor at every size, never a loss");
+  const board = PL.priceList("CX0-ZZ", bookP, snap, nowP).products[0];
+  ok(board.basis === "board" && board.sizes.every(x => x.collected === PE.priceLadder(x.q, Cs, Ps, { collects: true }).ask.total),
+    "and a customer with no history is quoted the board's ask, the engine's, at every size");
+
+  /* THE RAILS SHIP WITHOUT A NUMBER. */
+  const ship = shipAccounts({ accounts: [
+    { key: "x", name: "X", sub: "1234 5678", payload: "00020101021226", acct: "12345678", bank: "X Bank", mid: "123456", biller: "11445", ref1: "60111234567" },
+    { key: "y", name: "Y", bank: "Y Bank", maintenance: true }] });
+  ok(ship.length === 2 && ship[0].qr && ship[0].transfer && ship[0].jompay && !ship[1].qr && ship[1].transfer && !ship[1].jompay && ship[1].maintenance,
+    "a rail is derived from the record: a payload is a code, a bank is a transfer, a biller is JomPAY");
+  const rendered = renderPayJs("https://q.example", ship);
+  ok(!/12345678|123456|60111|000201|1234 5678/.test(rendered) && rendered.includes('"key": "x"') && rendered.includes('"https://q.example"'),
+    "and what is rendered carries the key, the name, the bank and the rails, and no number, payload, member number or reference");
+  const payTxt = readFileSync(join(REPO, "stmt", "pay.js"), "utf8");
+  ok(!/[0-9]{5}/.test(payTxt) && PAY_ACCOUNTS.length >= 10 && PAY_ACCOUNTS.every(a => a.key && a.name)
+    && /^https:\/\/[a-z0-9]+\.qyts8mh72kyg\.workers\.dev$/.test(PAY_SITE),
+    "the shipped stmt/pay.js holds no run of five digits, names every account, and points at QR Command on the account's own subdomain");
+  ok(PAY_ACCOUNTS.some(a => a.key === "tngbiz" && a.qr) && PAY_ACCOUNTS.some(a => a.jompay) && PAY_ACCOUNTS.some(a => a.transfer && !a.qr),
+    "it carries the Touch 'n Go Business code, a JomPAY biller and a transfer-only account");
+  if (mastersPresent()) ok(payJs() === payTxt, "stmt/pay.js is what the pay master produces (run tools/paysync.mjs --sync if this fails)");
+  else okOff(true, "the pay master is not on this machine, so stmt/pay.js goes unchecked against it");
+
+  /* THE SITE: a record with a price list sealed in, a session on the password, the order book. */
+  const C = await import("../tools/stmt-crypto.mjs");
+  const un = C.newUsername(), pw = C.newPassword();
+  const ck = await C.contentKey("test-secret", un);
+  const listSealed = Object.assign({ at: list.at, week: list.week.monday }, await C.encryptWith(ck, JSON.stringify(list)));
+  const rec = { u: un, issued: "2026-09-01", issues: ["2026-09-01"], verifier: await C.makeVerifier(pw), wrap: await C.wrapKey(pw, ck),
+    env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", body: "<p>CX0-AA</p>" }] })), prices: listSealed };
+  const kv = new KV(); await kv.put("u:" + un, JSON.stringify(rec));
+  const senv = { STMT: kv, STMT_MASTER: "master-pass", STMT_DESK_KEY: "desk-key" };
+  const sreq = (path, opts = {}) => new Request("https://k7m3p2.example" + path, opts);
+  const sj = (path, body, headers = {}) => sreq(path, { method: "POST", headers: { "content-type": "application/json", ...headers }, body: JSON.stringify(body) });
+  const page = await stmtWorker.fetch(sreq("/?u=" + un), senv);
+  const html = await page.text();
+  const payInPage = (/[ ,]PAY=(\[[\s\S]*?\]);/.exec(html) || [])[1] || "MISSING";
+  ok(html.includes('data-t="prices"') && html.includes('data-t="order"') && html.includes('data-t="stmt"') && /PAY_SITE="https/.test(html),
+    "the page carries three tabs, statements, prices and order, and the address of QR Command");
+  ok(payInPage !== "MISSING" && !/[0-9]{5}/.test(payInPage) && !html.includes("CX0-AA"),
+    "the accounts on the page are names and rails with no number, and no code is on it");
+  ok(/worker-src 'self'/.test(page.headers.get("content-security-policy") || ""), "the CSP admits the site's own service worker and nothing else new");
+  const sw = await stmtWorker.fetch(sreq("/sw.js"), senv);
+  const swTxt = await sw.text();
+  ok(sw.status === 200 && /javascript/.test(sw.headers.get("content-type")) && /showNotification/.test(swTxt) && !/fetch\(/.test(swTxt) && !/caches/.test(swTxt),
+    "/sw.js is served as script, shows a banner on a push, and neither fetches nor caches anything");
+  let r = await stmtWorker.fetch(sj("/open", { u: un, password: pw }), senv);
+  let b = await r.json();
+  ok(r.status === 200 && b.ok && typeof b.session === "string" && b.session.length >= 20 && b.prices && b.prices.week === "2026-08-31",
+    "a correct password answers with a session and the sealed price list");
+  ok(JSON.parse(await C.decryptWith(ck, b.prices)).products[0].rate === 115 && !JSON.stringify(b.prices).includes("115"),
+    "the list opens under the content key and is ciphertext on the wire");
+  const rm = await (await stmtWorker.fetch(sj("/open", { u: un, password: "master-pass", master: "master-pass" }), senv)).json();
+  ok(rm.ok && rm.byMaster && rm.session === null, "the owner's override gets no session: the owner does not order");
+  const S = { "X-Stmt-Session": b.session };
+  ok((await stmtWorker.fetch(sreq("/orders"), senv)).status === 401
+    && (await stmtWorker.fetch(sreq("/orders", { headers: { "X-Stmt-Session": "not-a-session-token-at-all" } }), senv)).status === 401,
+    "the order routes refuse a missing or unknown session alike");
+  r = await stmtWorker.fetch(sreq("/orders", { method: "POST", headers: S, body: "product=salt" }), senv);
+  ok(r.status === 400, "a placement that is not JSON is refused");
+  r = await stmtWorker.fetch(sj("/orders", { product: "salt", qty: 2.5, mode: "collect", unit: 115, total: 288, week: "2026-08-31" }, S), senv);
+  b = await r.json();
+  const id = b.order && b.order.id;
+  ok(r.status === 200 && b.ok && b.order.status === "placed" && b.order.u === un && /^[0-9]{14}-[a-z0-9]+$/.test(id) && b.order.history.length === 1,
+    "a placement is stored as placed, under the session's username, with an id and a history");
+  for (const bad of [{ product: "Salt!", qty: 1, mode: "collect", unit: 1, total: 1 }, { product: "salt", qty: 0, mode: "collect", unit: 1, total: 1 },
+    { product: "salt", qty: 1, mode: "post", unit: 1, total: 1 }, { product: "salt", qty: 1, mode: "collect", unit: 1, total: "9" }]) {
+    ok((await stmtWorker.fetch(sj("/orders", bad, S), senv)).status === 400, "refused: " + JSON.stringify(bad));
+  }
+  ok((await stmtWorker.fetch(sj("/orders/" + id + "/method", { method: "cod" }, S), senv)).status === 409,
+    "payment cannot be chosen before the order is ready");
+  ok((await stmtWorker.fetch(sreq("/desk/orders"), senv)).status === 401
+    && (await stmtWorker.fetch(sreq("/desk/orders", { headers: { "X-Stmt-Desk": "wrong" } }), senv)).status === 401
+    && (await stmtWorker.fetch(sreq("/desk/orders", { headers: { "X-Stmt-Desk": "desk-key" } }), { STMT: kv })).status === 401,
+    "the desk routes refuse without the key, with a wrong key, and when the site holds no key at all");
+  const D = { "X-Stmt-Desk": "desk-key" };
+  b = await (await stmtWorker.fetch(sreq("/desk/orders", { headers: D }), senv)).json();
+  ok(b.ok && b.orders.length === 1 && b.orders[0].id === id && !("code" in b.orders[0]),
+    "the desk key lists the open orders, by username, with no code anywhere on the site");
+  ok((await stmtWorker.fetch(sj("/desk/orders/" + un + "/" + id, { status: "done" }, D), senv)).status === 409
+    && (await stmtWorker.fetch(sj("/desk/orders/" + un + "/" + id, { status: "placed" }, D), senv)).status === 400,
+    "an order cannot be completed from placed, and the desk cannot set a state that is not its to set");
+  b = await (await stmtWorker.fetch(sj("/desk/orders/" + un + "/" + id, { status: "acknowledged" }, D), senv)).json();
+  ok(b.ok && b.order.status === "acknowledged" && b.push && b.push.sent === 0 && /not configured/.test(b.push.error || ""),
+    "acknowledged from the desk; with no push key on the site the wake is reported as not configured, not thrown");
+  b = await (await stmtWorker.fetch(sj("/desk/orders/" + un + "/" + id, { status: "ready", mode: "deliver" }, D), senv)).json();
+  ok(b.ok && b.order.status === "ready" && b.order.mode === "deliver", "ready to deliver, the desk's word on the mode");
+  ok((await stmtWorker.fetch(sj("/orders/" + id + "/cancel", {}, S), senv)).status === 409, "a customer cannot withdraw an order that is ready");
+  ok((await stmtWorker.fetch(sj("/orders/" + id + "/method", { method: "qr", account: "wise" }, S), senv)).status === 400
+    && (await stmtWorker.fetch(sj("/orders/" + id + "/method", { method: "paypal" }, S), senv)).status === 400
+    && (await stmtWorker.fetch(sj("/orders/" + id + "/method", { method: "transfer", account: "nope" }, S), senv)).status === 400,
+    "a rail the account does not run, a rail the site does not offer, and an account off the list are all refused");
+  b = await (await stmtWorker.fetch(sj("/orders/" + id + "/method", { method: "transfer", account: "wise" }, S), senv)).json();
+  ok(b.ok && b.order.method === "transfer" && b.order.account === "wise" && b.order.status === "ready",
+    "DuitNow Transfer to the transfer-only account is recorded on the order");
+  b = await (await stmtWorker.fetch(sj("/orders/" + id + "/method", { method: "tngbiz" }, S), senv)).json();
+  ok(b.ok && b.order.method === "tngbiz" && b.order.account === "tngbiz", "and the Touch 'n Go Business code names its own account");
+  r = await stmtWorker.fetch(sj("/push/subscribe", { endpoint: "https://push.example/abc" }, S), senv);
+  ok(r.status === 200 && (await kv.list({ prefix: "push:" + un + ":" })).keys.length === 1
+    && (await stmtWorker.fetch(sj("/push/subscribe", { endpoint: "http://push.example/abc" }, S), senv)).status === 400,
+    "a push subscription is filed under the username, and only an https endpoint is taken");
+  const k = await (await stmtWorker.fetch(sreq("/push/key"), senv)).json();
+  ok(k.ok && k.key === null && k.configured === false, "/push/key says plainly when the site has no key yet");
+  const o2 = await (await stmtWorker.fetch(sj("/orders", { product: "oil", qty: 1, mode: "collect", unit: 40, total: 40, week: "" }, S), senv)).json();
+  b = await (await stmtWorker.fetch(sj("/orders/" + o2.order.id + "/cancel", {}, S), senv)).json();
+  ok(b.ok && b.order.status === "cancelled" && (await (await stmtWorker.fetch(sreq("/orders", { headers: S }), senv)).json()).orders.length === 2,
+    "a placed order can be withdrawn by the customer, and his list carries both");
+  const openOnly = (await (await stmtWorker.fetch(sreq("/desk/orders", { headers: D }), senv)).json()).orders;
+  const allOf = (await (await stmtWorker.fetch(sreq("/desk/orders?all=1", { headers: D }), senv)).json()).orders;
+  ok(openOnly.length === 1 && allOf.length === 2, "the desk sees open orders by default and everything with all=1");
+
+  /* THE DESK'S RELAY, end to end through both Workers, with the code joined from its own store. */
+  const dkv = new KV(); await dkv.put("stmt-users", JSON.stringify({ [un]: "CX0-AA" }));
+  const denv = { ...mkEnv(dkv), STMT_DESK_KEY: "desk-key", STMT_SITE: { fetch: (url, init) => stmtWorker.fetch(new Request(url, init), senv) } };
+  r = await deskWorker.fetch(req("/orders"), denv); b = await r.json();
+  ok(r.status === 200 && b.ok && b.orders.length === 1 && b.orders[0].code === "CX0-AA" && b.orders[0].id === id,
+    "the desk's Worker lists the open orders with the code joined from stmt-users");
+  ok((await deskWorker.fetch(req("/orders"), mkEnv(new KV()))).status === 503, "and says the relay is not configured rather than answering empty");
+  ok((await deskWorker.fetch(req("/orders"), { ...denv, SALT_WRITE_KEY: "k" })).status === 401, "the write key gates the orders like the drafts");
+  const sum = await (await deskWorker.fetch(req("/push/summary"), denv)).json();
+  ok(sum.ok && sum.orders === 0, "the phone's summary counts orders waiting on a tap: none, this one is ready");
+  b = await (await deskWorker.fetch(req("/orders/" + un + "/" + id, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ status: "done" }) }), denv)).json();
+  const q = JSON.parse(await dkv.get("q:orders"));
+  ok(b.ok && b.order.status === "done" && b.queued && q.queue.length === 1 && q.queue[0].at === b.queued,
+    "Completed moves the order and queues one entry under q:orders");
+  const e = q.queue[0];
+  ok(e.type === "SELL" && e.party === "CX0-AA" && e.payload.mode === "new" && e.payload.direction === "SELL" && e.payload.party === "CX0-AA"
+    && e.payload.product === "salt" && e.payload.qty === 2.5 && e.payload.total === 288 && e.payload.cash === 288 && e.payload.kg === 2.5
+    && e.payload.handover === "delivered" && /order [0-9]{14}-/.test(e.payload.note) && /tngbiz/.test(e.payload.note) && !JSON.stringify(e).includes(un),
+    "the entry is the Workbench's shape: a sale to the code, paid and handed over in full, dated, noting the order and the rail, and naming no username");
+  ok(saleEntry({ id: "x", qty: 1, total: 10, mode: "collect", product: "oil" }, "CX0-AA", new Date("2026-09-06T17:00:00Z")).payload.date === "2026-09-07",
+    "the sale is dated in Kuala Lumpur, so a completion after midnight there is tomorrow's row");
+  const { draftRow } = await import("../src/drafter.js");
+  const bookD = { version: "v499", pricing: { v: "v499", byProduct: { salt: { stockCost: 48, replCost: 48, floors: { "2.5": { delivered: 167.3, collected: 157.3 } } } } },
+    purchases: [{ date: "2026-08-13", qty: 12.5, total: 650, receivedOn: "2026-08-13" }], sales, state: { roster: ["CX0-AA"], QUEUE_COMMITTED: "2026-09-01T00:00:00.000Z" } };
+  const d = draftRow(e, bookD);
+  ok(!d.skip && d.collection === "sales" && d.row.customer === "CX0-AA" && d.row.qty === 2.5 && d.row.total === 288 && d.row.cash === 288
+    && d.row.deliveredQty === 2.5 && d.row.paidOn === d.row.date && d.row.handover === "delivered",
+    "and the drafter drafts it as a completed sale, which the phone then approves like any other row");
+  const unmapped = C.newUsername();
+  await kv.put("u:" + unmapped, JSON.stringify({ ...rec, u: unmapped }));
+  const s2 = (await (await stmtWorker.fetch(sj("/open", { u: unmapped, password: pw }), senv)).json()).session;
+  const o3 = (await (await stmtWorker.fetch(sj("/orders", { product: "salt", qty: 1, mode: "collect", unit: 100, total: 100, week: "" }, { "X-Stmt-Session": s2 }), senv)).json()).order;
+  ok((await (await deskWorker.fetch(req("/push/summary"), denv)).json()).orders === 1, "a placed order counts as waiting on the phone's summary");
+  const n1 = await nudgeOrders(denv), n2 = await nudgeOrders(denv);
+  ok(n1.ok && n1.placed === 1 && (await dkv.get("orders:nudged")) === o3.at && n2.ok && n2.sent === 0 && n2.placed === 1,
+    "the quarter-hour nudge marks the newest placement and does not nudge twice for it");
+  for (const st of ["acknowledged", "ready"]) await deskWorker.fetch(req("/orders/" + unmapped + "/" + o3.id, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ status: st }) }), denv);
+  b = await (await deskWorker.fetch(req("/orders/" + unmapped + "/" + o3.id, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ status: "done" }) }), denv)).json();
+  ok(b.ok && b.order.status === "done" && !b.queued && /no desk code/.test(b.warn || "") && JSON.parse(await dkv.get("q:orders")).queue.length === 1,
+    "a completion for a username the map does not carry queues nothing and says so");
+  ok((await ordersWaiting(denv)) === 0, "and nothing is left waiting");
+
+  /* THE DEPLOY SEALS THE LIST INTO THE RECORD, beside the live statement, under the same key. */
+  {
+    const { liveRecords } = await import("../tools/make_statements.mjs");
+    const tmp = join(REPO, "test", "tmp", "pricelist-" + Date.now());
+    mkdirSync(join(tmp, "2026-09", "_kv"), { recursive: true });
+    const users = JSON.parse(readFileSync(join(REPO, "statements", "_users.json"), "utf8"));
+    const code = Object.keys(users)[0], uu = users[code];
+    const ckR = await C.contentKey("test-secret", uu);
+    writeFileSync(join(tmp, "_users.json"), JSON.stringify({ [code]: uu }));
+    writeFileSync(join(tmp, "2026-09", "_kv", uu + ".json"), JSON.stringify({ u: uu, issued: "2026-09-01", issues: ["2026-09-01"],
+      verifier: await C.makeVerifier(pw), wrap: await C.wrapKey(pw, ckR), env: await C.encryptWith(ckR, JSON.stringify({ statements: [{ issued: "2026-09-01", body: "x" }] })) }));
+    const lr = await liveRecords(tmp, "test-secret", nowP, snap);
+    const recR = lr.records[0];
+    let opened = null;
+    try { opened = JSON.parse(await C.decryptWith(ckR, recR.prices)); } catch (e) { opened = null; }
+    ok(lr.priced === 1 && recR.prices && recR.prices.week === "2026-08-31" && opened && opened.week.monday === "2026-08-31" && opened.products.length >= 1
+      && opened.products[0].sizes.length === snap.sizes.length,
+      "liveRecords seals " + code + "'s price list into the record for the week, opening under the same content key as the statement");
+    const lr0 = await liveRecords(tmp, "test-secret", nowP);
+    ok(lr0.priced === 0 && !lr0.records[0].prices, "and without a snapshot no list is written");
+    rmSync(tmp, { recursive: true, force: true });
+  }
+
+  /* THE SEND SHEET carries the address as a link on every card. */
+  const { sendSheet } = await import("../tools/stmt-send.mjs");
+  const sheet = sendSheet([{ who: "CX0-AA", user: un, pw: pw, url: "https://k7m3p2.example/?u=" + un, t: { n: 1, total: 100, owed: 0 } }], { issue: "2026-09-01", monthName: "September 2026" });
+  ok(sheet.includes('<a class="site" target="_blank" rel="noopener"></a>') && sheet.includes("site.href = row.url"),
+    "the send sheet draws each card's statement address as a link that opens in a new tab");
+  ok(existsSync(join(REPO, "tools", "send-sheet.cmd")) && /_send_\*\.html/.test(readFileSync(join(REPO, "tools", "send-sheet.cmd"), "utf8")),
+    "and the Desktop shortcut's launcher finds the newest send sheet by name");
+}
+
 section("Statements — the QR, the sort and the Salt identity");
 {
   const { statementCss, saltTokens } = await import("../tools/stmt-style.mjs");

@@ -26,9 +26,22 @@ import { liveRecords } from "./make_statements.mjs";
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const CONFIG = join(REPO, "wrangler.stmt.jsonc");
 
+/* THE USERNAME-TO-CODE MAP, FOR THE DESK'S OWN STORE (06 Sep 2026). An order placed on the
+   statements site names a username and nothing else; the ledger's Worker turns that into the
+   desk code from this map, which the publish writes to the DESK's KV (stmt-users), never to the
+   site's. The site keeps having no idea which account on the book a username is. The map is
+   _users.json inverted, and _users.json is committed, so nothing secret moves. */
+export function usersMap(root) {
+  const file = join(root, "_users.json");
+  const users = existsSync(file) ? JSON.parse(readFileSync(file, "utf8")) : {};
+  const out = {};
+  for (const code of Object.keys(users)) out[users[code]] = code;
+  return out;
+}
+
 /** Everything the publish would do, as data: the puts, the deletes and what it found. */
-export async function planPublish(root, key, now, existingKeys, storedIssue) {
-  const r = await liveRecords(root, key, now);
+export async function planPublish(root, key, now, existingKeys, storedIssue, pricing) {
+  const r = await liveRecords(root, key, now, pricing);
   const puts = r.records.map(rec => ({ key: "u:" + rec.u, value: JSON.stringify(rec) }));
   const keep = new Set(r.records.map(rec => "u:" + rec.u));
   const issued = r.records.length ? r.records[0].issued : null;
@@ -43,7 +56,7 @@ export async function planPublish(root, key, now, existingKeys, storedIssue) {
     }
     puts.push({ key: "issue", value: issued });
   }
-  return { latest: r.latest, issued, newIssue, live: r.live, unmatched: r.unmatched, stale: r.stale, wrongKey: r.wrongKey || [], puts, deletes };
+  return { latest: r.latest, issued, newIssue, live: r.live, priced: r.priced || 0, unmatched: r.unmatched, stale: r.stale, wrongKey: r.wrongKey || [], puts, deletes, users: usersMap(root) };
 }
 
 /* shell:true, and NOT an npx.cmd branch. Node refuses to spawn a .cmd without a shell on Windows
@@ -53,6 +66,11 @@ export async function planPublish(root, key, now, existingKeys, storedIssue) {
    value becomes shell syntax. tools/d1.mjs and tools/drafts.mjs already do it this way. */
 function wrangler(args, opts = {}) {
   return execFileSync("npx", ["wrangler", "-c", CONFIG, ...args],
+    { cwd: REPO, encoding: "utf8", stdio: ["ignore", "pipe", "inherit"], shell: true, ...opts });
+}
+/* the desk's own config, for the one key this publish writes to the desk's store */
+function deskWrangler(args, opts = {}) {
+  return execFileSync("npx", ["wrangler", ...args],
     { cwd: REPO, encoding: "utf8", stdio: ["ignore", "pipe", "inherit"], shell: true, ...opts });
 }
 function listKeys(prefix) {
@@ -79,7 +97,16 @@ async function main() {
     try { storedIssue = wrangler(["kv", "key", "get", "--remote", "--binding", "STMT", "issue"], { stdio: ["ignore", "pipe", "ignore"] }).trim() || null; }
     catch (e) { storedIssue = null; }
   }
-  const plan = await planPublish(root, key, new Date(), existing, storedIssue);
+  /* THE PRICE LIST NEEDS THE DESK'S PRICING SNAPSHOT, which only the desk can produce: pxInputs and
+     pxPolicy are the desk's contribution to the engine, so the master is opened in jsdom here, the
+     way tools/d1.mjs --seed already does in the step before this one. About ten seconds. A dry run
+     skips it, and so does --no-prices, and the records then go up without a list. */
+  let pricing = null;
+  if (!dry && !process.argv.includes("--no-prices") && key) {
+    const { readBook } = await import("./book.mjs");
+    pricing = (await readBook()).ledger.PRICING;
+  }
+  const plan = await planPublish(root, key, new Date(), existing, storedIssue, pricing);
   if (!plan.latest) { console.log("no statement set to publish; normal for a build with no issue in it"); return; }
 
   /* THE STEP ASSERTS ITS OWN EFFECT, and does not merely report one (04 Sep 2026 audit). Every
@@ -105,13 +132,18 @@ async function main() {
   const putFile = join(outDir, "put.json"), delFile = join(outDir, "delete.json");
   writeFileSync(putFile, JSON.stringify(plan.puts));
   writeFileSync(delFile, JSON.stringify(plan.deletes));
+  const usersFile = join(outDir, "users.json");
+  writeFileSync(usersFile, JSON.stringify(plan.users));
   console.log((dry ? "would publish " : "publishing ") + (plan.puts.length - 1) + " records from " + plan.latest
-    + (key ? ", " + plan.live + " with a live statement" : ", NO live statements: STMT_KEY is not set")
+    + (key ? ", " + plan.live + " with a live statement, " + plan.priced + " with a price list" : ", NO live statements: STMT_KEY is not set")
     + (plan.newIssue ? ", a new issue (" + plan.issued + "), attempt counters cleared" : ""));
   if (plan.unmatched.length) console.log("::warning::no code in _users.json for: " + plan.unmatched.join(", "));
-  if (dry) { console.log("wrote " + putFile + " and " + delFile); return; }
+  if (dry) { console.log("wrote " + putFile + ", " + delFile + " and " + usersFile); return; }
 
   wrangler(["kv", "bulk", "put", putFile, "--remote", "--binding", "STMT"], { stdio: "inherit" });
+  /* the desk's map, so the ledger's Worker can name the account an order belongs to */
+  deskWrangler(["kv", "key", "put", "stmt-users", "--path", usersFile, "--remote", "--binding", "SALT_QUEUE"], { stdio: "inherit" });
+  console.log("wrote stmt-users (" + Object.keys(plan.users).length + " usernames) to the desk's store");
 
   /* AND THE EFFECT IS READ BACK. A bulk put that reported success and stored nothing would be
      invisible otherwise, which is the whole class of fault this file was rewritten for. */

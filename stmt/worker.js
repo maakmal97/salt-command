@@ -39,6 +39,9 @@
  * must never be able to reach the ledger's code even by accident.
  */
 import { landingPage } from "./page.js";
+import { SW_JS } from "./sw.js";
+import { endpointId } from "./push.js";
+import { mintSession, sessionUser, ordersOf, allOrders, placeOrder, customerMove, deskMove } from "./orders.js";
 
 const UKEY = (u) => "u:" + u;
 const FKEY = (k) => "fail:" + k;          // keyed on address AND username; see handleOpen
@@ -69,6 +72,20 @@ export function normUser(s) {
   if (s.length !== 8) return "";
   s = s.slice(0, 4) + "-" + s.slice(4);
   return USER_RE.test(s) ? s : "";
+}
+
+/* THE PASSWORD IS FORGIVEN THE SAME WAY (06 Sep 2026): a statement password is sixteen symbols of
+   one alphabet in four groups, and one typed without its hyphens, with the wrong ones, or in
+   capitals is the same password. Only a value that is exactly sixteen such symbols is reshaped;
+   anything else, the owner's master passphrase included, is compared as typed. The page groups
+   the field as it is typed too; this is the same rule at the door, so a pasted password works
+   whatever the page did. */
+const PASS_RE = /^[23456789abcdefghjkmnpqrstvwxyz]{16}$/;
+export function normPass(s) {
+  const t = typeof s === "string" ? s.trim() : "";
+  const raw = t.toLowerCase().replace(/[^a-z0-9]/g, "");
+  if (!PASS_RE.test(raw)) return t;
+  return raw.slice(0, 4) + "-" + raw.slice(4, 8) + "-" + raw.slice(8, 12) + "-" + raw.slice(12);
 }
 
 const b64d = (s) => {
@@ -121,7 +138,7 @@ async function handleOpen(request, env) {
   let body = {};
   try { body = await request.json(); } catch (e) { body = {}; }
   const u = normUser(body.u);
-  const pass = typeof body.password === "string" ? body.password.trim() : "";
+  const pass = normPass(body.password);
   const master = typeof body.master === "string" ? body.master.trim() : "";
 
   /* THE COUNTER IS KEYED ON THE CALLER AS WELL AS THE ACCOUNT, and that is the whole point.
@@ -195,15 +212,82 @@ async function handleOpen(request, env) {
      paper statement.
      Nothing else in the record is a secret to the holder of a correct password: the envelope and
      the live document are his own account, and both are ciphertext he now has the key for. */
+  /* THE SESSION (06 Sep 2026): a token the order routes take in place of the password, minted here
+     because this is the one place the password has just been proved. Fifteen minutes in the store;
+     the page forgets it the moment it locks. The override gets none: the owner does not order. */
+  const session = byMaster ? null : await mintSession(env, u);
   return new Response(JSON.stringify({
     ok: true, byMaster, issued: rec.issued || null, issues: rec.issues || null,
     wrap: byMaster ? null : (rec.wrap || null),
     wrapMaster: byMaster ? (rec.wrapMaster || null) : null,
-    env: rec.env, live: rec.live || null
+    env: rec.env, live: rec.live || null, prices: rec.prices || null, session
   }), {
     status: 200,
     headers: Object.assign({ "content-type": "application/json; charset=utf-8", "cache-control": "no-store, private" }, HEADERS)
   });
+}
+
+/* ---- THE ORDER ROUTES (06 Sep 2026) ---------------------------------------------------
+ * Customer side, on a session: his own orders, a placement, a rail once the order is ready, a
+ * withdrawal before it is, and a push subscription. Nothing a session cannot reach answers with
+ * anything but the one refusal, so a token that has expired reads exactly as no token at all.
+ * JSON only, as /open: the content type is the gate, so a cross-site form cannot place an order
+ * with a browser that happens to hold nothing anyway. */
+async function readJson(request) {
+  if (!/^application\/json\b/i.test(String(request.headers.get("content-type") || ""))) return null;
+  try { return await request.json(); } catch (e) { return null; }
+}
+const OID_RE = /^[0-9]{14}-[a-z0-9]{1,8}$/;
+
+async function handleCustomer(request, env, p, m) {
+  if (!env.STMT) return json({ ok: false, error: "no KV binding" }, 500);
+  const u = await sessionUser(request, env);
+  if (!u) return json({ ok: false, error: "Sign in again to see your orders.", session: false }, 401);
+  if (p === "/orders") {
+    if (m === "GET") return json({ ok: true, orders: await ordersOf(env, u) });
+    if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+    const r = await placeOrder(env, u, await readJson(request));
+    return r.error ? json({ ok: false, error: r.error }, 400) : json({ ok: true, order: r.order });
+  }
+  if (p === "/push/subscribe") {
+    if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+    const b = await readJson(request);
+    const ep = b && b.endpoint;
+    if (typeof ep !== "string" || !/^https:\/\//.test(ep)) return json({ ok: false, error: "a subscription needs an https endpoint" }, 400);
+    const id = await endpointId(ep);
+    await env.STMT.put("push:" + u + ":" + id, JSON.stringify({ endpoint: ep, at: new Date().toISOString() }));
+    return json({ ok: true, id });
+  }
+  const mm = /^\/orders\/([^/]+)\/(method|cancel)$/.exec(p);
+  if (!mm || !OID_RE.test(mm[1])) return notFound();
+  if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+  const r = await customerMove(env, u, mm[1], mm[2], await readJson(request));
+  return r.error ? json({ ok: false, error: r.error }, r.status || 400) : json({ ok: true, order: r.order });
+}
+
+/* Desk side, on the shared key STMT_DESK_KEY, which the ledger's Worker holds as a secret and sends
+ * as X-Stmt-Desk over a service binding. It is a key, not a session: it names no customer and opens
+ * no statement, and this Worker still cannot read a single sealed document with it. Unset, the
+ * routes refuse everything, so an undeployed setup fails closed. */
+function deskOk(request, env) {
+  const want = String(env.STMT_DESK_KEY || "");
+  return !!want && ctEq(String(request.headers.get("X-Stmt-Desk") || ""), want);
+}
+async function handleDesk(request, env, p, m) {
+  if (!env.STMT) return json({ ok: false, error: "no KV binding" }, 500);
+  if (!deskOk(request, env)) return json({ ok: false, error: "desk key required" }, 401);
+  if (p === "/desk/orders") {
+    if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
+    const all = new URL(request.url).searchParams.get("all") === "1";
+    return json({ ok: true, orders: await allOrders(env, all) });
+  }
+  const mm = /^\/desk\/orders\/([^/]+)\/([^/]+)$/.exec(p);
+  if (!mm) return notFound();
+  const u = normUser(mm[1]);
+  if (!u || !OID_RE.test(mm[2])) return notFound();
+  if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+  const r = await deskMove(env, u, mm[2], await readJson(request));
+  return r.error ? json({ ok: false, error: r.error }, r.status || 400) : json({ ok: true, order: r.order, push: r.push });
 }
 
 export default {
@@ -216,6 +300,15 @@ export default {
       if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
       return handleOpen(request, env);
     }
+    /* THE SERVICE WORKER, served as text: the site has no assets. It caches nothing and reads
+       nothing; see stmt/sw.js. worker-src 'self' in the page's CSP is what lets it register. */
+    if (p === "/sw.js") {
+      if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
+      return new Response(SW_JS, { headers: Object.assign({ "content-type": "application/javascript; charset=utf-8" }, HEADERS) });
+    }
+    if (p === "/push/key") return json({ ok: true, key: env.STMT_VAPID_PUBLIC_KEY || null, configured: !!(env.STMT_VAPID_PUBLIC_KEY && env.STMT_VAPID_PRIVATE_JWK) });
+    if (p === "/orders" || p.startsWith("/orders/") || p === "/push/subscribe") return handleCustomer(request, env, p, m);
+    if (p === "/desk/orders" || p.startsWith("/desk/orders/")) return handleDesk(request, env, p, m);
     if (p !== "/") return notFound();
     if (m !== "GET" && m !== "HEAD") return json({ ok: false, error: "method not allowed" }, 405);
 
@@ -228,7 +321,7 @@ export default {
         "content-type": "text/html; charset=utf-8",
         "content-security-policy":
           "default-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; "
-          + "img-src 'self' data:; connect-src 'self'; "
+          + "img-src 'self' data:; connect-src 'self'; worker-src 'self'; "
           + "style-src 'nonce-" + nonce + "'; script-src 'nonce-" + nonce + "'"
       }, HEADERS)
     });

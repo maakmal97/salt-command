@@ -30,6 +30,7 @@ import { statementCss, REVIEW_CSS } from "./stmt-style.mjs";
 import { qrSvg } from "./qr.mjs";
 import { sendSheet } from "./stmt-send.mjs";
 import { newPassword, newUsername, USERNAME_RE, makeVerifier, contentKey, wrapKey, encryptWith, decryptWith } from "./stmt-crypto.mjs";
+import { priceList } from "./pricelist.mjs";
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const BOOK = process.env.SALT_BOOK || resolve(REPO, "ledger", "book.json");
@@ -634,8 +635,10 @@ export function liveStatement(party, now) {
 
 /* THE RECORDS AS THE DEPLOY PUBLISHES THEM: the newest issue's records, each with the live
    document sealed under the same content key. `root` is the statements folder. Without a key
-   the records go up as issued and no live document is written, and the caller says so. */
-export async function liveRecords(root, key, now) {
+   the records go up as issued and no live document is written, and the caller says so.
+   `pricing` (06 Sep 2026) is the desk's PRICING snapshot; given, each record also carries the
+   customer's price list for the week, sealed under the same key (tools/pricelist.mjs). */
+export async function liveRecords(root, key, now, pricing) {
   let latest = null;
   for (const d of readdirSync(root).filter(x => /^\d{4}-\d{2}$/.test(x)).sort()) {
     if (existsSync(join(root, d, "_kv"))) latest = d;
@@ -645,7 +648,7 @@ export async function liveRecords(root, key, now) {
   const byUser = {};
   for (const c of Object.keys(users)) byUser[users[c]] = c;
   const records = [], unmatched = [], stale = [], wrongKey = [];
-  let live = 0;
+  let live = 0, priced = 0;
   for (const f of readdirSync(join(root, latest, "_kv")).filter(x => x.endsWith(".json")).sort()) {
     const rec = JSON.parse(readFileSync(join(root, latest, "_kv", f), "utf8"));
     /* A RECORD WITH NO USERNAME IS FROM BEFORE 03 SEP 2026 and cannot be published: the first
@@ -676,10 +679,15 @@ export async function liveRecords(root, key, now) {
         rec.live = Object.assign({ at: doc.at }, await encryptWith(ck, JSON.stringify(doc)));
         live++;
       }
+      if (pricing) {
+        const list = priceList(code, book, pricing, now);
+        rec.prices = Object.assign({ at: list.at, week: list.week.monday }, await encryptWith(ck, JSON.stringify(list)));
+        priced++;
+      }
     } else if (key) unmatched.push(rec.u);
     records.push(rec);
   }
-  return { latest, records, live, unmatched, stale, wrongKey };
+  return { latest, records, live, priced, unmatched, stale, wrongKey };
 }
 
 /* `archive` produces a HISTORICAL issue: the documents and the review sheet, and nothing else.

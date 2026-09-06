@@ -30,6 +30,16 @@
 	// The owner's override lives in the STMT_MASTER secret:
 	//   npx wrangler secret put STMT_MASTER -c wrangler.stmt.jsonc
 	// Unset, the override is simply off and every open needs the customer's own password.
+	//
+	// TWO MORE SECRETS SINCE 06 Sep 2026, both set by `node tools/stmt-setup.mjs`:
+	//   STMT_DESK_KEY           the shared key the desk's Worker sends on /desk/orders; unset,
+	//                           those routes refuse everything
+	//   STMT_VAPID_PRIVATE_JWK  the site's own Web Push signing key, for waking a customer's
+	//                           phone when his order moves; the public half is the var below
+	"vars": {
+		"STMT_VAPID_PUBLIC_KEY": "",
+		"STMT_VAPID_SUBJECT": "mailto:maakmal97@icloud.com"
+	},
 	"observability": {
 		"enabled": true
 	}

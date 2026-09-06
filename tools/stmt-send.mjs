@@ -87,6 +87,10 @@ h1{margin:0 0 8px;font-size:var(--salt-text-2xl);font-weight:600;letter-spacing:
   letter-spacing:.06em;color:var(--salt-text);margin:0}
 .un{font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);color:var(--salt-brass);
   letter-spacing:.1em;margin:2px 0 0}
+.site{display:inline-block;margin:6px 0 0;font-family:var(--salt-font-mono);font-size:var(--salt-text-xs);
+  color:var(--salt-copper);letter-spacing:.02em;word-break:break-all;text-decoration:underline;
+  text-underline-offset:3px;min-height:var(--salt-tap);line-height:var(--salt-tap)}
+.site:hover{color:var(--salt-brass)}
 .tot{font-family:var(--salt-font-mono);font-size:var(--salt-text-xs);color:var(--salt-text-muted);
   margin:6px 0 0;font-variant-numeric:tabular-nums}
 .qrw{display:flex;gap:14px;align-items:center;margin:14px 0 4px}
@@ -173,7 +177,7 @@ const JS = `
     var card = document.createElement('div');
     card.className = 'card' + (sent[row.who] ? ' done' : '');
     card.innerHTML =
-      '<p class="who"></p><p class="un"></p><p class="tot"></p>'
+      '<p class="who"></p><p class="un"></p><a class="site" target="_blank" rel="noopener"></a><p class="tot"></p>'
       + '<div class="qrw"><canvas></canvas><p class="qrn">Scan or share the code.<br>It opens the '
       + 'statement with the username filled in.</p></div>'
       + '<div class="btns">'
@@ -186,6 +190,11 @@ const JS = `
       + '<details class="peek"><summary>See the message</summary><pre></pre></details>';
     card.querySelector('.who').textContent = row.who;
     card.querySelector('.un').textContent = row.user;
+    /* THE ADDRESS IS A LINK (06 Sep 2026, his instruction): what the QR opens, opened from here, so
+       a card can be checked against the live site without scanning it. Username filled in, as the
+       code does; the password is still the other button. */
+    var site = card.querySelector('.site');
+    site.href = row.url; site.textContent = row.url.replace(/^https?:\/\//, '');
     card.querySelector('.tot').textContent = row.tot;
     card.querySelector('pre').textContent = row.msg;
     var cv = card.querySelector('canvas');

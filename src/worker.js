@@ -31,6 +31,7 @@
 
 import { runDrafter, dryRunDrafter } from "./drafter.js";
 import { sendPush, listSubs } from "./push.js";
+import { listOrders, moveOrder, saleEntry, queueSale, ordersWaiting, nudgeOrders } from "./orders.js";
 
 /* X-Robots-Tag matches public/_headers, which sets it on the static assets. It was missing
    here, so GET /queue and GET /rev carried no noindex at all. That mattered little behind
@@ -547,6 +548,8 @@ export default {
         const r = await runDrafter(env);
         console.log("drafter: " + JSON.stringify(r));
         await pushIfDrafted(env, r);
+        /* a customer order placed since the last quarter-hour wakes the phone once */
+        console.log("orders nudge: " + JSON.stringify(await nudgeOrders(env)));
       } catch (e) {
         console.log("scheduled FAILED: " + String((e && e.stack) || e));
       }
@@ -587,6 +590,7 @@ export default {
      * cannot quietly miss it. */
     if ((p === "/queue" || p === "/ledger" || p.startsWith("/ledger/")
       || p === "/drafts" || p.startsWith("/drafts/")
+      || p === "/orders" || p.startsWith("/orders/")
       /* /push/key is the ONE push route left open, and only because the VAPID public
          key is public by definition: a browser cannot create a subscription without
          it, and it authorises nothing on its own. Everything else under /push either
@@ -646,6 +650,31 @@ export default {
     }
     /* The approval step. Reads open, decisions write-gated, same posture as everything else. */
     if (p === "/drafts" || p.startsWith("/drafts/")) return handleDrafts(request, env, ctx, url, p, m);
+    /* THE CUSTOMER ORDERS (06 Sep 2026), relayed from the statements site: see src/orders.js.
+       Keyed like the drafts, because an order names a party and a figure. A move to "done" is
+       the one that writes: a queue entry under q:orders, drafted on arrival like any other. */
+    if (p === "/orders") {
+      if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
+      const r = await listOrders(env, url.searchParams.get("all") === "1");
+      return json(r, r.ok ? 200 : 503);
+    }
+    const om = /^\/orders\/([^/]+)\/([^/]+)$/.exec(p);
+    if (om) {
+      if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+      let b = {};
+      try { b = await request.json(); } catch { b = {}; }
+      const r = await moveOrder(env, om[1], om[2], b);
+      if (!r.ok) return json({ ok: false, error: r.error }, r.status || 502);
+      if (b && b.status === "done") {
+        if (r.order.code) {
+          const e = saleEntry(r.order, r.order.code, new Date());
+          await queueSale(env, e);
+          draftOnArrival(env, ctx);
+          r.queued = e.at;
+        } else r.warn = "no desk code is mapped to " + r.order.u + ", so no sale was queued: publish the statements again, then enter the sale by hand";
+      }
+      return json(r);
+    }
     /* Run the drafter on demand rather than waiting for the cron: needed to prove it from
        outside, and needed the moment an entry is queued and you want the row now. Write-gated,
        because it writes rows into `draft`. `?dry=1` reports what it would draft and stores
@@ -703,6 +732,7 @@ export default {
             for (const k of Object.keys(on)) if (on[k] !== today) out.countDue.push(k);
           }
         }
+        out.orders = await ordersWaiting(env);
       } catch (e) { out.warn = String((e && e.message) || e); }
       return json(out);
     }

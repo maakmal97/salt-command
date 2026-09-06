@@ -169,6 +169,60 @@ thing a curious customer could still notice. A custom domain on the statements W
 fix: a `routes` block in `wrangler.stmt.jsonc`, and `SALT_BASE_URL` (or the default at the top
 of `tools/make_statements.mjs`) changed to match before the next issue, since the QR carries it.
 
+## The price list and the order book (06 Sep 2026, his instruction)
+
+Three things sit behind the one password since v499: the statements, a **price list** for
+the week, and an **order**. The page shows them as three tabs once the password has opened
+the record. Nothing about the statements changed.
+
+**The price list is a second sealed document beside the live statement.** The deploy writes
+it in the same publish, under the same content key, so the site still holds nothing it can
+read. `tools/pricelist.mjs` is the whole rule: the customer's rate on a product is the median
+unit rate of his last four committed orders of it, read from orders dated before the week's
+Monday in Kuala Lumpur, so the rate he is shown cannot move inside a week; each board size is
+that rate times the size, lifted to the engine's collected floor for the size and rounded up
+to the ringgit, with one delivery on top for a delivered order, as the board quotes. A customer
+with no history on a product sees the board's ask. Nothing outside the engine prices: the
+publish opens the master in jsdom for the desk's PRICING inputs (the same the drafter reads)
+and calls `floorTotal` and `priceLadder`. `node tools/pricelist.mjs --show <CODE>` prints what
+a customer sees. `--no-prices` on the publish leaves the list out.
+
+**The order lives on the site, in its own store**, as `order:<username>:<id>`, plaintext, and
+the reason is stated in `stmt/orders.js`: it is written at runtime by the customer and the site
+holds no key to seal it with. It carries a size, a quoted total and a state; no name, no code.
+`/open` mints a **session** on a correct password (fifteen minutes; the page forgets it when it
+locks), and the order routes take that and nothing else. The states: placed (the customer),
+acknowledged and ready to collect or deliver (the owner), done (the owner: handed over and
+paid), declined (the owner), withdrawn (the customer, while nothing is on the road).
+**Payment is offered at ready only.** Five rails: cash on collection or delivery, DuitNow
+Transfer to a named account, a DuitNow QR to save, JomPAY, and the Touch 'n Go Business code;
+the page hands over one link into QR Command for the rail chosen, and the accounts it may name
+are `stmt/pay.js`, generated from the pay master by `node tools/paysync.mjs --sync` with no
+number, payload or reference shipped. The quote is the customer's claim off his own list: the
+owner reads the rate against the party's usual on the phone before acknowledging, and the
+drafter flags it again when the sale is queued.
+
+**The desk reads and moves orders through a service binding**, `STMT_SITE` in
+`wrangler.jsonc`, sending `STMT_DESK_KEY`, a secret the same on both Workers. The direction is
+desk to site only; the site has no binding, no key of the desk's and no route back. The
+Orders card in Enter (cloud desk) is the taps. **Completed queues the sale** under the
+`q:orders` device, shaped as the Workbench shapes an entry, cash and units in full, and the
+drafter drafts it on arrival; it is approved under Approve like every row, and the live
+statement follows the fold. The username-to-code map the relay needs is written to the DESK's
+KV as `stmt-users` by every publish; the site never holds it. A placed order also wakes his
+phone once, on the drafter's quarter-hour.
+
+**Notifications.** The page polls the customer's orders every ten seconds while it is open.
+For a closed page the site has its own Web Push pair: a payload-free wake, and the service
+worker the site serves at `/sw.js` shows a fixed banner naming no amount and no order. On an
+iPhone the page has to be on the Home Screen first; the copy says so.
+
+**Setup, once:** `node tools/stmt-setup.mjs` mints `STMT_DESK_KEY` onto both Workers and the
+site's push pair (`STMT_VAPID_PRIVATE_JWK` as a secret, the public key written into
+`wrangler.stmt.jsonc`), then commit that file and push. Until the desk key exists the desk's
+`/orders` answers 503 and the site's `/desk/orders` refuses everything; until the push pair
+exists the page says notifications are not switched on.
+
 ### Publishing, and the one-time setup
 
 Statements reach the site through the two steps at the foot of the `deploy` job in

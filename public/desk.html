@@ -68,7 +68,7 @@ document.addEventListener('visibilitychange',function(){
    localStorage before it posts anything and the load reads it straight back.
    The same tick retries a held entry, which is what gets a phone write to the cloud
    without waiting for the next open. */
-var SALT_BUILD_ID="6b7bf51fdf74f56f";
+var SALT_BUILD_ID="a485c40e8bc5c0da";
 var SALT_REV_MS=10000;
 (function(){
   var chip=null,timer=null;
@@ -5410,7 +5410,9 @@ const whiteboard=[
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{"v":"v498","d":"06 Sep 2026","t":"A NEW BUYER TAKES 1 UNIT, AND THE SALT SHELF IS COUNTED AT 7","n":["<b>ENTERED BY THE FOLD ON HIS WORD, 06 SEP 2026.</b> A new customer is registered as CE5-TBC and takes 1 unit of salt for RM 110, paid and handed over on the day. The suffix is temporary: the code's place part is decided by the location, and the location is to be confirmed, so the code is re-keyed by Correction when it is, and the row keeps its id. The name and the location are on the laptop's directory only, as every name is.","<b>THE SHELF IS COUNTED AT 7.</b> After the unit went out the roll from 9.3 read 8.3; he counted 7, a drift of 1.3 unit. A count, not a roll: the stated salt shelf is set to 7 outright and the count date moves to 6 Sep. The last count was 9.8 on 4 Sep.","<b>THE STATEMENT USERNAME IS MINTED WITH THE ID</b>, as the rule of 05 Sep asks, and is kept for life under whatever code the party ends up with."]},
+const evolution=[{"v": "v499", "d": "06 Sep 2026", "t": "THE STATEMENTS SITE TAKES ORDERS, AND SHOWS EACH CUSTOMER HIS OWN PRICE LIST", "n": ["<b>HIS INSTRUCTION, 06 SEP 2026:</b> after the username and the password a customer can also find a price list based on his historical purchase price, changing weekly, and place an order: a lot size in, the price back, then the payment method, with a link to only the method he chose, from QR Command. He sees the payment options only after the desk has acknowledged the order and said it is ready for pickup or ready to be delivered, with live notifications, and an updated statement after completion.", "<b>THE PRICE LIST</b> is a second sealed document beside the live statement, written by the same deploy under the same content key (tools/pricelist.mjs): the median unit rate of his last four committed orders of each product, read from orders dated before the week's Monday in Kuala Lumpur, never below the engine's collected floor for the size, and delivery quoted on top per order as the board does. A customer with no history on a product sees the board's ask. Nothing outside the engine prices: floorTotal and priceLadder are called, fed the desk's own PRICING inputs, the same the drafter reads.", "<b>THE ORDER</b> lives on the statements site's own store (stmt/orders.js), on a session the site mints with the password. Placed, acknowledged, ready, done, declined, withdrawn; payment is offered at ready only; five rails, and one link into QR Command for the one chosen, the accounts read from the pay master by tools/paysync.mjs with no number shipped. The page follows the order every ten seconds while it is open, and a payload-free push wakes the phone when it is not (stmt/push.js, the site's own key pair), the banner naming no amount and no order.", "<b>THE DESK READS THEM THROUGH A SERVICE BINDING</b> (src/orders.js): this Worker calls the site with STMT_DESK_KEY and the site has no road back. The Orders card in Enter is the taps: Acknowledge, Ready to collect or deliver, Completed, Decline. Completed queues the sale under q:orders, shaped as the Workbench shapes one, cash and units in full, drafted on arrival and approved here as every row is; the live statement follows the fold. The username-to-code map is written to the desk's own store by the publish; the site never holds it. A placed order also wakes his phone on the drafter's quarter-hour.", "<b>THE SEND SHEET</b> now carries the statement address on every card as a link, and a Desktop shortcut, Send Statement, opens the newest sheet."]},
+
+{"v":"v498","d":"06 Sep 2026","t":"A NEW BUYER TAKES 1 UNIT, AND THE SALT SHELF IS COUNTED AT 7","n":["<b>ENTERED BY THE FOLD ON HIS WORD, 06 SEP 2026.</b> A new customer is registered as CE5-TBC and takes 1 unit of salt for RM 110, paid and handed over on the day. The suffix is temporary: the code's place part is decided by the location, and the location is to be confirmed, so the code is re-keyed by Correction when it is, and the row keeps its id. The name and the location are on the laptop's directory only, as every name is.","<b>THE SHELF IS COUNTED AT 7.</b> After the unit went out the roll from 9.3 read 8.3; he counted 7, a drift of 1.3 unit. A count, not a roll: the stated salt shelf is set to 7 outright and the count date moves to 6 Sep. The last count was 9.8 on 4 Sep.","<b>THE STATEMENT USERNAME IS MINTED WITH THE ID</b>, as the rule of 05 Sep asks, and is kept for life under whatever code the party ends up with."]},
 
 {"v":"v497","d":"06 Sep 2026","t":"A BREACH IS NAMED ON ITS OWN BOOK'S REGISTER ONLY","n":["<b>HIS INSTRUCTION, 06 SEP 2026: CA4-DAM breaks one rule in salt only, not in oil.</b> The Boundaries register on the oil tab listed his salt credit-cap breach, 2.5 unit of salt out and unpaid, and named it as salt's. Round 5 had made the cap per book and kept the whole-book read on purpose, so a salt breach was shown on every tab. That is reversed: the credit rows are filtered to the active book before they are named, so the oil register carries no salt breach and the salt register carries it once, under the one rule he breaks. Every other rule in the register was already the active book's: the shelf, the cost basis and the margin floor read the product on screen, the receivables ladder reads the walk's own list, and a ban is a person, not a book, and stays on both.","<b>PROVED ON THE LIVE BOOK.</b> The assertion asks the register for CA4-DAM's rules on each book: on salt, exactly one, Credit cap; on oil, none. The same expression on the unchanged desk returned the credit-cap breach on oil. The render diff moves nowhere, because every shot is taken on the salt book, where nothing changes."]},
 {"v":"v496","d":"06 Sep 2026","t":"COST IS THE ORDER'S, IN RINGGIT, AND A MOVEMENT CARRIES THE COST OF WHAT IT MOVED","n":["<b>HIS INSTRUCTION, 05 SEP 2026, THE FIRST FOLD OF THE TWO-SHAPE SHEET:</b> the delivered cost is a stored input, an absolute figure, because it determines the cost of goods sold and the pricing of the product over time. Until now a sale's cost was RM per unit, and every reader multiplied it by a quantity of its own choosing: the order's units in the Ledger's margin, the units not pending in the P&L, the whole quantity in the customer tables. The audit of 04 Sep had counted three definitions of COGS. The unit figure is now DERIVED, once, by txUnitCost in the position engine, with the caller's shelf figure as the fallback for a row with no stated cost; nothing else divides, and costOf on the desk is a wrapper over it. txCost reads the order's figure.","<b>THE BOOK CONVERTED ONCE, BY tools/cost-migrate.mjs, RUN BY HAND.</b> 128 stated costs became the unit figure times the order's units, to the sen; 52 product-moving steps took the cost of what they moved, unit times units moved, as amend[i].cost; and s107, the one live row that had never stated a cost, is stored at the product's weighted average buy price of RM 50.4042 a unit that the desk had been costing it at, RM 315.03 for 6.25 unit, with a row note saying so. The five cancelled rows without a cost stay without one: nothing was delivered. The tool refuses to run twice.","<b>PROVED BY EVERY FIGURE HOLDING.</b> On the book as it stood and on the book as converted, read through the running desk: salt COGS RM 16,325.43, goodwill RM 26.26, gross margin RM 10,679.57, receivables RM 142.50; oil COGS RM 615.33 and gross margin RM 271.17; the same to the sen. 153 of 154 Ledger cards print the margin they printed; the one that moved is s018, whose cost of 47.6 a unit on 10.4412 unit was RM 497.00112 and printed RM 213.00 of margin, and is stored as RM 497.00 and prints RM 213. The render diff against a v495 build shot the same day moves in four places and each is accounted for: the Ledger on that one cell; the Journal on its cost line and s107's note; Financials, where the gross margin card had printed a dash, 'a product has an uncosted row', because s107 had no cost, and now prints RM 10,951, salt 10,680 and oil 271, the walk's own figure; and Plans, where the watch count and the integrity count fall from 7 to 6 because s107 has left the row-with-no-cost item. The first cut of this fold left one reader unswept, the per-product summary behind that card, and it printed RM -76,350 of gross margin until the render diff caught it: the reader map had skipped the master's lines 5000 to 5999 as generated, and only the version entries there are.","<b>THE WRITERS FOLLOW.</b> The drafter's row carries the shelf's unit figure times the order's units, and its below-cost and recost flags read the row's unit cost through the engine. The fold's Fulfilment writes the movement's cost on the step, from the order's unit cost, after the shelf has filled an uncosted order and after a note has recost one, in that order; the suite found the step written before the fill and it is written after. A Modification rescales the order's cost to its new quantity, in the fold and in the desk's own preview alike, so the unit cost the order was costed at is kept. The editor's field reads Cost, RM, with a hint that it is the whole order's. The fold routine's note contract says the same.","<b>ONE RED LINE IS NOT THIS FOLD'S, AND IS HIS TO DECIDE.</b> The oil board's assertion that RM 450 clears both 50 unit floors went red on 06 Sep on the unchanged v495 desk as well: lot p012 of 6 Aug left the thirty-day window at midnight, the trailing rate rose from RM 7.00 to RM 7.25, and the delivered floor at 50 unit reads RM 453.18. That assertion exists to say his stated price needs his decision, and it is left red until he gives it."]},
@@ -5685,7 +5687,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='06 Sep 2026, 21:36 KL';
+const LAST_UPDATED='06 Sep 2026, 22:21 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -7848,7 +7850,7 @@ const dAhead=d=>(typeof d==='number'?d:dbet(d))<0;
 const TAB_LABEL={today:'Today',forward:'Forward',overview:'Overview',receivables:'Order book',
   inventory:'Inventory',financials:'Financials',analysis:'Analysis',concentration:'Customers',
   network:'Network',map:'Map',ledger:'Ledger',journal:'Journal',add:'Transaction',sourcing:'Sourcing',
-  pricing:'Pricing',plans:'Whiteboard',approve:'Approve'};
+  pricing:'Pricing',plans:'Whiteboard',approve:'Approve',orders:'Orders'};
 const starStr=n=>'★'.repeat(n)+'☆'.repeat(3-n);
 /* v245: THE PRICE TIER LEADS. custBadges() carries a RECENCY badge, Dormant/Loyal/Regular/New,
    which is a different question from what the customer pays; both now show, price tier first,
@@ -13908,7 +13910,7 @@ function nextBest(id){
    replaced it with the queue length alone, and before Approve had ever been opened it was
    never set at all. One predicate, one count, one writer. */
 const qTx=()=>queue.filter(q=>!(q.payload&&(q.payload.mode==='plan'||q.payload.mode==='obs')));
-const enterCount=()=>qTx().length+AP_DRAFTS.length;
+const enterCount=()=>qTx().length+AP_DRAFTS.length+ORD_OPEN.filter(o=>o.status==='placed').length;
 function apBadge(){try{const b=document.querySelector('.tab[data-s="enter"]');if(!b)return;
   let c=b.querySelector('.navct');const n=enterCount();
   /* v385: AND WHERE THE DRAFTS COULD NOT BE READ THE BADGE SAYS SO RATHER THAN COUNTING THEM
@@ -15162,6 +15164,99 @@ async function apDecide(id,action,btn){
   }catch(e){ apMsg='No connection, so the decision was not recorded. The row is still waiting.'; }
   delete apBusy[id];await apLoad();
   const m=document.getElementById('apMsg');if(m)m.textContent=apMsg;
+}
+/* ---- Orders card (v499): what customers ordered on the statements site, and the taps that
+   move an order. THE ORDERS LIVE ON THE SITE, in its own store, and reach here through the
+   Worker's relay (src/orders.js) over a service binding, keyed like the drafts because an order
+   names a party and a figure. This card computes no price: the Rate is the customer's own
+   quote off the list the deploy sealed for him, and "Their usual" is the median of the party's
+   last four committed rows on this book, the same reading the list itself was struck from.
+   COMPLETED IS THE ONE TAP THAT WRITES, and it writes a queue entry, not a row: the sale is
+   drafted on arrival and approved under Approve like every other, and the live statement
+   follows the fold. ---- */
+let ORD_OPEN=[],ordUnread='',ordNeedKey=false,ordBusy={},ordMsg='',ordTimer=null;
+const ORD_WORD={placed:'Placed',acknowledged:'Acknowledged',ready:'Ready',done:'Completed',declined:'Declined',cancelled:'Withdrawn'};
+function tabOrders(){
+  if(!cloudMode())return `<h1>Orders</h1>
+  <div class="dsc dsclead">Customer orders are read on the cloud desk; this laptop copy has no relay to the statements site.</div>
+  <div class="card">
+    <div class="cardh">Where an order is decided <span class="sub">the phone, or /desk in the cloud</span></div>
+    <div class="insight">An order placed on the statements site lands on the cloud desk's Orders card the moment it is placed. Acknowledge it there, mark it ready to collect or to deliver, and Completed once it is handed over and paid; Completed queues the sale, which is then approved under Approve like any other row.</div>
+  </div>`;
+  return `<h1>Orders</h1>
+  <div class="dsc dsclead">What customers ordered on the statements site, each priced off his own weekly list.</div>
+  <div class="insight">Acknowledge, then Ready to collect or Ready to deliver, then Completed once it is handed over and paid; Completed queues the sale for approval.</div>
+  <div id="ordBox"><div style="font-size:12px;color:var(--dim)">Reading the orders.</div></div>
+  <div id="ordMsg" style="margin-top:8px;font-size:12px;color:var(--mut)">${esc(ordMsg)}</div>`;
+}
+async function ordLoad(quiet){
+  if(!cloudMode())return;
+  const go=()=>fetch('orders',{cache:'no-store',headers:qHeaders()});
+  try{ let r=await go(); if(r.status===401&&!quiet&&saltAskWriteKey())r=await go();
+    ordNeedKey=(r.status===401); let j=null; try{j=await r.json();}catch(e){}
+    ordUnread=r.ok?'':(r.status===401?'':(j&&j.error)||'the Worker answered http '+r.status);
+    ORD_OPEN=(r.ok&&j&&j.orders)||[];
+  }catch(e){ ordUnread=(e&&e.message)||'the request did not complete'; ORD_OPEN=[]; }
+  ordDraw();
+  /* the card follows the site while it is on screen, at the phone's own pace */
+  if(!ordTimer)ordTimer=setInterval(()=>{if(document.getElementById('ordBox'))ordLoad(true);else{clearInterval(ordTimer);ordTimer=null;}},30000);
+}
+function ordUsual(code,product){
+  const rows=sales.filter(s=>s.customer===code&&((s.product||'salt')===(product||'salt'))&&!s.cancelled&&s.date&&s.total>0&&s.qty>0)
+    .sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0).slice(-4).map(s=>s.total/s.qty).sort((a,b)=>a-b);
+  if(!rows.length)return null;
+  const n=rows.length;return n%2?rows[(n-1)/2]:(rows[n/2-1]+rows[n/2])/2;
+}
+function ordCard(o){
+  const when=iso=>{try{return new Date(iso).toLocaleString('en-GB',{timeZone:'Asia/Kuala_Lumpur',day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit',hour12:false});}catch(e){return '';}};
+  const cell=(k,v,cls)=>`<div class="kpi ${cls||''}"><div class="l">${k}</div><div class="v" style="font-size:17px">${v}</div></div>`;
+  const who=o.code?codeOf(o.code):'unmapped '+esc(o.u);
+  const rate=o.qty?o.total/o.qty:null, usual=o.code?ordUsual(o.code,o.product):null;
+  const off=(rate!=null&&usual)?(rate-usual)/usual:null;
+  const pay=o.method?(o.method+(o.account?' via '+o.account:'')):'not chosen yet';
+  const last=(o.history||[]).slice(-1)[0];
+  const red='background:transparent;color:var(--crim);border-color:var(--crim);box-shadow:none';
+  const green='background:linear-gradient(135deg,#6fae97,#4f8f7a);border-color:transparent;color:#05080a;box-shadow:none';
+  const btn=(st,label,style,mode)=>`<button class="vbtn" data-ord="${st}" data-u="${esc(o.u)}" data-id="${esc(o.id)}"${mode?` data-mode="${mode}"`:''} style="${style||''}">${label}</button>`;
+  let acts='';
+  if(o.status==='placed')acts=btn('acknowledged','Acknowledge',green)+btn('declined','Decline',red);
+  else if(o.status==='acknowledged')acts=btn('ready','Ready to collect','','collect')+btn('ready','Ready to deliver','','deliver')+btn('declined','Decline',red);
+  else if(o.status==='ready')acts=btn('done','Completed: handed over and paid',green)+btn('declined','Decline',red);
+  return `<div class="card" style="margin-top:10px" data-id="${esc(o.id)}">
+    <div style="font-size:14px"><b>${who}</b> orders ${units(o.qty)} ${esc(o.product||'salt')} for <b>${fmt(o.total)}</b>, ${o.mode==='deliver'?'delivered':'collected'} <span class="sub">${esc(ORD_WORD[o.status]||o.status)}, ${when((last&&last.at)||o.at)}</span></div>
+    <div class="kpis k4" style="margin-top:10px">${cell('Rate',rate==null?'&mdash;':fmt(rate)+'/unit')
+      +cell('Their usual',usual==null?'&mdash;':fmt(usual)+'/unit',off==null?'':Math.abs(off)>=0.10?'r':'g')
+      +cell('Paying by',esc(pay))+cell('Placed',when(o.at))}</div>
+    ${o.status==='ready'&&!o.method?'<div class="dsc" style="margin-top:8px">Ready; the customer has not chosen how to pay yet.</div>':''}
+    ${acts?`<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">${acts}</div>`:''}
+  </div>`;
+}
+function ordDraw(){
+  apBadge();
+  const box=document.getElementById('ordBox');if(!box)return;
+  if(ordNeedKey)box.innerHTML='<div class="warnpill" style="display:block">The write key is needed to read the orders and it was not accepted. Reload to be asked again. <b>This is not an empty book: orders may be waiting.</b></div>';
+  else if(ordUnread)box.innerHTML='<div class="warnpill" style="display:block;background:rgba(212,105,76,.14);border-color:var(--crim);color:var(--crim)">The orders could not be read: '+esc(ordUnread)+'. <b>This is not an empty book.</b></div>';
+  else if(!ORD_OPEN.length)box.innerHTML='<div class="card"><div class="dsc">No open orders. A customer\'s order lands here the moment it is placed.</div></div>';
+  else box.innerHTML=ORD_OPEN.map(ordCard).join('');
+  box.querySelectorAll('button[data-ord]').forEach(b=>{b.onclick=()=>ordAct(b);});
+}
+async function ordAct(b){
+  const id=b.dataset.id,u=b.dataset.u,st=b.dataset.ord;if(!id||ordBusy[id])return;ordBusy[id]=1;
+  const card=b.closest('.card');if(card)card.querySelectorAll('button').forEach(x=>x.disabled=true);
+  const body=JSON.stringify(Object.assign({status:st},b.dataset.mode?{mode:b.dataset.mode}:{}));
+  const url='orders/'+encodeURIComponent(u)+'/'+encodeURIComponent(id);
+  try{ let r=await fetch(url,{method:'POST',headers:qHeaders(),body});
+    if(r.status===401&&saltAskWriteKey())r=await fetch(url,{method:'POST',headers:qHeaders(),body});
+    let j={};try{j=await r.json();}catch(e){}
+    ordMsg=r.status===401?'That write key was refused. The order is unchanged.'
+      :!r.ok?'The Worker refused the move: '+(j.error||'http '+r.status)+'. The order is unchanged.'
+      :st==='done'?(j.queued?'Completed. The sale is queued and drafted; approve it under Approve.':(j.warn||'Completed.'))
+      :st==='declined'?'Declined. The customer sees it.'
+      :ORD_WORD[st]+'. The customer is told'+(j.push&&j.push.sent?' on the phone':' on the page')+'.';
+  }catch(e){ ordMsg='No connection, so nothing moved.'; }
+  delete ordBusy[id];await ordLoad(true);
+  const m=document.getElementById('ordMsg');if(m)m.textContent=ordMsg;
+  if(st==='done')apLoad(true);
 }
 const wbEl=id=>document.getElementById(id);
 const wbVal=id=>{const e=wbEl(id);return e?e.value:'';};
@@ -17355,7 +17450,7 @@ function setProdView(pr){
   PROD=pr; try{localStorage.setItem('saltProd',pr);}catch(e){}
   recompute(); drawProdSw(); render();
 }
-const builders={today:tabToday,forward:tabForward,sourcing:()=>{const b=perProduct(tabSourcing,{skipEmpty:true});return srcHead()+(b||'<div class="card"><div class="insight">No purchases or sales on any book yet, so there is nothing to source against.</div></div>');},analysis:()=>anaHead()+perProduct(tabAnalysis),map:tabMap,overview:tabOverview,inventory:()=>invHead()+perProduct(tabInventory),financials:()=>consoBlock()+consoCashBlock()+perProduct(tabFinancials),ledger:tabLedger,journal:tabJournal,concentration:tabConcentration,network:tabNetwork,receivables:()=>consoOrderBlock()+perProduct(tabReceivables),add:tabWorkbench,pricing:()=>pxHead()+perProduct(tabPricing),plans:tabPlans,approve:tabApprove};
+const builders={today:tabToday,forward:tabForward,sourcing:()=>{const b=perProduct(tabSourcing,{skipEmpty:true});return srcHead()+(b||'<div class="card"><div class="insight">No purchases or sales on any book yet, so there is nothing to source against.</div></div>');},analysis:()=>anaHead()+perProduct(tabAnalysis),map:tabMap,overview:tabOverview,inventory:()=>invHead()+perProduct(tabInventory),financials:()=>consoBlock()+consoCashBlock()+perProduct(tabFinancials),ledger:tabLedger,journal:tabJournal,concentration:tabConcentration,network:tabNetwork,receivables:()=>consoOrderBlock()+perProduct(tabReceivables),add:tabWorkbench,pricing:()=>pxHead()+perProduct(tabPricing),plans:tabPlans,approve:tabApprove,orders:tabOrders};
 /* ============ SEVEN VIEWS OVER FIFTEEN TABS (v341, move 4 of the rebuild) ============
    The fifteen tabs were fifteen reports stacked: a megabyte to open for one figure, with the
    method prose standing open on every one. A view leads with one tab open, folds that tab's
@@ -17371,7 +17466,7 @@ const VIEWS=[
   {id:'price', name:'Price',            lead:'pricing',       parts:[]},
   {id:'people',name:'Customers',        lead:'concentration', parts:['network','map']},
   {id:'book',  name:'The book',         lead:'ledger',        parts:['journal','analysis']},
-  {id:'enter', name:'Enter',            lead:'add',           parts:['approve','plans']}
+  {id:'enter', name:'Enter',            lead:'add',           parts:['approve','orders','plans']}
 ];
 const VIEW_OF={}; VIEWS.forEach(v=>{VIEW_OF[v.id]=v.id;VIEW_OF[v.lead]=v.id;v.parts.forEach(p=>{VIEW_OF[p]=v.id;});});
 const PART_Q={today:'what needs doing, ranked by the money at stake',
@@ -17390,6 +17485,7 @@ const PART_Q={today:'what needs doing, ranked by the money at stake',
   analysis:'the month read twelve ways',
   add:'record an order, an amendment, a count, a loss, a lost sale or a follow-up',
   approve:'the rows drafted from the queue, waiting on a decision',
+  orders:'what customers ordered on the statements site, and where each order stands',
   plans:'the whiteboard: plans, never figures'};
 /* the chart and wiring passes each tab needs after its HTML is in the document */
 const PART_DRAW={inventory:()=>drawPerProduct([trackCharts]),
@@ -17398,7 +17494,7 @@ const PART_DRAW={inventory:()=>drawPerProduct([trackCharts]),
   receivables:()=>drawPerProduct([drawRecvCharts]), financials:()=>drawPerProduct([drawFinCharts]),
   network:()=>drawNetworkCharts(), ledger:()=>{drawLedgerCharts();wireLedger();}, journal:()=>wireJournal(),
   sourcing:()=>drawPerProduct([drawSourcingCharts,drawOutlookChart]), forward:()=>drawFwdCharts(),
-  analysis:()=>drawPerProduct([drawAnalysis]), approve:()=>apLoad()};
+  analysis:()=>drawPerProduct([drawAnalysis]), approve:()=>apLoad(), orders:()=>ordLoad()};
 /* THE METHOD PROSE GOES (v372). HIS INSTRUCTION OF 26 Aug: Method and caveats is useless,
    remove it everywhere. There were TWO of these on every part, which is most of why it read
    as clutter: applyNotes() hid the long paragraphs behind a pill and cut the lead and every
@@ -17822,7 +17918,7 @@ recompute();drawProdSw();
    one part that fetches them, which is the wrong way round for a step that is not optional.
    One read on load: cloud only, and only where a write key is already stored, so a stranger
    with the URL is neither prompted nor served anything new. */
-try{if(cloudMode()&&saltWriteKey())apLoad(true);}catch(e){}
+try{if(cloudMode()&&saltWriteKey()){apLoad(true);ordLoad(true);}}catch(e){}
 window.addEventListener('hashchange',()=>{
   const h=(location.hash||'').slice(1);
   /* v365: was VIEW_OF[h]!==curTab, which only ever caught a jump between views. Two

@@ -140,6 +140,7 @@ async function banner() {
     bits.push(s.countDue.length === 1 ? s.countDue[0] + " not counted today" : "neither shelf counted today");
   }
   if (s.refused) bits.push(s.refused === 1 ? "1 entry the drafter refused" : s.refused + " entries the drafter refused");
+  if (s.orders) bits.push(s.orders === 1 ? "1 customer order waiting" : s.orders + " customer orders waiting");
 
   return {
     title: bits.length ? "Salt Command" : "Salt Command is square",

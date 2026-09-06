@@ -42,6 +42,17 @@
 			"database_id": "ba9dbf0f-00dc-497f-9a86-82194af595c7"
 		}
 	],
+	// THE STATEMENTS SITE, AS A SERVICE BINDING (06 Sep 2026). The one road between the two
+	// Workers, and it runs one way: this Worker calls the site's /desk/orders routes with the
+	// STMT_DESK_KEY secret (the same string is a secret on the site; tools/stmt-setup.mjs sets
+	// both) to read and move customer orders for the phone. The site has no binding back, no key
+	// of this Worker's, and no route to it. src/orders.js is the whole of what crosses.
+	"services": [
+		{
+			"binding": "STMT_SITE",
+			"service": "k7m3p2"
+		}
+	],
 	// The Worker-side gate. "1" makes the Worker refuse EVERY request, reads and
 	// writes both, that did not arrive through Cloudflare Access.
 	//
