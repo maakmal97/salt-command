@@ -1,6 +1,6 @@
 {
- "v": "v514",
- "stamped": "07 Sep 2026, 21:36 KL",
+ "v": "v515",
+ "stamped": "07 Sep 2026, 21:52 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -41,7 +41,7 @@
     "stated": 15
    }
   },
-  "STATED_STOCK": 5,
+  "STATED_STOCK": 1,
   "COUNT_ON": {
    "salt": "2026-09-06",
    "oil": "2026-08-23"
@@ -3101,6 +3101,20 @@
     "deliveredOn": "2026-09-07",
     "note": "CR3-DAM's twelfth order and the first above RM 80 a unit since 03 Jul: 2 unit at RM 92.50, RM 185 the order, handed over collected. The floor for 2 unit is RM 109.73 and the board's ask RM 220, so the rate stands RM 75.27 above the floor and RM 35 under the ask, a discount held for a party whose last nine orders were each 1 unit at RM 80. Costed at the inventory's own RM 48 a unit, the 03 Sep lot of 25 unit from SA5-BTR, which is what the draft carried, so RM 96 on the order and RM 89 gross, 48.1% on price. An advance: RM 150 of RM 185 paid, both unit collected on 07 Sep, RM 35 outstanding, and CR3-DAM carried nothing before this row, so RM 35 is their whole exposure.",
     "rid": "s136"
+   },
+   {
+    "customer": "CJ4-BJ",
+    "qty": 12.5,
+    "total": 850,
+    "cost": 600,
+    "cash": 0,
+    "delivery": 15,
+    "handover": "delivered",
+    "date": "2026-09-07",
+    "deliveredQty": 4,
+    "deliveredOn": "2026-09-07",
+    "note": "<b>12.5 UNIT TO CJ4-BJ AT RM 850, NOTHING PAID, 4 UNIT HANDED OVER ON 07 SEP.</b> RM 15 of the total is the delivery charge typed on the order, so the goods are RM 835 at RM 66.80 a unit; the drafter's own line reads RM 68 a unit and RM 250 gross at 29.4% because it struck those on the full RM 850, and on the goods it is RM 235 at 28.1%. Costed at the inventory's own RM 48 a unit, the 03 Sep lot of 25 unit from SA5-BTR, the same figure the desk's pricing snapshot carries, so RM 600 on the order and no cost override. The floor for 12.5 unit reads RM 685.82 and the board's ask RM 1,150, so the goods stand RM 149.18 above the floor and RM 300 under the ask; the wholesale anchor for this size is RM 875. His seventh order: RM 66.80 a unit falls between his 20 Aug tranche at RM 64 and his 26 Aug tranche at RM 72, and just under the RM 68.00 of the audited 15 Jul row. Those two August tranches were a split 12.5 unit order totalling RM 850 between them, the same size and total as this row, but on separate dates and as separate rows, and both were paid before delivery. The one flag the drafter raised is the advance and it stands: nothing is paid, 4 unit are already out, which is 4 unit of credit against a retail cap of 1 unit of salt for a party who is not an associate. CJ4-BJ carried nothing outstanding before this row, so RM 850 is his whole exposure and 8.5 unit remain to be delivered against a shelf of 1.",
+    "rid": "s137"
    }
   ],
   "contacts": [
@@ -3409,9 +3423,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-07T06:21:06.691Z",
+  "QUEUE_COMMITTED": "2026-09-07T13:27:15.139Z",
   "PRICING": {
-   "takenAt": "2026-09-07T13:40:44.136Z",
+   "takenAt": "2026-09-07T13:52:21.970Z",
    "sizes": [
     0.5,
     1,
@@ -3564,15 +3578,15 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0.35294117647058826
+         "v": 0.3888888888888889
         }
        },
        "attrib": 1,
        "shrinkRate": 0.06295481030687558,
        "avgDel": {
-        "n": 123,
-        "kg": 318.2,
-        "mean": 2.587
+        "n": 124,
+        "kg": 322.2,
+        "mean": 2.5984
        }
       },
       "policy": {
@@ -3843,11 +3857,11 @@
      }
     }
    },
-   "v": "v514"
+   "v": "v515"
   },
   "OPEN": {
-   "at": "2026-09-07T13:40:44.180Z",
-   "count": 6,
+   "at": "2026-09-07T13:52:22.015Z",
+   "count": 7,
    "byKey": {
     "CR3-DAM|2026-09-07|185": {
      "d": "2026-09-07",
@@ -3865,6 +3879,24 @@
      "key": "CR3-DAM|2026-09-07|185",
      "age": 0,
      "exp": 35
+    },
+    "CJ4-BJ|2026-09-07|850": {
+     "d": "2026-09-07",
+     "p": "CJ4-BJ",
+     "dir": "S",
+     "q": 12.5,
+     "t": 850,
+     "cash": 0,
+     "mv": 4,
+     "st": "part",
+     "oweRM": 850,
+     "oweUnits": 8.5,
+     "rid": "s137",
+     "deliveredOn": "2026-09-07",
+     "handover": "delivered",
+     "key": "CJ4-BJ|2026-09-07|850",
+     "age": 0,
+     "exp": 272
     },
     "CM4-MK|2026-09-04|360": {
      "d": "2026-09-04",
@@ -3953,14 +3985,14 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 5,
-     "free": 5,
+     "onHand": 1,
+     "free": 1,
      "owedOut": 0,
-     "coverDays": 0.9,
-     "rate": 5.45,
-     "owedToYou": 465,
-     "promised": 0,
-     "short": 0
+     "coverDays": 0.2,
+     "rate": 5.73,
+     "owedToYou": 737,
+     "promised": 8.5,
+     "short": 7.5
     },
     "oil": {
      "name": "Oil",
@@ -3978,7 +4010,7 @@
     "salt": "2026-09-06",
     "oil": "2026-08-23"
    },
-   "v": "v514"
+   "v": "v515"
   }
  }
 }
