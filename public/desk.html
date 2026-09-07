@@ -68,7 +68,7 @@ document.addEventListener('visibilitychange',function(){
    localStorage before it posts anything and the load reads it straight back.
    The same tick retries a held entry, which is what gets a phone write to the cloud
    without waiting for the next open. */
-var SALT_BUILD_ID="e63073d29ec3c81b";
+var SALT_BUILD_ID="c77c271150757b00";
 var SALT_REV_MS=10000;
 (function(){
   var chip=null,timer=null;
@@ -5455,7 +5455,9 @@ const whiteboard=[
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{"v":"v505","d":"07 Sep 2026","t":"THE SUPPLIER'S 25 UNIT TIER IS RM 1,200","n":["<b>HIS WORD, 07 SEP 2026:</b> the bulk quote for 25 unit is RM 1,200, RM 48 a unit, down from the RM 1,250 quoted on 20 Aug. The other four tiers stand. The two 25 unit lots of 02 and 03 Sep already landed at this rate, so the replacement rate does not move; what moves is the taper the ladder is fitted to, which the Price part reports with its r-squared."]},
+const evolution=[{"v": "v506", "d": "07 Sep 2026", "t": "FROM COST TO ASK, ONE ROW PER SIZE", "n": ["<b>HIS INSTRUCTION, 07 SEP 2026: I want to see COGS, then the floor (break-even), then the minimum ask; it seems disconnected.</b> The Price part showed the cost stack, the ladder policy and the board as three cards and walked nobody between them. A table now does, one row per size: COGS (landed times the size), the leak the floor adds, the floor, the size's margin, the floor at that margin, and the board's ask, marked where the rate law stepped it. Every figure is priceLadder's own, so the walk cannot disagree with the board. The Level row reads as the margin on the floor where a book carries anchorG."]},
+
+{"v":"v505","d":"07 Sep 2026","t":"THE SUPPLIER'S 25 UNIT TIER IS RM 1,200","n":["<b>HIS WORD, 07 SEP 2026:</b> the bulk quote for 25 unit is RM 1,200, RM 48 a unit, down from the RM 1,250 quoted on 20 Aug. The other four tiers stand. The two 25 unit lots of 02 and 03 Sep already landed at this rate, so the replacement rate does not move; what moves is the taper the ladder is fitted to, which the Price part reports with its r-squared."]},
 
 {"v": "v504", "d": "07 Sep 2026", "t": "THE LAST THREE LOTS, THE LEAK FROM THE COUNTS, THE ASK AS A MARGIN ON THE FLOOR, AND THE INVENTORY", "n": ["<b>HIS INSTRUCTIONS OF 07 SEP 2026, BOOKED AS ONE VERSION.</b> The replacement window is the last three lots received, not thirty days: salt lands a lot every four or five days and oil every ten to fifteen, so one calendar window was six cycles on one book and two on the other. The rate and the typed freight both read off those three lots (pxWindowLots).", "<b>THE LEAK IS CHARGED FROM THE COUNTS.</b> A count is taken when a lot lands and the inventory is near empty, so the drift at each count is that cycle's leak, every use included. The book now keeps COUNTS, every count as taken, seeded from the fold notes of v473, v489 and v498, and the fold appends one line per count. pxLeakCharge() takes the units missing over the last three cycles over the units handed over in them, and the cost stack applies that ratio to landed in place of the lifetime share and the attribution lever, which stand in only where no cycle can be read.", "<b>THE ASK IS A MARGIN ON THE FLOOR.</b> One basis: the floor is what a size costs to take out, and the ask is the floor at the size's margin on price, sliding on the supplier's taper, pinned at anchorG on anchorQ (0.47 on salt's 2.5 unit, 0.36 on oil's 10, each set so the board did not move on the day) and clamped between gLo and gHi. ladderMargin() beside ladderMarkup(); the walk, the rate law and the floor guard are unchanged. The margin the board prints is now the P&L's gross margin to the point.", "<b>INVENTORY, NOT SHELF OR STOCK.</b> Every place the desk's copy said shelf or stock now says inventory; the Stock view is the Inventory view at the same address. Identifiers, addresses and the history are untouched."]},
 
@@ -5744,7 +5746,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='07 Sep 2026, 09:49 KL';
+const LAST_UPDATED='07 Sep 2026, 09:51 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -15934,7 +15936,7 @@ function tabPricing(){
       /* the note is NOT run through esc(): it carries entities. Data inside it is escaped. */
       const sR=(lab,v,n)=>`<tr><td class="l">${lab}<div class="iref">${n||''}</div></td><td class="mono">${v}</td></tr>`;
       return `<table class="fintab istmt" style="margin-top:12px"><tbody>
-      ${sR('Level',LD.anchorX.toFixed(3)+'x',`typed, at ${units(LD.anchorQ)} on cogs`)}
+      ${LD.anchorG!=null?sR('Level',(LD.anchorG*100).toFixed(0)+'% margin',`typed, at ${units(LD.anchorQ)}, on the floor (v504)`):sR('Level',LD.anchorX.toFixed(3)+'x',`typed, at ${units(LD.anchorQ)} on cogs`)}
       ${sR('Taper',(sT.b!=null?sT.b.toFixed(3):'&mdash;'),sT.b!=null?`fitted to ${esc(sSup)}&rsquo;s quote ladder${sT.r2!=null?`, r&sup2; ${sT.r2.toFixed(2)}`:''}, ${units(LD.at.lo)} to ${units(LD.at.hi)}${sBor?`; <b>${esc(sOwn)}&rsquo;s own ladder is on the book and is not the one this is fitted to</b>`:''}`:'no supplier ladder to fit')}
       ${sR('Ceiling',LD.ceiling.toFixed(2)+'x','does not bind at any printed size')}
       ${sR('Floor','break-even',`${fmt(sC.effEx)} a unit after the leak, from the last three lots and the last three counts (v504); delivery and his time are not in it`)}
@@ -15944,6 +15946,18 @@ function tabPricing(){
       <tr class="tot"><td class="l"><b>Margin it returns</b><div class="iref">struck on the lot cost, not on cogs</div></td><td class="mono"><b>${sLo.ask.margin.toFixed(1)}% to ${sHi.ask.margin.toFixed(1)}%</b></td></tr>
       ${sRz!=null?sR('Weighted by what he trades',sRz.toFixed(2)+'x','the level the book actually returns'):''}
     </tbody></table>
+    <!-- v506, his instruction of 07 Sep 2026: the three cards read as three things, and nothing
+         walked the reader from COGS to the floor to the ask. This is that walk, one row per size,
+         every figure the engine's own: COGS is landed times the size, the leak is what the floor
+         adds to it, the floor is break-even, the margin is the size's margin on price, and the ask
+         is the floor at that margin rounded up to the ten, then held to the rate law and the floor
+         guard. Where the two differ the walk stepped it. -->
+    <div class="cardh" style="margin-top:14px">From cost to ask <span class="sub">COGS, then the leak, is the floor; the floor at the size&rsquo;s margin is the ask</span></div>
+    <div class="tblw"><table class="fintab istmt"><thead><tr><th class="l">Size</th><th>COGS</th><th>Leak</th><th>Floor</th><th>Margin</th><th>Floor &divide; (1 &minus; margin)</th><th>Ask</th></tr></thead><tbody>
+      ${sSZ.map(q=>{const L=priceLadder(q);const cogs=L.cogs,fl=L.floor.total,g=L.marginX;const raw=g!=null?fl/(1-g):null;
+        return `<tr><td class="l">${units(q)}</td><td class="mono">${fmt(cogs)}</td><td class="mono">+${fmt(fl-cogs)}</td><td class="mono"><b>${fmt(fl)}</b></td><td class="mono">${g!=null?(g*100).toFixed(1)+'%':'&mdash;'}</td><td class="mono">${raw!=null?fmt(raw):'&mdash;'}</td><td class="mono"><b>${fmt0(L.ask.total)}</b>${L.ask.lawStepped?' <span class="iref">stepped</span>':''}</td></tr>`;}).join('')}
+    </tbody></table></div>
+    <div class="dsc" style="margin-top:8px">COGS is ${fmt(sC.landed)} a unit landed; the leak adds ${((sC.shrink/(1-sC.shrink))*100).toFixed(1)}% of it, so the floor is ${fmt(sC.effEx)} a unit and earns nothing. The ask is rounded up to the ten, then may step down to keep the rate from rising with size, never below its floor.</div>
     ${sFlat>=2?`<div class="insight" style="border-left-color:var(--gold)"><b>The taper stops at ${units(LD.at.hi)}, so ${sFlat} of the ${sSZ.length} printed sizes carry the same ${sHi.markupX.toFixed(2)}x.</b></div>`
       :''}`;})()}
     <!-- v393: THE EDITOR FOLDS. Seventeen tickboxes and nineteen number boxes were standing

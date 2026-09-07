@@ -1,5 +1,13 @@
 [
  {
+  "v": "v506",
+  "d": "07 Sep 2026",
+  "t": "FROM COST TO ASK, ONE ROW PER SIZE",
+  "n": [
+   "<b>HIS INSTRUCTION, 07 SEP 2026: I want to see COGS, then the floor (break-even), then the minimum ask; it seems disconnected.</b> The Price part showed the cost stack, the ladder policy and the board as three cards and walked nobody between them. A table now does, one row per size: COGS (landed times the size), the leak the floor adds, the floor, the size's margin, the floor at that margin, and the board's ask, marked where the rate law stepped it. Every figure is priceLadder's own, so the walk cannot disagree with the board. The Level row reads as the margin on the floor where a book carries anchorG."
+  ]
+ },
+ {
   "v": "v505",
   "d": "07 Sep 2026",
   "t": "THE SUPPLIER'S 25 UNIT TIER IS RM 1,200",
