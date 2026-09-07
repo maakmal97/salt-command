@@ -5380,7 +5380,9 @@ const whiteboard=[
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{"v": "v508", "d": "07 Sep 2026", "t": "THE BOARD AS AN IMAGE OR AN HTML FILE, FROM THE PHONE", "n": ["<b>HIS INSTRUCTION, 07 SEP 2026: make it printable as an image, or HTML, in Files, on the phone.</b> Two buttons beside Print: Save as image draws the same rows on a canvas (ink on white, the title, the username, one line per size, the week) and Save as HTML writes a standalone page with the same lines and no dependency. Either is handed to the phone's share sheet as a file, where iOS offers Save Image and Save to Files and Android its own targets; a browser that cannot share a file downloads it instead, and the card says which happened. Nothing loads from outside, and the rows are the ones the paper gets."]},
+const evolution=[{"v": "v509", "d": "07 Sep 2026", "t": "THE LAST THREE PLACES THE BOARD SAID DELIVERED OR COLLECTED FLOOR", "n": ["<b>Seen on the printed proof of v508:</b> the board table's last column still read \"Floor, delivered\", the sheet's read \"Floor, collected\", the board chart's dashed series was labelled \"floor, delivered\" and the sheet's under-floor notice named the collected floor. v502 retired the pair and these four captions were missed. They read Floor now. The board's third column reads Margin rather than Markup, the ask being a margin on the floor since v504; the figure beneath each ask already said so."]},
+
+{"v": "v508", "d": "07 Sep 2026", "t": "THE BOARD AS AN IMAGE OR AN HTML FILE, FROM THE PHONE", "n": ["<b>HIS INSTRUCTION, 07 SEP 2026: make it printable as an image, or HTML, in Files, on the phone.</b> Two buttons beside Print: Save as image draws the same rows on a canvas (ink on white, the title, the username, one line per size, the week) and Save as HTML writes a standalone page with the same lines and no dependency. Either is handed to the phone's share sheet as a file, where iOS offers Save Image and Save to Files and Android its own targets; a browser that cannot share a file downloads it instead, and the card says which happened. Nothing loads from outside, and the rows are the ones the paper gets."]},
 
 {"v": "v507", "d": "07 Sep 2026", "t": "PRINT A BOARD: THE ID CHOSEN, THE SIZES TICKED, ONLY THE UNIT, THE PRICE AND THE USERNAME ON PAPER", "n": ["<b>HIS INSTRUCTION, 07 SEP 2026.</b> A card on the Price part: choose the customer, tick the sizes, Print. What reaches paper is the unit, the price and the customer's statement username and nothing of the desk around it. The prices are the customer's own weekly list, the same rule tools/pricelist.mjs seals into his statement page (pbPrices, proved equal by the suite), so the sheet handed over and the page he opens agree. The username is read from the Worker (GET /stmt-users, keyed), which the publish writes to the desk's store; the laptop copy prints a blank line for it.", "<b>IF IT WILL NOT PRINT.</b> Copy as text puts the same lines on the clipboard, and the card folds a checklist: a Home Screen desk with no print dialog (open the address in the browser, or Share then Print), a blank page (Save as PDF, then print that), no printer (copy and paste it into the message), a blank username (the laptop has no road; the cloud desk needs the write key)."]},
 
@@ -5675,7 +5677,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='07 Sep 2026, 10:24 KL';
+const LAST_UPDATED='07 Sep 2026, 10:27 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -15915,7 +15917,7 @@ function tabPricing(){
        engine is right; the table was silent. So the row now names the condition rather than
        lifting the price, which would be pricing, and pricing does not happen on the desk.
        A negative margin is crimson for the same reason: it was dim grey beside a positive one. */
-    const head=`<tr><th class="l">Size</th><th>Cogs</th><th>Markup</th><th>Ask</th><th>Floor, delivered</th></tr>`;
+    const head=`<tr><th class="l">Size</th><th>Cogs</th><th>Margin</th><th>Ask</th><th>Floor</th></tr>`;
     const rows=tb.map(r=>{const L=priceLadder(r.q);
       const flC=floorTotal(r.q,null,{collects:true});
       const underD=L.ask.total<L.floor.total-0.009, underC=L.ask.total<flC-0.009;
@@ -16037,7 +16039,7 @@ function tabPricing(){
         /* v385: the id sits on a plain wrapper and the class on the child. stripMethod removes
            every standing .dsc on a part but the first, and this element is the whole feedback
            channel: with the class on it, changing a price said nothing and neither did saving. */
-        return `<table class="pxboard" style="margin-bottom:9px"><thead><tr><th class="l">Size</th><th>On the board</th><th>Price</th><th>Floor, collected</th></tr></thead><tbody>${rows}</tbody></table>
+        return `<table class="pxboard" style="margin-bottom:9px"><thead><tr><th class="l">Size</th><th>On the board</th><th>Price</th><th>Floor</th></tr></thead><tbody>${rows}</tbody></table>
         <!-- round 5: was "the derived board", which the prefill stopped being the day a stated
              price won: it is priceLadder's ask, stated where he has stated. "As it stands" is
              true on both books; the reset button below still says derived because reset IS. -->
@@ -16422,7 +16424,7 @@ function shQueueHouse(btn){
   const prod=pxProdOf(btn);
   const R=pxScope(prod,()=>shRows(prod));
   if(!R.rows.length)return shOut('<div class="dsc" style="color:var(--crim)">Every size is unticked, so there is no board to make.</div>',prod);
-  if(R.under.length)return shOut('<div class="dsc" style="color:var(--crim)">'+R.under.map(u=>units(u.q)+' at '+fmt0(u.p)).join(', ')+' sits under its collected floor. The board would lift it to the next step rather than quote it, so set it above the floor first.</div>',prod);
+  if(R.under.length)return shOut('<div class="dsc" style="color:var(--crim)">'+R.under.map(u=>units(u.q)+' at '+fmt0(u.p)).join(', ')+' sits under its floor. The board would lift it to the next step rather than quote it, so set it above the floor first.</div>',prod);
   const prices={},hide=[];
   const shown={};R.rows.forEach(r=>{prices[String(r.q)]=r.p;shown[String(r.q)]=1;});
   pxScope(prod,()=>shSizes()).forEach(q=>{if(!shown[String(q)])hide.push(q);});
@@ -16623,7 +16625,7 @@ function drawBoardCharts(){
         const ds=[
           {label:'ask',borderColor:'#c5a059',backgroundColor:'#c5a059',tension:.25,pointRadius:3,borderWidth:2,
             data:tb.map(r=>{let p=null;try{p=priceLadder(r.q).ask.rate;}catch(e){}return p;})},
-          {label:'floor, delivered',borderColor:'#d4694c',borderDash:[5,4],borderWidth:1.5,pointRadius:0,
+          {label:'floor',borderColor:'#d4694c',borderDash:[5,4],borderWidth:1.5,pointRadius:0,
             data:tb.map(r=>+(r.floor/r.q).toFixed(2))},
           {label:'floor, collected',borderColor:'#e08a72',borderDash:[2,3],borderWidth:1.5,pointRadius:0,
             data:tb.map(r=>{let f=null;try{f=floorTotal(r.q,null,{collects:true});}catch(e){}
