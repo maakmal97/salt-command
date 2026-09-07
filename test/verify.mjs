@@ -5774,6 +5774,18 @@ section("v497: a breach is named on its own book's register only");
      same credit aged past the credit-age threshold on the clock alone. The point of the block is
      WHERE the breach is named, not how many rules a living credit breaks, so it asks for the cap
      and lets the age join it. */
+  /* v513: OVER CAP IS ONE RULER. A 2 unit sale with most of it paid is not over a 1 unit cap on
+     any surface; a 2 unit sale with nothing paid is, on every surface. */
+  {
+    const probe = (row) => JSON.parse(String(w21.eval("(function(){setProd('salt');const s=Object.assign({customer:'CX0-CAP',product:'salt',qty:2,date:'2026-09-07',deliveredQty:2,deliveredOn:'2026-09-07'}," + JSON.stringify(row) + ");"
+      + "sales.push(s);try{recompute();const reg=boundaryScan().some(function(x){return x.who==='CX0-CAP'&&x.rule==='Credit cap'&&x.sev==='breach';});"
+      + "return JSON.stringify({units:creditOutUnits(s),over:overCap(s),reg:reg});}finally{sales.pop();recompute();}})()")));
+    const paid = probe({ total: 185, cash: 150 }), unpaid = probe({ total: 185, cash: 0 });
+    ok(Math.abs(paid.units - (2 - 150 / 92.5)) < 1e-6 && !paid.over && !paid.reg,
+      "2 units delivered with RM 150 of RM 185 paid is " + paid.units.toFixed(2) + " unit out, under the 1 unit cap on the row and on the register");
+    ok(Math.abs(unpaid.units - 2) < 1e-9 && unpaid.over && unpaid.reg,
+      "the same 2 units with nothing paid are over the cap on the row and on the register alike");
+  }
   ok(salt.includes("Credit cap") && salt.every((r) => /^Credit/.test(r)),
     "on the salt book CA4-DAM breaks the credit cap, and nothing but credit rules (" + salt.join(", ") + ")");
   ok(oil.length === 0, "and on the oil book he breaks none (" + (oil.join(", ") || "none") + ")");

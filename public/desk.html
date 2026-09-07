@@ -68,7 +68,7 @@ document.addEventListener('visibilitychange',function(){
    localStorage before it posts anything and the load reads it straight back.
    The same tick retries a held entry, which is what gets a phone write to the cloud
    without waiting for the next open. */
-var SALT_BUILD_ID="6e06a7a3dd257e21";
+var SALT_BUILD_ID="1974c63ba7ee7133";
 var SALT_REV_MS=10000;
 (function(){
   var chip=null,timer=null;
@@ -5469,7 +5469,9 @@ const whiteboard=[
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{"v": "v512", "d": "07 Sep 2026", "t": "A REPLAY BATCH CLEARS ITS OWN HANDOFF, AND THE WATERMARK PASSES THE DUPLICATE", "n": ["<b>WHAT HAPPENED ON 07 SEP.</b> The CR3-DAM sale of 2 unit at RM 185 was queued twice three minutes apart and both entries were approved. The first folded as v510 in nine minutes; the second was staged, refused by the fold as a replay of the row it had just written, and its handoff stayed in HEAD, where the stage stands down, so the chain was shut with every job green until it was cleared by hand.", "<b>THE STAGE NOW ASKS THE PLANNER FIRST.</b> `node tools/fold.mjs --replays` answers yes when every staged row is refused because the same row is already on the book; the stage then marks those drafts committed, records each refusal where the phone shows refusals (`drafts.mjs --refused-note`, source fold), removes the handoff and stages on. Anything else still stands down as before.", "<b>THE WATERMARK</b> moves to the duplicate's own stamp with no row folded, so the phone stops showing it as provisional and the ship check stops reading it as a replay."]},
+const evolution=[{"v": "v513", "d": "07 Sep 2026", "t": "OVER CAP IS UNITS OUT AND UNPAID, ON EVERY SURFACE", "n": ["<b>HIS INSTRUCTION, 07 SEP 2026: CR3-DAM's RM 35 should not be over the cap.</b> It was not, on the register: the Boundaries register measures credit out as the units handed over less what the cash covers at the row's price, and CR3-DAM's 2 unit sale with RM 35 left to pay is about a quarter of a unit against the 1 unit retail cap. The Order book row and the Today advances measured units DELIVERED instead, so the same row read \"over cap\" one tab over. One helper now, creditOutUnits and overCap, summed per customer per book, and all three surfaces ask it."]},
+
+{"v": "v512", "d": "07 Sep 2026", "t": "A REPLAY BATCH CLEARS ITS OWN HANDOFF, AND THE WATERMARK PASSES THE DUPLICATE", "n": ["<b>WHAT HAPPENED ON 07 SEP.</b> The CR3-DAM sale of 2 unit at RM 185 was queued twice three minutes apart and both entries were approved. The first folded as v510 in nine minutes; the second was staged, refused by the fold as a replay of the row it had just written, and its handoff stayed in HEAD, where the stage stands down, so the chain was shut with every job green until it was cleared by hand.", "<b>THE STAGE NOW ASKS THE PLANNER FIRST.</b> `node tools/fold.mjs --replays` answers yes when every staged row is refused because the same row is already on the book; the stage then marks those drafts committed, records each refusal where the phone shows refusals (`drafts.mjs --refused-note`, source fold), removes the handoff and stages on. Anything else still stands down as before.", "<b>THE WATERMARK</b> moves to the duplicate's own stamp with no row folded, so the phone stops showing it as provisional and the ship check stops reading it as a replay."]},
 
 {"v": "v511", "d": "07 Sep 2026", "t": "A CUSTOMER'S RATE IS DRAWN TOWARD THE BOARD", "n": ["<b>HIS INSTRUCTION, 07 SEP 2026, on the design fault that CR3-DAM's list read RM 160 at 2 units under a board asking RM 220:</b> his rate adjusted slightly higher if below the ask, up more if below the floor, down more if above a 2x markup (three times COGS), and down slightly if above the ask but loyal, by tier. Booked as one rule, adjustedPrice in tools/pricelist.mjs and pbAdjusted on the desk, the suite holding them equal on the real book: slightly is a quarter of the gap to the ask, more is half, never under the floor, never above the cap, then up to the ringgit. Loyal is the desk's own badge, three or more priced orders and the last within fourteen days. A customer with no history sees the board's ask. CR3-DAM at 2 units now reads RM 175: RM 160 plus a quarter of the RM 60 gap to the board."]},
 
@@ -5772,7 +5774,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='07 Sep 2026, 16:32 KL';
+const LAST_UPDATED='07 Sep 2026, 17:34 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -7637,13 +7639,19 @@ function ladderRate(q){
 /* round 5: the cap is per PERSON per BOOK. The tier (retail or associate) is the person's;
    the figure is the book's, so the same man may hold 1 unit of salt and 10 of oil. */
 const capForParty=(id,prod)=>{try{return creditCapFor(prod,associateIds().indexOf(id)>=0?'associate':'retail');}catch(e){return creditCapFor(prod,'retail');}};
+/* v513: ONE RULER FOR THE CAP. Credit out is the units handed over and not yet paid for, per row:
+   delivered less what the cash covers at the row's price. The register measured that; the Order
+   book row and the Today advances measured units DELIVERED, so a 2 unit sale with RM 35 left to
+   pay read "over cap" against a 1 unit cap while the register, rightly, named no breach. Every
+   reader now asks these two. */
+function creditOutUnits(s){if(s.cancelled||s.exemptCap)return 0;const p=txPrice(s);return p>0?Math.max(0,(s.deliveredQty||0)-txPaid(s)/p):0;}
+function creditOutBy(){const by={};sales.forEach(s=>{const u=creditOutUnits(s);if(u>0.009){const k=s.customer+'|'+prodOf(s);by[k]=+((by[k]||0)+u).toFixed(2);}});return by;}
+function overCap(s){const by=creditOutBy();return (by[s.customer+'|'+prodOf(s)]||0)>capForParty(s.customer,prodOf(s))+0.009;}
 function boundaryScan(){
   const out=[],add=(sev,rule,who,what,why)=>out.push({sev,rule,who,what,why});
   // 1. credit cap: units delivered but not yet paid for, totalled per customer PER BOOK
   const credit={};
-  sales.forEach(s=>{if(s.cancelled||s.exemptCap)return;   // exemptCap orders sit outside the cap, as the Order book and Advances panel already treat them
-    const p=txPrice(s);if(!(p>0))return;
-    const owed=Math.max(0,(s.deliveredQty||0)-txPaid(s)/p);
+  sales.forEach(s=>{const owed=creditOutUnits(s);   // v513: the one ruler; exemptCap and cancelled rows read 0
     if(owed>0.009){const k=s.customer+'|'+prodOf(s);
       (credit[k]=credit[k]||{who:s.customer,prod:prodOf(s),kg:0}).kg=+(credit[k].kg+owed).toFixed(2);}});
   /* v385 said the whole-book read was on purpose: a credit cap was about a PERSON, one
@@ -7987,7 +7995,7 @@ function tabOverview(){
      RM 80 and RM 80, while Today one tap away now states the RM 160 he actually owes. */
   const defRows=sales.filter(s=>prodOf(s)===PROD&&txDeferUnits(s)>0.009);
   const advBy=(()=>{const by={};arList.forEach(s=>{const e=by[s.customer]=by[s.customer]||{rm:0,over:false};
-    e.rm+=outstandingOf(s);e.over=e.over||((s.deliveredQty||0)>capForParty(s.customer)+0.009&&!s.exemptCap);});
+    e.rm+=outstandingOf(s);e.over=e.over||overCap(s);});   /* v513: units out and unpaid against the cap, the register's ruler */
     return Object.keys(by).map(k=>({who:k,rm:+by[k].rm.toFixed(2),over:by[k].over}));})();
   const totDue=+(ar+supRecovNet).toFixed(2);
   const stockCost=stockCostFor(PROD);                          // v230: the ACTIVE product's inventory rate, not always salt's
@@ -11499,7 +11507,7 @@ function tabReceivables(){
      THE CHART IS THE ONE THAT VISIBLY MOVED. It sorted by size while the table beside it sat
      in date order, so the pair could not be read across. Both read down the ladder now. */
   const oldest=(a,b)=>(a.date||'9999-99-99')<(b.date||'9999-99-99')?-1:(a.date===b.date?0:1);
-  const cCash=arList.map(s=>{const d=dAge(s.date),g=outstandingOf(s),rate=saleProvRate(s,d),n=+(g*(1-rate)).toFixed(2),over=(s.deliveredQty||0)>capForParty(s.customer)+0.009&&!s.exemptCap;return {id:s.customer,date:s.date,d,g,rate,n,over};})
+  const cCash=arList.map(s=>{const d=dAge(s.date),g=outstandingOf(s),rate=saleProvRate(s,d),n=+(g*(1-rate)).toFixed(2),over=overCap(s);return {id:s.customer,date:s.date,d,g,rate,n,over};})
     .sort((a,b)=>b.d-a.d||b.g-a.g);
   const cCashBody=cCash.map(r=>`<tr><td class="l mono">${ID(r.id)}${r.over?` <span class="attn" title="advance over their ${units(capForParty(r.id))} credit cap on this book">over cap</span>`:''}<div style="font-size:11px;font-weight:400;color:var(--mut)">${r.date||'not dated'}</div></td><td>${r.d}d</td><td>${fmt0(r.g)}</td><td>${(r.rate*100).toFixed(0)}%</td><td>${fmt0(r.n)}</td></tr>`).join('');
   // Goods you owe them: deferred (paid ahead of delivery).

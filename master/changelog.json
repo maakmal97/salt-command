@@ -1,5 +1,13 @@
 [
  {
+  "v": "v513",
+  "d": "07 Sep 2026",
+  "t": "OVER CAP IS UNITS OUT AND UNPAID, ON EVERY SURFACE",
+  "n": [
+   "<b>HIS INSTRUCTION, 07 SEP 2026: CR3-DAM's RM 35 should not be over the cap.</b> It was not, on the register: the Boundaries register measures credit out as the units handed over less what the cash covers at the row's price, and CR3-DAM's 2 unit sale with RM 35 left to pay is about a quarter of a unit against the 1 unit retail cap. The Order book row and the Today advances measured units DELIVERED instead, so the same row read \"over cap\" one tab over. One helper now, creditOutUnits and overCap, summed per customer per book, and all three surfaces ask it."
+  ]
+ },
+ {
   "v": "v512",
   "d": "07 Sep 2026",
   "t": "A REPLAY BATCH CLEARS ITS OWN HANDOFF, AND THE WATERMARK PASSES THE DUPLICATE",
