@@ -87,7 +87,10 @@ function costStack(I){
      So any probe that set a cost silently took the 06 Aug lock's FROZEN freight and delivery while
      the leak stayed live: one cost stack, two components frozen and one not, on a lock switched
      OFF. v382 is what made it visible, by moving live freight away from the frozen figure. */
-  const freight=(I.lockOn&&LKb&&pxOver.cost!=null)?LKb.freight:(freightQty?COST_BASIS.freightPerTrip.rm/freightQty:0);
+  /* v503, his instruction of 07 Sep 2026: freight is TYPED ON EACH LOT. I.freightRate is the desk's
+     reading of those figures per unit over the same window as the replacement rate, and it wins;
+     the stated trip cost over the average lot is the fallback for a book with no typed freight. */
+  const freight=(I.lockOn&&LKb&&pxOver.cost!=null)?LKb.freight:(I.freightRate!=null?+I.freightRate:(freightQty?COST_BASIS.freightPerTrip.rm/freightQty:0));
   const landed=lot+freight;                   // <- IAS 2 inventoriable cost, and nothing below this line is
   /* 3. THE UNITS THAT NEVER REACH A PAYING CUSTOMER. It divides rather than adds: losing 8% of
      what you buy means the 92% that sells has to return the cost of 100%. When a lock exists and

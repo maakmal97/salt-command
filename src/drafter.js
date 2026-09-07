@@ -956,6 +956,8 @@ export function draftRow(entry, book) {
   if (dir === "BUY") {
     delete row.customer; delete row.cost;
     row.supplier = party;
+    /* v503: the trip for this lot, typed per purchase; beside the total, so the lot rate stays the goods */
+    if (isNum(pay.freight) && pay.freight > 0.005) row.freight = round(pay.freight);
     row.status = paidInFull ? "paid" : (cash > 0.005 ? "part" : "unpaid");
     /* PENDING PURCHASES MUST CARRY pending:true, and this was found by folding one.
        poLive() excludes a lot by THIS FLAG, not by any status string, so a purchase written

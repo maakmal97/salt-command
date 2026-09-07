@@ -1,5 +1,15 @@
 [
  {
+  "v": "v503",
+  "d": "07 Sep 2026",
+  "t": "FREIGHT IS TYPED ON EACH LOT",
+  "n": [
+   "<b>HIS INSTRUCTION, 07 SEP 2026: for every sale and purchase moving forward, freight and delivery cost are input manually.</b> Delivery on a sale landed at v502. This is freight on a purchase: a lot carries `freight` in RM, the trip it cost, typed on the Workbench (Freight, shown for a purchase), the phone, the row editor and the order sheet, and carried by the drafter into the row. It sits beside the total, so the lot rate stays the goods.",
+   "<b>COLLECTION PER UNIT COMES FROM THE LOTS.</b> pxFreightRate() sums the typed freight over the units of the same lots, over the replacement window first and over every live lot with a figure when the window holds none, and hands it to the cost stack as I.freightRate, which wins over the stated trip. COST_BASIS.freightPerTrip.rm is retired to 0 as the fallback, so a book with no typed freight charges nothing for collection and the Price part says so. The P&L's freight-in line is the sum of what was typed.",
+   "<b>WHAT THAT MEANS TODAY.</b> No lot on the book carries a freight figure yet, so collection reads RM 0 and landed equals the replacement rate until the next purchase is entered with its trip. The rows already on the book can be given one through the row editor."
+  ]
+ },
+ {
   "v": "v502",
   "d": "07 Sep 2026",
   "t": "ONE FLOOR PER SIZE, AND DELIVERY IS TYPED ON THE ORDER",

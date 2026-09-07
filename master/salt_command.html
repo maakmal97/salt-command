@@ -3676,7 +3676,8 @@ const CORRECT_NUM_POS=['qty'];
    (his instruction, 07 Sep 2026). It is INSIDE the total, so nothing that reads what is owed or
    paid changes; what changes is the rate, which is struck on the goods: txGoods below. */
 const CORRECT_NUM_NN=['total','cash','deliveredQty','receivedQty','cost',
-  'settledRM','settledKg','rebateKg','delivery'];
+  'settledRM','settledKg','rebateKg','delivery',
+  'freight'];   /* v503: the trip for a lot, RM, typed per purchase, beside the total */
 const CORRECT_DATE=['date','agreedOn','paidOn','deliveredOn','receivedOn','cancelledOn'];
 const CORRECT_BOOL=['unpriced','cancelled','pending','inTransit','defaulted','rebate','goodwill'];
 const CORRECT_CODE=['party','assoc','downstream'];
@@ -3915,7 +3916,10 @@ function costStack(I){
      So any probe that set a cost silently took the 06 Aug lock's FROZEN freight and delivery while
      the leak stayed live: one cost stack, two components frozen and one not, on a lock switched
      OFF. v382 is what made it visible, by moving live freight away from the frozen figure. */
-  const freight=(I.lockOn&&LKb&&pxOver.cost!=null)?LKb.freight:(freightQty?COST_BASIS.freightPerTrip.rm/freightQty:0);
+  /* v503, his instruction of 07 Sep 2026: freight is TYPED ON EACH LOT. I.freightRate is the desk's
+     reading of those figures per unit over the same window as the replacement rate, and it wins;
+     the stated trip cost over the average lot is the fallback for a book with no typed freight. */
+  const freight=(I.lockOn&&LKb&&pxOver.cost!=null)?LKb.freight:(I.freightRate!=null?+I.freightRate:(freightQty?COST_BASIS.freightPerTrip.rm/freightQty:0));
   const landed=lot+freight;                   // <- IAS 2 inventoriable cost, and nothing below this line is
   /* 3. THE UNITS THAT NEVER REACH A PAYING CUSTOMER. It divides rather than adds: losing 8% of
      what you buy means the 92% that sells has to return the cost of 100%. When a lock exists and
@@ -5331,7 +5335,9 @@ const whiteboard=[
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{"v": "v502", "d": "07 Sep 2026", "t": "ONE FLOOR PER SIZE, AND DELIVERY IS TYPED ON THE ORDER", "n": ["<b>HIS INSTRUCTION, 07 SEP 2026: do not name it floor delivered; delivery will be an input per order.</b> The engine returned two floors per size, collected and delivered, the second the first plus one delivery. There is one now: the goods after the leak. floorTotal and lotCost carry no delivery, board() publishes floors[q].floor and no deliveryCharge, the snapshot, the drafter and the price list read the one figure, and the copy on the Price part says so.", "<b>DELIVERY IS A FIELD ON THE ROW, INSIDE THE TOTAL.</b> A sale carries `delivery` in RM, typed per order on the Workbench, the phone (Of which delivery), the row editor and the order sheet, and carried by the drafter into the row. It is part of the total, so nothing that reads what is owed or paid changes: the statement prints \"incl. delivery\" under the amount, the total to pay is the total. What changes is the rate: txGoods() is the total less the delivery, and the drafter's flags, the party's usual, the Approve card, the Orders card and the customer price list all strike the rate on the goods. A delivery charge larger than its total is refused by the drafter.", "<b>ON THE STATEMENTS SITE</b> the list shows one price per size, for the goods. A customer who asks for delivery is told the charge when the order is marked ready: Ready to deliver on the Orders card asks for the figure, the customer sees goods plus delivery as the sum to pay, and Completed queues the sale with the delivery as its own field."]},
+const evolution=[{"v": "v503", "d": "07 Sep 2026", "t": "FREIGHT IS TYPED ON EACH LOT", "n": ["<b>HIS INSTRUCTION, 07 SEP 2026: for every sale and purchase moving forward, freight and delivery cost are input manually.</b> Delivery on a sale landed at v502. This is freight on a purchase: a lot carries `freight` in RM, the trip it cost, typed on the Workbench (Freight, shown for a purchase), the phone, the row editor and the order sheet, and carried by the drafter into the row. It sits beside the total, so the lot rate stays the goods.", "<b>COLLECTION PER UNIT COMES FROM THE LOTS.</b> pxFreightRate() sums the typed freight over the units of the same lots, over the replacement window first and over every live lot with a figure when the window holds none, and hands it to the cost stack as I.freightRate, which wins over the stated trip. COST_BASIS.freightPerTrip.rm is retired to 0 as the fallback, so a book with no typed freight charges nothing for collection and the Price part says so. The P&L's freight-in line is the sum of what was typed.", "<b>WHAT THAT MEANS TODAY.</b> No lot on the book carries a freight figure yet, so collection reads RM 0 and landed equals the replacement rate until the next purchase is entered with its trip. The rows already on the book can be given one through the row editor."]},
+
+{"v": "v502", "d": "07 Sep 2026", "t": "ONE FLOOR PER SIZE, AND DELIVERY IS TYPED ON THE ORDER", "n": ["<b>HIS INSTRUCTION, 07 SEP 2026: do not name it floor delivered; delivery will be an input per order.</b> The engine returned two floors per size, collected and delivered, the second the first plus one delivery. There is one now: the goods after the leak. floorTotal and lotCost carry no delivery, board() publishes floors[q].floor and no deliveryCharge, the snapshot, the drafter and the price list read the one figure, and the copy on the Price part says so.", "<b>DELIVERY IS A FIELD ON THE ROW, INSIDE THE TOTAL.</b> A sale carries `delivery` in RM, typed per order on the Workbench, the phone (Of which delivery), the row editor and the order sheet, and carried by the drafter into the row. It is part of the total, so nothing that reads what is owed or paid changes: the statement prints \"incl. delivery\" under the amount, the total to pay is the total. What changes is the rate: txGoods() is the total less the delivery, and the drafter's flags, the party's usual, the Approve card, the Orders card and the customer price list all strike the rate on the goods. A delivery charge larger than its total is refused by the drafter.", "<b>ON THE STATEMENTS SITE</b> the list shows one price per size, for the goods. A customer who asks for delivery is told the charge when the order is marked ready: Ready to deliver on the Orders card asks for the figure, the customer sees goods plus delivery as the sum to pay, and Completed queues the sale with the delivery as its own field."]},
 
 {"v": "v501", "d": "07 Sep 2026", "t": "HIS TIME IS NOT CHARGED INTO THE FLOOR", "n": ["<b>HIS INSTRUCTION, 07 SEP 2026: do not charge for my time.</b> Given on reading how the salt floor and ask are struck at 1, 1.5 and 2 units, where the RM 25 per order was the whole of the gap between the leak-adjusted cost and the floor. PRICE_ENGINE.timePerOrder is 0.", "<b>WHAT MOVES.</b> Every floor on both books falls by RM 25, at every size, collected and delivered alike, since v500 already took delivery out: the floor is now the leak-adjusted cost times the units and nothing per order. Salt at 1 unit reads RM 52.92 against RM 77.92 before; the ask is untouched, because his time was never in the margin curve, and no ask was floor-lifted so none moves. The customer price list lifts a rate to this floor, so a customer's own rate is now bounded by a lower line.", "<b>WHAT STAYS.</b> The mechanism, the per-order argument and the measurement behind RM 25 are kept in the declaration for the day he states a figure again; the copy on the Price part names the figure it is given, which is now nil."]},
 
@@ -5614,7 +5620,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='07 Sep 2026, 07:47 KL';
+const LAST_UPDATED='07 Sep 2026, 08:12 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -8343,7 +8349,7 @@ function tabSourcing(){
     <div class="kpi"><div class="l">Bought to date</div><div class="v">${units(buyUnits)}</div><div class="n">${fmt0(buyRM)} at ${fmt(wavgBuy)}/unit weighted</div></div>
     <div class="kpi ${conc&&conc.recentShare>80?'r':''}"><div class="l">Top supplier share</div><div class="v" style="${conc&&conc.recentShare>80?'color:var(--crim)':''}">${conc?conc.recentShare.toFixed(0)+'%':'&mdash;'}</div><div class="n">${conc?ID(conc.id)+` of ${ss.length} supplier${ss.length===1?'':'s'}, last ${conc.recentDays} days (${conc.share.toFixed(0)}% all time)`:'none yet'}</div></div>
     <div class="kpi gold"><div class="l">Effective cost</div><div class="v">${fmt(c.eff)}<span style="font-size:12px;color:var(--mut)">/unit</span></div><div class="n">${fmt(c.repl)} goods + ${fmt(c.freight)} freight, loaded ${(c.shrink*100).toFixed(1)}% for leak</div></div>
-    <div class="kpi"><div class="l">Freight per unit</div><div class="v">${fmt(c.freight)}</div><div class="n">${ml?`${fmt0(COST_BASIS.freightPerTrip.rm)} a trip over ${units(ml)}, the average lot received`:'no lot received to average'}</div></div>
+    <div class="kpi"><div class="l">Freight per unit</div><div class="v">${fmt(c.freight)}</div><div class="n">${ml?`typed on the lots, per unit over the replacement window (v503)`:'no lot received to average'}</div></div>
     <div class="kpi ${ss.some(s=>s.defaults)?'r':'g'}"><div class="l">Lost to defaults</div><div class="v">${fmt0(ss.reduce((a,s)=>a+s.defaultRM,0))}</div><div class="n">${ss.reduce((a,s)=>a+s.defaults,0)} lot${ss.reduce((a,s)=>a+s.defaults,0)===1?'':'s'} paid for and never delivered</div></div>
   </div>
 
@@ -9373,6 +9379,7 @@ const EDFORM=[
   {k:'party',   l:'Supplier',           kind:'code', only:'B'},
   {k:'qty',     l:'Quantity, unit',     kind:'num'},
   {k:'total',   l:'Total, RM',          kind:'num'},
+  {k:'freight', l:'Freight, RM',         kind:'num', only:'B', hint:'The trip this lot cost, typed per purchase (v503). Beside the total, so the lot rate stays the goods; it feeds collection per unit.'},
   {k:'delivery',l:'Of which delivery, RM', kind:'num', only:'S', hint:'The delivery charge inside the total, typed per order (v502). The rate per unit is struck on the total less this; nothing owed or paid changes.'},
   {k:'unpriced',l:'Price not agreed yet', kind:'bool', hint:'A zero total on an unpriced row is not the same as paid in full. This is what tells them apart.'},
   {g:'Attribution', only:'S'},
@@ -9583,7 +9590,7 @@ function edSubmitNew(){
     raw:'New order: '+codeOf(all.party)+' '+units(all.qty)+' for '+fmt0(all.total||0)
         +(all.date?' on '+all.date:'')+', recorded '+today,
     payload:{mode:'new',product:all.product||'salt',direction:'SELL',party:all.party,newId:null,
-      date:all.date||null,qty:all.qty,total:all.total||0,delivery:all.delivery||0,cash:all.cash||0,kg:all.deliveredQty||0,
+      date:all.date||null,qty:all.qty,total:all.total||0,delivery:all.delivery||0,freight:all.freight||0,cash:all.cash||0,kg:all.deliveredQty||0,
       assoc:all.assoc||null,stream:all.stream||null,downstream:all.downstream||null,
       kind:null,orderCode:all.orderCode||null,linkTo:null,note:all.note||null,
       handover:all.handover||null,
@@ -10796,7 +10803,7 @@ function ifrsPanel(){
     <table class="fintab istmt"><tbody>
       ${L('Revenue',F.rev,{ref:'IFRS 15',n:`${units(F.soldUnits)} recognised on transfer of control`})}
       ${L('Cost of sales &mdash; goods',-F.goods,{neg:true,ref:'IAS 2.11',n:'at the rate of the lot each order drew from'})}
-      ${L('Cost of sales &mdash; freight in',-F.freightCos,{neg:true,ref:'IAS 2.11',n:`${fmt0(COST_BASIS.freightPerTrip.rm)} a trip on ${F.lots} lot${F.lots===1?'':'s'}, ${fmt(F.freightPerUnit)}/unit`})}
+      ${L('Cost of sales &mdash; freight in',-F.freightCos,{neg:true,ref:'IAS 2.11',n:`${fmt0(F.freightTot)} typed on ${F.lots} lot${F.lots===1?'':'s'}, ${fmt(F.freightPerUnit)}/unit`})}
       ${L('<b>Gross profit</b>',F.gross,{cls:'tot',n:`${F.grossPct==null?'no revenue yet':`${F.grossPct}% of revenue`}${F.freightCos>0.009?`, and ${fmt0(F.freightCos)} under the gross margin above, which charges goods only`:''}`})}
       ${L('Selling and distribution',-F.selling,{neg:true,ref:'IAS 2.16(d)',n:`${F.delAssumed} of ${F.delN} orders delivered at ${fmt0(COST_BASIS.txnPerDelivery.rm)}, the rest collected`})}
       ${L('Marketing &mdash; samples and testers',-F.marketing,{neg:true,ref:'IAS 38.69',n:F.sampleUnits?`${units(F.sampleUnits)} at ${fmt(F.unitCost)}`:'none'})}
@@ -13046,6 +13053,18 @@ function pxRecentBuyRate(days){
    nothing landed in the window: the most recent lot's rate, so a quiet book still prices,
    and never undefined. This feeds costStack as I.repl and replCost() below, so the board,
    the floors, the coach and the drafter's snapshot all move off one figure per book. */
+/* v503: FREIGHT PER UNIT FROM THE LOTS THEMSELVES. Every purchase carries the trip it cost as
+   `freight`, typed when it is entered. The rate is the sum of those over the units of the same
+   lots, over the replacement window first and over every live lot with a figure when the
+   window holds none; a book with no typed freight reads 0, which the copy says. */
+function pxFreightRate(days){
+  const from=new Date(TODAY.getTime()-(days||30)*86400000);
+  const live=pPurch(PROD).filter(p=>poLive(p)&&p.qty>0&&p.freight!=null);
+  let ps=live.filter(p=>new Date(p.receivedOn||p.date)>=from);
+  if(!ps.length)ps=live;
+  const k=ps.reduce((a,p)=>a+p.qty,0);
+  return k>0?+(ps.reduce((a,p)=>a+(+p.freight||0),0)/k).toFixed(4):0;
+}
 function pxReplRate(){
   const r=pxRecentBuyRate(30);
   if(r!=null)return r;
@@ -13147,7 +13166,7 @@ const SHRINK_ATTRIB=1;
    was neither: it charged every order a third of a delivery that most of them never had.
    Keeping them apart is what lets the delivered and the collected floor differ honestly. */
 const COST_BASIS={
-  freightPerTrip:{rm:30, what:'one return trip to collect a lot, spread over the AVERAGE lot received rather than the latest one', ias2:'inventory', ref:'IAS 2.11 costs of purchase include transport and handling directly attributable to acquisition; rate and basis both stated by him 27 Aug 2026'},
+  freightPerTrip:{rm:0, what:'RETIRED AS A STATED FIGURE (v503, his instruction of 07 Sep 2026): freight is typed on each lot as `freight`, and pxFreightRate() reads it per unit; this stands at 0 as the fallback for a book with no typed freight', ias2:'inventory', ref:'IAS 2.11 costs of purchase include transport and handling directly attributable to acquisition; rate and basis both stated by him 27 Aug 2026'},
   txnPerDelivery:{rm:0, what:'ONE delivery, to a customer who does not collect. NOT CHARGED since 06 Sep 2026, his instruction: the oil floor at 50 units had climbed over his stated RM 450 on the RM 10 of delivery alone, and his answer was to remove the delivery cost, so a delivered order carries the collected floor and no more', ias2:'period', ref:'IAS 2.16(d) selling costs are excluded from the cost of inventories; RM 10 stated by him 27 Aug 2026, replacing the RM50 v373 flagged as never derived'},
   deliveredShare:{v:0.20, what:'the share of orders delivered rather than collected; four in five come and collect', ias2:'period', ref:'stated by him 24 Aug 2026'},
   sampleShare:{v:0.5,    what:'the half of the leak that is samples, testers and advertising', ias2:'period', ref:'IAS 38.69 advertising and promotional costs are expensed as incurred'},
@@ -13280,7 +13299,7 @@ function ifrsPL(p){
      rows do not say which lot they drew from. Stated as the basis, not hidden. */
   /* v344: one trip per lot. Where two lots were collected on one run the total is overstated
      by a trip; the rows do not say, so the assumption is stated rather than modelled. */
-  const freightTot=lots.length*COST_BASIS.freightPerTrip.rm;
+  const freightTot=lots.reduce((a,x)=>a+(+x.freight||0),0);   /* v503: the freight typed on each lot */
   const freightPerUnit=recvUnits>0?freightTot/recvUnits:0;
   const rows=(P===PROD?pricedSales:pSales(P).filter(s=>{const o=txStat(s).order;return o!=='Pending'&&o!=='Cancelled';}));
   const op=openingFor(P);
@@ -13366,6 +13385,7 @@ function pxInputs(){
   return {prod:PROD, lockOn:PRICE_LOCK_ON, lockState:priceLockState(PROD), lockBase:PRICE_LOCK[PROD]||null,
     over:{cost:pxOver.cost,shrink:pxOver.shrink}, lot:latestLot(PROD), meanLot:meanLotQty(PROD), quoteRate:pxQuoteRate(),
     repl:pxReplRate(),   /* round 5, call 2: the trailing 30-day weighted average, per book */
+    freightRate:pxFreightRate(30),   /* v503: freight typed on the lots, per unit */
     costBasis:{freightPerTrip:{rm:COST_BASIS.freightPerTrip.rm},txnPerDelivery:{rm:COST_BASIS.txnPerDelivery.rm},
       deliveredShare:{v:delShare(PROD).v}},
     attrib:SHRINK_ATTRIB, shrinkRate:pxShrinkRate(), avgDel:avgDelivery(PROD)};
@@ -15336,7 +15356,8 @@ function tabWorkbench(){
       <div class="qrow" style="margin-bottom:10px">
         <div class="qfield qunits"><label>Quantity (unit)</label><input id="wbQty" type="number" step="0.5" min="0" inputmode="decimal"></div>
         <div class="qfield qunits"><label>Total (RM)</label><input id="wbTotal" type="number" step="1" min="0" inputmode="decimal"></div>
-        <div class="qfield qunits"><label>Of which delivery (RM)</label><input id="wbDelivery" type="number" step="1" min="0" value="0" inputmode="decimal"></div>
+        <div class="qfield qunits" id="wbDeliveryCell"><label>Of which delivery (RM)</label><input id="wbDelivery" type="number" step="1" min="0" value="0" inputmode="decimal"></div>
+        <div class="qfield qunits" id="wbFreightCell"><label>Freight (RM)</label><input id="wbFreight" type="number" step="1" min="0" value="0" inputmode="decimal"></div>
         <div class="qfield"><label>Note <span style="color:var(--dim)">optional</span></label><input id="wbNote" placeholder="optional"></div>
       </div>
       <div class="qrow" style="margin-bottom:10px">
@@ -15860,8 +15881,8 @@ function tabPricing(){
            "over 30 unit" for oil when it is 43.33. The divisor is READ BACK OUT OF THE ANSWER
            rather than recomputed here, the same discipline the floor markup follows, so it cannot
            drift from the engine and it stays right under a lock, where the freight is frozen. */
-        const d=c.freight>0?+(COST_BASIS.freightPerTrip.rm/c.freight).toFixed(2):null;
-        return `${fmt0(COST_BASIS.freightPerTrip.rm)} a return trip, over ${d!=null?units(d):'&mdash;'}, the average lot received`;})())}
+        const ls=pPurch(PROD).filter(x=>poLive(x)&&x.qty>0&&x.freight!=null);
+        return ls.length?`freight typed on ${ls.length} lot${ls.length===1?'':'s'}, per unit over the replacement window (v503)`:'no lot carries a typed freight yet, so nothing is charged (v503)';})())}
       <tr class="tot"><td class="l"><b>Landed</b><div class="iref">what the balance sheet carries</div></td><td class="mono"><b>${fmt(c.landed)}</b></td><td><span class="tag paid">Inventory</span></td></tr>
       ${r('Samples and testers',c.sampleLoad,'period',pxOver.shrink!=null?`${(c.shrink*100).toFixed(1)}%, your override`:`${(c.shrinkRaw*100).toFixed(1)}% of what is bought never sells, ${(SHRINK_ATTRIB*100)}% of it charged`)}
       ${r('Delivery and packaging',c.txn,'period',(()=>{const s=delShare(PROD);return `${fmt0(COST_BASIS.txnPerDelivery.rm)} on ${Math.round(s.v*100)}% of orders (${s.measured?s.delivered+' of '+s.said+' that say':'stated, no row says yet'}), over ${units(c.avgDel)}, the average order`;})())}
@@ -16723,10 +16744,10 @@ function wbRecord(){
       +(useA?(isR2?' (R2 via '+codeOf(assoc)+')':' (R3 referred by '+codeOf(assoc)+')'):'')+(note?', '+note:'');
     queue.push({at:new Date().toISOString(),type:wbDir,party:label,qty:qty,total:total,status:status,raw:raw,
       payload:{mode:'new',product:wbProdVal(),direction:wbDir,party:party,newId:null,
-        date:date,qty:qty,total:total,delivery:(wbDir==='SELL'?wbNum('wbDelivery'):0),cash:cash,kg:unitsD,assoc:assoc,stream:useA?wbStream:null,downstream:down,kind:null,orderCode:null,linkTo:null,note:note||null,
+        date:date,qty:qty,total:total,delivery:(wbDir==='SELL'?wbNum('wbDelivery'):0),freight:(wbDir==='BUY'?wbNum('wbFreight'):0),cash:cash,kg:unitsD,assoc:assoc,stream:useA?wbStream:null,downstream:down,kind:null,orderCode:null,linkTo:null,note:note||null,
         handover:(wbDir==='SELL'&&wbEl('wbHand')?wbEl('wbHand').value||null:null)}});
     ['wbQty','wbTotal','wbNote'].forEach(id=>{const e=wbEl(id);if(e)e.value='';});
-    ['wbCash','wbUnits','wbDelivery'].forEach(id=>{const e=wbEl(id);if(e)e.value='0';});
+    ['wbCash','wbUnits','wbDelivery','wbFreight'].forEach(id=>{const e=wbEl(id);if(e)e.value='0';});
     const nb=wbEl('wbNewBox');if(nb)nb.style.display='none';
     /* clear the party after every record: the next entry must be chosen deliberately,
        so a second sale cannot inherit the first one's buyer */
@@ -16910,6 +16931,8 @@ function wbApply(){
   if(apk&&apc){apc.style.display=(apk.value==='downstream'||apk.value==='bucket')?'':'none';
     if(app&&!app.options.length)app.innerHTML='<option value="">Choose</option>'+roster.filter(id=>!id.startsWith('S')).map(id=>`<option value="${id}">${codeOf(id)}</option>`).join('');}
   for(const k in p){const e=wbEl(p[k]);if(e)e.style.display=(k===wbMode)?'':'none';}
+  /* v502, v503: delivery is a sale's field and freight a purchase's */
+  {const dc=wbEl('wbDeliveryCell'),fc=wbEl('wbFreightCell');if(dc)dc.style.display=wbDir==='SELL'?'':'none';if(fc)fc.style.display=wbDir==='BUY'?'':'none';}
   /* v275: the product control. Options are built from PROD_IDS every time rather than typed,
      so declaring a third product in PRODUCTS is the whole of the work. */
   const pr=wbEl('wbProd');

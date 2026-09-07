@@ -37,7 +37,10 @@ The fold routine is `docs/CLOUD_FOLD.md`; statements `docs/STATEMENTS.md`; desig
    build fails on an external `src`, `url(` or `@import`. CSP in `public/_headers` is
    `connect-src 'self'` and otherwise self-only, so Georgia and Consolas stand in for
    Fraunces and JetBrains Mono.
-5. **RM and unit only**; the mass symbol was retired at v161.
+5. **RM and unit only**; the mass symbol was retired at v161. **One floor per size, the
+   goods after the leak (v502); no delivery, no time in it.** A sale carries `delivery`
+   (inside its total) and a lot carries `freight` (beside it), both typed per row (v503);
+   `txGoods` strikes every rate on the goods, and freight per unit comes from the lots.
 6. **The look is the Salt design system applied as a layer.** Material, type and colour
    are decided in `design/desk.css` over the vendored `design/salt-ds.css`; a colour or
    type change is an edit there, then `--sync`, then build, never a hex in the master's
@@ -79,10 +82,9 @@ desk shows, cost and margin included, is served at the public URL.
 - **The fold is a judgement and stays with an agent**: rolling `STATED_STOCK`, the row
   NOTE, the `evolution` entry and what an amendment amends. CI never folds and holds no
   secrets. Proved end to end on v480, 03 Sep 2026.
-- **No clock.** The six-hourly routine was disabled 24 Aug 2026 after it and a session
-  folded the same batch minutes apart. `Salt fold (manual backup)`
-  (trig_01UrnjQMWA3f6GXN5R6Dzi4S) is disabled with no cron: fire it by hand if the fold
-  job fails. The stage stands down while `master/_to_fold.json` is still in HEAD.
+- **No clock** since 24 Aug 2026. `Salt fold (manual backup)` (trig_01UrnjQMWA3f6GXN5R6Dzi4S)
+  is disabled, no cron: fire it by hand if the fold job fails. The stage stands down while
+  `master/_to_fold.json` is still in HEAD.
 - **A version asks about the queue first (02 Sep 2026).** Before any bump: `node
   tools/drain.mjs --status`, `node tools/drafts.mjs --list` and `--approved`, `git fetch`
   for a staged `_to_fold.json`. Ask him one line per pending item; never approve for him;
@@ -167,8 +169,7 @@ statement code, plain node) and `tools/qr.mjs` (byte mode, level M, versions 1 t
 
 **Behind the password since v499 (06 Sep 2026): statements, prices, order.** The price
 list (`tools/pricelist.mjs`: median of the last four orders before the week's Monday, never
-below the engine's one floor; no history means the board's ask; delivery is typed per order
-and rides on the row as `delivery`, inside the total, since v502) is sealed in by the
+below the engine's one floor; no history means the board's ask) is sealed in by the
 publish, which opens the master in jsdom for the PRICING inputs. Orders live in the site's
 KV (`stmt/orders.js`) on a session `/open` mints; payment at `ready` only, one QR Command
 link per rail, accounts from `stmt/pay.js` (`tools/paysync.mjs`, no number ships). The desk

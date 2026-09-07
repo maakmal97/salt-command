@@ -1557,7 +1557,8 @@ section("Engine — one definition, out of the desk (v337)");
     minPerUnit: 0, timePerOrder: 25, lotFloor: {}, tiers: [{ qty: 12.5, total: 700 }, { qty: 25, total: 1300 }, { qty: 50, total: 2200 }],
     boardSizes: [0.5, 1, 1.5, 2, 2.5, 3, 4, 5, 6.25, 12.5] };
   const C = E.costStack(I);
-  ok(Math.abs(C.landed - 45.2) < 1e-9, "landed cost is the lot rate plus the trip spread over the lot");
+  ok(Math.abs(C.landed - 45.2) < 1e-9, "landed cost is the lot rate plus the trip spread over the lot, where no freight is typed");
+  ok(Math.abs(E.costStack({ ...I, freightRate: 0.8 }).landed - 44.8) < 1e-9, "and the freight typed on the lots, per unit, wins over the stated trip (v503)");
   ok(Math.abs(C.delPerOrder - 50) < 1e-9, "delPerOrder is ONE full delivery, not the blended figure");
   ok(Math.abs(C.txn - (0.2 * 50) / 2.5) < 1e-9, "eff carries only the share of orders that are delivered");
   ok(C.effEx > C.landed && C.eff > C.effEx, "the leak divides and delivery adds, in that order");
@@ -1999,7 +2000,8 @@ section("Fold — an approved batch becomes records in the book (v340)");
        from the rows rather than stated at 0.20. The count is pinned rather than derived on
        purpose: a table that quietly gains a field is exactly what this assertion is for. */
     /* v502: thirty-two. delivery joined, the charge inside a sale's total, typed per order. */
-    ok(E.CORRECTABLE.length === 32, `thirty-two attributes are editable, found ${E.CORRECTABLE.length}`);
+    /* v503: thirty-three. freight joined, the trip a lot cost, typed per purchase. */
+    ok(E.CORRECTABLE.length === 33, `thirty-three attributes are editable, found ${E.CORRECTABLE.length}`);
     ok(E.CORRECTABLE.includes('handover'), 'handover is one of them');
     ok(Array.isArray(E.HANDOVER) && E.HANDOVER.join(',') === 'delivered,collected',
        `handover takes two values, found ${JSON.stringify(E.HANDOVER)}`);
@@ -2513,8 +2515,8 @@ section("Orders and money — every basis is named where the figure is stated (v
       ok(F.freightPerUnit === c.freight,
         `${pr}: the statement's freight per unit is the pricing engine's (${F.freightPerUnit})`);
     /* and the cell names the live rate, so moving the rate without the copy fails here */
-    if (F.lots > 0) ok(panel.includes(html("fmt0(COST_BASIS.freightPerTrip.rm)") + " a trip"),
-      `${pr}: the freight line names the rate it was struck at`);
+    if (F.lots > 0) ok(panel.includes(" typed on " + F.lots + " lot"),
+      `${pr}: the freight line says it is the sum typed on the lots (v503)`);
 
     /* a month on the P&L is evidence that something happened in it */
     ok(rows.every(([, v]) => Math.abs(v.rev) + Math.abs(v.cogs) + Math.abs(v.cash) + Math.abs(v.kg) > 0.009),

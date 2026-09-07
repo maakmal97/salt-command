@@ -426,7 +426,8 @@ const CORRECT_NUM_POS=['qty'];
    (his instruction, 07 Sep 2026). It is INSIDE the total, so nothing that reads what is owed or
    paid changes; what changes is the rate, which is struck on the goods: txGoods below. */
 const CORRECT_NUM_NN=['total','cash','deliveredQty','receivedQty','cost',
-  'settledRM','settledKg','rebateKg','delivery'];
+  'settledRM','settledKg','rebateKg','delivery',
+  'freight'];   /* v503: the trip for a lot, RM, typed per purchase, beside the total */
 const CORRECT_DATE=['date','agreedOn','paidOn','deliveredOn','receivedOn','cancelledOn'];
 const CORRECT_BOOL=['unpriced','cancelled','pending','inTransit','defaulted','rebate','goodwill'];
 const CORRECT_CODE=['party','assoc','downstream'];
