@@ -657,11 +657,23 @@ export function apply(book, staged, notes, masterText) {
 /* ---- the command line ---------------------------------------------------------------------- */
 const isMain = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
 if (isMain) {
-  const mode = argv.find((a) => a === "--plan" || a === "--apply");
-  if (!mode) { console.log("usage: node tools/fold.mjs --plan | --apply   [--staged f] [--notes f] [--book f] [--master f] [--folded f] [--today YYYY-MM-DD]"); process.exit(2); }
+  const mode = argv.find((a) => a === "--plan" || a === "--apply" || a === "--replays");
+  if (!mode) { console.log("usage: node tools/fold.mjs --plan | --apply | --replays   [--staged f] [--notes f] [--book f] [--master f] [--folded f] [--today YYYY-MM-DD]"); process.exit(2); }
   const staged = readStaged();
-  if (!staged || !staged.count) { console.log("  nothing to fold: no staged batch, or its count is zero. Stop here; do not bump a version."); process.exit(0); }
+  if (!staged || !staged.count) { console.log("  nothing to fold: no staged batch, or its count is zero. Stop here; do not bump a version."); process.exit(mode === "--replays" ? 1 : 0); }
   const book = readBookFile(BOOK);
+  /* v512: IS THE WHOLE BATCH A REPLAY? Exit 0 and print the ids when every staged row is refused
+     because the same row is already on the book, and 1 for anything else. The stage job reads
+     this to clear a handoff the fold could never take, rather than standing down for ever. */
+  if (mode === "--replays") {
+    const p = plan(book, staged, null);
+    const replay = p.refused.filter((x) => /would be a replay/.test(x.why));
+    if (p.items.length === 0 && replay.length === staged.count && replay.length > 0) {
+      console.log(replay.map((x) => x.id).join(" ")); process.exit(0);
+    }
+    console.log("  not a replay batch: " + p.items.length + " row(s) would fold, " + (p.refused.length - replay.length) + " refused for other reasons, " + replay.length + " replay(s)");
+    process.exit(1);
+  }
   const notes = existsSync(NOTES) ? JSON.parse(readFileSync(NOTES, "utf8")) : null;
   if (mode === "--plan") {
     const p = plan(book, staged, notes);

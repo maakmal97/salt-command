@@ -88,7 +88,7 @@ desk shows, cost and margin included, is served at the public URL.
   secrets.
 - **No clock** since 24 Aug 2026. `Salt fold (manual backup)` (trig_01UrnjQMWA3f6GXN5R6Dzi4S)
   is disabled, no cron: fire it by hand if the fold job fails. The stage stands down while
-  `master/_to_fold.json` is still in HEAD.
+  `master/_to_fold.json` is in HEAD, unless `fold.mjs --replays` says the batch is a replay (v512).
 - **A version asks about the queue first (02 Sep 2026).** Before any bump: `node
   tools/drain.mjs --status`, `node tools/drafts.mjs --list` and `--approved`, `git fetch`
   for a staged `_to_fold.json`. Ask him one line per pending item; never approve for him;

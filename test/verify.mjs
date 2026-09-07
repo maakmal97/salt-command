@@ -6723,6 +6723,31 @@ section("Statements — the price list, the order book and the desk's relay (v49
     "and the Desktop shortcut's launcher finds the newest send sheet by name");
 }
 
+section("v512: a replay batch clears its own handoff");
+{
+  /* the planner answers the stage's one question: is the whole staged batch a replay? */
+  const bookR = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const dupRow = bookR.sales.find((x) => x.date && x.customer && +x.total > 0 && +x.qty > 0 && !x.cancelled);
+  const dir = join(REPO, "test", "tmp", "replays-" + Date.now());
+  mkdirSync(dir, { recursive: true });
+  const staged = (rows) => { const f = join(dir, "staged.json"); writeFileSync(f, JSON.stringify({ ok: true, count: rows.length, approved: rows })); return f; };
+  const run = (f) => { try { return { code: 0, out: execFileSync(process.execPath, [join(REPO, "tools", "fold.mjs"), "--replays", "--staged", f], { encoding: "utf8", stdio: "pipe" }) }; }
+    catch (e) { return { code: e.status, out: String(e.stdout || "") }; } };
+  const dup = { id: "2099-01-01T00:00:00.000Z", collection: "sales", row: { customer: dupRow.customer, date: dupRow.date, total: dupRow.total, qty: dupRow.qty } };
+  const fresh = { id: "2099-01-01T00:00:01.000Z", collection: "sales", row: { customer: dupRow.customer, date: "2099-01-01", total: 1, qty: 1 } };
+  const a = run(staged([dup]));
+  ok(a.code === 0 && a.out.trim() === dup.id, "a batch that is wholly a replay answers 0 and names the ids");
+  const b = run(staged([dup, fresh]));
+  ok(b.code === 1 && /1 row\(s\) would fold/.test(b.out), "a batch with a row that would fold answers 1");
+  const c = run(staged([]));
+  ok(c.code === 1, "an empty batch is not a replay batch");
+  rmSync(dir, { recursive: true, force: true });
+  const yml = readFileSync(join(REPO, ".github", "workflows", "cloud-commit.yml"), "utf8");
+  ok(/fold\.mjs --replays/.test(yml) && /--refused-note/.test(yml) && /git rm -q master\/_to_fold\.json/.test(yml),
+    "and the stage job asks the planner, records the refusals and clears the handoff before standing down");
+  ok(/--refused-note/.test(readFileSync(join(REPO, "tools", "drafts.mjs"), "utf8")), "drafts.mjs can record a refusal the fold made");
+}
+
 section("Statements — the QR, the sort and the Salt identity");
 {
   const { statementCss, saltTokens } = await import("../tools/stmt-style.mjs");

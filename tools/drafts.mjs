@@ -323,10 +323,29 @@ function committed() {
   }
 }
 
+/* ---- a refusal the fold made, put where the phone shows refusals (v512) ------------------
+   The drafter writes `refused` for what it will not draft; the fold has had no way to say what it
+   would not fold. This records one, keyed on the draft id so the drafter's self-cleaning retires
+   it once the watermark passes. Source "fold", so the phone can tell the two apart. */
+function refusedNote() {
+  const i = argv.indexOf("--refused-note");
+  const id = argv[i + 1], why = argv.slice(i + 2).filter((a) => !a.startsWith("--")).join(" ");
+  if (!id || !why) { fail("--refused-note needs a draft id and a reason"); return; }
+  const cur = query("SELECT entry,party FROM draft WHERE id=" + q(id));
+  if (!cur) return;
+  const entry = cur.length ? cur[0].entry : JSON.stringify({ raw: id });
+  const party = cur.length ? cur[0].party : null;
+  const r = wrangler(["d1", "execute", DB, WHERE, "--json", "--command",
+    JSON.stringify("INSERT OR REPLACE INTO refused (id,entry,why,party,source,seen_at) VALUES (" + q(id) + "," + q(entry) + "," + q(why) + "," + (party == null ? "NULL" : q(party)) + ",'fold'," + q(new Date().toISOString()) + ")")], { quiet: true });
+  if (r.code !== 0) { fail("could not record the refusal of " + id); return; }
+  ok(id + " recorded as refused by the fold");
+}
+
 /* ---- main ---------------------------------------------------------------------------- */
 if (has("--schema")) schema();
 else if (has("--draft")) draft();
 else if (has("--from-queue")) await fromQueue();
+else if (has("--refused-note")) refusedNote();
 else if (has("--approve")) approve();
 else if (has("--approved")) approved();
 else if (has("--committed")) committed();

@@ -1,6 +1,6 @@
 {
- "v": "v510",
- "stamped": "07 Sep 2026, 14:23 KL",
+ "v": "v512",
+ "stamped": "07 Sep 2026, 16:32 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -3404,9 +3404,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-07T06:18:06.568Z",
+  "QUEUE_COMMITTED": "2026-09-07T06:21:06.691Z",
   "PRICING": {
-   "takenAt": "2026-09-07T06:23:39.845Z",
+   "takenAt": "2026-09-07T08:32:25.177Z",
    "sizes": [
     0.5,
     1,
@@ -3833,10 +3833,10 @@
      }
     }
    },
-   "v": "v510"
+   "v": "v512"
   },
   "OPEN": {
-   "at": "2026-09-07T06:23:39.934Z",
+   "at": "2026-09-07T08:32:25.215Z",
    "count": 6,
    "byKey": {
     "CR3-DAM|2026-09-07|185": {
@@ -3968,7 +3968,7 @@
     "salt": "2026-09-06",
     "oil": "2026-08-23"
    },
-   "v": "v510"
+   "v": "v512"
   }
  }
 }

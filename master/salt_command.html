@@ -4572,7 +4572,8 @@ const CASH_COUNT_RETIRED={
 const ONE_OFFS=[
   {"id":"CM6-HCM","date":"2026-07-14","note":"One-off; RM104/unit is an outlier."}
 ];
-const QUEUE_COMMITTED="2026-09-07T06:18:06.568Z";
+/* v512, 07 Sep 2026: moved to 06:21:06.691Z past a second entry of the CR3-DAM sale already folded at v510, so the phone stops showing it as provisional; no row folded. */
+const QUEUE_COMMITTED="2026-09-07T06:21:06.691Z";
 const PRICE_SET={
   "salt": {
     "prices": {},
@@ -5382,7 +5383,9 @@ const whiteboard=[
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{"v": "v511", "d": "07 Sep 2026", "t": "A CUSTOMER'S RATE IS DRAWN TOWARD THE BOARD", "n": ["<b>HIS INSTRUCTION, 07 SEP 2026, on the design fault that CR3-DAM's list read RM 160 at 2 units under a board asking RM 220:</b> his rate adjusted slightly higher if below the ask, up more if below the floor, down more if above a 2x markup (three times COGS), and down slightly if above the ask but loyal, by tier. Booked as one rule, adjustedPrice in tools/pricelist.mjs and pbAdjusted on the desk, the suite holding them equal on the real book: slightly is a quarter of the gap to the ask, more is half, never under the floor, never above the cap, then up to the ringgit. Loyal is the desk's own badge, three or more priced orders and the last within fourteen days. A customer with no history sees the board's ask. CR3-DAM at 2 units now reads RM 175: RM 160 plus a quarter of the RM 60 gap to the board."]},
+const evolution=[{"v": "v512", "d": "07 Sep 2026", "t": "A REPLAY BATCH CLEARS ITS OWN HANDOFF, AND THE WATERMARK PASSES THE DUPLICATE", "n": ["<b>WHAT HAPPENED ON 07 SEP.</b> The CR3-DAM sale of 2 unit at RM 185 was queued twice three minutes apart and both entries were approved. The first folded as v510 in nine minutes; the second was staged, refused by the fold as a replay of the row it had just written, and its handoff stayed in HEAD, where the stage stands down, so the chain was shut with every job green until it was cleared by hand.", "<b>THE STAGE NOW ASKS THE PLANNER FIRST.</b> `node tools/fold.mjs --replays` answers yes when every staged row is refused because the same row is already on the book; the stage then marks those drafts committed, records each refusal where the phone shows refusals (`drafts.mjs --refused-note`, source fold), removes the handoff and stages on. Anything else still stands down as before.", "<b>THE WATERMARK</b> moves to the duplicate's own stamp with no row folded, so the phone stops showing it as provisional and the ship check stops reading it as a replay."]},
+
+{"v": "v511", "d": "07 Sep 2026", "t": "A CUSTOMER'S RATE IS DRAWN TOWARD THE BOARD", "n": ["<b>HIS INSTRUCTION, 07 SEP 2026, on the design fault that CR3-DAM's list read RM 160 at 2 units under a board asking RM 220:</b> his rate adjusted slightly higher if below the ask, up more if below the floor, down more if above a 2x markup (three times COGS), and down slightly if above the ask but loyal, by tier. Booked as one rule, adjustedPrice in tools/pricelist.mjs and pbAdjusted on the desk, the suite holding them equal on the real book: slightly is a quarter of the gap to the ask, more is half, never under the floor, never above the cap, then up to the ringgit. Loyal is the desk's own badge, three or more priced orders and the last within fourteen days. A customer with no history sees the board's ask. CR3-DAM at 2 units now reads RM 175: RM 160 plus a quarter of the RM 60 gap to the board."]},
 
 {"v":"v510","d":"07 Sep 2026","t":"TWO UNIT TO CR3-DAM AT RM 92.50, RM 35 LEFT ON ADVANCE","n":["<b>ONE APPROVED ROW.</b> 2 unit of salt to CR3-DAM on 07 Sep for RM 185, RM 92.50 a unit, collected in full on the day. Costed at the inventory's own RM 48 a unit, the 03 Sep lot of 25 unit from SA5-BTR, so RM 96 on the order and RM 89 gross, 48.1% on price.","<b>ABOVE THE FLOOR, UNDER THE ASK.</b> The floor for 2 unit reads RM 109.73 and the board's ask RM 220, so the order sits RM 75.27 above the floor and RM 35 under the ask. It is also CR3-DAM's first rate above RM 80 a unit since 03 Jul: each of their last nine orders was 1 unit at RM 80, and the drafter flagged this one 15.6% above their eleven-order average.","<b>AN ADVANCE OF RM 35.</b> RM 150 of the RM 185 was paid and both unit went out on 07 Sep. CR3-DAM carried nothing outstanding before this row, so the RM 35 is their whole exposure.","<b>THE INVENTORY ROLLS 7 TO 5.</b> The first movement off the 7 counted on 06 Sep. A roll and not a count; COUNT_ON.salt stays at 2026-09-06."]},
 
@@ -5683,7 +5686,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='07 Sep 2026, 15:37 KL';
+const LAST_UPDATED='07 Sep 2026, 16:32 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */

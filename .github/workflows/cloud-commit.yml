@@ -120,18 +120,41 @@ jobs:
       # logs would all read green.
       #
       # So the stage stands down and says so. The next tick, half an hour later, picks it up.
+      # A BATCH THE FOLD REFUSED AS A REPLAY CLEARS ITS OWN HANDOFF (v512, 07 Sep 2026). On 07 Sep
+      # a sale was queued twice three minutes apart and both were approved; the first folded as
+      # v510, the second was staged, refused by the fold as a replay of the row it had just
+      # written, and the handoff stayed in HEAD. This step then stood down on every tick, so the
+      # chain was shut with every job green until a person cleared it by hand. Now, before
+      # standing down, it asks the planner whether the whole batch is a replay; if it is, the
+      # drafts are marked committed (the row IS on the book), each refusal is recorded where the
+      # phone shows refusals, the handoff is removed, and staging carries on.
       - name: Stand down if the last batch is still unfolded
         id: guard
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
         run: |
           set -euo pipefail
           if git cat-file -e HEAD:master/_to_fold.json 2>/dev/null; then
             n=$(git show HEAD:master/_to_fold.json | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).count")
-            echo "::notice::A batch of $n row(s) is staged and not yet folded. Standing down rather than overwriting it."
-            echo "skip=1" >> "$GITHUB_OUTPUT"
-            # A batch that is already staged is still a batch to fold, so the fold job runs on
-            # this tick too. That is how a batch left behind by a failed fold job, or staged
-            # before the fold job existed, is picked up within the hour rather than never.
-            echo "staged=1" >> "$GITHUB_OUTPUT"
+            if ids=$(node tools/fold.mjs --replays); then
+              echo "::notice::The staged batch of $n row(s) is a replay of rows already on the book ($ids): clearing it."
+              node tools/drafts.mjs --committed $ids
+              for id in $ids; do node tools/drafts.mjs --refused-note "$id" "The fold refused this as a replay: a row with the same party, date, size and total is already on the book, so it was folded once and marked committed."; done
+              git config user.name "salt-command stage"
+              git config user.email "noreply@github.com"
+              git rm -q master/_to_fold.json
+              git commit -q -m "The fold refused the staged batch as a replay: $ids"
+              git push origin HEAD:master
+              echo "skip=0" >> "$GITHUB_OUTPUT"
+            else
+              echo "::notice::A batch of $n row(s) is staged and not yet folded. Standing down rather than overwriting it."
+              echo "skip=1" >> "$GITHUB_OUTPUT"
+              # A batch that is already staged is still a batch to fold, so the fold job runs on
+              # this tick too. That is how a batch left behind by a failed fold job, or staged
+              # before the fold job existed, is picked up within the hour rather than never.
+              echo "staged=1" >> "$GITHUB_OUTPUT"
+            fi
           else
             echo "skip=0" >> "$GITHUB_OUTPUT"
           fi

@@ -1,5 +1,15 @@
 [
  {
+  "v": "v512",
+  "d": "07 Sep 2026",
+  "t": "A REPLAY BATCH CLEARS ITS OWN HANDOFF, AND THE WATERMARK PASSES THE DUPLICATE",
+  "n": [
+   "<b>WHAT HAPPENED ON 07 SEP.</b> The CR3-DAM sale of 2 unit at RM 185 was queued twice three minutes apart and both entries were approved. The first folded as v510 in nine minutes; the second was staged, refused by the fold as a replay of the row it had just written, and its handoff stayed in HEAD, where the stage stands down, so the chain was shut with every job green until it was cleared by hand.",
+   "<b>THE STAGE NOW ASKS THE PLANNER FIRST.</b> `node tools/fold.mjs --replays` answers yes when every staged row is refused because the same row is already on the book; the stage then marks those drafts committed, records each refusal where the phone shows refusals (`drafts.mjs --refused-note`, source fold), removes the handoff and stages on. Anything else still stands down as before.",
+   "<b>THE WATERMARK</b> moves to the duplicate's own stamp with no row folded, so the phone stops showing it as provisional and the ship check stops reading it as a replay."
+  ]
+ },
+ {
   "v": "v511",
   "d": "07 Sep 2026",
   "t": "A CUSTOMER'S RATE IS DRAWN TOWARD THE BOARD",

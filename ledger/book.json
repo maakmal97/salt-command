@@ -419,7 +419,7 @@
   "ONE_OFFS": [
     {"id":"CM6-HCM","date":"2026-07-14","note":"One-off; RM104/unit is an outlier."}
   ],
-  "QUEUE_COMMITTED": "2026-09-07T06:18:06.568Z",
+  "QUEUE_COMMITTED": "2026-09-07T06:21:06.691Z",
   "PRICE_SET": {
     "salt": {
       "prices": {},
@@ -467,6 +467,9 @@
     ],
     "supplierQuote": [
       "v505, 07 Sep 2026: the 25 unit tier is RM 1,200 on his word; the other four tiers stand as quoted on 20 Aug."
+    ],
+    "QUEUE_COMMITTED": [
+      "v512, 07 Sep 2026: moved to 06:21:06.691Z past a second entry of the CR3-DAM sale already folded at v510, so the phone stops showing it as provisional; no row folded."
     ]
   }
 }
