@@ -356,8 +356,8 @@
       },
       {
         "qty": 25,
-        "total": 1250,
-        "note": "RM50/unit. The 25 unit agreed on the 20th was struck at RM1,300 against the old ladder and is RM50 above this."
+        "total": 1200,
+        "note": "RM48/unit, his word 07 Sep 2026, down from the RM1,250 quoted on 20 Aug; the two 25 unit lots of 02 and 03 Sep already landed at this rate."
       },
       {
         "qty": 50,
@@ -462,6 +462,9 @@
     ],
     "COUNTS": [
       "EVERY COUNT, AS TAKEN (v504, 07 Sep 2026): product, date, the figure counted, what the roll said and the drift, negative when units are missing. The fold appends one line per count. A count with no drift bounds a cycle and charges nothing; the 24 Aug anchor is one. Seeded from the fold notes of v473 (02 Sep, 10.5 against 18.75), v489 (04 Sep, 9.8 entered net of a rolled sale, no drift) and v498 (06 Sep, 7 against 8.3); the oil count of 23 Aug has no recorded drift. The leak is charged from these: the units missing over the last three cycles, at landed, over the units sold in them."
+    ],
+    "supplierQuote": [
+      "v505, 07 Sep 2026: the 25 unit tier is RM 1,200 on his word; the other four tiers stand as quoted on 20 Aug."
     ]
   }
 }

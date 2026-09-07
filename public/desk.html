@@ -68,7 +68,7 @@ document.addEventListener('visibilitychange',function(){
    localStorage before it posts anything and the load reads it straight back.
    The same tick retries a held entry, which is what gets a phone write to the cloud
    without waiting for the next open. */
-var SALT_BUILD_ID="5b3d4cbeb9138faf";
+var SALT_BUILD_ID="e63073d29ec3c81b";
 var SALT_REV_MS=10000;
 (function(){
   var chip=null,timer=null;
@@ -4565,6 +4565,7 @@ const AWARDS={
     "why": "Oil turnover counted at his direction: RM400 of salt plus RM100 of oil is exactly the RM500 step."
   }
 };
+/* v505, 07 Sep 2026: the 25 unit tier is RM 1,200 on his word; the other four tiers stand as quoted on 20 Aug. */
 const supplierQuote={
   "supplier": "SA5-BTR",
   "quotedOn": "2026-08-20",
@@ -4582,8 +4583,8 @@ const supplierQuote={
     },
     {
       "qty": 25,
-      "total": 1250,
-      "note": "RM50/unit. The 25 unit agreed on the 20th was struck at RM1,300 against the old ladder and is RM50 above this."
+      "total": 1200,
+      "note": "RM48/unit, his word 07 Sep 2026, down from the RM1,250 quoted on 20 Aug; the two 25 unit lots of 02 and 03 Sep already landed at this rate."
     },
     {
       "qty": 50,
@@ -5454,7 +5455,9 @@ const whiteboard=[
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{"v": "v504", "d": "07 Sep 2026", "t": "THE LAST THREE LOTS, THE LEAK FROM THE COUNTS, THE ASK AS A MARGIN ON THE FLOOR, AND THE INVENTORY", "n": ["<b>HIS INSTRUCTIONS OF 07 SEP 2026, BOOKED AS ONE VERSION.</b> The replacement window is the last three lots received, not thirty days: salt lands a lot every four or five days and oil every ten to fifteen, so one calendar window was six cycles on one book and two on the other. The rate and the typed freight both read off those three lots (pxWindowLots).", "<b>THE LEAK IS CHARGED FROM THE COUNTS.</b> A count is taken when a lot lands and the inventory is near empty, so the drift at each count is that cycle's leak, every use included. The book now keeps COUNTS, every count as taken, seeded from the fold notes of v473, v489 and v498, and the fold appends one line per count. pxLeakCharge() takes the units missing over the last three cycles over the units handed over in them, and the cost stack applies that ratio to landed in place of the lifetime share and the attribution lever, which stand in only where no cycle can be read.", "<b>THE ASK IS A MARGIN ON THE FLOOR.</b> One basis: the floor is what a size costs to take out, and the ask is the floor at the size's margin on price, sliding on the supplier's taper, pinned at anchorG on anchorQ (0.47 on salt's 2.5 unit, 0.36 on oil's 10, each set so the board did not move on the day) and clamped between gLo and gHi. ladderMargin() beside ladderMarkup(); the walk, the rate law and the floor guard are unchanged. The margin the board prints is now the P&L's gross margin to the point.", "<b>INVENTORY, NOT SHELF OR STOCK.</b> Every place the desk's copy said shelf or stock now says inventory; the Stock view is the Inventory view at the same address. Identifiers, addresses and the history are untouched."]},
+const evolution=[{"v":"v505","d":"07 Sep 2026","t":"THE SUPPLIER'S 25 UNIT TIER IS RM 1,200","n":["<b>HIS WORD, 07 SEP 2026:</b> the bulk quote for 25 unit is RM 1,200, RM 48 a unit, down from the RM 1,250 quoted on 20 Aug. The other four tiers stand. The two 25 unit lots of 02 and 03 Sep already landed at this rate, so the replacement rate does not move; what moves is the taper the ladder is fitted to, which the Price part reports with its r-squared."]},
+
+{"v": "v504", "d": "07 Sep 2026", "t": "THE LAST THREE LOTS, THE LEAK FROM THE COUNTS, THE ASK AS A MARGIN ON THE FLOOR, AND THE INVENTORY", "n": ["<b>HIS INSTRUCTIONS OF 07 SEP 2026, BOOKED AS ONE VERSION.</b> The replacement window is the last three lots received, not thirty days: salt lands a lot every four or five days and oil every ten to fifteen, so one calendar window was six cycles on one book and two on the other. The rate and the typed freight both read off those three lots (pxWindowLots).", "<b>THE LEAK IS CHARGED FROM THE COUNTS.</b> A count is taken when a lot lands and the inventory is near empty, so the drift at each count is that cycle's leak, every use included. The book now keeps COUNTS, every count as taken, seeded from the fold notes of v473, v489 and v498, and the fold appends one line per count. pxLeakCharge() takes the units missing over the last three cycles over the units handed over in them, and the cost stack applies that ratio to landed in place of the lifetime share and the attribution lever, which stand in only where no cycle can be read.", "<b>THE ASK IS A MARGIN ON THE FLOOR.</b> One basis: the floor is what a size costs to take out, and the ask is the floor at the size's margin on price, sliding on the supplier's taper, pinned at anchorG on anchorQ (0.47 on salt's 2.5 unit, 0.36 on oil's 10, each set so the board did not move on the day) and clamped between gLo and gHi. ladderMargin() beside ladderMarkup(); the walk, the rate law and the floor guard are unchanged. The margin the board prints is now the P&L's gross margin to the point.", "<b>INVENTORY, NOT SHELF OR STOCK.</b> Every place the desk's copy said shelf or stock now says inventory; the Stock view is the Inventory view at the same address. Identifiers, addresses and the history are untouched."]},
 
 {"v": "v503", "d": "07 Sep 2026", "t": "FREIGHT IS TYPED ON EACH LOT", "n": ["<b>HIS INSTRUCTION, 07 SEP 2026: for every sale and purchase moving forward, freight and delivery cost are input manually.</b> Delivery on a sale landed at v502. This is freight on a purchase: a lot carries `freight` in RM, the trip it cost, typed on the Workbench (Freight, shown for a purchase), the phone, the row editor and the order sheet, and carried by the drafter into the row. It sits beside the total, so the lot rate stays the goods.", "<b>COLLECTION PER UNIT COMES FROM THE LOTS.</b> pxFreightRate() sums the typed freight over the units of the same lots, over the replacement window first and over every live lot with a figure when the window holds none, and hands it to the cost stack as I.freightRate, which wins over the stated trip. COST_BASIS.freightPerTrip.rm is retired to 0 as the fallback, so a book with no typed freight charges nothing for collection and the Price part says so. The P&L's freight-in line is the sum of what was typed.", "<b>WHAT THAT MEANS TODAY.</b> No lot on the book carries a freight figure yet, so collection reads RM 0 and landed equals the replacement rate until the next purchase is entered with its trip. The rows already on the book can be given one through the row editor."]},
 
@@ -5741,7 +5744,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='07 Sep 2026, 08:32 KL';
+const LAST_UPDATED='07 Sep 2026, 09:49 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */

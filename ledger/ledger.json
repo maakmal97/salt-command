@@ -1,6 +1,6 @@
 {
- "v": "v504",
- "stamped": "07 Sep 2026, 08:32 KL",
+ "v": "v505",
+ "stamped": "07 Sep 2026, 09:49 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -3309,8 +3309,8 @@
     },
     {
      "qty": 25,
-     "total": 1250,
-     "note": "RM50/unit. The 25 unit agreed on the 20th was struck at RM1,300 against the old ladder and is RM50 above this."
+     "total": 1200,
+     "note": "RM48/unit, his word 07 Sep 2026, down from the RM1,250 quoted on 20 Aug; the two 25 unit lots of 02 and 03 Sep already landed at this rate."
     },
     {
      "qty": 50,
@@ -3393,7 +3393,7 @@
   ],
   "QUEUE_COMMITTED": "2026-09-06T13:42:00.000Z",
   "PRICING": {
-   "takenAt": "2026-09-07T00:34:42.079Z",
+   "takenAt": "2026-09-07T01:49:36.186Z",
    "sizes": [
     0.5,
     1,
@@ -3594,8 +3594,8 @@
         },
         {
          "qty": 25,
-         "total": 1250,
-         "note": "RM50/unit. The 25 unit agreed on the 20th was struck at RM1,300 against the old ladder and is RM50 above this."
+         "total": 1200,
+         "note": "RM48/unit, his word 07 Sep 2026, down from the RM1,250 quoted on 20 Aug; the two 25 unit lots of 02 and 03 Sep already landed at this rate."
         },
         {
          "qty": 50,
@@ -3820,10 +3820,10 @@
      }
     }
    },
-   "v": "v504"
+   "v": "v505"
   },
   "OPEN": {
-   "at": "2026-09-07T00:34:42.109Z",
+   "at": "2026-09-07T01:49:36.222Z",
    "count": 5,
    "byKey": {
     "CM4-MK|2026-09-04|360": {
@@ -3938,7 +3938,7 @@
     "salt": "2026-09-06",
     "oil": "2026-08-23"
    },
-   "v": "v504"
+   "v": "v505"
   }
  }
 }
