@@ -4525,31 +4525,37 @@ const supplierQuote={
     }
   ]
 };
+/* v514, 07 Sep 2026: SP7-PUD's quote as he relayed it: 10@100, 15@150, 20@180, 30@250, 50@380. The 15 unit tier is new; 30 and 50 moved up RM 20 and RM 30; 10 and 20 stand. The 06 Aug ladder was 10@100, 20@180, 30@230, 50@350. */
 const oilQuote={
   "supplier": "SP7-PUD",
-  "quotedOn": "2026-08-06",
+  "quotedOn": "2026-09-07",
   "kind": "live quote",
   "product": "oil",
   "tiers": [
     {
       "qty": 10,
       "total": 100,
-      "note": "RM10/unit, the smallest lot he sells and the highest rate"
+      "note": "RM10/unit, unchanged from 06 Aug; the smallest lot and the highest rate"
+    },
+    {
+      "qty": 15,
+      "total": 150,
+      "note": "RM10/unit, a new tier on 07 Sep; the same rate as 10 unit, so it buys nothing but size"
     },
     {
       "qty": 20,
       "total": 180,
-      "note": "RM9/unit"
+      "note": "RM9/unit, unchanged from 06 Aug"
     },
     {
       "qty": 30,
-      "total": 230,
-      "note": "RM7.67/unit"
+      "total": 250,
+      "note": "RM8.33/unit, up from the RM230 (RM7.67) quoted on 06 Aug, the tier the 26 Aug lot was bought on"
     },
     {
       "qty": 50,
-      "total": 350,
-      "note": "RM7/unit, the sharpest, and the tier the first lot was bought on"
+      "total": 380,
+      "note": "RM7.60/unit, up from the RM350 (RM7) quoted on 06 Aug and paid on the 11 Aug lot; still the sharpest"
     }
   ]
 };
@@ -5383,7 +5389,9 @@ const whiteboard=[
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{"v": "v513", "d": "07 Sep 2026", "t": "OVER CAP IS UNITS OUT AND UNPAID, ON EVERY SURFACE", "n": ["<b>HIS INSTRUCTION, 07 SEP 2026: CR3-DAM's RM 35 should not be over the cap.</b> It was not, on the register: the Boundaries register measures credit out as the units handed over less what the cash covers at the row's price, and CR3-DAM's 2 unit sale with RM 35 left to pay is about a quarter of a unit against the 1 unit retail cap. The Order book row and the Today advances measured units DELIVERED instead, so the same row read \"over cap\" one tab over. One helper now, creditOutUnits and overCap, summed per customer per book, and all three surfaces ask it."]},
+const evolution=[{"v": "v514", "d": "07 Sep 2026", "t": "OIL QUOTE OF 07 SEP: FIVE TIERS FROM SP7-PUD", "n": ["<b>HIS WORD, 07 SEP 2026: SP7-PUD quotes oil at 10 unit RM 100, 15 unit RM 150, 20 unit RM 180, 30 unit RM 250, 50 unit RM 380.</b> Booked over the 06 Aug ladder: the 15 unit tier is new, 30 moved up RM 20 and 50 up RM 30, 10 and 20 stand. A quote, not a purchase: no lot, no cost and no floor moves. The oil ladder's taper is fitted from these tiers and eases from -0.231 to -0.186, but every carded ask holds: RM 130, 240, 330, 400 and 450 at 10 to 50 unit, on floors that do not move because no lot moved."]},
+
+{"v": "v513", "d": "07 Sep 2026", "t": "OVER CAP IS UNITS OUT AND UNPAID, ON EVERY SURFACE", "n": ["<b>HIS INSTRUCTION, 07 SEP 2026: CR3-DAM's RM 35 should not be over the cap.</b> It was not, on the register: the Boundaries register measures credit out as the units handed over less what the cash covers at the row's price, and CR3-DAM's 2 unit sale with RM 35 left to pay is about a quarter of a unit against the 1 unit retail cap. The Order book row and the Today advances measured units DELIVERED instead, so the same row read \"over cap\" one tab over. One helper now, creditOutUnits and overCap, summed per customer per book, and all three surfaces ask it."]},
 
 {"v": "v512", "d": "07 Sep 2026", "t": "A REPLAY BATCH CLEARS ITS OWN HANDOFF, AND THE WATERMARK PASSES THE DUPLICATE", "n": ["<b>WHAT HAPPENED ON 07 SEP.</b> The CR3-DAM sale of 2 unit at RM 185 was queued twice three minutes apart and both entries were approved. The first folded as v510 in nine minutes; the second was staged, refused by the fold as a replay of the row it had just written, and its handoff stayed in HEAD, where the stage stands down, so the chain was shut with every job green until it was cleared by hand.", "<b>THE STAGE NOW ASKS THE PLANNER FIRST.</b> `node tools/fold.mjs --replays` answers yes when every staged row is refused because the same row is already on the book; the stage then marks those drafts committed, records each refusal where the phone shows refusals (`drafts.mjs --refused-note`, source fold), removes the handoff and stages on. Anything else still stands down as before.", "<b>THE WATERMARK</b> moves to the duplicate's own stamp with no row folded, so the phone stops showing it as provisional and the ship check stops reading it as a replay."]},
 
@@ -5688,7 +5696,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='07 Sep 2026, 17:34 KL';
+const LAST_UPDATED='07 Sep 2026, 21:36 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */

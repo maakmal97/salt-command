@@ -374,29 +374,34 @@
   },
   "oilQuote": {
     "supplier": "SP7-PUD",
-    "quotedOn": "2026-08-06",
+    "quotedOn": "2026-09-07",
     "kind": "live quote",
     "product": "oil",
     "tiers": [
       {
         "qty": 10,
         "total": 100,
-        "note": "RM10/unit, the smallest lot he sells and the highest rate"
+        "note": "RM10/unit, unchanged from 06 Aug; the smallest lot and the highest rate"
+      },
+      {
+        "qty": 15,
+        "total": 150,
+        "note": "RM10/unit, a new tier on 07 Sep; the same rate as 10 unit, so it buys nothing but size"
       },
       {
         "qty": 20,
         "total": 180,
-        "note": "RM9/unit"
+        "note": "RM9/unit, unchanged from 06 Aug"
       },
       {
         "qty": 30,
-        "total": 230,
-        "note": "RM7.67/unit"
+        "total": 250,
+        "note": "RM8.33/unit, up from the RM230 (RM7.67) quoted on 06 Aug, the tier the 26 Aug lot was bought on"
       },
       {
         "qty": 50,
-        "total": 350,
-        "note": "RM7/unit, the sharpest, and the tier the first lot was bought on"
+        "total": 380,
+        "note": "RM7.60/unit, up from the RM350 (RM7) quoted on 06 Aug and paid on the 11 Aug lot; still the sharpest"
       }
     ]
   },
@@ -470,6 +475,9 @@
     ],
     "QUEUE_COMMITTED": [
       "v512, 07 Sep 2026: moved to 06:21:06.691Z past a second entry of the CR3-DAM sale already folded at v510, so the phone stops showing it as provisional; no row folded."
+    ],
+    "oilQuote": [
+      "v514, 07 Sep 2026: SP7-PUD's quote as he relayed it: 10@100, 15@150, 20@180, 30@250, 50@380. The 15 unit tier is new; 30 and 50 moved up RM 20 and RM 30; 10 and 20 stand. The 06 Aug ladder was 10@100, 20@180, 30@230, 50@350."
     ]
   }
 }
