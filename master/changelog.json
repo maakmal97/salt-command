@@ -1,5 +1,16 @@
 [
  {
+  "v": "v510",
+  "d": "07 Sep 2026",
+  "t": "TWO UNIT TO CR3-DAM AT RM 92.50, RM 35 LEFT ON ADVANCE",
+  "n": [
+   "<b>ONE APPROVED ROW.</b> 2 unit of salt to CR3-DAM on 07 Sep for RM 185, RM 92.50 a unit, collected in full on the day. Costed at the inventory's own RM 48 a unit, the 03 Sep lot of 25 unit from SA5-BTR, so RM 96 on the order and RM 89 gross, 48.1% on price.",
+   "<b>ABOVE THE FLOOR, UNDER THE ASK.</b> The floor for 2 unit reads RM 109.73 and the board's ask RM 220, so the order sits RM 75.27 above the floor and RM 35 under the ask. It is also CR3-DAM's first rate above RM 80 a unit since 03 Jul: each of their last nine orders was 1 unit at RM 80, and the drafter flagged this one 15.6% above their eleven-order average.",
+   "<b>AN ADVANCE OF RM 35.</b> RM 150 of the RM 185 was paid and both unit went out on 07 Sep. CR3-DAM carried nothing outstanding before this row, so the RM 35 is their whole exposure.",
+   "<b>THE INVENTORY ROLLS 7 TO 5.</b> The first movement off the 7 counted on 06 Sep. A roll and not a count; COUNT_ON.salt stays at 2026-09-06."
+  ]
+ },
+ {
   "v": "v509",
   "d": "07 Sep 2026",
   "t": "THE LAST THREE PLACES THE BOARD SAID DELIVERED OR COLLECTED FLOOR",

@@ -1,6 +1,6 @@
 {
- "v": "v505",
- "stamped": "07 Sep 2026, 09:49 KL",
+ "v": "v510",
+ "stamped": "07 Sep 2026, 14:23 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -41,7 +41,7 @@
     "stated": 15
    }
   },
-  "STATED_STOCK": 7,
+  "STATED_STOCK": 5,
   "COUNT_ON": {
    "salt": "2026-09-06",
    "oil": "2026-08-23"
@@ -3088,6 +3088,19 @@
     "note": "<b>1 UNIT TO A NEW BUYER, PAID AND HANDED OVER ON THE DAY.</b> CE5-TBC is registered with a temporary suffix: the location is to be confirmed and the code is re-keyed when it is, on his word of 06 Sep 2026. RM 110 for 1 unit, costed off the shelf at RM 48.",
     "rid": "s135",
     "cost": 48
+   },
+   {
+    "customer": "CR3-DAM",
+    "qty": 2,
+    "total": 185,
+    "cost": 96,
+    "cash": 150,
+    "handover": "collected",
+    "date": "2026-09-07",
+    "deliveredQty": 2,
+    "deliveredOn": "2026-09-07",
+    "note": "CR3-DAM's twelfth order and the first above RM 80 a unit since 03 Jul: 2 unit at RM 92.50, RM 185 the order, handed over collected. The floor for 2 unit is RM 109.73 and the board's ask RM 220, so the rate stands RM 75.27 above the floor and RM 35 under the ask, a discount held for a party whose last nine orders were each 1 unit at RM 80. Costed at the inventory's own RM 48 a unit, the 03 Sep lot of 25 unit from SA5-BTR, which is what the draft carried, so RM 96 on the order and RM 89 gross, 48.1% on price. An advance: RM 150 of RM 185 paid, both unit collected on 07 Sep, RM 35 outstanding, and CR3-DAM carried nothing before this row, so RM 35 is their whole exposure.",
+    "rid": "s136"
    }
   ],
   "contacts": [
@@ -3391,9 +3404,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-06T13:42:00.000Z",
+  "QUEUE_COMMITTED": "2026-09-07T06:18:06.568Z",
   "PRICING": {
-   "takenAt": "2026-09-07T01:49:36.186Z",
+   "takenAt": "2026-09-07T06:23:39.845Z",
    "sizes": [
     0.5,
     1,
@@ -3546,15 +3559,15 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0.375
+         "v": 0.35294117647058826
         }
        },
        "attrib": 1,
        "shrinkRate": 0.06295481030687558,
        "avgDel": {
-        "n": 122,
-        "kg": 316.2,
-        "mean": 2.5918
+        "n": 123,
+        "kg": 318.2,
+        "mean": 2.587
        }
       },
       "policy": {
@@ -3820,12 +3833,29 @@
      }
     }
    },
-   "v": "v505"
+   "v": "v510"
   },
   "OPEN": {
-   "at": "2026-09-07T01:49:36.222Z",
-   "count": 5,
+   "at": "2026-09-07T06:23:39.934Z",
+   "count": 6,
    "byKey": {
+    "CR3-DAM|2026-09-07|185": {
+     "d": "2026-09-07",
+     "p": "CR3-DAM",
+     "dir": "S",
+     "q": 2,
+     "t": 185,
+     "cash": 150,
+     "mv": 2,
+     "st": "dueMoney",
+     "oweRM": 35,
+     "rid": "s136",
+     "deliveredOn": "2026-09-07",
+     "handover": "collected",
+     "key": "CR3-DAM|2026-09-07|185",
+     "age": 0,
+     "exp": 35
+    },
     "CM4-MK|2026-09-04|360": {
      "d": "2026-09-04",
      "p": "CM4-MK",
@@ -3913,12 +3943,12 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 7,
-     "free": 7,
+     "onHand": 5,
+     "free": 5,
      "owedOut": 0,
-     "coverDays": 1.3,
-     "rate": 5.3,
-     "owedToYou": 430,
+     "coverDays": 0.9,
+     "rate": 5.45,
+     "owedToYou": 465,
      "promised": 0,
      "short": 0
     },
@@ -3938,7 +3968,7 @@
     "salt": "2026-09-06",
     "oil": "2026-08-23"
    },
-   "v": "v505"
+   "v": "v510"
   }
  }
 }

@@ -68,7 +68,7 @@ document.addEventListener('visibilitychange',function(){
    localStorage before it posts anything and the load reads it straight back.
    The same tick retries a held entry, which is what gets a phone write to the cloud
    without waiting for the next open. */
-var SALT_BUILD_ID="77cd652ca3324b7e";
+var SALT_BUILD_ID="120574f8a14a83c7";
 var SALT_REV_MS=10000;
 (function(){
   var chip=null,timer=null;
@@ -4307,6 +4307,7 @@ const PROD_OPENING={
     "stated": 15
   }
 };
+/* ROLLED AT v510: 2 unit to CR3-DAM on 2026-09-07, so 7 less 2 is 5. A ROLL AND NOT A COUNT; COUNT_ON is untouched. The first movement off the 7 counted on 06 Sep. */
 /* COUNTED AT v498 on 2026-09-06, AFTER CE5-TBC's 1 unit had gone out: the salt shelf held 7 against 8.3 on the roll (9.3 less that 1 unit), a drift of -1.3. A COUNT, NOT A ROLL: STATED_STOCK is set to 7 outright and COUNT_ON.salt moves to 2026-09-06. The fold applied the count and then rolled the sale out of it, reading 6, because it takes a count as taken before the batch's movements; the count was taken after, so the shelf is 7, corrected by hand in the same version. The previous count was 9.8 on 2026-09-04. */
 /* ROLLED AT v490: 0.5 unit to CH5-KLC on 2026-09-05, so 9.8 less 0.5 is 9.3. A ROLL AND NOT A COUNT; COUNT_ON is untouched. The first movement off the 9.8 counted on 4 Sep. */
 /* COUNTED AT v489 on 2026-09-04: the salt shelf held 9.8 against 10.5 on the roll, a drift of -0.7. He physically counted 13.8 on 4 Sep, after CH5-OUG's 12.5 had gone and before CM4-MK's 4 did; v484 had already rolled CM4-MK's 4 off, and the fold sets the shelf to the counted figure rather than re-rolling what came after, so the count is entered net of that 4 at 9.8. The 0.7 is real shrinkage against the shelf as it stood at the moment of the count, the first this book has booked since the 2 Sep count of 10.5, and the ladder walk reads it as self-use at loaded cost, RM 36.84. */
@@ -4323,7 +4324,7 @@ const PROD_OPENING={
 /* ROLLED AT v439: 1 unit to CA7-JTR on 2026-09-01, 6 unit to CK4-SEN on 2026-09-01, 1 unit to CR3-DAM on 2026-09-01, so 8.25 less 8 is 0.25. A ROLL AND NOT A COUNT; COUNT_ON is untouched. Eight of the eight and a quarter unit on the shelf went out today across four rows, leaving 0.25 unit against 3 unit already promised: CE4-CHE's half unit owed out and CY2-NIL's 2.5 unit pending. The book is 2.75 unit short of its own commitments and sourcing is now the first decision on it. */
 /* ROLLED AT v404: 5 unit to CE4-AD on 2026-08-29, so 13.25 less 5 is 8.25. A ROLL AND NOT A COUNT; COUNT_ON is untouched. */
 /* ROLLED AT v399: 3 unit to CH4-KLS on 2026-08-28, so 16.25 less 3 is 13.25. A ROLL AND NOT A COUNT; COUNT_ON is untouched. */
-const STATED_STOCK=7;
+const STATED_STOCK=5;
 const COUNT_ON={
   "salt": "2026-09-06",
   "oil": "2026-08-23"
@@ -4494,7 +4495,8 @@ const sales=[
   {"customer":"CM4-MK","qty":4,"total":360,"cost":192,"cash":300,"date":"2026-09-04","deliveredQty":4,"deliveredOn":"2026-09-04","note":"CM4-MK takes 4 unit at RM 360, RM 90/unit, delivered in full on 4 Sep with RM 300 paid and RM 60 left owing. Two flags came with the draft and both were read. The rate flag calls RM 90/unit 18.2% under this party's RM 110/unit median over seven orders; the median is the wrong ruler, because RM 110/unit is what CM4-MK's 2 unit orders cost and both of its 4 unit orders were struck at this grade, RM 360 on 10 Aug and RM 380 on 24 Aug. This is the 10 Aug price repeated, and it sits well clear of the live floor of RM 245.52 delivered for 4 unit. The cost is the shelf's own RM 48/unit, from the 25 unit SA5-BTR lot of 3 Sep at RM 1,200, and it is the same figure the desk's pricing snapshot carries, so no override was needed: RM 192 of cost against RM 360 leaves RM 168, 46.7%. The advance flag is the one that stands: RM 60 goes out against delivered stock, and it is the first balance CM4-MK has carried, every one of its seven earlier orders having settled on the day.","rid":"s132"},
   {"customer":"CH5-OUG","qty":12.5,"total":650,"cost":600,"cash":650,"handover":"collected","date":"2026-09-04","deliveredQty":12.5,"deliveredOn":"2026-09-04","paidOn":"2026-09-04","note":"<b>12.5 UNIT COLLECTED AND PAID IN FULL ON 4 SEP, RM 650 AT RM 52 A UNIT, BELOW THE FLOOR ON HIS WORD.</b> The desk's own snapshot that morning put the collected floor for 12.5 unit at RM 682.87 and the delivered floor at RM 692.87, so this clears neither: it is RM 32.87 under the one that applies. The loaded cost is RM 52.63 a unit against RM 52.00 sold, so the order loses RM 0.63 a unit before the RM 25 that timePerOrder charges for the work; costed at the shelf's RM 48 it shows RM 50 on the order at 7.7%, which is the thinnest margin on any salt row this month. He took it with the figure in front of him, and three things stand beside the decision: CH5-OUG bought 12.5 unit at RM 600 on 20 Aug, RM 48 a unit, so RM 650 is RM 50 more than his own last order at this size; he is the only customer buying 12.5 unit at wholesale rates, the other four such orders on the book being RM 750 to RM 1,300; and RM 650 for 12.5 unit is exactly SA5-BTR's live quote tier, so the lot goes out at what it costs to replace. Entered by the fold on his word, 05 Sep, after the phone entry did not arrive twice: no drafter flag was raised because no draft was made, which is why the floor figure is written here instead.","rid":"s133"},
   {"customer":"CH5-KLC","qty":0.5,"total":75,"cost":24,"cash":75,"handover":"collected","date":"2026-09-05","deliveredQty":0.5,"deliveredOn":"2026-09-05","paidOn":"2026-09-05","note":"<b>0.5 UNIT COLLECTED AND PAID IN FULL ON 5 SEP, RM 75 AT RM 150 A UNIT.</b> His second completed order and his first since July: s024 of 17 Jul was 0.5 unit at RM 105, and the 0.5 at RM 80 he agreed on 31 Jul was cancelled on 5 Aug. RM 150 a unit is RM 60 under that July rate and clears the 0.5-unit collected floor of RM 51.31 by RM 23.69. Costed at the shelf's RM 48, RM 24 against RM 75, RM 51 on the order at 68%. Entered by the fold on his word, 05 Sep, as the four rows of v489 were.","rid":"s134"},
-  {"customer":"CE5-TBC","qty":1,"total":110,"cash":110,"date":"2026-09-06","deliveredQty":1,"deliveredOn":"2026-09-06","paidOn":"2026-09-06","note":"<b>1 UNIT TO A NEW BUYER, PAID AND HANDED OVER ON THE DAY.</b> CE5-TBC is registered with a temporary suffix: the location is to be confirmed and the code is re-keyed when it is, on his word of 06 Sep 2026. RM 110 for 1 unit, costed off the shelf at RM 48.","rid":"s135","cost":48}
+  {"customer":"CE5-TBC","qty":1,"total":110,"cash":110,"date":"2026-09-06","deliveredQty":1,"deliveredOn":"2026-09-06","paidOn":"2026-09-06","note":"<b>1 UNIT TO A NEW BUYER, PAID AND HANDED OVER ON THE DAY.</b> CE5-TBC is registered with a temporary suffix: the location is to be confirmed and the code is re-keyed when it is, on his word of 06 Sep 2026. RM 110 for 1 unit, costed off the shelf at RM 48.","rid":"s135","cost":48},
+  {"customer":"CR3-DAM","qty":2,"total":185,"cost":96,"cash":150,"handover":"collected","date":"2026-09-07","deliveredQty":2,"deliveredOn":"2026-09-07","note":"CR3-DAM's twelfth order and the first above RM 80 a unit since 03 Jul: 2 unit at RM 92.50, RM 185 the order, handed over collected. The floor for 2 unit is RM 109.73 and the board's ask RM 220, so the rate stands RM 75.27 above the floor and RM 35 under the ask, a discount held for a party whose last nine orders were each 1 unit at RM 80. Costed at the inventory's own RM 48 a unit, the 03 Sep lot of 25 unit from SA5-BTR, which is what the draft carried, so RM 96 on the order and RM 89 gross, 48.1% on price. An advance: RM 150 of RM 185 paid, both unit collected on 07 Sep, RM 35 outstanding, and CR3-DAM carried nothing before this row, so RM 35 is their whole exposure.","rid":"s136"}
 ];
 const contacts=[
   {"date":"2026-08-06","party":"CM4-SK","how":"message","outcome":"noreply","next":null,"note":"said hello"},
@@ -4656,7 +4658,7 @@ const CASH_COUNT_RETIRED={
 const ONE_OFFS=[
   {"id":"CM6-HCM","date":"2026-07-14","note":"One-off; RM104/unit is an outlier."}
 ];
-const QUEUE_COMMITTED="2026-09-06T13:42:00.000Z";
+const QUEUE_COMMITTED="2026-09-07T06:18:06.568Z";
 const PRICE_SET={
   "salt": {
     "prices": {},
@@ -5466,7 +5468,9 @@ const whiteboard=[
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{"v": "v509", "d": "07 Sep 2026", "t": "THE LAST THREE PLACES THE BOARD SAID DELIVERED OR COLLECTED FLOOR", "n": ["<b>Seen on the printed proof of v508:</b> the board table's last column still read \"Floor, delivered\", the sheet's read \"Floor, collected\", the board chart's dashed series was labelled \"floor, delivered\" and the sheet's under-floor notice named the collected floor. v502 retired the pair and these four captions were missed. They read Floor now. The board's third column reads Margin rather than Markup, the ask being a margin on the floor since v504; the figure beneath each ask already said so."]},
+const evolution=[{"v":"v510","d":"07 Sep 2026","t":"TWO UNIT TO CR3-DAM AT RM 92.50, RM 35 LEFT ON ADVANCE","n":["<b>ONE APPROVED ROW.</b> 2 unit of salt to CR3-DAM on 07 Sep for RM 185, RM 92.50 a unit, collected in full on the day. Costed at the inventory's own RM 48 a unit, the 03 Sep lot of 25 unit from SA5-BTR, so RM 96 on the order and RM 89 gross, 48.1% on price.","<b>ABOVE THE FLOOR, UNDER THE ASK.</b> The floor for 2 unit reads RM 109.73 and the board's ask RM 220, so the order sits RM 75.27 above the floor and RM 35 under the ask. It is also CR3-DAM's first rate above RM 80 a unit since 03 Jul: each of their last nine orders was 1 unit at RM 80, and the drafter flagged this one 15.6% above their eleven-order average.","<b>AN ADVANCE OF RM 35.</b> RM 150 of the RM 185 was paid and both unit went out on 07 Sep. CR3-DAM carried nothing outstanding before this row, so the RM 35 is their whole exposure.","<b>THE INVENTORY ROLLS 7 TO 5.</b> The first movement off the 7 counted on 06 Sep. A roll and not a count; COUNT_ON.salt stays at 2026-09-06."]},
+
+{"v": "v509", "d": "07 Sep 2026", "t": "THE LAST THREE PLACES THE BOARD SAID DELIVERED OR COLLECTED FLOOR", "n": ["<b>Seen on the printed proof of v508:</b> the board table's last column still read \"Floor, delivered\", the sheet's read \"Floor, collected\", the board chart's dashed series was labelled \"floor, delivered\" and the sheet's under-floor notice named the collected floor. v502 retired the pair and these four captions were missed. They read Floor now. The board's third column reads Margin rather than Markup, the ask being a margin on the floor since v504; the figure beneath each ask already said so."]},
 
 {"v": "v508", "d": "07 Sep 2026", "t": "THE BOARD AS AN IMAGE OR AN HTML FILE, FROM THE PHONE", "n": ["<b>HIS INSTRUCTION, 07 SEP 2026: make it printable as an image, or HTML, in Files, on the phone.</b> Two buttons beside Print: Save as image draws the same rows on a canvas (ink on white, the title, the username, one line per size, the week) and Save as HTML writes a standalone page with the same lines and no dependency. Either is handed to the phone's share sheet as a file, where iOS offers Save Image and Save to Files and Android its own targets; a browser that cannot share a file downloads it instead, and the card says which happened. Nothing loads from outside, and the rows are the ones the paper gets."]},
 
@@ -5763,7 +5767,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='07 Sep 2026, 10:27 KL';
+const LAST_UPDATED='07 Sep 2026, 14:23 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
