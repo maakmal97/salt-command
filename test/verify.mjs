@@ -6476,6 +6476,22 @@ section("Statements — the price list, the order book and the desk's relay (v49
     "the last four dated salt orders before the Monday are 100, 110, 120 and 130 a unit, median 115: the RM500 fifth-oldest, the gift, the cancelled, the undated and this week's are all left out");
   ok(PL.ownRate(sales, "CX0-AA", "oil", "2026-08-31").rate === 10 && PL.ownRate(sales, "CX0-ZZ", "salt", "2026-08-31").rate === null,
     "per product, and a customer with no history has no rate");
+  /* v510: HIS RATE IS DRAWN TOWARD THE BOARD. R his rate times the size, F the floor, A the ask,
+     cap three times COGS; slightly is a quarter of the gap, more is half. */
+  ok(PL.adjustedPrice(160, 110, 220, 300, false) === 175, "under the ask: up a quarter of the way, 160 toward 220 is 175");
+  ok(PL.adjustedPrice(100, 110, 220, 300, false) === 160 && PL.adjustedPrice(20, 110, 220, 300, false) === 120,
+    "under the floor: up halfway toward the ask, and never under the floor");
+  ok(PL.adjustedPrice(400, 110, 220, 300, false) === 300 && PL.adjustedPrice(400, 110, 220, 300, true) === 300
+    && PL.adjustedPrice(340, 110, 220, 300, false) === 280,
+    "above the cap: down halfway toward the ask and never above the cap, loyal or not");
+  ok(PL.adjustedPrice(260, 110, 220, 300, true) === 250 && PL.adjustedPrice(260, 110, 220, 300, false) === 260,
+    "above the ask under the cap: down a quarter of the way where loyal, and his rate stands where not");
+  ok(PL.adjustedPrice(220, 110, 220, 300, true) === 220 && PL.adjustedPrice(159.5, 110, 220, 300, false) === 175,
+    "at the ask it is the ask, and the answer rounds up to the ringgit");
+  ok(PL.loyalFor(sales, "CX0-AA", "salt", new Date("2026-09-10T00:00:00Z")) === true
+    && PL.loyalFor(sales, "CX0-AA", "salt", new Date("2026-10-10T00:00:00Z")) === false
+    && PL.loyalFor([{ date: "2026-09-02", customer: "CX0-BB", qty: 1, total: 100 }], "CX0-BB", "salt", new Date("2026-09-03T00:00:00Z")) === false,
+    "loyal is three or more priced orders with the last within fourteen days, the desk's own badge");
 
   /* THE LIST AGAINST THE ENGINE, on the real snapshot: never below the collected floor, delivery on top. */
   const { pricingSnapshot } = await import("../tools/book.mjs");
@@ -6490,12 +6506,14 @@ section("Statements — the price list, the order book and the desk's relay (v49
     "the list is stamped with the week and carries both products, salt on the customer's own rate");
   const Cs = PE.costStack(snap.byProduct.salt.inputs.cost), Ps = snap.byProduct.salt.inputs.policy;
   const floorC = q => PE.floorTotal(q, Cs, Ps);
-  const wrong = saltL.sizes.filter(x => x.price !== Math.ceil(Math.max(115 * x.q, floorC(x.q))) || "delivered" in x);
+  const askC = q => PE.priceLadder(q, Cs, Ps).ask.total;
+  const loyalAA = PL.loyalFor(sales, "CX0-AA", "salt", nowP);
+  const wrong = saltL.sizes.filter(x => x.price !== PL.adjustedPrice(115 * x.q, floorC(x.q), askC(x.q), 3 * PE.ladderCogs(x.q, Cs), loyalAA) || "delivered" in x);
   ok(wrong.length === 0 && saltL.sizes.length === snap.sizes.length && !("delivery" in saltL),
-    "every board size is his rate times the size, lifted to the engine's floor and rounded up to the ringgit; one price, no delivery on the list (v502)");
+    "every board size is his rate times the size, drawn toward the board's ask by the v510 rule; one price, no delivery on the list");
   const cheap = PL.priceList("CX0-CH", { ...bookP, sales: [{ date: "2026-07-01", customer: "CX0-CH", qty: 1, total: 1 }] }, snap, nowP).products[0];
-  ok(cheap.rate === 1 && cheap.sizes.every(x => x.price === Math.ceil(floorC(x.q))),
-    "a customer whose old rate is under the floor is quoted the floor at every size, never a loss");
+  ok(cheap.rate === 1 && cheap.sizes.every(x => x.price === PL.adjustedPrice(1 * x.q, floorC(x.q), askC(x.q), 3 * PE.ladderCogs(x.q, Cs), false) && x.price >= floorC(x.q)),
+    "a customer whose old rate is under the floor is lifted halfway to the ask, never under the floor");
   const board = PL.priceList("CX0-ZZ", bookP, snap, nowP).products[0];
   ok(board.basis === "board" && board.sizes.every(x => x.price === PE.priceLadder(x.q, Cs, Ps).ask.total),
     "and a customer with no history is quoted the board's ask, the engine's, at every size");

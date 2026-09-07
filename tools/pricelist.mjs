@@ -67,6 +67,34 @@ export function ownRate(sales, code, product, before) {
   return { rate: +mid.toFixed(2), orders: n };
 }
 
+/* HIS RATE, DRAWN TOWARD THE BOARD (v510, his instruction of 07 Sep 2026). The board's ask is the
+   minimum for anyone, so a list under it is a design fault; but a customer's own history is not
+   thrown away either. At each size, with R his rate times the size, F the floor, A the board's
+   ask and CAP three times COGS (a 2x markup, the ladder's ceiling):
+     below the floor       up more:      halfway from R to A, and never under F
+     under the ask         up slightly:  a quarter of the way from R to A
+     above the cap         down more:    halfway from R back to A, and never above CAP
+     above the ask, loyal  down slightly: a quarter of the way from R back to A
+     above the ask, other  his rate stands
+   then up to the whole ringgit. "Slightly" is a quarter of the gap and "more" is half, stated
+   here once so the desk's printed board (pbPrices in the master) reads the same. Loyal is the
+   desk's own badge: three or more priced orders and the last within fourteen days. */
+export function adjustedPrice(R, F, A, cap, loyal) {
+  let p;
+  if (R < F) p = Math.max(F, R + 0.5 * (A - R));
+  else if (R < A) p = R + 0.25 * (A - R);
+  else if (R > cap) p = Math.max(A, Math.min(cap, R - 0.5 * (R - A)));
+  else p = loyal ? R - 0.25 * (R - A) : R;
+  return Math.ceil(Math.max(p, F) - 1e-9);
+}
+export function loyalFor(sales, code, product, now) {
+  const at = now instanceof Date ? now : new Date(now || Date.now());
+  const rows = (sales || []).filter((s) => s.customer === code && prodOf(s) === product && !s.cancelled && s.date && isNum(s.total) && s.total > 0);
+  if (rows.length < 3) return false;
+  const last = rows.map((s) => s.date).sort().pop();
+  return (at - new Date(last + "T00:00:00Z")) / 86400000 <= 14;
+}
+
 /** The list: one block per product, every board size, one price each. */
 export function priceList(code, book, pricing, now) {
   const week = weekOf(now);
@@ -79,11 +107,13 @@ export function priceList(code, book, pricing, now) {
     if (!inputs || !inputs.cost || !inputs.policy) continue;      // a product the desk cannot price is left off
     const C = PRICING_ENGINE.costStack(inputs.cost), P = inputs.policy;
     const own = ownRate(book.sales, code, p, week.monday);
+    const loyal = loyalFor(book.sales, code, p, now);
     const rows = sizes.map((q) => {
       const floor = PRICING_ENGINE.floorTotal(q, C, P);
+      const ask = PRICING_ENGINE.priceLadder(q, C, P).ask.total;
       let price;
-      if (own.rate != null) price = Math.ceil(Math.max(own.rate * q, floor));
-      else price = PRICING_ENGINE.priceLadder(q, C, P).ask.total;
+      if (own.rate != null) price = adjustedPrice(own.rate * q, floor, ask, 3 * PRICING_ENGINE.ladderCogs(q, C), loyal);
+      else price = ask;
       return { q, price: +price.toFixed(2) };
     });
     out.products.push({
@@ -91,7 +121,7 @@ export function priceList(code, book, pricing, now) {
       name: (book.PRODUCTS && book.PRODUCTS[p] && book.PRODUCTS[p].name) || p,
       unit: (book.PRODUCTS && book.PRODUCTS[p] && book.PRODUCTS[p].unit) || "unit",
       basis: own.rate != null ? "yours" : "board",
-      rate: own.rate, orders: own.orders, sizes: rows
+      rate: own.rate, orders: own.orders, loyal, sizes: rows
     });
   }
   return out;

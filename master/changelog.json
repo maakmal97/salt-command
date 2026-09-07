@@ -1,5 +1,13 @@
 [
  {
+  "v": "v511",
+  "d": "07 Sep 2026",
+  "t": "A CUSTOMER'S RATE IS DRAWN TOWARD THE BOARD",
+  "n": [
+   "<b>HIS INSTRUCTION, 07 SEP 2026, on the design fault that CR3-DAM's list read RM 160 at 2 units under a board asking RM 220:</b> his rate adjusted slightly higher if below the ask, up more if below the floor, down more if above a 2x markup (three times COGS), and down slightly if above the ask but loyal, by tier. Booked as one rule, adjustedPrice in tools/pricelist.mjs and pbAdjusted on the desk, the suite holding them equal on the real book: slightly is a quarter of the gap to the ask, more is half, never under the floor, never above the cap, then up to the ringgit. Loyal is the desk's own badge, three or more priced orders and the last within fourteen days. A customer with no history sees the board's ask. CR3-DAM at 2 units now reads RM 175: RM 160 plus a quarter of the RM 60 gap to the board."
+  ]
+ },
+ {
   "v": "v510",
   "d": "07 Sep 2026",
   "t": "TWO UNIT TO CR3-DAM AT RM 92.50, RM 35 LEFT ON ADVANCE",

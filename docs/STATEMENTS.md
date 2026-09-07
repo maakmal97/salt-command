@@ -180,8 +180,13 @@ it in the same publish, under the same content key, so the site still holds noth
 read. `tools/pricelist.mjs` is the whole rule: the customer's rate on a product is the median
 unit rate of his last four committed orders of it, read from orders dated before the week's
 Monday in Kuala Lumpur, so the rate he is shown cannot move inside a week; each board size is
-that rate times the size, lifted to the engine's floor for the size and rounded up to the
-ringgit. One price per size, for the goods (v502): delivery is not on the list. It is a figure
+that rate times the size, drawn toward the board (v510): up a quarter of the gap to the ask
+where he sits under it, up half the gap and never under the floor where he sits under the
+floor, down half the gap and never above three times COGS where he sits above a 2x markup,
+down a quarter of the gap where he is loyal (three orders, the last within fourteen days) and
+above the ask, his own rate otherwise; then up to the ringgit. `adjustedPrice` in the module
+and `pbAdjusted` on the desk are the same rule and the suite proves it. One price per size,
+for the goods (v502): delivery is not on the list. It is a figure
 he types when he marks an order ready to deliver, the customer sees goods plus delivery as the
 sum to pay, and the sale carries it as its own field, `delivery`, inside the total. A customer
 with no history on a product sees the board's ask. Nothing outside the engine prices: the

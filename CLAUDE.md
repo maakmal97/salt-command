@@ -63,8 +63,8 @@ The fold routine is `docs/CLOUD_FOLD.md`; statements `docs/STATEMENTS.md`; desig
 ## The one surface
 
 **Retired at v387:** the phone app `public/index.html`, `public/data.json` and the
-claude.ai mirror. Neither file exists. The built desk is seven views over sixteen tabs
-(`VIEWS` in the master): Today, Orders and money, Stock, Price, Customers, The book,
+claude.ai mirror. The built desk is seven views over sixteen tabs
+(`VIEWS` in the master): Today, Orders and money, Inventory, Price, Customers, The book,
 Enter. Old tab ids remain addresses (`/desk#network`). In cloud mode the Enter view carries
 **Add ID** (a code queued as `addid`, drafted into the roster, approved, folded) and
 **Approve**; the laptop desk keeps Names & IDs and has no drafts table. Everything the
@@ -85,7 +85,7 @@ desk shows, cost and margin included, is served at the public URL.
 
 - **The fold is a judgement and stays with an agent**: rolling `STATED_STOCK`, the row
   NOTE, the `evolution` entry and what an amendment amends. CI never folds and holds no
-  secrets. Proved end to end on v480, 03 Sep 2026.
+  secrets.
 - **No clock** since 24 Aug 2026. `Salt fold (manual backup)` (trig_01UrnjQMWA3f6GXN5R6Dzi4S)
   is disabled, no cron: fire it by hand if the fold job fails. The stage stands down while
   `master/_to_fold.json` is still in HEAD.
@@ -102,13 +102,12 @@ desk shows, cost and margin included, is served at the public URL.
   `linkTo` or `orderCode`, a movement with no date, a product with no cost. Fulfilment,
   Cancellation, Modification and Correction go through the gate.
 - **The laptop's own queue takes the same road:** `node tools/drafts.mjs --from-queue`.
-  `serve_desk.py`'s timed drain was removed at v305. A ledger row edit (right-click on
-  `/desk`, tap on the phone) queues as a Correction; cost and NOTE are desk-only.
+  A ledger row edit (right-click on `/desk`, tap on the phone) queues as a Correction.
 - Endpoints: `GET /drafts?status=…`, `POST /drafts/<id>/approve|reject|committed`,
   `POST /draft-now?dry=1`, all keyed. Schema `migrations/0002`, `0003`. Nothing writes
   to `entry`.
-- **Cowork:** Salt left Cowork on 20 Aug 2026, yet root section 6 still lists
-  `salt-daily-price-brief`; Code cannot see that registry. Settle it from Cowork.
+- **Cowork:** Salt left Cowork on 20 Aug 2026; root section 6 still lists
+  `salt-daily-price-brief`. Settle it from Cowork.
 
 ## Sync and proof
 
@@ -169,8 +168,9 @@ losing it re-issues every account. `tools/make_statements.mjs` (the v387 desk's
 statement code, plain node) and `tools/qr.mjs` (byte mode, level M, versions 1 to 10) feed it.
 
 **Behind the password since v499 (06 Sep 2026): statements, prices, order.** The price
-list (`tools/pricelist.mjs`: median of the last four orders before the week's Monday, never
-below the engine's one floor; no history means the board's ask) is sealed in by the
+list (`tools/pricelist.mjs`: median of the last four orders before the week's Monday, drawn
+toward the board's ask by `adjustedPrice` (v510), never below the floor; no history means
+the ask) is sealed in by the
 publish, which opens the master in jsdom for the PRICING inputs. Orders live in the site's
 KV (`stmt/orders.js`) on a session `/open` mints; payment at `ready` only, one QR Command
 link per rail, accounts from `stmt/pay.js` (`tools/paysync.mjs`, no number ships). The desk

@@ -68,7 +68,7 @@ document.addEventListener('visibilitychange',function(){
    localStorage before it posts anything and the load reads it straight back.
    The same tick retries a held entry, which is what gets a phone write to the cloud
    without waiting for the next open. */
-var SALT_BUILD_ID="120574f8a14a83c7";
+var SALT_BUILD_ID="22b459d0188141bc";
 var SALT_REV_MS=10000;
 (function(){
   var chip=null,timer=null;
@@ -5468,7 +5468,9 @@ const whiteboard=[
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{"v":"v510","d":"07 Sep 2026","t":"TWO UNIT TO CR3-DAM AT RM 92.50, RM 35 LEFT ON ADVANCE","n":["<b>ONE APPROVED ROW.</b> 2 unit of salt to CR3-DAM on 07 Sep for RM 185, RM 92.50 a unit, collected in full on the day. Costed at the inventory's own RM 48 a unit, the 03 Sep lot of 25 unit from SA5-BTR, so RM 96 on the order and RM 89 gross, 48.1% on price.","<b>ABOVE THE FLOOR, UNDER THE ASK.</b> The floor for 2 unit reads RM 109.73 and the board's ask RM 220, so the order sits RM 75.27 above the floor and RM 35 under the ask. It is also CR3-DAM's first rate above RM 80 a unit since 03 Jul: each of their last nine orders was 1 unit at RM 80, and the drafter flagged this one 15.6% above their eleven-order average.","<b>AN ADVANCE OF RM 35.</b> RM 150 of the RM 185 was paid and both unit went out on 07 Sep. CR3-DAM carried nothing outstanding before this row, so the RM 35 is their whole exposure.","<b>THE INVENTORY ROLLS 7 TO 5.</b> The first movement off the 7 counted on 06 Sep. A roll and not a count; COUNT_ON.salt stays at 2026-09-06."]},
+const evolution=[{"v": "v511", "d": "07 Sep 2026", "t": "A CUSTOMER'S RATE IS DRAWN TOWARD THE BOARD", "n": ["<b>HIS INSTRUCTION, 07 SEP 2026, on the design fault that CR3-DAM's list read RM 160 at 2 units under a board asking RM 220:</b> his rate adjusted slightly higher if below the ask, up more if below the floor, down more if above a 2x markup (three times COGS), and down slightly if above the ask but loyal, by tier. Booked as one rule, adjustedPrice in tools/pricelist.mjs and pbAdjusted on the desk, the suite holding them equal on the real book: slightly is a quarter of the gap to the ask, more is half, never under the floor, never above the cap, then up to the ringgit. Loyal is the desk's own badge, three or more priced orders and the last within fourteen days. A customer with no history sees the board's ask. CR3-DAM at 2 units now reads RM 175: RM 160 plus a quarter of the RM 60 gap to the board."]},
+
+{"v":"v510","d":"07 Sep 2026","t":"TWO UNIT TO CR3-DAM AT RM 92.50, RM 35 LEFT ON ADVANCE","n":["<b>ONE APPROVED ROW.</b> 2 unit of salt to CR3-DAM on 07 Sep for RM 185, RM 92.50 a unit, collected in full on the day. Costed at the inventory's own RM 48 a unit, the 03 Sep lot of 25 unit from SA5-BTR, so RM 96 on the order and RM 89 gross, 48.1% on price.","<b>ABOVE THE FLOOR, UNDER THE ASK.</b> The floor for 2 unit reads RM 109.73 and the board's ask RM 220, so the order sits RM 75.27 above the floor and RM 35 under the ask. It is also CR3-DAM's first rate above RM 80 a unit since 03 Jul: each of their last nine orders was 1 unit at RM 80, and the drafter flagged this one 15.6% above their eleven-order average.","<b>AN ADVANCE OF RM 35.</b> RM 150 of the RM 185 was paid and both unit went out on 07 Sep. CR3-DAM carried nothing outstanding before this row, so the RM 35 is their whole exposure.","<b>THE INVENTORY ROLLS 7 TO 5.</b> The first movement off the 7 counted on 06 Sep. A roll and not a count; COUNT_ON.salt stays at 2026-09-06."]},
 
 {"v": "v509", "d": "07 Sep 2026", "t": "THE LAST THREE PLACES THE BOARD SAID DELIVERED OR COLLECTED FLOOR", "n": ["<b>Seen on the printed proof of v508:</b> the board table's last column still read \"Floor, delivered\", the sheet's read \"Floor, collected\", the board chart's dashed series was labelled \"floor, delivered\" and the sheet's under-floor notice named the collected floor. v502 retired the pair and these four captions were missed. They read Floor now. The board's third column reads Margin rather than Markup, the ask being a margin on the floor since v504; the figure beneath each ask already said so."]},
 
@@ -5767,7 +5769,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='07 Sep 2026, 14:23 KL';
+const LAST_UPDATED='07 Sep 2026, 15:37 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -15823,9 +15825,20 @@ function pbOwnRate(code){const before=pbWeekMonday();
     .sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0).slice(-4).map(s=>(s.total-(+s.delivery||0))/s.qty).sort((a,b)=>a-b);
   if(!rows.length)return {rate:null,orders:0};const n=rows.length;
   return {rate:+(n%2?rows[(n-1)/2]:(rows[n/2-1]+rows[n/2])/2).toFixed(2),orders:n};}
-function pbPrices(code){const own=pbOwnRate(code);
-  return shownSizes(PROD).slice().sort((a,b)=>a-b).map(q=>{const fl=floorTotal(q);
-    const price=own.rate!=null?Math.ceil(Math.max(own.rate*q,fl)):priceLadder(q).ask.total;return {q,price:+price.toFixed(2)};});}
+/* v510: HIS RATE, DRAWN TOWARD THE BOARD. The same rule, word for word, as adjustedPrice in
+   tools/pricelist.mjs, which seals the customer's page; the suite proves the two agree. */
+function pbAdjusted(Rr,F,A,cap,loyal){let x;
+  if(Rr<F)x=Math.max(F,Rr+0.5*(A-Rr));
+  else if(Rr<A)x=Rr+0.25*(A-Rr);
+  else if(Rr>cap)x=Math.max(A,Math.min(cap,Rr-0.5*(Rr-A)));
+  else x=loyal?Rr-0.25*(Rr-A):Rr;
+  return Math.ceil(Math.max(x,F)-1e-9);}
+function pbLoyal(code){const rows=pSales(PROD).filter(s=>s.customer===code&&!s.cancelled&&s.date&&s.total>0);
+  if(rows.length<3)return false;const last=rows.map(s=>s.date).sort().pop();
+  return (TODAY-new Date(last+'T00:00:00Z'))/86400000<=14;}
+function pbPrices(code){const own=pbOwnRate(code),loyal=pbLoyal(code);
+  return shownSizes(PROD).slice().sort((a,b)=>a-b).map(q=>{const fl=floorTotal(q),L=priceLadder(q);
+    const price=own.rate!=null?pbAdjusted(own.rate*q,fl,L.ask.total,3*L.cogs,loyal):L.ask.total;return {q,price:+price.toFixed(2)};});}
 async function pbUsers(){if(PB_USERS)return PB_USERS;if(!cloudMode())return {};
   try{const r=await fetch('stmt-users',{cache:'no-store',headers:qHeaders()});const j=r.ok?await r.json():null;
     const inv={};Object.keys((j&&j.users)||{}).forEach(u=>{inv[j.users[u]]=u;});PB_USERS=inv;}catch(e){PB_USERS=null;}
@@ -15835,7 +15848,7 @@ function pbCard(){
   const sizes=shownSizes(PROD).slice().sort((a,b)=>a-b);
   return `<div class="card" id="pbCard" style="margin-top:12px">
     <div class="cardh">Print a board <span class="sub">unit, price and the customer&rsquo;s username</span></div>
-    <div class="dsc">Choose the customer, tick the sizes, then Print, or on the phone Save as image (the share sheet offers Save Image and Save to Files) or Save as HTML (a file that opens anywhere). The prices are his own list where he has history and the board&rsquo;s ask where he has none, the same list his statement page shows this week. Copy as text puts the same lines on the clipboard.</div>
+    <div class="dsc">Choose the customer, tick the sizes, then Print, or on the phone Save as image (the share sheet offers Save Image and Save to Files) or Save as HTML (a file that opens anywhere). The prices are his own rate drawn toward the board: up a quarter of the way to the ask where he sits under it, up further where he sits under the floor, down where he sits above twice the markup, down a quarter of the way where he is loyal and above the ask; the board&rsquo;s ask where he has no history. The same list his statement page shows this week. Copy as text puts the same lines on the clipboard.</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px">
       <select id="pbWho" aria-label="Customer" style="min-height:44px;border:1px solid var(--brd);border-radius:8px;padding:8px 10px;font-size:14px;color:var(--ink);background:var(--wellbg)">${who.map(id=>`<option value="${esc(id)}">${esc(codeOf(id))}</option>`).join('')}</select>
       <button class="vbtn" id="pbPrint" type="button">Print</button>
