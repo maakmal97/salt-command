@@ -1,6 +1,6 @@
 {
- "v": "v498",
- "stamped": "06 Sep 2026, 21:36 KL",
+ "v": "v504",
+ "stamped": "07 Sep 2026, 08:32 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -46,6 +46,44 @@
    "salt": "2026-09-06",
    "oil": "2026-08-23"
   },
+  "COUNTS": [
+   {
+    "product": "salt",
+    "date": "2026-08-24",
+    "qty": null,
+    "was": null,
+    "drift": null,
+    "note": "anchor: the count the 15:70:15 leak split of 24 Aug was taken at; the figure itself was not recorded, so it bounds the next cycle and charges nothing"
+   },
+   {
+    "product": "salt",
+    "date": "2026-09-02",
+    "qty": 10.5,
+    "was": 18.75,
+    "drift": -8.25
+   },
+   {
+    "product": "salt",
+    "date": "2026-09-04",
+    "qty": 9.8,
+    "was": null,
+    "drift": 0
+   },
+   {
+    "product": "salt",
+    "date": "2026-09-06",
+    "qty": 7,
+    "was": 8.3,
+    "drift": -1.3
+   },
+   {
+    "product": "oil",
+    "date": "2026-08-23",
+    "qty": 15,
+    "was": null,
+    "drift": null
+   }
+  ],
   "purchases": [
    {
     "date": "2026-06-27",
@@ -3355,7 +3393,7 @@
   ],
   "QUEUE_COMMITTED": "2026-09-06T13:42:00.000Z",
   "PRICING": {
-   "takenAt": "2026-09-06T13:38:05.576Z",
+   "takenAt": "2026-09-07T00:34:42.079Z",
    "sizes": [
     0.5,
     1,
@@ -3382,55 +3420,43 @@
    "byProduct": {
     "salt": {
      "stockCost": 48,
-     "replCost": 48.33,
+     "replCost": 48.67,
      "floors": {
       "1": {
-       "delivered": 87.92,
-       "collected": 77.92
+       "floor": 54.87
       },
       "2": {
-       "delivered": 140.84,
-       "collected": 130.84
+       "floor": 109.73
       },
       "3": {
-       "delivered": 193.76,
-       "collected": 183.76
+       "floor": 164.6
       },
       "4": {
-       "delivered": 246.68,
-       "collected": 236.68
+       "floor": 219.46
       },
       "5": {
-       "delivered": 299.6,
-       "collected": 289.6
+       "floor": 274.33
       },
       "0.5": {
-       "delivered": 61.46,
-       "collected": 51.46
+       "floor": 27.43
       },
       "1.5": {
-       "delivered": 114.38,
-       "collected": 104.38
+       "floor": 82.3
       },
       "2.5": {
-       "delivered": 167.3,
-       "collected": 157.3
+       "floor": 137.16
       },
       "3.5": {
-       "delivered": 220.22,
-       "collected": 210.22
+       "floor": 192.03
       },
       "4.5": {
-       "delivered": 273.14,
-       "collected": 263.14
+       "floor": 246.9
       },
       "6.25": {
-       "delivered": 365.75,
-       "collected": 355.75
+       "floor": 342.91
       },
       "12.5": {
-       "delivered": 696.51,
-       "collected": 686.51
+       "floor": 685.82
       }
      },
      "inputs": {
@@ -3466,8 +3492,8 @@
          "date": "2026-09-03",
          "sup": "SA5-BTR"
         },
-        "days": 31,
-        "sinceLot": 40
+        "days": 32,
+        "sinceLot": 41
        },
        "lockBase": {
         "lockedOn": "2026-08-06",
@@ -3502,13 +3528,22 @@
        },
        "meanLot": 23.828125,
        "quoteRate": 56,
-       "repl": 48.33,
+       "repl": 48.67,
+       "freightRate": 0,
+       "leak": {
+        "ratio": 0.1273,
+        "leak": 9.55,
+        "sold": 75,
+        "cycles": 3,
+        "from": "2026-08-24",
+        "to": "2026-09-06"
+       },
        "costBasis": {
         "freightPerTrip": {
-         "rm": 30
+         "rm": 0
         },
         "txnPerDelivery": {
-         "rm": 10
+         "rm": 0
         },
         "deliveredShare": {
          "v": 0.375
@@ -3532,7 +3567,10 @@
          "lo": 0.5,
          "hi": 12.5
         },
-        "basis": "cogs",
+        "basis": "floor",
+        "anchorG": 0.47,
+        "gLo": 0.25,
+        "gHi": 0.667,
         "round": {
          "to": 10,
          "up": true
@@ -3540,7 +3578,7 @@
         "taper": "supplier"
        },
        "minPerUnit": 0,
-       "timePerOrder": 25,
+       "timePerOrder": 0,
        "lotFloor": {},
        "stated": {},
        "tiers": [
@@ -3589,55 +3627,43 @@
     },
     "oil": {
      "stockCost": 7.6667,
-     "replCost": 7.25,
+     "replCost": 7.15,
      "floors": {
       "1": {
-       "delivered": 43.36,
-       "collected": 33.36
+       "floor": 7.53
       },
       "2": {
-       "delivered": 51.73,
-       "collected": 41.73
+       "floor": 15.06
       },
       "3": {
-       "delivered": 60.09,
-       "collected": 50.09
+       "floor": 22.59
       },
       "4": {
-       "delivered": 68.45,
-       "collected": 58.45
+       "floor": 30.12
       },
       "5": {
-       "delivered": 76.82,
-       "collected": 66.82
+       "floor": 37.65
       },
       "0.5": {
-       "delivered": 39.18,
-       "collected": 29.18
+       "floor": 3.76
       },
       "1.5": {
-       "delivered": 47.55,
-       "collected": 37.55
+       "floor": 11.29
       },
       "2.5": {
-       "delivered": 55.91,
-       "collected": 45.91
+       "floor": 18.82
       },
       "3.5": {
-       "delivered": 64.27,
-       "collected": 54.27
+       "floor": 26.35
       },
       "4.5": {
-       "delivered": 72.64,
-       "collected": 62.64
+       "floor": 33.88
       },
       "6.25": {
-       "delivered": 87.27,
-       "collected": 77.27
+       "floor": 47.06
       },
       "12.5": {
-       "delivered": 139.54,
-       "collected": 129.54
+       "floor": 94.12
       }
      },
      "inputs": {
@@ -3673,8 +3699,8 @@
          "date": "2026-08-26",
          "sup": "SP7-PUD"
         },
-        "days": 31,
-        "sinceLot": 31
+        "days": 32,
+        "sinceLot": 32
        },
        "lockBase": {
         "lockedOn": "2026-08-06",
@@ -3709,13 +3735,15 @@
        },
        "meanLot": 43.333333333333336,
        "quoteRate": 10,
-       "repl": 7.25,
+       "repl": 7.15,
+       "freightRate": 0,
+       "leak": null,
        "costBasis": {
         "freightPerTrip": {
-         "rm": 30
+         "rm": 0
         },
         "txnPerDelivery": {
-         "rm": 10
+         "rm": 0
         },
         "deliveredShare": {
          "v": 0
@@ -3739,7 +3767,10 @@
          "lo": 10,
          "hi": 50
         },
-        "basis": "cogs",
+        "basis": "floor",
+        "anchorG": 0.36,
+        "gLo": 0,
+        "gHi": 0.667,
         "round": {
          "to": 10,
          "up": true
@@ -3747,7 +3778,7 @@
         "taper": "supplier"
        },
        "minPerUnit": 0,
-       "timePerOrder": 25,
+       "timePerOrder": 0,
        "lotFloor": {},
        "stated": {
         "10": 130,
@@ -3789,10 +3820,10 @@
      }
     }
    },
-   "v": "v498"
+   "v": "v504"
   },
   "OPEN": {
-   "at": "2026-09-06T13:38:05.606Z",
+   "at": "2026-09-07T00:34:42.109Z",
    "count": 5,
    "byKey": {
     "CM4-MK|2026-09-04|360": {
@@ -3808,7 +3839,7 @@
      "rid": "s132",
      "deliveredOn": "2026-09-04",
      "key": "CM4-MK|2026-09-04|360",
-     "age": 2,
+     "age": 3,
      "exp": 60
     },
     "CA4-DAM|2026-09-02|160": {
@@ -3826,7 +3857,7 @@
      "handover": "collected",
      "defaulted": true,
      "key": "CA4-DAM|2026-09-02|160",
-     "age": 4,
+     "age": 5,
      "exp": 0
     },
     "CN6-WM|2026-08-30|110": {
@@ -3843,8 +3874,8 @@
      "deliveredOn": "2026-08-30",
      "handover": "delivered",
      "key": "CN6-WM|2026-08-30|110",
-     "age": 7,
-     "exp": 82.5
+     "age": 8,
+     "exp": 55
     },
     "CA4-DAM|2026-08-28|100": {
      "d": "2026-08-28",
@@ -3861,7 +3892,7 @@
      "handover": "collected",
      "defaulted": true,
      "key": "CA4-DAM|2026-08-28|100",
-     "age": 9,
+     "age": 10,
      "exp": 0
     },
     "SF6-KLC|2026-07-08|750": {
@@ -3907,7 +3938,7 @@
     "salt": "2026-09-06",
     "oil": "2026-08-23"
    },
-   "v": "v498"
+   "v": "v504"
   }
  }
 }

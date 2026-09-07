@@ -1,5 +1,16 @@
 [
  {
+  "v": "v504",
+  "d": "07 Sep 2026",
+  "t": "THE LAST THREE LOTS, THE LEAK FROM THE COUNTS, THE ASK AS A MARGIN ON THE FLOOR, AND THE INVENTORY",
+  "n": [
+   "<b>HIS INSTRUCTIONS OF 07 SEP 2026, BOOKED AS ONE VERSION.</b> The replacement window is the last three lots received, not thirty days: salt lands a lot every four or five days and oil every ten to fifteen, so one calendar window was six cycles on one book and two on the other. The rate and the typed freight both read off those three lots (pxWindowLots).",
+   "<b>THE LEAK IS CHARGED FROM THE COUNTS.</b> A count is taken when a lot lands and the inventory is near empty, so the drift at each count is that cycle's leak, every use included. The book now keeps COUNTS, every count as taken, seeded from the fold notes of v473, v489 and v498, and the fold appends one line per count. pxLeakCharge() takes the units missing over the last three cycles over the units handed over in them, and the cost stack applies that ratio to landed in place of the lifetime share and the attribution lever, which stand in only where no cycle can be read.",
+   "<b>THE ASK IS A MARGIN ON THE FLOOR.</b> One basis: the floor is what a size costs to take out, and the ask is the floor at the size's margin on price, sliding on the supplier's taper, pinned at anchorG on anchorQ (0.47 on salt's 2.5 unit, 0.36 on oil's 10, each set so the board did not move on the day) and clamped between gLo and gHi. ladderMargin() beside ladderMarkup(); the walk, the rate law and the floor guard are unchanged. The margin the board prints is now the P&L's gross margin to the point.",
+   "<b>INVENTORY, NOT SHELF OR STOCK.</b> Every place the desk's copy said shelf or stock now says inventory; the Stock view is the Inventory view at the same address. Identifiers, addresses and the history are untouched."
+  ]
+ },
+ {
   "v": "v503",
   "d": "07 Sep 2026",
   "t": "FREIGHT IS TYPED ON EACH LOT",

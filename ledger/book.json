@@ -42,6 +42,13 @@
     "salt": "2026-09-06",
     "oil": "2026-08-23"
   },
+  "COUNTS": [
+    {"product":"salt","date":"2026-08-24","qty":null,"was":null,"drift":null,"note":"anchor: the count the 15:70:15 leak split of 24 Aug was taken at; the figure itself was not recorded, so it bounds the next cycle and charges nothing"},
+    {"product":"salt","date":"2026-09-02","qty":10.5,"was":18.75,"drift":-8.25},
+    {"product":"salt","date":"2026-09-04","qty":9.8,"was":null,"drift":0},
+    {"product":"salt","date":"2026-09-06","qty":7,"was":8.3,"drift":-1.3},
+    {"product":"oil","date":"2026-08-23","qty":15,"was":null,"drift":null}
+  ],
   "purchases": [
     {"date":"2026-06-27","qty":12.5,"total":800,"supplier":"SF6-KLC","status":"paid","rid":"p001"},
     {"date":"2026-07-01","qty":12.5,"total":800,"supplier":"SF6-KLC","status":"paid","rid":"p002"},
@@ -452,6 +459,9 @@
     ],
     "PROD_OPENING": [
       "ROLLED AT v439 (oil): 5 unit to CA7-JTR on 2026-09-01, so 20 less 5 is 15. A ROLL AND NOT A COUNT; COUNT_ON is untouched."
+    ],
+    "COUNTS": [
+      "EVERY COUNT, AS TAKEN (v504, 07 Sep 2026): product, date, the figure counted, what the roll said and the drift, negative when units are missing. The fold appends one line per count. A count with no drift bounds a cycle and charges nothing; the 24 Aug anchor is one. Seeded from the fold notes of v473 (02 Sep, 10.5 against 18.75), v489 (04 Sep, 9.8 entered net of a rolled sale, no drift) and v498 (06 Sep, 7 against 8.3); the oil count of 23 Aug has no recorded drift. The leak is charged from these: the units missing over the last three cycles, at landed, over the units sold in them."
     ]
   }
 }

@@ -24,6 +24,7 @@ export const LEDGER = {
      difference between a figure somebody looked at and a figure the arithmetic produced,
      and the week to 20 Aug proved that distinction is worth 24 unit. A roll never moves it. */
   COUNT_ON: "COUNT_ON",
+  COUNTS: "COUNTS",   /* v504: every count as taken, the leak's measurement */
   purchases: "BASE_PURCHASES",
   sales: "BASE_SALES",
   contacts: "BASE_CONTACTS",

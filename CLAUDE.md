@@ -37,10 +37,14 @@ The fold routine is `docs/CLOUD_FOLD.md`; statements `docs/STATEMENTS.md`; desig
    build fails on an external `src`, `url(` or `@import`. CSP in `public/_headers` is
    `connect-src 'self'` and otherwise self-only, so Georgia and Consolas stand in for
    Fraunces and JetBrains Mono.
-5. **RM and unit only**; the mass symbol was retired at v161. **One floor per size, the
-   goods after the leak (v502); no delivery, no time in it.** A sale carries `delivery`
-   (inside its total) and a lot carries `freight` (beside it), both typed per row (v503);
-   `txGoods` strikes every rate on the goods, and freight per unit comes from the lots.
+5. **RM and unit only**; the mass symbol was retired at v161. **Inventory, never shelf or
+   stock, in copy (v504).** One floor per size, the goods after the leak; no delivery, no
+   time in it (v502). A sale carries `delivery` (inside its total) and a lot `freight`
+   (beside it), typed per row (v503); `txGoods` strikes every rate on the goods. **The window
+   is the last three lots** (rate and freight); **the leak is the drift of the last three
+   counts** (`COUNTS` on the book, appended by every fold) over the units sold in those
+   cycles, at landed; **the ask is a margin on the floor** (`ladderMargin`, `anchorG` per
+   book), all v504.
 6. **The look is the Salt design system applied as a layer.** Material, type and colour
    are decided in `design/desk.css` over the vendored `design/salt-ds.css`; a colour or
    type change is an edit there, then `--sync`, then build, never a hex in the master's
@@ -90,22 +94,19 @@ desk shows, cost and margin included, is served at the public URL.
   for a staged `_to_fold.json`. Ask him one line per pending item; never approve for him;
   fold anything approved into that version.
 - **What is approved is the ROW, not the entry.** The phone leads with cost and margin
-  read from the draft; it computes nothing. Flags: rate against the product's observed
-  range, the party's median, the live floor, below cost, blended shelf, unknown party,
-  advance, stale `PRICING` snapshot. A purchase is never measured with a seller's ruler.
+  read from the draft and computes nothing; the drafter's flags do the measuring, and a
+  purchase is never measured with a seller's ruler.
 - **The drafter is arithmetic, never a model**, and never prices: it reads the `PRICING`
-  state key that `tools/book.mjs pricingSnapshot()` derives from the engine. It refuses,
-  records in `refused` (visible on the phone, no buttons, self-cleaning) and leaves for a
-  person: Linked and Rewarded amendments, `linkTo` or `orderCode`, a movement with no
-  date, a product with no cost. Fulfilment, Cancellation, Modification and Correction go
-  through the gate; associate, stream and downstream are checked, not refused.
+  state key `tools/book.mjs pricingSnapshot()` derives from the engine. It refuses and
+  records in `refused` (on the phone, self-cleaning): Linked and Rewarded amendments,
+  `linkTo` or `orderCode`, a movement with no date, a product with no cost. Fulfilment,
+  Cancellation, Modification and Correction go through the gate.
 - **The laptop's own queue takes the same road:** `node tools/drafts.mjs --from-queue`.
   `serve_desk.py`'s timed drain was removed at v305. A ledger row edit (right-click on
   `/desk`, tap on the phone) queues as a Correction; cost and NOTE are desk-only.
-- Endpoints: `GET /drafts?status=…[&uncommitted=1]`, `POST /drafts`,
-  `POST /drafts/<id>/approve|reject|committed`, `POST /draft-now?dry=1` with the write
-  key. Schema `migrations/0002_draft.sql`, `0003_refused.sql`. `draft` is the first table
-  the cloud owns; nothing writes to `entry`.
+- Endpoints: `GET /drafts?status=…`, `POST /drafts/<id>/approve|reject|committed`,
+  `POST /draft-now?dry=1`, all keyed. Schema `migrations/0002`, `0003`. Nothing writes
+  to `entry`.
 - **Cowork:** Salt left Cowork on 20 Aug 2026, yet root section 6 still lists
   `salt-daily-price-brief`; Code cannot see that registry. Settle it from Cowork.
 

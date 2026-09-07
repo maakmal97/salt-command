@@ -30,7 +30,7 @@ const prodOf = (r) => (r && r.product) || "salt";
 /* ---- reading the book out of the mirror ------------------------------------------- */
 /* One query per collection, plus the state singletons. The mirror is kept level by the same
  * pass that commits, so a snapshot older than the master means the run should flag, not
- * proceed: pricing off a stale shelf is how a wrong cost reaches an approval screen looking
+ * proceed: pricing off a stale inventory is how a wrong cost reaches an approval screen looking
  * authoritative. */
 import PRICING_ENGINE from "../engine/pricing.mjs";
 import POSITION_ENGINE from "../engine/position.mjs";
@@ -173,10 +173,10 @@ export function checkCorrection(fields, book, target, isSale) {
     if (fields[k] === null) delete after[k]; else after[k] = fields[k];
   }
   /* round six: cancelled-and-delivered is a contradiction the desk then chases as money owed
-     while the delivered unit leaves the shelf uncosted. The two fields are individually
+     while the delivered unit leaves the inventory uncosted. The two fields are individually
      correctable, so the PAIR is checked here, on the state the correction would leave. */
   /* v407, round seven: a LOT records receivedQty, so a Correction cancelling a landed lot walked
-     past a gate that tested deliveredQty alone, kept its units on the shelf and its cost in the
+     past a gate that tested deliveredQty alone, kept its units on the inventory and its cost in the
      basis, and therefore moved wavgBuy and every floor beneath it. Whichever field the direction
      uses, the contradiction is the same one. */
   /* v421: CALL THE RULE, DO NOT RETYPE IT. v413 hand-rolled the received-in-full convention here
@@ -224,7 +224,7 @@ export function checkCorrection(fields, book, target, isSale) {
     flags.push(`This row carries a trail of ${target.amend.length} step${target.amend.length === 1 ? "" : "s"}. Setting the figure directly does not rewrite them, so the trail will no longer add up to it; the correction is recorded beside them saying so.`);
   }
   if (changes.some((c) => c.field === "cost")) {
-    flags.push("A cost typed here overrides what the shelf says this row drew, and it is what every margin on the row is then measured against.");
+    flags.push("A cost typed here overrides what the inventory says this row drew, and it is what every margin on the row is then measured against.");
   }
   if (changes.some((c) => c.field === "cancelled" && c.to === true)) {
     flags.push("Cancelling takes this row out of every figure on the desk: the revenue, the stock it drew and anything owed on it.");
@@ -240,11 +240,11 @@ export function checkCorrection(fields, book, target, isSale) {
 }
 
 /* ---- the lot the row draws --------------------------------------------------------- */
-/* THE DESK'S OWN ANSWER FIRST. stockCost is what the master says the shelf is carried at, and
+/* THE DESK'S OWN ANSWER FIRST. stockCost is what the master says the inventory is carried at, and
  * it is the number every recent row has used. It is preferred over anything computed here for
  * the reason the whole file exists: two engines drift.
  *
- * The FIFO walk below is a CHECK on that, not a replacement. Where the shelf spans two lots the
+ * The FIFO walk below is a CHECK on that, not a replacement. Where the inventory spans two lots the
  * single figure is an average and the true cost of the next unit out depends on which lot it
  * comes off; that is exactly the case that produced the RM54.20 blend on 14 Aug, and it is
  * flagged rather than silently averaged. */
@@ -266,14 +266,14 @@ export function costFor(book, product) {
      and the true cost of the next unit out depends which one it draws.
      The first version of this compared the last few PURCHASE rates instead, which was wrong in
      the way that matters: it would have flagged a blend on every row for ever after any rate
-     change, including now, when the shelf is a single RM56 lot and the RM47 remnant is gone.
+     change, including now, when the inventory is a single RM56 lot and the RM47 remnant is gone.
      A flag that fires when nothing is wrong is worse than no flag, because it teaches the
      reader to tap through. */
   const blend = (deskCost != null && latest != null) ? Math.abs(deskCost - latest.rate) > 0.005 : false;
 
   return {
     cost: deskCost != null ? deskCost : (latest ? latest.rate : null),
-    source: deskCost != null ? "the desk's own shelf cost" : (latest ? "the newest received lot" : null),
+    source: deskCost != null ? "the desk's own inventory cost" : (latest ? "the newest received lot" : null),
     latestRate: latest ? latest.rate : null,
     mayBlend: blend
   };
@@ -404,24 +404,24 @@ export function flagsFor(entry, row, book, priced) {
   /* 4. BELOW COST. Separate from the floor because it is a different fact and the book has
         actually done it: the RM6 oil resell of 11 Aug. */
   /* v407, round seven: a cost typed on the full order sheet reached the row and not this flag,
-     which priced off the shelf, so an under-water row drew no flag and the prose beside it called
+     which priced off the inventory, so an under-water row drew no flag and the prose beside it called
      it profitable while the card's own KPI grid printed the opposite number. The row's own stated
      cost wins where there is one, because that is what every margin on the row is measured
      against once it lands. */
-  /* v496: the row's cost is absolute; the unit figure is the engine's derivation, and the shelf's figure is already per unit. */
+  /* v496: the row's cost is absolute; the unit figure is the engine's derivation, and the inventory's figure is already per unit. */
   const ownCost = isNum(row && row.cost) ? POSITION_ENGINE.txUnitCost(row, priced.cost) : (isNum(priced.cost) ? priced.cost : null);
   if (isSale && ownCost != null && rate != null && rate < ownCost) {
-    flags.push(`This sells at RM ${round(rate)}/unit against a cost of RM ${round(ownCost)}${isNum(row && row.cost) ? " stated on the row itself" : " from the shelf"}: it loses money on every unit.`);
+    flags.push(`This sells at RM ${round(rate)}/unit against a cost of RM ${round(ownCost)}${isNum(row && row.cost) ? " stated on the row itself" : " from the inventory"}: it loses money on every unit.`);
   }
 
   /* 5. A BLENDED SHELF. The cost given is an average and the row may in truth draw two lots. */
   if (priced.mayBlend) {
-    flags.push(`The shelf spans more than one lot rate, so RM ${round(priced.cost)}/unit is the shelf average rather than the lot this row draws. Check the blend before approving.`);
+    flags.push(`The inventory spans more than one lot rate, so RM ${round(priced.cost)}/unit is the inventory average rather than the lot this row draws. Check the blend before approving.`);
   }
 
   /* 6. A PARTY THIS BOOK DOES NOT KNOW. Checked against the right list for the direction: the
         roster names customers, and a supplier is known by having supplied before. Getting this
-        wrong told me SA5-BTR, who has sold the desk almost everything on the shelf, had "no
+        wrong told me SA5-BTR, who has sold the desk almost everything on the inventory, had "no
         committed salt order", which is true and completely beside the point. */
   if (party) {
     if (isSale) {
@@ -440,7 +440,7 @@ export function flagsFor(entry, row, book, priced) {
     flags.push(`This is an ADVANCE: ${row.deliveredQty} unit goes out with RM ${round(total - row.cash)} unpaid. Check it against ${party}'s credit cap.`);
   }
 
-  /* 8. A STALE SNAPSHOT prices the row off a shelf that has since moved. */
+  /* 8. A STALE SNAPSHOT prices the row off a inventory that has since moved. */
   if (book.pricing && book.version && book.pricing.v && book.pricing.v !== book.version) {
     flags.push(`The pricing snapshot was taken at ${book.pricing.v} but the mirror is at ${book.version}, so the cost and floors here may be stale.`);
   }
@@ -548,7 +548,7 @@ export function draftRow(entry, book) {
         flags.push("This lot is marked pending, which means nothing has moved, and this records money or stock against it. Untick pending if it is no longer agreed-only.");
       }
       if (chk.changes.some((c) => c.field === "product") && isSale && priced.cost != null && isNum(target.cost) && Math.abs(priced.cost - POSITION_ENGINE.txUnitCost(target, priced.cost)) > 0.005) {
-        flags.push(`The row carries RM ${round(POSITION_ENGINE.txUnitCost(target, priced.cost))}/unit of cost from its old product. ${product} costs RM ${round(priced.cost)}/unit off the shelf, so this row's margin moves when it is recosted.`);
+        flags.push(`The row carries RM ${round(POSITION_ENGINE.txUnitCost(target, priced.cost))}/unit of cost from its old product. ${product} costs RM ${round(priced.cost)}/unit off the inventory, so this row's margin moves when it is recosted.`);
       }
 
       const words = chk.changes.map((c) => `${c.field} from ${c.from == null ? "unset" : c.from} to ${c.to == null ? "cleared" : c.to}`);
@@ -704,7 +704,7 @@ export function draftRow(entry, book) {
    * be stored. The desk's own applyOverlay already applies the first three exactly as the fold
    * will, so nothing here is invented: it is the same treatment, made permanent.
    *
-   * WHAT IS BEING APPROVED IS NOT THE FACT, IT IS WHAT THE FACT MEANS. He looked at the shelf;
+   * WHAT IS BEING APPROVED IS NOT THE FACT, IT IS WHAT THE FACT MEANS. He looked at the inventory;
    * that is not in dispute. What the tap is for is seeing the drift with the part that matters
    * attached, which on 20 Aug was that a count of zero against a roll of 8.05 included SIX UNIT
    * somebody had already paid for. Read as ordinary shrinkage it would have missed that. */
@@ -724,11 +724,11 @@ export function draftRow(entry, book) {
       if (Math.abs(drift) < 0.005) {
         flags.push(`The book says ${round(pos.onHand)} and you counted the same. Nothing is unaccounted for, which is the first time that can be said since the last count.`);
       } else {
-        flags.push(`The book says ${round(pos.onHand)} and you counted ${round(q)}: ${drift > 0 ? "+" : ""}${drift} unit unaccounted for. A COUNT ALWAYS WINS, so this becomes the shelf and the gap books as shrinkage across every unit sold.`);
+        flags.push(`The book says ${round(pos.onHand)} and you counted ${round(q)}: ${drift > 0 ? "+" : ""}${drift} unit unaccounted for. A COUNT ALWAYS WINS, so this becomes the inventory and the gap books as shrinkage across every unit sold.`);
       }
       /* THE PART THAT IS NOT SHRINKAGE. Stock owed out is paid for and belongs to somebody. */
       if (drift != null && drift < -0.005 && isNum(pos.owedOut) && pos.owedOut > 0.005) {
-        flags.push(`${round(pos.owedOut)} unit of this shelf is OWED OUT and already paid for. If the count is right, that stock is not there to deliver, which is a different problem from shrinkage and a worse one.`);
+        flags.push(`${round(pos.owedOut)} unit of this inventory is OWED OUT and already paid for. If the count is right, that stock is not there to deliver, which is a different problem from shrinkage and a worse one.`);
       }
       if (q < 0.005 && isNum(pos.promised) && pos.promised > 0.005) {
         flags.push(`Counting zero against ${round(pos.promised)} unit of promises means every open order on the book is unmeetable until a lot lands.`);
@@ -751,7 +751,7 @@ export function draftRow(entry, book) {
   if (pay.mode === "loss") {
     const prod = pay.product || "salt";
     const q = isNum(pay.kg) ? +pay.kg : (isNum(pay.qty) ? +pay.qty : null);
-    if (q == null || !(q > 0)) return { skip: "a loss needs a quantity that actually left the shelf" };
+    if (q == null || !(q > 0)) return { skip: "a loss needs a quantity that actually left the inventory" };
     const when = pay.date || null;
     if (!when) return { skip: "a loss needs a date, and dating it is a judgement" };
     const why = String(pay.why || "").trim();
@@ -761,16 +761,16 @@ export function draftRow(entry, book) {
     const flags = [];
     if (pos && isNum(pos.onHand)) {
       if (q > pos.onHand + 0.005) {
-        flags.push(`This is ${round(q)} unit against a shelf the book puts at ${round(pos.onHand)}. Losing more than you hold means the shelf figure is already wrong, and a COUNT would say more than this entry can.`);
+        flags.push(`This is ${round(q)} unit against a inventory the book puts at ${round(pos.onHand)}. Losing more than you hold means the inventory figure is already wrong, and a COUNT would say more than this entry can.`);
       } else if (pos.onHand > 0.005 && q / pos.onHand >= 0.25) {
-        flags.push(`That is ${round(q / pos.onHand * 100, 1)}% of the shelf.`);
+        flags.push(`That is ${round(q / pos.onHand * 100, 1)}% of the inventory.`);
       }
     }
     return {
       collection: "loss",
       row: { date: when, product: prod, kg: q, why, note: pay.note || null },
       flags,
-      reasoning: `${round(q)} unit of ${prod} left the shelf without a sale on ${when}: ${why}.`
+      reasoning: `${round(q)} unit of ${prod} left the inventory without a sale on ${when}: ${why}.`
         + " It draws stock and books no revenue, so it lands in selfUseLog and raises the effective cost of everything else.",
     };
   }
@@ -789,7 +789,7 @@ export function draftRow(entry, book) {
     /* THE ONE COMPARISON WORTH MAKING: was it lost for want of stock, which is a buying
        decision, or for some other reason, which is a pricing or a relationship one. */
     if (pos && isNum(pos.onHand) && pos.onHand < q) {
-      flags.push(`The shelf held ${round(pos.onHand)} against ${round(q)} wanted, so this was lost for want of stock rather than on price. That is a restock signal, not a pricing one.`);
+      flags.push(`The inventory held ${round(pos.onHand)} against ${round(q)} wanted, so this was lost for want of stock rather than on price. That is a restock signal, not a pricing one.`);
     }
     return {
       collection: "lostDemand",
@@ -922,7 +922,7 @@ export function draftRow(entry, book) {
   const deliveredInFull = moved >= qty - 0.005;
   const nothingMoved = cash < 0.005 && moved < 0.005;
 
-  /* v496: the shelf prices per unit; the row's cost is the order's, absolute. */
+  /* v496: the inventory prices per unit; the row's cost is the order's, absolute. */
   const row = { customer: party, qty, total, cost: round(priced.cost * qty), cash: round(cash) };
   /* v502: the delivery charge inside the total, typed per order; absent or zero means none */
   if (isNum(pay.delivery) && pay.delivery > 0.005) {

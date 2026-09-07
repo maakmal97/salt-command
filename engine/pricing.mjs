@@ -97,8 +97,14 @@ function costStack(I){
      only the cost is being probed, the leak is held at the locked figure (v240); off the locked
      path it reads live (v280). */
   const raw=pxOver.shrink!=null?+pxOver.shrink/100:((I.lockOn&&LKb)?LKb.shrinkRaw:I.shrinkRate);
-  const sh=raw*SHRINK_ATTRIB;
-  const yielded=landed/Math.max(0.01,1-sh);
+  /* v504, his instruction of 07 Sep 2026: THE LEAK IS CHARGED IN FULL FROM THE COUNTS. I.leak is
+     the desk's reading of the last three count cycles: the units missing at each count, over the
+     units sold in those cycles, as a ratio; every lost unit, whatever it was used for, priced at
+     landed and carried by the units that sell. Where no cycle can be read the lifetime share
+     and the attribution lever stand in, exactly as before. */
+  const lc=(pxOver.shrink==null&&I.leak&&I.leak.ratio!=null)?+I.leak.ratio:null;
+  const sh=lc!=null?lc/(1+lc):raw*SHRINK_ATTRIB;
+  const yielded=lc!=null?landed*(1+lc):landed/Math.max(0.01,1-sh);
   /* 4. GETTING THEM TO THE CUSTOMER. Per order, so divided by what an average order carries. */
   const del=(I.lockOn&&LKb&&pxOver.cost!=null)?{n:LKb.delN,mean:LKb.avgDel}:I.avgDel;   // v384: see the freight note above
   const txn=del.mean?(COST_BASIS.deliveredShare.v*COST_BASIS.txnPerDelivery.rm)/del.mean:0;
@@ -159,6 +165,19 @@ function ladderCogs(q,C){
   const per=(C.landed!=null?C.landed:C.eff);
   return +(per*q).toFixed(4);
 }
+/* v504: THE ASK IS A MARGIN ON THE FLOOR, one basis (his instruction, 07 Sep 2026). The floor is
+   what a size costs to take out; the margin on price slides with size on the same supplier taper
+   the markup used, pinned at anchorG on anchorQ and clamped between gLo and gHi. A LADDER with
+   no anchorG keeps the markup road. */
+function ladderMargin(q,P){
+  const LADDER=P.LADDER; if(LADDER.anchorG==null)return null;
+  const lo=LADDER.at.lo, hi=LADDER.at.hi;
+  const x=Math.min(hi,Math.max(lo,+q||lo));
+  const T=(typeof LADDER.taper==='number')?{b:LADDER.taper}:buyTaper(P.tiers);
+  const b=(T&&T.b!=null)?T.b:0;
+  const g=LADDER.anchorG*Math.pow(x/LADDER.anchorQ,b);
+  return Math.min(LADDER.gHi!=null?LADDER.gHi:0.9,Math.max(LADDER.gLo!=null?LADDER.gLo:0,g));
+}
 /* the house rounding, and it is UP. A floor is never rounded. */
 function ladderRound(v,LADDER){const to=LADDER.round.to; return LADDER.round.up?Math.ceil(v/to)*to:Math.round(v/to)*to;}
 /* ============ THE RATE MAY NOT RISE WITH SIZE, AND ROUNDING UP IS WHAT BREAKS IT (v328) ============
@@ -180,10 +199,12 @@ function ladderWalk(sizes,C,P){
        lot may never cost more per unit, and that is the honest consequence rather than a fault.
        A stated price under its own floor is not honoured; the floor guard lifts it and says so. */
     const set=(P.stated||{})[String(q)];
-    let p=(set!=null&&+set>0)?+set:ladderRound(cogs*(1+ladderMarkup(q,P)),LADDER);
+    const fl=floorTotal(q,C,P);
+    const g=ladderMargin(q,P);
+    let p=(set!=null&&+set>0)?+set:(g!=null?ladderRound(fl/(1-g),LADDER):ladderRound(cogs*(1+ladderMarkup(q,P)),LADDER));
     if(q>0&&prevRate<Infinity&&p/q>prevRate+1e-9){
       const stepped=Math.floor((prevRate*q+1e-9)/LADDER.round.to)*LADDER.round.to;
-      const least=cogs*(1+LADDER.floor);          // never step down through the floor
+      const least=g!=null?fl:cogs*(1+LADDER.floor);   // never step down through the floor
       if(stepped>0&&stepped>=least-0.009)p=stepped;
     }
     /* v352: AND NEVER UNDER THE FLOOR, WHICH IS THE HOUSE RULE ALREADY WRITTEN DOWN. v263 put it
@@ -194,7 +215,6 @@ function ladderWalk(sizes,C,P){
        because 34 of the 105 unit ever bought were given away and the price now carries that.
        IT RAISES TO THE NEXT GRID STEP ABOVE THE FLOOR, never to the exact floor, because an ask
        equal to its refusal line leaves nothing and is not an ask. */
-    const fl=floorTotal(q,C,P,null,{collects:true});
     if(fl>p+0.009)p=Math.ceil((fl+0.009)/LADDER.round.to)*LADDER.round.to;
     out.push({q:q,p:p});
     if(q>0)prevRate=Math.min(prevRate,p/q);
@@ -264,11 +284,16 @@ function priceLadder(q,C,P,opts){
             margin:+(((p-lot)/p)*100).toFixed(1)};};
   /* v330: THE FLOOR COMES FROM floorTotal AND IS NOT RECOMPUTED HERE. One function answers, and
      the markup shown beside it is derived back from the answer rather than assumed. */
-  const fl=floorTotal(q,C,P,null,{collects:opts&&opts.collects});
+  const fl=floorTotal(q,C,P);
   out.floor={total:+fl.toFixed(2),rate:+(fl/q).toFixed(2),
              markup:+((fl/cogs-1)*100).toFixed(2),markupX:+(fl/cogs-1).toFixed(4),
              margin:+(((fl-lot)/fl)*100).toFixed(1)};
-  out.ask=at(m,true);                 // the one price on the board
+  /* v504: the ask is the floor at the size's margin, rounded up; the markup fields beside it are
+     derived back from the answer, never assumed */
+  const g=ladderMargin(q,P);
+  out.marginX=g!=null?+g.toFixed(4):null;
+  if(g!=null){const p=ladderRound(fl/(1-g),LADDER);out.ask={total:p,rate:+(p/q).toFixed(2),markup:+((p/cogs-1)*100).toFixed(2),markupX:+(p/cogs-1).toFixed(4),margin:+(((p-lot)/p)*100).toFixed(1)};}
+  else out.ask=at(m,true);
   /* the rounded figure above is what the curve alone asks; the walked one is what the board
      quotes, and they differ only where rounding up would have broken the rate law */
   {const walked=ladderAsk(q,C,P);
@@ -314,7 +339,7 @@ function board(sizes,C,P){
           timePerOrder:+(P.timePerOrder||0).toFixed(2)};
 }
 
-return {costStack:costStack,buyTaper:buyTaper,ladderMarkup:ladderMarkup,ladderCogs:ladderCogs,
+return {costStack:costStack,buyTaper:buyTaper,ladderMarkup:ladderMarkup,ladderMargin:ladderMargin,ladderCogs:ladderCogs,
         ladderRound:ladderRound,ladderWalk:ladderWalk,ladderAsk:ladderAsk,lotCost:lotCost,
         floorTotal:floorTotal,priceLadder:priceLadder,ladderRow:ladderRow,board:board};
 })();

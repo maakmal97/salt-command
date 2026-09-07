@@ -204,7 +204,7 @@ export function plan(book, staged, notes) {
       if (moved > 0.009) out.moves.push({ product: prodOf(r), kg: it.collection === "sales" ? -moved : +moved, who: r[key], when: r.date || TODAY, landed: it.collection === "purchases" });
     } else if (it.collection === "count") {
       entry.count = { product: r.product || "salt", qty: +r.qty, date: r.date || TODAY, was: r.was, drift: r.drift };
-      entry.does.push(`set the stated ${entry.count.product} shelf to ${entry.count.qty} and move COUNT_ON.${entry.count.product} to ${entry.count.date}`);
+      entry.does.push(`set the stated ${entry.count.product} inventory to ${entry.count.qty} and move COUNT_ON.${entry.count.product} to ${entry.count.date}`);
     } else if (it.collection === "loss") {
       entry.append = "selfUseLog"; entry.does.push("append to selfUseLog; it draws stock and books no revenue");
       if (+r.kg > 0.009) out.moves.push({ product: r.product || "salt", kg: -(+r.kg), who: "loss: " + r.why, when: r.date || TODAY });
@@ -590,7 +590,10 @@ export function apply(book, staged, notes, masterText) {
       if (c.product === "salt") book.STATED_STOCK = c.qty;
       else { book.PROD_OPENING[c.product] = book.PROD_OPENING[c.product] || { qty: 0, costPerKg: null, stated: null }; book.PROD_OPENING[c.product].stated = c.qty; }
       book.COUNT_ON[c.product] = c.date;
-      const sentence = `COUNTED AT ${notes.version} on ${c.date}: the ${c.product} shelf held ${c.qty} against ${c.was != null ? c.was : "?"} on the roll, a drift of ${c.drift != null ? c.drift : "?"}. A COUNT AND NOT A ROLL, so COUNT_ON.${c.product} moves to ${c.date}.` + (n.note ? " " + String(n.note).trim() : "");
+      /* v504: every count is kept; the leak is charged from the drift of the last three */
+      book.COUNTS = book.COUNTS || [];
+      book.COUNTS.push({ product: c.product, date: c.date, qty: c.qty, was: c.was != null ? c.was : null, drift: c.drift != null ? c.drift : null });
+      const sentence = `COUNTED AT ${notes.version} on ${c.date}: the ${c.product} inventory held ${c.qty} against ${c.was != null ? c.was : "?"} on the roll, a drift of ${c.drift != null ? c.drift : "?"}. A COUNT AND NOT A ROLL, so COUNT_ON.${c.product} moves to ${c.date}.` + (n.note ? " " + String(n.note).trim() : "");
       const key = c.product === "salt" ? "STATED_STOCK" : "PROD_OPENING";
       book.NOTES = book.NOTES || {}; book.NOTES[key] = [sentence].concat(book.NOTES[key] || []);
     } else if (it.append === "selfUseLog" || it.append === "lostDemand") {

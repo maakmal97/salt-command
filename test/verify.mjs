@@ -1015,9 +1015,9 @@ section("Drafter — rows, refusals and flags");
   const blended = { ...book, pricing: { ...book.pricing, byProduct: { ...book.pricing.byProduct, salt: { ...book.pricing.byProduct.salt, stockCost: 47.47 } } } };
   ok(costFor(blended, "salt").mayBlend === true, "shelf cost differing from the newest lot rate means a blend, and is flagged");
   const blendRow = draftRow(entry({ direction: "SELL", party: "CC5-OKR", qty: 1, total: 90, cash: 90, kg: 1, date: "2026-08-16" }), blended);
-  ok(blendRow.flags.some(f => /shelf average/.test(f)), "a blended shelf is named on the row");
+  ok(blendRow.flags.some(f => /inventory average/.test(f)), "a blended shelf is named on the row");
   const singleRow = draftRow(entry({ direction: "SELL", party: "CC5-OKR", qty: 1, total: 90, cash: 90, kg: 1, date: "2026-08-16" }), book);
-  ok(!singleRow.flags.some(f => /shelf average/.test(f)), "a single-lot shelf does not raise it, so the flag stays worth reading");
+  ok(!singleRow.flags.some(f => /inventory average/.test(f)), "a single-lot shelf does not raise it, so the flag stays worth reading");
 
   /* the floor lookup falls to the nearest carded size BELOW, never above */
   ok(floorFor(book, "salt", 1).exact === true, "an exact carded size is exact");
@@ -1098,7 +1098,7 @@ section("Drafter — rows, refusals and flags");
 
   const spill = draftRow({ at: "x", payload: { mode: "loss", product: "salt", kg: 3, why: "spillage", date: "2026-08-20" } }, shelf);
   ok(!spill.skip && spill.collection === "loss", "a loss with a reason is drafted");
-  ok(spill.flags.some(f => /% of the shelf/.test(f)), "a loss of a quarter of the shelf or more is sized against it");
+  ok(spill.flags.some(f => /% of the inventory/.test(f)), "a loss of a quarter of the shelf or more is sized against it");
   ok(/needs a reason/.test(draftRow({ at: "x", payload: { mode: "loss", product: "salt", kg: 1, date: "2026-08-20" } }, shelf).skip || ""),
     "a loss with no reason is refused: without one it is indistinguishable from shrinkage");
   ok(draftRow({ at: "x", payload: { mode: "loss", product: "salt", kg: 99, why: "x", date: "2026-08-20" } }, shelf)
@@ -1861,7 +1861,7 @@ section("Book — ledger/book.json is the source (v339)");
   ok(/ok\s+the master's BOOK block is ledger\/book\.json/.test(chk), "tools/booksync.mjs --check: the master's book block is the file");
   const book = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
   const keys = Object.keys(book).filter((k) => k !== "NOTES");
-  ok(keys.length === 27, "the book holds the twenty-seven ledger keys");   // v353 added PRICE_SET
+  ok(keys.length === 28, "the book holds the twenty-eight ledger keys");   // v353 added PRICE_SET; v504 added COUNTS
   ok(Array.isArray(book.sales) && book.sales.length > 100 && Array.isArray(book.purchases), "with the rows as records");
   ok(typeof book.QUEUE_COMMITTED === "string" && typeof book.STATED_STOCK === "number", "and the singletons as values");
   ok(book.NOTES && Array.isArray(book.NOTES.STATED_STOCK) && book.NOTES.STATED_STOCK.length > 0, "the stated stock's roll history survived as NOTES");
@@ -2037,7 +2037,7 @@ section("Fold — an approved batch becomes records in the book (v340)");
 
     /* the flags that WARN and let it through, because each is a real thing that happens */
     ok(flagsOf({ cash: 400 }).some((f) => /overpaid/.test(f)), "more cash than the row is worth is flagged, not refused");
-    ok(flagsOf({ cost: 99 }).some((f) => /overrides what the shelf says/.test(f)), "a hand-typed cost says it overrides the shelf");
+    ok(flagsOf({ cost: 99 }).some((f) => /overrides what the inventory says/.test(f)), "a hand-typed cost says it overrides the shelf");
     ok(flagsOf({ cancelled: true }).some((f) => /out of every figure/.test(f)), "cancelling says what it takes with it");
     ok(flagsOf({ cash: 10 }, { ...tgt, amend: [{ kind: "Fulfilment" }] }).some((f) => /no longer add up/.test(f)),
       "setting a figure on a row with a trail says the trail will no longer sum to it");
@@ -2719,19 +2719,17 @@ section("Pricing — each book prices off its own quote (round 5, his call 1)");
   /* his call 2: replacement is the trailing 30-day quantity-weighted average, per book.
      The expectation is computed here from the page's own lots and TODAY, never typed, so
      the assertion holds whichever day the suite runs. */
+  /* v504: THE WINDOW IS THE LAST THREE LOTS RECEIVED, his instruction of 07 Sep 2026. */
   const expRepl = (p) => {
     w.eval(`setProd(${JSON.stringify(p)});recompute();`);
-    const rows = read("pPurch(PROD).filter(x=>poLive(x)&&x.qty>0)");
-    const from = read("TODAY.getTime()") - 30 * 86400000;
-    const win = rows.filter((x) => new Date(x.receivedOn || x.date).getTime() >= from);
+    const rows = read("pPurch(PROD).filter(x=>poLive(x)&&x.qty>0&&x.total>0&&(x.receivedOn||x.date))");
+    const win = rows.slice().sort((a, b) => ((a.receivedOn || a.date) < (b.receivedOn || b.date) ? -1 : 1)).slice(-3);
     const k = win.reduce((a, x) => a + x.qty, 0);
-    if (k > 0) return +(win.reduce((a, x) => a + x.total, 0) / k).toFixed(2);
-    const last = rows.slice().sort((a, b) => ((a.receivedOn || a.date) < (b.receivedOn || b.date) ? -1 : 1)).pop();
-    return last ? +(last.total / last.qty).toFixed(2) : null;
+    return k > 0 ? +(win.reduce((a, x) => a + x.total, 0) / k).toFixed(2) : null;
   };
   for (const p of ["salt", "oil"]) {
     const want = expRepl(p);
-    ok(read("pxInputs().repl") === want, `${p}: pxInputs().repl is the book's own trailing average, ${want}`);
+    ok(read("pxInputs().repl") === want, `${p}: pxInputs().repl is the weighted rate of the last three lots, ${want}`);
     ok(read("pxCost().repl") === want, `${p}: and the cost stack prices off it`);
     ok(read("replCost()") === want, `${p}: and replCost() is the same figure, so there is one replacement number`);
   }
