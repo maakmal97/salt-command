@@ -1343,6 +1343,16 @@ body.navopen .navveil{opacity:1;pointer-events:auto;}
   .kpi,.card,.chartbox,.lcard,.pend{background:#fff!important;border:1px solid #dfe3ec!important;
     box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;}
   details>*{display:revert;}}
+/* v507: the printed board. #pbSheet is hidden on screen and is the ONLY thing on paper while
+   body.pbPrinting is set; ink on white, nothing of the desk around it. */
+#pbSheet{display:none}
+@media print{body.pbPrinting>*:not(#pbSheet){display:none!important}
+  body.pbPrinting #pbSheet{display:block!important;color:#141821;font-family:Georgia,serif;padding:24px}
+  #pbSheet h1{font-size:22px;margin:0 0 4px;color:#141821;-webkit-text-fill-color:#141821}
+  #pbSheet .pbu{font-family:Consolas,monospace;font-size:14px;letter-spacing:.08em;margin:0 0 16px}
+  #pbSheet table{border-collapse:collapse;min-width:280px}
+  #pbSheet th,#pbSheet td{padding:8px 14px;border-bottom:1px solid #dfe3ec;text-align:right;font-size:15px}
+  #pbSheet th.l,#pbSheet td.l{text-align:left}}
 /* ============ v281 - THE INTERACTION PASS ============================================
    A last-wins layer, as v213 was. Nothing below renames a class or moves markup; it
    completes the accent map, gives the desk its motion grammar, and makes the phone's
@@ -3194,6 +3204,7 @@ details.obs>summary:hover{background:var(--salt-glass);}
 </head>
 <body>
 <div class="orb a"></div><div class="orb b"></div>
+<div id="pbSheet"></div>
 <div class="wrap">
 <button class="fabtn orderbtn" id="orderbtn" type="button" title="Enter an order"
   aria-label="Enter an order">+</button>
@@ -5369,7 +5380,9 @@ const whiteboard=[
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{"v": "v506", "d": "07 Sep 2026", "t": "FROM COST TO ASK, ONE ROW PER SIZE", "n": ["<b>HIS INSTRUCTION, 07 SEP 2026: I want to see COGS, then the floor (break-even), then the minimum ask; it seems disconnected.</b> The Price part showed the cost stack, the ladder policy and the board as three cards and walked nobody between them. A table now does, one row per size: COGS (landed times the size), the leak the floor adds, the floor, the size's margin, the floor at that margin, and the board's ask, marked where the rate law stepped it. Every figure is priceLadder's own, so the walk cannot disagree with the board. The Level row reads as the margin on the floor where a book carries anchorG."]},
+const evolution=[{"v": "v507", "d": "07 Sep 2026", "t": "PRINT A BOARD: THE ID CHOSEN, THE SIZES TICKED, ONLY THE UNIT, THE PRICE AND THE USERNAME ON PAPER", "n": ["<b>HIS INSTRUCTION, 07 SEP 2026.</b> A card on the Price part: choose the customer, tick the sizes, Print. What reaches paper is the unit, the price and the customer's statement username and nothing of the desk around it. The prices are the customer's own weekly list, the same rule tools/pricelist.mjs seals into his statement page (pbPrices, proved equal by the suite), so the sheet handed over and the page he opens agree. The username is read from the Worker (GET /stmt-users, keyed), which the publish writes to the desk's store; the laptop copy prints a blank line for it.", "<b>IF IT WILL NOT PRINT.</b> Copy as text puts the same lines on the clipboard, and the card folds a checklist: a Home Screen desk with no print dialog (open the address in the browser, or Share then Print), a blank page (Save as PDF, then print that), no printer (copy and paste it into the message), a blank username (the laptop has no road; the cloud desk needs the write key)."]},
+
+{"v": "v506", "d": "07 Sep 2026", "t": "FROM COST TO ASK, ONE ROW PER SIZE", "n": ["<b>HIS INSTRUCTION, 07 SEP 2026: I want to see COGS, then the floor (break-even), then the minimum ask; it seems disconnected.</b> The Price part showed the cost stack, the ladder policy and the board as three cards and walked nobody between them. A table now does, one row per size: COGS (landed times the size), the leak the floor adds, the floor, the size's margin, the floor at that margin, and the board's ask, marked where the rate law stepped it. Every figure is priceLadder's own, so the walk cannot disagree with the board. The Level row reads as the margin on the floor where a book carries anchorG."]},
 
 {"v":"v505","d":"07 Sep 2026","t":"THE SUPPLIER'S 25 UNIT TIER IS RM 1,200","n":["<b>HIS WORD, 07 SEP 2026:</b> the bulk quote for 25 unit is RM 1,200, RM 48 a unit, down from the RM 1,250 quoted on 20 Aug. The other four tiers stand. The two 25 unit lots of 02 and 03 Sep already landed at this rate, so the replacement rate does not move; what moves is the taper the ladder is fitted to, which the Price part reports with its r-squared."]},
 
@@ -5660,7 +5673,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='07 Sep 2026, 09:51 KL';
+const LAST_UPDATED='07 Sep 2026, 09:56 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -15699,6 +15712,79 @@ function pxHead(){
        already agreed with somebody. The sentence now names that. -->
   <div class="dsc dsclead">What the board asks today, and how much room is left before a price already agreed stops paying.</div>`;
 }
+/* ============ PRINT A BOARD (v507, his instruction of 07 Sep 2026) ============
+   Choose the ID, tick the sizes, and print JUST the unit, the price and the customer's statement
+   username. THE PRICES ARE THE CUSTOMER'S OWN LIST, the same rule tools/pricelist.mjs seals into
+   his statement page: the median unit rate of his last four orders before the week's Monday,
+   never below the floor, rounded up to the ringgit; the board's ask where he has no history. The
+   suite proves this copy against that module on the real book, so the sheet he hands over and
+   the page the customer opens cannot say different prices.
+   THE USERNAME COMES FROM THE WORKER (GET /stmt-users, keyed), which the publish writes to the
+   desk's store; the laptop copy has no road to it and prints a blank line for it. */
+let PB_USERS=null;
+function pbWeekMonday(){const kl=new Date(TODAY.toLocaleString('en-US',{timeZone:'Asia/Kuala_Lumpur'}));const d=(kl.getDay()+6)%7;kl.setDate(kl.getDate()-d);
+  return kl.getFullYear()+'-'+String(kl.getMonth()+1).padStart(2,'0')+'-'+String(kl.getDate()).padStart(2,'0');}
+function pbOwnRate(code){const before=pbWeekMonday();
+  const rows=pSales(PROD).filter(s=>s.customer===code&&!s.cancelled&&s.date&&s.date<before&&s.total>0&&s.qty>0)
+    .sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0).slice(-4).map(s=>(s.total-(+s.delivery||0))/s.qty).sort((a,b)=>a-b);
+  if(!rows.length)return {rate:null,orders:0};const n=rows.length;
+  return {rate:+(n%2?rows[(n-1)/2]:(rows[n/2-1]+rows[n/2])/2).toFixed(2),orders:n};}
+function pbPrices(code){const own=pbOwnRate(code);
+  return shownSizes(PROD).slice().sort((a,b)=>a-b).map(q=>{const fl=floorTotal(q);
+    const price=own.rate!=null?Math.ceil(Math.max(own.rate*q,fl)):priceLadder(q).ask.total;return {q,price:+price.toFixed(2)};});}
+async function pbUsers(){if(PB_USERS)return PB_USERS;if(!cloudMode())return {};
+  try{const r=await fetch('stmt-users',{cache:'no-store',headers:qHeaders()});const j=r.ok?await r.json():null;
+    const inv={};Object.keys((j&&j.users)||{}).forEach(u=>{inv[j.users[u]]=u;});PB_USERS=inv;}catch(e){PB_USERS=null;}
+  return PB_USERS||{};}
+function pbCard(){
+  const who=roster.filter(id=>!id.startsWith('S'));
+  const sizes=shownSizes(PROD).slice().sort((a,b)=>a-b);
+  return `<div class="card" id="pbCard" style="margin-top:12px">
+    <div class="cardh">Print a board <span class="sub">unit, price and the customer&rsquo;s username</span></div>
+    <div class="dsc">Choose the customer, tick the sizes, print. The prices are his own list where he has history and the board&rsquo;s ask where he has none, the same list his statement page shows this week. Copy as text puts the same lines on the clipboard for a phone that will not print.</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px">
+      <select id="pbWho" aria-label="Customer" style="min-height:44px;border:1px solid var(--brd);border-radius:8px;padding:8px 10px;font-size:14px;color:var(--ink);background:var(--wellbg)">${who.map(id=>`<option value="${esc(id)}">${esc(codeOf(id))}</option>`).join('')}</select>
+      <button class="vbtn" id="pbPrint" type="button">Print</button>
+      <button class="vbtn" id="pbCopy" type="button" style="background:transparent;color:var(--gold)">Copy as text</button>
+    </div>
+    <div id="pbSizes" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px">${sizes.map(q=>`<label style="display:flex;gap:6px;align-items:center;min-height:44px;font-size:13px"><input type="checkbox" checked data-q="${q}" style="width:18px;height:18px"> ${units(q)}</label>`).join('')}</div>
+    <div id="pbMsg" class="dsc" style="margin-top:6px;min-height:15px"></div>
+    <details style="margin-top:6px"><summary style="cursor:pointer;font-size:12px;color:var(--gold)">If it will not print</summary>
+      <ul class="dsc" style="margin:6px 0 0 18px;padding:0">
+        <li>Nothing happens on the phone: the desk added to the Home Screen has no print dialog on some phones. Open the same address in Safari or Chrome, tap Print again, or use the browser&rsquo;s Share, then Print.</li>
+        <li>The dialog opens but the page is blank: choose &ldquo;Save as PDF&rdquo; as the printer, then print the PDF; a blocked pop-up does the same.</li>
+        <li>No printer at hand: Copy as text, and paste it into the message you send him.</li>
+        <li>The username line is blank: the laptop copy has no road to the usernames, and the cloud desk needs the write key. On the cloud desk, reload once and try again.</li>
+      </ul></details>
+  </div>`;}
+function pbTicked(){return [...document.querySelectorAll('#pbSizes input:checked')].map(i=>+i.dataset.q);}
+async function pbSheet(){
+  const sel=document.getElementById('pbWho');if(!sel||!sel.value)return null;
+  const code=sel.value, ticked=pbTicked();
+  const rows=pbPrices(code).filter(r=>ticked.some(q=>Math.abs(q-r.q)<1e-9));
+  const users=await pbUsers();
+  return {code,user:users[code]||'',rows,product:(PRODUCTS[PROD]&&PRODUCTS[PROD].name)||PROD,week:pbWeekMonday()};}
+async function pbPrint(){
+  const sh=await pbSheet();const m=document.getElementById('pbMsg');
+  if(!sh||!sh.rows.length){if(m)m.textContent='Tick at least one size.';return;}
+  const el=document.getElementById('pbSheet');
+  el.innerHTML=`<h1>Salt Command</h1><p class="pbu">Username ${esc(sh.user||'&mdash;')}</p>
+    <table><thead><tr><th class="l">${esc(sh.product)}</th><th>Price</th></tr></thead><tbody>${sh.rows.map(r=>`<tr><td class="l">${units(r.q)}</td><td>${fmt(r.price)}</td></tr>`).join('')}</tbody></table>
+    <p class="pbu" style="margin-top:14px;font-size:12px">Week of ${esc(sh.week)}. Collected; delivery is quoted on the order.</p>`;
+  document.body.classList.add('pbPrinting');
+  const off=()=>{document.body.classList.remove('pbPrinting');window.removeEventListener('afterprint',off);};
+  window.addEventListener('afterprint',off);
+  try{window.print();}catch(e){off();if(m)m.textContent='This browser refused to print; use Copy as text, or open the desk in Safari or Chrome.';return;}
+  setTimeout(off,60000);
+  if(m)m.textContent='Sent to print: '+sh.rows.length+' size'+(sh.rows.length===1?'':'s')+(sh.user?'':', no username on this copy');}
+async function pbCopy(){
+  const sh=await pbSheet();const m=document.getElementById('pbMsg');
+  if(!sh||!sh.rows.length){if(m)m.textContent='Tick at least one size.';return;}
+  const text=['Salt Command',sh.user?'Username '+sh.user:'',sh.product+', week of '+sh.week,''].concat(sh.rows.map(r=>units(r.q)+'  RM '+r.price)).filter(x=>x!==null).join('\n');
+  let ok=false;try{await navigator.clipboard.writeText(text);ok=true;}catch(e){
+    try{const ta=document.createElement('textarea');ta.value=text;ta.style.position='fixed';ta.style.top='-1000px';document.body.appendChild(ta);ta.select();ok=document.execCommand('copy');document.body.removeChild(ta);}catch(e2){}}
+  if(m)m.textContent=ok?'Copied '+sh.rows.length+' line'+(sh.rows.length===1?'':'s')+'.':'Could not copy on this browser.';}
+function pbWire(){const b=document.getElementById('pbPrint'),c=document.getElementById('pbCopy');if(b)b.onclick=pbPrint;if(c)c.onclick=pbCopy;if(cloudMode()&&saltWriteKey())pbUsers();}
 function tabPricing(){
   const c=pxCost(),sg=pxSignals(),pt=pxParty(pxOver.party),net=sg.net,pn=pt.net;
   const q=pxQuoteRate();                      // v385: r30 went with the dead board, unread since v326
@@ -15874,6 +15960,7 @@ function tabPricing(){
     <div class="dsc" style="margin-top:8px">COGS is ${fmt(sC.landed)} a unit landed; the leak adds ${((sC.shrink/(1-sC.shrink))*100).toFixed(1)}% of it, so the floor is ${fmt(sC.effEx)} a unit and earns nothing. The ask is rounded up to the ten, then may step down to keep the rate from rising with size, never below its floor.</div>
     ${sFlat>=2?`<div class="insight" style="border-left-color:var(--gold)"><b>The taper stops at ${units(LD.at.hi)}, so ${sFlat} of the ${sSZ.length} printed sizes carry the same ${sHi.markupX.toFixed(2)}x.</b></div>`
       :''}`;})()}
+    ${pbCard()}
     <!-- v393: THE EDITOR FOLDS. Seventeen tickboxes and nineteen number boxes were standing
          open inside the board card, which on a 375px phone put the thing he acts on, the
          board, above a screen and a half of controls he touches once a month. It is Do, so
@@ -17526,7 +17613,7 @@ const PART_Q={today:'what needs doing, ranked by the money at stake',
   plans:'the whiteboard: plans, never figures'};
 /* the chart and wiring passes each tab needs after its HTML is in the document */
 const PART_DRAW={inventory:()=>drawPerProduct([trackCharts]),
-  pricing:()=>drawPerProduct([wirePricing,drawPriceCharts,drawEarnChart,drawBoardCharts]),
+  pricing:()=>{drawPerProduct([wirePricing,drawPriceCharts,drawEarnChart,drawBoardCharts]);pbWire();},
   today:()=>drawTodayCharts(), concentration:()=>drawConcCharts(),
   receivables:()=>drawPerProduct([drawRecvCharts]), financials:()=>drawPerProduct([drawFinCharts]),
   network:()=>drawNetworkCharts(), ledger:()=>{drawLedgerCharts();wireLedger();}, journal:()=>wireJournal(),

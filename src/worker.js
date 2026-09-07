@@ -590,7 +590,7 @@ export default {
      * cannot quietly miss it. */
     if ((p === "/queue" || p === "/ledger" || p.startsWith("/ledger/")
       || p === "/drafts" || p.startsWith("/drafts/")
-      || p === "/orders" || p.startsWith("/orders/")
+      || p === "/orders" || p.startsWith("/orders/") || p === "/stmt-users"
       /* /push/key is the ONE push route left open, and only because the VAPID public
          key is public by definition: a browser cannot create a subscription without
          it, and it authorises nothing on its own. Everything else under /push either
@@ -653,6 +653,12 @@ export default {
     /* THE CUSTOMER ORDERS (06 Sep 2026), relayed from the statements site: see src/orders.js.
        Keyed like the drafts, because an order names a party and a figure. A move to "done" is
        the one that writes: a queue entry under q:orders, drafted on arrival like any other. */
+    /* v507: the username-to-code map the publish writes here, for the printed board. Keyed: a
+       username is the address of an account. Inverted on the desk. */
+    if (p === "/stmt-users") {
+      if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
+      return json({ ok: true, users: (await env.SALT_QUEUE.get("stmt-users", "json")) || {} });
+    }
     if (p === "/orders") {
       if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
       const r = await listOrders(env, url.searchParams.get("all") === "1");

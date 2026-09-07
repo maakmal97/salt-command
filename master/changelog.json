@@ -1,5 +1,14 @@
 [
  {
+  "v": "v507",
+  "d": "07 Sep 2026",
+  "t": "PRINT A BOARD: THE ID CHOSEN, THE SIZES TICKED, ONLY THE UNIT, THE PRICE AND THE USERNAME ON PAPER",
+  "n": [
+   "<b>HIS INSTRUCTION, 07 SEP 2026.</b> A card on the Price part: choose the customer, tick the sizes, Print. What reaches paper is the unit, the price and the customer's statement username and nothing of the desk around it. The prices are the customer's own weekly list, the same rule tools/pricelist.mjs seals into his statement page (pbPrices, proved equal by the suite), so the sheet handed over and the page he opens agree. The username is read from the Worker (GET /stmt-users, keyed), which the publish writes to the desk's store; the laptop copy prints a blank line for it.",
+   "<b>IF IT WILL NOT PRINT.</b> Copy as text puts the same lines on the clipboard, and the card folds a checklist: a Home Screen desk with no print dialog (open the address in the browser, or Share then Print), a blank page (Save as PDF, then print that), no printer (copy and paste it into the message), a blank username (the laptop has no road; the cloud desk needs the write key)."
+  ]
+ },
+ {
   "v": "v506",
   "d": "07 Sep 2026",
   "t": "FROM COST TO ASK, ONE ROW PER SIZE",

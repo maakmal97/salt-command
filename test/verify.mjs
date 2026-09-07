@@ -6614,6 +6614,24 @@ section("Statements — the price list, the order book and the desk's relay (v49
     "the desk's Worker lists the open orders with the code joined from stmt-users");
   ok((await deskWorker.fetch(req("/orders"), mkEnv(new KV()))).status === 503, "and says the relay is not configured rather than answering empty");
   ok((await deskWorker.fetch(req("/orders"), { ...denv, SALT_WRITE_KEY: "k" })).status === 401, "the write key gates the orders like the drafts");
+  /* v507: the printed board reads the username map off the desk's Worker, keyed */
+  ok((await deskWorker.fetch(req("/stmt-users"), { ...denv, SALT_WRITE_KEY: "k" })).status === 401
+    && (await (await deskWorker.fetch(req("/stmt-users"), denv)).json()).users[un] === "CX0-AA",
+    "GET /stmt-users is keyed and hands back the map the publish wrote");
+  {
+    const { openMaster: omP } = await import("../tools/payload.mjs");
+    const { w: wB } = await omP();
+    const rd = (e) => JSON.parse(wB.eval("JSON.stringify(" + e + ")"));
+    wB.eval("setProd('salt');recompute();");
+    const codeB = rd("roster.find(id=>!id.startsWith('S')&&pSales('salt').some(s=>s.customer===id&&s.date&&s.total>0))");
+    const bookB = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+    const nowB = new Date(rd("TODAY.toISOString()"));
+    const mine = PL.priceList(codeB, bookB, snap, nowB).products.find(x => x.product === "salt").sizes.map(x => x.price);
+    const desk = rd("pbPrices(" + JSON.stringify(codeB) + ").map(x=>x.price)");
+    ok(JSON.stringify(desk) === JSON.stringify(mine), codeB + ": the printed board's prices are the customer's statement-page list, size for size (v507)");
+    ok(rd("typeof pbCard") === "function" && /id=\"pbSheet\"/.test(readFileSync(join(REPO, "master", "salt_command.html"), "utf8")),
+      "and the Price part carries the card and the page the print-only sheet");
+  }
   const sum = await (await deskWorker.fetch(req("/push/summary"), denv)).json();
   ok(sum.ok && sum.orders === 0, "the phone's summary counts orders waiting on a tap: none, this one is ready");
   b = await (await deskWorker.fetch(req("/orders/" + un + "/" + id, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ status: "done" }) }), denv)).json();
