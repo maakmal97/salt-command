@@ -1,5 +1,13 @@
 [
  {
+  "v": "v508",
+  "d": "07 Sep 2026",
+  "t": "THE BOARD AS AN IMAGE OR AN HTML FILE, FROM THE PHONE",
+  "n": [
+   "<b>HIS INSTRUCTION, 07 SEP 2026: make it printable as an image, or HTML, in Files, on the phone.</b> Two buttons beside Print: Save as image draws the same rows on a canvas (ink on white, the title, the username, one line per size, the week) and Save as HTML writes a standalone page with the same lines and no dependency. Either is handed to the phone's share sheet as a file, where iOS offers Save Image and Save to Files and Android its own targets; a browser that cannot share a file downloads it instead, and the card says which happened. Nothing loads from outside, and the rows are the ones the paper gets."
+  ]
+ },
+ {
   "v": "v507",
   "d": "07 Sep 2026",
   "t": "PRINT A BOARD: THE ID CHOSEN, THE SIZES TICKED, ONLY THE UNIT, THE PRICE AND THE USERNAME ON PAPER",

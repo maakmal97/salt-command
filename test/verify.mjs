@@ -6631,6 +6631,13 @@ section("Statements — the price list, the order book and the desk's relay (v49
     ok(JSON.stringify(desk) === JSON.stringify(mine), codeB + ": the printed board's prices are the customer's statement-page list, size for size (v507)");
     ok(rd("typeof pbCard") === "function" && /id=\"pbSheet\"/.test(readFileSync(join(REPO, "master", "salt_command.html"), "utf8")),
       "and the Price part carries the card and the page the print-only sheet");
+    /* v508: the board as a file, drawn here and handed to the share sheet */
+    const doc = rd("pbHtmlDoc({code:'CX0-AA',user:'abcd-efgh',product:'Salt',week:'2026-09-07',rows:[{q:1,price:120},{q:2.5,price:260}]})");
+    ok(/^<!DOCTYPE html>/.test(doc) && doc.includes("abcd-efgh") && doc.includes("RM 120") && doc.includes("RM 260") && !/https?:\/\//.test(doc) && !doc.includes("CX0-AA"),
+      "the HTML file carries the username, the sizes and the prices, no address and no code");
+    ok(rd("typeof pbImageBlob+typeof pbDeliver+typeof pbSaveImage+typeof pbSaveHtml") === "functionfunctionfunctionfunction"
+      && /id=\"pbImage\"/.test(rd("pbCard()")) && /id=\"pbHtml\"/.test(rd("pbCard()")),
+      "and the card offers Save as image and Save as HTML, drawn on the desk and shared as files");
   }
   const sum = await (await deskWorker.fetch(req("/push/summary"), denv)).json();
   ok(sum.ok && sum.orders === 0, "the phone's summary counts orders waiting on a tap: none, this one is ready");
