@@ -84,7 +84,7 @@ async function main() {
   const dry = dryAt >= 0;
   const outDir = dry ? resolve(process.argv[dryAt + 1] || join(REPO, "statements", ".publish")) : join(REPO, "statements", ".publish");
   const root = process.env.SALT_STATEMENTS_DIR || join(REPO, "statements");
-  const key = process.env.STMT_KEY || "";
+  const key = (process.env.STMT_KEY || "").trim();   /* trimmed at every door, as make_statements does (08 Sep 2026) */
 
   if (!dry && /PLACEHOLDER_STMT_KV_ID/.test(readFileSync(CONFIG, "utf8"))) {
     console.log("the statements store is not created yet (placeholder id in wrangler.stmt.jsonc); nothing published");

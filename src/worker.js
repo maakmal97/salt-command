@@ -73,6 +73,10 @@ const locked = () => new Response(LOCKED_HTML, {
 const QKEY = (device) => "q:" + device;
 const VKEY = "vault";                 // the encrypted name vault, ciphertext only
 const DEVICE_RE = /^[A-Za-z0-9._-]{1,80}$/;
+/* THE DAY IS KUALA LUMPUR'S (08 Sep 2026). COUNT_ON is written by the fold in MYT; "today" here
+   was the UTC day, so between midnight and 08:00 a morning count read as not taken and
+   yesterday's count read as today's. Same expression as src/orders.js. */
+const klDay = () => new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kuala_Lumpur" });
 
 // The only shape /vault will store: the desk's AES-GCM envelope. Anything else (a plain
 // name map, say) is refused, so plaintext can never reach the cloud through this door.
@@ -524,9 +528,16 @@ async function handleDraftDecide(request, env, ctx, id, decision) {
   if (cur.status !== "pending") {
     return json({ ok: false, error: "already " + cur.status, status: cur.status }, 409);
   }
-  await env.SALT_LEDGER.prepare(
+  const upd = await env.SALT_LEDGER.prepare(
     "UPDATE draft SET status=?1, decided_at=?2, decided_by=?3 WHERE id=?4 AND status='pending'"
   ).bind(decision, new Date().toISOString(), by, id).run();
+  /* 08 Sep 2026: THE SELECT ABOVE IS NOT THE UPDATE. Two taps in the same instant both read
+     `pending`; the second UPDATE changes no row, and used to answer 200 with the first tap's
+     decision in the body, and ring the stage for an approval that was in fact a rejection. */
+  if (upd && upd.meta && upd.meta.changes === 0) {
+    const now = await env.SALT_LEDGER.prepare("SELECT status FROM draft WHERE id=?1").bind(id).first();
+    return json({ ok: false, error: "already " + ((now && now.status) || "decided"), status: now && now.status }, 409);
+  }
   if (decision === "approved") stageOnApproval(env, ctx);
   let dropped = 0;
   if (decision === "rejected") { try { dropped = await dropQueued(env, [id]); } catch (e) { /* the decision stands; the POST filter catches a re-post */ } }
@@ -592,7 +603,7 @@ export default {
             if ((d && d.n) > 0) worth = true;
             const c = await env.SALT_LEDGER.prepare("SELECT doc FROM state WHERE key='COUNT_ON'").first();
             if (c && c.doc) {
-              const on = JSON.parse(c.doc), today = new Date().toISOString().slice(0, 10);
+              const on = JSON.parse(c.doc), today = klDay();
               if (Object.keys(on).some((k) => on[k] !== today)) worth = true;
             }
           } catch (e) { console.log("nudge check failed: " + String(e)); }
@@ -789,7 +800,7 @@ export default {
           out.refused = (r && r.n) || 0;
           const c = await env.SALT_LEDGER.prepare("SELECT doc FROM state WHERE key='COUNT_ON'").first();
           if (c && c.doc) {
-            const on = JSON.parse(c.doc), today = new Date().toISOString().slice(0, 10);
+            const on = JSON.parse(c.doc), today = klDay();
             for (const k of Object.keys(on)) if (on[k] !== today) out.countDue.push(k);
           }
         }

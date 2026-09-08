@@ -112,8 +112,11 @@ desk shows, cost and margin included, is served at the public URL.
 - **The drafter is arithmetic, never a model**, and never prices: it reads the `PRICING`
   state key `tools/book.mjs pricingSnapshot()` derives from the engine. It refuses and
   records in `refused` (on the phone, self-cleaning): Linked and Rewarded amendments,
-  `linkTo` or `orderCode`, a movement with no date, a product with no cost. Fulfilment,
-  Cancellation, Modification and Correction go through the gate.
+  `linkTo` or `orderCode`, a movement with no date, a product with no cost, a zero or negative
+  figure, a date not in YYYY-MM-DD (08 Sep 2026). Fulfilment, Cancellation, Modification and
+  Correction go through the gate. **An entry stamped before the watermark that the draft table
+  does not know is drafted, never dropped** (08 Sep 2026): `at` is minted on the phone, and an
+  offline tap that lands after a later fold used to be counted as committed and lost.
 - **The laptop's own queue takes the same road:** `node tools/drafts.mjs --from-queue` (broken
   since the reads were gated). A decided draft keeps its id for good; to re-draft a rejected or
   refused entry he later calls real, mint a new `at`, run `draftRow` against `readBook()`, then

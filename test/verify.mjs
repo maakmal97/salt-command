@@ -1018,6 +1018,9 @@ section("Drafter — rows, refusals and flags");
     ],
     state: { roster: ["CC5-OKR", "CH4-MLR", "CS6-BS", "CN6-WM-R"], QUEUE_COMMITTED: "2026-08-14T00:00:00.000Z" }
   };
+  /* the bare rows above are COMPLETED orders: every row on the real book carries cash and
+     deliveredQty, and since 08 Sep 2026 the drafter reads a row with neither as pending */
+  book.sales = book.sales.map((r) => ({ cash: r.total, deliveredQty: r.qty, ...r }));
   const entry = (payload, at = "2026-08-16T01:00:00.000Z") => ({ at, payload: { mode: "new", ...payload } });
 
   /* the desk's own cost wins over anything recomputed */
@@ -1245,7 +1248,7 @@ section("Drafter — rows, refusals and flags");
   ok(stillFlagged.flags.some(f => /RM 90/.test(f)), "an undated pending row does not count as history, so the standing rate still reads RM90");
 
   /* ---- one odd order must not switch the check off for ever ---- */
-  const mixed = { ...book, sales: [...book.sales, { date: "2026-08-01", customer: "CC5-OKR", qty: 1, total: 70 }] };
+  const mixed = { ...book, sales: [...book.sales, { date: "2026-08-01", customer: "CC5-OKR", qty: 1, total: 70, cash: 70, deliveredQty: 1 }] };
   const vsMedian = draftRow(entry({ direction: "SELL", party: "CC5-OKR", qty: 1, total: 130, cash: 130, kg: 1, date: "2026-08-16" }), mixed);
   ok(vsMedian.flags.some(f => /typically pays/.test(f)), "a party with a mixed history is measured against the median, not against perfect uniformity");
   const inBand = draftRow(entry({ direction: "SELL", party: "CC5-OKR", qty: 1, total: 88, cash: 88, kg: 1, date: "2026-08-16" }), book);
@@ -4389,7 +4392,9 @@ section("v432: the money on a statement is the money on the book");
   ok(cxRows.length >= 4, `the book carries ${cxRows.length} cancelled orders to check`);
   let fromTrail = 0, fromField = 0;
   for (const src of cxRows) {
-    const r = stmtRows(src.customer, SO).find((x) => x.rid === src.rid);
+    /* the check is on the date the row states, not on the window; SO closes on 1 Sep and a row
+       cancelled after that is rightly outside it, so it is looked up with the window open */
+    const r = stmtRows(src.customer, { ...SO, to: null }).find((x) => x.rid === src.rid);
     const trail = ((src.amend || []).filter((a) => a.kind === "Cancellation")[0] || {}).date;
     const want = trail || src.cancelledOn || null;
     if (trail) fromTrail++; else if (src.cancelledOn) fromField++;
@@ -5500,7 +5505,10 @@ section("v456: an undated row says so wherever its date is printed");
     /* v479: the lock rule prints its undated lot only while the lock is on; with it off (v280) the
        breach is gated and Today prints nothing for it, which is the point, and no undefined either */
     const lockOn6 = String(w.eval("String(PRICE_LOCK_ON)")) === "true";
-    ok(count(seen.today || "", "landed not dated") === (lockOn6 ? 1 : 0) && nd >= 14, `the lock rule on Today ${lockOn6 ? "says so too" : "is gated with the lock off, and stays silent"}, ${nd} cells across the desk`);
+    /* 12 since 08 Sep 2026, from 14: the Concentration tab's "last rate" per supplier is the newest DATED
+       lot now (an undated lot sorted first under a comparator that answered -1 to undefined), so its two
+       cells print a date. The receivables, inventory, pricing, plans and sourcing cells stand. */
+    ok(count(seen.today || "", "landed not dated") === (lockOn6 ? 1 : 0) && nd >= 12, `the lock rule on Today ${lockOn6 ? "says so too" : "is gated with the lock off, and stays silent"}, ${nd} cells across the desk`);
   } finally { for (const f of [B6, M6]) { try { rm6(f); } catch (e) { /* best effort */ } } }
 }
 
@@ -6069,7 +6077,13 @@ section("Round 7: the states no suite check had ever rendered");
     const off = [];
     for (const p of prods) {
       w.eval(`PROD=${JSON.stringify(p)};recompute();`);
-      for (const q of [1, 2.5]) {
+      /* 08 Sep 2026: on THIS book's own sizes. The snapshot used to key every product by salt's
+         grid, so oil's floors sat under 0.5 to 12.5 while oil sells 10 to 50; the check read
+         salt's sizes on oil and passed on the wrong table. */
+      const sizesP = JSON.parse(w.eval("JSON.stringify(PRICE_TIERS.sizes)"));
+      ok(Array.isArray(snap.byProduct[p].sizes) && snap.byProduct[p].sizes.join() === sizesP.join(),
+        `${p}'s snapshot carries its own sizes (${sizesP.join(", ")})`);
+      for (const q of sizesP.slice(0, 2)) {
         const desk = w.eval(`floorTotal(${q})`);
         const snapped = snap.byProduct[p] && snap.byProduct[p].floors && snap.byProduct[p].floors[q]
           ? snap.byProduct[p].floors[q].floor : null;
@@ -6516,6 +6530,8 @@ section("Statements — the price list, the order book and the desk's relay (v49
     { customer: "CX0-AA", qty: 1, total: 400 },
     { date: "2026-08-20", customer: "CX0-AA", product: "oil", qty: 10, total: 100 }
   ];
+  /* completed orders, as on the book: a row with neither cash nor deliveredQty reads pending since 08 Sep 2026 */
+  sales.forEach((r) => { if (r.cash == null) r.cash = r.total; if (r.deliveredQty == null) r.deliveredQty = r.qty; });
   const own = PL.ownRate(sales, "CX0-AA", "salt", "2026-08-31");
   ok(own.orders === 4 && own.rate === 115,
     "the last four dated salt orders before the Monday are 100, 110, 120 and 130 a unit, median 115: the RM500 fifth-oldest, the gift, the cancelled, the undated and this week's are all left out");
@@ -6556,7 +6572,7 @@ section("Statements — the price list, the order book and the desk's relay (v49
   const wrong = saltL.sizes.filter(x => x.price !== PL.adjustedPrice(115 * x.q, floorC(x.q), askC(x.q), 3 * PE.ladderCogs(x.q, Cs), loyalAA) || "delivered" in x);
   ok(wrong.length === 0 && saltL.sizes.length === snap.sizes.length && !("delivery" in saltL),
     "every board size is his rate times the size, drawn toward the board's ask by the v510 rule; one price, no delivery on the list");
-  const cheap = PL.priceList("CX0-CH", { ...bookP, sales: [{ date: "2026-07-01", customer: "CX0-CH", qty: 1, total: 1 }] }, snap, nowP).products[0];
+  const cheap = PL.priceList("CX0-CH", { ...bookP, sales: [{ date: "2026-07-01", customer: "CX0-CH", qty: 1, total: 1, cash: 1, deliveredQty: 1 }] }, snap, nowP).products[0];
   ok(cheap.rate === 1 && cheap.sizes.every(x => x.price === PL.adjustedPrice(1 * x.q, floorC(x.q), askC(x.q), 3 * PE.ladderCogs(x.q, Cs), false) && x.price >= floorC(x.q)),
     "a customer whose old rate is under the floor is lifted halfway to the ask, never under the floor");
   const board = PL.priceList("CX0-ZZ", bookP, snap, nowP).products[0];
@@ -7415,7 +7431,9 @@ section("v526: the replay question, asked on the phone");
   /* the editor, driven on the real master: a double tap, then the question both ways */
   const { openMaster: omD } = await import("../tools/payload.mjs");
   const { w } = await omD();
-  w.eval("setProd('salt');recompute();switchTab('ledger');");
+  /* the editor is driven on the twin's own product: `real` is the newest live sale, which was oil
+     at v542, and a twin is matched on product, so salt would find nothing to ask about */
+  w.eval("setProd(" + JSON.stringify(real.product || "salt") + ");recompute();switchTab('ledger');");
   const DRIVE = (answer, prime) => "(function(){try{window.confirm=function(){return " + (answer ? "true" : "false") + ";};queue=" + (prime ? "[{at:'2099-02-01T00:00:00.000Z',type:'SELL',payload:{mode:'new',direction:'SELL',party:" + JSON.stringify(real.customer) + ",date:" + JSON.stringify(real.date) + ",qty:" + real.qty + ",total:" + real.total + "}}]" : "[]") + ";" +
     "ledNew();var set=function(k,v){var e=document.getElementById('ed_'+k);if(e)e.value=v;};set('party'," + JSON.stringify(real.customer) + ");set('qty'," + JSON.stringify(String(real.qty)) + ");set('total'," + JSON.stringify(String(real.total)) + ");set('cash'," + JSON.stringify(String(real.total)) + ");set('deliveredQty'," + JSON.stringify(String(real.qty)) + ");set('date'," + JSON.stringify(real.date) + ");" +
     "var n0=queue.length;edSubmitNew();var why=(document.getElementById('edWhy')||{}).textContent||'';var q=queue[queue.length-1];return JSON.stringify({pushed:queue.length===n0+1,why:why,second:q&&q.payload?q.payload.second:undefined});}catch(e){return JSON.stringify({no:'threw: '+(e&&e.message)});}})()";
@@ -7545,6 +7563,201 @@ ok(pass + fail - offMachine >= FLOOR_ASSERTIONS,
   `the suite ran ${pass + fail - offMachine} assertions everywhere (${pass + fail} here, ${offMachine} of them needing files that live off this repo), below its floor of ${FLOOR_ASSERTIONS}: a section has stopped running`);
 ok(sections >= FLOOR_SECTIONS,
   `the suite ran ${sections} sections, below its floor of ${FLOOR_SECTIONS}: a section has stopped running`);
+
+/* ---- 08 Sep 2026: the audit, one assertion per fix, each proved red on the code it replaced ---- */
+section("08 Sep 2026: the audit fixes");
+{
+  const { draftRow, costFor, runDrafter } = await import("../src/drafter.js");
+  const { plan: planA, apply: applyA, applyAmend: amendA } = await import("../tools/fold.mjs");
+  const PE = (await import("../engine/pricing.mjs")).default;
+  const PL = await import("../tools/pricelist.mjs");
+  const { checkPlacement } = await import("../stmt/orders.js");
+  const bookA = {
+    version: "vA", pricing: { v: "vA", byProduct: { salt: { stockCost: 56, replCost: 56, floors: { "1": { floor: 60 } } } } },
+    purchases: [{ date: "2026-08-13", supplier: "SA5-BTR", qty: 12.5, total: 700, receivedOn: "2026-08-13", receivedQty: 12.5 }],
+    sales: [
+      { date: "2026-08-01", customer: "CC5-OKR", qty: 1, total: 90, cash: 90, deliveredQty: 1 },
+      { date: "2026-08-08", customer: "CC5-OKR", qty: 1, total: 90, cash: 90, deliveredQty: 1 },
+      { date: "2026-08-10", customer: "CC5-OKR", qty: 1, total: 80, cash: 0, deliveredQty: 0 },
+      { date: "2026-08-11", customer: "CC5-OKR", qty: 1, total: 80, cash: 0, deliveredQty: 0 },
+      { date: "2026-08-12", customer: "CH4-MLR", qty: 1, total: 110, delivery: 10, cash: 110, deliveredQty: 1, rid: "s-del" }
+    ],
+    state: { roster: ["CC5-OKR", "CH4-MLR", "SA5-BTR"], QUEUE_COMMITTED: "2026-08-14T00:00:00.000Z" }
+  };
+  const ent = (payload, at = "2026-08-16T01:00:00.000Z") => ({ at, payload: { mode: "new", ...payload } });
+
+  /* the drafter */
+  const cut = draftRow(ent({ direction: "SELL", party: "CC5-OKR", qty: 1, total: 80, cash: 80, kg: 1, date: "2026-08-16" }), bookA);
+  ok(cut.flags.some((f) => /has paid RM 90/.test(f)), "two DATED pending RM 80 rows are not history: the standing rate still reads RM 90 (v540 dated every pending row)");
+  const twin = draftRow(ent({ direction: "SELL", party: "CH4-MLR", qty: 1, total: 110, delivery: 10, cash: 110, kg: 1, date: "2026-08-12" }), bookA);
+  ok(twin.flags.some((f) => /matches s-del/.test(f)), "a twin with delivery inside its total is matched on the FULL total, as the fold matches it");
+  const adv = draftRow(ent({ direction: "SELL", party: "CH4-MLR", qty: 1, total: 100, delivery: 10, cash: 95, kg: 1, date: "2026-08-16" }), bookA);
+  ok(adv.flags.some((f) => /ADVANCE/.test(f) && /RM 5 unpaid/.test(f)), "RM 95 on a RM 100 order with RM 10 delivery inside is an advance of RM 5, not none");
+  const over = draftRow(ent({ direction: "SELL", party: "CH4-MLR", qty: 5, total: 100, cash: 900, kg: 50, date: "2026-08-16" }), bookA);
+  ok(over.flags.some((f) => /RM 800 more/.test(f)) && over.flags.some((f) => /50 unit goes out on an order of 5/.test(f)), "cash above the total and units above the order are flagged on a new row");
+  for (const [p, why] of [[{ qty: 0, total: 100 }, /above zero/], [{ qty: -2, total: -200 }, /above zero/], [{ qty: 1, total: 100, date: "8/9/2026" }, /YYYY-MM-DD/]]) {
+    const d = draftRow(ent({ direction: "SELL", party: "CH4-MLR", cash: 0, kg: 0, date: "2026-08-16", ...p }), bookA);
+    ok(!!d.skip && why.test(d.skip), "the gate refuses " + JSON.stringify(p) + ": " + (d.skip || "drafted"));
+  }
+  const lot = draftRow(ent({ direction: "BUY", party: "SA5-BTR", qty: 12.5, total: 500, cash: 500, kg: 12.5, date: "2026-08-16" }),
+    { ...bookA, sales: bookA.sales.concat([{ date: "2026-08-13", customer: "CC5-OKR", qty: 1, total: 100, cash: 100, deliveredQty: 1 }]) });
+  ok(!lot.skip && !lot.flags.some((f) => /less than half/.test(f)), "a RM 40 lot is not measured against the lowest SALE rate on the book");
+  const transit = { ...bookA, pricing: { v: "vA", byProduct: { salt: { stockCost: null, replCost: null, floors: {} } } },
+    purchases: bookA.purchases.concat([{ date: "2026-08-20", supplier: "SA5-BTR", qty: 25, total: 1500, inTransit: true, receivedQty: 0 }]) };
+  const cf = costFor(transit, "salt");
+  ok(cf.cost === 56 && cf.mayBlend === false, `a lot in transit is not the newest received lot: cost ${cf.cost}, blend ${cf.mayBlend}`);
+
+  /* the run: an entry older than the watermark that the draft table does not know is drafted, not lost */
+  const mirror = (b) => {
+    const self = { drafts: new Map(), refused: new Map() };
+    self.prepare = (sql) => {
+      const s = sql.replace(/\s+/g, " ").trim(); let binds = [];
+      const api = {
+        bind(...a) { binds = a; return api; },
+        async all() {
+          if (/^SELECT doc FROM entry/.test(s)) return { results: (b[binds[0]] || []).map((r) => ({ doc: JSON.stringify(r) })) };
+          if (/^SELECT key,doc FROM state/.test(s)) return { results: Object.keys(b.state).map((k) => ({ key: k, doc: JSON.stringify(b.state[k]) })).concat([{ key: "PRICING", doc: JSON.stringify(b.pricing) }]) };
+          if (/^SELECT id FROM draft/.test(s)) return { results: [...self.drafts.keys()].map((id) => ({ id })) };
+          throw new Error("unmocked all(): " + s);
+        },
+        async first() {
+          if (/^SELECT v,stamped FROM snapshot/.test(s)) return { v: b.version, stamped: null };
+          if (/^SELECT MAX\(committed_at\)/.test(s)) return { t: null };
+          throw new Error("unmocked first(): " + s);
+        },
+        async run() {
+          if (/^DELETE FROM refused/.test(s)) return { meta: { changes: 0 } };
+          if (/^INSERT OR REPLACE INTO refused/.test(s)) { self.refused.set(binds[0], binds[2]); return { meta: { changes: 1 } }; }
+          if (/^INSERT OR IGNORE INTO draft/.test(s)) { self.drafts.set(binds[0], binds[3]); return { meta: { changes: 1 } }; }
+          throw new Error("unmocked run(): " + s);
+        }
+      };
+      return api;
+    };
+    return self;
+  };
+  const db = mirror(bookA), kvA = new KV();
+  await kvA.put("q:phone", JSON.stringify({ queue: [ent({ direction: "SELL", party: "CC5-OKR", qty: 1, total: 90, cash: 90, kg: 1, date: "2026-08-13" }, "2026-08-13T01:00:00.000Z")] }));
+  const run1 = await runDrafter({ SALT_QUEUE: kvA, SALT_LEDGER: db });
+  ok(run1.ok && run1.drafted === 1 && run1.committed === 0 && db.drafts.has("2026-08-13T01:00:00.000Z"),
+    `an entry stamped before the watermark that no draft knows is drafted for a decision, not counted as committed (drafted ${run1.drafted}, committed ${run1.committed}, refused ${[...db.refused.values()].join("; ")})`);
+  const run2 = await runDrafter({ SALT_QUEUE: kvA, SALT_LEDGER: db });
+  ok(run2.drafted === 0 && run2.committed === 1, "and on the next pass the same entry, now in the draft table and below the mark, counts as committed");
+
+  /* the Worker: a decision that changed no row is a 409, and the day is Kuala Lumpur's */
+  {
+    const d1 = { rows: new Map([["x1", { status: "pending" }]]) };
+    d1.prepare = (sql) => { const s = sql.replace(/\s+/g, " "); let binds = []; const api = { bind(...a) { binds = a; return api; },
+      async first() { return d1.rows.get(binds[0]) || null; },
+      async run() { if (/^UPDATE draft SET status=/.test(s)) return { meta: { changes: 0 } }; throw new Error("unmocked " + s); } }; return api; };
+    const envD = { SALT_QUEUE: new KV(), SALT_LEDGER: d1, ASSETS: assets, REQUIRE_ACCESS: "0", SALT_WRITE_KEY: "k" };
+    const r = await worker.fetch(req("/drafts/x1/approve", { method: "POST", headers: { "content-type": "application/json", "x-salt-key": "k" }, body: "{}" }), envD, { waitUntil() { } });
+    ok(r.status === 409, `a decision whose UPDATE changed no row (another tap won) answers 409, not 200 (${r.status})`);
+    const wsrc = readFileSync(join(REPO, "src", "worker.js"), "utf8");
+    ok((wsrc.match(/today = klDay\(\)/g) || []).length === 2 && /timeZone: "Asia\/Kuala_Lumpur"/.test(wsrc), "both of the Worker's \"today\" readings against COUNT_ON are Kuala Lumpur's day");
+    const swA = readFileSync(join(REPO, "public", "sw.js"), "utf8"); const apiA = (swA.match(/const API = (\/.*\/);/) || [])[1];
+    const rxA = new RegExp(apiA.slice(1, apiA.lastIndexOf("/")));
+    ok(["/orders", "/orders/u/abc", "/stmt-users", "/draft-now"].every((p) => rxA.test(p)) && /salt-shell-v5/.test(swA), "the service worker never caches /orders, /stmt-users or /draft-now, and the shell cache name moved");
+    const dsrc = readFileSync(join(REPO, "src", "drafter.js"), "utf8");
+    ok(/id LIKE 'fold:%'/.test(dsrc) && /seen_at<\?1/.test(dsrc), "a fold's own failure notice on the phone retires once a later draft has been committed");
+  }
+
+  /* the fold */
+  const cx = { rid: "c1", customer: "CC5-OKR", date: "2026-08-01", qty: 1, total: 90, cash: 0, deliveredQty: 0 };
+  amendA(cx, { date: "2026-08-05", kind: "Cancellation", cash: 0, kg: 0 }, "SELL");
+  ok(cx.cancelled === true && cx.cancelledOn === "2026-08-05", "a cancellation through the trail stamps cancelledOn on the row as well as the step");
+  const cq = { rid: "c2", customer: "CC5-OKR", date: "2026-08-01", qty: 1, total: 110, cost: 48, cash: 0, deliveredQty: 1 };
+  amendA(cq, { date: "2026-08-05", kind: "Correction", cash: 0, kg: 0, fields: { qty: 2, total: 220 } }, "SELL");
+  ok(cq.qty === 2 && cq.cost === 96, `a qty correction scales the order's absolute cost with it (cost ${cq.cost})`);
+  const bkR = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const liveRow = bkR.sales.find((s) => s.rid && !s.cancelled && s.date && s.customer);
+  const pUnd = planA(JSON.parse(JSON.stringify(bkR)), { ok: true, count: 1, approved: [{ id: "2099-01-01T00:00:00.001Z", collection: "sales", amends: liveRow.rid, amendKind: "Fulfilment", row: {},
+    entry: { at: "2099-01-01T00:00:00.001Z", payload: { mode: "amend", direction: "SELL", rid: liveRow.rid, kind: "Fulfilment", cash: 10, kg: 0 } } }] }, null);
+  ok(pUnd.items.length === 0 && pUnd.refused.length === 1 && /carries no date/.test(pUnd.refused[0].why), "an undated fulfilment is refused rather than dated the day the order was agreed: " + (pUnd.refused[0] || {}).why);
+  const twinRow = { customer: liveRow.customer, date: "2099-01-02", qty: 2, total: 20, cash: 20, deliveredQty: 2, product: "salt" };
+  const twoOf = (ids) => ({ ok: true, count: ids.length, approved: ids.map((id) => ({ id, collection: "sales", row: { ...twinRow }, entry: { at: id, payload: { mode: "new", direction: "SELL" } } })) });
+  const pTwo = planA(JSON.parse(JSON.stringify(bkR)), twoOf(["2099-01-01T00:00:00.002Z", "2099-01-01T00:00:00.003Z"]), null);
+  ok(pTwo.items.length === 1 && pTwo.refused.length === 1 && /in this batch/.test(pTwo.refused[0].why), "two identical approved drafts in one batch: the second is refused as a replay of the first (" + pTwo.refused.map((x) => x.why).join("; ") + ")");
+  const stale = applyA(JSON.parse(JSON.stringify(bkR)), twoOf(["2099-01-01T00:00:00.004Z"]), { version: "v100", title: "t", notes: ["n"], rows: {} }, 'const evolution=[{"v":"v542",');
+  ok(!stale.ok && stale.problems.some((p) => /stale notes file/.test(p)), "a notes file at a version the master has passed is refused whole");
+
+  /* the engine: the step-down never lands on the floor */
+  {
+    const C = { landed: 15.2, effEx: 15.2, eff: 15.2 };
+    const P = { LADDER: { floor: 0, ceiling: 2, anchorQ: 10, anchorX: 0.62, at: { lo: 10, hi: 50 }, anchorG: 0.01, gLo: 0, gHi: 0.667, round: { to: 5, up: true }, taper: 0 },
+      minPerUnit: 0, timePerOrder: 0, lotFloor: {}, tiers: [], boardSizes: [10, 12.5], stated: {} };
+    const walked = PE.ladderWalk([10, 12.5], C, P), fl = PE.floorTotal(12.5, C, P);
+    ok(walked[1].p > fl + 0.009, `where no grid step holds the rate flat above the floor, the ask stays above the floor rather than on it (ask ${walked[1].p}, floor ${fl})`);
+  }
+
+  /* the price list */
+  ok(!PL.pricedOrder({ qty: 1, total: 90, cash: 0, deliveredQty: 0 }) && !PL.pricedOrder({ qty: 1, total: 90, cash: 90, deliveredQty: 1, cancelled: true })
+    && !PL.pricedOrder({ qty: 1, total: 90, cash: 0, deliveredQty: 1, defaulted: true }) && !PL.pricedOrder({ qty: 1, total: 90, cash: 0, settledRM: 90, deliveredQty: 1, rebate: true })
+    && PL.pricedOrder({ qty: 1, total: 90, cash: 90, deliveredQty: 1 }) && PL.pricedOrder({ qty: 1, total: 90, cash: 40, settledRM: 50, deliveredQty: 1, rebate: true }),
+    "a price paid is a row that moved: pending, cancelled and defaulted rows and awards with no cash are not");
+  const three = ["2026-08-10", "2026-08-17", "2026-08-24"].map((date) => ({ date, customer: "CX0-LY", qty: 1, total: 90, cash: 90, deliveredQty: 1 }));
+  ok(PL.loyalFor(three, "CX0-LY", "salt", new Date("2026-09-06T12:00:00Z")) === true && PL.loyalFor(three, "CX0-LY", "salt", new Date("2026-09-06T20:00:00Z")) === false,
+    "the fourteen days run from Kuala Lumpur midnight: loyal at 20:00 KL on the fourteenth day, not at 04:00 KL on the fifteenth");
+  ok(!!checkPlacement({ product: "salt", qty: 1, mode: "collect", total: 0, unit: 0 }, []).error, "an order for RM 0 is not placed");
+  const ssrc = readFileSync(join(REPO, "stmt", "worker.js"), "utf8");
+  ok(/DUMMY_VERIFIER/.test(ssrc) && /known \? rec\.verifier : DUMMY_VERIFIER/.test(ssrc), "an unknown username runs the same verifier work as a known one, so the refusal cannot be timed");
+  ok(/!PASS_RE\.test\(String\(master\)\)/.test(ssrc), "a customer's wrong password does not count against the owner's override brake");
+  ok(/\(process\.env\.STMT_KEY \|\| ""\)\.trim\(\)/.test(readFileSync(join(REPO, "tools", "stmt-publish.mjs"), "utf8")), "the publish trims STMT_KEY as the generator does");
+  ok(/new Anthropic\(\{ maxRetries: 6 \}\)/.test(readFileSync(join(REPO, "tools", "foldcall.mjs"), "utf8")), "the fold's call retries six times on 529 before leaving the batch staged");
+  ok(!/JSON\.stringify\("(UPDATE|INSERT)/.test(readFileSync(join(REPO, "tools", "drafts.mjs"), "utf8")), "no write in drafts.mjs goes to wrangler by --command, where a shell reads the text");
+
+  /* the statement: a gift owes nothing */
+  {
+    const gb = JSON.parse(JSON.stringify(bkR));
+    const cust = gb.sales.find((s) => s.customer && s.date).customer;
+    gb.sales.push({ rid: "g-1", customer: cust, date: "2026-09-01", qty: 1, total: 100, cost: 48, cash: 0, deliveredQty: 1, deliveredOn: "2026-09-01", goodwill: true, amend: [] });
+    const gp = join(REPO, "test", "tmp", "gift-book.json"); mkdirSync(dirname(gp), { recursive: true }); writeFileSync(gp, JSON.stringify(gb));
+    const was = process.env.SALT_BOOK; process.env.SALT_BOOK = gp;
+    const MS = await import("../tools/make_statements.mjs?gift=" + Date.now());
+    if (was == null) delete process.env.SALT_BOOK; else process.env.SALT_BOOK = was;
+    const g = MS.stmtRows(cust, { from: null, to: null, completed: true, open: true, pending: true }).find((x) => x.rid === "g-1");
+    ok(g && g.gift === true && g.owed === 0 && g.total === 0, `a goodwill unit with nothing booked in kind prints no charge AND owes nothing (${g && JSON.stringify({ gift: g.gift, owed: g.owed, total: g.total })})`);
+    try { rmSync(gp, { force: true }); } catch (e) { }
+  }
+
+  /* the desk, on the real master */
+  {
+    const { openMaster: omA } = await import("../tools/payload.mjs");
+    const { pricingSnapshot } = await import("../tools/book.mjs");
+    const { w } = await omA();
+    const snap = pricingSnapshot(w);
+    const list = PL.priceList("CX0-ZZ", bkR, snap, new Date("2026-09-08T04:00:00Z"));
+    const oilL = list.products.find((p) => p.product === "oil"), saltL = list.products.find((p) => p.product === "salt");
+    ok(oilL && saltL && oilL.sizes.map((x) => x.q).join() === snap.byProduct.oil.sizes.join() && saltL.sizes.map((x) => x.q).join() === snap.byProduct.salt.sizes.join() && oilL.sizes[0].q !== saltL.sizes[0].q,
+      `each product's list is drawn on its own board sizes (oil ${oilL && oilL.sizes.map((x) => x.q).join("/")}, salt ${saltL && saltL.sizes.map((x) => x.q).join("/")})`);
+    w.eval("setProd('salt');recompute();");
+    const before = JSON.parse(String(w.eval("JSON.stringify(pxLeakCharge())")));
+    w.eval("(function(){var c=sales.find(function(s){return s.customer&&s.date;}).customer;sales.push({rid:'lk-1',customer:c,date:'2026-09-01',qty:5,total:500,cost:240,cash:0,deliveredQty:5,amend:[{date:'2099-01-01',kind:'Fulfilment',kg:5,cash:0}]});})();recompute();");
+    const after = JSON.parse(String(w.eval("JSON.stringify(pxLeakCharge())")));
+    ok(before && after && Math.abs(after.sold - before.sold) < 0.005, `units the trail delivers after the last count stay out of the leak window (sold ${before && before.sold} before, ${after && after.sold} after)`);
+    w.eval("(function(){var i=sales.findIndex(function(s){return s.rid==='lk-1';});if(i>=0)sales.splice(i,1);})();recompute();");
+    const cs = JSON.parse(String(w.eval("JSON.stringify(COUNTS.filter(function(c){return (c.product||'salt')==='salt'&&c.drift!=null;}).slice(-3).map(function(c){return c.drift;}))")));
+    if (cs.length === 3) {
+      w.eval("(function(){var cs=COUNTS.filter(function(c){return (c.product||'salt')==='salt'&&c.drift!=null;}).slice(-3);cs[1].drift=5;})();recompute();");
+      const net = JSON.parse(String(w.eval("JSON.stringify(pxLeakCharge())")));
+      const expect = Math.max(0, -(cs[0] + 5 + cs[2]));
+      ok(Math.abs(net.leak - expect) < 0.005, `the three drifts are netted before the charge: a surplus of 5 offsets the deficits (leak ${net.leak}, expected ${expect})`);
+      w.eval("(function(){var cs=COUNTS.filter(function(c){return (c.product||'salt')==='salt'&&c.drift!=null;}).slice(-3);cs[1].drift=" + JSON.stringify(cs[1]) + ";})();recompute();");
+    }
+    const cust = String(w.eval("sales.find(function(s){return s.customer&&s.date;}).customer"));
+    const ef = (p) => String(w.eval("entryFault(" + JSON.stringify(p) + ")"));
+    ok(/more than the order/.test(ef({ direction: "SELL", product: "salt", party: cust, qty: 1, total: 100, delivery: 120, cash: 0, kg: 0, date: "2026-09-08" })), "the entry form refuses a delivery charge above the total, as the drafter does");
+    ok(/dated/.test(ef({ direction: "SELL", product: "salt", party: cust, qty: 1, total: 100, cash: 0, kg: 0, date: null, fresh: true }))
+      && ef({ direction: "SELL", product: "salt", party: cust, qty: 1, total: 100, cash: 0, kg: 0, date: "2026-09-08", fresh: true }) === "", "and an undated new row, while a dated pending one passes");
+    ok(/above zero/.test(ef({ direction: "SELL", product: "salt", party: cust, qty: 0, total: 100, cash: 0, kg: 0, date: "2026-09-08" })), "and a zero quantity");
+    const wb = JSON.parse(String(w.eval("(function(){try{switchTab('enter');}catch(e){}try{switchTab('workbench');}catch(e){}var b=document.querySelector('#wbModeSw button[data-m=\"loss\"]');if(!b)return JSON.stringify({no:'switch'});b.click();var u=document.getElementById('wbLossUnits'),d=document.getElementById('wbLossDate'),r=document.getElementById('wbRec');if(!u||!d||!r)return JSON.stringify({no:'fields'});u.value='1';u.dispatchEvent(new Event('input',{bubbles:true}));d.value='2026-09-08';d.dispatchEvent(new Event('input',{bubbles:true}));return JSON.stringify({disabled:r.disabled});})()")));
+    ok(wb.no == null && wb.disabled === false, "typing the units and the date into Self-use or loss enables Record without tapping another switch: " + JSON.stringify(wb));
+    const msrc = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+    ok(/cell\('Cost drawn',cost==null\?'&mdash;':fmt\(cost\)\+\(qty>0\?/.test(msrc), "the Approve card labels the order's cost as the order's, with the unit figure beside it");
+    ok(/function txGoods\(s\)\{return POSITION_ENGINE\.txGoods\(s\);\}/.test(msrc) && (msrc.match(/txGoods\(s\)\/s\.qty|txGoods\(x\)\/x\.qty/g) || []).length >= 10, "the desk strikes its customer rates on the goods through the engine's txGoods");
+    try { w.close(); } catch (e) { }
+  }
+}
 
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
 process.exit(fail ? 1 : 0);

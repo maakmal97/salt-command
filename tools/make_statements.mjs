@@ -151,7 +151,12 @@ function stmtRows(party,o){
        "excluded from revenue everywhere"; the tool read only rebate, so a goodwill gift with no
        rebate beside it would have been billed at full value. The only goodwill row on the book
        today carries rebate as well, which is what has been hiding it. */
-    const gift=(!!s.rebate||!!s.goodwill)&&paidCash<=0.009;
+    /* 08 Sep 2026: A GIFT OWES NOTHING, and a rebate row is a gift only when nothing is owed on it.
+       The flag plus "no cash" made the row print "no charge" while its unsettled value still went
+       into Outstanding: a goodwill unit with nothing booked in kind read "nil ... Outstanding 100".
+       Goodwill is out of the priced set by definition; a rebate row with a balance prints its
+       charge and the balance due, as v432 intended. */
+    const gift=!!s.goodwill||(!!s.rebate&&paidCash<=0.009&&owed<=0.009);
     /* v432: THE ROW CARRIES ITS OWN rid. Nothing on the document prints it, but without it a
        statement row cannot be traced back to the book row it came from, and any check over these
        figures has to match on party, date and quantity: CH4-MLR has two orders on 14 August of one
@@ -165,7 +170,7 @@ function stmtRows(party,o){
          showing its value as OUTSTANDING would tell a customer he owes money for salt he
          has never received. The desk has run on that rule since v111; the statement was
          quietly breaking it, and these go out to people. */
-      owed:(st.order==='Pending'||st.order==='Cancelled')?0:(owed>0.009?owed:0),
+      owed:(st.order==='Pending'||st.order==='Cancelled'||gift)?0:(owed>0.009?owed:0),
       pendingOrder:st.order==='Pending',
       /* A CANCELLED ORDER IS NOT A BILL (v193). txStat has returned 'Cancelled' since
          long before statements existed, and stmtRows simply never asked. So CC5-OKR's

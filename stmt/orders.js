@@ -99,7 +99,7 @@ export function checkPlacement(body, open) {
   const mode = String(body.mode || "");
   if (!MODES.includes(mode)) return { error: "collected or delivered, one or the other" };
   const total = body.total, unit = body.unit;
-  if (!isNum(total) || total < 0 || total > 1000000) return { error: "the total is not a figure the list quoted" };
+  if (!isNum(total) || !(total > 0) || total > 1000000) return { error: "the total is not a figure the list quoted" };   /* 08 Sep 2026: RM 0 was accepted */
   if (!isNum(unit) || unit < 0) return { error: "the unit rate is not a figure the list quoted" };
   const week = String(body.week || "").slice(0, 40);
   if (open.length >= MAX_OPEN) return { error: "you already have " + open.length + " orders open; wait for one to be completed" };

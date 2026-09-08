@@ -31,7 +31,9 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const OUT = join(REPO, "stmt", "pay.js");
 /* the same defaults qr-command's own build uses; both repos sit beside this one */
-export const PAY_MASTER = process.env.QR_MASTER || "C:/Users/maakm/Claude/Code/pay-afif-site";
+/* 08 Sep 2026: the pay master moved. pay-afif-site was retired that day and the store is
+   Code\qr-command\data\accounts.json, committed in that repo; this read the retired file. */
+export const PAY_MASTER = process.env.QR_MASTER || "C:/Users/maakm/Claude/Code/qr-command/data";
 export const QR_REPO = process.env.QR_REPO || "C:/Users/maakm/Claude/Code/qr-command";
 const WORKERS_SUBDOMAIN = "qyts8mh72kyg";
 

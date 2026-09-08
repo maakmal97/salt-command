@@ -191,7 +191,11 @@ Reply with the notes JSON only: version "${d.version.next}", the title, the note
 
 async function callClaude(req) {
   const { default: Anthropic } = await import("@anthropic-ai/sdk");
-  const client = new Anthropic();
+  /* SIX RETRIES, NOT THE SDK'S TWO (08 Sep 2026). Three dispatched runs in a row failed on
+     http 529 "Overloaded" inside twenty seconds and left the batch to the hourly net. The SDK
+     already backs off on 429, 529 and 5xx; it just gives up too soon for a job nobody is
+     watching. Six retries is about two minutes of patience before the batch is left staged. */
+  const client = new Anthropic({ maxRetries: 6 });
   const res = await client.messages.create(req);
   if (res.stop_reason === "refusal") throw new Error("the model declined: " + JSON.stringify(res.stop_details || null));
   const text = res.content.filter((b) => b.type === "text").map((b) => b.text).join("");

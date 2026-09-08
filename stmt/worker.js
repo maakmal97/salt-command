@@ -118,6 +118,9 @@ async function verifierOk(pass, verifier) {
     { name: "PBKDF2", salt: b64d(verifier.salt), iterations: verifier.rounds || 10000, hash: "SHA-256" }, base, 256);
   return ctEq(b64e(bits), verifier.hash);
 }
+/* a verifier no password matches, run when the username does not exist so the refusal costs the
+   same either way (08 Sep 2026); the salt and hash are fixed bytes, not secrets */
+const DUMMY_VERIFIER = { salt: "c2FsdC1jb21tYW5kLW51bGw=", hash: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=", rounds: 10000 };
 
 /* ONE ANSWER FOR EVERY REFUSAL. An unknown username, a wrong password and a malformed
    username all say the same thing, with the same status, after the same counter tick, so
@@ -175,14 +178,25 @@ async function handleOpen(request, env) {
   const uFails = await readN(uKey);
   if (!byMaster && uFails >= MAX_FAILS) return tooMany();
 
-  const byPass = !byMaster && !!(rec && rec.env) && !!pass && await verifierOk(pass, rec.verifier);
+  /* THE SAME WORK FOR A NAME THAT EXISTS AND ONE THAT DOES NOT (08 Sep 2026). The verifier ran only
+     when the record existed, so an unknown username answered in a fraction of a millisecond and a
+     known one with a wrong password in two: the one answer for every refusal, timed. A fixed
+     verifier is run against the typed password when there is no record, and its result discarded. */
+  const known = !!(rec && rec.env);
+  const passOk = (!byMaster && !!pass) ? await verifierOk(pass, known ? rec.verifier : DUMMY_VERIFIER) : false;
+  const byPass = known && passOk;
 
   if (!byMaster && !byPass) {
     /* KV counts are eventually consistent, so someone racing many requests can land a few
        more than ten before the count catches up. That is a brake, not a lock. */
     await bump(uKey, uFails);
     await bump(ipKey, ipFails);
-    if (master && masterKey) await bump(mKey, mFails);
+    /* THE OVERRIDE'S BRAKE COUNTS OVERRIDE ATTEMPTS ONLY (08 Sep 2026). The page sends every typed
+       value as both password and master, so ten wrong customer passwords from one address locked the
+       owner's override from that address for fifteen minutes: on his own phone, helping that
+       customer, exactly when it is for. A value shaped like a statement password was never a
+       master attempt. */
+    if (master && masterKey && !PASS_RE.test(String(master))) await bump(mKey, mFails);
     return json({ ok: false, error: REFUSED }, 401);
   }
 

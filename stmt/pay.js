@@ -103,7 +103,7 @@ export const PAY_ACCOUNTS = [
   "qr": true,
   "transfer": true,
   "jompay": false,
-  "maintenance": false
+  "maintenance": true
  },
  {
   "key": "boostw",

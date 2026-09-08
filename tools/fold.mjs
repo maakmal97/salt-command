@@ -36,7 +36,7 @@
  * matches no row or more than one; a new row that would replay one already on the book (same
  * party, date and total); a new row with no note; a version entry with no title or notes. A
  * refusal folds nothing: the batch is applied whole or not at all. */
-import { readFileSync, writeFileSync, existsSync } from "node:fs";
+import { readFileSync, writeFileSync, existsSync, unlinkSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { execFileSync } from "node:child_process";
@@ -187,35 +187,47 @@ export function plan(book, staged, notes) {
       } else if (it.amendKind === "Modification") {
         const newQty = +pay.newQty, newTotal = +pay.newTotal;
         if (!(newQty > 0) || !(newTotal >= 0)) { out.refused.push({ id: it.id, why: `the modification on ${it.amends} carries no valid new quantity and total` }); continue; }
-        entry.pay = { date: pay.date || r.date || TODAY, kind: "Modification", cash: 0, kg: 0, newQty, newTotal };
+        /* 08 Sep 2026: AN UNDATED AMENDMENT IS REFUSED, not dated to the order. The draft row carries
+           the target's own date, so `pay.date || r.date` stamped a fulfilment typed today with the day
+           the order was agreed. The drafter refuses a movement with no date; this gate now does too. */
+        if (!pay.date) { out.refused.push({ id: it.id, why: `the modification on ${it.amends} carries no date; an amendment is dated the day it happened, not the day the order was agreed` }); continue; }
+        entry.pay = { date: pay.date, kind: "Modification", cash: 0, kg: 0, newQty, newTotal };
         entry.does.push(`restate ${dir === "BUY" ? "lot" : "order"} ${it.amends} to ${newQty} unit / RM${newTotal}${pay.date ? " on " + pay.date : ""}`);
       } else {
-        entry.pay = { date: pay.date || r.date || TODAY, kind: it.amendKind, cash: +pay.cash || 0, kg: +pay.kg || 0 };
+        if (!pay.date) { out.refused.push({ id: it.id, why: `the ${it.amendKind.toLowerCase()} on ${it.amends} carries no date; an amendment is dated the day it happened, not the day the order was agreed` }); continue; }
+        entry.pay = { date: pay.date, kind: it.amendKind, cash: +pay.cash || 0, kg: +pay.kg || 0 };
         entry.does.push(`${it.amendKind.toLowerCase()} ${entry.pay.cash ? "RM" + entry.pay.cash + " " : ""}${entry.pay.kg ? entry.pay.kg + " unit " : ""}on ${entry.pay.date} against ${dir === "BUY" ? "lot" : "order"} ${it.amends}`);
       }
       if (dir !== "BUY" && entry.pay.kg > 0.009) out.moves.push({ product: prodOf(hits[0]), kg: -entry.pay.kg, who: hits[0].customer, when: entry.pay.date });
       if (dir === "BUY" && entry.pay.kg > 0.009) out.moves.push({ product: prodOf(hits[0]), kg: +entry.pay.kg, who: hits[0].supplier, when: entry.pay.date, landed: true });
     } else if (it.collection === "sales" || it.collection === "purchases") {
       const key = it.collection === "sales" ? "customer" : "supplier";
-      const dup = (book[it.collection] || []).find((x) => x[key] === r[key] && (x.date || null) === (r.date || null) && +x.total === +r.total && +x.qty === +r.qty);
-      /* v526: THE REPLAY QUESTION IS ASKED ON THE PHONE. An entry that matches a row on the book by
-         party, date, size and total is refused as a replay unless the phone asked and he said it is a
-         second order, which the entry then carries as `second`. Two identical CS6-BS rows on 07 Sep
-         were real; the guard would have refused the second. */
-      const second = !!(it.entry && it.entry.payload && it.entry.payload.second);
-      if (dup && !second) { out.refused.push({ id: it.id, why: `a row for ${r[key]} with the same date, size and total is already on the book, so this would be a replay` }); continue; }
-      if (dup && second) entry.does.push(`a second order beside ${dup.rid || "the row"} with the same party, date, size and total, marked so at entry on his word`);
       /* v540: EVERY ROW IS DATED (v487), and a pending row is dated to the day it was agreed. A draft
          made before the drafter learnt that arrives undated; the entry it came from carries the date
          the phone typed, and that is the row's date. With neither, the fold refuses rather than put
-         an undated row on the book for the gate to throw back. */
+         an undated row on the book for the gate to throw back.
+         08 Sep 2026: THIS RUNS BEFORE THE REPLAY GUARD, which it used to follow, so an undated draft
+         compared `null` against the book's dates, matched nothing, was then dated, and folded a
+         twin beside the row it replayed. */
       if (!r.date) {
         const typed = it.entry && it.entry.payload && it.entry.payload.date;
         if (!typed) { out.refused.push({ id: it.id, why: "the row carries no date and the entry typed none; every row on the ledger is dated (v487)" }); continue; }
         r.date = typed;
         entry.does.push(`date the pending row ${typed}, the day it was agreed, from the entry`);
       }
-      entry.append = it.collection;
+      const twinOf = (x) => x[key] === r[key] && (x.date || null) === (r.date || null) && +x.total === +r.total && +x.qty === +r.qty;
+      /* 08 Sep 2026: AND THE BATCH IS READ AS WELL AS THE BOOK. Two identical approved drafts, from
+         two devices or the laptop road, both matched nothing on the book and both folded. */
+      const dup = (book[it.collection] || []).find(twinOf)
+        || (out.items.find((e) => e.append === it.collection && e.row && twinOf(e.row)) || {}).row;
+      /* v526: THE REPLAY QUESTION IS ASKED ON THE PHONE. An entry that matches a row on the book by
+         party, date, size and total is refused as a replay unless the phone asked and he said it is a
+         second order, which the entry then carries as `second`. Two identical CS6-BS rows on 07 Sep
+         were real; the guard would have refused the second. */
+      const second = !!(it.entry && it.entry.payload && it.entry.payload.second);
+      if (dup && !second) { out.refused.push({ id: it.id, why: `a row for ${r[key]} with the same date, size and total is already on the book${dup.rid ? "" : " or in this batch"}, so this would be a replay` }); continue; }
+      if (dup && second) entry.does.push(`a second order beside ${dup.rid || "the row"} with the same party, date, size and total, marked so at entry on his word`);
+      entry.append = it.collection; entry.row = r;   /* the row, so a later item in this batch can see it */
       entry.does.push(`append to ${it.collection} with its note`);
       const moved = it.collection === "sales" ? (+r.deliveredQty || 0) : (r.pending || r.inTransit ? 0 : (r.receivedQty != null ? +r.receivedQty : +r.qty || 0));
       if (moved > 0.009) out.moves.push({ product: prodOf(r), kg: it.collection === "sales" ? -moved : +moved, who: r[key], when: r.date || TODAY, landed: it.collection === "purchases" });
@@ -334,6 +346,14 @@ export function applyAmend(row, pay, dir, note) {   /* v413: exported so the sui
     for (const k of PLAIN) {
       if (!asked(k)) continue;
       if (f[k] === null) delete row[k]; else row[k] = f[k];
+    }
+    /* 08 Sep 2026: THE COST FOLLOWS THE QUANTITY. `cost` is the order's absolute cost (v496) and a
+       Modification rescales it; a Correction of qty wrote the quantity and left the cost, so 1 unit
+       to 2 halved the unit cost and the margin read 78% for 56%. Scaled unless the correction set
+       the cost itself. */
+    if (asked("qty") && !asked("cost") && before.cost != null && +before.qty > 0 && +row.qty > 0) {
+      row.cost = +(before.cost / before.qty * row.qty).toFixed(2);
+      reasons.cost = "the order's cost follows its quantity";
     }
     /* A FALSE FLAG IS AN ABSENT FLAG on this book. Every row that is not cancelled simply has
        no `cancelled` key, and writing cancelled:false would make the corrected row the only
@@ -497,7 +517,7 @@ export function applyAmend(row, pay, dir, note) {   /* v413: exported so the sui
     if (pay.kind === "Cancellation") {
       const movedB = E.poRecvUnits(row);
       if (movedB > 0.009) throw new Error(`cancelling this lot would leave it carrying ${movedB} unit already received, which contradicts itself: restate qty by Modification for what arrived, then cancel the remainder`);
-      row.cancelled = true; return;
+      row.cancelled = true; if (pay.date) row.cancelledOn = pay.date; return;
     }
     const wasPending = !!row.pending;
     if (((+pay.cash || 0) > 0.009) || ((+pay.kg || 0) > 0.009)) {
@@ -544,7 +564,11 @@ export function applyAmend(row, pay, dir, note) {   /* v413: exported so the sui
        the walk itself does at position.mjs:195. */
     const moved = dir === "BUY" ? E.poRecvUnits(row) : Math.max(+row.deliveredQty || 0, E.txEffDeliv(row));
     if (moved > 0.009) throw new Error(`cancelling this row would leave it carrying ${moved} unit already moved, which contradicts itself: restate qty by Modification for what moved, then cancel the remainder`);
-    row.cancelled = true; return;
+    /* 08 Sep 2026: THE DATE IS STAMPED ON THE ROW AS WELL AS IN THE TRAIL. A row cancelled by a
+       Correction carries cancelledOn and no Cancellation step; one cancelled here carried the step
+       and no field, so the desk's "Cancelled on" cell and the refund's `since` read the field on
+       three cancelled rows and nothing on four. Both kinds now carry both. */
+    row.cancelled = true; if (pay.date) row.cancelledOn = pay.date; return;
   }
   row.cash = +((row.cash || 0) + (+pay.cash || 0)).toFixed(2);
   row.deliveredQty = +((row.deliveredQty || 0) + (+pay.kg || 0)).toFixed(2);
@@ -560,6 +584,11 @@ export function apply(book, staged, notes, masterText) {
   const problems = [];
   if (p.refused.length) p.refused.forEach((x) => problems.push(`${x.id}: ${x.why}`));
   if (!notes || !notes.version || !/^v\d+$/.test(notes.version)) problems.push("notes.version is missing (the next version after the master's)");
+  /* 08 Sep 2026: AND IT IS THE NEXT ONE. The shape alone was checked, so a notes file left behind
+     by an earlier hand fold (a v518 file sat beside a v542 master) was accepted whole and wrote
+     its stale version ahead of the current one; the changelog then said "already in". */
+  else { const m = /const evolution=\[\{\s*"?v"?\s*:\s*['"]v(\d+)['"]/.exec(masterText || "");
+    if (m && +notes.version.slice(1) <= +m[1]) problems.push(`notes.version is ${notes.version} against a master already at v${m[1]}: a stale notes file. Delete ${NOTES} and run --plan again`); }
   if (!notes || !notes.title) problems.push("notes.title is missing");
   if (!notes || !Array.isArray(notes.notes) || !notes.notes.length) problems.push("notes.notes is empty: the version entry needs at least one note");
   for (const it of p.items) {
@@ -716,6 +745,9 @@ if (isMain) {
     try { execFileSync("node", [resolve(REPO, "tools", "changelog.mjs")], { cwd: REPO, encoding: "utf8", env: { ...process.env, SALT_MASTER: MASTER } }); }
     catch (e) { console.log("  FAIL  the changelog did not take: " + String((e && e.stdout) || e)); process.exit(1); }
     console.log(`  ok    folded ${res.folded.length} row(s) into ${BOOK} and the master at ${notes.version}`);
+    /* 08 Sep 2026: the notes are spent. Left behind, --plan refuses to overwrite them and a later
+       hand fold takes them whole, stale version and all. */
+    try { unlinkSync(NOTES); } catch (e) { /* already gone */ }
     for (const mv of res.moves) console.log(mv.uncounted ? `  note  ${mv.product}: ${mv.out} out, ${mv.inn} in, but this book is uncounted so nothing stated was rolled` : `  ok    ${mv.product} shelf rolled ${mv.from} -> ${mv.to} (${mv.out} out, ${mv.inn} in)`);
     console.log(`  ok    QUEUE_COMMITTED -> ${book.QUEUE_COMMITTED}; ${FOLDED} names ${res.folded.length} id(s)`);
     console.log("  next  npm run build && npm test, then commit and push. The deploy marks the ids committed.");

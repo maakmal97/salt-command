@@ -3,7 +3,7 @@
    API: /queue, /vault, /bio and /bye must always hit the Worker, or a stale ping
    would strand the desk in read-only mode and a cached POST is meaningless. */
 
-const CACHE = "salt-shell-v4";   /* bumped at v321: the shell now carries push handlers */
+const CACHE = "salt-shell-v5";   /* bumped 08 Sep 2026: /orders and /stmt-users leave the cache */
 
 /* "./index.html" is deliberately absent: the host serves "./" and a navigation
    cannot be answered from a redirected response. The manifest starts at "./" too. */
@@ -24,7 +24,10 @@ const SHELL = [
    no way for the phone to know why; worse, an approved row would keep asking to be approved
    while the one actually waiting stayed invisible. It was left out of this list at first and
    the self-test caught it: a deleted draft was still on screen after a reload. */
-const API = /^\/(queue|vault|bio|bye|menu|qr|rev|rev\.json|drafts|push)(\/|$)/;
+/* /orders, /stmt-users and /draft-now join 08 Sep 2026: the desk fetches the first two by GET,
+   and the page's own cache:'no-store' never reaches a service worker, whose "everything else"
+   branch stored any 200 for ever. The phone's order list froze at first load. */
+const API = /^\/(queue|vault|bio|bye|menu|qr|rev|rev\.json|drafts|push|orders|stmt-users|draft-now)(\/|$)/;
 
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));

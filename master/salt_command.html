@@ -4115,7 +4115,11 @@ function ladderWalk(sizes,C,P){
     if(q>0&&prevRate<Infinity&&p/q>prevRate+1e-9){
       const stepped=Math.floor((prevRate*q+1e-9)/LADDER.round.to)*LADDER.round.to;
       const least=g!=null?fl:cogs*(1+LADDER.floor);   // never step down through the floor
-      if(stepped>0&&stepped>=least-0.009)p=stepped;
+      /* 08 Sep 2026: NOR ONTO IT. `>=least-0.009` let the step land exactly on the floor, and the
+         floor guard below then had nothing to lift, against its own rule that an ask equal to its
+         refusal line is not an ask. Where no grid step holds the rate flat above the floor, the
+         floor wins over the rate law, which is the order v352 wrote down. */
+      if(stepped>0&&stepped>least+0.009)p=stepped;
     }
     /* v352: AND NEVER UNDER THE FLOOR, WHICH IS THE HOUSE RULE ALREADY WRITTEN DOWN. v263 put it
        plainly: a price above its floor that breaks a rate taper is a decision the desk can defend,
@@ -5057,7 +5061,7 @@ const LOST_LABEL={nostock:'no stock',price:'would not pay the price',credit:'ref
 const CONTACT_HOW={call:'called',message:'messaged',visit:'visited',other:'contacted'};
 const CONTACT_OUT={ordered:'ordered',later:'asked to be tried later',no:'not interested',noreply:'no reply'};
 /* the most recent word with a party, and every promise whose date has arrived */
-const lastContact=id=>contacts.filter(c=>c.party===id).sort((a,b)=>a.date<b.date?1:-1)[0]||null;
+const lastContact=id=>contacts.filter(c=>c.party===id).sort((a,b)=>{const x=a.date||'',y=b.date||'';return x<y?1:x>y?-1:0;})[0]||null;
 const contactsDue=()=>contacts.filter(c=>c.next&&dbet(c.next)>=0&&c.outcome!=='no')
   .filter(c=>{const l=lastContact(c.party);return l&&l.date===c.date;})   // superseded by a later call
   .sort((a,b)=>a.next<b.next?-1:1);
@@ -5848,6 +5852,7 @@ var goodwillRM,receivedPO,defaultPO,pricedSales,buyUnits,buyRM,wavgBuy,soldUnits
 /* ---- three-axis status engine (R1) ---- */
 function txPrice(s){return POSITION_ENGINE.txPrice(s);}
 function txPaid(s){return POSITION_ENGINE.txPaid(s);}          // cash + non-cash settled
+function txGoods(s){return POSITION_ENGINE.txGoods(s);}        // the total less the delivery inside it: the rate is struck on this (v502; wired 08 Sep 2026)
 function txDeliv(s){return POSITION_ENGINE.txDeliv(s);} // physical + offset fulfilment
 function txCost(s){return POSITION_ENGINE.txCost(s);}                 // v496: the order's cost, RM, absolute
 function txUnitCost(s,f){return POSITION_ENGINE.txUnitCost(s,f);}    // v496: the one derivation of RM per unit
@@ -6212,7 +6217,7 @@ function ovAmend(p,q){
     if(p.kind==='Cancellation'){
       const movedB=poRecvUnits(row);
       if(movedB>0.009){provNotes.push('a cancellation on '+(row.rid||'a lot')+' was not applied: '+units(movedB)+' has already been received');return;}
-      row.cancelled=true;return;}
+      row.cancelled=true;if(p.date)row.cancelledOn=p.date;return;}   /* the field as well as the trail, as the fold stamps it (08 Sep 2026) */
     if((+p.cash||0)>0.009){
       const before=wasPending?0:(row.cash!=null?row.cash:(row.status==='paid'?row.total:0));
       row.cash=+(before+(+p.cash)).toFixed(2);}
@@ -6249,7 +6254,7 @@ function ovAmend(p,q){
   if(p.kind==='Cancellation'){
     const movedS=txEffDeliv(row);
     if(movedS>0.009){provNotes.push('a cancellation on '+(row.rid||'a row')+' was not applied: '+units(movedS)+' has already been delivered');return;}
-    row.cancelled=true;ovRefund(row,p.date);return;}
+    row.cancelled=true;if(p.date)row.cancelledOn=p.date;ovRefund(row,p.date);return;}   /* the field as well as the trail, as the fold stamps it (08 Sep 2026) */
   row.cash=+((row.cash||0)+(+p.cash||0)).toFixed(2);
   row.deliveredQty=+((row.deliveredQty||0)+(+p.kg||0)).toFixed(2);
   /* v420: THE FOLD MAKES FIVE WRITES HERE AND THE DESK MADE TWO. The three missing ones are the
@@ -7788,7 +7793,7 @@ function boundaryScan(){
       add('breach','Board unpriced',PRODUCTS[PROD].name,
         units(LK.cur.qty)+' at '+fmt(LK.cur.rate)+' landed '+(LK.cur.date||'not dated'),
         'the basis is locked to the '+units(LK.lock.lot.qty)+' lot of '+LK.lock.lot.date+'; every floor has moved with the new lot, so re-lock it on the Pricing tab');return;}
-    const ls=pPurch(PROD).filter(x=>poLive(x)&&x.qty>0).sort((a,b)=>((a.receivedOn||a.date)<(b.receivedOn||b.date))?-1:1);
+    const ls=pPurch(PROD).filter(x=>poLive(x)&&x.qty>0).sort((a,b)=>{const x=a.receivedOn||a.date,y=b.receivedOn||b.date;if(!x||!y)return (!x&&!y)?0:(!x?1:-1);return x<y?-1:x>y?1:0;});
     if(ls.length<2)return;
     const L=ls[ls.length-1],Pv=ls[ls.length-2],lr=+(L.total/L.qty).toFixed(2),pr=+(Pv.total/Pv.qty).toFixed(2);
     const when=L.receivedOn||L.date; if(!when||dAge(when)>7||Math.abs(lr-pr)<0.005)return;
@@ -8059,7 +8064,7 @@ function tabOverview(){
      on a book that trades at RM 13. Oil's own last three are CZ4-MK, CH4-MLR and CS6-BS-R,
      and none of them appeared. The digest cards beside it are scoped, so this one panel was
      answering a different question from every neighbour without saying so. */
-  const recent=pSales(PROD).slice().filter(s=>s.date).sort((a,b)=>a.date<b.date?1:-1).slice(0,3);
+  const recent=pSales(PROD).slice().filter(s=>s.date).sort((a,b)=>{const x=a.date||'',y=b.date||'';return x<y?1:x>y?-1:0;}).slice(0,3);
   /* v401: FOUR TABLES WENT TO THE VIEW THAT OWNS THEM, and this is why nothing here
      replaces them. Key accounts, Reconnect, Partner performance and Reseller milestones
      were this part restating the Customers view: the sortable database, the approach
@@ -8382,7 +8387,7 @@ const BULK_OVER=6.25;
 function lotOutlook(){
   const c=pxCost(), shrink=pxShrinkRate();
   const priced=pricedSales.filter(s=>s.qty>0&&s.total>0&&!s.cancelled);
-  const rates=priced.map(s=>({r:s.total/s.qty,d:s.date,who:s.customer,q:s.qty}));
+  const rates=priced.map(s=>({r:txGoods(s)/s.qty,d:s.date,who:s.customer,q:s.qty}));
   /* THE CEILING HAS TO RESPECT THE LADDER, or it is a fantasy (v180).
      A first cut priced every remaining unit at the best rate ever paid, RM210/unit. That
      rate was achieved on a HALF UNIT. Applying it to eighty-odd units implied RM18,589
@@ -8399,7 +8404,7 @@ function lotOutlook(){
     const k=q>BULK_OVER?'bulk':key;
     let b=bands.find(x=>x.k===k);
     if(!b){b={k:k,q:(k==='bulk'?q:key),units:0,rates:[]};bands.push(b);}
-    b.units+=q; b.rates.push(s.total/s.qty);
+    b.units+=q; b.rates.push(txGoods(s)/s.qty);
   });
   const totUnits=bands.reduce((a,b)=>a+b.units,0)||1;
   bands.forEach(b=>{
@@ -8428,7 +8433,7 @@ function lotOutlook(){
   const lots=pPurch(PROD).filter(poLive).filter(p=>poRecvUnits(p)>0.0001)
     .map(p=>({p:p,recv:poRecvUnits(p),date:p.receivedOn||p.date,
               rate:+(p.total/p.qty).toFixed(2),sup:p.supplier}))
-    .sort((a,b)=>a.date<b.date?-1:1);
+    .sort((a,b)=>{const x=a.date,y=b.date;if(!x||!y)return (!x&&!y)?0:(!x?1:-1);return x<y?-1:x>y?1:0;});
   /* THE COUNT ALWAYS WINS, here as everywhere (v180). A first cut rebuilt what was left
      by subtracting delivered units and a share of the shrinkage plug from each lot, and
      arrived at 88.52 unit against a counted 78.4. Any reconstruction that disagrees with
@@ -8512,7 +8517,7 @@ function supplierStats(){
       best:o.rates.length?Math.min.apply(null,o.rates.map(r=>r.r)):null,
       worst:o.rates.length?Math.max.apply(null,o.rates.map(r=>r.r)):null,
       fill:o.kg>0?+(o.recvUnits/o.kg*100).toFixed(0):null,
-      lastRate:o.rates.length?o.rates.slice().sort((a,b)=>a.d<b.d?1:-1)[0].r:null});
+      lastRate:o.rates.length?o.rates.slice().sort((a,b)=>{const x=a.d||'',y=b.d||'';return x<y?1:x>y?-1:0;})[0].r:null});   /* newest dated lot; an undated one is not known to be last (08 Sep 2026) */
   }).sort((a,b)=>b.kg-a.kg);
 }
 function srcHead(){return `<h1>Sourcing</h1>
@@ -8910,7 +8915,7 @@ function drawAnalysis(){
       cur='anScatter';
       // 2. price vs size, with the live board through it
       const dots=pricedSales.filter(s=>s.qty>0&&s.total>0&&!s.cancelled)
-        .map(s=>({x:s.qty,y:+(s.total/s.qty).toFixed(2),id:s.customer,d:s.date}));
+        .map(s=>({x:s.qty,y:+(txGoods(s)/s.qty).toFixed(2),id:s.customer,d:s.date}));
       const qs=[];for(let q=0.5;q<=13;q+=0.25)qs.push(+q.toFixed(2));
       const line=qs.map(q=>({x:q,y:+pxQuote(q,sg.net,0).perUnit.toFixed(2)}));
       const floor=qs.map(q=>({x:q,y:+(floorTotal(q,c.eff)/q).toFixed(2)}));
@@ -9286,7 +9291,7 @@ function tabInventory(){
   /* v275: SCOPED. This is drawn once per product and read the whole log, so oil's heading
      listed salt's shrinkage rows and 'still unexplained' subtracted a whole-desk attributed
      total from a per-product plug. */
-  const suRows=selfUseLog.filter(r=>(r.product||DEFAULT_PROD)===PROD).sort((a,b)=>a.date<b.date?1:-1),suUnits=+suRows.reduce((a,r)=>a+r.kg,0).toFixed(2);
+  const suRows=selfUseLog.filter(r=>(r.product||DEFAULT_PROD)===PROD).sort((a,b)=>{const x=a.date||'',y=b.date||'';return x<y?1:x>y?-1:0;}),suUnits=+suRows.reduce((a,r)=>a+r.kg,0).toFixed(2);
   /* v385: SHUT, and the summary carries the answer. These three were open on every load and
      on both books, so the lead part of the Inventory view opened as six standing sections of
      workings. Every one of them is read once and then trusted, which is what a fold is for;
@@ -9741,7 +9746,7 @@ function edSubmitNew(){
   /* v524: an R2 row books to its associate; a blank date takes today when something moved */
   if(all.stream==='R2'&&all.assoc&&!all.party)all.party=all.assoc;
   if(!all.date&&((+all.cash||0)>0||(+all.deliveredQty||0)>0))all.date=TODAY.toISOString().slice(0,10);
-  const fault=entryFault({direction:'SELL',product:all.product||'salt',party:all.party,assoc:all.assoc,downstream:all.downstream,date:all.date,cash:all.cash,kg:all.deliveredQty});
+  const fault=entryFault({direction:'SELL',product:all.product||'salt',party:all.party,assoc:all.assoc,downstream:all.downstream,date:all.date,cash:all.cash,kg:all.deliveredQty,qty:all.qty,total:all.total,delivery:all.delivery,fresh:true});
   if(fault)return say(fault);
   if(!(all.qty>0))return say('An order needs a quantity above zero.');
   const ra=replayAnswer('SELL',all.product||'salt',all.party,all.date||null,all.qty,all.total||0);   /* v526 */
@@ -11359,7 +11364,7 @@ function phonePayloadBuild(){
           referred:(r.referrals||[]).length,earned:+(+r.earned).toFixed(2),applied:rebateApplied(r.id),toNext:+(+r.toNextR2).toFixed(2),band:r.bringBand,departed:isDeparted(r.id)}));
       }catch(e){}
       try{ out.rewards=customerRewards().map(r=>({id:r.id,bought:r.rev,band:r.band,earned:r.earned,toNext:r.toNext})); }catch(e){}
-      try{ out.lost=lostDemand.slice().sort((a,b)=>a.date<b.date?1:-1).map(r=>({d:r.date,p:r.party||null,pr:r.product||DEFAULT_PROD,q:+(+r.kg).toFixed(2),rm:+(+(r.rm||0)).toFixed(2),why:LOST_LABEL[r.why]||r.why||''})); }catch(e){}
+      try{ out.lost=lostDemand.slice().sort((a,b)=>{const x=a.date||'',y=b.date||'';return x<y?1:x>y?-1:0;}).map(r=>({d:r.date,p:r.party||null,pr:r.product||DEFAULT_PROD,q:+(+r.kg).toFixed(2),rm:+(+(r.rm||0)).toFixed(2),why:LOST_LABEL[r.why]||r.why||''})); }catch(e){}
       try{
         const {pts,miss,far}=mapPoints();
         if(pts.length){
@@ -11500,7 +11505,7 @@ function costPanel(){
      chevron on it. The h2 it used to sit under IS the summary now, so the fold costs no heading. */
   return `<details class="obsec" style="margin-top:20px"><summary>The cost of doing business <span class="q">per unit, then per order</span><span class="ct">${fmt(c.eff)} + ${s0.perOrder>0?fmt(s0.perOrder):'&mdash;'}</span></summary>
   <div class="kpis k3">
-    <div class="kpi"><div class="l">Goods, per unit</div><div class="v">${fmt(c.eff)}</div><div class="n">${fmt(c.repl)} plus ${(c.shrink*100).toFixed(2)}% of the leak; you absorb ${fmt(c.absorbed)} more</div></div>
+    <div class="kpi"><div class="l">Goods, per unit</div><div class="v">${fmt(c.eff)}</div><div class="n">${fmt(c.repl)} plus ${(c.shrink*100).toFixed(2)}% of the leak${c.absorbed>0.009?'; you absorb '+fmt(c.absorbed)+' more':''}</div></div>
     <div class="kpi ${s0.knownParts<s0.totalParts?'r':'g'}"><div class="l">Per order</div><div class="v">${s0.perOrder>0?fmt(s0.perOrder):'&mdash;'}</div><div class="n">${s0.knownParts} of ${s0.totalParts} lines measured</div></div>
     <div class="kpi"><div class="l">Provisioned against</div><div class="v">${R.badDebtPct==null?'&mdash;':R.badDebtPct+'%'}</div><div class="n">${fmt0(R.badDebtRM)} discounted on ${fmt0(R.revenueRM)} written</div></div>
   </div>
@@ -12216,7 +12221,7 @@ function observations(){
       const q=+s.qty||0,tot=+s.total||0; if(!(q>0)||!(tot>0))return false;
       const fp=floorPct(q); const need=(eff*q)/(1-fp/100);
       return tot<need-0.009&&dbet(s.date)<=45;
-    }).sort((a,b)=>a.date<b.date?1:-1);
+    }).sort((a,b)=>{const x=a.date||'',y=b.date||'';return x<y?1:x>y?-1:0;});
     if(breach.length){
       const worst=breach.slice(0,5);
       add({id:'int:underfloor',fam:'integrity',sev:'watch',conf:'measured',rm:null,tab:'pricing',
@@ -12235,7 +12240,7 @@ function observations(){
      has gone quiet. */
   const late=[];
   cust.forEach(c=>{
-    const rows=D.filter(s=>s.customer===c).sort((a,b)=>a.date<b.date?-1:1);
+    const rows=D.filter(s=>s.customer===c).sort((a,b)=>{const x=a.date,y=b.date;if(!x||!y)return (!x&&!y)?0:(!x?1:-1);return x<y?-1:x>y?1:0;});
     if(rows.length<3)return;
     const gaps=[];for(let i=1;i<rows.length;i++)gaps.push((new Date(rows[i].date)-new Date(rows[i-1].date))/86400000);
     gaps.sort((a,b)=>a-b);
@@ -12363,7 +12368,7 @@ function observations(){
   /* THE INVENTORY ROLL AGAINST THE LATEST LOT. */
   try{
     const lots=pPurch(DEFAULT_PROD).filter(p=>poLive(p)&&poRecvUnits(p)>0.0001)
-                 .sort((a,b)=>(a.receivedOn||a.date)<(b.receivedOn||b.date)?-1:1);
+                 .sort((a,b)=>{const x=a.receivedOn||a.date,y=b.receivedOn||b.date;if(!x||!y)return (!x&&!y)?0:(!x?1:-1);return x<y?-1:x>y?1:0;});
     const last=lots[lots.length-1];
     if(last&&typeof STOCK_COST!=='undefined'&&STOCK_COST!=null){
       const rate=obsDiv(+last.total,+last.qty);
@@ -13171,7 +13176,7 @@ function median(a){if(!a.length)return 0;const m=Math.floor(a.length/2);return a
    fifth recurrence of the whole-book-inside-one-book class. */
 function custPrices(id){
   if(!id||id==='__new__')return [];
-  return pSales(PROD).filter(s=>s.customer===id&&!s.cancelled&&s.qty>0&&s.total>0).map(s=>s.total/s.qty).sort((a,b)=>a-b);
+  return pSales(PROD).filter(s=>s.customer===id&&!s.cancelled&&s.qty>0&&s.total>0).map(s=>txGoods(s)/s.qty).sort((a,b)=>a-b);
 }
 /* LIVE PRICING COACH for the entry form. Judges the typed price against what it costs
    to replace the salt and against what this party has actually paid before. Advisory
@@ -13180,13 +13185,17 @@ function custPrices(id){
 function priceCoach(party,price,qty){
   const out=[];if(!(price>0))return out;
   const rc=replCost(),m=(price-rc)/price*100;
-  const bandQ=qty>0?qty:1, fl=floorPct(bandQ), fp=floorPrice(bandQ);
-  const all=pSales(PROD).filter(s=>!s.cancelled&&s.qty>0&&s.total>0).map(s=>s.total/s.qty);   /* v409: was bare `sales`, so oil was measured against salt's best rate */
+  /* 08 Sep 2026: THE FLOOR IS THE ENGINE'S, per size. This coach quoted floorPrice(), a flat 20%
+     over replacement rounded to the five that the ladder retired at v504, so it told him RM 59 was
+     "under the 20% floor for retail" while the board's floor for 1 unit was RM 58.56 and the
+     drafter raised no flag. One floor, the one the Price view prints and the drafter measures. */
+  const bandQ=qty>0?qty:1, flT=floorTotal(bandQ), fpu=bandQ>0?flT/bandQ:0;
+  const all=pSales(PROD).filter(s=>!s.cancelled&&s.qty>0&&s.total>0).map(s=>txGoods(s)/s.qty);   /* v409: was bare `sales`, so oil was measured against salt's best rate */
   const best=all.length?Math.max.apply(null,all):0;
   if(price<rc-0.009)
-    out.push({sev:'err',msg:`<b>${fmt(price)}/unit is below the ${fmt(rc)}/unit it costs to replace this ${PRODUCTS[PROD].name.toLowerCase()}.</b> Every unit loses ${fmt(rc-price)}. ${fmt0(fp)}/unit clears the ${fl}% floor for ${BAND_LABEL[sizeBand(bandQ)]}.`});
-  else if(m<fl-0.009)
-    out.push({sev:'warn',msg:`Only <b>${m.toFixed(0)}%</b> against the ${fmt(rc)}/unit replacement cost, under the <b>${fl}% floor for ${BAND_LABEL[sizeBand(bandQ)]}</b>. <b>${fmt0(fp)}/unit</b> would clear it.`});
+    out.push({sev:'err',msg:`<b>${fmt(price)}/unit is below the ${fmt(rc)}/unit it costs to replace this ${PRODUCTS[PROD].name.toLowerCase()}.</b> Every unit loses ${fmt(rc-price)}. The floor for ${units(bandQ)} is ${fmt(fpu)}/unit.`});
+  else if(price<fpu-0.009)
+    out.push({sev:'warn',msg:`<b>${fmt(price)}/unit is under the floor for ${units(bandQ)}</b>, ${fmt(fpu)}/unit (${fmt(flT)} for the order: the goods after the leak). Margin ${m.toFixed(0)}% on replacement cost.`});
   if(best>0&&price>best+0.009)
     out.push({sev:'good',msg:`<b>Best rate the desk has ever taken</b>, ahead of ${fmt(best)}/unit. Margin ${m.toFixed(0)}% on replacement cost.`});
   const h=custPrices(party);
@@ -13272,8 +13281,10 @@ function pxFreightRate(){
    or so on either, holds enough to smooth a single odd lot, and moves within a fortnight. The
    rate, the freight and (through the counts) the leak all read off the same lots. */
 function pxWindowLots(){
-  return pPurch(PROD).filter(p=>poLive(p)&&p.qty>0&&p.total>0&&(p.receivedOn||p.date))
-    .sort((a,b)=>(a.receivedOn||a.date)<(b.receivedOn||b.date)?-1:1).slice(-3);
+  /* 08 Sep 2026: RECEIVED means landed. poLive alone let a lot in transit be one of the last three
+     received, and its rate moved the whole board the day it was ordered rather than the day it arrived. */
+  return pPurch(PROD).filter(p=>poLive(p)&&p.qty>0&&p.total>0&&(p.receivedOn||p.date)&&poRecvUnits(p)>0)
+    .sort((a,b)=>{const x=a.receivedOn||a.date,y=b.receivedOn||b.date;if(!x||!y)return (!x&&!y)?0:(!x?1:-1);return x<y?-1:x>y?1:0;}).slice(-3);
 }
 /* v504: THE LEAK, FROM THE COUNTS. A count is taken when a lot lands and the inventory is at or
    near empty, so the drift at each count is the leak of that cycle, every use included. The
@@ -13281,14 +13292,26 @@ function pxWindowLots(){
    a ratio the cost stack applies to landed. Null where fewer than one cycle can be read. */
 function pxLeakCharge(){
   const cs=(typeof COUNTS!=='undefined'?COUNTS:[]).filter(c=>(c.product||'salt')===PROD&&c.date&&c.drift!=null)
-    .sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0);
+    .sort((a,b)=>{const x=a.date,y=b.date;if(!x||!y)return (!x&&!y)?0:(!x?1:-1);return x<y?-1:x>y?1:0;});
   const last=cs.slice(-3); if(!last.length)return null;
-  const all=(typeof COUNTS!=='undefined'?COUNTS:[]).filter(c=>(c.product||'salt')===PROD&&c.date).sort((a,b)=>a.date<b.date?-1:1);
+  const all=(typeof COUNTS!=='undefined'?COUNTS:[]).filter(c=>(c.product||'salt')===PROD&&c.date).sort((a,b)=>{const x=a.date,y=b.date;if(!x||!y)return (!x&&!y)?0:(!x?1:-1);return x<y?-1:x>y?1:0;});
   const i=all.findIndex(c=>c.date===last[0].date);
   const start=i>0?all[i-1].date:null, end=last[last.length-1].date;
-  const leak=last.reduce((a,c)=>a+Math.max(0,-(+c.drift||0)),0);
-  const sold=pSales(PROD).filter(s=>!s.cancelled).reduce((a,s)=>{const d=s.deliveredOn||s.date;
-    return a+((d&&(start==null||d>start)&&d<=end)?(+s.deliveredQty||0):0);},0);
+  /* 08 Sep 2026, two corrections to the reading. THE DRIFTS ARE NETTED: a lot not yet stacked at
+     one count shows as a deficit there and the same surplus at the next (the v473 note says so),
+     and flooring each count at zero before summing charged the deficit and forgave nothing. And
+     THE UNITS ARE DATED BY THE MOVEMENT, NOT THE ORDER: a row's whole deliveredQty used to land on
+     deliveredOn||date, so a part-delivered order completed after the last count put its later
+     units into a cycle that had closed. Each Fulfilment step counts at its own date; units the
+     trail does not carry (a Correction that raised deliveredQty) count at deliveredOn||date. */
+  const leak=Math.max(0,-last.reduce((a,c)=>a+(+c.drift||0),0));
+  const inWin=d=>!!d&&(start==null||d>start)&&d<=end;
+  const sold=pSales(PROD).filter(s=>!s.cancelled).reduce((a,s)=>{
+    let got=0,tr=0;
+    (s.amend||[]).forEach(st=>{const k=+st.kg||0;if(st.kind!=='Fulfilment'||!(k>0))return;tr+=k;if(inWin(st.date||s.date))got+=k;});
+    const rest=(+s.deliveredQty||0)-tr;
+    if(rest>0&&inWin(s.deliveredOn||s.date))got+=rest;
+    return a+got;},0);
   if(!(sold>0))return null;
   return {ratio:+(leak/sold).toFixed(4),leak:+leak.toFixed(2),sold:+sold.toFixed(2),cycles:last.length,from:start,to:end};
 }
@@ -13460,8 +13483,8 @@ function priceLockState(p){
 /* the rate actually paid for the most recent lot of this product, which is what a
    replacement costs today, rather than an average of what it used to cost */
 function latestLot(p){
-  const ls=pPurch(p).filter(x=>poLive(x)&&x.qty>0)
-    .sort((a,b)=>((a.receivedOn||a.date)<(b.receivedOn||b.date))?-1:1);
+  const ls=pPurch(p).filter(x=>poLive(x)&&x.qty>0&&poRecvUnits(x)>0)   /* 08 Sep 2026: landed, as pxWindowLots */
+    .sort((a,b)=>{const x=a.receivedOn||a.date,y=b.receivedOn||b.date;if(!x||!y)return (!x&&!y)?0:(!x?1:-1);return x<y?-1:x>y?1:0;});
   const L=ls[ls.length-1];
   return L?{qty:L.qty,total:L.total,rate:+(L.total/L.qty).toFixed(4),date:L.receivedOn||L.date,sup:L.supplier}:null;
 }
@@ -13754,7 +13777,7 @@ const BAND_NAME={small:'1 unit and under',mid:'over 1 unit to '+PRICE.retailTo+'
 function earnedPerUnit(){
   const eff=pxCost().eff;
   const rows=pricedSales.filter(s=>s.qty>0&&s.total>0&&!s.cancelled).map(s=>{
-    const perUnit=s.total/s.qty, lot=costOf(s);
+    const perUnit=txGoods(s)/s.qty, lot=costOf(s);
     return {id:s.customer,date:s.date,q:s.qty,rm:s.total,perUnit:+perUnit.toFixed(2),
       band:bandOf(s.qty),oneOff:isOneOff(s.customer),
       lotCost:+lot.toFixed(2),pkLot:+(perUnit-lot).toFixed(2),profLot:+((perUnit-lot)*s.qty).toFixed(2),
@@ -13792,7 +13815,7 @@ function capCase(limit){
     losers:above.filter(r=>r.pkEff<0)};
 }
 function pxHistory(q){
-  const hits=pricedSales.filter(s=>Math.abs(s.qty-q)<0.01&&s.total>0).map(s=>s.total/s.qty).sort((a,b)=>a-b);
+  const hits=pricedSales.filter(s=>Math.abs(s.qty-q)<0.01&&s.total>0).map(s=>txGoods(s)/s.qty).sort((a,b)=>a-b);
   if(!hits.length)return {n:0,med:null,best:null};
   const m=hits.length%2?hits[(hits.length-1)/2]:(hits[hits.length/2-1]+hits[hits.length/2])/2;
   return {n:hits.length,med:+m.toFixed(2),best:+hits[hits.length-1].toFixed(2)};
@@ -14063,7 +14086,7 @@ function nextBest(id){
      as +Infinity on screen. Rebate and zero-value rows are dropped from the rate, and if
      nothing priced is left there is no rate to compare against and delta is null. */
   const paidRows=rows.filter(s=>!s.rebate&&s.total>0.009);
-  const ps=paidRows.map(s=>s.total/s.qty).sort((a,b)=>a-b);
+  const ps=paidRows.map(s=>txGoods(s)/s.qty).sort((a,b)=>a-b);
   const paid=ps.length?ps[Math.floor(ps.length/2)]:null;
   /* v248: THE CARD QUOTES THE BOARD. This read pxQuote, the ladder that predates the tier
      board, so the desk stated two different prices for the same lot: RM130 on a revive card
@@ -14540,7 +14563,7 @@ function approachBoard(approach,owedBy,bm){
   const pop=(x,side)=>{
     const d=dbet(iso(x.dd));                        // positive means already past
     const hist=pricedSales.filter(s=>s.customer===x.id&&!s.cancelled&&s.qty>0)
-      .sort((a,b)=>a.date<b.date?1:-1).slice(0,3)
+      .sort((a,b)=>{const x=a.date||'',y=b.date||'';return x<y?1:x>y?-1:0;}).slice(0,3)
       .map(s=>`<tr><td>${s.date||'not dated'}</td><td>${units(s.qty)} &middot; ${fmt0(s.total)}</td></tr>`).join('');
     const act=x.debt>0.009
       ?`<span style="color:var(--crim)"><b>Collect ${fmt0(x.debt)} first.</b></span> A chase comes before an offer.`
@@ -14675,7 +14698,7 @@ function tabConcentration(){
   const risk=c.hhi>3000?'high':c.hhi>1800?'moderate':'low';
   const riskCol=risk==='high'?'var(--crim)':risk==='moderate'?'var(--gold)':'var(--grn)';
   const ind=k=>concSort.key===k?(concSort.dir<0?' ↓':' ↑'):'';
-  const ld=lostDemand.slice().sort((a,b)=>a.date<b.date?1:-1);
+  const ld=lostDemand.slice().sort((a,b)=>{const x=a.date||'',y=b.date||'';return x<y?1:x>y?-1:0;});
   const ldUnits=+ld.reduce((a,r)=>a+r.kg,0).toFixed(2), ldRM=+ld.reduce((a,r)=>a+(r.rm||0),0).toFixed(2);
   const ldStock=+ld.filter(r=>r.why==='nostock').reduce((a,r)=>a+r.kg,0).toFixed(2);
   const sv=x=>concSort.key==='id'?x.id:concSort.key==='marginpct'?(x.rev?x.margin/x.rev:0):concSort.key==='share'?x.rev:(x[concSort.key]||0);
@@ -14925,7 +14948,7 @@ function drawConcCharts(){
 function redeemRebate(rid){const rst=networkStats().find(x=>x.id===rid);if(!rst)return;const applied=rebateApplied(rid);const freeUnits=+(rst.earned-applied).toFixed(2);if(freeUnits<=0.009)return;
   // rule: a free unit offsets an outstanding advance first (clears the debt, no salt leaves the inventory);
   // only where the associate holds no advance does it go out as free salt through the queue.
-  const adv=sales.filter(s=>s.customer===rid&&txAdvance(s)>0.009).sort((a,b)=>a.date<b.date?-1:1);
+  const adv=sales.filter(s=>s.customer===rid&&txAdvance(s)>0.009).sort((a,b)=>{const x=a.date,y=b.date;if(!x||!y)return (!x&&!y)?0:(!x?1:-1);return x<y?-1:x>y?1:0;});
   if(adv.length){const s=adv[0],owe=txAdvance(s),price=txPrice(s),offUnits=+Math.min(freeUnits,price>0?owe/price:freeUnits).toFixed(2),offRM=+(price*offUnits).toFixed(2);
     queue.push({at:new Date().toISOString(),type:'REBATE_OFFSET',party:codeOf(rid),ref:s.date,qty:offUnits,total:0,cash:0,settledRM:offRM,status:'inkind',raw:'Rebate: offset '+offUnits+' unit for '+codeOf(rid)+' against the '+s.date+' advance, clearing '+CUR+' '+offRM});}
   else{queue.push({at:new Date().toISOString(),type:'REDEEM',party:codeOf(rid),qty:freeUnits,total:0,status:'inkind',raw:'Redeem '+freeUnits+' unit free rebate salt for '+codeOf(rid)});}
@@ -15223,6 +15246,14 @@ function entryFault(p){
   if(dir==='SELL'){ let c=null; try{c=stockCostFor(p.product||'salt');}catch(e){c=null;}
     if(!(c>0))return 'No lot of '+esc(((PRODUCTS[p.product||'salt']||{}).name||p.product||'salt').toLowerCase())+' has landed, so it has no cost and cannot be sold yet. Record the lot first.'; }
   if(((+p.cash||0)>0||(+p.kg||0)>0)&&!p.date)return 'Something moved on this entry, so it needs a date.';
+  /* 08 Sep 2026: WHAT THE DRAFTER REFUSES, THE FORM DOES NOT LET YOU TYPE (v524), extended to the
+     figures. A delivery above the total, a zero or negative figure and an undated new row all
+     went to the cloud to be refused there. Each check runs only when the form passed the field. */
+  if(p.qty!=null&&!(+p.qty>0))return 'The quantity has to be above zero.';
+  if(p.total!=null&&+p.total<0)return 'The total cannot be negative.';
+  if((+p.cash||0)<0||(+p.kg||0)<0)return 'Cash and units moved cannot be negative.';
+  if(p.delivery!=null&&p.total!=null&&+p.delivery>+p.total+0.005)return 'The delivery charge ('+fmt(+p.delivery)+') is more than the order\'s total ('+fmt(+p.total)+').';
+  if(p.fresh&&!p.date)return 'Every row is dated (v487): a pending order takes the day it was agreed.';
   return '';
 }
 /* v275: WHICH BOOK AN ENTRY LANDS ON. It starts at the product the rail is showing, because
@@ -15372,7 +15403,7 @@ function apCard(d){
        the rate on its own. */
     const rate=cell('Rate',per==null?'&mdash;':fmt(per)+'/unit');
     grid=(buy?rate
-      :cell('Cost drawn',cost==null?'&mdash;':fmt(cost)+'/unit')
+      :cell('Cost drawn',cost==null?'&mdash;':fmt(cost)+(qty>0?' ('+fmt(cost/qty)+'/unit)':''))   /* the order's cost, absolute (v496); it read "/unit" until 08 Sep 2026 */
         +cell('Margin',mar==null?'&mdash;':mar.toFixed(1)+'%',mar==null?'':(d.flags&&d.flags.length)?'gold':mar<20?'r':'g')
         +rate)
       +cell('Cash',fmt(r.cash||0))+cell(buy?'Received':'Delivered',units(buy?poRecvUnits(r):(r.deliveredQty||0)));}
@@ -15477,7 +15508,7 @@ async function ordLoad(quiet){
 }
 function ordUsual(code,product){
   const rows=sales.filter(s=>s.customer===code&&((s.product||'salt')===(product||'salt'))&&!s.cancelled&&s.date&&s.total>0&&s.qty>0)
-    .sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0).slice(-4).map(s=>(s.total-(+s.delivery||0))/s.qty).sort((a,b)=>a-b);
+    .sort((a,b)=>{const x=a.date,y=b.date;if(!x||!y)return (!x&&!y)?0:(!x?1:-1);return x<y?-1:x>y?1:0;}).slice(-4).map(s=>(s.total-(+s.delivery||0))/s.qty).sort((a,b)=>a-b);
   if(!rows.length)return null;
   const n=rows.length;return n%2?rows[(n-1)/2]:(rows[n/2-1]+rows[n/2])/2;
 }
@@ -15976,9 +16007,15 @@ function pxHead(){
 let PB_USERS=null;
 function pbWeekMonday(){const kl=new Date(TODAY.toLocaleString('en-US',{timeZone:'Asia/Kuala_Lumpur'}));const d=(kl.getDay()+6)%7;kl.setDate(kl.getDate()-d);
   return kl.getFullYear()+'-'+String(kl.getMonth()+1).padStart(2,'0')+'-'+String(kl.getDate()).padStart(2,'0');}
+/* 08 Sep 2026: A ROW THAT COUNTS AS A PRICE THIS CUSTOMER PAID, word for word pricedOrder in
+   tools/pricelist.mjs. Pending, cancelled and defaulted rows and awards with no cash are not. */
+function pbPriced(s){const st=txStat(s).order;
+  if(st==='Pending'||st==='Cancelled'||st==='Default')return false;
+  if((s.rebate||s.goodwill)&&!((+s.cash||0)>0.009))return false;
+  return true;}
 function pbOwnRate(code){const before=pbWeekMonday();
-  const rows=pSales(PROD).filter(s=>s.customer===code&&!s.cancelled&&s.date&&s.date<before&&s.total>0&&s.qty>0)
-    .sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0).slice(-4).map(s=>(s.total-(+s.delivery||0))/s.qty).sort((a,b)=>a-b);
+  const rows=pSales(PROD).filter(s=>s.customer===code&&pbPriced(s)&&s.date&&s.date<before&&s.total>0&&s.qty>0)
+    .sort((a,b)=>{const x=a.date,y=b.date;if(!x||!y)return (!x&&!y)?0:(!x?1:-1);return x<y?-1:x>y?1:0;}).slice(-4).map(s=>(s.total-(+s.delivery||0))/s.qty).sort((a,b)=>a-b);
   if(!rows.length)return {rate:null,orders:0};const n=rows.length;
   return {rate:+(n%2?rows[(n-1)/2]:(rows[n/2-1]+rows[n/2])/2).toFixed(2),orders:n};}
 /* v510: HIS RATE, DRAWN TOWARD THE BOARD. The same rule, word for word, as adjustedPrice in
@@ -15989,9 +16026,9 @@ function pbAdjusted(Rr,F,A,cap,loyal){let x;
   else if(Rr>cap)x=Math.max(A,Math.min(cap,Rr-0.5*(Rr-A)));
   else x=loyal?Rr-0.25*(Rr-A):Rr;
   return Math.ceil(Math.max(x,F)-1e-9);}
-function pbLoyal(code){const rows=pSales(PROD).filter(s=>s.customer===code&&!s.cancelled&&s.date&&s.total>0);
+function pbLoyal(code){const rows=pSales(PROD).filter(s=>s.customer===code&&pbPriced(s)&&s.date&&s.total>0);
   if(rows.length<3)return false;const last=rows.map(s=>s.date).sort().pop();
-  return (TODAY-new Date(last+'T00:00:00Z'))/86400000<=14;}
+  return (TODAY-new Date(last+'T00:00:00+08:00'))/86400000<=14;}   /* Kuala Lumpur midnight, as loyalFor (08 Sep 2026) */
 function pbPrices(code){const own=pbOwnRate(code),loyal=pbLoyal(code);
   return shownSizes(PROD).slice().sort((a,b)=>a-b).map(q=>{const fl=floorTotal(q),L=priceLadder(q);
     const price=own.rate!=null?pbAdjusted(own.rate*q,fl,L.ask.total,3*L.cogs,loyal):L.ask.total;return {q,price:+price.toFixed(2)};});}
@@ -16143,7 +16180,7 @@ function tabPricing(){
   return `
   ${(()=>{const A=anchorsFor(PROD);if(!A.derived)return '';
     const sold=pSales(PROD).filter(x=>!x.rebate&&x.total>0.009&&x.qty>0);
-    const med=sold.length?(function(){const v=sold.map(x=>x.total/x.qty).sort((a,b)=>a-b);return v[Math.floor(v.length/2)];})():null;
+    const med=sold.length?(function(){const v=sold.map(x=>txGoods(x)/x.qty).sort((a,b)=>a-b);return v[Math.floor(v.length/2)];})():null;
     return `<div class="insight" style="border-left-color:var(--amber)"><b>This board is DERIVED, not stated.</b> `
       +`No prices have been set for ${esc(PRODUCTS[PROD]?PRODUCTS[PROD].name:PROD)}, so it carries the markup `
       +`${esc(PRODUCTS[A.from]?PRODUCTS[A.from].name:A.from)} takes on its own lot cost at each anchor size, `
@@ -16392,7 +16429,7 @@ function tabPricing(){
       /* the lot before the one the basis is built on. Same filter and sort as latestLot(), one
          step back, so the two cannot name different lots. */
       const ls=pPurch(PROD).filter(x=>poLive(x)&&x.qty>0)
-        .sort((a,b)=>((a.receivedOn||a.date)<(b.receivedOn||b.date))?-1:1);
+        .sort((a,b)=>{const x=a.receivedOn||a.date,y=b.receivedOn||b.date;if(!x||!y)return (!x&&!y)?0:(!x?1:-1);return x<y?-1:x>y?1:0;});
       const pv=ls[ls.length-2];
       if(!pv) return '';
       const pr=+(pv.total/pv.qty).toFixed(4), d=c.lot-pr;
@@ -16803,7 +16840,7 @@ function pxRedraw(){
 function priceBuckets(){
   const b={};
   pricedSales.forEach(s=>{const q=s.qty-txPendUnitsRaw(s);if(!(q>0)||!(s.total>0))return;
-    const p=Math.round(s.total/s.qty);
+    const p=Math.round(txGoods(s)/s.qty);   /* the bucket is the rate on the goods (v502); revenue below stays the total */
     if(!b[p])b[p]={kg:0,rm:0,n:0};
     b[p].kg+=q;b[p].rm+=(s.total||0)-txPendRM(s);b[p].n++;});
   return Object.keys(b).map(Number).sort((a,b2)=>a-b2).map(p=>({p,...b[p]}));
@@ -16829,7 +16866,10 @@ function priceNote(){
   /* judged against the BULK floor, the most forgiving of the three, so this reads as
      a floor no trade of any size should fall under rather than an unfair single-unit
      test applied to a 12.5 unit lot. */
-  const rc=replCost(),flB=PRICE.floorPct.wholesale,under=pts.filter(x=>x.p<rc/(1-flB/100));
+  /* 08 Sep 2026: ONE THRESHOLD FOR THE COUNT AND THE SENTENCE. The share was measured at the exact
+     line and the sentence printed floorPrice(12), the same line rounded up to the five, so a bucket
+     between the two made "14% sold below RM 65" wrong by that bucket. */
+  const rc=replCost(),flB=PRICE.floorPct.wholesale,wline=rc/(1-flB/100),under=pts.filter(x=>x.p<wline);
   const underUnits=under.reduce((a,x)=>a+x.kg,0),totUnits=pts.reduce((a,x)=>a+x.kg,0);
   /* THE INSIGHT CARRIES THE CLAIM AND NOTHING ELSE, for the reason Customers found: being under
      NOTE_MIN is a property of the template PLUS today's figures. With the definition attached this
@@ -16837,12 +16877,12 @@ function priceNote(){
      than safety: a replacement cost in three figures tips it and the bold comes off the one number
      the sentence exists for. The definition belongs beside the sentence that already explains the
      line anyway. */
-  return `<div class="insight"><b>${(underUnits/totUnits*100).toFixed(0)}% of your volume</b> has sold below ${fmt0(floorPrice(12))}/unit.</div>`
+  return `<div class="insight"><b>${(underUnits/totUnits*100).toFixed(0)}% of your volume</b> has sold below ${fmt(wline)}/unit.</div>`
    +`<div class="dsc" style="margin-top:9px">${nOrd} priced order${nOrd===1?'':'s'} at ${pts.length} distinct price${pts.length===1?'':'s'}. `
    +(byUnits.n<3
       ? `Too few at any one price to call one of them busiest: the largest is ${fmt0(byUnits.p)}/unit, ${byUnits.n===1?'a single order':byUnits.n+' orders'} and ${units(byUnits.kg)}.`
       : `The busiest is <b>${fmt0(byUnits.p)}/unit</b>, ${byUnits.n} orders and ${units(byUnits.kg)}; the price earning most is <b>${fmt0(byRM.p)}/unit</b> at ${fmt0(byRM.rm)}.`)
-   +` That ${fmt0(floorPrice(12))}/unit is the total clearing the ${flB}% wholesale line on today&rsquo;s ${fmt(rc)}/unit replacement cost. It is a percentage over cost and it is <b>not</b> the board&rsquo;s floor, which is break-even and carries his time as well.</div>`;
+   +` That ${fmt(wline)}/unit is the rate clearing the ${flB}% wholesale line on today&rsquo;s ${fmt(rc)}/unit replacement cost. It is a percentage over cost and it is <b>not</b> the board&rsquo;s floor, which is break-even and carries his time as well.</div>`;
 }
 /* ============ THE BOARD, DRAWN (v246) ============
    Two questions the tables answer badly. FIRST, the SHAPE: a table of thirty prices does not
@@ -16917,7 +16957,7 @@ function drawBoardCharts(){
       }
       if(b){
         const rows=pricedSales.filter(s=>!s.rebate&&s.total>0.009&&s.qty>0&&s.date)
-          .map(s=>({x:s.date,y:+(s.total/s.qty).toFixed(2),q:s.qty}))
+          .map(s=>({x:s.date,y:+(txGoods(s)/s.qty).toFixed(2),q:s.qty}))
           .sort((p,r)=>p.x<r.x?-1:1);
         const labs=[...new Set(rows.map(r=>r.x))].sort();
         const BANDS=pxBands();
@@ -17018,7 +17058,7 @@ function wbPreview(){
     /* v524: the same answer wbRecord gives, so the button is disabled rather than refused */
     { const aOn=wbDir==='SELL'&&wbEl('wbAssoc')&&wbEl('wbAssoc').checked, pA=aOn?(wbVal('wbAssocSel')||null):null;
       const pParty=r2books?pA:(pv||null), pDown=r2books?(wbVal('wbDown')||(pA?codeOf(pA)+'-R':null)):null;
-      if(pParty){ const ef=entryFault({direction:wbDir,product:wbProdVal(),party:pParty,assoc:pA,downstream:pDown,date:wbVal('wbDate'),cash,kg:unitsD});
+      if(pParty){ const ef=entryFault({direction:wbDir,product:wbProdVal(),party:pParty,assoc:pA,downstream:pDown,date:wbVal('wbDate'),cash,kg:unitsD,qty:wbNum('wbQty'),total:wbNum('wbTotal'),delivery:wbNum('wbDelivery')});
         if(ef&&!/needs a date/.test(ef))errs.push(ef); } }
     /* the date is blank by default so it cannot silently carry a stale day */
     if(!wbVal('wbDate'))errs.push('Enter the date &mdash; it is deliberately blank.');
@@ -17156,7 +17196,7 @@ function wbPreview(){
     const why=wbVal('wbLostWhy'),who=wbVal('wbLostParty');
     const px=w>0&&rm>0?rm/w:0;
     body=`<div style="font-size:13px;color:var(--mut)">${has&&w>0?`<b style="color:var(--ink)">${who==='__walkup__'?'A walk-up':ID(who)}</b> wanted <b style="color:var(--ink)">${units(w)}</b>${rm>0?` for <b style="color:var(--ink)">${fmt0(rm)}</b>, which is ${fmt(px)}/unit`:''} &middot; ${LOST_LABEL[why]||''}.`:'Enter the units they wanted.'}`
-      +(px>0?`<div class="dsc" style="margin-top:6px">At the ${fmt(replCost())}/unit replacement cost that order would have carried about <b>${fmt0((px-replCost())*w)}</b> of margin. ${px<floorPrice(w)?`It was <b>below</b> the ${fmt0(floorPrice(w))}/unit floor for ${BAND_LABEL[sizeBand(w)]}, so turning it away may have been right.`:`It <b>cleared</b> the ${fmt0(floorPrice(w))}/unit floor for ${BAND_LABEL[sizeBand(w)]}, so this is a real loss.`}</div>`:'')
+      +(px>0?`<div class="dsc" style="margin-top:6px">At the ${fmt(replCost())}/unit replacement cost that order would have carried about <b>${fmt0((px-replCost())*w)}</b> of margin. ${(()=>{const fu=floorTotal(w)/w;return px<fu-0.009?`It was <b>below</b> the ${fmt(fu)}/unit floor for ${units(w)}, so turning it away may have been right.`:`It <b>cleared</b> the ${fmt(fu)}/unit floor for ${units(w)}, so this is a real loss.`;})()}</div>`:'')
       +`</div>`;
     if(!has||!(w>0))errs.push('Enter the units they wanted.');
     if(!wbVal('wbLostDate'))errs.push('Enter the date &mdash; it is deliberately blank.');
@@ -17265,7 +17305,7 @@ function wbRecord(){
        party IS the associate, as the engine reads the row. */
     if(isR2&&!down&&assoc)down=codeOf(assoc)+'-R';
     const party=isR2?(assoc||null):wbVal('wbParty');
-    { const ef=entryFault({direction:wbDir,product:wbProdVal(),party,assoc,downstream:down,date,cash,kg:unitsD});
+    { const ef=entryFault({direction:wbDir,product:wbProdVal(),party,assoc,downstream:down,date,cash,kg:unitsD,qty,total,delivery:wbNum('wbDelivery'),fresh:true});
       if(ef){ok.innerHTML=ef;ok.style.color='var(--crim)';return;} }
     const ra=replayAnswer(wbDir,wbProdVal(),party,date,qty,total);   /* v526 */
     if(ra.fault){ok.innerHTML=ra.fault;ok.style.color='var(--crim)';return;}
@@ -17586,6 +17626,14 @@ function wireWorkbench(){
     wbPreview();};
   ['wbQty','wbTotal','wbCash','wbUnits','wbNote','wbDate',
    'wbACash','wbAUnits','wbANote','wbADate','wbCountUnits','wbCDate'].forEach(id=>{const e=wbEl(id);if(e)e.oninput=wbPreview;});
+  /* 08 Sep 2026: THE OTHER MODES TYPE INTO THE PREVIEW TOO. Loss, Loan, Lost and Contact fields, and
+     on a sale the delivery, freight, handover, associate and end-buyer fields, had no handler at all,
+     so Record stayed disabled on what was typed until another switch was tapped, and the delivery
+     changed the payload without moving the coach. Wired where nothing is wired already. */
+  ['wbLossUnits','wbLossDate','wbLossWhy','wbLossNote','wbLoanUnits','wbLoanDate','wbLoanDir','wbLoanParty','wbLoanNote',
+   'wbLostUnits','wbLostRM','wbLostDate','wbLostWhy','wbLostParty','wbLostNote','wbCtParty','wbCtDate','wbCtOut','wbCtHow','wbCtNext','wbCtNote',
+   'wbDelivery','wbFreight','wbHand','wbAssocSel','wbDown','wbApName','wbApPlace'].forEach(id=>{const e=wbEl(id);if(!e)return;
+    if(!e.oninput)e.oninput=wbPreview;if(e.tagName==='SELECT'&&!e.onchange)e.onchange=wbPreview;});
   const cq=wbEl('wbCashQ');if(cq)cq.onclick=e=>{const c=e.target.dataset.c;if(!c)return;const t=wbNum('wbTotal');
     wbEl('wbCash').value=c==='none'?0:c==='half'?+(t/2).toFixed(2):t;wbPreview();};
   const kq=wbEl('wbUnitsQ');if(kq)kq.onclick=e=>{const k=e.target.dataset.k;if(!k)return;

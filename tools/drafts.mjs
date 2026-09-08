@@ -276,7 +276,7 @@ function approve() {
     if (cur[0].status !== "pending") { fail(id + " is already " + cur[0].status + "; refusing to decide it twice"); continue; }
     const sql = "UPDATE draft SET status='approved', decided_at=" + q(at) + ", decided_by=" + q(by)
       + " WHERE id=" + q(id) + " AND status='pending'";
-    const r = wrangler(["d1", "execute", DB, WHERE, "--json", "--command", JSON.stringify(sql)], { quiet: true });
+    const r = execFile(sql);   /* 08 Sep 2026: every write goes by --file; --command hands the text to a shell */
     if (r.code !== 0) { fail("could not approve " + id); continue; }
     ok(id + " approved (" + by + ")");
   }
@@ -326,8 +326,7 @@ function committed() {
     if (cur[0].status !== "approved") { fail(id + " is " + cur[0].status + ", not approved; refusing to mark it committed"); continue; }
     if (cur[0].committed_at) { ok(id + " was already marked committed at " + cur[0].committed_at); continue; }
     const at = new Date().toISOString();
-    const r = wrangler(["d1", "execute", DB, WHERE, "--json", "--command",
-      JSON.stringify("UPDATE draft SET committed_at=" + q(at) + ", live_at=" + (liveAt ? q(liveAt) : "NULL") + " WHERE id=" + q(id) + " AND committed_at IS NULL")], { quiet: true });
+    const r = execFile("UPDATE draft SET committed_at=" + q(at) + ", live_at=" + (liveAt ? q(liveAt) : "NULL") + " WHERE id=" + q(id) + " AND committed_at IS NULL");
     if (r.code !== 0) { fail("could not mark " + id + " committed"); continue; }
     ok(id + " marked committed");
     clock.push(clockLine(id, cur[0].decided_at, liveAt, at));
@@ -359,8 +358,10 @@ function refusedNote() {
   if (!cur) return;
   const entry = cur.length ? cur[0].entry : JSON.stringify({ raw: id });
   const party = cur.length ? cur[0].party : null;
-  const r = wrangler(["d1", "execute", DB, WHERE, "--json", "--command",
-    JSON.stringify("INSERT OR REPLACE INTO refused (id,entry,why,party,source,seen_at) VALUES (" + q(id) + "," + q(entry) + "," + q(why) + "," + (party == null ? "NULL" : q(party)) + ",'fold'," + q(new Date().toISOString()) + ")")], { quiet: true });
+  /* 08 Sep 2026: BY FILE, NOT BY --command. With shell:true the reason went to /bin/sh on the runner,
+     where a backtick in the fold's own refusal text ran as a command and the stored note read
+     "the party of a row is , not". The entry JSON carries phone-typed text on the same road. */
+  const r = execFile("INSERT OR REPLACE INTO refused (id,entry,why,party,source,seen_at) VALUES (" + q(id) + "," + q(entry) + "," + q(why) + "," + (party == null ? "NULL" : q(party)) + ",'fold'," + q(new Date().toISOString()) + ")");
   if (r.code !== 0) { fail("could not record the refusal of " + id); return; }
   ok(id + " recorded as refused by the fold");
 }

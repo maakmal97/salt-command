@@ -205,7 +205,11 @@ function ladderWalk(sizes,C,P){
     if(q>0&&prevRate<Infinity&&p/q>prevRate+1e-9){
       const stepped=Math.floor((prevRate*q+1e-9)/LADDER.round.to)*LADDER.round.to;
       const least=g!=null?fl:cogs*(1+LADDER.floor);   // never step down through the floor
-      if(stepped>0&&stepped>=least-0.009)p=stepped;
+      /* 08 Sep 2026: NOR ONTO IT. `>=least-0.009` let the step land exactly on the floor, and the
+         floor guard below then had nothing to lift, against its own rule that an ask equal to its
+         refusal line is not an ask. Where no grid step holds the rate flat above the floor, the
+         floor wins over the rate law, which is the order v352 wrote down. */
+      if(stepped>0&&stepped>least+0.009)p=stepped;
     }
     /* v352: AND NEVER UNDER THE FLOOR, WHICH IS THE HOUSE RULE ALREADY WRITTEN DOWN. v263 put it
        plainly: a price above its floor that breaks a rate taper is a decision the desk can defend,

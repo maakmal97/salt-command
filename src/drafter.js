@@ -253,10 +253,14 @@ export function costFor(book, product) {
   const snap = book.pricing && book.pricing.byProduct && book.pricing.byProduct[p];
   const deskCost = snap && isNum(snap.stockCost) ? snap.stockCost : null;
 
+  /* 08 Sep 2026: ONLY A LOT THAT HAS LANDED IS "THE NEWEST RECEIVED LOT". This filtered out the
+     defaulted lot alone, so a lot on order, in transit or cancelled was the newest, the blend
+     flag fired on every sale while a lot was on order, and with no snapshot the cost fell back
+     to a rate nothing on the shelf was bought at. poRecvUnits is the book's own ruler. */
   const lots = (book.purchases || [])
     .filter((x) => prodOf(x) === p && isNum(x.qty) && x.qty > 0 && isNum(x.total))
-    .map((x) => ({ date: x.receivedOn || x.date, qty: x.qty, rate: round(x.total / x.qty, 4), defaulted: !!x.defaulted }))
-    .filter((l) => !l.defaulted)
+    .filter((x) => !x.defaulted && !x.cancelled && !x.pending && !x.inTransit && POSITION_ENGINE.poRecvUnits(x) > 0)
+    .map((x) => ({ date: x.receivedOn || x.date, qty: x.qty, rate: round(x.total / x.qty, 4) }))
     .sort((a, b) => (a.date || "") < (b.date || "") ? -1 : 1);
   const latest = lots.length ? lots[lots.length - 1] : null;
 
@@ -336,7 +340,9 @@ export function flagsFor(entry, row, book, priced) {
      paid and nothing went out, so it is not evidence of what a party pays. This matters here
      and not in theory: CC5-OKR's pending RM80 sits on the book undated, and counting it made
      his four RM90 orders look like a party with no standing rate at all. */
-  const committed = (book.sales || []).filter((s) => !s.cancelled && s.date);
+  /* 08 Sep 2026: SINCE v540 EVERY PENDING ROW IS DATED, so "has a date" no longer means "moved".
+     The status is the ruler: a Pending row (nothing paid, nothing out) is not history. */
+  const committed = (book.sales || []).filter((s) => !s.cancelled && POSITION_ENGINE.txStat(s).order !== "Pending");
 
   /* 1. THE RATE AGAINST THE PRODUCT'S WHOLE OBSERVED RANGE. This is the RM115 oil check, and
         it is first because it is the one that would have caught it: RM115 against a book whose
@@ -347,7 +353,9 @@ export function flagsFor(entry, row, book, priced) {
      low-side check `rate < lo/2` unfireable (round six). */
   const seen = committed.filter((s) => prodOf(s) === p && isNum(s.total) && s.total > 0 && isNum(s.qty) && s.qty > 0)
     .map((s) => (s.total - (isNum(s.delivery) ? s.delivery : 0)) / s.qty);
-  if (rate != null && seen.length >= 3) {
+  /* 08 Sep 2026: gated on isSale like every check after it. `seen` holds SALE rates, and this
+     one comparison ran on a lot too, so a RM 40 lot read "less than half the lowest rate". */
+  if (isSale && rate != null && seen.length >= 3) {
     const lo = Math.min(...seen), hi = Math.max(...seen);
     if (rate > hi * 2) flags.push(`RM ${round(rate)}/unit is more than double the highest ${p} rate this book has ever carried (RM ${round(hi)}). Check the figure before approving.`);
     else if (rate < lo / 2) flags.push(`RM ${round(rate)}/unit is less than half the lowest ${p} rate on the book (RM ${round(lo)}).`);
@@ -439,7 +447,10 @@ export function flagsFor(entry, row, book, priced) {
         second order. Either way the match is named here, so the approval reads it. */
   {
     const key = isSale ? "customer" : "supplier";
-    const twin = (book[isSale ? "sales" : "purchases"] || []).find((x) => x[key] === party && (x.date || null) === (row.date || null) && +x.total === +total && +x.qty === +qty);
+    /* the FULL total, as the fold compares it (fold.mjs, the replay guard): `total` here is the
+       goods after delivery, and a twin with delivery inside was missed on the phone and then
+       refused at the fold as a replay (08 Sep 2026) */
+    const twin = (book[isSale ? "sales" : "purchases"] || []).find((x) => x[key] === party && (x.date || null) === (row.date || null) && +x.total === +row.total && +x.qty === +qty);
     if (twin) {
       flags.push((entry && entry.payload && entry.payload.second)
         ? `This matches ${twin.rid || "a row"} on the book by party, date, size and total, and the entry says it is a SECOND order: the fold will take it as one.`
@@ -449,9 +460,18 @@ export function flagsFor(entry, row, book, priced) {
 
   /* 7. AN ADVANCE, and whether it sits at the retail credit cap. Reported rather than judged:
         the cap lives in the master's RULES, which is configuration and not mirrored here. */
-  if (isNum(row.cash) && isNum(total) && row.cash < total - 0.005 && isNum(row.deliveredQty) && row.deliveredQty > 0) {
-    flags.push(`This is an ADVANCE: ${row.deliveredQty} unit goes out with RM ${round(total - row.cash)} unpaid. Check it against ${party}'s credit cap.`);
+  /* against the row's FULL total: the customer owes the delivery charge too (08 Sep 2026) */
+  if (isNum(row.cash) && isNum(row.total) && row.cash < row.total - 0.005 && isNum(row.deliveredQty) && row.deliveredQty > 0) {
+    flags.push(`This is an ADVANCE: ${row.deliveredQty} unit goes out with RM ${round(row.total - row.cash)} unpaid. Check it against ${party}'s credit cap.`);
   }
+  /* 7b. MORE THAN THE ORDER, either way. A correction is flagged for this (checkCorrection) and a
+        new row was not, so RM 900 cash on a RM 100 order and 50 unit out on an order of 5 drafted
+        without a word (08 Sep 2026). */
+  if (isNum(row.cash) && isNum(row.total) && row.cash > row.total + 0.005)
+    flags.push(`RM ${round(row.cash)} is paid on an order of RM ${round(row.total)}: RM ${round(row.cash - row.total)} more than it is worth. Check the figures.`);
+  { const movedU = isSale ? row.deliveredQty : row.receivedQty;
+    if (isNum(qty) && isNum(movedU) && movedU > qty + 0.005)
+      flags.push(`${movedU} unit ${isSale ? "goes out" : "arrives"} on an order of ${qty} unit. Check the figures.`); }
 
   /* 8. A STALE SNAPSHOT prices the row off a inventory that has since moved. */
   if (book.pricing && book.version && book.pricing.v && book.pricing.v !== book.version) {
@@ -962,6 +982,13 @@ export function draftRow(entry, book) {
   const qty = isNum(pay.qty) ? pay.qty : null;
   const total = isNum(pay.total) ? pay.total : null;
   if (qty == null || total == null) return { skip: "the entry has no quantity or no total" };
+  /* 08 Sep 2026: THE GATE REFUSES WHAT NO ROW MAY CARRY. Zero and negative figures drafted, and
+     a date in any shape drafted; the phone's entryFault masks it, the laptop's queue road does not. */
+  if (!(qty > 0)) return { skip: "the quantity has to be above zero" };
+  if (total < 0) return { skip: "the total cannot be negative" };
+  if (isNum(pay.cash) && pay.cash < 0) return { skip: "cash cannot be negative" };
+  if (isNum(pay.kg) && pay.kg < 0) return { skip: "the units moved cannot be negative" };
+  if (pay.date != null && pay.date !== "" && !DATE_RE.test(String(pay.date))) return { skip: `the date is not a date in YYYY-MM-DD: ${pay.date}` };
 
   const cash = isNum(pay.cash) ? pay.cash : 0;
   const moved = isNum(pay.kg) ? pay.kg : 0;
@@ -1128,7 +1155,7 @@ export async function dryRunDrafter(env) {
   const already = new Set((seen.results || []).map((r) => r.id));
   const out = { ok: true, dry: true, mirror: book.version, pricingAt: book.pricing && book.pricing.v, would: [], skipped: [], already: 0, committed: 0 };
   for (const at of [...byAt.keys()].sort()) {
-    if (mark && at <= mark) { out.committed++; continue; }
+    if (mark && at <= mark && already.has(at)) { out.committed++; continue; }
     if (already.has(at)) { out.already++; continue; }
     const d = draftRow(byAt.get(at), book);
     if (d.skip) out.skipped.push({ at, why: d.skip });
@@ -1140,7 +1167,12 @@ export async function dryRunDrafter(env) {
 /* ---- the run ------------------------------------------------------------------------ */
 /* Idempotent by construction: a draft's id IS the entry's own `at`, and the insert is
  * INSERT OR IGNORE, so a cron that fires while the last one is still finishing cannot double
- * anything. Entries at or below the watermark are already in the master and are skipped. */
+ * anything. An entry at or below the watermark that the draft table knows is already in the
+ * master and is skipped. ONE THAT IT DOES NOT KNOW IS DRAFTED (08 Sep 2026): `at` is minted on
+ * the phone at tap time and the phone holds entries offline, so a tap that reached KV after a
+ * later fold had moved the mark was counted as committed, never drafted, never refused, and the
+ * phone then cleared it as folded. A sale vanished with no trace. Drafting it puts it to a
+ * person; a twin already on the book is named by check 6b and rejected in one tap. */
 export async function runDrafter(env, { now = () => new Date().toISOString() } = {}) {
   if (!env.SALT_LEDGER) return { ok: false, error: "no ledger binding" };
   if (!env.SALT_QUEUE) return { ok: false, error: "no queue binding" };
@@ -1156,11 +1188,18 @@ export async function runDrafter(env, { now = () => new Date().toISOString() } =
      now and must stop being listed. Doing it here means nobody has to tidy up, and a stale
      refusal cannot accumulate into a list people learn to ignore. */
   if (mark) await env.SALT_LEDGER.prepare("DELETE FROM refused WHERE id<=?1").bind(mark).run();
+  /* 08 Sep 2026: A FOLD'S OWN NOTICE RETIRES WITH THE NEXT FOLD. foldcall and the suite write
+     refusals under "fold:<id>" and "suite:<id>", which sort above every ISO id, so the line above
+     never touched them and a failure notice stayed on the phone for good. One is stale once a draft
+     has been committed after it was written. */
+  const lastCommit = await env.SALT_LEDGER.prepare("SELECT MAX(committed_at) AS t FROM draft").first();
+  if (lastCommit && lastCommit.t)
+    await env.SALT_LEDGER.prepare("DELETE FROM refused WHERE (id LIKE 'fold:%' OR id LIKE 'suite:%') AND seen_at<?1").bind(lastCommit.t).run();
 
   const out = { ok: true, at: now(), considered: 0, drafted: 0, skipped: [], already: 0, committed: 0 };
   for (const at of [...byAt.keys()].sort()) {
     const entry = byAt.get(at);
-    if (mark && at <= mark) { out.committed++; continue; }
+    if (mark && at <= mark && already.has(at)) { out.committed++; continue; }
     out.considered++;
     if (already.has(at)) { out.already++; continue; }
     const d = draftRow(entry, book);

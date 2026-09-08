@@ -33,8 +33,21 @@ import { readFileSync } from "node:fs";
 import { dirname, resolve, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import PRICING_ENGINE from "../engine/pricing.mjs";
+import POSITION_ENGINE from "../engine/position.mjs";
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+
+/* 08 Sep 2026: A ROW THAT COUNTS AS A PRICE THIS CUSTOMER PAID. The window filtered on cancelled
+   alone, so two award redemptions at RM 80 and RM 47 with no cash made a customer's rate 63.5
+   against a board ask of RM 130, two defaulted rows made another loyal, and a pending row moved a
+   median. Pending, cancelled and defaulted rows and awards with no cash are not prices paid. The
+   desk's pbPriced is this rule word for word; the suite holds the two together. */
+export function pricedOrder(s) {
+  const st = POSITION_ENGINE.txStat(s).order;
+  if (st === "Pending" || st === "Cancelled" || st === "Default") return false;
+  if ((s.rebate || s.goodwill) && !((+s.cash || 0) > 0.009)) return false;
+  return true;
+}
 const isNum = (v) => typeof v === "number" && Number.isFinite(v);
 const prodOf = (r) => (r && r.product) || "salt";
 export const HISTORY_ORDERS = 4;
@@ -55,7 +68,7 @@ export function weekOf(now) {
 /** The customer's own rate on a product: the median of his last four committed orders before `before`. */
 export function ownRate(sales, code, product, before) {
   const rows = (sales || [])
-    .filter((s) => s.customer === code && prodOf(s) === product && !s.cancelled && s.date && s.date < before
+    .filter((s) => s.customer === code && prodOf(s) === product && pricedOrder(s) && s.date && s.date < before
       && isNum(s.total) && s.total > 0 && isNum(s.qty) && s.qty > 0)
     /* v502: the rate a customer paid is on the goods, the delivery charge inside the total taken out */
     .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0))
@@ -73,7 +86,8 @@ export function ownRate(sales, code, product, before) {
    ask and CAP three times COGS (a 2x markup, the ladder's ceiling):
      below the floor       up more:      halfway from R to A, and never under F
      under the ask         up slightly:  a quarter of the way from R to A
-     above the cap         down more:    halfway from R back to A, and never above CAP
+     above the cap         down more:    halfway from R back to A, and never above CAP (the ask
+                                         itself stands where it is above the cap: nobody lists under the board)
      above the ask, loyal  down slightly: a quarter of the way from R back to A
      above the ask, other  his rate stands
    then up to the whole ringgit. "Slightly" is a quarter of the gap and "more" is half, stated
@@ -89,10 +103,11 @@ export function adjustedPrice(R, F, A, cap, loyal) {
 }
 export function loyalFor(sales, code, product, now) {
   const at = now instanceof Date ? now : new Date(now || Date.now());
-  const rows = (sales || []).filter((s) => s.customer === code && prodOf(s) === product && !s.cancelled && s.date && isNum(s.total) && s.total > 0);
+  const rows = (sales || []).filter((s) => s.customer === code && prodOf(s) === product && pricedOrder(s) && s.date && isNum(s.total) && s.total > 0);
   if (rows.length < 3) return false;
   const last = rows.map((s) => s.date).sort().pop();
-  return (at - new Date(last + "T00:00:00Z")) / 86400000 <= 14;
+  /* the fourteen days run from Kuala Lumpur midnight, not UTC's, which ended them at 08:00 (08 Sep 2026) */
+  return (at - new Date(last + "T00:00:00+08:00")) / 86400000 <= 14;
 }
 
 /** The list: one block per product, every board size, one price each. */
@@ -108,7 +123,12 @@ export function priceList(code, book, pricing, now) {
     const C = PRICING_ENGINE.costStack(inputs.cost), P = inputs.policy;
     const own = ownRate(book.sales, code, p, week.monday);
     const loyal = loyalFor(book.sales, code, p, now);
-    const rows = sizes.map((q) => {
+    /* 08 Sep 2026: THIS BOOK'S SIZES. `pricing.sizes` is the one global grid, salt's 0.5 to 12.5,
+       and every customer's oil list was drawn on it: sizes the desk never sells, and none it does.
+       The board's own sizes travel in the policy; the snapshot carries them too since today. */
+    const sizesHere = (Array.isArray(P.boardSizes) && P.boardSizes.length) ? P.boardSizes
+      : ((Array.isArray(snap.sizes) && snap.sizes.length) ? snap.sizes : sizes);
+    const rows = sizesHere.slice().sort((a, b) => a - b).map((q) => {
       const floor = PRICING_ENGINE.floorTotal(q, C, P);
       const ask = PRICING_ENGINE.priceLadder(q, C, P).ask.total;
       let price;

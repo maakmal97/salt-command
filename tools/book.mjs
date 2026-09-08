@@ -185,7 +185,7 @@ export function pricingSnapshot(w) {
        is set, read, and put back. Restoring it matters: this runs inside the extract, and
        leaving the desk on the wrong book would silently change what is extracted next. */
     const before = call("PROD");
-    let floors = null, repl = null, stockCost = null, inputs = null;
+    let floors = null, repl = null, stockCost = null, inputs = null, sizesHere = sizes;
     try {
       /* v407, round seven, MATERIAL: PROD was assigned bare and the walk was never re-run, so
          every walk-derived global stayed on the PREVIOUS book and all twenty-four oil floors came
@@ -197,13 +197,18 @@ export function pricingSnapshot(w) {
       /* v337: THE ENGINE'S OWN INPUTS, so the drafter can price any size with the module rather
          than read the nearest carded floor. Read as JSON so nothing from the window leaks through. */
       inputs = { cost: JSON.parse(w.eval("JSON.stringify(pxInputs())")), policy: JSON.parse(w.eval("JSON.stringify(pxPolicy())")) };
+      /* 08 Sep 2026: THE SIZES ARE THIS BOOK'S. `sizes` above was read once before the loop, so
+         oil's floors were keyed by salt's 0.5 to 12.5 while oil sells 10 to 50, and the drafter's
+         carded fallback for a 30 unit oil order read the 12.5 floor. recompute() has just rebuilt
+         PRICE_TIERS for this product; read it now, and carry it so the price list can too. */
+      sizesHere = call("PRICE_TIERS && PRICE_TIERS.sizes") || sizes;
       floors = {};
-      for (const q of sizes) {
+      for (const q of sizesHere) {
         floors[q] = { floor: numOrNull(call("floorTotal(" + q + ")")) };   // v502: one floor per size
       }
     } catch (e) { /* a product the desk cannot price yields nulls, which the drafter must handle */ }
     finally { if (before != null) { try { w.eval("PROD=" + JSON.stringify(before) + ";if(typeof recompute==='function')recompute();"); } catch (e) { } } }
-    byProduct[p] = { stockCost, replCost: repl, floors, inputs };
+    byProduct[p] = { stockCost, replCost: repl, floors, inputs, sizes: sizesHere };
   }
 
   return {
