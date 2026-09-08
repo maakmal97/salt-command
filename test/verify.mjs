@@ -7348,8 +7348,8 @@ section("v524: roster-only parties on the phone");
   const DRIVE_WB = (assoc) => "(function(){try{var set=function(id,v){var e=document.getElementById(id);if(!e)return false;e.value=v;return true;};" +
     "wbMode='new';wbDir='SELL';wbStream='R2';wbApply();var a=document.getElementById('wbAssoc');a.checked=true;wbApply();" +
     "set('wbAssocSel'," + JSON.stringify(assoc) + ");set('wbDown','');set('wbDate','2026-09-08');set('wbQty','1');set('wbTotal','110');set('wbCash','0');set('wbUnits','1');" +
-    "wbPreview();var btn=document.getElementById('wbOk');var n0=queue.length;var r={};try{wbRecord();}catch(e){r.threw=String(e&&e.message);}" +
-    "var q=queue[queue.length-1];r.pushed=(queue.length===n0+1);r.msg=(btn||{}).textContent||'';r.q=r.pushed&&q?{party:q.payload.party,down:q.payload.downstream,assoc:q.payload.assoc,stream:q.payload.stream,raw:q.raw}:null;return JSON.stringify(r);}catch(e){return JSON.stringify({no:'threw: '+(e&&e.message)});}})()";
+    "wbPreview();var btn=document.getElementById('wbRec');var n0=queue.length;var r={};try{wbRecord();}catch(e){r.threw=String(e&&e.message);}" +
+    "var q=queue[queue.length-1];r.pushed=(queue.length===n0+1);r.msg=(document.getElementById('wbOk')||{}).textContent||'';r.q=r.pushed&&q?{party:q.payload.party,down:q.payload.downstream,assoc:q.payload.assoc,stream:q.payload.stream,raw:q.raw}:null;return JSON.stringify(r);}catch(e){return JSON.stringify({no:'threw: '+(e&&e.message)});}})()";
   w.eval("switchTab('add');");
   const A = JSON.parse(String(w.eval(DRIVE_WB(withR))));
   ok(!A.no && A.pushed && A.q && A.q.party === withR && A.q.down === withR + "-R" && A.q.stream === "R2" && !/-Gen/.test(A.q.raw),
@@ -7452,13 +7452,64 @@ section("v527: borrow and lend on the phone");
   w.eval("setProd('salt');recompute();switchTab('add');");
   const DRIVE = (dir, party) => "(function(){try{queue=[];wbMode='loan';wbApply();var set=function(id,v){var e=document.getElementById(id);if(!e)return false;e.value=v;return true;};" +
     "set('wbLoanDir'," + JSON.stringify(dir) + ");set('wbLoanParty'," + JSON.stringify(party) + ");set('wbLoanUnits','2.5');set('wbLoanDate','2026-09-08');set('wbLoanNote','terms');wbPreview();" +
-    "var btn=document.getElementById('wbOk');var dis=!!btn.disabled;var n0=queue.length;var r={dis:dis};try{wbRecord();}catch(e){r.threw=String(e&&e.message);}var q=queue[queue.length-1];r.pushed=(queue.length===n0+1);" +
+    "var btn=document.getElementById('wbRec');var dis=!!btn.disabled;var n0=queue.length;var r={dis:dis};try{wbRecord();}catch(e){r.threw=String(e&&e.message);}var q=queue[queue.length-1];r.pushed=(queue.length===n0+1);" +
     "r.q=r.pushed&&q?{type:q.type,party:q.party,payload:q.payload}:null;var nl=loans.length;applyOverlay();r.loansAfter=loans.length-nl;r.card=(function(){try{return apCard({collection:'loan',row:{direction:" + JSON.stringify(dir) + ",party:" + JSON.stringify(party) + ",valueKg:2.5,product:'salt',date:'2026-09-08'}});}catch(e){return 'threw '+e.message;}})();return JSON.stringify(r);}catch(e){return JSON.stringify({no:'threw: '+(e&&e.message)});}})()";
   const L1 = JSON.parse(String(w.eval(DRIVE("in", lender.party))));
   ok(!L1.no && !L1.dis && L1.pushed && L1.q && L1.q.type === "BORROW" && L1.q.payload.mode === "loan" && L1.q.payload.direction === "in" && L1.q.payload.kg === 2.5 && L1.q.payload.party === lender.party && L1.q.payload.date === "2026-09-08", "the Workbench queues a borrowing with its figures: " + (L1.no || L1.threw || JSON.stringify(L1.q)));
   ok(!L1.no && L1.loansAfter === 1 && /Borrow/.test(L1.card) && /in kind/.test(L1.card) && /2.5 unit/.test(L1.card), "the overlay puts it on the loan book at once and the Approve card reads Borrow, in kind, 2.5 unit");
   const L2 = JSON.parse(String(w.eval(DRIVE("out", "CM4-MK"))));
   ok(!L2.no && L2.pushed && L2.q.type === "LEND" && L2.q.payload.direction === "out" && /Lend/.test(L2.card), "and a lending the other way");
+  await new Promise((r) => setTimeout(r, 200));   /* let the record's own save answer before the desk closes */
+  try { w.close(); } catch (e) { }
+}
+
+section("v528: the name on the phone, filed encrypted before the ID is queued");
+{
+  const { mergeBio } = await import("../tools/pull-vault.mjs");
+  const { vaultDecrypt: vdec } = await import("../tools/seed-vault.mjs");
+  const m = mergeBio({ bio: { "CA1-X": { raw: "Kept (Here)" }, "CB2-Y": { raw: "" } } }, { "CA1-X": "New (There)", "CB2-Y": "Filled (Now)", "CC3-Z": "Added (Place)", "CD4-W": "" });
+  ok(m.added.join() === "CB2-Y,CC3-Z" && m.kept.join() === "CA1-X" && m.bio.bio["CA1-X"].raw === "Kept (Here)" && m.bio.bio["CC3-Z"].raw === "Added (Place)" && !("CD4-W" in m.bio.bio), "the pull adds what the directory lacks or left blank, keeps what it has, and skips an empty name");
+  const { openMaster: omV } = await import("../tools/payload.mjs");
+  const { webcrypto } = await import("node:crypto");
+  const { w } = await omV();
+  if (!w.crypto || !w.crypto.subtle) { try { Object.defineProperty(w, "crypto", { value: webcrypto, configurable: true }); } catch (e) { w.crypto = webcrypto; } }
+  w.eval("setProd('salt');recompute();switchTab('add');");
+  const DRIVE = (opts) => "(function(){try{queue=[];NAME_VAULT=" + (opts.vault || "null") + ";qSyncState='server';window.__posts=[];window.prompt=function(){return " + JSON.stringify(opts.pass) + ";};" +
+    "window.fetch=function(u,o){window.__posts.push({u:String(u),body:o&&o.body?JSON.parse(o.body):null});return Promise.resolve({ok:" + (opts.saveOk === false ? "false" : "true") + ",json:function(){return Promise.resolve({ok:" + (opts.saveOk === false ? "false" : "true") + "});}});};" +
+    "wbMode='addid';wbApply();var set=function(id,v){var e=document.getElementById(id);if(e)e.value=v;};set('wbApCode'," + JSON.stringify(opts.code) + ");set('wbApKind'," + JSON.stringify(opts.kind || "customer") + ");set('wbApName'," + JSON.stringify(opts.name || "") + ");set('wbApPlace'," + JSON.stringify(opts.place || "") + ");wbPreview();" +
+    "var btn=document.getElementById('wbRec');var r={dis:!!btn.disabled,errs:(document.getElementById('wbMsgs')||{}).textContent||''};try{wbRecord();}catch(e){r.threw=String(e&&e.message);}return JSON.stringify(r);}catch(e){return JSON.stringify({no:'threw: '+(e&&e.message)});}})()";
+  const settle = async () => { for (let i = 0; i < 60; i++) { await new Promise((r) => setTimeout(r, 100)); const st = String(w.eval("(document.getElementById('wbOk')||{}).textContent||''")); if (!/Filing the name/.test(st)) return st; } return String(w.eval("(document.getElementById('wbOk')||{}).textContent||''")); };
+  const readQ = () => JSON.parse(String(w.eval("JSON.stringify({q:queue.map(function(x){return {type:x.type,party:x.party,raw:x.raw,payload:x.payload};}),posts:window.__posts,vault:NAME_VAULT,roster:roster.indexOf('CZ9-TESTNAME')>=0})")));
+  /* without a name the button is disabled and nothing is registered */
+  const A = JSON.parse(String(w.eval(DRIVE({ code: "CZ9-TESTNAME", pass: "pw" }))));
+  ok(!A.no && A.dis && /Type the name/.test(A.errs) && /Type the place/.test(A.errs), "without a name and a place the button is disabled and says so: " + (A.no || A.errs.slice(0, 80)));
+  /* the named road: the vault is written first, then the ID is queued with no name on it */
+  const B = JSON.parse(String(w.eval(DRIVE({ code: "CZ9-TESTNAME", pass: "pw", name: "Test Person", place: "Somewhere" }))));
+  const stB = await settle();
+  const qB = readQ();
+  const post = qB.posts.find((p) => /vault$/.test(p.u));
+  ok(!B.no && !B.dis && /Registered CZ9-TESTNAME/.test(stB) && post && post.body && post.body.vault && post.body.vault.ct, "with a name and place the vault is posted and the ID registered: " + (B.no || stB.slice(0, 90)));
+  let opened = null; try { opened = await vdec("pw", post.body.vault); } catch (e) { opened = { err: String(e && e.message) }; }
+  ok(opened && opened["CZ9-TESTNAME"] === "Test Person (Somewhere)", "the same passphrase opens the envelope to the name and place: " + JSON.stringify(opened && opened["CZ9-TESTNAME"]));
+  ok(qB.q.length === 1 && qB.q[0].type === "ADDID" && qB.q[0].payload.code === "CZ9-TESTNAME" && !JSON.stringify(qB.q).includes("Test Person") && !JSON.stringify(qB.q).includes("Somewhere") && qB.roster, "the ID is queued with no name and no place on it, and is selectable at once");
+  /* a refused passphrase, and a refused save, register nothing */
+  w.eval("(function(){var i=roster.indexOf('CZ9-TESTNAME');if(i>=0)roster.splice(i,1);})();");
+  const C = JSON.parse(String(w.eval(DRIVE({ code: "CZ9-TESTNAME", pass: "", name: "Test Person", place: "Somewhere" }))));
+  const stC = await settle();
+  ok(!C.no && /needs the passphrase/.test(stC) && readQ().q.length === 0, "no passphrase registers nothing: " + stC.slice(0, 80));
+  const D = JSON.parse(String(w.eval(DRIVE({ code: "CZ9-TESTNAME", pass: "pw", name: "Test Person", place: "Somewhere", saveOk: false }))));
+  const stD = await settle();
+  ok(!D.no && /could not be saved/.test(stD) && readQ().q.length === 0 && readQ().vault === null, "a refused save registers nothing and puts the old vault back");
+  const wrongEnv = JSON.stringify(post.body.vault);
+  const E = JSON.parse(String(w.eval(DRIVE({ code: "CZ9-TESTNAME", pass: "not-pw", name: "Test Person", place: "Somewhere", vault: wrongEnv }))));
+  const stE = await settle();
+  ok(!E.no && /did not open the vault/.test(stE) && readQ().q.length === 0, "a wrong passphrase against an existing vault registers nothing");
+  /* a bucket has no name and takes the old road */
+  const F = JSON.parse(String(w.eval(DRIVE({ code: "CZ9-TESTBUCKET", kind: "bucket", pass: "pw" }))));
+  w.eval("var ap=document.getElementById('wbApParent');if(ap){ap.innerHTML='<option value=\"CS6-BS\">CS6-BS</option>';ap.value='CS6-BS';}wbPreview();wbRecord();");
+  const qF = readQ();
+  ok(!F.no && qF.q.some((x) => x.payload.code === "CZ9-TESTBUCKET" && x.payload.kind === "bucket") && !qF.posts.some((p) => /vault$/.test(p.u)), "a bucket registers without a name and touches no vault");
+  await new Promise((r) => setTimeout(r, 200));
   try { w.close(); } catch (e) { }
 }
 

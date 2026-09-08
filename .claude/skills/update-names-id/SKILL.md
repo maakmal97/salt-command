@@ -23,6 +23,15 @@ AES-GCM ciphertext ever leaves, pushed by `tools/seed-vault.mjs`.
 
 ## The steps
 
+0. **Pull first (v528).** Names filed on the phone sit in the cloud vault until they are pulled:
+
+   ```
+   node tools/pull-vault.mjs
+   ```
+
+   It asks for the passphrase hidden, adds every code the directory lacks and never overwrites a
+   name typed here. Skipping this and seeding would push the laptop's older directory over them.
+
 1. **Open the desk.** Find `serve_desk.py`: repo root first, then the project folder beside it.
    Run it in the background (`python serve_desk.py`), read the port from its output, and give
    him the local URL with one line: open **Names & IDs**, type the name against the code, Save.

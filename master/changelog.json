@@ -1,5 +1,15 @@
 [
  {
+  "v": "v528",
+  "d": "08 Sep 2026",
+  "t": "THE NAME ON THE PHONE",
+  "n": [
+   "<b>PART B, STEP 10 OF HIS INSTRUCTION OF 08 SEP 2026, and his rule of 05 Sep: a name and ID is committed every time.</b> Add ID on the phone now asks for the name and the place beside the code. They go into the vault first, encrypted on the device with the passphrase asked there and used once, and the ID is queued only when the vault has saved; if the passphrase does not open the vault, or the save is refused, nothing is registered. Only a bucket has no name. The queue carries codes only, as always, so rule 2 stands: plaintext names never reach the cloud, the encrypted vault may.",
+   "<b>THE LAPTOP PULLS.</b> Until now the directory on the laptop was the source and <code>seed-vault.mjs</code> pushed it up; a name filed on the phone would have been overwritten by the next seed. <code>tools/pull-vault.mjs</code> brings the vault down first: it decrypts here, adds every code the directory lacks and never overwrites a name already typed on the laptop. The Names &amp; IDs workflow runs it before anything else.",
+   "<b>PROVED.</b> On the real master, with WebCrypto lent to the test window: Add ID with a name and place files an envelope the same passphrase opens to the name, queues the ID with no name on it, and refuses when the passphrase is refused or the save fails; a bucket registers without a name; the pull's merge adds what the directory lacks and keeps what it has."
+  ]
+ },
+ {
   "v": "v527",
   "d": "08 Sep 2026",
   "t": "BORROW AND LEND ON THE PHONE",

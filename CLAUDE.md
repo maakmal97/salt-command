@@ -147,9 +147,11 @@ Codes by default; names only after a password. `tools/seed-vault.mjs` encrypts
 `salt_bio.json` with `$env:SALT_VAULT_PASS` (never a file) into the envelope
 `vaultDecrypt` expects and pushes the ciphertext to KV; the desk auto-locks on
 `visibilitychange`. **A name and ID is committed every time, like an approved row (05 Sep
-2026):** when a new code appears through Add ID or a fold finds a roster code the
-directory lacks, ask him for the name and the location before the ID commits, then write
-both to `10_Data\salt_bio.json`, seed the vault, and commit the statement username in
+2026):** since v528 Add ID on the phone asks for the name and the place and files them into
+the vault, encrypted on the device, before the ID is queued; the laptop pulls them down with
+`node tools/pull-vault.mjs` before any seed. When a fold finds a roster code the directory
+lacks, ask him for the name and the location before the ID commits, then write both to
+`10_Data\salt_bio.json`, seed the vault, and commit the statement username in
 `statements/_users.json` (minted once, kept for life; an address, not a secret). The three
 `-R` reseller sub-accounts are the one exception. His own route is the `update-names-id`
 skill in `.claude/skills`, laptop only.
