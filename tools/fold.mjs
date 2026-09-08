@@ -205,6 +205,16 @@ export function plan(book, staged, notes) {
       const second = !!(it.entry && it.entry.payload && it.entry.payload.second);
       if (dup && !second) { out.refused.push({ id: it.id, why: `a row for ${r[key]} with the same date, size and total is already on the book, so this would be a replay` }); continue; }
       if (dup && second) entry.does.push(`a second order beside ${dup.rid || "the row"} with the same party, date, size and total, marked so at entry on his word`);
+      /* v540: EVERY ROW IS DATED (v487), and a pending row is dated to the day it was agreed. A draft
+         made before the drafter learnt that arrives undated; the entry it came from carries the date
+         the phone typed, and that is the row's date. With neither, the fold refuses rather than put
+         an undated row on the book for the gate to throw back. */
+      if (!r.date) {
+        const typed = it.entry && it.entry.payload && it.entry.payload.date;
+        if (!typed) { out.refused.push({ id: it.id, why: "the row carries no date and the entry typed none; every row on the ledger is dated (v487)" }); continue; }
+        r.date = typed;
+        entry.does.push(`date the pending row ${typed}, the day it was agreed, from the entry`);
+      }
       entry.append = it.collection;
       entry.does.push(`append to ${it.collection} with its note`);
       const moved = it.collection === "sales" ? (+r.deliveredQty || 0) : (r.pending || r.inTransit ? 0 : (r.receivedQty != null ? +r.receivedQty : +r.qty || 0));

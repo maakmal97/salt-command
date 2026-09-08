@@ -195,6 +195,9 @@ async function callClaude(req) {
   const res = await client.messages.create(req);
   if (res.stop_reason === "refusal") throw new Error("the model declined: " + JSON.stringify(res.stop_details || null));
   const text = res.content.filter((b) => b.type === "text").map((b) => b.text).join("");
+  /* v540: an empty reply used to surface as "Unexpected end of JSON input", which names the parser
+     and not the cause; say what came back and why it stopped. */
+  if (!text.trim()) throw new Error(`the model returned no text (stop_reason ${res.stop_reason}, ${res.content.length} block(s), ${res.usage && res.usage.output_tokens} tokens out)`);
   return { notes: JSON.parse(text), usage: res.usage, stop: res.stop_reason };
 }
 

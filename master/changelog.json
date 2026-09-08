@@ -1,5 +1,14 @@
 [
  {
+  "v": "v540",
+  "d": "08 Sep 2026",
+  "t": "A PENDING ORDER IS DATED THE DAY IT WAS AGREED",
+  "n": [
+   "<b>THE FIRST TWO PENDING ORDERS APPROVED SINCE v487 FAILED THE GATE.</b> His approvals of 08 Sep at 16:17 and 16:18 KL, 50 unit of oil to CA7-JTR at RM 450 and 1 unit of salt to CC5-OKR at RM 90, nothing paid and nothing moved on either, were staged, folded and refused in the same run: the book is in date order, but s140 and s141 carry no date. v487 made the rule that no undated row may stand and dated the three that did, and the drafter went on writing a pending order with no date, on the belief that a dated row draws stock and books revenue. It does not: the desk reads Pending, stock and revenue from cash and deliveredQty, so a dated row with neither is Pending and counts nowhere, which is how s119 has stood since 04 Sep.",
+   "<b>THREE PLACES CHANGE.</b> The drafter dates a pending row to the day the phone typed, and refuses an order typed with no date rather than draft it undated. The fold dates a draft that arrived undated from the entry it came from, so the two staged rows fold without being re-drafted, and refuses one with no date anywhere. And the fold's call reports an empty reply as what it is, with the stop reason, instead of the parser's Unexpected end of JSON input, which is how the second of the two dispatched runs failed. The batch stays staged in this commit; the job that runs on it folds the two rows as the next version."
+  ]
+ },
+ {
   "v": "v539",
   "d": "08 Sep 2026",
   "t": "NO PART REPEATS ITS VIEW'S NAME",

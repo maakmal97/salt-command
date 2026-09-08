@@ -1159,11 +1159,13 @@ section("Drafter — rows, refusals and flags");
   ok(/no date/.test(draftRow(entry({ direction: "SELL", party: "CC5-OKR", qty: 1, total: 90, cash: 90, kg: 1 }), book).skip || ""),
     "something moved but no date given: refused rather than dated by guess");
 
-  /* ---- a pending row carries NO DATE ---- */
+  /* ---- a pending row carries THE DAY IT WAS AGREED (v540; every row is dated since v487) ---- */
   const pend = draftRow(entry({ direction: "SELL", party: "CC5-OKR", qty: 1, total: 80, cash: 0, kg: 0, date: "2026-08-16" }), book);
-  ok(!pend.skip && pend.row.date === undefined, "nothing moved, so the row is pending and carries NO date even though one was given");
-  ok(pend.row.deliveredQty === 0, "and it draws no stock");
-  ok(/PENDING/.test(pend.reasoning), "the reasoning says so");
+  ok(!pend.skip && pend.row.date === "2026-08-16", "nothing moved, so the row is pending and carries the agreed date the phone typed");
+  ok(pend.row.deliveredQty === 0 && pend.row.cash === 0, "and it draws no stock and books no cash");
+  ok(/PENDING/.test(pend.reasoning) && /2026-08-16/.test(pend.reasoning), "the reasoning says so, with the date");
+  const pendNoDate = draftRow(entry({ direction: "SELL", party: "CC5-OKR", qty: 1, total: 80, cash: 0, kg: 0, date: null }), book);
+  ok(!!pendNoDate.skip && /no date/.test(pendNoDate.skip), "a pending order with no date typed is refused rather than drafted undated");
 
   /* ---- THE RM115 OIL UNIT, the fixture this whole path exists for ---- */
   const oil = draftRow(entry({ direction: "SELL", party: "CH4-MLR", product: "oil", qty: 1, total: 115, cash: 115, kg: 1, date: "2026-08-14" }), book);

@@ -463,9 +463,12 @@ export function flagsFor(entry, row, book, priced) {
 
 /* ---- the row ----------------------------------------------------------------------- */
 /* Built to the shape the master's own arrays use, because the commit run folds it in verbatim.
- * A PENDING order carries NO DATE, which is the desk's standing rule and not a nicety: an
- * agreed date is an intention, a dated row draws stock and books revenue, and a row that did
- * neither would put both on the book before anything moved. */
+ * A PENDING order carries THE DAY IT WAS AGREED (v540, 08 Sep 2026). It used to carry no date,
+ * on the belief that a dated row draws stock and books revenue; it does not. The desk reads
+ * Pending, stock and revenue from cash and deliveredQty (txStat in engine/position.mjs), so a
+ * dated row with nothing paid and nothing moved is Pending and counts nowhere. Since v487 no
+ * undated row may stand on the ledger, and the first two pending orders approved after it
+ * failed the gate on exactly that. The agreed date is what the phone typed. */
 export function draftRow(entry, book) {
   const pay = entry && entry.payload;
   if (!pay || typeof pay !== "object") return { skip: "the entry carries no payload the desk can read" };
@@ -1019,11 +1022,11 @@ export function draftRow(entry, book) {
   }
   if (product !== "salt") row.product = product;
 
-  /* THE DATE, and the rule it follows. Nothing moved means nothing happened, so the row is
-     pending and undated and counts nowhere until it does. */
+  /* THE DATE, and the rule it follows. Every row is dated (v487). A row on which nothing moved
+     carries the day it was agreed and is pending: it counts nowhere until something moves. */
+  row.date = pay.date || null;
+  if (!row.date) return { skip: nothingMoved ? "the order carries no date, and dating it is a judgement" : "something moved on this entry but it carries no date, and dating it is a judgement" };
   if (!nothingMoved) {
-    row.date = pay.date || null;
-    if (!row.date) return { skip: "something moved on this entry but it carries no date, and dating it is a judgement" };
     if (dir === "SELL") {
       row.deliveredQty = moved;
       if (moved > 0.005) row.deliveredOn = row.date;
@@ -1081,7 +1084,7 @@ export function draftRow(entry, book) {
     `${dir === "BUY" ? "Bought" : "Sold"} ${qty} unit of ${product} ${dir === "BUY" ? "from" : "to"} ${party} for RM ${round(total)}, RM ${round(rate)}/unit.`,
     dir === "SELL" ? `Costed at RM ${round(priced.cost)}/unit from ${priced.source}, so ${margin == null ? "no margin could be computed" : `RM ${round(total - priced.cost * qty)} on the order at ${round(margin, 1)}%`}.` : "",
     nothingMoved
-      ? "Nothing was paid and nothing moved, so the row is PENDING and carries NO DATE: it draws no stock and books no revenue until it does."
+      ? `Nothing was paid and nothing moved, so the row is PENDING, dated ${row.date} as the day it was agreed: it draws no stock and books no revenue until something moves.`
       : `${paidInFull ? "Paid in full" : `RM ${round(cash)} of RM ${round(total)} paid`} and ${deliveredInFull ? "delivered in full" : `${moved} of ${qty} unit moved`} on ${row.date}.`,
     "Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved."
   ].filter(Boolean);
