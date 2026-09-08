@@ -153,7 +153,6 @@ details.rcard>summary .rname{font-size:16px;font-weight:500;}
 .prodsw button.live .pdot{box-shadow:0 0 7px 0 var(--pacc);}
 .prodsw button .pv{font-weight:400;letter-spacing:0;text-transform:none;}
 .prodsw .pall{font-family:var(--salt-font-display);color:var(--salt-mist);}
-.deskbar{background:linear-gradient(180deg,var(--salt-veil) 70%,transparent);}
 .dhbrand .mark{width:26px;height:26px;display:block;}
 .dhname{font-size:11.5px;font-weight:500;letter-spacing:.22em;text-transform:uppercase;color:var(--salt-brass);}
 .chip{font-size:11px;letter-spacing:.05em;background:var(--salt-glass);border-color:var(--salt-line-faint);color:var(--salt-mist);}
@@ -449,6 +448,20 @@ details.obs>summary:hover{background:var(--salt-glass);}
   body{background:#fff!important;color:#141821!important;}
   h1,.railtitle{background:none;color:#141821;-webkit-text-fill-color:#141821;}
 }
+/* v537: THE PRINTED BOARD IS THE LOGO AND THE NUMBERS (his instruction, 08 Sep 2026): the
+   horizontal lockup in its light tone on white, then one line per size. Slate ink, brass
+   hairlines, the display face for the unit and the mono face for the price. The HTML file and
+   the image the phone saves carry the same rules in the master (PB_CSS, pbImageBlob). */
+@media print{
+  body.pbPrinting #pbSheet{padding:32px;color:var(--salt-slate);}
+  #pbSheet .pbl{display:flex;align-items:center;gap:14px;margin:0 0 28px;}
+  #pbSheet .pbl .mark{width:48px;height:48px;display:block;}
+  #pbSheet .pbt{font-family:var(--salt-font-display);font-weight:300;font-size:30px;letter-spacing:.05em;line-height:1.05;color:var(--salt-slate);}
+  #pbSheet .pbd{font-family:var(--salt-font-mono);font-size:11px;font-weight:500;letter-spacing:.25em;text-transform:uppercase;color:var(--salt-copper);margin-top:5px;}
+  #pbSheet table{border-collapse:collapse;min-width:300px;}
+  #pbSheet td{padding:10px 0 10px 40px;border-bottom:1px solid rgba(197,160,89,.35);font-size:18px;text-align:right;font-family:var(--salt-font-mono);color:var(--salt-slate);}
+  #pbSheet td.l{text-align:left;padding-left:0;font-family:var(--salt-font-display);}
+}
 
 /* ---- 5b. THE RAIL'S TAB AND ITS PARTS ARE ONE BLOCK (v529, his instruction of 08 Sep 2026) ----
    The open tab was a bordered card and its parts a separate indented list under a faint line,
@@ -487,8 +500,15 @@ details.obs>summary:hover{background:var(--salt-glass);}
    date and stamp at the left, status beside it, version and the key at the right, all on one
    glass veil that fades into the desk below. On a phone the bar wraps and the status row takes
    its own line under the brand and the sections button. */
-.deskbar{flex-wrap:wrap;gap:8px 14px;padding-bottom:10px;margin-bottom:10px;
-  background:linear-gradient(180deg,var(--salt-veil) 84%,rgba(11,18,21,0));}
+.deskbar{flex-wrap:wrap;gap:8px 14px;padding-bottom:10px;margin-bottom:18px;
+  background:var(--salt-veil);border-bottom:1px solid var(--salt-line);
+  border-radius:0 0 var(--salt-radius-sm) var(--salt-radius-sm);box-shadow:0 18px 26px -20px rgba(0,0,0,.85);}
+/* v537: THE BRAND RIDES THE BAR AT EVERY WIDTH (his instruction, 08 Sep 2026). The mark and the
+   name persist with the date, the status and the version on scroll; the rail keeps its own brand
+   only on the phone, where it is a floating menu. And the bar is one glass surface with a
+   hairline beneath it and a soft fall of shadow into the desk, not a veil fading into the first
+   card: that is the transition from the header to the rest. */
+@media(min-width:861px){.dhbrand .mark{width:30px;height:30px;}.dhname{font-size:12.5px;}}
 .deskbar .dbtools{order:2;}
 .deskbar .meta{order:1;flex:1 1 auto;min-width:0;margin:0;gap:6px 8px;align-items:center;}
 .deskbar .meta>.metarow{flex:1 1 auto;}

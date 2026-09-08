@@ -6135,7 +6135,7 @@ section("v472: the desk in the Salt identity");
   ok(survivors.length === 0, `no retired hex survives in the desk's own css and js (found ${survivors.join(" ") || "none"})`);
   ok(!/rgba\(\s*99\s*,\s*230\s*,\s*224/.test(own) && !/rgba\(\s*245\s*,\s*196\s*,\s*81/.test(own) && !/rgba\(\s*255\s*,\s*93\s*,\s*115/.test(own), "nor the retired rgba fills");
   /* the mark */
-  ok((m472.match(/aria-label="Salt crystal"/g) || []).length === 2, "the crystal is drawn in the rail and in the bar");
+  ok((m472.match(/aria-label="Salt crystal"/g) || []).length === 3, "the crystal is drawn in the rail, in the bar and on the printed board (v537)");
   ok(!m472.includes('class="logo">&#9670;') && !m472.includes('class="logo sm">&#9670;'), "and the diamond glyph is gone");
   ok(/<link rel="icon" href="data:image\/svg\+xml,[^>]*%2305080a[^>]*%23c5a059/.test(m472), "the favicon is the crystal in brass on obsidian");
   /* the books' hues come from the identity, through the book, which is where the extract reads them */
@@ -6694,8 +6694,9 @@ section("Statements — the price list, the order book and the desk's relay (v49
       "and the Price part carries the card and the page the print-only sheet");
     /* v508: the board as a file, drawn here and handed to the share sheet */
     const doc = rd("pbHtmlDoc({code:'CX0-AA',user:'abcd-efgh',product:'Salt',week:'2026-09-07',rows:[{q:1,price:120},{q:2.5,price:260}]})");
-    ok(/^<!DOCTYPE html>/.test(doc) && doc.includes("abcd-efgh") && doc.includes("RM 120") && doc.includes("RM 260") && !/https?:\/\//.test(doc) && !doc.includes("CX0-AA"),
-      "the HTML file carries the username, the sizes and the prices, no address and no code");
+    ok(/^<!DOCTYPE html>/.test(doc) && doc.includes("<svg") && doc.includes("RM 120") && doc.includes("RM 260") && !/https?:\/\//.test(doc)
+      && !doc.includes("CX0-AA") && !doc.includes("abcd-efgh") && !doc.includes("Week of") && !doc.includes("Username"),
+      "the HTML file carries the logo, the sizes and the prices, and nothing else: no username, no week, no address, no code (v537)");
     ok(rd("typeof pbImageBlob+typeof pbDeliver+typeof pbSaveImage+typeof pbSaveHtml") === "functionfunctionfunctionfunction"
       && /id=\"pbImage\"/.test(rd("pbCard()")) && /id=\"pbHtml\"/.test(rd("pbCard()")),
       "and the card offers Save as image and Save as HTML, drawn on the desk and shared as files");
