@@ -10967,7 +10967,6 @@ function ifrsPanel(){
       ${L('Impairment &mdash; trade receivables',-F.ecl,{neg:true,ref:'IFRS 9',n:F.ecl?'loss allowance on open balances':'no open balance'})}
       ${L('Impairment &mdash; supplier prepayment',-F.supImp,{neg:true,ref:'IAS 36',n:F.supImp?`${ID(supplierReceivable.party)}, paid and never delivered`:'none'})}
       ${L('<b>Operating profit</b>',F.opProfit,{cls:'tot',n:F.opPct==null?'no revenue yet':`${F.opPct}% of revenue`})}
-      ${F.ownUnits?L("Owner&rsquo;s use",-F.ownUse,{neg:true,ref:'a drawing, not a cost',n:`${units(F.ownUnits)} taken for himself, shown below the trading result and NOT in operating profit`}):''}
     </tbody></table>
     <div class="dsc" style="margin-top:9px">Pricing basis ${fmt(c.eff)}, balance-sheet cost ${fmt(c.landed)}: the three lines under gross profit are in the price but cannot sit in inventory.</div>
     <h3 style="margin-top:16px;font-size:14px">Inventory</h3>
