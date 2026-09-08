@@ -12,6 +12,7 @@
  *
  *   node tools/foldcall.mjs            plan, dossier, call, notes, apply
  *   node tools/foldcall.mjs --dry      print the dossier and the request; call nothing
+ *   node tools/foldcall.mjs --probe    one cheap call with the key, to prove it where it is used
  *   SALT_FOLD_FAKE=<notes.json>        use this reply instead of calling (the suite)
  *   SALT_FOLD_MODEL                    default claude-opus-5
  *   --staged --book --master --notes --folded --today   as fold.mjs takes them, passed through
@@ -196,6 +197,15 @@ async function callClaude(req) {
 /* ---- main ----------------------------------------------------------------------------------- */
 const isMain = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
 if (isMain) {
+  if (argv.includes("--probe")) {
+    /* THE KEY, PROVED WHERE IT IS USED. A secret set from a laptop is a claim until a run has
+       spent it; this asks the API for the fold's model and nothing else. */
+    if (!process.env.ANTHROPIC_API_KEY) { console.log("  FAIL  ANTHROPIC_API_KEY is not set"); process.exit(1); }
+    const { default: Anthropic } = await import("@anthropic-ai/sdk");
+    const t0 = Date.now();
+    try { const m = await new Anthropic().models.retrieve(MODEL); console.log(`  ok    the key answers: ${m.id} (${m.display_name}), ${((Date.now() - t0) / 1000).toFixed(1)} s`); process.exit(0); }
+    catch (e) { console.log("  FAIL  the key was refused: " + (e && e.status ? "http " + e.status + " " : "") + String((e && e.message) || e).slice(0, 160)); process.exit(1); }
+  }
   const dry = argv.includes("--dry");
   const passthrough = [];
   for (const k of ["--staged", "--book", "--master", "--notes", "--folded", "--today"]) { const v = opt(k, null); if (v) passthrough.push(k, v); }

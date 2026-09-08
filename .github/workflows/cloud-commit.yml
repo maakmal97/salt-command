@@ -53,6 +53,10 @@ on:
         description: 'Send a test push, even with no fold in this build'
         type: boolean
         default: false
+      probe_key:
+        description: 'Prove the fold key with one cheap call, then stop'
+        type: boolean
+        default: false
 
 concurrency:
   group: cloud-commit
@@ -80,6 +84,14 @@ jobs:
             exit 1
           fi
 
+      # THE FOLD'S KEY, PROVED WHERE IT IS USED (08 Sep 2026): a dispatch with probe_key asks the
+      # API for the fold's model with the repo's secret and stops. Nothing is staged or deployed.
+      - name: Probe the fold's key
+        if: github.event_name == 'workflow_dispatch' && inputs.probe_key
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: node tools/foldcall.mjs --probe
+
       # ---- STAGE: the approved, uncommitted rows out of D1 -------------------------------
       # DO NOT TRAMPLE AN UNFOLDED BATCH. If master/_to_fold.json is still in HEAD, the last
       # fold has not happened (it failed, or it is the batch this tick is about to fold). A
@@ -88,7 +100,7 @@ jobs:
       # refusals, and staging carries on.
       - name: Stand down if the last batch is still unfolded
         id: guard
-        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && !inputs.probe_key)
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
@@ -117,7 +129,7 @@ jobs:
           fi
 
       - name: Read the approved rows out of D1
-        if: (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && steps.guard.outputs.skip == '0'
+        if: (github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && !inputs.probe_key)) && steps.guard.outputs.skip == '0'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
@@ -137,7 +149,7 @@ jobs:
       # the fold below fails.
       - name: Commit it, and prove it
         id: commit
-        if: (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && steps.guard.outputs.skip == '0'
+        if: (github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && !inputs.probe_key)) && steps.guard.outputs.skip == '0'
         run: |
           set -euo pipefail
           echo "staged=0" >> "$GITHUB_OUTPUT"
@@ -173,7 +185,7 @@ jobs:
           if [ "${{ steps.guard.outputs.staged }}" = "1" ] || [ "${{ steps.commit.outputs.staged }}" = "1" ]; then fold=1; fi
           deploy=0
           if [ "${{ github.event_name }}" = "push" ]; then deploy=1; fi
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.stage_only }}" != "true" ]; then deploy=1; fi
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.stage_only }}" != "true" ] && [ "${{ inputs.probe_key }}" != "true" ]; then deploy=1; fi
           if [ "$fold" = "1" ]; then deploy=1; fi
           echo "fold=$fold" >> "$GITHUB_OUTPUT"
           echo "deploy=$deploy" >> "$GITHUB_OUTPUT"
