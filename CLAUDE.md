@@ -97,6 +97,10 @@ desk shows, cost and margin included, is served at the public URL.
 - **What is approved is the ROW, not the entry.** The phone leads with cost and margin
   read from the draft and computes nothing; the drafter's flags do the measuring, and a
   purchase is never measured with a seller's ruler.
+- **What the drafter refuses, the phone does not let you type (v524):** `entryFault` in the
+  master answers both entry forms: roster codes only, an R2 row books to its associate, no sale
+  of a product with no lot, a date when something moved. The unknown R2 buyer is the reseller's
+  `-R` account, never an invented code.
 - **The drafter is arithmetic, never a model**, and never prices: it reads the `PRICING`
   state key `tools/book.mjs pricingSnapshot()` derives from the engine. It refuses and
   records in `refused` (on the phone, self-cleaning): Linked and Rewarded amendments,

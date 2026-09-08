@@ -1,5 +1,15 @@
 [
  {
+  "v": "v524",
+  "d": "08 Sep 2026",
+  "t": "ROSTER-ONLY PARTIES ON THE PHONE",
+  "n": [
+   "<b>PART B, STEP 6 OF HIS INSTRUCTION OF 08 SEP 2026: what the drafter refuses, the form does not let you type.</b> On 07 Sep an R2 sale left the Workbench with no party and an end buyer the desk had invented, the reseller's code plus <code>-Gen</code>, and the drafter refused it as naming no counterparty; a person had to re-read it the next morning. One validator, <code>entryFault</code>, now answers both entry forms: every party field is a roster code or nothing, with a message that points at Add ID; an R2 row's party is its associate, as the engine reads the row; a sale of a product with no lot has no cost and is refused; and an entry on which cash or units moved carries a date, the editor filling today when it is blank.",
+   "<b>THE WORKBENCH'S UNKNOWN BUYER BOOKS TO THE RESELLER'S -R ACCOUNT</b>, which the select has promised since v313 while the code invented <code>-Gen</code>; the three <code>-R</code> accounts on the roster are the one exception to a name and ID being committed with every code, and an associate without one is refused with the same message. The preview disables the button on the same answer the record step gives, so a refusal is read before the tap.",
+   "<b>PROVED ON THE REAL MASTER.</b> The validator both ways; the Workbench booking an R2 with the buyer unknown to the associate and its -R account, and refusing one for an associate that has none; the editor refusing a buyer not on the roster and filling today's date on a moved order."
+  ]
+ },
+ {
   "v": "v523",
   "d": "08 Sep 2026",
   "t": "THE GATE THAT DID NOT RUN",

@@ -899,7 +899,7 @@ section("Worker — drafts and approval");
        "a batch already staged counts as staged, so a batch a failed fold left behind is folded on the next tick rather than never");
     ok(!/claude-code-action/.test(wf) && !/CLAUDE_CODE_OAUTH_TOKEN: \$\{\{ secrets/.test(wf) && /node tools\/ledger\.mjs\n\s+npm run build\n\s+node tools\/gate\.mjs\n/.test(wf) && /git push origin HEAD:master\n\s+echo "folded and pushed/.test(wf),
        "the Claude Code action is gone from the job: the fold step folds, extracts, builds, tests and pushes as the runner, which starts no second run");
-    ok(/if \[ "\$\{\{ github\.event_name \}\}" = "push" \]; then deploy=1; fi/.test(wf) && /\[ "\$\{\{ inputs\.stage_only \}\}" != "true" \]; then deploy=1; fi/.test(wf) && /if \[ "\$fold" = "1" \]; then deploy=1; fi/.test(wf),
+    ok(/if \[ "\$\{\{ github\.event_name \}\}" = "push" \]; then deploy=1; fi/.test(wf) && /\[ "\$\{\{ inputs\.stage_only \}\}" != "true" \] && \[ "\$\{\{ inputs\.probe_key \}\}" != "true" \]; then deploy=1; fi/.test(wf) && /if \[ "\$fold" = "1" \]; then deploy=1; fi/.test(wf),
        "the deploy steps run on a push, on a dispatch that did not ask to stage only, and whenever this run folded");
     ok(/- name: Already serving\?/.test(wf) && (wf.match(/steps\.already\.outputs\.live != '1'/g) || []).length >= 6 && !/Check out what the fold pushed/.test(wf),
        "the deploy follows the fold in the same job and every deploy step stands aside when the phone already has the build; no second checkout is needed once the job pushes as itself");
@@ -7311,6 +7311,51 @@ section("v522: the gate before the deploy, the suite after the phone is live");
   ok(suiteAt > stmtAt && /id: suite\n\s+if: steps\.plan\.outputs\.deploy == '1' && steps\.already\.outputs\.live != '1'\n\s+run: npm test/.test(wf), "the full suite is the last step, after the statements, after the phone is live");
   ok(/if: always\(\) && steps\.suite\.outcome == 'failure'/.test(wf) && /--refused-note "suite:\$v"/.test(wf), "a suite failure is written where the phone shows refusals, under a synthetic id");
   ok(!/\n\s+npm test\n[\s\S]*?- name: Deploy\n/.test(wf.slice(wf.indexOf("- name: Fold\n"))), "and nothing runs the suite between the fold and the deploy");
+}
+
+section("v524: roster-only parties on the phone");
+{
+  const { openMaster: omB } = await import("../tools/payload.mjs");
+  const bkB = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const withR = bkB.associates.find((a) => bkB.roster.includes(a + "-R")), withoutR = bkB.associates.find((a) => !bkB.roster.includes(a + "-R"));
+  const anyCust = bkB.sales.filter((r) => r.customer && r.date).slice(-1)[0].customer;
+  ok(withR && withoutR, "the book has an associate with an -R account and one without (" + withR + ", " + withoutR + ")");
+  const { w } = await omB();
+  w.eval("setProd('salt');recompute();");
+  const fault = (p) => String(w.eval("entryFault(" + JSON.stringify(p) + ")"));
+  ok(/is not on the roster/.test(fault({ direction: "SELL", party: "ZZ9-NOPE", date: "2026-09-08" })) && /Add ID/.test(fault({ direction: "SELL", party: "ZZ9-NOPE", date: "2026-09-08" })), "a buyer not on the roster is refused, and the message points at Add ID");
+  ok(/names its buyer/.test(fault({ direction: "SELL", party: null })) && /names its supplier/.test(fault({ direction: "BUY", party: "" })), "no party is refused in the direction's own word");
+  ok(/end buyer/.test(fault({ direction: "SELL", party: withR, assoc: withR, downstream: "ZZ9-NOPE", date: "2026-09-08" })), "an end buyer not on the roster is refused as the end buyer");
+  ok(/not a product/.test(fault({ direction: "SELL", party: anyCust, product: "nothing", date: "2026-09-08" })), "a product the book does not carry is refused");
+  w.eval("var _scf=stockCostFor; stockCostFor=function(){return null;};");
+  ok(/no cost/.test(fault({ direction: "SELL", party: anyCust, product: "salt", date: "2026-09-08" })) && fault({ direction: "BUY", party: bkB.purchases[0].supplier, product: "salt", date: "2026-09-08" }) === "", "a sale of a product with no lot is refused, and a purchase of it is not");
+  w.eval("stockCostFor=_scf;");
+  ok(/needs a date/.test(fault({ direction: "SELL", party: anyCust, cash: 10 })) && fault({ direction: "SELL", party: anyCust, qty: 1 }) === "", "cash or units moved with no date is refused; a pending undated order is not");
+  ok(fault({ direction: "SELL", party: anyCust, assoc: withR, downstream: withR + "-R", date: "2026-09-08", kg: 1 }) === "", "a roster party, associate and -R account pass");
+  /* the Workbench, driven: an R2 with the buyer unknown */
+  const DRIVE_WB = (assoc) => "(function(){try{var set=function(id,v){var e=document.getElementById(id);if(!e)return false;e.value=v;return true;};" +
+    "wbMode='new';wbDir='SELL';wbStream='R2';wbApply();var a=document.getElementById('wbAssoc');a.checked=true;wbApply();" +
+    "set('wbAssocSel'," + JSON.stringify(assoc) + ");set('wbDown','');set('wbDate','2026-09-08');set('wbQty','1');set('wbTotal','110');set('wbCash','0');set('wbUnits','1');" +
+    "wbPreview();var btn=document.getElementById('wbOk');var n0=queue.length;var r={};try{wbRecord();}catch(e){r.threw=String(e&&e.message);}" +
+    "var q=queue[queue.length-1];r.pushed=(queue.length===n0+1);r.msg=(btn||{}).textContent||'';r.q=r.pushed&&q?{party:q.payload.party,down:q.payload.downstream,assoc:q.payload.assoc,stream:q.payload.stream,raw:q.raw}:null;return JSON.stringify(r);}catch(e){return JSON.stringify({no:'threw: '+(e&&e.message)});}})()";
+  w.eval("switchTab('add');");
+  const A = JSON.parse(String(w.eval(DRIVE_WB(withR))));
+  ok(!A.no && A.pushed && A.q && A.q.party === withR && A.q.down === withR + "-R" && A.q.stream === "R2" && !/-Gen/.test(A.q.raw),
+    "an R2 with the buyer unknown books to the associate as its party and to the -R account as the end buyer, and invents nothing: " + (A.no || JSON.stringify(A.q)));
+  const B = JSON.parse(String(w.eval(DRIVE_WB(withoutR))));
+  ok(!B.no && !B.pushed && /-R is not on the roster/.test(B.msg) && /Add ID/.test(B.msg), "an associate without an -R account is refused with the code and Add ID named, and nothing is queued: " + (B.no || B.msg.slice(0, 120)));
+  /* the editor, driven: a buyer not on the roster, then a moved order with a blank date */
+  const DRIVE_ED = (party, date, moved) => "(function(){try{ledNew();var set=function(k,v){var e=document.getElementById('ed_'+k);if(!e)return false;e.value=v;return true;};" +
+    "set('party'," + JSON.stringify(party) + ");set('qty','1');set('total','110');set('cash'," + JSON.stringify(moved ? "110" : "0") + ");set('deliveredQty'," + JSON.stringify(moved ? "1" : "0") + ");set('date'," + JSON.stringify(date) + ");" +
+    "var n0=queue.length;edSubmitNew();var why=(document.getElementById('edWhy')||{}).textContent||'';var q=queue[queue.length-1];" +
+    "return JSON.stringify({pushed:queue.length===n0+1,why:why,q:(queue.length===n0+1&&q)?{party:q.payload.party,date:q.payload.date}:null});}catch(e){return JSON.stringify({no:'threw: '+(e&&e.message)});}})()";
+  w.eval("switchTab('ledger');");
+  const C = JSON.parse(String(w.eval(DRIVE_ED("ZZ9-NOPE", "", true))));
+  ok(!C.no && !C.pushed && /ZZ9-NOPE is not on the roster/.test(C.why), "the editor refuses a buyer not on the roster and queues nothing: " + (C.no || C.why.slice(0, 100)));
+  const D = JSON.parse(String(w.eval(DRIVE_ED(anyCust, "", true))));
+  const today = String(w.eval("TODAY.toISOString().slice(0,10)"));
+  ok(!D.no && D.pushed && D.q && D.q.party === anyCust && D.q.date === today, "a moved order with a blank date is queued dated today: " + (D.no || JSON.stringify(D.q)));
+  try { w.close(); } catch (e) { }
 }
 
 const FLOOR_ASSERTIONS = 1330, FLOOR_SECTIONS = 97;   /* stale records skipped: 1334 everywhere, 1335 here */
