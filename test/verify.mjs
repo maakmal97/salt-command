@@ -7513,6 +7513,24 @@ section("v528: the name on the phone, filed encrypted before the ID is queued");
   try { w.close(); } catch (e) { }
 }
 
+section("v532: a re-keyed party reads back as the correction it was");
+{
+  const { openMaster: omK } = await import("../tools/payload.mjs");
+  const { w } = await omK();
+  const claims = (row, dir) => JSON.parse(String(w.eval("JSON.stringify(modClaims(" + JSON.stringify(row) + "," + JSON.stringify(dir) + "))")));
+  const sale = { rid: "k1", type: "SELL", customer: "CH6-SET", qty: 1, total: 100, mod: "corrected on 2026-08-26: customer CH6-TBC to CH6-SET", amend: [{ kind: "Correction", date: "2026-08-26" }] };
+  const a = claims(sale, "SELL");
+  ok(a.length === 1 && a[0].field === "party" && a[0].verdict === "agrees" && a[0].reads === "CH6-SET", "a customer re-key written with the stored key reads back as the party correction it is: " + JSON.stringify(a[0] && a[0].verdict));
+  const lot = { rid: "k2", type: "BUY", supplier: "SA5-BTR", qty: 25, total: 1200, mod: "corrected on 2026-08-26: supplier SX9-OLD to SA5-BTR", amend: [{ kind: "Correction", date: "2026-08-26" }] };
+  const b = claims(lot, "BUY");
+  ok(b.length === 1 && b[0].field === "party" && b[0].verdict === "agrees", "and a supplier re-key the same");
+  const wrong = claims({ ...sale, customer: "CH6-TBC" }, "SELL");
+  ok(wrong[0].verdict === "differs" && wrong[0].reads === "CH6-TBC", "a re-key the row does not carry still differs");
+  const odd = claims({ ...sale, mod: "corrected on 2026-08-26: colour red to blue" }, "SELL");
+  ok(odd[0].verdict === "unknown", "a field no correction may set is still unknown");
+  try { w.close(); } catch (e) { }
+}
+
 const FLOOR_ASSERTIONS = 1330, FLOOR_SECTIONS = 97;   /* stale records skipped: 1334 everywhere, 1335 here */
 ok(pass + fail - offMachine >= FLOOR_ASSERTIONS,
   `the suite ran ${pass + fail - offMachine} assertions everywhere (${pass + fail} here, ${offMachine} of them needing files that live off this repo), below its floor of ${FLOOR_ASSERTIONS}: a section has stopped running`);

@@ -1,5 +1,13 @@
 [
  {
+  "v": "v532",
+  "d": "08 Sep 2026",
+  "t": "A RE-KEYED PARTY READS BACK",
+  "n": [
+   "<b>THE TWO STATED CORRECTIONS THAT DID NOT HOLD, s032 and s046, held all along.</b> Both were re-keyed on 26 Aug, CH6-TBC to CH6-SET and CZ4-TBC to CZ4-MK, and both rows carry the new code. The fold that wrote them named the field by its stored key, <code>customer</code>, where a correction's own name for it is <code>party</code>; the checker read the stored key, found it in no list, and reported that nothing had been written. His call of 08 Sep: this is a correction that can be done, and it had been. The checker now reads <code>customer</code> and <code>supplier</code> as the party field they are, and both rows read back as agreeing. Proved in the suite on a synthetic row each way, with a field that truly is unknown still called unknown."
+  ]
+ },
+ {
   "v": "v531",
   "d": "08 Sep 2026",
   "t": "ONE BUCKET: NON-REVENUE SALT, OR OIL",
