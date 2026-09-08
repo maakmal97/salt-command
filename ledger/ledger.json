@@ -1,6 +1,6 @@
 {
- "v": "v516",
- "stamped": "08 Sep 2026, 09:13 KL",
+ "v": "v517",
+ "stamped": "08 Sep 2026, 09:29 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -3391,8 +3391,8 @@
     },
     {
      "qty": 100,
-     "total": 4300,
-     "note": "RM43/unit, cheaper than any rate this desk has ever been quoted or has ever paid."
+     "total": 4000,
+     "note": "RM40/unit on his word of 08 Sep 2026, down RM300 from the RM4,300 quoted on 20 Aug; cheaper than any rate this desk has ever been quoted or has ever paid."
     }
    ]
   },
@@ -3470,7 +3470,7 @@
   ],
   "QUEUE_COMMITTED": "2026-09-08T00:40:00.003Z",
   "PRICING": {
-   "takenAt": "2026-09-08T01:16:03.502Z",
+   "takenAt": "2026-09-08T01:29:21.800Z",
    "sizes": [
     0.5,
     1,
@@ -3681,8 +3681,8 @@
         },
         {
          "qty": 100,
-         "total": 4300,
-         "note": "RM43/unit, cheaper than any rate this desk has ever been quoted or has ever paid."
+         "total": 4000,
+         "note": "RM40/unit on his word of 08 Sep 2026, down RM300 from the RM4,300 quoted on 20 Aug; cheaper than any rate this desk has ever been quoted or has ever paid."
         }
        ],
        "boardSizes": [
@@ -3902,10 +3902,10 @@
      }
     }
    },
-   "v": "v516"
+   "v": "v517"
   },
   "OPEN": {
-   "at": "2026-09-08T01:16:03.544Z",
+   "at": "2026-09-08T01:29:21.883Z",
    "count": 9,
    "byKey": {
     "CR3-DAM|2026-09-07|185": {
@@ -4072,7 +4072,7 @@
     "salt": "2026-09-06",
     "oil": "2026-08-23"
    },
-   "v": "v516"
+   "v": "v517"
   }
  }
 }

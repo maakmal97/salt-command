@@ -2793,8 +2793,8 @@ section("Boundaries — the caps and the trigger are per book (round 5, his call
   /* his call 4(e): a suggested restock is priced at the book's own tier, lots bought whole */
   ok(JSON.stringify(read("restockQuote(7.25)")) === JSON.stringify({ qty: 12.5, total: 650, rate: 52, lots: 1, quoted: true }),
     "salt: 7.25 unit needed is covered by the 12.5 tier at its RM650 total, not 7.25 at a flat rate");
-  ok(JSON.stringify(read("restockQuote(130)")) === JSON.stringify({ qty: 200, total: 8600, rate: 43, lots: 2, quoted: true }),
-    "beyond the top tier it takes whole top-tier lots: 130 needs two 100s at RM8,600");
+  ok(JSON.stringify(read("restockQuote(130)")) === JSON.stringify({ qty: 200, total: 8000, rate: 40, lots: 2, quoted: true }),
+    "beyond the top tier it takes whole top-tier lots: 130 needs two 100s at RM8,000");
   w.eval("setProd('oil');recompute();");
   ok(JSON.stringify(read("restockQuote(3)")) === JSON.stringify({ qty: 10, total: 100, rate: 10, lots: 1, quoted: true }),
     "oil: 3 unit needed is covered by its own 10 unit tier at RM100");

@@ -370,8 +370,8 @@
       },
       {
         "qty": 100,
-        "total": 4300,
-        "note": "RM43/unit, cheaper than any rate this desk has ever been quoted or has ever paid."
+        "total": 4000,
+        "note": "RM40/unit on his word of 08 Sep 2026, down RM300 from the RM4,300 quoted on 20 Aug; cheaper than any rate this desk has ever been quoted or has ever paid."
       }
     ]
   },
@@ -476,7 +476,8 @@
       "EVERY COUNT, AS TAKEN (v504, 07 Sep 2026): product, date, the figure counted, what the roll said and the drift, negative when units are missing. The fold appends one line per count. A count with no drift bounds a cycle and charges nothing; the 24 Aug anchor is one. Seeded from the fold notes of v473 (02 Sep, 10.5 against 18.75), v489 (04 Sep, 9.8 entered net of a rolled sale, no drift) and v498 (06 Sep, 7 against 8.3); the oil count of 23 Aug has no recorded drift. The leak is charged from these: the units missing over the last three cycles, at landed, over the units sold in them."
     ],
     "supplierQuote": [
-      "v505, 07 Sep 2026: the 25 unit tier is RM 1,200 on his word; the other four tiers stand as quoted on 20 Aug."
+      "v505, 07 Sep 2026: the 25 unit tier is RM 1,200 on his word; the other four tiers stand as quoted on 20 Aug.",
+      "v517, 08 Sep 2026: the 100 unit tier is RM 4,000 on his word, down RM 300 from the RM 4,300 quoted on 20 Aug; the other four tiers stand. The salt taper refits from -0.100 to -0.121 and five asks come down RM 10 (RM 30 at 12.5 unit); no floor moves."
     ],
     "QUEUE_COMMITTED": [
       "v512, 07 Sep 2026: moved to 06:21:06.691Z past a second entry of the CR3-DAM sale already folded at v510, so the phone stops showing it as provisional; no row folded."
