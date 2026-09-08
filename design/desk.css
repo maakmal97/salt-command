@@ -449,3 +449,48 @@ details.obs>summary:hover{background:var(--salt-glass);}
   body{background:#fff!important;color:#141821!important;}
   h1,.railtitle{background:none;color:#141821;-webkit-text-fill-color:#141821;}
 }
+
+/* ---- 5b. THE RAIL'S TAB AND ITS PARTS ARE ONE BLOCK (v529, his instruction of 08 Sep 2026) ----
+   The open tab was a bordered card and its parts a separate indented list under a faint line,
+   two things where there is one. The open tab is now the head of a block and its parts the body
+   of the same block: one border, one glass, the head with square bottom corners, the body with
+   square top corners, no gap. A part is marked by a brass bar at its left, not a pill. */
+.tab.on{border-radius:var(--salt-radius-sm) var(--salt-radius-sm) 0 0;border-bottom-color:transparent;margin-bottom:0;}
+.tab.on+.subs{display:block;}
+.subs{margin:0 0 8px;padding:2px 6px 6px;border:1px solid var(--salt-line);border-top:0;
+  border-radius:0 0 var(--salt-radius-sm) var(--salt-radius-sm);background:var(--salt-glass);}
+.sub{position:relative;display:flex;align-items:center;min-height:32px;padding:6px 10px 6px 18px;border:0;border-radius:8px;
+  color:var(--salt-mist);background:transparent;}
+.sub::before{content:'';position:absolute;left:8px;top:9px;bottom:9px;width:2px;border-radius:2px;background:transparent;}
+.sub:hover{color:var(--salt-salt);background:transparent;}
+.sub.on{color:var(--salt-salt);background:rgba(255,255,255,.035);}
+.sub.on::before{background:var(--salt-brass);}
+
+/* ---- 7b. THE LEDGER ROW'S SECOND LINE (v529, his instruction of 08 Sep 2026) ----
+   The role and the type sat at the far left under the E code, and Update was a pill button at the
+   far right, so every open row carried a second line taller than its first. The second line now
+   starts under the date, in the same small capitals as the rest, and Update is a brass link at the
+   right, on the same baseline; the row's own padding does the spacing, not the gap between lines. */
+.ledwrap .lrow{row-gap:1px;padding:6px 8px 5px;}
+.ledwrap .lrow .lc-step{padding-left:36px;}   /* under the date, not under the E code: the grid keeps its tracks */
+.ledwrap .lrow .lc-step,.ledwrap .lrow .lc-type{align-self:center;}
+.ledwrap .lrow .lclabel{font-size:10.5px;letter-spacing:.14em;min-width:0;}
+.ledwrap .lrow .lc-type .tag{font-size:10.5px;letter-spacing:.14em;}
+.ledwrap .lqb,.ledwrap .lqb.qdone{border:1px solid rgba(197,160,89,.45);background:transparent;border-radius:999px;padding:3px 10px;min-height:0;line-height:1.3;
+  font-size:10.5px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--salt-brass);text-decoration:none;}
+.ledwrap .lqb:hover,.ledwrap .lqb.qdone:hover{background:rgba(197,160,89,.10);color:var(--salt-salt);border-color:var(--salt-brass);}
+.ledwrap .lquick{justify-content:flex-end;align-self:center;}
+
+/* ---- 5c. ONE PERSISTENT HEADER (v529, his instruction of 08 Sep 2026) ----
+   The version chip and the names key stayed put on scroll while the date and status row scrolled
+   away beneath them, two strips where there is one. The status row now rides in the desk bar:
+   date and stamp at the left, status beside it, version and the key at the right, all on one
+   glass veil that fades into the desk below. On a phone the bar wraps and the status row takes
+   its own line under the brand and the sections button. */
+.deskbar{flex-wrap:wrap;gap:8px 14px;padding-bottom:10px;margin-bottom:10px;
+  background:linear-gradient(180deg,var(--salt-veil) 84%,rgba(11,18,21,0));}
+.deskbar .dbtools{order:2;}
+.deskbar .meta{order:1;flex:1 1 auto;min-width:0;margin:0;gap:6px 8px;align-items:center;}
+.deskbar .meta>.metarow{flex:1 1 auto;}
+.deskbar .meta #provBar{flex:1 0 100%;}
+@media(max-width:860px){.deskbar .meta{order:3;flex:1 0 100%;}}
