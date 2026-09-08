@@ -34,6 +34,26 @@ export const CHECKS = [
   ["the extract is the book", ["tools/ledger.mjs", "--check"]],
 ];
 
+/* v535: THE STAMP MAY NOT BE IN THE FUTURE. Five hand-made versions on 08 Sep carried a typed stamp
+   that ran ahead of the clock. Parsed from "DD Mon YYYY, HH:MM KL", compared with Kuala Lumpur now
+   plus ten minutes of grace for the run itself. */
+export function stampAhead(stampText, nowMs) {
+  const m = /^(\d{2}) ([A-Z][a-z]{2}) (\d{4}), (\d{2}):(\d{2}) KL$/.exec(String(stampText || "").trim());
+  if (!m) return "the stamp is not in the shape DD Mon YYYY, HH:MM KL: " + stampText;
+  const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const mi = MON.indexOf(m[2]); if (mi < 0) return "the stamp's month is not a short month: " + m[2];
+  const stampMs = Date.UTC(+m[3], mi, +m[1], +m[4] - 8, +m[5]);
+  const graceMs = 10 * 60e3;
+  return stampMs > (nowMs == null ? Date.now() : nowMs) + graceMs ? "the master's stamp is in the future: " + stampText : "";
+}
+export function stampCheck() {
+  const src = readFileSync(resolve(REPO, "master", "salt_command.html"), "utf8");
+  const m = /const LAST_UPDATED='([^']*)';/.exec(src);
+  const why = stampAhead(m ? m[1] : "");
+  if (why) throw new Error(why);
+  return m[1];
+}
+
 export function buildMatches() {
   const revPath = resolve(REPO, "public", "rev.json");
   const before = JSON.parse(readFileSync(revPath, "utf8")).id;
@@ -54,6 +74,10 @@ if (isMain) {
     const t = Date.now();
     try { run(args); console.log(`  ok    ${what} (${((Date.now() - t) / 1000).toFixed(1)} s)`); }
     catch (e) { failed = true; console.log(`  FAIL  ${what}\n        ${String((e && e.stdout) || (e && e.message) || e).trim().split("\n").slice(-4).join("\n        ")}`); break; }
+  }
+  if (!failed) {
+    try { const st = stampCheck(); console.log(`  ok    the master's stamp is not in the future (${st})`); }
+    catch (e) { failed = true; console.log(`  FAIL  ${e.message}`); }
   }
   if (!failed) {
     const t = Date.now();

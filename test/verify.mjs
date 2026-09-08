@@ -7301,6 +7301,10 @@ section("v522: the gate before the deploy, the suite after the phone is live");
   const gateTools = G.CHECKS.map(([, args]) => args[0]);
   ok(ciChecks.length >= 7 && ciChecks.every((t) => gateTools.includes(t)), "the gate runs every --check that ci.yml runs (" + ciChecks.length + " of them)");
   ok(gateTools.includes("tools/lint-workflows.mjs") && gateTools.includes("tools/ledger.mjs") && typeof G.buildMatches === "function", "and the workflow lint, the extract and the build check");
+  /* v535: a stamp ahead of Kuala Lumpur time fails the gate; one behind, or within the grace, passes */
+  const NOW = Date.UTC(2026, 8, 8, 6, 16);   /* 08 Sep 2026, 14:16 KL */
+  ok(/in the future/.test(G.stampAhead("08 Sep 2026, 19:30 KL", NOW)) && G.stampAhead("08 Sep 2026, 14:16 KL", NOW) === "" && G.stampAhead("08 Sep 2026, 14:25 KL", NOW) === "" && G.stampAhead("07 Sep 2026, 23:59 KL", NOW) === "", "a stamp five hours ahead is refused; the present, ten minutes of grace and the past pass");
+  ok(/not in the shape/.test(G.stampAhead("08 Sept 2026, 14:16 KL", NOW)), "and Sept is not the shape the stamp takes");
   /* red: a master whose BOOK block is not the file fails the gate at that check, and nothing after runs */
   const { mkdirSync: mkG, rmSync: rmG, copyFileSync: cpG, readFileSync: rfG, writeFileSync: wfG } = await import("node:fs");
   const { execFileSync: exG } = await import("node:child_process");
