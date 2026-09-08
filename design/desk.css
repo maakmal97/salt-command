@@ -472,7 +472,7 @@ details.obs>summary:hover{background:var(--salt-glass);}
    starts under the date, in the same small capitals as the rest, and Update is a brass link at the
    right, on the same baseline; the row's own padding does the spacing, not the gap between lines. */
 .ledwrap .lrow{row-gap:1px;padding:6px 8px 5px;}
-.ledwrap .lrow .lc-step{padding-left:36px;}   /* under the date, not under the E code: the grid keeps its tracks */
+.ledwrap .lrow .lc-step{padding-left:calc(var(--lc-e,30px) + 6px);}   /* under the date, not under the E code: the grid keeps its tracks */
 .ledwrap .lrow .lc-step,.ledwrap .lrow .lc-type{align-self:center;}
 .ledwrap .lrow .lclabel{font-size:10.5px;letter-spacing:.14em;min-width:0;}
 .ledwrap .lrow .lc-type .tag{font-size:10.5px;letter-spacing:.14em;}

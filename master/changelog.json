@@ -1,5 +1,13 @@
 [
  {
+  "v": "v530",
+  "d": "08 Sep 2026",
+  "t": "THE LEDGER COLUMNS FIT THEIR LONGEST ENTRY",
+  "n": [
+   "<b>HIS INSTRUCTION OF 08 SEP 2026: size the ledger by the longest entry in each column.</b> The tracks were fixed widths, so a column was either clipped or slack whatever it held. After every render of the Ledger part, <code>ledFit()</code> lets the grid out to max-content for one layout, measures every cell of every column across the head, the rows and the steps, and sets the widest as that column's track on the wrap, with the old width as its floor; the party column keeps its share of the rest. A desk with no layout engine measures nothing and keeps the floors, which is what the suite sees. The row's second line indents by the fitted E column, not a fixed 36px."
+  ]
+ },
+ {
   "v": "v529",
   "d": "08 Sep 2026",
   "t": "THE RAIL BLOCK, THE ROW LINE AND THE PERSISTENT HEADER",
