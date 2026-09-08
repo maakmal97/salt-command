@@ -101,7 +101,10 @@ desk shows, cost and margin included, is served at the public URL.
   records in `refused` (on the phone, self-cleaning): Linked and Rewarded amendments,
   `linkTo` or `orderCode`, a movement with no date, a product with no cost. Fulfilment,
   Cancellation, Modification and Correction go through the gate.
-- **The laptop's own queue takes the same road:** `node tools/drafts.mjs --from-queue`.
+- **The laptop's own queue takes the same road:** `node tools/drafts.mjs --from-queue` (broken
+  since the reads were gated). A decided draft keeps its id for good; to re-draft a rejected or
+  refused entry he later calls real, mint a new `at`, run `draftRow` against `readBook()`, then
+  `drafts.mjs --draft`, `--approve --by`, `--approved > master/_to_fold.json` (08 Sep 2026).
   A ledger row edit (right-click on `/desk`, tap on the phone) queues as a Correction.
 - Endpoints: `GET /drafts?status=…`, `POST /drafts/<id>/approve|reject|committed`,
   `POST /draft-now?dry=1`, all keyed. Schema `migrations/0002`, `0003`. Nothing writes
@@ -149,7 +152,9 @@ skill in `.claude/skills`, laptop only.
   application was removed.** Setting it to `"1"` without recreating the application
   locks him out. To restore: first the Access application (Self-hosted, Workers,
   `salt-command`, policy Allow for his two addresses), then the var, then deploy by hand.
-- **Reads are open; writes need `X-Salt-Key` = `SALT_WRITE_KEY`, armed 16 Aug 2026.**
+- **Writes need `X-Salt-Key` = `SALT_WRITE_KEY`, armed 16 Aug 2026, and so do the reads that
+  carry cost or trade: `/queue`, `/ledger`, `/drafts`, `/orders`, `/stmt-users`. The desk, `/rev`
+  and `/queue/ping` stay open (corrected 08 Sep 2026).**
   Unkeyed `POST /queue` or `/vault` returns 401. Change it with
   `npx wrangler secret put SALT_WRITE_KEY`, then clear `saltWriteKey` from the phone's
   storage. `drain.mjs` and `seed-vault.mjs` go through wrangler, unaffected.
