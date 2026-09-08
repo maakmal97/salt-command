@@ -1,5 +1,13 @@
 [
  {
+  "v": "v539",
+  "d": "08 Sep 2026",
+  "t": "NO PART REPEATS ITS VIEW'S NAME",
+  "n": [
+   "<b>AND FOR ALL OTHER TABS AS WELL (his instruction, 08 Sep 2026).</b> v538 renamed the Today view's lead part To do because the rail's open block read TODAY then TODAY. The same doubling stood on three more views: Inventory over Inventory, Price over Pricing, Customers over Customers. Each lead part is now named for what it shows rather than for the view it leads: On hand for what is on the inventory and how long it lasts, The board for the ladder and its floors, Who buys for the buyers and who to approach next. Ids and addresses are unchanged; Order book, Ledger and Transaction already read apart from their views and stay."
+  ]
+ },
+ {
   "v": "v538",
   "d": "08 Sep 2026",
   "t": "THE PRINTED BOARD IN THE IDENTITY'S OWN COLOURS, THE RESELLER ROW TAGGED, AND TO DO",
