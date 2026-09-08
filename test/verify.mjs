@@ -3627,6 +3627,10 @@ section("v411: the Worker's SQL run against the real schema");
     const back = await call("GET", "/drafts?status=pending");
     ok(back.j.clock && back.j.clock.id === ID && back.j.clock.liveAt === LIVE && back.j.clock.decidedAt && back.j.clock.committedAt,
       "the pending view carries the clock: the last committed draft with tap, phone and committed times");
+    /* v527: a loan draft passes the widened collection check on the real schema */
+    const LOAN = { ...D, id: "suite-sql-loan", collection: "loan", row: { date: "2026-09-08", party: "CH5-OUG", direction: "in", valueKg: 5.5, valueRM: null, status: "open", product: "salt" } };
+    const madeLoan = await guard("a loan draft passes the widened collection check", () => call("POST", "/drafts", LOAN));
+    ok(madeLoan && madeLoan.status === 200 && madeLoan.j.created === true, "a loan draft passes the widened collection check on the real schema");
     ok((await call("POST", "/drafts/" + ID + "/committed", { liveAt: "not a date" })).j.alreadyCommitted === true
       && (await call("GET", "/drafts?status=all")).j.drafts.find((d) => d.id === ID).liveAt === LIVE,
       "a proof time that is not a date is dropped, and the stored one stands");
@@ -7413,6 +7417,48 @@ section("v526: the replay question, asked on the phone");
   const yes = JSON.parse(String(w.eval(DRIVE(true, false))));
   const named = bkD.sales.find((r) => r.rid === yes.second);
   ok(!yes.no && yes.pushed && named && named.customer === real.customer && named.date === real.date && +named.total === +real.total && +named.qty === +real.qty, "with the answer yes it is queued marked second, naming a twin row on the book: " + (yes.no || String(yes.second)));
+  try { w.close(); } catch (e) { }
+}
+
+section("v527: borrow and lend on the phone");
+{
+  const { draftRow: draftL } = await import("../src/drafter.js");
+  const { plan: planL, apply: applyL } = await import("../tools/fold.mjs");
+  const bkL = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const lender = bkL.loans.find((l) => l.direction === "in" && l.status !== "settled");
+  ok(lender, "the book carries an open loan in to measure against (" + (lender && lender.party) + ")");
+  const mirror = { version: "vX", sales: bkL.sales, purchases: bkL.purchases, state: { roster: bkL.roster, loans: bkL.loans, OPEN: { position: { salt: { onHand: 1, owedOut: 8.5, promised: 0 } } } }, pricing: null };
+  const ent = (p) => ({ at: "2099-03-01T00:00:00.001Z", payload: { mode: "loan", product: "salt", ...p } });
+  const dIn = draftL(ent({ party: lender.party, direction: "in", kg: 2, date: "2099-03-01" }), mirror);
+  ok(!dIn.skip && dIn.collection === "loan" && dIn.row.direction === "in" && dIn.row.valueKg === 2 && dIn.row.status === "open" && dIn.flags.some((f) => /already has .* open loan/.test(f)), "a borrowing drafts as a loan in and names the party's open loans: " + (dIn.skip || dIn.flags.join(" | ").slice(0, 120)));
+  const dOut = draftL(ent({ party: "CM4-MK", direction: "out", kg: 3, date: "2099-03-01" }), mirror);
+  ok(!dOut.skip && dOut.row.direction === "out" && dOut.flags.some((f) => /Lending more than you hold/.test(f)), "a lending over the inventory drafts and is flagged: " + (dOut.skip || ""));
+  ok(/names the party/.test(draftL(ent({ direction: "in", kg: 1, date: "2099-03-01" }), mirror).skip || "") && /in \(borrowed/.test(draftL(ent({ party: "CM4-MK", direction: "sideways", kg: 1, date: "2099-03-01" }), mirror).skip || "") && /needs the date/.test(draftL(ent({ party: "CM4-MK", direction: "in", kg: 1 }), mirror).skip || ""), "no party, a direction that is neither, and no date are refused");
+  /* the planner and the apply, on a copy of the book */
+  const stagedL = { ok: true, count: 2, approved: [
+    { id: "2099-03-01T00:00:00.001Z", collection: "loan", row: dIn.row, entry: ent({ party: lender.party, direction: "in", kg: 2, date: "2099-03-01" }) },
+    { id: "2099-03-01T00:00:00.002Z", collection: "loan", row: dOut.row, entry: ent({ party: "CM4-MK", direction: "out", kg: 3, date: "2099-03-01" }) } ] };
+  const copyL = JSON.parse(JSON.stringify(bkL));
+  const pL = planL(copyL, stagedL, null);
+  ok(pL.refused.length === 0 && pL.items.length === 2 && pL.moves.length === 2 && pL.moves[0].kg === 2 && pL.moves[1].kg === -3 && /BORROW 2 unit/.test(pL.items[0].what) && /LEND 3 unit/.test(pL.items[1].what), "the planner moves a borrowing in and a lending out: " + JSON.stringify(pL.moves.map((m) => m.kg)));
+  const notesL = { version: "v9999", date: "01 Mar 2099", title: "TWO LOANS", notes: ["<b>TWO LOANS.</b> A borrowing and a lending, on a copy of the book, long enough to be a paragraph."], rows: { "2099-03-01T00:00:00.001Z": { note: "<b>BORROWED 2 UNIT.</b> A note long enough to pass, on a copy of the book." }, "2099-03-01T00:00:00.002Z": { note: "<b>LENT 3 UNIT.</b> A note long enough to pass, on a copy of the book." } }, stockNote: "", stockCost: null, stockCostNote: "" };
+  const before = copyL.STATED_STOCK, nLoans = copyL.loans.length;
+  const aL = applyL(copyL, stagedL, notesL, readFileSync(join(REPO, "master", "salt_command.html"), "utf8"));
+  ok(aL.ok && copyL.loans.length === nLoans + 2 && copyL.loans[nLoans].direction === "in" && copyL.loans[nLoans].valueKg === 2 && /BORROWED 2 UNIT/.test(copyL.loans[nLoans].note) && copyL.loans[nLoans + 1].direction === "out", "the apply appends both to the loan book with their notes: " + (aL.ok ? "ok" : (aL.problems || []).join("; ")));
+  ok(Math.abs(copyL.STATED_STOCK - (before + 2 - 3)) < 0.005, "and rolls the stated inventory in by 2 and out by 3 (" + before + " to " + copyL.STATED_STOCK + ")");
+  /* the Workbench, driven on the real master */
+  const { openMaster: omL } = await import("../tools/payload.mjs");
+  const { w } = await omL();
+  w.eval("setProd('salt');recompute();switchTab('add');");
+  const DRIVE = (dir, party) => "(function(){try{queue=[];wbMode='loan';wbApply();var set=function(id,v){var e=document.getElementById(id);if(!e)return false;e.value=v;return true;};" +
+    "set('wbLoanDir'," + JSON.stringify(dir) + ");set('wbLoanParty'," + JSON.stringify(party) + ");set('wbLoanUnits','2.5');set('wbLoanDate','2026-09-08');set('wbLoanNote','terms');wbPreview();" +
+    "var btn=document.getElementById('wbOk');var dis=!!btn.disabled;var n0=queue.length;var r={dis:dis};try{wbRecord();}catch(e){r.threw=String(e&&e.message);}var q=queue[queue.length-1];r.pushed=(queue.length===n0+1);" +
+    "r.q=r.pushed&&q?{type:q.type,party:q.party,payload:q.payload}:null;var nl=loans.length;applyOverlay();r.loansAfter=loans.length-nl;r.card=(function(){try{return apCard({collection:'loan',row:{direction:" + JSON.stringify(dir) + ",party:" + JSON.stringify(party) + ",valueKg:2.5,product:'salt',date:'2026-09-08'}});}catch(e){return 'threw '+e.message;}})();return JSON.stringify(r);}catch(e){return JSON.stringify({no:'threw: '+(e&&e.message)});}})()";
+  const L1 = JSON.parse(String(w.eval(DRIVE("in", lender.party))));
+  ok(!L1.no && !L1.dis && L1.pushed && L1.q && L1.q.type === "BORROW" && L1.q.payload.mode === "loan" && L1.q.payload.direction === "in" && L1.q.payload.kg === 2.5 && L1.q.payload.party === lender.party && L1.q.payload.date === "2026-09-08", "the Workbench queues a borrowing with its figures: " + (L1.no || L1.threw || JSON.stringify(L1.q)));
+  ok(!L1.no && L1.loansAfter === 1 && /Borrow/.test(L1.card) && /in kind/.test(L1.card) && /2.5 unit/.test(L1.card), "the overlay puts it on the loan book at once and the Approve card reads Borrow, in kind, 2.5 unit");
+  const L2 = JSON.parse(String(w.eval(DRIVE("out", "CM4-MK"))));
+  ok(!L2.no && L2.pushed && L2.q.type === "LEND" && L2.q.payload.direction === "out" && /Lend/.test(L2.card), "and a lending the other way");
   try { w.close(); } catch (e) { }
 }
 

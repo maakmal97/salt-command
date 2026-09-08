@@ -788,6 +788,42 @@ export function draftRow(entry, book) {
     };
   }
 
+  /* ---- A LOAN, EITHER WAY (v527, Part B step 9). Salt borrowed from a party lands on the
+   * inventory and is owed back in kind; salt lent to a party leaves it and is owed back. The
+   * loan book has carried both since v518; until now a loan was entered on his word in a Code
+   * session. Measured here against the position and the party's open loans, never priced. */
+  if (pay.mode === "loan") {
+    const prod = pay.product || "salt";
+    const party = pay.party || null;
+    if (!party) return { skip: "a loan names the party it is with" };
+    const roster = (book.state && book.state.roster) || [];
+    const direction = String(pay.direction || "").toLowerCase();
+    if (direction !== "in" && direction !== "out") return { skip: "a loan is in (borrowed from them) or out (lent to them)" };
+    const q = isNum(pay.kg) ? +pay.kg : (isNum(pay.qty) ? +pay.qty : null);
+    if (q == null || !(q > 0)) return { skip: "a loan needs the units that changed hands" };
+    const when = pay.date || null;
+    if (!when) return { skip: "a loan needs the date it changed hands" };
+    const pos = ((book.state && book.state.OPEN && book.state.OPEN.position) || {})[prod] || null;
+    const flags = [];
+    if (!roster.includes(party)) flags.push(`${party} is not on the roster. A new party needs a code and a directory entry before this is committed.`);
+    if (direction === "out" && pos && isNum(pos.onHand) && q > pos.onHand + 0.005) {
+      flags.push(`This lends ${round(q)} unit against an inventory the book puts at ${round(pos.onHand)}. Lending more than you hold means the inventory figure is already wrong.`);
+    }
+    const open = ((book.state && book.state.loans) || []).filter((l) => l && l.party === party && l.status !== "settled" && !l.preOpening);
+    if (open.length) {
+      const inn = open.filter((l) => l.direction === "in").reduce((a, l) => a + (+l.valueKg || 0), 0), out = open.filter((l) => l.direction !== "in").reduce((a, l) => a + (+l.valueKg || 0), 0);
+      flags.push(`${party} already has ${open.length} open loan${open.length === 1 ? "" : "s"} on the book: ${inn ? round(inn) + " unit borrowed from them" : ""}${inn && out ? ", " : ""}${out ? round(out) + " unit lent to them" : ""}. This one is beside those, not a settlement.`);
+    }
+    return {
+      collection: "loan",
+      row: { date: when, party, direction, valueKg: q, valueRM: null, status: "open", product: prod, note: pay.note || null },
+      flags,
+      reasoning: (direction === "in" ? `Borrowed ${round(q)} unit of ${prod} from ${party} on ${when}, owed back in kind.` : `Lent ${round(q)} unit of ${prod} to ${party} on ${when}, owed back in kind.`)
+        + (direction === "in" ? " It lands on the inventory while open and counts nowhere once settled." : " It leaves the inventory and is drawn against loans until settled.")
+        + " The fold appends it to the loan book and rolls the stated inventory.",
+    };
+  }
+
   if (pay.mode === "lost") {
     const prod = pay.product || "salt";
     const q = isNum(pay.kg) ? +pay.kg : (isNum(pay.qty) ? +pay.qty : null);

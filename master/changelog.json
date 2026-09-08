@@ -1,5 +1,15 @@
 [
  {
+  "v": "v527",
+  "d": "08 Sep 2026",
+  "t": "BORROW AND LEND ON THE PHONE",
+  "n": [
+   "<b>PART B, STEP 9 OF HIS INSTRUCTION OF 08 SEP 2026.</b> The two loans in of v518 were entered on his word in a Code session because the phone had no form for them. The Workbench now has <i>Borrow or lend</i>: which way, the party from the roster, the units, the date and a note. The drafter measures it against the position and the party's open loans and never prices it; the Approve card shows the units, that it is owed back in kind, and what the inventory does; the fold appends it to the loan book and rolls the stated inventory, in for a borrowing and out for a lending. The queued entry shows on the desk at once through the overlay, as a count or a loss does.",
+   "<b>THE DRAFT TABLE WIDENS</b> (migration 0007): <code>loan</code> joins the collections a draft may be, and <code>priceset</code> with it, which the drafter has returned since the price board could be set from the phone and the check of 0005 never named. Settling a loan stays a fold on his word for now: mark it settled with the date and roll the inventory the other way in the same version.",
+   "<b>PROVED.</b> The drafter drafts a borrowing and a lending and flags a lending over the inventory and a party with loans already open; the planner moves the units the right way; the apply appends the row and rolls the inventory on a copy of the book; the Workbench queues the entry with its figures; a loan draft passes the widened table on the real schema."
+  ]
+ },
+ {
   "v": "v526",
   "d": "08 Sep 2026",
   "t": "THE REPLAY QUESTION, ASKED ON THE PHONE",

@@ -85,6 +85,7 @@ function describe(item) {
     case "purchases": return `BUY ${r.supplier} ${r.qty} unit ${prodOf(r)} RM${r.total}${r.pending ? " (pending lot)" : ""}`;
     case "count": return `COUNT ${r.product} ${r.qty} unit on ${r.date} (book said ${r.was}, drift ${r.drift})`;
     case "loss": return `LOSS ${r.kg} unit ${r.product} on ${r.date}: ${r.why}`;
+    case "loan": return `${r.direction === "in" ? "BORROW" : "LEND"} ${r.valueKg} unit ${r.product || "salt"} ${r.direction === "in" ? "from" : "to"} ${r.party} on ${r.date}`;
     case "lostDemand": return `LOST SALE ${r.kg} unit ${r.product}${r.party ? " to " + r.party : ""} on ${r.date}: ${r.why}`;
     case "roster": return `REGISTER ${r.code} as ${r.kind}${r.parent ? " under " + r.parent : ""}`;
     case "priceset": return `SET THE BOARD for ${r.product}${Object.keys(r.prices || {}).length ? ": " + Object.entries(r.prices).map(([q, p]) => `${q} unit at RM${p}`).join(", ") : ""}${(r.hide || []).length ? `, hiding ${r.hide.join(", ")} unit` : ""}`;
@@ -214,6 +215,10 @@ export function plan(book, staged, notes) {
     } else if (it.collection === "loss") {
       entry.append = "selfUseLog"; entry.does.push("append to selfUseLog; it draws stock and books no revenue");
       if (+r.kg > 0.009) out.moves.push({ product: r.product || "salt", kg: -(+r.kg), who: "loss: " + r.why, when: r.date || TODAY });
+    } else if (it.collection === "loan") {
+      /* v527: a loan in lands on the inventory, a loan out leaves it; both are owed back in kind */
+      entry.append = "loans"; entry.does.push(r.direction === "in" ? "append to loans as borrowed in: it lands on the inventory and is owed back in kind" : "append to loans as lent out: it leaves the inventory and is owed back in kind");
+      if (+r.valueKg > 0.009) out.moves.push({ product: r.product || "salt", kg: r.direction === "in" ? +r.valueKg : -(+r.valueKg), who: (r.direction === "in" ? "borrowed from " : "lent to ") + r.party, when: r.date || TODAY });
     } else if (it.collection === "lostDemand") {
       entry.append = "lostDemand"; entry.does.push("append to lostDemand; touches no stock and no cash");
     } else if (it.collection === "roster") {
@@ -602,7 +607,7 @@ export function apply(book, staged, notes, masterText) {
       const sentence = `COUNTED AT ${notes.version} on ${c.date}: the ${c.product} inventory held ${c.qty} against ${c.was != null ? c.was : "?"} on the roll, a drift of ${c.drift != null ? c.drift : "?"}. A COUNT AND NOT A ROLL, so COUNT_ON.${c.product} moves to ${c.date}.` + (n.note ? " " + String(n.note).trim() : "");
       const key = c.product === "salt" ? "STATED_STOCK" : "PROD_OPENING";
       book.NOTES = book.NOTES || {}; book.NOTES[key] = [sentence].concat(book.NOTES[key] || []);
-    } else if (it.append === "selfUseLog" || it.append === "lostDemand") {
+    } else if (it.append === "selfUseLog" || it.append === "lostDemand" || it.append === "loans") {
       const row = { ...src.row }; if (n.note) row.note = String(n.note).trim();
       book[it.append] = book[it.append] || []; book[it.append].push(row);
     } else if (it.roster) {

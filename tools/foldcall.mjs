@@ -102,6 +102,8 @@ export function dossier(book, staged, p, w) {
         const q = (book.supplierQuote || []).filter((x) => (x.product || "salt") === prod).slice(-1)[0] || null;
         d.quote = q ? { date: q.date, supplier: q.supplier, tiers: q.tiers } : null;
       }
+    } else if (src.collection === "loan" && row.party) {
+      d.party = Object.assign({ code: row.party }, partyDossier(book, "customer", row.party));
     } else if (src.collection === "count") {
       try {
         const before = evalJSON(w, "({floor1:floorTotal(1),floor2:floorTotal(2),floor125:floorTotal(12.5),ask1:priceLadder(1).ask.total,selfUse:selfUse})");
