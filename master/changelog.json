@@ -1,5 +1,15 @@
 [
  {
+  "v": "v536",
+  "d": "08 Sep 2026",
+  "t": "BOTH 07 SEP CREDIT ROWS RESTATED TO RM 117.50, ONE OF THEM MOVED TO CS6-BS-R",
+  "n": [
+   "<b>THREE ROWS FOLDED, NONE OF THEM MOVING STOCK.</b> Two corrections sit against the pair of 1 unit credit rows of 07 Sep, s138 and s139, both taken to RM 117.50 from RM 110, and one fulfilment of RM 60 cash settles CM4-MK s132 in full. No cash moves on the corrections and no unit moves on any of the three.",
+   "<b>THE UNUSUAL PART IS THE SPLIT PARTY ON s138.</b> That row leaves CS6-BS for CS6-BS-R, with assoc set to CS6-BS and stream set to R2, while its twin s139 keeps CS6-BS and takes the total alone. The drafter flagged that R2 books the row to the associate and that with no downstream named the end buyer is recorded nowhere, and the dossier carries nothing to fill that in. It also flagged that each correction leaves 1 unit out with RM 117.50 unpaid to be checked against a credit cap, and no cap figure for CS6-BS-R is given here, so that flag stands open. The two rows still share party of origin, date and size, so an amendment to either must name its rid.",
+   "<b>THE INVENTORY DID NOTHING THIS FOLD.</b> Salt was counted on 08 Sep 2026 and stands at 1 unit stated, ledger 68.95 and self use 67.95, costed at the shelf's own RM 48 a unit against a replacement of RM 48.67, reorder at 15, nothing owed out and 8.5 promised. Oil was last counted on 23 Aug 2026. Two loans in remain open, CH5-OUG at 5.5 unit and CA11-SEN at 1.5 unit, both dated 08 Sep."
+  ]
+ },
+ {
   "v": "v535",
   "d": "08 Sep 2026",
   "t": "THE STAMP IS THE CLOCK, NOT A GUESS",
