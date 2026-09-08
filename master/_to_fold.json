@@ -1,0 +1,54 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-09-08T19:09:28.649Z",
+   "collection": "sales",
+   "row": {
+    "qty": 50,
+    "total": 450,
+    "cash": 0,
+    "date": "2026-09-08",
+    "customer": "CA7-JTR",
+    "product": "oil"
+   },
+   "reasoning": "Fulfilment against CA7-JTR's order of 50 unit for RM 450 agreed 2026-09-08. RM 450 and 50 unit move on 2026-09-09, against RM 450 and 50 unit outstanding. Leaves RM 0 and 0 unit outstanding. The row itself is NOT recomputed here: ovAmend in the master applies it, so there is one definition of what a fulfilment does rather than two.",
+   "flags": [
+    "This SETTLES the order in full: nothing is left outstanding after it."
+   ],
+   "amends": "s140",
+   "amendKind": "Fulfilment",
+   "entry": {
+    "at": "2026-09-08T19:09:28.649Z",
+    "type": "AMEND",
+    "party": "CA7-JTR",
+    "qty": 50,
+    "total": 450,
+    "status": "paid",
+    "raw": "Fulfilment on CA7-JTR s140: RM 450 cash, 50 unit moved, recorded 2026-09-09",
+    "payload": {
+     "mode": "amend",
+     "direction": "SELL",
+     "party": "CA7-JTR",
+     "rid": "s140",
+     "orderKey": "CA7-JTR|2026-09-08|450",
+     "assoc": null,
+     "downstream": null,
+     "orderCode": null,
+     "linkTo": null,
+     "sameDay": false,
+     "note": null,
+     "kind": "Fulfilment",
+     "date": "2026-09-09",
+     "qty": 50,
+     "total": 450,
+     "cash": 450,
+     "kg": 50
+    }
+   },
+   "decidedAt": "2026-09-08T19:22:18.628Z",
+   "decidedBy": "desk"
+  }
+ ]
+}
