@@ -1,6 +1,6 @@
 {
- "v": "v543",
- "stamped": "09 Sep 2026, 02:00 KL",
+ "v": "v544",
+ "stamped": "09 Sep 2026, 02:44 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -41,7 +41,7 @@
     "stated": 15
    }
   },
-  "STATED_STOCK": 1,
+  "STATED_STOCK": 38.5,
   "COUNT_ON": {
    "salt": "2026-09-08",
    "oil": "2026-08-23"
@@ -345,6 +345,20 @@
     "paidOn": "2026-09-03",
     "note": "25 unit from SA5-BTR for RM 1,200, RM 48 a unit, paid in full and received in full on 3 Sep. RM 50 under the RM 1,250 the 20 Aug live quote puts on the 25 unit tier, and the second lot running at RM 48 after p019 of 31 Aug, so the shelf cost stays at RM 48 and the cost basis does not move. Bought against a shelf of 4 unit, the lowest it has stood since the 2 Sep count. Same size and same total as p019 three days earlier; separate lots on separate dates, and the replay guard passed on both.",
     "rid": "p020"
+   },
+   {
+    "qty": 50,
+    "total": 2200,
+    "cash": 2200,
+    "supplier": "SA5-BTR",
+    "freight": 36,
+    "status": "paid",
+    "date": "2026-09-08",
+    "receivedOn": "2026-09-08",
+    "receivedQty": 37.5,
+    "paidOn": "2026-09-08",
+    "note": "<b>PURCHASE ROW DATED 08 SEP, PAID AND PART RECEIVED THE SAME DAY.</b> BUY from SA5-BTR, 50 unit of salt for RM 2,200, RM 44 a unit, RM 2,200 cash paid on 08 Sep, with RM 36 freight; 37.5 of the 50 unit moved on 08 Sep. The rate is exactly the RM 2,200 the 20 Aug quote puts on the 50 unit tier, back to the 10 Jul level, and the floor of the party's RM 44 to RM 64 range, under its median of RM 56. SA5-BTR stood at 14 orders, RM 3,100 outstanding, nothing defaulted, on the roster. The drafter flagged nothing. 12.5 unit stay outstanding.",
+    "rid": "p021"
    }
   ],
   "sales": [
@@ -3609,9 +3623,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-08T17:58:27.054Z",
+  "QUEUE_COMMITTED": "2026-09-08T18:26:22.112Z",
   "PRICING": {
-   "takenAt": "2026-09-08T18:01:06.091Z",
+   "takenAt": "2026-09-08T18:44:10.090Z",
    "sizes": [
     0.5,
     1,
@@ -3637,44 +3651,44 @@
    "shrinkAttrib": 1,
    "byProduct": {
     "salt": {
-     "stockCost": 48,
-     "replCost": 48.67,
+     "stockCost": 44,
+     "replCost": 46,
      "floors": {
       "1": {
-       "floor": 58.56
+       "floor": 56.21
       },
       "2": {
-       "floor": 117.12
+       "floor": 112.43
       },
       "3": {
-       "floor": 175.68
+       "floor": 168.64
       },
       "4": {
-       "floor": 234.24
+       "floor": 224.85
       },
       "5": {
-       "floor": 292.8
+       "floor": 281.07
       },
       "0.5": {
-       "floor": 29.28
+       "floor": 28.11
       },
       "1.5": {
-       "floor": 87.84
+       "floor": 84.32
       },
       "2.5": {
-       "floor": 146.4
+       "floor": 140.53
       },
       "3.5": {
-       "floor": 204.96
+       "floor": 196.75
       },
       "4.5": {
-       "floor": 263.52
+       "floor": 252.96
       },
       "6.25": {
-       "floor": 366
+       "floor": 351.33
       },
       "12.5": {
-       "floor": 732
+       "floor": 702.67
       }
      },
      "inputs": {
@@ -3704,10 +3718,10 @@
          "why": "RE-LOCKED v244 on the same 28 Jul lot, at the 06 Aug count. The lot has not changed; what changed is the leak behind it and the attribution in front of it. The 33.14 count took the observed rate from 16.19% to 18.87%, and SHRINK_ATTRIB went to 1, so the whole leak is now carried in the price and nothing is absorbed. Effective cost RM53.19 to RM60.01. These numbers are the unlocked path’s own output, captured rather than hand-computed: the lock was deleted, pxCost() run fresh at attrib 1, and the result written back here. Absorbed is 0 by definition at full attribution."
         },
         "cur": {
-         "qty": 25,
-         "total": 1200,
-         "rate": 48,
-         "date": "2026-09-03",
+         "qty": 50,
+         "total": 2200,
+         "rate": 44,
+         "date": "2026-09-08",
          "sup": "SA5-BTR"
         },
         "days": 34,
@@ -3738,16 +3752,16 @@
         "shrink": null
        },
        "lot": {
-        "qty": 25,
-        "total": 1200,
-        "rate": 48,
-        "date": "2026-09-03",
+        "qty": 50,
+        "total": 2200,
+        "rate": 44,
+        "date": "2026-09-08",
         "sup": "SA5-BTR"
        },
-       "meanLot": 23.828125,
+       "meanLot": 25.36764705882353,
        "quoteRate": 56,
-       "repl": 48.67,
-       "freightRate": 0,
+       "repl": 46,
+       "freightRate": 0.72,
        "leak": {
         "ratio": 0.2032,
         "leak": 6.3,
@@ -3768,7 +3782,7 @@
         }
        },
        "attrib": 1,
-       "shrinkRate": 0.07590314644568175,
+       "shrinkRate": 0.06918446831110588,
        "avgDel": {
         "n": 126,
         "kg": 324.2,
@@ -4043,11 +4057,11 @@
      ]
     }
    },
-   "v": "v543"
+   "v": "v544"
   },
   "OPEN": {
-   "at": "2026-09-08T18:01:06.127Z",
-   "count": 8,
+   "at": "2026-09-08T18:44:10.176Z",
+   "count": 9,
    "byKey": {
     "CA7-JTR|2026-09-08|450": {
      "d": "2026-09-08",
@@ -4064,6 +4078,22 @@
      "rid": "s140",
      "handover": "collected",
      "key": "CA7-JTR|2026-09-08|450"
+    },
+    "SA5-BTR|2026-09-08|2200": {
+     "d": "2026-09-08",
+     "p": "SA5-BTR",
+     "dir": "B",
+     "q": 50,
+     "t": 2200,
+     "cash": 2200,
+     "mv": 37.5,
+     "st": "dueStock",
+     "oweUnits": 12.5,
+     "rid": "p021",
+     "paidOn": "2026-09-08",
+     "receivedOn": "2026-09-08",
+     "receivedQty": 37.5,
+     "key": "SA5-BTR|2026-09-08|2200"
     },
     "CR3-DAM|2026-09-07|185": {
      "d": "2026-09-07",
@@ -4188,14 +4218,14 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 1,
-     "free": 1,
+     "onHand": 38.5,
+     "free": 38.5,
      "owedOut": 0,
-     "coverDays": 0.2,
+     "coverDays": 7.5,
      "rate": 5.16,
      "owedToYou": 777,
      "promised": 8.5,
-     "short": 7.5
+     "short": 0
     },
     "oil": {
      "name": "Oil",
@@ -4213,7 +4243,7 @@
     "salt": "2026-09-08",
     "oil": "2026-08-23"
    },
-   "v": "v543"
+   "v": "v544"
   }
  }
 }
