@@ -1,0 +1,60 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-09-08T18:26:22.112Z",
+   "collection": "purchases",
+   "row": {
+    "qty": 50,
+    "total": 2200,
+    "cash": 2200,
+    "supplier": "SA5-BTR",
+    "freight": 36,
+    "status": "paid",
+    "date": "2026-09-08",
+    "receivedOn": "2026-09-08",
+    "receivedQty": 37.5,
+    "paidOn": "2026-09-08"
+   },
+   "reasoning": "Bought 50 unit of salt from SA5-BTR for RM 2200, RM 44/unit. Paid in full and 37.5 of 50 unit moved on 2026-09-08. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-09-08T18:26:22.112Z",
+    "type": "BUY",
+    "party": "SA5-BTR",
+    "qty": 50,
+    "total": 2200,
+    "status": "paid",
+    "raw": "Buy 50 unit from SA5-BTR for RM 2,200 on 2026-09-08, RM 2,200 cash, 37.5 unit moved → Open · Deferred",
+    "payload": {
+     "mode": "new",
+     "product": "salt",
+     "direction": "BUY",
+     "party": "SA5-BTR",
+     "newId": null,
+     "date": "2026-09-08",
+     "qty": 50,
+     "total": 2200,
+     "delivery": 0,
+     "freight": 36,
+     "cash": 2200,
+     "kg": 37.5,
+     "assoc": null,
+     "stream": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": null,
+     "handover": null,
+     "second": null
+    }
+   },
+   "decidedAt": "2026-09-08T18:27:13.443Z",
+   "decidedBy": "desk"
+  }
+ ]
+}
