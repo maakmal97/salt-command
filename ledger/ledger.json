@@ -1,6 +1,6 @@
 {
- "v": "v517",
- "stamped": "08 Sep 2026, 09:29 KL",
+ "v": "v518",
+ "stamped": "08 Sep 2026, 09:59 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -41,9 +41,9 @@
     "stated": 15
    }
   },
-  "STATED_STOCK": -1,
+  "STATED_STOCK": 1,
   "COUNT_ON": {
-   "salt": "2026-09-06",
+   "salt": "2026-09-08",
    "oil": "2026-08-23"
   },
   "COUNTS": [
@@ -82,6 +82,13 @@
     "qty": 15,
     "was": null,
     "drift": null
+   },
+   {
+    "product": "salt",
+    "date": "2026-09-08",
+    "qty": 1,
+    "was": 6,
+    "drift": -5
    }
   ],
   "purchases": [
@@ -3236,6 +3243,26 @@
     "settledOn": "2026-07-14",
     "preOpening": true,
     "note": "Offset against the package sale; predates the opening count."
+   },
+   {
+    "date": "2026-09-08",
+    "party": "CH5-OUG",
+    "direction": "in",
+    "valueKg": 5.5,
+    "valueRM": null,
+    "status": "open",
+    "product": "salt",
+    "note": "<b>5.5 UNIT OF SALT BORROWED FROM CH5-OUG on 08 Sep, owed back in kind, unit for unit, no date set.</b> Entered on his word in a Code session on 08 Sep 2026. Adds to the inventory while open; when it is returned, mark it settled with the date and roll the stated inventory down by 5.5 in the same fold."
+   },
+   {
+    "date": "2026-09-08",
+    "party": "CA11-SEN",
+    "direction": "in",
+    "valueKg": 1.5,
+    "valueRM": null,
+    "status": "open",
+    "product": "salt",
+    "note": "<b>1.5 UNIT OF SALT BORROWED FROM CA11-SEN on 08 Sep, owed back in kind, unit for unit, no date set.</b> Entered on his word in a Code session on 08 Sep 2026. Adds to the inventory while open; when it is returned, mark it settled with the date and roll the stated inventory down by 1.5 in the same fold."
    }
   ],
   "supplierReceivable": {
@@ -3468,9 +3495,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-08T00:40:00.003Z",
+  "QUEUE_COMMITTED": "2026-09-08T03:10:00.001Z",
   "PRICING": {
-   "takenAt": "2026-09-08T01:29:21.800Z",
+   "takenAt": "2026-09-08T01:59:07.803Z",
    "sizes": [
     0.5,
     1,
@@ -3500,40 +3527,40 @@
      "replCost": 48.67,
      "floors": {
       "1": {
-       "floor": 54.87
+       "floor": 58.56
       },
       "2": {
-       "floor": 109.73
+       "floor": 117.12
       },
       "3": {
-       "floor": 164.6
+       "floor": 175.68
       },
       "4": {
-       "floor": 219.46
+       "floor": 234.24
       },
       "5": {
-       "floor": 274.33
+       "floor": 292.8
       },
       "0.5": {
-       "floor": 27.43
+       "floor": 29.28
       },
       "1.5": {
-       "floor": 82.3
+       "floor": 87.84
       },
       "2.5": {
-       "floor": 137.16
+       "floor": 146.4
       },
       "3.5": {
-       "floor": 192.03
+       "floor": 204.96
       },
       "4.5": {
-       "floor": 246.9
+       "floor": 263.52
       },
       "6.25": {
-       "floor": 342.91
+       "floor": 366
       },
       "12.5": {
-       "floor": 685.82
+       "floor": 732
       }
      },
      "inputs": {
@@ -3608,12 +3635,12 @@
        "repl": 48.67,
        "freightRate": 0,
        "leak": {
-        "ratio": 0.1273,
-        "leak": 9.55,
-        "sold": 75,
+        "ratio": 0.2032,
+        "leak": 6.3,
+        "sold": 31,
         "cycles": 3,
-        "from": "2026-08-24",
-        "to": "2026-09-06"
+        "from": "2026-09-02",
+        "to": "2026-09-08"
        },
        "costBasis": {
         "freightPerTrip": {
@@ -3627,7 +3654,7 @@
         }
        },
        "attrib": 1,
-       "shrinkRate": 0.06295481030687558,
+       "shrinkRate": 0.07590314644568175,
        "avgDel": {
         "n": 126,
         "kg": 324.2,
@@ -3902,10 +3929,10 @@
      }
     }
    },
-   "v": "v517"
+   "v": "v518"
   },
   "OPEN": {
-   "at": "2026-09-08T01:29:21.883Z",
+   "at": "2026-09-08T01:59:07.834Z",
    "count": 9,
    "byKey": {
     "CR3-DAM|2026-09-07|185": {
@@ -4047,14 +4074,14 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": -1,
-     "free": -1,
+     "onHand": 1,
+     "free": 1,
      "owedOut": 0,
-     "coverDays": 0,
+     "coverDays": 0.2,
      "rate": 5.16,
      "owedToYou": 947,
      "promised": 8.5,
-     "short": 9.5
+     "short": 7.5
     },
     "oil": {
      "name": "Oil",
@@ -4069,10 +4096,10 @@
     }
    },
    "countedOn": {
-    "salt": "2026-09-06",
+    "salt": "2026-09-08",
     "oil": "2026-08-23"
    },
-   "v": "v517"
+   "v": "v518"
   }
  }
 }

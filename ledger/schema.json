@@ -1,6 +1,6 @@
 {
-  "v": "v517",
-  "derivedFrom": "dc733bc9bb08a025",
+  "v": "v518",
+  "derivedFrom": "adfa26c3abc7c2b7",
   "tables": {
     "sales": {
       "rows": 139,
@@ -389,27 +389,35 @@
       }
     },
     "loans": {
-      "rows": 1,
+      "rows": 3,
       "fields": {
         "date": {
-          "present": 1,
-          "of": 1,
+          "present": 3,
+          "of": 3,
           "optional": false,
           "types": [
             "string"
           ]
         },
+        "direction": {
+          "present": 2,
+          "of": 3,
+          "optional": true,
+          "types": [
+            "string"
+          ]
+        },
         "note": {
-          "present": 1,
-          "of": 1,
+          "present": 3,
+          "of": 3,
           "optional": false,
           "types": [
             "string"
           ]
         },
         "party": {
-          "present": 1,
-          "of": 1,
+          "present": 3,
+          "of": 3,
           "optional": false,
           "types": [
             "string"
@@ -417,41 +425,50 @@
         },
         "preOpening": {
           "present": 1,
-          "of": 1,
-          "optional": false,
+          "of": 3,
+          "optional": true,
           "types": [
             "boolean"
           ]
         },
+        "product": {
+          "present": 2,
+          "of": 3,
+          "optional": true,
+          "types": [
+            "string"
+          ]
+        },
         "settledOn": {
           "present": 1,
-          "of": 1,
-          "optional": false,
+          "of": 3,
+          "optional": true,
           "types": [
             "string"
           ]
         },
         "status": {
-          "present": 1,
-          "of": 1,
+          "present": 3,
+          "of": 3,
           "optional": false,
           "types": [
             "string"
           ]
         },
         "valueKg": {
-          "present": 1,
-          "of": 1,
+          "present": 3,
+          "of": 3,
           "optional": false,
           "types": [
             "number"
           ]
         },
         "valueRM": {
-          "present": 1,
-          "of": 1,
+          "present": 3,
+          "of": 3,
           "optional": false,
           "types": [
+            "null",
             "number"
           ]
         }

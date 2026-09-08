@@ -1,0 +1,40 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-09-08T03:10:00.001Z",
+   "collection": "count",
+   "row": {
+    "product": "salt",
+    "qty": 1,
+    "date": "2026-09-08",
+    "was": 6,
+    "drift": -5
+   },
+   "reasoning": "Counted 1 unit of salt by hand on 2026-09-08, against 6 on the book: a drift of -5. The last count was 2026-09-06. A count wins over the ledger, and the fold sets the stated stock and moves COUNT_ON to this date.",
+   "flags": [
+    "The book says 6 and you counted 1: -5 unit unaccounted for. A COUNT ALWAYS WINS, so this becomes the inventory and the gap books as shrinkage across every unit sold."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-09-08T03:10:00.001Z",
+    "type": "COUNT",
+    "party": null,
+    "qty": 1,
+    "total": 0,
+    "status": "",
+    "raw": "Count 1 unit of salt on 2026-09-08 (on his word, 08 Sep)",
+    "payload": {
+     "mode": "count",
+     "product": "salt",
+     "qty": 1,
+     "date": "2026-09-08"
+    }
+   },
+   "decidedAt": "2026-09-08T01:57:19.675Z",
+   "decidedBy": "Afif Akmal, Code session 08 Sep 2026: counted 1 unit of salt after borrowing 5.5 from CH5-OUG and 1.5 from CA11-SEN; the 5 unit gap stands as unexplained"
+  }
+ ]
+}

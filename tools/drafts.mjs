@@ -128,7 +128,10 @@ function draft() {
   for (const k of ["id", "entry", "row", "reasoning"]) {
     if (!d[k]) { fail(k + " is required. A draft with no proposed row is just a queue entry."); return; }
   }
-  const collection = d.collection === "purchases" ? "purchases" : "sales";
+  /* v518: a hand-staged count was written as a sale, because this read every collection but
+     purchases as sales. The fold then planned it as "SELL undefined". The drafter's five other
+     collections are honoured; anything else is still a sale. */
+  const collection = ["purchases", "count", "loss", "lostDemand", "roster", "priceset"].includes(d.collection) ? d.collection : "sales";
   const row = d.row;
   /* v478: amends and amend_kind travel with the draft, as they do from the Worker. Without them the
      fold reads an amendment as nameless and refuses it, which is what the laptop road had done to

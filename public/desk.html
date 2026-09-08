@@ -68,7 +68,7 @@ document.addEventListener('visibilitychange',function(){
    localStorage before it posts anything and the load reads it straight back.
    The same tick retries a held entry, which is what gets a phone write to the cloud
    without waiting for the next open. */
-var SALT_BUILD_ID="149d3647c17b233e";
+var SALT_BUILD_ID="1535563ad4e24855";
 var SALT_REV_MS=10000;
 (function(){
   var chip=null,timer=null;
@@ -3565,7 +3565,7 @@ function saleProvRate(s,days){return (s&&s.defaulted)?1:provRate(days);}
      sales, purchases   this product's rows only, or oil sold would eat salt off the shelf
      opening            {qty, costPerKg, stated, uncounted} for the product
      isSalt             loans and the supplier receivable are salt arrangements
-     loanUnits             units drawn against loans (salt only; pre-opening loans are inside the opening count)
+     loanUnits             units drawn against loans, net: lent out less borrowed in (salt only; pre-opening loans are inside the opening count; v518)
      counted            the hand count that beats the ledger, or null when this book was never counted
      supplierReceivable {amount, since, status} or null
      today              the as-of date, for ageing the receivables
@@ -4307,6 +4307,8 @@ const PROD_OPENING={
     "stated": 15
   }
 };
+/* COUNTED AT v518 on 2026-09-08: the salt inventory held 1 against 6 on the roll, a drift of -5. A COUNT AND NOT A ROLL, so COUNT_ON.salt moves to 2026-09-08. Taken after 5.5 unit borrowed from CH5-OUG and 1.5 unit from CA11-SEN landed the same day, which took the roll from -1 to 6. Nothing was delivered anywhere between the roll and the count on his word, so the 5 unit are unexplained and book as shrinkage across every unit sold: the floor for 1 unit moves from RM 54.87 to RM 58.56 on the desk's own ladder. 8.5 unit remain owed out to CJ4-BJ and 7 unit owed back to the two lenders against the 1 unit counted. Entered on his word in a Code session on 08 Sep 2026. */
+/* ROLLED AT v518: 5.5 unit borrowed in from CH5-OUG and 1.5 unit from CA11-SEN on 2026-09-08, so -1 plus 7 is 6. A ROLL AND NOT A COUNT; COUNT_ON is untouched. The first loans in on the book: the salt is owed back in kind and sits on the inventory until it is returned. The count taken the same day follows in this version and wins. */
 /* ROLLED AT v516: 1 unit to CS6-BS on 2026-09-07, 1 unit to CS6-BS on 2026-09-07, so 1 less 2 is -1. A ROLL AND NOT A COUNT; COUNT_ON is untouched. Two unit to CS6-BS on 07 Sep against 1 unit on hand after CJ4-BJ's 4 unit the same day: the stated inventory stands at -1. A roll, not a count; a lot since the 06 Sep count is unrecorded or the count was one short, and no row is invented for it. */
 /* ROLLED AT v515: 4 unit to CJ4-BJ on 2026-09-07, so 5 less 4 is 1. A ROLL AND NOT A COUNT; COUNT_ON is untouched. The second movement off the 7 counted on 06 Sep, after CR3-DAM's 2 unit the same day; 8.5 unit of this order are still owed out against what is left, and the salt reorder point is 15 unit. */
 /* ROLLED AT v510: 2 unit to CR3-DAM on 2026-09-07, so 7 less 2 is 5. A ROLL AND NOT A COUNT; COUNT_ON is untouched. The first movement off the 7 counted on 06 Sep. */
@@ -4326,9 +4328,9 @@ const PROD_OPENING={
 /* ROLLED AT v439: 1 unit to CA7-JTR on 2026-09-01, 6 unit to CK4-SEN on 2026-09-01, 1 unit to CR3-DAM on 2026-09-01, so 8.25 less 8 is 0.25. A ROLL AND NOT A COUNT; COUNT_ON is untouched. Eight of the eight and a quarter unit on the shelf went out today across four rows, leaving 0.25 unit against 3 unit already promised: CE4-CHE's half unit owed out and CY2-NIL's 2.5 unit pending. The book is 2.75 unit short of its own commitments and sourcing is now the first decision on it. */
 /* ROLLED AT v404: 5 unit to CE4-AD on 2026-08-29, so 13.25 less 5 is 8.25. A ROLL AND NOT A COUNT; COUNT_ON is untouched. */
 /* ROLLED AT v399: 3 unit to CH4-KLS on 2026-08-28, so 16.25 less 3 is 13.25. A ROLL AND NOT A COUNT; COUNT_ON is untouched. */
-const STATED_STOCK=-1;
+const STATED_STOCK=1;
 const COUNT_ON={
-  "salt": "2026-09-06",
+  "salt": "2026-09-08",
   "oil": "2026-08-23"
 };
 /* EVERY COUNT, AS TAKEN (v504, 07 Sep 2026): product, date, the figure counted, what the roll said and the drift, negative when units are missing. The fold appends one line per count. A count with no drift bounds a cycle and charges nothing; the 24 Aug anchor is one. Seeded from the fold notes of v473 (02 Sep, 10.5 against 18.75), v489 (04 Sep, 9.8 entered net of a rolled sale, no drift) and v498 (06 Sep, 7 against 8.3); the oil count of 23 Aug has no recorded drift. The leak is charged from these: the units missing over the last three cycles, at landed, over the units sold in them. */
@@ -4337,7 +4339,8 @@ const COUNTS=[
   {"product":"salt","date":"2026-09-02","qty":10.5,"was":18.75,"drift":-8.25},
   {"product":"salt","date":"2026-09-04","qty":9.8,"was":null,"drift":0},
   {"product":"salt","date":"2026-09-06","qty":7,"was":8.3,"drift":-1.3},
-  {"product":"oil","date":"2026-08-23","qty":15,"was":null,"drift":null}
+  {"product":"oil","date":"2026-08-23","qty":15,"was":null,"drift":null},
+  {"product":"salt","date":"2026-09-08","qty":1,"was":6,"drift":-5}
 ];
 const purchases=[
   {"date":"2026-06-27","qty":12.5,"total":800,"supplier":"SF6-KLC","status":"paid","rid":"p001"},
@@ -4517,7 +4520,9 @@ const selfUseLog=[
 ];
 const lostDemand=[];
 const loans=[
-  {"date":"2026-05-12","party":"CS6-PER","valueRM":650,"valueKg":6,"status":"settled","settledOn":"2026-07-14","preOpening":true,"note":"Offset against the package sale; predates the opening count."}
+  {"date":"2026-05-12","party":"CS6-PER","valueRM":650,"valueKg":6,"status":"settled","settledOn":"2026-07-14","preOpening":true,"note":"Offset against the package sale; predates the opening count."},
+  {"date":"2026-09-08","party":"CH5-OUG","direction":"in","valueKg":5.5,"valueRM":null,"status":"open","product":"salt","note":"<b>5.5 UNIT OF SALT BORROWED FROM CH5-OUG on 08 Sep, owed back in kind, unit for unit, no date set.</b> Entered on his word in a Code session on 08 Sep 2026. Adds to the inventory while open; when it is returned, mark it settled with the date and roll the stated inventory down by 5.5 in the same fold."},
+  {"date":"2026-09-08","party":"CA11-SEN","direction":"in","valueKg":1.5,"valueRM":null,"status":"open","product":"salt","note":"<b>1.5 UNIT OF SALT BORROWED FROM CA11-SEN on 08 Sep, owed back in kind, unit for unit, no date set.</b> Entered on his word in a Code session on 08 Sep 2026. Adds to the inventory while open; when it is returned, mark it settled with the date and roll the stated inventory down by 1.5 in the same fold."}
 ];
 const supplierReceivable={
   "party": "SF6-KLC",
@@ -4671,7 +4676,7 @@ const ONE_OFFS=[
   {"id":"CM6-HCM","date":"2026-07-14","note":"One-off; RM104/unit is an outlier."}
 ];
 /* v512, 07 Sep 2026: moved to 06:21:06.691Z past a second entry of the CR3-DAM sale already folded at v510, so the phone stops showing it as provisional; no row folded. */
-const QUEUE_COMMITTED="2026-09-08T00:40:00.003Z";
+const QUEUE_COMMITTED="2026-09-08T03:10:00.001Z";
 const PRICE_SET={
   "salt": {
     "prices": {},
@@ -4746,7 +4751,13 @@ function stockCostFor(p){const k=p||PROD,v=PROD_STOCK_COST[k];
    the effective cost that every price on the board is measured against. A loan made after
    an opening count still counts in full; that is what the flag is for, rather than
    deleting the line and losing the rule with it. */
-const loanDrawUnits=()=>(typeof loans!=='undefined'?loans:[]).reduce((a,l)=>a+(l.preOpening?0:(l.valueKg||0)),0);
+/* v518: A LOAN IN IS THE SAME BOOK THE OTHER WAY. direction:"in" is salt borrowed from a party and
+   owed back in kind: it adds to the inventory while open and counts nowhere once settled, because
+   the units came in and went back. A loan out is what it always was. loanDrawUnits is the net, so
+   posInputs and the engine need not know which way each row runs. */
+const loanOutUnits=()=>(typeof loans!=='undefined'?loans:[]).reduce((a,l)=>a+(l.preOpening||l.direction==='in'?0:(l.valueKg||0)),0);
+const loanInUnits=(LN)=>(LN||(typeof loans!=='undefined'?loans:[])).reduce((a,l)=>a+(l.direction==='in'&&l.status!=='settled'?(l.valueKg||0):0),0);
+const loanDrawUnits=()=>loanOutUnits()-loanInUnits();
 /* WRITTEN OFF 31 Jul 2026. He stopped responding, so the desk stops carrying this as
    money it expects. status:'writtenOff' takes it out of the forward cash view, off the
    Today list and out of Boundaries: none of those should show a figure nobody is
@@ -5481,7 +5492,9 @@ const whiteboard=[
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{"v":"v517","d":"08 Sep 2026","t":"SALT QUOTE: THE 100 UNIT TIER IS RM 4,000","n":["<b>HIS WORD, 08 SEP 2026: SA5-BTR's 100 unit tier is RM 4,000, RM 40 a unit.</b> Down RM 300 from the RM 4,300 (RM 43) quoted on 20 Aug; the other four tiers stand at 6.25 unit RM 350, 12.5 unit RM 650, 25 unit RM 1,200 and 50 unit RM 2,200. A quote, not a purchase: no lot, no cost and no floor moves.","<b>THE TAPER STEEPENS AND FIVE ASKS COME DOWN.</b> The salt ladder's taper is fitted from the quoted tiers and moves from -0.100 to -0.121 (fit 0.98 to 1.00), so the margin the ask carries falls faster with size. Every floor holds. The asks at 0.5 to 3 unit hold, RM 70 to RM 310; 3.5 unit RM 360 to RM 350, 4.5 unit RM 450 to RM 440, 5 unit RM 490 to RM 480, 6.25 unit RM 610 to RM 600 and 12.5 unit RM 1,150 to RM 1,120. Figures read from the engine on the desk's own snapshot before and after the edit, and the sealed price list follows on this deploy."]},
+const evolution=[{"v":"v518","d":"08 Sep 2026","t":"BORROWED 7 UNIT IN, AND COUNTED 1","n":["<b>TWO LOANS IN, ON HIS WORD OF 08 SEP 2026.</b> 5.5 unit of salt borrowed from CH5-OUG and 1.5 unit from CA11-SEN on 08 Sep, owed back in kind, unit for unit, with no date set. The loan book only knew salt lent out, so a loan in is a new direction on the same rows: <code>direction:\"in\"</code> adds to the inventory while open and counts nowhere once settled, because the units came in and went back. The stated inventory rolled -1 to 6 for the two loans before the count, a roll and not a count. When either loan is returned, mark it settled with the date and roll the inventory down by its units in the same fold.","<b>COUNTED 1 UNIT AGAINST 6 ON THE BOOK: 5 UNIT UNEXPLAINED.</b> His count on 08 Sep, after the borrowings, with nothing delivered anywhere since the CS6-BS rows of 07 Sep; asked where the 5 unit went, he said the count stands. The count wins: the stated inventory is 1 and COUNT_ON.salt moves to 2026-09-08. The drift of -5 joins the last three counts (04 Sep 0, 06 Sep -1.3) and the leak rises with it, so every floor moves: 1 unit RM 54.87 to RM 58.56, 2 unit RM 109.73 to RM 117.12, 12.5 unit RM 685.82 to RM 732, and the board's ask for 1 unit RM 120 to RM 130, all read from the desk's own ladder before and after. The replacement cost is unchanged at RM 48.67. The self-use and shrinkage plug stands at 67.95 unit.","<b>WHAT THE DESK NOW SHOWS FOR A LOAN IN.</b> The Inventory walk prints <i>Borrowed in (to return)</i> as its own line and the movement chart a bar beside Received; the history walk lands the units on the day they were borrowed rather than at the opening, where a loan out still sits; the Order book folds the open borrowings under <i>Salt you borrowed</i> with the lender, the date and the units to return. <code>loanDrawUnits</code> is the net of out less in, so the position engine and the phone payload are untouched. Proved on the real master over a fixture book in the suite, red before the change on all four counts.","<b>A HAND-STAGED COUNT WAS A SALE.</b> <code>drafts.mjs --draft</code> wrote every collection but purchases as sales, so the count planned as <i>SELL undefined</i>; it now honours the drafter's five other collections. The desk's stated inventory of 1 stands against 8.5 unit still owed out to CJ4-BJ and 7 unit owed back to the lenders; the salt reorder mark of 15 unit is passed on every reading."]},
+
+{"v":"v517","d":"08 Sep 2026","t":"SALT QUOTE: THE 100 UNIT TIER IS RM 4,000","n":["<b>HIS WORD, 08 SEP 2026: SA5-BTR's 100 unit tier is RM 4,000, RM 40 a unit.</b> Down RM 300 from the RM 4,300 (RM 43) quoted on 20 Aug; the other four tiers stand at 6.25 unit RM 350, 12.5 unit RM 650, 25 unit RM 1,200 and 50 unit RM 2,200. A quote, not a purchase: no lot, no cost and no floor moves.","<b>THE TAPER STEEPENS AND FIVE ASKS COME DOWN.</b> The salt ladder's taper is fitted from the quoted tiers and moves from -0.100 to -0.121 (fit 0.98 to 1.00), so the margin the ask carries falls faster with size. Every floor holds. The asks at 0.5 to 3 unit hold, RM 70 to RM 310; 3.5 unit RM 360 to RM 350, 4.5 unit RM 450 to RM 440, 5 unit RM 490 to RM 480, 6.25 unit RM 610 to RM 600 and 12.5 unit RM 1,150 to RM 1,120. Figures read from the engine on the desk's own snapshot before and after the edit, and the sealed price list follows on this deploy."]},
 
 {"v":"v516","d":"08 Sep 2026","t":"TWO UNIT TO CS6-BS ON CREDIT, AND S136 PAID RM 160 AT THE OPEN","n":["<b>THREE ROWS ON HIS WORD OF 08 SEP, re-read from the three taps of 07 Sep evening that never reached the fold.</b> The 13:32 tap sold 1 unit at RM 125 via CS6-BS to a downstream party the drafter refused as naming no counterparty; the 13:34 tap sold 1 unit to CS6-BS at RM 110 and was rejected on the phone; the 13:35 tap paid RM 10 against s136 and was rejected with it. Read to him in a Code session on 08 Sep: there is no such party as the downstream code, both advances to CS6-BS are real, each is 1 unit at RM 110 with the RM 15 delivery divided equally at RM 7.50 inside each total, and s136 was paid RM 160 at the open. Drafted again through the same drafter, approved on his word, and folded here; the three KV entries clear as the watermark passes them.","<b>TWO 1-UNIT ADVANCES TO CS6-BS, RM 110 EACH, NOTHING PAID.</b> RM 102.50 on the goods of each after the RM 7.50 delivery inside the total. The desk's own ladder for 1 unit puts the floor at RM 54.87, the ask at RM 120 and the ceiling at RM 150, so each order stands RM 47.63 clear of the floor and RM 17.50 under the ask. Costed at the inventory's own RM 48 a unit, the 03 Sep lot of 25 unit from SA5-BTR, which is the figure the pricing snapshot carries: RM 62 on each order at 56.4%. RM 110 a unit is the rate CS6-BS paid on 29 Jul and sits inside their own RM 95 to RM 126.67 range on 1 to 1.5 unit; the drafter raised no rate flag. Both delivered in full on 07 Sep, so CS6-BS now carries RM 220 and 2 unit of credit, exactly the associate cap of 2 unit of salt. CS6-BS carried nothing outstanding before these rows: the two July rows with no cash were settled in rebate, not owed.","<b>S136 CORRECTED: RM 160 PAID AT THE OPEN, RM 25 OWING.</b> The row was folded at v515 with RM 150 paid and RM 35 owing; on his word of 08 Sep the cash paid when the order opened was RM 160, so the correction sets cash from 150 to 160 and CR3-DAM's balance from RM 35 to RM 25. A correction, not a payment: nothing moved on 07 Sep beyond what the row now says. The RM 10 fulfilment tapped at 13:35 was the phone's way to the same RM 160 and is superseded by this.","<b>THE INVENTORY ROLLS 1 TO -1.</b> Two unit went out to CS6-BS on 07 Sep against 1 unit on hand after CJ4-BJ's 4 unit the same day, so the stated inventory stands one unit below zero. A roll and not a count; COUNT_ON.salt stays at 2026-09-06. A negative shelf says a lot has landed since the 06 Sep count that is not on the book, or the count was one short; no row is invented to explain it. With CJ4-BJ's 8.5 unit still owed out the salt reorder point of 15 unit is well passed."]},
 
@@ -5794,7 +5807,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='08 Sep 2026, 09:29 KL';
+const LAST_UPDATED='08 Sep 2026, 09:59 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -8687,6 +8700,7 @@ function stockHistory(){
   const d0=new Date(ds[0]), days=Math.max(1,Math.round((TODAY-d0)/MS));
   const inOn={},outOn={};
   B.filter(poLive).forEach(p=>{const k=p.receivedOn||p.date;inOn[k]=(inOn[k]||0)+poRecvUnits(p);});
+  if(PROD===DEFAULT_PROD)(typeof loans!=='undefined'?loans:[]).forEach(l=>{if(l.direction==='in'&&l.status!=='settled'&&l.date)inOn[l.date]=(inOn[l.date]||0)+(l.valueKg||0);});   // v518: borrowed salt lands the day it was borrowed
   /* ALL sales, not just priced ones: recompute draws the inventory down with sales.reduce
      over txPhys, so filtering to priced trade here would leave the walk ending somewhere
      the rest of the desk does not agree with.
@@ -8709,7 +8723,7 @@ function stockHistory(){
   });
   /* only loans made AFTER the opening count draw the inventory down here; a pre-opening loan
      is already inside opening.qty, exactly as recompute now treats it */
-  const loanUnits=(PROD===DEFAULT_PROD)?loanDrawUnits():0;   // the loan book is Salt's, as posInputs has it
+  const loanUnits=(PROD===DEFAULT_PROD)?loanOutUnits():0;   // the loan book is Salt's, as posInputs has it; v518: loans out at day 0 as before, a loan in lands on its date above
   /* shrinkage is a plug for the whole period with no date on it, so it is spread across
      the days that have actually passed. Nothing is taken on day 0, which is the opening
      position rather than a day of trading. */
@@ -9267,7 +9281,7 @@ function tabInventory(){
   const oversold=free<0;
   const PN=PRODUCTS[PROD].name.toLowerCase();
   const LN=pLoans();                                    // v385: this product's loans, not the book's
-  const loanUnits=LN.reduce((a,l)=>a+(l.preOpening?0:(l.valueKg||0)),0);
+  const loanUnits=LN.reduce((a,l)=>a+(l.preOpening||l.direction==='in'?0:(l.valueKg||0)),0), loanIn=loanInUnits(LN);   // v518: out and in kept apart; soldUnits carries the net
   const loanPre=LN.reduce((a,l)=>a+(l.preOpening?(l.valueKg||0):0),0);
   // reconciliation walk (only lines that apply)
   const recon=[
@@ -9278,8 +9292,9 @@ function tabInventory(){
        again under Still to arrive, and the lines would not have summed to the figure beneath
        them. No lot on the book is part received today. Same fault in the lot list below. */
     ...receivedPO.map(p=>['Received '+(p.date||'not dated'),'+'+units(poRecvUnits(p)),fmt(poRate(p))+'/unit']),
-    ['Sold and delivered',(v=>v>0.001?'-'+units(v):units(0))(+(soldUnits-loanUnits).toFixed(2)),'&mdash;'],   // soldUnits already carries the loan; the loan gets its own line below. The text minus sits outside units(), so it is guarded here (round six: "-0 unit")
+    ['Sold and delivered',(v=>v>0.001?'-'+units(v):units(0))(+(soldUnits-(loanUnits-loanIn)).toFixed(2)),'&mdash;'],   // soldUnits already carries the loan; the loan gets its own line below. The text minus sits outside units(), so it is guarded here (round six: "-0 unit")
     loanUnits>0?['Loan out (settled)','-'+units(loanUnits),'&mdash;']:null,
+    loanIn>0?['Borrowed in (to return)','+'+units(loanIn),'&mdash;']:null,   // v518
     selfUse>0?['Self-use / shrinkage','-'+units(selfUse),'&asymp; '+fmt0(selfUse*wavgBuy)]:null,
     /* v429: v406 gave the walk a surplus and gave the PROSE a sentence about it, and left this
        table without a row, so on a count ABOVE the ledger the lines summed to less than the
@@ -11620,7 +11635,10 @@ function tabReceivables(){
      The card carries no .dsc, deliberately: stripMethod() keeps one prose block per part and
      would delete a second, leaving an empty card under a heading. The sentence rides the
      cardh's own sub, which is markup the strip does not touch. */
-  const custN=cCash.length+cSalt.length+cRef.length+cPen.length,
+  /* v518: salt borrowed from a party and owed back in kind: the open loans in on this book. */
+  const bIn=pLoans().filter(l=>l.direction==='in'&&l.status!=='settled'), bInUnits=+bIn.reduce((a,l)=>a+(l.valueKg||0),0).toFixed(2),
+        bInBody=bIn.map(l=>`<tr><td class="l">${esc(l.party)}</td><td class="l">${l.date||'not dated'}</td><td>${units(l.valueKg||0)}</td></tr>`).join('');
+  const custN=cCash.length+cSalt.length+cRef.length+cPen.length+bIn.length,
         supN=sCash.length+sSalt.length+sPen.length+(hasRef?1:0), openN=custN+supN;
   /* AND EACH HALF SAYS IT SEPARATELY. The guard tests the whole part, so it fires only when
      BOTH halves are empty; a book with customers open and no supplier bill still printed the
@@ -11643,6 +11661,8 @@ function tabReceivables(){
     `<table><thead><tr><th class="l">Customer</th><th>Age</th><th>Gross</th><th>Prov.</th><th>Net</th></tr></thead><tbody>${cCashBody}<tr class="tot"><td class="l" colspan="2">Total</td><td>${fmt0(arGross)}</td><td>&mdash;</td><td>${fmt0(ar)}</td></tr></tbody></table>`)}
   ${sec(`${NM} you owe them`,'paid ahead of delivery &mdash; goods still to hand over',cSalt.length,
     `<table><thead><tr><th class="l">Customer</th><th class="l">Since</th><th>Unit owed</th><th>Value</th></tr></thead><tbody>${cSaltBody}<tr class="tot"><td class="l" colspan="2">Total</td><td>${units(cSaltUnits)}</td><td>${fmt0(cSaltRm)}</td></tr></tbody></table>${cSaltUnits>currentStock?`<div class="dsc" style="margin-top:8px"><span class="risk">Exceeds ${units(currentStock)} on hand &mdash; restock to cover.</span></div>`:''}`)}
+  ${sec(`${NM} you borrowed`,'lent to you, to return unit for unit',bIn.length,
+    `<table><thead><tr><th class="l">Lender</th><th class="l">Since</th><th>Unit to return</th></tr></thead><tbody>${bInBody}<tr class="tot"><td class="l" colspan="2">Total</td><td>${units(bInUnits)}</td></tr></tbody></table>`)}
   ${sec('Refunds you owe','cash back to a customer',cRef.length,
     `<table><thead><tr><th class="l">Customer</th><th class="l">Since</th><th>Amount</th></tr></thead><tbody>${cRefBody}<tr class="tot"><td class="l" colspan="2">Total</td><td>${fmt0(cRefTot)}</td></tr></tbody></table>`)}
   ${sec('Pending orders','agreed, neither paid nor delivered',cPen.length,
@@ -14232,13 +14252,14 @@ function trackCharts(){
 function drawInvChart(ic){
   /* v385: pLoans(), not loanDrawUnits(), for the reason given at pLoans. Both books read 0
      today because the only loan on the book is preOpening, so this is latent and not live. */
-  const loanOut=pLoans().reduce((a,l)=>a+(l.preOpening?0:(l.valueKg||0)),0);
+  const loanOut=pLoans().reduce((a,l)=>a+(l.preOpening||l.direction==='in'?0:(l.valueKg||0)),0), loanIn=loanInUnits(pLoans());   // v518
   /* v385: openingFor(PROD), not the bare `opening`. This is the v365 fault, left standing in
      the chart after the table above it was fixed. `opening` is Salt's 4.9 unit under BOTH
      books, so Oil's movement bar opened on Salt's lot and the walk missed by exactly that
      difference: 4.9 + 100 - 71 - 34 = -0.1 against a counted 0. With Oil's own 5 it closes. */
-  const labs=['Opening','Received','Sold','Self-use','On hand'],vals=[openingFor(PROD).qty,buyUnits,-(soldUnits-loanOut),-selfUse,currentStock],cols=['#c5a059','#e4e9ec','#d4694c','#b87333','#6fae97'];
+  const labs=['Opening','Received','Sold','Self-use','On hand'],vals=[openingFor(PROD).qty,buyUnits,-(soldUnits-(loanOut-loanIn)),-selfUse,currentStock],cols=['#c5a059','#e4e9ec','#d4694c','#b87333','#6fae97'];
   if(loanOut>0){labs.splice(3,0,'Loan out');vals.splice(3,0,-loanOut);cols.splice(3,0,'#8ea2b6');}  // the walk splits it; the chart should too
+  if(loanIn>0){labs.splice(2,0,'Borrowed in');vals.splice(2,0,loanIn);cols.splice(2,0,'#8ea2b6');}   // v518: lands beside Received
   freshChart(ic,{type:'bar',data:{labels:labs,datasets:[{data:vals,backgroundColor:cols,borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},title:{display:true,text:'Inventory movement (unit)',color:'#f2f4f5',font:{size:12}}},scales:{x:{grid:{color:'rgba(255,255,255,0.07)'},ticks:{color:'rgba(242,244,245,0.66)'}},y:{grid:{color:'rgba(255,255,255,0.07)'},ticks:{color:'rgba(242,244,245,0.66)'}}}}});
 }
 

@@ -218,7 +218,7 @@ function saleProvRate(s,days){return (s&&s.defaulted)?1:provRate(days);}
      sales, purchases   this product's rows only, or oil sold would eat salt off the shelf
      opening            {qty, costPerKg, stated, uncounted} for the product
      isSalt             loans and the supplier receivable are salt arrangements
-     loanUnits             units drawn against loans (salt only; pre-opening loans are inside the opening count)
+     loanUnits             units drawn against loans, net: lent out less borrowed in (salt only; pre-opening loans are inside the opening count; v518)
      counted            the hand count that beats the ledger, or null when this book was never counted
      supplierReceivable {amount, since, status} or null
      today              the as-of date, for ageing the receivables

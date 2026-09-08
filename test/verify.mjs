@@ -7141,6 +7141,54 @@ section("Statements — the QR, the sort and the Salt identity");
   }
 }
 
+section("v518: salt borrowed in is a loan the other way");
+{
+  /* HIS ROWS OF 08 SEP 2026: 5.5 unit borrowed from CH5-OUG and 1.5 from CA11-SEN, owed back in
+     kind. The loan book only knew salt lent OUT (valueKg drawn off the inventory); a loan IN adds
+     to it while open, lands on its own date in the history walk, prints its own line on the
+     Inventory walk and its own fold on the Order book, and nets out of loanDrawUnits so nothing
+     else on the desk has to know. Proved on the real master over a fixture book. */
+  const { openMaster: om7 } = await import("../tools/payload.mjs");
+  const { readFileSync: rf7, writeFileSync: wf7, unlinkSync: rm7 } = await import("node:fs");
+  const { execSync: ex7 } = await import("node:child_process");
+  const { join: j7 } = await import("node:path");
+  const bk7 = JSON.parse(rf7(j7(REPO, "ledger", "book.json"), "utf8"));
+  const LD = bk7.COUNT_ON.salt;   // a date inside the walk on any book
+  bk7.loans = (bk7.loans || []).filter((l) => l.preOpening).concat([
+    { date: LD, party: "CH5-OUG", direction: "in", valueKg: 5.5, valueRM: null, status: "open", product: "salt", note: "fixture" },
+    { date: LD, party: "CA11-SEN", direction: "in", valueKg: 1.5, valueRM: null, status: "open", product: "salt", note: "fixture" },
+    { date: LD, party: "CS6-PER", direction: "in", valueKg: 9, valueRM: null, status: "settled", settledOn: LD, product: "salt", note: "fixture, settled: counts nowhere" },
+  ]);
+  const B7 = j7(REPO, "test", ".v518.json"), M7 = j7(REPO, "test", ".v518.html");
+  wf7(B7, JSON.stringify(bk7, null, 1)); wf7(M7, rf7(j7(REPO, "master", "salt_command.html"), "utf8"));
+  ex7("node tools/booksync.mjs --sync", { cwd: REPO, env: { ...process.env, SALT_BOOK: B7, SALT_MASTER: M7 }, stdio: "pipe" });
+  const READ7 = "(function(){var e=document.querySelector('.sec.on');if(!e)return '';var c=e.cloneNode(true);[].slice.call(c.querySelectorAll('.jquote')).forEach(function(q){q.parentNode.removeChild(q);});return c.textContent.replace(/\\s+/g,' ');})()";
+  try {
+    const { w } = await om7(M7);
+    w.eval("setProd('salt');recompute();");
+    const draw = +w.eval("loanDrawUnits()");
+    ok(draw === -7, `loanDrawUnits nets a loan in against loans out and ignores a settled one: -7, got ${draw}`);
+    w.eval("switchTab('inventory');");
+    const inv = String(w.eval(READ7));
+    ok(inv.includes("Borrowed in (to return)") && /Borrowed in \(to return\)\+7 unit/.test(inv), "the Inventory walk prints the borrowed units as their own line, +7 unit");
+    w.eval("switchTab('receivables');");
+    const ob = String(w.eval(READ7));
+    ok(/Salt you borrowed/.test(ob) && ob.includes("CH5-OUG") && ob.includes("CA11-SEN") && !/CS6-PER[^.]{0,40}9 unit/.test(ob),
+      "the Order book folds the two open borrowings under Salt you borrowed and leaves the settled one out");
+    /* the history walk: the units land on the loan's date, not on day 0 */
+    const withIn = JSON.parse(w.eval("JSON.stringify(stockHistory())"));
+    w.eval("loans.forEach(function(l){if(l.direction==='in')l.status='settled';});recompute();");
+    const without = JSON.parse(w.eval("JSON.stringify(stockHistory())"));
+    const i = withIn.findIndex((r) => r.iso === LD);
+    const d0 = withIn[0].lvl - without[0].lvl, dL = (withIn[i].lvl - withIn[i - 1].lvl) - (without[i].lvl - without[i - 1].lvl);
+    /* the shrinkage plug is spread over every day of the walk, so 7 unit in raises the plug by 7 and
+       the loan day shows 7 less one day's share of it; the tolerance is exactly that share */
+    const share = 7 / Math.max(1, withIn.length - 1) + 0.01;
+    ok(i > 0 && Math.abs(d0) < 0.005 && Math.abs(dL - 7) < share, `the history walk lands the 7 unit on ${LD}, not on day 0 (day 0 moved ${d0.toFixed(2)}, the loan day ${dL.toFixed(2)}, plug share ${share.toFixed(2)})`);
+    try { w.close(); } catch (e) { }
+  } finally { try { rm7(B7); } catch (e) { } try { rm7(M7); } catch (e) { } }
+}
+
 const FLOOR_ASSERTIONS = 1330, FLOOR_SECTIONS = 97;   /* stale records skipped: 1334 everywhere, 1335 here */
 ok(pass + fail - offMachine >= FLOOR_ASSERTIONS,
   `the suite ran ${pass + fail - offMachine} assertions everywhere (${pass + fail} here, ${offMachine} of them needing files that live off this repo), below its floor of ${FLOOR_ASSERTIONS}: a section has stopped running`);
