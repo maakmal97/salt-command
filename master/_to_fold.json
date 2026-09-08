@@ -1,0 +1,190 @@
+{
+ "ok": true,
+ "count": 3,
+ "approved": [
+  {
+   "id": "2026-09-08T01:37:37.463Z",
+   "collection": "sales",
+   "row": {
+    "rid": "s138",
+    "qty": 1,
+    "total": 110,
+    "cash": 0,
+    "date": "2026-09-07",
+    "product": "salt",
+    "changes": [
+     {
+      "field": "party",
+      "from": "CS6-BS",
+      "to": "CS6-BS-R"
+     },
+     {
+      "field": "total",
+      "from": 110,
+      "to": 117.5
+     },
+     {
+      "field": "assoc",
+      "from": null,
+      "to": "CS6-BS"
+     },
+     {
+      "field": "stream",
+      "from": null,
+      "to": "R2"
+     }
+    ],
+    "customer": "CS6-BS"
+   },
+   "reasoning": "Correction against CS6-BS's order of 1 unit for RM 110 dated 2026-09-07 (s138). Sets party from CS6-BS to CS6-BS-R, total from 110 to 117.5, assoc from unset to CS6-BS, stream from unset to R2. It moves no cash and no stock: it changes what the row says about itself. The row is not rewritten here. The fold applies the patch, so there is one definition of what a correction does rather than two.",
+   "flags": [
+    "R2 books the row to the associate, so without a downstream the end buyer is recorded nowhere.",
+    "This moves the row from CS6-BS to CS6-BS-R, so what each of them owes changes with it, and so does every figure drawn per party.",
+    "This is an ADVANCE: 1 unit goes out with RM 117.5 unpaid. Check it against CS6-BS-R's credit cap."
+   ],
+   "amends": "s138",
+   "amendKind": "Correction",
+   "entry": {
+    "at": "2026-09-08T01:37:37.463Z",
+    "type": "AMEND",
+    "party": "CS6-BS",
+    "qty": 0,
+    "total": 0,
+    "raw": "Correction on CS6-BS s138: party to CS6-BS-R, total to 117.5, assoc to CS6-BS, stream to R2, recorded 2026-09-08",
+    "payload": {
+     "mode": "amend",
+     "direction": "SELL",
+     "party": "CS6-BS",
+     "rid": "s138",
+     "orderKey": "CS6-BS|2026-09-07|110",
+     "kind": "Correction",
+     "date": "2026-09-08",
+     "fields": {
+      "party": "CS6-BS-R",
+      "total": 117.5,
+      "assoc": "CS6-BS",
+      "stream": "R2"
+     },
+     "assoc": null,
+     "downstream": null,
+     "orderCode": null,
+     "linkTo": null,
+     "sameDay": false,
+     "note": null,
+     "qty": 0,
+     "total": 0,
+     "cash": 0,
+     "kg": 0
+    }
+   },
+   "decidedAt": "2026-09-08T05:57:38.435Z",
+   "decidedBy": "desk"
+  },
+  {
+   "id": "2026-09-08T01:38:01.805Z",
+   "collection": "sales",
+   "row": {
+    "rid": "s139",
+    "qty": 1,
+    "total": 110,
+    "cash": 0,
+    "date": "2026-09-07",
+    "product": "salt",
+    "changes": [
+     {
+      "field": "total",
+      "from": 110,
+      "to": 117.5
+     }
+    ],
+    "customer": "CS6-BS"
+   },
+   "reasoning": "Correction against CS6-BS's order of 1 unit for RM 110 dated 2026-09-07 (s139). Sets total from 110 to 117.5. It moves no cash and no stock: it changes what the row says about itself. The row is not rewritten here. The fold applies the patch, so there is one definition of what a correction does rather than two.",
+   "flags": [
+    "CS6-BS typically pays about RM 104.75/unit for salt across 8 orders; this one is RM 117.5, 12.2% above that.",
+    "This is an ADVANCE: 1 unit goes out with RM 117.5 unpaid. Check it against CS6-BS's credit cap."
+   ],
+   "amends": "s139",
+   "amendKind": "Correction",
+   "entry": {
+    "at": "2026-09-08T01:38:01.805Z",
+    "type": "AMEND",
+    "party": "CS6-BS",
+    "qty": 0,
+    "total": 0,
+    "raw": "Correction on CS6-BS s139: total to 117.5, recorded 2026-09-08",
+    "payload": {
+     "mode": "amend",
+     "direction": "SELL",
+     "party": "CS6-BS",
+     "rid": "s139",
+     "orderKey": "CS6-BS|2026-09-07|110",
+     "kind": "Correction",
+     "date": "2026-09-08",
+     "fields": {
+      "total": 117.5
+     },
+     "assoc": null,
+     "downstream": null,
+     "orderCode": null,
+     "linkTo": null,
+     "sameDay": false,
+     "note": null,
+     "qty": 0,
+     "total": 0,
+     "cash": 0,
+     "kg": 0
+    }
+   },
+   "decidedAt": "2026-09-08T05:57:39.172Z",
+   "decidedBy": "desk"
+  },
+  {
+   "id": "2026-09-08T05:48:39.158Z",
+   "collection": "sales",
+   "row": {
+    "qty": 4,
+    "total": 360,
+    "cash": 300,
+    "date": "2026-09-04",
+    "customer": "CM4-MK"
+   },
+   "reasoning": "Fulfilment against CM4-MK's order of 4 unit for RM 360 agreed 2026-09-04. RM 60 and 0 unit move on 2026-09-08, against RM 60 and 0 unit outstanding. Leaves RM 0 and 0 unit outstanding. The row itself is NOT recomputed here: ovAmend in the master applies it, so there is one definition of what a fulfilment does rather than two.",
+   "flags": [
+    "This SETTLES the order in full: nothing is left outstanding after it."
+   ],
+   "amends": "CM4-MK|2026-09-04|360",
+   "amendKind": "Fulfilment",
+   "entry": {
+    "at": "2026-09-08T05:48:39.158Z",
+    "type": "AMEND",
+    "party": "CM4-MK",
+    "qty": 0,
+    "total": 60,
+    "status": "paid",
+    "raw": "Fulfilment on CM4-MK s132: RM 60 cash, recorded 2026-09-08",
+    "payload": {
+     "mode": "amend",
+     "direction": "SELL",
+     "party": "CM4-MK",
+     "rid": "s132",
+     "orderKey": "CM4-MK|2026-09-04|360",
+     "assoc": null,
+     "downstream": null,
+     "orderCode": null,
+     "linkTo": null,
+     "sameDay": false,
+     "note": null,
+     "kind": "Fulfilment",
+     "date": "2026-09-08",
+     "qty": 0,
+     "total": 60,
+     "cash": 60,
+     "kg": 0
+    }
+   },
+   "decidedAt": "2026-09-08T05:50:28.610Z",
+   "decidedBy": "desk"
+  }
+ ]
+}
