@@ -905,7 +905,8 @@ section("Worker — drafts and approval");
        "the deploy follows the fold in the same job and every deploy step stands aside when the phone already has the build; no second checkout is needed once the job pushes as itself");
     ok(/git pull -q --rebase --autostash origin master\n\s+git push/.test(wf),
        "the handoff clear rebases before it pushes, autostashing what npm test rebuilt: master moved under it once, and the dirty tree refused the rebase the next time");
-    ok((wf.match(/ref: master/g) || []).length === 1 && /uses: actions\/checkout@v4\n\s+with: \{ ref: master \}/.test(wf), "the one checkout is master's tip, not the sha the run started on, and it serves the whole job");
+    ok((wf.match(/ref: master/g) || []).length === 1 && /uses: actions\/checkout@v5[^\n]*\n\s+with: \{ ref: master \}/.test(wf), "the one checkout is master's tip, not the sha the run started on, and it serves the whole job");
+    ok(!/actions\/(checkout|setup-node)@v4/.test(wf), "the actions run on Node 24 (v5); v4 targeted Node 20, which the runners retired");
   }
 
   /* the double tap */
@@ -7789,6 +7790,22 @@ section("08 Sep 2026: the audit fixes");
     const msrc = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
     ok(/cell\('Cost drawn',cost==null\?'&mdash;':fmt\(cost\)\+\(qty>0\?/.test(msrc), "the Approve card labels the order's cost as the order's, with the unit figure beside it");
     ok(/function txGoods\(s\)\{return POSITION_ENGINE\.txGoods\(s\);\}/.test(msrc) && (msrc.match(/txGoods\(s\)\/s\.qty|txGoods\(x\)\/x\.qty/g) || []).length >= 10, "the desk strikes its customer rates on the goods through the engine's txGoods");
+    /* 09 Sep 2026: the fold's dossier reads the live quote for a lot's product off the book's own
+       keys; it filtered supplierQuote as an array and threw on the first lot staged since v521 */
+    {
+      const { dossier } = await import("../tools/foldcall.mjs");
+      /* two different sizes, or the second lot is a twin of the first and the batch guard refuses it */
+      const lotOf = (id, product) => ({ id, collection: "purchases", row: Object.assign(product ? { qty: 30, total: 230, cash: 230, receivedQty: 30 } : { qty: 50, total: 2200, cash: 2200, receivedQty: 50 },
+        { supplier: bkR.purchases[0].supplier, date: "2099-01-03", receivedOn: "2099-01-03", status: "paid" }, product ? { product } : {}),
+        entry: { at: id, payload: { mode: "new", direction: "BUY" } } });
+      const stagedQ = { ok: true, count: 2, approved: [lotOf("2099-01-03T00:00:00.001Z", null), lotOf("2099-01-03T00:00:00.002Z", "oil")] };
+      const bkQ = JSON.parse(JSON.stringify(bkR)), pQ = planA(bkQ, stagedQ, null);
+      const dQ = pQ.items.length === 2 ? dossier(bkQ, stagedQ, pQ, w) : null;
+      const [salt, oil] = dQ ? dQ.items : [];
+      ok(dQ && salt && salt.quote && salt.quote.supplier === bkR.supplierQuote.supplier && salt.quote.date === bkR.supplierQuote.quotedOn && Array.isArray(salt.quote.tiers),
+        `a staged salt lot's dossier carries the salt quote, dated the day it was quoted (${pQ.refused.map((x) => x.why).join("; ") || (salt && JSON.stringify(salt.quote).slice(0, 80))})`);
+      ok(dQ && oil && oil.quote && oil.quote.supplier === bkR.oilQuote.supplier, "and an oil lot's carries the oil quote");
+    }
     try { w.close(); } catch (e) { }
   }
 }

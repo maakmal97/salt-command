@@ -99,8 +99,12 @@ export function dossier(book, staged, p, w) {
         } catch (e) { d.ladder = null; }
       }
       if (src.collection === "purchases") {
-        const q = (book.supplierQuote || []).filter((x) => (x.product || "salt") === prod).slice(-1)[0] || null;
-        d.quote = q ? { date: q.date, supplier: q.supplier, tiers: q.tiers } : null;
+        /* 09 Sep 2026: THE BOOK HOLDS ONE LIVE QUOTE PER PRODUCT UNDER ITS OWN KEY, supplierQuote for
+           salt and oilQuote for oil, as the desk's QUOTES map reads them. This filtered the salt quote
+           as an array and threw on the first lot staged since v521, and the hourly net threw again
+           every hour with the lot left unfolded. The quote's date is quotedOn. */
+        const q = ({ salt: book.supplierQuote, oil: book.oilQuote })[prod] || null;
+        d.quote = q ? { date: q.quotedOn || q.date || null, supplier: q.supplier, tiers: q.tiers } : null;
       }
     } else if (src.collection === "loan" && row.party) {
       d.party = Object.assign({ code: row.party }, partyDossier(book, "customer", row.party));
