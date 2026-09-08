@@ -197,13 +197,50 @@ async function handleQueuePost(request, env, ctx) {
   let payload;
   try { payload = await readQueuePost(request); }
   catch (e) { return json({ ok: false, error: String(e && e.message || e) }, 400); }
+  /* v525: an entry whose draft was rejected never comes back, whichever device re-posts it */
+  const gone = await rejectedAmong(env, payload.queue.map((e) => e && e.at));
+  const kept = gone.size ? payload.queue.filter((e) => !(e && gone.has(e.at))) : payload.queue;
   // Per-device replace: this device's key holds its whole current queue, so an undo on
   // the device (which re-posts the shortened queue) is reflected rather than merged away.
   await env.SALT_QUEUE.put(QKEY(payload.device), JSON.stringify({
-    updated: payload.updated, device: payload.device, queue: payload.queue
+    updated: payload.updated, device: payload.device, queue: kept
   }));
   draftOnArrival(env, ctx);
-  return json({ ok: true, entries: payload.queue.length, device: payload.device });
+  return json({ ok: true, entries: kept.length, device: payload.device, dropped: gone.size, droppedAts: [...gone] });
+}
+
+/* v525: REJECT MEANS DISCARD. A rejected entry used to sit in every device's queue until the
+   fold's watermark passed it, and a device that still held it re-posted it with its next tap.
+   The Worker now drops it from every q:* key on the rejection, and a queue POST drops any entry
+   whose draft was rejected, so no device can bring it back. The draft row stays, rejected: the
+   decision is the record. */
+async function dropQueued(env, ats) {
+  const want = new Set(ats.filter(Boolean));
+  if (!env.SALT_QUEUE || !want.size) return 0;
+  let dropped = 0, cursor;
+  do {
+    const list = await env.SALT_QUEUE.list({ prefix: "q:", cursor });
+    for (const k of list.keys) {
+      const raw = await env.SALT_QUEUE.get(k.name);
+      if (!raw) continue;
+      let v; try { v = JSON.parse(raw); } catch (e) { continue; }
+      const before = (v.queue || []).length;
+      v.queue = (v.queue || []).filter((e) => !(e && want.has(e.at)));
+      if (v.queue.length !== before) { dropped += before - v.queue.length; await env.SALT_QUEUE.put(k.name, JSON.stringify(v)); }
+    }
+    cursor = list.list_complete ? null : list.cursor;
+  } while (cursor);
+  return dropped;
+}
+async function rejectedAmong(env, ats) {
+  const out = new Set();
+  if (!env.SALT_LEDGER) return out;
+  for (const at of ats) {
+    if (!at) continue;
+    try { const r = await env.SALT_LEDGER.prepare("SELECT status FROM draft WHERE id=?1").bind(at).first(); if (r && r.status === "rejected") out.add(at); }
+    catch (e) { /* a store that cannot answer keeps the entry */ }
+  }
+  return out;
 }
 
 /* Union of every device's queue, for the drain and for eyeballing behind Access. */
@@ -491,8 +528,10 @@ async function handleDraftDecide(request, env, ctx, id, decision) {
     "UPDATE draft SET status=?1, decided_at=?2, decided_by=?3 WHERE id=?4 AND status='pending'"
   ).bind(decision, new Date().toISOString(), by, id).run();
   if (decision === "approved") stageOnApproval(env, ctx);
+  let dropped = 0;
+  if (decision === "rejected") { try { dropped = await dropQueued(env, [id]); } catch (e) { /* the decision stands; the POST filter catches a re-post */ } }
   const row = await env.SALT_LEDGER.prepare(`SELECT ${DRAFT_COLS} FROM draft WHERE id=?1`).bind(id).first();
-  return json({ ok: true, draft: row ? draftOut(row) : null });
+  return json({ ok: true, draft: row ? draftOut(row) : null, dropped });
 }
 
 /* Marked by the commit run once the row is actually in the master, so an approved row is not

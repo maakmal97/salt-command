@@ -1,5 +1,15 @@
 [
  {
+  "v": "v525",
+  "d": "08 Sep 2026",
+  "t": "REJECT MEANS DISCARD, WITH RE-ENTER",
+  "n": [
+   "<b>PART B, STEP 7 OF HIS INSTRUCTION OF 08 SEP 2026.</b> A rejected entry used to sit in every device's queue until the fold's watermark passed it, and a device that still held it re-posted it with its next tap; on 07 Sep two rejections were real orders retyped, and the originals waited for a person the next morning. Now the Worker drops the entry from every device's queue on the rejection, and a queue POST drops any entry whose draft was rejected, so no device can bring it back. The draft row stays, rejected: the decision is the record.",
+   "<b>AND THE PHONE OFFERS IT BACK.</b> The device that rejected drops its own copy too, so its next post cannot re-send it, and the Approve view offers <i>Re-enter it, corrected</i>: the rejected entry's own figures open in the editor, party, size, total, cash, units, date, delivery, handover, note and the associate on an R2, to be corrected and queued again under a new stamp. An amendment or a purchase is re-entered on the Workbench, and the message says so.",
+   "<b>PROVED.</b> In the suite the Worker drops the rejected entry from the store and filters it out of a re-post, leaving the other entries; the phone's seed maps a queued sale to the editor's row shape and refuses an amendment; the device's own copy goes and the rest stay."
+  ]
+ },
+ {
   "v": "v524",
   "d": "08 Sep 2026",
   "t": "ROSTER-ONLY PARTIES ON THE PHONE",

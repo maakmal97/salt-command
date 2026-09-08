@@ -928,7 +928,15 @@ section("Worker — drafts and approval");
   /* a rejected row is never offered */
   const second = { ...goodDraft, id: "2026-08-14T12:42:33.844Z" };
   await worker.fetch(post("/drafts", second, KEY), env);
-  await worker.fetch(post("/drafts/" + encodeURIComponent(second.id) + "/reject", {}, KEY), env);
+  /* v525: the rejected entry is dropped from every device's queue, and a re-post cannot bring it back */
+  const other = { at: "2026-08-14T12:50:00.000Z", type: "SELL", raw: "the one that stays" };
+  await env.SALT_QUEUE.put("q:dev-one", JSON.stringify({ device: "dev-one", queue: [{ at: second.id, type: "SELL", raw: "the rejected one" }, other] }));
+  await env.SALT_QUEUE.put("q:dev-two", JSON.stringify({ device: "dev-two", queue: [{ at: second.id, type: "SELL", raw: "held on a second device" }] }));
+  r = await worker.fetch(post("/drafts/" + encodeURIComponent(second.id) + "/reject", {}, KEY), env); j = await r.json();
+  ok(r.status === 200 && j.dropped === 2, "a rejection drops the entry from every device's queue and says how many (" + j.dropped + ")");
+  ok(JSON.parse(await env.SALT_QUEUE.get("q:dev-one")).queue.map((e) => e.at).join() === other.at && JSON.parse(await env.SALT_QUEUE.get("q:dev-two")).queue.length === 0, "the other entry stays, on the device that held it");
+  r = await worker.fetch(post("/queue", { device: "dev-one", queue: [{ at: second.id, type: "SELL", raw: "re-posted" }, other] }, KEY), env); j = await r.json();
+  ok(r.status === 200 && j.dropped === 1 && j.entries === 1 && JSON.parse(await env.SALT_QUEUE.get("q:dev-one")).queue.length === 1, "a device re-posting the rejected entry has it dropped again, and keeps the rest");
   r = await worker.fetch(get("/drafts?status=approved&uncommitted=1", KEY), env);
   j = await r.json();
   ok(j.count === 0, "a rejected row never reaches the commit run");
@@ -7355,6 +7363,21 @@ section("v524: roster-only parties on the phone");
   const D = JSON.parse(String(w.eval(DRIVE_ED(anyCust, "", true))));
   const today = String(w.eval("TODAY.toISOString().slice(0,10)"));
   ok(!D.no && D.pushed && D.q && D.q.party === anyCust && D.q.date === today, "a moved order with a blank date is queued dated today: " + (D.no || JSON.stringify(D.q)));
+  try { w.close(); } catch (e) { }
+}
+
+section("v525: reject means discard, with re-enter, on the phone");
+{
+  const { openMaster: omC } = await import("../tools/payload.mjs");
+  const { w } = await omC();
+  const seed = (p) => JSON.parse(String(w.eval("JSON.stringify(apReenterSeed(" + JSON.stringify({ id: "x", entry: { payload: p } }) + "))")));
+  const s1 = seed({ mode: "new", direction: "SELL", party: "CS6-BS", qty: 1, total: 110, cash: 0, kg: 1, date: "2026-09-07", delivery: 7.5, handover: "delivered", note: null });
+  ok(s1 && s1.customer === "CS6-BS" && s1.qty === 1 && s1.total === 110 && s1.deliveredQty === 1 && s1.date === "2026-09-07" && s1.delivery === 7.5 && s1.handover === "delivered" && !s1.rev, "a queued sale seeds the editor with its own figures");
+  const s2 = seed({ mode: "new", direction: "SELL", party: null, assoc: "CS6-BS", stream: "R2", downstream: "CS6-BS-R", qty: 1, total: 125, cash: 0, kg: 1, date: "2026-09-07" });
+  ok(s2 && s2.customer === "CS6-BS" && s2.rev === "R2" && s2.downstream === "CS6-BS-R", "an R2 seeds the associate as the row's party with the end buyer beside it");
+  ok(seed({ mode: "amend", direction: "SELL", rid: "s136", kind: "Fulfilment", cash: 10 }) === null && seed({ mode: "new", direction: "BUY", party: "SA5-BTR", qty: 25, total: 1200 }) === null, "an amendment and a purchase are not seeded: they re-enter on the Workbench");
+  const gone = JSON.parse(String(w.eval("(function(){queue=[{at:'a1',type:'SELL'},{at:'a2',type:'SELL'},{at:'a3',type:'SELL'}];var n=qForgetAt('a2');return JSON.stringify({n:n,left:queue.map(function(q){return q.at;})});})()")));
+  ok(gone.n === 1 && gone.left.join() === "a1,a3", "the device drops its own copy of the rejected entry and keeps the rest");
   try { w.close(); } catch (e) { }
 }
 

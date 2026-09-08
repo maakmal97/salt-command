@@ -76,7 +76,7 @@ desk shows, cost and margin included, is served at the public URL.
 |---|---|---|
 | Queue an entry | KV `q:<deviceId>`, `POST /queue` from the phone | on tap; held offline, retried every ten seconds |
 | Draft the row | Worker `src/drafter.js` | on arrival via `waitUntil`, plus a `*/15` cron as the net |
-| Approve or reject | D1 `draft`, `POST /drafts/<id>/approve` | on tap; a decided row returns 409 |
+| Approve or reject | D1 `draft`, `POST /drafts/<id>/approve` | on tap; a decided row returns 409; a rejection drops the entry from every queue and the phone offers it back to re-enter (v525) |
 | Stage approved rows | Actions `cloud-commit.yml`, one job `chain` since v520 | dispatched by every approval (Worker holds `SALT_GITHUB_TOKEN`), hourly as the net |
 | **Fold, bump, build, test, push** | the `Fold` step: `tools/foldcall.mjs`, one Claude call for the notes (`ANTHROPIC_API_KEY`) over `fold.mjs`, since v521; or any agent asked, per `docs/CLOUD_FOLD.md` | same job when rows were staged; or on demand |
 | Gate (`tools/gate.mjs`, CI's mechanical checks in about ten seconds, v522), deploy, prove, mark committed (with the clock, v519), re-seed the D1 mirror, publish statements, then the full suite | the steps that follow in the same job; a push runs them alone, and skips the deploy when the phone already has the build; a suite failure after the phone is live turns the run red and is written where the phone shows refusals, never rolled back | same job; or on push |
