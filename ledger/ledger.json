@@ -1,6 +1,6 @@
 {
- "v": "v541",
- "stamped": "08 Sep 2026, 16:33 KL",
+ "v": "v542",
+ "stamped": "08 Sep 2026, 22:26 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -3242,7 +3242,24 @@
     "deliveredQty": 0,
     "date": "2026-09-08",
     "note": "<b>PENDING SALT ROW DATED 08 SEP, THE DAY IT WAS AGREED.</b> SELL to CC5-OKR, 1 unit of salt for RM 90, collected, RM 0 cash and 0 unit moved, so the row is pending and draws no stock and books no revenue until it does. At RM 90 a unit it sits above the RM 58.56 floor for 1 unit and under the RM 130 ask, well under the RM 150 ceiling. It is costed at the inventory's own RM 48 a unit, RM 42 on the order at 46.7%, so no separate cost attaches. CC5-OKR stood at 5 orders, a median rate of RM 90, a range of RM 80 to RM 90, RM 90 outstanding, 1 unit on credit against a cap of 1 and nothing defaulted. The drafter flagged nothing. RM 90 and 1 unit stay outstanding.",
-    "rid": "s141"
+    "rid": "s141",
+    "amend": [
+     {
+      "date": "2026-09-08",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 0,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-09-08",
+      "kind": "Cancellation",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>CANCELLATION ON 08 SEP 2026 AGAINST THE CC5-OKR ORDER OF THAT DAY.</b> The withdrawn row was a SELL to CC5-OKR, 1 unit of salt for RM 90, and it was still pending: RM 0 cash and 0 unit had moved, so no stock was drawn and no revenue booked. The order is withdrawn and counts nowhere. The row itself is not recomputed here, ovAmend in the master applies it, so there is one definition of what a fulfilment does rather than two. It carries no cost of its own. The drafter flagged nothing. Nothing is left outstanding on it."
+     }
+    ],
+    "cancelled": true
    }
   ],
   "contacts": [
@@ -3571,9 +3588,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-08T08:18:14.797Z",
+  "QUEUE_COMMITTED": "2026-09-08T12:09:46.739Z",
   "PRICING": {
-   "takenAt": "2026-09-08T08:33:25.498Z",
+   "takenAt": "2026-09-08T14:26:16.398Z",
    "sizes": [
     0.5,
     1,
@@ -4005,11 +4022,11 @@
      }
     }
    },
-   "v": "v541"
+   "v": "v542"
   },
   "OPEN": {
-   "at": "2026-09-08T08:33:25.571Z",
-   "count": 10,
+   "at": "2026-09-08T14:26:16.463Z",
+   "count": 9,
    "byKey": {
     "CA7-JTR|2026-09-08|450": {
      "d": "2026-09-08",
@@ -4026,21 +4043,6 @@
      "rid": "s140",
      "handover": "collected",
      "key": "CA7-JTR|2026-09-08|450"
-    },
-    "CC5-OKR|2026-09-08|90": {
-     "d": "2026-09-08",
-     "p": "CC5-OKR",
-     "dir": "S",
-     "q": 1,
-     "t": 90,
-     "cash": 0,
-     "mv": 0,
-     "st": "part",
-     "oweRM": 90,
-     "oweUnits": 1,
-     "rid": "s141",
-     "handover": "collected",
-     "key": "CC5-OKR|2026-09-08|90"
     },
     "CR3-DAM|2026-09-07|185": {
      "d": "2026-09-07",
@@ -4171,8 +4173,8 @@
      "coverDays": 0.2,
      "rate": 5.16,
      "owedToYou": 902,
-     "promised": 9.5,
-     "short": 8.5
+     "promised": 8.5,
+     "short": 7.5
     },
     "oil": {
      "name": "Oil",
@@ -4190,7 +4192,7 @@
     "salt": "2026-09-08",
     "oil": "2026-08-23"
    },
-   "v": "v541"
+   "v": "v542"
   }
  }
 }

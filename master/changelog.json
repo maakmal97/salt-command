@@ -1,5 +1,14 @@
 [
  {
+  "v": "v542",
+  "d": "08 Sep 2026",
+  "t": "A PENDING SALT ORDER IS WITHDRAWN IN FULL",
+  "n": [
+   "<b>ONE ROW FOLDED, A CANCELLATION.</b> The fold carries a single amendment: the pending SELL to CC5-OKR of 1 unit for RM 90, agreed 08 Sep 2026, is withdrawn on the same day. No cash and no unit had moved against it, so nothing is reversed and nothing is booked. The withdrawn order counts nowhere from here, and the RM 90 and the 1 unit it had held out are no longer outstanding against that party.",
+   "<b>THE INVENTORY DID NOT MOVE.</b> Stock stands at 1 unit on the salt count of 08 Sep 2026, with the ledger at 68.95 units and self use at 67.95, cost basis unchanged at RM 48 a unit against a replacement cost of RM 48.67. Nothing is owed out, 59.5 units remain promised, and the reorder mark of 15 is untouched. The loans in from CH5-OUG at 5.5 units and CA11-SEN at 1.5 units stay open."
+  ]
+ },
+ {
   "v": "v541",
   "d": "08 Sep 2026",
   "t": "TWO PENDING ROWS TAKE THE DAY THEY WERE AGREED",
