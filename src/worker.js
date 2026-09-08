@@ -331,7 +331,7 @@ async function handleLedger(env, url) {
  * since 11 Aug: anyone with the URL reads the book, nobody without the key writes to it. A
  * decision is a write in the fullest sense, since an approved row reaches the master.
  */
-const DRAFT_COLS = "id,status,collection,entry,row,reasoning,flags,party,product,date,qty,total,cost,amends,amend_kind,drafter,drafted_at,decided_at,decided_by,committed_at";
+const DRAFT_COLS = "id,status,collection,entry,row,reasoning,flags,party,product,date,qty,total,cost,amends,amend_kind,drafter,drafted_at,decided_at,decided_by,committed_at,live_at";
 
 function draftOut(r) {
   const parse = (s, fallback) => { try { return s == null ? fallback : JSON.parse(s); } catch (e) { return fallback; } };
@@ -345,7 +345,8 @@ function draftOut(r) {
        rather than a row to append: see migrations/0004_amend.sql. */
     amends: r.amends || null, amendKind: r.amend_kind || null,
     drafter: r.drafter, draftedAt: r.drafted_at,
-    decidedAt: r.decided_at, decidedBy: r.decided_by, committedAt: r.committed_at
+    decidedAt: r.decided_at, decidedBy: r.decided_by, committedAt: r.committed_at,
+    liveAt: r.live_at || null   /* v519: when the deploy proved the phone was serving the row */
   };
 }
 
@@ -387,7 +388,19 @@ async function handleDraftsGet(env, url) {
       });
     } catch (e) { /* an older store has no `refused` table; the drafts still answer */ }
   }
-  return json({ ok: true, count: drafts.length, drafts, refused, refusedCount: refused.length });
+  /* v519: THE CLOCK RIDES ALONG. The last committed draft's three timestamps, so the Approve
+     view can say how long the last tap took to reach the phone without a second round trip
+     and without reading every approved row there has ever been. Pending view only. */
+  let clock = null;
+  if (want === "pending" && !uncommitted) {
+    try {
+      const c = await env.SALT_LEDGER.prepare(
+        "SELECT id,party,decided_at,live_at,committed_at FROM draft WHERE committed_at IS NOT NULL ORDER BY committed_at DESC LIMIT 1"
+      ).first();
+      if (c) clock = { id: c.id, party: c.party, decidedAt: c.decided_at, liveAt: c.live_at || null, committedAt: c.committed_at };
+    } catch (e) { /* a store without the column answers the drafts and no clock */ }
+  }
+  return json({ ok: true, count: drafts.length, drafts, refused, refusedCount: refused.length, clock });
 }
 
 async function handleDraftPost(request, env) {
@@ -492,8 +505,11 @@ async function handleDraftCommitted(request, env, id) {
   if (cur.status !== "approved") return json({ ok: false, error: "only an approved draft may be committed; this one is " + cur.status }, 409);
   if (cur.committed_at) return json({ ok: true, id, alreadyCommitted: true, committedAt: cur.committed_at });
   const at = new Date().toISOString();
-  await env.SALT_LEDGER.prepare("UPDATE draft SET committed_at=?1 WHERE id=?2 AND committed_at IS NULL").bind(at, id).run();
-  return json({ ok: true, id, committedAt: at });
+  /* v519: liveAt is the deploy job's proof time, sent with the mark; absent on an older caller */
+  let liveAt = null;
+  try { const b = await request.json(); if (b && typeof b.liveAt === "string" && !Number.isNaN(Date.parse(b.liveAt))) liveAt = b.liveAt; } catch (e) { /* no body */ }
+  await env.SALT_LEDGER.prepare("UPDATE draft SET committed_at=?1, live_at=?2 WHERE id=?3 AND committed_at IS NULL").bind(at, liveAt, id).run();
+  return json({ ok: true, id, committedAt: at, liveAt });
 }
 
 async function handleDrafts(request, env, ctx, url, p, m) {

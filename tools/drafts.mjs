@@ -78,9 +78,11 @@ const money = (v) => v == null ? "-" : "RM " + Number(v).toLocaleString("en-MY",
 /* ---- schema -------------------------------------------------------------------------- */
 function schema() {
   /* Both migrations, in order, and each is CREATE TABLE IF NOT EXISTS so re-running is safe. */
-  for (const name of ["0002_draft.sql", "0003_refused.sql", "0004_amend.sql", "0005_bookkeeping.sql"]) {
+  for (const name of ["0002_draft.sql", "0003_refused.sql", "0004_amend.sql", "0005_bookkeeping.sql", "0006_clock.sql"]) {
     if (!existsSync(resolve(REPO, "migrations", name))) { fail("migrations/" + name + " is not there"); continue; }
     const r = wrangler(["d1", "execute", DB, WHERE, "--file=migrations/" + name], { quiet: true });
+    /* v519: 0006 is an ADD COLUMN, which SQLite refuses the second time; that refusal means applied */
+    if (r.code !== 0 && /duplicate column/i.test(r.out)) { ok("migrations/" + name + " was already applied"); continue; }
     if (r.code !== 0) { fail("could not apply " + name + ":\n        " + r.out.split("\n").slice(0, 6).join("\n        ")); continue; }
     ok("migrations/" + name + " applied to " + DB + " (" + WHERE.replace("--", "") + ")");
   }
@@ -304,10 +306,14 @@ function approved() {
 /* ---- committed ----------------------------------------------------------------------- */
 function committed() {
   const i = argv.indexOf("--committed");
-  const ids = argv.slice(i + 1).filter((a) => !a.startsWith("--"));
+  /* v519: --live <ISO> is the moment the deploy job proved the phone was serving the build; its
+     value is not an id, so it is excluded by position as --by is in approve() */
+  const liveAt = valOf("--live") || null, liveIdx = argv.indexOf("--live");
+  const ids = argv.slice(i + 1).filter((a, k) => !a.startsWith("--") && (liveIdx < 0 || (i + 1 + k) !== liveIdx + 1));
   if (!ids.length) { fail("--committed needs at least one draft id"); return; }
+  const clock = [];
   for (const id of ids) {
-    const cur = query("SELECT status,committed_at FROM draft WHERE id=" + q(id));
+    const cur = query("SELECT status,committed_at,decided_at,live_at FROM draft WHERE id=" + q(id));
     if (!cur) return;
     /* v391: A FOLD STATED DIRECTLY HAS NO DRAFTS BEHIND IT, AND THAT IS NOT A FAILURE.
        This step exists to mark the drafts a fold consumed. When he states the day's trade
@@ -319,11 +325,26 @@ function committed() {
     if (!cur.length) { ok(id + ": no draft behind it, which is what a fold stated directly looks like"); continue; }
     if (cur[0].status !== "approved") { fail(id + " is " + cur[0].status + ", not approved; refusing to mark it committed"); continue; }
     if (cur[0].committed_at) { ok(id + " was already marked committed at " + cur[0].committed_at); continue; }
+    const at = new Date().toISOString();
     const r = wrangler(["d1", "execute", DB, WHERE, "--json", "--command",
-      JSON.stringify("UPDATE draft SET committed_at=" + q(new Date().toISOString()) + " WHERE id=" + q(id) + " AND committed_at IS NULL")], { quiet: true });
+      JSON.stringify("UPDATE draft SET committed_at=" + q(at) + ", live_at=" + (liveAt ? q(liveAt) : "NULL") + " WHERE id=" + q(id) + " AND committed_at IS NULL")], { quiet: true });
     if (r.code !== 0) { fail("could not mark " + id + " committed"); continue; }
     ok(id + " marked committed");
+    clock.push(clockLine(id, cur[0].decided_at, liveAt, at));
   }
+  /* THE LITERAL CHECK (v519): tap to phone and tap to committed, from D1's own timestamps, on
+     every approval. Printed here, and into the run summary when Actions offers one. */
+  if (clock.length) {
+    for (const c of clock) console.log("  clock " + c);
+    if (process.env.GITHUB_STEP_SUMMARY) {
+      try { writeFileSync(process.env.GITHUB_STEP_SUMMARY, "### The clock\n\n" + clock.map((c) => "- " + c).join("\n") + "\n", { flag: "a" }); } catch (e) { /* the summary is a courtesy */ }
+    }
+  }
+}
+/* seconds from the tap, or a dash when a timestamp is missing (a fold stated directly has no tap) */
+export function clockLine(id, decidedAt, liveAt, committedAt) {
+  const sec = (a, b) => (a && b) ? Math.round((new Date(b) - new Date(a)) / 1000) + " s" : "-";
+  return id + ": tap to phone " + sec(decidedAt, liveAt) + ", tap to committed " + sec(decidedAt, committedAt);
 }
 
 /* ---- a refusal the fold made, put where the phone shows refusals (v512) ------------------

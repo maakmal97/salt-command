@@ -68,7 +68,7 @@ document.addEventListener('visibilitychange',function(){
    localStorage before it posts anything and the load reads it straight back.
    The same tick retries a held entry, which is what gets a phone write to the cloud
    without waiting for the next open. */
-var SALT_BUILD_ID="1535563ad4e24855";
+var SALT_BUILD_ID="30a389bf6cdd77d7";
 var SALT_REV_MS=10000;
 (function(){
   var chip=null,timer=null;
@@ -5492,7 +5492,7 @@ const whiteboard=[
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{"v":"v518","d":"08 Sep 2026","t":"BORROWED 7 UNIT IN, AND COUNTED 1","n":["<b>TWO LOANS IN, ON HIS WORD OF 08 SEP 2026.</b> 5.5 unit of salt borrowed from CH5-OUG and 1.5 unit from CA11-SEN on 08 Sep, owed back in kind, unit for unit, with no date set. The loan book only knew salt lent out, so a loan in is a new direction on the same rows: <code>direction:\"in\"</code> adds to the inventory while open and counts nowhere once settled, because the units came in and went back. The stated inventory rolled -1 to 6 for the two loans before the count, a roll and not a count. When either loan is returned, mark it settled with the date and roll the inventory down by its units in the same fold.","<b>COUNTED 1 UNIT AGAINST 6 ON THE BOOK: 5 UNIT UNEXPLAINED.</b> His count on 08 Sep, after the borrowings, with nothing delivered anywhere since the CS6-BS rows of 07 Sep; asked where the 5 unit went, he said the count stands. The count wins: the stated inventory is 1 and COUNT_ON.salt moves to 2026-09-08. The drift of -5 joins the last three counts (04 Sep 0, 06 Sep -1.3) and the leak rises with it, so every floor moves: 1 unit RM 54.87 to RM 58.56, 2 unit RM 109.73 to RM 117.12, 12.5 unit RM 685.82 to RM 732, and the board's ask for 1 unit RM 120 to RM 130, all read from the desk's own ladder before and after. The replacement cost is unchanged at RM 48.67. The self-use and shrinkage plug stands at 67.95 unit.","<b>WHAT THE DESK NOW SHOWS FOR A LOAN IN.</b> The Inventory walk prints <i>Borrowed in (to return)</i> as its own line and the movement chart a bar beside Received; the history walk lands the units on the day they were borrowed rather than at the opening, where a loan out still sits; the Order book folds the open borrowings under <i>Salt you borrowed</i> with the lender, the date and the units to return. <code>loanDrawUnits</code> is the net of out less in, so the position engine and the phone payload are untouched. Proved on the real master over a fixture book in the suite, red before the change on all four counts.","<b>A HAND-STAGED COUNT WAS A SALE.</b> <code>drafts.mjs --draft</code> wrote every collection but purchases as sales, so the count planned as <i>SELL undefined</i>; it now honours the drafter's five other collections. The desk's stated inventory of 1 stands against 8.5 unit still owed out to CJ4-BJ and 7 unit owed back to the lenders; the salt reorder mark of 15 unit is passed on every reading."]},
+const evolution=[{"v":"v519","d":"08 Sep 2026","t":"THE CLOCK ON EVERY APPROVAL","n":["<b>PART A, STEP 1 OF THE CHAIN HIS INSTRUCTION OF 08 SEP 2026 ASKS FOR: everything within a minute of a tap on Approve, with a literal end-to-end check.</b> Measured first: yesterday's CJ4-BJ approval took about 8 minutes from dispatch to the phone and 8 and a half to committed, of which the Claude Code action folding was 5 minutes 12 seconds and the full test suite in the deploy job 2 minutes 9 seconds. This version builds the clock the later steps are measured against and changes nothing else about the chain.","<b>THE CLOCK.</b> The draft table gains <code>live_at</code> (migration 0006): the moment the deploy job proved the phone was serving the build that carries the row. The tap is <code>decided_at</code>; <code>committed_at</code> follows the proof by seconds. The deploy job captures the proof time and passes it to <code>drafts.mjs --committed --live</code>, which writes both and prints tap-to-phone and tap-to-committed per row into the run summary. <code>POST /drafts/&lt;id&gt;/committed</code> accepts the same <code>liveAt</code>.","<b>ON THE PHONE.</b> The pending drafts response carries <code>clock</code>, the last committed draft's three timestamps, and the Approve view leads with it: how long the last approval took to reach the phone and to be committed, with the party and the time. A dash where a timestamp is missing: a fold stated directly has no tap, and every row marked before this version has no proof time. Four assertions in the suite: the route stores and returns the proof time on the real schema, the mock store agrees, the clock rides the pending view, and the phone's sentence reads it."]},{"v":"v518","d":"08 Sep 2026","t":"BORROWED 7 UNIT IN, AND COUNTED 1","n":["<b>TWO LOANS IN, ON HIS WORD OF 08 SEP 2026.</b> 5.5 unit of salt borrowed from CH5-OUG and 1.5 unit from CA11-SEN on 08 Sep, owed back in kind, unit for unit, with no date set. The loan book only knew salt lent out, so a loan in is a new direction on the same rows: <code>direction:\"in\"</code> adds to the inventory while open and counts nowhere once settled, because the units came in and went back. The stated inventory rolled -1 to 6 for the two loans before the count, a roll and not a count. When either loan is returned, mark it settled with the date and roll the inventory down by its units in the same fold.","<b>COUNTED 1 UNIT AGAINST 6 ON THE BOOK: 5 UNIT UNEXPLAINED.</b> His count on 08 Sep, after the borrowings, with nothing delivered anywhere since the CS6-BS rows of 07 Sep; asked where the 5 unit went, he said the count stands. The count wins: the stated inventory is 1 and COUNT_ON.salt moves to 2026-09-08. The drift of -5 joins the last three counts (04 Sep 0, 06 Sep -1.3) and the leak rises with it, so every floor moves: 1 unit RM 54.87 to RM 58.56, 2 unit RM 109.73 to RM 117.12, 12.5 unit RM 685.82 to RM 732, and the board's ask for 1 unit RM 120 to RM 130, all read from the desk's own ladder before and after. The replacement cost is unchanged at RM 48.67. The self-use and shrinkage plug stands at 67.95 unit.","<b>WHAT THE DESK NOW SHOWS FOR A LOAN IN.</b> The Inventory walk prints <i>Borrowed in (to return)</i> as its own line and the movement chart a bar beside Received; the history walk lands the units on the day they were borrowed rather than at the opening, where a loan out still sits; the Order book folds the open borrowings under <i>Salt you borrowed</i> with the lender, the date and the units to return. <code>loanDrawUnits</code> is the net of out less in, so the position engine and the phone payload are untouched. Proved on the real master over a fixture book in the suite, red before the change on all four counts.","<b>A HAND-STAGED COUNT WAS A SALE.</b> <code>drafts.mjs --draft</code> wrote every collection but purchases as sales, so the count planned as <i>SELL undefined</i>; it now honours the drafter's five other collections. The desk's stated inventory of 1 stands against 8.5 unit still owed out to CJ4-BJ and 7 unit owed back to the lenders; the salt reorder mark of 15 unit is passed on every reading."]},
 
 {"v":"v517","d":"08 Sep 2026","t":"SALT QUOTE: THE 100 UNIT TIER IS RM 4,000","n":["<b>HIS WORD, 08 SEP 2026: SA5-BTR's 100 unit tier is RM 4,000, RM 40 a unit.</b> Down RM 300 from the RM 4,300 (RM 43) quoted on 20 Aug; the other four tiers stand at 6.25 unit RM 350, 12.5 unit RM 650, 25 unit RM 1,200 and 50 unit RM 2,200. A quote, not a purchase: no lot, no cost and no floor moves.","<b>THE TAPER STEEPENS AND FIVE ASKS COME DOWN.</b> The salt ladder's taper is fitted from the quoted tiers and moves from -0.100 to -0.121 (fit 0.98 to 1.00), so the margin the ask carries falls faster with size. Every floor holds. The asks at 0.5 to 3 unit hold, RM 70 to RM 310; 3.5 unit RM 360 to RM 350, 4.5 unit RM 450 to RM 440, 5 unit RM 490 to RM 480, 6.25 unit RM 610 to RM 600 and 12.5 unit RM 1,150 to RM 1,120. Figures read from the engine on the desk's own snapshot before and after the edit, and the sealed price list follows on this deploy."]},
 
@@ -5807,7 +5807,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='08 Sep 2026, 09:59 KL';
+const LAST_UPDATED='08 Sep 2026, 11:30 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -15198,7 +15198,19 @@ const WB_NO_PROD={amend:1,contact:1,addid:1};
    the phone. Same endpoints, same rule: what is approved is the ROW the drafter wrote, with
    the cost it draws and the margin it makes beside the price, and nothing is computed here.
    Cloud only: the laptop server has no drafts table. */
-let AP_DRAFTS=[],AP_REFUSED=[],apNeedKey=false,apUnread='',apBusy={},apMsg='';
+let AP_DRAFTS=[],AP_REFUSED=[],AP_CLOCK=null,apNeedKey=false,apUnread='',apBusy={},apMsg='';
+/* v519: THE CLOCK ON EVERY APPROVAL, his instruction of 08 Sep 2026: how long the last tap took
+   to reach the phone and to be marked committed, from D1's own timestamps. A dash where a
+   timestamp is missing: a fold stated directly has no tap, and a row marked before v519 has no
+   proof time. Pure, so the suite reads it. */
+function apClock(c){
+  if(!c||!c.committedAt)return '';
+  const sec=(a,b)=>(a&&b)?Math.max(0,Math.round((new Date(b)-new Date(a))/1000)):null;
+  const say=(n)=>n==null?'&mdash;':n>=120?Math.round(n/60)+' min':n+' s';
+  const live=sec(c.decidedAt,c.liveAt),done=sec(c.decidedAt,c.committedAt);
+  const when=c.committedAt?new Date(c.committedAt).toLocaleString('en-GB',{timeZone:'Asia/Kuala_Lumpur',day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}):'';
+  return `<div class="card" style="margin-bottom:8px"><div class="cardh">Last approval reached the phone in <b>${say(live)}</b> <span class="sub">${say(done)} to committed &middot; ${esc(codeOf(c.party||'')||c.id||'')}, ${esc(when)}</span></div></div>`;
+}
 function tabApprove(){
   /* v385: THE LAPTOP COPY WAS A DEAD END. One sentence saying the decision happens somewhere
      else, and no way to tell whether anything was waiting or what to do about it. It cannot
@@ -15247,7 +15259,7 @@ async function apLoad(quiet){
   try{ let r=await go(); if(r.status===401&&!quiet&&saltAskWriteKey())r=await go();
     apNeedKey=(r.status===401); const j=r.ok?await r.json():null;
     apUnread=(r.ok||r.status===401)?'':'the Worker answered http '+r.status;
-    AP_DRAFTS=(j&&j.drafts)||[]; AP_REFUSED=(j&&j.refused)||[];
+    AP_DRAFTS=(j&&j.drafts)||[]; AP_REFUSED=(j&&j.refused)||[]; AP_CLOCK=(j&&j.clock)||null;
   }catch(e){ apUnread=(e&&e.message)||'the request did not complete'; AP_DRAFTS=[]; AP_REFUSED=[]; }
   apDraw();
 }
@@ -15326,8 +15338,8 @@ function apDraw(){
   if(!box)return;
   if(apNeedKey)box.innerHTML='<div class="warnpill" style="display:block">The write key is needed to read the drafts and it was not accepted. Reload to be asked again. <b>This is not an empty queue: rows may be waiting.</b></div>';
   else if(apUnread)box.innerHTML='<div class="warnpill" style="display:block;background:rgba(212,105,76,.14);border-color:var(--crim);color:var(--crim)">The drafts could not be read: '+esc(apUnread)+'. <b>This is not an empty queue: rows may be waiting on a tap.</b> Open this part again once the connection is back.</div>';
-  else if(!AP_DRAFTS.length)box.innerHTML='<div class="card"><div class="dsc">Nothing waiting. Every drafted row has been decided.</div></div>';
-  else box.innerHTML=AP_DRAFTS.map(apCard).join('');
+  else if(!AP_DRAFTS.length)box.innerHTML=apClock(AP_CLOCK)+'<div class="card"><div class="dsc">Nothing waiting. Every drafted row has been decided.</div></div>';
+  else box.innerHTML=apClock(AP_CLOCK)+AP_DRAFTS.map(apCard).join('');
   box.querySelectorAll('button[data-ap]').forEach(b=>{b.onclick=()=>apDecide(b.dataset.id,b.dataset.ap,b);});
   if(ref)ref.innerHTML=AP_REFUSED.length?`<h2 style="margin-top:18px">Already queued, and not yours to approve <span class="rule"></span></h2><div class="dsc" style="margin-bottom:4px">In hand and needing a person at the laptop; shown so they are not entered twice.</div>`
     +AP_REFUSED.map(r=>{const e=r.entry||{},seen=(r.seenAt||'').slice(0,10);return `<div class="card" style="margin-top:8px"><div style="font-size:13px">${esc(e.raw||((e.type||'Entry')+' '+(r.party||'')))}</div><div class="dsc" style="margin-top:5px">${esc(r.why||'')}</div><div class="dsc" style="margin-top:3px;color:var(--dim)">${esc(r.source||'drafter')}${seen?', '+esc(seen):''}</div></div>`;}).join(''):'';

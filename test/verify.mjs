@@ -744,6 +744,10 @@ section("Worker — drafts and approval");
             return self.rows.get(binds[0]) || null;
           }
           if (/^SELECT .* FROM draft WHERE id=/.test(s)) return self.rows.get(binds[0]) || null;
+          if (/^SELECT .* FROM draft WHERE committed_at IS NOT NULL ORDER BY committed_at DESC LIMIT 1/.test(s)) {
+            const done = [...self.rows.values()].filter((r) => r.committed_at).sort((a, b) => a.committed_at < b.committed_at ? 1 : -1);
+            return done[0] || null;
+          }
           throw new Error("unmocked first(): " + s);
         },
         async all() {
@@ -777,9 +781,9 @@ section("Worker — drafts and approval");
             if (r && r.status === "pending") { r.status = binds[0]; r.decided_at = binds[1]; r.decided_by = binds[2]; }
             return { meta: { changes: 1 } };
           }
-          if (/^UPDATE draft SET committed_at=/.test(s)) {
-            const r = self.rows.get(binds[1]);
-            if (r && !r.committed_at) r.committed_at = binds[0];
+          if (/^UPDATE draft SET committed_at=\?1, live_at=\?2 WHERE id=\?3/.test(s)) {
+            const r = self.rows.get(binds[2]);
+            if (r && !r.committed_at) { r.committed_at = binds[0]; r.live_at = binds[1]; }
             return { meta: { changes: 1 } };
           }
           throw new Error("unmocked run(): " + s);
@@ -3604,9 +3608,18 @@ section("v411: the Worker's SQL run against the real schema");
     ok((await call("POST", "/drafts/" + ID + "/approve", {})).status === 200, "it approves");
     ok((await call("POST", "/drafts/" + ID + "/reject", {})).status === 409,
       "a reject AFTER an approve is refused, so a double tap cannot flip a decision");
-    ok((await call("POST", "/drafts/" + ID + "/committed", {})).j.committedAt, "an approved draft commits");
+    /* v519: the proof time rides with the mark and is read back, on the real schema */
+    const LIVE = "2026-09-08T04:00:30.000Z";
+    const cm = await call("POST", "/drafts/" + ID + "/committed", { liveAt: LIVE });
+    ok(cm.j.committedAt && cm.j.liveAt === LIVE, "an approved draft commits, and carries the proof time it was given");
     ok((await call("POST", "/drafts/" + ID + "/committed", {})).j.alreadyCommitted === true,
       "and committing it twice is reported rather than applied twice");
+    const back = await call("GET", "/drafts?status=pending");
+    ok(back.j.clock && back.j.clock.id === ID && back.j.clock.liveAt === LIVE && back.j.clock.decidedAt && back.j.clock.committedAt,
+      "the pending view carries the clock: the last committed draft with tap, phone and committed times");
+    ok((await call("POST", "/drafts/" + ID + "/committed", { liveAt: "not a date" })).j.alreadyCommitted === true
+      && (await call("GET", "/drafts?status=all")).j.drafts.find((d) => d.id === ID).liveAt === LIVE,
+      "a proof time that is not a date is dropped, and the stored one stands");
   }
 }
 
@@ -7187,6 +7200,19 @@ section("v518: salt borrowed in is a loan the other way");
     ok(i > 0 && Math.abs(d0) < 0.005 && Math.abs(dL - 7) < share, `the history walk lands the 7 unit on ${LD}, not on day 0 (day 0 moved ${d0.toFixed(2)}, the loan day ${dL.toFixed(2)}, plug share ${share.toFixed(2)})`);
     try { w.close(); } catch (e) { }
   } finally { try { rm7(B7); } catch (e) { } try { rm7(M7); } catch (e) { } }
+}
+
+section("v519: the clock on every approval, as the phone says it");
+{
+  const { openMaster: om9 } = await import("../tools/payload.mjs");
+  const { w } = await om9();
+  const read = (c) => String(w.eval("apClock(" + JSON.stringify(c) + ")")).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
+  const c = { id: "x", party: "CJ4-BJ", decidedAt: "2026-09-08T04:00:00.000Z", liveAt: "2026-09-08T04:01:23.000Z", committedAt: "2026-09-08T04:01:30.000Z" };
+  ok(/reached the phone in 83 s/.test(read(c)) && /90 s to committed/.test(read(c)), "83 s to the phone and 90 s to committed, from the three timestamps");
+  ok(/reached the phone in .*—|&mdash;/.test(String(w.eval("apClock(" + JSON.stringify({ ...c, liveAt: null }) + ")"))) , "no proof time reads as a dash, not as zero");
+  ok(w.eval("apClock(null)") === "" && w.eval("apClock({id:'y'})") === "", "no committed draft yet prints nothing");
+  ok(/reached the phone in 9 min/.test(read({ ...c, liveAt: "2026-09-08T04:08:40.000Z" })), "past two minutes it says minutes");
+  try { w.close(); } catch (e) { }
 }
 
 const FLOOR_ASSERTIONS = 1330, FLOOR_SECTIONS = 97;   /* stale records skipped: 1334 everywhere, 1335 here */

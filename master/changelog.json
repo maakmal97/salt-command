@@ -1,5 +1,15 @@
 [
  {
+  "v": "v519",
+  "d": "08 Sep 2026",
+  "t": "THE CLOCK ON EVERY APPROVAL",
+  "n": [
+   "<b>PART A, STEP 1 OF THE CHAIN HIS INSTRUCTION OF 08 SEP 2026 ASKS FOR: everything within a minute of a tap on Approve, with a literal end-to-end check.</b> Measured first: yesterday's CJ4-BJ approval took about 8 minutes from dispatch to the phone and 8 and a half to committed, of which the Claude Code action folding was 5 minutes 12 seconds and the full test suite in the deploy job 2 minutes 9 seconds. This version builds the clock the later steps are measured against and changes nothing else about the chain.",
+   "<b>THE CLOCK.</b> The draft table gains <code>live_at</code> (migration 0006): the moment the deploy job proved the phone was serving the build that carries the row. The tap is <code>decided_at</code>; <code>committed_at</code> follows the proof by seconds. The deploy job captures the proof time and passes it to <code>drafts.mjs --committed --live</code>, which writes both and prints tap-to-phone and tap-to-committed per row into the run summary. <code>POST /drafts/&lt;id&gt;/committed</code> accepts the same <code>liveAt</code>.",
+   "<b>ON THE PHONE.</b> The pending drafts response carries <code>clock</code>, the last committed draft's three timestamps, and the Approve view leads with it: how long the last approval took to reach the phone and to be committed, with the party and the time. A dash where a timestamp is missing: a fold stated directly has no tap, and every row marked before this version has no proof time. Four assertions in the suite: the route stores and returns the proof time on the real schema, the mock store agrees, the clock rides the pending view, and the phone's sentence reads it."
+  ]
+ },
+ {
   "v": "v518",
   "d": "08 Sep 2026",
   "t": "BORROWED 7 UNIT IN, AND COUNTED 1",

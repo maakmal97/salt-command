@@ -350,7 +350,7 @@ jobs:
           want=$(node -p "require('./public/rev.json').id")
           for i in 1 2 3 4 5 6; do
             got=$(curl -fsS --max-time 20 https://salt-command.qyts8mh72kyg.workers.dev/rev | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).id")
-            [ "$got" = "$want" ] && { echo "live at $got"; exit 0; }
+            [ "$got" = "$want" ] && { echo "live at $got"; echo "LIVE_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_ENV"; exit 0; }
             echo "attempt $i: live=$got want=$want"
             sleep 10
           done
@@ -371,7 +371,8 @@ jobs:
           fi
           ids=$(node -p "(require('./master/_folded.json').ids||[]).join(' ')")
           if [ -z "$ids" ]; then echo "_folded.json names no ids."; exit 0; fi
-          node tools/drafts.mjs --committed $ids
+          # v519: the proof time rides with the mark, so D1 carries tap, phone and committed per row
+          node tools/drafts.mjs --committed $ids --live "${LIVE_AT:-}"
 
       # TELL THE PHONE, IF THERE IS A KEY TO DO IT WITH.
       #
