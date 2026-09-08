@@ -1,5 +1,14 @@
 [
  {
+  "v": "v533",
+  "d": "08 Sep 2026",
+  "t": "THE CUSTOMERS CHART READS ACROSS AGAIN; THE QUOTE LEAVES THE LEDGER",
+  "n": [
+   "<b>WHAT THE REVENUE-AGAINST-MARGIN CHART IS.</b> One circle per customer: across is the size of a typical order with them, revenue per order; up is their margin; the area of the circle is everything they have ever bought; the dashed line is the book's weighted average margin. Gold circles are the top quartile by margin, the customers who make the money; grey-blue the bottom quartile, the ones kept for reasons other than margin. Since some version after v261 every circle sat against the left edge with no figures on the axis: the chart has no top-level type, its first dataset is the average line, and a line's default x scale is a category axis. The axis is now told it is linear, with its bounds, and the circles spread across as they were drawn to.",
+   "<b>THE SUPPLIER QUOTE LEAVES THE LEDGER.</b> The table at the foot of the Ledger was Salt's quote alone, a bare copy of what Inventory, Sourcing already carries for each product as a ladder with the rate, the cash, the units after the leak, the cover and the profit at each tier; the oil quote of 07 Sep has been there under the Oil block since it was folded. The copy is gone and the quote has one home, beside the sourcing it informs."
+  ]
+ },
+ {
   "v": "v532",
   "d": "08 Sep 2026",
   "t": "A RE-KEYED PARTY READS BACK",
