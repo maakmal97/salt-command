@@ -59,6 +59,11 @@ The fold routine is `docs/CLOUD_FOLD.md`; statements `docs/STATEMENTS.md`; desig
    ```
    Get-ChildItem .git -Recurse -Include *.lock,tmp_obj_* -Force | Remove-Item -Force
    ```
+8. **Two deployers only: the Actions job and `tools/update.mjs`.** Cloudflare Workers Builds
+   had been connected to the Worker since 08 Aug 2026 and deployed every push to master by
+   itself, outside the gate (278 builds). Disconnected in the dashboard on 08 Sep 2026 after
+   its build token was deleted; never reconnect it, and never select a build token on that
+   screen.
 
 ## The one surface
 
