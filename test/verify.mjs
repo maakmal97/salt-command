@@ -5438,6 +5438,10 @@ section("v456: an undated row says so wherever its date is printed");
   const { join: j6 } = await import("node:path");
   const bk6 = JSON.parse(rf6(j6(REPO, "ledger", "book.json"), "utf8"));
   const sup6 = bk6.purchases.find((x) => x.supplier).supplier, cus6 = bk6.sales.find((x) => x.customer && x.date).customer;
+  /* v516: the census counts the Sourcing tab's per-lot table, which the desk replaces with "nothing left on
+     the inventory" once the shelf is at or below zero; the fixture pins its own shelf so the count does not
+     move with the live book (the 07 Sep fold rolled it to -1 and the census read 13) */
+  bk6.STATED_STOCK = 10;
   bk6.sales.push({ rid: "f13", customer: cus6, product: "salt", qty: 2, total: 200, cost: 64, cash: 200, deliveredQty: 0 });
   bk6.sales.push({ rid: "f16", customer: cus6, product: "salt", qty: 1, total: 100, cost: 64, cash: 0, deliveredQty: 1 });
   bk6.purchases.push({ rid: "f14", supplier: sup6, product: "salt", qty: 10, total: 500, cash: 500, receivedQty: 0 });

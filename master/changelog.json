@@ -1,5 +1,16 @@
 [
  {
+  "v": "v516",
+  "d": "08 Sep 2026",
+  "t": "TWO UNIT TO CS6-BS ON CREDIT, AND S136 PAID RM 160 AT THE OPEN",
+  "n": [
+   "<b>THREE ROWS ON HIS WORD OF 08 SEP, re-read from the three taps of 07 Sep evening that never reached the fold.</b> The 13:32 tap sold 1 unit at RM 125 via CS6-BS to a downstream party the drafter refused as naming no counterparty; the 13:34 tap sold 1 unit to CS6-BS at RM 110 and was rejected on the phone; the 13:35 tap paid RM 10 against s136 and was rejected with it. Read to him in a Code session on 08 Sep: there is no such party as the downstream code, both advances to CS6-BS are real, each is 1 unit at RM 110 with the RM 15 delivery divided equally at RM 7.50 inside each total, and s136 was paid RM 160 at the open. Drafted again through the same drafter, approved on his word, and folded here; the three KV entries clear as the watermark passes them.",
+   "<b>TWO 1-UNIT ADVANCES TO CS6-BS, RM 110 EACH, NOTHING PAID.</b> RM 102.50 on the goods of each after the RM 7.50 delivery inside the total. The desk's own ladder for 1 unit puts the floor at RM 54.87, the ask at RM 120 and the ceiling at RM 150, so each order stands RM 47.63 clear of the floor and RM 17.50 under the ask. Costed at the inventory's own RM 48 a unit, the 03 Sep lot of 25 unit from SA5-BTR, which is the figure the pricing snapshot carries: RM 62 on each order at 56.4%. RM 110 a unit is the rate CS6-BS paid on 29 Jul and sits inside their own RM 95 to RM 126.67 range on 1 to 1.5 unit; the drafter raised no rate flag. Both delivered in full on 07 Sep, so CS6-BS now carries RM 220 and 2 unit of credit, exactly the associate cap of 2 unit of salt. CS6-BS carried nothing outstanding before these rows: the two July rows with no cash were settled in rebate, not owed.",
+   "<b>S136 CORRECTED: RM 160 PAID AT THE OPEN, RM 25 OWING.</b> The row was folded at v515 with RM 150 paid and RM 35 owing; on his word of 08 Sep the cash paid when the order opened was RM 160, so the correction sets cash from 150 to 160 and CR3-DAM's balance from RM 35 to RM 25. A correction, not a payment: nothing moved on 07 Sep beyond what the row now says. The RM 10 fulfilment tapped at 13:35 was the phone's way to the same RM 160 and is superseded by this.",
+   "<b>THE INVENTORY ROLLS 1 TO -1.</b> Two unit went out to CS6-BS on 07 Sep against 1 unit on hand after CJ4-BJ's 4 unit the same day, so the stated inventory stands one unit below zero. A roll and not a count; COUNT_ON.salt stays at 2026-09-06. A negative shelf says a lot has landed since the 06 Sep count that is not on the book, or the count was one short; no row is invented to explain it. With CJ4-BJ's 8.5 unit still owed out the salt reorder point of 15 unit is well passed."
+  ]
+ },
+ {
   "v": "v515",
   "d": "07 Sep 2026",
   "t": "12.5 UNIT TO CJ4-BJ, NOTHING PAID AND 4 UNIT ALREADY OUT",
