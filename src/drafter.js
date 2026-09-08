@@ -611,14 +611,27 @@ export function draftRow(entry, book) {
     }
 
     const key = pay.orderKey;
-    if (!key) return { skip: "this amendment names no order, so which row it amends is still a judgement" };
-    const open = book.state && book.state.OPEN;
-    if (!open || !open.byKey) {
-      return { skip: "the mirror carries no open-order snapshot, so the target row cannot be confirmed. Reseed the mirror and it will draft" };
+    const open = (book.state && book.state.OPEN) || null;
+    /* 09 Sep 2026: THE RID NAMES THE ROW, read off the book itself; the open-order snapshot by key
+       is the fallback for an entry queued before rids existed. Two identical CS6-BS orders of 07 Sep
+       shared one key, so the snapshot held one of them under it, the draft named the key, the fold
+       refused it as matching two rows, and neither twin could be fulfilled from the phone. The row
+       is shaped with the engine's own ledgerRow, which is what the snapshot entries are. */
+    let t = null;
+    if (pay.rid) {
+      const found = findRow(book, pay.rid);
+      if (found.row && !found.row.cancelled && POSITION_ENGINE.openable(POSITION_ENGINE.ledgerRow(found.row, found.collection === "purchases" ? "B" : "S", "salt")))
+        t = Object.assign(POSITION_ENGINE.ledgerRow(found.row, found.collection === "purchases" ? "B" : "S", "salt"), { key: POSITION_ENGINE.ovKey(found.row) });
     }
-    const t = open.byKey[key];
     if (!t) {
-      return { skip: `no OPEN order on the book matches ${key}. It has been settled or cancelled since the phone listed it, or it was folded already` };
+      if (!key) return { skip: "this amendment names no order, so which row it amends is still a judgement" };
+      if (!open || !open.byKey) {
+        return { skip: "the mirror carries no open-order snapshot, so the target row cannot be confirmed. Reseed the mirror and it will draft" };
+      }
+      t = open.byKey[key];
+      if (!t) {
+        return { skip: `no OPEN order on the book matches ${key}. It has been settled or cancelled since the phone listed it, or it was folded already` };
+      }
     }
     const dir2 = t.dir === "B" ? "BUY" : "SELL";
 
@@ -648,7 +661,7 @@ export function draftRow(entry, book) {
       if (newQty < (t.mv || 0) - 0.005) {
         flags.push(`The new quantity of ${round(newQty)} unit is less than the ${round(t.mv || 0)} unit already moved against this order.`);
       }
-      if (open.v && book.version && open.v !== book.version) {
+      if (open && open.v && book.version && open.v !== book.version) {
         flags.push(`The open-order snapshot was taken at ${open.v} but the mirror is at ${book.version}, so the terms it is restating from may be stale.`);
       }
       const rate = newQty > 0 ? newTotal / newQty : null;
@@ -668,7 +681,7 @@ export function draftRow(entry, book) {
       return {
         collection: isSale ? "sales" : "purchases",
         row, reasoning, flags,
-        amends: key,
+        amends: t.rid || key,
         amendKind: kind,
       };
     }
@@ -730,7 +743,7 @@ export function draftRow(entry, book) {
     return {
       collection: dir2 === "BUY" ? "purchases" : "sales",
       row, reasoning, flags,
-      amends: key,
+      amends: t.rid || key,
       amendKind: kind,
     };
   }

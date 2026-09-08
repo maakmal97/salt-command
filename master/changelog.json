@@ -1,5 +1,16 @@
 [
  {
+  "v": "v543",
+  "d": "09 Sep 2026",
+  "t": "THE TWO CS6-BS UNITS OF 07 SEP AS THEY WERE: ONE RESOLD AND PAID, ONE ON CREDIT WITH ITS DELIVERY PAID",
+  "n": [
+   "<b>THE TWO CS6-BS UNITS OF 07 SEP, AS HE RECORDS THEM.</b> One unit was resold and books to the CS6-BS-R account, paid in full on 07 Sep; one unit CS6-BS took for themselves on credit, RM 7.50 of delivery paid on 08 Sep and RM 110 outstanding. Both at RM 110 on the goods with RM 7.50 delivery inside, one RM 15 trip shared between them. Three entries on his word of 09 Sep: a correction moving s138 to CS6-BS-R, a fulfilment of RM 117.50 on it dated 07 Sep, and a fulfilment of RM 7.50 on s139 dated 08 Sep. At RM 110 a unit the goods sit RM 51.44 above the RM 58.56 floor for 1 unit and RM 20 under the RM 130 ask, costed at RM 48 a unit from the inventory.",
+   "<b>TWO APPROVED PHONE AMENDMENTS WERE REJECTED ON HIS WORD, NOT FOLDED.</b> An RM 7.50 fulfilment tapped on 08 Sep named the key both twins share, so the fold would have refused it as matching two rows; a correction tapped the same day zeroed s138's cash and delivered units, which contradicts the record above. Both are marked rejected in the draft table with the reason, their queue entries withdrawn, and the figures re-entered here by rid.",
+   "<b>A FULFILMENT NAMES ITS ROW BY RID FROM THIS VERSION.</b> The drafter resolved a fulfilment through the open-order snapshot by key alone, so of two identical orders only one could ever be fulfilled from the phone; it reads the rid off the book first now, shaped with the engine's own ledgerRow, and falls back to the key for an entry queued before rids existed. The suite holds it: a twin fulfilled by rid drafts against that twin, and one named by key alone still resolves.",
+   "<b>THE INVENTORY DID NOT MOVE.</b> No unit left or landed; the salt inventory stands at 1 from the 08 Sep count. CS6-BS-R stands at ten orders, every one paid on the day; CS6-BS has RM 110 open on 1 unit and nothing else."
+  ]
+ },
+ {
   "v": "v542",
   "d": "08 Sep 2026",
   "t": "A PENDING SALT ORDER IS WITHDRAWN IN FULL",

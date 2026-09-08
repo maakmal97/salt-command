@@ -7606,6 +7606,19 @@ section("08 Sep 2026: the audit fixes");
     purchases: bookA.purchases.concat([{ date: "2026-08-20", supplier: "SA5-BTR", qty: 25, total: 1500, inTransit: true, receivedQty: 0 }]) };
   const cf = costFor(transit, "salt");
   ok(cf.cost === 56 && cf.mayBlend === false, `a lot in transit is not the newest received lot: cost ${cf.cost}, blend ${cf.mayBlend}`);
+  /* 09 Sep 2026: a fulfilment names its row by rid. Two twins share one key; the snapshot can hold
+     only one under it, and a draft naming the key was refused at the fold as matching two rows. */
+  {
+    const t1 = { rid: "tw1", key: "CH4-MLR|2026-09-12|100", p: "CH4-MLR", q: 1, t: 100, d: "2026-09-12", cash: 0, mv: 1, dir: "S" };
+    const t2 = { ...t1, rid: "tw2" };
+    const bkT = { ...bookA, sales: bookA.sales.concat([{ rid: "tw1", customer: "CH4-MLR", date: "2026-09-12", qty: 1, total: 100, cash: 0, deliveredQty: 1 },
+      { rid: "tw2", customer: "CH4-MLR", date: "2026-09-12", qty: 1, total: 100, cash: 0, deliveredQty: 1 }]),
+      state: { ...bookA.state, OPEN: { byKey: { [t1.key]: t2 } } } };
+    const fu = draftRow({ at: "2026-09-16T01:00:00.000Z", payload: { mode: "amend", direction: "SELL", party: "CH4-MLR", rid: "tw1", orderKey: t1.key, kind: "Fulfilment", cash: 100, kg: 0, date: "2026-09-13" } }, bkT);
+    ok(!fu.skip && fu.amends === "tw1", `a fulfilment on one of two twins names the twin it was tapped on (${fu.skip || fu.amends})`);
+    const fk = draftRow({ at: "2026-09-16T01:00:00.001Z", payload: { mode: "amend", direction: "SELL", party: "CH4-MLR", orderKey: t1.key, kind: "Fulfilment", cash: 100, kg: 0, date: "2026-09-13" } }, bkT);
+    ok(!fk.skip && fk.amends === "tw2", `and an entry with no rid still resolves by key, naming the rid the snapshot holds (${fk.skip || fk.amends})`);
+  }
 
   /* the run: an entry older than the watermark that the draft table does not know is drafted, not lost */
   const mirror = (b) => {

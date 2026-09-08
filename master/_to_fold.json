@@ -1,0 +1,155 @@
+{
+ "ok": true,
+ "count": 3,
+ "approved": [
+  {
+   "id": "2026-09-08T17:58:27.052Z",
+   "collection": "sales",
+   "row": {
+    "rid": "s138",
+    "qty": 1,
+    "total": 117.5,
+    "cash": 0,
+    "date": "2026-09-07",
+    "product": "salt",
+    "changes": [
+     {
+      "field": "assoc",
+      "from": "CS6-BS",
+      "to": "CS6-BS-R"
+     }
+    ],
+    "customer": "CS6-BS"
+   },
+   "reasoning": "Correction against CS6-BS's order of 1 unit for RM 117.5 dated 2026-09-07 (s138). Sets assoc from CS6-BS to CS6-BS-R. It moves no cash and no stock: it changes what the row says about itself. The row is not rewritten here. The fold applies the patch, so there is one definition of what a correction does rather than two.",
+   "flags": [
+    "CS6-BS-R is on the book but is not listed as an associate, so crediting a downsell to them is a new relationship rather than an existing one.",
+    "This is an ADVANCE: 1 unit goes out with RM 117.5 unpaid. Check it against CS6-BS-R's credit cap."
+   ],
+   "amends": "s138",
+   "amendKind": "Correction",
+   "entry": {
+    "at": "2026-09-08T17:58:27.052Z",
+    "type": "AMEND",
+    "party": "CS6-BS",
+    "qty": 0,
+    "total": 0,
+    "status": "correction",
+    "raw": "Correction on CS6-BS s138: the resold unit books to the CS6-BS-R account, on his word 09 Sep 2026",
+    "payload": {
+     "mode": "amend",
+     "direction": "SELL",
+     "party": "CS6-BS",
+     "assoc": null,
+     "downstream": null,
+     "orderCode": null,
+     "linkTo": null,
+     "sameDay": false,
+     "rid": "s138",
+     "kind": "Correction",
+     "date": "2026-09-09",
+     "fields": {
+      "assoc": "CS6-BS-R"
+     },
+     "qty": 0,
+     "total": 0,
+     "cash": 0,
+     "kg": 0,
+     "note": "On his word, 09 Sep 2026: the unit was resold and books to the CS6-BS-R account, as every R2 row before it."
+    }
+   },
+   "decidedAt": "2026-09-08T17:59:06.760Z",
+   "decidedBy": "desk, on his word 09 Sep 2026: the resold unit books to CS6-BS-R and is paid in full on 07 Sep; the credit unit paid its RM 7.50 delivery portion on 08 Sep"
+  },
+  {
+   "id": "2026-09-08T17:58:27.053Z",
+   "collection": "sales",
+   "row": {
+    "qty": 1,
+    "total": 117.5,
+    "cash": 0,
+    "date": "2026-09-07",
+    "customer": "CS6-BS"
+   },
+   "reasoning": "Fulfilment against CS6-BS's order of 1 unit for RM 117.5 agreed 2026-09-07. RM 117.5 and 0 unit move on 2026-09-07, against RM 117.5 and 0 unit outstanding. Leaves RM 0 and 0 unit outstanding. The row itself is NOT recomputed here: ovAmend in the master applies it, so there is one definition of what a fulfilment does rather than two.",
+   "flags": [
+    "This SETTLES the order in full: nothing is left outstanding after it."
+   ],
+   "amends": "s138",
+   "amendKind": "Fulfilment",
+   "entry": {
+    "at": "2026-09-08T17:58:27.053Z",
+    "type": "AMEND",
+    "party": "CS6-BS",
+    "qty": 0,
+    "total": 117.5,
+    "status": "paid",
+    "raw": "Fulfilment on CS6-BS s138: RM 117.50 cash on 2026-09-07, paid in full on his word 09 Sep 2026",
+    "payload": {
+     "mode": "amend",
+     "direction": "SELL",
+     "party": "CS6-BS",
+     "assoc": null,
+     "downstream": null,
+     "orderCode": null,
+     "linkTo": null,
+     "sameDay": false,
+     "rid": "s138",
+     "kind": "Fulfilment",
+     "date": "2026-09-07",
+     "qty": 0,
+     "total": 117.5,
+     "cash": 117.5,
+     "kg": 0,
+     "note": null
+    }
+   },
+   "decidedAt": "2026-09-08T17:59:06.760Z",
+   "decidedBy": "desk, on his word 09 Sep 2026: the resold unit books to CS6-BS-R and is paid in full on 07 Sep; the credit unit paid its RM 7.50 delivery portion on 08 Sep"
+  },
+  {
+   "id": "2026-09-08T17:58:27.054Z",
+   "collection": "sales",
+   "row": {
+    "qty": 1,
+    "total": 117.5,
+    "cash": 0,
+    "date": "2026-09-07",
+    "customer": "CS6-BS"
+   },
+   "reasoning": "Fulfilment against CS6-BS's order of 1 unit for RM 117.5 agreed 2026-09-07. RM 7.5 and 0 unit move on 2026-09-08, against RM 117.5 and 0 unit outstanding. Leaves RM 110 and 0 unit outstanding. The row itself is NOT recomputed here: ovAmend in the master applies it, so there is one definition of what a fulfilment does rather than two.",
+   "flags": [],
+   "amends": "s139",
+   "amendKind": "Fulfilment",
+   "entry": {
+    "at": "2026-09-08T17:58:27.054Z",
+    "type": "AMEND",
+    "party": "CS6-BS",
+    "qty": 0,
+    "total": 7.5,
+    "status": "part",
+    "raw": "Fulfilment on CS6-BS s139: RM 7.50 cash on 2026-09-08, the delivery portion, on his word 09 Sep 2026",
+    "payload": {
+     "mode": "amend",
+     "direction": "SELL",
+     "party": "CS6-BS",
+     "assoc": null,
+     "downstream": null,
+     "orderCode": null,
+     "linkTo": null,
+     "sameDay": false,
+     "rid": "s139",
+     "kind": "Fulfilment",
+     "date": "2026-09-08",
+     "qty": 0,
+     "total": 7.5,
+     "cash": 7.5,
+     "kg": 0,
+     "note": null
+    }
+   },
+   "decidedAt": "2026-09-08T17:59:06.760Z",
+   "decidedBy": "desk, on his word 09 Sep 2026: the resold unit books to CS6-BS-R and is paid in full on 07 Sep; the credit unit paid its RM 7.50 delivery portion on 08 Sep"
+  }
+ ]
+}

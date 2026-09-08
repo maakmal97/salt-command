@@ -1,6 +1,6 @@
 {
-  "v": "v542",
-  "derivedFrom": "9aaedf5890768165",
+  "v": "v543",
+  "derivedFrom": "7966e06ba431b790",
   "tables": {
     "sales": {
       "rows": 141,
@@ -102,7 +102,7 @@
           ]
         },
         "downstream": {
-          "present": 2,
+          "present": 1,
           "of": 141,
           "optional": true,
           "types": [
@@ -150,7 +150,7 @@
           ]
         },
         "paidOn": {
-          "present": 89,
+          "present": 90,
           "of": 141,
           "optional": true,
           "types": [
