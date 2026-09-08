@@ -1,77 +1,53 @@
-# THE TWO HALVES OF THE CLOUD COMMIT THAT NEED A CREDENTIAL, added 20 Aug 2026.
+# THE CHAIN, IN ONE JOB. Rewritten 08 Sep 2026 (v520, Part A step 2 of his instruction of the
+# same day: everything within a minute of a tap on Approve, with a literal end-to-end check).
 #
-# WHY THIS EXISTS, AND WHY THE EARLIER CLAIM THAT CI NEEDS NO SECRETS WAS WRONG.
-# ci.yml holds nothing and should stay that way. But once the laptop is off the critical path,
-# two steps of the daily commit still need Cloudflare credentials and nothing else can hold
-# them: reading the APPROVED rows out of D1, and running `wrangler deploy`. A scheduled cloud
-# agent gets a git checkout and no secrets, so it cannot do either. The deploy has to live
-# somewhere, and with the laptop retired that somewhere is here.
+# WHY ONE JOB. Until v519 this was three jobs: stage (D1 to master/_to_fold.json), fold (the
+# agent, in the same run) and deploy (a SECOND run, started by the agent's push). Each job
+# started its own machine, checked out and installed, and the deploy waited for a push event to
+# be picked up. Measured on the CJ4-BJ approval of 07 Sep: about 45 seconds of job boundaries
+# and 15 seconds of push-to-run on an 8-minute chain. One job does the checkout and install
+# once, and the deploy follows the fold in the same workspace without waiting for anything.
 #
-# THE SPLIT, AND THE RULE BEHIND IT. The credential does the two mechanical things. The
-# JUDGEMENT stays with the agent, because rolling STATED_STOCK, writing a row's note, writing
-# the evolution entry and deciding what an amendment amends are not arithmetic, and a job that
-# folded rows and dropped the prose would be a worse ledger.
+# WHAT IS UNCHANGED. The credential does the mechanical things (read D1, deploy, mark
+# committed); the JUDGEMENT stays with the agent, which writes the notes and the version
+# entry. The stage still refuses to trample an unfolded batch. The deploy still proves the
+# phone is serving the build before any row is marked committed. The hourly net and the
+# daily ship check stand.
 #
-#   on a tap, and hourly   stage    this file    D1 -> master/_to_fold.json, committed
-#   same run, if staged    fold     the agent    the Claude Code action: folds, bumps, builds, tests, pushes
-#   same run, and on push  deploy   this file    wrangler deploy, then mark those ids committed
-#   11:00 MYT              prove    ship-check.yml
-#
-# (Until 03 Sep 2026 the fold was a cloud routine, six-hourly and then on demand; see the
-# fold job below for why it moved in here.)
+# THE AGENT STILL PUSHES AS THE CLAUDE GITHUB APP (until step 3 replaces the action with one
+# API call), and that push starts a second run of this file. Two guards make that harmless:
+# the concurrency group serialises it behind this run, and "Already serving?" below skips the
+# deploy when the phone already has the build. It re-publishes the statements only when the
+# push touched them.
 #
 # SETUP, AND IT IS THE ONE THING ONLY HE CAN DO:
-#   gh secret set CLOUDFLARE_API_TOKEN
-# The token needs Workers Scripts:Edit, Workers KV:Edit and D1:Edit on the account. Nothing
-# here runs until it exists; both jobs check for it and say so rather than failing obscurely.
-# Two more since 03 Sep 2026:
-#   claude setup-token, then  gh secret set CLAUDE_CODE_OAUTH_TOKEN     (the fold job's agent)
-#   npx wrangler secret put SALT_GITHUB_TOKEN                            (the Worker's dispatch:
-#     a fine-grained GitHub token on this repo alone, Actions read and write, nothing else)
+#   gh secret set CLOUDFLARE_API_TOKEN     Workers Scripts:Edit, Workers KV:Edit, D1:Edit
+#   claude setup-token, then  gh secret set CLAUDE_CODE_OAUTH_TOKEN     (the fold's agent)
+#   npx wrangler secret put SALT_GITHUB_TOKEN    (the Worker's dispatch on every approval)
 name: Cloud commit
 
 on:
   schedule:
-    # HOURLY. Originally against a fold that ran every SIX hours (his instruction of 20 Aug);
-    # that routine is disabled from 24 Aug and folding is on demand instead (CLAUDE.md,
-    # "Retiring Cowork"). Staging still runs on its own clock regardless of when, or whether
-    # by clock at all, a fold comes: a batch stays ready and recent for whenever one is asked
-    # for, and it is still what answers "is anything waiting" without needing D1 credentials.
-    # Staging twice an hour, as this briefly did, was 48 runs a day for no gain even against
-    # the old four-a-day fold, so hourly stands.
-    #
-    # THE CLOCK IS NOT THE GUARD, AND THAT WAS THE FIRST DESIGN'S MISTAKE. This was offset to
-    # clear a fold at :00, and the routine API then JITTERED the fold's minute of its own
-    # accord, twice: to :41, then to :52. A schedule whose safety depends on another scheduler
-    # keeping the minute you asked for is not safe. The real guard is in the job: it refuses to
-    # overwrite a batch that has not been folded yet. See "Do not trample an unfolded batch".
+    # HOURLY NET. Stages and folds anything an approval's dispatch missed. The clock is not
+    # the guard: the guard is in the job, which refuses to overwrite an unfolded batch.
     - cron: '5 * * * *'
   push:
     branches: [master]
     paths:
       - 'public/rev.json'
-      # A STATEMENTS COMMIT NEVER MOVES THE BUILD ID, AND THAT LEFT THE FIRST ISSUE UNPUBLISHED
-      # (03 Sep 2026). rev.json hashes the master, sw.js and src/*.js; an issue writes under
-      # statements/ and touches none of them, so the merge that carried thirty-seven encrypted
-      # September records fired nothing, the publish step below never ran, and every QR code
-      # answered "no statement published". The step existed and was correct; nothing ever
-      # reached it. A commit under statements/ now deploys, which on a push runs only the
-      # deploy job: stage and fold are gated to schedule and dispatch, and the handoff step
-      # leaves a staged batch alone when no fold happened.
+      # A statements commit never moves the build id; it deploys on its own paths (03 Sep 2026).
       - 'statements/**'
-      # THE STATEMENTS SITE IS ITS OWN WORKER (03 Sep 2026) and nothing in rev.json hashes it,
-      # so a change to it deploys on its own paths. See the two steps at the foot of deploy.
       - 'stmt/**'
       - 'wrangler.stmt.jsonc'
       - 'tools/stmt-publish.mjs'
       - 'tools/make_statements.mjs'
   workflow_dispatch:
     inputs:
-      # THE WORKER DISPATCHES THIS ON EVERY APPROVAL (03 Sep 2026), with stage_only set, so
-      # a tap on the phone stages within a minute instead of within the hour. Such a run is
-      # stage and fold only: the fold's own push is what starts the deploy run.
+      # THE WORKER DISPATCHES THIS ON EVERY APPROVAL with stage_only set. Since v520 a run that
+      # folds also deploys in the same job; stage_only now means "do not deploy when nothing
+      # was folded", which is what a double tap or an empty batch should do.
       stage_only:
-        description: 'Stage the approved rows and stop; do not deploy'
+        description: 'Stage the approved rows; deploy only if something was folded'
         type: boolean
         default: false
       test_push:
@@ -84,167 +60,7 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  # ---------------------------------------------------------------------------
-  # STAGE: put the approved, uncommitted rows where an agent with no secrets can
-  # read them. It writes nothing to the ledger and decides nothing.
-  # ---------------------------------------------------------------------------
-  stage:
-    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    outputs:
-      staged: ${{ steps.guard.outputs.staged == '1' || steps.commit.outputs.staged == '1' }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: '24', cache: npm }
-      - run: npm ci
-
-      - name: The credential exists
-        env:
-          TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-        run: |
-          if [ -z "${TOKEN:-}" ]; then
-            echo "::error::CLOUDFLARE_API_TOKEN is not set. Run: gh secret set CLOUDFLARE_API_TOKEN"
-            exit 1
-          fi
-
-      # DO NOT TRAMPLE AN UNFOLDED BATCH.
-      #
-      # If master/_to_fold.json is still in HEAD, the agent has not folded the last batch yet:
-      # either it is running right now, or its run failed. Writing a fresh batch over it would
-      # hand the agent a file it has already partly read, and the deploy job would afterwards
-      # clear a file carrying rows nobody folded. Those rows would still be approved and
-      # uncommitted in D1, so nothing is LOST, but they would be silently deferred and the
-      # logs would all read green.
-      #
-      # So the stage stands down and says so. The next tick, half an hour later, picks it up.
-      # A BATCH THE FOLD REFUSED AS A REPLAY CLEARS ITS OWN HANDOFF (v512, 07 Sep 2026). On 07 Sep
-      # a sale was queued twice three minutes apart and both were approved; the first folded as
-      # v510, the second was staged, refused by the fold as a replay of the row it had just
-      # written, and the handoff stayed in HEAD. This step then stood down on every tick, so the
-      # chain was shut with every job green until a person cleared it by hand. Now, before
-      # standing down, it asks the planner whether the whole batch is a replay; if it is, the
-      # drafts are marked committed (the row IS on the book), each refusal is recorded where the
-      # phone shows refusals, the handoff is removed, and staging carries on.
-      - name: Stand down if the last batch is still unfolded
-        id: guard
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
-        run: |
-          set -euo pipefail
-          if git cat-file -e HEAD:master/_to_fold.json 2>/dev/null; then
-            n=$(git show HEAD:master/_to_fold.json | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).count")
-            if ids=$(node tools/fold.mjs --replays); then
-              echo "::notice::The staged batch of $n row(s) is a replay of rows already on the book ($ids): clearing it."
-              node tools/drafts.mjs --committed $ids
-              for id in $ids; do node tools/drafts.mjs --refused-note "$id" "The fold refused this as a replay: a row with the same party, date, size and total is already on the book, so it was folded once and marked committed."; done
-              git config user.name "salt-command stage"
-              git config user.email "noreply@github.com"
-              git rm -q master/_to_fold.json
-              git commit -q -m "The fold refused the staged batch as a replay: $ids"
-              git push origin HEAD:master
-              echo "skip=0" >> "$GITHUB_OUTPUT"
-            else
-              echo "::notice::A batch of $n row(s) is staged and not yet folded. Standing down rather than overwriting it."
-              echo "skip=1" >> "$GITHUB_OUTPUT"
-              # A batch that is already staged is still a batch to fold, so the fold job runs on
-              # this tick too. That is how a batch left behind by a failed fold job, or staged
-              # before the fold job existed, is picked up within the hour rather than never.
-              echo "staged=1" >> "$GITHUB_OUTPUT"
-            fi
-          else
-            echo "skip=0" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Read the approved rows out of D1
-        if: steps.guard.outputs.skip == '0'
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
-        run: |
-          set -euo pipefail
-          node tools/drafts.mjs --approved > master/_to_fold.json
-          node -e "
-            const j=require('./master/_to_fold.json');
-            if(!j.ok) { console.error('::error::drafts.mjs did not report ok'); process.exit(1); }
-            console.log('approved and uncommitted: '+j.count);
-          "
-
-      # COMMIT IT, AND PROVE IT WAS COMMITTED.
-      #
-      # THE FIRST VERSION OF THIS STEP WAS SILENTLY BROKEN AND THE FIRST RUN CAUGHT IT ONLY
-      # BECAUSE THE COUNT WAS ZERO. It asked `git diff --quiet -- master/_to_fold.json`, and
-      # git diff does not see an UNTRACKED file: on the first real run the file would have been
-      # written, reported as "nothing new", and never committed. The agent would then have
-      # found no _to_fold.json, correctly concluded there was nothing to fold, and stopped.
-      # Approved rows would have sat unfolded indefinitely with every job green. That is the
-      # same shape as the 10 Aug deploy and the 19 Aug ship: a healthy log over a dead leg.
-      #
-      # So: `git status --porcelain`, which sees untracked files, and then an ASSERTION that
-      # the file is actually in HEAD when there was anything to stage. A step that reports
-      # success without checking its own effect is the fault this repo keeps writing tests for.
-      - name: Commit it, and prove it
-        id: commit
-        if: steps.guard.outputs.skip == '0'
-        run: |
-          set -euo pipefail
-          echo "staged=0" >> "$GITHUB_OUTPUT"
-          count=$(node -p "require('./master/_to_fold.json').count")
-          if [ "$count" = "0" ]; then
-            # Deliberately NOT committed. Its absence is the signal the agent stops on, and a
-            # daily commit of an empty file would be noise that hides the days that matter.
-            echo "Nothing approved is waiting, so nothing is staged."
-            rm -f master/_to_fold.json
-            exit 0
-          fi
-          git config user.name  "salt-command CI"
-          git config user.email "noreply@github.com"
-          git add -f master/_to_fold.json
-          if [ -n "$(git status --porcelain -- master/_to_fold.json)" ]; then
-            git commit -m "Stage $count approved row(s) for the fold"
-            git push
-          else
-            echo "The staged file is unchanged from the last run."
-          fi
-          # THE ASSERTION. Whatever path was taken above, the file must now be in HEAD.
-          if ! git cat-file -e HEAD:master/_to_fold.json 2>/dev/null; then
-            echo "::error::$count row(s) were staged but master/_to_fold.json is not in HEAD. The fold would find nothing and stop, and the rows would sit unfolded."
-            exit 1
-          fi
-          echo "Staged $count row(s) and confirmed the file is in HEAD."
-          echo "staged=1" >> "$GITHUB_OUTPUT"
-
-  # ---------------------------------------------------------------------------
-  # DEPLOY: the phone gets what was just pushed, and only then are the folded
-  # rows marked committed. THAT ORDER MATTERS. Marking first and failing to
-  # deploy would leave a row recorded as shipped while the phone still shows the
-  # old book, which is the exact silent failure of 10 and 19 Aug.
-  # ---------------------------------------------------------------------------
-  # ---------------------------------------------------------------------------
-  # FOLD: the judgement, run by an agent INSIDE this workflow (his instruction, 03 Sep 2026:
-  # approve, stage, fold, commit, push and deploy together, or within minutes).
-  #
-  # The fold was a cloud routine on a six-hourly clock, then on demand. Neither is "within
-  # minutes of the tap". A routine webhook cannot do it either: the routine API fires on pull
-  # request and release events only, never a push. So the agent runs here, between the stage
-  # and the deploy, as the Claude Code action on the owner's subscription token. It follows
-  # docs/CLOUD_FOLD.md exactly as the routine did, and holds no Cloudflare credential: this
-  # job's secret can fold a book and push a commit, and nothing else.
-  #
-  # THE ACTION PUSHES AS THE CLAUDE GITHUB APP, NOT AS THE RUNNER, and that push starts the
-  # deploy run like any other. The first version of this job assumed the opposite (a push
-  # made with GITHUB_TOKEN starts nothing) and chained a deploy onto this run as well, which
-  # would have deployed and woken the phone twice per fold. Proved on the first real fold,
-  # 03 Sep 2026: the action's push started run 33717101758, which deployed v480. So this job
-  # ends when the agent has pushed, and nothing here reads the remote afterwards, because the
-  # action rewrites the remote's credentials for its own push and revokes them on the way out.
-  # ---------------------------------------------------------------------------
-  fold:
-    needs: stage
-    if: needs.stage.outputs.staged == 'true'
+  chain:
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -258,6 +74,118 @@ jobs:
 
       - name: The credential exists
         env:
+          TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          if [ -z "${TOKEN:-}" ]; then
+            echo "::error::CLOUDFLARE_API_TOKEN is not set. Run: gh secret set CLOUDFLARE_API_TOKEN"
+            exit 1
+          fi
+
+      # ---- STAGE: the approved, uncommitted rows out of D1 -------------------------------
+      # DO NOT TRAMPLE AN UNFOLDED BATCH. If master/_to_fold.json is still in HEAD, the last
+      # fold has not happened (it failed, or it is the batch this tick is about to fold). A
+      # batch the fold refused as a replay clears its own handoff (v512): the rows ARE on the
+      # book, so the drafts are marked committed, each refusal recorded where the phone shows
+      # refusals, and staging carries on.
+      - name: Stand down if the last batch is still unfolded
+        id: guard
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          echo "staged=0" >> "$GITHUB_OUTPUT"
+          if git cat-file -e HEAD:master/_to_fold.json 2>/dev/null; then
+            n=$(git show HEAD:master/_to_fold.json | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).count")
+            if ids=$(node tools/fold.mjs --replays); then
+              echo "::notice::The staged batch of $n row(s) is a replay of rows already on the book ($ids): clearing it."
+              node tools/drafts.mjs --committed $ids
+              for id in $ids; do node tools/drafts.mjs --refused-note "$id" "The fold refused this as a replay: a row with the same party, date, size and total is already on the book, so it was folded once and marked committed."; done
+              git config user.name "salt-command stage"
+              git config user.email "noreply@github.com"
+              git rm -q master/_to_fold.json
+              git commit -q -m "The fold refused the staged batch as a replay: $ids"
+              git push origin HEAD:master
+              echo "skip=0" >> "$GITHUB_OUTPUT"
+            else
+              echo "::notice::A batch of $n row(s) is staged and not yet folded. Standing down rather than overwriting it; the fold runs on it below."
+              echo "skip=1" >> "$GITHUB_OUTPUT"
+              echo "staged=1" >> "$GITHUB_OUTPUT"
+            fi
+          else
+            echo "skip=0" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Read the approved rows out of D1
+        if: (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && steps.guard.outputs.skip == '0'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          node tools/drafts.mjs --approved > master/_to_fold.json
+          node -e "
+            const j=require('./master/_to_fold.json');
+            if(!j.ok) { console.error('::error::drafts.mjs did not report ok'); process.exit(1); }
+            console.log('approved and uncommitted: '+j.count);
+          "
+
+      # COMMIT IT, AND PROVE IT WAS COMMITTED. `git status --porcelain` sees an untracked file
+      # where `git diff --quiet` did not (the first version of this step was silently broken),
+      # and the file must be in HEAD afterwards: a healthy log over a dead leg is the fault this
+      # repo keeps writing tests for. Staged in HEAD is also the marker the next tick reads if
+      # the fold below fails.
+      - name: Commit it, and prove it
+        id: commit
+        if: (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && steps.guard.outputs.skip == '0'
+        run: |
+          set -euo pipefail
+          echo "staged=0" >> "$GITHUB_OUTPUT"
+          count=$(node -p "require('./master/_to_fold.json').count")
+          if [ "$count" = "0" ]; then
+            echo "Nothing approved is waiting, so nothing is staged."
+            rm -f master/_to_fold.json
+            exit 0
+          fi
+          git config user.name  "salt-command CI"
+          git config user.email "noreply@github.com"
+          git add -f master/_to_fold.json
+          if [ -n "$(git status --porcelain -- master/_to_fold.json)" ]; then
+            git commit -m "Stage $count approved row(s) for the fold"
+            git push
+          else
+            echo "The staged file is unchanged from the last run."
+          fi
+          if ! git cat-file -e HEAD:master/_to_fold.json 2>/dev/null; then
+            echo "::error::$count row(s) were staged but master/_to_fold.json is not in HEAD. The fold would find nothing and stop, and the rows would sit unfolded."
+            exit 1
+          fi
+          echo "Staged $count row(s) and confirmed the file is in HEAD."
+          echo "staged=1" >> "$GITHUB_OUTPUT"
+
+      # ---- THE PLAN FOR THE REST OF THE JOB ---------------------------------------------
+      # fold:   something is staged, by this tick or a previous one.
+      # deploy: a push; a dispatch that did not ask to stage only; or any run that folded.
+      - name: What this run does
+        id: plan
+        run: |
+          fold=0
+          if [ "${{ steps.guard.outputs.staged }}" = "1" ] || [ "${{ steps.commit.outputs.staged }}" = "1" ]; then fold=1; fi
+          deploy=0
+          if [ "${{ github.event_name }}" = "push" ]; then deploy=1; fi
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.stage_only }}" != "true" ]; then deploy=1; fi
+          if [ "$fold" = "1" ]; then deploy=1; fi
+          echo "fold=$fold" >> "$GITHUB_OUTPUT"
+          echo "deploy=$deploy" >> "$GITHUB_OUTPUT"
+          echo "fold=$fold deploy=$deploy"
+
+      # ---- FOLD: the judgement, by an agent, in this job ---------------------------------
+      # It follows docs/CLOUD_FOLD.md and holds no Cloudflare credential: this token can fold
+      # a book and push a commit, and nothing else. It pushes as the Claude GitHub App.
+      - name: The fold credential exists
+        if: steps.plan.outputs.fold == '1'
+        env:
           TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
         run: |
           if [ -z "${TOKEN:-}" ]; then
@@ -268,17 +196,18 @@ jobs:
           git config user.email "noreply@github.com"
 
       - name: Fold
+        if: steps.plan.outputs.fold == '1'
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           show_full_output: true
           claude_args: '--model claude-opus-5 --allowedTools "Bash,Read,Write,Edit,Glob,Grep" --max-turns 80'
           prompt: |
-            You are the fold for the Salt Command trading book, running as the fold job of
+            You are the fold for the Salt Command trading book, running as the Fold step of
             .github/workflows/cloud-commit.yml. This is a real ledger with real money in it; be
             exact and never guess a figure.
 
-            The stage job has just written master/_to_fold.json to master and this checkout is
+            The stage step has just written master/_to_fold.json to master and this checkout is
             master's tip. Two stops come first. If master/_to_fold.json is absent, nothing is
             staged: say so in one line and stop. If master/_folded.json is present, the last batch
             is folded and waiting for its deploy: say so in one line and stop.
@@ -296,10 +225,10 @@ jobs:
             the notes array, and your sentence on the roll), run `node tools/fold.mjs --apply`,
             then `node tools/ledger.mjs`, then `npm run build && npm test`, then commit
             everything it wrote with a message naming the version and what was folded, and push
-            with `git push origin HEAD:master`. Git identity is already configured. The deploy
-            job that follows in this run deploys, marks the rows committed and clears the
-            handoff files; do not run npm run deploy, do not mark anything committed and do not
-            delete the handoff files yourself.
+            with `git push origin HEAD:master`. Git identity is already configured. The steps
+            that follow in this job deploy, mark the rows committed and clear the handoff
+            files; do not run npm run deploy, do not mark anything committed and do not delete
+            the handoff files yourself.
 
             A refusal folds nothing: if --plan or --apply refuses anything, report it plainly and
             stop. Never edit the rows in the master, never write a real name: codes only,
@@ -315,36 +244,49 @@ jobs:
             figure you were unsure of. If anything looks wrong, fold nothing and say so: a day
             with no commit is cheap and a wrong row is not.
 
-  deploy:
-    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && !inputs.stage_only)
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/checkout@v4
-        with: { ref: master }
-      - uses: actions/setup-node@v4
-        with: { node-version: '24', cache: npm }
-      - run: npm ci
+      # THE WORKSPACE AFTER THE AGENT. The action pushes with its own credentials and revokes
+      # them on the way out, so master is checked out again: the tip now carries the fold, and
+      # the runner's own token is back on the remote for the handoff commit below. clean: false
+      # keeps node_modules.
+      - name: Check out what the fold pushed
+        if: steps.plan.outputs.fold == '1'
+        uses: actions/checkout@v4
+        with: { ref: master, clean: false }
 
-      - name: The credential exists
-        env:
-          TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      # ---- DEPLOY: the phone gets the build, and only then are the rows marked ----------
+      # ALREADY SERVING? The agent's push starts a second run of this file, queued behind this
+      # one. That run finds the phone already on the build and no fold waiting, and deploys
+      # nothing; it republishes the statements only if the push touched them.
+      - name: Already serving?
+        id: already
+        if: steps.plan.outputs.deploy == '1'
         run: |
-          if [ -z "${TOKEN:-}" ]; then
-            echo "::error::CLOUDFLARE_API_TOKEN is not set. Run: gh secret set CLOUDFLARE_API_TOKEN"
-            exit 1
+          set -euo pipefail
+          live=0; stmt=1
+          want=$(node -p "require('./public/rev.json').id")
+          got=$(curl -fsS --max-time 20 https://salt-command.qyts8mh72kyg.workers.dev/rev | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).id" || echo none)
+          if [ "$got" = "$want" ] && ! git cat-file -e HEAD:master/_folded.json 2>/dev/null; then live=1; fi
+          if [ "${{ github.event_name }}" = "push" ] && [ "$live" = "1" ]; then
+            stmt=0
+            if git diff --name-only "${{ github.event.before }}" "${{ github.sha }}" 2>/dev/null | grep -qE '^(statements/|stmt/|wrangler\.stmt\.jsonc|tools/stmt-publish\.mjs|tools/make_statements\.mjs)'; then stmt=1; fi
           fi
+          echo "live=$live" >> "$GITHUB_OUTPUT"
+          echo "stmt=$stmt" >> "$GITHUB_OUTPUT"
+          echo "live=$live (phone on $got, repo at $want) stmt=$stmt"
 
-      - run: npm test
+      - name: Test
+        if: steps.plan.outputs.deploy == '1' && steps.already.outputs.live != '1'
+        run: npm test
 
       - name: Deploy
+        if: steps.plan.outputs.deploy == '1' && steps.already.outputs.live != '1'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
         run: npx wrangler deploy
 
       - name: The phone is serving it
+        if: steps.plan.outputs.deploy == '1' && steps.already.outputs.live != '1'
         run: |
           set -euo pipefail
           want=$(node -p "require('./public/rev.json').id")
@@ -357,9 +299,11 @@ jobs:
           echo "::error::the Worker is not serving $want after the deploy reported success"
           exit 1
 
-      # ONLY NOW. A draft marked committed is a draft the commit run will never offer again,
-      # so it must not be marked until the row it became is demonstrably on the phone.
+      # ONLY NOW. A draft marked committed is never offered to the fold again, so it is marked
+      # only once the row it became is demonstrably on the phone. The proof time rides with
+      # the mark (v519), and the clock is printed per row into the run summary.
       - name: Mark the folded rows committed
+        if: steps.plan.outputs.deploy == '1' && steps.already.outputs.live != '1'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
@@ -371,34 +315,12 @@ jobs:
           fi
           ids=$(node -p "(require('./master/_folded.json').ids||[]).join(' ')")
           if [ -z "$ids" ]; then echo "_folded.json names no ids."; exit 0; fi
-          # v519: the proof time rides with the mark, so D1 carries tap, phone and committed per row
           node tools/drafts.mjs --committed $ids --live "${LIVE_AT:-}"
 
-      # TELL THE PHONE, IF THERE IS A KEY TO DO IT WITH.
-      #
-      # OPTIONAL BY DESIGN. /push/send is write-gated like everything else that carries the
-      # book, so this needs SALT_WRITE_KEY as a second repo secret. It is skipped silently
-      # without one, because the two pushes that matter most (a row waiting, and the morning
-      # nudge) come from the Worker itself and need nothing here.
-      #
-      # A FOLD IS ALSO NOT THE MOST USEFUL BANNER. The phone reloads itself within ten seconds
-      # of a new build anyway, so this mostly tells him something he is about to see. It earns
-      # its place only when he is away from the app.
-      # IT USES SALT_PUSH_KEY, NOT THE WRITE KEY. The write key authorises the queue, the
-      # vault and draft approvals, which is the whole ledger, and a GitHub Actions secret is
-      # readable by anyone who can land a workflow here. A notification step gets a key that
-      # opens POST /push/send and nothing else. See pushKeyOk() in src/worker.js.
-      #
-      # THE SECRET IS TESTED IN THE SHELL, NOT IN `if:`. The first version wrote
-      # `if: ${{ secrets.SALT_WRITE_KEY != '' }}` and GitHub REJECTED THE WHOLE FILE, because
-      # the `secrets` context is not available in an if condition. The run had ZERO jobs, no
-      # logs, and was named by its file path rather than "Cloud commit", which is the tell that
-      # a workflow failed to PARSE rather than failed to run.
-      #
-      # It was loud, which is the only good thing about it: it emailed. But between adding it
-      # and fixing it, the stage and deploy jobs were dead, and a workflow that cannot parse
-      # does not run its cron either. A broken optional step took the whole file with it.
+      # OPTIONAL BY DESIGN: SALT_PUSH_KEY opens POST /push/send and nothing else. The secret is
+      # tested in the shell, never in `if:`, because the secrets context there rejects the file.
       - name: Wake the phone
+        if: steps.plan.outputs.deploy == '1' && steps.already.outputs.live != '1'
         continue-on-error: true
         env:
           PUSH_KEY: ${{ secrets.SALT_PUSH_KEY }}
@@ -416,22 +338,17 @@ jobs:
           code=$(curl -s -o /dev/null -w "%{http_code}" -X POST -H "X-Push-Key: $PUSH_KEY" -H "content-type: application/json" -d '{"tag":"folded"}' https://salt-command.qyts8mh72kyg.workers.dev/push/send)
           echo "push/send -> $code for $n folded row(s)"
 
-      # A PUSH THAT FOLDED NOTHING MUST NOT UNSTAGE A WAITING BATCH, fixed 24 Aug 2026.
-      # This cleared master/_to_fold.json on EVERY push. A v344 push that touched only the cost
-      # basis therefore deleted a batch approved on 23 Aug and still unfolded, which is the very
-      # file the stage job reads to decide whether to stand down. Nothing was lost, because D1
-      # stays authoritative until `drafts.mjs --committed` runs and neither row was marked, so
-      # the next hourly stage re-staged them. It is still wrong: the guard was gone for a cycle
-      # and the batch was delayed by one.
-      # _folded.json is the proof that a fold happened in THIS push. Without it, only _folded is
-      # cleared (there is none) and the waiting batch is left exactly where the fold expects it.
+      # A DEPLOY THAT FOLDED NOTHING MUST NOT UNSTAGE A WAITING BATCH (24 Aug 2026):
+      # _folded.json is the proof a fold happened in this build; without it only _folded is
+      # cleared, which is nothing, and the staged batch is left where the fold expects it.
       - name: Clear the handoff files
+        if: steps.plan.outputs.deploy == '1' && steps.already.outputs.live != '1'
         run: |
           set -euo pipefail
           changed=0
           files="master/_folded.json"
           if [ -f master/_folded.json ]; then files="master/_to_fold.json master/_folded.json"; else
-            echo "No _folded.json: this push folded nothing, so any staged batch is left alone."
+            echo "No _folded.json: this build folded nothing, so any staged batch is left alone."
           fi
           for f in $files; do
             if [ -f "$f" ]; then git rm -q "$f"; changed=1; fi
@@ -440,29 +357,16 @@ jobs:
           git config user.name  "salt-command CI"
           git config user.email "noreply@github.com"
           git commit -m "Clear the fold handoff: the rows are on the phone and marked committed"
-          # Master can move while this job runs (on 03 Sep 2026 a merge landed in the same
-          # minute and this push was refused), so rebase onto its tip first. Nothing else
-          # touches these two files, so the rebase cannot conflict. --autostash because
-          # `npm test` above rebuilds public/ and leaves it dirty, which refuses a rebase
-          # outright: that is what failed the step on the v481 deploy and took the mirror
-          # re-seed down with it.
+          # master can move while this runs; rebase onto its tip first. --autostash because the
+          # suite rebuilds public/ and leaves it dirty, which refuses a rebase outright.
           git pull -q --rebase --autostash origin master
           git push
 
-      # KEEP THE MIRROR LEVEL WITH THE BOOK, added 22 Aug 2026.
-      #
-      # The drafter confirms every amendment against the open-order snapshot in D1 and costs
-      # every draft off the PRICING snapshot there, and both come from the last seed. Nothing in
-      # the cloud chain re-seeded after the master moved here: the mirror sat at v320 (seeded
-      # 20 Aug, 12:07 KL) while v321 to v331 folded, so every fulfilment queued after it was
-      # refused as matching no open order, the refusal told him the order had been settled, he
-      # typed each one again, and three drafts in a row carried a shelf rate that had moved.
-      # Nine queue entries for three events and one sale, all found on 22 Aug.
-      #
-      # LAST OF THE LEDGER'S STEPS, so a failure here leaves the deploy and the committed marks
-      # standing. It still fails the run, because a stale mirror is exactly the silent fault
-      # this job exists to end.
+      # KEEP THE MIRROR LEVEL WITH THE BOOK (22 Aug 2026). The drafter measures every entry
+      # against the snapshot in D1; a stale mirror is the silent fault this job exists to end.
+      # Last of the ledger's steps, so a failure here leaves the deploy and the marks standing.
       - name: Re-seed the mirror from the master just shipped
+        if: steps.plan.outputs.deploy == '1' && steps.already.outputs.live != '1'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
@@ -472,12 +376,10 @@ jobs:
           node tools/d1.mjs --seed
 
       # ---- THE STATEMENTS SITE, after everything the ledger needs ------------------------
-      # A second Worker on its own cryptic address (stmt/worker.js, wrangler.stmt.jsonc), with
-      # its own KV store. Both steps come AFTER the ledger's, so a fault in the statements can
-      # never leave a folded row unmarked or the mirror stale, and both stand down while the
-      # store has not been created yet (the placeholder id is still in the config), so an
-      # unfinished setup cannot turn a ledger deploy red.
+      # A second Worker on its own address with its own KV store (docs/STATEMENTS.md). Both
+      # steps stand down while the store has not been created yet.
       - name: Deploy the statements site
+        if: steps.plan.outputs.deploy == '1' && steps.already.outputs.stmt == '1'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
@@ -489,19 +391,11 @@ jobs:
           fi
           npx wrangler deploy -c wrangler.stmt.jsonc
 
-      # THE STATEMENTS GO INTO THE SITE'S OWN KV, NOT INTO public/. Under public/ they would be
-      # served by an asset store, which knows nothing about a password: the ciphertext would be
-      # fetchable by anyone who guessed a filename and the whole gate would be decoration. This
-      # step is the only thing that publishes a statement, and it holds one secret beyond the
-      # Cloudflare token the job already has: STMT_KEY, from which every customer's content key
-      # is derived. With it, every record goes up with a LIVE statement sealed inside, every
-      # entry from the start to this minute, so an approved row reaches the customer's page in
-      # the same run that reaches the phone. Without it the records go up exactly as issued.
-      #
-      # tools/stmt-publish.mjs does the rest: the newest issue only, one bulk call, every record
-      # the issue does not carry retired (so last month's password stops opening anything the
-      # moment a new one is issued), and the attempt counters cleared on a new issue only.
+      # THE STATEMENTS GO INTO THE SITE'S OWN KV, sealed under content keys derived from
+      # STMT_KEY, so an approved row reaches the customer's page in the same run that reaches
+      # the phone. Without the key the records go up exactly as issued.
       - name: Publish the statements, live
+        if: steps.plan.outputs.deploy == '1' && steps.already.outputs.stmt == '1'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
@@ -513,10 +407,8 @@ jobs:
           fi
           node tools/stmt-publish.mjs
 
-      # THE OLD ROUTE'S KEYS ON THE DESK'S STORE (stmt:, stmtfail:, stmtseen:) are gone with the
-      # route. Deleted here rather than by hand, once; later runs find nothing. Best effort:
-      # the desk never reads them again either way.
       - name: Retire the old statement keys from the desk's store
+        if: steps.plan.outputs.deploy == '1' && steps.already.outputs.stmt == '1'
         continue-on-error: true
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}

@@ -1,5 +1,15 @@
 [
  {
+  "v": "v520",
+  "d": "08 Sep 2026",
+  "t": "THE CHAIN IN ONE JOB",
+  "n": [
+   "<b>PART A, STEP 2: stage, fold and deploy are one job of <code>cloud-commit.yml</code>.</b> Until v519 they were three, each starting its own machine, checking out and installing, and the deploy waited for the agent's push to be picked up as a second run: about 45 seconds of job boundaries and 15 of push-to-run on the 8-minute CJ4-BJ chain of 07 Sep. One job does the checkout and install once and the deploy follows the fold in the same workspace. A plan step decides what the run does: fold when something is staged, deploy on a push, on a dispatch that did not ask to stage only, or whenever this run folded.",
+   "<b>THE AGENT STILL PUSHES AS THE CLAUDE GITHUB APP</b>, which starts a second run of the file. Two guards make that harmless: the concurrency group queues it behind this run, and an <i>Already serving?</i> step skips the deploy when the phone already has the build and no fold is waiting, republishing the statements only when the push touched them. After the agent, master is checked out again so the tip carries the fold and the runner's own token is back on the remote for the handoff commit. Step 3 replaces the action with one API call, after which the job pushes as itself and starts nothing.",
+   "<b>UNCHANGED.</b> The stage refuses to trample an unfolded batch and clears a replay batch itself; the deploy proves the phone is serving the build before any row is marked committed; the clock of v519 rides with the mark; the hourly net and the daily ship check stand. The repo's own workflow linter and the suite's three assertions on the file pass on the new shape. This build carries no fold, so its push is the first run through the one job."
+  ]
+ },
+ {
   "v": "v519",
   "d": "08 Sep 2026",
   "t": "THE CLOCK ON EVERY APPROVAL",

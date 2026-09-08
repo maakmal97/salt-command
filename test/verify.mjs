@@ -893,14 +893,16 @@ section("Worker — drafts and approval");
     /* the workflow's half, read as text because YAML cannot be run here */
     const wf = readFileSync("./.github/workflows/cloud-commit.yml", "utf8");
     ok(/stage_only:\n\s+description/.test(wf), "cloud-commit.yml accepts stage_only");
-    ok(/\n  fold:\n    needs: stage\n    if: needs\.stage\.outputs\.staged == 'true'/.test(wf), "a fold job follows the stage, only when a batch is staged");
-    ok(/staged: \$\{\{ steps\.guard\.outputs\.staged == '1' \|\| steps\.commit\.outputs\.staged == '1' \}\}/.test(wf) && /echo "skip=1" >> "\$GITHUB_OUTPUT"\n(?:\s+#[^\n]*\n)*\s+echo "staged=1"/.test(wf),
+    /* v520: one job. The Fold step is gated by a plan step that reads the stage's two outputs. */
+    ok(/- name: Fold\n\s+if: steps\.plan\.outputs\.fold == '1'\n\s+uses: anthropics\/claude-code-action@v1/.test(wf), "the Fold step runs in the same job, only when the plan says a batch is staged");
+    ok(/if \[ "\$\{\{ steps\.guard\.outputs\.staged \}\}" = "1" \] \|\| \[ "\$\{\{ steps\.commit\.outputs\.staged \}\}" = "1" \]; then fold=1; fi/.test(wf) && /echo "skip=1" >> "\$GITHUB_OUTPUT"\n(?:\s+#[^\n]*\n)*\s+echo "staged=1"/.test(wf),
        "a batch already staged counts as staged, so a batch a failed fold left behind is folded on the next tick rather than never");
     ok(/uses: anthropics\/claude-code-action@v1/.test(wf) && /claude_code_oauth_token: \$\{\{ secrets\.CLAUDE_CODE_OAUTH_TOKEN \}\}/.test(wf),
        "the fold is the Claude Code action on the subscription token, so the judgement stays with an agent");
-    ok(/\n  deploy:\n    if: github\.event_name == 'push' \|\| \(github\.event_name == 'workflow_dispatch' && !inputs\.stage_only\)/.test(wf),
-       "the deploy runs on a push, which the fold's own push is, and stands aside on a stage-only dispatch");
-    ok(!/needs\.fold/.test(wf), "and is not chained onto the fold job, or a fold would deploy and wake the phone twice");
+    ok(/if \[ "\$\{\{ github\.event_name \}\}" = "push" \]; then deploy=1; fi/.test(wf) && /\[ "\$\{\{ inputs\.stage_only \}\}" != "true" \]; then deploy=1; fi/.test(wf) && /if \[ "\$fold" = "1" \]; then deploy=1; fi/.test(wf),
+       "the deploy steps run on a push, on a dispatch that did not ask to stage only, and whenever this run folded");
+    ok(/- name: Already serving\?/.test(wf) && (wf.match(/steps\.already\.outputs\.live != '1'/g) || []).length >= 6 && /- name: Check out what the fold pushed\n\s+if: steps\.plan\.outputs\.fold == '1'\n\s+uses: actions\/checkout@v4\n\s+with: \{ ref: master, clean: false \}/.test(wf),
+       "the deploy follows the fold in the same job on a fresh checkout, and every deploy step stands aside when the phone already has the build, so the agent's own push cannot deploy twice");
     ok(/git pull -q --rebase --autostash origin master\n\s+git push/.test(wf),
        "the handoff clear rebases before it pushes, autostashing what npm test rebuilt: master moved under it once, and the dirty tree refused the rebase the next time");
     ok((wf.match(/ref: master/g) || []).length >= 2, "the fold and the deploy check out master's tip, not the sha the run started on");

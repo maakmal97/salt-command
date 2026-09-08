@@ -77,9 +77,9 @@ desk shows, cost and margin included, is served at the public URL.
 | Queue an entry | KV `q:<deviceId>`, `POST /queue` from the phone | on tap; held offline, retried every ten seconds |
 | Draft the row | Worker `src/drafter.js` | on arrival via `waitUntil`, plus a `*/15` cron as the net |
 | Approve or reject | D1 `draft`, `POST /drafts/<id>/approve` | on tap; a decided row returns 409 |
-| Stage approved rows | Actions `cloud-commit.yml`, job `stage` | dispatched by every approval (Worker holds `SALT_GITHUB_TOKEN`), hourly as the net |
-| **Fold, bump, build, test, push** | job `fold`: the Claude Code action (`CLAUDE_CODE_OAUTH_TOKEN`) per `docs/CLOUD_FOLD.md`; or any agent asked | same run when rows were staged; or on demand |
-| Deploy, prove, mark committed, re-seed the D1 mirror, publish statements | job `deploy` | on push |
+| Stage approved rows | Actions `cloud-commit.yml`, one job `chain` since v520 | dispatched by every approval (Worker holds `SALT_GITHUB_TOKEN`), hourly as the net |
+| **Fold, bump, build, test, push** | the `Fold` step: the Claude Code action (`CLAUDE_CODE_OAUTH_TOKEN`) per `docs/CLOUD_FOLD.md`; or any agent asked | same job when rows were staged; or on demand |
+| Deploy, prove, mark committed (with the clock, v519), re-seed the D1 mirror, publish statements | the steps that follow in the same job; a push runs them alone, and skips the deploy when the phone already has the build | same job; or on push |
 | Prove repo and live agree | `ship-check.yml` | 11:00 MYT |
 | Monthly statements | `docs/STATEMENTS.md` routine | the 1st, gated in Kuala Lumpur time |
 
@@ -87,7 +87,7 @@ desk shows, cost and margin included, is served at the public URL.
   NOTE, the `evolution` entry and what an amendment amends. CI never folds and holds no
   secrets.
 - **No clock** since 24 Aug 2026. `Salt fold (manual backup)` (trig_01UrnjQMWA3f6GXN5R6Dzi4S)
-  is disabled, no cron: fire it by hand if the fold job fails. The stage stands down while
+  is disabled, no cron: fire it by hand if the Fold step fails. The stage stands down while
   `master/_to_fold.json` is in HEAD, unless `fold.mjs --replays` says the batch is a replay (v512).
 - **A version asks about the queue first (02 Sep 2026).** Before any bump: `node
   tools/drain.mjs --status`, `node tools/drafts.mjs --list` and `--approved`, `git fetch`
