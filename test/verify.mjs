@@ -7353,8 +7353,8 @@ section("v524: roster-only parties on the phone");
   const B = JSON.parse(String(w.eval(DRIVE_WB(withoutR))));
   ok(!B.no && !B.pushed && /-R is not on the roster/.test(B.msg) && /Add ID/.test(B.msg), "an associate without an -R account is refused with the code and Add ID named, and nothing is queued: " + (B.no || B.msg.slice(0, 120)));
   /* the editor, driven: a buyer not on the roster, then a moved order with a blank date */
-  const DRIVE_ED = (party, date, moved) => "(function(){try{ledNew();var set=function(k,v){var e=document.getElementById('ed_'+k);if(!e)return false;e.value=v;return true;};" +
-    "set('party'," + JSON.stringify(party) + ");set('qty','1');set('total','110');set('cash'," + JSON.stringify(moved ? "110" : "0") + ");set('deliveredQty'," + JSON.stringify(moved ? "1" : "0") + ");set('date'," + JSON.stringify(date) + ");" +
+  const DRIVE_ED = (party, date, moved) => "(function(){try{queue=[];window.confirm=function(){return true;};ledNew();var set=function(k,v){var e=document.getElementById('ed_'+k);if(!e)return false;e.value=v;return true;};" +
+    "set('party'," + JSON.stringify(party) + ");set('qty','1.3');set('total','113');set('cash'," + JSON.stringify(moved ? "113" : "0") + ");set('deliveredQty'," + JSON.stringify(moved ? "1" : "0") + ");set('date'," + JSON.stringify(date) + ");" +
     "var n0=queue.length;edSubmitNew();var why=(document.getElementById('edWhy')||{}).textContent||'';var q=queue[queue.length-1];" +
     "return JSON.stringify({pushed:queue.length===n0+1,why:why,q:(queue.length===n0+1&&q)?{party:q.payload.party,date:q.payload.date}:null});}catch(e){return JSON.stringify({no:'threw: '+(e&&e.message)});}})()";
   w.eval("switchTab('ledger');");
@@ -7378,6 +7378,41 @@ section("v525: reject means discard, with re-enter, on the phone");
   ok(seed({ mode: "amend", direction: "SELL", rid: "s136", kind: "Fulfilment", cash: 10 }) === null && seed({ mode: "new", direction: "BUY", party: "SA5-BTR", qty: 25, total: 1200 }) === null, "an amendment and a purchase are not seeded: they re-enter on the Workbench");
   const gone = JSON.parse(String(w.eval("(function(){queue=[{at:'a1',type:'SELL'},{at:'a2',type:'SELL'},{at:'a3',type:'SELL'}];var n=qForgetAt('a2');return JSON.stringify({n:n,left:queue.map(function(q){return q.at;})});})()")));
   ok(gone.n === 1 && gone.left.join() === "a1,a3", "the device drops its own copy of the rejected entry and keeps the rest");
+  try { w.close(); } catch (e) { }
+}
+
+section("v526: the replay question, asked on the phone");
+{
+  const { plan: planD } = await import("../tools/fold.mjs");
+  const { draftRow: draftD } = await import("../src/drafter.js");
+  const bkD = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const real = bkD.sales.filter((r) => r.date && r.customer && +r.total > 0 && +r.qty > 0 && !r.cancelled).slice(-1)[0];
+  const twinRow = { customer: real.customer, date: real.date, qty: real.qty, total: real.total, cash: real.total, deliveredQty: real.qty, product: real.product || "salt" };
+  const staged = (second) => ({ ok: true, count: 1, approved: [{ id: "2099-02-01T00:00:00.001Z", collection: "sales", row: twinRow, entry: { at: "2099-02-01T00:00:00.001Z", payload: { mode: "new", direction: "SELL", second: second ? real.rid || true : null } } }] });
+  const pNo = planD(bkD, staged(false), null), pYes = planD(bkD, staged(true), null);
+  ok(pNo.items.length === 0 && pNo.refused.length === 1 && /would be a replay/.test(pNo.refused[0].why), "an unmarked twin of " + real.rid + " is refused as a replay");
+  ok(pYes.refused.length === 0 && pYes.items.length === 1 && pYes.items[0].does.some((d) => /second order beside/.test(d)), "the same twin marked second folds, and says so in what it does");
+  /* the drafter names the match both ways */
+  const mirror = { version: "vX", sales: bkD.sales, purchases: bkD.purchases, state: { roster: bkD.roster, associates: bkD.associates, PRODUCTS: bkD.PRODUCTS, QUEUE_COMMITTED: bkD.QUEUE_COMMITTED },
+    pricing: { v: "vX", byProduct: { salt: { stockCost: 48, replCost: 48.67, floors: { 1: { floor: 54.87 }, 2: { floor: 109.73 } }, inputs: null } } } };
+  const draftOf = (second) => draftD({ at: "2099-02-01T00:00:00.002Z", payload: { mode: "new", direction: "SELL", party: real.customer, product: real.product || "salt", qty: real.qty, total: real.total, cash: real.total, kg: real.qty, date: real.date, second } }, mirror);
+  const dNo = draftOf(null), dYes = draftOf(true);
+  ok(!dNo.skip && dNo.flags.some((f) => /refuse it as a replay/.test(f) && /enter it again, answering yes/.test(f)), "the drafter flags an unmarked twin as a replay the fold will refuse: " + (dNo.skip || ""));
+  ok(!dYes.skip && dYes.flags.some((f) => /SECOND order/.test(f) && /take it as one/.test(f)), "and names a marked twin as the second order it is");
+  /* the editor, driven on the real master: a double tap, then the question both ways */
+  const { openMaster: omD } = await import("../tools/payload.mjs");
+  const { w } = await omD();
+  w.eval("setProd('salt');recompute();switchTab('ledger');");
+  const DRIVE = (answer, prime) => "(function(){try{window.confirm=function(){return " + (answer ? "true" : "false") + ";};queue=" + (prime ? "[{at:'2099-02-01T00:00:00.000Z',type:'SELL',payload:{mode:'new',direction:'SELL',party:" + JSON.stringify(real.customer) + ",date:" + JSON.stringify(real.date) + ",qty:" + real.qty + ",total:" + real.total + "}}]" : "[]") + ";" +
+    "ledNew();var set=function(k,v){var e=document.getElementById('ed_'+k);if(e)e.value=v;};set('party'," + JSON.stringify(real.customer) + ");set('qty'," + JSON.stringify(String(real.qty)) + ");set('total'," + JSON.stringify(String(real.total)) + ");set('cash'," + JSON.stringify(String(real.total)) + ");set('deliveredQty'," + JSON.stringify(String(real.qty)) + ");set('date'," + JSON.stringify(real.date) + ");" +
+    "var n0=queue.length;edSubmitNew();var why=(document.getElementById('edWhy')||{}).textContent||'';var q=queue[queue.length-1];return JSON.stringify({pushed:queue.length===n0+1,why:why,second:q&&q.payload?q.payload.second:undefined});}catch(e){return JSON.stringify({no:'threw: '+(e&&e.message)});}})()";
+  const tap = JSON.parse(String(w.eval(DRIVE(true, true))));
+  ok(!tap.no && !tap.pushed && /already queued from this device/.test(tap.why), "the same figures already queued on this device are refused as a double tap, before any question: " + (tap.no || tap.why.slice(0, 90)));
+  const no = JSON.parse(String(w.eval(DRIVE(false, false))));
+  ok(!no.no && !no.pushed && /not a second order/.test(no.why), "a twin of " + real.rid + " with the answer no is not queued: " + (no.no || no.why.slice(0, 90)));
+  const yes = JSON.parse(String(w.eval(DRIVE(true, false))));
+  const named = bkD.sales.find((r) => r.rid === yes.second);
+  ok(!yes.no && yes.pushed && named && named.customer === real.customer && named.date === real.date && +named.total === +real.total && +named.qty === +real.qty, "with the answer yes it is queued marked second, naming a twin row on the book: " + (yes.no || String(yes.second)));
   try { w.close(); } catch (e) { }
 }
 

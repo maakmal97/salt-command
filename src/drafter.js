@@ -434,6 +434,19 @@ export function flagsFor(entry, row, book, priced) {
     }
   }
 
+  /* 6b. A ROW THIS ONE WOULD REPLAY (v526). The fold refuses an entry that matches a row on the
+        book by party, date, size and total unless the phone asked and the entry says it is a
+        second order. Either way the match is named here, so the approval reads it. */
+  {
+    const key = isSale ? "customer" : "supplier";
+    const twin = (book[isSale ? "sales" : "purchases"] || []).find((x) => x[key] === party && (x.date || null) === (row.date || null) && +x.total === +total && +x.qty === +qty);
+    if (twin) {
+      flags.push((entry && entry.payload && entry.payload.second)
+        ? `This matches ${twin.rid || "a row"} on the book by party, date, size and total, and the entry says it is a SECOND order: the fold will take it as one.`
+        : `This matches ${twin.rid || "a row"} on the book by party, date, size and total and is not marked a second order, so the fold will refuse it as a replay. If it is a second order, reject this and enter it again, answering yes.`);
+    }
+  }
+
   /* 7. AN ADVANCE, and whether it sits at the retail credit cap. Reported rather than judged:
         the cap lives in the master's RULES, which is configuration and not mirrored here. */
   if (isNum(row.cash) && isNum(total) && row.cash < total - 0.005 && isNum(row.deliveredQty) && row.deliveredQty > 0) {

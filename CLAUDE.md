@@ -100,7 +100,8 @@ desk shows, cost and margin included, is served at the public URL.
 - **What the drafter refuses, the phone does not let you type (v524):** `entryFault` in the
   master answers both entry forms: roster codes only, an R2 row books to its associate, no sale
   of a product with no lot, a date when something moved. The unknown R2 buyer is the reseller's
-  `-R` account, never an invented code.
+  `-R` account, never an invented code. A twin of a row on the book is put to him at entry and
+  travels as `second` (v526); a twin already queued on the device is refused as a double tap.
 - **The drafter is arithmetic, never a model**, and never prices: it reads the `PRICING`
   state key `tools/book.mjs pricingSnapshot()` derives from the engine. It refuses and
   records in `refused` (on the phone, self-cleaning): Linked and Rewarded amendments,

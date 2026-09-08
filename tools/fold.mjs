@@ -197,7 +197,13 @@ export function plan(book, staged, notes) {
     } else if (it.collection === "sales" || it.collection === "purchases") {
       const key = it.collection === "sales" ? "customer" : "supplier";
       const dup = (book[it.collection] || []).find((x) => x[key] === r[key] && (x.date || null) === (r.date || null) && +x.total === +r.total && +x.qty === +r.qty);
-      if (dup) { out.refused.push({ id: it.id, why: `a row for ${r[key]} with the same date, size and total is already on the book, so this would be a replay` }); continue; }
+      /* v526: THE REPLAY QUESTION IS ASKED ON THE PHONE. An entry that matches a row on the book by
+         party, date, size and total is refused as a replay unless the phone asked and he said it is a
+         second order, which the entry then carries as `second`. Two identical CS6-BS rows on 07 Sep
+         were real; the guard would have refused the second. */
+      const second = !!(it.entry && it.entry.payload && it.entry.payload.second);
+      if (dup && !second) { out.refused.push({ id: it.id, why: `a row for ${r[key]} with the same date, size and total is already on the book, so this would be a replay` }); continue; }
+      if (dup && second) entry.does.push(`a second order beside ${dup.rid || "the row"} with the same party, date, size and total, marked so at entry on his word`);
       entry.append = it.collection;
       entry.does.push(`append to ${it.collection} with its note`);
       const moved = it.collection === "sales" ? (+r.deliveredQty || 0) : (r.pending || r.inTransit ? 0 : (r.receivedQty != null ? +r.receivedQty : +r.qty || 0));
