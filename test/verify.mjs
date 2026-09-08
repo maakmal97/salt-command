@@ -2528,12 +2528,28 @@ section("Orders and money — every basis is named where the figure is stated (v
     if (F.freightCos > 0.009)
       ok(panel.includes(`under the gross margin above`), `${pr}: and the statement states that bridge rather than leaving it to be derived`);
 
-    /* one engine, on whatever basis it is set to. Both are the rate over the mean lot today;
-       a price lock legitimately freezes the desk's copy, so that is the one exemption. */
+    /* TWO FIGURES, TWO STATED BASES, EACH PROVED FROM THE BOOK (09 Sep 2026). This used to demand
+       the statement's freight per unit equal the pricing engine's, "both the rate over the mean lot",
+       which was true while both read COST_BASIS and never ran while no lot carried freight (v503
+       typed it per lot; every lot until p021 carried none). The first typed freight split them by
+       design: the price carries the freight of the LAST THREE LOTS per unit bought (rule 5), the
+       P&L charges the freight ACTUALLY TYPED, spread over every unit received, and the panel says
+       so. Each is recomputed here from the rows rather than read back from the code under test. */
     const c = read("pxCost()");
-    if (!c.locked && F.lots > 0)
-      ok(F.freightPerUnit === c.freight,
-        `${pr}: the statement's freight per unit is the pricing engine's (${F.freightPerUnit})`);
+    if (!c.locked && F.lots > 0) {
+      const bkF = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+      const EF = (await import("../engine/position.mjs")).default;
+      const live = bkF.purchases.filter((x) => (x.product || "salt") === pr && !x.cancelled && !x.defaulted && !x.pending && +x.qty > 0);
+      const landed = live.filter((x) => +x.total > 0 && (x.receivedOn || x.date) && EF.poRecvUnits(x) > 0)
+        .sort((a, b) => { const x = a.receivedOn || a.date, y = b.receivedOn || b.date; return x < y ? -1 : x > y ? 1 : 0; }).slice(-3);
+      let win = landed.filter((x) => x.freight != null);
+      if (!win.length) win = live.filter((x) => x.freight != null);
+      const engineWant = win.length ? +(win.reduce((a, x) => a + (+x.freight || 0), 0) / win.reduce((a, x) => a + x.qty, 0)).toFixed(4) : 0;   /* a book with no typed freight reads 0 */
+      ok(Math.abs(c.freight - engineWant) < 0.00005, `${pr}: the price's freight is the last three lots' typed freight per unit bought (${c.freight} against ${engineWant} from the rows)`);
+      const recv = live.reduce((a, x) => a + EF.poRecvUnits(x), 0), typed = live.reduce((a, x) => a + (+x.freight || 0), 0);
+      ok(Math.abs(F.freightPerUnit - typed / recv) < 0.00005, `${pr}: the statement's freight per unit is the freight typed over every unit received (${F.freightPerUnit} against ${(typed / recv).toFixed(4)})`);
+      ok(/typed on \d+ lots?/.test(panel), `${pr}: and the panel states that basis beside the figure`);
+    }
     /* and the cell names the live rate, so moving the rate without the copy fails here */
     if (F.lots > 0) ok(panel.includes(" typed on " + F.lots + " lot"),
       `${pr}: the freight line says it is the sum typed on the lots (v503)`);
@@ -5058,7 +5074,9 @@ section("v446: what a lot is, answered beside what a sale is");
     ok(!picked.includes("p9c"), `a cancelled lot is not offered for amendment (${JSON.stringify(picked)})`);
     ok(picked.includes("p9u"), "while the unpriced, pending one is");
     const real = JSON.parse(w.eval("JSON.stringify(purchases.filter(function(p){return p.rid!=='p9c'&&p.rid!=='p9u';}).map(function(p){return ledgerBuy(p).order;}))"));
-    ok(real.length >= 18 && real.every((o) => o === "Completed" || o === "Default"), `the ${real.length} real lots read Completed or Default as before (${[...new Set(real)].join(", ")})`);
+    /* 09 Sep 2026: a real lot may be open too. p021 is paid in full with 12.5 unit still to come, and
+       reads "Open · Deferred"; what no real lot may read is the two fixtures' states. */
+    ok(real.length >= 18 && real.every((o) => /^(Completed|Default|Open)/.test(o)), `the ${real.length} real lots read Completed, Default or Open, never Pending, Unpriced or Cancelled (${[...new Set(real)].join(", ")})`);
   } finally { for (const f of [B6, M6]) { try { rm6(f); } catch (e) { /* best effort */ } } }
 }
 
