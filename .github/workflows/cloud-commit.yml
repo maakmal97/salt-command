@@ -209,7 +209,7 @@ jobs:
           node tools/foldcall.mjs
           node tools/ledger.mjs
           npm run build
-          npm test
+          node tools/gate.mjs
           v=$(node -p "require('./master/changelog.json')[0].v + ': ' + require('./master/changelog.json')[0].t.toLowerCase()")
           git add -A
           git commit -q -m "$v"
@@ -240,9 +240,14 @@ jobs:
           echo "stmt=$stmt" >> "$GITHUB_OUTPUT"
           echo "live=$live (phone on $got, repo at $want) stmt=$stmt"
 
-      - name: Test
+      # THE GATE, NOT THE SUITE, STANDS BEFORE THE DEPLOY (v522). What must hold before a build
+      # reaches the phone is mechanical and ci.yml already names it: tools/gate.mjs runs those
+      # checks in about ten seconds. The full suite runs at the foot of this job, after the phone
+      # is live, and fails the run loudly if it fails; it never pulls a correct ledger back off
+      # the phone, because its post-fold failures have been its own fixtures moving with the book.
+      - name: Gate
         if: steps.plan.outputs.deploy == '1' && steps.already.outputs.live != '1'
-        run: npm test
+        run: node tools/gate.mjs
 
       - name: Deploy
         if: steps.plan.outputs.deploy == '1' && steps.already.outputs.live != '1'
@@ -389,3 +394,22 @@ jobs:
             npx wrangler kv key delete --remote --binding SALT_QUEUE "$k" && echo "retired $k"
           done
           rm -f .old-keys.json
+
+      # ---- THE FULL SUITE, AFTER THE PHONE IS LIVE (v522) --------------------------------
+      # Off the critical path: the clock has stopped by now. A failure turns the run red, which
+      # emails, and is written where the phone shows refusals under a synthetic id above the
+      # watermark, so it is seen on the Approve view until someone clears it.
+      - name: The full suite, after the phone is live
+        id: suite
+        if: steps.plan.outputs.deploy == '1' && steps.already.outputs.live != '1'
+        run: npm test
+
+      - name: Say so on the phone if the suite failed
+        if: always() && steps.suite.outcome == 'failure'
+        continue-on-error: true
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          v=$(node -p "require('./master/changelog.json')[0].v")
+          node tools/drafts.mjs --refused-note "suite:$v" "The test suite failed after $v went live. The phone is serving $v; read the run ${{ github.run_id }} before the next fold."

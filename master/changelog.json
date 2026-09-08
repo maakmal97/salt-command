@@ -1,5 +1,15 @@
 [
  {
+  "v": "v522",
+  "d": "08 Sep 2026",
+  "t": "THE GATE BEFORE, THE SUITE AFTER",
+  "n": [
+   "<b>PART A, STEP 4: the full suite no longer stands between a fold and the phone.</b> It is about two minutes of jsdom and until v521 it ran twice per approval on the same commit, once in the fold and once before the deploy. What must hold before a build reaches the phone is mechanical, and <code>ci.yml</code> already names it: the workflows parse, the book is in date order, the master's version is in the changelog, every generated block in the master is its module, the extract is the book, and <code>public/</code> is what this master builds. <code>tools/gate.mjs</code> runs exactly those, in about ten seconds on this laptop, and both the Fold step and the deploy path run it instead of the suite.",
+   "<b>THE SUITE RUNS AFTER THE PHONE IS LIVE, AND A FAILURE IS LOUD, NOT AUTOMATIC.</b> It is the last step of the job, so the clock has stopped by then; a failure turns the run red, which emails, and is written where the phone shows refusals under a synthetic id above the watermark, so it stays on the Approve view until someone clears it. Nothing is rolled back: two of the three post-fold failures on 08 Sep were the suite's own fixtures moving with the live book, and an automatic revert would have pulled a correct ledger off the phone. Step 5 of the plan, the re-seed and the statements off the critical path, is met by this order: both already run after the proof and the mark, which is where the clock stops.",
+   "<b>PROVED IN THE SUITE.</b> The gate's list covers every <code>--check</code> that <code>ci.yml</code> runs; the gate exits 1 on a master whose book block is not the file; the workflow runs the gate before the deploy in both places and the suite after the last statements step; and the fold step no longer runs the suite before its push."
+  ]
+ },
+ {
   "v": "v521",
   "d": "08 Sep 2026",
   "t": "THE FOLD AS ONE CALL",

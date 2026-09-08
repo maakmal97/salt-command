@@ -897,7 +897,7 @@ section("Worker — drafts and approval");
     ok(/- name: Fold\n\s+if: steps\.plan\.outputs\.fold == '1'\n\s+env:\n\s+ANTHROPIC_API_KEY: \$\{\{ secrets\.ANTHROPIC_API_KEY \}\}/.test(wf) && /\n\s+node tools\/foldcall\.mjs\n/.test(wf), "the Fold step runs in the same job, only when the plan says a batch is staged, and it is tools/foldcall.mjs on the API key");
     ok(/if \[ "\$\{\{ steps\.guard\.outputs\.staged \}\}" = "1" \] \|\| \[ "\$\{\{ steps\.commit\.outputs\.staged \}\}" = "1" \]; then fold=1; fi/.test(wf) && /echo "skip=1" >> "\$GITHUB_OUTPUT"\n(?:\s+#[^\n]*\n)*\s+echo "staged=1"/.test(wf),
        "a batch already staged counts as staged, so a batch a failed fold left behind is folded on the next tick rather than never");
-    ok(!/claude-code-action/.test(wf) && !/CLAUDE_CODE_OAUTH_TOKEN: \$\{\{ secrets/.test(wf) && /node tools\/ledger\.mjs\n\s+npm run build\n\s+npm test\n/.test(wf) && /git push origin HEAD:master\n\s+echo "folded and pushed/.test(wf),
+    ok(!/claude-code-action/.test(wf) && !/CLAUDE_CODE_OAUTH_TOKEN: \$\{\{ secrets/.test(wf) && /node tools\/ledger\.mjs\n\s+npm run build\n\s+node tools\/gate\.mjs\n/.test(wf) && /git push origin HEAD:master\n\s+echo "folded and pushed/.test(wf),
        "the Claude Code action is gone from the job: the fold step folds, extracts, builds, tests and pushes as the runner, which starts no second run");
     ok(/if \[ "\$\{\{ github\.event_name \}\}" = "push" \]; then deploy=1; fi/.test(wf) && /\[ "\$\{\{ inputs\.stage_only \}\}" != "true" \]; then deploy=1; fi/.test(wf) && /if \[ "\$fold" = "1" \]; then deploy=1; fi/.test(wf),
        "the deploy steps run on a push, on a dispatch that did not ask to stage only, and whenever this run folded");
@@ -7278,6 +7278,35 @@ section("v521: the fold as one call");
   ok(good9.code === 0 && row9 && /RM 130/.test(row9.note) && after9.QUEUE_COMMITTED === id9, "a good reply folds the row into the book with its note and moves the watermark");
   ok(existsSync(FD9) && JSON.parse(rf9(FD9, "utf8")).ids[0] === id9 && new RegExp('const evolution=\\[\\{"v":"' + dd.version.next + '"').test(rf9(M9, "utf8")), "names the id in _folded.json and stamps the master with the next version");
   rm9(dir9, { recursive: true, force: true });
+}
+
+section("v522: the gate before the deploy, the suite after the phone is live");
+{
+  const G = await import("../tools/gate.mjs");
+  const ci = readFileSync(join(REPO, ".github", "workflows", "ci.yml"), "utf8");
+  const ciChecks = [...ci.matchAll(/run: node (tools\/[a-z-]+\.mjs) --check/g)].map((m) => m[1]);
+  const gateTools = G.CHECKS.map(([, args]) => args[0]);
+  ok(ciChecks.length >= 7 && ciChecks.every((t) => gateTools.includes(t)), "the gate runs every --check that ci.yml runs (" + ciChecks.length + " of them)");
+  ok(gateTools.includes("tools/lint-workflows.mjs") && gateTools.includes("tools/ledger.mjs") && typeof G.buildMatches === "function", "and the workflow lint, the extract and the build check");
+  /* red: a master whose BOOK block is not the file fails the gate at that check, and nothing after runs */
+  const { mkdirSync: mkG, rmSync: rmG, copyFileSync: cpG, readFileSync: rfG, writeFileSync: wfG } = await import("node:fs");
+  const { execFileSync: exG } = await import("node:child_process");
+  const dirG = join(REPO, "test", "tmp", "gate-" + Date.now());
+  mkG(dirG, { recursive: true });
+  const MG = join(dirG, "salt_command.html");
+  cpG(join(REPO, "master", "changelog.json"), join(dirG, "changelog.json"));
+  wfG(MG, rfG(join(REPO, "master", "salt_command.html"), "utf8").replace(/(const STATED_STOCK=)(-?\d+(?:\.\d+)?)/, (m, a, b) => a + (+b + 1000)));
+  let gate;
+  try { gate = { code: 0, out: exG(process.execPath, [join(REPO, "tools", "gate.mjs")], { cwd: REPO, encoding: "utf8", stdio: "pipe", env: { ...process.env, SALT_MASTER: MG } }) }; }
+  catch (e) { gate = { code: e.status, out: String(e.stdout || "") }; }
+  ok(gate.code === 1 && /FAIL  the book in the master is ledger\/book\.json/.test(gate.out) && !/public\/ is what this master builds/.test(gate.out), "a master whose book block is not the file fails the gate there, and the build check never runs");
+  rmG(dirG, { recursive: true, force: true });
+  const wf = readFileSync(join(REPO, ".github", "workflows", "cloud-commit.yml"), "utf8");
+  const gateAt = wf.indexOf("- name: Gate\n"), deployAt = wf.indexOf("- name: Deploy\n"), suiteAt = wf.indexOf("- name: The full suite, after the phone is live"), stmtAt = wf.indexOf("- name: Retire the old statement keys");
+  ok(gateAt > 0 && deployAt > gateAt && /- name: Gate\n\s+if: steps\.plan\.outputs\.deploy == '1' && steps\.already\.outputs\.live != '1'\n\s+run: node tools\/gate\.mjs/.test(wf), "the gate stands before the deploy, on the deploy's own condition");
+  ok(suiteAt > stmtAt && /id: suite\n\s+if: steps\.plan\.outputs\.deploy == '1' && steps\.already\.outputs\.live != '1'\n\s+run: npm test/.test(wf), "the full suite is the last step, after the statements, after the phone is live");
+  ok(/if: always\(\) && steps\.suite\.outcome == 'failure'/.test(wf) && /--refused-note "suite:\$v"/.test(wf), "a suite failure is written where the phone shows refusals, under a synthetic id");
+  ok(!/\n\s+npm test\n[\s\S]*?- name: Deploy\n/.test(wf.slice(wf.indexOf("- name: Fold\n"))), "and nothing runs the suite between the fold and the deploy");
 }
 
 const FLOOR_ASSERTIONS = 1330, FLOOR_SECTIONS = 97;   /* stale records skipped: 1334 everywhere, 1335 here */
