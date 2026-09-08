@@ -1,5 +1,14 @@
 [
  {
+  "v": "v546",
+  "d": "09 Sep 2026",
+  "t": "FULFILMENT ON THE 50 UNIT CA7-JTR OIL ORDER S140: RM450 AND 50 UNIT MOVE ON 09 SEP, THE ROW SETTLES IN FULL",
+  "n": [
+   "<b>ONE ROW FOLDED, A FULFILMENT AND NOTHING ELSE.</b> The pending oil order s140 with CA7-JTR, 50 unit for RM450 agreed 08 Sep, is met in full: RM450 cash and 50 unit recorded on 09 Sep against RM450 and 50 unit outstanding, leaving RM0 and 0 unit. The row itself is not recomputed in this fold, the master's amend path applies it, so there is one definition of what a fulfilment does rather than two.",
+   "<b>THE INVENTORY DID NOT MOVE ON THIS FOLD.</b> The movement is oil, 50 unit out to CA7-JTR dated 09 Sep, and the salt position stands where the count of 08 Sep left it at 32.25 unit, with cost at RM44 and replacement at RM46. The oil count still dates from 23 Aug, so this fulfilment runs against a count two weeks and more behind. CA7-JTR's outstanding of RM450 clears to nothing and no units sit on credit."
+  ]
+ },
+ {
   "v": "v545",
   "d": "09 Sep 2026",
   "t": "THE 6.25 UNIT CK4-SEN SALE OF 09 SEP: RM505 COLLECTED IN FULL, ABOVE FLOOR AND UNDER THE ASK",

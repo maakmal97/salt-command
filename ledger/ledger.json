@@ -1,6 +1,6 @@
 {
- "v": "v545",
- "stamped": "09 Sep 2026, 03:08 KL",
+ "v": "v546",
+ "stamped": "09 Sep 2026, 03:23 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -38,7 +38,7 @@
    "oil": {
     "qty": 5,
     "costPerKg": 7.666666666666667,
-    "stated": 15
+    "stated": -35
    }
   },
   "STATED_STOCK": 32.25,
@@ -3260,13 +3260,31 @@
     "customer": "CA7-JTR",
     "qty": 50,
     "total": 450,
-    "cash": 0,
+    "cash": 450,
     "handover": "collected",
     "product": "oil",
-    "deliveredQty": 0,
+    "deliveredQty": 50,
     "date": "2026-09-08",
     "note": "<b>PENDING OIL ROW DATED 08 SEP, THE DAY IT WAS AGREED.</b> SELL to CA7-JTR, 50 unit of oil for RM 450, collected, RM 0 cash and 0 unit moved, so the row is pending and draws no stock and books no revenue until it does. At RM 9 a unit the total sits above the RM 376.46 floor for 50 unit and exactly on the RM 450 ask, under the RM 1,080 ceiling. It is costed at the desk's own RM 7.67 a unit, RM 66.67 on the order at 14.8%, so no separate cost attaches. CA7-JTR stood at 2 orders, a median rate of RM 135, a range of RM 13 to RM 135, nothing outstanding, nothing on credit and nothing defaulted, against a credit cap of 10 unit. The drafter flagged nothing. RM 450 and 50 unit stay outstanding.",
-    "rid": "s140"
+    "rid": "s140",
+    "amend": [
+     {
+      "date": "2026-09-08",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 0,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-09-09",
+      "kind": "Fulfilment",
+      "cash": 450,
+      "kg": 50,
+      "note": "<b>FULFILMENT ON CA7-JTR ORDER s140, RECORDED 09 SEP AND SETTLING IT IN FULL.</b> SELL to CA7-JTR, 50 unit of oil for RM450, collected, agreed 08 Sep and pending until now: RM450 cash and 50 unit move against RM450 and 50 unit outstanding, leaving RM0 and 0 unit. At RM9 a unit it sits at the bottom of this party's own range of RM9 to RM135 and under the median rate of RM13 across 3 orders. Outstanding before was RM450, no units on credit, nothing defaulted, on the roster and not an associate. The draft carries no cost of its own. The drafter flagged that this settles the order in full, and the figures answer it. Nothing is left outstanding."
+     }
+    ],
+    "deliveredOn": "2026-09-09",
+    "paidOn": "2026-09-09"
    },
    {
     "customer": "CC5-OKR",
@@ -3637,9 +3655,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-08T18:33:54.271Z",
+  "QUEUE_COMMITTED": "2026-09-08T19:09:28.649Z",
   "PRICING": {
-   "takenAt": "2026-09-08T19:08:15.673Z",
+   "takenAt": "2026-09-08T19:23:07.997Z",
    "sizes": [
     0.5,
     1,
@@ -3991,9 +4009,9 @@
        "attrib": 1,
        "shrinkRate": 0.05037037037037038,
        "avgDel": {
-        "n": 7,
-        "kg": 86,
-        "mean": 12.2857
+        "n": 8,
+        "kg": 136,
+        "mean": 17
        }
       },
       "policy": {
@@ -4071,28 +4089,12 @@
      ]
     }
    },
-   "v": "v545"
+   "v": "v546"
   },
   "OPEN": {
-   "at": "2026-09-08T19:08:15.760Z",
-   "count": 9,
+   "at": "2026-09-08T19:23:08.077Z",
+   "count": 8,
    "byKey": {
-    "CA7-JTR|2026-09-08|450": {
-     "d": "2026-09-08",
-     "p": "CA7-JTR",
-     "dir": "S",
-     "q": 50,
-     "t": 450,
-     "cash": 0,
-     "mv": 0,
-     "st": "part",
-     "oweRM": 450,
-     "oweUnits": 50,
-     "pr": "oil",
-     "rid": "s140",
-     "handover": "collected",
-     "key": "CA7-JTR|2026-09-08|450"
-    },
     "SA5-BTR|2026-09-08|2200": {
      "d": "2026-09-08",
      "p": "SA5-BTR",
@@ -4243,13 +4245,13 @@
     },
     "oil": {
      "name": "Oil",
-     "onHand": 15,
-     "free": 15,
+     "onHand": -35,
+     "free": -35,
      "owedOut": 0,
-     "coverDays": 14,
-     "rate": 1.07,
+     "coverDays": 0,
+     "rate": 4.64,
      "owedToYou": 0,
-     "promised": 50,
+     "promised": 0,
      "short": 35
     }
    },
@@ -4257,7 +4259,7 @@
     "salt": "2026-09-08",
     "oil": "2026-08-23"
    },
-   "v": "v545"
+   "v": "v546"
   }
  }
 }
