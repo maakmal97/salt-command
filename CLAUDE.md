@@ -142,10 +142,12 @@ desk shows, cost and margin included, is served at the public URL.
   output before and after (10 Aug: identical rebuild, undeployed bundle, silent).
 - `ci.yml` on push: book in date order, master version in the changelog, tests pass,
   `public/` matches the master by id. `ship-check.yml` daily: repo id against live `/rev`.
-- **`node tools/update.mjs`** drains, reports both queues, builds, tests, deploys only on
-  an id change, commits, pushes, then proves master, `rev.json`, live `/rev` and origin
-  agree; non-zero on any failure. `--dry`, `--no-push`, `--no-deploy`, `--no-drain`,
-  `-m`. It never folds. The replay check refuses to ship while an entry above
+- **`node tools/update.mjs`** drains (a pull only since 09 Sep 2026: `drain.mjs --keep`, the
+  phone's KV keys are kept, so a laptop update never races the cloud drafter), reports both
+  queues, builds, tests, deploys only on an id change, commits, pushes, then proves master,
+  `rev.json`, live `/rev` and origin agree; non-zero on any failure. `--dry`, `--no-push`,
+  `--no-deploy`, `--no-drain`, `-m`. It never folds. Its mirror check reads `/ledger` with
+  `SALT_WRITE_KEY` from the shell and says so when the key is not set (09 Sep 2026). The replay check refuses to ship while an entry above
   `QUEUE_COMMITTED` matches a ledger row by date and total; `--force-ship` after reading
   the rows.
 

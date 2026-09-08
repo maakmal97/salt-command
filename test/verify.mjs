@@ -7719,6 +7719,27 @@ section("08 Sep 2026: the audit fixes");
   ok(/new Anthropic\(\{ maxRetries: 6 \}\)/.test(readFileSync(join(REPO, "tools", "foldcall.mjs"), "utf8")), "the fold's call retries six times on 529 before leaving the batch staged");
   ok(!/JSON\.stringify\("(UPDATE|INSERT)/.test(readFileSync(join(REPO, "tools", "drafts.mjs"), "utf8")), "no write in drafts.mjs goes to wrangler by --command, where a shell reads the text");
 
+  /* the drain: update.mjs pulls and keeps; only the hand mode clears (09 Sep 2026) */
+  {
+    const { runDrain } = await import("../tools/drain.mjs");
+    const mk = () => {
+      const kv = new Map([["q:a", JSON.stringify({ queue: [{ at: "2026-09-09T01:00:00.000Z", raw: "x" }] })], ["q:b", JSON.stringify({ queue: [{ at: "2026-09-09T02:00:00.000Z", raw: "y" }] })]]);
+      const io = { deleted: [], written: null,
+        list: () => [...kv.keys()], get: (k) => kv.get(k) ?? null, del: (k) => { io.deleted.push(k); return kv.delete(k); },
+        read: () => ({ queue: [{ at: "2026-09-09T00:30:00.000Z", raw: "old" }] }), write: (o) => { io.written = o; } };
+      return io;
+    };
+    const keep = mk(), r1 = runDrain({ keep: true, io: keep });
+    ok(r1.cleared === 0 && keep.deleted.length === 0 && keep.written && keep.written.queue.length === 3,
+      `--keep pulls both devices into the file (${keep.written && keep.written.queue.length} entries) and deletes nothing`);
+    const clear = mk(), r2 = runDrain({ io: clear });
+    ok(r2.cleared === 2 && clear.deleted.join() === "q:a,q:b", "the default mode still clears the keys it read, which is why update.mjs no longer runs it");
+    const usrc = readFileSync(join(REPO, "tools", "update.mjs"), "utf8");
+    ok(/\["tools\/drain\.mjs", "--keep"\]/.test(usrc), "update.mjs drains with --keep");
+    ok(/headers: \{ "X-Salt-Key": process\.env\.SALT_WRITE_KEY \}/.test(usrc) && /!process\.env\.SALT_WRITE_KEY/.test(usrc),
+      "the mirror check carries the write key from the environment, and says so when there is none");
+  }
+
   /* the statement: a gift owes nothing */
   {
     const gb = JSON.parse(JSON.stringify(bkR));

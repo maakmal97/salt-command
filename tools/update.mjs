@@ -125,9 +125,12 @@ step(2, "drain the phone queue");
 if (NO_DRAIN) {
   ok("skipped" + (DRY ? " (dry run)" : ""));
 } else {
-  const r = sh("node", ["tools/drain.mjs"]);
+  /* --keep, 09 Sep 2026: this ran the drain's DEFAULT mode, which deletes each phone's queue key
+     from KV after pulling it, the destructive read drain.mjs's own header says must not come back
+     (it raced the cloud drafter on 16 Aug and lost an entry). The file is all this run needs. */
+  const r = sh("node", ["tools/drain.mjs", "--keep"]);
   if (r.code !== 0) fail("drain failed, so phone entries may not be on disk");
-  else ok("KV drained into 10_Data");
+  else ok("KV pulled into 10_Data, the phone's keys kept");
 }
 
 /* ---- 3. queues, and the replay check --------------------------------------------- */
@@ -274,9 +277,15 @@ if (NO_DEPLOY) {
 step("6b", "the ledger mirror");
 if (DRY || has("--no-mirror")) {
   ok("skipped" + (DRY ? " (dry run)" : ""));
+} else if (!process.env.SALT_WRITE_KEY) {
+  /* 09 Sep 2026: /ledger is a keyed read since 08 Sep, and this asked without the key, so the
+     endpoint answered "write key required" and the check was blind. The key is never on disk;
+     it comes from the environment or the check is skipped and says so. The cloud fold re-seeds
+     the mirror on every fold regardless. */
+  console.log("  note  not checked: set SALT_WRITE_KEY in this shell to compare the mirror (the cloud fold re-seeds it on every fold)");
 } else {
   let store = null;
-  try { store = await (await fetch(SITE + "/ledger", { cache: "no-store" })).json(); }
+  try { store = await (await fetch(SITE + "/ledger", { cache: "no-store", headers: { "X-Salt-Key": process.env.SALT_WRITE_KEY } })).json(); }
   catch (e) { warn("could not reach " + SITE + "/ledger, so the mirror was not checked"); }
   if (store && store.ok === false) warn("the ledger endpoint answered: " + (store.error || "not ok"));
   else if (store && !store.seeded) {

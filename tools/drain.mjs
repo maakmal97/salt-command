@@ -25,6 +25,9 @@
  *                                      after a successful commit, drop file entries whose
  *                                      'at' <= <ISO> (the QUEUE_COMMITTED watermark the run
  *                                      just set), leaving only still-uncommitted entries.
+ *   node tools/drain.mjs --keep        pull KV -> file as above and clear NOTHING: the mode
+ *                                      update.mjs runs (09 Sep 2026), so a laptop update never
+ *                                      races the cloud drafter for a phone entry.
  *   node tools/drain.mjs --status      read-only: print the KV union and the file, no writes.
  *   node tools/drain.mjs --forget <at> withdraw ONE entry, from the file and from KV, by
  *                                      its own `at`. For testing the phone leg without
@@ -157,9 +160,14 @@ function runStatus() {
   }
 }
 
-function runDrain() {
+/* `keep` pulls and clears nothing (09 Sep 2026): the mode update.mjs runs, because the default
+   is the destructive read the header says must not come back, and update.mjs had been running
+   it on every laptop update since v305. `io` is the KV and file access, injectable so the suite
+   can prove which keys a mode deletes without a namespace. */
+export function runDrain({ keep = false, io = {} } = {}) {
+  const IO = Object.assign({ list: kvList, get: kvGet, del: kvDelete, read: readFile, write: writeAtomic }, io);
   let keys;
-  try { keys = kvList(); }
+  try { keys = IO.list(); }
   catch (e) {
     console.error("DRAIN FAILED: wrangler could not reach the KV namespace.");
     console.error("  " + e.message.split("\n")[0]);
@@ -168,26 +176,30 @@ function runDrain() {
   }
   const captured = [];   // {name, raw, entries}
   for (const name of keys) {
-    const raw = kvGet(name);
+    const raw = IO.get(name);
     if (!raw) continue;
     const j = jsonSlice(raw, "{", "}");
     captured.push({ name, raw, entries: (j && Array.isArray(j.queue)) ? j.queue : [] });
   }
   const fresh = captured.flatMap(c => c.entries);
-  const file = readFile();
+  const file = IO.read();
   const merged = unionByAt(file.queue, fresh);
-  writeAtomic({ updated: nowISO(), desk: "cloud", queue: merged });
+  IO.write({ updated: nowISO(), desk: "cloud", queue: merged });
 
   let cleared = 0, kept = 0;
-  for (const c of captured) {
-    const now = kvGet(c.name);            // re-read: only delete if this device has not pushed since
-    if (now !== null && now === c.raw) { if (kvDelete(c.name)) cleared++; }
-    else kept++;                          // changed mid-drain; its new entries land next drain (dedup by at)
+  if (!keep) {
+    for (const c of captured) {
+      const now = IO.get(c.name);           // re-read: only delete if this device has not pushed since
+      if (now !== null && now === c.raw) { if (IO.del(c.name)) cleared++; }
+      else kept++;                          // changed mid-drain; its new entries land next drain (dedup by at)
+    }
   }
   console.log(`DRAIN OK -> ${OUT}`);
   console.log(`  devices: ${captured.length}   fresh entries: ${fresh.length}   file now holds: ${merged.length}`);
-  console.log(`  KV keys cleared: ${cleared}${kept ? `, ${kept} left (changed mid-drain, next run gets them)` : ""}`);
-  if (merged.length) console.log(`  the daily run should commit ${FILE}, then: node tools/drain.mjs --committed <QUEUE_COMMITTED>`);
+  console.log(keep ? "  KV keys kept: the phone's queue is untouched (--keep)"
+    : `  KV keys cleared: ${cleared}${kept ? `, ${kept} left (changed mid-drain, next run gets them)` : ""}`);
+  if (merged.length && !keep) console.log(`  the daily run should commit ${FILE}, then: node tools/drain.mjs --committed <QUEUE_COMMITTED>`);
+  return { devices: captured.length, fresh: fresh.length, merged: merged.length, cleared, kept };
 }
 
 /* --forget <at>: take one entry back out of BOTH the file and KV. */
@@ -227,6 +239,7 @@ function main() {
   if (arg === "--forget") return runForget();
   if (arg === "--committed") return runCommitted();
   if (arg === "--status") return runStatus();
+  if (arg === "--keep") return runDrain({ keep: true });
   return runDrain();
 }
 
