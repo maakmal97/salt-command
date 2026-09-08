@@ -205,8 +205,16 @@ if (isMain) {
     if (!process.env.ANTHROPIC_API_KEY) { console.log("  FAIL  ANTHROPIC_API_KEY is not set"); process.exit(1); }
     const { default: Anthropic } = await import("@anthropic-ai/sdk");
     const t0 = Date.now();
-    try { const m = await new Anthropic().models.retrieve(MODEL); console.log(`  ok    the key answers: ${m.id} (${m.display_name}), ${((Date.now() - t0) / 1000).toFixed(1)} s`); process.exit(0); }
-    catch (e) { console.log("  FAIL  the key was refused: " + (e && e.status ? "http " + e.status + " " : "") + String((e && e.message) || e).slice(0, 160)); process.exit(1); }
+    /* THE BALANCE, NOT ONLY THE KEY (08 Sep 2026). models.retrieve needs no credit and answered on an
+       account with none; the first real fold then failed with "credit balance is too low". One
+       five-token message proves what the fold will actually need. */
+    try {
+      const client = new Anthropic();
+      const m = await client.models.retrieve(MODEL);
+      const r = await client.messages.create({ model: MODEL, max_tokens: 5, messages: [{ role: "user", content: "Reply with the single word: ok" }] });
+      console.log(`  ok    the key answers and the account is funded: ${m.id} (${m.display_name}), ${r.usage.input_tokens} in, ${r.usage.output_tokens} out, ${((Date.now() - t0) / 1000).toFixed(1)} s`); process.exit(0);
+    }
+    catch (e) { console.log("  FAIL  the call was refused: " + (e && e.status ? "http " + e.status + " " : "") + String((e && e.message) || e).slice(0, 220)); process.exit(1); }
   }
   const dry = argv.includes("--dry");
   const passthrough = [];
@@ -244,7 +252,23 @@ if (isMain) {
   } else {
     if (!process.env.ANTHROPIC_API_KEY) { console.log("  FAIL  ANTHROPIC_API_KEY is not set. Run: gh secret set ANTHROPIC_API_KEY. The batch stays staged."); process.exit(1); }
     const t0 = Date.now();
-    let got = await callClaude(req);
+    /* A CALL THAT FAILS IS SAID ON THE PHONE (08 Sep 2026). The first live fold failed on an
+       unfunded account and nothing outside the run's log said so; the batch sat staged. The
+       failure is recorded where the phone shows refusals, under an id above the watermark, so
+       the Approve view carries it until the next fold clears it. */
+    const said = async (why) => {
+      if (!process.env.CLOUDFLARE_API_TOKEN) return;
+      const r = spawnSync(process.execPath, [resolve(REPO, "tools", "drafts.mjs"), "--refused-note", "fold:" + ids[0], why], { cwd: REPO, encoding: "utf8" });
+      console.log("  " + (r.status === 0 ? "noted" : "could not note") + "  on the phone: " + why.slice(0, 120));
+    };
+    let got;
+    try { got = await callClaude(req); }
+    catch (e) {
+      const why = "The fold could not call Claude: " + (e && e.status ? "http " + e.status + ", " : "") + String((e && e.message) || e).replace(/\s+/g, " ").slice(0, 200) + ". The batch stays staged and the hourly net retries.";
+      console.log("  FAIL  " + why);
+      await said(why);
+      process.exit(1);
+    }
     console.log(`  call  ${MODEL}: ${got.usage.input_tokens} in, ${got.usage.output_tokens} out, ${((Date.now() - t0) / 1000).toFixed(1)} s`);
     notes = got.notes; problems = checkNotes(notes, d.version.next, ids);
     if (problems.length) {
