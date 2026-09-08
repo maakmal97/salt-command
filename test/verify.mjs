@@ -894,18 +894,18 @@ section("Worker — drafts and approval");
     const wf = readFileSync("./.github/workflows/cloud-commit.yml", "utf8");
     ok(/stage_only:\n\s+description/.test(wf), "cloud-commit.yml accepts stage_only");
     /* v520: one job. The Fold step is gated by a plan step that reads the stage's two outputs. */
-    ok(/- name: Fold\n\s+if: steps\.plan\.outputs\.fold == '1'\n\s+uses: anthropics\/claude-code-action@v1/.test(wf), "the Fold step runs in the same job, only when the plan says a batch is staged");
+    ok(/- name: Fold\n\s+if: steps\.plan\.outputs\.fold == '1'\n\s+env:\n\s+ANTHROPIC_API_KEY: \$\{\{ secrets\.ANTHROPIC_API_KEY \}\}/.test(wf) && /\n\s+node tools\/foldcall\.mjs\n/.test(wf), "the Fold step runs in the same job, only when the plan says a batch is staged, and it is tools/foldcall.mjs on the API key");
     ok(/if \[ "\$\{\{ steps\.guard\.outputs\.staged \}\}" = "1" \] \|\| \[ "\$\{\{ steps\.commit\.outputs\.staged \}\}" = "1" \]; then fold=1; fi/.test(wf) && /echo "skip=1" >> "\$GITHUB_OUTPUT"\n(?:\s+#[^\n]*\n)*\s+echo "staged=1"/.test(wf),
        "a batch already staged counts as staged, so a batch a failed fold left behind is folded on the next tick rather than never");
-    ok(/uses: anthropics\/claude-code-action@v1/.test(wf) && /claude_code_oauth_token: \$\{\{ secrets\.CLAUDE_CODE_OAUTH_TOKEN \}\}/.test(wf),
-       "the fold is the Claude Code action on the subscription token, so the judgement stays with an agent");
+    ok(!/claude-code-action/.test(wf) && !/CLAUDE_CODE_OAUTH_TOKEN: \$\{\{ secrets/.test(wf) && /node tools\/ledger\.mjs\n\s+npm run build\n\s+npm test\n/.test(wf) && /git push origin HEAD:master\n\s+echo "folded and pushed/.test(wf),
+       "the Claude Code action is gone from the job: the fold step folds, extracts, builds, tests and pushes as the runner, which starts no second run");
     ok(/if \[ "\$\{\{ github\.event_name \}\}" = "push" \]; then deploy=1; fi/.test(wf) && /\[ "\$\{\{ inputs\.stage_only \}\}" != "true" \]; then deploy=1; fi/.test(wf) && /if \[ "\$fold" = "1" \]; then deploy=1; fi/.test(wf),
        "the deploy steps run on a push, on a dispatch that did not ask to stage only, and whenever this run folded");
-    ok(/- name: Already serving\?/.test(wf) && (wf.match(/steps\.already\.outputs\.live != '1'/g) || []).length >= 6 && /- name: Check out what the fold pushed\n\s+if: steps\.plan\.outputs\.fold == '1'\n\s+uses: actions\/checkout@v4\n\s+with: \{ ref: master, clean: false \}/.test(wf),
-       "the deploy follows the fold in the same job on a fresh checkout, and every deploy step stands aside when the phone already has the build, so the agent's own push cannot deploy twice");
+    ok(/- name: Already serving\?/.test(wf) && (wf.match(/steps\.already\.outputs\.live != '1'/g) || []).length >= 6 && !/Check out what the fold pushed/.test(wf),
+       "the deploy follows the fold in the same job and every deploy step stands aside when the phone already has the build; no second checkout is needed once the job pushes as itself");
     ok(/git pull -q --rebase --autostash origin master\n\s+git push/.test(wf),
        "the handoff clear rebases before it pushes, autostashing what npm test rebuilt: master moved under it once, and the dirty tree refused the rebase the next time");
-    ok((wf.match(/ref: master/g) || []).length >= 2, "the fold and the deploy check out master's tip, not the sha the run started on");
+    ok((wf.match(/ref: master/g) || []).length === 1 && /uses: actions\/checkout@v4\n\s+with: \{ ref: master \}/.test(wf), "the one checkout is master's tip, not the sha the run started on, and it serves the whole job");
   }
 
   /* the double tap */
@@ -7215,6 +7215,69 @@ section("v519: the clock on every approval, as the phone says it");
   ok(w.eval("apClock(null)") === "" && w.eval("apClock({id:'y'})") === "", "no committed draft yet prints nothing");
   ok(/reached the phone in 9 min/.test(read({ ...c, liveAt: "2026-09-08T04:08:40.000Z" })), "past two minutes it says minutes");
   try { w.close(); } catch (e) { }
+}
+
+section("v521: the fold as one call");
+{
+  const F = await import("../tools/foldcall.mjs");
+  const ids = ["2099-01-01T00:00:00.001Z"];
+  const good = { version: "v999", title: "ONE UNIT TO A REGULAR", notes: ["<b>ONE ROW.</b> A paragraph that says what was folded and what the inventory did, at length enough."],
+    rows: { [ids[0]]: { note: "<b>1 UNIT, PAID AND COLLECTED.</b> Clear of the floor by a margin the dossier gives, costed at the inventory's own rate.", rowNote: null, cost: null } },
+    stockNote: "", stockCost: null, stockCostNote: "" };
+  ok(F.checkNotes(good, "v999", ids).length === 0, "a well-formed reply passes the check");
+  ok(F.checkNotes({ ...good, version: "v998" }, "v999", ids).some((x) => /version/.test(x)), "the wrong version is refused");
+  ok(F.checkNotes({ ...good, title: "one unit to a regular" }, "v999", ids).some((x) => /capitals/.test(x)), "a title not in capitals is refused");
+  ok(F.checkNotes({ ...good, rows: { [ids[0]]: { note: "short", rowNote: null, cost: null } } }, "v999", ids).some((x) => /paragraph/.test(x)), "a row note that is not a paragraph is refused");
+  ok(F.checkNotes({ ...good, notes: ["<b>ONE ROW.</b> A paragraph with an em-dash \u2014 in it, which the house does not write, at length."] }, "v999", ids).some((x) => /em-dash/.test(x)), "an em-dash is refused");
+  ok(F.checkNotes({ ...good, stockNote: "Two kg went out on the day, which is the wrong word." }, "v999", ids).some((x) => /kg/.test(x)), "kg is refused");
+  ok(F.checkNotes({ ...good, rows: { ...good.rows, extra: { note: "a paragraph that is long enough to pass the length check on its own merits", rowNote: null, cost: null } } }, "v999", ids).some((x) => /not in the batch/.test(x)), "a row the batch does not carry is refused");
+  ok(F.nextVersion("v520") === "v521" && F.nextVersion("junk") === null, "the next version is the master's plus one");
+  const sch = F.schemaFor(ids);
+  ok(sch.additionalProperties === false && sch.required.includes("rows") && sch.properties.rows.required[0] === ids[0] && sch.properties.rows.properties[ids[0]].required.includes("note"), "the schema names every id and forbids anything else");
+
+  /* END TO END ON A FIXTURE, through a fake reply: the tool plans, builds the dossier off the real
+     master, takes the notes, and folds with fold.mjs into copies of the book and the master. */
+  const { mkdirSync: mk9, rmSync: rm9, copyFileSync: cp9, readFileSync: rf9, writeFileSync: wf9, existsSync } = await import("node:fs");
+  const { join: j9 } = await import("node:path");
+  const { execFileSync: ex9 } = await import("node:child_process");
+  const dir9 = j9(REPO, "test", "tmp", "foldcall-" + Date.now());
+  mk9(dir9, { recursive: true });
+  const bk9 = JSON.parse(rf9(j9(REPO, "ledger", "book.json"), "utf8"));
+  const party9 = bk9.sales.filter((r) => r.customer && r.date && !r.cancelled).slice(-1)[0].customer;
+  const B9 = j9(dir9, "book.json"), M9 = j9(dir9, "salt_command.html"), S9 = j9(dir9, "_to_fold.json"), N9 = j9(dir9, "_fold_notes.json"), FD9 = j9(dir9, "_folded.json"), FAKE9 = j9(dir9, "reply.json");
+  cp9(j9(REPO, "ledger", "book.json"), B9); cp9(j9(REPO, "master", "salt_command.html"), M9); cp9(j9(REPO, "master", "changelog.json"), j9(dir9, "changelog.json"));
+  const id9 = "2099-01-02T00:00:00.001Z";
+  wf9(S9, JSON.stringify({ ok: true, count: 1, approved: [{ id: id9, collection: "sales",
+    row: { customer: party9, qty: 1, total: 130, cost: 48, cash: 130, delivery: 0, handover: "collected", date: "2099-01-02", deliveredQty: 1, deliveredOn: "2099-01-02", paidOn: "2099-01-02" },
+    reasoning: "Sold 1 unit of salt for RM 130.", flags: ["a flag from the drafter"], amends: null, amendKind: null,
+    entry: { raw: "Sell 1 unit for RM 130", payload: { mode: "new", qty: 1, total: 130 } }, decidedAt: "2099-01-02T00:01:00.000Z", decidedBy: "phone" }] }));
+  const args9 = ["--staged", S9, "--book", B9, "--master", M9, "--notes", N9, "--folded", FD9, "--today", "2099-01-02"];
+  const run9 = (env) => { try { return { code: 0, out: ex9(process.execPath, [j9(REPO, "tools", "foldcall.mjs"), ...args9], { cwd: REPO, encoding: "utf8", stdio: "pipe", env: { ...process.env, ...env } }) }; } catch (e) { return { code: e.status, out: String(e.stdout || "") + String(e.stderr || "") }; } };
+  /* the dossier, read from the dry run: it carries the ladder for the size and the party's rows */
+  const dry = run9({ SALT_FOLD_FAKE: "", ANTHROPIC_API_KEY: "" });
+  const dryArgs = [j9(REPO, "tools", "foldcall.mjs"), ...args9, "--dry"];
+  const dryOut = ex9(process.execPath, dryArgs, { cwd: REPO, encoding: "utf8", stdio: "pipe" });
+  const dj = JSON.parse(dryOut.slice(dryOut.indexOf('{\n "model"')));
+  const dd = JSON.parse(dj.user.slice(dj.user.indexOf("{"), dj.user.lastIndexOf("}") + 1));
+  const it9 = dd.items[0];
+  ok(dd.version.next && it9 && it9.ladder && it9.ladder.size === 1 && it9.ladder.floor > 0 && it9.ladder.ask >= it9.ladder.floor, "the dossier carries the desk's own floor and ask for 1 unit (floor " + (it9 && it9.ladder && it9.ladder.floor) + ", ask " + (it9 && it9.ladder && it9.ladder.ask) + ")");
+  ok(it9.party && it9.party.code === party9 && it9.party.lastRows.length > 0 && it9.party.medianRate > 0 && it9.drafterFlags[0] === "a flag from the drafter", "and the party's last rows, median rate and the drafter's flag");
+  ok(dd.inventory.position && typeof dd.inventory.position.stock === "number" && typeof dd.inventory.position.owedOut === "number", "and the inventory position from the engine");
+  ok(dj.schema.properties.rows.required[0] === id9 && /never kg or kilo/.test(dj.system), "the request binds the reply to the batch's ids under the house rules");
+  /* no key and no fake: it stops before anything is written */
+  ok(dry.code === 1 && /ANTHROPIC_API_KEY is not set/.test(dry.out) && !existsSync(N9), "without a key it fails plainly and writes nothing");
+  /* a fake reply that breaks the rules is refused, and nothing is folded */
+  wf9(FAKE9, JSON.stringify({ ...good, version: dd.version.next, rows: { [id9]: { note: "<b>ONE UNIT.</b> A note with an em-dash \u2014 which the house never writes, at length enough to pass.", rowNote: null, cost: null } } }));
+  const bad9 = run9({ SALT_FOLD_FAKE: FAKE9 });
+  ok(bad9.code === 1 && /em-dash/.test(bad9.out) && !existsSync(FD9), "a reply against the house rules folds nothing");
+  /* a good reply folds: the row is on the copied book at the next version, and the master carries it */
+  wf9(FAKE9, JSON.stringify({ ...good, version: dd.version.next, title: "ONE UNIT TO " + party9, rows: { [id9]: { note: "<b>1 UNIT COLLECTED AND PAID, RM 130.</b> Clear of the floor for 1 unit on the desk's own ladder, costed at the inventory's own RM 48, the drafter's flag read and answered by the figures.", rowNote: null, cost: null } } }));
+  const good9 = run9({ SALT_FOLD_FAKE: FAKE9 });
+  const after9 = JSON.parse(rf9(B9, "utf8"));
+  const row9 = after9.sales.find((r) => r.date === "2099-01-02" && r.customer === party9 && r.total === 130);
+  ok(good9.code === 0 && row9 && /RM 130/.test(row9.note) && after9.QUEUE_COMMITTED === id9, "a good reply folds the row into the book with its note and moves the watermark");
+  ok(existsSync(FD9) && JSON.parse(rf9(FD9, "utf8")).ids[0] === id9 && new RegExp('const evolution=\\[\\{"v":"' + dd.version.next + '"').test(rf9(M9, "utf8")), "names the id in _folded.json and stamps the master with the next version");
+  rm9(dir9, { recursive: true, force: true });
 }
 
 const FLOOR_ASSERTIONS = 1330, FLOOR_SECTIONS = 97;   /* stale records skipped: 1334 everywhere, 1335 here */

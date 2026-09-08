@@ -1,5 +1,15 @@
 [
  {
+  "v": "v521",
+  "d": "08 Sep 2026",
+  "t": "THE FOLD AS ONE CALL",
+  "n": [
+   "<b>PART A, STEP 3: the Fold step is one call to Claude over a dossier the tools compute.</b> The Claude Code action booted a whole session for every approval, read the docs, explored the repo, ran the suite itself and pushed: 5 minutes 12 seconds on the CJ4-BJ chain of 07 Sep. <code>tools/foldcall.mjs</code> plans with <code>fold.mjs</code>, gathers what a person auditing the row would have looked up (the party's last rows, median and range, outstanding and units on credit against the cap; the desk's own floor, ask and ceiling for the size; the drafter's flags and sentences; the inventory position and open loans; for a count, the floors before and after), sends it once as JSON, and takes the notes back as JSON under a schema. The judgement is still a model's, on the same facts.",
+   "<b>WHAT THE MODEL CANNOT DO.</b> Every refusal rule stays in <code>fold.mjs</code>: a Linked or Rewarded amendment, an ambiguous key, a replay, a cancelled row. The reply is checked before it is used: the exact next version, a title in capitals, a paragraph for every row, no em-dash or en-dash, RM and unit only, codes only; a refused reply is sent back once with the reasons, and a second refusal leaves the batch staged. A refusal by the planner is recorded where the phone shows refusals and folds nothing. The step then runs the extract, the build and the suite, commits as the runner and pushes, which starts no second run.",
+   "<b>WHAT IT NEEDS, AND WHAT IT DOES NOT.</b> One new secret, <code>ANTHROPIC_API_KEY</code>; the Claude Code token is no longer read by the job. Nothing leaves the machine but codes, figures and the drafter's own sentences: the book carries no name. Proved in the suite on a fixture batch through a fake reply end to end, and on the validator both ways; the first real approval is the live proof and its clock (v519) is the measure."
+  ]
+ },
+ {
   "v": "v520",
   "d": "08 Sep 2026",
   "t": "THE CHAIN IN ONE JOB",

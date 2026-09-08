@@ -14,15 +14,14 @@
 # phone is serving the build before any row is marked committed. The hourly net and the
 # daily ship check stand.
 #
-# THE AGENT STILL PUSHES AS THE CLAUDE GITHUB APP (until step 3 replaces the action with one
-# API call), and that push starts a second run of this file. Two guards make that harmless:
-# the concurrency group serialises it behind this run, and "Already serving?" below skips the
-# deploy when the phone already has the build. It re-publishes the statements only when the
-# push touched them.
+# THE FOLD IS ONE CALL (v521, step 3): tools/foldcall.mjs builds the dossier, asks Claude once
+# for the notes, checks them and folds with fold.mjs. The job then pushes as the runner, which
+# starts no second run. "Already serving?" below stays as a guard: a push of the statements
+# alone deploys nothing, and a build the phone already has is never deployed twice.
 #
 # SETUP, AND IT IS THE ONE THING ONLY HE CAN DO:
 #   gh secret set CLOUDFLARE_API_TOKEN     Workers Scripts:Edit, Workers KV:Edit, D1:Edit
-#   claude setup-token, then  gh secret set CLAUDE_CODE_OAUTH_TOKEN     (the fold's agent)
+#   gh secret set ANTHROPIC_API_KEY          (the fold's one call; CLAUDE_CODE_OAUTH_TOKEN is no longer read here)
 #   npx wrangler secret put SALT_GITHUB_TOKEN    (the Worker's dispatch on every approval)
 name: Cloud commit
 
@@ -180,83 +179,50 @@ jobs:
           echo "deploy=$deploy" >> "$GITHUB_OUTPUT"
           echo "fold=$fold deploy=$deploy"
 
-      # ---- FOLD: the judgement, by an agent, in this job ---------------------------------
-      # It follows docs/CLOUD_FOLD.md and holds no Cloudflare credential: this token can fold
-      # a book and push a commit, and nothing else. It pushes as the Claude GitHub App.
-      - name: The fold credential exists
+      # ---- FOLD: the judgement, by one call, in this job (v521) ---------------------------
+      # tools/foldcall.mjs plans with fold.mjs, gathers the dossier a person would have looked up
+      # (the party's history, the desk's own floor and ask for the size, the drafter's flags, the
+      # inventory position), asks Claude once for the notes as JSON, checks them against the house
+      # rules and the next version, and folds with fold.mjs --apply. The judgement is still a
+      # model's, on the same facts; every refusal rule stays in the tool. The step then builds,
+      # tests, commits and pushes as the runner, so no second run starts. A refusal or a refused
+      # reply leaves the batch staged, recorded where the phone shows refusals, for the hourly net
+      # or a person. The Claude Code action is retired from the job; the manual backup stands.
+      - name: Fold
         if: steps.plan.outputs.fold == '1'
         env:
-          TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
         run: |
-          if [ -z "${TOKEN:-}" ]; then
-            echo "::error::CLAUDE_CODE_OAUTH_TOKEN is not set. Run: claude setup-token, then gh secret set CLAUDE_CODE_OAUTH_TOKEN. The batch stays staged; fold it by hand or fire the backup routine."
+          set -euo pipefail
+          if [ -z "${ANTHROPIC_API_KEY:-}" ]; then
+            echo "::error::ANTHROPIC_API_KEY is not set. Run: gh secret set ANTHROPIC_API_KEY. The batch stays staged; fold it by hand or fire the backup routine."
             exit 1
+          fi
+          if git cat-file -e HEAD:master/_folded.json 2>/dev/null; then
+            echo "::notice::master/_folded.json is in HEAD: the last batch is folded and its deploy did not clear it. Nothing is folded until that is resolved."
+            exit 0
           fi
           git config user.name  "salt-command fold"
           git config user.email "noreply@github.com"
-
-      - name: Fold
-        if: steps.plan.outputs.fold == '1'
-        uses: anthropics/claude-code-action@v1
-        with:
-          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          show_full_output: true
-          claude_args: '--model claude-opus-5 --allowedTools "Bash,Read,Write,Edit,Glob,Grep" --max-turns 80'
-          prompt: |
-            You are the fold for the Salt Command trading book, running as the Fold step of
-            .github/workflows/cloud-commit.yml. This is a real ledger with real money in it; be
-            exact and never guess a figure.
-
-            The stage step has just written master/_to_fold.json to master and this checkout is
-            master's tip. Two stops come first. If master/_to_fold.json is absent, nothing is
-            staged: say so in one line and stop. If master/_folded.json is present, the last batch
-            is folded and waiting for its deploy: say so in one line and stop.
-
-            Read these next, in this order, and follow them:
-              1. docs/CLOUD_FOLD.md  - your procedure. It is authoritative and short. The book is
-                 ledger/book.json and the fold is done by a tool; the rows in
-                 master/salt_command.html are a generated copy and are never edited by hand.
-              2. CLAUDE.md           - the repo's hard rules.
-
-            In one line: run `node tools/fold.mjs --plan`. If it says there is nothing to fold, say
-            so in one line and stop without bumping a version. Otherwise read the plan, fill in
-            master/_fold_notes.json (a note for every new row written as a person auditing it
-            would need, a trail note for every amendment, the next version, a title in capitals,
-            the notes array, and your sentence on the roll), run `node tools/fold.mjs --apply`,
-            then `node tools/ledger.mjs`, then `npm run build && npm test`, then commit
-            everything it wrote with a message naming the version and what was folded, and push
-            with `git push origin HEAD:master`. Git identity is already configured. The steps
-            that follow in this job deploy, mark the rows committed and clear the handoff
-            files; do not run npm run deploy, do not mark anything committed and do not delete
-            the handoff files yourself.
-
-            A refusal folds nothing: if --plan or --apply refuses anything, report it plainly and
-            stop. Never edit the rows in the master, never write a real name: codes only,
-            everywhere, including in a note. A Modification and a Correction are mechanical and
-            fold like any other amendment; a Linked or Rewarded amendment is refused by the tool
-            and left for a person.
-
-            You have no Cloudflare credential and must not look for one. House style, and it is
-            not optional: British English, no em-dashes, RM and 'unit' only (never kg or kilo),
-            codes only and never a real name.
-
-            Before you push, state plainly what you folded, what you refused and why, and any
-            figure you were unsure of. If anything looks wrong, fold nothing and say so: a day
-            with no commit is cheap and a wrong row is not.
-
-      # THE WORKSPACE AFTER THE AGENT. The action pushes with its own credentials and revokes
-      # them on the way out, so master is checked out again: the tip now carries the fold, and
-      # the runner's own token is back on the remote for the handoff commit below. clean: false
-      # keeps node_modules.
-      - name: Check out what the fold pushed
-        if: steps.plan.outputs.fold == '1'
-        uses: actions/checkout@v4
-        with: { ref: master, clean: false }
+          node tools/foldcall.mjs
+          node tools/ledger.mjs
+          npm run build
+          npm test
+          v=$(node -p "require('./master/changelog.json')[0].v + ': ' + require('./master/changelog.json')[0].t.toLowerCase()")
+          git add -A
+          git commit -q -m "$v"
+          # master can move while this runs; rebase onto its tip, then push as the runner, which
+          # starts no second run.
+          git pull -q --rebase origin master
+          git push origin HEAD:master
+          echo "folded and pushed: $v"
 
       # ---- DEPLOY: the phone gets the build, and only then are the rows marked ----------
-      # ALREADY SERVING? The agent's push starts a second run of this file, queued behind this
-      # one. That run finds the phone already on the build and no fold waiting, and deploys
-      # nothing; it republishes the statements only if the push touched them.
+      # ALREADY SERVING? A push of the statements alone, or a re-run, finds the phone already on
+      # the build and no fold waiting, and deploys nothing; it republishes the statements only if
+      # the push touched them.
       - name: Already serving?
         id: already
         if: steps.plan.outputs.deploy == '1'

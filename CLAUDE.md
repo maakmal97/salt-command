@@ -78,14 +78,15 @@ desk shows, cost and margin included, is served at the public URL.
 | Draft the row | Worker `src/drafter.js` | on arrival via `waitUntil`, plus a `*/15` cron as the net |
 | Approve or reject | D1 `draft`, `POST /drafts/<id>/approve` | on tap; a decided row returns 409 |
 | Stage approved rows | Actions `cloud-commit.yml`, one job `chain` since v520 | dispatched by every approval (Worker holds `SALT_GITHUB_TOKEN`), hourly as the net |
-| **Fold, bump, build, test, push** | the `Fold` step: the Claude Code action (`CLAUDE_CODE_OAUTH_TOKEN`) per `docs/CLOUD_FOLD.md`; or any agent asked | same job when rows were staged; or on demand |
+| **Fold, bump, build, test, push** | the `Fold` step: `tools/foldcall.mjs`, one Claude call for the notes (`ANTHROPIC_API_KEY`) over `fold.mjs`, since v521; or any agent asked, per `docs/CLOUD_FOLD.md` | same job when rows were staged; or on demand |
 | Deploy, prove, mark committed (with the clock, v519), re-seed the D1 mirror, publish statements | the steps that follow in the same job; a push runs them alone, and skips the deploy when the phone already has the build | same job; or on push |
 | Prove repo and live agree | `ship-check.yml` | 11:00 MYT |
 | Monthly statements | `docs/STATEMENTS.md` routine | the 1st, gated in Kuala Lumpur time |
 
-- **The fold is a judgement and stays with an agent**: rolling `STATED_STOCK`, the row
-  NOTE, the `evolution` entry and what an amendment amends. CI never folds and holds no
-  secrets.
+- **The fold is a judgement and stays with a model**: the row NOTE, the `evolution` entry
+  and the sentence on the roll come from one Claude call over a dossier the tools compute
+  (`tools/foldcall.mjs`, v521); what a row DOES, what is refused and what the inventory rolls
+  are `fold.mjs`, never the model. CI holds the API key and the Cloudflare token, nothing else.
 - **No clock** since 24 Aug 2026. `Salt fold (manual backup)` (trig_01UrnjQMWA3f6GXN5R6Dzi4S)
   is disabled, no cron: fire it by hand if the Fold step fails. The stage stands down while
   `master/_to_fold.json` is in HEAD, unless `fold.mjs --replays` says the batch is a replay (v512).
