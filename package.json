@@ -10,7 +10,7 @@
     "deploy": "npm run build && wrangler deploy",
     "drain": "node tools/drain.mjs",
     "icons": "python tools/make_icons.py",
-    "test": "node test/verify.mjs",
+    "test": "node --max-old-space-size=4096 test/verify.mjs",
     "payload": "node tools/payload.mjs"
   },
   "devDependencies": {
