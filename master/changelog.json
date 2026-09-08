@@ -1,5 +1,13 @@
 [
  {
+  "v": "v523",
+  "d": "08 Sep 2026",
+  "t": "THE GATE THAT DID NOT RUN",
+  "n": [
+   "<b>THE v522 GATE WAS A NO-OP ON THE RUNNER.</b> Its main-module check built the file URL by hand, which matched on Windows and not on Linux, so on the runner it printed nothing and exited 0: the Gate step of the v522 deploy took one second and passed. The suite, running after the phone was live as v522 arranged, failed on its own red case for the gate and wrote the failure where the phone shows refusals, which is the loud failure that version promised. The check is now <code>pathToFileURL</code>, as <code>fold.mjs</code> does it, and the suite also asserts the green path: on the real master the gate prints every check and says GATE OK. The v522 note stands corrected: the gate runs in about ten seconds on the laptop and on the runner."
+  ]
+ },
+ {
   "v": "v522",
   "d": "08 Sep 2026",
   "t": "THE GATE BEFORE, THE SUITE AFTER",

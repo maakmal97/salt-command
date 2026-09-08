@@ -17,7 +17,7 @@
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { resolve, dirname } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const run = (args) => execFileSync(process.execPath, args.map((a) => a.startsWith("tools/") ? resolve(REPO, a) : a), { cwd: REPO, encoding: "utf8", stdio: "pipe" });
@@ -43,7 +43,10 @@ export function buildMatches() {
   return after;
 }
 
-const isMain = process.argv[1] && import.meta.url === new URL("file:///" + process.argv[1].replace(/\\/g, "/")).href;
+/* v523: pathToFileURL, as fold.mjs does it. A hand-built file URL matched on Windows and not on the
+   runner, where the gate then printed nothing and exited 0: a no-op gate the suite caught after
+   the v522 deploy. */
+const isMain = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
 if (isMain) {
   const t0 = Date.now();
   let failed = false;
