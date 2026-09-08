@@ -173,6 +173,8 @@ const SYSTEM = `You write the audit notes for a fold of the Salt Command trading
 
 House style, not optional: plain British English; no em-dashes or en-dashes (use a comma, a colon or a full stop); RM and "unit" only, never kg or kilo; party CODES only (like CJ4-BJ, SA5-BTR), never a name, a title or a place; figures only from the dossier, never computed by hand, and quoted exactly (a floor, an ask, a rate, a margin); each note opens with a bold lead in capitals inside <b></b>, then the facts. A note names what happened, the terms, how the rate stands against the desk's own floor and ask for that size, the party's own history (median rate, range, outstanding, credit against the cap), the cost the row carries and whether it is the inventory's own, what the drafter flagged and whether the figures answer the flag, and what is left outstanding. For an amendment: what moved, when, and what it leaves. For a count: what was counted against what the book said, where the gap sits, and how the floors move. Never invent a row or a reason for a gap: say what the dossier says and no more. Say "on his word" for a fact the dossier marks as decided by him.
 
+LENGTH, and it is a rule: a row note is 60 to 120 words; each version note is one paragraph of 50 to 90 words; two version notes for a batch of one or two rows, three at most for a larger batch. Say each fact once. The first live fold wrote 4,700 tokens in 60 seconds, and the chain is measured in seconds.
+
 The version entry: "version" is exactly the next version given; "title" in CAPITALS, a short line; "notes" an array of HTML paragraphs, each opening with a bold lead, saying what was folded, what was unusual, and what the inventory did. "stockNote" is one or two sentences appended to the roll sentence the tool writes (empty string when nothing moved). "stockCost" is null unless a lot landed and the cost basis moves, then RM per unit with "stockCostNote" saying why. "rows.<id>.rowNote" is null unless a short bold line should be prepended to an amended row's own note. "rows.<id>.cost" is null unless the dossier shows the draft's cost is not the inventory's own rate, then the RM for the whole order.`;
 
 function requestFor(d, ids) {
@@ -184,7 +186,7 @@ THE DOSSIER, as JSON. Everything you may cite is in it.
 ${JSON.stringify(d, null, 1)}
 
 Reply with the notes JSON only: version "${d.version.next}", the title, the notes array, rows for exactly these ids ${JSON.stringify(ids)}, stockNote, stockCost, stockCostNote.`;
-  return { model: MODEL, max_tokens: 8000, system: SYSTEM, messages: [{ role: "user", content: user }], output_config: { format: { type: "json_schema", schema: schemaFor(ids) } } };
+  return { model: MODEL, max_tokens: 4000, system: SYSTEM, messages: [{ role: "user", content: user }], output_config: { effort: "medium", format: { type: "json_schema", schema: schemaFor(ids) } } };
 }
 
 async function callClaude(req) {
