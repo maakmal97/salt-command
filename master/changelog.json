@@ -1,5 +1,15 @@
 [
  {
+  "v": "v541",
+  "d": "08 Sep 2026",
+  "t": "TWO PENDING ROWS TAKE THE DAY THEY WERE AGREED",
+  "n": [
+   "<b>WHAT WAS FOLDED:</b> two sales, both pending, both dated 08 Sep 2026 from the entry as the day they were agreed. CA7-JTR takes 50 unit of oil at RM 450, collected, and CC5-OKR takes 1 unit of salt at RM 90, collected. Neither carries cash and neither has moved goods, so both are appended with their notes and nothing else follows them into the book.",
+   "<b>WHAT IS UNUSUAL:</b> the oil row lands exactly on the desk's RM 450 ask for 50 unit, while the salt row sits between the RM 58.56 floor and the RM 130 ask for 1 unit and repeats CC5-OKR's own median of RM 90. The drafter raised no flags on either row, and both are costed at the inventory's own rates, so no separate cost attaches to either order.",
+   "<b>WHAT THE INVENTORY DID:</b> nothing. Both rows are pending, so they draw no stock and book no revenue until goods move or cash arrives. Salt was counted on 08 Sep and oil on 23 Aug, and the salt cost basis stays at RM 48 a unit. Outstanding after this fold: RM 450 from CA7-JTR and RM 90 from CC5-OKR, with 51 unit still to hand over."
+  ]
+ },
+ {
   "v": "v540",
   "d": "08 Sep 2026",
   "t": "A PENDING ORDER IS DATED THE DAY IT WAS AGREED",

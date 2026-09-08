@@ -1,6 +1,6 @@
 {
- "v": "v536",
- "stamped": "08 Sep 2026, 14:35 KL",
+ "v": "v541",
+ "stamped": "08 Sep 2026, 16:33 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -3220,6 +3220,29 @@
       "note": "<b>CORRECTION ON s139: TOTAL ONLY, RM 110 TO RM 117.50.</b> The target is the second of the two 1 unit rows of 07 Sep, delivered, RM 7.50 delivery inside, nothing paid, and the party stays CS6-BS. One field moves on 08 Sep and no cash or stock goes with it. At RM 117.50 for 1 unit the row sits above the RM 54.87 floor for 1 unit and under the RM 120 ask named on the row itself, and it is costed at the inventory's own RM 48 a unit, so no separate cost attaches. CS6-BS stood at 10 orders, a median rate of RM 102.50, a range of RM 11 to RM 126.67, RM 220 outstanding, 3 unit on credit and nothing defaulted. The drafter flagged that CS6-BS typically pays about RM 104.75 a unit for salt across 8 orders and that RM 117.50 is 12.2% above that, and that this is an advance of 1 unit with RM 117.50 unpaid to be checked against the credit cap. The first flag is answered by the figures, the total is above the party's own run and stands as corrected; the second is not, the twin row names an associate cap of 2 unit of salt while CS6-BS carried 3 unit on credit before this fold. Outstanding: RM 117.50 unpaid on 1 unit delivered, and the cap question with it."
      }
     ]
+   },
+   {
+    "customer": "CA7-JTR",
+    "qty": 50,
+    "total": 450,
+    "cash": 0,
+    "handover": "collected",
+    "product": "oil",
+    "deliveredQty": 0,
+    "date": "2026-09-08",
+    "note": "<b>PENDING OIL ROW DATED 08 SEP, THE DAY IT WAS AGREED.</b> SELL to CA7-JTR, 50 unit of oil for RM 450, collected, RM 0 cash and 0 unit moved, so the row is pending and draws no stock and books no revenue until it does. At RM 9 a unit the total sits above the RM 376.46 floor for 50 unit and exactly on the RM 450 ask, under the RM 1,080 ceiling. It is costed at the desk's own RM 7.67 a unit, RM 66.67 on the order at 14.8%, so no separate cost attaches. CA7-JTR stood at 2 orders, a median rate of RM 135, a range of RM 13 to RM 135, nothing outstanding, nothing on credit and nothing defaulted, against a credit cap of 10 unit. The drafter flagged nothing. RM 450 and 50 unit stay outstanding.",
+    "rid": "s140"
+   },
+   {
+    "customer": "CC5-OKR",
+    "qty": 1,
+    "total": 90,
+    "cash": 0,
+    "handover": "collected",
+    "deliveredQty": 0,
+    "date": "2026-09-08",
+    "note": "<b>PENDING SALT ROW DATED 08 SEP, THE DAY IT WAS AGREED.</b> SELL to CC5-OKR, 1 unit of salt for RM 90, collected, RM 0 cash and 0 unit moved, so the row is pending and draws no stock and books no revenue until it does. At RM 90 a unit it sits above the RM 58.56 floor for 1 unit and under the RM 130 ask, well under the RM 150 ceiling. It is costed at the inventory's own RM 48 a unit, RM 42 on the order at 46.7%, so no separate cost attaches. CC5-OKR stood at 5 orders, a median rate of RM 90, a range of RM 80 to RM 90, RM 90 outstanding, 1 unit on credit against a cap of 1 and nothing defaulted. The drafter flagged nothing. RM 90 and 1 unit stay outstanding.",
+    "rid": "s141"
    }
   ],
   "contacts": [
@@ -3548,9 +3571,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-08T05:48:39.158Z",
+  "QUEUE_COMMITTED": "2026-09-08T08:18:14.797Z",
   "PRICING": {
-   "takenAt": "2026-09-08T06:35:06.223Z",
+   "takenAt": "2026-09-08T08:33:25.498Z",
    "sizes": [
     0.5,
     1,
@@ -3982,12 +4005,43 @@
      }
     }
    },
-   "v": "v536"
+   "v": "v541"
   },
   "OPEN": {
-   "at": "2026-09-08T06:35:06.298Z",
-   "count": 8,
+   "at": "2026-09-08T08:33:25.571Z",
+   "count": 10,
    "byKey": {
+    "CA7-JTR|2026-09-08|450": {
+     "d": "2026-09-08",
+     "p": "CA7-JTR",
+     "dir": "S",
+     "q": 50,
+     "t": 450,
+     "cash": 0,
+     "mv": 0,
+     "st": "part",
+     "oweRM": 450,
+     "oweUnits": 50,
+     "pr": "oil",
+     "rid": "s140",
+     "handover": "collected",
+     "key": "CA7-JTR|2026-09-08|450"
+    },
+    "CC5-OKR|2026-09-08|90": {
+     "d": "2026-09-08",
+     "p": "CC5-OKR",
+     "dir": "S",
+     "q": 1,
+     "t": 90,
+     "cash": 0,
+     "mv": 0,
+     "st": "part",
+     "oweRM": 90,
+     "oweUnits": 1,
+     "rid": "s141",
+     "handover": "collected",
+     "key": "CC5-OKR|2026-09-08|90"
+    },
     "CR3-DAM|2026-09-07|185": {
      "d": "2026-09-07",
      "p": "CR3-DAM",
@@ -4117,8 +4171,8 @@
      "coverDays": 0.2,
      "rate": 5.16,
      "owedToYou": 902,
-     "promised": 8.5,
-     "short": 7.5
+     "promised": 9.5,
+     "short": 8.5
     },
     "oil": {
      "name": "Oil",
@@ -4128,15 +4182,15 @@
      "coverDays": 14,
      "rate": 1.07,
      "owedToYou": 0,
-     "promised": 0,
-     "short": 0
+     "promised": 50,
+     "short": 35
     }
    },
    "countedOn": {
     "salt": "2026-09-08",
     "oil": "2026-08-23"
    },
-   "v": "v536"
+   "v": "v541"
   }
  }
 }
