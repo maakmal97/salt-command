@@ -6694,9 +6694,10 @@ section("Statements — the price list, the order book and the desk's relay (v49
       "and the Price part carries the card and the page the print-only sheet");
     /* v508: the board as a file, drawn here and handed to the share sheet */
     const doc = rd("pbHtmlDoc({code:'CX0-AA',user:'abcd-efgh',product:'Salt',week:'2026-09-07',rows:[{q:1,price:120},{q:2.5,price:260}]})");
-    ok(/^<!DOCTYPE html>/.test(doc) && doc.includes("<svg") && doc.includes("RM 120") && doc.includes("RM 260") && !/https?:\/\//.test(doc)
-      && !doc.includes("CX0-AA") && !doc.includes("abcd-efgh") && !doc.includes("Week of") && !doc.includes("Username"),
-      "the HTML file carries the logo, the sizes and the prices, and nothing else: no username, no week, no address, no code (v537)");
+    ok(/^<!DOCTYPE html>/.test(doc) && doc.includes("<svg") && doc.includes("abcd-efgh") && doc.includes(">120<") && doc.includes(">260<") && doc.includes(">2.5<")
+      && !/https?:\/\//.test(doc) && !doc.includes("CX0-AA") && !doc.includes("RM ") && !doc.includes("unit") && !doc.includes("SALT") && !doc.includes("Commodities")
+      && !doc.includes("Username") && !doc.includes("Week of") && doc.includes("#05080a"),
+      "the HTML file carries the mark, the username and bare figures on the obsidian ground, and no words: no unit, no RM, no wordmark, no week, no address, no code (v538)");
     ok(rd("typeof pbImageBlob+typeof pbDeliver+typeof pbSaveImage+typeof pbSaveHtml") === "functionfunctionfunctionfunction"
       && /id=\"pbImage\"/.test(rd("pbCard()")) && /id=\"pbHtml\"/.test(rd("pbCard()")),
       "and the card offers Save as image and Save as HTML, drawn on the desk and shared as files");

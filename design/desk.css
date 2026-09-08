@@ -448,19 +448,21 @@ details.obs>summary:hover{background:var(--salt-glass);}
   body{background:#fff!important;color:#141821!important;}
   h1,.railtitle{background:none;color:#141821;-webkit-text-fill-color:#141821;}
 }
-/* v537: THE PRINTED BOARD IS THE LOGO AND THE NUMBERS (his instruction, 08 Sep 2026): the
-   horizontal lockup in its light tone on white, then one line per size. Slate ink, brass
-   hairlines, the display face for the unit and the mono face for the price. The HTML file and
-   the image the phone saves carry the same rules in the master (PB_CSS, pbImageBlob). */
+/* v537: THE PRINTED BOARD IS THE LOGO AND THE NUMBERS (his instruction, 08 Sep 2026). v538, his
+   two calls: ON THE IDENTITY'S OWN GROUND, not white, and NO WORDS. The crystal, the username in
+   brass mono, then one line per size with two bare figures, the size in salt and the price in
+   brass, brass hairlines between; the browser is asked to keep the colours on paper. The HTML
+   file and the image the phone saves carry the same rules in the master (PB_CSS, pbImageBlob). */
 @media print{
-  body.pbPrinting #pbSheet{padding:32px;color:var(--salt-slate);}
-  #pbSheet .pbl{display:flex;align-items:center;gap:14px;margin:0 0 28px;}
-  #pbSheet .pbl .mark{width:48px;height:48px;display:block;}
-  #pbSheet .pbt{font-family:var(--salt-font-display);font-weight:300;font-size:30px;letter-spacing:.05em;line-height:1.05;color:var(--salt-slate);}
-  #pbSheet .pbd{font-family:var(--salt-font-mono);font-size:11px;font-weight:500;letter-spacing:.25em;text-transform:uppercase;color:var(--salt-copper);margin-top:5px;}
+  body.pbPrinting{background:var(--salt-obsidian)!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  body.pbPrinting #pbSheet{padding:32px;background:var(--salt-obsidian);color:var(--salt-salt);
+    -webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  #pbSheet .pbl{margin:0 0 14px;}
+  #pbSheet .pbl .mark{width:56px;height:56px;display:block;}
+  #pbSheet .pbu{font-family:var(--salt-font-mono);font-size:14px;font-weight:500;letter-spacing:.14em;color:var(--salt-brass);margin:0 0 24px;min-height:17px;}
   #pbSheet table{border-collapse:collapse;min-width:300px;}
-  #pbSheet td{padding:10px 0 10px 40px;border-bottom:1px solid rgba(197,160,89,.35);font-size:18px;text-align:right;font-family:var(--salt-font-mono);color:var(--salt-slate);}
-  #pbSheet td.l{text-align:left;padding-left:0;font-family:var(--salt-font-display);}
+  #pbSheet td{padding:10px 0 10px 40px;border-bottom:1px solid rgba(197,160,89,.3);font-size:20px;text-align:right;font-family:var(--salt-font-mono);color:var(--salt-brass);}
+  #pbSheet td.l{text-align:left;padding-left:0;font-family:var(--salt-font-display);color:var(--salt-salt);}
 }
 
 /* ---- 5b. THE RAIL'S TAB AND ITS PARTS ARE ONE BLOCK (v529, his instruction of 08 Sep 2026) ----
