@@ -184,7 +184,7 @@ replaceOnce("P3 qInit cloud branch",
 
 replaceOnce("P4a renderRole cloud tooltip",
   '      +\'title="Served by serve_desk.py, so this copy writes salt_queue.json and salt_vault.json to disk.">\'',
-  "      +(window.SALT_CLOUD?'title=\"Cloud desk. New transactions push to the queue and reach the source at the next daily run. Names arrive sealed and need the passphrase.\">':'title=\"Served by serve_desk.py, so this copy writes salt_queue.json and salt_vault.json to disk.\">')");
+  "      +(window.SALT_CLOUD?'title=\"Cloud desk. A tap queues the entry, the drafter measures it within seconds, and an approval folds and deploys on arrival. Names arrive sealed and need the passphrase.\">':'title=\"Served by serve_desk.py, so this copy writes salt_queue.json and salt_vault.json to disk.\">')");
 
 replaceOnce("P4b renderRole cloud label",
   "      +'&#9679; master &middot; writes to disk</span>';",
@@ -192,12 +192,12 @@ replaceOnce("P4b renderRole cloud label",
 
 replaceOnce("P5 qNote cloud line",
   "  if(qSyncState==='server')return 'Record saves straight to <b>'+QFILE+'</b> in this folder, which the daily run reads. Nothing else to do. <b>Save queue file</b> writes it again on demand and <b>Copy queue</b> puts the lines on the clipboard.';",
-  "  if(qSyncState==='server'&&window.SALT_CLOUD)return 'Record pushes each entry to the cloud queue. The daily run folds it into the source; nothing else to do. <b>Copy queue</b> still puts the lines on the clipboard.';" + EOL +
+  "  if(qSyncState==='server'&&window.SALT_CLOUD)return 'Record pushes each entry to the cloud queue. It is drafted within seconds and folded the moment it is approved; nothing else to do. <b>Copy queue</b> still puts the lines on the clipboard.';" + EOL +
   "  if(qSyncState==='server')return 'Record saves straight to <b>'+QFILE+'</b> in this folder, which the daily run reads. Nothing else to do. <b>Save queue file</b> writes it again on demand and <b>Copy queue</b> puts the lines on the clipboard.';");
 
 replaceOnce("P6a qPost success line",
   "    qStatus('Saved <b>'+QFILE+'</b> to this folder &mdash; '+j.entries+' queued.');",
-  "    qStatus(window.SALT_CLOUD?('Pushed to the cloud queue &mdash; '+j.entries+' waiting for the daily run.'):('Saved <b>'+QFILE+'</b> to this folder &mdash; '+j.entries+' queued.'));");
+  "    qStatus(window.SALT_CLOUD?('Pushed to the cloud queue &mdash; '+j.entries+' queued, drafted within seconds, folded on approval.'):('Saved <b>'+QFILE+'</b> to this folder &mdash; '+j.entries+' queued.'));");
 
 replaceOnce("P6b qPost offline branch",
   "    qSyncState='download'; qStatus('<b style=\"color:var(--amber)\">The desk server stopped answering</b> &mdash; falling back to downloads. Restart start_desk.bat for in-place saves.');",

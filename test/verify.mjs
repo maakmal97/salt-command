@@ -7223,7 +7223,8 @@ section("v519: the clock on every approval, as the phone says it");
   const read = (c) => String(w.eval("apClock(" + JSON.stringify(c) + ")")).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
   const c = { id: "x", party: "CJ4-BJ", decidedAt: "2026-09-08T04:00:00.000Z", liveAt: "2026-09-08T04:01:23.000Z", committedAt: "2026-09-08T04:01:30.000Z" };
   ok(/reached the phone in 83 s/.test(read(c)) && /90 s to committed/.test(read(c)), "83 s to the phone and 90 s to committed, from the three timestamps");
-  ok(/reached the phone in .*—|&mdash;/.test(String(w.eval("apClock(" + JSON.stringify({ ...c, liveAt: null }) + ")"))) , "no proof time reads as a dash, not as zero");
+  ok(/was committed in .*90 s/.test(read({ ...c, liveAt: null })) && /before the clock had a proof time/.test(read({ ...c, liveAt: null })), "no proof time says so, and gives the time to committed");
+  ok(/08 Sep 2026, 12:01 KL/.test(read(c)) && /a bookkeeping entry/.test(read({ ...c, party: null })), "the time is Kuala Lumpur in the header's own shape, and an entry with no party is named as such");
   ok(w.eval("apClock(null)") === "" && w.eval("apClock({id:'y'})") === "", "no committed draft yet prints nothing");
   ok(/reached the phone in 9 min/.test(read({ ...c, liveAt: "2026-09-08T04:08:40.000Z" })), "past two minutes it says minutes");
   try { w.close(); } catch (e) { }
