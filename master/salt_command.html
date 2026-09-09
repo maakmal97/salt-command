@@ -4164,8 +4164,24 @@ function ladderWalk(sizes,C,P){
        because 34 of the 105 unit ever bought were given away and the price now carries that.
        IT RAISES TO THE NEXT GRID STEP ABOVE THE FLOOR, never to the exact floor, because an ask
        equal to its refusal line leaves nothing and is not an ask. */
-    if(fl>p+0.009)p=Math.ceil((fl+0.009)/LADDER.round.to)*LADDER.round.to;
-    out.push({q:q,p:p});
+    /* v552, HIS INSTRUCTION OF 09 SEP 2026: A PRICE HE HAS STATED IS QUOTED, EVEN UNDER ITS FLOOR.
+       "The desk quotes to 450, by lowering margin." v353 said a stated price under its own floor is
+       not honoured and the guard lifts it; that is now true of a DERIVED ask only. The reason the
+       rule was written still stands for a derived one: the ladder and the floor are struck on
+       different bases, nothing forces them to agree, and an ask the desk invented below break-even
+       is a fault. A price HE set below break-even is not a fault, it is a decision, and the desk's
+       job is to quote it and say what it costs rather than to overrule him at the counter.
+       WHAT IT COSTS IS NAMED, NOT HIDDEN: `under` is the gap to break-even, and every surface that
+       prints an ask reads it. Oil's 50 unit tier is the whole of it today, RM450 against a floor of
+       RM482.20, so the desk quotes RM450 and reports it as 0.93x of break-even. The board's other
+       four sizes are untouched: they clear their floors already and his ladder steps the margin
+       down proportionately into this one. */
+    let under=0;
+    if(fl>p+0.009){
+      if(set!=null&&+set>0&&Math.abs(p-+set)<0.009)under=+(fl-p).toFixed(2);
+      else p=Math.ceil((fl+0.009)/LADDER.round.to)*LADDER.round.to;
+    }
+    out.push({q:q,p:p,under:under});
     if(q>0)prevRate=Math.min(prevRate,p/q);
   });
   return out;
@@ -4250,6 +4266,12 @@ function priceLadder(q,C,P,opts){
      out.ask={total:walked,rate:+(walked/q).toFixed(2),markup:+((walked/cogs-1)*100).toFixed(2),
               markupX:+(walked/cogs-1).toFixed(4),margin:+(((walked-lot)/walked)*100).toFixed(1),
               lawStepped:true};}}
+  /* v552: THE ASK AGAINST BREAK-EVEN, on whichever ask stands above. floorTotal IS the effective
+     cost of the size, to the ringgit and at every size on both books, so this one multiple is the
+     margin the board is actually taking: over 1.00x earns, 1.00x earns nothing, under 1.00x is a
+     price he has stated below break-even and `under` says by how much. */
+  out.ask.floorX=+(out.ask.total/Math.max(0.01,fl)).toFixed(3);
+  out.ask.under=+Math.max(0,fl-out.ask.total).toFixed(2);
   out.ceiling=at(LADDER.ceiling,true);
   return out;
 }
@@ -4701,6 +4723,7 @@ const ONE_OFFS=[
 ];
 /* v512, 07 Sep 2026: moved to 06:21:06.691Z past a second entry of the CR3-DAM sale already folded at v510, so the phone stops showing it as provisional; no row folded. */
 const QUEUE_COMMITTED="2026-09-09T05:55:00.001Z";
+/* HIS INSTRUCTION, 09 SEP 2026, AFTER THE v551 OIL COUNT: "The desk quotes to 450, by lowering margin, then for others, quote proportionately." The count read a 23.08 per cent leak from his own figures and lifted the 50 unit oil floor to RM482.20, above the RM450 he had stated, and v353 had the desk lift any stated price that sat under its floor. From v552 it lifts a DERIVED ask only: a price he has set is quoted as set, the gap to break-even is reported beside it rather than hidden, and the 50 unit tier reads 0.93x with RM32.20 under. His other four oil tiers are untouched and already step the margin down proportionately into it: 1.35x, 1.24x, 1.14x, 1.04x, 0.93x. Recorded as his decision, not an error, and the drafter will flag a 50 unit oil sale as under floor for the same reason the board does. */
 const PRICE_SET={
   "salt": {
     "prices": {},
@@ -5525,7 +5548,9 @@ const whiteboard=[
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{"v":"v551","d":"09 Sep 2026","t":"OIL COUNTED AT 60 ON 09 SEP: A DRIFT OF 15 UNIT AGAINST THE ROLL, AND THE FIRST OIL COUNT IN SEVENTEEN DAYS","n":["<b>HIS COUNT, 09 SEP 2026: OIL STANDS AT 60 UNIT.</b> The roll put it at 75 once the two lots of v550 were on, so the drift is -15. A COUNT AND NOT A ROLL: COUNT_ON.oil moves from 23 Aug to 09 Sep, and the counted figure stands over the roll, as it does everywhere on this desk.","<b>OIL HAD NOT BEEN COUNTED FOR SEVENTEEN DAYS,</b> and everything between was rolled. The 23 Aug count is the anchor the whole run of oil figures has rested on, and it carried no `was` of its own, so until today oil had no measured drift at all: it was the one book whose leak could not be charged from its own counts. This is the second oil count on the book and the first that can be compared with anything.","<b>WHAT THE 15 UNIT DOES AND DOES NOT PROVE.</b> It is the difference between what the book expected and what he found, over a cycle in which 65 unit of oil went out. It does not say where the 15 went. A drift measured against a roll standing on a seventeen-day-old anchor carries that anchor's error as well as the cycle's, so the honest reading is that oil's leak is now measurable rather than that it is 15 unit of loss. The next count is the one that tests it.","<b>IT ALSO SETTLES THE NEGATIVE INVENTORY.</b> Oil had stood at -35 since v546 rolled a 50 unit sale out of a stated 15. v550 put the missing lots on and this count puts a measured figure under them, so the oil book stops reporting an impossible position and the Sourcing tab stops calling it empty."]},
+const evolution=[{"v":"v552","d":"09 Sep 2026","t":"THE DESK QUOTES A PRICE HE HAS STATED, EVEN UNDER ITS FLOOR, AND THE BOARD READS ACROSS AS THE ARITHMETIC RUNS","n":["<b>HIS INSTRUCTION, 09 SEP 2026:</b> \"The desk quotes to 450, by lowering margin, then for others, quote proportionately.\" The v551 oil count read a 23.08 per cent leak from his own figures, which lifted the 50 unit oil floor to RM482.20 against the RM450 he had stated. v353 had the desk lift any stated price sitting under its floor, so the board read RM450 and the desk quoted RM490.","<b>THE GUARD IS NARROWED, NOT REMOVED.</b> From here it lifts a DERIVED ask only. The reason v352 wrote it still holds for one the desk invented: the ladder and the floor are struck on different bases, nothing forces them to agree, and an ask the desk made up below break-even is a fault. A price HE set below break-even is a decision, and the desk's job is to quote it and say what it costs rather than overrule him at the counter. The gap is named rather than hidden: `under` is the ringgit to break-even and `floorX` the multiple of it, so the 50 unit tier reads RM450 at 0.93x with RM32.20 under, and nothing else on either book moves.","<b>AND HIS LADDER ALREADY QUOTES PROPORTIONATELY.</b> Oil steps 1.35x, 1.24x, 1.14x, 1.04x, 0.93x of break-even across the five sizes, so the tier he has taken under cost is the end of a straight decline rather than a kink. The other four stand exactly as stated.","<b>THE BOARD'S COLUMNS ARE HIS ORDER NOW: size, COGS, effective cost, margin in x, ask with its % margin.</b> What stood there put the ask before the floor and headed a MARKUP column \"Margin\": ask over cogs less one, struck on LANDED, beside a \"% margin\" struck on EFFECTIVE cost. Two figures on one row shared a word without sharing a basis, and \"2.00x\" meant the ask was THREE times cogs. He asked what the difference was, which is the answer.","<b>EFFECTIVE COST, BREAK-EVEN AND THE FLOOR ARE ONE NUMBER,</b> equal to the ringgit at every size on both books, so the column carries all three names honestly and the multiple beside it is the ask over that: above 1.00x earns, 1.00x earns nothing, below 1.00x is a stated price under break-even and prints crimson.","<b>PROVED IN BOTH DIRECTIONS ON THE DESK'S OWN COST STACK.</b> Same size, same policy, same figures, the only difference being whether the price was stated: the stated one is quoted at RM450 and carries a RM32.20 gap; the derived one is still lifted clear of the floor and carries none. Against the unchanged engine the first reads RM490 and the pair collapses."]},
+
+{"v":"v551","d":"09 Sep 2026","t":"OIL COUNTED AT 60 ON 09 SEP: A DRIFT OF 15 UNIT AGAINST THE ROLL, AND THE FIRST OIL COUNT IN SEVENTEEN DAYS","n":["<b>HIS COUNT, 09 SEP 2026: OIL STANDS AT 60 UNIT.</b> The roll put it at 75 once the two lots of v550 were on, so the drift is -15. A COUNT AND NOT A ROLL: COUNT_ON.oil moves from 23 Aug to 09 Sep, and the counted figure stands over the roll, as it does everywhere on this desk.","<b>OIL HAD NOT BEEN COUNTED FOR SEVENTEEN DAYS,</b> and everything between was rolled. The 23 Aug count is the anchor the whole run of oil figures has rested on, and it carried no `was` of its own, so until today oil had no measured drift at all: it was the one book whose leak could not be charged from its own counts. This is the second oil count on the book and the first that can be compared with anything.","<b>WHAT THE 15 UNIT DOES AND DOES NOT PROVE.</b> It is the difference between what the book expected and what he found, over a cycle in which 65 unit of oil went out. It does not say where the 15 went. A drift measured against a roll standing on a seventeen-day-old anchor carries that anchor's error as well as the cycle's, so the honest reading is that oil's leak is now measurable rather than that it is 15 unit of loss. The next count is the one that tests it.","<b>IT ALSO SETTLES THE NEGATIVE INVENTORY.</b> Oil had stood at -35 since v546 rolled a 50 unit sale out of a stated 15. v550 put the missing lots on and this count puts a measured figure under them, so the oil book stops reporting an impossible position and the Sourcing tab stops calling it empty."]},
 
 {"v":"v550","d":"09 Sep 2026","t":"TWO OIL LOTS THAT WERE NEVER RECORDED: 30 UNIT ON 04 SEP AND 80 UNIT ON 08 SEP","n":["<b>HIS ENTRY, 09 SEP 2026:</b> two oil purchases that had never reached the book. 30 unit from SM4-KEP for RM 230 with RM 15 delivery on Friday 04 Sep, and 80 unit from SP7-PUD for RM 602 with a RM 12 collection trip on Tuesday 08 Sep. Both paid in full on the day, both received in full on the day.","<b>THE 80 UNIT LOT IS WHY THE OIL INVENTORY HAD GONE NEGATIVE.</b> CA7-JTR took 50 unit at RM 9 on order s140, and v546 rolled that out of a stated 15 to leave -35: the desk was reporting an oil book 35 unit short because the lot that covered the sale had not been entered. With both lots on, the roll runs -35 plus 110 to 75. The count that follows is a separate entry and a separate version.","<b>BOTH RATES STAND UP.</b> The 80 unit lot at RM 7.53 a unit beats every tier on SP7-PUD's live quote of 07 Sep, whose sharpest is 50 unit at RM 380, RM 7.60 a unit, so the largest oil lot this book has bought took size and rate together; landed at RM 7.67 with the trip, the 50 unit sale of 09 Sep carries RM 1.33 a unit, 14.7 per cent. The 30 unit lot at RM 7.67 is the same rate as the 26 Aug lot and RM 20 under the 30 unit tier as quoted on 07 Sep, though that quote is dated after the purchase and was not a choice he had on the day.","<b>TWO OIL LOTS NOW READ AS TWINS ON THE BOOK, AND ARE NOT ONE.</b> 26 Aug, 30 unit, RM 230, SP7-PUD, and 04 Sep, 30 unit, RM 230, SM4-KEP: the same quantity and the same total. Put to him at entry and confirmed as separate purchases from separate names. Recorded here so a later reader does not repair a duplicate that is not one.","<b>AND OIL CARRIES FREIGHT FOR THE FIRST TIME.</b> All three August oil lots were typed with none. These two carry RM 15 delivered and RM 12 collected, so oil's freight per unit stops being zero and its effective cost rises accordingly. SM4-KEP is also the first name other than SP7-PUD to supply oil, so that book stops being single-sourced."]},
 
@@ -5863,7 +5888,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='09 Sep 2026, 14:00 KL';
+const LAST_UPDATED='09 Sep 2026, 14:51 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -16289,19 +16314,30 @@ function tabPricing(){
        engine is right; the table was silent. So the row now names the condition rather than
        lifting the price, which would be pricing, and pricing does not happen on the desk.
        A negative margin is crimson for the same reason: it was dim grey beside a positive one. */
-    const head=`<tr><th class="l">Size</th><th>Cogs</th><th>Margin</th><th>Ask</th><th>Floor</th></tr>`;
+    /* v552, HIS COLUMN ORDER OF 09 SEP 2026: size, COGS, effective cost, margin in x, then the ask
+       with its % margin. The row now reads across as the arithmetic actually runs. What was there
+       put the ask before the floor and headed a MARKUP column "Margin": ask/cogs-1 on landed beside
+       a "% margin" struck on effective cost, so two figures on one row shared a word and did not
+       share a basis, and "2.00x" meant the ask was THREE times cogs. Effective cost, break-even and
+       the floor are one number, equal to the ringgit at every size on both books, so the column can
+       carry all three names honestly and the multiple beside it is ask over that: over 1.00x earns,
+       1.00x earns nothing, under 1.00x is a price he has stated below break-even. */
+    const head=`<tr><th class="l">Size</th><th>COGS</th><th>Eff. cost<div style="font-size:9px;font-weight:400;letter-spacing:0;text-transform:none;color:var(--dim)">break-even, the floor</div></th><th>Margin</th><th>Ask</th></tr>`;
     const rows=tb.map(r=>{const L=priceLadder(r.q);
       const flC=floorTotal(r.q,null,{collects:true});
       const underD=L.ask.total<L.floor.total-0.009, underC=L.ask.total<flC-0.009;
       return `<tr${underD?' style="background:rgba(212,105,76,.07)"':''}><td class="l">${units(r.q)}`
       +(underC?' <span class="tag def">under floor</span>':underD?' <span class="tag prov">collect only</span>':'')+`</td>`
       +`<td class="mono" style="color:var(--dim)">${fmt0(L.cogs)}</td>`
-      /* round 5: the ask's OWN markup, read back from the answer, never the curve's. The column
-         printed ladderMarkup(q), which equals the ask only while the ask is derived; with the oil
-         board stated whole the two parted company on four of five rows, 0.38x beside a stated
-         RM 240 that is 0.53x on its own cogs, and nothing on the row said which one it meant.
-         Reading the figure back out of the answer is the v382 Collection rule, applied here. */
-      +`<td class="mono" style="color:var(--dim)">${L.ask.markupX.toFixed(2)}x</td>`
+      /* v552: effective cost, which IS break-even and IS the floor, moved in front of the margin and
+         the ask so the row reads left to right the way the ask is built. It was the last column. */
+      +`<td class="mono" style="color:var(--crim)">${fmt0(L.floor.total)}`
+         +`<div style="font-size:10px;color:var(--dim)">${fmt(L.floor.rate)}</div></td>`
+      /* v552: the margin the ask actually takes, ask over effective cost, read back from the answer
+         and not from the curve. It replaces ask/cogs-1 on landed, which was headed Margin, was a
+         markup, and disagreed with the % margin printed inches away because the two were struck on
+         different bases. Under 1.00x prints crimson: that is an ask below break-even. */
+      +`<td class="mono" style="color:${L.ask.floorX<1?'var(--crim)':'var(--dim)'}">${L.ask.floorX.toFixed(2)}x</td>`
       /* v330: THE RATE AND THE MARGIN GO ON SEPARATE LINES, and it is a phone fix rather than a
          style one. On one line this sub-label read "RM 120.00 - 32% margin" and forced the Ask
          column to 160px of the 325px the board has on a 375px screen, which pushed the ASK ITSELF
@@ -16311,15 +16347,11 @@ function tabPricing(){
       +`<td><b${underD?' style="color:var(--crim)"':''}>${fmt0(L.ask.total)}</b>`
          +`<div style="font-size:10px;color:var(--dim)">${fmt(L.ask.rate)}</div>`
          +`<div style="font-size:10px;color:${L.ask.margin<0?'var(--crim)':'var(--dim)'}">${L.ask.margin.toFixed(0)}% margin</div></td>`
-      /* v385: THE COLLECTED FLOOR IS NOT PUT IN THIS CELL, and that is a phone decision of
-         exactly the kind v330 made. "collect RM 113" is longer than "RM 197.66", so it took
-         the Floor column from 70px to 94px and the whole board from 325px to 348px in the
-         325px it has on a 375px screen: it would have put the ASK behind a sideways scroll to
-         explain the ask, which is the trade v330 refused. The tag on the row carries the
-         signal, the sentence under the table carries the figures, and the Set the board table
-         one pane down already prints the collected floor at every size. */
-      +`<td class="mono" style="color:var(--crim)">${fmt0(L.floor.total)}`
-         +`<div style="font-size:10px;color:var(--dim)">${fmt(L.floor.rate)}</div></td>`
+      /* v385's note stood on the Floor cell when it was last: the COLLECTED floor is still not put
+         in it, because "collect RM 113" is longer than "RM 197.66" and took the board past the
+         325px it has on a 375px screen. The tag on the row carries that signal, the sentence under
+         the table carries the figures, and the Set the board table one pane down prints the
+         collected floor at every size. The cell moved at v552; the reason it stays one figure did not. */
       +`</tr>`;}).join('');
     const nUnderD=tb.filter(r=>priceLadder(r.q).ask.total<priceLadder(r.q).floor.total-0.009);
     const nUnderC=nUnderD.filter(r=>priceLadder(r.q).ask.total<floorTotal(r.q,null,{collects:true})-0.009);

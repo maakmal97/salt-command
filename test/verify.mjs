@@ -1616,11 +1616,20 @@ section("Engine — one definition, out of the desk (v337)");
     let law = true;
     for (let i = 1; i < sa.length; i++) if (sa[i] / P.boardSizes[i] > sa[i-1] / P.boardSizes[i-1] + 1e-9) law = false;
     ok(law, "and the rate still never rises with size, so setting one price moves the sizes above it");
-    ok(P.boardSizes.every((q, i) => sa[i] >= SB.floors[q].floor - 0.009), "and no stated price sits under its own floor");
-    /* set one absurdly low and the floor guard must lift it rather than honour it */
-    const lowB = E.board(P.boardSizes, C, { ...P, stated: { "12.5": 1 } });
-    ok(lowB.tiers[0].prices[P.boardSizes.indexOf(12.5)] >= lowB.floors[12.5].floor - 0.009,
-      "a price set under the floor is lifted, never honoured");
+    ok(P.boardSizes.every((q, i) => sa[i] >= SB.floors[q].floor - 0.009), "and RM150 at 2 unit clears its own floor, so nothing is lifted here");
+    /* v552, his instruction of 09 Sep 2026: SET ONE ABSURDLY LOW AND IT IS QUOTED, NOT LIFTED. The
+       guard that lifted it is now the DERIVED ask's alone, so the pair below is the whole of the
+       change: same cost stack, same size, same policy but for the stated price. */
+    const lowP = { ...P, stated: { "12.5": 1 } };
+    const lowB = E.board(P.boardSizes, C, lowP);
+    const lowRow = E.ladderWalk(P.boardSizes, C, lowP).find((r) => r.q === 12.5);
+    ok(lowB.tiers[0].prices[P.boardSizes.indexOf(12.5)] === 1,
+      `a price he sets under the floor is quoted as set (${lowB.tiers[0].prices[P.boardSizes.indexOf(12.5)]})`);
+    ok(lowRow.under > 0.009 && Math.abs(lowRow.under - +(lowB.floors[12.5].floor - 1).toFixed(2)) < 0.011,
+      `and names the gap to break-even, RM${lowRow.under} of RM${lowB.floors[12.5].floor}`);
+    const derivedRow = E.ladderWalk(P.boardSizes, C, { ...P, stated: {} }).find((r) => r.q === 12.5);
+    ok(derivedRow.p >= lowB.floors[12.5].floor - 0.009 && derivedRow.under === 0,
+      `while a DERIVED ask is still lifted clear of its own floor (${derivedRow.p} over ${lowB.floors[12.5].floor}), which is what v352 was written for`);
   }
 
   /* 3. THE GATE FOR MOVE 1. Fed the desk's own inputs, the module reproduces the desk's asks and
@@ -2674,11 +2683,19 @@ section("The board — four laws, read off the engine (v387)");
     const priced = walk.filter((r) => r.p != null && r.p > 0);
     ok(priced.length === walk.length, `${pid}: every size on the board has an ask (${priced.length} of ${walk.length})`);
 
-    /* THE ASK IS A COLLECTION PRICE and must clear the COLLECTED floor at every size. */
+    /* THE ASK IS A COLLECTION PRICE and must clear the COLLECTED floor at every size, unless HE has
+       stated the price there. v552 narrowed the lift to derived asks on his instruction, so the
+       rule splits: an ask the DESK derived under its floor is still a fault, and one he stated is a
+       decision that must NAME its gap. Both halves are asserted; neither can pass by the other. */
+    const stated = P.stated || {};
     const under = walk.filter((r) => r.p < E.floorTotal(r.q, C, P, null, { collects: true }) - 0.009);
-    ok(under.length === 0, under.length
-      ? `${pid}: the ask is under its own collected floor at ${under.map((r) => r.q).join(", ")} unit`
-      : `${pid}: every ask clears the collected floor`);
+    const unstated = under.filter((r) => !(+stated[String(r.q)] > 0));
+    ok(unstated.length === 0, unstated.length
+      ? `${pid}: an ask the desk DERIVED is under its own collected floor at ${unstated.map((r) => r.q).join(", ")} unit`
+      : `${pid}: every derived ask clears the collected floor`);
+    ok(under.every((r) => r.under > 0.009), under.length
+      ? `${pid}: and each of the ${under.length} stated ask(s) under it names the gap`
+      : `${pid}: and nothing sits under it to name`);
 
     /* v502: one floor; the collects option changes nothing */
     const badDel = P.boardSizes.filter((q) => Math.abs(E.floorTotal(q, C, P, null, { collects: true }) - E.floorTotal(q, C, P)) > 1e-9);
@@ -2857,11 +2874,34 @@ section("Oil — pinned at both ends and lawful between (round 5, his call 5)");
   const rows = read("sizesFor('oil').map(q=>({q,ask:priceLadder(q).ask.total,fl:floorTotal(q)}))");
   const a10 = rows.find((r) => r.q === 10), a50 = rows.find((r) => r.q === 50);
   ok(a10.ask === 130, "the board asks his RM130 at 10");
-  ok(a50.ask === 450, "and his RM450 at 50; if this reads higher, the floor has overtaken his price and he must decide");
+  ok(a50.ask === 450, "and his RM450 at 50, quoted whether or not it clears its floor (v552)");
   ok(JSON.stringify(rows.map((r) => r.ask)) === JSON.stringify([130, 240, 330, 400, 450]),
     "the whole board is his stated one: 130, 240, 330, 400, 450");
-  ok(a50.fl <= 450 + 1e-9,
-    `RM450 clears the 50 unit floor (${a50.fl}); red here means the floor has overtaken his price and he must decide`);
+  /* v552, 09 Sep 2026: HE DECIDED, AND THE LINE MOVES TO WHAT HE DECIDED. The v551 oil count read a
+     23.08% leak from his own figures and lifted the 50 unit floor to RM482.20, so this section went
+     red exactly as it was built to: "his stated price needs his decision, not a board that quietly
+     moves it". His decision was to quote RM450 and let the margin carry it. So the assertion is no
+     longer that RM450 clears its floor; it is that the desk QUOTES what he stated and NAMES the gap,
+     which is the thing that must never silently stop being true. */
+  const under50 = read("priceLadder(50).ask.under"), fx50 = read("priceLadder(50).ask.floorX");
+  ok(a50.fl > 450 + 0.009 ? under50 > 0.009 : under50 === 0,
+    `where his stated ask sits under break-even the desk says by how much (floor ${a50.fl}, under RM${under50})`);
+  ok(Math.abs(fx50 - +(450 / a50.fl).toFixed(3)) < 0.0011,
+    `and reports it as a multiple of break-even (${fx50}x)`);
+  ok(a50.fl <= 450 + 1e-9 || fx50 < 1,
+    "and a stated ask below break-even reads under 1.00x rather than above it");
+  /* THE GUARD IS NARROWED, NOT REMOVED, and this is the pair that proves it. Same cost stack, same
+     size, same policy: the only difference is whether the price was STATED. A stated one stands and
+     names its gap; a derived one is still lifted clear of the floor, which is the whole of what
+     v352 was written to stop. Read off the desk's own inputs rather than a fixture, so a change to
+     the cost stack cannot make either half vacuous. */
+  const walkS = read("PRICING_ENGINE.ladderWalk([50], pxCost(), Object.assign({}, pxPolicy(), {stated:{'50':450}}))");
+  const walkD = read("PRICING_ENGINE.ladderWalk([50], pxCost(), Object.assign({}, pxPolicy(), {stated:{}}))");
+  ok(walkS[0].p === 450, `a price he stated under its floor is quoted as stated (${walkS[0].p})`);
+  ok(walkS[0].under > 0.009 && Math.abs(walkS[0].under - +(a50.fl - 450).toFixed(2)) < 0.011,
+    `and carries the gap to break-even, RM${walkS[0].under}`);
+  ok(walkD[0].p > a50.fl + 0.009, `a DERIVED ask under the same floor is still lifted clear of it (${walkD[0].p} over ${a50.fl})`);
+  ok(walkD[0].under === 0, "and reports no gap, because it has none");
   let strict = true, dearer = true;
   for (let i = 1; i < rows.length; i++) {
     if (!(rows[i].ask / rows[i].q < rows[i - 1].ask / rows[i - 1].q - 1e-9)) strict = false;

@@ -219,8 +219,24 @@ function ladderWalk(sizes,C,P){
        because 34 of the 105 unit ever bought were given away and the price now carries that.
        IT RAISES TO THE NEXT GRID STEP ABOVE THE FLOOR, never to the exact floor, because an ask
        equal to its refusal line leaves nothing and is not an ask. */
-    if(fl>p+0.009)p=Math.ceil((fl+0.009)/LADDER.round.to)*LADDER.round.to;
-    out.push({q:q,p:p});
+    /* v552, HIS INSTRUCTION OF 09 SEP 2026: A PRICE HE HAS STATED IS QUOTED, EVEN UNDER ITS FLOOR.
+       "The desk quotes to 450, by lowering margin." v353 said a stated price under its own floor is
+       not honoured and the guard lifts it; that is now true of a DERIVED ask only. The reason the
+       rule was written still stands for a derived one: the ladder and the floor are struck on
+       different bases, nothing forces them to agree, and an ask the desk invented below break-even
+       is a fault. A price HE set below break-even is not a fault, it is a decision, and the desk's
+       job is to quote it and say what it costs rather than to overrule him at the counter.
+       WHAT IT COSTS IS NAMED, NOT HIDDEN: `under` is the gap to break-even, and every surface that
+       prints an ask reads it. Oil's 50 unit tier is the whole of it today, RM450 against a floor of
+       RM482.20, so the desk quotes RM450 and reports it as 0.93x of break-even. The board's other
+       four sizes are untouched: they clear their floors already and his ladder steps the margin
+       down proportionately into this one. */
+    let under=0;
+    if(fl>p+0.009){
+      if(set!=null&&+set>0&&Math.abs(p-+set)<0.009)under=+(fl-p).toFixed(2);
+      else p=Math.ceil((fl+0.009)/LADDER.round.to)*LADDER.round.to;
+    }
+    out.push({q:q,p:p,under:under});
     if(q>0)prevRate=Math.min(prevRate,p/q);
   });
   return out;
@@ -305,6 +321,12 @@ function priceLadder(q,C,P,opts){
      out.ask={total:walked,rate:+(walked/q).toFixed(2),markup:+((walked/cogs-1)*100).toFixed(2),
               markupX:+(walked/cogs-1).toFixed(4),margin:+(((walked-lot)/walked)*100).toFixed(1),
               lawStepped:true};}}
+  /* v552: THE ASK AGAINST BREAK-EVEN, on whichever ask stands above. floorTotal IS the effective
+     cost of the size, to the ringgit and at every size on both books, so this one multiple is the
+     margin the board is actually taking: over 1.00x earns, 1.00x earns nothing, under 1.00x is a
+     price he has stated below break-even and `under` says by how much. */
+  out.ask.floorX=+(out.ask.total/Math.max(0.01,fl)).toFixed(3);
+  out.ask.under=+Math.max(0,fl-out.ask.total).toFixed(2);
   out.ceiling=at(LADDER.ceiling,true);
   return out;
 }
