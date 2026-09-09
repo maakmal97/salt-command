@@ -7909,19 +7909,25 @@ section("v549: the Sourcing tab describes the lot he has");
       `the card reports the lot as bought, and names what is still to come (${bought.qty} unit, ${bought.total}, ${bought.owed} owed)`);
     const landed = JSON.parse(w.eval("JSON.stringify(currentLot(" + JSON.stringify({ rows: [{ date: "2026-09-08", sup: "X", recv: 10, rate: 50, cost: 500, left: 0, costLeft: 0 }] }) + "))"));
     ok(landed.qty === 10 && landed.owed === 0, "and falls back to what landed where the row carries no bought figure");
-    /* AN EMPTY BOOK DOES NOT GET A DATE. free is the inventory less what is owed out, so on Oil it
-       is negative and dividing it by the sell rate printed a dry date in the PAST under a heading
-       in the future tense. Read both ways, on whichever book is in which state. */
+    /* AN EMPTY BOOK DOES NOT GET A DATE. free is the inventory less what is owed out, and when Oil
+       stood at -35 dividing it by the sell rate printed a dry date in the PAST under a heading in
+       the future tense. The live books prove the FULL branch; the empty branch is forced rather
+       than waited for, because the first cut of this test required one book to be empty and passed
+       only for as long as Oil happened to be. v551 counted Oil at 60 and the assertion broke on a
+       fix, which is exactly the coupling to live data an instrument must not have. */
     const state = (p) => JSON.parse(w.eval("(function(){setProd(" + JSON.stringify(p) + ");recompute();var x=currentLot();var h=tabSourcing();return JSON.stringify({empty:x?x.empty:null,free:x?x.free:null,says:h.indexOf('empty already')>=0});})()"));
-    let bothWays = 0;
     for (const p of JSON.parse(w.eval("JSON.stringify(PROD_IDS)"))) {
       const st = state(p);
       if (st.empty === null) continue;
-      bothWays |= st.empty ? 1 : 2;
       ok(st.empty === (st.free <= 0.009), `${p}: the empty flag says what the free figure says (${st.free})`);
       ok(st.empty === st.says, `${p}: and the card says "empty already" exactly when it is (${st.empty})`);
     }
-    ok(bothWays === 3, `and the two books read the rule in both directions (${bothWays})`);
+    /* forced to nought and put back, so the empty branch is exercised on every run */
+    const forced = JSON.parse(w.eval("(function(){setProd('oil');recompute();var k=PROD_OPENING.oil,was=k.stated;k.stated=0;recompute();var x=currentLot();var h=tabSourcing();k.stated=was;recompute();return JSON.stringify({empty:x?x.empty:null,free:x?x.free:null,says:h.indexOf('empty already')>=0,dated:/Inventory runs dry<\\/div><div class=\"v\"[^>]*>20\\d\\d-/.test(h)});})()"));
+    ok(forced.empty === true, `forced to nought, the book reads empty (free ${forced.free})`);
+    ok(forced.says === true, "and the card says empty already");
+    ok(forced.dated === false, "and prints no dry date at all, rather than one in the past");
+    ok(state("oil").empty === false, "and the forced state is put back, so nothing downstream reads a nought inventory");
     w.eval("setProd('salt');recompute();");
     w.eval("setProd('salt');recompute();switchTab('sourcing');");
     const txt = String(w.eval("document.querySelector('.sec.on').textContent"));

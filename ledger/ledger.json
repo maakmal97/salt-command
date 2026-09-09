@@ -1,6 +1,6 @@
 {
- "v": "v548",
- "stamped": "09 Sep 2026, 10:49 KL",
+ "v": "v551",
+ "stamped": "09 Sep 2026, 14:00 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -38,13 +38,13 @@
    "oil": {
     "qty": 5,
     "costPerKg": 7.666666666666667,
-    "stated": -35
+    "stated": 60
    }
   },
   "STATED_STOCK": 32.25,
   "COUNT_ON": {
    "salt": "2026-09-08",
-   "oil": "2026-08-23"
+   "oil": "2026-09-09"
   },
   "COUNTS": [
    {
@@ -89,6 +89,13 @@
     "qty": 1,
     "was": 6,
     "drift": -5
+   },
+   {
+    "product": "oil",
+    "date": "2026-09-09",
+    "qty": 60,
+    "was": 75,
+    "drift": -15
    }
   ],
   "purchases": [
@@ -347,6 +354,21 @@
     "rid": "p020"
    },
    {
+    "date": "2026-09-04",
+    "product": "oil",
+    "qty": 30,
+    "total": 230,
+    "supplier": "SM4-KEP",
+    "freight": 15,
+    "status": "paid",
+    "cash": 230,
+    "paidOn": "2026-09-04",
+    "receivedOn": "2026-09-04",
+    "receivedQty": 30,
+    "note": "<b>PURCHASE ROW DATED 04 SEP, PAID AND RECEIVED IN FULL THE SAME DAY.</b> BUY from SM4-KEP, 30 unit of oil for RM 230, RM 7.67 a unit, RM 230 cash paid on 04 Sep, with RM 15 delivery; all 30 unit moved on 04 Sep, landing it at RM 8.17 a unit. The first lot this desk has bought from SM4-KEP, who stood on the roster and had never supplied, so oil is no longer single-sourced. The rate is the same RM 7.67 paid on the 26 Aug lot and matches the 30 unit tier as it was quoted on 06 Aug; SP7-PUD's live quote of 07 Sep puts that tier at RM 250, RM 8.33 a unit, so the goods are RM 20 under it, but that quote is dated after this purchase and was not a choice he had on the day. <b>THIS IS NOT THE 26 AUG LOT.</b> That row is also 30 unit of oil for RM 230, from SP7-PUD; the twin was put to him at entry on 09 Sep and confirmed as a separate purchase. Nothing is outstanding either way.",
+    "rid": "p022"
+   },
+   {
     "qty": 50,
     "total": 2200,
     "cash": 2200,
@@ -359,6 +381,21 @@
     "paidOn": "2026-09-08",
     "note": "<b>PURCHASE ROW DATED 08 SEP, PAID AND PART RECEIVED THE SAME DAY.</b> BUY from SA5-BTR, 50 unit of salt for RM 2,200, RM 44 a unit, RM 2,200 cash paid on 08 Sep, with RM 36 freight; 37.5 of the 50 unit moved on 08 Sep. The rate is exactly the RM 2,200 the 20 Aug quote puts on the 50 unit tier, back to the 10 Jul level, and the floor of the party's RM 44 to RM 64 range, under its median of RM 56. SA5-BTR stood at 14 orders, RM 3,100 outstanding, nothing defaulted, on the roster. The drafter flagged nothing. 12.5 unit stay outstanding.",
     "rid": "p021"
+   },
+   {
+    "date": "2026-09-08",
+    "product": "oil",
+    "qty": 80,
+    "total": 602,
+    "supplier": "SP7-PUD",
+    "freight": 12,
+    "status": "paid",
+    "cash": 602,
+    "paidOn": "2026-09-08",
+    "receivedOn": "2026-09-08",
+    "receivedQty": 80,
+    "note": "<b>PURCHASE ROW DATED 08 SEP, PAID AND RECEIVED IN FULL THE SAME DAY, AND THE LARGEST OIL LOT THIS BOOK HAS BOUGHT.</b> BUY from SP7-PUD, 80 unit of oil for RM 602, RM 7.53 a unit, RM 602 cash paid on 08 Sep, with RM 12 freight on a trip he collected himself; all 80 unit moved on 08 Sep, landing it at RM 7.67 a unit. The previous largest oil lot was 50 unit. The rate beats every tier on the party's live quote of 07 Sep, whose sharpest is 50 unit at RM 380, RM 7.60 a unit, so this lot took size and rate together at a size above any tier quoted. <b>IT IS THE LOT THAT COVERED THE 50 UNIT SALE OF 09 SEP.</b> CA7-JTR took 50 unit at RM 9 a unit on order s140, and v546 rolled that sale out of a stated inventory of 15 to leave -35 because this purchase had not been recorded; against RM 7.67 landed, that sale carries RM 1.33 a unit, 14.7 per cent. Nothing is outstanding.",
+    "rid": "p023"
    }
   ],
   "sales": [
@@ -3616,17 +3653,6 @@
     }
    ]
   },
-  "SOURCING_PLAN": {
-   "statedOn": "2026-08-24",
-   "qty": 50,
-   "by": "2026-08-28",
-   "label": "the 28th",
-   "cadence": "monthly, on the ceiling reset",
-   "basis": "His decision of 24 Aug. The purchase ceiling of RM4,500 resets on the 28th of each month and anything beyond it comes out of rolling cash. 50 unit at RM2,200 plus the RM60 collection trip is RM2,260, well inside the ceiling.",
-   "assumedRate": 44,
-   "rateBasis": "quoted and paid on the 20 Aug ladder's 50 unit tier",
-   "note": "THE 100 UNIT TIER WAS THE RECOMMENDATION AND HE HAS TAKEN THE 50. Landed cost is RM45.20 a unit against RM43.60, so this lot costs RM80 more than the same salt bought at the top tier, and it covers about a fortnight rather than three weeks. RM4,360 would have fitted the ceiling with RM140 to spare. Recorded as his call, not as an error."
-  },
   "PRICE_SET": {
    "salt": {
     "prices": {},
@@ -3655,9 +3681,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-08T19:09:28.649Z",
+  "QUEUE_COMMITTED": "2026-09-09T05:55:00.001Z",
   "PRICING": {
-   "takenAt": "2026-09-09T02:49:17.129Z",
+   "takenAt": "2026-09-09T06:07:20.688Z",
    "sizes": [
     0.5,
     1,
@@ -3904,23 +3930,23 @@
      ]
     },
     "oil": {
-     "stockCost": 7.6667,
-     "replCost": 7.15,
+     "stockCost": 7.525,
+     "replCost": 7.59,
      "floors": {
       "10": {
-       "floor": 75.29
+       "floor": 96.44
       },
       "20": {
-       "floor": 150.59
+       "floor": 192.88
       },
       "30": {
-       "floor": 225.88
+       "floor": 289.32
       },
       "40": {
-       "floor": 301.17
+       "floor": 385.76
       },
       "50": {
-       "floor": 376.46
+       "floor": 482.2
       }
      },
      "inputs": {
@@ -3950,10 +3976,10 @@
          "why": "Locked on the first oil lot, the day it landed."
         },
         "cur": {
-         "qty": 30,
-         "total": 230,
-         "rate": 7.6667,
-         "date": "2026-08-26",
+         "qty": 80,
+         "total": 602,
+         "rate": 7.525,
+         "date": "2026-09-08",
          "sup": "SP7-PUD"
         },
         "days": 34,
@@ -3984,17 +4010,24 @@
         "shrink": null
        },
        "lot": {
-        "qty": 30,
-        "total": 230,
-        "rate": 7.6667,
-        "date": "2026-08-26",
+        "qty": 80,
+        "total": 602,
+        "rate": 7.525,
+        "date": "2026-09-08",
         "sup": "SP7-PUD"
        },
-       "meanLot": 43.333333333333336,
+       "meanLot": 48,
        "quoteRate": 10,
-       "repl": 7.15,
-       "freightRate": 0,
-       "leak": null,
+       "repl": 7.59,
+       "freightRate": 0.2455,
+       "leak": {
+        "ratio": 0.2308,
+        "leak": 15,
+        "sold": 65,
+        "cycles": 1,
+        "from": "2026-08-23",
+        "to": "2026-09-09"
+       },
        "costBasis": {
         "freightPerTrip": {
          "rm": 0
@@ -4007,7 +4040,7 @@
         }
        },
        "attrib": 1,
-       "shrinkRate": 0.05037037037037038,
+       "shrinkRate": 0.08897959183673469,
        "avgDel": {
         "n": 8,
         "kg": 136,
@@ -4089,10 +4122,10 @@
      ]
     }
    },
-   "v": "v548"
+   "v": "v551"
   },
   "OPEN": {
-   "at": "2026-09-09T02:49:17.165Z",
+   "at": "2026-09-09T06:07:20.732Z",
    "count": 8,
    "byKey": {
     "SA5-BTR|2026-09-08|2200": {
@@ -4245,21 +4278,21 @@
     },
     "oil": {
      "name": "Oil",
-     "onHand": -35,
-     "free": -35,
+     "onHand": 60,
+     "free": 60,
      "owedOut": 0,
-     "coverDays": 0,
+     "coverDays": 12.9,
      "rate": 4.64,
      "owedToYou": 0,
      "promised": 0,
-     "short": 35
+     "short": 0
     }
    },
    "countedOn": {
     "salt": "2026-09-08",
-    "oil": "2026-08-23"
+    "oil": "2026-09-09"
    },
-   "v": "v548"
+   "v": "v551"
   }
  }
 }

@@ -1,5 +1,28 @@
 [
  {
+  "v": "v551",
+  "d": "09 Sep 2026",
+  "t": "OIL COUNTED AT 60 ON 09 SEP: A DRIFT OF 15 UNIT AGAINST THE ROLL, AND THE FIRST OIL COUNT IN SEVENTEEN DAYS",
+  "n": [
+   "<b>HIS COUNT, 09 SEP 2026: OIL STANDS AT 60 UNIT.</b> The roll put it at 75 once the two lots of v550 were on, so the drift is -15. A COUNT AND NOT A ROLL: COUNT_ON.oil moves from 23 Aug to 09 Sep, and the counted figure stands over the roll, as it does everywhere on this desk.",
+   "<b>OIL HAD NOT BEEN COUNTED FOR SEVENTEEN DAYS,</b> and everything between was rolled. The 23 Aug count is the anchor the whole run of oil figures has rested on, and it carried no `was` of its own, so until today oil had no measured drift at all: it was the one book whose leak could not be charged from its own counts. This is the second oil count on the book and the first that can be compared with anything.",
+   "<b>WHAT THE 15 UNIT DOES AND DOES NOT PROVE.</b> It is the difference between what the book expected and what he found, over a cycle in which 65 unit of oil went out. It does not say where the 15 went. A drift measured against a roll standing on a seventeen-day-old anchor carries that anchor's error as well as the cycle's, so the honest reading is that oil's leak is now measurable rather than that it is 15 unit of loss. The next count is the one that tests it.",
+   "<b>IT ALSO SETTLES THE NEGATIVE INVENTORY.</b> Oil had stood at -35 since v546 rolled a 50 unit sale out of a stated 15. v550 put the missing lots on and this count puts a measured figure under them, so the oil book stops reporting an impossible position and the Sourcing tab stops calling it empty."
+  ]
+ },
+ {
+  "v": "v550",
+  "d": "09 Sep 2026",
+  "t": "TWO OIL LOTS THAT WERE NEVER RECORDED: 30 UNIT ON 04 SEP AND 80 UNIT ON 08 SEP",
+  "n": [
+   "<b>HIS ENTRY, 09 SEP 2026:</b> two oil purchases that had never reached the book. 30 unit from SM4-KEP for RM 230 with RM 15 delivery on Friday 04 Sep, and 80 unit from SP7-PUD for RM 602 with a RM 12 collection trip on Tuesday 08 Sep. Both paid in full on the day, both received in full on the day.",
+   "<b>THE 80 UNIT LOT IS WHY THE OIL INVENTORY HAD GONE NEGATIVE.</b> CA7-JTR took 50 unit at RM 9 on order s140, and v546 rolled that out of a stated 15 to leave -35: the desk was reporting an oil book 35 unit short because the lot that covered the sale had not been entered. With both lots on, the roll runs -35 plus 110 to 75. The count that follows is a separate entry and a separate version.",
+   "<b>BOTH RATES STAND UP.</b> The 80 unit lot at RM 7.53 a unit beats every tier on SP7-PUD's live quote of 07 Sep, whose sharpest is 50 unit at RM 380, RM 7.60 a unit, so the largest oil lot this book has bought took size and rate together; landed at RM 7.67 with the trip, the 50 unit sale of 09 Sep carries RM 1.33 a unit, 14.7 per cent. The 30 unit lot at RM 7.67 is the same rate as the 26 Aug lot and RM 20 under the 30 unit tier as quoted on 07 Sep, though that quote is dated after the purchase and was not a choice he had on the day.",
+   "<b>TWO OIL LOTS NOW READ AS TWINS ON THE BOOK, AND ARE NOT ONE.</b> 26 Aug, 30 unit, RM 230, SP7-PUD, and 04 Sep, 30 unit, RM 230, SM4-KEP: the same quantity and the same total. Put to him at entry and confirmed as separate purchases from separate names. Recorded here so a later reader does not repair a duplicate that is not one.",
+   "<b>AND OIL CARRIES FREIGHT FOR THE FIRST TIME.</b> All three August oil lots were typed with none. These two carry RM 15 delivered and RM 12 collected, so oil's freight per unit stops being zero and its effective cost rises accordingly. SM4-KEP is also the first name other than SP7-PUD to supply oil, so that book stops being single-sourced."
+  ]
+ },
+ {
   "v": "v549",
   "d": "09 Sep 2026",
   "t": "THE SOURCING SECTION IS THE CURRENT LOT, NOT A NEXT LOT NOBODY PLANNED",
