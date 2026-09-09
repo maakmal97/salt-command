@@ -1,6 +1,6 @@
 {
- "v": "v553",
- "stamped": "09 Sep 2026, 16:10 KL",
+ "v": "v555",
+ "stamped": "09 Sep 2026, 21:12 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -41,7 +41,7 @@
     "stated": 60
    }
   },
-  "STATED_STOCK": 32.25,
+  "STATED_STOCK": 30.25,
   "COUNT_ON": {
    "salt": "2026-09-08",
    "oil": "2026-09-09"
@@ -3364,6 +3364,20 @@
     "paidOn": "2026-09-09",
     "note": "<b>COMPLETED SALT ROW DATED 09 SEP, PAID AND DELIVERED THE SAME DAY.</b> SELL to CK4-SEN, 6.25 unit of salt for RM505, collected, RM505 cash and 6.25 unit moved, so nothing stays open. At RM80.8 a unit it stands above the RM351.33 floor for 6.25 unit and under the RM610 ask, well under the RM880 ceiling. The draft costs it at RM48 a unit, not the inventory's own RM44, so RM300 attaches to this order. CK4-SEN stood at 1 order, a median rate of RM73.33, a range of RM73.33 to RM73.33, nothing outstanding, no units on credit against a cap of 1 and nothing defaulted. The drafter flagged nothing. Nothing is left outstanding.",
     "rid": "s142"
+   },
+   {
+    "customer": "CM4-MK",
+    "qty": 2,
+    "total": 220,
+    "cost": 88,
+    "cash": 110,
+    "delivery": 18,
+    "handover": "delivered",
+    "date": "2026-09-09",
+    "deliveredQty": 2,
+    "deliveredOn": "2026-09-09",
+    "note": "<b>SALT SELL DATED 09 SEP, DELIVERED IN FULL WITH HALF THE MONEY OUTSTANDING.</b> SELL to CM4-MK, 2 unit for RM220, RM202 goods and RM18 delivery, RM110 cash in and 2 unit delivered on 09 Sep, so RM110 stays open. The total meets the RM220 ask for 2 unit and stands above the RM112.43 floor, under the RM290 ceiling. RM110 a unit is CM4-MK's median across 8 orders on a range of RM90 to RM110, with nothing outstanding before, no units on credit and nothing defaulted. Cost is the inventory's own RM44 a unit, RM88 on the order. The drafter flagged the advance against a credit cap of 1: the figures show 2 unit gone out on credit, so the cap question is not settled here.",
+    "rid": "s143"
    }
   ],
   "contacts": [
@@ -3689,9 +3703,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-09T05:55:00.001Z",
+  "QUEUE_COMMITTED": "2026-09-09T13:11:00.478Z",
   "PRICING": {
-   "takenAt": "2026-09-09T08:11:01.986Z",
+   "takenAt": "2026-09-09T13:12:45.794Z",
    "sizes": [
     0.5,
     1,
@@ -3845,15 +3859,15 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0.42857142857142855
+         "v": 0.45454545454545453
         }
        },
        "attrib": 1,
        "shrinkRate": 0.06918446831110588,
        "avgDel": {
-        "n": 127,
-        "kg": 330.45,
-        "mean": 2.602
+        "n": 128,
+        "kg": 332.45,
+        "mean": 2.5973
        }
       },
       "policy": {
@@ -4137,12 +4151,29 @@
      ]
     }
    },
-   "v": "v553"
+   "v": "v555"
   },
   "OPEN": {
-   "at": "2026-09-09T08:11:02.024Z",
-   "count": 8,
+   "at": "2026-09-09T13:12:45.883Z",
+   "count": 9,
    "byKey": {
+    "CM4-MK|2026-09-09|220": {
+     "d": "2026-09-09",
+     "p": "CM4-MK",
+     "dir": "S",
+     "q": 2,
+     "t": 220,
+     "cash": 110,
+     "mv": 2,
+     "st": "dueMoney",
+     "oweRM": 110,
+     "rid": "s143",
+     "deliveredOn": "2026-09-09",
+     "handover": "delivered",
+     "key": "CM4-MK|2026-09-09|220",
+     "age": 0,
+     "exp": 110
+    },
     "SA5-BTR|2026-09-08|2200": {
      "d": "2026-09-08",
      "p": "SA5-BTR",
@@ -4282,12 +4313,12 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 32.25,
-     "free": 32.25,
+     "onHand": 30.25,
+     "free": 30.25,
      "owedOut": 0,
-     "coverDays": 5.8,
-     "rate": 5.61,
-     "owedToYou": 777,
+     "coverDays": 5.3,
+     "rate": 5.75,
+     "owedToYou": 887,
      "promised": 8.5,
      "short": 0
     },
@@ -4307,7 +4338,7 @@
     "salt": "2026-09-08",
     "oil": "2026-09-09"
    },
-   "v": "v553"
+   "v": "v555"
   }
  }
 }
