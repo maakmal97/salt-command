@@ -8016,5 +8016,92 @@ section("v549: the Sourcing tab describes the lot he has");
   } finally { try { w.close(); } catch (e) { } }
 }
 
+section("v557: a true alarm, and it is scarce enough to mean something");
+{
+  /* --crim and --rose both pointed at --salt-ember, the identity's third warm accent, so every
+     warning was painted in a colour the headings also speak in. And the supplier row lit four
+     figures crimson of which none was a fault. Both halves are his instruction of 09 Sep 2026:
+     add a true alarm, and fix the thresholds. Colour asserted from the stylesheet, thresholds
+     asserted against each row's own figures so the rule holds whatever the book does next. */
+  const css = readFileSync(join(REPO, "design", "desk.css"), "utf8");
+  const alarm = (css.match(/--salt-alarm:\s*(#[0-9a-fA-F]{6})/) || [])[1];
+  ok(!!alarm, `the layer defines a true alarm colour (${alarm || "none"})`);
+  ok(alarm && alarm.toLowerCase() !== "#d4694c", "and it is not ember, which is the accent it was");
+  ok(/--crim:var\(--salt-alarm\)/.test(css), "--crim points at it, so all 109 warnings move together");
+  ok(/--rose:var\(--salt-ember\)/.test(css), "and --rose keeps ember, which no reader uses");
+  /* the perceptual test, because hue alone said nothing: ember sits dE 20.7 from copper and that
+     is the collision he pointed at, so the alarm must be a clear step further than that */
+  const lab = (h) => {
+    let [r, g, b] = [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16))
+      .map((v) => { const s = v / 255; return s <= 0.04045 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4); });
+    const X = (0.4124 * r + 0.3576 * g + 0.1805 * b) / 0.95047, Y = 0.2126 * r + 0.7152 * g + 0.0722 * b,
+      Z = (0.0193 * r + 0.1192 * g + 0.9505 * b) / 1.08883;
+    const f = (t) => t > 0.008856 ? Math.cbrt(t) : (7.787 * t + 16 / 116);
+    return [116 * f(Y) - 16, 500 * (f(X) - f(Y)), 200 * (f(Y) - f(Z))];
+  };
+  const dE = (a, b) => { const A = lab(a), B = lab(b); return Math.sqrt(A.reduce((s, v, i) => s + (v - B[i]) ** 2, 0)); };
+  const baseline = dE("#d4694c", "#b87333");
+  ok(alarm && dE(alarm, "#d4694c") > baseline * 1.4,
+    `and it is a clear step from ember: dE ${dE(alarm, "#d4694c").toFixed(1)} against the ${baseline.toFixed(1)} that ember sits from copper`);
+  /* THE THRESHOLDS, read off the rendered row against that row's own figures. */
+  const { openMaster: om5 } = await import("../tools/payload.mjs");
+  const { w } = await om5();
+  try {
+    let checked = 0, wrong = [];
+    for (const p of JSON.parse(w.eval("JSON.stringify(PROD_IDS)"))) {
+      w.eval(`setProd(${JSON.stringify(p)});recompute();`);
+      const stats = JSON.parse(w.eval("JSON.stringify(supplierStats().map(s=>({id:s.id,quiet:s.quiet,share:s.share,recentShare:s.recentShare,fill:s.fill,defaults:s.defaults})))"));
+      const html = String(w.eval("tabSourcing()"));
+      for (const s of stats) {
+        const i = html.indexOf(">" + s.id + "<") >= 0 ? html.indexOf(">" + s.id + "<") : html.indexOf(s.id);
+        if (i < 0) continue;
+        const row = html.slice(i, html.indexOf("</tr>", i));
+        checked++;
+        const quietCrim = /bought \d+d ago/.test(row) && /var\(--crim\)'?">bought/.test(row.replace(/\s+/g, " "));
+        const wantQuiet = s.quiet > 30 && !s.defaults && s.share >= 25;
+        if (quietCrim !== wantQuiet) wrong.push(`${p}/${s.id} quiet ${s.quiet}d share ${s.share}% defaults ${s.defaults}: drawn ${quietCrim}, rule ${wantQuiet}`);
+        const fillCrim = new RegExp("color:var\\(--crim\\)\">" + (s.fill == null ? "&mdash;" : s.fill + "%")).test(row);
+        const wantFill = s.fill != null && s.fill < 90;
+        if (fillCrim !== wantFill) wrong.push(`${p}/${s.id} fill ${s.fill}%: drawn ${fillCrim}, rule ${wantFill}`);
+      }
+    }
+    ok(checked >= 3, `every supplier row was read (${checked})`);
+    ok(wrong.length === 0, wrong.length ? wrong.join(" ; ") : "each row's colours follow the rule, not the old thresholds");
+    /* and the whole point: the alarm is rare. Count crimson figures across both books' tables. */
+    let crimsons = 0;
+    for (const p of JSON.parse(w.eval("JSON.stringify(PROD_IDS)"))) {
+      w.eval(`setProd(${JSON.stringify(p)});recompute();`);
+      const html = String(w.eval("tabSourcing()"));
+      const tbl = html.slice(html.indexOf("Who you buy from"));
+      crimsons += (tbl.match(/var\(--crim\)/g) || []).length;
+    }
+
+    /* HIS WORD OF 09 SEP 2026: CA4-DAM has disappeared, no contact, nothing recoverable, exactly as
+       SF6-KLC did. The Order book was telling him to CHASE FIRST a party he had already written
+       off, on a row whose own note says the money will not come and whose provision is 100%. The
+       book knew: `defaulted` on the sale, `writtenOff` on the supplier receivable. The card did not
+       read either. Same shape as the supplier thresholds above, in a third place. */
+    const claims = JSON.parse(w.eval("JSON.stringify(obClaims())"));
+    const book5 = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+    const offParties = new Set(book5.sales.filter((s) => s.defaulted).map((s) => s.customer));
+    if (book5.supplierReceivable && book5.supplierReceivable.status === "writtenOff") offParties.add(book5.supplierReceivable.party);
+    ok(claims.every((r) => typeof r.off === "boolean"), "every claim says whether it has been written off");
+    const mismarked = claims.filter((r) => r.off && !offParties.has(r.who));
+    ok(mismarked.length === 0, mismarked.length ? `a claim is marked off with no record behind it: ${mismarked.map((r) => r.who).join(", ")}` : "and nothing is marked off that the book does not say so about");
+    const offCount = claims.filter((r) => r.off).length;
+    ok(offCount > 0, `there is something written off to be skipped (${offCount} claim(s))`);
+    const chased = String(w.eval("consoOrderBlock()"));
+    const pick = claims.find((r) => !r.off);
+    ok(!!pick, "a chaseable claim remains");
+    ok(chased.indexOf(">Chase first</div><div class=\"v\">" + w.eval("ID(" + JSON.stringify(pick.who) + ")")) >= 0
+      || new RegExp("Chase first[\\s\\S]{0,120}" + w.eval("ID(" + JSON.stringify(pick.who) + ")")).test(chased),
+      `Chase first names the oldest claim that can still be worked (${pick.who}, ${pick.d} days)`);
+    for (const r of claims.filter((x) => x.off)) {
+      ok(!new RegExp("Chase first[\\s\\S]{0,120}" + w.eval("ID(" + JSON.stringify(r.who) + ")") + "</div>").test(chased),
+        `and never a party he has written off (${r.who}, ${r.d} days, ${r.pr * 100}% provisioned)`);
+    }
+  } finally { try { w.close(); } catch (e) { } }
+}
+
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
 process.exit(fail ? 1 : 0);

@@ -21,7 +21,20 @@ html[data-tod="register"],:root{
   --card:var(--salt-glass);--card2:rgba(255,255,255,.045);--line:var(--salt-line);
   --ink:var(--salt-salt);--mut:#b4bcc2;--dim:var(--salt-mist);
   --gold:var(--salt-brass);--amber:var(--salt-copper);--ice:var(--salt-product-salt);
-  --rose:var(--salt-ember);--crim:var(--salt-ember);--grn:var(--salt-verdigris);--vio:var(--salt-steel);
+  /* ---- v557, HIS INSTRUCTION OF 09 SEP 2026: A TRUE ALARM, CLEAR OF THE DECORATION. --crim and
+     --rose both pointed at --salt-ember, and ember is the identity's warm third accent: brass at
+     hue 39, copper at 29, ember at 13, all on the same dark ground. So every warning on the desk
+     was painted in a colour the headings also speak in, and a supplier row with four flags read as
+     a wash rather than as four warnings. Measured rather than eyeballed: ember sits dE 20.7 from
+     copper, which is the collision he pointed at; this alarm sits dE 32.5 from ember, 52.6 from
+     copper and 68.7 from brass, at 5.6:1 on obsidian, so it clears small text as well.
+     IT LIVES IN THE LAYER, NOT THE IDENTITY. The vendored salt-ds.css is synced from Code\salt-ds
+     and an edit there would be overwritten; if this earns a place in the identity proper it goes
+     into that repo's tokens. --rose keeps ember and has no reader (0 uses); the chart series keep
+     their literal #d4694c, because ember there is a SERIES colour and not a warning, which is why
+     this is a one-place change and not the two a palette move usually costs. ---- */
+  --salt-alarm:#fa3c5a;
+  --rose:var(--salt-ember);--crim:var(--salt-alarm);--grn:var(--salt-verdigris);--vio:var(--salt-steel);
   --acc:var(--salt-brass);--accB:var(--salt-copper);
   --glass:var(--salt-glass);--glass-2:rgba(255,255,255,.07);
   --brd:var(--salt-line);--brd-2:rgba(197,160,89,.42);

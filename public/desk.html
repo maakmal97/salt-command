@@ -68,7 +68,7 @@ document.addEventListener('visibilitychange',function(){
    localStorage before it posts anything and the load reads it straight back.
    The same tick retries a held entry, which is what gets a phone write to the cloud
    without waiting for the next open. */
-var SALT_BUILD_ID="6cf22ed12a518fe4";
+var SALT_BUILD_ID="c90d7c2f10cce532";
 var SALT_REV_MS=10000;
 (function(){
   var chip=null,timer=null;
@@ -2882,7 +2882,20 @@ html[data-tod="register"],:root{
   --card:var(--salt-glass);--card2:rgba(255,255,255,.045);--line:var(--salt-line);
   --ink:var(--salt-salt);--mut:#b4bcc2;--dim:var(--salt-mist);
   --gold:var(--salt-brass);--amber:var(--salt-copper);--ice:var(--salt-product-salt);
-  --rose:var(--salt-ember);--crim:var(--salt-ember);--grn:var(--salt-verdigris);--vio:var(--salt-steel);
+  /* ---- v557, HIS INSTRUCTION OF 09 SEP 2026: A TRUE ALARM, CLEAR OF THE DECORATION. --crim and
+     --rose both pointed at --salt-ember, and ember is the identity's warm third accent: brass at
+     hue 39, copper at 29, ember at 13, all on the same dark ground. So every warning on the desk
+     was painted in a colour the headings also speak in, and a supplier row with four flags read as
+     a wash rather than as four warnings. Measured rather than eyeballed: ember sits dE 20.7 from
+     copper, which is the collision he pointed at; this alarm sits dE 32.5 from ember, 52.6 from
+     copper and 68.7 from brass, at 5.6:1 on obsidian, so it clears small text as well.
+     IT LIVES IN THE LAYER, NOT THE IDENTITY. The vendored salt-ds.css is synced from Code\salt-ds
+     and an edit there would be overwritten; if this earns a place in the identity proper it goes
+     into that repo's tokens. --rose keeps ember and has no reader (0 uses); the chart series keep
+     their literal #d4694c, because ember there is a SERIES colour and not a warning, which is why
+     this is a one-place change and not the two a palette move usually costs. ---- */
+  --salt-alarm:#fa3c5a;
+  --rose:var(--salt-ember);--crim:var(--salt-alarm);--grn:var(--salt-verdigris);--vio:var(--salt-steel);
   --acc:var(--salt-brass);--accB:var(--salt-copper);
   --glass:var(--salt-glass);--glass-2:rgba(255,255,255,.07);
   --brd:var(--salt-line);--brd-2:rgba(197,160,89,.42);
@@ -5662,7 +5675,9 @@ const whiteboard=[
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{"v":"v556","d":"09 Sep 2026","t":"FULFILMENT ON SA5-BTR P021: THE LAST 12.5 UNIT IN, ORDER SETTLED","n":["<b>ONE FULFILMENT FOLDED, AND IT CLOSES A LOT.</b> The remaining 12.5 unit of SA5-BTR's 50 unit lot p021, agreed 08 Sep at RM 2,200, moved on 09 Sep with no money attached, the RM 2,200 having been paid on 08 Sep. Against RM 0 and 12.5 unit outstanding, the move leaves RM 0 and 0 unit, so the drafter's flag that this settles the order in full is answered by the figures.","<b>WHAT THE INVENTORY DID.</b> The row is not recomputed here: ovAmend in the master applies the fulfilment, so a fulfilment has one definition. The lot rate of RM 44 a unit matches the inventory's own RM 44 shelf cost, so the cost basis does not move and no cost override is carried on the row. SA5-BTR's RM 3,100 outstanding before this fold stands on the party's other rows, not on p021."]},
+const evolution=[{"v":"v557","d":"09 Sep 2026","t":"A TRUE ALARM, AND IT IS SCARCE ENOUGH TO MEAN SOMETHING; THE DESK STOPS TELLING HIM TO CHASE A PARTY HE HAS WRITTEN OFF","n":["<b>HIS INSTRUCTION, 09 SEP 2026: ADD A TRUE ALARM AND FIX THE THRESHOLDS.</b> --crim and --rose both pointed at --salt-ember, the identity's third warm accent, so every warning on the desk was painted in a colour the headings also speak in: brass at hue 39, copper at 29, ember at 13, all on one dark ground. Measured rather than eyeballed. Ember sits dE 20.7 from copper, which is the collision he pointed at; the new alarm sits dE 32.5 from ember, 52.6 from copper and 68.7 from brass, at 5.6:1 on obsidian, so it clears small text as well.","<b>IT IS A ONE-PLACE CHANGE, WHICH A PALETTE MOVE USUALLY IS NOT.</b> The token lives in design/desk.css, the layer, because the vendored salt-ds.css is synced from Code\\salt-ds and an edit there would be overwritten. --crim points at it and carries all 109 warnings with it; --rose keeps ember and has no reader at all. The chart series keep their literal #d4694c, because ember there is a SERIES colour and not a warning, so tokens.ts is untouched.","<b>AND THE THRESHOLDS, WHICH ARE THE OTHER HALF OF WHAT MAKES AN ALARM AN ALARM.</b> The supplier row lit four figures crimson and not one was a fault: 97 per cent landed of bought is a paid lot still to come, 100 per cent of a 30-day share is a supplier he chose, and 63 days quiet is a name that defaulted and is finished with. Quiet now needs a name he leaned on: over 30 days, no default, a quarter of the book or more. Concentration is brass, a watch, and takes the alarm only where that name has actually cost him something. A shortfall is a plain figure to 90 per cent and a colour below it.","<b>THE SENTENCE UNDER THE TABLE WENT THE SAME WAY,</b> which is the sweep rather than the fix: it was crimson on concentration alone, so Oil's 84 per cent read as an alarm on a book that has never lost a ringgit while the share figure four inches above it had just become a watch. Salt now carries two earned marks, SF6-KLC's 67 per cent and the concentration sentence that names the RM750; oil carries none, where the old thresholds lit two.","<b>AND HIS WORD OF THE SAME DAY: CA4-DAM HAS DISAPPEARED.</b> \"No more contact. Just like SF6-KLC, I have lost contact with no way of recovering my losses.\" The Order book was telling him to CHASE FIRST a party he had already written off, on a row whose own note says the money will not come and whose ladder provision is 100 per cent. The book knew both ways: `defaulted` on the sale since 05 Sep, `writtenOff` on the supplier receivable since 31 Jul. The card read neither. Chase first now takes the oldest claim that can still be worked and, where none can be, says what became of the money instead of printing a dash. The claim list keeps the written-off rows, because gross owed is still gross owed; only the chase skips them.","<b>PROVED AGAINST THE RULE, NOT A COUNT.</b> The colour is asserted from the stylesheet with the same dE arithmetic that chose it. The thresholds are read off each rendered row against that row's own figures, so they hold whatever the book does next. And the alarm's scarcity is asserted as a rule: a book that has lost nothing may carry no alarm at all, which is what oil proves.","<b>THIS WAS v555, THEN v556, BEFORE THE CLOUD GOT THERE TWICE.</b> While it was being built, an approval on the phone dispatched the chain and the chain folded twice from his phone approvals and took both numbers: the CM4-MK sale as v555, then the fulfilment on SA5-BTR p021 as v556, each deployed and pushed. A fold that carries real rows owns its number; this work was rebuilt on top of both and renumbered again. Nothing was lost either way and no bad build ever reached the phone: update.mjs refused the push rather than forcing it, and .deployed.json still read v554 when the collision was found."]},
+
+{"v":"v556","d":"09 Sep 2026","t":"FULFILMENT ON SA5-BTR P021: THE LAST 12.5 UNIT IN, ORDER SETTLED","n":["<b>ONE FULFILMENT FOLDED, AND IT CLOSES A LOT.</b> The remaining 12.5 unit of SA5-BTR's 50 unit lot p021, agreed 08 Sep at RM 2,200, moved on 09 Sep with no money attached, the RM 2,200 having been paid on 08 Sep. Against RM 0 and 12.5 unit outstanding, the move leaves RM 0 and 0 unit, so the drafter's flag that this settles the order in full is answered by the figures.","<b>WHAT THE INVENTORY DID.</b> The row is not recomputed here: ovAmend in the master applies the fulfilment, so a fulfilment has one definition. The lot rate of RM 44 a unit matches the inventory's own RM 44 shelf cost, so the cost basis does not move and no cost override is carried on the row. SA5-BTR's RM 3,100 outstanding before this fold stands on the party's other rows, not on p021."]},
 
 {"v":"v555","d":"09 Sep 2026","t":"ONE SALT SELL TO CM4-MK: 2 UNIT AT RM220, HALF PAID AND DELIVERED","n":["<b>ONE ROW FOLDED, A SALT SELL DATED 09 SEP.</b> CM4-MK takes 2 unit for RM220, with RM220 of goods and delivery split as RM202 goods and RM18 delivery, RM110 cash in and 2 unit handed over the same day. The total meets the RM220 ask for 2 unit and clears the RM112.43 floor, well under the RM290 ceiling, and RM110 a unit is this party's own median. Costed at the inventory's own RM44 a unit, so RM88 attaches.","<b>THE ADVANCE IS THE ONE THING TO WATCH.</b> The drafter flagged the RM110 left unpaid against CM4-MK's credit cap of 1, and the dossier shows 2 unit going out on credit with nothing outstanding before and nothing defaulted, so the flag stands answered only in part. Nothing else moved: no lot landed, the cost basis holds at RM44 a unit with replacement at RM46, and the two loans in, CH5-OUG and CA11-SEN, are untouched."]},
 
@@ -6010,7 +6025,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='09 Sep 2026, 22:18 KL';
+const LAST_UPDATED='09 Sep 2026, 23:06 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -8844,20 +8859,45 @@ function tabSourcing(){
 
   <h2 style="margin-top:18px">Who you buy from <span class="rule"></span></h2>
   <div class="card">${stkCols('sup')}<div class="stkwrap"><table><thead><tr><th class="l">Supplier</th><th class="stkx">Lots</th><th class="stkx">Unit</th><th>Share, ${ss.length?ss[0].recentDays:90}d</th><th class="stkx">Share, all</th><th>Weighted</th><th class="stkx">Best</th><th class="stkx">Last paid</th><th class="stkx">Received<div style="font-size:10px;color:var(--dim);font-weight:400">landed of bought</div></th><th class="l">Standing</th></tr></thead><tbody>
-    ${ss.map(s=>`<tr><td class="l mono">${ID(s.id)}<div style="font-size:10px;color:${s.quiet>30?'var(--crim)':'var(--dim)'}">bought ${s.quiet}d ago</div></td>
+    ${''/* v557, HIS INSTRUCTION OF 09 SEP 2026: THE ALARM IS SCARCE NOW, WHICH IS HALF OF WHAT MAKES
+       IT AN ALARM. This row lit four things crimson and not one of them was wrong. 97% landed of
+       bought is 12.5 unit of a paid lot still to come, which he knows about. 100% of a 30-day
+       share is a supplier he chose. 63 days quiet is a name that defaulted and is finished with,
+       already carrying a tag that says so. A colour that fires on the ordinary teaches its reader
+       to stop looking, so each of the three now has to earn it.
+         QUIET: only for a name he leaned on. quiet>30 implies a recent share of nought by
+       construction, so the recent figure cannot be the test; the all-time share is. A supplier who
+       carried a quarter of the book and has gone silent is worth a colour. One who never carried
+       much, or who defaulted and is done, is history rather than news.
+         SHARE: a watch, not an alarm. Concentration is a standing condition he has chosen, so it
+       takes brass; it goes crimson only where the same name has actually cost him something, which
+       is the pairing the sentence under this table already makes.
+         RECEIVED: a shortfall is not a fault until it is large. At or above 99% is clean, down to
+       90% is a lot still in transit and reads as a plain figure, and below that is a colour. */}
+    ${ss.map(s=>{
+      const quietAlarm=s.quiet>30&&!s.defaults&&s.share>=25;
+      const concentrated=s.recentShare>80;
+      const fillCol=s.fill==null?'var(--dim)':s.fill>=99?'var(--grn)':s.fill>=90?'var(--dim)':'var(--crim)';
+      return `<tr><td class="l mono">${ID(s.id)}<div style="font-size:10px;color:${quietAlarm?'var(--crim)':'var(--dim)'}">bought ${s.quiet}d ago</div></td>
       <td class="stkx">${s.lots}${s.pending?` <span style="color:var(--gold)">+${s.pending} agreed</span>`:''}</td>
-      <td class="stkx">${units(s.kg)}</td><td style="color:${s.recentShare>80?'var(--crim)':'var(--ink)'}"><b>${s.recentShare.toFixed(0)}%</b></td>
+      <td class="stkx">${units(s.kg)}</td><td style="color:${concentrated?(s.defaults?'var(--crim)':'var(--gold)'):'var(--ink)'}"><b>${s.recentShare.toFixed(0)}%</b></td>
       <td class="stkx" style="color:var(--dim)">${s.share.toFixed(0)}%</td>
       <td>${s.wavg==null?'&mdash;':fmt(s.wavg)}</td><td class="stkx">${s.best==null?'&mdash;':fmt(s.best)}</td><td class="stkx">${s.lastRate==null?'&mdash;':fmt(s.lastRate)}</td>
-      <td class="stkx" style="color:${s.fill!=null&&s.fill<100?'var(--crim)':'var(--grn)'}">${s.fill==null?'&mdash;':s.fill+'%'}</td>
-      <td class="l">${s.defaults?`<span class="tag def">defaulted ${fmt0(s.defaultRM)}</span>`:'<span class="tag paid">clean</span>'}</td></tr>`).join('')}
+      <td class="stkx" style="color:${fillCol}">${s.fill==null?'&mdash;':s.fill+'%'}</td>
+      <td class="l">${s.defaults?`<span class="tag def">defaulted ${fmt0(s.defaultRM)}</span>`:'<span class="tag paid">clean</span>'}</td></tr>`;}).join('')}
   </tbody></table></div>
   ${(()=>{if(!(conc&&conc.recentShare>80))return'';
     const bits=[];
     if(PROD===DEFAULT_PROD&&typeof supplierReceivable!=='undefined'&&supplierReceivable&&supplierReceivable.status!=='closed')
       bits.push(`the last name that carried this book took ${fmt0(supplierReceivable.amount)} and delivered nothing`);
     if(pend.length)bits.push(`<b>${fmt0(pend.reduce((a,p)=>a+p.total,0))}</b> is agreed with that same supplier now`);
-    return `<div class="dsc" style="margin-top:8px"><b style="color:var(--crim)">${ID(conc.id)} is ${conc.recentShare.toFixed(0)}% of every unit bought in the last ${conc.recentDays} days</b>${bits.length?', and '+bits.join('; '):''}.</div>`;})()}</div>
+    /* v557: THE SENTENCE FOLLOWS THE SAME RULE AS THE CELL ABOVE IT. It was crimson on concentration
+       alone, so Oil's 84% read as an alarm on a book that has never lost a ringgit, while the share
+       figure four inches up had already been made a watch. Concentration he has chosen is brass; it
+       earns the alarm only where this book has actually been cost something, which is exactly what
+       `bits` collects. Two rules for one fact on one screen is the fault this whole round is about. */
+    const hurt=bits.length>0||conc.defaults>0;
+    return `<div class="dsc" style="margin-top:8px"><b style="color:${hurt?'var(--crim)':'var(--gold)'}">${ID(conc.id)} is ${conc.recentShare.toFixed(0)}% of every unit bought in the last ${conc.recentDays} days</b>${bits.length?', and '+bits.join('; '):''}.</div>`;})()}</div>
 
   <div class="card" style="margin-top:14px"><div class="cardh">Every lot, at the rate it landed <span class="sub">by landing date, RM/unit; the defaulted lot drawn hollow</span></div><div class="chartbox" style="height:190px"><canvas id="srcLotChart"></canvas></div></div>
   ${(()=>{/* v385: THE PROFIT COLUMN WAS INVERTED, AND THE PROSE UNDER IT CLAIMED THE OPPOSITE.
@@ -18155,13 +18195,24 @@ function obClaims(){
   const sr=(typeof supplierReceivable!=='undefined'&&supplierReceivable&&supplierReceivable.status==='recoverable')?supplierReceivable:null;
   /* pr is passed in rather than derived here, because a sale's rate honours a declared default
      and the supplier's does not: one row shape, two rules, and the caller says which. */
-  const row=(who,date,g,pr)=>{const d=dAge(date);return {who:who,d:d,g:+(+g).toFixed(2),pr:pr,n:+(g*(1-pr)).toFixed(2)};};
-  return sales.filter(s=>txAdvance(s)>0.009).map(s=>row(s.customer,s.date,txAdvance(s),saleProvRate(s,dAge(s.date))))
-    .concat(sr?[row(sr.party,sr.since,sr.amount,provRate(dAge(sr.since)))]:[])
+  /* v557, HIS WORD OF 09 SEP 2026: "Disappeared, MIA. No more contact. Just like SF6-KLC, I have
+     lost contact with no way of recovering my losses." The Order book was telling him to CHASE
+     FIRST a party he had already written off, on a row whose own note says the money will not come
+     and whose ladder provision is 100%. A claim written off is a loss taken, not a debt to work,
+     and naming it as the first call is the desk arguing with its own record. `off` carries that,
+     from the same two fields the book already uses: `defaulted` on a sale, `writtenOff` on the
+     supplier receivable, which is how SF6-KLC has stood since 31 Jul. The list keeps them, because
+     gross owed is still gross owed; only the chase skips them. */
+  const row=(who,date,g,pr,off)=>{const d=dAge(date);return {who:who,d:d,g:+(+g).toFixed(2),pr:pr,n:+(g*(1-pr)).toFixed(2),off:!!off};};
+  return sales.filter(s=>txAdvance(s)>0.009).map(s=>row(s.customer,s.date,txAdvance(s),saleProvRate(s,dAge(s.date)),s.defaulted))
+    .concat(sr?[row(sr.party,sr.since,sr.amount,provRate(dAge(sr.since)),sr.status==='writtenOff')]:[])
     .sort((a,b)=>b.d-a.d||b.g-a.g);
 }
 function consoOrderBlock(){
-  const cl=obClaims(), cf=cashFlow(), o=cl[0];
+  /* v557: the oldest claim that can still be worked, not the oldest claim. `wo` is what has been
+     written off, so the card can say what became of the money rather than printing a dash. */
+  const cl=obClaims(), cf=cashFlow(), o=cl.find(r=>!r.off)||null;
+  const wo=cl.filter(r=>r.off), woG=+wo.reduce((a,r)=>a+r.g,0).toFixed(2);
   const g=+cl.reduce((a,r)=>a+r.g,0).toFixed(2), n=+cl.reduce((a,r)=>a+r.n,0).toFixed(2);
   const pend=+sales.reduce((a,s)=>a+txPendRM(s),0).toFixed(2);
   const pendB=+purchases.filter(x=>x.pending&&!x.defaulted).reduce((a,x)=>a+(+x.total||0),0).toFixed(2);
@@ -18169,7 +18220,11 @@ function consoOrderBlock(){
   return `<h1>Order book</h1>`+consoHd('Both books')
     +`<div class="conso"><div class="kpis k4">`
     +cell('gold','Owed to you',fmt0(n),g>0.009?`${fmt0(g)} gross; the ladder has already discounted ${fmt0(+(g-n).toFixed(2))}`:'nothing owed to you')
-    +cell(o&&o.pr>=0.5?'r':'','Chase first',o?ID(o.who):'&mdash;',o?`${o.d} days &middot; ${fmt0(o.g)} gross, ${(o.pr*100).toFixed(0)}% of it already written off by the ladder`:'nothing is owed to you')
+    +cell(o&&o.pr>=0.5?'r':'','Chase first',o?ID(o.who):'&mdash;',o
+      ? `${o.d} days &middot; ${fmt0(o.g)} gross, ${(o.pr*100).toFixed(0)}% of it already written off by the ladder`
+      : wo.length
+        ? `nothing left to chase; ${fmt0(woG)} across ${wo.length} claim${wo.length===1?'':'s'} is written off and the ${wo.length===1?'party is':'parties are'} out of contact`
+        : 'nothing is owed to you')
     +cell('r','You owe, in cash',fmt0(cf.dueOut),cf.dueOut>0.009?`${fmt0(cf.billsOut)} of supplier bills &middot; ${fmt0(cf.refundsOut)} of refunds`:'no bill and no refund outstanding')
     +cell('','Agreed, nothing moved',fmt0(pend),pendB>0.009?`and ${fmt0(pendB)} of buying agreed the same way`:'no buying agreed the same way')
     +`</div></div>`;
