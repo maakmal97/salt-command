@@ -443,6 +443,14 @@
       "hide": []
     }
   },
+  "COST_RULE": {
+    "oil": {
+      "kind": "buyPlusPct",
+      "pct": 15,
+      "placeholder": true,
+      "note": "His instruction of 09 Sep 2026, a PLACEHOLDER. Oil prices off the buy rate plus 15 per cent instead of the measured leak: the v551 count read 23.08 per cent from one cycle on a seventeen-day-old anchor, which put RM1.81 of a RM9.64 effective cost on a single drift figure. The 15 per cent stands in for freight and leak together. It moves the PRICING basis only; landed cost stays the true figure the accounts use."
+    }
+  },
   "NOTES": {
     "PRICE_SET": [
       "HIS INSTRUCTION, 09 SEP 2026, AFTER THE v551 OIL COUNT: \"The desk quotes to 450, by lowering margin, then for others, quote proportionately.\" The count read a 23.08 per cent leak from his own figures and lifted the 50 unit oil floor to RM482.20, above the RM450 he had stated, and v353 had the desk lift any stated price that sat under its floor. From v552 it lifts a DERIVED ask only: a price he has set is quoted as set, the gap to break-even is reported beside it rather than hidden, and the 50 unit tier reads 0.93x with RM32.20 under. His other four oil tiers are untouched and already step the margin down proportionately into it: 1.35x, 1.24x, 1.14x, 1.04x, 0.93x. Recorded as his decision, not an error, and the drafter will flag a 50 unit oil sale as under floor for the same reason the board does."

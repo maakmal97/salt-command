@@ -1,6 +1,6 @@
 {
- "v": "v552",
- "stamped": "09 Sep 2026, 14:51 KL",
+ "v": "v553",
+ "stamped": "09 Sep 2026, 16:10 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -3653,6 +3653,14 @@
     }
    ]
   },
+  "COST_RULE": {
+   "oil": {
+    "kind": "buyPlusPct",
+    "pct": 15,
+    "placeholder": true,
+    "note": "His instruction of 09 Sep 2026, a PLACEHOLDER. Oil prices off the buy rate plus 15 per cent instead of the measured leak: the v551 count read 23.08 per cent from one cycle on a seventeen-day-old anchor, which put RM1.81 of a RM9.64 effective cost on a single drift figure. The 15 per cent stands in for freight and leak together. It moves the PRICING basis only; landed cost stays the true figure the accounts use."
+   }
+  },
   "PRICE_SET": {
    "salt": {
     "prices": {},
@@ -3683,7 +3691,7 @@
   ],
   "QUEUE_COMMITTED": "2026-09-09T05:55:00.001Z",
   "PRICING": {
-   "takenAt": "2026-09-09T06:51:26.428Z",
+   "takenAt": "2026-09-09T08:11:01.986Z",
    "sizes": [
     0.5,
     1,
@@ -3828,6 +3836,7 @@
         "from": "2026-09-02",
         "to": "2026-09-08"
        },
+       "costRule": null,
        "costBasis": {
         "freightPerTrip": {
          "rm": 0
@@ -3934,19 +3943,19 @@
      "replCost": 7.59,
      "floors": {
       "10": {
-       "floor": 96.44
+       "floor": 87.28
       },
       "20": {
-       "floor": 192.88
+       "floor": 174.57
       },
       "30": {
-       "floor": 289.32
+       "floor": 261.86
       },
       "40": {
-       "floor": 385.76
+       "floor": 349.14
       },
       "50": {
-       "floor": 482.2
+       "floor": 436.43
       }
      },
      "inputs": {
@@ -4027,6 +4036,12 @@
         "cycles": 1,
         "from": "2026-08-23",
         "to": "2026-09-09"
+       },
+       "costRule": {
+        "kind": "buyPlusPct",
+        "pct": 15,
+        "placeholder": true,
+        "note": "His instruction of 09 Sep 2026, a PLACEHOLDER. Oil prices off the buy rate plus 15 per cent instead of the measured leak: the v551 count read 23.08 per cent from one cycle on a seventeen-day-old anchor, which put RM1.81 of a RM9.64 effective cost on a single drift figure. The 15 per cent stands in for freight and leak together. It moves the PRICING basis only; landed cost stays the true figure the accounts use."
        },
        "costBasis": {
         "freightPerTrip": {
@@ -4122,10 +4137,10 @@
      ]
     }
    },
-   "v": "v552"
+   "v": "v553"
   },
   "OPEN": {
-   "at": "2026-09-09T06:51:26.466Z",
+   "at": "2026-09-09T08:11:02.024Z",
    "count": 8,
    "byKey": {
     "SA5-BTR|2026-09-08|2200": {
@@ -4292,7 +4307,7 @@
     "salt": "2026-09-08",
     "oil": "2026-09-09"
    },
-   "v": "v552"
+   "v": "v553"
   }
  }
 }

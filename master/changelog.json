@@ -1,5 +1,18 @@
 [
  {
+  "v": "v553",
+  "d": "09 Sep 2026",
+  "t": "OIL PRICES OFF THE BUY RATE PLUS 15 PER CENT, A PLACEHOLDER, AND THE LEAK STOPS CARRYING THE WHOLE BOARD",
+  "n": [
+   "<b>HIS INSTRUCTION, 09 SEP 2026, AFTER ASKING WHY OIL'S EFFECTIVE COST WAS SO HIGH:</b> \"for oil, COGS is just the price to buy + 15%. That will be placeholder for now.\" The answer to the question was that the leak was almost all of it: goods RM7.59 and freight RM0.25 make a landed RM7.84, and a 23.08 per cent leak added RM1.81 to reach RM9.64, so 18.8 per cent of the effective cost was one drift figure.",
+   "<b>AND THAT DRIFT CAME FROM ONE CYCLE.</b> 15 unit missing over 65 sold, 23 Aug to 09 Sep, read from the count folded an hour earlier at v551. Salt's 20.32 per cent is read over three cycles; oil had one, on an anchor seventeen days stale. A flat markup on the buy rate is a coarser number and an honest one while oil has one cycle to its name.",
+   "<b>IT MOVES THE PRICING BASIS AND NOTHING ELSE.</b> eff and effEx both take the rule, because the FLOOR reads effEx and a rule that moved the headline alone would price the board one way and refuse it another. landed stays the IAS 2 inventoriable figure the accounts use, and shrink keeps reporting what the counts actually read, so the desk can still show the leak it is measuring while pricing off something else. Oil's board now runs 1.49x, 1.38x, 1.26x, 1.15x and 1.03x of break-even, so his RM450 at 50 unit clears on this basis and the under-floor flag of v552 goes quiet on its own.",
+   "<b>THE RULE IS DATA, NOT CODE.</b> COST_RULE on the book, per product, so the percentage moves without touching the engine, and `rule`, `rulePct` and `rulePlaceholder` travel with the cost stack so every surface can say which basis it is on. The Sourcing card said \"goods plus freight, loaded 18.8% for leak\", which described arithmetic that no longer ran; it now reads \"RM 7.59 to buy plus 15%, a placeholder; freight and the leak are inside it, not added\".",
+   "<b>ALSO FOUND, AND NOT FIXED HERE: OIL'S 23 AUG COUNT CONTRADICTS ITS OWN ROLL.</b> COUNTS records 15 unit. The roll chain only reaches the -35 that stood before v550 if that count was ZERO, and v384's note says so in terms. The entry carries no drift so it feeds nothing today, but it is wrong in the record and it will matter once oil has three cycles to read. Left for his decision.",
+   "<b>SALT IS THE CONTROL.</b> It carries no rule, still prices off its measured leak at RM56.21 effective on RM46.72 landed, and not one salt ask moves. Asserted as such, so the rule cannot quietly go global."
+  ]
+ },
+ {
   "v": "v552",
   "d": "09 Sep 2026",
   "t": "THE DESK QUOTES A PRICE HE HAS STATED, EVEN UNDER ITS FLOOR, AND THE BOARD READS ACROSS AS THE ARITHMETIC RUNS",

@@ -68,7 +68,7 @@ document.addEventListener('visibilitychange',function(){
    localStorage before it posts anything and the load reads it straight back.
    The same tick retries a held entry, which is what gets a phone write to the cloud
    without waiting for the next open. */
-var SALT_BUILD_ID="f01a8f738b6b786f";
+var SALT_BUILD_ID="03c51f2c47dadf10";
 var SALT_REV_MS=10000;
 (function(){
   var chip=null,timer=null;
@@ -4139,8 +4139,22 @@ function costStack(I){
   /* 4. GETTING THEM TO THE CUSTOMER. Per order, so divided by what an average order carries. */
   const del=(I.lockOn&&LKb&&pxOver.cost!=null)?{n:LKb.delN,mean:LKb.avgDel}:I.avgDel;   // v384: see the freight note above
   const txn=del.mean?(COST_BASIS.deliveredShare.v*COST_BASIS.txnPerDelivery.rm)/del.mean:0;
-  const eff=yielded+txn;
-  return {repl:+lot.toFixed(2),lot:+lot.toFixed(4),freight:+freight.toFixed(4),
+  let eff=yielded+txn;
+  /* v553, HIS INSTRUCTION OF 09 SEP 2026, AND IT IS A PLACEHOLDER: "for oil, COGS is just the price
+     to buy + 15%". The measured road above put RM1.81 of a RM9.64 effective cost on ONE drift
+     figure, read from a single cycle whose opening anchor was seventeen days old and whose own
+     COUNTS entry contradicts the roll that produced it. A flat markup on the buy rate is a coarser
+     number and an honest one while oil has one cycle to its name.
+     IT MOVES THE PRICING BASIS AND NOTHING ELSE. `landed` is the IAS 2 inventoriable figure and
+     stays the true cost; `shrink` and `sampleLoad` keep reporting the leak the counts actually
+     read, so the desk can still show what it is measuring while pricing off something else. The
+     rule is DATA, in COST_RULE on the book, so the percentage moves without touching this file,
+     and `rule`/`rulePct` travel with the stack so every surface can say which basis it is on. */
+  const CR=I.costRule||null;
+  const ruled=!!(CR&&CR.kind==='buyPlusPct'&&+CR.pct>=0);
+  if(ruled)eff=+(lot*(1+ +CR.pct/100)).toFixed(6);
+  return {rule:ruled?CR.kind:null,rulePct:ruled?+CR.pct:null,rulePlaceholder:!!(ruled&&CR.placeholder),
+          repl:+lot.toFixed(2),lot:+lot.toFixed(4),freight:+freight.toFixed(4),
           landed:+landed.toFixed(4),inventoriable:+landed.toFixed(4),
           shrink:sh,shrinkRaw:raw,attrib:SHRINK_ATTRIB,
           sampleLoad:+(yielded-landed).toFixed(4),
@@ -4151,7 +4165,10 @@ function costStack(I){
           /* GOODS ONLY, per unit. eff spreads the per-ORDER delivery over an average order, which
              is the right headline and the wrong thing to multiply by a lot size. Anything that
              prices a specific quantity uses effEx and adds delivery once. */
-          effEx:+yielded.toFixed(6),delPerOrder:COST_BASIS.txnPerDelivery.rm,
+          /* v553: and the RULED basis lands here too, because the FLOOR reads effEx, not eff. A rule
+             that moved the headline and left the floor on the leak would have been the worst of
+             both: a board priced one way and refused another. */
+          effEx:ruled?+(lot*(1+ +CR.pct/100)).toFixed(6):+yielded.toFixed(6),delPerOrder:COST_BASIS.txnPerDelivery.rm,
           locked:false,lockedOn:null,lockAge:null,
           /* v403: gated on lockOn. With the lock off there is nothing to be stale AGAINST,
              and the ungated read was a constant true on this desk since PRICE_LOCK_ON went
@@ -4824,6 +4841,14 @@ const PRICE_SET={
       "50": 450
     },
     "hide": []
+  }
+};
+const COST_RULE={
+  "oil": {
+    "kind": "buyPlusPct",
+    "pct": 15,
+    "placeholder": true,
+    "note": "His instruction of 09 Sep 2026, a PLACEHOLDER. Oil prices off the buy rate plus 15 per cent instead of the measured leak: the v551 count read 23.08 per cent from one cycle on a seventeen-day-old anchor, which put RM1.81 of a RM9.64 effective cost on a single drift figure. The 15 per cent stands in for freight and leak together. It moves the PRICING basis only; landed cost stays the true figure the accounts use."
   }
 };
 /* ==== END BOOK ==== */
@@ -5634,7 +5659,9 @@ const whiteboard=[
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{"v":"v552","d":"09 Sep 2026","t":"THE DESK QUOTES A PRICE HE HAS STATED, EVEN UNDER ITS FLOOR, AND THE BOARD READS ACROSS AS THE ARITHMETIC RUNS","n":["<b>HIS INSTRUCTION, 09 SEP 2026:</b> \"The desk quotes to 450, by lowering margin, then for others, quote proportionately.\" The v551 oil count read a 23.08 per cent leak from his own figures, which lifted the 50 unit oil floor to RM482.20 against the RM450 he had stated. v353 had the desk lift any stated price sitting under its floor, so the board read RM450 and the desk quoted RM490.","<b>THE GUARD IS NARROWED, NOT REMOVED.</b> From here it lifts a DERIVED ask only. The reason v352 wrote it still holds for one the desk invented: the ladder and the floor are struck on different bases, nothing forces them to agree, and an ask the desk made up below break-even is a fault. A price HE set below break-even is a decision, and the desk's job is to quote it and say what it costs rather than overrule him at the counter. The gap is named rather than hidden: `under` is the ringgit to break-even and `floorX` the multiple of it, so the 50 unit tier reads RM450 at 0.93x with RM32.20 under, and nothing else on either book moves.","<b>AND HIS LADDER ALREADY QUOTES PROPORTIONATELY.</b> Oil steps 1.35x, 1.24x, 1.14x, 1.04x, 0.93x of break-even across the five sizes, so the tier he has taken under cost is the end of a straight decline rather than a kink. The other four stand exactly as stated.","<b>THE BOARD'S COLUMNS ARE HIS ORDER NOW: size, COGS, effective cost, margin in x, ask with its % margin.</b> What stood there put the ask before the floor and headed a MARKUP column \"Margin\": ask over cogs less one, struck on LANDED, beside a \"% margin\" struck on EFFECTIVE cost. Two figures on one row shared a word without sharing a basis, and \"2.00x\" meant the ask was THREE times cogs. He asked what the difference was, which is the answer.","<b>EFFECTIVE COST, BREAK-EVEN AND THE FLOOR ARE ONE NUMBER,</b> equal to the ringgit at every size on both books, so the column carries all three names honestly and the multiple beside it is the ask over that: above 1.00x earns, 1.00x earns nothing, below 1.00x is a stated price under break-even and prints crimson.","<b>PROVED IN BOTH DIRECTIONS ON THE DESK'S OWN COST STACK.</b> Same size, same policy, same figures, the only difference being whether the price was stated: the stated one is quoted at RM450 and carries a RM32.20 gap; the derived one is still lifted clear of the floor and carries none. Against the unchanged engine the first reads RM490 and the pair collapses."]},
+const evolution=[{"v":"v553","d":"09 Sep 2026","t":"OIL PRICES OFF THE BUY RATE PLUS 15 PER CENT, A PLACEHOLDER, AND THE LEAK STOPS CARRYING THE WHOLE BOARD","n":["<b>HIS INSTRUCTION, 09 SEP 2026, AFTER ASKING WHY OIL'S EFFECTIVE COST WAS SO HIGH:</b> \"for oil, COGS is just the price to buy + 15%. That will be placeholder for now.\" The answer to the question was that the leak was almost all of it: goods RM7.59 and freight RM0.25 make a landed RM7.84, and a 23.08 per cent leak added RM1.81 to reach RM9.64, so 18.8 per cent of the effective cost was one drift figure.","<b>AND THAT DRIFT CAME FROM ONE CYCLE.</b> 15 unit missing over 65 sold, 23 Aug to 09 Sep, read from the count folded an hour earlier at v551. Salt's 20.32 per cent is read over three cycles; oil had one, on an anchor seventeen days stale. A flat markup on the buy rate is a coarser number and an honest one while oil has one cycle to its name.","<b>IT MOVES THE PRICING BASIS AND NOTHING ELSE.</b> eff and effEx both take the rule, because the FLOOR reads effEx and a rule that moved the headline alone would price the board one way and refuse it another. landed stays the IAS 2 inventoriable figure the accounts use, and shrink keeps reporting what the counts actually read, so the desk can still show the leak it is measuring while pricing off something else. Oil's board now runs 1.49x, 1.38x, 1.26x, 1.15x and 1.03x of break-even, so his RM450 at 50 unit clears on this basis and the under-floor flag of v552 goes quiet on its own.","<b>THE RULE IS DATA, NOT CODE.</b> COST_RULE on the book, per product, so the percentage moves without touching the engine, and `rule`, `rulePct` and `rulePlaceholder` travel with the cost stack so every surface can say which basis it is on. The Sourcing card said \"goods plus freight, loaded 18.8% for leak\", which described arithmetic that no longer ran; it now reads \"RM 7.59 to buy plus 15%, a placeholder; freight and the leak are inside it, not added\".","<b>ALSO FOUND, AND NOT FIXED HERE: OIL'S 23 AUG COUNT CONTRADICTS ITS OWN ROLL.</b> COUNTS records 15 unit. The roll chain only reaches the -35 that stood before v550 if that count was ZERO, and v384's note says so in terms. The entry carries no drift so it feeds nothing today, but it is wrong in the record and it will matter once oil has three cycles to read. Left for his decision.","<b>SALT IS THE CONTROL.</b> It carries no rule, still prices off its measured leak at RM56.21 effective on RM46.72 landed, and not one salt ask moves. Asserted as such, so the rule cannot quietly go global."]},
+
+{"v":"v552","d":"09 Sep 2026","t":"THE DESK QUOTES A PRICE HE HAS STATED, EVEN UNDER ITS FLOOR, AND THE BOARD READS ACROSS AS THE ARITHMETIC RUNS","n":["<b>HIS INSTRUCTION, 09 SEP 2026:</b> \"The desk quotes to 450, by lowering margin, then for others, quote proportionately.\" The v551 oil count read a 23.08 per cent leak from his own figures, which lifted the 50 unit oil floor to RM482.20 against the RM450 he had stated. v353 had the desk lift any stated price sitting under its floor, so the board read RM450 and the desk quoted RM490.","<b>THE GUARD IS NARROWED, NOT REMOVED.</b> From here it lifts a DERIVED ask only. The reason v352 wrote it still holds for one the desk invented: the ladder and the floor are struck on different bases, nothing forces them to agree, and an ask the desk made up below break-even is a fault. A price HE set below break-even is a decision, and the desk's job is to quote it and say what it costs rather than overrule him at the counter. The gap is named rather than hidden: `under` is the ringgit to break-even and `floorX` the multiple of it, so the 50 unit tier reads RM450 at 0.93x with RM32.20 under, and nothing else on either book moves.","<b>AND HIS LADDER ALREADY QUOTES PROPORTIONATELY.</b> Oil steps 1.35x, 1.24x, 1.14x, 1.04x, 0.93x of break-even across the five sizes, so the tier he has taken under cost is the end of a straight decline rather than a kink. The other four stand exactly as stated.","<b>THE BOARD'S COLUMNS ARE HIS ORDER NOW: size, COGS, effective cost, margin in x, ask with its % margin.</b> What stood there put the ask before the floor and headed a MARKUP column \"Margin\": ask over cogs less one, struck on LANDED, beside a \"% margin\" struck on EFFECTIVE cost. Two figures on one row shared a word without sharing a basis, and \"2.00x\" meant the ask was THREE times cogs. He asked what the difference was, which is the answer.","<b>EFFECTIVE COST, BREAK-EVEN AND THE FLOOR ARE ONE NUMBER,</b> equal to the ringgit at every size on both books, so the column carries all three names honestly and the multiple beside it is the ask over that: above 1.00x earns, 1.00x earns nothing, below 1.00x is a stated price under break-even and prints crimson.","<b>PROVED IN BOTH DIRECTIONS ON THE DESK'S OWN COST STACK.</b> Same size, same policy, same figures, the only difference being whether the price was stated: the stated one is quoted at RM450 and carries a RM32.20 gap; the derived one is still lifted clear of the floor and carries none. Against the unchanged engine the first reads RM490 and the pair collapses."]},
 
 {"v":"v551","d":"09 Sep 2026","t":"OIL COUNTED AT 60 ON 09 SEP: A DRIFT OF 15 UNIT AGAINST THE ROLL, AND THE FIRST OIL COUNT IN SEVENTEEN DAYS","n":["<b>HIS COUNT, 09 SEP 2026: OIL STANDS AT 60 UNIT.</b> The roll put it at 75 once the two lots of v550 were on, so the drift is -15. A COUNT AND NOT A ROLL: COUNT_ON.oil moves from 23 Aug to 09 Sep, and the counted figure stands over the roll, as it does everywhere on this desk.","<b>OIL HAD NOT BEEN COUNTED FOR SEVENTEEN DAYS,</b> and everything between was rolled. The 23 Aug count is the anchor the whole run of oil figures has rested on, and it carried no `was` of its own, so until today oil had no measured drift at all: it was the one book whose leak could not be charged from its own counts. This is the second oil count on the book and the first that can be compared with anything.","<b>WHAT THE 15 UNIT DOES AND DOES NOT PROVE.</b> It is the difference between what the book expected and what he found, over a cycle in which 65 unit of oil went out. It does not say where the 15 went. A drift measured against a roll standing on a seventeen-day-old anchor carries that anchor's error as well as the cycle's, so the honest reading is that oil's leak is now measurable rather than that it is 15 unit of loss. The next count is the one that tests it.","<b>IT ALSO SETTLES THE NEGATIVE INVENTORY.</b> Oil had stood at -35 since v546 rolled a 50 unit sale out of a stated 15. v550 put the missing lots on and this count puts a measured figure under them, so the oil book stops reporting an impossible position and the Sourcing tab stops calling it empty."]},
 
@@ -5974,7 +6001,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='09 Sep 2026, 14:51 KL';
+const LAST_UPDATED='09 Sep 2026, 16:10 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -8721,7 +8748,12 @@ function tabSourcing(){
   return `<div class="kpis k5">
     <div class="kpi"><div class="l">Bought to date</div><div class="v">${units(buyUnits)}</div><div class="n">${fmt0(buyRM)} at ${fmt(wavgBuy)}/unit weighted</div></div>
     <div class="kpi ${conc&&conc.recentShare>80?'r':''}"><div class="l">Top supplier share</div><div class="v" style="${conc&&conc.recentShare>80?'color:var(--crim)':''}">${conc?conc.recentShare.toFixed(0)+'%':'&mdash;'}</div><div class="n">${conc?ID(conc.id)+` of ${ss.length} supplier${ss.length===1?'':'s'}, last ${conc.recentDays} days (${conc.share.toFixed(0)}% all time)`:'none yet'}</div></div>
-    <div class="kpi gold"><div class="l">Effective cost</div><div class="v">${fmt(c.eff)}<span style="font-size:12px;color:var(--mut)">/unit</span></div><div class="n">${fmt(c.repl)} goods + ${fmt(c.freight)} freight, loaded ${(c.shrink*100).toFixed(1)}% for leak</div></div>
+    ${''/* v553: the note has to say WHICH basis it is on. Under a COST_RULE the effective figure is
+       a flat markup on the buy rate, so the old sentence, "goods plus freight loaded for leak",
+       described arithmetic that no longer ran and named a leak percentage the figure did not use. */}
+    <div class="kpi gold"><div class="l">Effective cost</div><div class="v">${fmt(c.eff)}<span style="font-size:12px;color:var(--mut)">/unit</span></div><div class="n">${c.rule==='buyPlusPct'
+      ? `${fmt(c.repl)} to buy plus ${c.rulePct}%${c.rulePlaceholder?', a placeholder':''}; freight and the ${(c.shrink*100).toFixed(1)}% leak are inside it, not added`
+      : `${fmt(c.repl)} goods + ${fmt(c.freight)} freight, loaded ${(c.shrink*100).toFixed(1)}% for leak`}</div></div>
     <div class="kpi"><div class="l">Freight per unit</div><div class="v">${fmt(c.freight)}</div><div class="n">${ml?`typed on the lots, per unit over the replacement window (v503)`:'no lot received to average'}</div></div>
     <div class="kpi ${ss.some(s=>s.defaults)?'r':'g'}"><div class="l">Lost to defaults</div><div class="v">${fmt0(ss.reduce((a,s)=>a+s.defaultRM,0))}</div><div class="n">${ss.reduce((a,s)=>a+s.defaults,0)} lot${ss.reduce((a,s)=>a+s.defaults,0)===1?'':'s'} paid for and never delivered</div></div>
   </div>
@@ -13813,6 +13845,7 @@ function pxInputs(){
     repl:pxReplRate(),   /* round 5, call 2: the trailing 30-day weighted average, per book */
     freightRate:pxFreightRate(),   /* v503: freight typed on the lots, per unit; v504: the same three lots */
     leak:pxLeakCharge(),   /* v504: the last three count cycles */
+    costRule:(typeof COST_RULE!=='undefined'?COST_RULE:{})[PROD]||null,   /* v553: a per-book pricing basis, from the book */
     costBasis:{freightPerTrip:{rm:COST_BASIS.freightPerTrip.rm},txnPerDelivery:{rm:COST_BASIS.txnPerDelivery.rm},
       deliveredShare:{v:delShare(PROD).v}},
     attrib:SHRINK_ATTRIB, shrinkRate:pxShrinkRate(), avgDel:avgDelivery(PROD)};

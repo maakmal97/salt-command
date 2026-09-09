@@ -1890,7 +1890,7 @@ section("Book — ledger/book.json is the source (v339)");
   ok(/ok\s+the master's BOOK block is ledger\/book\.json/.test(chk), "tools/booksync.mjs --check: the master's book block is the file");
   const book = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
   const keys = Object.keys(book).filter((k) => k !== "NOTES");
-  ok(keys.length === 27, "the book holds the twenty-seven ledger keys");   // v353 added PRICE_SET; v504 added COUNTS; v549 retired SOURCING_PLAN
+  ok(keys.length === 28, "the book holds the twenty-eight ledger keys");   // v353 added PRICE_SET; v504 added COUNTS; v549 retired SOURCING_PLAN; v553 added COST_RULE
   ok(Array.isArray(book.sales) && book.sales.length > 100 && Array.isArray(book.purchases), "with the rows as records");
   ok(typeof book.QUEUE_COMMITTED === "string" && typeof book.STATED_STOCK === "number", "and the singletons as values");
   ok(book.NOTES && Array.isArray(book.NOTES.STATED_STOCK) && book.NOTES.STATED_STOCK.length > 0, "the stated stock's roll history survived as NOTES");
@@ -2895,13 +2895,34 @@ section("Oil — pinned at both ends and lawful between (round 5, his call 5)");
      names its gap; a derived one is still lifted clear of the floor, which is the whole of what
      v352 was written to stop. Read off the desk's own inputs rather than a fixture, so a change to
      the cost stack cannot make either half vacuous. */
-  const walkS = read("PRICING_ENGINE.ladderWalk([50], pxCost(), Object.assign({}, pxPolicy(), {stated:{'50':450}}))");
+  /* v553: the stated price used here is RM1, not RM450. The first cut used RM450 because it was
+     under its floor that hour; the COST_RULE of v553 dropped oil's floor to RM436.43 and RM450
+     cleared it, so the pair broke on a change to the cost basis rather than on a fault. RM1 is
+     under any floor this book can compute, which is what makes the halves independent of it. */
+  const walkS = read("PRICING_ENGINE.ladderWalk([50], pxCost(), Object.assign({}, pxPolicy(), {stated:{'50':1}}))");
   const walkD = read("PRICING_ENGINE.ladderWalk([50], pxCost(), Object.assign({}, pxPolicy(), {stated:{}}))");
-  ok(walkS[0].p === 450, `a price he stated under its floor is quoted as stated (${walkS[0].p})`);
-  ok(walkS[0].under > 0.009 && Math.abs(walkS[0].under - +(a50.fl - 450).toFixed(2)) < 0.011,
-    `and carries the gap to break-even, RM${walkS[0].under}`);
+  ok(walkS[0].p === 1, `a price he stated under its floor is quoted as stated (${walkS[0].p})`);
+  ok(walkS[0].under > 0.009 && Math.abs(walkS[0].under - +(a50.fl - 1).toFixed(2)) < 0.011,
+    `and carries the gap to break-even, RM${walkS[0].under} of RM${a50.fl}`);
   ok(walkD[0].p > a50.fl + 0.009, `a DERIVED ask under the same floor is still lifted clear of it (${walkD[0].p} over ${a50.fl})`);
   ok(walkD[0].under === 0, "and reports no gap, because it has none");
+  /* v553, his instruction of 09 Sep 2026: OIL PRICES OFF THE BUY RATE PLUS 15%, A PLACEHOLDER. The
+     measured road put RM1.81 of a RM9.64 effective cost on one drift figure from a single cycle.
+     The rule is DATA on the book, it moves eff AND effEx because the floor reads effEx, and it
+     moves nothing else: landed stays the IAS 2 figure and shrink keeps reporting what the counts
+     read. Both halves asserted, and salt is the control that proves the rule is not global. */
+  const cOil = read("pxCost()");
+  ok(cOil.rule === "buyPlusPct" && cOil.rulePct === 15, `oil prices on the stated rule (${cOil.rule} ${cOil.rulePct})`);
+  ok(Math.abs(cOil.eff - +(cOil.repl * 1.15).toFixed(6)) < 0.005, `and its effective cost is the buy rate plus 15% (${cOil.eff} against ${cOil.repl})`);
+  ok(Math.abs(cOil.effEx - cOil.eff) < 0.005, "the floor's basis moves with it, so the board is not priced one way and refused another");
+  ok(Math.abs(cOil.landed - +(cOil.repl + cOil.freight).toFixed(4)) < 0.005 && cOil.shrink > 0,
+    `while landed stays the true cost and the leak is still measured and reported (${cOil.landed}, ${(cOil.shrink * 100).toFixed(2)}%)`);
+  ok(read("priceLadder(50).ask.under") === 0, "so his RM450 clears its floor on this basis and the desk stops calling it under");
+  w.eval("setProd('salt');recompute();");
+  const cSalt = read("pxCost()");
+  ok(cSalt.rule === null && Math.abs(cSalt.eff - cSalt.effEx) < 0.001 && cSalt.eff > cSalt.landed,
+    `and salt carries no rule, so it still prices off the measured leak (${cSalt.eff} on ${cSalt.landed})`);
+  w.eval("setProd('oil');recompute();");
   let strict = true, dearer = true;
   for (let i = 1; i < rows.length; i++) {
     if (!(rows[i].ask / rows[i].q < rows[i - 1].ask / rows[i - 1].q - 1e-9)) strict = false;

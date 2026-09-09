@@ -108,8 +108,22 @@ function costStack(I){
   /* 4. GETTING THEM TO THE CUSTOMER. Per order, so divided by what an average order carries. */
   const del=(I.lockOn&&LKb&&pxOver.cost!=null)?{n:LKb.delN,mean:LKb.avgDel}:I.avgDel;   // v384: see the freight note above
   const txn=del.mean?(COST_BASIS.deliveredShare.v*COST_BASIS.txnPerDelivery.rm)/del.mean:0;
-  const eff=yielded+txn;
-  return {repl:+lot.toFixed(2),lot:+lot.toFixed(4),freight:+freight.toFixed(4),
+  let eff=yielded+txn;
+  /* v553, HIS INSTRUCTION OF 09 SEP 2026, AND IT IS A PLACEHOLDER: "for oil, COGS is just the price
+     to buy + 15%". The measured road above put RM1.81 of a RM9.64 effective cost on ONE drift
+     figure, read from a single cycle whose opening anchor was seventeen days old and whose own
+     COUNTS entry contradicts the roll that produced it. A flat markup on the buy rate is a coarser
+     number and an honest one while oil has one cycle to its name.
+     IT MOVES THE PRICING BASIS AND NOTHING ELSE. `landed` is the IAS 2 inventoriable figure and
+     stays the true cost; `shrink` and `sampleLoad` keep reporting the leak the counts actually
+     read, so the desk can still show what it is measuring while pricing off something else. The
+     rule is DATA, in COST_RULE on the book, so the percentage moves without touching this file,
+     and `rule`/`rulePct` travel with the stack so every surface can say which basis it is on. */
+  const CR=I.costRule||null;
+  const ruled=!!(CR&&CR.kind==='buyPlusPct'&&+CR.pct>=0);
+  if(ruled)eff=+(lot*(1+ +CR.pct/100)).toFixed(6);
+  return {rule:ruled?CR.kind:null,rulePct:ruled?+CR.pct:null,rulePlaceholder:!!(ruled&&CR.placeholder),
+          repl:+lot.toFixed(2),lot:+lot.toFixed(4),freight:+freight.toFixed(4),
           landed:+landed.toFixed(4),inventoriable:+landed.toFixed(4),
           shrink:sh,shrinkRaw:raw,attrib:SHRINK_ATTRIB,
           sampleLoad:+(yielded-landed).toFixed(4),
@@ -120,7 +134,10 @@ function costStack(I){
           /* GOODS ONLY, per unit. eff spreads the per-ORDER delivery over an average order, which
              is the right headline and the wrong thing to multiply by a lot size. Anything that
              prices a specific quantity uses effEx and adds delivery once. */
-          effEx:+yielded.toFixed(6),delPerOrder:COST_BASIS.txnPerDelivery.rm,
+          /* v553: and the RULED basis lands here too, because the FLOOR reads effEx, not eff. A rule
+             that moved the headline and left the floor on the leak would have been the worst of
+             both: a board priced one way and refused another. */
+          effEx:ruled?+(lot*(1+ +CR.pct/100)).toFixed(6):+yielded.toFixed(6),delPerOrder:COST_BASIS.txnPerDelivery.rm,
           locked:false,lockedOn:null,lockAge:null,
           /* v403: gated on lockOn. With the lock off there is nothing to be stale AGAINST,
              and the ungated read was a constant true on this desk since PRICE_LOCK_ON went

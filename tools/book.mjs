@@ -41,6 +41,7 @@ export const LEDGER = {
   REWARD_OPENING: "REWARD_OPENING", CUSTOMER_REWARD_OPENING: "CUSTOMER_REWARD_OPENING",
   AWARDS: "AWARDS",
   supplierQuote: "supplierQuote", oilQuote: "oilQuote",
+  COST_RULE: "COST_RULE",
   /* v354: read the COMMITTED copy, like sales and selfUseLog. PRICE_SET carries the overlay once a
      price edit is queued, and the extract must never see a change nobody has approved. */
   PRICE_SET: "BASE_PRICESET",
