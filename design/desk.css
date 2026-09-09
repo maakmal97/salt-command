@@ -263,6 +263,22 @@ tbody tr:hover td:not(.l){background:rgba(255,255,255,.03);}
 .lrow .lparty{color:var(--salt-salt);}
 .lrow .ldate,.lmove .lmdate,.ecode{color:var(--salt-mist);}
 .lcol.ctot,.lcol.ctot .tval{font-weight:500;}
+/* ---- v559, HIS INSTRUCTION OF 10 SEP 2026: "just arrange them nicely, not too packed." The
+   figure column stacks up to four things on a live row: what has been paid, what it is of, the
+   margin, and what the figure was before a correction struck it. Nothing is removed, because each
+   was asked for and each says something the others do not. What was wrong is that they were set
+   solid: a flex column at line-height 1.25 with no gap, so four separate facts read as one block
+   of digits. The gap separates them, the figure keeps its own tighter leading so it still reads as
+   the headline, and the two footnotes settle a shade quieter. The quantity column carries the same
+   pair and takes the same treatment, so the two sides of the row stay in step. ---- */
+.lcol.ctot,.lcol.cqty{gap:2px;line-height:1.3;}
+.lcol.ctot .tval,.lcol.cqty .lfig{line-height:1.15;}
+/* the clearance under the figure is for the notes beneath it, so a row with none does not
+   reserve room for them: :not(:last-child) is the whole of that condition */
+.lcol.ctot .tval:not(:last-child),.lcol.cqty .lfig:not(:last-child){margin-bottom:4px;}
+.lcol.ctot .lof,.lcol.cqty .lof{margin-left:4px;}
+.lcol.ctot .lwas,.lcol.cqty .lwas{margin-top:1px;opacity:.8;}
+.lmove .lcol.ctot,.lmove .lcol.cqty{gap:0;}   /* a trail line carries one figure; nothing to space */
 .lclabel{font-weight:500;letter-spacing:.14em;}
 .lclabel.roleopen{color:var(--salt-product-salt);}
 .lclabel.roleclose{color:var(--salt-verdigris);}

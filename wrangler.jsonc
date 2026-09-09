@@ -92,7 +92,33 @@
 		"VAPID_PUBLIC_KEY": "BB7ReK5C7NBB6KMo7tNGmd43SKePl8qQi_DnbGnEmsrLevWIM8sn4zJ7ICp5Hs_nnz1A4ZH9TtSJij4Z71HFC0k",
 		"VAPID_SUBJECT": "mailto:maakmal97@icloud.com"
 	},
+	// WHAT THE PLATFORM KEEPS OF EACH REQUEST (10 Sep 2026). The top-level `enabled` is the old
+	// single switch and stays on; the two blocks below say what it means per signal, and the API
+	// reads them in preference to it.
+	//
+	// LOGS ON AND KEPT. head_sampling_rate 1 is every invocation and not a fraction, because this
+	// Worker takes a handful of requests a day and a sample would throw away the one refusal he
+	// wants to read. invocation_logs keeps the per-request summary line, which is what says a cron
+	// fired at all on a tick where the drafter found nothing and logged nothing.
+	//
+	// TRACES OFF, DELIBERATELY. They answer "where did the time go" across a call graph, and this
+	// Worker's graph is one hop to KV, D1 or the statements site. Off rather than sampled to
+	// nothing; the rate and persist sit ready underneath for the day that changes.
+	//
+	// DEPLOY THIS BY HAND: a wrangler.jsonc change does not move rev.json's id, so update.mjs
+	// compares equal and skips the deploy.
 	"observability": {
-		"enabled": true
+		"enabled": true,
+		"logs": {
+			"enabled": true,
+			"head_sampling_rate": 1,
+			"invocation_logs": true,
+			"persist": true
+		},
+		"traces": {
+			"enabled": false,
+			"head_sampling_rate": 1,
+			"persist": true
+		}
 	}
 }

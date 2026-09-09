@@ -1,5 +1,17 @@
 [
  {
+  "v": "v559",
+  "d": "10 Sep 2026",
+  "t": "THE LEDGER FIGURES ARE ARRANGED RATHER THAN STACKED",
+  "n": [
+   "<b>HIS INSTRUCTION, 10 SEP 2026, ON A SCREENSHOT OF THE FIGURE COLUMN:</b> \"just arrange them nicely, not too packed.\" Nothing is removed. A live row carries up to four things in that one cell, and each was asked for and says something the others do not: what has been paid, what it is of, the margin, and what the figure was before a correction struck it.",
+   "<b>WHAT WAS WRONG WAS THE SETTING, NOT THE CONTENT.</b> A flex column at line-height 1.25 with no gap at all, so the three boxes sat at 0, 16 and 30 pixels: four separate facts read as one block of digits. Measured in a real browser rather than in jsdom, which does no layout.",
+   "<b>THEY ARE GROUPED NOW, NOT MERELY SPREAD.</b> Four candidates were measured in the live renderer: a flat 3px gap, a flat 4px, and two grouped settings. The one taken gives the figure its own clearance and sets the two notes tighter beneath it, 0, 21 and 38, so the cell reads as a figure with its notes rather than three lines of equal weight. It costs the same height as the flat 4px and reads better: 53px against 51, and 6px on the card.",
+   "<b>AND A ROW WITH NO NOTES RESERVES NO ROOM FOR THEM.</b> The first cut put the clearance on the figure unconditionally, so a plain row grew from 15px to 19px of empty cell for notes it does not have. The CSS pseudo-class for &ldquo;only when something follows&rdquo; is the whole of that condition. Three shapes proved in the browser: figure with margin and struck figure, figure with margin alone, and figure alone, the last back to exactly where it was.",
+   "<b>THE QUANTITY COLUMN TAKES THE SAME TREATMENT,</b> because it carries the same pair and the two sides of the row have to stay in step. The whole ledger grows 233px across 166 entries, about 1.4px an entry."
+  ]
+ },
+ {
   "v": "v558",
   "d": "09 Sep 2026",
   "t": "THE CONCENTRATION FIGURE HAD THREE READERS AND TWO RULES; NOW IT HAS ONE OF EACH",
