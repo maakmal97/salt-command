@@ -1,6 +1,6 @@
 {
- "v": "v556",
- "stamped": "09 Sep 2026, 22:18 KL",
+ "v": "v560",
+ "stamped": "10 Sep 2026, 06:55 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -41,7 +41,7 @@
     "stated": 60
    }
   },
-  "STATED_STOCK": 42.75,
+  "STATED_STOCK": 40.25,
   "COUNT_ON": {
    "salt": "2026-09-08",
    "oil": "2026-09-09"
@@ -3394,6 +3394,20 @@
     "deliveredOn": "2026-09-09",
     "note": "<b>SALT SELL DATED 09 SEP, DELIVERED IN FULL WITH HALF THE MONEY OUTSTANDING.</b> SELL to CM4-MK, 2 unit for RM220, RM202 goods and RM18 delivery, RM110 cash in and 2 unit delivered on 09 Sep, so RM110 stays open. The total meets the RM220 ask for 2 unit and stands above the RM112.43 floor, under the RM290 ceiling. RM110 a unit is CM4-MK's median across 8 orders on a range of RM90 to RM110, with nothing outstanding before, no units on credit and nothing defaulted. Cost is the inventory's own RM44 a unit, RM88 on the order. The drafter flagged the advance against a credit cap of 1: the figures show 2 unit gone out on credit, so the cap question is not settled here.",
     "rid": "s143"
+   },
+   {
+    "customer": "CE4-CHE",
+    "qty": 2.5,
+    "total": 230,
+    "cost": 110,
+    "cash": 230,
+    "handover": "collected",
+    "date": "2026-09-10",
+    "deliveredQty": 2.5,
+    "deliveredOn": "2026-09-10",
+    "paidOn": "2026-09-10",
+    "note": "<b>SALT SELL DATED 10 SEP, PAID IN FULL AND COLLECTED IN FULL.</b> SELL to CE4-CHE, 2.5 unit for RM230, all goods with no delivery, RM230 cash in and 2.5 unit handed over on 10 Sep, so nothing stays open. The total clears the RM140.53 floor for 2.5 unit, falls short of the RM270 ask and sits under the RM360 ceiling. RM92 a unit is CE4-CHE's median across 7 orders on a range of RM76.67 to RM107.50, with nothing outstanding before, no units on credit against a cap of 1 and nothing defaulted. Cost is the inventory's own RM44 a unit, RM110 on the order, not the drafter's RM120. The drafter flagged nothing and nothing is left outstanding.",
+    "rid": "s144"
    }
   ],
   "contacts": [
@@ -3719,9 +3733,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-09T13:38:45.145Z",
+  "QUEUE_COMMITTED": "2026-09-09T22:54:32.766Z",
   "PRICING": {
-   "takenAt": "2026-09-09T14:18:46.719Z",
+   "takenAt": "2026-09-09T22:55:58.069Z",
    "sizes": [
     0.5,
     1,
@@ -3820,8 +3834,8 @@
          "date": "2026-09-09",
          "sup": "SA5-BTR"
         },
-        "days": 34,
-        "sinceLot": 43
+        "days": 35,
+        "sinceLot": 44
        },
        "lockBase": {
         "lockedOn": "2026-08-06",
@@ -3875,15 +3889,15 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0.45454545454545453
+         "v": 0.43478260869565216
         }
        },
        "attrib": 1,
        "shrinkRate": 0.0672016508082082,
        "avgDel": {
-        "n": 128,
-        "kg": 332.45,
-        "mean": 2.5973
+        "n": 129,
+        "kg": 334.95,
+        "mean": 2.5965
        }
       },
       "policy": {
@@ -4021,8 +4035,8 @@
          "date": "2026-09-08",
          "sup": "SP7-PUD"
         },
-        "days": 34,
-        "sinceLot": 34
+        "days": 35,
+        "sinceLot": 35
        },
        "lockBase": {
         "lockedOn": "2026-08-06",
@@ -4167,10 +4181,10 @@
      ]
     }
    },
-   "v": "v556"
+   "v": "v560"
   },
   "OPEN": {
-   "at": "2026-09-09T14:18:46.783Z",
+   "at": "2026-09-09T22:55:58.161Z",
    "count": 8,
    "byKey": {
     "CM4-MK|2026-09-09|220": {
@@ -4187,7 +4201,7 @@
      "deliveredOn": "2026-09-09",
      "handover": "delivered",
      "key": "CM4-MK|2026-09-09|220",
-     "age": 0,
+     "age": 1,
      "exp": 110
     },
     "CR3-DAM|2026-09-07|185": {
@@ -4204,7 +4218,7 @@
      "deliveredOn": "2026-09-07",
      "handover": "collected",
      "key": "CR3-DAM|2026-09-07|185",
-     "age": 2,
+     "age": 3,
      "exp": 25
     },
     "CJ4-BJ|2026-09-07|850": {
@@ -4222,7 +4236,7 @@
      "deliveredOn": "2026-09-07",
      "handover": "delivered",
      "key": "CJ4-BJ|2026-09-07|850",
-     "age": 2,
+     "age": 3,
      "exp": 272
     },
     "CS6-BS|2026-09-07|117.5": {
@@ -4239,7 +4253,7 @@
      "deliveredOn": "2026-09-07",
      "handover": "delivered",
      "key": "CS6-BS|2026-09-07|117.5",
-     "age": 2,
+     "age": 3,
      "exp": 110
     },
     "CA4-DAM|2026-09-02|160": {
@@ -4257,7 +4271,7 @@
      "handover": "collected",
      "defaulted": true,
      "key": "CA4-DAM|2026-09-02|160",
-     "age": 7,
+     "age": 8,
      "exp": 0
     },
     "CN6-WM|2026-08-30|110": {
@@ -4274,7 +4288,7 @@
      "deliveredOn": "2026-08-30",
      "handover": "delivered",
      "key": "CN6-WM|2026-08-30|110",
-     "age": 10,
+     "age": 11,
      "exp": 55
     },
     "CA4-DAM|2026-08-28|100": {
@@ -4292,7 +4306,7 @@
      "handover": "collected",
      "defaulted": true,
      "key": "CA4-DAM|2026-08-28|100",
-     "age": 12,
+     "age": 13,
      "exp": 0
     },
     "SF6-KLC|2026-07-08|750": {
@@ -4313,11 +4327,11 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 42.75,
-     "free": 42.75,
+     "onHand": 40.25,
+     "free": 40.25,
      "owedOut": 0,
-     "coverDays": 7.4,
-     "rate": 5.75,
+     "coverDays": 8.4,
+     "rate": 4.8,
      "owedToYou": 887,
      "promised": 8.5,
      "short": 0
@@ -4327,8 +4341,8 @@
      "onHand": 60,
      "free": 60,
      "owedOut": 0,
-     "coverDays": 12.9,
-     "rate": 4.64,
+     "coverDays": 15.3,
+     "rate": 3.93,
      "owedToYou": 0,
      "promised": 0,
      "short": 0
@@ -4338,7 +4352,7 @@
     "salt": "2026-09-08",
     "oil": "2026-09-09"
    },
-   "v": "v556"
+   "v": "v560"
   }
  }
 }
