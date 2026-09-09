@@ -2911,6 +2911,25 @@ section("Oil — pinned at both ends and lawful between (round 5, his call 5)");
      The rule is DATA on the book, it moves eff AND effEx because the floor reads effEx, and it
      moves nothing else: landed stays the IAS 2 figure and shrink keeps reporting what the counts
      read. Both halves asserted, and salt is the control that proves the rule is not global. */
+  /* v554, his instruction of 09 Sep 2026: THE COLUMN IS MARKUP AND THE HEADING SAYS SO. It read
+     Margin over a multiple of cost while the % margin under the ask was a margin on price, so one
+     row carried two arithmetics under one word. The heading is asserted rather than left to the
+     eye, because copy that contradicts its own figures is the fault this desk keeps finding. */
+  /* `pxboard` is worn by TWO tables per book: the board itself and the Set the board panel below
+     it, whose columns are Size / On the board / Price / Floor. A bare selector picks up both, which
+     is how the first cut of this check read "Floor" as a fourth heading and went red on a table it
+     was never about. Filter to the board by its own second column. */
+  w.eval("switchTab('pricing');");
+  const allHeads = JSON.parse(w.eval("JSON.stringify([].slice.call(document.querySelectorAll('.sec.on table.pxboard')).map(function(t){return [].slice.call(t.rows[0].cells).map(function(c){return c.textContent.replace(/[\\r\\n\\t ]+/g,' ').trim();});}))"));
+  const heads = allHeads.filter((h) => /^COGS/.test(h[1] || ""));
+  ok(heads.length >= 1 && heads.length < allHeads.length,
+    `the board is drawn and told apart from the Set the board panel (${heads.length} of ${allHeads.length} pxboard tables)`);
+  ok(heads.every((h) => h[3] && /^Markup/.test(h[3])), `the fourth column is headed Markup (${heads.map((h) => h[3]).join(" / ")})`);
+  ok(heads.every((h) => !h.some((c) => /^Margin/.test(c))), "and no column on the board is headed Margin any more");
+  ok(heads.every((h) => /eff\. cost/i.test(h[3])), "the heading says what the multiple is of, so 2.49x cannot read as +249%");
+  ok(String(w.eval("document.querySelector('.sec.on table.pxboard').textContent")).indexOf("% margin") >= 0,
+    "while the true margin on price stays under the ask, where it belongs");
+  w.eval("setProd('oil');recompute();");
   const cOil = read("pxCost()");
   ok(cOil.rule === "buyPlusPct" && cOil.rulePct === 15, `oil prices on the stated rule (${cOil.rule} ${cOil.rulePct})`);
   ok(Math.abs(cOil.eff - +(cOil.repl * 1.15).toFixed(6)) < 0.005, `and its effective cost is the buy rate plus 15% (${cOil.eff} against ${cOil.repl})`);

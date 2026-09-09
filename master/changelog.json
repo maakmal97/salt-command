@@ -1,5 +1,16 @@
 [
  {
+  "v": "v554",
+  "d": "09 Sep 2026",
+  "t": "THE BOARD'S MULTIPLE IS A MARKUP AND THE HEADING NOW SAYS SO",
+  "n": [
+   "<b>HIS INSTRUCTION, 09 SEP 2026, ON A SCREENSHOT OF THE COLUMN:</b> \"Please correct them to markup then.\" The board's fourth column read <b>Margin</b> over 2.49x and 2.13x, and a multiple of cost is not a margin. On that same row the ask carries 60% margin, on price. One row, two arithmetics, one word.",
+   "<b>THE HEADING IS MARKUP, AND IT SAYS WHAT THE MULTIPLE IS OF.</b> A bare \"Markup 2.49x\" still misleads anyone who takes markup at its book meaning, where 2.49x would be plus 249 per cent; the figure is the ask as a multiple of effective cost, so the sub-label reads &times; eff. cost. The % margin under the ask is untouched, because that one was always a margin and always on price.",
+   "<b>THE CLASS WAS SWEPT BEFORE THE FIX SHIPPED.</b> Four columns on the desk are headed Margin. The customer reward table, the reward stream table and the Financials tier table all render a true percentage margin and are right as they stand; only the board's was a multiple. Checked rather than assumed, which is the rule the last three rounds were caught by.",
+   "<b>AND THE HEADING IS ASSERTED NOW, NOT LEFT TO THE EYE.</b> Five checks: the board draws, its fourth column is headed Markup, no column on it is headed Margin, the heading names its basis, and the true margin still sits under the ask. Copy that contradicts its own figures is the fault this desk keeps finding, so the copy is under test with the arithmetic."
+  ]
+ },
+ {
   "v": "v553",
   "d": "09 Sep 2026",
   "t": "OIL PRICES OFF THE BUY RATE PLUS 15 PER CENT, A PLACEHOLDER, AND THE LEAK STOPS CARRYING THE WHOLE BOARD",
