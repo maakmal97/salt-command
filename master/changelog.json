@@ -1,5 +1,16 @@
 [
  {
+  "v": "v547",
+  "d": "09 Sep 2026",
+  "t": "THE LEDGER ENTRY IS TWO ROWS: THE ORDER AS IT STANDS, THEN WHAT LAST HAPPENED TO IT",
+  "n": [
+   "<b>HIS SCHEMATIC, 09 SEP 2026: AN ENTRY IS TWO ROWS.</b> Row 1 is the order as it stands, the figure carrying the state: a part-delivered order reads 4 of 12.5 unit and a part-paid one RM 8 of RM 118. Row 2 is the transaction: the date when it differs from the order's, Open or Closed, the kind, then the units and the RM that moved. A closed entry folds to its first row; an open one keeps its latest line in view; a tap on the entry opens the whole trail. The credit-days collapse of v254 and the Opened role are retired.",
+   "<b>THE FIRST LINE IS WHAT MOVED AT BOOKING, AGREED WHEN NOTHING DID</b>, and a movement on the same day overwrites Agreed rather than following it. Open or Closed on every line is the entry's state after that line: the replay's reading, the last movement of a completed entry, a Cancellation or a Default. A Correction is a line of its own, saying in the row's own words what it moved, and inherits the state of the line before it.",
+   "<b>THE SELL OR BUY TAG SITS UNDER THE E-NUMBER</b>, at the entry's corner, so a folded entry still says which it is. <b>THE PEN AT THE OTHER CORNER REPLACES THE UPDATE BUTTON:</b> shown on hover and always faintly on a touch screen, it opens a short menu of the simple transactions, paid in full, delivered or received in full, completed, each the editor's own chip with the outstanding figures filled in, then Modification and More for the editor itself.",
+   "<b>NO ROW MOVED AND NO FIGURE CHANGED.</b> A display change only. The suite's ledger assertions were rewritten to the new shape and hold it: the fold, the tap, the roles on every line, the tag and the pen."
+  ]
+ },
+ {
   "v": "v546",
   "d": "09 Sep 2026",
   "t": "FULFILMENT ON THE 50 UNIT CA7-JTR OIL ORDER S140: RM450 AND 50 UNIT MOVE ON 09 SEP, THE ROW SETTLES IN FULL",

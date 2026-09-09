@@ -284,6 +284,27 @@ tr.tot td{font-weight:800;background:#0b1215;}
    and is classed as a step for the same reason. */
 .lmove{grid-template-areas:"e date step step qty price tot state";}
 .lmove .lc-type,.lmove .lc-prod,.lmove .lc-party,.lmove .lc-act{display:none;}
+/* ---- AN ENTRY IS TWO ROWS (09 Sep 2026): row 1 the order, row 2 the latest transaction. A closed
+   entry folds to row 1; an open one keeps its last line; a tap (.lexp) opens the trail. The SELL or
+   BUY tag sits under the E-number; the pen at the corner replaces the Update button. ---- */
+.ledwrap .lcard{position:relative;}
+.ledwrap .lcard .lmove{display:none;}
+.ledwrap .lcard.lopenq .lmove.llast,.ledwrap .lcard.lexp .lmove{display:grid;}
+.ledwrap .lcard.lexp .lmove.lclose:not(:first-child){border-top:1px dashed var(--line);}
+.ledwrap .lrow .lc-e{display:flex;flex-direction:column;align-items:flex-start;gap:1px;align-self:start;}
+.ledwrap .tag.ltype{font-size:9.5px;letter-spacing:.14em;}
+.lnil{color:var(--dim);}
+.lmove .ltext{white-space:normal;text-align:right;font-size:11px;color:var(--mut);}
+.lmove .cqty:empty,.lmove .cprc:empty{min-height:1px;}
+.lpen{all:unset;position:absolute;top:5px;right:8px;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;border-radius:50%;color:var(--gold);opacity:0;cursor:pointer;transition:opacity .12s;}
+.ledwrap .lcard:hover .lpen,.ledwrap .lcard:focus-within .lpen,.lpen:focus-visible{opacity:1;}
+.lpen:hover,.lpen:focus-visible{background:rgba(197,160,89,.14);outline:none;}
+@media (hover:none){.lpen{opacity:.55;}}
+.lprov{position:absolute;top:6px;right:8px;opacity:1;width:auto;height:auto;border-radius:0;cursor:default;}
+.lmenu{position:absolute;top:28px;right:8px;z-index:20;display:flex;flex-direction:column;min-width:170px;padding:4px;background:var(--bg0,#05080a);border:1px solid var(--line);border-radius:8px;box-shadow:0 10px 28px rgba(0,0,0,.45);}
+.lmenu button{all:unset;cursor:pointer;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink);padding:8px 12px;border-radius:5px;min-height:var(--tap,36px);box-sizing:border-box;}
+.lmenu button:hover,.lmenu button:focus-visible{background:rgba(197,160,89,.12);color:var(--gold);}
+.lmenu button:last-child{color:var(--mut);border-top:1px solid var(--line);border-radius:0 0 5px 5px;margin-top:2px;}
 .ledwrap .lcard{background:none;border:0;border-radius:0;border-bottom:1px solid var(--line);}
 .ledwrap .lcards{gap:0;}
 .ledwrap .lrow{padding:6px 8px;}
@@ -308,6 +329,8 @@ tr.tot td{font-weight:800;background:#0b1215;}
 @container ledger (max-width:599px){
   .lrow,.lmove,.lhead{grid-template-columns:56px 74px minmax(60px,1fr) 108px;
     grid-template-areas:"e date party state" "step step qty tot" "type prod price act";}
+  /* a transaction line on a phone: the date beside the kind, the figures beneath (09 Sep 2026) */
+  .lmove{grid-template-areas:"e date step step" "e qty price tot";}
 }
 .lsb{all:unset;cursor:pointer;font:inherit;color:inherit;letter-spacing:inherit;text-transform:inherit;display:inline-flex;align-items:center;gap:3px;min-height:var(--tap);}
 .lsb:hover,.lsb.on{color:var(--ink);}
@@ -3268,6 +3291,18 @@ details.obs>summary:hover{background:var(--salt-glass);}
 .deskbar .meta>.metarow{flex:1 1 auto;}
 .deskbar .meta #provBar{flex:1 0 100%;}
 @media(max-width:860px){.deskbar .meta{order:3;flex:1 0 100%;}}
+/* ---- AN ENTRY IS TWO ROWS (09 Sep 2026): the corner tag, the pen and its menu, in the identity. ---- */
+.ledwrap .tag.ltype{font-weight:500;letter-spacing:.14em;}
+.ledwrap .tag.ltype.buy{color:var(--salt-steel);}
+.ledwrap .tag.ltype.sell{color:var(--salt-product-salt);}
+.ledwrap .etype.eagreed{color:var(--salt-mist);}
+.ledwrap .lpen{color:var(--salt-brass);}
+.ledwrap .lpen:hover,.ledwrap .lpen:focus-visible{background:rgba(197,160,89,.14);color:var(--salt-salt);}
+.lmenu{background:var(--salt-obsidian);border-color:var(--salt-line);box-shadow:0 10px 28px rgba(0,0,0,.5);}
+.lmenu button{color:var(--salt-salt);}
+.lmenu button:hover,.lmenu button:focus-visible{background:rgba(197,160,89,.12);color:var(--salt-brass);}
+.lmenu button:last-child{color:var(--salt-mist);border-top-color:var(--salt-line-faint);}
+.ledwrap .lmove .ltext{color:var(--salt-mist-light);}
 /* ==== END DESIGN desk ==== */
 </style>
 </head>
@@ -5488,7 +5523,9 @@ const whiteboard=[
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{"v":"v546","d":"09 Sep 2026","t":"FULFILMENT ON THE 50 UNIT CA7-JTR OIL ORDER S140: RM450 AND 50 UNIT MOVE ON 09 SEP, THE ROW SETTLES IN FULL","n":["<b>ONE ROW FOLDED, A FULFILMENT AND NOTHING ELSE.</b> The pending oil order s140 with CA7-JTR, 50 unit for RM450 agreed 08 Sep, is met in full: RM450 cash and 50 unit recorded on 09 Sep against RM450 and 50 unit outstanding, leaving RM0 and 0 unit. The row itself is not recomputed in this fold, the master's amend path applies it, so there is one definition of what a fulfilment does rather than two.","<b>THE INVENTORY DID NOT MOVE ON THIS FOLD.</b> The movement is oil, 50 unit out to CA7-JTR dated 09 Sep, and the salt position stands where the count of 08 Sep left it at 32.25 unit, with cost at RM44 and replacement at RM46. The oil count still dates from 23 Aug, so this fulfilment runs against a count two weeks and more behind. CA7-JTR's outstanding of RM450 clears to nothing and no units sit on credit."]},
+const evolution=[{"v":"v547","d":"09 Sep 2026","t":"THE LEDGER ENTRY IS TWO ROWS: THE ORDER AS IT STANDS, THEN WHAT LAST HAPPENED TO IT","n":["<b>HIS SCHEMATIC, 09 SEP 2026: AN ENTRY IS TWO ROWS.</b> Row 1 is the order as it stands, the figure carrying the state: a part-delivered order reads 4 of 12.5 unit and a part-paid one RM 8 of RM 118. Row 2 is the transaction: the date when it differs from the order's, Open or Closed, the kind, then the units and the RM that moved. A closed entry folds to its first row; an open one keeps its latest line in view; a tap on the entry opens the whole trail. The credit-days collapse of v254 and the Opened role are retired.","<b>THE FIRST LINE IS WHAT MOVED AT BOOKING, AGREED WHEN NOTHING DID</b>, and a movement on the same day overwrites Agreed rather than following it. Open or Closed on every line is the entry's state after that line: the replay's reading, the last movement of a completed entry, a Cancellation or a Default. A Correction is a line of its own, saying in the row's own words what it moved, and inherits the state of the line before it.","<b>THE SELL OR BUY TAG SITS UNDER THE E-NUMBER</b>, at the entry's corner, so a folded entry still says which it is. <b>THE PEN AT THE OTHER CORNER REPLACES THE UPDATE BUTTON:</b> shown on hover and always faintly on a touch screen, it opens a short menu of the simple transactions, paid in full, delivered or received in full, completed, each the editor's own chip with the outstanding figures filled in, then Modification and More for the editor itself.","<b>NO ROW MOVED AND NO FIGURE CHANGED.</b> A display change only. The suite's ledger assertions were rewritten to the new shape and hold it: the fold, the tap, the roles on every line, the tag and the pen."]},
+
+{"v":"v546","d":"09 Sep 2026","t":"FULFILMENT ON THE 50 UNIT CA7-JTR OIL ORDER S140: RM450 AND 50 UNIT MOVE ON 09 SEP, THE ROW SETTLES IN FULL","n":["<b>ONE ROW FOLDED, A FULFILMENT AND NOTHING ELSE.</b> The pending oil order s140 with CA7-JTR, 50 unit for RM450 agreed 08 Sep, is met in full: RM450 cash and 50 unit recorded on 09 Sep against RM450 and 50 unit outstanding, leaving RM0 and 0 unit. The row itself is not recomputed in this fold, the master's amend path applies it, so there is one definition of what a fulfilment does rather than two.","<b>THE INVENTORY DID NOT MOVE ON THIS FOLD.</b> The movement is oil, 50 unit out to CA7-JTR dated 09 Sep, and the salt position stands where the count of 08 Sep left it at 32.25 unit, with cost at RM44 and replacement at RM46. The oil count still dates from 23 Aug, so this fulfilment runs against a count two weeks and more behind. CA7-JTR's outstanding of RM450 clears to nothing and no units sit on credit."]},
 
 {"v":"v545","d":"09 Sep 2026","t":"THE 6.25 UNIT CK4-SEN SALE OF 09 SEP: RM505 COLLECTED IN FULL, ABOVE FLOOR AND UNDER THE ASK","n":["<b>ONE ROW FOLDED, A COMPLETED SALT SALE.</b> CK4-SEN takes 6.25 unit for RM505, collected, RM505 cash and 6.25 unit moved on 09 Sep, so the row lands complete with nothing carried. Against the ladder for that size it clears the RM351.33 floor and sits under the RM610 ask, well inside the RM880 ceiling. The drafter raised no flags and the entry was decided at the desk, not on his word.","<b>WHAT IS UNUSUAL IS THE COST LINE AND THE PARTY'S SHORT HISTORY.</b> The draft costs the order at RM48 a unit, which is not the inventory's own RM44, so RM300 is booked against this order as its own cost rather than absorbed at the shelf rate. CK4-SEN shows one prior order, a median rate of RM73.33 and a range of RM73.33 to RM73.33, nothing outstanding and no units on credit against the cap of 1."]},
 
@@ -5817,7 +5854,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='09 Sep 2026, 03:23 KL';
+const LAST_UPDATED='09 Sep 2026, 10:04 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -9634,6 +9671,40 @@ function ledEdit(rid,type){
   edRid=rid;edType=type||'SELL';renderEditor();
 }
 function edClose(){edRid=null;edNew=false;renderEditor();}
+/* THE PEN AT THE CORNER (his instruction, 09 Sep 2026). One small control per entry, shown on hover
+   and always on a touch screen, opening a short menu: the simple transactions first, each a chip
+   the editor already offers (updSet fills the outstanding figures, so a tap cannot overpay), then
+   the editor itself for anything else. The menu is one element, moved under the pen that was
+   tapped; a click anywhere else closes it. */
+function ledMenu(ev,rid,type){
+  if(ev){ev.preventDefault();ev.stopPropagation();}
+  let m=document.getElementById('ledMenu');
+  if(m&&m.getAttribute('data-rid')===rid){m.remove();return;}
+  if(m)m.remove();
+  const row=(type==='BUY'?purchases:sales).find(r=>r&&r.rid===rid);
+  if(!row){ledEdit(rid,type);return;}
+  const o=updOut(row,type), buy=type==='BUY', unpriced=!!row.unpriced;
+  const canc=!!row.cancelled;
+  const items=[];
+  const via=(lab,fn)=>items.push({lab,fn});
+  if(!canc&&!unpriced&&o.cashLeft>0.009)via('Paid in full',()=>{ledEdit(rid,type);updSet(null,o.cashLeft,0);});
+  if(!canc&&o.unitLeft>0.009)via(buy?'Received in full':'Delivered in full',()=>{ledEdit(rid,type);updSet(null,0,o.unitLeft);});
+  if(!canc&&!unpriced&&(o.cashLeft>0.009||o.unitLeft>0.009)&&!(o.cashLeft>0.009&&o.unitLeft<=0.009)&&!(o.unitLeft>0.009&&o.cashLeft<=0.009))via('Completed',()=>{ledEdit(rid,type);updSet(null,o.cashLeft,o.unitLeft);});
+  via('Modification',()=>ledEdit(rid,type));
+  via('More',()=>ledEdit(rid,type));
+  m=document.createElement('div');m.id='ledMenu';m.className='lmenu';m.setAttribute('data-rid',rid);m.setAttribute('role','menu');
+  m.innerHTML=items.map((it,i)=>`<button type="button" role="menuitem" data-i="${i}">${it.lab}</button>`).join('');
+  m.addEventListener('click',e=>{const b=e.target.closest('button[data-i]');if(!b)return;e.stopPropagation();const it=items[+b.getAttribute('data-i')];m.remove();if(it)it.fn();});
+  const btn=ev&&ev.currentTarget&&ev.currentTarget.closest?ev.currentTarget:(ev&&ev.target?ev.target.closest('.lpen'):null);
+  const card=btn&&btn.closest?btn.closest('.lcard'):null;
+  (card||document.body).appendChild(m);
+  const first=m.querySelector('button');if(first)first.focus();
+}
+if(typeof document!=='undefined'&&!window.__lmenuBound){
+  window.__lmenuBound=1;
+  document.addEventListener('click',e=>{const m=document.getElementById('ledMenu');if(m&&!m.contains(e.target)&&!(e.target.closest&&e.target.closest('.lpen')))m.remove();});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'){const m=document.getElementById('ledMenu');if(m)m.remove();}});
+}
 function edEsc(v){return v==null?'':String(v).split('&').join('&amp;').split('"').join('&quot;').split('<').join('&lt;');}
 function renderEditor(){
   let bd=document.getElementById('edBackdrop'),pn=document.getElementById('edPanel');
@@ -10039,6 +10110,16 @@ if(typeof document!=='undefined'&&!window.__edBound){
     const rid=card.getAttribute('data-rid');if(!rid)return;
     e.preventDefault();
     ledEdit(rid,card.getAttribute('data-type')||'SELL');
+  });
+  /* A TAP OPENS THE TRAIL (09 Sep 2026). A closed entry shows its first row alone and an open one its
+     latest transaction; the rest of the lines come out on a tap anywhere on the entry that is not a
+     control, and go back on the next. A long press that has just fired is not a tap. */
+  document.addEventListener('click',function(e){
+    const t=e.target;if(!t||!t.closest)return;
+    const card=t.closest('.ledwrap .lcard');
+    if(!card||t.closest('button,a,select,textarea,input,details,.lmenu,.lpen'))return;
+    if(card.classList.contains('lpressed')||card.classList.contains('lpressing'))return;
+    card.classList.toggle('lexp');
   });
   /* THE LONG PRESS, WRITTEN OUT. A hold that has not moved opens the same editor a right-click
      does. It cancels on movement, so scrolling a long ledger with a finger resting on a card
@@ -10533,15 +10614,6 @@ function tabLedger(){
     const completed=si.order==='Completed'||si.order==='In-Kind'||si.order==='Default'||si.order==='Cancelled';
 
     const closeState=finalState;
-    const moves=am.length?am.slice(1,completed?am.length-1:am.length):[];
-    const single=!am.length;                                             // no movements -> one line only
-    // a single-line order carries the CLOSING role when it is done, else it is an open opening
-    const headRole=single?(completed?'close':'openlive'):'open';
-    const headLabel={open:'Opened',openlive:'Open',close:'Closed'}[headRole];
-    const headLabelCls={open:'roleopen',openlive:'roleopen',close:'roleclose'}[headRole];
-    // ---- the four numeric columns. Qty and Total show what MOVED at this step in full
-    // strength; when nothing moved they carry the order figure over, greyed. Price and
-    // Margin are order-level facts, always full strength.
     const price=t.qty>0?t.total/t.qty:0;
     /* v266: PENDING HAS NO MARGIN. Nothing has been paid and nothing delivered, so there is
        no cost of goods against it; printing one states a profit on a trade that has not
@@ -10552,16 +10624,7 @@ function tabLedger(){
     let margin=(t.type==='SELL'&&si.order!=='Pending'&&si.order!=='Cancelled')?t.total-t.qty*costOf(t):null;
     if(margin!=null&&Math.abs(margin)<0.005)margin=0;   // a rebate settled at cost printed "RM -0.00 · -0%"
     const marPct=(margin!=null&&t.total>0)?margin/t.total*100:null;
-    const qCell=(mv,v,extra)=>`<span class="lcol cqty${mv?'':' carried'}">${units(v)}${extra||''}</span>`;
     const pCell=on=>`<span class="lcol cprc">${on?fmt(price):''}</span>`;
-    // total with the deal margin as subtext beneath it (under 20% reads thin)
-    /* marPct is null on a zero-value row, and the guard used to test margin alone, so the
-       first RM0 line ever written to this book (a rebate redeemed as salt, v218) took the
-       whole Ledger tab out. A free unit still has a margin in ringgit; what it has no
-       meaning for is a percentage of nothing. */
-    const tCell=(mv,v,showMar,extra)=>`<span class="lcol ctot"><b class="tval${mv?'':' carried'}">${fmt0(v)}</b>`
-      +((showMar&&margin!=null)?`<em class="submar${(marPct!=null&&marPct<20)?' thin':''}">${fmt(margin)}${marPct!=null?' &middot; '+marPct.toFixed(0)+'%':''}</em>`:'')
-      +(extra||'')+`</span>`;
     /* ============ THE FIGURE CARRIES THE STATE (v447) ============
        His model, stated on 02 Sep 2026: an entry is a date, a party, a product, a quantity and a
        sum, and its state is not a word beside them but WHICH OF THEM HAS HAPPENED. Grey is not
@@ -10592,113 +10655,84 @@ function tabLedger(){
       const wasQ=()=>was(['qty','deliveredQty'],'qty',v=>units(+String(v).replace(/[^\d.]/g,'')||0));
       const wasT=()=>was(['total','cash'],'total',v=>fmt0(+String(v).replace(/[^\d.]/g,'')||0));
       return {qty,tot,wasQ,wasT};})();
-    /* v465: THE CONTROL IS A CELL. v408 put one button on a bar beneath every live row and v430
-       made it reach the lots; in a table a bar under each line is a card again, so the same
-       control, the same ledEdit, sits in the last column of the order's own line. */
-    const actRid=ridOf(t);
-    const actCell=(finalState!=='Cancelled'&&actRid&&!provOf(t))
-      ?`<span class="lquick lc-act"><button class="lqb qdone" onclick="ledEdit('${actRid}','${t.type}')" title="Paid, delivered, cancelled: update this order">${finalState==='Pending'?'Mark':'Update'}</button></span>`
-      /* v495: a provisional row cannot be edited, since it has no rid yet, so the act cell says why
-         instead: the Provisional pill sits where the button would, at the end of the second row. */
-      :provOf(t)?`<span class="lquick lc-act"><span class="tag prov" title="recorded but not yet committed">Provisional</span></span>`
-      :'<span class="lc lc-act"></span>';
-    const h=single?null:am[0];                                   // the step the opening line records
-    const hUnits=single||h.kg>0.0001,hCash=single||h.cash>0.0001;
-    /* v465: every line is the same twelve cells, so the table's columns hold from the heading down:
-       E, step, date, type, product, party, kind, note, then the four figures. A cell a line has no
-       use for stays in place, empty. */
-    /* v466: each cell names its area, so a narrower screen can re-flow the line without losing a cell.
-       THE STEP COLUMN CARRIES THE KIND, on his instruction: Opened and Closed on the order's own
-       lines, Fulfilment, Modification, Correction or Linked orders on the step lines, one column. */
+    /* ============ AN ENTRY IS TWO ROWS (his schematic, 09 Sep 2026) ============
+       Row 1 is the order as it stands: the figure carries the state (v447), so a part-delivered
+       order reads "4 of 12.5 unit" and a part-paid one "RM 7.50 of RM 117.50". The SELL or BUY tag
+       sits in the entry's corner, under the E-number. Row 2 is the transaction: the date when it
+       differs from the order's, Open or Closed, the kind, then the units and the RM that moved.
+       The first line is what moved at booking, Agreed when nothing did, and a movement on the same
+       day overwrites Agreed rather than following it. A closed entry folds to row 1; an open one
+       keeps its latest line in view; a tap opens the whole trail. The credit-days collapse (v254),
+       the Opened role, the closing line as a separate builder and the Update button (the pen at the
+       corner replaces it) go with this. A Correction is a line of its own, saying what it moved. */
+    const dOf=x=>String(x||'').slice(0,10);
+    const modAt=date=>String(rowT.mod||'').split(', then ').map(s=>s.trim()).filter(s=>s.indexOf(' on '+date)>=0)
+      .map(s=>s.replace(/^(?:corrected|restated) on \d{4}-\d{2}-\d{2}:?\s*/,'').replace(/^from /,'').replace(/ to /g,' → ')).join('; ');
+    /* Open or Closed on each line is the entry's state AFTER that line: the replay's reading of the
+       step, the last movement of a completed entry (v491: the replay alone can miss it), a
+       Cancellation or a Default; a Correction inherits the line before it. Lines keep the trail's
+       own order within a day, which is the order things were recorded. */
+    const TERMINAL=s=>s==='Completed'||s==='In-Kind'||s==='Default'||s==='Cancelled';
+    const lines=(()=>{
+      const raw=t._buy||t,buy=t.type==='BUY';
+      const rawA=steps.slice().sort((a,b)=>new Date(a.date)-new Date(b.date));   /* am[i] pairs with rawA[i] */
+      const at=x=>{const i=(rowT.amend||[]).indexOf(x);return i<0?9999:i;};
+      const seed=am.length?{date:dOf(am[0].date)||dOf(t.date),kind:'Fulfilment',units:am[0].kg||0,cash:am[0].cash||0,closed:TERMINAL(am[0].state),idx:at(rawA[0])}
+        :{date:dOf(t.date),kind:'Fulfilment',units:buy?poRecvUnits(raw):txEffDeliv(raw),cash:buy?poCash(raw):txPaid(raw),closed:completed,idx:0};
+      const out=[(seed.units>0.0001||seed.cash>0.0001)?seed:{date:dOf(t.date),kind:'Agreed',units:0,cash:0,closed:false,idx:seed.idx}];
+      const rest=am.slice(1).map((a,i)=>({date:dOf(a.date),kind:a.kind,units:a.kg||0,cash:a.cash||0,closed:TERMINAL(a.state)||a.kind==='Cancellation'||a.kind==='Default',idx:at(rawA[i+1])}))
+        .concat(corrs.map(c=>({date:dOf(c.date),kind:'Correction',units:0,cash:0,closed:null,idx:at(c)})))
+        .sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:a.idx-b.idx);
+      let lastMove=-1;rest.forEach((L,i)=>{if(L.kind!=='Correction')lastMove=i;});
+      if(completed){if(lastMove>=0)rest[lastMove].closed=true;else out[0].closed=true;}
+      rest.forEach(L=>{
+        if(L.kind==='Correction'||L.kind==='Modification')L.text=modAt(L.date)||(L.kind==='Modification'?'restated':'corrected');
+        const prev=out[out.length-1];
+        if(L.closed==null)L.closed=prev.closed;
+        if(prev.kind==='Agreed'&&L.date===dOf(t.date)&&(L.units>0.0001||L.cash>0.0001))out[out.length-1]=L;
+        else out.push(L);});
+      return out;})();
+    const penRid=ridOf(t);
+    const pen=(finalState!=='Cancelled'&&penRid&&!provOf(t))
+      ?`<button type="button" class="lpen" onclick="ledMenu(event,'${penRid}','${t.type}')" title="Update this ${t.type==='BUY'?'lot':'order'}" aria-label="Update ${code}"><svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path d="M11.3 1.7a1.6 1.6 0 0 1 2.3 0l.7.7a1.6 1.6 0 0 1 0 2.3L5.6 13.4 1.9 14.1l.7-3.7L11.3 1.7zm-8 8.9-.4 2.2 2.2-.4 7.6-7.6-1.8-1.8-7.6 7.6z" fill="currentColor"/></svg></button>`
+      :provOf(t)?`<span class="tag prov lpen lprov" title="recorded but not yet committed">Provisional</span>`:'';
+    /* v465: every line is the same cells, so the table's columns hold from the heading down: E, step,
+       date, type, product, party, then the four figures. A cell a line has no use for stays in place,
+       empty. v466: each cell names its area, so a narrower screen can re-flow the line. The step cell
+       carries Open or Closed and the kind, one column. */
     const cells=(o)=>`<span class="lgroup">`
-        +`<span class="lc lc-e"><span class="ecode">${o.code||''}</span></span>`
-        +`<span class="lc lc-step">${o.step||''}${o.kind||''}</span>`
+        +`<span class="lc lc-e">${o.e||''}</span>`
+        +`<span class="lc lc-step">${o.step||''}</span>`
         +`<span class="lc lc-date">${o.date||''}</span>`
         +`<span class="lc lc-type">${o.type||''}</span>`
         +`<span class="lc lc-prod">${o.product||''}</span>`
         +`<span class="lc lc-party">${o.party||''}</span>`
       +`</span>`;
-    const openLine=`<div class="lrow l${headRole==='close'?'close':'open'}">`
-      +cells({code:code,
-        step:`<span class="lclabel ${headLabelCls}">${headLabel}</span>`,
+    const nil='<span class="lnil">&mdash;</span>';
+    const lineHtml=(L,i)=>{
+      const last=i===lines.length-1, role=L.closed?'close':'open';
+      const showDate=!!L.date&&L.date!==dOf(t.date);
+      const kc=L.kind==='Agreed'?'eagreed':(kindCls[L.kind]||'efulfil');
+      const lab=L.kind==='Agreed'?'Agreed':kindLab(L.kind,t.type==='BUY',{cash:L.cash,kg:L.units});
+      return `<div class="lmove${last?' llast':''}${role==='close'?' lclose':''}">`
+        +cells({step:`<span class="lclabel ${role==='close'?'roleclose':'roleopen'}">${role==='close'?'Closed':'Open'}</span><span class="etype ${kc}">${lab}</span>`,
+          date:showDate?`<span class="lmdate">${ledDate(L.date)}</span>`:''})
+        +(L.text
+          ?`<span class="lcol cqty"></span><span class="lcol cprc"></span><span class="lcol ctot ltext">${esc(L.text)}</span>`
+          :`<span class="lcol cqty">${L.units>0.0001?units(L.units):nil}</span><span class="lcol cprc"></span><span class="lcol ctot"><b class="tval">${L.cash>0.0001?fmt0(L.cash):nil}</b></span>`)
+        +`<span class="lstate"></span><span class="lc lc-act"></span></div>`;};
+    const openLine=`<div class="lrow lopen">`
+      +cells({e:`<span class="ecode">${code}</span><span class="tag ltype ${t.type==='BUY'?'buy':'sell'}">${t.type}</span>`,
         date:`<span class="ldate">${isPend(t)?'':ledDate(t.date)}</span>`,
-        type:`<span class="tag ${t.type==='BUY'?'buy':'sell'}">${t.type}</span>`,
         product:prodTag(t),
         party:`<span class="lparty">${ID(t.who)}</span>${ledAttr(t)}`})
-      +(single?figNow.qty():qCell(hUnits,hUnits?h.kg:t.qty,figNow.wasQ()))
-      +pCell(true)
-      +(single?figNow.tot():tCell(hCash,hCash?h.cash:t.total,true,figNow.wasT()))
-      +`<span class="lstate">${pill(single?closeState:openState,stateCls(single?closeState:openState))}</span>`
-      +actCell
-      +`</div>`;
-    // the movement lines and the closing line
-    const stepLine=(a,cls,lead)=>{
-      const mk=a.kg>0.0001,mc=a.cash>0.0001,isMod=a.kind==='Modification';
-      /* v471: the step's note and its cross-references are in the Journal, not here */
-      return `<div class="${cls}">`
-        +cells({code:'',step:lead.step||'',date:lead.date||'',
-          kind:`<span class="etype ${kindCls[a.kind]||'efulfil'}">${kindLab(a.kind,t.type==='BUY',a)}</span>`})
-        +qCell(mk,mk?a.kg:t.qty)
-        +pCell(isMod)
-        +tCell(mc,mc?a.cash:t.total,isMod)
-        /* v491: NO STATE ON A STEP, on his instruction. A step is a movement; the state is the
-           entry's and sits on its opening line. The cell stays so the grid keeps its track. */
-        +`<span class="lstate"></span>`
-        +'<span class="lc lc-act"></span>'
-        +`</div>`;};
-    const moveLines=moves.map(a=>stepLine(a,'lmove',{date:`<span class="lmdate">${ledDate(a.date)}</span>`})).join('');
-    /* v465: every step shows. Three or more used to fold behind a disclosure, and a folded step
-       is a step the reader has to know to look for. */
-    const movePanel=moveLines?`<div class="lmoves">${moveLines}</div>`:'';
-    // closing line (full strength) when a multi-step order has completed. Opening->Closing with no
-    // middle is fine (moves may be empty). A single-line order carries its close on the head row instead.
-    const closeA=am.length?Object.assign({},am[am.length-1],{state:finalState,cls:stateCls(finalState)}):null;
-    const closeLine=(completed&&am.length)?stepLine(closeA,'lmove lclose',
-       {step:`<span class="lclabel roleclose">Closed</span>`,date:`<span class="ldate">${ledDate(closeA.date)}</span>`}):'';
-    /* ============ A PENDING ORDER IS A NOTE TO SELF, NOT AN EVENT (v254) ============
-       An order agreed on Monday and settled on Wednesday was rendering as three lines:
-       Opened, a Fulfilment, Closed. The middle two say the same thing twice and the first
-       records a state that never had any consequence, because PENDING COUNTS NOWHERE on
-       this desk. It is a reference, not a movement, so it does not deserve a step.
-       THE EXCEPTION IS CREDIT, AND ONLY REAL CREDIT. Where the order sat in Advance or
-       Deferred, someone was carrying the other for a while, and above TWO DAYS that is a
-       fact about the relationship rather than a rounding of the calendar. Those keep their
-       steps. Dwell is measured to the NEXT step, or to today where the state is still open,
-       so a position still outstanding cannot hide by never being closed.
-       THE CAPTION SURVIVES THE COLLAPSE. Most notes on these rows are restatements of the
-       figures beside them, but not all: "paid a day earlier than promised" is the kind of
-       thing the trail exists for. Structure is dropped, substance is carried up. */
-    const dwell=i=>{const nx=am[i+1];
-      return Math.round(((nx?new Date(nx.date):TODAY)-new Date(am[i].date))/86400000);};
-    let creditDays=0;
-    am.forEach((a,i)=>{if(/Advance|Deferred/.test(a.state))creditDays=Math.max(creditDays,dwell(i));});
-    /* THE TEST IS THE CREDIT PERIOD, NOT THE OPENING STATE. The first version also required
-       the order to have opened Pending, which kept the steps on every row that opened straight
-       into Advance or Deferred and closed the same day or the next: eight orders drawn in three
-       lines to say that money and salt crossed within a day of each other. His rule is about
-       how long someone carried the other, so that is the only thing tested. */
-    const collapse=am.length>0&&completed&&creditDays<=LEDGER_CREDIT_DAYS;
-    /* BOILERPLATE IS NOT A CAPTION. The opening step of an auto-built trail carries "as
-       booked", which restates the line it sits on; carrying that up would replace three
-       lines of noise with one line of noise. Anything a person actually wrote survives. */
-    /* DERIVED, NOT TYPED. The written notes stay on the row and stay in the file; what they
-       no longer do is print on a card that collapsed precisely because nothing happened worth
-       three lines. What prints instead is the one thing the desk can say and he cannot see:
-       how this order compares with how that party usually behaves. */
-      const collapsedLine=collapse?`<div class="lrow lclose">`
-      +cells({code:code,
-        step:`<span class="lclabel roleclose">Closed</span>`,
-        date:`<span class="ldate">${ledDate(closeA.date)}</span>`,
-        type:`<span class="tag ${t.type==='BUY'?'buy':'sell'}">${t.type}</span>`,
-        product:prodTag(t),
-        party:`<span class="lparty">${ID(t.who)}</span>`})
       +figNow.qty()+pCell(true)+figNow.tot()
       +`<span class="lstate">${pill(finalState,stateCls(finalState))}</span>`
-      +actCell
-      +`</div>`:'';
+      +`<span class="lc lc-act"></span></div>`;
+    const trail=lines.map(lineHtml).join('');
     if(!ledMatches(t,si,am,code))return '';
     shownTx.push(t);
-    const cardCls=finalState==='Completed'?'s-completed':finalState==='Pending'?'s-pending':finalState==='In-Kind'?'s-inkind':finalState==='Default'?'s-default':finalState==='Cancelled'?'s-cancelled':finalState==='Open · Deferred'?'s-deferred':'s-advance';
+    const cardCls=(completed?'lfold ':'lopenq ')+(finalState==='Completed'?'s-completed':finalState==='Pending'?'s-pending':finalState==='In-Kind'?'s-inkind':finalState==='Default'?'s-default':finalState==='Cancelled'?'s-cancelled':finalState==='Open · Deferred'?'s-deferred':'s-advance');
     /* v253: a pending order carries its own next action */
     /* v408: WAS THREE BUTTONS ON PENDING ROWS ONLY, and they queued the row's FULL TOTAL as a
        Fulfilment, which the fold ADDS: tapping Paid on a row already carrying RM 50 of RM 100
@@ -10729,7 +10763,7 @@ function tabLedger(){
     const kProd=(PRODUCTS[prodOf(rowT)]||{}).name||'';
     return {live:live,date:t.date||'',
       k:{e:idx,date:t.date||null,type:t.type,product:kProd,party:ID(t.who),qty:+t.qty||0,price:price,total:+t.total||0,margin:margin,state:finalState},
-      h:`<div class="lcard ${cardCls}" id="ent-${code}"${rid?` data-rid="${rid}" data-type="${t.type}" tabindex="0"`:""}>${collapse?collapsedLine:(openLine+movePanel+closeLine)}</div>`};}).filter(Boolean);
+      h:`<div class="lcard ${cardCls}" id="ent-${code}"${rid?` data-rid="${rid}" data-type="${t.type}" tabindex="0"`:""}>${pen}${openLine}${trail}</div>`};}).filter(Boolean);
   const shown=rows.length,total=all.length;
   const filtered=!!(ledF.q||ledF.state||ledF.party||ledF.month||ledF.product);
   /* v465: THE WHOLE BOOK, IN THE ORDER ASKED FOR. A blank key sorts last in both directions, as a
@@ -10766,7 +10800,7 @@ function tabLedger(){
   <div class="card" style="margin:0 0 6px"><div class="cardh">The book, day by day <span class="sub">RM written and units moved${filtered?', across the rows shown':''}</span></div><div class="chartbox" style="height:180px"><canvas id="lgTimeChart"></canvas></div></div>
   ${(()=>{const hb=(key,lab)=>`<button type="button" class="lsb${ledSort.key===key?' on':''}" data-lsort="${key}" id="lsort-${key}">${lab}${ledSort.key===key?`<span class="larr">${ledSort.dir>0?'&#9650;':'&#9660;'}</span>`:''}</button>`;
     return `<div class="ledwrap"><div class="lhead">`
-      +`<span class="lc lc-e">${hb('e','E')}</span><span class="lc lc-step">Step</span><span class="lc lc-date">${hb('date','Date')}</span><span class="lc lc-type">${hb('type','Type')}</span><span class="lc lc-prod">${hb('product','Product')}</span><span class="lc lc-party">${hb('party','Party')}</span>`
+      +`<span class="lc lc-e">${hb('e','E')}</span><span class="lc lc-step">Transaction</span><span class="lc lc-date">${hb('date','Date')}</span><span class="lc lc-type">${hb('type','Type')}</span><span class="lc lc-prod">${hb('product','Product')}</span><span class="lc lc-party">${hb('party','Party')}</span>`
       +`<span class="lcol cqty">${hb('qty','Qty')}</span><span class="lcol cprc">${hb('price','Price/unit')}</span><span class="lcol ctot">${hb('total','Total')}${hb('margin','margin')}</span><span class="lstate">${hb('state','State')}</span><span class="lc lc-act">Act</span></div>`;})()}
   <div class="lcards">${rowsHtml||'<div class="dsc" style="padding:14px 4px">Nothing matches this filter.</div>'}</div></div>
 `;   /* v533: the quote ladder is on Inventory, Sourcing, per product; it was a salt-only copy here */

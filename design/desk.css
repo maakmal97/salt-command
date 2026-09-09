@@ -516,3 +516,15 @@ details.obs>summary:hover{background:var(--salt-glass);}
 .deskbar .meta>.metarow{flex:1 1 auto;}
 .deskbar .meta #provBar{flex:1 0 100%;}
 @media(max-width:860px){.deskbar .meta{order:3;flex:1 0 100%;}}
+/* ---- AN ENTRY IS TWO ROWS (09 Sep 2026): the corner tag, the pen and its menu, in the identity. ---- */
+.ledwrap .tag.ltype{font-weight:500;letter-spacing:.14em;}
+.ledwrap .tag.ltype.buy{color:var(--salt-steel);}
+.ledwrap .tag.ltype.sell{color:var(--salt-product-salt);}
+.ledwrap .etype.eagreed{color:var(--salt-mist);}
+.ledwrap .lpen{color:var(--salt-brass);}
+.ledwrap .lpen:hover,.ledwrap .lpen:focus-visible{background:rgba(197,160,89,.14);color:var(--salt-salt);}
+.lmenu{background:var(--salt-obsidian);border-color:var(--salt-line);box-shadow:0 10px 28px rgba(0,0,0,.5);}
+.lmenu button{color:var(--salt-salt);}
+.lmenu button:hover,.lmenu button:focus-visible{background:rgba(197,160,89,.12);color:var(--salt-brass);}
+.lmenu button:last-child{color:var(--salt-mist);border-top-color:var(--salt-line-faint);}
+.ledwrap .lmove .ltext{color:var(--salt-mist-light);}

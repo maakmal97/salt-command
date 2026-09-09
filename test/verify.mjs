@@ -4311,11 +4311,12 @@ section("v430: the controls the panel offers must exist and must be able to do w
   /* KEYED ON THE CARD'S OWN TYPE. Matching the word "lot" in a card's text also matched sale cards
      carrying "Usual lot", so the count stayed above zero with the fault reintroduced and the check
      read green over it. */
-  const onBuy = +w8.eval("document.querySelectorAll('.sec.on .lcard[data-type=BUY] .lquick').length");
+  /* 09 Sep 2026: the control is the pen at the entry's corner, not a button in a cell */
+  const onBuy = +w8.eval("document.querySelectorAll('.sec.on .lcard[data-type=BUY] .lpen').length");
   const buyCards = +w8.eval("document.querySelectorAll('.sec.on .lcard[data-type=BUY]').length");
   ok(buyCards > 0, "the ledger renders purchase cards at all (" + buyCards + ")");
-  ok(onBuy > 0, "the Update control renders on purchase cards (" + onBuy + "), which carried none at v408");
-  ok(+w8.eval("document.querySelectorAll('.sec.on .lquick').length") > onBuy,
+  ok(onBuy > 0, "the update control (the pen) renders on purchase cards (" + onBuy + "), which carried none at v408");
+  ok(+w8.eval("document.querySelectorAll('.sec.on .lpen').length") > onBuy,
     "and on sale cards too, so unwrapping the lot did not move the control off the sales");
 
   w8.eval("setProd('oil');recompute();ledNew();");
@@ -5270,19 +5271,21 @@ section("v451: the Ledger draws a lot's trail");
     w.eval("switchTab('journal');");
     const f7c = JSON.parse(w.eval("JSON.stringify((function(){var k=document.querySelector('.jent[data-rid=\"f7\"] .lcorr');return k?{cls:k.className,why:!!k.querySelector('.cwhy'),text:k.textContent.replace(/[ \\t\\n\\r]+/g,' ').trim()}:null;})())"));
     w.eval("switchTab('ledger');");
-    ok(f6 && f6.rows.length === 2 && /\blopen\b/.test(f6.rows[0].cls) && /\blclose\b/.test(f6.rows[1].cls),
-      `a lot paid on the 10th and received on the 20th opens and closes on two lines (${f6 && f6.rows.map((r) => r.cls).join(" | ")})`);
+    /* 09 Sep 2026, his schematic: an entry is its order row and one line per transaction; the
+       line that completed it reads Closed, the ones before it Open */
+    ok(f6 && f6.rows.length === 3 && /\blopen\b/.test(f6.rows[0].cls) && !/\blclose\b/.test(f6.rows[1].cls) && /\blclose\b/.test(f6.rows[2].cls),
+      `a lot paid on the 10th and received on the 20th is its order row and two transaction lines, the second of them closed (${f6 && f6.rows.map((r) => r.cls).join(" | ")})`);
     /* v491: ONE STATE PER ENTRY, ON THE HEAD, on his instruction. This asserted "paid ahead" on
        the head and Completed on the close, one state per line, which is the shape he rejected on a
        screenshot of s107. The head now carries the entry's state, the engine's, and the close
        carries the receipt date and no state: the paid-ahead history is on the steps, where the
        cash of the 10th and the units of the 20th are each their own row. */
-    ok(f6 && f6.rows[0].pill === "Completed" && f6.rows[1].pill === "" && f6.rows[1].date === "2026-08-20",
-      `Completed once on the head, the close dated by the receipt and carrying no state (${f6 && f6.rows.map((r) => (r.pill || "-") + " " + r.date).join(" | ")})`);
+    ok(f6 && f6.rows[0].pill === "Completed" && f6.rows[1].pill === "" && f6.rows[2].pill === "" && f6.rows[2].date === "2026-08-20",
+      `Completed once on the order row, the closing line dated by the receipt and carrying no state (${f6 && f6.rows.map((r) => (r.pill || "-") + " " + r.date).join(" | ")})`);
     ok(f7 && f7c && /Corrected 2026-08-30/.test(f7c.text) && !/\bbad\b/.test(f7c.cls) && f7c.why,
       `a corrected lot carries the correction strip in the Journal, quiet because every claim reads back, its own note behind why (${f7c && f7c.text.slice(0, 60)})`);
-    ok(p16 && p16.rows.length === 1 && /\blclose\b/.test(p16.rows[0].cls) && p16.rows[0].pill === "Completed",
-      `p016, restated the day it was booked, still folds to one Completed line (${p16 && p16.rows.map((r) => r.cls + " " + r.pill).join(" | ")})`);
+    ok(p16 && p16.rows.length >= 2 && /\blopen\b/.test(p16.rows[0].cls) && p16.rows[0].pill === "Completed" && /\blclose\b/.test(p16.rows[p16.rows.length - 1].cls),
+      `p016, restated the day it was booked, reads Completed on its order row and its trail closes on its last line (${p16 && p16.rows.map((r) => r.cls + " " + r.pill).join(" | ")})`);
     w.eval("ledF.q='corrected on 2026-08-30';switchTab('ledger');");
     const hit = JSON.parse(w.eval("JSON.stringify([!!document.querySelector('.lcard[data-rid=\"f7\"]'),!!document.querySelector('.lcard[data-rid=\"f6\"]')])"));
     ok(hit[0] && !hit[1], "and the search reads a lot's mod: the corrected lot is found and the other is not");
@@ -5700,9 +5703,11 @@ section("v461: a lot's step is named the way the whiteboard took it");
     const { w } = await om11(M11);
     w.eval("setProd('salt');recompute();switchTab('ledger');");
     const lot = JSON.parse(String(w.eval(LABELS("F20")))), sale = JSON.parse(String(w.eval(LABELS("F21"))));
-    ok(lot.length === 2 && lot[0] === "Receipt" && lot[1] === "Payment", `the lot's two steps read Receipt then Payment (${JSON.stringify(lot)})`);
+    /* 09 Sep 2026: every line shows, the booking's own included, so the lot reads its payment at
+       booking, the receipt, then the payment that closed it, each named by what moved */
+    ok(lot.join() === "Payment,Receipt,Payment", `the lot's lines read Payment, Receipt then Payment, each named by what moved (${JSON.stringify(lot)})`);
     ok(lot.indexOf("Fulfilment") < 0, "and the sale's word is nowhere on the lot");
-    ok(sale.length === 1 && sale[0] === "Fulfilment", `while the sale's step still reads Fulfilment (${JSON.stringify(sale)})`);
+    ok(sale.join() === "Agreed,Fulfilment", `while the sale reads Agreed at booking, then Fulfilment (${JSON.stringify(sale)})`);
   } finally { for (const f of [B11, M11]) { try { rm11(f); } catch (e) { /* best effort */ } } }
 }
 
@@ -5754,8 +5759,23 @@ section("v465: the ledger is a table, whole and sortable");
   const J15 = (x) => JSON.parse(String(w15.eval(x)));
   const rows15 = +w15.eval("sales.length+purchases.length"), cards15 = +w15.eval("document.querySelectorAll('.sec.on .lcard').length");
   ok(rows15 > 100 && cards15 === rows15, `every row on the book is on screen (${cards15} of ${rows15}), none folded`);
-  ok(+w15.eval("document.querySelectorAll('.sec.on .ledmore, .sec.on details.lmc, .sec.on details .lmove').length") === 0 && +w15.eval("document.querySelectorAll('.sec.on .lmove').length") > 0,
-    "no fold and no disclosure: every interim step is a visible line");
+  /* 09 Sep 2026: no disclosure element, but the trail folds on his schematic: a closed entry shows
+     its order row, an open one its latest line, and a tap on the entry opens the rest */
+  ok(+w15.eval("document.querySelectorAll('.sec.on .ledmore, .sec.on details.lmc, .sec.on details .lmove').length") === 0 && +w15.eval("document.querySelectorAll('.sec.on .lmove').length") > 0
+    && +w15.eval("document.querySelectorAll('.sec.on .lcard.lfold').length") + +w15.eval("document.querySelectorAll('.sec.on .lcard.lopenq').length") === cards15,
+    "no disclosure element: every entry is folded (closed) or open, and its trail is lines a tap reveals");
+  {
+    const vis = (sel) => +w15.eval("[].slice.call(document.querySelectorAll('" + sel + "')).filter(function(r){return getComputedStyle(r).display!=='none';}).length");
+    ok(vis(".sec.on .lcard.lfold .lmove") === 0 && vis(".sec.on .lcard.lopenq .lmove") === +w15.eval("document.querySelectorAll('.sec.on .lcard.lopenq').length"),
+      "a closed entry shows no transaction line and an open one shows exactly its latest");
+    w15.eval("document.querySelector('.sec.on .lcard.lfold .lparty').click()");
+    ok(vis(".sec.on .lcard.lfold.lexp .lmove") > 0 && vis(".sec.on .lcard.lfold.lexp .lmove") === +w15.eval("document.querySelectorAll('.sec.on .lcard.lfold.lexp .lmove').length"),
+      "and a tap on a closed entry opens every line of its trail");
+    ok(+w15.eval("document.querySelectorAll('.sec.on .lmove .lclabel').length") === +w15.eval("document.querySelectorAll('.sec.on .lmove').length")
+      && +w15.eval("[].slice.call(document.querySelectorAll('.sec.on .lmove .lclabel')).filter(function(l){return l.textContent!=='Open'&&l.textContent!=='Closed';}).length") === 0,
+      "every transaction line says Open or Closed, and nothing else");
+    ok(+w15.eval("document.querySelectorAll('.sec.on .lcard .lrow .lc-e .ltype').length") === cards15, "and every entry carries its SELL or BUY tag under the E-number");
+  }
   ok(+w15.eval("document.querySelectorAll('.sec.on .lhead > *').length") === 11 && +w15.eval("document.querySelectorAll('.sec.on .lhead [data-lsort]').length") === 10,
     "eleven headed columns, ten of them sortable");
   const ids15 = J15("JSON.stringify([].slice.call(document.querySelectorAll('.sec.on .lcard')).map(function(c){return +c.id.replace('ent-E','');}))");
@@ -5811,8 +5831,8 @@ section("v466: the ledger never scrolls sideways; a narrower screen re-flows the
   ok(head.length === 1 && head[0] === 11, "and so does the heading, so it re-flows with them");
   /* the kind rides in the step column: a step line's step cell holds the kind pill, an order line's holds its role */
   ok(+w16.eval("document.querySelectorAll('.sec.on .lmove .lc-step .etype').length") > 0 && +w16.eval("document.querySelectorAll('.sec.on .lmove .lc-step .etype').length") === +w16.eval("document.querySelectorAll('.sec.on .lmove').length")
-    && +w16.eval("document.querySelectorAll('.sec.on .lcard > .lrow:first-child .lc-step .lclabel').length") === +w16.eval("document.querySelectorAll('.sec.on .lcard').length"),
-    "every step line carries its kind in the step column, and every order line its role there");
+    && +w16.eval("document.querySelectorAll('.sec.on .lmove .lc-step .lclabel').length") === +w16.eval("document.querySelectorAll('.sec.on .lmove').length"),
+    "every transaction line carries Open or Closed and its kind in the step column (09 Sep 2026: the order row carries no role)");
   const css = String(w16.eval("[].slice.call(document.querySelectorAll('style')).map(function(s){return s.textContent;}).join(' ')"));
   ok(/\.ledwrap[^{]*\{[^}]*container-type:\s*inline-size/.test(css) && (css.match(/@container ledger/g) || []).length === 1,
     "the wrap is a size container and one width tier, the phone, is declared against it (v495: the 935px tier became the shape at every width above it)");
@@ -5870,11 +5890,20 @@ section("v495: an entry is two rows, and the act cell ends the second");
   ok(open.length === 2 && open[1][0] === "step" && open[1].includes("type") && open[1][open[1].length - 1] === "act" && !open[1].includes("prod"),
     "and its second row opens with the step and ends with the act cell, with the product no longer on it");
   ok(step.length === 1 && step[0].includes("step") && !step[0].includes("act"), "a step stays one row (" + step.map((r) => r.join(" ")).join(" / ") + ")");
-  const prov = JSON.parse(String(w19.eval("JSON.stringify((function(){var c=document.querySelector('.lcard[data-rid=x-prov]');return {inAct:!!c.querySelector('.lc-act .tag.prov'),inProd:!!c.querySelector('.lc-prod .tag.prov'),button:!!c.querySelector('.lc-act button'),border:getComputedStyle(c.querySelector('.tag.prov')).borderTopStyle,bg:getComputedStyle(c.querySelector('.tag.prov')).backgroundColor};})())")));
-  ok(prov.inAct && !prov.inProd && !prov.button, "a provisional row carries its pill in the act cell, where the button would be, and no button");
+  /* 09 Sep 2026: the pen at the corner replaces the Update button; a provisional row carries its
+     pill at that corner instead, and no pen */
+  const prov = JSON.parse(String(w19.eval("JSON.stringify((function(){var c=document.querySelector('.lcard[data-rid=x-prov]');var p=c.querySelector('.tag.prov');return {atCorner:!!c.querySelector('.lprov.tag.prov'),inProd:!!c.querySelector('.lc-prod .tag.prov'),pen:!!c.querySelector('button.lpen'),border:p?getComputedStyle(p).borderTopStyle:null,bg:p?getComputedStyle(p).backgroundColor:null};})())")));
+  ok(prov.atCorner && !prov.inProd && !prov.pen, "a provisional row carries its pill at the corner, where the pen would be, and no pen");
   ok(prov.border === "dotted" && /transparent|rgba\(0, 0, 0, 0\)/.test(prov.bg), "and the pill is dotted with nothing behind it (" + prov.border + ", " + prov.bg + ")");
-  const btn = JSON.parse(String(w19.eval("JSON.stringify((function(){var b=document.querySelector('.sec.on .lcard .lc-act button');var s=getComputedStyle(b);return {border:s.borderTopStyle,radius:s.borderRadius,deco:s.textDecorationLine||s.textDecoration};})())")));
-  ok(btn.border === "solid" && /100px|999px|var\(--salt-radius-pill\)/.test(btn.radius) && !/underline/.test(btn.deco), "Update is a bordered pill button, not an underlined word (" + JSON.stringify(btn) + ")");
+  const pen = JSON.parse(String(w19.eval("JSON.stringify((function(){var b=document.querySelector('.sec.on .lcard[data-rid]:not([data-rid=x-prov]) button.lpen');if(!b)return null;var s=getComputedStyle(b);return {tag:b.tagName,opacity:s.opacity,position:s.position,hasSvg:!!b.querySelector('svg'),label:b.getAttribute('aria-label')||''};})())")));
+  const css19 = String(w19.eval("[].slice.call(document.querySelectorAll('style')).map(function(s){return s.textContent;}).join(' ')"));
+  ok(pen && pen.tag === "BUTTON" && pen.position === "absolute" && pen.opacity === "0" && pen.hasSvg && /^Update E\d+$/.test(pen.label) && /\.lcard:hover \.lpen[^{]*\{[^}]*opacity:1/.test(css19) && /hover:none\)\{\.lpen\{opacity:\.55/.test(css19),
+    "the pen is a real button at the entry's corner, hidden until the entry is hovered and always faintly there on a touch screen (" + JSON.stringify(pen) + ")");
+  w19.eval("document.querySelector('.sec.on .lcard[data-rid]:not([data-rid=x-prov]) button.lpen').click()");
+  const menu19 = JSON.parse(String(w19.eval("JSON.stringify([].slice.call(document.querySelectorAll('#ledMenu button')).map(function(b){return b.textContent;}))")));
+  ok(menu19.length >= 2 && menu19[menu19.length - 1] === "More" && menu19.indexOf("Modification") >= 0, "the pen opens a short menu: the simple transactions, Modification, then More for the editor (" + menu19.join(", ") + ")");
+  w19.eval("document.body.click()");
+  ok(+w19.eval("document.querySelectorAll('#ledMenu').length") === 0, "and a click anywhere else closes it");
 }
 
 
