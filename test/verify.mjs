@@ -7557,7 +7557,7 @@ section("v528: the name on the phone, filed encrypted before the ID is queued");
   const readQ = () => JSON.parse(String(w.eval("JSON.stringify({q:queue.map(function(x){return {type:x.type,party:x.party,raw:x.raw,payload:x.payload};}),posts:window.__posts,vault:NAME_VAULT,roster:roster.indexOf('CZ9-TESTNAME')>=0})")));
   /* without a name the button is disabled and nothing is registered */
   const A = JSON.parse(String(w.eval(DRIVE({ code: "CZ9-TESTNAME", pass: "pw" }))));
-  ok(!A.no && A.dis && /Type the name/.test(A.errs) && /Type the place/.test(A.errs), "without a name and a place the button is disabled and says so: " + (A.no || A.errs.slice(0, 80)));
+  ok(!A.no && A.dis && /Type the name/.test(A.errs) && /ends in TBC/.test(A.errs), "without a name the button is disabled, and a blank place on a code that names one says the code must end in TBC: " + (A.no || A.errs.slice(0, 80)));
   /* the named road: the vault is written first, then the ID is queued with no name on it */
   const B = JSON.parse(String(w.eval(DRIVE({ code: "CZ9-TESTNAME", pass: "pw", name: "Test Person", place: "Somewhere" }))));
   const stB = await settle();
@@ -7572,6 +7572,25 @@ section("v528: the name on the phone, filed encrypted before the ID is queued");
   const C = JSON.parse(String(w.eval(DRIVE({ code: "CZ9-TESTNAME", pass: "", name: "Test Person", place: "Somewhere" }))));
   const stC = await settle();
   ok(!C.no && /needs the passphrase/.test(stC) && readQ().q.length === 0, "no passphrase registers nothing: " + stC.slice(0, 80));
+  /* v548, his instruction of 09 Sep 2026: a place still to be confirmed can be entered. Blank, on a code
+     ending in TBC, it files "(to be confirmed)" and registers; the map's reason for a TBC code renders
+     its ampersand, which the entity in the source had printed literally. */
+  const TB = JSON.parse(String(w.eval(DRIVE({ code: "CZ9-TBC", pass: "pw", name: "Test Person", place: "" }))));
+  const stTB = await settle();
+  const qTB = readQ();
+  const postTB = qTB.posts.find((p) => /vault$/.test(p.u));
+  let openedTB = null; try { openedTB = postTB && postTB.body ? await vdec("pw", postTB.body.vault) : null; } catch (e) { openedTB = { err: String(e && e.message) }; }
+  ok(!TB.no && !TB.dis && /Registered CZ9-TBC/.test(stTB) && openedTB && openedTB["CZ9-TBC"] === "Test Person (to be confirmed)",
+    "a blank place on a TBC code registers, and files the name as to be confirmed: " + (TB.no || stTB.slice(0, 60)) + " / " + JSON.stringify(openedTB && openedTB["CZ9-TBC"]));
+  w.eval("(function(){var i=roster.indexOf('CZ9-TBC');if(i>=0)roster.splice(i,1);queue=[];})();");
+  w.eval("switchTab('map');");
+  const mapText = String(w.eval("(document.querySelector('.sec.on')||{}).textContent||''"));
+  ok(/Names & IDs/.test(mapText) && !/&amp;/.test(mapText), "the map's reason for a TBC code reads Names & IDs, not the entity");
+  w.eval("switchTab('add');");
+  /* the laptop's Names & IDs panel takes the same answer: a blank location derives the TBC suffix and files to be confirmed */
+  const L = JSON.parse(String(w.eval("(function(){queue=[];['apName','apLoc','apKind','apParent','apMsg'].forEach(function(id){if(!document.getElementById(id)){var e=document.createElement(id==='apMsg'?'div':(id==='apKind'||id==='apParent')?'select':'input');e.id=id;document.body.appendChild(e);}});var k=document.getElementById('apKind');k.innerHTML='<option value=customer>customer</option>';k.value='customer';document.getElementById('apName').value='Test Person';document.getElementById('apLoc').value='';try{addParty();}catch(e){return JSON.stringify({threw:String(e&&e.message)});}return JSON.stringify({on:roster.indexOf('CT11-TBC')>=0,raw:(BIO['CT11-TBC']||{}).raw||null,msg:document.getElementById('apMsg').textContent.slice(0,60),q:queue.length});})()")));
+  ok(!L.threw && L.on && L.raw === "Test Person (to be confirmed)" && L.q === 1, "on the laptop panel a blank location derives CT11-TBC and files to be confirmed: " + JSON.stringify(L));
+  w.eval("(function(){var i=roster.indexOf('CT11-TBC');if(i>=0)roster.splice(i,1);delete BIO['CT11-TBC'];queue=[];})();");
   const D = JSON.parse(String(w.eval(DRIVE({ code: "CZ9-TESTNAME", pass: "pw", name: "Test Person", place: "Somewhere", saveOk: false }))));
   const stD = await settle();
   ok(!D.no && /could not be saved/.test(stD) && readQ().q.length === 0 && readQ().vault === null, "a refused save registers nothing and puts the old vault back");

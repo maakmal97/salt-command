@@ -1,5 +1,15 @@
 [
  {
+  "v": "v548",
+  "d": "09 Sep 2026",
+  "t": "A PLACE STILL TO BE CONFIRMED CAN BE ENTERED, AND THE MAP'S REASON PRINTS ITS AMPERSAND",
+  "n": [
+   "<b>HIS INSTRUCTION, 09 SEP 2026, ON A SCREENSHOT:</b> the map's reason for a TBC code printed 'Names &amp; IDs' with the entity showing, and a place still to be confirmed could not be entered when adding a name and ID. The first is one character in geo/places.json: the reason is escaped where it is rendered, so an entity in the source is escaped twice. The second was both forms refusing a blank place outright, 'Type the place' on the phone and 'A location is needed too' on the laptop, though the map has read the suffix TBC as 'nobody has recorded where this party is' since v347 and CE5-TBC was registered on 06 Sep on exactly that footing.",
+   "<b>A BLANK PLACE IS AN ANSWER, AND IT TAKES THE SUFFIX TBC.</b> On the phone, a blank place is filed into the vault as 'to be confirmed' when the code ends in TBC, and refused with the code it should be when the code names a place, because filing a place the party does not have is the wrong record. On the laptop's Names & IDs, a blank location derives the TBC suffix and files '(to be confirmed)'. Both fields say so in their placeholder. The code is re-keyed by Correction when the place is known, and the row keeps its id.",
+   "<b>PROVED RED FIRST.</b> Four assertions: the phone refuses a blank place on a code that names one with the TBC wording; a blank place on CZ9-TBC registers and the vault opens to 'Test Person (to be confirmed)'; the laptop panel derives CT11-TBC from a blank location; and the map's text reads 'Names & IDs' with no entity. Against the unchanged master the first three read the old refusals and the fourth found the entity."
+  ]
+ },
+ {
   "v": "v547",
   "d": "09 Sep 2026",
   "t": "THE LEDGER ENTRY IS TWO ROWS: THE ORDER AS IT STANDS, THEN WHAT LAST HAPPENED TO IT",

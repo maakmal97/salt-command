@@ -5213,7 +5213,7 @@ const NON_PLACE={"GEN":"a reseller general bucket, not a person or a place","R":
    yet, so there is nothing to look up.
    THEY STILL COUNT AS GENUINE GAPS, not as excluded by rule. A reseller account will never have
    a place of its own; these two will, the moment someone asks. Only the reason changes. */
-const PLACEHOLDER={"TBC":"TBC is to be confirmed: nobody has recorded where this party is, so there is nothing to look up. Ask, then set the location in Names &amp; IDs."};
+const PLACEHOLDER={"TBC":"TBC is to be confirmed: nobody has recorded where this party is, so there is nothing to look up. Ask, then set the location in Names & IDs."};
 /* THE OVERRIDE, and only the override. From v347 locOf reads the locality out of the party
    code itself, which is where v237 put it, so this list is no longer the only source and a
    party added since it was last typed no longer falls off the map. It stays for the party
@@ -5523,7 +5523,8 @@ const whiteboard=[
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{"v":"v547","d":"09 Sep 2026","t":"THE LEDGER ENTRY IS TWO ROWS: THE ORDER AS IT STANDS, THEN WHAT LAST HAPPENED TO IT","n":["<b>HIS SCHEMATIC, 09 SEP 2026: AN ENTRY IS TWO ROWS.</b> Row 1 is the order as it stands, the figure carrying the state: a part-delivered order reads 4 of 12.5 unit and a part-paid one RM 8 of RM 118. Row 2 is the transaction: the date when it differs from the order's, Open or Closed, the kind, then the units and the RM that moved. A closed entry folds to its first row; an open one keeps its latest line in view; a tap on the entry opens the whole trail. The credit-days collapse of v254 and the Opened role are retired.","<b>THE FIRST LINE IS WHAT MOVED AT BOOKING, AGREED WHEN NOTHING DID</b>, and a movement on the same day overwrites Agreed rather than following it. Open or Closed on every line is the entry's state after that line: the replay's reading, the last movement of a completed entry, a Cancellation or a Default. A Correction is a line of its own, saying in the row's own words what it moved, and inherits the state of the line before it.","<b>THE SELL OR BUY TAG SITS UNDER THE E-NUMBER</b>, at the entry's corner, so a folded entry still says which it is. <b>THE PEN AT THE OTHER CORNER REPLACES THE UPDATE BUTTON:</b> shown on hover and always faintly on a touch screen, it opens a short menu of the simple transactions, paid in full, delivered or received in full, completed, each the editor's own chip with the outstanding figures filled in, then Modification and More for the editor itself.","<b>NO ROW MOVED AND NO FIGURE CHANGED.</b> A display change only. The suite's ledger assertions were rewritten to the new shape and hold it: the fold, the tap, the roles on every line, the tag and the pen."]},
+const evolution=[{"v":"v548","d":"09 Sep 2026","t":"A PLACE STILL TO BE CONFIRMED CAN BE ENTERED, AND THE MAP'S REASON PRINTS ITS AMPERSAND","n":["<b>HIS INSTRUCTION, 09 SEP 2026, ON A SCREENSHOT:</b> the map's reason for a TBC code printed 'Names &amp; IDs' with the entity showing, and a place still to be confirmed could not be entered when adding a name and ID. The first is one character in geo/places.json: the reason is escaped where it is rendered, so an entity in the source is escaped twice. The second was both forms refusing a blank place outright, 'Type the place' on the phone and 'A location is needed too' on the laptop, though the map has read the suffix TBC as 'nobody has recorded where this party is' since v347 and CE5-TBC was registered on 06 Sep on exactly that footing.","<b>A BLANK PLACE IS AN ANSWER, AND IT TAKES THE SUFFIX TBC.</b> On the phone, a blank place is filed into the vault as 'to be confirmed' when the code ends in TBC, and refused with the code it should be when the code names a place, because filing a place the party does not have is the wrong record. On the laptop's Names & IDs, a blank location derives the TBC suffix and files '(to be confirmed)'. Both fields say so in their placeholder. The code is re-keyed by Correction when the place is known, and the row keeps its id.","<b>PROVED RED FIRST.</b> Four assertions: the phone refuses a blank place on a code that names one with the TBC wording; a blank place on CZ9-TBC registers and the vault opens to 'Test Person (to be confirmed)'; the laptop panel derives CT11-TBC from a blank location; and the map's text reads 'Names & IDs' with no entity. Against the unchanged master the first three read the old refusals and the fourth found the entity."]},
+{"v":"v547","d":"09 Sep 2026","t":"THE LEDGER ENTRY IS TWO ROWS: THE ORDER AS IT STANDS, THEN WHAT LAST HAPPENED TO IT","n":["<b>HIS SCHEMATIC, 09 SEP 2026: AN ENTRY IS TWO ROWS.</b> Row 1 is the order as it stands, the figure carrying the state: a part-delivered order reads 4 of 12.5 unit and a part-paid one RM 8 of RM 118. Row 2 is the transaction: the date when it differs from the order's, Open or Closed, the kind, then the units and the RM that moved. A closed entry folds to its first row; an open one keeps its latest line in view; a tap on the entry opens the whole trail. The credit-days collapse of v254 and the Opened role are retired.","<b>THE FIRST LINE IS WHAT MOVED AT BOOKING, AGREED WHEN NOTHING DID</b>, and a movement on the same day overwrites Agreed rather than following it. Open or Closed on every line is the entry's state after that line: the replay's reading, the last movement of a completed entry, a Cancellation or a Default. A Correction is a line of its own, saying in the row's own words what it moved, and inherits the state of the line before it.","<b>THE SELL OR BUY TAG SITS UNDER THE E-NUMBER</b>, at the entry's corner, so a folded entry still says which it is. <b>THE PEN AT THE OTHER CORNER REPLACES THE UPDATE BUTTON:</b> shown on hover and always faintly on a touch screen, it opens a short menu of the simple transactions, paid in full, delivered or received in full, completed, each the editor's own chip with the outstanding figures filled in, then Modification and More for the editor itself.","<b>NO ROW MOVED AND NO FIGURE CHANGED.</b> A display change only. The suite's ledger assertions were rewritten to the new shape and hold it: the fold, the tap, the roles on every line, the tag and the pen."]},
 
 {"v":"v546","d":"09 Sep 2026","t":"FULFILMENT ON THE 50 UNIT CA7-JTR OIL ORDER S140: RM450 AND 50 UNIT MOVE ON 09 SEP, THE ROW SETTLES IN FULL","n":["<b>ONE ROW FOLDED, A FULFILMENT AND NOTHING ELSE.</b> The pending oil order s140 with CA7-JTR, 50 unit for RM450 agreed 08 Sep, is met in full: RM450 cash and 50 unit recorded on 09 Sep against RM450 and 50 unit outstanding, leaving RM0 and 0 unit. The row itself is not recomputed in this fold, the master's amend path applies it, so there is one definition of what a fulfilment does rather than two.","<b>THE INVENTORY DID NOT MOVE ON THIS FOLD.</b> The movement is oil, 50 unit out to CA7-JTR dated 09 Sep, and the salt position stands where the count of 08 Sep left it at 32.25 unit, with cost at RM44 and replacement at RM46. The oil count still dates from 23 Aug, so this fulfilment runs against a count two weeks and more behind. CA7-JTR's outstanding of RM450 clears to nothing and no units sit on credit."]},
 
@@ -5854,7 +5855,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='09 Sep 2026, 10:04 KL';
+const LAST_UPDATED='09 Sep 2026, 10:49 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -12837,9 +12838,12 @@ function addParty(){
     return;
   }
   if(!name)return setM('A name is needed.','var(--crim)');
-  if(!loc&&kind!=='supplier')return setM('A location is needed too. A name alone does not earn a code: the place is what proves you dealt with him yourself rather than merely heard the name.','var(--crim)');
+  /* v548, his instruction of 09 Sep 2026: a place still to be confirmed is an answer. A blank location
+     derives the suffix TBC and files "(to be confirmed)"; the map reads TBC as a place nobody has recorded
+     yet, and the code is re-keyed when it is. A supplier takes no place either way. */
+  const tbc=!loc&&kind!=='supplier';
   if(kind==='downstream'&&!parent)return setM('Pick which associate this buyer sits under.','var(--crim)');
-  const code=deriveCode(name,loc,kind,parent);
+  const code=deriveCode(name,tbc?'TBC':loc,kind,parent);
   if(!code)return setM('That does not derive a code. A downstream buyer needs an associate and a place.','var(--crim)');
   if(roster.indexOf(code)>=0)return setM('The code <b>'+esc(code)+'</b> already belongs to someone. Change the name or the location so it derives a free one.','var(--crim)');
   addedParties.push({code:code,kind:kind,parent:parent||null,at:new Date().toISOString()});
@@ -12853,7 +12857,7 @@ function addParty(){
      the same direction the rest of the panel runs in, so the new party now behaves exactly
      like every existing one. */
   if(!BIO[code])BIO[code]={raw:'',photo:null};
-  BIO[code].raw=name+(loc?' ('+loc+')':'');
+  BIO[code].raw=name+(loc?' ('+loc+')':(tbc?' (to be confirmed)':''));
   syncBioNames();                                    // vaultNames follows BIO, never the reverse
   /* only the CODE and its shape ride the queue. The name is deliberately absent: the queue
      file is plaintext and is the one place a name must never appear. */
@@ -13016,7 +13020,7 @@ function renderReveal(){
       <div class="dsc" style="margin:7px 0 8px">A party is created <b>here</b>, by naming it, because a proper code is derived from a name and a place and this is the only panel that holds names. The code minted is the one the ledger carries from its first transaction, so there is <b>no placeholder and no re-key</b>.</div>
       <div style="display:flex;flex-direction:column;gap:6px">
         <input id="apName" placeholder="name" style="border:1px solid var(--line);border-radius:7px;padding:6px 8px;font-size:12px;color:var(--ink);background:#05080a">
-        <input id="apLoc" placeholder="location" style="border:1px solid var(--line);border-radius:7px;padding:6px 8px;font-size:12px;color:var(--ink);background:#05080a">
+        <input id="apLoc" placeholder="location; blank if to be confirmed" style="border:1px solid var(--line);border-radius:7px;padding:6px 8px;font-size:12px;color:var(--ink);background:#05080a">
         <select id="apKind" style="border:1px solid var(--line);border-radius:7px;padding:6px 30px 6px 8px;font-size:12px;color:var(--ink);background-color:#05080a">
           <option value="customer">Customer &mdash; buys direct</option>
           <option value="reseller">Associate, resells for you &mdash; R2</option>
@@ -15899,7 +15903,7 @@ function tabWorkbench(){
           <option value="supplier">Supplier</option></select></div>
         <div class="qfield" id="wbApParentCell" style="display:none"><label>Under which associate</label><select id="wbApParent"></select></div>
         <div class="qfield" id="wbApNameCell"><label>Name</label><input id="wbApName" type="text" placeholder="as they are known" autocomplete="off"></div>
-        <div class="qfield" id="wbApPlaceCell"><label>Place</label><input id="wbApPlace" type="text" placeholder="town or area" autocomplete="off"></div>
+        <div class="qfield" id="wbApPlaceCell"><label>Place</label><input id="wbApPlace" type="text" placeholder="town or area; blank if to be confirmed" autocomplete="off"></div>
         <div class="qfield" style="flex:1"><label>Note <span style="color:var(--dim)">optional</span></label><input id="wbApNote" type="text" placeholder="never the name or the place"></div>
       </div>
       <div class="dsc">Customers run <b>C</b>, suppliers <b>S</b>, then a digit or two and a place suffix: <b>CA4-DAM</b>, <b>SP7-PUD</b>. The name is typed into the directory at the laptop, never here.</div>
@@ -17267,7 +17271,11 @@ function wbPreview(){
     const nc=wbEl('wbApNameCell'),pc=wbEl('wbApPlaceCell');if(nc)nc.style.display=kind==='bucket'?'none':'';if(pc)pc.style.display=kind==='bucket'?'none':'';
     if(kind!=='bucket'){
       if(!(wbVal('wbApName')||'').trim())errs.push('Type the name. It is filed into the vault, encrypted, and never into the queue.');
-      if(!(wbVal('wbApPlace')||'').trim())errs.push('Type the place.');
+      /* v548, his instruction of 09 Sep 2026: a place still to be confirmed can be entered. Left blank, the
+         place is filed as "to be confirmed" and the code must end in TBC, the suffix the map already
+         reads as "nobody has recorded where this party is"; it is re-keyed by Correction when the place is
+         known. A blank place on a code that names a place would file a place the party does not have. */
+      if(!(wbVal('wbApPlace')||'').trim()&&code&&!/-TBC$/.test(code))errs.push('No place yet? Then the code ends in TBC, like '+esc(code.replace(/-[A-Z0-9]*$/,'')||'CX9')+'-TBC, and is re-keyed when the place is known. Or type the place.');
       if(!NAME_VAULT&&qSyncState==='server')warns.push('No vault has synced to this device yet; the first name filed here starts one.');
     }
   }else if(wbMode==='contact'){
@@ -17478,7 +17486,7 @@ function wbRecord(){
        before the ID is queued; if the vault cannot be opened or saved, nothing is registered. Only
        a bucket has no name. The queue never carries a name: codes only, as always. */
     if(kind!=='bucket'){
-      const nm=(wbVal('wbApName')||'').trim(),pl=(wbVal('wbApPlace')||'').trim();
+      const nm=(wbVal('wbApName')||'').trim(),pl=(wbVal('wbApPlace')||'').trim()||(/-TBC$/.test(code)?'to be confirmed':'');   /* v548 */
       if(!nm||!pl){ok.textContent='Type the name and the place first.';ok.style.color='var(--crim)';return;}
       ok.textContent='Filing the name into the vault…';ok.style.color='var(--mut)';
       wbAddIdNamed(code,kind,parent,an,nm,pl);
