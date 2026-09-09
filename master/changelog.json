@@ -1,5 +1,14 @@
 [
  {
+  "v": "v556",
+  "d": "09 Sep 2026",
+  "t": "FULFILMENT ON SA5-BTR P021: THE LAST 12.5 UNIT IN, ORDER SETTLED",
+  "n": [
+   "<b>ONE FULFILMENT FOLDED, AND IT CLOSES A LOT.</b> The remaining 12.5 unit of SA5-BTR's 50 unit lot p021, agreed 08 Sep at RM 2,200, moved on 09 Sep with no money attached, the RM 2,200 having been paid on 08 Sep. Against RM 0 and 12.5 unit outstanding, the move leaves RM 0 and 0 unit, so the drafter's flag that this settles the order in full is answered by the figures.",
+   "<b>WHAT THE INVENTORY DID.</b> The row is not recomputed here: ovAmend in the master applies the fulfilment, so a fulfilment has one definition. The lot rate of RM 44 a unit matches the inventory's own RM 44 shelf cost, so the cost basis does not move and no cost override is carried on the row. SA5-BTR's RM 3,100 outstanding before this fold stands on the party's other rows, not on p021."
+  ]
+ },
+ {
   "v": "v555",
   "d": "09 Sep 2026",
   "t": "ONE SALT SELL TO CM4-MK: 2 UNIT AT RM220, HALF PAID AND DELIVERED",

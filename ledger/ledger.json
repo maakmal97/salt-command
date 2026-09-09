@@ -1,6 +1,6 @@
 {
- "v": "v555",
- "stamped": "09 Sep 2026, 21:12 KL",
+ "v": "v556",
+ "stamped": "09 Sep 2026, 22:18 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -41,7 +41,7 @@
     "stated": 60
    }
   },
-  "STATED_STOCK": 30.25,
+  "STATED_STOCK": 42.75,
   "COUNT_ON": {
    "salt": "2026-09-08",
    "oil": "2026-09-09"
@@ -376,11 +376,27 @@
     "freight": 36,
     "status": "paid",
     "date": "2026-09-08",
-    "receivedOn": "2026-09-08",
-    "receivedQty": 37.5,
+    "receivedOn": "2026-09-09",
+    "receivedQty": 50,
     "paidOn": "2026-09-08",
     "note": "<b>PURCHASE ROW DATED 08 SEP, PAID AND PART RECEIVED THE SAME DAY.</b> BUY from SA5-BTR, 50 unit of salt for RM 2,200, RM 44 a unit, RM 2,200 cash paid on 08 Sep, with RM 36 freight; 37.5 of the 50 unit moved on 08 Sep. The rate is exactly the RM 2,200 the 20 Aug quote puts on the 50 unit tier, back to the 10 Jul level, and the floor of the party's RM 44 to RM 64 range, under its median of RM 56. SA5-BTR stood at 14 orders, RM 3,100 outstanding, nothing defaulted, on the roster. The drafter flagged nothing. 12.5 unit stay outstanding.",
-    "rid": "p021"
+    "rid": "p021",
+    "amend": [
+     {
+      "date": "2026-09-08",
+      "kind": "Fulfilment",
+      "cash": 2200,
+      "kg": 37.5,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-09-09",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 12.5,
+      "note": "<b>FULFILMENT DATED 09 SEP THAT SETTLES p021 IN FULL.</b> BUY from SA5-BTR, lot p021 of 50 unit for RM 2,200 agreed 08 Sep, RM 44 a unit, RM 2,200 cash paid on 08 Sep with 37.5 unit received the same day. RM 0 and 12.5 unit move on 09 Sep against RM 0 and 12.5 unit outstanding, leaving RM 0 and 0 unit. RM 44 a unit sits at the bottom of SA5-BTR's range of RM 44 to RM 64 across 15 orders, under the RM 56 median, with RM 3,100 outstanding before, no units on credit and nothing defaulted. Cost is the inventory's own RM 44 a unit. The drafter flagged full settlement: the figures answer it, and nothing is left outstanding on this order."
+     }
+    ]
    },
    {
     "date": "2026-09-08",
@@ -3703,9 +3719,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-09T13:11:00.478Z",
+  "QUEUE_COMMITTED": "2026-09-09T13:38:45.145Z",
   "PRICING": {
-   "takenAt": "2026-09-09T13:12:45.794Z",
+   "takenAt": "2026-09-09T14:18:46.719Z",
    "sizes": [
     0.5,
     1,
@@ -3801,7 +3817,7 @@
          "qty": 50,
          "total": 2200,
          "rate": 44,
-         "date": "2026-09-08",
+         "date": "2026-09-09",
          "sup": "SA5-BTR"
         },
         "days": 34,
@@ -3835,7 +3851,7 @@
         "qty": 50,
         "total": 2200,
         "rate": 44,
-        "date": "2026-09-08",
+        "date": "2026-09-09",
         "sup": "SA5-BTR"
        },
        "meanLot": 25.36764705882353,
@@ -3863,7 +3879,7 @@
         }
        },
        "attrib": 1,
-       "shrinkRate": 0.06918446831110588,
+       "shrinkRate": 0.0672016508082082,
        "avgDel": {
         "n": 128,
         "kg": 332.45,
@@ -4151,11 +4167,11 @@
      ]
     }
    },
-   "v": "v555"
+   "v": "v556"
   },
   "OPEN": {
-   "at": "2026-09-09T13:12:45.883Z",
-   "count": 9,
+   "at": "2026-09-09T14:18:46.783Z",
+   "count": 8,
    "byKey": {
     "CM4-MK|2026-09-09|220": {
      "d": "2026-09-09",
@@ -4173,22 +4189,6 @@
      "key": "CM4-MK|2026-09-09|220",
      "age": 0,
      "exp": 110
-    },
-    "SA5-BTR|2026-09-08|2200": {
-     "d": "2026-09-08",
-     "p": "SA5-BTR",
-     "dir": "B",
-     "q": 50,
-     "t": 2200,
-     "cash": 2200,
-     "mv": 37.5,
-     "st": "dueStock",
-     "oweUnits": 12.5,
-     "rid": "p021",
-     "paidOn": "2026-09-08",
-     "receivedOn": "2026-09-08",
-     "receivedQty": 37.5,
-     "key": "SA5-BTR|2026-09-08|2200"
     },
     "CR3-DAM|2026-09-07|185": {
      "d": "2026-09-07",
@@ -4313,10 +4313,10 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 30.25,
-     "free": 30.25,
+     "onHand": 42.75,
+     "free": 42.75,
      "owedOut": 0,
-     "coverDays": 5.3,
+     "coverDays": 7.4,
      "rate": 5.75,
      "owedToYou": 887,
      "promised": 8.5,
@@ -4338,7 +4338,7 @@
     "salt": "2026-09-08",
     "oil": "2026-09-09"
    },
-   "v": "v555"
+   "v": "v556"
   }
  }
 }
