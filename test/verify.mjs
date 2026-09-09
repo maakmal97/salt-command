@@ -1881,7 +1881,7 @@ section("Book — ledger/book.json is the source (v339)");
   ok(/ok\s+the master's BOOK block is ledger\/book\.json/.test(chk), "tools/booksync.mjs --check: the master's book block is the file");
   const book = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
   const keys = Object.keys(book).filter((k) => k !== "NOTES");
-  ok(keys.length === 28, "the book holds the twenty-eight ledger keys");   // v353 added PRICE_SET; v504 added COUNTS
+  ok(keys.length === 27, "the book holds the twenty-seven ledger keys");   // v353 added PRICE_SET; v504 added COUNTS; v549 retired SOURCING_PLAN
   ok(Array.isArray(book.sales) && book.sales.length > 100 && Array.isArray(book.purchases), "with the rows as records");
   ok(typeof book.QUEUE_COMMITTED === "string" && typeof book.STATED_STOCK === "number", "and the singletons as values");
   ok(book.NOTES && Array.isArray(book.NOTES.STATED_STOCK) && book.NOTES.STATED_STOCK.length > 0, "the stated stock's roll history survived as NOTES");
@@ -7874,6 +7874,60 @@ section("08 Sep 2026: the audit fixes");
     }
     try { w.close(); } catch (e) { }
   }
+}
+
+section("v549: the Sourcing tab describes the lot he has");
+{
+  /* The section used to be THE NEXT LOT, AS STATED: a hand-typed target date, and a traffic light
+     that read `daysToTarget - daysOfCover`, so a date already PAST turned the card green. It went
+     green because the plan had failed. currentLot takes the lot outlook's rows as an argument, so
+     the choice of lot is testable on synthetic rows without a fixture book anywhere near it. */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  try {
+    const R = (date, recv) => ({ date, sup: "SA5-BTR", recv, rate: 50, cost: recv * 50, left: 0, costLeft: 0 });
+    const pick = (rows) => JSON.parse(w.eval("JSON.stringify((currentLot(" + JSON.stringify({ rows }) + ")||{}).lot||null)"));
+    /* lotOutlook sorts undated receipts LAST, so taking the final row outright made an undated lot
+       the current lot and printed its date as the word undefined. Same rule as supplierStats keeps
+       for last paid: an undated receipt is not known to be the newest. */
+    const a = pick([R("2026-09-01", 10), R(null, 5)]);
+    ok(a && a.date === "2026-09-01", `an undated receipt does not become the current lot (${a && String(a.date)})`);
+    const b = pick([R("2026-09-01", 10), R("2026-09-05", 8)]);
+    ok(b && b.date === "2026-09-05", `the newest dated lot is the current one (${b && String(b.date)})`);
+    const c = pick([R(null, 5)]);
+    ok(c && !c.date, "with nothing dated at all the last row still stands, and the card says so");
+    ok(pick([]) === null, "and no receipt at all returns null rather than an empty card");
+    /* the cadence is measured off the rows, never typed: SOURCING_PLAN's "monthly, on the ceiling
+       reset" was contradicted by the book four times in the fortnight before it was retired */
+    const g = JSON.parse(w.eval("JSON.stringify(currentLot(" + JSON.stringify({ rows: [R("2026-09-01", 10), R("2026-09-05", 8), R("2026-09-08", 6)] }) + ").gaps)"));
+    ok(JSON.stringify(g) === "[4,3]", `the cadence is the gaps the lots actually left (${JSON.stringify(g)})`);
+    /* the lot AS BOUGHT, beside the lot as landed: the 08 Sep lot was 50 unit for RM2,200 with
+       12.5 still to come, and the card called it 37.5 unit at RM1,650 until the row carried both */
+    const RB = (date, recv, qty, total) => ({ date, sup: "SA5-BTR", recv, rate: 44, cost: recv * 44, left: 0, costLeft: 0, qty, total, freight: 36 });
+    const bought = JSON.parse(w.eval("JSON.stringify(currentLot(" + JSON.stringify({ rows: [RB("2026-09-08", 37.5, 50, 2200)] }) + "))"));
+    ok(bought.qty === 50 && bought.total === 2200 && bought.owed === 12.5,
+      `the card reports the lot as bought, and names what is still to come (${bought.qty} unit, ${bought.total}, ${bought.owed} owed)`);
+    const landed = JSON.parse(w.eval("JSON.stringify(currentLot(" + JSON.stringify({ rows: [{ date: "2026-09-08", sup: "X", recv: 10, rate: 50, cost: 500, left: 0, costLeft: 0 }] }) + "))"));
+    ok(landed.qty === 10 && landed.owed === 0, "and falls back to what landed where the row carries no bought figure");
+    /* AN EMPTY BOOK DOES NOT GET A DATE. free is the inventory less what is owed out, so on Oil it
+       is negative and dividing it by the sell rate printed a dry date in the PAST under a heading
+       in the future tense. Read both ways, on whichever book is in which state. */
+    const state = (p) => JSON.parse(w.eval("(function(){setProd(" + JSON.stringify(p) + ");recompute();var x=currentLot();var h=tabSourcing();return JSON.stringify({empty:x?x.empty:null,free:x?x.free:null,says:h.indexOf('empty already')>=0});})()"));
+    let bothWays = 0;
+    for (const p of JSON.parse(w.eval("JSON.stringify(PROD_IDS)"))) {
+      const st = state(p);
+      if (st.empty === null) continue;
+      bothWays |= st.empty ? 1 : 2;
+      ok(st.empty === (st.free <= 0.009), `${p}: the empty flag says what the free figure says (${st.free})`);
+      ok(st.empty === st.says, `${p}: and the card says "empty already" exactly when it is (${st.empty})`);
+    }
+    ok(bothWays === 3, `and the two books read the rule in both directions (${bothWays})`);
+    w.eval("setProd('salt');recompute();");
+    w.eval("setProd('salt');recompute();switchTab('sourcing');");
+    const txt = String(w.eval("document.querySelector('.sec.on').textContent"));
+    ok(/The current lot/.test(txt), "the tab leads on the current lot");
+    ok(!/Lands in time|Stated lot|Gap to cover|Pull it forward/.test(txt), "and no card promises a stated next lot");
+  } finally { try { w.close(); } catch (e) { } }
 }
 
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);

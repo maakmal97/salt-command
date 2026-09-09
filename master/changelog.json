@@ -1,5 +1,17 @@
 [
  {
+  "v": "v549",
+  "d": "09 Sep 2026",
+  "t": "THE SOURCING SECTION IS THE CURRENT LOT, NOT A NEXT LOT NOBODY PLANNED",
+  "n": [
+   "<b>HIS INSTRUCTION, 09 SEP 2026, ON A SCREENSHOT OF THE STATED LOT CARD:</b> 'Outdated information', then 'generally no information on when I purchase', then 'in fact, this whole section should be the current lot, not the next lot'. The card read '50 unit, the 28th, by 2026-08-28, 12 days past its date'. SOURCING_PLAN had been typed on 24 Aug and the book had overtaken it four times since: 25 unit on 26 Aug, 25 on 31 Aug, 25 on 03 Sep and 50 on 08 Sep. A purchase date he does not fix in advance cannot be typed into the book without becoming a lie the desk repeats.",
+   "<b>THE GREEN CARD WAS THE WORSE FAULT.</b> 'Lands in time: none, the lot lands before the inventory empties' was drawn in green beside the stale date. `late` was daysToTarget minus the days of cover, so once the target date had PASSED the subtraction went safely negative and the check could no longer fail. The desk reported that the lot would land in time BECAUSE the plan had failed. An assertion that cannot fail passes, and so did this one, for twelve days.",
+   "<b>WHAT THE SECTION SAYS NOW.</b> The newest lot that actually landed, what it cost on the goods and effective, what is left of it and at cost, when the inventory runs dry on both rates, when the reorder mark arrives, and the lot against a month of demand. The cadence is MEASURED off the book, the gaps his last few lots really left, and the footer says in terms that the desk does not know when he will buy again and does not guess. The gap, the bridge, the pull-forward, the 'if it lands' cash and SOURCING_PLAN itself are retired; the ceiling fact inside its basis is kept in NOTES.SOURCING_PLAN. The section is no longer salt-only: a lot that landed is a fact every book has, so oil gets it too, and a book with no receipt gets a chip on the heading rather than an empty card.",
+   "<b>AN UNDATED RECEIPT IS NOT THE CURRENT LOT, WHICH THE CENSUS CAUGHT.</b> lotOutlook sorts undated lots last, so taking the final row outright made the v456 fixture's undated lot the current one and printed its date as the word undefined. Same rule supplierStats has kept for last paid since 08 Sep: an undated receipt is not known to be the newest. The newest DATED lot is taken, the final row still stands where nothing is dated at all, and the card says 'not dated' rather than going blank.",
+   "<b>PROVED RED FIRST.</b> Seven assertions. currentLot takes the lot outlook's rows as an argument, so the choice of lot is tested on synthetic rows with no fixture book near it: an undated receipt does not win, the newest dated one does, the last row stands when nothing is dated, an empty book returns null, and the cadence is the gaps the lots left. Two more read the rendered tab: it leads on the current lot, and no card says Lands in time, Stated lot, Gap to cover or Pull it forward. Against the master with the dated-lot rule reverted, the undated assertion reads back null and the census fails on sourcing again."
+  ]
+ },
+ {
   "v": "v548",
   "d": "09 Sep 2026",
   "t": "A PLACE STILL TO BE CONFIRMED CAN BE ENTERED, AND THE MAP'S REASON PRINTS ITS AMPERSAND",

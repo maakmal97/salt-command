@@ -415,17 +415,6 @@
       }
     ]
   },
-  "SOURCING_PLAN": {
-    "statedOn": "2026-08-24",
-    "qty": 50,
-    "by": "2026-08-28",
-    "label": "the 28th",
-    "cadence": "monthly, on the ceiling reset",
-    "basis": "His decision of 24 Aug. The purchase ceiling of RM4,500 resets on the 28th of each month and anything beyond it comes out of rolling cash. 50 unit at RM2,200 plus the RM60 collection trip is RM2,260, well inside the ceiling.",
-    "assumedRate": 44,
-    "rateBasis": "quoted and paid on the 20 Aug ladder's 50 unit tier",
-    "note": "THE 100 UNIT TIER WAS THE RECOMMENDATION AND HE HAS TAKEN THE 50. Landed cost is RM45.20 a unit against RM43.60, so this lot costs RM80 more than the same salt bought at the top tier, and it covers about a fortnight rather than three weeks. RM4,360 would have fitted the ceiling with RM140 to spare. Recorded as his call, not as an error."
-  },
   "CASH_COUNT_RETIRED": {
     "on": "2026-07-28",
     "amount": 8950,
@@ -452,6 +441,9 @@
     }
   },
   "NOTES": {
+    "SOURCING_PLAN": [
+      "RETIRED AT v549 on 2026-09-09, his instruction. The key held one hand-typed lot: 50 unit by 2026-08-28, stated on the 24th. He read it on 9 September with the date twelve days gone and four lots landed since (25 unit on 26 Aug, 25 on 31 Aug, 25 on 03 Sep and 50 on 08 Sep), and said he generally has no information on when he purchases. The Sourcing section is now about the CURRENT lot, and the cadence is measured off the book rather than typed. One standing fact from the retired basis is kept here because it is not a plan: the purchase ceiling of RM4,500 resets on the 28th of each month and anything beyond it comes out of rolling cash. The rest was the 24 Aug reasoning, that the 100 unit tier was the recommendation and he took the 50, at a landed RM45.20 a unit against RM43.60."
+    ],
     "STATED_STOCK": [
       "ROLLED AT v545: 6.25 unit to CK4-SEN on 2026-09-09, so 38.5 less 6.25 is 32.25. A ROLL AND NOT A COUNT; COUNT_ON is untouched. The 6.25 unit went out on 09 Sep against a salt count taken 08 Sep, with 5.5 unit in from CH5-OUG and 1.5 unit in from CA11-SEN still open. Stock stays above the reorder mark of 15 unit.",
       "ROLLED AT v544: 37.5 unit from SA5-BTR on 2026-09-08, so 1 plus 37.5 is 38.5. A ROLL AND NOT A COUNT; COUNT_ON is untouched. The 37.5 unit landed on 08 Sep against the salt count of that date; 12.5 unit of the 50 remain to be delivered although the order is paid in full.",

@@ -68,7 +68,7 @@ document.addEventListener('visibilitychange',function(){
    localStorage before it posts anything and the load reads it straight back.
    The same tick retries a held entry, which is what gets a phone write to the cloud
    without waiting for the next open. */
-var SALT_BUILD_ID="6d416db72da57bb7";
+var SALT_BUILD_ID="ed173293533fdfbc";
 var SALT_REV_MS=10000;
 (function(){
   var chip=null,timer=null;
@@ -4772,17 +4772,6 @@ const oilQuote={
     }
   ]
 };
-const SOURCING_PLAN={
-  "statedOn": "2026-08-24",
-  "qty": 50,
-  "by": "2026-08-28",
-  "label": "the 28th",
-  "cadence": "monthly, on the ceiling reset",
-  "basis": "His decision of 24 Aug. The purchase ceiling of RM4,500 resets on the 28th of each month and anything beyond it comes out of rolling cash. 50 unit at RM2,200 plus the RM60 collection trip is RM2,260, well inside the ceiling.",
-  "assumedRate": 44,
-  "rateBasis": "quoted and paid on the 20 Aug ladder's 50 unit tier",
-  "note": "THE 100 UNIT TIER WAS THE RECOMMENDATION AND HE HAS TAKEN THE 50. Landed cost is RM45.20 a unit against RM43.60, so this lot costs RM80 more than the same salt bought at the top tier, and it covers about a fortnight rather than three weeks. RM4,360 would have fitted the ceiling with RM140 to spare. Recorded as his call, not as an error."
-};
 const CASH_COUNT_RETIRED={
   "on": "2026-07-28",
   "amount": 8950,
@@ -5370,74 +5359,76 @@ let NAME_VAULT=null;
    old ladder gave RM4 a unit at the 25 step and RM4 again at the 50; this one gives RM2 at the
    25 and RM6 at the 50, so 50 unit is where it pays and 25 has stopped paying much. */
 /* supplierQuote: declared in the BOOK block near the top of this script, generated from ledger/book.json (v339). */
-/* ============ THE NEXT LOT, AS STATED (v220) ============
-   His intention, put on the Sourcing tab at his request. It is a PLAN and it books
-   nothing: no inventory, no payable, no in-transit, no effect on cost or on the board.
-   Only the target quantity, the target date and the reasoning are typed. Every figure
-   the section shows is derived at render time from coverStats() and the live sell
-   rate, so a stated date cannot quietly go stale while the inventory moves underneath it.
-   Stated 05 Aug 2026: a big lot at the end of the month, about 150 unit, on the
-   reading that next week is already covered. Next week IS covered. End August is not
-   the same question, and the section says so rather than agreeing politely. */
-/* SOURCING_PLAN: declared in the BOOK block near the top of this script, generated from ledger/book.json (v339). */
-/* What the stated plan implies, derived rather than typed. Returns nulls rather than
-   guesses where the sell rate is zero, because a cover figure divided by nothing is
-   the sort of number that looks like information. */
-function sourcingPlan(){
-  const P=SOURCING_PLAN, cv=coverStats(), MS=86400000;
+/* ============ THE CURRENT LOT (v549, 09 Sep 2026, his instruction) ============
+   This was THE NEXT LOT, AS STATED (v220): a target quantity, a target date and the reasoning
+   typed into the book, with every figure beside them derived. The v220 note promised that "a
+   stated date cannot quietly go stale while the inventory moves underneath it", and that is
+   exactly what it did. The plan said 50 unit by 28 August. He read it on 9 September with the
+   date twelve days gone and four lots landed since, the last of them 50 unit on the 8th. He
+   does not fix a purchase date in advance, so a typed one can only become a lie the desk keeps
+   repeating.
+   THE TRAFFIC LIGHT WAS WORSE THAN THE STALE FIGURE. `late` was daysToTarget minus the days of
+   cover, so once the target date had PASSED the subtraction went safely negative and the card
+   turned green: the desk reported "lands in time" because the plan had failed. A check that
+   cannot fail is not a check, which is the same fault as the instruments in the audit note.
+   So the section is about the lot he HAS. Every figure is read off the newest lot that actually
+   landed and the live sell rate, and the cadence is MEASURED from the book rather than typed.
+   With the target date go the gap, the bridge, the pull-forward and SOURCING_PLAN itself.
+   Returns null where nothing has been received: a section about the current lot with no lot is
+   a heading and nothing else. */
+function currentLot(L){
+  const rows=(L||lotOutlook()).rows, cv=coverStats(), MS=86400000;
+  if(!rows.length)return null;
   const iso=d=>d.toISOString().slice(0,10);
+  /* THE NEWEST DATED LOT, and the same rule supplierStats keeps for last paid (08 Sep 2026): an
+     undated receipt is not known to be last, so it cannot be the current one. lotOutlook sorts
+     undated last, so taking the final row outright made an undated lot the current lot and printed
+     its date as the word undefined, which the v456 census caught. Where NOTHING is dated the final
+     row still stands, and the card says "not dated" rather than going blank on him. */
+  const dated=rows.filter(r=>r.date);
+  const lot=dated.length?dated[dated.length-1]:rows[rows.length-1];
+  const undatedRecv=rows.length-dated.length;
   const free=cv.free, rate=cv.rate, r28=cv.rate28;
-  const target=new Date(P.by+'T00:00:00.000Z');
-  const daysToTarget=Math.round((target-TODAY)/MS);
-  /* two rates, deliberately. The fortnight rate is what the inventory faces now; the
-     four-week rate is the sceptical read, and on this book it is the FASTER of the
-     two, so it shortens every date rather than flattering it. */
-  const dryD =rate>0?+(free/rate).toFixed(1):null;
+  /* two rates, as before and for the same reason. The fortnight rate is what the inventory
+     faces now; the four-week rate is the sceptical read, and on this book it is the FASTER of
+     the two, so it shortens every date rather than flattering it. */
+  const dryD  =rate>0?+(free/rate).toFixed(1):null;
   const dryD28=r28>0?+(free/r28).toFixed(1):null;
-  const dry  =dryD!=null?iso(new Date(TODAY.getTime()+dryD*MS)):null;
-  const dry28=dryD28!=null?iso(new Date(TODAY.getTime()+dryD28*MS)):null;
-  const reD  =rate>0?+((free-reorderFor(PROD))/rate).toFixed(1):null;
+  const dry   =dryD!=null?iso(new Date(TODAY.getTime()+dryD*MS)):null;
+  const dry28 =dryD28!=null?iso(new Date(TODAY.getTime()+dryD28*MS)):null;
+  const mark=reorderFor(PROD);
+  const reD =rate>0?+((free-mark)/rate).toFixed(1):null;
   const reorder=reD!=null?iso(new Date(TODAY.getTime()+Math.max(0,reD)*MS)):null;
-  /* the gap is the whole point: days the inventory is empty between running dry and the
-     stated lot landing. Negative means the lot lands before the inventory empties. */
-  const gapDays=dryD!=null?+(daysToTarget-dryD).toFixed(1):null;
-  const gapUnits  =gapDays!=null&&gapDays>0?+(gapDays*rate).toFixed(2):0;
-  /* the bridge that would hold the stated date, and the lot that would remove the
-     need for one. Neither is booked and neither is a recommendation on its own. */
-  const bridge=gapUnits>0?+(Math.ceil(gapUnits/5)*5).toFixed(2):0;
-  const pullD=Math.max(0,reD!=null?reD:(dryD||0));
-  const pullTo=dryD!=null?iso(new Date(TODAY.getTime()+pullD*MS)):null;
-  // what the stated lot does, at the assumed rate and at expected shrinkage
-  const q=P.qty, rt=P.assumedRate, lvl=shrinkPctFor('expected');
-  const lossUnits=+(q*lvl/100).toFixed(2), usable=+(q-lossUnits).toFixed(2);
-  const cash=+(q*rt).toFixed(2);
-  const eff=+(cash/Math.max(0.01,usable)).toFixed(2);
-  const _oc=opening.costPerKg!=null;
-  const newWavg=+(((buyRM+(_oc?opening.qty*opening.costPerKg:0))+cash)/((buyUnits+(_oc?opening.qty:0))+q)).toFixed(2);
+  /* v549: AN EMPTY BOOK DOES NOT GET A DATE. free is the inventory less what is already owed
+     out, so on Oil it is -35 unit, and dividing that by the sell rate projected the inventory
+     running dry 7.5 days AGO and printed 2026-09-01 under a heading in the future tense. Same
+     shape as the traffic light this section replaced: a figure computed forward off a quantity
+     that has already gone negative. Where nothing is free the card says so instead. */
+  const empty=free<=0.009;
+  /* what the lot bought, at the expected level the rest of the tab plans on. Struck on the lot
+     AS BOUGHT, because that is what he paid; `owed` is the part he has paid for and not yet had. */
+  const qty=lot.qty!=null?lot.qty:lot.recv, total=lot.total!=null?lot.total:lot.cost;
+  const owed=+(qty-lot.recv).toFixed(2);
+  const lvl=shrinkPctFor('expected');
+  const usable=+(qty*(1-lvl/100)).toFixed(2);
+  const eff=+(total/Math.max(0.01,usable)).toFixed(2);
   const cover=rate>0?+(usable/rate).toFixed(1):null;
+  const coverLeft=rate>0?+(lot.left/rate).toFixed(1):null;
   const monthly=+(rate*30).toFixed(1), monthly28=+(r28*30).toFixed(1);
-  /* where each route actually leaves the inventory, worked rather than asserted. The first
-     draft of this section claimed pulling the lot forward would put the cadence back at
-     month end on its own; it does not, because the cover a lot buys and the length of a
-     month are different numbers, and the honest date is stated instead. */
-  const pullDry=(cover!=null&&pullTo)?iso(new Date(TODAY.getTime()+(pullD+cover)*MS)):null;
-  /* the bridge route, on the stated date: what is on the inventory the morning after the
-     big lot lands. Everything is counted, including the salt already there and the
-     selling that happens between now and then, both of which the first pass omitted. */
-  const bridgeUsable=+(bridge*(1-lvl/100)).toFixed(2);
-  const bridgeShelf=+(free-rate*daysToTarget+bridgeUsable+usable).toFixed(2);
-  const bridgeCover=rate>0?+(Math.max(0,bridgeShelf)/rate).toFixed(1):null;
-  // concentration: the exposure this lot adds to a name that already carries the book
-  const ss=supplierStats(), top=ss.length?ss[0]:null;
-  const lost=(typeof supplierReceivable!=='undefined'&&supplierReceivable)?supplierReceivable.amount:0;
-  const biggest=purchases.filter(p=>!p.pending&&!p.defaulted)
-    .reduce((a,p)=>(p.qty>(a?a.qty:0)?p:a),null);
-  return {P,free,rate,r28,dryD,dryD28,dry,dry28,reD,reorder,daysToTarget,gapDays,gapUnits,bridge,pullTo,pullDry,
-    bridgeUsable,bridgeShelf,bridgeCover,
-    q,rt,lvl,lossUnits,usable,cash,eff,newWavg,cover,monthly,monthly28,top,lost,biggest,
-    multiple:biggest?+(q/biggest.qty).toFixed(1):null,
-    lostMultiple:lost>0?+(cash/lost).toFixed(1):null,
-    quoted:((quoteFor(PROD)||{}).tiers||[]).some(t=>t.qty>=q)};
+  /* THE CADENCE IS MEASURED, NOT DECLARED. The retired block typed "monthly, on the ceiling
+     reset" and the book disagreed with it four times in a fortnight. These are the gaps his
+     last few lots actually left, reported as a fact about the past rather than a promise about
+     the next one. */
+  const dates=rows.map(r=>r.date).filter(Boolean);
+  const gaps=[];
+  for(let i=Math.max(1,dates.length-4);i<dates.length;i++)
+    gaps.push(Math.round((new Date(dates[i])-new Date(dates[i-1]))/MS));
+  const gapAvg=gaps.length?+(gaps.reduce((a,x)=>a+x,0)/gaps.length).toFixed(1):null;
+  const biggest=pPurch(PROD).filter(poLive).reduce((a,p)=>(p.qty>(a?a.qty:0)?p:a),null);
+  return {lot,free,rate,r28,dryD,dryD28,dry,dry28,reD,reorder,mark,below:free<mark,
+    qty,total,owed,recvOnLot:lot.recv,empty,lvl,usable,eff,cover,coverLeft,monthly,monthly28,gaps,gapAvg,undatedRecv,
+    age:lot.date?dAge(lot.date):null,
+    multiple:biggest?+(qty/biggest.qty).toFixed(1):null};
 }
 /* ============ PRODUCTS: THE DESK BECOMES MULTI-COMMODITY (v228) ============
    v226 bolted oil on beside the salt books because one sale did not justify a refactor.
@@ -5609,7 +5600,9 @@ const whiteboard=[
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{"v":"v548","d":"09 Sep 2026","t":"A PLACE STILL TO BE CONFIRMED CAN BE ENTERED, AND THE MAP'S REASON PRINTS ITS AMPERSAND","n":["<b>HIS INSTRUCTION, 09 SEP 2026, ON A SCREENSHOT:</b> the map's reason for a TBC code printed 'Names &amp; IDs' with the entity showing, and a place still to be confirmed could not be entered when adding a name and ID. The first is one character in geo/places.json: the reason is escaped where it is rendered, so an entity in the source is escaped twice. The second was both forms refusing a blank place outright, 'Type the place' on the phone and 'A location is needed too' on the laptop, though the map has read the suffix TBC as 'nobody has recorded where this party is' since v347 and CE5-TBC was registered on 06 Sep on exactly that footing.","<b>A BLANK PLACE IS AN ANSWER, AND IT TAKES THE SUFFIX TBC.</b> On the phone, a blank place is filed into the vault as 'to be confirmed' when the code ends in TBC, and refused with the code it should be when the code names a place, because filing a place the party does not have is the wrong record. On the laptop's Names & IDs, a blank location derives the TBC suffix and files '(to be confirmed)'. Both fields say so in their placeholder. The code is re-keyed by Correction when the place is known, and the row keeps its id.","<b>PROVED RED FIRST.</b> Four assertions: the phone refuses a blank place on a code that names one with the TBC wording; a blank place on CZ9-TBC registers and the vault opens to 'Test Person (to be confirmed)'; the laptop panel derives CT11-TBC from a blank location; and the map's text reads 'Names & IDs' with no entity. Against the unchanged master the first three read the old refusals and the fourth found the entity."]},
+const evolution=[{"v":"v549","d":"09 Sep 2026","t":"THE SOURCING SECTION IS THE CURRENT LOT, NOT A NEXT LOT NOBODY PLANNED","n":["<b>HIS INSTRUCTION, 09 SEP 2026, ON A SCREENSHOT OF THE STATED LOT CARD:</b> 'Outdated information', then 'generally no information on when I purchase', then 'in fact, this whole section should be the current lot, not the next lot'. The card read '50 unit, the 28th, by 2026-08-28, 12 days past its date'. SOURCING_PLAN had been typed on 24 Aug and the book had overtaken it four times since: 25 unit on 26 Aug, 25 on 31 Aug, 25 on 03 Sep and 50 on 08 Sep. A purchase date he does not fix in advance cannot be typed into the book without becoming a lie the desk repeats.","<b>THE GREEN CARD WAS THE WORSE FAULT.</b> 'Lands in time: none, the lot lands before the inventory empties' was drawn in green beside the stale date. `late` was daysToTarget minus the days of cover, so once the target date had PASSED the subtraction went safely negative and the check could no longer fail. The desk reported that the lot would land in time BECAUSE the plan had failed. An assertion that cannot fail passes, and so did this one, for twelve days.","<b>WHAT THE SECTION SAYS NOW.</b> The newest lot that actually landed, what it cost on the goods and effective, what is left of it and at cost, when the inventory runs dry on both rates, when the reorder mark arrives, and the lot against a month of demand. The cadence is MEASURED off the book, the gaps his last few lots really left, and the footer says in terms that the desk does not know when he will buy again and does not guess. The gap, the bridge, the pull-forward, the 'if it lands' cash and SOURCING_PLAN itself are retired; the ceiling fact inside its basis is kept in NOTES.SOURCING_PLAN. The section is no longer salt-only: a lot that landed is a fact every book has, so oil gets it too, and a book with no receipt gets a chip on the heading rather than an empty card.","<b>AN UNDATED RECEIPT IS NOT THE CURRENT LOT, WHICH THE CENSUS CAUGHT.</b> lotOutlook sorts undated lots last, so taking the final row outright made the v456 fixture's undated lot the current one and printed its date as the word undefined. Same rule supplierStats has kept for last paid since 08 Sep: an undated receipt is not known to be the newest. The newest DATED lot is taken, the final row still stands where nothing is dated at all, and the card says 'not dated' rather than going blank.","<b>PROVED RED FIRST.</b> Seven assertions. currentLot takes the lot outlook's rows as an argument, so the choice of lot is tested on synthetic rows with no fixture book near it: an undated receipt does not win, the newest dated one does, the last row stands when nothing is dated, an empty book returns null, and the cadence is the gaps the lots left. Two more read the rendered tab: it leads on the current lot, and no card says Lands in time, Stated lot, Gap to cover or Pull it forward. Against the master with the dated-lot rule reverted, the undated assertion reads back null and the census fails on sourcing again."]},
+
+{"v":"v548","d":"09 Sep 2026","t":"A PLACE STILL TO BE CONFIRMED CAN BE ENTERED, AND THE MAP'S REASON PRINTS ITS AMPERSAND","n":["<b>HIS INSTRUCTION, 09 SEP 2026, ON A SCREENSHOT:</b> the map's reason for a TBC code printed 'Names &amp; IDs' with the entity showing, and a place still to be confirmed could not be entered when adding a name and ID. The first is one character in geo/places.json: the reason is escaped where it is rendered, so an entity in the source is escaped twice. The second was both forms refusing a blank place outright, 'Type the place' on the phone and 'A location is needed too' on the laptop, though the map has read the suffix TBC as 'nobody has recorded where this party is' since v347 and CE5-TBC was registered on 06 Sep on exactly that footing.","<b>A BLANK PLACE IS AN ANSWER, AND IT TAKES THE SUFFIX TBC.</b> On the phone, a blank place is filed into the vault as 'to be confirmed' when the code ends in TBC, and refused with the code it should be when the code names a place, because filing a place the party does not have is the wrong record. On the laptop's Names & IDs, a blank location derives the TBC suffix and files '(to be confirmed)'. Both fields say so in their placeholder. The code is re-keyed by Correction when the place is known, and the row keeps its id.","<b>PROVED RED FIRST.</b> Four assertions: the phone refuses a blank place on a code that names one with the TBC wording; a blank place on CZ9-TBC registers and the vault opens to 'Test Person (to be confirmed)'; the laptop panel derives CT11-TBC from a blank location; and the map's text reads 'Names & IDs' with no entity. Against the unchanged master the first three read the old refusals and the fourth found the entity."]},
 {"v":"v547","d":"09 Sep 2026","t":"THE LEDGER ENTRY IS TWO ROWS: THE ORDER AS IT STANDS, THEN WHAT LAST HAPPENED TO IT","n":["<b>HIS SCHEMATIC, 09 SEP 2026: AN ENTRY IS TWO ROWS.</b> Row 1 is the order as it stands, the figure carrying the state: a part-delivered order reads 4 of 12.5 unit and a part-paid one RM 8 of RM 118. Row 2 is the transaction: the date when it differs from the order's, Open or Closed, the kind, then the units and the RM that moved. A closed entry folds to its first row; an open one keeps its latest line in view; a tap on the entry opens the whole trail. The credit-days collapse of v254 and the Opened role are retired.","<b>THE FIRST LINE IS WHAT MOVED AT BOOKING, AGREED WHEN NOTHING DID</b>, and a movement on the same day overwrites Agreed rather than following it. Open or Closed on every line is the entry's state after that line: the replay's reading, the last movement of a completed entry, a Cancellation or a Default. A Correction is a line of its own, saying in the row's own words what it moved, and inherits the state of the line before it.","<b>THE SELL OR BUY TAG SITS UNDER THE E-NUMBER</b>, at the entry's corner, so a folded entry still says which it is. <b>THE PEN AT THE OTHER CORNER REPLACES THE UPDATE BUTTON:</b> shown on hover and always faintly on a touch screen, it opens a short menu of the simple transactions, paid in full, delivered or received in full, completed, each the editor's own chip with the outstanding figures filled in, then Modification and More for the editor itself.","<b>NO ROW MOVED AND NO FIGURE CHANGED.</b> A display change only. The suite's ledger assertions were rewritten to the new shape and hold it: the fold, the tap, the roles on every line, the tag and the pen."]},
 
 {"v":"v546","d":"09 Sep 2026","t":"FULFILMENT ON THE 50 UNIT CA7-JTR OIL ORDER S140: RM450 AND 50 UNIT MOVE ON 09 SEP, THE ROW SETTLES IN FULL","n":["<b>ONE ROW FOLDED, A FULFILMENT AND NOTHING ELSE.</b> The pending oil order s140 with CA7-JTR, 50 unit for RM450 agreed 08 Sep, is met in full: RM450 cash and 50 unit recorded on 09 Sep against RM450 and 50 unit outstanding, leaving RM0 and 0 unit. The row itself is not recomputed in this fold, the master's amend path applies it, so there is one definition of what a fulfilment does rather than two.","<b>THE INVENTORY DID NOT MOVE ON THIS FOLD.</b> The movement is oil, 50 unit out to CA7-JTR dated 09 Sep, and the salt position stands where the count of 08 Sep left it at 32.25 unit, with cost at RM44 and replacement at RM46. The oil count still dates from 23 Aug, so this fulfilment runs against a count two weeks and more behind. CA7-JTR's outstanding of RM450 clears to nothing and no units sit on credit."]},
@@ -5941,7 +5934,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='09 Sep 2026, 10:49 KL';
+const LAST_UPDATED='09 Sep 2026, 13:30 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -8588,7 +8581,12 @@ function lotOutlook(){
     const expUnits=+(left*(1-shrink)).toFixed(2);
     const expRev=+(expUnits*mean).toFixed(2);
     const costLeft=+(left*l.rate).toFixed(2);
+    /* v549: THE LOT AS BOUGHT, beside the lot as landed. The row carried received units only,
+       so the current-lot card called the 08 Sep lot 37.5 unit at RM1,650 when he had bought 50
+       for RM2,200 and was still owed 12.5. What landed is the right basis for what is LEFT; what
+       was bought is the right basis for what it COST him. Both, and the difference named. */
     return {date:l.date,sup:l.sup,recv:l.recv,rate:l.rate,cost:cost,
+      qty:l.p.qty,total:l.p.total,freight:+(l.p.freight||0),
       consumed:+consumed.toFixed(2),leak:+leak.toFixed(2),left:left,
       maxRev:maxRev,maxMar:+(maxRev-costLeft).toFixed(2),
       expRev:expRev,expMar:+(expRev-costLeft).toFixed(2),
@@ -8665,13 +8663,13 @@ function tabSourcing(){
      existed only to feed it: the quantity and rate overrides, the arrival day, the
      what-if forecast, the quick-set chips, the shrinkage level switch, the re-priced
      board and the cover it would have bought. What remains is the record and the plan. */
-  const c=pxCost(),sg=pxSignals(),cv=coverStats(),ss=supplierStats();
+  const c=pxCost(),sg=pxSignals(),cv=coverStats(),ss=supplierStats(),LO=lotOutlook();
   /* v385: the freight divisor, read for the KPI below. It is meanLotQty and not c.lotQty:
      from v382 a trip is spread over the AVERAGE lot this book has received, not the latest
      one, so the per-unit freight is the SAME at every tier and lot size no longer buys a
      cheaper trip. Nothing on this tab said so, and it is the tab the statement belongs on. */
   const ml=meanLotQty(PROD);
-  /* v385: the plan's shrinkage level, so the tab can say WHICH leak it is using. sourcingPlan
+  /* v385: the section's shrinkage level, so the tab can say WHICH leak it is using. currentLot
      takes shrinkPctFor('expected'), 7.5%, while every cost figure four inches above it is
      struck on the observed rate. Both are correct and SHRINK's own note says so in terms: the
      board prices off observed, expected exists so a decision can be tested against where the
@@ -8688,43 +8686,39 @@ function tabSourcing(){
     <div class="kpi ${ss.some(s=>s.defaults)?'r':'g'}"><div class="l">Lost to defaults</div><div class="v">${fmt0(ss.reduce((a,s)=>a+s.defaultRM,0))}</div><div class="n">${ss.reduce((a,s)=>a+s.defaults,0)} lot${ss.reduce((a,s)=>a+s.defaults,0)===1?'':'s'} paid for and never delivered</div></div>
   </div>
 
-  <h2 style="margin-top:18px">The next lot ${PROD===DEFAULT_PROD?`<span class="sub" style="font-weight:400">stated ${SOURCING_PLAN.statedOn}, and what the inventory says about it</span>`:'<span class="rtag">no stated plan</span>'} <span class="rule"></span></h2>
-  ${PROD!==DEFAULT_PROD?''/* v385: THE STATE GOES ON THE HEADING AND THE CARD GOES. The card held one
-      free-standing .dsc, which is exactly what stripMethod sweeps, so every book but Salt drew
-      a heading promising the next lot over a completely empty box. SOURCING_PLAN is one
-      hand-entered lot on the Salt ladder and there is nothing else to say; a chip says it. */
-    :(()=>{const s=sourcingPlan();
-    const late=s.gapDays!=null&&s.gapDays>0;
-    return `<div class="card">
+  ${(()=>{const s=currentLot(LO);
+    /* v549: no product gate here any more. The old section was salt-only because SOURCING_PLAN
+       was one hand-typed salt lot and every other book drew a heading over an empty box. A lot
+       that landed is a fact every book has, so oil gets the same section and a book with no
+       receipt gets a chip on the heading, which is the v385 shape. */
+    const hd=c=>`<h2 style="margin-top:18px">The current lot ${c?`<span class="rtag">${c}</span>`
+      :'<span class="sub" style="font-weight:400">the newest one that landed, and what the inventory says about it</span>'} <span class="rule"></span></h2>`;
+    if(!s)return hd('no lot received yet');
+    return hd('')+`<div class="card">
     <div class="kpis k6">
-      <div class="kpi"><div class="l">Stated lot</div><div class="v">${units(s.q)}</div><div class="n">${s.P.label}, by ${s.P.by}, ${s.daysToTarget<0?`${-s.daysToTarget} day${s.daysToTarget===-1?'':'s'} past its date`:`${s.daysToTarget} day${s.daysToTarget===1?'':'s'} out`}</div></div>
-      <div class="kpi ${late?'r':'g'}"><div class="l">Inventory runs dry</div><div class="v" style="${late?'color:var(--crim)':''}">${s.dry||'&mdash;'}</div><div class="n">${s.dryD==null?'no sell rate':`${s.dryD} days at ${units(s.rate)}/day; ${s.dry28} at the four-week rate`}</div></div>
-      <div class="kpi ${late?'r':'g'}"><div class="l">${late?'Gap to cover':'Lands in time'}</div><div class="v" style="${late?'color:var(--crim)':'color:var(--grn)'}">${late?s.gapDays+'d':'none'}</div><div class="n">${late?`${units(s.gapUnits)} of demand with an empty inventory`:'the lot lands before the inventory empties'}</div></div>
-      <div class="kpi gold"><div class="l">Cover it buys</div><div class="v">${s.cover==null?'&mdash;':s.cover+'d'}</div><div class="n">${units(s.usable)} usable of ${units(s.q)}, at the ${s.lvl}% ${SL.label} level, not the ${(c.shrink*100).toFixed(1)}% charged today</div></div>
-      <div class="kpi"><div class="l">If it lands</div><div class="v">${fmt0(s.cash)}</div><div class="n">${fmt(s.rt)}/unit ${s.quoted?'quoted':'assumed'}, ${fmt(s.eff)} effective; average cost ${fmt(wavgBuy)} to ${fmt(s.newWavg)}</div></div>
-      <div class="kpi"><div class="l">Against a month</div><div class="v">${s.monthly>0.009?(s.q/s.monthly).toFixed(1)+'&times;':'&mdash;'}</div><div class="n">${s.monthly>0.009?`${units(s.q)} against ${units(s.monthly)} a month, ${units(s.monthly28)} at the four-week rate; ${s.multiple}&times; the largest lot bought`:'no demand rate to size it against'}</div></div>
+      <div class="kpi ${s.owed>0.009?'p':''}"><div class="l">Current lot</div><div class="v">${units(s.qty)}</div><div class="n">${s.lot.date||'not dated'}, from ${ID(s.lot.sup)}${s.age==null?'':`, ${s.age} day${s.age===1?'':'s'} ago`}${s.owed>0.009?`; ${units(s.recvOnLot)} landed and ${units(s.owed)} still to come`:''}</div></div>
+      <div class="kpi"><div class="l">What it cost</div><div class="v">${fmt0(s.total)}</div><div class="n">${fmt(s.lot.rate)}/unit on the goods${s.lot.freight?` plus ${fmt0(s.lot.freight)} freight`:''}, ${fmt(s.eff)} effective at the ${s.lvl}% ${SL.label} level; average cost ${fmt(wavgBuy)}</div></div>
+      <div class="kpi gold"><div class="l">Left of it</div><div class="v">${units(s.lot.left)}</div><div class="n">${fmt0(s.lot.costLeft)} at cost, of the ${units(s.recvOnLot)} landed${s.coverLeft==null?'':`; ${s.coverLeft} days at today's rate`}</div></div>
+      <div class="kpi ${s.below?'r':'g'}"><div class="l">Inventory runs dry</div><div class="v" style="${s.below?'color:var(--crim)':''}">${s.empty?'empty already':(s.dry||'&mdash;')}</div><div class="n">${s.empty?`nothing left to sell, at ${units(s.rate)}/day`:(s.dryD==null?'no sell rate':`${s.dryD} days at ${units(s.rate)}/day; ${s.dry28} at the four-week rate`)}</div></div>
+      <div class="kpi ${s.below?'r':''}"><div class="l">${s.below?'Short of the mark':'Reorder mark'}</div><div class="v" style="${s.below?'color:var(--crim)':''}">${s.below?units(s.mark-s.free):(s.reorder||'&mdash;')}</div><div class="n">${s.empty?`nothing free to sell${s.free<-0.009?`, and ${units(-s.free)} owed out beyond the inventory`:''}, against a ${units(s.mark)} mark`:s.below?`under the ${units(s.mark)} mark, with ${units(s.free)} free to sell`:`${units(s.free)} free to sell against a ${units(s.mark)} mark`}</div></div>
+      <div class="kpi"><div class="l">Against a month</div><div class="v">${s.monthly>0.009?(s.qty/s.monthly).toFixed(1)+'&times;':'&mdash;'}</div><div class="n">${s.monthly>0.009?`${units(s.qty)} against ${units(s.monthly)} a month, ${units(s.monthly28)} at the four-week rate; ${s.multiple}&times; the largest lot bought`:'no demand rate to size it against'}</div></div>
     </div>
     <div class="insight" style="margin-top:11px"><b>${!(s.rate>0)
         ? `No trade in the last four weeks, so there is no rate to say when the inventory empties.`
-        : late
-          ? `The stated lot lands ${s.gapDays} day${s.gapDays===1?'':'s'} after the inventory empties on ${s.dry}.`
-          : (s.reD!=null&&s.reD<=0)
-            ? `Under the reorder mark already, and the stated lot lands before the inventory empties.`
-            : `Covered to ${s.dry}, and the stated lot lands before that.`}</b>
-      ${units(s.free)} free to sell${(late||s.reD==null)?''
-        :s.reD<=0?` against a ${units(reorderFor(PROD))} mark`
-        :`; the ${units(reorderFor(PROD))} mark is not reached until <b>${s.reorder}</b>`}.</div>
-    ${late?`<div class="kpis k2" style="margin-top:11px">
-      <div class="kpi gold"><div class="l">Pull it forward</div><div class="v">${s.pullTo}</div><div class="n">${units(s.q)} landing when the inventory hits the reorder mark. One lot, one trip; ${s.cover} days of cover, to ${s.pullDry}.</div></div>
-      <div class="kpi p"><div class="l">Or hold the date and bridge it</div><div class="v">${units(s.bridge)}</div><div class="n">by ${s.reorder}, on top of the ${units(s.q)}. Two trips; ${fmt0(s.bridge*s.rt+s.cash)} committed inside four weeks, ${s.bridgeCover} days of cover on ${s.P.by}.</div></div>
-    </div>`:''}
-    ${''/* round 5: the lead called the rate an assumption even when s.quoted was true and the
-       basis beside it said "quoted and paid". A quoted rate keeps the figure and lets the
-       basis speak; only an unquoted one is called an assumption and told to get a quote. */}
-    <div class="dsc" style="margin-top:9px"><b>${fmt(s.rt)}/unit${s.quoted?'':' is an assumption'}:</b> ${esc(s.P.rateBasis)}${s.quoted?'':' <b>Get a quote at this size before treating any of it as real.</b>'}</div>
+        : s.empty
+          ? `The inventory is already empty${s.free<-0.009?`, and ${units(-s.free)} is owed out beyond it`:''}.`
+          : s.below
+            ? `Under the ${units(s.mark)} mark already, and the inventory empties on ${s.dry}.`
+            : `Covered to ${s.dry}, and the ${units(s.mark)} mark is not reached until ${s.reorder}.`}</b>
+      ${s.empty?`Nothing of this lot is left to sell.`:`${units(s.free)} free to sell, ${units(s.lot.left)} of it still on this lot.`}</div>
+    ${''/* v549: the cadence replaces the rateBasis line that stood here. It says what the book
+       knows and refuses the thing it does not: how often he HAS bought, never when he will. */}
+    <div class="dsc" style="margin-top:9px"><b>${s.gaps.length
+      ? `Your last ${s.gaps.length+1} lots landed ${s.gaps.join(', ')} days apart, ${s.gapAvg} on average.`
+      : `Only one lot on this book, so there is no cadence to read yet.`}</b> The desk does not know when you will buy again and does not guess; this is how often you have.${s.undatedRecv?` ${s.undatedRecv} landed lot${s.undatedRecv===1?' carries':'s carry'} no date, so ${s.undatedRecv===1?'it sits':'they sit'} in the inventory but not in the cadence.`:''}</div>
     </div>`;})()}
 
-  ${(()=>{const L=lotOutlook();
+  ${(()=>{const L=LO;
     const live=L.rows.filter(r=>r.left>0.009);
     /* v385: this block called the goods "salt" in five places, so Oil's inventory was worth
        RM153 "of salt" and Oil's leak was "salt that never reaches a customer". The tab is
@@ -18179,7 +18173,7 @@ const PART_Q={today:'what needs doing, ranked by the money at stake',
   receivables:'who owes you, what you owe, and what the ageing ladder says it is worth',
   financials:'the profit and loss, the cash position and the cost of doing business',
   inventory:'what is on the inventory, how long it lasts and where the shrinkage went',
-  sourcing:'the next lot: the quote, the taper, the leak and who you buy from',
+  sourcing:'the current lot: the quote, the taper, the leak and who you buy from',
   pricing:'the board, the floors and what the book has actually earned',
   concentration:'who buys, who to approach next, and the demand you could not serve',
   network:'associates, their downstream buckets and the rewards',
