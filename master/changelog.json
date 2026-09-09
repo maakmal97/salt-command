@@ -1,5 +1,16 @@
 [
  {
+  "v": "v558",
+  "d": "09 Sep 2026",
+  "t": "THE CONCENTRATION FIGURE HAD THREE READERS AND TWO RULES; NOW IT HAS ONE OF EACH",
+  "n": [
+   "<b>ONE FACT, THREE READERS, AND v557 SWEPT TWO OF THEM.</b> The concentration figure is drawn in three places on the Sourcing tab: the Top supplier share KPI, the share cell in the table, and the sentence under it. v557 made the cell a watch and followed it with the sentence, and left the KPI four inches above both on the bare recentShare&gt;80 rule. So Oil&rsquo;s 84 per cent went on reading as an alarm on a book that has never lost a ringgit, on the same screen as the two that had just stopped saying it.",
+   "<b>FOUND BY READING THE DEPLOYED BUILD, NOT THE DIFF.</b> A verification pass over live v557 caught it, because the rendered tab is the one place all three readers are visible at once; the diff shows only what moved. The check that missed it sliced from the &ldquo;Who you buy from&rdquo; heading and so could only ever prove two of the three.",
+   "<b>AND WIDENING THE CHECK FOUND A SECOND DISAGREEMENT, IN THE RULE ITSELF.</b> The sentence alarmed when THIS BOOK had lost money, the cell and the KPI when THIS SUPPLIER had. On salt those differ: SA5-BTR holds 100 per cent with no default of its own, while SF6-KLC took RM750 in July. Both readings are defensible alone and cannot both stand on one screen. The narrower one wins: the alarm is about the name in front of him. The book&rsquo;s history is not lost, it is stated in the sentence&rsquo;s own words two clauses along, and it stops shouting a third time in a colour that is meant to be scarce.",
+   "<b>THE CHECK NOW READS THE WHOLE TAB AND REQUIRES THE THREE TO AGREE,</b> against the rule computed from that book&rsquo;s own figures, so a fourth reader cannot be added quietly and neither can a fourth rule. Salt keeps one earned mark on the block, SF6-KLC&rsquo;s 67 per cent received; oil keeps none."
+  ]
+ },
+ {
   "v": "v557",
   "d": "09 Sep 2026",
   "t": "A TRUE ALARM, AND IT IS SCARCE ENOUGH TO MEAN SOMETHING; THE DESK STOPS TELLING HIM TO CHASE A PARTY HE HAS WRITTEN OFF",

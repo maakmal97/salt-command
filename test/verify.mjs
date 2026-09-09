@@ -8067,13 +8067,35 @@ section("v557: a true alarm, and it is scarce enough to mean something");
     }
     ok(checked >= 3, `every supplier row was read (${checked})`);
     ok(wrong.length === 0, wrong.length ? wrong.join(" ; ") : "each row's colours follow the rule, not the old thresholds");
-    /* and the whole point: the alarm is rare. Count crimson figures across both books' tables. */
-    let crimsons = 0;
+    /* ONE FACT, THREE READERS, ONE RULE (v558). The first cut of this check sliced from "Who you
+       buy from" and so proved only two of them: the share cell and the sentence under it. The KPI
+       four inches ABOVE that heading kept the bare recentShare>80 rule and went on painting Oil's
+       84% as an alarm on a book that has never lost a ringgit, on the same screen as the two that
+       had just stopped. A verification pass over the DEPLOYED build found it, because that is the
+       one place all three are visible at once. The check now reads the WHOLE tab and requires the
+       three to agree, so a fourth reader cannot be added quietly either. */
     for (const p of JSON.parse(w.eval("JSON.stringify(PROD_IDS)"))) {
       w.eval(`setProd(${JSON.stringify(p)});recompute();`);
       const html = String(w.eval("tabSourcing()"));
-      const tbl = html.slice(html.indexOf("Who you buy from"));
-      crimsons += (tbl.match(/var\(--crim\)/g) || []).length;
+      const st = JSON.parse(w.eval("JSON.stringify((function(){var s=supplierStats()[0];return s?{id:s.id,recentShare:s.recentShare,defaults:s.defaults}:null;})())"));
+      if (!st) continue;
+      const concentrated = st.recentShare > 80;
+      const want = !concentrated ? null : (st.defaults ? "var(--crim)" : "var(--gold)");
+      const pct = st.recentShare.toFixed(0) + "%";
+      /* every place the concentration percentage is drawn, with the colour it is drawn in */
+      const sites = [];
+      const kpi = new RegExp('Top supplier share</div><div class="v" style="([^"]*)">' + pct.replace("%", "%")).exec(html);
+      if (kpi) sites.push(["the KPI", (/color:(var\(--\w+\))/.exec(kpi[1]) || [])[1] || null]);
+      const cell = new RegExp('<td style="color:(var\\(--\\w+\\))"><b>' + pct + "</b>").exec(html);
+      if (cell) sites.push(["the table cell", cell[1] === "var(--ink)" ? null : cell[1]]);
+      const sent = new RegExp('<b style="color:(var\\(--\\w+\\))">[A-Z0-9-]+ is ' + pct).exec(html);
+      if (sent) sites.push(["the sentence", sent[1]]);
+      ok(sites.length === (concentrated ? 3 : 2) || sites.length >= 2,
+        `${p}: the concentration figure is drawn in ${sites.length} place(s)`);
+      const disagree = sites.filter(([, c]) => c !== want);
+      ok(disagree.length === 0, disagree.length
+        ? `${p}: ${disagree.map(([n, c]) => n + " says " + c).join(", ")} where the rule says ${want} (share ${pct}, defaults ${st.defaults})`
+        : `${p}: all ${sites.length} readers of the concentration figure agree (${want || "no colour"}, share ${pct}, defaults ${st.defaults})`);
     }
 
     /* HIS WORD OF 09 SEP 2026: CA4-DAM has disappeared, no contact, nothing recoverable, exactly as
