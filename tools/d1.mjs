@@ -20,7 +20,7 @@
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { resolve, dirname } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { createHash } from "node:crypto";
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -120,6 +120,32 @@ function seed() {
 }
 
 /* ---- verify -------------------------------------------------------------------------- */
+/* ====== TWO STAMPS ARE MINTED BY THE EXTRACT, NOT CARRIED BY THE BOOK (11 Sep 2026) =======
+   `PRICING.takenAt` and `OPEN.at` are `new Date().toISOString()` at the moment tools/ledger.mjs
+   runs (tools/book.mjs:215, :247), so a local extract and CI's re-seed OF THE SAME BOOK differ
+   in them by however far apart the two ran. --verify compared them and so reported
+   `D1 INCOMPLETE: 3 problems` against every healthy mirror. The one tool whose job is to catch
+   a mirror the deploy did not re-seed cried wolf on every run, and a check that always fails is
+   worth nothing on the day it is right: on 11 Sep a Cloudflare 503 made the Deploy step exit 1
+   AFTER uploading, skipping the re-seed, which is exactly the fault it exists for.
+
+   THE KEYS ARE STILL COMPARED; ONLY THE STAMP IS DROPPED, and the distinction is the whole fix.
+   Excluding PRICING and OPEN wholesale would be worse than the false alarm: they are the two
+   state keys src/drafter.js reads most, PRICING being the entire basis on which it prices and
+   OPEN.byKey and OPEN.position being how it resolves an amendment, so a blanket exclusion would
+   pass a genuinely mangled PRICING in silence. Every other byte of both keys is still compared.
+   Nothing reads either stamp: `takenAt` is written once and read nowhere, and no caller of OPEN
+   touches `.at`. */
+const EXTRACT_STAMPS = { PRICING: "takenAt", OPEN: "at" };
+function compareForm(key, value) {
+  const stamp = EXTRACT_STAMPS[key];
+  if (!stamp || !value || typeof value !== "object" || Array.isArray(value) || !(stamp in value)) {
+    return JSON.stringify(value);
+  }
+  const { [stamp]: _minted, ...rest } = value;
+  return JSON.stringify(rest);
+}
+
 /* THE POINT OF THE FILE. Everything above is plumbing; this is the part that decides whether
    the store can be believed. It reads the whole book back out of D1 and compares it, key by
    key and row by row, against the JSON that went in. A store that quietly rounds a number or
@@ -151,7 +177,7 @@ function verify() {
   for (const key of Object.keys(L)) {
     if (!(key in back)) continue;
     checked++;
-    const a = JSON.stringify(L[key]), b = JSON.stringify(back[key]);
+    const a = compareForm(key, L[key]), b = compareForm(key, back[key]);
     if (a !== b) {
       bad++;
       if (bad <= 3) {
@@ -256,7 +282,13 @@ function status() {
   for (const c of (counts || []).flatMap((r) => r.results || [])) console.log(`    ${String(c.collection).padEnd(18)} ${c.n}`);
 }
 
-/* ---- run ----------------------------------------------------------------------------- */
+/* ---- run -----------------------------------------------------------------------------
+   GUARDED SO THE SUITE CAN IMPORT compareForm without this file reaching for wrangler on the
+   way in. pathToFileURL, not a hand-built file URL: the hand-built form matches on Windows and
+   not on Linux, which is how v522's gate ran as a silent no-op on the runner. */
+export { compareForm };
+const isMain = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
+if (isMain) {
 const arg = process.argv[2];
 if (arg === "--status") status();
 else if (arg === "--schema") applySchema();
@@ -268,3 +300,4 @@ else { console.log("usage: node tools/d1.mjs --schema | --seed | --verify | --pr
 console.log("");
 if (problems.length) { console.log(`D1 INCOMPLETE: ${problems.length} problem${problems.length === 1 ? "" : "s"} above.`); process.exitCode = 1; }
 else if (arg !== "--status") console.log("D1 OK: the book is in the store and came back unchanged.");
+}

@@ -9152,5 +9152,55 @@ section("v570: an associate is appointed from the Enter tab, and the Kind means 
   }
 }
 
+
+section("11 Sep 2026: the mirror check stops crying wolf, and still catches a real difference");
+{
+  /* THE FAULT. PRICING.takenAt and OPEN.at are minted by tools/ledger.mjs at the moment it runs,
+     so a local extract and CI's re-seed OF THE SAME BOOK differ in them, and `d1.mjs --verify`
+     reported D1 INCOMPLETE against every healthy mirror. It is the one tool whose job is to
+     catch a mirror the deploy did not re-seed, which is exactly what a Cloudflare 503 caused on
+     11 Sep when the Deploy step exited 1 after uploading. A check that always fails is worth
+     nothing on the day it is right.
+
+     THE ASSERTIONS THAT MATTER ARE THE LAST TWO. Silencing the alarm is easy and excluding the
+     two keys outright would have done it, at the price of never again checking the two state
+     keys the drafter reads most. So the stamp is dropped and EVERYTHING ELSE is still compared,
+     and that is proved in both directions rather than assumed. */
+  const { compareForm } = await import("../tools/d1.mjs");
+
+  const a = { takenAt: "2026-09-10T17:09:21.942Z", sizes: [0.5, 1], floors: { 1: 54.87 } };
+  const b = { takenAt: "2026-09-10T17:44:02.840Z", sizes: [0.5, 1], floors: { 1: 54.87 } };
+  ok(JSON.stringify(a) !== JSON.stringify(b), "the two extracts really do differ raw, or this section proves nothing");
+  ok(compareForm("PRICING", a) === compareForm("PRICING", b),
+     "PRICING minted at two different moments compares equal: the stamp is dropped");
+
+  const o1 = { at: "2026-09-10T17:09:21.978Z", count: 8, byKey: { "CM4-MK|x": 1 } };
+  const o2 = { at: "2026-09-10T17:44:02.934Z", count: 8, byKey: { "CM4-MK|x": 1 } };
+  ok(compareForm("OPEN", o1) === compareForm("OPEN", o2), "and so is OPEN's");
+
+  /* the stamp is dropped for those two keys ONLY, and only where it is the named one */
+  ok(compareForm("STATED_STOCK", 40.25) === "40.25" && compareForm("QUEUE_COMMITTED", "x") === '"x"',
+     "a key with no stamp is compared whole");
+  const withAt = { at: "2026-09-10T00:00:00.000Z", n: 1 };
+  ok(compareForm("COUNT_ON", withAt) === JSON.stringify(withAt),
+     "and `at` on a key that is not OPEN is NOT dropped: the exemption is per key, not per field name");
+
+  /* AND THE CATCH SURVIVES, which is the whole point: a real difference inside either key,
+     with the stamps identical, still compares unequal. */
+  const realP = { takenAt: a.takenAt, sizes: [0.5, 99], floors: { 1: 54.87 } };
+  ok(compareForm("PRICING", a) !== compareForm("PRICING", realP),
+     "a changed size inside PRICING is still caught with the stamp dropped");
+  const realF = { takenAt: a.takenAt, sizes: [0.5, 1], floors: { 1: 99.99 } };
+  ok(compareForm("PRICING", a) !== compareForm("PRICING", realF),
+     "and a changed floor inside PRICING is still caught");
+  const realO = { at: o1.at, count: 999, byKey: { "CM4-MK|x": 1 } };
+  ok(compareForm("OPEN", o1) !== compareForm("OPEN", realO),
+     "and a changed count inside OPEN is still caught");
+  /* the two keys are the drafter's own, which is why they are stripped rather than excluded */
+  const drafterSrc = readFileSync(join(REPO, "src", "drafter.js"), "utf8");
+  ok(/state\s*&&\s*book\.state\.PRICING|state\.PRICING/.test(drafterSrc) && /state\.OPEN/.test(drafterSrc),
+     "and the drafter really does read both, so excluding them would have blinded the check");
+}
+
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
 process.exit(fail ? 1 : 0);
