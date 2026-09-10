@@ -407,22 +407,15 @@ jobs:
           fi
           node tools/stmt-publish.mjs
 
-      - name: Retire the old statement keys from the desk's store
-        if: steps.plan.outputs.deploy == '1' && steps.already.outputs.stmt == '1'
-        continue-on-error: true
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
-        run: |
-          set -euo pipefail
-          npx wrangler kv key list --remote --binding SALT_QUEUE --prefix "stmt" > .old-keys.json || true
-          for k in $(node -e "
-            const t=require('fs').readFileSync('.old-keys.json','utf8'); const i=t.indexOf('[');
-            if(i>=0) for(const k of JSON.parse(t.slice(i))) console.log(k.name);
-          "); do
-            npx wrangler kv key delete --remote --binding SALT_QUEUE "$k" && echo "retired $k"
-          done
-          rm -f .old-keys.json
+      # NOTHING RETIRES DESK KEYS BY PREFIX HERE, and nothing may be added that does (10 Sep 2026).
+      # A step stood here from 03 Sep that listed the desk's store for the prefix "stmt" and deleted
+      # what it found. It was written as a one-off, to clear the old route's stmt:, stmtfail: and
+      # stmtseen: keys, and its own comment said "later runs find nothing". Later runs found the two
+      # keys the publish had just written: "stmt" is a prefix of stmt-users, and of stmt-site after
+      # v564. So every deploy for a week wrote both and deleted both about five seconds later, and
+      # the log said "retired stmt-users" in plain words where nobody was reading. The old keys are
+      # long gone; the step's work was done on its first run. The publish now reads both keys back,
+      # which catches a write that fails but NOT a later step that undoes it, so this stays absent.
 
       # ---- THE FULL SUITE, AFTER THE PHONE IS LIVE (v522) --------------------------------
       # Off the critical path: the clock has stopped by now. A failure turns the run red, which

@@ -7706,13 +7706,26 @@ section("v522: the gate before the deploy, the suite after the phone is live");
   ok(green.code === 0 && (green.out.match(/^  ok    /gm) || []).length >= 10 && /GATE OK in \d/.test(green.out), "on the real master the gate runs every check, says so, and passes (" + (green.out.match(/^  ok    /gm) || []).length + " checks)");
   rmG(dirG, { recursive: true, force: true });
   const wf = readFileSync(join(REPO, ".github", "workflows", "cloud-commit.yml"), "utf8");
-  const gateAt = wf.indexOf("- name: Gate\n"), deployAt = wf.indexOf("- name: Deploy\n"), suiteAt = wf.indexOf("- name: The full suite, after the phone is live"), stmtAt = wf.indexOf("- name: Retire the old statement keys");
+  const gateAt = wf.indexOf("- name: Gate\n"), deployAt = wf.indexOf("- name: Deploy\n"), suiteAt = wf.indexOf("- name: The full suite, after the phone is live"), stmtAt = wf.indexOf("- name: Publish the statements, live");
   ok(gateAt > 0 && deployAt > gateAt && /- name: Gate\n\s+if: steps\.plan\.outputs\.deploy == '1' && steps\.already\.outputs\.live != '1'\n\s+run: node tools\/gate\.mjs/.test(wf), "the gate stands before the deploy, on the deploy's own condition");
   /* 10 Sep 2026: the suite no longer stands down when the phone already has the build. It used to
      carry the `Already serving?` clause, so a Workers Build that won the race meant the suite never
      ran on that push at all. It is still last and still after the statements; it simply no longer
      asks who deployed. */
-  ok(suiteAt > stmtAt && /id: suite\n\s+if: steps\.plan\.outputs\.deploy == '1'\n\s+run: npm test/.test(wf), "the full suite is the last step, after the statements, and runs whoever deployed");
+  ok(stmtAt > 0 && suiteAt > stmtAt && /id: suite\n\s+if: steps\.plan\.outputs\.deploy == '1'\n\s+run: npm test/.test(wf), "the full suite is the last step, after the statements, and runs whoever deployed");
+  /* 10 Sep 2026: the publish wrote stmt-users and stmt-site into the desk's store and the step that
+     ran next listed the prefix "stmt" and deleted what it found. Both keys begin with it, so both
+     were gone about five seconds after they were written, on every deploy since 03 Sep. The step is
+     removed; nothing may put a prefix sweep of the desk's store back. */
+  const deskLines = wf.split("\n").filter((l) => /SALT_QUEUE/.test(l));
+  ok(!deskLines.some((l) => /kv (key|bulk) delete/.test(l)) && !deskLines.some((l) => /--prefix "stmt/.test(l)),
+     "no step in the chain deletes from the desk's store by prefix, where stmt-users and stmt-site live");
+  /* and every desk write in the publish goes through the one function that reads the key back, so a
+     write that reports success and stores nothing is red rather than a line in a log nobody reads */
+  const pubSrc = readFileSync(join(REPO, "tools", "stmt-publish.mjs"), "utf8");
+  const pubMain = pubSrc.slice(pubSrc.indexOf("async function main("));
+  ok(!/deskWrangler\(\["kv", "key", "put"/.test(pubMain) && (pubMain.match(/\bdeskPut\(/g) || []).length === 2
+     && /deskWrangler\(\["kv", "key", "get"/.test(pubSrc), "both desk-store writes in the publish go through deskPut, which reads the key back");
   ok(/if: always\(\) && steps\.suite\.outcome == 'failure'/.test(wf) && /--refused-note "suite:\$v"/.test(wf), "a suite failure is written where the phone shows refusals, under a synthetic id");
   ok(!/\n\s+npm test\n[\s\S]*?- name: Deploy\n/.test(wf.slice(wf.indexOf("- name: Fold\n"))), "and nothing runs the suite between the fold and the deploy");
 }
