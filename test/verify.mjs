@@ -9278,5 +9278,95 @@ section("11 Sep 2026: a rail heading and a rail destination are told apart, and 
 }
 
 
+section("11 Sep 2026: the reward hurdles are stated off the board, carry a unit minimum, and oil has none");
+{
+  /* HIS INSTRUCTION OF 11 SEP 2026. Two figures and two minimums: RM 450 and 5 unit for what an
+     associate brings in, RM 975 and 12.5 unit for what anyone buys directly, and no reward at all
+     on oil. Everything is forced through the master's own functions in jsdom, because THE LIVE
+     BOOK EXERCISES ONE PATH OF THREE: every party who currently crosses RM 975 also bought over
+     12.5 unit, so the short path and the oil path have no live example and would go untested by
+     anything read off the desk. Each was proved red by mutation. */
+  const { openMaster: omRw } = await import("../tools/payload.mjs");
+  const { w: wRw } = await omRw();
+  const rd = (e) => JSON.parse(wRw.eval("JSON.stringify(" + e + ")"));
+  try {
+    wRw.eval("setProd('salt');");
+
+    /* ---- the two figures, and the DERIVATION checked against the engine that prints the board.
+       Stated figures drift away from the reason they were stated; this is what keeps the two
+       tied, so re-striking the board without re-striking the hurdle goes red here. ---- */
+    ok(rd("rewardHurdle('salt','associate')") === 450 && rd("rewardMinUnits('salt','associate')") === 5,
+      "what an associate brings in hurdles at RM 450 and 5 unit");
+    ok(rd("rewardHurdle('salt','customer')") === 975 && rd("rewardMinUnits('salt','customer')") === 12.5,
+      "what anyone buys directly hurdles at RM 975 and 12.5 unit");
+    const t625 = rd("priceLadder(6.25).tier1.total"), t125 = rd("priceLadder(12.5).tier1.total");
+    ok(t625 === 500 && +(t625 * 0.9).toFixed(2) === 450, `450 is the 6.25 unit Tier 1 of RM ${t625} less a tenth`);
+    ok(t125 === 875 && t125 + 100 === 975, `975 is the 12.5 unit Tier 1 of RM ${t125} plus a hundred`);
+
+    /* ---- OIL HAS NO REWARD, and the absence reads as an absence rather than as NaN. `x % null`
+       is NaN and NaN formats as "RM NaN", which is what the old arithmetic would have printed. ---- */
+    const nul = (e) => rd(`(function(){var v=${e};return {isNull:v===null,isNaN:typeof v==='number'&&isNaN(v)};})()`);
+    const hOilC = nul("rewardHurdle('oil','customer')"), hOilA = nul("rewardHurdle('oil','associate')");
+    ok(hOilC.isNull && !hOilC.isNaN && hOilA.isNull && !hOilA.isNaN,
+      "oil has no hurdle on either stream, and the absence is null rather than NaN");
+    ok(rd("rewardHurdleTxt('oil','customer')") === "no reward on this book", "and every card says so in words");
+    const tnOil = nul("rewardToNext('oil','customer',1000)");
+    ok(tnOil.isNull && !tnOil.isNaN, "the distance to the next crossing is null, never NaN");
+    /* and the probe itself is proved in both directions here, because the first cut of it could
+       not fail: NaN crosses JSON as null, so `=== null` was true of both. */
+    const nanCtl = nul("(0/0)"), nullCtl = nul("null");
+    ok(nanCtl.isNaN && !nanCtl.isNull && nullCtl.isNull && !nullCtl.isNaN,
+      "the probe tells NaN from null, which a JSON round-trip cannot");
+    ok(rd("rewardEarn('oil','customer',99999,9999,99999,{units:1,label:'full'})") === 0,
+      "and no amount of money, units or margin earns anything on oil");
+    wRw.eval("setProd('oil');");
+    ok(rd("customerRewards().length") === 0, "the oil customer reward table is empty rather than hurdle-less");
+    wRw.eval("setProd('salt');");
+    ok(rd("customerRewards().length") > 0, "and salt's is not, so the guard is the book and not a broken table");
+
+    /* ---- THE THREE PATHS, forced ---- */
+    const B = "{units:1,label:'full'}";
+    ok(rd(`rewardEarn('salt','customer',975,12.5,9999,${B})`) === 1, "money over and units over pays the band in full");
+    ok(rd(`rewardEarn('salt','customer',974.99,9999,9999,${B})`) === 0,
+      "a ringgit under the hurdle pays nothing, however many units and whatever the margin");
+    ok(rd(`rewardEarn('salt','customer',1950,25,9999,${B})`) === 2, "two crossings pay twice");
+    ok(rd(`rewardEarn('salt','customer',1950,25,9999,{units:0.25,label:'quarter'})`) === 0.5,
+      "and the band still decides how much, so two crossings on a quarter band pay half a unit");
+
+    /* the short path: money over, units short, scaled by the margin actually made against the
+       margin the board expects on the minimum units at Tier 1 */
+    const gmExp = rd("rewardGmExpected(12.5)");
+    const m125 = rd("priceLadder(12.5).tier1.margin");
+    ok(gmExp > 0 && gmExp === +(t125 * m125 / 100).toFixed(2),
+      `the expected margin is the board's own on 12.5 unit at Tier 1, RM ${gmExp} at ${m125}%`);
+    const half = rd(`rewardEarn('salt','customer',975,8,${gmExp / 2},${B})`);
+    ok(Math.abs(half - 0.5) < 0.005, `short on units at half the expected margin pays half a unit (${half})`);
+    ok(rd(`rewardEarn('salt','customer',975,8,0,${B})`) === 0, "short on units with no margin made pays nothing");
+    ok(rd(`rewardEarn('salt','customer',975,8,${gmExp},${B})`) === 1,
+      "short on units but the full expected margin pays the band in full");
+    ok(rd(`rewardEarn('salt','customer',975,8,${gmExp * 5},${B})`) === 1,
+      "AND THE SCALE IS CAPPED AT 1: a short seller at five times the expected margin never beats the full path");
+    ok(rd(`rewardEarn('salt','associate',450,5,1,${B})`) === 1,
+      "the associate stream reads its own minimum, so 5 unit is over rather than under");
+    ok(Math.abs(rd(`rewardEarn('salt','associate',450,4,${rd("rewardGmExpected(5)") / 2},${B})`) - 0.5) < 0.005,
+      "and 4 unit is under it, scaled against the expected margin on 5 unit");
+
+    /* ---- the streams carry the units the minimum is measured on ---- */
+    ok(rd("typeof streamMargin(associateIds()[0],'own').qty") === "number",
+      "streamMargin returns the units beside the money, measured on the same rows");
+
+    /* ---- HIS RULING THAT IT APPLIES TO THE WHOLE WINDOW SINCE 10 AUG. Stated as the invariant
+       rather than as one party's figure, so it stays true as the book moves: nothing under the
+       hurdle can have crossed it. CK4-SEN at RM 945 is the live example it cost. ---- */
+    const cr = rd("customerRewards().map(function(r){return {id:r.id,rev:r.rev,crossed:r.crossed,earned:r.earned,opening:r.opening,qty:r.qty,min:r.min,short:r.short};})");
+    ok(cr.every((r) => r.rev >= 975 || r.crossed === 0),
+      "no customer under RM 975 has crossed it, on the whole window since 10 Aug");
+    ok(cr.every((r) => r.min === 12.5), "every customer row is measured against the same 12.5 unit minimum");
+    ok(cr.every((r) => !r.short || r.earned <= r.crossed * 1 + r.opening + 1e-9),
+      "and a row the unit minimum bit never earns more than the same crossings would have paid in full");
+  } finally { try { wRw.close(); } catch (e) { /* best effort */ } }
+}
+
+
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
 process.exit(fail ? 1 : 0);

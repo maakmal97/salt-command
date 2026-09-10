@@ -15307,14 +15307,75 @@ const REWARD={
      referrals that settled it. So history is captured once, in the opening, and the engine
      counts only what happens from this date. */
   since:'2026-08-10',
-  hurdleMultiple:{customer:20, associate:10},
-  lot:{salt:{base:1, cost:47}, oil:{base:10, cost:7}},
+  /* v576, HIS INSTRUCTION OF 11 SEP 2026: THE HURDLE IS STATED OFF THE BOARD, NOT DERIVED FROM
+     A LOT COST, AND IT CARRIES A UNIT MINIMUM BESIDE THE MONEY.
+       associate (R2 + R3)  RM 450, the 6.25 unit Tier 1 price less 10%, and at least 5 unit
+       customer  (R1)       RM 975, the 12.5 unit Tier 1 price plus 100, and at least 12.5 unit
+     Both figures are HIS, and both check against the engine: the board prints Tier 1 at RM 500
+     on 6.25 unit and RM 875 on 12.5 unit, so 500 less a tenth is 450 and 875 and a hundred is
+     975. They are STATED here rather than derived from the ladder, because a hurdle that moved
+     every time a lot landed would be a moving target for the party trying to cross it; the
+     derivation is recorded so it can be re-struck when he wants it re-struck.
+     THE UNIT MINIMUM REVERSES A v280 SENTENCE, DELIBERATELY. v280 said "Everything is measured
+     in MONEY, never in units", because the old unit trigger paid most to whoever was sold to
+     most cheaply. The money hurdle still decides IF and the margin band still decides HOW MUCH;
+     the unit minimum is a THIRD test that stops a hurdle being crossed on a handful of dear
+     units, and where it bites it scales the award by margin rather than refusing it, so the
+     v280 objection does not come back with it. See rewardEarn.
+     OIL HAS NO REWARD (his instruction, same day). Oil is absent from `stated` rather than
+     zeroed: rewardHurdle returns null, every earn path returns 0 and the tables say so. The two
+     figures are salt's Tier 1 and oil has no Tier 1 at all (LADDER_BY.oil is tier1:null), so
+     there was nothing to derive an oil pair from and a formula he did not choose is worse than
+     no scheme. */
+  stated:{salt:{associate:{rm:450, units:5}, customer:{rm:975, units:12.5}}},
   /* margin on revenue, read from what the party has ACTUALLY delivered, not from a quote */
   bands:[{min:50,units:1,label:'full'},{min:40,units:0.5,label:'half'},{min:30,units:0.25,label:'quarter'},{min:0,units:0,label:'none'}]
 };
-function rewardHurdle(prod,who){
-  const L=REWARD.lot[prod]||REWARD.lot.salt;
-  return +(L.base*L.cost*REWARD.hurdleMultiple[who]).toFixed(2);
+/* null means THIS BOOK HAS NO REWARD, which is oil. Every reader guards on it; none defaults to
+   salt's, because quietly lending one book another book's hurdle is how oil came to be priced off
+   salt's ladder before v405. */
+function rewardHurdle(prod,who){const S=REWARD.stated[prod];return (S&&S[who])?S[who].rm:null;}
+function rewardMinUnits(prod,who){const S=REWARD.stated[prod];return (S&&S[who])?S[who].units:null;}
+/* THE GROSS MARGIN THE BOARD EXPECTS ON q UNIT AT TIER 1, from the engine and never typed: the
+   desk prices nothing (hard rule 1), so this asks priceLadder the same question the board asks.
+   It reads the CURRENT book, which is safe because rewardEarn refuses any book with no stated
+   pair before it gets here. Tier 1 because the hurdles are struck off Tier 1. */
+function rewardGmExpected(q){
+  try{const t=priceLadder(q).tier1;
+      return (t&&t.total>0&&t.margin>0)?+(t.total*t.margin/100).toFixed(2):0;}catch(e){return 0;}
+}
+/* ONE EARN RULE, BOTH STREAMS AND BOTH TABLES (v576).
+     money below the hurdle            nothing, as before
+     money over AND units over         crossings x the band's units, as before
+     money over BUT units short        the same, scaled by the margin actually earned against the
+                                       margin the board expects on the minimum units at Tier 1
+   HIS RULE FOR THE SHORT CASE: "calculated based on the gross margin expected". So a party who
+   crosses RM 975 on 8 unit rather than 12.5 is not refused; they are paid what their margin is
+   worth against the RM 175 the board expects on 12.5 unit at Tier 1. THE SCALE IS CAPPED AT 1
+   and that is a decision: uncapped, a short seller at a very high margin would earn MORE than
+   the same money over the unit minimum, and the short path should never beat the full one. */
+function rewardEarn(prod,who,rev,qty,gm,band){
+  const H=rewardHurdle(prod,who);
+  if(H==null||!(rev>0)||!band||!(band.units>0))return 0;
+  const crossings=Math.floor(rev/H); if(crossings<1)return 0;
+  const min=rewardMinUnits(prod,who);
+  let scale=1;
+  if(min!=null&&qty<min-1e-9){
+    const exp=rewardGmExpected(min);
+    scale=exp>0?Math.min(1,Math.max(0,(gm||0)/exp)):0;
+  }
+  return +(crossings*band.units*scale).toFixed(2);
+}
+/* what is left to the next crossing, or null where the book has no hurdle at all */
+function rewardToNext(prod,who,rev){
+  const H=rewardHurdle(prod,who); if(H==null)return null;
+  return +(H-((rev||0)%H)).toFixed(2);
+}
+/* the hurdle as a reader sees it, stated once so five call sites cannot drift apart */
+function rewardHurdleTxt(prod,who){
+  const H=rewardHurdle(prod,who); if(H==null)return 'no reward on this book';
+  const m=rewardMinUnits(prod,who);
+  return fmt0(H)+(m!=null?' and '+units(m):'');
 }
 function rewardBand(pct){
   for(const b of REWARD.bands){ if(pct>=b.min) return b; }
@@ -15350,7 +15411,9 @@ function streamMargin(id,which){
   });
   let rev=0,cogs=0,qty=0;
   rows.forEach(s=>{ rev+=(s.total||0); cogs+=(s.qty||0)*txUnitCost(s,wavgBuy); qty+=(s.qty||0); });
-  return {rev:+rev.toFixed(2), margin:+(rev-cogs).toFixed(2),
+  /* qty rides out with the rest since v576: the unit minimum is measured on the same rows the
+     margin is, so a stream cannot clear one test on one window and the other on another. */
+  return {rev:+rev.toFixed(2), margin:+(rev-cogs).toFixed(2), qty:+qty.toFixed(2),
           pct:rev>0?+(((rev-cogs)/rev)*100).toFixed(1):0,
           perUnit:qty>0?+((rev-cogs)/qty).toFixed(2):0, n:rows.length};
 }
@@ -15385,10 +15448,10 @@ function networkStats(){
     const bringM=streamMargin(id,'bring'), ownM=streamMargin(id,'own');
     const bring=bringM.rev, sinceOwn=ownM.rev;
     const bringBand=rewardBand(bringM.pct), ownBand=rewardBand(ownM.pct);
-    const earnedR2=+(Math.floor(bring/rewardHurdle(PROD,'associate'))*bringBand.units).toFixed(2);
+    const earnedR2=rewardEarn(PROD,'associate',bring,bringM.qty,bringM.margin,bringBand);
     const earnedR3=0;   // folded into earnedR2; the field survives so the render need not change
     const earnedLot=0;  // the unit-based trigger is retired
-    const earnedOwn=+(Math.floor(sinceOwn/rewardHurdle(PROD,'customer'))*ownBand.units).toFixed(2);
+    const earnedOwn=rewardEarn(PROD,'customer',sinceOwn,ownM.qty,ownM.margin,ownBand);
     const opening=(typeof REWARD_OPENING!=='undefined'&&REWARD_OPENING[id]!=null)?REWARD_OPENING[id]:0;
     /* AWARDS is HISTORY now. Every stated grant was made before the scheme was adopted, so
        it is already netted into the opening position; adding it again would pay it twice.
@@ -15399,9 +15462,10 @@ function networkStats(){
     /* v280: one stream, so one distance to the next unit. toNextR3 survives as the same
        figure because two call sites take Math.min of the pair and would otherwise read
        undefined; it is not a second threshold. */
-    const _hA=rewardHurdle(PROD,'associate'), _hC=rewardHurdle(PROD,'customer');
-    const toNextR2=+(_hA-(bring%_hA)).toFixed(2), toNextR3=toNextR2;
-    const toNextOwn=+(_hC-(sinceOwn%_hC)).toFixed(2);
+    /* v576: null where the book has no hurdle, rather than NaN. `x % null` is NaN and NaN
+       formats as "RM NaN" at three call sites, which is what oil would have printed. */
+    const toNextR2=rewardToNext(PROD,'associate',bring), toNextR3=toNextR2;
+    const toNextOwn=rewardToNext(PROD,'customer',sinceOwn);
     const share=revTotal>0?(indirect+r3)/revTotal*100:0;
     const starN=share>=50?3:share>=30?2:share>=10?1:0;
     /* connections shown on the node badge: end customers sold to (R2) PLUS customers
@@ -15419,7 +15483,11 @@ function networkStats(){
          beside `ownPct`, which is measured only since adoption: RM 1,610 of buying at 0%
          on the same line, two different books in one sentence. `own` is the turnover the
          margin was read from. */
-      bringUnits:bringBand.units, ownUnits:ownBand.units, own:sinceOwn};
+      bringUnits:bringBand.units, ownUnits:ownBand.units, own:sinceOwn,
+      /* v576: the units behind each stream and the minimum they are measured against, so the
+         card can say WHY a crossed hurdle paid a fraction rather than leaving it unexplained. */
+      bringQty:bringM.qty, ownQty:ownM.qty, bringGm:bringM.margin, ownGm:ownM.margin,
+      minBring:rewardMinUnits(PROD,'associate'), minOwn:rewardMinUnits(PROD,'customer')};
   });
   // R0 first, then by total made-you
   out.sort((a,b)=>{if(a.kind==='R0'&&b.kind!=='R0')return -1;if(b.kind==='R0'&&a.kind!=='R0')return 1;return b.total-a.total;});
@@ -15612,6 +15680,7 @@ function approachBoard(approach,owedBy,bm){
 function customerRewards(){
   const assoc=new Set(associateIds());
   const hurdle=rewardHurdle(PROD,'customer');
+  if(hurdle==null)return [];   // v576: oil has no reward, so it has no table rather than an empty hurdle
   const by={};
   pricedSales.forEach(s=>{
     if(s.date<REWARD.since||s.rebate||s.goodwill||s.rev==='R2')return;
@@ -15626,8 +15695,13 @@ function customerRewards(){
     r.band=band.label; r.bandUnits=band.units;
     r.crossed=Math.floor(r.rev/hurdle);
     r.opening=(CUSTOMER_REWARD_OPENING[r.id]!=null)?CUSTOMER_REWARD_OPENING[r.id]:0;
-    r.earned=+((r.crossed*band.units)+r.opening).toFixed(2);
-    r.toNext=+(hurdle-(r.rev%hurdle)).toFixed(2);
+    /* v576: the same one earn rule the associate table uses, so a customer and an associate
+       buying identically are paid identically. `short` says the unit minimum bit, which is the
+       only reason a crossed hurdle can now pay under its band. */
+    r.min=rewardMinUnits(PROD,'customer');
+    r.short=(r.min!=null&&r.qty<r.min-1e-9&&r.crossed>0);
+    r.earned=+(rewardEarn(PROD,'customer',r.rev,r.qty,r.margin,band)+r.opening).toFixed(2);
+    r.toNext=rewardToNext(PROD,'customer',r.rev);
     r.hurdle=hurdle;
     return r;
   }).sort((a,b)=>b.rev-a.rev);
@@ -15703,14 +15777,14 @@ function tabConcentration(){
      column carries its own units, and the hurdle is the card's subtitle, where a reader
      looking at "To next" will find what the distance is to. */
   const cr=customerRewards(), crReady=cr.filter(r=>r.earned>0.009);
-  const crBody=cr.length?cr.map(r=>`<tr><td class="l mono">${ID(r.id)}</td><td>${fmt0(r.rev)}</td><td>${r.pct}%</td><td class="l">${r.band}${r.bandUnits>0?` <span style="color:var(--dim)">&middot; ${units(r.bandUnits)}</span>`:` <span style="color:var(--dim)">&middot; nothing</span>`}</td><td>${r.earned>0.009?`<b style="color:var(--gold)">${units(r.earned)}</b>`:'&mdash;'}</td><td class="mono" style="color:var(--dim)">${fmt0(r.toNext)}</td></tr>`).join('')
+  const crBody=cr.length?cr.map(r=>`<tr><td class="l mono">${ID(r.id)}</td><td>${fmt0(r.rev)}</td><td>${r.pct}%</td><td class="l">${r.band}${r.bandUnits>0?` <span style="color:var(--dim)">&middot; ${units(r.bandUnits)}</span>`:` <span style="color:var(--dim)">&middot; nothing</span>`}</td><td>${r.earned>0.009?`<b style="color:var(--gold)">${units(r.earned)}</b>`:'&mdash;'}${r.short?` <span class="sbadge bthin" title="${units(r.qty)} bought against a ${units(r.min)} minimum, so the crossing pays on the margin it made rather than in full">${units(r.qty)} of ${units(r.min)}</span>`:''}</td><td class="mono" style="color:var(--dim)">${fmt0(r.toNext)}</td></tr>`).join('')
     :`<tr><td class="l" colspan="6" style="color:var(--dim)">Nothing since ${REWARD.since}. The scheme counts from the day it was adopted, because the opening positions already hold everything before it.</td></tr>`;
   /* v401: the sub lost "the band sets the units", which the Band pays column states per row
      and in units. NOT for width: this header measures 332px inside a 325px box at 375px, and
      the 7px is the .sub rule at :438, a full-width BUTTON style that lands on this span by
      cascade (width:100% plus the 7px margin-left .cardh .sub adds). That is desk-wide, on
      every card header with a sub, so it is not fixed from this view. */
-  const crCard=`<div class="card"><div class="cardh">&#127873; Customer rewards <span class="sub">since ${REWARD.since} &middot; ${fmt0(rewardHurdle(PROD,'customer'))} a hurdle</span>${crReady.length?`<span class="sub" style="color:var(--gold)">${crReady.map(r=>ID(r.id)).join(', ')} waiting</span>`:''}</div>
+  const crCard=`<div class="card"><div class="cardh">&#127873; Customer rewards <span class="sub">since ${REWARD.since} &middot; ${rewardHurdleTxt(PROD,'customer')} a hurdle</span>${crReady.length?`<span class="sub" style="color:var(--gold)">${crReady.map(r=>ID(r.id)).join(', ')} waiting</span>`:''}</div>
     <table><thead><tr><th class="l">Customer</th><th>Bought</th><th>Margin</th><th class="l">Band pays</th><th>Earned</th><th>To next</th></tr></thead><tbody>${crBody}</tbody></table></div>`;
   /* ============ v385: DO, THEN WATCH, THEN STUDY ============
      The order was rewards, tiles, read, two charts, the approach calendar, turned-away, the
@@ -15952,6 +16026,13 @@ function resellerCard(r){
      stream figures become a table, because six fields per stream is what a table is for
      and a table survives the strip. The button becomes a sibling, so nothing can eat it. */
   const bandPays=u=>u>0?units(u):'nothing';
+  /* v576: only where the money cleared and the units did not, which is the one case a reader
+     cannot otherwise account for. Silent above the minimum, silent below the hurdle. */
+  const shortTag=(rev,qty,min,who)=>{
+    const H=rewardHurdle(PROD,who);
+    if(H==null||min==null||!(rev>=H)||!(qty<min-1e-9))return '';
+    return ` <span class="sbadge bthin" title="${units(qty)} against a ${units(min)} minimum, so the crossing pays on the margin it made rather than in full">${units(qty)} of ${units(min)}</span>`;
+  };
   /* v385: THE BALANCE ROW PRINTED "-1 unit" UNDER A COLUMN HEADED "Per hurdle", on two cards
      of five. Two faults in one cell. A balance is not a per-hurdle figure, and a bare negative
      tells a reader nothing he can act on: it is the arithmetic of a deficit carried from the
@@ -15962,8 +16043,8 @@ function resellerCard(r){
      networkStats and the reason it can be negative sits in REWARD_OPENING against
      rebateApplied, which is the book's question and not this card's. */
   const rewardTbl=`<table style="margin-top:10px"><thead><tr><th class="l">Reward stream</th><th>Turnover</th><th>Margin</th><th class="l">Band</th><th>Per hurdle</th><th>To next</th></tr></thead><tbody>
-    <tr><td class="l">Brought in <span style="color:var(--dim)">R2 + R3</span></td><td>${fmt0(r.bring)}</td><td>${r.bringPct}%</td><td class="l">${r.bringBand}</td><td>${bandPays(r.bringUnits)}</td><td class="mono" style="color:var(--dim)">${fmt0(r.toNextR2)}</td></tr>
-    <tr><td class="l">Bought himself <span style="color:var(--dim)">R1</span></td><td>${fmt0(r.own)}</td><td>${r.ownPct}%</td><td class="l">${r.ownBand}</td><td>${bandPays(r.ownUnits)}</td><td class="mono" style="color:var(--dim)">${fmt0(r.toNextOwn)}</td></tr>
+    <tr><td class="l">Brought in <span style="color:var(--dim)">R2 + R3</span></td><td>${fmt0(r.bring)}${shortTag(r.bring,r.bringQty,r.minBring,'associate')}</td><td>${r.bringPct}%</td><td class="l">${r.bringBand}</td><td>${bandPays(r.bringUnits)}</td><td class="mono" style="color:var(--dim)">${r.toNextR2==null?'&mdash;':fmt0(r.toNextR2)}</td></tr>
+    <tr><td class="l">Bought himself <span style="color:var(--dim)">R1</span></td><td>${fmt0(r.own)}${shortTag(r.own,r.ownQty,r.minOwn,'customer')}</td><td>${r.ownPct}%</td><td class="l">${r.ownBand}</td><td>${bandPays(r.ownUnits)}</td><td class="mono" style="color:var(--dim)">${r.toNextOwn==null?'&mdash;':fmt0(r.toNextOwn)}</td></tr>
     <tr class="tot"><td class="l">Balance</td><td class="l" colspan="3" style="color:var(--dim)">${r.opening?`opening ${r.opening>0?'+':''}${units(r.opening)} carried, `:''}${applied>0?`${units(applied)} already drawn`:'nothing drawn yet'}</td><td>${r.earned>0.009?units(r.earned):'nothing'}</td><td>${freeUnits>0.009?`<b style="color:var(--gold)">${units(freeUnits)} free</b>`:'&mdash;'}</td></tr>
   </tbody></table>`;
   /* v385: "Rated unrated on 9.1% of revenue." is what the first pass shipped, on all five
@@ -16069,7 +16150,7 @@ function tabNetwork(){
        book. That is the storyboard's tell for documentation rather than a dashboard. Nothing
        is deleted to fold it, and the summary carries the two figures a reader comes back for,
        so shut it still answers what a hurdle is. -->
-  <details class="obsec" style="margin-top:22px"><summary>What counts, and why <span class="q">customer hurdle ${fmt0(rewardHurdle(PROD,'customer'))} &middot; associate hurdle ${fmt0(rewardHurdle(PROD,'associate'))}</span></summary>
+  <details class="obsec" style="margin-top:22px"><summary>What counts, and why <span class="q">customer hurdle ${rewardHurdleTxt(PROD,'customer')} &middot; associate hurdle ${rewardHurdleTxt(PROD,'associate')}</span></summary>
   <div class="card">
     <!-- v401: the sub went with the fold. "What each counts and what it earns" is what the
          summary above now says, with the two hurdle figures in it, and a header that restates
@@ -16079,17 +16160,17 @@ function tabNetwork(){
       <div class="nstream nv">
         <div class="nsh"><span class="tag pendingt">R1</span> Bought from you</div>
         <div class="nsw">His own orders, priced.</div>
-        <div class="nswhy">A partner who is also a buyer: his own demand and loyalty. Earns on the customer hurdle, <b>${fmt0(rewardHurdle(PROD,'customer'))}</b>.</div>
+        <div class="nswhy">A partner who is also a buyer: his own demand and loyalty. Earns on the customer hurdle, <b>${rewardHurdleTxt(PROD,'customer')}</b>.</div>
       </div>
       <div class="nstream ng">
         <div class="nsh"><span class="tag paid">R2</span> Sold for you</div>
         <div class="nsw">Onward sales he runs, booked to him; the end buyer has no separate line.</div>
-        <div class="nswhy">Revenue you would not have made alone. Runs with R3 against the associate hurdle, <b>${fmt0(rewardHurdle(PROD,'associate'))}</b>.</div>
+        <div class="nswhy">Revenue you would not have made alone. Runs with R3 against the associate hurdle, <b>${rewardHurdleTxt(PROD,'associate')}</b>.</div>
       </div>
       <div class="nstream ni">
         <div class="nsh"><span class="tag" style="background:rgba(228,233,236,.16);color:var(--ice)">R3</span> Brought you</div>
         <div class="nsw">First-order value of each new customer he introduces.</div>
-        <div class="nswhy">Network growth, not repeat spend. Runs with R2 against that same <b>${fmt0(rewardHurdle(PROD,'associate'))}</b>, not a hurdle of its own.</div>
+        <div class="nswhy">Network growth, not repeat spend. Runs with R2 against that same <b>${rewardHurdleTxt(PROD,'associate')}</b>, not a hurdle of its own.</div>
       </div>
     </div>
     <!-- ============ v385: THE THREE FIGURES ON THIS CARD WERE WRONG ============
@@ -18419,9 +18500,9 @@ function wbPreview(){
        together -- hurdles at the associate figure; what they buy for themselves keeps the
        customer figure, because networkStats reads earnedOwn against rewardHurdle(...,'customer')
        exactly as the customer reward table does. Both are read here rather than restated, so a
-       change to REWARD.hurdleMultiple moves this sentence with it. */
-    const hA=rewardHurdle(wbProdVal(),'associate'),hC=rewardHurdle(wbProdVal(),'customer');
-    const stand=apl.stream?`<div class="dsc" style="margin-top:6px">They join the associate bench on the <b>${apl.stream}</b> stream${apl.resell?`, and <b>${esc(apl.resell)}</b> joins the roster as their resell account, so an R2 sale with no named end buyer has somewhere to book`:''}. Their credit cap on the ${esc(wbProdName().toLowerCase())} book goes to <b>${units(capA)}</b> from ${units(capR)}, and what they bring in hurdles at <b>${fmt0(hA)}</b> a free unit instead of ${fmt0(hC)}. What they buy for themselves keeps the ${fmt0(hC)} customer hurdle, and moves off the customer reward table onto their own card.</div>`:'';
+       change to REWARD.stated moves this sentence with it. v576: through rewardHurdleTxt, which
+       also carries the unit minimum and says so plainly on a book that has no reward at all. */
+    const stand=apl.stream?`<div class="dsc" style="margin-top:6px">They join the associate bench on the <b>${apl.stream}</b> stream${apl.resell?`, and <b>${esc(apl.resell)}</b> joins the roster as their resell account, so an R2 sale with no named end buyer has somewhere to book`:''}. Their credit cap on the ${esc(wbProdName().toLowerCase())} book goes to <b>${units(capA)}</b> from ${units(capR)}, and what they bring in hurdles at <b>${rewardHurdleTxt(wbProdVal(),'associate')}</b> a free unit instead of ${rewardHurdleTxt(wbProdVal(),'customer')}. What they buy for themselves keeps the ${rewardHurdleTxt(wbProdVal(),'customer')} customer hurdle, and moves off the customer reward table onto their own card.</div>`:'';
     /* v571: "as a" TOOK AN ARTICLE THE LABELS DO NOT FIT. ADDID_KIND_LABEL holds whole phrases,
        so this read "as a Associate, resells for you (R2)" and, worse, "as a An associate's end
        buyer". The article cannot be chosen from the first letter either, since the downstream and
