@@ -51,8 +51,11 @@ The fold routine is `docs/CLOUD_FOLD.md`; statements `docs/STATEMENTS.md`; desig
    interpolated in the log of size between them, clamped outside; the ends print verbatim
    because RM875 is off the ten grid. A one-tier book needs `tier1:null` in `LADDER_BY` **as
    an entry, not an omission**, or `ladderFor` hands it salt's. Board prints cheapest first;
-   the payload does not. **The customer's suggested price rounds to the nearest five**, never
-   under its floor: `adjustedPrice` and `pbAdjusted`, held together by the suite.
+   the payload does not. **Nothing clamps the two together and nothing should**: `tier1.over` (v566)
+   measures the RM by which Tier 1 exceeds the ask, beside `under`, and the board tags the row and
+   refuses its all-clear; a stated price is quoted anyway. **The customer's suggested price rounds
+   to the nearest five**, never under its floor: `adjustedPrice` and `pbAdjusted`, held together by
+   a 416-point grid in the suite (v566).
 6. **The look is the Salt design system applied as a layer.** Material, type and colour
    are decided in `design/desk.css` over the vendored `design/salt-ds.css`; a colour or
    type change is an edit there, then `--sync`, then build, never a hex in the master's

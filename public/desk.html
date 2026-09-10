@@ -68,7 +68,7 @@ document.addEventListener('visibilitychange',function(){
    localStorage before it posts anything and the load reads it straight back.
    The same tick retries a held entry, which is what gets a phone write to the cloud
    without waiting for the next open. */
-var SALT_BUILD_ID="1d399b7993334d7f";
+var SALT_BUILD_ID="f04f8687ff422b1c";
 var SALT_REV_MS=10000;
 (function(){
   var chip=null,timer=null;
@@ -4793,6 +4793,12 @@ function tier1Anchors(P){
   const ks=Object.keys(A).map(Number).filter(q=>q>0&&+A[q]>0).sort((a,b)=>a-b);
   if(ks.length<2)return null;
   const lo=ks[0], hi=ks[ks.length-1], rLo=+A[lo]/lo, rHi=+A[hi]/hi;
+  /* v566: TWO ANCHORS MEANS TWO SIZES, AND THE COUNT ABOVE DOES NOT SAY THAT. {0.5:60,"0.50":60}
+     is two keys naming one size: it passes ks.length<2, lands hi===lo, and the exponent becomes
+     Math.log(1)/Math.log(1), which is NaN. Every interpolated rung then prices NaN while reading
+     TRUTHY at every guard downstream, so the board would print a column of blanks under a heading
+     that says the tier is stated. A tier stated at one size is not stated. */
+  if(!(hi>lo))return null;
   /* the rate in the log of size, fitted to the two ends rather than typed */
   return {ks:ks, lo:lo, hi:hi, rLo:rLo, rHi:rHi, b:Math.log(rHi/rLo)/Math.log(hi/lo)};
 }
@@ -4911,11 +4917,21 @@ function priceLadder(q,C,P,opts){
   /* v564: TIER 1 BESIDE THE ASK, on the same cost stack and the same floor, so every surface reads
      one engine for both levels. null on a book with no stated second tier. The figures beside the
      total are derived back from the answer, exactly as the ask's are. */
+  /* v566: AND `over`, WHICH IS THE RELATION BETWEEN THE TIERS. Tier 1 is walked against the rate
+     law and the floor and against nothing else, so nothing in the engine or on the board knew
+     whether the cheaper tier was still the cheaper one. It need not be: Tier 2 is DERIVED from a
+     floor that moves with the cost of salt, while Tier 1's two ends are figures he typed and do
+     not move at all, so a fall in the lot rate walks Tier 2 down through a frozen Tier 1 from the
+     small end up. A stated price he has set is quoted anyway, which is v552's rule and is not
+     reopened here: this MEASURES the inversion in the same shape as `under`, RM by RM, and the
+     board says so. It does not clamp. Clamping would make a second place that prices, and there
+     is one place that prices. */
   {const t=tier1Ask(q,C,P);
    out.tier1=t?{total:t.p,rate:+(t.p/q).toFixed(2),
                 markup:+((t.p/cogs-1)*100).toFixed(2),markupX:+(t.p/cogs-1).toFixed(4),
                 margin:+(((t.p-lot)/t.p)*100).toFixed(1),
-                floorX:+(t.p/Math.max(0.01,fl)).toFixed(3),under:t.under,stated:!!t.stated}:null;}
+                floorX:+(t.p/Math.max(0.01,fl)).toFixed(3),under:t.under,
+                over:+Math.max(0,t.p-out.ask.total).toFixed(2),stated:!!t.stated}:null;}
   out.ceiling=at(LADDER.ceiling,true);
   return out;
 }
@@ -4934,7 +4950,12 @@ function ladderRow(sizes,C,P){
     code:'T2', name:'Tier 2', dflt:true, who:'the default ask, graded by size, tapered as the supplier tapers',
     prices:col('ask')
   }];
-  if(P.tier1)rows.push({
+  /* v566: GATED ON tier1Anchors, NOT ON THE RAW FIELD. priceLadder decides whether a book HAS a
+     Tier 1 by asking tier1Anchors, which needs two usable anchors; this asked whether the field
+     was truthy. A book stating one end satisfied the second and not the first, so the payload
+     carried a row NAMED "Tier 1" whose every price was null, beside a desk saying the tier is not
+     stated on this book. Two gates on one fact is one gate too many. */
+  if(tier1Anchors(P))rows.push({
     code:'T1', name:'Tier 1', dflt:false, who:'stated at its two ends, the rate interpolated between them',
     prices:col('tier1')
   });
@@ -6219,7 +6240,9 @@ const whiteboard=[
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{"v":"v565","d":"10 Sep 2026","t":"THE PEN'S ACTIONS STOP BEING CUT OFF BY THE ENTRY THEY BELONG TO","n":["<b>HIS INSTRUCTION, 09 SEP 2026:</b> “Better design maybe tapping the edit button, 4-5 button will appear floating from the edit button, for the 4-5 most probable action.” What he photographed was <b>one box reading PAID IN FULL</b>, and the menu was not the fault. v547 appended it INSIDE the entry’s card and <code>.lcard</code> carries <code>overflow:hidden</code>. Measured in a real browser at 1280: a folded entry is <b>72px</b> and the menu was <b>144px</b>, so one item of three was painted. Worse, the two that were not painted were still in the layout: a hit test at the centre of MODIFICATION reached the <code>.lstate</code> of the entry BELOW, so the control did the wrong thing rather than nothing. jsdom could not have found this and did not; it does no layout.","<b>SO THE FAN LEAVES THE CARD.</b> It is <code>position:fixed</code> at the pen’s own coordinates, thrown above the pen where it would run off the bottom, and closed on a scroll, because a fixed element cannot follow the pen that opened it. Each action is its own pill with its own ground, so four or five of them read as four or five buttons rather than as one block of rows. Measured after, at 1280 and at 375: every action reachable by hit test, <b>44px in both dimensions</b>, nothing off screen, nothing overflowing sideways, and the flip proved on the last entry of the ledger at both widths.","<b>RANKED ON HIS OWN BOOK RATHER THAN ON A GUESS.</b> Of <b>117 settled sales, 101 closed with the cash and the goods on the same date</b>, so Completed leads wherever both are outstanding; of 27 open sales, 18 owe cash alone, so Paid in full leads where they do not. Four are drawn and More is always the fifth. On the order he is most likely to tap the pen on it is five: <b>Completed, Paid in full, Delivered in full, Back to pending, More</b>. On a settled row it is three, because a settled row has three real actions and a button the fold would refuse is not an action. Every item is still a chip the editor already offers, on the editor’s own conditions, with <code>updSet</code> filling the outstanding figures, so a tap still cannot overpay.","<b>THE PEN ITSELF WAS HALF THE TAP CONTRACT.</b> Hit-tested at <b>22px by 22px</b>, with no pseudo hit area, on the one control that opens all of this and the one he reaches for on a phone. It carries a 44px hit area now. That takes the entry’s top right corner, so a tap there opens the fan where it used to expand the trail; the rest of the entry still expands it, and the fan is what that corner is for.","<b>AND THE ENTRY ANIMATION WAS WRITTEN, MEASURED AND REMOVED.</b> The pills fanned out of the pen on a staggered keyframe from opacity 0 and scale .7, with <code>animation-fill-mode:backwards</code>. In a real browser whose animation timeline does not advance, the animation sits at <code>currentTime 0</code> with <code>playState:“running”</code>, so backwards holds the FROM state and every pill is <b>invisible and 30.8px tall while still answering a hit test</b>. A control that can be invisible and under the tap contract is worse than a control that does not move, and the fan reads as a fan because it is separate buttons, not because of 170 milliseconds. <b>Eight assertions, each proved RED before its green was trusted</b>: by putting the menu back inside the card, by giving the container the ground back, by moving More off the end, by dropping its class, by restoring the v547 list of three, by deleting the pen’s hit area, by making the close a no-op, and by putting the keyframes back."]},
+const evolution=[{"v":"v566","d":"10 Sep 2026","t":"THE BOARD SAYS WHEN THE CHEAPER TIER IS NOT THE CHEAPER ONE, AND FIVE INSTRUMENTS LEARN TO FAIL","n":["<b>THE ONE RELATION BETWEEN THE TWO TIERS WAS MEASURED BY NOTHING.</b> v564 walks Tier 1 against the rate law and against the floor, and against nothing else, so no surface knew whether the cheaper tier was still the cheaper one. It need not be: <b>Tier 2 is DERIVED from a floor that moves with the cost of salt, while his two Tier 1 ends are figures he typed and do not move at all.</b> A price stated at 5 unit, or a fall in the lot rate to about RM40 a unit against today’s RM46, walks Tier 2 down through a frozen Tier 1 from the small end up. The board then prints cheaper to the right under columns ordered cheapest-first, which is the one arrangement v247 says a board may not have. <code>over</code> now measures it in the engine beside <code>under</code>, ringgit by ringgit; the row carries a <b>Tier 1 above Tier 2</b> tag, the census names every affected size and the gap, and the all-clear sentence requires BOTH tiers to clear break-even AND Tier 1 to be under Tier 2. Forced with a stated RM350 at 5 unit: three sizes inverted, three rows tagged, one sentence, no all-clear. <b>It does not clamp.</b> Clamping would make a second place that prices, which is what hard rule 1 exists to forbid, and a price he has stated is quoted anyway (v552).","<b>TWO GATES STOOD ON ONE FACT AND THEY DISAGREED.</b> <code>ladderRow</code> asked whether <code>P.tier1</code> was truthy; <code>priceLadder</code> asked <code>tier1Anchors</code>, which needs two usable anchors. A book stating ONE end satisfied the second and not the first, so the payload carried a row <b>named “Tier 1” whose every price was null</b>, beside a desk saying the tier is not stated on this book. One gate now, the stricter one. And <b>two keys naming ONE size</b> (<code>{0.5:60,\"0.50\":60}</code>) passed the length check, landed <code>hi===lo</code>, and made the exponent <code>Math.log(1)/Math.log(1)</code>, which is NaN: every rung priced NaN while reading TRUTHY at every guard downstream. A tier stated at one size is not stated.","<b>OIL’S CHART SAID TIER 2 ON A BOOK WITH ONE TIER.</b> The series label was hardcoded while every other tier-facing string on that view is conditional, so oil carried a legend reading “Tier 2 ask” three inches under its own table head reading “Ask”. One flag now, computed once, read by the label and by the Tier 1 series alike.","<b>AND THE BOARD CHART DREW ITS FLOOR TWICE.</b> A second series drew <code>floorTotal(q,null,{collects:true})</code> beside the floor, on the belief that the two were one delivery apart. <b>v502 made one floor per size and floorTotal ignores the collects option</b>: measured at every printed size on both books, the two arrays are identical, <b>max gap RM0.00</b>. So the chart has been drawing a second dashed line exactly on top of the first and labelling it as a different thing, under a caption explaining a RM20 gap that stopped existing a week ago. The series is gone and the caption says what is drawn.","<b>FIVE INSTRUMENTS LEARNED TO FAIL, AND EVERY ONE WAS PROVED RED BEFORE ITS GREEN WAS TRUSTED.</b> “Tier 2 does not move” was pinned to RM70 and RM1,150, figures this book DERIVES, so an ordinary lot landing turned it red while proving nothing; it now asserts the ask is identical with <code>tier1</code> in the policy and with it stripped out, which is the actual claim and does not care what salt costs. <b>Nothing read a body cell against the column above it</b>, so the two tier cells could be swapped and every tier assertion stayed green while the board quoted the wrong tier. “Tier 1’s rate never rises” could not fail on a falling pair, so a RISING pair is now forced and the law is watched dragging every interpolated rung back, with his two stated ends printing verbatim through it. And the desk’s <code>pbAdjusted</code> and <code>tools/pricelist.mjs</code> <code>adjustedPrice</code>, one rule written twice, had never been compared directly at all: 416 grid points, exact agreement. Eight mutations, eight reds, the board’s proved against the shipped v565 master itself rather than against a hand-made stub."]},
+
+{"v":"v565","d":"10 Sep 2026","t":"THE PEN'S ACTIONS STOP BEING CUT OFF BY THE ENTRY THEY BELONG TO","n":["<b>HIS INSTRUCTION, 09 SEP 2026:</b> “Better design maybe tapping the edit button, 4-5 button will appear floating from the edit button, for the 4-5 most probable action.” What he photographed was <b>one box reading PAID IN FULL</b>, and the menu was not the fault. v547 appended it INSIDE the entry’s card and <code>.lcard</code> carries <code>overflow:hidden</code>. Measured in a real browser at 1280: a folded entry is <b>72px</b> and the menu was <b>144px</b>, so one item of three was painted. Worse, the two that were not painted were still in the layout: a hit test at the centre of MODIFICATION reached the <code>.lstate</code> of the entry BELOW, so the control did the wrong thing rather than nothing. jsdom could not have found this and did not; it does no layout.","<b>SO THE FAN LEAVES THE CARD.</b> It is <code>position:fixed</code> at the pen’s own coordinates, thrown above the pen where it would run off the bottom, and closed on a scroll, because a fixed element cannot follow the pen that opened it. Each action is its own pill with its own ground, so four or five of them read as four or five buttons rather than as one block of rows. Measured after, at 1280 and at 375: every action reachable by hit test, <b>44px in both dimensions</b>, nothing off screen, nothing overflowing sideways, and the flip proved on the last entry of the ledger at both widths.","<b>RANKED ON HIS OWN BOOK RATHER THAN ON A GUESS.</b> Of <b>117 settled sales, 101 closed with the cash and the goods on the same date</b>, so Completed leads wherever both are outstanding; of 27 open sales, 18 owe cash alone, so Paid in full leads where they do not. Four are drawn and More is always the fifth. On the order he is most likely to tap the pen on it is five: <b>Completed, Paid in full, Delivered in full, Back to pending, More</b>. On a settled row it is three, because a settled row has three real actions and a button the fold would refuse is not an action. Every item is still a chip the editor already offers, on the editor’s own conditions, with <code>updSet</code> filling the outstanding figures, so a tap still cannot overpay.","<b>THE PEN ITSELF WAS HALF THE TAP CONTRACT.</b> Hit-tested at <b>22px by 22px</b>, with no pseudo hit area, on the one control that opens all of this and the one he reaches for on a phone. It carries a 44px hit area now. That takes the entry’s top right corner, so a tap there opens the fan where it used to expand the trail; the rest of the entry still expands it, and the fan is what that corner is for.","<b>AND THE ENTRY ANIMATION WAS WRITTEN, MEASURED AND REMOVED.</b> The pills fanned out of the pen on a staggered keyframe from opacity 0 and scale .7, with <code>animation-fill-mode:backwards</code>. In a real browser whose animation timeline does not advance, the animation sits at <code>currentTime 0</code> with <code>playState:“running”</code>, so backwards holds the FROM state and every pill is <b>invisible and 30.8px tall while still answering a hit test</b>. A control that can be invisible and under the tap contract is worse than a control that does not move, and the fan reads as a fan because it is separate buttons, not because of 170 milliseconds. <b>Eight assertions, each proved RED before its green was trusted</b>: by putting the menu back inside the card, by giving the container the ground back, by moving More off the end, by dropping its class, by restoring the v547 list of three, by deleting the pen’s hit area, by making the close a no-op, and by putting the keyframes back."]},
 
 {"v":"v564","d":"10 Sep 2026","t":"TWO TIERS ON THE BOARD, THE SUGGESTED PRICE TO THE NEAREST FIVE, AND THE SHEET SAVES AS JPG AND PDF WITH A QR","n":["<b>HIS INSTRUCTION, 10 SEP 2026: “I want to have a 2 tier rate. The current one shown on the board is Tier 2. For Tier 1, the 0.5 unit is 60 while the 12.5 unit is 875.”</b> So the board carries two levels. <b>Tier 2 is the board that was there and not one of its figures moves</b>, at any size, on either book: it is still what priceLadder().ask returns, still what the customer price list is drawn toward, still what the drafter measures a row against, and still row zero of the payload the phone and the D1 mirror read. Tier 1 is new and sits under it: <b>RM 60, 110, 150, 200, 230, 270, 310, 340, 380, 410, 500 and 875</b> against Tier 2’s RM 70 to RM 1,150. Said as rates, RM 120 a unit falling to RM 70 against RM 140 falling to RM 92, so Tier 1 is 86 per cent of the ask at half a unit and 76 per cent of it at twelve and a half. Every rung clears break-even, from 2.13x at half a unit to 1.25x at twelve and a half, so nothing on either tier is quoted at a loss.","<b>TIER 1 IS STATED AT ITS ENDS AND INTERPOLATED BETWEEN THEM, AND THE DERIVED ROAD WAS TRIED FIRST.</b> The ask is a margin on the floor tapered at the supplier’s own exponent (v504), which is ONE number to set: a level pinned at 2.5 unit. His two ends are two numbers, and they do not fit on that shape. Measured, his pair implies a taper of <b>-0.167 against the supplier’s -0.121</b>, which is the whole point of a relationship price and not something a level can absorb; solved as a margin curve it wants an anchor of 0.324 and a taper of -0.308, and the clamps then bite. Worse, <b>RM 875 is not a multiple of ten</b> and the house rounding is up to the ten, so no derived curve can ever print the figure he gave; it would print RM 880. So the two ends are taken verbatim and only the sizes between them are rounded, which is the rule the retired tier board used and the only one that can be honest about a number he typed. Between them the RATE is interpolated in the log of size, the desk’s own method, and outside them it is clamped rather than extrapolated. Tier 1 obeys the same two laws as the ask: the rate never rises with size, and the gap to break-even is named in <code>under</code> rather than hidden.","<b>OIL HAS ONE TIER AND THE BOARD SAYS SO.</b> Its five prices are already his own stated ones and its 50 unit rung earns 3 per cent, so there is nothing for a second tier to sit under, and he has stated no ends for it. <code>LADDER_BY.oil</code> therefore carries <code>tier1:null</code> as an ENTRY rather than an omission: <code>ladderFor</code> spreads LADDER underneath, so leaving it out would hand oil salt’s anchors, clamp every oil size to 12.5, land the rate at RM 70 a unit and quote <b>RM 700 for ten units of oil that Tier 2 sells at RM 130</b>. The suite asserts oil is handed none, and the board head reads Ask on a one-tier book and Tier 2 on a two-tier one.","<b>THE MARKUP COLUMN MOVED INTO THE ASKS RATHER THAN BEING DROPPED OR DOUBLED.</b> v554’s rule stands: the multiple must say what it is OF, or 2.49x reads as +249 per cent. What could not stand is one Markup column beside TWO asks, which has to pick a tier and then silently describes one of them while sitting level with both. Each tier cell now carries its own total, rate, margin on price and multiple of effective cost, four lines, and the board stays at five columns because it gets 325px of a 375px screen. <b>The “collect only” tag went with it, and it had been unreachable since v502</b>: that release made one floor per size and the suite asserts collecting and delivering give the same figure to the ringgit, so the tag’s own condition has been impossible for a fortnight. The row now flags a price under break-even, on either tier, and names which.","<b>HIS SECOND INSTRUCTION: THE SUGGESTED PRICE PER CUSTOMER ROUNDS TO THE NEAREST FIVE.</b> It was the whole ringgit UP, which put figures like RM 97 and RM 416 on a sheet handed to a customer while the board beside it quotes in tens. NEAREST, not up: the four drawing rules that pull a customer’s own rate toward the board already decide the direction, and rounding had no business deciding it again. <b>The floor is the one thing rounding may not cross</b>: nearest-five can land up to RM 2.50 under break-even, so a price that does is lifted to the first five above the floor. The cap is not re-clamped, because it is a drawing target at three times COGS and not a refusal line. One rule, two places, and the suite holds <code>tools/pricelist.mjs</code> and the desk’s <code>pbAdjusted</code> together as it always has. Measured over <b>all 39 parties on the roster</b>: every price on every sheet is a multiple of five and not one is under its floor.","<b>HIS THIRD INSTRUCTION: THE BOARD SHEET SAVES AS HTML, PDF AND JPG, WITH THE LOGO AND THE NUMBERS ONLY, THEN THE USERNAME AND A QR TO THE WEBSITE.</b> HTML was already there. The image was a PNG and is now a <b>JPG</b>, which every message app and phone gallery takes without asking. The <b>PDF</b> is written out here, one A4 page embedding the same JPEG as a DCTDecode image, so paper, file and message are one rendering and cannot drift; no library, for the reason hard rule 4 exists and the reason engine/qr.mjs is written out rather than installed. And <b>the username has moved below the numbers, with the QR after it</b>, which is the order he gave; v538’s rule that there are no words at all on the sheet is not withdrawn and still holds.","<b>ONE QR ENCODER, INLINED LIKE THE PRICING ENGINE.</b> tools/qr.mjs was a build-time module for the statements; the desk needs the same encoder at runtime, and a second copy would drift exactly as two pricing engines would. It is now <code>engine/qr.mjs</code>, inlined into the master by <code>tools/engine.mjs --sync</code> beside pricing and position, with CI failing if the block is not the module to the byte. It draws <b>rectangles, never a path and never a stroke</b>, because the sheet goes to print, to a PDF and to a phone’s share sheet rather than only to a browser. <b>The site’s address is never in this file</b>: /desk is public by his decision of 11 Aug and the statements site is deliberately on its own cryptic name, so the address travels the keyed road the usernames already travel, written to the desk’s store by the publish and handed back by GET /stmt-users. No address means no QR, said on the card, because a printed code that opens nothing is worse than no code.","<b>MEASURED IN A REAL BROWSER, NOT IN jsdom, BECAUSE jsdom HAS NO CANVAS.</b> The QR was drawn on the canvas and then <b>read back module by module against the encoder: 1,089 modules, none wrong</b>, and the quiet zone light at every one of 344 samples round its edge. The JPEG carries its start and end markers. The PDF opens <code>%PDF-1.4</code>, ends <code>%%EOF</code>, and <b>every one of its five xref offsets lands exactly on its own object</b>, which is the whole difficulty of writing one by hand. With no address the sheet still renders and the PDF is still made, with no QR block at all. Four new suite assertions were each proved RED before their green was trusted, by moving the 12.5 anchor onto a ten, by removing oil’s tier1:null, by putting Tier 1 at row zero and by pricing Tier 1 above Tier 2."]},
 
@@ -6585,7 +6608,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='10 Sep 2026, 14:37 KL';
+const LAST_UPDATED='10 Sep 2026, 16:08 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -17331,9 +17354,20 @@ function tabPricing(){
        exists. The row now flags a price under break-even, on either tier, and says which. */
     const rows=tb.map(r=>{const L=priceLadder(r.q);
       const badT1=!!(L.tier1&&L.tier1.under>0.009), badT2=L.ask.under>0.009;
-      return `<tr${badT1||badT2?' style="background:rgba(212,105,76,.07)"':''}><td class="l">${units(r.q)}`
-      +(badT1&&badT2?' <span class="tag def">both under floor</span>':badT2?' <span class="tag def">under floor</span>'
-        :badT1?' <span class="tag def">Tier 1 under floor</span>':'')+`</td>`
+      /* v566: AND THE ROW SAYS WHEN THE CHEAPER TIER IS NOT THE CHEAPER ONE. The two columns are
+         printed cheapest-first in a fixed order, which is v247's rule for reading a board, so an
+         inverted row reads dearer-to-cheaper with nothing saying so. `over` is the RM by which
+         Tier 1 exceeds the ask at that size, measured in the engine beside `under`.
+         The under-floor tag also NAMES Tier 2 now: it printed a bare "under floor" while naming
+         Tier 1 in the other branch, which on a two-tier board leaves the reader to guess which
+         column the tag is about. */
+      const badOver=!!(L.tier1&&L.tier1.over>0.009);
+      const tag=badOver?' <span class="tag def">Tier 1 above Tier 2</span>'
+        :badT1&&badT2?' <span class="tag def">both under floor</span>'
+        :badT2?' <span class="tag def">'+(T1on?'Tier 2 under floor':'under floor')+'</span>'
+        :badT1?' <span class="tag def">Tier 1 under floor</span>':'';
+      return `<tr${badT1||badT2||badOver?' style="background:rgba(212,105,76,.07)"':''}><td class="l">${units(r.q)}`
+      +tag+`</td>`
       +`<td class="mono" style="color:var(--dim)">${fmt0(L.cogs)}</td>`
       /* v552: effective cost, which IS break-even and IS the floor, moved in front of the margin and
          the ask so the row reads left to right the way the ask is built. It was the last column. */
@@ -17349,10 +17383,15 @@ function tabPricing(){
        total to the floor itself. They are the same test on a derived ask and not on a stated one:
        since v552 a price he has stated is quoted below break-even and carries the gap in `under`,
        which is the only figure that distinguishes a decision from a fault. */
-    const flagged=[];
+    const flagged=[],inverted=[];
     tb.forEach(r=>{const L=priceLadder(r.q);
       if(L.tier1&&L.tier1.under>0.009)flagged.push({who:'Tier 1',q:r.q,rm:L.tier1.under});
-      if(L.ask.under>0.009)flagged.push({who:T1on?'Tier 2':'the ask',q:r.q,rm:L.ask.under});});
+      if(L.ask.under>0.009)flagged.push({who:T1on?'Tier 2':'the ask',q:r.q,rm:L.ask.under});
+      /* v566: this read `under` and nothing else, so a board printing Tier 1 DEARER than Tier 2
+         at half its sizes still ended on "Every price on the board, on both tiers, clears
+         break-even" — true, and the wrong question. Both tiers clearing their floor says nothing
+         about which of the two is the cheaper one. */
+      if(L.tier1&&L.tier1.over>0.009)inverted.push({q:r.q,rm:L.tier1.over});});
     return `<div class="card"><table class="pxboard"><thead>${head}</thead><tbody>${rows}</tbody></table>
     <!-- v393: the break-even definition that stood here went with the rest of the standing
          prose. The setup table below states it as a figure, which is the register this asks for. -->
@@ -17370,8 +17409,9 @@ function tabPricing(){
          "Do not quote this at all" is also a different and more serious instruction than "quote it
          at the counter", and it was a sub-clause of it. Split, so neither can crowd the other and
          neither can grow into the limit. The definition of the two floors is in the fold below. -->
-    ${flagged.length?`<div class="insight" style="border-left-color:var(--crim)"><b>${flagged.length} price${flagged.length===1?'':'s'} on this board sit${flagged.length===1?'s':''} under break-even</b>: ${flagged.map(f=>f.who+' at '+units(f.q)+', short '+fmt(f.rm)).join('; ')}.</div>`
-      :`<div class="insight" style="border-left-color:var(--grn)">Every price on the board, on ${T1on?'both tiers':'the one tier'}, clears break-even.</div>`}
+    ${flagged.length?`<div class="insight" style="border-left-color:var(--crim)"><b>${flagged.length} price${flagged.length===1?'':'s'} on this board sit${flagged.length===1?'s':''} under break-even</b>: ${flagged.map(f=>f.who+' at '+units(f.q)+', short '+fmt(f.rm)).join('; ')}.</div>`:''}
+    ${inverted.length?`<div class="insight" style="border-left-color:var(--crim)"><b>Tier 1 is dearer than Tier 2 at ${inverted.length} of ${tb.length} size${tb.length===1?'':'s'}</b>, so the board reads cheaper to the right where it should read dearer: ${inverted.map(f=>units(f.q)+' by '+fmt(f.rm)).join('; ')}. Tier 2 is derived from a floor that moves with the cost of salt; his two Tier 1 ends do not move at all.</div>`:''}
+    ${!flagged.length&&!inverted.length?`<div class="insight" style="border-left-color:var(--grn)">Every price on the board, on ${T1on?'both tiers':'the one tier'}, clears break-even${T1on?', and Tier 1 is under Tier 2 at every size':''}.</div>`:''}
     <!-- v393: THE MARGIN SETUP IS THE BOARD'S DERIVATION, SO IT SITS IN THE BOARD'S CARD.
          It was its own open h2 one section down, restating in prose what these six figures
          say. The prose went; the figures are the ask's derivation and stay open. -->
@@ -17760,7 +17800,7 @@ function tabPricing(){
 
   </details>
   <details class="obsec"><summary>What the two charts plot <span class="q">and what is deliberately not on them</span><span class="ct">nothing fitted</span></summary>
-  <div class="dsc">Left: the ask per unit at each printed size, against both floors and the effective cost. A flat line is a ladder that has stopped rewarding size; the gap between the ask and the floor it clears is all the room there is, and the two floors are one delivery apart per order. Right: every priced order ever written, plotted at the rate actually paid on the day it was agreed, grouped into three lot bands taken from this book&rsquo;s own board, with today&rsquo;s ask for each band drawn as a dashed line. There is no fitted curve on either chart and no elasticity anywhere on this desk.</div>
+  <div class="dsc">Left: the ask per unit at each printed size, against its floor and the effective cost, with Tier 1 beside it where the book states one. A flat line is a ladder that has stopped rewarding size, and the gap between the ask and the floor it clears is all the room there is. Right: every priced order ever written, plotted at the rate actually paid on the day it was agreed, grouped into three lot bands taken from this book&rsquo;s own board, with today&rsquo;s ask for each band drawn as a dashed line. There is no fitted curve on either chart and no elasticity anywhere on this desk.</div>
   </details>
   <details class="obsec"><summary>Price response <span class="q">what has sold at each price</span></summary>
   <div class="dsc" style="margin-bottom:9px">What you have actually sold at each price, carried over from the original Register. Observed trade only &mdash; <b>no fitted demand curve and no invented elasticity</b>. Volume tells you where the business really sits; revenue tells you which price is carrying it. Prices are grouped to the nearest ringgit, and the axis lists the prices you have traded at rather than a continuous scale, so the gaps are not to scale.</div>
@@ -18037,11 +18077,16 @@ function drawBoardCharts(){
            IT SURVIVED BECAUSE NOTHING CAN SEE IT. drawPerProduct swallows a throw, and a series
            of nulls does not even throw: Chart.js draws the legend entry and no line. Found by
            stubbing Chart and reading what the datasets actually held, which is the only way.
-           ONE ASK SERIES NOW, off priceLadder, the same call the board makes. BOTH FLOORS ARE
-           DRAWN, because they are one delivery apart per order and that gap is the whole reason
-           a small lot carries a "collect only" tag on the table above; on this book they separate
-           by RM20 a unit at half a unit of salt and converge to nothing by twelve and a half. */
+           ONE ASK SERIES NOW, off priceLadder, the same call the board makes.
+           v566: AND ONE FLOOR, BECAUSE THERE HAS BEEN ONE SINCE v502. A second series drew
+           floorTotal(q,null,{collects:true}) beside the floor, on the old belief that the two were
+           one delivery apart. v502 made one floor per size and floorTotal ignores the collects
+           option, so the two arrays are IDENTICAL: measured at every printed size on both books,
+           max gap RM0.00. The chart was drawing a second dashed line exactly on top of the first
+           and labelling it as a different thing, under a caption explaining a RM20 gap that has
+           not existed for a week. The same v502 retirement took the "collect only" tag at v564. */
         const c=pxCost(),tb=tierBoard();
+        const T1chart=tb.some(r=>{try{return !!priceLadder(r.q).tier1;}catch(e){return false;}});
         /* v564: TWO ASK SERIES WHERE THE BOOK HAS TWO TIERS. A chart of the board that drew one of
            its two levels would be the "folded reads as missing" fault in its purest form: the second
            tier would exist on the table six inches above and nowhere on the picture of it. Tier 1 is
@@ -18049,17 +18094,17 @@ function drawBoardCharts(){
            An all-null series never throws, so the map returns null per point and the series is only
            pushed where a Tier 1 exists at all. */
         const ds=[
-          {label:'Tier 2 ask',borderColor:'#c5a059',backgroundColor:'#c5a059',tension:.25,pointRadius:3,borderWidth:2,
+          /* v566: the label is conditional, as every other tier-facing string on this view is. It
+             was hardcoded, so OIL's chart carried a legend reading "Tier 2 ask" on a book whose own
+             table head three inches above reads "Ask" and which has no second tier at all. */
+          {label:T1chart?'Tier 2 ask':'ask',borderColor:'#c5a059',backgroundColor:'#c5a059',tension:.25,pointRadius:3,borderWidth:2,
             data:tb.map(r=>{let p=null;try{p=priceLadder(r.q).ask.rate;}catch(e){}return p;})},
           {label:'floor',borderColor:'#d4694c',borderDash:[5,4],borderWidth:1.5,pointRadius:0,
             data:tb.map(r=>+(r.floor/r.q).toFixed(2))},
-          {label:'floor, collected',borderColor:'#e08a72',borderDash:[2,3],borderWidth:1.5,pointRadius:0,
-            data:tb.map(r=>{let f=null;try{f=floorTotal(r.q,null,{collects:true});}catch(e){}
-              return f==null?null:+(f/r.q).toFixed(2);})},
           {label:'effective cost',borderColor:'rgba(242,244,245,0.45)',borderDash:[1,4],borderWidth:1.5,pointRadius:0,
             data:tb.map(()=>+c.eff.toFixed(2))}
         ];
-        if(tb.some(r=>{try{return !!priceLadder(r.q).tier1;}catch(e){return false;}}))
+        if(T1chart)
           ds.splice(1,0,{label:'Tier 1',borderColor:'#b87333',borderDash:[6,3],tension:.25,pointRadius:3,borderWidth:2,
             data:tb.map(r=>{let p=null;try{const t=priceLadder(r.q).tier1;p=t?t.rate:null;}catch(e){}return p;})});
         freshChart(a,{type:'line',data:{labels:tb.map(r=>units(r.q)),datasets:ds},
