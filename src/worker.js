@@ -723,7 +723,12 @@ export default {
        username is the address of an account. Inverted on the desk. */
     if (p === "/stmt-users") {
       if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
-      return json({ ok: true, users: (await env.SALT_QUEUE.get("stmt-users", "json")) || {} });
+      /* v564: the site's own address travels with the usernames, for the QR the desk draws on the
+         board sheet. BEHIND THE KEY, with them, and never in the desk's HTML: /desk is public and
+         the statements site is deliberately on its own cryptic name. tools/stmt-publish.mjs writes
+         both keys on every deploy; a desk that gets no site draws no QR and says so. */
+      return json({ ok: true, users: (await env.SALT_QUEUE.get("stmt-users", "json")) || {},
+                    site: (await env.SALT_QUEUE.get("stmt-site")) || null });
     }
     if (p === "/orders") {
       if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);

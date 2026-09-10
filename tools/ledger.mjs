@@ -62,6 +62,10 @@ const NOT_LEDGER = new Set([
 
   /* pricing, cost and reward MODEL: rules, not facts */
   "PRICE", "PRICE_ENGINE", "PRICING_ENGINE", "POSITION_ENGINE" /* v337, v338: the engine modules inlined by tools/engine.mjs; functions, no data */,
+  "QR_ENGINE" /* v564: the third inlined module, engine/qr.mjs. Functions and the format's own
+     constant tables; a QR is drawn from an address, and the address is not held here. */,
+  "PB_A4" /* v564: the page size the board sheet's PDF is written onto, in points. A measurement of
+     paper, not of anything that happened. */,
   "VIEWS", "VIEW_OF", "PART_Q", "PART_DRAW", "VIEW_PART" /* v341: the seven views over the tabs; navigation, not the book */,
   "EDFORM" /* v363: the row editor's form spec. Labels, control kinds and hints for the thirty
      editable attributes: presentation of the book, never the book. It is data-shaped because a

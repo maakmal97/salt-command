@@ -20,7 +20,8 @@ The fold routine is `docs/CLOUD_FOLD.md`; statements `docs/STATEMENTS.md`; desig
 1. **The master is `master/salt_command.html`. Never hand-edit `public/desk.html`**, a
    build output committed so the data lives in the repo. Inside the master four blocks
    are GENERATED and CI fails if any differs from its file: `ENGINE` from
-   `engine/pricing.mjs` and `engine/position.mjs` (`node tools/engine.mjs --sync`),
+   `engine/pricing.mjs`, `engine/position.mjs` and `engine/qr.mjs` (`node
+   tools/engine.mjs --sync`; `tools/qr.mjs` re-exports the last, never copies it),
    `BOOK` from `ledger/book.json` (`tools/booksync.mjs --sync`), geography from
    `geo/*.json` (`tools/geosync.mjs --sync`), `DESIGN` from `design/salt-ds.css` and
    `design/desk.css` (`tools/designsync.mjs --sync`). Edit the module, sync, build.
@@ -44,7 +45,14 @@ The fold routine is `docs/CLOUD_FOLD.md`; statements `docs/STATEMENTS.md`; desig
    is the last three lots** (rate and freight); **the leak is the drift of the last three
    counts** (`COUNTS` on the book, appended by every fold) over the units sold in those
    cycles, at landed; **the ask is a margin on the floor** (`ladderMargin`, `anchorG` per
-   book), all v504.
+   book), all v504. **Two tiers since v564.** Tier 2 is that derived ask, unchanged, and is
+   **row zero of `ladderRow`, which is load bearing**: phone, mirror and suite read `[0]`.
+   Tier 1 is STATED at its ends in `LADDER.tier1` (salt 0.5:60, 12.5:875), the rate
+   interpolated in the log of size between them, clamped outside; the ends print verbatim
+   because RM875 is off the ten grid. A one-tier book needs `tier1:null` in `LADDER_BY` **as
+   an entry, not an omission**, or `ladderFor` hands it salt's. Board prints cheapest first;
+   the payload does not. **The customer's suggested price rounds to the nearest five**, never
+   under its floor: `adjustedPrice` and `pbAdjusted`, held together by the suite.
 6. **The look is the Salt design system applied as a layer.** Material, type and colour
    are decided in `design/desk.css` over the vendored `design/salt-ds.css`; a colour or
    type change is an edit there, then `--sync`, then build, never a hex in the master's
@@ -229,6 +237,10 @@ reads and moves them over the `STMT_SITE` service binding with `STMT_DESK_KEY` o
 Workers (`src/orders.js`; the site has no road back); `done` queues the sale under
 `q:orders`; the publish writes `stmt-users` to the desk's KV. `node tools/stmt-setup.mjs`
 sets the desk key and the site's push pair. Detail: `docs/STATEMENTS.md`.
+**Print a board (v564)** saves HTML, PDF or JPG: crystal, sizes, username, then a QR to
+`<site>/?u=<username>`. **The site address is never in the public desk**: the publish writes
+KV `stmt-site` and keyed `GET /stmt-users` returns it, so the laptop has no username and no
+QR. No address, no QR drawn.
 
 ## Files
 
@@ -237,6 +249,7 @@ sets the desk key and the site's push pair. Detail: `docs/STATEMENTS.md`.
 | `src/worker.js` | `/queue`, `/vault`, `/bio` dropped, `/drafts`, `/orders` (relay), `/rev`, static assets; dispatches the stage on approval |
 | `src/drafter.js` | Queue plus D1 mirror to a proposed row in `draft`; never writes `entry` |
 | `tools/fold.mjs` | `--plan` reads `master/_to_fold.json`, refuses what it must, writes the notes skeleton; `--apply` folds all or nothing, syncs, bumps, rolls the shelf, moves the watermark |
+| `engine/qr.mjs` | The one QR encoder, inlined like the pricing engine (v564); `qrRectSvg` draws RECTANGLES, a stroked symbol does not scan |
 | `tools/rid.mjs` | Stable `rid` per ledger row; `nextRid` is the one minting place (`ovKey` collided on two SA5-BTR lots) |
 | `tools/drafts.mjs` | `--schema`, `--list`, `--draft <file>`, `--approved`, `--committed <id>`, `--from-queue`; via wrangler, no key |
 | `tools/drain.mjs` | KV to `06_Data\salt_queue_cloud.json`; `--committed <ISO>`, `--status`, `--forget` |

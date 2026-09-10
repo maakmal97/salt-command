@@ -22,6 +22,9 @@ const MASTER = resolve(REPO, "master", "salt_command.html");
 const ENGINES = [
   { name: "pricing", file: resolve(REPO, "engine", "pricing.mjs") },
   { name: "position", file: resolve(REPO, "engine", "position.mjs") },
+  /* v564: the QR encoder, because the desk draws one on the board sheet he hands a customer and
+     the statements build draws one from the same text. Two encoders would drift. */
+  { name: "qr", file: resolve(REPO, "engine", "qr.mjs") },
 ];
 
 const BEGIN = (n) => `/* ==== ENGINE ${n}: generated from engine/${n}.mjs by tools/engine.mjs. Edit the module, never this block. ==== */`;
