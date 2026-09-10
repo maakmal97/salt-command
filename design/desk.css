@@ -155,7 +155,7 @@ details.rcard>summary .rname{font-size:16px;font-weight:500;}
 .rtag{font-weight:500;letter-spacing:.14em;border-color:var(--salt-line-faint);}
 
 /* ---- 5. THE RAIL AND THE BAR ---- */
-.rail{width:200px;flex:0 0 200px;background:var(--salt-glass);border:1px solid var(--salt-line);
+.rail{background:var(--salt-glass);border:1px solid var(--salt-line);
   border-radius:var(--salt-radius-lg);padding:18px 12px 14px;
   box-shadow:var(--salt-shadow-desk),inset 0 1px 0 var(--salt-highlight);
   -webkit-backdrop-filter:blur(28px);backdrop-filter:blur(28px);}
@@ -164,19 +164,47 @@ details.rcard>summary .rname{font-size:16px;font-weight:500;}
 .railtitle{font-family:var(--salt-font-display);font-weight:300;font-size:22px;letter-spacing:.04em;line-height:1;
   background:var(--salt-gradient-title);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;margin:0;}
 .kick{font-size:10px;font-weight:500;letter-spacing:.24em;color:var(--salt-brass);margin-top:4px;}
-.grouplbl{font-size:10px;font-weight:500;letter-spacing:.18em;color:var(--salt-mist);padding:0 10px;margin-bottom:4px;}
-.tab{font-size:11.5px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--salt-mist);
-  border-radius:var(--salt-radius-sm);padding:8px 10px;}
-.tab:hover{background:var(--salt-glass);color:var(--salt-salt);}
+/* ---- A DIVIDER IS NOT A DESTINATION (his instruction, 11 Sep 2026) ----
+   .grouplbl and .tab wore the same costume: the mono face, uppercase, weight 500, and the
+   SAME COLOUR, --salt-mist for both, with 1.5px of size and a little tracking between them.
+   Nothing in the rail said which of the two you could tap, and the group heading read as a
+   dimmer tab. They are opposite on four axes now, because relying on one is what failed.
+     CASE    a heading shouts, a destination is named. Uppercase mono at wide tracking is this
+             desk's LABEL signature: .kick, .plbl, .dhname, the identity's eyebrow, every
+             table head. The tab wearing it was the whole confusion. The tabs and the rail's
+             parts go sentence case; TAB_LABEL and the markup already hold sentence case, so
+             no copy moves. .vpill and .prodsw button keep uppercase: a bordered pill is not
+             confusable with a heading, which is why SALT and OIL never were.
+     RULE    the heading sits ON a hairline that runs out to the rail's edge. Nothing
+             clickable on this desk sits on a line.
+     COLUMN  the heading is flush to the rail's own padding; every tab is inset 12px from it,
+             so the seven destinations form one column with one left edge and the five
+             headings sit outside it.
+     WEIGHT  the tab rises to mist-light at rest and salt when open; the heading keeps mist.
+             The brighter of the two is the one you can reach, which is the way round it was
+             not. The heading is NOT dimmed to make the gap: mist on obsidian is 5.0:1 and
+             anything under it fails small text, so the gap is made from above. ---- */
+.railgroup{margin-bottom:15px;}
+.grouplbl,.prodsw .plbl{display:flex;align-items:center;gap:9px;font-size:9.5px;font-weight:500;
+  letter-spacing:.22em;color:var(--salt-mist);padding:0 2px;margin:0 0 7px;}
+.grouplbl::after,.prodsw .plbl::after{content:'';flex:1 1 auto;height:1px;background:var(--salt-line);}
+.prodsw{margin:2px 0 16px;}
+.tab{font-size:13px;font-weight:500;letter-spacing:.01em;text-transform:none;color:var(--salt-mist-light);
+  border-radius:var(--salt-radius-sm);padding:8px 10px 8px 12px;}
+/* the resting glass is white 3%, which is also .tab.on's ground, so hover read as selected and
+   selected read as nothing. Hover is its own step now, and the open tab keeps the 5b block. */
+.tab:hover{background:rgba(255,255,255,.06);color:var(--salt-salt);}
 .tab.on{background:var(--salt-glass);border-color:var(--salt-line);color:var(--salt-salt);font-weight:500;box-shadow:none;}
 .navct{font-size:11px;font-weight:500;background:none;color:var(--salt-copper);padding:0;}
 .tab.on .navct{background:none;color:var(--salt-copper);}
 .subs{border-left-color:var(--salt-line-faint);}
 .sub{font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--salt-mist);min-height:32px;}
+/* the rail's parts follow the tabs into sentence case; bare .sub above is ALSO the card
+   subtitle in every h2 and .cardh on the desk, so this is scoped and that one is untouched. */
+.subs .sub{font-size:11.5px;letter-spacing:.01em;text-transform:none;}
 .sub.on{color:var(--salt-salt);background:var(--salt-glass);}
 .railfoot{border-top-color:var(--salt-line-faint);}
-.prodsw .plbl{font-size:10px;font-weight:500;letter-spacing:.18em;color:var(--salt-mist);}
-.prodsw button{font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;
+.prodsw button{font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;padding-left:12px;
   border-radius:var(--salt-radius-sm);border-color:var(--salt-line-faint);background:transparent;color:var(--salt-mist);}
 .prodsw button:hover{background:var(--salt-glass);}
 .prodsw button.live{box-shadow:none;border-color:var(--pacc);color:var(--salt-salt);}
@@ -201,6 +229,7 @@ details.rcard>summary .rname{font-size:16px;font-weight:500;}
   box-shadow:0 0 26px -2px rgba(197,160,89,.5),0 12px 34px -12px rgba(0,0,0,.85),inset 0 1px 0 var(--salt-highlight);}
 .totop:focus-visible{outline-color:var(--salt-brass);}
 .navveil{background:rgba(5,8,10,.55);}
+@media(min-width:861px){.rail{width:212px;flex:0 0 212px;}}
 @media(max-width:860px){.rail{background:var(--salt-pane);}}
 .exitbtn{font-size:10px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;border-color:var(--salt-line-faint);color:var(--salt-mist);}
 .exitbtn:hover{color:var(--salt-ember);border-color:rgba(212,105,76,.55);background:rgba(212,105,76,.08);}
@@ -500,8 +529,12 @@ details.obs>summary:hover{background:var(--salt-glass);}
 /* ---- 13. THE PHONE: the same vocabulary; only the floors the old layer sets stand ---- */
 @media(max-width:560px){
   h2{white-space:normal;}
-  .kick,.grouplbl{font-size:11px !important;letter-spacing:.18em;}
-  .tab{font-size:11.5px;}
+  .kick{font-size:11px !important;letter-spacing:.18em;}
+  /* the 11px floor is the phone's, not the hierarchy's: at 11px against a 11.5px tab the
+     heading and the destination were level again, which is the fault this rail just lost.
+     The heading keeps the floor and the tab clears it. */
+  .grouplbl,.prodsw .plbl{font-size:11px !important;letter-spacing:.22em;}
+  .tab{font-size:13.5px;}
   /* the As-at stamp is one chip that may not break inside itself (v333); at 11px it is 372px wide
      and carries the page to 383, so it keeps 10.5px here. Measured at v477. */
   .metarow .chip{font-size:10.5px;letter-spacing:.04em;}

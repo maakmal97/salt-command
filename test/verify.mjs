@@ -9202,5 +9202,81 @@ section("11 Sep 2026: the mirror check stops crying wolf, and still catches a re
      "and the drafter really does read both, so excluding them would have blinded the check");
 }
 
+section("11 Sep 2026: a rail heading and a rail destination are told apart, and Current holds three");
+{
+  /* HIS REPORT: nothing in the rail said which rows you could tap. .grouplbl and .tab were the
+     mono face, uppercase, weight 500 and THE SAME COLOUR, --salt-mist for both, separated by
+     1.5px of size and a little tracking. Four axes now carry it, and each is asserted, because
+     any one of them alone is what failed. Colour and type are decided in design/desk.css and
+     synced into the master (hard rule 6), so they are read there; the directory is markup and is
+     read in the master. Every one was proved red by putting the v570 rule back. */
+  const railCss = readFileSync(join(REPO, "design", "desk.css"), "utf8");
+  const rule = (sel) => {
+    const at = railCss.indexOf("\n" + sel + "{");
+    return at < 0 ? null : railCss.slice(at + sel.length + 2, railCss.indexOf("}", at));
+  };
+  const head = rule(".grouplbl,.prodsw .plbl"), tab = rule(".tab");
+  ok(!!head && !!tab, "the layer states the rail's heading and its tab in one rule each");
+
+  /* CASE. Uppercase mono at wide tracking is the desk's label signature; a destination is named. */
+  ok(/text-transform:none/.test(tab), "the tab is sentence case");
+  ok(!/text-transform:none/.test(head), "and the heading is not, so the two never wear one costume");
+
+  /* WEIGHT. The reachable row is the brighter of the two, which is the way round it was not.
+     And the heading is NOT dimmed to make the gap: mist on obsidian is 5.0:1 and small text
+     under it fails, so the gap is made from above. */
+  ok(/color:var\(--salt-mist-light\)/.test(tab), "the tab rests at mist-light");
+  ok(/color:var\(--salt-mist\)[;}]/.test(head), "the heading keeps mist, so nothing was dimmed to make the difference");
+  ok(!/color:var\(--salt-mist\)[;}]/.test(tab), "and the two no longer share one colour, which is the fault itself");
+
+  /* SIZE, read as numbers rather than trusted as text */
+  const px = (r) => parseFloat((/font-size:([\d.]+)px/.exec(r) || [])[1]);
+  ok(px(tab) >= px(head) + 3, `the tab is at least 3px over the heading (${px(head)} -> ${px(tab)})`);
+
+  /* RULE. --salt-line-faint is white 6% and drew 97px of rule that cannot be seen on this
+     ground; --salt-line is the hairline every card border is drawn in. */
+  ok(/\.grouplbl::after,\.prodsw \.plbl::after\{[^}]*background:var\(--salt-line\)/.test(railCss),
+     "every heading sits on the desk's own hairline, and nothing clickable on this desk does");
+
+  /* COLUMN. One heading rule covers PRODUCT too: it read as a heading only because SALT and OIL
+     are bordered pills, which is the accident this fix is about. */
+  ok(/\.grouplbl,\.prodsw \.plbl\{/.test(railCss), "PRODUCT is the same heading as the other five, stated once");
+  const padL = (r) => { const m = /padding:([^;]*)/.exec(r); if (!m) return null;
+    const v = m[1].trim().split(/\s+/); return v.length === 4 ? v[3] : v.length >= 2 ? v[1] : v[0]; };
+  ok(padL(head) === "2px" && /padding:[^;]*\s12px[;}]/.test(tab),
+     `the heading is flush at ${padL(head)} and every destination is inset, so they form two columns`);
+
+  /* THE WIDTH IS THE WIDE DESK'S ONLY. This layer's bare .rail carries no media query and sits
+     after v371's drawer block at the same specificity, so from v472 to 11 Sep it silently held
+     the phone drawer at the desk's rail width instead of min(272px,100vw - 28px). */
+  ok(/@media\(min-width:861px\)\{\.rail\{width:\d+px;flex:0 0 \d+px;\}\}/.test(railCss),
+     "the rail's width is scoped to the wide desk");
+  const bare = rule(".rail");
+  ok(bare !== null && !/width:/.test(bare), "and the unscoped .rail sets no width, so the drawer keeps its own");
+
+  /* THE DIRECTORY (his instruction, 11 Sep 2026): Position and Trading are one group, Current. */
+  const masterRail = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+  const nav = masterRail.slice(masterRail.indexOf('<nav class="rail"'), masterRail.indexOf("</nav>"));
+  const heads = [...nav.matchAll(/class="grouplbl">([^<]+)</g)].map((m) => m[1]);
+  ok(heads.join(" | ") === "Command | Current | Relationships | Actions",
+     `the rail reads ${heads.join(" | ")}`);
+  const inCurrent = nav.slice(nav.indexOf('class="grouplbl">Current<'), nav.indexOf('class="grouplbl">Relationships<'));
+  ok([...inCurrent.matchAll(/data-s="([a-z]+)">([^<]+)</g)].map((m) => m[1] + ":" + m[2]).join(" ")
+     === "money:Order book stock:Stock price:Pricing",
+     "Current holds Order book, Stock and Pricing, in that order");
+
+  /* AND NOTHING ELSE MOVED: the ids are the addresses, so every /desk#tab link still lands.
+     A rename that took an id with it would pass every assertion above. */
+  for (const id of ["today", "money", "stock", "price", "people", "book", "enter"]) {
+    ok(new RegExp('data-s="' + id + '"').test(nav), `#${id} is still a tab in the rail`);
+  }
+  const viewsSrc = masterRail.slice(masterRail.indexOf("const VIEWS=["), masterRail.indexOf("const VIEW_OF="));
+  ok(/\{id:'money',\s*name:'Order book',\s*lead:'receivables'/.test(viewsSrc)
+     && /\{id:'stock',\s*name:'Stock',\s*lead:'inventory'/.test(viewsSrc)
+     && /\{id:'price',\s*name:'Pricing',\s*lead:'pricing'/.test(viewsSrc),
+     "VIEWS carries the same three names against the same three ids and the same three leads");
+}
+
+
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
 process.exit(fail ? 1 : 0);
