@@ -90,16 +90,30 @@ export function ownRate(sales, code, product, before) {
                                          itself stands where it is above the cap: nobody lists under the board)
      above the ask, loyal  down slightly: a quarter of the way from R back to A
      above the ask, other  his rate stands
-   then up to the whole ringgit. "Slightly" is a quarter of the gap and "more" is half, stated
+   then to the nearest five. "Slightly" is a quarter of the gap and "more" is half, stated
    here once so the desk's printed board (pbPrices in the master) reads the same. Loyal is the
-   desk's own badge: three or more priced orders and the last within fourteen days. */
+   desk's own badge: three or more priced orders and the last within fourteen days.
+
+   THE NEAREST FIVE, HIS INSTRUCTION OF 10 SEP 2026 (v564). It was the whole ringgit up, which put
+   RM 97, RM 123 and RM 416 on a sheet handed to a customer; the board itself has been quoted in
+   tens since v326 and in fives where a ten will not fit since v263, and a suggested price is read
+   out of the same mouth as a board price. NEAREST, not up: his word, and the drawing rules above
+   already decide the direction, so rounding had no business deciding it again.
+   THE FLOOR STILL WINS, AND IT IS THE ONE THING THAT DOES. Rounding to the nearest five can land
+   under break-even by up to RM 2.50, so a price that does is lifted to the first five above the
+   floor rather than left there. The cap is NOT re-clamped after rounding: it is a drawing target
+   at three times COGS, not a refusal line, and rounding may pass it by at most RM 2.50 on a price
+   in the hundreds. The floor is a refusal line and gets the guard. */
+const near5 = (v) => Math.round(v / 5) * 5;
 export function adjustedPrice(R, F, A, cap, loyal) {
   let p;
   if (R < F) p = Math.max(F, R + 0.5 * (A - R));
   else if (R < A) p = R + 0.25 * (A - R);
   else if (R > cap) p = Math.max(A, Math.min(cap, R - 0.5 * (R - A)));
   else p = loyal ? R - 0.25 * (R - A) : R;
-  return Math.ceil(Math.max(p, F) - 1e-9);
+  p = near5(Math.max(p, F));
+  if (p < F - 0.009) p = Math.ceil((F - 0.009) / 5) * 5;
+  return p;
 }
 export function loyalFor(sales, code, product, now) {
   const at = now instanceof Date ? now : new Date(now || Date.now());

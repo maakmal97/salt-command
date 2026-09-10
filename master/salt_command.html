@@ -4007,6 +4007,7 @@ return {txPrice:txPrice,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeli
  *      tiers       the supplier's live quote tiers, for the taper ({qty,total} each)
  *      boardSizes  the sizes the board quotes, for walking an off-board size against them
  *      stated      prices HE has set, by size, overriding the derived ask (PRICE_SET[product])
+ *      tier1       the second level's two stated ends, by size; absent means this book has one tier
  * and costStack() takes the input record the desk's pxInputs() gathers (see there).
  *
  * PORTED VERBATIM. The bodies are the desk's, with the globals replaced by C, P and I. Every
@@ -4247,6 +4248,71 @@ function ladderWalk(sizes,C,P){
   });
   return out;
 }
+/* ============ v564: TWO TIERS ON THE BOARD (his instruction, 10 Sep 2026) ============
+   TIER 2 IS THE LADDER ABOVE AND NOT ONE OF ITS FIGURES MOVES. It stays the default ask, the one
+   priceLadder().ask returns, the one the customer price list is drawn toward and the one the
+   drafter measures a row against. Tier 1 is a SECOND level beneath it, and it is STATED rather
+   than derived: he gives the two ends, RM 60 at half a unit and RM 875 at twelve and a half, and
+   the rate between them is interpolated in the LOG of size, which is this desk's house method and
+   the one the retired tier board used at v251.
+
+   WHY STATED AND NOT A SECOND anchorG, WHICH WAS TRIED FIRST. Two ends is two numbers, and the
+   derived road has room for one: a level pinned at anchorQ plus the SUPPLIER'S taper. Measured,
+   his pair implies a taper of -0.167 against the supplier's -0.121, so no level on the supplier's
+   shape reaches both ends, and that gap is the whole point of a relationship price. Worse, RM 875
+   IS NOT A MULTIPLE OF TEN: the house rounding is up to the ten, so no curve rounded by it can
+   ever print the figure he gave. The two anchors are therefore taken VERBATIM and only the sizes
+   BETWEEN them are rounded, which is cappedBoard's old rule and the only one that can be honest
+   about a number he typed.
+
+   IT OBEYS THE SAME TWO LAWS AS THE ASK. The rate may not rise with size, repaired the same way,
+   one grid step down and never through the floor. And the gap to break-even is NAMED rather than
+   hidden: per v552 a price he has stated is quoted even under its floor, and every rung here is
+   his own rate, so none is lifted. Nothing on salt is under its floor today; `under` is the
+   mechanism for the day a cost rise puts one there.
+
+   OUTSIDE HIS TWO ANCHORS THE RATE IS CLAMPED, never extrapolated, exactly as ladderMarkup
+   clamps at LADDER.at: a 25 unit lot is asked the 12.5 rate and not a rate the policy never
+   stated.
+
+   A BOOK WITH NO tier1 HAS NO TIER 1, and oil is one. Its board is his stated price at every one
+   of its five sizes and its 50 unit rung already earns 3%, so there is nothing for a second tier
+   to sit under, and inheriting salt's RM 120 a unit would quote RM 700 for ten units of oil that
+   Tier 2 sells at RM 130. LADDER_BY.oil says tier1:null for that reason. */
+function tier1Anchors(P){
+  const A=P.tier1; if(!A)return null;
+  const ks=Object.keys(A).map(Number).filter(q=>q>0&&+A[q]>0).sort((a,b)=>a-b);
+  if(ks.length<2)return null;
+  const lo=ks[0], hi=ks[ks.length-1], rLo=+A[lo]/lo, rHi=+A[hi]/hi;
+  /* the rate in the log of size, fitted to the two ends rather than typed */
+  return {ks:ks, lo:lo, hi:hi, rLo:rLo, rHi:rHi, b:Math.log(rHi/rLo)/Math.log(hi/lo)};
+}
+function tier1Walk(sizes,C,P){
+  const A=tier1Anchors(P); if(!A)return null;
+  const out=[]; let prevRate=Infinity;
+  sizes.forEach(q=>{
+    const fl=floorTotal(q,C,P);
+    const pin=A.ks.find(k=>Math.abs(k-q)<0.009);
+    const x=Math.min(A.hi,Math.max(A.lo,+q||A.lo));          // clamped, never extrapolated
+    let p=pin!=null?+P.tier1[pin]:ladderRound(A.rLo*Math.pow(x/A.lo,A.b)*q,P.LADDER);
+    /* the rate law, and rounding up is what breaks it here too. A pinned end is never moved. */
+    if(pin==null&&q>0&&prevRate<Infinity&&p/q>prevRate+1e-9){
+      const stepped=Math.floor((prevRate*q+1e-9)/P.LADDER.round.to)*P.LADDER.round.to;
+      if(stepped>0&&stepped>fl+0.009)p=stepped;
+    }
+    out.push({q:q,p:p,stated:pin!=null,under:+Math.max(0,fl-p).toFixed(2)});
+    if(q>0)prevRate=Math.min(prevRate,p/q);
+  });
+  return out;
+}
+/* Tier 1 at ANY size, walked against the board sizes beneath it, for the same reason ladderAsk is. */
+function tier1Ask(q,C,P){
+  if(!P.tier1)return null;
+  const board=Array.isArray(P.boardSizes)?P.boardSizes:[];
+  const upTo=board.filter(s=>s<q-1e-9); upTo.push(q);
+  const w=tier1Walk(upTo,C,P);
+  return w?w[w.length-1]:null;
+}
 /* the ask at ANY size, walked against the board sizes beneath it so an off-board quote is judged
    against prices the desk actually quotes rather than against a neighbour it invented. */
 function ladderAsk(q,C,P){
@@ -4333,16 +4399,37 @@ function priceLadder(q,C,P,opts){
      price he has stated below break-even and `under` says by how much. */
   out.ask.floorX=+(out.ask.total/Math.max(0.01,fl)).toFixed(3);
   out.ask.under=+Math.max(0,fl-out.ask.total).toFixed(2);
+  /* v564: TIER 1 BESIDE THE ASK, on the same cost stack and the same floor, so every surface reads
+     one engine for both levels. null on a book with no stated second tier. The figures beside the
+     total are derived back from the answer, exactly as the ask's are. */
+  {const t=tier1Ask(q,C,P);
+   out.tier1=t?{total:t.p,rate:+(t.p/q).toFixed(2),
+                markup:+((t.p/cogs-1)*100).toFixed(2),markupX:+(t.p/cogs-1).toFixed(4),
+                margin:+(((t.p-lot)/t.p)*100).toFixed(1),
+                floorX:+(t.p/Math.max(0.01,fl)).toFixed(3),under:t.under,stated:!!t.stated}:null;}
   out.ceiling=at(LADDER.ceiling,true);
   return out;
 }
-/* ONE LADDER MEANS ONE ROW. It stays an array because that is the shape the phone maps over. */
+/* ============ v564: TWO ROWS WHERE THE BOOK HAS TWO TIERS ============
+   v328 made this one row and said why: a second row should have to be a real second thing rather
+   than a tier that is no longer one. It is one now, so there are two, and the ORDER IS LOAD
+   BEARING. Row zero is TIER 2, the default ask, because that is what every reader of this array
+   already takes row zero to be: the phone, the D1 mirror and the suite all read [0] rather than
+   hunting for a code, on v328's own argument that a fallback which quietly carries a panel hides
+   a fault. Putting the cheaper tier first would have silently cut every quoted price. The BOARD
+   prints them cheapest-first, which is a rendering decision and is made where the board renders. */
 function ladderRow(sizes,C,P){
-  return [{
-    code:'ASK', name:'Ask', who:'one ladder, graded by size, tapered as the supplier tapers',
-    prices:sizes.map(q=>{try{const L=priceLadder(q,C,P);
-      return L&&L.ask&&L.ask.total!=null?+L.ask.total:null;}catch(e){return null;}})
+  const col=(k)=>sizes.map(q=>{try{const L=priceLadder(q,C,P);
+    return L&&L[k]&&L[k].total!=null?+L[k].total:null;}catch(e){return null;}});
+  const rows=[{
+    code:'T2', name:'Tier 2', dflt:true, who:'the default ask, graded by size, tapered as the supplier tapers',
+    prices:col('ask')
   }];
+  if(P.tier1)rows.push({
+    code:'T1', name:'Tier 1', dflt:false, who:'stated at its two ends, the rate interpolated between them',
+    prices:col('tier1')
+  });
+  return rows;
 }
 /* THE BOARD AND THE FLOORS, for quoting at the point of sale: what the phone receives. */
 /* THE CARD IS A COLLECTION PRICE AND DELIVERY IS QUOTED ON TOP, PER ORDER (v352, his instruction).
@@ -4373,6 +4460,7 @@ function board(sizes,C,P){
 
 return {costStack:costStack,buyTaper:buyTaper,ladderMarkup:ladderMarkup,ladderMargin:ladderMargin,ladderCogs:ladderCogs,
         ladderRound:ladderRound,ladderWalk:ladderWalk,ladderAsk:ladderAsk,lotCost:lotCost,
+        tier1Anchors:tier1Anchors,tier1Walk:tier1Walk,tier1Ask:tier1Ask,
         floorTotal:floorTotal,priceLadder:priceLadder,ladderRow:ladderRow,board:board};
 })();
 /* ==== END ENGINE pricing ==== */
@@ -7614,7 +7702,21 @@ const LADDER={
   anchorG:0.47,         // v504: the margin on price at anchorQ; 0.47 reproduces the 2.5 unit ask of RM 250 on the day it was set
   gLo:0.25, gHi:0.667,  // v504: the clamps, 0.33x and 2.00x markup said as margins
   round:{to:10, up:true},// his instruction: to the nearest ten, ROUNDED UP
-  taper:'supplier'      // 'supplier' measures it off the book's own quote, quoteFor(PROD); a number here overrides
+  taper:'supplier',     // 'supplier' measures it off the book's own quote, quoteFor(PROD); a number here overrides
+  /* ============ v564: TIER 1, HIS TWO STATED ENDS (his instruction, 10 Sep 2026) ============
+     "The current one shown on the board is Tier 2. For Tier 1, the 0.5 unit is 60 while the 12.5
+     unit is 875." So the board carries two levels, and everything above this line is Tier 2's,
+     unchanged in every figure at every size.
+     THESE ARE THE WHOLE OF TIER 1 AND THEY ARE PRICES, NOT A LEVEL. Two ends is two numbers and the
+     derived road has room for one: anchorG is a level on the supplier's taper. His pair implies a
+     taper of -0.167 against the supplier's -0.121, so no level on that shape reaches both, and RM875
+     is not even a multiple of ten, which the house rounding is. The engine therefore takes these two
+     verbatim and interpolates the RATE between them in the log of size, clamped at each end. See
+     tier1Walk in the ENGINE block for the argument in full.
+     RM120 a unit at the small end falling to RM70 at the large: against Tier 2's RM140 and RM92,
+     Tier 1 is 86% of the ask at half a unit and 76% of it at twelve and a half. Every rung clears
+     break-even, from 2.13x at half a unit to 1.25x at twelve and a half. */
+  tier1:{0.5:60, 12.5:875}
 };
 /* ============ ROUND 5, his call 1: THE LADDER ANCHOR IS PER BOOK ============
    LADDER above is SALT'S, untouched: anchorQ 2.5 is salt's geometric middle and the 0.5 to
@@ -7634,7 +7736,13 @@ const LADDER={
    still enforces after every step.
    A product with no entry inherits LADDER whole, exactly as sizesBy and anchors fall back. */
 const LADDER_BY={
-  oil:{anchorQ:10, anchorX:0.62, at:{lo:10, hi:50}, floor:0, anchorG:0.36, gLo:0}   /* v504: 0.36 reproduces RM130 at 10 on the floor basis */
+  /* v564: tier1 null, and it is an ENTRY rather than an omission. ladderFor spreads LADDER under
+     the override, so leaving it out would hand oil SALT'S two anchors: every oil size clamps to
+     12.5, the rate lands at RM70 a unit, and ten units of oil that Tier 2 sells at RM130 would be
+     quoted RM700. Oil has one tier on its own merits too: its board is his stated price at all
+     five sizes and the 50 unit rung already earns 3%, so there is nothing for a second tier to sit
+     under. Give it two ends here the day he states them. */
+  oil:{anchorQ:10, anchorX:0.62, at:{lo:10, hi:50}, floor:0, anchorG:0.36, gLo:0, tier1:null}   /* v504: 0.36 reproduces RM130 at 10 on the floor basis */
 };
 function ladderFor(p){const o=LADDER_BY[p||PROD];return o?{...LADDER,...o}:LADDER;}
 /* THE SUPPLIER'S OWN ELASTICITY, FITTED RATHER THAN TYPED. Least squares of ln(rate) on ln(qty)
@@ -7686,8 +7794,15 @@ const REF={
   floor:LADDER.floor,      // NOT the refusal line any more: the line a rate-law step-down may not pass through
   ceiling:LADDER.ceiling   // the top of the band
 };
+/* ============ v564: TWO COLUMNS, CHEAPEST FIRST ============
+   The order here is the BOARD'S reading order and it is deliberately not the payload's. v247's rule
+   for reading a board is that price rises strictly left to right, so Tier 1 prints first; the
+   engine's ladderRow puts Tier 2 at index zero instead, because every reader of that array takes
+   index zero to be the quoted ask and reordering it would have cut every quoted price in silence.
+   Two orders, each right for its own reader, stated in both places. */
 const REF_POINTS=[
-  {k:'ask', label:'Ask', m:null, why:'one ladder, graded by size'}
+  {k:'tier1', label:'Tier 1', m:null, why:'stated at its two ends, the rate interpolated between them'},
+  {k:'ask',   label:'Tier 2', m:null, why:'the default ask, graded by size, tapered as the supplier tapers'}
 ];
 /* The lot cost a price has to beat: the salt, after the leak, plus ONE delivery for the order. */
 function lotCost(q,opts){ return PRICING_ENGINE.lotCost(q,pxCost(),opts); }
@@ -7699,13 +7814,17 @@ function tierBoard(){
   return shownSizes(PROD).map(q=>{
     const L=priceLadder(q);
     return {q:q, floor:L.floor.total, lot:L.lot, perUnit:L.perUnit,
+      /* v564: a book with no second tier returns no Tier 1 cell rather than a null one. Every
+         consumer walks these with forEach, so a shorter array is safe and a null member is not:
+         the upkeep check and the old headroom walk both read cl.p off the member directly. */
       cells:REF_POINTS.map(pt=>{
         const cell=L[pt.k];
+        if(!cell)return null;
         return {code:pt.label, p:cell.total, rate:cell.rate, margin:cell.margin,
                 markup:cell.markup, floor:L.floor.total, why:pt.why,
                 underFloor:cell.total<L.floor.total-0.009, underWalk:false,
                 shortBy:+(cell.total-L.floor.total).toFixed(2)};
-      })};
+      }).filter(Boolean)};
   });
 }
 function tierBoardOLD(){
@@ -13875,8 +13994,16 @@ function pxPolicy(){
      at salt's exponent inside salt's clamp. quoteFor(PROD) and ladderFor(PROD) hand each
      book its own; salt's values are untouched. */
   const pq=(typeof quoteFor==='function')?quoteFor(PROD):null;
+  /* v564: TIER 1 IS LIFTED OUT OF THE LADDER AND ONTO THE POLICY, and the engine reads it in one
+     place only. It is DECLARED in LADDER, and in LADDER_BY for a book that differs, so oil's
+     tier1:null overrides salt's pair by the same mechanism anchorQ and the span already use; it is
+     READ as P.tier1, beside `stated`, because that is what it is, a set of prices he has typed. The
+     first cut declared it and never passed it, so salt rendered with one tier and the derivation
+     row said the anchors were not stated. A fallback to P.LADDER.tier1 in the engine would have
+     hidden exactly that, which is why there is not one. */
   return {LADDER:ladderFor(PROD), minPerUnit:PRICE_ENGINE.minPerUnit||0, timePerOrder:PRICE_ENGINE.timePerOrder||0, lotFloor:PRICE.lotFloor||{},
     stated:setPricesFor(PROD),
+    tier1:ladderFor(PROD).tier1||null,
     tiers:(pq&&pq.tiers)?pq.tiers:[],
     boardSizes:(typeof sizesFor==='function')?sizesFor(PROD):[]};
 }
@@ -16243,13 +16370,21 @@ function pbOwnRate(code){const before=pbWeekMonday();
   if(!rows.length)return {rate:null,orders:0};const n=rows.length;
   return {rate:+(n%2?rows[(n-1)/2]:(rows[n/2-1]+rows[n/2])/2).toFixed(2),orders:n};}
 /* v510: HIS RATE, DRAWN TOWARD THE BOARD. The same rule, word for word, as adjustedPrice in
-   tools/pricelist.mjs, which seals the customer's page; the suite proves the two agree. */
+   tools/pricelist.mjs, which seals the customer's page; the suite proves the two agree.
+   v564, HIS INSTRUCTION OF 10 SEP 2026: TO THE NEAREST FIVE. It was the whole ringgit up, which put
+   RM 97 and RM 416 on a sheet handed to a customer while the board beside it quotes in tens. Nearest
+   rather than up, because the four drawing rules above already decide the direction. The floor still
+   wins: nearest-five can land up to RM 2.50 under break-even, and a price that does is lifted to the
+   first five above the floor. The cap is not re-clamped; it is a target, not a refusal line. The
+   argument in full is in tools/pricelist.mjs, and the suite holds the two together. */
 function pbAdjusted(Rr,F,A,cap,loyal){let x;
   if(Rr<F)x=Math.max(F,Rr+0.5*(A-Rr));
   else if(Rr<A)x=Rr+0.25*(A-Rr);
   else if(Rr>cap)x=Math.max(A,Math.min(cap,Rr-0.5*(Rr-A)));
   else x=loyal?Rr-0.25*(Rr-A):Rr;
-  return Math.ceil(Math.max(x,F)-1e-9);}
+  let p=Math.round(Math.max(x,F)/5)*5;
+  if(p<F-0.009)p=Math.ceil((F-0.009)/5)*5;
+  return p;}
 function pbLoyal(code){const rows=pSales(PROD).filter(s=>s.customer===code&&pbPriced(s)&&s.date&&s.total>0);
   if(rows.length<3)return false;const last=rows.map(s=>s.date).sort().pop();
   return (TODAY-new Date(last+'T00:00:00+08:00'))/86400000<=14;}   /* Kuala Lumpur midnight, as loyalFor (08 Sep 2026) */
@@ -16436,7 +16571,8 @@ function tabPricing(){
         :`buying can reach ${fmt(hr.safeTo)}/unit before a live price fails, ${hr.pct}% above today; <b>${hr.firstTier}</b> falls first at ${fmt(hr.firstAt)}`}</div></div>
   </div>
 
-  <h2 style="margin-top:18px">The board <span class="sub" style="font-weight:400">one ladder, tapered at the rate the supplier tapers</span> <span class="rule"></span></h2>
+  <h2 style="margin-top:18px">The board <span class="sub" style="font-weight:400">${(()=>{let t1=null;try{t1=priceLadder(shownSizes(PROD)[0]).tier1;}catch(e){}
+    return t1?'two tiers: Tier 1 stated at its ends, Tier 2 derived from cost':'one ladder, tapered at the rate the supplier tapers';})()}</span> <span class="rule"></span></h2>
   ${(()=>{const tb=tierBoard();
     /* ============ THE ASK SAYS WHICH FLOOR IT CLEARS (v381) ============
        THE BOARD HAS BEEN PRINTING ASKS THAT DO NOT CLEAR THEIR OWN FLOOR, IN BLACK, WITH
@@ -16460,44 +16596,62 @@ function tabPricing(){
        the floor are one number, equal to the ringgit at every size on both books, so the column can
        carry all three names honestly and the multiple beside it is ask over that: over 1.00x earns,
        1.00x earns nothing, under 1.00x is a price he has stated below break-even. */
-    const head=`<tr><th class="l">Size</th><th>COGS</th><th>Eff. cost<div style="font-size:9px;font-weight:400;letter-spacing:0;text-transform:none;color:var(--dim)">break-even, the floor</div></th><th>Markup<div style="font-size:9px;font-weight:400;letter-spacing:0;text-transform:none;color:var(--dim)">&times; eff. cost</div></th><th>Ask</th></tr>`;
+    /* ============ v564: TWO TIERS, AND THE MARKUP MOVED INTO THE ASKS ============
+       HIS INSTRUCTION, 10 SEP 2026: the board shows Tier 1 and Tier 2. Tier 2 is the column that
+       was here and not one of its figures moves. Tier 1 prints to its LEFT, because cheapest-first
+       is the order the tiers earn and the order v247 asked a board to read in.
+       THE MARKUP COLUMN DID NOT GO, IT MOVED INTO EACH ASK. v552 put effective cost in front of the
+       ask and v554 named the multiple Markup rather than Margin; both still hold. What cannot hold
+       is ONE markup column beside TWO asks: it would have to pick a tier, and would then silently
+       describe one of them while sitting level with both. So each tier cell carries its own
+       multiple on its own last line, under its own rate and margin.
+       AND FIVE COLUMNS IS WHAT THE BOARD HAS ROOM FOR. It gets 325px of a 375px screen (v330), so
+       six was not available and the sixth would have been the one he reads to a customer. */
+    const T1on=tb.some(r=>{try{return !!priceLadder(r.q).tier1;}catch(e){return false;}});
+    const sub=t=>`<div style="font-size:9px;font-weight:400;letter-spacing:0;text-transform:none;color:var(--dim)">${t}</div>`;
+    const head=`<tr><th class="l">Size</th><th>COGS</th><th>Eff. cost${sub('break-even, the floor')}</th>`
+      +(T1on?`<th>Tier 1${sub('stated at its ends')}</th>`:'')
+      +`<th>${T1on?'Tier 2':'Ask'}${sub(T1on?'the default ask':'rate, margin, &times; eff. cost')}</th></tr>`;
+    /* one cell, both tiers, so the two can never be printed by two pieces of code that drift. The
+       four lines are the total, the rate, the margin on price and the multiple of break-even; each
+       turns crimson on its own test, and a price under break-even is crimson on the total itself. */
+    const tCell=cl=>{
+      if(!cl)return '';
+      const bad=cl.under>0.009;
+      return `<td><b${bad?' style="color:var(--crim)"':''}>${fmt0(cl.total)}</b>`
+        +`<div style="font-size:10px;color:var(--dim)">${fmt(cl.rate)}</div>`
+        +`<div style="font-size:10px;color:${cl.margin<0?'var(--crim)':'var(--dim)'}">${cl.margin.toFixed(0)}% margin</div>`
+        +`<div style="font-size:10px;color:${cl.floorX<1?'var(--crim)':'var(--dim)'}">${cl.floorX.toFixed(2)}x eff.</div></td>`;};
+    /* v564: ONE TAG, BECAUSE THERE HAS BEEN ONE FLOOR SINCE v502. This read the collected floor
+       into flC and printed "collect only" where the ask cleared that and not the delivered one.
+       v502 removed the pair: floorTotal ignores the collects option and the suite asserts the two
+       are equal to the ringgit at every size on both books, so underC has equalled underD since,
+       the "collect only" branch has been unreachable, and the distinction the tag drew no longer
+       exists. The row now flags a price under break-even, on either tier, and says which. */
     const rows=tb.map(r=>{const L=priceLadder(r.q);
-      const flC=floorTotal(r.q,null,{collects:true});
-      const underD=L.ask.total<L.floor.total-0.009, underC=L.ask.total<flC-0.009;
-      return `<tr${underD?' style="background:rgba(212,105,76,.07)"':''}><td class="l">${units(r.q)}`
-      +(underC?' <span class="tag def">under floor</span>':underD?' <span class="tag prov">collect only</span>':'')+`</td>`
+      const badT1=!!(L.tier1&&L.tier1.under>0.009), badT2=L.ask.under>0.009;
+      return `<tr${badT1||badT2?' style="background:rgba(212,105,76,.07)"':''}><td class="l">${units(r.q)}`
+      +(badT1&&badT2?' <span class="tag def">both under floor</span>':badT2?' <span class="tag def">under floor</span>'
+        :badT1?' <span class="tag def">Tier 1 under floor</span>':'')+`</td>`
       +`<td class="mono" style="color:var(--dim)">${fmt0(L.cogs)}</td>`
       /* v552: effective cost, which IS break-even and IS the floor, moved in front of the margin and
          the ask so the row reads left to right the way the ask is built. It was the last column. */
       +`<td class="mono" style="color:var(--crim)">${fmt0(L.floor.total)}`
          +`<div style="font-size:10px;color:var(--dim)">${fmt(L.floor.rate)}</div></td>`
-      /* v552: the ask over effective cost, read back from the answer and not from the curve. It
-         replaces ask/cogs-1 on landed, which disagreed with the % margin printed inches away
-         because the two were struck on different bases. Under 1.00x prints crimson: that is an ask
-         below break-even.
-         v554, HIS INSTRUCTION: THE COLUMN IS MARKUP, NOT MARGIN. It was headed Margin through both
-         shapes and was never one: 2.49x is the ask as a MULTIPLE OF COST, while the margin on that
-         same row is 60% on price. Two words for two arithmetics, and the heading had the wrong one.
-         The sub-label says what the multiple is OF, because "2.49x" under a bare Markup still reads
-         as +249% to anyone who takes markup at its book meaning. */
-      +`<td class="mono" style="color:${L.ask.floorX<1?'var(--crim)':'var(--dim)'}">${L.ask.floorX.toFixed(2)}x</td>`
-      /* v330: THE RATE AND THE MARGIN GO ON SEPARATE LINES, and it is a phone fix rather than a
-         style one. On one line this sub-label read "RM 120.00 - 32% margin" and forced the Ask
-         column to 160px of the 325px the board has on a 375px screen, which pushed the ASK ITSELF
-         half off the edge and the Floor column entirely off it. The ask is the number he reads to
-         a customer standing in front of him, so it is the last thing that should need a sideways
-         scroll to see. Two lines cost one row of height and take the column to about 72px. */
-      +`<td><b${underD?' style="color:var(--crim)"':''}>${fmt0(L.ask.total)}</b>`
-         +`<div style="font-size:10px;color:var(--dim)">${fmt(L.ask.rate)}</div>`
-         +`<div style="font-size:10px;color:${L.ask.margin<0?'var(--crim)':'var(--dim)'}">${L.ask.margin.toFixed(0)}% margin</div></td>`
-      /* v385's note stood on the Floor cell when it was last: the COLLECTED floor is still not put
-         in it, because "collect RM 113" is longer than "RM 197.66" and took the board past the
-         325px it has on a 375px screen. The tag on the row carries that signal, the sentence under
-         the table carries the figures, and the Set the board table one pane down prints the
-         collected floor at every size. The cell moved at v552; the reason it stays one figure did not. */
-      +`</tr>`;}).join('');
-    const nUnderD=tb.filter(r=>priceLadder(r.q).ask.total<priceLadder(r.q).floor.total-0.009);
-    const nUnderC=nUnderD.filter(r=>priceLadder(r.q).ask.total<floorTotal(r.q,null,{collects:true})-0.009);
+      +(T1on?tCell(L.tier1):'')+tCell(L.ask)+`</tr>`;}).join('');
+      /* v564: the Markup and Ask cells that stood here are now tCell, called once per tier above.
+         v330's reason for stacking the rate and the margin on their own lines is why tCell does:
+         on one line the sub-label read "RM 120.00 - 32% margin" and forced the column to 160px of
+         the 325px the board has on a 375px screen, pushing the ask itself half off the edge. The
+         multiple joins them as a fourth line for the same reason, rather than as a sixth column. */
+    /* v564: the under-floor census reads BOTH tiers, and it reads `under` rather than comparing the
+       total to the floor itself. They are the same test on a derived ask and not on a stated one:
+       since v552 a price he has stated is quoted below break-even and carries the gap in `under`,
+       which is the only figure that distinguishes a decision from a fault. */
+    const flagged=[];
+    tb.forEach(r=>{const L=priceLadder(r.q);
+      if(L.tier1&&L.tier1.under>0.009)flagged.push({who:'Tier 1',q:r.q,rm:L.tier1.under});
+      if(L.ask.under>0.009)flagged.push({who:T1on?'Tier 2':'the ask',q:r.q,rm:L.ask.under});});
     return `<div class="card"><table class="pxboard"><thead>${head}</thead><tbody>${rows}</tbody></table>
     <!-- v393: the break-even definition that stood here went with the rest of the standing
          prose. The setup table below states it as a figure, which is the register this asks for. -->
@@ -16515,9 +16669,8 @@ function tabPricing(){
          "Do not quote this at all" is also a different and more serious instruction than "quote it
          at the counter", and it was a sub-clause of it. Split, so neither can crowd the other and
          neither can grow into the limit. The definition of the two floors is in the fold below. -->
-    ${nUnderD.length?`<div class="insight" style="border-left-color:var(--gold)"><b>${nUnderD.length} of ${tb.length} asks do not carry a delivery</b>: quote ${nUnderD.map(r=>units(r.q)).join(', ')} at the counter.</div>`
-      +(nUnderC.length?`<div class="insight" style="border-left-color:var(--crim)"><b>Do not quote ${nUnderC.map(r=>units(r.q)).join(', ')} at all</b>: under both floors.</div>`:'')
-      :`<div class="insight" style="border-left-color:var(--grn)">Every ask on the board clears its floor.</div>`}
+    ${flagged.length?`<div class="insight" style="border-left-color:var(--crim)"><b>${flagged.length} price${flagged.length===1?'':'s'} on this board sit${flagged.length===1?'s':''} under break-even</b>: ${flagged.map(f=>f.who+' at '+units(f.q)+', short '+fmt(f.rm)).join('; ')}.</div>`
+      :`<div class="insight" style="border-left-color:var(--grn)">Every price on the board, on ${T1on?'both tiers':'the one tier'}, clears break-even.</div>`}
     <!-- v393: THE MARGIN SETUP IS THE BOARD'S DERIVATION, SO IT SITS IN THE BOARD'S CARD.
          It was its own open h2 one section down, restating in prose what these six figures
          say. The prose went; the figures are the ask's derivation and stay open. -->
@@ -16538,6 +16691,13 @@ function tabPricing(){
       <tr class="tot"><td class="l"><b>Markup across the board</b><div class="iref">${units(sSZ[0])} down to ${units(sSZ[sSZ.length-1])}</div></td><td class="mono"><b>${sLo.ask.markupX.toFixed(2)}x to ${sHi.ask.markupX.toFixed(2)}x</b></td></tr>
       <tr class="tot"><td class="l"><b>Margin it returns</b><div class="iref">struck on the lot cost, not on cogs</div></td><td class="mono"><b>${sLo.ask.margin.toFixed(1)}% to ${sHi.ask.margin.toFixed(1)}%</b></td></tr>
       ${sRz!=null?sR('Weighted by what he trades',sRz.toFixed(2)+'x','the level the book actually returns'):''}
+      <!-- v564: the six rows above are TIER 2'S derivation, which is the only one there was until
+           today. Tier 1 is not derived at all, so it gets its own row saying what it IS rather than
+           being folded into a table of levels and tapers it does not use. -->
+      ${(()=>{const A=(typeof PRICING_ENGINE!=='undefined'&&PRICING_ENGINE.tier1Anchors)?PRICING_ENGINE.tier1Anchors(pxPolicy()):null;
+        if(!A)return sR('Tier 1','&mdash;','not stated on this book, so the board carries one tier');
+        return sR('Tier 1',fmt(A.rLo)+' to '+fmt(A.rHi)+'/unit',
+          `stated at ${units(A.lo)} and ${units(A.hi)}, ${fmt0(A.lo*A.rLo)} and ${fmt0(A.hi*A.rHi)}; the rate between them is interpolated in the log of size, taper ${A.b.toFixed(3)} against the supplier&rsquo;s ${(sT.b!=null?sT.b.toFixed(3):'&mdash;')}`);})()}
     </tbody></table>
     <!-- v506, his instruction of 07 Sep 2026: the three cards read as three things, and nothing
          walked the reader from COGS to the floor to the ask. This is that walk, one row per size,
@@ -16545,12 +16705,16 @@ function tabPricing(){
          adds to it, the floor is break-even, the margin is the size's margin on price, and the ask
          is the floor at that margin rounded up to the ten, then held to the rate law and the floor
          guard. Where the two differ the walk stepped it. -->
-    <div class="cardh" style="margin-top:14px">From cost to ask <span class="sub">COGS, then the leak, is the floor; the floor at the size&rsquo;s margin is the ask</span></div>
+    <!-- v564: the walk is TIER 2'S and now says so. Tier 1 has no margin curve to walk: it is two
+         stated prices and an interpolation between them, which the row in the table above states in
+         full. Heading a derivation "ask" while the board prints two of them is how a reader comes to
+         believe the wrong one was derived. -->
+    <div class="cardh" style="margin-top:14px">From cost to ${T1on?'Tier 2':'the ask'} <span class="sub">COGS, then the leak, is the floor; the floor at the size&rsquo;s margin is the ask${T1on?'. Tier 1 is stated, not derived':''}</span></div>
     <div class="tblw"><table class="fintab istmt"><thead><tr><th class="l">Size</th><th>COGS</th><th>Leak</th><th>Floor</th><th>Margin</th><th>Floor &divide; (1 &minus; margin)</th><th>Ask</th></tr></thead><tbody>
       ${sSZ.map(q=>{const L=priceLadder(q);const cogs=L.cogs,fl=L.floor.total,g=L.marginX;const raw=g!=null?fl/(1-g):null;
         return `<tr><td class="l">${units(q)}</td><td class="mono">${fmt(cogs)}</td><td class="mono">+${fmt(fl-cogs)}</td><td class="mono"><b>${fmt(fl)}</b></td><td class="mono">${g!=null?(g*100).toFixed(1)+'%':'&mdash;'}</td><td class="mono">${raw!=null?fmt(raw):'&mdash;'}</td><td class="mono"><b>${fmt0(L.ask.total)}</b>${L.ask.lawStepped?' <span class="iref">stepped</span>':''}</td></tr>`;}).join('')}
     </tbody></table></div>
-    <div class="dsc" style="margin-top:8px">COGS is ${fmt(sC.landed)} a unit landed; the leak adds ${((sC.shrink/(1-sC.shrink))*100).toFixed(1)}% of it, so the floor is ${fmt(sC.effEx)} a unit and earns nothing. The ask is rounded up to the ten, then may step down to keep the rate from rising with size, never below its floor.</div>
+    <div class="dsc" style="margin-top:8px">COGS is ${fmt(sC.landed)} a unit landed; the leak adds ${((sC.shrink/(1-sC.shrink))*100).toFixed(1)}% of it, so the floor is ${fmt(sC.effEx)} a unit and earns nothing. The ask is rounded up to the ten, then may step down to keep the rate from rising with size, never below its floor.${T1on?' Tier 1 takes his two stated ends verbatim and rounds only the sizes between them, because RM 875 is not a multiple of ten.':''}</div>
     ${sFlat>=2?`<div class="insight" style="border-left-color:var(--gold)"><b>The taper stops at ${units(LD.at.hi)}, so ${sFlat} of the ${sSZ.length} printed sizes carry the same ${sHi.markupX.toFixed(2)}x.</b></div>`
       :''}`;})()}
     ${pbCard()}
@@ -17177,8 +17341,14 @@ function drawBoardCharts(){
            a small lot carries a "collect only" tag on the table above; on this book they separate
            by RM20 a unit at half a unit of salt and converge to nothing by twelve and a half. */
         const c=pxCost(),tb=tierBoard();
+        /* v564: TWO ASK SERIES WHERE THE BOOK HAS TWO TIERS. A chart of the board that drew one of
+           its two levels would be the "folded reads as missing" fault in its purest form: the second
+           tier would exist on the table six inches above and nowhere on the picture of it. Tier 1 is
+           the same brass, dashed and unfilled, so the eye reads it as the same family one level down.
+           An all-null series never throws, so the map returns null per point and the series is only
+           pushed where a Tier 1 exists at all. */
         const ds=[
-          {label:'ask',borderColor:'#c5a059',backgroundColor:'#c5a059',tension:.25,pointRadius:3,borderWidth:2,
+          {label:'Tier 2 ask',borderColor:'#c5a059',backgroundColor:'#c5a059',tension:.25,pointRadius:3,borderWidth:2,
             data:tb.map(r=>{let p=null;try{p=priceLadder(r.q).ask.rate;}catch(e){}return p;})},
           {label:'floor',borderColor:'#d4694c',borderDash:[5,4],borderWidth:1.5,pointRadius:0,
             data:tb.map(r=>+(r.floor/r.q).toFixed(2))},
@@ -17188,8 +17358,11 @@ function drawBoardCharts(){
           {label:'effective cost',borderColor:'rgba(242,244,245,0.45)',borderDash:[1,4],borderWidth:1.5,pointRadius:0,
             data:tb.map(()=>+c.eff.toFixed(2))}
         ];
+        if(tb.some(r=>{try{return !!priceLadder(r.q).tier1;}catch(e){return false;}}))
+          ds.splice(1,0,{label:'Tier 1',borderColor:'#b87333',borderDash:[6,3],tension:.25,pointRadius:3,borderWidth:2,
+            data:tb.map(r=>{let p=null;try{const t=priceLadder(r.q).tier1;p=t?t.rate:null;}catch(e){}return p;})});
         freshChart(a,{type:'line',data:{labels:tb.map(r=>units(r.q)),datasets:ds},
-          options:Object.assign(base('The board and its two floors, per unit (RM/unit)'),{})});
+          options:Object.assign(base('The board and its floor, per unit (RM/unit)'),{})});
       }
       if(b){
         const rows=pricedSales.filter(s=>!s.rebate&&s.total>0.009&&s.qty>0&&s.date)
