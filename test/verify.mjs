@@ -8949,5 +8949,208 @@ section("v567: the tables are warm, the floor is drawn once, and a chart can pla
   } finally { try { w7.close(); } catch (e) { /* best effort */ } }
 }
 
+
+section("v570: an associate is appointed from the Enter tab, and the Kind means what it says");
+{
+  const { plan: plan570, apply: apply570 } = await import("../tools/fold.mjs");
+  const { draftRow: draft570 } = await import("../src/drafter.js");
+  const { default: PE570 } = await import("../engine/position.mjs");
+  const master570 = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+
+  /* THE TABLE HAS ONE HOME. Three readers decide what a Kind means -- the pane, the drafter and
+     the fold -- and the whole point of this version is that they cannot answer differently. */
+  ok(PE570.ADDID_APPOINTS && PE570.ADDID_APPOINTS.reseller === "R2" && PE570.ADDID_APPOINTS.referral === "R3"
+    && !PE570.ADDID_APPOINTS.customer && !PE570.ADDID_APPOINTS.downstream && !PE570.ADDID_APPOINTS.bucket && !PE570.ADDID_APPOINTS.supplier,
+    "the engine names which Add ID kinds appoint, and only those two");
+
+  /* A FIXTURE BOOK, so the assertions do not move when the real roster does. */
+  const B570 = () => ({ roster: ["CX1-OLD", "CX2-NEW", "CX3-AS", "CX3-AS-R", "CX4-REF"], associates: ["CX3-AS"],
+    PRODUCTS: { salt: {} }, sales: [], purchases: [], QUEUE_COMMITTED: "2026-01-01T00:00:00.000Z" });
+  const stage570 = (at, code, kind) => ({ ok: true, count: 1, approved: [{
+    id: at, collection: "roster", row: { code, kind, parent: null, note: null },
+    entry: { at, payload: { mode: "addid", code, kind } } }] });
+  const why570 = (r) => (r.refused.length ? r.refused[0].why : "");
+
+  /* ---- the plan ---- */
+  const pOld = plan570(B570(), stage570("2026-09-11T01:00:00.000Z", "CX1-OLD", "reseller"), null);
+  ok(pOld.items.length === 1 && pOld.refused.length === 0,
+    "appointing a code ALREADY on the roster is planned, not refused as a duplicate" + (pOld.refused.length ? ": " + why570(pOld) : ""));
+  ok(pOld.items.length === 1 && pOld.items[0].roster && pOld.items[0].roster.register === false
+    && pOld.items[0].roster.appoint === true && pOld.items[0].roster.resell === "CX1-OLD-R",
+    "and it registers nothing new, appoints, and mints the -R account: " + JSON.stringify(pOld.items[0] && pOld.items[0].roster));
+  ok(pOld.items.length === 1 && /APPOINT CX1-OLD/.test(pOld.items[0].what),
+    "the batch line calls it an appointment rather than a registration: " + (pOld.items[0] || {}).what);
+
+  const pPlain = plan570(B570(), stage570("2026-09-11T01:01:00.000Z", "CX1-OLD", "customer"), null);
+  ok(pPlain.items.length === 0 && /already on the roster/.test(why570(pPlain)),
+    "a PLAIN registration of a known code is still refused: that one really would list the party twice");
+
+  const pTwice = plan570(B570(), stage570("2026-09-11T01:02:00.000Z", "CX3-AS", "reseller"), null);
+  ok(pTwice.items.length === 0 && /already an associate/.test(why570(pTwice)),
+    "appointing an associate twice is refused, which is the duplicate that matters here");
+
+  const pRef = plan570(B570(), stage570("2026-09-11T01:03:00.000Z", "CX4-REF", "referral"), null);
+  ok(pRef.items.length === 1 && pRef.items[0].roster.appoint === true && pRef.items[0].roster.resell === null,
+    "a referrer is appointed with NO -R account: R3 leaves the buyer on the row and never books to one");
+
+  const pFresh = plan570(B570(), stage570("2026-09-11T01:04:00.000Z", "CX9-BRANDNEW", "reseller"), null);
+  ok(pFresh.items.length === 1 && pFresh.items[0].roster.register === true && pFresh.items[0].roster.appoint === true,
+    "a brand-new associate is registered AND appointed in the one act");
+
+  /* ---- the apply, and it is idempotent ---- */
+  {
+    const A = B570();
+    const st = stage570("2026-09-11T01:05:00.000Z", "CX1-OLD", "reseller");
+    const notes = { version: "v999", date: "11 Sep 2026", title: "TEST", notes: ["<b>TEST.</b>"], rows: {}, stockNote: "" };
+    const r1 = apply570(A, st, notes, master570);
+    ok(r1.ok && A.associates.includes("CX1-OLD"), "applied, the appointment reaches book.associates" + (r1.ok ? "" : ": " + (r1.problems || []).join("; ")));
+    ok(A.roster.includes("CX1-OLD-R"), "and the -R account joins the roster");
+    ok(A.roster.filter((x) => x === "CX1-OLD").length === 1, "and the code itself is not appended a second time");
+    /* A RE-RUN IS STOPPED BY THE PLAN, NOT BY THE APPLY. apply() re-plans first, and the plan
+       reads the book, so the second fold of a batch already folded is refused before any write.
+       Said as what it is rather than as idempotence, because the first draft of this assertion
+       claimed the apply's guard and stayed green with that guard removed. */
+    const before = JSON.stringify({ r: A.roster, a: A.associates });
+    const again = apply570(A, st, notes, master570);
+    ok(!again.ok && /already an associate/.test((again.problems || []).join("; "))
+      && JSON.stringify({ r: A.roster, a: A.associates }) === before,
+      "folding the same batch again is refused by the plan, having written nothing: " + (again.problems || []).join("; ").slice(0, 80));
+
+    /* WHAT THE APPLY'S OWN GUARD IS FOR: two taps appointing one code in a SINGLE batch. The
+       plan does not mutate the book as it walks its items, so it cannot see the first tap when
+       it checks the second, and both pass it. This is the assertion that goes red when the
+       guard is removed, and it is a real case: an offline phone retrying a tap queues two. */
+    const A2 = B570();
+    const twoTaps = { ok: true, count: 2, approved: [
+      stage570("2026-09-11T01:06:00.000Z", "CX1-OLD", "reseller").approved[0],
+      stage570("2026-09-11T01:07:00.000Z", "CX1-OLD", "reseller").approved[0]] };
+    const rTwo = apply570(A2, twoTaps, { version: "v999", date: "11 Sep 2026", title: "TEST", notes: ["<b>TEST.</b>"], rows: {}, stockNote: "" }, master570);
+    ok(rTwo.ok, "two taps appointing one code in one batch fold" + (rTwo.ok ? "" : ": " + (rTwo.problems || []).join("; ")));
+    ok(A2.associates.filter((x) => x === "CX1-OLD").length === 1,
+      "and they appoint them ONCE, not twice: " + JSON.stringify(A2.associates));
+    ok(A2.roster.filter((x) => x === "CX1-OLD-R").length === 1,
+      "and mint the -R account once: " + JSON.stringify(A2.roster.filter((x) => /^CX1-OLD/.test(x))));
+  }
+
+  /* ---- the drafter, which is the gate ---- */
+  const bk570 = { state: { roster: B570().roster, associates: B570().associates, PRODUCTS: { salt: {} } } };
+  const dOld = draft570({ at: "x", payload: { mode: "addid", code: "CX1-OLD", kind: "reseller" } }, bk570);
+  ok(!dOld.skip && dOld.collection === "roster" && !dOld.flags.some((f) => /ALREADY on the roster/.test(f)),
+    "the drafter no longer flags a known code as a duplicate when the kind appoints: " + JSON.stringify(dOld.flags));
+  ok(/Appoints CX1-OLD/.test(dOld.reasoning) && /R2 stream/.test(dOld.reasoning) && /CX1-OLD-R/.test(dOld.reasoning)
+    && /credit cap/.test(dOld.reasoning),
+    "and its reasoning says the standing it confers, which is what he is approving: " + dOld.reasoning.slice(0, 160));
+  const dPlain = draft570({ at: "x", payload: { mode: "addid", code: "CX1-OLD", kind: "customer" } }, bk570);
+  ok(dPlain.flags.some((f) => /ALREADY on the roster/.test(f)),
+    "a plain registration of a known code is still flagged as the duplicate it is");
+  const dTwice = draft570({ at: "x", payload: { mode: "addid", code: "CX3-AS", kind: "reseller" } }, bk570);
+  ok(dTwice.flags.some((f) => /ALREADY an associate/.test(f)),
+    "and appointing an associate twice is flagged before it reaches the fold");
+  const dRef = draft570({ at: "x", payload: { mode: "addid", code: "CX4-REF", kind: "referral" } }, bk570);
+  /* THE CODE ITSELF ENDS IN -REF, so a bare /-R/ here matched the party's own name and proved
+     nothing. The test is the -R ACCOUNT and the phrase that promises it. */
+  ok(/R3 stream/.test(dRef.reasoning) && dRef.reasoning.indexOf("CX4-REF-R") < 0 && !/resell account/.test(dRef.reasoning),
+    "a referral appointment names the R3 stream and promises no -R account: " + dRef.reasoning.slice(0, 130));
+
+  /* ---- the pane, on the real master ---- */
+  {
+    const { openMaster: om570 } = await import("../tools/payload.mjs");
+    const { w: w570 } = await om570();
+    try {
+      /* ====== THE STATE IS FORCED, NOT BORROWED FROM THE BOOK ==========================
+         The first draft of this block used CR3-DAM as its example of a roster code that is
+         not yet an associate, and v571 appointed them one commit later: four assertions went
+         red on a change that broke nothing. An assertion coupled to live book state passes
+         only while the data cooperates. Two synthetic codes are pushed onto the running desk
+         instead -- one on the roster and off the bench, one on both -- so what is being proved
+         is true by construction and stays true whoever he appoints next. */
+      w570.eval("setProd('salt');recompute();switchTab('add');");
+      w570.eval("(function(){if(roster.indexOf('CZ8-APPT')<0)roster.push('CZ8-APPT');"
+        + "if(roster.indexOf('CZ7-BENCH')<0)roster.push('CZ7-BENCH');"
+        + "if(associates.indexOf('CZ7-BENCH')<0)associates.push('CZ7-BENCH');"
+        + "try{recompute();}catch(e){}})();");
+      const forced = JSON.parse(String(w570.eval("JSON.stringify({onRoster:roster.indexOf('CZ8-APPT')>=0,"
+        + "offBench:associates.indexOf('CZ8-APPT')<0,onBench:associates.indexOf('CZ7-BENCH')>=0})")));
+      ok(forced.onRoster && forced.offBench && forced.onBench,
+        "the fixture codes are forced: one on the roster and off the bench, one on both " + JSON.stringify(forced));
+      /* the plan helper the preview, the Record handler and the queue line all read */
+      const P = JSON.parse(String(w570.eval("JSON.stringify({"
+        + "elev:addIdPlan('CZ8-APPT','reseller'),"
+        + "fresh:addIdPlan('CZ9-UNKNOWN','reseller'),"
+        + "twice:addIdPlan('CZ7-BENCH','reseller'),"
+        + "plain:addIdPlan('CZ8-APPT','customer'),"
+        + "ref:addIdPlan('CZ8-APPT','referral')})")));
+      ok(P.elev.elevate === true && P.elev.stream === "R2" && P.elev.resell === "CZ8-APPT-R" && P.elev.already === false,
+        "on the real master a known code with the Associate kind reads as an elevation, with its -R named: " + JSON.stringify(P.elev));
+      ok(P.fresh.elevate === false && P.fresh.stream === "R2", "an unknown code with the same kind reads as a fresh registration");
+      ok(P.twice.already === true, "a code already on the bench reads as already an associate");
+      ok(P.plain.stream === null && P.plain.elevate === false, "and the Customer kind confers nothing");
+      ok(P.ref.stream === "R3" && P.ref.resell === null, "the Referrer kind appoints on R3 and asks for no -R account");
+
+      /* THE BUTTON IS THE CONTRACT. A preview that describes an appointment while Record stays
+         disabled would be exactly the fault this version fixes, one layer up, so the state of
+         the button is asserted rather than the prose alone. Driven through wbPreview, and the
+         name and place cells are read from the DOM rather than from the source. */
+      const DRIVE570 = (code, kind) => "(function(){try{queue=[];wbMode='addid';wbApply();"
+        + "var set=function(id,v){var e=document.getElementById(id);if(e)e.value=v;};"
+        + "set('wbApCode'," + JSON.stringify(code) + ");set('wbApKind'," + JSON.stringify(kind) + ");"
+        + "set('wbApName','');set('wbApPlace','');wbPreview();"
+        + "var btn=document.getElementById('wbRec');"
+        + "return JSON.stringify({dis:!!btn.disabled,"
+        + "prev:(document.getElementById('wbPrev')||{}).textContent||'',"
+        + "errs:(document.getElementById('wbMsgs')||{}).textContent||'',"
+        + "nameShown:(document.getElementById('wbApNameCell')||{}).style.display!=='none',"
+        + "placeShown:(document.getElementById('wbApPlaceCell')||{}).style.display!=='none'});"
+        + "}catch(e){return JSON.stringify({no:String(e&&e.message)});}})()";
+      const EL = JSON.parse(String(w570.eval(DRIVE570("CZ8-APPT", "reseller"))));
+      ok(!EL.no && EL.dis === false,
+        "an elevation ENABLES Record with no name typed, where before v570 the code was refused outright: " + (EL.no || EL.errs.slice(0, 90)));
+      ok(!EL.no && EL.nameShown === false && EL.placeShown === false,
+        "and the Name and Place cells are hidden: the party is already in the vault");
+      ok(!EL.no && /Appoints/.test(EL.prev) && /CZ8-APPT-R/.test(EL.prev) && /R2/.test(EL.prev),
+        "the preview says it appoints, on which stream, and names the resell account: " + (EL.no || EL.prev.slice(0, 150)));
+      ok(!EL.no && /credit cap/.test(EL.prev) && /hurdle/.test(EL.prev),
+        "and it says what the standing changes, which is the part he is deciding");
+      /* the figures in that sentence are the engine's, not a second copy */
+      /* READ THE PAGE'S OWN FORMATTER. Rebuilding "RM 470" in the test would be a second copy of
+         fmt0 and would pass while the page printed something else entirely. */
+      const HUR = JSON.parse(String(w570.eval("JSON.stringify({a:fmt0(rewardHurdle('salt','associate')),c:fmt0(rewardHurdle('salt','customer')),"
+        + "aN:rewardHurdle('salt','associate'),cN:rewardHurdle('salt','customer'),"
+        + "capA:creditCapFor('salt','associate'),capR:creditCapFor('salt','retail')})")));
+      ok(HUR.aN !== HUR.cN, `the two hurdles really are different figures (${HUR.a} bring, ${HUR.c} own), or this assertion proves nothing`);
+      ok(EL.prev.indexOf(HUR.a) >= 0 && EL.prev.indexOf(HUR.c) >= 0,
+        `the hurdles printed are the ones rewardHurdle returns (${HUR.a} bring, ${HUR.c} own), not restated`);
+      ok(HUR.capA > HUR.capR, `and the associate cap really is the larger one (${HUR.capA} against ${HUR.capR})`);
+
+      const TW = JSON.parse(String(w570.eval(DRIVE570("CZ7-BENCH", "reseller"))));
+      ok(!TW.no && TW.dis === true && /already an associate/.test(TW.errs),
+        "appointing someone already on the bench disables Record and says why: " + (TW.no || TW.errs.slice(0, 80)));
+      const PL = JSON.parse(String(w570.eval(DRIVE570("CZ8-APPT", "customer"))));
+      ok(!PL.no && PL.dis === true && /already on the roster/.test(PL.errs),
+        "and a plain registration of a known code is still refused: " + (PL.no || PL.errs.slice(0, 80)));
+
+      /* THE TAP ITSELF: what it queues, and what the desk shows before the fold */
+      const REC = JSON.parse(String(w570.eval("(function(){try{queue=[];"
+        + "wbMode='addid';wbApply();var set=function(id,v){var e=document.getElementById(id);if(e)e.value=v;};"
+        + "set('wbApCode','CZ8-APPT');set('wbApKind','reseller');set('wbApName','');set('wbApPlace','');wbPreview();"
+        + "wbRecord();"
+        + "return JSON.stringify({n:queue.length,q:queue[0]||null,"
+        + "ok:(document.getElementById('wbOk')||{}).textContent||'',"
+        + "onBench:associates.indexOf('CZ8-APPT')>=0,hasR:roster.indexOf('CZ8-APPT-R')>=0});"
+        + "}catch(e){return JSON.stringify({no:String(e&&e.message)});}})()")));
+      ok(!REC.no && REC.n === 1 && REC.q && REC.q.type === "ADDID" && REC.q.payload.code === "CZ8-APPT"
+        && REC.q.payload.kind === "reseller" && REC.q.payload.rev === "R2",
+        "the tap queues one ADDID carrying the code, the kind and the stream: " + (REC.no || JSON.stringify(REC.q && REC.q.payload)));
+      ok(!REC.no && /^Appoint CZ8-APPT as:/.test(REC.q.raw) && /CZ8-APPT-R/.test(REC.q.raw),
+        "the queue line reads as an appointment and names the resell account: " + (REC.no || (REC.q && REC.q.raw)));
+      ok(!REC.no && /Appointed CZ8-APPT/.test(REC.ok), "and the desk says Appointed, not Registered: " + (REC.no || REC.ok));
+      ok(!REC.no && REC.onBench === true && REC.hasR === true,
+        "the overlay puts them on the bench and mints the -R at once, as a queued count shows before it is folded");
+      /* NO NAME REACHED THE QUEUE. Rule 2, and the elevation road skips the vault entirely. */
+      ok(!REC.no && !/vault|name/i.test(JSON.stringify(REC.q)), "and nothing name-shaped rode along with it");
+    } finally { try { w570.close(); } catch (e) { /* best effort */ } }
+  }
+}
+
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
 process.exit(fail ? 1 : 0);

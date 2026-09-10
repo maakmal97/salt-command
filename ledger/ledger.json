@@ -1,6 +1,6 @@
 {
- "v": "v569",
- "stamped": "11 Sep 2026, 00:21 KL",
+ "v": "v570",
+ "stamped": "11 Sep 2026, 01:01 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -3582,7 +3582,8 @@
    "CD3-SEG",
    "CA7-JTR",
    "CF5-WM",
-   "CE5-TBC"
+   "CE5-TBC",
+   "CR3-DAM-R"
   ],
   "associates": [
    "CS6-BS",
@@ -3590,7 +3591,8 @@
    "CS6-PER",
    "CN6-WM",
    "CI4-OKR",
-   "CE4-AD"
+   "CE4-AD",
+   "CR3-DAM"
   ],
   "PEOPLE": {
    "banned": [
@@ -3745,7 +3747,7 @@
   ],
   "QUEUE_COMMITTED": "2026-09-10T03:48:14.758Z",
   "PRICING": {
-   "takenAt": "2026-09-10T16:24:47.866Z",
+   "takenAt": "2026-09-10T17:09:21.942Z",
    "sizes": [
     0.5,
     1,
@@ -4201,10 +4203,10 @@
      ]
     }
    },
-   "v": "v569"
+   "v": "v570"
   },
   "OPEN": {
-   "at": "2026-09-10T16:24:47.904Z",
+   "at": "2026-09-10T17:09:21.978Z",
    "count": 8,
    "byKey": {
     "CM4-MK|2026-09-09|220": {
@@ -4372,7 +4374,7 @@
     "salt": "2026-09-08",
     "oil": "2026-09-09"
    },
-   "v": "v569"
+   "v": "v570"
   }
  }
 }

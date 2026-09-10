@@ -899,21 +899,40 @@ export function draftRow(entry, book) {
     if (kind === "bucket" && !parent) return { skip: "a bucket sits under a party, and which party is a judgement" };
 
     const roster = (book.state && book.state.roster) || [];
+    const associates = (book.state && book.state.associates) || [];
     const flags = [];
-    /* THE ONE THAT MATTERS. A duplicate registration is silent: the fold would append a second
-       copy and every roster walk would see the party twice. */
-    if (roster.includes(code)) {
+    /* v570: AN APPOINTMENT AND A REGISTRATION ARE TWO ACTS ON ONE COLLECTION, and only one of
+       them is a duplicate when the code is already known. A party is registered when they first
+       buy and appointed when he decides, which is months apart on this book, so an appointment
+       naming a code the roster already holds is the ordinary road and not a fault. What IS a
+       duplicate here is appointing an associate twice, and the fold refuses that outright. */
+    const stream = POSITION_ENGINE.ADDID_APPOINTS[kind] || null;
+    if (roster.includes(code) && !stream) {
       flags.push(`${code} is ALREADY on the roster. Folding this would list the party twice, and the desk walks the roster to build its own tables.`);
+    }
+    if (stream && associates.includes(code)) {
+      flags.push(`${code} is ALREADY an associate, so this appointment would be refused at the fold.`);
     }
     if (parent && !roster.includes(parent)) {
       flags.push(`The parent ${parent} is not on the roster either, so this bucket would hang off nothing.`);
     }
+    /* THE STANDING IS THE POINT, so the reasoning says what it changes rather than only that a
+       code joined a list. He approves the ROW, and on this row the row is a rule change: the
+       credit cap, the reward hurdle and which table the party is counted on all move with it. */
+    const resell = kind === "reseller" ? `${code}-R` : null;
+    const appointBits = stream
+      ? ` It APPOINTS them an associate on the ${stream} stream: ${stream === "R2"
+          ? `a sale may book to them with the buyer behind it, and ${resell} joins the roster as their resell account so an R2 with no named end buyer has somewhere to land`
+          : "a sale stays with the buyer and their introduction is credited beside it"}.`
+        + " Their credit cap moves from the retail one to the associate one, their turnover hurdles to the associate hurdle, and they leave the customer reward table for the network bench."
+      : "";
     return {
       collection: "roster",
       row: { code, kind, parent, note: pay.note || null },
       flags,
-      reasoning: `Registers ${code} as a ${kind}${parent ? ` under ${parent}` : ""}.`
-        + " It touches no figure: the fold appends the code to the roster."
+      reasoning: `${stream && roster.includes(code) ? "Appoints" : "Registers"} ${code} as a ${kind}${parent ? ` under ${parent}` : ""}.`
+        + ` It touches no figure: the fold appends ${roster.includes(code) ? "nothing new" : "the code"} to the roster.`
+        + appointBits
         + " THE NAME AND THE PLACE ARE NOT HERE AND MUST NOT BE: the directory is typed at the laptop and never travels.",
     };
   }

@@ -295,7 +295,8 @@
     "CD3-SEG",
     "CA7-JTR",
     "CF5-WM",
-    "CE5-TBC"
+    "CE5-TBC",
+    "CR3-DAM-R"
   ],
   "associates": [
     "CS6-BS",
@@ -303,7 +304,8 @@
     "CS6-PER",
     "CN6-WM",
     "CI4-OKR",
-    "CE4-AD"
+    "CE4-AD",
+    "CR3-DAM"
   ],
   "PEOPLE": {
     "banned": [

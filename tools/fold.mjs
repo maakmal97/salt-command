@@ -26,6 +26,10 @@
  *   a count           the stated stock set and COUNT_ON moved; the one entry that moves it
  *   a loss            appended to selfUseLog     a lost sale   appended to lostDemand
  *   a registration    the code appended to the roster; the directory is never touched
+ *   an appointment    a registration whose kind is reseller or referral: the code also joins
+ *                     associates, and a reseller is given its <CODE>-R account. The code may
+ *                     already be on the roster, since a party is registered when they first buy
+ *                     and appointed when he decides
  *   a price edit      PRICE_SET[product] REPLACED with what he set: the form on the desk is the
  *                     whole statement of what the board should be, so a price he cleared is cleared
  * then the shelf is ROLLED for what physically moved (a roll, never a count), the watermark
@@ -58,6 +62,8 @@ const TODAY = opt("--today", new Date(Date.now() + 8 * 36e5).toISOString().slice
 
 const E = POSITION_ENGINE;
 const r2 = (v) => +(+v).toFixed(2);
+/* the engine's table, not a second copy: which Add ID kind appoints, and for which stream */
+const APPOINTS = POSITION_ENGINE.ADDID_APPOINTS;
 const stamp = () => { const d = new Date(Date.now() + 8 * 36e5); const MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
   return `${String(d.getUTCDate()).padStart(2, "0")} ${MON[d.getUTCMonth()]} ${d.getUTCFullYear()}, ${String(d.getUTCHours()).padStart(2, "0")}:${String(d.getUTCMinutes()).padStart(2, "0")} KL`; };
 const dayOf = (iso) => { const MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]; const [y, m, d] = iso.split("-"); return `${d} ${MON[+m - 1]} ${y}`; };
@@ -87,7 +93,7 @@ function describe(item) {
     case "loss": return `LOSS ${r.kg} unit ${r.product} on ${r.date}: ${r.why}`;
     case "loan": return `${r.direction === "in" ? "BORROW" : "LEND"} ${r.valueKg} unit ${r.product || "salt"} ${r.direction === "in" ? "from" : "to"} ${r.party} on ${r.date}`;
     case "lostDemand": return `LOST SALE ${r.kg} unit ${r.product}${r.party ? " to " + r.party : ""} on ${r.date}: ${r.why}`;
-    case "roster": return `REGISTER ${r.code} as ${r.kind}${r.parent ? " under " + r.parent : ""}`;
+    case "roster": return `${APPOINTS[r.kind] ? "APPOINT" : "REGISTER"} ${r.code} as ${r.kind}${r.parent ? " under " + r.parent : ""}`;
     case "priceset": return `SET THE BOARD for ${r.product}${Object.keys(r.prices || {}).length ? ": " + Object.entries(r.prices).map(([q, p]) => `${q} unit at RM${p}`).join(", ") : ""}${(r.hide || []).length ? `, hiding ${r.hide.join(", ")} unit` : ""}`;
     default: return `${item.collection}: ${JSON.stringify(r).slice(0, 80)}`;
   }
@@ -244,8 +250,39 @@ export function plan(book, staged, notes) {
     } else if (it.collection === "lostDemand") {
       entry.append = "lostDemand"; entry.does.push("append to lostDemand; touches no stock and no cash");
     } else if (it.collection === "roster") {
-      if ((book.roster || []).includes(r.code)) { out.refused.push({ id: it.id, why: `${r.code} is already on the roster` }); continue; }
-      entry.roster = r.code; entry.does.push(`append ${r.code} to the roster (the directory is not touched)`);
+      /* ====== v570: THE KIND IS NOT DECORATION ==========================================
+         Add ID has offered "Associate, resells for you (R2)" since v343 and the fold appended
+         the bare code and stopped, so a party registered as an associate was not one: it never
+         reached book.associates, which is the only thing associateIds() reads for an appointment.
+         Every consequence of standing hung off that list and none of them fired -- the Workbench's
+         associate picker, the network bench, the credit cap of 2 unit against retail's 1, and the
+         move off the customer reward table. The option was a label over an act nobody performed.
+
+         AN APPOINTMENT IS ALSO WHY A CODE ALREADY ON THE ROSTER IS NOT A DUPLICATE. A person is
+         registered when they first buy and appointed when he decides, which can be months apart:
+         CR3-DAM bought from 29 Jun and was appointed on 11 Sep. So the already-on-the-roster
+         refusal holds for a plain registration, which really would list the party twice, and
+         becomes the appointment's ordinary road. What it refuses instead is appointing an
+         associate twice, which is the duplicate that matters on this collection.
+
+         THE -R ACCOUNT IS MINTED WITH THE APPOINTMENT, and only for a reseller. R2 books the row
+         TO the associate and the desk fills <CODE>-R as the end buyer where none is named, so an
+         associate without one has every R2 sale refused at entryFault as a code not on the roster.
+         Minting it here closes that by construction rather than leaving him a second act to
+         remember. R3 never books to an -R account, so a referrer is appointed without one. */
+      const appoints = !!APPOINTS[r.kind];
+      const onRoster = (book.roster || []).includes(r.code);
+      if (onRoster && !appoints) { out.refused.push({ id: it.id, why: `${r.code} is already on the roster` }); continue; }
+      if (appoints && (book.associates || []).includes(r.code)) { out.refused.push({ id: it.id, why: `${r.code} is already an associate` }); continue; }
+      const resell = r.kind === "reseller" ? r.code + "-R" : null;
+      entry.roster = { code: r.code, register: !onRoster, appoint: appoints, resell: resell && !(book.roster || []).includes(resell) ? resell : null };
+      if (entry.roster.register) entry.does.push(`append ${r.code} to the roster (the directory is not touched)`);
+      /* THE FIGURES ARE NOT RESTATED HERE. The reward hurdles and the credit caps are the
+         engine's (REWARD.hurdleMultiple, RULES.creditUnits), and a second copy in the fold's
+         prose is a second copy that will differ. What the line says is which rules start
+         reading them, which is the part that is true whatever the numbers are. */
+      if (appoints) entry.does.push(`appoint ${r.code} an associate: R2 and R3 credit reaches them, their credit cap moves from the retail one to the associate one, their turnover hurdles to the associate hurdle, and they leave the customer reward table for the network bench`);
+      if (entry.roster.resell) entry.does.push(`append ${entry.roster.resell} to the roster as their resell account, so an R2 sale with no named end buyer has somewhere to book`);
     } else if (it.collection === "priceset") {
       /* v354: A PRICE EDIT MOVES NO STOCK AND NO CASH. It REPLACES that product's entry in
          PRICE_SET rather than merging into it, so the form on the desk is the whole statement of
@@ -650,7 +687,16 @@ export function apply(book, staged, notes, masterText) {
       const row = { ...src.row }; if (n.note) row.note = String(n.note).trim();
       book[it.append] = book[it.append] || []; book[it.append].push(row);
     } else if (it.roster) {
-      book.roster.push(it.roster);
+      /* v570: three writes, each guarded, because a re-run of a fold must add nothing twice.
+         The plan has already refused the duplicate cases; these guards are what makes the
+         apply itself idempotent, as refundOnCancel is. */
+      const rr = it.roster;
+      if (rr.register && !book.roster.includes(rr.code)) book.roster.push(rr.code);
+      if (rr.resell && !book.roster.includes(rr.resell)) book.roster.push(rr.resell);
+      if (rr.appoint) {
+        book.associates = book.associates || [];
+        if (!book.associates.includes(rr.code)) book.associates.push(rr.code);
+      }
     } else if (it.priceset) {
       const ps = it.priceset;
       book.PRICE_SET = book.PRICE_SET || {};

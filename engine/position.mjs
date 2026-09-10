@@ -565,6 +565,18 @@ function refundOnCancel(list,row,date){
 }
 /* the key an amendment names a row by, shared with the phone and the drafter */
 function ovKey(t){return (t.customer||t.supplier)+'|'+t.date+'|'+t.total;}
+/* ====== WHICH Add ID KIND APPOINTS AN ASSOCIATE, AND WHICH STREAM IT IS FOR (v570) ========
+   THREE READERS AND THEY HAVE TO AGREE, which is the same reason CORRECTABLE sits in this file:
+   the drafter decides whether to accept the entry, the fold applies it, and the Add ID pane
+   previews what the tap will do. A table in three places is a table that will differ.
+
+   THE VALUE IS THE STREAM, and it decides the -R account. R2 books the row TO the associate, so
+   an R2 with no named end buyer needs somewhere to land and the desk fills <CODE>-R; an associate
+   without that account has every R2 sale refused at the gate. R3 leaves the buyer on the row and
+   credits the introduction beside it, so a referrer never books to an -R and is not given one.
+   The other kinds -- customer, downstream, bucket, supplier -- register a code and confer no
+   standing, which is why they are absent rather than listed as false. */
+const ADDID_APPOINTS={reseller:'R2',referral:'R3'};
 
 return {txPrice:txPrice,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:txEffDeliv,txAdvance:txAdvance,
         txDeferUnits:txDeferUnits,txPendUnits:txPendUnits,txPendUnitsRaw:txPendUnitsRaw,txPendRM:txPendRM,txStat:txStat,txDates:txDates,txGoods:txGoods,
@@ -573,6 +585,7 @@ return {txPrice:txPrice,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeli
         ledgerRow:ledgerRow,openable:openable,ovKey:ovKey,attributionOf:attributionOf,correctionFaults:correctionFaults,refundOnCancel:refundOnCancel,
         CORRECTABLE:CORRECTABLE,CORRECT_REQUIRED:CORRECT_REQUIRED,CORRECT_NUM_POS:CORRECT_NUM_POS,
         CORRECT_NUM_NN:CORRECT_NUM_NN,CORRECT_DATE:CORRECT_DATE,CORRECT_BOOL:CORRECT_BOOL,
-        CORRECT_CODE:CORRECT_CODE,CORRECT_TEXT:CORRECT_TEXT,HANDOVER:HANDOVER};
+        CORRECT_CODE:CORRECT_CODE,CORRECT_TEXT:CORRECT_TEXT,HANDOVER:HANDOVER,
+        ADDID_APPOINTS:ADDID_APPOINTS};
 })();
 export default POSITION_ENGINE;

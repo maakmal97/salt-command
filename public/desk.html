@@ -68,7 +68,7 @@ document.addEventListener('visibilitychange',function(){
    localStorage before it posts anything and the load reads it straight back.
    The same tick retries a held entry, which is what gets a phone write to the cloud
    without waiting for the next open. */
-var SALT_BUILD_ID="39d6abf420e85cc8";
+var SALT_BUILD_ID="71bbbbb726c908bb";
 var SALT_REV_MS=10000;
 (function(){
   var chip=null,timer=null;
@@ -4509,6 +4509,18 @@ function refundOnCancel(list,row,date){
 }
 /* the key an amendment names a row by, shared with the phone and the drafter */
 function ovKey(t){return (t.customer||t.supplier)+'|'+t.date+'|'+t.total;}
+/* ====== WHICH Add ID KIND APPOINTS AN ASSOCIATE, AND WHICH STREAM IT IS FOR (v570) ========
+   THREE READERS AND THEY HAVE TO AGREE, which is the same reason CORRECTABLE sits in this file:
+   the drafter decides whether to accept the entry, the fold applies it, and the Add ID pane
+   previews what the tap will do. A table in three places is a table that will differ.
+
+   THE VALUE IS THE STREAM, and it decides the -R account. R2 books the row TO the associate, so
+   an R2 with no named end buyer needs somewhere to land and the desk fills <CODE>-R; an associate
+   without that account has every R2 sale refused at the gate. R3 leaves the buyer on the row and
+   credits the introduction beside it, so a referrer never books to an -R and is not given one.
+   The other kinds -- customer, downstream, bucket, supplier -- register a code and confer no
+   standing, which is why they are absent rather than listed as false. */
+const ADDID_APPOINTS={reseller:'R2',referral:'R3'};
 
 return {txPrice:txPrice,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:txEffDeliv,txAdvance:txAdvance,
         txDeferUnits:txDeferUnits,txPendUnits:txPendUnits,txPendUnitsRaw:txPendUnitsRaw,txPendRM:txPendRM,txStat:txStat,txDates:txDates,txGoods:txGoods,
@@ -4517,7 +4529,8 @@ return {txPrice:txPrice,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeli
         ledgerRow:ledgerRow,openable:openable,ovKey:ovKey,attributionOf:attributionOf,correctionFaults:correctionFaults,refundOnCancel:refundOnCancel,
         CORRECTABLE:CORRECTABLE,CORRECT_REQUIRED:CORRECT_REQUIRED,CORRECT_NUM_POS:CORRECT_NUM_POS,
         CORRECT_NUM_NN:CORRECT_NUM_NN,CORRECT_DATE:CORRECT_DATE,CORRECT_BOOL:CORRECT_BOOL,
-        CORRECT_CODE:CORRECT_CODE,CORRECT_TEXT:CORRECT_TEXT,HANDOVER:HANDOVER};
+        CORRECT_CODE:CORRECT_CODE,CORRECT_TEXT:CORRECT_TEXT,HANDOVER:HANDOVER,
+        ADDID_APPOINTS:ADDID_APPOINTS};
 })();
 /* ==== END ENGINE position ==== */
 /* ==== ENGINE pricing: generated from engine/pricing.mjs by tools/engine.mjs. Edit the module, never this block. ==== */
@@ -5302,8 +5315,8 @@ const customerRefunds=[
   {"party":"CZ6-WM","amount":80,"since":"2026-07-24","paidOn":"2026-07-31","note":"RM80 overpayment, refunded 31 Jul."},
   {"party":"CZ4-MK","amount":20,"since":"2026-08-26","note":"RM20 over-tender, cash payable to set off."}
 ];
-const roster=["CA5-SEN","CG5-SB","CJ4-BJ","CR3-DAM","CS6-PER","CN5-TAI","CJ4-OKR","CC5-OKR","CA4-DAM","CE4-CHE","CM6-HCM","CM4-SK","CS6-BS","CS6-BS-R","CM4-MK","CH5-KLC","CI4-OKR","CN6-WM","CN6-WM-R","CZ6-WM","CR4-PJ","CD4-CS","CA5-KER","CE4-AD","SF6-KLC","SA5-BTR","SM4-KEP","SP7-PUD","CH4-KLS","CS6-PER-R","CY2-NIL","CR3-PUD","CH4-MLR","CH5-OUG","CA11-SEN","CM6-PJ","CK4-SEN","CZ4-MK","CH6-SET","CD3-SEG","CA7-JTR","CF5-WM","CE5-TBC"];
-const associates=["CS6-BS","CJ4-OKR","CS6-PER","CN6-WM","CI4-OKR","CE4-AD"];
+const roster=["CA5-SEN","CG5-SB","CJ4-BJ","CR3-DAM","CS6-PER","CN5-TAI","CJ4-OKR","CC5-OKR","CA4-DAM","CE4-CHE","CM6-HCM","CM4-SK","CS6-BS","CS6-BS-R","CM4-MK","CH5-KLC","CI4-OKR","CN6-WM","CN6-WM-R","CZ6-WM","CR4-PJ","CD4-CS","CA5-KER","CE4-AD","SF6-KLC","SA5-BTR","SM4-KEP","SP7-PUD","CH4-KLS","CS6-PER-R","CY2-NIL","CR3-PUD","CH4-MLR","CH5-OUG","CA11-SEN","CM6-PJ","CK4-SEN","CZ4-MK","CH6-SET","CD3-SEG","CA7-JTR","CF5-WM","CE5-TBC","CR3-DAM-R"];
+const associates=["CS6-BS","CJ4-OKR","CS6-PER","CN6-WM","CI4-OKR","CE4-AD","CR3-DAM"];
 const PEOPLE={
   "banned": [
     {
@@ -6265,7 +6278,7 @@ const whiteboard=[
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{"v":"v569","d":"11 Sep 2026","t":"CA7-JTR s140 SAYS RM430 THROUGHOUT, AND THE RM20 OVERPAYMENT IT REPORTED NEVER EXISTED","n":["<b>HIS RULING, 10 SEP 2026:</b> “On the CA7-JTR s140, it is a correction in the agreed order, 50 unit oil to 430 instead of 450, paid and delivered.” So RM430 is the agreed figure and RM430 is what moved. The row already STORED that — total 430, cash 430, delivered 50, nothing outstanding — and three things inside it still said the opposite.","<b>THE TRAIL SAID RM450 AND THE ROW SAID RM430.</b> The 09 Sep Fulfilment step recorded the then-agreed RM450 settling the order; the 10 Sep Correction restated the total and the row’s cash to RM430 and left the step alone, so <b>the three steps summed to RM450 against a stored RM430</b>. On his ruling the step is the figure that was wrong, so it is restated to RM430 and the trail now adds to the row: 0 + 430 + 0 = 430. Nothing else about the row moves.","<b>AND THE ROW WAS REPORTING A REFUND IT DID NOT OWE.</b> Its own note read “RM450 already paid stands RM20 above it” and “the trail of two steps no longer adds to the total and the overpayment stays outstanding”, in the row note and again in the Correction note, four passages in all. That RM20 was the gap between a corrected total and an uncorrected trail step, not money anyone had handed over: <b>there is no CA7-JTR row in customerRefunds and there never was</b>, so the desk was describing an outstanding refund that no surface could act on and no figure carried. The passages are replaced rather than deleted, so the row still records what the correction did and still says plainly that RM430 sits RM6.43 under the RM436.43 floor — a stated price under break-even, quoted as such under v552.","<b>WHAT IS NOT CHANGED.</b> The <code>mod</code> line still reads “cash 450 to 430”, because that is exactly what the correction did to the ROW and rewriting it would erase the correction’s own record. No other row is touched, no count moves, no price moves: this is one figure and four sentences on one row, on his word.","<b>ONE LINE OF THE BOOK, AND THE BOOK’S OWN WRITER WROTE IT.</b> Worth recording because the first attempt used <code>JSON.stringify(book,null,1)</code> and produced a <b>3,784-line diff</b> on a one-figure change: <code>ledger/book.json</code> keeps one row per line and <code>writeBookFile</code> in booksync.mjs is what preserves that. Re-serialising a ledger is not a formatting preference; it destroys the reviewable diff that is the whole defence against a bad fold."]},
+const evolution=[{"v":"v570","d":"11 Sep 2026","t":"AN ASSOCIATE IS APPOINTED FROM THE ENTER TAB, AND CR3-DAM IS THE FIRST","n":["<b>HIS INSTRUCTION, 11 SEP 2026: elevate CR3-DAM as an Associate, and he could not do it himself from the Enter tab.</b> He was right, and the reason was worse than a missing form. Add ID has offered <i>Associate, resells for you (R2)</i> since v343 and the option did NOTHING: the payload carried the stream, the drafter wrote a roster row, and the fold appended the bare code and stopped. A party registered as an associate never reached <code>associates</code>, which is the only list <code>associateIds()</code> reads for an appointment, so the Workbench's picker, the network bench, the credit cap and the move off the customer reward table all hung off a list the form never wrote to. The Kind was a label over an act nobody performed.","<b>AND THERE WAS NO ROAD AT ALL FOR A CODE ALREADY ON THE ROSTER</b>, which is the ordinary case: a party is registered when they first buy and appointed when he decides, months apart. The pane refused any known code as a duplicate. It now refuses the two that really are duplicates, a plain registration of a known code and appointing an associate twice, and takes the appointment as the ordinary road. An elevation asks for no name and hides the Name and Place cells, because the party is already in the vault and asking again invites a second spelling of a name already filed.","<b>THE -R ACCOUNT IS MINTED WITH THE APPOINTMENT.</b> R2 books the row TO the associate and the desk fills <code>&lt;CODE&gt;-R</code> where no end buyer is named, so an associate without that account has every R2 sale refused at the gate as a code not on the roster. The fold appends it with the appointment rather than leaving a second act to remember. A referrer is appointed without one: R3 leaves the buyer on the row and never books to an -R. Which Kind appoints is <code>ADDID_APPOINTS</code> in <code>engine/position.mjs</code>, beside <code>CORRECTABLE</code> and for the same reason: the pane, the drafter and the fold all read it, and a table in three places is a table that will differ.","<b>CR3-DAM IS THE FIRST, AND THE BENCH RANKS THEM FOURTH ON ARRIVAL.</b> They joined on 29 Jun and have bought on 12 orders since, 13 unit for RM 1,080 with RM 25 outstanding, the steadiest run of repeat buying on this book. Read off the desk rather than asserted: rank <b>#4</b>, ahead of CE4-AD at RM 835 and CI4-OKR at RM 655, because rank is contribution and their own buying is the larger figure; <b>no stars</b>, since the star reads resale and referral as a share of all revenue and both are nil, so the first is earned rather than granted; the salt credit cap goes to 2 unit from 1. They leave the customer reward table for their own card, and RM 585 of own buying at 41.4% since the scheme was adopted has earned nothing under either reading, so the move costs them nothing. What they buy for themselves keeps the RM 940 customer hurdle; what they now bring in hurdles at RM 470.","<b>TWO FAULTS FOUND IN PASSING, BOTH IN THE LINE BEING REWRITTEN.</b> The Add ID branch of <code>wbRecord</code> wrote its success line to the status node captured BEFORE <code>render()</code> rebuilt the tab, so the node was detached and a registration has confirmed itself silently since v343; the named road has re-fetched it since v528 and the common tail always did, and this branch returned early and was the one that missed it. And the lead read <i>as a Associate</i>, and on another kind <i>as a An associate's end buyer</i>: the labels are whole phrases, so no article fits and one cannot be picked from the first letter either. The colon drops it, which is the shape the queue's own line has used all along.","<b>PROVED, AND ONE INSTRUMENT REWRITTEN WHEN IT WOULD NOT GO RED.</b> Thirty-nine assertions over the fold, the drafter and the pane on the real master, each mutated first: reverting the plan's refusal reddens seven, reverting the pane's gate reddens the elevation road, and removing the apply's guard reddens two taps appointing one code in a single batch. That last assertion first claimed idempotence on a re-run and stayed GREEN with the guard removed, because <code>apply()</code> re-plans and the plan refuses a second fold outright; what the guard actually covers is a duplicate the plan cannot see, since it does not mutate the book as it walks its items. Four assertions had used CR3-DAM as their example of a roster code that is NOT an associate, which this same version made false: they are re-keyed onto synthetic codes forced onto the running desk. <code>ledger/ledger.json</code> is generated from the running desk and a book change leaves it stale, so it is regenerated here."]},{"v":"v569","d":"11 Sep 2026","t":"CA7-JTR s140 SAYS RM430 THROUGHOUT, AND THE RM20 OVERPAYMENT IT REPORTED NEVER EXISTED","n":["<b>HIS RULING, 10 SEP 2026:</b> “On the CA7-JTR s140, it is a correction in the agreed order, 50 unit oil to 430 instead of 450, paid and delivered.” So RM430 is the agreed figure and RM430 is what moved. The row already STORED that — total 430, cash 430, delivered 50, nothing outstanding — and three things inside it still said the opposite.","<b>THE TRAIL SAID RM450 AND THE ROW SAID RM430.</b> The 09 Sep Fulfilment step recorded the then-agreed RM450 settling the order; the 10 Sep Correction restated the total and the row’s cash to RM430 and left the step alone, so <b>the three steps summed to RM450 against a stored RM430</b>. On his ruling the step is the figure that was wrong, so it is restated to RM430 and the trail now adds to the row: 0 + 430 + 0 = 430. Nothing else about the row moves.","<b>AND THE ROW WAS REPORTING A REFUND IT DID NOT OWE.</b> Its own note read “RM450 already paid stands RM20 above it” and “the trail of two steps no longer adds to the total and the overpayment stays outstanding”, in the row note and again in the Correction note, four passages in all. That RM20 was the gap between a corrected total and an uncorrected trail step, not money anyone had handed over: <b>there is no CA7-JTR row in customerRefunds and there never was</b>, so the desk was describing an outstanding refund that no surface could act on and no figure carried. The passages are replaced rather than deleted, so the row still records what the correction did and still says plainly that RM430 sits RM6.43 under the RM436.43 floor — a stated price under break-even, quoted as such under v552.","<b>WHAT IS NOT CHANGED.</b> The <code>mod</code> line still reads “cash 450 to 430”, because that is exactly what the correction did to the ROW and rewriting it would erase the correction’s own record. No other row is touched, no count moves, no price moves: this is one figure and four sentences on one row, on his word.","<b>ONE LINE OF THE BOOK, AND THE BOOK’S OWN WRITER WROTE IT.</b> Worth recording because the first attempt used <code>JSON.stringify(book,null,1)</code> and produced a <b>3,784-line diff</b> on a one-figure change: <code>ledger/book.json</code> keeps one row per line and <code>writeBookFile</code> in booksync.mjs is what preserves that. Re-serialising a ledger is not a formatting preference; it destroys the reviewable diff that is the whole defence against a bad fold."]},
 
 {"v":"v568","d":"11 Sep 2026","t":"WHAT A UNIT COSTS AND HOW A PRICE IS BUILT ARE ONE PART, AND THE STACK IS PRINTED ONCE","n":["<b>HIS INSTRUCTION, 10 SEP 2026:</b> “What a unit costs and how pricing works should be one and the same, repetitive and lengthy prose is useless, and as always, if it doesn’t add value - it is definitely out.” He had sent two screenshots, one of each part, asking what the repetition was.","<b>THE SECOND PART’S LOWER TABLE WAS THIS ONE MULTIPLIED BY A QUANTITY.</b> <code>Goods</code> was the pricing basis over q, <code>Delivery</code> was the same delivery already charged in the stack above, and <code>Cost to serve</code> was their sum: one arithmetic, printed twice, a screen apart, under two headings. What only the second part carried was the step from a cost to a PRICE, so that is what moved up: cogs, the markup, the ask, the cost to serve and the margin now sit under the stack that feeds them, and the stack is not restated. The basis simply carries into the price, which is the whole reason it is called the basis. <b>The fold is deleted rather than renamed</b>, and the suite asserts there is no second copy of it.","<b>THE WORKED SIZE COMES OFF EACH BOOK’S OWN BOARD NOW, AND THE CONSTANT IT REPLACED WAS WRONG ON OIL.</b> The retired fold was pinned at <code>q=2</code> for both books. 2 unit is a printed salt size; <b>oil’s board runs 10 to 50 unit</b>, so oil’s worked example priced a lot that book never quotes, and the merged part would have called it “the size the board is read at”. It takes the middle rung of <code>tierBoard()</code> instead: <b>salt works at 3.5 unit for RM 360 and oil at 30 unit for RM 330</b>, each matching its own board to the ringgit. Caught by RENDERING oil and reading the row back; the constant looks perfectly reasonable sitting in the file, and salt is green either way, which is why the assertion drives both books.","<b>AND THE PROSE WENT WITH IT.</b> Two paragraphs explaining the bridge between two tables are not needed when there is one table: the sentence that said the price has nothing else in it, and the closing paragraph restating what cogs and the cost to serve are, are gone. One sentence survives, because without it a reader sees a 1.012x markup beside a 45.2% margin and has no way to know they are struck on different things. Each book’s part now carries <b>two short lines</b> where it carried four long ones.","<b>ONE ASSERTION WAS RETIRED AND FOUR REPLACED IT.</b> v567’s check that Goods named the landed figure and the grossed one was checking a row this release deletes; the claim underneath it is kept and made structural instead — the two figures differ, each is named in its own row, and the word <i>landed</i> never attaches to the post-leak one. Beside them: the price build is inside the cost part, the old fold is gone, and the worked size is on the board. The board-size pair was proved red by pinning <code>q=2</code> again, which reddens oil and leaves salt green, exactly as the fault did.","<b>ALSO FIXED, AND IT WENT RED ON THE CLOCK RATHER THAN ON THE CODE.</b> The CA4-DAM credit block asserted the cap AND that nothing but <code>/^Credit/</code> rules fired. Overnight the receivable aged into <b>Aged receivable</b>, which is not a Credit rule, and the suite failed with nothing about the book or the code changed. Its own comment records the same thing happening on 07 Sep, when the fix was to WIDEN the tail clause rather than remove it. The block’s stated point is where the breach is NAMED, so it asks for the cap and stops policing what else a living, ageing receivable trips. An assertion that has to be re-widened every time the calendar moves is measuring the calendar.","<b>NO PRICE MOVES AND NO LEDGER ROW CHANGES.</b> Every figure on the merged part is the same call the board makes; nothing here prices anything, which is hard rule 1. The suite goes <b>1832 to 1839 over 119 sections</b>."]},
 
@@ -6639,7 +6652,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='11 Sep 2026, 00:21 KL';
+const LAST_UPDATED='11 Sep 2026, 01:37 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -16547,6 +16560,24 @@ const wbNum=id=>{const e=wbEl(id);if(!e)return 0;const v=parseFloat(e.value);ret
 const ADDID_KIND_LABEL={customer:'Customer, buys direct',reseller:'Associate, resells for you (R2)',
   referral:'Referrer, introduces buyers (R3)',downstream:'An associate’s end buyer',
   bucket:'An associate’s -Gen bucket',supplier:'Supplier'};
+/* ====== WHAT AN Add ID TAP WILL ACTUALLY DO (v570) ======================================
+   THREE PLACES ON THIS PAGE ASK and they must not answer differently: the preview, which
+   decides whether Record is even enabled; the Record handler, which refuses on its own line;
+   and wbAddIdQueue, which writes what the queue says the tap was. Until v570 the second of
+   those refused any code already on the roster, which is exactly the code an appointment
+   names, so the three would have contradicted each other the moment the preview allowed one.
+
+   WHICH KIND APPOINTS IS THE ENGINE'S TABLE, not a fourth copy: the drafter and the fold read
+   the same ADDID_APPOINTS, and the whole point of this version is that the Kind means the same
+   thing at the form, at the gate and at the fold. */
+function addIdPlan(code,kind){
+  const stream=(POSITION_ENGINE.ADDID_APPOINTS||{})[kind]||null;
+  const known=!!code&&roster.indexOf(code)>=0;
+  const resell=(stream==='R2'&&code)?code+'-R':null;
+  return {stream:stream,known:known,elevate:!!stream&&known,
+    already:!!stream&&!!code&&associates.indexOf(code)>=0,
+    resell:(resell&&roster.indexOf(resell)<0)?resell:null};
+}
 const wbFutureWarn=d=>{
   if(!d)return null;
   const dt=new Date(d);if(isNaN(+dt))return null;
@@ -16823,7 +16854,7 @@ function tabWorkbench(){
         <div class="qfield" id="wbApPlaceCell"><label>Place</label><input id="wbApPlace" type="text" placeholder="town or area; blank if to be confirmed" autocomplete="off"></div>
         <div class="qfield" style="flex:1"><label>Note <span style="color:var(--dim)">optional</span></label><input id="wbApNote" type="text" placeholder="never the name or the place"></div>
       </div>
-      <div class="dsc">Customers run <b>C</b>, suppliers <b>S</b>, then a digit or two and a place suffix: <b>CA4-DAM</b>, <b>SP7-PUD</b>. The name is typed into the directory at the laptop, never here.</div>
+      <div class="dsc">Customers run <b>C</b>, suppliers <b>S</b>, then a digit or two and a place suffix: <b>CA4-DAM</b>, <b>SP7-PUD</b>. The name goes into the vault on this device, encrypted, and never into the queue.<br>To <b>appoint someone already on the roster</b>, type their existing code and pick Associate or Referrer: it confers the standing rather than registering a second time, asks for no name, and an associate is given their <b>-R</b> resell account with it.</div>
     </div>
 
     <div style="margin-top:13px;padding-top:11px;border-top:1px solid var(--line)">
@@ -18419,16 +18450,41 @@ function wbPreview(){
        than what the dropdown itself says, which reads as internal jargon to anyone reading
        it back before clicking Record. ADDID_KIND_LABEL is the same wording the option list
        (line ~11326) already carries. */
-    body=`<div style="font-size:13px;color:var(--mut)">${code?`Registers <b style="color:var(--ink)">${esc(code)}</b> as a <b style="color:var(--ink)">${esc(ADDID_KIND_LABEL[kind]||kind)}</b>${needP&&parent?` under <b style="color:var(--ink)">${esc(codeOf(parent))}</b>`:''}. No figure moves; the code joins the roster when the row is approved and folded.`:'Type the code.'}</div>`;
+    /* v570: AN APPOINTMENT IS THE OTHER ACT THIS PANE PERFORMS, and it reads differently from a
+       registration in every line: it names a code the roster already has, it confers standing
+       rather than adding a row, and it asks for no name because the party is already in the
+       vault. The lead says which of the two it is doing, and the second line says what the
+       standing changes, because that is the part he is deciding and it is nowhere else on this
+       pane. */
+    const apl=addIdPlan(code,kind);
+    const capA=creditCapFor(wbProdVal(),'associate'),capR=creditCapFor(wbProdVal(),'retail');
+    /* THE TWO HURDLES ARE NOT ONE HURDLE. What an associate brings in -- resale and referral
+       together -- hurdles at the associate figure; what they buy for themselves keeps the
+       customer figure, because networkStats reads earnedOwn against rewardHurdle(...,'customer')
+       exactly as the customer reward table does. Both are read here rather than restated, so a
+       change to REWARD.hurdleMultiple moves this sentence with it. */
+    const hA=rewardHurdle(wbProdVal(),'associate'),hC=rewardHurdle(wbProdVal(),'customer');
+    const stand=apl.stream?`<div class="dsc" style="margin-top:6px">They join the associate bench on the <b>${apl.stream}</b> stream${apl.resell?`, and <b>${esc(apl.resell)}</b> joins the roster as their resell account, so an R2 sale with no named end buyer has somewhere to book`:''}. Their credit cap on the ${esc(wbProdName().toLowerCase())} book goes to <b>${units(capA)}</b> from ${units(capR)}, and what they bring in hurdles at <b>${fmt0(hA)}</b> a free unit instead of ${fmt0(hC)}. What they buy for themselves keeps the ${fmt0(hC)} customer hurdle, and moves off the customer reward table onto their own card.</div>`:'';
+    /* v571: "as a" TOOK AN ARTICLE THE LABELS DO NOT FIT. ADDID_KIND_LABEL holds whole phrases,
+       so this read "as a Associate, resells for you (R2)" and, worse, "as a An associate's end
+       buyer". The article cannot be chosen from the first letter either, since the downstream and
+       bucket labels are themselves sentences. The colon drops it, and it is the shape the queue's
+       own line has used since v343: "Add CA4-DAM to the roster as: Customer, buys direct". */
+    body=`<div style="font-size:13px;color:var(--mut)">${code?`${apl.elevate?'Appoints':'Registers'} <b style="color:var(--ink)">${esc(code)}</b> as: <b style="color:var(--ink)">${esc(ADDID_KIND_LABEL[kind]||kind)}</b>${needP&&parent?`, under <b style="color:var(--ink)">${esc(codeOf(parent))}</b>`:''}. No figure moves; ${apl.elevate?'they are on the roster already, so nothing new joins it':'the code joins the roster'} when the row is approved and folded.${stand}`:'Type the code.'}</div>`;
     if(!code)errs.push('Type the code.');
     else if(!/^[A-Z]{1,3}\d{0,2}[A-Z0-9-]*$/.test(code))errs.push('That does not look like a desk code. They run like CA4-DAM or SP7-PUD.');
-    else if(roster.indexOf(code)>=0)errs.push(`<b>${esc(code)}</b> is already on the roster.`);
+    else if(apl.already)errs.push(`<b>${esc(code)}</b> is already an associate.`);
+    else if(apl.known&&!apl.stream)errs.push(`<b>${esc(code)}</b> is already on the roster.`);
     else if(kind==='supplier'&&!code.startsWith('S'))errs.push('A supplier code starts with S.');
     else if(kind!=='supplier'&&code.startsWith('S'))errs.push('A customer code does not start with S.');
     if(needP&&!parent)errs.push('Choose the associate it sits under.');
-    /* v528: the name and the place are filed into the vault, encrypted, before the ID is queued */
-    const nc=wbEl('wbApNameCell'),pc=wbEl('wbApPlaceCell');if(nc)nc.style.display=kind==='bucket'?'none':'';if(pc)pc.style.display=kind==='bucket'?'none':'';
-    if(kind!=='bucket'){
+    /* v528: the name and the place are filed into the vault, encrypted, before the ID is queued.
+       v570: AN ELEVATION ASKS FOR NEITHER. The party was registered with a name and a place when
+       they first bought; asking again would either duplicate the vault entry or invite a second,
+       different spelling of a name already filed. A bucket has no name for its own reason. */
+    const hideNm=kind==='bucket'||apl.elevate;
+    const nc=wbEl('wbApNameCell'),pc=wbEl('wbApPlaceCell');if(nc)nc.style.display=hideNm?'none':'';if(pc)pc.style.display=hideNm?'none':'';
+    if(!hideNm){
       if(!(wbVal('wbApName')||'').trim())errs.push('Type the name. It is filed into the vault, encrypted, and never into the queue.');
       /* v548, his instruction of 09 Sep 2026: a place still to be confirmed can be entered. Left blank, the
          place is filed as "to be confirmed" and the code must end in TBC, the suffix the map already
@@ -18461,12 +18517,19 @@ function wbPreview(){
 }
 /* v528: the registration itself, shared by the bucket road and the named road */
 function wbAddIdQueue(code,kind,parent,an){
+  /* v570: READ THE PLAN BEFORE THE OVERLAY MOVES, or the two pushes below flip `known` and
+     `already` under it and the queue line would describe an appointment as a registration. */
+  const apl=addIdPlan(code,kind);
   addedParties.push({code:code,kind:kind,parent:parent,at:new Date().toISOString()});
   try{localStorage.setItem('saltAddedParties',JSON.stringify(addedParties));}catch(e){}
   if(roster.indexOf(code)<0)roster.push(code);
+  /* the same three writes the fold will make, applied here so the desk shows the standing at
+     once, exactly as a queued count or loss shows through the overlay before it is folded */
+  if(apl.resell&&roster.indexOf(apl.resell)<0)roster.push(apl.resell);
+  if(apl.stream&&associates.indexOf(code)<0)associates.push(code);
   queue.push({at:new Date().toISOString(),type:'ADDID',party:code,qty:null,total:null,status:'addid',
-    raw:'Add '+code+' to the roster as: '+(ADDID_KIND_LABEL[kind]||kind)+(parent?' (under '+codeOf(parent)+')':'')+(an?', '+an:''),
-    payload:{mode:'addid',code:code,kind:kind,parent:parent,rev:kind==='reseller'?'R2':(kind==='referral'?'R3':null),note:an||null}});
+    raw:(apl.elevate?'Appoint '+code+' as: ':'Add '+code+' to the roster as: ')+(ADDID_KIND_LABEL[kind]||kind)+(parent?' (under '+codeOf(parent)+')':'')+(apl.resell?', with '+apl.resell+' as their resell account':'')+(an?', '+an:''),
+    payload:{mode:'addid',code:code,kind:kind,parent:parent,rev:apl.stream,note:an||null}});
   ['wbApCode','wbApNote','wbApName','wbApPlace'].forEach(id=>{const e=wbEl(id);if(e)e.value='';});
   applyOverlay();render();
   Promise.resolve(saveQueue()).then(()=>{try{renderQueue();}catch(e){}});
@@ -18639,12 +18702,19 @@ function wbRecord(){
   }else if(wbMode==='addid'){
     const code=(wbVal('wbApCode')||'').trim().toUpperCase(),kind=wbVal('wbApKind');
     const parent=(kind==='downstream'||kind==='bucket')?(wbVal('wbApParent')||null):null,an=(wbVal('wbApNote')||'').trim();
-    if(!code||roster.indexOf(code)>=0){ok.textContent='Type a code that is not already on the roster.';ok.style.color='var(--crim)';return;}
+    const apl=addIdPlan(code,kind);
+    /* v570: this line used to refuse ANY code already on the roster, which is precisely the code
+       an appointment names. It refuses the two things that really are duplicates now: a plain
+       registration of a known code, and appointing an associate twice. */
+    if(!code||apl.already||(apl.known&&!apl.stream)){ok.textContent=apl.already?codeOf(code)+' is already an associate.':'Type a code that is not already on the roster.';ok.style.color='var(--crim)';return;}
     /* v528: A NAME AND ID IS COMMITTED EVERY TIME (his rule of 05 Sep 2026), now from the phone. The
        name and the place go into the vault, encrypted with the passphrase asked here and used once,
        before the ID is queued; if the vault cannot be opened or saved, nothing is registered. Only
        a bucket has no name. The queue never carries a name: codes only, as always. */
-    if(kind!=='bucket'){
+    /* v570: an elevation takes the bucket's road, not the vault's. The party was registered with
+       a name and a place when they first bought, so there is nothing to file and asking again
+       would invite a second spelling of a name already in the vault. */
+    if(kind!=='bucket'&&!apl.elevate){
       const nm=(wbVal('wbApName')||'').trim(),pl=(wbVal('wbApPlace')||'').trim()||(/-TBC$/.test(code)?'to be confirmed':'');   /* v548 */
       if(!nm||!pl){ok.textContent='Type the name and the place first.';ok.style.color='var(--crim)';return;}
       ok.textContent='Filing the name into the vault…';ok.style.color='var(--mut)';
@@ -18652,7 +18722,14 @@ function wbRecord(){
       return;
     }
     wbAddIdQueue(code,kind,parent,an);
-    ok.textContent='Registered '+code+'.'+wbUnremembered;ok.style.color='var(--grn)';
+    /* v570: RE-FETCH THE STATUS NODE. wbAddIdQueue ends in render(), which rebuilds this tab, so
+       the node captured at the top of wbRecord is detached and writing to it says nothing at all.
+       The named road has done this since v528 (o2, line above) and the common tail does it too
+       (st(), at the foot); this branch returns early and was the one that missed it, so a bucket
+       registration has been confirming itself silently. Found by asserting the message rather
+       than the queue. */
+    const o3=wbEl('wbOk')||ok;
+    if(o3){o3.textContent=(apl.elevate?'Appointed ':'Registered ')+code+'.'+wbUnremembered;o3.style.color='var(--grn)';}
     return;
   }else if(wbMode==='contact'){
     const who=wbVal('wbCtParty'),date=wbVal('wbCtDate'),how=wbVal('wbCtHow'),outcome=wbVal('wbCtOut'),next=wbVal('wbCtNext'),note=wbVal('wbCtNote').trim();
