@@ -4,7 +4,17 @@ Standing facts only. Root `CLAUDE.md` governs voice, structure, verification and
 precedence; this file adds what a session here would otherwise rediscover, and
 never repeats a root rule. British English, no em-dashes, in files, code and copy.
 Correct stale facts in place; the dated record is the project changelog / journal.
-Set 6 Sep 2026. Ceiling 15 KB.
+Set 6 Sep 2026. **No size ceiling here** (his standing order, 10 Sep 2026): this file is not
+cut to a byte count, and the root's 15 KB does not bind it. What it IS held to is
+organisation. Every fact once, in the section that owns it; the dated record in
+`master/changelog.json`, never here. This file is read whole at the start of every session in
+this repo, so a fact stated twice is paid for twice, and a paragraph of history is paid for
+every time it is not needed.
+**THE HARD RULE NUMBERS ARE LOAD BEARING AND MAY NOT BE RENUMBERED.** Rules 1 to 6 are cited by
+number from `engine/qr.mjs`, `stmt/qr.js`, `tools/qrsync.mjs`, `tools/ledger.mjs`,
+`.claude/skills/update-names-id/SKILL.md` and twice in `test/verify.mjs`. Reorganise WITHIN a
+rule freely; dissolving one into a topic section, or renumbering, silently strands every one of
+those citations. Grep `rule [0-9]` before touching the list.
 
 The Salt Command desk as a cloud app: the ledger and the pricing engine reachable on the
 go, a transaction addable from the phone. **This repo holds the master** (since 20 Aug
@@ -20,8 +30,7 @@ The fold routine is `docs/CLOUD_FOLD.md`; statements `docs/STATEMENTS.md`; desig
 1. **The master is `master/salt_command.html`. Never hand-edit `public/desk.html`**, a
    build output committed so the data lives in the repo. Inside the master four blocks
    are GENERATED and CI fails if any differs from its file: `ENGINE` from
-   `engine/pricing.mjs`, `engine/position.mjs` and `engine/qr.mjs` (`node
-   tools/engine.mjs --sync`; `tools/qr.mjs` re-exports the last, never copies it),
+   `engine/pricing.mjs`, `engine/position.mjs` and `engine/qr.mjs` (`node tools/engine.mjs --sync`),
    `BOOK` from `ledger/book.json` (`tools/booksync.mjs --sync`), geography from
    `geo/*.json` (`tools/geosync.mjs --sync`), `DESIGN` from `design/salt-ds.css` and
    `design/desk.css` (`tools/designsync.mjs --sync`). Edit the module, sync, build.
@@ -74,33 +83,28 @@ The fold routine is `docs/CLOUD_FOLD.md`; statements `docs/STATEMENTS.md`; desig
    deploys, proves the phone is serving the build, marks the folded rows committed, re-seeds the
    D1 mirror, publishes the statements, then runs the suite. `tools/update.mjs` does the laptop
    half of that and never touches the statements. **Cloudflare Workers Builds deploys the tip of
-   master and stops:** connected 08 Aug 2026, 278 builds outside the gate, disconnected 08 Sep
-   after its build token was deleted, **reconnected on his instruction of 10 Sep 2026**. The
-   Actions job is the authority; Workers Builds is a convenience, and it cannot touch the ledger
-   because it never folds, never marks a draft committed and never writes D1 or KV. Its worst
-   case is the wrong build in front of the phone, corrected by the next good deploy and caught
-   within a day by `ship-check.yml`, which does not care who deployed.
-   **Its build command runs the gate**, set 10 Sep 2026: `npm ci && node tools/gate.mjs`, then
-   `npx wrangler deploy`. It was `npm run build`, which deployed without a single check. This
-   matters because Actions only runs on a push touching `public/rev.json` or the statements
-   paths, so a push touching `src/` or the master alone is one Workers Builds ships and nothing
-   else would check. Gate BEFORE build, not after: `buildMatches()` rebuilds `public/` itself and
-   fails if the committed id differs, so a build in front of it would make that check vacuous,
-   and the gate leaves a verified `public/` for wrangler to ship.
-   **Read it back rather than trusting this line.** It is not a dashboard-only field: the
-   Cloudflare API serves it at `GET /accounts/{account}/builds/workers/{script_tag}` and the
-   `.../triggers` beside it, where `script_tag` is the Worker id
-   `e85618c353ad4fd6b009cf57e05f0842`. Its builds and their LOGS are there too, at
-   `.../builds/workers/{script_tag}/builds` and `.../builds/builds/{uuid}/logs`, and the logs are
-   the only place that shows what the build actually ran; the MCP builds tool reports zero builds
-   where the API reports 280. The `master` trigger is the one that deploys; the other
-   trigger excludes master, uploads a version rather than deploying, and is off
-   (`previews_enabled: false`), so it is still on the ungated `npm run build`.
-   Its token is its own credential: when it was deleted the builds failed in silence (v537 to
-   v539) while the other two deployers carried on. And a build lands in about a minute against
-   the Actions job's checkout and `npm ci`, so it usually wins that race; since 10 Sep the
+   master and stops** (reconnected on his instruction, 10 Sep 2026). The Actions job is the
+   authority; this is a convenience, and it cannot touch the ledger because it never folds, never
+   marks a draft committed and never writes D1 or KV. Its worst case is the wrong build in front
+   of the phone, caught within a day by `ship-check.yml`, which does not care who deployed. Its
+   build token is its own credential and its failure is SILENT. A build lands in about a minute
+   against the Actions job's checkout and `npm ci`, so it usually wins that race; the
    `Already serving?` guard holds back only Gate and Deploy, so winning no longer skips the
    mirror re-seed and the suite.
+   **Its build command is `npm ci && node tools/gate.mjs`, then `npx wrangler deploy`** (10 Sep
+   2026). Gate BEFORE build: `buildMatches()` rebuilds `public/` itself and fails if the committed
+   id differs, so a build in front of it makes that check vacuous, and the gate leaves a verified
+   `public/` for wrangler to ship. It matters because Actions runs only on a push touching
+   `public/rev.json` or the statements paths, so a push touching `src/` or the master alone is one
+   only Workers Builds ships.
+   **Read the config back rather than trusting this line**, and not from the dashboard:
+   `GET /accounts/{account}/builds/workers/{script_tag}` with the `.../triggers` beside it,
+   `script_tag` being `e85618c353ad4fd6b009cf57e05f0842`; builds at
+   `.../builds/workers/{script_tag}/builds`, logs at
+   `.../builds/builds/{uuid}/logs`, and the logs are the only place that shows what the build
+   actually ran. The MCP builds tool reports zero where the API reports 280. The `master` trigger
+   deploys; the other excludes master, uploads a version rather than deploying, is off
+   (`previews_enabled: false`), and is still on the ungated `npm run build`.
 
 ## The one surface
 
@@ -123,9 +127,13 @@ desk shows, cost and margin included, is served at the public URL.
 | **Fold, bump, build, test, push** | the `Fold` step: `tools/foldcall.mjs`, one Claude call for the notes (`ANTHROPIC_API_KEY`) over `fold.mjs`, since v521; or any agent asked, per `docs/CLOUD_FOLD.md` | same job when rows were staged; or on demand |
 | Gate (`tools/gate.mjs`, CI's mechanical checks in about ten seconds, v522), deploy, prove, mark committed (with the clock, v519), re-seed the D1 mirror, publish statements, then the full suite | the steps that follow in the same job; a push runs them alone, and skips the deploy when the phone already has the build; a suite failure after the phone is live turns the run red and is written where the phone shows refusals, never rolled back | same job; or on push |
 | Prove repo and live agree | `ship-check.yml` | 11:00 MYT |
-| Deploy the statements site | the same job, on its own paths. **The checkout is depth 1, so the base commit must be FETCHED before it can be diffed** (fixed 10 Sep 2026): it was not, `git diff` failed into `2>/dev/null`, and a statements-only push deployed nothing while the run went green. It bit only when the desk's build id had not moved, which is exactly what a statements-only change does. It fails safe now: no base, deploy anyway | on push |
+| Deploy the statements site | the same job, on its own paths. **The checkout is depth 1, so the base commit must be FETCHED before it is diffed** (fixed 10 Sep 2026), or `git diff` fails into `2>/dev/null` and a statements-only push deploys nothing while the run goes green. It bit only when the desk's build id had not moved, which is what a statements-only change does. Fails safe: no base, deploy anyway | on push |
 | Monthly statements | `docs/STATEMENTS.md` routine | the 1st, gated in Kuala Lumpur time |
 
+- **A CHANGE TO `cloud-commit.yml` NEVER TESTS ITSELF ON THE WAY IN** (10 Sep 2026). That file is
+  not in its own `push.paths`, so pushing it triggers nothing and proves nothing. Dispatch a run
+  by hand, or push it with a file on one of those paths, and then READ THE STEP LIST: most steps
+  are conditional, so a skipped step is green too. Two faults hid behind exactly this in one day.
 - **The fold is a judgement and stays with a model**: the row NOTE, the `evolution` entry
   and the sentence on the roll come from one Claude call over a dossier the tools compute
   (`tools/foldcall.mjs`, v521); what a row DOES, what is refused and what the inventory rolls
@@ -230,7 +238,7 @@ or a node builtin; the suite checks. Config `wrangler.stmt.jsonc` (every command
 under a content key derived from `STMT_KEY`. `statements/_secrets.json` is laptop only,
 gitignored: `{"key","master"}`; the key is the same string as the Actions secret, and
 losing it re-issues every account. `tools/make_statements.mjs` (the v387 desk's
-statement code, plain node) and `tools/qr.mjs` (byte mode, level M, versions 1 to 10) feed it.
+statement code, plain node) and `tools/qr.mjs` feed it.
 
 **Behind the password since v499 (06 Sep 2026): statements, prices, order.** The price
 list (`tools/pricelist.mjs`: median of the last four orders before the week's Monday, drawn
@@ -248,35 +256,32 @@ sets the desk key and the site's push pair. Detail: `docs/STATEMENTS.md`.
 KV `stmt-site` and keyed `GET /stmt-users` returns it, so the laptop has no username and no
 QR. No address, no QR drawn.
 
-**NO BRAND ON THE CUSTOMER'S PAGE** (his instruction, 10 Sep 2026). Nothing under `stmt/`
-names Salt Command: not the door, not an order line, not the push banner. The whole design
-is that nothing a customer holds points at the ledger, and an eyebrow saying the name undid
-it. The statement DOCUMENTS still carry it as a letterhead (`brand:` in
-`tools/make_statements.mjs`), which is deliberate and separate; changing it rewrites every
-archive. The landing lead is two sentences and stays two.
+**NO BRAND ON THE CUSTOMER'S PAGE** (his instruction, 10 Sep 2026). Nothing under `stmt/` names
+Salt Command: not the door, not an order line, not the push banner. Nothing a customer holds may
+point at the ledger, and an eyebrow carrying the name undid that. The landing lead is two
+sentences and stays two. The statement DOCUMENTS keep it as a letterhead (`brand:` in
+`tools/make_statements.mjs`), deliberately: changing that rewrites every archive.
 
-**`/all` IS THE OWNER'S LIST, behind Cloudflare Access** (v566, 10 Sep 2026). It serves the
-same page a customer sees with the roster where the gate is; a tap fills the username and
-`STMT_MASTER` into the customer's own form and submits it, so everything past the door is the
-customer's own code. **Two locks, and neither is trusted alone:** an Access application
-("Salt statements owner", `67280e0b-…`, one-time PIN, his address, 24h) covers `/all` AND
-everything under it, and `stmt/access.js` verifies the JWT again — RS256 against the team's
-keys, issuer, audience, expiry. A header check would pass a token signed by any key at all.
-With `ACCESS_TEAM` or `ACCESS_AUD` empty the route is 401, so it deploys before the
-application exists, and deleting the application closes `/all` rather than opening it. His
-decision: the gated route hands the master to the page, so nothing is typed; the trade is
-that an Access session there reads every account. `roster` (codes beside usernames, never
-names) is written by the publish.
+**`/all` IS THE OWNER'S LIST, behind Cloudflare Access** (v566). It serves the customer's own
+page with the roster where the gate is; a tap fills the username and `STMT_MASTER` into that
+form and submits it, so everything past the door is the customer's own code. His decision: the
+gated route hands the master to the page, so nothing is typed, and the trade is that an Access
+session there reads every account. **Two locks, neither trusted alone:** the Access application
+("Salt statements owner", `67280e0b-…`, one-time PIN, his address, 24h) covers `/all` and
+everything under it, and `stmt/access.js` verifies the JWT again, RS256 against the team's keys
+with issuer, audience and expiry, because a header check passes a token signed by any key at
+all. With `ACCESS_TEAM` or `ACCESS_AUD` empty the route is 401: it deploys before the
+application exists, and deleting the application closes `/all` rather than opening it. `roster`
+(codes beside usernames, never names) is written by the publish.
 
-**GUEST REFERRAL LINKS: `/g/<id>`** (v566). He mints one from inside `/all`, pinned to Tier 1
-or Tier 2 and labelled so he knows who holds it; it shows that tier's board and nothing else,
-with no script at all and `script-src 'none'`. **The id IS the credential** and the boards are
-NOT sealed, both deliberately: a board is what he prints and hands to strangers, and the link
-exists to say WHICH stranger. An unknown id, a malformed one and a withdrawn one answer the
-same 404. `stmt/refs.js`; boards written as `board:1`/`board:2` by the publish from
-`boardList`, which takes one row off the engine's own `ladderRow` and prices nothing itself.
-**A row named "Tier 1" may carry no prices** (the engine gates it on bare `if(P.tier1)`), so
-take the first row that HAS finite prices; oil is a genuine one-tier book and says so.
+**GUEST REFERRAL LINKS: `/g/<id>`** (v566), minted inside `/all`, pinned to Tier 1 or Tier 2 and
+labelled. One tier's board and nothing else, no script at all, `script-src 'none'`. **The id IS
+the credential** and the boards are NOT sealed, both deliberate: a board is what he prints and
+hands to strangers, and the link exists to say WHICH stranger. Unknown, malformed and withdrawn
+ids answer the same 404. `stmt/refs.js`; `board:1`/`board:2` written by the publish from
+`boardList`, which takes one row off the engine's `ladderRow` and prices nothing itself.
+**A row named "Tier 1" may carry no prices** (the engine gates it on bare `if(P.tier1)`), so take
+the first row with finite prices; oil is a genuine one-tier book and says so.
 
 ## Files
 
@@ -285,7 +290,7 @@ take the first row that HAS finite prices; oil is a genuine one-tier book and sa
 | `src/worker.js` | `/queue`, `/vault`, `/bio` dropped, `/drafts`, `/orders` (relay), `/rev`, static assets; dispatches the stage on approval |
 | `src/drafter.js` | Queue plus D1 mirror to a proposed row in `draft`; never writes `entry` |
 | `tools/fold.mjs` | `--plan` reads `master/_to_fold.json`, refuses what it must, writes the notes skeleton; `--apply` folds all or nothing, syncs, bumps, rolls the shelf, moves the watermark |
-| `engine/qr.mjs` | The one QR encoder, inlined like the pricing engine (v564); `qrRectSvg` draws RECTANGLES, a stroked symbol does not scan |
+| `engine/qr.mjs` | The ONE QR encoder and the only place its facts are stated: byte mode, level M, versions 1 to 10; inlined into the master like the pricing engine (v564); `tools/qr.mjs` re-exports it and never copies it; `qrRectSvg` draws RECTANGLES, a stroked symbol does not scan |
 | `stmt/access.js` | Who passed Cloudflare Access, VERIFIED not assumed; header or `CF_Authorization` cookie; fails closed on an unset var |
 | `stmt/refs.js` | Guest referral links: mint, list, revoke, count opens. The id is the credential; rejection sampling, never `byte % 30` |
 | `stmt/qr.js` | GENERATED from `engine/qr.mjs` by `tools/qrsync.mjs --sync`; gate and CI fail on drift. Never edit it; `stmt/` may import only a sibling |
