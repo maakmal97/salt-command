@@ -7979,6 +7979,20 @@ section("v522: the gate before the deploy, the suite after the phone is live");
   const deskLines = wf.split("\n").filter((l) => /SALT_QUEUE/.test(l));
   ok(!deskLines.some((l) => /kv (key|bulk) delete/.test(l)) && !deskLines.some((l) => /--prefix "stmt/.test(l)),
      "no step in the chain deletes from the desk's store by prefix, where stmt-users and stmt-site live");
+  /* AND THE GATE MUST BE ABLE TO READ THE DIFF IT DECIDES ON (10 Sep 2026, 6741548). The checkout
+     is depth 1, so `git diff <before> <sha>` could not resolve <before>: it failed into /dev/null,
+     grep matched nothing, and stmt came out 0. A statements-only push, the ONE case this branch
+     exists for, could therefore never deploy the site or publish -- it is the only push that leaves
+     the build id alone, which is what makes live=1 and arms this branch at all. The fix fetches the
+     base first and fails safe; it shipped without a guard, so this is the guard. Held by shape, not
+     by wording: default 1, lower it only after the base was obtained, and warn when it cannot be. */
+  const already = wf.slice(wf.indexOf("- name: Already serving?"), wf.indexOf("- name: Gate\n"));
+  const fetchAt = already.indexOf('git fetch --no-tags --depth=1 origin "$base"');
+  ok(/base='\$\{\{ github\.event\.before \}\}'\s*\n\s*stmt=1/.test(already)
+     && fetchAt > 0                                   /* or the ordering below compares against -1 and cannot fail */
+     && already.indexOf("stmt=0") > fetchAt
+     && /::warning::.*could not be fetched/.test(already),
+     "the publish gate defaults to publishing, fetches the base before diffing it, and lowers stmt only on a diff it read");
   /* and every desk write in the publish goes through the one function that reads the key back, so a
      write that reports success and stores nothing is red rather than a line in a log nobody reads */
   const pubSrc = readFileSync(join(REPO, "tools", "stmt-publish.mjs"), "utf8");
