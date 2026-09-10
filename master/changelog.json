@@ -1,5 +1,17 @@
 [
  {
+  "v": "v563",
+  "d": "10 Sep 2026",
+  "t": "CLEAR IS THE GHOST, NOT THE PILL: THE FILTER STOPS ANNOUNCING ITSELF",
+  "n": [
+   "<b>HIS INSTRUCTION, 10 SEP 2026, ON THE LEDGER FILTER.</b> v561 made the bar compact and the geometry was right: 44px on one row at 1280, 148px and two controls to a row at 375, every control 44px in both directions. What it left alone was weight. <b>Clear was the only filled element in the bar</b>, and on a bar he had just called not the main function of the ledger, the eye landed on it first.",
+   "<b>THE DESIGN LAYER HAD ALREADY WRITTEN THE ANSWER.</b> Section 7 of <code>design/desk.css</code> says it in one line: the pill books or produces, everything else is a ghost. <code>.vbtn</code> is the booking pill. Clear books nothing, produces nothing and undoes a filter, so it was wearing the wrong component, not the wrong colour. <b>No new CSS was written and no hex was added</b>: it takes <code>.ubtn</code>, the secondary action Record plan, Undo last and Review in Transaction already wear, which carries the same <code>--tap</code> minimum. The other 28 <code>.vbtn</code> buttons on the desk are untouched.",
+   "<b>MEASURED IN A REAL BROWSER, BOTH WAYS.</b> Before: <code>linear-gradient(135deg,#c5a059,#b87333)</code>, obsidian text at weight 700, a brass glow, 78 by 44. After: no background image, no shadow, brass text at weight 500 inside a 50 per cent brass outline, 58 by 44, still over the tap floor. A census of the bar named Clear as <b>the only glowing element and the only gradient</b> on the old build, and <b>nothing glows</b> on the new one; the four selects' gradients are their SVG arrows, not fills. The inline <code>font-size:11px</code> went with the pill, because the ghost rule already sets 11px.",
+   "<b>THE BAR IS OTHERWISE EXACTLY WHERE v561 LEFT IT,</b> 44px on one row at 924px wide, and the filter still does what it says: the search box keeps focus while typing, all four dropdowns filter, and Clear empties all five fields and removes itself. State &ldquo;Pending&rdquo; matches nothing today, which is correct rather than dead: <code>engine/position.mjs</code> returns it when nothing is paid and nothing delivered, and no row is in that state.",
+   "<b>AND v562 WAS TAKEN WHILE THIS WAS BEING BUILT.</b> The chain folded the CA7-JTR s140 correction from his phone and deployed it mid-flight. A fold that carries real rows owns its number, so this work was rebased onto v562 and renumbered. Nothing was lost either way."
+  ]
+ },
+ {
   "v": "v562",
   "d": "10 Sep 2026",
   "t": "CORRECTION ON CA7-JTR S140: TOTAL DOWN TO RM430, DELIVERED WITH RM15 CARRIAGE",

@@ -68,7 +68,7 @@ document.addEventListener('visibilitychange',function(){
    localStorage before it posts anything and the load reads it straight back.
    The same tick retries a held entry, which is what gets a phone write to the cloud
    without waiting for the next open. */
-var SALT_BUILD_ID="661be2d47b5280df";
+var SALT_BUILD_ID="e5ba8a913854b148";
 var SALT_REV_MS=10000;
 (function(){
   var chip=null,timer=null;
@@ -5708,7 +5708,9 @@ const whiteboard=[
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{"v":"v562","d":"10 Sep 2026","t":"CORRECTION ON CA7-JTR S140: TOTAL DOWN TO RM430, DELIVERED WITH RM15 CARRIAGE","n":["<b>ONE CORRECTION FOLDED, NO CASH AND NO STOCK MOVED.</b> The desk applied the patch to CA7-JTR's oil row s140 of 08 Sep, 50 unit: total from RM450 to RM430, delivery from unset to RM15, cash from RM450 to RM430, handover from collected to delivered and cost from unset to RM350. The row is not rewritten, only its own terms restated, so the ledger position and the inventory both stand where they stood.","<b>WHAT THE DRAFTER FLAGGED STAYS ON THE FACE OF THE ROW.</b> The row carries a trail of two steps that no longer adds to the stated figure, RM450 was paid against a corrected total of RM430, and RM430 for the goods is RM6.43 under the floor of RM436.43. The typed RM350 becomes the cost every margin on this row is measured against, in place of the inventory's own rate. All four points are recorded, none is answered here."]},
+const evolution=[{"v":"v563","d":"10 Sep 2026","t":"CLEAR IS THE GHOST, NOT THE PILL: THE FILTER STOPS ANNOUNCING ITSELF","n":["<b>HIS INSTRUCTION, 10 SEP 2026, ON THE LEDGER FILTER.</b> v561 made the bar compact and the geometry was right: 44px on one row at 1280, 148px and two controls to a row at 375, every control 44px in both directions. What it left alone was weight. <b>Clear was the only filled element in the bar</b>, and on a bar he had just called not the main function of the ledger, the eye landed on it first.","<b>THE DESIGN LAYER HAD ALREADY WRITTEN THE ANSWER.</b> Section 7 of <code>design/desk.css</code> says it in one line: the pill books or produces, everything else is a ghost. <code>.vbtn</code> is the booking pill. Clear books nothing, produces nothing and undoes a filter, so it was wearing the wrong component, not the wrong colour. <b>No new CSS was written and no hex was added</b>: it takes <code>.ubtn</code>, the secondary action Record plan, Undo last and Review in Transaction already wear, which carries the same <code>--tap</code> minimum. The other 28 <code>.vbtn</code> buttons on the desk are untouched.","<b>MEASURED IN A REAL BROWSER, BOTH WAYS.</b> Before: <code>linear-gradient(135deg,#c5a059,#b87333)</code>, obsidian text at weight 700, a brass glow, 78 by 44. After: no background image, no shadow, brass text at weight 500 inside a 50 per cent brass outline, 58 by 44, still over the tap floor. A census of the bar named Clear as <b>the only glowing element and the only gradient</b> on the old build, and <b>nothing glows</b> on the new one; the four selects' gradients are their SVG arrows, not fills. The inline <code>font-size:11px</code> went with the pill, because the ghost rule already sets 11px.","<b>THE BAR IS OTHERWISE EXACTLY WHERE v561 LEFT IT,</b> 44px on one row at 924px wide, and the filter still does what it says: the search box keeps focus while typing, all four dropdowns filter, and Clear empties all five fields and removes itself. State &ldquo;Pending&rdquo; matches nothing today, which is correct rather than dead: <code>engine/position.mjs</code> returns it when nothing is paid and nothing delivered, and no row is in that state.","<b>AND v562 WAS TAKEN WHILE THIS WAS BEING BUILT.</b> The chain folded the CA7-JTR s140 correction from his phone and deployed it mid-flight. A fold that carries real rows owns its number, so this work was rebased onto v562 and renumbered. Nothing was lost either way."]},
+
+{"v":"v562","d":"10 Sep 2026","t":"CORRECTION ON CA7-JTR S140: TOTAL DOWN TO RM430, DELIVERED WITH RM15 CARRIAGE","n":["<b>ONE CORRECTION FOLDED, NO CASH AND NO STOCK MOVED.</b> The desk applied the patch to CA7-JTR's oil row s140 of 08 Sep, 50 unit: total from RM450 to RM430, delivery from unset to RM15, cash from RM450 to RM430, handover from collected to delivered and cost from unset to RM350. The row is not rewritten, only its own terms restated, so the ledger position and the inventory both stand where they stood.","<b>WHAT THE DRAFTER FLAGGED STAYS ON THE FACE OF THE ROW.</b> The row carries a trail of two steps that no longer adds to the stated figure, RM450 was paid against a corrected total of RM430, and RM430 for the goods is RM6.43 under the floor of RM436.43. The typed RM350 becomes the cost every margin on this row is measured against, in place of the inventory's own rate. All four points are recorded, none is answered here."]},
 
 {"v":"v561","d":"10 Sep 2026","t":"THE LEDGER OPENS ON THE LEDGER, NOT ON ITS OWN FILTER","n":["<b>HIS INSTRUCTION, 10 SEP 2026:</b> \"Redesign this, to be more compact and functional, as this is not the main function of the ledger.\" The filter stood <b>273px tall on a 924px column</b>, the search box and all four dropdowns each on a row of its own, so the first of 166 entries began 905px below the heading and the first thing the Ledger showed you was its own filter.","<b>THE CAUSE WAS ONE RULE IN THE OLDER LAYER, AND NOT THE BAR AT ALL.</b> A bare <code>select{width:100%}</code>, written for the stacked fields on the Enter view, catches every select on the desk. <code>.ledbar</code> has been a wrapping flex row since it was written; its controls were simply each as wide as the row. Measured in a real browser rather than read off the source, because this is layout and jsdom does none.","<b>SO THEY WERE GIVEN A WIDTH, NOT A NEW BAR.</b> The search grows, the four selects take their content and cap at 190px, the count and Clear sit at the right. On the desk the bar is <b>44px, one row</b>, and the first entry moves up to 677px: <b>228px reclaimed</b>. On a 375px phone it is 148px against 278px, two controls to a row instead of one, and every control still measures 44px in both directions, which is the tap contract.","<b>IT STILL WRAPS, WHICH IS WHY THE CONTAINER WAS A WRAP FLEX ROW TO BEGIN WITH.</b> Nothing overflows at 375px and no control shrinks below the tap size. The floating filter he offered as an alternative is not needed for this: the bar was never the wrong shape, only the wrong width."]},
 
@@ -6068,7 +6070,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='10 Sep 2026, 11:50 KL';
+const LAST_UPDATED='10 Sep 2026, 12:46 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -11040,13 +11042,19 @@ function tabLedger(){
   const months=[...new Set(all.filter(t=>t.date).map(t=>t.date.slice(0,7)))].sort();
   const mLab=m=>new Date(m+'-01').toLocaleDateString('en-GB',{month:'short',year:'numeric'});
   const selOpt=(v,cur,lab)=>`<option value="${v}"${v===cur?' selected':''}>${lab}</option>`;
+  /* v563: Clear is the ghost, not the pill. `.vbtn` is the button that books or produces, per
+     the design layer's own rule at section 7, and it was the only filled element in the bar:
+     brass gradient, a glow and obsidian text, against five dark boxes with a faint border. On a
+     bar that is not the main function of the ledger, the eye landed on Clear first. `.ubtn` is
+     the desk's secondary action, the one Record plan and Undo last already wear, and it keeps
+     the same tap minimum. The inline font-size went with it: the ghost rule already sets 11px. */
   const toolbar=`<div class="ledbar">
     <input id="ledQ" placeholder="Search party, note, amount, E-code&hellip;" value="${esc(ledF.q)}">
     <select id="ledState">${selOpt('',ledF.state,'All states')}${['Open','Pending','Completed','In-Kind','Cancelled','Default'].map(x=>selOpt(x,ledF.state,x)).join('')}</select>
     <select id="ledParty">${selOpt('',ledF.party,'All parties')}${parties.map(x=>selOpt(x,ledF.party,ID(x))).join('')}</select>
     <select id="ledMonth">${selOpt('',ledF.month,'All months')}${months.map(x=>selOpt(x,ledF.month,mLab(x))).join('')}</select>
     <select id="ledProduct">${selOpt('',ledF.product,'All products')}${PROD_IDS.map(p=>selOpt(p,ledF.product,PRODUCTS[p].name)).join('')}</select>
-    ${filtered?'<button class="vbtn" id="ledClear" style="font-size:11px">Clear</button>':''}
+    ${filtered?'<button class="ubtn" id="ledClear">Clear</button>':''}
     <span class="ledct">${shown} of ${total}</span>
   </div>`;
   return `<h1>Ledger</h1>
