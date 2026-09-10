@@ -7008,9 +7008,69 @@ section("Statements — guest referral links and the tier they are pinned to (v5
     globalThis.fetch = realFetch;
   }
 
+  /* A TIER 1 ROW THAT CARRIES NO PRICES IS NOT A TIER (10 Sep 2026). engine/pricing.mjs offers the
+     Tier 1 row on a bare `if(P.tier1)` while every other path gates on tier1Anchors, which wants two
+     usable ends; so a book with one stated end, or with two keys naming the same size, produces a
+     row named "Tier 1" whose prices are null or NaN. Today's book has neither shape, so this FORCES
+     both rather than waiting for the data to produce them: an assertion that needs the book's
+     cooperation is an assertion that sleeps. */
+  {
+    const { boardList: bl } = await import("../tools/pricelist.mjs");
+    const { readBook: rb } = await import("../tools/book.mjs");
+    const bk = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+    const px = (await rb()).ledger.PRICING;
+    const bend = (tier1) => {
+      const copy = JSON.parse(JSON.stringify(px));
+      for (const p of Object.keys(copy.byProduct || {})) {
+        if (copy.byProduct[p].inputs && copy.byProduct[p].inputs.policy) {
+          copy.byProduct[p].inputs.policy.tier1 = tier1;
+        }
+      }
+      return copy;
+    };
+    const oneEnd = bl(1, bk, bend({ 0.5: 60 }), new Date());
+    const sameSize = bl(1, bk, bend({ 0.5: 60, "0.50": 875 }), new Date());
+    const healthy = bl(1, bk, px, new Date());
+    ok(healthy.products.length > 0 && healthy.products.every((p) => p.sizes.length > 0),
+      "a book with two usable Tier 1 ends prices every size on the guest board");
+    ok(oneEnd.products.length > 0 && oneEnd.products.every((p) => p.sizes.length > 0 && p.fellBack),
+      "a book with ONE stated end falls back to the tier that has prices rather than an empty table");
+    ok(sameSize.products.length > 0 && sameSize.products.every((p) => p.sizes.length > 0
+      && p.sizes.every((r) => Number.isFinite(r.price))),
+      "and two anchors naming one size cannot put NaN in front of a stranger");
+  }
+
   /* the vendored encoder is the one encoder, or the site draws a QR from code nobody is testing */
   const { matches: qrMatches } = await import("../tools/qrsync.mjs");
   ok(qrMatches(), "stmt/qr.js is engine/qr.mjs byte for byte (run tools/qrsync.mjs --sync if this fails)");
+}
+
+/* ---- THE NEAREST-FIVE RULE, WHICH SHIPPED UNCOVERED (v564, found 10 Sep 2026) ---------------
+   adjustedPrice draws a customer's own rate toward the board and then rounds to the NEAREST five,
+   never under the floor. It went out with no assertion that could tell it from the rule it replaced:
+   reverting both copies to the old `Math.ceil(max(p,F))` left the suite at 1728 passed, 0 failed,
+   while the two rules disagree on some thirty-one thousand inputs across a grid of rates, floors and
+   asks. Three cases separate them, at salt's real floors, and the third is the one that matters --
+   the nearest five of 56.21 is 55, which is UNDER break-even, so the shipped rule must lift it to 60
+   and nothing else in the suite walks that branch. These are exact values, not properties, because
+   the point is to pin the rule rather than to describe it. */
+section("Pricing — the nearest-five rule is told apart from the one it replaced (v564)");
+{
+  const { adjustedPrice: adj } = await import("../tools/pricelist.mjs");
+  ok(adj(1, 56.21, 140, 168.63, true) === 70,
+    "a rate that rounds DOWN to the nearest five gives 70, where rounding up gave 71");
+  ok(adj(1, 703, 70, 2109, true) === 705,
+    "and one that rounds UP gives 705, where the old rule stopped at 703");
+  ok(adj(1, 56.21, 70, 168.63, true) === 60,
+    "and where the nearest five would sit under break-even the floor guard lifts it to 60, never 55");
+  /* the property behind the three, so a future change cannot satisfy them and still quote a loss */
+  let under = 0;
+  for (let F = 20; F <= 800; F += 7.3) {
+    for (const A of [70, 140, 500, 1150]) {
+      for (let R = 1; R <= 900; R += 37) if (adj(R, F, A, 3 * F, true) < F - 0.009) under++;
+    }
+  }
+  ok(under === 0, "and across a grid of rates, floors and asks it never returns a price below the floor");
 }
 
 /* ---- the statement in the Salt identity, and what the QR carries ----------------- */

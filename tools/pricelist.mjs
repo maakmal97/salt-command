@@ -188,9 +188,18 @@ export function boardList(tier, book, pricing, now) {
     const sizesHere = (Array.isArray(P.boardSizes) && P.boardSizes.length) ? P.boardSizes
       : ((Array.isArray(snap.sizes) && snap.sizes.length) ? snap.sizes : ((pricing && pricing.sizes) || []));
     const sizes = sizesHere.slice().sort((a, b) => a - b);
+    /* A ROW IS ONLY THE TIER IF IT CARRIES PRICES (10 Sep 2026). ladderRow offers the Tier 1 row on
+       a bare `if(P.tier1)` while every other path in the engine gates on tier1Anchors, which wants
+       two usable ends. So a book with ONE stated end, or two keys naming the same size, yields a row
+       named "Tier 1" whose every price is null or NaN. Taking it on its name would hand a stranger a
+       product with an empty table and no explanation. The same two lines also cover the honest
+       one-tier case, oil's, so there is one rule here rather than two. */
+    const usable = (r) => r && Array.isArray(r.prices)
+      && r.prices.some((x) => x != null && Number.isFinite(+x));
     const rows = PRICING_ENGINE.ladderRow(sizes, C, P);
-    const row = rows.find((r) => r.code === want) || rows[0];
-    if (!row) continue;
+    const asked = rows.find((r) => r.code === want);
+    const row = usable(asked) ? asked : rows.find(usable);
+    if (!row) continue;                        // nothing on this product is priceable; leave it off
     out.products.push({
       product: p,
       name: (book.PRODUCTS && book.PRODUCTS[p] && book.PRODUCTS[p].name) || p,
@@ -200,7 +209,7 @@ export function boardList(tier, book, pricing, now) {
       tierName: row.name,
       /* true when this product could not be shown at the tier asked for, because it has only one */
       fellBack: row.code !== want,
-      sizes: sizes.map((q, i) => ({ q, price: row.prices[i] == null ? null : +(+row.prices[i]).toFixed(2) }))
+      sizes: sizes.map((q, i) => ({ q, price: Number.isFinite(+row.prices[i]) ? +(+row.prices[i]).toFixed(2) : null }))
         .filter((r) => r.price != null)
     });
   }
