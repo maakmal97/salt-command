@@ -69,11 +69,19 @@ The fold routine is `docs/CLOUD_FOLD.md`; statements `docs/STATEMENTS.md`; desig
    because it never folds, never marks a draft committed and never writes D1 or KV. Its worst
    case is the wrong build in front of the phone, corrected by the next good deploy and caught
    within a day by `ship-check.yml`, which does not care who deployed.
-   **Its build command must run the gate**, `npm ci && node tools/gate.mjs` before
-   `npx wrangler deploy`, or an ungated build reaches the phone: Actions only runs on a push
-   touching `public/rev.json` or the statements paths, so a push touching `src/` or the master
-   alone is one Workers Builds ships and nothing checks. Set in the dashboard, so a session
-   cannot verify it from here; ask before trusting it.
+   **Its build command runs the gate**, set 10 Sep 2026: `npm ci && node tools/gate.mjs`, then
+   `npx wrangler deploy`. It was `npm run build`, which deployed without a single check. This
+   matters because Actions only runs on a push touching `public/rev.json` or the statements
+   paths, so a push touching `src/` or the master alone is one Workers Builds ships and nothing
+   else would check. Gate BEFORE build, not after: `buildMatches()` rebuilds `public/` itself and
+   fails if the committed id differs, so a build in front of it would make that check vacuous,
+   and the gate leaves a verified `public/` for wrangler to ship.
+   **Read it back rather than trusting this line.** It is not a dashboard-only field: the
+   Cloudflare API serves it at `GET /accounts/{account}/builds/workers/{script_tag}` and the
+   `.../triggers` beside it, where `script_tag` is the Worker id
+   `e85618c353ad4fd6b009cf57e05f0842`. The `master` trigger is the one that deploys; the other
+   trigger excludes master, uploads a version rather than deploying, and is off
+   (`previews_enabled: false`), so it is still on the ungated `npm run build`.
    Its token is its own credential: when it was deleted the builds failed in silence (v537 to
    v539) while the other two deployers carried on. And a build lands in about a minute against
    the Actions job's checkout and `npm ci`, so it usually wins that race; since 10 Sep the
