@@ -8778,5 +8778,134 @@ section("v557: a true alarm, and it is scarce enough to mean something");
   } finally { try { w.close(); } catch (e) { } }
 }
 
+section("v567: the tables are warm, the floor is drawn once, and a chart can place its own x");
+{
+  /* His report of 10 Sep 2026 on three screenshots of the Price view. Each rule below is written
+     as the GENERAL claim rather than as a spot-check of the line that was wrong, because the
+     twin-series fault is v566's own fix missing its sibling one line down, and a spot-check
+     would have missed it exactly as v566 did. Each was proved red against the shipped v566
+     master by putting the fault back. */
+  const { openMaster: om7 } = await import("../tools/payload.mjs");
+  const master7 = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+  /* THE COLOUR IS DECIDED IN design/desk.css AND SYNCED IN (hard rule 6), so the claim is read
+     there. The master carries older CSS layers underneath in which "thead th{" also appears, and
+     reading the first match in the master picked one of those up: the instrument's own first
+     draft failed on #0b1215, the menu colour, which is exactly the fault it is written to catch
+     in the page. tools/designsync.mjs and the gate hold the two files together. */
+  const desk7 = readFileSync(join(REPO, "design", "desk.css"), "utf8");
+
+  /* ---- the sticky table fills, read out of the design layer as it is shipped ---- */
+  const tok = (name) => {
+    const m = new RegExp("--" + name + ":\\s*(rgba?\\([^)]*\\))").exec(desk7);
+    return m ? m[1] : null;
+  };
+  const rgba = (s) => {
+    const m = /rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*([\d.]+))?\s*\)/.exec(s || "");
+    return m ? { r: +m[1], g: +m[2], b: +m[3], a: m[4] === undefined ? 1 : +m[4] } : null;
+  };
+  const ruleBg = (sel) => {
+    const i = desk7.indexOf(sel + "{");
+    if (i < 0) return null;
+    const body = desk7.slice(i + sel.length + 1, desk7.indexOf("}", i));
+    const m = /background:\s*([^;]+);/.exec(body);
+    return m ? m[1].trim() : null;
+  };
+  for (const [sel, why] of [["thead th", "every table head"], ["th.l,td.l", "every label column"]]) {
+    const bg = ruleBg(sel);
+    ok(!!bg, `${sel} declares a background (${bg || "none found"})`);
+    const varName = (/var\(--([\w-]+)\)/.exec(bg || "") || [])[1];
+    ok(!!varName, `and takes it from a token rather than a literal (${bg})`);
+    const c = rgba(tok(varName));
+    ok(!!c, `and the token --${varName} resolves to an rgba in the design layer (${tok(varName)})`);
+    /* THE FAULT WAS THE HUE, NOT THE WEIGHT. --salt-veil is rgba(5,8,10,.86): b above r, a cold
+       near-black, and the identity documents it for surfaces that float OVER content. These sit
+       INSIDE a card the aurora lights warm, so they must be warm too. Red before: 5 > 10 is false. */
+    ok(c && c.r > c.b, `${why} is filled warm rather than cold, so it sits in the card instead of punching a hole in it (r ${c && c.r} against b ${c && c.b})`);
+    /* AND IT MAY NOT BE THINNED TO FIX THAT, WHICH IS THE MISTAKE THIS FIX MADE FIRST. The first
+       cut thinned the label column to .62 so the card would show through, and he caught the
+       ORDERS column legible straight through the band labels on the earnings table. Ghosting is
+       arithmetic: a sticky fill at alpha a passes (1-a) of whatever scrolls under it, the .86
+       this replaced already passed a readable 14 per cent, and 1 is the only value that cannot
+       ghost. Asserted as fully opaque rather than as "opaque enough", because there is no
+       defensible number between them. */
+    ok(c && c.a === 1, `and is fully opaque, so nothing scrolling under it can ghost through (alpha ${c && c.a})`);
+  }
+  /* the rule holds only because these tables really do scroll sideways; if that stopped being
+     true the assertion above would be pinning a cost with nothing on the other side of it. */
+  /* this one is read from the master, not the design layer: .tscroll's overflow-x belongs to an
+     older CSS layer that the design layer sits on top of and does not restate. */
+  ok(/\.tscroll\{[^}]*overflow-x:\s*auto/.test(master7),
+    "and the tables these cells sit in really do scroll sideways, which is what makes opacity load-bearing");
+  /* A LATER RULE MAY NOT UN-PAINT THE STICKY COLUMN, WHICH IS HOW 14 CELLS STAYED LEAKY THROUGH
+     THE FIRST FIX. `tr.tot td` sets a 7% brass wash and sits after th.l,td.l, so on a total row it
+     REPLACED the opaque fill and passed 93 per cent. Whatever repaints a label cell has to layer
+     over the panel rather than stand in for it. Found by computing all 232 sticky cells in a
+     browser; reading this file would not have shown it, and the assertion below is a reminder of
+     the rule rather than the instrument that catches the next one. */
+  const totL = ruleBg("tr.tot td.l");
+  ok(!!totL, `the total row restates the label column's fill rather than dropping it (${totL || "no tr.tot td.l rule"})`);
+  ok(!!totL && /var\(--panel\)/.test(totL), `and layers its wash over the opaque panel (${totL})`);
+  ok(/\.menu\{[^}]*background:var\(--salt-veil\)/.test(desk7),
+    "and --salt-veil keeps the one job it is documented for, the menu that really does float over the page");
+
+  /* ---- the two Price charts, read back off a recording Chart ---- */
+  const STUB7 = "window.__charts={};window.Chart=function(c,cfg){var id=(c&&c.canvas&&c.canvas.id)||(c&&c.id)||'?';window.__charts[id+':'+PROD]=cfg;this.destroy=function(){};};window.Chart.register=function(){};";
+  const w7 = (await om7(join(REPO, "master", "salt_command.html"))).w;
+  try {
+    for (const prod of ["salt", "oil"]) {
+      w7.eval(STUB7 + "setProd(" + JSON.stringify(prod) + ");recompute();switchTab('price');");
+      const shape = JSON.parse(w7.eval("JSON.stringify((function(){var c=window.__charts['pxShapeChart:" + prod + "'];return c?{type:c.type,sets:c.data.datasets.map(function(d){return {label:d.label,data:d.data};})}:null;})())"));
+      ok(shape && shape.sets.length >= 2, `${prod}: the board chart draws (${shape ? shape.sets.length : 0} series)`);
+      /* ONE LINE PER THING. v552 made effective cost, break-even and the floor ONE number, so any
+         two series that agree to the cent at every size are one line drawn twice under two names.
+         Red before: floor and "effective cost" agreed everywhere, salt max gap RM0.01, oil RM0.00. */
+      const twins = [];
+      for (let i = 0; i < shape.sets.length; i++) {
+        for (let k = i + 1; k < shape.sets.length; k++) {
+          const A = shape.sets[i].data, B = shape.sets[k].data;
+          if (!Array.isArray(A) || !Array.isArray(B) || A.length !== B.length) continue;
+          const both = A.every((v, n) => v != null && B[n] != null);
+          if (both && A.every((v, n) => Math.abs(v - B[n]) <= 0.011)) twins.push(shape.sets[i].label + " and " + shape.sets[k].label);
+        }
+      }
+      ok(twins.length === 0, twins.length
+        ? `${prod}: two series on the board chart are one line drawn twice: ${twins.join("; ")}`
+        : `${prod}: no two series on the board chart draw the same figure under different names`);
+
+      /* A CHART MUST BE ABLE TO PLACE ITS OWN x. Every dataset here declares its own type, so the
+         config carried no root type, and Chart.js took its SCALE defaults from scatter, whose x is
+         LINEAR. The x values are date STRINGS, which a linear scale cannot place: 116 salt points
+         and 8 oil points were held and none drawn. Red before: cfg.type was undefined. */
+      const time = JSON.parse(w7.eval("JSON.stringify((function(){var c=window.__charts['pxTimeChart:" + prod + "'];if(!c)return null;var xs=[];c.data.datasets.forEach(function(d){(d.data||[]).forEach(function(p){if(p&&typeof p==='object'&&'x' in p)xs.push(typeof p.x);});});return {type:c.type,scaleX:(c.options&&c.options.scales&&c.options.scales.x&&c.options.scales.x.type)||null,xKinds:Array.from(new Set(xs)),points:xs.length};})())"));
+      ok(time && time.points > 0, `${prod}: the rate-actually-paid chart carries points at all (${time && time.points})`);
+      if (time && time.xKinds.indexOf("string") >= 0) {
+        ok(!!(time.type || time.scaleX), `${prod}: its x values are strings, so the config declares the scale that can place them (type ${time.type || "none"}, scales.x ${time.scaleX || "none"}) — without one Chart.js takes scatter's linear default and drops every point`);
+        ok(time.type !== "scatter", `${prod}: and the root type is not the one whose default loses them (${time.type})`);
+      }
+    }
+    /* ---- and the copy that named two figures with one word ---- */
+    /* READ OFF THE RENDERED PAGE, NOT OUT OF THE MASTER. The first draft of these three asserted
+       the old phrase was absent from master/salt_command.html and went red on the spot, because
+       the v567 changelog entry QUOTES the phrase it retired. A source-text search over a file
+       that carries its own history cannot answer a question about what the page says. textContent
+       and not innerText, because this panel is a closed <details> and innerText reads empty. */
+    w7.eval("setProd('salt');recompute();switchTab('price');");
+    const built = String(w7.eval("(function(){var d=[].filter.call(document.querySelectorAll('.sec.on details.obsec'),function(x){var s=x.querySelector('summary');return s&&/How a price is built/.test(s.textContent);})[0];return d?d.textContent.replace(/\\s+/g,' '):'';})()"));
+    const cost7 = JSON.parse(w7.eval("JSON.stringify({landed:pxCost().landed,effEx:pxCost().effEx})"));
+    const money = (n) => "RM " + n.toFixed(2);
+    ok(built.length > 0, "the How a price is built panel renders");
+    ok(built.indexOf("landed and grossed for samples") < 0,
+      "Goods no longer calls the post-leak figure landed, which is what Cogs six lines above already is");
+    ok(built.indexOf(money(cost7.landed) + " landed, grossed to " + money(cost7.effEx)) >= 0,
+      `it names the landed figure, the grossed one and the step between them (${money(cost7.landed)} to ${money(cost7.effEx)})`);
+    ok(cost7.effEx > cost7.landed,
+      `and the two really are different numbers, which is why one word could not carry both (${money(cost7.landed)} against ${money(cost7.effEx)})`);
+    const cap = String(w7.eval("(function(){var d=[].filter.call(document.querySelectorAll('.sec.on .dsc'),function(x){return /the ask per unit at each printed size/.test(x.textContent);})[0];return d?d.textContent.replace(/\\s+/g,' '):'';})()"));
+    ok(cap.length > 0, "the board chart's caption renders");
+    ok(cap.indexOf("against its floor and the effective cost") < 0 && /same figure as effective cost/.test(cap),
+      "and it stops promising two lines where one is drawn, naming the one figure's three names instead");
+  } finally { try { w7.close(); } catch (e) { /* best effort */ } }
+}
+
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
 process.exit(fail ? 1 : 0);

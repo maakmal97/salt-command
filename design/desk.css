@@ -45,7 +45,24 @@ html[data-tod="register"],:root{
   --sh:var(--salt-shadow-desk);--glassShadow:var(--salt-shadow-desk);
   --gloss:inset 0 1px 0 var(--salt-highlight);
   --railA:rgba(255,255,255,.035);--railB:rgba(255,255,255,.02);
-  --panel:var(--salt-veil);--totbg:rgba(197,160,89,.07);--hair:var(--salt-line-faint);
+  /* v567: THE STICKY TABLE SURFACES ARE WARM, BECAUSE THEY SIT INSIDE A CARD RATHER THAN OVER
+     THE PAGE. --salt-veil is the identity's veil for "sticky and floating surfaces over content"
+     and is right for .menu, which does float over the page. Used on every thead th and every
+     label column it painted 218 cells on the Price view alone in rgba(5,8,10,.86), a cold
+     near-black punched into a card the aurora lights warm, which is what he reported. Same job,
+     warm hue. --panel had been defined here since the design layer landed and read by nothing;
+     it is the name for this and now carries it.
+     AND IT IS FULLY OPAQUE, WHICH THE FIRST CUT OF THIS FIX WAS NOT. That one thinned the label
+     column to .62 to let the card through and did not carry the backdrop blur `thead th` relies
+     on, so 38 per cent of whatever scrolled under it came through. He caught it on the earnings
+     table before it shipped, with the ORDERS column legible straight through the band labels.
+     Ghosting is arithmetic and not a matter of taste: a sticky fill at alpha a passes (1-a) of
+     what is behind it, the .86 this replaced already passed a readable 14 per cent, and the only
+     value that cannot ghost is 1. These tables scroll horizontally (`.tscroll`), so rows really
+     do pass under the label column. The warmth is what fixes what he reported; the opacity is
+     what keeps the fix from costing something else. */
+  --panel:rgba(28,20,13,1);
+  --totbg:rgba(197,160,89,.07);--hair:var(--salt-line-faint);
   --field:var(--salt-well);
 }
 /* the seven view hues are retired: a view is known by its name and its figures */
@@ -259,11 +276,19 @@ input::placeholder{color:var(--salt-mist);opacity:.7;}
 
 /* ---- 9. TABLES: mist caps heads over a brass rule, salt figures, faint hairlines ---- */
 table{font-size:13px;}
-thead th{font-size:11px;font-weight:500;letter-spacing:.12em;color:var(--salt-mist);background:var(--salt-veil);border-bottom:1px solid var(--salt-line);
+thead th{font-size:11px;font-weight:500;letter-spacing:.12em;color:var(--salt-mist);background:var(--panel);border-bottom:1px solid var(--salt-line);
   -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);}
-th.l,td.l{background:var(--salt-veil);color:var(--salt-mist-light);font-weight:500;}
+th.l,td.l{background:var(--panel);color:var(--salt-mist-light);font-weight:500;}
 tbody td{color:var(--salt-salt);font-weight:400;border-bottom-color:var(--salt-line-faint);}
 tr.tot td{font-weight:500;background:rgba(197,160,89,.07);}
+/* v567: AND THE TOTAL ROW'S BRASS WASH MAY NOT UN-PAINT THE STICKY LABEL COLUMN. This rule sits
+   after th.l,td.l and REPLACED its fill, so on every total row the sticky label cell dropped to a
+   7 per cent wash and passed 93 per cent of whatever scrolled under it: 14 such cells on the Price
+   view, and they were as leaky at the .86 this fix replaced as they are obvious now. The wash is
+   layered OVER the panel instead of standing in for it, so the tint is unchanged to the eye and
+   the cell is as opaque as every other. Found by computing the styles of all 232 sticky cells
+   rather than by reading this file, which is the only way a cascade fault of this shape shows. */
+tr.tot td.l{background:linear-gradient(rgba(197,160,89,.07),rgba(197,160,89,.07)),var(--panel);}
 tbody tr:hover td:not(.l){background:rgba(255,255,255,.03);}
 .fintab th{font-weight:500;letter-spacing:.12em;color:var(--salt-mist);}
 .fintab .fy{background:var(--salt-glass);font-weight:500;}
