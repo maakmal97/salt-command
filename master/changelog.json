@@ -1,5 +1,42 @@
 [
  {
+  "v": "v575",
+  "d": "11 Sep 2026",
+  "t": "FIVE UNITS TO CR3-DAM AT RM90 A UNIT, PAID AND COLLECTED THE SAME DAY, BOOKED AS AN R2 DOWNSELL",
+  "n": [
+   "<b>ONE ROW FOLDED, A SALT SELL DATED 10 SEP.</b> SELL to CR3-DAM, 5 unit for RM450, RM450 cash in and 5 unit collected on 10 Sep, so nothing stays open on the goods. The total clears the RM281.07 floor for 5 unit, falls short of the RM500 ask and sits well under the RM710 ceiling. Cost is the inventory's own RM44 a unit, RM220 on the order, so no separate cost line was needed on the row.",
+   "<b>WHAT WAS UNUSUAL AND WHAT THE INVENTORY DID.</b> The drafter flagged the booking as an R2 downsell through CR3-DAM-R, so CR3-DAM is not the counterparty on this row and takes no statement from it, and flagged the rate at 12.5% above the party's usual RM90 against a median of RM80. The figures answer both: RM90 a unit sits inside the recorded range of RM80 to RM92.50. The RM25 outstanding from s136 is untouched and stays open."
+  ]
+ },
+ {
+  "v": "v574",
+  "d": "11 Sep 2026",
+  "t": "ONE UNIT OUT TO A NEW CODE AT RM100, PAID AND COLLECTED SAME DAY, ROSTER FLAG ANSWERED",
+  "n": [
+   "<b>FOLDED THIS PASS:</b> a single salt sell dated 10 Sep, 1 unit to CB7-TBC for RM100, cash in full and goods collected on the day, referred by CI4-OKR on stream R3. It appends to sales with its note and leaves nothing open. The rate clears the RM56.21 floor for 1 unit, sits under the RM120 ask and well under the RM150 ceiling, so the desk took the order below ask on his word.",
+   "<b>UNUSUAL, AND WHAT THE INVENTORY DID:</b> the drafter flagged CB7-TBC as absent from the roster and wanting a code and a directory entry; the party record now carries the code and shows on roster, with no prior orders, no median rate, no range, nothing outstanding and nothing on credit against a cap of 1. Cost is the inventory's own RM44 a unit, so no override was written. Stated stock stays at 40.25 unit, with counts on 8 Sep for salt and 9 Sep for oil."
+  ]
+ },
+ {
+  "v": "v573",
+  "d": "11 Sep 2026",
+  "t": "ONE CODE ONTO THE ROSTER, NO FIGURE MOVED, AND THE DIRECTORY STAYS AT THE LAPTOP",
+  "n": [
+   "<b>FOLDED: A SINGLE ROSTER LINE.</b> The batch is one row, dated 10 Sep and decided at the desk: CB7-TBC is appended to the roster as a customer buying direct, with no parent above it and no note carried on the row. There is no order, no rate and no unit behind it, so no floor, no ask and no cost enter the book. The row was folded as drafted with no flag raised against it.",
+   "<b>UNUSUAL: A CODE WITHOUT A TRADE.</b> A registration is the one row that answers no floor and no ask, so nothing was checked against the desk's own terms and no history, median or range exists under the code yet. The directory is untouched, as the drafter set out: the name and the place are typed at the laptop and never travel with the ledger. Only the code stands here.",
+   "<b>THE INVENTORY DID NOTHING.</b> Stock stays as stated at 40.25 unit, cost basis holds at RM44 a unit against a replacement of RM46, the reorder mark stays at 15 and 8.5 unit stay promised with nothing owed out. Counts stand where they were, salt on 8 Sep and oil on 9 Sep. The two loans in remain open, 5.5 unit from CH5-OUG and 1.5 unit from CA11-SEN, both dated 8 Sep."
+  ]
+ },
+ {
+  "v": "v572",
+  "d": "11 Sep 2026",
+  "t": "ONE CORRECTION ON THE BOOKS: THE RM25 ON S136 SETTLED IN CASH AND MARKED THE FIRST ASSOCIATE SALE",
+  "n": [
+   "<b>ONE ROW FOLDED, A CORRECTION AND NOTHING ELSE.</b> The fold carries a single amendment against CR3-DAM's salt order of 2 unit for RM185 dated 07 Sep, s136. It sets settledRM to 25, settledKg to 0 and settle to First associate sale, recorded 11 Sep. No cash and no stock move on the fold: the row changes only what it says about itself, and the row text is not rewritten here.",
+   "<b>WHAT WAS UNUSUAL AND WHAT THE INVENTORY DID.</b> The drafter flagged the rate at RM92.50 a unit, 15.6 per cent above CR3-DAM's usual RM80 across 12 orders, and flagged the advance of 2 unit against his credit. The settlement figures answer the second flag and the rate stands as recorded. Inventory holds at 40.25 unit on the salt count of 08 Sep, cost basis unchanged at RM44 a unit, nothing owed out and 8.5 unit promised."
+  ]
+ },
+ {
   "v": "v571",
   "d": "11 Sep 2026",
   "t": "A RAIL HEADING IS TOLD FROM A DESTINATION, AND POSITION AND TRADING BECOME CURRENT",
