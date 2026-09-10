@@ -98,6 +98,33 @@ if (!VER) fail("no version found in the master (evolution[0].v)");
 if (!MARK) fail("no QUEUE_COMMITTED found in the master");
 ok(`master ${VER}, watermark ${MARK}`);
 
+/* ---- IS THE REMOTE AHEAD? (10 Sep 2026) --------------------------------------------------
+   THIS FILE NEVER FETCHED. Both `origin/master..HEAD` counts in steps 7 and 8 read whatever the
+   remote-tracking ref happened to say when something last fetched, which on a laptop that has
+   been building for an hour is a lie. It cost two rebuilds on 09 Sep: the cloud chain folded a
+   real row and took the version this run was about to claim, twice, and the run only found out
+   when the push was rejected, after it had already built, tested and tried to deploy.
+   The remote moving is NORMAL here, not exceptional: every approval on the phone dispatches a
+   job that folds, commits and pushes. So this asks first, and stops before any work is done.
+   A failed fetch is a warning and not a stop: the network is often what is wrong, and refusing
+   to build offline would be worse than building against a ref that is merely old.
+   IT ASKS ON EVERY RUN, INCLUDING A DRY ONE, and only declines to STOP a run that was not going
+   to push anyway. The first cut gated the whole check on !NO_PUSH, and --dry sets NO_PUSH, so
+   the one run you would make to find out where you stand was the one that never looked. */
+{
+  const f = sh("git", ["fetch", "--quiet", "origin", "master"], { quiet: true });
+  if (f.code !== 0) warn("could not reach origin; the ahead and behind counts below read a stale ref");
+  else {
+    const behind = git("rev-list", "--count", "HEAD..origin/master");
+    if (behind === "0") ok("origin is level with this tree");
+    else {
+      const m = `origin is ${behind} commit(s) AHEAD of this tree. The chain has folded since you started.\n` +
+                `        Pull first: git pull --ff-only origin master, then rebuild. Do not take a version this run.`;
+      if (NO_PUSH) warn(m); else fail(m);
+    }
+  }
+}
+
 /* The lock scan is done in-process rather than by shelling out, because the whole hazard
    this guards against is git leaving files behind, and a fragile quoted one-liner is the
    last thing that should stand between you and noticing. */

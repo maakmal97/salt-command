@@ -235,6 +235,23 @@ jobs:
       # ALREADY SERVING? A push of the statements alone, or a re-run, finds the phone already on
       # the build and no fold waiting, and deploys nothing; it republishes the statements only if
       # the push touched them.
+      #
+      # IT GATES THE DEPLOY AND NOTHING ELSE (10 Sep 2026, his instruction). It used to stand down
+      # eight steps, on the assumption that whatever had already put the build on the phone had
+      # done the rest of the job too. Cloudflare Workers Builds was reconnected to the repository
+      # on his instruction that day and breaks that assumption outright: it deploys the tip of
+      # master in about a minute and stops, while this job has a checkout and an npm ci to get
+      # through before it reaches this step. A build that wins that race made live=1 here, and the
+      # run then skipped the gate, the proof, the marks, the handoff, THE MIRROR RE-SEED and the
+      # suite, and still went green. The comment forty lines down calls a stale mirror the silent
+      # fault this job exists to end, and this was a road straight to one.
+      # So the guard now holds back only the two steps that are about deploying: Gate and Deploy.
+      # The six below it run on deploy == '1' alone. Each is already safe without a deploy: the
+      # proof step confirms the phone is serving the build whoever put it there, and the marks,
+      # the wake and the handoff clear all no-op without master/_folded.json. The fold path never
+      # took this road anyway, because a fold leaves _folded.json in HEAD and the second clause
+      # below forces live=0; the exposure was the hand push, which is the one a person makes.
+      # The cost is a suite run and a re-seed on a push that deployed nothing.
       - name: Already serving?
         id: already
         if: steps.plan.outputs.deploy == '1'
@@ -269,7 +286,7 @@ jobs:
         run: npx wrangler deploy
 
       - name: The phone is serving it
-        if: steps.plan.outputs.deploy == '1' && steps.already.outputs.live != '1'
+        if: steps.plan.outputs.deploy == '1'
         run: |
           set -euo pipefail
           want=$(node -p "require('./public/rev.json').id")
@@ -286,7 +303,7 @@ jobs:
       # only once the row it became is demonstrably on the phone. The proof time rides with
       # the mark (v519), and the clock is printed per row into the run summary.
       - name: Mark the folded rows committed
-        if: steps.plan.outputs.deploy == '1' && steps.already.outputs.live != '1'
+        if: steps.plan.outputs.deploy == '1'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
@@ -303,7 +320,7 @@ jobs:
       # OPTIONAL BY DESIGN: SALT_PUSH_KEY opens POST /push/send and nothing else. The secret is
       # tested in the shell, never in `if:`, because the secrets context there rejects the file.
       - name: Wake the phone
-        if: steps.plan.outputs.deploy == '1' && steps.already.outputs.live != '1'
+        if: steps.plan.outputs.deploy == '1'
         continue-on-error: true
         env:
           PUSH_KEY: ${{ secrets.SALT_PUSH_KEY }}
@@ -325,7 +342,7 @@ jobs:
       # _folded.json is the proof a fold happened in this build; without it only _folded is
       # cleared, which is nothing, and the staged batch is left where the fold expects it.
       - name: Clear the handoff files
-        if: steps.plan.outputs.deploy == '1' && steps.already.outputs.live != '1'
+        if: steps.plan.outputs.deploy == '1'
         run: |
           set -euo pipefail
           changed=0
@@ -349,7 +366,7 @@ jobs:
       # against the snapshot in D1; a stale mirror is the silent fault this job exists to end.
       # Last of the ledger's steps, so a failure here leaves the deploy and the marks standing.
       - name: Re-seed the mirror from the master just shipped
-        if: steps.plan.outputs.deploy == '1' && steps.already.outputs.live != '1'
+        if: steps.plan.outputs.deploy == '1'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
@@ -413,7 +430,7 @@ jobs:
       # watermark, so it is seen on the Approve view until someone clears it.
       - name: The full suite, after the phone is live
         id: suite
-        if: steps.plan.outputs.deploy == '1' && steps.already.outputs.live != '1'
+        if: steps.plan.outputs.deploy == '1'
         run: npm test
 
       - name: Say so on the phone if the suite failed
