@@ -68,10 +68,34 @@ function wrangler(args, opts = {}) {
   return execFileSync("npx", ["wrangler", "-c", CONFIG, ...args],
     { cwd: REPO, encoding: "utf8", stdio: ["ignore", "pipe", "inherit"], shell: true, ...opts });
 }
-/* the desk's own config, for the one key this publish writes to the desk's store */
+/* the desk's own config (no -c), for the two keys this publish writes to the desk's store */
 function deskWrangler(args, opts = {}) {
   return execFileSync("npx", ["wrangler", ...args],
     { cwd: REPO, encoding: "utf8", stdio: ["ignore", "pipe", "inherit"], shell: true, ...opts });
+}
+/* A DESK WRITE READS ITSELF BACK, the way the bulk put into the site's store already does
+   (10 Sep 2026). It did not, and that is why stmt-users was absent from the desk's store from the
+   day it was invented (03 Sep) until this was found: the publish printed a success line, wrangler
+   exited 0, and the key was not there. Both halves of the fault are fixed, because either alone
+   leaves it live: the "Retire the old statement keys" step that was deleting them seconds later is
+   gone from cloud-commit.yml, and a write that does not land is now red rather than a line in a log.
+   Read back against the FILE, not against a substring: an empty value and a stale value both pass a
+   substring test, and this key has been wrong in exactly that quiet way for a week.
+   Exported so it can be driven against the real store by hand, on a throwaway key, which is the
+   only place it can be proved: the suite reaches no network and --dry never writes. */
+export function deskPut(key, file, what) {
+  deskWrangler(["kv", "key", "put", key, "--path", file, "--remote", "--binding", "SALT_QUEUE"], { stdio: "inherit" });
+  let got = "";
+  /* a missing key exits non-zero, which throws; that is the failure, not an error to report */
+  try { got = String(deskWrangler(["kv", "key", "get", key, "--remote", "--binding", "SALT_QUEUE"], { stdio: ["ignore", "pipe", "ignore"] })); }
+  catch (e) { got = ""; }
+  if (got.replace(/^\uFEFF/, "").trim() !== readFileSync(file, "utf8").trim()) {
+    console.error("::error::wrangler reported writing " + key + " to the desk's store and it does not read back. "
+      + "The desk cannot name an account on an order, and the board sheet's QR is not drawn. "
+      + "Check nothing in cloud-commit.yml deletes it after this step.");
+    process.exit(1);
+  }
+  console.log("wrote " + key + " (" + what + ") to the desk's store, and read it back");
 }
 function listKeys(prefix) {
   const t = wrangler(["kv", "key", "list", "--remote", "--binding", "STMT", "--prefix", prefix]);
@@ -168,8 +192,7 @@ async function main() {
 
   wrangler(["kv", "bulk", "put", putFile, "--remote", "--binding", "STMT"], { stdio: "inherit" });
   /* the desk's map, so the ledger's Worker can name the account an order belongs to */
-  deskWrangler(["kv", "key", "put", "stmt-users", "--path", usersFile, "--remote", "--binding", "SALT_QUEUE"], { stdio: "inherit" });
-  console.log("wrote stmt-users (" + Object.keys(plan.users).length + " usernames) to the desk's store");
+  deskPut("stmt-users", usersFile, Object.keys(plan.users).length + " usernames");
   /* ============ v564: AND THE SITE'S OWN ADDRESS, FOR THE QR ON THE BOARD SHEET ============
      The desk draws a QR to the customer's page on the sheet he hands over, so it needs the address,
      and the address MUST NOT be baked into the desk: /desk is public by his decision of 11 Aug and
@@ -182,8 +205,7 @@ async function main() {
      to code map and changing its shape would break the order relay. */
   const siteFile = join(outDir, "site.txt");
   writeFileSync(siteFile, siteBaseUrl());
-  deskWrangler(["kv", "key", "put", "stmt-site", "--path", siteFile, "--remote", "--binding", "SALT_QUEUE"], { stdio: "inherit" });
-  console.log("wrote stmt-site (" + siteBaseUrl() + ") to the desk's store");
+  deskPut("stmt-site", siteFile, siteBaseUrl());
 
   /* AND THE EFFECT IS READ BACK. A bulk put that reported success and stored nothing would be
      invisible otherwise, which is the whole class of fault this file was rewritten for. */
