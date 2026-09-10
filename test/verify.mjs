@@ -2940,9 +2940,107 @@ section("Oil — pinned at both ends and lawful between (round 5, his call 5)");
   const heads = allHeads.filter((h) => /^COGS/.test(h[1] || ""));
   ok(heads.length >= 1 && heads.length < allHeads.length,
     `the board is drawn and told apart from the Set the board panel (${heads.length} of ${allHeads.length} pxboard tables)`);
-  ok(heads.every((h) => h[3] && /^Markup/.test(h[3])), `the fourth column is headed Markup (${heads.map((h) => h[3]).join(" / ")})`);
+  /* v564, HIS INSTRUCTION OF 10 SEP 2026: TWO TIERS, SO THE MARKUP COLUMN MOVED INTO THE ASKS.
+     v554's rule is unchanged and is asserted in its new place: the multiple must say what it is OF,
+     or "2.49x" reads as +249% to anyone who takes markup at its book meaning. It could not stay a
+     column of its own, because one Markup column beside TWO asks has to pick a tier and then
+     silently describes one of them. The fourth and fifth columns are the two tiers, cheapest first,
+     which is v247's rule for reading a board. Salt is the book with two tiers; oil is checked below
+     and must still read Ask. */
+  /* THE PRICE VIEW DRAWS A BOARD PER BOOK, so `heads` holds TWO: salt's, which has two tiers, and
+     oil's, which has one because LADDER_BY.oil says tier1 null. An `every` over both is what the
+     first cut of this check used and it went red on the book it was right about. One assertion per
+     shape, and the COUNT of each shape is asserted too, so a tier1 silently inherited by oil (five
+     columns where there should be four) fails here rather than on the phone. */
+  const twoTier = heads.filter((h) => h.length === 5), oneTier = heads.filter((h) => h.length === 4);
+  ok(twoTier.length === 1 && oneTier.length === 1 && twoTier.length + oneTier.length === heads.length,
+    `one book carries two tiers and one carries one (${heads.map((h) => h.length + " cols").join(", ")})`);
+  ok(twoTier.every((h) => /^Tier 1/.test(h[3]) && /^Tier 2/.test(h[4])),
+    `the two-tier board ends in Tier 1 then Tier 2, cheapest first (${twoTier.map((h) => h[3] + " | " + h[4]).join(" / ")})`);
+  ok(oneTier.every((h) => /^Ask/.test(h[3])),
+    `and a book with no second tier still ends in Ask (${oneTier.map((h) => h[3]).join(" / ")})`);
   ok(heads.every((h) => !h.some((c) => /^Margin/.test(c))), "and no column on the board is headed Margin any more");
-  ok(heads.every((h) => /eff\. cost/i.test(h[3])), "the heading says what the multiple is of, so 2.49x cannot read as +249%");
+  ok(heads.every((h) => !h.some((c) => /^Markup/.test(c))), "and the Markup column is gone from the head, because it moved into the cells");
+  {
+    /* v564: v554's RULE IN ITS NEW PLACE. The multiple must name its basis or "2.49x" reads as
+       +249%. It is now the fourth line of every tier cell, so it is counted against THAT TABLE'S
+       own row count rather than against shownSizes(PROD): this runs deep in a suite that has moved
+       PROD and the fixtures around, and the first cut read 10 from the global against a table of
+       12, which is the "coupled to live state" trap. Self-consistent, on the table being proved. */
+    const bd = "document.querySelectorAll('.sec.on table.pxboard')[0]";
+    const boardTx = String(w.eval(bd + ".textContent"));
+    const nRows = Number(w.eval(bd + ".rows.length")) - 1;
+    const mult = boardTx.match(/[0-9]+\.[0-9]{2}x eff\./g) || [];
+    ok(nRows > 1 && mult.length === nRows * 2,
+      `every cell on both tiers carries the multiple and says it is of effective cost (${mult.length} over ${nRows} sizes)`);
+    ok(!/[0-9]x markup/i.test(boardTx), "and nowhere on the board is the multiple called a markup without its basis");
+  }
+  /* ============ v564: TIER 1 IS HIS TWO PRICES, PROVED ON THE BOARD AND IN THE ENGINE ============
+     THE ANCHORS ARE THE POINT OF THE ASSERTION. RM875 is not a multiple of ten and the house
+     rounding is up to the ten, so a derived curve can print RM880 and never RM875; the reason the
+     engine takes the ends verbatim is so the board says what he said. Asserted on the RENDERED
+     table, because that is what he reads, and again on the engine, because that is what the phone,
+     the mirror and the price list read. */
+  {
+    /* FORCE THE BOOK. This section runs with OIL active: the first cut asserted salt's RM60 and
+       RM875 against whatever pxPolicy() happened to return and read oil's RM10 and RM160 asks,
+       which is the "coupled to live state" trap in my own comment four lines up. The board check
+       above survives it only because the Price view draws a board per book into one section. */
+    const keepProd = String(w.eval("PROD"));
+    w.eval("setProd('salt');recompute();");
+    const P1 = JSON.parse(w.eval("JSON.stringify(pxPolicy())"));
+    ok(P1.tier1 && +P1.tier1["0.5"] === 60 && +P1.tier1["12.5"] === 875,
+      "salt's policy carries his two Tier 1 ends, 0.5 unit at RM60 and 12.5 at RM875");
+    const L05 = JSON.parse(w.eval("JSON.stringify(priceLadder(0.5))"));
+    const L125 = JSON.parse(w.eval("JSON.stringify(priceLadder(12.5))"));
+    ok(L05.tier1 && L05.tier1.total === 60 && L125.tier1 && L125.tier1.total === 875,
+      `and the engine prints them verbatim, not rounded up to the ten (${L05.tier1 && L05.tier1.total} and ${L125.tier1 && L125.tier1.total})`);
+    ok(L125.ask.total === 1150 && L05.ask.total === 70,
+      `while TIER 2 DOES NOT MOVE: still RM70 at half a unit and RM1,150 at twelve and a half (${L05.ask.total}, ${L125.ask.total})`);
+    /* the two-tier board is found by its own five-column head rather than by position, because
+       position depends on which book the view drew first and that is not what is being proved */
+    const boardTx = String(w.eval("(function(){var ts=document.querySelectorAll('.sec.on table.pxboard');"
+      + "for(var i=0;i<ts.length;i++)if(ts[i].rows[0].cells.length===5)return ts[i].textContent;return '';})()"));
+    ok(boardTx.indexOf("RM 875") >= 0 && boardTx.indexOf("RM 880") < 0,
+      "the board he reads prints RM 875 and never the RM 880 a rounded curve would give");
+    /* the two laws, over the whole printed tier, and the one relation between the tiers */
+    const sz = JSON.parse(w.eval("JSON.stringify(shownSizes('salt'))"));
+    const walked = JSON.parse(w.eval("JSON.stringify(PRICING_ENGINE.tier1Walk(" + JSON.stringify(sz) + ", pxCost(), pxPolicy()))"));
+    let fall = true, cheaper = true, clears = true;
+    for (let i = 1; i < walked.length; i++) if (walked[i].p / walked[i].q > walked[i - 1].p / walked[i - 1].q + 1e-9) fall = false;
+    sz.forEach((q, i) => {
+      const L = JSON.parse(w.eval("JSON.stringify(priceLadder(" + q + "))"));
+      if (walked[i].p > L.ask.total + 1e-9) cheaper = false;
+      if (walked[i].p < L.floor.total - 0.009) clears = false;
+    });
+    ok(fall, "Tier 1's rate never rises with size, the same law the ask obeys");
+    ok(cheaper, "Tier 1 is at or under Tier 2 at every printed size, so the board reads dearer left to right");
+    ok(clears, "and every Tier 1 rung clears break-even on today's cost, so none carries a gap");
+    /* AND A BOOK WITH NO SECOND TIER RETURNS NOTHING RATHER THAN SALT'S. Without the explicit
+       tier1:null in LADDER_BY, ladderFor spreads LADDER underneath and oil inherits salt's ends:
+       every oil size clamps to 12.5, the rate lands at RM70 a unit, and ten units of oil that
+       Tier 2 sells at RM130 would be quoted RM700. This is the assertion that catches that. */
+    w.eval("setProd('oil');recompute();");
+    const Poil = JSON.parse(w.eval("JSON.stringify(pxPolicy())"));
+    const Loil = JSON.parse(w.eval("JSON.stringify(priceLadder(10))"));
+    ok(!Poil.tier1 && Loil.tier1 === null,
+      "oil declares no Tier 1 and is handed none, rather than inheriting salt's RM120 a unit");
+    ok(Loil.ask.total === 130, `and oil's ask is untouched at RM130 for its 10 unit minimum (${Loil.ask.total})`);
+    const rowsOil = JSON.parse(w.eval("JSON.stringify(PRICING_ENGINE.ladderRow(shownSizes('oil'), pxCost(), pxPolicy()))"));
+    ok(rowsOil.length === 1 && rowsOil[0].code === "T2" && rowsOil[0].dflt === true,
+      "the payload row for a one-tier book is the default ask alone");
+    w.eval("setProd('salt');recompute();");
+    const rowsSalt = JSON.parse(w.eval("JSON.stringify(PRICING_ENGINE.ladderRow(shownSizes('salt'), pxCost(), pxPolicy()))"));
+    /* ROW ZERO IS THE DEFAULT ASK AND THAT IS LOAD BEARING. The phone, the D1 mirror and the board
+       check above all read [0] rather than hunting for a code, on v328's argument that a fallback
+       which quietly carries a panel hides a fault. Putting Tier 1 first would have cut every
+       quoted price in silence, so the order is asserted by NAME and not taken on trust. */
+    ok(rowsSalt.length === 2 && rowsSalt[0].code === "T2" && rowsSalt[0].dflt === true && rowsSalt[1].code === "T1",
+      `the payload puts Tier 2 at row zero and Tier 1 after it (${rowsSalt.map((r) => r.code).join(", ")})`);
+    ok(rowsSalt[0].prices[0] === 70 && rowsSalt[1].prices[0] === 60,
+      `so row zero still quotes the ask and not the cheaper tier (${rowsSalt[0].prices[0]} then ${rowsSalt[1].prices[0]})`);
+    w.eval("setProd(" + JSON.stringify(keepProd) + ");recompute();");   // put the desk back on the book this section was on
+  }
   ok(String(w.eval("document.querySelector('.sec.on table.pxboard').textContent")).indexOf("% margin") >= 0,
     "while the true margin on price stays under the ask, where it belongs");
   w.eval("setProd('oil');recompute();");

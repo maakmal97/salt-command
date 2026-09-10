@@ -18,6 +18,7 @@
  *      tiers       the supplier's live quote tiers, for the taper ({qty,total} each)
  *      boardSizes  the sizes the board quotes, for walking an off-board size against them
  *      stated      prices HE has set, by size, overriding the derived ask (PRICE_SET[product])
+ *      tier1       the second level's two stated ends, by size; absent means this book has one tier
  * and costStack() takes the input record the desk's pxInputs() gathers (see there).
  *
  * PORTED VERBATIM. The bodies are the desk's, with the globals replaced by C, P and I. Every
@@ -258,6 +259,71 @@ function ladderWalk(sizes,C,P){
   });
   return out;
 }
+/* ============ v564: TWO TIERS ON THE BOARD (his instruction, 10 Sep 2026) ============
+   TIER 2 IS THE LADDER ABOVE AND NOT ONE OF ITS FIGURES MOVES. It stays the default ask, the one
+   priceLadder().ask returns, the one the customer price list is drawn toward and the one the
+   drafter measures a row against. Tier 1 is a SECOND level beneath it, and it is STATED rather
+   than derived: he gives the two ends, RM 60 at half a unit and RM 875 at twelve and a half, and
+   the rate between them is interpolated in the LOG of size, which is this desk's house method and
+   the one the retired tier board used at v251.
+
+   WHY STATED AND NOT A SECOND anchorG, WHICH WAS TRIED FIRST. Two ends is two numbers, and the
+   derived road has room for one: a level pinned at anchorQ plus the SUPPLIER'S taper. Measured,
+   his pair implies a taper of -0.167 against the supplier's -0.121, so no level on the supplier's
+   shape reaches both ends, and that gap is the whole point of a relationship price. Worse, RM 875
+   IS NOT A MULTIPLE OF TEN: the house rounding is up to the ten, so no curve rounded by it can
+   ever print the figure he gave. The two anchors are therefore taken VERBATIM and only the sizes
+   BETWEEN them are rounded, which is cappedBoard's old rule and the only one that can be honest
+   about a number he typed.
+
+   IT OBEYS THE SAME TWO LAWS AS THE ASK. The rate may not rise with size, repaired the same way,
+   one grid step down and never through the floor. And the gap to break-even is NAMED rather than
+   hidden: per v552 a price he has stated is quoted even under its floor, and every rung here is
+   his own rate, so none is lifted. Nothing on salt is under its floor today; `under` is the
+   mechanism for the day a cost rise puts one there.
+
+   OUTSIDE HIS TWO ANCHORS THE RATE IS CLAMPED, never extrapolated, exactly as ladderMarkup
+   clamps at LADDER.at: a 25 unit lot is asked the 12.5 rate and not a rate the policy never
+   stated.
+
+   A BOOK WITH NO tier1 HAS NO TIER 1, and oil is one. Its board is his stated price at every one
+   of its five sizes and its 50 unit rung already earns 3%, so there is nothing for a second tier
+   to sit under, and inheriting salt's RM 120 a unit would quote RM 700 for ten units of oil that
+   Tier 2 sells at RM 130. LADDER_BY.oil says tier1:null for that reason. */
+function tier1Anchors(P){
+  const A=P.tier1; if(!A)return null;
+  const ks=Object.keys(A).map(Number).filter(q=>q>0&&+A[q]>0).sort((a,b)=>a-b);
+  if(ks.length<2)return null;
+  const lo=ks[0], hi=ks[ks.length-1], rLo=+A[lo]/lo, rHi=+A[hi]/hi;
+  /* the rate in the log of size, fitted to the two ends rather than typed */
+  return {ks:ks, lo:lo, hi:hi, rLo:rLo, rHi:rHi, b:Math.log(rHi/rLo)/Math.log(hi/lo)};
+}
+function tier1Walk(sizes,C,P){
+  const A=tier1Anchors(P); if(!A)return null;
+  const out=[]; let prevRate=Infinity;
+  sizes.forEach(q=>{
+    const fl=floorTotal(q,C,P);
+    const pin=A.ks.find(k=>Math.abs(k-q)<0.009);
+    const x=Math.min(A.hi,Math.max(A.lo,+q||A.lo));          // clamped, never extrapolated
+    let p=pin!=null?+P.tier1[pin]:ladderRound(A.rLo*Math.pow(x/A.lo,A.b)*q,P.LADDER);
+    /* the rate law, and rounding up is what breaks it here too. A pinned end is never moved. */
+    if(pin==null&&q>0&&prevRate<Infinity&&p/q>prevRate+1e-9){
+      const stepped=Math.floor((prevRate*q+1e-9)/P.LADDER.round.to)*P.LADDER.round.to;
+      if(stepped>0&&stepped>fl+0.009)p=stepped;
+    }
+    out.push({q:q,p:p,stated:pin!=null,under:+Math.max(0,fl-p).toFixed(2)});
+    if(q>0)prevRate=Math.min(prevRate,p/q);
+  });
+  return out;
+}
+/* Tier 1 at ANY size, walked against the board sizes beneath it, for the same reason ladderAsk is. */
+function tier1Ask(q,C,P){
+  if(!P.tier1)return null;
+  const board=Array.isArray(P.boardSizes)?P.boardSizes:[];
+  const upTo=board.filter(s=>s<q-1e-9); upTo.push(q);
+  const w=tier1Walk(upTo,C,P);
+  return w?w[w.length-1]:null;
+}
 /* the ask at ANY size, walked against the board sizes beneath it so an off-board quote is judged
    against prices the desk actually quotes rather than against a neighbour it invented. */
 function ladderAsk(q,C,P){
@@ -344,16 +410,37 @@ function priceLadder(q,C,P,opts){
      price he has stated below break-even and `under` says by how much. */
   out.ask.floorX=+(out.ask.total/Math.max(0.01,fl)).toFixed(3);
   out.ask.under=+Math.max(0,fl-out.ask.total).toFixed(2);
+  /* v564: TIER 1 BESIDE THE ASK, on the same cost stack and the same floor, so every surface reads
+     one engine for both levels. null on a book with no stated second tier. The figures beside the
+     total are derived back from the answer, exactly as the ask's are. */
+  {const t=tier1Ask(q,C,P);
+   out.tier1=t?{total:t.p,rate:+(t.p/q).toFixed(2),
+                markup:+((t.p/cogs-1)*100).toFixed(2),markupX:+(t.p/cogs-1).toFixed(4),
+                margin:+(((t.p-lot)/t.p)*100).toFixed(1),
+                floorX:+(t.p/Math.max(0.01,fl)).toFixed(3),under:t.under,stated:!!t.stated}:null;}
   out.ceiling=at(LADDER.ceiling,true);
   return out;
 }
-/* ONE LADDER MEANS ONE ROW. It stays an array because that is the shape the phone maps over. */
+/* ============ v564: TWO ROWS WHERE THE BOOK HAS TWO TIERS ============
+   v328 made this one row and said why: a second row should have to be a real second thing rather
+   than a tier that is no longer one. It is one now, so there are two, and the ORDER IS LOAD
+   BEARING. Row zero is TIER 2, the default ask, because that is what every reader of this array
+   already takes row zero to be: the phone, the D1 mirror and the suite all read [0] rather than
+   hunting for a code, on v328's own argument that a fallback which quietly carries a panel hides
+   a fault. Putting the cheaper tier first would have silently cut every quoted price. The BOARD
+   prints them cheapest-first, which is a rendering decision and is made where the board renders. */
 function ladderRow(sizes,C,P){
-  return [{
-    code:'ASK', name:'Ask', who:'one ladder, graded by size, tapered as the supplier tapers',
-    prices:sizes.map(q=>{try{const L=priceLadder(q,C,P);
-      return L&&L.ask&&L.ask.total!=null?+L.ask.total:null;}catch(e){return null;}})
+  const col=(k)=>sizes.map(q=>{try{const L=priceLadder(q,C,P);
+    return L&&L[k]&&L[k].total!=null?+L[k].total:null;}catch(e){return null;}});
+  const rows=[{
+    code:'T2', name:'Tier 2', dflt:true, who:'the default ask, graded by size, tapered as the supplier tapers',
+    prices:col('ask')
   }];
+  if(P.tier1)rows.push({
+    code:'T1', name:'Tier 1', dflt:false, who:'stated at its two ends, the rate interpolated between them',
+    prices:col('tier1')
+  });
+  return rows;
 }
 /* THE BOARD AND THE FLOORS, for quoting at the point of sale: what the phone receives. */
 /* THE CARD IS A COLLECTION PRICE AND DELIVERY IS QUOTED ON TOP, PER ORDER (v352, his instruction).
@@ -384,6 +471,7 @@ function board(sizes,C,P){
 
 return {costStack:costStack,buyTaper:buyTaper,ladderMarkup:ladderMarkup,ladderMargin:ladderMargin,ladderCogs:ladderCogs,
         ladderRound:ladderRound,ladderWalk:ladderWalk,ladderAsk:ladderAsk,lotCost:lotCost,
+        tier1Anchors:tier1Anchors,tier1Walk:tier1Walk,tier1Ask:tier1Ask,
         floorTotal:floorTotal,priceLadder:priceLadder,ladderRow:ladderRow,board:board};
 })();
 export default PRICING_ENGINE;
