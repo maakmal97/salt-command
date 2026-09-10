@@ -1,6 +1,6 @@
 {
- "v": "v572",
- "stamped": "11 Sep 2026, 04:29 KL",
+ "v": "v573",
+ "stamped": "11 Sep 2026, 04:38 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -3593,7 +3593,8 @@
    "CA7-JTR",
    "CF5-WM",
    "CE5-TBC",
-   "CR3-DAM-R"
+   "CR3-DAM-R",
+   "CB7-TBC"
   ],
   "associates": [
    "CS6-BS",
@@ -3755,9 +3756,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-10T20:07:34.862Z",
+  "QUEUE_COMMITTED": "2026-09-10T20:31:57.946Z",
   "PRICING": {
-   "takenAt": "2026-09-10T20:29:41.927Z",
+   "takenAt": "2026-09-10T20:38:09.588Z",
    "sizes": [
     0.5,
     1,
@@ -4213,10 +4214,10 @@
      ]
     }
    },
-   "v": "v572"
+   "v": "v573"
   },
   "OPEN": {
-   "at": "2026-09-10T20:29:42.026Z",
+   "at": "2026-09-10T20:38:09.677Z",
    "count": 7,
    "byKey": {
     "CM4-MK|2026-09-09|220": {
@@ -4367,7 +4368,7 @@
     "salt": "2026-09-08",
     "oil": "2026-09-09"
    },
-   "v": "v572"
+   "v": "v573"
   }
  }
 }

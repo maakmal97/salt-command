@@ -296,7 +296,8 @@
     "CA7-JTR",
     "CF5-WM",
     "CE5-TBC",
-    "CR3-DAM-R"
+    "CR3-DAM-R",
+    "CB7-TBC"
   ],
   "associates": [
     "CS6-BS",
@@ -430,7 +431,7 @@
   "ONE_OFFS": [
     {"id":"CM6-HCM","date":"2026-07-14","note":"One-off; RM104/unit is an outlier."}
   ],
-  "QUEUE_COMMITTED": "2026-09-10T20:07:34.862Z",
+  "QUEUE_COMMITTED": "2026-09-10T20:31:57.946Z",
   "PRICE_SET": {
     "salt": {
       "prices": {},
