@@ -161,6 +161,52 @@ export function priceList(code, book, pricing, now) {
   return out;
 }
 
+/* THE BOARD A STRANGER IS SHOWN (his instruction, 10 Sep 2026), pinned to one tier.
+ *
+ * A guest has no history and no account, so there is no "his rate" to draw toward: what he gets is
+ * the board itself, which is already defined as the one price the desk quotes to a stranger. So
+ * this prices NOTHING of its own. It reads the same ladderRow the desk's board and the phone read,
+ * and takes one row off it. Row order is load bearing elsewhere -- [0] is Tier 2 and the whole desk
+ * reads it -- so the row is chosen BY CODE here rather than by index, and the index is never
+ * assumed.
+ *
+ * A ONE-TIER BOOK HAS NO TIER 1, and oil is one (LADDER_BY.oil says tier1:null). Asking for tier 1
+ * on such a product is not an error and not an omission: it has one price and that price is shown,
+ * with `asked` recording that the tier fell back, so the page can say so rather than imply oil is
+ * being discounted.
+ */
+export function boardList(tier, book, pricing, now) {
+  const want = "T" + (tier === 1 ? 1 : 2);
+  const week = weekOf(now);
+  const products = book.PROD_ORDER || Object.keys(book.PRODUCTS || { salt: 1 });
+  const out = { at: new Date(now || Date.now()).toISOString(), week, tier: tier === 1 ? 1 : 2, products: [] };
+  for (const p of products) {
+    const snap = pricing && pricing.byProduct && pricing.byProduct[p];
+    const inputs = snap && snap.inputs;
+    if (!inputs || !inputs.cost || !inputs.policy) continue;    // a product the desk cannot price is left off
+    const C = PRICING_ENGINE.costStack(inputs.cost), P = inputs.policy;
+    const sizesHere = (Array.isArray(P.boardSizes) && P.boardSizes.length) ? P.boardSizes
+      : ((Array.isArray(snap.sizes) && snap.sizes.length) ? snap.sizes : ((pricing && pricing.sizes) || []));
+    const sizes = sizesHere.slice().sort((a, b) => a - b);
+    const rows = PRICING_ENGINE.ladderRow(sizes, C, P);
+    const row = rows.find((r) => r.code === want) || rows[0];
+    if (!row) continue;
+    out.products.push({
+      product: p,
+      name: (book.PRODUCTS && book.PRODUCTS[p] && book.PRODUCTS[p].name) || p,
+      unit: (book.PRODUCTS && book.PRODUCTS[p] && book.PRODUCTS[p].unit) || "unit",
+      basis: "board",
+      tier: row.code === "T1" ? 1 : 2,
+      tierName: row.name,
+      /* true when this product could not be shown at the tier asked for, because it has only one */
+      fellBack: row.code !== want,
+      sizes: sizes.map((q, i) => ({ q, price: row.prices[i] == null ? null : +(+row.prices[i]).toFixed(2) }))
+        .filter((r) => r.price != null)
+    });
+  }
+  return out;
+}
+
 async function main() {
   const i = process.argv.indexOf("--show");
   const code = i >= 0 ? process.argv[i + 1] : null;

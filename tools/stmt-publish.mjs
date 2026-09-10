@@ -139,6 +139,22 @@ async function main() {
     .map(([username, code]) => ({ code, username }))
     .sort((a, b) => String(a.code).localeCompare(String(b.code)));
   plan.puts.push({ key: "roster", value: JSON.stringify(rosterList) });
+
+  /* THE TWO GUEST BOARDS (10 Sep 2026). A referral link opens one tier's board and nothing else, so
+     both are written on every publish, beside the sealed per-customer lists and from the same
+     snapshot, which is what keeps a guest and a customer from ever being quoted off different
+     inputs. They are NOT sealed: a board is the price he prints and hands to strangers, and the
+     link's own id is what decides who gets to read one. tools/pricelist.mjs states that argument.
+     No snapshot, no boards, exactly as no snapshot means no price lists. */
+  if (pricing) {
+    const { boardList } = await import("./pricelist.mjs");
+    const bookNow = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+    const madeAt = new Date();
+    for (const tier of [1, 2]) {
+      plan.puts.push({ key: "board:" + tier, value: JSON.stringify(boardList(tier, bookNow, pricing, madeAt)) });
+    }
+    console.log("and both guest boards, tier 1 and tier 2");
+  }
   const putFile = join(outDir, "put.json"), delFile = join(outDir, "delete.json");
   writeFileSync(putFile, JSON.stringify(plan.puts));
   writeFileSync(delFile, JSON.stringify(plan.deletes));

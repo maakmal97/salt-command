@@ -73,6 +73,13 @@ jobs:
       - name: The statement stylesheet the Worker serves is the one the generator writes
         run: node tools/stmt-style.mjs --check
 
+      # AND THE SITE'S QR ENCODER IS THE ONE ENCODER. The statements Worker draws a QR for each
+      # guest referral link and may import only a sibling, so engine/qr.mjs is carried into
+      # stmt/qr.js verbatim. Same rule again: the copy is proved rather than trusted, because two
+      # encoders drift exactly as two pricing engines would.
+      - name: The site's QR encoder is engine/qr.mjs
+        run: node tools/qrsync.mjs --check
+
       - name: Tests
         run: npm test
 

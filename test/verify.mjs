@@ -6899,6 +6899,120 @@ section("Statements — the owner's list behind Access (v566)");
   }
 }
 
+/* ---- THE GUEST REFERRAL LINKS (his instruction, 10 Sep 2026) --------------------------------
+   A link is minted behind Access, pinned to a tier, and opens ONE board and nothing else. The tier
+   is the load-bearing part, so it is proved from both ends: the page carries the figures its own
+   tier computes and NONE of the figures that are distinct to the other. The figures are computed
+   here rather than written down, because an assertion nailed to today's book passes only while the
+   book cooperates; the invariant that tier 1 is the cheaper of the two is asserted separately. */
+section("Statements — guest referral links and the tier they are pinned to (v566)");
+{
+  const realFetch = globalThis.fetch;
+  try {
+    const TEAM = "maakmal", AUD = "refs-aud", KID = "refs-kid";
+    const kp = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048,
+      publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
+    const pub = await crypto.subtle.exportKey("jwk", kp.publicKey);
+    globalThis.fetch = async (u) => String(u).endsWith("/cdn-cgi/access/certs")
+      ? new Response(JSON.stringify({ keys: [{ ...pub, kid: KID, kty: "RSA" }] }))
+      : (() => { throw new Error("unexpected fetch " + u); })();
+    const b64u = (b) => Buffer.from(b).toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+    const token = async () => {
+      const claims = { iss: "https://" + TEAM + ".cloudflareaccess.com", aud: [AUD],
+        email: "maakmal97@icloud.com", exp: Math.floor(Date.now() / 1000) + 600 };
+      const h = b64u(JSON.stringify({ alg: "RS256", kid: KID, typ: "JWT" })), c = b64u(JSON.stringify(claims));
+      return h + "." + c + "." + b64u(new Uint8Array(await crypto.subtle.sign("RSASSA-PKCS1-v1_5",
+        kp.privateKey, new TextEncoder().encode(h + "." + c))));
+    };
+
+    /* the two boards, written the way tools/stmt-publish.mjs writes them */
+    const { boardList } = await import("../tools/pricelist.mjs");
+    const { readBook } = await import("../tools/book.mjs");
+    const gbook = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+    const gpricing = (await readBook()).ledger.PRICING;
+    const boards = { 1: boardList(1, gbook, gpricing, new Date()), 2: boardList(2, gbook, gpricing, new Date()) };
+
+    const gkv = new KV();
+    for (const t of [1, 2]) await gkv.put("board:" + t, JSON.stringify(boards[t]));
+    const genv = { STMT: gkv, ACCESS_TEAM: TEAM, ACCESS_AUD: AUD };
+    const gq = (path, opts = {}) => new Request("https://k7m3p2.example" + path, opts);
+    const mintLink = async (tier, label) => (await (await stmtWorker.fetch(gq("/all/refs", {
+      method: "POST", headers: { "cf-access-jwt-assertion": await token(), "content-type": "application/json" },
+      body: JSON.stringify({ tier, label }) }), genv)).json()).ref;
+
+    ok((await stmtWorker.fetch(gq("/all/refs"), genv)).status === 401
+      && (await stmtWorker.fetch(gq("/all/refs", { method: "POST",
+        headers: { "content-type": "application/json" }, body: '{"tier":1}' }), genv)).status === 401,
+      "a guest link can be neither listed nor minted without passing Access");
+
+    const one = await mintLink(1, "Hardware shop, Ipoh");
+    const two = await mintLink(2, "Market stall, Kajang");
+    ok(one && two && one.id !== two.id && one.tier === 1 && two.tier === 2,
+      "two links mint with different ids, each pinned to the tier it was asked for");
+    ok(one.label === "Hardware shop, Ipoh" && one.url === "https://k7m3p2.example/g/" + one.id,
+      "and each carries its label and its own /g/ address");
+    ok((await (await stmtWorker.fetch(gq("/all/refs", { method: "POST",
+      headers: { "cf-access-jwt-assertion": await token(), "content-type": "application/json" },
+      body: JSON.stringify({ tier: 3 }) }), genv))).status === 400,
+      "and a tier that is neither 1 nor 2 is refused rather than defaulted");
+
+    const svg = decodeURIComponent(one.qr.slice("data:image/svg+xml,".length));
+    ok(one.qr.startsWith("data:image/svg+xml,") && /<rect /.test(svg) && !/stroke/.test(svg),
+      "the QR travels as a data URI of RECTANGLES, never a stroked path, which does not decode");
+
+    /* THE TIER, FROM BOTH ENDS. Every figure distinct to the other tier must be absent, or a link
+       could be serving the wrong board and still look right on the sizes the two happen to share. */
+    const figs = (t) => boards[t].products.flatMap((p) => p.sizes.map((r) => r.price));
+    const only = (t) => figs(t).filter((x) => !figs(t === 1 ? 2 : 1).includes(x));
+    const shown = (html, ns) => ns.every((n) => html.includes(n.toLocaleString("en-MY",
+      { minimumFractionDigits: 0, maximumFractionDigits: 2 })));
+    const g1 = await stmtWorker.fetch(gq("/g/" + one.id), genv), h1 = await g1.text();
+    const h2 = await (await stmtWorker.fetch(gq("/g/" + two.id), genv)).text();
+    ok(g1.status === 200 && only(1).length > 0 && shown(h1, only(1)) && !shown(h1, only(2)),
+      "a tier 1 link shows every figure that is tier 1's alone and none that is tier 2's alone");
+    ok(shown(h2, only(2)) && !shown(h2, only(1)),
+      "and a tier 2 link is the other way round");
+
+    /* the design invariant, independent of which board the route served */
+    const twoTier = boards[1].products.find((p) => !p.fellBack);
+    const pairs = twoTier ? twoTier.sizes.map((r, i) => [r.price, boards[2].products
+      .find((x) => x.product === twoTier.product).sizes[i].price]) : [];
+    ok(pairs.length > 0 && pairs.every(([a, b]) => a < b),
+      "and on a two-tier book tier 1 is cheaper than tier 2 at every size, which is what the tiers are");
+
+    ok(/the only price for this product/.test(h1) === boards[1].products.some((p) => p.fellBack),
+      "a one-tier product says its price is its only one rather than implying a discount");
+    ok(!/<script/.test(h1) && /script-src 'none'/.test(g1.headers.get("content-security-policy") || ""),
+      "the guest page carries no script and forbids it outright");
+    ok(!/Statements|Username|Password/.test(h1),
+      "and offers no statement, no account and no way in to one");
+
+    await stmtWorker.fetch(gq("/g/" + one.id), genv);
+    const listed = (await (await stmtWorker.fetch(gq("/all/refs",
+      { headers: { "cf-access-jwt-assertion": await token() } }), genv)).json()).refs;
+    ok((listed.find((r) => r.id === one.id) || {}).opens === 2,
+      "every open is counted, which is how he tells which link a stranger actually used");
+
+    const revoke = await stmtWorker.fetch(gq("/all/refs/" + one.id + "/revoke",
+      { method: "POST", headers: { "cf-access-jwt-assertion": await token() } }), genv);
+    const gone = (await stmtWorker.fetch(gq("/g/" + one.id), genv)).status;
+    ok(revoke.status === 200 && gone === 404
+      && (await stmtWorker.fetch(gq("/g/aaaa-bbbb"), genv)).status === 404
+      && (await stmtWorker.fetch(gq("/g/nope"), genv)).status === 404,
+      "a withdrawn link, one that never existed and a malformed id all answer the same 404");
+    ok((await stmtWorker.fetch(gq("/all/refs/" + one.id + "/restore",
+      { method: "POST", headers: { "cf-access-jwt-assertion": await token() } }), genv)).status === 200
+      && (await stmtWorker.fetch(gq("/g/" + one.id), genv)).status === 200,
+      "and a withdrawal is reversible, because the record is kept rather than deleted");
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+
+  /* the vendored encoder is the one encoder, or the site draws a QR from code nobody is testing */
+  const { matches: qrMatches } = await import("../tools/qrsync.mjs");
+  ok(qrMatches(), "stmt/qr.js is engine/qr.mjs byte for byte (run tools/qrsync.mjs --sync if this fails)");
+}
+
 /* ---- the statement in the Salt identity, and what the QR carries ----------------- */
 /* ---- Statements: the price list, the order book and the desk's relay (06 Sep 2026) ---- */
 section("Statements — the price list, the order book and the desk's relay (v499)");

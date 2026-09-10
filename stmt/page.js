@@ -136,9 +136,66 @@ select.fld{letter-spacing:0;appearance:none;-webkit-appearance:none}
 .rlist button:hover{border-color:var(--salt-brass)}
 .rlist button span{color:var(--salt-mist);font-size:var(--salt-text-xs);letter-spacing:.06em}
 .rnone{color:var(--salt-text-muted);font-size:var(--salt-text-sm);margin:14px 0 0}
+/* A GUEST LINK, as a card: who it is for leads, then the tier, then what it has done. The address
+   is selectable text rather than a live link, because the thing he does with it is copy it. */
+.glink{border:1px solid var(--salt-line);border-radius:var(--salt-radius-sm);background:var(--salt-glass);
+  padding:14px 16px;margin:12px 0 0}
+.glink.off{opacity:.5}
+.glink h4{margin:0;font-size:var(--salt-text-md);font-weight:600}
+.glink .gt{font-family:var(--salt-font-mono);font-size:var(--salt-text-xs);letter-spacing:.14em;
+  text-transform:uppercase;color:var(--salt-copper);font-weight:700;margin:0 0 6px}
+.glink .gu{display:block;width:100%;margin:10px 0 0;padding:9px 11px;font-family:var(--salt-font-mono);
+  font-size:var(--salt-text-xs);color:var(--salt-brass);background:var(--salt-well);
+  border:1px solid var(--salt-line);border-radius:var(--salt-radius-sm);word-break:break-all}
+.glink .gs{margin:8px 0 0;font-size:var(--salt-text-xs);color:var(--salt-text-muted);
+  font-family:var(--salt-font-mono);letter-spacing:.04em}
+.glink img{display:block;margin:12px auto 0;border-radius:var(--salt-radius-sm);width:180px;height:180px}
+.grow{display:flex;gap:8px;margin-top:12px}
+.grow button{flex:1;min-height:var(--salt-tap);font-family:var(--salt-font-mono);
+  font-size:var(--salt-text-xs);letter-spacing:.06em;color:var(--salt-text);background:none;
+  border:1px solid var(--salt-line);border-radius:var(--salt-radius-pill);cursor:pointer}
 `;
 
 const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+/* THE GUEST BOARD (his instruction, 10 Sep 2026). A referral link opens this and nothing else: one
+   tier's board prices, no statement, no order, no account, no sign-in. It is a page of numbers he
+   would otherwise print, so it is SERVER-RENDERED AND CARRIES NO SCRIPT AT ALL -- its CSP forbids
+   script outright rather than allowing a nonce, which is the strongest thing that can be said about
+   a page and is free here because there is nothing for a script to do.
+
+   A ONE-TIER PRODUCT SAYS SO. Oil has no Tier 1, so a Tier 1 link shows oil at its only price; the
+   line says that rather than leaving him to wonder whether the guest was quoted a discount. */
+export function boardPage(guest, nonce) {
+  const b = (guest && guest.prices) || {};
+  const products = Array.isArray(b.products) ? b.products : [];
+  const week = (b.week && b.week.label) || "";
+  const rm = (n) => "RM " + Number(n || 0).toLocaleString("en-MY", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+  const body = products.length
+    ? products.map((p) => '<div class="pane">'
+        + "<h3>" + esc(p.name) + "</h3>"
+        + '<p class="sub2">' + esc(p.tierName || "")
+          + (p.fellBack ? ", the only price for this product" : "")
+          + "</p>"
+        + '<div class="tblw"><table><thead><tr><th class="l">Size</th><th>Price</th></tr></thead><tbody>'
+        + p.sizes.map((r) => "<tr><td class=\"l\">" + esc(r.q) + " " + esc(p.unit || "unit")
+            + "</td><td>" + esc(rm(r.price)) + "</td></tr>").join("")
+        + "</tbody></table></div></div>").join("")
+    : '<p class="lead">No price list has been written yet.</p>';
+  return '<!DOCTYPE html>\n<html lang="en"><head><meta charset="utf-8">'
+    + '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">'
+    + '<meta name="robots" content="noindex,nofollow,noarchive">'
+    + '<meta name="referrer" content="no-referrer">'
+    + "<title>Price list</title>"
+    + '<style nonce="' + nonce + '">' + STATEMENT_CSS + PAGE_CSS + "</style></head><body>"
+    + '<div class="panel">'
+    + "<h2>Price list</h2>"
+    + '<p class="lead">' + (week ? "For the week of " + esc(week) + ". " : "")
+    + "The price is for the goods. Delivery is charged separately and quoted when you order. "
+    + "Ask about any size that is not listed.</p>"
+    + body
+    + "</div></body></html>";
+}
 
 /** The landing page. `user` is the normalised username to prefill, or "". `nonce` ties the
     inline style and script to the CSP.
@@ -160,11 +217,29 @@ export function landingPage(user, nonce, owner) {
     + '<style nonce="' + nonce + '">' + STATEMENT_CSS + PAGE_CSS + "</style></head><body>"
     + (owner
       ? '<div id="roster" class="gate">'
+        + '<div class="tabs" id="otabs"><button type="button" data-o="acct" class="on">Accounts</button>'
+        + '<button type="button" data-o="links">Links</button></div>'
+        + '<div id="oAcct">'
         + "<h1>Accounts</h1>"
         + '<p class="lead">' + owner.accounts.length + " on the site. Tap one to open it.</p>"
         + '<input class="fld" id="rq" type="text" autocapitalize="none" autocorrect="off" '
         + 'spellcheck="false" placeholder="filter" aria-label="Filter accounts">'
         + '<div id="rlist" class="rlist"></div>'
+        + "</div>"
+        + '<div id="oLinks" hidden>'
+        + "<h1>Guest links</h1>"
+        + '<p class="lead">A link shows one tier\'s board prices and nothing else: no statement, no '
+        + "order, no account. The id in the link is what opens it, so it is the key.</p>"
+        + '<label class="lbl" for="gtier">Tier</label>'
+        + '<select class="fld" id="gtier">'
+        + '<option value="2">Tier 2, the retail ask</option>'
+        + '<option value="1">Tier 1, the trade price</option></select>'
+        + '<label class="lbl" for="glabel">Who it is for</label>'
+        + '<input class="fld" id="glabel" type="text" maxlength="60" '
+        + 'placeholder="a shop, a name, a note" aria-label="Who the link is for">'
+        + '<button class="btn" type="button" id="gmake">Make a link</button>'
+        + '<div id="glist"></div>'
+        + "</div>"
         + '<p class="msg" id="rmsg" role="status" aria-live="polite"></p></div>'
       : "")
     + '<div id="gate" class="gate"' + (owner ? " hidden" : "") + ">"
@@ -689,6 +764,85 @@ const CLIENT_JS = `
       rlist.appendChild(b);
     });
   }
+  /* ---- THE GUEST LINKS, on the same gated route -------------------------------------------
+     Minted, listed and revoked over /all/refs; the Worker draws the QR and returns it as a data
+     URI, so nothing here encodes anything and the page loads no library to do it. */
+  var links=[];
+  function stampDay(iso){
+    try{ return new Date(iso).toLocaleDateString('en-GB',{timeZone:'Asia/Kuala_Lumpur',
+      day:'2-digit',month:'short',year:'numeric'}); }catch(e){ return ''; }
+  }
+  function drawLinks(){
+    var glist=document.getElementById('glist');
+    glist.textContent='';
+    if(!links.length){ glist.appendChild(el('p','rnone','No links yet.')); return; }
+    links.forEach(function(r){
+      var card=el('div','glink'+(r.revoked?' off':''));
+      card.appendChild(el('p','gt','Tier '+r.tier+(r.revoked?' \\u00b7 withdrawn':'')));
+      card.appendChild(el('h4',null,r.label||'(no label)'));
+      card.appendChild(el('code','gu',r.url));
+      card.appendChild(el('p','gs', r.opens
+        ? 'opened '+r.opens+' time'+(r.opens===1?'':'s')+', last '+stampDay(r.last)
+        : 'never opened \\u00b7 made '+stampDay(r.made)));
+      var img=document.createElement('img');
+      img.src=r.qr; img.alt='QR to the guest price list for '+(r.label||r.id); img.width=180; img.height=180;
+      card.appendChild(img);
+      var row=el('div','grow');
+      var copy=el('button',null,'Copy link'); copy.type='button';
+      copy.addEventListener('click', function(){
+        try{ navigator.clipboard.writeText(r.url); copy.textContent='Copied'; }
+        catch(e){ copy.textContent='Copy failed'; }
+        setTimeout(function(){ copy.textContent='Copy link'; }, 1500);
+      });
+      var rev=el('button',null,r.revoked?'Restore':'Withdraw'); rev.type='button';
+      rev.addEventListener('click', function(){ moveLink(r, r.revoked?'restore':'revoke'); });
+      row.appendChild(copy); row.appendChild(rev); card.appendChild(row);
+      glist.appendChild(card);
+    });
+  }
+  async function refs(path, body){
+    var o = body ? {method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify(body)}
+                 : {};
+    var r = await fetch(path, o);
+    var j = await r.json().catch(function(){ return {}; });
+    if(!r.ok||!j.ok) throw new Error(j.error||'that did not work');
+    return j;
+  }
+  async function loadLinks(){
+    try{ links=(await refs('/all/refs')).refs||[]; drawLinks(); say(''); }
+    catch(e){ say(e.message,'bad'); }
+  }
+  async function moveLink(r, how){
+    try{
+      var j=await refs('/all/refs/'+r.id+'/'+how);
+      for(var i=0;i<links.length;i++) if(links[i].id===j.ref.id) links[i]=j.ref;
+      drawLinks(); say('');
+    }catch(e){ say(e.message,'bad'); }
+  }
+  if(OWNER){
+    document.getElementById('gmake').addEventListener('click', async function(){
+      var b=this, tier=+document.getElementById('gtier').value,
+          label=document.getElementById('glabel').value;
+      b.disabled=true; say('Making it...','wait');
+      try{
+        var j=await refs('/all/refs', {tier:tier, label:label});
+        links.unshift(j.ref); drawLinks();
+        document.getElementById('glabel').value='';
+        say('Made. The QR opens it.');
+      }catch(e){ say(e.message,'bad'); }
+      b.disabled=false;
+    });
+    document.getElementById('otabs').addEventListener('click', function(ev){
+      var b=ev.target.closest('button[data-o]'); if(!b) return;
+      var which=b.getAttribute('data-o'), bs=this.querySelectorAll('button');
+      for(var i=0;i<bs.length;i++) bs[i].className=(bs[i]===b?'on':'');
+      document.getElementById('oAcct').hidden=(which!=='acct');
+      document.getElementById('oLinks').hidden=(which!=='links');
+      say('');
+      if(which==='links'&&!links.length) loadLinks();
+    });
+  }
+
   if(OWNER){
     rq.addEventListener('input', drawRoster);
     drawRoster();
