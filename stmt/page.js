@@ -125,13 +125,89 @@ select.fld{letter-spacing:0;appearance:none;-webkit-appearance:none}
 .pay input{width:18px;height:18px;accent-color:var(--salt-brass)}
 .hist{margin:10px 0 0;padding:0;list-style:none;font-size:var(--salt-text-xs);color:var(--salt-text-muted);font-family:var(--salt-font-mono);line-height:1.8}
 @media print{.bar,.mos,.tabs{display:none}}
+/* THE OWNER'S ROSTER, in the gate's own geometry so the door looks like the door. One row per
+   account: the code leads because that is what he knows an account by, and the username follows
+   in mist because that is what is printed on the paper. A row is a tap target at the full 44px. */
+.rlist{margin-top:14px;max-height:60vh;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.rlist button{display:flex;width:100%;gap:12px;align-items:baseline;justify-content:space-between;
+  min-height:var(--salt-tap);padding:11px 14px;margin:0 0 6px;cursor:pointer;text-align:left;
+  font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);color:var(--salt-text);
+  background:var(--salt-glass);border:1px solid var(--salt-line);border-radius:var(--salt-radius-sm)}
+.rlist button:hover{border-color:var(--salt-brass)}
+.rlist button span{color:var(--salt-mist);font-size:var(--salt-text-xs);letter-spacing:.06em}
+.rnone{color:var(--salt-text-muted);font-size:var(--salt-text-sm);margin:14px 0 0}
+/* A GUEST LINK, as a card: who it is for leads, then the tier, then what it has done. The address
+   is selectable text rather than a live link, because the thing he does with it is copy it. */
+.glink{border:1px solid var(--salt-line);border-radius:var(--salt-radius-sm);background:var(--salt-glass);
+  padding:14px 16px;margin:12px 0 0}
+.glink.off{opacity:.5}
+.glink h4{margin:0;font-size:var(--salt-text-md);font-weight:600}
+.glink .gt{font-family:var(--salt-font-mono);font-size:var(--salt-text-xs);letter-spacing:.14em;
+  text-transform:uppercase;color:var(--salt-copper);font-weight:700;margin:0 0 6px}
+.glink .gu{display:block;width:100%;margin:10px 0 0;padding:9px 11px;font-family:var(--salt-font-mono);
+  font-size:var(--salt-text-xs);color:var(--salt-brass);background:var(--salt-well);
+  border:1px solid var(--salt-line);border-radius:var(--salt-radius-sm);word-break:break-all}
+.glink .gs{margin:8px 0 0;font-size:var(--salt-text-xs);color:var(--salt-text-muted);
+  font-family:var(--salt-font-mono);letter-spacing:.04em}
+.glink img{display:block;margin:12px auto 0;border-radius:var(--salt-radius-sm);width:180px;height:180px}
+.grow{display:flex;gap:8px;margin-top:12px}
+.grow button{flex:1;min-height:var(--salt-tap);font-family:var(--salt-font-mono);
+  font-size:var(--salt-text-xs);letter-spacing:.06em;color:var(--salt-text);background:none;
+  border:1px solid var(--salt-line);border-radius:var(--salt-radius-pill);cursor:pointer}
 `;
 
 const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
+/* THE GUEST BOARD (his instruction, 10 Sep 2026). A referral link opens this and nothing else: one
+   tier's board prices, no statement, no order, no account, no sign-in. It is a page of numbers he
+   would otherwise print, so it is SERVER-RENDERED AND CARRIES NO SCRIPT AT ALL -- its CSP forbids
+   script outright rather than allowing a nonce, which is the strongest thing that can be said about
+   a page and is free here because there is nothing for a script to do.
+
+   A ONE-TIER PRODUCT SAYS SO. Oil has no Tier 1, so a Tier 1 link shows oil at its only price; the
+   line says that rather than leaving him to wonder whether the guest was quoted a discount. */
+export function boardPage(guest, nonce) {
+  const b = (guest && guest.prices) || {};
+  const products = Array.isArray(b.products) ? b.products : [];
+  const week = (b.week && b.week.label) || "";
+  const rm = (n) => "RM " + Number(n || 0).toLocaleString("en-MY", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+  const body = products.length
+    ? products.map((p) => '<div class="pane">'
+        + "<h3>" + esc(p.name) + "</h3>"
+        + '<p class="sub2">' + esc(p.tierName || "")
+          + (p.fellBack ? ", the only price for this product" : "")
+          + "</p>"
+        + '<div class="tblw"><table><thead><tr><th class="l">Size</th><th>Price</th></tr></thead><tbody>'
+        + p.sizes.map((r) => "<tr><td class=\"l\">" + esc(r.q) + " " + esc(p.unit || "unit")
+            + "</td><td>" + esc(rm(r.price)) + "</td></tr>").join("")
+        + "</tbody></table></div></div>").join("")
+    : '<p class="lead">No price list has been written yet.</p>';
+  return '<!DOCTYPE html>\n<html lang="en"><head><meta charset="utf-8">'
+    + '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">'
+    + '<meta name="robots" content="noindex,nofollow,noarchive">'
+    + '<meta name="referrer" content="no-referrer">'
+    + "<title>Price list</title>"
+    + '<style nonce="' + nonce + '">' + STATEMENT_CSS + PAGE_CSS + "</style></head><body>"
+    + '<div class="panel">'
+    + "<h2>Price list</h2>"
+    + '<p class="lead">' + (week ? "For the week of " + esc(week) + ". " : "")
+    + "The price is for the goods. Delivery is charged separately and quoted when you order. "
+    + "Ask about any size that is not listed.</p>"
+    + body
+    + "</div></body></html>";
+}
+
 /** The landing page. `user` is the normalised username to prefill, or "". `nonce` ties the
-    inline style and script to the CSP. */
-export function landingPage(user, nonce) {
+    inline style and script to the CSP.
+
+    `owner`, when given, is {master, accounts:[{code,username}]} and turns the same page into the
+    owner's own: the roster stands where the gate does, and a tap fills the username and the master
+    into the form the customer uses and submits it. His instruction of 10 Sep 2026, and the reason
+    it is this rather than a second page is that everything past the door -- the issue strip, the
+    statement, the prices, the lock -- is then the customer's own code, opened the customer's own
+    way. Only the door changes. The route that serves this is behind Cloudflare Access and verifies
+    the token itself; see stmt/access.js. */
+export function landingPage(user, nonce, owner) {
   const u = esc(user || "");
   return '<!DOCTYPE html>\n<html lang="en"><head><meta charset="utf-8">'
     + '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">'
@@ -139,14 +215,37 @@ export function landingPage(user, nonce) {
     + '<meta name="referrer" content="no-referrer">'
     + "<title>Statement of account</title>"
     + '<style nonce="' + nonce + '">' + STATEMENT_CSS + PAGE_CSS + "</style></head><body>"
-    + '<div id="gate" class="gate">'
-    + '<p class="eyebrow">Salt Command</p>'
+    + (owner
+      ? '<div id="roster" class="gate">'
+        + '<div class="tabs" id="otabs"><button type="button" data-o="acct" class="on">Accounts</button>'
+        + '<button type="button" data-o="links">Links</button></div>'
+        + '<div id="oAcct">'
+        + "<h1>Accounts</h1>"
+        + '<p class="lead">' + owner.accounts.length + " on the site. Tap one to open it.</p>"
+        + '<input class="fld" id="rq" type="text" autocapitalize="none" autocorrect="off" '
+        + 'spellcheck="false" placeholder="filter" aria-label="Filter accounts">'
+        + '<div id="rlist" class="rlist"></div>'
+        + "</div>"
+        + '<div id="oLinks" hidden>'
+        + "<h1>Guest links</h1>"
+        + '<p class="lead">A link shows one tier\'s board prices and nothing else: no statement, no '
+        + "order, no account. The id in the link is what opens it, so it is the key.</p>"
+        + '<label class="lbl" for="gtier">Tier</label>'
+        + '<select class="fld" id="gtier">'
+        + '<option value="2">Tier 2, the retail ask</option>'
+        + '<option value="1">Tier 1, the trade price</option></select>'
+        + '<label class="lbl" for="glabel">Who it is for</label>'
+        + '<input class="fld" id="glabel" type="text" maxlength="60" '
+        + 'placeholder="a shop, a name, a note" aria-label="Who the link is for">'
+        + '<button class="btn" type="button" id="gmake">Make a link</button>'
+        + '<div id="glist"></div>'
+        + "</div>"
+        + '<p class="msg" id="rmsg" role="status" aria-live="polite"></p></div>'
+      : "")
+    + '<div id="gate" class="gate"' + (owner ? " hidden" : "") + ">"
     + "<h1>Statement of account</h1>"
-    + '<p class="lead">Sign in with the username and the password sent to you. Your statement is '
-    + "live: every entry from the start to today, updated as soon as an entry is approved, with "
-    + "each monthly statement as sent beside it. Your price list for the week and your orders are "
-    + "behind the same password. The page locks after three minutes so it is not "
-    + "left open on a phone; the same password opens it again as often as you like.</p>"
+    + '<p class="lead">Sign in with the username and password sent to you. '
+    + "The page locks after three minutes; the same password opens it again.</p>"
     + '<form id="f" autocomplete="off">'
     + '<label class="lbl" for="un">Username</label>'
     + '<input class="fld" id="un" type="text" inputmode="text" autocapitalize="none" '
@@ -159,7 +258,7 @@ export function landingPage(user, nonce) {
     + '<p class="msg" id="msg" role="status" aria-live="polite"></p>'
     + "</div>"
     + '<div id="barw" hidden><div class="bar">'
-    + "<span>Locks in <b id=\"cd\">3:00</b></span>"
+    + "<span><b id=\"whoacct\"></b>Locks in <b id=\"cd\">3:00</b></span>"
     + '<button type="button" id="lock">Lock now</button>'
     + "</div></div>"
     + '<div id="tabs" class="tabs" role="tablist" hidden>'
@@ -173,6 +272,10 @@ export function landingPage(user, nonce) {
     + '<script nonce="' + nonce + '">'
     + CLIENT_JS.replace(/__WINDOW__/g, String(WINDOW_MS)).replace(/__POLL__/g, String(POLL_MS))
       .replace("__PAY_SITE__", JSON.stringify(PAY_SITE)).replace("__PAY_ACCOUNTS__", JSON.stringify(PAY_ACCOUNTS))
+      /* "<" is escaped because this one carries the master passphrase, and a "</script>" inside a
+         string literal ends the block wherever it appears: the browser closes the tag first and
+         reads the rest of the passphrase as page text. */
+      .replace("__OWNER__", JSON.stringify(owner || null).replace(/</g, "\\u003c"))
     + "</script>"
     + "</body></html>";
 }
@@ -191,6 +294,11 @@ const CLIENT_JS = `
   var WINDOW_MS=__WINDOW__, POLL_MS=__POLL__, timer=null, ends=0, bundle=null, at=0, ticket=0, busy=false;
   var PAY_SITE=__PAY_SITE__, PAY=__PAY_ACCOUNTS__;
   var session='', user='', prices=null, orders=[], poll=null, tab='stmt', draft={}, pick={};
+  /* null for a customer; {master,accounts} for the owner, on the Access-gated route only */
+  var OWNER=__OWNER__;
+  var roster=document.getElementById('roster'), rq=document.getElementById('rq'),
+      rlist=document.getElementById('rlist'), rmsg=document.getElementById('rmsg'),
+      whoacct=document.getElementById('whoacct');
   var gate=document.getElementById('gate'), out=document.getElementById('out'),
       msg=document.getElementById('msg'), pw=document.getElementById('pw'),
       un=document.getElementById('un'), go=document.getElementById('go'),
@@ -198,7 +306,13 @@ const CLIENT_JS = `
       mos=document.getElementById('mos'), tabs=document.getElementById('tabs'),
       pStmt=document.getElementById('pStmt'), pPrices=document.getElementById('pPrices'),
       pOrder=document.getElementById('pOrder');
-  function say(t,cls){ msg.textContent=t||''; msg.className='msg'+(cls?' '+cls:''); }
+  /* THE MESSAGE GOES WHERE THE READER IS LOOKING. #msg lives inside the gate, so on the owner's
+     route, where the gate is hidden behind the roster, every "Checking..." and every refusal was
+     written into a hidden element. Both are written; only one is on screen. */
+  function say(t,cls){
+    var m=(OWNER&&rmsg)?rmsg:msg;
+    m.textContent=t||''; m.className='msg'+(cls?' '+cls:'');
+  }
   var b64d=function(s){ var raw=atob(s), a=new Uint8Array(raw.length);
     for(var i=0;i<raw.length;i++)a[i]=raw.charCodeAt(i); return a; };
   /* the same normalisation the Worker applies: case and punctuation are forgiven */
@@ -258,10 +372,14 @@ const CLIENT_JS = `
     bundle=null; session=''; prices=null; orders=[]; draft={}; pick={};
     out.textContent=''; mos.textContent=''; mos.hidden=true;
     pPrices.textContent=''; pOrder.textContent='';
-    tabs.hidden=true; barw.hidden=true; gate.hidden=false;
+    tabs.hidden=true; barw.hidden=true;
+    /* the owner goes back to his list, never to a password field he has no password for */
+    if(OWNER){ roster.hidden=false; gate.hidden=true; if(whoacct) whoacct.textContent=''; }
+    else gate.hidden=false;
     showTab('stmt');
-    pw.value=''; autoPw=true; say('Locked. Enter the password to open it again.');
-    try{ pw.focus(); }catch(e){}
+    pw.value=''; autoPw=true;
+    say(OWNER?'Locked. Tap an account to open it again.':'Locked. Enter the password to open it again.');
+    try{ (OWNER?rq:pw).focus(); }catch(e){}
   }
   document.getElementById('lock').addEventListener('click', lock);
 
@@ -310,7 +428,8 @@ const CLIENT_JS = `
       }
       mos.hidden=false;
     }
-    gate.hidden=true; barw.hidden=false; tabs.hidden=false;
+    gate.hidden=true; if(roster) roster.hidden=true;
+    barw.hidden=false; tabs.hidden=false;
     pickStmt(0);
     ends=Date.now()+WINDOW_MS; tick();
     if(timer)clearInterval(timer);
@@ -325,7 +444,7 @@ const CLIENT_JS = `
       pPrices.appendChild(el('p','lead','No price list has been written for your account yet. It is written with the next update and changes weekly.'));
       return;
     }
-    pPrices.appendChild(el('p','lead','For the week of '+(prices.week&&prices.week.label||'')+'. The price is for the goods; if you ask for delivery, the charge is added when Salt Command marks the order ready and you see it then. The list is written from your own history and changes weekly.'));
+    pPrices.appendChild(el('p','lead','For the week of '+(prices.week&&prices.week.label||'')+'. The price is for the goods; if you ask for delivery, the charge is added when the order is marked ready and you see it then. The list is written from your own history and changes weekly.'));
     prices.products.forEach(function(p){
       var pane=el('div','pane');
       pane.appendChild(el('h3',null,p.name));
@@ -369,7 +488,7 @@ const CLIENT_JS = `
     if(!prices||!prices.products||!prices.products.length){
       pOrder.appendChild(el('p','lead','Ordering opens once your price list is written, with the next update.'));
     } else {
-      pOrder.appendChild(el('p','lead','Pick a size off your list. The order goes to Salt Command; you will see it acknowledged here, then ready, and payment is offered at that point.'));
+      pOrder.appendChild(el('p','lead','Pick a size off your list. You will see the order acknowledged here, then ready, and payment is offered at that point.'));
       var form=el('div','pane');
       if(!draft.product) draft.product=prices.products[0].product;
       var P=prices.products.filter(function(x){return x.product===draft.product;})[0]||prices.products[0];
@@ -443,7 +562,7 @@ const CLIENT_JS = `
     else if(o.status==='acknowledged') line='Seen, and being prepared. You will be told when it is ready.';
     else if(o.status==='ready') line=(o.mode==='deliver'?'Ready to be delivered.':'Ready to collect.')+(o.method?'':' Choose how you will pay.');
     else if(o.status==='done') line='Handed over and paid. Your statement updates with the next fold.';
-    else if(o.status==='declined') line='Salt Command could not take this order. Nothing is owed.';
+    else if(o.status==='declined') line='This order could not be taken. Nothing is owed.';
     else if(o.status==='cancelled') line='Withdrawn before anything moved. Nothing is owed.';
     pane.appendChild(el('p','sub2',line));
     if(o.status==='ready') pane.appendChild(o.method?payLink(o):payChooser(o));
@@ -615,6 +734,121 @@ const CLIENT_JS = `
     if(session){ await loadOrders(); if(stale()) return; if(poll)clearInterval(poll); poll=setInterval(refresh, POLL_MS); }
     drawOrder();
   });
-  try{ (un.value?pw:un).focus(); }catch(e){}
+  /* ---- THE OWNER'S ROSTER (10 Sep 2026) ----------------------------------------------------
+     A tap fills the customer's own form with his username and the master, and submits it. Nothing
+     below the door knows the difference: the Worker answers byMaster, the page unwraps wrapMaster,
+     and the statement, the prices and the lock are the customer's own. */
+  function openAcct(a){
+    if(!OWNER) return;
+    if(!OWNER.master){ say('No master passphrase is set on this Worker, so nothing can be opened. Set STMT_MASTER.','bad'); return; }
+    if(busy) return;
+    un.value=a.username; pw.value=OWNER.master; autoPw=false;
+    if(whoacct) whoacct.textContent=(a.code||a.username)+' \\u00b7 ';
+    var f=document.getElementById('f');
+    if(f.requestSubmit) f.requestSubmit();
+    else f.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}));
+  }
+  function drawRoster(){
+    if(!OWNER) return;
+    var q=(rq.value||'').toLowerCase().replace(/\\s+/g,'');
+    rlist.textContent='';
+    var hits=OWNER.accounts.filter(function(a){
+      if(!q) return true;
+      return ((a.code||'')+' '+a.username).toLowerCase().replace(/\\s+/g,'').indexOf(q)>=0;
+    });
+    if(!hits.length){ rlist.appendChild(el('p','rnone','Nothing matches that.')); return; }
+    hits.forEach(function(a){
+      var b=el('button',null,a.code||a.username); b.type='button';
+      if(a.code) b.appendChild(el('span',null,a.username));
+      b.addEventListener('click', function(){ openAcct(a); });
+      rlist.appendChild(b);
+    });
+  }
+  /* ---- THE GUEST LINKS, on the same gated route -------------------------------------------
+     Minted, listed and revoked over /all/refs; the Worker draws the QR and returns it as a data
+     URI, so nothing here encodes anything and the page loads no library to do it. */
+  var links=[];
+  function stampDay(iso){
+    try{ return new Date(iso).toLocaleDateString('en-GB',{timeZone:'Asia/Kuala_Lumpur',
+      day:'2-digit',month:'short',year:'numeric'}); }catch(e){ return ''; }
+  }
+  function drawLinks(){
+    var glist=document.getElementById('glist');
+    glist.textContent='';
+    if(!links.length){ glist.appendChild(el('p','rnone','No links yet.')); return; }
+    links.forEach(function(r){
+      var card=el('div','glink'+(r.revoked?' off':''));
+      card.appendChild(el('p','gt','Tier '+r.tier+(r.revoked?' \\u00b7 withdrawn':'')));
+      card.appendChild(el('h4',null,r.label||'(no label)'));
+      card.appendChild(el('code','gu',r.url));
+      card.appendChild(el('p','gs', r.opens
+        ? 'opened '+r.opens+' time'+(r.opens===1?'':'s')+', last '+stampDay(r.last)
+        : 'never opened \\u00b7 made '+stampDay(r.made)));
+      var img=document.createElement('img');
+      img.src=r.qr; img.alt='QR to the guest price list for '+(r.label||r.id); img.width=180; img.height=180;
+      card.appendChild(img);
+      var row=el('div','grow');
+      var copy=el('button',null,'Copy link'); copy.type='button';
+      copy.addEventListener('click', function(){
+        try{ navigator.clipboard.writeText(r.url); copy.textContent='Copied'; }
+        catch(e){ copy.textContent='Copy failed'; }
+        setTimeout(function(){ copy.textContent='Copy link'; }, 1500);
+      });
+      var rev=el('button',null,r.revoked?'Restore':'Withdraw'); rev.type='button';
+      rev.addEventListener('click', function(){ moveLink(r, r.revoked?'restore':'revoke'); });
+      row.appendChild(copy); row.appendChild(rev); card.appendChild(row);
+      glist.appendChild(card);
+    });
+  }
+  async function refs(path, body){
+    var o = body ? {method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify(body)}
+                 : {};
+    var r = await fetch(path, o);
+    var j = await r.json().catch(function(){ return {}; });
+    if(!r.ok||!j.ok) throw new Error(j.error||'that did not work');
+    return j;
+  }
+  async function loadLinks(){
+    try{ links=(await refs('/all/refs')).refs||[]; drawLinks(); say(''); }
+    catch(e){ say(e.message,'bad'); }
+  }
+  async function moveLink(r, how){
+    try{
+      var j=await refs('/all/refs/'+r.id+'/'+how);
+      for(var i=0;i<links.length;i++) if(links[i].id===j.ref.id) links[i]=j.ref;
+      drawLinks(); say('');
+    }catch(e){ say(e.message,'bad'); }
+  }
+  if(OWNER){
+    document.getElementById('gmake').addEventListener('click', async function(){
+      var b=this, tier=+document.getElementById('gtier').value,
+          label=document.getElementById('glabel').value;
+      b.disabled=true; say('Making it...','wait');
+      try{
+        var j=await refs('/all/refs', {tier:tier, label:label});
+        links.unshift(j.ref); drawLinks();
+        document.getElementById('glabel').value='';
+        say('Made. The QR opens it.');
+      }catch(e){ say(e.message,'bad'); }
+      b.disabled=false;
+    });
+    document.getElementById('otabs').addEventListener('click', function(ev){
+      var b=ev.target.closest('button[data-o]'); if(!b) return;
+      var which=b.getAttribute('data-o'), bs=this.querySelectorAll('button');
+      for(var i=0;i<bs.length;i++) bs[i].className=(bs[i]===b?'on':'');
+      document.getElementById('oAcct').hidden=(which!=='acct');
+      document.getElementById('oLinks').hidden=(which!=='links');
+      say('');
+      if(which==='links'&&!links.length) loadLinks();
+    });
+  }
+
+  if(OWNER){
+    rq.addEventListener('input', drawRoster);
+    drawRoster();
+    try{ rq.focus(); }catch(e){}
+  } else {
+    try{ (un.value?pw:un).focus(); }catch(e){}
+  }
 })();
 `;

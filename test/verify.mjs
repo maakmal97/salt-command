@@ -6942,6 +6942,265 @@ section("Statements — the password, the username, the envelope and the site's 
   }
 }
 
+/* ---- THE OWNER'S LIST, BEHIND CLOUDFLARE ACCESS (his instruction, 10 Sep 2026) ---------------
+   The gate is proved in BOTH directions, and the forged-signature case is the reason it exists at
+   all: a route that only checked the header's presence would pass every one of these. The JWKS is
+   served from a stand-in fetch over a key pair minted here, so nothing touches the network; the
+   real fetch is put back afterwards or every later section that uses it breaks. */
+section("Statements — the owner's list behind Access (v566)");
+{
+  const realFetch = globalThis.fetch;
+  try {
+    const TEAM = "maakmal", AUD = "aud-under-test", KID = "test-kid";
+    const kp = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048,
+      publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
+    const pub = await crypto.subtle.exportKey("jwk", kp.publicKey);
+    globalThis.fetch = async (u) => {
+      if (String(u) === "https://" + TEAM + ".cloudflareaccess.com/cdn-cgi/access/certs") {
+        return new Response(JSON.stringify({ keys: [{ ...pub, kid: KID, kty: "RSA" }] }));
+      }
+      throw new Error("the Access gate reached for something other than the team's key server: " + u);
+    };
+    const b64u = (b) => Buffer.from(b).toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+    const mint = async (claims, key = kp.privateKey, kid = KID) => {
+      const h = b64u(JSON.stringify({ alg: "RS256", kid, typ: "JWT" })), c = b64u(JSON.stringify(claims));
+      const sig = await crypto.subtle.sign("RSASSA-PKCS1-v1_5", key, new TextEncoder().encode(h + "." + c));
+      return h + "." + c + "." + b64u(new Uint8Array(sig));
+    };
+    const good = { iss: "https://" + TEAM + ".cloudflareaccess.com", aud: [AUD],
+      email: "maakmal97@icloud.com", exp: Math.floor(Date.now() / 1000) + 600 };
+
+    const okv = new KV();
+    await okv.put("u:aaaa-bbbb", "{}");
+    await okv.put("u:cccc-dddd", "{}");
+    const oenv = { STMT: okv, STMT_MASTER: "the-master-passphrase", ACCESS_TEAM: TEAM, ACCESS_AUD: AUD };
+    const hit = (h, env = oenv) => stmtWorker.fetch(new Request("https://k7m3p2.example/all", { headers: h || {} }), env);
+    const st = async (h, env) => (await hit(h, env)).status;
+
+    ok(await st() === 401, "/all with no token at all is refused");
+    ok(await st({ "cf-access-jwt-assertion": "not.a.jwt" }) === 401, "and a token that is not a JWT is refused");
+    ok(await st({ "cf-access-jwt-assertion": await mint({ ...good, aud: ["another-app"] }) }) === 401,
+      "and a token for another Access application is refused");
+    ok(await st({ "cf-access-jwt-assertion": await mint({ ...good, iss: "https://someone-else.cloudflareaccess.com" }) }) === 401,
+      "and a token from another team is refused");
+    ok(await st({ "cf-access-jwt-assertion": await mint({ ...good, exp: Math.floor(Date.now() / 1000) - 5 }) }) === 401,
+      "and an expired token is refused");
+    ok(await st({ "cf-access-jwt-assertion": await mint(good, kp.privateKey, "some-other-kid") }) === 401,
+      "and a token naming a signing key the team does not publish is refused");
+
+    /* THE ONE THE HEADER CHECK MISSES: every claim right, signed by a key that is not the team's. */
+    const other = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048,
+      publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
+    ok(await st({ "cf-access-jwt-assertion": await mint(good, other.privateKey) }) === 401,
+      "and a token with every claim right but another key's signature is refused");
+
+    ok(await st({ "cf-access-jwt-assertion": await mint(good) }, { ...oenv, ACCESS_AUD: "" }) === 401
+      && await st({ "cf-access-jwt-assertion": await mint(good) }, { ...oenv, ACCESS_TEAM: "" }) === 401,
+      "and with either variable unset the route fails closed, so it deploys before the application exists");
+
+    const opened = await hit({ "cf-access-jwt-assertion": await mint(good) });
+    const ohtml = await opened.text();
+    ok(opened.status === 200 && /id="roster"/.test(ohtml),
+      "a token from the right application opens the roster, so the gate is not simply welded shut");
+    ok(ohtml.includes("aaaa-bbbb") && ohtml.includes("cccc-dddd"),
+      "and every account in the store is listed");
+    ok(ohtml.includes("the-master-passphrase"),
+      "and the master reaches the page, which is what lets a tap open an account with nothing typed");
+    ok((await hit({ cookie: "CF_Authorization=" + await mint(good) })).status === 200,
+      "and the cookie is read as well as the header, because the page's own fetches carry only the cookie");
+
+    /* and none of it leaks onto the customer's door */
+    const cust = await stmtWorker.fetch(new Request("https://k7m3p2.example/"), oenv);
+    const chtml = await cust.text();
+    ok(cust.status === 200 && !/id="roster"/.test(chtml) && !chtml.includes("the-master-passphrase"),
+      "while GET / carries neither the roster nor the master, with the same env");
+    ok((await stmtWorker.fetch(new Request("https://k7m3p2.example/all", { method: "POST" }), oenv)).status === 405,
+      "and /all is GET only");
+
+    /* the roster prefers the published map, which is the only place a desk code exists */
+    await okv.put("roster", JSON.stringify([{ code: "CX0-AA", username: "aaaa-bbbb" }]));
+    const named = await (await hit({ "cf-access-jwt-assertion": await mint(good) })).text();
+    ok(named.includes("CX0-AA"),
+      "and once the publish has written `roster`, the account is listed by the code he knows it by");
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+}
+
+/* ---- THE GUEST REFERRAL LINKS (his instruction, 10 Sep 2026) --------------------------------
+   A link is minted behind Access, pinned to a tier, and opens ONE board and nothing else. The tier
+   is the load-bearing part, so it is proved from both ends: the page carries the figures its own
+   tier computes and NONE of the figures that are distinct to the other. The figures are computed
+   here rather than written down, because an assertion nailed to today's book passes only while the
+   book cooperates; the invariant that tier 1 is the cheaper of the two is asserted separately. */
+section("Statements — guest referral links and the tier they are pinned to (v566)");
+{
+  const realFetch = globalThis.fetch;
+  try {
+    const TEAM = "maakmal", AUD = "refs-aud", KID = "refs-kid";
+    const kp = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048,
+      publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
+    const pub = await crypto.subtle.exportKey("jwk", kp.publicKey);
+    globalThis.fetch = async (u) => String(u).endsWith("/cdn-cgi/access/certs")
+      ? new Response(JSON.stringify({ keys: [{ ...pub, kid: KID, kty: "RSA" }] }))
+      : (() => { throw new Error("unexpected fetch " + u); })();
+    const b64u = (b) => Buffer.from(b).toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+    const token = async () => {
+      const claims = { iss: "https://" + TEAM + ".cloudflareaccess.com", aud: [AUD],
+        email: "maakmal97@icloud.com", exp: Math.floor(Date.now() / 1000) + 600 };
+      const h = b64u(JSON.stringify({ alg: "RS256", kid: KID, typ: "JWT" })), c = b64u(JSON.stringify(claims));
+      return h + "." + c + "." + b64u(new Uint8Array(await crypto.subtle.sign("RSASSA-PKCS1-v1_5",
+        kp.privateKey, new TextEncoder().encode(h + "." + c))));
+    };
+
+    /* the two boards, written the way tools/stmt-publish.mjs writes them */
+    const { boardList } = await import("../tools/pricelist.mjs");
+    const { readBook } = await import("../tools/book.mjs");
+    const gbook = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+    const gpricing = (await readBook()).ledger.PRICING;
+    const boards = { 1: boardList(1, gbook, gpricing, new Date()), 2: boardList(2, gbook, gpricing, new Date()) };
+
+    const gkv = new KV();
+    for (const t of [1, 2]) await gkv.put("board:" + t, JSON.stringify(boards[t]));
+    const genv = { STMT: gkv, ACCESS_TEAM: TEAM, ACCESS_AUD: AUD };
+    const gq = (path, opts = {}) => new Request("https://k7m3p2.example" + path, opts);
+    const mintLink = async (tier, label) => (await (await stmtWorker.fetch(gq("/all/refs", {
+      method: "POST", headers: { "cf-access-jwt-assertion": await token(), "content-type": "application/json" },
+      body: JSON.stringify({ tier, label }) }), genv)).json()).ref;
+
+    ok((await stmtWorker.fetch(gq("/all/refs"), genv)).status === 401
+      && (await stmtWorker.fetch(gq("/all/refs", { method: "POST",
+        headers: { "content-type": "application/json" }, body: '{"tier":1}' }), genv)).status === 401,
+      "a guest link can be neither listed nor minted without passing Access");
+
+    const one = await mintLink(1, "Hardware shop, Ipoh");
+    const two = await mintLink(2, "Market stall, Kajang");
+    ok(one && two && one.id !== two.id && one.tier === 1 && two.tier === 2,
+      "two links mint with different ids, each pinned to the tier it was asked for");
+    ok(one.label === "Hardware shop, Ipoh" && one.url === "https://k7m3p2.example/g/" + one.id,
+      "and each carries its label and its own /g/ address");
+    ok((await (await stmtWorker.fetch(gq("/all/refs", { method: "POST",
+      headers: { "cf-access-jwt-assertion": await token(), "content-type": "application/json" },
+      body: JSON.stringify({ tier: 3 }) }), genv))).status === 400,
+      "and a tier that is neither 1 nor 2 is refused rather than defaulted");
+
+    const svg = decodeURIComponent(one.qr.slice("data:image/svg+xml,".length));
+    ok(one.qr.startsWith("data:image/svg+xml,") && /<rect /.test(svg) && !/stroke/.test(svg),
+      "the QR travels as a data URI of RECTANGLES, never a stroked path, which does not decode");
+
+    /* THE TIER, FROM BOTH ENDS. Every figure distinct to the other tier must be absent, or a link
+       could be serving the wrong board and still look right on the sizes the two happen to share. */
+    const figs = (t) => boards[t].products.flatMap((p) => p.sizes.map((r) => r.price));
+    const only = (t) => figs(t).filter((x) => !figs(t === 1 ? 2 : 1).includes(x));
+    const shown = (html, ns) => ns.every((n) => html.includes(n.toLocaleString("en-MY",
+      { minimumFractionDigits: 0, maximumFractionDigits: 2 })));
+    const g1 = await stmtWorker.fetch(gq("/g/" + one.id), genv), h1 = await g1.text();
+    const h2 = await (await stmtWorker.fetch(gq("/g/" + two.id), genv)).text();
+    ok(g1.status === 200 && only(1).length > 0 && shown(h1, only(1)) && !shown(h1, only(2)),
+      "a tier 1 link shows every figure that is tier 1's alone and none that is tier 2's alone");
+    ok(shown(h2, only(2)) && !shown(h2, only(1)),
+      "and a tier 2 link is the other way round");
+
+    /* the design invariant, independent of which board the route served */
+    const twoTier = boards[1].products.find((p) => !p.fellBack);
+    const pairs = twoTier ? twoTier.sizes.map((r, i) => [r.price, boards[2].products
+      .find((x) => x.product === twoTier.product).sizes[i].price]) : [];
+    ok(pairs.length > 0 && pairs.every(([a, b]) => a < b),
+      "and on a two-tier book tier 1 is cheaper than tier 2 at every size, which is what the tiers are");
+
+    ok(/the only price for this product/.test(h1) === boards[1].products.some((p) => p.fellBack),
+      "a one-tier product says its price is its only one rather than implying a discount");
+    ok(!/<script/.test(h1) && /script-src 'none'/.test(g1.headers.get("content-security-policy") || ""),
+      "the guest page carries no script and forbids it outright");
+    ok(!/Statements|Username|Password/.test(h1),
+      "and offers no statement, no account and no way in to one");
+
+    await stmtWorker.fetch(gq("/g/" + one.id), genv);
+    const listed = (await (await stmtWorker.fetch(gq("/all/refs",
+      { headers: { "cf-access-jwt-assertion": await token() } }), genv)).json()).refs;
+    ok((listed.find((r) => r.id === one.id) || {}).opens === 2,
+      "every open is counted, which is how he tells which link a stranger actually used");
+
+    const revoke = await stmtWorker.fetch(gq("/all/refs/" + one.id + "/revoke",
+      { method: "POST", headers: { "cf-access-jwt-assertion": await token() } }), genv);
+    const gone = (await stmtWorker.fetch(gq("/g/" + one.id), genv)).status;
+    ok(revoke.status === 200 && gone === 404
+      && (await stmtWorker.fetch(gq("/g/aaaa-bbbb"), genv)).status === 404
+      && (await stmtWorker.fetch(gq("/g/nope"), genv)).status === 404,
+      "a withdrawn link, one that never existed and a malformed id all answer the same 404");
+    ok((await stmtWorker.fetch(gq("/all/refs/" + one.id + "/restore",
+      { method: "POST", headers: { "cf-access-jwt-assertion": await token() } }), genv)).status === 200
+      && (await stmtWorker.fetch(gq("/g/" + one.id), genv)).status === 200,
+      "and a withdrawal is reversible, because the record is kept rather than deleted");
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+
+  /* A TIER 1 ROW THAT CARRIES NO PRICES IS NOT A TIER (10 Sep 2026). engine/pricing.mjs offers the
+     Tier 1 row on a bare `if(P.tier1)` while every other path gates on tier1Anchors, which wants two
+     usable ends; so a book with one stated end, or with two keys naming the same size, produces a
+     row named "Tier 1" whose prices are null or NaN. Today's book has neither shape, so this FORCES
+     both rather than waiting for the data to produce them: an assertion that needs the book's
+     cooperation is an assertion that sleeps. */
+  {
+    const { boardList: bl } = await import("../tools/pricelist.mjs");
+    const { readBook: rb } = await import("../tools/book.mjs");
+    const bk = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+    const px = (await rb()).ledger.PRICING;
+    const bend = (tier1) => {
+      const copy = JSON.parse(JSON.stringify(px));
+      for (const p of Object.keys(copy.byProduct || {})) {
+        if (copy.byProduct[p].inputs && copy.byProduct[p].inputs.policy) {
+          copy.byProduct[p].inputs.policy.tier1 = tier1;
+        }
+      }
+      return copy;
+    };
+    const oneEnd = bl(1, bk, bend({ 0.5: 60 }), new Date());
+    const sameSize = bl(1, bk, bend({ 0.5: 60, "0.50": 875 }), new Date());
+    const healthy = bl(1, bk, px, new Date());
+    ok(healthy.products.length > 0 && healthy.products.every((p) => p.sizes.length > 0),
+      "a book with two usable Tier 1 ends prices every size on the guest board");
+    ok(oneEnd.products.length > 0 && oneEnd.products.every((p) => p.sizes.length > 0 && p.fellBack),
+      "a book with ONE stated end falls back to the tier that has prices rather than an empty table");
+    ok(sameSize.products.length > 0 && sameSize.products.every((p) => p.sizes.length > 0
+      && p.sizes.every((r) => Number.isFinite(r.price))),
+      "and two anchors naming one size cannot put NaN in front of a stranger");
+  }
+
+  /* the vendored encoder is the one encoder, or the site draws a QR from code nobody is testing */
+  const { matches: qrMatches } = await import("../tools/qrsync.mjs");
+  ok(qrMatches(), "stmt/qr.js is engine/qr.mjs byte for byte (run tools/qrsync.mjs --sync if this fails)");
+}
+
+/* ---- THE NEAREST-FIVE RULE, WHICH SHIPPED UNCOVERED (v564, found 10 Sep 2026) ---------------
+   adjustedPrice draws a customer's own rate toward the board and then rounds to the NEAREST five,
+   never under the floor. It went out with no assertion that could tell it from the rule it replaced:
+   reverting both copies to the old `Math.ceil(max(p,F))` left the suite at 1728 passed, 0 failed,
+   while the two rules disagree on some thirty-one thousand inputs across a grid of rates, floors and
+   asks. Three cases separate them, at salt's real floors, and the third is the one that matters --
+   the nearest five of 56.21 is 55, which is UNDER break-even, so the shipped rule must lift it to 60
+   and nothing else in the suite walks that branch. These are exact values, not properties, because
+   the point is to pin the rule rather than to describe it. */
+section("Pricing — the nearest-five rule is told apart from the one it replaced (v564)");
+{
+  const { adjustedPrice: adj } = await import("../tools/pricelist.mjs");
+  ok(adj(1, 56.21, 140, 168.63, true) === 70,
+    "a rate that rounds DOWN to the nearest five gives 70, where rounding up gave 71");
+  ok(adj(1, 703, 70, 2109, true) === 705,
+    "and one that rounds UP gives 705, where the old rule stopped at 703");
+  ok(adj(1, 56.21, 70, 168.63, true) === 60,
+    "and where the nearest five would sit under break-even the floor guard lifts it to 60, never 55");
+  /* the property behind the three, so a future change cannot satisfy them and still quote a loss */
+  let under = 0;
+  for (let F = 20; F <= 800; F += 7.3) {
+    for (const A of [70, 140, 500, 1150]) {
+      for (let R = 1; R <= 900; R += 37) if (adj(R, F, A, 3 * F, true) < F - 0.009) under++;
+    }
+  }
+  ok(under === 0, "and across a grid of rates, floors and asks it never returns a price below the floor");
+}
+
 /* ---- the statement in the Salt identity, and what the QR carries ----------------- */
 /* ---- Statements: the price list, the order book and the desk's relay (06 Sep 2026) ---- */
 section("Statements — the price list, the order book and the desk's relay (v499)");
@@ -7848,6 +8107,20 @@ section("v522: the gate before the deploy, the suite after the phone is live");
   const deskLines = wf.split("\n").filter((l) => /SALT_QUEUE/.test(l));
   ok(!deskLines.some((l) => /kv (key|bulk) delete/.test(l)) && !deskLines.some((l) => /--prefix "stmt/.test(l)),
      "no step in the chain deletes from the desk's store by prefix, where stmt-users and stmt-site live");
+  /* AND THE GATE MUST BE ABLE TO READ THE DIFF IT DECIDES ON (10 Sep 2026, 6741548). The checkout
+     is depth 1, so `git diff <before> <sha>` could not resolve <before>: it failed into /dev/null,
+     grep matched nothing, and stmt came out 0. A statements-only push, the ONE case this branch
+     exists for, could therefore never deploy the site or publish -- it is the only push that leaves
+     the build id alone, which is what makes live=1 and arms this branch at all. The fix fetches the
+     base first and fails safe; it shipped without a guard, so this is the guard. Held by shape, not
+     by wording: default 1, lower it only after the base was obtained, and warn when it cannot be. */
+  const already = wf.slice(wf.indexOf("- name: Already serving?"), wf.indexOf("- name: Gate\n"));
+  const fetchAt = already.indexOf('git fetch --no-tags --depth=1 origin "$base"');
+  ok(/base='\$\{\{ github\.event\.before \}\}'\s*\n\s*stmt=1/.test(already)
+     && fetchAt > 0                                   /* or the ordering below compares against -1 and cannot fail */
+     && already.indexOf("stmt=0") > fetchAt
+     && /::warning::.*could not be fetched/.test(already),
+     "the publish gate defaults to publishing, fetches the base before diffing it, and lowers stmt only on a diff it read");
   /* and every desk write in the publish goes through the one function that reads the key back, so a
      write that reports success and stores nothing is red rather than a line in a log nobody reads */
   const pubSrc = readFileSync(join(REPO, "tools", "stmt-publish.mjs"), "utf8");

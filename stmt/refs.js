@@ -1,0 +1,122 @@
+/* stmt/refs.js: THE GUEST REFERRAL LINKS.
+ *
+ * His instruction of 10 Sep 2026: he hands out links, each carrying a unique referral ID he can
+ * tell apart, each pinned to Tier 1 or Tier 2, and each opening a landing page that shows THAT
+ * TIER'S BOARD PRICES AND NOTHING ELSE. No statement, no order, no account.
+ *
+ * THE ID IS THE CREDENTIAL, and that is the whole gate. There is no password, because there is
+ * nothing here worth a password: a board price is a thing he prints and hands to strangers, and the
+ * link exists to tell him WHICH stranger, not to keep a secret. Eight symbols of the username
+ * alphabet is about thirty-nine bits, which is far past guessing at the rate a Worker will answer,
+ * and an unknown id is answered exactly as a revoked one is, so the space cannot be walked either.
+ *
+ * WHAT IS DELIBERATELY NOT SEALED. Every other document on this site is AES-GCM ciphertext at rest,
+ * because every other document is a customer's own account. A board is not: it is his own price
+ * list, the same one he prints. Encrypting it under a key that travels in the same URL would be
+ * ceremony, not security, and it would hide from him what he is handing out. Stated here so nobody
+ * later reads the difference as an oversight.
+ *
+ * THE LABEL IS FOR HIM AND NEVER LEAVES. It is how he knows who he gave a link to, and it is
+ * returned only on the Access-gated route; the guest page never carries it. A label may be a
+ * person or a shop, so it is treated as his own note, not as anything to publish.
+ *
+ * NO IMPORT but a sibling; the suite holds every file under stmt/ to that rule.
+ */
+
+/* the username alphabet: no 0/1/i/l/o/u, because these are read off a screen and typed on a phone */
+const ALPHA = "23456789abcdefghjkmnpqrstvwxyz";
+export const REF_RE = /^[23456789abcdefghjkmnpqrstvwxyz]{4}-[23456789abcdefghjkmnpqrstvwxyz]{4}$/;
+const RKEY = (id) => "g:" + id;
+export const MAX_LABEL = 60;
+
+/** Case and punctuation forgiven, exactly as a username is; anything else is "". */
+export function normRef(s) {
+  s = String(s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+  if (s.length !== 8) return "";
+  s = s.slice(0, 4) + "-" + s.slice(4);
+  return REF_RE.test(s) ? s : "";
+}
+
+/* REJECTION SAMPLING, not a modulo. The alphabet is thirty characters and a byte is 256 values, so
+   `byte % 30` would make the first sixteen symbols about 12% likelier than the rest. It costs
+   nothing to draw again, and a biased id is a smaller id than it looks. */
+export function newRef(rand) {
+  const draw = rand || ((n) => crypto.getRandomValues(new Uint8Array(n)));
+  let out = "";
+  while (out.length < 8) {
+    for (const b of draw(16)) {
+      if (b >= 240) continue;                 // 240 = 8 * 30, the largest clean multiple
+      out += ALPHA[b % ALPHA.length];
+      if (out.length === 8) break;
+    }
+  }
+  return out.slice(0, 4) + "-" + out.slice(4);
+}
+
+/** A label as it will be stored: trimmed, capped, and stripped of the control characters that
+ *  would let a note break the JSON it is read back out of. */
+export function cleanLabel(s) {
+  return String(s == null ? "" : s).replace(/[\x00-\x1f\x7f]/g, " ").trim().slice(0, MAX_LABEL);
+}
+
+/** Mint one. Collides at about one in 10^11 for forty links, and is checked anyway because the
+ *  cost is one read and the failure would silently re-point a link already handed out. */
+export async function mintRef(env, { tier, label, by }) {
+  const t = Number(tier) === 1 ? 1 : 2;
+  for (let i = 0; i < 5; i++) {
+    const id = newRef();
+    if (await env.STMT.get(RKEY(id))) continue;
+    const rec = { id, tier: t, label: cleanLabel(label), made: new Date().toISOString(),
+      by: String(by || ""), opens: 0, first: null, last: null, revoked: false };
+    await env.STMT.put(RKEY(id), JSON.stringify(rec));
+    return rec;
+  }
+  return null;
+}
+
+/** The record, or null when there is none. Never throws on a malformed value. */
+export async function readRef(env, id) {
+  const k = normRef(id);
+  if (!k) return null;
+  try { return await env.STMT.get(RKEY(k), "json"); } catch (e) { return null; }
+}
+
+/** Every link, newest first. Forty of these at most, so one list and one read each is the whole
+ *  cost and there is no index to keep in step with the records. */
+export async function listRefs(env) {
+  const out = [];
+  let cursor;
+  do {
+    const page = await env.STMT.list({ prefix: "g:", cursor });
+    for (const k of page.keys) {
+      const r = await env.STMT.get(k.name, "json");
+      if (r && r.id) out.push(r);
+    }
+    cursor = page.list_complete ? null : page.cursor;
+  } while (cursor);
+  return out.sort((a, b) => String(b.made).localeCompare(String(a.made)));
+}
+
+/** Mark a link revoked. It is kept rather than deleted, so the count of what it did survives it
+ *  and the id can never be minted onto a second party. */
+export async function revokeRef(env, id, on = true) {
+  const rec = await readRef(env, id);
+  if (!rec) return null;
+  rec.revoked = !!on;
+  await env.STMT.put(RKEY(rec.id), JSON.stringify(rec));
+  return rec;
+}
+
+/** Count an open. This is the answer to "which of the two links did he actually use", which is the
+ *  question the whole feature exists for, so it is written before the page is served rather than
+ *  after, and a failure to write it is not allowed to fail the page. */
+export async function markOpen(env, rec) {
+  try {
+    const now = new Date().toISOString();
+    rec.opens = (rec.opens || 0) + 1;
+    rec.first = rec.first || now;
+    rec.last = now;
+    await env.STMT.put(RKEY(rec.id), JSON.stringify(rec));
+  } catch (e) { /* a board still opens; the count is the only thing lost */ }
+  return rec;
+}

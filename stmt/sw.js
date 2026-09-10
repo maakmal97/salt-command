@@ -15,9 +15,9 @@ self.addEventListener('install', function(){ self.skipWaiting(); });
 self.addEventListener('activate', function(e){ e.waitUntil(self.clients.claim()); });
 self.addEventListener('push', function(e){
   var u = new URL(self.location.href).searchParams.get('u') || '';
-  e.waitUntil(self.registration.showNotification('Salt Command', {
+  e.waitUntil(self.registration.showNotification('Your order', {
     body: 'Your order has an update. Open your statement page to see it.',
-    tag: 'salt-order', renotify: true,
+    tag: 'order-update', renotify: true,
     data: { url: './' + (u ? '?u=' + encodeURIComponent(u) : '') }
   }));
 });

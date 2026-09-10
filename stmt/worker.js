@@ -38,8 +38,11 @@
  * NO IMPORT FROM src/ OR tools/. The suite proves it: this Worker must bundle on its own, and
  * must never be able to reach the ledger's code even by accident.
  */
-import { landingPage } from "./page.js";
+import { landingPage, boardPage } from "./page.js";
 import { SW_JS } from "./sw.js";
+import { identity } from "./access.js";
+import QR from "./qr.js";
+import { normRef, mintRef, readRef, listRefs, revokeRef, markOpen } from "./refs.js";
 import { endpointId } from "./push.js";
 import { mintSession, sessionUser, ordersOf, allOrders, placeOrder, customerMove, deskMove } from "./orders.js";
 
@@ -304,11 +307,138 @@ async function handleDesk(request, env, p, m) {
   return r.error ? json({ ok: false, error: r.error }, r.status || 400) : json({ ok: true, order: r.order, push: r.push });
 }
 
+/* ---- THE OWNER'S LIST (10 Sep 2026) ---------------------------------------------------------
+ * His instruction: open any statement from a list, with Zero Trust proving who is asking. /all is
+ * covered by a Cloudflare Access application on this hostname AND verified again in stmt/access.js,
+ * because a deleted or misconfigured application is exactly the case where a stranger arrives
+ * carrying a header of his own. Behind it the page is handed the roster and STMT_MASTER, which is
+ * his decision of today: the list opens an account with no passphrase typed. The trade is stated
+ * where it is made -- an Access session on this hostname is then enough to read every account -- and
+ * it is why the route verifies the token rather than trusting the header.
+ *
+ * THE ROSTER IS THE PUBLISH'S, not this Worker's: `roster` is written by tools/stmt-publish.mjs and
+ * carries the desk code beside each username, which is what he knows an account by. A site that has
+ * not been published since this shipped has no such key, so the usernames are listed from the store
+ * itself and the codes are simply absent. Neither path reads a single sealed document. */
+async function roster(env) {
+  const named = await env.STMT.get("roster", "json");
+  if (Array.isArray(named) && named.length) return named;
+  const out = [];
+  let cursor;
+  do {
+    const page = await env.STMT.list({ prefix: "u:", cursor });
+    for (const k of page.keys) out.push({ code: null, username: k.name.slice(2) });
+    cursor = page.list_complete ? null : page.cursor;
+  } while (cursor);
+  return out.sort((a, b) => a.username.localeCompare(b.username));
+}
+
+/* ---- THE GUEST REFERRAL LINKS (10 Sep 2026) --------------------------------------------------
+ * He mints a link from inside the Access area, pinned to a tier and labelled so he knows who he
+ * gave it to; the link's id is its own credential and opens one board and nothing else. The rules
+ * are in stmt/refs.js. These are the routes.
+ *
+ * THE QR IS DRAWN HERE, IN THE WORKER, from the vendored copy of the one encoder (tools/qrsync.mjs
+ * keeps stmt/qr.js byte-identical to engine/qr.mjs and CI fails on drift). So no encoder is inlined
+ * into a page's script and nothing about QR drawing runs in a browser. RECTANGLES, never a stroked
+ * path: a stroked symbol looks right and does not decode.
+ */
+const refUrl = (origin, id) => origin + "/g/" + id;
+function refQr(origin, id) {
+  const svg = QR.qrRectSvg(refUrl(origin, id), { size: 180, dark: "#05080a", light: "#f2f4f5",
+    label: "Referral link " + id });
+  return "data:image/svg+xml," + encodeURIComponent(svg);
+}
+const refOut = (origin, r) => Object.assign({}, r, { url: refUrl(origin, r.id), qr: refQr(origin, r.id) });
+
+async function handleRefs(request, env, p, m, origin) {
+  if (!env.STMT) return json({ ok: false, error: "no KV binding" }, 500);
+  if (!(await identity(request, env))) return json({ ok: false, error: "Access required" }, 401);
+
+  if (p === "/all/refs") {
+    if (m === "GET") return json({ ok: true, refs: (await listRefs(env)).map((r) => refOut(origin, r)) });
+    if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+    const b = await readJson(request);
+    if (!b) return json({ ok: false, error: "send it as application/json" }, 400);
+    const tier = Number(b.tier);
+    if (tier !== 1 && tier !== 2) return json({ ok: false, error: "a link is pinned to tier 1 or tier 2" }, 400);
+    const rec = await mintRef(env, { tier, label: b.label, by: "" });
+    if (!rec) return json({ ok: false, error: "could not mint an unused id; try again" }, 500);
+    return json({ ok: true, ref: refOut(origin, rec) });
+  }
+  const mm = /^\/all\/refs\/([^/]+)\/(revoke|restore)$/.exec(p);
+  if (!mm) return notFound();
+  const id = normRef(mm[1]);
+  if (!id) return notFound();
+  if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+  const rec = await revokeRef(env, id, mm[2] === "revoke");
+  if (!rec) return json({ ok: false, error: "no such link" }, 404);
+  return json({ ok: true, ref: refOut(origin, rec) });
+}
+
+/* The guest's own door. An unknown id, a malformed id and a revoked one all answer with the same
+   404 the rest of this Worker gives, so the space cannot be walked and a withdrawn link cannot be
+   told from one that never existed. */
+async function handleGuest(request, env, id) {
+  if (!env.STMT) return notFound();
+  const rec = await readRef(env, id);
+  if (!rec || rec.revoked) return notFound();
+  await markOpen(env, rec);
+  let prices = null;
+  try { prices = await env.STMT.get("board:" + (rec.tier === 1 ? 1 : 2), "json"); } catch (e) { prices = null; }
+  const nonce = b64e(crypto.getRandomValues(new Uint8Array(16))).replace(/[^A-Za-z0-9]/g, "");
+  return new Response(boardPage({ tier: rec.tier, prices }, nonce), {
+    headers: Object.assign({
+      "content-type": "text/html; charset=utf-8",
+      /* script-src 'none' OUTRIGHT, not a nonce: this page is numbers and there is nothing for a
+         script to do, so the strongest thing that can be said about it is free to say. */
+      "content-security-policy":
+        "default-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; "
+        + "img-src 'self' data:; style-src 'nonce-" + nonce + "'; script-src 'none'"
+    }, HEADERS)
+  });
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     const p = (url.pathname.replace(/\/+$/, "") || "/");
     const m = request.method;
+
+    /* Generated per request so the inline style and script carry a nonce rather than needing
+       'unsafe-inline'. One builder for the customer's door and the owner's. */
+    const pageResponse = (user, owner) => {
+      const nonce = b64e(crypto.getRandomValues(new Uint8Array(16))).replace(/[^A-Za-z0-9]/g, "");
+      return new Response(landingPage(user, nonce, owner), {
+        headers: Object.assign({
+          "content-type": "text/html; charset=utf-8",
+          "content-security-policy":
+            "default-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; "
+            + "img-src 'self' data:; connect-src 'self'; worker-src 'self'; "
+            + "style-src 'nonce-" + nonce + "'; script-src 'nonce-" + nonce + "'"
+        }, HEADERS)
+      });
+    };
+
+    /* the guest's board; the id in the path is the whole credential */
+    const g = /^\/g\/([^/]+)$/.exec(p);
+    if (g) return handleGuest(request, env, g[1]);
+
+    /* the referral links, minted and revoked from inside the Access area only */
+    if (p === "/all/refs" || p.startsWith("/all/refs/")) return handleRefs(request, env, p, m, url.origin);
+
+    if (p === "/all") {
+      if (m !== "GET" && m !== "HEAD") return json({ ok: false, error: "method not allowed" }, 405);
+      if (!env.STMT) return json({ ok: false, error: "no KV binding" }, 500);
+      /* Said plainly rather than answered with a 404: reaching this unauthenticated means the
+         Access application is gone or misconfigured, and that is the one thing he must be told
+         rather than left to guess at. Nothing is handed over either way. */
+      const who = await identity(request, env);
+      if (!who) return new Response("This page is behind Cloudflare Access, and this request did not pass it.", {
+        status: 401, headers: Object.assign({ "content-type": "text/plain; charset=utf-8" }, HEADERS)
+      });
+      return pageResponse("", { master: String(env.STMT_MASTER || ""), accounts: await roster(env) });
+    }
 
     if (p === "/open") {
       if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
@@ -326,18 +456,8 @@ export default {
     if (p !== "/") return notFound();
     if (m !== "GET" && m !== "HEAD") return json({ ok: false, error: "method not allowed" }, 405);
 
-    /* Generated per request so the inline style and script can carry a nonce rather than
-       needing 'unsafe-inline'. The QR carries ?u=<username>; anything else in the query is
-       ignored, and a username that does not parse is simply not filled in. */
-    const nonce = b64e(crypto.getRandomValues(new Uint8Array(16))).replace(/[^A-Za-z0-9]/g, "");
-    return new Response(landingPage(normUser(url.searchParams.get("u")), nonce), {
-      headers: Object.assign({
-        "content-type": "text/html; charset=utf-8",
-        "content-security-policy":
-          "default-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; "
-          + "img-src 'self' data:; connect-src 'self'; worker-src 'self'; "
-          + "style-src 'nonce-" + nonce + "'; script-src 'nonce-" + nonce + "'"
-      }, HEADERS)
-    });
+    /* The QR carries ?u=<username>; anything else in the query is ignored, and a username that
+       does not parse is simply not filled in. */
+    return pageResponse(normUser(url.searchParams.get("u")), null);
   }
 };
