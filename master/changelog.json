@@ -1,5 +1,14 @@
 [
  {
+  "v": "v575",
+  "d": "11 Sep 2026",
+  "t": "FIVE UNITS TO CR3-DAM AT RM90 A UNIT, PAID AND COLLECTED THE SAME DAY, BOOKED AS AN R2 DOWNSELL",
+  "n": [
+   "<b>ONE ROW FOLDED, A SALT SELL DATED 10 SEP.</b> SELL to CR3-DAM, 5 unit for RM450, RM450 cash in and 5 unit collected on 10 Sep, so nothing stays open on the goods. The total clears the RM281.07 floor for 5 unit, falls short of the RM500 ask and sits well under the RM710 ceiling. Cost is the inventory's own RM44 a unit, RM220 on the order, so no separate cost line was needed on the row.",
+   "<b>WHAT WAS UNUSUAL AND WHAT THE INVENTORY DID.</b> The drafter flagged the booking as an R2 downsell through CR3-DAM-R, so CR3-DAM is not the counterparty on this row and takes no statement from it, and flagged the rate at 12.5% above the party's usual RM90 against a median of RM80. The figures answer both: RM90 a unit sits inside the recorded range of RM80 to RM92.50. The RM25 outstanding from s136 is untouched and stays open."
+  ]
+ },
+ {
   "v": "v574",
   "d": "11 Sep 2026",
   "t": "ONE UNIT OUT TO A NEW CODE AT RM100, PAID AND COLLECTED SAME DAY, ROSTER FLAG ANSWERED",
