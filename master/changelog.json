@@ -1,5 +1,16 @@
 [
  {
+  "v": "v561",
+  "d": "10 Sep 2026",
+  "t": "THE LEDGER OPENS ON THE LEDGER, NOT ON ITS OWN FILTER",
+  "n": [
+   "<b>HIS INSTRUCTION, 10 SEP 2026:</b> \"Redesign this, to be more compact and functional, as this is not the main function of the ledger.\" The filter stood <b>273px tall on a 924px column</b>, the search box and all four dropdowns each on a row of its own, so the first of 166 entries began 905px below the heading and the first thing the Ledger showed you was its own filter.",
+   "<b>THE CAUSE WAS ONE RULE IN THE OLDER LAYER, AND NOT THE BAR AT ALL.</b> A bare <code>select{width:100%}</code>, written for the stacked fields on the Enter view, catches every select on the desk. <code>.ledbar</code> has been a wrapping flex row since it was written; its controls were simply each as wide as the row. Measured in a real browser rather than read off the source, because this is layout and jsdom does none.",
+   "<b>SO THEY WERE GIVEN A WIDTH, NOT A NEW BAR.</b> The search grows, the four selects take their content and cap at 190px, the count and Clear sit at the right. On the desk the bar is <b>44px, one row</b>, and the first entry moves up to 677px: <b>228px reclaimed</b>. On a 375px phone it is 148px against 278px, two controls to a row instead of one, and every control still measures 44px in both directions, which is the tap contract.",
+   "<b>IT STILL WRAPS, WHICH IS WHY THE CONTAINER WAS A WRAP FLEX ROW TO BEGIN WITH.</b> Nothing overflows at 375px and no control shrinks below the tap size. The floating filter he offered as an alternative is not needed for this: the bar was never the wrong shape, only the wrong width."
+  ]
+ },
+ {
   "v": "v560",
   "d": "10 Sep 2026",
   "t": "SELL TO CE4-CHE: 2.5 UNIT AT RM230, PAID AND COLLECTED ON THE DAY",

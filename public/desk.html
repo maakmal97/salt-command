@@ -68,7 +68,7 @@ document.addEventListener('visibilitychange',function(){
    localStorage before it posts anything and the load reads it straight back.
    The same tick retries a held entry, which is what gets a phone write to the cloud
    without waiting for the next open. */
-var SALT_BUILD_ID="8e3c527c19a6acbe";
+var SALT_BUILD_ID="32f1d3b7024338a4";
 var SALT_REV_MS=10000;
 (function(){
   var chip=null,timer=null;
@@ -3088,6 +3088,21 @@ details.rcard>summary .rname{font-size:16px;font-weight:500;}
 .stkcols:focus-visible+.stkcolsl{outline-color:var(--salt-brass);}
 :where(a,button,summary,input,select,textarea,[tabindex]):focus-visible{outline-color:var(--salt-brass);}
 
+/* ---- v561, HIS INSTRUCTION OF 10 SEP 2026: the ledger's filter is not the ledger. "Redesign this,
+   to be more compact and functional, as this is not the main function of the ledger."
+   It stood 273px tall on a 924px column, every control on a row of its own, so 166 entries began
+   905px below the heading and the first thing the Ledger showed was its own filter.
+   THE CAUSE IS ONE RULE IN THE OLDER LAYER: a bare `select{width:100%}`, written for the stacked
+   fields on the Enter view, which catches every select on the desk. `.ledbar` is a wrap flex row
+   and always was; its controls were simply each as wide as the row. So the fix is to give them a
+   width rather than to rebuild the bar: the search grows, the four selects take their content, and
+   the count and Clear sit at the right. It still wraps on a narrow screen, which is the whole
+   reason the container was a wrap flex row to begin with. ---- */
+.ledbar{gap:8px;align-items:center;}
+.ledbar input{flex:1 1 200px;min-width:180px;width:auto;}
+.ledbar select{width:auto;flex:0 0 auto;min-width:0;max-width:190px;text-overflow:ellipsis;}
+.ledbar .ledct{margin-left:auto;white-space:nowrap;}
+
 /* ---- 8. FIELDS: inset wells, mono values, brass focus ---- */
 input,select,textarea,.qfield input,.qfield select,.ledbar input,.ledbar select{
   background-color:var(--salt-well);border:1px solid var(--salt-line-faint);border-radius:var(--salt-radius-sm);
@@ -5693,7 +5708,9 @@ const whiteboard=[
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{"v":"v560","d":"10 Sep 2026","t":"SELL TO CE4-CHE: 2.5 UNIT AT RM230, PAID AND COLLECTED ON THE DAY","n":["<b>ONE ROW FOLDED, A CLEAN SALT SELL.</b> CE4-CHE takes 2.5 unit for RM230 on 10 Sep, RM230 goods with no delivery charge, cash in full and 2.5 unit collected the same day, so nothing stays open. The total sits above the RM140.53 floor for 2.5 unit but under the RM270 ask and the RM360 ceiling. The drafter raised no flag and the party carries nothing outstanding.","<b>WHAT THE INVENTORY DID.</b> The cost is the inventory's own RM44 a unit, RM110 on the order, and the drafter's RM120 has been set back to the desk's own rate. The salt count stands on 08 Sep and the 2.5 unit move is not shown landed, so the stated figure is untouched here. Two loans in remain open, and RM8.50 of promised units still sits ahead of the reorder mark at 15."]},
+const evolution=[{"v":"v561","d":"10 Sep 2026","t":"THE LEDGER OPENS ON THE LEDGER, NOT ON ITS OWN FILTER","n":["<b>HIS INSTRUCTION, 10 SEP 2026:</b> \"Redesign this, to be more compact and functional, as this is not the main function of the ledger.\" The filter stood <b>273px tall on a 924px column</b>, the search box and all four dropdowns each on a row of its own, so the first of 166 entries began 905px below the heading and the first thing the Ledger showed you was its own filter.","<b>THE CAUSE WAS ONE RULE IN THE OLDER LAYER, AND NOT THE BAR AT ALL.</b> A bare <code>select{width:100%}</code>, written for the stacked fields on the Enter view, catches every select on the desk. <code>.ledbar</code> has been a wrapping flex row since it was written; its controls were simply each as wide as the row. Measured in a real browser rather than read off the source, because this is layout and jsdom does none.","<b>SO THEY WERE GIVEN A WIDTH, NOT A NEW BAR.</b> The search grows, the four selects take their content and cap at 190px, the count and Clear sit at the right. On the desk the bar is <b>44px, one row</b>, and the first entry moves up to 677px: <b>228px reclaimed</b>. On a 375px phone it is 148px against 278px, two controls to a row instead of one, and every control still measures 44px in both directions, which is the tap contract.","<b>IT STILL WRAPS, WHICH IS WHY THE CONTAINER WAS A WRAP FLEX ROW TO BEGIN WITH.</b> Nothing overflows at 375px and no control shrinks below the tap size. The floating filter he offered as an alternative is not needed for this: the bar was never the wrong shape, only the wrong width."]},
+
+{"v":"v560","d":"10 Sep 2026","t":"SELL TO CE4-CHE: 2.5 UNIT AT RM230, PAID AND COLLECTED ON THE DAY","n":["<b>ONE ROW FOLDED, A CLEAN SALT SELL.</b> CE4-CHE takes 2.5 unit for RM230 on 10 Sep, RM230 goods with no delivery charge, cash in full and 2.5 unit collected the same day, so nothing stays open. The total sits above the RM140.53 floor for 2.5 unit but under the RM270 ask and the RM360 ceiling. The drafter raised no flag and the party carries nothing outstanding.","<b>WHAT THE INVENTORY DID.</b> The cost is the inventory's own RM44 a unit, RM110 on the order, and the drafter's RM120 has been set back to the desk's own rate. The salt count stands on 08 Sep and the 2.5 unit move is not shown landed, so the stated figure is untouched here. Two loans in remain open, and RM8.50 of promised units still sits ahead of the reorder mark at 15."]},
 
 {"v":"v559","d":"10 Sep 2026","t":"THE LEDGER FIGURES ARE ARRANGED RATHER THAN STACKED","n":["<b>HIS INSTRUCTION, 10 SEP 2026, ON A SCREENSHOT OF THE FIGURE COLUMN:</b> \"just arrange them nicely, not too packed.\" Nothing is removed. A live row carries up to four things in that one cell, and each was asked for and says something the others do not: what has been paid, what it is of, the margin, and what the figure was before a correction struck it.","<b>WHAT WAS WRONG WAS THE SETTING, NOT THE CONTENT.</b> A flex column at line-height 1.25 with no gap at all, so the three boxes sat at 0, 16 and 30 pixels: four separate facts read as one block of digits. Measured in a real browser rather than in jsdom, which does no layout.","<b>THEY ARE GROUPED NOW, NOT MERELY SPREAD.</b> Four candidates were measured in the live renderer: a flat 3px gap, a flat 4px, and two grouped settings. The one taken gives the figure its own clearance and sets the two notes tighter beneath it, 0, 21 and 38, so the cell reads as a figure with its notes rather than three lines of equal weight. It costs the same height as the flat 4px and reads better: 53px against 51, and 6px on the card.","<b>AND A ROW WITH NO NOTES RESERVES NO ROOM FOR THEM.</b> The first cut put the clearance on the figure unconditionally, so a plain row grew from 15px to 19px of empty cell for notes it does not have. The CSS pseudo-class for &ldquo;only when something follows&rdquo; is the whole of that condition. Three shapes proved in the browser: figure with margin and struck figure, figure with margin alone, and figure alone, the last back to exactly where it was.","<b>THE QUANTITY COLUMN TAKES THE SAME TREATMENT,</b> because it carries the same pair and the two sides of the row have to stay in step. The whole ledger grows 233px across 166 entries, about 1.4px an entry."]},
 
@@ -6049,7 +6066,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='10 Sep 2026, 06:55 KL';
+const LAST_UPDATED='10 Sep 2026, 09:02 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */

@@ -227,6 +227,21 @@ details.rcard>summary .rname{font-size:16px;font-weight:500;}
 .stkcols:focus-visible+.stkcolsl{outline-color:var(--salt-brass);}
 :where(a,button,summary,input,select,textarea,[tabindex]):focus-visible{outline-color:var(--salt-brass);}
 
+/* ---- v561, HIS INSTRUCTION OF 10 SEP 2026: the ledger's filter is not the ledger. "Redesign this,
+   to be more compact and functional, as this is not the main function of the ledger."
+   It stood 273px tall on a 924px column, every control on a row of its own, so 166 entries began
+   905px below the heading and the first thing the Ledger showed was its own filter.
+   THE CAUSE IS ONE RULE IN THE OLDER LAYER: a bare `select{width:100%}`, written for the stacked
+   fields on the Enter view, which catches every select on the desk. `.ledbar` is a wrap flex row
+   and always was; its controls were simply each as wide as the row. So the fix is to give them a
+   width rather than to rebuild the bar: the search grows, the four selects take their content, and
+   the count and Clear sit at the right. It still wraps on a narrow screen, which is the whole
+   reason the container was a wrap flex row to begin with. ---- */
+.ledbar{gap:8px;align-items:center;}
+.ledbar input{flex:1 1 200px;min-width:180px;width:auto;}
+.ledbar select{width:auto;flex:0 0 auto;min-width:0;max-width:190px;text-overflow:ellipsis;}
+.ledbar .ledct{margin-left:auto;white-space:nowrap;}
+
 /* ---- 8. FIELDS: inset wells, mono values, brass focus ---- */
 input,select,textarea,.qfield input,.qfield select,.ledbar input,.ledbar select{
   background-color:var(--salt-well);border:1px solid var(--salt-line-faint);border-radius:var(--salt-radius-sm);
