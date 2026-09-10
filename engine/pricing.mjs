@@ -295,6 +295,12 @@ function tier1Anchors(P){
   const ks=Object.keys(A).map(Number).filter(q=>q>0&&+A[q]>0).sort((a,b)=>a-b);
   if(ks.length<2)return null;
   const lo=ks[0], hi=ks[ks.length-1], rLo=+A[lo]/lo, rHi=+A[hi]/hi;
+  /* v566: TWO ANCHORS MEANS TWO SIZES, AND THE COUNT ABOVE DOES NOT SAY THAT. {0.5:60,"0.50":60}
+     is two keys naming one size: it passes ks.length<2, lands hi===lo, and the exponent becomes
+     Math.log(1)/Math.log(1), which is NaN. Every interpolated rung then prices NaN while reading
+     TRUTHY at every guard downstream, so the board would print a column of blanks under a heading
+     that says the tier is stated. A tier stated at one size is not stated. */
+  if(!(hi>lo))return null;
   /* the rate in the log of size, fitted to the two ends rather than typed */
   return {ks:ks, lo:lo, hi:hi, rLo:rLo, rHi:rHi, b:Math.log(rHi/rLo)/Math.log(hi/lo)};
 }
@@ -413,11 +419,21 @@ function priceLadder(q,C,P,opts){
   /* v564: TIER 1 BESIDE THE ASK, on the same cost stack and the same floor, so every surface reads
      one engine for both levels. null on a book with no stated second tier. The figures beside the
      total are derived back from the answer, exactly as the ask's are. */
+  /* v566: AND `over`, WHICH IS THE RELATION BETWEEN THE TIERS. Tier 1 is walked against the rate
+     law and the floor and against nothing else, so nothing in the engine or on the board knew
+     whether the cheaper tier was still the cheaper one. It need not be: Tier 2 is DERIVED from a
+     floor that moves with the cost of salt, while Tier 1's two ends are figures he typed and do
+     not move at all, so a fall in the lot rate walks Tier 2 down through a frozen Tier 1 from the
+     small end up. A stated price he has set is quoted anyway, which is v552's rule and is not
+     reopened here: this MEASURES the inversion in the same shape as `under`, RM by RM, and the
+     board says so. It does not clamp. Clamping would make a second place that prices, and there
+     is one place that prices. */
   {const t=tier1Ask(q,C,P);
    out.tier1=t?{total:t.p,rate:+(t.p/q).toFixed(2),
                 markup:+((t.p/cogs-1)*100).toFixed(2),markupX:+(t.p/cogs-1).toFixed(4),
                 margin:+(((t.p-lot)/t.p)*100).toFixed(1),
-                floorX:+(t.p/Math.max(0.01,fl)).toFixed(3),under:t.under,stated:!!t.stated}:null;}
+                floorX:+(t.p/Math.max(0.01,fl)).toFixed(3),under:t.under,
+                over:+Math.max(0,t.p-out.ask.total).toFixed(2),stated:!!t.stated}:null;}
   out.ceiling=at(LADDER.ceiling,true);
   return out;
 }
@@ -436,7 +452,12 @@ function ladderRow(sizes,C,P){
     code:'T2', name:'Tier 2', dflt:true, who:'the default ask, graded by size, tapered as the supplier tapers',
     prices:col('ask')
   }];
-  if(P.tier1)rows.push({
+  /* v566: GATED ON tier1Anchors, NOT ON THE RAW FIELD. priceLadder decides whether a book HAS a
+     Tier 1 by asking tier1Anchors, which needs two usable anchors; this asked whether the field
+     was truthy. A book stating one end satisfied the second and not the first, so the payload
+     carried a row NAMED "Tier 1" whose every price was null, beside a desk saying the tier is not
+     stated on this book. Two gates on one fact is one gate too many. */
+  if(tier1Anchors(P))rows.push({
     code:'T1', name:'Tier 1', dflt:false, who:'stated at its two ends, the rate interpolated between them',
     prices:col('tier1')
   });
