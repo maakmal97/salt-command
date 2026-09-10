@@ -1,0 +1,65 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-09-10T22:18:15.853Z",
+   "collection": "sales",
+   "row": {
+    "customer": "CN6-WM",
+    "qty": 1,
+    "total": 130,
+    "cost": 44,
+    "cash": 130,
+    "handover": "collected",
+    "date": "2026-09-11",
+    "deliveredQty": 1,
+    "deliveredOn": "2026-09-11",
+    "paidOn": "2026-09-11",
+    "rev": "R2",
+    "downstream": "CN6-WM-R"
+   },
+   "reasoning": "Sold 1 unit of salt to CN6-WM for RM 130, RM 130/unit. Costed at RM 44/unit from the desk's own inventory cost, so RM 86 on the order at 66.2%. Paid in full and delivered in full on 2026-09-11. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [
+    "Booked to CN6-WM as an R2 downsell, so CN6-WM is not the counterparty on this row and gets no statement from it.",
+    "CN6-WM typically pays about RM 100/unit for salt across 5 orders; this one is RM 130, 30% above that."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-09-10T22:18:15.853Z",
+    "type": "SELL",
+    "party": "CN6-WM-R",
+    "qty": 1,
+    "total": 130,
+    "status": "paid",
+    "raw": "Sell 1 unit to CN6-WM-R for RM 130 on 2026-09-11, RM 130 cash, 1 unit moved → Completed (R2 via CN6-WM)",
+    "payload": {
+     "mode": "new",
+     "product": "salt",
+     "direction": "SELL",
+     "party": "CN6-WM",
+     "newId": null,
+     "date": "2026-09-11",
+     "qty": 1,
+     "total": 130,
+     "delivery": 0,
+     "freight": 0,
+     "cash": 130,
+     "kg": 1,
+     "assoc": "CN6-WM",
+     "stream": "R2",
+     "downstream": "CN6-WM-R",
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": null,
+     "handover": "collected",
+     "second": null
+    }
+   },
+   "decidedAt": "2026-09-10T22:19:01.508Z",
+   "decidedBy": "desk"
+  }
+ ]
+}
