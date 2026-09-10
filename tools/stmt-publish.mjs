@@ -21,7 +21,7 @@ import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { dirname, resolve, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { liveRecords } from "./make_statements.mjs";
+import { liveRecords, siteBaseUrl } from "./make_statements.mjs";
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const CONFIG = join(REPO, "wrangler.stmt.jsonc");
@@ -144,6 +144,20 @@ async function main() {
   /* the desk's map, so the ledger's Worker can name the account an order belongs to */
   deskWrangler(["kv", "key", "put", "stmt-users", "--path", usersFile, "--remote", "--binding", "SALT_QUEUE"], { stdio: "inherit" });
   console.log("wrote stmt-users (" + Object.keys(plan.users).length + " usernames) to the desk's store");
+  /* ============ v564: AND THE SITE'S OWN ADDRESS, FOR THE QR ON THE BOARD SHEET ============
+     The desk draws a QR to the customer's page on the sheet he hands over, so it needs the address,
+     and the address MUST NOT be baked into the desk: /desk is public by his decision of 11 Aug and
+     the statements site is deliberately on its own cryptic name ("nothing in that name says salt").
+     So it travels the same road the usernames already travel: this key, read back by GET /stmt-users
+     behind the write key. It is siteBaseUrl(), the same one derivation make_statements prints on
+     paper, read out of wrangler.stmt.jsonc rather than restated, because a QR handed to a customer
+     that points at a hostname answering nothing is the fault that derivation exists to prevent.
+     A SEPARATE KEY, not a field inside stmt-users: src/orders.js reads that key as a flat username
+     to code map and changing its shape would break the order relay. */
+  const siteFile = join(outDir, "site.txt");
+  writeFileSync(siteFile, siteBaseUrl());
+  deskWrangler(["kv", "key", "put", "stmt-site", "--path", siteFile, "--remote", "--binding", "SALT_QUEUE"], { stdio: "inherit" });
+  console.log("wrote stmt-site (" + siteBaseUrl() + ") to the desk's store");
 
   /* AND THE EFFECT IS READ BACK. A bulk put that reported success and stored nothing would be
      invisible otherwise, which is the whole class of fault this file was rewritten for. */

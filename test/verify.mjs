@@ -6517,6 +6517,45 @@ section("QR — proved against an independent encoder");
       "the drawn path re-reads as exactly the matrix it was drawn from");
     ok((d.match(/M/g) || []).length < cells, "and it is run-length encoded, not one command per module");
   }
+
+  /* ============ v564: THE RECTS RENDERER, AND ONE ENCODER FOR BOTH READERS ============
+     The desk draws a QR on the board sheet he hands a customer, so the encoder moved to
+     engine/qr.mjs and is inlined into the master by tools/engine.mjs --sync, whose --check the
+     suite already runs. tools/qr.mjs is now a re-export, and this asserts that rather than trusting
+     it: two QR encoders would drift exactly as two pricing engines would.
+     qrRectSvg IS NOT COSMETIC. The sheet goes to print, to a PDF and to a phone's share sheet, not
+     only to a browser, and a filled path with many subpaths depends on every one of those reading
+     the fill rule the same way. Rectangles cannot be read two ways. A STROKE cannot be read at all:
+     a stroked symbol looks right on screen and does not scan, which is why the check below is on
+     the absence of stroke as much as on the geometry. */
+  {
+    const E = (await import("../engine/qr.mjs")).default;
+    const T = await import("../tools/qr.mjs");
+    ok(T.qrMatrix === E.qrMatrix && T.qrSvg === E.qrSvg,
+      "tools/qr.mjs re-exports the one encoder and keeps no copy of its own");
+    const url = "https://salt-command.example/?u=kite-amber-7";
+    const mm = E.qrMatrix(url), nn = mm.length;
+    /* the runs are the shared geometry: every renderer reads these, so proving them proves all */
+    const back = Array.from({ length: nn }, () => new Array(nn).fill(0));
+    E.qrRuns(mm).forEach((u) => { for (let i = 0; i < u.w; i++) back[u.r][u.c + i] = 1; });
+    ok(back.every((row, r) => row.every((v, c) => v === mm[r][c])),
+      "the runs every renderer draws re-read as exactly the matrix");
+    const rs = E.qrRectSvg(url, { size: 176, dark: "#05080a", light: "#f2f4f5" });
+    const quiet = 4;
+    const back2 = Array.from({ length: nn }, () => new Array(nn).fill(0));
+    let cells2 = 0, hit2;
+    const re2 = /<rect x="(\d+)" y="(\d+)" width="(\d+)" height="1"\/>/g;
+    while ((hit2 = re2.exec(rs))) {
+      const c0 = +hit2[1] - quiet, r0 = +hit2[2] - quiet, w = +hit2[3];
+      for (let i = 0; i < w; i++) { back2[r0][c0 + i] = 1; cells2++; }
+    }
+    ok(cells2 > 0 && back2.every((row, r) => row.every((v, c) => v === mm[r][c])),
+      `the rectangles re-read as exactly the matrix they were drawn from (${cells2} modules)`);
+    ok(!/stroke/.test(rs), "and nothing in the rects form is stroked, which would not scan at all");
+    ok(/<rect width="\d+" height="\d+" fill="#f2f4f5"/.test(rs),
+      "the quiet zone is drawn light under the code, because the desk's own ground is almost black");
+    ok(!/<script|href=|xlink|<image/i.test(rs), "the rects SVG is inert too: no script, nothing external");
+  }
 }
 
 /* ---- the statement password, the envelope and the site's own Worker --------------- */
@@ -6790,7 +6829,26 @@ section("Statements — the price list, the order book and the desk's relay (v49
   ok(PL.adjustedPrice(260, 110, 220, 300, true) === 250 && PL.adjustedPrice(260, 110, 220, 300, false) === 260,
     "above the ask under the cap: down a quarter of the way where loyal, and his rate stands where not");
   ok(PL.adjustedPrice(220, 110, 220, 300, true) === 220 && PL.adjustedPrice(159.5, 110, 220, 300, false) === 175,
-    "at the ask it is the ask, and the answer rounds up to the ringgit");
+    "at the ask it is the ask");
+  /* ============ v564, HIS INSTRUCTION OF 10 SEP 2026: TO THE NEAREST FIVE ============
+     It was the whole ringgit UP, which put RM97 and RM416 on a sheet handed to a customer while the
+     board beside it quotes in tens. NEAREST, not up: the four drawing rules above already decide
+     the direction and rounding had no business deciding it again. The cases above all happened to
+     land on fives already, so none of them would have gone red on this change and none of them
+     proves it; these do. */
+  ok(PL.adjustedPrice(97, 50, 97, 300, false) === 95 && PL.adjustedPrice(98, 50, 98, 300, false) === 100,
+    "the nearest five, and it rounds DOWN when down is nearer: 97 to 95, 98 to 100");
+  ok(PL.adjustedPrice(102.5, 50, 102.5, 300, false) === 105,
+    "an exact half-step goes up, which is what Math.round does and is worth pinning");
+  ok([0, 1, 2, 3, 4, 5, 6, 7, 8, 9].every((d) => PL.adjustedPrice(410 + d, 50, 410 + d, 900, false) % 5 === 0),
+    "and every answer across a run of ten ringgit is a multiple of five");
+  /* THE FLOOR IS THE ONE THING ROUNDING MAY NOT CROSS. Nearest-five can land up to RM2.50 under
+     break-even, so a price that does is lifted to the first five ABOVE the floor. The cap is not
+     re-clamped: it is a drawing target at three times COGS, not a refusal line. */
+  ok(PL.adjustedPrice(31, 31, 31, 300, false) === 35 && PL.adjustedPrice(10, 28.11, 28.11, 300, false) === 30,
+    "a five that lands under the floor is lifted to the first five above it, never left there");
+  ok([31, 32, 33, 34, 36, 41, 46.2, 51.7].every((f) => PL.adjustedPrice(f, f, f, 900, false) >= f - 0.009),
+    "and no floor in a sweep of eight is breached by the rounding");
   ok(PL.loyalFor(sales, "CX0-AA", "salt", new Date("2026-09-10T00:00:00Z")) === true
     && PL.loyalFor(sales, "CX0-AA", "salt", new Date("2026-10-10T00:00:00Z")) === false
     && PL.loyalFor([{ date: "2026-09-02", customer: "CX0-BB", qty: 1, total: 100 }], "CX0-BB", "salt", new Date("2026-09-03T00:00:00Z")) === false,
@@ -6952,6 +7010,34 @@ section("Statements — the price list, the order book and the desk's relay (v49
     ok(JSON.stringify(desk) === JSON.stringify(mine), codeB + ": the printed board's prices are the customer's statement-page list, size for size (v507)");
     ok(rd("typeof pbCard") === "function" && /id=\"pbSheet\"/.test(readFileSync(join(REPO, "master", "salt_command.html"), "utf8")),
       "and the Price part carries the card and the page the print-only sheet");
+    /* ============ v564: THE SHEET IS THE MARK, THE NUMBERS, THE USERNAME, THEN THE QR ============
+       HIS INSTRUCTION, 10 SEP 2026: "subtle logos and numbers only, followed by their login username
+       and QR code to the website." The username MOVED below the table to get there, so the ORDER is
+       asserted rather than left to the eye: three indexes, and each must come after the last.
+       AND THE QR IS DRAWN ONLY WHERE IT WOULD OPEN SOMETHING. The address comes down the keyed road
+       from the Worker with the usernames and is never in this file, so the laptop desk has neither.
+       A QR to nowhere on paper in a customer's hand is worse than no QR, so no url means no block. */
+    {
+      const shq = "{code:'CX0-AA',user:'abcd-efgh',url:'https://site.example/?u=abcd-efgh',product:'Salt',week:'2026-09-07',rows:[{q:1,price:120},{q:2.5,price:260}]}";
+      const withQr = rd("pbSheetHtml(" + shq + ")");
+      const iMark = withQr.indexOf('class="pbl"'), iTab = withQr.indexOf("<table"),
+            iUser = withQr.indexOf('class="pbu"'), iQr = withQr.indexOf('class="pbq"');
+      ok(iMark >= 0 && iTab > iMark && iUser > iTab && iQr > iUser,
+        `the sheet reads mark, numbers, username, QR, in his order (${iMark}, ${iTab}, ${iUser}, ${iQr})`);
+      ok((withQr.match(/<rect /g) || []).length > 50 && !/ stroke=/.test(withQr.replace(/stroke-linejoin|stroke-width|stroke="url\(#saltCrystalPrint\)"/g, "")),
+        "the QR on the sheet is rectangles and nothing on it is stroked");
+      ok(withQr.indexOf("site.example") < 0, "and the address is in the code, not printed as words beside it");
+      const noQr = rd("pbSheetHtml({code:'CX0-AA',user:'abcd-efgh',url:null,product:'Salt',week:'2026-09-07',rows:[{q:1,price:120}]})");
+      ok(noQr.indexOf('class="pbq"') < 0 && noQr.indexOf("<table") > 0 && noQr.indexOf("abcd-efgh") > 0,
+        "a sheet with no address carries no QR block at all, and is otherwise the same sheet");
+      /* the buttons he asked for, by name, on the card */
+      const card = rd("pbCard()");
+      ok(/>Save as JPG</.test(card) && /">Save as PDF</.test(card) && /">Save as HTML</.test(card),
+        "the card offers JPG, PDF and HTML");
+      ok(rd("typeof pbPdfBlob") === "function" && rd("typeof pbDrawQr") === "function",
+        "and the PDF writer and the canvas QR are on the desk");
+      ok(!/Save as image/.test(card), "and no button still says 'image', which said nothing about the format");
+    }
     /* v508: the board as a file, drawn here and handed to the share sheet */
     const doc = rd("pbHtmlDoc({code:'CX0-AA',user:'abcd-efgh',product:'Salt',week:'2026-09-07',rows:[{q:1,price:120},{q:2.5,price:260}]})");
     ok(/^<!DOCTYPE html>/.test(doc) && doc.includes("<svg") && doc.includes("abcd-efgh") && doc.includes(">120<") && doc.includes(">260<") && doc.includes(">2.5<")

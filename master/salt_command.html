@@ -3407,6 +3407,414 @@ details.obs>summary:hover{background:var(--salt-glass);}
 </div>
 <button class="totop" id="totop" type="button" title="Back to top" aria-label="Back to top">&#9650;</button>
 <script>
+/* ==== ENGINE qr: generated from engine/qr.mjs by tools/engine.mjs. Edit the module, never this block. ==== */
+/* engine/qr.mjs: A QR ENCODER, WRITTEN OUT RATHER THAN INSTALLED.
+ *
+ * IT LIVES IN engine/ BECAUSE THERE ARE TWO READERS NOW (v564). It was tools/qr.mjs, a build-time
+ * module for the statements, and the desk needs the same encoder at RUNTIME to put a QR on the
+ * board sheet he hands a customer. Hard rule 4 forbids a third-party load at runtime and rule 1
+ * forbids a second copy of anything the desk computes: two encoders would drift exactly as two
+ * pricing engines would. So this is the one encoder, inlined into master/salt_command.html between
+ * two markers by `node tools/engine.mjs --sync` alongside the pricing and position engines, and CI
+ * fails if the block is not this file to the byte. tools/qr.mjs is now a re-export and a CLI.
+ *
+ * WHY THIS IS NOT AN npm DEPENDENCY. A build-time package would not breach rule 4, so that is not
+ * the reason. The reason is that this repo carries the real ledger and runs `npm ci` unattended in
+ * a cloud routine: every package added here is a supply chain that reaches the book. Two
+ * devDependencies is the whole surface today and it is worth keeping. This is ~300 lines of a fully
+ * specified format, it never changes, and it is proved against an independent encoder in
+ * test/verify.mjs rather than trusted.
+ *
+ * SCOPE, deliberately narrow. Byte mode, error correction level M, versions 1 to 10, which is up to
+ * 213 bytes. A statement URL is about sixty characters and lands at version 3 or 4, so there is a
+ * wide margin and no reason to carry the tables for forty versions.
+ *
+ * PURE. Nothing here reads a global, the document or the clock, which is what lets the same text
+ * run in node for the statements and in the page for the board sheet.
+ *
+ * TWO OUTPUTS. qrMatrix is the modules as a grid, which the canvas and the PDF draw as filled
+ * rectangles; qrSvg is an inline SVG for a page. Both are run-length RECTANGLES and neither is ever
+ * a stroked path: a stroked path looks right on screen and does not decode.
+ *
+ * THE FILE IS THE INLINE BLOCK PLUS ONE LINE, the same shape engine/pricing.mjs keeps: the last
+ * line is the export and the sync tool drops exactly that line.
+ */
+const QR_ENGINE=(function(){
+
+/* ---- the tables, level M only ------------------------------------------------------
+   Each row: [total codewords, EC codewords per block, [blocks, data codewords] groups].
+   Derived capacities are asserted in the test rather than restated here. */
+const VERSIONS = {
+  1: { total: 26, ec: 10, groups: [[1, 16]], align: [] },
+  2: { total: 44, ec: 16, groups: [[1, 28]], align: [6, 18] },
+  3: { total: 70, ec: 26, groups: [[1, 44]], align: [6, 22] },
+  4: { total: 100, ec: 18, groups: [[2, 32]], align: [6, 26] },
+  5: { total: 134, ec: 24, groups: [[2, 43]], align: [6, 30] },
+  6: { total: 172, ec: 16, groups: [[4, 27]], align: [6, 34] },
+  7: { total: 196, ec: 18, groups: [[4, 31]], align: [6, 22, 38] },
+  8: { total: 242, ec: 22, groups: [[2, 38], [2, 39]], align: [6, 24, 42] },
+  9: { total: 292, ec: 22, groups: [[3, 36], [2, 37]], align: [6, 26, 46] },
+  10: { total: 346, ec: 26, groups: [[4, 43], [1, 44]], align: [6, 28, 50] }
+};
+
+/* ---- GF(256) arithmetic, the field QR's Reed-Solomon lives in ----------------------
+   Primitive polynomial 0x11d, generator 2. Log and antilog tables are built once. */
+const EXP = new Uint8Array(512), LOG = new Uint8Array(256);
+(function buildGF() {
+  let x = 1;
+  for (let i = 0; i < 255; i++) {
+    EXP[i] = x; LOG[x] = i;
+    x <<= 1;
+    if (x & 0x100) x ^= 0x11d;
+  }
+  for (let i = 255; i < 512; i++) EXP[i] = EXP[i - 255];
+})();
+const gfMul = (a, b) => (a === 0 || b === 0) ? 0 : EXP[LOG[a] + LOG[b]];
+
+/* The generator polynomial for n EC codewords is (x - a^0)(x - a^1)...(x - a^(n-1)). */
+function rsGenerator(n) {
+  let poly = [1];
+  for (let i = 0; i < n; i++) {
+    const next = new Array(poly.length + 1).fill(0);
+    for (let j = 0; j < poly.length; j++) {
+      next[j] ^= poly[j];
+      next[j + 1] ^= gfMul(poly[j], EXP[i]);
+    }
+    poly = next;
+  }
+  return poly;
+}
+
+function rsEncode(data, ecLen) {
+  const gen = rsGenerator(ecLen);
+  const rem = new Array(ecLen).fill(0);
+  for (const byte of data) {
+    const factor = byte ^ rem[0];
+    rem.shift(); rem.push(0);
+    if (factor !== 0) for (let j = 0; j < ecLen; j++) rem[j] ^= gfMul(gen[j + 1], factor);
+  }
+  return rem;
+}
+
+/* ---- the bit stream ---------------------------------------------------------------- */
+function encodeData(bytes, version) {
+  const V = VERSIONS[version];
+  const dataCodewords = V.groups.reduce((a, [n, c]) => a + n * c, 0);
+  /* THE CHARACTER COUNT IS EIGHT BITS BELOW VERSION 10 AND SIXTEEN AT IT. Getting this
+     wrong produces a symbol that scans as gibberish rather than one that fails to scan,
+     which is the worse failure: it looks like it worked. */
+  const countBits = version < 10 ? 8 : 16;
+  const bits = [];
+  const push = (val, len) => { for (let i = len - 1; i >= 0; i--) bits.push((val >> i) & 1); };
+  push(0b0100, 4);                       // byte mode
+  push(bytes.length, countBits);
+  for (const b of bytes) push(b, 8);
+  const capacity = dataCodewords * 8;
+  if (bits.length > capacity) throw new Error('qr: data does not fit version ' + version);
+  push(0, Math.min(4, capacity - bits.length));          // terminator
+  while (bits.length % 8) bits.push(0);                   // pad to a byte boundary
+  const codewords = [];
+  for (let i = 0; i < bits.length; i += 8) {
+    let b = 0; for (let j = 0; j < 8; j++) b = (b << 1) | bits[i + j];
+    codewords.push(b);
+  }
+  const PAD = [0xEC, 0x11];
+  for (let i = 0; codewords.length < dataCodewords; i++) codewords.push(PAD[i % 2]);
+
+  /* Split into blocks, error-correct each, then INTERLEAVE. The interleave is what makes a
+     burst of damage land across many blocks rather than destroying one. */
+  const blocks = [];
+  let at = 0;
+  for (const [n, count] of V.groups) {
+    for (let i = 0; i < n; i++) {
+      const d = codewords.slice(at, at + count); at += count;
+      blocks.push({ data: d, ec: rsEncode(d, V.ec) });
+    }
+  }
+  const out = [];
+  const maxData = Math.max(...blocks.map(b => b.data.length));
+  for (let i = 0; i < maxData; i++) for (const b of blocks) if (i < b.data.length) out.push(b.data[i]);
+  for (let i = 0; i < V.ec; i++) for (const b of blocks) out.push(b.ec[i]);
+  return out;
+}
+
+/* ---- the matrix --------------------------------------------------------------------- */
+function makeMatrix(version) {
+  const size = version * 4 + 17;
+  const m = Array.from({ length: size }, () => new Array(size).fill(null));  // null = free
+  const set = (r, c, v) => { if (r >= 0 && r < size && c >= 0 && c < size) m[r][c] = v; };
+
+  const finder = (r0, c0) => {
+    for (let r = -1; r <= 7; r++) for (let c = -1; c <= 7; c++) {
+      const inside = r >= 0 && r <= 6 && c >= 0 && c <= 6;
+      const ring = r === 0 || r === 6 || c === 0 || c === 6;
+      const core = r >= 2 && r <= 4 && c >= 2 && c <= 4;
+      set(r0 + r, c0 + c, inside ? (ring || core ? 1 : 0) : 0);   // outside the 7x7 is the separator
+    }
+  };
+  finder(0, 0); finder(0, size - 7); finder(size - 7, 0);
+
+  for (let i = 8; i < size - 8; i++) {            // timing patterns
+    const v = i % 2 === 0 ? 1 : 0;
+    if (m[6][i] === null) m[6][i] = v;
+    if (m[i][6] === null) m[i][6] = v;
+  }
+
+  /* THE THREE OMITTED ALIGNMENT PATTERNS ARE THE THREE THAT SIT UNDER A FINDER, and only
+     those. The first guard here skipped any centre whose cell was already written, which
+     catches the finder corners and, from version 7, ALSO catches the legitimate patterns
+     centred on the timing row and column: version 7 wants one at (6,22), and the timing
+     row had already claimed that cell. Versions 1 to 6 were unaffected, because there the
+     only (6,x) centres do fall inside a finder, so the wrong rule and the right one agree
+     and the fault stayed hidden until version 7. An alignment pattern overwrites timing
+     where they meet, which is what the specification asks for. */
+  const first = 6, last = size - 7;
+  for (const r of VERSIONS[version].align) for (const c of VERSIONS[version].align) {
+    if ((r === first && c === first) || (r === first && c === last) || (r === last && c === first)) continue;
+    for (let dr = -2; dr <= 2; dr++) for (let dc = -2; dc <= 2; dc++) {
+      const edge = Math.abs(dr) === 2 || Math.abs(dc) === 2;
+      set(r + dr, c + dc, (edge || (dr === 0 && dc === 0)) ? 1 : 0);
+    }
+  }
+
+  m[size - 8][8] = 1;                             // the dark module, always set
+
+  /* Format areas are reserved now and written after masking, because the format bits
+     depend on which mask won. 0 is a placeholder, not a value. */
+  for (let i = 0; i < 9; i++) { if (m[8][i] === null) m[8][i] = 0; if (m[i][8] === null) m[i][8] = 0; }
+  for (let i = 0; i < 8; i++) { if (m[8][size - 1 - i] === null) m[8][size - 1 - i] = 0; if (m[size - 1 - i][8] === null) m[size - 1 - i][8] = 0; }
+  if (version >= 7) {
+    for (let i = 0; i < 6; i++) for (let j = 0; j < 3; j++) {
+      m[size - 11 + j][i] = 0; m[i][size - 11 + j] = 0;
+    }
+  }
+  return m;
+}
+
+/* Which cells carry data: everything still null after the function patterns are laid. */
+function placeData(m, codewords, version) {
+  const size = m.length;
+  const free = m.map(row => row.map(v => v === null));
+  const bits = [];
+  for (const cw of codewords) for (let i = 7; i >= 0; i--) bits.push((cw >> i) & 1);
+  let bi = 0, up = true;
+  for (let col = size - 1; col > 0; col -= 2) {
+    if (col === 6) col--;                          // the vertical timing column is skipped entirely
+    for (let n = 0; n < size; n++) {
+      const row = up ? size - 1 - n : n;
+      for (const c of [col, col - 1]) {
+        if (!free[row][c]) continue;
+        m[row][c] = bi < bits.length ? bits[bi++] : 0;
+      }
+    }
+    up = !up;
+  }
+  return free;
+}
+
+const MASKS = [
+  (r, c) => (r + c) % 2 === 0,
+  (r) => r % 2 === 0,
+  (r, c) => c % 3 === 0,
+  (r, c) => (r + c) % 3 === 0,
+  (r, c) => (Math.floor(r / 2) + Math.floor(c / 3)) % 2 === 0,
+  (r, c) => ((r * c) % 2) + ((r * c) % 3) === 0,
+  (r, c) => (((r * c) % 2) + ((r * c) % 3)) % 2 === 0,
+  (r, c) => (((r + c) % 2) + ((r * c) % 3)) % 2 === 0
+];
+
+/* The four penalty rules, scored exactly as the specification states them. A mask is chosen
+   to avoid patterns a scanner could mistake for a finder, and to keep light and dark even. */
+function penalty(m) {
+  const size = m.length; let score = 0;
+  const run = line => {
+    let s = 0, last = -1, len = 0;
+    for (const v of line) {
+      if (v === last) { len++; if (len === 5) s += 3; else if (len > 5) s += 1; }
+      else { last = v; len = 1; }
+    }
+    return s;
+  };
+  for (let i = 0; i < size; i++) { score += run(m[i]); score += run(m.map(r => r[i])); }
+  for (let r = 0; r < size - 1; r++) for (let c = 0; c < size - 1; c++) {
+    const v = m[r][c];
+    if (v === m[r][c + 1] && v === m[r + 1][c] && v === m[r + 1][c + 1]) score += 3;
+  }
+  const bad1 = [1, 0, 1, 1, 1, 0, 1, 0, 0, 0, 0], bad2 = [0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 1];
+  const hits = line => {
+    let s = 0;
+    for (let i = 0; i + 11 <= line.length; i++) {
+      const seg = line.slice(i, i + 11);
+      if (bad1.every((v, j) => v === seg[j]) || bad2.every((v, j) => v === seg[j])) s += 40;
+    }
+    return s;
+  };
+  for (let i = 0; i < size; i++) { score += hits(m[i]); score += hits(m.map(r => r[i])); }
+  /* Rule 4, as the specification states it: take the multiples of five either side of the
+     dark percentage, measure each from 50, and score the SMALLER. Some encoders in the wild
+     use a ceil() shortcut that rounds one way only and so scores 52% as a deviation; that
+     picks a different mask on roughly one symbol in a hundred. Both are scannable, since
+     the format bits declare the mask either way, but this one is the spec and the mask
+     override below is what lets the test prove everything else against an encoder that
+     chose differently. */
+  const dark = m.flat().filter(v => v === 1).length;
+  const pct = (dark * 100) / (size * size);
+  score += Math.floor(Math.abs(pct - 50) / 5) * 10;
+  return score;
+}
+
+const ECC_M_BITS = 0b00;
+function formatBits(maskIndex) {
+  let data = (ECC_M_BITS << 3) | maskIndex;
+  let rem = data;
+  for (let i = 0; i < 10; i++) rem = (rem << 1) ^ (((rem >> 9) & 1) * 0b10100110111);
+  return ((data << 10) | rem) ^ 0b101010000010010;
+}
+function versionBits(version) {
+  let rem = version;
+  for (let i = 0; i < 12; i++) rem = (rem << 1) ^ (((rem >> 11) & 1) * 0b1111100100101);
+  return (version << 12) | rem;
+}
+
+function applyFormat(m, maskIndex, version) {
+  const size = m.length, bits = formatBits(maskIndex);
+  /* THE FIFTEEN BITS ARE READ MOST-SIGNIFICANT FIRST. Indexing them from the low end
+     instead produces a symbol that is structurally perfect and says the wrong thing about
+     its own mask, so every scanner unmasks it incorrectly and reads noise. It looks right
+     to the eye, which is why this is proved against an independent encoder in the test
+     rather than checked by looking at it. */
+  const b = k => (bits >> (14 - k)) & 1;
+  for (let i = 0; i <= 5; i++) m[8][i] = b(i);
+  m[8][7] = b(6); m[8][8] = b(7); m[7][8] = b(8);
+  for (let i = 9; i <= 14; i++) m[14 - i][8] = b(i);
+  for (let i = 0; i <= 6; i++) m[size - 1 - i][8] = b(i);
+  for (let i = 7; i <= 14; i++) m[8][size - 15 + i] = b(i);
+  m[size - 8][8] = 1;                              // the dark module, over the second copy
+  if (version >= 7) {
+    const vb = versionBits(version);
+    /* The eighteen version bits are read low-first, unlike the format bits above. That
+       asymmetry is the specification's, not a slip. */
+    for (let i = 0; i < 18; i++) {
+      const v = (vb >> i) & 1, r = Math.floor(i / 3), c = i % 3;
+      m[size - 11 + c][r] = v; m[r][size - 11 + c] = v;
+    }
+  }
+}
+
+/** The module matrix for a string, as an array of rows of 0/1. */
+function qrMatrix(text, opts) {
+  opts = opts || {};
+  const bytes = Array.from(new TextEncoder().encode(String(text)));
+  let version = opts.version || 0;
+  if (!version) {
+    for (let v = 1; v <= 10; v++) {
+      const V = VERSIONS[v];
+      const dataCw = V.groups.reduce((a, [n, c]) => a + n * c, 0);
+      const overheadBits = 4 + (v < 10 ? 8 : 16);
+      if (bytes.length * 8 + overheadBits <= dataCw * 8) { version = v; break; }
+    }
+  }
+  if (!version) throw new Error('qr: ' + bytes.length + ' bytes exceeds version 10 at level M');
+  const codewords = encodeData(bytes, version);
+  const base = makeMatrix(version);
+  const free = placeData(base, codewords, version);
+
+  /* `mask` forces one of the eight rather than scoring for the best. Nothing in the batch
+     uses it; it exists so the test can drive all eight and compare against an independent
+     encoder held to the same mask, which proves the data, the error correction, the
+     interleave, the function patterns and the format bits without the choice of mask
+     getting in the way. */
+  const only = opts.mask;
+  let best = null;
+  for (let k = 0; k < 8; k++) {
+    if (only != null && k !== only) continue;
+    const m = base.map(r => r.slice());
+    for (let r = 0; r < m.length; r++) for (let c = 0; c < m.length; c++) {
+      if (free[r][c] && MASKS[k](r, c)) m[r][c] ^= 1;
+    }
+    applyFormat(m, k, version);
+    const p = penalty(m);
+    if (!best || p < best.p) best = { p, m };
+  }
+  if (!best) throw new Error('qr: mask must be 0 to 7');
+  return best.m;
+}
+
+/**
+ * An SVG for a string. One path for every dark module, so it is a single fill and it scales.
+ * `quiet` is the mandatory light border, four modules by the specification; below that,
+ * scanners start to fail against a dark background.
+ */
+function qrSvg(text, opts) {
+  opts = opts || {};
+  const m = qrMatrix(text, opts);
+  const quiet = opts.quiet == null ? 4 : opts.quiet;
+  const n = m.length, span = n + quiet * 2;
+  const size = opts.size || 132;
+  const dark = opts.dark || '#000000';
+  const light = opts.light || '#ffffff';
+  /* v564: the run-length walk moved to qrRuns, shared with qrRectSvg and with the desk's canvas
+     and PDF, so no two renderers can draw different geometry from the same matrix. */
+  const d = qrRuns(m).map(function (u) {
+    return 'M' + (u.c + quiet) + ' ' + (u.r + quiet) + 'h' + u.w + 'v1h-' + u.w + 'z';
+  }).join('');
+  const label = opts.label ? String(opts.label).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch])) : '';
+  return '<svg xmlns="http://www.w3.org/2000/svg" width="' + size + '" height="' + size + '" '
+    + 'viewBox="0 0 ' + span + ' ' + span + '" shape-rendering="crispEdges" role="img"'
+    + (label ? ' aria-label="' + label + '"' : ' aria-hidden="true"') + '>'
+    + '<rect width="' + span + '" height="' + span + '" fill="' + light + '"/>'
+    + '<path d="' + d + '" fill="' + dark + '"/></svg>';
+}
+
+/* THE DARK MODULES AS RUNS, once, for every renderer. qrSvg turns these into path subpaths,
+   qrRectSvg into <rect>s and the desk's canvas and PDF into filled rectangles; all four draw the
+   same geometry because all four read this. */
+function qrRuns(m) {
+  const out = [], n = m.length;
+  for (let r = 0; r < n; r++) {
+    let c = 0;
+    while (c < n) {
+      if (m[r][c] !== 1) { c++; continue; }
+      let w = 1;
+      while (c + w < n && m[r][c + w] === 1) w++;
+      out.push({ r: r, c: c, w: w });
+      c += w;
+    }
+  }
+  return out;
+}
+/**
+ * The same QR as <rect> elements rather than one filled path. Both decode; this one cannot be
+ * argued with. A stroked path does NOT decode, and a filled path with many subpaths depends on the
+ * fill rule being read as every renderer reads it, so where the output is handed to something other
+ * than a browser -- print, a PDF, a phone's share sheet -- the rectangles are the honest form.
+ * `px` is the size of one module in user units, so the caller decides the scale and nothing is
+ * resampled. The quiet zone is four modules by the specification: below that, scanners start to
+ * fail against a dark background, and this desk's ground is almost black.
+ */
+function qrRectSvg(text, opts) {
+  opts = opts || {};
+  const m = qrMatrix(text, opts);
+  const quiet = opts.quiet == null ? 4 : opts.quiet;
+  const n = m.length, span = n + quiet * 2;
+  const size = opts.size || 132;
+  const dark = opts.dark || '#000000';
+  const light = opts.light || '#ffffff';
+  const rects = qrRuns(m).map(function (u) {
+    return '<rect x="' + (u.c + quiet) + '" y="' + (u.r + quiet) + '" width="' + u.w + '" height="1"/>';
+  }).join('');
+  const label = opts.label ? String(opts.label).replace(/[&<>"]/g, function (ch) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]; }) : '';
+  return '<svg xmlns="http://www.w3.org/2000/svg" width="' + size + '" height="' + size + '" '
+    + 'viewBox="0 0 ' + span + ' ' + span + '" shape-rendering="crispEdges" role="img"'
+    + (label ? ' aria-label="' + label + '"' : ' aria-hidden="true"') + '>'
+    + '<rect width="' + span + '" height="' + span + '" fill="' + light + '"/>'
+    + '<g fill="' + dark + '">' + rects + '</g></svg>';
+}
+
+return {qrMatrix:qrMatrix, qrSvg:qrSvg, qrRectSvg:qrRectSvg, qrRuns:qrRuns, QR_VERSIONS:VERSIONS};
+})();
+/* ==== END ENGINE qr ==== */
 /* ==== ENGINE position: generated from engine/position.mjs by tools/engine.mjs. Edit the module, never this block. ==== */
 /* engine/position.mjs: THE POSITION ENGINE, OUT OF THE DESK (move 1 of the rebuild, session 2, 22 Aug 2026).
  *
@@ -5710,7 +6118,9 @@ const whiteboard=[
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{"v":"v562","d":"10 Sep 2026","t":"CORRECTION ON CA7-JTR S140: TOTAL DOWN TO RM430, DELIVERED WITH RM15 CARRIAGE","n":["<b>ONE CORRECTION FOLDED, NO CASH AND NO STOCK MOVED.</b> The desk applied the patch to CA7-JTR's oil row s140 of 08 Sep, 50 unit: total from RM450 to RM430, delivery from unset to RM15, cash from RM450 to RM430, handover from collected to delivered and cost from unset to RM350. The row is not rewritten, only its own terms restated, so the ledger position and the inventory both stand where they stood.","<b>WHAT THE DRAFTER FLAGGED STAYS ON THE FACE OF THE ROW.</b> The row carries a trail of two steps that no longer adds to the stated figure, RM450 was paid against a corrected total of RM430, and RM430 for the goods is RM6.43 under the floor of RM436.43. The typed RM350 becomes the cost every margin on this row is measured against, in place of the inventory's own rate. All four points are recorded, none is answered here."]},
+const evolution=[{"v":"v564","d":"10 Sep 2026","t":"TWO TIERS ON THE BOARD, THE SUGGESTED PRICE TO THE NEAREST FIVE, AND THE SHEET SAVES AS JPG AND PDF WITH A QR","n":["<b>HIS INSTRUCTION, 10 SEP 2026: “I want to have a 2 tier rate. The current one shown on the board is Tier 2. For Tier 1, the 0.5 unit is 60 while the 12.5 unit is 875.”</b> So the board carries two levels. <b>Tier 2 is the board that was there and not one of its figures moves</b>, at any size, on either book: it is still what priceLadder().ask returns, still what the customer price list is drawn toward, still what the drafter measures a row against, and still row zero of the payload the phone and the D1 mirror read. Tier 1 is new and sits under it: <b>RM 60, 110, 150, 200, 230, 270, 310, 340, 380, 410, 500 and 875</b> against Tier 2’s RM 70 to RM 1,150. Said as rates, RM 120 a unit falling to RM 70 against RM 140 falling to RM 92, so Tier 1 is 86 per cent of the ask at half a unit and 76 per cent of it at twelve and a half. Every rung clears break-even, from 2.13x at half a unit to 1.25x at twelve and a half, so nothing on either tier is quoted at a loss.","<b>TIER 1 IS STATED AT ITS ENDS AND INTERPOLATED BETWEEN THEM, AND THE DERIVED ROAD WAS TRIED FIRST.</b> The ask is a margin on the floor tapered at the supplier’s own exponent (v504), which is ONE number to set: a level pinned at 2.5 unit. His two ends are two numbers, and they do not fit on that shape. Measured, his pair implies a taper of <b>-0.167 against the supplier’s -0.121</b>, which is the whole point of a relationship price and not something a level can absorb; solved as a margin curve it wants an anchor of 0.324 and a taper of -0.308, and the clamps then bite. Worse, <b>RM 875 is not a multiple of ten</b> and the house rounding is up to the ten, so no derived curve can ever print the figure he gave; it would print RM 880. So the two ends are taken verbatim and only the sizes between them are rounded, which is the rule the retired tier board used and the only one that can be honest about a number he typed. Between them the RATE is interpolated in the log of size, the desk’s own method, and outside them it is clamped rather than extrapolated. Tier 1 obeys the same two laws as the ask: the rate never rises with size, and the gap to break-even is named in <code>under</code> rather than hidden.","<b>OIL HAS ONE TIER AND THE BOARD SAYS SO.</b> Its five prices are already his own stated ones and its 50 unit rung earns 3 per cent, so there is nothing for a second tier to sit under, and he has stated no ends for it. <code>LADDER_BY.oil</code> therefore carries <code>tier1:null</code> as an ENTRY rather than an omission: <code>ladderFor</code> spreads LADDER underneath, so leaving it out would hand oil salt’s anchors, clamp every oil size to 12.5, land the rate at RM 70 a unit and quote <b>RM 700 for ten units of oil that Tier 2 sells at RM 130</b>. The suite asserts oil is handed none, and the board head reads Ask on a one-tier book and Tier 2 on a two-tier one.","<b>THE MARKUP COLUMN MOVED INTO THE ASKS RATHER THAN BEING DROPPED OR DOUBLED.</b> v554’s rule stands: the multiple must say what it is OF, or 2.49x reads as +249 per cent. What could not stand is one Markup column beside TWO asks, which has to pick a tier and then silently describes one of them while sitting level with both. Each tier cell now carries its own total, rate, margin on price and multiple of effective cost, four lines, and the board stays at five columns because it gets 325px of a 375px screen. <b>The “collect only” tag went with it, and it had been unreachable since v502</b>: that release made one floor per size and the suite asserts collecting and delivering give the same figure to the ringgit, so the tag’s own condition has been impossible for a fortnight. The row now flags a price under break-even, on either tier, and names which.","<b>HIS SECOND INSTRUCTION: THE SUGGESTED PRICE PER CUSTOMER ROUNDS TO THE NEAREST FIVE.</b> It was the whole ringgit UP, which put figures like RM 97 and RM 416 on a sheet handed to a customer while the board beside it quotes in tens. NEAREST, not up: the four drawing rules that pull a customer’s own rate toward the board already decide the direction, and rounding had no business deciding it again. <b>The floor is the one thing rounding may not cross</b>: nearest-five can land up to RM 2.50 under break-even, so a price that does is lifted to the first five above the floor. The cap is not re-clamped, because it is a drawing target at three times COGS and not a refusal line. One rule, two places, and the suite holds <code>tools/pricelist.mjs</code> and the desk’s <code>pbAdjusted</code> together as it always has. Measured over <b>all 39 parties on the roster</b>: every price on every sheet is a multiple of five and not one is under its floor.","<b>HIS THIRD INSTRUCTION: THE BOARD SHEET SAVES AS HTML, PDF AND JPG, WITH THE LOGO AND THE NUMBERS ONLY, THEN THE USERNAME AND A QR TO THE WEBSITE.</b> HTML was already there. The image was a PNG and is now a <b>JPG</b>, which every message app and phone gallery takes without asking. The <b>PDF</b> is written out here, one A4 page embedding the same JPEG as a DCTDecode image, so paper, file and message are one rendering and cannot drift; no library, for the reason hard rule 4 exists and the reason engine/qr.mjs is written out rather than installed. And <b>the username has moved below the numbers, with the QR after it</b>, which is the order he gave; v538’s rule that there are no words at all on the sheet is not withdrawn and still holds.","<b>ONE QR ENCODER, INLINED LIKE THE PRICING ENGINE.</b> tools/qr.mjs was a build-time module for the statements; the desk needs the same encoder at runtime, and a second copy would drift exactly as two pricing engines would. It is now <code>engine/qr.mjs</code>, inlined into the master by <code>tools/engine.mjs --sync</code> beside pricing and position, with CI failing if the block is not the module to the byte. It draws <b>rectangles, never a path and never a stroke</b>, because the sheet goes to print, to a PDF and to a phone’s share sheet rather than only to a browser. <b>The site’s address is never in this file</b>: /desk is public by his decision of 11 Aug and the statements site is deliberately on its own cryptic name, so the address travels the keyed road the usernames already travel, written to the desk’s store by the publish and handed back by GET /stmt-users. No address means no QR, said on the card, because a printed code that opens nothing is worse than no code.","<b>MEASURED IN A REAL BROWSER, NOT IN jsdom, BECAUSE jsdom HAS NO CANVAS.</b> The QR was drawn on the canvas and then <b>read back module by module against the encoder: 1,089 modules, none wrong</b>, and the quiet zone light at every one of 344 samples round its edge. The JPEG carries its start and end markers. The PDF opens <code>%PDF-1.4</code>, ends <code>%%EOF</code>, and <b>every one of its five xref offsets lands exactly on its own object</b>, which is the whole difficulty of writing one by hand. With no address the sheet still renders and the PDF is still made, with no QR block at all. Four new suite assertions were each proved RED before their green was trusted, by moving the 12.5 anchor onto a ten, by removing oil’s tier1:null, by putting Tier 1 at row zero and by pricing Tier 1 above Tier 2."]},
+
+{"v":"v562","d":"10 Sep 2026","t":"CORRECTION ON CA7-JTR S140: TOTAL DOWN TO RM430, DELIVERED WITH RM15 CARRIAGE","n":["<b>ONE CORRECTION FOLDED, NO CASH AND NO STOCK MOVED.</b> The desk applied the patch to CA7-JTR's oil row s140 of 08 Sep, 50 unit: total from RM450 to RM430, delivery from unset to RM15, cash from RM450 to RM430, handover from collected to delivered and cost from unset to RM350. The row is not rewritten, only its own terms restated, so the ledger position and the inventory both stand where they stood.","<b>WHAT THE DRAFTER FLAGGED STAYS ON THE FACE OF THE ROW.</b> The row carries a trail of two steps that no longer adds to the stated figure, RM450 was paid against a corrected total of RM430, and RM430 for the goods is RM6.43 under the floor of RM436.43. The typed RM350 becomes the cost every margin on this row is measured against, in place of the inventory's own rate. All four points are recorded, none is answered here."]},
 
 {"v":"v561","d":"10 Sep 2026","t":"THE LEDGER OPENS ON THE LEDGER, NOT ON ITS OWN FILTER","n":["<b>HIS INSTRUCTION, 10 SEP 2026:</b> \"Redesign this, to be more compact and functional, as this is not the main function of the ledger.\" The filter stood <b>273px tall on a 924px column</b>, the search box and all four dropdowns each on a row of its own, so the first of 166 entries began 905px below the heading and the first thing the Ledger showed you was its own filter.","<b>THE CAUSE WAS ONE RULE IN THE OLDER LAYER, AND NOT THE BAR AT ALL.</b> A bare <code>select{width:100%}</code>, written for the stacked fields on the Enter view, catches every select on the desk. <code>.ledbar</code> has been a wrapping flex row since it was written; its controls were simply each as wide as the row. Measured in a real browser rather than read off the source, because this is layout and jsdom does none.","<b>SO THEY WERE GIVEN A WIDTH, NOT A NEW BAR.</b> The search grows, the four selects take their content and cap at 190px, the count and Clear sit at the right. On the desk the bar is <b>44px, one row</b>, and the first entry moves up to 677px: <b>228px reclaimed</b>. On a 375px phone it is 148px against 278px, two controls to a row instead of one, and every control still measures 44px in both directions, which is the tap contract.","<b>IT STILL WRAPS, WHICH IS WHY THE CONTAINER WAS A WRAP FLEX ROW TO BEGIN WITH.</b> Nothing overflows at 375px and no control shrinks below the tap size. The floating filter he offered as an alternative is not needed for this: the bar was never the wrong shape, only the wrong width."]},
 
@@ -6070,7 +6480,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='10 Sep 2026, 11:50 KL';
+const LAST_UPDATED='10 Sep 2026, 13:40 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -16356,6 +16766,7 @@ function pxHead(){
    THE USERNAME COMES FROM THE WORKER (GET /stmt-users, keyed), which the publish writes to the
    desk's store; the laptop copy has no road to it and prints a blank line for it. */
 let PB_USERS=null;
+let PB_SITE=null;   /* v564: the statements site, learned from the keyed /stmt-users; never baked in */
 function pbWeekMonday(){const kl=new Date(TODAY.toLocaleString('en-US',{timeZone:'Asia/Kuala_Lumpur'}));const d=(kl.getDay()+6)%7;kl.setDate(kl.getDate()-d);
   return kl.getFullYear()+'-'+String(kl.getMonth()+1).padStart(2,'0')+'-'+String(kl.getDate()).padStart(2,'0');}
 /* 08 Sep 2026: A ROW THAT COUNTS AS A PRICE THIS CUSTOMER PAID, word for word pricedOrder in
@@ -16391,20 +16802,26 @@ function pbLoyal(code){const rows=pSales(PROD).filter(s=>s.customer===code&&pbPr
 function pbPrices(code){const own=pbOwnRate(code),loyal=pbLoyal(code);
   return shownSizes(PROD).slice().sort((a,b)=>a-b).map(q=>{const fl=floorTotal(q),L=priceLadder(q);
     const price=own.rate!=null?pbAdjusted(own.rate*q,fl,L.ask.total,3*L.cogs,loyal):L.ask.total;return {q,price:+price.toFixed(2)};});}
+/* v564: AND THE SITE'S ADDRESS, for the QR. It comes down the same keyed road as the usernames
+   and is never in this file: /desk is public by his decision of 11 Aug and the statements site is
+   deliberately on its own cryptic name. No site means no QR, said on the card rather than drawn as
+   a QR to nowhere, which is the one failure a printed code must not have. */
 async function pbUsers(){if(PB_USERS)return PB_USERS;if(!cloudMode())return {};
   try{const r=await fetch('stmt-users',{cache:'no-store',headers:qHeaders()});const j=r.ok?await r.json():null;
-    const inv={};Object.keys((j&&j.users)||{}).forEach(u=>{inv[j.users[u]]=u;});PB_USERS=inv;}catch(e){PB_USERS=null;}
+    const inv={};Object.keys((j&&j.users)||{}).forEach(u=>{inv[j.users[u]]=u;});PB_USERS=inv;
+    PB_SITE=(j&&typeof j.site==='string'&&/^https?:\/\//.test(j.site))?j.site.replace(/\/+$/,''):null;}catch(e){PB_USERS=null;}
   return PB_USERS||{};}
 function pbCard(){
   const who=roster.filter(id=>!id.startsWith('S'));
   const sizes=shownSizes(PROD).slice().sort((a,b)=>a-b);
   return `<div class="card" id="pbCard" style="margin-top:12px">
-    <div class="cardh">Print a board <span class="sub">the mark, the figures and the username</span></div>
-    <div class="dsc">Choose the customer, tick the sizes, then Print, or on the phone Save as image (the share sheet offers Save Image and Save to Files) or Save as HTML (a file that opens anywhere). The prices are his own rate drawn toward the board: up a quarter of the way to the ask where he sits under it, up further where he sits under the floor, down where he sits above twice the markup, down a quarter of the way where he is loyal and above the ask; the board&rsquo;s ask where he has no history. The same list his statement page shows this week. Copy as text puts the same lines on the clipboard.</div>
+    <div class="cardh">Print a board <span class="sub">the mark, the figures, the username and a QR to his page</span></div>
+    <div class="dsc">Choose the customer, tick the sizes, then Print, or save it as JPG, PDF or HTML; on the phone the share sheet offers Save Image and Save to Files. The sheet is the crystal, one line per size, his username and a QR that opens his own statements page. The prices are his own rate drawn toward the board: up a quarter of the way to the ask where he sits under it, up further where he sits under the floor, down where he sits above twice the markup, down a quarter of the way where he is loyal and above the ask; the board&rsquo;s ask where he has no history, and to the nearest five since 10 Sep 2026. The same list his statement page shows this week. Copy as text puts the same lines and the link on the clipboard.</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px">
       <select id="pbWho" aria-label="Customer" style="min-height:44px;border:1px solid var(--brd);border-radius:8px;padding:8px 10px;font-size:14px;color:var(--ink);background:var(--wellbg)">${who.map(id=>`<option value="${esc(id)}">${esc(codeOf(id))}</option>`).join('')}</select>
       <button class="vbtn" id="pbPrint" type="button">Print</button>
-      <button class="vbtn" id="pbImage" type="button" style="background:transparent;color:var(--gold)">Save as image</button>
+      <button class="vbtn" id="pbImage" type="button" style="background:transparent;color:var(--gold)">Save as JPG</button>
+      <button class="vbtn" id="pbPdf" type="button" style="background:transparent;color:var(--gold)">Save as PDF</button>
       <button class="vbtn" id="pbHtml" type="button" style="background:transparent;color:var(--gold)">Save as HTML</button>
       <button class="vbtn" id="pbCopy" type="button" style="background:transparent;color:var(--gold)">Copy as text</button>
     </div>
@@ -16415,7 +16832,8 @@ function pbCard(){
         <li>Nothing happens on the phone: the desk added to the Home Screen has no print dialog on some phones. Open the same address in Safari or Chrome, tap Print again, or use the browser&rsquo;s Share, then Print.</li>
         <li>The dialog opens but the page is blank: choose &ldquo;Save as PDF&rdquo; as the printer, then print the PDF; a blocked pop-up does the same.</li>
         <li>No printer at hand: Copy as text, and paste it into the message you send him.</li>
-        <li>The username line is blank: the laptop copy has no road to the usernames, and the cloud desk needs the write key. On the cloud desk, reload once and try again.</li>
+        <li>The username line is blank, or there is no QR: both come down the same keyed road from the Worker, so the laptop copy has neither and the cloud desk needs the write key. On the cloud desk, reload once and try again. A QR is never drawn without a username, because a code that opens nothing is worse than no code.</li>
+        <li>Save as PDF does nothing: the sheet is drawn on a canvas first, and a browser that refuses that refuses the JPG too. Print, then choose Save as PDF in the dialog.</li>
       </ul></details>
   </div>`;}
 function pbTicked(){return [...document.querySelectorAll('#pbSizes input:checked')].map(i=>+i.dataset.q);}
@@ -16424,7 +16842,12 @@ async function pbSheet(){
   const code=sel.value, ticked=pbTicked();
   const rows=pbPrices(code).filter(r=>ticked.some(q=>Math.abs(q-r.q)<1e-9));
   const users=await pbUsers();
-  return {code,user:users[code]||'',rows,product:(PRODUCTS[PROD]&&PRODUCTS[PROD].name)||PROD,week:pbWeekMonday()};}
+  /* v564: the customer's own landing page, the address tools/make_statements.mjs prints on the
+     statement itself, built the same way: the site, then ?u= his username. No username or no site
+     and there is no url, so every renderer below simply leaves the QR off. */
+  const user=users[code]||'';
+  const url=(PB_SITE&&user)?(PB_SITE+'/?u='+encodeURIComponent(user)):null;
+  return {code,user,url,rows,product:(PRODUCTS[PROD]&&PRODUCTS[PROD].name)||PROD,week:pbWeekMonday()};}
 /* v537: THE PRINTED BOARD IS THE LOGO AND THE NUMBERS (his instruction, 08 Sep 2026). v538, his
    two calls the same hour: on the identity's own ground, not white, and NO WORDS AT ALL. The
    crystal alone, the username the list is tagged to, then one line per size carrying two bare
@@ -16433,10 +16856,35 @@ async function pbSheet(){
    file carries the same rules inline because it opens with no stylesheet, and the image draws them. */
 const PB_MARK='<svg class="mark" viewBox="0 0 100 100" role="img" aria-label="Salt crystal"><defs><linearGradient id="saltCrystalPrint" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#c5a059"/><stop offset="100%" stop-color="#b87333"/></linearGradient></defs><polygon points="50,5 95,28 95,72 50,95 5,72 5,28" fill="none" stroke="url(#saltCrystalPrint)" stroke-width="3" stroke-linejoin="round"/><polyline points="50,5 50,50 95,28" fill="none" stroke="url(#saltCrystalPrint)" stroke-width="3" stroke-linejoin="round"/><polyline points="50,50 5,28" fill="none" stroke="url(#saltCrystalPrint)" stroke-width="3" stroke-linejoin="round"/><polyline points="50,50 50,95" fill="none" stroke="url(#saltCrystalPrint)" stroke-width="3" stroke-linejoin="round"/><polygon points="50,28 72,39 50,50 28,39" fill="url(#saltCrystalPrint)" opacity="0.85"/></svg>';
 const pbFig=x=>fmt(x).replace(/^RM\s*/,'');   /* the desk's own figure, without the currency */
+/* ============ v564: THE MARK, THE NUMBERS, THE USERNAME, THE QR, IN THAT ORDER ============
+   HIS INSTRUCTION, 10 SEP 2026: "subtle logos and numbers only, followed by their login username
+   and QR code to the website." The username MOVED: v538 put it directly under the crystal and above
+   the lines, because the sheet was then the mark and the figures and the username was what tagged
+   them to a person. His order now puts it after the numbers, with the QR after it, and it reads
+   better for being there: the top of the sheet is the thing he is quoting and the foot of it is how
+   the customer opens his own page.
+   STILL NO WORDS, which was his instruction at v538 and is not withdrawn. No unit, no RM, no SALT,
+   no column heads and no sentence under the QR. The crystal is the only mark and the username is
+   the only text.
+   THE QR IS RECTANGLES, never a path and never a stroke. engine/qr.mjs draws both forms off one
+   matrix; this takes the rectangles, because this output goes to print, to a PDF and to a phone's
+   share sheet rather than only to a browser, and a fill rule read differently by any one of them
+   would produce a code that looks right and does not scan. Light modules on the light ground and
+   dark on the obsidian is the wrong way round for a scanner, so the block keeps its own light
+   panel: the quiet zone is part of the specification, not decoration. */
+function pbQr(url,size){
+  if(!url)return '';
+  try{return QR_ENGINE.qrRectSvg(url,{size:size||176,dark:'#05080a',light:'#f2f4f5',label:'Your statements page'});}
+  catch(e){return '';}}
 function pbSheetHtml(sh){
-  return '<div class="pbl">'+PB_MARK+'</div><div class="pbu">'+esc(sh.user||'')+'</div>'
-    +'<table>'+sh.rows.map(r=>'<tr><td class="l">'+esc(String(r.q))+'</td><td>'+esc(pbFig(r.price))+'</td></tr>').join('')+'</table>';}
-const PB_CSS='.pbl{margin:0 0 14px}.pbl .mark{width:56px;height:56px;display:block}.pbu{font-family:Consolas,monospace;font-size:14px;font-weight:500;letter-spacing:.14em;color:#c5a059;margin:0 0 24px;min-height:17px}table{border-collapse:collapse;min-width:300px}td{padding:10px 0 10px 40px;border-bottom:1px solid rgba(197,160,89,.3);font-size:20px;text-align:right;font-family:Consolas,monospace;color:#c5a059}td.l{text-align:left;padding-left:0;font-family:Georgia,serif;color:#f2f4f5}';
+  const qr=pbQr(sh.url,176);
+  return '<div class="pbl">'+PB_MARK+'</div>'
+    +'<table>'+sh.rows.map(r=>'<tr><td class="l">'+esc(String(r.q))+'</td><td>'+esc(pbFig(r.price))+'</td></tr>').join('')+'</table>'
+    +'<div class="pbu">'+esc(sh.user||'')+'</div>'
+    +(qr?'<div class="pbq">'+qr+'</div>':'');}
+/* v564: the username and the QR sit BELOW the table now, so their margins swapped ends, and the
+   QR gets a light panel of its own because a scanner needs the quiet zone lighter than the code. */
+const PB_CSS='.pbl{margin:0 0 18px}.pbl .mark{width:56px;height:56px;display:block}.pbu{font-family:Consolas,monospace;font-size:14px;font-weight:500;letter-spacing:.14em;color:#c5a059;margin:22px 0 0;min-height:17px}.pbq{margin:14px 0 0}.pbq svg{display:block;background:#f2f4f5;padding:0}table{border-collapse:collapse;min-width:300px}td{padding:10px 0 10px 40px;border-bottom:1px solid rgba(197,160,89,.3);font-size:20px;text-align:right;font-family:Consolas,monospace;color:#c5a059}td.l{text-align:left;padding-left:0;font-family:Georgia,serif;color:#f2f4f5}';
 async function pbPrint(){
   const sh=await pbSheet();const m=document.getElementById('pbMsg');
   if(!sh||!sh.rows.length){if(m)m.textContent='Tick at least one size.';return;}
@@ -16451,7 +16899,12 @@ async function pbPrint(){
 async function pbCopy(){
   const sh=await pbSheet();const m=document.getElementById('pbMsg');
   if(!sh||!sh.rows.length){if(m)m.textContent='Tick at least one size.';return;}
-  const text=['Salt Command',sh.user?'Username '+sh.user:'',sh.product+', week of '+sh.week,''].concat(sh.rows.map(r=>units(r.q)+'  RM '+r.price)).filter(x=>x!==null).join('\n');
+  /* v564: the link goes with it. A message cannot carry a QR, and the QR and the link are the same
+     address, so the text form carries the one the customer can tap. */
+  const text=['Salt Command',sh.user?'Username '+sh.user:'',sh.product+', week of '+sh.week,'']
+    .concat(sh.rows.map(r=>units(r.q)+'  RM '+r.price))
+    .concat(sh.url?['','Your statements page: '+sh.url]:[])
+    .filter(x=>x!==null).join('\n');
   let ok=false;try{await navigator.clipboard.writeText(text);ok=true;}catch(e){
     try{const ta=document.createElement('textarea');ta.value=text;ta.style.position='fixed';ta.style.top='-1000px';document.body.appendChild(ta);ta.select();ok=document.execCommand('copy');document.body.removeChild(ta);}catch(e2){}}
   if(m)m.textContent=ok?'Copied '+sh.rows.length+' line'+(sh.rows.length===1?'':'s')+'.':'Could not copy on this browser.';}
@@ -16471,19 +16924,103 @@ function pbDrawMark(g,x,y,s){
   P([[50,5],[95,28],[95,72],[50,95],[5,72],[5,28]]);g.closePath();g.stroke();
   P([[50,5],[50,50],[95,28]]);g.stroke();P([[50,50],[5,28]]);g.stroke();P([[50,50],[50,95]]);g.stroke();
   g.globalAlpha=.85;g.fillStyle=grad;P([[50,28],[72,39],[50,50],[28,39]]);g.closePath();g.fill();g.globalAlpha=1;}
-function pbImageBlob(sh){
-  const W=1080,pad=72,rowH=64,top=270;const H=top+sh.rows.length*rowH+90;
+/* the QR as filled rectangles, off the same matrix the SVG uses. One rectangle per RUN, not per
+   module: 275 against 564 on a statement URL, and every one of them axis-aligned on whole module
+   boundaries so nothing is half a pixel wide at any scale. */
+function pbDrawQr(g,url,x,y,box){
+  let m=null;try{m=QR_ENGINE.qrMatrix(url);}catch(e){return 0;}
+  const quiet=4,span=m.length+quiet*2,px=box/span;
+  g.fillStyle='#f2f4f5';g.fillRect(x,y,box,box);      // the quiet zone, and it must be the light one
+  g.fillStyle='#05080a';
+  QR_ENGINE.qrRuns(m).forEach(u=>{
+    /* ceil on the far edge rather than rounding the width: at a fractional px a rounded width
+       leaves hairlines between adjacent runs, and a scanner reads those as light modules */
+    const x0=x+(u.c+quiet)*px, y0=y+(u.r+quiet)*px;
+    g.fillRect(Math.floor(x0),Math.floor(y0),Math.ceil(x0+u.w*px)-Math.floor(x0),Math.ceil(y0+px)-Math.floor(y0));});
+  return box;}
+/* v564: the username and the QR follow the numbers, his order, and the canvas grows to hold them.
+   `mime` is the caller's: JPG for what he saves and sends, and the same bytes are what the PDF
+   embeds, so the sheet on paper and the sheet in the message cannot differ. */
+function pbImageBlob(sh,mime,quality){
+  const W=1080,pad=72,rowH=64,top=240;
+  const QRBOX=sh.url?264:0;
+  const afterRows=top+sh.rows.length*rowH;
+  const userY=afterRows+58, qrY=userY+28;
+  const H=qrY+(QRBOX?QRBOX+pad:0)+(QRBOX?0:pad);
   const cv=document.createElement('canvas');cv.width=W;cv.height=H;const g=cv.getContext('2d');
   g.fillStyle='#05080a';g.fillRect(0,0,W,H);g.textBaseline='alphabetic';
   pbDrawMark(g,pad,pad,112);
-  g.fillStyle='#c5a059';g.font='500 28px Consolas,monospace';try{g.letterSpacing='4px';}catch(e){}
-  g.fillText(sh.user||'',pad,pad+112+46);try{g.letterSpacing='0px';}catch(e){}
   g.strokeStyle='rgba(197,160,89,.3)';g.lineWidth=2;
   sh.rows.forEach((r,i)=>{const y=top+i*rowH+42;g.textAlign='left';g.fillStyle='#f2f4f5';g.font='36px Georgia,serif';g.fillText(String(r.q),pad,y);
     g.textAlign='right';g.fillStyle='#c5a059';g.font='36px Consolas,monospace';g.fillText(pbFig(r.price),W-pad,y);
     g.beginPath();g.moveTo(pad,top+(i+1)*rowH);g.lineTo(W-pad,top+(i+1)*rowH);g.stroke();});
   g.textAlign='left';
-  return new Promise(res=>{try{cv.toBlob(b=>res(b),'image/png');}catch(e){res(null);}});}
+  g.fillStyle='#c5a059';g.font='500 28px Consolas,monospace';try{g.letterSpacing='4px';}catch(e){}
+  g.fillText(sh.user||'',pad,userY);try{g.letterSpacing='0px';}catch(e){}
+  if(QRBOX)pbDrawQr(g,sh.url,pad,qrY,QRBOX);
+  return new Promise(res=>{try{cv.toBlob(b=>res(b),mime||'image/jpeg',quality==null?0.92:quality);}catch(e){res(null);}});}
+/* ============ v564: A PDF, WRITTEN OUT, AROUND THE SHEET'S OWN IMAGE ============
+   HIS INSTRUCTION, 10 SEP 2026: a button to save the board rate in HTML, PDF and JPG. HTML was
+   there, the image was a PNG and is now a JPG, and this is the PDF.
+   NO LIBRARY, for the reason hard rule 4 exists and for the reason engine/qr.mjs is written out
+   rather than installed: nothing may load at runtime, and nothing goes into package.json that does
+   not have to, because `npm ci` runs unattended in a routine that reaches the book. A PDF holding
+   one image is about forty lines of a format that has not changed since 1993.
+   IT EMBEDS THE JPEG THE JPG BUTTON SAVES, byte for byte, as a DCTDecode XObject. So the paper, the
+   PDF and the image he sends are one rendering and cannot drift; and the alternative, redrawing the
+   sheet in PDF operators, would have meant a second renderer for the numbers and a third for the QR.
+   A4 PORTRAIT, because that is what a printer has. The image is scaled to fit inside a 36 point
+   margin and centred, so a twelve-row board and a three-row board both come out as the same sheet
+   with different amounts of white under it.
+   THE BYTE OFFSETS ARE THE WHOLE DIFFICULTY. The xref table must carry the exact byte offset of
+   every object, so this assembles an array of parts, measures each as BYTES rather than as
+   characters, and the text parts are pure ASCII by construction for that reason: one multi-byte
+   character anywhere above the table and every offset after it is wrong by a byte, which most
+   readers survive and some refuse. */
+const PB_A4=[595.28,841.89];
+async function pbPdfBlob(sh){
+  const img=await pbImageBlob(sh,'image/jpeg',0.92);
+  if(!img)return null;
+  const jpg=new Uint8Array(await img.arrayBuffer());
+  /* the pixel size is read back off the canvas rather than recomputed: pbImageBlob owns the layout
+     and a second copy of its arithmetic here would be a second layout engine. */
+  const px=await new Promise(res=>{try{const u=URL.createObjectURL(img),i=new Image();
+    i.onload=()=>{res({w:i.naturalWidth,h:i.naturalHeight});URL.revokeObjectURL(u);};
+    i.onerror=()=>{res(null);URL.revokeObjectURL(u);};i.src=u;}catch(e){res(null);}});
+  if(!px||!px.w||!px.h)return null;
+  const PW=PB_A4[0],PH=PB_A4[1],mar=36;
+  const sc=Math.min((PW-mar*2)/px.w,(PH-mar*2)/px.h);
+  const w=px.w*sc,h=px.h*sc,x=(PW-w)/2,y=PH-mar-h;          // pinned to the top margin, white below
+  const f=n=>(Math.round(n*100)/100).toString();
+  const content='q '+f(w)+' 0 0 '+f(h)+' '+f(x)+' '+f(y)+' cm /I0 Do Q\n';
+  const objs=[
+    '<</Type/Catalog/Pages 2 0 R>>',
+    '<</Type/Pages/Kids[3 0 R]/Count 1>>',
+    '<</Type/Page/Parent 2 0 R/MediaBox[0 0 '+f(PW)+' '+f(PH)+']/Resources<</XObject<</I0 4 0 R>>>>/Contents 5 0 R>>',
+    {img:true},
+    '<</Length '+content.length+'>>\nstream\n'+content+'endstream'
+  ];
+  const enc=new TextEncoder();
+  const parts=[],offs=[];let at=0;
+  const push=u=>{parts.push(u);at+=u.length;};
+  const txt=t=>push(enc.encode(t));
+  txt('%PDF-1.4\n%\u00e2\u00e3\u00cf\u00d3\n');
+  objs.forEach((o,i)=>{
+    offs[i]=at;
+    if(o&&o.img){
+      txt((i+1)+' 0 obj\n<</Type/XObject/Subtype/Image/Width '+px.w+'/Height '+px.h
+        +'/ColorSpace/DeviceRGB/BitsPerComponent 8/Filter/DCTDecode/Length '+jpg.length+'>>\nstream\n');
+      push(jpg);
+      txt('\nendstream\nendobj\n');
+    }else{
+      txt((i+1)+' 0 obj\n'+o+'\nendobj\n');
+    }});
+  const xref=at;
+  let tb='xref\n0 '+(objs.length+1)+'\n0000000000 65535 f \n';
+  offs.forEach(o=>{tb+=String(o).padStart(10,'0')+' 00000 n \n';});
+  tb+='trailer\n<</Size '+(objs.length+1)+'/Root 1 0 R>>\nstartxref\n'+xref+'\n%%EOF\n';
+  txt(tb);
+  return new Blob(parts,{type:'application/pdf'});}
 async function pbDeliver(blob,name,m){
   if(!blob){if(m)m.textContent='This browser could not make the file.';return;}
   const f=new File([blob],name,{type:blob.type});
@@ -16493,14 +17030,24 @@ async function pbDeliver(blob,name,m){
   const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;a.style.display='none';
   document.body.appendChild(a);a.click();setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(url);},2000);
   if(m)m.textContent='Saved '+name+' to this device\u2019s downloads.';}
+/* v564: JPG rather than PNG, his word. A board of twelve lines is flat colour and large type, so
+   the two are within a few kilobytes of each other on this sheet; what decides it is that every
+   message app and every phone gallery takes a JPG without asking, and the PDF embeds the same
+   bytes, so one rendering reaches paper, the file and the message. */
 async function pbSaveImage(){const sh=await pbSheet();const m=document.getElementById('pbMsg');
   if(!sh||!sh.rows.length){if(m)m.textContent='Tick at least one size.';return;}
-  await pbDeliver(await pbImageBlob(sh),'board-'+sh.code+'-'+sh.week+'.png',m);}
+  await pbDeliver(await pbImageBlob(sh,'image/jpeg',0.92),'board-'+sh.code+'-'+sh.week+'.jpg',m);}
+async function pbSavePdf(){const sh=await pbSheet();const m=document.getElementById('pbMsg');
+  if(!sh||!sh.rows.length){if(m)m.textContent='Tick at least one size.';return;}
+  if(m)m.textContent='Making the PDF\u2026';
+  const b=await pbPdfBlob(sh);
+  if(!b){if(m)m.textContent='This browser could not make the PDF; use Print, then Save as PDF.';return;}
+  await pbDeliver(b,'board-'+sh.code+'-'+sh.week+'.pdf',m);}
 async function pbSaveHtml(){const sh=await pbSheet();const m=document.getElementById('pbMsg');
   if(!sh||!sh.rows.length){if(m)m.textContent='Tick at least one size.';return;}
   await pbDeliver(new Blob([pbHtmlDoc(sh)],{type:'text/html'}),'board-'+sh.code+'-'+sh.week+'.html',m);}
-function pbWire(){const b=document.getElementById('pbPrint'),c=document.getElementById('pbCopy'),i=document.getElementById('pbImage'),h=document.getElementById('pbHtml');
-  if(b)b.onclick=pbPrint;if(c)c.onclick=pbCopy;if(i)i.onclick=pbSaveImage;if(h)h.onclick=pbSaveHtml;if(cloudMode()&&saltWriteKey())pbUsers();}
+function pbWire(){const b=document.getElementById('pbPrint'),c=document.getElementById('pbCopy'),i=document.getElementById('pbImage'),h=document.getElementById('pbHtml'),d=document.getElementById('pbPdf');
+  if(b)b.onclick=pbPrint;if(c)c.onclick=pbCopy;if(i)i.onclick=pbSaveImage;if(h)h.onclick=pbSaveHtml;if(d)d.onclick=pbSavePdf;if(cloudMode()&&saltWriteKey())pbUsers();}
 function tabPricing(){
   const c=pxCost(),sg=pxSignals(),pt=pxParty(pxOver.party),net=sg.net,pn=pt.net;
   const q=pxQuoteRate();                      // v385: r30 went with the dead board, unread since v326
