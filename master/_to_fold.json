@@ -1,0 +1,77 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-09-10T20:07:34.862Z",
+   "collection": "sales",
+   "row": {
+    "rid": "s136",
+    "qty": 2,
+    "total": 185,
+    "cash": 160,
+    "date": "2026-09-07",
+    "product": "salt",
+    "changes": [
+     {
+      "field": "settledRM",
+      "from": null,
+      "to": 25
+     },
+     {
+      "field": "settledKg",
+      "from": null,
+      "to": 0
+     },
+     {
+      "field": "settle",
+      "from": null,
+      "to": "First associate sale"
+     }
+    ],
+    "customer": "CR3-DAM"
+   },
+   "reasoning": "Correction against CR3-DAM's order of 2 unit for RM 185 dated 2026-09-07 (s136). Sets settledRM from unset to 25, settledKg from unset to 0, settle from unset to First associate sale. It moves no cash and no stock: it changes what the row says about itself. The row is not rewritten here. The fold applies the patch, so there is one definition of what a correction does rather than two.",
+   "flags": [
+    "CR3-DAM typically pays about RM 80/unit for salt across 12 orders; this one is RM 92.5, 15.6% above that.",
+    "This is an ADVANCE: 2 unit goes out with RM 25 unpaid. Check it against CR3-DAM's credit cap."
+   ],
+   "amends": "s136",
+   "amendKind": "Correction",
+   "entry": {
+    "at": "2026-09-10T20:07:34.862Z",
+    "type": "AMEND",
+    "party": "CR3-DAM",
+    "qty": 0,
+    "total": 0,
+    "raw": "Correction on CR3-DAM s136: settledRM to 25, settledKg to 0, settle to First associate sale, recorded 2026-09-11",
+    "payload": {
+     "mode": "amend",
+     "direction": "SELL",
+     "party": "CR3-DAM",
+     "rid": "s136",
+     "orderKey": "CR3-DAM|2026-09-07|185",
+     "kind": "Correction",
+     "date": "2026-09-11",
+     "fields": {
+      "settledRM": 25,
+      "settledKg": 0,
+      "settle": "First associate sale"
+     },
+     "assoc": null,
+     "downstream": null,
+     "orderCode": null,
+     "linkTo": null,
+     "sameDay": false,
+     "note": null,
+     "qty": 0,
+     "total": 0,
+     "cash": 0,
+     "kg": 0
+    }
+   },
+   "decidedAt": "2026-09-10T20:28:45.076Z",
+   "decidedBy": "desk"
+  }
+ ]
+}
