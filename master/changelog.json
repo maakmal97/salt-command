@@ -1,5 +1,14 @@
 [
  {
+  "v": "v576",
+  "d": "11 Sep 2026",
+  "t": "ONE UNIT TO CN6-WM AT RM130, PAID AND COLLECTED THE SAME DAY, BOOKED AS AN R2 DOWNSELL",
+  "n": [
+   "<b>ONE ROW FOLDED, A SINGLE UNIT OF SALT OUT THE DOOR.</b> The fold takes a SELL to CN6-WM, 1 unit for RM130 dated 11 Sep, RM130 cash in and 1 unit collected on the day, so the row closes on both legs. The rate clears the RM56.21 floor for 1 unit, sits above the RM120 ask and under the RM150 ceiling. Cost is the inventory's own RM44 a unit, so nothing was restated.",
+   "<b>THE FLAGS AND WHAT THE INVENTORY DID.</b> The drafter flagged the R2 booking with downstream CN6-WM-R, so CN6-WM takes no statement from this row, and the rate at 30% above the RM100 the drafter cites. CN6-WM's own history answers the rate: a median of RM110 in a range of RM75 to RM110. RM110 stays outstanding from the advance of 30 Aug, with 1 unit on credit against a cap of 2."
+  ]
+ },
+ {
   "v": "v575",
   "d": "11 Sep 2026",
   "t": "FIVE UNITS TO CR3-DAM AT RM90 A UNIT, PAID AND COLLECTED THE SAME DAY, BOOKED AS AN R2 DOWNSELL",

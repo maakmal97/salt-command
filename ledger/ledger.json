@@ -1,6 +1,6 @@
 {
- "v": "v575",
- "stamped": "11 Sep 2026, 04:48 KL",
+ "v": "v576",
+ "stamped": "11 Sep 2026, 06:19 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -41,7 +41,7 @@
     "stated": 60
    }
   },
-  "STATED_STOCK": 34.25,
+  "STATED_STOCK": 33.25,
   "COUNT_ON": {
    "salt": "2026-09-08",
    "oil": "2026-09-09"
@@ -3460,6 +3460,22 @@
     "downstream": "CR3-DAM-R",
     "note": "<b>SALT SELL DATED 10 SEP, PAID IN FULL AND COLLECTED IN FULL.</b> SELL to CR3-DAM, 5 unit for RM450, RM450 cash in and 5 unit handed over on 10 Sep, stream R2 with downstream CR3-DAM-R, so nothing stays open on this row. The total clears the RM281.07 floor for 5 unit, falls short of the RM500 ask and sits under the RM710 ceiling. CR3-DAM has 12 prior orders, a median rate of RM80 and a range of RM80 to RM92.50, RM25 outstanding before this, 0.27 unit on credit against a cap of 2 and nothing defaulted. Cost is the inventory's own RM44 a unit. The drafter flagged the R2 downsell booking and the rate 12.5% above the usual RM80; the range answers the rate flag, and the RM25 stays outstanding.",
     "rid": "s146"
+   },
+   {
+    "customer": "CN6-WM",
+    "qty": 1,
+    "total": 130,
+    "cost": 44,
+    "cash": 130,
+    "handover": "collected",
+    "date": "2026-09-11",
+    "deliveredQty": 1,
+    "deliveredOn": "2026-09-11",
+    "paidOn": "2026-09-11",
+    "rev": "R2",
+    "downstream": "CN6-WM-R",
+    "note": "<b>SALT SELL DATED 11 SEP, PAID IN FULL AND COLLECTED IN FULL.</b> SELL to CN6-WM, 1 unit for RM130, RM130 cash in and 1 unit handed over on 11 Sep, stream R2 with downstream CN6-WM-R, so nothing new stays open on this row. The total clears the RM56.21 floor for 1 unit, stands above the RM120 ask and under the RM150 ceiling. CN6-WM has 6 prior orders, a median rate of RM110 and a range of RM75 to RM110, RM110 outstanding before this, 1 unit on credit against a cap of 2 and nothing defaulted. Cost is the inventory's own RM44 a unit. The drafter flagged the R2 downsell booking and the rate 30% above the RM100 cited; the median and range answer the rate flag, and the RM110 stays outstanding.",
+    "rid": "s147"
    }
   ],
   "contacts": [
@@ -3788,9 +3804,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-10T20:46:31.577Z",
+  "QUEUE_COMMITTED": "2026-09-10T22:18:15.853Z",
   "PRICING": {
-   "takenAt": "2026-09-10T20:48:37.024Z",
+   "takenAt": "2026-09-10T22:19:45.815Z",
    "sizes": [
     0.5,
     1,
@@ -3944,15 +3960,15 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0.4
+         "v": 0.38461538461538464
         }
        },
        "attrib": 1,
        "shrinkRate": 0.0672016508082082,
        "avgDel": {
-        "n": 131,
-        "kg": 340.95,
-        "mean": 2.6027
+        "n": 132,
+        "kg": 341.95,
+        "mean": 2.5905
        }
       },
       "policy": {
@@ -4246,10 +4262,10 @@
      ]
     }
    },
-   "v": "v575"
+   "v": "v576"
   },
   "OPEN": {
-   "at": "2026-09-10T20:48:37.084Z",
+   "at": "2026-09-10T22:19:45.911Z",
    "count": 7,
    "byKey": {
     "CM4-MK|2026-09-09|220": {
@@ -4375,11 +4391,11 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 34.25,
-     "free": 34.25,
+     "onHand": 33.25,
+     "free": 33.25,
      "owedOut": 0,
-     "coverDays": 6.7,
-     "rate": 5.09,
+     "coverDays": 6.4,
+     "rate": 5.16,
      "owedToYou": 862,
      "promised": 8.5,
      "short": 0
@@ -4400,7 +4416,7 @@
     "salt": "2026-09-08",
     "oil": "2026-09-09"
    },
-   "v": "v575"
+   "v": "v576"
   }
  }
 }
