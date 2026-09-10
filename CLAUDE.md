@@ -79,7 +79,10 @@ The fold routine is `docs/CLOUD_FOLD.md`; statements `docs/STATEMENTS.md`; desig
    **Read it back rather than trusting this line.** It is not a dashboard-only field: the
    Cloudflare API serves it at `GET /accounts/{account}/builds/workers/{script_tag}` and the
    `.../triggers` beside it, where `script_tag` is the Worker id
-   `e85618c353ad4fd6b009cf57e05f0842`. The `master` trigger is the one that deploys; the other
+   `e85618c353ad4fd6b009cf57e05f0842`. Its builds and their LOGS are there too, at
+   `.../builds/workers/{script_tag}/builds` and `.../builds/builds/{uuid}/logs`, and the logs are
+   the only place that shows what the build actually ran; the MCP builds tool reports zero builds
+   where the API reports 280. The `master` trigger is the one that deploys; the other
    trigger excludes master, uploads a version rather than deploying, and is off
    (`previews_enabled: false`), so it is still on the ungated `npm run build`.
    Its token is its own credential: when it was deleted the builds failed in silence (v537 to
