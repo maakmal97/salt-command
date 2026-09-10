@@ -120,6 +120,7 @@ desk shows, cost and margin included, is served at the public URL.
 | **Fold, bump, build, test, push** | the `Fold` step: `tools/foldcall.mjs`, one Claude call for the notes (`ANTHROPIC_API_KEY`) over `fold.mjs`, since v521; or any agent asked, per `docs/CLOUD_FOLD.md` | same job when rows were staged; or on demand |
 | Gate (`tools/gate.mjs`, CI's mechanical checks in about ten seconds, v522), deploy, prove, mark committed (with the clock, v519), re-seed the D1 mirror, publish statements, then the full suite | the steps that follow in the same job; a push runs them alone, and skips the deploy when the phone already has the build; a suite failure after the phone is live turns the run red and is written where the phone shows refusals, never rolled back | same job; or on push |
 | Prove repo and live agree | `ship-check.yml` | 11:00 MYT |
+| Deploy the statements site | the same job, on its own paths. **The checkout is depth 1, so the base commit must be FETCHED before it can be diffed** (fixed 10 Sep 2026): it was not, `git diff` failed into `2>/dev/null`, and a statements-only push deployed nothing while the run went green. It bit only when the desk's build id had not moved, which is exactly what a statements-only change does. It fails safe now: no base, deploy anyway | on push |
 | Monthly statements | `docs/STATEMENTS.md` routine | the 1st, gated in Kuala Lumpur time |
 
 - **The fold is a judgement and stays with a model**: the row NOTE, the `evolution` entry
@@ -206,6 +207,8 @@ skill in `.claude/skills`, laptop only.
   application was removed.** Setting it to `"1"` without recreating the application
   locks him out. To restore: first the Access application (Self-hosted, Workers,
   `salt-command`, policy Allow for his two addresses), then the var, then deploy by hand.
+  **This is the DESK. It is not the statements site's Access, which is live** and gates
+  only `/all` there (set 10 Sep 2026); the two share nothing but a team name.
 - **Writes need `X-Salt-Key` = `SALT_WRITE_KEY`, armed 16 Aug 2026, and so do the reads that
   carry cost or trade: `/queue`, `/ledger`, `/drafts`, `/orders`, `/stmt-users`. The desk, `/rev`
   and `/queue/ping` stay open (corrected 08 Sep 2026).**
@@ -242,6 +245,36 @@ sets the desk key and the site's push pair. Detail: `docs/STATEMENTS.md`.
 KV `stmt-site` and keyed `GET /stmt-users` returns it, so the laptop has no username and no
 QR. No address, no QR drawn.
 
+**NO BRAND ON THE CUSTOMER'S PAGE** (his instruction, 10 Sep 2026). Nothing under `stmt/`
+names Salt Command: not the door, not an order line, not the push banner. The whole design
+is that nothing a customer holds points at the ledger, and an eyebrow saying the name undid
+it. The statement DOCUMENTS still carry it as a letterhead (`brand:` in
+`tools/make_statements.mjs`), which is deliberate and separate; changing it rewrites every
+archive. The landing lead is two sentences and stays two.
+
+**`/all` IS THE OWNER'S LIST, behind Cloudflare Access** (v566, 10 Sep 2026). It serves the
+same page a customer sees with the roster where the gate is; a tap fills the username and
+`STMT_MASTER` into the customer's own form and submits it, so everything past the door is the
+customer's own code. **Two locks, and neither is trusted alone:** an Access application
+("Salt statements owner", `67280e0b-…`, one-time PIN, his address, 24h) covers `/all` AND
+everything under it, and `stmt/access.js` verifies the JWT again — RS256 against the team's
+keys, issuer, audience, expiry. A header check would pass a token signed by any key at all.
+With `ACCESS_TEAM` or `ACCESS_AUD` empty the route is 401, so it deploys before the
+application exists, and deleting the application closes `/all` rather than opening it. His
+decision: the gated route hands the master to the page, so nothing is typed; the trade is
+that an Access session there reads every account. `roster` (codes beside usernames, never
+names) is written by the publish.
+
+**GUEST REFERRAL LINKS: `/g/<id>`** (v566). He mints one from inside `/all`, pinned to Tier 1
+or Tier 2 and labelled so he knows who holds it; it shows that tier's board and nothing else,
+with no script at all and `script-src 'none'`. **The id IS the credential** and the boards are
+NOT sealed, both deliberately: a board is what he prints and hands to strangers, and the link
+exists to say WHICH stranger. An unknown id, a malformed one and a withdrawn one answer the
+same 404. `stmt/refs.js`; boards written as `board:1`/`board:2` by the publish from
+`boardList`, which takes one row off the engine's own `ladderRow` and prices nothing itself.
+**A row named "Tier 1" may carry no prices** (the engine gates it on bare `if(P.tier1)`), so
+take the first row that HAS finite prices; oil is a genuine one-tier book and says so.
+
 ## Files
 
 | Path | What it is |
@@ -250,6 +283,9 @@ QR. No address, no QR drawn.
 | `src/drafter.js` | Queue plus D1 mirror to a proposed row in `draft`; never writes `entry` |
 | `tools/fold.mjs` | `--plan` reads `master/_to_fold.json`, refuses what it must, writes the notes skeleton; `--apply` folds all or nothing, syncs, bumps, rolls the shelf, moves the watermark |
 | `engine/qr.mjs` | The one QR encoder, inlined like the pricing engine (v564); `qrRectSvg` draws RECTANGLES, a stroked symbol does not scan |
+| `stmt/access.js` | Who passed Cloudflare Access, VERIFIED not assumed; header or `CF_Authorization` cookie; fails closed on an unset var |
+| `stmt/refs.js` | Guest referral links: mint, list, revoke, count opens. The id is the credential; rejection sampling, never `byte % 30` |
+| `stmt/qr.js` | GENERATED from `engine/qr.mjs` by `tools/qrsync.mjs --sync`; gate and CI fail on drift. Never edit it; `stmt/` may import only a sibling |
 | `tools/rid.mjs` | Stable `rid` per ledger row; `nextRid` is the one minting place (`ovKey` collided on two SA5-BTR lots) |
 | `tools/drafts.mjs` | `--schema`, `--list`, `--draft <file>`, `--approved`, `--committed <id>`, `--from-queue`; via wrangler, no key |
 | `tools/drain.mjs` | KV to `06_Data\salt_queue_cloud.json`; `--committed <ISO>`, `--status`, `--forget` |
@@ -260,7 +296,7 @@ QR. No address, no QR drawn.
 | `geo/*.json`, `tools/geofetch.mjs` | Basemap (geoBoundaries, ODbL) and gazetteer; `geofetch` alone touches the network, by hand; feature names never rendered |
 | `public/sw.js`, `public/_headers`, `manifest.webmanifest`, `icon-*.png` | Shell network-first, `/queue` never cached; CSP; icons from `Code\salt-ds` |
 | `.deployed.json` | `{id,v,at}` of the last successful deploy |
-| `test/verify.mjs` | About 250 assertions, no network or browser; add one per behavioural change to the Worker, build patches or drain |
+| `test/verify.mjs` | ~1,790 assertions over 118 sections, no network or browser; add one per behavioural change, and **prove it red by mutation before trusting its green** |
 
 ## Working on it
 
