@@ -1,6 +1,6 @@
 {
- "v": "v560",
- "stamped": "10 Sep 2026, 06:55 KL",
+ "v": "v562",
+ "stamped": "10 Sep 2026, 11:50 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -3312,13 +3312,13 @@
    {
     "customer": "CA7-JTR",
     "qty": 50,
-    "total": 450,
-    "cash": 450,
-    "handover": "collected",
+    "total": 430,
+    "cash": 430,
+    "handover": "delivered",
     "product": "oil",
     "deliveredQty": 50,
     "date": "2026-09-08",
-    "note": "<b>PENDING OIL ROW DATED 08 SEP, THE DAY IT WAS AGREED.</b> SELL to CA7-JTR, 50 unit of oil for RM 450, collected, RM 0 cash and 0 unit moved, so the row is pending and draws no stock and books no revenue until it does. At RM 9 a unit the total sits above the RM 376.46 floor for 50 unit and exactly on the RM 450 ask, under the RM 1,080 ceiling. It is costed at the desk's own RM 7.67 a unit, RM 66.67 on the order at 14.8%, so no separate cost attaches. CA7-JTR stood at 2 orders, a median rate of RM 135, a range of RM 13 to RM 135, nothing outstanding, nothing on credit and nothing defaulted, against a credit cap of 10 unit. The drafter flagged nothing. RM 450 and 50 unit stay outstanding.",
+    "note": "<b>AMENDED 10 SEP: TOTAL, DELIVERY, CASH, HANDOVER AND COST RESTATED.</b> <b>CORRECTION RECORDED 10 SEP AGAINST THE OIL ROW OF 08 SEP.</b> SELL to CA7-JTR, 50 unit of oil, total from RM450 to RM430, delivery from unset to RM15, cash from RM450 to RM430, handover from collected to delivered, cost from unset to RM350. RM430 is RM6.43 under the floor of RM436.43, and RM450 already paid stands RM20 above it. At RM8.60 a unit the rate is 21.8% below CA7-JTR's usual RM11 a unit for oil, against a median of RM13 over 3 orders on a range of RM9 to RM135, nothing outstanding before, no units on credit and nothing defaulted. Cost is the typed RM350, not the inventory's own rate. The trail of two steps no longer adds to the total and the overpayment stays outstanding. <b>PENDING OIL ROW DATED 08 SEP, THE DAY IT WAS AGREED.</b> SELL to CA7-JTR, 50 unit of oil for RM 450, collected, RM 0 cash and 0 unit moved, so the row is pending and draws no stock and books no revenue until it does. At RM 9 a unit the total sits above the RM 376.46 floor for 50 unit and exactly on the RM 450 ask, under the RM 1,080 ceiling. It is costed at the desk's own RM 7.67 a unit, RM 66.67 on the order at 14.8%, so no separate cost attaches. CA7-JTR stood at 2 orders, a median rate of RM 135, a range of RM 13 to RM 135, nothing outstanding, nothing on credit and nothing defaulted, against a credit cap of 10 unit. The drafter flagged nothing. RM 450 and 50 unit stay outstanding.",
     "rid": "s140",
     "amend": [
      {
@@ -3334,10 +3334,20 @@
       "cash": 450,
       "kg": 50,
       "note": "<b>FULFILMENT ON CA7-JTR ORDER s140, RECORDED 09 SEP AND SETTLING IT IN FULL.</b> SELL to CA7-JTR, 50 unit of oil for RM450, collected, agreed 08 Sep and pending until now: RM450 cash and 50 unit move against RM450 and 50 unit outstanding, leaving RM0 and 0 unit. At RM9 a unit it sits at the bottom of this party's own range of RM9 to RM135 and under the median rate of RM13 across 3 orders. Outstanding before was RM450, no units on credit, nothing defaulted, on the roster and not an associate. The draft carries no cost of its own. The drafter flagged that this settles the order in full, and the figures answer it. Nothing is left outstanding."
+     },
+     {
+      "date": "2026-09-10",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>CORRECTION RECORDED 10 SEP AGAINST THE OIL ROW OF 08 SEP.</b> SELL to CA7-JTR, 50 unit of oil, total from RM450 to RM430, delivery from unset to RM15, cash from RM450 to RM430, handover from collected to delivered, cost from unset to RM350. RM430 is RM6.43 under the floor of RM436.43, and RM450 already paid stands RM20 above it. At RM8.60 a unit the rate is 21.8% below CA7-JTR's usual RM11 a unit for oil, against a median of RM13 over 3 orders on a range of RM9 to RM135, nothing outstanding before, no units on credit and nothing defaulted. Cost is the typed RM350, not the inventory's own rate. The trail of two steps no longer adds to the total and the overpayment stays outstanding."
      }
     ],
     "deliveredOn": "2026-09-09",
-    "paidOn": "2026-09-09"
+    "paidOn": "2026-09-09",
+    "cost": 350,
+    "delivery": 15,
+    "mod": "corrected on 2026-09-10: total 450 to 430; cash 450 to 430; cost (unset) to 350; delivery (unset) to 15; handover collected to delivered"
    },
    {
     "customer": "CC5-OKR",
@@ -3733,9 +3743,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-09T22:54:32.766Z",
+  "QUEUE_COMMITTED": "2026-09-10T03:48:14.758Z",
   "PRICING": {
-   "takenAt": "2026-09-09T22:55:58.069Z",
+   "takenAt": "2026-09-10T03:50:16.512Z",
    "sizes": [
     0.5,
     1,
@@ -4095,7 +4105,7 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0
+         "v": 0.5
         }
        },
        "attrib": 1,
@@ -4181,10 +4191,10 @@
      ]
     }
    },
-   "v": "v560"
+   "v": "v562"
   },
   "OPEN": {
-   "at": "2026-09-09T22:55:58.161Z",
+   "at": "2026-09-10T03:50:16.604Z",
    "count": 8,
    "byKey": {
     "CM4-MK|2026-09-09|220": {
@@ -4352,7 +4362,7 @@
     "salt": "2026-09-08",
     "oil": "2026-09-09"
    },
-   "v": "v560"
+   "v": "v562"
   }
  }
 }

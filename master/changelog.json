@@ -1,5 +1,14 @@
 [
  {
+  "v": "v562",
+  "d": "10 Sep 2026",
+  "t": "CORRECTION ON CA7-JTR S140: TOTAL DOWN TO RM430, DELIVERED WITH RM15 CARRIAGE",
+  "n": [
+   "<b>ONE CORRECTION FOLDED, NO CASH AND NO STOCK MOVED.</b> The desk applied the patch to CA7-JTR's oil row s140 of 08 Sep, 50 unit: total from RM450 to RM430, delivery from unset to RM15, cash from RM450 to RM430, handover from collected to delivered and cost from unset to RM350. The row is not rewritten, only its own terms restated, so the ledger position and the inventory both stand where they stood.",
+   "<b>WHAT THE DRAFTER FLAGGED STAYS ON THE FACE OF THE ROW.</b> The row carries a trail of two steps that no longer adds to the stated figure, RM450 was paid against a corrected total of RM430, and RM430 for the goods is RM6.43 under the floor of RM436.43. The typed RM350 becomes the cost every margin on this row is measured against, in place of the inventory's own rate. All four points are recorded, none is answered here."
+  ]
+ },
+ {
   "v": "v561",
   "d": "10 Sep 2026",
   "t": "THE LEDGER OPENS ON THE LEDGER, NOT ON ITS OWN FILTER",
