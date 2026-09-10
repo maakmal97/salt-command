@@ -1,6 +1,6 @@
 {
- "v": "v562",
- "stamped": "10 Sep 2026, 11:50 KL",
+ "v": "v569",
+ "stamped": "11 Sep 2026, 00:21 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -3318,7 +3318,7 @@
     "product": "oil",
     "deliveredQty": 50,
     "date": "2026-09-08",
-    "note": "<b>AMENDED 10 SEP: TOTAL, DELIVERY, CASH, HANDOVER AND COST RESTATED.</b> <b>CORRECTION RECORDED 10 SEP AGAINST THE OIL ROW OF 08 SEP.</b> SELL to CA7-JTR, 50 unit of oil, total from RM450 to RM430, delivery from unset to RM15, cash from RM450 to RM430, handover from collected to delivered, cost from unset to RM350. RM430 is RM6.43 under the floor of RM436.43, and RM450 already paid stands RM20 above it. At RM8.60 a unit the rate is 21.8% below CA7-JTR's usual RM11 a unit for oil, against a median of RM13 over 3 orders on a range of RM9 to RM135, nothing outstanding before, no units on credit and nothing defaulted. Cost is the typed RM350, not the inventory's own rate. The trail of two steps no longer adds to the total and the overpayment stays outstanding. <b>PENDING OIL ROW DATED 08 SEP, THE DAY IT WAS AGREED.</b> SELL to CA7-JTR, 50 unit of oil for RM 450, collected, RM 0 cash and 0 unit moved, so the row is pending and draws no stock and books no revenue until it does. At RM 9 a unit the total sits above the RM 376.46 floor for 50 unit and exactly on the RM 450 ask, under the RM 1,080 ceiling. It is costed at the desk's own RM 7.67 a unit, RM 66.67 on the order at 14.8%, so no separate cost attaches. CA7-JTR stood at 2 orders, a median rate of RM 135, a range of RM 13 to RM 135, nothing outstanding, nothing on credit and nothing defaulted, against a credit cap of 10 unit. The drafter flagged nothing. RM 450 and 50 unit stay outstanding.",
+    "note": "<b>AMENDED 10 SEP: TOTAL, DELIVERY, CASH, HANDOVER AND COST RESTATED.</b> <b>CORRECTION RECORDED 10 SEP AGAINST THE OIL ROW OF 08 SEP.</b> SELL to CA7-JTR, 50 unit of oil, total from RM450 to RM430, delivery from unset to RM15, cash from RM450 to RM430, handover from collected to delivered, cost from unset to RM350. RM430 is RM6.43 under the floor of RM436.43, which is a stated price under break-even and is quoted as such. At RM8.60 a unit the rate is 21.8% below CA7-JTR's usual RM11 a unit for oil, against a median of RM13 over 3 orders on a range of RM9 to RM135, nothing outstanding before, no units on credit and nothing defaulted. Cost is the typed RM350, not the inventory's own rate. The 09 Sep fulfilment step is restated to RM430 with it, on his ruling of 10 Sep that RM430 is what was agreed, paid and delivered, so the trail adds to the total and nothing is outstanding. <b>PENDING OIL ROW DATED 08 SEP, THE DAY IT WAS AGREED.</b> SELL to CA7-JTR, 50 unit of oil for RM 450, collected, RM 0 cash and 0 unit moved, so the row is pending and draws no stock and books no revenue until it does. At RM 9 a unit the total sits above the RM 376.46 floor for 50 unit and exactly on the RM 450 ask, under the RM 1,080 ceiling. It is costed at the desk's own RM 7.67 a unit, RM 66.67 on the order at 14.8%, so no separate cost attaches. CA7-JTR stood at 2 orders, a median rate of RM 135, a range of RM 13 to RM 135, nothing outstanding, nothing on credit and nothing defaulted, against a credit cap of 10 unit. The drafter flagged nothing. RM 450 and 50 unit stay outstanding.",
     "rid": "s140",
     "amend": [
      {
@@ -3331,7 +3331,7 @@
      {
       "date": "2026-09-09",
       "kind": "Fulfilment",
-      "cash": 450,
+      "cash": 430,
       "kg": 50,
       "note": "<b>FULFILMENT ON CA7-JTR ORDER s140, RECORDED 09 SEP AND SETTLING IT IN FULL.</b> SELL to CA7-JTR, 50 unit of oil for RM450, collected, agreed 08 Sep and pending until now: RM450 cash and 50 unit move against RM450 and 50 unit outstanding, leaving RM0 and 0 unit. At RM9 a unit it sits at the bottom of this party's own range of RM9 to RM135 and under the median rate of RM13 across 3 orders. Outstanding before was RM450, no units on credit, nothing defaulted, on the roster and not an associate. The draft carries no cost of its own. The drafter flagged that this settles the order in full, and the figures answer it. Nothing is left outstanding."
      },
@@ -3340,7 +3340,7 @@
       "kind": "Correction",
       "cash": 0,
       "kg": 0,
-      "note": "<b>CORRECTION RECORDED 10 SEP AGAINST THE OIL ROW OF 08 SEP.</b> SELL to CA7-JTR, 50 unit of oil, total from RM450 to RM430, delivery from unset to RM15, cash from RM450 to RM430, handover from collected to delivered, cost from unset to RM350. RM430 is RM6.43 under the floor of RM436.43, and RM450 already paid stands RM20 above it. At RM8.60 a unit the rate is 21.8% below CA7-JTR's usual RM11 a unit for oil, against a median of RM13 over 3 orders on a range of RM9 to RM135, nothing outstanding before, no units on credit and nothing defaulted. Cost is the typed RM350, not the inventory's own rate. The trail of two steps no longer adds to the total and the overpayment stays outstanding."
+      "note": "<b>CORRECTION RECORDED 10 SEP AGAINST THE OIL ROW OF 08 SEP.</b> SELL to CA7-JTR, 50 unit of oil, total from RM450 to RM430, delivery from unset to RM15, cash from RM450 to RM430, handover from collected to delivered, cost from unset to RM350. RM430 is RM6.43 under the floor of RM436.43, which is a stated price under break-even and is quoted as such. At RM8.60 a unit the rate is 21.8% below CA7-JTR's usual RM11 a unit for oil, against a median of RM13 over 3 orders on a range of RM9 to RM135, nothing outstanding before, no units on credit and nothing defaulted. Cost is the typed RM350, not the inventory's own rate. The 09 Sep fulfilment step is restated to RM430 with it, on his ruling of 10 Sep that RM430 is what was agreed, paid and delivered, so the trail adds to the total and nothing is outstanding."
      }
     ],
     "deliveredOn": "2026-09-09",
@@ -3745,7 +3745,7 @@
   ],
   "QUEUE_COMMITTED": "2026-09-10T03:48:14.758Z",
   "PRICING": {
-   "takenAt": "2026-09-10T03:50:16.512Z",
+   "takenAt": "2026-09-10T16:24:47.866Z",
    "sizes": [
     0.5,
     1,
@@ -3844,8 +3844,8 @@
          "date": "2026-09-09",
          "sup": "SA5-BTR"
         },
-        "days": 35,
-        "sinceLot": 44
+        "days": 36,
+        "sinceLot": 45
        },
        "lockBase": {
         "lockedOn": "2026-08-06",
@@ -3928,12 +3928,20 @@
          "to": 10,
          "up": true
         },
-        "taper": "supplier"
+        "taper": "supplier",
+        "tier1": {
+         "0.5": 60,
+         "12.5": 875
+        }
        },
        "minPerUnit": 0,
        "timePerOrder": 0,
        "lotFloor": {},
        "stated": {},
+       "tier1": {
+        "0.5": 60,
+        "12.5": 875
+       },
        "tiers": [
         {
          "qty": 6.25,
@@ -4045,8 +4053,8 @@
          "date": "2026-09-08",
          "sup": "SP7-PUD"
         },
-        "days": 35,
-        "sinceLot": 35
+        "days": 36,
+        "sinceLot": 36
        },
        "lockBase": {
         "lockedOn": "2026-08-06",
@@ -4134,7 +4142,8 @@
          "to": 10,
          "up": true
         },
-        "taper": "supplier"
+        "taper": "supplier",
+        "tier1": null
        },
        "minPerUnit": 0,
        "timePerOrder": 0,
@@ -4146,6 +4155,7 @@
         "40": 400,
         "50": 450
        },
+       "tier1": null,
        "tiers": [
         {
          "qty": 10,
@@ -4191,10 +4201,10 @@
      ]
     }
    },
-   "v": "v562"
+   "v": "v569"
   },
   "OPEN": {
-   "at": "2026-09-10T03:50:16.604Z",
+   "at": "2026-09-10T16:24:47.904Z",
    "count": 8,
    "byKey": {
     "CM4-MK|2026-09-09|220": {
@@ -4211,7 +4221,7 @@
      "deliveredOn": "2026-09-09",
      "handover": "delivered",
      "key": "CM4-MK|2026-09-09|220",
-     "age": 1,
+     "age": 2,
      "exp": 110
     },
     "CR3-DAM|2026-09-07|185": {
@@ -4228,8 +4238,8 @@
      "deliveredOn": "2026-09-07",
      "handover": "collected",
      "key": "CR3-DAM|2026-09-07|185",
-     "age": 3,
-     "exp": 25
+     "age": 4,
+     "exp": 18.75
     },
     "CJ4-BJ|2026-09-07|850": {
      "d": "2026-09-07",
@@ -4246,8 +4256,8 @@
      "deliveredOn": "2026-09-07",
      "handover": "delivered",
      "key": "CJ4-BJ|2026-09-07|850",
-     "age": 3,
-     "exp": 272
+     "age": 4,
+     "exp": 204
     },
     "CS6-BS|2026-09-07|117.5": {
      "d": "2026-09-07",
@@ -4263,8 +4273,8 @@
      "deliveredOn": "2026-09-07",
      "handover": "delivered",
      "key": "CS6-BS|2026-09-07|117.5",
-     "age": 3,
-     "exp": 110
+     "age": 4,
+     "exp": 82.5
     },
     "CA4-DAM|2026-09-02|160": {
      "d": "2026-09-02",
@@ -4281,7 +4291,7 @@
      "handover": "collected",
      "defaulted": true,
      "key": "CA4-DAM|2026-09-02|160",
-     "age": 8,
+     "age": 9,
      "exp": 0
     },
     "CN6-WM|2026-08-30|110": {
@@ -4298,7 +4308,7 @@
      "deliveredOn": "2026-08-30",
      "handover": "delivered",
      "key": "CN6-WM|2026-08-30|110",
-     "age": 11,
+     "age": 12,
      "exp": 55
     },
     "CA4-DAM|2026-08-28|100": {
@@ -4316,7 +4326,7 @@
      "handover": "collected",
      "defaulted": true,
      "key": "CA4-DAM|2026-08-28|100",
-     "age": 13,
+     "age": 14,
      "exp": 0
     },
     "SF6-KLC|2026-07-08|750": {
@@ -4340,8 +4350,8 @@
      "onHand": 40.25,
      "free": 40.25,
      "owedOut": 0,
-     "coverDays": 8.4,
-     "rate": 4.8,
+     "coverDays": 8.6,
+     "rate": 4.66,
      "owedToYou": 887,
      "promised": 8.5,
      "short": 0
@@ -4362,7 +4372,7 @@
     "salt": "2026-09-08",
     "oil": "2026-09-09"
    },
-   "v": "v562"
+   "v": "v569"
   }
  }
 }

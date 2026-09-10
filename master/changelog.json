@@ -1,5 +1,17 @@
 [
  {
+  "v": "v569",
+  "d": "11 Sep 2026",
+  "t": "CA7-JTR s140 SAYS RM430 THROUGHOUT, AND THE RM20 OVERPAYMENT IT REPORTED NEVER EXISTED",
+  "n": [
+   "<b>HIS RULING, 10 SEP 2026:</b> “On the CA7-JTR s140, it is a correction in the agreed order, 50 unit oil to 430 instead of 450, paid and delivered.” So RM430 is the agreed figure and RM430 is what moved. The row already STORED that — total 430, cash 430, delivered 50, nothing outstanding — and three things inside it still said the opposite.",
+   "<b>THE TRAIL SAID RM450 AND THE ROW SAID RM430.</b> The 09 Sep Fulfilment step recorded the then-agreed RM450 settling the order; the 10 Sep Correction restated the total and the row’s cash to RM430 and left the step alone, so <b>the three steps summed to RM450 against a stored RM430</b>. On his ruling the step is the figure that was wrong, so it is restated to RM430 and the trail now adds to the row: 0 + 430 + 0 = 430. Nothing else about the row moves.",
+   "<b>AND THE ROW WAS REPORTING A REFUND IT DID NOT OWE.</b> Its own note read “RM450 already paid stands RM20 above it” and “the trail of two steps no longer adds to the total and the overpayment stays outstanding”, in the row note and again in the Correction note, four passages in all. That RM20 was the gap between a corrected total and an uncorrected trail step, not money anyone had handed over: <b>there is no CA7-JTR row in customerRefunds and there never was</b>, so the desk was describing an outstanding refund that no surface could act on and no figure carried. The passages are replaced rather than deleted, so the row still records what the correction did and still says plainly that RM430 sits RM6.43 under the RM436.43 floor — a stated price under break-even, quoted as such under v552.",
+   "<b>WHAT IS NOT CHANGED.</b> The <code>mod</code> line still reads “cash 450 to 430”, because that is exactly what the correction did to the ROW and rewriting it would erase the correction’s own record. No other row is touched, no count moves, no price moves: this is one figure and four sentences on one row, on his word.",
+   "<b>ONE LINE OF THE BOOK, AND THE BOOK’S OWN WRITER WROTE IT.</b> Worth recording because the first attempt used <code>JSON.stringify(book,null,1)</code> and produced a <b>3,784-line diff</b> on a one-figure change: <code>ledger/book.json</code> keeps one row per line and <code>writeBookFile</code> in booksync.mjs is what preserves that. Re-serialising a ledger is not a formatting preference; it destroys the reviewable diff that is the whole defence against a bad fold."
+  ]
+ },
+ {
   "v": "v568",
   "d": "11 Sep 2026",
   "t": "WHAT A UNIT COSTS AND HOW A PRICE IS BUILT ARE ONE PART, AND THE STACK IS PRINTED ONCE",
