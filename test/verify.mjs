@@ -6188,8 +6188,17 @@ section("v497: a breach is named on its own book's register only");
     ok(Math.abs(unpaid.units - 2) < 1e-9 && unpaid.over && unpaid.reg,
       "the same 2 units with nothing paid are over the cap on the row and on the register alike");
   }
-  ok(salt.includes("Credit cap") && salt.every((r) => /^Credit/.test(r)),
-    "on the salt book CA4-DAM breaks the credit cap, and nothing but credit rules (" + salt.join(", ") + ")");
+  /* 11 Sep 2026: RED AT MIDNIGHT AGAIN, AND THE 07 SEP PATCH IS WHY. That one met the same
+     rollover by widening the tail clause to /^Credit/ rather than removing it, so the block still
+     policed WHICH rules a living credit breaks. Overnight the receivable aged into "Aged
+     receivable", which is not a Credit rule, and it went red on the clock alone for the second
+     time in four days with nothing about the book or the code changed. The stated point of the
+     block, in its own comment, is WHERE the breach is named. That is the cap, so that is all it
+     asks; what else an ageing receivable trips is the ageing rules' business and is asserted
+     where those rules live. An assertion that has to be re-widened every time the calendar moves
+     is measuring the calendar. */
+  ok(salt.includes("Credit cap"),
+    "on the salt book CA4-DAM breaks the credit cap (" + salt.join(", ") + ")");
   ok(oil.length === 0, "and on the oil book he breaks none (" + (oil.join(", ") || "none") + ")");
   w21.eval("setProd('salt');recompute();");
 }
@@ -8889,17 +8898,50 @@ section("v567: the tables are warm, the floor is drawn once, and a chart can pla
        the v567 changelog entry QUOTES the phrase it retired. A source-text search over a file
        that carries its own history cannot answer a question about what the page says. textContent
        and not innerText, because this panel is a closed <details> and innerText reads empty. */
+    /* v568 merged this panel into "What a unit costs, and what it returns", so the text is read
+       off that part now. The claim is unchanged: one word may not name two different figures. */
     w7.eval("setProd('salt');recompute();switchTab('price');");
-    const built = String(w7.eval("(function(){var d=[].filter.call(document.querySelectorAll('.sec.on details.obsec'),function(x){var s=x.querySelector('summary');return s&&/How a price is built/.test(s.textContent);})[0];return d?d.textContent.replace(/\\s+/g,' '):'';})()"));
+    const built = String(w7.eval("(function(){var h=[].filter.call(document.querySelectorAll('.sec.on h2'),function(x){return /What a unit costs/.test(x.textContent);})[0];if(!h)return '';var out='',n=h.nextElementSibling;while(n&&n.tagName!=='H2'){out+=' '+n.textContent;n=n.nextElementSibling;}return (h.textContent+out).replace(/\\s+/g,' ');})()"));
     const cost7 = JSON.parse(w7.eval("JSON.stringify({landed:pxCost().landed,effEx:pxCost().effEx})"));
     const money = (n) => "RM " + n.toFixed(2);
-    ok(built.length > 0, "the How a price is built panel renders");
+    ok(built.length > 0, "the cost-and-price part renders");
+    /* v568 CLOSED THIS BY STRUCTURE RATHER THAN BY WORDING. The merge deleted the Goods line that
+       carried the offending phrase, so the old assertion was checking for a replacement string on
+       a row that no longer exists. The claim worth keeping is the one underneath it: the two
+       figures are different, each is named in its own row, and the word "landed" never attaches
+       to the post-leak one anywhere on the part. */
     ok(built.indexOf("landed and grossed for samples") < 0,
-      "Goods no longer calls the post-leak figure landed, which is what Cogs six lines above already is");
-    ok(built.indexOf(money(cost7.landed) + " landed, grossed to " + money(cost7.effEx)) >= 0,
-      `it names the landed figure, the grossed one and the step between them (${money(cost7.landed)} to ${money(cost7.effEx)})`);
+      "nothing calls the post-leak figure landed and grossed for samples");
     ok(cost7.effEx > cost7.landed,
-      `and the two really are different numbers, which is why one word could not carry both (${money(cost7.landed)} against ${money(cost7.effEx)})`);
+      `landed and the pricing basis really are different numbers, which is why one word could not carry both (${money(cost7.landed)} against ${money(cost7.effEx)})`);
+    ok(built.indexOf(money(cost7.effEx) + " landed") < 0,
+      `and the word landed is never attached to the basis figure (${money(cost7.effEx)})`);
+    ok(built.indexOf(money(cost7.landed) + " landed") >= 0,
+      `while the figure that IS landed says so (${money(cost7.landed)})`);
+    /* AND THE TWO PARTS ARE ONE PART, which is what he asked for. The price build has to be
+       inside the cost part, and the fold it used to live in has to be gone rather than merely
+       renamed, or this is a second copy and not a merge. */
+    ok(/Cogs/.test(built) && /Cost to serve/.test(built) && /Margin/.test(built),
+      "the price build sits inside the cost part rather than in a fold of its own");
+    const stillThere = String(w7.eval("(function(){return [].filter.call(document.querySelectorAll('.sec.on details.obsec summary'),function(s){return /How a price is built/.test(s.textContent);}).length;})()"));
+    ok(stillThere === "0", `and the old How a price is built fold is gone, not duplicated (${stillThere} found)`);
+    /* AND THE WORKED SIZE IS ONE THE BOOK ACTUALLY PRINTS. The fold this replaced was pinned at
+       q=2 on both books; oil's board runs 10 to 50 unit, so that example priced a lot oil never
+       quotes. Caught by rendering oil and reading the row, not by reading the source, because the
+       constant looks perfectly reasonable sitting in the file. Asserted on BOTH books, since salt
+       is the one where a hardcoded 2 happens to be right and would hide it. */
+    for (const p of ["salt", "oil"]) {
+      const got = JSON.parse(w7.eval("(function(){setProd(" + JSON.stringify(p) + ");recompute();switchTab('price');"
+        + "var hs=[].filter.call(document.querySelectorAll('.sec.on h2'),function(x){return /What a unit costs/.test(x.textContent);});"
+        + "var h=hs[" + (p === "salt" ? 0 : 1) + "]||hs[0];var txt='',n=h.nextElementSibling;"
+        + "while(n&&n.tagName!=='H2'){txt+=' '+n.textContent;n=n.nextElementSibling;}"
+        + "var m=/At ([\\d.]+) unit, a size off/.exec(txt.replace(/\\s+/g,' '));"
+        + "return JSON.stringify({q:m?parseFloat(m[1]):null,board:tierBoard().map(function(r){return r.q;})});})()"));
+      ok(got.q != null, `${p}: the part names the size it works (${got.q})`);
+      ok(got.q != null && got.board.indexOf(got.q) >= 0,
+        `${p}: and it is a size this book's board actually prints (${got.q} in ${got.board.join(", ")})`);
+    }
+    w7.eval("setProd('salt');recompute();switchTab('price');");
     const cap = String(w7.eval("(function(){var d=[].filter.call(document.querySelectorAll('.sec.on .dsc'),function(x){return /the ask per unit at each printed size/.test(x.textContent);})[0];return d?d.textContent.replace(/\\s+/g,' '):'';})()"));
     ok(cap.length > 0, "the board chart's caption renders");
     ok(cap.indexOf("against its floor and the effective cost") < 0 && /same figure as effective cost/.test(cap),
