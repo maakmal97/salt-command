@@ -567,8 +567,10 @@ details.obs>summary:hover{background:var(--salt-glass);}
 .ledwrap .etype.eagreed{color:var(--salt-mist);}
 .ledwrap .lpen{color:var(--salt-brass);}
 .ledwrap .lpen:hover,.ledwrap .lpen:focus-visible{background:rgba(197,160,89,.14);color:var(--salt-salt);}
-.lmenu{background:var(--salt-obsidian);border-color:var(--salt-line);box-shadow:0 10px 28px rgba(0,0,0,.5);}
-.lmenu button{color:var(--salt-salt);}
-.lmenu button:hover,.lmenu button:focus-visible{background:rgba(197,160,89,.12);color:var(--salt-brass);}
-.lmenu button:last-child{color:var(--salt-mist);border-top-color:var(--salt-line-faint);}
+/* v565: the ground moved from the container to each pill, because the fan is pills now. The last
+   rule keyed on :last-child, which named More only while More happened to be last; it keys on the
+   role. */
+.lmenu button{background:var(--salt-obsidian);border-color:var(--salt-line);color:var(--salt-salt);box-shadow:0 10px 28px rgba(0,0,0,.5);}
+.lmenu button:hover,.lmenu button:focus-visible{background:rgba(197,160,89,.12);color:var(--salt-brass);border-color:var(--salt-brass);}
+.lmenu button.lmore{color:var(--salt-mist);}
 .ledwrap .lmove .ltext{color:var(--salt-mist-light);}

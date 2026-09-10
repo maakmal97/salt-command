@@ -68,7 +68,7 @@ document.addEventListener('visibilitychange',function(){
    localStorage before it posts anything and the load reads it straight back.
    The same tick retries a held entry, which is what gets a phone write to the cloud
    without waiting for the next open. */
-var SALT_BUILD_ID="4483f3aad1bcc582";
+var SALT_BUILD_ID="1d399b7993334d7f";
 var SALT_REV_MS=10000;
 (function(){
   var chip=null,timer=null;
@@ -387,10 +387,23 @@ tr.tot td{font-weight:800;background:#0b1215;}
 .lpen:hover,.lpen:focus-visible{background:rgba(197,160,89,.14);outline:none;}
 @media (hover:none){.lpen{opacity:.55;}}
 .lprov{position:absolute;top:6px;right:8px;opacity:1;width:auto;height:auto;border-radius:0;cursor:default;}
-.lmenu{position:absolute;top:28px;right:8px;z-index:20;display:flex;flex-direction:column;min-width:170px;padding:4px;background:var(--bg0,#05080a);border:1px solid var(--line);border-radius:8px;box-shadow:0 10px 28px rgba(0,0,0,.45);}
-.lmenu button{all:unset;cursor:pointer;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink);padding:8px 12px;border-radius:5px;min-height:var(--tap,36px);box-sizing:border-box;}
-.lmenu button:hover,.lmenu button:focus-visible{background:rgba(197,160,89,.12);color:var(--gold);}
-.lmenu button:last-child{color:var(--mut);border-top:1px solid var(--line);border-radius:0 0 5px 5px;margin-top:2px;}
+/* v565: THE FAN IS FIXED, NOT ABSOLUTE, BECAUSE .lcard CLIPS. Every rule below follows from that:
+   the container has no ground of its own, each action is its own pill so five of them read as five
+   buttons, and .up reverses the column so the first action stays nearest the pen when the fan is
+   thrown upward. The pen's own 44px hit area is the tap contract, which a 22px control never met. */
+.lmenu{position:fixed;z-index:60;display:flex;flex-direction:column;align-items:stretch;gap:6px;min-width:186px;max-width:calc(100vw - 24px);}
+.lmenu.up{flex-direction:column-reverse;}
+/* NO ENTRY ANIMATION, AND IT WAS TRIED. The pills fanned out of the pen on a staggered keyframe
+   that began at opacity 0 and scale .7 with animation-fill-mode:backwards. Measured in a real
+   browser: where the document's animation timeline does not advance the animation sits at
+   currentTime 0 with playState "running", so backwards holds the FROM state and every pill is
+   INVISIBLE and 30.8px tall while still answering a hit test. A control that can be invisible and
+   under the 44px tap contract is worse than a control that does not move, and the fan already
+   reads as separate buttons because it is separate buttons. */
+.lmenu button{all:unset;box-sizing:border-box;cursor:pointer;display:flex;align-items:center;min-height:var(--tap,44px);padding:0 16px;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink);background:var(--bg0,#05080a);border:1px solid var(--line);border-radius:23px;box-shadow:0 8px 22px rgba(0,0,0,.5);}
+.lmenu button:hover,.lmenu button:focus-visible{background:rgba(197,160,89,.14);color:var(--gold);border-color:var(--gold);}
+.lmenu button.lmore{color:var(--mut);}
+.lpen::after{content:'';position:absolute;top:-5px;right:-3px;width:44px;height:44px;}
 .ledwrap .lcard{background:none;border:0;border-radius:0;border-bottom:1px solid var(--line);}
 .ledwrap .lcards{gap:0;}
 .ledwrap .lrow{padding:6px 8px;}
@@ -3428,10 +3441,12 @@ details.obs>summary:hover{background:var(--salt-glass);}
 .ledwrap .etype.eagreed{color:var(--salt-mist);}
 .ledwrap .lpen{color:var(--salt-brass);}
 .ledwrap .lpen:hover,.ledwrap .lpen:focus-visible{background:rgba(197,160,89,.14);color:var(--salt-salt);}
-.lmenu{background:var(--salt-obsidian);border-color:var(--salt-line);box-shadow:0 10px 28px rgba(0,0,0,.5);}
-.lmenu button{color:var(--salt-salt);}
-.lmenu button:hover,.lmenu button:focus-visible{background:rgba(197,160,89,.12);color:var(--salt-brass);}
-.lmenu button:last-child{color:var(--salt-mist);border-top-color:var(--salt-line-faint);}
+/* v565: the ground moved from the container to each pill, because the fan is pills now. The last
+   rule keyed on :last-child, which named More only while More happened to be last; it keys on the
+   role. */
+.lmenu button{background:var(--salt-obsidian);border-color:var(--salt-line);color:var(--salt-salt);box-shadow:0 10px 28px rgba(0,0,0,.5);}
+.lmenu button:hover,.lmenu button:focus-visible{background:rgba(197,160,89,.12);color:var(--salt-brass);border-color:var(--salt-brass);}
+.lmenu button.lmore{color:var(--salt-mist);}
 .ledwrap .lmove .ltext{color:var(--salt-mist-light);}
 /* ==== END DESIGN desk ==== */
 </style>
@@ -6204,7 +6219,9 @@ const whiteboard=[
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{"v":"v564","d":"10 Sep 2026","t":"TWO TIERS ON THE BOARD, THE SUGGESTED PRICE TO THE NEAREST FIVE, AND THE SHEET SAVES AS JPG AND PDF WITH A QR","n":["<b>HIS INSTRUCTION, 10 SEP 2026: “I want to have a 2 tier rate. The current one shown on the board is Tier 2. For Tier 1, the 0.5 unit is 60 while the 12.5 unit is 875.”</b> So the board carries two levels. <b>Tier 2 is the board that was there and not one of its figures moves</b>, at any size, on either book: it is still what priceLadder().ask returns, still what the customer price list is drawn toward, still what the drafter measures a row against, and still row zero of the payload the phone and the D1 mirror read. Tier 1 is new and sits under it: <b>RM 60, 110, 150, 200, 230, 270, 310, 340, 380, 410, 500 and 875</b> against Tier 2’s RM 70 to RM 1,150. Said as rates, RM 120 a unit falling to RM 70 against RM 140 falling to RM 92, so Tier 1 is 86 per cent of the ask at half a unit and 76 per cent of it at twelve and a half. Every rung clears break-even, from 2.13x at half a unit to 1.25x at twelve and a half, so nothing on either tier is quoted at a loss.","<b>TIER 1 IS STATED AT ITS ENDS AND INTERPOLATED BETWEEN THEM, AND THE DERIVED ROAD WAS TRIED FIRST.</b> The ask is a margin on the floor tapered at the supplier’s own exponent (v504), which is ONE number to set: a level pinned at 2.5 unit. His two ends are two numbers, and they do not fit on that shape. Measured, his pair implies a taper of <b>-0.167 against the supplier’s -0.121</b>, which is the whole point of a relationship price and not something a level can absorb; solved as a margin curve it wants an anchor of 0.324 and a taper of -0.308, and the clamps then bite. Worse, <b>RM 875 is not a multiple of ten</b> and the house rounding is up to the ten, so no derived curve can ever print the figure he gave; it would print RM 880. So the two ends are taken verbatim and only the sizes between them are rounded, which is the rule the retired tier board used and the only one that can be honest about a number he typed. Between them the RATE is interpolated in the log of size, the desk’s own method, and outside them it is clamped rather than extrapolated. Tier 1 obeys the same two laws as the ask: the rate never rises with size, and the gap to break-even is named in <code>under</code> rather than hidden.","<b>OIL HAS ONE TIER AND THE BOARD SAYS SO.</b> Its five prices are already his own stated ones and its 50 unit rung earns 3 per cent, so there is nothing for a second tier to sit under, and he has stated no ends for it. <code>LADDER_BY.oil</code> therefore carries <code>tier1:null</code> as an ENTRY rather than an omission: <code>ladderFor</code> spreads LADDER underneath, so leaving it out would hand oil salt’s anchors, clamp every oil size to 12.5, land the rate at RM 70 a unit and quote <b>RM 700 for ten units of oil that Tier 2 sells at RM 130</b>. The suite asserts oil is handed none, and the board head reads Ask on a one-tier book and Tier 2 on a two-tier one.","<b>THE MARKUP COLUMN MOVED INTO THE ASKS RATHER THAN BEING DROPPED OR DOUBLED.</b> v554’s rule stands: the multiple must say what it is OF, or 2.49x reads as +249 per cent. What could not stand is one Markup column beside TWO asks, which has to pick a tier and then silently describes one of them while sitting level with both. Each tier cell now carries its own total, rate, margin on price and multiple of effective cost, four lines, and the board stays at five columns because it gets 325px of a 375px screen. <b>The “collect only” tag went with it, and it had been unreachable since v502</b>: that release made one floor per size and the suite asserts collecting and delivering give the same figure to the ringgit, so the tag’s own condition has been impossible for a fortnight. The row now flags a price under break-even, on either tier, and names which.","<b>HIS SECOND INSTRUCTION: THE SUGGESTED PRICE PER CUSTOMER ROUNDS TO THE NEAREST FIVE.</b> It was the whole ringgit UP, which put figures like RM 97 and RM 416 on a sheet handed to a customer while the board beside it quotes in tens. NEAREST, not up: the four drawing rules that pull a customer’s own rate toward the board already decide the direction, and rounding had no business deciding it again. <b>The floor is the one thing rounding may not cross</b>: nearest-five can land up to RM 2.50 under break-even, so a price that does is lifted to the first five above the floor. The cap is not re-clamped, because it is a drawing target at three times COGS and not a refusal line. One rule, two places, and the suite holds <code>tools/pricelist.mjs</code> and the desk’s <code>pbAdjusted</code> together as it always has. Measured over <b>all 39 parties on the roster</b>: every price on every sheet is a multiple of five and not one is under its floor.","<b>HIS THIRD INSTRUCTION: THE BOARD SHEET SAVES AS HTML, PDF AND JPG, WITH THE LOGO AND THE NUMBERS ONLY, THEN THE USERNAME AND A QR TO THE WEBSITE.</b> HTML was already there. The image was a PNG and is now a <b>JPG</b>, which every message app and phone gallery takes without asking. The <b>PDF</b> is written out here, one A4 page embedding the same JPEG as a DCTDecode image, so paper, file and message are one rendering and cannot drift; no library, for the reason hard rule 4 exists and the reason engine/qr.mjs is written out rather than installed. And <b>the username has moved below the numbers, with the QR after it</b>, which is the order he gave; v538’s rule that there are no words at all on the sheet is not withdrawn and still holds.","<b>ONE QR ENCODER, INLINED LIKE THE PRICING ENGINE.</b> tools/qr.mjs was a build-time module for the statements; the desk needs the same encoder at runtime, and a second copy would drift exactly as two pricing engines would. It is now <code>engine/qr.mjs</code>, inlined into the master by <code>tools/engine.mjs --sync</code> beside pricing and position, with CI failing if the block is not the module to the byte. It draws <b>rectangles, never a path and never a stroke</b>, because the sheet goes to print, to a PDF and to a phone’s share sheet rather than only to a browser. <b>The site’s address is never in this file</b>: /desk is public by his decision of 11 Aug and the statements site is deliberately on its own cryptic name, so the address travels the keyed road the usernames already travel, written to the desk’s store by the publish and handed back by GET /stmt-users. No address means no QR, said on the card, because a printed code that opens nothing is worse than no code.","<b>MEASURED IN A REAL BROWSER, NOT IN jsdom, BECAUSE jsdom HAS NO CANVAS.</b> The QR was drawn on the canvas and then <b>read back module by module against the encoder: 1,089 modules, none wrong</b>, and the quiet zone light at every one of 344 samples round its edge. The JPEG carries its start and end markers. The PDF opens <code>%PDF-1.4</code>, ends <code>%%EOF</code>, and <b>every one of its five xref offsets lands exactly on its own object</b>, which is the whole difficulty of writing one by hand. With no address the sheet still renders and the PDF is still made, with no QR block at all. Four new suite assertions were each proved RED before their green was trusted, by moving the 12.5 anchor onto a ten, by removing oil’s tier1:null, by putting Tier 1 at row zero and by pricing Tier 1 above Tier 2."]},
+const evolution=[{"v":"v565","d":"10 Sep 2026","t":"THE PEN'S ACTIONS STOP BEING CUT OFF BY THE ENTRY THEY BELONG TO","n":["<b>HIS INSTRUCTION, 09 SEP 2026:</b> “Better design maybe tapping the edit button, 4-5 button will appear floating from the edit button, for the 4-5 most probable action.” What he photographed was <b>one box reading PAID IN FULL</b>, and the menu was not the fault. v547 appended it INSIDE the entry’s card and <code>.lcard</code> carries <code>overflow:hidden</code>. Measured in a real browser at 1280: a folded entry is <b>72px</b> and the menu was <b>144px</b>, so one item of three was painted. Worse, the two that were not painted were still in the layout: a hit test at the centre of MODIFICATION reached the <code>.lstate</code> of the entry BELOW, so the control did the wrong thing rather than nothing. jsdom could not have found this and did not; it does no layout.","<b>SO THE FAN LEAVES THE CARD.</b> It is <code>position:fixed</code> at the pen’s own coordinates, thrown above the pen where it would run off the bottom, and closed on a scroll, because a fixed element cannot follow the pen that opened it. Each action is its own pill with its own ground, so four or five of them read as four or five buttons rather than as one block of rows. Measured after, at 1280 and at 375: every action reachable by hit test, <b>44px in both dimensions</b>, nothing off screen, nothing overflowing sideways, and the flip proved on the last entry of the ledger at both widths.","<b>RANKED ON HIS OWN BOOK RATHER THAN ON A GUESS.</b> Of <b>117 settled sales, 101 closed with the cash and the goods on the same date</b>, so Completed leads wherever both are outstanding; of 27 open sales, 18 owe cash alone, so Paid in full leads where they do not. Four are drawn and More is always the fifth. On the order he is most likely to tap the pen on it is five: <b>Completed, Paid in full, Delivered in full, Back to pending, More</b>. On a settled row it is three, because a settled row has three real actions and a button the fold would refuse is not an action. Every item is still a chip the editor already offers, on the editor’s own conditions, with <code>updSet</code> filling the outstanding figures, so a tap still cannot overpay.","<b>THE PEN ITSELF WAS HALF THE TAP CONTRACT.</b> Hit-tested at <b>22px by 22px</b>, with no pseudo hit area, on the one control that opens all of this and the one he reaches for on a phone. It carries a 44px hit area now. That takes the entry’s top right corner, so a tap there opens the fan where it used to expand the trail; the rest of the entry still expands it, and the fan is what that corner is for.","<b>AND THE ENTRY ANIMATION WAS WRITTEN, MEASURED AND REMOVED.</b> The pills fanned out of the pen on a staggered keyframe from opacity 0 and scale .7, with <code>animation-fill-mode:backwards</code>. In a real browser whose animation timeline does not advance, the animation sits at <code>currentTime 0</code> with <code>playState:“running”</code>, so backwards holds the FROM state and every pill is <b>invisible and 30.8px tall while still answering a hit test</b>. A control that can be invisible and under the tap contract is worse than a control that does not move, and the fan reads as a fan because it is separate buttons, not because of 170 milliseconds. <b>Eight assertions, each proved RED before its green was trusted</b>: by putting the menu back inside the card, by giving the container the ground back, by moving More off the end, by dropping its class, by restoring the v547 list of three, by deleting the pen’s hit area, by making the close a no-op, and by putting the keyframes back."]},
+
+{"v":"v564","d":"10 Sep 2026","t":"TWO TIERS ON THE BOARD, THE SUGGESTED PRICE TO THE NEAREST FIVE, AND THE SHEET SAVES AS JPG AND PDF WITH A QR","n":["<b>HIS INSTRUCTION, 10 SEP 2026: “I want to have a 2 tier rate. The current one shown on the board is Tier 2. For Tier 1, the 0.5 unit is 60 while the 12.5 unit is 875.”</b> So the board carries two levels. <b>Tier 2 is the board that was there and not one of its figures moves</b>, at any size, on either book: it is still what priceLadder().ask returns, still what the customer price list is drawn toward, still what the drafter measures a row against, and still row zero of the payload the phone and the D1 mirror read. Tier 1 is new and sits under it: <b>RM 60, 110, 150, 200, 230, 270, 310, 340, 380, 410, 500 and 875</b> against Tier 2’s RM 70 to RM 1,150. Said as rates, RM 120 a unit falling to RM 70 against RM 140 falling to RM 92, so Tier 1 is 86 per cent of the ask at half a unit and 76 per cent of it at twelve and a half. Every rung clears break-even, from 2.13x at half a unit to 1.25x at twelve and a half, so nothing on either tier is quoted at a loss.","<b>TIER 1 IS STATED AT ITS ENDS AND INTERPOLATED BETWEEN THEM, AND THE DERIVED ROAD WAS TRIED FIRST.</b> The ask is a margin on the floor tapered at the supplier’s own exponent (v504), which is ONE number to set: a level pinned at 2.5 unit. His two ends are two numbers, and they do not fit on that shape. Measured, his pair implies a taper of <b>-0.167 against the supplier’s -0.121</b>, which is the whole point of a relationship price and not something a level can absorb; solved as a margin curve it wants an anchor of 0.324 and a taper of -0.308, and the clamps then bite. Worse, <b>RM 875 is not a multiple of ten</b> and the house rounding is up to the ten, so no derived curve can ever print the figure he gave; it would print RM 880. So the two ends are taken verbatim and only the sizes between them are rounded, which is the rule the retired tier board used and the only one that can be honest about a number he typed. Between them the RATE is interpolated in the log of size, the desk’s own method, and outside them it is clamped rather than extrapolated. Tier 1 obeys the same two laws as the ask: the rate never rises with size, and the gap to break-even is named in <code>under</code> rather than hidden.","<b>OIL HAS ONE TIER AND THE BOARD SAYS SO.</b> Its five prices are already his own stated ones and its 50 unit rung earns 3 per cent, so there is nothing for a second tier to sit under, and he has stated no ends for it. <code>LADDER_BY.oil</code> therefore carries <code>tier1:null</code> as an ENTRY rather than an omission: <code>ladderFor</code> spreads LADDER underneath, so leaving it out would hand oil salt’s anchors, clamp every oil size to 12.5, land the rate at RM 70 a unit and quote <b>RM 700 for ten units of oil that Tier 2 sells at RM 130</b>. The suite asserts oil is handed none, and the board head reads Ask on a one-tier book and Tier 2 on a two-tier one.","<b>THE MARKUP COLUMN MOVED INTO THE ASKS RATHER THAN BEING DROPPED OR DOUBLED.</b> v554’s rule stands: the multiple must say what it is OF, or 2.49x reads as +249 per cent. What could not stand is one Markup column beside TWO asks, which has to pick a tier and then silently describes one of them while sitting level with both. Each tier cell now carries its own total, rate, margin on price and multiple of effective cost, four lines, and the board stays at five columns because it gets 325px of a 375px screen. <b>The “collect only” tag went with it, and it had been unreachable since v502</b>: that release made one floor per size and the suite asserts collecting and delivering give the same figure to the ringgit, so the tag’s own condition has been impossible for a fortnight. The row now flags a price under break-even, on either tier, and names which.","<b>HIS SECOND INSTRUCTION: THE SUGGESTED PRICE PER CUSTOMER ROUNDS TO THE NEAREST FIVE.</b> It was the whole ringgit UP, which put figures like RM 97 and RM 416 on a sheet handed to a customer while the board beside it quotes in tens. NEAREST, not up: the four drawing rules that pull a customer’s own rate toward the board already decide the direction, and rounding had no business deciding it again. <b>The floor is the one thing rounding may not cross</b>: nearest-five can land up to RM 2.50 under break-even, so a price that does is lifted to the first five above the floor. The cap is not re-clamped, because it is a drawing target at three times COGS and not a refusal line. One rule, two places, and the suite holds <code>tools/pricelist.mjs</code> and the desk’s <code>pbAdjusted</code> together as it always has. Measured over <b>all 39 parties on the roster</b>: every price on every sheet is a multiple of five and not one is under its floor.","<b>HIS THIRD INSTRUCTION: THE BOARD SHEET SAVES AS HTML, PDF AND JPG, WITH THE LOGO AND THE NUMBERS ONLY, THEN THE USERNAME AND A QR TO THE WEBSITE.</b> HTML was already there. The image was a PNG and is now a <b>JPG</b>, which every message app and phone gallery takes without asking. The <b>PDF</b> is written out here, one A4 page embedding the same JPEG as a DCTDecode image, so paper, file and message are one rendering and cannot drift; no library, for the reason hard rule 4 exists and the reason engine/qr.mjs is written out rather than installed. And <b>the username has moved below the numbers, with the QR after it</b>, which is the order he gave; v538’s rule that there are no words at all on the sheet is not withdrawn and still holds.","<b>ONE QR ENCODER, INLINED LIKE THE PRICING ENGINE.</b> tools/qr.mjs was a build-time module for the statements; the desk needs the same encoder at runtime, and a second copy would drift exactly as two pricing engines would. It is now <code>engine/qr.mjs</code>, inlined into the master by <code>tools/engine.mjs --sync</code> beside pricing and position, with CI failing if the block is not the module to the byte. It draws <b>rectangles, never a path and never a stroke</b>, because the sheet goes to print, to a PDF and to a phone’s share sheet rather than only to a browser. <b>The site’s address is never in this file</b>: /desk is public by his decision of 11 Aug and the statements site is deliberately on its own cryptic name, so the address travels the keyed road the usernames already travel, written to the desk’s store by the publish and handed back by GET /stmt-users. No address means no QR, said on the card, because a printed code that opens nothing is worse than no code.","<b>MEASURED IN A REAL BROWSER, NOT IN jsdom, BECAUSE jsdom HAS NO CANVAS.</b> The QR was drawn on the canvas and then <b>read back module by module against the encoder: 1,089 modules, none wrong</b>, and the quiet zone light at every one of 344 samples round its edge. The JPEG carries its start and end markers. The PDF opens <code>%PDF-1.4</code>, ends <code>%%EOF</code>, and <b>every one of its five xref offsets lands exactly on its own object</b>, which is the whole difficulty of writing one by hand. With no address the sheet still renders and the PDF is still made, with no QR block at all. Four new suite assertions were each proved RED before their green was trusted, by moving the 12.5 anchor onto a ten, by removing oil’s tier1:null, by putting Tier 1 at row zero and by pricing Tier 1 above Tier 2."]},
 
 {"v":"v563","d":"10 Sep 2026","t":"CLEAR IS THE GHOST, NOT THE PILL: THE FILTER STOPS ANNOUNCING ITSELF","n":["<b>HIS INSTRUCTION, 10 SEP 2026, ON THE LEDGER FILTER.</b> v561 made the bar compact and the geometry was right: 44px on one row at 1280, 148px and two controls to a row at 375, every control 44px in both directions. What it left alone was weight. <b>Clear was the only filled element in the bar</b>, and on a bar he had just called not the main function of the ledger, the eye landed on it first.","<b>THE DESIGN LAYER HAD ALREADY WRITTEN THE ANSWER.</b> Section 7 of <code>design/desk.css</code> says it in one line: the pill books or produces, everything else is a ghost. <code>.vbtn</code> is the booking pill. Clear books nothing, produces nothing and undoes a filter, so it was wearing the wrong component, not the wrong colour. <b>No new CSS was written and no hex was added</b>: it takes <code>.ubtn</code>, the secondary action Record plan, Undo last and Review in Transaction already wear, which carries the same <code>--tap</code> minimum. The other 28 <code>.vbtn</code> buttons on the desk are untouched.","<b>MEASURED IN A REAL BROWSER, BOTH WAYS.</b> Before: <code>linear-gradient(135deg,#c5a059,#b87333)</code>, obsidian text at weight 700, a brass glow, 78 by 44. After: no background image, no shadow, brass text at weight 500 inside a 50 per cent brass outline, 58 by 44, still over the tap floor. A census of the bar named Clear as <b>the only glowing element and the only gradient</b> on the old build, and <b>nothing glows</b> on the new one; the four selects' gradients are their SVG arrows, not fills. The inline <code>font-size:11px</code> went with the pill, because the ghost rule already sets 11px.","<b>THE BAR IS OTHERWISE EXACTLY WHERE v561 LEFT IT,</b> 44px on one row at 924px wide, and the filter still does what it says: the search box keeps focus while typing, all four dropdowns filter, and Clear empties all five fields and removes itself. State &ldquo;Pending&rdquo; matches nothing today, which is correct rather than dead: <code>engine/position.mjs</code> returns it when nothing is paid and nothing delivered, and no row is in that state.","<b>AND v562 WAS TAKEN WHILE THIS WAS BEING BUILT.</b> The chain folded the CA7-JTR s140 correction from his phone and deployed it mid-flight. A fold that carries real rows owns its number, so this work was rebased onto v562 and renumbered. Nothing was lost either way."]},
 
@@ -6568,7 +6585,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='10 Sep 2026, 13:40 KL';
+const LAST_UPDATED='10 Sep 2026, 14:37 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -10460,39 +10477,82 @@ function ledEdit(rid,type){
   edRid=rid;edType=type||'SELL';renderEditor();
 }
 function edClose(){edRid=null;edNew=false;renderEditor();}
-/* THE PEN AT THE CORNER (his instruction, 09 Sep 2026). One small control per entry, shown on hover
-   and always on a touch screen, opening a short menu: the simple transactions first, each a chip
-   the editor already offers (updSet fills the outstanding figures, so a tap cannot overpay), then
-   the editor itself for anything else. The menu is one element, moved under the pen that was
-   tapped; a click anywhere else closes it. */
+/* ============ v565: THE PEN FANS OUT, AND NOTHING CLIPS IT (his instruction, 09 Sep 2026) ============
+   "Better design maybe tapping the edit button, 4-5 button will appear floating from the edit
+   button, for the 4-5 most probable action."
+
+   WHAT HE PHOTOGRAPHED WAS ONE BOX READING PAID IN FULL, AND THE MENU WAS NOT THE FAULT. v547
+   appended it INSIDE the entry's card, and .lcard carries overflow:hidden. Measured in a real
+   browser at 1280: a folded entry is 72px and the menu 144px, so it was cut at the card's edge
+   and one item of three was painted. Worse, the two that were not painted were still in the
+   layout: a hit test at the centre of MODIFICATION reached the .lstate of the entry BELOW, so
+   the control did the wrong thing rather than nothing.
+
+   SO THE FAN LEAVES THE CARD: position:fixed at the pen's own coordinates, thrown upward when it
+   would run off the bottom, and closed on scroll, because a fixed element cannot follow the pen
+   that opened it. Each action is its own pill, staggered out of the pen's corner, so four or five
+   of them read as four or five buttons rather than as one block of rows.
+
+   THEY ARE RANKED ON HIS OWN BOOK RATHER THAN ON A GUESS. Of 117 settled sales 101 closed with
+   the cash and the goods on the SAME DATE, so Completed leads wherever both are outstanding; of
+   27 open sales 18 owe cash alone, so Paid in full leads where they do not. Four are drawn and
+   More is always the fifth, so it is four or five on every row he is likely to tap and three on a
+   settled one, which has only three real actions: a button the fold would refuse is not an action.
+   Every item is still a chip the editor already offers, on the editor's own conditions, with
+   updSet filling the outstanding figures, so a tap still cannot overpay. Completed keeps the
+   menu's stricter rule of both-outstanding rather than the editor's either-outstanding: where one
+   side is already settled, Completed and Paid in full are the same tap under two names. */
+function ledMenuClose(){const m=document.getElementById('ledMenu');if(m)m.remove();}
+/* FIXED MEANS THE PLACING IS THIS FUNCTION'S JOB. Right-aligned to the pen it came out of, under
+   it where there is room and above it where there is not, and measured off-screen first so the
+   fan is never painted at the wrong end of the page for a frame. */
+function ledMenuPlace(m,pen){
+  const r=pen&&pen.getBoundingClientRect?pen.getBoundingClientRect():null;
+  if(!r){m.style.top='20%';m.style.right='16px';return;}
+  m.style.top='-9999px';
+  const h=m.offsetHeight;
+  m.style.right=Math.max(8,Math.round(window.innerWidth-r.right))+'px';
+  if(h+12<=window.innerHeight-r.bottom){m.style.top=Math.round(r.bottom+6)+'px';m.style.bottom='auto';m.classList.remove('up');}
+  else{m.style.top='auto';m.style.bottom=Math.round(window.innerHeight-r.top+6)+'px';m.classList.add('up');}
+}
 function ledMenu(ev,rid,type){
   if(ev){ev.preventDefault();ev.stopPropagation();}
-  let m=document.getElementById('ledMenu');
-  if(m&&m.getAttribute('data-rid')===rid){m.remove();return;}
-  if(m)m.remove();
+  const was=document.getElementById('ledMenu');
+  if(was&&was.getAttribute('data-rid')===rid){ledMenuClose();return;}
+  ledMenuClose();
   const row=(type==='BUY'?purchases:sales).find(r=>r&&r.rid===rid);
   if(!row){ledEdit(rid,type);return;}
-  const o=updOut(row,type), buy=type==='BUY', unpriced=!!row.unpriced;
-  const canc=!!row.cancelled;
-  const items=[];
-  const via=(lab,fn)=>items.push({lab,fn});
-  if(!canc&&!unpriced&&o.cashLeft>0.009)via('Paid in full',()=>{ledEdit(rid,type);updSet(null,o.cashLeft,0);});
-  if(!canc&&o.unitLeft>0.009)via(buy?'Received in full':'Delivered in full',()=>{ledEdit(rid,type);updSet(null,0,o.unitLeft);});
-  if(!canc&&!unpriced&&(o.cashLeft>0.009||o.unitLeft>0.009)&&!(o.cashLeft>0.009&&o.unitLeft<=0.009)&&!(o.unitLeft>0.009&&o.cashLeft<=0.009))via('Completed',()=>{ledEdit(rid,type);updSet(null,o.cashLeft,o.unitLeft);});
-  via('Modification',()=>ledEdit(rid,type));
-  via('More',()=>ledEdit(rid,type));
-  m=document.createElement('div');m.id='ledMenu';m.className='lmenu';m.setAttribute('data-rid',rid);m.setAttribute('role','menu');
-  m.innerHTML=items.map((it,i)=>`<button type="button" role="menuitem" data-i="${i}">${it.lab}</button>`).join('');
-  m.addEventListener('click',e=>{const b=e.target.closest('button[data-i]');if(!b)return;e.stopPropagation();const it=items[+b.getAttribute('data-i')];m.remove();if(it)it.fn();});
-  const btn=ev&&ev.currentTarget&&ev.currentTarget.closest?ev.currentTarget:(ev&&ev.target?ev.target.closest('.lpen'):null);
-  const card=btn&&btn.closest?btn.closest('.lcard'):null;
-  (card||document.body).appendChild(m);
+  const o=updOut(row,type), buy=type==='BUY', unpriced=!!row.unpriced, canc=!!row.cancelled;
+  const cash=!canc&&!unpriced&&o.cashLeft>0.009, unit=!canc&&o.unitLeft>0.009;
+  const via=(mode,c,k)=>()=>{ledEdit(rid,type);updSet(mode,c,k);};
+  const items=[
+    [cash&&unit, 'Completed', via(null,o.cashLeft,o.unitLeft)],
+    [cash, 'Paid in full', via(null,o.cashLeft,0)],
+    [unit, buy?'Received in full':'Delivered in full', via(null,0,o.unitLeft)],
+    [!canc&&(o.paid>0.009||o.moved>0.009), 'Back to pending', via('pending',null,null)],
+    [!canc&&buy&&!row.defaulted&&poRecvUnits(row)<=0.009, 'Defaulted', via('default',null,null)],
+    [!canc, 'Cancelled', via('cancel',null,null)]
+  ].filter(x=>x[0]).slice(0,4).map(x=>({lab:x[1],fn:x[2],cls:''}));
+  items.push({lab:'More',fn:()=>ledEdit(rid,type),cls:' lmore'});
+  const m=document.createElement('div');
+  m.id='ledMenu';m.className='lmenu';m.setAttribute('data-rid',rid);m.setAttribute('role','menu');
+  m.innerHTML=items.map((it,i)=>`<button type="button" role="menuitem" class="lmi${it.cls}" data-i="${i}">${it.lab}</button>`).join('');
+  m.addEventListener('click',e=>{const b=e.target.closest('button[data-i]');if(!b)return;e.stopPropagation();
+    const it=items[+b.getAttribute('data-i')];ledMenuClose();if(it)it.fn();});
+  document.body.appendChild(m);
+  const pen=ev&&ev.currentTarget&&ev.currentTarget.closest?ev.currentTarget:(ev&&ev.target?ev.target.closest('.lpen'):null);
+  ledMenuPlace(m,pen);
   const first=m.querySelector('button');if(first)first.focus();
 }
 if(typeof document!=='undefined'&&!window.__lmenuBound){
   window.__lmenuBound=1;
-  document.addEventListener('click',e=>{const m=document.getElementById('ledMenu');if(m&&!m.contains(e.target)&&!(e.target.closest&&e.target.closest('.lpen')))m.remove();});
-  document.addEventListener('keydown',e=>{if(e.key==='Escape'){const m=document.getElementById('ledMenu');if(m)m.remove();}});
+  document.addEventListener('click',e=>{const m=document.getElementById('ledMenu');if(m&&!m.contains(e.target)&&!(e.target.closest&&e.target.closest('.lpen')))ledMenuClose();});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape')ledMenuClose();});
+  /* a fixed fan cannot follow the pen that opened it, so a scroll closes it rather than leaving it
+     hanging over an entry it has nothing to do with. Capturing, because the desk scrolls the
+     document here and a pane elsewhere. */
+  window.addEventListener('scroll',()=>{if(document.getElementById('ledMenu'))ledMenuClose();},true);
+  window.addEventListener('resize',()=>{if(document.getElementById('ledMenu'))ledMenuClose();});
 }
 function edEsc(v){return v==null?'':String(v).split('&').join('&amp;').split('"').join('&quot;').split('<').join('&lt;');}
 function renderEditor(){

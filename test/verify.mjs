@@ -6094,8 +6094,43 @@ section("v495: an entry is two rows, and the act cell ends the second");
   ok(pen && pen.tag === "BUTTON" && pen.position === "absolute" && pen.opacity === "0" && pen.hasSvg && /^Update E\d+$/.test(pen.label) && /\.lcard:hover \.lpen[^{]*\{[^}]*opacity:1/.test(css19) && /hover:none\)\{\.lpen\{opacity:\.55/.test(css19),
     "the pen is a real button at the entry's corner, hidden until the entry is hovered and always faintly there on a touch screen (" + JSON.stringify(pen) + ")");
   w19.eval("document.querySelector('.sec.on .lcard[data-rid]:not([data-rid=x-prov]) button.lpen').click()");
-  const menu19 = JSON.parse(String(w19.eval("JSON.stringify([].slice.call(document.querySelectorAll('#ledMenu button')).map(function(b){return b.textContent;}))")));
-  ok(menu19.length >= 2 && menu19[menu19.length - 1] === "More" && menu19.indexOf("Modification") >= 0, "the pen opens a short menu: the simple transactions, Modification, then More for the editor (" + menu19.join(", ") + ")");
+  /* ============ v565: THE FAN, AND WHY EACH OF THESE CAN GO RED ============
+     The menu was appended INSIDE the card and .lcard carries overflow:hidden, so on a 72px entry
+     a 144px menu showed one item of three and a tap where the second appeared reached the entry
+     BELOW. Measured in a real browser at 1280 before the fix, because jsdom does no layout and
+     could not have found it. What jsdom CAN hold is the structural fact that caused it: the fan
+     hangs off the body and is fixed. Put it back under the card and the first of these goes red. */
+  const fan = JSON.parse(String(w19.eval("JSON.stringify((function(){var m=document.getElementById('ledMenu');if(!m)return null;var s=getComputedStyle(m);var bs=[].slice.call(m.querySelectorAll('button'));return {parent:m.parentElement.tagName,position:s.position,bg:s.backgroundColor,gap:s.gap||s.rowGap,radius:bs.length?getComputedStyle(bs[0]).borderRadius:null,labels:bs.map(function(b){return b.textContent;}),delays:bs.map(function(b){return b.style.animationDelay;}),lastCls:bs.length?bs[bs.length-1].className:''};})())")));
+  ok(fan && fan.parent === "BODY" && fan.position === "fixed",
+    `the fan hangs off the body and is fixed, so .lcard's overflow:hidden cannot cut it (${fan && fan.parent}, ${fan && fan.position})`);
+  ok(fan && /transparent|rgba\(0, 0, 0, 0\)/.test(fan.bg) && fan.radius === "23px" && fan.gap === "6px",
+    `the ground is on each pill and they stand apart, rather than one block of rows (container ${fan && fan.bg}, pill radius ${fan && fan.radius}, gap ${fan && fan.gap})`);
+  ok(fan && fan.labels[fan.labels.length - 1] === "More" && fan.lastCls.indexOf("lmore") >= 0,
+    `More is always the last action, and it is named by its own class rather than by :last-child, which stopped being reliable when the list started varying (${fan && fan.labels.join(", ")})`);
+  /* THERE IS NO ENTRY ANIMATION AND THAT IS THE ASSERTION. A staggered keyframe from opacity 0
+     and scale .7 was written first and measured in a real browser: where the animation timeline
+     does not advance it holds the FROM state, so every pill was invisible and 30.8px while still
+     answering a hit test. Nothing on this fan may depend on an animation running to be seen or to
+     meet the 44px contract. */
+  ok(fan && fan.delays.every((d) => !d) && !/@keyframes lfan/.test(css19) && !/.lmenu button{[^}]*animation:/.test(css19),
+    `no pill depends on an animation to reach its resting size or to be visible (${JSON.stringify(fan && fan.delays)})`);
+  ok(/\.lpen::after\{[^}]*width:44px[^}]*height:44px/.test(css19),
+    "the pen carries a 44px hit area, which its own 22px box never met; the box and the hit area were both measured in a real browser");
+  /* HOW MANY, AND IN WHAT ORDER. Ranked on his own book rather than on a guess: of 117 settled
+     sales 101 closed with the cash and the goods on the SAME DATE, so Completed leads wherever
+     both are outstanding, and of 27 open sales 18 owe cash alone. FORCED rather than found, so
+     this does not go quietly meaningless the day he settles the row it used to read. */
+  w19.eval("document.body.click();sales.push({customer:'CX9-FAN',qty:4,total:400,cash:100,deliveredQty:1,date:'2026-09-01',rid:'x-fan'});recompute();switchTab('ledger');");
+  w19.eval("document.querySelector('.lcard[data-rid=x-fan] button.lpen').click()");
+  const fan5 = JSON.parse(String(w19.eval("JSON.stringify([].slice.call(document.querySelectorAll('#ledMenu button')).map(function(b){return b.textContent;}))")));
+  ok(fan5.length === 5 && fan5[0] === "Completed" && fan5[1] === "Paid in full" && fan5[2] === "Delivered in full" && fan5[4] === "More",
+    `a part-paid, part-delivered order fans out five, Completed first (${fan5.join(", ")})`);
+  /* a fixed fan cannot follow the pen that opened it, so a scroll closes it */
+  const beforeScroll = +w19.eval("document.querySelectorAll('#ledMenu').length");
+  w19.eval("window.dispatchEvent(new Event('scroll'))");
+  ok(beforeScroll === 1 && +w19.eval("document.querySelectorAll('#ledMenu').length") === 0,
+    "and a scroll closes it, because a fixed element cannot follow the pen it came out of");
+  w19.eval("document.querySelector('.lcard[data-rid=x-fan] button.lpen').click()");
   w19.eval("document.body.click()");
   ok(+w19.eval("document.querySelectorAll('#ledMenu').length") === 0, "and a click anywhere else closes it");
 }
