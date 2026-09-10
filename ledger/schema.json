@@ -1,6 +1,6 @@
 {
-  "v": "v570",
-  "derivedFrom": "aa736d47c7e77a34",
+  "v": "v572",
+  "derivedFrom": "856dbd267d52e358",
   "tables": {
     "sales": {
       "rows": 144,
@@ -230,7 +230,7 @@
           ]
         },
         "settle": {
-          "present": 1,
+          "present": 2,
           "of": 144,
           "optional": true,
           "types": [
@@ -238,7 +238,7 @@
           ]
         },
         "settledKg": {
-          "present": 1,
+          "present": 2,
           "of": 144,
           "optional": true,
           "types": [
@@ -246,7 +246,7 @@
           ]
         },
         "settledRM": {
-          "present": 12,
+          "present": 13,
           "of": 144,
           "optional": true,
           "types": [

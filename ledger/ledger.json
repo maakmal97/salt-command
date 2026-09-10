@@ -1,6 +1,6 @@
 {
- "v": "v570",
- "stamped": "11 Sep 2026, 01:01 KL",
+ "v": "v572",
+ "stamped": "11 Sep 2026, 04:29 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -3190,9 +3190,9 @@
     "date": "2026-09-07",
     "deliveredQty": 2,
     "deliveredOn": "2026-09-07",
-    "note": "<b>PAID RM 160 AT THE OPEN, corrected on his word 08 Sep: RM 25 outstanding, not RM 35.</b> <b>CASH CORRECTED 150 TO 160 on his word, 08 Sep.</b> RM 160 was paid when the order opened on 07 Sep, not RM 150, so RM 25 is owing rather than RM 35. No money and no stock moves; the row is restated. The RM 10 fulfilment tapped on 07 Sep at 13:35 was rejected on the phone and is superseded by this correction. Both unit were collected on 07 Sep as booked. CR3-DAM's twelfth order and the first above RM 80 a unit since 03 Jul: 2 unit at RM 92.50, RM 185 the order, handed over collected. The floor for 2 unit is RM 109.73 and the board's ask RM 220, so the rate stands RM 75.27 above the floor and RM 35 under the ask, a discount held for a party whose last nine orders were each 1 unit at RM 80. Costed at the inventory's own RM 48 a unit, the 03 Sep lot of 25 unit from SA5-BTR, which is what the draft carried, so RM 96 on the order and RM 89 gross, 48.1% on price. An advance: RM 150 of RM 185 paid, both unit collected on 07 Sep, RM 35 outstanding, and CR3-DAM carried nothing before this row, so RM 35 is their whole exposure.",
+    "note": "<b>CORRECTION ON s136, THE RM25 SETTLED IN CASH AND FLAGGED AS THE FIRST ASSOCIATE SALE.</b> Against CR3-DAM's SELL of 2 unit for RM185 dated 07 Sep, RM160 paid at the open and 2 unit collected. The patch sets settledRM from unset to 25, settledKg from unset to 0 and settle to First associate sale, recorded 11 Sep. RM92.50 a unit sits at the top of his range of RM80 to RM92.50 against a median of RM80 over 12 orders, with RM25 outstanding before and 0.27 unit on credit, nothing defaulted. The drafter flagged the rate 15.6 per cent above his usual and the advance; the settlement answers the advance. No cash or stock moves and nothing is left outstanding. <b>PAID RM 160 AT THE OPEN, corrected on his word 08 Sep: RM 25 outstanding, not RM 35.</b> <b>CASH CORRECTED 150 TO 160 on his word, 08 Sep.</b> RM 160 was paid when the order opened on 07 Sep, not RM 150, so RM 25 is owing rather than RM 35. No money and no stock moves; the row is restated. The RM 10 fulfilment tapped on 07 Sep at 13:35 was rejected on the phone and is superseded by this correction. Both unit were collected on 07 Sep as booked. CR3-DAM's twelfth order and the first above RM 80 a unit since 03 Jul: 2 unit at RM 92.50, RM 185 the order, handed over collected. The floor for 2 unit is RM 109.73 and the board's ask RM 220, so the rate stands RM 75.27 above the floor and RM 35 under the ask, a discount held for a party whose last nine orders were each 1 unit at RM 80. Costed at the inventory's own RM 48 a unit, the 03 Sep lot of 25 unit from SA5-BTR, which is what the draft carried, so RM 96 on the order and RM 89 gross, 48.1% on price. An advance: RM 150 of RM 185 paid, both unit collected on 07 Sep, RM 35 outstanding, and CR3-DAM carried nothing before this row, so RM 35 is their whole exposure.",
     "rid": "s136",
-    "mod": "corrected on 2026-09-07: cash 150 to 160",
+    "mod": "corrected on 2026-09-07: cash 150 to 160, then corrected on 2026-09-11: settledRM (unset) to 25; settledKg (unset) to 0; settle (unset) to First associate sale",
     "amend": [
      {
       "date": "2026-09-07",
@@ -3207,8 +3207,18 @@
       "cash": 0,
       "kg": 0,
       "note": "<b>CASH CORRECTED 150 TO 160 on his word, 08 Sep.</b> RM 160 was paid when the order opened on 07 Sep, not RM 150, so RM 25 is owing rather than RM 35. No money and no stock moves; the row is restated. The RM 10 fulfilment tapped on 07 Sep at 13:35 was rejected on the phone and is superseded by this correction. Both unit were collected on 07 Sep as booked."
+     },
+     {
+      "date": "2026-09-11",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>CORRECTION ON s136, THE RM25 SETTLED IN CASH AND FLAGGED AS THE FIRST ASSOCIATE SALE.</b> Against CR3-DAM's SELL of 2 unit for RM185 dated 07 Sep, RM160 paid at the open and 2 unit collected. The patch sets settledRM from unset to 25, settledKg from unset to 0 and settle to First associate sale, recorded 11 Sep. RM92.50 a unit sits at the top of his range of RM80 to RM92.50 against a median of RM80 over 12 orders, with RM25 outstanding before and 0.27 unit on credit, nothing defaulted. The drafter flagged the rate 15.6 per cent above his usual and the advance; the settlement answers the advance. No cash or stock moves and nothing is left outstanding."
      }
-    ]
+    ],
+    "settledRM": 25,
+    "settledKg": 0,
+    "settle": "First associate sale"
    },
    {
     "customer": "CJ4-BJ",
@@ -3745,9 +3755,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-10T03:48:14.758Z",
+  "QUEUE_COMMITTED": "2026-09-10T20:07:34.862Z",
   "PRICING": {
-   "takenAt": "2026-09-10T17:09:21.942Z",
+   "takenAt": "2026-09-10T20:29:41.927Z",
    "sizes": [
     0.5,
     1,
@@ -4203,11 +4213,11 @@
      ]
     }
    },
-   "v": "v570"
+   "v": "v572"
   },
   "OPEN": {
-   "at": "2026-09-10T17:09:21.978Z",
-   "count": 8,
+   "at": "2026-09-10T20:29:42.026Z",
+   "count": 7,
    "byKey": {
     "CM4-MK|2026-09-09|220": {
      "d": "2026-09-09",
@@ -4225,23 +4235,6 @@
      "key": "CM4-MK|2026-09-09|220",
      "age": 2,
      "exp": 110
-    },
-    "CR3-DAM|2026-09-07|185": {
-     "d": "2026-09-07",
-     "p": "CR3-DAM",
-     "dir": "S",
-     "q": 2,
-     "t": 185,
-     "cash": 160,
-     "mv": 2,
-     "st": "dueMoney",
-     "oweRM": 25,
-     "rid": "s136",
-     "deliveredOn": "2026-09-07",
-     "handover": "collected",
-     "key": "CR3-DAM|2026-09-07|185",
-     "age": 4,
-     "exp": 18.75
     },
     "CJ4-BJ|2026-09-07|850": {
      "d": "2026-09-07",
@@ -4354,7 +4347,7 @@
      "owedOut": 0,
      "coverDays": 8.6,
      "rate": 4.66,
-     "owedToYou": 887,
+     "owedToYou": 862,
      "promised": 8.5,
      "short": 0
     },
@@ -4374,7 +4367,7 @@
     "salt": "2026-09-08",
     "oil": "2026-09-09"
    },
-   "v": "v570"
+   "v": "v572"
   }
  }
 }
