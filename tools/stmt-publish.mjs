@@ -129,6 +129,16 @@ async function main() {
   if (!plan.puts.length) { console.log("nothing publishable in " + plan.latest + "; the store is left as it is"); return; }
 
   mkdirSync(outDir, { recursive: true });
+  /* THE ROSTER, for the owner's list at /all (10 Sep 2026). It is what turns a page of usernames
+     into a page of accounts: a code is what he knows a party by, and without this the list can only
+     show the eight random symbols printed on the paper. CODES, NEVER NAMES. A code is already public
+     on the desk, whereas a plaintext name has never reached this site and does not start now; the
+     directory stays in the vault on the other Worker. It rides the same bulk put as the records, so
+     it lands or fails with them rather than in a write of its own. */
+  const rosterList = Object.entries(plan.users)
+    .map(([username, code]) => ({ code, username }))
+    .sort((a, b) => String(a.code).localeCompare(String(b.code)));
+  plan.puts.push({ key: "roster", value: JSON.stringify(rosterList) });
   const putFile = join(outDir, "put.json"), delFile = join(outDir, "delete.json");
   writeFileSync(putFile, JSON.stringify(plan.puts));
   writeFileSync(delFile, JSON.stringify(plan.deletes));

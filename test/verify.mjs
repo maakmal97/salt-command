@@ -6814,6 +6814,91 @@ section("Statements — the password, the username, the envelope and the site's 
   }
 }
 
+/* ---- THE OWNER'S LIST, BEHIND CLOUDFLARE ACCESS (his instruction, 10 Sep 2026) ---------------
+   The gate is proved in BOTH directions, and the forged-signature case is the reason it exists at
+   all: a route that only checked the header's presence would pass every one of these. The JWKS is
+   served from a stand-in fetch over a key pair minted here, so nothing touches the network; the
+   real fetch is put back afterwards or every later section that uses it breaks. */
+section("Statements — the owner's list behind Access (v566)");
+{
+  const realFetch = globalThis.fetch;
+  try {
+    const TEAM = "maakmal", AUD = "aud-under-test", KID = "test-kid";
+    const kp = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048,
+      publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
+    const pub = await crypto.subtle.exportKey("jwk", kp.publicKey);
+    globalThis.fetch = async (u) => {
+      if (String(u) === "https://" + TEAM + ".cloudflareaccess.com/cdn-cgi/access/certs") {
+        return new Response(JSON.stringify({ keys: [{ ...pub, kid: KID, kty: "RSA" }] }));
+      }
+      throw new Error("the Access gate reached for something other than the team's key server: " + u);
+    };
+    const b64u = (b) => Buffer.from(b).toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+    const mint = async (claims, key = kp.privateKey, kid = KID) => {
+      const h = b64u(JSON.stringify({ alg: "RS256", kid, typ: "JWT" })), c = b64u(JSON.stringify(claims));
+      const sig = await crypto.subtle.sign("RSASSA-PKCS1-v1_5", key, new TextEncoder().encode(h + "." + c));
+      return h + "." + c + "." + b64u(new Uint8Array(sig));
+    };
+    const good = { iss: "https://" + TEAM + ".cloudflareaccess.com", aud: [AUD],
+      email: "maakmal97@icloud.com", exp: Math.floor(Date.now() / 1000) + 600 };
+
+    const okv = new KV();
+    await okv.put("u:aaaa-bbbb", "{}");
+    await okv.put("u:cccc-dddd", "{}");
+    const oenv = { STMT: okv, STMT_MASTER: "the-master-passphrase", ACCESS_TEAM: TEAM, ACCESS_AUD: AUD };
+    const hit = (h, env = oenv) => stmtWorker.fetch(new Request("https://k7m3p2.example/all", { headers: h || {} }), env);
+    const st = async (h, env) => (await hit(h, env)).status;
+
+    ok(await st() === 401, "/all with no token at all is refused");
+    ok(await st({ "cf-access-jwt-assertion": "not.a.jwt" }) === 401, "and a token that is not a JWT is refused");
+    ok(await st({ "cf-access-jwt-assertion": await mint({ ...good, aud: ["another-app"] }) }) === 401,
+      "and a token for another Access application is refused");
+    ok(await st({ "cf-access-jwt-assertion": await mint({ ...good, iss: "https://someone-else.cloudflareaccess.com" }) }) === 401,
+      "and a token from another team is refused");
+    ok(await st({ "cf-access-jwt-assertion": await mint({ ...good, exp: Math.floor(Date.now() / 1000) - 5 }) }) === 401,
+      "and an expired token is refused");
+    ok(await st({ "cf-access-jwt-assertion": await mint(good, kp.privateKey, "some-other-kid") }) === 401,
+      "and a token naming a signing key the team does not publish is refused");
+
+    /* THE ONE THE HEADER CHECK MISSES: every claim right, signed by a key that is not the team's. */
+    const other = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048,
+      publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
+    ok(await st({ "cf-access-jwt-assertion": await mint(good, other.privateKey) }) === 401,
+      "and a token with every claim right but another key's signature is refused");
+
+    ok(await st({ "cf-access-jwt-assertion": await mint(good) }, { ...oenv, ACCESS_AUD: "" }) === 401
+      && await st({ "cf-access-jwt-assertion": await mint(good) }, { ...oenv, ACCESS_TEAM: "" }) === 401,
+      "and with either variable unset the route fails closed, so it deploys before the application exists");
+
+    const opened = await hit({ "cf-access-jwt-assertion": await mint(good) });
+    const ohtml = await opened.text();
+    ok(opened.status === 200 && /id="roster"/.test(ohtml),
+      "a token from the right application opens the roster, so the gate is not simply welded shut");
+    ok(ohtml.includes("aaaa-bbbb") && ohtml.includes("cccc-dddd"),
+      "and every account in the store is listed");
+    ok(ohtml.includes("the-master-passphrase"),
+      "and the master reaches the page, which is what lets a tap open an account with nothing typed");
+    ok((await hit({ cookie: "CF_Authorization=" + await mint(good) })).status === 200,
+      "and the cookie is read as well as the header, because the page's own fetches carry only the cookie");
+
+    /* and none of it leaks onto the customer's door */
+    const cust = await stmtWorker.fetch(new Request("https://k7m3p2.example/"), oenv);
+    const chtml = await cust.text();
+    ok(cust.status === 200 && !/id="roster"/.test(chtml) && !chtml.includes("the-master-passphrase"),
+      "while GET / carries neither the roster nor the master, with the same env");
+    ok((await stmtWorker.fetch(new Request("https://k7m3p2.example/all", { method: "POST" }), oenv)).status === 405,
+      "and /all is GET only");
+
+    /* the roster prefers the published map, which is the only place a desk code exists */
+    await okv.put("roster", JSON.stringify([{ code: "CX0-AA", username: "aaaa-bbbb" }]));
+    const named = await (await hit({ "cf-access-jwt-assertion": await mint(good) })).text();
+    ok(named.includes("CX0-AA"),
+      "and once the publish has written `roster`, the account is listed by the code he knows it by");
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+}
+
 /* ---- the statement in the Salt identity, and what the QR carries ----------------- */
 /* ---- Statements: the price list, the order book and the desk's relay (06 Sep 2026) ---- */
 section("Statements — the price list, the order book and the desk's relay (v499)");

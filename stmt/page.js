@@ -125,13 +125,32 @@ select.fld{letter-spacing:0;appearance:none;-webkit-appearance:none}
 .pay input{width:18px;height:18px;accent-color:var(--salt-brass)}
 .hist{margin:10px 0 0;padding:0;list-style:none;font-size:var(--salt-text-xs);color:var(--salt-text-muted);font-family:var(--salt-font-mono);line-height:1.8}
 @media print{.bar,.mos,.tabs{display:none}}
+/* THE OWNER'S ROSTER, in the gate's own geometry so the door looks like the door. One row per
+   account: the code leads because that is what he knows an account by, and the username follows
+   in mist because that is what is printed on the paper. A row is a tap target at the full 44px. */
+.rlist{margin-top:14px;max-height:60vh;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.rlist button{display:flex;width:100%;gap:12px;align-items:baseline;justify-content:space-between;
+  min-height:var(--salt-tap);padding:11px 14px;margin:0 0 6px;cursor:pointer;text-align:left;
+  font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);color:var(--salt-text);
+  background:var(--salt-glass);border:1px solid var(--salt-line);border-radius:var(--salt-radius-sm)}
+.rlist button:hover{border-color:var(--salt-brass)}
+.rlist button span{color:var(--salt-mist);font-size:var(--salt-text-xs);letter-spacing:.06em}
+.rnone{color:var(--salt-text-muted);font-size:var(--salt-text-sm);margin:14px 0 0}
 `;
 
 const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
 /** The landing page. `user` is the normalised username to prefill, or "". `nonce` ties the
-    inline style and script to the CSP. */
-export function landingPage(user, nonce) {
+    inline style and script to the CSP.
+
+    `owner`, when given, is {master, accounts:[{code,username}]} and turns the same page into the
+    owner's own: the roster stands where the gate does, and a tap fills the username and the master
+    into the form the customer uses and submits it. His instruction of 10 Sep 2026, and the reason
+    it is this rather than a second page is that everything past the door -- the issue strip, the
+    statement, the prices, the lock -- is then the customer's own code, opened the customer's own
+    way. Only the door changes. The route that serves this is behind Cloudflare Access and verifies
+    the token itself; see stmt/access.js. */
+export function landingPage(user, nonce, owner) {
   const u = esc(user || "");
   return '<!DOCTYPE html>\n<html lang="en"><head><meta charset="utf-8">'
     + '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">'
@@ -139,14 +158,19 @@ export function landingPage(user, nonce) {
     + '<meta name="referrer" content="no-referrer">'
     + "<title>Statement of account</title>"
     + '<style nonce="' + nonce + '">' + STATEMENT_CSS + PAGE_CSS + "</style></head><body>"
-    + '<div id="gate" class="gate">'
-    + '<p class="eyebrow">Salt Command</p>'
+    + (owner
+      ? '<div id="roster" class="gate">'
+        + "<h1>Accounts</h1>"
+        + '<p class="lead">' + owner.accounts.length + " on the site. Tap one to open it.</p>"
+        + '<input class="fld" id="rq" type="text" autocapitalize="none" autocorrect="off" '
+        + 'spellcheck="false" placeholder="filter" aria-label="Filter accounts">'
+        + '<div id="rlist" class="rlist"></div>'
+        + '<p class="msg" id="rmsg" role="status" aria-live="polite"></p></div>'
+      : "")
+    + '<div id="gate" class="gate"' + (owner ? " hidden" : "") + ">"
     + "<h1>Statement of account</h1>"
-    + '<p class="lead">Sign in with the username and the password sent to you. Your statement is '
-    + "live: every entry from the start to today, updated as soon as an entry is approved, with "
-    + "each monthly statement as sent beside it. Your price list for the week and your orders are "
-    + "behind the same password. The page locks after three minutes so it is not "
-    + "left open on a phone; the same password opens it again as often as you like.</p>"
+    + '<p class="lead">Sign in with the username and password sent to you. '
+    + "The page locks after three minutes; the same password opens it again.</p>"
     + '<form id="f" autocomplete="off">'
     + '<label class="lbl" for="un">Username</label>'
     + '<input class="fld" id="un" type="text" inputmode="text" autocapitalize="none" '
@@ -159,7 +183,7 @@ export function landingPage(user, nonce) {
     + '<p class="msg" id="msg" role="status" aria-live="polite"></p>'
     + "</div>"
     + '<div id="barw" hidden><div class="bar">'
-    + "<span>Locks in <b id=\"cd\">3:00</b></span>"
+    + "<span><b id=\"whoacct\"></b>Locks in <b id=\"cd\">3:00</b></span>"
     + '<button type="button" id="lock">Lock now</button>'
     + "</div></div>"
     + '<div id="tabs" class="tabs" role="tablist" hidden>'
@@ -173,6 +197,10 @@ export function landingPage(user, nonce) {
     + '<script nonce="' + nonce + '">'
     + CLIENT_JS.replace(/__WINDOW__/g, String(WINDOW_MS)).replace(/__POLL__/g, String(POLL_MS))
       .replace("__PAY_SITE__", JSON.stringify(PAY_SITE)).replace("__PAY_ACCOUNTS__", JSON.stringify(PAY_ACCOUNTS))
+      /* "<" is escaped because this one carries the master passphrase, and a "</script>" inside a
+         string literal ends the block wherever it appears: the browser closes the tag first and
+         reads the rest of the passphrase as page text. */
+      .replace("__OWNER__", JSON.stringify(owner || null).replace(/</g, "\\u003c"))
     + "</script>"
     + "</body></html>";
 }
@@ -191,6 +219,11 @@ const CLIENT_JS = `
   var WINDOW_MS=__WINDOW__, POLL_MS=__POLL__, timer=null, ends=0, bundle=null, at=0, ticket=0, busy=false;
   var PAY_SITE=__PAY_SITE__, PAY=__PAY_ACCOUNTS__;
   var session='', user='', prices=null, orders=[], poll=null, tab='stmt', draft={}, pick={};
+  /* null for a customer; {master,accounts} for the owner, on the Access-gated route only */
+  var OWNER=__OWNER__;
+  var roster=document.getElementById('roster'), rq=document.getElementById('rq'),
+      rlist=document.getElementById('rlist'), rmsg=document.getElementById('rmsg'),
+      whoacct=document.getElementById('whoacct');
   var gate=document.getElementById('gate'), out=document.getElementById('out'),
       msg=document.getElementById('msg'), pw=document.getElementById('pw'),
       un=document.getElementById('un'), go=document.getElementById('go'),
@@ -198,7 +231,13 @@ const CLIENT_JS = `
       mos=document.getElementById('mos'), tabs=document.getElementById('tabs'),
       pStmt=document.getElementById('pStmt'), pPrices=document.getElementById('pPrices'),
       pOrder=document.getElementById('pOrder');
-  function say(t,cls){ msg.textContent=t||''; msg.className='msg'+(cls?' '+cls:''); }
+  /* THE MESSAGE GOES WHERE THE READER IS LOOKING. #msg lives inside the gate, so on the owner's
+     route, where the gate is hidden behind the roster, every "Checking..." and every refusal was
+     written into a hidden element. Both are written; only one is on screen. */
+  function say(t,cls){
+    var m=(OWNER&&rmsg)?rmsg:msg;
+    m.textContent=t||''; m.className='msg'+(cls?' '+cls:'');
+  }
   var b64d=function(s){ var raw=atob(s), a=new Uint8Array(raw.length);
     for(var i=0;i<raw.length;i++)a[i]=raw.charCodeAt(i); return a; };
   /* the same normalisation the Worker applies: case and punctuation are forgiven */
@@ -258,10 +297,14 @@ const CLIENT_JS = `
     bundle=null; session=''; prices=null; orders=[]; draft={}; pick={};
     out.textContent=''; mos.textContent=''; mos.hidden=true;
     pPrices.textContent=''; pOrder.textContent='';
-    tabs.hidden=true; barw.hidden=true; gate.hidden=false;
+    tabs.hidden=true; barw.hidden=true;
+    /* the owner goes back to his list, never to a password field he has no password for */
+    if(OWNER){ roster.hidden=false; gate.hidden=true; if(whoacct) whoacct.textContent=''; }
+    else gate.hidden=false;
     showTab('stmt');
-    pw.value=''; autoPw=true; say('Locked. Enter the password to open it again.');
-    try{ pw.focus(); }catch(e){}
+    pw.value=''; autoPw=true;
+    say(OWNER?'Locked. Tap an account to open it again.':'Locked. Enter the password to open it again.');
+    try{ (OWNER?rq:pw).focus(); }catch(e){}
   }
   document.getElementById('lock').addEventListener('click', lock);
 
@@ -310,7 +353,8 @@ const CLIENT_JS = `
       }
       mos.hidden=false;
     }
-    gate.hidden=true; barw.hidden=false; tabs.hidden=false;
+    gate.hidden=true; if(roster) roster.hidden=true;
+    barw.hidden=false; tabs.hidden=false;
     pickStmt(0);
     ends=Date.now()+WINDOW_MS; tick();
     if(timer)clearInterval(timer);
@@ -325,7 +369,7 @@ const CLIENT_JS = `
       pPrices.appendChild(el('p','lead','No price list has been written for your account yet. It is written with the next update and changes weekly.'));
       return;
     }
-    pPrices.appendChild(el('p','lead','For the week of '+(prices.week&&prices.week.label||'')+'. The price is for the goods; if you ask for delivery, the charge is added when Salt Command marks the order ready and you see it then. The list is written from your own history and changes weekly.'));
+    pPrices.appendChild(el('p','lead','For the week of '+(prices.week&&prices.week.label||'')+'. The price is for the goods; if you ask for delivery, the charge is added when the order is marked ready and you see it then. The list is written from your own history and changes weekly.'));
     prices.products.forEach(function(p){
       var pane=el('div','pane');
       pane.appendChild(el('h3',null,p.name));
@@ -369,7 +413,7 @@ const CLIENT_JS = `
     if(!prices||!prices.products||!prices.products.length){
       pOrder.appendChild(el('p','lead','Ordering opens once your price list is written, with the next update.'));
     } else {
-      pOrder.appendChild(el('p','lead','Pick a size off your list. The order goes to Salt Command; you will see it acknowledged here, then ready, and payment is offered at that point.'));
+      pOrder.appendChild(el('p','lead','Pick a size off your list. You will see the order acknowledged here, then ready, and payment is offered at that point.'));
       var form=el('div','pane');
       if(!draft.product) draft.product=prices.products[0].product;
       var P=prices.products.filter(function(x){return x.product===draft.product;})[0]||prices.products[0];
@@ -443,7 +487,7 @@ const CLIENT_JS = `
     else if(o.status==='acknowledged') line='Seen, and being prepared. You will be told when it is ready.';
     else if(o.status==='ready') line=(o.mode==='deliver'?'Ready to be delivered.':'Ready to collect.')+(o.method?'':' Choose how you will pay.');
     else if(o.status==='done') line='Handed over and paid. Your statement updates with the next fold.';
-    else if(o.status==='declined') line='Salt Command could not take this order. Nothing is owed.';
+    else if(o.status==='declined') line='This order could not be taken. Nothing is owed.';
     else if(o.status==='cancelled') line='Withdrawn before anything moved. Nothing is owed.';
     pane.appendChild(el('p','sub2',line));
     if(o.status==='ready') pane.appendChild(o.method?payLink(o):payChooser(o));
@@ -615,6 +659,42 @@ const CLIENT_JS = `
     if(session){ await loadOrders(); if(stale()) return; if(poll)clearInterval(poll); poll=setInterval(refresh, POLL_MS); }
     drawOrder();
   });
-  try{ (un.value?pw:un).focus(); }catch(e){}
+  /* ---- THE OWNER'S ROSTER (10 Sep 2026) ----------------------------------------------------
+     A tap fills the customer's own form with his username and the master, and submits it. Nothing
+     below the door knows the difference: the Worker answers byMaster, the page unwraps wrapMaster,
+     and the statement, the prices and the lock are the customer's own. */
+  function openAcct(a){
+    if(!OWNER) return;
+    if(!OWNER.master){ say('No master passphrase is set on this Worker, so nothing can be opened. Set STMT_MASTER.','bad'); return; }
+    if(busy) return;
+    un.value=a.username; pw.value=OWNER.master; autoPw=false;
+    if(whoacct) whoacct.textContent=(a.code||a.username)+' \\u00b7 ';
+    var f=document.getElementById('f');
+    if(f.requestSubmit) f.requestSubmit();
+    else f.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}));
+  }
+  function drawRoster(){
+    if(!OWNER) return;
+    var q=(rq.value||'').toLowerCase().replace(/\\s+/g,'');
+    rlist.textContent='';
+    var hits=OWNER.accounts.filter(function(a){
+      if(!q) return true;
+      return ((a.code||'')+' '+a.username).toLowerCase().replace(/\\s+/g,'').indexOf(q)>=0;
+    });
+    if(!hits.length){ rlist.appendChild(el('p','rnone','Nothing matches that.')); return; }
+    hits.forEach(function(a){
+      var b=el('button',null,a.code||a.username); b.type='button';
+      if(a.code) b.appendChild(el('span',null,a.username));
+      b.addEventListener('click', function(){ openAcct(a); });
+      rlist.appendChild(b);
+    });
+  }
+  if(OWNER){
+    rq.addEventListener('input', drawRoster);
+    drawRoster();
+    try{ rq.focus(); }catch(e){}
+  } else {
+    try{ (un.value?pw:un).focus(); }catch(e){}
+  }
 })();
 `;

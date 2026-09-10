@@ -36,7 +36,17 @@
 	//                           those routes refuse everything
 	//   STMT_VAPID_PRIVATE_JWK  the site's own Web Push signing key, for waking a customer's
 	//                           phone when his order moves; the public half is the var below
+	// THE OWNER'S ROUTE, /all, IS BEHIND CLOUDFLARE ACCESS (10 Sep 2026). These two name the
+	// application stmt/access.js verifies the token against, and they are not secrets: the audience
+	// tag is public, and holding it opens nothing. WITH EITHER EMPTY THE ROUTE ANSWERS 401 AND HANDS
+	// OVER NOTHING, which is why it is safe to deploy this before the application exists.
+	//   ACCESS_TEAM  the team name in <team>.cloudflareaccess.com, "maakmal" since 11 Aug 2026
+	//   ACCESS_AUD   the application's Application Audience tag, from the Access application on
+	//                <this worker>.workers.dev/all. Paste it here and deploy; there is no secret
+	//                to set. The QR Command admin application is the working example of the shape.
 	"vars": {
+		"ACCESS_TEAM": "maakmal",
+		"ACCESS_AUD": "",
 		"STMT_VAPID_PUBLIC_KEY": "BDIvD4Y6s-Ucr6twgOkmcYPZiUhGLaXMNzAqFrBKhdNCNy-Iyr9xYl7iWLTEAfL1rtQOJJg7g-m8ZeokZqM493c",
 		"STMT_VAPID_SUBJECT": "mailto:maakmal97@icloud.com"
 	},

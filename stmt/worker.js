@@ -40,6 +40,7 @@
  */
 import { landingPage } from "./page.js";
 import { SW_JS } from "./sw.js";
+import { identity } from "./access.js";
 import { endpointId } from "./push.js";
 import { mintSession, sessionUser, ordersOf, allOrders, placeOrder, customerMove, deskMove } from "./orders.js";
 
@@ -304,11 +305,65 @@ async function handleDesk(request, env, p, m) {
   return r.error ? json({ ok: false, error: r.error }, r.status || 400) : json({ ok: true, order: r.order, push: r.push });
 }
 
+/* ---- THE OWNER'S LIST (10 Sep 2026) ---------------------------------------------------------
+ * His instruction: open any statement from a list, with Zero Trust proving who is asking. /all is
+ * covered by a Cloudflare Access application on this hostname AND verified again in stmt/access.js,
+ * because a deleted or misconfigured application is exactly the case where a stranger arrives
+ * carrying a header of his own. Behind it the page is handed the roster and STMT_MASTER, which is
+ * his decision of today: the list opens an account with no passphrase typed. The trade is stated
+ * where it is made -- an Access session on this hostname is then enough to read every account -- and
+ * it is why the route verifies the token rather than trusting the header.
+ *
+ * THE ROSTER IS THE PUBLISH'S, not this Worker's: `roster` is written by tools/stmt-publish.mjs and
+ * carries the desk code beside each username, which is what he knows an account by. A site that has
+ * not been published since this shipped has no such key, so the usernames are listed from the store
+ * itself and the codes are simply absent. Neither path reads a single sealed document. */
+async function roster(env) {
+  const named = await env.STMT.get("roster", "json");
+  if (Array.isArray(named) && named.length) return named;
+  const out = [];
+  let cursor;
+  do {
+    const page = await env.STMT.list({ prefix: "u:", cursor });
+    for (const k of page.keys) out.push({ code: null, username: k.name.slice(2) });
+    cursor = page.list_complete ? null : page.cursor;
+  } while (cursor);
+  return out.sort((a, b) => a.username.localeCompare(b.username));
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     const p = (url.pathname.replace(/\/+$/, "") || "/");
     const m = request.method;
+
+    /* Generated per request so the inline style and script carry a nonce rather than needing
+       'unsafe-inline'. One builder for the customer's door and the owner's. */
+    const pageResponse = (user, owner) => {
+      const nonce = b64e(crypto.getRandomValues(new Uint8Array(16))).replace(/[^A-Za-z0-9]/g, "");
+      return new Response(landingPage(user, nonce, owner), {
+        headers: Object.assign({
+          "content-type": "text/html; charset=utf-8",
+          "content-security-policy":
+            "default-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; "
+            + "img-src 'self' data:; connect-src 'self'; worker-src 'self'; "
+            + "style-src 'nonce-" + nonce + "'; script-src 'nonce-" + nonce + "'"
+        }, HEADERS)
+      });
+    };
+
+    if (p === "/all") {
+      if (m !== "GET" && m !== "HEAD") return json({ ok: false, error: "method not allowed" }, 405);
+      if (!env.STMT) return json({ ok: false, error: "no KV binding" }, 500);
+      /* Said plainly rather than answered with a 404: reaching this unauthenticated means the
+         Access application is gone or misconfigured, and that is the one thing he must be told
+         rather than left to guess at. Nothing is handed over either way. */
+      const who = await identity(request, env);
+      if (!who) return new Response("This page is behind Cloudflare Access, and this request did not pass it.", {
+        status: 401, headers: Object.assign({ "content-type": "text/plain; charset=utf-8" }, HEADERS)
+      });
+      return pageResponse("", { master: String(env.STMT_MASTER || ""), accounts: await roster(env) });
+    }
 
     if (p === "/open") {
       if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
@@ -326,18 +381,8 @@ export default {
     if (p !== "/") return notFound();
     if (m !== "GET" && m !== "HEAD") return json({ ok: false, error: "method not allowed" }, 405);
 
-    /* Generated per request so the inline style and script can carry a nonce rather than
-       needing 'unsafe-inline'. The QR carries ?u=<username>; anything else in the query is
-       ignored, and a username that does not parse is simply not filled in. */
-    const nonce = b64e(crypto.getRandomValues(new Uint8Array(16))).replace(/[^A-Za-z0-9]/g, "");
-    return new Response(landingPage(normUser(url.searchParams.get("u")), nonce), {
-      headers: Object.assign({
-        "content-type": "text/html; charset=utf-8",
-        "content-security-policy":
-          "default-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; "
-          + "img-src 'self' data:; connect-src 'self'; worker-src 'self'; "
-          + "style-src 'nonce-" + nonce + "'; script-src 'nonce-" + nonce + "'"
-      }, HEADERS)
-    });
+    /* The QR carries ?u=<username>; anything else in the query is ignored, and a username that
+       does not parse is simply not filled in. */
+    return pageResponse(normUser(url.searchParams.get("u")), null);
   }
 };
