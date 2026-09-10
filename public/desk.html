@@ -68,7 +68,7 @@ document.addEventListener('visibilitychange',function(){
    localStorage before it posts anything and the load reads it straight back.
    The same tick retries a held entry, which is what gets a phone write to the cloud
    without waiting for the next open. */
-var SALT_BUILD_ID="0e00ff661ff7c8af";
+var SALT_BUILD_ID="c3645b76e8a5d4e4";
 var SALT_REV_MS=10000;
 (function(){
   var chip=null,timer=null;
@@ -3357,14 +3357,23 @@ details.obs>summary:hover{background:var(--salt-glass);}
    two calls: ON THE IDENTITY'S OWN GROUND, not white, and NO WORDS. The crystal, the username in
    brass mono, then one line per size with two bare figures, the size in salt and the price in
    brass, brass hairlines between; the browser is asked to keep the colours on paper. The HTML
-   file and the image the phone saves carry the same rules in the master (PB_CSS, pbImageBlob). */
+   file and the image the phone saves carry the same rules in the master (PB_CSS, pbImageBlob).
+   HIS INSTRUCTION, 10 SEP 2026: THE USERNAME MOVES TO THE TOP RIGHT AND THE SHEET IS STAMPED.
+   The header is one row, the crystal at the left and the tag block at the right: username in
+   brass, then the week the prices are for and the moment the sheet was made, both in mist.
+   The stamp is a HEADER, not a footer, because v538's no-footer rule still holds. Two lines and
+   not one: the week is what governs the price and the made-at only proves the copy is fresh, so
+   a reader who conflates them would think the rate moves by the minute. */
 @media print{
   body.pbPrinting{background:var(--salt-obsidian)!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
   body.pbPrinting #pbSheet{padding:32px;background:var(--salt-obsidian);color:var(--salt-salt);
     -webkit-print-color-adjust:exact;print-color-adjust:exact;}
-  #pbSheet .pbl{margin:0 0 14px;}
-  #pbSheet .pbl .mark{width:56px;height:56px;display:block;}
-  #pbSheet .pbu{font-family:var(--salt-font-mono);font-size:14px;font-weight:500;letter-spacing:.14em;color:var(--salt-brass);margin:0 0 24px;min-height:17px;}
+  #pbSheet .pbl{display:flex;align-items:flex-start;justify-content:space-between;gap:24px;margin:0 0 24px;}
+  #pbSheet .pbl .mark{width:56px;height:56px;display:block;flex-shrink:0;}
+  #pbSheet .pbm{text-align:right;}
+  #pbSheet .pbu{font-family:var(--salt-font-mono);font-size:14px;font-weight:500;letter-spacing:.14em;color:var(--salt-brass);margin:0;min-height:17px;}
+  #pbSheet .pbd{font-family:var(--salt-font-mono);font-size:11px;letter-spacing:.12em;color:var(--salt-mist);margin:7px 0 0;}
+  #pbSheet .pbd span{display:block;}
   #pbSheet table{border-collapse:collapse;min-width:300px;}
   #pbSheet td{padding:10px 0 10px 40px;border-bottom:1px solid rgba(197,160,89,.3);font-size:20px;text-align:right;font-family:var(--salt-font-mono);color:var(--salt-brass);}
   #pbSheet td.l{text-align:left;padding-left:0;font-family:var(--salt-font-display);color:var(--salt-salt);}
@@ -16452,6 +16461,18 @@ function pxHead(){
 let PB_USERS=null;
 function pbWeekMonday(){const kl=new Date(TODAY.toLocaleString('en-US',{timeZone:'Asia/Kuala_Lumpur'}));const d=(kl.getDay()+6)%7;kl.setDate(kl.getDate()-d);
   return kl.getFullYear()+'-'+String(kl.getMonth()+1).padStart(2,'0')+'-'+String(kl.getDate()).padStart(2,'0');}
+/* HIS INSTRUCTION, 10 SEP 2026: THE SHEET CARRIES TWO DATES, AND THEY ARE NOT THE SAME THING.
+   The week is the one that governs. tools/pricelist.mjs reads a customer's own rate from orders
+   dated BEFORE that Monday, so the figures are the week's and do not move inside it. The made-at
+   is only the moment this copy was drawn, and proves the copy is fresh. They are printed on two
+   lines for that reason: run together, a reader would take the rate to move by the minute.
+   pbWeekMonday reads TODAY, a date carrying no clock, so the made-at reads the real one. */
+const PB_MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function pbDay(iso){const p=String(iso||'').split('-');
+  return p.length===3?p[2]+' '+(PB_MONTHS[+p[1]-1]||'')+' '+p[0]:'';}
+function pbMade(){try{return new Date().toLocaleString('en-GB',{timeZone:'Asia/Kuala_Lumpur',
+    day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:false}).replace(',','');}
+  catch(e){return '';}}
 /* 08 Sep 2026: A ROW THAT COUNTS AS A PRICE THIS CUSTOMER PAID, word for word pricedOrder in
    tools/pricelist.mjs. Pending, cancelled and defaulted rows and awards with no cash are not. */
 function pbPriced(s){const st=txStat(s).order;
@@ -16518,19 +16539,28 @@ async function pbSheet(){
   const code=sel.value, ticked=pbTicked();
   const rows=pbPrices(code).filter(r=>ticked.some(q=>Math.abs(q-r.q)<1e-9));
   const users=await pbUsers();
-  return {code,user:users[code]||'',rows,product:(PRODUCTS[PROD]&&PRODUCTS[PROD].name)||PROD,week:pbWeekMonday()};}
+  const week=pbWeekMonday();
+  return {code,user:users[code]||'',rows,product:(PRODUCTS[PROD]&&PRODUCTS[PROD].name)||PROD,
+    week,weekLabel:pbDay(week)?'WEEK OF '+pbDay(week):'',made:pbMade()};}
 /* v537: THE PRINTED BOARD IS THE LOGO AND THE NUMBERS (his instruction, 08 Sep 2026). v538, his
    two calls the same hour: on the identity's own ground, not white, and NO WORDS AT ALL. The
    crystal alone, the username the list is tagged to, then one line per size carrying two bare
    figures, the size and the price; no unit, no RM, no wordmark, no column heads, no footer, on
    paper, in the image and in the HTML file alike. The look on paper is design/desk.css 14; the
-   file carries the same rules inline because it opens with no stylesheet, and the image draws them. */
+   file carries the same rules inline because it opens with no stylesheet, and the image draws them.
+   HIS INSTRUCTION, 10 SEP 2026: THE HEADER IS ONE ROW, CRYSTAL LEFT AND THE TAG BLOCK RIGHT.
+   The username sits at the top right in brass with the week and the made-at beneath it in mist.
+   It is a header and not a footer, so v538's no-footer rule is untouched; the figures below it
+   are still two bare numbers to a line. All three surfaces carry it: this markup for paper and
+   for the HTML file, and pbImageBlob draws the same block on the canvas. */
 const PB_MARK='<svg class="mark" viewBox="0 0 100 100" role="img" aria-label="Salt crystal"><defs><linearGradient id="saltCrystalPrint" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#c5a059"/><stop offset="100%" stop-color="#b87333"/></linearGradient></defs><polygon points="50,5 95,28 95,72 50,95 5,72 5,28" fill="none" stroke="url(#saltCrystalPrint)" stroke-width="3" stroke-linejoin="round"/><polyline points="50,5 50,50 95,28" fill="none" stroke="url(#saltCrystalPrint)" stroke-width="3" stroke-linejoin="round"/><polyline points="50,50 5,28" fill="none" stroke="url(#saltCrystalPrint)" stroke-width="3" stroke-linejoin="round"/><polyline points="50,50 50,95" fill="none" stroke="url(#saltCrystalPrint)" stroke-width="3" stroke-linejoin="round"/><polygon points="50,28 72,39 50,50 28,39" fill="url(#saltCrystalPrint)" opacity="0.85"/></svg>';
 const pbFig=x=>fmt(x).replace(/^RM\s*/,'');   /* the desk's own figure, without the currency */
 function pbSheetHtml(sh){
-  return '<div class="pbl">'+PB_MARK+'</div><div class="pbu">'+esc(sh.user||'')+'</div>'
+  const d=[sh.weekLabel,sh.made].filter(Boolean).map(x=>'<span>'+esc(x)+'</span>').join('');
+  return '<div class="pbl">'+PB_MARK+'<div class="pbm"><div class="pbu">'+esc(sh.user||'')+'</div>'
+    +(d?'<div class="pbd">'+d+'</div>':'')+'</div></div>'
     +'<table>'+sh.rows.map(r=>'<tr><td class="l">'+esc(String(r.q))+'</td><td>'+esc(pbFig(r.price))+'</td></tr>').join('')+'</table>';}
-const PB_CSS='.pbl{margin:0 0 14px}.pbl .mark{width:56px;height:56px;display:block}.pbu{font-family:Consolas,monospace;font-size:14px;font-weight:500;letter-spacing:.14em;color:#c5a059;margin:0 0 24px;min-height:17px}table{border-collapse:collapse;min-width:300px}td{padding:10px 0 10px 40px;border-bottom:1px solid rgba(197,160,89,.3);font-size:20px;text-align:right;font-family:Consolas,monospace;color:#c5a059}td.l{text-align:left;padding-left:0;font-family:Georgia,serif;color:#f2f4f5}';
+const PB_CSS='.pbl{display:flex;align-items:flex-start;justify-content:space-between;gap:24px;margin:0 0 24px}.pbl .mark{width:56px;height:56px;display:block;flex-shrink:0}.pbm{text-align:right}.pbu{font-family:Consolas,monospace;font-size:14px;font-weight:500;letter-spacing:.14em;color:#c5a059;margin:0;min-height:17px}.pbd{font-family:Consolas,monospace;font-size:11px;letter-spacing:.12em;color:#7a8690;margin:7px 0 0}.pbd span{display:block}table{border-collapse:collapse;min-width:300px}td{padding:10px 0 10px 40px;border-bottom:1px solid rgba(197,160,89,.3);font-size:20px;text-align:right;font-family:Consolas,monospace;color:#c5a059}td.l{text-align:left;padding-left:0;font-family:Georgia,serif;color:#f2f4f5}';
 async function pbPrint(){
   const sh=await pbSheet();const m=document.getElementById('pbMsg');
   if(!sh||!sh.rows.length){if(m)m.textContent='Tick at least one size.';return;}
@@ -16545,7 +16575,9 @@ async function pbPrint(){
 async function pbCopy(){
   const sh=await pbSheet();const m=document.getElementById('pbMsg');
   if(!sh||!sh.rows.length){if(m)m.textContent='Tick at least one size.';return;}
-  const text=['Salt Command',sh.user?'Username '+sh.user:'',sh.product+', week of '+sh.week,''].concat(sh.rows.map(r=>units(r.q)+'  RM '+r.price)).filter(x=>x!==null).join('\n');
+  const head=['Salt Command',sh.user?'Username '+sh.user:'',sh.product+', week of '+(pbDay(sh.week)||sh.week),
+    sh.made?'Made '+sh.made+' KL':''].filter(Boolean);
+  const text=head.concat('',sh.rows.map(r=>units(r.q)+'  RM '+r.price)).join('\n');
   let ok=false;try{await navigator.clipboard.writeText(text);ok=true;}catch(e){
     try{const ta=document.createElement('textarea');ta.value=text;ta.style.position='fixed';ta.style.top='-1000px';document.body.appendChild(ta);ta.select();ok=document.execCommand('copy');document.body.removeChild(ta);}catch(e2){}}
   if(m)m.textContent=ok?'Copied '+sh.rows.length+' line'+(sh.rows.length===1?'':'s')+'.':'Could not copy on this browser.';}
@@ -16570,8 +16602,15 @@ function pbImageBlob(sh){
   const cv=document.createElement('canvas');cv.width=W;cv.height=H;const g=cv.getContext('2d');
   g.fillStyle='#05080a';g.fillRect(0,0,W,H);g.textBaseline='alphabetic';
   pbDrawMark(g,pad,pad,112);
+  /* the tag block at the top right, the same one the paper and the HTML file carry */
+  g.textAlign='right';
   g.fillStyle='#c5a059';g.font='500 28px Consolas,monospace';try{g.letterSpacing='4px';}catch(e){}
-  g.fillText(sh.user||'',pad,pad+112+46);try{g.letterSpacing='0px';}catch(e){}
+  g.fillText(sh.user||'',W-pad,pad+32);try{g.letterSpacing='0px';}catch(e){}
+  g.fillStyle='#7a8690';g.font='22px Consolas,monospace';try{g.letterSpacing='2px';}catch(e){}
+  if(sh.weekLabel)g.fillText(sh.weekLabel,W-pad,pad+72);
+  if(sh.made)g.fillText(sh.made,W-pad,pad+104);
+  try{g.letterSpacing='0px';}catch(e){}
+  g.textAlign='left';
   g.strokeStyle='rgba(197,160,89,.3)';g.lineWidth=2;
   sh.rows.forEach((r,i)=>{const y=top+i*rowH+42;g.textAlign='left';g.fillStyle='#f2f4f5';g.font='36px Georgia,serif';g.fillText(String(r.q),pad,y);
     g.textAlign='right';g.fillStyle='#c5a059';g.font='36px Consolas,monospace';g.fillText(pbFig(r.price),W-pad,y);
