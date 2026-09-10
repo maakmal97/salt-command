@@ -47,8 +47,13 @@ The fold routine is `docs/CLOUD_FOLD.md`; statements `docs/STATEMENTS.md`; desig
    build fails on an external `src`, `url(` or `@import`. CSP in `public/_headers` is
    `connect-src 'self'` and otherwise self-only, so Georgia and Consolas stand in for
    Fraunces and JetBrains Mono.
-5. **RM and unit only**; the mass symbol was retired at v161. **Inventory, never shelf or
-   stock, in copy (v504).** One floor per size, the goods after the leak; no delivery, no
+5. **RM and unit only**; the mass symbol was retired at v161. **The goods are inventory in
+   copy and never shelf (v504); the rail's destination is Stock** (his instruction, 11 Sep
+   2026, v571), which was always the view's id. **v504 did not finish**: `Spent on stock` and
+   `Stock behind it` on Financials, and `Stock reconciliation` on On hand, still say it,
+   measured on the rendered desk 11 Sep 2026. **The Journal is exempt and stays so**: its
+   passages say shelf wherever a fold wrote it on the day, and a dated record is not corrected
+   in place. One floor per size, the goods after the leak; no delivery, no
    time in it (v502). A sale carries `delivery` (inside its total) and a lot `freight`
    (beside it), typed per row (v503); `txGoods` strikes every rate on the goods. **The window
    is the last three lots** (rate and freight); **the leak is the drift of the last three
