@@ -901,8 +901,24 @@ section("Worker — drafts and approval");
        "the Claude Code action is gone from the job: the fold step folds, extracts, builds, tests and pushes as the runner, which starts no second run");
     ok(/if \[ "\$\{\{ github\.event_name \}\}" = "push" \]; then deploy=1; fi/.test(wf) && /\[ "\$\{\{ inputs\.stage_only \}\}" != "true" \] && \[ "\$\{\{ inputs\.probe_key \}\}" != "true" \]; then deploy=1; fi/.test(wf) && /if \[ "\$fold" = "1" \]; then deploy=1; fi/.test(wf),
        "the deploy steps run on a push, on a dispatch that did not ask to stage only, and whenever this run folded");
-    ok(/- name: Already serving\?/.test(wf) && (wf.match(/steps\.already\.outputs\.live != '1'/g) || []).length >= 6 && !/Check out what the fold pushed/.test(wf),
-       "the deploy follows the fold in the same job and every deploy step stands aside when the phone already has the build; no second checkout is needed once the job pushes as itself");
+    /* 10 Sep 2026: THE GUARD HOLDS BACK THE DEPLOY AND NOTHING ELSE, and this assertion had to move
+       with it. It required SIX OR MORE steps to stand down on `Already serving?`, which was right
+       while only the two sanctioned deployers existed: whatever had put the build on the phone had
+       done the rest of the job too. Workers Builds was reconnected on his instruction that day and
+       breaks it, deploying the tip of master in about a minute and stopping, while this job has a
+       checkout and an npm ci first. A build that won the race made live=1 and the run skipped the
+       gate, the proof, the marks, the handoff, the mirror re-seed and the suite, and went green.
+       Now exactly two stand down, and they are Gate and Deploy by name. Asserting the count alone
+       would pass on any two, which is the shape of check this desk keeps catching. */
+    const guarded = (wf.match(/steps\.already\.outputs\.live != '1'/g) || []).length;
+    ok(/- name: Already serving\?/.test(wf) && guarded === 2 && !/Check out what the fold pushed/.test(wf),
+       `the deploy follows the fold in the same job and exactly two steps stand aside when the phone already has the build (${guarded}); no second checkout is needed once the job pushes as itself`);
+    ok(/- name: Gate\n\s+if: steps\.plan\.outputs\.deploy == '1' && steps\.already\.outputs\.live != '1'/.test(wf)
+       && /- name: Deploy\n\s+if: steps\.plan\.outputs\.deploy == '1' && steps\.already\.outputs\.live != '1'/.test(wf),
+       "and they are Gate and Deploy, the two steps that are about deploying");
+    ok(/- name: Re-seed the mirror from the master just shipped\n\s+if: steps\.plan\.outputs\.deploy == '1'\n/.test(wf)
+       && /- name: Mark the folded rows committed\n\s+if: steps\.plan\.outputs\.deploy == '1'\n/.test(wf),
+       "while the mirror re-seed and the marks run whoever deployed, because a stale mirror is the silent fault this job exists to end");
     ok(/git pull -q --rebase --autostash origin master\n\s+git push/.test(wf),
        "the handoff clear rebases before it pushes, autostashing what npm test rebuilt: master moved under it once, and the dirty tree refused the rebase the next time");
     ok((wf.match(/ref: master/g) || []).length === 1 && /uses: actions\/checkout@v5[^\n]*\n\s+with: \{ ref: master \}/.test(wf), "the one checkout is master's tip, not the sha the run started on, and it serves the whole job");
@@ -7473,7 +7489,11 @@ section("v522: the gate before the deploy, the suite after the phone is live");
   const wf = readFileSync(join(REPO, ".github", "workflows", "cloud-commit.yml"), "utf8");
   const gateAt = wf.indexOf("- name: Gate\n"), deployAt = wf.indexOf("- name: Deploy\n"), suiteAt = wf.indexOf("- name: The full suite, after the phone is live"), stmtAt = wf.indexOf("- name: Retire the old statement keys");
   ok(gateAt > 0 && deployAt > gateAt && /- name: Gate\n\s+if: steps\.plan\.outputs\.deploy == '1' && steps\.already\.outputs\.live != '1'\n\s+run: node tools\/gate\.mjs/.test(wf), "the gate stands before the deploy, on the deploy's own condition");
-  ok(suiteAt > stmtAt && /id: suite\n\s+if: steps\.plan\.outputs\.deploy == '1' && steps\.already\.outputs\.live != '1'\n\s+run: npm test/.test(wf), "the full suite is the last step, after the statements, after the phone is live");
+  /* 10 Sep 2026: the suite no longer stands down when the phone already has the build. It used to
+     carry the `Already serving?` clause, so a Workers Build that won the race meant the suite never
+     ran on that push at all. It is still last and still after the statements; it simply no longer
+     asks who deployed. */
+  ok(suiteAt > stmtAt && /id: suite\n\s+if: steps\.plan\.outputs\.deploy == '1'\n\s+run: npm test/.test(wf), "the full suite is the last step, after the statements, and runs whoever deployed");
   ok(/if: always\(\) && steps\.suite\.outcome == 'failure'/.test(wf) && /--refused-note "suite:\$v"/.test(wf), "a suite failure is written where the phone shows refusals, under a synthetic id");
   ok(!/\n\s+npm test\n[\s\S]*?- name: Deploy\n/.test(wf.slice(wf.indexOf("- name: Fold\n"))), "and nothing runs the suite between the fold and the deploy");
 }

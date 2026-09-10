@@ -59,11 +59,26 @@ The fold routine is `docs/CLOUD_FOLD.md`; statements `docs/STATEMENTS.md`; desig
    ```
    Get-ChildItem .git -Recurse -Include *.lock,tmp_obj_* -Force | Remove-Item -Force
    ```
-8. **Two deployers only: the Actions job and `tools/update.mjs`.** Cloudflare Workers Builds
-   had been connected to the Worker since 08 Aug 2026 and deployed every push to master by
-   itself, outside the gate (278 builds). Disconnected in the dashboard on 08 Sep 2026 after
-   its build token was deleted; never reconnect it, and never select a build token on that
-   screen.
+8. **Three deployers, and only the Actions job does the whole job.** `cloud-commit.yml` gates,
+   deploys, proves the phone is serving the build, marks the folded rows committed, re-seeds the
+   D1 mirror, publishes the statements, then runs the suite. `tools/update.mjs` does the laptop
+   half of that and never touches the statements. **Cloudflare Workers Builds deploys the tip of
+   master and stops:** connected 08 Aug 2026, 278 builds outside the gate, disconnected 08 Sep
+   after its build token was deleted, **reconnected on his instruction of 10 Sep 2026**. The
+   Actions job is the authority; Workers Builds is a convenience, and it cannot touch the ledger
+   because it never folds, never marks a draft committed and never writes D1 or KV. Its worst
+   case is the wrong build in front of the phone, corrected by the next good deploy and caught
+   within a day by `ship-check.yml`, which does not care who deployed.
+   **Its build command must run the gate**, `npm ci && node tools/gate.mjs` before
+   `npx wrangler deploy`, or an ungated build reaches the phone: Actions only runs on a push
+   touching `public/rev.json` or the statements paths, so a push touching `src/` or the master
+   alone is one Workers Builds ships and nothing checks. Set in the dashboard, so a session
+   cannot verify it from here; ask before trusting it.
+   Its token is its own credential: when it was deleted the builds failed in silence (v537 to
+   v539) while the other two deployers carried on. And a build lands in about a minute against
+   the Actions job's checkout and `npm ci`, so it usually wins that race; since 10 Sep the
+   `Already serving?` guard holds back only Gate and Deploy, so winning no longer skips the
+   mirror re-seed and the suite.
 
 ## The one surface
 
