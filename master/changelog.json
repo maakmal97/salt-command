@@ -1,5 +1,17 @@
 [
  {
+  "v": "v585",
+  "d": "11 Sep 2026",
+  "t": "AN ASSOCIATE'S REWARD IS OFFSET AGAINST THEIR ADVANCE AUTOMATICALLY, UP TO 1 UNIT",
+  "n": [
+   "<b>HIS INSTRUCTION, 11 SEP 2026: an associate's reward is offset against their advanced delivery order, up to 1 unit, automatically, and folded into the Approve tab.</b> So nobody presses anything: whenever Approve has read the drafts, each associate holding an earned unit and an outstanding advance is offered an offset, capped at 1 unit, as the same Correction the Offset button has queued since v584. It waits in Approve for his tap like any row, and the Approve part says what it offered.",
+   "<b>IT RUNS ONLY WHEN THE DRAFTS WERE READ.</b> The check that stops it offering the same offset twice reads them, and a failed read would leave that check blind, so on a failed read it does nothing. It skips a row with an offset already queued, drafted or refused, so a refusal is not offered again on every load; once one folds, the row is settled in kind and stops being an advance, which ends it. Salt only, since oil has no reward. Associates only, on his word; a customer's reward is not offset automatically.",
+   "<b>A DUPLICATE OFFER CANNOT REACH THE LEDGER.</b> Two devices loading at the same moment could each offer the same offset. The drafter's own correction check already refuses a Correction that changes nothing, so the second is refused rather than drafted, and an assertion now holds it to that. A second guard for the same case was written, found unreachable when its own mutation stayed green, and taken out again, so this version does not touch the Worker at all.",
+   "<b>PROVED WITH EVERY STATE FORCED, AND THE HOOK THROUGH apLoad ITSELF</b> with the network stubbed, because a test that called the function directly would stay green with the hook removed. Thirteen assertions. Five mutations on the new code and one on the drafter's existing no-change check, each reddening its own.",
+   "<b>WHO IT TOUCHES TODAY: NOBODY, READ OFF THE ENGINE.</b> The two associates with an advance outstanding, CS6-BS on s139 and CN6-WM on s124, hold no free unit, and CN6-WM carries a deficit of 1, so nothing is offered until one of them earns one. CR3-DAM holds the one free unit among the associates and has no advance, so theirs stays a Redeem. Customers are outside the automatic offset on his word, and two of them hold both: CM4-MK a unit against RM 110 owed on s143, and CJ4-BJ a quarter unit against RM 272 on s137. That is put to him, with the customers' want of any Redeem button at all."
+  ]
+ },
+ {
   "v": "v584",
   "d": "11 Sep 2026",
   "t": "A REDEMPTION AND A REBATE OFFSET REACH APPROVE, AND REDEEM IS ONE TAP",

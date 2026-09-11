@@ -9567,5 +9567,64 @@ section("11 Sep 2026: a redemption and a rebate offset reach Approve, and Redeem
 }
 
 
+section("11 Sep 2026: an associate's reward is offset against their advance automatically, up to 1 unit");
+{
+  /* HIS INSTRUCTION OF 11 SEP 2026. Every state FORCED: whether any associate holds a free unit and an advance
+     on the live book today is the calendar's business. The hook is proved through apLoad itself, with the
+     network stubbed, because a test that called autoOffsets directly would stay green with the hook removed. */
+  const { openMaster: omA } = await import("../tools/payload.mjs");
+  const { w: wA } = await omA();
+  const rdA = (e) => JSON.parse(wA.eval("JSON.stringify(" + e + ")"));
+  const autoQ = "queue.filter(function(x){return x&&x.payload&&x.payload.auto;})";
+  try {
+    wA.eval("setProd('salt');");
+    wA.eval(`window.__ns=networkStats;networkStats=function(){return [{id:'CZ9-TST',earned:2.5}];};
+      sales.push({rid:'adv-a',customer:'CZ9-TST',date:'2026-09-10',qty:3,total:330,cost:132,cash:0,deliveredQty:3,deliveredOn:'2026-09-10'});
+      recompute();queue=[];AP_DRAFTS=[];AP_REFUSED=[];apMsg='';`);
+
+    /* ---- THE OFFER ---- */
+    wA.eval("autoOffsets();");
+    const q = rdA(autoQ);
+    ok(q.length === 1, `one automatic offset is queued (${q.length})`);
+    const f = (q[0] && q[0].payload && q[0].payload.fields) || {};
+    ok(!!(q[0] && q[0].payload.kind === "Correction" && q[0].payload.rid === "adv-a"), "as a Correction on the advance row, the same shape the Offset button queues");
+    ok(f.rebateKg === 1 && f.settledRM === 110 && f.rebate === true, `CAPPED AT 1 UNIT, though 2.5 are free and 3 are owed (${JSON.stringify(f)})`);
+    ok(/automatic offset/i.test(rdA("apMsg")), "and the Approve part says what it offered");
+
+    /* ---- NEVER TWICE ---- */
+    wA.eval("autoOffsets();");
+    ok(rdA(autoQ + ".length") === 1, "a second pass offers nothing more while the first is waiting");
+    wA.eval("queue=[];AP_DRAFTS=[{id:'d',amends:'adv-a',amendKind:'Correction',collection:'sales',row:{}}];autoOffsets();");
+    ok(rdA("queue.length") === 0, "nor while a Correction on that row is already drafted");
+    wA.eval("AP_DRAFTS=[];AP_REFUSED=[{id:'r',entry:{payload:{mode:'amend',kind:'Correction',rid:'adv-a'}}}];autoOffsets();");
+    ok(rdA("queue.length") === 0, "nor while one was refused, so a refusal is not offered again on every load");
+    wA.eval("AP_REFUSED=[];setProd('oil');autoOffsets();");
+    ok(rdA("queue.length") === 0, "and nothing on the oil book, which has no reward");
+    wA.eval("setProd('salt');networkStats=function(){return [{id:'CZ9-TST',earned:0}];};autoOffsets();");
+    ok(rdA("queue.length") === 0, "an associate with nothing earned is offered nothing");
+
+    /* ---- THE HOOK, through apLoad, with the network stubbed ---- */
+    wA.eval(`networkStats=function(){return [{id:'CZ9-TST',earned:2.5}];};queue=[];
+      try{cloudMode=function(){return true;};}catch(e){}
+      fetch=function(){return Promise.resolve({ok:true,status:200,json:function(){return Promise.resolve({drafts:[],refused:[],clock:null});}});};`);
+    ok(rdA("cloudMode()") === true, "the desk believes it is in the cloud for this check, or it proves nothing");
+    await wA.eval("apLoad(true)");
+    ok(rdA(autoQ + ".length") === 1, "apLoad offers the offset once the drafts have been read");
+    wA.eval("queue=[];fetch=function(){return Promise.reject(new Error('offline'));};");
+    await wA.eval("apLoad(true)");
+    ok(rdA("queue.length") === 0, "and offers nothing when the drafts could not be read, because its duplicate check would be blind");
+    wA.eval("networkStats=window.__ns;sales.splice(sales.findIndex(function(s){return s.rid==='adv-a';}),1);recompute();queue=[];");
+  } finally { try { wA.close(); } catch (e) { /* best effort */ } }
+
+  /* ---- THE DRAFTER: a Correction that changes nothing is refused ---- */
+  const { draftRow: dN } = await import("../src/drafter.js");
+  const bkN = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const tgt = bkN.sales.find((x) => x.rid && !x.cancelled && x.date);
+  const mN = { version: "vX", sales: bkN.sales, purchases: bkN.purchases, state: { roster: bkN.roster, loans: bkN.loans }, pricing: null };
+  const dn = dN({ at: "2099-05-01T00:00:00.001Z", payload: { mode: "amend", kind: "Correction", direction: "SELL", party: tgt.customer, rid: tgt.rid, fields: { total: tgt.total }, date: "2099-05-01" } }, mN);
+  ok(/changes nothing/.test(dn.skip || ""), `a Correction that changes nothing is refused rather than drafted (${dn.skip || "drafted"})`);
+}
+
+
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
 process.exit(fail ? 1 : 0);
