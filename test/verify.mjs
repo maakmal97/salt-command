@@ -8277,7 +8277,7 @@ section("v527: borrow and lend on the phone");
   const DRIVE = (dir, party) => "(function(){try{queue=[];wbMode='loan';wbApply();var set=function(id,v){var e=document.getElementById(id);if(!e)return false;e.value=v;return true;};" +
     "set('wbLoanDir'," + JSON.stringify(dir) + ");set('wbLoanParty'," + JSON.stringify(party) + ");set('wbLoanUnits','2.5');set('wbLoanDate','2026-09-08');set('wbLoanNote','terms');wbPreview();" +
     "var btn=document.getElementById('wbRec');var dis=!!btn.disabled;var n0=queue.length;var r={dis:dis};try{wbRecord();}catch(e){r.threw=String(e&&e.message);}var q=queue[queue.length-1];r.pushed=(queue.length===n0+1);" +
-    "r.q=r.pushed&&q?{type:q.type,party:q.party,payload:q.payload}:null;var nl=loans.length;applyOverlay();r.loansAfter=loans.length-nl;r.card=(function(){try{return apCard({collection:'loan',row:{direction:" + JSON.stringify(dir) + ",party:" + JSON.stringify(party) + ",valueKg:2.5,product:'salt',date:'2026-09-08'}});}catch(e){return 'threw '+e.message;}})();return JSON.stringify(r);}catch(e){return JSON.stringify({no:'threw: '+(e&&e.message)});}})()";
+    "r.q=r.pushed&&q?{type:q.type,party:q.party,payload:q.payload}:null;var nl=BASE_LOANS.length;applyOverlay();r.loansAfter=loans.length-nl;r.card=(function(){try{return apCard({collection:'loan',row:{direction:" + JSON.stringify(dir) + ",party:" + JSON.stringify(party) + ",valueKg:2.5,product:'salt',date:'2026-09-08'}});}catch(e){return 'threw '+e.message;}})();return JSON.stringify(r);}catch(e){return JSON.stringify({no:'threw: '+(e&&e.message)});}})()";
   const L1 = JSON.parse(String(w.eval(DRIVE("in", lender.party))));
   ok(!L1.no && !L1.dis && L1.pushed && L1.q && L1.q.type === "BORROW" && L1.q.payload.mode === "loan" && L1.q.payload.direction === "in" && L1.q.payload.kg === 2.5 && L1.q.payload.party === lender.party && L1.q.payload.date === "2026-09-08", "the Workbench queues a borrowing with its figures: " + (L1.no || L1.threw || JSON.stringify(L1.q)));
   ok(!L1.no && L1.loansAfter === 1 && /Borrow/.test(L1.card) && /in kind/.test(L1.card) && /2.5 unit/.test(L1.card), "the overlay puts it on the loan book at once and the Approve card reads Borrow, in kind, 2.5 unit");
@@ -9870,6 +9870,97 @@ section("11 Sep 2026: a customer's statement username is minted at registration"
   const fm = readFileSync(join(REPO, "tools", "fold.mjs"), "utf8");
   ok(/mintUsernames\(users, staged, res\.folded\)/.test(fm) && /writeFileSync\(USERS, usersJson\(users\)\)/.test(fm),
     "and the fold's run mints after a fold that took, and writes the file in the one format");
+}
+
+
+section("11 Sep 2026: a loan can be cash as well as salt");
+{
+  /* HIS RULING OF 11 SEP 2026: borrow and lend in salt or in cash, a loan repaid in what was lent. A cash loan is
+     ringgit that changed hands: the drafter drafts it with no units, the fold appends it and moves no inventory,
+     and while it is open it moves the cash flow and nothing in the profit and loss. */
+  const { draftRow: dC } = await import("../src/drafter.js");
+  const { plan: pC, apply: aC } = await import("../tools/fold.mjs");
+  const mirrorC = { version: "vX", sales: [], purchases: [], state: { roster: ["CZ7-LEND"], loans: [], OPEN: { position: { salt: { onHand: 1, owedOut: 0, promised: 0 } } } }, pricing: null };
+  const entC = (p) => ({ at: "2099-04-01T00:00:00.001Z", payload: { mode: "loan", ...p } });
+  const cIn = dC(entC({ form: "cash", party: "CZ7-LEND", direction: "in", rm: 500, date: "2099-04-01" }), mirrorC);
+  ok(!cIn.skip && cIn.collection === "loan" && cIn.row.form === "cash" && cIn.row.valueRM === 500 && cIn.row.valueKg === null && cIn.row.status === "open" && cIn.row.product === null,
+    "a cash borrowing drafts as a cash loan in, in ringgit, with no units and no product: " + (cIn.skip || JSON.stringify(cIn.row)));
+  const cOut = dC(entC({ form: "cash", party: "CZ7-LEND", direction: "out", rm: 5000, date: "2099-04-01" }), mirrorC);
+  ok(!cOut.skip && cOut.row.direction === "out" && !cOut.flags.some((f) => /Lending more than you hold/.test(f)),
+    "lending cash is not measured against the salt inventory: " + (cOut.skip || cOut.flags.join(" | ")));
+  ok(/ringgit/.test(dC(entC({ form: "cash", party: "CZ7-LEND", direction: "in", date: "2099-04-01" }), mirrorC).skip || ""), "a cash loan with no ringgit is refused");
+  const sIn = dC(entC({ party: "CZ7-LEND", direction: "in", kg: 2, date: "2099-04-01" }), mirrorC);
+  ok(!sIn.skip && sIn.row.form === "salt" && sIn.row.valueKg === 2, "and a salt loan is still units, marked salt now");
+
+  /* the planner and the apply, on a copy of the book */
+  const bkC = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const idC = "2099-04-01T00:00:00.001Z";
+  const rowC = dC(entC({ form: "cash", party: "CM4-MK", direction: "in", rm: 500, date: "2099-04-01" }), mirrorC).row;
+  const stagedC = { ok: true, count: 1, approved: [{ id: idC, collection: "loan", row: rowC, entry: entC({ form: "cash", party: "CM4-MK", direction: "in", rm: 500, date: "2099-04-01" }) }] };
+  const pCash = pC(JSON.parse(JSON.stringify(bkC)), stagedC, null);
+  ok(pCash.refused.length === 0 && pCash.items.length === 1 && pCash.moves.length === 0 && /BORROW RM 500 in cash from CM4-MK/.test(pCash.items[0].what),
+    "the planner moves no inventory for a cash loan and names it in ringgit: " + JSON.stringify(pCash.refused.concat(pCash.items.map((x) => x.what))));
+  const copyC = JSON.parse(JSON.stringify(bkC));
+  const notesC = { version: "v9999", date: "01 Apr 2099", title: "A CASH LOAN", notes: ["<b>A CASH LOAN.</b> Five hundred ringgit borrowed, on a copy of the book, long enough to be a paragraph."],
+    rows: { [idC]: { note: "<b>BORROWED RM 500 IN CASH.</b> A note long enough to pass, on a copy of the book." } }, stockNote: "", stockCost: null, stockCostNote: "" };
+  const beforeC = copyC.STATED_STOCK, nC = (copyC.loans || []).length;
+  const aCash = aC(copyC, stagedC, notesC, readFileSync(join(REPO, "master", "salt_command.html"), "utf8"));
+  ok(aCash.ok && copyC.loans.length === nC + 1 && copyC.loans[nC].form === "cash" && copyC.loans[nC].valueRM === 500 && Math.abs(copyC.STATED_STOCK - beforeC) < 0.005,
+    "the apply appends it to the loan book and leaves the stated inventory where it was: " + (aCash.ok ? "ok" : (aCash.problems || []).join("; ")));
+
+  /* the desk: the pane, the overlay, the Approve card and the cash flow */
+  const { openMaster: omC } = await import("../tools/payload.mjs");
+  const { w: wC } = await omC();
+  const rdC = (e) => JSON.parse(String(wC.eval("JSON.stringify(" + e + ")")));
+  try {
+    wC.eval("setProd('salt');recompute();switchTab('add');");
+    const PANE = JSON.parse(String(wC.eval("(function(){try{queue=[];wbMode='loan';wbApply();var set=function(id,v){var e=document.getElementById(id);if(!e)return false;e.value=v;return true;};"
+      + "var ps=document.getElementById('wbLoanParty');if(ps){ps.innerHTML='<option value=\"CM4-MK\">CM4-MK</option>';}"
+      + "set('wbLoanForm','cash');wbApply();set('wbLoanDir','in');set('wbLoanParty','CM4-MK');set('wbLoanRM','500');set('wbLoanDate','2099-04-01');set('wbLoanNote','');wbPreview();"
+      + "var r={unitsShown:document.getElementById('wbLoanUnitsCell').style.display!=='none',rmShown:document.getElementById('wbLoanRMCell').style.display!=='none',"
+      + "dis:!!document.getElementById('wbRec').disabled,prev:(document.getElementById('wbPrev')||{}).textContent||''};"
+      + "var n0=queue.length,nl=loans.length;wbRecord();var q=queue[queue.length-1];r.pushed=queue.length===n0+1;r.q=r.pushed?{type:q.type,payload:q.payload}:null;"
+      + "applyOverlay();r.loan=loans.filter(function(l){return l.form==='cash'&&l.party==='CM4-MK';})[0]||null;"
+      + "r.card=apCard({collection:'loan',row:{direction:'in',form:'cash',party:'CM4-MK',valueRM:500,valueKg:null,date:'2099-04-01'}});"
+      + "return JSON.stringify(r);}catch(e){return JSON.stringify({no:'threw: '+(e&&e.message)});}})()")));
+    ok(!PANE.no && PANE.rmShown && !PANE.unitsShown, "choosing Cash shows the RM box and hides the units: " + (PANE.no || ""));
+    ok(!PANE.no && !PANE.dis && /in cash borrowed from/.test(PANE.prev) && /does not move/.test(PANE.prev),
+      "the preview reads the ringgit, and says the inventory does not move: " + (PANE.no || PANE.prev.slice(0, 160)));
+    ok(!PANE.no && PANE.pushed && PANE.q && PANE.q.type === "BORROW" && PANE.q.payload.form === "cash" && PANE.q.payload.rm === 500 && PANE.q.payload.kg === null,
+      "the tap queues a cash borrowing, in ringgit and with no units: " + (PANE.no || JSON.stringify(PANE.q && PANE.q.payload)));
+    ok(!PANE.no && PANE.loan && PANE.loan.valueRM === 500 && PANE.loan.valueKg === null, "the overlay puts it on the loan book at once, in ringgit: " + JSON.stringify(PANE.loan));
+    ok(!PANE.no && /Borrow/.test(PANE.card) && /in cash/.test(PANE.card) && /does not move/.test(PANE.card), "and the Approve card reads Borrow, in cash, the inventory not moving");
+
+    /* the cash flow: an open cash loan in raises the net, one out lowers it, a settled one does neither */
+    const base = rdC("(function(){queue=[];applyOverlay();loans.length=0;return cashFlow().net;})()");
+    const withIn = rdC("(function(){loans.push({date:'2099-04-01',party:'CM4-MK',direction:'in',form:'cash',valueKg:null,valueRM:500,status:'open'});return cashFlow().net;})()");
+    const withOut = rdC("(function(){loans.push({date:'2099-04-01',party:'CM4-MK',direction:'out',form:'cash',valueKg:null,valueRM:200,status:'open'});return cashFlow().net;})()");
+    const withSettled = rdC("(function(){loans.push({date:'2099-04-01',party:'CM4-MK',direction:'in',form:'cash',valueKg:null,valueRM:900,status:'settled'});return cashFlow().net;})()");
+    ok(Math.abs(withIn - base - 500) < 0.005, `an open cash loan in raises the cash flow by its ringgit (${base} to ${withIn})`);
+    ok(Math.abs(withIn - withOut - 200) < 0.005, `one lent out lowers it (${withIn} to ${withOut})`);
+    ok(Math.abs(withSettled - withOut) < 0.005, `and a settled one moves it neither way (${withOut} to ${withSettled})`);
+    ok(rdC("loanOutUnits()+loanInUnits()") === 0, "and no cash loan counts as units anywhere");
+  } finally { try { wC.close(); } catch (e) { /* best effort */ } }
+}
+
+
+section("12 Sep 2026: a queued loan counts once, however often the desk redraws");
+{
+  /* THE OVERLAY REBUILT EVERY LIST BUT ONE. Purchases, sales, self-use, lost demand, contacts, the board and the
+     refunds are copied back from their snapshots at the start of each pass; loans had no snapshot, so each redraw
+     pushed a queued loan again. Found at v589, where a queued cash loan would have grown the cash flow with every
+     redraw. The v527 section measured against the grown list, which is how the fault passed its own test. */
+  const { openMaster: omO } = await import("../tools/payload.mjs");
+  const { w: wO } = await omO();
+  try {
+    const n = JSON.parse(String(wO.eval("(function(){queue=[{at:'2099-05-01T00:00:00.000Z',type:'BORROW',party:'CM4-MK',"
+      + "payload:{mode:'loan',form:'cash',direction:'in',party:'CM4-MK',date:'2099-05-01',rm:300,kg:null}}];"
+      + "applyOverlay();var a=loans.length,net1=cashFlow().net;applyOverlay();applyOverlay();applyOverlay();"
+      + "return JSON.stringify({a:a,b:loans.length,net1:net1,net2:cashFlow().net,base:BASE_LOANS.length});})()")));
+    ok(n.a === n.b, `three more redraws leave the loan book the same length (${n.a}, then ${n.b}): the queued loan counts once`);
+    ok(n.net1 === n.net2, `and the cash flow does not grow with each redraw (${n.net1}, then ${n.net2})`);
+    ok(n.a === n.base + 1, `it is the book's own loans and the one queued (${n.base} + 1 = ${n.a})`);
+  } finally { try { wO.close(); } catch (e) { /* best effort */ } }
 }
 
 

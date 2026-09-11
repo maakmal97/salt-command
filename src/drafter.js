@@ -835,6 +835,26 @@ export function draftRow(entry, book) {
     const roster = (book.state && book.state.roster) || [];
     const direction = String(pay.direction || "").toLowerCase();
     if (direction !== "in" && direction !== "out") return { skip: "a loan is in (borrowed from them) or out (lent to them)" };
+    /* v589, HIS RULING OF 11 SEP 2026: A LOAN CAN BE CASH, and is repaid in what was lent. A cash loan is
+       ringgit that changed hands: it moves the cash flow and no salt, so it is measured against nothing
+       on the inventory, and it carries no product. */
+    if (pay.form === "cash") {
+      const rm = isNum(pay.rm) ? +pay.rm : null;
+      if (rm == null || !(rm > 0)) return { skip: "a cash loan needs the ringgit that changed hands" };
+      const whenC = pay.date || null;
+      if (!whenC) return { skip: "a loan needs the date it changed hands" };
+      const flagsC = [];
+      if (!roster.includes(party)) flagsC.push(`${party} is not on the roster. A new party needs a code and a directory entry before this is committed.`);
+      const openC = ((book.state && book.state.loans) || []).filter((l) => l && l.party === party && l.status !== "settled" && l.form === "cash");
+      if (openC.length) flagsC.push(`${party} already has ${openC.length} open cash loan${openC.length === 1 ? "" : "s"} on the book. This one is beside ${openC.length === 1 ? "it" : "them"}, not a settlement.`);
+      return {
+        collection: "loan",
+        row: { date: whenC, party, direction, form: "cash", valueKg: null, valueRM: +rm.toFixed(2), status: "open", product: null, note: pay.note || null },
+        flags: flagsC,
+        reasoning: (direction === "in" ? `Borrowed RM ${rm.toFixed(2)} in cash from ${party} on ${whenC}, owed back in cash.` : `Lent RM ${rm.toFixed(2)} in cash to ${party} on ${whenC}, owed back in cash.`)
+          + " It moves the cash flow while it is open and no inventory. The fold appends it to the loan book.",
+      };
+    }
     const q = isNum(pay.kg) ? +pay.kg : (isNum(pay.qty) ? +pay.qty : null);
     if (q == null || !(q > 0)) return { skip: "a loan needs the units that changed hands" };
     const when = pay.date || null;
@@ -852,7 +872,7 @@ export function draftRow(entry, book) {
     }
     return {
       collection: "loan",
-      row: { date: when, party, direction, valueKg: q, valueRM: null, status: "open", product: prod, note: pay.note || null },
+      row: { date: when, party, direction, form: "salt", valueKg: q, valueRM: null, status: "open", product: prod, note: pay.note || null },
       flags,
       reasoning: (direction === "in" ? `Borrowed ${round(q)} unit of ${prod} from ${party} on ${when}, owed back in kind.` : `Lent ${round(q)} unit of ${prod} to ${party} on ${when}, owed back in kind.`)
         + (direction === "in" ? " It lands on the inventory while open and counts nowhere once settled." : " It leaves the inventory and is drawn against loans until settled.")

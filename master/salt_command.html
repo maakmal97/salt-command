@@ -6227,7 +6227,9 @@ const whiteboard=[
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{"v":"v588","d":"12 Sep 2026","t":"A CUSTOMER'S STATEMENT USERNAME IS MINTED THE DAY THEY ARE REGISTERED, AND KEPT FOR LIFE","n":["<b>HIS INSTRUCTION, 11 SEP 2026: each customer has a permanent username for their statement.</b> One used to be minted the month a customer was first issued a statement, so a new customer had no address for up to a month: no statement link, and no QR on a printed board. The fold mints it with the registration now.","<b>ONE MINT AND ONE FILE FORMAT.</b> The statements run and the fold both call userFor and usersJson, moved into stmt-crypto.mjs beside newUsername, so the two writers of the users file cannot drift. A username that exists is never replaced, and the amend that re-keys a code will carry it to the new code.","<b>WHO IS MINTED ONE:</b> a registered customer, associate or referrer, the kinds whose rows book to them. A supplier, a bucket and an associate's end buyer are issued no statement and get none.","<b>WHAT IT TOUCHES TODAY: NOBODY.</b> It runs only when a registration folds, and the 39 usernames already in the file are untouched.","<b>PROVED IN MEMORY</b> through mintUsernames and the two shared functions; the fold's own run is the one step read rather than driven, since the suite never runs fold.mjs as a process. Seven mutations, each reddening its own."]},
+const evolution=[{"v":"v589","d":"12 Sep 2026","t":"A LOAN CAN BE CASH AS WELL AS SALT, AND A CASH LOAN MOVES THE CASH FLOW","n":["<b>HIS INSTRUCTION OF 11 SEP 2026: borrow and lend in salt or in cash.</b> Borrow or lend asks what changed hands now. Salt is entered in units, as before; cash is entered in ringgit. On his ruling a loan is repaid in what was lent, so a cash loan is owed back in cash.","<b>A CASH LOAN MOVES THE CASH FLOW AND NOTHING ELSE.</b> While it is open, cash borrowed in adds to the flow and cash lent out takes from it. It is money that goes back, so it is neither revenue nor cost, and the inventory does not move. The drafter drafts it in ringgit with no units, the fold appends it and rolls nothing, and the borrowed-in table shows it in ringgit.","<b>AND A QUEUED LOAN COUNTS ONCE.</b> The overlay rebuilt every list from its snapshot on each redraw except the loans, which had none, so since v527 a queued loan was pushed again on every pass and a borrowing counted twice after two redraws. It would have grown the cash flow with each redraw, so the loans take a snapshot and a reset like the six lists beside them. The v527 test had measured against the grown list, which is how the fault passed it. The ledger extract reads that committed copy too, as it reads refunds, so a queued loan cannot reach the store unapproved.","<b>WHAT IT TOUCHES TODAY: NOTHING.</b> Every loan on the book is salt, and all three are settled. Repayment and interest are the next two folds.","<b>PROVED THROUGH EVERY ROAD</b>: the drafter, the planner and the apply on a copy of the book, the pane driven on the real master, the overlay across redraws, the Approve card and cashFlow itself. Eleven mutations, each reddening its own, two of them the redraw fix: without the reset, three redraws grew the loan book from 4 to 7."]},
+
+{"v":"v588","d":"12 Sep 2026","t":"A CUSTOMER'S STATEMENT USERNAME IS MINTED THE DAY THEY ARE REGISTERED, AND KEPT FOR LIFE","n":["<b>HIS INSTRUCTION, 11 SEP 2026: each customer has a permanent username for their statement.</b> One used to be minted the month a customer was first issued a statement, so a new customer had no address for up to a month: no statement link, and no QR on a printed board. The fold mints it with the registration now.","<b>ONE MINT AND ONE FILE FORMAT.</b> The statements run and the fold both call userFor and usersJson, moved into stmt-crypto.mjs beside newUsername, so the two writers of the users file cannot drift. A username that exists is never replaced, and the amend that re-keys a code will carry it to the new code.","<b>WHO IS MINTED ONE:</b> a registered customer, associate or referrer, the kinds whose rows book to them. A supplier, a bucket and an associate's end buyer are issued no statement and get none.","<b>WHAT IT TOUCHES TODAY: NOBODY.</b> It runs only when a registration folds, and the 39 usernames already in the file are untouched.","<b>PROVED IN MEMORY</b> through mintUsernames and the two shared functions; the fold's own run is the one step read rather than driven, since the suite never runs fold.mjs as a process. Seven mutations, each reddening its own."]},
 
 {"v":"v587","d":"11 Sep 2026","t":"ADD ID DERIVES THE CODE FROM THE NAME AND THE PLACE, AND A CLASH TAKES MORE OF THE NAME","n":["<b>HIS INSTRUCTION, 11 SEP 2026: the code is derived, never typed.</b> C for a customer or S for a supplier, then the name's first letter and its length, then a dash and the place: its initials when it is several words, its first three letters when it is one. A blank place gives TBC, for a supplier too, which used to take no suffix. Names & IDs on the laptop already minted codes this way; the phone took a typed code and checked only its shape. Both call one function now.","<b>A CLASH TAKES MORE OF THE NAME.</b> Two people can derive one code: the same initial, the same length, the same place. Asked for something better than a refusal or a running number, the code takes one more letter of the name at a time, so a second four-letter A from the same place is told apart by the name people know them by. Only a name used up entirely, the same name twice in one place, falls back to a number. The preview says which code was taken.","<b>APPOINTING SOMEONE ALREADY ON THE ROSTER</b> is a pick under Who now, since there is no code box left to type into. Who lists the roster's customers who are not yet associates, so nobody can be appointed twice.","<b>WHAT IT TOUCHES: NO EXISTING CODE.</b> The rule reproduces 37 of the 40 codes in the directory it applies to. CH4-KLS, CH4-MLR and CD3-SEG do not fit it, and on his ruling they are re-keyed with the amend, which comes last in this round and carries each statement username with its customer.","<b>PROVED ON FIXTURE CODES</b> forced onto the live roster and taken off again: the rule, the clash walk, the pane and the laptop. Ten mutations, each reddening its own. The v528 and v570 tests moved with the pane, since they typed a code there is no longer a box for, and the bucket test uses a fixture associate now."]},
 
@@ -6631,7 +6633,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='12 Sep 2026, 00:04 KL';
+const LAST_UPDATED='12 Sep 2026, 01:08 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -6750,6 +6752,10 @@ const BASE_LOST=JSON.parse(JSON.stringify(lostDemand));
 const BASE_CONTACTS=JSON.parse(JSON.stringify(contacts));
 const BASE_PRICESET=JSON.parse(JSON.stringify(typeof PRICE_SET!=='undefined'?PRICE_SET:{}));
 const BASE_REFUNDS=JSON.parse(JSON.stringify(typeof customerRefunds!=='undefined'?customerRefunds:[]));
+/* v589: AND THE LOANS. The overlay has pushed a queued loan since v527 with nothing to rebuild the list from,
+   so every redraw pushed it again and a borrowing counted once per pass until the page reloaded. With a
+   cash loan in the cash flow that would have grown the flow on every redraw. */
+const BASE_LOANS=JSON.parse(JSON.stringify(typeof loans!=='undefined'?loans:[]));
 let stockCounted=true;
 /* v275: ONE COUNT PER BOOK. This was a single scalar, so a count queued while oil was on
    screen was accepted, announced, discarded for oil, and silently overwrote SALT's counted
@@ -6797,6 +6803,7 @@ function applyOverlay(){
      caused it is withdrawn. This list was the only one of the six the pass touched that was not
      being rebuilt, so without this line the preview would keep a refund the queue no longer has. */
   customerRefunds.length=0;JSON.parse(JSON.stringify(BASE_REFUNDS)).forEach(r=>customerRefunds.push(r));
+  loans.length=0;JSON.parse(JSON.stringify(BASE_LOANS)).forEach(l=>loans.push(l));   // v589: rebuilt each pass, so a queued loan counts once
   statedStockBy={};provCount=0;provNotes=[];provRM=0;
   queue.slice().sort((a,b)=>(a.at||'')<(b.at||'')?-1:1).forEach(q=>{
     const p=q.payload;if(!p)return;
@@ -6806,7 +6813,7 @@ function applyOverlay(){
       else if(p.mode==='count'){const _pk=(p.product&&PRODUCTS[p.product])?p.product:DEFAULT_PROD;
         statedStockBy[_pk]=+p.qty;
         provNotes.push('stock count '+units(+p.qty)+' '+((PRODUCTS[_pk]||{}).name||_pk));}
-      else if(p.mode==='loan'){loans.push({date:p.date,party:p.party,direction:p.direction==='in'?'in':'out',valueKg:+p.kg,valueRM:null,status:'open',product:p.product||DEFAULT_PROD,note:p.note||'',_prov:q.at});provNotes.push((p.direction==='in'?'borrowed ':'lent ')+units(+p.kg));}
+      else if(p.mode==='loan'){const cashL=p.form==='cash';loans.push({date:p.date,party:p.party,direction:p.direction==='in'?'in':'out',form:cashL?'cash':'salt',valueKg:cashL?null:+p.kg,valueRM:cashL?+p.rm:null,status:'open',product:cashL?null:(p.product||DEFAULT_PROD),note:p.note||'',_prov:q.at});provNotes.push((p.direction==='in'?'borrowed ':'lent ')+(cashL?fmt(+p.rm):units(+p.kg)));}
       else if(p.mode==='loss'){selfUseLog.push({date:p.date,product:p.product||DEFAULT_PROD,kg:+p.kg,why:p.why||'other',note:p.note||'',_prov:q.at});provNotes.push('self-use '+units(+p.kg));}
       else if(p.mode==='lost'){lostDemand.push({date:p.date,product:p.product||DEFAULT_PROD,party:p.party||null,kg:+p.kg,rm:+p.total||0,why:p.why||'other',note:p.note||'',_prov:q.at});provNotes.push('turned away '+units(+p.kg));}
       else if(p.mode==='contact'){contacts.push({date:p.date,party:p.party,how:p.how||'other',outcome:p.outcome||'noreply',next:p.next||null,note:p.note||'',_prov:q.at});provNotes.push('contact '+codeOf(p.party));}
@@ -8754,7 +8761,13 @@ function cashFlow(){
   /* a PAID refund is trade cash going back out; it is not an expense and not a drawing,
      so it is carried on the refund entry itself and dated by paidOn (v170) */
   const refPaid=+customerRefunds.filter(r=>r.paidOn).reduce((a,r)=>a+ +r.amount,0).toFixed(2);
-  const net=+(inRM+inj-outRM-spend-refPaid).toFixed(2);
+  /* v589: A CASH LOAN IS CASH, borrowed in or lent out, while it is open. It is money that goes back, so it
+     moves the flow and nothing in the profit and loss. A settled one has gone back, so it counts neither
+     way until a repayment is recorded in its own right. */
+  const cashLoans=(typeof loans!=='undefined'?loans:[]).filter(l=>l&&l.form==='cash'&&l.status!=='settled');
+  const loanIn=+cashLoans.filter(l=>l.direction==='in').reduce((a,l)=>a+(+l.valueRM||0),0).toFixed(2);
+  const loanOut=+cashLoans.filter(l=>l.direction!=='in').reduce((a,l)=>a+(+l.valueRM||0),0).toFixed(2);
+  const net=+(inRM+inj-outRM-spend-refPaid+loanIn-loanOut).toFixed(2);
   /* A COUNT beats a derived balance, exactly as it does for inventory. Flows are split at
      the count date: everything up to it is already inside the counted figure, and only
      what has been recorded since is added on top. The opening balance is then worked
@@ -8807,7 +8820,7 @@ function cashFlow(){
   const billsOut=+purchases.reduce((a,p)=>a+poOwed(p),0).toFixed(2);
   const refundsOut=+customerRefunds.filter(r=>!r.paidOn).reduce((a,r)=>a+ +r.amount,0).toFixed(2);   // a paid refund is no longer promised away
   const dueOut=+(billsOut+refundsOut).toFixed(2);
-  return {inRM,outRM,inj,spend,refPaid,net,onHand:null,dueIn,dueOut,billsOut,refundsOut,
+  return {inRM,outRM,inj,spend,refPaid,loanIn,loanOut,net,onHand:null,dueIn,dueOut,billsOut,refundsOut,
     free:null,count:null,netTo,netAfter,impliedOpen:null,drift:null,
     known:false};
 }
@@ -12590,7 +12603,7 @@ function tabReceivables(){
      cardh's own sub, which is markup the strip does not touch. */
   /* v518: salt borrowed from a party and owed back in kind: the open loans in on this book. */
   const bIn=pLoans().filter(l=>l.direction==='in'&&l.status!=='settled'), bInUnits=+bIn.reduce((a,l)=>a+(l.valueKg||0),0).toFixed(2),
-        bInBody=bIn.map(l=>`<tr><td class="l">${esc(l.party)}</td><td class="l">${l.date||'not dated'}</td><td>${units(l.valueKg||0)}</td></tr>`).join('');
+        bInBody=bIn.map(l=>`<tr><td class="l">${esc(l.party)}</td><td class="l">${l.date||'not dated'}</td><td>${l.form==='cash'?fmt(+l.valueRM||0):units(l.valueKg||0)}</td></tr>`).join('');
   const custN=cCash.length+cSalt.length+cRef.length+cPen.length+bIn.length,
         supN=sCash.length+sSalt.length+sPen.length+(hasRef?1:0), openN=custN+supN;
   /* AND EACH HALF SAYS IT SEPARATELY. The guard tests the whole part, so it fires only when
@@ -16474,6 +16487,8 @@ function apCard(d){
     grid=cell('Book says',r.was==null?'&mdash;':units(r.was))+cell('You counted',units(r.qty))+cell('Drift',dr==null?'&mdash;':(dr>0?'+':'')+units(dr),dr==null?'':Math.abs(dr)<0.005?'g':'r');}
   else if(col==='loss'||col==='lostDemand'){const lost=col==='lostDemand';head=`${lost?'Lost sale':'Loss'} of <b>${esc(r.product||'salt')}</b> on ${esc(r.date||'-')}`;
     grid=cell(lost?'Wanted':'Left the inventory',units(r.kg))+(lost?cell('Who',esc(codeOf(r.party||'')||'walk-up'))+cell('Asked',r.rm?fmt(r.rm):'&mdash;'):'')+cell('Why',esc(LOSS_LABEL[r.why]||r.why||'-'));}
+  else if(col==='loan'&&r.form==='cash'){head=`${r.direction==='in'?'Borrow':'Lend'} <b>${fmt(+r.valueRM||0)}</b> in cash ${r.direction==='in'?'from':'to'} <b>${esc(codeOf(r.party||'?'))}</b> on ${esc(r.date||'-')}`;   // v589
+    grid=cell('Cash',fmt(+r.valueRM||0))+cell('Owed back','in cash')+cell('Cash flow',(r.direction==='in'?'+':'-')+fmt(+r.valueRM||0))+cell('Inventory','does not move');}
   else if(col==='loan'){head=`${r.direction==='in'?'Borrow':'Lend'} <b>${units(r.valueKg)}</b> of ${esc(r.product||'salt')} ${r.direction==='in'?'from':'to'} <b>${esc(codeOf(r.party||'?'))}</b> on ${esc(r.date||'-')}`;
     grid=cell('Units',units(r.valueKg))+cell('Owed back','in kind')+cell(r.direction==='in'?'Inventory':'Inventory',r.direction==='in'?'+'+units(r.valueKg):'-'+units(r.valueKg));}
   else if(col==='roster'){head=`Register <b>${esc(r.code||'?')}</b>`;grid=cell('Kind',esc(r.kind||'customer'))+(r.parent?cell('Under',esc(codeOf(r.parent))):'');}
@@ -16933,12 +16948,14 @@ function tabWorkbench(){
     <div id="wbPaneLoan" style="display:none;margin-top:13px">
       <div class="qrow" style="margin-bottom:10px">
         <div class="qfield"><label>Which way</label><select id="wbLoanDir"><option value="in">Borrowed from them</option><option value="out">Lent to them</option></select></div>
+        <div class="qfield"><label>What changed hands</label><select id="wbLoanForm"><option value="salt">Salt</option><option value="cash">Cash</option></select></div>
         <div class="qfield"><label>Party</label><select id="wbLoanParty"></select></div>
-        <div class="qfield qunits"><label>Unit</label><input id="wbLoanUnits" type="number" step="0.01" min="0" inputmode="decimal"></div>
+        <div class="qfield qunits" id="wbLoanUnitsCell"><label>Unit</label><input id="wbLoanUnits" type="number" step="0.01" min="0" inputmode="decimal"></div>
+        <div class="qfield" id="wbLoanRMCell" style="display:none"><label>RM</label><input id="wbLoanRM" type="number" step="0.01" min="0" inputmode="decimal"></div>
         <div class="qfield"><label>Date</label><input id="wbLoanDate" type="date"></div>
       </div>
       <div class="qrow" style="margin-bottom:10px"><div class="qfield" style="flex:1"><label>Note (optional)</label><input id="wbLoanNote" type="text" placeholder="terms, if any"></div></div>
-      <div class="dsc">Owed back in kind, unit for unit. Borrowed salt sits on the inventory until it is returned; lent salt leaves it. Settling a loan is a fold on your word for now.</div>
+      <div class="dsc">A salt loan is owed back in kind, unit for unit: borrowed salt sits on the inventory until it is returned, and lent salt leaves it. A cash loan is owed back in cash, and moves the cash flow while it is open. Settling a loan is a fold on your word for now.</div>
     </div>
 
     <!-- v343: ADD ID, ON THE CLOUD DESK. Names & IDs mints a code from a name and a place, and
@@ -18527,11 +18544,19 @@ function wbPreview(){
       }
     }
   }else if(wbMode==='loan'){
-    const el=wbEl('wbLoanUnits'),w=wbNum('wbLoanUnits'),has=el&&el.value!=='',dirL=wbVal('wbLoanDir'),who=wbVal('wbLoanParty');
+    const dirL=wbVal('wbLoanDir'),who=wbVal('wbLoanParty');
+    if(wbVal('wbLoanForm')==='cash'){   // v589: a cash loan, in ringgit, moves the cash flow and no salt
+      const re=wbEl('wbLoanRM'),rm=wbNum('wbLoanRM'),hasR=re&&re.value!=='';
+      body=`<div style="font-size:13px;color:var(--mut)">${hasR&&rm>0&&who?`<b style="color:var(--ink)">${fmt(rm)}</b> in cash ${dirL==='in'?'borrowed from':'lent to'} <b style="color:var(--ink)">${ID(who)}</b>, owed back in cash. The cash flow ${dirL==='in'?'gains':'loses'} it while the loan is open; the inventory does not move.`:'Choose the party and enter the ringgit.'}</div>`;
+      if(!who)errs.push('Choose the party.');
+      if(!hasR||!(rm>0))errs.push('Enter the ringgit that changed hands.');
+    }else{
+    const el=wbEl('wbLoanUnits'),w=wbNum('wbLoanUnits'),has=el&&el.value!=='';
     body=`<div style="font-size:13px;color:var(--mut)">${has&&w>0&&who?`<b style="color:var(--ink)">${units(w)}</b> of ${esc(wbProdName())} ${dirL==='in'?'borrowed from':'lent to'} <b style="color:var(--ink)">${ID(who)}</b>, owed back in kind. The inventory ${dirL==='in'?'rises to':'falls to'} <b style="color:var(--ink)">${units(+(currentStock+(dirL==='in'?w:-w)).toFixed(2))}</b>.`:'Choose the party and enter the units.'}</div>`;
     if(!who)errs.push('Choose the party.');
     if(!has||!(w>0))errs.push('Enter the units that changed hands.');
     if(dirL==='out'&&w>currentStock+0.009)warns.push(`Lends more than the ${units(currentStock)} on hand.`);
+    }
     if(!wbVal('wbLoanDate'))errs.push('Enter the date &mdash; it is deliberately blank.');
     else{const fw=wbFutureWarn(wbVal('wbLoanDate'));if(fw)warns.push(fw);}
   }else if(wbMode==='addid'){
@@ -18764,11 +18789,15 @@ function wbRecord(){
     ['wbACash','wbAUnits'].forEach(id=>{const e=wbEl(id);if(e)e.value='0';});
   }else if(wbMode==='loan'){
     const who=wbVal('wbLoanParty'),w=wbNum('wbLoanUnits'),date=wbVal('wbLoanDate'),dirL=wbVal('wbLoanDir'),noteL=wbVal('wbLoanNote').trim();
-    if(!who||!(w>0)||!date){ok.textContent='Choose the party, the units and the date first.';ok.style.color='var(--crim)';return;}
-    queue.push({at:new Date().toISOString(),type:dirL==='in'?'BORROW':'LEND',party:codeOf(who),qty:w,total:null,status:'open',
+    const cashL=wbVal('wbLoanForm')==='cash',rm=wbNum('wbLoanRM');   // v589
+    if(!who||!(cashL?rm>0:w>0)||!date){ok.textContent='Choose the party, the '+(cashL?'ringgit':'units')+' and the date first.';ok.style.color='var(--crim)';return;}
+    if(cashL)queue.push({at:new Date().toISOString(),type:dirL==='in'?'BORROW':'LEND',party:codeOf(who),qty:null,total:rm,status:'open',
+      raw:(dirL==='in'?'Borrowed ':'Lent ')+fmt(rm)+' in cash'+(dirL==='in'?' from ':' to ')+codeOf(who)+' on '+date+', owed back in cash'+(noteL?', '+noteL:''),
+      payload:{mode:'loan',form:'cash',product:null,direction:dirL,party:who,date:date,qty:null,total:rm,cash:null,kg:null,rm:rm,note:noteL||null}});
+    else queue.push({at:new Date().toISOString(),type:dirL==='in'?'BORROW':'LEND',party:codeOf(who),qty:w,total:null,status:'open',
       raw:(dirL==='in'?'Borrowed ':'Lent ')+units(w)+' '+wbProdName()+(dirL==='in'?' from ':' to ')+codeOf(who)+' on '+date+', owed back in kind'+(noteL?', '+noteL:''),
-      payload:{mode:'loan',product:wbProdVal(),direction:dirL,party:who,date:date,qty:w,total:null,cash:null,kg:w,note:noteL||null}});
-    ['wbLoanUnits','wbLoanNote'].forEach(id=>{const e=wbEl(id);if(e)e.value='';});
+      payload:{mode:'loan',form:'salt',product:wbProdVal(),direction:dirL,party:who,date:date,qty:w,total:null,cash:null,kg:w,note:noteL||null}});
+    ['wbLoanUnits','wbLoanRM','wbLoanNote'].forEach(id=>{const e=wbEl(id);if(e)e.value='';});
   }else if(wbMode==='addid'){
     const code=wbApCodeNow(),kind=wbVal('wbApKind');
     const parent=(kind==='downstream'||kind==='bucket')?(wbVal('wbApParent')||null):null,an=(wbVal('wbApNote')||'').trim();
@@ -18878,6 +18907,8 @@ function wbApply(){
   const p={new:'wbPaneNew',amend:'wbPaneAmend',count:'wbPaneCount',loan:'wbPaneLoan',addid:'wbPaneAddid'};
   /* v527: the loan's party is any roster code, filled once */
   const lpSel=wbEl('wbLoanParty');if(lpSel&&!lpSel.options.length)lpSel.innerHTML='<option value="">Choose</option>'+(roster||[]).slice().sort().map(id=>`<option value="${id}">${codeOf(id)}</option>`).join('');
+  /* v589: a loan is salt, in units, or cash, in ringgit, and only the box that applies is shown */
+  {const lf=wbEl('wbLoanForm'),uc=wbEl('wbLoanUnitsCell'),rc=wbEl('wbLoanRMCell');if(lf&&uc&&rc){const cashL=lf.value==='cash';uc.style.display=cashL?'none':'';rc.style.display=cashL?'':'none';}}
   /* v343: a downstream or a bucket hangs off an associate, so the parent shows for those two */
   const apk=wbEl('wbApKind'),apc=wbEl('wbApParentCell'),app=wbEl('wbApParent');
   if(apk&&apc){apc.style.display=(apk.value==='downstream'||apk.value==='bucket')?'':'none';
@@ -18947,6 +18978,7 @@ function wireWorkbench(){
   wbFillParty();wbFillKind();wbFillOrders();wbApply();
   ms.onclick=e=>{const m=e.target.dataset.m;if(!m)return;wbMode=m;wbApply();wbEl('wbOk').textContent='';wbPreview();};
   const apk=wbEl('wbApKind');if(apk)apk.onchange=()=>{wbApply();wbPreview();};
+  const lfm=wbEl('wbLoanForm');if(lfm)lfm.onchange=()=>{wbApply();wbPreview();};   // v589: the switch changes which box shows
   ['wbApWho','wbApName','wbApPlace','wbApParent','wbApNote'].forEach(id=>{const e=wbEl(id);if(e)e.oninput=e.onchange=wbPreview;});   // v587: the code follows the name and the place as they are typed
   const ds=wbEl('wbDirSw');if(ds)ds.onclick=e=>{const d=e.target.dataset.d;if(!d)return;wbDir=d;wbFillParty();wbApply();wbPreview();};
   const asw=wbEl('wbASideSw');if(asw)asw.onclick=e=>{const s=e.target.dataset.s;if(!s)return;wbASide=s;
@@ -18984,7 +19016,7 @@ function wireWorkbench(){
      on a sale the delivery, freight, handover, associate and end-buyer fields, had no handler at all,
      so Record stayed disabled on what was typed until another switch was tapped, and the delivery
      changed the payload without moving the coach. Wired where nothing is wired already. */
-  ['wbLoanUnits','wbLoanDate','wbLoanDir','wbLoanParty','wbLoanNote',
+  ['wbLoanUnits','wbLoanRM','wbLoanDate','wbLoanDir','wbLoanParty','wbLoanNote',
    'wbDelivery','wbFreight','wbHand','wbAssocSel','wbDown','wbApName','wbApPlace'].forEach(id=>{const e=wbEl(id);if(!e)return;
     if(!e.oninput)e.oninput=wbPreview;if(e.tagName==='SELECT'&&!e.onchange)e.onchange=wbPreview;});
   const cq=wbEl('wbCashQ');if(cq)cq.onclick=e=>{const c=e.target.dataset.c;if(!c)return;const t=wbNum('wbTotal');

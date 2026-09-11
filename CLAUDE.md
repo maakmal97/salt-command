@@ -158,7 +158,7 @@ desk shows, cost and margin included, is served at the public URL.
   of a product with no lot, a date when something moved. The unknown R2 buyer is the reseller's
   `-R` account, never an invented code. A twin of a row on the book is put to him at entry and
   travels as `second` (v526); a twin already queued on the device is refused as a double tap.
-  A loan either way is a Workbench mode, drafted and folded into `loans` (v527); settling one is
+  A loan either way, in salt or in cash (v589), is a Workbench mode, drafted and folded into `loans` (v527); settling one is
   still a fold on his word.
 - **The drafter is arithmetic, never a model**, and never prices: it reads the `PRICING`
   state key `tools/book.mjs pricingSnapshot()` derives from the engine. It refuses and

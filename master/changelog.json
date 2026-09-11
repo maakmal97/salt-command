@@ -1,5 +1,17 @@
 [
  {
+  "v": "v589",
+  "d": "12 Sep 2026",
+  "t": "A LOAN CAN BE CASH AS WELL AS SALT, AND A CASH LOAN MOVES THE CASH FLOW",
+  "n": [
+   "<b>HIS INSTRUCTION OF 11 SEP 2026: borrow and lend in salt or in cash.</b> Borrow or lend asks what changed hands now. Salt is entered in units, as before; cash is entered in ringgit. On his ruling a loan is repaid in what was lent, so a cash loan is owed back in cash.",
+   "<b>A CASH LOAN MOVES THE CASH FLOW AND NOTHING ELSE.</b> While it is open, cash borrowed in adds to the flow and cash lent out takes from it. It is money that goes back, so it is neither revenue nor cost, and the inventory does not move. The drafter drafts it in ringgit with no units, the fold appends it and rolls nothing, and the borrowed-in table shows it in ringgit.",
+   "<b>AND A QUEUED LOAN COUNTS ONCE.</b> The overlay rebuilt every list from its snapshot on each redraw except the loans, which had none, so since v527 a queued loan was pushed again on every pass and a borrowing counted twice after two redraws. It would have grown the cash flow with each redraw, so the loans take a snapshot and a reset like the six lists beside them. The v527 test had measured against the grown list, which is how the fault passed it. The ledger extract reads that committed copy too, as it reads refunds, so a queued loan cannot reach the store unapproved.",
+   "<b>WHAT IT TOUCHES TODAY: NOTHING.</b> Every loan on the book is salt, and all three are settled. Repayment and interest are the next two folds.",
+   "<b>PROVED THROUGH EVERY ROAD</b>: the drafter, the planner and the apply on a copy of the book, the pane driven on the real master, the overlay across redraws, the Approve card and cashFlow itself. Eleven mutations, each reddening its own, two of them the redraw fix: without the reset, three redraws grew the loan book from 4 to 7."
+  ]
+ },
+ {
   "v": "v588",
   "d": "12 Sep 2026",
   "t": "A CUSTOMER'S STATEMENT USERNAME IS MINTED THE DAY THEY ARE REGISTERED, AND KEPT FOR LIFE",

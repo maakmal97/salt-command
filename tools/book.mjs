@@ -30,7 +30,10 @@ export const LEDGER = {
   contacts: "BASE_CONTACTS",
   selfUseLog: "BASE_SELFUSE",
   lostDemand: "BASE_LOST",
-  loans: "loans",
+  /* v589: READ THE COMMITTED COPY, as refunds have since v444. The overlay puts a queued loan into the
+     live list, and until v589 it pushed that loan again on every redraw; reading the live list would
+     carry an unapproved loan into the store. */
+  loans: "BASE_LOANS",
   supplierReceivable: "supplierReceivable",
   /* v444: READ THE COMMITTED COPY, like sales and the board. Until this version the overlay
      never touched this list, so reading it live was safe. A cancelled paid order now books a
