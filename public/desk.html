@@ -68,7 +68,7 @@ document.addEventListener('visibilitychange',function(){
    localStorage before it posts anything and the load reads it straight back.
    The same tick retries a held entry, which is what gets a phone write to the cloud
    without waiting for the next open. */
-var SALT_BUILD_ID="f8b3ce72ca350dec";
+var SALT_BUILD_ID="af1b04e2e7bdcb3a";
 var SALT_REV_MS=10000;
 (function(){
   var chip=null,timer=null;
@@ -15146,7 +15146,14 @@ function nextBest(id){
    replaced it with the queue length alone, and before Approve had ever been opened it was
    never set at all. One predicate, one count, one writer. */
 const qTx=()=>queue.filter(q=>!(q.payload&&(q.payload.mode==='plan'||q.payload.mode==='obs')));
-const enterCount=()=>qTx().length+AP_DRAFTS.length+ORD_OPEN.filter(o=>o.status==='placed').length;
+/* v578, HIS REPORT OF 11 SEP 2026: ONE ENTRY WAS COUNTED AS TWO. An entry queued on this phone stays
+   in qTx() until the fold has passed it and this device has seen that, and once the cloud drafter has
+   drafted it the same entry is ALSO in AP_DRAFTS, so between the draft and the approval it was counted
+   in both. A draft's id IS the entry's `at`, so the union on that key counts each entry once at every
+   stage: drafted and waiting on a tap, approved and waiting to go live, or refused and waiting on him.
+   Orders placed on the statements site are a separate thing until one is done and queued, so they
+   stay a separate term. */
+const enterCount=()=>new Set(AP_DRAFTS.map(d=>d.id)).size+ORD_OPEN.filter(o=>o.status==='placed').length;
 function apBadge(){try{const b=document.querySelector('.tab[data-s="enter"]');if(!b)return;
   let c=b.querySelector('.navct');const n=enterCount();
   /* v385: AND WHERE THE DRAFTS COULD NOT BE READ THE BADGE SAYS SO RATHER THAN COUNTING THEM
@@ -19624,8 +19631,13 @@ function navCounts(){
      visit to Enter can actually clear: entries waiting to be committed, plus rows waiting
      on a tap. */
   apBadge();
-  /* v341: what is due now and what is breached, on the one view that carries both */
-  put('today',actions().filter(x=>x.sev==='now').length+boundaryScan().filter(x=>x.sev==='breach').length);
+  /* v578, HIS REPORT OF 11 SEP 2026: A BREACH WAS COUNTED TWICE. v341 added the breaches to the NOW
+     items, but actions() step 5 builds its RULE rows FROM those same breaches, grouped by party, and
+     marks every one of them now. So each breach was counted once as a breach and again inside the
+     rule row that names it: nine on the badge against the five items Today lists, measured 11 Sep.
+     The badge is the NOW list the page shows, which already carries every breach. One predicate,
+     the page's own, so the number on the rail is the number of things a visit finds. */
+  put('today',actions().filter(x=>x.sev==='now').length);
 }
 const VIEW_PART={};   /* v343: the part each view is showing; its lead until a part is chosen */
 function partOf(view){const V=VIEWS.find(v=>v.id===view);if(!V)return 'today';

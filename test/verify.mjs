@@ -9368,5 +9368,56 @@ section("11 Sep 2026: the reward hurdles are stated off the board, carry a unit 
 }
 
 
+section("11 Sep 2026: a count badge counts each thing once, on Today and on Enter");
+{
+  /* HIS REPORT: the Today badge counted a breach and the rule row naming it as two things, and the
+     Enter badge counted one entry twice while it was both queued on the phone and drafted. Both
+     states are FORCED here rather than read off the book: whether the live book happens to hold a
+     breach, or a queued entry that is also drafted, is the calendar's business and not the test's.
+     Each assertion was proved red by putting the old formula back. */
+  const { openMaster: omB } = await import("../tools/payload.mjs");
+  const { w: wB } = await omB();
+  const dB = wB.document;
+  const rdB = (e) => JSON.parse(wB.eval("JSON.stringify(" + e + ")"));
+  try {
+    /* ---- TODAY. One synthetic breach, so the old formula and the new one must differ by it. ---- */
+    wB.eval(`window.__realScan = boundaryScan;
+      boundaryScan = function(){ return [{sev:'breach', rule:'Test rule', who:'CZ9-TST', what:'forced', why:'forced'}]; };`);
+    wB.eval("navCounts();");
+    const nowN = rdB("actions().filter(function(x){return x.sev==='now';}).length");
+    const breachN = rdB("boundaryScan().filter(function(x){return x.sev==='breach';}).length");
+    const tb = dB.querySelector('.tab[data-s="today"] .navct');
+    const shown = tb ? +tb.textContent : 0;
+    ok(breachN === 1, "the forced state really holds one breach, or this section proves nothing");
+    ok(rdB("actions().some(function(x){return x.sev==='now'&&x.kind==='rule'&&/CZ9-TST/.test(x.title);})"),
+      "the breach is already in the NOW list as a rule row, which is why adding it again was a double count");
+    ok(shown === nowN, `the Today badge reads the NOW list the page shows (${shown} against ${nowN} items)`);
+    ok(shown !== nowN + breachN, `and not the NOW list plus the breaches again (${nowN + breachN})`);
+    wB.eval("boundaryScan = window.__realScan; delete window.__realScan;");
+
+    /* ---- ENTER. One entry queued on this phone AND drafted, keyed by the same `at`. ---- */
+    const AT = "2026-09-11T01:00:00.000Z";
+    wB.eval(`queue = [{at:${JSON.stringify(AT)}, type:'SELL', party:'CZ9-TST', qty:1, total:100,
+      payload:{mode:'new', direction:'SELL', party:'CZ9-TST'}}];
+      AP_DRAFTS = [{id:${JSON.stringify(AT)}, status:'pending', collection:'sales', row:{customer:'CZ9-TST', qty:1, total:100}}];
+      AP_REFUSED = []; ORD_OPEN = [];`);
+    ok(rdB("qTx().length") === 1 && rdB("AP_DRAFTS.length") === 1,
+      "the forced state holds the entry in both places, or this section proves nothing");
+    ok(rdB("enterCount()") === 1, "an entry that is both queued and drafted counts once");
+    ok(rdB("enterCount()") !== rdB("qTx().length + AP_DRAFTS.length"),
+      "which the old sum of the two could not do");
+    /* approved: the draft leaves AP_DRAFTS and the entry waits in the queue to go live. Still one. */
+    wB.eval("AP_DRAFTS = [];");
+    ok(rdB("enterCount()") === 1, "approved and not yet live it still counts once, not zero and not two");
+    /* a second, different entry drafted from another phone: two things, counted as two */
+    wB.eval(`AP_DRAFTS = [{id:'2026-09-11T02:00:00.000Z', status:'pending', collection:'sales', row:{customer:'CZ8-TST'}}];`);
+    ok(rdB("enterCount()") === 2, "and a different entry drafted elsewhere is a second thing, so the union has not collapsed them");
+    /* an order placed on the statements site is its own term until it is done */
+    wB.eval("ORD_OPEN = [{status:'placed'}];");
+    ok(rdB("enterCount()") === 3, "and a placed customer order adds one of its own");
+  } finally { try { wB.close(); } catch (e) { /* best effort */ } }
+}
+
+
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
 process.exit(fail ? 1 : 0);
