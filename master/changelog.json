@@ -1,5 +1,17 @@
 [
  {
+  "v": "v580",
+  "d": "11 Sep 2026",
+  "t": "A COUNT BADGE COUNTS EACH THING ONCE, ON TODAY AND ON ENTER",
+  "n": [
+   "<b>HIS REPORT, 11 SEP 2026: the badges counted one thing as two.</b> On Today a breach was counted once as a breach and again inside the rule row that names it. v341 added the breaches to the NOW items, but <code>actions()</code> step 5 builds its RULE rows FROM those same breaches, grouped by party, and marks every one of them now. Measured the same morning: <b>nine on the badge against the five items Today lists</b>. The badge is the NOW list the page shows, which already carries every breach, so the number on the rail is the number of things a visit finds.",
+   "<b>ON ENTER, ONE ENTRY WAS COUNTED TWICE WHILE IT WAITED.</b> An entry queued on the phone stays in <code>qTx()</code> until the fold has passed it, and once the cloud drafter drafts it the same entry is also in <code>AP_DRAFTS</code>, so between the draft and the approval it was counted in both. <b>A draft's id IS the entry's <code>at</code></b>, read off D1 rather than assumed, so the union on that key counts each entry once at every stage: drafted and waiting on a tap, approved and waiting to go live, or refused and waiting on him. Customer orders placed on the statements site stay a term of their own until one is done and queued.",
+   "<b>THE PHONE'S PUSH BANNER WAS CHECKED AND IS CLEAN.</b> It names four things, rows waiting for approval, shelves not counted, entries refused and customer orders, as separate phrases rather than one summed number, and the four sets do not overlap: an entry is drafted or refused, never both, and an order is placed until it is done.",
+   "<b>FOUND IN PASSING, AND IT IS THE NEXT FOLD: A REFUSED ENTRY IS DROPPED IN SILENCE.</b> His Redeem for CR3-DAM, pressed at 07:01 KL a minute after v577 made the unit real, was refused at 07:09 because the Redeem button sends no payload and the drafter refuses an entry without one. When v578's fold moved the watermark past it, the refusal self-cleaned and the phone cleared the entry from its queue as if it had been committed. Nothing on the book or the phone records the attempt. The unit itself is not lost, since the engine still shows it earned and unredeemed, but the request is. Every Redeem, Rebate offset, Rename and follow-up on the cloud chain has met the same end, and giving each a road to Approve is the fold that follows this one.",
+   "<b>PROVED WITH BOTH STATES FORCED.</b> Ten assertions, each proved red by putting the old formula back: a stubbed breach makes the old Today sum visibly wrong, and one entry placed in both the queue and the drafts makes the old Enter sum count it twice. Whether the live book happens to hold either state is the calendar's business and not the test's, so neither is read off the desk."
+  ]
+ },
+ {
   "v": "v579",
   "d": "11 Sep 2026",
   "t": "A SECOND ORDER FROM CF5-WM AT RM110 INCLUDING CARRIAGE, PENDING UNTIL SOMETHING MOVES",
