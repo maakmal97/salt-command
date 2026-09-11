@@ -7356,7 +7356,7 @@ section("Statements — the price list, the order book and the desk's relay (v49
   let b = await r.json();
   ok(r.status === 200 && b.ok && typeof b.session === "string" && b.session.length >= 20 && b.prices && b.prices.week === "2026-08-31",
     "a correct password answers with a session and the sealed price list");
-  ok(JSON.parse(await C.decryptWith(ck, b.prices)).products[0].rate === 115 && !JSON.stringify(b.prices).includes("115"),
+  ok(JSON.parse(await C.decryptWith(ck, b.prices)).products[0].rate === 115 && !JSON.stringify(b.prices).includes('"rate":115'),   // v588: the ciphertext is random and "115" turned up in it by chance, twice on 11 Sep; the plaintext is what must not
     "the list opens under the content key and is ciphertext on the wire");
   const rm = await (await stmtWorker.fetch(sj("/open", { u: un, password: "master-pass", master: "master-pass" }), senv)).json();
   ok(rm.ok && rm.byMaster && rm.session === null, "the owner's override gets no session: the owner does not order");
@@ -9839,6 +9839,37 @@ section("11 Sep 2026: Add ID derives the code, and a clash takes more of the nam
     try { offRoster(FIX); } catch (e) { /* best effort */ }
     try { wD.close(); } catch (e) { /* best effort */ }
   }
+}
+
+
+section("11 Sep 2026: a customer's statement username is minted at registration");
+{
+  /* HIS INSTRUCTION OF 11 SEP 2026: every customer has a permanent username for the statement. The fold mints
+     it with the registration, by the same userFor the statements run uses, and never replaces one. */
+  const { mintUsernames } = await import("../tools/fold.mjs");
+  const { userFor: uf, usersJson: uj, USERNAME_RE: URE } = await import("../tools/stmt-crypto.mjs");
+  const stageU = (rows) => ({ ok: true, count: rows.length,
+    approved: rows.map(([id, code, kind]) => ({ id, collection: "roster", row: { code, kind, parent: null, note: null } })) });
+  const users = { "CZ1-OLD": "abcd-efgh" };
+  const minted = mintUsernames(users, stageU([["a1", "CZ4-NEW", "customer"], ["a2", "SZ4-SUP", "supplier"], ["a3", "CZ1-OLD", "customer"],
+    ["a4", "CZ6-AS", "reseller"], ["a5", "CZ5-PAR-Gen", "bucket"], ["a6", "CZ7-LATE", "customer"]]), ["a1", "a2", "a3", "a4", "a5"]);
+  ok(minted.join() === "CZ4-NEW,CZ6-AS", `a registered customer and a registered associate are minted a username, and nobody else: ${minted.join()}`);
+  ok(URE.test(users["CZ4-NEW"] || "") && URE.test(users["CZ6-AS"] || "") && users["CZ4-NEW"] !== users["CZ6-AS"],
+    "each is a well-formed username, and no two are the same");
+  ok(users["CZ1-OLD"] === "abcd-efgh", "a username that exists is never replaced");
+  ok(!("SZ4-SUP" in users) && !("CZ5-PAR-Gen" in users), "a supplier and a bucket are issued no statement, so they get none");
+  ok(!("CZ7-LATE" in users), "and a row the fold did not take gets none");
+
+  /* one mint, one format, shared with the statements run */
+  ok(uj({ b: "x", a: "y" }) === '{\n  "a": "y",\n  "b": "x"\n}\n', "the users file is sorted by code, one line each, with a closing newline");
+  ok(uf({ Q: "keep-mine" }, "Q") === "keep-mine", "userFor returns an existing username untouched");
+  const ms = readFileSync(join(REPO, "tools", "make_statements.mjs"), "utf8");
+  ok(/import \{[^}]*\buserFor\b[^}]*\busersJson\b[^}]*\} from "\.\/stmt-crypto\.mjs"/.test(ms) && !/function userFor\(/.test(ms),
+    "the statements run mints and writes through the same two functions, with no copy of its own");
+  /* THE ONE STEP HERE NOT DRIVEN IN MEMORY: the suite never runs fold.mjs as a process, so its run is read */
+  const fm = readFileSync(join(REPO, "tools", "fold.mjs"), "utf8");
+  ok(/mintUsernames\(users, staged, res\.folded\)/.test(fm) && /writeFileSync\(USERS, usersJson\(users\)\)/.test(fm),
+    "and the fold's run mints after a fold that took, and writes the file in the one format");
 }
 
 

@@ -39,8 +39,8 @@ statements/_secrets.json                                  GITIGNORED: the key an
 ```
 
 **The username is minted once and kept for life.** `_users.json` sits beside the month folders
-because it belongs to every issue, not to one. A customer new to the roster gets a line the first
-month a statement is made for them, and no line ever changes: a username is the address a
+because it belongs to every issue, not to one. A customer new to the roster gets a line the day the
+fold registers them (v588; before, the first month a statement was made for them), and no line ever changes: a username is the address a
 customer keeps, so re-keying one would strand everything they were ever sent. It is committed,
 because an address is not a secret; the password beside it is, and that stays out.
 

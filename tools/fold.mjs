@@ -48,6 +48,7 @@ import { readBookFile, writeBookFile, syncText, BOOK as BOOK_DEFAULT, MASTER as 
 import { sortBook } from "./sort-ledger.mjs";
 import POSITION_ENGINE from "../engine/position.mjs";
 import { nextRid } from "./rid.mjs";
+import { userFor, usersJson } from "./stmt-crypto.mjs";
 import { CORRECT_BOOL, CORRECT_DATE, CORRECT_NUM_NN, CORRECT_NUM_POS, CORRECT_TEXT } from "../src/drafter.js";
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -58,12 +59,31 @@ const BOOK = opt("--book", BOOK_DEFAULT);
 const STAGED = opt("--staged", resolve(dirname(MASTER), "_to_fold.json"));
 const NOTES = opt("--notes", resolve(dirname(MASTER), "_fold_notes.json"));
 const FOLDED = opt("--folded", resolve(dirname(MASTER), "_folded.json"));
+const USERS = opt("--users", resolve(REPO, "statements", "_users.json"));   // v588
 const TODAY = opt("--today", new Date(Date.now() + 8 * 36e5).toISOString().slice(0, 10));   // Kuala Lumpur
 
 const E = POSITION_ENGINE;
 const r2 = (v) => +(+v).toFixed(2);
 /* the engine's table, not a second copy: which Add ID kind appoints, and for which stream */
 const APPOINTS = POSITION_ENGINE.ADDID_APPOINTS;
+/* v588, HIS INSTRUCTION OF 11 SEP 2026: EVERY CUSTOMER HAS A PERMANENT STATEMENT USERNAME FROM THE DAY THEY ARE
+   REGISTERED. It used to be minted the month a customer was first issued a statement, so a new customer had
+   no address for up to a month: no statement link, and no QR on a printed board. The fold mints it with the
+   registration, by the same userFor as the statements run, and never touches one that exists. These are the
+   kinds whose rows book to them and so are issued a statement; a supplier, a bucket and an associate's end
+   buyer are not, and get none. */
+const STATEMENT_KINDS = ["customer", "reseller", "referral"];
+export function mintUsernames(users, staged, folded) {
+  const minted = [];
+  for (const a of (staged && staged.approved) || []) {
+    const r = a.row || {};
+    if (a.collection === "roster" && folded.includes(a.id) && STATEMENT_KINDS.includes(r.kind) && !users[r.code]) {
+      userFor(users, r.code);
+      minted.push(r.code);
+    }
+  }
+  return minted;
+}
 const stamp = () => { const d = new Date(Date.now() + 8 * 36e5); const MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
   return `${String(d.getUTCDate()).padStart(2, "0")} ${MON[d.getUTCMonth()]} ${d.getUTCFullYear()}, ${String(d.getUTCHours()).padStart(2, "0")}:${String(d.getUTCMinutes()).padStart(2, "0")} KL`; };
 const dayOf = (iso) => { const MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]; const [y, m, d] = iso.split("-"); return `${d} ${MON[+m - 1]} ${y}`; };
@@ -277,6 +297,7 @@ export function plan(book, staged, notes) {
       const resell = r.kind === "reseller" ? r.code + "-R" : null;
       entry.roster = { code: r.code, register: !onRoster, appoint: appoints, resell: resell && !(book.roster || []).includes(resell) ? resell : null };
       if (entry.roster.register) entry.does.push(`append ${r.code} to the roster (the directory is not touched)`);
+      if (STATEMENT_KINDS.includes(r.kind)) entry.does.push(`give ${r.code} a statement username if they have none, kept for life`);
       /* THE FIGURES ARE NOT RESTATED HERE. The reward hurdles and the credit caps are the
          engine's (REWARD.hurdleMultiple, RULES.creditUnits), and a second copy in the fold's
          prose is a second copy that will differ. What the line says is which rules start
@@ -754,7 +775,7 @@ export function apply(book, staged, notes, masterText) {
 const isMain = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
 if (isMain) {
   const mode = argv.find((a) => a === "--plan" || a === "--apply" || a === "--replays");
-  if (!mode) { console.log("usage: node tools/fold.mjs --plan | --apply | --replays   [--staged f] [--notes f] [--book f] [--master f] [--folded f] [--today YYYY-MM-DD]"); process.exit(2); }
+  if (!mode) { console.log("usage: node tools/fold.mjs --plan | --apply | --replays   [--staged f] [--notes f] [--book f] [--master f] [--folded f] [--users f] [--today YYYY-MM-DD]"); process.exit(2); }
   const staged = readStaged();
   if (!staged || !staged.count) { console.log("  nothing to fold: no staged batch, or its count is zero. Stop here; do not bump a version."); process.exit(mode === "--replays" ? 1 : 0); }
   const book = readBookFile(BOOK);
@@ -788,6 +809,10 @@ if (isMain) {
     writeBookFile(book, BOOK);
     writeFileSync(MASTER, res.master);
     writeFileSync(FOLDED, JSON.stringify({ ids: res.folded }) + "\n");
+    /* v588: a registration that folded is minted its statement username now, not the month of its first statement */
+    const users = existsSync(USERS) ? JSON.parse(readFileSync(USERS, "utf8")) : {};
+    const minted = mintUsernames(users, staged, res.folded);
+    if (minted.length) { writeFileSync(USERS, usersJson(users)); console.log(`  ok    statement username minted for ${minted.join(", ")}, kept for life`); }
     try { execFileSync("node", [resolve(REPO, "tools", "changelog.mjs")], { cwd: REPO, encoding: "utf8", env: { ...process.env, SALT_MASTER: MASTER } }); }
     catch (e) { console.log("  FAIL  the changelog did not take: " + String((e && e.stdout) || e)); process.exit(1); }
     console.log(`  ok    folded ${res.folded.length} row(s) into ${BOOK} and the master at ${notes.version}`);

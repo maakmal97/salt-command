@@ -1,5 +1,17 @@
 [
  {
+  "v": "v588",
+  "d": "12 Sep 2026",
+  "t": "A CUSTOMER'S STATEMENT USERNAME IS MINTED THE DAY THEY ARE REGISTERED, AND KEPT FOR LIFE",
+  "n": [
+   "<b>HIS INSTRUCTION, 11 SEP 2026: each customer has a permanent username for their statement.</b> One used to be minted the month a customer was first issued a statement, so a new customer had no address for up to a month: no statement link, and no QR on a printed board. The fold mints it with the registration now.",
+   "<b>ONE MINT AND ONE FILE FORMAT.</b> The statements run and the fold both call userFor and usersJson, moved into stmt-crypto.mjs beside newUsername, so the two writers of the users file cannot drift. A username that exists is never replaced, and the amend that re-keys a code will carry it to the new code.",
+   "<b>WHO IS MINTED ONE:</b> a registered customer, associate or referrer, the kinds whose rows book to them. A supplier, a bucket and an associate's end buyer are issued no statement and get none.",
+   "<b>WHAT IT TOUCHES TODAY: NOBODY.</b> It runs only when a registration folds, and the 39 usernames already in the file are untouched.",
+   "<b>PROVED IN MEMORY</b> through mintUsernames and the two shared functions; the fold's own run is the one step read rather than driven, since the suite never runs fold.mjs as a process. Seven mutations, each reddening its own."
+  ]
+ },
+ {
   "v": "v587",
   "d": "11 Sep 2026",
   "t": "ADD ID DERIVES THE CODE FROM THE NAME AND THE PLACE, AND A CLASH TAKES MORE OF THE NAME",

@@ -77,6 +77,23 @@ export function newUsername() {
   return out;
 }
 export const USERNAME_RE = /^[23456789abcdefghjkmnpqrstvwxyz]{4}-[23456789abcdefghjkmnpqrstvwxyz]{4}$/;
+/* v588: ONE MINT AND ONE FILE FORMAT for statements/_users.json. Two writers use them: the statements run,
+   the month a customer is first issued a statement, and the fold, the day a customer is registered. A
+   username that exists is returned and never replaced. */
+export function userFor(users, code) {
+  if (users[code]) return users[code];
+  const taken = new Set(Object.values(users));
+  let u;
+  do { u = newUsername(); } while (taken.has(u));
+  users[code] = u;
+  return u;
+}
+/* sorted by code, one line each, so a new customer is one added line in the diff */
+export function usersJson(users) {
+  const sorted = {};
+  for (const k of Object.keys(users).sort()) sorted[k] = users[k];
+  return JSON.stringify(sorted, null, 2) + "\n";
+}
 
 async function deriveBits(pass, salt, bits, rounds) {
   const base = await wc.subtle.importKey("raw", new TextEncoder().encode(pass), "PBKDF2", false, ["deriveBits"]);

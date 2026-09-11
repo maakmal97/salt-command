@@ -29,7 +29,7 @@ import POSITION_ENGINE from "../engine/position.mjs";
 import { statementCss, REVIEW_CSS } from "./stmt-style.mjs";
 import { qrSvg } from "./qr.mjs";
 import { sendSheet } from "./stmt-send.mjs";
-import { newPassword, newUsername, USERNAME_RE, makeVerifier, contentKey, wrapKey, encryptWith, decryptWith } from "./stmt-crypto.mjs";
+import { newPassword, USERNAME_RE, makeVerifier, contentKey, wrapKey, encryptWith, decryptWith, userFor, usersJson } from "./stmt-crypto.mjs";
 import { priceList } from "./pricelist.mjs";
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -556,14 +556,7 @@ function loadUsers(file) {
   for (const k of Object.keys(u)) if (!USERNAME_RE.test(u[k])) throw new Error(file + ": " + k + " has a malformed username " + u[k]);
   return u;
 }
-function userFor(users, code) {
-  if (users[code]) return users[code];
-  const taken = new Set(Object.values(users));
-  let u;
-  do { u = newUsername(); } while (taken.has(u));
-  users[code] = u;
-  return u;
-}
+/* userFor, the mint, lives in stmt-crypto.mjs since v588, shared with the fold */
 /* THE BODY OF A DOCUMENT, without its QR block: what an envelope carries. A reader who reached
    the page by scanning the code is already where the code points, so printing it back at him
    is furniture; encrypting it as well quadrupled the ciphertext for a picture nobody on that
@@ -930,10 +923,7 @@ export async function makeStatements(outDir, issue, opts) {
   if (!archive) {
     writeFileSync(pwFile, JSON.stringify(passwords, null, 2) + '\n');
     for (const r of kv) writeFileSync(join(outDir, '_kv', r.u + '.json'), JSON.stringify(r) + '\n');
-    /* sorted by code, one line each, so a new customer is one added line in the diff */
-    const sorted = {};
-    for (const k of Object.keys(users).sort()) sorted[k] = users[k];
-    writeFileSync(usersFile, JSON.stringify(sorted, null, 2) + '\n');
+    writeFileSync(usersFile, usersJson(users));   // sorted by code, one line each (stmt-crypto.mjs, v588)
   }
 
   console.log('\nwrote ' + made + ' statement' + (made === 1 ? '' : 's') + ' to ' + outDir);
