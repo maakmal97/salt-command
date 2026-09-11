@@ -88,7 +88,7 @@ h2,.kick,.grouplbl,.tab,.navct,.sub,.sub2,.chip,.tag,.rtag,.etype,.lclabel,.tier
 .kpi .l,.kpi .v,.cardh .sub,table,th,td,.lhead,.lrow,.lmove,.lcol,.ldate,.lparty,.ecode,.eref,.lagreed,
 .lof,.lwas,.submar,.actk,.actm,.rchip,.pchip,.sevh .cnt,.obsk,.obsm,.obsc,.obsevh,
 .plan .plid,.plan .plrm,.plan .plst,.plfoot,.jmeta,.evo .v,.qfield label,.qask,.ledsum,.ledbar .ledct,
-.provbar,.lcorr .clab,.lcorr .cclaim,.iref,.isub,.finpct,.fincap,.mono,.foot0,.dhname,.railtitle+.kick,
+.provbar,.lcorr .clab,.lcorr .cclaim,.iref,.isub,.finpct,.fincap,.mono,.railtitle+.kick,
 .menu button,.stkcolsl,.nchip,.nop,.pend .cd,.pend h3,details.obsec>summary .q,details.obsec>summary .ct,
 details.rcard>summary .rsum,.fintab th,.fintab tr.grp td,.totop,.fabtn,
 input,select,textarea,button{font-family:var(--salt-font-mono);}
@@ -211,8 +211,6 @@ details.rcard>summary .rname{font-size:16px;font-weight:500;}
 .prodsw button.live .pdot{box-shadow:0 0 7px 0 var(--pacc);}
 .prodsw button .pv{font-weight:400;letter-spacing:0;text-transform:none;}
 .prodsw .pall{font-family:var(--salt-font-display);color:var(--salt-mist);}
-.dhbrand .mark{width:26px;height:26px;display:block;}
-.dhname{font-size:11.5px;font-weight:500;letter-spacing:.22em;text-transform:uppercase;color:var(--salt-brass);}
 .chip{font-size:11px;letter-spacing:.05em;background:var(--salt-glass);border-color:var(--salt-line-faint);color:var(--salt-mist);}
 .chip b{color:var(--salt-salt);font-weight:500;}
 .chip.ver{color:var(--salt-brass);border-color:rgba(197,160,89,.45);font-weight:500;letter-spacing:.12em;}
@@ -220,8 +218,6 @@ details.rcard>summary .rname{font-size:16px;font-weight:500;}
   box-shadow:inset 0 1px 0 var(--salt-highlight),0 10px 30px -12px rgba(0,0,0,.8);}
 .fabtn:hover{border-color:rgba(197,160,89,.55);}
 .fabtn:focus-visible{outline-color:var(--salt-brass);}
-.deskbar .fabtn{background:var(--salt-glass);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);}
-.idfix.on{border-color:var(--salt-brass);box-shadow:0 0 12px -4px var(--salt-brass),inset 0 1px 0 var(--salt-highlight);}
 .totop{color:var(--salt-brass);border-color:var(--salt-line);background:var(--salt-glass);
   box-shadow:0 0 18px -4px rgba(197,160,89,.4),0 10px 30px -12px rgba(0,0,0,.8),inset 0 1px 0 var(--salt-highlight);}
 .totop.on{animation:none;}
@@ -235,7 +231,6 @@ details.rcard>summary .rname{font-size:16px;font-weight:500;}
 .exitbtn:hover{color:var(--salt-ember);border-color:rgba(212,105,76,.55);background:rgba(212,105,76,.08);}
 .exitfix{background:var(--salt-pane);}
 .byecard .q{color:var(--salt-brass);}
-.foot0{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--salt-mist);border-top-color:var(--salt-line-faint);}
 
 /* ---- 6. THE PARTS STRIP AND THE SWITCHERS: the TabStrip pill, the active one in glass ---- */
 .vnav{gap:8px;margin:0 0 16px;}
@@ -303,6 +298,21 @@ option,optgroup{background-color:#0b1215;color:var(--salt-salt);}
 option:checked{background-color:#16211f;}
 input::placeholder{color:var(--salt-mist);opacity:.7;}
 
+/* ---- 8b. A DATE TAKES TODAY IN ONE TAP (his comment of 12 Sep 2026) ----
+   "Make sure today is clickable while other dates are via the opened calendar dialog box." Every
+   date field is drawn by dateIn() in the master, with a Today button inside its right edge at the
+   field's full height, so the tap contract holds; a click anywhere else on the field opens the
+   calendar on a pointer device. The field keeps its well; the button is a ghost behind a hairline,
+   brass like every other quiet control. */
+.dtin{position:relative;display:block;min-width:0;}
+.dtin>input[type="date"]{width:100%;padding-right:74px;}
+.dtoday{position:absolute;top:0;right:0;bottom:0;min-width:var(--tap);min-height:var(--tap);margin:0;padding:0 12px;
+  border:0;border-left:1px solid var(--salt-line-faint);border-radius:0 var(--salt-radius-sm) var(--salt-radius-sm) 0;
+  background:transparent;color:var(--salt-brass);cursor:pointer;
+  font-family:var(--salt-font-mono);font-size:10.5px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;}
+.dtoday:hover{background:rgba(197,160,89,.10);color:var(--salt-salt);}
+.dtoday:focus-visible{outline:2px solid var(--salt-brass);outline-offset:-2px;}
+@media(max-width:560px){.dtoday{font-size:11px;}}
 /* ---- 9. TABLES: mist caps heads over a brass rule, salt figures, faint hairlines ---- */
 table{font-size:13px;}
 thead th{font-size:11px;font-weight:500;letter-spacing:.12em;color:var(--salt-mist);background:var(--panel);border-bottom:1px solid var(--salt-line);
@@ -535,9 +545,6 @@ details.obs>summary:hover{background:var(--salt-glass);}
      The heading keeps the floor and the tab clears it. */
   .grouplbl,.prodsw .plbl{font-size:11px !important;letter-spacing:.22em;}
   .tab{font-size:13.5px;}
-  /* the As-at stamp is one chip that may not break inside itself (v333); at 11px it is 372px wide
-     and carries the page to 383, so it keeps 10.5px here. Measured at v477. */
-  .metarow .chip{font-size:10.5px;letter-spacing:.04em;}
   .kpi .v{font-size:20px;}
   /* THE BOARD FITS ITS CARD WITHOUT A SCROLL, measured at v477: 337px of table in a 325px card since
      the mono face arrived at v472, and the width is the figures', not the type's (12.5, 12, 11.5 and
@@ -548,7 +555,7 @@ details.obs>summary:hover{background:var(--salt-glass);}
 /* ---- 14. PRINT: the page is white; the layer above already strips the frost ---- */
 @media print{
   body{background:#fff!important;color:#141821!important;}
-  h1,.railtitle{background:none;color:#141821;-webkit-text-fill-color:#141821;}
+  h1,.railtitle,.dhname{background:none;color:#141821;-webkit-text-fill-color:#141821;}
 }
 /* v537: THE PRINTED BOARD IS THE LOGO AND THE NUMBERS (his instruction, 08 Sep 2026). v538, his
    two calls: ON THE IDENTITY'S OWN GROUND, not white, and NO WORDS. The crystal, the username in
@@ -598,26 +605,69 @@ details.obs>summary:hover{background:var(--salt-glass);}
 .ledwrap .lqb:hover,.ledwrap .lqb.qdone:hover{background:rgba(197,160,89,.10);color:var(--salt-salt);border-color:var(--salt-brass);}
 .ledwrap .lquick{justify-content:flex-end;align-self:center;}
 
-/* ---- 5c. ONE PERSISTENT HEADER (v529, his instruction of 08 Sep 2026) ----
-   The version chip and the names key stayed put on scroll while the date and status row scrolled
-   away beneath them, two strips where there is one. The status row now rides in the desk bar:
-   date and stamp at the left, status beside it, version and the key at the right, all on one
-   glass veil that fades into the desk below. On a phone the bar wraps and the status row takes
-   its own line under the brand and the sections button. */
-.deskbar{flex-wrap:wrap;gap:8px 14px;padding-bottom:10px;margin-bottom:18px;
-  background:var(--salt-veil);border-bottom:1px solid var(--salt-line);
-  border-radius:0 0 var(--salt-radius-sm) var(--salt-radius-sm);box-shadow:0 18px 26px -20px rgba(0,0,0,.85);}
-/* v537: THE BRAND RIDES THE BAR AT EVERY WIDTH (his instruction, 08 Sep 2026). The mark and the
-   name persist with the date, the status and the version on scroll; the rail keeps its own brand
-   only on the phone, where it is a floating menu. And the bar is one glass surface with a
-   hairline beneath it and a soft fall of shadow into the desk, not a veil fading into the first
-   card: that is the transition from the header to the rest. */
-@media(min-width:861px){.dhbrand .mark{width:30px;height:30px;}.dhname{font-size:12.5px;}}
-.deskbar .dbtools{order:2;}
-.deskbar .meta{order:1;flex:1 1 auto;min-width:0;margin:0;gap:6px 8px;align-items:center;}
-.deskbar .meta>.metarow{flex:1 1 auto;}
-.deskbar .meta #provBar{flex:1 0 100%;}
-@media(max-width:860px){.deskbar .meta{order:3;flex:1 0 100%;}}
+/* ---- 5c. THE HEADER, REDRAWN (his comment of 12 Sep 2026: "this persisting header can look much
+   better than this") ----
+   It was four costumes in one strip: a dark pill for the date, a verdigris pill for the status, a
+   brass pill for the version and a glowing disc for the key, on a cold near-black slab hung from
+   the top edge, the same cold near-black v567 took out of the tables. On a phone it wrapped to
+   three rows, and 135px of an 812px screen stayed pinned over everything.
+   It is the rail's material now, glass with the rail's hairline at the rail's offset, so the two
+   read as one frame and neither moves while the desk scrolls under them (v529 and v537 stand: one
+   header, the brand in it at every width). The name is the identity's wordmark, the display face
+   in the title gradient, and the status, the date and the stamp are one quiet line under it: the
+   mark and the name, then when it was updated, the version top right, his order of 26 Aug. The
+   key and the menu keep their 44px and lose the disc. One row at every width, the phone included.
+   Once the desk has moved, the bar casts an obsidian cap above itself (body.dbstuck, set by the
+   back-to-top control's own scroll read), so nothing slides through the gap over it. */
+:root{--dbtop:22px;}
+@media(max-width:560px){:root{--dbtop:14px;}}
+.deskbar{top:calc(var(--safetop) + var(--dbtop));margin:0 0 18px;padding:9px 8px 9px 16px;gap:10px 12px;flex-wrap:wrap;
+  background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.02)),rgba(13,11,9,.9);
+  border:1px solid var(--salt-line);border-radius:var(--salt-radius-md);
+  box-shadow:var(--salt-shadow-desk),inset 0 1px 0 var(--salt-highlight);
+  -webkit-backdrop-filter:blur(24px) saturate(1.25);backdrop-filter:blur(24px) saturate(1.25);}
+/* THE CAP IS FOUR OBSIDIAN COPIES OF THE BAR'S OWN SHAPE, stacked above it 24px apart, so the gap over the
+   bar and the slivers outside its top corners are covered, up to a 96px inset. A shadow is not layout: the
+   first cut was a pseudo-element reaching into the gutter, and it made the phone's page 2px wide. */
+body.dbstuck .deskbar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 var(--salt-obsidian),0 -72px 0 0 var(--salt-obsidian),
+  0 -96px 0 0 var(--salt-obsidian),var(--salt-shadow-desk),inset 0 1px 0 var(--salt-highlight);}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){.deskbar{background:rgb(18,15,12);}}
+@media (prefers-reduced-transparency:reduce){.deskbar{background:rgb(18,15,12);-webkit-backdrop-filter:none;backdrop-filter:none;}}
+.dhbrand{gap:12px;min-width:0;}
+.dhbrand .mark{width:30px;height:30px;flex:0 0 auto;display:block;}
+.dhtext{display:flex;flex-direction:column;gap:6px;min-width:0;overflow:hidden;}
+.dhname{align-self:flex-start;font-family:var(--salt-font-display);font-weight:300;font-size:21px;letter-spacing:.04em;line-height:1;text-transform:none;
+  background:var(--salt-gradient-title);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;}
+.deskbar .meta{display:block;margin:0;min-width:0;}
+.deskbar .metarow{display:flex;align-items:center;flex-wrap:nowrap;gap:0;overflow:hidden;white-space:nowrap;
+  font-family:var(--salt-font-mono);font-size:10px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;line-height:1.2;color:var(--salt-mist);}
+.dhrole{display:inline-flex;align-items:center;gap:6px;margin-right:12px;}
+.dhrole i{width:6px;height:6px;border-radius:50%;background:currentColor;flex:0 0 auto;}
+.dhrole.live{color:var(--salt-verdigris);}
+.dhrole.ro{color:var(--salt-brass);}
+.dhupd::before{content:"\00b7";margin:0 8px;}
+.deskbar .dbtools{order:2;gap:4px;}
+.deskbar .chip.ver{background:none;border:0;padding:0 8px 0 0;font-size:11px;font-weight:500;letter-spacing:.14em;color:var(--salt-brass);}
+.deskbar .fabtn{background:transparent;border-color:var(--salt-line-faint);box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none;}
+.deskbar .fabtn:hover{background:rgba(255,255,255,.06);border-color:var(--salt-line);}
+.deskbar .idfix.on{border-color:var(--salt-brass);box-shadow:0 0 12px -4px var(--salt-brass);}
+.deskbar>#provBar{order:3;flex:1 0 100%;}
+.deskbar>#provBar:empty{display:none;}
+.deskbar .provbar{margin-top:0;}
+/* the phone's menu opens under the bar rather than over it */
+@media(max-width:860px){.rail{top:calc(var(--safetop) + var(--dbtop) + 72px);}}
+@media(max-width:560px){
+  .deskbar{padding:7px 6px 7px 12px;gap:8px;}
+  .dhbrand{gap:10px;}
+  .dhbrand .mark{width:26px;height:26px;}
+  .dhname{font-size:18px;}
+  /* the phone's 11px floor for a label (v401); the line keeps one row by dropping the as-at date
+     and, while the desk is live, the status word, which the dot already says */
+  .deskbar .metarow{font-size:11px;letter-spacing:.1em;}
+  .dhasat,.dhrole.live .dhword{display:none;}
+  .dhupd::before{content:none;}
+  .dhrole{margin-right:8px;}
+}
 /* ---- AN ENTRY IS TWO ROWS (09 Sep 2026): the corner tag, the pen and its menu, in the identity. ---- */
 .ledwrap .tag.ltype{font-weight:500;letter-spacing:.14em;}
 .ledwrap .tag.ltype.buy{color:var(--salt-steel);}

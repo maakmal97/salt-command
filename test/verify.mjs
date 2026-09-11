@@ -547,7 +547,7 @@ section("Build — patches, scripts, no externals");
       ok(got.length === 3 && got[2] === false && h.script() === first,
          "a library that 404'd is not requested a second time");
     }
-    ok(html.includes("cloud &middot; pushes to source"), "cloud badge present");
+    ok(html.includes("(window.SALT_CLOUD?'cloud':'master')"), "cloud badge present");
     ok(html.includes("device:(typeof saltDeviceId"), "qPayload carries the device id");
     ok(html.includes("if(j.cloud){ await vaultLoad();"), "cloud loads the encrypted vault");
     ok(html.includes("SALT_CLOUD&&document.visibilityState==='hidden'"), "cloud auto-hides names on background");

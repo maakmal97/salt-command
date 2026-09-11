@@ -829,7 +829,6 @@ select{width:100%;border:1px solid var(--line);border-radius:8px;padding:8px 9px
 .navlink{background:transparent;border:1px solid var(--line);color:var(--mut);font-weight:600;font-size:12px;padding:6px 11px;border-radius:8px;cursor:pointer;white-space:nowrap;transition:border-color .15s,color .15s;}
 .navlink:hover{border-color:var(--dim);color:var(--ink);}
 .sec{display:none;}.sec.on{display:block;animation:secin .22s ease;}@keyframes secin{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
-.foot0{margin-top:34px;padding-top:14px;border-top:1px solid var(--line);font-size:11px;color:var(--dim);}
 /* ---- Today action list (v148) ----
    A table forced the reason text into a cramped cell and made every row the same weight.
    These are rows you read one at a time and act on, so they are cards: a severity rail
@@ -2876,7 +2875,7 @@ h2,.kick,.grouplbl,.tab,.navct,.sub,.sub2,.chip,.tag,.rtag,.etype,.lclabel,.tier
 .kpi .l,.kpi .v,.cardh .sub,table,th,td,.lhead,.lrow,.lmove,.lcol,.ldate,.lparty,.ecode,.eref,.lagreed,
 .lof,.lwas,.submar,.actk,.actm,.rchip,.pchip,.sevh .cnt,.obsk,.obsm,.obsc,.obsevh,
 .plan .plid,.plan .plrm,.plan .plst,.plfoot,.jmeta,.evo .v,.qfield label,.qask,.ledsum,.ledbar .ledct,
-.provbar,.lcorr .clab,.lcorr .cclaim,.iref,.isub,.finpct,.fincap,.mono,.foot0,.dhname,.railtitle+.kick,
+.provbar,.lcorr .clab,.lcorr .cclaim,.iref,.isub,.finpct,.fincap,.mono,.railtitle+.kick,
 .menu button,.stkcolsl,.nchip,.nop,.pend .cd,.pend h3,details.obsec>summary .q,details.obsec>summary .ct,
 details.rcard>summary .rsum,.fintab th,.fintab tr.grp td,.totop,.fabtn,
 input,select,textarea,button{font-family:var(--salt-font-mono);}
@@ -2999,8 +2998,6 @@ details.rcard>summary .rname{font-size:16px;font-weight:500;}
 .prodsw button.live .pdot{box-shadow:0 0 7px 0 var(--pacc);}
 .prodsw button .pv{font-weight:400;letter-spacing:0;text-transform:none;}
 .prodsw .pall{font-family:var(--salt-font-display);color:var(--salt-mist);}
-.dhbrand .mark{width:26px;height:26px;display:block;}
-.dhname{font-size:11.5px;font-weight:500;letter-spacing:.22em;text-transform:uppercase;color:var(--salt-brass);}
 .chip{font-size:11px;letter-spacing:.05em;background:var(--salt-glass);border-color:var(--salt-line-faint);color:var(--salt-mist);}
 .chip b{color:var(--salt-salt);font-weight:500;}
 .chip.ver{color:var(--salt-brass);border-color:rgba(197,160,89,.45);font-weight:500;letter-spacing:.12em;}
@@ -3008,8 +3005,6 @@ details.rcard>summary .rname{font-size:16px;font-weight:500;}
   box-shadow:inset 0 1px 0 var(--salt-highlight),0 10px 30px -12px rgba(0,0,0,.8);}
 .fabtn:hover{border-color:rgba(197,160,89,.55);}
 .fabtn:focus-visible{outline-color:var(--salt-brass);}
-.deskbar .fabtn{background:var(--salt-glass);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);}
-.idfix.on{border-color:var(--salt-brass);box-shadow:0 0 12px -4px var(--salt-brass),inset 0 1px 0 var(--salt-highlight);}
 .totop{color:var(--salt-brass);border-color:var(--salt-line);background:var(--salt-glass);
   box-shadow:0 0 18px -4px rgba(197,160,89,.4),0 10px 30px -12px rgba(0,0,0,.8),inset 0 1px 0 var(--salt-highlight);}
 .totop.on{animation:none;}
@@ -3023,7 +3018,6 @@ details.rcard>summary .rname{font-size:16px;font-weight:500;}
 .exitbtn:hover{color:var(--salt-ember);border-color:rgba(212,105,76,.55);background:rgba(212,105,76,.08);}
 .exitfix{background:var(--salt-pane);}
 .byecard .q{color:var(--salt-brass);}
-.foot0{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--salt-mist);border-top-color:var(--salt-line-faint);}
 
 /* ---- 6. THE PARTS STRIP AND THE SWITCHERS: the TabStrip pill, the active one in glass ---- */
 .vnav{gap:8px;margin:0 0 16px;}
@@ -3091,6 +3085,21 @@ option,optgroup{background-color:#0b1215;color:var(--salt-salt);}
 option:checked{background-color:#16211f;}
 input::placeholder{color:var(--salt-mist);opacity:.7;}
 
+/* ---- 8b. A DATE TAKES TODAY IN ONE TAP (his comment of 12 Sep 2026) ----
+   "Make sure today is clickable while other dates are via the opened calendar dialog box." Every
+   date field is drawn by dateIn() in the master, with a Today button inside its right edge at the
+   field's full height, so the tap contract holds; a click anywhere else on the field opens the
+   calendar on a pointer device. The field keeps its well; the button is a ghost behind a hairline,
+   brass like every other quiet control. */
+.dtin{position:relative;display:block;min-width:0;}
+.dtin>input[type="date"]{width:100%;padding-right:74px;}
+.dtoday{position:absolute;top:0;right:0;bottom:0;min-width:var(--tap);min-height:var(--tap);margin:0;padding:0 12px;
+  border:0;border-left:1px solid var(--salt-line-faint);border-radius:0 var(--salt-radius-sm) var(--salt-radius-sm) 0;
+  background:transparent;color:var(--salt-brass);cursor:pointer;
+  font-family:var(--salt-font-mono);font-size:10.5px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;}
+.dtoday:hover{background:rgba(197,160,89,.10);color:var(--salt-salt);}
+.dtoday:focus-visible{outline:2px solid var(--salt-brass);outline-offset:-2px;}
+@media(max-width:560px){.dtoday{font-size:11px;}}
 /* ---- 9. TABLES: mist caps heads over a brass rule, salt figures, faint hairlines ---- */
 table{font-size:13px;}
 thead th{font-size:11px;font-weight:500;letter-spacing:.12em;color:var(--salt-mist);background:var(--panel);border-bottom:1px solid var(--salt-line);
@@ -3323,9 +3332,6 @@ details.obs>summary:hover{background:var(--salt-glass);}
      The heading keeps the floor and the tab clears it. */
   .grouplbl,.prodsw .plbl{font-size:11px !important;letter-spacing:.22em;}
   .tab{font-size:13.5px;}
-  /* the As-at stamp is one chip that may not break inside itself (v333); at 11px it is 372px wide
-     and carries the page to 383, so it keeps 10.5px here. Measured at v477. */
-  .metarow .chip{font-size:10.5px;letter-spacing:.04em;}
   .kpi .v{font-size:20px;}
   /* THE BOARD FITS ITS CARD WITHOUT A SCROLL, measured at v477: 337px of table in a 325px card since
      the mono face arrived at v472, and the width is the figures', not the type's (12.5, 12, 11.5 and
@@ -3336,7 +3342,7 @@ details.obs>summary:hover{background:var(--salt-glass);}
 /* ---- 14. PRINT: the page is white; the layer above already strips the frost ---- */
 @media print{
   body{background:#fff!important;color:#141821!important;}
-  h1,.railtitle{background:none;color:#141821;-webkit-text-fill-color:#141821;}
+  h1,.railtitle,.dhname{background:none;color:#141821;-webkit-text-fill-color:#141821;}
 }
 /* v537: THE PRINTED BOARD IS THE LOGO AND THE NUMBERS (his instruction, 08 Sep 2026). v538, his
    two calls: ON THE IDENTITY'S OWN GROUND, not white, and NO WORDS. The crystal, the username in
@@ -3386,26 +3392,69 @@ details.obs>summary:hover{background:var(--salt-glass);}
 .ledwrap .lqb:hover,.ledwrap .lqb.qdone:hover{background:rgba(197,160,89,.10);color:var(--salt-salt);border-color:var(--salt-brass);}
 .ledwrap .lquick{justify-content:flex-end;align-self:center;}
 
-/* ---- 5c. ONE PERSISTENT HEADER (v529, his instruction of 08 Sep 2026) ----
-   The version chip and the names key stayed put on scroll while the date and status row scrolled
-   away beneath them, two strips where there is one. The status row now rides in the desk bar:
-   date and stamp at the left, status beside it, version and the key at the right, all on one
-   glass veil that fades into the desk below. On a phone the bar wraps and the status row takes
-   its own line under the brand and the sections button. */
-.deskbar{flex-wrap:wrap;gap:8px 14px;padding-bottom:10px;margin-bottom:18px;
-  background:var(--salt-veil);border-bottom:1px solid var(--salt-line);
-  border-radius:0 0 var(--salt-radius-sm) var(--salt-radius-sm);box-shadow:0 18px 26px -20px rgba(0,0,0,.85);}
-/* v537: THE BRAND RIDES THE BAR AT EVERY WIDTH (his instruction, 08 Sep 2026). The mark and the
-   name persist with the date, the status and the version on scroll; the rail keeps its own brand
-   only on the phone, where it is a floating menu. And the bar is one glass surface with a
-   hairline beneath it and a soft fall of shadow into the desk, not a veil fading into the first
-   card: that is the transition from the header to the rest. */
-@media(min-width:861px){.dhbrand .mark{width:30px;height:30px;}.dhname{font-size:12.5px;}}
-.deskbar .dbtools{order:2;}
-.deskbar .meta{order:1;flex:1 1 auto;min-width:0;margin:0;gap:6px 8px;align-items:center;}
-.deskbar .meta>.metarow{flex:1 1 auto;}
-.deskbar .meta #provBar{flex:1 0 100%;}
-@media(max-width:860px){.deskbar .meta{order:3;flex:1 0 100%;}}
+/* ---- 5c. THE HEADER, REDRAWN (his comment of 12 Sep 2026: "this persisting header can look much
+   better than this") ----
+   It was four costumes in one strip: a dark pill for the date, a verdigris pill for the status, a
+   brass pill for the version and a glowing disc for the key, on a cold near-black slab hung from
+   the top edge, the same cold near-black v567 took out of the tables. On a phone it wrapped to
+   three rows, and 135px of an 812px screen stayed pinned over everything.
+   It is the rail's material now, glass with the rail's hairline at the rail's offset, so the two
+   read as one frame and neither moves while the desk scrolls under them (v529 and v537 stand: one
+   header, the brand in it at every width). The name is the identity's wordmark, the display face
+   in the title gradient, and the status, the date and the stamp are one quiet line under it: the
+   mark and the name, then when it was updated, the version top right, his order of 26 Aug. The
+   key and the menu keep their 44px and lose the disc. One row at every width, the phone included.
+   Once the desk has moved, the bar casts an obsidian cap above itself (body.dbstuck, set by the
+   back-to-top control's own scroll read), so nothing slides through the gap over it. */
+:root{--dbtop:22px;}
+@media(max-width:560px){:root{--dbtop:14px;}}
+.deskbar{top:calc(var(--safetop) + var(--dbtop));margin:0 0 18px;padding:9px 8px 9px 16px;gap:10px 12px;flex-wrap:wrap;
+  background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.02)),rgba(13,11,9,.9);
+  border:1px solid var(--salt-line);border-radius:var(--salt-radius-md);
+  box-shadow:var(--salt-shadow-desk),inset 0 1px 0 var(--salt-highlight);
+  -webkit-backdrop-filter:blur(24px) saturate(1.25);backdrop-filter:blur(24px) saturate(1.25);}
+/* THE CAP IS FOUR OBSIDIAN COPIES OF THE BAR'S OWN SHAPE, stacked above it 24px apart, so the gap over the
+   bar and the slivers outside its top corners are covered, up to a 96px inset. A shadow is not layout: the
+   first cut was a pseudo-element reaching into the gutter, and it made the phone's page 2px wide. */
+body.dbstuck .deskbar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 var(--salt-obsidian),0 -72px 0 0 var(--salt-obsidian),
+  0 -96px 0 0 var(--salt-obsidian),var(--salt-shadow-desk),inset 0 1px 0 var(--salt-highlight);}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){.deskbar{background:rgb(18,15,12);}}
+@media (prefers-reduced-transparency:reduce){.deskbar{background:rgb(18,15,12);-webkit-backdrop-filter:none;backdrop-filter:none;}}
+.dhbrand{gap:12px;min-width:0;}
+.dhbrand .mark{width:30px;height:30px;flex:0 0 auto;display:block;}
+.dhtext{display:flex;flex-direction:column;gap:6px;min-width:0;overflow:hidden;}
+.dhname{align-self:flex-start;font-family:var(--salt-font-display);font-weight:300;font-size:21px;letter-spacing:.04em;line-height:1;text-transform:none;
+  background:var(--salt-gradient-title);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;}
+.deskbar .meta{display:block;margin:0;min-width:0;}
+.deskbar .metarow{display:flex;align-items:center;flex-wrap:nowrap;gap:0;overflow:hidden;white-space:nowrap;
+  font-family:var(--salt-font-mono);font-size:10px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;line-height:1.2;color:var(--salt-mist);}
+.dhrole{display:inline-flex;align-items:center;gap:6px;margin-right:12px;}
+.dhrole i{width:6px;height:6px;border-radius:50%;background:currentColor;flex:0 0 auto;}
+.dhrole.live{color:var(--salt-verdigris);}
+.dhrole.ro{color:var(--salt-brass);}
+.dhupd::before{content:"\00b7";margin:0 8px;}
+.deskbar .dbtools{order:2;gap:4px;}
+.deskbar .chip.ver{background:none;border:0;padding:0 8px 0 0;font-size:11px;font-weight:500;letter-spacing:.14em;color:var(--salt-brass);}
+.deskbar .fabtn{background:transparent;border-color:var(--salt-line-faint);box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none;}
+.deskbar .fabtn:hover{background:rgba(255,255,255,.06);border-color:var(--salt-line);}
+.deskbar .idfix.on{border-color:var(--salt-brass);box-shadow:0 0 12px -4px var(--salt-brass);}
+.deskbar>#provBar{order:3;flex:1 0 100%;}
+.deskbar>#provBar:empty{display:none;}
+.deskbar .provbar{margin-top:0;}
+/* the phone's menu opens under the bar rather than over it */
+@media(max-width:860px){.rail{top:calc(var(--safetop) + var(--dbtop) + 72px);}}
+@media(max-width:560px){
+  .deskbar{padding:7px 6px 7px 12px;gap:8px;}
+  .dhbrand{gap:10px;}
+  .dhbrand .mark{width:26px;height:26px;}
+  .dhname{font-size:18px;}
+  /* the phone's 11px floor for a label (v401); the line keeps one row by dropping the as-at date
+     and, while the desk is live, the status word, which the dot already says */
+  .deskbar .metarow{font-size:11px;letter-spacing:.1em;}
+  .dhasat,.dhrole.live .dhword{display:none;}
+  .dhupd::before{content:none;}
+  .dhrole{margin-right:8px;}
+}
 /* ---- AN ENTRY IS TWO ROWS (09 Sep 2026): the corner tag, the pen and its menu, in the identity. ---- */
 .ledwrap .tag.ltype{font-weight:500;letter-spacing:.14em;}
 .ledwrap .tag.ltype.buy{color:var(--salt-steel);}
@@ -3458,12 +3507,12 @@ details.obs>summary:hover{background:var(--salt-glass);}
   </nav>
   <main class="main">
     <div class="deskbar" id="deskbar">
-      <div class="dhbrand"><svg class="mark" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Salt crystal"><defs><linearGradient id="saltCrystalBar" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#c5a059"/><stop offset="100%" stop-color="#b87333"/></linearGradient></defs><polygon points="50,5 95,28 95,72 50,95 5,72 5,28" fill="none" stroke="url(#saltCrystalBar)" stroke-width="3" stroke-linejoin="round"/><polyline points="50,5 50,50 95,28" fill="none" stroke="url(#saltCrystalBar)" stroke-width="3" stroke-linejoin="round"/><polyline points="50,50 5,28" fill="none" stroke="url(#saltCrystalBar)" stroke-width="3" stroke-linejoin="round"/><polyline points="50,50 50,95" fill="none" stroke="url(#saltCrystalBar)" stroke-width="3" stroke-linejoin="round"/><polygon points="50,28 72,39 50,50 28,39" fill="url(#saltCrystalBar)" opacity="0.85"/></svg><div class="dhname">Salt Command</div></div>
+      <div class="dhbrand"><svg class="mark" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Salt crystal"><defs><linearGradient id="saltCrystalBar" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#c5a059"/><stop offset="100%" stop-color="#b87333"/></linearGradient></defs><polygon points="50,5 95,28 95,72 50,95 5,72 5,28" fill="none" stroke="url(#saltCrystalBar)" stroke-width="3" stroke-linejoin="round"/><polyline points="50,5 50,50 95,28" fill="none" stroke="url(#saltCrystalBar)" stroke-width="3" stroke-linejoin="round"/><polyline points="50,50 5,28" fill="none" stroke="url(#saltCrystalBar)" stroke-width="3" stroke-linejoin="round"/><polyline points="50,50 50,95" fill="none" stroke="url(#saltCrystalBar)" stroke-width="3" stroke-linejoin="round"/><polygon points="50,28 72,39 50,50 28,39" fill="url(#saltCrystalBar)" opacity="0.85"/></svg><div class="dhtext"><div class="dhname">Salt Command</div><div class="meta" id="meta"></div></div></div>
       <div class="dbtools"><span class="chip ver" id="verChip"></span><span id="revealCtrl"></span>
         <button class="fabtn navbtn" id="navbtn" type="button" aria-controls="tabs" aria-expanded="false"
           aria-label="Sections"><span class="nbars"><span class="nb1"></span><span class="nb2"></span><span class="nb3"></span></span></button></div>
-      <!-- v529: the status row rides in the bar, so date, status, version and the names key persist together on scroll -->
-      <div class="meta" id="meta"></div>
+      <!-- 12 Sep 2026: the date, the stamp and the status ride under the name (#meta, in .dhtext); the provisional notice keeps a row of its own -->
+      <div id="provBar"></div>
     </div>
     <div class="sec on" id="sec-today"></div>
     <div class="sec" id="sec-money"></div>
@@ -3472,7 +3521,6 @@ details.obs>summary:hover{background:var(--salt-glass);}
     <div class="sec" id="sec-people"></div>
     <div class="sec" id="sec-book"></div>
     <div class="sec" id="sec-enter"></div>
-    <div class="foot0" id="foot0"></div>
   </main>
 </div>
 </div>
@@ -6632,6 +6680,16 @@ let revealed=true,newIds={},newLocs={};   /* v217: no lock, so the directory ope
    booked to the previous UTC day; the day is then parsed back as YYYY-MM-DD, which lands
    on UTC midnight, keeping every day difference in dbet() a whole number. */
 const TODAY=new Date(new Date(Date.now()+8*36e5).toISOString().slice(0,10));
+/* HIS COMMENT OF 12 SEP 2026: "if there is an input for date, make sure today is clickable while
+   other dates are via the opened calendar dialog box". Every date field on the desk is drawn here,
+   so a field added later carries both roads: a Today button inside the field's right edge, the
+   field's full height so the tap contract holds, and a click anywhere else on the field opens the
+   calendar (the listener sits beside renderRole's first call). A phone opens its own picker on the
+   tap already, so the calendar call is made on a pointer device only. */
+function dateIn(id,val,attrs){
+  return '<span class="dtin"><input id="'+id+'" type="date"'+(val?' value="'+String(val).replace(/"/g,'&quot;')+'"':'')+(attrs||'')+'>'
+    +'<button type="button" class="dtoday" data-dt="'+id+'" aria-label="Set to today">Today</button></span>';
+}
 /* ============ A ROW IS COSTED IN ITS OWN PRODUCT (v266) ============
    costOf fell back to wavgBuy, which is the ACTIVE product's weighted average, so an oil row
    with no stated cost was costed at salt's RM52 a unit: the ledger showed a 10 unit oil order
@@ -10658,7 +10716,7 @@ function renderEditor(){
     if(f.kind==='handover')return '<select id="'+id+'" style="'+box+'">'+[['','not stated'],['collected','Collected by the customer'],['delivered','Delivered by us']].map(o=>'<option value="'+o[0]+'"'+(String(val||'')===o[0]?' selected':'')+'>'+o[1]+'</option>').join('')+'</select>';
     if(f.kind==='code')return '<input id="'+id+'" list="edCodes" value="'+edEsc(val)+'" placeholder="none" style="'+box+'">';
     if(f.kind==='num')return '<input id="'+id+'" type="number" step="0.01" value="'+edEsc(val)+'" style="'+box+'">';
-    if(f.kind==='date')return '<input id="'+id+'" type="date" value="'+edEsc(val)+'" style="'+box+'">';
+    if(f.kind==='date')return dateIn(id,val,' style="'+box+';padding-right:74px"');
     if(f.kind==='bool')return '<label style="display:flex;gap:8px;align-items:center;font-size:13px;color:var(--ink);cursor:pointer"><input id="'+id+'" type="checkbox"'+(val?' checked':'')+' style="width:auto;min-height:0;accent-color:var(--gold)"> '+edEsc(f.l)+'</label>';
     if(f.kind==='prose')return '<textarea id="'+id+'" rows="4" style="'+box+';font-size:12.5px;line-height:1.45;resize:vertical">'+edEsc(val)+'</textarea>';
     return '<input id="'+id+'" value="'+edEsc(val)+'" placeholder="none" style="'+box+'">';
@@ -10918,7 +10976,7 @@ function updBlock(row,dir,canc){
         +'<div style="font-size:11px;color:var(--dim);margin-top:3px">'+units(o.unitLeft)+' left to move</div></div>'
     +'</div>'
     +'<div style="margin-top:11px"><label for="updDate" style="'+lb+'">Date</label>'
-      +'<input id="updDate" type="date" value="'+today+'" style="'+bx+'"></div>'
+      +dateIn('updDate',today,' style="'+bx+';padding-right:74px"')+'</div>'
     +'<div id="updSay" style="font-size:12px;color:var(--dim);margin-top:10px;line-height:1.5"></div>'
     +'<button id="updGo" class="vbtn" style="width:100%;margin-top:10px">Queue the update</button>'
     +'</div>';
@@ -13483,7 +13541,7 @@ function tabPlans(){
     <div class="qrow" style="margin-bottom:10px">
       <div class="qfield" style="flex:2"><label>Plan</label><input id="plTitle" placeholder="what you intend to do"></div>
       <div class="qfield"><label>Status</label><select id="plStatus"><option value="idea">Idea</option><option value="committed">Committed</option><option value="done">Done</option><option value="dropped">Dropped</option></select></div>
-      <div class="qfield"><label>Target date (optional)</label><input id="plDue" type="date" min="${isoT}"></div>
+      <div class="qfield"><label>Target date (optional)</label>${dateIn('plDue','',' min="'+isoT+'"')}</div>
     </div>
     <div class="qrow" style="margin-bottom:10px">
       <div class="qfield" style="flex:2"><label>Detail (optional)</label><input id="plDetail" placeholder="numbers, conditions, who it affects"></div>
@@ -13930,7 +13988,9 @@ function renderReveal(){
       : '<div style="display:flex;gap:9px;align-items:center">'+av+'<span style="color:var(--dim);font-size:12px">&bull;&bull;&bull;&bull;&bull;&bull;</span></div>';
     return '<tr><td class="l mono" style="vertical-align:top;padding-top:11px">'+codeOf(id)+'</td><td class="l">'+cell+'</td><td style="vertical-align:top;padding-top:11px">'+kindOf(id)+'</td></tr>';
   }).join('');
-  el.innerHTML=`<button id="idBtn" class="fabtn idfix${(idOpen||revealed)?' on':''}" type="button" title="Names &amp; IDs" aria-label="Names and IDs">${key}</button>
+  /* 12 Sep 2026: lit only while a name is actually showing, which is namesShown()'s question. On the
+     cloud desk `revealed` defaults to true with every name still sealed, so the key glowed all day. */
+  el.innerHTML=`<button id="idBtn" class="fabtn idfix${(idOpen||namesShown())?' on':''}" type="button" title="Names &amp; IDs" aria-label="Names and IDs">${key}</button>
   <div id="idBackdrop" style="display:${idOpen?'block':'none'};position:fixed;inset:0;background:rgba(5,8,10,.55);z-index:79"></div>
   <div id="idPanel" style="display:${idOpen?'block':'none'};position:fixed;top:0;right:0;height:100dvh;padding-top:var(--safetop);padding-bottom:var(--safebot);width:min(430px,92vw);z-index:80;text-align:left;overflow-y:auto;background:linear-gradient(180deg,var(--card2),var(--card)),var(--bg0);border-left:1px solid var(--line);padding:15px 16px;box-shadow:-18px 0 40px rgba(0,0,0,.45)">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px"><div style="font-size:13px;font-weight:800;color:var(--gold);letter-spacing:.3px">Names &amp; IDs</div><button id="idClose" aria-label="Close" style="background:none;border:none;color:var(--dim);font-size:19px;line-height:1;cursor:pointer">&times;</button></div>
@@ -16886,7 +16946,7 @@ function tabWorkbench(){
         <div class="qfield"><label>Direction</label><span class="viewsw" id="wbDirSw" style="display:flex"><button data-d="SELL" class="on">Sell</button><button data-d="BUY">Buy</button></span></div>
         <div class="qfield" id="wbPartyCell"><label id="wbPartyLbl">Party</label><select id="wbParty"></select></div>
         <div class="qfield" id="wbPartyNote" style="display:none"><label>Party</label><div class="dsc" style="padding-top:7px">Books to the <b>associate</b> below. Name the buyer under <b>End customer</b>.</div></div>
-        <div class="qfield"><label>Date</label><input id="wbDate" type="date"></div>
+        <div class="qfield"><label>Date</label>${dateIn('wbDate')}</div>
       </div>
       <div class="qrow" id="wbNewBox" style="display:none;margin-bottom:10px"></div>
       <div class="qrow" style="margin-bottom:10px">
@@ -16948,7 +17008,7 @@ function tabWorkbench(){
              above, so a person who has learnt where to look on one does not relearn it here. -->
         <div class="qfield qunits"><label id="wbAUnitsLbl">Units moved (unit)</label><input id="wbAUnits" type="number" step="0.5" min="0" value="0" inputmode="decimal"></div>
         <div class="qfield qunits"><label id="wbACashLbl">Cash moved (RM)</label><input id="wbACash" type="number" step="1" min="0" value="0" inputmode="decimal"></div>
-        <div class="qfield"><label>Date</label><input id="wbADate" type="date"></div>
+        <div class="qfield"><label>Date</label>${dateIn('wbADate')}</div>
       </div>
       <div class="qrow" style="margin-bottom:10px">
         <div class="qfield"><label>Note <span style="color:var(--dim)">optional</span></label><input id="wbANote" placeholder="optional"></div>
@@ -16963,7 +17023,7 @@ function tabWorkbench(){
     <div id="wbPaneCount" style="display:none;margin-top:13px">
       <div class="qrow" style="margin-bottom:10px">
         <div class="qfield qunits"><label>Unit on hand</label><input id="wbCountUnits" type="number" step="0.01" min="0" inputmode="decimal"></div>
-        <div class="qfield"><label>Date</label><input id="wbCDate" type="date"></div>
+        <div class="qfield"><label>Date</label>${dateIn('wbCDate')}</div>
         <div class="qfield"></div>
       </div>
       <div class="dsc">The count is authoritative; the gap against the ledger books as self-use.</div>
@@ -16976,7 +17036,7 @@ function tabWorkbench(){
         <div class="qfield"><label>Party</label><select id="wbLoanParty"></select></div>
         <div class="qfield qunits" id="wbLoanUnitsCell"><label>Unit</label><input id="wbLoanUnits" type="number" step="0.01" min="0" inputmode="decimal"></div>
         <div class="qfield" id="wbLoanRMCell" style="display:none"><label>RM</label><input id="wbLoanRM" type="number" step="0.01" min="0" inputmode="decimal"></div>
-        <div class="qfield"><label>Date</label><input id="wbLoanDate" type="date"></div>
+        <div class="qfield"><label>Date</label>${dateIn('wbLoanDate')}</div>
       </div>
       <div class="qrow" style="margin-bottom:10px"><div class="qfield" style="flex:1"><label>Note (optional)</label><input id="wbLoanNote" type="text" placeholder="terms, if any"></div></div>
       <div class="dsc">A salt loan is owed back in kind, unit for unit: borrowed salt sits on the inventory until it is returned, and lent salt leaves it. A cash loan is owed back in cash, and moves the cash flow while it is open. Settling a loan is a fold on your word for now.</div>
@@ -19798,9 +19858,22 @@ document.getElementById('tabs').onclick=e=>{const s=e.target.dataset.s;if(s)swit
   const vc=document.getElementById('verChip');
   if(vc)vc.textContent=(evolution[0]?evolution[0].v:'');
   document.getElementById('meta').innerHTML=
-    '<div class="metarow"><span class="chip">As at <b>'+asAt+'</b> &middot; updated '+stamp+'</span>'
-      +'<span id="deskRole"></span></div><div id="provBar"></div>';
+    /* 12 Sep 2026: one quiet line under the name, the status dot first, then the as-at date and the stamp */
+    '<div class="metarow"><span id="deskRole"></span><span class="dhasat">'+asAt+'</span>'
+      +'<span class="dhupd">updated '+stamp+'</span></div>';
 })();renderReveal();renderRole();
+/* 12 Sep 2026: Today fills the field it sits in and says so to the field's own listeners; a click
+   anywhere else on a date field opens the calendar where there is a pointer to click with. */
+document.addEventListener('click',function(e){
+  const t=e.target;if(!t||!t.closest)return;
+  const b=t.closest('.dtoday');
+  if(b){const i=document.getElementById(b.getAttribute('data-dt'));
+    if(i&&!i.disabled){i.value=TODAY.toISOString().slice(0,10);
+      i.dispatchEvent(new Event('input',{bubbles:true}));i.dispatchEvent(new Event('change',{bubbles:true}));}
+    return;}
+  const d=t.closest('input[type="date"]');
+  if(d&&!d.disabled&&typeof d.showPicker==='function'&&window.matchMedia&&window.matchMedia('(pointer:fine)').matches){try{d.showPicker();}catch(_){}}
+});
 /* the provisional banner rides above every tab, so an uncommitted figure is never
    mistaken for a banked one whichever tab you happen to be looking at */
 /* ============ WHICH COPY AM I LOOKING AT (v154) ============
@@ -19815,16 +19888,13 @@ function renderRole(){
   const el=document.getElementById('deskRole');if(!el)return;
   const live=(function(){try{return qSyncState==='server';}catch(e){return false;}})();
   const loc=(function(){try{return location.protocol==='http:'||location.protocol==='https:';}catch(e){return false;}})();
-  if(live){
-    el.innerHTML='<span class="chip" style="border-color:var(--grn);color:var(--grn)" '
-      +'title="Served by serve_desk.py, so this copy writes salt_queue.json and salt_vault.json to disk.">'
-      +'&#9679; master &middot; writes to disk</span>';
-  }else{
-    el.innerHTML='<span class="chip" style="border-color:var(--gold);color:var(--gold)" '
-      +'title="No queue server answered, so nothing typed here can be saved. Open the project file with '
-      +'Open Salt Command.bat to get the writable copy.">'
-      +'&#9679; no server &middot; read only'+(loc?'':', not served')+'</span>';
-  }
+  /* HIS COMMENT OF 12 SEP 2026: the status is a dot and a word on the line under the name, not a
+     pill beside it. The long form rides in the title. On a phone the word goes while the desk is
+     live, because the dot says so; a read-only desk keeps its word at every width. */
+  el.className='dhrole '+(live?'live':'ro');
+  el.title=live?'Served by serve_desk.py, so this copy writes salt_queue.json and salt_vault.json to disk.'
+    :'No queue server answered, so nothing typed here can be saved. Open the project file with Open Salt Command.bat to get the writable copy.';
+  el.innerHTML='<i></i><span class="dhword">'+(live?'master':'read only'+(loc?'':', not served'))+'</span>';
 }
 function renderProvBar(){
   const b=document.getElementById('provBar');if(!b)return;
@@ -19851,7 +19921,6 @@ function undoLast(){
   const last=queue.slice().sort((a,b)=>(a.at||'')<(b.at||'')?-1:1).pop();
   undoEntry(last.at);
 }
-document.getElementById('foot0').innerHTML='Salt Command';
 /* v273: back to top. Shown once the page has moved a screen's worth, so it never sits over
    a tab that fits without scrolling. The threshold is read from the viewport rather than
    typed, because the tabs differ enormously in length. The listener is passive: it only
@@ -19859,7 +19928,8 @@ document.getElementById('foot0').innerHTML='Salt Command';
 (function(){
   const b=document.getElementById('totop'); if(!b)return;
   const at=()=>window.pageYOffset||document.documentElement.scrollTop||0;
-  const sync=()=>b.classList.toggle('on',at()>Math.max(320,window.innerHeight*.6));
+  /* 12 Sep 2026: the same read tells the header it is stuck, so the cap above it fades in only once the desk has moved */
+  const sync=()=>{b.classList.toggle('on',at()>Math.max(320,window.innerHeight*.6));document.body.classList.toggle('dbstuck',at()>4);};
   window.addEventListener('scroll',sync,{passive:true});
   window.addEventListener('resize',sync,{passive:true});
   b.addEventListener('click',()=>{

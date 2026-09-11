@@ -182,13 +182,14 @@ replaceOnce("P3 qInit cloud branch",
   "    if(r.ok&&(await r.json()).ok){qSyncState='server';renderQueue();qStatus(qNote());renderRole();await vaultLoad();await bioLoad();qHeartbeat();}",
   "    const j=r.ok?await r.json():{}; if(j.ok){qSyncState='server';window.SALT_CLOUD=!!j.cloud;renderQueue();qStatus(qNote());renderRole(); if(j.cloud){ await vaultLoad(); if(queue&&queue.length){qPost();} } else { await vaultLoad();await bioLoad();qHeartbeat(); } }");
 
+/* 12 Sep 2026: the status is a dot and a word under the name now, so the two anchors moved with it */
 replaceOnce("P4a renderRole cloud tooltip",
-  '      +\'title="Served by serve_desk.py, so this copy writes salt_queue.json and salt_vault.json to disk.">\'',
-  "      +(window.SALT_CLOUD?'title=\"Cloud desk. A tap queues the entry, the drafter measures it within seconds, and an approval folds and deploys on arrival. Names arrive sealed and need the passphrase.\">':'title=\"Served by serve_desk.py, so this copy writes salt_queue.json and salt_vault.json to disk.\">')");
+  "  el.title=live?'Served by serve_desk.py, so this copy writes salt_queue.json and salt_vault.json to disk.'",
+  "  el.title=live?(window.SALT_CLOUD?'Cloud desk. A tap queues the entry, the drafter measures it within seconds, and an approval folds and deploys on arrival. Names arrive sealed and need the passphrase.':'Served by serve_desk.py, so this copy writes salt_queue.json and salt_vault.json to disk.')");
 
 replaceOnce("P4b renderRole cloud label",
-  "      +'&#9679; master &middot; writes to disk</span>';",
-  "      +(window.SALT_CLOUD?'&#9679; cloud &middot; pushes to source</span>':'&#9679; master &middot; writes to disk</span>');");
+  "  el.innerHTML='<i></i><span class=\"dhword\">'+(live?'master':'read only'+(loc?'':', not served'))+'</span>';",
+  "  el.innerHTML='<i></i><span class=\"dhword\">'+(live?(window.SALT_CLOUD?'cloud':'master'):'read only'+(loc?'':', not served'))+'</span>';");
 
 replaceOnce("P5 qNote cloud line",
   "  if(qSyncState==='server')return 'Record saves straight to <b>'+QFILE+'</b> in this folder, which the daily run reads. Nothing else to do. <b>Save queue file</b> writes it again on demand and <b>Copy queue</b> puts the lines on the clipboard.';",
