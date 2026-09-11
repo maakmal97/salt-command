@@ -5791,7 +5791,6 @@ function shrinkPctFor(key){const l=shrinkLevel(key);return l.pct!=null?l.pct:+(p
 /* selfUseLog: declared in the BOOK block near the top of this script, generated from ledger/book.json (v339). */
 /* lostDemand: declared in the BOOK block near the top of this script, generated from ledger/book.json (v339). */
 const LOSS_LABEL={personal:'personal use',spillage:'spillage or damage',short:'short delivery in',sample:'a sample or gift',other:'something else',nonrev:'non-revenue'};   /* v531: new entries are nonrev; the old keys read the log */
-const LOST_LABEL={nostock:'no stock',price:'would not pay the price',credit:'refused on credit',other:'another reason'};
 
 /* ============ FOLLOW-UP (v137) ============
    The Customers tab has always been able to say who has gone quiet. It has never had
@@ -6227,7 +6226,9 @@ const whiteboard=[
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{"v":"v581","d":"11 Sep 2026","t":"SELF-USE OR LOSS, TURNED AWAY AND FOLLOW-UP LEAVE THE ENTER FORM","n":["<b>HIS INSTRUCTION, 11 SEP 2026, WITH HIS REASONS.</b> Self use and loss are read from the counts already: the gap between the ledger and what was counted books as self-use, and the count always wins, so a form for typing it in again was a second road to one figure. A turned-away sale is at most something to derive from a cancelled order. A follow-up is not needed on this desk at all. The three modes leave the switch, with their panes, their previews and their records.","<b>WHAT STAYS, AND WHY.</b> Every row already on the book, and every view that reads one: the self-use split on Inventory, the turned-away table on Customers and the payload beside it. The drafter and the fold <b>keep</b> their loss and lost-sale roads, because a phone offline on an old build can still queue one, and v580 found that an entry the drafter refuses is dropped in silence on the next fold.","<b>COPY MAY POINT ONLY AT A CONTROL THAT EXISTS.</b> Inventory told him to record under Self-use or loss, Customers told him to log a turned-away sale under Enter, and the Enter part described itself by all three. Each now says what is true. <b>Today raises no follow-up call</b>: that call read rows nothing can write any more, so it would have been a standing item on the badge v580 had just made honest, with no visit able to clear it.","<b>FOUND IN THE SWEEP, AND GONE WITH IT.</b> Sixteen field ids still wired to listeners, the follow-up party list, and four follow-up helpers with no reader left: <code>CONTACT_HOW</code>, <code>CONTACT_OUT</code>, <code>lastContact</code> and <code>contactsDue</code>. <code>LOST_LABEL</code> stays, because it still labels the turned-away table.","<b>OPEN, FOR HIS WORD.</b> The turned-away card on Customers now has no writer and the book holds no rows in it, so it will read “Nothing recorded” until turned-away sales are derived from cancelled orders, which is his idea and is not built.","<b>PROVED ON THE RENDERED FORM.</b> Seven assertions, read off the mode switch as it draws rather than off the source, with a follow-up ten days overdue forced onto the book so the Today check can fail at all: the live book holds none with a date. Six mutations, each reddening its own."]},
+const evolution=[{"v":"v582","d":"11 Sep 2026","t":"THE DEMAND YOU COULD NOT SERVE CARD LEAVES CUSTOMERS","n":["<b>HIS CALL, 11 SEP 2026.</b> With Turned away gone from the Enter form at v581 the card had no writer, and the book holds no rows in it, so it could only ever read “Nothing recorded”. It goes, with the three figures only it read, and the Customers lead and its one-line description stop naming it.","<b>ITS FIELD IN THE PHONE PAYLOAD GOES WITH IT.</b> Nothing outside the desk reads it: no reader in the Worker, the tools, the statements site or the service worker. <code>LOST_LABEL</code> goes too, having no reader left once the card and the Turned away pane had gone.","<b>WHAT STAYS.</b> The turned-away rows stay on the book as data, and the drafter keeps its lost-sale road, for the reason v581 gave: a phone offline on an old build can still queue one, and an entry the drafter refuses is dropped in silence.","<b>AND THE v581 WORDING CHECKS NOW READ THE CODE ONLY.</b> They searched the whole master, and the version history quotes retired wording by design, so the first entry to quote it would have turned them red for the wrong reason. They skip the history now, as this version's own check does.","<b>PROVED ON THE RENDERED VIEW AND THE BUILT PAYLOAD.</b> Five assertions, with a turned-away row forced onto the book so the card had something to show and its absence means something. Four mutations, each reddening its own."]},
+
+{"v":"v581","d":"11 Sep 2026","t":"SELF-USE OR LOSS, TURNED AWAY AND FOLLOW-UP LEAVE THE ENTER FORM","n":["<b>HIS INSTRUCTION, 11 SEP 2026, WITH HIS REASONS.</b> Self use and loss are read from the counts already: the gap between the ledger and what was counted books as self-use, and the count always wins, so a form for typing it in again was a second road to one figure. A turned-away sale is at most something to derive from a cancelled order. A follow-up is not needed on this desk at all. The three modes leave the switch, with their panes, their previews and their records.","<b>WHAT STAYS, AND WHY.</b> Every row already on the book, and every view that reads one: the self-use split on Inventory, the turned-away table on Customers and the payload beside it. The drafter and the fold <b>keep</b> their loss and lost-sale roads, because a phone offline on an old build can still queue one, and v580 found that an entry the drafter refuses is dropped in silence on the next fold.","<b>COPY MAY POINT ONLY AT A CONTROL THAT EXISTS.</b> Inventory told him to record under Self-use or loss, Customers told him to log a turned-away sale under Enter, and the Enter part described itself by all three. Each now says what is true. <b>Today raises no follow-up call</b>: that call read rows nothing can write any more, so it would have been a standing item on the badge v580 had just made honest, with no visit able to clear it.","<b>FOUND IN THE SWEEP, AND GONE WITH IT.</b> Sixteen field ids still wired to listeners, the follow-up party list, and four follow-up helpers with no reader left: <code>CONTACT_HOW</code>, <code>CONTACT_OUT</code>, <code>lastContact</code> and <code>contactsDue</code>. <code>LOST_LABEL</code> stays, because it still labels the turned-away table.","<b>OPEN, FOR HIS WORD.</b> The turned-away card on Customers now has no writer and the book holds no rows in it, so it will read “Nothing recorded” until turned-away sales are derived from cancelled orders, which is his idea and is not built.","<b>PROVED ON THE RENDERED FORM.</b> Seven assertions, read off the mode switch as it draws rather than off the source, with a follow-up ten days overdue forced onto the book so the Today check can fail at all: the live book holds none with a date. Six mutations, each reddening its own."]},
 
 {"v": "v580", "d": "11 Sep 2026", "t": "A COUNT BADGE COUNTS EACH THING ONCE, ON TODAY AND ON ENTER", "n": ["<b>HIS REPORT, 11 SEP 2026: the badges counted one thing as two.</b> On Today a breach was counted once as a breach and again inside the rule row that names it. v341 added the breaches to the NOW items, but <code>actions()</code> step 5 builds its RULE rows FROM those same breaches, grouped by party, and marks every one of them now. Measured the same morning: <b>nine on the badge against the five items Today lists</b>. The badge is the NOW list the page shows, which already carries every breach, so the number on the rail is the number of things a visit finds.", "<b>ON ENTER, ONE ENTRY WAS COUNTED TWICE WHILE IT WAITED.</b> An entry queued on the phone stays in <code>qTx()</code> until the fold has passed it, and once the cloud drafter drafts it the same entry is also in <code>AP_DRAFTS</code>, so between the draft and the approval it was counted in both. <b>A draft's id IS the entry's <code>at</code></b>, read off D1 rather than assumed, so the union on that key counts each entry once at every stage: drafted and waiting on a tap, approved and waiting to go live, or refused and waiting on him. Customer orders placed on the statements site stay a term of their own until one is done and queued.", "<b>THE PHONE'S PUSH BANNER WAS CHECKED AND IS CLEAN.</b> It names four things, rows waiting for approval, shelves not counted, entries refused and customer orders, as separate phrases rather than one summed number, and the four sets do not overlap: an entry is drafted or refused, never both, and an order is placed until it is done.", "<b>FOUND IN PASSING, AND IT IS THE NEXT FOLD: A REFUSED ENTRY IS DROPPED IN SILENCE.</b> His Redeem for CR3-DAM, pressed at 07:01 KL a minute after v577 made the unit real, was refused at 07:09 because the Redeem button sends no payload and the drafter refuses an entry without one. When v578's fold moved the watermark past it, the refusal self-cleaned and the phone cleared the entry from its queue as if it had been committed. Nothing on the book or the phone records the attempt. The unit itself is not lost, since the engine still shows it earned and unredeemed, but the request is. Every Redeem, Rebate offset, Rename and follow-up on the cloud chain has met the same end, and giving each a road to Approve is the fold that follows this one.", "<b>PROVED WITH BOTH STATES FORCED.</b> Ten assertions, each proved red by putting the old formula back: a stubbed breach makes the old Today sum visibly wrong, and one entry placed in both the queue and the drafts makes the old Enter sum count it twice. Whether the live book happens to hold either state is the calendar's business and not the test's, so neither is read off the desk."]},{"v":"v579","d":"11 Sep 2026","t":"A SECOND ORDER FROM CF5-WM AT RM110 INCLUDING CARRIAGE, PENDING UNTIL SOMETHING MOVES","n":["<b>ONE ROW FOLDED, A SALT SELL TO CF5-WM.</b> One unit at RM110 total on 11 Sep, RM10 of that carriage, so RM100 of goods. Nothing was paid and nothing moved, so the row sits pending and draws no stock and books no revenue for now. The drafter raised no flags and the queued entry matched the mirror, so the fold went in as drafted with no amendment and no count attached.","<b>THE INVENTORY DID NOT MOVE.</b> Stock stands at 33.25 units on the salt count of 8 Sep, cost held at RM44 a unit against a replacement of RM46, with 10.5 units promised, nothing owed out and the reorder mark at 15. The two loans in, 5.5 units from CH5-OUG and 1.5 units from CA11-SEN, both dated 8 Sep, stay open and untouched by this fold."]},
 
@@ -6617,7 +6618,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='11 Sep 2026, 17:12 KL';
+const LAST_UPDATED='11 Sep 2026, 19:41 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -12280,11 +12281,11 @@ function phonePayloadBuild(){
     /* ---- v343: THE PEOPLE, read off the Customers, Network and Map tabs' own functions ----
        Who is due on his own buying habit (nextBest, without its profit), the associates and
        what each has made, brought and earned (networkStats), the customer rewards (their band
-       and units, never the margin that set the band), the demand turned away, and the map's
+       and units, never the margin that set the band), and the map's
        heat by locality with the frame the desk draws it in. NO COST, NO MARGIN, NO PROFIT and
        no prose from the book; the leak test reads this payload like every other part of it. */
     people:(function(){
-      const out={approach:[],network:[],rewards:[],lost:[],map:{places:[],unplaced:0,far:0}};
+      const out={approach:[],network:[],rewards:[],map:{places:[],unplaced:0,far:0}};
       try{
         const owed={};(arList||[]).forEach(s=>{const g=outstandingOf(s);if(g>0.009)owed[s.customer]=+((owed[s.customer]||0)+g).toFixed(2);});
         out.approach=byCustomer().map(x=>x.id).filter(id=>!isBanned(id)&&!isDeparted(id)).map(id=>{
@@ -12298,7 +12299,6 @@ function phonePayloadBuild(){
           referred:(r.referrals||[]).length,earned:+(+r.earned).toFixed(2),applied:rebateApplied(r.id),toNext:+(+r.toNextR2).toFixed(2),band:r.bringBand,departed:isDeparted(r.id)}));
       }catch(e){}
       try{ out.rewards=customerRewards().map(r=>({id:r.id,bought:r.rev,band:r.band,earned:r.earned,toNext:r.toNext})); }catch(e){}
-      try{ out.lost=lostDemand.slice().sort((a,b)=>{const x=a.date||'',y=b.date||'';return x<y?1:x>y?-1:0;}).map(r=>({d:r.date,p:r.party||null,pr:r.product||DEFAULT_PROD,q:+(+r.kg).toFixed(2),rm:+(+(r.rm||0)).toFixed(2),why:LOST_LABEL[r.why]||r.why||''})); }catch(e){}
       try{
         const {pts,miss,far}=mapPoints();
         if(pts.length){
@@ -15725,9 +15725,6 @@ function tabConcentration(){
   const risk=c.hhi>3000?'high':c.hhi>1800?'moderate':'low';
   const riskCol=risk==='high'?'var(--crim)':risk==='moderate'?'var(--gold)':'var(--grn)';
   const ind=k=>concSort.key===k?(concSort.dir<0?' ↓':' ↑'):'';
-  const ld=lostDemand.slice().sort((a,b)=>{const x=a.date||'',y=b.date||'';return x<y?1:x>y?-1:0;});
-  const ldUnits=+ld.reduce((a,r)=>a+r.kg,0).toFixed(2), ldRM=+ld.reduce((a,r)=>a+(r.rm||0),0).toFixed(2);
-  const ldStock=+ld.filter(r=>r.why==='nostock').reduce((a,r)=>a+r.kg,0).toFixed(2);
   const sv=x=>concSort.key==='id'?x.id:concSort.key==='marginpct'?(x.rev?x.margin/x.rev:0):concSort.key==='share'?x.rev:(x[concSort.key]||0);
   const CONC_HEAD=8;
   const sortedBc=c.bc.slice().sort((a,b)=>{const av=sv(a),bv=sv(b);return typeof av==='string'?concSort.dir*(av<bv?-1:av>bv?1:0):concSort.dir*(av-bv);});
@@ -15819,7 +15816,7 @@ function tabConcentration(){
        a scoring model was half the lead, and it is method prose: it is true of every figure on
        this desk, it never changes, and there is nothing a reader does differently for knowing
        it. It still binds whoever edits this part, so it is said here instead. -->
-  <div class="dsc dsclead" style="margin-bottom:13px">Who buys, who to approach next, and the demand you could not serve.</div>
+  <div class="dsc dsclead" style="margin-bottom:13px">Who buys, and who to approach next.</div>
   <div class="kpis k5">
     <div class="kpi ${risk==='high'?'r':risk==='moderate'?'gold':'g'}"><div class="l">Concentration</div><div class="v" style="color:${riskCol}">${c.hhi.toFixed(0)}</div><div class="n">${risk} on the Herfindahl over ${c.n} buyers; ${c.hhi>2500?'widen the base before growing the top':'no single lapse decides the month'}</div></div>
     <div class="kpi"><div class="l">Carry 80% of revenue</div><div class="v">${to80}</div><div class="n">of ${c.n} names; top is ${topName} at ${c.top.toFixed(0)}%</div></div>
@@ -15847,18 +15844,6 @@ function tabConcentration(){
   <div class="chartbox" style="height:230px"><canvas id="ccPareto"></canvas></div>
   <div class="card" style="margin-top:14px"><div class="cardh">Revenue against margin <span class="sub">per order across, total revenue as the circle</span></div>
       <div class="chartbox" style="height:230px"><canvas id="ccScatter"></canvas></div></div>
-
-  <h2 style="margin-top:18px">Demand you could not serve <span class="rule"></span></h2>
-  <!-- v385: THE EMPTY STATE RENDERED AS AN EMPTY BOX. It was a lone .dsc in a card, so the
-       strip removed it and left a heading over four inches of nothing, on the one section
-       whose entire purpose is to be noticed while it is still empty. The words are the same
-       words; they sit in a table row now, which the strip does not touch. -->
-  <div class="card"><table>${ld.length
-    ? `<thead><tr><th class="l">Date</th><th class="l">Who asked</th><th>Unit</th><th>RM</th><th>Per unit</th><th class="l">Why not</th></tr></thead><tbody>`
-      +ld.map(r=>`<tr><td class="l">${r.date}</td><td class="l mono">${r.party?ID(r.party):'walk-up'}</td><td>${units(r.kg)}</td><td>${fmt0(r.rm)}</td><td>${r.kg>0&&r.rm>0?fmt(r.rm/r.kg):'&mdash;'}</td><td class="l">${LOST_LABEL[r.why]||r.why}${r.note?' &middot; '+esc(r.note):''}</td></tr>`).join('')
-      +`<tr class="tot"><td class="l" colspan="2">Total turned away</td><td>${units(ldUnits)}</td><td>${fmt0(ldRM)}</td><td></td><td class="l">${ldStock>0.009?`${units(ldStock)} of it for want of inventory`:'none for want of stock'}</td></tr>`
-      +`<tr><td class="l" colspan="6" style="color:var(--mut)">That is <b>${(ldRM/revTotal*100).toFixed(1)}%</b> of ${fmt0(revTotal)} of recorded revenue, asked for and refused. None of it appears in any other figure on this desk.</td></tr></tbody>`
-    : `<tbody><tr><td class="l" style="color:var(--mut)"><b>Nothing recorded</b>, and an unfilled order leaves no trace, so empty shelves read as no demand. Free to sell <b>${units(Math.max(0,currentStock-defUnits))}</b>.</td></tr></tbody>`}</table></div>
 
   <h2 style="margin-top:22px">The database <span class="sub" style="font-weight:400">every customer, sortable on any column</span> <span class="rule"></span></h2>
   <div class="card"><table class="sortt"><thead><tr><th class="l" onclick="sortConc('id')">Customer${ind('id')}</th><th onclick="sortConc('rev')">Revenue${ind('rev')}</th><th onclick="sortConc('share')">Share${ind('share')}</th><th onclick="sortConc('kg')">Volume${ind('kg')}</th><th onclick="sortConc('margin')">Margin${ind('margin')}</th><th onclick="sortConc('marginpct')">Margin %${ind('marginpct')}</th></tr></thead><tbody>${rows}<tr class="tot"><td class="l">All</td><td>${fmt0(c.revSum)}</td><td>100%</td><td>${units(c.bc.reduce((a,x)=>a+x.kg,0))}</td><td>${fmt0(c.bc.reduce((a,x)=>a+x.margin,0))}</td><td>${(()=>{const M=c.bc.reduce((a,x)=>a+x.margin,0);
@@ -19299,7 +19284,7 @@ const PART_Q={today:'what needs doing, ranked by the money at stake',
   inventory:'what is on the inventory, how long it lasts and where the shrinkage went',
   sourcing:'the current lot: the quote, the taper, the leak and who you buy from',
   pricing:'the board, the floors and what the book has actually earned',
-  concentration:'who buys, who to approach next, and the demand you could not serve',
+  concentration:'who buys, and who to approach next',
   network:'associates, their downstream buckets and the rewards',
   map:'where the book is concentrated, drawn as heat',
   ledger:'every row on the book, and a statement of account for any party',

@@ -9443,7 +9443,8 @@ section("11 Sep 2026: Self-use or loss, Turned away and Follow-up leave the Ente
 
     /* COPY MAY POINT ONLY AT CONTROLS THAT EXIST. A literal absent from the master cannot render,
        so the source is a sound instrument for absence; the switch above is read off the page. */
-    const msrcX = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+    /* the code only: history entries are skipped by their shape, since the newest sits on its own short line */
+    const msrcX = readFileSync(join(REPO, "master", "salt_command.html"), "utf8").split("\n").filter((l) => !/^(const evolution=\[)?\{"v": ?"v/.test(l)).join("\n");
     ok(!/under Self-use or loss on/.test(msrcX) && !/Transaction &rarr; Turned away/.test(msrcX),
       "no copy tells him to record under a mode that is gone");
     ok(!/a loss, a lost sale or a follow-up/.test(msrcX), "and the Enter part no longer describes itself by them");
@@ -9455,6 +9456,34 @@ section("11 Sep 2026: Self-use or loss, Turned away and Follow-up leave the Ente
       "a follow-up left on the book ten days overdue raises no call on Today");
     wX.eval("contacts.pop();");
   } finally { try { wX.close(); } catch (e) { /* best effort */ } }
+}
+
+
+section("11 Sep 2026: the Demand you could not serve card leaves Customers");
+{
+  /* HIS CALL OF 11 SEP 2026. With Turned away gone from the Enter form at v581 the card had no writer,
+     and the book holds no rows in it, so it could only ever read "Nothing recorded". It goes, with its
+     field in the phone payload. The lostDemand rows stay on the book as data, and the drafter keeps its
+     lost-sale road for a phone offline on an old build. A turned-away row is FORCED onto the book here,
+     so the card had something to show and its absence means something. */
+  const { openMaster: omD } = await import("../tools/payload.mjs");
+  const { w: wD } = await omD();
+  const dD = wD.document;
+  const rdD = (e) => JSON.parse(wD.eval("JSON.stringify(" + e + ")"));
+  try {
+    wD.eval("lostDemand.push({date:'2026-09-10',product:'salt',party:null,kg:2,rm:200,why:'nostock',note:''});");
+    wD.eval("switchTab('concentration');");
+    const txt = (dD.querySelector(".sec.on") || dD.body).textContent;
+    ok(/The database/.test(txt), "the Customers view rendered, or this section proves nothing");
+    ok(!/Demand you could not serve/.test(txt),
+      "and it carries no Demand you could not serve card, even with a turned-away row on the book");
+    const people = rdD("(function(){try{var p=phonePayloadBuild();return p&&p.people?Object.keys(p.people):'no people block';}catch(e){return 'threw: '+e.message;}})()");
+    ok(Array.isArray(people) && people.includes("approach"), `the phone payload's people block was built (${people})`);
+    ok(Array.isArray(people) && !people.includes("lost"), "and it carries no lost field");
+    wD.eval("lostDemand.pop();");
+    const codeD = readFileSync(join(REPO, "master", "salt_command.html"), "utf8").split("\n").filter((l) => !/^(const evolution=\[)?\{"v": ?"v/.test(l)).join("\n");
+    ok(!/the demand you could not serve/.test(codeD), "and neither the Customers lead nor its description names it");
+  } finally { try { wD.close(); } catch (e) { /* best effort */ } }
 }
 
 
