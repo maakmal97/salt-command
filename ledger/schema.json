@@ -1,6 +1,6 @@
 {
-  "v": "v590",
-  "derivedFrom": "8680a720f4d1c0be",
+  "v": "v591",
+  "derivedFrom": "b15b33357e044721",
   "tables": {
     "sales": {
       "rows": 151,
@@ -182,7 +182,7 @@
           ]
         },
         "rebate": {
-          "present": 11,
+          "present": 12,
           "of": 151,
           "optional": true,
           "types": [
@@ -190,7 +190,7 @@
           ]
         },
         "rebateKg": {
-          "present": 3,
+          "present": 4,
           "of": 151,
           "optional": true,
           "types": [
@@ -246,7 +246,7 @@
           ]
         },
         "settledRM": {
-          "present": 13,
+          "present": 14,
           "of": 151,
           "optional": true,
           "types": [

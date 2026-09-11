@@ -1,5 +1,14 @@
 [
  {
+  "v": "v591",
+  "d": "12 Sep 2026",
+  "t": "A REWARD OF 0.94 UNIT SETTLES RM110.45 OF THE 07 SEP ADVANCE IN KIND",
+  "n": [
+   "<b>ONE CORRECTION FOLDED, NO CASH AND NO STOCK.</b> The fold patches s139, the 1 unit sale to CS6-BS of 07 Sep at RM117.50 with RM7.50 delivery inside and nothing paid: settledRM goes from unset to RM110.45, rebate from false to true, and rebateKg from unset to 0.94. The entry is the automatic offset of the CS6-BS reward against that order, so the row now says it is settled in kind rather than owed in cash. The row itself is not rewritten.",
+   "<b>THE INVENTORY DID NOTHING.</b> No units moved and no money was taken in, so stock stands at 25.25 units on the salt count of 08 Sep, costed at the inventory's own RM44 a unit against a replacement of RM46, with the reorder mark at 15, nothing owed out and 11.5 units promised. The drafter's flag on the RM110 advance asks for a check against the CS6-BS credit cap, and the dossier carries 1.94 units on credit before this row but states no cap, so that check stays open."
+  ]
+ },
+ {
   "v": "v590",
   "d": "12 Sep 2026",
   "t": "ONE UNIT OUT TO CS6-BS AT RM130 ALL IN, PAID AND DELIVERED THE SAME DAY",
