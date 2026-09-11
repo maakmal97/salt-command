@@ -3308,7 +3308,9 @@ section("Silence — four things that failed without saying so (v384)");
   ok(/&&!b\.id&&!FIGURE\.test\(txt\(b\)\)\);/.test(m),
      "and leaves alone a block carrying a figure, or one another function addresses by id");
   ok(/const FIGURE=\/RM\\s\?\\d\|/.test(m), "FIGURE says what a figure is: money, a quantity or a percentage");
-  ok(/<div id="plOk" class="dsc"/.test(m), "the div planAdd writes into is still there to be found, and now survives");
+  /* 12 Sep 2026, his comment "sometimes less is more": the hand-filed plans left the Whiteboard, and the
+     writer went with the div it wrote into, so the v384 fault (a writer whose div was deleted) cannot recur */
+  ok(!/function planAdd\(/.test(m) && !/id="plOk"/.test(m), "the plan form and the div it wrote into went together");
 
   /* 3. THE LOCK SWITCH. lockBase is populated whether the lock is on or off, so guarding on it
      alone froze freight and delivery under any cost override while the leak stayed live. */
@@ -3440,7 +3442,7 @@ section("Orders and money — one heading, and the standing leads are gone (v401
        parts must carry a figure, carry an id, or sit somewhere the sweep does not reach. */
     const FIGURE = w.eval("FIGURE");
     const bare = [...el.querySelectorAll(".dsc,.dsclead,.insight")].filter((b) =>
-      !b.closest("table,details,.kpi,.act,.plan,.obs,.qfield") &&
+      !b.closest("table,details,.kpi,.act,.obs,.qfield") &&
       !b.querySelector("button,input,select,canvas,table,.kpi") &&
       !b.id && !FIGURE.test((b.textContent || "").replace(/\s+/g, " ").trim()));
     ok(bare.length < 2, bare.length < 2

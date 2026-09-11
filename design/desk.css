@@ -87,12 +87,12 @@ h2,.kick,.grouplbl,.tab,.navct,.sub,.sub2,.chip,.tag,.rtag,.etype,.lclabel,.tier
 .apside .apm,.apside .apbig,.appop .apname,.appop td,
 .kpi .l,.kpi .v,.cardh .sub,table,th,td,.lhead,.lrow,.lmove,.lcol,.ldate,.lparty,.ecode,.eref,.lagreed,
 .lof,.lwas,.submar,.actk,.actm,.rchip,.pchip,.sevh .cnt,.obsk,.obsm,.obsc,.obsevh,
-.plan .plid,.plan .plrm,.plan .plst,.plfoot,.jmeta,.evo .v,.qfield label,.qask,.ledsum,.ledbar .ledct,
+.jmeta,.evo .v,.qfield label,.qask,.ledsum,.ledbar .ledct,
 .provbar,.lcorr .clab,.lcorr .cclaim,.iref,.isub,.finpct,.fincap,.mono,.railtitle+.kick,
 .menu button,.stkcolsl,.nchip,.nop,.pend .cd,.pend h3,details.obsec>summary .q,details.obsec>summary .ct,
 details.rcard>summary .rsum,.fintab th,.fintab tr.grp td,.totop,.fabtn,
 input,select,textarea,button{font-family:var(--salt-font-mono);}
-.dsclead,.dsc,.insight,.note,.stand-note,.actt,.actw,.actp,.plt,.plbody,.obst,.obsb,.obsev li,.jtext,
+.dsclead,.dsc,.insight,.note,.stand-note,.actt,.actw,.actp,.obst,.obsb,.obsev li,.jtext,
 .evo .txt,.nsw,.nswhy,.apsub,.byecard p,.qmeta,.cardh,.nsh,details.obsec>summary,
 details.rcard>summary .rname,.kpi .n,.prodhd .sub,.appop .apact,.lcorr .cprose,.lcorr .cnote,
 .cardh{font-family:var(--salt-font-display);}
@@ -475,7 +475,7 @@ tbody tr:hover td:not(.l){background:rgba(255,255,255,.03);}
 .pchip.bad{color:var(--salt-ember);border-color:rgba(212,105,76,.55);}
 .rchip{font-size:10.5px;font-weight:500;letter-spacing:.12em;}
 
-/* ---- 11. THE ACTION LIST, THE OBSERVATIONS, THE PLANS ---- */
+/* ---- 11. THE ACTION LIST AND THE OBSERVATIONS (the hand-filed plans left the Whiteboard on 12 Sep 2026) ---- */
 .act{background:var(--salt-glass);border:1px solid var(--salt-line);border-left:2px solid var(--sev,var(--salt-brass));
   box-shadow:inset 0 1px 0 var(--salt-highlight);}
 .actk{font-size:11px;font-weight:500;letter-spacing:.14em;}
@@ -497,15 +497,6 @@ details.obs>summary:hover{background:var(--salt-glass);}
 .obsev{border-top-color:var(--salt-line-faint);}
 .obsevh{font-weight:500;letter-spacing:.16em;}
 .obsbtn{font-size:10.5px;}
-.plan{background:var(--salt-glass-faint);border-color:var(--salt-line-faint);}
-.plan>summary:hover{background:var(--salt-glass);}
-.plan[open]>summary{border-bottom-color:var(--salt-line-faint);}
-.plan .plid{font-weight:500;letter-spacing:.12em;}
-.plan .plt{font-weight:400;font-size:15px;}
-.plan .plst{font-weight:500;letter-spacing:.16em;}
-.plan.planlate{border-color:rgba(197,160,89,.45);}
-.plan.planlate .plst{color:var(--salt-brass);}
-.plbody{color:var(--mut);font-size:14px;line-height:1.6;}
 
 /* ---- 12. THE NETWORK, THE MAP, THE CALENDAR, THE METERS ---- */
 .nstream{border-top-color:var(--salt-line);}

@@ -159,23 +159,6 @@ h2 .rule{flex:1;height:1px;background:linear-gradient(90deg,var(--acc) -40%,var(
    hidden until asked for. The threshold is a display heuristic with a visible toggle,
    so its failure mode is a click rather than a wrong number. */
 .dsclead{font-size:13px;color:var(--mut);line-height:1.5;margin-bottom:10px;}
-/* ---- a plan is a headline with the reasoning behind it (v210) ---- */
-.plan{border:1px solid var(--line);border-radius:10px;margin-bottom:7px;background:rgba(0,0,0,.13);}
-.plan>summary{list-style:none;cursor:pointer;padding:9px 12px;display:grid;grid-template-columns:40px 1fr auto auto;gap:11px;align-items:baseline;}
-.plan>summary::-webkit-details-marker{display:none;}
-.plan>summary::marker{content:'';}
-.plan>summary:hover{background:rgba(197,160,89,.06);}
-.plan[open]>summary{border-bottom:1px solid var(--line);}
-.plan .plid{font-size:10px;color:var(--dim);font-weight:700;letter-spacing:.5px;}
-.plan .plt{font-size:13px;font-weight:600;color:var(--ink);}
-.plan .plrm{font-size:11px;color:var(--mut);font-variant-numeric:tabular-nums;white-space:nowrap;}
-.plan .plst{font-size:9px;letter-spacing:.7px;text-transform:uppercase;color:var(--dim);white-space:nowrap;}
-.plan.planlate{border-color:rgba(197,160,89,.45);}
-.plan.planlate .plst{color:var(--gold);}
-.plan.plandone{opacity:.55;}
-.plbody{padding:10px 12px 12px;font-size:12px;color:var(--mut);line-height:1.55;}
-.plfoot{font-size:10px;color:var(--dim);margin-top:9px;}
-@media(max-width:860px){.plan>summary{grid-template-columns:36px 1fr;row-gap:3px;}}
 /* ---- the approach calendar (v208). Replaces a ten-column table nobody could scan. ---- */
 .apwrap{display:grid;grid-template-columns:158px 1fr 158px;gap:11px;align-items:stretch;}
 .apside{background:linear-gradient(160deg,var(--card2),var(--card));border:1px solid var(--line);border-radius:12px;padding:12px 13px;}
@@ -947,7 +930,7 @@ td,th,.dsc,.evo .txt,.n,.rsum,.pend h3{overflow-wrap:break-word;}
 .wrap{position:relative;z-index:1;}
 /* NEVER FROST INSIDE FROST. Children of a pane get flat translucent fills. */
 .card .card,.lcard .card,details.obsec .card,details.rcard .card,.pend .card,
-.apday,.apchip,.plan,.item,.insight{
+.apday,.apchip,.item,.insight{
   -webkit-backdrop-filter:none!important;backdrop-filter:none!important;}
 .insight{box-shadow:none;}
 /* every input is a finger target; its material is the layer's */
@@ -956,7 +939,7 @@ td,th,.dsc,.evo .txt,.n,.rsum,.pend h3{overflow-wrap:break-word;}
 /* GEOMETRY: one radius per class of box. Panes 22, nested 14, pills round. */
 .card,.chartbox,.quotecard,.evo,.pend,.lcard,details.obsec,details.rcard,.apcal,.apside{border-radius:var(--r);}
 .kpi{border-radius:var(--r-sm);}
-.insight,.note,.apday,.plan{border-radius:var(--r-sm);}
+.insight,.note,.apday{border-radius:var(--r-sm);}
 .chip,.sbadge,.viewsw,.navct{border-radius:var(--pill);}
 /* FOCUS. There was none. Every control is now keyboard-reachable with a visible ring. */
 :where(a,button,summary,input,select,textarea,[tabindex]):focus-visible{
@@ -2874,12 +2857,12 @@ h2,.kick,.grouplbl,.tab,.navct,.sub,.sub2,.chip,.tag,.rtag,.etype,.lclabel,.tier
 .apside .apm,.apside .apbig,.appop .apname,.appop td,
 .kpi .l,.kpi .v,.cardh .sub,table,th,td,.lhead,.lrow,.lmove,.lcol,.ldate,.lparty,.ecode,.eref,.lagreed,
 .lof,.lwas,.submar,.actk,.actm,.rchip,.pchip,.sevh .cnt,.obsk,.obsm,.obsc,.obsevh,
-.plan .plid,.plan .plrm,.plan .plst,.plfoot,.jmeta,.evo .v,.qfield label,.qask,.ledsum,.ledbar .ledct,
+.jmeta,.evo .v,.qfield label,.qask,.ledsum,.ledbar .ledct,
 .provbar,.lcorr .clab,.lcorr .cclaim,.iref,.isub,.finpct,.fincap,.mono,.railtitle+.kick,
 .menu button,.stkcolsl,.nchip,.nop,.pend .cd,.pend h3,details.obsec>summary .q,details.obsec>summary .ct,
 details.rcard>summary .rsum,.fintab th,.fintab tr.grp td,.totop,.fabtn,
 input,select,textarea,button{font-family:var(--salt-font-mono);}
-.dsclead,.dsc,.insight,.note,.stand-note,.actt,.actw,.actp,.plt,.plbody,.obst,.obsb,.obsev li,.jtext,
+.dsclead,.dsc,.insight,.note,.stand-note,.actt,.actw,.actp,.obst,.obsb,.obsev li,.jtext,
 .evo .txt,.nsw,.nswhy,.apsub,.byecard p,.qmeta,.cardh,.nsh,details.obsec>summary,
 details.rcard>summary .rname,.kpi .n,.prodhd .sub,.appop .apact,.lcorr .cprose,.lcorr .cnote,
 .cardh{font-family:var(--salt-font-display);}
@@ -3262,7 +3245,7 @@ tbody tr:hover td:not(.l){background:rgba(255,255,255,.03);}
 .pchip.bad{color:var(--salt-ember);border-color:rgba(212,105,76,.55);}
 .rchip{font-size:10.5px;font-weight:500;letter-spacing:.12em;}
 
-/* ---- 11. THE ACTION LIST, THE OBSERVATIONS, THE PLANS ---- */
+/* ---- 11. THE ACTION LIST AND THE OBSERVATIONS (the hand-filed plans left the Whiteboard on 12 Sep 2026) ---- */
 .act{background:var(--salt-glass);border:1px solid var(--salt-line);border-left:2px solid var(--sev,var(--salt-brass));
   box-shadow:inset 0 1px 0 var(--salt-highlight);}
 .actk{font-size:11px;font-weight:500;letter-spacing:.14em;}
@@ -3284,15 +3267,6 @@ details.obs>summary:hover{background:var(--salt-glass);}
 .obsev{border-top-color:var(--salt-line-faint);}
 .obsevh{font-weight:500;letter-spacing:.16em;}
 .obsbtn{font-size:10.5px;}
-.plan{background:var(--salt-glass-faint);border-color:var(--salt-line-faint);}
-.plan>summary:hover{background:var(--salt-glass);}
-.plan[open]>summary{border-bottom-color:var(--salt-line-faint);}
-.plan .plid{font-weight:500;letter-spacing:.12em;}
-.plan .plt{font-weight:400;font-size:15px;}
-.plan .plst{font-weight:500;letter-spacing:.16em;}
-.plan.planlate{border-color:rgba(197,160,89,.45);}
-.plan.planlate .plst{color:var(--salt-brass);}
-.plbody{color:var(--mut);font-size:14px;line-height:1.6;}
 
 /* ---- 12. THE NETWORK, THE MAP, THE CALENDAR, THE METERS ---- */
 .nstream{border-top-color:var(--salt-line);}
@@ -6241,32 +6215,6 @@ function prodSummary(p){
 const QUOTES={salt:()=>supplierQuote, oil:()=>oilQuote};
 const quoteFor=p=>{const f=QUOTES[p||PROD];return f?f():null;};
 
-/* ============ WHITEBOARD: plans, deliberately outside the books ============
-   A plan is an intention, not a transaction. NOTHING here feeds revenue, cost,
-   inventory, receivables or margin, and nothing here is ever inferred into the ledger.
-   A plan becomes a figure only when it is recorded in the Workbench as a real
-   entry. Statuses: committed | idea | done | dropped. Plans added in the browser
-   ride the same queue file tagged mode:'plan', which applyOverlay ignores
-   outright, so a plan cannot book itself by accident. */
-const whiteboard=[
-  /* EMPTIED AT v273, AT HIS INSTRUCTION, AND THE TAB CHANGED JOB WITH IT.
-     Q1 IS ANSWERED AND IT WAS THE DUPLICATE. The 05 Aug queue entry booking 2 unit through
-     CN6-WM for RM250 was the 06 Aug order re-entered. It was never committed, so nothing is
-     reversed and no figure moves by closing it: revenue was never counted twice, the 2 unit
-     never left a inventory, and CN6-WM's turnover stays at RM690 rather than crossing a rebate step
-     it had not earned. That is exactly the outcome the question was raised to protect.
-     THE P-SERIES IS DROPPED WHOLE. P1 to P17 were hand-written plans and every one of them
-     was a reading of the book at a moment that has passed: P4's shrinkage at 12.7% has since been 18.87% and is now 17.18%, P17's leak arithmetic was struck at a 38.23 unit plug against today's 44.56, and
-     P11's reorder trigger has since been built into the Inventory tab where it belongs.
-     A plan that restates a figure goes stale the moment the figure moves, and a stale plan
-     on a desk is worse than no plan because it reads as current.
-     WHAT REPLACES THEM IS observations(), WHICH DERIVES ITSELF. Nothing below this line is
-     typed; every item is recomputed from the ledger on each load, so it cannot go stale and
-     cannot disagree with the tab it came from. This array survives for anything you file by
-     hand that is genuinely NOT derivable: a standing intention, a promise made to someone,
-     a judgement the book cannot see. Those still belong here. Restatements of the book
-     do not. */
-];
 /* ============ THE CHANGELOG LIVES OUTSIDE THE DESK NOW (v177) ============
    176 entries, 191 KB, 27% of this file, and not one of them was ever read on screen:
    it is a record for him and for me, not a tab a trader uses. So it is EXTRACTED
@@ -11767,7 +11715,7 @@ function tabLedger(){
      the design layer's own rule at section 7, and it was the only filled element in the bar:
      brass gradient, a glow and obsidian text, against five dark boxes with a faint border. On a
      bar that is not the main function of the ledger, the eye landed on Clear first. `.ubtn` is
-     the desk's secondary action, the one Record plan and Undo last already wear, and it keeps
+     the desk's secondary action, the one Undo last already wears, and it keeps
      the same tap minimum. The inline font-size went with it: the ghost rule already sets 11px. */
   const toolbar=`<div class="ledbar">
     <input id="ledQ" placeholder="Search party, note, amount, E-code&hellip;" value="${esc(ledF.q)}">
@@ -12728,58 +12676,6 @@ function tabReceivables(){
      <tr class="tot"><td class="l">Total</td><td></td><td>${units(sPenUnits)}</td><td>${fmt0(sPenRM)}</td></tr></tbody></table>`)}`:nothingOpen('all lots paid, nothing in transit and nothing agreed')}`;
 }
 
-/* ============ TAB: WHITEBOARD (plans; no live figure depends on any of this) ============ */
-const PLAN_ST={committed:'Committed',idea:'Idea',done:'Done',dropped:'Dropped'};
-function planQueued(){return queue.filter(x=>x.payload&&x.payload.mode==='plan');}
-function planList(){
-  return whiteboard.concat(planQueued().map(x=>({
-    id:'new',added:(x.at||'').slice(0,10),due:(x.payload.due||null),
-    status:(x.payload.status||'idea'),title:(x.payload.title||x.raw||'(untitled)'),
-    detail:(x.payload.detail||''),worth:(x.payload.worth==null?null:x.payload.worth),_q:true})));
-}
-function planDue(p){
-  if(!p.due||p.status==='done'||p.status==='dropped')return '';
-  const d=dbet(p.due);
-  return d>0?` &middot; due <b>${p.due}</b> <span class="risk">overdue by ${d} day${d===1?'':'s'}</span>`
-       :d===0?` &middot; due <b>${p.due}</b> <span class="attn">today</span>`
-       :` &middot; due <b>${p.due}</b>, in ${-d} day${d===-1?'':'s'}`;
-}
-/* WHAT A PLAN IS WORTH IS A FIELD, NOT A GUESS FROM ITS PROSE (v210).
-   This shipped twice as a regex over the plan text and was wrong both times. Taking the
-   FIRST figure made P17 read RM62.94, a unit cost it quotes in passing, when the plan is
-   worth RM973. Taking the LARGEST made P15 read RM8,950, a cash count it mentions while
-   proposing to draw RM250. Both produced a number that looked computed, sat in a money
-   column and was neither checked nor checkable, which is the exact failure this desk
-   refuses everywhere else: an invented figure is indistinguishable from a counted one.
-   So there is no inference. worth is an explicit optional number on the plan record,
-   entered in the form below, and a plan nobody has priced shows a dash. The dash is
-   information: it says this has not been thought about in money yet. */
-const planWorth=p=>(p.worth==null||p.worth===''||!isFinite(+p.worth))?null:fmt0(+p.worth);
-/* A PLAN IS NOW A HEADLINE WITH THE REASONING FOLDED BEHIND IT (v210). It used to print
-   in full, every plan, every visit: 18 blocks and 16,863 characters, 93% of the tab and
-   the worst density on the desk. The write-up is the asset and none of it is deleted;
-   it is one click away instead, and the summary carries what decides whether to click:
-   what it is, what it is worth, and whether it has slipped. The detail deliberately
-   carries class plbody rather than dsc, or the notes rule would hide it a second time
-   and the click would open an empty box. */
-function planCard(p){
-  const live=p.status!=='done'&&p.status!=='dropped';
-  const d=p.due&&live?dbet(p.due):null;
-  const late=d!=null&&d>0;
-  const rm=planWorth(p);
-  const state=late?`${d}d late`:(d===0?'due today':(d!=null?`in ${-d}d`:(PLAN_ST[p.status]||esc(p.status))));
-  return `<details class="plan${late?' planlate':''}${live?'':' plandone'}"${late?' open':''}>
-    <summary>
-      <span class="plid mono">${esc(p.id==='new'?'NEW':p.id)}</span>
-      <span class="plt">${esc(p.title)}</span>
-      <span class="plrm" title="What you judged this plan to be worth when you filed it. A dash means nobody has priced it yet.">${rm||'&mdash;'}</span>
-      <span class="plst">${state}</span>
-    </summary>
-    <div class="plbody">${p.detail?esc(p.detail):'<i>No detail recorded.</i>'}
-      <div class="plfoot">Added ${esc(p.added)}${planDue(p)}${p._q?' &middot; <span class="attn">queued, not yet filed</span>':''}</div>
-    </div>
-  </details>`;
-}
 /* ============ THE OBSERVATION ENGINE (v273) ============
    THE WHITEBOARD USED TO HOLD WHAT HE TYPED. It now holds what the desk works out for
    itself, and the difference is that a derived item cannot go stale: it is recomputed from
@@ -13414,15 +13310,6 @@ function observations(){
       }
     }
   }catch(e){}
-  /* A PLAN THAT HAS SLIPPED is still an observation, even though it was typed rather than
-     derived: it is the one place the two halves of this tab meet. */
-  try{
-    planList().filter(p=>p.due&&p.status!=='done'&&p.status!=='dropped'&&dbet(p.due)>0).forEach(p=>{
-      add({id:'upkeep:plan:'+p.id,fam:'upkeep',sev:'watch',conf:'measured',rm:null,tab:'plans',
-        title:`Plan ${esc(p.id)} is ${dbet(p.due)} days overdue`,
-        why:esc(p.title),ev:[`due ${esc(p.due)}`,`added ${esc(p.added)}`]});
-    });
-  }catch(e){}
 
   /* ---------- PARITY: THE DESK TESTING ITS OWN PRODUCT SPLIT ---------- */
   try{
@@ -13496,12 +13383,6 @@ function tabPlans(){
       <summary>${OBS_FAM[k].lbl} <span class="q">${OBS_FAM[k].q}</span><span class="ct${L.length?'':' zero'}">${L.length}</span></summary>
       <div style="padding-bottom:12px">${L.map(obsCard).join('')}</div></details>`;};
 
-  /* the plans that survive are the ones nobody could derive: promises, judgements, intentions */
-  const all=planList(),grp=s=>all.filter(p=>p.status===s);
-  const openN=grp('committed').length+grp('idea').length;
-  const sec=s=>{const r=grp(s);return r.length?`<div class="cardh" style="margin:18px 0 8px">${PLAN_ST[s]} <span class="sub">${r.length}</span></div>${r.map(planCard).join('')}`:'';};
-  const isoT=TODAY.toISOString().slice(0,10);
-
   /* v385: SPLIT, NOT SHORTENED, AND THE BRANCH NOBODY RENDERS TODAY WAS ALREADY OVER THE LINE.
      stripMethod cuts an .insight past NOTE_MIN to its FIRST sentence, and here the caveat is the
      second, so the half that says what the count is worth was the half that went. The thin-book
@@ -13531,41 +13412,7 @@ function tabPlans(){
   ${fam('rhythm')}${fam('integrity')}${fam('customer')}${fam('pricing')}${fam('promo')}${fam('upkeep')}
   ${live.length?'':'<div class="dsc" style="margin-top:16px">Nothing to raise. Every rule ran and none of them found anything, which is not the same as nothing being wrong.</div>'}
   ${hushed.length?`<details class="obsec"><summary>Hushed <span class="q">dismissed or snoozed, kept so the decision is visible</span><span class="ct">${hushed.length}</span></summary><div style="padding-bottom:12px">${hushed.map(obsCard).join('')}</div></details>`:''}
-
-  <h2 style="margin-top:26px">Filed by hand <span class="rule"></span></h2>
-  <!-- v273 dropped the P-series: every one of those plans restated the book at a moment that had passed, and the engine above derives all of it live. What belongs here is what the book cannot see. The count is the point of this line, so it carries an id: stripMethod deletes a bare .dsc past the first in scope, and it was deleting this one, count and all. -->
-  <div class="dsc" id="planOpenN" style="margin-bottom:10px">${openN?`${openN} live.`:'Nothing filed.'} A promise, an intention, a judgement with no figure behind it.</div>
-  ${sec('committed')}${sec('idea')}${sec('done')}${sec('dropped')}
-  <div class="card" style="margin-top:14px">
-    <div class="cardh" style="margin-bottom:10px">File a plan <span class="sub">tagged as a plan, so it can never fold itself into a figure</span></div>
-    <div class="qrow" style="margin-bottom:10px">
-      <div class="qfield" style="flex:2"><label>Plan</label><input id="plTitle" placeholder="what you intend to do"></div>
-      <div class="qfield"><label>Status</label><select id="plStatus"><option value="idea">Idea</option><option value="committed">Committed</option><option value="done">Done</option><option value="dropped">Dropped</option></select></div>
-      <div class="qfield"><label>Target date (optional)</label>${dateIn('plDue','',' min="'+isoT+'"')}</div>
-    </div>
-    <div class="qrow" style="margin-bottom:10px">
-      <div class="qfield" style="flex:2"><label>Detail (optional)</label><input id="plDetail" placeholder="numbers, conditions, who it affects"></div>
-      <div class="qfield"><label>Worth in RM (optional)</label><input id="plWorth" type="number" step="1" min="0" placeholder="what it is worth"></div>
-    </div>
-    <button class="ubtn" onclick="planAdd()">Record plan</button>
-    <div id="plOk" class="dsc" style="margin-top:9px"></div>
-  </div>`;
-}
-function planAdd(){
-  const el=i=>document.getElementById(i),ok=el('plOk');
-  const t=((el('plTitle')||{}).value||'').trim();
-  if(!t){if(ok){ok.textContent='Give the plan a title first.';ok.style.color='var(--amber)';}return;}
-  const d=((el('plDetail')||{}).value||'').trim();
-  const st=((el('plStatus')||{}).value||'idea'), due=((el('plDue')||{}).value||'')||null;
-  const wv=((el('plWorth')||{}).value||'').trim(), worth=(wv===''||!isFinite(+wv))?null:+wv;
-  queue.push({at:new Date().toISOString(),type:'PLAN',party:'whiteboard',qty:null,total:null,status:'plan',
-    raw:'Plan: '+t+(worth!=null?' (worth RM'+worth+')':''),payload:{mode:'plan',title:t,detail:d,due:due,status:st,worth:worth}});
-  render();
-  const st2=()=>el('plOk')||ok;
-  st2().textContent='Saving…';st2().style.color='var(--mut)';
-  Promise.resolve(saveQueue()).then(res=>{const o=st2();
-    if(res===false){o.textContent='Held in this tab, but NOT saved to the folder: a download was made instead.';o.style.color='var(--amber)';}
-    else{o.textContent='Recorded as a plan. It touches no figure on this desk.';o.style.color='var(--grn)';}});
+  `;
 }
 /* ============ TAB: CHANGELOG ============ */
 /* tabChangelog() retired at v177: the log left the desk for 04_Docs\changelog.json and
@@ -15118,10 +14965,6 @@ function actions(){
   const qn=qTx().length;
   if(qn)add('soon','queue',`${qn} entr${qn===1?'y':'ies'} queued and not yet in the book`,0,
     'Typed into the Transaction tab and saved to the queue file. Until they are committed, no figure on this desk includes them.','add');
-  /* 10. plans you committed to, past their own date */
-  whiteboard.filter(p=>p.status==='committed'&&p.due&&dbet(p.due)>=0).forEach(p=>
-    add(dbet(p.due)>0?'now':'soon','plan',`${p.id} is due: ${esc(p.title)}`,0,
-      `Committed ${p.added}, due ${p.due}${dbet(p.due)>0?`, ${dbet(p.due)} days late`:', today'}.`,'plans'));
 
   return out.sort((a,b)=>ACTSEV[a.sev].r-ACTSEV[b.sev].r||b.rm-a.rm);
 }
@@ -19538,7 +19381,7 @@ const PART_Q={today:'what needs doing, ranked by the money at stake',
   add:'record an order, an amendment, a count or a loan',
   approve:'the rows drafted from the queue, waiting on a decision',
   orders:'what customers ordered on the statements site, and where each order stands',
-  plans:'the whiteboard: plans, never figures'};
+  plans:'what the desk noticed, from the book on this load'};
 /* the chart and wiring passes each tab needs after its HTML is in the document */
 const PART_DRAW={inventory:()=>drawPerProduct([trackCharts]),
   pricing:()=>{drawPerProduct([wirePricing,drawPriceCharts,drawEarnChart,drawBoardCharts]);pbWire();},
@@ -19566,10 +19409,10 @@ const PART_DRAW={inventory:()=>drawPerProduct([trackCharts]),
    so it holds two leads and two of every note, and keeping the FIRST deleted oil's lead
    sentence outright on all six of them while salt kept both. It now runs once per block.
    TWO, THE FIGURE HALF OF ITS OWN RULE WAS NEVER WRITTEN. See FIGURE above.
-   THREE, A BLOCK SOMETHING ADDRESSES BY ID IS NOT PROSE. planAdd writes into <div id="plOk">,
-   which this deleted, so planAdd threw before saveQueue() and A FILED PLAN WAS NEVER SAVED.
-   One id guard fixes that and every other slot on the desk, rather than one token in one
-   builder. Six blocks are addressed by id today.
+   THREE, A BLOCK SOMETHING ADDRESSES BY ID IS NOT PROSE. The plan form wrote its status into a
+   div this deleted, so it threw before saveQueue() and A FILED PLAN WAS NEVER SAVED (the form
+   left the Whiteboard on 12 Sep 2026). One id guard fixes that and every other slot on the
+   desk, rather than one token in one builder. Six blocks were addressed by id then.
    The policy is untouched: the lead is still cut to one sentence, an insight that has grown
    into an essay is still cut to its first, and method prose carrying no figure still goes. */
 /* v387: A SEGMENTED SWITCHER IS ONE CONTROL AND IT WAS COSTING ONE TAB STOP PER OPTION. Seven
@@ -19627,7 +19470,7 @@ function stripMethod(el){
     const lead=scope.querySelector('.dsclead');
     if(lead){const t=txt(lead);if(t)lead.textContent=cut(t);}
     const blocks=[...scope.querySelectorAll('.dsc,.dsclead,.insight')].filter(b=>
-      !b.closest('table,details,.kpi,.act,.plan,.obs,.qfield')&&!b.querySelector('button,input,select,canvas,table,.kpi')
+      !b.closest('table,details,.kpi,.act,.obs,.qfield')&&!b.querySelector('button,input,select,canvas,table,.kpi')
       &&!b.id&&!FIGURE.test(txt(b)));
     if(blocks.length<2)return;
     const keep=blocks.find(b=>b.classList.contains('dsclead'))||blocks[0];
