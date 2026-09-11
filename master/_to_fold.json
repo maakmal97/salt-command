@@ -1,0 +1,65 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-09-11T17:37:13.741Z",
+   "collection": "sales",
+   "row": {
+    "customer": "CS6-BS",
+    "qty": 1,
+    "total": 130,
+    "cost": 44,
+    "cash": 130,
+    "delivery": 30,
+    "handover": "delivered",
+    "date": "2026-09-12",
+    "deliveredQty": 1,
+    "deliveredOn": "2026-09-12",
+    "paidOn": "2026-09-12",
+    "rev": "R2",
+    "downstream": "CS6-BS-R"
+   },
+   "reasoning": "Sold 1 unit of salt to CS6-BS for RM 130, RM 130/unit. Costed at RM 44/unit from the desk's own inventory cost, so RM 86 on the order at 66.2%. Paid in full and delivered in full on 2026-09-12. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [
+    "Booked to CS6-BS as an R2 downsell, so CS6-BS is not the counterparty on this row and gets no statement from it."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-09-11T17:37:13.741Z",
+    "type": "SELL",
+    "party": "CS6-BS-R",
+    "qty": 1,
+    "total": 130,
+    "status": "paid",
+    "raw": "Sell 1 unit to CS6-BS-R for RM 130 on 2026-09-12, RM 130 cash, 1 unit moved → Completed (R2 via CS6-BS)",
+    "payload": {
+     "mode": "new",
+     "product": "salt",
+     "direction": "SELL",
+     "party": "CS6-BS",
+     "newId": null,
+     "date": "2026-09-12",
+     "qty": 1,
+     "total": 130,
+     "delivery": 30,
+     "freight": 0,
+     "cash": 130,
+     "kg": 1,
+     "assoc": "CS6-BS",
+     "stream": "R2",
+     "downstream": "CS6-BS-R",
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": null,
+     "handover": "delivered",
+     "second": null
+    }
+   },
+   "decidedAt": "2026-09-11T17:38:12.317Z",
+   "decidedBy": "desk"
+  }
+ ]
+}
