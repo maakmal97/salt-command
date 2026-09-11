@@ -1,6 +1,6 @@
 {
-  "v": "v579",
-  "derivedFrom": "d6615a863c58bb63",
+  "v": "v582",
+  "derivedFrom": "34b97c1573c1c477",
   "tables": {
     "sales": {
       "rows": 150,
@@ -448,9 +448,9 @@
           ]
         },
         "settledOn": {
-          "present": 1,
+          "present": 3,
           "of": 3,
-          "optional": true,
+          "optional": false,
           "types": [
             "string"
           ]

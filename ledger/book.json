@@ -37,7 +37,7 @@
       "stated": 60
     }
   },
-  "STATED_STOCK": 33.25,
+  "STATED_STOCK": 26.25,
   "COUNT_ON": {
     "salt": "2026-09-08",
     "oil": "2026-09-09"
@@ -243,8 +243,8 @@
   "lostDemand": [],
   "loans": [
     {"date":"2026-05-12","party":"CS6-PER","valueRM":650,"valueKg":6,"status":"settled","settledOn":"2026-07-14","preOpening":true,"note":"Offset against the package sale; predates the opening count."},
-    {"date":"2026-09-08","party":"CH5-OUG","direction":"in","valueKg":5.5,"valueRM":null,"status":"open","product":"salt","note":"<b>5.5 UNIT OF SALT BORROWED FROM CH5-OUG on 08 Sep, owed back in kind, unit for unit, no date set.</b> Entered on his word in a Code session on 08 Sep 2026. Adds to the inventory while open; when it is returned, mark it settled with the date and roll the stated inventory down by 5.5 in the same fold."},
-    {"date":"2026-09-08","party":"CA11-SEN","direction":"in","valueKg":1.5,"valueRM":null,"status":"open","product":"salt","note":"<b>1.5 UNIT OF SALT BORROWED FROM CA11-SEN on 08 Sep, owed back in kind, unit for unit, no date set.</b> Entered on his word in a Code session on 08 Sep 2026. Adds to the inventory while open; when it is returned, mark it settled with the date and roll the stated inventory down by 1.5 in the same fold."}
+    {"date":"2026-09-08","party":"CH5-OUG","direction":"in","valueKg":5.5,"valueRM":null,"status":"settled","product":"salt","note":"<b>5.5 UNIT OF SALT BORROWED FROM CH5-OUG on 08 Sep, owed back in kind, unit for unit, no date set.</b> Entered on his word in a Code session on 08 Sep 2026. Adds to the inventory while open; when it is returned, mark it settled with the date and roll the stated inventory down by 5.5 in the same fold. <b>RETURNED ON 11 SEP, ON HIS WORD.</b> The 5.5 unit went back to CH5-OUG in kind, unit for unit, so the loan is settled and the stated inventory rolled down by it at v583.","settledOn":"2026-09-11"},
+    {"date":"2026-09-08","party":"CA11-SEN","direction":"in","valueKg":1.5,"valueRM":null,"status":"settled","product":"salt","note":"<b>1.5 UNIT OF SALT BORROWED FROM CA11-SEN on 08 Sep, owed back in kind, unit for unit, no date set.</b> Entered on his word in a Code session on 08 Sep 2026. Adds to the inventory while open; when it is returned, mark it settled with the date and roll the stated inventory down by 1.5 in the same fold. <b>RETURNED ON 11 SEP, ON HIS WORD.</b> The 1.5 unit went back to CA11-SEN in kind, unit for unit, so the loan is settled and the stated inventory rolled down by it at v583.","settledOn":"2026-09-11"}
   ],
   "supplierReceivable": {
     "party": "SF6-KLC",
@@ -470,6 +470,7 @@
       "RETIRED AT v549 on 2026-09-09, his instruction. The key held one hand-typed lot: 50 unit by 2026-08-28, stated on the 24th. He read it on 9 September with the date twelve days gone and four lots landed since (25 unit on 26 Aug, 25 on 31 Aug, 25 on 03 Sep and 50 on 08 Sep), and said he generally has no information on when he purchases. The Sourcing section is now about the CURRENT lot, and the cadence is measured off the book rather than typed. One standing fact from the retired basis is kept here because it is not a plan: the purchase ceiling of RM4,500 resets on the 28th of each month and anything beyond it comes out of rolling cash. The rest was the 24 Aug reasoning, that the 100 unit tier was the recommendation and he took the 50, at a landed RM45.20 a unit against RM43.60."
     ],
     "STATED_STOCK": [
+      "ROLLED AT v583: 5.5 unit to CH5-OUG (the 08 Sep loan returned) on 2026-09-11, 1.5 unit to CA11-SEN (the 08 Sep loan returned) on 2026-09-11, so 33.25 less 7 is 26.25. A ROLL AND NOT A COUNT; COUNT_ON is untouched.",
       "ROLLED AT v576: 1 unit to CN6-WM on 2026-09-11, so 34.25 less 1 is 33.25. A ROLL AND NOT A COUNT; COUNT_ON is untouched. The 1 unit went out against stock counted on 8 Sep, with 8.5 unit promised and the reorder mark at 15 still clear.",
       "ROLLED AT v575: 5 unit to CR3-DAM on 2026-09-10, so 39.25 less 5 is 34.25. A ROLL AND NOT A COUNT; COUNT_ON is untouched. The 5 unit move dated 10 Sep is marked not landed, so the stated position stays at 39.25 unit on the salt count of 8 Sep. Loans in of 5.5 unit from CH5-OUG and 1.5 unit from CA11-SEN remain open, with 8.5 unit promised.",
       "ROLLED AT v574: 1 unit to CB7-TBC on 2026-09-10, so 40.25 less 1 is 39.25. A ROLL AND NOT A COUNT; COUNT_ON is untouched. The 1 unit to CB7-TBC on 10 Sep is not yet landed against the count, so stated stock holds at 40.25 unit.",

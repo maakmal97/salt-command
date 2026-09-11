@@ -1,6 +1,6 @@
 {
- "v": "v579",
- "stamped": "11 Sep 2026, 09:35 KL",
+ "v": "v582",
+ "stamped": "11 Sep 2026, 19:41 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -41,7 +41,7 @@
     "stated": 60
    }
   },
-  "STATED_STOCK": 33.25,
+  "STATED_STOCK": 26.25,
   "COUNT_ON": {
    "salt": "2026-09-08",
    "oil": "2026-09-09"
@@ -3594,9 +3594,10 @@
     "direction": "in",
     "valueKg": 5.5,
     "valueRM": null,
-    "status": "open",
+    "status": "settled",
     "product": "salt",
-    "note": "<b>5.5 UNIT OF SALT BORROWED FROM CH5-OUG on 08 Sep, owed back in kind, unit for unit, no date set.</b> Entered on his word in a Code session on 08 Sep 2026. Adds to the inventory while open; when it is returned, mark it settled with the date and roll the stated inventory down by 5.5 in the same fold."
+    "note": "<b>5.5 UNIT OF SALT BORROWED FROM CH5-OUG on 08 Sep, owed back in kind, unit for unit, no date set.</b> Entered on his word in a Code session on 08 Sep 2026. Adds to the inventory while open; when it is returned, mark it settled with the date and roll the stated inventory down by 5.5 in the same fold. <b>RETURNED ON 11 SEP, ON HIS WORD.</b> The 5.5 unit went back to CH5-OUG in kind, unit for unit, so the loan is settled and the stated inventory rolled down by it at v583.",
+    "settledOn": "2026-09-11"
    },
    {
     "date": "2026-09-08",
@@ -3604,9 +3605,10 @@
     "direction": "in",
     "valueKg": 1.5,
     "valueRM": null,
-    "status": "open",
+    "status": "settled",
     "product": "salt",
-    "note": "<b>1.5 UNIT OF SALT BORROWED FROM CA11-SEN on 08 Sep, owed back in kind, unit for unit, no date set.</b> Entered on his word in a Code session on 08 Sep 2026. Adds to the inventory while open; when it is returned, mark it settled with the date and roll the stated inventory down by 1.5 in the same fold."
+    "note": "<b>1.5 UNIT OF SALT BORROWED FROM CA11-SEN on 08 Sep, owed back in kind, unit for unit, no date set.</b> Entered on his word in a Code session on 08 Sep 2026. Adds to the inventory while open; when it is returned, mark it settled with the date and roll the stated inventory down by 1.5 in the same fold. <b>RETURNED ON 11 SEP, ON HIS WORD.</b> The 1.5 unit went back to CA11-SEN in kind, unit for unit, so the loan is settled and the stated inventory rolled down by it at v583.",
+    "settledOn": "2026-09-11"
    }
   ],
   "supplierReceivable": {
@@ -3841,7 +3843,7 @@
   ],
   "QUEUE_COMMITTED": "2026-09-11T00:43:04.221Z",
   "PRICING": {
-   "takenAt": "2026-09-11T01:35:30.069Z",
+   "takenAt": "2026-09-11T12:16:54.030Z",
    "sizes": [
     0.5,
     1,
@@ -4297,10 +4299,10 @@
      ]
     }
    },
-   "v": "v579"
+   "v": "v582"
   },
   "OPEN": {
-   "at": "2026-09-11T01:35:30.164Z",
+   "at": "2026-09-11T12:16:54.074Z",
    "count": 10,
    "byKey": {
     "CH6-SET|2026-09-11|120": {
@@ -4471,10 +4473,10 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 33.25,
-     "free": 33.25,
+     "onHand": 26.25,
+     "free": 26.25,
      "owedOut": 0,
-     "coverDays": 6.4,
+     "coverDays": 5.1,
      "rate": 5.16,
      "owedToYou": 862,
      "promised": 11.5,
@@ -4496,7 +4498,7 @@
     "salt": "2026-09-08",
     "oil": "2026-09-09"
    },
-   "v": "v579"
+   "v": "v582"
   }
  }
 }

@@ -8242,6 +8242,12 @@ section("v527: borrow and lend on the phone");
   const { draftRow: draftL } = await import("../src/drafter.js");
   const { plan: planL, apply: applyL } = await import("../tools/fold.mjs");
   const bkL = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  /* v583: THE OPEN LOAN IS FORCED, NOT READ OFF THE BOOK. This leaned on the live book holding one,
+     which stayed true only until the two 08 Sep loans went back on 11 Sep: a correct fold then failed
+     the check below and threw on lender.party. What the section proves is the drafter naming an
+     existing open loan, so the loan it measures against is its own, whatever the book holds. */
+  bkL.loans = (bkL.loans || []).filter((l) => !(l.direction === "in" && l.status !== "settled"))
+    .concat([{ date: "2026-09-08", party: "CH5-OUG", direction: "in", valueKg: 5.5, valueRM: null, status: "open", product: "salt", note: "fixture: the open loan this section measures against" }]);
   const lender = bkL.loans.find((l) => l.direction === "in" && l.status !== "settled");
   ok(lender, "the book carries an open loan in to measure against (" + (lender && lender.party) + ")");
   const mirror = { version: "vX", sales: bkL.sales, purchases: bkL.purchases, state: { roster: bkL.roster, loans: bkL.loans, OPEN: { position: { salt: { onHand: 1, owedOut: 8.5, promised: 0 } } } }, pricing: null };

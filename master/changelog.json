@@ -1,5 +1,17 @@
 [
  {
+  "v": "v583",
+  "d": "11 Sep 2026",
+  "t": "BOTH BORROWED LOTS GO BACK, AND THE INVENTORY ROLLS DOWN BY 7",
+  "n": [
+   "<b>HIS WORD, 11 SEP 2026: both lots borrowed in on 08 Sep have been returned, today.</b> CH5-OUG's 5.5 unit and CA11-SEN's 1.5 unit went back in kind, unit for unit. Both loans are settled on 11 Sep and the 7 unit leave the stated inventory: 33.25 less 7 is <b>26.25</b>. A roll and not a count, so COUNT_ON stays at 08 Sep.",
+   "<b>BY HAND, BECAUSE THERE IS NO ROAD YET.</b> The fold's loan road only appends a loan; nothing settles one, and the Borrow or lend pane says so in terms. So it was written exactly as the fold would write a loan movement: the loans marked settled with the date, the same ROLLED sentence on the stated inventory, and the book written by <code>writeBookFile</code> so it stays one row per line. <code>ledger/ledger.json</code> is regenerated with it.",
+   "<b>BOTH READERS AGREE AFTERWARDS.</b> <code>loanInUnits</code> counts a borrowed loan only while it is open, so the ledger walk drops the 7 unit by itself, and the stated shelf rolls by the same 7.",
+   "<b>FOUND FOR THE LOAN FOLD THAT FOLLOWS.</b> The lent-out side has no status filter: <code>loanOutUnits</code> and the Inventory walk count every loan out, settled or not, so a repaid loan out would keep reading as lent. Both of today's loans were borrowed, so nothing on the book is touched by it; the repay road will need the filter.",
+   "<b>AND ONE TEST THAT READ THE LIVE BOOK NOW CARRIES ITS OWN LOAN.</b> The v527 borrow-and-lend section found its open loan by searching the live book, which held one only until these two went back: the correct fold failed its first check and threw on <code>lender.party</code>. It was run once without the change to prove the break, then given a fixture open loan of its own, so what it measures no longer depends on what the book happens to hold."
+  ]
+ },
+ {
   "v": "v582",
   "d": "11 Sep 2026",
   "t": "THE DEMAND YOU COULD NOT SERVE CARD LEAVES CUSTOMERS",
