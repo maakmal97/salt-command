@@ -1,6 +1,6 @@
 {
- "v": "v591",
- "stamped": "12 Sep 2026, 01:44 KL",
+ "v": "v592",
+ "stamped": "12 Sep 2026, 01:54 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -41,7 +41,7 @@
     "stated": 60
    }
   },
-  "STATED_STOCK": 25.25,
+  "STATED_STOCK": 25.19,
   "COUNT_ON": {
    "salt": "2026-09-08",
    "oil": "2026-09-09"
@@ -3538,6 +3538,22 @@
     "downstream": "CS6-BS-R",
     "note": "<b>SALT SELL DATED 12 SEP, PAID AND DELIVERED THE SAME DAY.</b> SELL to CS6-BS, 1 unit for RM130 with RM30 carriage in that total and RM100 of goods, RM130 cash in, 1 unit moved, delivered and paid on 12 Sep, so nothing is left outstanding on the row. The total clears the RM56.21 floor for 1 unit, sits RM10 above the RM120 ask and RM20 under the RM150 ceiling. CS6-BS has 9 prior orders, a median rate of RM100, a range of RM11 to RM126.67, RM110 outstanding before this, 1.94 units on credit against a cap of 2 and nothing defaulted. Cost is the inventory's own RM44 a unit. The drafter flagged the booking to CS6-BS as an R2 downsell, so that code is not the counterparty and gets no statement from this row; the figures do not speak to that flag.",
     "rid": "s151"
+   },
+   {
+    "customer": "CS6-BS",
+    "qty": 0.06,
+    "total": 2.64,
+    "cost": 2.64,
+    "cash": 0,
+    "settledRM": 2.64,
+    "rebate": true,
+    "rebateKg": 0.06,
+    "goodwill": true,
+    "deliveredQty": 0.06,
+    "deliveredOn": "2026-09-12",
+    "date": "2026-09-12",
+    "note": "<b>SALT REDEMPTION DATED 12 SEP, SETTLED BY REWARD, NO CASH IN.</b> CS6-BS takes 0.06 unit free, RM2.64 of goods, RM2.64 settled by the reward and RM0 cash, 0.06 unit moved and delivered on 12 Sep, nothing outstanding on the row. Booked as cost and not revenue on his ruling of 11 Sep 2026, the row carrying goodwill as well as rebate. The RM2.64 is under the RM3.37 floor for 0.06 unit and under the RM10 ask and RM10 ceiling. CS6-BS has 10 orders, a median rate of RM100, a range of RM11 to RM126.67, nothing outstanding before, 1 unit on credit against a cap of 2 and nothing defaulted. Cost is the inventory's own RM44 a unit. The drafter flagged the 0.06 unit earned and unredeemed balance (1 earned, 0.94 applied) as the desk's word, not checkable here; the figures do not answer that flag.",
+    "rid": "s152"
    }
   ],
   "contacts": [
@@ -3868,9 +3884,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-11T17:37:39.318Z",
+  "QUEUE_COMMITTED": "2026-09-11T17:53:08.325Z",
   "PRICING": {
-   "takenAt": "2026-09-11T17:44:26.004Z",
+   "takenAt": "2026-09-11T17:54:34.110Z",
    "sizes": [
     0.5,
     1,
@@ -4030,9 +4046,9 @@
        "attrib": 1,
        "shrinkRate": 0.0672016508082082,
        "avgDel": {
-        "n": 133,
-        "kg": 342.95,
-        "mean": 2.5786
+        "n": 134,
+        "kg": 343.01,
+        "mean": 2.5598
        }
       },
       "policy": {
@@ -4326,10 +4342,10 @@
      ]
     }
    },
-   "v": "v591"
+   "v": "v592"
   },
   "OPEN": {
-   "at": "2026-09-11T17:44:26.099Z",
+   "at": "2026-09-11T17:54:34.170Z",
    "count": 9,
    "byKey": {
     "CH6-SET|2026-09-11|120": {
@@ -4483,8 +4499,8 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 25.25,
-     "free": 25.25,
+     "onHand": 25.19,
+     "free": 25.19,
      "owedOut": 0,
      "coverDays": 5.1,
      "rate": 4.95,
@@ -4508,7 +4524,7 @@
     "salt": "2026-09-08",
     "oil": "2026-09-09"
    },
-   "v": "v591"
+   "v": "v592"
   }
  }
 }
