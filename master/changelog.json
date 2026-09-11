@@ -1,5 +1,18 @@
 [
  {
+  "v": "v581",
+  "d": "11 Sep 2026",
+  "t": "SELF-USE OR LOSS, TURNED AWAY AND FOLLOW-UP LEAVE THE ENTER FORM",
+  "n": [
+   "<b>HIS INSTRUCTION, 11 SEP 2026, WITH HIS REASONS.</b> Self use and loss are read from the counts already: the gap between the ledger and what was counted books as self-use, and the count always wins, so a form for typing it in again was a second road to one figure. A turned-away sale is at most something to derive from a cancelled order. A follow-up is not needed on this desk at all. The three modes leave the switch, with their panes, their previews and their records.",
+   "<b>WHAT STAYS, AND WHY.</b> Every row already on the book, and every view that reads one: the self-use split on Inventory, the turned-away table on Customers and the payload beside it. The drafter and the fold <b>keep</b> their loss and lost-sale roads, because a phone offline on an old build can still queue one, and v580 found that an entry the drafter refuses is dropped in silence on the next fold.",
+   "<b>COPY MAY POINT ONLY AT A CONTROL THAT EXISTS.</b> Inventory told him to record under Self-use or loss, Customers told him to log a turned-away sale under Enter, and the Enter part described itself by all three. Each now says what is true. <b>Today raises no follow-up call</b>: that call read rows nothing can write any more, so it would have been a standing item on the badge v580 had just made honest, with no visit able to clear it.",
+   "<b>FOUND IN THE SWEEP, AND GONE WITH IT.</b> Sixteen field ids still wired to listeners, the follow-up party list, and four follow-up helpers with no reader left: <code>CONTACT_HOW</code>, <code>CONTACT_OUT</code>, <code>lastContact</code> and <code>contactsDue</code>. <code>LOST_LABEL</code> stays, because it still labels the turned-away table.",
+   "<b>OPEN, FOR HIS WORD.</b> The turned-away card on Customers now has no writer and the book holds no rows in it, so it will read “Nothing recorded” until turned-away sales are derived from cancelled orders, which is his idea and is not built.",
+   "<b>PROVED ON THE RENDERED FORM.</b> Seven assertions, read off the mode switch as it draws rather than off the source, with a follow-up ten days overdue forced onto the book so the Today check can fail at all: the live book holds none with a date. Six mutations, each reddening its own."
+  ]
+ },
+ {
   "v": "v580",
   "d": "11 Sep 2026",
   "t": "A COUNT BADGE COUNTS EACH THING ONCE, ON TODAY AND ON ENTER",

@@ -68,7 +68,7 @@ document.addEventListener('visibilitychange',function(){
    localStorage before it posts anything and the load reads it straight back.
    The same tick retries a held entry, which is what gets a phone write to the cloud
    without waiting for the next open. */
-var SALT_BUILD_ID="99b2cd4006750d88";
+var SALT_BUILD_ID="5ce0751ce5ee1ec4";
 var SALT_REV_MS=10000;
 (function(){
   var chip=null,timer=null;
@@ -5892,13 +5892,8 @@ const LOST_LABEL={nostock:'no stock',price:'would not pay the price',credit:'ref
    noreply because saying hello is not an answer, and a name stays on Reconnect until it
    ORDERS, so these three are still listed, now with the follow-up column filled. */
 /* contacts: declared in the BOOK block near the top of this script, generated from ledger/book.json (v339). */
-const CONTACT_HOW={call:'called',message:'messaged',visit:'visited',other:'contacted'};
-const CONTACT_OUT={ordered:'ordered',later:'asked to be tried later',no:'not interested',noreply:'no reply'};
-/* the most recent word with a party, and every promise whose date has arrived */
-const lastContact=id=>contacts.filter(c=>c.party===id).sort((a,b)=>{const x=a.date||'',y=b.date||'';return x<y?1:x>y?-1:0;})[0]||null;
-const contactsDue=()=>contacts.filter(c=>c.next&&dbet(c.next)>=0&&c.outcome!=='no')
-  .filter(c=>{const l=lastContact(c.party);return l&&l.date===c.date;})   // superseded by a later call
-  .sort((a,b)=>a.next<b.next?-1:1);
+/* v581: the Follow-up mode left the desk on his instruction of 11 Sep 2026, and with it the words it
+   printed and the two readers that raised a call on Today. The rows stay on the book as data. */
 /* PDPA: real names are NOT stored here. Transactions carry SLT IDs directly.
    Real names live only inside NAME_VAULT below, AES-GCM encrypted under a
    passphrase you set in your browser; they never appear in this source. */
@@ -6318,7 +6313,9 @@ const whiteboard=[
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{"v": "v580", "d": "11 Sep 2026", "t": "A COUNT BADGE COUNTS EACH THING ONCE, ON TODAY AND ON ENTER", "n": ["<b>HIS REPORT, 11 SEP 2026: the badges counted one thing as two.</b> On Today a breach was counted once as a breach and again inside the rule row that names it. v341 added the breaches to the NOW items, but <code>actions()</code> step 5 builds its RULE rows FROM those same breaches, grouped by party, and marks every one of them now. Measured the same morning: <b>nine on the badge against the five items Today lists</b>. The badge is the NOW list the page shows, which already carries every breach, so the number on the rail is the number of things a visit finds.", "<b>ON ENTER, ONE ENTRY WAS COUNTED TWICE WHILE IT WAITED.</b> An entry queued on the phone stays in <code>qTx()</code> until the fold has passed it, and once the cloud drafter drafts it the same entry is also in <code>AP_DRAFTS</code>, so between the draft and the approval it was counted in both. <b>A draft's id IS the entry's <code>at</code></b>, read off D1 rather than assumed, so the union on that key counts each entry once at every stage: drafted and waiting on a tap, approved and waiting to go live, or refused and waiting on him. Customer orders placed on the statements site stay a term of their own until one is done and queued.", "<b>THE PHONE'S PUSH BANNER WAS CHECKED AND IS CLEAN.</b> It names four things, rows waiting for approval, shelves not counted, entries refused and customer orders, as separate phrases rather than one summed number, and the four sets do not overlap: an entry is drafted or refused, never both, and an order is placed until it is done.", "<b>FOUND IN PASSING, AND IT IS THE NEXT FOLD: A REFUSED ENTRY IS DROPPED IN SILENCE.</b> His Redeem for CR3-DAM, pressed at 07:01 KL a minute after v577 made the unit real, was refused at 07:09 because the Redeem button sends no payload and the drafter refuses an entry without one. When v578's fold moved the watermark past it, the refusal self-cleaned and the phone cleared the entry from its queue as if it had been committed. Nothing on the book or the phone records the attempt. The unit itself is not lost, since the engine still shows it earned and unredeemed, but the request is. Every Redeem, Rebate offset, Rename and follow-up on the cloud chain has met the same end, and giving each a road to Approve is the fold that follows this one.", "<b>PROVED WITH BOTH STATES FORCED.</b> Ten assertions, each proved red by putting the old formula back: a stubbed breach makes the old Today sum visibly wrong, and one entry placed in both the queue and the drafts makes the old Enter sum count it twice. Whether the live book happens to hold either state is the calendar's business and not the test's, so neither is read off the desk."]},{"v":"v579","d":"11 Sep 2026","t":"A SECOND ORDER FROM CF5-WM AT RM110 INCLUDING CARRIAGE, PENDING UNTIL SOMETHING MOVES","n":["<b>ONE ROW FOLDED, A SALT SELL TO CF5-WM.</b> One unit at RM110 total on 11 Sep, RM10 of that carriage, so RM100 of goods. Nothing was paid and nothing moved, so the row sits pending and draws no stock and books no revenue for now. The drafter raised no flags and the queued entry matched the mirror, so the fold went in as drafted with no amendment and no count attached.","<b>THE INVENTORY DID NOT MOVE.</b> Stock stands at 33.25 units on the salt count of 8 Sep, cost held at RM44 a unit against a replacement of RM46, with 10.5 units promised, nothing owed out and the reorder mark at 15. The two loans in, 5.5 units from CH5-OUG and 1.5 units from CA11-SEN, both dated 8 Sep, stay open and untouched by this fold."]},
+const evolution=[{"v":"v581","d":"11 Sep 2026","t":"SELF-USE OR LOSS, TURNED AWAY AND FOLLOW-UP LEAVE THE ENTER FORM","n":["<b>HIS INSTRUCTION, 11 SEP 2026, WITH HIS REASONS.</b> Self use and loss are read from the counts already: the gap between the ledger and what was counted books as self-use, and the count always wins, so a form for typing it in again was a second road to one figure. A turned-away sale is at most something to derive from a cancelled order. A follow-up is not needed on this desk at all. The three modes leave the switch, with their panes, their previews and their records.","<b>WHAT STAYS, AND WHY.</b> Every row already on the book, and every view that reads one: the self-use split on Inventory, the turned-away table on Customers and the payload beside it. The drafter and the fold <b>keep</b> their loss and lost-sale roads, because a phone offline on an old build can still queue one, and v580 found that an entry the drafter refuses is dropped in silence on the next fold.","<b>COPY MAY POINT ONLY AT A CONTROL THAT EXISTS.</b> Inventory told him to record under Self-use or loss, Customers told him to log a turned-away sale under Enter, and the Enter part described itself by all three. Each now says what is true. <b>Today raises no follow-up call</b>: that call read rows nothing can write any more, so it would have been a standing item on the badge v580 had just made honest, with no visit able to clear it.","<b>FOUND IN THE SWEEP, AND GONE WITH IT.</b> Sixteen field ids still wired to listeners, the follow-up party list, and four follow-up helpers with no reader left: <code>CONTACT_HOW</code>, <code>CONTACT_OUT</code>, <code>lastContact</code> and <code>contactsDue</code>. <code>LOST_LABEL</code> stays, because it still labels the turned-away table.","<b>OPEN, FOR HIS WORD.</b> The turned-away card on Customers now has no writer and the book holds no rows in it, so it will read “Nothing recorded” until turned-away sales are derived from cancelled orders, which is his idea and is not built.","<b>PROVED ON THE RENDERED FORM.</b> Seven assertions, read off the mode switch as it draws rather than off the source, with a follow-up ten days overdue forced onto the book so the Today check can fail at all: the live book holds none with a date. Six mutations, each reddening its own."]},
+
+{"v": "v580", "d": "11 Sep 2026", "t": "A COUNT BADGE COUNTS EACH THING ONCE, ON TODAY AND ON ENTER", "n": ["<b>HIS REPORT, 11 SEP 2026: the badges counted one thing as two.</b> On Today a breach was counted once as a breach and again inside the rule row that names it. v341 added the breaches to the NOW items, but <code>actions()</code> step 5 builds its RULE rows FROM those same breaches, grouped by party, and marks every one of them now. Measured the same morning: <b>nine on the badge against the five items Today lists</b>. The badge is the NOW list the page shows, which already carries every breach, so the number on the rail is the number of things a visit finds.", "<b>ON ENTER, ONE ENTRY WAS COUNTED TWICE WHILE IT WAITED.</b> An entry queued on the phone stays in <code>qTx()</code> until the fold has passed it, and once the cloud drafter drafts it the same entry is also in <code>AP_DRAFTS</code>, so between the draft and the approval it was counted in both. <b>A draft's id IS the entry's <code>at</code></b>, read off D1 rather than assumed, so the union on that key counts each entry once at every stage: drafted and waiting on a tap, approved and waiting to go live, or refused and waiting on him. Customer orders placed on the statements site stay a term of their own until one is done and queued.", "<b>THE PHONE'S PUSH BANNER WAS CHECKED AND IS CLEAN.</b> It names four things, rows waiting for approval, shelves not counted, entries refused and customer orders, as separate phrases rather than one summed number, and the four sets do not overlap: an entry is drafted or refused, never both, and an order is placed until it is done.", "<b>FOUND IN PASSING, AND IT IS THE NEXT FOLD: A REFUSED ENTRY IS DROPPED IN SILENCE.</b> His Redeem for CR3-DAM, pressed at 07:01 KL a minute after v577 made the unit real, was refused at 07:09 because the Redeem button sends no payload and the drafter refuses an entry without one. When v578's fold moved the watermark past it, the refusal self-cleaned and the phone cleared the entry from its queue as if it had been committed. Nothing on the book or the phone records the attempt. The unit itself is not lost, since the engine still shows it earned and unredeemed, but the request is. Every Redeem, Rebate offset, Rename and follow-up on the cloud chain has met the same end, and giving each a road to Approve is the fold that follows this one.", "<b>PROVED WITH BOTH STATES FORCED.</b> Ten assertions, each proved red by putting the old formula back: a stubbed breach makes the old Today sum visibly wrong, and one entry placed in both the queue and the drafts makes the old Enter sum count it twice. Whether the live book happens to hold either state is the calendar's business and not the test's, so neither is read off the desk."]},{"v":"v579","d":"11 Sep 2026","t":"A SECOND ORDER FROM CF5-WM AT RM110 INCLUDING CARRIAGE, PENDING UNTIL SOMETHING MOVES","n":["<b>ONE ROW FOLDED, A SALT SELL TO CF5-WM.</b> One unit at RM110 total on 11 Sep, RM10 of that carriage, so RM100 of goods. Nothing was paid and nothing moved, so the row sits pending and draws no stock and books no revenue for now. The drafter raised no flags and the queued entry matched the mirror, so the fold went in as drafted with no amendment and no count attached.","<b>THE INVENTORY DID NOT MOVE.</b> Stock stands at 33.25 units on the salt count of 8 Sep, cost held at RM44 a unit against a replacement of RM46, with 10.5 units promised, nothing owed out and the reorder mark at 15. The two loans in, 5.5 units from CH5-OUG and 1.5 units from CA11-SEN, both dated 8 Sep, stay open and untouched by this fold."]},
 
 {"v":"v578","d":"11 Sep 2026","t":"TWO PENDING SALT ROWS DATED 11 SEP, NOTHING PAID AND NOTHING MOVED","n":["<b>WHAT WAS FOLDED.</b> Two new salt sells dated 11 Sep, both agreed on the day and both pending: 1 unit to CH6-SET at RM120 with RM10 delivery, and 1 unit to CC5-OKR at RM90 collected. Neither carries cash and neither moved a unit, so neither draws stock nor books revenue. Both sit on the 1 unit ladder with a floor of RM56.21, an ask of RM120 and a ceiling of RM150.","<b>WHAT WAS UNUSUAL, AND WHAT THE INVENTORY DID.</b> CH6-SET lands exactly on the RM120 ask and on its own median; CC5-OKR lands RM30 under the ask with RM90 already outstanding and 1 unit on credit against a cap of 1, after a cancelled row at the same terms on 08 Sep. The drafter raised no flags on either. Both are costed at the inventory's own RM44 a unit, and stock stands unmoved at 33.25 units."]},
 
@@ -6706,7 +6703,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='11 Sep 2026, 12:18 KL';
+const LAST_UPDATED='11 Sep 2026, 17:12 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -9002,9 +8999,8 @@ function tabOverview(){
   /* v401: FOUR TABLES WENT TO THE VIEW THAT OWNS THEM, and this is why nothing here
      replaces them. Key accounts, Reconnect, Partner performance and Reseller milestones
      were this part restating the Customers view: the sortable database, the approach
-     board and the reseller cards each carry the same subject in full, and Follow-ups due
-     was contactsDue() a second time, since actions() already puts every one of them on
-     Today as a Call. They were also the widest things on the part. Latest ledger stays
+     board and the reseller cards each carry the same subject in full. Follow-ups due went
+     with the Follow-up mode at v581. They were also the widest things on the part. Latest ledger stays
      because three rows IS the headline this part promises, not another view in miniature. */
   /* ============ THE REGISTER LEADS (v385) ============
      This part is declared as "every rule the desk trades by, and the register of what is
@@ -10339,7 +10335,7 @@ function tabInventory(){
         <div class="kpi r"><div class="l">At cost</div><div class="v">${fmt0(selfUse*wavgBuy)}</div><div class="n">at the ${fmt(wavgBuy)}/unit average</div></div>
         <div class="kpi p"><div class="l">Of gross margin</div><div class="v">${mar}</div><div class="n">${grossMargin>0.009?'of every ringgit the desk has earned':'no margin yet to measure it against'}</div></div>
       </div>
-      <div class="dsc" style="margin-top:9px">Record what you know under Self-use or loss on <button class="navlink" onclick="switchTab('add')">Transaction &rarr;</button>. The count still wins, so nothing here moves a figure; it splits the plug into the part you chose and the part you lost.</div>`;})()}</div>
+      <div class="dsc" style="margin-top:9px">Self-use and loss are read from the counts: the gap between the ledger and what was counted is the figure above, and the count always wins.</div>`;})()}</div>
   <div class="insight" style="margin-top:10px">${(()=>{const h=+(buyUnits+op.qty).toFixed(2);
     /* v385, HIS POINT ON 27 Aug AND IT IS ARITHMETIC RATHER THAN PROGRESS. pxShrinkRate
        divides by everything handled, so the 25 unit that landed on the 26th took the charged
@@ -15052,9 +15048,9 @@ function actions(){
     const pos=[...new Set(xs.map(x=>esc(x.what)))].join(' &middot; ');
     add('now','rule',`${ID(who)} breaks ${xs.length} rule${xs.length===1?'':'s'}`,0,
       `<div class="rchips">${chips}</div><div class="actp">${pos}</div>`,'overview');});
-  /* 6. promises you made to people */
-  contactsDue().forEach(cd=>add(dbet(cd.next)>0?'now':'soon','call',`Follow up ${ID(cd.party)}`,0,
-    `Promised for ${cd.next}${dbet(cd.next)>0?`, ${dbet(cd.next)} days late`:', today'}. Last spoke ${cd.date}, ${CONTACT_OUT[cd.outcome]}.`,'concentration'));
+  /* 6. v581: no follow-up is raised here. His instruction of 11 Sep 2026 retired the Follow-up mode
+     as not needed on this desk, and a call raised from rows nothing can write any more would be a
+     standing item on Today that no visit could clear. */
   /* ============ 7. QUIET CUSTOMERS, AS ONE LINE (v257) ============
      This printed a card per name: five of them, each with a headline, a sentence of history,
      a quote, a value and a button, to say a thing that is one sentence long. Today is the tab
@@ -15948,7 +15944,7 @@ function tabConcentration(){
       +ld.map(r=>`<tr><td class="l">${r.date}</td><td class="l mono">${r.party?ID(r.party):'walk-up'}</td><td>${units(r.kg)}</td><td>${fmt0(r.rm)}</td><td>${r.kg>0&&r.rm>0?fmt(r.rm/r.kg):'&mdash;'}</td><td class="l">${LOST_LABEL[r.why]||r.why}${r.note?' &middot; '+esc(r.note):''}</td></tr>`).join('')
       +`<tr class="tot"><td class="l" colspan="2">Total turned away</td><td>${units(ldUnits)}</td><td>${fmt0(ldRM)}</td><td></td><td class="l">${ldStock>0.009?`${units(ldStock)} of it for want of inventory`:'none for want of stock'}</td></tr>`
       +`<tr><td class="l" colspan="6" style="color:var(--mut)">That is <b>${(ldRM/revTotal*100).toFixed(1)}%</b> of ${fmt0(revTotal)} of recorded revenue, asked for and refused. None of it appears in any other figure on this desk.</td></tr></tbody>`
-    : `<tbody><tr><td class="l" style="color:var(--mut)"><b>Nothing recorded</b>, and an unfilled order leaves no trace, so empty shelves read as no demand. Free to sell <b>${units(Math.max(0,currentStock-defUnits))}</b>. Log one under <b>Enter &rarr; Transaction &rarr; Turned away</b>.</td></tr></tbody>`}</table></div>
+    : `<tbody><tr><td class="l" style="color:var(--mut)"><b>Nothing recorded</b>, and an unfilled order leaves no trace, so empty shelves read as no demand. Free to sell <b>${units(Math.max(0,currentStock-defUnits))}</b>.</td></tr></tbody>`}</table></div>
 
   <h2 style="margin-top:22px">The database <span class="sub" style="font-weight:400">every customer, sortable on any column</span> <span class="rule"></span></h2>
   <div class="card"><table class="sortt"><thead><tr><th class="l" onclick="sortConc('id')">Customer${ind('id')}</th><th onclick="sortConc('rev')">Revenue${ind('rev')}</th><th onclick="sortConc('share')">Share${ind('share')}</th><th onclick="sortConc('kg')">Volume${ind('kg')}</th><th onclick="sortConc('margin')">Margin${ind('margin')}</th><th onclick="sortConc('marginpct')">Margin %${ind('marginpct')}</th></tr></thead><tbody>${rows}<tr class="tot"><td class="l">All</td><td>${fmt0(c.revSum)}</td><td>100%</td><td>${units(c.bc.reduce((a,x)=>a+x.kg,0))}</td><td>${fmt0(c.bc.reduce((a,x)=>a+x.margin,0))}</td><td>${(()=>{const M=c.bc.reduce((a,x)=>a+x.margin,0);
@@ -16391,9 +16387,9 @@ function entryFault(p){
    and the payload records the book the entry was actually checked against. */
 function wbProdVal(){return PRODUCTS[PROD]?PROD:DEFAULT_PROD;}
 function wbProdName(){return (PRODUCTS[wbProdVal()]||{}).name||wbProdVal();}
-/* the two modes with no product of their own, and why. An amendment inherits the product of
-   the order it attaches to; a follow-up is a conversation with a person. */
-const WB_NO_PROD={amend:1,contact:1,addid:1};
+/* the modes with no product of their own, and why. An amendment inherits the product of the
+   order it attaches to; an ID names a party, not goods. */
+const WB_NO_PROD={amend:1,addid:1};
 /* ============ APPROVE, ON THE DESK (v343) ============
    The rows the cloud drafter wrote from the queue, waiting on a decision. The phone has had
    this since v302 and the desk did not, so a row queued at the laptop had to be approved on
@@ -16807,16 +16803,15 @@ function tabWorkbench(){
   return `<h1>Transaction</h1>
   <div class="dsc dsclead">Queued for approval, never booked here.</div>
   <div class="card">
-    <span class="viewsw" id="wbModeSw"><button data-m="new" class="on">New order</button><button data-m="amend">Amend an order</button><button data-m="count">Inventory count</button><button data-m="loan">Borrow or lend</button><button data-m="loss">Self-use or loss</button><button data-m="lost">Turned away</button><button data-m="contact">Follow-up</button>${cloudMode()?'<button data-m="addid">Add ID</button>':''}</span>
+    <span class="viewsw" id="wbModeSw"><button data-m="new" class="on">New order</button><button data-m="amend">Amend an order</button><button data-m="count">Inventory count</button><button data-m="loan">Borrow or lend</button>${cloudMode()?'<button data-m="addid">Add ID</button>':''}</span>
     <!-- v275: WHICH BOOK THE ENTRY LANDS ON. Until now there was no such control and no
          product on any payload, so prodOf() defaulted EVERY entry ever made here to salt:
          the desk could not record oil at all, and the three oil rows on the book were
          written into the data by hand. Built from PROD_IDS, so a third product appears here
          by being declared in PRODUCTS and nothing on this form is touched.
-         It is hidden for the two modes that have no product: an amendment inherits the
-         product of the order it attaches to, and a follow-up is a conversation with a
-         person. Showing it there would invite a contradiction the desk would then have to
-         resolve. -->
+         It is hidden for the modes that have no product: an amendment inherits the product
+         of the order it attaches to, and an ID names a party, not goods. Showing it there
+         would invite a contradiction the desk would then have to resolve. -->
     <div class="qrow" id="wbProdRow" style="margin-top:13px">
       <div class="qfield"><label>Product</label><select id="wbProd"></select></div>
       <div class="qfield" style="flex:2"><div class="dsc" id="wbProdNote" style="padding-top:7px"></div></div>
@@ -16922,16 +16917,6 @@ function tabWorkbench(){
       <div class="dsc">The count is authoritative; the gap against the ledger books as self-use.</div>
     </div>
 
-    <div id="wbPaneLoss" style="display:none;margin-top:13px">
-      <div class="qrow" style="margin-bottom:10px">
-        <div class="qfield qunits"><label>Unit gone</label><input id="wbLossUnits" type="number" step="0.01" min="0" inputmode="decimal"></div>
-        <input id="wbLossWhy" type="hidden" value="nonrev">
-        <div class="qfield"><label>Date</label><input id="wbLossDate" type="date"></div>
-      </div>
-      <div class="qrow" style="margin-bottom:10px"><div class="qfield" style="flex:1"><label>Note (optional)</label><input id="wbLossNote" type="text" placeholder="what happened"></div></div>
-      <div class="dsc">Non-revenue ${esc(wbProdName().toLowerCase())}: units that left without a sale, at cost. The count still wins and this does not change it.</div>
-    </div>
-
     <div id="wbPaneLoan" style="display:none;margin-top:13px">
       <div class="qrow" style="margin-bottom:10px">
         <div class="qfield"><label>Which way</label><select id="wbLoanDir"><option value="in">Borrowed from them</option><option value="out">Lent to them</option></select></div>
@@ -16941,38 +16926,6 @@ function tabWorkbench(){
       </div>
       <div class="qrow" style="margin-bottom:10px"><div class="qfield" style="flex:1"><label>Note (optional)</label><input id="wbLoanNote" type="text" placeholder="terms, if any"></div></div>
       <div class="dsc">Owed back in kind, unit for unit. Borrowed salt sits on the inventory until it is returned; lent salt leaves it. Settling a loan is a fold on your word for now.</div>
-    </div>
-
-    <div id="wbPaneLost" style="display:none;margin-top:13px">
-      <div class="qrow" style="margin-bottom:10px">
-        <div class="qfield"><label>Who asked</label><select id="wbLostParty"></select></div>
-        <div class="qfield qunits"><label>Unit wanted</label><input id="wbLostUnits" type="number" step="0.01" min="0" inputmode="decimal"></div>
-        <div class="qfield"><label>Total they would pay (RM)</label><input id="wbLostRM" type="number" step="1" min="0" inputmode="decimal"></div>
-      </div>
-      <div class="qrow" style="margin-bottom:10px">
-        <div class="qfield"><label>Why not</label><select id="wbLostWhy">
-          <option value="nostock">No inventory</option><option value="price">Would not pay the price</option>
-          <option value="credit">Refused on credit</option><option value="other">Other</option></select></div>
-        <div class="qfield"><label>Date</label><input id="wbLostDate" type="date"></div>
-        <div class="qfield" style="flex:1"><label>Note (optional)</label><input id="wbLostNote" type="text" placeholder="what was said"></div>
-      </div>
-      <div class="dsc">Nothing here touches revenue, inventory or margin. It sits beside the books as the evidence of what a shortage cost, which is otherwise recorded nowhere at all.</div>
-    </div>
-
-    <div id="wbPaneContact" style="display:none;margin-top:13px">
-      <div class="qrow" style="margin-bottom:10px">
-        <div class="qfield"><label>Who</label><select id="wbCtParty"></select></div>
-        <div class="qfield"><label>How</label><select id="wbCtHow">
-          <option value="message">Messaged</option><option value="call">Called</option><option value="visit">Visited</option><option value="other">Other</option></select></div>
-        <div class="qfield"><label>Date</label><input id="wbCtDate" type="date"></div>
-      </div>
-      <div class="qrow" style="margin-bottom:10px">
-        <div class="qfield"><label>Outcome</label><select id="wbCtOut">
-          <option value="noreply">No reply</option><option value="later">Try again later</option><option value="ordered">Ordered</option><option value="no">Not interested</option></select></div>
-        <div class="qfield"><label>Next action due</label><input id="wbCtNext" type="date"></div>
-        <div class="qfield" style="flex:1"><label>Note (optional)</label><input id="wbCtNote" type="text" placeholder="what was agreed"></div>
-      </div>
-      <div class="dsc">This moves no figure. It is the desk&rsquo;s memory of who has been chased, so a name that has gone quiet stops coming back every day once you have acted on it.</div>
     </div>
 
     <!-- v343: ADD ID, ON THE CLOUD DESK. Names & IDs mints a code from a name and a place, and
@@ -18559,14 +18512,6 @@ function wbPreview(){
         else if(ak<sf.kg-0.009||ac<sf.cash-0.009)warns.push('The new terms are smaller than what has already moved on this order, so it would read as over-delivered or over-paid. Check the figures.');
       }
     }
-  }else if(wbMode==='loss'){
-    const el=wbEl('wbLossUnits'),w=wbNum('wbLossUnits'),has=el&&el.value!=='';
-    const why=wbVal('wbLossWhy'),atCost=+(w*wavgBuy).toFixed(2);
-    body=`<div style="font-size:13px;color:var(--mut)">${has&&w>0?`<b style="color:var(--ink)">${units(w)}</b> of <b style="color:var(--ink)">non-revenue ${esc(wbProdName().toLowerCase())}</b>, worth about <b style="color:var(--crim)">${fmt0(atCost)}</b> at the ${fmt(wavgBuy)}/unit average.`:'Enter the units that went.'}`
-      +`<div class="dsc" style="margin-top:6px">Shrinkage stands at <b>${units(selfUse)}</b> on <b>${units(buyUnits+opening.qty)}</b> handled, <b>${((selfUse/(buyUnits+opening.qty))*100).toFixed(1)}%</b>. This entry attributes part of that gap; it does not move the count or any figure.</div></div>`;
-    if(!has||!(w>0))errs.push('Enter the units that went.');
-    if(!wbVal('wbLossDate'))errs.push('Enter the date &mdash; it is deliberately blank.');
-    else{const fw=wbFutureWarn(wbVal('wbLossDate'));if(fw)warns.push(fw);}
   }else if(wbMode==='loan'){
     const el=wbEl('wbLoanUnits'),w=wbNum('wbLoanUnits'),has=el&&el.value!=='',dirL=wbVal('wbLoanDir'),who=wbVal('wbLoanParty');
     body=`<div style="font-size:13px;color:var(--mut)">${has&&w>0&&who?`<b style="color:var(--ink)">${units(w)}</b> of ${esc(wbProdName())} ${dirL==='in'?'borrowed from':'lent to'} <b style="color:var(--ink)">${ID(who)}</b>, owed back in kind. The inventory ${dirL==='in'?'rises to':'falls to'} <b style="color:var(--ink)">${units(+(currentStock+(dirL==='in'?w:-w)).toFixed(2))}</b>.`:'Choose the party and enter the units.'}</div>`;
@@ -18575,16 +18520,6 @@ function wbPreview(){
     if(dirL==='out'&&w>currentStock+0.009)warns.push(`Lends more than the ${units(currentStock)} on hand.`);
     if(!wbVal('wbLoanDate'))errs.push('Enter the date &mdash; it is deliberately blank.');
     else{const fw=wbFutureWarn(wbVal('wbLoanDate'));if(fw)warns.push(fw);}
-  }else if(wbMode==='lost'){
-    const el=wbEl('wbLostUnits'),w=wbNum('wbLostUnits'),rm=wbNum('wbLostRM'),has=el&&el.value!=='';
-    const why=wbVal('wbLostWhy'),who=wbVal('wbLostParty');
-    const px=w>0&&rm>0?rm/w:0;
-    body=`<div style="font-size:13px;color:var(--mut)">${has&&w>0?`<b style="color:var(--ink)">${who==='__walkup__'?'A walk-up':ID(who)}</b> wanted <b style="color:var(--ink)">${units(w)}</b>${rm>0?` for <b style="color:var(--ink)">${fmt0(rm)}</b>, which is ${fmt(px)}/unit`:''} &middot; ${LOST_LABEL[why]||''}.`:'Enter the units they wanted.'}`
-      +(px>0?`<div class="dsc" style="margin-top:6px">At the ${fmt(replCost())}/unit replacement cost that order would have carried about <b>${fmt0((px-replCost())*w)}</b> of margin. ${(()=>{const fu=floorTotal(w)/w;return px<fu-0.009?`It was <b>below</b> the ${fmt(fu)}/unit floor for ${units(w)}, so turning it away may have been right.`:`It <b>cleared</b> the ${fmt(fu)}/unit floor for ${units(w)}, so this is a real loss.`;})()}</div>`:'')
-      +`</div>`;
-    if(!has||!(w>0))errs.push('Enter the units they wanted.');
-    if(!wbVal('wbLostDate'))errs.push('Enter the date &mdash; it is deliberately blank.');
-    else{const fw=wbFutureWarn(wbVal('wbLostDate'));if(fw)warns.push(fw);}
   }else if(wbMode==='addid'){
     const code=(wbVal('wbApCode')||'').trim().toUpperCase(),kind=wbVal('wbApKind'),parent=wbVal('wbApParent');
     const needP=(kind==='downstream'||kind==='bucket');
@@ -18635,15 +18570,6 @@ function wbPreview(){
       if(!(wbVal('wbApPlace')||'').trim()&&code&&!/-TBC$/.test(code))errs.push('No place yet? Then the code ends in TBC, like '+esc(code.replace(/-[A-Z0-9]*$/,'')||'CX9')+'-TBC, and is re-keyed when the place is known. Or type the place.');
       if(!NAME_VAULT&&qSyncState==='server')warns.push('No vault has synced to this device yet; the first name filed here starts one.');
     }
-  }else if(wbMode==='contact'){
-    const who=wbVal('wbCtParty'),out=wbVal('wbCtOut'),how=wbVal('wbCtHow'),next=wbVal('wbCtNext');
-    const cs2=custStats().find(c=>c.id===who);
-    body=`<div style="font-size:13px;color:var(--mut)">${who?`You <b style="color:var(--ink)">${CONTACT_HOW[how]}</b> <b style="color:var(--ink)">${ID(who)}</b> and they <b style="color:var(--ink)">${CONTACT_OUT[out]}</b>${next?`; next due <b style="color:var(--ink)">${next}</b>`:''}.`:'Choose a customer.'}`
-      +(cs2?`<div class="dsc" style="margin-top:6px">${ID(who)} last ordered <b>${dAge(cs2.last)} days</b> ago, ${cs2.n} order${cs2.n===1?'':'s'} for <b>${fmt0(cs2.rev)}</b> in total.</div>`:'')
-      +`</div>`;
-    if(!who)errs.push('Choose a customer.');
-    if(!wbVal('wbCtDate'))errs.push('Enter the date &mdash; it is deliberately blank.');
-    else{const fw=wbFutureWarn(wbVal('wbCtDate'));if(fw)warns.push(fw);}
   }else{
     const el=wbEl('wbCountUnits'),w=wbNum('wbCountUnits'),has=el&&el.value!=='';
     const diff=+(w-currentStock).toFixed(2);
@@ -18822,12 +18748,6 @@ function wbRecord(){
     }
     ['wbANote'].forEach(id=>{const e=wbEl(id);if(e)e.value='';});
     ['wbACash','wbAUnits'].forEach(id=>{const e=wbEl(id);if(e)e.value='0';});
-  }else if(wbMode==='loss'){
-    const w=wbNum('wbLossUnits'),date=wbVal('wbLossDate'),why=wbVal('wbLossWhy'),note=wbVal('wbLossNote').trim();
-    queue.push({at:new Date().toISOString(),type:'LOSS',party:'self-use',qty:w,total:null,status:'count',
-      raw:'Non-revenue '+wbProdName().toLowerCase()+': '+units(w)+' out without a sale on '+date+(note?', '+note:''),
-      payload:{mode:'loss',product:wbProdVal(),direction:null,party:null,date:date,qty:w,total:null,cash:null,kg:w,why:why,note:note||null}});
-    ['wbLossUnits','wbLossNote'].forEach(id=>{const e=wbEl(id);if(e)e.value='';});
   }else if(wbMode==='loan'){
     const who=wbVal('wbLoanParty'),w=wbNum('wbLoanUnits'),date=wbVal('wbLoanDate'),dirL=wbVal('wbLoanDir'),noteL=wbVal('wbLoanNote').trim();
     if(!who||!(w>0)||!date){ok.textContent='Choose the party, the units and the date first.';ok.style.color='var(--crim)';return;}
@@ -18835,12 +18755,6 @@ function wbRecord(){
       raw:(dirL==='in'?'Borrowed ':'Lent ')+units(w)+' '+wbProdName()+(dirL==='in'?' from ':' to ')+codeOf(who)+' on '+date+', owed back in kind'+(noteL?', '+noteL:''),
       payload:{mode:'loan',product:wbProdVal(),direction:dirL,party:who,date:date,qty:w,total:null,cash:null,kg:w,note:noteL||null}});
     ['wbLoanUnits','wbLoanNote'].forEach(id=>{const e=wbEl(id);if(e)e.value='';});
-  }else if(wbMode==='lost'){
-    const who=wbVal('wbLostParty'),w=wbNum('wbLostUnits'),rm=wbNum('wbLostRM'),date=wbVal('wbLostDate'),why=wbVal('wbLostWhy'),note=wbVal('wbLostNote').trim();
-    queue.push({at:new Date().toISOString(),type:'TURNED_AWAY',party:who==='__walkup__'?'walk-up':codeOf(who),qty:w,total:rm,status:'unpaid',
-      raw:'Turned away: '+(who==='__walkup__'?'a walk-up':codeOf(who))+' wanted '+units(w)+' '+wbProdName()+' for '+fmt0(rm)+', '+LOST_LABEL[why]+', on '+date+(note?', '+note:''),
-      payload:{mode:'lost',product:wbProdVal(),direction:null,party:who==='__walkup__'?null:who,date:date,qty:w,total:rm,cash:null,kg:w,why:why,note:note||null}});
-    ['wbLostUnits','wbLostRM','wbLostNote'].forEach(id=>{const e=wbEl(id);if(e)e.value='';});
   }else if(wbMode==='addid'){
     const code=(wbVal('wbApCode')||'').trim().toUpperCase(),kind=wbVal('wbApKind');
     const parent=(kind==='downstream'||kind==='bucket')?(wbVal('wbApParent')||null):null,an=(wbVal('wbApNote')||'').trim();
@@ -18873,12 +18787,6 @@ function wbRecord(){
     const o3=wbEl('wbOk')||ok;
     if(o3){o3.textContent=(apl.elevate?'Appointed ':'Registered ')+code+'.'+wbUnremembered;o3.style.color='var(--grn)';}
     return;
-  }else if(wbMode==='contact'){
-    const who=wbVal('wbCtParty'),date=wbVal('wbCtDate'),how=wbVal('wbCtHow'),outcome=wbVal('wbCtOut'),next=wbVal('wbCtNext'),note=wbVal('wbCtNote').trim();
-    queue.push({at:new Date().toISOString(),type:'CONTACT',party:codeOf(who),qty:null,total:null,status:'count',
-      raw:'Follow-up: '+CONTACT_HOW[how]+' '+codeOf(who)+' on '+date+', '+CONTACT_OUT[outcome]+(next?'; next due '+next:'')+(note?', '+note:''),
-      payload:{mode:'contact',direction:null,party:who,date:date,how:how,outcome:outcome,next:next||null,qty:null,total:null,cash:null,kg:null,note:note||null}});
-    ['wbCtNote'].forEach(id=>{const e=wbEl(id);if(e)e.value='';});
   }else{
     const w=wbNum('wbCountUnits'),date=wbVal('wbCDate');
     queue.push({at:new Date().toISOString(),type:'COUNT',party:'stock count',qty:w,total:null,status:'count',raw:'Stock count: '+units(w)+' '+wbProdName()+' on hand on '+date,
@@ -18953,7 +18861,7 @@ function wbApply(){
   const ms=wbEl('wbModeSw');if(ms)[...ms.querySelectorAll('button')].forEach(b=>b.classList.toggle('on',b.dataset.m===wbMode));
   const ds=wbEl('wbDirSw');if(ds)[...ds.querySelectorAll('button')].forEach(b=>b.classList.toggle('on',b.dataset.d===wbDir));
   const as=wbEl('wbASideSw');if(as)[...as.querySelectorAll('button')].forEach(b=>b.classList.toggle('on',b.dataset.s===wbASide));
-  const p={new:'wbPaneNew',amend:'wbPaneAmend',count:'wbPaneCount',loss:'wbPaneLoss',loan:'wbPaneLoan',lost:'wbPaneLost',contact:'wbPaneContact',addid:'wbPaneAddid'};
+  const p={new:'wbPaneNew',amend:'wbPaneAmend',count:'wbPaneCount',loan:'wbPaneLoan',addid:'wbPaneAddid'};
   /* v527: the loan's party is any roster code, filled once */
   const lpSel=wbEl('wbLoanParty');if(lpSel&&!lpSel.options.length)lpSel.innerHTML='<option value="">Choose</option>'+(roster||[]).slice().sort().map(id=>`<option value="${id}">${codeOf(id)}</option>`).join('');
   /* v343: a downstream or a bucket hangs off an associate, so the parent shows for those two */
@@ -18988,16 +18896,7 @@ function wbApply(){
   const pnote=wbEl('wbProdNote');
   if(pnote)pnote.innerHTML=WB_NO_PROD[wbMode]?''
     :(wbMode==='count'?`Counts <b>${esc(wbProdName())}</b> only; each product has its own inventory.`
-     :wbMode==='loss'?`Comes off the <b>${esc(wbProdName())}</b> inventory.`
-     :wbMode==='lost'?`Demand for <b>${esc(wbProdName())}</b> that was not met.`
      :`Books to the <b>${esc(wbProdName())}</b> book, and the rail moves with it, so the margin, the free inventory and the price coach are all this book's.`);
-  /* the turned-away list is every customer plus a walk-up, because the person who
-     asked and left is often someone with no code yet. Follow-up is customers only. */
-  const custOpts=roster.filter(id=>!id.startsWith('S')).map(id=>`<option value="${id}">${codeOf(id)}</option>`).join('');
-  const lp=wbEl('wbLostParty');
-  if(lp&&!lp.options.length)lp.innerHTML='<option value="__walkup__">Someone new / walk-up</option>'+custOpts;
-  const cp=wbEl('wbCtParty');
-  if(cp&&!cp.options.length)cp.innerHTML='<option value="">Choose a customer</option>'+custOpts;
   const aw=wbEl('wbAssocWrap');if(aw)aw.style.display=wbDir==='SELL'?'':'none';
   /* the full sheet writes a SALE and only a sale, so it is offered only where it can
      honour what it says. Same rule, same line, as the associate box above it. */
@@ -19064,8 +18963,7 @@ function wireWorkbench(){
      on a sale the delivery, freight, handover, associate and end-buyer fields, had no handler at all,
      so Record stayed disabled on what was typed until another switch was tapped, and the delivery
      changed the payload without moving the coach. Wired where nothing is wired already. */
-  ['wbLossUnits','wbLossDate','wbLossWhy','wbLossNote','wbLoanUnits','wbLoanDate','wbLoanDir','wbLoanParty','wbLoanNote',
-   'wbLostUnits','wbLostRM','wbLostDate','wbLostWhy','wbLostParty','wbLostNote','wbCtParty','wbCtDate','wbCtOut','wbCtHow','wbCtNext','wbCtNote',
+  ['wbLoanUnits','wbLoanDate','wbLoanDir','wbLoanParty','wbLoanNote',
    'wbDelivery','wbFreight','wbHand','wbAssocSel','wbDown','wbApName','wbApPlace'].forEach(id=>{const e=wbEl(id);if(!e)return;
     if(!e.oninput)e.oninput=wbPreview;if(e.tagName==='SELECT'&&!e.onchange)e.onchange=wbPreview;});
   const cq=wbEl('wbCashQ');if(cq)cq.onclick=e=>{const c=e.target.dataset.c;if(!c)return;const t=wbNum('wbTotal');
@@ -19494,7 +19392,7 @@ const PART_Q={today:'what needs doing, ranked by the money at stake',
   ledger:'every row on the book, and a statement of account for any party',
   journal:'the prose beside the figures: every note, step, correction and version, dated',
   analysis:'the month read twelve ways',
-  add:'record an order, an amendment, a count, a loss, a lost sale or a follow-up',
+  add:'record an order, an amendment, a count or a loan',
   approve:'the rows drafted from the queue, waiting on a decision',
   orders:'what customers ordered on the statements site, and where each order stands',
   plans:'the whiteboard: plans, never figures'};

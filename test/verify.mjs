@@ -8593,8 +8593,8 @@ section("08 Sep 2026: the audit fixes");
     ok(/dated/.test(ef({ direction: "SELL", product: "salt", party: cust, qty: 1, total: 100, cash: 0, kg: 0, date: null, fresh: true }))
       && ef({ direction: "SELL", product: "salt", party: cust, qty: 1, total: 100, cash: 0, kg: 0, date: "2026-09-08", fresh: true }) === "", "and an undated new row, while a dated pending one passes");
     ok(/above zero/.test(ef({ direction: "SELL", product: "salt", party: cust, qty: 0, total: 100, cash: 0, kg: 0, date: "2026-09-08" })), "and a zero quantity");
-    const wb = JSON.parse(String(w.eval("(function(){try{switchTab('enter');}catch(e){}try{switchTab('workbench');}catch(e){}var b=document.querySelector('#wbModeSw button[data-m=\"loss\"]');if(!b)return JSON.stringify({no:'switch'});b.click();var u=document.getElementById('wbLossUnits'),d=document.getElementById('wbLossDate'),r=document.getElementById('wbRec');if(!u||!d||!r)return JSON.stringify({no:'fields'});u.value='1';u.dispatchEvent(new Event('input',{bubbles:true}));d.value='2026-09-08';d.dispatchEvent(new Event('input',{bubbles:true}));return JSON.stringify({disabled:r.disabled});})()")));
-    ok(wb.no == null && wb.disabled === false, "typing the units and the date into Self-use or loss enables Record without tapping another switch: " + JSON.stringify(wb));
+    /* v581: the Self-use or loss mode left the Enter form on his instruction of 11 Sep 2026, so the
+       test that typed into it went with it. Its removal is asserted in its own section below. */
     const msrc = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
     ok(/cell\('Cost drawn',cost==null\?'&mdash;':fmt\(cost\)\+\(qty>0\?/.test(msrc), "the Approve card labels the order's cost as the order's, with the unit figure beside it");
     ok(/function txGoods\(s\)\{return POSITION_ENGINE\.txGoods\(s\);\}/.test(msrc) && (msrc.match(/txGoods\(s\)\/s\.qty|txGoods\(x\)\/x\.qty/g) || []).length >= 10, "the desk strikes its customer rates on the goods through the engine's txGoods");
@@ -9416,6 +9416,45 @@ section("11 Sep 2026: a count badge counts each thing once, on Today and on Ente
     wB.eval("ORD_OPEN = [{status:'placed'}];");
     ok(rdB("enterCount()") === 3, "and a placed customer order adds one of its own");
   } finally { try { wB.close(); } catch (e) { /* best effort */ } }
+}
+
+
+section("11 Sep 2026: Self-use or loss, Turned away and Follow-up leave the Enter form");
+{
+  /* HIS INSTRUCTION OF 11 SEP 2026. Self use and loss are read from the counts; a turned-away sale
+     is at most something to derive from a cancelled order; a follow-up is not needed here. The three
+     modes go, and every row already on the book and every view that reads one stays. The drafter
+     and the fold KEEP their loss and lost-sale roads, asserted in the Drafter section, because a
+     phone offline on an old build can still queue one, and a refused entry is dropped in silence. */
+  const { openMaster: omX } = await import("../tools/payload.mjs");
+  const { w: wX } = await omX();
+  const dX = wX.document;
+  const rdX = (e) => JSON.parse(wX.eval("JSON.stringify(" + e + ")"));
+  try {
+    wX.eval("try{switchTab('enter');}catch(e){}try{switchTab('add');}catch(e){}");
+    const modes = [...dX.querySelectorAll('#wbModeSw button[data-m]')].map((b) => b.dataset.m);
+    ok(modes.length > 0, "the Enter form's mode switch is on the page, or this section proves nothing");
+    ok(!modes.some((m) => ["loss", "lost", "contact"].includes(m)),
+      `the switch offers no Self-use or loss, no Turned away and no Follow-up (${modes.join(", ")})`);
+    ok(["new", "amend", "count", "loan"].every((m) => modes.includes(m)),
+      "and keeps New order, Amend an order, Inventory count and Borrow or lend");
+    ok(!dX.getElementById("wbPaneLoss") && !dX.getElementById("wbPaneLost") && !dX.getElementById("wbPaneContact"),
+      "no pane for a removed mode is left on the page");
+
+    /* COPY MAY POINT ONLY AT CONTROLS THAT EXIST. A literal absent from the master cannot render,
+       so the source is a sound instrument for absence; the switch above is read off the page. */
+    const msrcX = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+    ok(!/under Self-use or loss on/.test(msrcX) && !/Transaction &rarr; Turned away/.test(msrcX),
+      "no copy tells him to record under a mode that is gone");
+    ok(!/a loss, a lost sale or a follow-up/.test(msrcX), "and the Enter part no longer describes itself by them");
+
+    /* TODAY RAISES NO FOLLOW-UP CALL, proved with a due one forced onto the book: the live book
+       holds no follow-up with a next date, so without this the check could not fail. */
+    wX.eval("contacts.push({date:'2026-09-01',party:'CZ9-TST',how:'call',outcome:'later',next:'2026-09-01'});");
+    ok(rdX("actions().every(function(x){return x.kind!=='call';})"),
+      "a follow-up left on the book ten days overdue raises no call on Today");
+    wX.eval("contacts.pop();");
+  } finally { try { wX.close(); } catch (e) { /* best effort */ } }
 }
 
 
