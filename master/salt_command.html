@@ -6227,7 +6227,9 @@ const whiteboard=[
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{"v":"v586","d":"11 Sep 2026","t":"A REFUSED ENTRY STAYS ON THE PHONE UNTIL IT IS WITHDRAWN, IN ONE TAP","n":["<b>HIS DECISION, 11 SEP 2026: a refused entry is kept on the phone, with a Withdraw button.</b> Until now one vanished at the next fold with no record. The phone cleared any acknowledged entry the watermark had passed, and the drafter deleted any refusal the watermark had passed, so an unrelated fold passed for proof that the entry had been dealt with. CR3-DAM's redemption of 11 Sep went that way: refused for carrying no payload, then gone.","<b>THE PHONE KEEPS WHAT THE DRAFTS SAY IS REFUSED.</b> A read of the drafts that succeeds records which entries are refused; a failed read records nothing, so it cannot wipe the list. The load keeps a refused entry however far the watermark has passed it, and does not call it stuck, since stuck means it never reached the cloud and a refused entry did.","<b>THE CLOUD KEEPS A REFUSAL WHILE ITS ENTRY IS QUEUED,</b> whoever wrote it. Once the entry leaves the queue, the drafter's own refusal goes at its next pass, since leaving is a withdrawal or a re-entry; one from the laptop's queue or the fold goes at the watermark as before, since their entries need never have been on the cloud queue. The fold's own notices keep their rule.","<b>WITHDRAW</b> is one button on each refusal card whose entry this phone holds. It drops the entry the way a rejection does, takes the card off at once and syncs, and the cloud's copy and its refusal follow. A card not queued here says so; a fold notice says it clears itself. Nothing on the panel approves or rejects, as v309 built it.","<b>PROVED IN BOTH DIRECTIONS.</b> The drafter runs twice against a fake ledger, including a withdrawal above the watermark, the one case where the old rule and the new part. The phone is tested through a real boot with a refused entry already in storage, a real apLoad with the network stubbed and a real tap on Withdraw. Fourteen mutations, each reddening its own assertion. Three source pins from v485 and one from the drafter's first round moved with the code.","<b>ONE GAP REMAINS, AND IT IS NARROW.</b> The phone learns of a refusal only when it reads the drafts: on opening, on Approve, and after a redemption. The load runs before the first read, so an entry refused after the phone's last read, then passed by a fold approved elsewhere before the phone next opens, can still clear at that opening. An approval on this phone reads the drafts first, so today only the laptop can open it.","<b>WHO IT TOUCHES TODAY: NOTHING.</b> The refused table is empty and the cloud queue holds no entries, so the first pass after this deploy clears nothing. It does not bring CR3-DAM's redemption back: their unit is still earned and unredeemed, and Redeem, which has carried a payload since v584, puts it to Approve in one tap."]},
+const evolution=[{"v":"v587","d":"11 Sep 2026","t":"ADD ID DERIVES THE CODE FROM THE NAME AND THE PLACE, AND A CLASH TAKES MORE OF THE NAME","n":["<b>HIS INSTRUCTION, 11 SEP 2026: the code is derived, never typed.</b> C for a customer or S for a supplier, then the name's first letter and its length, then a dash and the place: its initials when it is several words, its first three letters when it is one. A blank place gives TBC, for a supplier too, which used to take no suffix. Names & IDs on the laptop already minted codes this way; the phone took a typed code and checked only its shape. Both call one function now.","<b>A CLASH TAKES MORE OF THE NAME.</b> Two people can derive one code: the same initial, the same length, the same place. Asked for something better than a refusal or a running number, the code takes one more letter of the name at a time, so a second four-letter A from the same place is told apart by the name people know them by. Only a name used up entirely, the same name twice in one place, falls back to a number. The preview says which code was taken.","<b>APPOINTING SOMEONE ALREADY ON THE ROSTER</b> is a pick under Who now, since there is no code box left to type into. Who lists the roster's customers who are not yet associates, so nobody can be appointed twice.","<b>WHAT IT TOUCHES: NO EXISTING CODE.</b> The rule reproduces 37 of the 40 codes in the directory it applies to. CH4-KLS, CH4-MLR and CD3-SEG do not fit it, and on his ruling they are re-keyed with the amend, which comes last in this round and carries each statement username with its customer.","<b>PROVED ON FIXTURE CODES</b> forced onto the live roster and taken off again: the rule, the clash walk, the pane and the laptop. Ten mutations, each reddening its own. The v528 and v570 tests moved with the pane, since they typed a code there is no longer a box for, and the bucket test uses a fixture associate now."]},
+
+{"v":"v586","d":"11 Sep 2026","t":"A REFUSED ENTRY STAYS ON THE PHONE UNTIL IT IS WITHDRAWN, IN ONE TAP","n":["<b>HIS DECISION, 11 SEP 2026: a refused entry is kept on the phone, with a Withdraw button.</b> Until now one vanished at the next fold with no record. The phone cleared any acknowledged entry the watermark had passed, and the drafter deleted any refusal the watermark had passed, so an unrelated fold passed for proof that the entry had been dealt with. CR3-DAM's redemption of 11 Sep went that way: refused for carrying no payload, then gone.","<b>THE PHONE KEEPS WHAT THE DRAFTS SAY IS REFUSED.</b> A read of the drafts that succeeds records which entries are refused; a failed read records nothing, so it cannot wipe the list. The load keeps a refused entry however far the watermark has passed it, and does not call it stuck, since stuck means it never reached the cloud and a refused entry did.","<b>THE CLOUD KEEPS A REFUSAL WHILE ITS ENTRY IS QUEUED,</b> whoever wrote it. Once the entry leaves the queue, the drafter's own refusal goes at its next pass, since leaving is a withdrawal or a re-entry; one from the laptop's queue or the fold goes at the watermark as before, since their entries need never have been on the cloud queue. The fold's own notices keep their rule.","<b>WITHDRAW</b> is one button on each refusal card whose entry this phone holds. It drops the entry the way a rejection does, takes the card off at once and syncs, and the cloud's copy and its refusal follow. A card not queued here says so; a fold notice says it clears itself. Nothing on the panel approves or rejects, as v309 built it.","<b>PROVED IN BOTH DIRECTIONS.</b> The drafter runs twice against a fake ledger, including a withdrawal above the watermark, the one case where the old rule and the new part. The phone is tested through a real boot with a refused entry already in storage, a real apLoad with the network stubbed and a real tap on Withdraw. Fourteen mutations, each reddening its own assertion. Three source pins from v485 and one from the drafter's first round moved with the code.","<b>ONE GAP REMAINS, AND IT IS NARROW.</b> The phone learns of a refusal only when it reads the drafts: on opening, on Approve, and after a redemption. The load runs before the first read, so an entry refused after the phone's last read, then passed by a fold approved elsewhere before the phone next opens, can still clear at that opening. An approval on this phone reads the drafts first, so today only the laptop can open it.","<b>WHO IT TOUCHES TODAY: NOTHING.</b> The refused table is empty and the cloud queue holds no entries, so the first pass after this deploy clears nothing. It does not bring CR3-DAM's redemption back: their unit is still earned and unredeemed, and Redeem, which has carried a payload since v584, puts it to Approve in one tap."]},
 
 {"v":"v585","d":"11 Sep 2026","t":"AN ASSOCIATE'S REWARD IS OFFSET AGAINST THEIR ADVANCE AUTOMATICALLY, UP TO 1 UNIT","n":["<b>HIS INSTRUCTION, 11 SEP 2026: an associate's reward is offset against their advanced delivery order, up to 1 unit, automatically, and folded into the Approve tab.</b> So nobody presses anything: whenever Approve has read the drafts, each associate holding an earned unit and an outstanding advance is offered an offset, capped at 1 unit, as the same Correction the Offset button has queued since v584. It waits in Approve for his tap like any row, and the Approve part says what it offered.","<b>IT RUNS ONLY WHEN THE DRAFTS WERE READ.</b> The check that stops it offering the same offset twice reads them, and a failed read would leave that check blind, so on a failed read it does nothing. It skips a row with an offset already queued, drafted or refused, so a refusal is not offered again on every load; once one folds, the row is settled in kind and stops being an advance, which ends it. Salt only, since oil has no reward. Associates only, on his word; a customer's reward is not offset automatically.","<b>A DUPLICATE OFFER CANNOT REACH THE LEDGER.</b> Two devices loading at the same moment could each offer the same offset. The drafter's own correction check already refuses a Correction that changes nothing, so the second is refused rather than drafted, and an assertion now holds it to that. A second guard for the same case was written, found unreachable when its own mutation stayed green, and taken out again, so this version does not touch the Worker at all.","<b>PROVED WITH EVERY STATE FORCED, AND THE HOOK THROUGH apLoad ITSELF</b> with the network stubbed, because a test that called the function directly would stay green with the hook removed. Thirteen assertions. Five mutations on the new code and one on the drafter's existing no-change check, each reddening its own.","<b>WHO IT TOUCHES TODAY: NOBODY, READ OFF THE ENGINE.</b> The two associates with an advance outstanding, CS6-BS on s139 and CN6-WM on s124, hold no free unit, and CN6-WM carries a deficit of 1, so nothing is offered until one of them earns one. CR3-DAM holds the one free unit among the associates and has no advance, so theirs stays a Redeem. Customers are outside the automatic offset on his word, and two of them hold both: CM4-MK a unit against RM 110 owed on s143, and CJ4-BJ a quarter unit against RM 272 on s137. That is put to him, with the customers' want of any Redeem button at all."]},
 
@@ -6627,7 +6629,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='11 Sep 2026, 22:45 KL';
+const LAST_UPDATED='11 Sep 2026, 23:35 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -13698,6 +13700,20 @@ function deriveCode(name,loc,kind,parent){
   }
   return (kind==='supplier'?'S':'C')+n[0].toUpperCase()+n.length+(lc?'-'+lc:'');
 }
+/* v587, HIS INSTRUCTION OF 11 SEP 2026: THE CODE IS DERIVED ON THE PHONE TOO, AND A CLASH IS SETTLED BY
+   THE NAME. deriveCode reads the kind, the name's first letter and length, and the place, so two people
+   can share one: the same initial, the same length, the same place. Asked for something better than a
+   refusal or a running number, the code takes one more letter of the name at a time, so a second
+   four-letter A from the same place is told apart from the first by the name people know them by. Only a name
+   used up entirely, the same name twice in one place, falls back to a number. A downstream code numbers
+   its siblings instead, so it is returned as derived and its caller checks it. */
+function deriveFreeCode(name,loc,kind,parent){
+  const base=deriveCode(name,loc,kind,parent);
+  if(!base||kind==='downstream'||roster.indexOf(base)<0)return base;
+  const head=base.slice(0,2),tail=base.slice(2),more=name.trim().slice(1).replace(/[^A-Za-z]/g,'').toUpperCase();
+  for(let i=1;i<=more.length;i++){const c=head+more.slice(0,i)+tail;if(roster.indexOf(c)<0)return c;}
+  for(let i=2;;i++){if(roster.indexOf(base+i)<0)return base+i;}
+}
 function addParty(){
   const g=id=>{const e=document.getElementById(id);return e?e.value:'';};
   const name=(g('apName')||'').trim(), loc=(g('apLoc')||'').trim();
@@ -13734,10 +13750,11 @@ function addParty(){
   if(!name)return setM('A name is needed.','var(--crim)');
   /* v548, his instruction of 09 Sep 2026: a place still to be confirmed is an answer. A blank location
      derives the suffix TBC and files "(to be confirmed)"; the map reads TBC as a place nobody has recorded
-     yet, and the code is re-keyed when it is. A supplier takes no place either way. */
-  const tbc=!loc&&kind!=='supplier';
+     yet, and the code is re-keyed when it is. v587, his rule of 11 Sep 2026: a supplier's blank place is
+     TBC too; it used to take no suffix at all. */
+  const tbc=!loc;
   if(kind==='downstream'&&!parent)return setM('Pick which associate this buyer sits under.','var(--crim)');
-  const code=deriveCode(name,tbc?'TBC':loc,kind,parent);
+  const code=deriveFreeCode(name,tbc?'TBC':loc,kind,parent);   // v587: a clash takes more of the name
   if(!code)return setM('That does not derive a code. A downstream buyer needs an associate and a place.','var(--crim)');
   if(roster.indexOf(code)>=0)return setM('The code <b>'+esc(code)+'</b> already belongs to someone. Change the name or the location so it derives a free one.','var(--crim)');
   addedParties.push({code:code,kind:kind,parent:parent||null,at:new Date().toISOString()});
@@ -16699,6 +16716,17 @@ function addIdPlan(code,kind){
     already:!!stream&&!!code&&associates.indexOf(code)>=0,
     resell:(resell&&roster.indexOf(resell)<0)?resell:null};
 }
+/* v587: THE CODE THIS PANE WILL REGISTER. An appointment names someone on the roster, picked under Who; a
+   bucket is its associate's -Gen, as Names & IDs makes it; everyone else is derived from the name and the
+   place, a blank place being TBC, by the same deriveFreeCode the laptop calls, so a code minted here and
+   one minted there are the same string. */
+function wbApCodeNow(){
+  const kind=wbVal('wbApKind'),parent=wbVal('wbApParent'),who=wbVal('wbApWho');
+  if((POSITION_ENGINE.ADDID_APPOINTS||{})[kind]&&who)return who;
+  if(kind==='bucket')return parent?codeOf(parent)+'-Gen':'';
+  const nm=(wbVal('wbApName')||'').trim();
+  return nm?(deriveFreeCode(nm,(wbVal('wbApPlace')||'').trim()||'TBC',kind,parent)||''):'';
+}
 const wbFutureWarn=d=>{
   if(!d)return null;
   const dt=new Date(d);if(isNaN(+dt))return null;
@@ -16823,7 +16851,7 @@ function tabWorkbench(){
       <div class="qrow" style="margin-bottom:10px">
         <div class="qfield" style="flex:1 1 100%">
           <div class="dsc">Not in the list? ${cloudMode()
-            ?'Use <b>Add ID</b> above: a code typed by hand. The name goes into the directory at the laptop.'
+            ?'Use <b>Add ID</b> above: the code is made from the name and the place, and the name goes into the vault, encrypted.'
             :'The <b>key</b> icon, top right, then <b>+ Add ID</b>: the code is selectable here at once.'}</div></div>
       </div>
       <div class="qrow" style="margin-bottom:10px">
@@ -16914,12 +16942,12 @@ function tabWorkbench(){
     <!-- v343: ADD ID, ON THE CLOUD DESK. Names & IDs mints a code from a name and a place, and
          it does that on the laptop only, because the directory never leaves it. The cloud desk
          therefore had no way to register a party at all, while its own form said "use + Add ID".
-         This pane is the phone's route: a code typed by hand, queued as an addid entry, drafted
+         This pane is the phone's route: a code (derived from the name and the place since v587, typed
+         by hand before), queued as an addid entry, drafted
          into the roster by the cloud drafter, approved, folded. The name goes in the directory
          at the laptop, later, and never travels. -->
     <div id="wbPaneAddid" style="display:none;margin-top:13px">
       <div class="qrow" style="margin-bottom:10px">
-        <div class="qfield"><label>Code</label><input id="wbApCode" type="text" placeholder="CA4-DAM" maxlength="16" style="text-transform:uppercase"></div>
         <div class="qfield"><label>Kind</label><select id="wbApKind">
           <option value="customer">Customer, buys direct</option>
           <option value="reseller">Associate, resells for you (R2)</option>
@@ -16927,12 +16955,13 @@ function tabWorkbench(){
           <option value="downstream">An associate&rsquo;s end buyer</option>
           <option value="bucket">An associate&rsquo;s -Gen bucket</option>
           <option value="supplier">Supplier</option></select></div>
+        <div class="qfield" id="wbApWhoCell" style="display:none"><label>Who</label><select id="wbApWho"></select></div>
         <div class="qfield" id="wbApParentCell" style="display:none"><label>Under which associate</label><select id="wbApParent"></select></div>
         <div class="qfield" id="wbApNameCell"><label>Name</label><input id="wbApName" type="text" placeholder="as they are known" autocomplete="off"></div>
         <div class="qfield" id="wbApPlaceCell"><label>Place</label><input id="wbApPlace" type="text" placeholder="town or area; blank if to be confirmed" autocomplete="off"></div>
         <div class="qfield" style="flex:1"><label>Note <span style="color:var(--dim)">optional</span></label><input id="wbApNote" type="text" placeholder="never the name or the place"></div>
       </div>
-      <div class="dsc">Customers run <b>C</b>, suppliers <b>S</b>, then a digit or two and a place suffix: <b>CA4-DAM</b>, <b>SP7-PUD</b>. The name goes into the vault on this device, encrypted, and never into the queue.<br>To <b>appoint someone already on the roster</b>, type their existing code and pick Associate or Referrer: it confers the standing rather than registering a second time, asks for no name, and an associate is given their <b>-R</b> resell account with it.</div>
+      <div class="dsc">The code is made from what you type, never typed itself: <b>C</b> for a customer or <b>S</b> for a supplier, the name&rsquo;s first letter and its length, then the place, its initials when it is several words and its first three letters when it is one. So a four-letter name starting with A is <b>CA4</b>, and with its place <b>CA4-DAM</b>; a blank place gives <b>TBC</b>. If the code is taken, it takes one more letter of the name, as <b>CAB4-DAM</b>. The name goes into the vault on this device, encrypted, and never into the queue.<br>To <b>appoint someone already on the roster</b>, pick Associate or Referrer and choose them under <b>Who</b>: it confers the standing rather than registering a second time, asks for no name, and an associate is given their <b>-R</b> resell account with it.</div>
     </div>
 
     <div style="margin-top:13px;padding-top:11px;border-top:1px solid var(--line)">
@@ -18504,7 +18533,7 @@ function wbPreview(){
     if(!wbVal('wbLoanDate'))errs.push('Enter the date &mdash; it is deliberately blank.');
     else{const fw=wbFutureWarn(wbVal('wbLoanDate'));if(fw)warns.push(fw);}
   }else if(wbMode==='addid'){
-    const code=(wbVal('wbApCode')||'').trim().toUpperCase(),kind=wbVal('wbApKind'),parent=wbVal('wbApParent');
+    const code=wbApCodeNow(),kind=wbVal('wbApKind'),parent=wbVal('wbApParent');
     const needP=(kind==='downstream'||kind==='bucket');
     /* v365: the preview interpolated the raw select VALUE ("downstream", "bucket") rather
        than what the dropdown itself says, which reads as internal jargon to anyone reading
@@ -18530,13 +18559,13 @@ function wbPreview(){
        buyer". The article cannot be chosen from the first letter either, since the downstream and
        bucket labels are themselves sentences. The colon drops it, and it is the shape the queue's
        own line has used since v343: "Add CA4-DAM to the roster as: Customer, buys direct". */
-    body=`<div style="font-size:13px;color:var(--mut)">${code?`${apl.elevate?'Appoints':'Registers'} <b style="color:var(--ink)">${esc(code)}</b> as: <b style="color:var(--ink)">${esc(ADDID_KIND_LABEL[kind]||kind)}</b>${needP&&parent?`, under <b style="color:var(--ink)">${esc(codeOf(parent))}</b>`:''}. No figure moves; ${apl.elevate?'they are on the roster already, so nothing new joins it':'the code joins the roster'} when the row is approved and folded.${stand}`:'Type the code.'}</div>`;
-    if(!code)errs.push('Type the code.');
-    else if(!/^[A-Z]{1,3}\d{0,2}[A-Z0-9-]*$/.test(code))errs.push('That does not look like a desk code. They run like CA4-DAM or SP7-PUD.');
-    else if(apl.already)errs.push(`<b>${esc(code)}</b> is already an associate.`);
-    else if(apl.known&&!apl.stream)errs.push(`<b>${esc(code)}</b> is already on the roster.`);
-    else if(kind==='supplier'&&!code.startsWith('S'))errs.push('A supplier code starts with S.');
-    else if(kind!=='supplier'&&code.startsWith('S'))errs.push('A customer code does not start with S.');
+    /* v587: when the code had to take more of the name, or a number, say which code it would have been */
+    const nmNow=(wbVal('wbApName')||'').trim(),baseNow=(code&&!apl.elevate&&kind!=='bucket'&&nmNow)?deriveCode(nmNow,(wbVal('wbApPlace')||'').trim()||'TBC',kind,parent):null;
+    const grew=(baseNow&&baseNow!==code)?` <b style="color:var(--ink)">${esc(baseNow)}</b> was taken, so this one takes ${code.indexOf(baseNow)===0?'a number':'more of the name'}.`:'';
+    body=`<div style="font-size:13px;color:var(--mut)">${code?`${apl.elevate?'Appoints':'Registers'} <b style="color:var(--ink)">${esc(code)}</b> as: <b style="color:var(--ink)">${esc(ADDID_KIND_LABEL[kind]||kind)}</b>${needP&&parent?`, under <b style="color:var(--ink)">${esc(codeOf(parent))}</b>`:''}. No figure moves; ${apl.elevate?'they are on the roster already, so nothing new joins it':'the code joins the roster'} when the row is approved and folded.${grew}${stand}`:(needP&&!parent?'Choose the associate it sits under.':'Type the name; the code is made from it.')}</div>`;
+    /* v587: a derived code cannot be malformed or take the wrong letter, so only the duplicates are left to refuse */
+    if(code&&apl.already)errs.push(`<b>${esc(code)}</b> is already an associate.`);
+    else if(code&&apl.known&&!apl.stream)errs.push(`<b>${esc(code)}</b> is already on the roster.`);
     if(needP&&!parent)errs.push('Choose the associate it sits under.');
     /* v528: the name and the place are filed into the vault, encrypted, before the ID is queued.
        v570: AN ELEVATION ASKS FOR NEITHER. The party was registered with a name and a place when
@@ -18550,7 +18579,7 @@ function wbPreview(){
          place is filed as "to be confirmed" and the code must end in TBC, the suffix the map already
          reads as "nobody has recorded where this party is"; it is re-keyed by Correction when the place is
          known. A blank place on a code that names a place would file a place the party does not have. */
-      if(!(wbVal('wbApPlace')||'').trim()&&code&&!/-TBC$/.test(code))errs.push('No place yet? Then the code ends in TBC, like '+esc(code.replace(/-[A-Z0-9]*$/,'')||'CX9')+'-TBC, and is re-keyed when the place is known. Or type the place.');
+      if(!(wbVal('wbApPlace')||'').trim()&&code)goods.push('No place yet, so the code ends in <b>TBC</b>, and it is re-keyed once the place is known.');   // v587: derived, never refused
       if(!NAME_VAULT&&qSyncState==='server')warns.push('No vault has synced to this device yet; the first name filed here starts one.');
     }
   }else{
@@ -18581,7 +18610,7 @@ function wbAddIdQueue(code,kind,parent,an){
   queue.push({at:new Date().toISOString(),type:'ADDID',party:code,qty:null,total:null,status:'addid',
     raw:(apl.elevate?'Appoint '+code+' as: ':'Add '+code+' to the roster as: ')+(ADDID_KIND_LABEL[kind]||kind)+(parent?' (under '+codeOf(parent)+')':'')+(apl.resell?', with '+apl.resell+' as their resell account':'')+(an?', '+an:''),
     payload:{mode:'addid',code:code,kind:kind,parent:parent,rev:apl.stream,note:an||null}});
-  ['wbApCode','wbApNote','wbApName','wbApPlace'].forEach(id=>{const e=wbEl(id);if(e)e.value='';});
+  ['wbApWho','wbApNote','wbApName','wbApPlace'].forEach(id=>{const e=wbEl(id);if(e)e.value='';});
   applyOverlay();render();
   Promise.resolve(saveQueue()).then(()=>{try{renderQueue();}catch(e){}});
 }
@@ -18739,13 +18768,13 @@ function wbRecord(){
       payload:{mode:'loan',product:wbProdVal(),direction:dirL,party:who,date:date,qty:w,total:null,cash:null,kg:w,note:noteL||null}});
     ['wbLoanUnits','wbLoanNote'].forEach(id=>{const e=wbEl(id);if(e)e.value='';});
   }else if(wbMode==='addid'){
-    const code=(wbVal('wbApCode')||'').trim().toUpperCase(),kind=wbVal('wbApKind');
+    const code=wbApCodeNow(),kind=wbVal('wbApKind');
     const parent=(kind==='downstream'||kind==='bucket')?(wbVal('wbApParent')||null):null,an=(wbVal('wbApNote')||'').trim();
     const apl=addIdPlan(code,kind);
     /* v570: this line used to refuse ANY code already on the roster, which is precisely the code
        an appointment names. It refuses the two things that really are duplicates now: a plain
        registration of a known code, and appointing an associate twice. */
-    if(!code||apl.already||(apl.known&&!apl.stream)){ok.textContent=apl.already?codeOf(code)+' is already an associate.':'Type a code that is not already on the roster.';ok.style.color='var(--crim)';return;}
+    if(!code||apl.already||(apl.known&&!apl.stream)){ok.textContent=!code?'Type the name first; the code is made from it.':apl.already?codeOf(code)+' is already an associate.':codeOf(code)+' is already on the roster.';ok.style.color='var(--crim)';return;}
     /* v528: A NAME AND ID IS COMMITTED EVERY TIME (his rule of 05 Sep 2026), now from the phone. The
        name and the place go into the vault, encrypted with the passphrase asked here and used once,
        before the ID is queued; if the vault cannot be opened or saved, nothing is registered. Only
@@ -18851,6 +18880,13 @@ function wbApply(){
   const apk=wbEl('wbApKind'),apc=wbEl('wbApParentCell'),app=wbEl('wbApParent');
   if(apk&&apc){apc.style.display=(apk.value==='downstream'||apk.value==='bucket')?'':'none';
     if(app&&!app.options.length)app.innerHTML='<option value="">Choose</option>'+roster.filter(id=>!id.startsWith('S')).map(id=>`<option value="${id}">${codeOf(id)}</option>`).join('');}
+  /* v587: AN APPOINTMENT PICKS WHO FROM THE ROSTER, since a registration derives its code from the name and
+     there is no box left to type an existing code into. Refilled on every pass, keeping the choice, so
+     someone appointed a moment ago is no longer offered. */
+  const whoCell=wbEl('wbApWhoCell'),whoSel=wbEl('wbApWho');
+  if(apk&&whoCell&&whoSel){const appt=!!(POSITION_ENGINE.ADDID_APPOINTS||{})[apk.value],cur=whoSel.value;whoCell.style.display=appt?'':'none';
+    whoSel.innerHTML='<option value="">Someone new</option>'+roster.filter(id=>id[0]==='C'&&!/-(R|Gen)$/.test(id)&&!/-\d+-/.test(id)&&associates.indexOf(id)<0).map(id=>`<option value="${id}">${codeOf(id)}</option>`).join('');
+    whoSel.value=appt?cur:'';}
   for(const k in p){const e=wbEl(p[k]);if(e)e.style.display=(k===wbMode)?'':'none';}
   /* v502, v503: delivery is a sale's field and freight a purchase's */
   {const dc=wbEl('wbDeliveryCell'),fc=wbEl('wbFreightCell');if(dc)dc.style.display=wbDir==='SELL'?'':'none';if(fc)fc.style.display=wbDir==='BUY'?'':'none';}
@@ -18909,7 +18945,7 @@ function wireWorkbench(){
   wbFillParty();wbFillKind();wbFillOrders();wbApply();
   ms.onclick=e=>{const m=e.target.dataset.m;if(!m)return;wbMode=m;wbApply();wbEl('wbOk').textContent='';wbPreview();};
   const apk=wbEl('wbApKind');if(apk)apk.onchange=()=>{wbApply();wbPreview();};
-  ['wbApCode','wbApParent','wbApNote'].forEach(id=>{const e=wbEl(id);if(e)e.oninput=e.onchange=wbPreview;});
+  ['wbApWho','wbApName','wbApPlace','wbApParent','wbApNote'].forEach(id=>{const e=wbEl(id);if(e)e.oninput=e.onchange=wbPreview;});   // v587: the code follows the name and the place as they are typed
   const ds=wbEl('wbDirSw');if(ds)ds.onclick=e=>{const d=e.target.dataset.d;if(!d)return;wbDir=d;wbFillParty();wbApply();wbPreview();};
   const asw=wbEl('wbASideSw');if(asw)asw.onclick=e=>{const s=e.target.dataset.s;if(!s)return;wbASide=s;
     wbFillKind();wbFillOrders();wbApply();wbEl('wbOk').textContent='';wbPreview();};

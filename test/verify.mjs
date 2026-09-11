@@ -8300,38 +8300,42 @@ section("v528: the name on the phone, filed encrypted before the ID is queued");
   w.eval("setProd('salt');recompute();switchTab('add');");
   const DRIVE = (opts) => "(function(){try{queue=[];NAME_VAULT=" + (opts.vault || "null") + ";qSyncState='server';window.__posts=[];window.prompt=function(){return " + JSON.stringify(opts.pass) + ";};" +
     "window.fetch=function(u,o){window.__posts.push({u:String(u),body:o&&o.body?JSON.parse(o.body):null});return Promise.resolve({ok:" + (opts.saveOk === false ? "false" : "true") + ",json:function(){return Promise.resolve({ok:" + (opts.saveOk === false ? "false" : "true") + "});}});};" +
-    "wbMode='addid';wbApply();var set=function(id,v){var e=document.getElementById(id);if(e)e.value=v;};set('wbApCode'," + JSON.stringify(opts.code) + ");set('wbApKind'," + JSON.stringify(opts.kind || "customer") + ");set('wbApName'," + JSON.stringify(opts.name || "") + ");set('wbApPlace'," + JSON.stringify(opts.place || "") + ");wbPreview();" +
+    "wbMode='addid';wbApply();var set=function(id,v){var e=document.getElementById(id);if(e)e.value=v;};set('wbApKind'," + JSON.stringify(opts.kind || "customer") + ");set('wbApName'," + JSON.stringify(opts.name || "") + ");set('wbApPlace'," + JSON.stringify(opts.place || "") + ");wbPreview();" +
     "var btn=document.getElementById('wbRec');var r={dis:!!btn.disabled,errs:(document.getElementById('wbMsgs')||{}).textContent||''};try{wbRecord();}catch(e){r.threw=String(e&&e.message);}return JSON.stringify(r);}catch(e){return JSON.stringify({no:'threw: '+(e&&e.message)});}})()";
   const settle = async () => { for (let i = 0; i < 60; i++) { await new Promise((r) => setTimeout(r, 100)); const st = String(w.eval("(document.getElementById('wbOk')||{}).textContent||''")); if (!/Filing the name/.test(st)) return st; } return String(w.eval("(document.getElementById('wbOk')||{}).textContent||''")); };
-  const readQ = () => JSON.parse(String(w.eval("JSON.stringify({q:queue.map(function(x){return {type:x.type,party:x.party,raw:x.raw,payload:x.payload};}),posts:window.__posts,vault:NAME_VAULT,roster:roster.indexOf('CZ9-TESTNAME')>=0})")));
+  const readQ = () => JSON.parse(String(w.eval("JSON.stringify({q:queue.map(function(x){return {type:x.type,party:x.party,raw:x.raw,payload:x.payload};}),posts:window.__posts,vault:NAME_VAULT,roster:roster.indexOf('CT11-SOM')>=0})")));
   /* without a name the button is disabled and nothing is registered */
-  const A = JSON.parse(String(w.eval(DRIVE({ code: "CZ9-TESTNAME", pass: "pw" }))));
-  ok(!A.no && A.dis && /Type the name/.test(A.errs) && /ends in TBC/.test(A.errs), "without a name the button is disabled, and a blank place on a code that names one says the code must end in TBC: " + (A.no || A.errs.slice(0, 80)));
+  const A = JSON.parse(String(w.eval(DRIVE({ pass: "pw" }))));
+  ok(!A.no && A.dis && /Type the name/.test(A.errs), "without a name the button is disabled, and there is no code to register (v587): " + (A.no || A.errs.slice(0, 80)));
+  /* v587: THE CODE IS DERIVED, so the fixture's codes are forced free on the live roster, and forgotten
+     from the device's added parties too, which a render would otherwise put back */
+  const forgetCode = (c) => w.eval("(function(){var i=roster.indexOf(" + JSON.stringify(c) + ");if(i>=0)roster.splice(i,1);addedParties=addedParties.filter(function(p){return p.code!==" + JSON.stringify(c) + ";});try{localStorage.setItem('saltAddedParties',JSON.stringify(addedParties));}catch(e){}})();");
+  ["CT11-SOM", "CT11-TBC"].forEach(forgetCode);
   /* the named road: the vault is written first, then the ID is queued with no name on it */
-  const B = JSON.parse(String(w.eval(DRIVE({ code: "CZ9-TESTNAME", pass: "pw", name: "Test Person", place: "Somewhere" }))));
+  const B = JSON.parse(String(w.eval(DRIVE({ pass: "pw", name: "Test Person", place: "Somewhere" }))));
   const stB = await settle();
   const qB = readQ();
   const post = qB.posts.find((p) => /vault$/.test(p.u));
-  ok(!B.no && !B.dis && /Registered CZ9-TESTNAME/.test(stB) && post && post.body && post.body.vault && post.body.vault.ct, "with a name and place the vault is posted and the ID registered: " + (B.no || stB.slice(0, 90)));
+  ok(!B.no && !B.dis && /Registered CT11-SOM/.test(stB) && post && post.body && post.body.vault && post.body.vault.ct, "with a name and place the vault is posted and the ID registered: " + (B.no || stB.slice(0, 90)));
   let opened = null; try { opened = await vdec("pw", post.body.vault); } catch (e) { opened = { err: String(e && e.message) }; }
-  ok(opened && opened["CZ9-TESTNAME"] === "Test Person (Somewhere)", "the same passphrase opens the envelope to the name and place: " + JSON.stringify(opened && opened["CZ9-TESTNAME"]));
-  ok(qB.q.length === 1 && qB.q[0].type === "ADDID" && qB.q[0].payload.code === "CZ9-TESTNAME" && !JSON.stringify(qB.q).includes("Test Person") && !JSON.stringify(qB.q).includes("Somewhere") && qB.roster, "the ID is queued with no name and no place on it, and is selectable at once");
+  ok(opened && opened["CT11-SOM"] === "Test Person (Somewhere)", "the same passphrase opens the envelope to the name and place: " + JSON.stringify(opened && opened["CT11-SOM"]));
+  ok(qB.q.length === 1 && qB.q[0].type === "ADDID" && qB.q[0].payload.code === "CT11-SOM" && !JSON.stringify(qB.q).includes("Test Person") && !JSON.stringify(qB.q).includes("Somewhere") && qB.roster, "the ID is queued with no name and no place on it, and is selectable at once");
   /* a refused passphrase, and a refused save, register nothing */
-  w.eval("(function(){var i=roster.indexOf('CZ9-TESTNAME');if(i>=0)roster.splice(i,1);})();");
-  const C = JSON.parse(String(w.eval(DRIVE({ code: "CZ9-TESTNAME", pass: "", name: "Test Person", place: "Somewhere" }))));
+  forgetCode("CT11-SOM");
+  const C = JSON.parse(String(w.eval(DRIVE({ pass: "", name: "Test Person", place: "Somewhere" }))));
   const stC = await settle();
   ok(!C.no && /needs the passphrase/.test(stC) && readQ().q.length === 0, "no passphrase registers nothing: " + stC.slice(0, 80));
   /* v548, his instruction of 09 Sep 2026: a place still to be confirmed can be entered. Blank, on a code
      ending in TBC, it files "(to be confirmed)" and registers; the map's reason for a TBC code renders
      its ampersand, which the entity in the source had printed literally. */
-  const TB = JSON.parse(String(w.eval(DRIVE({ code: "CZ9-TBC", pass: "pw", name: "Test Person", place: "" }))));
+  const TB = JSON.parse(String(w.eval(DRIVE({ pass: "pw", name: "Test Person", place: "" }))));
   const stTB = await settle();
   const qTB = readQ();
   const postTB = qTB.posts.find((p) => /vault$/.test(p.u));
   let openedTB = null; try { openedTB = postTB && postTB.body ? await vdec("pw", postTB.body.vault) : null; } catch (e) { openedTB = { err: String(e && e.message) }; }
-  ok(!TB.no && !TB.dis && /Registered CZ9-TBC/.test(stTB) && openedTB && openedTB["CZ9-TBC"] === "Test Person (to be confirmed)",
-    "a blank place on a TBC code registers, and files the name as to be confirmed: " + (TB.no || stTB.slice(0, 60)) + " / " + JSON.stringify(openedTB && openedTB["CZ9-TBC"]));
-  w.eval("(function(){var i=roster.indexOf('CZ9-TBC');if(i>=0)roster.splice(i,1);queue=[];})();");
+  ok(!TB.no && !TB.dis && /Registered CT11-TBC/.test(stTB) && openedTB && openedTB["CT11-TBC"] === "Test Person (to be confirmed)",
+    "a blank place on a TBC code registers, and files the name as to be confirmed: " + (TB.no || stTB.slice(0, 60)) + " / " + JSON.stringify(openedTB && openedTB["CT11-TBC"]));
+  forgetCode("CT11-TBC"); w.eval("queue=[];");
   w.eval("switchTab('map');");
   const mapText = String(w.eval("(document.querySelector('.sec.on')||{}).textContent||''"));
   ok(/Names & IDs/.test(mapText) && !/&amp;/.test(mapText), "the map's reason for a TBC code reads Names & IDs, not the entity");
@@ -8340,18 +8344,21 @@ section("v528: the name on the phone, filed encrypted before the ID is queued");
   const L = JSON.parse(String(w.eval("(function(){queue=[];['apName','apLoc','apKind','apParent','apMsg'].forEach(function(id){if(!document.getElementById(id)){var e=document.createElement(id==='apMsg'?'div':(id==='apKind'||id==='apParent')?'select':'input');e.id=id;document.body.appendChild(e);}});var k=document.getElementById('apKind');k.innerHTML='<option value=customer>customer</option>';k.value='customer';document.getElementById('apName').value='Test Person';document.getElementById('apLoc').value='';try{addParty();}catch(e){return JSON.stringify({threw:String(e&&e.message)});}return JSON.stringify({on:roster.indexOf('CT11-TBC')>=0,raw:(BIO['CT11-TBC']||{}).raw||null,msg:document.getElementById('apMsg').textContent.slice(0,60),q:queue.length});})()")));
   ok(!L.threw && L.on && L.raw === "Test Person (to be confirmed)" && L.q === 1, "on the laptop panel a blank location derives CT11-TBC and files to be confirmed: " + JSON.stringify(L));
   w.eval("(function(){var i=roster.indexOf('CT11-TBC');if(i>=0)roster.splice(i,1);delete BIO['CT11-TBC'];queue=[];})();");
-  const D = JSON.parse(String(w.eval(DRIVE({ code: "CZ9-TESTNAME", pass: "pw", name: "Test Person", place: "Somewhere", saveOk: false }))));
+  const D = JSON.parse(String(w.eval(DRIVE({ pass: "pw", name: "Test Person", place: "Somewhere", saveOk: false }))));
   const stD = await settle();
   ok(!D.no && /could not be saved/.test(stD) && readQ().q.length === 0 && readQ().vault === null, "a refused save registers nothing and puts the old vault back");
   const wrongEnv = JSON.stringify(post.body.vault);
-  const E = JSON.parse(String(w.eval(DRIVE({ code: "CZ9-TESTNAME", pass: "not-pw", name: "Test Person", place: "Somewhere", vault: wrongEnv }))));
+  const E = JSON.parse(String(w.eval(DRIVE({ pass: "not-pw", name: "Test Person", place: "Somewhere", vault: wrongEnv }))));
   const stE = await settle();
   ok(!E.no && /did not open the vault/.test(stE) && readQ().q.length === 0, "a wrong passphrase against an existing vault registers nothing");
-  /* a bucket has no name and takes the old road */
-  const F = JSON.parse(String(w.eval(DRIVE({ code: "CZ9-TESTBUCKET", kind: "bucket", pass: "pw" }))));
-  w.eval("var ap=document.getElementById('wbApParent');if(ap){ap.innerHTML='<option value=\"CS6-BS\">CS6-BS</option>';ap.value='CS6-BS';}wbPreview();wbRecord();");
+  /* a bucket has no name and takes the old road. v587: its code is derived as its associate's -Gen, so the
+     associate is a fixture forced onto the roster and its -Gen forced off, rather than a real one whose
+     bucket may already exist */
+  w.eval("(function(){if(roster.indexOf('CZ5-PAR')<0)roster.push('CZ5-PAR');})();"); forgetCode("CZ5-PAR-Gen");
+  const F = JSON.parse(String(w.eval(DRIVE({ kind: "bucket", pass: "pw" }))));
+  w.eval("var ap=document.getElementById('wbApParent');if(ap){ap.innerHTML='<option value=\"CZ5-PAR\">CZ5-PAR</option>';ap.value='CZ5-PAR';}wbPreview();wbRecord();");
   const qF = readQ();
-  ok(!F.no && qF.q.some((x) => x.payload.code === "CZ9-TESTBUCKET" && x.payload.kind === "bucket") && !qF.posts.some((p) => /vault$/.test(p.u)), "a bucket registers without a name and touches no vault");
+  ok(!F.no && qF.q.some((x) => x.payload.code === "CZ5-PAR-Gen" && x.payload.kind === "bucket") && !qF.posts.some((p) => /vault$/.test(p.u)), "a bucket registers without a name and touches no vault, under its associate's -Gen (v587): " + JSON.stringify(qF.q.map((x) => x.payload.code)));
   await new Promise((r) => setTimeout(r, 200));
   try { w.close(); } catch (e) { }
 }
@@ -9101,10 +9108,10 @@ section("v570: an associate is appointed from the Enter tab, and the Kind means 
          name and place cells are read from the DOM rather than from the source. */
       const DRIVE570 = (code, kind) => "(function(){try{queue=[];wbMode='addid';wbApply();"
         + "var set=function(id,v){var e=document.getElementById(id);if(e)e.value=v;};"
-        + "set('wbApCode'," + JSON.stringify(code) + ");set('wbApKind'," + JSON.stringify(kind) + ");"
+        + "set('wbApWho'," + JSON.stringify(code) + ");set('wbApKind'," + JSON.stringify(kind) + ");"
         + "set('wbApName','');set('wbApPlace','');wbPreview();"
         + "var btn=document.getElementById('wbRec');"
-        + "return JSON.stringify({dis:!!btn.disabled,"
+        + "return JSON.stringify({dis:!!btn.disabled,whoOpts:Array.prototype.map.call((document.getElementById('wbApWho')||{options:[]}).options,function(o){return o.value;}),"
         + "prev:(document.getElementById('wbPrev')||{}).textContent||'',"
         + "errs:(document.getElementById('wbMsgs')||{}).textContent||'',"
         + "nameShown:(document.getElementById('wbApNameCell')||{}).style.display!=='none',"
@@ -9131,16 +9138,16 @@ section("v570: an associate is appointed from the Enter tab, and the Kind means 
       ok(HUR.capA > HUR.capR, `and the associate cap really is the larger one (${HUR.capA} against ${HUR.capR})`);
 
       const TW = JSON.parse(String(w570.eval(DRIVE570("CZ7-BENCH", "reseller"))));
-      ok(!TW.no && TW.dis === true && /already an associate/.test(TW.errs),
-        "appointing someone already on the bench disables Record and says why: " + (TW.no || TW.errs.slice(0, 80)));
+      ok(!TW.no && TW.dis === true && TW.whoOpts.indexOf("CZ7-BENCH") < 0 && TW.whoOpts.indexOf("CZ8-APPT") >= 0,
+        "someone already on the bench is not offered under Who, so they cannot be appointed twice, while someone off it is (v587): " + (TW.no || JSON.stringify(TW.whoOpts)));
       const PL = JSON.parse(String(w570.eval(DRIVE570("CZ8-APPT", "customer"))));
-      ok(!PL.no && PL.dis === true && /already on the roster/.test(PL.errs),
-        "and a plain registration of a known code is still refused: " + (PL.no || PL.errs.slice(0, 80)));
+      ok(!PL.no && PL.dis === true && /Type the name/.test(PL.errs),
+        "and a Customer registration ignores Who and asks for a name, so a known code cannot be registered twice from here (v587): " + (PL.no || PL.errs.slice(0, 80)));
 
       /* THE TAP ITSELF: what it queues, and what the desk shows before the fold */
       const REC = JSON.parse(String(w570.eval("(function(){try{queue=[];"
         + "wbMode='addid';wbApply();var set=function(id,v){var e=document.getElementById(id);if(e)e.value=v;};"
-        + "set('wbApCode','CZ8-APPT');set('wbApKind','reseller');set('wbApName','');set('wbApPlace','');wbPreview();"
+        + "set('wbApWho','CZ8-APPT');set('wbApKind','reseller');set('wbApName','');set('wbApPlace','');wbPreview();"
         + "wbRecord();"
         + "return JSON.stringify({n:queue.length,q:queue[0]||null,"
         + "ok:(document.getElementById('wbOk')||{}).textContent||'',"
@@ -9149,7 +9156,7 @@ section("v570: an associate is appointed from the Enter tab, and the Kind means 
       ok(!REC.no && REC.n === 1 && REC.q && REC.q.type === "ADDID" && REC.q.payload.code === "CZ8-APPT"
         && REC.q.payload.kind === "reseller" && REC.q.payload.rev === "R2",
         "the tap queues one ADDID carrying the code, the kind and the stream: " + (REC.no || JSON.stringify(REC.q && REC.q.payload)));
-      ok(!REC.no && /^Appoint CZ8-APPT as:/.test(REC.q.raw) && /CZ8-APPT-R/.test(REC.q.raw),
+      ok(!REC.no && /^Appoint CZ8-APPT as:/.test((REC.q || {}).raw || "") && /CZ8-APPT-R/.test((REC.q || {}).raw || ""),   // v587: reports a tap that queued nothing, rather than throwing on it
         "the queue line reads as an appointment and names the resell account: " + (REC.no || (REC.q && REC.q.raw)));
       ok(!REC.no && /Appointed CZ8-APPT/.test(REC.ok), "and the desk says Appointed, not Registered: " + (REC.no || REC.ok));
       ok(!REC.no && REC.onBench === true && REC.hasR === true,
@@ -9769,6 +9776,68 @@ section("11 Sep 2026: a refused entry is kept, and can be withdrawn");
       ok(got.ats.join() === OLD_A, `at load the refused entry is kept and the other, folded past and acknowledged, is cleared (${got.ats.join()})`);
       ok(got.stuck === 0 && got.count === 0, `and the kept one is not called stuck (${got.stuck} flagged, ${got.count} counted)`);
     } finally { try { wB.close(); } catch (e) { /* best effort */ } try { rmSync(dir, { recursive: true, force: true }); } catch (e) { /* best effort */ } }
+  }
+}
+
+
+section("11 Sep 2026: Add ID derives the code, and a clash takes more of the name");
+{
+  /* HIS INSTRUCTION OF 11 SEP 2026. The phone took a typed code; Names & IDs on the laptop already derived
+     one. Both derive it now, the same way: C or S, the name's first letter and length, then the place,
+     initials for several words and the first three letters for one, TBC when blank for every kind. A
+     clash takes one more letter of the name at a time, then a number. Fixture codes throughout, forced
+     onto the live roster and taken off again, so no assertion moves with the real book. */
+  const { openMaster: omD } = await import("../tools/payload.mjs");
+  const { w: wD } = await omD();
+  const rdD = (e) => JSON.parse(String(wD.eval("JSON.stringify(" + e + ")")));
+  const onRoster = (codes) => wD.eval("(function(){" + JSON.stringify(codes) + ".forEach(function(c){if(roster.indexOf(c)<0)roster.push(c);});})();");
+  const offRoster = (codes) => wD.eval("(function(){var cs=" + JSON.stringify(codes) + ";cs.forEach(function(c){var i;while((i=roster.indexOf(c))>=0)roster.splice(i,1);});addedParties=addedParties.filter(function(p){return cs.indexOf(p.code)<0;});})();");
+  const FIX = ["CZ4-QQQ", "CZY4-QQQ", "CZYX4-QQQ", "CZYXW4-QQQ", "CZ4-QQQ2", "SZ4-QQQ", "SZ4-TBC", "CZ5-PAR", "CZ5-PAR-2-QQQ"];
+  try {
+    offRoster(FIX);
+    ok(rdD("deriveCode('Abcd','Qqqville','customer')") === "CA4-QQQ", "a four-letter A is CA4, and one word of place gives its first three letters");
+    ok(rdD("deriveCode('Abcd','Qqq Rrr','customer')") === "CA4-QR", "several words of place give their initials");
+    ok(rdD("deriveCode('Abcd Efgh','Sss Ttt','supplier')") === "SA9-ST", "a supplier is S, and the length counts the space in the name");
+
+    /* the clash walk, with the roster forced */
+    ok(rdD("deriveFreeCode('Zyxw','Qqqville','customer')") === "CZ4-QQQ", "a free code is the derived code itself");
+    onRoster(["CZ4-QQQ"]);
+    ok(rdD("deriveFreeCode('Zyxw','Qqqville','customer')") === "CZY4-QQQ", "a taken code takes one more letter of the name: CZ4-QQQ taken gives CZY4-QQQ");
+    onRoster(["CZY4-QQQ"]);
+    ok(rdD("deriveFreeCode('Zyxw','Qqqville','customer')") === "CZYX4-QQQ", "and another when that one is taken too");
+    onRoster(["CZYX4-QQQ", "CZYXW4-QQQ"]);
+    ok(rdD("deriveFreeCode('Zyxw','Qqqville','customer')") === "CZ4-QQQ2", "only a name used up entirely falls back to a number");
+    ok(rdD("deriveFreeCode('Zyxw','Qqqville','supplier')") === "SZ4-QQQ", "a supplier does not clash with a customer of the same name and place");
+    onRoster(["CZ5-PAR", "CZ5-PAR-2-QQQ"]);
+    ok(rdD("deriveFreeCode('Anyone','Qqqville','downstream','CZ5-PAR')") === "CZ5-PAR-2-QQQ",
+      "a downstream code is returned as derived, for its caller to check, rather than grown from a name it does not carry");
+    offRoster(["CZY4-QQQ", "CZYX4-QQQ", "CZYXW4-QQQ", "CZ5-PAR", "CZ5-PAR-2-QQQ"]);
+
+    /* the phone's pane: no typed code, Who for an appointment, the code follows the name and the place */
+    wD.eval("setProd('salt');recompute();switchTab('add');wbMode='addid';wbApply();");
+    ok(!wD.document.getElementById("wbApCode") && !!wD.document.getElementById("wbApWho"), "the pane has no box to type a code into, and a Who picker for an appointment");
+    const PANE = (kind, name, place) => JSON.parse(String(wD.eval("(function(){var set=function(id,v){var e=document.getElementById(id);if(e)e.value=v;};"
+      + "set('wbApKind'," + JSON.stringify(kind) + ");wbApply();set('wbApWho','');set('wbApName'," + JSON.stringify(name) + ");set('wbApPlace'," + JSON.stringify(place) + ");wbPreview();"
+      + "return JSON.stringify({code:wbApCodeNow(),prev:(document.getElementById('wbPrev')||{}).textContent||'',msgs:(document.getElementById('wbMsgs')||{}).textContent||'',dis:!!document.getElementById('wbRec').disabled});})()")));
+    const clash = PANE("customer", "Zyxw", "Qqqville");   // CZ4-QQQ is still on the roster
+    ok(clash.code === "CZY4-QQQ" && /Registers CZY4-QQQ/.test(clash.prev) && !clash.dis,
+      "the pane registers the next free code, with Record enabled: " + clash.prev.slice(0, 120));
+    ok(/CZ4-QQQ was taken/.test(clash.prev), "and says which code was taken: " + clash.prev.slice(0, 200));
+    const sup = PANE("supplier", "Zyxw", "");
+    ok(sup.code === "SZ4-TBC" && /TBC/.test(sup.msgs), "a supplier's blank place is TBC too, and the pane says so: " + sup.code);
+
+    /* the laptop's Names & IDs takes the same rule */
+    const LAP = (kind, name, loc) => JSON.parse(String(wD.eval("(function(){queue=[];['apName','apLoc','apKind','apParent','apMsg'].forEach(function(id){if(!document.getElementById(id)){var e=document.createElement(id==='apMsg'?'div':(id==='apKind'||id==='apParent')?'select':'input');e.id=id;document.body.appendChild(e);}});"
+      + "var k=document.getElementById('apKind');k.innerHTML='<option value=customer>customer</option><option value=supplier>supplier</option>';k.value=" + JSON.stringify(kind) + ";"
+      + "document.getElementById('apName').value=" + JSON.stringify(name) + ";document.getElementById('apLoc').value=" + JSON.stringify(loc) + ";"
+      + "try{addParty();}catch(e){return JSON.stringify({threw:String(e&&e.message)});}return JSON.stringify({q:queue.map(function(x){return x.payload&&x.payload.code;})});})()")));
+    const lapClash = LAP("customer", "Zyxw", "Qqqville");
+    ok(!lapClash.threw && lapClash.q.join() === "CZY4-QQQ", "on the laptop a clash takes more of the name as well, rather than being refused: " + JSON.stringify(lapClash));
+    const lapSup = LAP("supplier", "Zyxw", "");
+    ok(!lapSup.threw && lapSup.q.join() === "SZ4-TBC", "and a supplier with no place is TBC there too, where it used to take no suffix: " + JSON.stringify(lapSup));
+  } finally {
+    try { offRoster(FIX); } catch (e) { /* best effort */ }
+    try { wD.close(); } catch (e) { /* best effort */ }
   }
 }
 

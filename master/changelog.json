@@ -1,5 +1,17 @@
 [
  {
+  "v": "v587",
+  "d": "11 Sep 2026",
+  "t": "ADD ID DERIVES THE CODE FROM THE NAME AND THE PLACE, AND A CLASH TAKES MORE OF THE NAME",
+  "n": [
+   "<b>HIS INSTRUCTION, 11 SEP 2026: the code is derived, never typed.</b> C for a customer or S for a supplier, then the name's first letter and its length, then a dash and the place: its initials when it is several words, its first three letters when it is one. A blank place gives TBC, for a supplier too, which used to take no suffix. Names & IDs on the laptop already minted codes this way; the phone took a typed code and checked only its shape. Both call one function now.",
+   "<b>A CLASH TAKES MORE OF THE NAME.</b> Two people can derive one code: the same initial, the same length, the same place. Asked for something better than a refusal or a running number, the code takes one more letter of the name at a time, so a second four-letter A from the same place is told apart by the name people know them by. Only a name used up entirely, the same name twice in one place, falls back to a number. The preview says which code was taken.",
+   "<b>APPOINTING SOMEONE ALREADY ON THE ROSTER</b> is a pick under Who now, since there is no code box left to type into. Who lists the roster's customers who are not yet associates, so nobody can be appointed twice.",
+   "<b>WHAT IT TOUCHES: NO EXISTING CODE.</b> The rule reproduces 37 of the 40 codes in the directory it applies to. CH4-KLS, CH4-MLR and CD3-SEG do not fit it, and on his ruling they are re-keyed with the amend, which comes last in this round and carries each statement username with its customer.",
+   "<b>PROVED ON FIXTURE CODES</b> forced onto the live roster and taken off again: the rule, the clash walk, the pane and the laptop. Ten mutations, each reddening its own. The v528 and v570 tests moved with the pane, since they typed a code there is no longer a box for, and the bucket test uses a fixture associate now."
+  ]
+ },
+ {
   "v": "v586",
   "d": "11 Sep 2026",
   "t": "A REFUSED ENTRY STAYS ON THE PHONE UNTIL IT IS WITHDRAWN, IN ONE TAP",
