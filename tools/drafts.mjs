@@ -349,7 +349,8 @@ export function clockLine(id, decidedAt, liveAt, committedAt) {
 /* ---- a refusal the fold made, put where the phone shows refusals (v512) ------------------
    The drafter writes `refused` for what it will not draft; the fold has had no way to say what it
    would not fold. This records one, keyed on the draft id so the drafter's self-cleaning retires
-   it once the watermark passes. Source "fold", so the phone can tell the two apart. */
+   it once the watermark passes, or, while its entry is still queued, once that entry is withdrawn
+   (v586). Source "fold", so the phone can tell the two apart. */
 function refusedNote() {
   const i = argv.indexOf("--refused-note");
   const id = argv[i + 1], why = argv.slice(i + 2).filter((a) => !a.startsWith("--")).join(" ");

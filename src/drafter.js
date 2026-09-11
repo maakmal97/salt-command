@@ -1258,14 +1258,24 @@ export async function runDrafter(env, { now = () => new Date().toISOString() } =
   const seen = await env.SALT_LEDGER.prepare("SELECT id FROM draft").all();
   const already = new Set((seen.results || []).map((r) => r.id));
 
-  /* SELF-CLEANING, and it runs before anything else. An entry the drafter refused may since
-     have been folded by a person, or withdrawn; either way it is at or below the watermark
-     now and must stop being listed. Doing it here means nobody has to tidy up, and a stale
-     refusal cannot accumulate into a list people learn to ignore. */
-  if (mark) await env.SALT_LEDGER.prepare("DELETE FROM refused WHERE id<=?1").bind(mark).run();
+  /* SELF-CLEANING, and it runs before anything else, so nobody has to tidy up and a stale refusal
+     cannot accumulate into a list people learn to ignore. v586, HIS DECISION OF 11 SEP 2026: A
+     REFUSAL LIVES AS LONG AS ITS ENTRY IS QUEUED. This used to delete every refusal the watermark had
+     passed, taking a fold past it for proof the entry had been dealt with. An unrelated fold passed it
+     just as well, the phone cleared the entry on the same watermark, and a refused entry vanished with
+     no record: CR3-DAM's redemption of 11 Sep went that way. Now one whose entry is still queued stays,
+     whoever wrote it. One whose entry has left the queue goes at once if it is the drafter's own, since
+     leaving is a withdrawal or a re-entry, and at the watermark as before if the laptop's queue or the
+     fold wrote it, since their entries need never have been on this queue. */
+  const held = await env.SALT_LEDGER.prepare("SELECT id,source FROM refused").all();
+  for (const r of held.results || []) {
+    if (byAt.has(r.id)) continue;
+    if (r.source === "cloud-drafter" || (mark && r.id <= mark))
+      await env.SALT_LEDGER.prepare("DELETE FROM refused WHERE id=?1").bind(r.id).run();
+  }
   /* 08 Sep 2026: A FOLD'S OWN NOTICE RETIRES WITH THE NEXT FOLD. foldcall and the suite write
-     refusals under "fold:<id>" and "suite:<id>", which sort above every ISO id, so the line above
-     never touched them and a failure notice stayed on the phone for good. One is stale once a draft
+     refusals under "fold:<id>" and "suite:<id>", which sort above every ISO id, so the rule above
+     never touches them and a failure notice stayed on the phone for good. One is stale once a draft
      has been committed after it was written. */
   const lastCommit = await env.SALT_LEDGER.prepare("SELECT MAX(committed_at) AS t FROM draft").first();
   if (lastCommit && lastCommit.t)

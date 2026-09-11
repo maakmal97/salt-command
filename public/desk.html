@@ -68,7 +68,7 @@ document.addEventListener('visibilitychange',function(){
    localStorage before it posts anything and the load reads it straight back.
    The same tick retries a held entry, which is what gets a phone write to the cloud
    without waiting for the next open. */
-var SALT_BUILD_ID="0d7c26081825cf43";
+var SALT_BUILD_ID="93eb0205c5ccc444";
 var SALT_REV_MS=10000;
 (function(){
   var chip=null,timer=null;
@@ -6313,7 +6313,9 @@ const whiteboard=[
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{"v":"v585","d":"11 Sep 2026","t":"AN ASSOCIATE'S REWARD IS OFFSET AGAINST THEIR ADVANCE AUTOMATICALLY, UP TO 1 UNIT","n":["<b>HIS INSTRUCTION, 11 SEP 2026: an associate's reward is offset against their advanced delivery order, up to 1 unit, automatically, and folded into the Approve tab.</b> So nobody presses anything: whenever Approve has read the drafts, each associate holding an earned unit and an outstanding advance is offered an offset, capped at 1 unit, as the same Correction the Offset button has queued since v584. It waits in Approve for his tap like any row, and the Approve part says what it offered.","<b>IT RUNS ONLY WHEN THE DRAFTS WERE READ.</b> The check that stops it offering the same offset twice reads them, and a failed read would leave that check blind, so on a failed read it does nothing. It skips a row with an offset already queued, drafted or refused, so a refusal is not offered again on every load; once one folds, the row is settled in kind and stops being an advance, which ends it. Salt only, since oil has no reward. Associates only, on his word; a customer's reward is not offset automatically.","<b>A DUPLICATE OFFER CANNOT REACH THE LEDGER.</b> Two devices loading at the same moment could each offer the same offset. The drafter's own correction check already refuses a Correction that changes nothing, so the second is refused rather than drafted, and an assertion now holds it to that. A second guard for the same case was written, found unreachable when its own mutation stayed green, and taken out again, so this version does not touch the Worker at all.","<b>PROVED WITH EVERY STATE FORCED, AND THE HOOK THROUGH apLoad ITSELF</b> with the network stubbed, because a test that called the function directly would stay green with the hook removed. Thirteen assertions. Five mutations on the new code and one on the drafter's existing no-change check, each reddening its own.","<b>WHO IT TOUCHES TODAY: NOBODY, READ OFF THE ENGINE.</b> The two associates with an advance outstanding, CS6-BS on s139 and CN6-WM on s124, hold no free unit, and CN6-WM carries a deficit of 1, so nothing is offered until one of them earns one. CR3-DAM holds the one free unit among the associates and has no advance, so theirs stays a Redeem. Customers are outside the automatic offset on his word, and two of them hold both: CM4-MK a unit against RM 110 owed on s143, and CJ4-BJ a quarter unit against RM 272 on s137. That is put to him, with the customers' want of any Redeem button at all."]},
+const evolution=[{"v":"v586","d":"11 Sep 2026","t":"A REFUSED ENTRY STAYS ON THE PHONE UNTIL IT IS WITHDRAWN, IN ONE TAP","n":["<b>HIS DECISION, 11 SEP 2026: a refused entry is kept on the phone, with a Withdraw button.</b> Until now one vanished at the next fold with no record. The phone cleared any acknowledged entry the watermark had passed, and the drafter deleted any refusal the watermark had passed, so an unrelated fold passed for proof that the entry had been dealt with. CR3-DAM's redemption of 11 Sep went that way: refused for carrying no payload, then gone.","<b>THE PHONE KEEPS WHAT THE DRAFTS SAY IS REFUSED.</b> A read of the drafts that succeeds records which entries are refused; a failed read records nothing, so it cannot wipe the list. The load keeps a refused entry however far the watermark has passed it, and does not call it stuck, since stuck means it never reached the cloud and a refused entry did.","<b>THE CLOUD KEEPS A REFUSAL WHILE ITS ENTRY IS QUEUED,</b> whoever wrote it. Once the entry leaves the queue, the drafter's own refusal goes at its next pass, since leaving is a withdrawal or a re-entry; one from the laptop's queue or the fold goes at the watermark as before, since their entries need never have been on the cloud queue. The fold's own notices keep their rule.","<b>WITHDRAW</b> is one button on each refusal card whose entry this phone holds. It drops the entry the way a rejection does, takes the card off at once and syncs, and the cloud's copy and its refusal follow. A card not queued here says so; a fold notice says it clears itself. Nothing on the panel approves or rejects, as v309 built it.","<b>PROVED IN BOTH DIRECTIONS.</b> The drafter runs twice against a fake ledger, including a withdrawal above the watermark, the one case where the old rule and the new part. The phone is tested through a real boot with a refused entry already in storage, a real apLoad with the network stubbed and a real tap on Withdraw. Fourteen mutations, each reddening its own assertion. Three source pins from v485 and one from the drafter's first round moved with the code.","<b>ONE GAP REMAINS, AND IT IS NARROW.</b> The phone learns of a refusal only when it reads the drafts: on opening, on Approve, and after a redemption. The load runs before the first read, so an entry refused after the phone's last read, then passed by a fold approved elsewhere before the phone next opens, can still clear at that opening. An approval on this phone reads the drafts first, so today only the laptop can open it.","<b>WHO IT TOUCHES TODAY: NOTHING.</b> The refused table is empty and the cloud queue holds no entries, so the first pass after this deploy clears nothing. It does not bring CR3-DAM's redemption back: their unit is still earned and unredeemed, and Redeem, which has carried a payload since v584, puts it to Approve in one tap."]},
+
+{"v":"v585","d":"11 Sep 2026","t":"AN ASSOCIATE'S REWARD IS OFFSET AGAINST THEIR ADVANCE AUTOMATICALLY, UP TO 1 UNIT","n":["<b>HIS INSTRUCTION, 11 SEP 2026: an associate's reward is offset against their advanced delivery order, up to 1 unit, automatically, and folded into the Approve tab.</b> So nobody presses anything: whenever Approve has read the drafts, each associate holding an earned unit and an outstanding advance is offered an offset, capped at 1 unit, as the same Correction the Offset button has queued since v584. It waits in Approve for his tap like any row, and the Approve part says what it offered.","<b>IT RUNS ONLY WHEN THE DRAFTS WERE READ.</b> The check that stops it offering the same offset twice reads them, and a failed read would leave that check blind, so on a failed read it does nothing. It skips a row with an offset already queued, drafted or refused, so a refusal is not offered again on every load; once one folds, the row is settled in kind and stops being an advance, which ends it. Salt only, since oil has no reward. Associates only, on his word; a customer's reward is not offset automatically.","<b>A DUPLICATE OFFER CANNOT REACH THE LEDGER.</b> Two devices loading at the same moment could each offer the same offset. The drafter's own correction check already refuses a Correction that changes nothing, so the second is refused rather than drafted, and an assertion now holds it to that. A second guard for the same case was written, found unreachable when its own mutation stayed green, and taken out again, so this version does not touch the Worker at all.","<b>PROVED WITH EVERY STATE FORCED, AND THE HOOK THROUGH apLoad ITSELF</b> with the network stubbed, because a test that called the function directly would stay green with the hook removed. Thirteen assertions. Five mutations on the new code and one on the drafter's existing no-change check, each reddening its own.","<b>WHO IT TOUCHES TODAY: NOBODY, READ OFF THE ENGINE.</b> The two associates with an advance outstanding, CS6-BS on s139 and CN6-WM on s124, hold no free unit, and CN6-WM carries a deficit of 1, so nothing is offered until one of them earns one. CR3-DAM holds the one free unit among the associates and has no advance, so theirs stays a Redeem. Customers are outside the automatic offset on his word, and two of them hold both: CM4-MK a unit against RM 110 owed on s143, and CJ4-BJ a quarter unit against RM 272 on s137. That is put to him, with the customers' want of any Redeem button at all."]},
 
 {"v":"v584","d":"11 Sep 2026","t":"A REDEMPTION AND A REBATE OFFSET REACH APPROVE, AND REDEEM IS ONE TAP","n":["<b>HIS INSTRUCTION, 11 SEP 2026: everything that goes through the ledger goes through Approve, and redeeming is a one-tap button.</b> The Redeem button queued REDEEM and REBATE_OFFSET with no payload. The cloud drafter refuses an entry without one, and the refusal cleaned itself away at the next fold, so not one redemption or offset pressed on the cloud desk ever reached the book. CR3-DAM's, pressed at 07:01 that morning, was the one found. Both now carry a payload the drafter reads, and the tap lands on Approve, which reads the drafts again once the post has landed.","<b>A REDEMPTION IS A SALES ROW THE DRAFTER BUILDS, BOOKED AS A COST.</b> Salt out, no cash, settled by the reward. On his ruling of the same day it carries goodwill as well as rebate, exactly as s050 does, so revenue does not move and its cost is an expense. Its total and its settlement are the salt's own cost, read where every other row's cost is read. <b>The drafter cannot check the reward</b>, since rewards are worked out on the desk from the whole book, so the Approve card carries the balance the desk stated and says it is the desk's word. Oil, which has no reward, is refused, and so is a redemption naming no party, no units or no date.","<b>THE 04 AUG RULE IS KEPT EXACTLY.</b> A free unit offsets an outstanding advance first, in kind, with no salt moving. The offset is a Correction on the advance row itself, settledRM and rebate, which is how the ledger has always recorded one, and it ADDS to whatever that row already settles in kind rather than overwriting it. It travels the Correction road the drafter and the fold already had, so the drafter needed one new branch and the fold none.","<b>THE APPROVE CARD READS A REDEMPTION AS ONE</b>: units out, the cost as an expense, no revenue, no cash. The sale card would have shown it as a sale at nil margin.","<b>PROVED WITH EVERY STATE FORCED.</b> Revenue unmoved and the cost landing as an expense on the desk's own walk; the row reading In-Kind; the tap queuing an entry the drafter drafts and landing on Approve; an advance turning it into an offset Correction the drafter drafts. Twenty-one assertions, and six mutations across the drafter and the desk, each reddening its own.","<b>STILL TO COME, EACH IN ITS OWN VERSION:</b> the automatic offset of up to 1 unit, and the fix that stops a refused entry vanishing at the next fold."]},
 
@@ -6711,7 +6713,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='11 Sep 2026, 21:35 KL';
+const LAST_UPDATED='11 Sep 2026, 22:45 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -16522,6 +16524,7 @@ async function apLoad(quiet){
     apNeedKey=(r.status===401); const j=r.ok?await r.json():null;
     apUnread=(r.ok||r.status===401)?'':'the Worker answered http '+r.status;
     AP_DRAFTS=(j&&j.drafts)||[]; AP_REFUSED=(j&&j.refused)||[]; AP_CLOCK=(j&&j.clock)||null;
+    if(r.ok){try{localStorage.setItem('saltRefusedAts',JSON.stringify(AP_REFUSED.map(x=>x.id)));}catch(e){}}   // v586: only a good read may say what is refused
   }catch(e){ apUnread=(e&&e.message)||'the request did not complete'; AP_DRAFTS=[]; AP_REFUSED=[]; }
   if(!apUnread&&!apNeedKey)autoOffsets();   // v585: only on a read that succeeded, or its duplicate check is blind
   apDraw();
@@ -16610,8 +16613,31 @@ function apDraw(){
   else if(!AP_DRAFTS.length)box.innerHTML=apClock(AP_CLOCK)+'<div class="card"><div class="dsc">Nothing waiting. Every drafted row has been decided.</div></div>';
   else box.innerHTML=apClock(AP_CLOCK)+AP_DRAFTS.map(apCard).join('');
   box.querySelectorAll('button[data-ap]').forEach(b=>{b.onclick=()=>apDecide(b.dataset.id,b.dataset.ap,b);});
-  if(ref)ref.innerHTML=AP_REFUSED.length?`<h2 style="margin-top:18px">Already queued, and not yours to approve <span class="rule"></span></h2><div class="dsc" style="margin-bottom:4px">In hand and needing a person at the laptop; shown so they are not entered twice.</div>`
-    +AP_REFUSED.map(r=>{const e=r.entry||{},seen=(r.seenAt||'').slice(0,10);return `<div class="card" style="margin-top:8px"><div style="font-size:13px">${esc(e.raw||((e.type||'Entry')+' '+(r.party||'')))}</div><div class="dsc" style="margin-top:5px">${esc(r.why||'')}</div><div class="dsc" style="margin-top:3px;color:var(--dim)">${esc(r.source||'drafter')}${seen?', '+esc(seen):''}</div></div>`;}).join(''):'';
+  /* v586, HIS DECISION OF 11 SEP 2026: A REFUSED ENTRY IS KEPT, AND HE CAN WITHDRAW IT. v309 built this panel with no
+     control at all so nothing on it could be decided by accident, and that part stands: nothing here approves or
+     rejects. What changed is that a refused entry used to vanish at the next fold, cleared by the same watermark
+     that clears a committed one; CR3-DAM's redemption of 11 Sep went that way. Kept now, each needs a way out, and
+     Withdraw is it: it drops the entry from this phone, where it lives, and the cloud's copy goes at the next sync.
+     Only for an entry this phone holds; the fold's own notices clear themselves and carry no control. */
+  if(ref){const held=new Set(queue.map(q=>q&&q.at));
+    ref.innerHTML=AP_REFUSED.length?`<h2 style="margin-top:18px">Refused entries <span class="rule"></span></h2><div class="dsc" style="margin-bottom:4px">Nothing here can be approved; each card says why. One queued on this phone stays until you withdraw it, and can then be entered again, corrected.</div>`
+    +AP_REFUSED.map(r=>{const e=r.entry||{},seen=(r.seenAt||'').slice(0,10),notice=/^(fold|suite):/.test(r.id||''),mine=!notice&&held.has(r.id);
+      const foot=notice?`<div class="dsc" style="margin-top:3px;color:var(--dim)">A notice from the fold; it clears itself once a later fold commits.</div>`
+        :mine?`<div style="margin-top:7px"><button type="button" class="vbtn" data-wd="${esc(r.id)}">Withdraw</button></div>`
+        :`<div class="dsc" style="margin-top:3px;color:var(--dim)">Not queued on this phone, so it cannot be withdrawn here.</div>`;
+      return `<div class="card" style="margin-top:8px"><div style="font-size:13px">${esc(e.raw||((e.type||'Entry')+' '+(r.party||'')))}</div><div class="dsc" style="margin-top:5px">${esc(r.why||'')}</div><div class="dsc" style="margin-top:3px;color:var(--dim)">${esc(r.source||'drafter')}${seen?', '+esc(seen):''}</div>${foot}</div>`;}).join(''):'';
+    ref.querySelectorAll('button[data-wd]').forEach(b=>{b.onclick=()=>apWithdraw(b.dataset.wd);});}
+}
+/* v586: Withdraw a refused entry this phone holds. It leaves the queue here by the road a rejection takes
+   (qForgetAt), leaves the panel at once, and leaves the cloud at the next sync, after which the drafter
+   clears a refusal of its own; one the fold or the laptop wrote waits for the watermark, as before. */
+function apWithdraw(at){
+  qForgetAt(at);
+  AP_REFUSED=AP_REFUSED.filter(r=>r.id!==at);
+  try{const k=JSON.parse(localStorage.getItem('saltRefusedAts')||'[]');localStorage.setItem('saltRefusedAts',JSON.stringify((Array.isArray(k)?k:[]).filter(x=>x!==at)));}catch(e){}
+  apMsg='Withdrawn. It is gone from this phone, and from the cloud once this syncs.';
+  apDraw();apBadge();
+  qPost().catch(()=>{});
 }
 async function apDecide(id,action,btn){
   if(!id||apBusy[id])return;apBusy[id]=1;
@@ -19067,9 +19093,10 @@ function qNewestAt(){return queue.reduce((m,q)=>(q&&q.at&&q.at>m)?q.at:m,'');}
 /* AN ENTRY GOES ONLY WHEN BOTH ARE TRUE: the ledger has folded past it, and this device saw
    it acknowledged. Named so the rule is RUN rather than grepped for, which is the v482
    lesson. A throw keeps the entry, because losing a sale is the fault being fixed. */
-function qKeepOnLoad(q,mark,sent){try{
+function qKeepOnLoad(q,mark,sent,refused){try{
   if(!q||!q.at)return false;                        // no stamp: predates the mechanism, as before
   if(q.stuck)return true;                           // named below, and it is never cleared again
+  if(Array.isArray(refused)&&refused.indexOf(q.at)>=0)return true;   // v586: refused, so kept until he withdraws it
   if(typeof mark!=='string'||!mark)return true;     // nothing to judge it by, so it stays
   /* covered means this device SAW it acknowledged. Written as a test on sent rather than as
      q.at>sent because a missing mark must read as "not covered", and `q.at>null` is false,
@@ -19077,6 +19104,12 @@ function qKeepOnLoad(q,mark,sent){try{
   const covered=(typeof sent==='string'&&!!sent&&q.at<=sent);
   return q.at>mark||!covered;
 }catch(e){return true;}}
+/* v586: A REFUSED ENTRY IS NOT STUCK. Stuck means an entry that never reached the cloud and was folded past,
+   and the notice says exactly that and tells him to re-record it. An entry the drafter refused DID reach the
+   cloud and is kept on purpose until he withdraws it, so it is flagged and counted apart from the stuck ones. */
+function qFlagStuck(q,mark,refused){let n=0;const r=Array.isArray(refused)?refused:[];
+  q.forEach(e=>{if(e&&e.at&&e.at<=mark&&!e.stuck&&r.indexOf(e.at)<0){e.stuck=true;n++;}});return n;}
+function qStuckCount(q,refused){const r=Array.isArray(refused)?refused:[];return q.filter(e=>e&&e.stuck&&r.indexOf(e.at)<0).length;}
 function qPayload(){return JSON.stringify({updated:new Date().toISOString(),desk:LAST_UPDATED,device:(typeof saltDeviceId==='function'?saltDeviceId():'anon'),queue},null,1);}
 /* ask the local server whether it accepts the queue; only meaningful when served */
 async function qInit(){
@@ -19843,9 +19876,11 @@ try{const _lq=localStorage.getItem('saltQueue');if(_lq)queue=JSON.parse(_lq);}ca
    which is a fact about the ledger, not about this device; an entry that never reached the
    cloud is not in the ledger however far the watermark has moved. qKeepOnLoad wants both. */
 let queueCleared=0,queueStuck=0;
+/* v586: the entries the drafter refused, as the last good read of the drafts named them */
+let refusedAts=[];try{refusedAts=JSON.parse(localStorage.getItem('saltRefusedAts')||'[]');if(!Array.isArray(refusedAts))refusedAts=[];}catch(e){refusedAts=[];}
 if(QUEUE_COMMITTED&&queue.length){
   const before=queue.length;
-  queue=queue.filter(q=>qKeepOnLoad(q,QUEUE_COMMITTED,qSentThrough));
+  queue=queue.filter(q=>qKeepOnLoad(q,QUEUE_COMMITTED,qSentThrough,refusedAts));
   queueCleared=before-queue.length;
   if(queueCleared){try{localStorage.setItem('saltQueue',JSON.stringify(queue));}catch(e){}}
   /* AND WHAT SURVIVED WHILE THE FOLD HAS ALREADY PASSED IT IS STUCK, PERMANENTLY.
@@ -19855,8 +19890,7 @@ if(QUEUE_COMMITTED&&queue.length){
      design, so that post can never become a row. The entry would have been lost anyway, one
      load later and just as quietly. Flagged once, kept for ever, and shown: only a person can
      settle it, by re-recording the sale or withdrawing it with drain.mjs --forget. */
-  let newlyStuck=0;
-  queue.forEach(q=>{if(q&&q.at&&q.at<=QUEUE_COMMITTED&&!q.stuck){q.stuck=true;newlyStuck++;}});
+  const newlyStuck=qFlagStuck(queue,QUEUE_COMMITTED,refusedAts);
   if(newlyStuck){try{localStorage.setItem('saltQueue',JSON.stringify(queue));}catch(e){}}
 }
 /* COUNT WHAT IS STUCK, NOT WHAT JUST BECAME STUCK, and count it outside the block above.
@@ -19864,7 +19898,7 @@ if(QUEUE_COMMITTED&&queue.length){
    loop reads one on that load and zero for ever after, and the warning vanished while the
    entry was still sitting there. The screen was checked, which is the only reason this was
    caught: the flag was right and the notice was not. */
-queueStuck=queue.filter(q=>q&&q.stuck).length;
+queueStuck=qStuckCount(queue,refusedAts);
 try{qInit().then(()=>{if(queueCleared&&qSyncState==='server')qPost();});}catch(e){}   // ask the server for the queue route, then sync any self-clearing
 applyOverlay();                            // uncommitted entries fold in before anything is drawn
 /* v281: a fresh open still lands on Today (v147: the desk opens on what to do), but an

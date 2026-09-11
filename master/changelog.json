@@ -1,5 +1,19 @@
 [
  {
+  "v": "v586",
+  "d": "11 Sep 2026",
+  "t": "A REFUSED ENTRY STAYS ON THE PHONE UNTIL IT IS WITHDRAWN, IN ONE TAP",
+  "n": [
+   "<b>HIS DECISION, 11 SEP 2026: a refused entry is kept on the phone, with a Withdraw button.</b> Until now one vanished at the next fold with no record. The phone cleared any acknowledged entry the watermark had passed, and the drafter deleted any refusal the watermark had passed, so an unrelated fold passed for proof that the entry had been dealt with. CR3-DAM's redemption of 11 Sep went that way: refused for carrying no payload, then gone.",
+   "<b>THE PHONE KEEPS WHAT THE DRAFTS SAY IS REFUSED.</b> A read of the drafts that succeeds records which entries are refused; a failed read records nothing, so it cannot wipe the list. The load keeps a refused entry however far the watermark has passed it, and does not call it stuck, since stuck means it never reached the cloud and a refused entry did.",
+   "<b>THE CLOUD KEEPS A REFUSAL WHILE ITS ENTRY IS QUEUED,</b> whoever wrote it. Once the entry leaves the queue, the drafter's own refusal goes at its next pass, since leaving is a withdrawal or a re-entry; one from the laptop's queue or the fold goes at the watermark as before, since their entries need never have been on the cloud queue. The fold's own notices keep their rule.",
+   "<b>WITHDRAW</b> is one button on each refusal card whose entry this phone holds. It drops the entry the way a rejection does, takes the card off at once and syncs, and the cloud's copy and its refusal follow. A card not queued here says so; a fold notice says it clears itself. Nothing on the panel approves or rejects, as v309 built it.",
+   "<b>PROVED IN BOTH DIRECTIONS.</b> The drafter runs twice against a fake ledger, including a withdrawal above the watermark, the one case where the old rule and the new part. The phone is tested through a real boot with a refused entry already in storage, a real apLoad with the network stubbed and a real tap on Withdraw. Fourteen mutations, each reddening its own assertion. Three source pins from v485 and one from the drafter's first round moved with the code.",
+   "<b>ONE GAP REMAINS, AND IT IS NARROW.</b> The phone learns of a refusal only when it reads the drafts: on opening, on Approve, and after a redemption. The load runs before the first read, so an entry refused after the phone's last read, then passed by a fold approved elsewhere before the phone next opens, can still clear at that opening. An approval on this phone reads the drafts first, so today only the laptop can open it.",
+   "<b>WHO IT TOUCHES TODAY: NOTHING.</b> The refused table is empty and the cloud queue holds no entries, so the first pass after this deploy clears nothing. It does not bring CR3-DAM's redemption back: their unit is still earned and unredeemed, and Redeem, which has carried a payload since v584, puts it to Approve in one tap."
+  ]
+ },
+ {
   "v": "v585",
   "d": "11 Sep 2026",
   "t": "AN ASSOCIATE'S REWARD IS OFFSET AGAINST THEIR ADVANCE AUTOMATICALLY, UP TO 1 UNIT",

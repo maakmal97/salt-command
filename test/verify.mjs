@@ -611,7 +611,7 @@ section("Build — patches, scripts, no externals");
        it, the load dropped it as committed and the sale was gone in silence.
        Run, not read: the shipped predicate is called over the sequence the audit's critic
        traced. Proved red against the old one-question rule before it was trusted. */
-    const keepSrc = (html.match(/function qKeepOnLoad\(q,mark,sent\)\{try\{[\s\S]*?\}catch\(e\)\{return true;\}\}/) || [])[0];
+    const keepSrc = (html.match(/function qKeepOnLoad\(q,mark,sent,refused\)\{try\{[\s\S]*?\}catch\(e\)\{return true;\}\}/) || [])[0];
     ok(!!keepSrc, "the built desk carries the load's self-clearing rule as a named function");
     if (keepSrc) {
       const keep = (q, mark, sent) =>
@@ -653,10 +653,10 @@ section("Build — patches, scripts, no externals");
       "the download route is marked too: it feeds the daily run, so an unmarked one would show twice");
     ok(/let qSentThrough=\(function\(\)\{[\s\S]*?localStorage\.setItem\('saltQueueSent',seed\)/.test(html),
       "the mark is seeded from the watermark AND written, so a moved watermark cannot re-seed over it");
-    ok(html.includes("if(q&&q.at&&q.at<=QUEUE_COMMITTED&&!q.stuck){q.stuck=true;newlyStuck++;}"),
-      "an entry that survived while the fold had passed it is flagged stuck at load");
-    ok(html.includes("queueStuck=queue.filter(q=>q&&q.stuck).length;"),
-      "the notice counts what IS stuck, not what just became stuck, or it shows once and never again");
+    ok(html.includes("const newlyStuck=qFlagStuck(queue,QUEUE_COMMITTED,refusedAts);") && html.includes("if(e&&e.at&&e.at<=mark&&!e.stuck&&r.indexOf(e.at)<0){e.stuck=true;n++;}"),
+      "an entry that survived while the fold had passed it is flagged stuck at load, unless the drafter refused it (v586)");
+    ok(html.includes("queueStuck=qStuckCount(queue,refusedAts);"),
+      "the notice counts what IS stuck, not what just became stuck, or it shows once and never again; a refused entry is not stuck (v586)");
     ok(html.includes("never reached the cloud</b>, and the ledger has since been folded past"),
       "and a stuck entry is named on screen, because only a person can settle it");
 
@@ -1336,7 +1336,7 @@ section("Refused entries — seen, not approvable");
 
   const d = readFileSync(join(REPO, "src", "drafter.js"), "utf8");
   ok(/INSERT OR REPLACE INTO refused/.test(d), "the cloud drafter records what it refuses");
-  ok(/DELETE FROM refused WHERE id<=\?1/.test(d), "and clears refusals the watermark has passed, so the list cannot go stale");
+  ok(!/DELETE FROM refused WHERE id<=\?1/.test(d), "and no longer clears a refusal because the watermark passed it: a refusal lives as long as its entry is queued (v586)");
   ok(/DELETE FROM refused WHERE id=\?1/.test(d), "a refusal that later drafts is cleared, so one entry is never in both lists");
 
   const t = readFileSync(join(REPO, "tools", "drafts.mjs"), "utf8");
@@ -3373,8 +3373,9 @@ section("Refused — shown so they are not entered twice, never so they can be a
   ok(/cloud-drafter/.test(txt), "and which drafter saw it");
   ok(/2026-08-29/.test(txt) && !/T02:00:01/.test(txt), "and the date it was seen, as a date and not a timestamp");
 
-  /* THE THREE PROPERTIES OF v309, each asserted rather than assumed */
-  ok(ref.querySelectorAll("button").length === 0, "the panel renders no button");
+  /* THE THREE PROPERTIES OF v309, each asserted rather than assumed. Since v586 the first two hold for a
+     refusal this phone does not hold, as here; one it holds carries exactly one control, Withdraw. */
+  ok(ref.querySelectorAll("button").length === 0, "a refusal this phone does not hold renders no button (v586)");
   ok(ref.querySelectorAll('button,input,select,textarea,a,[tabindex]:not([tabindex="-1"])').length === 0,
      "and nothing on it can be reached by a keyboard, so nothing there can be decided even by accident");
   ok(box.querySelectorAll("button[data-ap]").length === 2,
@@ -8446,6 +8447,7 @@ section("08 Sep 2026: the audit fixes");
           if (/^SELECT doc FROM entry/.test(s)) return { results: (b[binds[0]] || []).map((r) => ({ doc: JSON.stringify(r) })) };
           if (/^SELECT key,doc FROM state/.test(s)) return { results: Object.keys(b.state).map((k) => ({ key: k, doc: JSON.stringify(b.state[k]) })).concat([{ key: "PRICING", doc: JSON.stringify(b.pricing) }]) };
           if (/^SELECT id FROM draft/.test(s)) return { results: [...self.drafts.keys()].map((id) => ({ id })) };
+          if (/^SELECT id,source FROM refused/.test(s)) return { results: [...self.refused.keys()].map((id) => ({ id })) };
           throw new Error("unmocked all(): " + s);
         },
         async first() {
@@ -9623,6 +9625,151 @@ section("11 Sep 2026: an associate's reward is offset against their advance auto
   const mN = { version: "vX", sales: bkN.sales, purchases: bkN.purchases, state: { roster: bkN.roster, loans: bkN.loans }, pricing: null };
   const dn = dN({ at: "2099-05-01T00:00:00.001Z", payload: { mode: "amend", kind: "Correction", direction: "SELL", party: tgt.customer, rid: tgt.rid, fields: { total: tgt.total }, date: "2099-05-01" } }, mN);
   ok(/changes nothing/.test(dn.skip || ""), `a Correction that changes nothing is refused rather than drafted (${dn.skip || "drafted"})`);
+}
+
+
+section("11 Sep 2026: a refused entry is kept, and can be withdrawn");
+{
+  /* HIS DECISION OF 11 SEP 2026. A refused entry used to vanish at the next fold: the phone cleared it on the
+     watermark, and the drafter cleared its refusal on the same watermark. CR3-DAM's redemption went that way.
+     Now the phone keeps it, the cloud keeps its refusal while it is queued, and Withdraw is the way out.
+     THE DRAFTER'S HALF IS PROVED ABOVE THE WATERMARK TOO, deliberately: below it the old rule deleted a queued
+     entry's refusal and the loop wrote it straight back in the same pass, so the two rules end a pass alike
+     there. Above it, the old rule kept a withdrawn entry's refusal listed until a later fold passed it. */
+  const { runDrafter: runK } = await import("../src/drafter.js");
+  const MARK = "2026-09-11T00:00:00.000Z";
+  const fake = (drafted) => {
+    const self = { drafts: new Map(drafted.map((id) => [id, "{}"])), refused: new Map() };
+    const state = { QUEUE_COMMITTED: MARK };
+    self.prepare = (sql) => {
+      const s = sql.replace(/\s+/g, " ").trim(); let binds = [];
+      const api = {
+        bind(...a) { binds = a; return api; },
+        async all() {
+          if (/^SELECT doc FROM entry/.test(s)) return { results: [] };
+          if (/^SELECT key,doc FROM state/.test(s)) return { results: Object.keys(state).map((k) => ({ key: k, doc: JSON.stringify(state[k]) })) };
+          if (/^SELECT id FROM draft/.test(s)) return { results: [...self.drafts.keys()].map((id) => ({ id })) };
+          if (/^SELECT id,source FROM refused/.test(s)) return { results: [...self.refused].map(([id, r]) => ({ id, source: r.source })) };
+          throw new Error("unmocked all(): " + s);
+        },
+        async first() {
+          if (/^SELECT v,stamped FROM snapshot/.test(s)) return { v: "vX", stamped: null };
+          if (/^SELECT MAX\(committed_at\)/.test(s)) return { t: null };
+          throw new Error("unmocked first(): " + s);
+        },
+        async run() {
+          if (/^DELETE FROM refused WHERE id=\?1/.test(s)) { self.refused.delete(binds[0]); return { meta: { changes: 1 } }; }
+          if (/^DELETE FROM refused WHERE id<=\?1/.test(s)) { for (const k of [...self.refused.keys()]) if (k <= binds[0]) self.refused.delete(k); return { meta: { changes: 1 } }; }
+          if (/^INSERT OR REPLACE INTO refused/.test(s)) { self.refused.set(binds[0], { why: binds[2], source: binds[4] }); return { meta: { changes: 1 } }; }
+          if (/^INSERT OR IGNORE INTO draft/.test(s)) { self.drafts.set(binds[0], binds[3]); return { meta: { changes: 1 } }; }
+          throw new Error("unmocked run(): " + s);
+        }
+      };
+      return api;
+    };
+    return self;
+  };
+  const ABOVE = "2026-09-11T05:00:00.000Z", BELOW = "2026-09-10T05:00:00.000Z";
+  const FOLDED = "2026-09-10T08:00:00.000Z";                                          // a draft the fold refused, its entry still queued
+  const LAP_UP = "2026-09-11T06:00:00.000Z", LAP_DOWN = "2026-09-10T06:00:00.000Z";   // the laptop's queue, never on this one
+  const bad = (at) => ({ at, type: "REDEEM", party: "CZ9-TST", qty: 1, raw: "Redeem 1 unit" });   // no payload, so refused
+  const dbF = fake([FOLDED]), kvF = new KV();
+  dbF.refused.set("fold:x", { why: "a notice from the fold", source: "fold" });
+  dbF.refused.set(FOLDED, { why: "The fold refused this", source: "fold" });
+  dbF.refused.set(LAP_UP, { why: "refused on the laptop", source: "laptop-queue" });
+  dbF.refused.set(LAP_DOWN, { why: "refused on the laptop", source: "laptop-queue" });
+  await kvF.put("q:phone", JSON.stringify({ queue: [bad(ABOVE), bad(BELOW), bad(FOLDED)] }));
+  await runK({ SALT_QUEUE: kvF, SALT_LEDGER: dbF });
+  ok(dbF.refused.has(ABOVE) && dbF.refused.has(BELOW), "the drafter lists both refused entries while they are queued");
+  ok(dbF.refused.has(FOLDED), "and keeps the fold's refusal of an entry still queued, though the watermark has passed it");
+  ok(dbF.refused.has(LAP_UP) && !dbF.refused.has(LAP_DOWN), "while a refusal from the laptop's queue, never on this one, still goes at the watermark, as before");
+  await kvF.put("q:phone", JSON.stringify({ queue: [bad(BELOW), bad(FOLDED)] }));   // ABOVE is withdrawn
+  await runK({ SALT_QUEUE: kvF, SALT_LEDGER: dbF });
+  ok(!dbF.refused.has(ABOVE), "a withdrawn entry's refusal is cleared at the next pass, above the watermark too, where the old rule kept it until a later fold");
+  ok(dbF.refused.has(BELOW) && dbF.refused.has(FOLDED), "while those still queued stay listed");
+  ok(dbF.refused.has("fold:x"), "and a notice from the fold keeps its own rule");
+
+  /* ---- THE PHONE ---- */
+  const { openMaster: omK } = await import("../tools/payload.mjs");
+  const { w: wK } = await omK();
+  wK.SALT_CLOUD = true;                                  // the Approve part is cloud-mode only
+  const dK = wK.document;
+  const partK = dK.createElement("div");
+  partK.className = "vpart"; partK.setAttribute("data-tab", "approve");
+  dK.body.appendChild(partK);
+  partK.innerHTML = wK.eval("builders").approve();
+  const rdK = (e) => JSON.parse(wK.eval("JSON.stringify(" + e + ")"));
+  const B = JSON.stringify(BELOW), M = JSON.stringify(MARK), ELSE = "2026-09-10T07:00:00.000Z";
+  try {
+    const E = JSON.stringify({ at: BELOW, type: "REDEEM" });
+    ok(rdK(`qKeepOnLoad(${E},${M},${M},[${B}])`) === true,
+      "a refused entry the fold has passed and this device saw acknowledged is KEPT at load: the silent drop, closed");
+    ok(rdK(`qKeepOnLoad(${E},${M},${M},[])`) === false, "while the same entry, not refused, is still cleared as committed, as before");
+    const st = rdK(`(function(){var q=[{at:${B}},{at:"2026-09-10T06:00:00.000Z"},{at:"2026-09-10T04:00:00.000Z",stuck:true}],r=[${B},"2026-09-10T04:00:00.000Z"];
+      var n=qFlagStuck(q,${M},r);return {n:n,count:qStuckCount(q,r),refusedFlagged:!!q[0].stuck};})()`);
+    ok(st.n === 1 && st.refusedFlagged === false, `a refused entry is not flagged stuck, since it did reach the cloud (${JSON.stringify(st)})`);
+    ok(st.count === 1, `and one flagged before it was known to be refused is not counted as stuck either (${JSON.stringify(st)})`);
+
+    /* apLoad records the refused list on a good read, and a failed read does not wipe it */
+    ok(rdK("cloudMode()") === true, "the desk is in cloud mode for this check, or it proves nothing");
+    wK.eval(`autoOffsets=function(){};localStorage.setItem('saltRefusedAts','[]');
+      fetch=function(){return Promise.resolve({ok:true,status:200,json:function(){return Promise.resolve({drafts:[],refused:[{id:${B},entry:{raw:'x'},why:'y'}],clock:null});}});};`);
+    await wK.eval("apLoad(true)");
+    ok(rdK("localStorage.getItem('saltRefusedAts')") === JSON.stringify([BELOW]), "a good read of the drafts records which entries are refused");
+    wK.eval("fetch=function(){return Promise.resolve({ok:false,status:500,json:function(){return Promise.resolve(null);}});};");
+    await wK.eval("apLoad(true)");
+    ok(rdK("localStorage.getItem('saltRefusedAts')") === JSON.stringify([BELOW]), "and a failed read does not overwrite it with nothing");
+
+    /* the panel: Withdraw for what this phone holds, nothing for the rest, nothing that decides */
+    wK.eval(`queue=[{at:${B},type:'REDEEM',party:'CZ9-TST',raw:'Redeem 1 unit'}];AP_DRAFTS=[];apUnread='';apNeedKey=false;
+      AP_REFUSED=[{id:${B},entry:{raw:'Redeem 1 unit'},why:'no payload',source:'cloud-drafter',seenAt:'2026-09-10T05:01:00.000Z'},
+        {id:'${ELSE}',entry:{raw:'Queued elsewhere'},why:'no payload',source:'cloud-drafter',seenAt:'2026-09-10T07:01:00.000Z'},
+        {id:'fold:v586',entry:{raw:'A fold notice'},why:'the fold failed',source:'fold',seenAt:'2026-09-10T08:00:00.000Z'}];
+      apDraw();`);
+    const ref = dK.getElementById("apRef");
+    const cards = ref ? [...ref.querySelectorAll(".card")] : [];
+    ok(cards.length === 3, `one card per refusal (${cards.length})`);
+    ok(!!cards[0] && cards[0].querySelectorAll("button[data-wd]").length === 1 && cards[0].querySelectorAll("button").length === 1,
+      "a refusal queued on this phone carries exactly one control, Withdraw");
+    ok(!!cards[1] && cards[1].querySelectorAll("button").length === 0 && /Not queued on this phone/.test(cards[1].textContent),
+      "one not queued here carries none, and says so");
+    ok(!!cards[2] && cards[2].querySelectorAll("button").length === 0 && /clears itself/.test(cards[2].textContent),
+      "and a notice from the fold carries none and says it clears itself");
+    ok(!!ref && ref.querySelectorAll("button[data-ap]").length === 0, "nothing on the panel approves or rejects: v309's rule stands");
+
+    /* a real tap on Withdraw */
+    wK.eval(`localStorage.setItem('saltRefusedAts',JSON.stringify([${B},'${ELSE}']));`);
+    const wd = cards[0] && cards[0].querySelector("button[data-wd]");
+    if (wd) wd.click();
+    ok(rdK("queue.length") === 0, "a tap on Withdraw drops the entry from this phone's queue");
+    ok(rdK("AP_REFUSED.map(function(r){return r.id;}).join()") === ELSE + ",fold:v586", "and from the panel at once");
+    ok(rdK("localStorage.getItem('saltRefusedAts')") === JSON.stringify([ELSE]), "and from the refused list the next load reads");
+    ok(dK.getElementById("apRef").querySelectorAll("button[data-wd]").length === 0, "and the panel is redrawn without it");
+  } finally { try { wK.close(); } catch (e) { /* best effort */ } }
+
+  /* ---- THE LOAD, booted for real with a refused entry in storage ----
+     The load step is top-level code, so it runs once, at boot, before a test can reach it. A copy of the
+     master with a first script that fills storage boots it for real; the harness is the suite's own. */
+  {
+    const { mkdtempSync, writeFileSync: wfK, rmSync } = await import("node:fs");
+    const { tmpdir } = await import("node:os");
+    const dir = mkdtempSync(join(tmpdir(), "v586-"));
+    const OLD_A = "2026-08-01T01:00:00.000Z", OLD_B = "2026-08-01T02:00:00.000Z";
+    const src = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+    ok(src.includes("<head>"), "the master has a head to put the seed in, or this proves nothing");
+    const seed = "<script>localStorage.setItem('saltQueue'," + JSON.stringify(JSON.stringify([bad(OLD_A), bad(OLD_B)])) + ");"
+      + "localStorage.setItem('saltQueueSent','2026-08-02T00:00:00.000Z');"
+      + "localStorage.setItem('saltRefusedAts'," + JSON.stringify(JSON.stringify([OLD_A])) + ");</script>";
+    const path = join(dir, "master.html");
+    wfK(path, src.replace("<head>", "<head>" + seed));
+    const { w: wB } = await omK(path);
+    try {
+      const got = JSON.parse(wB.eval("JSON.stringify({ats:queue.map(function(q){return q.at;}),stuck:queue.filter(function(q){return q.stuck;}).length,count:queueStuck,mark:QUEUE_COMMITTED})"));
+      ok(got.mark > "2026-08-02", `the book's watermark has passed both seeded entries, or this proves nothing (${got.mark})`);
+      ok(got.ats.join() === OLD_A, `at load the refused entry is kept and the other, folded past and acknowledged, is cleared (${got.ats.join()})`);
+      ok(got.stuck === 0 && got.count === 0, `and the kept one is not called stuck (${got.stuck} flagged, ${got.count} counted)`);
+    } finally { try { wB.close(); } catch (e) { /* best effort */ } try { rmSync(dir, { recursive: true, force: true }); } catch (e) { /* best effort */ } }
+  }
 }
 
 
