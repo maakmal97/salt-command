@@ -1,5 +1,14 @@
 [
  {
+  "v": "v578",
+  "d": "11 Sep 2026",
+  "t": "TWO PENDING SALT ROWS DATED 11 SEP, NOTHING PAID AND NOTHING MOVED",
+  "n": [
+   "<b>WHAT WAS FOLDED.</b> Two new salt sells dated 11 Sep, both agreed on the day and both pending: 1 unit to CH6-SET at RM120 with RM10 delivery, and 1 unit to CC5-OKR at RM90 collected. Neither carries cash and neither moved a unit, so neither draws stock nor books revenue. Both sit on the 1 unit ladder with a floor of RM56.21, an ask of RM120 and a ceiling of RM150.",
+   "<b>WHAT WAS UNUSUAL, AND WHAT THE INVENTORY DID.</b> CH6-SET lands exactly on the RM120 ask and on its own median; CC5-OKR lands RM30 under the ask with RM90 already outstanding and 1 unit on credit against a cap of 1, after a cancelled row at the same terms on 08 Sep. The drafter raised no flags on either. Both are costed at the inventory's own RM44 a unit, and stock stands unmoved at 33.25 units."
+  ]
+ },
+ {
   "v": "v577",
   "d": "11 Sep 2026",
   "t": "THE REWARD HURDLES ARE STATED OFF THE BOARD, CARRY A UNIT MINIMUM, AND OIL HAS NONE",
