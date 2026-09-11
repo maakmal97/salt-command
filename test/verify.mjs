@@ -9493,5 +9493,79 @@ section("11 Sep 2026: the Demand you could not serve card leaves Customers");
 }
 
 
+section("11 Sep 2026: a redemption and a rebate offset reach Approve, and Redeem is one tap");
+{
+  /* HIS INSTRUCTION OF 11 SEP 2026, and his ruling on the P&L the same day. The Redeem button queued
+     entries with no payload, so the drafter refused every one and the next fold cleaned the refusal away.
+     Every state here is FORCED: the live book's rewards are the calendar's business, not the test's. */
+  const { draftRow: dR } = await import("../src/drafter.js");
+  const bkR = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const who = (bkR.roster || []).find((c) => !String(c).startsWith("S"));
+  const mirrorR = { version: "vX", sales: bkR.sales, purchases: bkR.purchases,
+    state: { roster: bkR.roster, loans: bkR.loans, OPEN: { position: { salt: { onHand: 20, owedOut: 0, promised: 0 } } } }, pricing: null };
+  const ent = (p) => ({ at: "2099-04-01T00:00:00.001Z", payload: { mode: "redeem", product: "salt", party: who, qty: 1, date: "2099-04-01", earned: 1, applied: 0, balance: 1, ...p } });
+
+  /* ---- THE DRAFTER ---- */
+  const d1 = dR(ent({}), mirrorR);
+  ok(!d1.skip && d1.collection === "sales", `a redemption drafts as a sales row (${d1.skip || d1.collection})`);
+  const r1 = d1.row || {};
+  ok(r1.rebate === true && r1.goodwill === true, "carrying rebate AND goodwill, so the walk books it as a cost and not as revenue");
+  ok(r1.cash === 0 && r1.deliveredQty === 1 && r1.rebateKg === 1, "no cash, one unit out, one unit of reward used");
+  ok(r1.total > 0 && r1.total === r1.cost && r1.settledRM === r1.total, `its total and its settlement are the salt's own cost (RM ${r1.total})`);
+  ok((d1.flags || []).some((f) => /desk's word/.test(f)), "and the card says the balance is the desk's word, which the drafter cannot check");
+  ok((dR(ent({ qty: 2 }), mirrorR).flags || []).some((f) => /against the 1 unit the desk says/.test(f)), "redeeming more than the stated balance is flagged");
+  ok(/no reward/.test(dR(ent({ product: "oil" }), mirrorR).skip || ""), "an oil redemption is refused: oil has no reward");
+  ok(/names the party/.test(dR(ent({ party: null }), mirrorR).skip || ""), "a redemption naming no party is refused");
+  ok(/units handed over/.test(dR(ent({ qty: 0 }), mirrorR).skip || ""), "and one with no units");
+  ok(/date the salt went out/.test(dR(ent({ date: null }), mirrorR).skip || ""), "and one with no date");
+
+  const { openMaster: omRd } = await import("../tools/payload.mjs");
+  const { w: wRd } = await omRd();
+  const rdRd = (e) => JSON.parse(wRd.eval("JSON.stringify(" + e + ")"));
+  try {
+    wRd.eval("setProd('salt');");
+
+    /* ---- HIS RULING: A COST, NOT REVENUE. The drafted row, on the desk's own walk. ---- */
+    const before = rdRd("({rev:revTotal,gw:goodwillRM})");
+    wRd.eval("sales.push(" + JSON.stringify({ rid: "rd-1", ...r1 }) + ");recompute();");
+    const after = rdRd("({rev:revTotal,gw:goodwillRM,st:txStat(sales.find(function(s){return s.rid==='rd-1';})).order})");
+    ok(Math.abs(after.rev - before.rev) < 0.005, `revenue does not move when the redemption lands (RM ${before.rev} before and after)`);
+    ok(Math.abs(after.gw - before.gw - r1.cost) < 0.05, `and its cost lands as an expense (RM ${before.gw} to RM ${after.gw})`);
+    ok(after.st === "In-Kind", `and the row reads In-Kind, settled and delivered in full (${after.st})`);
+    wRd.eval("sales.splice(sales.findIndex(function(s){return s.rid==='rd-1';}),1);recompute();");
+
+    /* ---- THE DESK: one tap, an entry the drafter reads, landing on Approve ---- */
+    wRd.eval("window.__ns=networkStats;networkStats=function(){return [{id:'CZ9-TST',earned:1}];};queue=[];");
+    wRd.eval("redeemRebate('CZ9-TST');");
+    const q1 = rdRd("queue[queue.length-1]||null");
+    ok(!!(q1 && q1.payload && q1.payload.mode === "redeem" && q1.payload.party === "CZ9-TST" && q1.payload.qty === 1 && q1.payload.balance === 1),
+      "Redeem queues an entry the drafter reads: mode redeem, the party, the units and the balance the desk saw");
+    const d2 = q1 ? dR({ at: q1.at, payload: q1.payload }, mirrorR) : { skip: "nothing queued" };
+    ok(!d2.skip && d2.collection === "sales", `and the drafter drafts it rather than refusing it (${d2.skip || d2.collection})`);
+    ok(rdRd("curAddr") === "approve", "the tap lands on Approve");
+
+    /* ---- AN ADVANCE OUTSTANDING: the 04 Aug rule, an offset first, as a Correction ---- */
+    const ADV = { rid: "adv-1", customer: "CZ9-TST", date: "2026-09-10", qty: 1, total: 110, cost: 44, cash: 0, deliveredQty: 1, deliveredOn: "2026-09-10" };
+    wRd.eval("sales.push(" + JSON.stringify(ADV) + ");recompute();queue=[];");
+    wRd.eval("redeemRebate('CZ9-TST');");
+    const q2 = rdRd("queue[queue.length-1]||null");
+    const f2 = (q2 && q2.payload && q2.payload.fields) || {};
+    ok(!!(q2 && q2.payload && q2.payload.mode === "amend" && q2.payload.kind === "Correction" && q2.payload.rid === "adv-1"),
+      "with an advance outstanding it queues an offset instead: a Correction on that advance row");
+    ok(f2.rebate === true && f2.settledRM === 110 && f2.rebateKg === 1, `settling it in kind (${JSON.stringify(f2)})`);
+    const mirrorO = { ...mirrorR, sales: bkR.sales.concat([ADV]) };
+    const dO = q2 ? dR({ at: q2.at, payload: q2.payload }, mirrorO) : { skip: "nothing queued" };
+    ok(!dO.skip && ((dO.row && dO.row.changes) || []).some((c) => c.field === "settledRM"),
+      `and the drafter drafts the offset as a Correction rather than refusing it (${dO.skip || "drafted"})`);
+    wRd.eval("sales.splice(sales.findIndex(function(s){return s.rid==='adv-1';}),1);networkStats=window.__ns;recompute();queue=[];");
+
+    /* ---- THE APPROVE CARD ---- */
+    const card = String(wRd.eval("apCard(" + JSON.stringify({ id: "d-r", collection: "sales", row: { customer: "CZ9-TST", qty: 1, total: 44, cost: 44, cash: 0, settledRM: 44, rebate: true, goodwill: true, deliveredQty: 1, date: "2026-09-11" }, flags: [], reasoning: "x" }) + ")"));
+    ok(/Redeem/.test(card) && /free to/.test(card) && /settled by the reward/.test(card), "the Approve card reads a redemption as one, free and settled by the reward");
+    ok(!/Margin/.test(card), "and not as a sale with a margin");
+  } finally { try { wRd.close(); } catch (e) { /* best effort */ } }
+}
+
+
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
 process.exit(fail ? 1 : 0);

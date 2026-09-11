@@ -976,6 +976,49 @@ export function draftRow(entry, book) {
         + " floor guard both still run on it, and setting one price moves every size above it.",
     };
   }
+  /* v584, HIS INSTRUCTION OF 11 SEP 2026: A REDEMPTION GOES THROUGH APPROVE LIKE EVERY OTHER LEDGER WRITE.
+     The desk's Redeem button queued REDEEM with no payload, the first check in this function refused
+     every one, and the refusal cleaned itself away at the next fold: not one redemption pressed on the
+     cloud desk ever reached the book. It is a sales row settled in kind: the salt leaves the inventory
+     and nothing is paid in cash. On his ruling of the same day it is booked as a COST and not as revenue,
+     goodwill as well as rebate, exactly as s050 is, so the walk leaves it out of revenue and books its
+     cost as an expense. The total and the settlement are the salt's own cost, read where every other
+     row's cost is read.
+     THE DRAFTER CANNOT CHECK THE REWARD, and says so. Rewards are worked out on the desk from the whole
+     book; what reaches the Approve card is the desk's own statement of the balance, carried in the
+     payload, beside everything this CAN measure: the party, the inventory and the cost. */
+  if (pay.mode === "redeem") {
+    const prod = pay.product || "salt";
+    if (prod !== "salt") return { skip: `${prod} has no reward scheme, so there is no reward to redeem` };
+    const party = pay.party || null;
+    if (!party) return { skip: "a redemption names the party it is for" };
+    const q = isNum(pay.qty) ? +pay.qty : null;
+    if (q == null || !(q > 0)) return { skip: "a redemption needs the units handed over" };
+    const when = pay.date || null;
+    if (!when) return { skip: "a redemption needs the date the salt went out" };
+    if (!DATE_RE.test(String(when))) return { skip: `the date is not a date in YYYY-MM-DD: ${when}` };
+    const priced = costFor(book, prod);
+    if (priced.cost == null) return { skip: "the inventory has no cost on the book, so the salt given away cannot be costed" };
+    const cost = round(priced.cost * q);
+    const roster = (book.state && book.state.roster) || [];
+    const pos = ((book.state && book.state.OPEN && book.state.OPEN.position) || {})[prod] || null;
+    const flags = [];
+    if (!roster.includes(party)) flags.push(`${party} is not on the roster. A new party needs a code and a directory entry before this is committed.`);
+    if (pos && isNum(pos.onHand) && q > pos.onHand + 0.005) flags.push(`This hands over ${round(q)} unit against an inventory the book puts at ${round(pos.onHand)}.`);
+    const said = isNum(pay.balance)
+      ? `The desk says ${party} held ${round(pay.balance)} unit earned and unredeemed when this was pressed${isNum(pay.earned) ? ` (${round(pay.earned)} earned, ${round(pay.applied || 0)} already used)` : ""}.`
+      : `The desk did not state ${party}'s balance.`;
+    flags.push(`${said} Rewards are worked out on the desk, not here, so that figure is the desk's word and the drafter cannot check it.`);
+    if (isNum(pay.balance) && q > pay.balance + 0.005) flags.push(`This redeems ${round(q)} unit against the ${round(pay.balance)} unit the desk says is available.`);
+    return {
+      collection: "sales",
+      row: { customer: party, qty: q, total: cost, cost, cash: 0, settledRM: cost, rebate: true, rebateKg: q, goodwill: true, deliveredQty: q, deliveredOn: when, date: when },
+      flags,
+      reasoning: `Redeems ${round(q)} unit of salt free to ${party} on ${when}, settled by the reward rather than in cash.`
+        + ` Booked as a cost and not as revenue, on his ruling of 11 Sep 2026: the row carries goodwill as well as rebate, so it stays out of revenue and its RM ${round(cost)} of cost is an expense.`
+        + " The salt leaves the inventory and the fold rolls the stated shelf by it.",
+    };
+  }
   if (pay.mode && pay.mode !== "new") {
     return { skip: `this entry carries mode "${pay.mode}", which the drafter has no row shape for, so it is left for a person` };
   }

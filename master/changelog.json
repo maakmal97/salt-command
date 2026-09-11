@@ -1,5 +1,18 @@
 [
  {
+  "v": "v584",
+  "d": "11 Sep 2026",
+  "t": "A REDEMPTION AND A REBATE OFFSET REACH APPROVE, AND REDEEM IS ONE TAP",
+  "n": [
+   "<b>HIS INSTRUCTION, 11 SEP 2026: everything that goes through the ledger goes through Approve, and redeeming is a one-tap button.</b> The Redeem button queued REDEEM and REBATE_OFFSET with no payload. The cloud drafter refuses an entry without one, and the refusal cleaned itself away at the next fold, so not one redemption or offset pressed on the cloud desk ever reached the book. CR3-DAM's, pressed at 07:01 that morning, was the one found. Both now carry a payload the drafter reads, and the tap lands on Approve, which reads the drafts again once the post has landed.",
+   "<b>A REDEMPTION IS A SALES ROW THE DRAFTER BUILDS, BOOKED AS A COST.</b> Salt out, no cash, settled by the reward. On his ruling of the same day it carries goodwill as well as rebate, exactly as s050 does, so revenue does not move and its cost is an expense. Its total and its settlement are the salt's own cost, read where every other row's cost is read. <b>The drafter cannot check the reward</b>, since rewards are worked out on the desk from the whole book, so the Approve card carries the balance the desk stated and says it is the desk's word. Oil, which has no reward, is refused, and so is a redemption naming no party, no units or no date.",
+   "<b>THE 04 AUG RULE IS KEPT EXACTLY.</b> A free unit offsets an outstanding advance first, in kind, with no salt moving. The offset is a Correction on the advance row itself, settledRM and rebate, which is how the ledger has always recorded one, and it ADDS to whatever that row already settles in kind rather than overwriting it. It travels the Correction road the drafter and the fold already had, so the drafter needed one new branch and the fold none.",
+   "<b>THE APPROVE CARD READS A REDEMPTION AS ONE</b>: units out, the cost as an expense, no revenue, no cash. The sale card would have shown it as a sale at nil margin.",
+   "<b>PROVED WITH EVERY STATE FORCED.</b> Revenue unmoved and the cost landing as an expense on the desk's own walk; the row reading In-Kind; the tap queuing an entry the drafter drafts and landing on Approve; an advance turning it into an offset Correction the drafter drafts. Twenty-one assertions, and six mutations across the drafter and the desk, each reddening its own.",
+   "<b>STILL TO COME, EACH IN ITS OWN VERSION:</b> the automatic offset of up to 1 unit, and the fix that stops a refused entry vanishing at the next fold."
+  ]
+ },
+ {
   "v": "v583",
   "d": "11 Sep 2026",
   "t": "BOTH BORROWED LOTS GO BACK, AND THE INVENTORY ROLLS DOWN BY 7",
