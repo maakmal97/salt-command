@@ -1,5 +1,14 @@
 [
  {
+  "v": "v579",
+  "d": "11 Sep 2026",
+  "t": "A SECOND ORDER FROM CF5-WM AT RM110 INCLUDING CARRIAGE, PENDING UNTIL SOMETHING MOVES",
+  "n": [
+   "<b>ONE ROW FOLDED, A SALT SELL TO CF5-WM.</b> One unit at RM110 total on 11 Sep, RM10 of that carriage, so RM100 of goods. Nothing was paid and nothing moved, so the row sits pending and draws no stock and books no revenue for now. The drafter raised no flags and the queued entry matched the mirror, so the fold went in as drafted with no amendment and no count attached.",
+   "<b>THE INVENTORY DID NOT MOVE.</b> Stock stands at 33.25 units on the salt count of 8 Sep, cost held at RM44 a unit against a replacement of RM46, with 10.5 units promised, nothing owed out and the reorder mark at 15. The two loans in, 5.5 units from CH5-OUG and 1.5 units from CA11-SEN, both dated 8 Sep, stay open and untouched by this fold."
+  ]
+ },
+ {
   "v": "v578",
   "d": "11 Sep 2026",
   "t": "TWO PENDING SALT ROWS DATED 11 SEP, NOTHING PAID AND NOTHING MOVED",
