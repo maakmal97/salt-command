@@ -1,5 +1,17 @@
 [
  {
+  "v": "v595",
+  "d": "12 Sep 2026",
+  "t": "A LOAN IS REPAID, IN PART OR IN FULL, IN WHAT WAS LENT, AND SETTLES WHEN NOTHING IS LEFT OWING",
+  "n": [
+   "<b>HIS RULING OF 11 SEP 2026: a loan is repaid in what was lent.</b> Borrow or lend has a third choice, Repaid, which picks the open loan and asks for units against a salt loan and ringgit against a cash one. A part repayment is allowed, and the loan settles when nothing is left owing. More than is owing is refused, since interest is not a repayment.",
+   "<b>A LOAN HAS A NAME NOW.</b> The fold gives each loan a rid as it appends it, the way it names a sale or a lot, so a repayment names the one loan it pays. The three loans on the book are settled and need none.",
+   "<b>WHAT IS OWING IS READ EVERYWHERE.</b> The inventory walk, the lent-out and borrowed-in counts, the cash flow and the borrowed-in table read what is still owing on each open loan. That also ends the fault where a repaid loan out kept reading as lent: its count had no status filter at all.",
+   "<b>WHAT IT TOUCHES TODAY: NOTHING.</b> All three loans on the book are settled, and none is lent out. Interest is still to come.",
+   "<b>PROVED THROUGH EVERY ROAD</b>: the drafter, the planner and the apply on a copy of the book, the pane driven on the real master, the overlay across redraws, the Approve card and cashFlow. Ten mutations, each reddening its own, run on this same code before v590 to v594 went in under it."
+  ]
+ },
+ {
   "v": "v594",
   "d": "12 Sep 2026",
   "t": "A REWARD OFFSET IS PRICED ON THE GOODS AND SETTLES NO MORE THAN IS OWED",

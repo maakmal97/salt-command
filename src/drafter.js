@@ -880,6 +880,40 @@ export function draftRow(entry, book) {
     };
   }
 
+  /* ---- A REPAYMENT (v595, his ruling of 11 Sep 2026): a loan is repaid in what was lent, in part or in full.
+   * The entry names the loan by its rid; the amount is units for a salt loan and ringgit for a cash loan.
+   * More than is owing is refused, since interest is not a repayment. Paid off, the loan settles. */
+  if (pay.mode === "repay") {
+    const rid = pay.loan || null;
+    if (!rid) return { skip: "a repayment names the loan it repays" };
+    const loan = ((book.state && book.state.loans) || []).find((l) => l && l.rid === rid);
+    if (!loan) return { skip: `no loan ${rid} is on the book` };
+    if (loan.status === "settled") return { skip: `loan ${rid} is already settled` };
+    const cashL = loan.form === "cash";
+    const amt = cashL ? (isNum(pay.rm) ? +pay.rm : null) : (isNum(pay.kg) ? +pay.kg : null);
+    if (amt == null || !(amt > 0)) return { skip: cashL ? "a repayment of a cash loan needs the ringgit" : "a repayment of a salt loan needs the units" };
+    const when = pay.date || null;
+    if (!when) return { skip: "a repayment needs the date it was made" };
+    const paid = (loan.repaid || []).reduce((a, x) => a + (+(cashL ? x.rm : x.kg) || 0), 0);
+    const owed = +((cashL ? +loan.valueRM : +loan.valueKg) - paid).toFixed(2);
+    if (amt > owed + 0.005) return { skip: `this repays ${amt} against ${owed} still owing on ${rid}; interest is not a repayment` };
+    const left = +(owed - amt).toFixed(2), settles = left < 0.005;
+    const flags = [];
+    const pos = ((book.state && book.state.OPEN && book.state.OPEN.position) || {})[loan.product || "salt"] || null;
+    if (!cashL && loan.direction === "in" && pos && isNum(pos.onHand) && amt > pos.onHand + 0.005)
+      flags.push(`This returns ${round(amt)} unit against an inventory the book puts at ${round(pos.onHand)}.`);
+    const what = cashL ? `RM ${amt.toFixed(2)}` : `${round(amt)} unit of ${loan.product || "salt"}`;
+    return {
+      collection: "repayment",
+      row: { loan: rid, party: loan.party, direction: loan.direction, form: cashL ? "cash" : "salt", date: when,
+        kg: cashL ? null : amt, rm: cashL ? amt : null, left, settles, product: cashL ? null : (loan.product || "salt"), note: pay.note || null },
+      flags,
+      reasoning: (loan.direction === "in" ? `Repays ${what} to ${loan.party} against the loan of ${loan.date}` : `${loan.party} repays ${what} against the loan of ${loan.date}`)
+        + (settles ? ", which settles it." : `, leaving ${cashL ? "RM " + left.toFixed(2) : round(left) + " unit"} owing.`)
+        + (cashL ? " It moves the cash flow and no inventory." : (loan.direction === "in" ? " The salt leaves the inventory." : " The salt comes back onto the inventory.")),
+    };
+  }
+
   if (pay.mode === "lost") {
     const prod = pay.product || "salt";
     const q = isNum(pay.kg) ? +pay.kg : (isNum(pay.qty) ? +pay.qty : null);

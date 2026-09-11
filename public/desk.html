@@ -68,7 +68,7 @@ document.addEventListener('visibilitychange',function(){
    localStorage before it posts anything and the load reads it straight back.
    The same tick retries a held entry, which is what gets a phone write to the cloud
    without waiting for the next open. */
-var SALT_BUILD_ID="79855ef87d17204c";
+var SALT_BUILD_ID="cbc70be512cc23ee";
 var SALT_REV_MS=10000;
 (function(){
   var chip=null,timer=null;
@@ -5585,8 +5585,13 @@ function stockCostFor(p){const k=p||PROD,v=PROD_STOCK_COST[k];
    owed back in kind: it adds to the inventory while open and counts nowhere once settled, because
    the units came in and went back. A loan out is what it always was. loanDrawUnits is the net, so
    posInputs and the engine need not know which way each row runs. */
-const loanOutUnits=()=>(typeof loans!=='undefined'?loans:[]).reduce((a,l)=>a+(l.preOpening||l.direction==='in'?0:(l.valueKg||0)),0);
-const loanInUnits=(LN)=>(LN||(typeof loans!=='undefined'?loans:[])).reduce((a,l)=>a+(l.direction==='in'&&l.status!=='settled'?(l.valueKg||0):0),0);
+/* v595: WHAT IS STILL OWING ON A LOAN, in its own form, once its repayments are taken off; a settled loan owes
+   nothing. Every reader of a loan's size reads these, so a part-repaid loan counts only what is left, and a
+   repaid loan out stops reading as lent, which before v595 had no status filter at all. */
+const loanLeft=l=>(!l||l.status==='settled')?0:+Math.max(0,(+l.valueKg||0)-(l.repaid||[]).reduce((a,x)=>a+(+x.kg||0),0)).toFixed(2);
+const cashLeft=l=>(!l||l.status==='settled')?0:+Math.max(0,(+l.valueRM||0)-(l.repaid||[]).reduce((a,x)=>a+(+x.rm||0),0)).toFixed(2);
+const loanOutUnits=()=>(typeof loans!=='undefined'?loans:[]).reduce((a,l)=>a+(l.preOpening||l.direction==='in'?0:loanLeft(l)),0);
+const loanInUnits=(LN)=>(LN||(typeof loans!=='undefined'?loans:[])).reduce((a,l)=>a+(l.direction==='in'?loanLeft(l):0),0);
 const loanDrawUnits=()=>loanOutUnits()-loanInUnits();
 /* WRITTEN OFF 31 Jul 2026. He stopped responding, so the desk stops carrying this as
    money it expects. status:'writtenOff' takes it out of the forward cash view, off the
@@ -6319,7 +6324,9 @@ const whiteboard=[
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{"v":"v594","d":"12 Sep 2026","t":"A REWARD OFFSET IS PRICED ON THE GOODS AND SETTLES NO MORE THAN IS OWED","n":["<b>HIS DIAGNOSIS OF 12 SEP 2026: A REWARD PAYS FOR SALT, SO IT IS PRICED ON THE GOODS.</b> s139 is one unit at RM 110.00 with a RM 7.50 delivery on the same line, and CS6-BS paid the delivery in cash. Both offset roads priced the unit on the whole line, RM 117.50, so v591's offset took 0.94 unit and settled RM 110.45 against RM 110.00 owed. offsetFor is the one rule now, for the Offset button and the automatic offset alike: the unit is the goods rate, as every rate on the desk has been since v502, the units never exceed what was sold, and the ringgit never exceeds what is owed, so an unpaid delivery stays owed. On it s139 takes the whole unit and settles exactly RM 110.00.","<b>THE CLOUD SUITE HAS BEEN RED SINCE v591 WENT LIVE</b>, through v592 and v593, on the same four checks and a book that was right. Two read CS6-BS's own rows and assumed every redemption of theirs predated the scheme; two looked s139 up in a statement window that closes on 01 Sep. None was a fault in the statement: s139 prints as the part-paid sale it is. The pair uses a fixture party now, and the part-paid check looks each row up with the window open, as the cancelled-order check beside it already did.","<b>s139 IS LEFT AS FOLDED</b>, 0.94 unit and RM 110.45, and so is v592's 0.06 unit to CS6-BS, the remainder the overshoot left free. Both go to him in Approve as corrections.","Seven mutations, each reddening its own, run on this same code before v592 and v593 folded under it: the unit priced on the whole line again, an offset settling more than is owed, a reward covering more units than were sold, the automatic offset and the Offset button each on arithmetic of their own, the reward window forgetting where it starts, and the statement reading any rebate row as a gift."]},
+const evolution=[{"v":"v595","d":"12 Sep 2026","t":"A LOAN IS REPAID, IN PART OR IN FULL, IN WHAT WAS LENT, AND SETTLES WHEN NOTHING IS LEFT OWING","n":["<b>HIS RULING OF 11 SEP 2026: a loan is repaid in what was lent.</b> Borrow or lend has a third choice, Repaid, which picks the open loan and asks for units against a salt loan and ringgit against a cash one. A part repayment is allowed, and the loan settles when nothing is left owing. More than is owing is refused, since interest is not a repayment.","<b>A LOAN HAS A NAME NOW.</b> The fold gives each loan a rid as it appends it, the way it names a sale or a lot, so a repayment names the one loan it pays. The three loans on the book are settled and need none.","<b>WHAT IS OWING IS READ EVERYWHERE.</b> The inventory walk, the lent-out and borrowed-in counts, the cash flow and the borrowed-in table read what is still owing on each open loan. That also ends the fault where a repaid loan out kept reading as lent: its count had no status filter at all.","<b>WHAT IT TOUCHES TODAY: NOTHING.</b> All three loans on the book are settled, and none is lent out. Interest is still to come.","<b>PROVED THROUGH EVERY ROAD</b>: the drafter, the planner and the apply on a copy of the book, the pane driven on the real master, the overlay across redraws, the Approve card and cashFlow. Ten mutations, each reddening its own, run on this same code before v590 to v594 went in under it."]},
+
+{"v":"v594","d":"12 Sep 2026","t":"A REWARD OFFSET IS PRICED ON THE GOODS AND SETTLES NO MORE THAN IS OWED","n":["<b>HIS DIAGNOSIS OF 12 SEP 2026: A REWARD PAYS FOR SALT, SO IT IS PRICED ON THE GOODS.</b> s139 is one unit at RM 110.00 with a RM 7.50 delivery on the same line, and CS6-BS paid the delivery in cash. Both offset roads priced the unit on the whole line, RM 117.50, so v591's offset took 0.94 unit and settled RM 110.45 against RM 110.00 owed. offsetFor is the one rule now, for the Offset button and the automatic offset alike: the unit is the goods rate, as every rate on the desk has been since v502, the units never exceed what was sold, and the ringgit never exceeds what is owed, so an unpaid delivery stays owed. On it s139 takes the whole unit and settles exactly RM 110.00.","<b>THE CLOUD SUITE HAS BEEN RED SINCE v591 WENT LIVE</b>, through v592 and v593, on the same four checks and a book that was right. Two read CS6-BS's own rows and assumed every redemption of theirs predated the scheme; two looked s139 up in a statement window that closes on 01 Sep. None was a fault in the statement: s139 prints as the part-paid sale it is. The pair uses a fixture party now, and the part-paid check looks each row up with the window open, as the cancelled-order check beside it already did.","<b>s139 IS LEFT AS FOLDED</b>, 0.94 unit and RM 110.45, and so is v592's 0.06 unit to CS6-BS, the remainder the overshoot left free. Both go to him in Approve as corrections.","Seven mutations, each reddening its own, run on this same code before v592 and v593 folded under it: the unit priced on the whole line again, an offset settling more than is owed, a reward covering more units than were sold, the automatic offset and the Offset button each on arithmetic of their own, the reward window forgetting where it starts, and the statement reading any rebate row as a gift."]},
 
 {"v":"v593","d":"12 Sep 2026","t":"A FREE UNIT OF SALT GOES OUT ON THE REWARD, BOOKED AS COST AND NOT REVENUE","n":["<b>ONE ROW FOLDED, A REDEMPTION AND NOT A SALE.</b> CR3-DAM takes 1 unit of salt free on 12 Sep, RM44 of goods settled by the reward with no cash in, and the unit delivered the same day. It is booked as cost and not revenue on his ruling of 11 Sep 2026, the row carrying goodwill as well as rebate, so the RM44 sits as an expense against the inventory's own rate.","<b>WHAT IS UNUSUAL AND WHAT THE INVENTORY DID.</b> The RM44 falls under the RM56.21 floor for 1 unit and well under the RM120 ask and RM150 ceiling, which is what a free unit does to the ladder. The drafter flagged the earned and unredeemed balance of 1 unit as the desk's word, not checkable here, and the figures do not answer it. The stated shelf rolls down by the unit and the RM25 already outstanding on CR3-DAM stays open."]},
 
@@ -6735,7 +6742,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='12 Sep 2026, 02:32 KL';
+const LAST_UPDATED='12 Sep 2026, 02:43 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -6916,6 +6923,7 @@ function applyOverlay(){
         statedStockBy[_pk]=+p.qty;
         provNotes.push('stock count '+units(+p.qty)+' '+((PRODUCTS[_pk]||{}).name||_pk));}
       else if(p.mode==='loan'){const cashL=p.form==='cash';loans.push({date:p.date,party:p.party,direction:p.direction==='in'?'in':'out',form:cashL?'cash':'salt',valueKg:cashL?null:+p.kg,valueRM:cashL?+p.rm:null,status:'open',product:cashL?null:(p.product||DEFAULT_PROD),note:p.note||'',_prov:q.at});provNotes.push((p.direction==='in'?'borrowed ':'lent ')+(cashL?fmt(+p.rm):units(+p.kg)));}
+      else if(p.mode==='repay'){const lo=loans.find(l=>l&&l.rid===p.loan);if(lo&&lo.status!=='settled'){lo.repaid=(lo.repaid||[]).concat([p.rm!=null?{date:p.date,rm:+p.rm}:{date:p.date,kg:+p.kg}]);if((lo.form==='cash'?cashLeft(lo):loanLeft(lo))<0.005){lo.status='settled';lo.settledOn=p.date;}}provNotes.push('repaid '+(p.rm!=null?fmt(+p.rm):units(+p.kg)));}   // v595
       else if(p.mode==='loss'){selfUseLog.push({date:p.date,product:p.product||DEFAULT_PROD,kg:+p.kg,why:p.why||'other',note:p.note||'',_prov:q.at});provNotes.push('self-use '+units(+p.kg));}
       else if(p.mode==='lost'){lostDemand.push({date:p.date,product:p.product||DEFAULT_PROD,party:p.party||null,kg:+p.kg,rm:+p.total||0,why:p.why||'other',note:p.note||'',_prov:q.at});provNotes.push('turned away '+units(+p.kg));}
       else if(p.mode==='contact'){contacts.push({date:p.date,party:p.party,how:p.how||'other',outcome:p.outcome||'noreply',next:p.next||null,note:p.note||'',_prov:q.at});provNotes.push('contact '+codeOf(p.party));}
@@ -8867,8 +8875,8 @@ function cashFlow(){
      moves the flow and nothing in the profit and loss. A settled one has gone back, so it counts neither
      way until a repayment is recorded in its own right. */
   const cashLoans=(typeof loans!=='undefined'?loans:[]).filter(l=>l&&l.form==='cash'&&l.status!=='settled');
-  const loanIn=+cashLoans.filter(l=>l.direction==='in').reduce((a,l)=>a+(+l.valueRM||0),0).toFixed(2);
-  const loanOut=+cashLoans.filter(l=>l.direction!=='in').reduce((a,l)=>a+(+l.valueRM||0),0).toFixed(2);
+  const loanIn=+cashLoans.filter(l=>l.direction==='in').reduce((a,l)=>a+cashLeft(l),0).toFixed(2);
+  const loanOut=+cashLoans.filter(l=>l.direction!=='in').reduce((a,l)=>a+cashLeft(l),0).toFixed(2);
   const net=+(inRM+inj-outRM-spend-refPaid+loanIn-loanOut).toFixed(2);
   /* A COUNT beats a derived balance, exactly as it does for inventory. Flows are split at
      the count date: everything up to it is already inside the counted figure, and only
@@ -9719,7 +9727,7 @@ function stockHistory(){
   const d0=new Date(ds[0]), days=Math.max(1,Math.round((TODAY-d0)/MS));
   const inOn={},outOn={};
   B.filter(poLive).forEach(p=>{const k=p.receivedOn||p.date;inOn[k]=(inOn[k]||0)+poRecvUnits(p);});
-  if(PROD===DEFAULT_PROD)(typeof loans!=='undefined'?loans:[]).forEach(l=>{if(l.direction==='in'&&l.status!=='settled'&&l.date)inOn[l.date]=(inOn[l.date]||0)+(l.valueKg||0);});   // v518: borrowed salt lands the day it was borrowed
+  if(PROD===DEFAULT_PROD)(typeof loans!=='undefined'?loans:[]).forEach(l=>{if(l.direction==='in'&&l.status!=='settled'&&l.date)inOn[l.date]=(inOn[l.date]||0)+loanLeft(l);});   // v518: borrowed salt lands the day it was borrowed
   /* ALL sales, not just priced ones: recompute draws the inventory down with sales.reduce
      over txPhys, so filtering to priced trade here would leave the walk ending somewhere
      the rest of the desk does not agree with.
@@ -10274,7 +10282,7 @@ function tabInventory(){
   const oversold=free<0;
   const PN=PRODUCTS[PROD].name.toLowerCase();
   const LN=pLoans();                                    // v385: this product's loans, not the book's
-  const loanUnits=LN.reduce((a,l)=>a+(l.preOpening||l.direction==='in'?0:(l.valueKg||0)),0), loanIn=loanInUnits(LN);   // v518: out and in kept apart; soldUnits carries the net
+  const loanUnits=LN.reduce((a,l)=>a+(l.preOpening||l.direction==='in'?0:loanLeft(l)),0), loanIn=loanInUnits(LN);   // v518: out and in kept apart; soldUnits carries the net
   const loanPre=LN.reduce((a,l)=>a+(l.preOpening?(l.valueKg||0):0),0);
   // reconciliation walk (only lines that apply)
   const recon=[
@@ -12704,8 +12712,8 @@ function tabReceivables(){
      would delete a second, leaving an empty card under a heading. The sentence rides the
      cardh's own sub, which is markup the strip does not touch. */
   /* v518: salt borrowed from a party and owed back in kind: the open loans in on this book. */
-  const bIn=pLoans().filter(l=>l.direction==='in'&&l.status!=='settled'), bInUnits=+bIn.reduce((a,l)=>a+(l.valueKg||0),0).toFixed(2),
-        bInBody=bIn.map(l=>`<tr><td class="l">${esc(l.party)}</td><td class="l">${l.date||'not dated'}</td><td>${l.form==='cash'?fmt(+l.valueRM||0):units(l.valueKg||0)}</td></tr>`).join('');
+  const bIn=pLoans().filter(l=>l.direction==='in'&&l.status!=='settled'), bInUnits=+bIn.reduce((a,l)=>a+loanLeft(l),0).toFixed(2),
+        bInBody=bIn.map(l=>`<tr><td class="l">${esc(l.party)}</td><td class="l">${l.date||'not dated'}</td><td>${l.form==='cash'?fmt(cashLeft(l)):units(loanLeft(l))}</td></tr>`).join('');
   const custN=cCash.length+cSalt.length+cRef.length+cPen.length+bIn.length,
         supN=sCash.length+sSalt.length+sPen.length+(hasRef?1:0), openN=custN+supN;
   /* AND EACH HALF SAYS IT SEPARATELY. The guard tests the whole part, so it fires only when
@@ -15375,7 +15383,7 @@ function trackCharts(){
 function drawInvChart(ic){
   /* v385: pLoans(), not loanDrawUnits(), for the reason given at pLoans. Both books read 0
      today because the only loan on the book is preOpening, so this is latent and not live. */
-  const loanOut=pLoans().reduce((a,l)=>a+(l.preOpening||l.direction==='in'?0:(l.valueKg||0)),0), loanIn=loanInUnits(pLoans());   // v518
+  const loanOut=pLoans().reduce((a,l)=>a+(l.preOpening||l.direction==='in'?0:loanLeft(l)),0), loanIn=loanInUnits(pLoans());   // v518
   /* v385: openingFor(PROD), not the bare `opening`. This is the v365 fault, left standing in
      the chart after the table above it was fixed. `opening` is Salt's 4.9 unit under BOTH
      books, so Oil's movement bar opened on Salt's lot and the walk missed by exactly that
@@ -16597,6 +16605,9 @@ function apCard(d){
     grid=cell('Book says',r.was==null?'&mdash;':units(r.was))+cell('You counted',units(r.qty))+cell('Drift',dr==null?'&mdash;':(dr>0?'+':'')+units(dr),dr==null?'':Math.abs(dr)<0.005?'g':'r');}
   else if(col==='loss'||col==='lostDemand'){const lost=col==='lostDemand';head=`${lost?'Lost sale':'Loss'} of <b>${esc(r.product||'salt')}</b> on ${esc(r.date||'-')}`;
     grid=cell(lost?'Wanted':'Left the inventory',units(r.kg))+(lost?cell('Who',esc(codeOf(r.party||'')||'walk-up'))+cell('Asked',r.rm?fmt(r.rm):'&mdash;'):'')+cell('Why',esc(LOSS_LABEL[r.why]||r.why||'-'));}
+  else if(col==='repayment'){const cashR=r.form==='cash',show=v=>cashR?fmt(+v||0):units(+v||0);   // v595
+    head=`Repay <b>${show(cashR?r.rm:r.kg)}</b> ${r.direction==='in'?'to':'from'} <b>${esc(codeOf(r.party||'?'))}</b> on ${esc(r.date||'-')}`;
+    grid=cell('Loan',esc(r.loan||'-'))+cell('Left owing',r.settles?'nothing':show(r.left))+cell(cashR?'Cash flow':'Inventory',(r.direction==='in'?'-':'+')+show(cashR?r.rm:r.kg));}
   else if(col==='loan'&&r.form==='cash'){head=`${r.direction==='in'?'Borrow':'Lend'} <b>${fmt(+r.valueRM||0)}</b> in cash ${r.direction==='in'?'from':'to'} <b>${esc(codeOf(r.party||'?'))}</b> on ${esc(r.date||'-')}`;   // v589
     grid=cell('Cash',fmt(+r.valueRM||0))+cell('Owed back','in cash')+cell('Cash flow',(r.direction==='in'?'+':'-')+fmt(+r.valueRM||0))+cell('Inventory','does not move');}
   else if(col==='loan'){head=`${r.direction==='in'?'Borrow':'Lend'} <b>${units(r.valueKg)}</b> of ${esc(r.product||'salt')} ${r.direction==='in'?'from':'to'} <b>${esc(codeOf(r.party||'?'))}</b> on ${esc(r.date||'-')}`;
@@ -17057,15 +17068,16 @@ function tabWorkbench(){
 
     <div id="wbPaneLoan" style="display:none;margin-top:13px">
       <div class="qrow" style="margin-bottom:10px">
-        <div class="qfield"><label>Which way</label><select id="wbLoanDir"><option value="in">Borrowed from them</option><option value="out">Lent to them</option></select></div>
-        <div class="qfield"><label>What changed hands</label><select id="wbLoanForm"><option value="salt">Salt</option><option value="cash">Cash</option></select></div>
-        <div class="qfield"><label>Party</label><select id="wbLoanParty"></select></div>
+        <div class="qfield"><label>What happened</label><select id="wbLoanDir"><option value="in">Borrowed from them</option><option value="out">Lent to them</option><option value="repay">Repaid, in part or in full</option></select></div>
+        <div class="qfield" id="wbLoanFormCell"><label>What changed hands</label><select id="wbLoanForm"><option value="salt">Salt</option><option value="cash">Cash</option></select></div>
+        <div class="qfield" id="wbLoanPartyCell"><label>Party</label><select id="wbLoanParty"></select></div>
+        <div class="qfield" id="wbLoanWhichCell" style="display:none"><label>Which loan</label><select id="wbLoanWhich"></select></div>
         <div class="qfield qunits" id="wbLoanUnitsCell"><label>Unit</label><input id="wbLoanUnits" type="number" step="0.01" min="0" inputmode="decimal"></div>
         <div class="qfield" id="wbLoanRMCell" style="display:none"><label>RM</label><input id="wbLoanRM" type="number" step="0.01" min="0" inputmode="decimal"></div>
         <div class="qfield"><label>Date</label><input id="wbLoanDate" type="date"></div>
       </div>
       <div class="qrow" style="margin-bottom:10px"><div class="qfield" style="flex:1"><label>Note (optional)</label><input id="wbLoanNote" type="text" placeholder="terms, if any"></div></div>
-      <div class="dsc">A salt loan is owed back in kind, unit for unit: borrowed salt sits on the inventory until it is returned, and lent salt leaves it. A cash loan is owed back in cash, and moves the cash flow while it is open. Settling a loan is a fold on your word for now.</div>
+      <div class="dsc">A salt loan is owed back in kind, unit for unit: borrowed salt sits on the inventory until it is returned, and lent salt leaves it. A cash loan is owed back in cash, and moves the cash flow while it is open. A repayment is in what was lent, in part or in full, and the loan settles when nothing is left owing.</div>
     </div>
 
     <!-- v343: ADD ID, ON THE CLOUD DESK. Names & IDs mints a code from a name and a place, and
@@ -18655,7 +18667,14 @@ function wbPreview(){
     }
   }else if(wbMode==='loan'){
     const dirL=wbVal('wbLoanDir'),who=wbVal('wbLoanParty');
-    if(wbVal('wbLoanForm')==='cash'){   // v589: a cash loan, in ringgit, moves the cash flow and no salt
+    if(dirL==='repay'){   // v595: a repayment names its loan and is in what was lent
+      const lo=(typeof loans!=='undefined'?loans:[]).find(l=>l&&l.rid===wbVal('wbLoanWhich'))||null,cashR=!!(lo&&lo.form==='cash');
+      const amt=cashR?wbNum('wbLoanRM'):wbNum('wbLoanUnits'),owed=lo?(cashR?cashLeft(lo):loanLeft(lo)):0,show=v=>cashR?fmt(v):units(v);
+      body=`<div style="font-size:13px;color:var(--mut)">${lo&&amt>0?`Repays <b style="color:var(--ink)">${show(amt)}</b> ${lo.direction==='in'?'to':'from'} <b style="color:var(--ink)">${ID(lo.party)}</b> against the loan of ${esc(lo.date||'-')}${amt>=owed-0.005?', which settles it':`, leaving <b style="color:var(--ink)">${show(+(owed-amt).toFixed(2))}</b> owing`}.`:'Choose the loan and enter what was repaid.'}</div>`;
+      if(!lo)errs.push('Choose the loan.');
+      else if(!(amt>0))errs.push(cashR?'Enter the ringgit repaid.':'Enter the units repaid.');
+      else if(amt>owed+0.005)errs.push(`That is more than the ${show(owed)} still owing. Interest is not a repayment.`);
+    }else if(wbVal('wbLoanForm')==='cash'){   // v589: a cash loan, in ringgit, moves the cash flow and no salt
       const re=wbEl('wbLoanRM'),rm=wbNum('wbLoanRM'),hasR=re&&re.value!=='';
       body=`<div style="font-size:13px;color:var(--mut)">${hasR&&rm>0&&who?`<b style="color:var(--ink)">${fmt(rm)}</b> in cash ${dirL==='in'?'borrowed from':'lent to'} <b style="color:var(--ink)">${ID(who)}</b>, owed back in cash. The cash flow ${dirL==='in'?'gains':'loses'} it while the loan is open; the inventory does not move.`:'Choose the party and enter the ringgit.'}</div>`;
       if(!who)errs.push('Choose the party.');
@@ -18899,6 +18918,15 @@ function wbRecord(){
     ['wbACash','wbAUnits'].forEach(id=>{const e=wbEl(id);if(e)e.value='0';});
   }else if(wbMode==='loan'){
     const who=wbVal('wbLoanParty'),w=wbNum('wbLoanUnits'),date=wbVal('wbLoanDate'),dirL=wbVal('wbLoanDir'),noteL=wbVal('wbLoanNote').trim();
+    if(dirL==='repay'){   // v595: a repayment names its loan by rid, in what was lent
+      const lo=(typeof loans!=='undefined'?loans:[]).find(l=>l&&l.rid===wbVal('wbLoanWhich'))||null,cashR=!!(lo&&lo.form==='cash'),amt=cashR?wbNum('wbLoanRM'):w;
+      const owed=lo?(cashR?cashLeft(lo):loanLeft(lo)):0;
+      if(!lo||!(amt>0)||amt>owed+0.005||!date){ok.textContent='Choose the loan, what was repaid (no more than is owing) and the date first.';ok.style.color='var(--crim)';return;}
+      queue.push({at:new Date().toISOString(),type:'REPAY',party:codeOf(lo.party),qty:cashR?null:amt,total:cashR?amt:null,status:'open',
+        raw:'Repaid '+(cashR?fmt(amt):units(amt)+' '+(lo.product||'salt'))+(lo.direction==='in'?' to ':' by ')+codeOf(lo.party)+' against the loan of '+lo.date+(noteL?', '+noteL:''),
+        payload:{mode:'repay',loan:lo.rid,party:lo.party,date:date,kg:cashR?null:amt,rm:cashR?amt:null,qty:null,total:null,cash:null,note:noteL||null}});
+      ['wbLoanUnits','wbLoanRM','wbLoanNote'].forEach(id=>{const e=wbEl(id);if(e)e.value='';});
+    }else{
     const cashL=wbVal('wbLoanForm')==='cash',rm=wbNum('wbLoanRM');   // v589
     if(!who||!(cashL?rm>0:w>0)||!date){ok.textContent='Choose the party, the '+(cashL?'ringgit':'units')+' and the date first.';ok.style.color='var(--crim)';return;}
     if(cashL)queue.push({at:new Date().toISOString(),type:dirL==='in'?'BORROW':'LEND',party:codeOf(who),qty:null,total:rm,status:'open',
@@ -18908,6 +18936,7 @@ function wbRecord(){
       raw:(dirL==='in'?'Borrowed ':'Lent ')+units(w)+' '+wbProdName()+(dirL==='in'?' from ':' to ')+codeOf(who)+' on '+date+', owed back in kind'+(noteL?', '+noteL:''),
       payload:{mode:'loan',form:'salt',product:wbProdVal(),direction:dirL,party:who,date:date,qty:w,total:null,cash:null,kg:w,note:noteL||null}});
     ['wbLoanUnits','wbLoanRM','wbLoanNote'].forEach(id=>{const e=wbEl(id);if(e)e.value='';});
+    }
   }else if(wbMode==='addid'){
     const code=wbApCodeNow(),kind=wbVal('wbApKind');
     const parent=(kind==='downstream'||kind==='bucket')?(wbVal('wbApParent')||null):null,an=(wbVal('wbApNote')||'').trim();
@@ -19018,7 +19047,12 @@ function wbApply(){
   /* v527: the loan's party is any roster code, filled once */
   const lpSel=wbEl('wbLoanParty');if(lpSel&&!lpSel.options.length)lpSel.innerHTML='<option value="">Choose</option>'+(roster||[]).slice().sort().map(id=>`<option value="${id}">${codeOf(id)}</option>`).join('');
   /* v589: a loan is salt, in units, or cash, in ringgit, and only the box that applies is shown */
-  {const lf=wbEl('wbLoanForm'),uc=wbEl('wbLoanUnitsCell'),rc=wbEl('wbLoanRMCell');if(lf&&uc&&rc){const cashL=lf.value==='cash';uc.style.display=cashL?'none':'';rc.style.display=cashL?'':'none';}}
+  {const ld=wbEl('wbLoanDir'),lf=wbEl('wbLoanForm'),uc=wbEl('wbLoanUnitsCell'),rc=wbEl('wbLoanRMCell'),fc=wbEl('wbLoanFormCell'),pc=wbEl('wbLoanPartyCell'),wc=wbEl('wbLoanWhichCell'),wl=wbEl('wbLoanWhich');
+    if(ld&&lf&&uc&&rc){const rep=ld.value==='repay';   // v595: a repayment picks its loan, and the loan's form sets the box
+      if(wl){const cur=wl.value;wl.innerHTML='<option value="">Choose the loan</option>'+(typeof loans!=='undefined'?loans:[]).filter(l=>l&&l.rid&&l.status!=='settled').map(l=>`<option value="${l.rid}">${esc(codeOf(l.party))}, ${l.direction==='in'?'borrowed':'lent'} ${esc(l.date||'')}: ${l.form==='cash'?fmt(cashLeft(l)):units(loanLeft(l))} owing</option>`).join('');wl.value=cur;}
+      const lo=rep&&wl?(typeof loans!=='undefined'?loans:[]).find(l=>l&&l.rid===wl.value):null,cashL=rep?!!(lo&&lo.form==='cash'):lf.value==='cash';
+      if(fc)fc.style.display=rep?'none':'';if(pc)pc.style.display=rep?'none':'';if(wc)wc.style.display=rep?'':'none';
+      uc.style.display=cashL?'none':'';rc.style.display=cashL?'':'none';}}
   /* v343: a downstream or a bucket hangs off an associate, so the parent shows for those two */
   const apk=wbEl('wbApKind'),apc=wbEl('wbApParentCell'),app=wbEl('wbApParent');
   if(apk&&apc){apc.style.display=(apk.value==='downstream'||apk.value==='bucket')?'':'none';
@@ -19089,6 +19123,7 @@ function wireWorkbench(){
   ms.onclick=e=>{const m=e.target.dataset.m;if(!m)return;wbMode=m;wbApply();wbEl('wbOk').textContent='';wbPreview();};
   const apk=wbEl('wbApKind');if(apk)apk.onchange=()=>{wbApply();wbPreview();};
   const lfm=wbEl('wbLoanForm');if(lfm)lfm.onchange=()=>{wbApply();wbPreview();};   // v589: the switch changes which box shows
+  ['wbLoanDir','wbLoanWhich'].forEach(id=>{const e=wbEl(id);if(e)e.onchange=()=>{wbApply();wbPreview();};});   // v595: what happened, and which loan, change the boxes
   ['wbApWho','wbApName','wbApPlace','wbApParent','wbApNote'].forEach(id=>{const e=wbEl(id);if(e)e.oninput=e.onchange=wbPreview;});   // v587: the code follows the name and the place as they are typed
   const ds=wbEl('wbDirSw');if(ds)ds.onclick=e=>{const d=e.target.dataset.d;if(!d)return;wbDir=d;wbFillParty();wbApply();wbPreview();};
   const asw=wbEl('wbASideSw');if(asw)asw.onclick=e=>{const s=e.target.dataset.s;if(!s)return;wbASide=s;

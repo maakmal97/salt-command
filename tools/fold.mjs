@@ -112,6 +112,7 @@ function describe(item) {
     case "count": return `COUNT ${r.product} ${r.qty} unit on ${r.date} (book said ${r.was}, drift ${r.drift})`;
     case "loss": return `LOSS ${r.kg} unit ${r.product} on ${r.date}: ${r.why}`;
     case "loan": return `${r.direction === "in" ? "BORROW" : "LEND"} ${r.form === "cash" ? "RM " + r.valueRM + " in cash" : r.valueKg + " unit " + (r.product || "salt")} ${r.direction === "in" ? "from" : "to"} ${r.party} on ${r.date}`;
+    case "repayment": return `REPAY ${r.form === "cash" ? "RM " + r.rm : r.kg + " unit " + (r.product || "salt")} ${r.direction === "in" ? "to" : "from"} ${r.party} on loan ${r.loan}, ${r.date}${r.settles ? ", settling it" : ""}`;
     case "lostDemand": return `LOST SALE ${r.kg} unit ${r.product}${r.party ? " to " + r.party : ""} on ${r.date}: ${r.why}`;
     case "roster": return `${APPOINTS[r.kind] ? "APPOINT" : "REGISTER"} ${r.code} as ${r.kind}${r.parent ? " under " + r.parent : ""}`;
     case "priceset": return `SET THE BOARD for ${r.product}${Object.keys(r.prices || {}).length ? ": " + Object.entries(r.prices).map(([q, p]) => `${q} unit at RM${p}`).join(", ") : ""}${(r.hide || []).length ? `, hiding ${r.hide.join(", ")} unit` : ""}`;
@@ -316,6 +317,21 @@ export function plan(book, staged, notes) {
       entry.priceset = { product: prod, prices: r.prices || {}, hide: r.hide || [] };
       const n = Object.keys(r.prices || {}).length;
       entry.does.push(`set ${n} price${n === 1 ? "" : "s"} on the ${prod} board${(r.hide || []).length ? ` and hide ${r.hide.join(", ")} unit` : ""}; it moves no stock and no cash`);
+    } else if (it.collection === "repayment") {
+      /* v595: A REPAYMENT IS WRITTEN ON ITS LOAN, named by rid, and the loan settles when nothing is left owing.
+         Earlier repayments of the same loan in this batch count, so two approvals cannot repay it twice. */
+      const loan = (book.loans || []).find((l) => l && l.rid === r.loan);
+      if (!loan) { out.refused.push({ id: it.id, why: `no loan ${r.loan} is on the book` }); continue; }
+      if (loan.status === "settled") { out.refused.push({ id: it.id, why: `loan ${r.loan} is already settled` }); continue; }
+      const cashL = loan.form === "cash", amt = +(cashL ? r.rm : r.kg);
+      const paid = (loan.repaid || []).reduce((a, x) => a + (+(cashL ? x.rm : x.kg) || 0), 0)
+        + out.items.filter((e) => e.repay && e.repay.rid === r.loan).reduce((a, e) => a + (+(cashL ? e.repay.rm : e.repay.kg) || 0), 0);
+      const owed = +((cashL ? +loan.valueRM : +loan.valueKg) - paid).toFixed(2);
+      if (!(amt > 0) || amt > owed + 0.005) { out.refused.push({ id: it.id, why: `repays ${amt} against ${owed} still owing on ${r.loan}` }); continue; }
+      const settles = owed - amt < 0.005;
+      entry.repay = { rid: r.loan, date: r.date, kg: cashL ? null : amt, rm: cashL ? amt : null, settles };
+      entry.does.push(`record the repayment on loan ${r.loan}${settles ? " and settle it" : `, leaving ${+(owed - amt).toFixed(2)} owing`}`);
+      if (!cashL) out.moves.push({ product: loan.product || "salt", kg: loan.direction === "in" ? -amt : +amt, who: (loan.direction === "in" ? "repaid to " : "repaid by ") + loan.party, when: r.date || TODAY });
     } else { out.refused.push({ id: it.id, why: `unknown collection ${it.collection}` }); continue; }
     out.items.push(entry);
   }
@@ -709,7 +725,13 @@ export function apply(book, staged, notes, masterText) {
       book.NOTES = book.NOTES || {}; book.NOTES[key] = [sentence].concat(book.NOTES[key] || []);
     } else if (it.append === "selfUseLog" || it.append === "lostDemand" || it.append === "loans") {
       const row = { ...src.row }; if (n.note) row.note = String(n.note).trim();
+      if (it.append === "loans" && !row.rid) row.rid = nextRid(book.loans || [], "l")(1);   // v595: a loan is named by its repayments
       book[it.append] = book[it.append] || []; book[it.append].push(row);
+    } else if (it.repay) {
+      /* v595: the repayment is written on its loan, which settles when it is paid off */
+      const rp = it.repay, loan = (book.loans || []).find((l) => l && l.rid === rp.rid);
+      loan.repaid = (loan.repaid || []).concat([rp.kg != null ? { date: rp.date, kg: rp.kg } : { date: rp.date, rm: rp.rm }]);
+      if (rp.settles) { loan.status = "settled"; loan.settledOn = rp.date; }
     } else if (it.roster) {
       /* v570: three writes, each guarded, because a re-run of a fold must add nothing twice.
          The plan has already refused the duplicate cases; these guards are what makes the

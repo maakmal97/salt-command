@@ -10007,5 +10007,94 @@ section("12 Sep 2026: a reward offset is priced on the goods, and settles no mor
 }
 
 
+section("12 Sep 2026: a loan is repaid, in part or in full, in what was lent");
+{
+  /* HIS RULING OF 11 SEP 2026: a loan is repaid in what was lent. A repayment names its loan by rid; the fold writes
+     it on the loan and settles the loan when nothing is left owing; every reader of a loan's size reads what is left.
+     Fixture loans throughout, so nothing moves with the real book. */
+  const { draftRow: dR } = await import("../src/drafter.js");
+  const { plan: pR, apply: aR } = await import("../tools/fold.mjs");
+  const salt = { rid: "l901", date: "2099-06-01", party: "CM4-MK", direction: "in", form: "salt", valueKg: 5, valueRM: null, status: "open", product: "salt", note: "fixture" };
+  const cash = { rid: "l902", date: "2099-06-01", party: "CM4-MK", direction: "out", form: "cash", valueKg: null, valueRM: 400, status: "open", product: null, note: "fixture" };
+  const done = { rid: "l903", date: "2099-06-01", party: "CM4-MK", direction: "in", form: "salt", valueKg: 1, valueRM: null, status: "settled", settledOn: "2099-06-02", product: "salt", note: "fixture" };
+  const outDone = { rid: "l904", date: "2099-06-01", party: "CM4-MK", direction: "out", form: "salt", valueKg: 3, valueRM: null, status: "settled", settledOn: "2099-06-02", product: "salt", note: "fixture" };
+  const outPart = { rid: "l905", date: "2099-06-01", party: "CM4-MK", direction: "out", form: "salt", valueKg: 4, valueRM: null, status: "open", product: "salt", repaid: [{ date: "2099-06-02", kg: 1 }], note: "fixture" };
+  const mirrorR = { version: "vX", sales: [], purchases: [], state: { roster: ["CM4-MK"], loans: [salt, cash, done], OPEN: { position: { salt: { onHand: 10 } } } }, pricing: null };
+  const entR = (p) => ({ at: "2099-06-03T00:00:00.001Z", payload: { mode: "repay", ...p } });
+  const part = dR(entR({ loan: "l901", kg: 2, date: "2099-06-03" }), mirrorR);
+  ok(!part.skip && part.collection === "repayment" && part.row.kg === 2 && part.row.left === 3 && part.row.settles === false,
+    "a part repayment of a salt loan drafts with what is left: " + (part.skip || JSON.stringify(part.row)));
+  const full = dR(entR({ loan: "l902", rm: 400, date: "2099-06-03" }), mirrorR);
+  ok(!full.skip && full.row.rm === 400 && full.row.settles === true && /settles it/.test(full.reasoning), "a repayment of the whole cash loan settles it: " + (full.skip || full.reasoning));
+  ok(/still owing/.test(dR(entR({ loan: "l901", kg: 9, date: "2099-06-03" }), mirrorR).skip || ""), "more than is owing is refused");
+  ok(/already settled/.test(dR(entR({ loan: "l903", kg: 1, date: "2099-06-03" }), mirrorR).skip || ""), "a settled loan cannot be repaid");
+  ok(/no loan/.test(dR(entR({ loan: "l999", kg: 1, date: "2099-06-03" }), mirrorR).skip || ""), "nor a loan that is not on the book");
+  ok(/ringgit/.test(dR(entR({ loan: "l902", kg: 1, date: "2099-06-03" }), mirrorR).skip || ""), "and a cash loan is repaid in ringgit, not units: what was lent");
+
+  /* the planner and the apply, on a copy of the book carrying the fixture loans */
+  const bkR = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  bkR.loans = (bkR.loans || []).concat([JSON.parse(JSON.stringify(salt)), JSON.parse(JSON.stringify(cash))]);
+  const stR = (rows) => ({ ok: true, count: rows.length, approved: rows.map((r, i) => ({ id: "2099-06-03T00:00:00.00" + (i + 1) + "Z", collection: "repayment", row: r, entry: entR({ loan: r.loan }) })) });
+  const twice = pR(JSON.parse(JSON.stringify(bkR)), stR([part.row, { ...part.row }, { ...part.row }]), null);
+  ok(twice.items.length === 2 && twice.refused.length === 1 && /still owing/.test((twice.refused[0] || {}).why || ""),
+    "three approvals of 2 against 5 owing: two fold and the third is refused, so a loan cannot be repaid twice over: " + JSON.stringify(twice.refused));
+  const pRp = pR(JSON.parse(JSON.stringify(bkR)), stR([part.row, full.row]), null);
+  ok(pRp.refused.length === 0 && pRp.moves.length === 1 && pRp.moves[0].kg === -2 && /REPAY 2 unit salt to CM4-MK on loan l901/.test((pRp.items[0] || {}).what || ""),
+    "the planner takes repaid salt back off the inventory and names the loan: " + JSON.stringify(pRp.moves) + " " + ((pRp.items[0] || {}).what || ""));
+  const copyR = JSON.parse(JSON.stringify(bkR));
+  const notesR = { version: "v9999", date: "03 Jun 2099", title: "TWO REPAYMENTS", notes: ["<b>TWO REPAYMENTS.</b> A part of a salt loan and the whole of a cash one, on a copy of the book, long enough to be a paragraph."],
+    rows: { "2099-06-03T00:00:00.001Z": { note: "<b>REPAID 2 UNIT.</b> A note long enough to pass, on a copy of the book." },
+            "2099-06-03T00:00:00.002Z": { note: "<b>REPAID RM 400.</b> A note long enough to pass, on a copy of the book." } }, stockNote: "", stockCost: null, stockCostNote: "" };
+  const aRp = aR(copyR, stR([part.row, full.row]), notesR, readFileSync(join(REPO, "master", "salt_command.html"), "utf8"));
+  const sl = copyR.loans.find((l) => l.rid === "l901"), cl = copyR.loans.find((l) => l.rid === "l902");
+  ok(aRp.ok && sl && sl.status === "open" && (sl.repaid || []).length === 1 && sl.repaid[0].kg === 2,
+    "the apply writes the part repayment on its loan and leaves it open: " + (aRp.ok ? JSON.stringify(sl && sl.repaid) : (aRp.problems || []).join("; ")));
+  ok(aRp.ok && cl && cl.status === "settled" && cl.settledOn === "2099-06-03" && (cl.repaid || [])[0] && cl.repaid[0].rm === 400, "and settles the loan the whole repayment paid off");
+  /* a loan folded now is named, so a repayment can find it */
+  const loanRow = dR({ at: "2099-06-04T00:00:00.001Z", payload: { mode: "loan", form: "salt", party: "CM4-MK", direction: "in", kg: 1, date: "2099-06-04" } }, mirrorR).row;
+  const copyN = JSON.parse(JSON.stringify(bkR));
+  const aN = aR(copyN, { ok: true, count: 1, approved: [{ id: "2099-06-04T00:00:00.001Z", collection: "loan", row: loanRow, entry: { at: "2099-06-04T00:00:00.001Z", payload: { mode: "loan" } } }] },
+    { version: "v9999", date: "04 Jun 2099", title: "A LOAN", notes: ["<b>A LOAN.</b> One unit borrowed, on a copy of the book, long enough to be a paragraph."],
+      rows: { "2099-06-04T00:00:00.001Z": { note: "<b>BORROWED 1 UNIT.</b> A note long enough to pass, on a copy of the book." } }, stockNote: "", stockCost: null, stockCostNote: "" },
+    readFileSync(join(REPO, "master", "salt_command.html"), "utf8"));
+  const newest = copyN.loans[copyN.loans.length - 1];
+  ok(aN.ok && /^l\d+$/.test((newest && newest.rid) || "") && newest.rid !== "l901" && newest.rid !== "l902",
+    "a loan folded now is given a rid, the next after the highest on the book, so a repayment can name it: " + (aN.ok ? newest && newest.rid : (aN.problems || []).join("; ")));
+
+  /* the desk: what is owing, the pane, the overlay, the Approve card and the cash flow */
+  const { openMaster: omR } = await import("../tools/payload.mjs");
+  const { w: wR } = await omR();
+  const rdR = (e) => JSON.parse(String(wR.eval("JSON.stringify(" + e + ")")));
+  try {
+    wR.eval("(function(){setProd('salt');recompute();switchTab('add');queue=[];" + [salt, cash, done, outDone, outPart].map((l) => "BASE_LOANS.push(" + JSON.stringify(l) + ");").join("") + "applyOverlay();})()");
+    ok(rdR("[loanLeft(loans.find(function(l){return l.rid==='l901';})),cashLeft(loans.find(function(l){return l.rid==='l902';})),loanLeft(loans.find(function(l){return l.rid==='l903';}))].join()") === "5,400,0",
+      "what is owing reads the loan's size in its own form, and a settled loan owes nothing");
+    ok(rdR("loanOutUnits()") === 3, `a settled loan out no longer reads as lent, and a part-repaid one counts what is left: ${rdR("loanOutUnits()")} unit, the 4 less 1 of l905 and none of l904`);
+    ok(rdR("loanInUnits()") === 5, "and a borrowed loan counts what is still owing");
+    const PANE = JSON.parse(String(wR.eval("(function(){try{wbMode='loan';wbApply();var set=function(id,v){var e=document.getElementById(id);if(!e)return false;e.value=v;return true;};"
+      + "set('wbLoanDir','repay');wbApply();var opts=Array.prototype.map.call(document.getElementById('wbLoanWhich').options,function(o){return o.value;});"
+      + "set('wbLoanWhich','l902');wbApply();var rmForCash=document.getElementById('wbLoanRMCell').style.display!=='none';"
+      + "set('wbLoanWhich','l901');wbApply();set('wbLoanUnits','2');set('wbLoanDate','2099-06-03');set('wbLoanNote','');wbPreview();"
+      + "var r={opts:opts,rmForCash:rmForCash,whichShown:document.getElementById('wbLoanWhichCell').style.display!=='none',partyShown:document.getElementById('wbLoanPartyCell').style.display!=='none',"
+      + "unitsShown:document.getElementById('wbLoanUnitsCell').style.display!=='none',prev:(document.getElementById('wbPrev')||{}).textContent||'',dis:!!document.getElementById('wbRec').disabled};"
+      + "queue=[];wbRecord();var q=queue[queue.length-1];r.q=q?{type:q.type,payload:q.payload}:null;"
+      + "applyOverlay();applyOverlay();var lo=loans.find(function(l){return l.rid==='l901';});r.left=loanLeft(lo);r.repaidN=(lo.repaid||[]).length;"
+      + "r.card=apCard({collection:'repayment',row:{loan:'l901',party:'CM4-MK',direction:'in',form:'salt',kg:2,rm:null,left:3,settles:false,date:'2099-06-03'}});"
+      + "return JSON.stringify(r);}catch(e){return JSON.stringify({no:'threw: '+(e&&e.message)});}})()")));
+    ok(!PANE.no && PANE.opts.indexOf("l901") >= 0 && PANE.opts.indexOf("l902") >= 0 && PANE.opts.indexOf("l903") < 0,
+      "Repaid lists the open loans by rid and not the settled ones: " + (PANE.no || PANE.opts.join()));
+    ok(!PANE.no && PANE.whichShown && !PANE.partyShown && PANE.unitsShown, "it shows the loan picker, hides the party, and asks for units against a salt loan");
+    ok(!PANE.no && PANE.rmForCash, "picking the cash loan asks for ringgit instead: what was lent");
+    ok(!PANE.no && !PANE.dis && /Repays/.test(PANE.prev) && /leaving/.test(PANE.prev), "the preview reads the repayment and what it leaves owing: " + (PANE.no || PANE.prev.slice(0, 140)));
+    ok(!PANE.no && PANE.q && PANE.q.type === "REPAY" && PANE.q.payload.mode === "repay" && PANE.q.payload.loan === "l901" && PANE.q.payload.kg === 2,
+      "the tap queues a repayment naming the loan by rid: " + (PANE.no || JSON.stringify(PANE.q && PANE.q.payload)));
+    ok(!PANE.no && PANE.left === 3 && PANE.repaidN === 1, `the overlay writes it on the loan once, however often the desk redraws (${PANE.repaidN} repayment, ${PANE.left} left)`);
+    ok(!PANE.no && /Repay/.test(PANE.card) && /Left owing/.test(PANE.card), "and the Approve card reads Repay, with what is left owing");
+    const cf = rdR("(function(){queue=[];applyOverlay();var base=cashFlow().net;var c=loans.find(function(l){return l.rid==='l902';});c.repaid=[{date:'2099-06-03',rm:150}];return {base:base,after:cashFlow().net};})()");
+    ok(Math.abs(cf.after - cf.base - 150) < 0.005, `cash lent out and part repaid takes only what is still owing out of the cash flow (${cf.base} to ${cf.after})`);
+  } finally { try { wR.close(); } catch (e) { /* best effort */ } }
+}
+
+
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
 process.exit(fail ? 1 : 0);
