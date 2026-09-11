@@ -1,5 +1,16 @@
 [
  {
+  "v": "v594",
+  "d": "12 Sep 2026",
+  "t": "A REWARD OFFSET IS PRICED ON THE GOODS AND SETTLES NO MORE THAN IS OWED",
+  "n": [
+   "<b>HIS DIAGNOSIS OF 12 SEP 2026: A REWARD PAYS FOR SALT, SO IT IS PRICED ON THE GOODS.</b> s139 is one unit at RM 110.00 with a RM 7.50 delivery on the same line, and CS6-BS paid the delivery in cash. Both offset roads priced the unit on the whole line, RM 117.50, so v591's offset took 0.94 unit and settled RM 110.45 against RM 110.00 owed. offsetFor is the one rule now, for the Offset button and the automatic offset alike: the unit is the goods rate, as every rate on the desk has been since v502, the units never exceed what was sold, and the ringgit never exceeds what is owed, so an unpaid delivery stays owed. On it s139 takes the whole unit and settles exactly RM 110.00.",
+   "<b>THE CLOUD SUITE HAS BEEN RED SINCE v591 WENT LIVE</b>, through v592 and v593, on the same four checks and a book that was right. Two read CS6-BS's own rows and assumed every redemption of theirs predated the scheme; two looked s139 up in a statement window that closes on 01 Sep. None was a fault in the statement: s139 prints as the part-paid sale it is. The pair uses a fixture party now, and the part-paid check looks each row up with the window open, as the cancelled-order check beside it already did.",
+   "<b>s139 IS LEFT AS FOLDED</b>, 0.94 unit and RM 110.45, and so is v592's 0.06 unit to CS6-BS, the remainder the overshoot left free. Both go to him in Approve as corrections.",
+   "Seven mutations, each reddening its own, run on this same code before v592 and v593 folded under it: the unit priced on the whole line again, an offset settling more than is owed, a reward covering more units than were sold, the automatic offset and the Offset button each on arithmetic of their own, the reward window forgetting where it starts, and the statement reading any rebate row as a gift."
+  ]
+ },
+ {
   "v": "v593",
   "d": "12 Sep 2026",
   "t": "A FREE UNIT OF SALT GOES OUT ON THE REWARD, BOOKED AS COST AND NOT REVENUE",

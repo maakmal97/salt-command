@@ -6233,7 +6233,9 @@ const whiteboard=[
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{"v":"v593","d":"12 Sep 2026","t":"A FREE UNIT OF SALT GOES OUT ON THE REWARD, BOOKED AS COST AND NOT REVENUE","n":["<b>ONE ROW FOLDED, A REDEMPTION AND NOT A SALE.</b> CR3-DAM takes 1 unit of salt free on 12 Sep, RM44 of goods settled by the reward with no cash in, and the unit delivered the same day. It is booked as cost and not revenue on his ruling of 11 Sep 2026, the row carrying goodwill as well as rebate, so the RM44 sits as an expense against the inventory's own rate.","<b>WHAT IS UNUSUAL AND WHAT THE INVENTORY DID.</b> The RM44 falls under the RM56.21 floor for 1 unit and well under the RM120 ask and RM150 ceiling, which is what a free unit does to the ladder. The drafter flagged the earned and unredeemed balance of 1 unit as the desk's word, not checkable here, and the figures do not answer it. The stated shelf rolls down by the unit and the RM25 already outstanding on CR3-DAM stays open."]},
+const evolution=[{"v":"v594","d":"12 Sep 2026","t":"A REWARD OFFSET IS PRICED ON THE GOODS AND SETTLES NO MORE THAN IS OWED","n":["<b>HIS DIAGNOSIS OF 12 SEP 2026: A REWARD PAYS FOR SALT, SO IT IS PRICED ON THE GOODS.</b> s139 is one unit at RM 110.00 with a RM 7.50 delivery on the same line, and CS6-BS paid the delivery in cash. Both offset roads priced the unit on the whole line, RM 117.50, so v591's offset took 0.94 unit and settled RM 110.45 against RM 110.00 owed. offsetFor is the one rule now, for the Offset button and the automatic offset alike: the unit is the goods rate, as every rate on the desk has been since v502, the units never exceed what was sold, and the ringgit never exceeds what is owed, so an unpaid delivery stays owed. On it s139 takes the whole unit and settles exactly RM 110.00.","<b>THE CLOUD SUITE HAS BEEN RED SINCE v591 WENT LIVE</b>, through v592 and v593, on the same four checks and a book that was right. Two read CS6-BS's own rows and assumed every redemption of theirs predated the scheme; two looked s139 up in a statement window that closes on 01 Sep. None was a fault in the statement: s139 prints as the part-paid sale it is. The pair uses a fixture party now, and the part-paid check looks each row up with the window open, as the cancelled-order check beside it already did.","<b>s139 IS LEFT AS FOLDED</b>, 0.94 unit and RM 110.45, and so is v592's 0.06 unit to CS6-BS, the remainder the overshoot left free. Both go to him in Approve as corrections.","Seven mutations, each reddening its own, run on this same code before v592 and v593 folded under it: the unit priced on the whole line again, an offset settling more than is owed, a reward covering more units than were sold, the automatic offset and the Offset button each on arithmetic of their own, the reward window forgetting where it starts, and the statement reading any rebate row as a gift."]},
+
+{"v":"v593","d":"12 Sep 2026","t":"A FREE UNIT OF SALT GOES OUT ON THE REWARD, BOOKED AS COST AND NOT REVENUE","n":["<b>ONE ROW FOLDED, A REDEMPTION AND NOT A SALE.</b> CR3-DAM takes 1 unit of salt free on 12 Sep, RM44 of goods settled by the reward with no cash in, and the unit delivered the same day. It is booked as cost and not revenue on his ruling of 11 Sep 2026, the row carrying goodwill as well as rebate, so the RM44 sits as an expense against the inventory's own rate.","<b>WHAT IS UNUSUAL AND WHAT THE INVENTORY DID.</b> The RM44 falls under the RM56.21 floor for 1 unit and well under the RM120 ask and RM150 ceiling, which is what a free unit does to the ladder. The drafter flagged the earned and unredeemed balance of 1 unit as the desk's word, not checkable here, and the figures do not answer it. The stated shelf rolls down by the unit and the RM25 already outstanding on CR3-DAM stays open."]},
 
 {"v":"v592","d":"12 Sep 2026","t":"A REWARD UNIT GOES OUT FREE TO CS6-BS, COSTED NOT SOLD, AND THE SHELF ROLLS BY IT","n":["<b>ONE ROW FOLDED, A REDEMPTION RATHER THAN A SALE.</b> CS6-BS takes 0.06 unit of salt on 12 Sep with nothing in cash, the RM2.64 settled by the reward. On his ruling of 11 Sep 2026 the row carries goodwill as well as rebate, so it stays out of revenue and the RM2.64 stands as expense. Delivered the same day, so nothing is left outstanding on it.","<b>THE LADDER AND THE SHELF.</b> At RM2.64 the row sits under the RM3.37 floor for 0.06 unit and well under the RM10 ask and RM10 ceiling, which is what a free redemption looks like on the board. The salt leaves the inventory at its own RM44 a unit, so the cost basis does not move and the stated shelf rolls down by 0.06 unit from 25.25."]},
 
@@ -6647,7 +6649,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='12 Sep 2026, 01:58 KL';
+const LAST_UPDATED='12 Sep 2026, 02:32 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -16022,10 +16024,19 @@ function drawConcCharts(){
    advance row itself, settledRM and rebate, which is how the ledger has always recorded one, and it ADDS to
    whatever that row already settles in kind rather than overwriting it. A redemption is a sales row the
    drafter builds, booked as a cost and not as revenue, on his ruling of the same day. */
+/* v594, HIS DIAGNOSIS OF 12 SEP 2026: A REWARD PAYS FOR SALT, SO IT IS PRICED ON THE GOODS. A sale carries its delivery
+   inside its total (v502), and both offset roads priced the unit on the whole line: s139, one unit at RM 110.00 with a
+   RM 7.50 delivery that CS6-BS paid in cash, read as a RM 117.50 unit, so v591's offset took 0.94 of it and settled
+   RM 110.45 against RM 110.00 owed. Stated once now, for the Offset button and the automatic offset alike: the unit
+   is the goods rate, as every rate on the desk has been since v502, the units never exceed what was sold, and the
+   ringgit settled never exceeds what is owed, so a delivery still unpaid stays owed rather than paid in reward. */
+function offsetFor(s,free,cap){const owe=txAdvance(s),q=+s.qty||0,rate=q>0?txGoods(s)/q:0;
+  const offUnits=+Math.min(free,cap,q,rate>0?owe/rate:0).toFixed(2);
+  return {offUnits:offUnits,offRM:+Math.min(owe,rate*offUnits).toFixed(2)};}
 function redeemRebate(rid){const rst=networkStats().find(x=>x.id===rid);if(!rst)return;const applied=rebateApplied(rid);const freeUnits=+(rst.earned-applied).toFixed(2);if(freeUnits<=0.009)return;
   const today=TODAY.toISOString().slice(0,10);
   const adv=sales.filter(s=>s.customer===rid&&txAdvance(s)>0.009).sort((a,b)=>{const x=a.date,y=b.date;if(!x||!y)return (!x&&!y)?0:(!x?1:-1);return x<y?-1:x>y?1:0;});
-  if(adv.length){const s=adv[0],owe=txAdvance(s),price=txPrice(s),offUnits=+Math.min(freeUnits,price>0?owe/price:freeUnits).toFixed(2),offRM=+(price*offUnits).toFixed(2);
+  if(adv.length){const s=adv[0],{offUnits,offRM}=offsetFor(s,freeUnits,freeUnits);
     queue.push({at:new Date().toISOString(),type:'AMEND',party:codeOf(rid),qty:0,total:0,status:'inkind',
       raw:'Rebate: offset '+units(offUnits)+' for '+codeOf(rid)+' against the '+(s.date||'undated')+' order, '+fmt(offRM)+' settled in kind',
       payload:{mode:'amend',kind:'Correction',direction:'SELL',party:rid,rid:s.rid||null,orderKey:ovKey(s),date:today,
@@ -16055,8 +16066,7 @@ function autoOffsets(){try{
     const free=+((+r.earned||0)-rebateApplied(r.id)).toFixed(2); if(free<=0.009)continue;
     const adv=sales.filter(s=>s.customer===r.id&&(s.product||'salt')==='salt'&&txAdvance(s)>0.009).sort((a,b)=>{const x=a.date,y=b.date;if(!x||!y)return (!x&&!y)?0:(!x?1:-1);return x<y?-1:x>y?1:0;});
     const s=adv[0]; if(!s||!s.rid||offered(s))continue;
-    const owe=txAdvance(s),price=txPrice(s);
-    const offUnits=+Math.min(free,1,price>0?owe/price:1).toFixed(2), offRM=+(price*offUnits).toFixed(2);
+    const {offUnits,offRM}=offsetFor(s,free,1);   // v594: priced on the goods, never more than is owed
     if(!(offUnits>0.009))continue;
     queue.push({at:new Date().toISOString(),type:'AMEND',party:codeOf(r.id),qty:0,total:0,status:'inkind',
       raw:'Automatic offset: '+codeOf(r.id)+' reward, '+units(offUnits)+', against the '+(s.date||'undated')+' order, '+fmt(offRM)+' settled in kind',

@@ -2829,10 +2829,17 @@ section("Rewards — redemption reads the earning window (round 5, his call 3)")
   const { w } = await openMaster();
   const read = (expr) => JSON.parse(w.eval("JSON.stringify(" + expr + ")"));
   const since = read("REWARD.since");
-  const pre = read("sales.filter(s=>s.customer==='CS6-BS'&&s.rebate).map(s=>({date:s.date,kg:(s.rebateKg!=null?+s.rebateKg:s.qty)}))");
-  ok(pre.length === 3 && pre.every((r) => r.date < since) && pre.reduce((a, r) => a + r.kg, 0) === 3,
-    "the guard: CS6-BS's three redeemed units are all before adoption, so the next assertion cannot pass vacuously");
-  ok(read("rebateApplied('CS6-BS')") === 0, "a redemption before REWARD.since belongs to the opening, not the running net");
+  /* v594: FORCED, NOT READ OFF THE BOOK. This pair read CS6-BS's own rows and assumed every redemption of theirs
+     predated adoption; v591's reward offset on s139 is one after it, and the pair went red on a book that was
+     right. A fixture party carries three units redeemed before the scheme and half a unit after it. */
+  w.eval("sales.push({customer:'CZ8-RBT',date:'2026-07-01',qty:1,total:100,cash:0,settledRM:100,rebate:true},"
+    + "{customer:'CZ8-RBT',date:'2026-07-02',qty:1,total:100,cash:0,settledRM:100,rebate:true},"
+    + "{customer:'CZ8-RBT',date:'2026-07-03',qty:1,total:100,cash:0,settledRM:100,rebate:true},"
+    + "{customer:'CZ8-RBT',date:'2026-09-01',qty:1,total:100,cash:50,settledRM:50,rebate:true,rebateKg:0.5});");
+  const pre = read("sales.filter(s=>s.customer==='CZ8-RBT'&&s.rebate&&s.date<REWARD.since).length");
+  ok(pre === 3 && since > "2026-07-03" && since <= "2026-09-01",
+    "the guard: the fixture's three redeemed units are before adoption and its half unit after, so the next assertion cannot pass vacuously");
+  ok(read("rebateApplied('CZ8-RBT')") === 0.5, "a redemption before REWARD.since belongs to the opening, not the running net: only the half unit after it counts");
   ok(read("rebateApplied('CJ4-OKR')") === 4, "the boundary day itself counts, both sides: the 10 Aug backfill is in, the 09 Jul unit is not");
   try { w.close(); } catch (e) { }
 }
@@ -4749,7 +4756,7 @@ section("v432: the money on a statement is the money on the book");
   const partAward = (bookM.sales || []).filter((x) => (x.rebate || x.goodwill) && (+x.cash || 0) > 0.009);
   ok(partAward.length > 0, `the book carries ${partAward.length} part-award rows, the case that was printing as free`);
   for (const src of partAward) {
-    const r = stmtRows(src.customer, SO).find((x) => x.rid === src.rid);
+    const r = stmtRows(src.customer, { ...SO, to: null }).find((x) => x.rid === src.rid);   // v594: the window open, as for the cancelled rows; s139 is dated after SO closes
     ok(r && !r.gift, `${src.rid} is charged rather than gifted: the customer paid RM ${src.cash} of it`);
     ok(r && Math.abs((+r.total || 0) - (+src.total || 0)) < 0.011,
       `${src.rid} carries its real total of RM ${src.total} (statement says RM ${r && r.total})`);
@@ -4761,7 +4768,7 @@ section("v432: the money on a statement is the money on the book");
   const gw = (bookM.sales || []).filter((x) => x.goodwill && !x.rebate);
   if (!gw.length) skipData("no goodwill row without a rebate beside it on the book");
   for (const src of gw) {
-    const r = stmtRows(src.customer, SO).find((x) => x.rid === src.rid);
+    const r = stmtRows(src.customer, { ...SO, to: null }).find((x) => x.rid === src.rid);   // v594: the window open, or a goodwill row dated after SO closes is skipped unchecked
     const cash = +src.cash || 0;
     if (!r) continue;
     ok(!!r.gift === (cash <= 0.009),
@@ -9827,7 +9834,7 @@ section("11 Sep 2026: Add ID derives the code, and a clash takes more of the nam
     ok(sup.code === "SZ4-TBC" && /TBC/.test(sup.msgs), "a supplier's blank place is TBC too, and the pane says so: " + sup.code);
 
     /* the laptop's Names & IDs takes the same rule */
-    const LAP = (kind, name, loc) => JSON.parse(String(wD.eval("(function(){queue=[];['apName','apLoc','apKind','apParent','apMsg'].forEach(function(id){if(!document.getElementById(id)){var e=document.createElement(id==='apMsg'?'div':(id==='apKind'||id==='apParent')?'select':'input');e.id=id;document.body.appendChild(e);}});"
+    const LAP = (kind, name, loc) => JSON.parse(String(wD.eval("(function(){queue=[];saveQueue=function(){return Promise.resolve(true);};['apName','apLoc','apKind','apParent','apMsg'].forEach(function(id){if(!document.getElementById(id)){var e=document.createElement(id==='apMsg'?'div':(id==='apKind'||id==='apParent')?'select':'input');e.id=id;document.body.appendChild(e);}});"
       + "var k=document.getElementById('apKind');k.innerHTML='<option value=customer>customer</option><option value=supplier>supplier</option>';k.value=" + JSON.stringify(kind) + ";"
       + "document.getElementById('apName').value=" + JSON.stringify(name) + ";document.getElementById('apLoc').value=" + JSON.stringify(loc) + ";"
       + "try{addParty();}catch(e){return JSON.stringify({threw:String(e&&e.message)});}return JSON.stringify({q:queue.map(function(x){return x.payload&&x.payload.code;})});})()")));
@@ -9961,6 +9968,42 @@ section("12 Sep 2026: a queued loan counts once, however often the desk redraws"
     ok(n.net1 === n.net2, `and the cash flow does not grow with each redraw (${n.net1}, then ${n.net2})`);
     ok(n.a === n.base + 1, `it is the book's own loans and the one queued (${n.base} + 1 = ${n.a})`);
   } finally { try { wO.close(); } catch (e) { /* best effort */ } }
+}
+
+
+section("12 Sep 2026: a reward offset is priced on the goods, and settles no more than is owed");
+{
+  /* HIS DIAGNOSIS OF 12 SEP 2026. s139 is one unit at RM 110.00 with a RM 7.50 delivery CS6-BS paid in cash, all on one
+     line of RM 117.50. v591's offset priced the unit on the line, took 0.94 of it and settled RM 110.45 against RM 110.00
+     owed. offsetFor prices a reward on the goods, as every rate on the desk is struck, and both roads are driven here on
+     a copy of s139 as it stood. */
+  const { openMaster: omO } = await import("../tools/payload.mjs");
+  const { w: wO } = await omO();
+  const rdO = (e) => JSON.parse(String(wO.eval("JSON.stringify(" + e + ")")));
+  try {
+    const row = (cash) => "{customer:'CZ9-OFF',qty:1,total:117.5,cash:" + cash + ",delivery:7.5,deliveredQty:1,deliveredOn:'2026-09-07',date:'2026-09-07'}";
+    const s139 = row(7.5);
+    ok(rdO("txAdvance(" + s139 + ")") === 110 && rdO("txGoods(" + s139 + ")") === 110 && rdO("txPrice(" + s139 + ")") === 117.5,
+      "the fixture is s139 as it stood: RM 110.00 owed for a RM 110.00 unit, on a line of RM 117.50 with the delivery inside it");
+    const o = rdO("offsetFor(" + s139 + ",5,1)");
+    ok(o.offUnits === 1 && o.offRM === 110, `an offset against it takes the whole unit and settles RM 110.00, where v591 took 0.94 and settled RM 110.45 (${JSON.stringify(o)})`);
+    const little = rdO("offsetFor(" + s139 + ",0.5,1)");
+    ok(little.offUnits === 0.5 && little.offRM === 55, `a reward smaller than the debt settles what it is worth on the goods (${JSON.stringify(little)})`);
+    const unpaid = rdO("offsetFor(" + row(0) + ",5,5)");
+    ok(unpaid.offUnits === 1 && unpaid.offRM === 110, `with the delivery unpaid too, the reward pays for the unit and the RM 7.50 delivery stays owed (${JSON.stringify(unpaid)})`);
+    const up = rdO("offsetFor(" + row(14.5) + ",5,1)");
+    ok(up.offUnits === 0.94 && up.offRM === 103, `rounding the units up never settles more than is owed: RM 103.00 owed, 0.94 unit, RM 103.00 settled (${JSON.stringify(up)})`);
+    /* both roads read the rule, driven on the same fixture */
+    const drive = (call) => JSON.parse(String(wO.eval("(function(){queue=[];AP_DRAFTS=[];AP_REFUSED=[];setProd('salt');saveQueue=function(){return Promise.resolve(true);};qPost=function(){return Promise.resolve(true);};"
+      + "sales.push({rid:'off-1',customer:'CZ9-OFF',qty:1,total:117.5,cash:7.5,delivery:7.5,deliveredQty:1,deliveredOn:'2026-09-07',date:'2026-09-07',product:'salt'});"
+      + "networkStats=function(){return [{id:'CZ9-OFF',earned:5}];};" + call
+      + "var q=queue.filter(function(x){return x.payload&&x.payload.rid==='off-1';})[0];var i=sales.findIndex(function(x){return x.rid==='off-1';});if(i>=0)sales.splice(i,1);"
+      + "return JSON.stringify(q?q.payload.fields:null);})()")));
+    const auto = drive("autoOffsets();");
+    ok(auto && auto.settledRM === 110 && auto.rebateKg === 1, "the automatic offset queues the whole unit, RM 110.00 settled in kind: " + JSON.stringify(auto));
+    const btn = drive("redeemRebate('CZ9-OFF');");
+    ok(btn && btn.settledRM === 110 && btn.rebateKg === 1, "and so does the Offset button: " + JSON.stringify(btn));
+  } finally { await new Promise((r) => setTimeout(r, 200)); try { wO.close(); } catch (e) { /* best effort */ } }
 }
 
 
