@@ -1,5 +1,23 @@
 [
  {
+  "v": "v579",
+  "d": "11 Sep 2026",
+  "t": "A SECOND ORDER FROM CF5-WM AT RM110 INCLUDING CARRIAGE, PENDING UNTIL SOMETHING MOVES",
+  "n": [
+   "<b>ONE ROW FOLDED, A SALT SELL TO CF5-WM.</b> One unit at RM110 total on 11 Sep, RM10 of that carriage, so RM100 of goods. Nothing was paid and nothing moved, so the row sits pending and draws no stock and books no revenue for now. The drafter raised no flags and the queued entry matched the mirror, so the fold went in as drafted with no amendment and no count attached.",
+   "<b>THE INVENTORY DID NOT MOVE.</b> Stock stands at 33.25 units on the salt count of 8 Sep, cost held at RM44 a unit against a replacement of RM46, with 10.5 units promised, nothing owed out and the reorder mark at 15. The two loans in, 5.5 units from CH5-OUG and 1.5 units from CA11-SEN, both dated 8 Sep, stay open and untouched by this fold."
+  ]
+ },
+ {
+  "v": "v578",
+  "d": "11 Sep 2026",
+  "t": "TWO PENDING SALT ROWS DATED 11 SEP, NOTHING PAID AND NOTHING MOVED",
+  "n": [
+   "<b>WHAT WAS FOLDED.</b> Two new salt sells dated 11 Sep, both agreed on the day and both pending: 1 unit to CH6-SET at RM120 with RM10 delivery, and 1 unit to CC5-OKR at RM90 collected. Neither carries cash and neither moved a unit, so neither draws stock nor books revenue. Both sit on the 1 unit ladder with a floor of RM56.21, an ask of RM120 and a ceiling of RM150.",
+   "<b>WHAT WAS UNUSUAL, AND WHAT THE INVENTORY DID.</b> CH6-SET lands exactly on the RM120 ask and on its own median; CC5-OKR lands RM30 under the ask with RM90 already outstanding and 1 unit on credit against a cap of 1, after a cancelled row at the same terms on 08 Sep. The drafter raised no flags on either. Both are costed at the inventory's own RM44 a unit, and stock stands unmoved at 33.25 units."
+  ]
+ },
+ {
   "v": "v577",
   "d": "11 Sep 2026",
   "t": "THE REWARD HURDLES ARE STATED OFF THE BOARD, CARRY A UNIT MINIMUM, AND OIL HAS NONE",

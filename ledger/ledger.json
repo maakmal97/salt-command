@@ -1,6 +1,6 @@
 {
- "v": "v576",
- "stamped": "11 Sep 2026, 06:19 KL",
+ "v": "v579",
+ "stamped": "11 Sep 2026, 09:35 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -3476,6 +3476,41 @@
     "downstream": "CN6-WM-R",
     "note": "<b>SALT SELL DATED 11 SEP, PAID IN FULL AND COLLECTED IN FULL.</b> SELL to CN6-WM, 1 unit for RM130, RM130 cash in and 1 unit handed over on 11 Sep, stream R2 with downstream CN6-WM-R, so nothing new stays open on this row. The total clears the RM56.21 floor for 1 unit, stands above the RM120 ask and under the RM150 ceiling. CN6-WM has 6 prior orders, a median rate of RM110 and a range of RM75 to RM110, RM110 outstanding before this, 1 unit on credit against a cap of 2 and nothing defaulted. Cost is the inventory's own RM44 a unit. The drafter flagged the R2 downsell booking and the rate 30% above the RM100 cited; the median and range answer the rate flag, and the RM110 stays outstanding.",
     "rid": "s147"
+   },
+   {
+    "customer": "CH6-SET",
+    "qty": 1,
+    "total": 120,
+    "cash": 0,
+    "delivery": 10,
+    "handover": "delivered",
+    "date": "2026-09-11",
+    "deliveredQty": 0,
+    "note": "<b>PENDING SALT SELL DATED 11 SEP, THE DAY IT WAS AGREED.</b> SELL to CH6-SET, 1 unit for RM120 with RM10 delivery, marked delivered, RM0 cash in and 0 unit moved, so the row draws no stock and books no revenue until something moves. The total clears the RM56.21 floor for 1 unit, sits exactly on the RM120 ask and under the RM150 ceiling. CH6-SET has 2 prior orders, a median rate of RM120 and a range of RM115 to RM120, nothing outstanding before this, no units on credit against a cap of 1 and nothing defaulted. Cost is the inventory's own RM44 a unit. The drafter flagged nothing. The full RM120 and the unit stay outstanding.",
+    "rid": "s148"
+   },
+   {
+    "customer": "CC5-OKR",
+    "qty": 1,
+    "total": 90,
+    "cash": 0,
+    "handover": "collected",
+    "date": "2026-09-11",
+    "deliveredQty": 0,
+    "note": "<b>PENDING SALT SELL DATED 11 SEP, THE DAY IT WAS AGREED.</b> SELL to CC5-OKR, 1 unit for RM90, collected, RM0 cash in and 0 unit moved, so the row draws no stock and books no revenue until something moves. The total clears the RM56.21 floor for 1 unit but sits RM30 under the RM120 ask and well under the RM150 ceiling. CC5-OKR has 6 prior orders, a median rate of RM90 and a range of RM80 to RM90, RM90 outstanding before this, 1 unit on credit against a cap of 1 and nothing defaulted. Cost is the inventory's own RM44 a unit. The drafter flagged nothing. The earlier RM90 and this RM90 both stay outstanding.",
+    "rid": "s149"
+   },
+   {
+    "customer": "CF5-WM",
+    "qty": 1,
+    "total": 110,
+    "cash": 0,
+    "delivery": 10,
+    "handover": "delivered",
+    "date": "2026-09-11",
+    "deliveredQty": 0,
+    "note": "<b>PENDING SALT SELL DATED 11 SEP, THE DAY IT WAS AGREED.</b> SELL to CF5-WM, 1 unit for RM110 with RM10 carriage in that total and RM100 of goods, marked delivered but RM0 cash in and 0 unit moved, so the row draws no stock and books no revenue until something moves. The total clears the RM56.21 floor for 1 unit, sits RM10 under the RM120 ask and well under the RM150 ceiling. CF5-WM has 1 prior order, a median rate of RM115 and a range of RM115 to RM115, nothing outstanding before this, no units on credit against a cap of 1 and nothing defaulted. Cost is the inventory's own RM44 a unit. The drafter flagged nothing. The RM110 stays outstanding.",
+    "rid": "s150"
    }
   ],
   "contacts": [
@@ -3804,9 +3839,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-10T22:18:15.853Z",
+  "QUEUE_COMMITTED": "2026-09-11T00:43:04.221Z",
   "PRICING": {
-   "takenAt": "2026-09-10T22:19:45.815Z",
+   "takenAt": "2026-09-11T01:35:30.069Z",
    "sizes": [
     0.5,
     1,
@@ -4262,12 +4297,57 @@
      ]
     }
    },
-   "v": "v576"
+   "v": "v579"
   },
   "OPEN": {
-   "at": "2026-09-10T22:19:45.911Z",
-   "count": 7,
+   "at": "2026-09-11T01:35:30.164Z",
+   "count": 10,
    "byKey": {
+    "CH6-SET|2026-09-11|120": {
+     "d": "2026-09-11",
+     "p": "CH6-SET",
+     "dir": "S",
+     "q": 1,
+     "t": 120,
+     "cash": 0,
+     "mv": 0,
+     "st": "part",
+     "oweRM": 120,
+     "oweUnits": 1,
+     "rid": "s148",
+     "handover": "delivered",
+     "key": "CH6-SET|2026-09-11|120"
+    },
+    "CC5-OKR|2026-09-11|90": {
+     "d": "2026-09-11",
+     "p": "CC5-OKR",
+     "dir": "S",
+     "q": 1,
+     "t": 90,
+     "cash": 0,
+     "mv": 0,
+     "st": "part",
+     "oweRM": 90,
+     "oweUnits": 1,
+     "rid": "s149",
+     "handover": "collected",
+     "key": "CC5-OKR|2026-09-11|90"
+    },
+    "CF5-WM|2026-09-11|110": {
+     "d": "2026-09-11",
+     "p": "CF5-WM",
+     "dir": "S",
+     "q": 1,
+     "t": 110,
+     "cash": 0,
+     "mv": 0,
+     "st": "part",
+     "oweRM": 110,
+     "oweUnits": 1,
+     "rid": "s150",
+     "handover": "delivered",
+     "key": "CF5-WM|2026-09-11|110"
+    },
     "CM4-MK|2026-09-09|220": {
      "d": "2026-09-09",
      "p": "CM4-MK",
@@ -4397,7 +4477,7 @@
      "coverDays": 6.4,
      "rate": 5.16,
      "owedToYou": 862,
-     "promised": 8.5,
+     "promised": 11.5,
      "short": 0
     },
     "oil": {
@@ -4416,7 +4496,7 @@
     "salt": "2026-09-08",
     "oil": "2026-09-09"
    },
-   "v": "v576"
+   "v": "v579"
   }
  }
 }
