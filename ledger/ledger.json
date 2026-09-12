@@ -1,6 +1,6 @@
 {
- "v": "v596",
- "stamped": "12 Sep 2026, 17:12 KL",
+ "v": "v597",
+ "stamped": "12 Sep 2026, 17:17 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -38,7 +38,7 @@
    "oil": {
     "qty": 5,
     "costPerKg": 7.666666666666667,
-    "stated": 60
+    "stated": 50
    }
   },
   "STATED_STOCK": 24.19,
@@ -3591,6 +3591,21 @@
     "date": "2026-09-12",
     "note": "<b>SALT REDEMPTION DATED 12 SEP, SETTLED BY REWARD, NO CASH IN.</b> CR3-DAM takes 1 unit free, RM44 of goods, RM44 settled by the reward and RM0 cash, 1 unit moved and delivered on 12 Sep, nothing outstanding on the row itself. Booked as cost and not revenue on his ruling of 11 Sep 2026, the row carrying goodwill as well as rebate. The RM44 is under the RM56.21 floor for 1 unit and under the RM120 ask and RM150 ceiling. CR3-DAM has 13 orders, a median rate of RM80, a range of RM80 to RM92.50, RM25 outstanding before, 0.27 unit on credit against a cap of 2 and nothing defaulted. Cost is the inventory's own RM44 a unit. The drafter flagged the 1 unit earned and unredeemed (1 earned, 0 applied) as the desk's word, not checkable here; the figures do not answer that flag.",
     "rid": "s153"
+   },
+   {
+    "customer": "CE4-CHE",
+    "qty": 10,
+    "total": 150,
+    "cost": 75.25,
+    "cash": 0,
+    "delivery": 20,
+    "handover": "delivered",
+    "product": "oil",
+    "date": "2026-09-12",
+    "deliveredQty": 10,
+    "deliveredOn": "2026-09-12",
+    "note": "<b>OIL SELL DATED 12 SEP, DELIVERED IN FULL, NOT A SEN PAID.</b> SELL to CE4-CHE, 10 unit for RM150, RM20 of that delivery and RM130 goods, RM0 cash in and 10 unit handed over on 12 Sep, so RM150 stays outstanding. The RM130 of goods matches the RM130 ask for 10 unit, clears the RM87.28 floor and sits under the RM240 ceiling. CE4-CHE has 8 orders, a median rate of RM92, a range of RM76.67 to RM107.50, RM0 outstanding before and nothing on credit, none defaulted. Cost on the row is RM75.25, not the inventory's own RM44 a unit. The drafter flagged the advance against the credit cap: 10 unit on credit against a cap of 10 answers it, at the limit. The flag that CE4-CHE has no committed oil order to compare against is not answered here.",
+    "rid": "s154"
    }
   ],
   "contacts": [
@@ -3921,9 +3936,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-11T19:37:27.617Z",
+  "QUEUE_COMMITTED": "2026-09-11T20:04:07.660Z",
   "PRICING": {
-   "takenAt": "2026-09-12T09:12:22.225Z",
+   "takenAt": "2026-09-12T09:17:03.414Z",
    "sizes": [
     0.5,
     1,
@@ -4291,15 +4306,15 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0.5
+         "v": 0.6666666666666666
         }
        },
        "attrib": 1,
        "shrinkRate": 0.08897959183673469,
        "avgDel": {
-        "n": 8,
-        "kg": 136,
-        "mean": 17
+        "n": 9,
+        "kg": 146,
+        "mean": 16.2222
        }
       },
       "policy": {
@@ -4379,12 +4394,30 @@
      ]
     }
    },
-   "v": "v596"
+   "v": "v597"
   },
   "OPEN": {
-   "at": "2026-09-12T09:12:22.288Z",
-   "count": 9,
+   "at": "2026-09-12T09:17:03.505Z",
+   "count": 10,
    "byKey": {
+    "CE4-CHE|2026-09-12|150": {
+     "d": "2026-09-12",
+     "p": "CE4-CHE",
+     "dir": "S",
+     "q": 10,
+     "t": 150,
+     "cash": 0,
+     "mv": 10,
+     "st": "dueMoney",
+     "oweRM": 150,
+     "pr": "oil",
+     "rid": "s154",
+     "deliveredOn": "2026-09-12",
+     "handover": "delivered",
+     "key": "CE4-CHE|2026-09-12|150",
+     "age": 0,
+     "exp": 150
+    },
     "CH6-SET|2026-09-11|120": {
      "d": "2026-09-11",
      "p": "CH6-SET",
@@ -4547,12 +4580,12 @@
     },
     "oil": {
      "name": "Oil",
-     "onHand": 60,
-     "free": 60,
+     "onHand": 50,
+     "free": 50,
      "owedOut": 0,
-     "coverDays": 15.3,
-     "rate": 3.93,
-     "owedToYou": 0,
+     "coverDays": 10.8,
+     "rate": 4.64,
+     "owedToYou": 150,
      "promised": 0,
      "short": 0
     }
@@ -4561,7 +4594,7 @@
     "salt": "2026-09-08",
     "oil": "2026-09-09"
    },
-   "v": "v596"
+   "v": "v597"
   }
  }
 }
