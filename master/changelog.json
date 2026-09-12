@@ -1,5 +1,15 @@
 [
  {
+  "v": "v596",
+  "d": "12 Sep 2026",
+  "t": "TWO CORRECTIONS ON CS6-BS: A REWARD ROUNDED UP, A REDEMPTION UNDONE",
+  "n": [
+   "<b>FOLDED: TWO CORRECTIONS, NO CASH AND NO STOCK.</b> Both sit against CS6-BS and both are on his word of 12 Sep. On s139 the reward now takes the whole unit, settledRM RM110 and rebateKg 1, where v591 folded RM110.45 and 0.94 unit. On s152 the 0.06 unit redemption is undone: cancelled on 12 Sep, nothing moved, nothing settled, no reward and no goodwill on it.",
+   "<b>UNUSUAL: A CANCELLATION THAT PULLS A ROW OUT OF EVERY FIGURE.</b> The drafter flagged that cancelling s152 removes the revenue, the stock it drew and anything owed on it, and that the row was priced at RM44 a unit against CS6-BS's usual RM107, 58.9% below, with RM2.64 of goods RM0.73 under the RM3.37 floor. The cancellation answers those flags by leaving nothing on the row.",
+   "<b>THE INVENTORY DID NOTHING.</b> Neither patch moves goods or money, so stock stands at 24.19 unit on the salt count of 08 Sep, cost basis unchanged at RM44 a unit against replacement of RM46 and the reorder mark of 15. CS6-BS had RM0 outstanding before and 1 unit on credit, nothing defaulted, across 11 orders with a median rate of RM100 and a range of RM11 to RM126.67."
+  ]
+ },
+ {
   "v": "v595",
   "d": "12 Sep 2026",
   "t": "A LOAN IS REPAID, IN PART OR IN FULL, IN WHAT WAS LENT, AND SETTLES WHEN NOTHING IS LEFT OWING",

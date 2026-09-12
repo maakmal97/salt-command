@@ -1,6 +1,6 @@
 {
- "v": "v593",
- "stamped": "12 Sep 2026, 01:58 KL",
+ "v": "v596",
+ "stamped": "12 Sep 2026, 17:12 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -3292,9 +3292,9 @@
     "date": "2026-09-07",
     "deliveredQty": 1,
     "deliveredOn": "2026-09-07",
-    "note": "<b>CORRECTION ON s139 DATED 12 SEP: SETTLED IN KIND, NO CASH, NO STOCK.</b> Against CS6-BS's 1 unit order of 07 Sep for RM117.50, with RM7.50 delivery inside and RM7.50 cash, settledRM moves from unset to RM110.45, rebate from false to true and rebateKg from unset to 0.94, the automatic offset of the CS6-BS reward. CS6-BS has 10 orders, a median rate of RM100, a range of RM11 to RM126.67, RM110 outstanding before this and 1.94 units on credit, nothing defaulted. Cost is the inventory's own RM44 a unit. The drafter flagged the RM110 advance against the credit cap; no cap figure is given, so the flag is unanswered. <b>CORRECTED 08 SEP: TOTAL TO RM 117.50.</b> <b>CORRECTION ON s139: TOTAL ONLY, RM 110 TO RM 117.50.</b> The target is the second of the two 1 unit rows of 07 Sep, delivered, RM 7.50 delivery inside, nothing paid, and the party stays CS6-BS. One field moves on 08 Sep and no cash or stock goes with it. At RM 117.50 for 1 unit the row sits above the RM 54.87 floor for 1 unit and under the RM 120 ask named on the row itself, and it is costed at the inventory's own RM 48 a unit, so no separate cost attaches. CS6-BS stood at 10 orders, a median rate of RM 102.50, a range of RM 11 to RM 126.67, RM 220 outstanding, 3 unit on credit and nothing defaulted. The drafter flagged that CS6-BS typically pays about RM 104.75 a unit for salt across 8 orders and that RM 117.50 is 12.2% above that, and that this is an advance of 1 unit with RM 117.50 unpaid to be checked against the credit cap. The first flag is answered by the figures, the total is above the party's own run and stands as corrected; the second is not, the twin row names an associate cap of 2 unit of salt while CS6-BS carried 3 unit on credit before this fold. Outstanding: RM 117.50 unpaid on 1 unit delivered, and the cap question with it. <b>1 UNIT DELIVERED ON CREDIT, THE SECOND OF TWO THE SAME EVENING.</b> RM 110 with RM 7.50 delivery inside, so RM 102.50 on the goods. Tapped on 07 Sep at 13:34 and rejected on the phone; on his word of 08 Sep it is real and separate from the first, two orders of 1 unit each rather than one. Same terms as its twin: RM 47.63 clear of the RM 54.87 floor for 1 unit, RM 17.50 under the RM 120 ask, costed at the inventory's own RM 48 from p020 for RM 62 on the order at 56.4%. Nothing paid, 1 unit out, which brings CS6-BS to RM 220 and 2 unit of credit, the associate cap of 2 unit of salt. The two rows share party, date, size and total by design; an amendment to either must name its rid. Entered on his word in a Code session on 08 Sep 2026.",
+    "note": "<b>CORRECTION ON s139 DATED 12 SEP: THE REWARD TAKES THE WHOLE UNIT.</b> Against CS6-BS's 1 unit order of 07 Sep for RM117.50, with RM7.50 delivery inside and RM7.50 cash, settledRM moves from RM110.45 to RM110 and rebateKg from 0.94 to 1, on his word of 12 Sep, where v591 folded the earlier pair. No cash and no stock move: the row states itself differently. CS6-BS has 11 orders, a median rate of RM100, a range of RM11 to RM126.67, RM0 outstanding before, 1 unit on credit and nothing defaulted. The drafter flagged this as an advance of 1 unit with RM110 unpaid, to be checked against the credit cap, and that the RM117.50 total is under the RM117.95 already paid against the row. The figures here do not answer either flag, and both stay outstanding. <b>CORRECTION ON s139 DATED 12 SEP: SETTLED IN KIND, NO CASH, NO STOCK.</b> Against CS6-BS's 1 unit order of 07 Sep for RM117.50, with RM7.50 delivery inside and RM7.50 cash, settledRM moves from unset to RM110.45, rebate from false to true and rebateKg from unset to 0.94, the automatic offset of the CS6-BS reward. CS6-BS has 10 orders, a median rate of RM100, a range of RM11 to RM126.67, RM110 outstanding before this and 1.94 units on credit, nothing defaulted. Cost is the inventory's own RM44 a unit. The drafter flagged the RM110 advance against the credit cap; no cap figure is given, so the flag is unanswered. <b>CORRECTED 08 SEP: TOTAL TO RM 117.50.</b> <b>CORRECTION ON s139: TOTAL ONLY, RM 110 TO RM 117.50.</b> The target is the second of the two 1 unit rows of 07 Sep, delivered, RM 7.50 delivery inside, nothing paid, and the party stays CS6-BS. One field moves on 08 Sep and no cash or stock goes with it. At RM 117.50 for 1 unit the row sits above the RM 54.87 floor for 1 unit and under the RM 120 ask named on the row itself, and it is costed at the inventory's own RM 48 a unit, so no separate cost attaches. CS6-BS stood at 10 orders, a median rate of RM 102.50, a range of RM 11 to RM 126.67, RM 220 outstanding, 3 unit on credit and nothing defaulted. The drafter flagged that CS6-BS typically pays about RM 104.75 a unit for salt across 8 orders and that RM 117.50 is 12.2% above that, and that this is an advance of 1 unit with RM 117.50 unpaid to be checked against the credit cap. The first flag is answered by the figures, the total is above the party's own run and stands as corrected; the second is not, the twin row names an associate cap of 2 unit of salt while CS6-BS carried 3 unit on credit before this fold. Outstanding: RM 117.50 unpaid on 1 unit delivered, and the cap question with it. <b>1 UNIT DELIVERED ON CREDIT, THE SECOND OF TWO THE SAME EVENING.</b> RM 110 with RM 7.50 delivery inside, so RM 102.50 on the goods. Tapped on 07 Sep at 13:34 and rejected on the phone; on his word of 08 Sep it is real and separate from the first, two orders of 1 unit each rather than one. Same terms as its twin: RM 47.63 clear of the RM 54.87 floor for 1 unit, RM 17.50 under the RM 120 ask, costed at the inventory's own RM 48 from p020 for RM 62 on the order at 56.4%. Nothing paid, 1 unit out, which brings CS6-BS to RM 220 and 2 unit of credit, the associate cap of 2 unit of salt. The two rows share party, date, size and total by design; an amendment to either must name its rid. Entered on his word in a Code session on 08 Sep 2026.",
     "rid": "s139",
-    "mod": "corrected on 2026-09-08: total 110 to 117.5, then corrected on 2026-09-12: settledRM (unset) to 110.45; rebateKg (unset) to 0.94; rebate (unset) to true",
+    "mod": "corrected on 2026-09-08: total 110 to 117.5, then corrected on 2026-09-12: settledRM (unset) to 110.45; rebateKg (unset) to 0.94; rebate (unset) to true, then corrected on 2026-09-12: settledRM 110.45 to 110; rebateKg 0.94 to 1",
     "amend": [
      {
       "date": "2026-09-07",
@@ -3323,10 +3323,17 @@
       "cash": 0,
       "kg": 0,
       "note": "<b>CORRECTION ON s139 DATED 12 SEP: SETTLED IN KIND, NO CASH, NO STOCK.</b> Against CS6-BS's 1 unit order of 07 Sep for RM117.50, with RM7.50 delivery inside and RM7.50 cash, settledRM moves from unset to RM110.45, rebate from false to true and rebateKg from unset to 0.94, the automatic offset of the CS6-BS reward. CS6-BS has 10 orders, a median rate of RM100, a range of RM11 to RM126.67, RM110 outstanding before this and 1.94 units on credit, nothing defaulted. Cost is the inventory's own RM44 a unit. The drafter flagged the RM110 advance against the credit cap; no cap figure is given, so the flag is unanswered."
+     },
+     {
+      "date": "2026-09-12",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>CORRECTION ON s139 DATED 12 SEP: THE REWARD TAKES THE WHOLE UNIT.</b> Against CS6-BS's 1 unit order of 07 Sep for RM117.50, with RM7.50 delivery inside and RM7.50 cash, settledRM moves from RM110.45 to RM110 and rebateKg from 0.94 to 1, on his word of 12 Sep, where v591 folded the earlier pair. No cash and no stock move: the row states itself differently. CS6-BS has 11 orders, a median rate of RM100, a range of RM11 to RM126.67, RM0 outstanding before, 1 unit on credit and nothing defaulted. The drafter flagged this as an advance of 1 unit with RM110 unpaid, to be checked against the credit cap, and that the RM117.50 total is under the RM117.95 already paid against the row. The figures here do not answer either flag, and both stay outstanding."
      }
     ],
-    "settledRM": 110.45,
-    "rebateKg": 0.94,
+    "settledRM": 110,
+    "rebateKg": 1,
     "rebate": true
    },
    {
@@ -3545,15 +3552,29 @@
     "total": 2.64,
     "cost": 2.64,
     "cash": 0,
-    "settledRM": 2.64,
-    "rebate": true,
-    "rebateKg": 0.06,
-    "goodwill": true,
-    "deliveredQty": 0.06,
-    "deliveredOn": "2026-09-12",
+    "deliveredQty": 0,
     "date": "2026-09-12",
-    "note": "<b>SALT REDEMPTION DATED 12 SEP, SETTLED BY REWARD, NO CASH IN.</b> CS6-BS takes 0.06 unit free, RM2.64 of goods, RM2.64 settled by the reward and RM0 cash, 0.06 unit moved and delivered on 12 Sep, nothing outstanding on the row. Booked as cost and not revenue on his ruling of 11 Sep 2026, the row carrying goodwill as well as rebate. The RM2.64 is under the RM3.37 floor for 0.06 unit and under the RM10 ask and RM10 ceiling. CS6-BS has 10 orders, a median rate of RM100, a range of RM11 to RM126.67, nothing outstanding before, 1 unit on credit against a cap of 2 and nothing defaulted. Cost is the inventory's own RM44 a unit. The drafter flagged the 0.06 unit earned and unredeemed balance (1 earned, 0.94 applied) as the desk's word, not checkable here; the figures do not answer that flag.",
-    "rid": "s152"
+    "note": "<b>CORRECTION ON s152 DATED 12 SEP: THE REDEMPTION IS UNDONE.</b> Against CS6-BS's 0.06 unit row of 12 Sep for RM2.64, cancelled moves to true and cancelledOn to 12 Sep, deliveredQty from 0.06 to 0, deliveredOn cleared, settledRM from RM2.64 cleared, rebate to false, rebateKg cleared and goodwill to false, on his word of 12 Sep. No cash and no stock move on the patch itself. The drafter flagged that cancelling takes the row out of the revenue, the stock it drew and anything owed; that RM44 a unit is 58.9% below CS6-BS's usual RM107 over 9 salt orders; that RM2.64 of goods is RM0.73 under the RM3.37 floor; and the advance of 0.06 unit against the cap. The cancellation leaves nothing outstanding on the row. <b>SALT REDEMPTION DATED 12 SEP, SETTLED BY REWARD, NO CASH IN.</b> CS6-BS takes 0.06 unit free, RM2.64 of goods, RM2.64 settled by the reward and RM0 cash, 0.06 unit moved and delivered on 12 Sep, nothing outstanding on the row. Booked as cost and not revenue on his ruling of 11 Sep 2026, the row carrying goodwill as well as rebate. The RM2.64 is under the RM3.37 floor for 0.06 unit and under the RM10 ask and RM10 ceiling. CS6-BS has 10 orders, a median rate of RM100, a range of RM11 to RM126.67, nothing outstanding before, 1 unit on credit against a cap of 2 and nothing defaulted. Cost is the inventory's own RM44 a unit. The drafter flagged the 0.06 unit earned and unredeemed balance (1 earned, 0.94 applied) as the desk's word, not checkable here; the figures do not answer that flag.",
+    "rid": "s152",
+    "cancelledOn": "2026-09-12",
+    "cancelled": true,
+    "mod": "corrected on 2026-09-12: deliveredQty 0.06 to 0; settledRM 2.64 to (cleared); rebateKg 0.06 to (cleared); deliveredOn 2026-09-12 to (cleared); cancelledOn (unset) to 2026-09-12; cancelled (unset) to true; rebate true to (cleared); goodwill true to (cleared)",
+    "amend": [
+     {
+      "date": "2026-09-12",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 0,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-09-12",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>CORRECTION ON s152 DATED 12 SEP: THE REDEMPTION IS UNDONE.</b> Against CS6-BS's 0.06 unit row of 12 Sep for RM2.64, cancelled moves to true and cancelledOn to 12 Sep, deliveredQty from 0.06 to 0, deliveredOn cleared, settledRM from RM2.64 cleared, rebate to false, rebateKg cleared and goodwill to false, on his word of 12 Sep. No cash and no stock move on the patch itself. The drafter flagged that cancelling takes the row out of the revenue, the stock it drew and anything owed; that RM44 a unit is 58.9% below CS6-BS's usual RM107 over 9 salt orders; that RM2.64 of goods is RM0.73 under the RM3.37 floor; and the advance of 0.06 unit against the cap. The cancellation leaves nothing outstanding on the row."
+     }
+    ]
    },
    {
     "customer": "CR3-DAM",
@@ -3900,9 +3921,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-11T17:53:33.653Z",
+  "QUEUE_COMMITTED": "2026-09-11T19:37:27.617Z",
   "PRICING": {
-   "takenAt": "2026-09-11T17:58:58.224Z",
+   "takenAt": "2026-09-12T09:12:22.225Z",
    "sizes": [
     0.5,
     1,
@@ -4060,11 +4081,11 @@
         }
        },
        "attrib": 1,
-       "shrinkRate": 0.0672016508082082,
+       "shrinkRate": 0.06733921815889031,
        "avgDel": {
-        "n": 135,
-        "kg": 344.01,
-        "mean": 2.5482
+        "n": 134,
+        "kg": 343.95,
+        "mean": 2.5668
        }
       },
       "policy": {
@@ -4358,10 +4379,10 @@
      ]
     }
    },
-   "v": "v593"
+   "v": "v596"
   },
   "OPEN": {
-   "at": "2026-09-11T17:58:58.314Z",
+   "at": "2026-09-12T09:12:22.288Z",
    "count": 9,
    "byKey": {
     "CH6-SET|2026-09-11|120": {
@@ -4540,7 +4561,7 @@
     "salt": "2026-09-08",
     "oil": "2026-09-09"
    },
-   "v": "v593"
+   "v": "v596"
   }
  }
 }
