@@ -10244,5 +10244,56 @@ section("12 Sep 2026: the leak check reads the master, and can find the director
 }
 
 
+/* ---- The Enter form's messages read as sentences (12 Sep 2026) --------------------- */
+section("12 Sep 2026: the Enter form's messages are a list, and an empty form carries no status");
+{
+  const msrc = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+  const dcss = readFileSync(join(REPO, "design", "desk.css"), "utf8");
+  /* they borrowed .warnpill, which this layer sets uppercase with letter-spacing */
+  ok(/const wbErr=t=>`<span class="wbmsg wbmsg-err">\$\{t\}<\/span>`;/.test(msrc)
+    && /const wbWarn=t=>`<span class="wbmsg wbmsg-warn">\$\{t\}<\/span>`;/.test(msrc)
+    && /const wbGood=t=>`<span class="wbmsg wbmsg-ok">\$\{t\}<\/span>`;/.test(msrc),
+    "the three message helpers carry their own classes and no inline style");
+  ok(!/wbErr=t=>`<span class="warnpill"|wbWarn=t=>`<span class="warnpill"|wbGood=t=>`<span class="warnpill"/.test(msrc),
+    "and none of them is a .warnpill any more");
+  ok(/\.wbmsg\{[^}]*text-transform:none/.test(dcss) && /\.wbmsg\{[^}]*letter-spacing:0/.test(dcss),
+    "the design layer sets them in sentence case, not the pill's uppercase");
+  ok(/\.warnpill\{font-size:11px;font-weight:500;letter-spacing:\.08em;text-transform:uppercase/.test(dcss),
+    "and .warnpill itself is untouched, for the panel notices that still want a pill");
+  /* his instruction: no em-dashes in the Enter form's copy */
+  /* ANY QUOTING, NOT JUST SINGLE QUOTES. The first version of this check matched only
+     `push('...')` and passed while "Choose a customer &mdash; nothing is selected." sat in a
+     TEMPLATE LITERAL a few lines away; the browser found it, not the suite. */
+  const pushed = msrc.match(/(?:errs|warns|goods)\.push\([^)]{0,200}/g) || [];
+  const dashed = pushed.filter((m) => /&mdash;|—/.test(m));
+  ok(pushed.length > 20 && dashed.length === 0,
+    `no em-dash in any of the ${pushed.length} messages the Enter form pushes (${dashed.length} found${dashed.length ? ": " + dashed[0].slice(0, 60) : ""})`);
+  /* the empty-form rule, run rather than read */
+  ok(/function wbFormEmpty\(\)\{/.test(msrc), "wbFormEmpty is defined");
+  const { openMaster: omE } = await import("../tools/payload.mjs");
+  const { w: wE } = await omE();
+  try {
+    const empty = wE.eval("(function(){switchTab('add');return typeof wbFormEmpty==='function'?wbFormEmpty():null;})()");
+    ok(empty === true, `a freshly drawn Enter form reads as empty (${empty})`);
+    const cleared = wE.eval(`(function(){
+      var st=document.getElementById('wbOk'); if(!st) return 'no status node';
+      st.textContent='Recorded something earlier.';
+      wbPreview();
+      return st.textContent;
+    })()`);
+    ok(cleared === "", `and a stale status is cleared while the form is empty ("${cleared}")`);
+    const kept = wE.eval(`(function(){
+      var q=document.getElementById('wbQty'); if(!q) return 'no qty field';
+      q.value='3';
+      var st=document.getElementById('wbOk'); st.textContent='Recorded something earlier.';
+      wbPreview();
+      var out=st.textContent; q.value=''; return out;
+    })()`);
+    ok(kept === "Recorded something earlier.",
+      `but a status on a form with something in it is left alone ("${kept}")`);
+  } finally { try { wE.close(); } catch (e) { /* best effort */ } }
+}
+
+
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
 process.exit(fail ? 1 : 0);

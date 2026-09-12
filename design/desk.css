@@ -263,6 +263,29 @@ details.rcard>summary .rname{font-size:16px;font-weight:500;}
 .badge{color:var(--salt-obsidian);background:var(--salt-brass);border-radius:999px;font-weight:700;font-size:11px;letter-spacing:.1em;text-transform:uppercase;}
 .warnpill{font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;background:transparent;
   border:1px solid rgba(212,105,76,.55);color:var(--salt-ember);border-radius:999px;}
+
+/* v604: THE ENTER FORM'S MESSAGES ARE A LIST, NOT A ROW OF PILLS. They borrowed `.warnpill`,
+   which this layer sets in uppercase with letter-spacing, so a sentence of plain English came
+   out shouting and broke across a flex row mid-phrase. They read as sentences now, one per
+   line, marked by a sign rather than a border. `.warnpill` is left exactly as it was for the
+   panel notices that still want a pill, which is why these are their own classes and not a
+   redefinition of that one. */
+#wbMsgs{display:block;}
+.wbmsg{display:block;margin:0 0 5px;padding-left:17px;position:relative;
+  font-size:12.5px;line-height:1.45;font-weight:400;letter-spacing:0;text-transform:none;
+  background:none;border:0;border-radius:0;}
+.wbmsg:last-child{margin-bottom:0;}
+.wbmsg::before{position:absolute;left:0;top:0;font-weight:600;}
+.wbmsg-err{color:var(--salt-ember);}
+.wbmsg-err::before{content:"!";}
+.wbmsg-warn{color:var(--salt-brass);}
+.wbmsg-warn::before{content:"!";}
+.wbmsg-ok{color:var(--salt-verdigris);}
+.wbmsg-ok::before{content:"\2713";}
+
+/* A QUIET STATUS LINE. It states what happened; it does not announce it. The colour is set
+   from the script for the three outcomes, so only the resting type is decided here. */
+#wbOk{font-size:12px;margin-left:8px;letter-spacing:0;text-transform:none;color:var(--salt-mist);}
 .stkcolsl::before{border-color:var(--salt-line);}
 .stkcols:checked+.stkcolsl::before{border-color:var(--salt-brass);background:var(--salt-brass);}
 .stkcols:focus-visible+.stkcolsl{outline-color:var(--salt-brass);}

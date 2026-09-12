@@ -68,7 +68,7 @@ document.addEventListener('visibilitychange',function(){
    localStorage before it posts anything and the load reads it straight back.
    The same tick retries a held entry, which is what gets a phone write to the cloud
    without waiting for the next open. */
-var SALT_BUILD_ID="4c699dcda145a5bc";
+var SALT_BUILD_ID="f9accf348b58b971";
 var SALT_REV_MS=10000;
 (function(){
   var chip=null,timer=null;
@@ -3119,6 +3119,29 @@ details.rcard>summary .rname{font-size:16px;font-weight:500;}
 .badge{color:var(--salt-obsidian);background:var(--salt-brass);border-radius:999px;font-weight:700;font-size:11px;letter-spacing:.1em;text-transform:uppercase;}
 .warnpill{font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;background:transparent;
   border:1px solid rgba(212,105,76,.55);color:var(--salt-ember);border-radius:999px;}
+
+/* v604: THE ENTER FORM'S MESSAGES ARE A LIST, NOT A ROW OF PILLS. They borrowed `.warnpill`,
+   which this layer sets in uppercase with letter-spacing, so a sentence of plain English came
+   out shouting and broke across a flex row mid-phrase. They read as sentences now, one per
+   line, marked by a sign rather than a border. `.warnpill` is left exactly as it was for the
+   panel notices that still want a pill, which is why these are their own classes and not a
+   redefinition of that one. */
+#wbMsgs{display:block;}
+.wbmsg{display:block;margin:0 0 5px;padding-left:17px;position:relative;
+  font-size:12.5px;line-height:1.45;font-weight:400;letter-spacing:0;text-transform:none;
+  background:none;border:0;border-radius:0;}
+.wbmsg:last-child{margin-bottom:0;}
+.wbmsg::before{position:absolute;left:0;top:0;font-weight:600;}
+.wbmsg-err{color:var(--salt-ember);}
+.wbmsg-err::before{content:"!";}
+.wbmsg-warn{color:var(--salt-brass);}
+.wbmsg-warn::before{content:"!";}
+.wbmsg-ok{color:var(--salt-verdigris);}
+.wbmsg-ok::before{content:"\2713";}
+
+/* A QUIET STATUS LINE. It states what happened; it does not announce it. The colour is set
+   from the script for the three outcomes, so only the resting type is decided here. */
+#wbOk{font-size:12px;margin-left:8px;letter-spacing:0;text-transform:none;color:var(--salt-mist);}
 .stkcolsl::before{border-color:var(--salt-line);}
 .stkcols:checked+.stkcolsl::before{border-color:var(--salt-brass);background:var(--salt-brass);}
 .stkcols:focus-visible+.stkcolsl{outline-color:var(--salt-brass);}
@@ -6324,7 +6347,9 @@ const quoteFor=p=>{const f=QUOTES[p||PROD];return f?f():null;};
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{"v":"v603","d":"12 Sep 2026","t":"THREE PARTIES TAKE THE CODES THE RULE DERIVES, AND EACH KEEPS ITS STATEMENT USERNAME","n":["<b>HIS INSTRUCTION OF 12 SEP 2026.</b> v587 said the derivation reproduces 37 of the 40 codes in the directory and named these three as the ones that do not fit. They are now what the rule gives: <b>CH4-KLS to CH4-KS, CH4-MLR to CH4-MAL, CD3-SEG to CD7-SEG</b>. Sixty occurrences across eight files, written all or nothing, with the roster checked first for a clash in either direction.","<b>THE USERNAME NEVER CHANGES, which is his rule.</b> In the statements it is the key that moves and the username that stays, so all three keep the address their customer already has and the account count is unchanged at 39. The monthly passwords move with them.","<b>CH4-KS REVERSES A CORRECTION OF 28 AUGUST, KNOWINGLY.</b> s065 was re-keyed from CH4-KS to CH4-KLS on 28 Aug 2026, and the derivation sends it back. That was put to him before anything was written and he confirmed it. The row's note and its mod now record both moves; <b>the 28 August amend entry is left verbatim</b>, because a dated record of what happened that day is not rewritten by what happened three weeks later.","<b>WHAT IS LEFT ALONE:</b> the archive, the changelog and every version note naming an old code, this one included. They are history and say what was true when they were written. Only the live book, the roster, the directory, the statements and the fixtures moved.","<b>THE VAULT NEEDS RE-SEEDING, AND ONLY HE CAN DO IT.</b> The directory's keys changed, and <code>tools/seed-vault.mjs</code> takes the passphrase from the shell and never from a file. Until he runs it the desk's name lookup will not find these three behind their new codes."]},
+const evolution=[{"v":"v604","d":"12 Sep 2026","t":"THE ENTER FORM'S MESSAGES ARE A LIST OF SENTENCES, AND AN EMPTY FORM CARRIES NO STATUS","n":["<b>THEY WERE A ROW OF SHOUTING PILLS.</b> The three message helpers borrowed <code>.warnpill</code>, which the design layer sets in uppercase with letter-spacing, so a sentence of plain English came out shouting and broke across a flex row mid-phrase. They have their own classes now: one per line, marked by a sign rather than a border, in ember, brass and verdigris. <code>.warnpill</code> is left exactly as it was for the panel notices that still want a pill, which is why these are new classes and not a redefinition of that one.","<b>NO STATUS ON AN EMPTY FORM.</b> The line kept stating the last thing recorded while the form was cleared underneath it, so it read as the status of whatever was on screen. It clears the moment the form has nothing in it, and is left alone the moment something is typed. Six number fields rest at 0 by default and are read as empty: on this form a zero and a blank both mean none, and counting them as input made every form look filled and the rule never fire.","<b>AND THE EM-DASHES ARE OUT OF THE COPY</b>, his standing rule. Eight messages read as two sentences where they read as one clause.","<b>THE BROWSER FOUND WHAT THE SUITE MISSED.</b> The first version of the em-dash check matched only <code>push('...')</code> and went green while \"Choose a customer &mdash; nothing is selected.\" sat in a TEMPLATE LITERAL a few lines away, rendering on the desk with the dash still in it. The check reads any quoting now, and is proved on both forms: the old one cannot see the template literal, the new one can, and it still catches the single-quoted kind.","<b>MEASURED ON THE SERVED BUILD</b>, with its id asserted against the local build first so nothing stale was being read. Three messages stacked one per line 23px apart, text-transform none, letter-spacing normal, no border and no radius, the three colours landing on their own tokens, and the status line quiet at 12px in mist.","<b>WHAT IT TOUCHES ON THE BOOK: NOTHING.</b> This is the Enter form's wording and its styling."]},
+
+{"v":"v603","d":"12 Sep 2026","t":"THREE PARTIES TAKE THE CODES THE RULE DERIVES, AND EACH KEEPS ITS STATEMENT USERNAME","n":["<b>HIS INSTRUCTION OF 12 SEP 2026.</b> v587 said the derivation reproduces 37 of the 40 codes in the directory and named these three as the ones that do not fit. They are now what the rule gives: <b>CH4-KLS to CH4-KS, CH4-MLR to CH4-MAL, CD3-SEG to CD7-SEG</b>. Sixty occurrences across eight files, written all or nothing, with the roster checked first for a clash in either direction.","<b>THE USERNAME NEVER CHANGES, which is his rule.</b> In the statements it is the key that moves and the username that stays, so all three keep the address their customer already has and the account count is unchanged at 39. The monthly passwords move with them.","<b>CH4-KS REVERSES A CORRECTION OF 28 AUGUST, KNOWINGLY.</b> s065 was re-keyed from CH4-KS to CH4-KLS on 28 Aug 2026, and the derivation sends it back. That was put to him before anything was written and he confirmed it. The row's note and its mod now record both moves; <b>the 28 August amend entry is left verbatim</b>, because a dated record of what happened that day is not rewritten by what happened three weeks later.","<b>WHAT IS LEFT ALONE:</b> the archive, the changelog and every version note naming an old code, this one included. They are history and say what was true when they were written. Only the live book, the roster, the directory, the statements and the fixtures moved.","<b>THE VAULT NEEDS RE-SEEDING, AND ONLY HE CAN DO IT.</b> The directory's keys changed, and <code>tools/seed-vault.mjs</code> takes the passphrase from the shell and never from a file. Until he runs it the desk's name lookup will not find these three behind their new codes."]},
 
 {"v":"v602","d":"12 Sep 2026","t":"THE LAPTOP'S DRAFT LIST STRIKES ITS SELLING RATE ON THE GOODS, AS THE PHONE DOES","n":["<b>IT DIVIDED THE WHOLE TOTAL, THE DELIVERY CHARGE INSIDE IT.</b> Every rate on the desk has been struck on the goods since v502, and the phone's Approve card shows it that way. <code>node tools/drafts.mjs --list</code> did not: the 10 unit oil order at RM 150 carrying RM 20 of delivery read <b>RM 15/unit on the laptop and RM 13/unit on the phone, on the same row</b>. It reads RM 13/unit now. This is the other half of v599, which fixed the cost and the margin on that same line and left the rate beside them wrong.","<b>THE DELIVERY WAS NEVER A COLUMN, AND DID NOT NEED TO BE.</b> It sits in the proposed row, which is the thing being approved, so it is read from there: no migration, and the live table already carried it. A row with no delivery is unchanged, which is every salt row to date, and a row whose blob will not parse reads as no delivery rather than printing no rate at all.","<b>PROVED RED.</b> With the old formula put back the suite fails on exactly one assertion, the one that names RM 13, and the other 2,125 stay green. Restored byte for byte afterwards.","<b>WHAT IT TOUCHES: THE LAPTOP'S PRINTOUT.</b> No draft moves, no row moves, nothing on the book moves. The drafter, the phone and the fold have always read the delivery correctly."]},
 
@@ -6768,7 +6793,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='12 Sep 2026, 21:09 KL';
+const LAST_UPDATED='12 Sep 2026, 21:34 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -16862,9 +16887,9 @@ function wbState(total,qty,cash,unitsD,flags){
 const wbPayCls=p=>p==='Paid'||p==='Delivered'?'paid':(p==='Unpaid'||p==='Undelivered')?'unpaid':'open';
 const wbPill=(l,c)=>`<span class="tag ${c}">${l}</span>`;
 const lbl0=()=>'font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:var(--dim)';
-const wbErr=t=>`<span class="warnpill">&#9888; ${t}</span>`;
-const wbWarn=t=>`<span class="warnpill" style="background:rgba(184,115,51,.14);border-color:var(--amber);color:#d8c79c">${t}</span>`;
-const wbGood=t=>`<span class="warnpill" style="background:rgba(74,222,128,.13);border-color:var(--grn);color:#6fae97">&#10003; ${t}</span>`;
+const wbErr=t=>`<span class="wbmsg wbmsg-err">${t}</span>`;
+const wbWarn=t=>`<span class="wbmsg wbmsg-warn">${t}</span>`;
+const wbGood=t=>`<span class="wbmsg wbmsg-ok">${t}</span>`;
 function tabWorkbench(){
   const eopts=wbSellOrders().map(o=>`<option value="${o.code}">${o.code} &middot; ${ID(o.t.who)} &middot; ${o.t.qty} unit &middot; RM${o.t.total}</option>`).join('');
   const a0=associateIds();
@@ -17036,14 +17061,14 @@ function tabWorkbench(){
     <div style="margin-top:13px;padding-top:11px;border-top:1px solid var(--line)">
       <div style="${lbl}">Preview</div>
       <div id="wbPrev" style="margin-top:7px"></div>
-      <div id="wbMsgs" style="margin-top:9px;display:flex;gap:7px;flex-wrap:wrap"></div>
+      <div id="wbMsgs" style="margin-top:9px"></div>
     </div>
     <div style="margin-top:13px">
       <button class="vbtn" id="wbRec" style="border-color:var(--grn);background:linear-gradient(135deg,#6fae97,#4f8f7a);color:#05080a">Record</button>
       <button class="vbtn" style="font-size:12px;margin-left:6px" onclick="if(queue.length&&confirm('Discard all '+queue.length+' uncommitted entries? The desk will fall back to the committed ledger.')){queue.length=0;saveQueue();applyOverlay();render();}">Clear queued</button>
       <button class="vbtn" id="wbSave" style="font-size:12px;margin-left:6px">Save queue file</button>
       <button class="vbtn" id="wbCopy" style="font-size:12px;margin-left:6px">Copy queue</button>
-      <span id="wbOk" style="font-size:12px;margin-left:8px;color:var(--mut)"></span>
+      <span id="wbOk"></span>
     </div>
     <div class="note" style="margin-top:10px" id="wbSync">${qNote()}</div>
   </div>
@@ -18442,9 +18467,31 @@ function wbSoFar(t){
      12.5 unit lot. txPaid and txEffDeliv are what the rest of the desk uses; so does this. */
   return {cash:txPaid(t),kg:txEffDeliv(t)};
 }
+/* v604: IS ANYTHING TYPED? Every text and number field of the form, whichever pane is on
+   screen. Read from the DOM rather than from the mode, so it cannot go stale when a pane is
+   added, and it never consults layout, which jsdom cannot answer. */
+function wbFormEmpty(){
+  const host=document.getElementById('wbPaneNew')&&document.getElementById('wbPaneNew').parentNode;
+  if(!host)return false;
+  for(const el of host.querySelectorAll('input,textarea')){
+    if(el.type==='checkbox'||el.type==='radio'){if(el.checked!==el.defaultChecked)return false;continue;}
+    const v=String(el.value||'').trim();
+    if(v==='')continue;
+    /* A NUMBER FIELD RESTING AT ZERO IS THE FORM'S OWN DEFAULT, not something typed. Six of
+       them open at 0 (delivery, freight, units and cash on both panes), and counting those as
+       input made every form look filled and the rule never fire. On this form a zero and a
+       blank mean the same thing: none. */
+    if(el.type==='number'&&Number(v)===0)continue;
+    return false;
+  }
+  return true;
+}
 function wbPreview(){
   const prev=wbEl('wbPrev');if(!prev)return;
   const msgs=wbEl('wbMsgs'),btn=wbEl('wbRec');
+  /* v604: NO STATUS ON AN EMPTY FORM. The line kept stating the last thing recorded while the
+     form was cleared underneath it, so it read as the status of what was on screen. */
+  {const st=wbEl('wbOk');if(st&&st.textContent&&wbFormEmpty()){st.textContent='';st.style.color='';}}
   const errs=[],warns=[],goods=[];let body='';
   if(wbMode==='new'){
     const qty=wbNum('wbQty'),total=wbNum('wbTotal'),cash=wbNum('wbCash'),unitsD=wbNum('wbUnits');
@@ -18458,7 +18505,7 @@ function wbPreview(){
     if(!(qty>0))errs.push('Quantity must be more than zero.');
     /* a blank total silences the whole pricing pane, because every coach test needs a
        price. Left unguarded it booked a zero-revenue order that still drew real units. */
-    if(!(total>0))errs.push('Total must be more than zero &mdash; enter the ringgit before recording.');
+    if(!(total>0))errs.push('Total must be more than zero. Enter the ringgit before recording.');
     if(cash>total+0.009)errs.push('Cash received cannot exceed the total.');
     if(unitsD>qty+0.009)errs.push('Delivered units cannot exceed the order quantity.');
     const free=+(currentStock-defUnits).toFixed(2);
@@ -18471,7 +18518,7 @@ function wbPreview(){
        there and is not required. */
     const r2books=(wbDir==='SELL'&&wbEl('wbAssoc')&&wbEl('wbAssoc').checked&&wbStream==='R2');
     const pv=wbVal('wbParty');
-    if(!r2books&&!pv)errs.push(`Choose a ${wbDir==='BUY'?'supplier':'customer'} &mdash; nothing is selected.`);
+    if(!r2books&&!pv)errs.push(`Choose a ${wbDir==='BUY'?'supplier':'customer'}. Nothing is selected.`);
     if(wbDir==='SELL'&&wbEl('wbAssoc')&&wbEl('wbAssoc').checked&&!wbVal('wbAssocSel'))errs.push('Choose the associate.');
     /* v524: the same answer wbRecord gives, so the button is disabled rather than refused */
     { const aOn=wbDir==='SELL'&&wbEl('wbAssoc')&&wbEl('wbAssoc').checked, pA=aOn?(wbVal('wbAssocSel')||null):null;
@@ -18479,7 +18526,7 @@ function wbPreview(){
       if(pParty){ const ef=entryFault({direction:wbDir,product:wbProdVal(),party:pParty,assoc:pA,downstream:pDown,date:wbVal('wbDate'),cash,kg:unitsD,qty:wbNum('wbQty'),total:wbNum('wbTotal'),delivery:wbNum('wbDelivery')});
         if(ef&&!/needs a date/.test(ef))errs.push(ef); } }
     /* the date is blank by default so it cannot silently carry a stale day */
-    if(!wbVal('wbDate'))errs.push('Enter the date &mdash; it is deliberately blank.');
+    if(!wbVal('wbDate'))errs.push('Enter the date. It is deliberately blank.');
     else{const fw=wbFutureWarn(wbVal('wbDate'));if(fw)warns.push(fw);}
     if(wbDir==='SELL'){
       /* a ban is the one boundary that stops the entry rather than warning about it.
@@ -18501,7 +18548,7 @@ function wbPreview(){
   }else if(wbMode==='amend'){
     const o=wbAmendList().find(x=>x.code===wbVal('wbOrder'));
     if(o&&!wbVal('wbKind'))errs.push('Choose what happened to this order.');
-    if(o&&!wbVal('wbADate'))errs.push('Enter the date &mdash; it is deliberately blank.');
+    if(o&&!wbVal('wbADate'))errs.push('Enter the date. It is deliberately blank.');
     else if(o){const fw=wbFutureWarn(wbVal('wbADate'));if(fw)warns.push(fw);}
     if(!o){body='<div class="dsc">Pick an order.</div>';errs.push('Pick an order to amend.');}
     else if(wbASide==='BUY'){
@@ -18519,11 +18566,11 @@ function wbPreview(){
       if(kind==='Payment'){
         if(ac<=0.009)errs.push('A payment needs cash.');
         if(ac>outRM+0.009)errs.push(`Only ${fmt0(outRM)} is outstanding on ${o.code}.`);
-        if(ak>0.009)warns.push('Units are ignored on a payment &mdash; use Receipt to book an arrival.');
+        if(ak>0.009)warns.push('Units are ignored on a payment. Use Receipt to book an arrival.');
       }else if(kind==='Receipt'){
         if(ak<=0.009)errs.push('A receipt needs units.');
         if(ak>outUnits+0.009)errs.push(`Only ${units(outUnits)} is still to arrive on ${o.code}.`);
-        if(ac>0.009)warns.push('Cash is ignored on a receipt &mdash; use Payment to book money out.');
+        if(ac>0.009)warns.push('Cash is ignored on a receipt. Use Payment to book money out.');
       }else if(kind==='Default'){
         warns.push(`Marks the lot as never delivered: the ${fmt0(sf.cash)} already paid becomes a recoverable, not inventory, and the lot leaves the cost basis.`);
       }
@@ -18614,7 +18661,7 @@ function wbPreview(){
     if(!has||!(w>0))errs.push('Enter the units that changed hands.');
     if(dirL==='out'&&w>currentStock+0.009)warns.push(`Lends more than the ${units(currentStock)} on hand.`);
     }
-    if(!wbVal('wbLoanDate'))errs.push('Enter the date &mdash; it is deliberately blank.');
+    if(!wbVal('wbLoanDate'))errs.push('Enter the date. It is deliberately blank.');
     else{const fw=wbFutureWarn(wbVal('wbLoanDate'));if(fw)warns.push(fw);}
   }else if(wbMode==='addid'){
     const code=wbApCodeNow(),kind=wbVal('wbApKind'),parent=wbVal('wbApParent');
@@ -18672,7 +18719,7 @@ function wbPreview(){
     body=`<div style="font-size:13px;color:var(--mut)">Counted inventory now <b style="color:var(--ink)">${units(currentStock)}</b>`
       +(has?` &middot; new count <b style="color:var(--ink)">${units(w)}</b> &middot; difference <b style="color:${diff<0?'var(--crim)':diff>0?'var(--grn)':'var(--mut)'}">${diff>0?'+':''}${units(diff)}</b>`:' &middot; enter the units on hand.')+`</div>`;
     if(!has||!(w>=0))errs.push('Enter the units on hand.');
-    if(!wbVal('wbCDate'))errs.push('Enter the date of the count &mdash; it is deliberately blank.');
+    if(!wbVal('wbCDate'))errs.push('Enter the date of the count. It is deliberately blank.');
     else{const fw=wbFutureWarn(wbVal('wbCDate'));if(fw)warns.push(fw);}
   }
   prev.innerHTML=body;
