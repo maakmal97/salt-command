@@ -1,5 +1,18 @@
 [
  {
+  "v": "v601",
+  "d": "12 Sep 2026",
+  "t": "THE DESKBAR, THE DATE FIELDS, THE PAGE SIGNATURE AND THE HAND-FILED PLANS, ON HIS FOUR COMMENTS OF 12 SEP 2026",
+  "n": [
+   "<b>THE DESKBAR IS ONE BAR AGAIN.</b> Glass at the rail's height with <code>--dbtop</code>, a stacked-obsidian cap once it sticks, the name in the display face, and the status, the as-at and the stamp collapsed into a single meta row with <code>provBar</code> on its own line. On the phone it is <b>one 60px row where it was three rows at 135px</b>. Measured on this build at 1280, 1024, 768 and 375: no horizontal overflow at any width, every deskbar control 44 by 44, and the backdrop filter applied at all four.",
+   "<b>EVERY DATE FIELD ON THE DESK IS DRAWN BY ONE HELPER.</b> <code>dateIn(id,val,attrs)</code> wraps each field in <code>.dtin</code> with a Today button inside the right edge, and a delegated handler fills today's date and opens the picker under <code>(pointer:fine)</code>. All four date fields are wrapped, and the master's whole source now carries exactly one <code>&lt;input ... type=\"date\"&gt;</code>, inside the helper, so a fifth cannot be added any other way. Proved on this build: the button sets 2026-09-12 and fires its input event, on the desk at 63 by 44 and on the phone at 65 by 45.",
+   "<b>THE PAGE SIGNATURE IS GONE.</b> The <code>#foot0</code> block that printed the desk's own name at the foot of every page, and the rule that styled it.",
+   "<b>THE HAND-FILED PLANS LEAVE THE WHITEBOARD.</b> The array, the state, the six functions behind it, the \"Filed by hand\" section and its form, the tenth Today action, the slipped-plan observation and the rules from both CSS layers. <b>Two things are kept deliberately</b>: the overlay still ignores a plan entry and the queue filter still drops one, so a plan queued before today cannot break anything when it arrives.",
+   "<b>NINE ASSERTIONS, EACH PROVED RED</b> against v595's master and design layer before this shipped. One of them started life vacuous, a brand-block check that was already green before the change, and was replaced by one that passes only while the key is unlit and the names are sealed. A vacuous assertion is worse than none, because it reads as cover.",
+   "<b>WHAT IT TOUCHES ON THE BOOK: NOTHING.</b> No row, no price, no figure. This is the desk's chrome and one retired section."
+  ]
+ },
+ {
   "v": "v600",
   "d": "12 Sep 2026",
   "t": "THE DIRECTORY NEVER REACHES THE DESK, AND THE GATE THAT SAYS SO CAN FIND IT AGAIN",
