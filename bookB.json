@@ -1403,7 +1403,7 @@
   },
   {
    "date": "2026-08-07",
-   "customer": "CH4-KLS",
+   "customer": "CH4-KS",
    "qty": 3,
    "total": 260,
    "cost": 47,
@@ -1413,7 +1413,7 @@
    "deliveredOn": "2026-08-08",
    "note": "Re-keyed from CH4-KS.",
    "rid": "s065",
-   "mod": "corrected on 2026-08-28: party CH4-KS to CH4-KLS",
+   "mod": "corrected on 2026-08-28: party CH4-KS to CH4-KS",
    "amend": [
     {
      "date": "2026-08-07",
@@ -1427,7 +1427,7 @@
      "kind": "Correction",
      "cash": 0,
      "kg": 0,
-     "note": "re-keyed CH4-KS to CH4-KLS"
+     "note": "re-keyed CH4-KS to CH4-KS"
     }
    ]
   },
@@ -1693,7 +1693,7 @@
   },
   {
    "date": "2026-08-14",
-   "customer": "CH4-MLR",
+   "customer": "CH4-MAL",
    "qty": 1,
    "total": 110,
    "cost": 56,
@@ -1707,7 +1707,7 @@
   {
    "date": "2026-08-14",
    "product": "oil",
-   "customer": "CH4-MLR",
+   "customer": "CH4-MAL",
    "qty": 1,
    "total": 11.5,
    "cost": 7,
@@ -2410,7 +2410,7 @@
    ]
   },
   {
-   "customer": "CD3-SEG",
+   "customer": "CD7-SEG",
    "qty": 1,
    "total": 100,
    "cost": 50,
@@ -2466,7 +2466,7 @@
    "rid": "s117"
   },
   {
-   "customer": "CH4-KLS",
+   "customer": "CH4-KS",
    "qty": 3,
    "total": 300,
    "cost": 50,
@@ -2720,18 +2720,18 @@
   "SA5-BTR",
   "SM4-KEP",
   "SP7-PUD",
-  "CH4-KLS",
+  "CH4-KS",
   "CS6-PER-R",
   "CY2-NIL",
   "CR3-PUD",
-  "CH4-MLR",
+  "CH4-MAL",
   "CH5-OUG",
   "CA11-SEN",
   "CM6-PJ",
   "CK4-SEN",
   "CZ4-MK",
   "CH6-SET",
-  "CD3-SEG",
+  "CD7-SEG",
   "CA7-JTR"
  ],
  "associates": [
@@ -2896,7 +2896,7 @@
   "STATED_STOCK": [
    "ROLLED AT v439: 1 unit to CA7-JTR on 2026-09-01, 6 unit to CK4-SEN on 2026-09-01, 1 unit to CR3-DAM on 2026-09-01, so 8.25 less 8 is 0.25. A ROLL AND NOT A COUNT; COUNT_ON is untouched. Eight of the eight and a quarter unit on the shelf went out today across four rows, leaving 0.25 unit against 3 unit already promised: CE4-CHE's half unit owed out and CY2-NIL's 2.5 unit pending. The book is 2.75 unit short of its own commitments and sourcing is now the first decision on it.",
    "ROLLED AT v404: 5 unit to CE4-AD on 2026-08-29, so 13.25 less 5 is 8.25. A ROLL AND NOT A COUNT; COUNT_ON is untouched.",
-   "ROLLED AT v399: 3 unit to CH4-KLS on 2026-08-28, so 16.25 less 3 is 13.25. A ROLL AND NOT A COUNT; COUNT_ON is untouched."
+   "ROLLED AT v399: 3 unit to CH4-KS on 2026-08-28, so 16.25 less 3 is 13.25. A ROLL AND NOT A COUNT; COUNT_ON is untouched."
   ],
   "sales": [
    "paidSplit: cash landed either side of the 28 Jul count; RM200 inside it, the rest after. Without the split the walk double-counted the RM200."

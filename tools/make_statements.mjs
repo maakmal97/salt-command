@@ -159,7 +159,7 @@ function stmtRows(party,o){
     const gift=!!s.goodwill||(!!s.rebate&&paidCash<=0.009&&owed<=0.009);
     /* v432: THE ROW CARRIES ITS OWN rid. Nothing on the document prints it, but without it a
        statement row cannot be traced back to the book row it came from, and any check over these
-       figures has to match on party, date and quantity: CH4-MLR has two orders on 14 August of one
+       figures has to match on party, date and quantity: CH4-MAL has two orders on 14 August of one
        unit each, RM 110 and RM 11.50, so that match is ambiguous on this very book and the first
        assertion written over it reported a correct statement as wrong. */
     return {rid:s.rid||null,gift:gift,date:s.date,qty:s.qty,total:gift?0:s.total,

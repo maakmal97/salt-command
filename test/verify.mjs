@@ -807,8 +807,8 @@ section("Worker — drafts and approval");
   const get = (p, key) => req(p, { headers: key ? { "X-Salt-Key": key } : {} });
   const goodDraft = {
     id: "2026-08-14T12:16:00.151Z", collection: "sales",
-    entry: { at: "2026-08-14T12:16:00.151Z", raw: "Sell 1 unit to CH4-MLR for RM 110" },
-    row: { date: "2026-08-14", customer: "CH4-MLR", qty: 1, total: 110, cost: 56, cash: 110 },
+    entry: { at: "2026-08-14T12:16:00.151Z", raw: "Sell 1 unit to CH4-MAL for RM 110" },
+    row: { date: "2026-08-14", customer: "CH4-MAL", qty: 1, total: 110, cost: 56, cash: 110 },
     reasoning: "FIFO off the 13 Aug RM56 lot.", flags: ["a first order from this party"],
     drafter: "test"
   };
@@ -1033,7 +1033,7 @@ section("Drafter — rows, refusals and flags");
       { date: "2026-08-11", product: "oil", customer: "CS6-BS-R", qty: 20, total: 120 },
       { date: "2026-08-06", product: "oil", customer: "CN6-WM-R", qty: 10, total: 130 }
     ],
-    state: { roster: ["CC5-OKR", "CH4-MLR", "CS6-BS", "CN6-WM-R"], QUEUE_COMMITTED: "2026-08-14T00:00:00.000Z" }
+    state: { roster: ["CC5-OKR", "CH4-MAL", "CS6-BS", "CN6-WM-R"], QUEUE_COMMITTED: "2026-08-14T00:00:00.000Z" }
   };
   /* the bare rows above are COMPLETED orders: every row on the real book carries cash and
      deliveredQty, and since 08 Sep 2026 the drafter reads a row with neither as pending */
@@ -1188,14 +1188,14 @@ section("Drafter — rows, refusals and flags");
   ok(!!pendNoDate.skip && /no date/.test(pendNoDate.skip), "a pending order with no date typed is refused rather than drafted undated");
 
   /* ---- THE RM115 OIL UNIT, the fixture this whole path exists for ---- */
-  const oil = draftRow(entry({ direction: "SELL", party: "CH4-MLR", product: "oil", qty: 1, total: 115, cash: 115, kg: 1, date: "2026-08-14" }), book);
+  const oil = draftRow(entry({ direction: "SELL", party: "CH4-MAL", product: "oil", qty: 1, total: 115, cash: 115, kg: 1, date: "2026-08-14" }), book);
   ok(!oil.skip, "the oil row drafts");
   ok(oil.row.cost === 7 && oil.row.product === "oil", "costed off the oil lot, and tagged oil");
   ok(oil.flags.some(f => /more than double/.test(f)), "RM115 is flagged as more than double any oil rate on the book");
   ok(oil.flags.length >= 1, "the row that caused this feature does not pass silently");
 
   /* the corrected figure passes that check */
-  const oilOk = draftRow(entry({ direction: "SELL", party: "CH4-MLR", product: "oil", qty: 1, total: 11.5, cash: 11.5, kg: 1, date: "2026-08-14" }), book);
+  const oilOk = draftRow(entry({ direction: "SELL", party: "CH4-MAL", product: "oil", qty: 1, total: 11.5, cash: 11.5, kg: 1, date: "2026-08-14" }), book);
   ok(!oilOk.flags.some(f => /more than double/.test(f)), "RM11.50 does not trip the range flag");
 
   /* ---- a purchase is not measured with a seller's ruler ---- */
@@ -3364,7 +3364,7 @@ section("Refused — shown so they are not entered twice, never so they can be a
   /* the shape the worker sends, verbatim */
   w.eval("AP_DRAFTS = " + JSON.stringify([{
     id: "d1", status: "pending", collection: "sales",
-    row: { customer: "CD3-SEG", product: "salt", qty: 10, total: 300, cost: 7, date: "2026-08-29" },
+    row: { customer: "CD7-SEG", product: "salt", qty: 10, total: 300, cost: 7, date: "2026-08-29" },
     flags: [], reasoning: "test"
   }]));
   w.eval("AP_REFUSED = " + JSON.stringify([{
@@ -4709,7 +4709,7 @@ section("v432: the money on a statement is the money on the book");
   for (const party of parties) {
     const rows = stmtRows(party, SO);
     for (const r of rows) {
-      /* MATCHED BY rid, because party+date+quantity is AMBIGUOUS on this book: CH4-MLR has two
+      /* MATCHED BY rid, because party+date+quantity is AMBIGUOUS on this book: CH4-MAL has two
          orders on 14 August of one unit each, RM 110 and RM 11.50. The first version of this check
          matched the wrong one and reported a correct statement as wrong. */
       const src = (bookM.sales || []).find((x) => x.rid && x.rid === r.rid);
@@ -8412,23 +8412,23 @@ section("08 Sep 2026: the audit fixes");
       { date: "2026-08-08", customer: "CC5-OKR", qty: 1, total: 90, cash: 90, deliveredQty: 1 },
       { date: "2026-08-10", customer: "CC5-OKR", qty: 1, total: 80, cash: 0, deliveredQty: 0 },
       { date: "2026-08-11", customer: "CC5-OKR", qty: 1, total: 80, cash: 0, deliveredQty: 0 },
-      { date: "2026-08-12", customer: "CH4-MLR", qty: 1, total: 110, delivery: 10, cash: 110, deliveredQty: 1, rid: "s-del" }
+      { date: "2026-08-12", customer: "CH4-MAL", qty: 1, total: 110, delivery: 10, cash: 110, deliveredQty: 1, rid: "s-del" }
     ],
-    state: { roster: ["CC5-OKR", "CH4-MLR", "SA5-BTR"], QUEUE_COMMITTED: "2026-08-14T00:00:00.000Z" }
+    state: { roster: ["CC5-OKR", "CH4-MAL", "SA5-BTR"], QUEUE_COMMITTED: "2026-08-14T00:00:00.000Z" }
   };
   const ent = (payload, at = "2026-08-16T01:00:00.000Z") => ({ at, payload: { mode: "new", ...payload } });
 
   /* the drafter */
   const cut = draftRow(ent({ direction: "SELL", party: "CC5-OKR", qty: 1, total: 80, cash: 80, kg: 1, date: "2026-08-16" }), bookA);
   ok(cut.flags.some((f) => /has paid RM 90/.test(f)), "two DATED pending RM 80 rows are not history: the standing rate still reads RM 90 (v540 dated every pending row)");
-  const twin = draftRow(ent({ direction: "SELL", party: "CH4-MLR", qty: 1, total: 110, delivery: 10, cash: 110, kg: 1, date: "2026-08-12" }), bookA);
+  const twin = draftRow(ent({ direction: "SELL", party: "CH4-MAL", qty: 1, total: 110, delivery: 10, cash: 110, kg: 1, date: "2026-08-12" }), bookA);
   ok(twin.flags.some((f) => /matches s-del/.test(f)), "a twin with delivery inside its total is matched on the FULL total, as the fold matches it");
-  const adv = draftRow(ent({ direction: "SELL", party: "CH4-MLR", qty: 1, total: 100, delivery: 10, cash: 95, kg: 1, date: "2026-08-16" }), bookA);
+  const adv = draftRow(ent({ direction: "SELL", party: "CH4-MAL", qty: 1, total: 100, delivery: 10, cash: 95, kg: 1, date: "2026-08-16" }), bookA);
   ok(adv.flags.some((f) => /ADVANCE/.test(f) && /RM 5 unpaid/.test(f)), "RM 95 on a RM 100 order with RM 10 delivery inside is an advance of RM 5, not none");
-  const over = draftRow(ent({ direction: "SELL", party: "CH4-MLR", qty: 5, total: 100, cash: 900, kg: 50, date: "2026-08-16" }), bookA);
+  const over = draftRow(ent({ direction: "SELL", party: "CH4-MAL", qty: 5, total: 100, cash: 900, kg: 50, date: "2026-08-16" }), bookA);
   ok(over.flags.some((f) => /RM 800 more/.test(f)) && over.flags.some((f) => /50 unit goes out on an order of 5/.test(f)), "cash above the total and units above the order are flagged on a new row");
   for (const [p, why] of [[{ qty: 0, total: 100 }, /above zero/], [{ qty: -2, total: -200 }, /above zero/], [{ qty: 1, total: 100, date: "8/9/2026" }, /YYYY-MM-DD/]]) {
-    const d = draftRow(ent({ direction: "SELL", party: "CH4-MLR", cash: 0, kg: 0, date: "2026-08-16", ...p }), bookA);
+    const d = draftRow(ent({ direction: "SELL", party: "CH4-MAL", cash: 0, kg: 0, date: "2026-08-16", ...p }), bookA);
     ok(!!d.skip && why.test(d.skip), "the gate refuses " + JSON.stringify(p) + ": " + (d.skip || "drafted"));
   }
   const lot = draftRow(ent({ direction: "BUY", party: "SA5-BTR", qty: 12.5, total: 500, cash: 500, kg: 12.5, date: "2026-08-16" }),
@@ -8441,14 +8441,14 @@ section("08 Sep 2026: the audit fixes");
   /* 09 Sep 2026: a fulfilment names its row by rid. Two twins share one key; the snapshot can hold
      only one under it, and a draft naming the key was refused at the fold as matching two rows. */
   {
-    const t1 = { rid: "tw1", key: "CH4-MLR|2026-09-12|100", p: "CH4-MLR", q: 1, t: 100, d: "2026-09-12", cash: 0, mv: 1, dir: "S" };
+    const t1 = { rid: "tw1", key: "CH4-MAL|2026-09-12|100", p: "CH4-MAL", q: 1, t: 100, d: "2026-09-12", cash: 0, mv: 1, dir: "S" };
     const t2 = { ...t1, rid: "tw2" };
-    const bkT = { ...bookA, sales: bookA.sales.concat([{ rid: "tw1", customer: "CH4-MLR", date: "2026-09-12", qty: 1, total: 100, cash: 0, deliveredQty: 1 },
-      { rid: "tw2", customer: "CH4-MLR", date: "2026-09-12", qty: 1, total: 100, cash: 0, deliveredQty: 1 }]),
+    const bkT = { ...bookA, sales: bookA.sales.concat([{ rid: "tw1", customer: "CH4-MAL", date: "2026-09-12", qty: 1, total: 100, cash: 0, deliveredQty: 1 },
+      { rid: "tw2", customer: "CH4-MAL", date: "2026-09-12", qty: 1, total: 100, cash: 0, deliveredQty: 1 }]),
       state: { ...bookA.state, OPEN: { byKey: { [t1.key]: t2 } } } };
-    const fu = draftRow({ at: "2026-09-16T01:00:00.000Z", payload: { mode: "amend", direction: "SELL", party: "CH4-MLR", rid: "tw1", orderKey: t1.key, kind: "Fulfilment", cash: 100, kg: 0, date: "2026-09-13" } }, bkT);
+    const fu = draftRow({ at: "2026-09-16T01:00:00.000Z", payload: { mode: "amend", direction: "SELL", party: "CH4-MAL", rid: "tw1", orderKey: t1.key, kind: "Fulfilment", cash: 100, kg: 0, date: "2026-09-13" } }, bkT);
     ok(!fu.skip && fu.amends === "tw1", `a fulfilment on one of two twins names the twin it was tapped on (${fu.skip || fu.amends})`);
-    const fk = draftRow({ at: "2026-09-16T01:00:00.001Z", payload: { mode: "amend", direction: "SELL", party: "CH4-MLR", orderKey: t1.key, kind: "Fulfilment", cash: 100, kg: 0, date: "2026-09-13" } }, bkT);
+    const fk = draftRow({ at: "2026-09-16T01:00:00.001Z", payload: { mode: "amend", direction: "SELL", party: "CH4-MAL", orderKey: t1.key, kind: "Fulfilment", cash: 100, kg: 0, date: "2026-09-13" } }, bkT);
     ok(!fk.skip && fk.amends === "tw2", `and an entry with no rid still resolves by key, naming the rid the snapshot holds (${fk.skip || fk.amends})`);
   }
 
