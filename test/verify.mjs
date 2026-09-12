@@ -8629,6 +8629,19 @@ section("08 Sep 2026: the audit fixes");
       ok(line === "cost RM 75.25 (RM 7.53/unit)   margin 49.8%", `and drafts.mjs --list reads it as the card does: 10 unit for RM 150 at a cost of RM 75.25 is 49.8% (${line})`);
       const run = spawnSync(process.execPath, [join(REPO, "tools", "drafts.mjs"), "--no-such-mode"], { encoding: "utf8" });
       ok(run.status === 2 && /unknown mode/.test(run.stdout), `and drafts.mjs still runs its modes when called (exit ${run.status})`);
+      /* v602: and its SELLING rate is struck on the goods, as the phone's is. It divided the whole
+         total, delivery inside, by the units: RM 15/unit here against RM 13/unit on the phone. */
+      const { rateLine } = await import("../tools/drafts.mjs");
+      const withDel = rateLine({ qty: 10, total: 150, row: JSON.stringify({ delivery: 20 }) });
+      ok(withDel === "RM 13/unit", `the list strikes the rate on the goods: RM 150 less RM 20 of delivery over 10 unit is RM 13/unit (${withDel})`);
+      const noDel = rateLine({ qty: 10, total: 150, row: "{}" });
+      ok(noDel === "RM 15/unit", `and a row carrying no delivery is unchanged (${noDel})`);
+      ok(rateLine({ qty: 10, total: 150, row: "not json" }) === "RM 15/unit", "and a bad row blob reads as no delivery rather than hiding the rate");
+      ok(rateLine({ qty: 10, total: null, row: "{}" }) === "", "and a pending row with no total prints no rate at all");
+      /* the delivery is only reachable because the row itself is selected */
+      const dsrc = readFileSync(join(REPO, "tools", "drafts.mjs"), "utf8");
+      ok(/SELECT id,status,collection,party,product,date,qty,total,cost,row,/.test(dsrc),
+        "and the list selects the proposed row, which is where the delivery is");
     }
     ok(/function txGoods\(s\)\{return POSITION_ENGINE\.txGoods\(s\);\}/.test(msrc) && (msrc.match(/txGoods\(s\)\/s\.qty|txGoods\(x\)\/x\.qty/g) || []).length >= 10, "the desk strikes its customer rates on the goods through the engine's txGoods");
     /* 09 Sep 2026: the fold's dossier reads the live quote for a lot's product off the book's own

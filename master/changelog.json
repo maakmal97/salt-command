@@ -1,5 +1,16 @@
 [
  {
+  "v": "v602",
+  "d": "12 Sep 2026",
+  "t": "THE LAPTOP'S DRAFT LIST STRIKES ITS SELLING RATE ON THE GOODS, AS THE PHONE DOES",
+  "n": [
+   "<b>IT DIVIDED THE WHOLE TOTAL, THE DELIVERY CHARGE INSIDE IT.</b> Every rate on the desk has been struck on the goods since v502, and the phone's Approve card shows it that way. <code>node tools/drafts.mjs --list</code> did not: the 10 unit oil order at RM 150 carrying RM 20 of delivery read <b>RM 15/unit on the laptop and RM 13/unit on the phone, on the same row</b>. It reads RM 13/unit now. This is the other half of v599, which fixed the cost and the margin on that same line and left the rate beside them wrong.",
+   "<b>THE DELIVERY WAS NEVER A COLUMN, AND DID NOT NEED TO BE.</b> It sits in the proposed row, which is the thing being approved, so it is read from there: no migration, and the live table already carried it. A row with no delivery is unchanged, which is every salt row to date, and a row whose blob will not parse reads as no delivery rather than printing no rate at all.",
+   "<b>PROVED RED.</b> With the old formula put back the suite fails on exactly one assertion, the one that names RM 13, and the other 2,125 stay green. Restored byte for byte afterwards.",
+   "<b>WHAT IT TOUCHES: THE LAPTOP'S PRINTOUT.</b> No draft moves, no row moves, nothing on the book moves. The drafter, the phone and the fold have always read the delivery correctly."
+  ]
+ },
+ {
   "v": "v601",
   "d": "12 Sep 2026",
   "t": "THE DESKBAR, THE DATE FIELDS, THE PAGE SIGNATURE AND THE HAND-FILED PLANS, ON HIS FOUR COMMENTS OF 12 SEP 2026",

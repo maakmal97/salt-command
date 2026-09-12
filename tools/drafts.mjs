@@ -97,16 +97,30 @@ export function costAndMargin(r) {
   const margin = (r.total > 0 && r.cost != null && r.qty) ? (((r.total - r.cost) / r.total) * 100).toFixed(1) + "%" : "-";
   return "cost " + money(r.cost) + unit + "   margin " + margin;
 }
+
+/* v602: THE SELLING RATE IS STRUCK ON THE GOODS, as every rate on the desk has been since v502
+   and as the phone's Approve card shows it. This divided the whole total, the delivery charge
+   inside it, by the units: the 10 unit oil order at RM 150 carrying RM 20 of delivery read
+   RM 15/unit here against RM 13/unit on the phone, on the same row. The delivery is not a column
+   of its own; it is in the PROPOSED ROW, which is the thing being approved, so it is read from
+   there. A row that carries no delivery is unchanged, which is every salt row to date. */
+export function rateLine(r) {
+  let delivery = 0;
+  try { const proposed = JSON.parse(r.row || "{}"); if (typeof proposed.delivery === "number") delivery = proposed.delivery; }
+  catch (e) { /* a bad row blob must not hide the rate; it reads as no delivery */ }
+  if (r.total == null || !r.qty) return "";
+  return money((r.total - delivery) / r.qty) + "/unit";
+}
 function list() {
   const all = has("--all");
-  const sql = "SELECT id,status,collection,party,product,date,qty,total,cost,reasoning,flags,drafter,drafted_at,decided_at,committed_at"
+  const sql = "SELECT id,status,collection,party,product,date,qty,total,cost,row,reasoning,flags,drafter,drafted_at,decided_at,committed_at"
     + " FROM draft" + (all ? "" : " WHERE status='pending'") + " ORDER BY drafted_at";
   const rows = query(sql);
   if (!rows) return;
   if (!rows.length) { ok(all ? "the draft table is empty" : "nothing is waiting for a decision"); return; }
   console.log("  " + rows.length + (all ? " draft(s)" : " waiting for a decision") + ":\n");
   for (const r of rows) {
-    const per = (r.total != null && r.qty) ? money(r.total / r.qty) + "/unit" : "";
+    const per = rateLine(r);
     console.log("  " + r.id + "   [" + r.status + "]" + (r.committed_at ? " committed" : ""));
     console.log("    " + (r.collection === "purchases" ? "BUY " : "SELL") + "  " + (r.party || "?")
       + "  " + (r.qty ?? "?") + " unit " + (r.product || "salt")
