@@ -1,5 +1,17 @@
 [
  {
+  "v": "v606",
+  "d": "12 Sep 2026",
+  "t": "A DRAFT'S MARGIN IS STRUCK ON THE GOODS, BECAUSE THE DELIVERY IS A PASS-THROUGH",
+  "n": [
+   "<b>HIS RULING OF 12 SEP 2026: the delivery is charged at cost, neither more nor less.</b> It is a pass-through, so it arrives as revenue with <b>no matching cost anywhere on the row</b>, and counting it flattered every figure it touched. s157, 1 unit at RM110 with RM20 of delivery, read <b>66.2% where the goods are 60.0%</b>. The direction of that error is the whole point: these two numbers exist so he can see when he is underpricing, and this made every delivered order look better priced than it was.",
+   "<b>THE RATE WAS ALREADY RIGHT IN TWO PLACES OUT OF THREE, AND THE MARGIN IN NONE.</b> v502 put the Approve card's rate on the goods and v602 the laptop list's; the drafter's own sentence still read RM130/unit, and all three struck the margin on the full total. All three now read the goods, and the drafter's sentence states the split as well: RM130, of which RM110 is the goods and RM20 the delivery.",
+   "<b>WHAT THE GATE MEASURES DID NOT CHANGE</b>, and that is worth saying: <code>flagsFor</code> has compared the rate against the floor and against a party's history on the goods since v502, so no entry was ever refused or passed on the wrong figure. This was what a person READ while deciding, not what the desk checked.",
+   "<b>HE APPROVED s157 ON THE OLD FIGURE.</b> The card showed 66.2% when he tapped it. Nothing about the row moves: RM130 in, RM44 of cost, 1 unit out, and the margin on its goods was 60.0% then as now. The row's note is left as it was written, because it records what the figures said at the moment it was approved, which is the thing an audit would want.",
+   "<b>PROVED RED ON ALL THREE SURFACES AT ONCE</b>, each reverted to the full total: four assertions went red, one per surface, and the other 2,139 stayed green. <b>One of the new assertions was vacuous and the mutation is what caught it</b>: it ran the Approve card's formula inside its own test and compared the answer to itself, so it stayed green while the three around it failed. It is gone, and the source pin that did go red carries that check with a note saying why."
+  ]
+ },
+ {
   "v": "v605",
   "d": "12 Sep 2026",
   "t": "TWO SALES OF 12 SEPTEMBER: TWO UNIT COLLECTED, AND ONE UNIT DELIVERED AS A DOWNSELL",

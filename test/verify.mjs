@@ -10295,5 +10295,45 @@ section("12 Sep 2026: the Enter form's messages are a list, and an empty form ca
 }
 
 
+/* ---- The delivery is a pass-through, so no figure counts it (12 Sep 2026) ----------- */
+section("12 Sep 2026: a draft's margin is struck on the goods, as its rate already was");
+{
+  /* His ruling of 12 Sep 2026: the delivery is charged at cost, neither more nor less. It is
+     revenue with NO matching cost on the row, so counting it flatters the margin on every
+     delivered order, in the one direction these figures exist to catch. s157 is the case: 1
+     unit at RM110 with RM20 of delivery read 66.2% where the goods are 60.0%. */
+  const { costAndMargin: cam, rateLine: rl } = await import("../tools/drafts.mjs");
+  const withDel = { qty: 1, total: 130, cost: 44, row: JSON.stringify({ delivery: 20 }) };
+  ok(rl(withDel) === "RM 110/unit", `the laptop's rate is the goods rate (${rl(withDel)})`);
+  ok(/margin 60\.0%/.test(cam(withDel)), `and its margin is struck on the goods: ${cam(withDel)}`);
+  const noDel = { qty: 1, total: 130, cost: 44, row: "{}" };
+  ok(/margin 66\.2%/.test(cam(noDel)), `a row with no delivery is unchanged: ${cam(noDel)}`);
+
+  /* THE APPROVE CARD IS PINNED BY ITS SOURCE, DELIBERATELY, AND THIS IS WORTH THE WORDS. The
+     first version of this check ran the formula inside its own jsdom eval and compared the
+     answer to 60%. That assertion cannot fail: it was testing a copy of the line, not the line.
+     Proved by mutation on 12 Sep 2026 - with the card reverted to the full total it stayed
+     green while the three around it went red. The card computes `mar` inline inside the render,
+     with no helper to call, so until there is one the honest instrument is the source pin
+     below, which DID go red on that same mutation. */
+  const msrc2 = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+  ok(/const goods=total-\(\+r\.delivery\|\|0\);const mar=\(!buy&&goods>0&&cost!=null&&qty\)\?\(\(goods-cost\)\/goods\*100\)/.test(msrc2),
+    "the Approve card's own line strikes the margin on the goods, not on the total");
+  ok(/var per=qty\?\(total-\(\+r\.delivery\|\|0\)\)\/qty:null|const per=qty\?\(total-\(\+r\.delivery\|\|0\)\)\/qty:null/.test(msrc2)
+    || /per=qty\?\(total-\(\+r\.delivery\|\|0\)\)\/qty:null/.test(msrc2),
+    "and its rate beside it is on the goods too, as it has been since v502");
+
+  /* and the drafter's prose, which is what a person reads when deciding */
+  const dsrc2 = readFileSync(join(REPO, "src", "drafter.js"), "utf8");
+  ok(/const goodsTotal = total - \(isNum\(row\.delivery\) \? row\.delivery : 0\);/.test(dsrc2)
+    && /const rate = qty > 0 \? goodsTotal \/ qty : null;/.test(dsrc2),
+    "the drafter's own rate is the goods rate");
+  ok(/\(\(goodsTotal - priced\.cost \* qty\) \/ goodsTotal\) \* 100/.test(dsrc2),
+    "and its margin is struck on the goods too");
+  ok(/on the goods at \$\{round\(margin, 1\)\}%/.test(dsrc2),
+    "and its sentence says so, rather than calling it the order");
+}
+
+
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
 process.exit(fail ? 1 : 0);

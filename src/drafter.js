@@ -1234,11 +1234,23 @@ export function draftRow(entry, book) {
 
   if (pay.note) row.note = String(pay.note);
 
-  const rate = qty > 0 ? total / qty : null;
-  const margin = (dir === "SELL" && rate != null) ? ((total - priced.cost * qty) / total) * 100 : null;
+  /* v606: THE RATE AND THE MARGIN ARE BOTH STRUCK ON THE GOODS, on his ruling of 12 Sep 2026
+     that the delivery charge is a pass-through at cost, neither more nor less. It is revenue
+     with NO matching cost anywhere on the row, so counting it flatters both figures: s157, 1
+     unit at RM110 with RM20 of delivery, read "RM130/unit" and 66.2% where the goods are
+     RM110/unit at 60.0%. The direction of that error is the whole problem, because these two
+     numbers exist to catch UNDERPRICING and this made every delivered order look better priced
+     than it was. The rate had already been put on the goods at v502 for the Approve card and at
+     v602 for the laptop's list; this line and the margin beside it were what was left. */
+  const goodsTotal = total - (isNum(row.delivery) ? row.delivery : 0);
+  const rate = qty > 0 ? goodsTotal / qty : null;
+  const margin = (dir === "SELL" && rate != null && goodsTotal > 0)
+    ? ((goodsTotal - priced.cost * qty) / goodsTotal) * 100 : null;
   const bits = [
-    `${dir === "BUY" ? "Bought" : "Sold"} ${qty} unit of ${product} ${dir === "BUY" ? "from" : "to"} ${party} for RM ${round(total)}, RM ${round(rate)}/unit.`,
-    dir === "SELL" ? `Costed at RM ${round(priced.cost)}/unit from ${priced.source}, so ${margin == null ? "no margin could be computed" : `RM ${round(total - priced.cost * qty)} on the order at ${round(margin, 1)}%`}.` : "",
+    `${dir === "BUY" ? "Bought" : "Sold"} ${qty} unit of ${product} ${dir === "BUY" ? "from" : "to"} ${party} for RM ${round(total)}`
+      + (goodsTotal !== total ? `, of which RM ${round(goodsTotal)} is the goods and RM ${round(total - goodsTotal)} the delivery` : "")
+      + `, RM ${round(rate)}/unit.`,
+    dir === "SELL" ? `Costed at RM ${round(priced.cost)}/unit from ${priced.source}, so ${margin == null ? "no margin could be computed" : `RM ${round(goodsTotal - priced.cost * qty)} on the goods at ${round(margin, 1)}%`}.` : "",
     nothingMoved
       ? `Nothing was paid and nothing moved, so the row is PENDING, dated ${row.date} as the day it was agreed: it draws no stock and books no revenue until something moves.`
       : `${paidInFull ? "Paid in full" : `RM ${round(cash)} of RM ${round(total)} paid`} and ${deliveredInFull ? "delivered in full" : `${moved} of ${qty} unit moved`} on ${row.date}.`,

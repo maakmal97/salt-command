@@ -92,10 +92,24 @@ function schema() {
 /* v596: A DRAFT'S COST IS THE ORDER'S, ABSOLUTE, as it has been since v496, and this read it as a
    unit cost: 10 unit of oil for RM 150 at RM 75.25 printed "cost RM 75.25/unit   margin -401.7%"
    where the phone's Approve card showed RM 75.25 (RM 7.53/unit) and 49.8%. It reads as the card does. */
+/* v606: AND THE MARGIN IS STRUCK ON THE GOODS TOO, on his ruling of 12 Sep 2026 that the
+   delivery charge is a pass-through at cost. It is revenue with no matching cost on the row, so
+   counting it flatters the margin on every delivered order, in the one direction that matters:
+   these figures exist to catch underpricing. v602 put the RATE on the goods and left this. */
 export function costAndMargin(r) {
   const unit = (r.cost != null && r.qty > 0) ? " (" + money(r.cost / r.qty) + "/unit)" : "";
-  const margin = (r.total > 0 && r.cost != null && r.qty) ? (((r.total - r.cost) / r.total) * 100).toFixed(1) + "%" : "-";
+  const goods = goodsOf(r);
+  const margin = (goods > 0 && r.cost != null && r.qty) ? (((goods - r.cost) / goods) * 100).toFixed(1) + "%" : "-";
   return "cost " + money(r.cost) + unit + "   margin " + margin;
+}
+
+/* The delivery is not a column of its own; it is in the proposed row, which is the thing being
+   approved. One reader for both figures, so the rate and the margin cannot drift apart again. */
+function goodsOf(r) {
+  let delivery = 0;
+  try { const proposed = JSON.parse(r.row || "{}"); if (typeof proposed.delivery === "number") delivery = proposed.delivery; }
+  catch (e) { /* a bad row blob reads as no delivery rather than hiding the figures */ }
+  return (r.total == null) ? 0 : r.total - delivery;
 }
 
 /* v602: THE SELLING RATE IS STRUCK ON THE GOODS, as every rate on the desk has been since v502
@@ -105,11 +119,8 @@ export function costAndMargin(r) {
    of its own; it is in the PROPOSED ROW, which is the thing being approved, so it is read from
    there. A row that carries no delivery is unchanged, which is every salt row to date. */
 export function rateLine(r) {
-  let delivery = 0;
-  try { const proposed = JSON.parse(r.row || "{}"); if (typeof proposed.delivery === "number") delivery = proposed.delivery; }
-  catch (e) { /* a bad row blob must not hide the rate; it reads as no delivery */ }
   if (r.total == null || !r.qty) return "";
-  return money((r.total - delivery) / r.qty) + "/unit";
+  return money(goodsOf(r) / r.qty) + "/unit";
 }
 function list() {
   const all = has("--all");
