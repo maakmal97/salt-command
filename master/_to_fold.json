@@ -1,0 +1,64 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-09-11T20:04:07.660Z",
+   "collection": "sales",
+   "row": {
+    "customer": "CE4-CHE",
+    "qty": 10,
+    "total": 150,
+    "cost": 75.25,
+    "cash": 0,
+    "delivery": 20,
+    "handover": "delivered",
+    "product": "oil",
+    "date": "2026-09-12",
+    "deliveredQty": 10,
+    "deliveredOn": "2026-09-12"
+   },
+   "reasoning": "Sold 10 unit of oil to CE4-CHE for RM 150, RM 15/unit. Costed at RM 7.53/unit from the desk's own inventory cost, so RM 74.75 on the order at 49.8%. RM 0 of RM 150 paid and delivered in full on 2026-09-12. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [
+    "CE4-CHE has no committed oil order on the book, so there is no rate of theirs to compare this against.",
+    "This is an ADVANCE: 10 unit goes out with RM 150 unpaid. Check it against CE4-CHE's credit cap."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-09-11T20:04:07.660Z",
+    "type": "SELL",
+    "party": "CE4-CHE",
+    "qty": 10,
+    "total": 150,
+    "status": "unpaid",
+    "raw": "Sell 10 unit of oil to CE4-CHE for RM 150 on 2026-09-12, RM 20 of it delivery, RM 0 cash, 10 unit moved, delivered",
+    "payload": {
+     "newId": null,
+     "freight": 0,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": null,
+     "second": null,
+     "mode": "new",
+     "product": "oil",
+     "direction": "SELL",
+     "party": "CE4-CHE",
+     "date": "2026-09-12",
+     "qty": 10,
+     "total": 150,
+     "delivery": 20,
+     "cash": 0,
+     "kg": 10,
+     "assoc": null,
+     "stream": null,
+     "downstream": null,
+     "handover": "delivered"
+    }
+   },
+   "decidedAt": "2026-09-12T09:12:01.976Z",
+   "decidedBy": "desk"
+  }
+ ]
+}
