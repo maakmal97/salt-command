@@ -547,7 +547,7 @@ section("Build — patches, scripts, no externals");
       ok(got.length === 3 && got[2] === false && h.script() === first,
          "a library that 404'd is not requested a second time");
     }
-    ok(html.includes("cloud &middot; pushes to source"), "cloud badge present");
+    ok(html.includes("(window.SALT_CLOUD?'cloud':'master')"), "cloud badge present");
     ok(html.includes("device:(typeof saltDeviceId"), "qPayload carries the device id");
     ok(html.includes("if(j.cloud){ await vaultLoad();"), "cloud loads the encrypted vault");
     ok(html.includes("SALT_CLOUD&&document.visibilityState==='hidden'"), "cloud auto-hides names on background");
@@ -3308,7 +3308,9 @@ section("Silence — four things that failed without saying so (v384)");
   ok(/&&!b\.id&&!FIGURE\.test\(txt\(b\)\)\);/.test(m),
      "and leaves alone a block carrying a figure, or one another function addresses by id");
   ok(/const FIGURE=\/RM\\s\?\\d\|/.test(m), "FIGURE says what a figure is: money, a quantity or a percentage");
-  ok(/<div id="plOk" class="dsc"/.test(m), "the div planAdd writes into is still there to be found, and now survives");
+  /* 12 Sep 2026, his comment "sometimes less is more": the hand-filed plans left the Whiteboard, and the
+     writer went with the div it wrote into, so the v384 fault (a writer whose div was deleted) cannot recur */
+  ok(!/function planAdd\(/.test(m) && !/id="plOk"/.test(m), "the plan form and the div it wrote into went together");
 
   /* 3. THE LOCK SWITCH. lockBase is populated whether the lock is on or off, so guarding on it
      alone froze freight and delivery under any cost override while the leak stayed live. */
@@ -3440,7 +3442,7 @@ section("Orders and money — one heading, and the standing leads are gone (v401
        parts must carry a figure, carry an id, or sit somewhere the sweep does not reach. */
     const FIGURE = w.eval("FIGURE");
     const bare = [...el.querySelectorAll(".dsc,.dsclead,.insight")].filter((b) =>
-      !b.closest("table,details,.kpi,.act,.plan,.obs,.qfield") &&
+      !b.closest("table,details,.kpi,.act,.obs,.qfield") &&
       !b.querySelector("button,input,select,canvas,table,.kpi") &&
       !b.id && !FIGURE.test((b.textContent || "").replace(/\s+/g, " ").trim()));
     ok(bare.length < 2, bare.length < 2
@@ -10104,6 +10106,42 @@ section("12 Sep 2026: a loan is repaid, in part or in full, in what was lent");
   } finally { try { wR.close(); } catch (e) { /* best effort */ } }
 }
 
+/* ---------------------------------------------------------------------------------------
+   HIS COMMENT PASS OF 12 SEP 2026, over the eighteen tab artifacts. Four changes to the desk
+   itself, an assertion apiece. Each was proved red against the master and the design layer as
+   they stood at 94a2313, before any of the four was made. */
+section("12 Sep 2026: the header redrawn, Today on every date field, the footer and the hand-filed plans gone");
+{
+  const mH = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+  const cH = readFileSync(join(REPO, "design", "desk.css"), "utf8");
+
+  /* 1. THE HEADER IS ONE FRAME: the mark and the wordmark lead, the status, the as-at and the
+     stamp sit under them as one quiet line, and the gap above the bar is capped once it sticks. */
+  ok(/idfix\$\{\(idOpen\|\|namesShown\(\)\)/.test(mH),
+    "the key in the bar is lit only while a name is actually showing, not whenever the vault is open");
+  ok(/<div class="metarow"><span id="deskRole">/.test(mH),
+    "the role, the as-at and the stamp are one line under the name, not three rows of pills");
+  ok(/body\.dbstuck \.deskbar\{box-shadow:/.test(cH),
+    "and once the page scrolls, the gap above the bar is capped");
+
+  /* 2. ONE HELPER DRAWS EVERY DATE FIELD, so Today cannot reach some of them and not others.
+     Counting the bare string would count a CSS selector and a matcher, so count the input. */
+  ok(/function dateIn\(id,val,attrs\)\{/.test(mH), "one helper draws every date field on the desk");
+  ok((mH.match(/<input[^>]*type="date"/g) || []).length === 1,
+    "and it is the only thing that writes a date input, so no field is left without the button");
+  ok(/class="dtoday" data-dt="/.test(mH) && /\.dtoday\{/.test(cH), "each field carries Today inside its right edge");
+  ok(/showPicker\(\)/.test(mH), "and a tap anywhere else on the field opens the calendar");
+
+  /* 3. NO PART SIGNS ITSELF AT THE FOOT. */
+  ok(!/id="foot0"/.test(mH) && !/\.foot0/.test(mH) && !/\.foot0/.test(cH),
+    "the Salt Command signature is gone from the foot of every part, its rule with it");
+
+  /* 4. THE HAND-FILED PLANS ARE GONE, the form and everything that read it. The builder is the
+     instrument: it may write no input, and nothing may be left to file into. */
+  const plansH = mH.slice(mH.indexOf("function tabPlans(){"), mH.indexOf("/* ============ TAB: CHANGELOG"));
+  ok(plansH.length > 200 && !/<input/.test(plansH) && !/Filed by hand/.test(plansH),
+    "the Whiteboard builder writes no form and nothing to file into");
+}
 
 section("12 Sep 2026: two Watch cards count only what they say");
 {

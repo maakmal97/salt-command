@@ -81,7 +81,7 @@ const NOT_LEDGER = new Set([
      the queued line read what the dropdown says rather than the raw select value. */,
   "LOSS_LABEL", "LOST_LABEL", "CONTACT_HOW", "CONTACT_OUT", "TAB_LABEL", "OBS_FAM", "OBS_SEV",
   "ORD_WORD" /* v499: the Orders card's state words; the orders themselves live on the statements site */,
-  "OBS_CONF", "ACTSEV", "bSevTag", "WB_NO_PROD", "PLAN_ST", "CHART_INK", "DIAMOND",
+  "OBS_CONF", "ACTSEV", "bSevTag", "WB_NO_PROD", "CHART_INK", "DIAMOND",
   "LOCS", "PLACES", "METRO", "NON_PLACE", "PLACEHOLDER", "BASEMAP", "BASEMAP_META", "DOW", "DOW3", "KL_HOLIDAYS", "HOL_MAP",
   "LEAK_TEST", "BIO_FIELDS", "PROD_META", "builders",
 
