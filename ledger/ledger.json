@@ -1,6 +1,6 @@
 {
- "v": "v597",
- "stamped": "12 Sep 2026, 17:17 KL",
+ "v": "v598",
+ "stamped": "12 Sep 2026, 18:20 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -41,7 +41,7 @@
     "stated": 50
    }
   },
-  "STATED_STOCK": 24.19,
+  "STATED_STOCK": 23.19,
   "COUNT_ON": {
    "salt": "2026-09-08",
    "oil": "2026-09-09"
@@ -3606,6 +3606,22 @@
     "deliveredOn": "2026-09-12",
     "note": "<b>OIL SELL DATED 12 SEP, DELIVERED IN FULL, NOT A SEN PAID.</b> SELL to CE4-CHE, 10 unit for RM150, RM20 of that delivery and RM130 goods, RM0 cash in and 10 unit handed over on 12 Sep, so RM150 stays outstanding. The RM130 of goods matches the RM130 ask for 10 unit, clears the RM87.28 floor and sits under the RM240 ceiling. CE4-CHE has 8 orders, a median rate of RM92, a range of RM76.67 to RM107.50, RM0 outstanding before and nothing on credit, none defaulted. Cost on the row is RM75.25, not the inventory's own RM44 a unit. The drafter flagged the advance against the credit cap: 10 unit on credit against a cap of 10 answers it, at the limit. The flag that CE4-CHE has no committed oil order to compare against is not answered here.",
     "rid": "s154"
+   },
+   {
+    "customer": "CN6-WM",
+    "qty": 1,
+    "total": 110,
+    "cost": 44,
+    "cash": 110,
+    "handover": "collected",
+    "date": "2026-09-12",
+    "deliveredQty": 1,
+    "deliveredOn": "2026-09-12",
+    "paidOn": "2026-09-12",
+    "rev": "R2",
+    "downstream": "CN6-WM-R",
+    "note": "<b>SALT SELL DATED 12 SEP, PAID IN FULL AND COLLECTED IN FULL.</b> SELL to CN6-WM, 1 unit for RM110, all RM110 goods, RM110 cash in and 1 unit handed over on 12 Sep, stream R2 with downstream CN6-WM-R, so nothing new stays outstanding. The rate clears the RM56.21 floor for 1 unit, sits under the RM120 ask and the RM150 ceiling. CN6-WM has 7 orders, a median rate of RM110, a range of RM75 to RM130, RM110 outstanding before and 1 unit on credit against a cap of 2, none defaulted. Cost is RM44 a unit, the inventory's own rate. The drafter flagged the rate as 10% above about RM100 across 6 orders: the median of RM110 answers it. The flag that the row books as an R2 downsell, so CN6-WM is not the counterparty and gets no statement, is not answered. The earlier RM110 stays outstanding.",
+    "rid": "s155"
    }
   ],
   "contacts": [
@@ -3936,9 +3952,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-11T20:04:07.660Z",
+  "QUEUE_COMMITTED": "2026-09-12T10:13:39.682Z",
   "PRICING": {
-   "takenAt": "2026-09-12T09:17:03.414Z",
+   "takenAt": "2026-09-12T10:20:06.902Z",
    "sizes": [
     0.5,
     1,
@@ -4092,15 +4108,15 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0.4074074074074074
+         "v": 0.39285714285714285
         }
        },
        "attrib": 1,
        "shrinkRate": 0.06733921815889031,
        "avgDel": {
-        "n": 134,
-        "kg": 343.95,
-        "mean": 2.5668
+        "n": 135,
+        "kg": 344.95,
+        "mean": 2.5552
        }
       },
       "policy": {
@@ -4394,10 +4410,10 @@
      ]
     }
    },
-   "v": "v597"
+   "v": "v598"
   },
   "OPEN": {
-   "at": "2026-09-12T09:17:03.505Z",
+   "at": "2026-09-12T10:20:06.989Z",
    "count": 10,
    "byKey": {
     "CE4-CHE|2026-09-12|150": {
@@ -4569,11 +4585,11 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 24.19,
-     "free": 24.19,
+     "onHand": 23.19,
+     "free": 23.19,
      "owedOut": 0,
-     "coverDays": 4.9,
-     "rate": 4.95,
+     "coverDays": 4.6,
+     "rate": 5.02,
      "owedToYou": 752,
      "promised": 11.5,
      "short": 0
@@ -4594,7 +4610,7 @@
     "salt": "2026-09-08",
     "oil": "2026-09-09"
    },
-   "v": "v597"
+   "v": "v598"
   }
  }
 }

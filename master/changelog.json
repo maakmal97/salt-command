@@ -1,5 +1,14 @@
 [
  {
+  "v": "v598",
+  "d": "12 Sep 2026",
+  "t": "A SALT UNIT GOES OUT AT THE MEDIAN, PAID AND COLLECTED THE SAME DAY",
+  "n": [
+   "<b>ONE ROW FOLDED, A SALT SELL SETTLED IN FULL ON THE DAY.</b> SELL to CN6-WM, 1 unit for RM110 on 12 Sep, RM110 cash in and 1 unit collected the same day, so the row itself leaves nothing open. The rate clears the RM56.21 floor for 1 unit, sits under the RM120 ask and the RM150 ceiling, and matches the party's own median of RM110 across 7 orders.",
+   "<b>THE FLAGS ARE ANSWERED IN PART AND THE INVENTORY MOVES BY ONE UNIT.</b> The drafter's rate flag is answered by the party's median of RM110 and its RM75 to RM130 range. The flag that the row books as an R2 downsell through CN6-WM-R, leaving CN6-WM off the statement, is not answered here. Cost is the inventory's own RM44 a unit, so the basis is untouched and stock falls from 24.19 by the 1 unit moved."
+  ]
+ },
+ {
   "v": "v597",
   "d": "12 Sep 2026",
   "t": "AN OIL ADVANCE GOES OUT IN FULL AT THE ASK AND SITS ON THE WHOLE CREDIT CAP",
