@@ -1,3 +1,19 @@
+> # RETIRED, 12 SEP 2026. DO NOT FOLLOW THIS.
+>
+> This is the laptop-era Cowork prompt, kept verbatim below for its context and for
+> nothing else. **Every path in it is wrong**: the master moved into this repo on
+> 20 Aug 2026 and `30_Published`, `deskctl.py`, both servers, the PriceCards folder
+> and the artifact mirror are all gone. The desk it describes had fifteen tabs; the
+> desk has seven views over sixteen tabs.
+>
+> The live procedure is `docs/CLOUD_FOLD.md`, and the chain that runs it is
+> `.github/workflows/cloud-commit.yml` with `node tools/update.mjs` for the laptop half.
+>
+> Salt left Cowork on 20 Aug 2026. If a `salt-daily-price-brief` task is still in the
+> Cowork registry it fires this text, and **editing this file does not change what
+> fires** - the stored prompt has to be deleted from Cowork. Root `CLAUDE.md` section 6
+> still lists it.
+
 ---
 name: salt-daily-price-brief
 description: Daily salt-trading run on the fifteen-tab Salt Command desk in 30_Published, inside the server window salt_daily.ps1 opens at 10:00: check the gate, drain phone entries, commit all queued transactions, date deliveries then refresh cost and margin, verify under every product, stamp and deploy to the phone, prune the cloud queue, post a brief and close the gate. Rewritten at v293: the watermark rule now clears cloud entries too (the v287 fault), tools/update.mjs is the cloud leg, both books carry a count since v290, and the Artifacts mirror was retired on 12 Aug 2026 so there is no publish step.

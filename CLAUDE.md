@@ -309,7 +309,7 @@ the first row with finite prices; oil is a genuine one-tier book and says so.
 | `geo/*.json`, `tools/geofetch.mjs` | Basemap (geoBoundaries, ODbL) and gazetteer; `geofetch` alone touches the network, by hand; feature names never rendered |
 | `public/sw.js`, `public/_headers`, `manifest.webmanifest`, `icon-*.png` | Shell network-first, `/queue` never cached; CSP; icons from `Code\salt-ds` |
 | `.deployed.json` | `{id,v,at}` of the last successful deploy |
-| `test/verify.mjs` | ~1,790 assertions over 118 sections, no network or browser; add one per behavioural change, and **prove it red by mutation before trusting its green** |
+| `test/verify.mjs` | ~2,130 assertions over 138 sections, no network or browser; add one per behavioural change, and **prove it red by mutation before trusting its green** |
 
 ## Working on it
 
@@ -317,7 +317,7 @@ the first row with finite prices; oil is a genuine one-tier book and says so.
 npm install        # once
 npm run build      # master -> public/desk.html, after any master edit
 npm run dev        # build, then wrangler dev
-npm test           # ~2 s
+npm test           # 2 to 7 minutes, not seconds; runs with a 4 GB heap
 npm run deploy     # build, then wrangler deploy
 node tools/update.mjs
 ```
