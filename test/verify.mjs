@@ -10149,5 +10149,49 @@ section("12 Sep 2026: two Watch cards count only what they say");
 }
 
 
+/* ---- The directory never reaches the desk (12 Sep 2026) ----------------------------- */
+section("12 Sep 2026: the leak check reads the master, and can find the directory at all");
+{
+  const msrc = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+  const led = readFileSync(join(REPO, "tools", "ledger.mjs"), "utf8");
+  /* Three real entries were live on the PUBLIC desk: a supplier's name in a script comment
+     and two places in Journal version notes. Pinned by what they say now. */
+  ok(/\/\* THE OIL SUPPLIER'S QUOTE\. Same shape as supplierQuote/.test(msrc),
+    "the oil quote comment names the supplier by its role, not by name");
+  ok(/<b>SET IS ON THE MAP\.<\/b> CH6-SET came off/.test(msrc),
+    "the v384 note names the code's suffix, not the place behind it");
+  ok(/<b>NIL JOINS THE GAZETTEER AND CY2-NIL IS SITED AT LAST\.<\/b>/.test(msrc),
+    "the v347 note names the code's suffix, not the place behind it");
+  /* The gate resolved the directory relative to the master, so once the master moved into
+     this repo on 20 Aug it pointed at <repo>/10_Data, found nothing, and passed every run. */
+  ok(/const BIO = resolve\(DATA_DIR, "salt_bio\.json"\)/.test(led),
+    "the leak check finds the directory through DATA_DIR, not the master's own folder");
+  /* And it reads the master beside the extract. Proved by RUNNING it, on a throwaway
+     directory holding one fictional party, so this needs no real directory and works on CI. */
+  const tdir = join(REPO, "test", "tmp", "leak");
+  mkdirSync(tdir, { recursive: true });
+  const WORD = "Zephyrhollow";           // fictional: in no directory, no book and no master
+  writeFileSync(join(tdir, "salt_bio.json"), JSON.stringify({ bio: { "CZ9-ZPH": { raw: WORD } } }));
+  const runLeak = (text) => {
+    const mpath = join(tdir, "master.html");
+    writeFileSync(mpath, text);
+    /* --check, so it never writes ledger/ledger.json from this throwaway master. */
+    const r = spawnSync(process.execPath, [join(REPO, "tools", "ledger.mjs"), "--check"],
+      { encoding: "utf8", env: { ...process.env, SALT_MASTER: mpath, SALT_DATA: tdir } });
+    return (r.stdout || "") + (r.stderr || "");
+  };
+  const clean = runLeak(msrc);
+  ok(/no real name or place from the directory appears in the master/.test(clean)
+    && !/the master carries/.test(clean), "a clean master passes the check");
+  const planted = runLeak(msrc.replace("/* THE OIL SUPPLIER'S QUOTE.",
+    "/* " + WORD + "'S QUOTE. THE OIL SUPPLIER'S QUOTE."));
+  ok(/the master carries 1 real name/.test(planted),
+    "and a name planted in a script comment turns it red");
+  ok(/no real name or place from the directory appears in the extract/.test(planted),
+    "while the extract stays green on that same plant, which is exactly why this was missed");
+  rmSync(tdir, { recursive: true, force: true });
+}
+
+
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
 process.exit(fail ? 1 : 0);

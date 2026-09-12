@@ -1,5 +1,18 @@
 [
  {
+  "v": "v600",
+  "d": "12 Sep 2026",
+  "t": "THE DIRECTORY NEVER REACHES THE DESK, AND THE GATE THAT SAYS SO CAN FIND IT AGAIN",
+  "n": [
+   "<b>THREE REAL ENTRIES WERE LIVE ON THE PUBLIC DESK.</b> A supplier's name in the script comment beside the oil quote, and two places in Journal version notes: beside CH6-SET at v384 and CY2-NIL at v347. The comment names the supplier by its role now, and the two notes name the code's own suffix, SET and NIL, which is what both sentences were about in the first place. Nothing else on the desk carries one: 66 names and places checked with 48 codes taken out first.",
+   "<b>THE GATE HAD NOT RUN SINCE 20 AUGUST.</b> It resolved <code>salt_bio.json</code> relative to the master, which was right while the master sat beside the directory and wrong from the day it moved into this repo. The path pointed at a <code>10_Data</code> inside the repo, nothing was there, and it printed \"not on this machine\" and passed. Three weeks of green meant nothing at all. It reads <code>DATA_DIR</code> now, the one place that knows where the project folder is, and hard rule 2 keeps the directory there deliberately.",
+   "<b>AND IT WAS READING THE ONE FILE THAT NEVER CARRIED THEM.</b> The check scanned the extracted ledger alone, so it saw row notes and nothing else; a name in a script comment or in a version note was invisible to it by construction, which is how three sat in plain sight. It scans the master beside the extract now and says which of the two is dirty.",
+   "<b>PROVED BY RUNNING IT</b>, on a throwaway directory holding one fictional party. With that word planted in a script comment the master goes red and the extract stays green, which is the exact shape of what was missed; on a clean master both pass. The suite runs both directions and needs no real directory, so CI proves it too and the check stays honest on a machine that has never seen the names.",
+   "<b>WHAT IT TOUCHES ON THE BOOK: NOTHING.</b> No row, no price, no figure, no count. The ledger extract moves only because it was still stamped v598.",
+   "<b>THE ARCHIVE IS SWEPT NEXT, ON HIS WORD OF 12 SEP 2026.</b> <code>master/changelog.json</code> carries 39 more, in entries the desk does not serve. The repo is private so it is not an exposure, but hard rule 3 says no real name is ever committed, and a sweep of the dated record is its own version rather than something that rides along with this one."
+  ]
+ },
+ {
   "v": "v599",
   "d": "12 Sep 2026",
   "t": "THREE READERS STOP PRINTING FIGURES THEY HAD NOT MEASURED",

@@ -35,7 +35,7 @@ import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
 import { openMaster } from "./payload.mjs";
-import { LEDGER, LEDGER_KEYS, META_KEYS, reader, pricingSnapshot, openSnapshot, NAME_STOPWORDS, NAME_COLLISIONS } from "./book.mjs";
+import { LEDGER, LEDGER_KEYS, META_KEYS, reader, pricingSnapshot, openSnapshot, NAME_STOPWORDS, NAME_COLLISIONS, DATA_DIR } from "./book.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO = resolve(HERE, "..");
@@ -268,7 +268,13 @@ for (const key of ["sales", "purchases", "loans", "contacts"]) {
    checked rather than assumed, against the actual directory on this machine: every name and
    place in salt_bio.json is searched for as a whole word. The directory is gitignored and
    never leaves the laptop, which is exactly why it is the right thing to check against. */
-const BIO = resolve(dirname(MASTER), "..", "10_Data", "salt_bio.json");
+/* THE DIRECTORY IS IN THE PROJECT FOLDER, NOT THE REPO (corrected 12 Sep 2026). This resolved
+   the bio relative to the master, which worked while the master lived beside it and has been
+   wrong since the master moved into this repo on 20 Aug 2026: the path pointed at
+   <repo>/10_Data, nothing was there, and the gate reported "not on this machine" and passed on
+   every run for three weeks. Hard rule 2 keeps salt_bio.json in the project folder deliberately,
+   and DATA_DIR is the one place that knows where that is. */
+const BIO = resolve(DATA_DIR, "salt_bio.json");
 if (existsSync(BIO)) {
   let names = [], bioCodes = {};
   try {
@@ -301,23 +307,33 @@ if (existsSync(BIO)) {
      CH6-TBC contains "TBC" and CS6-BS contains "BS". Searching the raw text therefore reports
      every code as a leak, which is the fastest way to teach someone to ignore this check.
      Remove every known code, then look at what is left. */
-  let hay = JSON.stringify(ledger);
   const codes = [...new Set([...(ledger.roster || []), ...Object.keys(bioCodes)])]
     .sort((a, b) => b.length - a.length);
-  for (const c of codes) hay = hay.split(c).join("~");
-  const hits = [];
-  for (const n of names) {
-    const re = new RegExp("\\b" + n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\b", "i");
-    const m = re.exec(hay);
-    if (!m) continue;
-    const at = Math.max(0, m.index - 45);
-    hits.push({ masked: n[0] + "*".repeat(n.length - 1), len: n.length,
-      near: hay.slice(at, m.index + n.length + 45).split(n).join("***") });
+  const strip = (t) => { for (const c of codes) t = t.split(c).join("~"); return t; };
+  /* AND THE MASTER IS SCANNED BESIDE THE EXTRACT (12 Sep 2026). This read the extract alone,
+     so it saw row NOTEs and nothing else. A supplier's name in a script comment and two places
+     in Journal version notes therefore sat on the PUBLIC desk for months: the one instrument
+     against hard rule 3 was pointed at the one file that never carried them. The master is what
+     the desk is built from, so it is the thing that has to be clean. */
+  const SOURCES = [
+    { what: "the extract", hay: strip(JSON.stringify(ledger)) },
+    { what: "the master", hay: strip(readFileSync(MASTER, "utf8")) },
+  ];
+  for (const src of SOURCES) {
+    const hits = [];
+    for (const n of names) {
+      const re = new RegExp("\\b" + n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\b", "i");
+      const m = re.exec(src.hay);
+      if (!m) continue;
+      const at = Math.max(0, m.index - 45);
+      hits.push({ masked: n[0] + "*".repeat(n.length - 1), len: n.length,
+        near: src.hay.slice(at, m.index + n.length + 45).split(n).join("***") });
+    }
+    if (hits.length) {
+      fail(`${src.what} carries ${hits.length} real name(s) or place(s) from the directory. It must not be committed.`);
+      hits.forEach((h) => { console.log(`          ${h.masked} (${h.len} chars) near: ...${h.near}...`); });
+    } else ok(`no real name or place from the directory appears in ${src.what} (${names.length} checked, ${codes.length} codes excluded)`);
   }
-  if (hits.length) {
-    fail(`the extract carries ${hits.length} real name(s) or place(s) from the directory. It must not be committed.`);
-    hits.forEach((h) => { console.log(`          ${h.masked} (${h.len} chars) near: ...${h.near}...`); });
-  } else ok(`no real name or place from the directory appears in the extract (${names.length} checked, ${codes.length} codes excluded)`);
   /* Said on every run, pass or fail. A skipped name is a party this gate is NOT checking for,
      and that has to be visible or a pass reads as more than it is. */
   if (collided.length) {
