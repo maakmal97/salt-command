@@ -10097,6 +10097,42 @@ section("12 Sep 2026: a loan is repaid, in part or in full, in what was lent");
   } finally { try { wR.close(); } catch (e) { /* best effort */ } }
 }
 
+/* ---------------------------------------------------------------------------------------
+   HIS COMMENT PASS OF 12 SEP 2026, over the eighteen tab artifacts. Four changes to the desk
+   itself, an assertion apiece. Each was proved red against the master and the design layer as
+   they stood at 94a2313, before any of the four was made. */
+section("12 Sep 2026: the header redrawn, Today on every date field, the footer and the hand-filed plans gone");
+{
+  const mH = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+  const cH = readFileSync(join(REPO, "design", "desk.css"), "utf8");
+
+  /* 1. THE HEADER IS ONE FRAME: the mark and the wordmark lead, the status, the as-at and the
+     stamp sit under them as one quiet line, and the gap above the bar is capped once it sticks. */
+  ok(/idfix\$\{\(idOpen\|\|namesShown\(\)\)/.test(mH),
+    "the key in the bar is lit only while a name is actually showing, not whenever the vault is open");
+  ok(/<div class="metarow"><span id="deskRole">/.test(mH),
+    "the role, the as-at and the stamp are one line under the name, not three rows of pills");
+  ok(/body\.dbstuck \.deskbar\{box-shadow:/.test(cH),
+    "and once the page scrolls, the gap above the bar is capped");
+
+  /* 2. ONE HELPER DRAWS EVERY DATE FIELD, so Today cannot reach some of them and not others.
+     Counting the bare string would count a CSS selector and a matcher, so count the input. */
+  ok(/function dateIn\(id,val,attrs\)\{/.test(mH), "one helper draws every date field on the desk");
+  ok((mH.match(/<input[^>]*type="date"/g) || []).length === 1,
+    "and it is the only thing that writes a date input, so no field is left without the button");
+  ok(/class="dtoday" data-dt="/.test(mH) && /\.dtoday\{/.test(cH), "each field carries Today inside its right edge");
+  ok(/showPicker\(\)/.test(mH), "and a tap anywhere else on the field opens the calendar");
+
+  /* 3. NO PART SIGNS ITSELF AT THE FOOT. */
+  ok(!/id="foot0"/.test(mH) && !/\.foot0/.test(mH) && !/\.foot0/.test(cH),
+    "the Salt Command signature is gone from the foot of every part, its rule with it");
+
+  /* 4. THE HAND-FILED PLANS ARE GONE, the form and everything that read it. The builder is the
+     instrument: it may write no input, and nothing may be left to file into. */
+  const plansH = mH.slice(mH.indexOf("function tabPlans(){"), mH.indexOf("/* ============ TAB: CHANGELOG"));
+  ok(plansH.length > 200 && !/<input/.test(plansH) && !/Filed by hand/.test(plansH),
+    "the Whiteboard builder writes no form and nothing to file into");
+}
 
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
 process.exit(fail ? 1 : 0);
