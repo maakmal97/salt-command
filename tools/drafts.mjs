@@ -25,7 +25,7 @@ import { readFileSync, existsSync, writeFileSync, mkdirSync, rmSync } from "node
 import { DATA_DIR } from "./book.mjs";
 import { spawnSync } from "node:child_process";
 import { resolve, dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const DB = "salt_ledger";
@@ -89,6 +89,14 @@ function schema() {
 }
 
 /* ---- list ---------------------------------------------------------------------------- */
+/* v596: A DRAFT'S COST IS THE ORDER'S, ABSOLUTE, as it has been since v496, and this read it as a
+   unit cost: 10 unit of oil for RM 150 at RM 75.25 printed "cost RM 75.25/unit   margin -401.7%"
+   where the phone's Approve card showed RM 75.25 (RM 7.53/unit) and 49.8%. It reads as the card does. */
+export function costAndMargin(r) {
+  const unit = (r.cost != null && r.qty > 0) ? " (" + money(r.cost / r.qty) + "/unit)" : "";
+  const margin = (r.total > 0 && r.cost != null && r.qty) ? (((r.total - r.cost) / r.total) * 100).toFixed(1) + "%" : "-";
+  return "cost " + money(r.cost) + unit + "   margin " + margin;
+}
 function list() {
   const all = has("--all");
   const sql = "SELECT id,status,collection,party,product,date,qty,total,cost,reasoning,flags,drafter,drafted_at,decided_at,committed_at"
@@ -99,13 +107,11 @@ function list() {
   console.log("  " + rows.length + (all ? " draft(s)" : " waiting for a decision") + ":\n");
   for (const r of rows) {
     const per = (r.total != null && r.qty) ? money(r.total / r.qty) + "/unit" : "";
-    const marginPct = (r.total > 0 && r.cost != null && r.qty)
-      ? (((r.total - r.cost * r.qty) / r.total) * 100).toFixed(1) + "%" : "-";
     console.log("  " + r.id + "   [" + r.status + "]" + (r.committed_at ? " committed" : ""));
     console.log("    " + (r.collection === "purchases" ? "BUY " : "SELL") + "  " + (r.party || "?")
       + "  " + (r.qty ?? "?") + " unit " + (r.product || "salt")
       + "  " + money(r.total) + (per ? "  (" + per + ")" : "")
-      + "   cost " + money(r.cost) + "/unit   margin " + marginPct);
+      + "   " + costAndMargin(r));
     console.log("    date: " + (r.date || "NONE (pending: nothing has moved)") + "   drafted by " + r.drafter);
     let flags = [];
     try { flags = JSON.parse(r.flags || "[]"); } catch (e) { /* a bad flags blob must not hide the row */ }
@@ -368,14 +374,19 @@ function refusedNote() {
 }
 
 /* ---- main ---------------------------------------------------------------------------- */
-if (has("--schema")) schema();
-else if (has("--draft")) draft();
-else if (has("--from-queue")) await fromQueue();
-else if (has("--refused-note")) refusedNote();
-else if (has("--approve")) approve();
-else if (has("--approved")) approved();
-else if (has("--committed")) committed();
-else if (has("--list") || argv.filter((a) => a !== "--local" && a !== "--all").length === 0) list();
-else { console.log("unknown mode. See the header of tools/drafts.mjs for the four."); process.exit(2); }
+/* v596: only when run, so the suite can import costAndMargin without reading the live table and
+   exiting. fold.mjs's own line: a hand-built file URL is false on Linux, and the job would do nothing. */
+const isMain = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
+if (isMain) {
+  if (has("--schema")) schema();
+  else if (has("--draft")) draft();
+  else if (has("--from-queue")) await fromQueue();
+  else if (has("--refused-note")) refusedNote();
+  else if (has("--approve")) approve();
+  else if (has("--approved")) approved();
+  else if (has("--committed")) committed();
+  else if (has("--list") || argv.filter((a) => a !== "--local" && a !== "--all").length === 0) list();
+  else { console.log("unknown mode. See the header of tools/drafts.mjs for the four."); process.exit(2); }
 
-process.exit(failed ? 1 : 0);
+  process.exit(failed ? 1 : 0);
+}

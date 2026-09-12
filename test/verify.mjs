@@ -5,7 +5,7 @@
  * rendering is tested by the daily run's jsdom pass; this suite guards the cloud plumbing.
  * No network, no browser: `npm test` runs it in a couple of seconds.
  */
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import { DATA_DIR, PROJECT_DIR } from "../tools/book.mjs";
 import { createHash } from "node:crypto";
 import { readFileSync, writeFileSync, mkdirSync, rmSync, existsSync, readdirSync } from "node:fs";
@@ -8619,6 +8619,15 @@ section("08 Sep 2026: the audit fixes");
        test that typed into it went with it. Its removal is asserted in its own section below. */
     const msrc = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
     ok(/cell\('Cost drawn',cost==null\?'&mdash;':fmt\(cost\)\+\(qty>0\?/.test(msrc), "the Approve card labels the order's cost as the order's, with the unit figure beside it");
+    /* v596: the laptop's list reads that cost the same way; it printed -401.7% for this 49.8% draft. The
+       tool runs its modes only when called now, so the second proves it still does, on every machine. */
+    {
+      const { costAndMargin } = await import("../tools/drafts.mjs");
+      const line = costAndMargin({ qty: 10, total: 150, cost: 75.25 });
+      ok(line === "cost RM 75.25 (RM 7.53/unit)   margin 49.8%", `and drafts.mjs --list reads it as the card does: 10 unit for RM 150 at a cost of RM 75.25 is 49.8% (${line})`);
+      const run = spawnSync(process.execPath, [join(REPO, "tools", "drafts.mjs"), "--no-such-mode"], { encoding: "utf8" });
+      ok(run.status === 2 && /unknown mode/.test(run.stdout), `and drafts.mjs still runs its modes when called (exit ${run.status})`);
+    }
     ok(/function txGoods\(s\)\{return POSITION_ENGINE\.txGoods\(s\);\}/.test(msrc) && (msrc.match(/txGoods\(s\)\/s\.qty|txGoods\(x\)\/x\.qty/g) || []).length >= 10, "the desk strikes its customer rates on the goods through the engine's txGoods");
     /* 09 Sep 2026: the fold's dossier reads the live quote for a lot's product off the book's own
        keys; it filtered supplierQuote as an array and threw on the first lot staged since v521 */
@@ -10093,6 +10102,50 @@ section("12 Sep 2026: a loan is repaid, in part or in full, in what was lent");
     const cf = rdR("(function(){queue=[];applyOverlay();var base=cashFlow().net;var c=loans.find(function(l){return l.rid==='l902';});c.repaid=[{date:'2099-06-03',rm:150}];return {base:base,after:cashFlow().net};})()");
     ok(Math.abs(cf.after - cf.base - 150) < 0.005, `cash lent out and part repaid takes only what is still owing out of the cash flow (${cf.base} to ${cf.after})`);
   } finally { try { wR.close(); } catch (e) { /* best effort */ } }
+}
+
+
+section("12 Sep 2026: two Watch cards count only what they say");
+{
+  /* HIS REPORT OF 12 SEP 2026. "7 recent sales sit under the band floor" listed sales above their floor with a negative
+     shortfall, because the filter still used the band formula v280 retired while the evidence printed the ladder's
+     floor; and "3 priced sales carry no cost of its own" counted three pending orders, which are not sales and carry
+     no cost by design. The live book stays in, since observations() divides by its history and a six-row book
+     throws in the payday card, so this measures what six fixture rows ADD to each card. They are dated tomorrow,
+     so the floor card's newest-first evidence leads with them. */
+  const { openMaster: omW } = await import("../tools/payload.mjs");
+  const { w: wW } = await omW();
+  const rdW = (e) => JSON.parse(String(wW.eval("JSON.stringify(" + e + ")")));
+  const CARDS = "(function(){return observations().all.filter(function(c){return c.id==='int:underfloor'||c.id==='int:nocost';}).map(function(c){return {id:c.id,title:c.title,why:c.why,ev:c.ev};});})()";
+  const count = (cards, id) => { const c = cards.find((x) => x.id === id); return c ? parseInt(c.title, 10) : 0; };
+  try {
+    const day = rdW("new Date(TODAY.getTime()+86400000).toISOString().slice(0,10)");
+    const ft = rdW("floorTotal(12.5)");
+    const band = rdW("(function(){var C=pxCost(),e=(C&&C.effEx!=null)?C.effEx:(C?C.eff:null);return e*12.5/(1-floorPct(12.5)/100);})()");
+    ok(ft > 200, "the ladder's floor at 12.5 unit is a real figure to test against: " + ft);
+    ok(band > ft + 1, `the guard: the retired band formula asks more than the ladder's floor at 12.5 unit (RM ${Math.round(band)} against RM ${Math.round(ft)}), so a sale between the two tells them apart`);
+    const before = rdW(CARDS);
+    const rows = [
+      `{customer:'CZ4-HI',qty:12.5,total:${ft + 1},cash:${ft + 1},deliveredQty:12.5,deliveredOn:'${day}',date:'${day}',cost:550}`,
+      `{customer:'CZ5-LO',qty:12.5,total:${ft - 100},cash:${ft - 100},deliveredQty:12.5,deliveredOn:'${day}',date:'${day}',cost:550}`,
+      `{customer:'CZ6-PLO',qty:12.5,total:${ft - 100},cash:0,deliveredQty:0,date:'${day}',cost:550}`,
+      `{customer:'CZ1-NOC',qty:1,total:100,cash:100,deliveredQty:1,deliveredOn:'${day}',date:'${day}'}`,
+      `{customer:'CZ2-NOC',qty:1,total:90,cash:90,deliveredQty:1,deliveredOn:'${day}',date:'${day}'}`,
+      `{customer:'CZ3-PEN',qty:1,total:120,cash:0,deliveredQty:0,date:'${day}'}`,
+    ];
+    wW.eval("(function(){" + rows.map((r) => "sales.push(" + r + ");").join("") + "})()");
+    const after = rdW(CARDS);
+    const uf = after.find((c) => c.id === "int:underfloor"), nc = after.find((c) => c.id === "int:nocost");
+    ok(count(after, "int:underfloor") - count(before, "int:underfloor") === 1,
+      `the floor card gains the one sale under its floor, and neither the sale just over it nor the pending order: ${count(before, "int:underfloor")} to ${count(after, "int:underfloor")}`);
+    ok(uf && /CZ5-LO/.test(uf.ev[0]) && /short \D*100$/.test(uf.ev[0]), "its evidence leads with that sale, short by the RM 100 it is under: " + (uf && uf.ev[0]));
+    ok(uf && !uf.ev.some((e) => /CZ4-HI|CZ6-PLO/.test(e)), "and names neither the sale over the floor nor the pending order: " + (uf && uf.ev.join(" | ")));
+    ok(uf && !uf.ev.some((e) => /short [^0-9]*[-−]/.test(e)), "and no shortfall it lists is negative");
+    ok(count(after, "int:nocost") - count(before, "int:nocost") === 2,
+      `the no-cost card gains the two delivered sales and not the pending order: ${count(before, "int:nocost")} to ${count(after, "int:nocost")}`);
+    ok(nc && / no cost of their own$/.test(nc.title), "and says their own of more than one: " + (nc && nc.title));
+    ok(nc && !/RM64|RM47/.test(nc.why), "and its reason states no buying rate by hand");
+  } finally { try { wW.close(); } catch (e) { /* best effort */ } }
 }
 
 

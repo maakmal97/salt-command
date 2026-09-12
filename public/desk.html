@@ -68,7 +68,7 @@ document.addEventListener('visibilitychange',function(){
    localStorage before it posts anything and the load reads it straight back.
    The same tick retries a held entry, which is what gets a phone write to the cloud
    without waiting for the next open. */
-var SALT_BUILD_ID="75b9bbbc2b36ab44";
+var SALT_BUILD_ID="efd29b1807842cf8";
 var SALT_REV_MS=10000;
 (function(){
   var chip=null,timer=null;
@@ -6328,7 +6328,9 @@ const whiteboard=[
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{"v":"v598","d":"12 Sep 2026","t":"A SALT UNIT GOES OUT AT THE MEDIAN, PAID AND COLLECTED THE SAME DAY","n":["<b>ONE ROW FOLDED, A SALT SELL SETTLED IN FULL ON THE DAY.</b> SELL to CN6-WM, 1 unit for RM110 on 12 Sep, RM110 cash in and 1 unit collected the same day, so the row itself leaves nothing open. The rate clears the RM56.21 floor for 1 unit, sits under the RM120 ask and the RM150 ceiling, and matches the party's own median of RM110 across 7 orders.","<b>THE FLAGS ARE ANSWERED IN PART AND THE INVENTORY MOVES BY ONE UNIT.</b> The drafter's rate flag is answered by the party's median of RM110 and its RM75 to RM130 range. The flag that the row books as an R2 downsell through CN6-WM-R, leaving CN6-WM off the statement, is not answered here. Cost is the inventory's own RM44 a unit, so the basis is untouched and stock falls from 24.19 by the 1 unit moved."]},
+const evolution=[{"v":"v599","d":"12 Sep 2026","t":"THREE READERS STOP PRINTING FIGURES THEY HAD NOT MEASURED","n":["<b>HIS REPORT OF 12 SEP 2026: A SALE OVER ITS FLOOR READ AS SHORT BY A NEGATIVE AMOUNT.</b> The under-floor card chose its rows with the band formula v280 retired and measured them with the ladder's floor its evidence prints. At 12.5 unit those are RM 878.34 and RM 702.67, so CJ4-BJ's RM 850 fell between the two: caught by one ruler, measured by the other, and printed as <code>short RM -147</code>. Three of the five rows on show were above their floor, not under it. One floor now, the one the evidence prints. The card goes from 7 rows to 2, and both that remain are CH5-OUG, short RM 53 and RM 103 against RM 703.","<b>AND A PENDING ORDER IS NOT A SALE.</b> The no-cost card listed CH6-SET, CC5-OKR and CF5-WM, three pending orders of 11 Sep, as priced sales carrying no cost of their own. A pending order carries none by design, since the cost is stated when the salt moves. With them out the card has nothing to report on this book and does not draw at all. Its title agrees with itself in the plural now, and its reason no longer names RM64 and RM47, which were the buying rates on the day it was written.","<b>THE COPY NAMES THE FLOOR IT USES, ON HIS WORD.</b> The title and reason still said band floor, after v280 left nothing in that card computing a band. Three sites keep the phrase and are left as they are: two comments, on the engine and on the ladder solver, and the Boundaries all-clear, which is a different card with a check of its own.","<b>AND THE LAPTOP PRINTED -401.7% FOR A 49.8% MARGIN.</b> <code>node tools/drafts.mjs --list</code> read a draft's cost as a unit cost, which it has not been since v496. A draft for 10 unit of oil at RM 150 with a cost of RM 75.25 printed its cost as RM 75.25 a unit and its margin as -401.7%, where the phone's Approve card showed RM 75.25 (RM 7.53/unit) and 49.8%. Only a draft of exactly one unit read right, and by accident. It reads as the Approve card does now. The drafter, the phone and the fold have always read the cost as the order's, so no draft and no row moves.","<b>NOTHING IN THE BOOK MOVES.</b> All three are readers. No price, no row, no cost, and the inventory, the credit and the queue close where they opened.","<b>PROVED RED FIRST, AND MEASURED ON THE BOOK.</b> The two cards are counted before and after six planted rows, so what each gains is what is asserted: a sale just over its floor, one under it and a pending order, and two delivered sales with no cost beside a pending one. The guard asserts the retired band figure still exceeds the ladder's floor at 12.5 unit, so the two rulers can be told apart at all. The draft list is asserted on that same oil draft, red on the old formula and on the old label.","<b>FOLDED OUT OF TWO SESSIONS, EACH OF WHICH HAD CLAIMED v596.</b> The cloud had already spent that number on the cs6-bs corrections while both sat unshipped, so both are renumbered into this one version. Their own bumps are discarded; only the fixes and their assertions come across."]},
+
+{"v":"v598","d":"12 Sep 2026","t":"A SALT UNIT GOES OUT AT THE MEDIAN, PAID AND COLLECTED THE SAME DAY","n":["<b>ONE ROW FOLDED, A SALT SELL SETTLED IN FULL ON THE DAY.</b> SELL to CN6-WM, 1 unit for RM110 on 12 Sep, RM110 cash in and 1 unit collected the same day, so the row itself leaves nothing open. The rate clears the RM56.21 floor for 1 unit, sits under the RM120 ask and the RM150 ceiling, and matches the party's own median of RM110 across 7 orders.","<b>THE FLAGS ARE ANSWERED IN PART AND THE INVENTORY MOVES BY ONE UNIT.</b> The drafter's rate flag is answered by the party's median of RM110 and its RM75 to RM130 range. The flag that the row books as an R2 downsell through CN6-WM-R, leaving CN6-WM off the statement, is not answered here. Cost is the inventory's own RM44 a unit, so the basis is untouched and stock falls from 24.19 by the 1 unit moved."]},
 
 {"v":"v597","d":"12 Sep 2026","t":"AN OIL ADVANCE GOES OUT IN FULL AT THE ASK AND SITS ON THE WHOLE CREDIT CAP","n":["<b>ONE ROW FOLDED, A SELL TO CE4-CHE AT THE ASK.</b> Ten unit of oil went out on 12 Sep for RM150, of which RM20 is delivery and RM130 goods, which is the RM130 ask for that size and well over the RM87.28 floor. Nothing came in as cash, so the whole RM150 stands open against a party that had RM0 outstanding and nothing on credit before today. Goods were handed over in full on the day.","<b>THE UNUSUAL PART IS THE CREDIT, NOT THE RATE.</b> The drafter flagged the row as an advance and asked that it be checked against the cap: ten unit on credit against a cap of 10 answers the flag exactly at the limit, with no room left. The second flag, that CE4-CHE has no committed oil order to compare against, is not answered here. The row carries RM75.25 of cost, which is not the inventory's own RM44 a unit.","<b>THE INVENTORY DID NOT MOVE.</b> The oil leg is recorded but not landed, so the salt position is untouched at 24.19 unit on the count of 8 Sep and the cost basis stays where it was."]},
 
@@ -6752,7 +6754,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='12 Sep 2026, 18:20 KL';
+const LAST_UPDATED='12 Sep 2026, 18:42 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -13240,12 +13242,15 @@ function observations(){
   });
   /* A PRICED SALE WITH NO COST OF ITS OWN falls back to the weighted average, which
      back-dates today's cheap salt onto an old order and quietly flatters its margin. */
-  const nocost=sales.filter(s=>s.cost==null&&(+s.total>0.0001)&&(+s.qty>0.0001)&&!s.cancelled);
+  /* v596, HIS REPORT OF 12 SEP 2026: A PENDING ORDER IS NOT A SALE. It carries no cost by design, since the cost is
+     stated when the salt moves, and the card listed CH6-SET, CC5-OKR and CF5-WM, three pending orders, as priced
+     sales without one. */
+  const nocost=sales.filter(s=>s.cost==null&&(+s.total>0.0001)&&(+s.qty>0.0001)&&!s.cancelled&&txStat(s).order!=='Pending');
   if(nocost.length){
     const w=nocost.reduce((a,s)=>a+(+s.qty||0),0);
     add({id:'int:nocost',fam:'integrity',sev:'watch',conf:'measured',rm:null,tab:'ledger',
-      title:`${nocost.length} priced ${nocost.length===1?'sale carries':'sales carry'} no cost of its own`,
-      why:`Each falls back to the weighted average, which is today's blend rather than what that salt actually cost. On a book whose buying rate has moved from RM64 to RM47 that flatters an old order and understates a new one. ${nocost.length===1?`It covers ${units(w)}.`:`Between them they cover ${units(w)}.`} Queue lots in receipt order and consume them in delivery order, then state the cost on the row.`,
+      title:`${nocost.length} priced ${nocost.length===1?'sale carries':'sales carry'} no cost of ${nocost.length===1?'its':'their'} own`,
+      why:`Each falls back to the weighted average, which is today's blend rather than what that salt actually cost. Where the buying rate has moved, that flatters one order and understates another. ${nocost.length===1?`It covers ${units(w)}.`:`Between them they cover ${units(w)}.`} Queue lots in receipt order and consume them in delivery order, then state the cost on the row.`,
       ev:nocost.slice(0,6).map(s=>`${s.date||'not dated'} ${ID(s.customer)}: ${units(+s.qty)} for ${fmt0(+s.total)}`)});
   }
   /* SALT OUT WITH NO DATE ON IT. txDates falls back to the order date and marks it
@@ -13299,14 +13304,16 @@ function observations(){
   if(eff!=null&&isFinite(eff)){
     const breach=D.filter(s=>{
       const q=+s.qty||0,tot=+s.total||0; if(!(q>0)||!(tot>0))return false;
-      const fp=floorPct(q); const need=(eff*q)/(1-fp/100);
-      return tot<need-0.009&&dbet(s.date)<=45;
+      /* v596, HIS REPORT OF 12 SEP 2026: the filter still used the band formula v280 retired, while the evidence below
+         prints floorTotal, so a sale over the ladder's floor passed as under it and read 'short RM -147'. One floor
+         now, the one the evidence prints, and a pending order is not a sale. */
+      return tot<floorTotal(q)-0.009&&dbet(s.date)<=45&&txStat(s).order!=='Pending';
     }).sort((a,b)=>{const x=a.date||'',y=b.date||'';return x<y?1:x>y?-1:0;});
     if(breach.length){
       const worst=breach.slice(0,5);
       add({id:'int:underfloor',fam:'integrity',sev:'watch',conf:'measured',rm:null,tab:'pricing',
-        title:`${breach.length} recent ${breach.length===1?'sale sits':'sales sit'} under the band floor at today's cost`,
-        why:`Measured against an effective cost of ${fmt(eff)} a unit and the band floor that applies at each size. These were priced when cost was lower, so this is cost catching up with a price rather than a mistake at the time. It matters because it is what those same customers will expect to pay next.`,
+        title:`${breach.length} recent ${breach.length===1?'sale sits':'sales sit'} under the ladder's floor at today's cost`,
+        why:`Measured against an effective cost of ${fmt(eff)} a unit and the floor the ladder sets at each size. These were priced when cost was lower, so this is cost catching up with a price rather than a mistake at the time. It matters because it is what those same customers will expect to pay next.`,
         /* v280: the floor is one markup on the lot cost now, so this reads it from the same
            function the ladder does rather than rebuilding the old band formula. */
         ev:worst.map(s=>{const q=+s.qty||0,need=floorTotal(q);

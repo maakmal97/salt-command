@@ -1,5 +1,19 @@
 [
  {
+  "v": "v599",
+  "d": "12 Sep 2026",
+  "t": "THREE READERS STOP PRINTING FIGURES THEY HAD NOT MEASURED",
+  "n": [
+   "<b>HIS REPORT OF 12 SEP 2026: A SALE OVER ITS FLOOR READ AS SHORT BY A NEGATIVE AMOUNT.</b> The under-floor card chose its rows with the band formula v280 retired and measured them with the ladder's floor its evidence prints. At 12.5 unit those are RM 878.34 and RM 702.67, so CJ4-BJ's RM 850 fell between the two: caught by one ruler, measured by the other, and printed as <code>short RM -147</code>. Three of the five rows on show were above their floor, not under it. One floor now, the one the evidence prints. The card goes from 7 rows to 2, and both that remain are CH5-OUG, short RM 53 and RM 103 against RM 703.",
+   "<b>AND A PENDING ORDER IS NOT A SALE.</b> The no-cost card listed CH6-SET, CC5-OKR and CF5-WM, three pending orders of 11 Sep, as priced sales carrying no cost of their own. A pending order carries none by design, since the cost is stated when the salt moves. With them out the card has nothing to report on this book and does not draw at all. Its title agrees with itself in the plural now, and its reason no longer names RM64 and RM47, which were the buying rates on the day it was written.",
+   "<b>THE COPY NAMES THE FLOOR IT USES, ON HIS WORD.</b> The title and reason still said band floor, after v280 left nothing in that card computing a band. Three sites keep the phrase and are left as they are: two comments, on the engine and on the ladder solver, and the Boundaries all-clear, which is a different card with a check of its own.",
+   "<b>AND THE LAPTOP PRINTED -401.7% FOR A 49.8% MARGIN.</b> <code>node tools/drafts.mjs --list</code> read a draft's cost as a unit cost, which it has not been since v496. A draft for 10 unit of oil at RM 150 with a cost of RM 75.25 printed its cost as RM 75.25 a unit and its margin as -401.7%, where the phone's Approve card showed RM 75.25 (RM 7.53/unit) and 49.8%. Only a draft of exactly one unit read right, and by accident. It reads as the Approve card does now. The drafter, the phone and the fold have always read the cost as the order's, so no draft and no row moves.",
+   "<b>NOTHING IN THE BOOK MOVES.</b> All three are readers. No price, no row, no cost, and the inventory, the credit and the queue close where they opened.",
+   "<b>PROVED RED FIRST, AND MEASURED ON THE BOOK.</b> The two cards are counted before and after six planted rows, so what each gains is what is asserted: a sale just over its floor, one under it and a pending order, and two delivered sales with no cost beside a pending one. The guard asserts the retired band figure still exceeds the ladder's floor at 12.5 unit, so the two rulers can be told apart at all. The draft list is asserted on that same oil draft, red on the old formula and on the old label.",
+   "<b>FOLDED OUT OF TWO SESSIONS, EACH OF WHICH HAD CLAIMED v596.</b> The cloud had already spent that number on the cs6-bs corrections while both sat unshipped, so both are renumbered into this one version. Their own bumps are discarded; only the fixes and their assertions come across."
+  ]
+ },
+ {
   "v": "v598",
   "d": "12 Sep 2026",
   "t": "A SALT UNIT GOES OUT AT THE MEDIAN, PAID AND COLLECTED THE SAME DAY",
