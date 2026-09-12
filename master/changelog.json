@@ -1,5 +1,16 @@
 [
  {
+  "v": "v605",
+  "d": "12 Sep 2026",
+  "t": "TWO SALES OF 12 SEPTEMBER: TWO UNIT COLLECTED, AND ONE UNIT DELIVERED AS A DOWNSELL",
+  "n": [
+   "<b>CA5-KER TAKES 2 UNIT FOR RM200, PAID AND COLLECTED THE SAME DAY.</b> RM100 a unit, which clears the RM112.43 floor for 2 unit with room. Cost is RM44 a unit, the inventory's own rate, so RM88 on the order and 56.0%. Nothing stays outstanding.",
+   "<b>AND ONE UNIT GOES OUT AS AN R2 DOWNSELL, PAID AND DELIVERED.</b> RM130 in all, of which <b>RM110 is the goods and RM20 the delivery</b>, booked to CN6-WM with CN6-WM-R downstream, the same shape as s155 a few hours earlier. The goods rate is RM110 a unit against a RM56.21 floor for 1 unit; cost RM44, so 60.0% struck on the goods, which is where every rate on this desk has been struck since v502.",
+   "<b>THE PRICE ON THE FIRST ONE IS BELOW THAT PARTY'S OWN HISTORY, AND WAS PUT TO HIM BEFORE IT WAS FOLDED.</b> CA5-KER paid RM120 a unit on both their earlier salt orders; RM100 is a 17% drop. The drafter flagged it, he confirmed it, and it is recorded here rather than left to be rediscovered from the statement.",
+   "<b>THE INVENTORY GOES 23.19 TO 20.19 UNIT</b>, three units out on the day across the two rows. Both are settled in full, so neither adds to credit and nothing new is outstanding."
+  ]
+ },
+ {
   "v": "v604",
   "d": "12 Sep 2026",
   "t": "THE ENTER FORM'S MESSAGES ARE A LIST OF SENTENCES, AND AN EMPTY FORM CARRIES NO STATUS",

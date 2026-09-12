@@ -1,6 +1,6 @@
 {
- "v": "v602",
- "stamped": "12 Sep 2026, 20:46 KL",
+ "v": "v605",
+ "stamped": "12 Sep 2026, 22:28 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -41,7 +41,7 @@
     "stated": 50
    }
   },
-  "STATED_STOCK": 23.19,
+  "STATED_STOCK": 20.19,
   "COUNT_ON": {
    "salt": "2026-09-08",
    "oil": "2026-09-09"
@@ -3622,6 +3622,37 @@
     "downstream": "CN6-WM-R",
     "note": "<b>SALT SELL DATED 12 SEP, PAID IN FULL AND COLLECTED IN FULL.</b> SELL to CN6-WM, 1 unit for RM110, all RM110 goods, RM110 cash in and 1 unit handed over on 12 Sep, stream R2 with downstream CN6-WM-R, so nothing new stays outstanding. The rate clears the RM56.21 floor for 1 unit, sits under the RM120 ask and the RM150 ceiling. CN6-WM has 7 orders, a median rate of RM110, a range of RM75 to RM130, RM110 outstanding before and 1 unit on credit against a cap of 2, none defaulted. Cost is RM44 a unit, the inventory's own rate. The drafter flagged the rate as 10% above about RM100 across 6 orders: the median of RM110 answers it. The flag that the row books as an R2 downsell, so CN6-WM is not the counterparty and gets no statement, is not answered. The earlier RM110 stays outstanding.",
     "rid": "s155"
+   },
+   {
+    "customer": "CA5-KER",
+    "qty": 2,
+    "total": 200,
+    "cost": 88,
+    "cash": 200,
+    "handover": "collected",
+    "date": "2026-09-12",
+    "deliveredQty": 2,
+    "deliveredOn": "2026-09-12",
+    "paidOn": "2026-09-12",
+    "note": "<b>SALT SELL DATED 12 SEP, PAID IN FULL AND COLLECTED IN FULL.</b> SELL to CA5-KER, 2 unit for RM200, all RM200 of it goods with no delivery charge, RM200 cash in and 2 unit handed over on 12 Sep, so nothing stays outstanding on it. The rate is RM100 a unit and clears the RM112.43 floor for 2 unit. Cost is RM44 a unit, the inventory's own rate, so RM88 on the order at 56.0%. <b>The drafter flagged the rate</b>: CA5-KER has paid RM120 a unit on both of their earlier salt orders and this one is RM100, a 17% drop. It was put to him with the row drafted and not yet written, and he confirmed the price as intended before it was folded.",
+    "rid": "s156"
+   },
+   {
+    "customer": "CN6-WM",
+    "qty": 1,
+    "total": 130,
+    "cost": 44,
+    "cash": 130,
+    "delivery": 20,
+    "handover": "delivered",
+    "date": "2026-09-12",
+    "deliveredQty": 1,
+    "deliveredOn": "2026-09-12",
+    "paidOn": "2026-09-12",
+    "rev": "R2",
+    "downstream": "CN6-WM-R",
+    "note": "<b>SALT SELL DATED 12 SEP, PAID IN FULL AND DELIVERED IN FULL, AS AN R2 DOWNSELL.</b> Booked to CN6-WM with downstream CN6-WM-R, 1 unit for RM130 of which <b>RM110 is the goods and RM20 the delivery</b>, RM130 cash in and 1 unit handed over on 12 Sep, so nothing stays outstanding. The goods rate is RM110 a unit and clears the RM56.21 floor for 1 unit. Cost is RM44, so RM44 against RM110 of goods at 60.0%; the drafter's own line reads the rate and the margin on the full RM130, delivery included, which is the figure the Approve card shows. <b>Two flags.</b> The row books to CN6-WM as an R2, so CN6-WM-R is not the counterparty and gets no statement from it: that is what a downsell is and it is not answered. And CN6-WM's usual rate is about RM100 a unit across 7 orders, so RM110 sits 10% above it, which is in his favour.",
+    "rid": "s157"
    }
   ],
   "contacts": [
@@ -3952,9 +3983,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-12T10:13:39.682Z",
+  "QUEUE_COMMITTED": "2026-09-12T14:31:00.000Z",
   "PRICING": {
-   "takenAt": "2026-09-12T13:07:55.313Z",
+   "takenAt": "2026-09-12T14:28:47.712Z",
    "sizes": [
     0.5,
     1,
@@ -4108,15 +4139,15 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0.39285714285714285
+         "v": 0.4
         }
        },
        "attrib": 1,
        "shrinkRate": 0.06733921815889031,
        "avgDel": {
-        "n": 135,
-        "kg": 344.95,
-        "mean": 2.5552
+        "n": 137,
+        "kg": 347.95,
+        "mean": 2.5398
        }
       },
       "policy": {
@@ -4410,10 +4441,10 @@
      ]
     }
    },
-   "v": "v602"
+   "v": "v605"
   },
   "OPEN": {
-   "at": "2026-09-12T13:07:55.355Z",
+   "at": "2026-09-12T14:28:47.762Z",
    "count": 10,
    "byKey": {
     "CE4-CHE|2026-09-12|150": {
@@ -4585,11 +4616,11 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 23.19,
-     "free": 23.19,
+     "onHand": 20.19,
+     "free": 20.19,
      "owedOut": 0,
-     "coverDays": 4.6,
-     "rate": 5.02,
+     "coverDays": 3.9,
+     "rate": 5.23,
      "owedToYou": 752,
      "promised": 11.5,
      "short": 0
@@ -4610,7 +4641,7 @@
     "salt": "2026-09-08",
     "oil": "2026-09-09"
    },
-   "v": "v602"
+   "v": "v605"
   }
  }
 }
