@@ -118,7 +118,11 @@ claude.ai mirror. The built desk is seven destinations over eighteen pages
 (`VIEWS` in the master): Today, Order book, Stock, Pricing, Customers, The book, Enter.
 **The rail is two levels at most** (his instruction, 14 Sep 2026, v622): the destinations with no
 heading above them, and the open one's pages beneath it; a destination with one page lists
-nothing. Old tab ids remain addresses (`/desk#network`). In cloud mode the Enter view carries
+nothing. **One product in view for the whole desk** (his rule, 14 Sep 2026, v625): `PROD`, set only
+through `setProdView` by the page's product switch, the single-book pages' badge and the Enter form's
+select, and remembered on the device. A per-product page draws that product's detail alone, under a
+switch whose buttons carry every product's headline; the rail carries no switch.
+Old tab ids remain addresses (`/desk#network`). In cloud mode the Enter view carries
 **Add ID** (a code queued as `addid`, drafted into the roster, approved, folded) and
 **Approve**; the laptop desk keeps Names & IDs and has no drafts table. Everything the
 desk shows, cost and margin included, is served at the public URL.

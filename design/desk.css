@@ -82,7 +82,7 @@ html[data-tod="register"] body,body{background:var(--salt-obsidian);color:var(--
 /* ---- 3. TYPE. Every figure, code, label and control is mono; every sentence inherits
    the display face from body. The list is the desk's whole figure vocabulary. ---- */
 h2,.kick,.tab,.navct,.sub,.sub2,.chip,.tag,.rtag,.etype,.lclabel,.tierpill,.gem,.starpill,
-.prodtag,.sbadge,.pbadge,.pscope,.prodhd,.prodsw button,.prodsw .plbl,.vpill,.viewsw button,
+.prodtag,.sbadge,.pbadge,.pscope,.prodhd,.prodsw button,.vpill,.viewsw button,
 .vbtn,.navlink,.ubtn,.obsbtn,.lqb,.updchip,.exitbtn,.badge,.warnpill,.apchip,.aprail,.apdow,.apday .apdn,
 .apside .apm,.apside .apbig,.appop .apname,.appop td,
 .kpi .l,.kpi .v,.cardh .sub,table,th,td,.lhead,.lrow,.lmove,.lcol,.ldate,.lparty,.ecode,.eref,.lagreed,
@@ -165,8 +165,9 @@ details.rcard>summary .rname{font-size:16px;font-weight:500;}
   background:var(--salt-gradient-title);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;margin:0;}
 .kick{font-size:10px;font-weight:500;letter-spacing:.24em;color:var(--salt-brass);margin-top:4px;}
 /* ---- A DIVIDER IS NOT A DESTINATION (his instruction, 11 Sep 2026) ----
-   v622, HIS INSTRUCTION OF 14 SEP 2026: THE RAIL IS TWO LEVELS, so the four group headings are gone and
-   PRODUCT, the label of the salt and oil switch, is the one heading left. What follows still holds for it.
+   v622, HIS INSTRUCTION OF 14 SEP 2026: THE RAIL IS TWO LEVELS, so the four group headings are gone, and v625
+   moved the salt and oil switch onto the page with its PRODUCT label, so the rail carries no heading at all.
+   What follows is kept as the reason the tabs dress as they do.
    .grouplbl and .tab wore the same costume: the mono face, uppercase, weight 500, and the
    SAME COLOUR, --salt-mist for both, with 1.5px of size and a little tracking between them.
    Nothing in the rail said which of the two you could tap, and the group heading read as a
@@ -187,10 +188,6 @@ details.rcard>summary .rname{font-size:16px;font-weight:500;}
              not. The heading is NOT dimmed to make the gap: mist on obsidian is 5.0:1 and
              anything under it fails small text, so the gap is made from above. ---- */
 .railgroup{margin-bottom:15px;}
-.prodsw .plbl{display:flex;align-items:center;gap:9px;font-size:9.5px;font-weight:500;
-  letter-spacing:.22em;color:var(--salt-mist);padding:0 2px;margin:0 0 7px;}
-.prodsw .plbl::after{content:'';flex:1 1 auto;height:1px;background:var(--salt-line);}
-.prodsw{margin:2px 0 16px;}
 .tab{font-size:13px;font-weight:500;letter-spacing:.01em;text-transform:none;color:var(--salt-mist-light);
   border-radius:var(--salt-radius-sm);padding:8px 10px 8px 12px;}
 /* the resting glass is white 3%, which is also .tab.on's ground, so hover read as selected and
@@ -212,7 +209,7 @@ details.rcard>summary .rname{font-size:16px;font-weight:500;}
 .prodsw button.live{box-shadow:none;border-color:var(--pacc);color:var(--salt-salt);}
 .prodsw button.live .pdot{box-shadow:0 0 7px 0 var(--pacc);}
 .prodsw button .pv{font-weight:400;letter-spacing:0;text-transform:none;}
-.prodsw .pall{font-family:var(--salt-font-display);color:var(--salt-mist);}
+
 .chip{font-size:11px;letter-spacing:.05em;background:var(--salt-glass);border-color:var(--salt-line-faint);color:var(--salt-mist);}
 .chip b{color:var(--salt-salt);font-weight:500;}
 .chip.ver{color:var(--salt-brass);border-color:rgba(197,160,89,.45);font-weight:500;letter-spacing:.12em;}
@@ -559,7 +556,7 @@ details.obs>summary:hover{background:var(--salt-glass);}
   /* the 11px floor is the phone's, not the hierarchy's: at 11px against a 11.5px tab the
      heading and the destination were level again, which is the fault this rail just lost.
      The heading keeps the floor and the tab clears it. */
-  .prodsw .plbl{font-size:11px !important;letter-spacing:.22em;}
+
   .tab{font-size:13.5px;}
   .kpi .v{font-size:20px;}
   /* THE BOARD FITS ITS CARD WITHOUT A SCROLL, measured at v477: 337px of table in a 325px card since

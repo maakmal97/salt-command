@@ -2724,7 +2724,9 @@ section("The board — four laws, read off the engine (v387)");
   const { openMaster } = await import("../tools/payload.mjs");
   const E = (await import("../engine/pricing.mjs")).default;
   const { w } = await openMaster();
-  w.perProduct(() => {
+  /* v625: perProduct builds the book in view only, so it can no longer stand in for a walk over every book; the laws
+     are read for each product in turn, with the scope set and restored here */
+  for (const pid0 of JSON.parse(w.eval("JSON.stringify(PROD_IDS)"))) { w.eval("PROD=" + JSON.stringify(pid0) + ";recompute();"); (() => {
     const P = w.pxPolicy(), C = w.pxCost();
     const shown = (typeof w.shownSizes === "function") ? w.shownSizes() : P.boardSizes;
     const pid = P.boardSizes[0] === 0.5 ? "salt" : "oil";
@@ -2761,7 +2763,8 @@ section("The board — four laws, read off the engine (v387)");
       : `${pid}: the rate per unit never rises with size`);
     ok(shown.length > 0 && shown.every((q) => P.boardSizes.includes(q)),
       `${pid}: every size the board PRINTS is a rung the walk actually priced (${shown.length} of ${P.boardSizes.length})`);
-  });
+  })(); }
+  w.eval("PROD='salt';recompute();");
 }
 
 section("Pricing — stale is a statement about the lock, not a constant (v403)");
@@ -9343,35 +9346,13 @@ section("11 Sep 2026: a rail heading and a rail destination are told apart");
     const at = railCss.indexOf("\n" + sel + "{");
     return at < 0 ? null : railCss.slice(at + sel.length + 2, railCss.indexOf("}", at));
   };
-  const head = rule(".prodsw .plbl"), tab = rule(".tab");   // v622: PRODUCT is the one heading the rail keeps
-  ok(!!head && !!tab, "the layer states the rail's heading and its tab in one rule each");
-
-  /* CASE. Uppercase mono at wide tracking is the desk's label signature; a destination is named. */
+  /* v622 took the group headings out of the rail and v625 took PRODUCT with the switch, so the heading half of
+     this section went with them. What stays is the destination's own dress, which the headings were set against. */
+  const tab = rule(".tab");
+  ok(!!tab, "the layer states the rail's tab in one rule");
   ok(/text-transform:none/.test(tab), "the tab is sentence case");
-  ok(!/text-transform:none/.test(head), "and the heading is not, so the two never wear one costume");
-
-  /* WEIGHT. The reachable row is the brighter of the two, which is the way round it was not.
-     And the heading is NOT dimmed to make the gap: mist on obsidian is 5.0:1 and small text
-     under it fails, so the gap is made from above. */
   ok(/color:var\(--salt-mist-light\)/.test(tab), "the tab rests at mist-light");
-  ok(/color:var\(--salt-mist\)[;}]/.test(head), "the heading keeps mist, so nothing was dimmed to make the difference");
-  ok(!/color:var\(--salt-mist\)[;}]/.test(tab), "and the two no longer share one colour, which is the fault itself");
-
-  /* SIZE, read as numbers rather than trusted as text */
-  const px = (r) => parseFloat((/font-size:([\d.]+)px/.exec(r) || [])[1]);
-  ok(px(tab) >= px(head) + 3, `the tab is at least 3px over the heading (${px(head)} -> ${px(tab)})`);
-
-  /* RULE. --salt-line-faint is white 6% and drew 97px of rule that cannot be seen on this
-     ground; --salt-line is the hairline every card border is drawn in. */
-  ok(/\.prodsw \.plbl::after\{[^}]*background:var\(--salt-line\)/.test(railCss),
-     "every heading sits on the desk's own hairline, and nothing clickable on this desk does");
-
-  /* COLUMN. One heading rule covers PRODUCT too: it read as a heading only because SALT and OIL
-     are bordered pills, which is the accident this fix is about. */
-  const padL = (r) => { const m = /padding:([^;]*)/.exec(r); if (!m) return null;
-    const v = m[1].trim().split(/\s+/); return v.length === 4 ? v[3] : v.length >= 2 ? v[1] : v[0]; };
-  ok(padL(head) === "2px" && /padding:[^;]*\s12px[;}]/.test(tab),
-     `the heading is flush at ${padL(head)} and every destination is inset, so they form two columns`);
+  ok(/padding:[^;]*\s12px[;}]/.test(tab), "every destination is inset 12px");
 
   /* THE WIDTH IS THE WIDE DESK'S ONLY. This layer's bare .rail carries no media query and sits
      after v371's drawer block at the same specificity, so from v472 to 11 Sep it silently held
@@ -10884,6 +10865,42 @@ section("v624: every page carries one name, in the rail, across the page and in 
     ok(labels24.overview === "Rules" && labels24.forward === "Next 30 days" && labels24.network === "Associates" && labels24.orders === "Site orders" && labels24.pricing === "Pricing",
       "the five renamed pages carry their new names: " + JSON.stringify({ overview: labels24.overview, forward: labels24.forward, network: labels24.network, orders: labels24.orders, pricing: labels24.pricing }));
   } finally { try { w24.close(); } catch (e) { /* best effort */ } }
+}
+
+section("v625: a per-product page shows one product's detail, under a switch that carries every product's headline");
+{
+  /* HIS INSTRUCTION OF 14 SEP 2026: the summary for every product always shows, a switch changes the product, and two
+     products' detail never stand on one page. The switch sets the book in view (PROD, through setProdView), the choice
+     the single-book pages and the Enter form already share. The rail no longer carries a switch. Each assertion was
+     proved red by mutation. */
+  const { openMaster: om25 } = await import("../tools/payload.mjs");
+  const { w: w25 } = await om25();
+  const rd25 = (e) => JSON.parse(String(w25.eval("JSON.stringify(" + e + ")")));
+  try {
+    ok(rd25("document.getElementById('prodsw')===null&&!document.querySelector('.rail .prodsw')"), "the rail carries no product switch");
+    const ids25 = rd25("PROD_IDS");
+    const look = (p) => rd25("(function(){switchTab('" + p + "');var s=document.querySelector('.sec.on'),w=s.querySelector('.prodsw');"
+      + "return {blocks:[].map.call(s.querySelectorAll('.prodblock'),function(b){return b.dataset.prod;}),"
+      + "sw:w?[].map.call(w.querySelectorAll('button'),function(b){return {p:b.dataset.show,live:b.classList.contains('live'),pressed:b.getAttribute('aria-pressed'),fig:(b.querySelector('.pv')||{}).textContent||''};}):[],"
+      + "before:w?!!(w.compareDocumentPosition(s.querySelector('.prodblock'))&Node.DOCUMENT_POSITION_FOLLOWING):false,conso:s.querySelectorAll('.conso').length,prod:PROD};})()");
+    w25.eval("setProdView('salt');");
+    const pages = ["receivables", "financials", "inventory", "sourcing", "pricing", "analysis"];
+    const seen = Object.fromEntries(pages.map((p) => [p, look(p)]));
+    const bad = pages.filter((p) => { const x = seen[p]; return x.blocks.length !== 1 || x.blocks[0] !== "salt" || !x.before || x.sw.length !== ids25.length || x.sw.filter((b) => b.live).map((b) => b.p).join() !== "salt"; });
+    ok(bad.length === 0, "each of the six pages draws salt's detail alone, under a switch that lists every product and lights salt: " + (bad.length ? JSON.stringify(bad.map((p) => [p, seen[p]])) : "all six"));
+    const revs = rd25("PROD_IDS.map(function(p){return fmt0(prodSummary(p).rev);})");
+    ok(JSON.stringify(seen.receivables.sw.map((b) => b.fig)) === JSON.stringify(revs), "each button carries its product's revenue, the summary that stays in view: " + JSON.stringify(seen.receivables.sw.map((b) => b.fig)));
+    const units25 = rd25("PROD_IDS.map(function(p){var k=PROD;PROD=p;recompute();var u=units(currentStock)+' on hand';PROD=k;recompute();return u;})");
+    ok(JSON.stringify(seen.inventory.sw.map((b) => b.fig)) === JSON.stringify(units25), "On hand's buttons carry what each product has on hand instead: " + JSON.stringify(seen.inventory.sw.map((b) => b.fig)));
+    ok(seen.receivables.conso > 0 && seen.financials.conso > 0, "the both-books summary still leads Receivables and Financials");
+    const other = ids25.find((p) => p !== "salt");
+    w25.eval("switchTab('inventory');document.querySelector('.sec.on .prodsw button[data-show=\"" + other + "\"]').click();");
+    const after = look("inventory");
+    ok(after.prod === other && after.blocks.join() === other && after.sw.filter((b) => b.live).map((b) => b.p).join() === other && after.sw.find((b) => b.p === other).pressed === "true"
+      && rd25("localStorage.getItem('saltProd')") === other,
+      "a tap on " + other + " shows its detail alone, lights and presses it, and the device remembers it: " + JSON.stringify(after));
+    ok(look("pricing").blocks.join() === other, "and the next per-product page opens on " + other + " too, one choice for the desk");
+  } finally { try { w25.eval("setProdView('salt');"); } catch (e) { } try { w25.close(); } catch (e) { /* best effort */ } }
 }
 
 

@@ -1,5 +1,16 @@
 [
  {
+  "v": "v625",
+  "d": "14 Sep 2026",
+  "t": "A PER-PRODUCT PAGE SHOWS ONE PRODUCT'S DETAIL, UNDER A SWITCH THAT CARRIES EVERY PRODUCT'S HEADLINE",
+  "n": [
+   "<b>HIS INSTRUCTION OF 14 SEP 2026.</b> The summary for every product always shows, a button switches the product, and two products' detail never stand on one page, because together they made the page too long. Receivables, Financials, On hand, Sourcing, Pricing and Analysis drew salt's block and then oil's. They draw one now. Above it sits a switch with a button per product, lit in that product's colour when it is the one shown. Each button carries the product's headline, so every product's summary stays in view: its revenue, or on On hand what it has on hand. The both-books summaries that lead Receivables and Financials stay where they were.",
+   "<b>ONE PRODUCT IN VIEW FOR THE WHOLE DESK, HIS RULE.</b> The switch sets PROD through setProdView, the same road the badge on the single-book pages and the Enter form's product select already took. Picking Oil on one page shows Oil on the next, and this device remembers the choice.",
+   "<b>THE RAIL'S SWITCH IS GONE.</b> Its buttons only jumped to a block further down, and on half the pages there was none, so it dimmed and explained itself. With it went prodJump, prodHead, drawProdSw, markProdSw, the PRODUCT heading, the last heading the rail carried, and their CSS.",
+   "<b>THE CHECKS.</b> A new section of seven assertions: no switch in the rail, and one block of the book in view on each of the six pages, under a switch listing every product and lighting that one. The buttons carry revenue, and units on hand on On hand. The both-books summaries still stand. A tap on Oil shows Oil alone and is remembered, and the next page opens on Oil. Seven mutations each turned it red. The four board laws walk each product in turn, having leaned on perProduct to do it, and the 11 Sep rail section keeps only the tab's own dress."
+  ]
+ },
+ {
   "v": "v624",
   "d": "14 Sep 2026",
   "t": "EVERY PAGE CARRIES ONE NAME, AND FIVE NAMES SAY WHAT THEIR PAGES ARE",
