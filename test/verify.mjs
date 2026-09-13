@@ -2435,7 +2435,7 @@ section("Views — every part is one tap away (v343)");
   ok(/const VIEW_PART=\{\}/.test(m) && /function railSubs\(\)/.test(m), "the master keeps the part each view shows and lists the parts under the rail");
   ok(/class="vnav"/.test(m) && !/details\.vfold/.test(m), "a view names its parts on a strip; the buried folds are gone");
   ok(/parts:\['approve','orders','plans'\]/.test(m) && /function tabApprove\(\)/.test(m) && /async function apDecide\(/.test(m), "Enter carries Approve, reading and deciding the same drafts the phone does");
-  ok(/function tabOrders\(\)/.test(m) && /async function ordAct\(/.test(m) && /orders:\(\)=>ordLoad\(\)/.test(m) && /orders:'Orders'/.test(m),
+  ok(/function tabOrders\(\)/.test(m) && /async function ordAct\(/.test(m) && /orders:\(\)=>ordLoad\(\)/.test(m) && /orders:'Site orders'/.test(m),
     "and Orders (v499), reading and moving the customer orders the statements site holds");
   ok(/data-m="addid">Add ID/.test(m) && /id="wbPaneAddid"/.test(m) && /wbMode==='addid'/.test(m), "the cloud desk's Workbench can register a party by code");
   ok(/mode:'addid',code:code,kind:kind,parent:parent/.test(m), "and queues it as the addid entry the drafter knows");
@@ -10861,6 +10861,31 @@ section("v623: an associate earns a unit per RM 470, and R3 counts against a hur
   } finally { await new Promise((r) => setTimeout(r, 200)); try { w23.close(); } catch (e) { /* best effort */ } }
 }
 
+section("v624: every page carries one name, in the rail, across the page and in its heading");
+{
+  /* HIS INSTRUCTION OF 14 SEP 2026: rename where necessary. A page's label is its name everywhere, no two pages share
+     one, and a destination's first page does not repeat the destination's name unless it is the only page. Every page is
+     rendered on the running desk and its heading read. Each assertion was proved red by mutation. */
+  const { openMaster: om24 } = await import("../tools/payload.mjs");
+  const { w: w24 } = await om24();
+  const rd24 = (e) => JSON.parse(String(w24.eval("JSON.stringify(" + e + ")")));
+  try {
+    const views24 = rd24("VIEWS.map(function(v){return {id:v.id,name:v.name,pages:[v.lead].concat(v.parts)};})");
+    const labels24 = rd24("TAB_LABEL");
+    const all24 = views24.flatMap((v) => v.pages);
+    const heads24 = {};
+    for (const p of all24) heads24[p] = rd24("(function(){switchTab('" + p + "');var h=document.querySelector('.sec.on h1');return h?h.textContent:null;})()");
+    const off24 = all24.filter((p) => heads24[p] !== labels24[p]).map((p) => p + ": " + labels24[p] + " / " + heads24[p]);
+    ok(all24.length === 18 && off24.length === 0, "all eighteen pages open under a heading that is their label" + (off24.length ? ": " + off24.join("; ") : ""));
+    const names24 = all24.map((p) => labels24[p]);
+    ok(new Set(names24).size === names24.length, "no two pages share a name: " + names24.join(", "));
+    const echo24 = views24.filter((v) => v.pages.length > 1 && labels24[v.pages[0]] === v.name).map((v) => v.name);
+    ok(echo24.length === 0, "no destination with more than one page opens on a page of its own name" + (echo24.length ? ": " + echo24.join(", ") : ""));
+    ok(labels24.overview === "Rules" && labels24.forward === "Next 30 days" && labels24.network === "Associates" && labels24.orders === "Site orders" && labels24.pricing === "Pricing",
+      "the five renamed pages carry their new names: " + JSON.stringify({ overview: labels24.overview, forward: labels24.forward, network: labels24.network, orders: labels24.orders, pricing: labels24.pricing }));
+  } finally { try { w24.close(); } catch (e) { /* best effort */ } }
+}
+
 
 section("v622: the rail is two levels, the destinations and the open one's pages");
 {
@@ -10893,7 +10918,7 @@ section("v622: the rail is two levels, the destinations and the open one's pages
     ok(price.solo && price.subs === null && price.pills.length === 0, "Pricing, with one page, lists nothing under itself and draws its own block: " + JSON.stringify(price));
     ok(JSON.stringify(price.allSolo) === '["price"]', "and it is the only destination that does: " + JSON.stringify(price.allSolo));
     const people = look("people");
-    ok(!people.solo && JSON.stringify(people.subs) === '["Who buys","Network","Map"]', "a destination with three pages still lists all three: " + JSON.stringify(people.subs));
+    ok(!people.solo && JSON.stringify(people.subs) === '["Who buys","Associates","Map"]', "a destination with three pages still lists all three: " + JSON.stringify(people.subs));
   } finally { try { w22.close(); } catch (e) { /* best effort */ } }
 }
 
