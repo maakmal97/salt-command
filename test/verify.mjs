@@ -1938,7 +1938,7 @@ section("Book — ledger/book.json is the source (v339)");
   ok(/ok\s+the master's BOOK block is ledger\/book\.json/.test(chk), "tools/booksync.mjs --check: the master's book block is the file");
   const book = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
   const keys = Object.keys(book).filter((k) => k !== "NOTES");
-  ok(keys.length === 28, "the book holds the twenty-eight ledger keys");   // v353 added PRICE_SET; v504 added COUNTS; v549 retired SOURCING_PLAN; v553 added COST_RULE
+  ok(keys.length === 29, "the book holds the twenty-nine ledger keys");   // v353 added PRICE_SET; v504 added COUNTS; v549 retired SOURCING_PLAN; v553 added COST_RULE; v615 added INTRODUCTIONS
   ok(Array.isArray(book.sales) && book.sales.length > 100 && Array.isArray(book.purchases), "with the rows as records");
   ok(typeof book.QUEUE_COMMITTED === "string" && typeof book.STATED_STOCK === "number", "and the singletons as values");
   ok(book.NOTES && Array.isArray(book.NOTES.STATED_STOCK) && book.NOTES.STATED_STOCK.length > 0, "the stated stock's roll history survived as NOTES");
