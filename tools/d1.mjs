@@ -17,6 +17,7 @@
  *   node tools/d1.mjs --status    what the store holds, no writes
  *   --local                       act on the local D1 rather than the remote one
  */
+import "./cloudflare.mjs";
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { resolve, dirname } from "node:path";

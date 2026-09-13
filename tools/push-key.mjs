@@ -14,6 +14,7 @@
  *   node tools/push-key.mjs             mint and store in both places
  *   node tools/push-key.mjs --force     replace an existing one
  */
+import "./cloudflare.mjs";
 import { spawn, spawnSync } from "node:child_process";
 import { webcrypto as crypto } from "node:crypto";
 

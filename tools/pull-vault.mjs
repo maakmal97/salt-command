@@ -15,6 +15,7 @@
  *
  * The passphrase is asked hidden, used once, never stored or printed. Laptop only.
  */
+import "./cloudflare.mjs";
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";

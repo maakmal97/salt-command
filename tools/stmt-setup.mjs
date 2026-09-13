@@ -18,6 +18,7 @@
  *   node tools/stmt-setup.mjs            both secrets, then the public key into the config
  *   node tools/stmt-setup.mjs --force    re-mint the push pair as well, silencing every phone
  */
+import "./cloudflare.mjs";
 import { spawn, spawnSync } from "node:child_process";
 import { webcrypto as crypto } from "node:crypto";
 import { readFileSync, writeFileSync } from "node:fs";

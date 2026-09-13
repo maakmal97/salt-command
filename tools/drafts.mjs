@@ -21,6 +21,7 @@
  *   node tools/drafts.mjs --committed <id>...  mark rows as folded into the master
  *   --local                                    act on the local D1 rather than the remote one
  */
+import "./cloudflare.mjs";
 import { readFileSync, existsSync, writeFileSync, mkdirSync, rmSync } from "node:fs";
 import { DATA_DIR } from "./book.mjs";
 import { spawnSync } from "node:child_process";

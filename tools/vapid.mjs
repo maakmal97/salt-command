@@ -13,6 +13,7 @@
  *   node tools/vapid.mjs            generate, store the secret, print the public key
  *   node tools/vapid.mjs --force    do it again anyway, invalidating every subscription
  */
+import "./cloudflare.mjs";
 import { spawn, spawnSync } from "node:child_process";
 import { webcrypto as crypto } from "node:crypto";
 

@@ -20,6 +20,7 @@
  *   node tools/seed-vault.mjs --dry-run   encrypt only; write the envelope (ciphertext) to
  *                                         test/tmp for inspection, push nothing
  */
+import { wranglerSaid } from "./cloudflare.mjs";
 import { webcrypto as wc } from "node:crypto";
 import { readFileSync, writeFileSync, mkdirSync, existsSync, rmSync } from "node:fs";
 import { dirname, resolve, join } from "node:path";
@@ -147,8 +148,8 @@ async function main() {
     console.log(`SEEDED: ${named} names encrypted and pushed to KV "${VKEY}". The phone can now decrypt them with the passphrase.`);
   } catch (e) {
     console.error("PUSH FAILED: wrangler could not write the KV key.");
-    console.error("  " + String(e.message || e).split("\n")[0]);
-    console.error("  Check `npx wrangler whoami`, the KV id in wrangler.jsonc, and CLOUDFLARE_API_TOKEN for unattended runs.");
+    console.error("  wrangler said: " + wranglerSaid(e));
+    console.error("  Timed out: run it again. Anything else: check `npx wrangler whoami`, the KV id in wrangler.jsonc, and CLOUDFLARE_API_TOKEN for unattended runs.");
     process.exitCode = 1;
   } finally {
     try { rmSync(tmp, { force: true }); } catch (e) {}   // never leave names or the envelope on disk

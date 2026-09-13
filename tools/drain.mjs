@@ -37,6 +37,7 @@
  *       an unattended run may need CLOUDFLARE_API_TOKEN set.
  */
 
+import { wranglerSaid } from "./cloudflare.mjs";
 import { readFileSync, writeFileSync, renameSync, existsSync } from "node:fs";
 import { DATA_DIR } from "./book.mjs";
 import { dirname, resolve, join } from "node:path";
@@ -170,8 +171,8 @@ export function runDrain({ keep = false, io = {} } = {}) {
   try { keys = IO.list(); }
   catch (e) {
     console.error("DRAIN FAILED: wrangler could not reach the KV namespace.");
-    console.error("  " + e.message.split("\n")[0]);
-    console.error("  Check `npx wrangler whoami`, that the KV id in wrangler.jsonc is real, and CLOUDFLARE_API_TOKEN for unattended runs.");
+    console.error("  wrangler said: " + wranglerSaid(e));
+    console.error("  Timed out: run it again. Anything else: check `npx wrangler whoami`, that the KV id in wrangler.jsonc is real, and CLOUDFLARE_API_TOKEN for unattended runs.");
     process.exit(1);
   }
   const captured = [];   // {name, raw, entries}
@@ -216,7 +217,7 @@ function runForget() {
   /* and out of KV, or the next drain would simply bring it back */
   let fromKv = 0, keys = [];
   try { keys = kvList(); }
-  catch (e) { console.error("KV unreachable, so only the file was cleaned: " + e.message.split("\n")[0]); }
+  catch (e) { console.error("KV unreachable, so only the file was cleaned: " + wranglerSaid(e)); }
   for (const name of keys) {
     const raw = kvGet(name); if (!raw) continue;
     const j = jsonSlice(raw, "{", "}"); if (!j || !Array.isArray(j.queue)) continue;
@@ -225,7 +226,7 @@ function runForget() {
     fromKv += j.queue.length - kept.length;
     if (kept.length) {
       try { wr(["kv", "key", "put", name, JSON.stringify({ updated: nowISO(), desk: j.desk || "cloud", queue: kept })]); }
-      catch (e) { console.error("  could not rewrite " + name + ": " + e.message.split("\n")[0]); }
+      catch (e) { console.error("  could not rewrite " + name + ": " + wranglerSaid(e)); }
     } else { kvDelete(name); }
   }
   console.log(`FORGOT ${at}`);

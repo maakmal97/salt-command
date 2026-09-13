@@ -30,6 +30,7 @@
  *   node tools/update.mjs -m "message"   commit message (defaults to the version)
  */
 
+import "./cloudflare.mjs";
 import { readFileSync, existsSync, writeFileSync, readdirSync } from "node:fs";
 import { DATA_DIR } from "./book.mjs";
 import { spawnSync } from "node:child_process";

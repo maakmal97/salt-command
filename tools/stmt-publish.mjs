@@ -17,6 +17,7 @@
  * exists. `--dry <dir>` writes the bulk files and touches nothing remote, which is how the suite
  * proves it. It stands down while wrangler.stmt.jsonc still carries the placeholder store id.
  */
+import "./cloudflare.mjs";
 import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { dirname, resolve, join } from "node:path";

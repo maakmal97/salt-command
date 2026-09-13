@@ -423,6 +423,38 @@ section("Vault crypto — desk-compatible round trip");
   ok(threw, "decrypt with the wrong pass → throws");
 }
 
+/* ---- 2c. The route to Cloudflare: IPv4 first, and wrangler's own words (13 Sep 2026) ---- */
+section("Cloudflare route: IPv4 first in every tool that reaches it, and wrangler's error shown");
+{
+  /* In a fresh node, the way a tool runs: the lookup order is set, and NODE_OPTIONS keeps what was
+     there and gains the flag once, so a tool that starts a tool does not stack it. */
+  const FLAG = "--dns-result-order=ipv4first";
+  const probe = (opts) => JSON.parse(execFileSync(process.execPath, ["--input-type=module", "-e",
+    'await import("./tools/cloudflare.mjs"); const { getDefaultResultOrder } = await import("node:dns");'
+    + " console.log(JSON.stringify([getDefaultResultOrder(), process.env.NODE_OPTIONS]));"],
+    { cwd: REPO, encoding: "utf8", env: { ...process.env, NODE_OPTIONS: opts } }));
+  let p = probe("--max-old-space-size=512");
+  ok(p[0] === "ipv4first", "a tool importing tools/cloudflare.mjs looks up IPv4 first");
+  ok(p[1] === "--max-old-space-size=512 " + FLAG, "…and hands the flag to every wrangler it starts through NODE_OPTIONS, keeping what was there");
+  p = probe("--max-old-space-size=512 " + FLAG);
+  ok(p[1] === "--max-old-space-size=512 " + FLAG, "…once: a tool started by a tool does not stack the flag");
+
+  /* Every tool that starts wrangler or fetches the Worker imports it, so a new one that forgets
+     fails here rather than timing out on the laptop. The count stops the census going quiet. */
+  const src = (f) => readFileSync(join(REPO, "tools", f), "utf8");
+  const reach = readdirSync(join(REPO, "tools")).filter((f) => f.endsWith(".mjs") && f !== "cloudflare.mjs")
+    .filter((f) => /\["wrangler"|fetch\((SITE|BASE|base) \+/.test(src(f)));
+  const bare = reach.filter((f) => !/^import (\{ wranglerSaid \} from )?"\.\/cloudflare\.mjs";$/m.test(src(f)));
+  ok(reach.length >= 10 && !bare.length, "every tool that reaches Cloudflare imports tools/cloudflare.mjs (" + reach.length + " found; without it: " + (bare.join(", ") || "none") + ")");
+
+  const { wranglerSaid } = await import("../tools/cloudflare.mjs");
+  /* the stderr shape wrangler 4 really writes into a pipe, colour codes and all (captured 13 Sep) */
+  const said = "\x1b[31mX \x1b[41;31m[\x1b[41;97mERROR\x1b[41;31m]\x1b[0m \x1b[1mThe request to Cloudflare's API timed out.\x1b[0m\n\n\nLogs were written to \"wrangler.log\"\n";
+  const timedOut = Object.assign(new Error("Command failed: npx wrangler kv key put vault\n" + said), { stdout: "\n", stderr: said });
+  ok(wranglerSaid(timedOut) === "The request to Cloudflare's API timed out.", "a failed wrangler call reports wrangler's own [ERROR] line, colours stripped, not \"Command failed\"");
+  ok(wranglerSaid(new Error("Command failed: npx wrangler kv key list\nno error line")) === "Command failed: npx wrangler kv key list", "…and with no [ERROR] line, the first line of the message, as before");
+}
+
 /* ---- 3. Worker: access gate + routing ------------------------------------------ */
 section("Worker — access gate and routing");
 {
