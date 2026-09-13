@@ -10603,6 +10603,44 @@ section("v611: an R2 sale books to the associate's bucket, at entry and on corre
   } finally { w11.close(); }
 }
 
+section("v615: who introduced whom is one map, from the row stamps and the book, one level");
+{
+  /* HIS RULING OF 13 SEP 2026. An introduction is either stamped on the introduced customer's row by an
+     R3 entry, or declared in INTRODUCTIONS on the book; introductions() reads both and nothing else may.
+     Every check runs on both books, because an introduction is a relationship and not a sale of one
+     product. Each was proved red by mutation. */
+  const bk15 = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const { openMaster: om15 } = await import("../tools/payload.mjs");
+  const { w: w15 } = await om15();
+  const rd15 = (e) => JSON.parse(String(w15.eval("JSON.stringify(" + e + ")")));
+  try {
+    for (const p15 of ["salt", "oil"]) {
+      w15.eval(`setProd('${p15}');`);
+      const in15 = rd15("introductions()");
+      const has15 = (a, c) => (in15[a] || []).includes(c);
+      ok(bk15.INTRODUCTIONS.length > 0 && bk15.INTRODUCTIONS.every((e) => has15(e.by, e.customer)),
+        `${p15}: every introduction declared on the book reaches the map`);
+      const st15 = rd15("sales.filter(function(s){return s.ref;}).map(function(s){return [s.ref,s.customer];})");
+      ok(st15.length > 0 && st15.every(([a, c]) => has15(a, c)), `${p15}: every stamped introduction reaches it too, whichever book its row is on`);
+      ok(has15("CS6-BS", "CM4-MK") && ["CG5-SB", "CC5-OKR", "CJ4-BJ", "CE4-CHE", "CS6-PER"].every((c) => has15("CJ4-OKR", c)),
+        `${p15}: CM4-MK sits under CS6-BS, and CJ4-OKR's stamped referral and declared network are one list`);
+      const par15 = {};
+      Object.entries(in15).forEach(([a, cs]) => cs.forEach((c) => (par15[c] = par15[c] || []).push(a)));
+      ok(Object.values(par15).every((l) => l.length === 1), `${p15}: no customer is introduced by two associates: ` + JSON.stringify(par15));
+      const ns15 = rd15("networkStats().map(function(x){return {id:x.id,refs:x.referrals};})");
+      ok(ns15.length > 0 && ns15.every((x) => JSON.stringify(x.refs.slice().sort()) === JSON.stringify((in15[x.id] || []).slice().sort())),
+        `${p15}: every associate's card lists exactly the customers the map gives them`);
+    }
+    w15.eval("setProd('salt');");
+    ok(JSON.stringify(rd15("Object.keys(R0_NETWORK)")) === '["reseller"]', "the founder's entry names the founder and holds no network of its own");
+    w15.eval("INTRODUCTIONS.push({by:'CE4-AD',customer:'CX9-ZZ'});");
+    const fr15 = rd15("networkStats().find(function(x){return x.id==='CE4-AD';}).referrals");
+    w15.eval("INTRODUCTIONS.pop();");
+    ok(fr15.includes("CX9-ZZ") && !rd15("networkStats().find(function(x){return x.id==='CE4-AD';}).referrals").includes("CX9-ZZ"),
+      "a forced declaration reaches the card, and taking it away takes it off");
+  } finally { w15.close(); }
+}
+
 
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
 process.exit(fail ? 1 : 0);

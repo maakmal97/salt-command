@@ -1,6 +1,6 @@
 {
- "v": "v612",
- "stamped": "13 Sep 2026, 22:50 KL",
+ "v": "v615",
+ "stamped": "14 Sep 2026, 00:51 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -4009,6 +4009,33 @@
     }
    ]
   },
+  "INTRODUCTIONS": [
+   {
+    "by": "CJ4-OKR",
+    "customer": "CC5-OKR",
+    "note": "Declared network, counted retrospectively on his word of 13 Sep 2026."
+   },
+   {
+    "by": "CJ4-OKR",
+    "customer": "CJ4-BJ",
+    "note": "Declared network, counted retrospectively on his word of 13 Sep 2026."
+   },
+   {
+    "by": "CJ4-OKR",
+    "customer": "CE4-CHE",
+    "note": "Declared network, counted retrospectively on his word of 13 Sep 2026."
+   },
+   {
+    "by": "CJ4-OKR",
+    "customer": "CS6-PER",
+    "note": "Declared network, counted retrospectively on his word of 13 Sep 2026."
+   },
+   {
+    "by": "CS6-BS",
+    "customer": "CM4-MK",
+    "note": "His ruling of 13 Sep 2026: the first order went through CS6-BS-R on 15 Jul, and every order since has been direct."
+   }
+  ],
   "REWARD_OPENING": {
    "CJ4-OKR": 0,
    "CS6-BS": 0,
@@ -4131,7 +4158,7 @@
   ],
   "QUEUE_COMMITTED": "2026-09-13T14:18:53.911Z",
   "PRICING": {
-   "takenAt": "2026-09-13T14:51:01.934Z",
+   "takenAt": "2026-09-13T16:51:53.148Z",
    "sizes": [
     0.5,
     1,
@@ -4230,8 +4257,8 @@
          "date": "2026-09-09",
          "sup": "SA5-BTR"
         },
-        "days": 38,
-        "sinceLot": 47
+        "days": 39,
+        "sinceLot": 48
        },
        "lockBase": {
         "lockedOn": "2026-08-06",
@@ -4439,8 +4466,8 @@
          "date": "2026-09-08",
          "sup": "SP7-PUD"
         },
-        "days": 38,
-        "sinceLot": 38
+        "days": 39,
+        "sinceLot": 39
        },
        "lockBase": {
         "lockedOn": "2026-08-06",
@@ -4587,10 +4614,10 @@
      ]
     }
    },
-   "v": "v612"
+   "v": "v615"
   },
   "OPEN": {
-   "at": "2026-09-13T14:51:01.973Z",
+   "at": "2026-09-13T16:51:53.192Z",
    "count": 10,
    "byKey": {
     "CM4-MK|2026-09-13|330": {
@@ -4607,7 +4634,7 @@
      "deliveredOn": "2026-09-13",
      "handover": "delivered",
      "key": "CM4-MK|2026-09-13|330",
-     "age": 0,
+     "age": 1,
      "exp": 110
     },
     "CE4-CHE|2026-09-12|150": {
@@ -4625,7 +4652,7 @@
      "deliveredOn": "2026-09-12",
      "handover": "delivered",
      "key": "CE4-CHE|2026-09-12|150",
-     "age": 1,
+     "age": 2,
      "exp": 150
     },
     "CH6-SET|2026-09-11|120": {
@@ -4688,7 +4715,7 @@
      "deliveredOn": "2026-09-07",
      "handover": "delivered",
      "key": "CJ4-BJ|2026-09-07|850",
-     "age": 6,
+     "age": 7,
      "exp": 204
     },
     "CA4-DAM|2026-09-02|160": {
@@ -4706,7 +4733,7 @@
      "handover": "collected",
      "defaulted": true,
      "key": "CA4-DAM|2026-09-02|160",
-     "age": 11,
+     "age": 12,
      "exp": 0
     },
     "CN6-WM|2026-08-30|110": {
@@ -4723,7 +4750,7 @@
      "deliveredOn": "2026-08-30",
      "handover": "delivered",
      "key": "CN6-WM|2026-08-30|110",
-     "age": 14,
+     "age": 15,
      "exp": 27.5
     },
     "CA4-DAM|2026-08-28|100": {
@@ -4741,7 +4768,7 @@
      "handover": "collected",
      "defaulted": true,
      "key": "CA4-DAM|2026-08-28|100",
-     "age": 16,
+     "age": 17,
      "exp": 0
     },
     "SF6-KLC|2026-07-08|750": {
@@ -4765,8 +4792,8 @@
      "onHand": 16.19,
      "free": 16.19,
      "owedOut": 0,
-     "coverDays": 2.9,
-     "rate": 5.52,
+     "coverDays": 3,
+     "rate": 5.45,
      "owedToYou": 752,
      "promised": 11.5,
      "short": 0
@@ -4787,7 +4814,7 @@
     "salt": "2026-09-08",
     "oil": "2026-09-09"
    },
-   "v": "v612"
+   "v": "v615"
   }
  }
 }

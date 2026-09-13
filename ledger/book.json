@@ -326,6 +326,33 @@
     "CE4-AD",
     "CR3-DAM"
   ],
+  "INTRODUCTIONS": [
+    {
+      "by": "CJ4-OKR",
+      "customer": "CC5-OKR",
+      "note": "Declared network, counted retrospectively on his word of 13 Sep 2026."
+    },
+    {
+      "by": "CJ4-OKR",
+      "customer": "CJ4-BJ",
+      "note": "Declared network, counted retrospectively on his word of 13 Sep 2026."
+    },
+    {
+      "by": "CJ4-OKR",
+      "customer": "CE4-CHE",
+      "note": "Declared network, counted retrospectively on his word of 13 Sep 2026."
+    },
+    {
+      "by": "CJ4-OKR",
+      "customer": "CS6-PER",
+      "note": "Declared network, counted retrospectively on his word of 13 Sep 2026."
+    },
+    {
+      "by": "CS6-BS",
+      "customer": "CM4-MK",
+      "note": "His ruling of 13 Sep 2026: the first order went through CS6-BS-R on 15 Jul, and every order since has been direct."
+    }
+  ],
   "PEOPLE": {
     "banned": [
       {

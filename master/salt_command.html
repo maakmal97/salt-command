@@ -5361,6 +5361,13 @@ const customerRefunds=[
 ];
 const roster=["CA5-SEN","CG5-SB","CJ4-BJ","CR3-DAM","CS6-PER","CN5-TAI","CJ4-OKR","CC5-OKR","CA4-DAM","CE4-CHE","CM6-HCM","CM4-SK","CS6-BS","CS6-BS-R","CM4-MK","CH5-KLC","CI4-OKR","CN6-WM","CN6-WM-R","CZ6-WM","CR4-PJ","CD4-CS","CA5-KER","CE4-AD","SF6-KLC","SA5-BTR","SM4-KEP","SP7-PUD","CH4-KS","CS6-PER-R","CY2-NIL","CR3-PUD","CH4-MAL","CH5-OUG","CA11-SEN","CM6-PJ","CK4-SEN","CZ4-MK","CH6-SET","CD7-SEG","CA7-JTR","CF5-WM","CE5-TBC","CR3-DAM-R","CB7-TBC","CJ4-OKR-R","CI4-OKR-R","CE4-AD-R"];
 const associates=["CS6-BS","CJ4-OKR","CS6-PER","CN6-WM","CI4-OKR","CE4-AD","CR3-DAM"];
+const INTRODUCTIONS=[
+  {"by":"CJ4-OKR","customer":"CC5-OKR","note":"Declared network, counted retrospectively on his word of 13 Sep 2026."},
+  {"by":"CJ4-OKR","customer":"CJ4-BJ","note":"Declared network, counted retrospectively on his word of 13 Sep 2026."},
+  {"by":"CJ4-OKR","customer":"CE4-CHE","note":"Declared network, counted retrospectively on his word of 13 Sep 2026."},
+  {"by":"CJ4-OKR","customer":"CS6-PER","note":"Declared network, counted retrospectively on his word of 13 Sep 2026."},
+  {"by":"CS6-BS","customer":"CM4-MK","note":"His ruling of 13 Sep 2026: the first order went through CS6-BS-R on 15 Jul, and every order since has been direct."}
+];
 const PEOPLE={
   "banned": [
     {
@@ -6295,7 +6302,7 @@ const quoteFor=p=>{const f=QUOTES[p||PROD];return f?f():null;};
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{"v":"v614","d":"14 Sep 2026","t":"CH4-KS IS BACK ON THE MAP: THE GAZETTEER'S KS RENAME REACHES THE DESK","n":["<b>HIS EDIT OF 14 SEP 2026, MADE ON GITHUB.</b> geo/places.json renamed the key KLS to KS, following CH4-KS home: the code was re-keyed to CH4-KLS on 28 Aug and back to CH4-KS on 12 Sep, and from that day the desk read the suffix KS, found no such key, and left the party off the map. No sync ran with the edit, so the master's GEO block still said KLS, CI failed on the push, and the cloud fold, which runs the gate before it commits, would have stalled the next approval. The block is synced byte for byte and the stale example in the locality comment goes. The check that caught it is CI's own geosync --check, proved red by that failed run.","<b>FOUND, NOT CHANGED.</b> Three roster codes still carry a place key the gazetteer does not hold: CA7-JTR (JTR), and CE5-TBC and CB7-TBC (TBC, the directory's to-be-confirmed placeholder). A coordinate comes from the directory by hand through tools/geofetch.mjs."]},{"v":"v613","d":"13 Sep 2026","t":"THE NAMES PANEL'S UNREACHABLE UNLOCK HANDLER GOES, WITH THE VAULT STATE ONLY IT TOUCHED","n":["<b>A HANDLER NOTHING COULD REACH IS REMOVED.</b> renderReveal wired an Unlock button, #vunlock, that no template has rendered since the v217 lock came off, so its decrypt, its hold on the passphrase and its messages could never run. It goes, with the one renderReveal local only it read. Show names on the phone, Import old vault and the laptop's Save are untouched.","<b>AND THE VAULT STATE ONLY IT TOUCHED.</b> vaultPass, vaultFileStamp, vaultLocalStamp and vaultSaveArmed were written and never read: only that handler ever held the passphrase, and the two stamps lost their last reader at v612. vaultLoad still takes the vault it is served and vaultSave still posts an ISO updated stamp, so nothing behaves differently and no assertion was added. The build's privacy note no longer says lockVault drops a passphrase."]},
+const evolution=[{"v":"v615","d":"14 Sep 2026","t":"WHO INTRODUCED WHOM IS ONE MAP ON THE BOOK, AND CM4-MK SITS UNDER CS6-BS","n":["<b>HIS RULING OF 13 SEP 2026, THE FIRST OF THREE VERSIONS THAT CHANGE THE REWARD RULE.</b> An introduction came from two places that did not know about each other: the referral stamp an R3 entry puts on a row, and a network list inside R0_NETWORK that only the founder could hold. CM4-MK, whose first order went through CS6-BS-R on 15 Jul and who has bought direct ever since, had nowhere to go. INTRODUCTIONS on the book now holds every introduction no row carries, each with its reason, and introductions() reads the stamps and the book together. R0_NETWORK names the founder and nothing else.","<b>WHAT MOVES.</b> On salt, CS6-BS's card lists CM4-MK, and its first-order R3 reads RM 220. No reward balance moves: the earning rule is v616. On oil, the lists now match salt's, because a stamp is read off every row of both books rather than the priced rows of the book in view; CI4-OKR's oil R3 reads RM 130 from an introduced customer's first oil order.","<b>THE CHECKS.</b> Twelve assertions over both books: every declared and every stamped introduction reaches the map, no customer has two introducers, and every card lists exactly what the map gives it. Five mutations each turned the section red."]},{"v":"v614","d":"14 Sep 2026","t":"CH4-KS IS BACK ON THE MAP: THE GAZETTEER'S KS RENAME REACHES THE DESK","n":["<b>HIS EDIT OF 14 SEP 2026, MADE ON GITHUB.</b> geo/places.json renamed the key KLS to KS, following CH4-KS home: the code was re-keyed to CH4-KLS on 28 Aug and back to CH4-KS on 12 Sep, and from that day the desk read the suffix KS, found no such key, and left the party off the map. No sync ran with the edit, so the master's GEO block still said KLS, CI failed on the push, and the cloud fold, which runs the gate before it commits, would have stalled the next approval. The block is synced byte for byte and the stale example in the locality comment goes. The check that caught it is CI's own geosync --check, proved red by that failed run.","<b>FOUND, NOT CHANGED.</b> Three roster codes still carry a place key the gazetteer does not hold: CA7-JTR (JTR), and CE5-TBC and CB7-TBC (TBC, the directory's to-be-confirmed placeholder). A coordinate comes from the directory by hand through tools/geofetch.mjs."]},{"v":"v613","d":"13 Sep 2026","t":"THE NAMES PANEL'S UNREACHABLE UNLOCK HANDLER GOES, WITH THE VAULT STATE ONLY IT TOUCHED","n":["<b>A HANDLER NOTHING COULD REACH IS REMOVED.</b> renderReveal wired an Unlock button, #vunlock, that no template has rendered since the v217 lock came off, so its decrypt, its hold on the passphrase and its messages could never run. It goes, with the one renderReveal local only it read. Show names on the phone, Import old vault and the laptop's Save are untouched.","<b>AND THE VAULT STATE ONLY IT TOUCHED.</b> vaultPass, vaultFileStamp, vaultLocalStamp and vaultSaveArmed were written and never read: only that handler ever held the passphrase, and the two stamps lost their last reader at v612. vaultLoad still takes the vault it is served and vaultSave still posts an ISO updated stamp, so nothing behaves differently and no assertion was added. The build's privacy note no longer says lockVault drops a passphrase."]},
 
 {"v":"v612","d":"13 Sep 2026","t":"SIX R2 RESALES MOVE INTO THEIR ASSOCIATES' BUCKETS, AND ADD ID READS THE VAULT FRESH","n":["<b>SIX RESALES MOVE INTO THE ASSOCIATES' BUCKETS, APPROVED ON HIS WORD OF 13 SEP 2026.</b> The corrections drafted under his ruling of the same day are folded. CR3-DAM's 5 unit of 10 Sep goes to CR3-DAM-R, CS6-BS's 1 unit of 12 Sep to CS6-BS-R, and four of CN6-WM's single units, 11 to 13 Sep, to CN6-WM-R. Every row was paid in full and handed over, so nothing owed moves and the inventory does not move.","<b>ADD ID READS THE VAULT AGAIN AT THE MOMENT IT FILES A NAME.</b> The desk loaded the encrypted vault once, when it opened, and filing a name saved that copy back over the whole of the cloud's. A phone left open across a laptop reseed would have wiped every name the reseed added or re-keyed. The vault is now fetched fresh once the passphrase is given, and a read that fails registers nothing rather than filing over the copy in memory.","<b>NO BROWSER COPY OUTRANKS THE CLOUD'S, AND THE FOUR NEW ASSERTIONS WENT RED FIRST.</b> A saltNameVault key in a browser's storage, which nothing has written since the master came into this repo, made that device keep its own old vault ahead of every newer one. The read goes, with the two flags it set. With the old Add ID and the legacy read put back, all four new assertions failed; with a fresh read that falls back to memory, the two refusals failed. Restored, the suite passes."]},
 
@@ -6759,7 +6766,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='14 Sep 2026, 00:34 KL';
+const LAST_UPDATED='14 Sep 2026, 00:51 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -8999,7 +9006,9 @@ const tierPill=id=>{
    of row height on a phone. The approach board has no margin column and keeps it. */
 const custBadgeHtml=(bm,id,noHi)=>{let h=tierPill(id);const b=bm&&bm[id];if(!b)return h;if(b.tier)h+=` <span class="sbadge ${b.tier.c}">${b.tier.l}</span>`;if(b.hi&&!noHi)h+=' <span class="sbadge bhi" title="top quarter by cumulative margin">High-margin</span>';return h;};
 const DIAMOND=['CJ4-OKR'];/* manually-awarded Diamond rank: top associate, special basis only */
-const R0_NETWORK={reseller:'CJ4-OKR',referral:{cust:'CG5-SB',kg:4},network:['CC5-OKR','CJ4-BJ','CE4-CHE','CS6-PER']};/* Reseller 0 referral + network attribution */
+/* v615: the founding partner only. His network moved to INTRODUCTIONS in the book, where every
+   declared introduction now sits; his referral of CG5-SB is stamped on its row and needed no copy. */
+const R0_NETWORK={reseller:'CJ4-OKR'};
 
 /* ============ PEOPLE DECISIONS (v140) ============
    Standing, not trade. Nothing here moves a figure. The LEDGER is never rewritten to
@@ -15453,10 +15462,26 @@ function rewardBand(pct){
    alike: anyone appointed, anyone who has resold (R2), anyone who has referred (R3),
    and the founding referrer. Appointment comes first so a new associate can be
    selected before he has traded, which the old R2-only test made impossible. */
+/* v615, HIS RULING OF 13 SEP 2026: WHO INTRODUCED WHOM IS ONE MAP, ONE LEVEL, READ FROM ONE PLACE.
+   Two sources feed it and nothing else may: the referral stamp an R3 entry puts on a customer's row,
+   and INTRODUCTIONS in the book, for an introduction no row carries (his declared network behind
+   CJ4-OKR, and CM4-MK under CS6-BS). Before this, the stamps were read here and the network was a
+   list inside R0_NETWORK that only the founder could hold, so CM4-MK had nowhere to go. The stamps
+   are read off every row of both books: an introduction is a relationship, not a sale of one
+   product, so the oil view no longer drops a customer whose stamped order was salt. What an
+   introduction is WORTH is still measured on the priced rows of the book in view. */
+function introductions(){
+  const by={};
+  const add=(a,c)=>{if(!a||!c)return;const l=by[a]=by[a]||[];if(!l.includes(c))l.push(c);};
+  sales.forEach(s=>add(s.ref,s.customer));
+  INTRODUCTIONS.forEach(e=>add(e.by,e.customer));
+  return by;
+}
 function associateIds(){
   const r0=(typeof R0_NETWORK!=='undefined'&&R0_NETWORK)?R0_NETWORK:null;
   const ids=new Set(typeof associates!=='undefined'?associates:[]);
   sales.forEach(s=>{if(s.rev==='R2')ids.add(ownerOf(s.customer));if(s.ref)ids.add(s.ref);});
+  INTRODUCTIONS.forEach(e=>ids.add(e.by));
   if(r0)ids.add(r0.reseller);
   /* a banned party leaves the bench. The referral he made stays in the ledger, because
      it happened; what ends is his standing, not the history. */
@@ -15483,6 +15508,7 @@ function streamMargin(id,which){
 function networkStats(){
   const r0=(typeof R0_NETWORK!=='undefined'&&R0_NETWORK)?R0_NETWORK:null;
   const ids=new Set(associateIds());
+  const intro=introductions();
   const out=[...ids].map(id=>{
     const isR0=!!(r0&&id===r0.reseller);
     const direct=pricedSales.filter(s=>s.customer===id&&s.total!=null&&s.rev!=='R2').reduce((a,s)=>a+s.total,0);
@@ -15498,9 +15524,8 @@ function networkStats(){
        for the node badge, where a connection genuinely IS a distinct end customer; only the
        count of SALES was ever wrong. */
     const resellN=sales.filter(s=>s.total!=null&&s.rev==='R2'&&ownerOf(s.customer)===id).length;
-    // referrals: rows this associate referred (ref:id) OR, for R0, the declared network
-    let refs=[...new Set(pricedSales.filter(s=>s.ref===id).map(s=>s.customer))];
-    if(isR0)refs=[...new Set(refs.concat([r0.referral.cust]).concat(r0.network||[]))];
+    // referrals: the customers this associate introduced, stamped or declared (v615)
+    const refs=intro[id]||[];
     const r3=refs.reduce((a,c)=>a+firstOrderOf(c),0);
     // per-stream recurring rebate (R2 + R3 only)
     /* v280: resale and referral are ONE stream against the associate hurdle, and what he

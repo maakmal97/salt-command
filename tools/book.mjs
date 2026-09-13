@@ -41,6 +41,8 @@ export const LEDGER = {
      provisional refund into the extract and from there into the store. The census caught it. */
   customerRefunds: "BASE_REFUNDS",
   roster: "roster", associates: "associates", PEOPLE: "PEOPLE",
+  /* v615: who introduced whom where no row carries the referral stamp; a fact on his word */
+  INTRODUCTIONS: "INTRODUCTIONS",
   REWARD_OPENING: "REWARD_OPENING", CUSTOMER_REWARD_OPENING: "CUSTOMER_REWARD_OPENING",
   AWARDS: "AWARDS",
   supplierQuote: "supplierQuote", oilQuote: "oilQuote",
