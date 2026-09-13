@@ -146,6 +146,13 @@ desk shows, cost and margin included, is served at the public URL.
 - **No clock** since 24 Aug 2026. `Salt fold (manual backup)` (trig_01UrnjQMWA3f6GXN5R6Dzi4S)
   is disabled, no cron: fire it by hand if the Fold step fails. The stage stands down while
   `master/_to_fold.json` is in HEAD, unless `fold.mjs --replays` says the batch is a replay (v512).
+- **Every task starts level with GitHub, never over a push in flight (his instruction, 14 Sep
+  2026).** Changes reach `master` from his own edits on the laptop, GitHub Desktop, Claude Code
+  and the phone, whose cloud job pushes for itself; GitHub online only rarely. Before any task:
+  `git fetch` and fast-forward the checkout to `origin/master`; wait out any Actions run in
+  progress or queued (`gh run list`) and any row approved but not yet folded (`node
+  tools/drafts.mjs --approved`), then fetch again. Uncommitted files in the checkout may be his
+  edits: ask before moving past them.
 - **A version asks about the queue first (02 Sep 2026).** Before any bump: `node
   tools/drain.mjs --status`, `node tools/drafts.mjs --list` and `--approved`, `git fetch`
   for a staged `_to_fold.json`. Ask him one line per pending item; never approve for him;
