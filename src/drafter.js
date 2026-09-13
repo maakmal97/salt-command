@@ -1188,6 +1188,20 @@ export function draftRow(entry, book) {
     }
     if (bad.length) return { skip: bad.join("; ") };
   }
+  /* v620, HIS RULING OF 14 SEP 2026: A COVER IS REWARD SPENT ON A LOWER MARGIN, on a sale he marks at entry,
+     at the salt's cost. Rewards are worked out on the desk, so the balance it drew on is the desk's word; what
+     the drafter can check, it does: a cover sits on a sale of salt to a customer, both halves travel together,
+     and the ringgit is the units at the book's cost. */
+  const coverFlags = [];
+  if (row.coverKg != null || row.coverRM != null) {
+    if (dir !== "SELL" || product !== "salt") return { skip: "a reward covers a sale of salt and nothing else" };
+    if (!(row.coverKg > 0) || !(row.coverRM > 0)) return { skip: "a cover carries both the units of reward and the ringgit they cover" };
+    if (((book.state && book.state.associates) || []).includes(POSITION_ENGINE.ownerCode(party)))
+      return { skip: `${party} is an associate, whose reward is redeemed or offset on their own card rather than spent covering a sale` };
+    if (Math.abs(row.coverRM - round(row.coverKg * priced.cost)) > 0.05)
+      coverFlags.push(`The cover says RM ${round(row.coverRM)} for ${round(row.coverKg)} unit, where the book's cost of RM ${round(priced.cost)}/unit makes it RM ${round(row.coverKg * priced.cost)}.`);
+    coverFlags.push(`${isNum(pay.coverFree) ? `The desk says ${party} held ${round(pay.coverFree)} unit of reward` : `The desk did not state what reward ${party} held`}, and ${round(row.coverKg)} unit of it covers RM ${round(row.coverRM)} of this sale. Rewards are worked out on the desk, so that balance is its word.`);
+  }
   if (dir === "BUY") {
     delete row.customer; delete row.cost;
     row.supplier = party;
@@ -1291,7 +1305,7 @@ export function draftRow(entry, book) {
     collection: dir === "BUY" ? "purchases" : "sales",
     row,
     reasoning: bits.join(" "),
-    flags: assocFlags.concat(flagsFor(entry, row, book, priced))
+    flags: assocFlags.concat(coverFlags, flagsFor(entry, row, book, priced))
   };
 }
 

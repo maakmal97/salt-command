@@ -2078,7 +2078,8 @@ section("Fold — an approved batch becomes records in the book (v340)");
        purpose: a table that quietly gains a field is exactly what this assertion is for. */
     /* v502: thirty-two. delivery joined, the charge inside a sale's total, typed per order. */
     /* v503: thirty-three. freight joined, the trip a lot cost, typed per purchase. */
-    ok(E.CORRECTABLE.length === 33, `thirty-three attributes are editable, found ${E.CORRECTABLE.length}`);
+    /* v620: thirty-five. coverKg and coverRM joined, the reward a sale spent covering a lower margin. */
+    ok(E.CORRECTABLE.length === 35, `thirty-five attributes are editable, found ${E.CORRECTABLE.length}`);
     ok(E.CORRECTABLE.includes('handover'), 'handover is one of them');
     ok(Array.isArray(E.HANDOVER) && E.HANDOVER.join(',') === 'delivered,collected',
        `handover takes two values, found ${JSON.stringify(E.HANDOVER)}`);
@@ -10705,6 +10706,83 @@ section("v618: a customer earns as an associate does, and a written-off order ea
     w18.eval("setProd('oil');");
     ok(rd18("customerRewards().length") === 0 && /No reward on this book/.test(String(w18.eval("tabConcentration()"))), "on oil there is no customer table, and the card says why");
   } finally { await new Promise((r) => setTimeout(r, 200)); try { w18.close(); } catch (e) { /* best effort */ } }
+}
+
+section("v620: a customer's reward covers a lower margin on a sale he marks, at the salt's cost");
+{
+  /* HIS RULINGS OF 14 SEP 2026. The gap is the board's ask for the size less the goods; what is covered is the gap
+     or what the balance is worth at cost, whichever is less; the sale records the units and the ringgit; the
+     drafter checks what it can and the fold carries both; and every unit spent is netted like a redemption.
+     Fixture customers are put on the COMMITTED book (BASE_SALES), because the overlay rebuilds the live list from
+     it on every pass. The rule is checked by its invariants, never by a second copy of its arithmetic. Each
+     assertion was proved red by mutation. */
+  const { draftRow: dR19 } = await import("../src/drafter.js");
+  const bk19 = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const { openMaster: om19 } = await import("../tools/payload.mjs");
+  const { w: w19 } = await om19();
+  const rd19 = (e) => JSON.parse(String(w19.eval("JSON.stringify(" + e + ")")));
+  try {
+    const row19 = (o) => JSON.stringify(Object.assign({ product: "salt" }, o));
+    w19.eval("setProd('salt');['CZ9-CV','CZ9-LOW','CZ9-AV'].forEach(function(c){if(roster.indexOf(c)<0)roster.push(c);});associates.push('CZ9-AV');BASE_SALES.push(" + [
+      row19({ rid: "z619a", customer: "CZ9-CV", date: "2026-07-01", qty: 2, total: 1100, cost: 100, cash: 1100, deliveredQty: 2 }),
+      row19({ rid: "z619b", customer: "CZ9-LOW", date: "2026-07-01", qty: 1, total: 550, cost: 50, cash: 550, deliveredQty: 1 }),
+      row19({ rid: "z619c", customer: "CZ9-LOW", date: "2026-07-02", qty: 1, total: 35.2, cost: 35.2, cash: 0, settledRM: 35.2, deliveredQty: 1, rebate: true, rebateKg: 0.8, goodwill: true }),
+      row19({ rid: "z619d", customer: "CZ9-AV", date: "2026-07-01", qty: 2, total: 1100, cost: 100, cash: 1100, deliveredQty: 2 }),
+    ].join(",") + ");queue=[];applyOverlay();recompute();");
+    const cost = rd19("stockCostFor('salt')"), ask1 = rd19("priceLadder(1).ask.total");
+    const cv = rd19("customerRewards().find(function(r){return r.id==='CZ9-CV';})||null"), low = rd19("customerRewards().find(function(r){return r.id==='CZ9-LOW';})||null");
+    ok(cost > 0 && ask1 > 40 && !!cv && cv.free === 2 && !!low && low.free === 0.2,
+      `the guards: salt costs RM ${cost}, the board asks RM ${ask1} for 1 unit, CZ9-CV holds 2 unit and CZ9-LOW 0.2`);
+
+    const plan = (who, total) => rd19(`coverPlan('${who}',1,${total})`);
+    const a19 = plan("CZ9-CV", ask1 - 30);
+    ok(!!a19 && a19.gap === 30 && a19.rm <= a19.gap && a19.rm > a19.gap - cost / 100 - 0.005 && a19.kg <= a19.free && a19.rm === +(a19.kg * a19.cost).toFixed(2) && a19.cost === cost,
+      "a sale RM 30 under the ask is covered to within a hundredth of a unit, never past the gap, at the salt's cost: " + JSON.stringify(a19));
+    const b19 = plan("CZ9-LOW", ask1 - 200);
+    ok(!!b19 && b19.kg === 0.2 && b19.rm === +(0.2 * cost).toFixed(2), "where the balance is worth less than the gap, the whole balance covers what it can: " + JSON.stringify(b19));
+    ok(plan("CZ9-CV", ask1) === null && plan("CZ9-CV", ask1 + 10) === null, "a sale at or over the ask has nothing to cover");
+    ok(plan("CZ9-AV", ask1 - 30) === null, "an associate's reward covers nothing: theirs is redeemed or offset on their own card");
+    w19.eval("setProd('oil');");
+    ok(plan("CZ9-CV", 1) === null, "and nothing on the oil book, which has no reward");
+    w19.eval("setProd('salt');applyOverlay();recompute();");
+
+    /* THE FORM. Delivery rides inside the total, so the gap is struck on the goods. */
+    const drive19 = (tick, day) => "(function(){try{queue=[];window.confirm=function(){return true;};switchTab('add');wbMode='new';wbDir='SELL';wbApply();"
+      + "var set=function(id,v){var e=document.getElementById(id);if(e)e.value=v;};"
+      + "set('wbParty','CZ9-CV');set('wbQty','1');set('wbTotal','" + (ask1 - 30 + 20) + "');set('wbDelivery','20');set('wbCash','" + (ask1 - 30 + 20) + "');set('wbUnits','1');set('wbDate','" + day + "');"
+      + "wbPreview();var cw=document.getElementById('wbCoverWrap'),cb=document.getElementById('wbCover');"
+      + "var shown=!!cw&&cw.style.display!=='none';if(cb)cb.checked=" + tick + ";wbPreview();wbRecord();"
+      + "var q=queue[queue.length-1]||null;return JSON.stringify({shown:shown,more:q&&q.payload?q.payload.more:null,free:q&&q.payload?q.payload.coverFree:null,raw:q?q.raw:'',after:cb?cb.checked:null});"
+      + "}catch(e){return JSON.stringify({no:String(e&&e.message)});}})()";
+    const f19 = JSON.parse(String(w19.eval(drive19(true, "2099-06-01"))));
+    const want19 = rd19(`coverPlan('CZ9-CV',1,${ask1 - 30})`);
+    ok(!f19.no && f19.shown === true && !!f19.more && f19.more.coverKg === want19.kg && f19.more.coverRM === want19.rm && f19.free === 2 && /covered by/.test(f19.raw) && f19.after === false,
+      "the form offers the cover, a tick queues what coverPlan gives on the goods, the delivery aside, and the box clears after: " + JSON.stringify(f19));
+    const n19 = JSON.parse(String(w19.eval(drive19(false, "2099-06-02"))));
+    ok(!n19.no && n19.shown === true && /Sell 1 unit to CZ9-CV/.test(n19.raw) && n19.more === null && !/covered by/.test(n19.raw), "left unticked, the same sale is queued with no cover: " + JSON.stringify(n19));
+
+    /* SPENT AT ONCE: a queued cover nets through the overlay, so the same units cannot be offered twice */
+    w19.eval("queue=[];wbMode='new';wbDir='SELL';");
+    const s19 = JSON.parse(String(w19.eval(drive19(true, "2099-06-03"))));
+    w19.eval("applyOverlay();recompute();");
+    const cvAfter = rd19("customerRewards().find(function(r){return r.id==='CZ9-CV';})");
+    ok(!!s19.more && rd19("queue.length") === 1 && Math.abs(cvAfter.free - +(2 - want19.kg).toFixed(2)) < 0.001 && Math.abs(rd19("rebateApplied('CZ9-CV')") - want19.kg) < 0.001,
+      "a queued cover spends the balance on the desk before the fold: " + JSON.stringify(cvAfter));
+    ok(/reward/.test(String(w19.eval("ledAttr({customer:'CZ9-CV',coverKg:0.5,coverRM:22})"))) && String(w19.eval("ledAttr({customer:'CZ9-CV'})")) === "",
+      "and the ledger line of a covered sale says so, where an uncovered one says nothing");
+
+    /* THE DRAFTER */
+    const mir19 = { version: "vX", sales: bk19.sales, purchases: bk19.purchases,
+      state: { roster: bk19.roster.concat(["CZ9-CV", "CZ9-AV"]), associates: (bk19.associates || []).concat(["CZ9-AV"]), loans: bk19.loans, PRICING: null,
+        OPEN: { position: { salt: { onHand: 20, owedOut: 0, promised: 0 } } } }, pricing: null };
+    const e19 = (party, more, prod) => ({ at: "2099-05-01T00:00:00.001Z", payload: { mode: "new", product: prod || "salt", direction: "SELL", party, date: "2099-05-01", qty: 1, total: 60, cash: 60, kg: 1, more, coverFree: 2 } });
+    const dc = dR19(e19("CZ9-CV", { coverKg: 0.5, coverRM: 22 }), mir19);
+    ok(!dc.skip && dc.row && dc.row.coverKg === 0.5 && dc.row.coverRM === 22 && (dc.flags || []).some((f) => /held 2 unit of reward/.test(f)),
+      "the drafter carries both halves onto the row and says the balance is the desk's word: " + (dc.skip || JSON.stringify((dc.flags || []).slice(0, 2))));
+    ok(/associate/.test(dR19(e19("CZ9-AV", { coverKg: 0.5, coverRM: 22 }), mir19).skip || "") && /both/.test(dR19(e19("CZ9-CV", { coverKg: 0.5 }), mir19).skip || "")
+      && /salt/.test(dR19(e19("CZ9-CV", { coverKg: 0.5, coverRM: 22 }, "oil"), mir19).skip || ""),
+      "and refuses a cover for an associate, a cover missing its ringgit, and one on oil");
+  } finally { await new Promise((r) => setTimeout(r, 200)); try { w19.close(); } catch (e) { /* best effort */ } }
 }
 
 
