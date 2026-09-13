@@ -10509,6 +10509,13 @@ section("v611: an R2 sale books to the associate's bucket, at entry and on corre
   const dC11 = drC11({ at: "2026-09-13T10:00:00.000Z", payload: { mode: "amend", direction: "SELL", rid: "sy02", kind: "Correction", date: "2026-09-13", fields: { downstream: null } } }, bk11);
   ok(!dC11.skip && /It moves the row from CX9-AS to CX9-AS-R, the associate's resale account/.test(dC11.reasoning || ""),
     "the Approve card for that correction says it moves the row from the plain code into the bucket: " + (dC11.skip || String(dC11.reasoning).slice(0, 160)));
+  const bkD11 = JSON.parse(JSON.stringify(bk11));
+  bkD11.sales = [{ rid: "sd01", date: "2026-09-01", customer: "CX9-AS", qty: 1, total: 110, cash: 110, deliveredQty: 1, cost: 44 },
+    { rid: "sd02", date: "2026-09-02", customer: "CX9-AS", qty: 1, total: 110, cash: 110, deliveredQty: 1, cost: 44 },
+    { rid: "sd03", date: "2026-09-03", customer: "CX9-AS", rev: "R2", downstream: "CX9-AS-R", qty: 1, total: 130, delivery: 20, cash: 130, deliveredQty: 1, cost: 44 }];
+  const dD11 = drC11({ at: "2026-09-13T10:00:01.000Z", payload: { mode: "amend", direction: "SELL", rid: "sd03", kind: "Correction", date: "2026-09-13", fields: { downstream: null } } }, bkD11);
+  ok(!dD11.skip && !dD11.flags.some((f) => /this one is RM 130/.test(f)),
+    "and its rate flags read the goods, not the total with the delivery inside: RM 110 of goods against a RM 110 history raises nothing: " + JSON.stringify(dD11.skip || dD11.flags));
   const { plan: plan11 } = await import("../tools/fold.mjs");
   const B11 = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
   B11.QUEUE_COMMITTED = "2026-01-01T00:00:00.000Z";

@@ -573,6 +573,9 @@ export function draftRow(entry, book) {
         ? `It moves the row from ${target[partyKey]} to ${bookedAfter}${POSITION_ENGINE.isBucket(bookedAfter) ? ", the associate's resale account, where an R2 books since v611" : ""}.` : "";
       if (isSale) {
         const synth = { customer: bookedAfter || after.party, qty: +after.qty, total: +after.total, cash: target.cash || 0, deliveredQty: target.deliveredQty || 0 };
+        /* v611: the delivery charge travels with the row, or the rate flags read it on the total, which v606 took off every
+           other surface: s151, RM 130 with RM 30 delivery, read "19.3% above" a RM 109 median its RM 100 of goods sits under */
+        if (isNum(after.delivery) && after.delivery > 0.005) synth.delivery = +after.delivery;
         if (product !== "salt") synth.product = product;
         for (const f of flagsFor(entry, synth, book, priced)) flags.push(f);
       }
