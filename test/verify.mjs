@@ -8651,8 +8651,9 @@ section("08 Sep 2026: the audit fixes");
     ok(r2.cleared === 2 && clear.deleted.join() === "q:a,q:b", "the default mode still clears the keys it read, which is why update.mjs no longer runs it");
     const usrc = readFileSync(join(REPO, "tools", "update.mjs"), "utf8");
     ok(/\["tools\/drain\.mjs", "--keep"\]/.test(usrc), "update.mjs drains with --keep");
-    ok(/headers: \{ "X-Salt-Key": process\.env\.SALT_WRITE_KEY \}/.test(usrc) && /!process\.env\.SALT_WRITE_KEY/.test(usrc),
-      "the mirror check carries the write key from the environment, and says so when there is none");
+    /* 14 Sep 2026, his question: the mirror check reads D1 through wrangler's own login, so it needs no key */
+    ok(/import \{ readSnapshot \} from "\.\/d1\.mjs";/.test(usrc) && /const snap = readSnapshot\(\);/.test(usrc) && !/SALT_WRITE_KEY/.test(usrc),
+      "the mirror check reads the D1 snapshot through wrangler, and no longer asks the shell for the write key");
   }
 
   /* the statement: a gift owes nothing */
