@@ -1,5 +1,15 @@
 [
  {
+  "v": "v612",
+  "d": "13 Sep 2026",
+  "t": "SIX R2 RESALES MOVE INTO THEIR ASSOCIATES' BUCKETS, AND ADD ID READS THE VAULT FRESH",
+  "n": [
+   "<b>SIX RESALES MOVE INTO THE ASSOCIATES' BUCKETS, APPROVED ON HIS WORD OF 13 SEP 2026.</b> The corrections drafted under his ruling of the same day are folded. CR3-DAM's 5 unit of 10 Sep goes to CR3-DAM-R, CS6-BS's 1 unit of 12 Sep to CS6-BS-R, and four of CN6-WM's single units, 11 to 13 Sep, to CN6-WM-R. Every row was paid in full and handed over, so nothing owed moves and the inventory does not move.",
+   "<b>ADD ID READS THE VAULT AGAIN AT THE MOMENT IT FILES A NAME.</b> The desk loaded the encrypted vault once, when it opened, and filing a name saved that copy back over the whole of the cloud's. A phone left open across a laptop reseed would have wiped every name the reseed added or re-keyed. The vault is now fetched fresh once the passphrase is given, and a read that fails registers nothing rather than filing over the copy in memory.",
+   "<b>NO BROWSER COPY OUTRANKS THE CLOUD'S, AND THE FOUR NEW ASSERTIONS WENT RED FIRST.</b> A saltNameVault key in a browser's storage, which nothing has written since the master came into this repo, made that device keep its own old vault ahead of every newer one. The read goes, with the two flags it set. With the old Add ID and the legacy read put back, all four new assertions failed; with a fresh read that falls back to memory, the two refusals failed. Restored, the suite passes."
+  ]
+ },
+ {
   "v": "v611",
   "d": "13 Sep 2026",
   "t": "AN R2 SALE BOOKS TO THE ASSOCIATE'S BUCKET, AT ENTRY AND ON CORRECTION, AND THE LEDGER LINE NAMES THE ASSOCIATE",

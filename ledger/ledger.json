@@ -1,6 +1,6 @@
 {
- "v": "v611",
- "stamped": "13 Sep 2026, 22:01 KL",
+ "v": "v612",
+ "stamped": "13 Sep 2026, 22:50 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -3480,7 +3480,7 @@
     "rid": "s145"
    },
    {
-    "customer": "CR3-DAM",
+    "customer": "CR3-DAM-R",
     "qty": 5,
     "total": 450,
     "cost": 220,
@@ -3490,13 +3490,29 @@
     "deliveredQty": 5,
     "deliveredOn": "2026-09-10",
     "paidOn": "2026-09-10",
+    "note": "<b>CORRECTION ON s146 DATED 13 SEP: THE RESALE MOVES TO CR3-DAM-R.</b> CR3-DAM's order of 10 Sep, 5 unit of salt for RM450, was booked to CR3-DAM with CR3-DAM-R as the end buyer. Under his ruling of 13 Sep an R2 sale books to the associate's -R account, so the row moves to CR3-DAM-R and the end buyer is cleared, approved on his word of 13 Sep. No cash and no inventory move: RM450 was paid and 5 unit handed over on 10 Sep, so nothing is left open. The drafter flagged RM90 a unit against CR3-DAM's usual RM80; that sits inside the party's own range of RM80 to RM92.50, and the correction leaves the rate as booked. <b>SALT SELL DATED 10 SEP, PAID IN FULL AND COLLECTED IN FULL.</b> SELL to CR3-DAM, 5 unit for RM450, RM450 cash in and 5 unit handed over on 10 Sep, stream R2 with downstream CR3-DAM-R, so nothing stays open on this row. The total clears the RM281.07 floor for 5 unit, falls short of the RM500 ask and sits under the RM710 ceiling. CR3-DAM has 12 prior orders, a median rate of RM80 and a range of RM80 to RM92.50, RM25 outstanding before this, 0.27 unit on credit against a cap of 2 and nothing defaulted. Cost is the inventory's own RM44 a unit. The drafter flagged the R2 downsell booking and the rate 12.5% above the usual RM80; the range answers the rate flag, and the RM25 stays outstanding.",
+    "rid": "s146",
     "rev": "R2",
-    "downstream": "CR3-DAM-R",
-    "note": "<b>SALT SELL DATED 10 SEP, PAID IN FULL AND COLLECTED IN FULL.</b> SELL to CR3-DAM, 5 unit for RM450, RM450 cash in and 5 unit handed over on 10 Sep, stream R2 with downstream CR3-DAM-R, so nothing stays open on this row. The total clears the RM281.07 floor for 5 unit, falls short of the RM500 ask and sits under the RM710 ceiling. CR3-DAM has 12 prior orders, a median rate of RM80 and a range of RM80 to RM92.50, RM25 outstanding before this, 0.27 unit on credit against a cap of 2 and nothing defaulted. Cost is the inventory's own RM44 a unit. The drafter flagged the R2 downsell booking and the rate 12.5% above the usual RM80; the range answers the rate flag, and the RM25 stays outstanding.",
-    "rid": "s146"
+    "mod": "corrected on 2026-09-13: party CR3-DAM-R to (cleared); downstream CR3-DAM-R to (cleared)",
+    "amend": [
+     {
+      "date": "2026-09-10",
+      "kind": "Fulfilment",
+      "cash": 450,
+      "kg": 5,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-09-13",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>CORRECTION ON s146 DATED 13 SEP: THE RESALE MOVES TO CR3-DAM-R.</b> CR3-DAM's order of 10 Sep, 5 unit of salt for RM450, was booked to CR3-DAM with CR3-DAM-R as the end buyer. Under his ruling of 13 Sep an R2 sale books to the associate's -R account, so the row moves to CR3-DAM-R and the end buyer is cleared, approved on his word of 13 Sep. No cash and no inventory move: RM450 was paid and 5 unit handed over on 10 Sep, so nothing is left open. The drafter flagged RM90 a unit against CR3-DAM's usual RM80; that sits inside the party's own range of RM80 to RM92.50, and the correction leaves the rate as booked."
+     }
+    ]
    },
    {
-    "customer": "CN6-WM",
+    "customer": "CN6-WM-R",
     "qty": 1,
     "total": 130,
     "cost": 44,
@@ -3506,10 +3522,26 @@
     "deliveredQty": 1,
     "deliveredOn": "2026-09-11",
     "paidOn": "2026-09-11",
+    "note": "<b>CORRECTION ON s147 DATED 13 SEP: THE RESALE MOVES TO CN6-WM-R.</b> CN6-WM's order of 11 Sep, 1 unit of salt for RM130, was booked to CN6-WM with CN6-WM-R as the end buyer. Under his ruling of 13 Sep an R2 sale books to the associate's -R account, so the row moves to CN6-WM-R and the end buyer is cleared, approved on his word of 13 Sep. No cash and no inventory move: RM130 was paid and 1 unit handed over on 11 Sep, so nothing is left open. The drafter flagged RM130 a unit against CN6-WM's usual RM110; that tops the party's own range of RM75 to RM130, and the correction leaves the rate as booked. <b>SALT SELL DATED 11 SEP, PAID IN FULL AND COLLECTED IN FULL.</b> SELL to CN6-WM, 1 unit for RM130, RM130 cash in and 1 unit handed over on 11 Sep, stream R2 with downstream CN6-WM-R, so nothing new stays open on this row. The total clears the RM56.21 floor for 1 unit, stands above the RM120 ask and under the RM150 ceiling. CN6-WM has 6 prior orders, a median rate of RM110 and a range of RM75 to RM110, RM110 outstanding before this, 1 unit on credit against a cap of 2 and nothing defaulted. Cost is the inventory's own RM44 a unit. The drafter flagged the R2 downsell booking and the rate 30% above the RM100 cited; the median and range answer the rate flag, and the RM110 stays outstanding.",
+    "rid": "s147",
     "rev": "R2",
-    "downstream": "CN6-WM-R",
-    "note": "<b>SALT SELL DATED 11 SEP, PAID IN FULL AND COLLECTED IN FULL.</b> SELL to CN6-WM, 1 unit for RM130, RM130 cash in and 1 unit handed over on 11 Sep, stream R2 with downstream CN6-WM-R, so nothing new stays open on this row. The total clears the RM56.21 floor for 1 unit, stands above the RM120 ask and under the RM150 ceiling. CN6-WM has 6 prior orders, a median rate of RM110 and a range of RM75 to RM110, RM110 outstanding before this, 1 unit on credit against a cap of 2 and nothing defaulted. Cost is the inventory's own RM44 a unit. The drafter flagged the R2 downsell booking and the rate 30% above the RM100 cited; the median and range answer the rate flag, and the RM110 stays outstanding.",
-    "rid": "s147"
+    "mod": "corrected on 2026-09-13: party CN6-WM-R to (cleared); downstream CN6-WM-R to (cleared)",
+    "amend": [
+     {
+      "date": "2026-09-11",
+      "kind": "Fulfilment",
+      "cash": 130,
+      "kg": 1,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-09-13",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>CORRECTION ON s147 DATED 13 SEP: THE RESALE MOVES TO CN6-WM-R.</b> CN6-WM's order of 11 Sep, 1 unit of salt for RM130, was booked to CN6-WM with CN6-WM-R as the end buyer. Under his ruling of 13 Sep an R2 sale books to the associate's -R account, so the row moves to CN6-WM-R and the end buyer is cleared, approved on his word of 13 Sep. No cash and no inventory move: RM130 was paid and 1 unit handed over on 11 Sep, so nothing is left open. The drafter flagged RM130 a unit against CN6-WM's usual RM110; that tops the party's own range of RM75 to RM130, and the correction leaves the rate as booked."
+     }
+    ]
    },
    {
     "customer": "CH6-SET",
@@ -3547,7 +3579,7 @@
     "rid": "s150"
    },
    {
-    "customer": "CS6-BS",
+    "customer": "CS6-BS-R",
     "qty": 1,
     "total": 130,
     "cost": 44,
@@ -3558,10 +3590,26 @@
     "deliveredQty": 1,
     "deliveredOn": "2026-09-12",
     "paidOn": "2026-09-12",
+    "note": "<b>CORRECTION ON s151 DATED 13 SEP: THE RESALE MOVES TO CS6-BS-R.</b> CS6-BS's order of 12 Sep, 1 unit of salt for RM130, RM100 of goods and RM30 carriage, was booked to CS6-BS with CS6-BS-R as the end buyer. Under his ruling of 13 Sep an R2 sale books to the associate's -R account, so the row moves to CS6-BS-R and the end buyer is cleared, approved on his word of 13 Sep. No cash and no inventory move: RM130 was paid and 1 unit delivered on 12 Sep, so nothing is left open. The drafter raised no flag, and the correction changes no figure on the row. <b>SALT SELL DATED 12 SEP, PAID AND DELIVERED THE SAME DAY.</b> SELL to CS6-BS, 1 unit for RM130 with RM30 carriage in that total and RM100 of goods, RM130 cash in, 1 unit moved, delivered and paid on 12 Sep, so nothing is left outstanding on the row. The total clears the RM56.21 floor for 1 unit, sits RM10 above the RM120 ask and RM20 under the RM150 ceiling. CS6-BS has 9 prior orders, a median rate of RM100, a range of RM11 to RM126.67, RM110 outstanding before this, 1.94 units on credit against a cap of 2 and nothing defaulted. Cost is the inventory's own RM44 a unit. The drafter flagged the booking to CS6-BS as an R2 downsell, so that code is not the counterparty and gets no statement from this row; the figures do not speak to that flag.",
+    "rid": "s151",
     "rev": "R2",
-    "downstream": "CS6-BS-R",
-    "note": "<b>SALT SELL DATED 12 SEP, PAID AND DELIVERED THE SAME DAY.</b> SELL to CS6-BS, 1 unit for RM130 with RM30 carriage in that total and RM100 of goods, RM130 cash in, 1 unit moved, delivered and paid on 12 Sep, so nothing is left outstanding on the row. The total clears the RM56.21 floor for 1 unit, sits RM10 above the RM120 ask and RM20 under the RM150 ceiling. CS6-BS has 9 prior orders, a median rate of RM100, a range of RM11 to RM126.67, RM110 outstanding before this, 1.94 units on credit against a cap of 2 and nothing defaulted. Cost is the inventory's own RM44 a unit. The drafter flagged the booking to CS6-BS as an R2 downsell, so that code is not the counterparty and gets no statement from this row; the figures do not speak to that flag.",
-    "rid": "s151"
+    "mod": "corrected on 2026-09-13: party CS6-BS-R to (cleared); downstream CS6-BS-R to (cleared)",
+    "amend": [
+     {
+      "date": "2026-09-12",
+      "kind": "Fulfilment",
+      "cash": 130,
+      "kg": 1,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-09-13",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>CORRECTION ON s151 DATED 13 SEP: THE RESALE MOVES TO CS6-BS-R.</b> CS6-BS's order of 12 Sep, 1 unit of salt for RM130, RM100 of goods and RM30 carriage, was booked to CS6-BS with CS6-BS-R as the end buyer. Under his ruling of 13 Sep an R2 sale books to the associate's -R account, so the row moves to CS6-BS-R and the end buyer is cleared, approved on his word of 13 Sep. No cash and no inventory move: RM130 was paid and 1 unit delivered on 12 Sep, so nothing is left open. The drafter raised no flag, and the correction changes no figure on the row."
+     }
+    ]
    },
    {
     "customer": "CS6-BS",
@@ -3625,7 +3673,7 @@
     "rid": "s154"
    },
    {
-    "customer": "CN6-WM",
+    "customer": "CN6-WM-R",
     "qty": 1,
     "total": 110,
     "cost": 44,
@@ -3635,10 +3683,26 @@
     "deliveredQty": 1,
     "deliveredOn": "2026-09-12",
     "paidOn": "2026-09-12",
+    "note": "<b>CORRECTION ON s155 DATED 13 SEP: THE RESALE MOVES TO CN6-WM-R.</b> CN6-WM's order of 12 Sep, 1 unit of salt for RM110, all of it goods, was booked to CN6-WM with CN6-WM-R as the end buyer. Under his ruling of 13 Sep an R2 sale books to the associate's -R account, so the row moves to CN6-WM-R and the end buyer is cleared, approved on his word of 13 Sep. No cash and no inventory move: RM110 was paid and 1 unit handed over on 12 Sep, so nothing is left open. The drafter raised no flag, and the correction changes no figure on the row. <b>SALT SELL DATED 12 SEP, PAID IN FULL AND COLLECTED IN FULL.</b> SELL to CN6-WM, 1 unit for RM110, all RM110 goods, RM110 cash in and 1 unit handed over on 12 Sep, stream R2 with downstream CN6-WM-R, so nothing new stays outstanding. The rate clears the RM56.21 floor for 1 unit, sits under the RM120 ask and the RM150 ceiling. CN6-WM has 7 orders, a median rate of RM110, a range of RM75 to RM130, RM110 outstanding before and 1 unit on credit against a cap of 2, none defaulted. Cost is RM44 a unit, the inventory's own rate. The drafter flagged the rate as 10% above about RM100 across 6 orders: the median of RM110 answers it. The flag that the row books as an R2 downsell, so CN6-WM is not the counterparty and gets no statement, is not answered. The earlier RM110 stays outstanding.",
+    "rid": "s155",
     "rev": "R2",
-    "downstream": "CN6-WM-R",
-    "note": "<b>SALT SELL DATED 12 SEP, PAID IN FULL AND COLLECTED IN FULL.</b> SELL to CN6-WM, 1 unit for RM110, all RM110 goods, RM110 cash in and 1 unit handed over on 12 Sep, stream R2 with downstream CN6-WM-R, so nothing new stays outstanding. The rate clears the RM56.21 floor for 1 unit, sits under the RM120 ask and the RM150 ceiling. CN6-WM has 7 orders, a median rate of RM110, a range of RM75 to RM130, RM110 outstanding before and 1 unit on credit against a cap of 2, none defaulted. Cost is RM44 a unit, the inventory's own rate. The drafter flagged the rate as 10% above about RM100 across 6 orders: the median of RM110 answers it. The flag that the row books as an R2 downsell, so CN6-WM is not the counterparty and gets no statement, is not answered. The earlier RM110 stays outstanding.",
-    "rid": "s155"
+    "mod": "corrected on 2026-09-13: party CN6-WM-R to (cleared); downstream CN6-WM-R to (cleared)",
+    "amend": [
+     {
+      "date": "2026-09-12",
+      "kind": "Fulfilment",
+      "cash": 110,
+      "kg": 1,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-09-13",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>CORRECTION ON s155 DATED 13 SEP: THE RESALE MOVES TO CN6-WM-R.</b> CN6-WM's order of 12 Sep, 1 unit of salt for RM110, all of it goods, was booked to CN6-WM with CN6-WM-R as the end buyer. Under his ruling of 13 Sep an R2 sale books to the associate's -R account, so the row moves to CN6-WM-R and the end buyer is cleared, approved on his word of 13 Sep. No cash and no inventory move: RM110 was paid and 1 unit handed over on 12 Sep, so nothing is left open. The drafter raised no flag, and the correction changes no figure on the row."
+     }
+    ]
    },
    {
     "customer": "CA5-KER",
@@ -3655,7 +3719,7 @@
     "rid": "s156"
    },
    {
-    "customer": "CN6-WM",
+    "customer": "CN6-WM-R",
     "qty": 1,
     "total": 130,
     "cost": 44,
@@ -3666,13 +3730,29 @@
     "deliveredQty": 1,
     "deliveredOn": "2026-09-12",
     "paidOn": "2026-09-12",
+    "note": "<b>CORRECTION ON s157 DATED 13 SEP: THE RESALE MOVES TO CN6-WM-R.</b> CN6-WM's order of 12 Sep, 1 unit of salt for RM130, RM110 of goods and RM20 delivery, was booked to CN6-WM with CN6-WM-R as the end buyer. Under his ruling of 13 Sep an R2 sale books to the associate's -R account, so the row moves to CN6-WM-R and the end buyer is cleared, approved on his word of 13 Sep. No cash and no inventory move: RM130 was paid and 1 unit delivered on 12 Sep, so nothing is left open. The drafter raised no flag, and the correction changes no figure on the row. <b>SALT SELL DATED 12 SEP, PAID IN FULL AND DELIVERED IN FULL, AS AN R2 DOWNSELL.</b> Booked to CN6-WM with downstream CN6-WM-R, 1 unit for RM130 of which <b>RM110 is the goods and RM20 the delivery</b>, RM130 cash in and 1 unit handed over on 12 Sep, so nothing stays outstanding. The goods rate is RM110 a unit and clears the RM56.21 floor for 1 unit. Cost is RM44, so RM44 against RM110 of goods at 60.0%; the drafter's own line reads the rate and the margin on the full RM130, delivery included, which is the figure the Approve card shows. <b>Two flags.</b> The row books to CN6-WM as an R2, so CN6-WM-R is not the counterparty and gets no statement from it: that is what a downsell is and it is not answered. And CN6-WM's usual rate is about RM100 a unit across 7 orders, so RM110 sits 10% above it, which is in his favour.",
+    "rid": "s157",
     "rev": "R2",
-    "downstream": "CN6-WM-R",
-    "note": "<b>SALT SELL DATED 12 SEP, PAID IN FULL AND DELIVERED IN FULL, AS AN R2 DOWNSELL.</b> Booked to CN6-WM with downstream CN6-WM-R, 1 unit for RM130 of which <b>RM110 is the goods and RM20 the delivery</b>, RM130 cash in and 1 unit handed over on 12 Sep, so nothing stays outstanding. The goods rate is RM110 a unit and clears the RM56.21 floor for 1 unit. Cost is RM44, so RM44 against RM110 of goods at 60.0%; the drafter's own line reads the rate and the margin on the full RM130, delivery included, which is the figure the Approve card shows. <b>Two flags.</b> The row books to CN6-WM as an R2, so CN6-WM-R is not the counterparty and gets no statement from it: that is what a downsell is and it is not answered. And CN6-WM's usual rate is about RM100 a unit across 7 orders, so RM110 sits 10% above it, which is in his favour.",
-    "rid": "s157"
+    "mod": "corrected on 2026-09-13: party CN6-WM-R to (cleared); downstream CN6-WM-R to (cleared)",
+    "amend": [
+     {
+      "date": "2026-09-12",
+      "kind": "Fulfilment",
+      "cash": 130,
+      "kg": 1,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-09-13",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>CORRECTION ON s157 DATED 13 SEP: THE RESALE MOVES TO CN6-WM-R.</b> CN6-WM's order of 12 Sep, 1 unit of salt for RM130, RM110 of goods and RM20 delivery, was booked to CN6-WM with CN6-WM-R as the end buyer. Under his ruling of 13 Sep an R2 sale books to the associate's -R account, so the row moves to CN6-WM-R and the end buyer is cleared, approved on his word of 13 Sep. No cash and no inventory move: RM130 was paid and 1 unit delivered on 12 Sep, so nothing is left open. The drafter raised no flag, and the correction changes no figure on the row."
+     }
+    ]
    },
    {
-    "customer": "CN6-WM",
+    "customer": "CN6-WM-R",
     "qty": 1,
     "total": 130,
     "cost": 44,
@@ -3682,10 +3762,26 @@
     "deliveredQty": 1,
     "deliveredOn": "2026-09-13",
     "paidOn": "2026-09-13",
+    "note": "<b>CORRECTION ON s158 DATED 13 SEP: THE RESALE MOVES TO CN6-WM-R.</b> CN6-WM's order of 13 Sep, 1 unit for RM130, all of it goods, was booked to CN6-WM with CN6-WM-R as the end buyer. Under his ruling of 13 Sep an R2 sale books to the associate's -R account, so the row moves to CN6-WM-R and the end buyer is cleared, approved on his word of 13 Sep. No cash and no inventory move: RM130 was paid and 1 unit handed over on 13 Sep, so nothing is left open. The drafter flagged RM130 a unit against CN6-WM's usual RM110; that tops the party's own range of RM75 to RM130, and the correction leaves the rate as booked. <b>SALT SELL DATED 13 SEP, PAID IN FULL AND COLLECTED IN FULL, AS AN R2 DOWNSELL.</b> Booked to CN6-WM with downstream CN6-WM-R, 1 unit for RM130, all of it goods, RM130 cash in and 1 unit handed over on 13 Sep, so nothing new stays outstanding. The rate clears the RM56.21 floor and the RM120 ask for 1 unit and sits under the RM150 ceiling. Cost is the inventory's own RM44 a unit. <b>Two flags.</b> The row books to CN6-WM as an R2, so CN6-WM-R is not the counterparty and gets no statement from it, which is what a downsell is and is not answered. And the drafter reads his usual rate as about RM105 a unit across 8 orders, 23.8% below this one; the dossier's own median is RM110 and his range runs RM75 to RM130, so RM130 is his top mark. RM110 stays open from earlier, 1 unit on credit against a cap of 2.",
+    "rid": "s158",
     "rev": "R2",
-    "downstream": "CN6-WM-R",
-    "note": "<b>SALT SELL DATED 13 SEP, PAID IN FULL AND COLLECTED IN FULL, AS AN R2 DOWNSELL.</b> Booked to CN6-WM with downstream CN6-WM-R, 1 unit for RM130, all of it goods, RM130 cash in and 1 unit handed over on 13 Sep, so nothing new stays outstanding. The rate clears the RM56.21 floor and the RM120 ask for 1 unit and sits under the RM150 ceiling. Cost is the inventory's own RM44 a unit. <b>Two flags.</b> The row books to CN6-WM as an R2, so CN6-WM-R is not the counterparty and gets no statement from it, which is what a downsell is and is not answered. And the drafter reads his usual rate as about RM105 a unit across 8 orders, 23.8% below this one; the dossier's own median is RM110 and his range runs RM75 to RM130, so RM130 is his top mark. RM110 stays open from earlier, 1 unit on credit against a cap of 2.",
-    "rid": "s158"
+    "mod": "corrected on 2026-09-13: party CN6-WM-R to (cleared); downstream CN6-WM-R to (cleared)",
+    "amend": [
+     {
+      "date": "2026-09-13",
+      "kind": "Fulfilment",
+      "cash": 130,
+      "kg": 1,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-09-13",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>CORRECTION ON s158 DATED 13 SEP: THE RESALE MOVES TO CN6-WM-R.</b> CN6-WM's order of 13 Sep, 1 unit for RM130, all of it goods, was booked to CN6-WM with CN6-WM-R as the end buyer. Under his ruling of 13 Sep an R2 sale books to the associate's -R account, so the row moves to CN6-WM-R and the end buyer is cleared, approved on his word of 13 Sep. No cash and no inventory move: RM130 was paid and 1 unit handed over on 13 Sep, so nothing is left open. The drafter flagged RM130 a unit against CN6-WM's usual RM110; that tops the party's own range of RM75 to RM130, and the correction leaves the rate as booked."
+     }
+    ]
    },
    {
     "customer": "CM4-MK",
@@ -4033,9 +4129,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-13T09:47:59.796Z",
+  "QUEUE_COMMITTED": "2026-09-13T14:18:53.911Z",
   "PRICING": {
-   "takenAt": "2026-09-13T14:14:15.928Z",
+   "takenAt": "2026-09-13T14:51:01.934Z",
    "sizes": [
     0.5,
     1,
@@ -4491,10 +4587,10 @@
      ]
     }
    },
-   "v": "v611"
+   "v": "v612"
   },
   "OPEN": {
-   "at": "2026-09-13T14:14:15.968Z",
+   "at": "2026-09-13T14:51:01.973Z",
    "count": 10,
    "byKey": {
     "CM4-MK|2026-09-13|330": {
@@ -4691,7 +4787,7 @@
     "salt": "2026-09-08",
     "oil": "2026-09-09"
    },
-   "v": "v611"
+   "v": "v612"
   }
  }
 }

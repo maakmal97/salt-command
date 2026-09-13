@@ -1,0 +1,246 @@
+{
+ "ok": true,
+ "count": 6,
+ "approved": [
+  {
+   "id": "2026-09-13T14:18:53.906Z",
+   "collection": "sales",
+   "row": {
+    "rid": "s146",
+    "qty": 5,
+    "total": 450,
+    "cash": 450,
+    "date": "2026-09-10",
+    "product": "salt",
+    "changes": [
+     {
+      "field": "downstream",
+      "from": "CR3-DAM-R",
+      "to": null
+     }
+    ],
+    "customer": "CR3-DAM"
+   },
+   "reasoning": "Correction against CR3-DAM's order of 5 unit for RM 450 dated 2026-09-10 (s146). Sets downstream from CR3-DAM-R to cleared. It moves the row from CR3-DAM to CR3-DAM-R, the associate's resale account, where an R2 books since v611. It moves no cash and no stock: it changes what the row says about itself. The row is not rewritten here. The fold applies the patch, so there is one definition of what a correction does rather than two.",
+   "flags": [
+    "CR3-DAM typically pays about RM 80/unit for salt across 14 orders; this one is RM 90, 12.5% above that."
+   ],
+   "amends": "s146",
+   "amendKind": "Correction",
+   "entry": {
+    "at": "2026-09-13T14:18:53.906Z",
+    "payload": {
+     "mode": "amend",
+     "direction": "SELL",
+     "rid": "s146",
+     "kind": "Correction",
+     "date": "2026-09-13",
+     "fields": {
+      "downstream": null
+     }
+    }
+   },
+   "decidedAt": "2026-09-13T14:50:04.084Z",
+   "decidedBy": "Afif Akmal, Code session 13 Sep 2026: approved all six v611 bucket corrections when asked before v612"
+  },
+  {
+   "id": "2026-09-13T14:18:53.907Z",
+   "collection": "sales",
+   "row": {
+    "rid": "s147",
+    "qty": 1,
+    "total": 130,
+    "cash": 130,
+    "date": "2026-09-11",
+    "product": "salt",
+    "changes": [
+     {
+      "field": "downstream",
+      "from": "CN6-WM-R",
+      "to": null
+     }
+    ],
+    "customer": "CN6-WM"
+   },
+   "reasoning": "Correction against CN6-WM's order of 1 unit for RM 130 dated 2026-09-11 (s147). Sets downstream from CN6-WM-R to cleared. It moves the row from CN6-WM to CN6-WM-R, the associate's resale account, where an R2 books since v611. It moves no cash and no stock: it changes what the row says about itself. The row is not rewritten here. The fold applies the patch, so there is one definition of what a correction does rather than two.",
+   "flags": [
+    "CN6-WM typically pays about RM 110/unit for salt across 12 orders; this one is RM 130, 18.2% above that."
+   ],
+   "amends": "s147",
+   "amendKind": "Correction",
+   "entry": {
+    "at": "2026-09-13T14:18:53.907Z",
+    "payload": {
+     "mode": "amend",
+     "direction": "SELL",
+     "rid": "s147",
+     "kind": "Correction",
+     "date": "2026-09-13",
+     "fields": {
+      "downstream": null
+     }
+    }
+   },
+   "decidedAt": "2026-09-13T14:50:04.084Z",
+   "decidedBy": "Afif Akmal, Code session 13 Sep 2026: approved all six v611 bucket corrections when asked before v612"
+  },
+  {
+   "id": "2026-09-13T14:18:53.908Z",
+   "collection": "sales",
+   "row": {
+    "rid": "s151",
+    "qty": 1,
+    "total": 130,
+    "cash": 130,
+    "date": "2026-09-12",
+    "product": "salt",
+    "changes": [
+     {
+      "field": "downstream",
+      "from": "CS6-BS-R",
+      "to": null
+     }
+    ],
+    "customer": "CS6-BS"
+   },
+   "reasoning": "Correction against CS6-BS's order of 1 unit for RM 130 dated 2026-09-12 (s151). Sets downstream from CS6-BS-R to cleared. It moves the row from CS6-BS to CS6-BS-R, the associate's resale account, where an R2 books since v611. It moves no cash and no stock: it changes what the row says about itself. The row is not rewritten here. The fold applies the patch, so there is one definition of what a correction does rather than two.",
+   "flags": [],
+   "amends": "s151",
+   "amendKind": "Correction",
+   "entry": {
+    "at": "2026-09-13T14:18:53.908Z",
+    "payload": {
+     "mode": "amend",
+     "direction": "SELL",
+     "rid": "s151",
+     "kind": "Correction",
+     "date": "2026-09-13",
+     "fields": {
+      "downstream": null
+     }
+    }
+   },
+   "decidedAt": "2026-09-13T14:50:04.084Z",
+   "decidedBy": "Afif Akmal, Code session 13 Sep 2026: approved all six v611 bucket corrections when asked before v612"
+  },
+  {
+   "id": "2026-09-13T14:18:53.909Z",
+   "collection": "sales",
+   "row": {
+    "rid": "s155",
+    "qty": 1,
+    "total": 110,
+    "cash": 110,
+    "date": "2026-09-12",
+    "product": "salt",
+    "changes": [
+     {
+      "field": "downstream",
+      "from": "CN6-WM-R",
+      "to": null
+     }
+    ],
+    "customer": "CN6-WM"
+   },
+   "reasoning": "Correction against CN6-WM's order of 1 unit for RM 110 dated 2026-09-12 (s155). Sets downstream from CN6-WM-R to cleared. It moves the row from CN6-WM to CN6-WM-R, the associate's resale account, where an R2 books since v611. It moves no cash and no stock: it changes what the row says about itself. The row is not rewritten here. The fold applies the patch, so there is one definition of what a correction does rather than two.",
+   "flags": [],
+   "amends": "s155",
+   "amendKind": "Correction",
+   "entry": {
+    "at": "2026-09-13T14:18:53.909Z",
+    "payload": {
+     "mode": "amend",
+     "direction": "SELL",
+     "rid": "s155",
+     "kind": "Correction",
+     "date": "2026-09-13",
+     "fields": {
+      "downstream": null
+     }
+    }
+   },
+   "decidedAt": "2026-09-13T14:50:04.084Z",
+   "decidedBy": "Afif Akmal, Code session 13 Sep 2026: approved all six v611 bucket corrections when asked before v612"
+  },
+  {
+   "id": "2026-09-13T14:18:53.910Z",
+   "collection": "sales",
+   "row": {
+    "rid": "s157",
+    "qty": 1,
+    "total": 130,
+    "cash": 130,
+    "date": "2026-09-12",
+    "product": "salt",
+    "changes": [
+     {
+      "field": "downstream",
+      "from": "CN6-WM-R",
+      "to": null
+     }
+    ],
+    "customer": "CN6-WM"
+   },
+   "reasoning": "Correction against CN6-WM's order of 1 unit for RM 130 dated 2026-09-12 (s157). Sets downstream from CN6-WM-R to cleared. It moves the row from CN6-WM to CN6-WM-R, the associate's resale account, where an R2 books since v611. It moves no cash and no stock: it changes what the row says about itself. The row is not rewritten here. The fold applies the patch, so there is one definition of what a correction does rather than two.",
+   "flags": [],
+   "amends": "s157",
+   "amendKind": "Correction",
+   "entry": {
+    "at": "2026-09-13T14:18:53.910Z",
+    "payload": {
+     "mode": "amend",
+     "direction": "SELL",
+     "rid": "s157",
+     "kind": "Correction",
+     "date": "2026-09-13",
+     "fields": {
+      "downstream": null
+     }
+    }
+   },
+   "decidedAt": "2026-09-13T14:50:04.084Z",
+   "decidedBy": "Afif Akmal, Code session 13 Sep 2026: approved all six v611 bucket corrections when asked before v612"
+  },
+  {
+   "id": "2026-09-13T14:18:53.911Z",
+   "collection": "sales",
+   "row": {
+    "rid": "s158",
+    "qty": 1,
+    "total": 130,
+    "cash": 130,
+    "date": "2026-09-13",
+    "product": "salt",
+    "changes": [
+     {
+      "field": "downstream",
+      "from": "CN6-WM-R",
+      "to": null
+     }
+    ],
+    "customer": "CN6-WM"
+   },
+   "reasoning": "Correction against CN6-WM's order of 1 unit for RM 130 dated 2026-09-13 (s158). Sets downstream from CN6-WM-R to cleared. It moves the row from CN6-WM to CN6-WM-R, the associate's resale account, where an R2 books since v611. It moves no cash and no stock: it changes what the row says about itself. The row is not rewritten here. The fold applies the patch, so there is one definition of what a correction does rather than two.",
+   "flags": [
+    "CN6-WM typically pays about RM 110/unit for salt across 12 orders; this one is RM 130, 18.2% above that."
+   ],
+   "amends": "s158",
+   "amendKind": "Correction",
+   "entry": {
+    "at": "2026-09-13T14:18:53.911Z",
+    "payload": {
+     "mode": "amend",
+     "direction": "SELL",
+     "rid": "s158",
+     "kind": "Correction",
+     "date": "2026-09-13",
+     "fields": {
+      "downstream": null
+     }
+    }
+   },
+   "decidedAt": "2026-09-13T14:50:04.084Z",
+   "decidedBy": "Afif Akmal, Code session 13 Sep 2026: approved all six v611 bucket corrections when asked before v612"
+  }
+ ]
+}
