@@ -44,8 +44,8 @@ if('serviceWorker' in navigator){
   });
 }
 /* Cloud privacy: on the phone names show only after the password and auto-hide the
-   moment the app leaves the foreground. lockVault() drops the passphrase and the
-   decrypted names, so returning shows codes until the password is re-entered. */
+   moment the app leaves the foreground. lockVault() drops the decrypted names, so
+   returning shows codes until the password is re-entered. */
 document.addEventListener('visibilitychange',function(){
   if(window.SALT_CLOUD&&document.visibilityState==='hidden'&&typeof lockVault==='function'){
     try{lockVault();if(typeof renderReveal==="function")renderReveal();if(typeof render==="function")render();}catch(e){}
@@ -68,7 +68,7 @@ document.addEventListener('visibilitychange',function(){
    localStorage before it posts anything and the load reads it straight back.
    The same tick retries a held entry, which is what gets a phone write to the cloud
    without waiting for the next open. */
-var SALT_BUILD_ID="5005b83591ea5ca5";
+var SALT_BUILD_ID="d93e06e304c67985";
 var SALT_REV_MS=10000;
 (function(){
   var chip=null,timer=null;
@@ -6381,7 +6381,9 @@ const quoteFor=p=>{const f=QUOTES[p||PROD];return f?f():null;};
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{"v":"v612","d":"13 Sep 2026","t":"SIX R2 RESALES MOVE INTO THEIR ASSOCIATES' BUCKETS, AND ADD ID READS THE VAULT FRESH","n":["<b>SIX RESALES MOVE INTO THE ASSOCIATES' BUCKETS, APPROVED ON HIS WORD OF 13 SEP 2026.</b> The corrections drafted under his ruling of the same day are folded. CR3-DAM's 5 unit of 10 Sep goes to CR3-DAM-R, CS6-BS's 1 unit of 12 Sep to CS6-BS-R, and four of CN6-WM's single units, 11 to 13 Sep, to CN6-WM-R. Every row was paid in full and handed over, so nothing owed moves and the inventory does not move.","<b>ADD ID READS THE VAULT AGAIN AT THE MOMENT IT FILES A NAME.</b> The desk loaded the encrypted vault once, when it opened, and filing a name saved that copy back over the whole of the cloud's. A phone left open across a laptop reseed would have wiped every name the reseed added or re-keyed. The vault is now fetched fresh once the passphrase is given, and a read that fails registers nothing rather than filing over the copy in memory.","<b>NO BROWSER COPY OUTRANKS THE CLOUD'S, AND THE FOUR NEW ASSERTIONS WENT RED FIRST.</b> A saltNameVault key in a browser's storage, which nothing has written since the master came into this repo, made that device keep its own old vault ahead of every newer one. The read goes, with the two flags it set. With the old Add ID and the legacy read put back, all four new assertions failed; with a fresh read that falls back to memory, the two refusals failed. Restored, the suite passes."]},
+const evolution=[{"v":"v613","d":"13 Sep 2026","t":"THE NAMES PANEL'S UNREACHABLE UNLOCK HANDLER GOES, WITH THE VAULT STATE ONLY IT TOUCHED","n":["<b>A HANDLER NOTHING COULD REACH IS REMOVED.</b> renderReveal wired an Unlock button, #vunlock, that no template has rendered since the v217 lock came off, so its decrypt, its hold on the passphrase and its messages could never run. It goes, with the one renderReveal local only it read. Show names on the phone, Import old vault and the laptop's Save are untouched.","<b>AND THE VAULT STATE ONLY IT TOUCHED.</b> vaultPass, vaultFileStamp, vaultLocalStamp and vaultSaveArmed were written and never read: only that handler ever held the passphrase, and the two stamps lost their last reader at v612. vaultLoad still takes the vault it is served and vaultSave still posts an ISO updated stamp, so nothing behaves differently and no assertion was added. The build's privacy note no longer says lockVault drops a passphrase."]},
+
+{"v":"v612","d":"13 Sep 2026","t":"SIX R2 RESALES MOVE INTO THEIR ASSOCIATES' BUCKETS, AND ADD ID READS THE VAULT FRESH","n":["<b>SIX RESALES MOVE INTO THE ASSOCIATES' BUCKETS, APPROVED ON HIS WORD OF 13 SEP 2026.</b> The corrections drafted under his ruling of the same day are folded. CR3-DAM's 5 unit of 10 Sep goes to CR3-DAM-R, CS6-BS's 1 unit of 12 Sep to CS6-BS-R, and four of CN6-WM's single units, 11 to 13 Sep, to CN6-WM-R. Every row was paid in full and handed over, so nothing owed moves and the inventory does not move.","<b>ADD ID READS THE VAULT AGAIN AT THE MOMENT IT FILES A NAME.</b> The desk loaded the encrypted vault once, when it opened, and filing a name saved that copy back over the whole of the cloud's. A phone left open across a laptop reseed would have wiped every name the reseed added or re-keyed. The vault is now fetched fresh once the passphrase is given, and a read that fails registers nothing rather than filing over the copy in memory.","<b>NO BROWSER COPY OUTRANKS THE CLOUD'S, AND THE FOUR NEW ASSERTIONS WENT RED FIRST.</b> A saltNameVault key in a browser's storage, which nothing has written since the master came into this repo, made that device keep its own old vault ahead of every newer one. The read goes, with the two flags it set. With the old Add ID and the legacy read put back, all four new assertions failed; with a fresh read that falls back to memory, the two refusals failed. Restored, the suite passes."]},
 
 {"v":"v611","d":"13 Sep 2026","t":"AN R2 SALE BOOKS TO THE ASSOCIATE'S BUCKET, AT ENTRY AND ON CORRECTION, AND THE LEDGER LINE NAMES THE ASSOCIATE","n":["<b>HIS RULING OF 13 SEP 2026: R2 SALES ARE PARKED UNDER THE ASSOCIATE'S -R BUCKET ONLY, and a buyer whose name is known is not their own.</b> The Enter tab said an unknown buyer books to the reseller's own -R account. It did not: the form wrote the bucket in as the end buyer, the drafter booked the row to the associate's plain code, and six resales since 10 Sep sit there now.","<b>ONE WRITER, FOUR ROADS.</b> bookR2 in the engine puts the row in the bucket and notes a named buyer beside it, credited nothing. The drafter's entry, the fold's correction, and the desk's queue branch and correction preview all call it, where each carried the same four lines by hand. An entry still queued the old way, with the bucket as the buyer, lands on the same row.","<b>THE ROW NAMES ITS ASSOCIATE.</b> Attribution reads the associate off the code the row sits on, bucket or plain, so the ledger line reads <i>R2 &middot; CN6-WM</i>, a named buyer in its title. A correction that names the associate unchanged and clears the bucket from the end buyer is a real change, and it is the one that files the six. The Approve card and the fold's plan both say when a correction moves a row into the bucket, where the trail's field list, which reads the buyer, would not.","<b>WHAT THE ENTER TAB SAYS AND CHECKS.</b> End customer reads <i>Not named</i> and says the sale books to the -R account either way. Record is refused while the associate's bucket is off the roster. A resale's replay twin is looked for in the bucket. The re-enter seed books the way the row will. The drafter reads the associate's history and credit across the code and the bucket, and a correction's rate flags read the goods, as v606 put every other surface.","<b>AND A STALE REWARD RULE LEAVES THE FORM.</b> The R2 and R3 note quoted one free unit per RM 500 resold or RM 1,500 referred, read off a block retired at v280 and kept only so a stale reference would fail. It rendered instead. It now says where the sale books and nothing about what it earns.","<b>PROVED RED FIRST.</b> Twelve new assertions on forced fixtures, and the five older ones that pinned the plain-code booking rewritten to the bucket. With bookR2 and the attribution put back, the form's default restored, and the ledger line and replay twin reverted, every one of them went red; restored, all pass."]},
 
@@ -6843,7 +6845,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='13 Sep 2026, 22:50 KL';
+const LAST_UPDATED='13 Sep 2026, 23:21 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -13733,7 +13735,6 @@ let idOpen=false;
    UNLOCKING NEVER REWRITES EXISTING CODES. The ledger keys on the id, so a
    display-layer rename would silently desync the desk from its own data; that
    was the drift where merely unlocking changed every code on screen. */
-let vaultPass='';
 /* v277: WHICH SURFACE THIS IS, AND WHY THE NAMES BEHAVE DIFFERENTLY ON EACH.
    On the laptop the directory is plaintext in 06_Data/salt_bio.json and reaches the page
    over localhost, so "Show" is a screen-privacy toggle and editing is the point.
@@ -13755,10 +13756,6 @@ function namesShown(){
   return revealed && !!(vaultNames && Object.keys(vaultNames).length);
 }
 let vaultRevealBusy=false, vaultRevealMsg='';
-/* v612: THE VAULT SERVED IS THE ONLY COPY. A browser copy under saltNameVault used to win over it,
-   when the browser was where names were edited; nothing has written that key since the master came
-   into this repo, so a device that still carried one kept an old vault in front of every newer one. */
-let vaultFileStamp=null, vaultLocalStamp=null, vaultSaveArmed=false;
 function qServed(){try{return qSyncState==='server';}catch(e){return false;}}
 /* v277: THE PHONE'S REVEAL. Decrypts the synced envelope with a passphrase typed here and
    held only in this tab, exactly as the legacy import did, but WITHOUT writing anything back
@@ -13777,7 +13774,7 @@ async function vaultReveal(pass){
     if(!n){vaultRevealMsg='It opened, but the vault holds no names.';vaultRevealBusy=false;try{renderReveal();}catch(e){}return false;}
     vaultNames={};Object.keys(map).forEach(k=>{if(map[k])vaultNames[k]=map[k];});
     try{fillNameLookup(vaultNames);}catch(e){}
-    revealed=true;vaultPass='';           /* the passphrase is not kept: it is not needed again */
+    revealed=true;                        /* the passphrase is not kept: it is not needed again */
     vaultRevealMsg='';vaultRevealBusy=false;
     render();try{renderReveal();}catch(e){}
     return true;
@@ -13788,7 +13785,7 @@ async function vaultReveal(pass){
     return false;
   }
 }
-function lockVault(){vaultPass='';vaultNames={};revealed=false;vaultSaveArmed=false;try{fillNameLookup({});}catch(e){}}
+function lockVault(){vaultNames={};revealed=false;try{fillNameLookup({});}catch(e){}}
 /* ONE IDENTIFIER PER PARTY. The id carried in the ledger and the code shown on screen
    are the SAME string, always. So when a vault name implies a different code, the answer
    is to RE-KEY the ledger, never to paint a new code over the old id: a hidden second
@@ -13976,7 +13973,6 @@ function applyCodes(vn){
 function renderReveal(){
   const el=document.getElementById('revealCtrl');if(!el)return;
   el.style.position='relative';el.style.display='inline-block';
-  const has=!!NAME_VAULT;
   const open=!!(vaultNames&&Object.keys(vaultNames).length);
   const key='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="M10.85 12.15 19 4M18 5l2 2M15 8l2 2"/></svg>';
   /* NOT EVERY ROSTER ENTRY IS A PERSON (v216). A -R is the associate's resell ACCOUNT and
@@ -14110,26 +14106,6 @@ function renderReveal(){
     if(m)m.innerHTML=isB?'A bucket has no name and no place, which is the whole point of it: it is where an associate&rsquo;s onward sale goes when you never meet the buyer. Pick the associate and the desk mints <b>&lt;associate&gt;-Gen</b>.':'';
   };
   const apA=document.getElementById('apAdd');if(apA)apA.onclick=addParty;
-  const ub=document.getElementById('vunlock');
-  if(ub)ub.onclick=async()=>{
-    const p=document.getElementById('vpass'),pass=p?p.value:'';
-    if(!pass){setMsg('Enter your passphrase.','var(--crim)');return;}
-    if(!has){vaultPass=pass;vaultNames={};roster.forEach(id=>{vaultNames[id]='';});renderReveal();setMsg('Add the names, then Save.','var(--grn)');return;}
-    try{ const d=await vaultDecrypt(pass,NAME_VAULT);
-      vaultNames={};Object.keys(d).forEach(k=>{vaultNames[k.replace(/^SLT-/,'')]=d[k];});
-      fillNameLookup(vaultNames);vaultPass=pass;          // held in memory only, cleared on Lock
-      renderReveal();
-      /* say what was actually found: an empty panel after a correct passphrase means the
-         vault's keys do not match the roster, which is a different fault to a lost vault.
-         Keys are codes, never names, so naming them here reveals nothing. */
-      const filled=roster.filter(id=>(''+(vaultNames[id]||'')).trim()).length;
-      const stray=Object.keys(vaultNames).filter(k=>roster.indexOf(k)<0);
-      let m='Unlocked from salt_vault.json. <b>'+filled+' of '+roster.length+'</b> names filled. Codes unchanged.';
-      if(!filled)m='<b style="color:var(--crim)">Decrypted, but no name matched a code on the ledger.</b> The vault opened correctly, so nothing is lost; its keys simply do not line up. Send Claude the key list below.';
-      if(stray.length)m+=' <b style="color:var(--amber)">'+stray.length+' key'+(stray.length>1?'s are':' is')+' not on the roster: '+stray.slice(0,6).join(', ')+(stray.length>6?'…':'')+'</b>';
-      setMsg(m,'var(--grn)');
-    }catch(e){setMsg('Wrong passphrase.','var(--crim)');}
-  };
 
   const rv=document.getElementById('vreveal');
   /* v277: ON THE PHONE, HIDING IS A LOCK RATHER THAN A TOGGLE. Flipping `revealed` back
@@ -19349,8 +19325,10 @@ async function vaultLoad(){
   if(qSyncState!=='server')return false;
   try{ const r=await fetch('vault',{cache:'no-store'}); if(!r.ok)return false;
     const j=await r.json(); if(!j.ok)return false;
-    vaultFileStamp=j.updated||null;
-    if(j.vault){NAME_VAULT=j.vault;vaultLocalStamp=vaultFileStamp;}
+    /* v612: THE VAULT SERVED IS THE ONLY COPY. A browser copy under saltNameVault used to win over it,
+       when the browser was where names were edited; nothing has written that key since the master came
+       into this repo, so a device that still carried one kept an old vault in front of every newer one. */
+    if(j.vault)NAME_VAULT=j.vault;
     /* ids are canonical: a roster id always maps to itself, whatever the file says.
        Accepting a file's ids wholesale re-opened the v87 unlock-renamed-everything
        bug through salt_vault.json; only NON-roster keys may come from the file. */
@@ -19364,7 +19342,7 @@ async function vaultLoad(){
 async function vaultSave(){
   if(qSyncState!=='server')return false;               // double-clicked: localStorage only, export by hand
   try{ const r=await fetch('vault',{method:'POST',headers:qHeaders(),
-      body:JSON.stringify({updated:(vaultLocalStamp=new Date().toISOString()),vault:NAME_VAULT,ids:newIds,locs:newLocs})});
+      body:JSON.stringify({updated:new Date().toISOString(),vault:NAME_VAULT,ids:newIds,locs:newLocs})});
     return r.ok&&(await r.json()).ok;
   }catch(e){ return false; }
 }
