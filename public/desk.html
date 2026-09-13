@@ -68,7 +68,7 @@ document.addEventListener('visibilitychange',function(){
    localStorage before it posts anything and the load reads it straight back.
    The same tick retries a held entry, which is what gets a phone write to the cloud
    without waiting for the next open. */
-var SALT_BUILD_ID="f89751028f419319";
+var SALT_BUILD_ID="81ac5611c393dff4";
 var SALT_REV_MS=10000;
 (function(){
   var chip=null,timer=null;
@@ -1066,13 +1066,10 @@ select[multiple],select[size]{background-image:none;padding-right:9px;}
 /* Print: a dropdown is a screen control, so it prints as its chosen value. */
 @media print{select{background-image:none;padding-right:9px;}.menu{display:none;}}
 .tab,.navlink,.ubtn,.vbtn{min-height:var(--tap);}
-/* PRODUCT SWITCHER (v228). It sits at the top of the rail, above the tab groups, because
-   it governs them: choosing a product changes what nine of the fifteen tabs are ABOUT, and
-   a control that powerful belongs above the thing it changes rather than beside it. Each
-   button carries its own revenue so the choice is informative rather than blind. */
-.prodsw{display:flex;flex-direction:column;gap:5px;margin:2px 10px 14px;}
-.prodsw .plbl{font-size:9.5px;letter-spacing:1.1px;text-transform:uppercase;color:var(--dim);margin:0 2px 3px;}
-.prodsw button{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;
+/* PRODUCT SWITCHER (v228; on the page since v625). Each button carries its product's headline figure, so the
+   choice is informed and every product's summary stays in view while one product's detail shows. */
+.prodsw{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 6px;}
+.prodsw button{display:flex;align-items:center;justify-content:space-between;gap:8px;min-width:150px;min-height:var(--tap);
   padding:8px 10px;border-radius:10px;cursor:pointer;text-align:left;
   background:rgba(255,255,255,.03);border:1px solid var(--line);color:var(--mut);
   font:600 12.5px/1.2 inherit;letter-spacing:.2px;transition:background .15s,border-color .15s,color .15s;}
@@ -1080,17 +1077,14 @@ select[multiple],select[size]{background-image:none;padding-right:9px;}
 .prodsw button .pdot{width:8px;height:8px;border-radius:50%;flex:0 0 8px;}
 .prodsw button .pnm{flex:1;}
 .prodsw button .pv{font-weight:500;font-size:10.5px;color:var(--dim);font-variant-numeric:tabular-nums;}
-/* v370: LIT WHEN THERE IS SOMEWHERE TO JUMP TO. --pacc is the product's own accent, set on
-   the button itself, so salt glows ice and oil gold rather than both glowing the same. The
-   dim state is NOT disabled: the button still explains why it has nothing to do, and a
-   control that cannot be pressed cannot tell you that. */
+/* v370, v625: LIT FOR THE PRODUCT SHOWN. --pacc is the product's own accent, set on the button itself, so salt
+   glows ice and oil gold; the other stays pressable at half strength. */
 .prodsw button.live{border-color:var(--pacc);color:var(--ink);
   box-shadow:0 0 12px -4px var(--pacc),inset 0 0 0 1px var(--pacc);}
 .prodsw button.live .pdot{box-shadow:0 0 7px 1px var(--pacc);}
 .prodsw button.live .pv{color:var(--mut);}
 .prodsw button:not(.live){opacity:.45;}
 .prodsw button:not(.live):hover{opacity:.75;}
-.prodsw .pall{font-size:10px;color:var(--dim);margin:1px 2px 0;line-height:1.45;}
 @media print{.prodsw{display:none!important;}}
 .sub2{font-size:10px;color:var(--dim);}
 .vbtn.tiny{padding:1px 7px;font-size:10px;margin-left:6px;}
@@ -2937,7 +2931,7 @@ html[data-tod="register"] body,body{background:var(--salt-obsidian);color:var(--
 /* ---- 3. TYPE. Every figure, code, label and control is mono; every sentence inherits
    the display face from body. The list is the desk's whole figure vocabulary. ---- */
 h2,.kick,.tab,.navct,.sub,.sub2,.chip,.tag,.rtag,.etype,.lclabel,.tierpill,.gem,.starpill,
-.prodtag,.sbadge,.pbadge,.pscope,.prodhd,.prodsw button,.prodsw .plbl,.vpill,.viewsw button,
+.prodtag,.sbadge,.pbadge,.pscope,.prodhd,.prodsw button,.vpill,.viewsw button,
 .vbtn,.navlink,.ubtn,.obsbtn,.lqb,.updchip,.exitbtn,.badge,.warnpill,.apchip,.aprail,.apdow,.apday .apdn,
 .apside .apm,.apside .apbig,.appop .apname,.appop td,
 .kpi .l,.kpi .v,.cardh .sub,table,th,td,.lhead,.lrow,.lmove,.lcol,.ldate,.lparty,.ecode,.eref,.lagreed,
@@ -3020,8 +3014,9 @@ details.rcard>summary .rname{font-size:16px;font-weight:500;}
   background:var(--salt-gradient-title);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;margin:0;}
 .kick{font-size:10px;font-weight:500;letter-spacing:.24em;color:var(--salt-brass);margin-top:4px;}
 /* ---- A DIVIDER IS NOT A DESTINATION (his instruction, 11 Sep 2026) ----
-   v622, HIS INSTRUCTION OF 14 SEP 2026: THE RAIL IS TWO LEVELS, so the four group headings are gone and
-   PRODUCT, the label of the salt and oil switch, is the one heading left. What follows still holds for it.
+   v622, HIS INSTRUCTION OF 14 SEP 2026: THE RAIL IS TWO LEVELS, so the four group headings are gone, and v625
+   moved the salt and oil switch onto the page with its PRODUCT label, so the rail carries no heading at all.
+   What follows is kept as the reason the tabs dress as they do.
    .grouplbl and .tab wore the same costume: the mono face, uppercase, weight 500, and the
    SAME COLOUR, --salt-mist for both, with 1.5px of size and a little tracking between them.
    Nothing in the rail said which of the two you could tap, and the group heading read as a
@@ -3042,10 +3037,6 @@ details.rcard>summary .rname{font-size:16px;font-weight:500;}
              not. The heading is NOT dimmed to make the gap: mist on obsidian is 5.0:1 and
              anything under it fails small text, so the gap is made from above. ---- */
 .railgroup{margin-bottom:15px;}
-.prodsw .plbl{display:flex;align-items:center;gap:9px;font-size:9.5px;font-weight:500;
-  letter-spacing:.22em;color:var(--salt-mist);padding:0 2px;margin:0 0 7px;}
-.prodsw .plbl::after{content:'';flex:1 1 auto;height:1px;background:var(--salt-line);}
-.prodsw{margin:2px 0 16px;}
 .tab{font-size:13px;font-weight:500;letter-spacing:.01em;text-transform:none;color:var(--salt-mist-light);
   border-radius:var(--salt-radius-sm);padding:8px 10px 8px 12px;}
 /* the resting glass is white 3%, which is also .tab.on's ground, so hover read as selected and
@@ -3067,7 +3058,7 @@ details.rcard>summary .rname{font-size:16px;font-weight:500;}
 .prodsw button.live{box-shadow:none;border-color:var(--pacc);color:var(--salt-salt);}
 .prodsw button.live .pdot{box-shadow:0 0 7px 0 var(--pacc);}
 .prodsw button .pv{font-weight:400;letter-spacing:0;text-transform:none;}
-.prodsw .pall{font-family:var(--salt-font-display);color:var(--salt-mist);}
+
 .chip{font-size:11px;letter-spacing:.05em;background:var(--salt-glass);border-color:var(--salt-line-faint);color:var(--salt-mist);}
 .chip b{color:var(--salt-salt);font-weight:500;}
 .chip.ver{color:var(--salt-brass);border-color:rgba(197,160,89,.45);font-weight:500;letter-spacing:.12em;}
@@ -3414,7 +3405,7 @@ details.obs>summary:hover{background:var(--salt-glass);}
   /* the 11px floor is the phone's, not the hierarchy's: at 11px against a 11.5px tab the
      heading and the destination were level again, which is the fault this rail just lost.
      The heading keeps the floor and the tab clears it. */
-  .prodsw .plbl{font-size:11px !important;letter-spacing:.22em;}
+
   .tab{font-size:13.5px;}
   .kpi .v{font-size:20px;}
   /* THE BOARD FITS ITS CARD WITHOUT A SCROLL, measured at v477: 337px of table in a 325px card since
@@ -3572,7 +3563,7 @@ body.dbstuck .deskbar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 va
       <svg class="mark" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Salt crystal"><defs><linearGradient id="saltCrystalRail" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#c5a059"/><stop offset="100%" stop-color="#b87333"/></linearGradient></defs><polygon points="50,5 95,28 95,72 50,95 5,72 5,28" fill="none" stroke="url(#saltCrystalRail)" stroke-width="3" stroke-linejoin="round"/><polyline points="50,5 50,50 95,28" fill="none" stroke="url(#saltCrystalRail)" stroke-width="3" stroke-linejoin="round"/><polyline points="50,50 5,28" fill="none" stroke="url(#saltCrystalRail)" stroke-width="3" stroke-linejoin="round"/><polyline points="50,50 50,95" fill="none" stroke="url(#saltCrystalRail)" stroke-width="3" stroke-linejoin="round"/><polygon points="50,28 72,39 50,50 28,39" fill="url(#saltCrystalRail)" opacity="0.85"/></svg>
       <div><div class="railtitle">Salt</div><div class="kick">Command</div></div>
     </div>
-    <div class="prodsw" id="prodsw"></div>
+
     <!-- v622, HIS INSTRUCTION OF 14 SEP 2026: TWO LEVELS AT MOST. The destinations and, under the open one,
          its pages. The four headings above them (Command, Current, Relationships, Actions) grouped the
          fifteen flat tabs this rail carried before v341 made the seven destinations, which group already. -->
@@ -6282,58 +6273,14 @@ const inProd=(r,p)=>prodOf(r)===(p||PROD);
    why the split above costs almost nothing to maintain. */
 const pSales=p=>sales.filter(r=>inProd(r,p));
 const pPurch=p=>purchases.filter(r=>inProd(r,p));
-/* v262: THE SWITCHER IS NO LONGER A FILTER. Every product-scoped tab now draws both books,
-   so switching would only decide which of two visible blocks the arithmetic behind the page
-   was scoped to, which is the worst of both. The buttons jump to a product's block on the
-   current tab, and say so. setProd survives for the internal scoping perProduct() does. */
+/* v262: THE SWITCHER IS NO LONGER A FILTER of the arithmetic. setProd survives for the internal scoping perProduct()
+   does; which product's detail a page shows is PROD, the book in view, set only by setProdView (v625). */
 function setProd(p){if(!PRODUCTS[p])return;PROD=p;recompute();}
-/* v370: ONE PREDICATE, TWO CONSUMERS. The jump and the light on the button ask the same
-   question of the same tab, so a lit button always lands somewhere and a dim one never
-   pretends it will. */
-function prodHead(p){
-  const sec=document.getElementById('sec-'+curTab); if(!sec)return null;
-  return [...sec.querySelectorAll('.prodhd')].find(h=>h.textContent.trim().indexOf(PRODUCTS[p].name)===0)||null;
-}
-function prodJump(p){
-  const hd=prodHead(p);
-  if(hd){hd.scrollIntoView({behavior:'smooth',block:'start'});
-    hd.style.transition='none';hd.style.opacity='.35';
-    setTimeout(()=>{hd.style.transition='opacity .5s ease';hd.style.opacity='1';},60);
-    return;}
-  /* this tab is consolidated already, so there is nothing to jump to and saying so beats
-     a button that appears to do nothing */
-  qStatus('<b>'+esc(PRODUCTS[p].name)+'</b> is not split out on this part: it reads both books together.');
-}
-/* The switcher itself. Each button states the product's revenue, so choosing is informed
-   rather than blind, and the footnote states the combined figure so the consolidated view
-   is never more than a glance away. Redrawn on every product change because the revenue on
-   the inactive button has to stay live too. */
-function drawProdSw(){
-  const host=document.getElementById('prodsw');if(!host)return;
-  const sums=PROD_IDS.map(p=>prodSummary(p));
-  host.innerHTML=`<div class="plbl">Product</div>`
-    +sums.map(x=>`<button data-p="${x.id}" style="--pacc:${PRODUCTS[x.id].accent}" onclick="prodJump('${x.id}')">
-        <span class="pdot" style="background:${PRODUCTS[x.id].accent}"></span>
-        <span class="pnm">${esc(x.name)}</span>
-        <span class="pv">${fmt0(x.rev)}</span></button>`).join('');
-  markProdSw();
-}
-/* v370: THE SWITCHER SAYS WHETHER IT WILL DO ANYTHING, AND IT IS WHAT THE RAIL BANDS WERE
-   FOR. These buttons jump to a product's block on the current tab; roughly half the tabs
-   read both books together and have no block to jump to, so on those the button did nothing
-   but explain itself after the tap. It is lit in the product's own colour where the block
-   exists and dimmed where it does not. The bands said the same thing from the side of the
-   rail, for the whole rail at once; this says it per product and per tab, on the control it
-   is about. Runs at the end of every render, because the answer is a property of the tab. */
-function markProdSw(){
-  const host=document.getElementById('prodsw'); if(!host)return;
-  host.querySelectorAll('button[data-p]').forEach(b=>{
-    const p=b.dataset.p, nm=PRODUCTS[p]?PRODUCTS[p].name:p, live=!!prodHead(p);
-    b.classList.toggle('live',live);
-    b.title=live?('Jump to '+nm+' on this part')
-                :(nm+' is not split out on this part, which reads both books together');
-  });
-}
+/* v625, HIS INSTRUCTION OF 14 SEP 2026: ONE PRODUCT'S DETAIL AT A TIME, CHOSEN ON THE PAGE. The rail's switcher
+   jumped between blocks that all stood on the page at once, which made every per-product page as long as its
+   products together. A page now carries every product's headline in the switch at the head of its detail, and the
+   detail of the active book, PROD. It is the same choice the single-book pages badge and the Enter form's select
+   make, through setProdView, so picking Oil anywhere shows Oil everywhere, and this device remembers it. */
 /* Per-product headline, computed WITHOUT disturbing the active book. Used by the switcher
    and by the consolidated view, so both read the same arithmetic rather than two guesses.
    It deliberately does not touch the globals: a summary that repriced the desk while
@@ -6381,7 +6328,7 @@ const quoteFor=p=>{const f=QUOTES[p||PROD];return f?f():null;};
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{"v":"v624","d":"14 Sep 2026","t":"EVERY PAGE CARRIES ONE NAME, AND FIVE NAMES SAY WHAT THEIR PAGES ARE","n":["<b>HIS INSTRUCTION OF 14 SEP 2026: RENAME WHERE NECESSARY.</b> Two rules decided where. A page carries one name, in the rail, across its page and in its heading. Six headings had named something else: To do opened under Today, On hand under Inventory, Who buys under Customers, Map under Where the buyers are, and the two renamed below. And a name says what its page is.","<b>THE FIVE RENAMES.</b> Overview is Rules: every rule the desk trades by, and the register of what is breached. Forward is Next 30 days. Network is Associates. Orders is Site orders, the orders customers place on the statements site, which no longer sits a word away from the Order book. Pricing's one page takes its destination's name in place of The board, so the Whiteboard's links read Pricing. The board is still the price board inside Pricing.","<b>WHAT DID NOT MOVE.</b> The seven destinations, every address (#overview, #network, #orders still land), the Whiteboard, Transaction, and every link on the desk, which reads its name from the same table. The Journal keeps the names its entries were written in.","<b>THE CHECKS.</b> A new section renders all eighteen pages and reads their headings against their labels, finds no two pages sharing a name, and finds no destination with more pages than one opening on a page of its own name. Four mutations each turned it red. The v622 and Views sections read the new names."]},{"v":"v623","d":"14 Sep 2026","t":"AN ASSOCIATE EARNS A UNIT PER RM 470, AND R3 COUNTS AGAINST A HURDLE 1.2 TIMES HIGHER","n":["<b>HIS RULINGS OF 14 SEP 2026.</b> The same unit of salt could earn twice: once in its customer's reward, and again in the R3 of the associate who introduced that customer. So an associate's R3 margin now counts against a hurdle 1.2 times their figure, and their figure is RM 470 of pooled margin a unit. A customer stays at RM 500. Both figures are stated in REWARD. rewardUnitMargin takes who the reward is for, and rewardR3Hurdle gives the weighing.","<b>WHY THOSE FIGURES.</b> No unit is counted more than twice on this book. 1.2 is the average number of rewards a unit of salt bought was counted into on the day (1.19), where the average over the units rewards count was 1.45 and over R3's own units exactly 2. At RM 500 no weighing could bring CN6-WM near a reward, because their R3 is RM 63 of RM 893, so the associate figure came down. RM 470 is the round figure that met the two targets he named.","<b>WHERE IT LANDS.</b> CS6-BS is RM 12 from their next reward, at 4 earned and 4 taken, where they had held a free unit. CN6-WM is RM 57 from theirs, and shows 1 unit ahead until his two corrections fold: s031 and s056, the two half units, become goodwill on his ruling, leaving 1 taken. CS6-PER keeps 1 free unit. CJ4-OKR, CR3-DAM, CE4-AD and CI4-OKR stand level, and every customer balance is unchanged.","<b>ON THE DESK.</b> The associate's card marks the R3 row at a 1.2 times hurdle and says what its margin counts as, and the total names RM 470. What counts gives both figures and the R3 hurdle, and the appointment line on Enter states the customer and associate rules side by side.","<b>ALSO.</b> The laptop's update chain now checks the D1 mirror through wrangler's own login, where it had needed a key no shell holds, and printed \"not checked\" on every run.","<b>THE CHECKS.</b> A new section of six assertions on fixtures: the stated figures, R3 at 1/1.2 pooling to a unit, the introduced customer still counted in full on their own table, RM 480 earning an associate a unit and a customer none, the card, and What counts. Six mutations each turned it red. The v616, v618 and v570 sections were moved onto RM 470."]},{"v":"v622","d":"14 Sep 2026","t":"THE RAIL IS TWO LEVELS, AND THE ORDER BOOK OPENS ON RECEIVABLES","n":["<b>HIS INSTRUCTION OF 14 SEP 2026: TWO LEVELS AT MOST.</b> The rail stacked three: four headings (Command, Current, Relationships, Actions), the seven destinations, and the open destination's pages. The headings grouped the fifteen flat tabs the rail carried before v341 made the destinations, which already group, and two of the four stood over a single destination. They are gone. The rail now reads Today, Order book, Stock, Pricing, Customers, The book and Enter, and the open one lists its pages beneath it.","<b>A DESTINATION WITH ONE PAGE LISTS NOTHING.</b> Pricing opened a block holding one row, The board, which named the level above it again. railSubs lists nothing under a destination with no other page and marks its tab solo, and design/desk.css draws an open solo tab as the whole block, with rounded corners and its bottom edge. Pricing is the only one.","<b>RECEIVABLES, ON HIS CHOICE.</b> The Order book destination opened on a page also called Order book. That page is Receivables now, in the rail, across the page and in its heading. The destination keeps its name, and every old address still lands.","<b>THE CHECKS.</b> A new section of seven assertions: no heading in the rail, the destinations in VIEWS order, the Order book's two pages and heading, Pricing's solo block alone, and a three-page destination listing all three. The 11 Sep section now asserts PRODUCT, the one heading left, against the tabs. Eight mutations each turned the new section red."]},{"v":"v621","d":"14 Sep 2026","t":"A CUSTOMER HOLDING A WHOLE UNIT CAN REDEEM ONE, ON HIS WORD","n":["<b>HIS RULING OF 14 SEP 2026, THE LAST OF THREE CUSTOMER VERSIONS.</b> Covering a lower margin is the main road for a customer's reward (v620). Redeeming stays open on his word. On the Customers card, every customer holding at least one whole unit now has a button. It reads Redeem when they owe nothing, and Offset when they hold an advance. A tap takes one whole unit: salt, through Approve as any redemption goes, or an offset against their earliest advance of no more than one unit. Under a whole unit there is no button, and the road refuses.","<b>ONE ROAD, TWO SIDES.</b> redeemRebate looks for an associate first, who still takes all they hold, and then for a customer. The redemption states the balance they hold rather than the unit taken, so the Approve card reads the customer's whole position. The automatic offset stays with associates, as he decided on 11 Sep. On the book today, CM4-MK and CE4-CHE are offered an Offset against the advance each holds, CM6-HCM a Redeem, and CJ4-BJ, at 0.44, nothing.","<b>THE CHECKS.</b> Six assertions on fixtures: the card's Redeem, Offset and absent buttons, one unit redeemed against two held, the refusal under a unit, the offset capped at one, and the drafter taking a customer's redemption without an over-balance flag. Four mutations each turned the section red. A fifth, looking for customers before associates, stayed green, and should: the customer table holds no associate, so the order cannot matter."]},{"v":"v620","d":"14 Sep 2026","t":"A CUSTOMER'S REWARD COVERS A LOWER MARGIN ON A SALE HE MARKS, AT THE SALT'S COST","n":["<b>HIS RULINGS OF 14 SEP 2026, THE SECOND OF THREE CUSTOMER VERSIONS.</b> A customer's balance is meant mostly for covering a lower margin rather than for free salt. On Enter, a sale to a customer who holds reward and is priced under the board's ask for its size now shows one line: the gap, what they hold, and what a tick would cover. The gap is struck on the goods, delivery aside. What is covered is the gap or what the balance is worth at the salt's cost, whichever is less, in whole hundredths of a unit, so the ringgit never runs past the gap.","<b>THE ROW RECORDS IT.</b> Two new fields, coverUnits and coverRM, ride through the drafter's existing check of correctable fields, and the fold copies them onto the sale. The row editor can reach both. rebateApplied nets a cover exactly as it nets a redemption, and the desk's overlay spends a queued cover at once, so the same units cannot be offered twice before the fold. The ledger line of a covered sale carries a reward tag. The drafter refuses a cover on oil, for an associate or missing either half, checks the ringgit against the book's cost, and says the balance is the desk's word.","<b>THE CHECKS.</b> Twelve assertions: the plan's invariants on fixtures, the form's offer, tick and clearing, driven through wbPreview and wbRecord on distinct days so no twin guard can swallow a drive, the overlay spending a queued cover, the ledger tag, and the drafter's three refusals. The editable-attribute count moves to thirty-five. Fourteen mutations each turned the section red."]},{"v":"v619","d":"14 Sep 2026","t":"AN ASSOCIATE TAKES SALT UNDER THE ASK AND OIL UNDER IT TOO, BOTH PAID ON THE DAY","n":["<b>TWO ROWS FOLDED, ONE PARTY, BOTH CASH AND BOTH DELIVERED.</b> CS6-PER takes 6.25 unit of salt at RM460 and 10 unit of oil at RM110, each dated 13 Sep, each paid and handed over the same day, so nothing stays open and the credit cap is untouched at 2 unit on salt and 20 unit on oil. He carried no outstanding and no units on credit before either row, with no defaulted sum against him.","<b>THE UNUSUAL PART IS PRICE, NOT PAYMENT.</b> The drafter flagged the salt rate at RM70.4 a unit, 12% under his usual RM80 across 6 orders. It sits inside his RM60 to RM100 range but under his RM85.52 median and well under the RM610 ask for 6.25 unit, clearing only the RM351.33 floor. The oil at RM110 likewise clears the RM87.28 floor and falls short of the RM130 ask. Both were decided at the desk.","<b>THE INVENTORY TOOK THE GOODS OUT AT ITS OWN COST.</b> Salt costed at RM44 a unit, RM275 on the order, oil at RM7.53 a unit, RM75.25, both the desk's own rates, so no separate cost line is carried. Stock stands at 16.19 unit against a stated 16.19, counted 8 Sep for salt and 9 Sep for oil, with 11.5 unit promised and the reorder mark at 15."]},
+const evolution=[{"v":"v625","d":"14 Sep 2026","t":"A PER-PRODUCT PAGE SHOWS ONE PRODUCT'S DETAIL, UNDER A SWITCH THAT CARRIES EVERY PRODUCT'S HEADLINE","n":["<b>HIS INSTRUCTION OF 14 SEP 2026.</b> The summary for every product always shows, a button switches the product, and two products' detail never stand on one page, because together they made the page too long. Receivables, Financials, On hand, Sourcing, Pricing and Analysis drew salt's block and then oil's. They draw one now. Above it sits a switch with a button per product, lit in that product's colour when it is the one shown. Each button carries the product's headline, so every product's summary stays in view: its revenue, or on On hand what it has on hand. The both-books summaries that lead Receivables and Financials stay where they were.","<b>ONE PRODUCT IN VIEW FOR THE WHOLE DESK, HIS RULE.</b> The switch sets PROD through setProdView, the same road the badge on the single-book pages and the Enter form's product select already took. Picking Oil on one page shows Oil on the next, and this device remembers the choice.","<b>THE RAIL'S SWITCH IS GONE.</b> Its buttons only jumped to a block further down, and on half the pages there was none, so it dimmed and explained itself. With it went prodJump, prodHead, drawProdSw, markProdSw, the PRODUCT heading, the last heading the rail carried, and their CSS.","<b>THE CHECKS.</b> A new section of seven assertions: no switch in the rail, and one block of the book in view on each of the six pages, under a switch listing every product and lighting that one. The buttons carry revenue, and units on hand on On hand. The both-books summaries still stand. A tap on Oil shows Oil alone and is remembered, and the next page opens on Oil. Seven mutations each turned it red. The four board laws walk each product in turn, having leaned on perProduct to do it, and the 11 Sep rail section keeps only the tab's own dress."]},{"v":"v624","d":"14 Sep 2026","t":"EVERY PAGE CARRIES ONE NAME, AND FIVE NAMES SAY WHAT THEIR PAGES ARE","n":["<b>HIS INSTRUCTION OF 14 SEP 2026: RENAME WHERE NECESSARY.</b> Two rules decided where. A page carries one name, in the rail, across its page and in its heading. Six headings had named something else: To do opened under Today, On hand under Inventory, Who buys under Customers, Map under Where the buyers are, and the two renamed below. And a name says what its page is.","<b>THE FIVE RENAMES.</b> Overview is Rules: every rule the desk trades by, and the register of what is breached. Forward is Next 30 days. Network is Associates. Orders is Site orders, the orders customers place on the statements site, which no longer sits a word away from the Order book. Pricing's one page takes its destination's name in place of The board, so the Whiteboard's links read Pricing. The board is still the price board inside Pricing.","<b>WHAT DID NOT MOVE.</b> The seven destinations, every address (#overview, #network, #orders still land), the Whiteboard, Transaction, and every link on the desk, which reads its name from the same table. The Journal keeps the names its entries were written in.","<b>THE CHECKS.</b> A new section renders all eighteen pages and reads their headings against their labels, finds no two pages sharing a name, and finds no destination with more pages than one opening on a page of its own name. Four mutations each turned it red. The v622 and Views sections read the new names."]},{"v":"v623","d":"14 Sep 2026","t":"AN ASSOCIATE EARNS A UNIT PER RM 470, AND R3 COUNTS AGAINST A HURDLE 1.2 TIMES HIGHER","n":["<b>HIS RULINGS OF 14 SEP 2026.</b> The same unit of salt could earn twice: once in its customer's reward, and again in the R3 of the associate who introduced that customer. So an associate's R3 margin now counts against a hurdle 1.2 times their figure, and their figure is RM 470 of pooled margin a unit. A customer stays at RM 500. Both figures are stated in REWARD. rewardUnitMargin takes who the reward is for, and rewardR3Hurdle gives the weighing.","<b>WHY THOSE FIGURES.</b> No unit is counted more than twice on this book. 1.2 is the average number of rewards a unit of salt bought was counted into on the day (1.19), where the average over the units rewards count was 1.45 and over R3's own units exactly 2. At RM 500 no weighing could bring CN6-WM near a reward, because their R3 is RM 63 of RM 893, so the associate figure came down. RM 470 is the round figure that met the two targets he named.","<b>WHERE IT LANDS.</b> CS6-BS is RM 12 from their next reward, at 4 earned and 4 taken, where they had held a free unit. CN6-WM is RM 57 from theirs, and shows 1 unit ahead until his two corrections fold: s031 and s056, the two half units, become goodwill on his ruling, leaving 1 taken. CS6-PER keeps 1 free unit. CJ4-OKR, CR3-DAM, CE4-AD and CI4-OKR stand level, and every customer balance is unchanged.","<b>ON THE DESK.</b> The associate's card marks the R3 row at a 1.2 times hurdle and says what its margin counts as, and the total names RM 470. What counts gives both figures and the R3 hurdle, and the appointment line on Enter states the customer and associate rules side by side.","<b>ALSO.</b> The laptop's update chain now checks the D1 mirror through wrangler's own login, where it had needed a key no shell holds, and printed \"not checked\" on every run.","<b>THE CHECKS.</b> A new section of six assertions on fixtures: the stated figures, R3 at 1/1.2 pooling to a unit, the introduced customer still counted in full on their own table, RM 480 earning an associate a unit and a customer none, the card, and What counts. Six mutations each turned it red. The v616, v618 and v570 sections were moved onto RM 470."]},{"v":"v622","d":"14 Sep 2026","t":"THE RAIL IS TWO LEVELS, AND THE ORDER BOOK OPENS ON RECEIVABLES","n":["<b>HIS INSTRUCTION OF 14 SEP 2026: TWO LEVELS AT MOST.</b> The rail stacked three: four headings (Command, Current, Relationships, Actions), the seven destinations, and the open destination's pages. The headings grouped the fifteen flat tabs the rail carried before v341 made the destinations, which already group, and two of the four stood over a single destination. They are gone. The rail now reads Today, Order book, Stock, Pricing, Customers, The book and Enter, and the open one lists its pages beneath it.","<b>A DESTINATION WITH ONE PAGE LISTS NOTHING.</b> Pricing opened a block holding one row, The board, which named the level above it again. railSubs lists nothing under a destination with no other page and marks its tab solo, and design/desk.css draws an open solo tab as the whole block, with rounded corners and its bottom edge. Pricing is the only one.","<b>RECEIVABLES, ON HIS CHOICE.</b> The Order book destination opened on a page also called Order book. That page is Receivables now, in the rail, across the page and in its heading. The destination keeps its name, and every old address still lands.","<b>THE CHECKS.</b> A new section of seven assertions: no heading in the rail, the destinations in VIEWS order, the Order book's two pages and heading, Pricing's solo block alone, and a three-page destination listing all three. The 11 Sep section now asserts PRODUCT, the one heading left, against the tabs. Eight mutations each turned the new section red."]},{"v":"v621","d":"14 Sep 2026","t":"A CUSTOMER HOLDING A WHOLE UNIT CAN REDEEM ONE, ON HIS WORD","n":["<b>HIS RULING OF 14 SEP 2026, THE LAST OF THREE CUSTOMER VERSIONS.</b> Covering a lower margin is the main road for a customer's reward (v620). Redeeming stays open on his word. On the Customers card, every customer holding at least one whole unit now has a button. It reads Redeem when they owe nothing, and Offset when they hold an advance. A tap takes one whole unit: salt, through Approve as any redemption goes, or an offset against their earliest advance of no more than one unit. Under a whole unit there is no button, and the road refuses.","<b>ONE ROAD, TWO SIDES.</b> redeemRebate looks for an associate first, who still takes all they hold, and then for a customer. The redemption states the balance they hold rather than the unit taken, so the Approve card reads the customer's whole position. The automatic offset stays with associates, as he decided on 11 Sep. On the book today, CM4-MK and CE4-CHE are offered an Offset against the advance each holds, CM6-HCM a Redeem, and CJ4-BJ, at 0.44, nothing.","<b>THE CHECKS.</b> Six assertions on fixtures: the card's Redeem, Offset and absent buttons, one unit redeemed against two held, the refusal under a unit, the offset capped at one, and the drafter taking a customer's redemption without an over-balance flag. Four mutations each turned the section red. A fifth, looking for customers before associates, stayed green, and should: the customer table holds no associate, so the order cannot matter."]},{"v":"v620","d":"14 Sep 2026","t":"A CUSTOMER'S REWARD COVERS A LOWER MARGIN ON A SALE HE MARKS, AT THE SALT'S COST","n":["<b>HIS RULINGS OF 14 SEP 2026, THE SECOND OF THREE CUSTOMER VERSIONS.</b> A customer's balance is meant mostly for covering a lower margin rather than for free salt. On Enter, a sale to a customer who holds reward and is priced under the board's ask for its size now shows one line: the gap, what they hold, and what a tick would cover. The gap is struck on the goods, delivery aside. What is covered is the gap or what the balance is worth at the salt's cost, whichever is less, in whole hundredths of a unit, so the ringgit never runs past the gap.","<b>THE ROW RECORDS IT.</b> Two new fields, coverUnits and coverRM, ride through the drafter's existing check of correctable fields, and the fold copies them onto the sale. The row editor can reach both. rebateApplied nets a cover exactly as it nets a redemption, and the desk's overlay spends a queued cover at once, so the same units cannot be offered twice before the fold. The ledger line of a covered sale carries a reward tag. The drafter refuses a cover on oil, for an associate or missing either half, checks the ringgit against the book's cost, and says the balance is the desk's word.","<b>THE CHECKS.</b> Twelve assertions: the plan's invariants on fixtures, the form's offer, tick and clearing, driven through wbPreview and wbRecord on distinct days so no twin guard can swallow a drive, the overlay spending a queued cover, the ledger tag, and the drafter's three refusals. The editable-attribute count moves to thirty-five. Fourteen mutations each turned the section red."]},{"v":"v619","d":"14 Sep 2026","t":"AN ASSOCIATE TAKES SALT UNDER THE ASK AND OIL UNDER IT TOO, BOTH PAID ON THE DAY","n":["<b>TWO ROWS FOLDED, ONE PARTY, BOTH CASH AND BOTH DELIVERED.</b> CS6-PER takes 6.25 unit of salt at RM460 and 10 unit of oil at RM110, each dated 13 Sep, each paid and handed over the same day, so nothing stays open and the credit cap is untouched at 2 unit on salt and 20 unit on oil. He carried no outstanding and no units on credit before either row, with no defaulted sum against him.","<b>THE UNUSUAL PART IS PRICE, NOT PAYMENT.</b> The drafter flagged the salt rate at RM70.4 a unit, 12% under his usual RM80 across 6 orders. It sits inside his RM60 to RM100 range but under his RM85.52 median and well under the RM610 ask for 6.25 unit, clearing only the RM351.33 floor. The oil at RM110 likewise clears the RM87.28 floor and falls short of the RM130 ask. Both were decided at the desk.","<b>THE INVENTORY TOOK THE GOODS OUT AT ITS OWN COST.</b> Salt costed at RM44 a unit, RM275 on the order, oil at RM7.53 a unit, RM75.25, both the desk's own rates, so no separate cost line is carried. Stock stands at 16.19 unit against a stated 16.19, counted 8 Sep for salt and 9 Sep for oil, with 11.5 unit promised and the reorder mark at 15."]},
 
 {"v":"v618","d":"14 Sep 2026","t":"A CUSTOMER EARNS AS AN ASSOCIATE DOES, AND A WRITTEN-OFF ORDER EARNS NOBODY ANYTHING","n":["<b>HIS RULINGS OF 14 SEP 2026, THE FIRST OF THREE CUSTOMER VERSIONS.</b> One rule now serves both sides: a whole free unit per RM 500 of margin brought, over the whole ledger. A customer counts their own priced orders. The RM 975 and 12.5 unit hurdle, the margin bands, the 10 Aug window and CUSTOMER_REWARD_OPENING are gone, and REWARD states the one figure and nothing else. He chose the whole ledger over his earlier ruling that three customers rewarded by hand before 10 Aug were settled (CE4-CHE, CM4-MK, CJ4-BJ), so only the units the book records as taken are netted.","<b>AN ORDER NEVER PAID EARNS NOTHING,</b> for a customer or an associate. On the book that is the two written-off orders of CA4-DAM, RM 138 of margin, which leaves them short of a unit. No associate balance moves.","<b>WHERE IT LANDS.</b> Thirty customers. CM4-MK holds 2 unit, CE4-CHE 1, CM6-HCM 1, and CJ4-BJ 0.44 after the 0.56 they took: 4.44 unit owed. The Customers card shows margin, earned, taken, left and the margin to the next unit, as an associate card does. The band chips on What counts gave way to the one rule. Covering a lower margin at entry is v619, and a customer Redeem is v620.","<b>THE CHECKS.</b> The 11 Sep section that pinned the old hurdle is retired with it. A new section of eight assertions on fixtures: a customer order before 10 Aug, one after, a written-off order, a quarter unit taken, an associate held short of a unit by their own written-off order, the card, the payload and oil. The redemption window, v570 and v616 sections were moved onto the new names. Nine mutations each turned the section red."]},{"v":"v617","d":"14 Sep 2026","t":"A DEPARTED ASSOCIATE KEEPS EARNING, AND NOTHING IS REDEEMED UNTIL THEY RETURN","n":["<b>HIS RULING OF 13 SEP 2026, THE LAST OF THREE VERSIONS.</b> Departure stops the handing over and nothing else. v616 already counts a departed associate's margin like anyone's. Now every road that gives a reward out asks canRedeem first: Redeem, the Offset it becomes against an advance, the automatic offset, the card's button and the Today prompt. On the Worker, the drafter refuses a departed associate's redemption, and refuses a correction that would add reward to their row. Undoing a redemption is not one, and still goes through. Returning is taking them off PEOPLE.departed, on his word.","<b>ON THE BOOK TODAY NOTHING MOVES.</b> CJ4-OKR, the one departed associate, stands level at 5 earned and 5 taken, so there is nothing held yet. When they earn their sixth unit, the card will say it is held while departed, and draw no button.","<b>THE CHECKS.</b> Nine assertions on fixture parties. The drafter's two refusals, and its drafting for a party still here or once returned. The undo that must pass. On the desk: earning continues, no queue from Redeem, Offset or the automatic offset, a held card, no Today prompt, and every road open again on return. Nine mutations each turned the section red, a guard that refused everyone among them."]},{"v":"v616","d":"14 Sep 2026","t":"AN ASSOCIATE EARNS A WHOLE FREE UNIT PER RM 500 OF MARGIN BROUGHT, POOLED OVER THE WHOLE LEDGER","n":["<b>HIS RULINGS OF 13 AND 14 SEP 2026, THE SECOND OF THREE VERSIONS.</b> An associate's reward is one count now. Their own orders and their -R account pool as R1 and R2, since the two cannot be told apart, and every priced order of each customer they introduced adds to it as R3, one level only, from v615's map. A whole unit is earned for each RM 500 of that margin. There are no bands, no unit minimum and no part units, and a loss earns nothing rather than a debt. It is counted over the whole ledger, so REWARD_OPENING leaves the book: the recount replaced the 10 Aug openings rather than adding to them, and every unit ever taken is netted against it, the July units and the -R account included.","<b>WHERE IT LANDS, ON THE BOOK AS IT STANDS.</b> RM 9,042.27 of margin brought against 14 units taken. CS6-BS has RM 2,576.10 and 1 unit free to redeem. CN6-WM has RM 893.20 and is 1 unit ahead. CJ4-OKR, CS6-PER, CI4-OKR, CE4-AD and CR3-DAM stand level. Net nil, as the recount he approved said at RM 500. The card shows the two margin rows and their total, then earned, taken, left and the margin to the next unit; What counts, and the appointment line on Enter, say the one rule.","<b>UNTOUCHED.</b> The customer scheme: RM 975 and 12.5 unit, banded, from 10 Aug over its own openings. The Redeem and automatic offset roads, which read the same earned and taken. Oil, which has no reward.","<b>THE CHECKS.</b> A new section of ten assertions on fixtures (an order before 10 Aug, a resale, a redemption, a pending order, an introduced associate and their own introduction, RM 1,000 exactly, a loss), the redemption window rewritten to the whole ledger, the 11 Sep and v570 sections moved off the RM 450 figure, and the book back to twenty-eight keys. Twelve mutations each turned them red."]},{"v":"v615","d":"14 Sep 2026","t":"WHO INTRODUCED WHOM IS ONE MAP ON THE BOOK, AND CM4-MK SITS UNDER CS6-BS","n":["<b>HIS RULING OF 13 SEP 2026, THE FIRST OF THREE VERSIONS THAT CHANGE THE REWARD RULE.</b> An introduction came from two places that did not know about each other: the referral stamp an R3 entry puts on a row, and a network list inside R0_NETWORK that only the founder could hold. CM4-MK, whose first order went through CS6-BS-R on 15 Jul and who has bought direct ever since, had nowhere to go. INTRODUCTIONS on the book now holds every introduction no row carries, each with its reason, and introductions() reads the stamps and the book together. R0_NETWORK names the founder and nothing else.","<b>WHAT MOVES.</b> On salt, CS6-BS's card lists CM4-MK, and its first-order R3 reads RM 220. No reward balance moves: the earning rule is v616. On oil, the lists now match salt's, because a stamp is read off every row of both books rather than the priced rows of the book in view; CI4-OKR's oil R3 reads RM 130 from an introduced customer's first oil order.","<b>THE CHECKS.</b> Twelve assertions over both books: every declared and every stamped introduction reaches the map, no customer has two introducers, and every card lists exactly what the map gives it. Five mutations each turned the section red."]},{"v":"v614","d":"14 Sep 2026","t":"CH4-KS IS BACK ON THE MAP: THE GAZETTEER'S KS RENAME REACHES THE DESK","n":["<b>HIS EDIT OF 14 SEP 2026, MADE ON GITHUB.</b> geo/places.json renamed the key KLS to KS, following CH4-KS home: the code was re-keyed to CH4-KLS on 28 Aug and back to CH4-KS on 12 Sep, and from that day the desk read the suffix KS, found no such key, and left the party off the map. No sync ran with the edit, so the master's GEO block still said KLS, CI failed on the push, and the cloud fold, which runs the gate before it commits, would have stalled the next approval. The block is synced byte for byte and the stale example in the locality comment goes. The check that caught it is CI's own geosync --check, proved red by that failed run.","<b>FOUND, NOT CHANGED.</b> Three roster codes still carry a place key the gazetteer does not hold: CA7-JTR (JTR), and CE5-TBC and CB7-TBC (TBC, the directory's to-be-confirmed placeholder). A coordinate comes from the directory by hand through tools/geofetch.mjs."]},{"v":"v613","d":"13 Sep 2026","t":"THE NAMES PANEL'S UNREACHABLE UNLOCK HANDLER GOES, WITH THE VAULT STATE ONLY IT TOUCHED","n":["<b>A HANDLER NOTHING COULD REACH IS REMOVED.</b> renderReveal wired an Unlock button, #vunlock, that no template has rendered since the v217 lock came off, so its decrypt, its hold on the passphrase and its messages could never run. It goes, with the one renderReveal local only it read. Show names on the phone, Import old vault and the laptop's Save are untouched.","<b>AND THE VAULT STATE ONLY IT TOUCHED.</b> vaultPass, vaultFileStamp, vaultLocalStamp and vaultSaveArmed were written and never read: only that handler ever held the passphrase, and the two stamps lost their last reader at v612. vaultLoad still takes the vault it is served and vaultSave still posts an ISO updated stamp, so nothing behaves differently and no assertion was added. The build's privacy note no longer says lockVault drops a passphrase."]},
 
@@ -6847,7 +6794,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='14 Sep 2026, 07:07 KL';
+const LAST_UPDATED='14 Sep 2026, 07:33 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -19401,18 +19348,21 @@ function saveQueue(){try{localStorage.setItem('saltQueue',JSON.stringify(queue))
    last product in the list would silently reprice every figure drawn after it. */
 function perProduct(builder,opts){
   opts=opts||{};
-  const keep=PROD, out=[];
-  PROD_IDS.forEach(pr=>{
-    if(opts.skipEmpty){const S=pSales(pr),B=pPurch(pr);if(!S.length&&!B.length)return;}
-    PROD=pr; recompute();
-    const P=PRODUCTS[pr];
-    out.push(`<div class="prodblock" data-prod="${pr}"><div class="prodhd">`
-      +`<span class="pd" style="background:${P.accent}"></span>${esc(P.name)}`
-      +(opts.sub?`<span class="sub">${opts.sub()}</span>`:'')
-      +`<span class="rule"></span></div>${builder()}</div>`);
-  });
+  const keep=PROD, ids=PROD_IDS.filter(pr=>!opts.skipEmpty||pSales(pr).length||pPurch(pr).length);
+  if(!ids.length)return '';
+  const shown=ids.includes(keep)?keep:ids[0];
+  /* v625: the switch is the summary of every product, so each button carries its headline: revenue, or the
+     page's own figure where it names one (opts.head, read with PROD set to that product) */
+  const fig={}; ids.forEach(pr=>{if(opts.head){PROD=pr;recompute();fig[pr]=opts.head();}else fig[pr]=fmt0(prodSummary(pr).rev);});
+  const sw=ids.length<2?'':`<div class="prodsw" role="group" aria-label="Product">${ids.map(pr=>`<button type="button" class="${pr===shown?'live':''}" aria-pressed="${pr===shown}" data-show="${pr}" style="--pacc:${PRODUCTS[pr].accent}" onclick="setProdView('${pr}')"><span class="pdot" style="background:${PRODUCTS[pr].accent}"></span><span class="pnm">${esc(PRODUCTS[pr].name)}</span><span class="pv">${fig[pr]}</span></button>`).join('')}</div>`;
+  PROD=shown; recompute();
+  const P=PRODUCTS[shown];
+  const out=sw+`<div class="prodblock" data-prod="${shown}"><div class="prodhd">`
+    +`<span class="pd" style="background:${P.accent}"></span>${esc(P.name)}`
+    +(opts.sub?`<span class="sub">${opts.sub()}</span>`:'')
+    +`<span class="rule"></span></div>${builder()}</div>`;
   PROD=keep; recompute();
-  return out.join('');
+  return out;
 }
 /* the two books added together, for the surfaces where addition is meaningful: money */
 function consoMoney(){
@@ -19560,14 +19510,14 @@ function prodBadge(){
   return `<span class="pbadge"><span class="pd" style="background:${P.accent}"></span>${esc(P.name)}</span>`
     +(others?`<span class="pbadgeo">other books: ${others}</span>`:'');
 }
-/* the switcher jumps to a block on the tabs that draw every product; on the three that draw
-   only one, it has to actually change the scope and redraw. */
+/* v625: the one road that changes the book in view: the page switch, the badge on the single-book pages and the Enter
+   form's select */
 function setProdView(pr){
   if(!PRODUCTS[pr])return;
   PROD=pr; try{localStorage.setItem('saltProd',pr);}catch(e){}
-  recompute(); drawProdSw(); render();
+  recompute(); render();
 }
-const builders={today:tabToday,forward:tabForward,sourcing:()=>{const b=perProduct(tabSourcing,{skipEmpty:true});return srcHead()+(b||'<div class="card"><div class="insight">No purchases or sales on any book yet, so there is nothing to source against.</div></div>');},analysis:()=>anaHead()+perProduct(tabAnalysis),map:tabMap,overview:tabOverview,inventory:()=>invHead()+perProduct(tabInventory),financials:()=>consoBlock()+consoCashBlock()+perProduct(tabFinancials),ledger:tabLedger,journal:tabJournal,concentration:tabConcentration,network:tabNetwork,receivables:()=>consoOrderBlock()+perProduct(tabReceivables),add:tabWorkbench,pricing:()=>pxHead()+perProduct(tabPricing),plans:tabPlans,approve:tabApprove,orders:tabOrders};
+const builders={today:tabToday,forward:tabForward,sourcing:()=>{const b=perProduct(tabSourcing,{skipEmpty:true});return srcHead()+(b||'<div class="card"><div class="insight">No purchases or sales on any book yet, so there is nothing to source against.</div></div>');},analysis:()=>anaHead()+perProduct(tabAnalysis),map:tabMap,overview:tabOverview,inventory:()=>invHead()+perProduct(tabInventory,{head:()=>units(currentStock)+' on hand'}),financials:()=>consoBlock()+consoCashBlock()+perProduct(tabFinancials),ledger:tabLedger,journal:tabJournal,concentration:tabConcentration,network:tabNetwork,receivables:()=>consoOrderBlock()+perProduct(tabReceivables),add:tabWorkbench,pricing:()=>pxHead()+perProduct(tabPricing),plans:tabPlans,approve:tabApprove,orders:tabOrders};
 /* ============ SEVEN VIEWS OVER FIFTEEN TABS (v341, move 4 of the rebuild) ============
    The fifteen tabs were fifteen reports stacked: a megabyte to open for one figure, with the
    method prose standing open on every one. A view leads with one tab open, folds that tab's
@@ -19780,7 +19730,7 @@ function render(){recompute();
   el.querySelectorAll('.vpill').forEach(b=>{b.onclick=()=>switchTab(b.dataset.s);});
   renderPart(part,el.querySelector('.vpart'),snap);
   wireSwitchers(el);            // the parts strip: written here, not by renderPart
-  renderQueue();renderProvBar();navCounts();railSubs();markProdSw();
+  renderQueue();renderProvBar();navCounts();railSubs();
   try{wrapTables();}catch(e){}}
 /* ============ KEY MESSAGE vs DATABASE (v210) ============
    The desk had grown to 52% prose. Not one word of it was wasted when it was written,
@@ -20048,7 +19998,7 @@ try{qInit().then(()=>{if(queueCleared&&qSyncState==='server')qPost();});}catch(e
 applyOverlay();                            // uncommitted entries fold in before anything is drawn
 /* v281: a fresh open still lands on Today (v147: the desk opens on what to do), but an
    address that names a tab is honoured, which is what lets a reload resume in place. */
-recompute();drawProdSw();
+recompute();
 (function(){const h=(location.hash||'').slice(1);switchTab(VIEW_OF[h]?h:'today');})();
 /* v385: THE RAIL KNOWS BEFORE APPROVE IS OPENED. A row is drafted within a second of an
    entry landing, and until now nothing on this desk said so until you happened to open the
