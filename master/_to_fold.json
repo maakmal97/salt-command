@@ -1,0 +1,112 @@
+{
+ "ok": true,
+ "count": 2,
+ "approved": [
+  {
+   "id": "2026-09-13T04:32:04.545Z",
+   "collection": "sales",
+   "row": {
+    "customer": "CN6-WM",
+    "qty": 1,
+    "total": 130,
+    "cost": 44,
+    "cash": 130,
+    "handover": "collected",
+    "date": "2026-09-13",
+    "deliveredQty": 1,
+    "deliveredOn": "2026-09-13",
+    "paidOn": "2026-09-13",
+    "rev": "R2",
+    "downstream": "CN6-WM-R"
+   },
+   "reasoning": "Sold 1 unit of salt to CN6-WM for RM 130, RM 130/unit. Costed at RM 44/unit from the desk's own inventory cost, so RM 86 on the goods at 66.2%. Paid in full and delivered in full on 2026-09-13. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [
+    "Booked to CN6-WM as an R2 downsell, so CN6-WM is not the counterparty on this row and gets no statement from it.",
+    "CN6-WM typically pays about RM 105/unit for salt across 8 orders; this one is RM 130, 23.8% above that."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-09-13T04:32:04.545Z",
+    "type": "SELL",
+    "party": "CN6-WM-R",
+    "qty": 1,
+    "total": 130,
+    "status": "paid",
+    "raw": "Sell 1 unit to CN6-WM-R for RM 130 on 2026-09-13, RM 130 cash, 1 unit moved → Completed (R2 via CN6-WM)",
+    "payload": {
+     "mode": "new",
+     "product": "salt",
+     "direction": "SELL",
+     "party": "CN6-WM",
+     "newId": null,
+     "date": "2026-09-13",
+     "qty": 1,
+     "total": 130,
+     "delivery": 0,
+     "freight": 0,
+     "cash": 130,
+     "kg": 1,
+     "assoc": "CN6-WM",
+     "stream": "R2",
+     "downstream": "CN6-WM-R",
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": null,
+     "handover": "collected",
+     "second": null
+    }
+   },
+   "decidedAt": "2026-09-13T04:33:33.668Z",
+   "decidedBy": "desk"
+  },
+  {
+   "id": "2026-09-13T04:48:30.210Z",
+   "collection": "sales",
+   "row": {
+    "qty": 2,
+    "total": 220,
+    "cash": 110,
+    "date": "2026-09-09",
+    "customer": "CM4-MK"
+   },
+   "reasoning": "Fulfilment against CM4-MK's order of 2 unit for RM 220 agreed 2026-09-09. RM 110 and 0 unit move on 2026-09-13, against RM 110 and 0 unit outstanding. Leaves RM 0 and 0 unit outstanding. The row itself is NOT recomputed here: ovAmend in the master applies it, so there is one definition of what a fulfilment does rather than two.",
+   "flags": [
+    "This SETTLES the order in full: nothing is left outstanding after it."
+   ],
+   "amends": "s143",
+   "amendKind": "Fulfilment",
+   "entry": {
+    "at": "2026-09-13T04:48:30.210Z",
+    "type": "AMEND",
+    "party": "CM4-MK",
+    "qty": 0,
+    "total": 110,
+    "status": "paid",
+    "raw": "Fulfilment on CM4-MK s143: RM 110 cash, recorded 2026-09-13",
+    "payload": {
+     "mode": "amend",
+     "direction": "SELL",
+     "party": "CM4-MK",
+     "rid": "s143",
+     "orderKey": "CM4-MK|2026-09-09|220",
+     "assoc": null,
+     "downstream": null,
+     "orderCode": null,
+     "linkTo": null,
+     "sameDay": false,
+     "note": null,
+     "kind": "Fulfilment",
+     "date": "2026-09-13",
+     "qty": 0,
+     "total": 110,
+     "cash": 110,
+     "kg": 0
+    }
+   },
+   "decidedAt": "2026-09-13T04:49:40.079Z",
+   "decidedBy": "desk"
+  }
+ ]
+}
