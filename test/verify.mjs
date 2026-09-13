@@ -8652,7 +8652,7 @@ section("08 Sep 2026: the audit fixes");
     const usrc = readFileSync(join(REPO, "tools", "update.mjs"), "utf8");
     ok(/\["tools\/drain\.mjs", "--keep"\]/.test(usrc), "update.mjs drains with --keep");
     /* 14 Sep 2026, his question: the mirror check reads D1 through wrangler's own login, so it needs no key */
-    ok(/import \{ readSnapshot \} from "\.\/d1\.mjs";/.test(usrc) && /const snap = readSnapshot\(\);/.test(usrc) && !/SALT_WRITE_KEY/.test(usrc),
+    ok(/import \{ readSnapshot \} from "\.\/d1\.mjs";/.test(usrc) && /const snap = readSnapshot\(\);/.test(usrc) && !/process\.env\.SALT_WRITE_KEY/.test(usrc),
       "the mirror check reads the D1 snapshot through wrangler, and no longer asks the shell for the write key");
   }
 
