@@ -10701,6 +10701,55 @@ section("v616: an associate earns a whole unit per RM 500 of margin brought, poo
   } finally { await new Promise((r) => setTimeout(r, 200)); try { w16.close(); } catch (e) { /* best effort */ } }
 }
 
+section("v617: a departed associate keeps earning, but nothing is redeemed until they return");
+{
+  /* HIS RULING OF 13 SEP 2026. Every road that hands a reward over asks the same question: the drafter's
+     redemption and a correction that would offset a row, and on the desk Redeem, Offset, the automatic
+     offset, the card's button and the Today prompt. Fixture parties throughout, and each road is shown
+     open again once the party is off the departed list, so a guard that refused everyone cannot pass.
+     Each assertion was proved red by mutation. */
+  const { draftRow: dR17, checkCorrection: cc17 } = await import("../src/drafter.js");
+  const bk17 = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const gone17 = [{ id: "CZ9-GONE", since: "2026-09-01", reason: "fixture", memorial: "fixture" }];
+  const mir17 = (departed) => ({ version: "vX", sales: bk17.sales, purchases: bk17.purchases,
+    state: { roster: bk17.roster.concat(["CZ9-GONE", "CZ9-HERE"]), loans: bk17.loans, PEOPLE: { banned: [], departed, roles: [] },
+      OPEN: { position: { salt: { onHand: 20, owedOut: 0, promised: 0 } } } }, pricing: null });
+  const red17 = (party) => ({ at: "2099-04-02T00:00:00.001Z", payload: { mode: "redeem", product: "salt", party, qty: 1, date: "2099-04-02", earned: 1, applied: 0, balance: 1 } });
+  ok(/has departed/.test(dR17(red17("CZ9-GONE"), mir17(gone17)).skip || ""), "the drafter refuses a departed associate's redemption");
+  ok(!dR17(red17("CZ9-HERE"), mir17(gone17)).skip && !dR17(red17("CZ9-GONE"), mir17([])).skip,
+    "and drafts one for an associate still here, or for the same party once they are off the departed list");
+  const adv17 = { rid: "a617", customer: "CZ9-GONE", date: "2026-09-10", qty: 1, total: 110, cost: 44, cash: 0, deliveredQty: 1, deliveredOn: "2026-09-10", product: "salt" };
+  const off17 = cc17({ settledRM: 110, rebate: true, rebateKg: 1 }, mir17(gone17), adv17, true).errs.join(" ");
+  ok(/has departed/.test(off17) && !/has departed/.test(cc17({ settledRM: 110, rebate: true, rebateKg: 1 }, mir17([]), adv17, true).errs.join(" ")),
+    "a correction that offsets their row in kind is refused while they are departed, and not otherwise: " + off17);
+  const undo17 = cc17({ rebate: false, rebateKg: 0 }, mir17(gone17), Object.assign({}, adv17, { rebate: true, rebateKg: 1 }), true).errs.join(" ");
+  ok(!/has departed/.test(undo17), "but undoing a redemption on their row is not a redemption, and is not refused for it");
+
+  const { openMaster: om17 } = await import("../tools/payload.mjs");
+  const { w: w17 } = await om17();
+  const rd17 = (e) => JSON.parse(String(w17.eval("JSON.stringify(" + e + ")")));
+  try {
+    w17.eval("setProd('salt');PEOPLE.departed.push(" + JSON.stringify(gone17[0]) + ");associates.push('CZ9-GONE');"
+      + "sales.push(" + JSON.stringify({ rid: "z617a", customer: "CZ9-GONE", date: "2026-09-01", qty: 1, total: 600, cost: 0, cash: 600, deliveredQty: 1, product: "salt" }) + "," + JSON.stringify(adv17) + ");recompute();"
+      + "queue=[];AP_DRAFTS=[];AP_REFUSED=[];saveQueue=function(){return Promise.resolve(true);};qPost=function(){return Promise.resolve(true);};switchTab=function(){};");
+    const g17 = rd17("(function(){var r=networkStats().find(function(x){return x.id==='CZ9-GONE';});return r?{earned:r.earned,taken:rebateApplied('CZ9-GONE')}:null;})()");
+    ok(!!g17 && g17.earned > 0 && g17.taken === 0, "they keep earning while departed: " + JSON.stringify(g17));
+    w17.eval("redeemRebate('CZ9-GONE');autoOffsets();");
+    ok(rd17("queue.length") === 0, "and neither the Offset against their advance nor the automatic offset queues anything");
+    const card17 = String(w17.eval("resellerCard(networkStats().find(function(x){return x.id==='CZ9-GONE';}))"));
+    ok(/held while departed/.test(card17) && /unit held/.test(card17) && !/redeemRebate\('CZ9-GONE'\)/.test(card17),
+      "the card says what they have earned is held, and draws no button");
+    ok(!/CZ9-GONE/.test(String(w17.eval("JSON.stringify(actions().filter(function(a){return a.kind==='reward';}))"))),
+      "and Today does not ask for it to be handed over");
+    w17.eval("PEOPLE.departed.pop();");
+    const back17 = String(w17.eval("resellerCard(networkStats().find(function(x){return x.id==='CZ9-GONE';}))"));
+    w17.eval("redeemRebate('CZ9-GONE');");
+    ok(rd17("queue.length") === 1 && /redeemRebate\('CZ9-GONE'\)/.test(back17)
+      && /CZ9-GONE/.test(String(w17.eval("JSON.stringify(actions().filter(function(a){return a.kind==='reward';}))"))),
+      "once they return, the button, the offset and the Today prompt are all back");
+  } finally { await new Promise((r) => setTimeout(r, 200)); try { w17.close(); } catch (e) { /* best effort */ } }
+}
+
 
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
 process.exit(fail ? 1 : 0);

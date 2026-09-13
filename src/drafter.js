@@ -25,6 +25,8 @@
 
 const round = (n, dp = 2) => Math.round((n + Number.EPSILON) * 10 ** dp) / 10 ** dp;
 const isNum = (v) => typeof v === "number" && Number.isFinite(v);
+/* v617: whether the book holds a party as departed. PEOPLE reaches the Worker in the mirror's state, as every book key does. */
+const isDepartedIn = (book, id) => !!id && ((book.state && book.state.PEOPLE && book.state.PEOPLE.departed) || []).some((d) => d && d.id === id);
 const prodOf = (r) => (r && r.product) || "salt";
 
 /* ---- reading the book out of the mirror ------------------------------------------- */
@@ -131,6 +133,13 @@ export function checkCorrection(fields, book, target, isSale) {
     party: buyerNow, assoc: at.assoc, stream: at.stream, downstream: at.downstream,
     product: prodOf(target),
   });
+
+  /* v617, HIS RULING OF 13 SEP 2026: AN OFFSET IS A REDEMPTION IN KIND, and a departed associate's reward is
+     held until they return. Only a correction that ADDS reward to the row is refused; undoing one is not a
+     redemption and still goes through. */
+  const owner = POSITION_ENGINE.ownerCode(target[partyKey] || "");
+  const addsReward = (fields.rebate === true && !target.rebate) || (isNum(fields.rebateKg) && +fields.rebateKg > (+target.rebateKg || 0) + 1e-9);
+  if (addsReward && isDepartedIn(book, owner)) errs.push(`${owner} has departed: their reward is held until they return, so it cannot settle this row`);
 
   for (const k of Object.keys(fields)) {
     if (!CORRECTABLE.includes(k)) { errs.push(`${k} is not a field a correction may set`); continue; }
@@ -1063,6 +1072,7 @@ export function draftRow(entry, book) {
     if (prod !== "salt") return { skip: `${prod} has no reward scheme, so there is no reward to redeem` };
     const party = pay.party || null;
     if (!party) return { skip: "a redemption names the party it is for" };
+    if (isDepartedIn(book, party)) return { skip: `${party} has departed: they keep earning, but nothing is redeemed until they return, on his ruling of 13 Sep 2026` };
     const q = isNum(pay.qty) ? +pay.qty : null;
     if (q == null || !(q > 0)) return { skip: "a redemption needs the units handed over" };
     const when = pay.date || null;
