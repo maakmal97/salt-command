@@ -1,5 +1,18 @@
 [
  {
+  "v": "v623",
+  "d": "14 Sep 2026",
+  "t": "AN ASSOCIATE EARNS A UNIT PER RM 470, AND R3 COUNTS AGAINST A HURDLE 1.2 TIMES HIGHER",
+  "n": [
+   "<b>HIS RULINGS OF 14 SEP 2026.</b> The same unit of salt could earn twice: once in its customer's reward, and again in the R3 of the associate who introduced that customer. So an associate's R3 margin now counts against a hurdle 1.2 times their figure, and their figure is RM 470 of pooled margin a unit. A customer stays at RM 500. Both figures are stated in REWARD. rewardUnitMargin takes who the reward is for, and rewardR3Hurdle gives the weighing.",
+   "<b>WHY THOSE FIGURES.</b> No unit is counted more than twice on this book. 1.2 is the average number of rewards a unit of salt bought was counted into on the day (1.19), where the average over the units rewards count was 1.45 and over R3's own units exactly 2. At RM 500 no weighing could bring CN6-WM near a reward, because their R3 is RM 63 of RM 893, so the associate figure came down. RM 470 is the round figure that met the two targets he named.",
+   "<b>WHERE IT LANDS.</b> CS6-BS is RM 12 from their next reward, at 4 earned and 4 taken, where they had held a free unit. CN6-WM is RM 57 from theirs, and shows 1 unit ahead until his two corrections fold: s031 and s056, the two half units, become goodwill on his ruling, leaving 1 taken. CS6-PER keeps 1 free unit. CJ4-OKR, CR3-DAM, CE4-AD and CI4-OKR stand level, and every customer balance is unchanged.",
+   "<b>ON THE DESK.</b> The associate's card marks the R3 row at a 1.2 times hurdle and says what its margin counts as, and the total names RM 470. What counts gives both figures and the R3 hurdle, and the appointment line on Enter states the customer and associate rules side by side.",
+   "<b>ALSO.</b> The laptop's update chain now checks the D1 mirror through wrangler's own login, where it had needed a key no shell holds, and printed \"not checked\" on every run.",
+   "<b>THE CHECKS.</b> A new section of six assertions on fixtures: the stated figures, R3 at 1/1.2 pooling to a unit, the introduced customer still counted in full on their own table, RM 480 earning an associate a unit and a customer none, the card, and What counts. Six mutations each turned it red. The v616, v618 and v570 sections were moved onto RM 470."
+  ]
+ },
+ {
   "v": "v622",
   "d": "14 Sep 2026",
   "t": "THE RAIL IS TWO LEVELS, AND THE ORDER BOOK OPENS ON RECEIVABLES",

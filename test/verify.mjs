@@ -9243,10 +9243,10 @@ section("v570: an associate is appointed from the Enter tab, and the Kind means 
       /* READ THE PAGE'S OWN FORMATTER. Rebuilding "RM 470" in the test would be a second copy of
          fmt0 and would pass while the page printed something else entirely. */
       /* v618: one rule for both sides, read through rewardRuleTxt off the page's own functions */
-      const HUR = JSON.parse(String(w570.eval("JSON.stringify({a:rewardRuleTxt('salt'),aN:rewardUnitMargin('salt'),"
+      const HUR = JSON.parse(String(w570.eval("JSON.stringify({a:rewardRuleTxt('salt'),aN:rewardUnitMargin('salt'),b:rewardRuleTxt('salt','associate'),"
         + "capA:creditCapFor('salt','associate'),capR:creditCapFor('salt','retail')})")));
-      ok(HUR.aN > 0 && EL.prev.indexOf(HUR.a) >= 0,
-        `the rule printed is the one the reward function returns (${HUR.a}), not restated`);
+      ok(HUR.aN > 0 && EL.prev.indexOf(HUR.a) >= 0 && EL.prev.indexOf(HUR.b) >= 0 && HUR.a !== HUR.b,
+        `the rules printed are the ones the reward functions return (${HUR.a} as a customer, ${HUR.b} as an associate), not restated`);
       ok(HUR.capA > HUR.capR, `and the associate cap really is the larger one (${HUR.capA} against ${HUR.capR})`);
 
       const TW = JSON.parse(String(w570.eval(DRIVE570("CZ7-BENCH", "reseller"))));
@@ -10562,9 +10562,10 @@ section("v616: an associate earns a whole unit per RM 500 of margin brought, poo
   const rd16 = (e) => JSON.parse(String(w16.eval("JSON.stringify(" + e + ")")));
   try {
     w16.eval("setProd('salt');");
-    ok(rd16("rewardUnitMargin('salt')") === 500 && rd16("rewardUnitMargin('oil')") === null
-      && rd16("rewardRuleTxt('salt')") === "a free unit per " + rd16("fmt0(500)") + " of margin" && rd16("rewardRuleTxt('oil')") === "no reward on this book",
-      "the rule is RM 500 of margin a unit on salt, and oil has none, in words as well as figures");
+    /* v623: an associate's figure is RM 470 and their R3 counts at 1/1.2; the figures below follow it */
+    ok(rd16("rewardUnitMargin('salt','associate')") === 470 && rd16("rewardUnitMargin('oil','associate')") === null
+      && rd16("rewardRuleTxt('salt','associate')") === "a free unit per " + rd16("fmt0(470)") + " of margin" && rd16("rewardRuleTxt('oil','associate')") === "no reward on this book",
+      "an associate's rule is RM 470 of margin a unit on salt, and oil has none, in words as well as figures");
     const row = (o) => JSON.stringify(Object.assign({ product: "salt" }, o));
     w16.eval("associates.push('CZ9-B2','CZ9-LOSS');"
       + "INTRODUCTIONS.push({by:'CZ9-AS',customer:'CZ9-IN'},{by:'CZ9-AS',customer:'CZ9-SUB'},{by:'CZ9-SUB',customer:'CZ9-GRAND'});"
@@ -10576,7 +10577,7 @@ section("v616: an associate earns a whole unit per RM 500 of margin brought, poo
         row({ rid: "z616e", customer: "CZ9-AS", date: "2026-09-04", qty: 1, total: 110, cost: 44, cash: 0, settledRM: 110, deliveredQty: 1, rebate: true, rebateKg: 0.5 }),
         row({ rid: "z616f", customer: "CZ9-SUB-R", rev: "R2", date: "2026-09-05", qty: 1, total: 100, cost: 60, cash: 100, deliveredQty: 1 }),
         row({ rid: "z616g", customer: "CZ9-GRAND", date: "2026-09-06", qty: 1, total: 500, cost: 0, cash: 500, deliveredQty: 1 }),
-        row({ rid: "z616h", customer: "CZ9-B2", date: "2026-09-07", qty: 1, total: 1000, cost: 0, cash: 1000, deliveredQty: 1 }),
+        row({ rid: "z616h", customer: "CZ9-B2", date: "2026-09-07", qty: 1, total: 940, cost: 0, cash: 940, deliveredQty: 1 }),
         row({ rid: "z616i", customer: "CZ9-LOSS", date: "2026-09-07", qty: 1, total: 100, cost: 700, cash: 100, deliveredQty: 1 }),
       ].join(",") + ");recompute();");
     const pick = (id) => rd16("(function(){var r=networkStats().find(function(x){return x.id==='" + id + "';});return r?{earned:r.earned,toNext:r.toNext,unit:r.unit,mine:r.marginMine,nMine:r.nMine,intro:r.marginIntro,nIntro:r.nIntro,total:r.marginTotal}:null;})()");
@@ -10585,16 +10586,16 @@ section("v616: an associate earns a whole unit per RM 500 of margin brought, poo
       "their own order before 10 Aug and their -R resale pool as one R1 + R2 figure, and the redemption is not an order: " + JSON.stringify(as));
     ok(!!as && as.intro === 150 && as.nIntro === 2,
       "every priced order of a customer they introduced counts, an introduced associate's resale included, and neither the pending order nor that associate's own introduction does: " + JSON.stringify(as));
-    ok(!!as && as.total === 550 && as.earned === 1 && as.toNext === 450,
-      "RM 550 pooled earns one whole unit, and RM 450 more reaches the second: " + JSON.stringify(as));
+    ok(!!as && as.total === 525 && as.earned === 1 && as.toNext === 415,
+      "RM 400 of their own and RM 150 of R3 at 1/1.2 pool to RM 525, one whole unit, and RM 415 more reaches the second: " + JSON.stringify(as));
     ok(rd16("rebateApplied('CZ9-AS')") === 0.5, "the half unit they took is netted against it");
     const b2 = pick("CZ9-B2"), loss = pick("CZ9-LOSS");
-    ok(!!b2 && b2.total === 1000 && b2.earned === 2 && b2.toNext === 500, "exactly RM 1,000 earns two, never a part unit: " + JSON.stringify(b2));
-    ok(!!loss && loss.total === -600 && loss.earned === 0 && loss.toNext === 1100,
-      "a loss earns nothing rather than a debt, and the next unit is RM 1,100 away: " + JSON.stringify(loss));
+    ok(!!b2 && b2.total === 940 && b2.earned === 2 && b2.toNext === 470, "exactly RM 940 earns two, never a part unit: " + JSON.stringify(b2));
+    ok(!!loss && loss.total === -600 && loss.earned === 0 && loss.toNext === 1070,
+      "a loss earns nothing rather than a debt, and the next unit is RM 1,070 away: " + JSON.stringify(loss));
 
     const card = String(w16.eval("resellerCard(networkStats().find(function(x){return x.id==='CZ9-AS';}))"));
-    ok(/Margin brought, whole ledger/.test(card) && card.indexOf(rd16("rewardRuleTxt('salt')")) >= 0 && /0\.5 unit free/.test(card)
+    ok(/Margin brought, whole ledger/.test(card) && card.indexOf(rd16("rewardRuleTxt('salt','associate')")) >= 0 && /0\.5 unit free/.test(card)
       && !/Per hurdle/.test(card) && !/>Band</.test(card),
       "the card shows the pooled count and the half unit free, and no hurdle or band column survives");
     w16.eval("setProd('oil');");
@@ -10687,7 +10688,7 @@ section("v618: a customer earns as an associate does, and a written-off order ea
     ok(!!cu && cu.margin === 550 && cu.n === 2 && cu.earned === 1 && cu.taken === 0.25 && cu.free === 0.75 && cu.toNext === 450,
       "the customer's June and September orders earn one unit, the written-off order and the redemption count for nothing, and the quarter taken is netted: " + JSON.stringify(cu));
     const ad = rd18("(function(){var r=networkStats().find(function(x){return x.id==='CZ9-AD';});return r?{total:r.marginTotal,earned:r.earned,toNext:r.toNext}:null;})()");
-    ok(!!ad && ad.total === 450 && ad.earned === 0 && ad.toNext === 50, "an associate's written-off order earns nothing either: " + JSON.stringify(ad));
+    ok(!!ad && ad.total === 450 && ad.earned === 0 && ad.toNext === 20, "an associate's written-off order earns nothing either, RM 20 short of their RM 470: " + JSON.stringify(ad));
     ok(!rd18("customerRewards().some(function(r){return r.id==='CZ9-AD';})"), "and an associate is not on the customer table, their buying being on their own card");
     const tab18 = String(w18.eval("tabConcentration()"));
     const i18 = tab18.indexOf("Customer rewards"), cardTxt = tab18.slice(i18, tab18.indexOf("</table>", i18));
@@ -10819,6 +10820,44 @@ section("v621: a customer holding a whole unit can redeem one, on his word");
     ok(!d21.skip && d21.row && d21.row.rebate === true && d21.row.qty === 1 && (d21.flags || []).some((f) => /held 2 unit/.test(f)) && !(d21.flags || []).some((f) => /against the/.test(f)),
       "the drafter drafts the customer's redemption as it does an associate's, and raises no over-balance flag: " + (d21.skip || JSON.stringify(d21.flags)));
   } finally { await new Promise((r) => setTimeout(r, 200)); try { w21.close(); } catch (e) { /* best effort */ } }
+}
+
+section("v623: an associate earns a unit per RM 470, and R3 counts against a hurdle 1.2 times higher");
+{
+  /* HIS RULINGS OF 14 SEP 2026. The same unit of salt counts once for its customer and again in the R3 of the associate
+     who introduced them, so R3 is weighed at 1/1.2 and the associate's figure is RM 470; a customer stays at RM 500.
+     Fixture parties on the committed book. Each assertion was proved red by mutation. */
+  const { openMaster: om23 } = await import("../tools/payload.mjs");
+  const { w: w23 } = await om23();
+  const rd23 = (e) => JSON.parse(String(w23.eval("JSON.stringify(" + e + ")")));
+  try {
+    w23.eval("setProd('salt');");
+    ok(rd23("[rewardUnitMargin('salt','associate'),rewardR3Hurdle('salt'),rewardUnitMargin('salt'),rewardR3Hurdle('oil')].join(' ')") === "470 1.2 500 1",
+      "the stated figures: RM 470 and a 1.2 times R3 hurdle for an associate, RM 500 for a customer, and no R3 weighing on oil");
+    const row23 = (o) => JSON.stringify(Object.assign({ product: "salt" }, o));
+    w23.eval("associates.push('CZ9-AX','CZ9-AY');INTRODUCTIONS.push({by:'CZ9-AX',customer:'CZ9-CX'});BASE_SALES.push(" + [
+      row23({ rid: "z623a", customer: "CZ9-AX", date: "2026-07-01", qty: 1, total: 230, cost: 0, cash: 230, deliveredQty: 1 }),
+      row23({ rid: "z623b", customer: "CZ9-CX", date: "2026-07-02", qty: 1, total: 300, cost: 0, cash: 300, deliveredQty: 1 }),
+      row23({ rid: "z623c", customer: "CZ9-AY", date: "2026-07-03", qty: 1, total: 480, cost: 0, cash: 480, deliveredQty: 1 }),
+      row23({ rid: "z623d", customer: "CZ9-CY", date: "2026-07-04", qty: 1, total: 480, cost: 0, cash: 480, deliveredQty: 1 }),
+    ].join(",") + ");queue=[];applyOverlay();recompute();");
+    const ax = rd23("(function(){var r=networkStats().find(function(x){return x.id==='CZ9-AX';});return r?{total:r.marginTotal,earned:r.earned,toNext:r.toNext,intro:r.marginIntro,x:r.r3x}:null;})()");
+    ok(!!ax && ax.intro === 300 && ax.x === 1.2 && ax.total === 480 && ax.earned === 1 && ax.toNext === 460,
+      "RM 230 of their own and RM 300 of R3 counted at 1/1.2 pool to RM 480, one unit at RM 470: " + JSON.stringify(ax));
+    const cx = rd23("(customerRewards().find(function(r){return r.id==='CZ9-CX';})||{})");
+    ok(cx.margin === 300 && cx.earned === 0 && cx.toNext === 200, "the introduced customer's own RM 300 still counts in full on their own table, at RM 500: " + JSON.stringify(cx));
+    const ay = rd23("(function(){var r=networkStats().find(function(x){return x.id==='CZ9-AY';});return r?{total:r.marginTotal,earned:r.earned}:null;})()");
+    const cy = rd23("(customerRewards().find(function(r){return r.id==='CZ9-CY';})||{})");
+    ok(!!ay && ay.total === 480 && ay.earned === 1 && cy.margin === 480 && cy.earned === 0,
+      "RM 480 of margin earns an associate a unit and a customer none, the same money on two figures: " + JSON.stringify({ ay, cy }));
+    const card23 = String(w23.eval("resellerCard(networkStats().find(function(x){return x.id==='CZ9-AX';}))")).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
+    ok(/R3, at a 1\.2 times hurdle/.test(card23) && /counts RM 250/.test(card23) && card23.indexOf(rd23("rewardRuleTxt('salt','associate')")) >= 0,
+      "the card says R3 is at a 1.2 times hurdle, what its RM 300 counts as, and the associate's own figure");
+    w23.eval("switchTab('network');");
+    const net23 = String(w23.eval("tabNetwork()")).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
+    ok(net23.indexOf("associates " + rd23("rewardRuleTxt('salt','associate')")) >= 0 && net23.indexOf("customers " + rd23("rewardRuleTxt('salt')")) >= 0 && /against a hurdle 1\.2 times higher/.test(net23),
+      "What counts states both figures and the R3 hurdle");
+  } finally { await new Promise((r) => setTimeout(r, 200)); try { w23.close(); } catch (e) { /* best effort */ } }
 }
 
 
