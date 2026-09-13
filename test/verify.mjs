@@ -9329,7 +9329,7 @@ section("11 Sep 2026: the mirror check stops crying wolf, and still catches a re
      "and the drafter really does read both, so excluding them would have blinded the check");
 }
 
-section("11 Sep 2026: a rail heading and a rail destination are told apart, and Current holds three");
+section("11 Sep 2026: a rail heading and a rail destination are told apart");
 {
   /* HIS REPORT: nothing in the rail said which rows you could tap. .grouplbl and .tab were the
      mono face, uppercase, weight 500 and THE SAME COLOUR, --salt-mist for both, separated by
@@ -9342,7 +9342,7 @@ section("11 Sep 2026: a rail heading and a rail destination are told apart, and 
     const at = railCss.indexOf("\n" + sel + "{");
     return at < 0 ? null : railCss.slice(at + sel.length + 2, railCss.indexOf("}", at));
   };
-  const head = rule(".grouplbl,.prodsw .plbl"), tab = rule(".tab");
+  const head = rule(".prodsw .plbl"), tab = rule(".tab");   // v622: PRODUCT is the one heading the rail keeps
   ok(!!head && !!tab, "the layer states the rail's heading and its tab in one rule each");
 
   /* CASE. Uppercase mono at wide tracking is the desk's label signature; a destination is named. */
@@ -9362,12 +9362,11 @@ section("11 Sep 2026: a rail heading and a rail destination are told apart, and 
 
   /* RULE. --salt-line-faint is white 6% and drew 97px of rule that cannot be seen on this
      ground; --salt-line is the hairline every card border is drawn in. */
-  ok(/\.grouplbl::after,\.prodsw \.plbl::after\{[^}]*background:var\(--salt-line\)/.test(railCss),
+  ok(/\.prodsw \.plbl::after\{[^}]*background:var\(--salt-line\)/.test(railCss),
      "every heading sits on the desk's own hairline, and nothing clickable on this desk does");
 
   /* COLUMN. One heading rule covers PRODUCT too: it read as a heading only because SALT and OIL
      are bordered pills, which is the accident this fix is about. */
-  ok(/\.grouplbl,\.prodsw \.plbl\{/.test(railCss), "PRODUCT is the same heading as the other five, stated once");
   const padL = (r) => { const m = /padding:([^;]*)/.exec(r); if (!m) return null;
     const v = m[1].trim().split(/\s+/); return v.length === 4 ? v[3] : v.length >= 2 ? v[1] : v[0]; };
   ok(padL(head) === "2px" && /padding:[^;]*\s12px[;}]/.test(tab),
@@ -9381,16 +9380,10 @@ section("11 Sep 2026: a rail heading and a rail destination are told apart, and 
   const bare = rule(".rail");
   ok(bare !== null && !/width:/.test(bare), "and the unscoped .rail sets no width, so the drawer keeps its own");
 
-  /* THE DIRECTORY (his instruction, 11 Sep 2026): Position and Trading are one group, Current. */
+  /* THE DIRECTORY (his instruction, 11 Sep 2026): Position and Trading were one group, Current. v622 took the
+     groups out of the rail altogether, on his instruction of 14 Sep 2026, and its own section asserts the rail now. */
   const masterRail = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
   const nav = masterRail.slice(masterRail.indexOf('<nav class="rail"'), masterRail.indexOf("</nav>"));
-  const heads = [...nav.matchAll(/class="grouplbl">([^<]+)</g)].map((m) => m[1]);
-  ok(heads.join(" | ") === "Command | Current | Relationships | Actions",
-     `the rail reads ${heads.join(" | ")}`);
-  const inCurrent = nav.slice(nav.indexOf('class="grouplbl">Current<'), nav.indexOf('class="grouplbl">Relationships<'));
-  ok([...inCurrent.matchAll(/data-s="([a-z]+)">([^<]+)</g)].map((m) => m[1] + ":" + m[2]).join(" ")
-     === "money:Order book stock:Stock price:Pricing",
-     "Current holds Order book, Stock and Pricing, in that order");
 
   /* AND NOTHING ELSE MOVED: the ids are the addresses, so every /desk#tab link still lands.
      A rename that took an id with it would pass every assertion above. */
@@ -10828,6 +10821,41 @@ section("v621: a customer holding a whole unit can redeem one, on his word");
   } finally { await new Promise((r) => setTimeout(r, 200)); try { w21.close(); } catch (e) { /* best effort */ } }
 }
 
+
+section("v622: the rail is two levels, the destinations and the open one's pages");
+{
+  /* HIS INSTRUCTION OF 14 SEP 2026: two levels at most. The four headings are gone, a destination with one page lists
+     nothing under itself and closes its own block, and the Order book opens on a page called Receivables. The rail is
+     read in the master's markup, the pages on the running desk, the block in design/desk.css. Each assertion was
+     proved red by mutation. */
+  const m22 = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+  const nav22 = m22.slice(m22.indexOf('<nav class="rail"'), m22.indexOf("</nav>"));
+  ok(!/class="grouplbl"/.test(nav22), "no heading stands over the destinations in the rail");
+  const css22 = readFileSync(join(REPO, "design", "desk.css"), "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
+  ok(!/\.grouplbl/.test(css22) && /\.tab\.on\.solo\{[^}]*border-radius:var\(--salt-radius-sm\);[^}]*border-bottom-color:var\(--salt-line\)/.test(css22),
+    "no rule styles a heading that is gone, and an open destination with one page draws its whole block");
+  const { openMaster: om22 } = await import("../tools/payload.mjs");
+  const { w: w22 } = await om22();
+  const rd22 = (e) => JSON.parse(String(w22.eval("JSON.stringify(" + e + ")")));
+  try {
+    const order = rd22("VIEWS.map(function(v){return v.id+':'+v.name;})");
+    const railOrder = [...nav22.matchAll(/<button class="tab[^"]*" data-s="([a-z]+)">([^<]+)</g)].map((x) => x[1] + ":" + x[2]);
+    ok(order.length === 7 && railOrder.join(" ") === order.join(" "), "the rail lists the seven destinations VIEWS names, in its order: " + railOrder.join(" "));
+    const look = (view) => rd22("(function(){switchTab('" + view + "');var t=document.querySelector('.rail .tab[data-s=\"" + view + "\"]'),d=t&&t.nextElementSibling;"
+      + "var sec=document.getElementById('sec-" + view + "'),h=sec&&sec.querySelector('h1');"
+      + "return {solo:!!t&&t.classList.contains('solo'),subs:(d&&d.classList.contains('subs'))?[].map.call(d.querySelectorAll('.sub'),function(b){return b.textContent;}):null,"
+      + "pills:sec?[].map.call(sec.querySelectorAll('.vpill'),function(b){return b.textContent;}):[],h1:h?h.textContent:null,"
+      + "allSolo:[].map.call(document.querySelectorAll('.rail .tab.solo'),function(x){return x.dataset.s;})};})()");
+    const money = look("money");
+    ok(!money.solo && JSON.stringify(money.subs) === '["Receivables","Financials"]' && JSON.stringify(money.pills) === '["Receivables","Financials"]' && money.h1 === "Receivables",
+      "the Order book lists Receivables and Financials beneath it and across its page, and opens on a page headed Receivables: " + JSON.stringify(money));
+    const price = look("price");
+    ok(price.solo && price.subs === null && price.pills.length === 0, "Pricing, with one page, lists nothing under itself and draws its own block: " + JSON.stringify(price));
+    ok(JSON.stringify(price.allSolo) === '["price"]', "and it is the only destination that does: " + JSON.stringify(price.allSolo));
+    const people = look("people");
+    ok(!people.solo && JSON.stringify(people.subs) === '["Who buys","Network","Map"]', "a destination with three pages still lists all three: " + JSON.stringify(people.subs));
+  } finally { try { w22.close(); } catch (e) { /* best effort */ } }
+}
 
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
 process.exit(fail ? 1 : 0);

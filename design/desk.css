@@ -81,7 +81,7 @@ html[data-tod="register"] body,body{background:var(--salt-obsidian);color:var(--
 
 /* ---- 3. TYPE. Every figure, code, label and control is mono; every sentence inherits
    the display face from body. The list is the desk's whole figure vocabulary. ---- */
-h2,.kick,.grouplbl,.tab,.navct,.sub,.sub2,.chip,.tag,.rtag,.etype,.lclabel,.tierpill,.gem,.starpill,
+h2,.kick,.tab,.navct,.sub,.sub2,.chip,.tag,.rtag,.etype,.lclabel,.tierpill,.gem,.starpill,
 .prodtag,.sbadge,.pbadge,.pscope,.prodhd,.prodsw button,.prodsw .plbl,.vpill,.viewsw button,
 .vbtn,.navlink,.ubtn,.obsbtn,.lqb,.updchip,.exitbtn,.badge,.warnpill,.apchip,.aprail,.apdow,.apday .apdn,
 .apside .apm,.apside .apbig,.appop .apname,.appop td,
@@ -165,6 +165,8 @@ details.rcard>summary .rname{font-size:16px;font-weight:500;}
   background:var(--salt-gradient-title);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;margin:0;}
 .kick{font-size:10px;font-weight:500;letter-spacing:.24em;color:var(--salt-brass);margin-top:4px;}
 /* ---- A DIVIDER IS NOT A DESTINATION (his instruction, 11 Sep 2026) ----
+   v622, HIS INSTRUCTION OF 14 SEP 2026: THE RAIL IS TWO LEVELS, so the four group headings are gone and
+   PRODUCT, the label of the salt and oil switch, is the one heading left. What follows still holds for it.
    .grouplbl and .tab wore the same costume: the mono face, uppercase, weight 500, and the
    SAME COLOUR, --salt-mist for both, with 1.5px of size and a little tracking between them.
    Nothing in the rail said which of the two you could tap, and the group heading read as a
@@ -178,16 +180,16 @@ details.rcard>summary .rname{font-size:16px;font-weight:500;}
      RULE    the heading sits ON a hairline that runs out to the rail's edge. Nothing
              clickable on this desk sits on a line.
      COLUMN  the heading is flush to the rail's own padding; every tab is inset 12px from it,
-             so the seven destinations form one column with one left edge and the five
-             headings sit outside it.
+             so the seven destinations form one column with one left edge and the heading
+             sits outside it.
      WEIGHT  the tab rises to mist-light at rest and salt when open; the heading keeps mist.
              The brighter of the two is the one you can reach, which is the way round it was
              not. The heading is NOT dimmed to make the gap: mist on obsidian is 5.0:1 and
              anything under it fails small text, so the gap is made from above. ---- */
 .railgroup{margin-bottom:15px;}
-.grouplbl,.prodsw .plbl{display:flex;align-items:center;gap:9px;font-size:9.5px;font-weight:500;
+.prodsw .plbl{display:flex;align-items:center;gap:9px;font-size:9.5px;font-weight:500;
   letter-spacing:.22em;color:var(--salt-mist);padding:0 2px;margin:0 0 7px;}
-.grouplbl::after,.prodsw .plbl::after{content:'';flex:1 1 auto;height:1px;background:var(--salt-line);}
+.prodsw .plbl::after{content:'';flex:1 1 auto;height:1px;background:var(--salt-line);}
 .prodsw{margin:2px 0 16px;}
 .tab{font-size:13px;font-weight:500;letter-spacing:.01em;text-transform:none;color:var(--salt-mist-light);
   border-radius:var(--salt-radius-sm);padding:8px 10px 8px 12px;}
@@ -557,7 +559,7 @@ details.obs>summary:hover{background:var(--salt-glass);}
   /* the 11px floor is the phone's, not the hierarchy's: at 11px against a 11.5px tab the
      heading and the destination were level again, which is the fault this rail just lost.
      The heading keeps the floor and the tab clears it. */
-  .grouplbl,.prodsw .plbl{font-size:11px !important;letter-spacing:.22em;}
+  .prodsw .plbl{font-size:11px !important;letter-spacing:.22em;}
   .tab{font-size:13.5px;}
   .kpi .v{font-size:20px;}
   /* THE BOARD FITS ITS CARD WITHOUT A SCROLL, measured at v477: 337px of table in a 325px card since
@@ -594,6 +596,8 @@ details.obs>summary:hover{background:var(--salt-glass);}
    of the same block: one border, one glass, the head with square bottom corners, the body with
    square top corners, no gap. A part is marked by a brass bar at its left, not a pill. */
 .tab.on{border-radius:var(--salt-radius-sm) var(--salt-radius-sm) 0 0;border-bottom-color:transparent;margin-bottom:0;}
+/* v622: a destination with one page has no body, so its open tab is the whole block */
+.tab.on.solo{border-radius:var(--salt-radius-sm);border-bottom-color:var(--salt-line);margin-bottom:2px;}
 .tab.on+.subs{display:block;}
 .subs{margin:0 0 8px;padding:2px 6px 6px;border:1px solid var(--salt-line);border-top:0;
   border-radius:0 0 var(--salt-radius-sm) var(--salt-radius-sm);background:var(--salt-glass);}
