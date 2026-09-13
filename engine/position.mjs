@@ -443,9 +443,13 @@ const CORRECT_TEXT=['orderCode','settle','note','handover'];
 const CORRECT_REQUIRED=['product','party','qty','total'];
 const CORRECTABLE=['product','stream'].concat(CORRECT_NUM_POS,CORRECT_NUM_NN,CORRECT_DATE,
   CORRECT_BOOL,CORRECT_CODE,CORRECT_TEXT);
+/* v611: AN R2 ROW BOOKS TO THE ASSOCIATE'S BUCKET, SO THE ASSOCIATE IS WHOEVER OWNS THE CODE IT SITS ON.
+   A row filed on the plain code before v611 reads the same way, which is what lets a correction name
+   the associate unchanged and still move the row into the bucket. The downstream is read as stored:
+   an old row carrying its own bucket there is a leg a correction can clear. */
 function attributionOf(row,partyKey){
   const pk=partyKey||(row.supplier!=null?'supplier':'customer');
-  if(row.rev==='R2')return {assoc:row[pk],stream:'R2',downstream:row.downstream||null};
+  if(row.rev==='R2')return {assoc:ownerCode(row[pk]),stream:'R2',downstream:row.downstream||null};
   if(row.ref)return {assoc:row.ref,stream:'R3',downstream:null};
   return {assoc:null,stream:null,downstream:null};
 }
@@ -588,6 +592,18 @@ function isBucket(code){return typeof code==='string'&&code.length>BUCKET_SFX.le
 function ownerCode(code){return isBucket(code)?code.slice(0,-BUCKET_SFX.length):code;}
 function ownsCode(party,code){return !!party&&(code===party||code===party+BUCKET_SFX);}
 function appointBucket(kind,code){return (ADDID_APPOINTS[kind]&&code)?code+BUCKET_SFX:null;}
+/* ====== v611, HIS RULING OF 13 SEP 2026: AN R2 SALE BOOKS TO THE ASSOCIATE'S BUCKET ===============
+   Whether or not the end buyer is named: R2 sales are parked under the -R account only, and a buyer
+   whose name is known is noted on the row as downstream and credited nothing. The bucket is never a
+   buyer, so it is never written as one. ONE WRITER for the four roads that book an R2: the drafter's
+   entry, the fold's correction, and the desk's queue branch and correction preview, which disagreed
+   about nothing only because each carried the same four lines by hand. */
+function bookR2(row,partyKey,assoc,buyer){
+  const a=ownerCode(assoc),b=a+BUCKET_SFX;
+  row[partyKey]=b;row.rev='R2';
+  if(buyer&&buyer!==a&&buyer!==b)row.downstream=buyer;else delete row.downstream;
+  return row;
+}
 
 return {txPrice:txPrice,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:txEffDeliv,txAdvance:txAdvance,
         txDeferUnits:txDeferUnits,txPendUnits:txPendUnits,txPendUnitsRaw:txPendUnitsRaw,txPendRM:txPendRM,txStat:txStat,txDates:txDates,txGoods:txGoods,
@@ -597,6 +613,6 @@ return {txPrice:txPrice,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeli
         CORRECTABLE:CORRECTABLE,CORRECT_REQUIRED:CORRECT_REQUIRED,CORRECT_NUM_POS:CORRECT_NUM_POS,
         CORRECT_NUM_NN:CORRECT_NUM_NN,CORRECT_DATE:CORRECT_DATE,CORRECT_BOOL:CORRECT_BOOL,
         CORRECT_CODE:CORRECT_CODE,CORRECT_TEXT:CORRECT_TEXT,HANDOVER:HANDOVER,
-        ADDID_APPOINTS:ADDID_APPOINTS,BUCKET_SFX:BUCKET_SFX,isBucket:isBucket,ownerCode:ownerCode,ownsCode:ownsCode,appointBucket:appointBucket};
+        ADDID_APPOINTS:ADDID_APPOINTS,BUCKET_SFX:BUCKET_SFX,isBucket:isBucket,ownerCode:ownerCode,ownsCode:ownsCode,appointBucket:appointBucket,bookR2:bookR2};
 })();
 export default POSITION_ENGINE;

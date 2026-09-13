@@ -161,7 +161,7 @@ export function checkCorrection(fields, book, target, isSale) {
     if (CORRECT_CODE.includes(k) && !roster.includes(String(v))) {
       flags.push(`${v} is not on the roster. A party needs a code and a directory entry before this is committed.`);
     }
-    if (k === "assoc" && !associates.includes(String(v))) {
+    if (k === "assoc" && !associates.includes(POSITION_ENGINE.ownerCode(String(v)))) {   /* v611: a bucket named here reads as its associate */
       flags.push(`${v} is on the book but is not listed as an associate, so crediting a downsell to them is a new relationship rather than an existing one.`);
     }
   }
@@ -203,9 +203,8 @@ export function checkCorrection(fields, book, target, isSale) {
      on the row and credits the introduction. Setting one leg and not the others is how a
      downsell ends up booked to a bucket owed money by nobody, which is the 02 Aug CS6-BS-R
      failure the desk already guards against at entry. */
-  if (after.stream === "R2" && after.assoc && !after.downstream) {
-    flags.push("R2 books the row to the associate, so without a downstream the end buyer is recorded nowhere.");
-  }
+  /* v611: an R2 books to the associate's bucket and a named end buyer is only noted, so an R2 with no
+     downstream is the ordinary case now and is not flagged. */
 
   /* THE COMPARISONS A FIELD CANNOT MAKE AGAINST ITSELF. Each of these is a figure that is legal
      on its own and says something worth reading beside the rest of the row. */
@@ -368,12 +367,16 @@ export function flagsFor(entry, row, book, priced) {
         off for that party for ever. A median with a tolerance keeps working, and says plainly
         that it is a typical rate rather than a rule. */
   const party = row.customer || row.supplier;
+  /* v611: THE PERSON, NOT THE CODE. A resale books to the bucket, and the bucket is the associate's own,
+     so their history and their credit are read across the code and the bucket and named by the
+     associate. The replay check below keeps the exact code, because the fold's guard compares it. */
+  const who = isSale ? POSITION_ENGINE.ownerCode(party) : party;
   const theirs = isSale
     /* v407, round seven: the TWIN of the fix sixteen lines above. v406 added the zero-total
        filter to the observed range and not to the party's own history, so one free unit still
        dragged a party's median down: CS6-BS read RM 108.50 against a real RM 110, which misfires
        at a rate they have actually paid and stays silent 10.9% adrift. Same rule, both sets. */
-    ? committed.filter((s) => s.customer === party && prodOf(s) === p && isNum(s.total) && s.total > 0 && isNum(s.qty) && s.qty > 0)
+    ? committed.filter((s) => POSITION_ENGINE.ownsCode(who, s.customer) && prodOf(s) === p && isNum(s.total) && s.total > 0 && isNum(s.qty) && s.qty > 0)
       .map((s) => (s.total - (isNum(s.delivery) ? s.delivery : 0)) / s.qty).sort((a, b) => a - b)
     : [];
   if (rate != null && theirs.length >= 2) {
@@ -381,8 +384,8 @@ export function flagsFor(entry, row, book, priced) {
     if (mid > 0 && Math.abs(rate - mid) / mid >= 0.10) {
       const uniform = theirs.every((r) => Math.abs(r - theirs[0]) < 0.005);
       flags.push(uniform
-        ? `${party} has paid RM ${round(mid)}/unit on every one of their ${theirs.length} orders of ${p}; this one is RM ${round(rate)}.`
-        : `${party} typically pays about RM ${round(mid)}/unit for ${p} across ${theirs.length} orders; this one is RM ${round(rate)}, ${round(Math.abs(rate - mid) / mid * 100, 1)}% ${rate > mid ? "above" : "below"} that.`);
+        ? `${who} has paid RM ${round(mid)}/unit on every one of their ${theirs.length} orders of ${p}; this one is RM ${round(rate)}.`
+        : `${who} typically pays about RM ${round(mid)}/unit for ${p} across ${theirs.length} orders; this one is RM ${round(rate)}, ${round(Math.abs(rate - mid) / mid * 100, 1)}% ${rate > mid ? "above" : "below"} that.`);
     }
   }
 
@@ -435,7 +438,7 @@ export function flagsFor(entry, row, book, priced) {
     if (isSale) {
       const roster = (book.state && book.state.roster) || [];
       if (!roster.includes(party)) flags.push(`${party} is not on the roster. A new party needs a code and a directory entry before this row is committed.`);
-      else if (!theirs.length) flags.push(`${party} has no committed ${p} order on the book, so there is no rate of theirs to compare this against.`);
+      else if (!theirs.length) flags.push(`${who} has no committed ${p} order on the book, so there is no rate of theirs to compare this against.`);
     } else {
       const suppliers = new Set((book.purchases || []).map((x) => x.supplier).filter(Boolean));
       if (!suppliers.has(party)) flags.push(`${party} has never supplied this desk before. Check the code before approving.`);
@@ -462,7 +465,7 @@ export function flagsFor(entry, row, book, priced) {
         the cap lives in the master's RULES, which is configuration and not mirrored here. */
   /* against the row's FULL total: the customer owes the delivery charge too (08 Sep 2026) */
   if (isNum(row.cash) && isNum(row.total) && row.cash < row.total - 0.005 && isNum(row.deliveredQty) && row.deliveredQty > 0) {
-    flags.push(`This is an ADVANCE: ${row.deliveredQty} unit goes out with RM ${round(row.total - row.cash)} unpaid. Check it against ${party}'s credit cap.`);
+    flags.push(`This is an ADVANCE: ${row.deliveredQty} unit goes out with RM ${round(row.total - row.cash)} unpaid. Check it against ${who}'s credit cap.`);
   }
   /* 7b. MORE THAN THE ORDER, either way. A correction is flagged for this (checkCorrection) and a
         new row was not, so RM 900 cash on a RM 100 order and 50 unit out on an order of 5 drafted
@@ -559,8 +562,17 @@ export function draftRow(entry, book) {
          Running them on the RESULT is the whole reason this goes through the gate instead of
          straight onto the book, and it is the same argument that put Modification through it on
          24 Aug: what is approved is the row as it will stand, not the edit that produced it. */
+      /* v611: THE ACCOUNT A ROW SITS ON CAN MOVE WITHOUT BEING NAMED. An R2 books to the associate's bucket, so a
+         correction that leaves the associate as it is still moves a row filed on the plain code into the bucket,
+         and one that clears the R2 with no buyer returns it to the associate's code. The field list reads the
+         buyer and would not say so, so the card does, by the same rule the fold applies. */
+      const bookedAfter = !isSale ? null
+        : (after.stream === "R2" && after.assoc) ? POSITION_ENGINE.bookR2({}, partyKey, after.assoc, null)[partyKey]   /* the writer itself, not a second copy of it */
+        : (target.rev === "R2" && !after.assoc) ? (after.party || POSITION_ENGINE.ownerCode(target[partyKey])) : null;
+      const moveLine = (bookedAfter && bookedAfter !== target[partyKey])
+        ? `It moves the row from ${target[partyKey]} to ${bookedAfter}${POSITION_ENGINE.isBucket(bookedAfter) ? ", the associate's resale account, where an R2 books since v611" : ""}.` : "";
       if (isSale) {
-        const synth = { customer: after.party, qty: +after.qty, total: +after.total, cash: target.cash || 0, deliveredQty: target.deliveredQty || 0 };
+        const synth = { customer: bookedAfter || after.party, qty: +after.qty, total: +after.total, cash: target.cash || 0, deliveredQty: target.deliveredQty || 0 };
         if (product !== "salt") synth.product = product;
         for (const f of flagsFor(entry, synth, book, priced)) flags.push(f);
       }
@@ -601,9 +613,10 @@ export function draftRow(entry, book) {
         reasoning: [
           `Correction against ${target[partyKey]}'s ${isSale ? "order" : "lot"} of ${round(target.qty)} unit for RM ${round(target.total)}${target.date ? ` dated ${target.date}` : ", pending and undated"}${target.rid ? ` (${target.rid})` : ""}.`,
           `Sets ${words.join(", ")}.`,
+          moveLine,
           "It moves no cash and no stock: it changes what the row says about itself.",
           "The row is not rewritten here. The fold applies the patch, so there is one definition of what a correction does rather than two.",
-        ].join(" "),
+        ].filter(Boolean).join(" "),
         flags,
         amends: target.rid || pay.orderKey,
         amendKind: kind,
@@ -1211,26 +1224,29 @@ export function draftRow(entry, book) {
     delete row.cost;
     row.deliveredQty = 0;
   }
-  /* THE DESK'S OWN RULE, COPIED RATHER THAN REINTERPRETED. R2 books the row to the associate;
-     R3 leaves the buyer on the row and credits the introduction beside it. These four lines are
-     the master's queue branch, and they are here in the same shape deliberately: a phone-entered
-     downsell and a laptop-entered one have to produce the same row or the book has two kinds of
-     downsell in it. What is NOT copied is the desk's assocOf() inference, which reads the whole
+  /* THE DESK'S OWN RULE, READ FROM THE ENGINE. R2 books the row to the associate's bucket (v611);
+     R3 leaves the buyer on the row and credits the introduction beside it. The master's queue branch
+     calls the same bookR2, deliberately: a phone-entered downsell and a laptop-entered one have to
+     produce the same row or the book has two kinds of downsell in it. What is NOT copied is the desk's assocOf() inference, which reads the whole
      sales history to guess an associate from a code. Guessing belongs on one side of the gate
      only: the drafter states what it was given and flags the silence, below. */
+  /* v611, HIS RULING OF 13 SEP 2026: AN R2 BOOKS TO THE ASSOCIATE'S BUCKET, named end buyer or not, through
+     the engine's bookR2, which the fold and the desk read too. A buyer whose name is known is noted as the
+     downstream and credited nothing, so "the end buyer is recorded nowhere" is no longer a fault to flag. */
   const assocFlags = [];
   if (dir === "SELL" && assoc) {
     if (stream === "R3") { row.ref = assoc; row.refKg = qty; }
-    else { row.customer = assoc; row.rev = "R2"; if (downstream) row.downstream = downstream; }
+    else POSITION_ENGINE.bookR2(row, "customer", assoc, downstream);
     const roster0 = (book.state && book.state.roster) || [];
     const assocs0 = (book.state && book.state.associates) || [];
-    if (!roster0.includes(assoc)) assocFlags.push(`${assoc} is not on the roster, so the credit would go to a code the book does not know.`);
-    else if (!assocs0.includes(assoc)) assocFlags.push(`${assoc} is on the roster but is not listed as an associate, so this is a new reselling relationship rather than an existing one.`);
+    const owner0 = POSITION_ENGINE.ownerCode(assoc);
+    if (!roster0.includes(owner0)) assocFlags.push(`${owner0} is not on the roster, so the credit would go to a code the book does not know.`);
+    else if (!assocs0.includes(owner0)) assocFlags.push(`${owner0} is on the roster but is not listed as an associate, so this is a new reselling relationship rather than an existing one.`);
     if (downstream && !roster0.includes(downstream)) assocFlags.push(`The downstream ${downstream} is not on the roster.`);
-    if (stream === "R2" && !downstream) {
-      assocFlags.push(`R2 books this row to ${assoc}, and no downstream was given, so the end buyer ${party} is recorded nowhere on it.`);
+    if (stream === "R2") {
+      if (!roster0.includes(row.customer)) assocFlags.push(`${row.customer}, the resale account this books to, is not on the roster.`);
+      assocFlags.push(`Booked to ${row.customer} as R2: ${owner0} buys it to sell on${row.downstream ? `, and ${row.downstream} is noted as the end buyer, credited nothing and sent no statement from it` : ""}.`);
     }
-    if (stream === "R2") assocFlags.push(`Booked to ${assoc} as an R2 downsell, so ${party} is not the counterparty on this row and gets no statement from it.`);
   }
 
   if (pay.note) row.note = String(pay.note);
@@ -1248,7 +1264,7 @@ export function draftRow(entry, book) {
   const margin = (dir === "SELL" && rate != null && goodsTotal > 0)
     ? ((goodsTotal - priced.cost * qty) / goodsTotal) * 100 : null;
   const bits = [
-    `${dir === "BUY" ? "Bought" : "Sold"} ${qty} unit of ${product} ${dir === "BUY" ? "from" : "to"} ${party} for RM ${round(total)}`
+    `${dir === "BUY" ? "Bought" : "Sold"} ${qty} unit of ${product} ${dir === "BUY" ? "from" : "to"} ${dir === "BUY" ? party : row.customer} for RM ${round(total)}`
       + (goodsTotal !== total ? `, of which RM ${round(goodsTotal)} is the goods and RM ${round(total - goodsTotal)} the delivery` : "")
       + `, RM ${round(rate)}/unit.`,
     dir === "SELL" ? `Costed at RM ${round(priced.cost)}/unit from ${priced.source}, so ${margin == null ? "no margin could be computed" : `RM ${round(goodsTotal - priced.cost * qty)} on the goods at ${round(margin, 1)}%`}.` : "",

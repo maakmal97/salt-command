@@ -1189,10 +1189,10 @@ section("Drafter — rows, refusals and flags");
      the three fields is a code the book either knows or does not, so each is CHECKED. */
   const r2 = draftRow(entry({ direction: "SELL", party: "CM4-MK", qty: 1, total: 100, cash: 100, kg: 1, date: "2026-08-16", assoc: "CN6-WM", stream: "R2", downstream: "CM4-MK" }), book);
   ok(!r2.skip, "an R2 downsell is drafted rather than refused");
-  ok(r2.row.customer === "CN6-WM" && r2.row.rev === "R2" && r2.row.downstream === "CM4-MK",
-    "and it books to the associate with the buyer behind it, exactly as the desk's own rule does");
-  ok(r2.flags.some(f => /is not the counterparty on this row/.test(f)),
-    "the reader is told the buyer gets no statement from it");
+  ok(r2.row.customer === "CN6-WM-R" && r2.row.rev === "R2" && r2.row.downstream === "CM4-MK",
+    "v611: and it books to the associate's bucket, with the named buyer noted beside it, exactly as the desk's own rule does");
+  ok(r2.flags.some(f => /Booked to CN6-WM-R as R2/.test(f) && /CM4-MK is noted as the end buyer, credited nothing and sent no statement/.test(f)),
+    "the reader is told where it books and that the named buyer is credited nothing and gets no statement from it");
   const r3 = draftRow(entry({ direction: "SELL", party: "CM4-MK", qty: 1, total: 100, cash: 100, kg: 1, date: "2026-08-16", assoc: "CN6-WM", stream: "R3" }), book);
   ok(!r3.skip && r3.row.customer === "CM4-MK" && r3.row.ref === "CN6-WM" && r3.row.refKg === 1,
     "R3 leaves the buyer on the row and credits the introduction beside it");
@@ -2256,8 +2256,8 @@ section("Fold — an approved batch becomes records in the book (v340)");
     if (ar.ok) {
       const r = A.sales.find((x) => x.rid === "sX01");
       ok(r.product === "oil", "the product changed on a row that was already paid and delivered");
-      ok(r.customer === "CN6-WM" && r.rev === "R2" && r.downstream === "CX9-TESTCOR",
-        "the R2 attribution books it to the associate with the buyer behind it, as the desk does");
+      ok(r.customer === "CN6-WM-R" && r.rev === "R2" && r.downstream === "CX9-TESTCOR",
+        "v611: the R2 attribution books it to the associate's bucket with the named buyer noted, as the desk does");
       ok(r.cash === 200 && r.deliveredQty === 2, "the settlement figures are untouched: a correction moves no money and no salt");
       ok(/corrected/.test(r.mod || "") && /salt to oil/.test(r.mod || ""),
         "the trail says what it was before, because the rate is the record");
@@ -8214,8 +8214,8 @@ section("v524: roster-only parties on the phone");
     "var q=queue[queue.length-1];r.pushed=(queue.length===n0+1);r.msg=(document.getElementById('wbOk')||{}).textContent||'';r.q=r.pushed&&q?{party:q.payload.party,down:q.payload.downstream,assoc:q.payload.assoc,stream:q.payload.stream,raw:q.raw}:null;return JSON.stringify(r);}catch(e){return JSON.stringify({no:'threw: '+(e&&e.message)});}})()";
   w.eval("switchTab('add');");
   const A = JSON.parse(String(w.eval(DRIVE_WB(withR))));
-  ok(!A.no && A.pushed && A.q && A.q.party === withR && A.q.down === withR + "-R" && A.q.stream === "R2" && !/-Gen/.test(A.q.raw),
-    "an R2 with the buyer unknown books to the associate as its party and to the -R account as the end buyer, and invents nothing: " + (A.no || JSON.stringify(A.q)));
+  ok(!A.no && A.pushed && A.q && A.q.party === withR && A.q.down === null && A.q.stream === "R2" && A.q.raw.indexOf(withR + "-R") >= 0 && !/-Gen/.test(A.q.raw),
+    "v611: an R2 with the buyer unknown queues the associate as its party and names no end buyer, and its line names the bucket it books to: " + (A.no || JSON.stringify(A.q)));
   const B = JSON.parse(String(w.eval(DRIVE_WB(withoutR))));
   ok(!B.no && !B.pushed && /-R is not on the roster/.test(B.msg) && /Add ID/.test(B.msg), "an associate without an -R account is refused with the code and Add ID named, and nothing is queued: " + (B.no || B.msg.slice(0, 120)));
   /* the editor, driven: a buyer not on the roster, then a moved order with a blank date */
@@ -8240,7 +8240,7 @@ section("v525: reject means discard, with re-enter, on the phone");
   const s1 = seed({ mode: "new", direction: "SELL", party: "CS6-BS", qty: 1, total: 110, cash: 0, kg: 1, date: "2026-09-07", delivery: 7.5, handover: "delivered", note: null });
   ok(s1 && s1.customer === "CS6-BS" && s1.qty === 1 && s1.total === 110 && s1.deliveredQty === 1 && s1.date === "2026-09-07" && s1.delivery === 7.5 && s1.handover === "delivered" && !s1.rev, "a queued sale seeds the editor with its own figures");
   const s2 = seed({ mode: "new", direction: "SELL", party: null, assoc: "CS6-BS", stream: "R2", downstream: "CS6-BS-R", qty: 1, total: 125, cash: 0, kg: 1, date: "2026-09-07" });
-  ok(s2 && s2.customer === "CS6-BS" && s2.rev === "R2" && s2.downstream === "CS6-BS-R", "an R2 seeds the associate as the row's party with the end buyer beside it");
+  ok(s2 && s2.customer === "CS6-BS-R" && s2.rev === "R2" && !s2.downstream, "v611: an R2 re-enters booked to the associate's bucket, and the bucket is not kept as its own end buyer");
   ok(seed({ mode: "amend", direction: "SELL", rid: "s136", kind: "Fulfilment", cash: 10 }) === null && seed({ mode: "new", direction: "BUY", party: "SA5-BTR", qty: 25, total: 1200 }) === null, "an amendment and a purchase are not seeded: they re-enter on the Workbench");
   const gone = JSON.parse(String(w.eval("(function(){queue=[{at:'a1',type:'SELL'},{at:'a2',type:'SELL'},{at:'a3',type:'SELL'}];var n=qForgetAt('a2');return JSON.stringify({n:n,left:queue.map(function(q){return q.at;})});})()")));
   ok(gone.n === 1 && gone.left.join() === "a1,a3", "the device drops its own copy of the rejected entry and keeps the rest");
@@ -10462,6 +10462,96 @@ section("v610: every associate is minted with a bucket");
   const bare10 = (b10.associates || []).filter((a) => !(b10.roster || []).includes(a + "-R"));
   ok((b10.associates || []).length > 0 && bare10.length === 0,
     "every associate on the book has their bucket on the roster" + (bare10.length ? ", but not " + bare10.join(", ") : ""));
+}
+
+section("v611: an R2 sale books to the associate's bucket, at entry and on correction");
+{
+  /* HIS RULING OF 13 SEP 2026: R2 sales are parked under the associate's -R bucket only, and a buyer whose name
+     is known is noted, never credited. Every road that books an R2 reads the engine's bookR2: the drafter's
+     entry, the fold's correction, the desk's queue branch and its correction preview. Forced fixtures only. */
+  const PE11 = (await import("../engine/position.mjs")).default;
+  const b11a = PE11.bookR2({}, "customer", "CN6-WM", null), b11b = PE11.bookR2({}, "customer", "CN6-WM", "CM4-MK"),
+    b11c = PE11.bookR2({ downstream: "X" }, "customer", "CN6-WM", "CN6-WM-R"), b11d = PE11.bookR2({}, "customer", "CN6-WM-R", "CN6-WM");
+  ok(b11a.customer === "CN6-WM-R" && b11a.rev === "R2" && !("downstream" in b11a) && b11b.customer === "CN6-WM-R" && b11b.downstream === "CM4-MK"
+    && b11c.customer === "CN6-WM-R" && !("downstream" in b11c) && b11d.customer === "CN6-WM-R" && !("downstream" in b11d),
+    "bookR2 puts the row in the associate's bucket, notes a named buyer, and never keeps the associate or the bucket as the buyer, whichever of the two it is handed");
+  const at11a = PE11.attributionOf({ customer: "CN6-WM-R", rev: "R2" }), at11b = PE11.attributionOf({ customer: "CN6-WM", rev: "R2", downstream: "CN6-WM-R" });
+  ok(at11a.assoc === "CN6-WM" && at11a.stream === "R2" && at11b.assoc === "CN6-WM" && at11b.downstream === "CN6-WM-R",
+    "a row in the bucket and a row still filed on the plain code both name the associate, and the old row's downstream reads as stored, so a correction can clear it");
+
+  /* THE DRAFTER'S ENTRY, queued the way the Enter tab queues it: the associate as party, no end buyer */
+  const { draftRow: dr11, checkCorrection: cc11 } = await import("../src/drafter.js");
+  const bk11 = { version: "v611", pricing: { v: "v611", byProduct: { salt: { stockCost: 44, replCost: 44, floors: { "1": { floor: 56 } } } } },
+    purchases: [{ date: "2026-09-01", qty: 25, total: 1100, receivedOn: "2026-09-01" }],
+    sales: [{ rid: "sy01", date: "2026-09-02", customer: "CX9-AS", qty: 1, total: 110, cash: 110, deliveredQty: 1, cost: 44 },
+      { rid: "sy02", date: "2026-09-03", customer: "CX9-AS", rev: "R2", downstream: "CX9-AS-R", qty: 1, total: 130, cash: 130, deliveredQty: 1, cost: 44 }],
+    state: { roster: ["CX9-AS", "CX9-AS-R", "CX9-BUY"], associates: ["CX9-AS"], QUEUE_COMMITTED: "2026-08-14T00:00:00.000Z" } };
+  const e11 = (p) => ({ at: "2026-09-10T01:00:00.000Z", payload: Object.assign({ mode: "new", direction: "SELL", date: "2026-09-10", qty: 1, total: 130, cash: 130, kg: 1 }, p) });
+  const d11 = dr11(e11({ party: "CX9-AS", assoc: "CX9-AS", stream: "R2", downstream: null }), bk11);
+  ok(!d11.skip && d11.row.customer === "CX9-AS-R" && d11.row.rev === "R2" && !("downstream" in d11.row) && !d11.flags.some((f) => /recorded nowhere/.test(f)),
+    "an R2 queued with no end buyer drafts into the associate's bucket, and is not flagged for a buyer it never had: " + (d11.skip || JSON.stringify(d11.row)));
+  const d11old = dr11(e11({ party: "CX9-AS", assoc: "CX9-AS", stream: "R2", downstream: "CX9-AS-R" }), bk11);
+  ok(!d11old.skip && d11old.row.customer === "CX9-AS-R" && !("downstream" in d11old.row),
+    "an entry still queued the old way, with the bucket written in as the end buyer, drafts to the same row");
+  ok(/to CX9-AS-R for RM 130/.test(d11.reasoning), "and the drafter's sentence names the account it books to: " + d11.reasoning.slice(0, 90));
+
+  /* THE CORRECTION THAT FILES AN OLD ROW: the associate unchanged, the bucket cleared as its buyer */
+  const c11 = cc11({ downstream: null }, bk11, bk11.sales[1], true);
+  ok(c11.errs.length === 0 && c11.changes.length === 1 && c11.changes[0].field === "downstream",
+    "clearing the bucket from an old row's end buyer is a real change the gate accepts: " + JSON.stringify(c11.errs));
+  const { applyAmend: aa11 } = await import("../tools/fold.mjs");
+  const rowF11 = JSON.parse(JSON.stringify(bk11.sales[1]));
+  aa11(rowF11, { kind: "Correction", date: "2026-09-13", fields: { downstream: null } }, "SELL", null);
+  ok(rowF11.customer === "CX9-AS-R" && rowF11.rev === "R2" && !("downstream" in rowF11) && rowF11.cash === 130 && rowF11.deliveredQty === 1,
+    "the fold moves it into the bucket, clears the buyer, and moves no money and no salt: " + JSON.stringify({ c: rowF11.customer, d: rowF11.downstream }));
+  /* and the move is SAID, where the trail's field list, which reads the buyer, would not say it */
+  const { draftRow: drC11 } = await import("../src/drafter.js");
+  const dC11 = drC11({ at: "2026-09-13T10:00:00.000Z", payload: { mode: "amend", direction: "SELL", rid: "sy02", kind: "Correction", date: "2026-09-13", fields: { downstream: null } } }, bk11);
+  ok(!dC11.skip && /It moves the row from CX9-AS to CX9-AS-R, the associate's resale account/.test(dC11.reasoning || ""),
+    "the Approve card for that correction says it moves the row from the plain code into the bucket: " + (dC11.skip || String(dC11.reasoning).slice(0, 160)));
+  const { plan: plan11 } = await import("../tools/fold.mjs");
+  const B11 = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  B11.QUEUE_COMMITTED = "2026-01-01T00:00:00.000Z";
+  B11.sales.push(JSON.parse(JSON.stringify(bk11.sales[1])));
+  const p11 = plan11(B11, { ok: true, count: 1, approved: [{ id: "d611", collection: "sales", amends: "sy02", amendKind: "Correction",
+    row: { rid: "sy02", customer: "CX9-AS", qty: 1, total: 130, cash: 130, date: "2026-09-03", product: "salt" },
+    entry: { at: "2026-09-13T10:00:00.000Z", payload: { mode: "amend", direction: "SELL", rid: "sy02", kind: "Correction", date: "2026-09-13", fields: { downstream: null } } } }] }, null);
+  ok(p11.refused.length === 0 && p11.items.length === 1 && p11.items[0].does.some((d) => /^move sy02 from CX9-AS to CX9-AS-R, the associate's resale account/.test(d)),
+    "and the fold's plan says the same, so the note written over it can: " + JSON.stringify(p11.refused.length ? p11.refused : p11.items.map((i) => i.does)));
+  const rowC11 = JSON.parse(JSON.stringify(rowF11));
+  aa11(rowC11, { kind: "Correction", date: "2026-09-13", fields: { assoc: null } }, "SELL", null);
+  ok(rowC11.customer === "CX9-AS" && !rowC11.rev,
+    "clearing the R2 on a bucket row with no buyer returns it to the associate's own code, never to the bucket as a buyer of its own");
+
+  /* THE DESK: its queue branch books a queued R2 the same way, its preview applies the same correction, the
+     ledger line names the associate, and a resale's replay twin is looked for in the bucket */
+  const { openMaster: om11 } = await import("../tools/payload.mjs");
+  const { w: w11 } = await om11();
+  try {
+    w11.eval("setProd('salt');recompute();");
+    const prov11 = JSON.parse(String(w11.eval("(function(){var n=sales.length;ovNew({mode:'new',direction:'SELL',party:'CS6-BS',assoc:'CS6-BS',stream:'R2',downstream:null,date:'2026-09-10',qty:1,total:130,cash:130,kg:1},{at:'t611'});var r=sales[sales.length-1];return JSON.stringify({grew:sales.length===n+1,c:r.customer,rev:r.rev,d:r.downstream||null});})()")));
+    ok(prov11.grew && prov11.c === "CS6-BS-R" && prov11.rev === "R2" && prov11.d === null,
+      "the desk's queue branch books a queued R2 into the associate's bucket, as the drafter does: " + JSON.stringify(prov11));
+    const seed11 = Object.assign({}, bk11.sales[1], { rid: "sy611", customer: "CS6-BS", downstream: "CS6-BS-R" });
+    w11.eval("sales.push(" + JSON.stringify(seed11) + ");");
+    w11.eval("ovAmend({kind:'Correction',date:'2026-09-13',direction:'SELL',rid:'sy611',fields:{downstream:null}},{at:'c611'})");
+    const desk11 = JSON.parse(String(w11.eval("JSON.stringify(sales.find(function(r){return r.rid==='sy611';}))")));
+    const fold11 = JSON.parse(JSON.stringify(seed11));
+    aa11(fold11, { kind: "Correction", date: "2026-09-13", fields: { downstream: null } }, "SELL", null);
+    ok(desk11.customer === "CS6-BS-R" && !desk11.downstream && desk11.customer === fold11.customer && (desk11.downstream || null) === (fold11.downstream || null) && desk11.rev === fold11.rev,
+      "the desk's preview applies that correction exactly as the fold does: " + JSON.stringify({ desk: [desk11.customer, desk11.downstream || null], fold: [fold11.customer, fold11.downstream || null] }));
+    const lab11 = (r) => String(w11.eval("ledAttr(" + JSON.stringify(r) + ")"));
+    const vis11 = (h) => h.replace(/<[^>]+>/g, "").replace(/&middot;/g, "·").trim();
+    const inB11 = lab11({ customer: "CS6-BS-R", rev: "R2" }), onCode11 = lab11({ customer: "CS6-BS", rev: "R2", downstream: "CS6-BS-R" }), named11 = lab11({ customer: "CS6-BS-R", rev: "R2", downstream: "CM4-MK" });
+    ok(vis11(inB11) === "R2 · CS6-BS" && vis11(onCode11) === "R2 · CS6-BS" && vis11(named11) === "R2 · CS6-BS"
+      && /CS6-BS's -R account/.test(inB11) && /end buyer CM4-MK, noted and not credited/.test(named11) && !/end buyer/.test(onCode11),
+      "the ledger line reads R2 and names the associate, in the bucket or still on the plain code; a named buyer sits in its title, noted and not credited: " + vis11(inB11) + " / " + vis11(onCode11));
+    w11.eval("window.confirm=function(){return false;};queue=[];sales.push({rid:'sy612',customer:'CS6-BS-R',rev:'R2',date:'2026-09-11',qty:1,total:130,cash:130,deliveredQty:1});");
+    const twinB11 = JSON.parse(String(w11.eval("JSON.stringify(replayAnswer('SELL','salt','CS6-BS','2026-09-11',1,130,'CS6-BS-R'))")));
+    const twinP11 = JSON.parse(String(w11.eval("JSON.stringify(replayAnswer('SELL','salt','CS6-BS','2026-09-11',1,130))")));
+    ok(!!twinB11.fault && /sy612/.test(twinB11.fault) && !twinP11.fault,
+      "a resale's replay twin is found in the bucket it books to, where reading the associate's plain code finds nothing");
+  } finally { w11.close(); }
 }
 
 

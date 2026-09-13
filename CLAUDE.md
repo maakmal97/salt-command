@@ -154,9 +154,11 @@ desk shows, cost and margin included, is served at the public URL.
   read from the draft and computes nothing; the drafter's flags do the measuring, and a
   purchase is never measured with a seller's ruler.
 - **What the drafter refuses, the phone does not let you type (v524):** `entryFault` in the
-  master answers both entry forms: roster codes only, an R2 row books to its associate, no sale
-  of a product with no lot, a date when something moved. The unknown R2 buyer is the reseller's
-  `-R` account, never an invented code. A twin of a row on the book is put to him at entry and
+  master answers both entry forms: roster codes only, no sale of a product with no lot, a date when
+  something moved. **An R2 row books to the associate's `-R` bucket whether or not the end buyer is
+  named** (v611, his ruling of 13 Sep 2026) through the engine's `bookR2`, which the drafter, the
+  fold's correction and the desk's queue branch and preview all call; a named buyer is noted as
+  `downstream` and credited nothing, and the bucket has to be on the roster. A twin of a row on the book is put to him at entry and
   travels as `second` (v526); a twin already queued on the device is refused as a double tap.
   A loan either way, in salt or in cash (v589), is a Workbench mode, drafted and folded into `loans` (v527); settling one is
   still a fold on his word.

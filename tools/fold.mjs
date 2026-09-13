@@ -211,6 +211,14 @@ export function plan(book, staged, notes) {
         entry.pay = { date: pay.date || null, kind: "Correction", cash: 0, kg: 0, fields };
         const words = Object.keys(fields).map((k) => `${k} to ${fields[k] === null ? "(cleared)" : fields[k]}`);
         entry.does.push(`correct ${dir === "BUY" ? "lot" : "order"} ${it.amends}: ${words.join(", ")}`);
+        /* v611: SAY WHEN THE ROW CHANGES ACCOUNT. An R2 books to the associate's bucket, so a correction can move a
+           row from the plain code into the bucket without naming either code, and the trail's field list reads the
+           buyer and would not say so. Measured by applying the patch to a copy, the one definition of a correction. */
+        try {
+          const pk = dir === "BUY" ? "supplier" : "customer", sim = JSON.parse(JSON.stringify(hits[0]));
+          applyAmend(sim, entry.pay, dir, null);
+          if (sim[pk] !== hits[0][pk]) entry.does.push(`move ${it.amends} from ${hits[0][pk]} to ${sim[pk]}${E.isBucket(sim[pk]) ? ", the associate's resale account, where an R2 books since v611" : ""}`);
+        } catch (e) { /* the apply refuses it below, with its own reason */ }
       } else if (it.amendKind === "Modification") {
         const newQty = +pay.newQty, newTotal = +pay.newTotal;
         if (!(newQty > 0) || !(newTotal >= 0)) { out.refused.push({ id: it.id, why: `the modification on ${it.amends} carries no valid new quantity and total` }); continue; }
@@ -469,12 +477,14 @@ export function applyAmend(row, pay, dir, note) {   /* v413: exported so the sui
     if (wantAssoc && wantStream === "R3") {
       row[partyKey] = wantBuyer; row.ref = wantAssoc; row.refKg = row.qty;
     } else if (wantAssoc) {
-      row[partyKey] = wantAssoc; row.rev = "R2";
-      if (wantBuyer && wantBuyer !== wantAssoc) row.downstream = wantBuyer;
+      /* v611: into the associate's bucket, the one writer the drafter and the desk read too; a
+         named buyer is noted, and the bucket itself is never kept as a buyer */
+      POSITION_ENGINE.bookR2(row, partyKey, wantAssoc, wantBuyer);
     } else {
       /* CLEARING AN R2 PUTS THE BUYER BACK, or the row stays booked to the associate with
-         nothing left saying who actually bought it. */
-      row[partyKey] = wantBuyer || row[partyKey];
+         nothing left saying who actually bought it. v611: with no buyer named, a row leaving a
+         bucket goes to the associate who owns it, never to the bucket as a buyer in its own right. */
+      row[partyKey] = wantBuyer || POSITION_ENGINE.ownerCode(row[partyKey]);
     }
 
     /* A PURCHASE'S status IS DERIVED, so it is recomputed rather than offered. ovAmend does

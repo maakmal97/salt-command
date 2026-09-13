@@ -4377,9 +4377,13 @@ const CORRECT_TEXT=['orderCode','settle','note','handover'];
 const CORRECT_REQUIRED=['product','party','qty','total'];
 const CORRECTABLE=['product','stream'].concat(CORRECT_NUM_POS,CORRECT_NUM_NN,CORRECT_DATE,
   CORRECT_BOOL,CORRECT_CODE,CORRECT_TEXT);
+/* v611: AN R2 ROW BOOKS TO THE ASSOCIATE'S BUCKET, SO THE ASSOCIATE IS WHOEVER OWNS THE CODE IT SITS ON.
+   A row filed on the plain code before v611 reads the same way, which is what lets a correction name
+   the associate unchanged and still move the row into the bucket. The downstream is read as stored:
+   an old row carrying its own bucket there is a leg a correction can clear. */
 function attributionOf(row,partyKey){
   const pk=partyKey||(row.supplier!=null?'supplier':'customer');
-  if(row.rev==='R2')return {assoc:row[pk],stream:'R2',downstream:row.downstream||null};
+  if(row.rev==='R2')return {assoc:ownerCode(row[pk]),stream:'R2',downstream:row.downstream||null};
   if(row.ref)return {assoc:row.ref,stream:'R3',downstream:null};
   return {assoc:null,stream:null,downstream:null};
 }
@@ -4522,6 +4526,18 @@ function isBucket(code){return typeof code==='string'&&code.length>BUCKET_SFX.le
 function ownerCode(code){return isBucket(code)?code.slice(0,-BUCKET_SFX.length):code;}
 function ownsCode(party,code){return !!party&&(code===party||code===party+BUCKET_SFX);}
 function appointBucket(kind,code){return (ADDID_APPOINTS[kind]&&code)?code+BUCKET_SFX:null;}
+/* ====== v611, HIS RULING OF 13 SEP 2026: AN R2 SALE BOOKS TO THE ASSOCIATE'S BUCKET ===============
+   Whether or not the end buyer is named: R2 sales are parked under the -R account only, and a buyer
+   whose name is known is noted on the row as downstream and credited nothing. The bucket is never a
+   buyer, so it is never written as one. ONE WRITER for the four roads that book an R2: the drafter's
+   entry, the fold's correction, and the desk's queue branch and correction preview, which disagreed
+   about nothing only because each carried the same four lines by hand. */
+function bookR2(row,partyKey,assoc,buyer){
+  const a=ownerCode(assoc),b=a+BUCKET_SFX;
+  row[partyKey]=b;row.rev='R2';
+  if(buyer&&buyer!==a&&buyer!==b)row.downstream=buyer;else delete row.downstream;
+  return row;
+}
 
 return {txPrice:txPrice,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:txEffDeliv,txAdvance:txAdvance,
         txDeferUnits:txDeferUnits,txPendUnits:txPendUnits,txPendUnitsRaw:txPendUnitsRaw,txPendRM:txPendRM,txStat:txStat,txDates:txDates,txGoods:txGoods,
@@ -4531,7 +4547,7 @@ return {txPrice:txPrice,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeli
         CORRECTABLE:CORRECTABLE,CORRECT_REQUIRED:CORRECT_REQUIRED,CORRECT_NUM_POS:CORRECT_NUM_POS,
         CORRECT_NUM_NN:CORRECT_NUM_NN,CORRECT_DATE:CORRECT_DATE,CORRECT_BOOL:CORRECT_BOOL,
         CORRECT_CODE:CORRECT_CODE,CORRECT_TEXT:CORRECT_TEXT,HANDOVER:HANDOVER,
-        ADDID_APPOINTS:ADDID_APPOINTS,BUCKET_SFX:BUCKET_SFX,isBucket:isBucket,ownerCode:ownerCode,ownsCode:ownsCode,appointBucket:appointBucket};
+        ADDID_APPOINTS:ADDID_APPOINTS,BUCKET_SFX:BUCKET_SFX,isBucket:isBucket,ownerCode:ownerCode,ownsCode:ownsCode,appointBucket:appointBucket,bookR2:bookR2};
 })();
 /* ==== END ENGINE position ==== */
 /* ==== ENGINE pricing: generated from engine/pricing.mjs by tools/engine.mjs. Edit the module, never this block. ==== */
@@ -6279,7 +6295,9 @@ const quoteFor=p=>{const f=QUOTES[p||PROD];return f?f():null;};
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{"v":"v610","d":"13 Sep 2026","t":"EVERY ASSOCIATE IS MINTED WITH A BUCKET, AND THE THREE WHO HAD NONE ARE GIVEN ONE","n":["<b>HIS RULING OF 13 SEP 2026: EVERY APPOINTMENT MINTS THE -R ACCOUNT.</b> Until now only a reseller was given one, on the ground that a referrer never books to it. An associate's own buying and their buying to sell on are one stream for the reward now, and any associate may resell, so the bucket comes with the appointment whichever stream it starts on.","<b>ONE ANSWER, THREE READERS.</b> The Add ID preview, the drafter and the fold all read appointBucket in the engine, so the form, the gate and the fold cannot come to disagree about which appointment mints one.","<b>CJ4-OKR-R, CI4-OKR-R AND CE4-AD-R JOIN THE ROSTER</b>, so all seven associates now hold a bucket. None carries a row, a name or a username, and nothing on the ledger moves.","<b>AND THE NAME CHECK STOPS CRYING WOLF ON A PLACEHOLDER.</b> Writing the extract failed closed: the directory files one buyer's place as <i>to be confirmed</i>, and s134's note says those same words about another such buyer. It is what TBC stands for, so it joins tbc and general on the one stopword list, where the reason is written down.","<b>PROVED RED FIRST.</b> The rule reverted to resellers only and one bucket taken off the roster turned five assertions red, the three v570 checks that said a referrer gets none rewritten to the new rule among them; restored, all pass."]},
+const evolution=[{"v":"v611","d":"13 Sep 2026","t":"AN R2 SALE BOOKS TO THE ASSOCIATE'S BUCKET, AT ENTRY AND ON CORRECTION, AND THE LEDGER LINE NAMES THE ASSOCIATE","n":["<b>HIS RULING OF 13 SEP 2026: R2 SALES ARE PARKED UNDER THE ASSOCIATE'S -R BUCKET ONLY, and a buyer whose name is known is not their own.</b> The Enter tab said an unknown buyer books to the reseller's own -R account. It did not: the form wrote the bucket in as the end buyer, the drafter booked the row to the associate's plain code, and six resales since 10 Sep sit there now.","<b>ONE WRITER, FOUR ROADS.</b> bookR2 in the engine puts the row in the bucket and notes a named buyer beside it, credited nothing. The drafter's entry, the fold's correction, and the desk's queue branch and correction preview all call it, where each carried the same four lines by hand. An entry still queued the old way, with the bucket as the buyer, lands on the same row.","<b>THE ROW NAMES ITS ASSOCIATE.</b> Attribution reads the associate off the code the row sits on, bucket or plain, so the ledger line reads <i>R2 &middot; CN6-WM</i>, a named buyer in its title. A correction that names the associate unchanged and clears the bucket from the end buyer is a real change, and it is the one that files the six. The Approve card and the fold's plan both say when a correction moves a row into the bucket, where the trail's field list, which reads the buyer, would not.","<b>WHAT THE ENTER TAB SAYS AND CHECKS.</b> End customer reads <i>Not named</i> and says the sale books to the -R account either way. Record is refused while the associate's bucket is off the roster. A resale's replay twin is looked for in the bucket. The re-enter seed books the way the row will. The drafter reads the associate's history and credit across the code and the bucket.","<b>AND A STALE REWARD RULE LEAVES THE FORM.</b> The R2 and R3 note quoted one free unit per RM 500 resold or RM 1,500 referred, read off a block retired at v280 and kept only so a stale reference would fail. It rendered instead. It now says where the sale books and nothing about what it earns.","<b>PROVED RED FIRST.</b> Twelve new assertions on forced fixtures, and the five older ones that pinned the plain-code booking rewritten to the bucket. With bookR2 and the attribution put back, the form's default restored, and the ledger line and replay twin reverted, every one of them went red; restored, all pass."]},
+
+{"v":"v610","d":"13 Sep 2026","t":"EVERY ASSOCIATE IS MINTED WITH A BUCKET, AND THE THREE WHO HAD NONE ARE GIVEN ONE","n":["<b>HIS RULING OF 13 SEP 2026: EVERY APPOINTMENT MINTS THE -R ACCOUNT.</b> Until now only a reseller was given one, on the ground that a referrer never books to it. An associate's own buying and their buying to sell on are one stream for the reward now, and any associate may resell, so the bucket comes with the appointment whichever stream it starts on.","<b>ONE ANSWER, THREE READERS.</b> The Add ID preview, the drafter and the fold all read appointBucket in the engine, so the form, the gate and the fold cannot come to disagree about which appointment mints one.","<b>CJ4-OKR-R, CI4-OKR-R AND CE4-AD-R JOIN THE ROSTER</b>, so all seven associates now hold a bucket. None carries a row, a name or a username, and nothing on the ledger moves.","<b>AND THE NAME CHECK STOPS CRYING WOLF ON A PLACEHOLDER.</b> Writing the extract failed closed: the directory files one buyer's place as <i>to be confirmed</i>, and s134's note says those same words about another such buyer. It is what TBC stands for, so it joins tbc and general on the one stopword list, where the reason is written down.","<b>PROVED RED FIRST.</b> The rule reverted to resellers only and one bucket taken off the roster turned five assertions red, the three v570 checks that said a referrer gets none rewritten to the new rule among them; restored, all pass."]},
 
 {"v":"v609","d":"13 Sep 2026","t":"AN ASSOCIATE'S BUCKET IS THEIRS: THE STATEMENT, THE PRICE LIST AND THE USUAL RATE READ THE CODE AND THE BUCKET AS ONE","n":["<b>HIS RULING OF 13 SEP 2026: THE BUCKET IS NOT ITS OWN PERSON, AND IN THE ACCOUNT STATEMENTS IT APPEARS UNDER THE ASSOCIATE.</b> An associate's -R account holds the salt they buy to sell on. Until now every code was a party of its own, so CN6-WM-R, CS6-BS-R and CS6-PER-R each had a statement and a username, and a resale booked to a bucket never reached the associate's own page.","<b>WHAT NOW READS THE TWO AS ONE.</b> The live statement and every issue from October, the price list sealed beside it, the board the desk prints and the rate the order card calls usual. A bucket's lines say <i>for resale</i>. The rule is stated once, in the engine, as ownsCode, so the statements tool, the price list and the desk cannot come to disagree about it.","<b>THE THREE BUCKET USERNAMES RETIRE ON THIS DEPLOY.</b> The publish leaves a bucket's record out, so its own delete step takes it off the site, and the username map the desk and the owner's list read no longer carries one. The lines stay in _users.json, kept for life. The September issue is untouched, exactly as sent; every row it held under a bucket reads on the associate's live statement instead.","<b>NOTHING ON THE LEDGER MOVES.</b> No row is rebooked and no reward changes. Filing new R2 sales into the bucket at entry, and correcting the six booked to plain codes since 10 Sep, are the folds that follow.","<b>PROVED RED FIRST, ON FORCED STATE.</b> Twelve assertions over a fixture associate and their bucket, none of them leaning on the live book: the engine's rule, the statement's rows and their resale marks, the publish leaving the bucket out, the username map, the price list's rate and loyalty, and the desk's three twins. With the rule reverted in every reader at once all twelve went red, and the files came back byte for byte."]},
 
@@ -6737,7 +6755,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='13 Sep 2026, 21:39 KL';
+const LAST_UPDATED='13 Sep 2026, 22:01 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -6983,7 +7001,7 @@ function ovNew(p,q){
         provNotes.push('attributed '+codeOf(who)+' to associate '+codeOf(par)+' from the code');}
     }
     if(p.assoc&&p.stream==='R3'){row.ref=p.assoc;row.refKg=+p.qty;}
-    else if(p.assoc){row.customer=p.assoc;row.rev='R2';if(p.downstream)row.downstream=p.downstream;}
+    else if(p.assoc)POSITION_ENGINE.bookR2(row,'customer',p.assoc,p.downstream);   /* v611: into the associate's bucket, as the drafter books it */
     sales.push(row);
   }
 }
@@ -7065,8 +7083,8 @@ function ovAmend(p,q){
     if(asked('downstream')&&f.downstream!==null)wantBuyer=f.downstream;
     delete row.rev;delete row.ref;delete row.refKg;delete row.downstream;
     if(wantAssoc&&wantStream==='R3'){row[partyKey]=wantBuyer;row.ref=wantAssoc;row.refKg=row.qty;}
-    else if(wantAssoc){row[partyKey]=wantAssoc;row.rev='R2';if(wantBuyer&&wantBuyer!==wantAssoc)row.downstream=wantBuyer;}
-    else{row[partyKey]=wantBuyer||row[partyKey];}
+    else if(wantAssoc)PE.bookR2(row,partyKey,wantAssoc,wantBuyer);   /* v611: the fold's writer, into the bucket */
+    else{row[partyKey]=wantBuyer||PE.ownerCode(row[partyKey]);}
     /* Only when a figure it derives from was set: an old lot stores its payment as
        status:'paid' with no cash field, so an unconditional recompute flipped it to unpaid on
        any correction, a date fix included. */
@@ -10846,7 +10864,10 @@ function edSubmitNew(){
   const fault=entryFault({direction:'SELL',product:all.product||'salt',party:all.party,assoc:all.assoc,downstream:all.downstream,date:all.date,cash:all.cash,kg:all.deliveredQty,qty:all.qty,total:all.total,delivery:all.delivery,fresh:true});
   if(fault)return say(fault);
   if(!(all.qty>0))return say('An order needs a quantity above zero.');
-  const ra=replayAnswer('SELL',all.product||'salt',all.party,all.date||null,all.qty,all.total||0);   /* v526 */
+  /* v611: a resale books to the associate's bucket, so the bucket has to exist and a twin is a row in it */
+  const bucketE=(all.stream==='R2'&&all.assoc)?POSITION_ENGINE.ownerCode(all.assoc)+POSITION_ENGINE.BUCKET_SFX:null;
+  if(bucketE&&(roster||[]).indexOf(bucketE)<0)return say(esc(bucketE)+' is not on the roster. Register the resale account under Add ID first, then pick the code.');
+  const ra=replayAnswer('SELL',all.product||'salt',all.party,all.date||null,all.qty,all.total||0,bucketE);   /* v526 */
   if(ra.fault)return say(ra.fault);
   if(all.total==null&&!all.unpriced)return say('State a total, or tick that the price is not agreed yet.');
   if(all.assoc&&!all.stream)return say('An associate needs a stream, R2 or R3, to say how the credit reaches them.');
@@ -11258,8 +11279,12 @@ const ledDate=d=>d&&d!=='undefined'?d:'undated';
 /* v538: AN ATTRIBUTED ROW SAYS SO ON ITS OPENING LINE. R2 books to the associate and keeps the
    buyer as downstream; R3 keeps the buyer and credits the associate in ref. Without this the twin
    rows of 07 Sep read identically, and his question was which one was the reseller's. */
+/* v611, HIS RULING OF 13 SEP 2026: A RESALE READS "R2" AND NAMES ITS ASSOCIATE. It books to the associate's -R
+   bucket, so the line says whose bucket it is; a buyer whose name is known is carried in the title only,
+   because it is noted, not credited. A row still filed on the plain code reads the same way. */
 function ledAttr(t){const r=t._buy||t;
-  if(r.rev==='R2'&&r.downstream)return ` <span class="tag inkind" title="a reseller order: booked to the associate, this is the buyer behind it">R2 &middot; ${ID(r.downstream)}</span>`;
+  if(r.rev==='R2'){const a=POSITION_ENGINE.ownerCode(r.customer),d=(r.downstream&&r.downstream!==a&&!POSITION_ENGINE.isBucket(r.downstream))?r.downstream:null;
+    return ` <span class="tag inkind" title="a resale, booked to ${esc(a)}'s -R account${d?'; end buyer '+esc(codeOf(d))+', noted and not credited':''}">R2 &middot; ${ID(a)}</span>`;}
   if(r.ref)return ` <span class="tag inkind" title="credited to the associate who introduced it">R3 &middot; ${ID(r.ref)}</span>`;
   return '';}
 function ledMatches(t,si,am,code){
@@ -16349,12 +16374,15 @@ function queuedTwin(dir,party,date,qty,total){
   return (queue||[]).find(q=>q&&q.payload&&q.payload.mode==='new'&&String(q.payload.direction||'').toUpperCase()===dir&&(q.payload.party||null)===(party||null)&&(q.payload.date||null)===(date||null)&&+q.payload.total===+total&&+q.payload.qty===+qty)||null;
 }
 /* returns {fault} to stop, {second:rid} when he said yes, or {} */
-function replayAnswer(dir,product,party,date,qty,total){
+/* v611: `booked` is the code the row will sit on when that is not the entry's party: a resale's party is the
+   associate and its row lands in their bucket, which is the code the fold's replay guard compares. */
+function replayAnswer(dir,product,party,date,qty,total,booked){
   const q=queuedTwin(dir,party,date,qty,total);
   if(q)return {fault:'The same order is already queued from this device, stamped '+esc(String(q.at).slice(11,16))+' UTC, and is on the Approve view. A second one is a double tap.'};
-  const t=replayTwin(dir,product,party,date,qty,total);
+  const on=booked||party;
+  const t=replayTwin(dir,product,on,date,qty,total);
   if(!t)return {};
-  const yes=confirm('A row for '+party+' with the same date, size and total is already on the book'+(t.rid?' ('+t.rid+')':'')+'.\n\nIs this a SECOND, separate order?');
+  const yes=confirm('A row for '+on+' with the same date, size and total is already on the book'+(t.rid?' ('+t.rid+')':'')+'.\n\nIs this a SECOND, separate order?');
   return yes?{second:t.rid||true}:{fault:'Not queued: it matches '+esc(t.rid||'a row')+' on the book and you said it is not a second order.'};
 }
 function entryFault(p){
@@ -16409,6 +16437,8 @@ function apReenterSeed(d){
   const seed={product:p.product||'salt',customer:p.assoc&&p.stream==='R2'?p.assoc:(p.party||null),qty:p.qty,total:p.total,cash:p.cash||0,deliveredQty:p.kg||0,
     date:p.date||null,delivery:p.delivery||0,handover:p.handover||null,note:p.note||null,orderCode:p.orderCode||null};
   if(p.assoc){seed.rev=p.stream||'R2';if(p.stream==='R2')seed.downstream=p.downstream||null;}
+  /* v611: a resale re-enters the way it books, in the associate's bucket with only a named buyer beside it */
+  if(p.assoc&&p.stream==='R2')POSITION_ENGINE.bookR2(seed,'customer',p.assoc,p.downstream||null);
   return seed;
 }
 function apReenter(){
@@ -16921,8 +16951,8 @@ function tabWorkbench(){
             <div class="qfield"></div>
           </div>
           <div class="qrow" id="wbDownRow">
-            <div class="qfield"><label>End customer</label><select id="wbDown"><option value="">Onward sale, buyer not known &mdash; books to the reseller&rsquo;s own -R account</option>${dopts}</select>
-              <div class="dsc" style="margin-top:6px;font-size:11px">Name one only if <b>you</b> delivered to them. Otherwise it books to that reseller&rsquo;s own <b>-R account</b>.</div></div>
+            <div class="qfield"><label>End customer</label><select id="wbDown"><option value="">Not named</option>${dopts}</select>
+              <div class="dsc" style="margin-top:6px;font-size:11px">It books to the associate&rsquo;s <b>-R account</b> either way. A name you pick is noted on the row, not credited.</div></div>
             <div class="qfield"></div>
             <div class="qfield"></div>
           </div>
@@ -18466,7 +18496,9 @@ function wbPreview(){
     if(wbDir==='SELL'&&wbEl('wbAssoc')&&wbEl('wbAssoc').checked&&!wbVal('wbAssocSel'))errs.push('Choose the associate.');
     /* v524: the same answer wbRecord gives, so the button is disabled rather than refused */
     { const aOn=wbDir==='SELL'&&wbEl('wbAssoc')&&wbEl('wbAssoc').checked, pA=aOn?(wbVal('wbAssocSel')||null):null;
-      const pParty=r2books?pA:(pv||null), pDown=r2books?(wbVal('wbDown')||(pA?codeOf(pA)+'-R':null)):null;
+      const pParty=r2books?pA:(pv||null), pDown=r2books?(wbVal('wbDown')||null):null;   /* v611: the bucket is booked, never named as the buyer */
+      const pBucket=r2books&&pA?POSITION_ENGINE.ownerCode(codeOf(pA))+POSITION_ENGINE.BUCKET_SFX:null;
+      if(pBucket&&(roster||[]).indexOf(pBucket)<0)errs.push(esc(pBucket)+' is not on the roster. Register the resale account under Add ID first, then pick the code.');
       if(pParty){ const ef=entryFault({direction:wbDir,product:wbProdVal(),party:pParty,assoc:pA,downstream:pDown,date:wbVal('wbDate'),cash,kg:unitsD,qty:wbNum('wbQty'),total:wbNum('wbTotal'),delivery:wbNum('wbDelivery')});
         if(ef&&!/needs a date/.test(ef))errs.push(ef); } }
     /* the date is blank by default so it cannot silently carry a stale day */
@@ -18728,7 +18760,7 @@ function wbRecord(){
        There is no replacement here on purpose: create the associate in Names & IDs, where the
        code is minted and only the code is queued, then pick him from this list. */
     const isR2=useA&&wbStream==='R2';                         // R2 books to the associate, so the top party is unused
-    let down=isR2?wbVal('wbDown'):null;
+    let down=isR2?(wbVal('wbDown')||null):null;   /* v611: nothing named is null, not an empty code */
     /* Same fault, same fix, for the end customer. A downsell buyer you can name earns a code
        in Names & IDs as a downstream of his associate; one you cannot name is what the -Gen
        bucket is for, and that is the default option on this select. */
@@ -18736,18 +18768,22 @@ function wbRecord(){
     /* v524: the unknown buyer books to the reseller's own -R account, which is a roster code or the
        entry is refused; "-Gen" was invented here and refused by the drafter on 07 Sep. An R2 row's
        party IS the associate, as the engine reads the row. */
-    if(isR2&&!down&&assoc)down=codeOf(assoc)+'-R';
+    /* v611, HIS RULING OF 13 SEP 2026: THE SALE BOOKS TO THE ASSOCIATE'S -R BUCKET whether or not a buyer
+       is named, so the bucket is no longer filled in as the end buyer; End customer carries a named buyer
+       or nothing. The drafter books the bucket through the engine's bookR2, and the account has to exist. */
+    const bucket=isR2&&assoc?POSITION_ENGINE.ownerCode(codeOf(assoc))+POSITION_ENGINE.BUCKET_SFX:null;
+    if(bucket&&(roster||[]).indexOf(bucket)<0){ok.innerHTML=esc(bucket)+' is not on the roster. Register the resale account under Add ID first, then pick the code.';ok.style.color='var(--crim)';return;}
     const party=isR2?(assoc||null):wbVal('wbParty');
     { const ef=entryFault({direction:wbDir,product:wbProdVal(),party,assoc,downstream:down,date,cash,kg:unitsD,qty,total,delivery:wbNum('wbDelivery'),fresh:true});
       if(ef){ok.innerHTML=ef;ok.style.color='var(--crim)';return;} }
-    const ra=replayAnswer(wbDir,wbProdVal(),party,date,qty,total);   /* v526 */
+    const ra=replayAnswer(wbDir,wbProdVal(),party,date,qty,total,bucket);   /* v526; v611: a resale's twin is a row in the bucket */
     if(ra.fault){ok.innerHTML=ra.fault;ok.style.color='var(--crim)';return;}
     /* belt and braces behind the disabled button: never book to an unchosen party */
     if(!isR2&&!party){ok.textContent='Choose a party first.';ok.style.color='var(--crim)';return;}
     if(useA&&!assoc){ok.textContent='Choose the associate first.';ok.style.color='var(--crim)';return;}
     if(!date){ok.textContent='Enter the date first.';ok.style.color='var(--crim)';return;}
     let label,nm='';
-    if(isR2){label=down||codeOf(assoc);}                    // the recipient shown is the reseller's end customer, as a CODE (v313)
+    if(isR2){label=bucket;}                    // v611: the account it books to, the associate's bucket, as a CODE (v313)
     /* a brand-new party gets a provisional CODE, never a name. Naming happens once, in
        Names & IDs, and the re-key to the proper code is queued from there. */
     else label=codeOf(party);   // the queue file is plaintext: codes only, never names
@@ -19027,13 +19063,17 @@ function wbApply(){
   if(pn)pn.style.display=r2books?'':'none';
   if(pl)pl.textContent=(assocOn&&wbStream==='R3')?'Buyer (referred)':'Party';
   if(r2books){const nb=wbEl('wbNewBox');if(nb)nb.style.display='none';}
-  /* R2 books the sale to the associate with an end customer behind him; R3 books it
-     to the buyer and credits the introduction to the associate. Different rebates. */
+  /* R2 books the sale to the associate's -R bucket (v611); R3 books it to the buyer and credits the
+     introduction to the associate.
+     v611: THE NOTE QUOTED A REWARD SCHEME RETIRED AT v280, one free unit per RM 500 resold or RM 1,500
+     referred plus a lot bonus, read off the REBATE block kept only so a stale reference would fail. It
+     rendered instead, on the form where every sale is entered. It says where the sale books and nothing
+     about what it earns, which the reward tables state. */
   const dr=wbEl('wbDownRow');if(dr)dr.style.display=wbStream==='R2'?'':'none';
   const sn=wbEl('wbStreamNote');
   if(sn)sn.innerHTML=wbStream==='R2'
-    ? 'R2: the sale books to the <b>associate</b>, who sells on to the end customer. Earns him 1 free unit per '+fmt0(REBATE.r2)+' resold, plus 1 more if this single order is '+units(REBATE.lotUnits)+' or more.'
-    : 'R3: the sale books to the <b>buyer named above</b> and credits the introduction to the associate. Earns him 1 free unit per '+fmt0(REBATE.r3)+' referred, plus 1 more if this single order is '+units(REBATE.lotUnits)+' or more, counted on the buyer\'s first order only.';
+    ? 'R2: the sale books to the associate&rsquo;s <b>-R</b> resale account, whether or not the end customer is named.'
+    : 'R3: the sale books to the <b>buyer named above</b> and credits the introduction to the associate.';
   const lb=wbEl('wbLinkBox');if(lb&&(wbASide==='BUY'||wbVal('wbKind')!=='Linked'))lb.style.display='none';
 }
 function wireWorkbench(){
@@ -19069,9 +19109,12 @@ function wireWorkbench(){
       wbApply();
       const hint=wbEl('wbAssocAuto');
       if(hint){hint.style.display='';
-        hint.innerHTML='<b>'+codeOf(ps.value)+'</b> is a downsell under <b>'+codeOf(par)
-          +'</b>, so this is booked to '+codeOf(par)+' as an R2 resell with '+codeOf(ps.value)
-          +' as the end customer. Untick above if that is wrong.';}
+        /* v611: it books to the associate's bucket; the picked code is noted only when it is a buyer */
+        const bk=POSITION_ENGINE.ownerCode(codeOf(par))+POSITION_ENGINE.BUCKET_SFX;
+        hint.innerHTML='<b>'+codeOf(ps.value)+'</b> sits under <b>'+codeOf(par)
+          +'</b>, so this books to '+esc(bk)+' as their R2 resale'
+          +(POSITION_ENGINE.isBucket(ps.value)?'':', with '+codeOf(ps.value)+' noted as the end customer')
+          +'. Untick above if that is wrong.';}
     }
     wbPreview();};
   ['wbQty','wbTotal','wbCash','wbUnits','wbNote','wbDate',
