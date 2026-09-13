@@ -13667,10 +13667,10 @@ function namesShown(){
   return revealed && !!(vaultNames && Object.keys(vaultNames).length);
 }
 let vaultRevealBusy=false, vaultRevealMsg='';
-/* Your browser holds the copy you actually work in, so it WINS over the file.
-   The file exists for portability and for a browser that has never seen the vault.
-   Getting this backwards once made an older file quietly replace newer names. */
-let vaultFromBrowser=false, vaultFileDiffers=false, vaultFileStamp=null, vaultLocalStamp=null, vaultSaveArmed=false;
+/* v612: THE VAULT SERVED IS THE ONLY COPY. A browser copy under saltNameVault used to win over it,
+   when the browser was where names were edited; nothing has written that key since the master came
+   into this repo, so a device that still carried one kept an old vault in front of every newer one. */
+let vaultFileStamp=null, vaultLocalStamp=null, vaultSaveArmed=false;
 function qServed(){try{return qSyncState==='server';}catch(e){return false;}}
 /* v277: THE PHONE'S REVEAL. Decrypts the synced envelope with a passphrase typed here and
    held only in this tab, exactly as the legacy import did, but WITHOUT writing anything back
@@ -14036,11 +14036,9 @@ function renderReveal(){
          Keys are codes, never names, so naming them here reveals nothing. */
       const filled=roster.filter(id=>(''+(vaultNames[id]||'')).trim()).length;
       const stray=Object.keys(vaultNames).filter(k=>roster.indexOf(k)<0);
-      let m='Unlocked from '+(vaultFromBrowser?'this browser':'salt_vault.json')+'. <b>'+filled+' of '+roster.length+'</b> names filled. Codes unchanged.';
+      let m='Unlocked from salt_vault.json. <b>'+filled+' of '+roster.length+'</b> names filled. Codes unchanged.';
       if(!filled)m='<b style="color:var(--crim)">Decrypted, but no name matched a code on the ledger.</b> The vault opened correctly, so nothing is lost; its keys simply do not line up. Send Claude the key list below.';
       if(stray.length)m+=' <b style="color:var(--amber)">'+stray.length+' key'+(stray.length>1?'s are':' is')+' not on the roster: '+stray.slice(0,6).join(', ')+(stray.length>6?'…':'')+'</b>';
-      if(vaultFileDiffers){const fileNewer=vaultFileStamp&&vaultLocalStamp?vaultFileStamp>vaultLocalStamp:null;
-        m+=' <span style="color:var(--amber)">The copy in salt_vault.json differs from this browser&rsquo;s'+(fileNewer===true?' and is <b>newer</b> &mdash; Save will ask before overwriting it':fileNewer===false?' and is older; <b>Save</b> brings it up to date':'; if you have edited names elsewhere, check before saving')+'.</span>';}
       setMsg(m,'var(--grn)');
     }catch(e){setMsg('Wrong passphrase.','var(--crim)');}
   };
@@ -18726,8 +18724,15 @@ async function wbAddIdNamed(code,kind,parent,an,nm,pl){
   const fail=m=>{if(ok){ok.textContent=m;ok.style.color='var(--crim)';}};
   const pass=prompt('Vault passphrase, to file the name encrypted. It is used once and not kept.');
   if(!pass)return fail('Not registered: the name needs the passphrase to be filed.');
+  /* v612: THE VAULT IS READ AGAIN HERE, NEVER TAKEN FROM MEMORY. NAME_VAULT is loaded once, when the
+     desk opens, and the save below replaces the cloud's whole vault. A desk left open across a laptop
+     reseed filed its one new name over the older map it still held, and every name the reseed had
+     added or re-keyed was gone. So a read that fails refuses: the copy in memory is the fault. */
+  let cloud=null;
+  try{const r=await fetch('vault',{cache:'no-store'});if(r.ok)cloud=await r.json();}catch(e){}
+  if(!cloud||!cloud.ok)return fail('The vault could not be read (offline, or the server did not answer). Nothing registered.');
   let map={};
-  if(NAME_VAULT){try{map=await vaultDecrypt(pass,NAME_VAULT);}catch(e){return fail('That passphrase did not open the vault. Nothing registered.');}}
+  if(cloud.vault){try{map=await vaultDecrypt(pass,cloud.vault);}catch(e){return fail('That passphrase did not open the vault. Nothing registered.');}}
   map[code]=nm+' ('+pl+')';
   let envl;try{envl=await vaultEncrypt(pass,map);}catch(e){return fail('The name could not be encrypted on this device. Nothing registered.');}
   const prev=NAME_VAULT;NAME_VAULT=envl;
@@ -19257,11 +19262,7 @@ async function vaultLoad(){
   try{ const r=await fetch('vault',{cache:'no-store'}); if(!r.ok)return false;
     const j=await r.json(); if(!j.ok)return false;
     vaultFileStamp=j.updated||null;
-    if(j.vault){
-      if(vaultFromBrowser){                        // never let the file overwrite the live copy
-        vaultFileDiffers=JSON.stringify(j.vault)!==JSON.stringify(NAME_VAULT);
-      }else{NAME_VAULT=j.vault;vaultLocalStamp=vaultFileStamp;}
-    }
+    if(j.vault){NAME_VAULT=j.vault;vaultLocalStamp=vaultFileStamp;}
     /* ids are canonical: a roster id always maps to itself, whatever the file says.
        Accepting a file's ids wholesale re-opened the v87 unlock-renamed-everything
        bug through salt_vault.json; only NON-roster keys may come from the file. */
@@ -19966,7 +19967,6 @@ function undoLast(){
      exist; re-read rather than leaving the button lit over a short tab */
   window._totopSync=sync;
 })();
-try{const _lsv=localStorage.getItem('saltNameVault');if(_lsv){NAME_VAULT=JSON.parse(_lsv);vaultFromBrowser=true;}}catch(e){}
 try{const _lni=localStorage.getItem('saltNewIds');if(_lni)newIds=JSON.parse(_lni);}catch(e){}
 try{const _lnl=localStorage.getItem('saltNewLocs');if(_lnl)newLocs=JSON.parse(_lnl);}catch(e){}
 try{const _lq=localStorage.getItem('saltQueue');if(_lq)queue=JSON.parse(_lq);}catch(e){}

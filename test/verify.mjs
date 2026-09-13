@@ -8344,8 +8344,14 @@ section("v528: the name on the phone, filed encrypted before the ID is queued");
   const { w } = await omV();
   if (!w.crypto || !w.crypto.subtle) { try { Object.defineProperty(w, "crypto", { value: webcrypto, configurable: true }); } catch (e) { w.crypto = webcrypto; } }
   w.eval("setProd('salt');recompute();switchTab('add');");
+  /* v612: the stub tells the vault's read from its save. opts.vault is the copy the desk loaded when it
+     opened and opts.cloud the vault the Worker holds now; opts.read "fail" answers the read not ok and
+     "throw" gives no answer at all, as offline; opts.saveOk false refuses the save */
   const DRIVE = (opts) => "(function(){try{queue=[];NAME_VAULT=" + (opts.vault || "null") + ";qSyncState='server';window.__posts=[];window.prompt=function(){return " + JSON.stringify(opts.pass) + ";};" +
-    "window.fetch=function(u,o){window.__posts.push({u:String(u),body:o&&o.body?JSON.parse(o.body):null});return Promise.resolve({ok:" + (opts.saveOk === false ? "false" : "true") + ",json:function(){return Promise.resolve({ok:" + (opts.saveOk === false ? "false" : "true") + "});}});};" +
+    "window.fetch=function(u,o){var post=!!(o&&o.method==='POST'),vlt=/vault$/.test(String(u));window.__posts.push({u:String(u),m:post?'POST':'GET',body:o&&o.body?JSON.parse(o.body):null});" +
+    "if(!post&&vlt&&" + JSON.stringify(opts.read === "throw") + ")return Promise.reject(new TypeError('offline'));" +
+    "var good=post?" + (opts.saveOk === false ? "false" : "true") + ":!(vlt&&" + JSON.stringify(opts.read === "fail") + ");" +
+    "return Promise.resolve({ok:good,json:function(){return Promise.resolve(post?{ok:good}:{ok:good,vault:" + (opts.cloud || "null") + "});}});};" +
     "wbMode='addid';wbApply();var set=function(id,v){var e=document.getElementById(id);if(e)e.value=v;};set('wbApKind'," + JSON.stringify(opts.kind || "customer") + ");set('wbApName'," + JSON.stringify(opts.name || "") + ");set('wbApPlace'," + JSON.stringify(opts.place || "") + ");wbPreview();" +
     "var btn=document.getElementById('wbRec');var r={dis:!!btn.disabled,errs:(document.getElementById('wbMsgs')||{}).textContent||''};try{wbRecord();}catch(e){r.threw=String(e&&e.message);}return JSON.stringify(r);}catch(e){return JSON.stringify({no:'threw: '+(e&&e.message)});}})()";
   const settle = async () => { for (let i = 0; i < 60; i++) { await new Promise((r) => setTimeout(r, 100)); const st = String(w.eval("(document.getElementById('wbOk')||{}).textContent||''")); if (!/Filing the name/.test(st)) return st; } return String(w.eval("(document.getElementById('wbOk')||{}).textContent||''")); };
@@ -8361,7 +8367,7 @@ section("v528: the name on the phone, filed encrypted before the ID is queued");
   const B = JSON.parse(String(w.eval(DRIVE({ pass: "pw", name: "Test Person", place: "Somewhere" }))));
   const stB = await settle();
   const qB = readQ();
-  const post = qB.posts.find((p) => /vault$/.test(p.u));
+  const post = qB.posts.find((p) => /vault$/.test(p.u) && p.m === "POST");
   ok(!B.no && !B.dis && /Registered CT11-SOM/.test(stB) && post && post.body && post.body.vault && post.body.vault.ct, "with a name and place the vault is posted and the ID registered: " + (B.no || stB.slice(0, 90)));
   let opened = null; try { opened = await vdec("pw", post.body.vault); } catch (e) { opened = { err: String(e && e.message) }; }
   ok(opened && opened["CT11-SOM"] === "Test Person (Somewhere)", "the same passphrase opens the envelope to the name and place: " + JSON.stringify(opened && opened["CT11-SOM"]));
@@ -8377,7 +8383,7 @@ section("v528: the name on the phone, filed encrypted before the ID is queued");
   const TB = JSON.parse(String(w.eval(DRIVE({ pass: "pw", name: "Test Person", place: "" }))));
   const stTB = await settle();
   const qTB = readQ();
-  const postTB = qTB.posts.find((p) => /vault$/.test(p.u));
+  const postTB = qTB.posts.find((p) => /vault$/.test(p.u) && p.m === "POST");
   let openedTB = null; try { openedTB = postTB && postTB.body ? await vdec("pw", postTB.body.vault) : null; } catch (e) { openedTB = { err: String(e && e.message) }; }
   ok(!TB.no && !TB.dis && /Registered CT11-TBC/.test(stTB) && openedTB && openedTB["CT11-TBC"] === "Test Person (to be confirmed)",
     "a blank place on a TBC code registers, and files the name as to be confirmed: " + (TB.no || stTB.slice(0, 60)) + " / " + JSON.stringify(openedTB && openedTB["CT11-TBC"]));
@@ -8394,9 +8400,45 @@ section("v528: the name on the phone, filed encrypted before the ID is queued");
   const stD = await settle();
   ok(!D.no && /could not be saved/.test(stD) && readQ().q.length === 0 && readQ().vault === null, "a refused save registers nothing and puts the old vault back");
   const wrongEnv = JSON.stringify(post.body.vault);
-  const E = JSON.parse(String(w.eval(DRIVE({ pass: "not-pw", name: "Test Person", place: "Somewhere", vault: wrongEnv }))));
+  const E = JSON.parse(String(w.eval(DRIVE({ pass: "not-pw", name: "Test Person", place: "Somewhere", vault: wrongEnv, cloud: wrongEnv }))));
   const stE = await settle();
   ok(!E.no && /did not open the vault/.test(stE) && readQ().q.length === 0, "a wrong passphrase against an existing vault registers nothing");
+  /* v612: THE VAULT IS READ AGAIN WHEN A NAME IS FILED. A desk left open across a laptop reseed held the
+     envelope it loaded when it opened, and filing a name saved that older map back over the cloud's,
+     wiping every name the reseed had added. Here the desk's copy holds one name and the cloud's holds
+     that and a second; both must be in what is saved, beside the new one. */
+  const { vaultEncrypt: venc } = await import("../tools/seed-vault.mjs");
+  const olderEnv = JSON.stringify(await venc("pw", { "CT11-ELD": "Test Elder (Oldplace)" }));
+  const newerEnv = JSON.stringify(await venc("pw", { "CT11-ELD": "Test Elder (Oldplace)", "CT11-RSD": "Test Reseeded (Newplace)" }));
+  forgetCode("CT11-SOM");
+  const G = JSON.parse(String(w.eval(DRIVE({ pass: "pw", name: "Test Person", place: "Somewhere", vault: olderEnv, cloud: newerEnv }))));
+  const stG = await settle();
+  const postG = readQ().posts.find((p) => /vault$/.test(p.u) && p.m === "POST");
+  let openedG = null; try { openedG = postG && postG.body ? await vdec("pw", postG.body.vault) : null; } catch (e) { openedG = { err: String(e && e.message) }; }
+  ok(!G.no && /Registered CT11-SOM/.test(stG) && openedG && openedG["CT11-RSD"] === "Test Reseeded (Newplace)" && openedG["CT11-ELD"] === "Test Elder (Oldplace)" && openedG["CT11-SOM"] === "Test Person (Somewhere)",
+    "a name the cloud gained after the desk opened survives an Add ID, beside the new one (v612): " + (G.no || stG.slice(0, 60)) + " / keys " + JSON.stringify(openedG && Object.keys(openedG)));
+  /* and a read that fails refuses, whether the server says no or nothing answers, rather than filing
+     over the copy the desk opened with */
+  for (const read of ["fail", "throw"]) {
+    forgetCode("CT11-SOM");
+    const H = JSON.parse(String(w.eval(DRIVE({ pass: "pw", name: "Test Person", place: "Somewhere", vault: olderEnv, read }))));
+    const stH = await settle();
+    const qH = readQ();
+    ok(!H.no && /could not be read/.test(stH) && qH.q.length === 0 && !qH.roster && !qH.posts.some((p) => /vault$/.test(p.u) && p.m === "POST"),
+      "a vault read that " + (read === "fail" ? "is refused" : "gets no answer") + " registers nothing and saves nothing (v612): " + (H.no || stH.slice(0, 80)));
+  }
+  forgetCode("CT11-SOM"); w.eval("queue=[];");
+  /* v612: AND NO BROWSER COPY OUTRANKS THE CLOUD'S. A device still carrying the retired saltNameVault key
+     kept that old vault in front of every newer one, the reveal included. The desk is opened with the
+     key already in storage, as such a device opens it. */
+  const legacyPath = join(REPO, "test", "tmp", "v612-legacy-vault.html");
+  mkdirSync(dirname(legacyPath), { recursive: true });
+  writeFileSync(legacyPath, readFileSync(join(REPO, "master", "salt_command.html"), "utf8").replace("<head>", "<head><script>localStorage.setItem('saltNameVault'," + JSON.stringify(olderEnv) + ");</script>"));
+  const { w: wL } = await omV(legacyPath);
+  const loaded = String(await wL.eval("(async function(){qSyncState='server';window.fetch=function(){return Promise.resolve({ok:true,json:function(){return Promise.resolve({ok:true,vault:" + newerEnv + "});}});};await vaultLoad();return JSON.stringify(NAME_VAULT);})()"));
+  ok(loaded === newerEnv, "a device carrying the retired saltNameVault key loads the cloud's vault, not its own older copy (v612): " + (loaded === olderEnv ? "kept the older copy" : loaded.slice(0, 40)));
+  try { wL.close(); } catch (e) { }
+  try { rmSync(legacyPath); } catch (e) { }
   /* a bucket has no name and takes the old road. v587: its code is derived as its associate's -Gen, so the
      associate is a fixture forced onto the roster and its -Gen forced off, rather than a real one whose
      bucket may already exist */
