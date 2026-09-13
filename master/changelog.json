@@ -1,5 +1,15 @@
 [
  {
+  "v": "v621",
+  "d": "14 Sep 2026",
+  "t": "A CUSTOMER HOLDING A WHOLE UNIT CAN REDEEM ONE, ON HIS WORD",
+  "n": [
+   "<b>HIS RULING OF 14 SEP 2026, THE LAST OF THREE CUSTOMER VERSIONS.</b> Covering a lower margin is the main road for a customer's reward (v620). Redeeming stays open on his word. On the Customers card, every customer holding at least one whole unit now has a button. It reads Redeem when they owe nothing, and Offset when they hold an advance. A tap takes one whole unit: salt, through Approve as any redemption goes, or an offset against their earliest advance of no more than one unit. Under a whole unit there is no button, and the road refuses.",
+   "<b>ONE ROAD, TWO SIDES.</b> redeemRebate looks for an associate first, who still takes all they hold, and then for a customer. The redemption states the balance they hold rather than the unit taken, so the Approve card reads the customer's whole position. The automatic offset stays with associates, as he decided on 11 Sep. On the book today, CM4-MK and CE4-CHE are offered an Offset against the advance each holds, CM6-HCM a Redeem, and CJ4-BJ, at 0.44, nothing.",
+   "<b>THE CHECKS.</b> Six assertions on fixtures: the card's Redeem, Offset and absent buttons, one unit redeemed against two held, the refusal under a unit, the offset capped at one, and the drafter taking a customer's redemption without an over-balance flag. Four mutations each turned the section red. A fifth, looking for customers before associates, stayed green, and should: the customer table holds no associate, so the order cannot matter."
+  ]
+ },
+ {
   "v": "v620",
   "d": "14 Sep 2026",
   "t": "A CUSTOMER'S REWARD COVERS A LOWER MARGIN ON A SALE HE MARKS, AT THE SALT'S COST",

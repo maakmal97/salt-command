@@ -10785,6 +10785,49 @@ section("v620: a customer's reward covers a lower margin on a sale he marks, at 
   } finally { await new Promise((r) => setTimeout(r, 200)); try { w19.close(); } catch (e) { /* best effort */ } }
 }
 
+section("v621: a customer holding a whole unit can redeem one, on his word");
+{
+  /* HIS RULING OF 14 SEP 2026. The Customers card offers a button once a customer holds a whole unit, and a tap takes
+     one whole unit: salt through Approve, or an offset against their advance. Under a whole unit there is no button
+     and the road refuses. Associates keep their own road, looked for first. Fixtures on the committed book. Each
+     assertion was proved red by mutation. */
+  const { draftRow: dR21 } = await import("../src/drafter.js");
+  const bk21 = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const { openMaster: om21 } = await import("../tools/payload.mjs");
+  const { w: w21 } = await om21();
+  const rd21 = (e) => JSON.parse(String(w21.eval("JSON.stringify(" + e + ")")));
+  try {
+    const row21 = (o) => JSON.stringify(Object.assign({ product: "salt" }, o));
+    w21.eval("setProd('salt');BASE_SALES.push(" + [
+      row21({ rid: "z621a", customer: "CZ9-RD", date: "2026-07-01", qty: 2, total: 1100, cost: 100, cash: 1100, deliveredQty: 2 }),
+      row21({ rid: "z621b", customer: "CZ9-HALF", date: "2026-07-01", qty: 1, total: 550, cost: 50, cash: 550, deliveredQty: 1 }),
+      row21({ rid: "z621c", customer: "CZ9-HALF", date: "2026-07-02", qty: 1, total: 24.64, cost: 24.64, cash: 0, settledRM: 24.64, deliveredQty: 1, rebate: true, rebateKg: 0.56, goodwill: true }),
+      row21({ rid: "z621d", customer: "CZ9-ADV2", date: "2026-07-01", qty: 1, total: 550, cost: 50, cash: 550, deliveredQty: 1 }),
+      row21({ rid: "z621e", customer: "CZ9-ADV2", date: "2026-09-10", qty: 1, total: 110, cost: 44, cash: 0, deliveredQty: 1, deliveredOn: "2026-09-10" }),
+    ].join(",") + ");queue=[];applyOverlay();recompute();saveQueue=function(){return Promise.resolve(true);};qPost=function(){return Promise.resolve(true);};switchTab=function(){};");
+    const free = (id) => rd21("(customerRewards().find(function(r){return r.id==='" + id + "';})||{}).free");
+    ok(free("CZ9-RD") === 2 && free("CZ9-HALF") === 0.44 && free("CZ9-ADV2") === 1, "the guards: the three fixtures hold 2, 0.44 and 1 unit");
+    const tab21 = String(w21.eval("tabConcentration()"));
+    ok(/redeemRebate\('CZ9-RD'\)">Redeem 1 unit for/.test(tab21) && /redeemRebate\('CZ9-ADV2'\)">Offset 1 unit for/.test(tab21) && !/redeemRebate\('CZ9-HALF'\)/.test(tab21),
+      "the card offers Redeem to the customer holding two, Offset to the one with an advance, and nothing under a whole unit");
+    w21.eval("redeemRebate('CZ9-RD');");
+    const q1 = rd21("queue.map(function(x){return x.payload;})");
+    ok(q1.length === 1 && q1[0].mode === "redeem" && q1[0].party === "CZ9-RD" && q1[0].qty === 1 && q1[0].balance === 2,
+      "a tap redeems one whole unit, stating the two they hold: " + JSON.stringify(q1));
+    w21.eval("queue=[];redeemRebate('CZ9-HALF');");
+    ok(rd21("queue.length") === 0, "under a whole unit the road refuses");
+    w21.eval("queue=[];redeemRebate('CZ9-ADV2');");
+    const q2 = rd21("queue.map(function(x){return x.payload;})");
+    ok(q2.length === 1 && q2[0].kind === "Correction" && q2[0].rid === "z621e" && q2[0].fields.rebate === true && q2[0].fields.rebateKg > 0 && q2[0].fields.rebateKg <= 1,
+      "and against an advance it offsets, no more than one unit: " + JSON.stringify(q2));
+    const mir21 = { version: "vX", sales: bk21.sales, purchases: bk21.purchases,
+      state: { roster: bk21.roster.concat(["CZ9-RD"]), associates: bk21.associates, loans: bk21.loans, OPEN: { position: { salt: { onHand: 20, owedOut: 0, promised: 0 } } } }, pricing: null };
+    const d21 = dR21({ at: "2099-05-02T00:00:00.001Z", payload: q1[0] }, mir21);
+    ok(!d21.skip && d21.row && d21.row.rebate === true && d21.row.qty === 1 && (d21.flags || []).some((f) => /held 2 unit/.test(f)) && !(d21.flags || []).some((f) => /against the/.test(f)),
+      "the drafter drafts the customer's redemption as it does an associate's, and raises no over-balance flag: " + (d21.skip || JSON.stringify(d21.flags)));
+  } finally { await new Promise((r) => setTimeout(r, 200)); try { w21.close(); } catch (e) { /* best effort */ } }
+}
+
 
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
 process.exit(fail ? 1 : 0);
