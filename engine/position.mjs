@@ -428,7 +428,7 @@ const CORRECT_NUM_POS=['qty'];
 const CORRECT_NUM_NN=['total','cash','deliveredQty','receivedQty','cost',
   'settledRM','settledKg','rebateKg','delivery',
   'freight',    /* v503: the trip for a lot, RM, typed per purchase, beside the total */
-  'coverKg','coverRM'];   /* v620: reward spent covering a lower margin on a sale he marks, units and the RM they cover at cost */
+  'coverUnits','coverRM'];   /* v620: reward spent covering a lower margin on a sale he marks, units and the RM they cover at cost */
 const CORRECT_DATE=['date','agreedOn','paidOn','deliveredOn','receivedOn','cancelledOn'];
 const CORRECT_BOOL=['unpriced','cancelled','pending','inTransit','defaulted','rebate','goodwill'];
 const CORRECT_CODE=['party','assoc','downstream'];

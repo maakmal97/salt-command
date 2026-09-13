@@ -2078,7 +2078,7 @@ section("Fold — an approved batch becomes records in the book (v340)");
        purpose: a table that quietly gains a field is exactly what this assertion is for. */
     /* v502: thirty-two. delivery joined, the charge inside a sale's total, typed per order. */
     /* v503: thirty-three. freight joined, the trip a lot cost, typed per purchase. */
-    /* v620: thirty-five. coverKg and coverRM joined, the reward a sale spent covering a lower margin. */
+    /* v620: thirty-five. coverUnits and coverRM joined, the reward a sale spent covering a lower margin. */
     ok(E.CORRECTABLE.length === 35, `thirty-five attributes are editable, found ${E.CORRECTABLE.length}`);
     ok(E.CORRECTABLE.includes('handover'), 'handover is one of them');
     ok(Array.isArray(E.HANDOVER) && E.HANDOVER.join(',') === 'delivered,collected',
@@ -10756,7 +10756,7 @@ section("v620: a customer's reward covers a lower margin on a sale he marks, at 
       + "}catch(e){return JSON.stringify({no:String(e&&e.message)});}})()";
     const f19 = JSON.parse(String(w19.eval(drive19(true, "2099-06-01"))));
     const want19 = rd19(`coverPlan('CZ9-CV',1,${ask1 - 30})`);
-    ok(!f19.no && f19.shown === true && !!f19.more && f19.more.coverKg === want19.kg && f19.more.coverRM === want19.rm && f19.free === 2 && /covered by/.test(f19.raw) && f19.after === false,
+    ok(!f19.no && f19.shown === true && !!f19.more && f19.more.coverUnits === want19.kg && f19.more.coverRM === want19.rm && f19.free === 2 && /covered by/.test(f19.raw) && f19.after === false,
       "the form offers the cover, a tick queues what coverPlan gives on the goods, the delivery aside, and the box clears after: " + JSON.stringify(f19));
     const n19 = JSON.parse(String(w19.eval(drive19(false, "2099-06-02"))));
     ok(!n19.no && n19.shown === true && /Sell 1 unit to CZ9-CV/.test(n19.raw) && n19.more === null && !/covered by/.test(n19.raw), "left unticked, the same sale is queued with no cover: " + JSON.stringify(n19));
@@ -10768,7 +10768,7 @@ section("v620: a customer's reward covers a lower margin on a sale he marks, at 
     const cvAfter = rd19("customerRewards().find(function(r){return r.id==='CZ9-CV';})");
     ok(!!s19.more && rd19("queue.length") === 1 && Math.abs(cvAfter.free - +(2 - want19.kg).toFixed(2)) < 0.001 && Math.abs(rd19("rebateApplied('CZ9-CV')") - want19.kg) < 0.001,
       "a queued cover spends the balance on the desk before the fold: " + JSON.stringify(cvAfter));
-    ok(/reward/.test(String(w19.eval("ledAttr({customer:'CZ9-CV',coverKg:0.5,coverRM:22})"))) && String(w19.eval("ledAttr({customer:'CZ9-CV'})")) === "",
+    ok(/reward/.test(String(w19.eval("ledAttr({customer:'CZ9-CV',coverUnits:0.5,coverRM:22})"))) && String(w19.eval("ledAttr({customer:'CZ9-CV'})")) === "",
       "and the ledger line of a covered sale says so, where an uncovered one says nothing");
 
     /* THE DRAFTER */
@@ -10776,11 +10776,11 @@ section("v620: a customer's reward covers a lower margin on a sale he marks, at 
       state: { roster: bk19.roster.concat(["CZ9-CV", "CZ9-AV"]), associates: (bk19.associates || []).concat(["CZ9-AV"]), loans: bk19.loans, PRICING: null,
         OPEN: { position: { salt: { onHand: 20, owedOut: 0, promised: 0 } } } }, pricing: null };
     const e19 = (party, more, prod) => ({ at: "2099-05-01T00:00:00.001Z", payload: { mode: "new", product: prod || "salt", direction: "SELL", party, date: "2099-05-01", qty: 1, total: 60, cash: 60, kg: 1, more, coverFree: 2 } });
-    const dc = dR19(e19("CZ9-CV", { coverKg: 0.5, coverRM: 22 }), mir19);
-    ok(!dc.skip && dc.row && dc.row.coverKg === 0.5 && dc.row.coverRM === 22 && (dc.flags || []).some((f) => /held 2 unit of reward/.test(f)),
+    const dc = dR19(e19("CZ9-CV", { coverUnits: 0.5, coverRM: 22 }), mir19);
+    ok(!dc.skip && dc.row && dc.row.coverUnits === 0.5 && dc.row.coverRM === 22 && (dc.flags || []).some((f) => /held 2 unit of reward/.test(f)),
       "the drafter carries both halves onto the row and says the balance is the desk's word: " + (dc.skip || JSON.stringify((dc.flags || []).slice(0, 2))));
-    ok(/associate/.test(dR19(e19("CZ9-AV", { coverKg: 0.5, coverRM: 22 }), mir19).skip || "") && /both/.test(dR19(e19("CZ9-CV", { coverKg: 0.5 }), mir19).skip || "")
-      && /salt/.test(dR19(e19("CZ9-CV", { coverKg: 0.5, coverRM: 22 }, "oil"), mir19).skip || ""),
+    ok(/associate/.test(dR19(e19("CZ9-AV", { coverUnits: 0.5, coverRM: 22 }), mir19).skip || "") && /both/.test(dR19(e19("CZ9-CV", { coverUnits: 0.5 }), mir19).skip || "")
+      && /salt/.test(dR19(e19("CZ9-CV", { coverUnits: 0.5, coverRM: 22 }, "oil"), mir19).skip || ""),
       "and refuses a cover for an associate, a cover missing its ringgit, and one on oil");
   } finally { await new Promise((r) => setTimeout(r, 200)); try { w19.close(); } catch (e) { /* best effort */ } }
 }
