@@ -68,7 +68,8 @@ export function weekOf(now) {
 /** The customer's own rate on a product: the median of his last four committed orders before `before`. */
 export function ownRate(sales, code, product, before) {
   const rows = (sales || [])
-    .filter((s) => s.customer === code && prodOf(s) === product && pricedOrder(s) && s.date && s.date < before
+    /* v609: the bucket is the associate's own, so what they bought for resale is a price they paid too */
+    .filter((s) => POSITION_ENGINE.ownsCode(code, s.customer) && prodOf(s) === product && pricedOrder(s) && s.date && s.date < before
       && isNum(s.total) && s.total > 0 && isNum(s.qty) && s.qty > 0)
     /* v502: the rate a customer paid is on the goods, the delivery charge inside the total taken out */
     .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0))
@@ -117,7 +118,7 @@ export function adjustedPrice(R, F, A, cap, loyal) {
 }
 export function loyalFor(sales, code, product, now) {
   const at = now instanceof Date ? now : new Date(now || Date.now());
-  const rows = (sales || []).filter((s) => s.customer === code && prodOf(s) === product && pricedOrder(s) && s.date && isNum(s.total) && s.total > 0);
+  const rows = (sales || []).filter((s) => POSITION_ENGINE.ownsCode(code, s.customer) && prodOf(s) === product && pricedOrder(s) && s.date && isNum(s.total) && s.total > 0);
   if (rows.length < 3) return false;
   const last = rows.map((s) => s.date).sort().pop();
   /* the fourteen days run from Kuala Lumpur midnight, not UTC's, which ended them at 08:00 (08 Sep 2026) */

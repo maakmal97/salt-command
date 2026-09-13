@@ -68,7 +68,7 @@ document.addEventListener('visibilitychange',function(){
    localStorage before it posts anything and the load reads it straight back.
    The same tick retries a held entry, which is what gets a phone write to the cloud
    without waiting for the next open. */
-var SALT_BUILD_ID="1de85ed4b8729f80";
+var SALT_BUILD_ID="6eeccb0e45fabef8";
 var SALT_REV_MS=10000;
 (function(){
   var chip=null,timer=null;
@@ -4597,6 +4597,15 @@ function ovKey(t){return (t.customer||t.supplier)+'|'+t.date+'|'+t.total;}
    The other kinds -- customer, downstream, bucket, supplier -- register a code and confer no
    standing, which is why they are absent rather than listed as false. */
 const ADDID_APPOINTS={reseller:'R2',referral:'R3'};
+/* ====== THE BUCKET IS NOT ITS OWN PERSON (his ruling, 13 Sep 2026) ==========================
+   An associate's <CODE>-R account holds the salt they buy to sell on. It is theirs: on their
+   statement, their price list and the rate the order card calls usual, the code and the bucket
+   read as one account, and the bucket has no statement, username or record of its own. One rule,
+   stated here, because the statements tool, the price list and the desk all have to agree on it. */
+const BUCKET_SFX='-R';
+function isBucket(code){return typeof code==='string'&&code.length>BUCKET_SFX.length&&code.slice(-BUCKET_SFX.length)===BUCKET_SFX;}
+function ownerCode(code){return isBucket(code)?code.slice(0,-BUCKET_SFX.length):code;}
+function ownsCode(party,code){return !!party&&(code===party||code===party+BUCKET_SFX);}
 
 return {txPrice:txPrice,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:txEffDeliv,txAdvance:txAdvance,
         txDeferUnits:txDeferUnits,txPendUnits:txPendUnits,txPendUnitsRaw:txPendUnitsRaw,txPendRM:txPendRM,txStat:txStat,txDates:txDates,txGoods:txGoods,
@@ -4606,7 +4615,7 @@ return {txPrice:txPrice,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeli
         CORRECTABLE:CORRECTABLE,CORRECT_REQUIRED:CORRECT_REQUIRED,CORRECT_NUM_POS:CORRECT_NUM_POS,
         CORRECT_NUM_NN:CORRECT_NUM_NN,CORRECT_DATE:CORRECT_DATE,CORRECT_BOOL:CORRECT_BOOL,
         CORRECT_CODE:CORRECT_CODE,CORRECT_TEXT:CORRECT_TEXT,HANDOVER:HANDOVER,
-        ADDID_APPOINTS:ADDID_APPOINTS};
+        ADDID_APPOINTS:ADDID_APPOINTS,BUCKET_SFX:BUCKET_SFX,isBucket:isBucket,ownerCode:ownerCode,ownsCode:ownsCode};
 })();
 /* ==== END ENGINE position ==== */
 /* ==== ENGINE pricing: generated from engine/pricing.mjs by tools/engine.mjs. Edit the module, never this block. ==== */
@@ -6354,7 +6363,9 @@ const quoteFor=p=>{const f=QUOTES[p||PROD];return f?f():null;};
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{"v":"v608","d":"13 Sep 2026","t":"THREE UNIT GOES OUT DELIVERED WITH A THIRD OF THE MONEY BEHIND IT","n":["<b>ONE ROW FOLDED, A DELIVERED SALT SELL ON ADVANCE.</b> CM4-MK takes 3 unit for RM330 on 13 Sep, RM310 goods and RM20 delivery, RM220 cash in and all 3 unit delivered the same day, leaving RM110 open. The total clears the RM320 ask for 3 unit and sits under the RM430 ceiling, well above the RM168.64 floor. Cost is the inventory's own RM44 a unit, RM132 on the order.","<b>THE ADVANCE FLAG IS THE ONE THING LEFT STANDING.</b> The drafter asked that 3 unit going out with RM110 unpaid be read against CM4-MK's credit cap of 1 unit. He carried nothing outstanding and no units on credit before this row, and his record over 9 orders shows no default, but the cap is 1 and the dossier gives no waiver, so the flag is not answered. Stock moved out on his word; nothing landed, so the cost basis holds at RM44."]},
+const evolution=[{"v":"v609","d":"13 Sep 2026","t":"AN ASSOCIATE'S BUCKET IS THEIRS: THE STATEMENT, THE PRICE LIST AND THE USUAL RATE READ THE CODE AND THE BUCKET AS ONE","n":["<b>HIS RULING OF 13 SEP 2026: THE BUCKET IS NOT ITS OWN PERSON, AND IN THE ACCOUNT STATEMENTS IT APPEARS UNDER THE ASSOCIATE.</b> An associate's -R account holds the salt they buy to sell on. Until now every code was a party of its own, so CN6-WM-R, CS6-BS-R and CS6-PER-R each had a statement and a username, and a resale booked to a bucket never reached the associate's own page.","<b>WHAT NOW READS THE TWO AS ONE.</b> The live statement and every issue from October, the price list sealed beside it, the board the desk prints and the rate the order card calls usual. A bucket's lines say <i>for resale</i>. The rule is stated once, in the engine, as ownsCode, so the statements tool, the price list and the desk cannot come to disagree about it.","<b>THE THREE BUCKET USERNAMES RETIRE ON THIS DEPLOY.</b> The publish leaves a bucket's record out, so its own delete step takes it off the site, and the username map the desk and the owner's list read no longer carries one. The lines stay in _users.json, kept for life. The September issue is untouched, exactly as sent; every row it held under a bucket reads on the associate's live statement instead.","<b>NOTHING ON THE LEDGER MOVES.</b> No row is rebooked and no reward changes. Filing new R2 sales into the bucket at entry, and correcting the six booked to plain codes since 10 Sep, are the folds that follow.","<b>PROVED RED FIRST, ON FORCED STATE.</b> Twelve assertions over a fixture associate and their bucket, none of them leaning on the live book: the engine's rule, the statement's rows and their resale marks, the publish leaving the bucket out, the username map, the price list's rate and loyalty, and the desk's three twins. With the rule reverted in every reader at once all twelve went red, and the files came back byte for byte."]},
+
+{"v":"v608","d":"13 Sep 2026","t":"THREE UNIT GOES OUT DELIVERED WITH A THIRD OF THE MONEY BEHIND IT","n":["<b>ONE ROW FOLDED, A DELIVERED SALT SELL ON ADVANCE.</b> CM4-MK takes 3 unit for RM330 on 13 Sep, RM310 goods and RM20 delivery, RM220 cash in and all 3 unit delivered the same day, leaving RM110 open. The total clears the RM320 ask for 3 unit and sits under the RM430 ceiling, well above the RM168.64 floor. Cost is the inventory's own RM44 a unit, RM132 on the order.","<b>THE ADVANCE FLAG IS THE ONE THING LEFT STANDING.</b> The drafter asked that 3 unit going out with RM110 unpaid be read against CM4-MK's credit cap of 1 unit. He carried nothing outstanding and no units on credit before this row, and his record over 9 orders shows no default, but the cap is 1 and the dossier gives no waiver, so the flag is not answered. Stock moved out on his word; nothing landed, so the cost basis holds at RM44."]},
 
 {"v":"v607","d":"13 Sep 2026","t":"A THIRD RM130 UNIT TO CN6-WM, AND CM4-MK CLEARS THE LAST RM110","n":["<b>TWO ROWS FOLDED, ONE SALE AND ONE FULFILMENT.</b> CN6-WM takes 1 unit of salt for RM130, all of it goods, paid and collected on 13 Sep, booked as an R2 with downstream CN6-WM-R. The rate clears the RM56.21 floor and the RM120 ask for 1 unit and sits at the top of his RM75 to RM130 range. Cost is the inventory's own RM44 a unit, so nothing is restated.","<b>THE FULFILMENT CLOSES CM4-MK.</b> RM110 cash lands on 13 Sep against s143 of 09 Sep, 2 unit for RM220, and settles it in full with no unit left to move. The drafter leaves the row to ovAmend in the master rather than recomputing it here. The inventory reads 20.19 unit stated against a salt count of 08 Sep, above the reorder mark of 15, with 11.5 unit promised and nothing owed out."]},
 
@@ -6808,7 +6819,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='13 Sep 2026, 19:41 KL';
+const LAST_UPDATED='13 Sep 2026, 21:24 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -16733,7 +16744,7 @@ async function ordLoad(quiet){
   if(!ordTimer)ordTimer=setInterval(()=>{if(document.getElementById('ordBox'))ordLoad(true);else{clearInterval(ordTimer);ordTimer=null;}},30000);
 }
 function ordUsual(code,product){
-  const rows=sales.filter(s=>s.customer===code&&((s.product||'salt')===(product||'salt'))&&!s.cancelled&&s.date&&s.total>0&&s.qty>0)
+  const rows=sales.filter(s=>POSITION_ENGINE.ownsCode(code,s.customer)&&((s.product||'salt')===(product||'salt'))&&!s.cancelled&&s.date&&s.total>0&&s.qty>0)   /* v609: the bucket is the associate's own */
     .sort((a,b)=>{const x=a.date,y=b.date;if(!x||!y)return (!x&&!y)?0:(!x?1:-1);return x<y?-1:x>y?1:0;}).slice(-4).map(s=>(s.total-(+s.delivery||0))/s.qty).sort((a,b)=>a-b);
   if(!rows.length)return null;
   const n=rows.length;return n%2?rows[(n-1)/2]:(rows[n/2-1]+rows[n/2])/2;
@@ -17231,7 +17242,7 @@ function pbPriced(s){const st=txStat(s).order;
   if((s.rebate||s.goodwill)&&!((+s.cash||0)>0.009))return false;
   return true;}
 function pbOwnRate(code){const before=pbWeekMonday();
-  const rows=pSales(PROD).filter(s=>s.customer===code&&pbPriced(s)&&s.date&&s.date<before&&s.total>0&&s.qty>0)
+  const rows=pSales(PROD).filter(s=>POSITION_ENGINE.ownsCode(code,s.customer)&&pbPriced(s)&&s.date&&s.date<before&&s.total>0&&s.qty>0)   /* v609: the bucket is the associate's own */
     .sort((a,b)=>{const x=a.date,y=b.date;if(!x||!y)return (!x&&!y)?0:(!x?1:-1);return x<y?-1:x>y?1:0;}).slice(-4).map(s=>(s.total-(+s.delivery||0))/s.qty).sort((a,b)=>a-b);
   if(!rows.length)return {rate:null,orders:0};const n=rows.length;
   return {rate:+(n%2?rows[(n-1)/2]:(rows[n/2-1]+rows[n/2])/2).toFixed(2),orders:n};}
@@ -17251,7 +17262,7 @@ function pbAdjusted(Rr,F,A,cap,loyal){let x;
   let p=Math.round(Math.max(x,F)/5)*5;
   if(p<F-0.009)p=Math.ceil((F-0.009)/5)*5;
   return p;}
-function pbLoyal(code){const rows=pSales(PROD).filter(s=>s.customer===code&&pbPriced(s)&&s.date&&s.total>0);
+function pbLoyal(code){const rows=pSales(PROD).filter(s=>POSITION_ENGINE.ownsCode(code,s.customer)&&pbPriced(s)&&s.date&&s.total>0);
   if(rows.length<3)return false;const last=rows.map(s=>s.date).sort().pop();
   return (TODAY-new Date(last+'T00:00:00+08:00'))/86400000<=14;}   /* Kuala Lumpur midnight, as loyalFor (08 Sep 2026) */
 function pbPrices(code){const own=pbOwnRate(code),loyal=pbLoyal(code);

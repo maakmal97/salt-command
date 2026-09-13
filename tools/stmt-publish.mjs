@@ -22,6 +22,7 @@ import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { dirname, resolve, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { liveRecords, siteBaseUrl } from "./make_statements.mjs";
+import POSITION_ENGINE from "../engine/position.mjs";
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const CONFIG = join(REPO, "wrangler.stmt.jsonc");
@@ -35,7 +36,9 @@ export function usersMap(root) {
   const file = join(root, "_users.json");
   const users = existsSync(file) ? JSON.parse(readFileSync(file, "utf8")) : {};
   const out = {};
-  for (const code of Object.keys(users)) out[users[code]] = code;
+  /* v609: a bucket is not its own person, so its username maps to nothing: no order placed on the site
+     can book to it, and the owner's list does not offer it. The line stays in _users.json, kept for life. */
+  for (const code of Object.keys(users)) if (!POSITION_ENGINE.isBucket(code)) out[users[code]] = code;
   return out;
 }
 

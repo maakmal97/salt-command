@@ -10334,6 +10334,84 @@ section("12 Sep 2026: a draft's margin is struck on the goods, as its rate alrea
     "and its sentence says so, rather than calling it the order");
 }
 
+section("v609: a bucket is its associate's own, on the statement, the price list and the site");
+{
+  /* HIS RULING OF 13 SEP 2026: the bucket is not its own person, but in the account statements it
+     appears under the associate. Every check here runs on FORCED state, a fixture associate CX9-AA
+     and their bucket CX9-AA-R, so none of it passes merely because the live book cooperates. */
+  const PEb = (await import("../engine/position.mjs")).default;
+  ok(PEb.isBucket("CS6-BS-R") && !PEb.isBucket("CS6-BS") && !PEb.isBucket("-R") && PEb.ownerCode("CN6-WM-R") === "CN6-WM" && PEb.ownerCode("CN6-WM") === "CN6-WM",
+    "the engine knows a bucket by its -R and names the associate it belongs to");
+  ok(PEb.ownsCode("CN6-WM", "CN6-WM") && PEb.ownsCode("CN6-WM", "CN6-WM-R") && !PEb.ownsCode("CN6-WM", "CN6-WM-RX") && !PEb.ownsCode("CN6", "CN6-WM-R") && !PEb.ownsCode(null, "-R"),
+    "and an associate owns their code and their bucket, and nothing that merely starts with it");
+
+  const fx = (rid, date, customer, total, extra) => Object.assign({ rid, date, customer, product: "salt", qty: 1, total, cost: 44, cash: total, deliveredQty: 1 }, extra || {});
+  const own = fx("sx01", "2026-08-03", "CX9-AA", 100), b1 = fx("sx02", "2026-08-04", "CX9-AA-R", 140, { rev: "R2" }), b2 = fx("sx03", "2026-08-05", "CX9-AA-R", 160, { rev: "R2" });
+
+  /* THE STATEMENT, on a copy of the book carrying the fixture */
+  const bookB = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  bookB.sales.push(own, b1, b2);
+  const tmpB = join(REPO, "test", "tmp", "v609-" + Date.now());
+  mkdirSync(join(tmpB, "2026-09", "_kv"), { recursive: true });
+  const fileB = join(tmpB, "book.json");
+  writeFileSync(fileB, JSON.stringify(bookB));
+  const prevB = process.env.SALT_BOOK; process.env.SALT_BOOK = fileB;
+  let mB;
+  const { pathToFileURL: puB } = await import("node:url");
+  /* an unset variable is DELETED, not assigned: process.env turns undefined into the string "undefined" */
+  try { mB = await import(puB(join(REPO, "tools", "make_statements.mjs")).href + "?v609"); }
+  finally { if (prevB === undefined) delete process.env.SALT_BOOK; else process.env.SALT_BOOK = prevB; }
+  const SOb = { from: null, to: "2026-09-01", completed: true, open: true, pending: true, dates: true, brand: "Salt Command", issued: "01 Sep 2026" };
+  const rowsB = mB.stmtRows("CX9-AA", SOb);
+  ok(rowsB.map(r => r.rid).join() === "sx01,sx02,sx03" && rowsB.filter(r => r.resale).map(r => r.rid).join() === "sx02,sx03",
+    "an associate's statement carries their bucket's orders beside their own, and marks only the bucket's as bought for resale");
+  const docB = mB.stmtDoc("CX9-AA", rowsB, Object.assign({}, SOb, { refunds: [], recon: [] }));
+  ok((docB.match(/<div class="sub2">for resale<\/div>/g) || []).length === 2,
+    "and the document says so on each of those two lines, and on no other");
+
+  /* A BUCKET IS NOT PUBLISHED: its record is left out, so the publish's delete step retires it */
+  const C9 = await import("../tools/stmt-crypto.mjs");
+  const pw9 = C9.newPassword(), uA = C9.newUsername(), uB = C9.newUsername();
+  writeFileSync(join(tmpB, "_users.json"), JSON.stringify({ "CX9-AA": uA, "CX9-AA-R": uB }));
+  for (const uu of [uA, uB]) {
+    const ck9 = await C9.contentKey("test-secret", uu);
+    writeFileSync(join(tmpB, "2026-09", "_kv", uu + ".json"), JSON.stringify({ u: uu, issued: "2026-09-01", issues: ["2026-09-01"],
+      verifier: await C9.makeVerifier(pw9), wrap: await C9.wrapKey(pw9, ck9), env: await C9.encryptWith(ck9, JSON.stringify({ statements: [{ issued: "2026-09-01", body: "x" }] })) }));
+  }
+  const lrB = await mB.liveRecords(tmpB, "test-secret", new Date("2026-09-03T06:20:00Z"));
+  ok(lrB.records.length === 1 && lrB.records[0].u === uA && lrB.live === 1,
+    "the deploy publishes the associate's record with a live statement and leaves the bucket's out, so it is retired from the store");
+  const liveB = mB.liveStatement("CX9-AA", new Date("2026-09-03T06:20:00Z"));
+  ok(liveB && (liveB.body.match(/for resale/g) || []).length === 2, "and that live statement carries the two resale lines");
+  const { usersMap: usersMapB } = await import("../tools/stmt-publish.mjs");
+  const mapB = usersMapB(tmpB);
+  ok(mapB[uA] === "CX9-AA" && !(uB in mapB),
+    "the username map the desk and the owner's list read has the associate and not the bucket, so nothing can book to it or open it");
+  rmSync(tmpB, { recursive: true, force: true });
+
+  /* THE PRICE LIST: what they bought for resale is a price they paid too */
+  const PLb = await import("../tools/pricelist.mjs");
+  const fixB = [own, b1, b2];
+  ok(PLb.ownRate(fixB, "CX9-AA", "salt", "2026-08-31").rate === 140 && PLb.ownRate(fixB, "CX9-AA", "salt", "2026-08-31").orders === 3,
+    "the associate's own rate is the median of their code's and their bucket's orders together: 100, 140 and 160 make 140");
+  ok(PLb.loyalFor(fixB, "CX9-AA", "salt", new Date("2026-08-10T00:00:00Z")) === true,
+    "and three orders across the code and the bucket make them loyal, where their code alone holds one");
+
+  /* THE DESK'S TWINS, on the same forced rows pushed into the master's own ledger */
+  const { openMaster: omB } = await import("../tools/payload.mjs");
+  const { w: wB } = await omB();
+  try {
+    const todayB = wB.eval("TODAY.toISOString().slice(0,10)");
+    const dayB = n => new Date(new Date(todayB + "T00:00:00Z").getTime() - n * 86400000).toISOString().slice(0, 10);
+    wB.eval("sales").push(own, b1, b2,
+      fx("sx04", dayB(3), "CX9-BB", 100), fx("sx05", dayB(2), "CX9-BB-R", 120, { rev: "R2" }), fx("sx06", dayB(1), "CX9-BB-R", 130, { rev: "R2" }));
+    ok(wB.pbOwnRate("CX9-AA").rate === 140, "the desk's board reads the same own rate off the code and the bucket, 140");
+    ok(wB.pbLoyal("CX9-BB") === true, "and calls the same associate loyal on three orders across the two");
+    ok(wB.ordUsual("CX9-AA", "salt") != null && Math.abs(wB.ordUsual("CX9-AA", "salt") - 140) < 0.01,
+      "and the order card's usual rate for them is 140 too");
+  } finally { wB.close(); }
+}
+
 
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
 process.exit(fail ? 1 : 0);

@@ -1,5 +1,17 @@
 [
  {
+  "v": "v609",
+  "d": "13 Sep 2026",
+  "t": "AN ASSOCIATE'S BUCKET IS THEIRS: THE STATEMENT, THE PRICE LIST AND THE USUAL RATE READ THE CODE AND THE BUCKET AS ONE",
+  "n": [
+   "<b>HIS RULING OF 13 SEP 2026: THE BUCKET IS NOT ITS OWN PERSON, AND IN THE ACCOUNT STATEMENTS IT APPEARS UNDER THE ASSOCIATE.</b> An associate's -R account holds the salt they buy to sell on. Until now every code was a party of its own, so CN6-WM-R, CS6-BS-R and CS6-PER-R each had a statement and a username, and a resale booked to a bucket never reached the associate's own page.",
+   "<b>WHAT NOW READS THE TWO AS ONE.</b> The live statement and every issue from October, the price list sealed beside it, the board the desk prints and the rate the order card calls usual. A bucket's lines say <i>for resale</i>. The rule is stated once, in the engine, as ownsCode, so the statements tool, the price list and the desk cannot come to disagree about it.",
+   "<b>THE THREE BUCKET USERNAMES RETIRE ON THIS DEPLOY.</b> The publish leaves a bucket's record out, so its own delete step takes it off the site, and the username map the desk and the owner's list read no longer carries one. The lines stay in _users.json, kept for life. The September issue is untouched, exactly as sent; every row it held under a bucket reads on the associate's live statement instead.",
+   "<b>NOTHING ON THE LEDGER MOVES.</b> No row is rebooked and no reward changes. Filing new R2 sales into the bucket at entry, and correcting the six booked to plain codes since 10 Sep, are the folds that follow.",
+   "<b>PROVED RED FIRST, ON FORCED STATE.</b> Twelve assertions over a fixture associate and their bucket, none of them leaning on the live book: the engine's rule, the statement's rows and their resale marks, the publish leaving the bucket out, the username map, the price list's rate and loyalty, and the desk's three twins. With the rule reverted in every reader at once all twelve went red, and the files came back byte for byte."
+  ]
+ },
+ {
   "v": "v608",
   "d": "13 Sep 2026",
   "t": "THREE UNIT GOES OUT DELIVERED WITH A THIRD OF THE MONEY BEHIND IT",

@@ -85,10 +85,13 @@ const codeOf = n => n; /* the desk's codeOf is newIds[n]||n and newIds is {} pos
    pay, what he handed over and when, what he collected and when, and what is still
    between them. A settlement in kind is included because he agreed to it, but stated as
    an amount and a date rather than with the reasoning that sits behind it here. */
+/* v609, HIS RULING OF 13 SEP 2026: THE BUCKET IS NOT ITS OWN PERSON. An associate's -R account holds
+   what they bought to sell on, so their statement reads their code AND their bucket, the bucket's
+   rows marked as bought for resale, and a bucket never has a statement of its own. */
 function stmtRows(party,o){
   o=o||{};
   const from=o.from?new Date(o.from):null, to=o.to?new Date(o.to):null;
-  return sales.filter(s=>s.customer===party).filter(s=>{
+  return sales.filter(s=>POSITION_ENGINE.ownsCode(party,s.customer)).filter(s=>{
     const d=new Date(s.date);
     const st=txStat(s).order;
     /* A PENDING ORDER IGNORES THE DATE WINDOW (v194). It is an open commitment, not an
@@ -131,7 +134,7 @@ function stmtRows(party,o){
     (s.amend||[]).forEach(a=>{
       (a.refKeys||[]).forEach(k=>{
         const m=/^([^|]+)\|([^|]+)\|/.exec(k||'');
-        if(m&&m[1]===party)links.push(m[2]);
+        if(m&&POSITION_ENGINE.ownsCode(party,m[1]))links.push(m[2]);
       });
     });
     /* A GIFT MUST NOT READ AS A CHARGE (v187). Goodwill salt is booked in-kind at a
@@ -162,7 +165,7 @@ function stmtRows(party,o){
        figures has to match on party, date and quantity: CH4-MAL has two orders on 14 August of one
        unit each, RM 110 and RM 11.50, so that match is ambiguous on this very book and the first
        assertion written over it reported a correct statement as wrong. */
-    return {rid:s.rid||null,gift:gift,date:s.date,qty:s.qty,total:gift?0:s.total,
+    return {rid:s.rid||null,gift:gift,resale:s.customer!==party,date:s.date,qty:s.qty,total:gift?0:s.total,
       unit:s.qty>0?+((s.total-(+s.delivery||0))/s.qty).toFixed(2):0,delivery:+(s.delivery||0),   /* v502: the rate is on the goods */
       paidCash:paidCash,inKind:inKind,got:got,inKindUnits:inKindUnits,
       /* PENDING COUNTS NOWHERE, on a statement as everywhere else (v189). An order
@@ -225,10 +228,10 @@ function stmtRows(party,o){
    reconciliation, only for the order that carries the offset, and it is his own rate. */
 function stmtRecon(party,rows){
   const out=[];
-  sales.filter(s=>s.customer===party&&(s.settledKg||0)>0.0001).forEach(s=>{
+  sales.filter(s=>POSITION_ENGINE.ownsCode(party,s.customer)&&(s.settledKg||0)>0.0001).forEach(s=>{
     const unitsOff=+s.settledKg;
     const keys=[];
-    (s.amend||[]).forEach(a=>{(a.refKeys||[]).forEach(k=>{if(k&&k.indexOf(party+'|')===0)keys.push(k);});});
+    (s.amend||[]).forEach(a=>{(a.refKeys||[]).forEach(k=>{if(k&&POSITION_ENGINE.ownsCode(party,k.split('|')[0]))keys.push(k);});});
     const legs=[...new Set(keys)].map(k=>{
       const t=sales.find(x=>x.customer+'|'+x.date+'|'+x.total===k);
       if(!t)return null;
@@ -370,6 +373,7 @@ function stmtDoc(party,rows,o){
     return '<tr>'
       +'<td class="l dt">'+(r.date?e(dLong(r.date)):(moved?'<span class="nodt">'+moved+'</span>':''))+when+'</td>'
       +'<td class="q'+(r.cancelled?' cxr':'')+'">'+n2(r.qty)+'<span class="u">unit</span>'
+        +(r.resale?'<div class="sub2">for resale</div>':'')
         +(r.inKindUnits>0.009?'<div class="sub2">'+n2(r.inKindUnits)+' unit applied '
           +(noLegDates.has(r.date)?'by agreement':'to an earlier balance')+'</div>':'')
         +'</td>'
@@ -656,6 +660,9 @@ export async function liveRecords(root, key, now, pricing) {
        regenerated on the laptop, which is the only place the passwords are. */
     if (!rec || !USERNAME_RE.test(String(rec.u || "")) || !rec.wrap || !rec.env) { stale.push(f); continue; }
     const code = byUser[rec.u];
+    /* v609: A BUCKET IS NOT PUBLISHED. Its record is left out, so the delete step retires it from the
+       store; every row it held now reads on its associate's live statement. */
+    if (code && POSITION_ENGINE.isBucket(code)) continue;
     if (key && code) {
       /* THE KEY IS PROVED AGAINST THE RECORD BEFORE ANYTHING IS SEALED WITH IT (04 Sep 2026 audit).
          The content key is derived here from the DEPLOY'S copy of STMT_KEY, and the record was
@@ -735,7 +742,8 @@ export async function makeStatements(outDir, issue, opts) {
   else { rmSync(join(outDir, "_kv"), { recursive: true, force: true }); mkdirSync(join(outDir, "_kv"), { recursive: true }); }
   const usersFile = archive ? null : usersFileFor(outDir);
   const users = archive ? {} : loadUsers(usersFile);
-  const parties = [...new Set(sales.map(s => s.customer))].sort();
+  /* v609: a bucket's rows are its associate's, so the bucket is never a party of its own */
+  const parties = [...new Set(sales.map(s => POSITION_ENGINE.ownerCode(s.customer)))].sort();
   const issued = longDate(issue);
   let made = 0; const skipped = [], sheets = [], kv = [], passwords = {};
   for (const p of parties) {

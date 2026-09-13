@@ -267,6 +267,12 @@ point at the ledger, and an eyebrow carrying the name undid that. The landing le
 sentences and stays two. The statement DOCUMENTS keep it as a letterhead (`brand:` in
 `tools/make_statements.mjs`), deliberately: changing that rewrites every archive.
 
+**A BUCKET IS NOT ITS OWN PERSON** (v609, his ruling of 13 Sep 2026). An associate's `<CODE>-R`
+account is theirs: their statement (live and issued), price list, printed board and the order
+card's usual rate read the code and the bucket together, bucket lines marked *for resale*, through
+`ownsCode` in `engine/position.mjs`. A bucket has no statement and no published username; its old
+`_users.json` line is kept but mapped to nothing.
+
 **`/all` IS THE OWNER'S LIST, behind Cloudflare Access** (v566). It serves the customer's own
 page with the roster where the gate is; a tap fills the username and `STMT_MASTER` into that
 form and submits it, so everything past the door is the customer's own code. His decision: the

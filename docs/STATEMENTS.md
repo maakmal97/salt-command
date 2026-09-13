@@ -38,6 +38,12 @@ statements/_users.json                                    code -> username, for 
 statements/_secrets.json                                  GITIGNORED: the key and the master
 ```
 
+**One statement per person, not per code (v609, his ruling of 13 Sep 2026).** An associate's
+`<CODE>-R` bucket is theirs, so it is never a party: its rows print on the associate's statement
+marked *for resale*, and its price history feeds the associate's price list. From October no issue
+makes a bucket file; the August and September bucket files stay as sent, and the publish leaves a
+bucket's record out, which retires it from the site.
+
 **The username is minted once and kept for life.** `_users.json` sits beside the month folders
 because it belongs to every issue, not to one. A customer new to the roster gets a line the day the
 fold registers them (v588; before, the first month a statement was made for them), and no line ever changes: a username is the address a

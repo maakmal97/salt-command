@@ -577,6 +577,15 @@ function ovKey(t){return (t.customer||t.supplier)+'|'+t.date+'|'+t.total;}
    The other kinds -- customer, downstream, bucket, supplier -- register a code and confer no
    standing, which is why they are absent rather than listed as false. */
 const ADDID_APPOINTS={reseller:'R2',referral:'R3'};
+/* ====== THE BUCKET IS NOT ITS OWN PERSON (his ruling, 13 Sep 2026) ==========================
+   An associate's <CODE>-R account holds the salt they buy to sell on. It is theirs: on their
+   statement, their price list and the rate the order card calls usual, the code and the bucket
+   read as one account, and the bucket has no statement, username or record of its own. One rule,
+   stated here, because the statements tool, the price list and the desk all have to agree on it. */
+const BUCKET_SFX='-R';
+function isBucket(code){return typeof code==='string'&&code.length>BUCKET_SFX.length&&code.slice(-BUCKET_SFX.length)===BUCKET_SFX;}
+function ownerCode(code){return isBucket(code)?code.slice(0,-BUCKET_SFX.length):code;}
+function ownsCode(party,code){return !!party&&(code===party||code===party+BUCKET_SFX);}
 
 return {txPrice:txPrice,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:txEffDeliv,txAdvance:txAdvance,
         txDeferUnits:txDeferUnits,txPendUnits:txPendUnits,txPendUnitsRaw:txPendUnitsRaw,txPendRM:txPendRM,txStat:txStat,txDates:txDates,txGoods:txGoods,
@@ -586,6 +595,6 @@ return {txPrice:txPrice,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeli
         CORRECTABLE:CORRECTABLE,CORRECT_REQUIRED:CORRECT_REQUIRED,CORRECT_NUM_POS:CORRECT_NUM_POS,
         CORRECT_NUM_NN:CORRECT_NUM_NN,CORRECT_DATE:CORRECT_DATE,CORRECT_BOOL:CORRECT_BOOL,
         CORRECT_CODE:CORRECT_CODE,CORRECT_TEXT:CORRECT_TEXT,HANDOVER:HANDOVER,
-        ADDID_APPOINTS:ADDID_APPOINTS};
+        ADDID_APPOINTS:ADDID_APPOINTS,BUCKET_SFX:BUCKET_SFX,isBucket:isBucket,ownerCode:ownerCode,ownsCode:ownsCode};
 })();
 export default POSITION_ENGINE;
