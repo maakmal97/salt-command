@@ -1,5 +1,14 @@
 [
  {
+  "v": "v613",
+  "d": "13 Sep 2026",
+  "t": "THE NAMES PANEL'S UNREACHABLE UNLOCK HANDLER GOES, WITH THE VAULT STATE ONLY IT TOUCHED",
+  "n": [
+   "<b>A HANDLER NOTHING COULD REACH IS REMOVED.</b> renderReveal wired an Unlock button, #vunlock, that no template has rendered since the v217 lock came off, so its decrypt, its hold on the passphrase and its messages could never run. It goes, with the one renderReveal local only it read. Show names on the phone, Import old vault and the laptop's Save are untouched.",
+   "<b>AND THE VAULT STATE ONLY IT TOUCHED.</b> vaultPass, vaultFileStamp, vaultLocalStamp and vaultSaveArmed were written and never read: only that handler ever held the passphrase, and the two stamps lost their last reader at v612. vaultLoad still takes the vault it is served and vaultSave still posts an ISO updated stamp, so nothing behaves differently and no assertion was added. The build's privacy note no longer says lockVault drops a passphrase."
+  ]
+ },
+ {
   "v": "v612",
   "d": "13 Sep 2026",
   "t": "SIX R2 RESALES MOVE INTO THEIR ASSOCIATES' BUCKETS, AND ADD ID READS THE VAULT FRESH",
