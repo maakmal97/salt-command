@@ -2980,8 +2980,13 @@ section("Oil — pinned at both ends and lawful between (round 5, his call 5)");
      it, whose columns are Size / On the board / Price / Floor. A bare selector picks up both, which
      is how the first cut of this check read "Floor" as a fourth heading and went red on a table it
      was never about. Filter to the board by its own second column. */
-  w.eval("switchTab('pricing');");
-  const allHeads = JSON.parse(w.eval("JSON.stringify([].slice.call(document.querySelectorAll('.sec.on table.pxboard')).map(function(t){return [].slice.call(t.rows[0].cells).map(function(c){return c.textContent.replace(/[\\r\\n\\t ]+/g,' ').trim();});}))"));
+  /* v625: THE PRICE VIEW DRAWS THE BOARD OF THE BOOK IN VIEW ONLY, so the boards are read one book at a time, salt
+     last, which leaves salt's two-tier board on the page for the checks that follow */
+  const allHeads = [];
+  for (const pb of JSON.parse(w.eval("JSON.stringify(PROD_IDS.slice().reverse())"))) {
+    w.eval("setProdView(" + JSON.stringify(pb) + ");switchTab('pricing');");
+    allHeads.push(...JSON.parse(w.eval("JSON.stringify([].slice.call(document.querySelectorAll('.sec.on table.pxboard')).map(function(t){return [].slice.call(t.rows[0].cells).map(function(c){return c.textContent.replace(/[\\r\\n\\t ]+/g,' ').trim();});}))")));
+  }
   const heads = allHeads.filter((h) => /^COGS/.test(h[1] || ""));
   ok(heads.length >= 1 && heads.length < allHeads.length,
     `the board is drawn and told apart from the Set the board panel (${heads.length} of ${allHeads.length} pxboard tables)`);
@@ -3030,7 +3035,7 @@ section("Oil — pinned at both ends and lawful between (round 5, his call 5)");
     /* FORCE THE BOOK. This section runs with OIL active: the first cut asserted salt's RM60 and
        RM875 against whatever pxPolicy() happened to return and read oil's RM10 and RM160 asks,
        which is the "coupled to live state" trap in my own comment four lines up. The board check
-       above survives it only because the Price view draws a board per book into one section. */
+       above reads each book's board in turn since v625, when the Price view began drawing the book in view only. */
     const keepProd = String(w.eval("PROD"));
     w.eval("setProd('salt');recompute();");
     const P1 = JSON.parse(w.eval("JSON.stringify(pxPolicy())"));
