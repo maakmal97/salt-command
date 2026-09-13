@@ -33,6 +33,7 @@
 import "./cloudflare.mjs";
 import { readFileSync, existsSync, writeFileSync, readdirSync } from "node:fs";
 import { DATA_DIR } from "./book.mjs";
+import { readSnapshot } from "./d1.mjs";
 import { spawnSync } from "node:child_process";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -299,35 +300,30 @@ if (NO_DEPLOY) {
 /* ---- 6b. the ledger mirror ----------------------------------------------------------
    The D1 store is a mirror of the desk, and a mirror that falls behind quietly is the same
    class of fault as a build that never shipped. Comparing the desk's version against the
-   one the store reports costs a single HTTP GET, so it is checked every run and re-seeded
+   one the store reports costs one D1 read, so it is checked every run and re-seeded
    when it differs, before the commit, so the refreshed extract is versioned with everything
-   else. Skip with --no-mirror. */
+   else. Skip with --no-mirror.
+   14 SEP 2026, HIS QUESTION: IT READS D1 THROUGH WRANGLER NOW, NOT THE KEYED /ledger. From 09 Sep the
+   check ran only with SALT_WRITE_KEY in the shell, which no shell on this laptop has, so every run
+   printed "not checked". wrangler reads the store on its own login, as drafts.mjs and drain.mjs do. */
 step("6b", "the ledger mirror");
 if (DRY || has("--no-mirror")) {
   ok("skipped" + (DRY ? " (dry run)" : ""));
-} else if (!process.env.SALT_WRITE_KEY) {
-  /* 09 Sep 2026: /ledger is a keyed read since 08 Sep, and this asked without the key, so the
-     endpoint answered "write key required" and the check was blind. The key is never on disk;
-     it comes from the environment or the check is skipped and says so. The cloud fold re-seeds
-     the mirror on every fold regardless. */
-  console.log("  note  not checked: set SALT_WRITE_KEY in this shell to compare the mirror (the cloud fold re-seeds it on every fold)");
 } else {
-  let store = null;
-  try { store = await (await fetch(SITE + "/ledger", { cache: "no-store", headers: { "X-Salt-Key": process.env.SALT_WRITE_KEY } })).json(); }
-  catch (e) { warn("could not reach " + SITE + "/ledger, so the mirror was not checked"); }
-  if (store && store.ok === false) warn("the ledger endpoint answered: " + (store.error || "not ok"));
-  else if (store && !store.seeded) {
+  const snap = readSnapshot();
+  if (snap === undefined) warn("wrangler could not read the D1 snapshot twice running, so the mirror was not checked");
+  else if (snap === null) {
     warn("the store has never been seeded. Run: node tools/ledger.mjs && node tools/d1.mjs --seed");
-  } else if (store && store.snapshot && store.snapshot.v === VER) {
-    ok(`the mirror is level at ${VER} (${store.snapshot.rows} records)`);
-  } else if (store && store.snapshot) {
-    console.log(`        the mirror is ${store.snapshot.v}, the desk is ${VER}. Re-seeding.`);
+  } else if (snap.v === VER) {
+    ok(`the mirror is level at ${VER} (${snap.rows} records)`);
+  } else {
+    console.log(`        the mirror is ${snap.v}, the desk is ${VER}. Re-seeding.`);
     const a = sh("node", ["tools/ledger.mjs"], { quiet: true });
     if (a.code !== 0) fail("the extract failed, so the mirror was NOT refreshed:\n        " + a.out.split("\n").filter(l => /FAIL/.test(l)).join("\n        "));
     else {
       const b = sh("node", ["tools/d1.mjs", "--seed"], { quiet: true });
       if (b.code !== 0) fail("the re-seed failed:\n        " + b.out.split("\n").slice(-4).join("\n        "));
-      else ok(`the mirror was re-seeded from ${store.snapshot.v} to ${VER}`);
+      else ok(`the mirror was re-seeded from ${snap.v} to ${VER}`);
     }
   }
 }

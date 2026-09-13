@@ -272,6 +272,22 @@ async function prove() {
   } finally { dom.window.close(); }
 }
 
+/* THE STORE'S SNAPSHOT ROW, FOR tools/update.mjs (14 Sep 2026, his question). update.mjs read it from the
+   desk's keyed /ledger, so on a laptop without SALT_WRITE_KEY in the shell the check never ran. wrangler
+   reads D1 on its own login, as drafts.mjs does, so no key is needed. {v, rows}; null when the store was
+   never seeded; undefined when wrangler could not answer, tried twice because a first "fetch failed" is
+   routine here. It never calls fail(): update.mjs decides what a missing answer means. */
+function readSnapshot() {
+  for (let i = 0; i < 2; i++) {
+    const r = wrangler(["d1", "execute", DB, WHERE, "--json", "--command", JSON.stringify("SELECT v,rows FROM snapshot WHERE one=1;")], { quiet: true });
+    const a = r.out.indexOf("["), b = r.out.lastIndexOf("]");
+    if (a < 0 || b < a) continue;
+    try { const s = JSON.parse(r.out.slice(a, b + 1)).flatMap((x) => x.results || [])[0]; return s ? { v: s.v, rows: s.rows } : null; }
+    catch (e) { /* unparseable: try once more */ }
+  }
+  return undefined;
+}
+
 function status() {
   console.log("\nSTORE");
   const snap = query("SELECT v,stamped,sha,rows,at FROM snapshot WHERE one=1;");
@@ -287,7 +303,7 @@ function status() {
    GUARDED SO THE SUITE CAN IMPORT compareForm without this file reaching for wrangler on the
    way in. pathToFileURL, not a hand-built file URL: the hand-built form matches on Windows and
    not on Linux, which is how v522's gate ran as a silent no-op on the runner. */
-export { compareForm };
+export { compareForm, readSnapshot };
 const isMain = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
 if (isMain) {
 const arg = process.argv[2];

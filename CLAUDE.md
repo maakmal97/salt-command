@@ -208,8 +208,8 @@ desk shows, cost and margin included, is served at the public URL.
   phone's KV keys are kept, so a laptop update never races the cloud drafter), reports both
   queues, builds, tests, deploys only on an id change, commits, pushes, then proves master,
   `rev.json`, live `/rev` and origin agree; non-zero on any failure. `--dry`, `--no-push`,
-  `--no-deploy`, `--no-drain`, `-m`. It never folds. Its mirror check reads `/ledger` with
-  `SALT_WRITE_KEY` from the shell and says so when the key is not set (09 Sep 2026). The replay check refuses to ship while an entry above
+  `--no-deploy`, `--no-drain`, `-m`. It never folds. Its mirror check reads the D1 snapshot
+  through wrangler's own login (`readSnapshot` in `tools/d1.mjs`), so no key is needed (14 Sep 2026). The replay check refuses to ship while an entry above
   `QUEUE_COMMITTED` matches a ledger row by date and total; `--force-ship` after reading
   the rows.
 
