@@ -1,5 +1,14 @@
 [
  {
+  "v": "v614",
+  "d": "14 Sep 2026",
+  "t": "CH4-KS IS BACK ON THE MAP: THE GAZETTEER'S KS RENAME REACHES THE DESK",
+  "n": [
+   "<b>HIS EDIT OF 14 SEP 2026, MADE ON GITHUB.</b> geo/places.json renamed the key KLS to KS, following CH4-KS home: the code was re-keyed to CH4-KLS on 28 Aug and back to CH4-KS on 12 Sep, and from that day the desk read the suffix KS, found no such key, and left the party off the map. No sync ran with the edit, so the master's GEO block still said KLS, CI failed on the push, and the cloud fold, which runs the gate before it commits, would have stalled the next approval. The block is synced byte for byte and the stale example in the locality comment goes. The check that caught it is CI's own geosync --check, proved red by that failed run.",
+   "<b>FOUND, NOT CHANGED.</b> Three roster codes still carry a place key the gazetteer does not hold: CA7-JTR (JTR), and CE5-TBC and CB7-TBC (TBC, the directory's to-be-confirmed placeholder). A coordinate comes from the directory by hand through tools/geofetch.mjs."
+  ]
+ },
+ {
   "v": "v613",
   "d": "13 Sep 2026",
   "t": "THE NAMES PANEL'S UNREACHABLE UNLOCK HANDLER GOES, WITH THE VAULT STATE ONLY IT TOUCHED",
