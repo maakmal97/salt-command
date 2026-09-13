@@ -384,11 +384,6 @@
       }
     ]
   },
-  "CUSTOMER_REWARD_OPENING": {
-    "CE4-CHE": 0,
-    "CM4-MK": 0,
-    "CJ4-BJ": 0
-  },
   "AWARDS": {
     "CS6-PER": {
       "units": 1,

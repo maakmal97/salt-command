@@ -1938,7 +1938,7 @@ section("Book — ledger/book.json is the source (v339)");
   ok(/ok\s+the master's BOOK block is ledger\/book\.json/.test(chk), "tools/booksync.mjs --check: the master's book block is the file");
   const book = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
   const keys = Object.keys(book).filter((k) => k !== "NOTES");
-  ok(keys.length === 28, "the book holds the twenty-eight ledger keys");   // v353 added PRICE_SET; v504 added COUNTS; v549 retired SOURCING_PLAN; v553 added COST_RULE; v615 added INTRODUCTIONS; v616 retired REWARD_OPENING
+  ok(keys.length === 27, "the book holds the twenty-seven ledger keys");   // v353 added PRICE_SET; v504 added COUNTS; v549 retired SOURCING_PLAN; v553 added COST_RULE; v615 added INTRODUCTIONS; v616 retired REWARD_OPENING; v618 retired CUSTOMER_REWARD_OPENING
   ok(Array.isArray(book.sales) && book.sales.length > 100 && Array.isArray(book.purchases), "with the rows as records");
   ok(typeof book.QUEUE_COMMITTED === "string" && typeof book.STATED_STOCK === "number", "and the singletons as values");
   ok(book.NOTES && Array.isArray(book.NOTES.STATED_STOCK) && book.NOTES.STATED_STOCK.length > 0, "the stated stock's roll history survived as NOTES");
@@ -2860,7 +2860,6 @@ section("Rewards — redemption reads the earning window (round 5, his call 3)")
   const { openMaster } = await import("../tools/payload.mjs");
   const { w } = await openMaster();
   const read = (expr) => JSON.parse(w.eval("JSON.stringify(" + expr + ")"));
-  const since = read("REWARD.since");
   /* v594: FORCED, NOT READ OFF THE BOOK. This pair read CS6-BS's own rows and assumed every redemption of theirs
      predated adoption; v591's reward offset on s139 is one after it, and the pair went red on a book that was
      right. A fixture party carries three units redeemed before the scheme and half a unit after it. */
@@ -2868,9 +2867,8 @@ section("Rewards — redemption reads the earning window (round 5, his call 3)")
     + "{customer:'CZ8-RBT',date:'2026-07-02',qty:1,total:100,cash:0,settledRM:100,rebate:true},"
     + "{customer:'CZ8-RBT',date:'2026-07-03',qty:1,total:100,cash:0,settledRM:100,rebate:true},"
     + "{customer:'CZ8-RBT',date:'2026-09-01',qty:1,total:100,cash:50,settledRM:50,rebate:true,rebateKg:0.5});");
-  const pre = read("sales.filter(s=>s.customer==='CZ8-RBT'&&s.rebate&&s.date<REWARD.since).length");
-  ok(pre === 3 && since > "2026-07-03" && since <= "2026-09-01",
-    "the guard: the fixture's three redeemed units are before adoption and its half unit after, so the next assertion cannot pass vacuously");
+  const pre = read("sales.filter(s=>s.customer==='CZ8-RBT'&&s.rebate&&s.date<'2026-08-10').length");
+  ok(pre === 3, "the guard: the fixture's three redeemed units are before 10 Aug and its half unit after, so the next assertion cannot pass vacuously");
   /* v616, HIS RULING OF 13 SEP 2026: STILL ONE WINDOW ON BOTH SIDES, AND IT IS NOW THE WHOLE LEDGER. The
      associate recount earns over all of history and replaced the openings, so all three July units count,
      and a unit taken on the -R account is the associate's. */
@@ -9238,19 +9236,16 @@ section("v570: an associate is appointed from the Enter tab, and the Kind means 
         "and the Name and Place cells are hidden: the party is already in the vault");
       ok(!EL.no && /Appoints/.test(EL.prev) && /CZ8-APPT-R/.test(EL.prev) && /R2/.test(EL.prev),
         "the preview says it appoints, on which stream, and names the resell account: " + (EL.no || EL.prev.slice(0, 150)));
-      ok(!EL.no && /credit cap/.test(EL.prev) && /hurdle/.test(EL.prev),
+      ok(!EL.no && /credit cap/.test(EL.prev) && /free unit per/.test(EL.prev),
         "and it says what the standing changes, which is the part he is deciding");
       /* the figures in that sentence are the engine's, not a second copy */
       /* READ THE PAGE'S OWN FORMATTER. Rebuilding "RM 470" in the test would be a second copy of
          fmt0 and would pass while the page printed something else entirely. */
-      /* v616: the associate's figure is the pooled margin rule, read through assocRuleTxt; the customer
-         hurdle it replaces through rewardHurdleTxt. Both read off the page's own functions. */
-      const HUR = JSON.parse(String(w570.eval("JSON.stringify({a:assocRuleTxt('salt'),c:rewardHurdleTxt('salt','customer'),"
-        + "aN:assocUnitMargin('salt'),cN:rewardHurdle('salt','customer'),"
+      /* v618: one rule for both sides, read through rewardRuleTxt off the page's own functions */
+      const HUR = JSON.parse(String(w570.eval("JSON.stringify({a:rewardRuleTxt('salt'),aN:rewardUnitMargin('salt'),"
         + "capA:creditCapFor('salt','associate'),capR:creditCapFor('salt','retail')})")));
-      ok(HUR.aN !== HUR.cN, `the two figures really are different (${HUR.a} as an associate, ${HUR.c} as a customer), or this assertion proves nothing`);
-      ok(EL.prev.indexOf(HUR.a) >= 0 && EL.prev.indexOf(HUR.c) >= 0,
-        `the figures printed are the ones the reward functions return (${HUR.a}, ${HUR.c}), not restated`);
+      ok(HUR.aN > 0 && EL.prev.indexOf(HUR.a) >= 0,
+        `the rule printed is the one the reward function returns (${HUR.a}), not restated`);
       ok(HUR.capA > HUR.capR, `and the associate cap really is the larger one (${HUR.capA} against ${HUR.capR})`);
 
       const TW = JSON.parse(String(w570.eval(DRIVE570("CZ7-BENCH", "reseller"))));
@@ -9409,89 +9404,8 @@ section("11 Sep 2026: a rail heading and a rail destination are told apart, and 
 }
 
 
-section("11 Sep 2026: the reward hurdles are stated off the board, carry a unit minimum, and oil has none");
-{
-  /* HIS INSTRUCTION OF 11 SEP 2026. Two figures and two minimums: RM 450 and 5 unit for what an
-     associate brings in, RM 975 and 12.5 unit for what anyone buys directly, and no reward at all
-     on oil. Everything is forced through the master's own functions in jsdom, because THE LIVE
-     BOOK EXERCISES ONE PATH OF THREE: every party who currently crosses RM 975 also bought over
-     12.5 unit, so the short path and the oil path have no live example and would go untested by
-     anything read off the desk. Each was proved red by mutation. */
-  const { openMaster: omRw } = await import("../tools/payload.mjs");
-  const { w: wRw } = await omRw();
-  const rd = (e) => JSON.parse(wRw.eval("JSON.stringify(" + e + ")"));
-  try {
-    wRw.eval("setProd('salt');");
-
-    /* ---- the two figures, and the DERIVATION checked against the engine that prints the board.
-       Stated figures drift away from the reason they were stated; this is what keeps the two
-       tied, so re-striking the board without re-striking the hurdle goes red here. ---- */
-    /* v616: an associate has no revenue hurdle any more; their rule is RM 500 of margin a unit, tested in
-       its own section. The customer pair below is unchanged. */
-    ok(rd("rewardHurdle('salt','associate')") === null && rd("assocUnitMargin('salt')") === 500,
-      "an associate has no revenue hurdle since v616, only RM 500 of margin a unit");
-    ok(rd("rewardHurdle('salt','customer')") === 975 && rd("rewardMinUnits('salt','customer')") === 12.5,
-      "what anyone buys directly hurdles at RM 975 and 12.5 unit");
-    const t125 = rd("priceLadder(12.5).tier1.total");
-    ok(t125 === 875 && t125 + 100 === 975, `975 is the 12.5 unit Tier 1 of RM ${t125} plus a hundred`);
-
-    /* ---- OIL HAS NO REWARD, and the absence reads as an absence rather than as NaN. `x % null`
-       is NaN and NaN formats as "RM NaN", which is what the old arithmetic would have printed. ---- */
-    const nul = (e) => rd(`(function(){var v=${e};return {isNull:v===null,isNaN:typeof v==='number'&&isNaN(v)};})()`);
-    const hOilC = nul("rewardHurdle('oil','customer')"), hOilA = nul("rewardHurdle('oil','associate')");
-    ok(hOilC.isNull && !hOilC.isNaN && hOilA.isNull && !hOilA.isNaN,
-      "oil has no hurdle on either stream, and the absence is null rather than NaN");
-    ok(rd("rewardHurdleTxt('oil','customer')") === "no reward on this book", "and every card says so in words");
-    const tnOil = nul("rewardToNext('oil','customer',1000)");
-    ok(tnOil.isNull && !tnOil.isNaN, "the distance to the next crossing is null, never NaN");
-    /* and the probe itself is proved in both directions here, because the first cut of it could
-       not fail: NaN crosses JSON as null, so `=== null` was true of both. */
-    const nanCtl = nul("(0/0)"), nullCtl = nul("null");
-    ok(nanCtl.isNaN && !nanCtl.isNull && nullCtl.isNull && !nullCtl.isNaN,
-      "the probe tells NaN from null, which a JSON round-trip cannot");
-    ok(rd("rewardEarn('oil','customer',99999,9999,99999,{units:1,label:'full'})") === 0,
-      "and no amount of money, units or margin earns anything on oil");
-    wRw.eval("setProd('oil');");
-    ok(rd("customerRewards().length") === 0, "the oil customer reward table is empty rather than hurdle-less");
-    wRw.eval("setProd('salt');");
-    ok(rd("customerRewards().length") > 0, "and salt's is not, so the guard is the book and not a broken table");
-
-    /* ---- THE THREE PATHS, forced ---- */
-    const B = "{units:1,label:'full'}";
-    ok(rd(`rewardEarn('salt','customer',975,12.5,9999,${B})`) === 1, "money over and units over pays the band in full");
-    ok(rd(`rewardEarn('salt','customer',974.99,9999,9999,${B})`) === 0,
-      "a ringgit under the hurdle pays nothing, however many units and whatever the margin");
-    ok(rd(`rewardEarn('salt','customer',1950,25,9999,${B})`) === 2, "two crossings pay twice");
-    ok(rd(`rewardEarn('salt','customer',1950,25,9999,{units:0.25,label:'quarter'})`) === 0.5,
-      "and the band still decides how much, so two crossings on a quarter band pay half a unit");
-
-    /* the short path: money over, units short, scaled by the margin actually made against the
-       margin the board expects on the minimum units at Tier 1 */
-    const gmExp = rd("rewardGmExpected(12.5)");
-    const m125 = rd("priceLadder(12.5).tier1.margin");
-    ok(gmExp > 0 && gmExp === +(t125 * m125 / 100).toFixed(2),
-      `the expected margin is the board's own on 12.5 unit at Tier 1, RM ${gmExp} at ${m125}%`);
-    const half = rd(`rewardEarn('salt','customer',975,8,${gmExp / 2},${B})`);
-    ok(Math.abs(half - 0.5) < 0.005, `short on units at half the expected margin pays half a unit (${half})`);
-    ok(rd(`rewardEarn('salt','customer',975,8,0,${B})`) === 0, "short on units with no margin made pays nothing");
-    ok(rd(`rewardEarn('salt','customer',975,8,${gmExp},${B})`) === 1,
-      "short on units but the full expected margin pays the band in full");
-    ok(rd(`rewardEarn('salt','customer',975,8,${gmExp * 5},${B})`) === 1,
-      "AND THE SCALE IS CAPPED AT 1: a short seller at five times the expected margin never beats the full path");
-    ok(rd(`rewardEarn('salt','associate',99999,9999,99999,${B})`) === 0,
-      "and the customer earn rule pays an associate nothing, because an associate is not measured on it since v616");
-
-    /* ---- HIS RULING THAT IT APPLIES TO THE WHOLE WINDOW SINCE 10 AUG. Stated as the invariant
-       rather than as one party's figure, so it stays true as the book moves: nothing under the
-       hurdle can have crossed it. CK4-SEN at RM 945 is the live example it cost. ---- */
-    const cr = rd("customerRewards().map(function(r){return {id:r.id,rev:r.rev,crossed:r.crossed,earned:r.earned,opening:r.opening,qty:r.qty,min:r.min,short:r.short};})");
-    ok(cr.every((r) => r.rev >= 975 || r.crossed === 0),
-      "no customer under RM 975 has crossed it, on the whole window since 10 Aug");
-    ok(cr.every((r) => r.min === 12.5), "every customer row is measured against the same 12.5 unit minimum");
-    ok(cr.every((r) => !r.short || r.earned <= r.crossed * 1 + r.opening + 1e-9),
-      "and a row the unit minimum bit never earns more than the same crossings would have paid in full");
-  } finally { try { wRw.close(); } catch (e) { /* best effort */ } }
-}
+/* v618: "11 Sep 2026: the reward hurdles are stated off the board, carry a unit minimum, and oil has none" is retired
+   with the rule it pinned. Its oil checks moved into the v618 section. */
 
 
 section("11 Sep 2026: a count badge counts each thing once, on Today and on Enter");
@@ -10654,8 +10568,8 @@ section("v616: an associate earns a whole unit per RM 500 of margin brought, poo
   const rd16 = (e) => JSON.parse(String(w16.eval("JSON.stringify(" + e + ")")));
   try {
     w16.eval("setProd('salt');");
-    ok(rd16("assocUnitMargin('salt')") === 500 && rd16("assocUnitMargin('oil')") === null
-      && rd16("assocRuleTxt('salt')") === "a free unit per " + rd16("fmt0(500)") + " of margin" && rd16("assocRuleTxt('oil')") === "no reward on this book",
+    ok(rd16("rewardUnitMargin('salt')") === 500 && rd16("rewardUnitMargin('oil')") === null
+      && rd16("rewardRuleTxt('salt')") === "a free unit per " + rd16("fmt0(500)") + " of margin" && rd16("rewardRuleTxt('oil')") === "no reward on this book",
       "the rule is RM 500 of margin a unit on salt, and oil has none, in words as well as figures");
     const row = (o) => JSON.stringify(Object.assign({ product: "salt" }, o));
     w16.eval("associates.push('CZ9-B2','CZ9-LOSS');"
@@ -10686,7 +10600,7 @@ section("v616: an associate earns a whole unit per RM 500 of margin brought, poo
       "a loss earns nothing rather than a debt, and the next unit is RM 1,100 away: " + JSON.stringify(loss));
 
     const card = String(w16.eval("resellerCard(networkStats().find(function(x){return x.id==='CZ9-AS';}))"));
-    ok(/Margin brought, whole ledger/.test(card) && card.indexOf(rd16("assocRuleTxt('salt')")) >= 0 && /0\.5 unit free/.test(card)
+    ok(/Margin brought, whole ledger/.test(card) && card.indexOf(rd16("rewardRuleTxt('salt')")) >= 0 && /0\.5 unit free/.test(card)
       && !/Per hurdle/.test(card) && !/>Band</.test(card),
       "the card shows the pooled count and the half unit free, and no hurdle or band column survives");
     w16.eval("setProd('oil');");
@@ -10748,6 +10662,49 @@ section("v617: a departed associate keeps earning, but nothing is redeemed until
       && /CZ9-GONE/.test(String(w17.eval("JSON.stringify(actions().filter(function(a){return a.kind==='reward';}))"))),
       "once they return, the button, the offset and the Today prompt are all back");
   } finally { await new Promise((r) => setTimeout(r, 200)); try { w17.close(); } catch (e) { /* best effort */ } }
+}
+
+section("v618: a customer earns as an associate does, and a written-off order earns nobody anything");
+{
+  /* HIS RULINGS OF 14 SEP 2026. One rule for both sides: a whole unit per RM 500 of margin over the whole
+     ledger, the bands, the hurdle and the openings gone; an order never paid counts for no one. Fixture
+     parties throughout. CZ9-CU is a customer with an order before 10 Aug, one after, a written-off order and
+     a quarter unit taken; CZ9-AD is an associate whose written-off order must not lift them to a unit.
+     Each assertion was proved red by mutation. */
+  const { openMaster: om18 } = await import("../tools/payload.mjs");
+  const { w: w18 } = await om18();
+  const rd18 = (e) => JSON.parse(String(w18.eval("JSON.stringify(" + e + ")")));
+  try {
+    w18.eval("setProd('salt');");
+    ok(rd18("rewardUnitMargin('salt')") === 500 && rd18("rewardUnitMargin('oil')") === null && rd18("rewardRuleTxt('oil')") === "no reward on this book"
+      && JSON.stringify(rd18("rewardUnits(1000,null)")) === '{"earned":0,"toNext":null}' && JSON.stringify(rd18("Object.keys(REWARD)")) === '["stated"]',
+      "one figure is all the scheme states: RM 500 of margin on salt, nothing on oil, and no window, band or hurdle beside it");
+    const row18 = (o) => JSON.stringify(Object.assign({ product: "salt" }, o));
+    w18.eval("associates.push('CZ9-AD');sales.push(" + [
+      row18({ rid: "z618a", customer: "CZ9-CU", date: "2026-06-02", qty: 1, total: 350, cost: 50, cash: 350, deliveredQty: 1 }),
+      row18({ rid: "z618b", customer: "CZ9-CU", date: "2026-09-02", qty: 1, total: 300, cost: 50, cash: 300, deliveredQty: 1 }),
+      row18({ rid: "z618c", customer: "CZ9-CU", date: "2026-09-03", qty: 1, total: 450, cost: 50, cash: 0, deliveredQty: 1, defaulted: true }),
+      row18({ rid: "z618d", customer: "CZ9-CU", date: "2026-09-04", qty: 0.25, total: 11, cost: 11, cash: 0, settledRM: 11, deliveredQty: 0.25, rebate: true, rebateKg: 0.25, goodwill: true }),
+      row18({ rid: "z618e", customer: "CZ9-AD", date: "2026-09-05", qty: 1, total: 500, cost: 50, cash: 500, deliveredQty: 1 }),
+      row18({ rid: "z618f", customer: "CZ9-AD", date: "2026-09-06", qty: 1, total: 150, cost: 50, cash: 0, deliveredQty: 1, defaulted: true }),
+    ].join(",") + ");recompute();");
+    ok(rd18("txStat(sales.find(function(s){return s.rid==='z618c';})).order") === "Default", "the guard: the written-off fixture reads Default, so what follows cannot pass vacuously");
+    const cu = rd18("customerRewards().find(function(r){return r.id==='CZ9-CU';})||null");
+    ok(!!cu && cu.margin === 550 && cu.n === 2 && cu.earned === 1 && cu.taken === 0.25 && cu.free === 0.75 && cu.toNext === 450,
+      "the customer's June and September orders earn one unit, the written-off order and the redemption count for nothing, and the quarter taken is netted: " + JSON.stringify(cu));
+    const ad = rd18("(function(){var r=networkStats().find(function(x){return x.id==='CZ9-AD';});return r?{total:r.marginTotal,earned:r.earned,toNext:r.toNext}:null;})()");
+    ok(!!ad && ad.total === 450 && ad.earned === 0 && ad.toNext === 50, "an associate's written-off order earns nothing either: " + JSON.stringify(ad));
+    ok(!rd18("customerRewards().some(function(r){return r.id==='CZ9-AD';})"), "and an associate is not on the customer table, their buying being on their own card");
+    const tab18 = String(w18.eval("tabConcentration()"));
+    const i18 = tab18.indexOf("Customer rewards"), cardTxt = tab18.slice(i18, tab18.indexOf("</table>", i18));
+    ok(i18 >= 0 && cardTxt.indexOf(rd18("rewardRuleTxt('salt')")) >= 0 && /CZ9-CU/.test(cardTxt) && /0\.75 unit free/.test(cardTxt) && !/Band/.test(cardTxt) && !/since 2026/.test(cardTxt),
+      "the Customers card states the one rule and the fixture's free three quarters, with no band column and no window");
+    const pay18 = rd18("(function(){var p=phonePayloadBuild();return (p&&p.people&&p.people.rewards)||null;})()");
+    ok(Array.isArray(pay18) && pay18.length > 0 && pay18.every((r) => JSON.stringify(Object.keys(r).sort()) === '["earned","id","taken"]'),
+      "the payload's customer rewards carry units only, no margin");
+    w18.eval("setProd('oil');");
+    ok(rd18("customerRewards().length") === 0 && /No reward on this book/.test(String(w18.eval("tabConcentration()"))), "on oil there is no customer table, and the card says why");
+  } finally { await new Promise((r) => setTimeout(r, 200)); try { w18.close(); } catch (e) { /* best effort */ } }
 }
 
 

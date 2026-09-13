@@ -5399,11 +5399,6 @@ const PEOPLE={
     }
   ]
 };
-const CUSTOMER_REWARD_OPENING={
-  "CE4-CHE": 0,
-  "CM4-MK": 0,
-  "CJ4-BJ": 0
-};
 const AWARDS={
   "CS6-PER": {
     "units": 1,
@@ -6295,7 +6290,7 @@ const quoteFor=p=>{const f=QUOTES[p||PROD];return f?f():null;};
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{"v":"v617","d":"14 Sep 2026","t":"A DEPARTED ASSOCIATE KEEPS EARNING, AND NOTHING IS REDEEMED UNTIL THEY RETURN","n":["<b>HIS RULING OF 13 SEP 2026, THE LAST OF THREE VERSIONS.</b> Departure stops the handing over and nothing else. v616 already counts a departed associate's margin like anyone's. Now every road that gives a reward out asks canRedeem first: Redeem, the Offset it becomes against an advance, the automatic offset, the card's button and the Today prompt. On the Worker, the drafter refuses a departed associate's redemption, and refuses a correction that would add reward to their row. Undoing a redemption is not one, and still goes through. Returning is taking them off PEOPLE.departed, on his word.","<b>ON THE BOOK TODAY NOTHING MOVES.</b> CJ4-OKR, the one departed associate, stands level at 5 earned and 5 taken, so there is nothing held yet. When they earn their sixth unit, the card will say it is held while departed, and draw no button.","<b>THE CHECKS.</b> Nine assertions on fixture parties. The drafter's two refusals, and its drafting for a party still here or once returned. The undo that must pass. On the desk: earning continues, no queue from Redeem, Offset or the automatic offset, a held card, no Today prompt, and every road open again on return. Nine mutations each turned the section red, a guard that refused everyone among them."]},{"v":"v616","d":"14 Sep 2026","t":"AN ASSOCIATE EARNS A WHOLE FREE UNIT PER RM 500 OF MARGIN BROUGHT, POOLED OVER THE WHOLE LEDGER","n":["<b>HIS RULINGS OF 13 AND 14 SEP 2026, THE SECOND OF THREE VERSIONS.</b> An associate's reward is one count now. Their own orders and their -R account pool as R1 and R2, since the two cannot be told apart, and every priced order of each customer they introduced adds to it as R3, one level only, from v615's map. A whole unit is earned for each RM 500 of that margin. There are no bands, no unit minimum and no part units, and a loss earns nothing rather than a debt. It is counted over the whole ledger, so REWARD_OPENING leaves the book: the recount replaced the 10 Aug openings rather than adding to them, and every unit ever taken is netted against it, the July units and the -R account included.","<b>WHERE IT LANDS, ON THE BOOK AS IT STANDS.</b> RM 9,042.27 of margin brought against 14 units taken. CS6-BS has RM 2,576.10 and 1 unit free to redeem. CN6-WM has RM 893.20 and is 1 unit ahead. CJ4-OKR, CS6-PER, CI4-OKR, CE4-AD and CR3-DAM stand level. Net nil, as the recount he approved said at RM 500. The card shows the two margin rows and their total, then earned, taken, left and the margin to the next unit; What counts, and the appointment line on Enter, say the one rule.","<b>UNTOUCHED.</b> The customer scheme: RM 975 and 12.5 unit, banded, from 10 Aug over its own openings. The Redeem and automatic offset roads, which read the same earned and taken. Oil, which has no reward.","<b>THE CHECKS.</b> A new section of ten assertions on fixtures (an order before 10 Aug, a resale, a redemption, a pending order, an introduced associate and their own introduction, RM 1,000 exactly, a loss), the redemption window rewritten to the whole ledger, the 11 Sep and v570 sections moved off the RM 450 figure, and the book back to twenty-eight keys. Twelve mutations each turned them red."]},{"v":"v615","d":"14 Sep 2026","t":"WHO INTRODUCED WHOM IS ONE MAP ON THE BOOK, AND CM4-MK SITS UNDER CS6-BS","n":["<b>HIS RULING OF 13 SEP 2026, THE FIRST OF THREE VERSIONS THAT CHANGE THE REWARD RULE.</b> An introduction came from two places that did not know about each other: the referral stamp an R3 entry puts on a row, and a network list inside R0_NETWORK that only the founder could hold. CM4-MK, whose first order went through CS6-BS-R on 15 Jul and who has bought direct ever since, had nowhere to go. INTRODUCTIONS on the book now holds every introduction no row carries, each with its reason, and introductions() reads the stamps and the book together. R0_NETWORK names the founder and nothing else.","<b>WHAT MOVES.</b> On salt, CS6-BS's card lists CM4-MK, and its first-order R3 reads RM 220. No reward balance moves: the earning rule is v616. On oil, the lists now match salt's, because a stamp is read off every row of both books rather than the priced rows of the book in view; CI4-OKR's oil R3 reads RM 130 from an introduced customer's first oil order.","<b>THE CHECKS.</b> Twelve assertions over both books: every declared and every stamped introduction reaches the map, no customer has two introducers, and every card lists exactly what the map gives it. Five mutations each turned the section red."]},{"v":"v614","d":"14 Sep 2026","t":"CH4-KS IS BACK ON THE MAP: THE GAZETTEER'S KS RENAME REACHES THE DESK","n":["<b>HIS EDIT OF 14 SEP 2026, MADE ON GITHUB.</b> geo/places.json renamed the key KLS to KS, following CH4-KS home: the code was re-keyed to CH4-KLS on 28 Aug and back to CH4-KS on 12 Sep, and from that day the desk read the suffix KS, found no such key, and left the party off the map. No sync ran with the edit, so the master's GEO block still said KLS, CI failed on the push, and the cloud fold, which runs the gate before it commits, would have stalled the next approval. The block is synced byte for byte and the stale example in the locality comment goes. The check that caught it is CI's own geosync --check, proved red by that failed run.","<b>FOUND, NOT CHANGED.</b> Three roster codes still carry a place key the gazetteer does not hold: CA7-JTR (JTR), and CE5-TBC and CB7-TBC (TBC, the directory's to-be-confirmed placeholder). A coordinate comes from the directory by hand through tools/geofetch.mjs."]},{"v":"v613","d":"13 Sep 2026","t":"THE NAMES PANEL'S UNREACHABLE UNLOCK HANDLER GOES, WITH THE VAULT STATE ONLY IT TOUCHED","n":["<b>A HANDLER NOTHING COULD REACH IS REMOVED.</b> renderReveal wired an Unlock button, #vunlock, that no template has rendered since the v217 lock came off, so its decrypt, its hold on the passphrase and its messages could never run. It goes, with the one renderReveal local only it read. Show names on the phone, Import old vault and the laptop's Save are untouched.","<b>AND THE VAULT STATE ONLY IT TOUCHED.</b> vaultPass, vaultFileStamp, vaultLocalStamp and vaultSaveArmed were written and never read: only that handler ever held the passphrase, and the two stamps lost their last reader at v612. vaultLoad still takes the vault it is served and vaultSave still posts an ISO updated stamp, so nothing behaves differently and no assertion was added. The build's privacy note no longer says lockVault drops a passphrase."]},
+const evolution=[{"v":"v618","d":"14 Sep 2026","t":"A CUSTOMER EARNS AS AN ASSOCIATE DOES, AND A WRITTEN-OFF ORDER EARNS NOBODY ANYTHING","n":["<b>HIS RULINGS OF 14 SEP 2026, THE FIRST OF THREE CUSTOMER VERSIONS.</b> One rule now serves both sides: a whole free unit per RM 500 of margin brought, over the whole ledger. A customer counts their own priced orders. The RM 975 and 12.5 unit hurdle, the margin bands, the 10 Aug window and CUSTOMER_REWARD_OPENING are gone, and REWARD states the one figure and nothing else. He chose the whole ledger over his earlier ruling that three customers rewarded by hand before 10 Aug were settled (CE4-CHE, CM4-MK, CJ4-BJ), so only the units the book records as taken are netted.","<b>AN ORDER NEVER PAID EARNS NOTHING,</b> for a customer or an associate. On the book that is the two written-off orders of CA4-DAM, RM 138 of margin, which leaves them short of a unit. No associate balance moves.","<b>WHERE IT LANDS.</b> Thirty customers. CM4-MK holds 2 unit, CE4-CHE 1, CM6-HCM 1, and CJ4-BJ 0.44 after the 0.56 they took: 4.44 unit owed. The Customers card shows margin, earned, taken, left and the margin to the next unit, as an associate card does. The band chips on What counts gave way to the one rule. Covering a lower margin at entry is v619, and a customer Redeem is v620.","<b>THE CHECKS.</b> The 11 Sep section that pinned the old hurdle is retired with it. A new section of eight assertions on fixtures: a customer order before 10 Aug, one after, a written-off order, a quarter unit taken, an associate held short of a unit by their own written-off order, the card, the payload and oil. The redemption window, v570 and v616 sections were moved onto the new names. Nine mutations each turned the section red."]},{"v":"v617","d":"14 Sep 2026","t":"A DEPARTED ASSOCIATE KEEPS EARNING, AND NOTHING IS REDEEMED UNTIL THEY RETURN","n":["<b>HIS RULING OF 13 SEP 2026, THE LAST OF THREE VERSIONS.</b> Departure stops the handing over and nothing else. v616 already counts a departed associate's margin like anyone's. Now every road that gives a reward out asks canRedeem first: Redeem, the Offset it becomes against an advance, the automatic offset, the card's button and the Today prompt. On the Worker, the drafter refuses a departed associate's redemption, and refuses a correction that would add reward to their row. Undoing a redemption is not one, and still goes through. Returning is taking them off PEOPLE.departed, on his word.","<b>ON THE BOOK TODAY NOTHING MOVES.</b> CJ4-OKR, the one departed associate, stands level at 5 earned and 5 taken, so there is nothing held yet. When they earn their sixth unit, the card will say it is held while departed, and draw no button.","<b>THE CHECKS.</b> Nine assertions on fixture parties. The drafter's two refusals, and its drafting for a party still here or once returned. The undo that must pass. On the desk: earning continues, no queue from Redeem, Offset or the automatic offset, a held card, no Today prompt, and every road open again on return. Nine mutations each turned the section red, a guard that refused everyone among them."]},{"v":"v616","d":"14 Sep 2026","t":"AN ASSOCIATE EARNS A WHOLE FREE UNIT PER RM 500 OF MARGIN BROUGHT, POOLED OVER THE WHOLE LEDGER","n":["<b>HIS RULINGS OF 13 AND 14 SEP 2026, THE SECOND OF THREE VERSIONS.</b> An associate's reward is one count now. Their own orders and their -R account pool as R1 and R2, since the two cannot be told apart, and every priced order of each customer they introduced adds to it as R3, one level only, from v615's map. A whole unit is earned for each RM 500 of that margin. There are no bands, no unit minimum and no part units, and a loss earns nothing rather than a debt. It is counted over the whole ledger, so REWARD_OPENING leaves the book: the recount replaced the 10 Aug openings rather than adding to them, and every unit ever taken is netted against it, the July units and the -R account included.","<b>WHERE IT LANDS, ON THE BOOK AS IT STANDS.</b> RM 9,042.27 of margin brought against 14 units taken. CS6-BS has RM 2,576.10 and 1 unit free to redeem. CN6-WM has RM 893.20 and is 1 unit ahead. CJ4-OKR, CS6-PER, CI4-OKR, CE4-AD and CR3-DAM stand level. Net nil, as the recount he approved said at RM 500. The card shows the two margin rows and their total, then earned, taken, left and the margin to the next unit; What counts, and the appointment line on Enter, say the one rule.","<b>UNTOUCHED.</b> The customer scheme: RM 975 and 12.5 unit, banded, from 10 Aug over its own openings. The Redeem and automatic offset roads, which read the same earned and taken. Oil, which has no reward.","<b>THE CHECKS.</b> A new section of ten assertions on fixtures (an order before 10 Aug, a resale, a redemption, a pending order, an introduced associate and their own introduction, RM 1,000 exactly, a loss), the redemption window rewritten to the whole ledger, the 11 Sep and v570 sections moved off the RM 450 figure, and the book back to twenty-eight keys. Twelve mutations each turned them red."]},{"v":"v615","d":"14 Sep 2026","t":"WHO INTRODUCED WHOM IS ONE MAP ON THE BOOK, AND CM4-MK SITS UNDER CS6-BS","n":["<b>HIS RULING OF 13 SEP 2026, THE FIRST OF THREE VERSIONS THAT CHANGE THE REWARD RULE.</b> An introduction came from two places that did not know about each other: the referral stamp an R3 entry puts on a row, and a network list inside R0_NETWORK that only the founder could hold. CM4-MK, whose first order went through CS6-BS-R on 15 Jul and who has bought direct ever since, had nowhere to go. INTRODUCTIONS on the book now holds every introduction no row carries, each with its reason, and introductions() reads the stamps and the book together. R0_NETWORK names the founder and nothing else.","<b>WHAT MOVES.</b> On salt, CS6-BS's card lists CM4-MK, and its first-order R3 reads RM 220. No reward balance moves: the earning rule is v616. On oil, the lists now match salt's, because a stamp is read off every row of both books rather than the priced rows of the book in view; CI4-OKR's oil R3 reads RM 130 from an introduced customer's first oil order.","<b>THE CHECKS.</b> Twelve assertions over both books: every declared and every stamped introduction reaches the map, no customer has two introducers, and every card lists exactly what the map gives it. Five mutations each turned the section red."]},{"v":"v614","d":"14 Sep 2026","t":"CH4-KS IS BACK ON THE MAP: THE GAZETTEER'S KS RENAME REACHES THE DESK","n":["<b>HIS EDIT OF 14 SEP 2026, MADE ON GITHUB.</b> geo/places.json renamed the key KLS to KS, following CH4-KS home: the code was re-keyed to CH4-KLS on 28 Aug and back to CH4-KS on 12 Sep, and from that day the desk read the suffix KS, found no such key, and left the party off the map. No sync ran with the edit, so the master's GEO block still said KLS, CI failed on the push, and the cloud fold, which runs the gate before it commits, would have stalled the next approval. The block is synced byte for byte and the stale example in the locality comment goes. The check that caught it is CI's own geosync --check, proved red by that failed run.","<b>FOUND, NOT CHANGED.</b> Three roster codes still carry a place key the gazetteer does not hold: CA7-JTR (JTR), and CE5-TBC and CB7-TBC (TBC, the directory's to-be-confirmed placeholder). A coordinate comes from the directory by hand through tools/geofetch.mjs."]},{"v":"v613","d":"13 Sep 2026","t":"THE NAMES PANEL'S UNREACHABLE UNLOCK HANDLER GOES, WITH THE VAULT STATE ONLY IT TOUCHED","n":["<b>A HANDLER NOTHING COULD REACH IS REMOVED.</b> renderReveal wired an Unlock button, #vunlock, that no template has rendered since the v217 lock came off, so its decrypt, its hold on the passphrase and its messages could never run. It goes, with the one renderReveal local only it read. Show names on the phone, Import old vault and the laptop's Save are untouched.","<b>AND THE VAULT STATE ONLY IT TOUCHED.</b> vaultPass, vaultFileStamp, vaultLocalStamp and vaultSaveArmed were written and never read: only that handler ever held the passphrase, and the two stamps lost their last reader at v612. vaultLoad still takes the vault it is served and vaultSave still posts an ISO updated stamp, so nothing behaves differently and no assertion was added. The build's privacy note no longer says lockVault drops a passphrase."]},
 
 {"v":"v612","d":"13 Sep 2026","t":"SIX R2 RESALES MOVE INTO THEIR ASSOCIATES' BUCKETS, AND ADD ID READS THE VAULT FRESH","n":["<b>SIX RESALES MOVE INTO THE ASSOCIATES' BUCKETS, APPROVED ON HIS WORD OF 13 SEP 2026.</b> The corrections drafted under his ruling of the same day are folded. CR3-DAM's 5 unit of 10 Sep goes to CR3-DAM-R, CS6-BS's 1 unit of 12 Sep to CS6-BS-R, and four of CN6-WM's single units, 11 to 13 Sep, to CN6-WM-R. Every row was paid in full and handed over, so nothing owed moves and the inventory does not move.","<b>ADD ID READS THE VAULT AGAIN AT THE MOMENT IT FILES A NAME.</b> The desk loaded the encrypted vault once, when it opened, and filing a name saved that copy back over the whole of the cloud's. A phone left open across a laptop reseed would have wiped every name the reseed added or re-keyed. The vault is now fetched fresh once the passphrase is given, and a read that fails registers nothing rather than filing over the copy in memory.","<b>NO BROWSER COPY OUTRANKS THE CLOUD'S, AND THE FOUR NEW ASSERTIONS WENT RED FIRST.</b> A saltNameVault key in a browser's storage, which nothing has written since the master came into this repo, made that device keep its own old vault ahead of every newer one. The read goes, with the two flags it set. With the old Add ID and the legacy read put back, all four new assertions failed; with a fresh read that falls back to memory, the two refusals failed. Restored, the suite passes."]},
 
@@ -6759,7 +6754,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='14 Sep 2026, 01:14 KL';
+const LAST_UPDATED='14 Sep 2026, 01:41 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -12462,7 +12457,7 @@ function phonePayloadBuild(){
       /* v616: toNext and band left this list. An associate's distance to the next unit is MARGIN since v616,
          and this payload carries no margin; the band is gone from their rule altogether. */
       }catch(e){}
-      try{ out.rewards=customerRewards().map(r=>({id:r.id,bought:r.rev,band:r.band,earned:r.earned,toNext:r.toNext})); }catch(e){}
+      try{ out.rewards=customerRewards().map(r=>({id:r.id,earned:r.earned,taken:r.taken})); }catch(e){}   // v618: no margin in this payload
       try{
         const {pts,miss,far}=mapPoints();
         if(pts.length){
@@ -13602,7 +13597,7 @@ const rebUnits=s=>s.rebate?(s.rebateKg!=null?+s.rebateKg:s.qty):0;
    v616, HIS RULING OF 13 SEP 2026: STILL ONE WINDOW ON BOTH SIDES, AND NOW IT IS THE WHOLE LEDGER.
    The associate's recount earns over all of history and replaced the openings, so every unit ever
    taken is netted against it, July's included. A unit taken on their -R account is theirs, as the
-   account is. Only an associate's balance reads this; the customer table nets nothing. */
+   account is. Since v618 the customer table nets it too, on the same whole-ledger window. */
 const rebateApplied=id=>+sales.filter(s=>s.rebate&&ownerOf(s.customer)===id).reduce((a,s)=>a+rebUnits(s),0).toFixed(2);
 /* what the free text appears to contain. The seed of the structured fields: every run
    can look at what this finds across the book and promote a pattern into its own box. */
@@ -15312,7 +15307,7 @@ function byCustomer(){const m={};pricedSales.filter(s=>isPerson(s.customer)).for
    rows dated within 1 day of it; later orders are excluded. */
 function firstOrderOf(cid){const rows=pricedSales.filter(s=>s.customer===cid&&s.total!=null).slice().sort((a,b)=>new Date(a.date)-new Date(b.date));if(!rows.length)return 0;const d0=new Date(rows[0].date);return rows.reduce((a,s)=>a+((new Date(s.date)-d0)/86400000<=1?(s.total||0):0),0);}
 /* HISTORY, RETIRED AT v280 AND KEPT FOR ITS REASONS. Nothing below describes a live rule until the
-   offset paragraph, which v585 and v616 still follow; the associate's rule is assocMargin (v616).
+   offset paragraph, which v585 and v616 still follow; the rule is rewardMargin (v616, v618).
    Free-unit rebate, R2 and R3 only. Own buys earn nothing. Two live triggers:
      MONEY  1 unit per REBATE.r2 resold, 1 per REBATE.r3 referred. Recurring.
      LOT    1 unit per single qualifying order of REBATE.lotUnits or more. Added 04 Aug 2026.
@@ -15344,9 +15339,8 @@ const REBATE={r2:500,r3:1500,lotUnits:5,lotFree:1};   /* RETIRED at v280, kept o
    surviving reference fails loudly rather than silently reading undefined. Nothing should
    read it: the scheme below replaces all four numbers. */
 /* ============ THE REWARD SCHEME (v280) ============
-   v616: FOR AN ASSOCIATE ALL OF THIS IS HISTORY, their two streams, their hurdle and their opening
-   included; their rule is a whole unit per RM 500 of margin over the whole ledger (assocMargin).
-   What follows still describes the CUSTOMER scheme's bands, window and openings.
+   ALL OF THIS IS HISTORY: v616 retired it for associates and v618 for customers. The one rule now is
+   a whole unit per RM 500 of margin over the whole ledger (rewardMargin), for everyone.
    ONE FORMULA, TWO HURDLES, FOUR BANDS.
 
      hurdle = base lot x cheapest unit cost x multiple
@@ -15376,111 +15370,47 @@ const REBATE={r2:500,r3:1500,lotUnits:5,lotFree:1};   /* RETIRED at v280, kept o
    the engine accrues from there. A negative opening is carried forward: it absorbs the
    next units earned rather than being written off. */
 const REWARD={
-  /* THE CUSTOMER SCHEME'S WINDOW, AND ONLY ITS OWN SINCE v616. It accrues from adoption, not over
-     all history, because the customer openings are the NET of every unit earned and taken under the
-     old rules, and re-earning against that history would pay twice for it. An associate's reward
-     stopped reading this date at v616: their recount runs over the whole ledger, on his ruling of
-     13 Sep 2026, and it replaced their openings rather than adding to them (see assocMargin). */
-  since:'2026-08-10',
-  /* v616, HIS RULING OF 14 SEP 2026: AN ASSOCIATE EARNS A WHOLE FREE UNIT PER RM 500 OF MARGIN BROUGHT.
-     `associate` holds that one figure and nothing else. The RM 450 and 5 unit below were the associate
-     figures from v576 to v615 and stay only as history; the customer pair is live and unchanged.
-     v576, HIS INSTRUCTION OF 11 SEP 2026: THE HURDLE IS STATED OFF THE BOARD, NOT DERIVED FROM
-     A LOT COST, AND IT CARRIES A UNIT MINIMUM BESIDE THE MONEY.
-       associate (R2 + R3)  RM 450, the 6.25 unit Tier 1 price less 10%, and at least 5 unit
-       customer  (R1)       RM 975, the 12.5 unit Tier 1 price plus 100, and at least 12.5 unit
-     Both figures are HIS, and both check against the engine: the board prints Tier 1 at RM 500
-     on 6.25 unit and RM 875 on 12.5 unit, so 500 less a tenth is 450 and 875 and a hundred is
-     975. They are STATED here rather than derived from the ladder, because a hurdle that moved
-     every time a lot landed would be a moving target for the party trying to cross it; the
-     derivation is recorded so it can be re-struck when he wants it re-struck.
-     THE UNIT MINIMUM REVERSES A v280 SENTENCE, DELIBERATELY. v280 said "Everything is measured
-     in MONEY, never in units", because the old unit trigger paid most to whoever was sold to
-     most cheaply. The money hurdle still decides IF and the margin band still decides HOW MUCH;
-     the unit minimum is a THIRD test that stops a hurdle being crossed on a handful of dear
-     units, and where it bites it scales the award by margin rather than refusing it, so the
-     v280 objection does not come back with it. See rewardEarn.
-     OIL HAS NO REWARD (his instruction, same day). Oil is absent from `stated` rather than
-     zeroed: rewardHurdle returns null, every earn path returns 0 and the tables say so. The two
-     figures are salt's Tier 1 and oil has no Tier 1 at all (LADDER_BY.oil is tier1:null), so
-     there was nothing to derive an oil pair from and a formula he did not choose is worse than
-     no scheme. */
-  stated:{salt:{associate:{margin:500}, customer:{rm:975, units:12.5}}},
-  /* the customer scheme's bands: margin on revenue, read from what the party has ACTUALLY delivered */
-  bands:[{min:50,units:1,label:'full'},{min:40,units:0.5,label:'half'},{min:30,units:0.25,label:'quarter'},{min:0,units:0,label:'none'}]
+  /* v618, HIS RULINGS OF 13 AND 14 SEP 2026: ONE RULE FOR EVERYONE. A whole free unit for every RM 500
+     of margin brought, counted over the whole ledger, for an associate and a customer alike. This one
+     figure is all the scheme states; oil is absent from it, so oil has no reward.
+     WHAT IT REPLACED, KEPT AS HISTORY. v576 to v615 stated revenue hurdles off the board with a unit
+     minimum (an associate RM 450 and 5 unit, the 6.25 unit Tier 1 of RM 500 less a tenth; a customer
+     RM 975 and 12.5 unit, the 12.5 unit Tier 1 of RM 875 plus a hundred), the margin band decided how
+     much (50% a unit, 40% a half, 30% a quarter), and both counted from 10 Aug over stated openings.
+     v616 moved associates onto margin brought over the whole ledger; v618 moved customers, on his
+     choice of the whole ledger over his earlier ruling that three customers' hand rewards before 10 Aug
+     settled their positions. */
+  stated:{salt:{margin:500}}
 };
-/* null means THIS BOOK HAS NO REWARD, which is oil. Every reader guards on it; none defaults to
-   salt's, because quietly lending one book another book's hurdle is how oil came to be priced off
-   salt's ladder before v405. */
-function rewardHurdle(prod,who){const S=REWARD.stated[prod];return (S&&S[who]&&S[who].rm!=null)?S[who].rm:null;}
-function rewardMinUnits(prod,who){const S=REWARD.stated[prod];return (S&&S[who])?S[who].units:null;}
-/* THE GROSS MARGIN THE BOARD EXPECTS ON q UNIT AT TIER 1, from the engine and never typed: the
-   desk prices nothing (hard rule 1), so this asks priceLadder the same question the board asks.
-   It reads the CURRENT book, which is safe because rewardEarn refuses any book with no stated
-   pair before it gets here. Tier 1 because the hurdles are struck off Tier 1. */
-function rewardGmExpected(q){
-  try{const t=priceLadder(q).tier1;
-      return (t&&t.total>0&&t.margin>0)?+(t.total*t.margin/100).toFixed(2):0;}catch(e){return 0;}
-}
-/* ONE EARN RULE, BOTH STREAMS AND BOTH TABLES (v576).
-     money below the hurdle            nothing, as before
-     money over AND units over         crossings x the band's units, as before
-     money over BUT units short        the same, scaled by the margin actually earned against the
-                                       margin the board expects on the minimum units at Tier 1
-   HIS RULE FOR THE SHORT CASE: "calculated based on the gross margin expected". So a party who
-   crosses RM 975 on 8 unit rather than 12.5 is not refused; they are paid what their margin is
-   worth against the RM 175 the board expects on 12.5 unit at Tier 1. THE SCALE IS CAPPED AT 1
-   and that is a decision: uncapped, a short seller at a very high margin would earn MORE than
-   the same money over the unit minimum, and the short path should never beat the full one. */
-function rewardEarn(prod,who,rev,qty,gm,band){
-  const H=rewardHurdle(prod,who);
-  if(H==null||!(rev>0)||!band||!(band.units>0))return 0;
-  const crossings=Math.floor(rev/H); if(crossings<1)return 0;
-  const min=rewardMinUnits(prod,who);
-  let scale=1;
-  if(min!=null&&qty<min-1e-9){
-    const exp=rewardGmExpected(min);
-    scale=exp>0?Math.min(1,Math.max(0,(gm||0)/exp)):0;
-  }
-  return +(crossings*band.units*scale).toFixed(2);
-}
-/* what is left to the next crossing, or null where the book has no hurdle at all */
-function rewardToNext(prod,who,rev){
-  const H=rewardHurdle(prod,who); if(H==null)return null;
-  return +(H-((rev||0)%H)).toFixed(2);
-}
-/* the hurdle as a reader sees it, stated once so five call sites cannot drift apart */
-function rewardHurdleTxt(prod,who){
-  const H=rewardHurdle(prod,who); if(H==null)return 'no reward on this book';
-  const m=rewardMinUnits(prod,who);
-  return fmt0(H)+(m!=null?' and '+units(m):'');
-}
-function rewardBand(pct){
-  for(const b of REWARD.bands){ if(pct>=b.min) return b; }
-  return REWARD.bands[REWARD.bands.length-1];
-}
-/* ============ v616: THE ASSOCIATE'S REWARD, HIS RULINGS OF 13 AND 14 SEP 2026 ============
-     what counts   every priced order on their own code and their -R account, R1 and R2 together because
-                   the two cannot be told apart, and every priced order of each customer they introduced,
-                   one level only (R3, from introductions()). A redemption is not an order.
+/* ============ THE REWARD, v616 FOR ASSOCIATES AND v618 FOR CUSTOMERS ============
+     what counts   every priced order on the party's own code and -R account, R1 and R2 together because
+                   the two cannot be told apart; for an associate, also every priced order of each customer
+                   they introduced, one level only (R3, from introductions()). A redemption is not an order,
+                   and neither is a written-off one (v618, his ruling of 14 Sep 2026: an order never paid
+                   earns nobody anything).
      margin        the row's total less its units at the row's own cost, as every margin on the desk
-     a unit        one for each whole RM 500 of that one pooled figure: no bands, no unit minimum, no part
-                   units, and a loss is not a debt, so nothing earned goes below zero
-     the window    the whole ledger, from their first order; the 10 Aug openings are gone, because the
-                   recount replaced them, and every unit ever taken is netted against it (rebateApplied)
-   A balance below zero is carried, and the next unit earned absorbs it. Oil has no reward. The functions
-   above serve the customer scheme alone, which v616 does not touch. */
-function assocUnitMargin(prod){const S=REWARD.stated[prod];return (S&&S.associate)?S.associate.margin:null;}
-function assocRuleTxt(prod){const m=assocUnitMargin(prod);return m==null?'no reward on this book':'a free unit per '+fmt0(m)+' of margin';}
-function assocMargin(id,refs){
+     a unit        one for each whole RM 500 of that figure: no bands, no minimum, no part units, and a
+                   loss is not a debt, so nothing earned goes below zero
+     the window    the whole ledger; every unit ever taken is netted against it (rebateApplied)
+   A balance below zero is carried, and the next unit earned absorbs it. null means THIS BOOK HAS NO
+   REWARD, which is oil; every reader guards on it rather than lending one book another's figure. */
+function rewardUnitMargin(prod){const S=REWARD.stated[prod];return (S&&S.margin!=null)?S.margin:null;}
+function rewardRuleTxt(prod){const m=rewardUnitMargin(prod);return m==null?'no reward on this book':'a free unit per '+fmt0(m)+' of margin';}
+function rewardMargin(id,refs){
   const mine={margin:0,n:0},intro={margin:0,n:0};
   pricedSales.forEach(s=>{
-    if(s.rebate)return;
+    if(s.rebate||txStat(s).order==='Default')return;
     const o=ownerOf(s.customer),t=o===id?mine:(refs.includes(o)?intro:null);
     if(t){t.margin+=(s.total||0)-(s.qty||0)*txUnitCost(s,wavgBuy);t.n++;}
   });
   mine.margin=+mine.margin.toFixed(2);intro.margin=+intro.margin.toFixed(2);
   return {mine,intro,total:+(mine.margin+intro.margin).toFixed(2)};
+}
+/* units earned on a margin figure, and the margin still to go to the next one; null where the book has none */
+function rewardUnits(total,unit){
+  if(unit==null)return {earned:0,toNext:null};
+  const earned=Math.max(0,Math.floor(total/unit));
+  return {earned,toNext:+((earned+1)*unit-total).toFixed(2)};
 }
 /* Every associate keeps the SAME three-stream ledger: Buy (R1/direct), Resell (R2/indirect),
    Refer (R3). R0 and R1 differ only in the numbers, not the structure. */
@@ -15541,9 +15471,7 @@ function networkStats(){
        unit, and null where the book has no reward, because `x % null` prints as "RM NaN". AWARDS
        stays on the book as history and is read by nothing: every grant in it was a real unit, and
        the recount already counts that unit where it was taken. */
-    const unit=assocUnitMargin(PROD), bm=assocMargin(id,refs);
-    const earned=unit==null?0:Math.max(0,Math.floor(bm.total/unit));
-    const toNext=unit==null?null:+((earned+1)*unit-bm.total).toFixed(2);
+    const unit=rewardUnitMargin(PROD), bm=rewardMargin(id,refs), {earned,toNext}=rewardUnits(bm.total,unit);
     const share=revTotal>0?(indirect+r3)/revTotal*100:0;
     const starN=share>=50?3:share>=30?2:share>=10?1:0;
     /* connections shown on the node badge: end customers sold to (R2) PLUS customers
@@ -15726,50 +15654,23 @@ function approachBoard(approach,owedBy,bm){
     </div>
   </div>`;
 }
-/* ============ THE CUSTOMER SIDE OF THE REWARD SCHEME (v280) ============
-   Same formula as an associate, one hurdle up: a customer clears base lot x cheapest cost x 20,
-   which is RM940 on salt and RM1,400 on oil, against RM470 and RM700 for someone bringing
-   business in. He buys for himself, so he is paid less for the same money than a man who
-   brings you a stranger, which is the whole point of having two hurdles.
-
-   THE BAND STILL DECIDES HOW MUCH. Turnover says who is big and margin says who is worth
-   having, and on this book they rank almost nothing alike. Rewarding turnover alone would pay
-   most to whoever was sold to most cheaply.
-
-   OPENINGS ARE STATED, exactly as they are for associates. Three customers were rewarded by
-   hand before the scheme existed, and those rewards settle their positions: CE4-CHE took half
-   a unit extra on the same money, CM4-MK took a rate cut worth about nine tenths of a unit for
-   crossing RM1,000, and CJ4-BJ took goodwill. A smaller amount than the rule would give still
-   counts as settled, on his instruction, so none of the three is owed a balance. */
-/* CUSTOMER_REWARD_OPENING: declared in the BOOK block near the top of this script, generated from ledger/book.json (v339). */
+/* ============ THE CUSTOMER SIDE OF THE REWARD (v618) ============
+   HIS RULINGS OF 14 SEP 2026. A customer earns as an associate does: a whole free unit per RM 500 of
+   margin on their own priced orders, over the whole ledger, and a written-off order earns nothing. He
+   chose the whole ledger over his earlier ruling that three customers rewarded by hand before 10 Aug
+   (CE4-CHE half a unit extra, CM4-MK a rate cut worth about nine tenths of a unit, CJ4-BJ goodwill) were
+   settled, so only the units the book records as taken are netted. The balance is meant mostly for
+   covering a lower margin on an order he marks, at the salt's cost, and a whole unit can be redeemed on
+   his word. An associate is not on this table: their buying is counted on their own card. */
 function customerRewards(){
-  const assoc=new Set(associateIds());
-  const hurdle=rewardHurdle(PROD,'customer');
-  if(hurdle==null)return [];   // v576: oil has no reward, so it has no table rather than an empty hurdle
-  const by={};
-  pricedSales.forEach(s=>{
-    if(s.date<REWARD.since||s.rebate||s.goodwill||s.rev==='R2')return;
-    const id=s.customer; if(assoc.has(ownerOf(id))||isResellAcct(id))return;
-    const r=by[id]=by[id]||{id:id,rev:0,cogs:0,qty:0,n:0};
-    r.rev+=(s.total||0); r.cogs+=(s.qty||0)*txUnitCost(s,wavgBuy); r.qty+=(s.qty||0); r.n++;
-  });
-  return Object.values(by).map(r=>{
-    r.rev=+r.rev.toFixed(2); r.margin=+(r.rev-r.cogs).toFixed(2);
-    r.pct=r.rev>0?+((r.margin/r.rev)*100).toFixed(1):0;
-    const band=rewardBand(r.pct);
-    r.band=band.label; r.bandUnits=band.units;
-    r.crossed=Math.floor(r.rev/hurdle);
-    r.opening=(CUSTOMER_REWARD_OPENING[r.id]!=null)?CUSTOMER_REWARD_OPENING[r.id]:0;
-    /* v576: the same one earn rule the associate table uses, so a customer and an associate
-       buying identically are paid identically. `short` says the unit minimum bit, which is the
-       only reason a crossed hurdle can now pay under its band. */
-    r.min=rewardMinUnits(PROD,'customer');
-    r.short=(r.min!=null&&r.qty<r.min-1e-9&&r.crossed>0);
-    r.earned=+(rewardEarn(PROD,'customer',r.rev,r.qty,r.margin,band)+r.opening).toFixed(2);
-    r.toNext=rewardToNext(PROD,'customer',r.rev);
-    r.hurdle=hurdle;
-    return r;
-  }).sort((a,b)=>b.rev-a.rev);
+  const unit=rewardUnitMargin(PROD); if(unit==null)return [];   // oil has no reward, so it has no table
+  const assoc=new Set(associateIds()), ids=new Set();
+  const add=s=>{const o=ownerOf(s.customer);if(!assoc.has(o)&&!isResellAcct(s.customer))ids.add(o);};
+  pricedSales.forEach(add); sales.forEach(s=>{if(s.rebate)add(s);});
+  return [...ids].map(id=>{
+    const m=rewardMargin(id,[]).mine, u=rewardUnits(m.margin,unit), taken=rebateApplied(id);
+    return {id,n:m.n,margin:m.margin,earned:u.earned,toNext:u.toNext,taken,free:+(u.earned-taken).toFixed(2)};
+  }).filter(r=>r.n>0||r.taken>0).sort((a,b)=>b.margin-a.margin);
 }
 function tabConcentration(){
   const c=concentration();const bm=custBadges();
@@ -15838,16 +15739,19 @@ function tabConcentration(){
      the hurdle it is measured against was invisible too. Both are fields now: the band
      column carries its own units, and the hurdle is the card's subtitle, where a reader
      looking at "To next" will find what the distance is to. */
-  const cr=customerRewards(), crReady=cr.filter(r=>r.earned>0.009);
-  const crBody=cr.length?cr.map(r=>`<tr><td class="l mono">${ID(r.id)}</td><td>${fmt0(r.rev)}</td><td>${r.pct}%</td><td class="l">${r.band}${r.bandUnits>0?` <span style="color:var(--dim)">&middot; ${units(r.bandUnits)}</span>`:` <span style="color:var(--dim)">&middot; nothing</span>`}</td><td>${r.earned>0.009?`<b style="color:var(--gold)">${units(r.earned)}</b>`:'&mdash;'}${r.short?` <span class="sbadge bthin" title="${units(r.qty)} bought against a ${units(r.min)} minimum, so the crossing pays on the margin it made rather than in full">${units(r.qty)} of ${units(r.min)}</span>`:''}</td><td class="mono" style="color:var(--dim)">${fmt0(r.toNext)}</td></tr>`).join('')
-    :`<tr><td class="l" colspan="6" style="color:var(--dim)">Nothing since ${REWARD.since}. The scheme counts from the day it was adopted, because the opening positions already hold everything before it.</td></tr>`;
+  /* v618: THE BAND COLUMN WENT WITH THE BANDS. Margin, the units it has earned, the units taken
+     against them, what is left, and the margin still to go to the next unit: the same five fields
+     an associate's card carries, because it is the same rule. */
+  const cr=customerRewards(), crReady=cr.filter(r=>r.free>0.009);
+  const crBody=cr.length?cr.map(r=>`<tr><td class="l mono">${ID(r.id)}</td><td>${fmt0(r.margin)}</td><td>${units(r.earned)}</td><td>${units(r.taken)}</td><td>${r.free>0.009?`<b style="color:var(--gold)">${units(r.free)} free</b>`:r.free<-0.009?`${units(-r.free)} drawn ahead`:'none'}</td><td class="mono" style="color:var(--dim)">${fmt0(r.toNext)}</td></tr>`).join('')
+    :`<tr><td class="l" colspan="6" style="color:var(--dim)">${rewardUnitMargin(PROD)==null?'No reward on this book.':'No customer has a priced order yet.'}</td></tr>`;
   /* v401: the sub lost "the band sets the units", which the Band pays column states per row
      and in units. NOT for width: this header measures 332px inside a 325px box at 375px, and
      the 7px is the .sub rule at :438, a full-width BUTTON style that lands on this span by
      cascade (width:100% plus the 7px margin-left .cardh .sub adds). That is desk-wide, on
      every card header with a sub, so it is not fixed from this view. */
-  const crCard=`<div class="card"><div class="cardh">&#127873; Customer rewards <span class="sub">since ${REWARD.since} &middot; ${rewardHurdleTxt(PROD,'customer')} a hurdle</span>${crReady.length?`<span class="sub" style="color:var(--gold)">${crReady.map(r=>ID(r.id)).join(', ')} waiting</span>`:''}</div>
-    <table><thead><tr><th class="l">Customer</th><th>Bought</th><th>Margin</th><th class="l">Band pays</th><th>Earned</th><th>To next</th></tr></thead><tbody>${crBody}</tbody></table></div>`;
+  const crCard=`<div class="card"><div class="cardh">&#127873; Customer rewards <span class="sub">${rewardRuleTxt(PROD)}, whole ledger</span>${crReady.length?`<span class="sub" style="color:var(--gold)">${crReady.map(r=>ID(r.id)).join(', ')} holding</span>`:''}</div>
+    <table><thead><tr><th class="l">Customer</th><th>Margin</th><th>Earned</th><th>Taken</th><th>Left</th><th>To next</th></tr></thead><tbody>${crBody}</tbody></table></div>`;
   /* ============ v385: DO, THEN WATCH, THEN STUDY ============
      The order was rewards, tiles, read, two charts, the approach calendar, turned-away, the
      database. The calendar is the only thing on this part that asks for an ACTION, and the
@@ -16152,7 +16056,7 @@ function resellerCard(r){
   const rewardTbl=r.unit==null?'':`<table style="margin-top:10px"><thead><tr><th class="l">Margin brought, whole ledger</th><th>Orders</th><th>Margin</th></tr></thead><tbody>
     <tr><td class="l">Own buying and resale <span style="color:var(--dim)">R1 + R2</span></td><td>${r.nMine}</td><td>${fmt0(r.marginMine)}</td></tr>
     <tr><td class="l">Every order of customers introduced <span style="color:var(--dim)">R3</span></td><td>${r.nIntro}</td><td>${fmt0(r.marginIntro)}</td></tr>
-    <tr class="tot"><td class="l">Total, ${assocRuleTxt(PROD)}</td><td>${r.nMine+r.nIntro}</td><td>${fmt0(r.marginTotal)}</td></tr>
+    <tr class="tot"><td class="l">Total, ${rewardRuleTxt(PROD)}</td><td>${r.nMine+r.nIntro}</td><td>${fmt0(r.marginTotal)}</td></tr>
   </tbody></table>
   <table style="margin-top:8px"><thead><tr><th class="l">Units</th><th>Earned</th><th>Taken</th><th>Left</th><th>To the next</th></tr></thead><tbody>
     <tr class="tot"><td class="l">Balance</td><td>${units(r.earned)}</td><td>${units(applied)}</td><td>${freeUnits>0.009&&held?`${units(freeUnits)} held`:freeUnits>0.009?`<b style="color:var(--gold)">${units(freeUnits)} free</b>`:freeUnits<-0.009?`${units(-freeUnits)} drawn ahead`:'none'}</td><td class="mono" style="color:var(--dim)">${fmt0(r.toNext)}</td></tr>
@@ -16260,7 +16164,7 @@ function tabNetwork(){
        book. That is the storyboard's tell for documentation rather than a dashboard. Nothing
        is deleted to fold it, and the summary carries the two figures a reader comes back for,
        so shut it still answers what a hurdle is. -->
-  <details class="obsec" style="margin-top:22px"><summary>What counts, and why <span class="q">associate ${assocRuleTxt(PROD)} &middot; customer hurdle ${rewardHurdleTxt(PROD,'customer')}</span></summary>
+  <details class="obsec" style="margin-top:22px"><summary>What counts, and why <span class="q">${rewardRuleTxt(PROD)}, associates and customers alike</span></summary>
   <div class="card">
     <!-- v401: the sub went with the fold. "What each counts and what it earns" is what the
          summary above now says, with the two hurdle figures in it, and a header that restates
@@ -16270,7 +16174,7 @@ function tabNetwork(){
       <div class="nstream nv">
         <div class="nsh"><span class="tag pendingt">R1</span> Bought from you</div>
         <div class="nsw">His own orders, priced.</div>
-        <div class="nswhy">A partner who is also a buyer. Pooled with R2 and R3 into one count of margin, <b>${assocRuleTxt(PROD)}</b>.</div>
+        <div class="nswhy">A partner who is also a buyer. Pooled with R2 and R3 into one count of margin, <b>${rewardRuleTxt(PROD)}</b>.</div>
       </div>
       <div class="nstream ng">
         <div class="nsh"><span class="tag paid">R2</span> Sold for you</div>
@@ -16297,12 +16201,14 @@ function tabNetwork(){
          view at all. The hurdle decides IF, the margin band decides HOW MUCH, and under the
          floor a crossed hurdle pays nothing. Every card here prints a band label and the
          Customers tab prints a Band column; neither said what a band was worth, because the
-         one paragraph that did was a .dsc and stripMethod deletes those. Chips survive. -->
+         one paragraph that did was a .dsc and stripMethod deletes those. Chips survive.
+         v618: THE BAND CHIPS WENT WITH THE BANDS. One rule remains, and the summary of this fold
+         states it for associates and customers alike. -->
     <div class="neq" style="margin:11px 0 0;padding-top:11px">
-      <span class="nchip">For a customer, the margin band decides how much</span>
-      <span class="nop">:</span>
-      ${REWARD.bands.filter(b=>b.units>0).map(b=>`<span class="nchip ng">${b.min}% and over &rarr; ${units(b.units)}</span>`).join('')}
-      <span class="nchip" style="color:var(--dim)">under ${REWARD.bands.filter(b=>b.units>0).slice(-1)[0].min}% &rarr; nothing</span>
+      ${rewardUnitMargin(PROD)==null?`<span class="nchip" style="color:var(--dim)">no reward on this book</span>`:`<span class="nchip ngold">every ${fmt0(rewardUnitMargin(PROD))} of margin</span>
+      <span class="nop">&rarr;</span>
+      <span class="nchip ng">one whole free unit</span>
+      <span class="nchip" style="color:var(--dim)">whole ledger &middot; written-off orders earn nothing</span>`}
     </div>
     <div class="neq">
       <span class="nchip nv">R1 Bought</span>
@@ -18638,12 +18544,11 @@ function wbPreview(){
        pane. */
     const apl=addIdPlan(code,kind);
     const capA=creditCapFor(wbProdVal(),'associate'),capR=creditCapFor(wbProdVal(),'retail');
-    /* v616: ONE POOL REPLACES THE TWO HURDLES. An appointed associate's own buying, resale and every
-       order of a customer they introduce earn together, a whole unit per RM 500 of margin, where as a
-       customer their buying crossed the customer hurdle. Both figures are read here rather than
-       restated, so a change to REWARD.stated moves this sentence with it, and a book with no reward
-       says so once instead of quoting two absent figures. */
-    const stand=apl.stream?`<div class="dsc" style="margin-top:6px">They join the associate bench on the <b>${apl.stream}</b> stream${apl.resell?`, and <b>${esc(apl.resell)}</b> joins the roster as their resell account, so an R2 sale with no named end buyer has somewhere to book`:''}. Their credit cap on the ${esc(wbProdName().toLowerCase())} book goes to <b>${units(capA)}</b> from ${units(capR)}.${assocUnitMargin(wbProdVal())==null?' Nothing on this book earns a reward.':` Everything they bring counts in one pool that earns <b>${assocRuleTxt(wbProdVal())}</b>: their own buying, their resale, and every order of a customer they introduce. That replaces the ${rewardHurdleTxt(wbProdVal(),'customer')} customer hurdle, so their buying moves off the customer reward table onto their own card.`}</div>`:'';
+    /* v618: ONE RULE FOR BOTH SIDES. A customer's own buying earns a whole unit per RM 500 of margin, and
+       appointment adds their resale and every order of a customer they introduce to the same pool. The
+       figure is read here rather than restated, so a change to REWARD.stated moves this sentence with it,
+       and a book with no reward says so once. */
+    const stand=apl.stream?`<div class="dsc" style="margin-top:6px">They join the associate bench on the <b>${apl.stream}</b> stream${apl.resell?`, and <b>${esc(apl.resell)}</b> joins the roster as their resell account, so an R2 sale with no named end buyer has somewhere to book`:''}. Their credit cap on the ${esc(wbProdName().toLowerCase())} book goes to <b>${units(capA)}</b> from ${units(capR)}.${rewardUnitMargin(wbProdVal())==null?' Nothing on this book earns a reward.':` Their own buying already earns <b>${rewardRuleTxt(wbProdVal())}</b>; from now their resale and every order of a customer they introduce join the same pool, and it moves off the customer reward table onto their own card.`}</div>`:'';
     /* v571: "as a" TOOK AN ARTICLE THE LABELS DO NOT FIT. ADDID_KIND_LABEL holds whole phrases,
        so this read "as a Associate, resells for you (R2)" and, worse, "as a An associate's end
        buyer". The article cannot be chosen from the first letter either, since the downstream and

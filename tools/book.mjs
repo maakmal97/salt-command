@@ -43,8 +43,7 @@ export const LEDGER = {
   roster: "roster", associates: "associates", PEOPLE: "PEOPLE",
   /* v615: who introduced whom where no row carries the referral stamp; a fact on his word */
   INTRODUCTIONS: "INTRODUCTIONS",
-  /* v616: REWARD_OPENING retired. The associate recount over the whole ledger replaced the openings. */
-  CUSTOMER_REWARD_OPENING: "CUSTOMER_REWARD_OPENING",
+  /* v616 and v618: REWARD_OPENING and CUSTOMER_REWARD_OPENING retired; the whole-ledger recounts replaced them. */
   AWARDS: "AWARDS",
   supplierQuote: "supplierQuote", oilQuote: "oilQuote",
   COST_RULE: "COST_RULE",

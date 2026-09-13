@@ -1,5 +1,16 @@
 [
  {
+  "v": "v618",
+  "d": "14 Sep 2026",
+  "t": "A CUSTOMER EARNS AS AN ASSOCIATE DOES, AND A WRITTEN-OFF ORDER EARNS NOBODY ANYTHING",
+  "n": [
+   "<b>HIS RULINGS OF 14 SEP 2026, THE FIRST OF THREE CUSTOMER VERSIONS.</b> One rule now serves both sides: a whole free unit per RM 500 of margin brought, over the whole ledger. A customer counts their own priced orders. The RM 975 and 12.5 unit hurdle, the margin bands, the 10 Aug window and CUSTOMER_REWARD_OPENING are gone, and REWARD states the one figure and nothing else. He chose the whole ledger over his earlier ruling that three customers rewarded by hand before 10 Aug were settled (CE4-CHE, CM4-MK, CJ4-BJ), so only the units the book records as taken are netted.",
+   "<b>AN ORDER NEVER PAID EARNS NOTHING,</b> for a customer or an associate. On the book that is the two written-off orders of CA4-DAM, RM 138 of margin, which leaves them short of a unit. No associate balance moves.",
+   "<b>WHERE IT LANDS.</b> Thirty customers. CM4-MK holds 2 unit, CE4-CHE 1, CM6-HCM 1, and CJ4-BJ 0.44 after the 0.56 they took: 4.44 unit owed. The Customers card shows margin, earned, taken, left and the margin to the next unit, as an associate card does. The band chips on What counts gave way to the one rule. Covering a lower margin at entry is v619, and a customer Redeem is v620.",
+   "<b>THE CHECKS.</b> The 11 Sep section that pinned the old hurdle is retired with it. A new section of eight assertions on fixtures: a customer order before 10 Aug, one after, a written-off order, a quarter unit taken, an associate held short of a unit by their own written-off order, the card, the payload and oil. The redemption window, v570 and v616 sections were moved onto the new names. Nine mutations each turned the section red."
+  ]
+ },
+ {
   "v": "v617",
   "d": "14 Sep 2026",
   "t": "A DEPARTED ASSOCIATE KEEPS EARNING, AND NOTHING IS REDEEMED UNTIL THEY RETURN",
