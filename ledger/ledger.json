@@ -1,6 +1,6 @@
 {
- "v": "v605",
- "stamped": "12 Sep 2026, 22:28 KL",
+ "v": "v607",
+ "stamped": "13 Sep 2026, 15:59 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -41,7 +41,7 @@
     "stated": 50
    }
   },
-  "STATED_STOCK": 20.19,
+  "STATED_STOCK": 19.19,
   "COUNT_ON": {
    "salt": "2026-09-08",
    "oil": "2026-09-09"
@@ -3423,14 +3423,31 @@
     "qty": 2,
     "total": 220,
     "cost": 88,
-    "cash": 110,
+    "cash": 220,
     "delivery": 18,
     "handover": "delivered",
     "date": "2026-09-09",
     "deliveredQty": 2,
     "deliveredOn": "2026-09-09",
     "note": "<b>SALT SELL DATED 09 SEP, DELIVERED IN FULL WITH HALF THE MONEY OUTSTANDING.</b> SELL to CM4-MK, 2 unit for RM220, RM202 goods and RM18 delivery, RM110 cash in and 2 unit delivered on 09 Sep, so RM110 stays open. The total meets the RM220 ask for 2 unit and stands above the RM112.43 floor, under the RM290 ceiling. RM110 a unit is CM4-MK's median across 8 orders on a range of RM90 to RM110, with nothing outstanding before, no units on credit and nothing defaulted. Cost is the inventory's own RM44 a unit, RM88 on the order. The drafter flagged the advance against a credit cap of 1: the figures show 2 unit gone out on credit, so the cap question is not settled here.",
-    "rid": "s143"
+    "rid": "s143",
+    "amend": [
+     {
+      "date": "2026-09-09",
+      "kind": "Fulfilment",
+      "cash": 110,
+      "kg": 2,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-09-13",
+      "kind": "Fulfilment",
+      "cash": 110,
+      "kg": 0,
+      "note": "<b>FULFILMENT OF RM110 ON S143, WHICH SETTLES THE ORDER.</b> CM4-MK's order of 09 Sep, 2 unit for RM220 with RM202 goods and RM18 delivery, stood delivered in full with RM110 cash in and RM110 open. RM110 and 0 unit move on 13 Sep against RM110 and 0 unit outstanding, leaving RM0 and 0 unit, which answers the drafter's single flag that this settles in full. The row is not recomputed in the note: ovAmend in the master applies the fulfilment. His median rate is RM101 a unit over a RM90 to RM110 range, nothing defaulted, and his outstanding of RM110 with 1 unit on credit goes to nil."
+     }
+    ],
+    "paidOn": "2026-09-13"
    },
    {
     "customer": "CE4-CHE",
@@ -3653,6 +3670,22 @@
     "downstream": "CN6-WM-R",
     "note": "<b>SALT SELL DATED 12 SEP, PAID IN FULL AND DELIVERED IN FULL, AS AN R2 DOWNSELL.</b> Booked to CN6-WM with downstream CN6-WM-R, 1 unit for RM130 of which <b>RM110 is the goods and RM20 the delivery</b>, RM130 cash in and 1 unit handed over on 12 Sep, so nothing stays outstanding. The goods rate is RM110 a unit and clears the RM56.21 floor for 1 unit. Cost is RM44, so RM44 against RM110 of goods at 60.0%; the drafter's own line reads the rate and the margin on the full RM130, delivery included, which is the figure the Approve card shows. <b>Two flags.</b> The row books to CN6-WM as an R2, so CN6-WM-R is not the counterparty and gets no statement from it: that is what a downsell is and it is not answered. And CN6-WM's usual rate is about RM100 a unit across 7 orders, so RM110 sits 10% above it, which is in his favour.",
     "rid": "s157"
+   },
+   {
+    "customer": "CN6-WM",
+    "qty": 1,
+    "total": 130,
+    "cost": 44,
+    "cash": 130,
+    "handover": "collected",
+    "date": "2026-09-13",
+    "deliveredQty": 1,
+    "deliveredOn": "2026-09-13",
+    "paidOn": "2026-09-13",
+    "rev": "R2",
+    "downstream": "CN6-WM-R",
+    "note": "<b>SALT SELL DATED 13 SEP, PAID IN FULL AND COLLECTED IN FULL, AS AN R2 DOWNSELL.</b> Booked to CN6-WM with downstream CN6-WM-R, 1 unit for RM130, all of it goods, RM130 cash in and 1 unit handed over on 13 Sep, so nothing new stays outstanding. The rate clears the RM56.21 floor and the RM120 ask for 1 unit and sits under the RM150 ceiling. Cost is the inventory's own RM44 a unit. <b>Two flags.</b> The row books to CN6-WM as an R2, so CN6-WM-R is not the counterparty and gets no statement from it, which is what a downsell is and is not answered. And the drafter reads his usual rate as about RM105 a unit across 8 orders, 23.8% below this one; the dossier's own median is RM110 and his range runs RM75 to RM130, so RM130 is his top mark. RM110 stays open from earlier, 1 unit on credit against a cap of 2.",
+    "rid": "s158"
    }
   ],
   "contacts": [
@@ -3983,9 +4016,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-12T14:31:00.000Z",
+  "QUEUE_COMMITTED": "2026-09-13T04:48:30.210Z",
   "PRICING": {
-   "takenAt": "2026-09-12T14:28:47.712Z",
+   "takenAt": "2026-09-13T07:59:47.129Z",
    "sizes": [
     0.5,
     1,
@@ -4084,8 +4117,8 @@
          "date": "2026-09-09",
          "sup": "SA5-BTR"
         },
-        "days": 37,
-        "sinceLot": 46
+        "days": 38,
+        "sinceLot": 47
        },
        "lockBase": {
         "lockedOn": "2026-08-06",
@@ -4139,15 +4172,15 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0.4
+         "v": 0.3870967741935484
         }
        },
        "attrib": 1,
        "shrinkRate": 0.06733921815889031,
        "avgDel": {
-        "n": 137,
-        "kg": 347.95,
-        "mean": 2.5398
+        "n": 138,
+        "kg": 348.95,
+        "mean": 2.5286
        }
       },
       "policy": {
@@ -4293,8 +4326,8 @@
          "date": "2026-09-08",
          "sup": "SP7-PUD"
         },
-        "days": 37,
-        "sinceLot": 37
+        "days": 38,
+        "sinceLot": 38
        },
        "lockBase": {
         "lockedOn": "2026-08-06",
@@ -4441,11 +4474,11 @@
      ]
     }
    },
-   "v": "v605"
+   "v": "v607"
   },
   "OPEN": {
-   "at": "2026-09-12T14:28:47.762Z",
-   "count": 10,
+   "at": "2026-09-13T07:59:47.226Z",
+   "count": 9,
    "byKey": {
     "CE4-CHE|2026-09-12|150": {
      "d": "2026-09-12",
@@ -4462,7 +4495,7 @@
      "deliveredOn": "2026-09-12",
      "handover": "delivered",
      "key": "CE4-CHE|2026-09-12|150",
-     "age": 0,
+     "age": 1,
      "exp": 150
     },
     "CH6-SET|2026-09-11|120": {
@@ -4510,23 +4543,6 @@
      "handover": "delivered",
      "key": "CF5-WM|2026-09-11|110"
     },
-    "CM4-MK|2026-09-09|220": {
-     "d": "2026-09-09",
-     "p": "CM4-MK",
-     "dir": "S",
-     "q": 2,
-     "t": 220,
-     "cash": 110,
-     "mv": 2,
-     "st": "dueMoney",
-     "oweRM": 110,
-     "rid": "s143",
-     "deliveredOn": "2026-09-09",
-     "handover": "delivered",
-     "key": "CM4-MK|2026-09-09|220",
-     "age": 3,
-     "exp": 110
-    },
     "CJ4-BJ|2026-09-07|850": {
      "d": "2026-09-07",
      "p": "CJ4-BJ",
@@ -4542,7 +4558,7 @@
      "deliveredOn": "2026-09-07",
      "handover": "delivered",
      "key": "CJ4-BJ|2026-09-07|850",
-     "age": 5,
+     "age": 6,
      "exp": 204
     },
     "CA4-DAM|2026-09-02|160": {
@@ -4560,7 +4576,7 @@
      "handover": "collected",
      "defaulted": true,
      "key": "CA4-DAM|2026-09-02|160",
-     "age": 10,
+     "age": 11,
      "exp": 0
     },
     "CN6-WM|2026-08-30|110": {
@@ -4577,8 +4593,8 @@
      "deliveredOn": "2026-08-30",
      "handover": "delivered",
      "key": "CN6-WM|2026-08-30|110",
-     "age": 13,
-     "exp": 55
+     "age": 14,
+     "exp": 27.5
     },
     "CA4-DAM|2026-08-28|100": {
      "d": "2026-08-28",
@@ -4595,7 +4611,7 @@
      "handover": "collected",
      "defaulted": true,
      "key": "CA4-DAM|2026-08-28|100",
-     "age": 15,
+     "age": 16,
      "exp": 0
     },
     "SF6-KLC|2026-07-08|750": {
@@ -4616,12 +4632,12 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 20.19,
-     "free": 20.19,
+     "onHand": 19.19,
+     "free": 19.19,
      "owedOut": 0,
-     "coverDays": 3.9,
-     "rate": 5.23,
-     "owedToYou": 752,
+     "coverDays": 3.6,
+     "rate": 5.3,
+     "owedToYou": 642,
      "promised": 11.5,
      "short": 0
     },
@@ -4641,7 +4657,7 @@
     "salt": "2026-09-08",
     "oil": "2026-09-09"
    },
-   "v": "v605"
+   "v": "v607"
   }
  }
 }

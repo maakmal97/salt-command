@@ -1,5 +1,14 @@
 [
  {
+  "v": "v607",
+  "d": "13 Sep 2026",
+  "t": "A THIRD RM130 UNIT TO CN6-WM, AND CM4-MK CLEARS THE LAST RM110",
+  "n": [
+   "<b>TWO ROWS FOLDED, ONE SALE AND ONE FULFILMENT.</b> CN6-WM takes 1 unit of salt for RM130, all of it goods, paid and collected on 13 Sep, booked as an R2 with downstream CN6-WM-R. The rate clears the RM56.21 floor and the RM120 ask for 1 unit and sits at the top of his RM75 to RM130 range. Cost is the inventory's own RM44 a unit, so nothing is restated.",
+   "<b>THE FULFILMENT CLOSES CM4-MK.</b> RM110 cash lands on 13 Sep against s143 of 09 Sep, 2 unit for RM220, and settles it in full with no unit left to move. The drafter leaves the row to ovAmend in the master rather than recomputing it here. The inventory reads 20.19 unit stated against a salt count of 08 Sep, above the reorder mark of 15, with 11.5 unit promised and nothing owed out."
+  ]
+ },
+ {
   "v": "v606",
   "d": "12 Sep 2026",
   "t": "A DRAFT'S MARGIN IS STRUCK ON THE GOODS, BECAUSE THE DELIVERY IS A PASS-THROUGH",
