@@ -1,6 +1,6 @@
 {
- "v": "v615",
- "stamped": "14 Sep 2026, 00:51 KL",
+ "v": "v616",
+ "stamped": "14 Sep 2026, 01:08 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -4036,13 +4036,6 @@
     "note": "His ruling of 13 Sep 2026: the first order went through CS6-BS-R on 15 Jul, and every order since has been direct."
    }
   ],
-  "REWARD_OPENING": {
-   "CJ4-OKR": 0,
-   "CS6-BS": 0,
-   "CS6-PER": 0,
-   "CN6-WM": -1,
-   "CI4-OKR": -1
-  },
   "CUSTOMER_REWARD_OPENING": {
    "CE4-CHE": 0,
    "CM4-MK": 0,
@@ -4158,7 +4151,7 @@
   ],
   "QUEUE_COMMITTED": "2026-09-13T14:18:53.911Z",
   "PRICING": {
-   "takenAt": "2026-09-13T16:51:53.148Z",
+   "takenAt": "2026-09-13T17:08:37.771Z",
    "sizes": [
     0.5,
     1,
@@ -4614,10 +4607,10 @@
      ]
     }
    },
-   "v": "v615"
+   "v": "v616"
   },
   "OPEN": {
-   "at": "2026-09-13T16:51:53.192Z",
+   "at": "2026-09-13T17:08:37.816Z",
    "count": 10,
    "byKey": {
     "CM4-MK|2026-09-13|330": {
@@ -4814,7 +4807,7 @@
     "salt": "2026-09-08",
     "oil": "2026-09-09"
    },
-   "v": "v615"
+   "v": "v616"
   }
  }
 }

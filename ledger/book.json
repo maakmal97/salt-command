@@ -384,13 +384,6 @@
       }
     ]
   },
-  "REWARD_OPENING": {
-    "CJ4-OKR": 0,
-    "CS6-BS": 0,
-    "CS6-PER": 0,
-    "CN6-WM": -1,
-    "CI4-OKR": -1
-  },
   "CUSTOMER_REWARD_OPENING": {
     "CE4-CHE": 0,
     "CM4-MK": 0,

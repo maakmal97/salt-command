@@ -5399,13 +5399,6 @@ const PEOPLE={
     }
   ]
 };
-const REWARD_OPENING={
-  "CJ4-OKR": 0,
-  "CS6-BS": 0,
-  "CS6-PER": 0,
-  "CN6-WM": -1,
-  "CI4-OKR": -1
-};
 const CUSTOMER_REWARD_OPENING={
   "CE4-CHE": 0,
   "CM4-MK": 0,
@@ -6302,7 +6295,7 @@ const quoteFor=p=>{const f=QUOTES[p||PROD];return f?f():null;};
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{"v":"v615","d":"14 Sep 2026","t":"WHO INTRODUCED WHOM IS ONE MAP ON THE BOOK, AND CM4-MK SITS UNDER CS6-BS","n":["<b>HIS RULING OF 13 SEP 2026, THE FIRST OF THREE VERSIONS THAT CHANGE THE REWARD RULE.</b> An introduction came from two places that did not know about each other: the referral stamp an R3 entry puts on a row, and a network list inside R0_NETWORK that only the founder could hold. CM4-MK, whose first order went through CS6-BS-R on 15 Jul and who has bought direct ever since, had nowhere to go. INTRODUCTIONS on the book now holds every introduction no row carries, each with its reason, and introductions() reads the stamps and the book together. R0_NETWORK names the founder and nothing else.","<b>WHAT MOVES.</b> On salt, CS6-BS's card lists CM4-MK, and its first-order R3 reads RM 220. No reward balance moves: the earning rule is v616. On oil, the lists now match salt's, because a stamp is read off every row of both books rather than the priced rows of the book in view; CI4-OKR's oil R3 reads RM 130 from an introduced customer's first oil order.","<b>THE CHECKS.</b> Twelve assertions over both books: every declared and every stamped introduction reaches the map, no customer has two introducers, and every card lists exactly what the map gives it. Five mutations each turned the section red."]},{"v":"v614","d":"14 Sep 2026","t":"CH4-KS IS BACK ON THE MAP: THE GAZETTEER'S KS RENAME REACHES THE DESK","n":["<b>HIS EDIT OF 14 SEP 2026, MADE ON GITHUB.</b> geo/places.json renamed the key KLS to KS, following CH4-KS home: the code was re-keyed to CH4-KLS on 28 Aug and back to CH4-KS on 12 Sep, and from that day the desk read the suffix KS, found no such key, and left the party off the map. No sync ran with the edit, so the master's GEO block still said KLS, CI failed on the push, and the cloud fold, which runs the gate before it commits, would have stalled the next approval. The block is synced byte for byte and the stale example in the locality comment goes. The check that caught it is CI's own geosync --check, proved red by that failed run.","<b>FOUND, NOT CHANGED.</b> Three roster codes still carry a place key the gazetteer does not hold: CA7-JTR (JTR), and CE5-TBC and CB7-TBC (TBC, the directory's to-be-confirmed placeholder). A coordinate comes from the directory by hand through tools/geofetch.mjs."]},{"v":"v613","d":"13 Sep 2026","t":"THE NAMES PANEL'S UNREACHABLE UNLOCK HANDLER GOES, WITH THE VAULT STATE ONLY IT TOUCHED","n":["<b>A HANDLER NOTHING COULD REACH IS REMOVED.</b> renderReveal wired an Unlock button, #vunlock, that no template has rendered since the v217 lock came off, so its decrypt, its hold on the passphrase and its messages could never run. It goes, with the one renderReveal local only it read. Show names on the phone, Import old vault and the laptop's Save are untouched.","<b>AND THE VAULT STATE ONLY IT TOUCHED.</b> vaultPass, vaultFileStamp, vaultLocalStamp and vaultSaveArmed were written and never read: only that handler ever held the passphrase, and the two stamps lost their last reader at v612. vaultLoad still takes the vault it is served and vaultSave still posts an ISO updated stamp, so nothing behaves differently and no assertion was added. The build's privacy note no longer says lockVault drops a passphrase."]},
+const evolution=[{"v":"v616","d":"14 Sep 2026","t":"AN ASSOCIATE EARNS A WHOLE FREE UNIT PER RM 500 OF MARGIN BROUGHT, POOLED OVER THE WHOLE LEDGER","n":["<b>HIS RULINGS OF 13 AND 14 SEP 2026, THE SECOND OF THREE VERSIONS.</b> An associate's reward is one count now. Their own orders and their -R account pool as R1 and R2, since the two cannot be told apart, and every priced order of each customer they introduced adds to it as R3, one level only, from v615's map. A whole unit is earned for each RM 500 of that margin. There are no bands, no unit minimum and no part units, and a loss earns nothing rather than a debt. It is counted over the whole ledger, so REWARD_OPENING leaves the book: the recount replaced the 10 Aug openings rather than adding to them, and every unit ever taken is netted against it, the July units and the -R account included.","<b>WHERE IT LANDS, ON THE BOOK AS IT STANDS.</b> RM 9,042.27 of margin brought against 14 units taken. CS6-BS has RM 2,576.10 and 1 unit free to redeem. CN6-WM has RM 893.20 and is 1 unit ahead. CJ4-OKR, CS6-PER, CI4-OKR, CE4-AD and CR3-DAM stand level. Net nil, as the recount he approved said at RM 500. The card shows the two margin rows and their total, then earned, taken, left and the margin to the next unit; What counts, and the appointment line on Enter, say the one rule.","<b>UNTOUCHED.</b> The customer scheme: RM 975 and 12.5 unit, banded, from 10 Aug over its own openings. The Redeem and automatic offset roads, which read the same earned and taken. Oil, which has no reward.","<b>THE CHECKS.</b> A new section of ten assertions on fixtures (an order before 10 Aug, a resale, a redemption, a pending order, an introduced associate and their own introduction, RM 1,000 exactly, a loss), the redemption window rewritten to the whole ledger, the 11 Sep and v570 sections moved off the RM 450 figure, and the book back to twenty-eight keys. Twelve mutations each turned them red."]},{"v":"v615","d":"14 Sep 2026","t":"WHO INTRODUCED WHOM IS ONE MAP ON THE BOOK, AND CM4-MK SITS UNDER CS6-BS","n":["<b>HIS RULING OF 13 SEP 2026, THE FIRST OF THREE VERSIONS THAT CHANGE THE REWARD RULE.</b> An introduction came from two places that did not know about each other: the referral stamp an R3 entry puts on a row, and a network list inside R0_NETWORK that only the founder could hold. CM4-MK, whose first order went through CS6-BS-R on 15 Jul and who has bought direct ever since, had nowhere to go. INTRODUCTIONS on the book now holds every introduction no row carries, each with its reason, and introductions() reads the stamps and the book together. R0_NETWORK names the founder and nothing else.","<b>WHAT MOVES.</b> On salt, CS6-BS's card lists CM4-MK, and its first-order R3 reads RM 220. No reward balance moves: the earning rule is v616. On oil, the lists now match salt's, because a stamp is read off every row of both books rather than the priced rows of the book in view; CI4-OKR's oil R3 reads RM 130 from an introduced customer's first oil order.","<b>THE CHECKS.</b> Twelve assertions over both books: every declared and every stamped introduction reaches the map, no customer has two introducers, and every card lists exactly what the map gives it. Five mutations each turned the section red."]},{"v":"v614","d":"14 Sep 2026","t":"CH4-KS IS BACK ON THE MAP: THE GAZETTEER'S KS RENAME REACHES THE DESK","n":["<b>HIS EDIT OF 14 SEP 2026, MADE ON GITHUB.</b> geo/places.json renamed the key KLS to KS, following CH4-KS home: the code was re-keyed to CH4-KLS on 28 Aug and back to CH4-KS on 12 Sep, and from that day the desk read the suffix KS, found no such key, and left the party off the map. No sync ran with the edit, so the master's GEO block still said KLS, CI failed on the push, and the cloud fold, which runs the gate before it commits, would have stalled the next approval. The block is synced byte for byte and the stale example in the locality comment goes. The check that caught it is CI's own geosync --check, proved red by that failed run.","<b>FOUND, NOT CHANGED.</b> Three roster codes still carry a place key the gazetteer does not hold: CA7-JTR (JTR), and CE5-TBC and CB7-TBC (TBC, the directory's to-be-confirmed placeholder). A coordinate comes from the directory by hand through tools/geofetch.mjs."]},{"v":"v613","d":"13 Sep 2026","t":"THE NAMES PANEL'S UNREACHABLE UNLOCK HANDLER GOES, WITH THE VAULT STATE ONLY IT TOUCHED","n":["<b>A HANDLER NOTHING COULD REACH IS REMOVED.</b> renderReveal wired an Unlock button, #vunlock, that no template has rendered since the v217 lock came off, so its decrypt, its hold on the passphrase and its messages could never run. It goes, with the one renderReveal local only it read. Show names on the phone, Import old vault and the laptop's Save are untouched.","<b>AND THE VAULT STATE ONLY IT TOUCHED.</b> vaultPass, vaultFileStamp, vaultLocalStamp and vaultSaveArmed were written and never read: only that handler ever held the passphrase, and the two stamps lost their last reader at v612. vaultLoad still takes the vault it is served and vaultSave still posts an ISO updated stamp, so nothing behaves differently and no assertion was added. The build's privacy note no longer says lockVault drops a passphrase."]},
 
 {"v":"v612","d":"13 Sep 2026","t":"SIX R2 RESALES MOVE INTO THEIR ASSOCIATES' BUCKETS, AND ADD ID READS THE VAULT FRESH","n":["<b>SIX RESALES MOVE INTO THE ASSOCIATES' BUCKETS, APPROVED ON HIS WORD OF 13 SEP 2026.</b> The corrections drafted under his ruling of the same day are folded. CR3-DAM's 5 unit of 10 Sep goes to CR3-DAM-R, CS6-BS's 1 unit of 12 Sep to CS6-BS-R, and four of CN6-WM's single units, 11 to 13 Sep, to CN6-WM-R. Every row was paid in full and handed over, so nothing owed moves and the inventory does not move.","<b>ADD ID READS THE VAULT AGAIN AT THE MOMENT IT FILES A NAME.</b> The desk loaded the encrypted vault once, when it opened, and filing a name saved that copy back over the whole of the cloud's. A phone left open across a laptop reseed would have wiped every name the reseed added or re-keyed. The vault is now fetched fresh once the passphrase is given, and a read that fails registers nothing rather than filing over the copy in memory.","<b>NO BROWSER COPY OUTRANKS THE CLOUD'S, AND THE FOUR NEW ASSERTIONS WENT RED FIRST.</b> A saltNameVault key in a browser's storage, which nothing has written since the master came into this repo, made that device keep its own old vault ahead of every newer one. The read goes, with the two flags it set. With the old Add ID and the legacy read put back, all four new assertions failed; with a fresh read that falls back to memory, the two refusals failed. Restored, the suite passes."]},
 
@@ -6766,7 +6759,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='14 Sep 2026, 00:51 KL';
+const LAST_UPDATED='14 Sep 2026, 01:08 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -12465,7 +12458,9 @@ function phonePayloadBuild(){
       try{
         out.network=networkStats().map(r=>({id:r.id,kind:r.kind,rank:r.rNum||null,stars:r.starN,
           made:+(+r.total).toFixed(2),bought:+(+r.direct).toFixed(2),soldFor:+(+r.indirect).toFixed(2),brought:+(+r.r3).toFixed(2),
-          referred:(r.referrals||[]).length,earned:+(+r.earned).toFixed(2),applied:rebateApplied(r.id),toNext:+(+r.toNextR2).toFixed(2),band:r.bringBand,departed:isDeparted(r.id)}));
+          referred:(r.referrals||[]).length,earned:+(+r.earned).toFixed(2),applied:rebateApplied(r.id),departed:isDeparted(r.id)}));
+      /* v616: toNext and band left this list. An associate's distance to the next unit is MARGIN since v616,
+         and this payload carries no margin; the band is gone from their rule altogether. */
       }catch(e){}
       try{ out.rewards=customerRewards().map(r=>({id:r.id,bought:r.rev,band:r.band,earned:r.earned,toNext:r.toNext})); }catch(e){}
       try{
@@ -13603,8 +13598,12 @@ const rebUnits=s=>s.rebate?(s.rebateKg!=null?+s.rebateKg:s.qty):0;
    scheme existed was netted against earnings that started AFTER it, and CS6-BS stood 3
    units in silent deficit for salt handed over in July that his own opening ruling had
    already settled. One window now, both sides: a redemption before REWARD.since belongs to
-   the opening, exactly as the earning it settled does. */
-const rebateApplied=id=>+sales.filter(s=>s.customer===id&&s.rebate&&s.date>=REWARD.since).reduce((a,s)=>a+rebUnits(s),0).toFixed(2);
+   the opening, exactly as the earning it settled does.
+   v616, HIS RULING OF 13 SEP 2026: STILL ONE WINDOW ON BOTH SIDES, AND NOW IT IS THE WHOLE LEDGER.
+   The associate's recount earns over all of history and replaced the openings, so every unit ever
+   taken is netted against it, July's included. A unit taken on their -R account is theirs, as the
+   account is. Only an associate's balance reads this; the customer table nets nothing. */
+const rebateApplied=id=>+sales.filter(s=>s.rebate&&ownerOf(s.customer)===id).reduce((a,s)=>a+rebUnits(s),0).toFixed(2);
 /* what the free text appears to contain. The seed of the structured fields: every run
    can look at what this finds across the book and promote a pattern into its own box. */
 function bioScan(txt){
@@ -15312,7 +15311,9 @@ function byCustomer(){const m={};pricedSales.filter(s=>isPerson(s.customer)).for
    An order can be split across consecutive days, so sum the earliest row plus any
    rows dated within 1 day of it; later orders are excluded. */
 function firstOrderOf(cid){const rows=pricedSales.filter(s=>s.customer===cid&&s.total!=null).slice().sort((a,b)=>new Date(a.date)-new Date(b.date));if(!rows.length)return 0;const d0=new Date(rows[0].date);return rows.reduce((a,s)=>a+((new Date(s.date)-d0)/86400000<=1?(s.total||0):0),0);}
-/* Free-unit rebate, R2 and R3 only. Own buys earn nothing. Two live triggers:
+/* HISTORY, RETIRED AT v280 AND KEPT FOR ITS REASONS. Nothing below describes a live rule until the
+   offset paragraph, which v585 and v616 still follow; the associate's rule is assocMargin (v616).
+   Free-unit rebate, R2 and R3 only. Own buys earn nothing. Two live triggers:
      MONEY  1 unit per REBATE.r2 resold, 1 per REBATE.r3 referred. Recurring.
      LOT    1 unit per single qualifying order of REBATE.lotUnits or more. Added 04 Aug 2026.
    Three calls settled on his instruction, recorded because each is reversible:
@@ -15343,6 +15344,9 @@ const REBATE={r2:500,r3:1500,lotUnits:5,lotFree:1};   /* RETIRED at v280, kept o
    surviving reference fails loudly rather than silently reading undefined. Nothing should
    read it: the scheme below replaces all four numbers. */
 /* ============ THE REWARD SCHEME (v280) ============
+   v616: FOR AN ASSOCIATE ALL OF THIS IS HISTORY, their two streams, their hurdle and their opening
+   included; their rule is a whole unit per RM 500 of margin over the whole ledger (assocMargin).
+   What follows still describes the CUSTOMER scheme's bands, window and openings.
    ONE FORMULA, TWO HURDLES, FOUR BANDS.
 
      hurdle = base lot x cheapest unit cost x multiple
@@ -15372,14 +15376,16 @@ const REBATE={r2:500,r3:1500,lotUnits:5,lotFree:1};   /* RETIRED at v280, kept o
    the engine accrues from there. A negative opening is carried forward: it absorbs the
    next units earned rather than being written off. */
 const REWARD={
-  /* THE SCHEME ACCRUES FROM ITS ADOPTION, NOT OVER ALL HISTORY, and the reason is worth
-     keeping. The opening positions below are the NET result of every unit earned and taken
-     under the old rules. If the engine also re-earned against that same history it would
-     pay twice for it: CJ4-OKR would be settled by his opening AND earn again on the
-     referrals that settled it. So history is captured once, in the opening, and the engine
-     counts only what happens from this date. */
+  /* THE CUSTOMER SCHEME'S WINDOW, AND ONLY ITS OWN SINCE v616. It accrues from adoption, not over
+     all history, because the customer openings are the NET of every unit earned and taken under the
+     old rules, and re-earning against that history would pay twice for it. An associate's reward
+     stopped reading this date at v616: their recount runs over the whole ledger, on his ruling of
+     13 Sep 2026, and it replaced their openings rather than adding to them (see assocMargin). */
   since:'2026-08-10',
-  /* v576, HIS INSTRUCTION OF 11 SEP 2026: THE HURDLE IS STATED OFF THE BOARD, NOT DERIVED FROM
+  /* v616, HIS RULING OF 14 SEP 2026: AN ASSOCIATE EARNS A WHOLE FREE UNIT PER RM 500 OF MARGIN BROUGHT.
+     `associate` holds that one figure and nothing else. The RM 450 and 5 unit below were the associate
+     figures from v576 to v615 and stay only as history; the customer pair is live and unchanged.
+     v576, HIS INSTRUCTION OF 11 SEP 2026: THE HURDLE IS STATED OFF THE BOARD, NOT DERIVED FROM
      A LOT COST, AND IT CARRIES A UNIT MINIMUM BESIDE THE MONEY.
        associate (R2 + R3)  RM 450, the 6.25 unit Tier 1 price less 10%, and at least 5 unit
        customer  (R1)       RM 975, the 12.5 unit Tier 1 price plus 100, and at least 12.5 unit
@@ -15399,14 +15405,14 @@ const REWARD={
      figures are salt's Tier 1 and oil has no Tier 1 at all (LADDER_BY.oil is tier1:null), so
      there was nothing to derive an oil pair from and a formula he did not choose is worse than
      no scheme. */
-  stated:{salt:{associate:{rm:450, units:5}, customer:{rm:975, units:12.5}}},
-  /* margin on revenue, read from what the party has ACTUALLY delivered, not from a quote */
+  stated:{salt:{associate:{margin:500}, customer:{rm:975, units:12.5}}},
+  /* the customer scheme's bands: margin on revenue, read from what the party has ACTUALLY delivered */
   bands:[{min:50,units:1,label:'full'},{min:40,units:0.5,label:'half'},{min:30,units:0.25,label:'quarter'},{min:0,units:0,label:'none'}]
 };
 /* null means THIS BOOK HAS NO REWARD, which is oil. Every reader guards on it; none defaults to
    salt's, because quietly lending one book another book's hurdle is how oil came to be priced off
    salt's ladder before v405. */
-function rewardHurdle(prod,who){const S=REWARD.stated[prod];return (S&&S[who])?S[who].rm:null;}
+function rewardHurdle(prod,who){const S=REWARD.stated[prod];return (S&&S[who]&&S[who].rm!=null)?S[who].rm:null;}
 function rewardMinUnits(prod,who){const S=REWARD.stated[prod];return (S&&S[who])?S[who].units:null;}
 /* THE GROSS MARGIN THE BOARD EXPECTS ON q UNIT AT TIER 1, from the engine and never typed: the
    desk prices nothing (hard rule 1), so this asks priceLadder the same question the board asks.
@@ -15453,9 +15459,29 @@ function rewardBand(pct){
   for(const b of REWARD.bands){ if(pct>=b.min) return b; }
   return REWARD.bands[REWARD.bands.length-1];
 }
-/* Units taken, and the position each party opened on when the scheme was adopted.
-   These are HIS RULINGS of 10 Aug 2026, row by row, not a computation. */
-/* REWARD_OPENING: declared in the BOOK block near the top of this script, generated from ledger/book.json (v339). */
+/* ============ v616: THE ASSOCIATE'S REWARD, HIS RULINGS OF 13 AND 14 SEP 2026 ============
+     what counts   every priced order on their own code and their -R account, R1 and R2 together because
+                   the two cannot be told apart, and every priced order of each customer they introduced,
+                   one level only (R3, from introductions()). A redemption is not an order.
+     margin        the row's total less its units at the row's own cost, as every margin on the desk
+     a unit        one for each whole RM 500 of that one pooled figure: no bands, no unit minimum, no part
+                   units, and a loss is not a debt, so nothing earned goes below zero
+     the window    the whole ledger, from their first order; the 10 Aug openings are gone, because the
+                   recount replaced them, and every unit ever taken is netted against it (rebateApplied)
+   A balance below zero is carried, and the next unit earned absorbs it. Oil has no reward. The functions
+   above serve the customer scheme alone, which v616 does not touch. */
+function assocUnitMargin(prod){const S=REWARD.stated[prod];return (S&&S.associate)?S.associate.margin:null;}
+function assocRuleTxt(prod){const m=assocUnitMargin(prod);return m==null?'no reward on this book':'a free unit per '+fmt0(m)+' of margin';}
+function assocMargin(id,refs){
+  const mine={margin:0,n:0},intro={margin:0,n:0};
+  pricedSales.forEach(s=>{
+    if(s.rebate)return;
+    const o=ownerOf(s.customer),t=o===id?mine:(refs.includes(o)?intro:null);
+    if(t){t.margin+=(s.total||0)-(s.qty||0)*txUnitCost(s,wavgBuy);t.n++;}
+  });
+  mine.margin=+mine.margin.toFixed(2);intro.margin=+intro.margin.toFixed(2);
+  return {mine,intro,total:+(mine.margin+intro.margin).toFixed(2)};
+}
 /* Every associate keeps the SAME three-stream ledger: Buy (R1/direct), Resell (R2/indirect),
    Refer (R3). R0 and R1 differ only in the numbers, not the structure. */
 /* One definition of who an associate is, read by the Network tab and the Workbench
@@ -15487,24 +15513,6 @@ function associateIds(){
      it happened; what ends is his standing, not the history. */
   return [...ids].filter(id=>!isBanned(id));
 }
-/* Margin actually realised on a party's two streams, which is what the band reads.
-   'bring' is what he resold or referred; 'own' is what he bought for himself. */
-function streamMargin(id,which){
-  const rows=pricedSales.filter(s=>{
-    if(s.date<REWARD.since) return false;          // the opening position holds everything before
-    if(s.rebate) return false;                     // a redemption is a reward being settled, not a purchase
-    const mine=ownerOf(s.customer)===id;
-    if(which==='bring') return (mine&&s.rev==='R2')||s.ref===id;
-    return s.customer===id&&s.rev!=='R2';
-  });
-  let rev=0,cogs=0,qty=0;
-  rows.forEach(s=>{ rev+=(s.total||0); cogs+=(s.qty||0)*txUnitCost(s,wavgBuy); qty+=(s.qty||0); });
-  /* qty rides out with the rest since v576: the unit minimum is measured on the same rows the
-     margin is, so a stream cannot clear one test on one window and the other on another. */
-  return {rev:+rev.toFixed(2), margin:+(rev-cogs).toFixed(2), qty:+qty.toFixed(2),
-          pct:rev>0?+(((rev-cogs)/rev)*100).toFixed(1):0,
-          perUnit:qty>0?+((rev-cogs)/qty).toFixed(2):0, n:rows.length};
-}
 function networkStats(){
   const r0=(typeof R0_NETWORK!=='undefined'&&R0_NETWORK)?R0_NETWORK:null;
   const ids=new Set(associateIds());
@@ -15527,33 +15535,15 @@ function networkStats(){
     // referrals: the customers this associate introduced, stamped or declared (v615)
     const refs=intro[id]||[];
     const r3=refs.reduce((a,c)=>a+firstOrderOf(c),0);
-    // per-stream recurring rebate (R2 + R3 only)
-    /* v280: resale and referral are ONE stream against the associate hurdle, and what he
-       buys for himself is a customer purchase at the customer hurdle. Each is scaled by the
-       margin band of that stream, so the hurdle decides if and the margin decides how much. */
-    /* the HURDLE reads the same window as the margin: turnover since adoption, so a party
-       cannot cross a threshold on business his opening position has already settled */
-    const bringM=streamMargin(id,'bring'), ownM=streamMargin(id,'own');
-    const bring=bringM.rev, sinceOwn=ownM.rev;
-    const bringBand=rewardBand(bringM.pct), ownBand=rewardBand(ownM.pct);
-    const earnedR2=rewardEarn(PROD,'associate',bring,bringM.qty,bringM.margin,bringBand);
-    const earnedR3=0;   // folded into earnedR2; the field survives so the render need not change
-    const earnedLot=0;  // the unit-based trigger is retired
-    const earnedOwn=rewardEarn(PROD,'customer',sinceOwn,ownM.qty,ownM.margin,ownBand);
-    const opening=(typeof REWARD_OPENING!=='undefined'&&REWARD_OPENING[id]!=null)?REWARD_OPENING[id]:0;
-    /* AWARDS is HISTORY now. Every stated grant was made before the scheme was adopted, so
-       it is already netted into the opening position; adding it again would pay it twice.
-       The block survives because the reason for each grant is worth keeping. */
-    const award=(AWARDS[id]&&AWARDS[id].units)||0;
-    /* a carried deficit absorbs what is earned rather than being written off */
-    const earned=+(earnedR2+earnedOwn+opening).toFixed(2);
-    /* v280: one stream, so one distance to the next unit. toNextR3 survives as the same
-       figure because two call sites take Math.min of the pair and would otherwise read
-       undefined; it is not a second threshold. */
-    /* v576: null where the book has no hurdle, rather than NaN. `x % null` is NaN and NaN
-       formats as "RM NaN" at three call sites, which is what oil would have printed. */
-    const toNextR2=rewardToNext(PROD,'associate',bring), toNextR3=toNextR2;
-    const toNextOwn=rewardToNext(PROD,'customer',sinceOwn);
+    /* v616: THE REWARD. One pooled figure of margin brought over the whole ledger, a whole unit for
+       each RM 500 of it, never below nothing, and no opening: every unit ever taken is netted
+       against it at the reader, through rebateApplied. toNext is what is left to the next whole
+       unit, and null where the book has no reward, because `x % null` prints as "RM NaN". AWARDS
+       stays on the book as history and is read by nothing: every grant in it was a real unit, and
+       the recount already counts that unit where it was taken. */
+    const unit=assocUnitMargin(PROD), bm=assocMargin(id,refs);
+    const earned=unit==null?0:Math.max(0,Math.floor(bm.total/unit));
+    const toNext=unit==null?null:+((earned+1)*unit-bm.total).toFixed(2);
     const share=revTotal>0?(indirect+r3)/revTotal*100:0;
     const starN=share>=50?3:share>=30?2:share>=10?1:0;
     /* connections shown on the node badge: end customers sold to (R2) PLUS customers
@@ -15562,20 +15552,7 @@ function networkStats(){
     const conns=isR0?refs.length:(ds.size+refs.length);
     return {id,kind:isR0?'R0':'R2',direct,indirect,r3,referrals:refs,dsN:conns,connKind:isR0?'referred':(ds.size&&refs.length?'linked':refs.length?'referred':'end cust'),
       dsResell:resellN,total:direct+indirect,share,starN,
-      earnedR2,earnedR3,earnedLot,lotN:0,earned,toNextR2,toNextR3,
-      earnedOwn,toNextOwn,opening,bring,bringPct:bringM.pct,ownPct:ownM.pct,bringBand:bringBand.label,ownBand:ownBand.label,
-      /* v385: THE BAND'S UNITS AND THE SCHEME'S OWN TURNOVER, both of which the card needed
-         and neither of which it could get. It read the band LABEL and could not say what
-         crossing a hurdle actually pays, so it told every associate a hurdle was worth a
-         unit when under 30% margin it is worth nothing. And it printed lifetime `direct`
-         beside `ownPct`, which is measured only since adoption: RM 1,610 of buying at 0%
-         on the same line, two different books in one sentence. `own` is the turnover the
-         margin was read from. */
-      bringUnits:bringBand.units, ownUnits:ownBand.units, own:sinceOwn,
-      /* v576: the units behind each stream and the minimum they are measured against, so the
-         card can say WHY a crossed hurdle paid a fraction rather than leaving it unexplained. */
-      bringQty:bringM.qty, ownQty:ownM.qty, bringGm:bringM.margin, ownGm:ownM.margin,
-      minBring:rewardMinUnits(PROD,'associate'), minOwn:rewardMinUnits(PROD,'customer')};
+      earned,toNext,unit,marginMine:bm.mine.margin,nMine:bm.mine.n,marginIntro:bm.intro.margin,nIntro:bm.intro.n,marginTotal:bm.total};
   });
   // R0 first, then by total made-you
   out.sort((a,b)=>{if(a.kind==='R0'&&b.kind!=='R0')return -1;if(b.kind==='R0'&&a.kind!=='R0')return 1;return b.total-a.total;});
@@ -16130,12 +16107,12 @@ function resellerCard(r){
      figure was quoting a distance to a reward he could not earn by covering it.
      Each of the three now says which one it is. The line is what a reader acts on with the
      card still shut, so it is the one line on this tab that must be exactly true. */
-  const nextGain=r.bringUnits||0, floorBand=REWARD.bands.filter(b=>b.units>0).slice(-1)[0];
-  const rebateStr=freeUnits>0.009?`${units(freeUnits)} free to redeem`
-    :r.bring<=0.009?`nothing brought in since ${REWARD.since}`
-    :nextGain<=0?`${r.bringPct}% margin earns nothing, ${floorBand.min}% is the floor`
-    :freeUnits+nextGain>0.009?`${fmt0(r.toNextR2)} more brought in earns ${units(nextGain)}`
-    :`${fmt0(r.toNextR2)} more earns ${units(nextGain)}, against ${units(-freeUnits)} drawn ahead`;
+  /* v616: the same three cases on the new rule. The margin to the next unit is exact, a crossing
+     always pays one whole unit, and a book with no reward says so rather than quoting a distance. */
+  const rebateStr=r.unit==null?'no reward on this book'
+    :freeUnits>0.009?`${units(freeUnits)} free to redeem`
+    :freeUnits<-0.009?`${fmt0(r.toNext)} more margin earns a unit, against ${units(-freeUnits)} drawn ahead`
+    :`${fmt0(r.toNext)} more margin earns a unit`;
   // summary line (collapsed)
   const summary=`<summary><span class="mono rname">${ID(r.id)}</span> ${badge}<span class="rsum">made you <b>${fmt0(r.total)}</b> &middot; R3 <b>${fmt0(r.r3)}</b> &middot; ${rebateStr}</span></summary>`;
   // KPI trio: R1 / R2 / R3 (same for every associate)
@@ -16152,14 +16129,6 @@ function resellerCard(r){
      was deleted at render the moment anybody earned any. Two fixes, both structural. The
      stream figures become a table, because six fields per stream is what a table is for
      and a table survives the strip. The button becomes a sibling, so nothing can eat it. */
-  const bandPays=u=>u>0?units(u):'nothing';
-  /* v576: only where the money cleared and the units did not, which is the one case a reader
-     cannot otherwise account for. Silent above the minimum, silent below the hurdle. */
-  const shortTag=(rev,qty,min,who)=>{
-    const H=rewardHurdle(PROD,who);
-    if(H==null||min==null||!(rev>=H)||!(qty<min-1e-9))return '';
-    return ` <span class="sbadge bthin" title="${units(qty)} against a ${units(min)} minimum, so the crossing pays on the margin it made rather than in full">${units(qty)} of ${units(min)}</span>`;
-  };
   /* v385: THE BALANCE ROW PRINTED "-1 unit" UNDER A COLUMN HEADED "Per hurdle", on two cards
      of five. Two faults in one cell. A balance is not a per-hurdle figure, and a bare negative
      tells a reader nothing he can act on: it is the arithmetic of a deficit carried from the
@@ -16167,12 +16136,18 @@ function resellerCard(r){
      on the page, in the words beside it, which is where it reads as a reason rather than as a
      quantity. What is showable here is whether there is anything to draw, so that is what it
      says. The figure is not touched, only how a negative one is stated: r.earned comes from
-     networkStats and the reason it can be negative sits in REWARD_OPENING against
-     rebateApplied, which is the book's question and not this card's. */
-  const rewardTbl=`<table style="margin-top:10px"><thead><tr><th class="l">Reward stream</th><th>Turnover</th><th>Margin</th><th class="l">Band</th><th>Per hurdle</th><th>To next</th></tr></thead><tbody>
-    <tr><td class="l">Brought in <span style="color:var(--dim)">R2 + R3</span></td><td>${fmt0(r.bring)}${shortTag(r.bring,r.bringQty,r.minBring,'associate')}</td><td>${r.bringPct}%</td><td class="l">${r.bringBand}</td><td>${bandPays(r.bringUnits)}</td><td class="mono" style="color:var(--dim)">${r.toNextR2==null?'&mdash;':fmt0(r.toNextR2)}</td></tr>
-    <tr><td class="l">Bought himself <span style="color:var(--dim)">R1</span></td><td>${fmt0(r.own)}${shortTag(r.own,r.ownQty,r.minOwn,'customer')}</td><td>${r.ownPct}%</td><td class="l">${r.ownBand}</td><td>${bandPays(r.ownUnits)}</td><td class="mono" style="color:var(--dim)">${r.toNextOwn==null?'&mdash;':fmt0(r.toNextOwn)}</td></tr>
-    <tr class="tot"><td class="l">Balance</td><td class="l" colspan="3" style="color:var(--dim)">${r.opening?`opening ${r.opening>0?'+':''}${units(r.opening)} carried, `:''}${applied>0?`${units(applied)} already drawn`:'nothing drawn yet'}</td><td>${r.earned>0.009?units(r.earned):'nothing'}</td><td>${freeUnits>0.009?`<b style="color:var(--gold)">${units(freeUnits)} free</b>`:'&mdash;'}</td></tr>
+     networkStats and the reason it can be negative is the units taken against it, through
+     rebateApplied, which is the book's question and not this card's.
+     v616: ONE POOLED COUNT, SO THE TABLE IS THE COUNT. Two rows of margin that add to the total a
+     unit is earned on, then the units: earned, taken, and what is left, with the margin still to
+     go to the next one. The bands, the unit minimum and the opening went with the old rule. */
+  const rewardTbl=r.unit==null?'':`<table style="margin-top:10px"><thead><tr><th class="l">Margin brought, whole ledger</th><th>Orders</th><th>Margin</th></tr></thead><tbody>
+    <tr><td class="l">Own buying and resale <span style="color:var(--dim)">R1 + R2</span></td><td>${r.nMine}</td><td>${fmt0(r.marginMine)}</td></tr>
+    <tr><td class="l">Every order of customers introduced <span style="color:var(--dim)">R3</span></td><td>${r.nIntro}</td><td>${fmt0(r.marginIntro)}</td></tr>
+    <tr class="tot"><td class="l">Total, ${assocRuleTxt(PROD)}</td><td>${r.nMine+r.nIntro}</td><td>${fmt0(r.marginTotal)}</td></tr>
+  </tbody></table>
+  <table style="margin-top:8px"><thead><tr><th class="l">Units</th><th>Earned</th><th>Taken</th><th>Left</th><th>To the next</th></tr></thead><tbody>
+    <tr class="tot"><td class="l">Balance</td><td>${units(r.earned)}</td><td>${units(applied)}</td><td>${freeUnits>0.009?`<b style="color:var(--gold)">${units(freeUnits)} free</b>`:freeUnits<-0.009?`${units(-freeUnits)} drawn ahead`:'none'}</td><td class="mono" style="color:var(--dim)">${fmt0(r.toNext)}</td></tr>
   </tbody></table>`;
   /* v385: "Rated unrated on 9.1% of revenue." is what the first pass shipped, on all five
      cards, because starN is 0 for every associate and the sentence was built to take a star
@@ -16277,7 +16252,7 @@ function tabNetwork(){
        book. That is the storyboard's tell for documentation rather than a dashboard. Nothing
        is deleted to fold it, and the summary carries the two figures a reader comes back for,
        so shut it still answers what a hurdle is. -->
-  <details class="obsec" style="margin-top:22px"><summary>What counts, and why <span class="q">customer hurdle ${rewardHurdleTxt(PROD,'customer')} &middot; associate hurdle ${rewardHurdleTxt(PROD,'associate')}</span></summary>
+  <details class="obsec" style="margin-top:22px"><summary>What counts, and why <span class="q">associate ${assocRuleTxt(PROD)} &middot; customer hurdle ${rewardHurdleTxt(PROD,'customer')}</span></summary>
   <div class="card">
     <!-- v401: the sub went with the fold. "What each counts and what it earns" is what the
          summary above now says, with the two hurdle figures in it, and a header that restates
@@ -16287,17 +16262,17 @@ function tabNetwork(){
       <div class="nstream nv">
         <div class="nsh"><span class="tag pendingt">R1</span> Bought from you</div>
         <div class="nsw">His own orders, priced.</div>
-        <div class="nswhy">A partner who is also a buyer: his own demand and loyalty. Earns on the customer hurdle, <b>${rewardHurdleTxt(PROD,'customer')}</b>.</div>
+        <div class="nswhy">A partner who is also a buyer. Pooled with R2 and R3 into one count of margin, <b>${assocRuleTxt(PROD)}</b>.</div>
       </div>
       <div class="nstream ng">
         <div class="nsh"><span class="tag paid">R2</span> Sold for you</div>
         <div class="nsw">Onward sales he runs, booked to him; the end buyer has no separate line.</div>
-        <div class="nswhy">Revenue you would not have made alone. Runs with R3 against the associate hurdle, <b>${rewardHurdleTxt(PROD,'associate')}</b>.</div>
+        <div class="nswhy">Revenue you would not have made alone. Booked to their -R account and pooled into the same count, since it cannot be told from their own buying.</div>
       </div>
       <div class="nstream ni">
         <div class="nsh"><span class="tag" style="background:rgba(228,233,236,.16);color:var(--ice)">R3</span> Brought you</div>
-        <div class="nsw">First-order value of each new customer he introduces.</div>
-        <div class="nswhy">Network growth, not repeat spend. Runs with R2 against that same <b>${rewardHurdleTxt(PROD,'associate')}</b>, not a hurdle of its own.</div>
+        <div class="nsw">First-order value of each new customer they introduce.</div>
+        <div class="nswhy">Network growth. For the reward, the margin on every order of each customer they introduced counts in the same pool, one level only.</div>
       </div>
     </div>
     <!-- ============ v385: THE THREE FIGURES ON THIS CARD WERE WRONG ============
@@ -16316,7 +16291,7 @@ function tabNetwork(){
          Customers tab prints a Band column; neither said what a band was worth, because the
          one paragraph that did was a .dsc and stripMethod deletes those. Chips survive. -->
     <div class="neq" style="margin:11px 0 0;padding-top:11px">
-      <span class="nchip">Then the margin band decides how much</span>
+      <span class="nchip">For a customer, the margin band decides how much</span>
       <span class="nop">:</span>
       ${REWARD.bands.filter(b=>b.units>0).map(b=>`<span class="nchip ng">${b.min}% and over &rarr; ${units(b.units)}</span>`).join('')}
       <span class="nchip" style="color:var(--dim)">under ${REWARD.bands.filter(b=>b.units>0).slice(-1)[0].min}% &rarr; nothing</span>
@@ -18655,13 +18630,12 @@ function wbPreview(){
        pane. */
     const apl=addIdPlan(code,kind);
     const capA=creditCapFor(wbProdVal(),'associate'),capR=creditCapFor(wbProdVal(),'retail');
-    /* THE TWO HURDLES ARE NOT ONE HURDLE. What an associate brings in -- resale and referral
-       together -- hurdles at the associate figure; what they buy for themselves keeps the
-       customer figure, because networkStats reads earnedOwn against rewardHurdle(...,'customer')
-       exactly as the customer reward table does. Both are read here rather than restated, so a
-       change to REWARD.stated moves this sentence with it. v576: through rewardHurdleTxt, which
-       also carries the unit minimum and says so plainly on a book that has no reward at all. */
-    const stand=apl.stream?`<div class="dsc" style="margin-top:6px">They join the associate bench on the <b>${apl.stream}</b> stream${apl.resell?`, and <b>${esc(apl.resell)}</b> joins the roster as their resell account, so an R2 sale with no named end buyer has somewhere to book`:''}. Their credit cap on the ${esc(wbProdName().toLowerCase())} book goes to <b>${units(capA)}</b> from ${units(capR)}, and what they bring in hurdles at <b>${rewardHurdleTxt(wbProdVal(),'associate')}</b> a free unit instead of ${rewardHurdleTxt(wbProdVal(),'customer')}. What they buy for themselves keeps the ${rewardHurdleTxt(wbProdVal(),'customer')} customer hurdle, and moves off the customer reward table onto their own card.</div>`:'';
+    /* v616: ONE POOL REPLACES THE TWO HURDLES. An appointed associate's own buying, resale and every
+       order of a customer they introduce earn together, a whole unit per RM 500 of margin, where as a
+       customer their buying crossed the customer hurdle. Both figures are read here rather than
+       restated, so a change to REWARD.stated moves this sentence with it, and a book with no reward
+       says so once instead of quoting two absent figures. */
+    const stand=apl.stream?`<div class="dsc" style="margin-top:6px">They join the associate bench on the <b>${apl.stream}</b> stream${apl.resell?`, and <b>${esc(apl.resell)}</b> joins the roster as their resell account, so an R2 sale with no named end buyer has somewhere to book`:''}. Their credit cap on the ${esc(wbProdName().toLowerCase())} book goes to <b>${units(capA)}</b> from ${units(capR)}.${assocUnitMargin(wbProdVal())==null?' Nothing on this book earns a reward.':` Everything they bring counts in one pool that earns <b>${assocRuleTxt(wbProdVal())}</b>: their own buying, their resale, and every order of a customer they introduce. That replaces the ${rewardHurdleTxt(wbProdVal(),'customer')} customer hurdle, so their buying moves off the customer reward table onto their own card.`}</div>`:'';
     /* v571: "as a" TOOK AN ARTICLE THE LABELS DO NOT FIT. ADDID_KIND_LABEL holds whole phrases,
        so this read "as a Associate, resells for you (R2)" and, worse, "as a An associate's end
        buyer". The article cannot be chosen from the first letter either, since the downstream and
