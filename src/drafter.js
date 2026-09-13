@@ -973,11 +973,12 @@ export function draftRow(entry, book) {
     /* THE STANDING IS THE POINT, so the reasoning says what it changes rather than only that a
        code joined a list. He approves the ROW, and on this row the row is a rule change: the
        credit cap, the reward hurdle and which table the party is counted on all move with it. */
-    const resell = kind === "reseller" ? `${code}-R` : null;
+    /* v610, his ruling of 13 Sep 2026: every appointment mints the -R account, on either stream */
+    const resell = POSITION_ENGINE.appointBucket(kind, code);
     const appointBits = stream
       ? ` It APPOINTS them an associate on the ${stream} stream: ${stream === "R2"
-          ? `a sale may book to them with the buyer behind it, and ${resell} joins the roster as their resell account so an R2 with no named end buyer has somewhere to land`
-          : "a sale stays with the buyer and their introduction is credited beside it"}.`
+          ? "a sale they resell is credited to them"
+          : "a sale stays with the buyer and their introduction is credited beside it"}${resell ? `, and ${resell} joins the roster as their resell account, which holds what they buy to sell on` : ""}.`
         + " Their credit cap moves from the retail one to the associate one, their turnover hurdles to the associate hurdle, and they leave the customer reward table for the network bench."
       : "";
     return {

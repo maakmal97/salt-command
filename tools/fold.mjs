@@ -27,7 +27,7 @@
  *   a loss            appended to selfUseLog     a lost sale   appended to lostDemand
  *   a registration    the code appended to the roster; the directory is never touched
  *   an appointment    a registration whose kind is reseller or referral: the code also joins
- *                     associates, and a reseller is given its <CODE>-R account. The code may
+ *                     associates, and is given its <CODE>-R account (v610). The code may
  *                     already be on the roster, since a party is registered when they first buy
  *                     and appointed when he decides
  *   a price edit      PRICE_SET[product] REPLACED with what he set: the form on the desk is the
@@ -289,16 +289,16 @@ export function plan(book, staged, notes) {
          becomes the appointment's ordinary road. What it refuses instead is appointing an
          associate twice, which is the duplicate that matters on this collection.
 
-         THE -R ACCOUNT IS MINTED WITH THE APPOINTMENT, and only for a reseller. R2 books the row
-         TO the associate and the desk fills <CODE>-R as the end buyer where none is named, so an
-         associate without one has every R2 sale refused at entryFault as a code not on the roster.
-         Minting it here closes that by construction rather than leaving him a second act to
-         remember. R3 never books to an -R account, so a referrer is appointed without one. */
+         THE -R ACCOUNT IS MINTED WITH THE APPOINTMENT, so an associate never has a second act to
+         remember before their first resale can book. v610, HIS RULING OF 13 SEP 2026: EVERY
+         appointment mints it, a referrer's included. Their own buying and their buying to sell on
+         are one stream for the reward and any associate may resell; the engine's appointBucket is
+         the one answer this, the drafter and the Add ID preview all read. */
       const appoints = !!APPOINTS[r.kind];
       const onRoster = (book.roster || []).includes(r.code);
       if (onRoster && !appoints) { out.refused.push({ id: it.id, why: `${r.code} is already on the roster` }); continue; }
       if (appoints && (book.associates || []).includes(r.code)) { out.refused.push({ id: it.id, why: `${r.code} is already an associate` }); continue; }
-      const resell = r.kind === "reseller" ? r.code + "-R" : null;
+      const resell = POSITION_ENGINE.appointBucket(r.kind, r.code);
       entry.roster = { code: r.code, register: !onRoster, appoint: appoints, resell: resell && !(book.roster || []).includes(resell) ? resell : null };
       if (entry.roster.register) entry.does.push(`append ${r.code} to the roster (the directory is not touched)`);
       if (STATEMENT_KINDS.includes(r.kind)) entry.does.push(`give ${r.code} a statement username if they have none, kept for life`);
@@ -307,7 +307,7 @@ export function plan(book, staged, notes) {
          prose is a second copy that will differ. What the line says is which rules start
          reading them, which is the part that is true whatever the numbers are. */
       if (appoints) entry.does.push(`appoint ${r.code} an associate: R2 and R3 credit reaches them, their credit cap moves from the retail one to the associate one, their turnover hurdles to the associate hurdle, and they leave the customer reward table for the network bench`);
-      if (entry.roster.resell) entry.does.push(`append ${entry.roster.resell} to the roster as their resell account, so an R2 sale with no named end buyer has somewhere to book`);
+      if (entry.roster.resell) entry.does.push(`append ${entry.roster.resell} to the roster as their resell account, which holds what they buy to sell on`);
     } else if (it.collection === "priceset") {
       /* v354: A PRICE EDIT MOVES NO STOCK AND NO CASH. It REPLACES that product's entry in
          PRICE_SET rather than merging into it, so the form on the desk is the whole statement of

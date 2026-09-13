@@ -8154,11 +8154,16 @@ section("v524: roster-only parties on the phone");
 {
   const { openMaster: omB } = await import("../tools/payload.mjs");
   const bkB = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
-  const withR = bkB.associates.find((a) => bkB.roster.includes(a + "-R")), withoutR = bkB.associates.find((a) => !bkB.roster.includes(a + "-R"));
+  /* v610: EVERY ASSOCIATE HOLDS AN -R ACCOUNT NOW, so the book no longer offers one without. The state
+     is FORCED instead: a second associate's account is taken off the roster inside the window. */
+  const withR = bkB.associates.find((a) => bkB.roster.includes(a + "-R"));
+  const withoutR = bkB.associates.find((a) => a !== withR && bkB.roster.includes(a + "-R"));
   const anyCust = bkB.sales.filter((r) => r.customer && r.date).slice(-1)[0].customer;
-  ok(withR && withoutR, "the book has an associate with an -R account and one without (" + withR + ", " + withoutR + ")");
   const { w } = await omB();
   w.eval("setProd('salt');recompute();");
+  w.eval("(function(){var i=roster.indexOf(" + JSON.stringify(withoutR + "-R") + ");if(i>=0)roster.splice(i,1);})()");
+  ok(withR && withoutR && String(w.eval("roster.indexOf(" + JSON.stringify(withR + "-R") + ")>=0&&roster.indexOf(" + JSON.stringify(withoutR + "-R") + ")<0")) === "true",
+    "forced: one associate with an -R account on the roster, and one whose account is taken off it in the window (" + withR + ", " + withoutR + ")");
   const fault = (p) => String(w.eval("entryFault(" + JSON.stringify(p) + ")"));
   ok(/is not on the roster/.test(fault({ direction: "SELL", party: "ZZ9-NOPE", date: "2026-09-08" })) && /Add ID/.test(fault({ direction: "SELL", party: "ZZ9-NOPE", date: "2026-09-08" })), "a buyer not on the roster is refused, and the message points at Add ID");
   ok(/names its buyer/.test(fault({ direction: "SELL", party: null })) && /names its supplier/.test(fault({ direction: "BUY", party: "" })), "no party is refused in the direction's own word");
@@ -9036,8 +9041,8 @@ section("v570: an associate is appointed from the Enter tab, and the Kind means 
     "appointing an associate twice is refused, which is the duplicate that matters here");
 
   const pRef = plan570(B570(), stage570("2026-09-11T01:03:00.000Z", "CX4-REF", "referral"), null);
-  ok(pRef.items.length === 1 && pRef.items[0].roster.appoint === true && pRef.items[0].roster.resell === null,
-    "a referrer is appointed with NO -R account: R3 leaves the buyer on the row and never books to one");
+  ok(pRef.items.length === 1 && pRef.items[0].roster.appoint === true && pRef.items[0].roster.resell === "CX4-REF-R",
+    "v610: a referrer is appointed WITH their -R account, as every associate is since his ruling of 13 Sep 2026");
 
   const pFresh = plan570(B570(), stage570("2026-09-11T01:04:00.000Z", "CX9-BRANDNEW", "reseller"), null);
   ok(pFresh.items.length === 1 && pFresh.items[0].roster.register === true && pFresh.items[0].roster.appoint === true,
@@ -9095,8 +9100,8 @@ section("v570: an associate is appointed from the Enter tab, and the Kind means 
   const dRef = draft570({ at: "x", payload: { mode: "addid", code: "CX4-REF", kind: "referral" } }, bk570);
   /* THE CODE ITSELF ENDS IN -REF, so a bare /-R/ here matched the party's own name and proved
      nothing. The test is the -R ACCOUNT and the phrase that promises it. */
-  ok(/R3 stream/.test(dRef.reasoning) && dRef.reasoning.indexOf("CX4-REF-R") < 0 && !/resell account/.test(dRef.reasoning),
-    "a referral appointment names the R3 stream and promises no -R account: " + dRef.reasoning.slice(0, 130));
+  ok(/R3 stream/.test(dRef.reasoning) && dRef.reasoning.indexOf("CX4-REF-R") >= 0 && /resell account/.test(dRef.reasoning),
+    "v610: a referral appointment names the R3 stream and the -R account it mints: " + dRef.reasoning.slice(0, 200));
 
   /* ---- the pane, on the real master ---- */
   {
@@ -9131,7 +9136,7 @@ section("v570: an associate is appointed from the Enter tab, and the Kind means 
       ok(P.fresh.elevate === false && P.fresh.stream === "R2", "an unknown code with the same kind reads as a fresh registration");
       ok(P.twice.already === true, "a code already on the bench reads as already an associate");
       ok(P.plain.stream === null && P.plain.elevate === false, "and the Customer kind confers nothing");
-      ok(P.ref.stream === "R3" && P.ref.resell === null, "the Referrer kind appoints on R3 and asks for no -R account");
+      ok(P.ref.stream === "R3" && P.ref.resell === "CZ8-APPT-R", "v610: the Referrer kind appoints on R3 and names the -R account it mints too");
 
       /* THE BUTTON IS THE CONTRACT. A preview that describes an appointment while Record stays
          disabled would be exactly the fault this version fixes, one layer up, so the state of
@@ -10410,6 +10415,21 @@ section("v609: a bucket is its associate's own, on the statement, the price list
     ok(wB.ordUsual("CX9-AA", "salt") != null && Math.abs(wB.ordUsual("CX9-AA", "salt") - 140) < 0.01,
       "and the order card's usual rate for them is 140 too");
   } finally { wB.close(); }
+}
+
+section("v610: every associate is minted with a bucket");
+{
+  /* HIS RULING OF 13 SEP 2026. The appointment's own road (the plan, the drafter, the preview) is
+     held in the v570 section, rewritten there to the new rule; this pins the one answer they read
+     and the standing fact on the book. */
+  const PE10 = (await import("../engine/position.mjs")).default;
+  ok(PE10.appointBucket("reseller", "CX9-AA") === "CX9-AA-R" && PE10.appointBucket("referral", "CX9-AA") === "CX9-AA-R"
+    && PE10.appointBucket("customer", "CX9-AA") === null && PE10.appointBucket("bucket", "CX9-AA") === null && PE10.appointBucket("referral", "") === null,
+    "an appointment on either stream mints the -R account, and a registration of any other kind mints none");
+  const b10 = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const bare10 = (b10.associates || []).filter((a) => !(b10.roster || []).includes(a + "-R"));
+  ok((b10.associates || []).length > 0 && bare10.length === 0,
+    "every associate on the book has their bucket on the roster" + (bare10.length ? ", but not " + bare10.join(", ") : ""));
 }
 
 

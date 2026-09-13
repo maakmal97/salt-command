@@ -4504,12 +4504,13 @@ function ovKey(t){return (t.customer||t.supplier)+'|'+t.date+'|'+t.total;}
    the drafter decides whether to accept the entry, the fold applies it, and the Add ID pane
    previews what the tap will do. A table in three places is a table that will differ.
 
-   THE VALUE IS THE STREAM, and it decides the -R account. R2 books the row TO the associate, so
-   an R2 with no named end buyer needs somewhere to land and the desk fills <CODE>-R; an associate
-   without that account has every R2 sale refused at the gate. R3 leaves the buyer on the row and
-   credits the introduction beside it, so a referrer never books to an -R and is not given one.
-   The other kinds -- customer, downstream, bucket, supplier -- register a code and confer no
-   standing, which is why they are absent rather than listed as false. */
+   THE VALUE IS THE STREAM an appointment starts on. The other kinds -- customer, downstream,
+   bucket, supplier -- register a code and confer no standing, which is why they are absent rather
+   than listed as false.
+   v610, HIS RULING OF 13 SEP 2026: EVERY APPOINTMENT MINTS THE <CODE>-R ACCOUNT, whichever stream it
+   starts on. An associate's own buying and their buying to sell on are one stream for the reward,
+   and any associate may resell, so a referrer is no longer appointed without one. appointBucket
+   below is the one answer the preview, the drafter and the fold all read. */
 const ADDID_APPOINTS={reseller:'R2',referral:'R3'};
 /* ====== THE BUCKET IS NOT ITS OWN PERSON (his ruling, 13 Sep 2026) ==========================
    An associate's <CODE>-R account holds the salt they buy to sell on. It is theirs: on their
@@ -4520,6 +4521,7 @@ const BUCKET_SFX='-R';
 function isBucket(code){return typeof code==='string'&&code.length>BUCKET_SFX.length&&code.slice(-BUCKET_SFX.length)===BUCKET_SFX;}
 function ownerCode(code){return isBucket(code)?code.slice(0,-BUCKET_SFX.length):code;}
 function ownsCode(party,code){return !!party&&(code===party||code===party+BUCKET_SFX);}
+function appointBucket(kind,code){return (ADDID_APPOINTS[kind]&&code)?code+BUCKET_SFX:null;}
 
 return {txPrice:txPrice,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:txEffDeliv,txAdvance:txAdvance,
         txDeferUnits:txDeferUnits,txPendUnits:txPendUnits,txPendUnitsRaw:txPendUnitsRaw,txPendRM:txPendRM,txStat:txStat,txDates:txDates,txGoods:txGoods,
@@ -4529,7 +4531,7 @@ return {txPrice:txPrice,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeli
         CORRECTABLE:CORRECTABLE,CORRECT_REQUIRED:CORRECT_REQUIRED,CORRECT_NUM_POS:CORRECT_NUM_POS,
         CORRECT_NUM_NN:CORRECT_NUM_NN,CORRECT_DATE:CORRECT_DATE,CORRECT_BOOL:CORRECT_BOOL,
         CORRECT_CODE:CORRECT_CODE,CORRECT_TEXT:CORRECT_TEXT,HANDOVER:HANDOVER,
-        ADDID_APPOINTS:ADDID_APPOINTS,BUCKET_SFX:BUCKET_SFX,isBucket:isBucket,ownerCode:ownerCode,ownsCode:ownsCode};
+        ADDID_APPOINTS:ADDID_APPOINTS,BUCKET_SFX:BUCKET_SFX,isBucket:isBucket,ownerCode:ownerCode,ownsCode:ownsCode,appointBucket:appointBucket};
 })();
 /* ==== END ENGINE position ==== */
 /* ==== ENGINE pricing: generated from engine/pricing.mjs by tools/engine.mjs. Edit the module, never this block. ==== */
@@ -5341,7 +5343,7 @@ const customerRefunds=[
   {"party":"CZ6-WM","amount":80,"since":"2026-07-24","paidOn":"2026-07-31","note":"RM80 overpayment, refunded 31 Jul."},
   {"party":"CZ4-MK","amount":20,"since":"2026-08-26","note":"RM20 over-tender, cash payable to set off."}
 ];
-const roster=["CA5-SEN","CG5-SB","CJ4-BJ","CR3-DAM","CS6-PER","CN5-TAI","CJ4-OKR","CC5-OKR","CA4-DAM","CE4-CHE","CM6-HCM","CM4-SK","CS6-BS","CS6-BS-R","CM4-MK","CH5-KLC","CI4-OKR","CN6-WM","CN6-WM-R","CZ6-WM","CR4-PJ","CD4-CS","CA5-KER","CE4-AD","SF6-KLC","SA5-BTR","SM4-KEP","SP7-PUD","CH4-KS","CS6-PER-R","CY2-NIL","CR3-PUD","CH4-MAL","CH5-OUG","CA11-SEN","CM6-PJ","CK4-SEN","CZ4-MK","CH6-SET","CD7-SEG","CA7-JTR","CF5-WM","CE5-TBC","CR3-DAM-R","CB7-TBC"];
+const roster=["CA5-SEN","CG5-SB","CJ4-BJ","CR3-DAM","CS6-PER","CN5-TAI","CJ4-OKR","CC5-OKR","CA4-DAM","CE4-CHE","CM6-HCM","CM4-SK","CS6-BS","CS6-BS-R","CM4-MK","CH5-KLC","CI4-OKR","CN6-WM","CN6-WM-R","CZ6-WM","CR4-PJ","CD4-CS","CA5-KER","CE4-AD","SF6-KLC","SA5-BTR","SM4-KEP","SP7-PUD","CH4-KS","CS6-PER-R","CY2-NIL","CR3-PUD","CH4-MAL","CH5-OUG","CA11-SEN","CM6-PJ","CK4-SEN","CZ4-MK","CH6-SET","CD7-SEG","CA7-JTR","CF5-WM","CE5-TBC","CR3-DAM-R","CB7-TBC","CJ4-OKR-R","CI4-OKR-R","CE4-AD-R"];
 const associates=["CS6-BS","CJ4-OKR","CS6-PER","CN6-WM","CI4-OKR","CE4-AD","CR3-DAM"];
 const PEOPLE={
   "banned": [
@@ -6277,7 +6279,9 @@ const quoteFor=p=>{const f=QUOTES[p||PROD];return f?f():null;};
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{"v":"v609","d":"13 Sep 2026","t":"AN ASSOCIATE'S BUCKET IS THEIRS: THE STATEMENT, THE PRICE LIST AND THE USUAL RATE READ THE CODE AND THE BUCKET AS ONE","n":["<b>HIS RULING OF 13 SEP 2026: THE BUCKET IS NOT ITS OWN PERSON, AND IN THE ACCOUNT STATEMENTS IT APPEARS UNDER THE ASSOCIATE.</b> An associate's -R account holds the salt they buy to sell on. Until now every code was a party of its own, so CN6-WM-R, CS6-BS-R and CS6-PER-R each had a statement and a username, and a resale booked to a bucket never reached the associate's own page.","<b>WHAT NOW READS THE TWO AS ONE.</b> The live statement and every issue from October, the price list sealed beside it, the board the desk prints and the rate the order card calls usual. A bucket's lines say <i>for resale</i>. The rule is stated once, in the engine, as ownsCode, so the statements tool, the price list and the desk cannot come to disagree about it.","<b>THE THREE BUCKET USERNAMES RETIRE ON THIS DEPLOY.</b> The publish leaves a bucket's record out, so its own delete step takes it off the site, and the username map the desk and the owner's list read no longer carries one. The lines stay in _users.json, kept for life. The September issue is untouched, exactly as sent; every row it held under a bucket reads on the associate's live statement instead.","<b>NOTHING ON THE LEDGER MOVES.</b> No row is rebooked and no reward changes. Filing new R2 sales into the bucket at entry, and correcting the six booked to plain codes since 10 Sep, are the folds that follow.","<b>PROVED RED FIRST, ON FORCED STATE.</b> Twelve assertions over a fixture associate and their bucket, none of them leaning on the live book: the engine's rule, the statement's rows and their resale marks, the publish leaving the bucket out, the username map, the price list's rate and loyalty, and the desk's three twins. With the rule reverted in every reader at once all twelve went red, and the files came back byte for byte."]},
+const evolution=[{"v":"v610","d":"13 Sep 2026","t":"EVERY ASSOCIATE IS MINTED WITH A BUCKET, AND THE THREE WHO HAD NONE ARE GIVEN ONE","n":["<b>HIS RULING OF 13 SEP 2026: EVERY APPOINTMENT MINTS THE -R ACCOUNT.</b> Until now only a reseller was given one, on the ground that a referrer never books to it. An associate's own buying and their buying to sell on are one stream for the reward now, and any associate may resell, so the bucket comes with the appointment whichever stream it starts on.","<b>ONE ANSWER, THREE READERS.</b> The Add ID preview, the drafter and the fold all read appointBucket in the engine, so the form, the gate and the fold cannot come to disagree about which appointment mints one.","<b>CJ4-OKR-R, CI4-OKR-R AND CE4-AD-R JOIN THE ROSTER</b>, so all seven associates now hold a bucket. None carries a row, a name or a username, and nothing on the ledger moves.","<b>AND THE NAME CHECK STOPS CRYING WOLF ON A PLACEHOLDER.</b> Writing the extract failed closed: the directory files one buyer's place as <i>to be confirmed</i>, and s134's note says those same words about another such buyer. It is what TBC stands for, so it joins tbc and general on the one stopword list, where the reason is written down.","<b>PROVED RED FIRST.</b> The rule reverted to resellers only and one bucket taken off the roster turned five assertions red, the three v570 checks that said a referrer gets none rewritten to the new rule among them; restored, all pass."]},
+
+{"v":"v609","d":"13 Sep 2026","t":"AN ASSOCIATE'S BUCKET IS THEIRS: THE STATEMENT, THE PRICE LIST AND THE USUAL RATE READ THE CODE AND THE BUCKET AS ONE","n":["<b>HIS RULING OF 13 SEP 2026: THE BUCKET IS NOT ITS OWN PERSON, AND IN THE ACCOUNT STATEMENTS IT APPEARS UNDER THE ASSOCIATE.</b> An associate's -R account holds the salt they buy to sell on. Until now every code was a party of its own, so CN6-WM-R, CS6-BS-R and CS6-PER-R each had a statement and a username, and a resale booked to a bucket never reached the associate's own page.","<b>WHAT NOW READS THE TWO AS ONE.</b> The live statement and every issue from October, the price list sealed beside it, the board the desk prints and the rate the order card calls usual. A bucket's lines say <i>for resale</i>. The rule is stated once, in the engine, as ownsCode, so the statements tool, the price list and the desk cannot come to disagree about it.","<b>THE THREE BUCKET USERNAMES RETIRE ON THIS DEPLOY.</b> The publish leaves a bucket's record out, so its own delete step takes it off the site, and the username map the desk and the owner's list read no longer carries one. The lines stay in _users.json, kept for life. The September issue is untouched, exactly as sent; every row it held under a bucket reads on the associate's live statement instead.","<b>NOTHING ON THE LEDGER MOVES.</b> No row is rebooked and no reward changes. Filing new R2 sales into the bucket at entry, and correcting the six booked to plain codes since 10 Sep, are the folds that follow.","<b>PROVED RED FIRST, ON FORCED STATE.</b> Twelve assertions over a fixture associate and their bucket, none of them leaning on the live book: the engine's rule, the statement's rows and their resale marks, the publish leaving the bucket out, the username map, the price list's rate and loyalty, and the desk's three twins. With the rule reverted in every reader at once all twelve went red, and the files came back byte for byte."]},
 
 {"v":"v608","d":"13 Sep 2026","t":"THREE UNIT GOES OUT DELIVERED WITH A THIRD OF THE MONEY BEHIND IT","n":["<b>ONE ROW FOLDED, A DELIVERED SALT SELL ON ADVANCE.</b> CM4-MK takes 3 unit for RM330 on 13 Sep, RM310 goods and RM20 delivery, RM220 cash in and all 3 unit delivered the same day, leaving RM110 open. The total clears the RM320 ask for 3 unit and sits under the RM430 ceiling, well above the RM168.64 floor. Cost is the inventory's own RM44 a unit, RM132 on the order.","<b>THE ADVANCE FLAG IS THE ONE THING LEFT STANDING.</b> The drafter asked that 3 unit going out with RM110 unpaid be read against CM4-MK's credit cap of 1 unit. He carried nothing outstanding and no units on credit before this row, and his record over 9 orders shows no default, but the cap is 1 and the dossier gives no waiver, so the flag is not answered. Stock moved out on his word; nothing landed, so the cost basis holds at RM44."]},
 
@@ -6733,7 +6737,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='13 Sep 2026, 21:24 KL';
+const LAST_UPDATED='13 Sep 2026, 21:39 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -16742,7 +16746,7 @@ const ADDID_KIND_LABEL={customer:'Customer, buys direct',reseller:'Associate, re
 function addIdPlan(code,kind){
   const stream=(POSITION_ENGINE.ADDID_APPOINTS||{})[kind]||null;
   const known=!!code&&roster.indexOf(code)>=0;
-  const resell=(stream==='R2'&&code)?code+'-R':null;
+  const resell=POSITION_ENGINE.appointBucket(kind,code);   /* v610: every appointment mints the bucket */
   return {stream:stream,known:known,elevate:!!stream&&known,
     already:!!stream&&!!code&&associates.indexOf(code)>=0,
     resell:(resell&&roster.indexOf(resell)<0)?resell:null};

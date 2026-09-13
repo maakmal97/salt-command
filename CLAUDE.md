@@ -213,8 +213,8 @@ the vault, encrypted on the device, before the ID is queued; the laptop pulls th
 `node tools/pull-vault.mjs` before any seed. When a fold finds a roster code the directory
 lacks, ask him for the name and the location before the ID commits, then write both to
 `10_Data\salt_bio.json`, seed the vault, and commit the statement username in
-`statements/_users.json` (minted by the fold at registration since v588, kept for life; an address, not a secret). The three
-`-R` reseller sub-accounts are the one exception. His own route is the `update-names-id`
+`statements/_users.json` (minted by the fold at registration since v588, kept for life; an address, not a secret). The `-R`
+buckets, one minted with every associate's appointment since v610, are the one exception. His own route is the `update-names-id`
 skill in `.claude/skills`, laptop only.
 
 ## Access and the write gate

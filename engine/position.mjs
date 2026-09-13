@@ -570,12 +570,13 @@ function ovKey(t){return (t.customer||t.supplier)+'|'+t.date+'|'+t.total;}
    the drafter decides whether to accept the entry, the fold applies it, and the Add ID pane
    previews what the tap will do. A table in three places is a table that will differ.
 
-   THE VALUE IS THE STREAM, and it decides the -R account. R2 books the row TO the associate, so
-   an R2 with no named end buyer needs somewhere to land and the desk fills <CODE>-R; an associate
-   without that account has every R2 sale refused at the gate. R3 leaves the buyer on the row and
-   credits the introduction beside it, so a referrer never books to an -R and is not given one.
-   The other kinds -- customer, downstream, bucket, supplier -- register a code and confer no
-   standing, which is why they are absent rather than listed as false. */
+   THE VALUE IS THE STREAM an appointment starts on. The other kinds -- customer, downstream,
+   bucket, supplier -- register a code and confer no standing, which is why they are absent rather
+   than listed as false.
+   v610, HIS RULING OF 13 SEP 2026: EVERY APPOINTMENT MINTS THE <CODE>-R ACCOUNT, whichever stream it
+   starts on. An associate's own buying and their buying to sell on are one stream for the reward,
+   and any associate may resell, so a referrer is no longer appointed without one. appointBucket
+   below is the one answer the preview, the drafter and the fold all read. */
 const ADDID_APPOINTS={reseller:'R2',referral:'R3'};
 /* ====== THE BUCKET IS NOT ITS OWN PERSON (his ruling, 13 Sep 2026) ==========================
    An associate's <CODE>-R account holds the salt they buy to sell on. It is theirs: on their
@@ -586,6 +587,7 @@ const BUCKET_SFX='-R';
 function isBucket(code){return typeof code==='string'&&code.length>BUCKET_SFX.length&&code.slice(-BUCKET_SFX.length)===BUCKET_SFX;}
 function ownerCode(code){return isBucket(code)?code.slice(0,-BUCKET_SFX.length):code;}
 function ownsCode(party,code){return !!party&&(code===party||code===party+BUCKET_SFX);}
+function appointBucket(kind,code){return (ADDID_APPOINTS[kind]&&code)?code+BUCKET_SFX:null;}
 
 return {txPrice:txPrice,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:txEffDeliv,txAdvance:txAdvance,
         txDeferUnits:txDeferUnits,txPendUnits:txPendUnits,txPendUnitsRaw:txPendUnitsRaw,txPendRM:txPendRM,txStat:txStat,txDates:txDates,txGoods:txGoods,
@@ -595,6 +597,6 @@ return {txPrice:txPrice,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeli
         CORRECTABLE:CORRECTABLE,CORRECT_REQUIRED:CORRECT_REQUIRED,CORRECT_NUM_POS:CORRECT_NUM_POS,
         CORRECT_NUM_NN:CORRECT_NUM_NN,CORRECT_DATE:CORRECT_DATE,CORRECT_BOOL:CORRECT_BOOL,
         CORRECT_CODE:CORRECT_CODE,CORRECT_TEXT:CORRECT_TEXT,HANDOVER:HANDOVER,
-        ADDID_APPOINTS:ADDID_APPOINTS,BUCKET_SFX:BUCKET_SFX,isBucket:isBucket,ownerCode:ownerCode,ownsCode:ownsCode};
+        ADDID_APPOINTS:ADDID_APPOINTS,BUCKET_SFX:BUCKET_SFX,isBucket:isBucket,ownerCode:ownerCode,ownsCode:ownsCode,appointBucket:appointBucket};
 })();
 export default POSITION_ENGINE;

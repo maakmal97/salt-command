@@ -112,7 +112,11 @@ export function reader(w) {
  * test/verify.mjs each carried their own list; "general" was added to the first and the
  * second went on failing, which is precisely the silent divergence book.mjs exists to stop.
  * One definition, both importers, and a test that asserts neither keeps a private copy. */
-export const NAME_STOPWORDS = new Set(["tbc", "unknown", "n/a", "na", "none", "-", "general"]);
+/* v610, 13 Sep 2026: "to be confirmed" is what TBC stands for, written out. Add ID has filed it as
+ * the place of a buyer registered before their location was known, and the note on s134 says the
+ * same words about another such buyer, so the scan failed closed on the one row being honest that
+ * there is no place to leak. The same reason "tbc" is here. */
+export const NAME_STOPWORDS = new Set(["tbc", "to be confirmed", "unknown", "n/a", "na", "none", "-", "general"]);
 
 /* AND A SECOND LIST, WHICH IS A DIFFERENT AND WORSE PROBLEM, SO IT IS KEPT APART.
  *
