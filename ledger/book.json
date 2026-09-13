@@ -34,10 +34,10 @@
     "oil": {
       "qty": 5,
       "costPerKg": 7.666666666666667,
-      "stated": 50
+      "stated": 40
     }
   },
-  "STATED_STOCK": 16.19,
+  "STATED_STOCK": 9.94,
   "COUNT_ON": {
     "salt": "2026-09-08",
     "oil": "2026-09-09"
@@ -235,7 +235,9 @@
     {"customer":"CA5-KER","qty":2,"total":200,"cost":88,"cash":200,"handover":"collected","date":"2026-09-12","deliveredQty":2,"deliveredOn":"2026-09-12","paidOn":"2026-09-12","note":"<b>SALT SELL DATED 12 SEP, PAID IN FULL AND COLLECTED IN FULL.</b> SELL to CA5-KER, 2 unit for RM200, all RM200 of it goods with no delivery charge, RM200 cash in and 2 unit handed over on 12 Sep, so nothing stays outstanding on it. The rate is RM100 a unit and clears the RM112.43 floor for 2 unit. Cost is RM44 a unit, the inventory's own rate, so RM88 on the order at 56.0%. <b>The drafter flagged the rate</b>: CA5-KER has paid RM120 a unit on both of their earlier salt orders and this one is RM100, a 17% drop. It was put to him with the row drafted and not yet written, and he confirmed the price as intended before it was folded.","rid":"s156"},
     {"customer":"CN6-WM-R","qty":1,"total":130,"cost":44,"cash":130,"delivery":20,"handover":"delivered","date":"2026-09-12","deliveredQty":1,"deliveredOn":"2026-09-12","paidOn":"2026-09-12","note":"<b>CORRECTION ON s157 DATED 13 SEP: THE RESALE MOVES TO CN6-WM-R.</b> CN6-WM's order of 12 Sep, 1 unit of salt for RM130, RM110 of goods and RM20 delivery, was booked to CN6-WM with CN6-WM-R as the end buyer. Under his ruling of 13 Sep an R2 sale books to the associate's -R account, so the row moves to CN6-WM-R and the end buyer is cleared, approved on his word of 13 Sep. No cash and no inventory move: RM130 was paid and 1 unit delivered on 12 Sep, so nothing is left open. The drafter raised no flag, and the correction changes no figure on the row. <b>SALT SELL DATED 12 SEP, PAID IN FULL AND DELIVERED IN FULL, AS AN R2 DOWNSELL.</b> Booked to CN6-WM with downstream CN6-WM-R, 1 unit for RM130 of which <b>RM110 is the goods and RM20 the delivery</b>, RM130 cash in and 1 unit handed over on 12 Sep, so nothing stays outstanding. The goods rate is RM110 a unit and clears the RM56.21 floor for 1 unit. Cost is RM44, so RM44 against RM110 of goods at 60.0%; the drafter's own line reads the rate and the margin on the full RM130, delivery included, which is the figure the Approve card shows. <b>Two flags.</b> The row books to CN6-WM as an R2, so CN6-WM-R is not the counterparty and gets no statement from it: that is what a downsell is and it is not answered. And CN6-WM's usual rate is about RM100 a unit across 7 orders, so RM110 sits 10% above it, which is in his favour.","rid":"s157","rev":"R2","mod":"corrected on 2026-09-13: party CN6-WM-R to (cleared); downstream CN6-WM-R to (cleared)","amend":[{"date":"2026-09-12","kind":"Fulfilment","cash":130,"kg":1,"note":"as booked"},{"date":"2026-09-13","kind":"Correction","cash":0,"kg":0,"note":"<b>CORRECTION ON s157 DATED 13 SEP: THE RESALE MOVES TO CN6-WM-R.</b> CN6-WM's order of 12 Sep, 1 unit of salt for RM130, RM110 of goods and RM20 delivery, was booked to CN6-WM with CN6-WM-R as the end buyer. Under his ruling of 13 Sep an R2 sale books to the associate's -R account, so the row moves to CN6-WM-R and the end buyer is cleared, approved on his word of 13 Sep. No cash and no inventory move: RM130 was paid and 1 unit delivered on 12 Sep, so nothing is left open. The drafter raised no flag, and the correction changes no figure on the row."}]},
     {"customer":"CN6-WM-R","qty":1,"total":130,"cost":44,"cash":130,"handover":"collected","date":"2026-09-13","deliveredQty":1,"deliveredOn":"2026-09-13","paidOn":"2026-09-13","note":"<b>CORRECTION ON s158 DATED 13 SEP: THE RESALE MOVES TO CN6-WM-R.</b> CN6-WM's order of 13 Sep, 1 unit for RM130, all of it goods, was booked to CN6-WM with CN6-WM-R as the end buyer. Under his ruling of 13 Sep an R2 sale books to the associate's -R account, so the row moves to CN6-WM-R and the end buyer is cleared, approved on his word of 13 Sep. No cash and no inventory move: RM130 was paid and 1 unit handed over on 13 Sep, so nothing is left open. The drafter flagged RM130 a unit against CN6-WM's usual RM110; that tops the party's own range of RM75 to RM130, and the correction leaves the rate as booked. <b>SALT SELL DATED 13 SEP, PAID IN FULL AND COLLECTED IN FULL, AS AN R2 DOWNSELL.</b> Booked to CN6-WM with downstream CN6-WM-R, 1 unit for RM130, all of it goods, RM130 cash in and 1 unit handed over on 13 Sep, so nothing new stays outstanding. The rate clears the RM56.21 floor and the RM120 ask for 1 unit and sits under the RM150 ceiling. Cost is the inventory's own RM44 a unit. <b>Two flags.</b> The row books to CN6-WM as an R2, so CN6-WM-R is not the counterparty and gets no statement from it, which is what a downsell is and is not answered. And the drafter reads his usual rate as about RM105 a unit across 8 orders, 23.8% below this one; the dossier's own median is RM110 and his range runs RM75 to RM130, so RM130 is his top mark. RM110 stays open from earlier, 1 unit on credit against a cap of 2.","rid":"s158","rev":"R2","mod":"corrected on 2026-09-13: party CN6-WM-R to (cleared); downstream CN6-WM-R to (cleared)","amend":[{"date":"2026-09-13","kind":"Fulfilment","cash":130,"kg":1,"note":"as booked"},{"date":"2026-09-13","kind":"Correction","cash":0,"kg":0,"note":"<b>CORRECTION ON s158 DATED 13 SEP: THE RESALE MOVES TO CN6-WM-R.</b> CN6-WM's order of 13 Sep, 1 unit for RM130, all of it goods, was booked to CN6-WM with CN6-WM-R as the end buyer. Under his ruling of 13 Sep an R2 sale books to the associate's -R account, so the row moves to CN6-WM-R and the end buyer is cleared, approved on his word of 13 Sep. No cash and no inventory move: RM130 was paid and 1 unit handed over on 13 Sep, so nothing is left open. The drafter flagged RM130 a unit against CN6-WM's usual RM110; that tops the party's own range of RM75 to RM130, and the correction leaves the rate as booked."}]},
-    {"customer":"CM4-MK","qty":3,"total":330,"cost":132,"cash":220,"delivery":20,"handover":"delivered","date":"2026-09-13","deliveredQty":3,"deliveredOn":"2026-09-13","note":"<b>SALT SELL DATED 13 SEP, DELIVERED IN FULL WITH A THIRD OF THE TOTAL OUTSTANDING.</b> Booked to CM4-MK, 3 unit for RM330, RM310 goods and RM20 delivery, RM220 cash in and 3 unit delivered on 13 Sep, so RM110 stays open. The total clears the RM320 ask for 3 unit and the RM168.64 floor, and sits under the RM430 ceiling. Cost is the inventory's own RM44 a unit, RM132 on the order. <b>One flag.</b> It is an advance: 3 unit out with RM110 unpaid against a credit cap of 1 unit. He held no outstanding and no units on credit before this row, across 9 orders at a RM101 median in a RM90 to RM110 range, but the cap is 1, so the flag is not answered.","rid":"s159"}
+    {"customer":"CM4-MK","qty":3,"total":330,"cost":132,"cash":220,"delivery":20,"handover":"delivered","date":"2026-09-13","deliveredQty":3,"deliveredOn":"2026-09-13","note":"<b>SALT SELL DATED 13 SEP, DELIVERED IN FULL WITH A THIRD OF THE TOTAL OUTSTANDING.</b> Booked to CM4-MK, 3 unit for RM330, RM310 goods and RM20 delivery, RM220 cash in and 3 unit delivered on 13 Sep, so RM110 stays open. The total clears the RM320 ask for 3 unit and the RM168.64 floor, and sits under the RM430 ceiling. Cost is the inventory's own RM44 a unit, RM132 on the order. <b>One flag.</b> It is an advance: 3 unit out with RM110 unpaid against a credit cap of 1 unit. He held no outstanding and no units on credit before this row, across 9 orders at a RM101 median in a RM90 to RM110 range, but the cap is 1, so the flag is not answered.","rid":"s159"},
+    {"customer":"CS6-PER","qty":6.25,"total":460,"cost":275,"cash":460,"delivery":20,"handover":"delivered","date":"2026-09-13","deliveredQty":6.25,"deliveredOn":"2026-09-13","paidOn":"2026-09-13","note":"<b>SALT SELL DATED 13 SEP, PAID AND DELIVERED IN FULL ON THE DAY.</b> Booked to CS6-PER, 6.25 unit for RM460, RM440 goods and RM20 delivery, RM460 cash in and 6.25 unit delivered on 13 Sep, so nothing stays open. The total clears the RM351.33 floor for 6.25 unit but sits under the RM610 ask and the RM880 ceiling. Cost is the inventory's own RM44 a unit, RM275 on the order. <b>One flag.</b> The rate of RM70.4 a unit is 12% under his usual RM80 across 6 orders. It falls inside his RM60 to RM100 range but under his RM85.52 median and under the ask, so the flag is not answered on price. He held no outstanding and no units on credit against a cap of 2 unit.","rid":"s160"},
+    {"customer":"CS6-PER","qty":10,"total":110,"cost":75.25,"cash":110,"handover":"delivered","product":"oil","date":"2026-09-13","deliveredQty":10,"deliveredOn":"2026-09-13","paidOn":"2026-09-13","note":"<b>OIL SELL DATED 13 SEP, PAID AND DELIVERED IN FULL ON THE DAY.</b> Booked to CS6-PER, 10 unit for RM110, all goods with no delivery charge, RM110 cash in and 10 unit delivered on 13 Sep, so nothing stays open. The total clears the RM87.28 floor for 10 unit and sits under the RM130 ask and the RM240 ceiling, at RM11 a unit. Cost is the desk's own RM7.53 a unit, RM75.25 on the order. <b>No flag was raised.</b> He held no outstanding and no units on credit before this row against a cap of 20 unit, with nothing defaulted, across 5 orders at a RM85.52 median in a RM60 to RM100 range. Nothing is left outstanding.","rid":"s161"}
   ],
   "contacts": [
     {"date":"2026-08-06","party":"CM4-SK","how":"message","outcome":"noreply","next":null,"note":"said hello"},
@@ -327,31 +329,11 @@
     "CR3-DAM"
   ],
   "INTRODUCTIONS": [
-    {
-      "by": "CJ4-OKR",
-      "customer": "CC5-OKR",
-      "note": "Declared network, counted retrospectively on his word of 13 Sep 2026."
-    },
-    {
-      "by": "CJ4-OKR",
-      "customer": "CJ4-BJ",
-      "note": "Declared network, counted retrospectively on his word of 13 Sep 2026."
-    },
-    {
-      "by": "CJ4-OKR",
-      "customer": "CE4-CHE",
-      "note": "Declared network, counted retrospectively on his word of 13 Sep 2026."
-    },
-    {
-      "by": "CJ4-OKR",
-      "customer": "CS6-PER",
-      "note": "Declared network, counted retrospectively on his word of 13 Sep 2026."
-    },
-    {
-      "by": "CS6-BS",
-      "customer": "CM4-MK",
-      "note": "His ruling of 13 Sep 2026: the first order went through CS6-BS-R on 15 Jul, and every order since has been direct."
-    }
+    {"by":"CJ4-OKR","customer":"CC5-OKR","note":"Declared network, counted retrospectively on his word of 13 Sep 2026."},
+    {"by":"CJ4-OKR","customer":"CJ4-BJ","note":"Declared network, counted retrospectively on his word of 13 Sep 2026."},
+    {"by":"CJ4-OKR","customer":"CE4-CHE","note":"Declared network, counted retrospectively on his word of 13 Sep 2026."},
+    {"by":"CJ4-OKR","customer":"CS6-PER","note":"Declared network, counted retrospectively on his word of 13 Sep 2026."},
+    {"by":"CS6-BS","customer":"CM4-MK","note":"His ruling of 13 Sep 2026: the first order went through CS6-BS-R on 15 Jul, and every order since has been direct."}
   ],
   "PEOPLE": {
     "banned": [
@@ -464,7 +446,7 @@
   "ONE_OFFS": [
     {"id":"CM6-HCM","date":"2026-07-14","note":"One-off; RM104/unit is an outlier."}
   ],
-  "QUEUE_COMMITTED": "2026-09-13T14:18:53.911Z",
+  "QUEUE_COMMITTED": "2026-09-13T17:50:42.523Z",
   "PRICE_SET": {
     "salt": {
       "prices": {},
@@ -497,6 +479,7 @@
       "RETIRED AT v549 on 2026-09-09, his instruction. The key held one hand-typed lot: 50 unit by 2026-08-28, stated on the 24th. He read it on 9 September with the date twelve days gone and four lots landed since (25 unit on 26 Aug, 25 on 31 Aug, 25 on 03 Sep and 50 on 08 Sep), and said he generally has no information on when he purchases. The Sourcing section is now about the CURRENT lot, and the cadence is measured off the book rather than typed. One standing fact from the retired basis is kept here because it is not a plan: the purchase ceiling of RM4,500 resets on the 28th of each month and anything beyond it comes out of rolling cash. The rest was the 24 Aug reasoning, that the 100 unit tier was the recommendation and he took the 50, at a landed RM45.20 a unit against RM43.60."
     ],
     "STATED_STOCK": [
+      "ROLLED AT v619: 6.25 unit to CS6-PER on 2026-09-13, so 16.19 less 6.25 is 9.94. A ROLL AND NOT A COUNT; COUNT_ON is untouched. Salt stands at 16.19 unit against a stated 16.19, counted 8 Sep, with 11.5 unit promised and the reorder mark at 15, so the next lot is close. Nothing is owed out and no loan is open.",
       "ROLLED AT v608: 3 unit to CM4-MK on 2026-09-13, so 19.19 less 3 is 16.19. A ROLL AND NOT A COUNT; COUNT_ON is untouched. The 3 unit left on his word on 13 Sep and no lot landed against it.",
       "ROLLED AT v607: 1 unit to CN6-WM on 2026-09-13, so 20.19 less 1 is 19.19. A ROLL AND NOT A COUNT; COUNT_ON is untouched. The salt sale of 1 unit to CN6-WM on 13 Sep is recorded but not yet landed against the count of 08 Sep. Stated stock holds at 20.19 unit, clear of the reorder mark of 15 with 11.5 unit promised.",
       "ROLLED AT v605: 2 unit to CA5-KER on 2026-09-12, 1 unit to CN6-WM on 2026-09-12, so 23.19 less 3 is 20.19. A ROLL AND NOT A COUNT; COUNT_ON is untouched. Three unit out on the day, 2 collected and 1 delivered.",
@@ -539,6 +522,7 @@
       "paidSplit: cash landed either side of the 28 Jul count; RM200 inside it, the rest after. Without the split the walk double-counted the RM200."
     ],
     "PROD_OPENING": [
+      "ROLLED AT v619 (oil): 10 unit to CS6-PER on 2026-09-13, so 50 less 10 is 40. A ROLL AND NOT A COUNT; COUNT_ON is untouched.",
       "ROLLED AT v597 (oil): 10 unit to CE4-CHE on 2026-09-12, so 60 less 10 is 50. A ROLL AND NOT A COUNT; COUNT_ON is untouched.",
       "COUNTED AT v551 on 2026-09-09: the oil inventory held 60 against 75 on the roll, a drift of -15. A COUNT AND NOT A ROLL, so COUNT_ON.oil moves to 2026-09-09. Counted by hand on 09 Sep 2026 and entered on his word the same day. The oil inventory held 60 unit against 75 on the roll, a drift of -15 over a cycle in which 65 unit went out. The roll of 75 is -35 as it stood after v546, plus the 30 unit lot of 04 Sep and the 80 unit lot of 08 Sep folded at v550. The previous count was 23 Aug at 15 unit, which carried no roll figure of its own, so this is the first oil count on this book that can be compared with an expectation and the first that charges a drift.",
       "ROLLED AT v550 (oil): 30 unit from SM4-KEP on 2026-09-04, 80 unit from SP7-PUD on 2026-09-08, so -35 plus 110 is 75. A ROLL AND NOT A COUNT; COUNT_ON is untouched.",
