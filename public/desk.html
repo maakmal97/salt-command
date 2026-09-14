@@ -68,7 +68,7 @@ document.addEventListener('visibilitychange',function(){
    localStorage before it posts anything and the load reads it straight back.
    The same tick retries a held entry, which is what gets a phone write to the cloud
    without waiting for the next open. */
-var SALT_BUILD_ID="82b48683b65ed773";
+var SALT_BUILD_ID="61d23d73050815dd";
 var SALT_REV_MS=10000;
 (function(){
   var chip=null,timer=null;
@@ -4616,6 +4616,27 @@ function bookR2(row,partyKey,assoc,buyer){
   if(buyer&&buyer!==a&&buyer!==b)row.downstream=buyer;else delete row.downstream;
   return row;
 }
+/* ====== v628, AMEND ID: A RENAME IS A RE-KEY (his rulings of 11 Sep 2026) =========================
+   A code is the party's one identifier, the string the ledger carries, so a new name or place that
+   derives a new code moves the code wherever the book holds it: every whole value and every key that
+   is the code. The codes built on it move with it, the -R account and an end buyer's
+   <code>-<n>-<place>, because ownerCode reads the party back out of them. Prose is never touched: a
+   note naming the old code says what was true when it was written. ONE WRITER for the drafter's
+   count, the fold's apply and the phone's preview. */
+function renamePairs(roster,from,to){
+  return (roster||[]).filter(c=>c===from||c.indexOf(from+'-')===0).map(c=>[c,to+c.slice(from.length)]);
+}
+function renameInBook(book,pairs){
+  const map=new Map(pairs);let n=0;
+  const walk=v=>{
+    if(!v||typeof v!=='object')return;
+    for(const k of Object.keys(v)){
+      if(typeof v[k]==='string'&&map.has(v[k])){v[k]=map.get(v[k]);n++;}else walk(v[k]);
+      if(!Array.isArray(v)&&map.has(k)){v[map.get(k)]=v[k];delete v[k];n++;}
+    }
+  };
+  walk(book);return n;
+}
 
 return {txPrice:txPrice,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:txEffDeliv,txAdvance:txAdvance,
         txDeferUnits:txDeferUnits,txPendUnits:txPendUnits,txPendUnitsRaw:txPendUnitsRaw,txPendRM:txPendRM,txStat:txStat,txDates:txDates,txGoods:txGoods,
@@ -4625,7 +4646,8 @@ return {txPrice:txPrice,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeli
         CORRECTABLE:CORRECTABLE,CORRECT_REQUIRED:CORRECT_REQUIRED,CORRECT_NUM_POS:CORRECT_NUM_POS,
         CORRECT_NUM_NN:CORRECT_NUM_NN,CORRECT_DATE:CORRECT_DATE,CORRECT_BOOL:CORRECT_BOOL,
         CORRECT_CODE:CORRECT_CODE,CORRECT_TEXT:CORRECT_TEXT,HANDOVER:HANDOVER,
-        ADDID_APPOINTS:ADDID_APPOINTS,BUCKET_SFX:BUCKET_SFX,isBucket:isBucket,ownerCode:ownerCode,ownsCode:ownsCode,appointBucket:appointBucket,bookR2:bookR2};
+        ADDID_APPOINTS:ADDID_APPOINTS,BUCKET_SFX:BUCKET_SFX,isBucket:isBucket,ownerCode:ownerCode,ownsCode:ownsCode,appointBucket:appointBucket,bookR2:bookR2,
+        renamePairs:renamePairs,renameInBook:renameInBook};
 })();
 /* ==== END ENGINE position ==== */
 /* ==== ENGINE pricing: generated from engine/pricing.mjs by tools/engine.mjs. Edit the module, never this block. ==== */
@@ -6328,7 +6350,7 @@ const quoteFor=p=>{const f=QUOTES[p||PROD];return f?f():null;};
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{"v":"v627","d":"14 Sep 2026","t":"TWO OLD HALF UNIT ROWS RECLASSED FROM REBATE TO GOODWILL, NO CASH AND NO STOCK MOVE","n":["<b>WHAT WAS FOLDED.</b> Two corrections, both against CN6-WM, both applied on 14 Sep. s031 of 21 Jul and s056 of 04 Aug, each 0.5 unit for RM50 with no cash in, are reclassed: rebate from true to false, goodwill from false to true. Neither touches quantity, total or cash, so the pair moves no money and no salt. The fold applies the patch only, leaving each row's own wording as it stood.","<b>WHAT WAS UNUSUAL.</b> Both rows were carried as rebate redemptions and now read as goodwill, which changes what the rows say about themselves rather than what they settled. The drafter raised no flag on either. CN6-WM stays an associate on the roster, with RM110 outstanding and 1 unit on credit from s124, nothing defaulted, a RM110 median across 6 orders in a RM75 to RM110 range.","<b>WHAT THE INVENTORY DID.</b> Nothing. Stock stands at 9.94 unit on the salt count of 08 Sep and the oil count of 09 Sep, ledger 77.95 against self use 68.01, cost basis RM44 a unit with replacement at RM46, reorder at 15 unit, nothing owed out and 11.5 unit promised. No loans are open and no floors or asks move on these two corrections."]},
+const evolution=[{"v":"v628","d":"14 Sep 2026","t":"AMEND ID: A NEW NAME OR PLACE RE-KEYS THE PARTY THROUGH APPROVE, AND THE USERNAME STAYS","n":["<b>HIS INSTRUCTION OF 14 SEP 2026, ON HIS RULINGS OF 11 SEP.</b> The Enter view could add an ID and not amend one. Amend ID sits beside Add ID on the phone: pick the party, type the name and the place as they should read, and the code is derived again by the Add ID rule, the party's own code counting as free. A spelling that keeps the code is filed in the vault and goes nowhere else. A code that changes is filed in the vault under the new code and queued as a rename, codes only, for Approve.","<b>WHAT A RENAME MOVES, FROM ONE WRITER.</b> The engine's renamePairs names the code and every code built on it, the -R account and an end buyer's, and renameInBook moves every whole value and every key that is one of them: the rows, the roster, the associates, the introductions, the people lists, the awards and the loans. The drafter counts the orders and lots for the card; the fold applies the rename after every other row in its batch, so a sale approved beside it under the old code moves too. Beyond the book it moves the statement key with the username unchanged, a place override while the code still ends in the same place, and the suite's fixtures, as v603 moved its three codes by hand. Notes, the changelog and issued statements keep the old code.","<b>WHAT IS REFUSED.</b> The drafter refuses a code off the roster, a resale account on its own, a code that does not change, a customer becoming a supplier, and a new code, or any code under it, that another party holds. The fold checks those again, and refuses a code the desk's own logic quotes, since it never edits the master's code: CJ4-OKR, SA5-BTR, SP7-PUD, and CM6-HCM in a comment. Those stay hand folds.","<b>TWO THINGS A RENAME NEEDED WERE ALREADY BROKEN.</b> The draft table's CHECK lists its collections by name and had never named repayment, so a repayment entered on the phone could not have reached Approve: migrations/0008 names repayment and rename, and drafts.mjs stages both as themselves. And the laptop's pull kept the directory's spelling over the vault's, so its next seed would have undone an amendment made on the phone: the vault's spelling now wins, the old one kept beside it as was. The unused queueRename is gone.","<b>THE CHECKS.</b> A new section of 29 assertions on fixture codes: the pairs and the walk, the card and six refusals, the CHECK against every collection the drafter returns, the fold's order and its hand-fold refusal, the three files beyond the book and the command line that writes them, the pull, and the phone's pane, plan, record, vault and card. 24 mutations each turn the assertions they touch red. The v528 pull assertion is restated for the new rule."]},{"v":"v627","d":"14 Sep 2026","t":"TWO OLD HALF UNIT ROWS RECLASSED FROM REBATE TO GOODWILL, NO CASH AND NO STOCK MOVE","n":["<b>WHAT WAS FOLDED.</b> Two corrections, both against CN6-WM, both applied on 14 Sep. s031 of 21 Jul and s056 of 04 Aug, each 0.5 unit for RM50 with no cash in, are reclassed: rebate from true to false, goodwill from false to true. Neither touches quantity, total or cash, so the pair moves no money and no salt. The fold applies the patch only, leaving each row's own wording as it stood.","<b>WHAT WAS UNUSUAL.</b> Both rows were carried as rebate redemptions and now read as goodwill, which changes what the rows say about themselves rather than what they settled. The drafter raised no flag on either. CN6-WM stays an associate on the roster, with RM110 outstanding and 1 unit on credit from s124, nothing defaulted, a RM110 median across 6 orders in a RM75 to RM110 range.","<b>WHAT THE INVENTORY DID.</b> Nothing. Stock stands at 9.94 unit on the salt count of 08 Sep and the oil count of 09 Sep, ledger 77.95 against self use 68.01, cost basis RM44 a unit with replacement at RM46, reorder at 15 unit, nothing owed out and 11.5 unit promised. No loans are open and no floors or asks move on these two corrections."]},
 
 {"v":"v626","d":"14 Sep 2026","t":"THE DRAFTER'S ADVANCE IS THE ENGINE'S, SO A ROW SETTLED IN KIND IS NO LONGER CALLED UNPAID","n":["<b>HIS REPORT OF 14 SEP 2026: CS6-BS AND CN6-WM EACH SHOWED A UNIT ON ADVANCE.</b> CS6-BS holds none: all four of its rows are paid, s139 in kind by its reward. CN6-WM holds one, and it is real: s124, 1 unit handed over on 30 Aug for RM 110 with nothing paid, which Receivables and Rules have shown all along. The rest was the drafter. Its ADVANCE flag set cash against the total and never read settledRM, so every settlement in kind read as unpaid: s139's three correction cards said 1 unit with RM 110 unpaid, and CN6-WM's two pending cards said half a unit each.","<b>THE FLAG IS NOW THE ENGINE'S txAdvance</b>, the units handed over at the row's price less what was paid in cash and in kind, which is what Receivables and the credit cap read. Swept across the book's sales, fifteen rows settled in kind lose a false flag, and s137 (CJ4-BJ, 4 of 12.5 unit out, nothing paid) says RM 272 unpaid rather than RM 850, the figure Receivables carries.","<b>A CORRECTION IS MEASURED AS THE ROW WILL STAND.</b> The card took cash and units off the row before the patch and left settledRM behind, so a correction settling an advance was flagged as that advance, and cancelling the s152 redemption as a fresh one. The same fault said s139's unchanged RM 117.5 was under RM 117.95 paid, on the very card that brought its settlement to RM 110; the corrected-total and corrected-quantity lines now wait for that figure to be corrected. A lot keeps the row it corrects, because a lot marked paid reads paid at whatever total it is given. The more-than-the-order check runs on new rows only, as its own comment said, or every overpayment on a correction was said twice.","<b>CARDS ALREADY DRAWN KEEP THEIR WORDS.</b> A draft's flags are written when it is drafted, so CN6-WM's two pending corrections carry the old line until they are decided. What they fold is unchanged: a flag never reaches the book.","<b>THE CHECKS.</b> A new section of fourteen assertions on fixture rows: a row paid in kind is no advance and an unpaid one still is, a part delivery owes its delivered share, CN6-WM's and CS6-BS's corrections and the s152 cancellation raise none, each overpayment is said once, and a total corrected under what was paid in kind is still flagged. Twelve mutations, the v625 drafter among them, each turn the assertions they touch red."]},{"v":"v625","d":"14 Sep 2026","t":"A PER-PRODUCT PAGE SHOWS ONE PRODUCT'S DETAIL, UNDER A SWITCH THAT CARRIES EVERY PRODUCT'S HEADLINE","n":["<b>HIS INSTRUCTION OF 14 SEP 2026.</b> The summary for every product always shows, a button switches the product, and two products' detail never stand on one page, because together they made the page too long. Receivables, Financials, On hand, Sourcing, Pricing and Analysis drew salt's block and then oil's. They draw one now. Above it sits a switch with a button per product, lit in that product's colour when it is the one shown. Each button carries the product's headline, so every product's summary stays in view: its revenue, or on On hand what it has on hand. The both-books summaries that lead Receivables and Financials stay where they were.","<b>ONE PRODUCT IN VIEW FOR THE WHOLE DESK, HIS RULE.</b> The switch sets PROD through setProdView, the same road the badge on the single-book pages and the Enter form's product select already took. Picking Oil on one page shows Oil on the next, and this device remembers the choice.","<b>THE RAIL'S SWITCH IS GONE.</b> Its buttons only jumped to a block further down, and on half the pages there was none, so it dimmed and explained itself. With it went prodJump, prodHead, drawProdSw, markProdSw, the PRODUCT heading, the last heading the rail carried, and their CSS.","<b>THE CHECKS.</b> A new section of seven assertions: no switch in the rail, and one block of the book in view on each of the six pages, under a switch listing every product and lighting that one. The buttons carry revenue, and units on hand on On hand. The both-books summaries still stand. A tap on Oil shows Oil alone and is remembered, and the next page opens on Oil. Seven mutations each turned it red. The four board laws walk each product in turn, having leaned on perProduct to do it, and the 11 Sep rail section keeps only the tab's own dress."]},{"v":"v624","d":"14 Sep 2026","t":"EVERY PAGE CARRIES ONE NAME, AND FIVE NAMES SAY WHAT THEIR PAGES ARE","n":["<b>HIS INSTRUCTION OF 14 SEP 2026: RENAME WHERE NECESSARY.</b> Two rules decided where. A page carries one name, in the rail, across its page and in its heading. Six headings had named something else: To do opened under Today, On hand under Inventory, Who buys under Customers, Map under Where the buyers are, and the two renamed below. And a name says what its page is.","<b>THE FIVE RENAMES.</b> Overview is Rules: every rule the desk trades by, and the register of what is breached. Forward is Next 30 days. Network is Associates. Orders is Site orders, the orders customers place on the statements site, which no longer sits a word away from the Order book. Pricing's one page takes its destination's name in place of The board, so the Whiteboard's links read Pricing. The board is still the price board inside Pricing.","<b>WHAT DID NOT MOVE.</b> The seven destinations, every address (#overview, #network, #orders still land), the Whiteboard, Transaction, and every link on the desk, which reads its name from the same table. The Journal keeps the names its entries were written in.","<b>THE CHECKS.</b> A new section renders all eighteen pages and reads their headings against their labels, finds no two pages sharing a name, and finds no destination with more pages than one opening on a page of its own name. Four mutations each turned it red. The v622 and Views sections read the new names."]},{"v":"v623","d":"14 Sep 2026","t":"AN ASSOCIATE EARNS A UNIT PER RM 470, AND R3 COUNTS AGAINST A HURDLE 1.2 TIMES HIGHER","n":["<b>HIS RULINGS OF 14 SEP 2026.</b> The same unit of salt could earn twice: once in its customer's reward, and again in the R3 of the associate who introduced that customer. So an associate's R3 margin now counts against a hurdle 1.2 times their figure, and their figure is RM 470 of pooled margin a unit. A customer stays at RM 500. Both figures are stated in REWARD. rewardUnitMargin takes who the reward is for, and rewardR3Hurdle gives the weighing.","<b>WHY THOSE FIGURES.</b> No unit is counted more than twice on this book. 1.2 is the average number of rewards a unit of salt bought was counted into on the day (1.19), where the average over the units rewards count was 1.45 and over R3's own units exactly 2. At RM 500 no weighing could bring CN6-WM near a reward, because their R3 is RM 63 of RM 893, so the associate figure came down. RM 470 is the round figure that met the two targets he named.","<b>WHERE IT LANDS.</b> CS6-BS is RM 12 from their next reward, at 4 earned and 4 taken, where they had held a free unit. CN6-WM is RM 57 from theirs, and shows 1 unit ahead until his two corrections fold: s031 and s056, the two half units, become goodwill on his ruling, leaving 1 taken. CS6-PER keeps 1 free unit. CJ4-OKR, CR3-DAM, CE4-AD and CI4-OKR stand level, and every customer balance is unchanged.","<b>ON THE DESK.</b> The associate's card marks the R3 row at a 1.2 times hurdle and says what its margin counts as, and the total names RM 470. What counts gives both figures and the R3 hurdle, and the appointment line on Enter states the customer and associate rules side by side.","<b>ALSO.</b> The laptop's update chain now checks the D1 mirror through wrangler's own login, where it had needed a key no shell holds, and printed \"not checked\" on every run.","<b>THE CHECKS.</b> A new section of six assertions on fixtures: the stated figures, R3 at 1/1.2 pooling to a unit, the introduced customer still counted in full on their own table, RM 480 earning an associate a unit and a customer none, the card, and What counts. Six mutations each turned it red. The v616, v618 and v570 sections were moved onto RM 470."]},{"v":"v622","d":"14 Sep 2026","t":"THE RAIL IS TWO LEVELS, AND THE ORDER BOOK OPENS ON RECEIVABLES","n":["<b>HIS INSTRUCTION OF 14 SEP 2026: TWO LEVELS AT MOST.</b> The rail stacked three: four headings (Command, Current, Relationships, Actions), the seven destinations, and the open destination's pages. The headings grouped the fifteen flat tabs the rail carried before v341 made the destinations, which already group, and two of the four stood over a single destination. They are gone. The rail now reads Today, Order book, Stock, Pricing, Customers, The book and Enter, and the open one lists its pages beneath it.","<b>A DESTINATION WITH ONE PAGE LISTS NOTHING.</b> Pricing opened a block holding one row, The board, which named the level above it again. railSubs lists nothing under a destination with no other page and marks its tab solo, and design/desk.css draws an open solo tab as the whole block, with rounded corners and its bottom edge. Pricing is the only one.","<b>RECEIVABLES, ON HIS CHOICE.</b> The Order book destination opened on a page also called Order book. That page is Receivables now, in the rail, across the page and in its heading. The destination keeps its name, and every old address still lands.","<b>THE CHECKS.</b> A new section of seven assertions: no heading in the rail, the destinations in VIEWS order, the Order book's two pages and heading, Pricing's solo block alone, and a three-page destination listing all three. The 11 Sep section now asserts PRODUCT, the one heading left, against the tabs. Eight mutations each turned the new section red."]},{"v":"v621","d":"14 Sep 2026","t":"A CUSTOMER HOLDING A WHOLE UNIT CAN REDEEM ONE, ON HIS WORD","n":["<b>HIS RULING OF 14 SEP 2026, THE LAST OF THREE CUSTOMER VERSIONS.</b> Covering a lower margin is the main road for a customer's reward (v620). Redeeming stays open on his word. On the Customers card, every customer holding at least one whole unit now has a button. It reads Redeem when they owe nothing, and Offset when they hold an advance. A tap takes one whole unit: salt, through Approve as any redemption goes, or an offset against their earliest advance of no more than one unit. Under a whole unit there is no button, and the road refuses.","<b>ONE ROAD, TWO SIDES.</b> redeemRebate looks for an associate first, who still takes all they hold, and then for a customer. The redemption states the balance they hold rather than the unit taken, so the Approve card reads the customer's whole position. The automatic offset stays with associates, as he decided on 11 Sep. On the book today, CM4-MK and CE4-CHE are offered an Offset against the advance each holds, CM6-HCM a Redeem, and CJ4-BJ, at 0.44, nothing.","<b>THE CHECKS.</b> Six assertions on fixtures: the card's Redeem, Offset and absent buttons, one unit redeemed against two held, the refusal under a unit, the offset capped at one, and the drafter taking a customer's redemption without an over-balance flag. Four mutations each turned the section red. A fifth, looking for customers before associates, stayed green, and should: the customer table holds no associate, so the order cannot matter."]},{"v":"v620","d":"14 Sep 2026","t":"A CUSTOMER'S REWARD COVERS A LOWER MARGIN ON A SALE HE MARKS, AT THE SALT'S COST","n":["<b>HIS RULINGS OF 14 SEP 2026, THE SECOND OF THREE CUSTOMER VERSIONS.</b> A customer's balance is meant mostly for covering a lower margin rather than for free salt. On Enter, a sale to a customer who holds reward and is priced under the board's ask for its size now shows one line: the gap, what they hold, and what a tick would cover. The gap is struck on the goods, delivery aside. What is covered is the gap or what the balance is worth at the salt's cost, whichever is less, in whole hundredths of a unit, so the ringgit never runs past the gap.","<b>THE ROW RECORDS IT.</b> Two new fields, coverUnits and coverRM, ride through the drafter's existing check of correctable fields, and the fold copies them onto the sale. The row editor can reach both. rebateApplied nets a cover exactly as it nets a redemption, and the desk's overlay spends a queued cover at once, so the same units cannot be offered twice before the fold. The ledger line of a covered sale carries a reward tag. The drafter refuses a cover on oil, for an associate or missing either half, checks the ringgit against the book's cost, and says the balance is the desk's word.","<b>THE CHECKS.</b> Twelve assertions: the plan's invariants on fixtures, the form's offer, tick and clearing, driven through wbPreview and wbRecord on distinct days so no twin guard can swallow a drive, the overlay spending a queued cover, the ledger tag, and the drafter's three refusals. The editable-attribute count moves to thirty-five. Fourteen mutations each turned the section red."]},{"v":"v619","d":"14 Sep 2026","t":"AN ASSOCIATE TAKES SALT UNDER THE ASK AND OIL UNDER IT TOO, BOTH PAID ON THE DAY","n":["<b>TWO ROWS FOLDED, ONE PARTY, BOTH CASH AND BOTH DELIVERED.</b> CS6-PER takes 6.25 unit of salt at RM460 and 10 unit of oil at RM110, each dated 13 Sep, each paid and handed over the same day, so nothing stays open and the credit cap is untouched at 2 unit on salt and 20 unit on oil. He carried no outstanding and no units on credit before either row, with no defaulted sum against him.","<b>THE UNUSUAL PART IS PRICE, NOT PAYMENT.</b> The drafter flagged the salt rate at RM70.4 a unit, 12% under his usual RM80 across 6 orders. It sits inside his RM60 to RM100 range but under his RM85.52 median and well under the RM610 ask for 6.25 unit, clearing only the RM351.33 floor. The oil at RM110 likewise clears the RM87.28 floor and falls short of the RM130 ask. Both were decided at the desk.","<b>THE INVENTORY TOOK THE GOODS OUT AT ITS OWN COST.</b> Salt costed at RM44 a unit, RM275 on the order, oil at RM7.53 a unit, RM75.25, both the desk's own rates, so no separate cost line is carried. Stock stands at 16.19 unit against a stated 16.19, counted 8 Sep for salt and 9 Sep for oil, with 11.5 unit promised and the reorder mark at 15."]},
 
@@ -6796,7 +6818,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='14 Sep 2026, 09:14 KL';
+const LAST_UPDATED='14 Sep 2026, 10:33 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -13811,12 +13833,13 @@ function deriveCode(name,loc,kind,parent){
    four-letter A from the same place is told apart from the first by the name people know them by. Only a name
    used up entirely, the same name twice in one place, falls back to a number. A downstream code numbers
    its siblings instead, so it is returned as derived and its caller checks it. */
-function deriveFreeCode(name,loc,kind,parent){
-  const base=deriveCode(name,loc,kind,parent);
-  if(!base||kind==='downstream'||roster.indexOf(base)<0)return base;
+/* v628: `except` is the party's own code on Amend ID, which is free to keep */
+function deriveFreeCode(name,loc,kind,parent,except){
+  const base=deriveCode(name,loc,kind,parent),free=c=>c===except||roster.indexOf(c)<0;
+  if(!base||kind==='downstream'||free(base))return base;
   const head=base.slice(0,2),tail=base.slice(2),more=name.trim().slice(1).replace(/[^A-Za-z]/g,'').toUpperCase();
-  for(let i=1;i<=more.length;i++){const c=head+more.slice(0,i)+tail;if(roster.indexOf(c)<0)return c;}
-  for(let i=2;;i++){if(roster.indexOf(base+i)<0)return base+i;}
+  for(let i=1;i<=more.length;i++){const c=head+more.slice(0,i)+tail;if(free(c))return c;}
+  for(let i=2;;i++){if(free(base+i))return base+i;}
 }
 function addParty(){
   const g=id=>{const e=document.getElementById(id);return e?e.value:'';};
@@ -13919,16 +13942,7 @@ function apDone(kind,html,colour){
   const m=document.getElementById('apMsg');
   if(m){m.innerHTML=html;m.style.color=colour||'var(--mut)';}
 }
-function queueRename(from,to){
-  if(!from||!to||from===to)return;
-  if(roster.indexOf(to)>=0){alert('The code '+to+' already belongs to another party. Rename that one first, or change the name so it implies a free code.');return;}
-  if(queue.some(q=>q.type==='RENAME'&&q.payload&&q.payload.from===from)){alert(from+' is already queued for renaming.');return;}
-  queue.push({at:new Date().toISOString(),type:'RENAME',party:from,qty:null,total:null,status:'rename',
-    raw:'Rename '+from+' to '+to+' everywhere, purging '+from+' outright',
-    payload:{mode:'rename',from:from,to:to}});
-  try{saveQueue();renderQueue();}catch(e){}
-  alert('Queued: '+from+' becomes '+to+'.\n\nIt is applied to every transaction on the next run, and '+from+' is purged outright. Nothing changes on screen until then, so the ledger and the code never disagree in the meantime.');
-}
+/* v628: queueRename, which nothing called, is gone; Amend ID on the Enter view queues a rename now (wbAmendIdNamed) */
 /* codes for parties that lack one; existing ids are canonical and are left alone */
 function applyCodes(vn){
   try{loadAdded();}catch(e){}
@@ -16388,7 +16402,7 @@ function wbProdVal(){return PRODUCTS[PROD]?PROD:DEFAULT_PROD;}
 function wbProdName(){return (PRODUCTS[wbProdVal()]||{}).name||wbProdVal();}
 /* the modes with no product of their own, and why. An amendment inherits the product of the
    order it attaches to; an ID names a party, not goods. */
-const WB_NO_PROD={amend:1,addid:1};
+const WB_NO_PROD={amend:1,addid:1,amendid:1};
 /* ============ APPROVE, ON THE DESK (v343) ============
    The rows the cloud drafter wrote from the queue, waiting on a decision. The phone has had
    this since v302 and the desk did not, so a row queued at the laptop had to be approved on
@@ -16510,6 +16524,8 @@ function apCard(d){
   else if(col==='loan'){head=`${r.direction==='in'?'Borrow':'Lend'} <b>${units(r.valueKg)}</b> of ${esc(r.product||'salt')} ${r.direction==='in'?'from':'to'} <b>${esc(codeOf(r.party||'?'))}</b> on ${esc(r.date||'-')}`;
     grid=cell('Units',units(r.valueKg))+cell('Owed back','in kind')+cell(r.direction==='in'?'Inventory':'Inventory',r.direction==='in'?'+'+units(r.valueKg):'-'+units(r.valueKg));}
   else if(col==='roster'){head=`Register <b>${esc(r.code||'?')}</b>`;grid=cell('Kind',esc(r.kind||'customer'))+(r.parent?cell('Under',esc(codeOf(r.parent))):'');}
+  else if(col==='rename'){head=`Amend ID: <b>${esc(r.from||'?')}</b> becomes <b>${esc(r.to||'?')}</b>`;   // v628
+    grid=cell('Orders re-keyed',String(r.orders||0))+cell('Lots re-keyed',String(r.lots||0))+cell('Moves with it',(r.pairs||[]).slice(1).map(x=>esc(x[0])).join(', ')||'nothing')+cell('Statement username','stays');}
   else if(d.amends&&d.amendKind==='Correction'){
     /* WHAT IS APPROVED IS WHAT CHANGED. The generic amendment grid below leads with cash and
        units moving, both of which are zero on a correction by definition, so it answered a
@@ -16849,7 +16865,7 @@ function tabWorkbench(){
   return `<h1>Transaction</h1>
   <div class="dsc dsclead">Queued for approval, never booked here.</div>
   <div class="card">
-    <span class="viewsw" id="wbModeSw"><button data-m="new" class="on">New order</button><button data-m="amend">Amend an order</button><button data-m="count">Inventory count</button><button data-m="loan">Borrow or lend</button>${cloudMode()?'<button data-m="addid">Add ID</button>':''}</span>
+    <span class="viewsw" id="wbModeSw"><button data-m="new" class="on">New order</button><button data-m="amend">Amend an order</button><button data-m="count">Inventory count</button><button data-m="loan">Borrow or lend</button>${cloudMode()?'<button data-m="addid">Add ID</button><button data-m="amendid">Amend ID</button>':''}</span>
     <!-- v275: WHICH BOOK THE ENTRY LANDS ON. Until now there was no such control and no
          product on any payload, so prodOf() defaulted EVERY entry ever made here to salt:
          the desk could not record oil at all, and the three oil rows on the book were
@@ -17004,6 +17020,18 @@ function tabWorkbench(){
         <div class="qfield" style="flex:1"><label>Note <span style="color:var(--dim)">optional</span></label><input id="wbApNote" type="text" placeholder="never the name or the place"></div>
       </div>
       <div class="dsc">The code is made from what you type, never typed itself: <b>C</b> for a customer or <b>S</b> for a supplier, the name&rsquo;s first letter and its length, then the place, its initials when it is several words and its first three letters when it is one. So a four-letter name starting with A is <b>CA4</b>, and with its place <b>CA4-DAM</b>; a blank place gives <b>TBC</b>. If the code is taken, it takes one more letter of the name, as <b>CAB4-DAM</b>. The name goes into the vault on this device, encrypted, and never into the queue.<br>To <b>appoint someone already on the roster</b>, pick Associate or Referrer and choose them under <b>Who</b>: it confers the standing rather than registering a second time, asks for no name, and an associate is given their <b>-R</b> resell account with it.</div>
+    </div>
+
+    <!-- v628, AMEND ID, his instruction of 14 Sep 2026: a party's name or place is corrected here. The name is
+         filed in the vault, encrypted, as on Add ID; when the code it derives differs, the re-key goes through
+         Approve like every other write, and only codes travel. -->
+    <div id="wbPaneAmendid" style="display:none;margin-top:13px">
+      <div class="qrow" style="margin-bottom:10px">
+        <div class="qfield"><label>Who</label><select id="wbAmWho"></select></div>
+        <div class="qfield"><label>Name</label><input id="wbAmName" type="text" placeholder="as they are known" autocomplete="off"></div>
+        <div class="qfield"><label>Place</label><input id="wbAmPlace" type="text" placeholder="town or area; blank if to be confirmed" autocomplete="off"></div>
+      </div>
+      <div class="dsc">Type the name and the place as they should read. The code is derived again by the Add ID rule: if it comes out the same, only the vault changes; if it differs, the new code replaces the old one everywhere once you approve it. The statement username never changes.</div>
     </div>
 
     <div style="margin-top:13px;padding-top:11px;border-top:1px solid var(--line)">
@@ -18668,6 +18696,15 @@ function wbPreview(){
       if(!(wbVal('wbApPlace')||'').trim()&&code)goods.push('No place yet, so the code ends in <b>TBC</b>, and it is re-keyed once the place is known.');   // v587: derived, never refused
       if(!NAME_VAULT&&qSyncState==='server')warns.push('No vault has synced to this device yet; the first name filed here starts one.');
     }
+  }else if(wbMode==='amendid'){
+    const ap=amendIdPlan();
+    if(!ap.from)errs.push('Choose whose name or place to amend.');
+    else if(!ap.nm)errs.push('Type the name as it should read. It is filed into the vault, encrypted, and never into the queue.');
+    else if(amendQueued(ap.from))errs.push(`<b>${esc(ap.from)}</b> already has a rename waiting for approval.`);
+    body=`<div style="font-size:13px;color:var(--mut)">${!ap.to?'Choose the party, then type the name and the place as they should read.'
+      :ap.to===ap.from?`The code stays <b style="color:var(--ink)">${esc(ap.from)}</b>: only the name and the place in the vault change, so nothing goes to Approve.`
+      :`<b style="color:var(--ink)">${esc(ap.from)}</b> becomes <b style="color:var(--ink)">${esc(ap.to)}</b> on every order and list that names it, once approved${ap.pairs.length>1?', and '+ap.pairs.slice(1).map(x=>esc(x[0])+' becomes '+esc(x[1])).join(', ')+' with it':''}. The statement username stays; notes and history keep the old code.`}</div>`;
+    if(ap.to&&!ap.pl)goods.push('No place yet, so the code ends in <b>TBC</b>, and it can be amended again once the place is known.');
   }else{
     const el=wbEl('wbCountUnits'),w=wbNum('wbCountUnits'),has=el&&el.value!=='';
     const diff=+(w-currentStock).toFixed(2);
@@ -18700,25 +18737,58 @@ function wbAddIdQueue(code,kind,parent,an){
   applyOverlay();render();
   Promise.resolve(saveQueue()).then(()=>{try{renderQueue();}catch(e){}});
 }
-async function wbAddIdNamed(code,kind,parent,an,nm,pl){
-  const ok=wbEl('wbOk');
-  const fail=m=>{if(ok){ok.textContent=m;ok.style.color='var(--crim)';}};
+/* v628: THE VAULT WRITE, ONE FOR ADD ID AND AMEND ID. The passphrase is asked here and used once; `edit`
+   changes the opened map; the map is sealed and saved, and the names on screen follow. Returns null when
+   the name is filed, or why nothing was. */
+async function wbVaultFile(edit){
   const pass=prompt('Vault passphrase, to file the name encrypted. It is used once and not kept.');
-  if(!pass)return fail('Not registered: the name needs the passphrase to be filed.');
+  if(!pass)return 'The name needs the passphrase to be filed.';
   /* v612: THE VAULT IS READ AGAIN HERE, NEVER TAKEN FROM MEMORY. NAME_VAULT is loaded once, when the
      desk opens, and the save below replaces the cloud's whole vault. A desk left open across a laptop
      reseed filed its one new name over the older map it still held, and every name the reseed had
      added or re-keyed was gone. So a read that fails refuses: the copy in memory is the fault. */
   let cloud=null;
   try{const r=await fetch('vault',{cache:'no-store'});if(r.ok)cloud=await r.json();}catch(e){}
-  if(!cloud||!cloud.ok)return fail('The vault could not be read (offline, or the server did not answer). Nothing registered.');
+  if(!cloud||!cloud.ok)return 'The vault could not be read (offline, or the server did not answer).';
   let map={};
-  if(cloud.vault){try{map=await vaultDecrypt(pass,cloud.vault);}catch(e){return fail('That passphrase did not open the vault. Nothing registered.');}}
-  map[code]=nm+' ('+pl+')';
-  let envl;try{envl=await vaultEncrypt(pass,map);}catch(e){return fail('The name could not be encrypted on this device. Nothing registered.');}
+  if(cloud.vault){try{map=await vaultDecrypt(pass,cloud.vault);}catch(e){return 'That passphrase did not open the vault.';}}
+  edit(map);
+  let envl;try{envl=await vaultEncrypt(pass,map);}catch(e){return 'The name could not be encrypted on this device.';}
   const prev=NAME_VAULT;NAME_VAULT=envl;
-  if(!(await vaultSave())){NAME_VAULT=prev;return fail('The vault could not be saved (offline, or the write key was refused). Nothing registered.');}
-  if(Object.keys(vaultNames||{}).length){vaultNames[code]=map[code];try{fillNameLookup(vaultNames);}catch(e){}}
+  if(!(await vaultSave())){NAME_VAULT=prev;return 'The vault could not be saved (offline, or the write key was refused).';}
+  if(Object.keys(vaultNames||{}).length){Object.assign(vaultNames,map);try{fillNameLookup(vaultNames);}catch(e){}}
+  return null;
+}
+/* v628, AMEND ID: WHAT THE TAP WILL DO, one answer for the preview and the record. The code is derived again by
+   the Add ID rule with the party's own code counting as free, so a spelling that keeps the code keeps it; what
+   moves with a new code is the engine's renamePairs, the list the card and the fold read too. */
+function amendIdPlan(){
+  const from=wbVal('wbAmWho'),nm=(wbVal('wbAmName')||'').trim(),pl=(wbVal('wbAmPlace')||'').trim();
+  const to=from&&nm?deriveFreeCode(nm,pl||'TBC',from[0]==='S'?'supplier':'customer',null,from):null;
+  return {from:from,nm:nm,pl:pl,to:to,pairs:to&&to!==from?POSITION_ENGINE.renamePairs(roster,from,to):[]};
+}
+const amendQueued=from=>queue.some(q=>q&&q.payload&&q.payload.mode==='rename'&&q.payload.from===from);
+async function wbAmendIdNamed(ap){
+  /* the new spelling goes under the code it derives; a rename leaves the old entry for the code still on the book
+     until the fold, and an end buyer's name is copied to their new code */
+  const why=await wbVaultFile(map=>{
+    map[ap.to]=ap.nm+' ('+(ap.pl||'to be confirmed')+')';
+    ap.pairs.slice(1).forEach(x=>{if(map[x[0]]&&!map[x[1]])map[x[1]]=map[x[0]];});
+  });
+  if(why){const o=wbEl('wbOk');if(o){o.textContent=why+' Nothing amended.';o.style.color='var(--crim)';}return;}
+  if(ap.to!==ap.from)queue.push({at:new Date().toISOString(),type:'RENAME',party:ap.from,qty:null,total:null,status:'rename',
+    raw:'Amend ID: re-key '+ap.from+' to '+ap.to+' wherever the book names it',
+    payload:{mode:'rename',from:ap.from,to:ap.to}});
+  ['wbAmName','wbAmPlace'].forEach(id=>{const e=wbEl(id);if(e)e.value='';});
+  render();
+  Promise.resolve(saveQueue()).then(()=>{try{renderQueue();}catch(e){}});
+  const o2=wbEl('wbOk');   /* render() rebuilt the tab */
+  if(o2){o2.textContent=ap.to===ap.from?'Filed in the vault, encrypted. The code stays '+ap.from+'.':'Filed in the vault, encrypted. '+ap.from+' to '+ap.to+' is queued for approval.';o2.style.color='var(--grn)';}
+}
+async function wbAddIdNamed(code,kind,parent,an,nm,pl){
+  const ok=wbEl('wbOk');
+  const why=await wbVaultFile(map=>{map[code]=nm+' ('+pl+')';});
+  if(why){if(ok){ok.textContent=why+' Nothing registered.';ok.style.color='var(--crim)';}return;}
   wbAddIdQueue(code,kind,parent,an);
   const o2=wbEl('wbOk')||ok;   /* render() rebuilt the tab, so the status node captured above is detached */
   if(o2){o2.textContent='Registered '+code+'. The name is filed in the vault, encrypted; the ID is queued for approval.';o2.style.color='var(--grn)';}
@@ -18883,6 +18953,13 @@ function wbRecord(){
       payload:{mode:'loan',form:'salt',product:wbProdVal(),direction:dirL,party:who,date:date,qty:w,total:null,cash:null,kg:w,note:noteL||null}});
     ['wbLoanUnits','wbLoanRM','wbLoanNote'].forEach(id=>{const e=wbEl(id);if(e)e.value='';});
     }
+  }else if(wbMode==='amendid'){
+    const ap=amendIdPlan();
+    if(!ap.to){ok.textContent='Choose the party and type the name first.';ok.style.color='var(--crim)';return;}
+    if(amendQueued(ap.from)){ok.textContent=ap.from+' already has a rename waiting for approval.';ok.style.color='var(--crim)';return;}
+    ok.textContent='Filing the name into the vault…';ok.style.color='var(--mut)';
+    wbAmendIdNamed(ap);
+    return;
   }else if(wbMode==='addid'){
     const code=wbApCodeNow(),kind=wbVal('wbApKind');
     const parent=(kind==='downstream'||kind==='bucket')?(wbVal('wbApParent')||null):null,an=(wbVal('wbApNote')||'').trim();
@@ -18989,7 +19066,10 @@ function wbApply(){
   const ms=wbEl('wbModeSw');if(ms)[...ms.querySelectorAll('button')].forEach(b=>b.classList.toggle('on',b.dataset.m===wbMode));
   const ds=wbEl('wbDirSw');if(ds)[...ds.querySelectorAll('button')].forEach(b=>b.classList.toggle('on',b.dataset.d===wbDir));
   const as=wbEl('wbASideSw');if(as)[...as.querySelectorAll('button')].forEach(b=>b.classList.toggle('on',b.dataset.s===wbASide));
-  const p={new:'wbPaneNew',amend:'wbPaneAmend',count:'wbPaneCount',loan:'wbPaneLoan',addid:'wbPaneAddid'};
+  const p={new:'wbPaneNew',amend:'wbPaneAmend',count:'wbPaneCount',loan:'wbPaneLoan',addid:'wbPaneAddid',amendid:'wbPaneAmendid'};
+  /* v628: Amend ID picks from the roster, keeping the choice; a resale account and an end buyer follow their associate's code, so neither is offered */
+  const amw=wbEl('wbAmWho');
+  if(amw){const cur=amw.value;amw.innerHTML='<option value="">Choose</option>'+roster.filter(id=>!POSITION_ENGINE.isBucket(id)&&!/-\d+-/.test(id)).slice().sort().map(id=>`<option value="${id}">${codeOf(id)}</option>`).join('');amw.value=cur;}
   /* v527: the loan's party is any roster code, filled once */
   const lpSel=wbEl('wbLoanParty');if(lpSel&&!lpSel.options.length)lpSel.innerHTML='<option value="">Choose</option>'+(roster||[]).slice().sort().map(id=>`<option value="${id}">${codeOf(id)}</option>`).join('');
   /* v589: a loan is salt, in units, or cash, in ringgit, and only the box that applies is shown */
@@ -19075,6 +19155,10 @@ function wireWorkbench(){
   const lfm=wbEl('wbLoanForm');if(lfm)lfm.onchange=()=>{wbApply();wbPreview();};   // v589: the switch changes which box shows
   ['wbLoanDir','wbLoanWhich'].forEach(id=>{const e=wbEl(id);if(e)e.onchange=()=>{wbApply();wbPreview();};});   // v595: what happened, and which loan, change the boxes
   ['wbApWho','wbApName','wbApPlace','wbApParent','wbApNote'].forEach(id=>{const e=wbEl(id);if(e)e.oninput=e.onchange=wbPreview;});   // v587: the code follows the name and the place as they are typed
+  /* v628: picking a party fills in the vault's spelling when the names are open, "Name (Place)", so the amendment starts from what is filed */
+  const amw=wbEl('wbAmWho');if(amw)amw.onchange=()=>{const v=(vaultNames||{})[amw.value]||'',m=/^(.*?)\s*\((.*)\)\s*$/.exec(v),n=wbEl('wbAmName'),pe=wbEl('wbAmPlace');
+    if(n)n.value=m?m[1]:v;if(pe)pe.value=m&&!/^(to be confirmed|TBC)$/i.test(m[2])?m[2]:'';wbPreview();};
+  ['wbAmName','wbAmPlace'].forEach(id=>{const e=wbEl(id);if(e)e.oninput=e.onchange=wbPreview;});
   const ds=wbEl('wbDirSw');if(ds)ds.onclick=e=>{const d=e.target.dataset.d;if(!d)return;wbDir=d;wbFillParty();wbApply();wbPreview();};
   const asw=wbEl('wbASideSw');if(asw)asw.onclick=e=>{const s=e.target.dataset.s;if(!s)return;wbASide=s;
     wbFillKind();wbFillOrders();wbApply();wbEl('wbOk').textContent='';wbPreview();};
