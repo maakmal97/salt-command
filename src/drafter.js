@@ -25,6 +25,9 @@
 
 const round = (n, dp = 2) => Math.round((n + Number.EPSILON) * 10 ** dp) / 10 ** dp;
 const isNum = (v) => typeof v === "number" && Number.isFinite(v);
+/* v633: a point on the map is two numbers inside Malaysia, kept to 0.01 degrees, about a kilometre; anything else is no point */
+const geoOf = (g) => (Array.isArray(g) && g.length === 2 && isNum(g[0]) && isNum(g[1]) && g[0] > 0.8 && g[0] < 7.5 && g[1] > 99.5 && g[1] < 119.5)
+  ? [Math.round(g[0] * 100) / 100, Math.round(g[1] * 100) / 100] : null;
 /* v617: whether the book holds a party as departed. PEOPLE reaches the Worker in the mirror's state, as every book key does. */
 const isDepartedIn = (book, id) => !!id && ((book.state && book.state.PEOPLE && book.state.PEOPLE.departed) || []).some((d) => d && d.id === id);
 const prodOf = (r) => (r && r.product) || "salt";
@@ -992,6 +995,7 @@ export function draftRow(entry, book) {
     const kind = String(pay.kind || "customer");
     const parent = pay.parent || null;
     if (kind === "bucket" && !parent) return { skip: "a bucket sits under a party, and which party is a judgement" };
+    if (pay.geo != null && !geoOf(pay.geo)) return { skip: "the point given for the place is not in Malaysia" };   // v633
 
     const roster = (book.state && book.state.roster) || [];
     const associates = (book.state && book.state.associates) || [];
@@ -1024,7 +1028,7 @@ export function draftRow(entry, book) {
       : "";
     return {
       collection: "roster",
-      row: { code, kind, parent, note: pay.note || null },
+      row: Object.assign({ code, kind, parent, note: pay.note || null }, geoOf(pay.geo) ? { geo: geoOf(pay.geo) } : {}),
       flags,
       reasoning: `${stream && roster.includes(code) ? "Appoints" : "Registers"} ${code} as a ${kind}${parent ? ` under ${parent}` : ""}.`
         + ` It touches no figure: the fold appends ${roster.includes(code) ? "nothing new" : "the code"} to the roster.`
@@ -1043,6 +1047,7 @@ export function draftRow(entry, book) {
     if (!/^[A-Z]{1,3}\d{0,2}[A-Z0-9-]*$/.test(to)) return { skip: `"${to}" does not look like a desk code. They run like CA4-DAM or SP7-PUD` };
     if (to === from) return { skip: "the code does not change, so there is nothing to approve: a new spelling of the name or the place is filed in the vault alone" };
     if (to[0] !== from[0]) return { skip: `${from} is a ${from[0] === "S" ? "supplier" : "customer"}, and ${to} would not be` };
+    if (pay.geo != null && !geoOf(pay.geo)) return { skip: "the point given for the place is not in Malaysia" };   // v633
     const pairs = POSITION_ENGINE.renamePairs(roster, from, to);
     const taken = pairs.map((p) => p[1]).filter((c) => roster.includes(c));
     if (taken.length) return { skip: `${taken.join(" and ")} already belongs to another party` };
@@ -1051,12 +1056,37 @@ export function draftRow(entry, book) {
     const also = pairs.slice(1).map((p) => `${p[0]} becomes ${p[1]}`);
     return {
       collection: "rename",
-      row: { from, to, pairs, orders, lots },
+      row: Object.assign({ from, to, pairs, orders, lots }, geoOf(pay.geo) ? { geo: geoOf(pay.geo) } : {}),
       flags: also.length ? [`${also.join(", and ")} with it, so the account and everything booked to it follow the party.`] : [],
       reasoning: `Re-keys ${from} to ${to} wherever the book names it: ${orders} order${orders === 1 ? "" : "s"}, ${lots} lot${lots === 1 ? "" : "s"}, the roster and every list that carries the code.`
         + " The old code is retired outright; notes, the changelog and issued statements keep saying what was true when they were written."
         + " The statement account moves to the new code and its username stays. It moves no cash and no stock."
+        + (geoOf(pay.geo) ? " Its place on the map moves with it, to the point the new place was found at." : "")
         + " THE NAME AND THE PLACE ARE NOT HERE: the phone filed them in the vault, encrypted.",
+    };
+  }
+  /* v633, HIS DECISION OF 14 SEP 2026: A PARTY'S PLACE ON THE MAP, one party from Amend ID or many from the map, as points to
+     0.01 degrees. Codes and points only: the place typed stays in the vault. */
+  if (pay.mode === "place") {
+    const places = (pay.places && typeof pay.places === "object" && !Array.isArray(pay.places)) ? pay.places : {};
+    const codes = Object.keys(places);
+    if (!codes.length) return { skip: "a place entry names no party" };
+    const roster = (book.state && book.state.roster) || [], placed = (book.state && book.state.PLACED) || {};
+    const row = { places: {} };
+    for (const c of codes) {
+      if (!roster.includes(c)) return { skip: `${c} is not on the roster` };
+      if (POSITION_ENGINE.isBucket(c)) return { skip: `${c} is a resale account, and it stands where its associate does` };
+      const g = geoOf(places[c]);
+      if (!g) return { skip: `the point for ${c} is not in Malaysia` };
+      row.places[c] = g;
+    }
+    const moves = codes.filter((c) => placed[c]);
+    return {
+      collection: "place",
+      row,
+      flags: moves.length ? [`${moves.join(", ")} ${moves.length === 1 ? "is" : "are"} on the map already, and move${moves.length === 1 ? "s" : ""} to the new point.`] : [],
+      reasoning: `Files the place of ${codes.length} ${codes.length === 1 ? "party" : "parties"} as a point on the map, each to about a kilometre: ${codes.join(", ")}.`
+        + " It moves no cash and no stock. The place that was typed stays in the vault; only the point travels.",
     };
   }
   /* A PRICE EDIT (v354). It moves no stock, no cash and no row: it states what the board asks and

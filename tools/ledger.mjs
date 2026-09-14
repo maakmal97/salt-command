@@ -84,6 +84,7 @@ const NOT_LEDGER = new Set([
   "OBS_CONF", "ACTSEV", "bSevTag", "WB_NO_PROD", "CHART_INK", "DIAMOND",
   "LOCS", "PLACES", "METRO", "NON_PLACE", "PLACEHOLDER", "BASEMAP", "BASEMAP_META", "DOW", "DOW3", "KL_HOLIDAYS", "HOL_MAP",
   "AREAS", "AREAS_META", "DISTRICTS", "MAPC" /* v630: the areas the map shades, and its steps; geography, not trade */,
+  "GAZ", "GAZ_META" /* v633: the hashed place list; geography, not trade */, "WB_GEO" /* v633: the place being typed on the Enter form */,
   "LEAK_TEST", "BIO_FIELDS", "PROD_META", "builders",
 
   /* transient UI state, not persisted anywhere */

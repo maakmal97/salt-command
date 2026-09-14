@@ -11,6 +11,8 @@
  *   geo/places.json    the gazetteer: PLACES, METRO, NON_PLACE, PLACEHOLDER, LOCS, and NOTES
  *   geo/areas.json     v630: the districts and the mukim, bandar and pekan, named, fetched once by
  *                      tools/areafetch.mjs
+ *   geo/gazetteer.json v633: the place list Add ID and Amend ID look a typed place up in, HASHED,
+ *                      fetched once by tools/gazfetch.mjs
  *
  * NOTES comes back as comments above its declaration, the same trick booksync uses, so the prose
  * that explains a decision sits where a reader meets it and still lives in the data file.
@@ -21,7 +23,7 @@ import { fileURLToPath } from "node:url";
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const MASTER = process.env.SALT_MASTER || resolve(REPO, "master", "salt_command.html");
-const OPEN = "/* ==== GEO: generated from geo/basemap.json, geo/places.json and geo/areas.json by tools/geosync.mjs. Edit those, never this block. ==== */";
+const OPEN = "/* ==== GEO: generated from geo/basemap.json, geo/places.json, geo/areas.json and geo/gazetteer.json by tools/geosync.mjs. Edit those, never this block. ==== */";
 const SHUT = "/* ==== END GEO ==== */";
 const KEYS = ["PLACES", "METRO", "NON_PLACE", "PLACEHOLDER", "LOCS"];
 
@@ -75,14 +77,24 @@ ${a.areas.map((x) => "  " + JSON.stringify(x)).join(",\n")}
 ];`;
 }
 /* a district's state stays in geo/areas.json and is not rendered: the map draws the states from BASEMAP and names none */
+/* v633: the place list, one packed string, HASHED: a plain list of the core states' places would carry most of the directory's */
+function renderGazetteer(g) {
+  return `/* ============ THE PLACE LIST (v633) ============
+   ${g.what}
+   ${g.source}, ${g.licence}, fetched ${g.fetchedOn}: ${g.places} places under ${g.names} names, ${g.ambiguous} of them ambiguous.
+   ${g.packing}. Built from GeoNames alone, never from the directory. Re-fetch with
+   \`node tools/gazfetch.mjs\`, by hand; it is never run by CI or by the build. */
+const GAZ_META=${JSON.stringify({ attribution: g.attribution, fetchedOn: g.fetchedOn, names: g.names })};
+const GAZ=${JSON.stringify(g.packed)};`;
+}
 function block() {
-  return [OPEN, renderBasemap(read("geo/basemap.json")), renderPlaces(read("geo/places.json")), renderAreas(read("geo/areas.json")), SHUT].join("\n");
+  return [OPEN, renderBasemap(read("geo/basemap.json")), renderPlaces(read("geo/places.json")), renderAreas(read("geo/areas.json")), renderGazetteer(read("geo/gazetteer.json")), SHUT].join("\n");
 }
 export function checkText(src) {
   const a = src.indexOf(OPEN), b = src.indexOf(SHUT);
   if (a < 0 || b < 0) return "the master has no GEO block";
   const have = src.slice(a, b + SHUT.length);
-  return have === block() ? null : "the master's GEO block is not geo/basemap.json + geo/places.json";
+  return have === block() ? null : "the master's GEO block is not the files in geo/";
 }
 
 const mode = process.argv[2] || "--check";
@@ -98,5 +110,5 @@ if (mode === "--sync") {
 } else {
   const why = checkText(src);
   if (why) { console.error(`  FAIL  ${why}. Run \`node tools/geosync.mjs --sync\`.`); process.exit(1); }
-  console.log("  ok    the master's GEO block is geo/basemap.json and geo/places.json, byte for byte");
+  console.log("  ok    the master's GEO block is the files in geo/, byte for byte");
 }

@@ -35,6 +35,8 @@
  *   a rename (v628)   Amend ID: the code re-keyed wherever the book holds it, AFTER every other row
  *                     in the batch, with its -R account; the statement key, a place override and the
  *                     suite's fixtures follow; refused for a code the desk's own logic names
+ *   a place (v633)    PLACED[code] set to the point its place was found or tapped at, one party or
+ *                     many; a registration and a rename may carry the point too
  * then the shelf is ROLLED for what physically moved (a roll, never a count), the watermark
  * moves to the newest id folded, and the book is sorted.
  *
@@ -121,6 +123,7 @@ function describe(item) {
     case "lostDemand": return `LOST SALE ${r.kg} unit ${r.product}${r.party ? " to " + r.party : ""} on ${r.date}: ${r.why}`;
     case "roster": return `${APPOINTS[r.kind] ? "APPOINT" : "REGISTER"} ${r.code} as ${r.kind}${r.parent ? " under " + r.parent : ""}`;
     case "rename": return `RENAME ${r.from} to ${r.to}`;
+    case "place": return `PLACE ${Object.keys(r.places || {}).join(", ")} on the map`;
     case "priceset": return `SET THE BOARD for ${r.product}${Object.keys(r.prices || {}).length ? ": " + Object.entries(r.prices).map(([q, p]) => `${q} unit at RM${p}`).join(", ") : ""}${(r.hide || []).length ? `, hiding ${r.hide.join(", ")} unit` : ""}`;
     default: return `${item.collection}: ${JSON.stringify(r).slice(0, 80)}`;
   }
@@ -313,8 +316,9 @@ export function plan(book, staged, notes) {
       if (onRoster && !appoints) { out.refused.push({ id: it.id, why: `${r.code} is already on the roster` }); continue; }
       if (appoints && (book.associates || []).includes(r.code)) { out.refused.push({ id: it.id, why: `${r.code} is already an associate` }); continue; }
       const resell = POSITION_ENGINE.appointBucket(r.kind, r.code);
-      entry.roster = { code: r.code, register: !onRoster, appoint: appoints, resell: resell && !(book.roster || []).includes(resell) ? resell : null };
+      entry.roster = { code: r.code, register: !onRoster, appoint: appoints, resell: resell && !(book.roster || []).includes(resell) ? resell : null, geo: r.geo || null };
       if (entry.roster.register) entry.does.push(`append ${r.code} to the roster (the directory is not touched)`);
+      if (r.geo) entry.does.push(`file ${r.code} as a point on the map, about a kilometre, where its place was found`);
       if (STATEMENT_KINDS.includes(r.kind)) entry.does.push(`give ${r.code} a statement username if they have none, kept for life`);
       /* THE FIGURES ARE NOT RESTATED HERE. The reward hurdles and the credit caps are the
          engine's (REWARD.hurdleMultiple, RULES.creditUnits), and a second copy in the fold's
@@ -346,6 +350,12 @@ export function plan(book, staged, notes) {
       entry.repay = { rid: r.loan, date: r.date, kg: cashL ? null : amt, rm: cashL ? amt : null, settles };
       entry.does.push(`record the repayment on loan ${r.loan}${settles ? " and settle it" : `, leaving ${+(owed - amt).toFixed(2)} owing`}`);
       if (!cashL) out.moves.push({ product: loan.product || "salt", kg: loan.direction === "in" ? -amt : +amt, who: (loan.direction === "in" ? "repaid to " : "repaid by ") + loan.party, when: r.date || TODAY });
+    } else if (it.collection === "place") {
+      /* v633: where parties are on the map, as points; checked against the book it folds into */
+      const codes = Object.keys(r.places || {}), off = codes.filter((c) => !(book.roster || []).includes(c));
+      if (!codes.length || off.length) { out.refused.push({ id: it.id, why: codes.length ? `${off.join(" and ")} is not on the roster` : "a place entry names no party" }); continue; }
+      entry.place = r.places;
+      entry.does.push(`file ${codes.join(", ")} as ${codes.length === 1 ? "a point" : "points"} on the map, about a kilometre each`);
     } else if (it.collection === "rename") {
       /* v628, AMEND ID: checked again against the book it folds into, since a code can be taken or retired
          between the draft and the fold. What moves is the engine's renamePairs, as on the card. */
@@ -357,7 +367,7 @@ export function plan(book, staged, notes) {
       if (taken.length) { out.refused.push({ id: it.id, why: `${taken.join(" and ")} already belongs to another party` }); continue; }
       const pinned = pairs.map((x) => x[0]).filter(pinnedInMaster);
       if (pinned.length) { out.refused.push({ id: it.id, why: `${pinned.join(" and ")} is written into the desk's own code, which a fold never edits, so this rename is left for a hand fold` }); continue; }
-      entry.rename = { from: r.from, to: r.to, pairs };
+      entry.rename = { from: r.from, to: r.to, pairs, geo: r.geo || null };
       entry.does.push(`re-key ${pairs.map((x) => x[0] + " to " + x[1]).join(" and ")} wherever the book holds the code, after every other row in this batch; notes and history keep the old code`);
       entry.does.push("move the statement account to the new code, its username unchanged, with any place override and the suite's fixtures");
     } else { out.refused.push({ id: it.id, why: `unknown collection ${it.collection}` }); continue; }
@@ -803,6 +813,7 @@ export function apply(book, staged, notes, masterText) {
          apply itself idempotent, as refundOnCancel is. */
       const rr = it.roster;
       if (rr.register && !book.roster.includes(rr.code)) book.roster.push(rr.code);
+      if (rr.geo) { book.PLACED = book.PLACED || {}; book.PLACED[rr.code] = rr.geo; }   // v633: the place found at Add ID
       if (rr.resell && !book.roster.includes(rr.resell)) book.roster.push(rr.resell);
       if (rr.appoint) {
         book.associates = book.associates || [];
@@ -816,12 +827,16 @@ export function apply(book, staged, notes, masterText) {
         book.NOTES = book.NOTES || {};
         book.NOTES.PRICE_SET = [String(n.note).trim()].concat(book.NOTES.PRICE_SET || []);
       }
-    } else if (it.rename) renames.push(it.rename);
+    } else if (it.place) { book.PLACED = book.PLACED || {}; Object.assign(book.PLACED, it.place); }   // v633
+    else if (it.rename) renames.push(it.rename);
     if (it.id > newest) newest = it.id;
     folded.push(it.id);
   }
   /* v628: A RENAME GOES LAST, so a row folded in the same batch under the old code moves with the rest */
-  for (const rn of renames) E.renameInBook(book, rn.pairs);
+  for (const rn of renames) {
+    E.renameInBook(book, rn.pairs);   // PLACED is a map keyed by code, so a point filed earlier moves with the code
+    if (rn.geo) { book.PLACED = book.PLACED || {}; book.PLACED[rn.to] = rn.geo; }   // v633: and a new place moves it on
+  }
   /* THE ROLL: what physically moved, per product, applied to the stated figure that stands */
   const byProd = {};
   for (const m of p.moves) { byProd[m.product] = byProd[m.product] || []; byProd[m.product].push(m); }

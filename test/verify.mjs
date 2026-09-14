@@ -1911,7 +1911,7 @@ section("Geography — geo/ is the source (v349)");
   let chk = "";
   try { chk = execFileSync("node", [join(REPO, "tools", "geosync.mjs"), "--check"], { encoding: "utf8" }); }
   catch (e) { chk = String((e && e.stdout) || e); }
-  ok(/ok\s+the master's GEO block/.test(chk), "tools/geosync.mjs --check: the master's GEO block is the two files");
+  ok(/ok\s+the master's GEO block/.test(chk), "tools/geosync.mjs --check: the master's GEO block is the files in geo/");
   const bm = JSON.parse(readFileSync(join(REPO, "geo", "basemap.json"), "utf8"));
   const pl = JSON.parse(readFileSync(join(REPO, "geo", "places.json"), "utf8"));
   ok(bm.features.length >= 1 && bm.features.every((f) => f.rings.length && f.rings.every((r) => r.length >= 4)),
@@ -1943,7 +1943,7 @@ section("Book — ledger/book.json is the source (v339)");
   ok(/ok\s+the master's BOOK block is ledger\/book\.json/.test(chk), "tools/booksync.mjs --check: the master's book block is the file");
   const book = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
   const keys = Object.keys(book).filter((k) => k !== "NOTES");
-  ok(keys.length === 27, "the book holds the twenty-seven ledger keys");   // v353 added PRICE_SET; v504 added COUNTS; v549 retired SOURCING_PLAN; v553 added COST_RULE; v615 added INTRODUCTIONS; v616 retired REWARD_OPENING; v618 retired CUSTOMER_REWARD_OPENING
+  ok(keys.length === 28, "the book holds the twenty-eight ledger keys");   // v633 added PLACED; v353 added PRICE_SET; v504 added COUNTS; v549 retired SOURCING_PLAN; v553 added COST_RULE; v615 added INTRODUCTIONS; v616 retired REWARD_OPENING; v618 retired CUSTOMER_REWARD_OPENING
   ok(Array.isArray(book.sales) && book.sales.length > 100 && Array.isArray(book.purchases), "with the rows as records");
   ok(typeof book.QUEUE_COMMITTED === "string" && typeof book.STATED_STOCK === "number", "and the singletons as values");
   ok(book.NOTES && Array.isArray(book.NOTES.STATED_STOCK) && book.NOTES.STATED_STOCK.length > 0, "the stated stock's roll history survived as NOTES");
@@ -8372,7 +8372,7 @@ section("v528: the name on the phone, filed encrypted before the ID is queued");
     "if(!post&&vlt&&" + JSON.stringify(opts.read === "throw") + ")return Promise.reject(new TypeError('offline'));" +
     "var good=post?" + (opts.saveOk === false ? "false" : "true") + ":!(vlt&&" + JSON.stringify(opts.read === "fail") + ");" +
     "return Promise.resolve({ok:good,json:function(){return Promise.resolve(post?{ok:good}:{ok:good,vault:" + (opts.cloud || "null") + "});}});};" +
-    "wbMode='addid';wbApply();var set=function(id,v){var e=document.getElementById(id);if(e)e.value=v;};set('wbApKind'," + JSON.stringify(opts.kind || "customer") + ");set('wbApName'," + JSON.stringify(opts.name || "") + ");set('wbApPlace'," + JSON.stringify(opts.place || "") + ");wbPreview();" +
+    "wbMode='addid';wbApply();var set=function(id,v){var e=document.getElementById(id);if(e)e.value=v;};set('wbApKind'," + JSON.stringify(opts.kind || "customer") + ");set('wbApName'," + JSON.stringify(opts.name || "") + ");set('wbApPlace'," + JSON.stringify(opts.place || "") + ");WB_GEO={text:" + JSON.stringify(opts.place || "") + ",point:[3.1,101.6],how:'tap'};wbPreview();" +   /* v633: placed by a tap */
     "var btn=document.getElementById('wbRec');var r={dis:!!btn.disabled,errs:(document.getElementById('wbMsgs')||{}).textContent||''};try{wbRecord();}catch(e){r.threw=String(e&&e.message);}return JSON.stringify(r);}catch(e){return JSON.stringify({no:'threw: '+(e&&e.message)});}})()";
   const settle = async () => { for (let i = 0; i < 60; i++) { await new Promise((r) => setTimeout(r, 100)); const st = String(w.eval("(document.getElementById('wbOk')||{}).textContent||''")); if (!/Filing the name/.test(st)) return st; } return String(w.eval("(document.getElementById('wbOk')||{}).textContent||''")); };
   const readQ = () => JSON.parse(String(w.eval("JSON.stringify({q:queue.map(function(x){return {type:x.type,party:x.party,raw:x.raw,payload:x.payload};}),posts:window.__posts,vault:NAME_VAULT,roster:roster.indexOf('CT11-SOM')>=0})")));
@@ -9834,7 +9834,7 @@ section("11 Sep 2026: Add ID derives the code, and a clash takes more of the nam
     wD.eval("setProd('salt');recompute();switchTab('add');wbMode='addid';wbApply();");
     ok(!wD.document.getElementById("wbApCode") && !!wD.document.getElementById("wbApWho"), "the pane has no box to type a code into, and a Who picker for an appointment");
     const PANE = (kind, name, place) => JSON.parse(String(wD.eval("(function(){var set=function(id,v){var e=document.getElementById(id);if(e)e.value=v;};"
-      + "set('wbApKind'," + JSON.stringify(kind) + ");wbApply();set('wbApWho','');set('wbApName'," + JSON.stringify(name) + ");set('wbApPlace'," + JSON.stringify(place) + ");wbPreview();"
+      + "set('wbApKind'," + JSON.stringify(kind) + ");wbApply();set('wbApWho','');set('wbApName'," + JSON.stringify(name) + ");set('wbApPlace'," + JSON.stringify(place) + ");WB_GEO={text:" + JSON.stringify(place) + ",point:[3.1,101.6],how:'tap'};wbPreview();"   /* v633: placed by a tap */
       + "return JSON.stringify({code:wbApCodeNow(),prev:(document.getElementById('wbPrev')||{}).textContent||'',msgs:(document.getElementById('wbMsgs')||{}).textContent||'',dis:!!document.getElementById('wbRec').disabled});})()")));
     const clash = PANE("customer", "Zyxw", "Qqqville");   // CZ4-QQQ is still on the roster
     ok(clash.code === "CZY4-QQQ" && /Registers CZY4-QQQ/.test(clash.prev) && !clash.dis,
@@ -10636,13 +10636,19 @@ section("v617: a departed associate keeps earning, but nothing is redeemed until
   const { w: w17 } = await om17();
   const rd17 = (e) => JSON.parse(String(w17.eval("JSON.stringify(" + e + ")")));
   try {
-    w17.eval("setProd('salt');PEOPLE.departed.push(" + JSON.stringify(gone17[0]) + ");associates.push('CZ9-GONE');"
-      + "sales.push(" + JSON.stringify({ rid: "z617a", customer: "CZ9-GONE", date: "2026-09-01", qty: 1, total: 600, cost: 0, cash: 600, deliveredQty: 1, product: "salt" }) + "," + JSON.stringify(adv17) + ");recompute();"
+    /* v633: AND AN ASSOCIATE STILL HERE, WITH A FREE UNIT AND AN ADVANCE OF THEIR OWN, because the live book had one at v631
+       and the automatic offset rightly offered it, which turned this section red on the cloud: the queue is read for the
+       departed party alone, and the other's offer shows the offset really ran */
+    w17.eval("setProd('salt');PEOPLE.departed.push(" + JSON.stringify(gone17[0]) + ");associates.push('CZ9-GONE','CZ9-LIVE');"
+      + "sales.push(" + JSON.stringify({ rid: "z617a", customer: "CZ9-GONE", date: "2026-09-01", qty: 1, total: 600, cost: 0, cash: 600, deliveredQty: 1, product: "salt" }) + "," + JSON.stringify(adv17)
+      + "," + JSON.stringify({ rid: "z617l", customer: "CZ9-LIVE", date: "2026-09-01", qty: 1, total: 600, cost: 0, cash: 600, deliveredQty: 1, product: "salt" })
+      + "," + JSON.stringify(Object.assign({}, adv17, { rid: "a617l", customer: "CZ9-LIVE" })) + ");recompute();"
       + "queue=[];AP_DRAFTS=[];AP_REFUSED=[];saveQueue=function(){return Promise.resolve(true);};qPost=function(){return Promise.resolve(true);};switchTab=function(){};");
     const g17 = rd17("(function(){var r=networkStats().find(function(x){return x.id==='CZ9-GONE';});return r?{earned:r.earned,taken:rebateApplied('CZ9-GONE')}:null;})()");
     ok(!!g17 && g17.earned > 0 && g17.taken === 0, "they keep earning while departed: " + JSON.stringify(g17));
     w17.eval("redeemRebate('CZ9-GONE');autoOffsets();");
-    ok(rd17("queue.length") === 0, "and neither the Offset against their advance nor the automatic offset queues anything");
+    const goneQ17 = "queue.filter(function(x){return JSON.stringify(x).indexOf('CZ9-GONE')>=0;}).length", liveQ17 = "queue.filter(function(x){return JSON.stringify(x).indexOf('CZ9-LIVE')>=0;}).length";
+    ok(rd17(goneQ17) === 0 && rd17(liveQ17) === 1, "and neither the Offset against their advance nor the automatic offset queues anything for them, while an associate still here is offered theirs: " + rd17(goneQ17) + " and " + rd17(liveQ17));
     const card17 = String(w17.eval("resellerCard(networkStats().find(function(x){return x.id==='CZ9-GONE';}))"));
     ok(/held while departed/.test(card17) && /unit held/.test(card17) && !/redeemRebate\('CZ9-GONE'\)/.test(card17),
       "the card says what they have earned is held, and draws no button");
@@ -10651,7 +10657,7 @@ section("v617: a departed associate keeps earning, but nothing is redeemed until
     w17.eval("PEOPLE.departed.pop();");
     const back17 = String(w17.eval("resellerCard(networkStats().find(function(x){return x.id==='CZ9-GONE';}))"));
     w17.eval("redeemRebate('CZ9-GONE');");
-    ok(rd17("queue.length") === 1 && /redeemRebate\('CZ9-GONE'\)/.test(back17)
+    ok(rd17(goneQ17) === 1 && /redeemRebate\('CZ9-GONE'\)/.test(back17)
       && /CZ9-GONE/.test(String(w17.eval("JSON.stringify(actions().filter(function(a){return a.kind==='reward';}))"))),
       "once they return, the button, the offset and the Today prompt are all back");
   } finally { await new Promise((r) => setTimeout(r, 200)); try { w17.close(); } catch (e) { /* best effort */ } }
@@ -11121,7 +11127,7 @@ section("v628: Amend ID re-keys a party through Approve, and the name moves in t
       + "return Promise.resolve({ok:true,json:function(){return Promise.resolve(post?{ok:true}:{ok:true,vault:" + env28 + "});}});};})();";
     const settle28 = async () => { for (let i = 0; i < 60; i++) { await new Promise((r) => setTimeout(r, 100)); const st = String(w28.eval("(document.getElementById('wbOk')||{}).textContent||''")); if (!/Filing the name/.test(st)) return st; } return ""; };
     const opened28 = async () => { const p = rd28("window.__posts").find((x) => /vault$/.test(x.u) && x.m === "POST"); return p ? vd28("pw", p.body.vault) : {}; };
-    w28.eval(stub28); aplan("CZ9-TBC", "Zed Zed Z", "Seg Town"); w28.eval("wbRecord();");
+    w28.eval(stub28 + "WB_GEO={text:'Seg Town',point:[2.7,101.95],how:'tap'};"); aplan("CZ9-TBC", "Zed Zed Z", "Seg Town"); w28.eval("wbRecord();");   // v633: placed by a tap
     const st28 = await settle28(), q28 = rd28("queue.map(function(x){return {type:x.type,raw:x.raw,payload:x.payload};})"), open28 = await opened28();
     ok(/queued for approval/.test(st28) && q28.length === 1 && q28[0].payload.mode === "rename" && q28[0].payload.from === "CZ9-TBC" && q28[0].payload.to === "CZ9-ST" && !/Zed|Seg Town/.test(JSON.stringify(q28)),
       "Record files the vault first and queues the rename with codes only: " + st28);
@@ -11197,6 +11203,197 @@ section("v630: the map shades named districts, opens a district's mukim, bandar 
     ok(rd30("document.querySelector('.sec.on svg').getAttribute('viewBox')") === "0 0 325 390", "on a phone the map is drawn at the width it is shown, taller than wide, so names keep their size");
     Object.defineProperty(w30, "innerWidth", { value: 1024, configurable: true });
   } finally { await new Promise((r) => setTimeout(r, 200)); try { w30.close(); } catch (e) { /* best effort */ } }
+}
+
+section("v633: a party's place reaches the map on its own, from what is typed at Add ID and Amend ID, or from a tap");
+{
+  /* HIS DECISION OF 14 SEP 2026: automatic from the typed place. Each wording is tried as an official area name and then in
+     GeoNames' hashed place list, a tap placing what neither finds; only codes and points travel. Fixture codes and a fixture
+     place list throughout, run through the real tools/gazfetch.mjs; the one real lookup is an official area name, public on
+     the map already. Each assertion was proved red by mutation. */
+  const E31 = (await import("../engine/position.mjs")).default;
+  const { draftRow: dr31 } = await import("../src/drafter.js");
+  const F31 = await import("../tools/fold.mjs");
+  const { webcrypto: wc31 } = await import("node:crypto");
+
+  /* ---- the engine: the wordings a typed place is looked up by ---- */
+  ok(E31.placeKey("kg. Baru,  Sg. Zedd") === "kampung baru sungai zedd" && E31.placeKey("Tmn Zédd") === "taman zedd",
+    "a typed place is folded to plain words, accents gone and the usual short forms spelled out: " + E31.placeKey("kg. Baru,  Sg. Zedd") + " / " + E31.placeKey("Tmn Zédd"));
+  const c31 = E31.placeCandidates("Kampung Zedd Permai, Qqqville");
+  ok(c31[0] === "kampung zedd permai qqqville" && c31.indexOf("zedd permai") > 0 && c31.indexOf("qqqville") > c31.indexOf("zedd permai") && c31.includes("permai") && !c31.includes("kampung") && !c31.includes("zedd"),
+    "the whole place first, then its parts without the generic word, then runs of its words, never a generic word or a short word alone: " + JSON.stringify(c31));
+
+  /* ---- the place list: a fixture GeoNames extract through the real builder ---- */
+  const tmp31 = join(REPO, "test", "tmp", "v633-gaz"), f31 = (n) => join(tmp31, n);
+  mkdirSync(tmp31, { recursive: true });
+  const geo31 = (id, name, alt, lat, lng, cls, code, adm) => [id, name, name, alt, lat, lng, cls, code, "MY", "", adm, "", "", "", "0", "", "10", "Asia/Kuala_Lumpur", "2026-01-01"].join("\t");
+  writeFileSync(f31("MY.txt"), [
+    geo31(1, "Zedville", "Zedvile", 3.1234, 101.5678, "P", "PPL", "12"),
+    geo31(2, "Seg Town", "", 2.7012, 101.9456, "P", "PPL", "05"),
+    geo31(3, "Qqqton", "", 3.0, 101.5, "P", "PPL", "12"),
+    geo31(4, "Qqqton", "", 3.2, 101.7, "P", "PPL", "14"),
+    geo31(5, "Farville", "", 5.4, 100.3, "P", "PPL", "07"),
+    geo31(6, "Wetville", "", 3.05, 101.45, "H", "STM", "12"),
+    geo31(7, "Taman Zedd Heights", "", 2.95, 101.75, "L", "LCTY", "12"),
+  ].join("\n") + "\n");
+  const run31 = spawnSync(process.execPath, [join(REPO, "tools", "gazfetch.mjs"), "--from", f31("MY.txt"), "--out", f31("gaz.json")], { encoding: "utf8" });
+  const G31 = run31.status === 0 ? JSON.parse(readFileSync(f31("gaz.json"), "utf8")) : { packed: "", names: -1 };
+  ok(run31.status === 0 && G31.places === 5 && /^(?:[0-9a-f]{7}[0-9a-z]{4})+$/.test(G31.packed) && G31.packed.length === G31.names * 11 && !/zedville|qqqton|seg town/i.test(JSON.stringify(G31)),
+    "the builder keeps the populated places and localities of the core states only, each name hashed beside a packed point, no name in the file: " + (run31.status === 0 ? G31.places + " places, " + G31.names + " names" : (run31.stdout + run31.stderr).slice(-200)));
+  const live31 = JSON.parse(readFileSync(join(REPO, "geo", "gazetteer.json"), "utf8"));
+  ok(/^(?:[0-9a-f]{7}[0-9a-z]{4})+$/.test(live31.packed) && live31.packed.length === live31.names * 11 && live31.names > 4000 && live31.licence === "CC BY 4.0" && /GeoNames/.test(live31.attribution),
+    "the committed list has the same shape, GeoNames under CC BY 4.0: " + live31.names + " names");
+
+  /* ---- the drafter: the place travels as a point, and only inside Malaysia ---- */
+  const mir31 = { sales: [], purchases: [], state: { roster: ["CZ9-PLA", "CZ9-PLB", "CZ9-PLA-R", "CZ9-OLD"], associates: [], PLACED: { "CZ9-PLB": [2.5, 101.5] } }, pricing: null };
+  const en31 = (p) => ({ at: "2026-09-14T09:00:00.000Z", payload: p });
+  const pl31 = dr31(en31({ mode: "place", places: { "CZ9-PLA": [3.1234, 101.5678], "CZ9-PLB": [2.7012, 101.9456] } }), mir31);
+  ok(!pl31.skip && pl31.collection === "place" && JSON.stringify(pl31.row.places) === '{"CZ9-PLA":[3.12,101.57],"CZ9-PLB":[2.7,101.95]}' && /CZ9-PLB is on the map already/.test(pl31.flags.join(" ")) && /only the point travels/.test(pl31.reasoning),
+    "a place entry drafts as its own collection, each point to 0.01 degrees, flagging a party it moves: " + (pl31.skip || JSON.stringify(pl31.row) + " " + pl31.flags.join(" ")));
+  for (const [p, why] of [[{ places: { "CZ9-NOT": [3.1, 101.6] } }, /CZ9-NOT is not on the roster/], [{ places: { "CZ9-PLA-R": [3.1, 101.6] } }, /resale account/],
+    [{ places: { "CZ9-PLA": [51.5, -0.12] } }, /not in Malaysia/], [{ places: { "CZ9-PLA": "3.1,101.6" } }, /not in Malaysia/], [{ places: {} }, /names no party/]]) {
+    const s = dr31(en31({ mode: "place", ...p }), mir31).skip || "";
+    ok(why.test(s), "the drafter refuses the place entry " + JSON.stringify(p) + ": " + (s || "drafted"));
+  }
+  const ad31 = dr31(en31({ mode: "addid", code: "CZ9-NEW", kind: "customer", parent: null, geo: [3.1234, 101.5678] }), mir31);
+  ok(!ad31.skip && JSON.stringify(ad31.row.geo) === "[3.12,101.57]", "a registration carries the point its place was found at: " + (ad31.skip || JSON.stringify(ad31.row)));
+  ok(/not in Malaysia/.test(dr31(en31({ mode: "addid", code: "CZ9-NEW", kind: "customer", parent: null, geo: [0, 0] }), mir31).skip || ""), "and is refused with a point outside Malaysia");
+  const rn31 = dr31(en31({ mode: "rename", from: "CZ9-OLD", to: "CZ9-ODD", geo: [2.7012, 101.9456] }), mir31);
+  ok(!rn31.skip && JSON.stringify(rn31.row.geo) === "[2.7,101.95]" && /place on the map moves with it/.test(rn31.reasoning), "a rename carries the new point, and its card says the place moves: " + (rn31.skip || JSON.stringify(rn31.row)));
+
+  /* ---- the fold: the point is filed on the book, and follows a rename ---- */
+  const master31 = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+  const book31 = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  book31.roster.push("CZ9-PLA", "CZ9-MOV", "CZ9-GEO"); book31.PLACED = { "CZ9-MOV": [2.9, 101.6], "CZ9-GEO": [2.9, 101.6] };
+  const it31 = (n, collection, row) => ({ id: "2099-01-01T00:00:00.00" + n + "Z", collection, row, entry: { at: "2099-01-01T00:00:00.00" + n + "Z", payload: {} } });
+  const res31 = F31.apply(book31, { ok: true, count: 4, approved: [
+    it31(1, "rename", { from: "CZ9-GEO", to: "CZ9-GEX", geo: [3.12, 101.57] }),
+    it31(2, "roster", { code: "CZ9-NEW", kind: "customer", parent: null, note: null, geo: [2.7, 101.95] }),
+    it31(3, "place", { places: { "CZ9-PLA": [3.05, 101.45] } }),
+    it31(4, "rename", { from: "CZ9-MOV", to: "CZ9-MVD" }),
+  ] }, { version: "v9998", date: "01 Jan 2099", title: "FIXTURE", notes: ["fixture"], rows: {} }, master31);
+  const P31 = book31.PLACED || {};
+  ok(res31.ok && JSON.stringify(P31["CZ9-NEW"]) === "[2.7,101.95]" && JSON.stringify(P31["CZ9-PLA"]) === "[3.05,101.45]", "a registration and a place entry file their points on the book: " + (res31.ok ? JSON.stringify(P31) : res31.problems.join("; ")));
+  ok(res31.ok && JSON.stringify(P31["CZ9-MVD"]) === "[2.9,101.6]" && !("CZ9-MOV" in P31) && JSON.stringify(P31["CZ9-GEX"]) === "[3.12,101.57]" && !("CZ9-GEO" in P31),
+    "a rename takes the party's point with it, and a rename with a new place moves the point too: " + JSON.stringify(P31));
+  const ref31 = F31.plan(book31, { ok: true, count: 1, approved: [it31(5, "place", { places: { "CZ9-GONE": [3.1, 101.6] } })] }, null).refused.map((x) => x.why).join(" ");
+  ok(/CZ9-GONE is not on the roster/.test(ref31), "the fold refuses a place for a code that left the roster since it was drafted: " + ref31);
+
+  /* ---- the phone ---- */
+  const { openMaster: om31 } = await import("../tools/payload.mjs");
+  const { vaultEncrypt: ve31 } = await import("../tools/seed-vault.mjs");
+  const A31 = JSON.parse(readFileSync(join(REPO, "geo", "areas.json"), "utf8"));
+  const { w: w31 } = await om31();
+  if (!w31.crypto || !w31.crypto.subtle) { try { Object.defineProperty(w31, "crypto", { value: wc31, configurable: true }); } catch (e) { w31.crypto = wc31; } }
+  const rd31 = (e) => JSON.parse(String(w31.eval("JSON.stringify(" + e + ")")));
+  const look31 = async (t) => { w31.eval("window.__pf=null;placeFromText(" + JSON.stringify(t) + ").then(function(r){window.__pf=r;});"); for (let i = 0; i < 50 && !rd31("window.__pf"); i++) await new Promise((r) => setTimeout(r, 20)); return rd31("window.__pf"); };
+  try {
+    w31.eval("GAZ_INDEX=gazDecode(" + JSON.stringify(G31.packed) + ");");
+    const zed31 = await look31("Zedvile"), seg31 = await look31("Seg Town"), amb31 = await look31("Qqqton"), far31 = await look31("Farville"), wet31 = await look31("Wetville");
+    ok(zed31 && zed31.how === "list" && JSON.stringify(zed31.point) === "[3.12,101.57]" && seg31.how === "list" && JSON.stringify(seg31.point) === "[2.7,101.95]",
+      "the desk reads the builder's packing back to the same points, under any spelling the list gives: " + JSON.stringify([zed31, seg31]));
+    ok(amb31.how === "ambiguous" && !amb31.point && far31.how === "none" && wet31.how === "none", "a name standing for places far apart asks for a tap, and a place outside the core states or not a settlement is not found: " + JSON.stringify([amb31, far31, wet31]));
+    const hts31 = await look31("Zedd Heights");
+    ok(hts31.how === "list" && JSON.stringify(hts31.point) === "[2.95,101.75]", "a place typed without its Taman is found under its bare name: " + JSON.stringify(hts31));
+    const sereb31 = await look31("Taman Zzqx, Seremban");
+    const at31 = sereb31 && sereb31.point ? rd31("(function(){var r=areaOf(" + sereb31.point[0] + "," + sereb31.point[1] + ");return [r.area?areaName(r.area):null,r.area?r.area.short:null,r.district?r.district.name:null];})()") : [];
+    ok(sereb31.how === "area" && at31.includes(sereb31.name) && /seremban/i.test(sereb31.name), "an official area name finds the area's own point, which lies inside the area it names: " + JSON.stringify([sereb31, at31]));
+    const first31 = await look31("Zedville, Seremban");
+    ok(first31.how === "list" && JSON.stringify(first31.point) === "[3.12,101.57]", "the most specific wording wins over a broader area named after it: " + JSON.stringify(first31));
+    const five31 = (A31.areas.find((a) => /^[A-Za-z]{5}$/.test(a.short)) || {}).short;
+    const f5 = five31 ? await look31("Taman Zzqx " + five31) : null;
+    ok(!!five31 && f5.how === "area" && f5.name && f5.name.toLowerCase().includes(five31.toLowerCase()), "a five-letter word alone is found as an official area name: " + JSON.stringify(f5));
+
+    /* placeOf reads the filed point first */
+    const po31 = rd31("(function(){var before=placeOf('CZ9-KLC');PLACED['CZ9-KLC']=[3.05,101.45];var after=placeOf('CZ9-KLC');delete PLACED['CZ9-KLC'];return [before,after];})()");
+    ok(po31[0] && po31[0].lat !== 3.05 && po31[1] && po31[1].lat === 3.05 && po31[1].lng === 101.45, "a filed point stands before the place a code's tail derives: " + JSON.stringify(po31));
+
+    /* Add ID: found, not found, tapped */
+    const env31 = JSON.stringify(await ve31("pw", { "CZ1-OTH": "Other (Here)" }));
+    const stub31 = "(function(){queue=[];NAME_VAULT=" + env31 + ";qSyncState='server';window.__posts=[];window.prompt=function(){return 'pw';};"
+      + "window.fetch=function(u,o){var post=!!(o&&o.method==='POST');window.__posts.push({u:String(u),m:post?'POST':'GET',body:o&&o.body?JSON.parse(o.body):null});"
+      + "return Promise.resolve({ok:true,json:function(){return Promise.resolve(post?{ok:true}:{ok:true,vault:" + env31 + "});}});};})();";
+    const wait31 = async () => { for (let i = 0; i < 50 && rd31("WB_GEO.how") === "looking"; i++) await new Promise((r) => setTimeout(r, 20)); w31.eval("wbPreview();"); };
+    const pane31 = (nm, pl) => rd31("(function(){var s=function(i,v){var e=document.getElementById(i);if(e)e.value=v;};s('wbApKind','customer');wbApply();s('wbApWho','');s('wbApName'," + JSON.stringify(nm) + ");s('wbApPlace'," + JSON.stringify(pl) + ");wbPreview();return 1;})()");
+    const view31 = () => rd31("(function(){var p=document.querySelector('#wbPrev svg.mpick'),c=p&&p.querySelector('circle.mpickpt');return {msgs:(document.getElementById('wbMsgs')||{}).textContent||'',dis:!!document.getElementById('wbRec').disabled,svg:!!p,cx:c?+c.getAttribute('cx'):null,cy:c?+c.getAttribute('cy'):null,code:wbApCodeNow()};})()");
+    const settle31 = async () => { for (let i = 0; i < 60; i++) { await new Promise((r) => setTimeout(r, 100)); const st = String(w31.eval("(document.getElementById('wbOk')||{}).textContent||''")); if (!/Filing the name/.test(st)) return st; } return ""; };
+    w31.eval("try{cloudMode=function(){return true;};}catch(e){};setProd('salt');recompute();switchTab('add');wbMode='addid';wbApply();WB_GEO={text:null,point:null,how:null};");
+    pane31("Zed Fixture", "Zedville"); await wait31();
+    const found31 = view31();
+    ok(/Found in the place list/.test(found31.msgs) && !found31.dis && found31.svg && found31.cx != null, "a place in the list is found as it is typed, drawn on the map under the form, and Record is enabled: " + JSON.stringify(found31));
+    ok(/Districts: geoBoundaries.*CC BY 3\.0\. Places: GeoNames, CC BY 4\.0\./.test(rd31("document.getElementById('wbPrev').textContent")), "the map under the form credits the districts it draws and the place list it searched");
+    w31.eval(stub31 + "wbRecord();");
+    const stF31 = await settle31(), qF31 = rd31("queue.map(function(x){return x.payload;})"), rawF31 = JSON.stringify(rd31("queue"));
+    ok(/Registered/.test(stF31) && qF31.length === 1 && JSON.stringify(qF31[0].geo) === "[3.12,101.57]" && !rawF31.includes("Zedville") && !rawF31.includes("Fixture"),
+      "Record queues the code with the point and never the place: " + stF31 + " " + JSON.stringify(qF31));
+    w31.eval("queue=[];");
+    pane31("Zed Other", "Zzqx Nowhere"); await wait31();
+    const miss31 = view31();
+    ok(/not in the place list: tap where they are/.test(miss31.msgs) && miss31.dis && miss31.svg && miss31.cx == null, "a place not in the list asks for a tap, with Record held back: " + JSON.stringify(miss31));
+    w31.eval(stub31 + "wbRecord();");
+    ok(/Find the place on the map first/.test(rd31("document.getElementById('wbOk').textContent")) && rd31("queue.length") === 0, "and Record refuses until it is placed");
+    /* the tap: at the pixel the map drew a point, on a picker shown at half size and offset, the same point comes back */
+    w31.eval("WB_GEO={text:'Zzqx Nowhere',point:[2.95,101.75],how:'tap'};wbPreview();");
+    const drawn31 = view31();
+    w31.eval("(function(){var svg=document.querySelector('#wbPrev svg.mpick');svg.getBoundingClientRect=function(){return {left:10,top:20,width:PICK.W/2,height:PICK.H/2};};"
+      + "WB_GEO.point=null;pickPlace({currentTarget:svg,clientX:10+" + drawn31.cx + "/2,clientY:20+" + drawn31.cy + "/2});})();");
+    const tap31 = rd31("WB_GEO"), tapV31 = view31();
+    ok(tap31.how === "tap" && Math.abs(tap31.point[0] - 2.95) <= 0.011 && Math.abs(tap31.point[1] - 101.75) <= 0.011 && /Placed where you tapped/.test(tapV31.msgs) && !tapV31.dis,
+      "a tap where the map drew a point files that point, whatever size the map is shown at: " + JSON.stringify([tap31, tapV31.msgs]));
+    w31.eval("(function(){var svg=document.querySelector('#wbPrev svg.mpick');svg.getBoundingClientRect=function(){return {left:10,top:20,width:PICK.W/2,height:PICK.H/2};};"
+      + "pickPlace({currentTarget:svg,clientX:10+(" + drawn31.cx + "+40)/2,clientY:20+" + drawn31.cy + "/2});})();");
+    const tap31b = rd31("WB_GEO.point");
+    ok(tap31b[1] > tap31.point[1] + 0.02 && Math.abs(tap31b[0] - tap31.point[0]) <= 0.011, "and a tap further right moves it east: " + JSON.stringify(tap31b));
+    w31.eval(stub31 + "wbRecord();");
+    const stT31 = await settle31(), qT31 = rd31("queue.map(function(x){return x.payload;})");
+    ok(/Registered/.test(stT31) && qT31.length === 1 && JSON.stringify(qT31[0].geo) === JSON.stringify(tap31b), "Record then queues the tapped point: " + stT31 + " " + JSON.stringify(qT31.map((q) => q.geo)));
+    w31.eval("queue=[];");
+
+    /* Amend ID: the same code with a new place queues the point; the same point queues nothing; a new code carries it */
+    const am31 = async (who, nm, pl) => { w31.eval("(function(){switchTab('add');wbMode='amendid';wbApply();var s=function(i,v){document.getElementById(i).value=v;};s('wbAmWho'," + JSON.stringify(who) + ");s('wbAmName'," + JSON.stringify(nm) + ");s('wbAmPlace'," + JSON.stringify(pl) + ");wbPreview();})();"); await wait31(); return rd31("(function(){var p=amendIdPlan();p.prev=(document.getElementById('wbPrev')||{}).textContent;return p;})()"); };
+    w31.eval("roster.push('CZ9-TBC','CZ9-TBC-R');associates.push('CZ9-TBC');");
+    const code31 = (await am31("CZ9-TBC", "Zed Zed Z", "Seg Town")).to;
+    w31.eval("roster.push(" + JSON.stringify(code31) + ");PLACED[" + JSON.stringify(code31) + "]=[2.5,101.5];");
+    const same31 = await am31(code31, "Zed Zed Z", "Seg Town");
+    ok(same31.to === code31 && same31.move && /new point on the map goes to Approve/.test(same31.prev), "a party whose code stays but whose place moves is told the new point goes to Approve: " + same31.prev);
+    w31.eval(stub31 + "wbRecord();");
+    const stS31 = await settle31(), qS31 = rd31("queue.map(function(x){return x.payload;})");
+    ok(/code stays/.test(stS31) && qS31.length === 1 && qS31[0].mode === "place" && JSON.stringify(qS31[0].places) === JSON.stringify({ [code31]: [2.7, 101.95] }),
+      "and Record queues a place entry for that code alone: " + stS31 + " " + JSON.stringify(qS31));
+    w31.eval("queue=[];PLACED[" + JSON.stringify(code31) + "]=[2.7,101.95];");
+    const still31 = await am31(code31, "Zed Zed Z", "Seg Town");
+    w31.eval(stub31 + "wbRecord();");
+    const stN31 = await settle31();
+    ok(!still31.move && /code stays/.test(stN31) && rd31("queue.length") === 0, "a place that lands on the point already filed queues nothing: " + stN31);
+    w31.eval("roster.splice(roster.indexOf(" + JSON.stringify(code31) + "),1);delete PLACED[" + JSON.stringify(code31) + "];");
+    const move31 = await am31("CZ9-TBC", "Zed Zed Z", "Seg Town");
+    w31.eval(stub31 + "wbRecord();");
+    await settle31();
+    const qM31 = rd31("queue.map(function(x){return x.payload;})");
+    ok(move31.to === code31 && qM31.length === 1 && qM31[0].mode === "rename" && JSON.stringify(qM31[0].geo) === "[2.7,101.95]", "a new code carries the point on its rename, with no second entry: " + JSON.stringify(qM31));
+    w31.eval("queue=[];");
+
+    /* the map: the parties on the book placed from the vault in one entry */
+    w31.eval("roster.push('CZ9-VA1','CZ9-VA2','CZ9-VA3');vaultNames={'CZ9-VA1':'Zed One (Zedville)','CZ9-VA2':'Zed Two (Zzqx Nowhere)','CZ9-VA3':'Zed Three (to be confirmed)'};revealed=true;saveQueue=function(){return Promise.resolve(true);};MAP_VIEW=null;MAP_MSG='';switchTab('map');");
+    ok(/Place parties from their recorded places/.test(rd31("document.querySelector('.sec.on').textContent")), "with the names open the map offers to place the parties from their recorded places");
+    ok(/Places: GeoNames, CC BY 4\.0\./.test(rd31("document.querySelector('.sec.on').textContent")), "and the map's credits name the place list beside the boundaries");
+    await w31.eval("mapPlaceFromVault()");
+    const vq31 = rd31("queue.map(function(x){return x.payload;})"), vm31 = rd31("MAP_MSG");
+    ok(vq31.length === 1 && vq31[0].mode === "place" && JSON.stringify(vq31[0].places) === '{"CZ9-VA1":[3.12,101.57]}' && /1 party queued/.test(vm31) && /CZ9-VA2/.test(vm31) && !/CZ9-VA3/.test(vm31) && !/Zed/.test(JSON.stringify(vq31)),
+      "one entry carries every party found, and the message names the codes to tap: " + vm31 + " " + JSON.stringify(vq31));
+    await w31.eval("mapPlaceFromVault()");
+    ok(rd31("queue.length") === 1 && /Nothing new to place/.test(rd31("MAP_MSG")), "a second run queues nothing twice: " + rd31("MAP_MSG"));
+    w31.eval("vaultNames={};revealed=false;switchTab('map');");
+    ok(!/Place parties from their recorded places/.test(rd31("document.querySelector('.sec.on').textContent")), "and with the names locked the button is not there");
+
+    /* the Approve card */
+    w31.eval("PLACED['CZ9-VA1']=[3.12,101.57];");
+    const card31 = String(w31.eval("apCard({id:'x',collection:'place',row:{places:{'CZ9-VA1':[3.12,101.57],'CZ9-VA2':[3,101.5]}},flags:[],reasoning:''})")).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
+    ok(/Place 2 parties on the map/.test(card31) && /Already on the map 1/.test(card31) && /Cash none/.test(card31), "the Approve card says how many parties it places and how many move: " + card31.slice(0, 160));
+  } finally {
+    await new Promise((r) => setTimeout(r, 200)); try { w31.close(); } catch (e) { /* best effort */ }
+    rmSync(tmp31, { recursive: true, force: true });
+  }
 }
 
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);

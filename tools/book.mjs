@@ -43,6 +43,8 @@ export const LEDGER = {
   roster: "roster", associates: "associates", PEOPLE: "PEOPLE",
   /* v615: who introduced whom where no row carries the referral stamp; a fact on his word */
   INTRODUCTIONS: "INTRODUCTIONS",
+  /* v633: where each party is on the map, a point to 0.01 degrees filed by Add ID, Amend ID or a place entry; renamed with its code */
+  PLACED: "PLACED",
   /* v616 and v618: REWARD_OPENING and CUSTOMER_REWARD_OPENING retired; the whole-ledger recounts replaced them. */
   AWARDS: "AWARDS",
   supplierQuote: "supplierQuote", oilQuote: "oilQuote",

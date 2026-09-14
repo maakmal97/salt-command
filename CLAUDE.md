@@ -138,6 +138,15 @@ dot, and the whole peninsula a switch away. **Area names show; a party's name ne
 A party is counted in the area its point lies inside, whichever district that area is filed under, because
 the two levels come from different surveys. The leak checks exempt a directory place only when it IS an
 official area name (`areaNameSet` in `tools/book.mjs`); six places on the directory were, on 14 Sep 2026.
+**A party's place reaches the map on its own** (his decision of 14 Sep 2026, v633). The place typed at Add ID or Amend
+ID is looked up whole, then by its parts, then by runs of its words (`placeCandidates` in the engine), each wording as an
+official area name and then in `geo/gazetteer.json`: GeoNames' populated places in the core states, each name kept as
+seven hex characters of SHA-256 over its `placeKey` beside a point to 0.01 degrees, built by `tools/gazfetch.mjs` from
+GeoNames alone and never from the directory. A five-letter word alone counts only as an area name. Not found, or a name
+standing for places over 3 km apart, is tapped on the map under the form, and Record waits for the point. The point
+travels as `geo` on `addid` and `rename`, or as the collection `place` (Amend ID keeping the code, or the map's *Place
+parties from their recorded places* with the names open); the fold files it in the book's `PLACED`, which `placeOf`
+reads before a code's tail. On 14 Sep 2026 it found 33 of the directory's 42 recorded places.
 
 ## The chain: tap to deploy
 
@@ -206,7 +215,7 @@ official area name (`areaNameSet` in `tools/book.mjs`); six places on the direct
   drafter newly returns needs a migration rebuilding it, applied to the live D1 BEFORE the deploy and
   as that file alone (`wrangler d1 execute salt_ledger --remote --file=...`): re-running an older one
   copies the rows through its narrower CHECK and INSERT OR IGNORE drops them. Missed twice: `priceset`
-  (0007) and `repayment` (0008); the suite now checks the newest CHECK against the drafter.
+  (0007) and `repayment` (0008); the suite now checks the newest CHECK against the drafter. Newest: 0009, `place` (v633).
 - **Cowork:** Salt left Cowork on 20 Aug 2026; root section 6 still lists
   `salt-daily-price-brief`. Settle it from Cowork.
 
@@ -344,7 +353,7 @@ the first row with finite prices; oil is a genuine one-tier book and says so.
 | `tools/changelog.mjs` | Prepends `evolution[0]` to `master/changelog.json`; never rewrites |
 | `tools/renderdiff.mjs` | `--shoot <label>` every part at 1280 and 375, `--compare <a> <b>`; Playwright from `Code\salt-ds\.ds-sync`; by hand |
 | `tools/send-sheet.cmd` | Opens the newest `_send_*.html`; the Desktop shortcut `Send Statement` points here |
-| `geo/*.json`, `tools/geofetch.mjs`, `tools/areafetch.mjs` | Basemap (four state outlines, ODbL, unnamed), gazetteer, and since v630 `geo/areas.json`: the 91 districts of Peninsular Malaysia (CC BY 3.0) and the 370 mukim, bandar and pekan of the core states (CC BY 4.0), rings as encoded polylines at 2e-4 degrees, pinned geoBoundaries release `9469f09`. The two fetch tools alone touch the network, by hand; geosync inlines all three |
+| `geo/*.json`, `tools/geofetch.mjs`, `tools/areafetch.mjs`, `tools/gazfetch.mjs` | Basemap (four state outlines, ODbL, unnamed), `places.json` (the code-tail table), since v630 `geo/areas.json`: the 91 districts of Peninsular Malaysia (CC BY 3.0) and the 370 mukim, bandar and pekan of the core states (CC BY 4.0), rings as encoded polylines at 2e-4 degrees, pinned geoBoundaries release `9469f09`; and since v633 `geo/gazetteer.json`, GeoNames' place names in the core states hashed and packed (CC BY 4.0, 55 KB). The three fetch tools alone touch the network, by hand (`gazfetch --from` reads a saved `MY.zip`); geosync inlines all four |
 | `public/sw.js`, `public/_headers`, `manifest.webmanifest`, `icon-*.png` | Shell network-first, `/queue` never cached; CSP; icons from `Code\salt-ds` |
 | `.deployed.json` | `{id,v,at}` of the last successful deploy |
 | `test/verify.mjs` | ~2,130 assertions over 138 sections, no network or browser; add one per behavioural change, and **prove it red by mutation before trusting its green** |

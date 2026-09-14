@@ -615,6 +615,26 @@ function bookR2(row,partyKey,assoc,buyer){
 function renamePairs(roster,from,to){
   return (roster||[]).filter(c=>c===from||c.indexOf(from+'-')===0).map(c=>[c,to+c.slice(from.length)]);
 }
+/* ====== v633: A PLACE AS IT IS TYPED, AND AS IT IS LOOKED UP (his decision of 14 Sep 2026) =========================
+   Add ID and Amend ID find a party's place on the map from what is typed, with no step of his. ONE SPELLING RULE for
+   tools/gazfetch.mjs, which hashes the place list, and for the phone, which hashes what is typed: lower case, accents off,
+   punctuation to spaces, and the abbreviations people write expanded. The candidates run from the whole place to its
+   parts to runs of its words, longest first, so "Taman X, Town" tries itself, then X, then the town. */
+const PLACE_ABBR={kg:'kampung',kpg:'kampung',tmn:'taman',bdr:'bandar',jln:'jalan',sg:'sungai',sgi:'sungai',bt:'batu',bkt:'bukit',sri:'seri',pj:'petaling jaya',kl:'kuala lumpur'};
+const PLACE_GENERIC=['taman','kampung','bandar','jalan','pekan','mukim','seksyen','section','baru'];
+function placeKey(s){
+  return String(s==null?'':s).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim()
+    .split(' ').filter(Boolean).map(w=>PLACE_ABBR[w]||w).join(' ');
+}
+function placeBare(k){const w=k.split(' ');while(w.length>1&&PLACE_GENERIC.indexOf(w[0])>=0)w.shift();return w.join(' ');}
+function placeCandidates(s){
+  const out=[],add=k=>{if(k&&k.length>=3&&out.indexOf(k)<0)out.push(k);};
+  const whole=placeKey(s);add(whole);add(placeBare(whole));
+  String(s==null?'':s).split(',').forEach(p=>{const k=placeKey(p);add(k);add(placeBare(k));});
+  const w=whole.split(' ');
+  for(let len=Math.min(4,w.length);len>=1;len--)for(let i=0;i+len<=w.length;i++){const run=w.slice(i,i+len).join(' ');if((len>1||run.length>=6)&&run.split(' ').some(x=>PLACE_GENERIC.indexOf(x)<0))add(run);}
+  return out;
+}
 function renameInBook(book,pairs){
   const map=new Map(pairs);let n=0;
   const walk=v=>{
@@ -636,6 +656,6 @@ return {txPrice:txPrice,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeli
         CORRECT_NUM_NN:CORRECT_NUM_NN,CORRECT_DATE:CORRECT_DATE,CORRECT_BOOL:CORRECT_BOOL,
         CORRECT_CODE:CORRECT_CODE,CORRECT_TEXT:CORRECT_TEXT,HANDOVER:HANDOVER,
         ADDID_APPOINTS:ADDID_APPOINTS,BUCKET_SFX:BUCKET_SFX,isBucket:isBucket,ownerCode:ownerCode,ownsCode:ownsCode,appointBucket:appointBucket,bookR2:bookR2,
-        renamePairs:renamePairs,renameInBook:renameInBook};
+        renamePairs:renamePairs,renameInBook:renameInBook,placeKey:placeKey,placeBare:placeBare,placeCandidates:placeCandidates};
 })();
 export default POSITION_ENGINE;

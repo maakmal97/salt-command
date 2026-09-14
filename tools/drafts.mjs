@@ -79,8 +79,8 @@ const money = (v) => v == null ? "-" : "RM " + Number(v).toLocaleString("en-MY",
 /* ---- schema -------------------------------------------------------------------------- */
 function schema() {
   /* Both migrations, in order, and each is CREATE TABLE IF NOT EXISTS so re-running is safe. */
-  /* v628: in order for a new database; a live one takes 0008 alone (its own header says why) */
-  for (const name of ["0002_draft.sql", "0003_refused.sql", "0004_amend.sql", "0005_bookkeeping.sql", "0006_clock.sql", "0007_loan.sql", "0008_rename.sql"]) {
+  /* v628: in order for a new database; a live one takes the newest alone (its own header says why) */
+  for (const name of ["0002_draft.sql", "0003_refused.sql", "0004_amend.sql", "0005_bookkeeping.sql", "0006_clock.sql", "0007_loan.sql", "0008_rename.sql", "0009_place.sql"]) {
     if (!existsSync(resolve(REPO, "migrations", name))) { fail("migrations/" + name + " is not there"); continue; }
     const r = wrangler(["d1", "execute", DB, WHERE, "--file=migrations/" + name], { quiet: true });
     /* v519: 0006 is an ADD COLUMN, which SQLite refuses the second time; that refusal means applied */
@@ -166,8 +166,8 @@ function draft() {
   /* v518: a hand-staged count was written as a sale, because this read every collection but
      purchases as sales. The fold then planned it as "SELL undefined". The drafter's five other
      collections are honoured; anything else is still a sale. */
-  /* v628: and repayment and rename, which the list had never named, so a hand-staged one was written as a sale */
-  const collection = ["purchases", "count", "loss", "lostDemand", "roster", "priceset", "loan", "repayment", "rename"].includes(d.collection) ? d.collection : "sales";
+  /* v628: and repayment and rename (v633: and place), which the list had never named, so a hand-staged one was written as a sale */
+  const collection = ["purchases", "count", "loss", "lostDemand", "roster", "priceset", "loan", "repayment", "rename", "place"].includes(d.collection) ? d.collection : "sales";
   const row = d.row;
   /* v478: amends and amend_kind travel with the draft, as they do from the Worker. Without them the
      fold reads an amendment as nameless and refuses it, which is what the laptop road had done to
