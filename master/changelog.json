@@ -1,5 +1,17 @@
 [
  {
+  "v": "v626",
+  "d": "14 Sep 2026",
+  "t": "THE DRAFTER'S ADVANCE IS THE ENGINE'S, SO A ROW SETTLED IN KIND IS NO LONGER CALLED UNPAID",
+  "n": [
+   "<b>HIS REPORT OF 14 SEP 2026: CS6-BS AND CN6-WM EACH SHOWED A UNIT ON ADVANCE.</b> CS6-BS holds none: all four of its rows are paid, s139 in kind by its reward. CN6-WM holds one, and it is real: s124, 1 unit handed over on 30 Aug for RM 110 with nothing paid, which Receivables and Rules have shown all along. The rest was the drafter. Its ADVANCE flag set cash against the total and never read settledRM, so every settlement in kind read as unpaid: s139's three correction cards said 1 unit with RM 110 unpaid, and CN6-WM's two pending cards said half a unit each.",
+   "<b>THE FLAG IS NOW THE ENGINE'S txAdvance</b>, the units handed over at the row's price less what was paid in cash and in kind, which is what Receivables and the credit cap read. Swept across the book's sales, fifteen rows settled in kind lose a false flag, and s137 (CJ4-BJ, 4 of 12.5 unit out, nothing paid) says RM 272 unpaid rather than RM 850, the figure Receivables carries.",
+   "<b>A CORRECTION IS MEASURED AS THE ROW WILL STAND.</b> The card took cash and units off the row before the patch and left settledRM behind, so a correction settling an advance was flagged as that advance, and cancelling the s152 redemption as a fresh one. The same fault said s139's unchanged RM 117.5 was under RM 117.95 paid, on the very card that brought its settlement to RM 110; the corrected-total and corrected-quantity lines now wait for that figure to be corrected. A lot keeps the row it corrects, because a lot marked paid reads paid at whatever total it is given. The more-than-the-order check runs on new rows only, as its own comment said, or every overpayment on a correction was said twice.",
+   "<b>CARDS ALREADY DRAWN KEEP THEIR WORDS.</b> A draft's flags are written when it is drafted, so CN6-WM's two pending corrections carry the old line until they are decided. What they fold is unchanged: a flag never reaches the book.",
+   "<b>THE CHECKS.</b> A new section of fourteen assertions on fixture rows: a row paid in kind is no advance and an unpaid one still is, a part delivery owes its delivered share, CN6-WM's and CS6-BS's corrections and the s152 cancellation raise none, each overpayment is said once, and a total corrected under what was paid in kind is still flagged. Twelve mutations, the v625 drafter among them, each turn the assertions they touch red."
+  ]
+ },
+ {
   "v": "v625",
   "d": "14 Sep 2026",
   "t": "A PER-PRODUCT PAGE SHOWS ONE PRODUCT'S DETAIL, UNDER A SWITCH THAT CARRIES EVERY PRODUCT'S HEADLINE",

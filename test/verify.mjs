@@ -10944,5 +10944,53 @@ section("v622: the rail is two levels, the destinations and the open one's pages
   } finally { try { w22.close(); } catch (e) { /* best effort */ } }
 }
 
+section("v626: the drafter's ADVANCE is the engine's, and a correction is measured as the row will stand");
+{
+  /* HIS REPORT OF 14 SEP 2026: CS6-BS and CN6-WM each showed a unit on advance. CS6-BS held none and CN6-WM one, on
+     30 Aug; the rest was the drafter counting cash alone, on cards built from the row before its correction.
+     Fixture rows, no live book. Each assertion was proved red by mutation. */
+  const { draftRow: dr26, flagsFor: ff26 } = await import("../src/drafter.js");
+  const bk26 = (sales) => ({ sales, purchases: [], pricing: null, state: { roster: ["CZ9-A1"], PRODUCTS: { salt: {} }, associates: [] } });
+  const sale26 = (o) => Object.assign({ customer: "CZ9-A1", date: "2026-09-07", deliveredOn: "2026-09-07" }, o);
+  const adv26 = (row) => ff26(null, sale26(row), bk26([]), { cost: null, mayBlend: false }).filter((f) => /ADVANCE/.test(f));
+  const fix26 = (target, fields) => {
+    const d = dr26({ at: "2026-09-14T00:00:00.000Z", payload: { mode: "amend", kind: "Correction", rid: target.rid, fields } }, bk26([sale26(target)]));
+    return d.skip ? ["SKIP " + d.skip] : d.flags;
+  };
+
+  ok(adv26({ qty: 1, total: 117.5, delivery: 7.5, cash: 7.5, settledRM: 110, deliveredQty: 1 }).length === 0,
+    "a delivered row paid RM 7.5 in cash and RM 110 in kind is no advance");
+  ok(/RM 110 unpaid/.test(adv26({ qty: 1, total: 110, cash: 0, deliveredQty: 1 }).join(" ")), "one delivered with nothing paid still is, for RM 110");
+  ok(/4 unit goes out with RM 272 unpaid/.test(adv26({ qty: 12.5, total: 850, cash: 0, deliveredQty: 4 }).join(" ")),
+    "4 of 12.5 unit out at RM 68 with nothing paid owes RM 272, as Receivables says, not the whole RM 850");
+  ok(adv26({ qty: 4, total: 400, cash: 200, deliveredQty: 1 }).length === 0, "and 1 of 4 unit out with two paid for is no advance at all");
+
+  const noAdv = (flags) => flags.every((f) => !/ADVANCE|SKIP/.test(f));
+  const f31 = fix26({ rid: "z626a", qty: 0.5, total: 50, cash: 0, settledRM: 50, rebate: true, deliveredQty: 0.5 }, { rebate: false, goodwill: true });
+  ok(noAdv(f31), "CN6-WM's case: re-marking a half unit settled in kind raises no advance: " + JSON.stringify(f31));
+  const f139 = fix26({ rid: "z626b", qty: 1, total: 117.5, delivery: 7.5, cash: 7.5, deliveredQty: 1 }, { settledRM: 110, rebate: true, rebateKg: 1 });
+  ok(noAdv(f139), "CS6-BS's case: the correction that settles an advance in kind is not flagged as that advance: " + JSON.stringify(f139));
+  const f152 = fix26({ rid: "z626c", date: "2026-09-12", deliveredOn: "2026-09-12", qty: 0.06, total: 2.64, cost: 2.64, cash: 0, settledRM: 2.64, rebate: true, rebateKg: 0.06, goodwill: true, deliveredQty: 0.06 },
+    { cancelled: true, cancelledOn: "2026-09-12", deliveredQty: 0, deliveredOn: null, settledRM: null, rebate: false, rebateKg: null, goodwill: false });
+  ok(noAdv(f152), "nor is cancelling a redemption, which hands nothing over once it stands: " + JSON.stringify(f152));
+
+  const paidLine = (flags) => flags.filter((f) => /already paid against|already handed over|already received/.test(f));
+  const f45 = fix26({ rid: "z626d", qty: 1, total: 117.5, delivery: 7.5, cash: 7.5, settledRM: 110.45, rebate: true, rebateKg: 0.94, deliveredQty: 1 }, { settledRM: 110, rebateKg: 1 });
+  ok(!f45.some((f) => /SKIP/.test(f)) && paidLine(f45).length === 0, "bringing a 45 sen overpayment in kind back to the total says nothing is overpaid: " + JSON.stringify(f45));
+  const fCash = fix26({ rid: "z626e", qty: 2, total: 200, cash: 200, deliveredQty: 2 }, { cash: 400 });
+  ok(fCash.filter((f) => /RM 400/.test(f)).length === 1 && fCash.some((f) => /overpaid/.test(f)),
+    "cash corrected above an unchanged total is said once, as overpaid, not again as a corrected total or an order paid over: " + JSON.stringify(fCash));
+  const fOut = fix26({ rid: "z626j", qty: 2, total: 200, cash: 200, deliveredQty: 2 }, { deliveredQty: 3 });
+  ok(fOut.filter((f) => /on an order of|against an order of/.test(f)).length === 1, "and more handed over than ordered is said once too: " + JSON.stringify(fOut));
+  const fBoth = fix26({ rid: "z626f", qty: 1, total: 120, cash: 120, deliveredQty: 1 }, { total: 100, cash: 100 });
+  ok(!fBoth.some((f) => /SKIP/.test(f)) && paidLine(fBoth).length === 0, "a total and its cash corrected together are measured together: " + JSON.stringify(fBoth));
+  const fQty = fix26({ rid: "z626g", qty: 2, total: 200, cash: 200, deliveredQty: 2 }, { qty: 1, total: 100, cash: 100, deliveredQty: 1 });
+  ok(!fQty.some((f) => /SKIP/.test(f)) && paidLine(fQty).length === 0, "and so are a quantity and what was handed over: " + JSON.stringify(fQty));
+  const fKg = fix26({ rid: "z626h", qty: 1, total: 100, cash: 100, deliveredQty: 1, settledKg: 0.5 }, { cash: 90 });
+  ok(!fKg.some((f) => /SKIP/.test(f)) && paidLine(fKg).length === 0, "a correction that leaves the quantity alone does not call it the corrected quantity: " + JSON.stringify(fKg));
+  const fLow = fix26({ rid: "z626i", qty: 1, total: 80, cash: 0, settledRM: 80, deliveredQty: 1 }, { total: 70 });
+  ok(/under the RM 80 already paid/.test(fLow.join(" ")), "while a total corrected under what was paid in kind is still flagged");
+}
+
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
 process.exit(fail ? 1 : 0);

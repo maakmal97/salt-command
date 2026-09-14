@@ -473,15 +473,23 @@ export function flagsFor(entry, row, book, priced) {
   /* 7. AN ADVANCE, and whether it sits at the retail credit cap. Reported rather than judged:
         the cap lives in the master's RULES, which is configuration and not mirrored here. */
   /* against the row's FULL total: the customer owes the delivery charge too (08 Sep 2026) */
-  if (isNum(row.cash) && isNum(row.total) && row.cash < row.total - 0.005 && isNum(row.deliveredQty) && row.deliveredQty > 0) {
-    flags.push(`This is an ADVANCE: ${row.deliveredQty} unit goes out with RM ${round(row.total - row.cash)} unpaid. Check it against ${who}'s credit cap.`);
+  /* v626: THE ENGINE'S ADVANCE, the units handed over less what was paid in cash AND in kind, which is what
+     Receivables and the credit cap read. Cash alone called every settlement in kind unpaid: s139, settled by
+     CS6-BS's reward, said "1 unit goes out with RM 110 unpaid" on three cards, and CN6-WM's two corrections of
+     14 Sep said half a unit each on rows paid in full. */
+  const owed = POSITION_ENGINE.txAdvance(row);
+  if (owed > 0.005) {
+    flags.push(`This is an ADVANCE: ${row.deliveredQty} unit goes out with RM ${round(owed)} unpaid. Check it against ${who}'s credit cap.`);
   }
   /* 7b. MORE THAN THE ORDER, either way. A correction is flagged for this (checkCorrection) and a
         new row was not, so RM 900 cash on a RM 100 order and 50 unit out on an order of 5 drafted
         without a word (08 Sep 2026). */
-  if (isNum(row.cash) && isNum(row.total) && row.cash > row.total + 0.005)
+  /* v626: A NEW ROW ONLY. An amendment says it already (checkCorrection, and a Modification's own two lines), and once a
+     correction's figures became the row as it will stand, this said every overpayment on it twice. */
+  const amending = !!(entry && entry.payload && entry.payload.mode === "amend");
+  if (!amending && isNum(row.cash) && isNum(row.total) && row.cash > row.total + 0.005)
     flags.push(`RM ${round(row.cash)} is paid on an order of RM ${round(row.total)}: RM ${round(row.cash - row.total)} more than it is worth. Check the figures.`);
-  { const movedU = isSale ? row.deliveredQty : row.receivedQty;
+  if (!amending) { const movedU = isSale ? row.deliveredQty : row.receivedQty;
     if (isNum(qty) && isNum(movedU) && movedU > qty + 0.005)
       flags.push(`${movedU} unit ${isSale ? "goes out" : "arrives"} on an order of ${qty} unit. Check the figures.`); }
 
@@ -581,7 +589,10 @@ export function draftRow(entry, book) {
       const moveLine = (bookedAfter && bookedAfter !== target[partyKey])
         ? `It moves the row from ${target[partyKey]} to ${bookedAfter}${POSITION_ENGINE.isBucket(bookedAfter) ? ", the associate's resale account, where an R2 books since v611" : ""}.` : "";
       if (isSale) {
-        const synth = { customer: bookedAfter || after.party, qty: +after.qty, total: +after.total, cash: target.cash || 0, deliveredQty: target.deliveredQty || 0 };
+        /* v626: THE FIGURES AS THE ROW WILL STAND, settledRM with them. Taken off the row before the patch, a correction
+           settling an advance in kind was flagged as the advance it settles, and one cancelling a redemption (s152) as a
+           fresh one. */
+        const synth = { customer: bookedAfter || after.party, qty: +after.qty, total: +after.total, cash: +after.cash || 0, settledRM: +after.settledRM || 0, deliveredQty: +after.deliveredQty || 0 };
         /* v611: the delivery charge travels with the row, or the rate flags read it on the total, which v606 took off every
            other surface: s151, RM 130 with RM 30 delivery, read "19.3% above" a RM 109 median its RM 100 of goods sits under */
         if (isNum(after.delivery) && after.delivery > 0.005) synth.delivery = +after.delivery;
@@ -592,12 +603,17 @@ export function draftRow(entry, book) {
          kind, and txEffDeliv folds the settled and advanced units in; raw cash misses every
          in-kind settlement, and s010 (cash 0, settledRM 80) proved it by raising nothing when
          its total was corrected below what had actually been paid. */
-      const paid = isSale ? POSITION_ENGINE.txPaid(target) : POSITION_ENGINE.poCash(target);
-      const movedQty = isSale ? POSITION_ENGINE.txEffDeliv(target) : POSITION_ENGINE.poRecvUnits(target);
-      if (isNum(after.total) && after.total < paid - 0.005) {
+      /* v626: EACH NAMES THE CORRECTED FIGURE, SO EACH WAITS FOR THAT FIGURE TO BE CORRECTED, and a sale is measured as it
+         will stand, since the same correction can restate what was paid or handed over. s139 stood 45 sen overpaid until a
+         correction set its settlement to RM 110, and that card said its unchanged RM 117.5 was under RM 117.95 paid. A lot
+         keeps the row it corrects: poCash reads a lot marked paid as paid its total, so the corrected lot always reads paid. */
+      const changed = (f) => chk.changes.some((c) => c.field === f);
+      const paid = isSale ? POSITION_ENGINE.txPaid(after) : POSITION_ENGINE.poCash(target);
+      const movedQty = isSale ? POSITION_ENGINE.txEffDeliv(after) : POSITION_ENGINE.poRecvUnits(target);
+      if (changed("total") && isNum(after.total) && after.total < paid - 0.005) {
         flags.push(`The corrected total of RM ${round(after.total)} is under the RM ${round(paid)} already paid against this row.`);
       }
-      if (isNum(after.qty) && after.qty < movedQty - 0.005) {
+      if (changed("qty") && isNum(after.qty) && after.qty < movedQty - 0.005) {
         flags.push(`The corrected quantity of ${round(after.qty)} unit is under the ${round(movedQty)} unit already ${isSale ? "handed over" : "received"}.`);
       }
       if (chk.changes.some((c) => c.field === "total") && after.total > 0.005 && target.unpriced && after.unpriced !== false) {
