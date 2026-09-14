@@ -68,7 +68,7 @@ document.addEventListener('visibilitychange',function(){
    localStorage before it posts anything and the load reads it straight back.
    The same tick retries a held entry, which is what gets a phone write to the cloud
    without waiting for the next open. */
-var SALT_BUILD_ID="6d6a3b882a4f6c2f";
+var SALT_BUILD_ID="880fa83866a497ed";
 var SALT_REV_MS=10000;
 (function(){
   var chip=null,timer=null;
@@ -6862,7 +6862,9 @@ const quoteFor=p=>{const f=QUOTES[p||PROD];return f?f():null;};
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{"v":"v635","d":"14 Sep 2026","t":"THE MAP SHADES BY REVENUE, MARGIN, UNITS, CUSTOMERS OR CREDIT OWED","n":["<b>HIS CHOICE OF 14 SEP 2026, THE FIRST OF THE FOUR MAP LAYERS: THE METRIC SWITCH.</b> A switch under the map chooses what the districts and areas are shaded by, for the product in view: revenue, margin, units, the number of customers, or the credit they owe. The lead line, the tooltips, the legend, the deepest-area tile and the table's figure column all follow it, so the page never says revenue over a margin shading. The map still opens on revenue.","<b>EACH FIGURE IS THE DESK'S OWN.</b> Revenue, margin and units are byCustomer's, credit owed is txAdvance over the book's receivables, so a written-off sale is owed by nobody here too, and a resale account counts where its associate is on every metric, as revenue already did. A count is whole, so the customers legend names the counts that fall in each step and leaves out a step no count reaches.","<b>THE CHECKS.</b> A new section of 5 assertions on fixture parties placed in four quiet districts so each metric has a different deepest district, with a defaulted advance to prove credit owed reads what is owed. 12 mutations each turn the assertion they target red. On a phone the five buttons wrap to two rows at 44 px, with no sideways scroll."]},
+const evolution=[{"v":"v636","d":"14 Sep 2026","t":"THE MAP READS A MONTH, A RANGE OR ALL TIME, AND PLAYS THE BOOK MONTH BY MONTH","n":["<b>HIS CHOICE OF 14 SEP 2026, THE SECOND MAP LAYER: THE TIME SLIDER.</b> Under the metric switch, a slider picks a whole month, two dates pick a range to the day, each the desk's own date field with Today inside it, and All time takes the period off. Play by month steps from the product's first priced order to this month and stops on the last, or on Stop, and it stops itself when the map is left. The lead line names the period, so a shading always says what it covers.","<b>THE PERIOD READS THE ORDERS PLACED IN IT.</b> byCustomer takes a row filter now, so revenue, margin, units and customers are the desk's own figures over the period's orders, with one definition for both. Credit owed in a period is what is still owed today on the orders placed in it, not a balance rebuilt as it stood then.","<b>THE CHECKS.</b> A new section of 13 assertions on fixture customers trading in different months in quiet districts: all time, each month, a range to the day at both ends, credit owed in a period, and the player's start, tick, stop, end and leaving the map, with its timer caught rather than waited on, and Today on the From field moving the period. 16 mutations each turn the assertion they target red. On a phone every control in the row is 44 px tall, with no sideways scroll."]},
+
+{"v":"v635","d":"14 Sep 2026","t":"THE MAP SHADES BY REVENUE, MARGIN, UNITS, CUSTOMERS OR CREDIT OWED","n":["<b>HIS CHOICE OF 14 SEP 2026, THE FIRST OF THE FOUR MAP LAYERS: THE METRIC SWITCH.</b> A switch under the map chooses what the districts and areas are shaded by, for the product in view: revenue, margin, units, the number of customers, or the credit they owe. The lead line, the tooltips, the legend, the deepest-area tile and the table's figure column all follow it, so the page never says revenue over a margin shading. The map still opens on revenue.","<b>EACH FIGURE IS THE DESK'S OWN.</b> Revenue, margin and units are byCustomer's, credit owed is txAdvance over the book's receivables, so a written-off sale is owed by nobody here too, and a resale account counts where its associate is on every metric, as revenue already did. A count is whole, so the customers legend names the counts that fall in each step and leaves out a step no count reaches.","<b>THE CHECKS.</b> A new section of 5 assertions on fixture parties placed in four quiet districts so each metric has a different deepest district, with a defaulted advance to prove credit owed reads what is owed. 12 mutations each turn the assertion they target red. On a phone the five buttons wrap to two rows at 44 px, with no sideways scroll."]},
 
 {"v":"v634","d":"14 Sep 2026","t":"A DEFAULTED SALE IS WRITTEN OFF: OFF WHAT IS OWED, STILL IN WHAT WAS LOST","n":["<b>HIS INSTRUCTION OF 14 SEP 2026: WRITE OFF THE DEFAULTED ENTRIES.</b> Since 05 Sep a default was provisioned in full and kept as gross owed, so the desk went on treating the money as live: Today said to chase CA4-DAM for RM 260 and that CA4-DAM broke three rules, the register listed a credit cap breach and two credit age breaches, Advances out read RM 642, and the Customers board and Plans put the party up for an approach and a message. A defaulted sale is now written off. What it had out and unpaid leaves every reading of what is owed: txAdvance reads nothing owed on it, as poOwed has read nothing owed on a defaulted lot since v438, and a written-off sale holds no credit. Advances out and the debtors table read RM 382, and the table says under it what was written off.","<b>NOTHING LOST LEAVES THE BOOK, AND NO PRICE MOVES.</b> txWrittenOff carries the figure wherever the desk reads a loss. The Financials impairment line reads RM 328 as it did, now RM 260 written off and RM 68 loss allowance on open balances, so operating profit is unchanged, and the month's charge, the bad-debt rate in the price stack, the receivables signal and a party's quote adjustment read what they read before. The pricing snapshot, every tier's quote at every size and CA4-DAM's quote were compared against v633 and are identical. The customer's own statement is untouched: a write-off does not forgive the debt.","<b>A PARTY WITH A WRITE-OFF IS NOT WORKED.</b> His word of 09 Sep on CA4-DAM was that they had disappeared, with no more contact. The chase had been the one guard keeping them off the approach lists, so every list that skips a banned or departed party now skips a party with a write-off too: the Customers board, the phone's approach list, Today's reconnect count, and the message Plans suggests, which had never skipped a banned or departed party either. Paid back, the party can be approached again. The Order book card reads the write-offs from the rows that carry them.","<b>THE CHECKS.</b> A new section of 13 assertions on a forced fixture, a customer read before and after an aged advance is defaulted: what is owed moves by the advance on the desk and the phone, credit and rules clear, the chase and every approach go, and operating profit, the bad-debt rate, the month's charge, the signal, the pricing snapshot and the party's quote stay exactly where they were. 22 mutations each turn the assertion they target red. Three older checks encoded the old treatment and are restated: the engine's gross keeps the number, the Order book's claims marked and skipped, and a credit breach that leaned on CA4-DAM's live row, now a fixture."]},
 
@@ -7342,7 +7344,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='14 Sep 2026, 15:14 KL';
+const LAST_UPDATED='14 Sep 2026, 15:35 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -10669,6 +10671,33 @@ let MAP_METRIC='rev';
 const MAP_METRICS={rev:'Revenue',margin:'Margin',units:'Units',customers:'Customers',credit:'Credit owed'};
 function mapMetric(m){MAP_METRIC=MAP_METRICS[m]?m:'rev';render();}
 const mapFmt=v=>MAP_METRIC==='units'?units(+(+v).toFixed(2)):MAP_METRIC==='customers'?String(Math.round(v)):fmt0(v);
+/* v636, HIS CHOICE OF 14 SEP 2026: THE TIME SLIDER. The map reads the orders of a period, a whole month off the slider, a
+   range off the two dates, or all time, and plays the book month by month from its first priced order. Credit owed in a
+   period is what is still owed on the orders placed in it. The player stops itself when the map is left. */
+let MAP_FROM=null,MAP_TO=null,MAP_PLAY=null;
+const MAP_MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+/* every month from the product's first priced order to this one, none skipped */
+function mapMonths(){
+  const ds=pricedSales.map(s=>s.date).filter(Boolean).sort(),end=TODAY.toISOString().slice(0,7),out=[];
+  if(!ds.length)return out;
+  let y=+ds[0].slice(0,4),m=+ds[0].slice(5,7);
+  for(;;){const k=y+'-'+String(m).padStart(2,'0');out.push(k);if(k>=end||out.length>=240)break;if(++m>12){m=1;y++;}}
+  return out;
+}
+const mapMonthEnd=k=>k+'-'+String(new Date(Date.UTC(+k.slice(0,4),+k.slice(5,7),0)).getUTCDate()).padStart(2,'0');
+const mapDay=d=>(+d.slice(8,10))+' '+MAP_MON[+d.slice(5,7)-1]+' '+d.slice(0,4);
+function mapPeriod(from,to){MAP_FROM=from||null;MAP_TO=to||null;render();}
+function mapMonth(i){const k=mapMonths()[+i];if(!k)return;MAP_FROM=k+'-01';MAP_TO=mapMonthEnd(k);render();}
+function mapPlay(){
+  if(MAP_PLAY){clearInterval(MAP_PLAY);MAP_PLAY=null;render();return;}
+  const ms=mapMonths();if(!ms.length)return;
+  let i=MAP_FROM?ms.indexOf(MAP_FROM.slice(0,7)):-1;if(i<0||i>=ms.length-1)i=0;
+  MAP_PLAY=setInterval(()=>{
+    if(!document.querySelector('.sec.on .mapplay')){clearInterval(MAP_PLAY);MAP_PLAY=null;return;}
+    if(++i>=ms.length){clearInterval(MAP_PLAY);MAP_PLAY=null;render();return;}
+    mapMonth(i);},1400);
+  mapMonth(i);
+}
 /* v633: THE PARTIES ALREADY ON THE BOOK, PLACED FROM THEIR RECORDED PLACES IN ONE STEP. With the names open, each party
    with no filed point and none queued has its place looked up as Add ID looks one up; those found go to Approve together,
    as one entry of codes and points, and those not found are listed by code, for a tap through Amend ID. */
@@ -10733,8 +10762,13 @@ function tabMap(){
   const {pts,miss,far}=mapPoints();
   /* an associate's resale account has no place of its own, so what it sells counts where the associate is */
   const own={},put=(id,k,v)=>{const o=POSITION_ENGINE.ownerCode(id);(own[o]=own[o]||{rev:0,margin:0,units:0,credit:0})[k]+=v;};
-  byCustomer().forEach(x=>{put(x.id,'rev',x.rev);put(x.id,'margin',x.margin);put(x.id,'units',x.kg);});
-  arList.forEach(s=>put(s.customer,'credit',txAdvance(s)));   // v635: the product in view's receivables
+  const inP=s=>(!MAP_FROM||(!!s.date&&s.date>=MAP_FROM))&&(!MAP_TO||(!!s.date&&s.date<=MAP_TO));   // v636: the period's orders
+  byCustomer(inP).forEach(x=>{put(x.id,'rev',x.rev);put(x.id,'margin',x.margin);put(x.id,'units',x.kg);});
+  arList.filter(inP).forEach(s=>put(s.customer,'credit',txAdvance(s)));   // v635: the product in view's receivables
+  const ms=mapMonths(),whole=!!(MAP_FROM&&MAP_TO&&MAP_FROM.slice(8)==='01'&&MAP_TO===mapMonthEnd(MAP_FROM.slice(0,7)));
+  const periodTxt=!MAP_FROM&&!MAP_TO?'':whole?' in '+MAP_MON[+MAP_FROM.slice(5,7)-1]+' '+MAP_FROM.slice(0,4)
+    :MAP_FROM&&MAP_TO?' from '+mapDay(MAP_FROM)+' to '+mapDay(MAP_TO):MAP_FROM?' since '+mapDay(MAP_FROM):' up to '+mapDay(MAP_TO);
+  const mi=MAP_FROM?ms.indexOf(MAP_FROM.slice(0,7)):ms.length-1;
   const val=id=>{const o=own[id];return !o?0:MAP_METRIC==='customers'?(o.rev>0.009?1:0):o[MAP_METRIC];};
   const word=MAP_METRICS[MAP_METRIC].toLowerCase(),empty=MAP_METRIC==='credit'?'nothing owed':'no trade';
   const placed=pts.concat(far).map(p=>Object.assign({},p,{value:p.role==='supplier'?p.value:val(p.id)},areaOf(p.place.lat,p.place.lng)));
@@ -10742,15 +10776,15 @@ function tabMap(){
   const unknown=miss.filter(m=>!NON_PLACE[m.id.split('-').pop()]);
   const tally=key=>{const t={};onMap.forEach(p=>{const a=p[key];if(!a||p.role==='supplier')return;const o=t[a.id]||(t[a.id]={v:0,n:0});o.v+=p.value||0;o.n++;});return t;};
   const byD=tally('district'),byA=tally('area');
-  const dist=(MAP_VIEW&&MAP_VIEW!=='*')?DISTRICTS.find(d=>d.id===MAP_VIEW)||null:null,whole=MAP_VIEW==='*';
+  const dist=(MAP_VIEW&&MAP_VIEW!=='*')?DISTRICTS.find(d=>d.id===MAP_VIEW)||null:null,peninsula=MAP_VIEW==='*';
   /* an opened district draws every area inside its frame, whichever district it is filed under, so no dot stands on
      bare ground where the two surveys disagree */
   const db=dist?areaShape(dist).box:null,meets=b=>b[0]<=db[2]&&b[2]>=db[0]&&b[1]<=db[3]&&b[3]>=db[1];
-  const shown=dist?AREAS.filter(a=>a.district===dist.id||meets(areaShape(a).box)):DISTRICTS.filter(d=>whole||d.core);
+  const shown=dist?AREAS.filter(a=>a.district===dist.id||meets(areaShape(a).box)):DISTRICTS.filter(d=>peninsula||d.core);
   const vals=dist?byA:byD,max=Math.max(0,...shown.map(a=>(vals[a.id]||{}).v||0));
   /* THE FRAME: the district opened, the core districts that carry trade, or the peninsula */
   const traded=shown.filter(d=>byD[d.id]);
-  const boxes=(dist?[dist]:(whole||!traded.length)?shown:traded).map(a=>areaShape(a).box);
+  const boxes=(dist?[dist]:(peninsula||!traded.length)?shown:traded).map(a=>areaShape(a).box);
   let x0=Math.min(...boxes.map(b=>b[0])),y0=Math.min(...boxes.map(b=>b[1])),x1=Math.max(...boxes.map(b=>b[2])),y1=Math.max(...boxes.map(b=>b[3]));
   const px=(x1-x0)*0.06,py=(y1-y0)*0.06;x0-=px;x1+=px;y0-=py;y1+=py;
   /* DRAWN AT THE SIZE IT IS SHOWN. A fixed 820 wide shrank to a third on a phone and every name with it; the drawing
@@ -10799,7 +10833,7 @@ function tabMap(){
   const mbtn=m=>`<button${m===MAP_METRIC?' class="on"':''} onclick="mapMetric('${m}')">${MAP_METRICS[m]}</button>`;
   return `<h1>Map</h1>
   <div class="pscope">${prodBadge()}</div>
-  <div class="dsc dsclead" style="margin-bottom:12px">${MAP_METRICS[MAP_METRIC]} by ${dist?'mukim, bandar and pekan in '+esc(dist.name)+', each party a dot with no name':'district, deeper where the book is concentrated; tap a district to open its mukim, bandar and pekan'}.</div>
+  <div class="dsc dsclead" style="margin-bottom:12px">${MAP_METRICS[MAP_METRIC]} by ${dist?'mukim, bandar and pekan in '+esc(dist.name)+periodTxt+', each party a dot with no name':'district'+periodTxt+', deeper where the book is concentrated; tap a district to open its mukim, bandar and pekan'}.</div>
   <div class="kpis k4">
     <div class="kpi"><div class="l">${dist?'Areas':'Districts'} ${MAP_METRIC==='credit'?'owing':'with trade'}</div><div class="v">${rows.length}</div><div class="n">of ${shown.length} drawn</div></div>
     <div class="kpi gold"><div class="l">Deepest</div><div class="v" style="font-size:17px">${top?esc(dist?areaName(top.a):top.a.name):'&mdash;'}</div><div class="n">${top&&total?Math.round(top.t.v/total*100)+'% of the '+word+' drawn':empty+' drawn'}</div></div>
@@ -10807,8 +10841,15 @@ function tabMap(){
     <div class="kpi ${unknown.length+off.length?'r':'g'}"><div class="l">Not on the map</div><div class="v">${unknown.length+off.length}</div><div class="n">${off.length} beyond the districts, ${unknown.length} with no place</div></div>
   </div>
   <div class="card" style="margin-top:13px">
-    <div style="margin-bottom:10px">${dist?`<button class="vbtn" onclick="mapZoom(null)">Back to the districts</button>`:`<span class="viewsw">${btn('Core districts',null,!whole)+btn('Whole peninsula','*',whole)}</span>`}</div>
+    <div style="margin-bottom:10px">${dist?`<button class="vbtn" onclick="mapZoom(null)">Back to the districts</button>`:`<span class="viewsw">${btn('Core districts',null,!peninsula)+btn('Whole peninsula','*',peninsula)}</span>`}</div>
     <div style="margin-bottom:10px"><span class="viewsw mapmetric" style="flex-wrap:wrap">${Object.keys(MAP_METRICS).map(mbtn).join('')}</span></div>
+    ${ms.length?`<div class="mapperiod" style="margin-bottom:10px;display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;font-size:12px;color:var(--mut)">
+      <span class="viewsw"><button${!MAP_FROM&&!MAP_TO?' class="on"':''} onclick="mapPeriod()">All time</button></span>
+      <button class="vbtn mapplay" onclick="mapPlay()">${MAP_PLAY?'Stop':'Play by month'}</button>
+      <span style="display:inline-flex;align-items:center;gap:8px"><input class="mapmonth" type="range" min="0" max="${ms.length-1}" value="${mi<0?ms.length-1:mi}" oninput="mapMonth(this.value)" aria-label="Month" style="width:150px;min-height:var(--tap)"><b class="mapmonthname" style="color:var(--ink)">${whole?MAP_MON[+MAP_FROM.slice(5,7)-1]+' '+MAP_FROM.slice(0,4):'&mdash;'}</b></span>
+      <label style="display:inline-flex;align-items:center;gap:6px">From ${dateIn('mapFrom',MAP_FROM,' class="mapfrom" onchange="mapPeriod(this.value,MAP_TO)" style="min-height:var(--tap);padding-right:74px"')}</label>
+      <label style="display:inline-flex;align-items:center;gap:6px">To ${dateIn('mapTo',MAP_TO,' class="mapto" onchange="mapPeriod(MAP_FROM,this.value)" style="min-height:var(--tap);padding-right:74px"')}</label>
+    </div>`:''}
     ${Object.keys(vaultNames||{}).length?`<div style="margin-bottom:10px"><button class="vbtn" onclick="mapPlaceFromVault()">Place parties from their recorded places</button></div>`:''}${MAP_MSG?`<div class="mapmsg" style="margin-bottom:10px;font-size:12px;color:var(--mut)">${esc(MAP_MSG)}</div>`:''}
     <div class="maplegend" style="margin-bottom:9px">${legend}</div>
     <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block;background:linear-gradient(160deg,#0b1215,#05080a);border:1px solid var(--line);border-radius:12px" role="img" aria-label="${MAP_METRICS[MAP_METRIC]} by ${dist?'area in '+esc(dist.name):'district'}, shaded deeper where the book is concentrated.">
@@ -15918,7 +15959,7 @@ function drawInvChart(ic){
 function custStats(){const m={};pricedSales.filter(s=>isPerson(s.customer)).forEach(s=>{if(!m[s.customer])m[s.customer]={id:s.customer,n:0,kg:0,rev:0,last:s.date,first:s.date};const o=m[s.customer];o.n++;o.kg+=s.qty;o.rev+=s.total;if(s.date>o.last)o.last=s.date;if(s.date<o.first)o.first=s.date;});return Object.values(m).sort((a,b)=>b.rev-a.rev);}
 /* net of the pending tail, as recompute() and finRows() are: otherwise the Customers
    tab totalled a different revenue from the Overview on the same desk */
-function byCustomer(){const m={};pricedSales.filter(s=>isPerson(s.customer)).forEach(s=>{if(!m[s.customer])m[s.customer]={rev:0,kg:0,margin:0,n:0};const o=m[s.customer];
+function byCustomer(keep){const m={};pricedSales.filter(s=>isPerson(s.customer)&&(!keep||keep(s))).forEach(s=>{   /* v636: keep picks the rows, as the map's period does */if(!m[s.customer])m[s.customer]={rev:0,kg:0,margin:0,n:0};const o=m[s.customer];
   const rev=(s.total||0)-txPendRM(s),q=s.qty-txPendUnitsRaw(s);
   o.rev+=rev;o.kg+=q;o.margin+=rev-q*costOf(s);o.n++;});return Object.entries(m).map(([id,o])=>({id,...o})).sort((a,b)=>b.rev-a.rev);}
 /* R3 attribution: a referred customer's FIRST order only (the introduction).
