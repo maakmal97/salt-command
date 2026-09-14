@@ -1,5 +1,15 @@
 [
  {
+  "v": "v638",
+  "d": "14 Sep 2026",
+  "t": "NETWORK LINES RUN FROM EACH ASSOCIATE TO THE CUSTOMERS THEY BROUGHT IN",
+  "n": [
+   "<b>HIS CHOICE OF 14 SEP 2026, THE LAST OF THE FOUR MAP LAYERS: NETWORK LINES.</b> A switch beside the view draws a line from each associate on the bench to each customer they brought in, the associate's end a ring and the customer's a dot, in the districts view, the whole peninsula and a district opened, where a line runs off the edge to the districts around. The switch is off until asked for. A note under the legend counts the lines, the associates, and the pairs not drawn because a party has no point.",
+   "<b>ONE MAP OF WHO BROUGHT IN WHOM.</b> The lines are read off introductions(), the one place the referral stamps on orders and the book's declared introductions meet, and the bench is associateIds(), so a banned party's lines go when it leaves the bench while its introductions stay in the ledger. Every line and ring is titled by code, even with the names open.",
+   "<b>THE CHECKS.</b> A new section of 8 assertions on a fixture associate with two declared introductions, one stamped on an order and one with no point: off by default, a line to each customer placed, each starting on the ring and ending on its dot, the note's counts, a district opened, codes with the names open, a banned associate, and Hide. 10 mutations each turn the assertion they target red. On the live book the switch draws 11 lines from 5 associates."
+  ]
+ },
+ {
   "v": "v637",
   "d": "14 Sep 2026",
   "t": "A TAP DRILLS INTO A DISTRICT OR AN AREA: ITS FIGURE, SHARE, RANK, TREND AND PARTIES",

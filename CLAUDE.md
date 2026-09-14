@@ -138,7 +138,8 @@ dot, and the whole peninsula a switch away; since v635 a second switch (`MAP_MET
 customers or credit owed, and since v636 over a period (`MAP_FROM`/`MAP_TO`: a month off the slider, two dates, or all time),
 played month by month; credit owed in a period is what is still owed on the orders placed in it. Since v637 a district
 opened carries a drill panel (`MAP_PICK`), and a tap on one of its areas swaps in that area's: figure, share and rank at its
-level, the trend month by month, and its parties by code. **Area names show; a party's name never does**, even unlocked.
+level, the trend month by month, and its parties by code. Since v638 a switch (`MAP_NET`, off by default) draws a line
+from each associate on the bench to each customer they brought in, off `introductions()`, in every view, titled by code. **Area names show; a party's name never does**, even unlocked.
 A party is counted in the area its point lies inside, whichever district that area is filed under, because
 the two levels come from different surveys. The leak checks exempt a directory place only when it IS an
 official area name (`areaNameSet` in `tools/book.mjs`); six places on the directory were, on 14 Sep 2026.

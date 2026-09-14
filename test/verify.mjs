@@ -11647,5 +11647,48 @@ section("v637: a tap drills into a district or an area: its figure, share, rank,
   } finally { await new Promise((r) => setTimeout(r, 200)); try { w37.close(); } catch (e) { /* best effort */ } }
 }
 
+section("v638: network lines run from each associate to the customers they brought in, in every view, by code");
+{
+  /* HIS CHOICE OF 14 SEP 2026, NETWORK LINES. A fixture associate in one quiet district has four introductions: two declared
+     customers placed in two other districts, one stamped on an order in a fourth, and one with no point at all. The lines
+     are read off the drawn SVG, their ends against the ring and the dots. The state is forced, never found. Each assertion
+     was proved red by mutation. */
+  const { openMaster: om38 } = await import("../tools/payload.mjs");
+  const { w: w38 } = await om38();
+  const rd38 = (e) => JSON.parse(String(w38.eval("JSON.stringify(" + e + ")")));
+  try {
+    w38.eval("(function(){setProd('salt');var at=function(n){var d=DISTRICTS.find(function(x){return x.name===n;});return [d.label[1],d.label[0]];};"
+      + "PLACED['CZ9-NA']=at('Jelebu');PLACED['CZ9-NC1']=at('Tampin');PLACED['CZ9-NC2']=at('Rembau');PLACED['CZ9-NC4']=at('Kuala Pilah');"
+      + "roster.push('CZ9-NA','CZ9-NC1','CZ9-NC2','CZ9-NC3','CZ9-NC4');associates.push('CZ9-NA');"
+      + "INTRODUCTIONS.push({by:'CZ9-NA',customer:'CZ9-NC1'},{by:'CZ9-NA',customer:'CZ9-NC2'},{by:'CZ9-NA',customer:'CZ9-NC3'});"
+      + "BASE_SALES.push(" + JSON.stringify({ rid: "z638a", customer: "CZ9-NC4", ref: "CZ9-NA", rev: "R3", product: "salt", date: "2026-08-01", qty: 1, total: 100, cost: 10, cash: 100, deliveredQty: 1, deliveredOn: "2026-08-01" })
+      + ");queue=[];applyOverlay();recompute();MAP_VIEW=null;MAP_PICK=null;switchTab('map');})();");
+    const read38 = (call) => rd38("(function(){" + (call || "") + "var s=document.querySelector('.sec.on');"
+      + "var lines=[].map.call(s.querySelectorAll('g.mnet'),function(g){var l=g.querySelector('line'),c=g.querySelector('circle');return {t:(g.querySelector('title')||{}).textContent,x1:+l.getAttribute('x1'),y1:+l.getAttribute('y1'),x2:+l.getAttribute('x2'),y2:+l.getAttribute('y2'),cx:+c.getAttribute('cx'),cy:+c.getAttribute('cy')};});"
+      + "var rings=[].map.call(s.querySelectorAll('circle.mnetsrc'),function(c){return {t:(c.querySelector('title')||{}).textContent,cx:+c.getAttribute('cx'),cy:+c.getAttribute('cy')};});"
+      + "return {on:MAP_NET,btn:(s.querySelector('.mapnetbtn')||{}).textContent,note:(s.querySelector('.mapnetnote')||{}).textContent||'',lines:lines,rings:rings,all:s.textContent};})()");
+    const mine = (r) => r.lines.filter((l) => /^CZ9-NA brought in /.test(l.t));
+    const off = read38("");
+    ok(!off.on && off.lines.length === 0 && off.rings.length === 0 && off.btn === "Show network lines" && off.note === "", "the lines are off until asked for, and the switch says so");
+    const on = read38("mapNet();");
+    const ring = on.rings.find((r) => r.t === "CZ9-NA, an associate") || {};
+    const m = mine(on), titles = m.map((l) => l.t).sort();
+    ok(on.on && on.btn === "Hide network lines" && JSON.stringify(titles) === JSON.stringify(["CZ9-NA brought in CZ9-NC1", "CZ9-NA brought in CZ9-NC2", "CZ9-NA brought in CZ9-NC4"]),
+      "on, a line runs to each customer brought in, declared or stamped on an order, each titled by code: " + JSON.stringify(titles));
+    ok(m.every((l) => l.x1 === ring.cx && l.y1 === ring.cy && l.x2 === l.cx && l.y2 === l.cy) && new Set(m.map((l) => l.x2 + "," + l.y2)).size === 3,
+      "every line starts at the associate's ring and ends on its customer's dot, three places apart: " + JSON.stringify([ring, m.map((l) => [l.x2, l.y2])]));
+    const nm = /^Network: (\d+) lines? from (\d+) associates? to the customers they brought in; (\d+) not drawn, a party with no point\.$/.exec(on.note);
+    ok(!!nm && +nm[1] === on.lines.length && +nm[2] === on.rings.length && +nm[3] >= 1, "and a note counts the lines, the associates and the pairs not drawn: " + on.note);
+    const inDist = read38("mapZoom(DISTRICTS.find(function(d){return d.name==='Jelebu';}).id);");
+    ok(mine(inDist).length === 3 && inDist.on, "the lines stay on in a district opened, running off its edge to the districts around: " + mine(inDist).length);
+    const named = read38("mapZoom(null);vaultNames={'CZ9-NA':'Zed Person (Here)','CZ9-NC1':'Zed Other (There)'};revealed=true;render();");
+    ok(mine(named).length === 3 && !/Zed Person|Zed Other/.test(JSON.stringify(named.lines) + JSON.stringify(named.rings)), "with the names open every line is still titled by code");
+    const banned = read38("vaultNames={};revealed=false;PEOPLE.banned.push({id:'CZ9-NA',since:'2026-09-01',reason:'fixture'});recompute();render();");
+    ok(mine(banned).length === 0 && !banned.rings.some((r) => /^CZ9-NA,/.test(r.t)), "a banned party leaves the bench, and its lines go with it");
+    const hide = read38("PEOPLE.banned.pop();recompute();mapNet();");
+    ok(!hide.on && hide.lines.length === 0 && hide.btn === "Show network lines", "and Hide takes every line off again");
+  } finally { await new Promise((r) => setTimeout(r, 200)); try { w38.close(); } catch (e) { /* best effort */ } }
+}
+
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
 process.exit(fail ? 1 : 0);
