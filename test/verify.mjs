@@ -10986,8 +10986,8 @@ section("v626: the drafter's ADVANCE is the engine's, and a correction is measur
   ok(!fBoth.some((f) => /SKIP/.test(f)) && paidLine(fBoth).length === 0, "a total and its cash corrected together are measured together: " + JSON.stringify(fBoth));
   const fQty = fix26({ rid: "z626g", qty: 2, total: 200, cash: 200, deliveredQty: 2 }, { qty: 1, total: 100, cash: 100, deliveredQty: 1 });
   ok(!fQty.some((f) => /SKIP/.test(f)) && paidLine(fQty).length === 0, "and so are a quantity and what was handed over: " + JSON.stringify(fQty));
-  const fKg = fix26({ rid: "z626h", qty: 1, total: 100, cash: 100, deliveredQty: 1, settledKg: 0.5 }, { cash: 90 });
-  ok(!fKg.some((f) => /SKIP/.test(f)) && paidLine(fKg).length === 0, "a correction that leaves the quantity alone does not call it the corrected quantity: " + JSON.stringify(fKg));
+  const fInKind = fix26({ rid: "z626h", qty: 1, total: 100, cash: 100, deliveredQty: 1, settledKg: 0.5 }, { cash: 90 });
+  ok(!fInKind.some((f) => /SKIP/.test(f)) && paidLine(fInKind).length === 0, "a correction that leaves the quantity alone does not call it the corrected quantity: " + JSON.stringify(fInKind));
   const fLow = fix26({ rid: "z626i", qty: 1, total: 80, cash: 0, settledRM: 80, deliveredQty: 1 }, { total: 70 });
   ok(/under the RM 80 already paid/.test(fLow.join(" ")), "while a total corrected under what was paid in kind is still flagged");
 }
