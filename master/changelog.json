@@ -1,5 +1,15 @@
 [
  {
+  "v": "v627",
+  "d": "14 Sep 2026",
+  "t": "TWO OLD HALF UNIT ROWS RECLASSED FROM REBATE TO GOODWILL, NO CASH AND NO STOCK MOVE",
+  "n": [
+   "<b>WHAT WAS FOLDED.</b> Two corrections, both against CN6-WM, both applied on 14 Sep. s031 of 21 Jul and s056 of 04 Aug, each 0.5 unit for RM50 with no cash in, are reclassed: rebate from true to false, goodwill from false to true. Neither touches quantity, total or cash, so the pair moves no money and no salt. The fold applies the patch only, leaving each row's own wording as it stood.",
+   "<b>WHAT WAS UNUSUAL.</b> Both rows were carried as rebate redemptions and now read as goodwill, which changes what the rows say about themselves rather than what they settled. The drafter raised no flag on either. CN6-WM stays an associate on the roster, with RM110 outstanding and 1 unit on credit from s124, nothing defaulted, a RM110 median across 6 orders in a RM75 to RM110 range.",
+   "<b>WHAT THE INVENTORY DID.</b> Nothing. Stock stands at 9.94 unit on the salt count of 08 Sep and the oil count of 09 Sep, ledger 77.95 against self use 68.01, cost basis RM44 a unit with replacement at RM46, reorder at 15 unit, nothing owed out and 11.5 unit promised. No loans are open and no floors or asks move on these two corrections."
+  ]
+ },
+ {
   "v": "v626",
   "d": "14 Sep 2026",
   "t": "THE DRAFTER'S ADVANCE IS THE ENGINE'S, SO A ROW SETTLED IN KIND IS NO LONGER CALLED UNPAID",
