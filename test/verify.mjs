@@ -11469,5 +11469,59 @@ section("v634: a defaulted sale is written off, off every reading of what is owe
   } finally { await new Promise((r) => setTimeout(r, 200)); try { w34.close(); } catch (e) { /* best effort */ } }
 }
 
+section("v635: the map shades by revenue, margin, units, customers or credit owed, for the product in view");
+{
+  /* HIS CHOICE OF 14 SEP 2026, THE METRIC SWITCH. Fixture parties are placed in four quiet districts so each metric has a
+     different deepest district: revenue in one, margin in another, units and credit in a third, customers counted in a
+     fourth. A defaulted advance proves credit owed is what is owed, not what went unpaid. The state is forced, never
+     found. Each assertion was proved red by mutation. */
+  const { openMaster: om35 } = await import("../tools/payload.mjs");
+  const { w: w35 } = await om35();
+  const rd35 = (e) => JSON.parse(String(w35.eval("JSON.stringify(" + e + ")")));
+  try {
+    const row35 = (o) => JSON.stringify(Object.assign({ product: "salt", date: "2026-09-01", deliveredOn: "2026-09-01" }, o));
+    w35.eval("(function(){setProd('salt');var at=function(n){var d=DISTRICTS.find(function(x){return x.name===n;});return [d.label[1],d.label[0]];};"
+      + "PLACED['CZ9-MA']=at('Jelebu');PLACED['CZ9-MB']=at('Tampin');PLACED['CZ9-MC']=at('Rembau');['CZ9-MD1','CZ9-MD2','CZ9-MD3'].forEach(function(c){PLACED[c]=at('Kuala Pilah');});"
+      + "roster.push('CZ9-MA','CZ9-MB','CZ9-MC','CZ9-MD1','CZ9-MD2','CZ9-MD3');"
+      + "BASE_SALES.push(" + [
+        row35({ rid: "z635a", customer: "CZ9-MA", qty: 10, total: 900000, cost: 890000, cash: 900000, deliveredQty: 10 }),
+        row35({ rid: "z635b", customer: "CZ9-MB", qty: 1, total: 500000, cost: 100000, cash: 500000, deliveredQty: 1 }),
+        row35({ rid: "z635c", customer: "CZ9-MB", qty: 1, total: 50000, cost: 1000, cash: 0, deliveredQty: 1, defaulted: true }),
+        row35({ rid: "z635d", customer: "CZ9-MC", qty: 5000, total: 100000, cost: 90000, cash: 20000, deliveredQty: 5000 }),
+        row35({ rid: "z635e", customer: "CZ9-MD1", qty: 1, total: 100, cost: 50, cash: 100, deliveredQty: 1 }),
+        row35({ rid: "z635f", customer: "CZ9-MD2", qty: 1, total: 100, cost: 50, cash: 100, deliveredQty: 1 }),
+        row35({ rid: "z635g", customer: "CZ9-MD3", qty: 1, total: 100, cost: 50, cash: 100, deliveredQty: 1 }),
+      ].join(",") + ");queue=[];applyOverlay();recompute();MAP_VIEW=null;})();");
+    const view35 = (m) => rd35("(function(){" + (m ? "mapMetric('" + m + "');" : "switchTab('map');") + "var s=document.querySelector('.sec.on');"
+      + "var tips={};[].forEach.call(s.querySelectorAll('path.marea'),function(p){var t=(p.querySelector('title')||{}).textContent||'';tips[t.split(':')[0]]={t:t,f:p.getAttribute('fill')};});"
+      + "var deep=Object.keys(tips).filter(function(k){return tips[k].f==='#d4694c';});"
+      + "return {on:[].map.call(s.querySelectorAll('.mapmetric button'),function(b){return (b.className==='on'?'*':'')+b.textContent;}),"
+      + "lead:(s.querySelector('.dsclead')||{}).textContent,deep:deep,tips:tips,"
+      + "head:[].map.call(s.querySelectorAll('details.obsec thead th'),function(t){return t.textContent;}).slice(0,4),"
+      + "rows:[].map.call(s.querySelectorAll('details.obsec tbody tr'),function(r){return [].map.call(r.cells,function(c){return c.textContent.trim();}).join('|');}),"
+      + "kpi:(s.querySelector('.kpis .kpi .l')||{}).textContent,"
+      + "legend:[].map.call(s.querySelectorAll('.maplegend > span'),function(x){return x.textContent;})};})()");
+    const rev = view35(null);
+    ok(JSON.stringify(rev.on) === JSON.stringify(["*Revenue", "Margin", "Units", "Customers", "Credit owed"]) && /^Revenue by district/.test(rev.lead) && rev.deep.includes("Jelebu"),
+      "the map opens on revenue, with the switch naming all five metrics, and the largest revenue takes the deepest step: " + JSON.stringify([rev.on, rev.deep]));
+    const mar = view35("margin");
+    ok(mar.deep.includes("Tampin") && !mar.deep.includes("Jelebu") && /^Tampin: RM 449,000, 1 party$/.test(mar.tips.Tampin.t) && /^Jelebu: RM 10,000/.test(mar.tips.Jelebu.t) && mar.head[2] === "Margin" && /^Margin by district/.test(mar.lead),
+      "on margin the district earning most takes the step, with its figure in the tooltip and the table: " + JSON.stringify([mar.deep, mar.tips.Tampin.t, mar.head]));
+    const uni = view35("units");
+    ok(uni.deep.includes("Rembau") && /^Rembau: 5,000 unit, 1 party$/.test(uni.tips.Rembau.t) && uni.rows.some((r) => /Rembau.*5,000 unit/.test(r)) && uni.legend.some((l) => / unit/.test(l)),
+      "on units the figures are units, in the tooltip, the table and the legend: " + JSON.stringify([uni.deep, uni.tips.Rembau.t, uni.legend[0]]));
+    const cus = view35("customers");
+    const steps = cus.legend.map((l) => l.trim().split(" to ").map(Number));
+    ok(/^Kuala Pilah: 3, 3 parties$/.test(cus.tips["Kuala Pilah"].t) && cus.rows.some((r) => /^Kuala Pilah\|3\|3\|/.test(r)) && steps.length >= 2
+      && steps.every((p) => p.every(Number.isInteger)) && steps.every((p, i) => i === 0 || p[0] > steps[i - 1][steps[i - 1].length - 1]),
+      "on customers each area counts its customers, and the legend names whole counts that do not overlap: " + JSON.stringify([cus.tips["Kuala Pilah"].t, cus.legend]));
+    const cre = view35("credit");
+    ok(cre.deep.includes("Rembau") && /^Rembau: RM 80,000, 1 party$/.test(cre.tips.Rembau.t) && cre.tips.Tampin.t === "Tampin: nothing owed" && cre.head[2] === "Credit owed" && /owing/.test(cre.kpi)
+      && JSON.stringify(cre.on) === JSON.stringify(["Revenue", "Margin", "Units", "Customers", "*Credit owed"]),
+      "on credit owed the area owing most takes the step, a written-off advance is owed by nobody, and the switch shows which metric is on: " + JSON.stringify([cre.deep, cre.tips.Rembau.t, cre.tips.Tampin.t, cre.kpi]));
+    w35.eval("mapMetric('rev');");
+  } finally { await new Promise((r) => setTimeout(r, 200)); try { w35.close(); } catch (e) { /* best effort */ } }
+}
+
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
 process.exit(fail ? 1 : 0);

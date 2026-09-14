@@ -134,7 +134,8 @@ own logic quotes (CJ4-OKR, SA5-BTR, SP7-PUD, and CM6-HCM in a comment): those ar
 desk shows, cost and margin included, is served at the public URL.
 **The map** (his decisions of 14 Sep 2026, v630, replacing v293's unnamed heat): the core districts shaded
 by revenue for the product in view, a tap opening that district's mukim, bandar and pekan with each party a
-dot, and the whole peninsula a switch away. **Area names show; a party's name never does**, even unlocked.
+dot, and the whole peninsula a switch away; since v635 a second switch (`MAP_METRIC`) shades by revenue, margin, units,
+customers or credit owed. **Area names show; a party's name never does**, even unlocked.
 A party is counted in the area its point lies inside, whichever district that area is filed under, because
 the two levels come from different surveys. The leak checks exempt a directory place only when it IS an
 official area name (`areaNameSet` in `tools/book.mjs`); six places on the directory were, on 14 Sep 2026.
