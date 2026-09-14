@@ -68,7 +68,7 @@ document.addEventListener('visibilitychange',function(){
    localStorage before it posts anything and the load reads it straight back.
    The same tick retries a held entry, which is what gets a phone write to the cloud
    without waiting for the next open. */
-var SALT_BUILD_ID="e17fe19cb3b454cb";
+var SALT_BUILD_ID="adeb4d4872b7005f";
 var SALT_REV_MS=10000;
 (function(){
   var chip=null,timer=null;
@@ -6862,7 +6862,9 @@ const quoteFor=p=>{const f=QUOTES[p||PROD];return f?f():null;};
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{"v":"v637","d":"14 Sep 2026","t":"A TAP DRILLS INTO A DISTRICT OR AN AREA: ITS FIGURE, SHARE, RANK, TREND AND PARTIES","n":["<b>HIS CHOICE OF 14 SEP 2026, THE THIRD MAP LAYER: DRILL AND COMPARE.</b> A district opened now carries a panel of its own under the map, and a tap on one of its areas, on the map or in the table, swaps in that area's: its figure for the metric and period in view, its share and its rank against the others at its level, a bar a month for its trend with the period's months in gold, and its parties by code, largest first. A second tap puts the area down, and closing the district puts the pick down with it. The area picked is outlined and its parties' dots are lit.","<b>ONE READING FOR ALL OF IT.</b> mapOwn is what each party carries on each metric over the orders a filter keeps, so the shading, the table and each month of the trend come off the same figures, and an area is ranked against the areas drawn in the district while a district is ranked against every district carrying the metric. Codes only, even with the names open, as everywhere on the map.","<b>THE CHECKS.</b> A new section of 12 assertions on three fixture customers sited in two areas of one quiet district, trading in two months: the district's panel, a tap dispatched on the drawn area, the toggle, the table's names, the period and the metric carried into the panel, codes with the names open, and closing the district. 14 mutations each turn the assertion they target red."]},
+const evolution=[{"v":"v638","d":"14 Sep 2026","t":"NETWORK LINES RUN FROM EACH ASSOCIATE TO THE CUSTOMERS THEY BROUGHT IN","n":["<b>HIS CHOICE OF 14 SEP 2026, THE LAST OF THE FOUR MAP LAYERS: NETWORK LINES.</b> A switch beside the view draws a line from each associate on the bench to each customer they brought in, the associate's end a ring and the customer's a dot, in the districts view, the whole peninsula and a district opened, where a line runs off the edge to the districts around. The switch is off until asked for. A note under the legend counts the lines, the associates, and the pairs not drawn because a party has no point.","<b>ONE MAP OF WHO BROUGHT IN WHOM.</b> The lines are read off introductions(), the one place the referral stamps on orders and the book's declared introductions meet, and the bench is associateIds(), so a banned party's lines go when it leaves the bench while its introductions stay in the ledger. Every line and ring is titled by code, even with the names open.","<b>THE CHECKS.</b> A new section of 8 assertions on a fixture associate with two declared introductions, one stamped on an order and one with no point: off by default, a line to each customer placed, each starting on the ring and ending on its dot, the note's counts, a district opened, codes with the names open, a banned associate, and Hide. 10 mutations each turn the assertion they target red. On the live book the switch draws 11 lines from 5 associates."]},
+
+{"v":"v637","d":"14 Sep 2026","t":"A TAP DRILLS INTO A DISTRICT OR AN AREA: ITS FIGURE, SHARE, RANK, TREND AND PARTIES","n":["<b>HIS CHOICE OF 14 SEP 2026, THE THIRD MAP LAYER: DRILL AND COMPARE.</b> A district opened now carries a panel of its own under the map, and a tap on one of its areas, on the map or in the table, swaps in that area's: its figure for the metric and period in view, its share and its rank against the others at its level, a bar a month for its trend with the period's months in gold, and its parties by code, largest first. A second tap puts the area down, and closing the district puts the pick down with it. The area picked is outlined and its parties' dots are lit.","<b>ONE READING FOR ALL OF IT.</b> mapOwn is what each party carries on each metric over the orders a filter keeps, so the shading, the table and each month of the trend come off the same figures, and an area is ranked against the areas drawn in the district while a district is ranked against every district carrying the metric. Codes only, even with the names open, as everywhere on the map.","<b>THE CHECKS.</b> A new section of 12 assertions on three fixture customers sited in two areas of one quiet district, trading in two months: the district's panel, a tap dispatched on the drawn area, the toggle, the table's names, the period and the metric carried into the panel, codes with the names open, and closing the district. 14 mutations each turn the assertion they target red."]},
 
 {"v":"v636","d":"14 Sep 2026","t":"THE MAP READS A MONTH, A RANGE OR ALL TIME, AND PLAYS THE BOOK MONTH BY MONTH","n":["<b>HIS CHOICE OF 14 SEP 2026, THE SECOND MAP LAYER: THE TIME SLIDER.</b> Under the metric switch, a slider picks a whole month, two dates pick a range to the day, each the desk's own date field with Today inside it, and All time takes the period off. Play by month steps from the product's first priced order to this month and stops on the last, or on Stop, and it stops itself when the map is left. The lead line names the period, so a shading always says what it covers.","<b>THE PERIOD READS THE ORDERS PLACED IN IT.</b> byCustomer takes a row filter now, so revenue, margin, units and customers are the desk's own figures over the period's orders, with one definition for both. Credit owed in a period is what is still owed today on the orders placed in it, not a balance rebuilt as it stood then.","<b>THE CHECKS.</b> A new section of 13 assertions on fixture customers trading in different months in quiet districts: all time, each month, a range to the day at both ends, credit owed in a period, and the player's start, tick, stop, end and leaving the map, with its timer caught rather than waited on, and Today on the From field moving the period. 16 mutations each turn the assertion they target red. On a phone every control in the row is 44 px tall, with no sideways scroll."]},
 
@@ -7346,7 +7348,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='14 Sep 2026, 15:59 KL';
+const LAST_UPDATED='14 Sep 2026, 16:16 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -10670,6 +10672,11 @@ let MAP_VIEW=null;                  // null: the core districts; '*': the whole 
 let MAP_PICK=null;
 function mapZoom(v){MAP_VIEW=v;MAP_PICK=null;render();}
 function mapPick(id){MAP_PICK=(id&&MAP_PICK!==id)?id:null;render();}
+/* v638, HIS CHOICE OF 14 SEP 2026: NETWORK LINES. A line from each associate on the bench to each customer they brought in,
+   read off the one introductions map, drawn in every view while the switch is on, the associate's end a ring and the
+   customer's a dot. A pair with no point at either end is counted, not drawn. Each line is titled by code, never by name. */
+let MAP_NET=false;
+function mapNet(){MAP_NET=!MAP_NET;render();}
 /* v635, HIS CHOICE OF 14 SEP 2026: THE METRIC SWITCH. The areas shade by revenue, margin, units, the number of customers
    or the credit they owe, for the product in view. Each figure is the desk's own: byCustomer's revenue, margin and units,
    and txAdvance for what is owed, so a written-off sale is owed by nobody here either. A resale account counts where its
@@ -10835,6 +10842,14 @@ function tabMap(){
     const cx=X(p.place.lng)+Math.cos(ang)*rad,cy=Y(p.place.lat)+Math.sin(ang)*rad;
     return p.role==='supplier'?`<rect class="mdot" x="${(cx-3.5).toFixed(1)}" y="${(cy-3.5).toFixed(1)}" width="7" height="7" fill="#a6afb5" stroke="#05080a" stroke-width="1"/>`
       :`<circle class="mdot${p.area&&p.area.id===MAP_PICK?' mdotpick':''}" cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${p.area&&p.area.id===MAP_PICK?5:4}" fill="${p.area&&p.area.id===MAP_PICK?'#c5a059':'#e6ebee'}" stroke="#05080a" stroke-width="1.2"/>`;}).join('');
+  /* v638: the network, over the areas and under nothing, so a line is seen wherever it runs */
+  const net=[],netMiss=[];
+  if(MAP_NET){const intro=introductions(),bench=new Set(associateIds());
+    Object.keys(intro).filter(a=>bench.has(a)).forEach(a=>intro[a].forEach(c=>{const pa=placeOf(a),pc=placeOf(c);
+      if(pa&&pc)net.push({a:a,c:c,pa:pa,pc:pc});else netMiss.push(c);}));}
+  const netSvg=net.map(x=>`<g class="mnet"><title>${esc(codeOf(x.a))} brought in ${esc(codeOf(x.c))}</title><line x1="${X(x.pa.lng).toFixed(1)}" y1="${Y(x.pa.lat).toFixed(1)}" x2="${X(x.pc.lng).toFixed(1)}" y2="${Y(x.pc.lat).toFixed(1)}" stroke="#c5a059" stroke-opacity=".85" stroke-width="1.6" stroke-linecap="round"/><circle cx="${X(x.pc.lng).toFixed(1)}" cy="${Y(x.pc.lat).toFixed(1)}" r="2.6" fill="#c5a059"/></g>`).join('')
+    +[...new Set(net.map(x=>x.a))].map(a=>{const pa=placeOf(a);return `<circle class="mnetsrc" cx="${X(pa.lng).toFixed(1)}" cy="${Y(pa.lat).toFixed(1)}" r="5.5" fill="#05080a" stroke="#c5a059" stroke-width="2"><title>${esc(codeOf(a))}, an associate</title></circle>`;}).join('');
+  const netAssoc=new Set(net.map(x=>x.a)).size;
   const kmPx=111.32/s,barKm=[1,2,5,10,20,50,100].find(k=>k/kmPx>=70)||100,barPx=barKm/kmPx;
   /* a count is whole, so its steps are named by the counts that fall in them, and a step no count reaches is not listed */
   const stepName=k=>{
@@ -10888,7 +10903,7 @@ function tabMap(){
     <div class="kpi ${unknown.length+off.length?'r':'g'}"><div class="l">Not on the map</div><div class="v">${unknown.length+off.length}</div><div class="n">${off.length} beyond the districts, ${unknown.length} with no place</div></div>
   </div>
   <div class="card" style="margin-top:13px">
-    <div style="margin-bottom:10px">${dist?`<button class="vbtn" onclick="mapZoom(null)">Back to the districts</button>`:`<span class="viewsw">${btn('Core districts',null,!peninsula)+btn('Whole peninsula','*',peninsula)}</span>`}</div>
+    <div style="margin-bottom:10px;display:flex;flex-wrap:wrap;gap:8px;align-items:center">${dist?`<button class="vbtn" onclick="mapZoom(null)">Back to the districts</button>`:`<span class="viewsw">${btn('Core districts',null,!peninsula)+btn('Whole peninsula','*',peninsula)}</span>`}<button class="vbtn mapnetbtn" onclick="mapNet()">${MAP_NET?'Hide network lines':'Show network lines'}</button></div>
     <div style="margin-bottom:10px"><span class="viewsw mapmetric" style="flex-wrap:wrap">${Object.keys(MAP_METRICS).map(mbtn).join('')}</span></div>
     ${ms.length?`<div class="mapperiod" style="margin-bottom:10px;display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;font-size:12px;color:var(--mut)">
       <span class="viewsw"><button${!MAP_FROM&&!MAP_TO?' class="on"':''} onclick="mapPeriod()">All time</button></span>
@@ -10899,8 +10914,9 @@ function tabMap(){
     </div>`:''}
     ${Object.keys(vaultNames||{}).length?`<div style="margin-bottom:10px"><button class="vbtn" onclick="mapPlaceFromVault()">Place parties from their recorded places</button></div>`:''}${MAP_MSG?`<div class="mapmsg" style="margin-bottom:10px;font-size:12px;color:var(--mut)">${esc(MAP_MSG)}</div>`:''}
     <div class="maplegend" style="margin-bottom:9px">${legend}</div>
+    ${MAP_NET?`<div class="mapnetnote" style="margin-bottom:9px;font-size:12px;color:var(--mut)">Network: ${net.length} line${net.length===1?'':'s'} from ${netAssoc} associate${netAssoc===1?'':'s'} to the customers they brought in${netMiss.length?`; ${netMiss.length} not drawn, a party with no point`:''}.</div>`:''}
     <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block;background:linear-gradient(160deg,#0b1215,#05080a);border:1px solid var(--line);border-radius:12px" role="img" aria-label="${MAP_METRICS[MAP_METRIC]} by ${dist?'area in '+esc(dist.name):'district'}, shaded deeper where the book is concentrated.">
-      ${around}${shapes}${states}${labels}${dots}
+      ${around}${shapes}${states}${labels}${dots}${netSvg}
       <g transform="translate(18,${H-26})">
         <line x1="0" y1="0" x2="${barPx.toFixed(1)}" y2="0" stroke="#a6afb5" stroke-width="2"/>
         <line x1="0" y1="-4" x2="0" y2="4" stroke="#a6afb5" stroke-width="2"/>
