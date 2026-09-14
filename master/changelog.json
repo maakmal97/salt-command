@@ -1,5 +1,16 @@
 [
  {
+  "v": "v634",
+  "d": "14 Sep 2026",
+  "t": "A DEFAULTED SALE IS WRITTEN OFF: OFF WHAT IS OWED, STILL IN WHAT WAS LOST",
+  "n": [
+   "<b>HIS INSTRUCTION OF 14 SEP 2026: WRITE OFF THE DEFAULTED ENTRIES.</b> Since 05 Sep a default was provisioned in full and kept as gross owed, so the desk went on treating the money as live: Today said to chase CA4-DAM for RM 260 and that CA4-DAM broke three rules, the register listed a credit cap breach and two credit age breaches, Advances out read RM 642, and the Customers board and Plans put the party up for an approach and a message. A defaulted sale is now written off. What it had out and unpaid leaves every reading of what is owed: txAdvance reads nothing owed on it, as poOwed has read nothing owed on a defaulted lot since v438, and a written-off sale holds no credit. Advances out and the debtors table read RM 382, and the table says under it what was written off.",
+   "<b>NOTHING LOST LEAVES THE BOOK, AND NO PRICE MOVES.</b> txWrittenOff carries the figure wherever the desk reads a loss. The Financials impairment line reads RM 328 as it did, now RM 260 written off and RM 68 loss allowance on open balances, so operating profit is unchanged, and the month's charge, the bad-debt rate in the price stack, the receivables signal and a party's quote adjustment read what they read before. The pricing snapshot, every tier's quote at every size and CA4-DAM's quote were compared against v633 and are identical. The customer's own statement is untouched: a write-off does not forgive the debt.",
+   "<b>A PARTY WITH A WRITE-OFF IS NOT WORKED.</b> His word of 09 Sep on CA4-DAM was that they had disappeared, with no more contact. The chase had been the one guard keeping them off the approach lists, so every list that skips a banned or departed party now skips a party with a write-off too: the Customers board, the phone's approach list, Today's reconnect count, and the message Plans suggests, which had never skipped a banned or departed party either. Paid back, the party can be approached again. The Order book card reads the write-offs from the rows that carry them.",
+   "<b>THE CHECKS.</b> A new section of 13 assertions on a forced fixture, a customer read before and after an aged advance is defaulted: what is owed moves by the advance on the desk and the phone, credit and rules clear, the chase and every approach go, and operating profit, the bad-debt rate, the month's charge, the signal, the pricing snapshot and the party's quote stay exactly where they were. 22 mutations each turn the assertion they target red. Three older checks encoded the old treatment and are restated: the engine's gross keeps the number, the Order book's claims marked and skipped, and a credit breach that leaned on CA4-DAM's live row, now a fixture."
+  ]
+ },
+ {
   "v": "v633",
   "d": "14 Sep 2026",
   "t": "A PARTY'S PLACE REACHES THE MAP ON ITS OWN, FROM WHAT IS TYPED AT ADD ID AND AMEND ID",

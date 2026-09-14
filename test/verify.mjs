@@ -1772,8 +1772,9 @@ section("Engine — the position, out of the desk (v338)");
       purchases: [ { date: "2026-08-01", qty: 50, total: 2200, supplier: "SA", status: "paid", cash: 2200 } ],
       opening: { qty: 10, costPerKg: 50, stated: null }, isSalt: true, loanUnits: 0, counted: null,
       supplierReceivable: null, today: new Date("2026-08-22"), wavgBuyPrev: 0 });
-    ok(W2.arList.length === 2 && W2.arGross === 260, `gross keeps the number: both advances stay on the list and RM 260 is still owed (${W2.arGross})`);
-    ok(Math.abs(W2.ar - 75) < 1e-9, `net goes to zero on the default: RM 100 at seven days is RM 75, and the RM 160 counts for nothing (${W2.ar})`);
+    /* v634, HIS INSTRUCTION OF 14 SEP 2026: the default is written off, not carried, so gross no longer keeps it (see the v634 section) */
+    ok(W2.arList.length === 1 && W2.arGross === 100 && W2.writtenOffRM === 160, `the default is written off: one advance stays on the list, RM 100 is owed and RM 160 written off (${W2.arGross}, ${W2.writtenOffRM})`);
+    ok(Math.abs(W2.ar - 75) < 1e-9, `net is unmoved: RM 100 at seven days is RM 75, and the RM 160 counts for nothing (${W2.ar})`);
     ok(X.poStat({ qty: 10, total: 500, status: "paid", defaulted: true }).order === "Default", "and a defaulted lot still reads Default, so the two sides of the book agree");
   }
 
@@ -6228,11 +6229,13 @@ section("v497: a breach is named on its own book's register only");
 {
   /* His instruction of 06 Sep 2026: CA4-DAM breaks one rule in salt only, not in oil. Round 5 had
      the register name every book's credit breach on every tab, as salt's, so the oil tab listed a
-     salt breach. Driven on the live book, where CA4-DAM holds 2.5 unit of salt out and unpaid. */
+     salt breach. Driven on a fixture since v634: CA4-DAM's 2.5 unit were written off on 14 Sep, so he holds no credit now. */
   const { openMaster: om21 } = await import("../tools/payload.mjs");
   const { w: w21 } = await om21();
-  const reg = (p) => JSON.parse(String(w21.eval("setProd('" + p + "');recompute();JSON.stringify(boundaryScan().filter(function(x){return x.who==='CA4-DAM';}).map(function(x){return x.rule;}))")));
+  w21.eval("sales.push({rid:'z497',customer:'CZ9-CAP',product:'salt',qty:2.5,total:250,cash:0,date:'2026-09-07',deliveredQty:2.5,deliveredOn:'2026-09-07'});");
+  const reg = (p) => JSON.parse(String(w21.eval("setProd('" + p + "');recompute();JSON.stringify(boundaryScan().filter(function(x){return x.who==='CZ9-CAP';}).map(function(x){return x.rule;}))")));
   const salt = reg("salt"), oil = reg("oil");
+  w21.eval("sales.splice(sales.findIndex(function(s){return s.rid==='z497';}),1);");
   /* 07 Sep 2026: this asserted exactly one rule and went red at midnight in Kuala Lumpur, when the
      same credit aged past the credit-age threshold on the clock alone. The point of the block is
      WHERE the breach is named, not how many rules a living credit breaks, so it asks for the cap
@@ -6259,7 +6262,7 @@ section("v497: a breach is named on its own book's register only");
      where those rules live. An assertion that has to be re-widened every time the calendar moves
      is measuring the calendar. */
   ok(salt.includes("Credit cap"),
-    "on the salt book CA4-DAM breaks the credit cap (" + salt.join(", ") + ")");
+    "on the salt book the party breaks the credit cap (" + salt.join(", ") + ")");
   ok(oil.length === 0, "and on the oil book he breaks none (" + (oil.join(", ") || "none") + ")");
   w21.eval("setProd('salt');recompute();");
 }
@@ -8913,25 +8916,15 @@ section("v557: a true alarm, and it is scarce enough to mean something");
        off, on a row whose own note says the money will not come and whose provision is 100%. The
        book knew: `defaulted` on the sale, `writtenOff` on the supplier receivable. The card did not
        read either. Same shape as the supplier thresholds above, in a third place. */
-    const claims = JSON.parse(w.eval("JSON.stringify(obClaims())"));
-    const book5 = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
-    const offParties = new Set(book5.sales.filter((s) => s.defaulted).map((s) => s.customer));
-    if (book5.supplierReceivable && book5.supplierReceivable.status === "writtenOff") offParties.add(book5.supplierReceivable.party);
-    ok(claims.every((r) => typeof r.off === "boolean"), "every claim says whether it has been written off");
-    const mismarked = claims.filter((r) => r.off && !offParties.has(r.who));
-    ok(mismarked.length === 0, mismarked.length ? `a claim is marked off with no record behind it: ${mismarked.map((r) => r.who).join(", ")}` : "and nothing is marked off that the book does not say so about");
-    const offCount = claims.filter((r) => r.off).length;
-    ok(offCount > 0, `there is something written off to be skipped (${offCount} claim(s))`);
-    const chased = String(w.eval("consoOrderBlock()"));
-    const pick = claims.find((r) => !r.off);
-    ok(!!pick, "a chaseable claim remains");
-    ok(chased.indexOf(">Chase first</div><div class=\"v\">" + w.eval("ID(" + JSON.stringify(pick.who) + ")")) >= 0
-      || new RegExp("Chase first[\\s\\S]{0,120}" + w.eval("ID(" + JSON.stringify(pick.who) + ")")).test(chased),
-      `Chase first names the oldest claim that can still be worked (${pick.who}, ${pick.d} days)`);
-    for (const r of claims.filter((x) => x.off)) {
-      ok(!new RegExp("Chase first[\\s\\S]{0,120}" + w.eval("ID(" + JSON.stringify(r.who) + ")") + "</div>").test(chased),
-        `and never a party he has written off (${r.who}, ${r.d} days, ${r.pr * 100}% provisioned)`);
-    }
+    /* v634, HIS INSTRUCTION OF 14 SEP 2026: a written-off claim is off the list altogether rather than marked and skipped, so
+       the proof is forced: the oldest advance on the book, defaulted, is no claim and never the call; the same advance live
+       is the first call. */
+    const oldest = (def) => JSON.parse(String(w.eval("(function(){sales.push({rid:'z557',customer:'CZ9-OFF',product:'salt',qty:1,total:100,cash:0,date:'2026-01-05',deliveredQty:1,defaulted:" + def + "});"
+      + "try{return JSON.stringify({claim:obClaims().some(function(c){return c.who==='CZ9-OFF';}),card:consoOrderBlock()});}finally{sales.splice(sales.findIndex(function(s){return s.rid==='z557';}),1);}})()")));
+    const off557 = oldest(true), live557 = oldest(false);
+    const first557 = (card) => new RegExp("Chase first[\\s\\S]{0,120}" + w.eval("ID('CZ9-OFF')") + "</div>").test(card);
+    ok(!off557.claim && !first557(off557.card) && live557.claim && first557(live557.card),
+      "a defaulted advance is no claim and never the first call, where the same advance live is the first call: " + JSON.stringify([off557.claim, live557.claim]));
   } finally { try { w.close(); } catch (e) { } }
 }
 
@@ -11394,6 +11387,86 @@ section("v633: a party's place reaches the map on its own, from what is typed at
     await new Promise((r) => setTimeout(r, 200)); try { w31.close(); } catch (e) { /* best effort */ }
     rmSync(tmp31, { recursive: true, force: true });
   }
+}
+
+section("v634: a defaulted sale is written off, off every reading of what is owed and on every reading of what was lost");
+{
+  /* HIS INSTRUCTION OF 14 SEP 2026: "Write-off defaulted entries". Since 05 Sep a default was provisioned in full and kept as
+     gross owed, so the desk chased it, counted it against the credit cap and offered the party more. A fixture customer with
+     three paid orders and one unpaid advance aged past the ladder is read before and after the advance is defaulted: what
+     is owed moves by the advance, what was lost and every price does not move at all. The state is forced, never found on
+     the live book. Each assertion was proved red by mutation. */
+  const E34 = (await import("../engine/position.mjs")).default;
+  const { pricingSnapshot: ps34 } = await import("../tools/book.mjs");
+
+  /* ---- the engine ---- */
+  const adv34 = { date: "2026-08-01", customer: "CX", qty: 3, total: 300, cash: 50, deliveredQty: 3 };
+  ok(E34.txAdvance(adv34) === 250 && E34.txWrittenOff(adv34) === 0 && E34.txAdvance({ ...adv34, defaulted: true }) === 0 && E34.txWrittenOff({ ...adv34, defaulted: true }) === 250,
+    "a live advance is owed and written off by nobody; the same row defaulted is owed nothing and written off by what it had out and unpaid");
+  const walk34 = (def) => E34.walk({ sales: [adv34, { ...adv34, customer: "CY", total: 160, cash: 0, qty: 1.6, deliveredQty: 1.6, defaulted: def }],
+    purchases: [{ date: "2026-07-01", qty: 50, total: 2200, supplier: "SA", status: "paid", cash: 2200 }], opening: { qty: 10, costPerKg: 50, stated: null },
+    isSalt: true, loanUnits: 0, counted: null, supplierReceivable: null, today: new Date("2026-09-14"), wavgBuyPrev: 0 });
+  const wl34 = walk34(false), wd34 = walk34(true);
+  ok(wl34.arGross === 410 && wd34.arGross === 250 && wd34.arList.length === 1 && wl34.writtenOffRM === 0 && wd34.writtenOffRM === 160 && wl34.ar === 0 && wd34.ar === 0,
+    "the walk takes the default off the receivables and carries it as written off: " + JSON.stringify([wl34.arGross, wd34.arGross, wd34.writtenOffRM]));
+
+  /* ---- the desk, before and after ---- */
+  const { openMaster: om34 } = await import("../tools/payload.mjs");
+  const { w: w34 } = await om34();
+  const rd34 = (e) => JSON.parse(String(w34.eval("JSON.stringify(" + e + ")")));
+  try {
+    const row34 = (o) => JSON.stringify(Object.assign({ customer: "CZ9-WO", product: "salt", qty: 1, cost: 50, deliveredQty: 1 }, o));
+    w34.eval("setProd('salt');roster.push('CZ9-WO');BASE_SALES.push("
+      + row34({ rid: "z634a", date: "2026-06-01", total: 5000, cost: 4900, cash: 5000 }) + "," + row34({ rid: "z634b", date: "2026-06-04", total: 5000, cost: 4900, cash: 5000 }) + ","
+      + row34({ rid: "z634c", date: "2026-06-07", total: 5000, cost: 4900, cash: 5000 }) + "," + row34({ rid: "z634d", date: "2026-06-10", qty: 3, total: 300, cost: 150, cash: 0, deliveredQty: 3 })
+      + ");queue=[];applyOverlay();recompute();");
+    const read34 = () => rd34("(function(){var F=ifrsPL('salt'),R=riskRates(),row=sales.find(function(s){return s.rid==='z634d';});"
+      + "var mo=finRows().find(function(m){return m[0]==='2026-06';});"
+      + "var sig=(pxSignals().rows||[]).find(function(r){return r.k==='Receivables';});"
+      + "return {arGross:arGross,woff:writtenOffRM,credit:creditOutUnits(row),"
+      + "rules:boundaryScan().filter(function(x){return x.who==='CZ9-WO';}).map(function(x){return x.rule;}),"
+      + "acts:actions().map(function(a){return a.title+' '+a.why;}).filter(function(t){return t.indexOf('CZ9-WO')>=0;}),"
+      + "plans:observations().all.filter(function(o){return JSON.stringify(o).indexOf('CZ9-WO')>=0;}).map(function(o){return o.id;}),"
+      + "approach:phonePayloadBuild().people.approach.map(function(a){return a.id;}).indexOf('CZ9-WO')>=0,owedToYou:phonePayloadBuild().position.salt.owedToYou,"
+      + "sig:sig?sig.read:null,op:F.opProfit,ecl:F.ecl,wOff:F.wOff,bad:R.badDebtRM,provJun:mo?+mo[1].provAR.toFixed(2):null,"
+      + "party:pxParty('CZ9-WO').rows.map(function(r){return r.k+' '+r.v+' '+r.read;}),"
+      + "claims:obClaims().filter(function(c){return c.who==='CZ9-WO';}).length};})()");
+    const recvText34 = () => { w34.eval("switchTab('receivables');document.querySelectorAll('.sec.on details').forEach(function(d){d.open=true;});"); return String(w34.eval("document.querySelector('.sec.on').textContent")).replace(/\s+/g, " "); };
+    const approachText34 = () => { w34.eval("switchTab('concentration');"); return JSON.parse(String(w34.eval("JSON.stringify([].map.call(document.querySelectorAll('.sec.on .apchip,.sec.on .apname'),function(e){return e.textContent;}))"))); };
+    const snap34 = () => { const s = ps34(w34); delete s.takenAt; w34.eval("setProd('salt');recompute();"); return JSON.stringify(s); };
+    const A = read34(), recvA = recvText34(), apprA = approachText34(), snapA = snap34();
+    w34.eval("BASE_SALES.find(function(s){return s.rid==='z634d';}).defaulted=true;applyOverlay();recompute();");
+    const B = read34(), recvB = recvText34(), apprB = approachText34(), snapB = snap34();
+
+    ok(A.arGross - B.arGross === 300 && +(B.woff - A.woff).toFixed(2) === 300 && A.owedToYou - B.owedToYou === 300,
+      "defaulting the advance takes its RM 300 off what is owed, on the desk and on the phone, and carries it as written off: " + JSON.stringify([A.arGross, B.arGross, A.woff, B.woff]));
+    ok(A.credit === 3 && B.credit === 0 && A.rules.includes("Credit cap") && A.rules.includes("Credit age") && B.rules.length === 0,
+      "it no longer holds the party's credit or breaks a credit rule: " + JSON.stringify([A.rules, B.rules]));
+    ok(A.acts.some((t) => /^Chase CZ9-WO/.test(t)) && B.acts.length === 0 && A.claims === 1 && B.claims === 0,
+      "Today chases it before and names the party nowhere after, and the Order book's claims drop it: " + JSON.stringify(B.acts));
+    ok(A.approach && !B.approach && A.plans.includes("promo:revive") && !B.plans.includes("promo:revive"),
+      "a party with a write-off is not put up for an approach on the phone or a message on Plans: " + JSON.stringify([A.plans, B.plans]));
+    ok(apprA.some((x) => x.indexOf("CZ9-WO") === 0) && apprB.length > 3 && !apprB.some((x) => x.indexOf("CZ9-WO") >= 0),
+      "nor on the Customers page's board of who to approach next: " + apprA.length + " cards before, " + apprB.length + " after");
+    ok(A.op === B.op && A.bad === B.bad && A.provJun === B.provJun && A.provJun >= 300 && !!A.sig && A.sig === B.sig,
+      "and nothing lost moves: operating profit, the bad-debt rate, the month's charge and the receivables signal are the same, the loss already charged: " + JSON.stringify([A.op, B.op, A.bad, B.bad, A.provJun, B.provJun, B.sig]));
+    ok(+(A.ecl - B.ecl).toFixed(2) === 300 && +(B.wOff - A.wOff).toFixed(2) === 300,
+      "the P&L's impairment line moves the RM 300 from the allowance to written off: " + JSON.stringify([A.ecl, B.ecl, A.wOff, B.wOff]));
+    ok(snapA === snapB && JSON.stringify(A.party.map((r) => r.split(" ").slice(0, 2).join(" "))) === JSON.stringify(B.party.map((r) => r.split(" ").slice(0, 2).join(" ")))
+      && B.party.some((r) => /^Outstanding 5 RM 300 written off$/.test(r)),
+      "no price moves: the pricing snapshot is identical, and the party's quote carries the same weight, now for a write-off: " + JSON.stringify(B.party));
+    ok(/CZ9-WO/.test(recvA.split("Refunds you owe")[0]) && !/Written off, and out of this table: [^.]*CZ9-WO/.test(recvA)
+      && /Written off, and out of this table: RM [\d,]+, [^.]*CZ9-WO\./.test(recvB) && !/CZ9-WO[^.]{0,40}\d+dRM 300/.test(recvB),
+      "the debtors table loses the row and says under it what was written off: " + (recvB.match(/Written off, and out of this table[^.]*\./) || [""])[0]);
+    w34.eval("window.__oc=obClaims;obClaims=function(){return [];};");
+    const card34 = String(w34.eval("consoOrderBlock()")).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
+    w34.eval("obClaims=window.__oc;");
+    const woN34 = rd34("sales.filter(function(s){return txWrittenOff(s)>0.009;}).length");
+    ok(new RegExp("nothing left to chase; RM [\\d,]+ on " + woN34 + " orders is written off").test(card34) && woN34 >= 1,
+      "with nothing left to chase, the Order book card says what was written off, counted in orders: " + (card34.match(/nothing left to chase[^.]*/) || [""])[0]);
+    const pl34 = String(w34.eval("(function(){switchTab('financials');return document.querySelector('.sec.on').textContent;})()")).replace(/\s+/g, " ");
+    ok(/RM [\d,]+ written off, RM [\d,]+ loss allowance on open balances/.test(pl34), "and the Financials line says how much of the impairment is written off: " + (pl34.match(/RM [\d,]+ written off[^I]*/) || [""])[0].slice(0, 90));
+  } finally { await new Promise((r) => setTimeout(r, 200)); try { w34.close(); } catch (e) { /* best effort */ } }
 }
 
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);

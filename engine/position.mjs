@@ -29,7 +29,14 @@ function txCost(s){return s.cost!=null?+s.cost:null;}
 function txUnitCost(s,fallback){return (s.cost!=null&&s.qty>0)?+s.cost/s.qty:(fallback==null?null:fallback);}
 function txPhys(s){return (s.deliveredQty||0);}
 function txEffDeliv(s){return txDeliv(s)+(s.advanceUnits||0);}
-function txAdvance(s){return Math.max(0,(s.deliveredQty||0)*txPrice(s)-txPaid(s));}
+/* v634, HIS INSTRUCTION OF 14 SEP 2026: "Write-off defaulted entries". A DEFAULTED SALE IS WRITTEN OFF, not carried.
+   Since 05 Sep a declared default was provisioned in full and kept as gross owed, so the desk went on chasing it,
+   counting it against the party's credit and offering the party more. What a defaulted sale still has out and unpaid
+   is now written off: txAdvance reads nothing owed on it, as poOwed has read nothing owed on a defaulted lot since
+   v438, and txWrittenOff carries the figure to every reading of what was LOST, so no loss leaves the book. */
+function txUnpaidOut(s){return Math.max(0,(s.deliveredQty||0)*txPrice(s)-txPaid(s));}
+function txAdvance(s){return s.defaulted?0:txUnpaidOut(s);}
+function txWrittenOff(s){return s.defaulted?txUnpaidOut(s):0;}
 /* A CANCELLED ORDER OWES NO SALT. txPendUnits, txPendUnitsRaw and txPendRM, the three lines
    directly below, have opened with this guard since they were written; this one never did, and
    it is the one that turns MONEY into a claim on the shelf. txDeferUnits asks how much salt has
@@ -205,9 +212,10 @@ function provRate(days){return days>=21?1:days>=14?0.75:days>=8?0.5:days>=4?0.25
    by how long it has been out; a default is his statement that it will not come at all, and it
    beats the ladder the way the supplier write-off beats it four lines below in the walk. This is
    the ONE reader of that fact for the sale side. Every net-of-ladder figure on the desk goes
-   through it, so gross keeps the number everywhere (the record of what was traded and lost, the
-   numerator of the provision, the reason pxParty penalises the party's next quote) and net goes
-   to zero everywhere (what the desk expects to collect). The supplier readers keep calling
+   through it. SINCE v634 THE DEFAULT IS WRITTEN OFF (his instruction, 14 Sep 2026): txAdvance reads
+   nothing owed on a defaulted sale, so it reaches no receivable at all, and txWrittenOff carries
+   the figure to what was lost (the P&L, the month's charge, the bad-debt rate, the party's quote).
+   The rate still answers 1 for a caller that hands it the row. The supplier readers keep calling
    provRate directly: that side has its own rule and its own record. */
 function saleProvRate(s,days){return (s&&s.defaulted)?1:provRate(days);}
 /* ============ THE WALK (was recompute) ============
@@ -284,8 +292,9 @@ function walk(I){
   /* AR = advance only: pending unpaid-and-undelivered is not a receivable */
   W.arList=_S.filter(s=>txAdvance(s)>0.009);
   W.arGross=W.arList.reduce((a,s)=>a+txAdvance(s),0);
-  W.ar=Math.max(0,+W.arList.reduce((a,s)=>a+txAdvance(s)*(1-saleProvRate(s,dage(s.date))),0).toFixed(2)); // net of provisioning; a declared default nets to zero
+  W.ar=Math.max(0,+W.arList.reduce((a,s)=>a+txAdvance(s)*(1-saleProvRate(s,dage(s.date))),0).toFixed(2)); // net of provisioning; a written-off default is not on the list
   W.advTotal=W.arGross;
+  W.writtenOffRM=+_S.reduce((a,s)=>a+txWrittenOff(s),0).toFixed(2);   // v634: off the receivables, still a loss
   W.defUnits=+_S.reduce((a,s)=>a+txDeferUnits(s),0).toFixed(2);
   const _sr=I.isSalt?(I.supplierReceivable||null):null;
   W.supRecovGross=_sr?_sr.amount:0;
@@ -647,7 +656,7 @@ function renameInBook(book,pairs){
   walk(book);return n;
 }
 
-return {txPrice:txPrice,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:txEffDeliv,txAdvance:txAdvance,
+return {txPrice:txPrice,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:txEffDeliv,txAdvance:txAdvance,txWrittenOff:txWrittenOff,
         txDeferUnits:txDeferUnits,txPendUnits:txPendUnits,txPendUnitsRaw:txPendUnitsRaw,txPendRM:txPendRM,txStat:txStat,txDates:txDates,txGoods:txGoods,
         poRecvUnits:poRecvUnits,poCash:poCash,poLive:poLive,poOwed:poOwed,poRate:poRate,poOpenUnits:poOpenUnits,poStat:poStat,provRate:provRate,saleProvRate:saleProvRate,
         daysBetween:daysBetween,dayAge:dayAge,walk:walk,coverStats:coverStats,commitments:commitments,

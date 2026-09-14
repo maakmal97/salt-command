@@ -147,6 +147,11 @@ standing for places over 3 km apart, is tapped on the map under the form, and Re
 travels as `geo` on `addid` and `rename`, or as the collection `place` (Amend ID keeping the code, or the map's *Place
 parties from their recorded places* with the names open); the fold files it in the book's `PLACED`, which `placeOf`
 reads before a code's tail. On 14 Sep 2026 it found 33 of the directory's 42 recorded places.
+**A defaulted sale is written off** (his instruction, 14 Sep 2026, v634): `txAdvance` reads nothing owed on it, as
+`poOwed` reads nothing on a defaulted lot, so it leaves every reading of what is owed, the credit rules and the chase;
+`txWrittenOff` carries the figure to every reading of what was lost (the P&L impairment line, the month's charge, the
+bad-debt rate in the price stack, the receivables signal, a party's quote), so no loss and no price moves with it. A party
+with a write-off is not approached, offered or messaged (`approachable`). The customer's statement is untouched.
 
 ## The chain: tap to deploy
 
