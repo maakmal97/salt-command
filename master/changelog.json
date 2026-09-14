@@ -1,5 +1,15 @@
 [
  {
+  "v": "v637",
+  "d": "14 Sep 2026",
+  "t": "A TAP DRILLS INTO A DISTRICT OR AN AREA: ITS FIGURE, SHARE, RANK, TREND AND PARTIES",
+  "n": [
+   "<b>HIS CHOICE OF 14 SEP 2026, THE THIRD MAP LAYER: DRILL AND COMPARE.</b> A district opened now carries a panel of its own under the map, and a tap on one of its areas, on the map or in the table, swaps in that area's: its figure for the metric and period in view, its share and its rank against the others at its level, a bar a month for its trend with the period's months in gold, and its parties by code, largest first. A second tap puts the area down, and closing the district puts the pick down with it. The area picked is outlined and its parties' dots are lit.",
+   "<b>ONE READING FOR ALL OF IT.</b> mapOwn is what each party carries on each metric over the orders a filter keeps, so the shading, the table and each month of the trend come off the same figures, and an area is ranked against the areas drawn in the district while a district is ranked against every district carrying the metric. Codes only, even with the names open, as everywhere on the map.",
+   "<b>THE CHECKS.</b> A new section of 12 assertions on three fixture customers sited in two areas of one quiet district, trading in two months: the district's panel, a tap dispatched on the drawn area, the toggle, the table's names, the period and the metric carried into the panel, codes with the names open, and closing the district. 14 mutations each turn the assertion they target red."
+  ]
+ },
+ {
   "v": "v636",
   "d": "14 Sep 2026",
   "t": "THE MAP READS A MONTH, A RANGE OR ALL TIME, AND PLAYS THE BOOK MONTH BY MONTH",

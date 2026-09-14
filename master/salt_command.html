@@ -6776,7 +6776,9 @@ const quoteFor=p=>{const f=QUOTES[p||PROD];return f?f():null;};
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{"v":"v636","d":"14 Sep 2026","t":"THE MAP READS A MONTH, A RANGE OR ALL TIME, AND PLAYS THE BOOK MONTH BY MONTH","n":["<b>HIS CHOICE OF 14 SEP 2026, THE SECOND MAP LAYER: THE TIME SLIDER.</b> Under the metric switch, a slider picks a whole month, two dates pick a range to the day, each the desk's own date field with Today inside it, and All time takes the period off. Play by month steps from the product's first priced order to this month and stops on the last, or on Stop, and it stops itself when the map is left. The lead line names the period, so a shading always says what it covers.","<b>THE PERIOD READS THE ORDERS PLACED IN IT.</b> byCustomer takes a row filter now, so revenue, margin, units and customers are the desk's own figures over the period's orders, with one definition for both. Credit owed in a period is what is still owed today on the orders placed in it, not a balance rebuilt as it stood then.","<b>THE CHECKS.</b> A new section of 13 assertions on fixture customers trading in different months in quiet districts: all time, each month, a range to the day at both ends, credit owed in a period, and the player's start, tick, stop, end and leaving the map, with its timer caught rather than waited on, and Today on the From field moving the period. 16 mutations each turn the assertion they target red. On a phone every control in the row is 44 px tall, with no sideways scroll."]},
+const evolution=[{"v":"v637","d":"14 Sep 2026","t":"A TAP DRILLS INTO A DISTRICT OR AN AREA: ITS FIGURE, SHARE, RANK, TREND AND PARTIES","n":["<b>HIS CHOICE OF 14 SEP 2026, THE THIRD MAP LAYER: DRILL AND COMPARE.</b> A district opened now carries a panel of its own under the map, and a tap on one of its areas, on the map or in the table, swaps in that area's: its figure for the metric and period in view, its share and its rank against the others at its level, a bar a month for its trend with the period's months in gold, and its parties by code, largest first. A second tap puts the area down, and closing the district puts the pick down with it. The area picked is outlined and its parties' dots are lit.","<b>ONE READING FOR ALL OF IT.</b> mapOwn is what each party carries on each metric over the orders a filter keeps, so the shading, the table and each month of the trend come off the same figures, and an area is ranked against the areas drawn in the district while a district is ranked against every district carrying the metric. Codes only, even with the names open, as everywhere on the map.","<b>THE CHECKS.</b> A new section of 12 assertions on three fixture customers sited in two areas of one quiet district, trading in two months: the district's panel, a tap dispatched on the drawn area, the toggle, the table's names, the period and the metric carried into the panel, codes with the names open, and closing the district. 14 mutations each turn the assertion they target red."]},
+
+{"v":"v636","d":"14 Sep 2026","t":"THE MAP READS A MONTH, A RANGE OR ALL TIME, AND PLAYS THE BOOK MONTH BY MONTH","n":["<b>HIS CHOICE OF 14 SEP 2026, THE SECOND MAP LAYER: THE TIME SLIDER.</b> Under the metric switch, a slider picks a whole month, two dates pick a range to the day, each the desk's own date field with Today inside it, and All time takes the period off. Play by month steps from the product's first priced order to this month and stops on the last, or on Stop, and it stops itself when the map is left. The lead line names the period, so a shading always says what it covers.","<b>THE PERIOD READS THE ORDERS PLACED IN IT.</b> byCustomer takes a row filter now, so revenue, margin, units and customers are the desk's own figures over the period's orders, with one definition for both. Credit owed in a period is what is still owed today on the orders placed in it, not a balance rebuilt as it stood then.","<b>THE CHECKS.</b> A new section of 13 assertions on fixture customers trading in different months in quiet districts: all time, each month, a range to the day at both ends, credit owed in a period, and the player's start, tick, stop, end and leaving the map, with its timer caught rather than waited on, and Today on the From field moving the period. 16 mutations each turn the assertion they target red. On a phone every control in the row is 44 px tall, with no sideways scroll."]},
 
 {"v":"v635","d":"14 Sep 2026","t":"THE MAP SHADES BY REVENUE, MARGIN, UNITS, CUSTOMERS OR CREDIT OWED","n":["<b>HIS CHOICE OF 14 SEP 2026, THE FIRST OF THE FOUR MAP LAYERS: THE METRIC SWITCH.</b> A switch under the map chooses what the districts and areas are shaded by, for the product in view: revenue, margin, units, the number of customers, or the credit they owe. The lead line, the tooltips, the legend, the deepest-area tile and the table's figure column all follow it, so the page never says revenue over a margin shading. The map still opens on revenue.","<b>EACH FIGURE IS THE DESK'S OWN.</b> Revenue, margin and units are byCustomer's, credit owed is txAdvance over the book's receivables, so a written-off sale is owed by nobody here too, and a resale account counts where its associate is on every metric, as revenue already did. A count is whole, so the customers legend names the counts that fall in each step and leaves out a step no count reaches.","<b>THE CHECKS.</b> A new section of 5 assertions on fixture parties placed in four quiet districts so each metric has a different deepest district, with a defaulted advance to prove credit owed reads what is owed. 12 mutations each turn the assertion they target red. On a phone the five buttons wrap to two rows at 44 px, with no sideways scroll."]},
 
@@ -7258,7 +7260,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='14 Sep 2026, 15:35 KL';
+const LAST_UPDATED='14 Sep 2026, 15:59 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -10576,7 +10578,12 @@ function mapPoints(){
    level. What stays is the part that protects a person: no party's NAME is drawn or listed here, only codes.
    The areas are geo/areas.json, fetched once by tools/areafetch.mjs and inlined by geosync; nothing loads at runtime. */
 let MAP_VIEW=null;                  // null: the core districts; '*': the whole peninsula; a district id: that district
-function mapZoom(v){MAP_VIEW=v;render();}
+/* v637, HIS CHOICE OF 14 SEP 2026: DRILL AND COMPARE. A district opened shows its own panel, and a tap on one of its areas
+   swaps in that area's: its figure over the period, its share and its rank against the others drawn at its level, its
+   trend month by month, and its parties by code. A second tap on the area, or opening another view, puts it down. */
+let MAP_PICK=null;
+function mapZoom(v){MAP_VIEW=v;MAP_PICK=null;render();}
+function mapPick(id){MAP_PICK=(id&&MAP_PICK!==id)?id:null;render();}
 /* v635, HIS CHOICE OF 14 SEP 2026: THE METRIC SWITCH. The areas shade by revenue, margin, units, the number of customers
    or the credit they owe, for the product in view. Each figure is the desk's own: byCustomer's revenue, margin and units,
    and txAdvance for what is owed, so a written-off sale is owed by nobody here either. A resale account counts where its
@@ -10585,6 +10592,15 @@ let MAP_METRIC='rev';
 const MAP_METRICS={rev:'Revenue',margin:'Margin',units:'Units',customers:'Customers',credit:'Credit owed'};
 function mapMetric(m){MAP_METRIC=MAP_METRICS[m]?m:'rev';render();}
 const mapFmt=v=>MAP_METRIC==='units'?units(+(+v).toFixed(2)):MAP_METRIC==='customers'?String(Math.round(v)):fmt0(v);
+/* v637: what each party carries on each metric over the orders a filter keeps, a resale account counted where its associate
+   is; one reading for the shading, the table and the drill's trend */
+function mapOwn(keep){
+  const own={},put=(id,k,v)=>{const o=POSITION_ENGINE.ownerCode(id);(own[o]=own[o]||{rev:0,margin:0,units:0,credit:0})[k]+=v;};
+  byCustomer(keep).forEach(x=>{put(x.id,'rev',x.rev);put(x.id,'margin',x.margin);put(x.id,'units',x.kg);});
+  arList.filter(s=>!keep||keep(s)).forEach(s=>put(s.customer,'credit',txAdvance(s)));
+  return own;
+}
+const mapVal=(own,id)=>{const o=own[id];return !o?0:MAP_METRIC==='customers'?(o.rev>0.009?1:0):o[MAP_METRIC];};
 /* v636, HIS CHOICE OF 14 SEP 2026: THE TIME SLIDER. The map reads the orders of a period, a whole month off the slider, a
    range off the two dates, or all time, and plays the book month by month from its first priced order. Credit owed in a
    period is what is still owed on the orders placed in it. The player stops itself when the map is left. */
@@ -10675,15 +10691,13 @@ const mapStep=(v,max)=>(v>0&&max>0)?Math.min(4,Math.floor(Math.sqrt(v/max)*5)):-
 function tabMap(){
   const {pts,miss,far}=mapPoints();
   /* an associate's resale account has no place of its own, so what it sells counts where the associate is */
-  const own={},put=(id,k,v)=>{const o=POSITION_ENGINE.ownerCode(id);(own[o]=own[o]||{rev:0,margin:0,units:0,credit:0})[k]+=v;};
   const inP=s=>(!MAP_FROM||(!!s.date&&s.date>=MAP_FROM))&&(!MAP_TO||(!!s.date&&s.date<=MAP_TO));   // v636: the period's orders
-  byCustomer(inP).forEach(x=>{put(x.id,'rev',x.rev);put(x.id,'margin',x.margin);put(x.id,'units',x.kg);});
-  arList.filter(inP).forEach(s=>put(s.customer,'credit',txAdvance(s)));   // v635: the product in view's receivables
+  const own=mapOwn(inP);   // v635: the product in view's figures; v637: one reading, mapOwn
   const ms=mapMonths(),whole=!!(MAP_FROM&&MAP_TO&&MAP_FROM.slice(8)==='01'&&MAP_TO===mapMonthEnd(MAP_FROM.slice(0,7)));
   const periodTxt=!MAP_FROM&&!MAP_TO?'':whole?' in '+MAP_MON[+MAP_FROM.slice(5,7)-1]+' '+MAP_FROM.slice(0,4)
     :MAP_FROM&&MAP_TO?' from '+mapDay(MAP_FROM)+' to '+mapDay(MAP_TO):MAP_FROM?' since '+mapDay(MAP_FROM):' up to '+mapDay(MAP_TO);
   const mi=MAP_FROM?ms.indexOf(MAP_FROM.slice(0,7)):ms.length-1;
-  const val=id=>{const o=own[id];return !o?0:MAP_METRIC==='customers'?(o.rev>0.009?1:0):o[MAP_METRIC];};
+  const val=id=>mapVal(own,id);
   const word=MAP_METRICS[MAP_METRIC].toLowerCase(),empty=MAP_METRIC==='credit'?'nothing owed':'no trade';
   const placed=pts.concat(far).map(p=>Object.assign({},p,{value:p.role==='supplier'?p.value:val(p.id)},areaOf(p.place.lat,p.place.lng)));
   const onMap=placed.filter(p=>p.district),off=placed.filter(p=>!p.district);
@@ -10713,7 +10727,8 @@ function tabMap(){
   const shapes=shown.map(a=>{
     const t=vals[a.id],k=mapStep(t?t.v:0,max),name=dist?areaName(a):a.name;
     const tip=name+': '+(t&&Math.abs(t.v)>0.009?mapFmt(t.v)+', '+t.n+(t.n===1?' party':' parties'):empty);
-    return `<path class="marea" data-a="${a.id}" d="${path(areaShape(a).rings)}" fill="${k<0?'#ffffff05':MAPC[k]}" fill-opacity="${k<0?1:.82}" stroke="#0b1215" stroke-width="${dist?0.8:1.2}" stroke-linejoin="round"${dist?'':` onclick="mapZoom('${a.id}')" style="cursor:pointer"`}><title>${esc(tip)}</title></path>`;
+    const sel=dist&&a.id===MAP_PICK;   // v637: the area drilled into is outlined
+    return `<path class="marea${sel?' mpicked':''}" data-a="${a.id}" d="${path(areaShape(a).rings)}" fill="${k<0?'#ffffff05':MAPC[k]}" fill-opacity="${k<0?1:.82}" stroke="${sel?'#c5a059':'#0b1215'}" stroke-width="${sel?2.4:dist?0.8:1.2}" stroke-linejoin="round" onclick="${dist?`mapPick('${a.id}')`:`mapZoom('${a.id}')`}" style="cursor:pointer"><title>${esc(tip)}</title></path>`;
   }).join('');
   /* A NAME IS DRAWN WHERE IT FITS: inside the frame, over an area at least as wide as the name, and clear of every name
      already placed, the busiest areas first. The rest are named in their tooltips and in the table. */
@@ -10733,7 +10748,7 @@ function tabMap(){
   const dots=here.map(p=>{const key=p.place.lat+','+p.place.lng,i=(seat[key]=(seat[key]||0)+1)-1,ang=i*2.4,rad=i?5+3*Math.sqrt(i):0;
     const cx=X(p.place.lng)+Math.cos(ang)*rad,cy=Y(p.place.lat)+Math.sin(ang)*rad;
     return p.role==='supplier'?`<rect class="mdot" x="${(cx-3.5).toFixed(1)}" y="${(cy-3.5).toFixed(1)}" width="7" height="7" fill="#a6afb5" stroke="#05080a" stroke-width="1"/>`
-      :`<circle class="mdot" cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="4" fill="#e6ebee" stroke="#05080a" stroke-width="1.2"/>`;}).join('');
+      :`<circle class="mdot${p.area&&p.area.id===MAP_PICK?' mdotpick':''}" cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${p.area&&p.area.id===MAP_PICK?5:4}" fill="${p.area&&p.area.id===MAP_PICK?'#c5a059':'#e6ebee'}" stroke="#05080a" stroke-width="1.2"/>`;}).join('');
   const kmPx=111.32/s,barKm=[1,2,5,10,20,50,100].find(k=>k/kmPx>=70)||100,barPx=barKm/kmPx;
   /* a count is whole, so its steps are named by the counts that fall in them, and a step no count reaches is not listed */
   const stepName=k=>{
@@ -10745,6 +10760,38 @@ function tabMap(){
   const total=rows.reduce((z,r)=>z+Math.max(0,r.t.v),0),top=rows[0]&&rows[0].t.v>0?rows[0]:null;
   const btn=(label,v,on)=>`<button${on?' class="on"':''} onclick="mapZoom(${v===null?'null':"'"+v+"'"})">${label}</button>`;
   const mbtn=m=>`<button${m===MAP_METRIC?' class="on"':''} onclick="mapMetric('${m}')">${MAP_METRICS[m]}</button>`;
+  /* v637: THE DRILL. The area picked in the district opened, else the district itself, read against the others at its level:
+     an area against the areas drawn here, a district against every district carrying the metric. */
+  const pick=dist?(shown.find(a=>a.id===MAP_PICK)||dist):null;
+  const drill=!pick?'':(()=>{
+    const isArea=pick!==dist,key=isArea?'area':'district';
+    const mine=onMap.filter(p=>p.role!=='supplier'&&p[key]&&p[key].id===pick.id),ids=[...new Set(mine.map(p=>p.id))];
+    const t=(isArea?byA:byD)[pick.id]||{v:0,n:0};
+    const pool=(isArea?rows.map(r=>({id:r.a.id,v:r.t.v})):Object.keys(byD).map(id=>({id:id,v:byD[id].v})).filter(x=>Math.abs(x.v)>0.009)).sort((p,q)=>q.v-p.v);
+    const poolTotal=pool.reduce((z,x)=>z+Math.max(0,x.v),0),rank=Math.abs(t.v)>0.009?pool.findIndex(x=>x.id===pick.id)+1:0;
+    const trend=ms.map(k=>{const own2=mapOwn(s=>!!s.date&&s.date.slice(0,7)===k);return {k:k,v:ids.reduce((z,id)=>z+mapVal(own2,id),0)};});
+    const top=Math.max(0,...trend.map(x=>x.v)),bw=28,W2=Math.max(1,trend.length)*bw,H2=60;
+    const inPeriod=k=>(!MAP_FROM||mapMonthEnd(k)>=MAP_FROM)&&(!MAP_TO||k+'-01'<=MAP_TO);
+    const bars=trend.map((x,i)=>{const h=top>0&&x.v>0?Math.max(2,x.v/top*(H2-6)):0;
+      return `<rect class="mtbar" x="${i*bw+5}" y="${(H2-2-h).toFixed(1)}" width="${bw-10}" height="${h.toFixed(1)}" rx="2" fill="${inPeriod(x.k)?'#c5a059':'#56697a'}"><title>${MAP_MON[+x.k.slice(5,7)-1]} ${x.k.slice(0,4)}: ${mapFmt(x.v)}</title></rect>`;}).join('');
+    const who=ids.map(id=>({id:id,v:val(id)})).sort((p,q)=>q.v-p.v),shownWho=who.slice(0,12);
+    const name=isArea?areaName(pick):pick.name,plural=isArea?'areas':'districts';
+    return `<div class="card mapdrill" style="margin-top:13px">
+      <div class="cardh">${esc(name)} <span class="sub">${isArea?'in '+esc(dist.name):'district'}${periodTxt}</span></div>
+      <div class="kpis k3" style="margin-top:8px">
+        <div class="kpi gold"><div class="l">${MAP_METRICS[MAP_METRIC]}</div><div class="v">${Math.abs(t.v)>0.009?mapFmt(t.v):'&mdash;'}</div><div class="n">${mine.length} ${mine.length===1?'party':'parties'} sited</div></div>
+        <div class="kpi"><div class="l">Share</div><div class="v">${poolTotal&&t.v>0?Math.round(t.v/poolTotal*100)+'%':'&mdash;'}</div><div class="n">of the ${word} across ${pool.length} ${plural}</div></div>
+        <div class="kpi"><div class="l">Rank</div><div class="v">${rank?'#'+rank:'&mdash;'}</div><div class="n">${rank?'of '+pool.length+' '+plural:empty+' in '+(isArea?'this area':'this district')}</div></div>
+      </div>
+      <div style="margin-top:12px;font-size:12px;color:var(--mut)">Month by month, the period in gold</div>
+      <svg class="maptrend" viewBox="0 0 ${W2} ${H2}" style="width:100%;max-width:${Math.max(W2,280)}px;height:auto;display:block;margin-top:4px" role="img" aria-label="${esc(name)}, ${word} month by month">${bars}</svg>
+      ${trend.length?`<div class="maptrendx" style="display:flex;justify-content:space-between;max-width:${Math.max(W2,280)}px;font-size:10px;color:var(--mut)"><span>${MAP_MON[+trend[0].k.slice(5,7)-1]} ${trend[0].k.slice(0,4)}</span><span>${MAP_MON[+trend[trend.length-1].k.slice(5,7)-1]} ${trend[trend.length-1].k.slice(0,4)}</span></div>`:''}
+      <table style="margin-top:10px"><thead><tr><th class="l">Party</th><th>${MAP_METRICS[MAP_METRIC]}</th></tr></thead><tbody>
+        ${shownWho.map(x=>`<tr><td class="l mono">${esc(codeOf(x.id))}</td><td>${Math.abs(x.v)>0.009?mapFmt(x.v):'&mdash;'}</td></tr>`).join('')||`<tr><td class="l" colspan="2" style="color:var(--mut)">No party sited here.</td></tr>`}
+        ${who.length>shownWho.length?`<tr><td class="l" colspan="2" style="color:var(--mut)">and ${who.length-shownWho.length} more</td></tr>`:''}
+      </tbody></table>
+      ${isArea?`<div style="margin-top:10px"><button class="vbtn" onclick="mapPick(null)">Back to ${esc(dist.name)}</button></div>`:''}
+    </div>`;})();
   return `<h1>Map</h1>
   <div class="pscope">${prodBadge()}</div>
   <div class="dsc dsclead" style="margin-bottom:12px">${MAP_METRICS[MAP_METRIC]} by ${dist?'mukim, bandar and pekan in '+esc(dist.name)+periodTxt+', each party a dot with no name':'district'+periodTxt+', deeper where the book is concentrated; tap a district to open its mukim, bandar and pekan'}.</div>
@@ -10782,9 +10829,10 @@ function tabMap(){
     <!-- the credits are licence conditions of drawing the areas, never method prose: no class stripMethod reads -->
     <div style="margin-top:8px;font-size:11px;color:var(--mut);line-height:1.5">${esc(AREAS_META.attribution.join('. '))}. States: ${esc(BASEMAP_META.attribution)}. Fetched ${AREAS_META.fetchedOn}, simplified. ${esc(GAZ_META.attribution)}.</div>
   </div>
+  ${drill}
   <details class="obsec" open><summary>${dist?'Areas in '+esc(dist.name):'Districts'} <span class="q">${rows.length} ${MAP_METRIC==='credit'?'owing':'with trade'}</span></summary>
   <div class="card"><table><thead><tr><th class="l">${dist?'Area':'District'}</th><th>Parties</th><th>${MAP_METRICS[MAP_METRIC]}</th><th>Share</th></tr></thead><tbody>
-    ${rows.map(r=>`<tr><td class="l">${dist?esc(areaName(r.a)):`<button class="navlink" onclick="mapZoom('${r.a.id}')">${esc(r.a.name)}</button>`}</td><td>${r.t.n}</td><td>${mapFmt(r.t.v)}</td><td>${total&&r.t.v>0?Math.round(r.t.v/total*100)+'%':'&mdash;'}</td></tr>`).join('')||`<tr><td class="l" colspan="4" style="color:var(--mut)">${MAP_METRIC==='credit'?'Nothing owed':'No trade'} in the areas drawn.</td></tr>`}
+    ${rows.map(r=>`<tr><td class="l">${dist?`<button class="navlink" onclick="mapPick('${r.a.id}')">${esc(areaName(r.a))}</button>`:`<button class="navlink" onclick="mapZoom('${r.a.id}')">${esc(r.a.name)}</button>`}</td><td>${r.t.n}</td><td>${mapFmt(r.t.v)}</td><td>${total&&r.t.v>0?Math.round(r.t.v/total*100)+'%':'&mdash;'}</td></tr>`).join('')||`<tr><td class="l" colspan="4" style="color:var(--mut)">${MAP_METRIC==='credit'?'Nothing owed':'No trade'} in the areas drawn.</td></tr>`}
   </tbody></table></div></details>
   ${(off.length+miss.length)?`<details class="obsec"><summary>Not on the map <span class="q">${[off.length?off.length+' beyond the districts':'',unknown.length?unknown.length+' with no place':'',(miss.length-unknown.length)?(miss.length-unknown.length)+' excluded by rule':''].filter(Boolean).join(', ')}</span></summary>
   <div class="card"><table><thead><tr><th class="l">Party</th><th class="l">Suffix</th><th>Worth</th><th class="l">Why it is not drawn</th></tr></thead><tbody>

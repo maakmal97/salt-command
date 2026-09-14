@@ -353,7 +353,7 @@ section("The public desk carries no name and no place");
     okOff(hits.length === 0, `no directory name or place appears in the public desk (${words.size} checked, ${hits.length} found)`);
 
     /* v630: the map shades named areas and draws each party as a dot with no name, in place of v293's unnamed heat */
-    okOff(desk.includes('class="marea"') && desk.includes("const DISTRICTS=["), "the map shades named districts and areas");
+    okOff(desk.includes('<path class="marea') && desk.includes("const DISTRICTS=["), "the map shades named districts and areas");   // v637: an area picked carries a second class
     okOff(!desk.includes("place.name"), "nothing on the map reads a place name");
     okOff(!/PLACES\[[^\]]*\]\.(name|src)/.test(desk), "the gazetteer table carries neither name nor provenance");
   }
@@ -11589,6 +11589,62 @@ section("v636: the map reads a month off the slider, a range off two dates, or a
     ok(!end.play && end.from === all.months[all.months.length - 1] + "-01", "played through, it stops on the last month: " + JSON.stringify(end));
     w36.eval("MAP_FROM=null;MAP_TO=null;MAP_PLAY=null;");
   } finally { await new Promise((r) => setTimeout(r, 200)); try { w36.close(); } catch (e) { /* best effort */ } }
+}
+
+section("v637: a tap drills into a district or an area: its figure, share, rank, trend by month and parties");
+{
+  /* HIS CHOICE OF 14 SEP 2026, DRILL AND COMPARE. Three fixture customers are sited in two areas of one quiet district, trading
+     in two months, so the district's panel, each area's panel, the ranks, the shares and the trend bars all have known
+     answers. The tap is dispatched on the drawn area itself. The state is forced, never found. Each assertion was proved
+     red by mutation. */
+  const { openMaster: om37 } = await import("../tools/payload.mjs");
+  const { w: w37 } = await om37();
+  const rd37 = (e) => JSON.parse(String(w37.eval("JSON.stringify(" + e + ")")));
+  try {
+    const row37 = (o) => JSON.stringify(Object.assign({ product: "salt", cost: 10, deliveredQty: o.qty }, o, { cash: o.total, deliveredOn: o.date }));
+    const setup = rd37("(function(){setProd('salt');var J=DISTRICTS.find(function(d){return d.name==='Jelebu';});var as=AREAS.filter(function(a){return a.district===J.id;}).slice(0,2);"
+      + "var at=function(a){return [a.label[1],a.label[0]];};PLACED['CZ9-DA1']=at(as[0]);PLACED['CZ9-DA2']=at(as[0]);PLACED['CZ9-DB1']=at(as[1]);roster.push('CZ9-DB1','CZ9-DA2','CZ9-DA1');"
+      + "BASE_SALES.push(" + [
+        row37({ rid: "z637a", customer: "CZ9-DA1", date: "2026-07-05", qty: 3, total: 300000 }),
+        row37({ rid: "z637b", customer: "CZ9-DA2", date: "2026-08-05", qty: 2, total: 200000 }),
+        row37({ rid: "z637c", customer: "CZ9-DB1", date: "2026-08-15", qty: 1, total: 100000 }),
+      ].join(",") + ");queue=[];applyOverlay();recompute();MAP_VIEW=null;MAP_METRIC='rev';MAP_FROM=null;MAP_TO=null;MAP_PICK=null;switchTab('map');"
+      + "return {J:J.id,a0:as[0].id,a1:as[1].id,n0:areaName(as[0]),n1:areaName(as[1]),months:mapMonths()};})()");
+    const panel = (call) => rd37("(function(){" + (call || "") + "var s=document.querySelector('.sec.on'),p=s.querySelector('.mapdrill');if(!p)return null;"
+      + "return {title:(p.querySelector('.cardh')||{}).textContent,v:[].map.call(p.querySelectorAll('.kpi .v'),function(x){return x.textContent;}),n:[].map.call(p.querySelectorAll('.kpi .n'),function(x){return x.textContent;}),"
+      + "bars:[].map.call(p.querySelectorAll('rect.mtbar'),function(b){return {h:+b.getAttribute('height'),f:b.getAttribute('fill'),t:(b.querySelector('title')||{}).textContent};}),"
+      + "x:[].map.call(p.querySelectorAll('.maptrendx span'),function(x){return x.textContent;}),"
+      + "who:[].map.call(p.querySelectorAll('tbody tr'),function(r){return [].map.call(r.cells,function(c){return c.textContent;}).join('|');}),"
+      + "head:(p.querySelector('thead th:nth-child(2)')||{}).textContent,back:!!p.querySelector('button.vbtn'),text:p.textContent,"
+      + "picked:[].map.call(s.querySelectorAll('path.marea.mpicked'),function(x){return x.getAttribute('data-a');}),gold:s.querySelectorAll('circle.mdotpick').length,pick:MAP_PICK};})()");
+    const mJul = setup.months.indexOf("2026-07"), mAug = setup.months.indexOf("2026-08");
+    ok(panel("") === null, "the districts view carries no drill: a tap there opens the district");
+    const d = panel("mapZoom('" + setup.J + "');");
+    ok(!!d && /^Jelebu district/.test(d.title) && d.v[0] === "RM 600,000" && d.v[2] === "#1" && /^of \d+ districts$/.test(d.n[2]) && d.n[0] === "3 parties sited" && /^\d+%$/.test(d.v[1]) && !d.back,
+      "a district opened shows its own panel: its figure, share and rank against the districts: " + JSON.stringify(d && [d.title, d.v, d.n]));
+    ok(d.bars.length === setup.months.length && d.bars[mJul].h > 0 && d.bars[mAug].h > d.bars[mJul].h * 0.9 && d.bars.filter((b, i) => i !== mJul && i !== mAug).every((b) => b.h === 0)
+      && /^Jul 2026: RM 300,000$/.test(d.bars[mJul].t) && /^Aug 2026: RM 300,000$/.test(d.bars[mAug].t) && d.x[0] === setup.months[0].replace(/^(\d{4})-(\d\d)$/, (m, y, mo) => ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][+mo - 1] + " " + y),
+      "its trend has a bar a month, the months it traded standing, each bar titled with its figure: " + JSON.stringify(d.bars.map((b) => b.t)));
+    ok(JSON.stringify(d.who) === JSON.stringify(["CZ9-DA1|RM 300,000", "CZ9-DA2|RM 200,000", "CZ9-DB1|RM 100,000"]), "and its parties by code, largest first: " + JSON.stringify(d.who));
+    const a1 = panel("document.querySelector('.sec.on path.marea[data-a=\"" + setup.a1 + "\"]').dispatchEvent(new window.MouseEvent('click',{bubbles:true}));");
+    ok(!!a1 && a1.title.indexOf(setup.n1 + " in Jelebu") === 0 && a1.v[0] === "RM 100,000" && a1.v[1] === "17%" && a1.v[2] === "#2" && a1.n[2] === "of 2 areas" && a1.back
+      && JSON.stringify(a1.picked) === JSON.stringify([setup.a1]) && a1.gold === 1,
+      "a tap on an area swaps in its panel, ranked and shared against the areas drawn, the area outlined and its one party lit: " + JSON.stringify(a1 && [a1.title, a1.v, a1.n, a1.gold]));
+    ok(a1.bars[mAug].h > 0 && a1.bars[mJul].h === 0 && JSON.stringify(a1.who) === JSON.stringify(["CZ9-DB1|RM 100,000"]), "and its own trend and parties alone: " + JSON.stringify(a1.who));
+    const off = panel("mapPick('" + setup.a1 + "');");
+    ok(off.pick === null && /^Jelebu district/.test(off.title) && off.picked.length === 0, "a second tap on the area puts it down, back to the district's panel");
+    const a0 = panel("var b=[].find.call(document.querySelectorAll('.sec.on details.obsec tbody button.navlink'),function(x){return x.textContent===" + JSON.stringify(setup.n0) + ";});if(b)b.click();");
+    ok(a0.pick === setup.a0 && a0.v[0] === "RM 500,000" && a0.v[2] === "#1" && a0.v[1] === "83%", "the table's area names pick an area too: " + JSON.stringify([a0.pick, a0.v]));
+    const jul = panel("mapMonth(" + mJul + ");");
+    ok(jul.pick === setup.a0 && jul.v[0] === "RM 300,000" && jul.bars[mJul].f === "#c5a059" && jul.bars[mAug].f === "#56697a" && jul.bars[mAug].h > 0 && / in Jul 2026$/.test(jul.title),
+      "the period narrows the figures and lights its own months in the trend, the rest still drawn: " + JSON.stringify([jul.v[0], jul.bars[mJul].f, jul.bars[mAug].f]));
+    const un = panel("mapMetric('units');");
+    ok(un.v[0] === "3 unit" && un.head === "Units" && un.who.some((r) => r === "CZ9-DA1|3 unit"), "and the metric switch carries into the panel: " + JSON.stringify([un.v[0], un.head]));
+    const named = panel("vaultNames={'CZ9-DA1':'Zed Person (Here)'};revealed=true;render();");
+    ok(!/Zed Person/.test(named.text) && named.who.some((r) => /^CZ9-DA1\|/.test(r)), "with the names open the panel still lists codes, never a name");
+    const out = panel("vaultNames={};revealed=false;mapMetric('rev');mapPeriod();mapZoom(null);");
+    ok(out === null && rd37("MAP_PICK") === null, "and closing the district puts the pick down with it");
+  } finally { await new Promise((r) => setTimeout(r, 200)); try { w37.close(); } catch (e) { /* best effort */ } }
 }
 
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
