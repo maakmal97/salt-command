@@ -605,6 +605,27 @@ function bookR2(row,partyKey,assoc,buyer){
   if(buyer&&buyer!==a&&buyer!==b)row.downstream=buyer;else delete row.downstream;
   return row;
 }
+/* ====== v628, AMEND ID: A RENAME IS A RE-KEY (his rulings of 11 Sep 2026) =========================
+   A code is the party's one identifier, the string the ledger carries, so a new name or place that
+   derives a new code moves the code wherever the book holds it: every whole value and every key that
+   is the code. The codes built on it move with it, the -R account and an end buyer's
+   <code>-<n>-<place>, because ownerCode reads the party back out of them. Prose is never touched: a
+   note naming the old code says what was true when it was written. ONE WRITER for the drafter's
+   count, the fold's apply and the phone's preview. */
+function renamePairs(roster,from,to){
+  return (roster||[]).filter(c=>c===from||c.indexOf(from+'-')===0).map(c=>[c,to+c.slice(from.length)]);
+}
+function renameInBook(book,pairs){
+  const map=new Map(pairs);let n=0;
+  const walk=v=>{
+    if(!v||typeof v!=='object')return;
+    for(const k of Object.keys(v)){
+      if(typeof v[k]==='string'&&map.has(v[k])){v[k]=map.get(v[k]);n++;}else walk(v[k]);
+      if(!Array.isArray(v)&&map.has(k)){v[map.get(k)]=v[k];delete v[k];n++;}
+    }
+  };
+  walk(book);return n;
+}
 
 return {txPrice:txPrice,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:txEffDeliv,txAdvance:txAdvance,
         txDeferUnits:txDeferUnits,txPendUnits:txPendUnits,txPendUnitsRaw:txPendUnitsRaw,txPendRM:txPendRM,txStat:txStat,txDates:txDates,txGoods:txGoods,
@@ -614,6 +635,7 @@ return {txPrice:txPrice,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeli
         CORRECTABLE:CORRECTABLE,CORRECT_REQUIRED:CORRECT_REQUIRED,CORRECT_NUM_POS:CORRECT_NUM_POS,
         CORRECT_NUM_NN:CORRECT_NUM_NN,CORRECT_DATE:CORRECT_DATE,CORRECT_BOOL:CORRECT_BOOL,
         CORRECT_CODE:CORRECT_CODE,CORRECT_TEXT:CORRECT_TEXT,HANDOVER:HANDOVER,
-        ADDID_APPOINTS:ADDID_APPOINTS,BUCKET_SFX:BUCKET_SFX,isBucket:isBucket,ownerCode:ownerCode,ownsCode:ownsCode,appointBucket:appointBucket,bookR2:bookR2};
+        ADDID_APPOINTS:ADDID_APPOINTS,BUCKET_SFX:BUCKET_SFX,isBucket:isBucket,ownerCode:ownerCode,ownsCode:ownsCode,appointBucket:appointBucket,bookR2:bookR2,
+        renamePairs:renamePairs,renameInBook:renameInBook};
 })();
 export default POSITION_ENGINE;

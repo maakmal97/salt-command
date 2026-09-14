@@ -32,6 +32,9 @@
  *                     and appointed when he decides
  *   a price edit      PRICE_SET[product] REPLACED with what he set: the form on the desk is the
  *                     whole statement of what the board should be, so a price he cleared is cleared
+ *   a rename (v628)   Amend ID: the code re-keyed wherever the book holds it, AFTER every other row
+ *                     in the batch, with its -R account; the statement key, a place override and the
+ *                     suite's fixtures follow; refused for a code the desk's own logic names
  * then the shelf is ROLLED for what physically moved (a roll, never a count), the watermark
  * moves to the newest id folded, and the book is sorted.
  *
@@ -60,6 +63,8 @@ const STAGED = opt("--staged", resolve(dirname(MASTER), "_to_fold.json"));
 const NOTES = opt("--notes", resolve(dirname(MASTER), "_fold_notes.json"));
 const FOLDED = opt("--folded", resolve(dirname(MASTER), "_folded.json"));
 const USERS = opt("--users", resolve(REPO, "statements", "_users.json"));   // v588
+const PLACES = opt("--places", resolve(REPO, "geo", "places.json"));       // v628
+const SUITE = opt("--suite", resolve(REPO, "test", "verify.mjs"));         // v628
 const TODAY = opt("--today", new Date(Date.now() + 8 * 36e5).toISOString().slice(0, 10));   // Kuala Lumpur
 
 const E = POSITION_ENGINE;
@@ -115,6 +120,7 @@ function describe(item) {
     case "repayment": return `REPAY ${r.form === "cash" ? "RM " + r.rm : r.kg + " unit " + (r.product || "salt")} ${r.direction === "in" ? "to" : "from"} ${r.party} on loan ${r.loan}, ${r.date}${r.settles ? ", settling it" : ""}`;
     case "lostDemand": return `LOST SALE ${r.kg} unit ${r.product}${r.party ? " to " + r.party : ""} on ${r.date}: ${r.why}`;
     case "roster": return `${APPOINTS[r.kind] ? "APPOINT" : "REGISTER"} ${r.code} as ${r.kind}${r.parent ? " under " + r.parent : ""}`;
+    case "rename": return `RENAME ${r.from} to ${r.to}`;
     case "priceset": return `SET THE BOARD for ${r.product}${Object.keys(r.prices || {}).length ? ": " + Object.entries(r.prices).map(([q, p]) => `${q} unit at RM${p}`).join(", ") : ""}${(r.hide || []).length ? `, hiding ${r.hide.join(", ")} unit` : ""}`;
     default: return `${item.collection}: ${JSON.stringify(r).slice(0, 80)}`;
   }
@@ -340,10 +346,59 @@ export function plan(book, staged, notes) {
       entry.repay = { rid: r.loan, date: r.date, kg: cashL ? null : amt, rm: cashL ? amt : null, settles };
       entry.does.push(`record the repayment on loan ${r.loan}${settles ? " and settle it" : `, leaving ${+(owed - amt).toFixed(2)} owing`}`);
       if (!cashL) out.moves.push({ product: loan.product || "salt", kg: loan.direction === "in" ? -amt : +amt, who: (loan.direction === "in" ? "repaid to " : "repaid by ") + loan.party, when: r.date || TODAY });
+    } else if (it.collection === "rename") {
+      /* v628, AMEND ID: checked again against the book it folds into, since a code can be taken or retired
+         between the draft and the fold. What moves is the engine's renamePairs, as on the card. */
+      const roster = book.roster || [];
+      if (!roster.includes(r.from)) { out.refused.push({ id: it.id, why: `${r.from} is not on the roster, so there is nothing to rename` }); continue; }
+      if (E.isBucket(r.from) || !r.to || r.to === r.from) { out.refused.push({ id: it.id, why: `${r.from} to ${r.to} is not a rename this fold takes` }); continue; }
+      const pairs = E.renamePairs(roster, r.from, r.to);
+      const taken = pairs.map((x) => x[1]).filter((c) => roster.includes(c));
+      if (taken.length) { out.refused.push({ id: it.id, why: `${taken.join(" and ")} already belongs to another party` }); continue; }
+      const pinned = pairs.map((x) => x[0]).filter(pinnedInMaster);
+      if (pinned.length) { out.refused.push({ id: it.id, why: `${pinned.join(" and ")} is written into the desk's own code, which a fold never edits, so this rename is left for a hand fold` }); continue; }
+      entry.rename = { from: r.from, to: r.to, pairs };
+      entry.does.push(`re-key ${pairs.map((x) => x[0] + " to " + x[1]).join(" and ")} wherever the book holds the code, after every other row in this batch; notes and history keep the old code`);
+      entry.does.push("move the statement account to the new code, its username unchanged, with any place override and the suite's fixtures");
     } else { out.refused.push({ id: it.id, why: `unknown collection ${it.collection}` }); continue; }
     out.items.push(entry);
   }
   return out;
+}
+
+/* v628: A CODE WRITTEN INTO THE DESK'S OWN LOGIC cannot be re-keyed by a fold, which writes the book and never the
+   master's code: CJ4-OKR is named in DIAMOND and R0_NETWORK. A code quoted anywhere in the master outside the
+   generated blocks and the version history is refused, a comment included, because a refusal costs a hand fold
+   and a miss costs a desk that names a party the book no longer has. */
+let masterLines = null;
+function pinnedInMaster(code) {
+  masterLines = masterLines || readFileSync(MASTER, "utf8").split("\n");
+  let generated = false;
+  return masterLines.some((l) => {
+    if (/^\/\* ==== (BOOK|GEO|ENGINE|DESIGN)\b/.test(l)) { generated = true; return false; }
+    if (/^\/\* ==== END (BOOK|GEO|ENGINE|DESIGN)\b/.test(l)) { generated = false; return false; }
+    if (generated || /^(const evolution=\[)?\{\s*"?v"?\s*:/.test(l)) return false;
+    return l.includes("'" + code + "'") || l.includes('"' + code + '"');
+  });
+}
+
+/* v628: the three files a rename reaches beyond the book. Pure, so the suite folds them on fixtures. */
+/* the statement account moves to the new code and keeps its username, his rule: the username never changes */
+export function renameUsers(users, pairs) {
+  for (const [f, t] of pairs) if (users[f] && !users[t]) { users[t] = users[f]; delete users[f]; }
+  return users;
+}
+/* a place override follows its code while the code ends in the same place, and goes when the place changed */
+export function renameLocs(places, pairs) {
+  const L = places.LOCS || {}, tail = (c) => c.slice(c.indexOf("-") + 1);
+  let moved = 0;
+  for (const [f, t] of pairs) if (f in L) { if (tail(f) === tail(t)) L[t] = L[f]; delete L[f]; moved++; }
+  return moved;
+}
+/* the suite's fixtures name live codes and move with the book, as v603 moved them by hand; whole codes only */
+export function renameSuiteText(text, pairs) {
+  for (const [f, t] of pairs) text = text.replace(new RegExp("(?<![A-Za-z0-9-])" + f + "(?![A-Za-z0-9-])", "g"), t);
+  return text;
 }
 
 /* ---- the skeleton the agent fills in ---------------------------------------------------- */
@@ -688,7 +743,7 @@ export function apply(book, staged, notes, masterText) {
   const fromSalt = book.STATED_STOCK;
   const moves = [];
   let newest = book.QUEUE_COMMITTED || "";
-  const folded = [];
+  const folded = [], renames = [];
   for (const it of p.items) {
     const src = staged.approved.find((x) => x.id === it.id);
     const n = (notes.rows && notes.rows[it.id]) || {};
@@ -761,10 +816,12 @@ export function apply(book, staged, notes, masterText) {
         book.NOTES = book.NOTES || {};
         book.NOTES.PRICE_SET = [String(n.note).trim()].concat(book.NOTES.PRICE_SET || []);
       }
-    }
+    } else if (it.rename) renames.push(it.rename);
     if (it.id > newest) newest = it.id;
     folded.push(it.id);
   }
+  /* v628: A RENAME GOES LAST, so a row folded in the same batch under the old code moves with the rest */
+  for (const rn of renames) E.renameInBook(book, rn.pairs);
   /* THE ROLL: what physically moved, per product, applied to the stated figure that stands */
   const byProd = {};
   for (const m of p.moves) { byProd[m.product] = byProd[m.product] || []; byProd[m.product].push(m); }
@@ -803,7 +860,7 @@ export function apply(book, staged, notes, masterText) {
     if (!re.test(m)) return { ok: false, problems: ["the master has no STOCK_COST line to move"] };
     m = m.replace(re, (all, c) => `const STOCK_COST=${+notes.stockCost};` + (c ? `  /* ${notes.version}: ${String(notes.stockCostNote || "the cost basis moved with the lot that landed").replace(/\*\//g, "* /")}` + (c.includes("/*") ? "\n  " : "") : ""));
   }
-  return { ok: true, folded, newest, moves, master: m, plan: p };
+  return { ok: true, folded, newest, moves, master: m, plan: p, renames };
 }
 
 /* ---- the command line ---------------------------------------------------------------------- */
@@ -848,6 +905,19 @@ if (isMain) {
     const users = existsSync(USERS) ? JSON.parse(readFileSync(USERS, "utf8")) : {};
     const minted = mintUsernames(users, staged, res.folded);
     if (minted.length) { writeFileSync(USERS, usersJson(users)); console.log(`  ok    statement username minted for ${minted.join(", ")}, kept for life`); }
+    /* v628: a rename reaches three files beyond the book: the statement key, a place override and the suite */
+    const pairs = res.renames.flatMap((x) => x.pairs);
+    if (pairs.length) {
+      writeFileSync(USERS, usersJson(renameUsers(users, pairs)));
+      if (existsSync(SUITE)) writeFileSync(SUITE, renameSuiteText(readFileSync(SUITE, "utf8"), pairs));
+      const places = JSON.parse(readFileSync(PLACES, "utf8"));
+      if (renameLocs(places, pairs)) {
+        writeFileSync(PLACES, JSON.stringify(places, null, 1) + "\n");
+        /* geosync reads the repo's geo/ and nothing else, so only the repo's own file is synced into the master */
+        if (PLACES === resolve(REPO, "geo", "places.json")) execFileSync("node", [resolve(REPO, "tools", "geosync.mjs"), "--sync"], { cwd: REPO, encoding: "utf8", env: { ...process.env, SALT_MASTER: MASTER } });
+      }
+      console.log(`  ok    renamed ${pairs.map((x) => x[0] + " -> " + x[1]).join(", ")} in the book, the statement key, the place overrides and the suite`);
+    }
     try { execFileSync("node", [resolve(REPO, "tools", "changelog.mjs")], { cwd: REPO, encoding: "utf8", env: { ...process.env, SALT_MASTER: MASTER } }); }
     catch (e) { console.log("  FAIL  the changelog did not take: " + String((e && e.stdout) || e)); process.exit(1); }
     console.log(`  ok    folded ${res.folded.length} row(s) into ${BOOK} and the master at ${notes.version}`);

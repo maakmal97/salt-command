@@ -5,8 +5,12 @@
  * Since v528 Add ID on the phone files the party's name and place into the cloud vault, encrypted
  * with the passphrase and never in the queue. The laptop's directory, 10_Data\salt_bio.json, is
  * then behind the vault until this runs: it fetches the envelope (ciphertext, an open read),
- * decrypts it here with the passphrase, and adds every code the directory lacks. A name already
- * in the directory is never overwritten: the laptop's copy is the one he edits by hand.
+ * decrypts it here with the passphrase, and adds every code the directory lacks.
+ * v628: AND WHERE THE VAULT SPELLS A NAME DIFFERENTLY, THE VAULT'S WINS, because Amend ID on the phone
+ * writes there. Kept the other way round, the next seed from the laptop's older copy would undo
+ * the amendment without a word. Nothing is lost: the directory's old spelling stays beside it as
+ * `was`, which the seed never reads. Run before any edit here, as the skill does, so the only
+ * spelling this can replace is one already seeded.
  *
  *   node tools/pull-vault.mjs             merge the vault's names into salt_bio.json
  *   node tools/pull-vault.mjs --dry-run   say what would be added, write nothing
@@ -25,21 +29,21 @@ import { DATA_DIR } from "./book.mjs";
 const BASE = (process.env.SALT_BASE || "https://salt-command.qyts8mh72kyg.workers.dev").replace(/\/+$/, "");
 const CTRL_C = String.fromCharCode(3), DEL = String.fromCharCode(127), BOM = String.fromCharCode(0xFEFF);
 
-/* pure: the directory with the vault's names added where the directory has none */
+/* pure: the directory with the vault's names added where it has none, and the vault's spelling where it differs */
 export function mergeBio(bioJson, map) {
   const out = JSON.parse(JSON.stringify(bioJson || {}));
   out.bio = out.bio || {};
-  const added = [], kept = [];
+  const added = [], kept = [], amended = [];
   for (const code of Object.keys(map || {})) {
     const raw = String(map[code] || "").trim();
     if (!raw) continue;
     const cur = out.bio[code] && String(out.bio[code].raw || "").trim();
-    if (cur) { kept.push(code); continue; }
-    out.bio[code] = Object.assign({}, out.bio[code] || {}, { raw });
-    added.push(code);
+    if (cur === raw) { kept.push(code); continue; }
+    out.bio[code] = Object.assign({}, out.bio[code] || {}, cur ? { raw, was: cur } : { raw });
+    (cur ? amended : added).push(code);
   }
-  if (added.length) out.updated = new Date().toISOString();
-  return { bio: out, added, kept };
+  if (added.length || amended.length) out.updated = new Date().toISOString();
+  return { bio: out, added, kept, amended };
 }
 
 function promptHidden(question) {
@@ -77,10 +81,10 @@ async function main() {
   if (text.startsWith(BOM)) text = text.slice(1);
   const bio = JSON.parse(text);
   const m = mergeBio(bio, map);
-  console.log(`vault updated ${j.updated || "?"}: ${Object.keys(map).length} names; directory has ${Object.keys(bio.bio || {}).length}; ${m.added.length} to add (${m.added.join(", ") || "none"}), ${m.kept.length} already named here.`);
-  if (dry || !m.added.length) { console.log(dry ? "DRY RUN: nothing written." : "Nothing to write."); return; }
+  console.log(`vault updated ${j.updated || "?"}: ${Object.keys(map).length} names; directory has ${Object.keys(bio.bio || {}).length}; ${m.added.length} to add (${m.added.join(", ") || "none"}), ${m.amended.length} amended on the phone (${m.amended.join(", ") || "none"}), ${m.kept.length} already the same here.`);
+  if (dry || !(m.added.length || m.amended.length)) { console.log(dry ? "DRY RUN: nothing written." : "Nothing to write."); return; }
   writeFileSync(file, JSON.stringify(m.bio, null, 2) + "\n");
-  console.log(`wrote ${file}: ${m.added.length} added. The names are on the laptop; codes only in the repo, as always.`);
+  console.log(`wrote ${file}: ${m.added.length} added, ${m.amended.length} amended, each old spelling kept as was. The names are on the laptop; codes only in the repo, as always.`);
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) main();

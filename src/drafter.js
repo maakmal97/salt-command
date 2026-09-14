@@ -1032,6 +1032,33 @@ export function draftRow(entry, book) {
         + " THE NAME AND THE PLACE ARE NOT HERE AND MUST NOT BE: the directory is typed at the laptop and never travels.",
     };
   }
+  /* v628, AMEND ID (his rulings of 11 Sep 2026): a new name or place that derives a new code re-keys the
+     party through Approve. The phone has already filed the name in the vault; this carries codes only.
+     What moves is the engine's renamePairs, so the card, the fold and the phone's preview agree. */
+  if (pay.mode === "rename") {
+    const from = String(pay.from || "").trim().toUpperCase(), to = String(pay.to || "").trim().toUpperCase();
+    const roster = (book.state && book.state.roster) || [];
+    if (!roster.includes(from)) return { skip: `${from || "the code"} is not on the roster, so there is nothing to amend` };
+    if (POSITION_ENGINE.isBucket(from)) return { skip: `${from} is a resale account, and it follows its associate's code rather than taking its own` };
+    if (!/^[A-Z]{1,3}\d{0,2}[A-Z0-9-]*$/.test(to)) return { skip: `"${to}" does not look like a desk code. They run like CA4-DAM or SP7-PUD` };
+    if (to === from) return { skip: "the code does not change, so there is nothing to approve: a new spelling of the name or the place is filed in the vault alone" };
+    if (to[0] !== from[0]) return { skip: `${from} is a ${from[0] === "S" ? "supplier" : "customer"}, and ${to} would not be` };
+    const pairs = POSITION_ENGINE.renamePairs(roster, from, to);
+    const taken = pairs.map((p) => p[1]).filter((c) => roster.includes(c));
+    if (taken.length) return { skip: `${taken.join(" and ")} already belongs to another party` };
+    const touches = (rows) => (rows || []).filter((r) => POSITION_ENGINE.renameInBook(JSON.parse(JSON.stringify(r)), pairs) > 0).length;
+    const orders = touches(book.sales), lots = touches(book.purchases);
+    const also = pairs.slice(1).map((p) => `${p[0]} becomes ${p[1]}`);
+    return {
+      collection: "rename",
+      row: { from, to, pairs, orders, lots },
+      flags: also.length ? [`${also.join(", and ")} with it, so the account and everything booked to it follow the party.`] : [],
+      reasoning: `Re-keys ${from} to ${to} wherever the book names it: ${orders} order${orders === 1 ? "" : "s"}, ${lots} lot${lots === 1 ? "" : "s"}, the roster and every list that carries the code.`
+        + " The old code is retired outright; notes, the changelog and issued statements keep saying what was true when they were written."
+        + " The statement account moves to the new code and its username stays. It moves no cash and no stock."
+        + " THE NAME AND THE PLACE ARE NOT HERE: the phone filed them in the vault, encrypted.",
+    };
+  }
   /* A PRICE EDIT (v354). It moves no stock, no cash and no row: it states what the board asks and
      which sizes it shows. What it CAN do is put a price under its own floor, so that is the flag,
      and it is computed off the PRICING snapshot rather than re-derived here, for the same reason

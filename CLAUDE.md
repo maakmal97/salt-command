@@ -123,8 +123,14 @@ through `setProdView` by the page's product switch, the single-book pages' badge
 select, and remembered on the device. A per-product page draws that product's detail alone, under a
 switch whose buttons carry every product's headline; the rail carries no switch.
 Old tab ids remain addresses (`/desk#network`). In cloud mode the Enter view carries
-**Add ID** (a code queued as `addid`, drafted into the roster, approved, folded) and
-**Approve**; the laptop desk keeps Names & IDs and has no drafts table. Everything the
+**Add ID** (a code queued as `addid`, drafted into the roster, approved, folded), **Amend ID**
+and **Approve**; the laptop desk keeps Names & IDs and has no drafts table. **Amend ID** (his
+instruction, 14 Sep 2026, v628, on his rulings of 11 Sep): the new name and place go into the vault;
+a code they derive differently is queued as `rename`, drafted, approved, and folded LAST in its
+batch as a re-key wherever the book holds the code (`renamePairs`/`renameInBook` in the engine), the
+`-R` account with it, plus the statement key (username kept), a place override in `geo/places.json`
+and the suite's fixtures. Prose and history keep the old code. The fold refuses a code the master's
+own logic quotes (CJ4-OKR, SA5-BTR, SP7-PUD, and CM6-HCM in a comment): those are hand folds. Everything the
 desk shows, cost and margin included, is served at the public URL.
 
 ## The chain: tap to deploy
@@ -190,7 +196,11 @@ desk shows, cost and margin included, is served at the public URL.
   A ledger row edit (right-click on `/desk`, tap on the phone) queues as a Correction.
 - Endpoints: `GET /drafts?status=…`, `POST /drafts/<id>/approve|reject|committed`,
   `POST /draft-now?dry=1`, all keyed. Schema `migrations/0002`, `0003`. Nothing writes
-  to `entry`.
+  to `entry`. **The `draft` table's CHECK lists every collection by name**, so a collection the
+  drafter newly returns needs a migration rebuilding it, applied to the live D1 BEFORE the deploy and
+  as that file alone (`wrangler d1 execute salt_ledger --remote --file=...`): re-running an older one
+  copies the rows through its narrower CHECK and INSERT OR IGNORE drops them. Missed twice: `priceset`
+  (0007) and `repayment` (0008); the suite now checks the newest CHECK against the drafter.
 - **Cowork:** Salt left Cowork on 20 Aug 2026; root section 6 still lists
   `salt-daily-price-brief`. Settle it from Cowork.
 
@@ -225,7 +235,8 @@ Codes by default; names only after a password. `tools/seed-vault.mjs` encrypts
 `visibilitychange`. **A name and ID is committed every time, like an approved row (05 Sep
 2026):** since v528 Add ID on the phone asks for the name and the place and files them into
 the vault, encrypted on the device, before the ID is queued; the laptop pulls them down with
-`node tools/pull-vault.mjs` before any seed. When a fold finds a roster code the directory
+`node tools/pull-vault.mjs` before any seed, and since v628 the vault's spelling wins where it
+differs (Amend ID writes there), the directory's old one kept as `was`. When a fold finds a roster code the directory
 lacks, ask him for the name and the location before the ID commits, then write both to
 `10_Data\salt_bio.json`, seed the vault, and commit the statement username in
 `statements/_users.json` (minted by the fold at registration since v588, kept for life; an address, not a secret). The `-R`

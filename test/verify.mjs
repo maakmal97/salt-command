@@ -8349,7 +8349,8 @@ section("v528: the name on the phone, filed encrypted before the ID is queued");
   const { mergeBio } = await import("../tools/pull-vault.mjs");
   const { vaultDecrypt: vdec } = await import("../tools/seed-vault.mjs");
   const m = mergeBio({ bio: { "CA1-X": { raw: "Kept (Here)" }, "CB2-Y": { raw: "" } } }, { "CA1-X": "New (There)", "CB2-Y": "Filled (Now)", "CC3-Z": "Added (Place)", "CD4-W": "" });
-  ok(m.added.join() === "CB2-Y,CC3-Z" && m.kept.join() === "CA1-X" && m.bio.bio["CA1-X"].raw === "Kept (Here)" && m.bio.bio["CC3-Z"].raw === "Added (Place)" && !("CD4-W" in m.bio.bio), "the pull adds what the directory lacks or left blank, keeps what it has, and skips an empty name");
+  /* v628: a spelling the vault holds differently is the phone's amendment and wins, the old kept as was (see the v628 section) */
+  ok(m.added.join() === "CB2-Y,CC3-Z" && m.amended.join() === "CA1-X" && m.bio.bio["CA1-X"].raw === "New (There)" && m.bio.bio["CA1-X"].was === "Kept (Here)" && m.bio.bio["CC3-Z"].raw === "Added (Place)" && !("CD4-W" in m.bio.bio), "the pull adds what the directory lacks or left blank, takes the vault's spelling where it differs, and skips an empty name");
   const { openMaster: omV } = await import("../tools/payload.mjs");
   const { webcrypto } = await import("node:crypto");
   const { w } = await omV();
@@ -10990,6 +10991,138 @@ section("v626: the drafter's ADVANCE is the engine's, and a correction is measur
   ok(!fInKind.some((f) => /SKIP/.test(f)) && paidLine(fInKind).length === 0, "a correction that leaves the quantity alone does not call it the corrected quantity: " + JSON.stringify(fInKind));
   const fLow = fix26({ rid: "z626i", qty: 1, total: 80, cash: 0, settledRM: 80, deliveredQty: 1 }, { total: 70 });
   ok(/under the RM 80 already paid/.test(fLow.join(" ")), "while a total corrected under what was paid in kind is still flagged");
+}
+
+section("v628: Amend ID re-keys a party through Approve, and the name moves in the vault");
+{
+  /* HIS INSTRUCTION OF 14 SEP 2026, ON HIS RULINGS OF 11 SEP: a new name or place derives the code again; when it
+     differs, the code moves wherever the book holds it, the statement username stays, and history keeps the old
+     code. Fixture codes throughout. Each assertion was proved red by mutation. */
+  const E28 = (await import("../engine/position.mjs")).default;
+  const { draftRow: dr28 } = await import("../src/drafter.js");
+  const F28 = await import("../tools/fold.mjs");
+
+  /* ---- the engine: what moves, and nothing else ---- */
+  const ros28 = ["CZ9-AB", "CZ9-AB-R", "CZ9-ABC", "CZ8-TBC", "CZ6-AB-R", "SZ9-SUP"];
+  ok(JSON.stringify(E28.renamePairs(ros28, "CZ9-AB", "CZ7-AB")) === '[["CZ9-AB","CZ7-AB"],["CZ9-AB-R","CZ7-AB-R"]]',
+    "an associate's code takes its resale account with it, and a longer code that is someone else's stays");
+  const bk28 = { roster: ros28.slice(), associates: ["CZ9-AB"], AWARDS: { "CZ9-AB": 1 }, PEOPLE: { departed: [{ id: "CZ9-AB" }] },
+    INTRODUCTIONS: [{ by: "CZ9-AB", customer: "CZ8-TBC" }], loans: [{ party: "CZ9-AB" }],
+    sales: [{ customer: "CZ9-AB-R", ref: "CZ9-AB", note: "sold on by CZ9-AB" }, { customer: "CZ9-ABC" }], purchases: [{ supplier: "SZ9-SUP" }] };
+  const n28 = E28.renameInBook(bk28, E28.renamePairs(ros28, "CZ9-AB", "CZ7-AB"));
+  ok(n28 === 9 && !/"CZ9-AB(-R)?"/.test(JSON.stringify(bk28)) && bk28.AWARDS["CZ7-AB"] === 1 && bk28.sales[0].customer === "CZ7-AB-R" && bk28.PEOPLE.departed[0].id === "CZ7-AB",
+    "every whole value and key moves, in lists, rows, maps and the people lists: " + n28);
+  ok(bk28.sales[0].note === "sold on by CZ9-AB" && bk28.sales[1].customer === "CZ9-ABC", "while a note keeps the old code, and another party's longer code is untouched");
+
+  /* ---- the drafter: the card, and what it refuses ---- */
+  const mir28 = { sales: [{ customer: "CZ9-AB-R", qty: 1, total: 100 }, { customer: "CZ9-AB", qty: 1, total: 90 }], purchases: [], state: { roster: ros28 }, pricing: null };
+  const en28 = (p) => ({ at: "2026-09-14T09:00:00.000Z", payload: { mode: "rename", ...p } });
+  const d28 = dr28(en28({ from: "CZ9-AB", to: "CZ7-AB" }), mir28);
+  ok(!d28.skip && d28.collection === "rename" && d28.row.orders === 2 && d28.row.pairs.length === 2 && /CZ9-AB-R becomes CZ7-AB-R/.test(d28.flags.join(" ")) && /username stays/.test(d28.reasoning),
+    "a rename drafts as its own collection, counting the orders it re-keys and naming the account that follows: " + (d28.skip || JSON.stringify(d28.row)));
+  for (const [p, why] of [[{ from: "CZ5-NOT", to: "CZ5-NEW" }, /not on the roster/], [{ from: "CZ9-AB-R", to: "CZ7-AB-R" }, /resale account/],
+    [{ from: "CZ8-TBC", to: "CZ8-TBC" }, /does not change/], [{ from: "CZ8-TBC", to: "SZ8-TBC" }, /is a customer/],
+    [{ from: "CZ9-AB", to: "CZ9-ABC" }, /CZ9-ABC already belongs/], [{ from: "CZ9-AB", to: "CZ6-AB" }, /CZ6-AB-R already belongs/]]) {
+    const s = dr28(en28(p), mir28).skip || "";
+    ok(why.test(s), "the drafter refuses " + JSON.stringify(p) + ": " + (s || "drafted"));
+  }
+
+  /* ---- the draft table takes every collection the drafter returns: 0007 never named repayment ---- */
+  const mig28 = readdirSync(join(REPO, "migrations")).filter((f) => /^\d{4}_.*\.sql$/.test(f)).sort().pop();
+  const allowed28 = ((/CHECK \(collection IN \(([^)]*)\)\)/.exec(readFileSync(join(REPO, "migrations", mig28), "utf8")) || [])[1] || "").split(",").map((x) => x.trim().replace(/'/g, ""));
+  const returns28 = [...new Set([...readFileSync(join(REPO, "src", "drafter.js"), "utf8").matchAll(/collection: "([A-Za-z]+)"/g)].map((m) => m[1]))];
+  const staged28 = (/\[([^\]]*)\]\.includes\(d\.collection\)/.exec(readFileSync(join(REPO, "tools", "drafts.mjs"), "utf8")) || [])[1] || "";
+  ok(returns28.length >= 8 && returns28.every((c) => allowed28.includes(c)), `${mig28}'s CHECK names every collection the drafter returns (${returns28.join(" ")}): missing ${returns28.filter((c) => !allowed28.includes(c)).join(" ") || "none"}`);
+  ok(returns28.every((c) => c === "sales" || staged28.includes('"' + c + '"')), "and drafts.mjs --draft stages each as itself: missing " + (returns28.filter((c) => c !== "sales" && !staged28.includes('"' + c + '"')).join(" ") || "none"));
+
+  /* ---- the fold: last in the batch, and refused for a code the desk's own logic names ---- */
+  const master28 = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+  const book28 = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  book28.roster.push("CZ9-TBC", "CZ9-TBC-R"); book28.associates.push("CZ9-TBC");
+  const ren28 = { id: "2099-01-01T00:00:00.001Z", collection: "rename", row: { from: "CZ9-TBC", to: "CZ9-SEG" }, entry: { at: "2099-01-01T00:00:00.001Z", payload: { mode: "rename", from: "CZ9-TBC", to: "CZ9-SEG" } } };
+  const sale28 = { id: "2099-01-01T00:00:00.002Z", collection: "sales", row: { date: "2099-01-01", customer: "CZ9-TBC-R", rev: "R2", qty: 1, total: 100, cost: 44, cash: 100, deliveredQty: 1, deliveredOn: "2099-01-01" }, entry: { at: "2099-01-01T00:00:00.002Z", payload: { mode: "new", date: "2099-01-01" } } };
+  const notes28 = { version: "v9998", date: "01 Jan 2099", title: "FIXTURE", notes: ["fixture"], rows: { [sale28.id]: { note: "fixture row" } } };
+  const res28 = F28.apply(book28, { ok: true, count: 2, approved: [ren28, sale28] }, notes28, master28);
+  const sold28 = book28.sales.find((s) => s.note === "fixture row");
+  ok(res28.ok && !!sold28 && sold28.customer === "CZ9-SEG-R" && book28.roster.includes("CZ9-SEG") && book28.roster.includes("CZ9-SEG-R") && !book28.roster.includes("CZ9-TBC") && book28.associates.includes("CZ9-SEG"),
+    "the rename folds last, so a sale approved after it under the old account moves too: " + (res28.ok ? JSON.stringify(sold28 && sold28.customer) : res28.problems.join("; ")));
+  const plan28 = (from, to, bk) => F28.plan(bk, { ok: true, count: 1, approved: [{ ...ren28, row: { from, to } }] }, null).refused.map((x) => x.why).join(" ");
+  const live28 = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  if (!live28.roster.includes("CJ4-OKR")) live28.roster.push("CJ4-OKR");
+  live28.roster.push("CZ9-DIA");
+  ok(master28.includes("const DIAMOND=['CJ4-OKR']") && /written into the desk's own code/.test(plan28("CJ4-OKR", "CJ5-OKR", live28)), "a code the desk's own logic names, CJ4-OKR in DIAMOND, is left for a hand fold");
+  ok(plan28("CZ9-DIA", "CZ9-DIB", live28) === "", "while a code the master never quotes plans cleanly: " + plan28("CZ9-DIA", "CZ9-DIB", live28));
+
+  /* ---- the three files beyond the book ---- */
+  const pairs28 = E28.renamePairs(["CZ9-TBC", "CZ9-TBC-R"], "CZ9-TBC", "CZ9-SEG");
+  const users28 = F28.renameUsers({ "CZ9-TBC": "abcd-efgh", "CZ9-TBC-R": "ijkl-mnop", "CZ1-OTH": "qrst-uvwx" }, pairs28);
+  ok(users28["CZ9-SEG"] === "abcd-efgh" && users28["CZ9-SEG-R"] === "ijkl-mnop" && !("CZ9-TBC" in users28) && users28["CZ1-OTH"] === "qrst-uvwx", "the statement account moves to the new code and keeps its username");
+  const pl28 = { LOCS: { "CZ9-MAL": "MLR", "CZ8-TBC": "KLC" } };
+  const mv28 = F28.renameLocs(pl28, [["CZ9-MAL", "CZ7-MAL"], ["CZ8-TBC", "CZ8-SEG"]]);
+  ok(mv28 === 2 && pl28.LOCS["CZ7-MAL"] === "MLR" && !("CZ9-MAL" in pl28.LOCS) && !("CZ8-TBC" in pl28.LOCS) && !("CZ8-SEG" in pl28.LOCS), "a place override follows a code that ends in the same place, and goes with a place that changed");
+  const txt28 = F28.renameSuiteText('a "CZ9-TBC" b "CZ9-TBC-R" c "CZ9-TBCX" d XCZ9-TBC e CZ9-TBC.', pairs28);
+  ok(txt28 === 'a "CZ9-SEG" b "CZ9-SEG-R" c "CZ9-TBCX" d XCZ9-TBC e CZ9-SEG.', "the suite's fixtures move by whole code only: " + txt28);
+  const tmp28 = join(REPO, "test", "tmp", "v628-fold"), f28 = (n) => join(tmp28, n);
+  mkdirSync(tmp28, { recursive: true });
+  const bookC28 = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8")); bookC28.roster.push("CZ9-TBC");
+  writeFileSync(f28("book.json"), JSON.stringify(bookC28));
+  writeFileSync(f28("salt_command.html"), master28);
+  writeFileSync(f28("changelog.json"), readFileSync(join(REPO, "master", "changelog.json"), "utf8"));
+  writeFileSync(f28("staged.json"), JSON.stringify({ ok: true, count: 1, approved: [ren28] }));
+  writeFileSync(f28("notes.json"), JSON.stringify({ version: "v9998", date: "01 Jan 2099", title: "FIXTURE", notes: ["fixture"], rows: {} }));
+  writeFileSync(f28("users.json"), JSON.stringify({ "CZ9-TBC": "abcd-efgh" }));
+  writeFileSync(f28("places.json"), JSON.stringify({ LOCS: { "CZ9-TBC": "KLC" } }, null, 1) + "\n");
+  writeFileSync(f28("suite.mjs"), 'x("CZ9-TBC")');
+  const run28 = spawnSync(process.execPath, [join(REPO, "tools", "fold.mjs"), "--apply", "--book", f28("book.json"), "--master", f28("salt_command.html"), "--staged", f28("staged.json"), "--notes", f28("notes.json"),
+    "--folded", f28("folded.json"), "--users", f28("users.json"), "--places", f28("places.json"), "--suite", f28("suite.mjs"), "--today", "2099-01-01"], { encoding: "utf8" });
+  const u28 = JSON.parse(readFileSync(f28("users.json"), "utf8")), p28 = JSON.parse(readFileSync(f28("places.json"), "utf8"));
+  ok(run28.status === 0 && u28["CZ9-SEG"] === "abcd-efgh" && !("CZ9-TBC" in u28) && readFileSync(f28("suite.mjs"), "utf8") === 'x("CZ9-SEG")' && !("CZ9-TBC" in p28.LOCS)
+    && JSON.parse(readFileSync(f28("book.json"), "utf8")).roster.includes("CZ9-SEG"),
+    "fold.mjs --apply writes the statement key, the suite and the place override beside the book: " + (run28.status === 0 ? JSON.stringify(u28) : (run28.stdout + run28.stderr).slice(-300)));
+  rmSync(tmp28, { recursive: true, force: true });
+
+  /* ---- the laptop's pull takes the phone's spelling ---- */
+  const { mergeBio: mb28 } = await import("../tools/pull-vault.mjs");
+  const m28 = mb28({ bio: { "CZ9-TBC": { raw: "Old Name (to be confirmed)", note: "kept" }, "CZ1-OTH": { raw: "Same (Here)" } } }, { "CZ9-TBC": "New Name (Seg)", "CZ9-SEG": "New Name (Seg)", "CZ1-OTH": "Same (Here)" });
+  ok(m28.amended.join() === "CZ9-TBC" && m28.added.join() === "CZ9-SEG" && m28.kept.join() === "CZ1-OTH" && m28.bio.bio["CZ9-TBC"].raw === "New Name (Seg)" && m28.bio.bio["CZ9-TBC"].was === "Old Name (to be confirmed)" && m28.bio.bio["CZ9-TBC"].note === "kept",
+    "the laptop's pull takes an amended spelling from the vault and keeps the old one as was, so the next seed cannot undo it");
+
+  /* ---- the phone: the pane, the plan, the record ---- */
+  const { openMaster: om28 } = await import("../tools/payload.mjs");
+  const { webcrypto: wc28 } = await import("node:crypto");
+  const { vaultEncrypt: ve28, vaultDecrypt: vd28 } = await import("../tools/seed-vault.mjs");
+  const { w: w28 } = await om28();
+  if (!w28.crypto || !w28.crypto.subtle) { try { Object.defineProperty(w28, "crypto", { value: wc28, configurable: true }); } catch (e) { w28.crypto = wc28; } }
+  const rd28 = (e) => JSON.parse(String(w28.eval("JSON.stringify(" + e + ")")));
+  try {
+    w28.eval("try{cloudMode=function(){return true;};}catch(e){};roster.push('CZ9-TBC','CZ9-TBC-R');associates.push('CZ9-TBC');setProd('salt');recompute();switchTab('add');wbMode='amendid';wbApply();");
+    const sw28 = rd28("[].map.call(document.querySelectorAll('#wbModeSw button'),function(b){return b.dataset.m;})");
+    ok(sw28.includes("amendid") && sw28.includes("addid"), "the Enter view's switch carries Amend ID beside Add ID in cloud mode: " + sw28.join(" "));
+    const who28 = rd28("[].map.call(document.getElementById('wbAmWho').options,function(o){return o.value;})");
+    ok(who28.includes("CZ9-TBC") && !who28.includes("CZ9-TBC-R") && rd28("document.getElementById('wbPaneAmendid').style.display") === "", "its picker offers the party and not their resale account, and its pane shows");
+    const aplan = (who, nm, pl) => rd28("(function(){var s=function(i,v){document.getElementById(i).value=v;};s('wbAmWho'," + JSON.stringify(who) + ");s('wbAmName'," + JSON.stringify(nm) + ");s('wbAmPlace'," + JSON.stringify(pl) + ");wbPreview();var p=amendIdPlan();p.prev=(document.getElementById('wbPrev')||{}).textContent;p.msgs=(document.getElementById('wbMsgs')||{}).textContent;return p;})()");
+    const same28 = aplan("CZ9-TBC", "Zed Zed Z", "");
+    ok(same28.to === "CZ9-TBC" && same28.pairs.length === 0 && /code stays CZ9-TBC/.test(same28.prev), "a spelling that derives the same code keeps it, the party's own code counting as free: " + same28.prev);
+    const new28 = aplan("CZ9-TBC", "Zed Zed Z", "Seg Town");
+    ok(new28.to === "CZ9-ST" && new28.pairs.length === 2 && /CZ9-TBC becomes CZ9-ST/.test(new28.prev) && /CZ9-TBC-R becomes CZ9-ST-R/.test(new28.prev), "a new place derives a new code, and the preview names the account that follows: " + new28.prev);
+    const env28 = JSON.stringify(await ve28("pw", { "CZ9-TBC": "Zed Zed Z (to be confirmed)", "CZ1-OTH": "Other (Here)" }));
+    const stub28 = "(function(){queue=[];NAME_VAULT=" + env28 + ";qSyncState='server';window.__posts=[];window.prompt=function(){return 'pw';};"
+      + "window.fetch=function(u,o){var post=!!(o&&o.method==='POST');window.__posts.push({u:String(u),m:post?'POST':'GET',body:o&&o.body?JSON.parse(o.body):null});"
+      + "return Promise.resolve({ok:true,json:function(){return Promise.resolve(post?{ok:true}:{ok:true,vault:" + env28 + "});}});};})();";
+    const settle28 = async () => { for (let i = 0; i < 60; i++) { await new Promise((r) => setTimeout(r, 100)); const st = String(w28.eval("(document.getElementById('wbOk')||{}).textContent||''")); if (!/Filing the name/.test(st)) return st; } return ""; };
+    const opened28 = async () => { const p = rd28("window.__posts").find((x) => /vault$/.test(x.u) && x.m === "POST"); return p ? vd28("pw", p.body.vault) : {}; };
+    w28.eval(stub28); aplan("CZ9-TBC", "Zed Zed Z", "Seg Town"); w28.eval("wbRecord();");
+    const st28 = await settle28(), q28 = rd28("queue.map(function(x){return {type:x.type,raw:x.raw,payload:x.payload};})"), open28 = await opened28();
+    ok(/queued for approval/.test(st28) && q28.length === 1 && q28[0].payload.mode === "rename" && q28[0].payload.from === "CZ9-TBC" && q28[0].payload.to === "CZ9-ST" && !/Zed|Seg Town/.test(JSON.stringify(q28)),
+      "Record files the vault first and queues the rename with codes only: " + st28);
+    ok(open28["CZ9-ST"] === "Zed Zed Z (Seg Town)" && open28["CZ9-TBC"] === "Zed Zed Z (to be confirmed)" && open28["CZ1-OTH"] === "Other (Here)", "the vault gains the new code's entry and keeps the old one until the fold: " + JSON.stringify(Object.keys(open28)));
+    ok(/already has a rename waiting/.test(aplan("CZ9-TBC", "Zed Zed Z", "Other Place").msgs), "a second rename of a party already waiting is refused at the preview");
+    w28.eval(stub28); aplan("CZ9-TBC", "Zyx Zyx Z", ""); w28.eval("wbRecord();");
+    const st28b = await settle28(), open28b = await opened28();
+    ok(/code stays CZ9-TBC/.test(st28b) && rd28("queue.length") === 0 && open28b["CZ9-TBC"] === "Zyx Zyx Z (to be confirmed)", "a spelling that keeps the code changes the vault and queues nothing: " + st28b);
+    const card28 = String(w28.eval("apCard({id:'x',collection:'rename',row:{from:'CZ9-TBC',to:'CZ9-ST',orders:3,lots:0,pairs:[['CZ9-TBC','CZ9-ST'],['CZ9-TBC-R','CZ9-ST-R']]},flags:[],reasoning:''})")).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
+    ok(/Amend ID: CZ9-TBC becomes CZ9-ST/.test(card28) && /Orders re-keyed 3/.test(card28) && /CZ9-TBC-R/.test(card28) && /Statement username stays/.test(card28), "the Approve card says what moves: " + card28.slice(0, 160));
+  } finally { await new Promise((r) => setTimeout(r, 200)); try { w28.close(); } catch (e) { /* best effort */ } }
 }
 
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
