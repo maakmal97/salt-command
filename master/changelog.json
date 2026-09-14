@@ -1,5 +1,14 @@
 [
  {
+  "v": "v639",
+  "d": "14 Sep 2026",
+  "t": "A HAND COUNT OF SALT CUTS THE BOOK BY 7.44 UNIT: FLOORS LIFT ACROSS EVERY SIZE",
+  "n": [
+   "<b>ONE COUNT FOLDED, NOTHING SOLD OR BOUGHT.</b> The salt count of 14 Sep stands at 1.5 unit against 8.94 on the book, a drift of -7.44 unit, and the count wins, so the stated inventory is set to 1.5 and COUNT_ON for salt moves from 8 Sep to 14 Sep. The drafter flagged the 7.44 unit as unaccounted for and books it as shrinkage across every unit sold. The dossier gives no reason for the gap and none is offered here.",
+   "<b>THE FLOORS MOVE WITH THE SHRINKAGE, AND THE DESK IS UNDER ITS REORDER MARK.</b> The 1 unit floor lifts from RM56.21 to RM61.15, 2 unit from RM112.43 to RM122.29, 12.5 unit from RM702.67 to RM764.34, the ask on 1 unit from RM120 to RM130 and self use from RM68.01 to RM75.45. Stock cost holds at RM44 a unit against RM46 replacement. Nothing is owed out, 11.5 unit stands promised, and the position sits below the RM15 reorder mark."
+  ]
+ },
+ {
   "v": "v638",
   "d": "14 Sep 2026",
   "t": "NETWORK LINES RUN FROM EACH ASSOCIATE TO THE CUSTOMERS THEY BROUGHT IN",

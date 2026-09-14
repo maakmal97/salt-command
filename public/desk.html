@@ -68,7 +68,7 @@ document.addEventListener('visibilitychange',function(){
    localStorage before it posts anything and the load reads it straight back.
    The same tick retries a held entry, which is what gets a phone write to the cloud
    without waiting for the next open. */
-var SALT_BUILD_ID="adeb4d4872b7005f";
+var SALT_BUILD_ID="3d52c086b970385f";
 var SALT_REV_MS=10000;
 (function(){
   var chip=null,timer=null;
@@ -5220,6 +5220,7 @@ const PROD_OPENING={
     "stated": 40
   }
 };
+/* COUNTED AT v639 on 2026-09-14: the salt inventory held 1.5 against 8.94 on the roll, a drift of -7.44. A COUNT AND NOT A ROLL, so COUNT_ON.salt moves to 2026-09-14. <b>SALT COUNT DATED 14 SEP, COUNTED BY HAND AT 1.5 UNIT.</b> The book said 8.94 and 1.5 was counted, a drift of -7.44 unit, so the stated inventory becomes 1.5 and COUNT_ON for salt moves from 8 Sep to 14 Sep. No party, no cash and no cost on this row: stock cost stays the desk's own RM44 a unit against RM46 replacement. <b>The drafter flagged 7.44 unit unaccounted for, a count always winning, the gap booking as shrinkage across every unit sold.</b> The figures fix the size of the gap but not its cause, and the dossier gives none. Floors lift: RM61.15 on 1 unit, RM122.29 on 2, RM764.34 on 12.5, ask RM130, self use RM75.45. The gap stays outstanding as shrinkage. */
 /* ROLLED AT v631: 1 unit to CN6-WM on 2026-09-14, so 9.94 less 1 is 8.94. A ROLL AND NOT A COUNT; COUNT_ON is untouched. The unit moved on the day, and stock stays under the RM15 reorder mark with 11.5 unit promised and nothing owed out. Counts still stand at 08 Sep for salt and 09 Sep for oil. */
 /* ROLLED AT v619: 6.25 unit to CS6-PER on 2026-09-13, so 16.19 less 6.25 is 9.94. A ROLL AND NOT A COUNT; COUNT_ON is untouched. Salt stands at 16.19 unit against a stated 16.19, counted 8 Sep, with 11.5 unit promised and the reorder mark at 15, so the next lot is close. Nothing is owed out and no loan is open. */
 /* ROLLED AT v608: 3 unit to CM4-MK on 2026-09-13, so 19.19 less 3 is 16.19. A ROLL AND NOT A COUNT; COUNT_ON is untouched. The 3 unit left on his word on 13 Sep and no lot landed against it. */
@@ -5259,9 +5260,9 @@ const PROD_OPENING={
 /* ROLLED AT v439: 1 unit to CA7-JTR on 2026-09-01, 6 unit to CK4-SEN on 2026-09-01, 1 unit to CR3-DAM on 2026-09-01, so 8.25 less 8 is 0.25. A ROLL AND NOT A COUNT; COUNT_ON is untouched. Eight of the eight and a quarter unit on the shelf went out today across four rows, leaving 0.25 unit against 3 unit already promised: CE4-CHE's half unit owed out and CY2-NIL's 2.5 unit pending. The book is 2.75 unit short of its own commitments and sourcing is now the first decision on it. */
 /* ROLLED AT v404: 5 unit to CE4-AD on 2026-08-29, so 13.25 less 5 is 8.25. A ROLL AND NOT A COUNT; COUNT_ON is untouched. */
 /* ROLLED AT v399: 3 unit to CH4-KS on 2026-08-28, so 16.25 less 3 is 13.25. A ROLL AND NOT A COUNT; COUNT_ON is untouched. */
-const STATED_STOCK=8.94;
+const STATED_STOCK=1.5;
 const COUNT_ON={
-  "salt": "2026-09-08",
+  "salt": "2026-09-14",
   "oil": "2026-09-09"
 };
 /* EVERY COUNT, AS TAKEN (v504, 07 Sep 2026): product, date, the figure counted, what the roll said and the drift, negative when units are missing. The fold appends one line per count. A count with no drift bounds a cycle and charges nothing; the 24 Aug anchor is one. Seeded from the fold notes of v473 (02 Sep, 10.5 against 18.75), v489 (04 Sep, 9.8 entered net of a rolled sale, no drift) and v498 (06 Sep, 7 against 8.3); the oil count of 23 Aug has no recorded drift. The leak is charged from these: the units missing over the last three cycles, at landed, over the units sold in them. */
@@ -5272,7 +5273,8 @@ const COUNTS=[
   {"product":"salt","date":"2026-09-06","qty":7,"was":8.3,"drift":-1.3},
   {"product":"oil","date":"2026-08-23","qty":15,"was":null,"drift":null},
   {"product":"salt","date":"2026-09-08","qty":1,"was":6,"drift":-5},
-  {"product":"oil","date":"2026-09-09","qty":60,"was":75,"drift":-15}
+  {"product":"oil","date":"2026-09-09","qty":60,"was":75,"drift":-15},
+  {"product":"salt","date":"2026-09-14","qty":1.5,"was":8.94,"drift":-7.44}
 ];
 const purchases=[
   {"date":"2026-06-27","qty":12.5,"total":800,"supplier":"SF6-KLC","status":"paid","rid":"p001"},
@@ -5619,7 +5621,7 @@ const ONE_OFFS=[
   {"id":"CM6-HCM","date":"2026-07-14","note":"One-off; RM104/unit is an outlier."}
 ];
 /* v512, 07 Sep 2026: moved to 06:21:06.691Z past a second entry of the CR3-DAM sale already folded at v510, so the phone stops showing it as provisional; no row folded. */
-const QUEUE_COMMITTED="2026-09-14T04:43:24.663Z";
+const QUEUE_COMMITTED="2026-09-14T09:41:29.122Z";
 /* HIS INSTRUCTION, 09 SEP 2026, AFTER THE v551 OIL COUNT: "The desk quotes to 450, by lowering margin, then for others, quote proportionately." The count read a 23.08 per cent leak from his own figures and lifted the 50 unit oil floor to RM482.20, above the RM450 he had stated, and v353 had the desk lift any stated price that sat under its floor. From v552 it lifts a DERIVED ask only: a price he has set is quoted as set, the gap to break-even is reported beside it rather than hidden, and the 50 unit tier reads 0.93x with RM32.20 under. His other four oil tiers are untouched and already step the margin down proportionately into it: 1.35x, 1.24x, 1.14x, 1.04x, 0.93x. Recorded as his decision, not an error, and the drafter will flag a 50 unit oil sale as under floor for the same reason the board does. */
 const PRICE_SET={
   "salt": {
@@ -6862,7 +6864,9 @@ const quoteFor=p=>{const f=QUOTES[p||PROD];return f?f():null;};
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{"v":"v638","d":"14 Sep 2026","t":"NETWORK LINES RUN FROM EACH ASSOCIATE TO THE CUSTOMERS THEY BROUGHT IN","n":["<b>HIS CHOICE OF 14 SEP 2026, THE LAST OF THE FOUR MAP LAYERS: NETWORK LINES.</b> A switch beside the view draws a line from each associate on the bench to each customer they brought in, the associate's end a ring and the customer's a dot, in the districts view, the whole peninsula and a district opened, where a line runs off the edge to the districts around. The switch is off until asked for. A note under the legend counts the lines, the associates, and the pairs not drawn because a party has no point.","<b>ONE MAP OF WHO BROUGHT IN WHOM.</b> The lines are read off introductions(), the one place the referral stamps on orders and the book's declared introductions meet, and the bench is associateIds(), so a banned party's lines go when it leaves the bench while its introductions stay in the ledger. Every line and ring is titled by code, even with the names open.","<b>THE CHECKS.</b> A new section of 8 assertions on a fixture associate with two declared introductions, one stamped on an order and one with no point: off by default, a line to each customer placed, each starting on the ring and ending on its dot, the note's counts, a district opened, codes with the names open, a banned associate, and Hide. 10 mutations each turn the assertion they target red. On the live book the switch draws 11 lines from 5 associates."]},
+const evolution=[{"v":"v639","d":"14 Sep 2026","t":"A HAND COUNT OF SALT CUTS THE BOOK BY 7.44 UNIT: FLOORS LIFT ACROSS EVERY SIZE","n":["<b>ONE COUNT FOLDED, NOTHING SOLD OR BOUGHT.</b> The salt count of 14 Sep stands at 1.5 unit against 8.94 on the book, a drift of -7.44 unit, and the count wins, so the stated inventory is set to 1.5 and COUNT_ON for salt moves from 8 Sep to 14 Sep. The drafter flagged the 7.44 unit as unaccounted for and books it as shrinkage across every unit sold. The dossier gives no reason for the gap and none is offered here.","<b>THE FLOORS MOVE WITH THE SHRINKAGE, AND THE DESK IS UNDER ITS REORDER MARK.</b> The 1 unit floor lifts from RM56.21 to RM61.15, 2 unit from RM112.43 to RM122.29, 12.5 unit from RM702.67 to RM764.34, the ask on 1 unit from RM120 to RM130 and self use from RM68.01 to RM75.45. Stock cost holds at RM44 a unit against RM46 replacement. Nothing is owed out, 11.5 unit stands promised, and the position sits below the RM15 reorder mark."]},
+
+{"v":"v638","d":"14 Sep 2026","t":"NETWORK LINES RUN FROM EACH ASSOCIATE TO THE CUSTOMERS THEY BROUGHT IN","n":["<b>HIS CHOICE OF 14 SEP 2026, THE LAST OF THE FOUR MAP LAYERS: NETWORK LINES.</b> A switch beside the view draws a line from each associate on the bench to each customer they brought in, the associate's end a ring and the customer's a dot, in the districts view, the whole peninsula and a district opened, where a line runs off the edge to the districts around. The switch is off until asked for. A note under the legend counts the lines, the associates, and the pairs not drawn because a party has no point.","<b>ONE MAP OF WHO BROUGHT IN WHOM.</b> The lines are read off introductions(), the one place the referral stamps on orders and the book's declared introductions meet, and the bench is associateIds(), so a banned party's lines go when it leaves the bench while its introductions stay in the ledger. Every line and ring is titled by code, even with the names open.","<b>THE CHECKS.</b> A new section of 8 assertions on a fixture associate with two declared introductions, one stamped on an order and one with no point: off by default, a line to each customer placed, each starting on the ring and ending on its dot, the note's counts, a district opened, codes with the names open, a banned associate, and Hide. 10 mutations each turn the assertion they target red. On the live book the switch draws 11 lines from 5 associates."]},
 
 {"v":"v637","d":"14 Sep 2026","t":"A TAP DRILLS INTO A DISTRICT OR AN AREA: ITS FIGURE, SHARE, RANK, TREND AND PARTIES","n":["<b>HIS CHOICE OF 14 SEP 2026, THE THIRD MAP LAYER: DRILL AND COMPARE.</b> A district opened now carries a panel of its own under the map, and a tap on one of its areas, on the map or in the table, swaps in that area's: its figure for the metric and period in view, its share and its rank against the others at its level, a bar a month for its trend with the period's months in gold, and its parties by code, largest first. A second tap puts the area down, and closing the district puts the pick down with it. The area picked is outlined and its parties' dots are lit.","<b>ONE READING FOR ALL OF IT.</b> mapOwn is what each party carries on each metric over the orders a filter keeps, so the shading, the table and each month of the trend come off the same figures, and an area is ranked against the areas drawn in the district while a district is ranked against every district carrying the metric. Codes only, even with the names open, as everywhere on the map.","<b>THE CHECKS.</b> A new section of 12 assertions on three fixture customers sited in two areas of one quiet district, trading in two months: the district's panel, a tap dispatched on the drawn area, the toggle, the table's names, the period and the metric carried into the panel, codes with the names open, and closing the district. 14 mutations each turn the assertion they target red."]},
 
@@ -7348,7 +7352,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='14 Sep 2026, 16:16 KL';
+const LAST_UPDATED='14 Sep 2026, 17:43 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
