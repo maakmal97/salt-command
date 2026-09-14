@@ -3114,10 +3114,18 @@ section("Oil — pinned at both ends and lawful between (round 5, his call 5)");
        the step-down branch in tier1Walk never runs: delete the branch and the assertion above
        stays green. FORCE a pair that rises — RM60 a unit at half a unit against RM80 at twelve and
        a half — and the law must drag every larger rung back down. */
-    const rising = JSON.parse(w.eval("JSON.stringify((function(){"
+    /* 14 Sep 2026: THE PAIR IS WALKED ON A FORCED COST. The step-down refuses a step that would land under the
+       floor, and v639's count lifted salt's floor to RM61.15 a unit, over the RM60 this pair steps back to, so the
+       check went red on the cost and not on the law. The claim is the law, so the floor is forced to RM1 a unit,
+       under any rung; and a second walk forces it to RM65, over the step, to prove the guard that refused it. */
+    const walkAt = (per) => JSON.parse(w.eval("JSON.stringify((function(){"
       + "var p=pxPolicy(), p2={}; for(var k in p)p2[k]=p[k]; p2.tier1={0.5:30, 12.5:1000};"
-      + "var wlk=PRICING_ENGINE.tier1Walk(shownSizes('salt'), pxCost(), p2);"
-      + "return wlk.map(function(x){return {q:x.q, rate:+(x.p/x.q).toFixed(4), stated:!!x.stated};});})())"));
+      + "var c=pxCost(), c2={}; for(var j in c)c2[j]=c[j]; c2.eff=" + per + "; c2.effEx=" + per + ";"
+      + "var wlk=PRICING_ENGINE.tier1Walk(shownSizes('salt'), c2, p2);"
+      + "return wlk.map(function(x){return {q:x.q, rate:+(x.p/x.q).toFixed(4), stated:!!x.stated, under:x.under};});})())"));
+    const rising = walkAt(1);
+    ok(walkAt(65).filter((x) => !x.stated).every((x) => x.under === 0),
+      "and the step-down never takes an interpolated rung under its floor: on a floor of RM65 a unit, over the RM60 it would step to, every rung keeps clear");
     {
       /* WHAT THE LAW HOLDS AND WHAT IT DOES NOT. The guard skips a PINNED end, because a figure he
          typed is quoted as he typed it, which is v552's rule. So on a rising pair the interpolated
@@ -3155,7 +3163,10 @@ section("Oil — pinned at both ends and lawful between (round 5, his call 5)");
        quoted price in silence, so the order is asserted by NAME and not taken on trust. */
     ok(rowsSalt.length === 2 && rowsSalt[0].code === "T2" && rowsSalt[0].dflt === true && rowsSalt[1].code === "T1",
       `the payload puts Tier 2 at row zero and Tier 1 after it (${rowsSalt.map((r) => r.code).join(", ")})`);
-    ok(rowsSalt[0].prices[0] === 70 && rowsSalt[1].prices[0] === 60,
+    /* 14 Sep 2026: against the engine's own two figures at the smallest size, not RM70 and RM60. The ask is derived,
+       and v639's count moved it to RM80, which turned this red while row zero went on quoting the ask. */
+    const L0 = JSON.parse(w.eval("JSON.stringify(priceLadder(shownSizes('salt')[0]))"));
+    ok(rowsSalt[0].prices[0] === L0.ask.total && rowsSalt[1].prices[0] === L0.tier1.total && L0.ask.total > L0.tier1.total,
       `so row zero still quotes the ask and not the cheaper tier (${rowsSalt[0].prices[0]} then ${rowsSalt[1].prices[0]})`);
     /* ============ v566: THE THREE GATES AND THE ONE RELATION ============ */
     /* A TIER STATED AT ONE SIZE IS NOT STATED. {0.5:60,"0.50":60} is two KEYS naming one size: it
