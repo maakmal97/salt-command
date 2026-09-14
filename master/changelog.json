@@ -1,5 +1,14 @@
 [
  {
+  "v": "v632",
+  "d": "14 Sep 2026",
+  "t": "AN ADVANCE ON THE BOOK SINCE 30 AUG IS SETTLED IN KIND, SO THE ROW NO LONGER READS AS OWED",
+  "n": [
+   "<b>ONE CORRECTION FOLDED, NO CASH AND NO STOCK BEHIND IT.</b> The fold patches s124, CN6-WM's salt order of 30 Aug, 1 unit for RM110: settledRM from unset to 110, rebate from false to true, rebateKg from unset to 1. It changes only what the row says about itself, so the ledger stands at 76.95 and stock at 8.94 units. The desk decided it on 14 Sep and the drafter raised no flag against it.",
+   "<b>WHAT IS UNUSUAL IS THE PARTY, NOT THE PATCH.</b> CN6-WM now carries seven orders at a RM100 median in a RM75 to RM110 range, RM210 outstanding and 2 units on credit against his cap, with nothing defaulted. The RM110 on s124 sits at the top of that range. The inventory did nothing: no lot landed, cost basis holds at RM44 a unit against a RM46 replacement, and the reorder mark of 15 units is untouched."
+  ]
+ },
+ {
   "v": "v631",
   "d": "14 Sep 2026",
   "t": "A CASH SALE AT THE TOP OF HIS OWN RANGE, TAKEN WHILE HIS CREDIT LINE SITS FULL",

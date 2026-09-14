@@ -1,6 +1,6 @@
 {
- "v": "v631",
- "stamped": "14 Sep 2026, 12:44 KL",
+ "v": "v632",
+ "stamped": "14 Sep 2026, 12:51 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -2886,8 +2886,28 @@
     "date": "2026-08-30",
     "deliveredQty": 1,
     "deliveredOn": "2026-08-30",
-    "note": "<b>ADVANCED DELIVERY, RM20 ABOVE HIS USUAL RATE.</b> 1 unit handed over on 30 Aug with nothing paid, so the row opens as an advance and RM110 is owed. CN6-WM has paid about RM90 a unit across four orders; this one is RM110, 22% above that. Against the RM50 shelf it returns RM60 at 54.5%. His undated 1.5 unit order (s108) was cancelled earlier and is not touched by this. Dictated in a Code session on 2 Sep 2026 and folded on his word.",
-    "rid": "s124"
+    "note": "<b>CORRECTION ON S124, SETTLED IN KIND AND REBATE ON, APPLIED 14 SEP.</b> The target is CN6-WM's order of 30 Aug, 1 unit for RM110, no cash in and 1 unit delivered, neither cancelled nor defaulted, noted at the time as an advance with RM110 owed. The patch sets settledRM to 110, rebate to false no longer, and rebateKg to 1: an automatic offset of his reward against that order. No cash and no stock move. Cost is the desk's own RM44 a unit, RM44 on the order. <b>The drafter raised no flag.</b> He held RM210 outstanding and 2 units on credit before this, nothing defaulted, across 7 orders at a RM100 median in a RM75 to RM110 range. Nothing is left outstanding on the row. <b>ADVANCED DELIVERY, RM20 ABOVE HIS USUAL RATE.</b> 1 unit handed over on 30 Aug with nothing paid, so the row opens as an advance and RM110 is owed. CN6-WM has paid about RM90 a unit across four orders; this one is RM110, 22% above that. Against the RM50 shelf it returns RM60 at 54.5%. His undated 1.5 unit order (s108) was cancelled earlier and is not touched by this. Dictated in a Code session on 2 Sep 2026 and folded on his word.",
+    "rid": "s124",
+    "settledRM": 110,
+    "rebateKg": 1,
+    "rebate": true,
+    "mod": "corrected on 2026-09-14: settledRM (unset) to 110; rebateKg (unset) to 1; rebate (unset) to true",
+    "amend": [
+     {
+      "date": "2026-08-30",
+      "kind": "Fulfilment",
+      "cash": 110,
+      "kg": 1,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-09-14",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>CORRECTION ON S124, SETTLED IN KIND AND REBATE ON, APPLIED 14 SEP.</b> The target is CN6-WM's order of 30 Aug, 1 unit for RM110, no cash in and 1 unit delivered, neither cancelled nor defaulted, noted at the time as an advance with RM110 owed. The patch sets settledRM to 110, rebate to false no longer, and rebateKg to 1: an automatic offset of his reward against that order. No cash and no stock move. Cost is the desk's own RM44 a unit, RM44 on the order. <b>The drafter raised no flag.</b> He held RM210 outstanding and 2 units on credit before this, nothing defaulted, across 7 orders at a RM100 median in a RM75 to RM110 range. Nothing is left outstanding on the row."
+     }
+    ]
    },
    {
     "customer": "CA7-AMP",
@@ -4222,9 +4242,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-14T04:43:21.323Z",
+  "QUEUE_COMMITTED": "2026-09-14T04:43:24.663Z",
   "PRICING": {
-   "takenAt": "2026-09-14T04:44:57.126Z",
+   "takenAt": "2026-09-14T04:51:15.551Z",
    "sizes": [
     0.5,
     1,
@@ -4680,11 +4700,11 @@
      ]
     }
    },
-   "v": "v631"
+   "v": "v632"
   },
   "OPEN": {
-   "at": "2026-09-14T04:44:57.231Z",
-   "count": 10,
+   "at": "2026-09-14T04:51:15.650Z",
+   "count": 9,
    "byKey": {
     "CM4-MK|2026-09-13|330": {
      "d": "2026-09-13",
@@ -4802,23 +4822,6 @@
      "age": 12,
      "exp": 0
     },
-    "CN6-WM|2026-08-30|110": {
-     "d": "2026-08-30",
-     "p": "CN6-WM",
-     "dir": "S",
-     "q": 1,
-     "t": 110,
-     "cash": 0,
-     "mv": 1,
-     "st": "dueMoney",
-     "oweRM": 110,
-     "rid": "s124",
-     "deliveredOn": "2026-08-30",
-     "handover": "delivered",
-     "key": "CN6-WM|2026-08-30|110",
-     "age": 15,
-     "exp": 27.5
-    },
     "CA4-DAM|2026-08-28|100": {
      "d": "2026-08-28",
      "p": "CA4-DAM",
@@ -4860,7 +4863,7 @@
      "owedOut": 0,
      "coverDays": 1.5,
      "rate": 5.96,
-     "owedToYou": 752,
+     "owedToYou": 642,
      "promised": 11.5,
      "short": 2.56
     },
@@ -4880,7 +4883,7 @@
     "salt": "2026-09-08",
     "oil": "2026-09-09"
    },
-   "v": "v631"
+   "v": "v632"
   }
  }
 }
