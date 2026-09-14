@@ -133,6 +133,15 @@ export const NAME_STOPWORDS = new Set(["tbc", "to be confirmed", "unknown", "n/a
  * this list as short as it can possibly be, and prefer renaming the column to adding a word.
  * A three-letter name is the worst case; anything longer should be argued about first. */
 export const NAME_COLLISIONS = new Set(["max", "min"]);
+/* v630, HIS DECISION OF 14 SEP 2026: AREA NAMES SHOW ON THE MAP, so an official district, mukim, bandar or pekan name is
+ * public geography. This is every form the desk draws one in, lower-cased: the district, an area's short name, and its
+ * kind with the name. A leak check exempts a directory word only when it IS one of these, never when it contains one. */
+export function areaNameSet(areas) {
+  const out = new Set(), cap = (k) => k.charAt(0).toUpperCase() + k.slice(1);
+  for (const d of (areas && areas.districts) || []) out.add(d.name.toLowerCase());
+  for (const a of (areas && areas.areas) || []) { out.add(a.short.toLowerCase()); if (a.kind) out.add((cap(a.kind) + " " + a.short).toLowerCase()); }
+  return out;
+}
 
 /* THE PRICING SNAPSHOT (v303), and it exists so the cloud drafter is never a second engine.
  *

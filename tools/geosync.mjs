@@ -9,6 +9,8 @@
  *
  *   geo/basemap.json   the drawn outlines, fetched once by tools/geofetch.mjs, with provenance
  *   geo/places.json    the gazetteer: PLACES, METRO, NON_PLACE, PLACEHOLDER, LOCS, and NOTES
+ *   geo/areas.json     v630: the districts and the mukim, bandar and pekan, named, fetched once by
+ *                      tools/areafetch.mjs
  *
  * NOTES comes back as comments above its declaration, the same trick booksync uses, so the prose
  * that explains a decision sits where a reader meets it and still lives in the data file.
@@ -19,7 +21,7 @@ import { fileURLToPath } from "node:url";
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const MASTER = process.env.SALT_MASTER || resolve(REPO, "master", "salt_command.html");
-const OPEN = "/* ==== GEO: generated from geo/basemap.json and geo/places.json by tools/geosync.mjs. Edit those, never this block. ==== */";
+const OPEN = "/* ==== GEO: generated from geo/basemap.json, geo/places.json and geo/areas.json by tools/geosync.mjs. Edit those, never this block. ==== */";
 const SHUT = "/* ==== END GEO ==== */";
 const KEYS = ["PLACES", "METRO", "NON_PLACE", "PLACEHOLDER", "LOCS"];
 
@@ -56,8 +58,25 @@ function renderPlaces(p) {
     return cmt + `const ${k}=${JSON.stringify(p[k])};`;
   }).join("\n");
 }
+/* v630: one area a line, so a re-fetch diffs by area. NAMED, unlike the basemap, on his decision of 14 Sep
+   2026 that area names show on the map; a party's name still never does. */
+function renderAreas(a) {
+  return `/* ============ THE AREAS (v630) ============
+   ${a.what}
+   ${a.sources.map((s) => `${s.source}, ${s.licence}.`).join("\n   ")}
+   Pinned at ${a.pinnedRelease}, fetched ${a.fetchedOn}; ${a.encoding}. Re-fetch with
+   \`node tools/areafetch.mjs\`, by hand; it is never run by CI or by the build. */
+const AREAS_META=${JSON.stringify({ attribution: a.sources.map((s) => s.attribution), fetchedOn: a.fetchedOn })};
+const DISTRICTS=[
+${a.districts.map(({ state, ...d }) => "  " + JSON.stringify(d)).join(",\n")}
+];
+const AREAS=[
+${a.areas.map((x) => "  " + JSON.stringify(x)).join(",\n")}
+];`;
+}
+/* a district's state stays in geo/areas.json and is not rendered: the map draws the states from BASEMAP and names none */
 function block() {
-  return [OPEN, renderBasemap(read("geo/basemap.json")), renderPlaces(read("geo/places.json")), SHUT].join("\n");
+  return [OPEN, renderBasemap(read("geo/basemap.json")), renderPlaces(read("geo/places.json")), renderAreas(read("geo/areas.json")), SHUT].join("\n");
 }
 export function checkText(src) {
   const a = src.indexOf(OPEN), b = src.indexOf(SHUT);

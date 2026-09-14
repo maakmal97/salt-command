@@ -1,5 +1,17 @@
 [
  {
+  "v": "v630",
+  "d": "14 Sep 2026",
+  "t": "THE MAP SHADES NAMED DISTRICTS, AND A TAP OPENS THEIR MUKIM, BANDAR AND PEKAN",
+  "n": [
+   "<b>HIS INSTRUCTION OF 14 SEP 2026: a proper map, the way a council map shades its districts, but more advanced.</b> His decisions on the day: districts first and the finer areas a tap away, area names always shown, each party a dot. This version is the map itself; a party's place following Add ID and Amend ID on its own comes in v631, and the metric switch, time slider, drill and compare and network lines in v632.",
+   "<b>THE AREAS ARE REAL, AND COMMITTED.</b> tools/areafetch.mjs takes the 91 districts of Peninsular Malaysia (geoBoundaries from citypopulation.de, CC BY 3.0) and the 370 mukim, bandar and pekan of the core states (geoBoundaries from Wikimedia Commons, CC BY 4.0) from the basemap's own pinned release, thins them and writes the rings as encoded polylines, 113 KB in all. geosync inlines them, so the desk still loads nothing, and both credits print under the map beside the states' own.",
+   "<b>WHAT THE MAP DRAWS.</b> The core districts, shaded in five steps on the square root of each one's share of the largest, named where a name fits, with the state lines over them; the whole peninsula is a switch away. A tap on a district opens every mukim, bandar and pekan in its frame, shaded the same way, each party a dot and a supplier a square, with a way back. The two levels come from different surveys and do not share edges, so a party counts in the area its point lies inside, whichever district that area is filed under: all 36 parties in the core states stand on the area they are counted in. An associate's resale account counts where the associate is. Names never overlap or run off the frame, and on a phone the drawing takes the phone's width so they stay readable.",
+   "<b>WHAT HIS DECISION CHANGED, AND WHAT IT DID NOT.</b> v293 kept the map to unnamed heat because a named place beside a code identifies a customer on a public page. Area names now show on his word, and the leak checks exempt a directory place only when it is itself an official area name; six were. A party's name never reaches the map, with the names unlocked or not, and its tables name parties by code.",
+   "<b>THE CHECKS.</b> A new section of 18 assertions: the areas, their nesting and their licences; a point finding its district and its area; the deepest step and its figure; a resale account counted at its associate; the credits; no name on the map; a district opened with its dots and a way back; no party on bare ground; no names overlapping; the peninsula and its switch; a phone's drawing. 14 mutations each turn their assertions red, the leak check's exemption among them, proved on this laptop's own directory. Three older instruments are restated and each proved red again: the basemap check allows a state name only where it is also an area the map shows, the kg scan skips the generated geography, whose rings are letters, and the map's TBC reason is checked on a TBC code put on the roster for it, since v629 re-keyed the last two on the book and that check had failed there ever since."
+  ]
+ },
+ {
   "v": "v629",
   "d": "14 Sep 2026",
   "t": "SIX CODES RE-KEYED, NO CASH AND NO STOCK MOVED",

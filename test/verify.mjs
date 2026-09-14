@@ -14,7 +14,7 @@ import { fileURLToPath } from "node:url";
 import worker from "../src/worker.js";
 import stmtWorker, { normUser } from "../stmt/worker.js";
 import { unionByAt, pruneCommitted } from "../tools/drain.mjs";
-import { NAME_STOPWORDS, NAME_COLLISIONS } from "../tools/book.mjs";
+import { NAME_STOPWORDS, NAME_COLLISIONS, areaNameSet } from "../tools/book.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO = resolve(HERE, "..");
@@ -340,17 +340,20 @@ section("The public desk carries no name and no place");
     /* One definition, in book.mjs; a private copy here drifted once already. NAME_COLLISIONS
        are names the desk also uses as words, skipped and reported rather than silently. */
     const skip = new Set([...NAME_STOPWORDS, ...NAME_COLLISIONS]);
+    /* v630, HIS DECISION OF 14 SEP 2026: AREA NAMES SHOW ON THE MAP. A place on the directory that IS an official district,
+       mukim, bandar or pekan name is public geography now and is not searched for; every other name and place still is,
+       including one that merely contains an area name. Words are exempted, never text cut out of the desk. */
+    const areaWords = areaNameSet(JSON.parse(readFileSync(join(REPO, "geo", "areas.json"), "utf8")));
     const word = (c) => /[A-Za-z0-9]/.test(c || "");
-    const hits = [...words].filter((x) => x && x.length >= 3 && !skip.has(x.toLowerCase())).filter((x) => {
+    const hits = [...words].filter((x) => x && x.length >= 3 && !skip.has(x.toLowerCase()) && !areaWords.has(x.toLowerCase())).filter((x) => {
       let f = 0;
       for (;;) { const i = hay.indexOf(x, f); if (i < 0) return false; f = i + x.length;
         if (!word(hay[i - 1]) && !word(hay[i + x.length])) return true; }
     });
     okOff(hits.length === 0, `no directory name or place appears in the public desk (${words.size} checked, ${hits.length} found)`);
 
-    /* The map is a heatmap and must stay one: no per-party label, no coordinates on screen. */
-    okOff(desk.includes("url(#heat"), "the map draws heat blobs");
-    okOff(desk.includes("mix-blend-mode:screen"), "overlapping localities brighten rather than stack");
+    /* v630: the map shades named areas and draws each party as a dot with no name, in place of v293's unnamed heat */
+    okOff(desk.includes('class="marea"') && desk.includes("const DISTRICTS=["), "the map shades named districts and areas");
     okOff(!desk.includes("place.name"), "nothing on the map reads a place name");
     okOff(!/PLACES\[[^\]]*\]\.(name|src)/.test(desk), "the gazetteer table carries neither name nor provenance");
   }
@@ -1925,7 +1928,9 @@ section("Geography — geo/ is the source (v349)");
   /* the outlines are drawn and credited, and they carry NO name into a public page */
   const desk = readFileSync(join(REPO, "public", "desk.html"), "utf8");
   ok(/const BASEMAP=\[/.test(desk) && !/const BASEMAP=\[\s*\{name:/.test(desk), "the built desk carries the outlines and no feature name");
-  ok(bm.features.every((f) => !desk.includes(`"${f.name}"`)), "no basemap feature is named in the public desk");
+  /* v630: beyond a name that is also an official area the map shows, by his decision of 14 Sep 2026 (Kuala Lumpur is a district) */
+  const areaWords19 = areaNameSet(JSON.parse(readFileSync(join(REPO, "geo", "areas.json"), "utf8")));
+  ok(bm.features.every((f) => areaWords19.has(f.name.toLowerCase()) || !desk.includes(`"${f.name}"`)), "no basemap feature is named in the public desk, beyond the area names the map shows");
   ok(desk.includes(bm.attribution.slice(0, 24)), "the ODbL attribution is on the page, which is what the licence asks");
 }
 
@@ -3665,6 +3670,9 @@ section("Units — no new kg-named identifier, anywhere (round 5, his call 6)");
       let end = ev;
       while (end < lines.length && !lines[end].trimEnd().endsWith("}];")) end++;
       text = lines.filter((_, i) => i < ev || i > end).join("\n");
+      /* v630: nor the generated GEO block, whose area rings are encoded polylines, runs of letters that spell no name */
+      const g0 = text.indexOf("/* ==== GEO: generated"), g1 = text.indexOf("/* ==== END GEO ==== */");
+      if (g0 >= 0 && g1 > g0) text = text.slice(0, g0) + text.slice(g1);
     }
     for (const m of text.matchAll(/[A-Za-z_$][A-Za-z0-9_$]*/g)) {
       if (bannedWord(m[0])) offenders.push(f + ": " + m[0]);
@@ -8399,9 +8407,11 @@ section("v528: the name on the phone, filed encrypted before the ID is queued");
   let openedTB = null; try { openedTB = postTB && postTB.body ? await vdec("pw", postTB.body.vault) : null; } catch (e) { openedTB = { err: String(e && e.message) }; }
   ok(!TB.no && !TB.dis && /Registered CT11-TBC/.test(stTB) && openedTB && openedTB["CT11-TBC"] === "Test Person (to be confirmed)",
     "a blank place on a TBC code registers, and files the name as to be confirmed: " + (TB.no || stTB.slice(0, 60)) + " / " + JSON.stringify(openedTB && openedTB["CT11-TBC"]));
-  forgetCode("CT11-TBC"); w.eval("queue=[];");
+  /* v630: a TBC code is put on the roster for this, since v629 re-keyed the last two on the book and the check had leaned on them */
+  forgetCode("CT11-TBC"); w.eval("queue=[];roster.push('CZ9-TBC');");
   w.eval("switchTab('map');");
   const mapText = String(w.eval("(document.querySelector('.sec.on')||{}).textContent||''"));
+  w.eval("roster.splice(roster.indexOf('CZ9-TBC'),1);");
   ok(/Names & IDs/.test(mapText) && !/&amp;/.test(mapText), "the map's reason for a TBC code reads Names & IDs, not the entity");
   w.eval("switchTab('add');");
   /* the laptop's Names & IDs panel takes the same answer: a blank location derives the TBC suffix and files to be confirmed */
@@ -11123,6 +11133,70 @@ section("v628: Amend ID re-keys a party through Approve, and the name moves in t
     const card28 = String(w28.eval("apCard({id:'x',collection:'rename',row:{from:'CZ9-TBC',to:'CZ9-ST',orders:3,lots:0,pairs:[['CZ9-TBC','CZ9-ST'],['CZ9-TBC-R','CZ9-ST-R']]},flags:[],reasoning:''})")).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
     ok(/Amend ID: CZ9-TBC becomes CZ9-ST/.test(card28) && /Orders re-keyed 3/.test(card28) && /CZ9-TBC-R/.test(card28) && /Statement username stays/.test(card28), "the Approve card says what moves: " + card28.slice(0, 160));
   } finally { await new Promise((r) => setTimeout(r, 200)); try { w28.close(); } catch (e) { /* best effort */ } }
+}
+
+section("v630: the map shades named districts, opens a district's mukim, bandar and pekan, and draws each party as a dot");
+{
+  /* HIS DECISIONS OF 14 SEP 2026: districts first and the finer areas on a tap, area names shown, each party a dot with no
+     name. Fixture parties are forced onto the book so the proof does not lean on today's trade. Proved red by mutation. */
+  const A30 = JSON.parse(readFileSync(join(REPO, "geo", "areas.json"), "utf8"));
+  const core30 = A30.districts.filter((d) => d.core).map((d) => d.id);
+  ok(core30.length === 17 && ["kuala-lumpur", "petaling", "seremban", "gombak"].every((x) => core30.includes(x)) && A30.districts.length === 91,
+    "the districts are Peninsular Malaysia's 91, 17 of them in the core states: " + core30.length + " core of " + A30.districts.length);
+  ok(A30.areas.length > 300 && A30.areas.every((a) => core30.includes(a.district) && a.short && a.rings.length && Array.isArray(a.label)),
+    "every mukim, bandar and pekan nests under a core district, named, with a shape and a label point: " + A30.areas.length);
+  ok(A30.sources.some((s) => /CC BY 3\.0/.test(s.licence)) && A30.sources.some((s) => /CC BY 4\.0/.test(s.licence)), "each level carries its licence");
+  const names30 = areaNameSet(A30);
+  ok(names30.has("petaling") && names30.has("kuala lumpur") && A30.areas.some((a) => a.kind && names30.has((a.kind + " " + a.short).toLowerCase())) && !names30.has("zzz fixture heights"),
+    "the leak checks' set of area names holds districts, short names and kind-and-name, and nothing else");
+
+  const { openMaster: om30 } = await import("../tools/payload.mjs");
+  const { w: w30 } = await om30();
+  const rd30 = (e) => JSON.parse(String(w30.eval("JSON.stringify(" + e + ")")));
+  const sec30 = () => String(w30.eval("(document.querySelector('.sec.on')||{}).innerHTML||''"));
+  try {
+    w30.eval("setProd('salt');");
+    const where30 = rd30("['KLC','NIL','TAI','HCM'].map(function(k){var r=areaOf(PLACES[k].lat,PLACES[k].lng);return [k,r.district&&r.district.id,r.area&&r.area.district,!!(r.area&&inShape([PLACES[k].lng,PLACES[k].lat],areaShape(r.area)))];})");
+    ok(JSON.stringify(where30) === JSON.stringify([["KLC", "kuala-lumpur", "kuala-lumpur", true], ["NIL", "seremban", "seremban", true], ["TAI", "larut-dan-matang", null, false], ["HCM", null, null, false]]),
+      "a point finds its district and the area it lies inside, a point outside the core finds a district only, and one outside Malaysia finds none: " + JSON.stringify(where30));
+    const drawn30 = rd30("(function(){var m=mapPoints(),n=0,on=0;m.pts.concat(m.far).forEach(function(p){var r=areaOf(p.place.lat,p.place.lng);if(!r.district||!r.district.core)return;n++;if(r.area&&inShape([p.place.lng,p.place.lat],areaShape(r.area)))on++;});return [n,on];})()");
+    ok(drawn30[0] > 20 && drawn30[0] === drawn30[1], "every party sited in the core states is drawn on the area it is counted in: " + drawn30.join(" of "));
+
+    /* the fixture: an associate at the Nilai point with a sale of their own and one through their resale account */
+    const row30 = (o) => JSON.stringify(Object.assign({ product: "salt", cost: 0, deliveredQty: 1, qty: 1 }, o));
+    w30.eval("roster.push('CZ9-NIL','CZ9-NIL-R');associates.push('CZ9-NIL');BASE_SALES.push(" + row30({ rid: "z630a", customer: "CZ9-NIL", date: "2026-07-01", total: 600000, cash: 600000 })
+      + "," + row30({ rid: "z630b", customer: "CZ9-NIL-R", rev: "R2", date: "2026-07-02", total: 400000, cash: 400000 }) + ");queue=[];applyOverlay();recompute();vaultNames={'CZ9-NIL':'Zed Fixture Person (Nilai)'};revealed=true;");
+    w30.eval("MAP_VIEW=null;switchTab('map');");
+    const top30 = rd30("(function(){var s=document.querySelector('.sec.on');var ps=[].map.call(s.querySelectorAll('path.marea'),function(p){return {t:(p.querySelector('title')||{}).textContent||'',f:p.getAttribute('fill')};});"
+      + "return {n:ps.length,ser:(ps.find(function(p){return /^Seremban:/.test(p.t);})||{}),kl:(ps.find(function(p){return /^Kuala Lumpur:/.test(p.t);})||{}),labels:[].map.call(s.querySelectorAll('svg text'),function(t){return t.textContent;}),"
+      + "row:[].map.call(s.querySelectorAll('details.obsec tbody tr'),function(r){return r.textContent.replace(/\\s+/g,' ');}).find(function(x){return /Seremban/.test(x);})||'',credit:s.textContent};})()");
+    ok(top30.n === 17 && top30.labels.includes("Kuala Lumpur") && top30.labels.includes("Seremban"), "the core view shades the 17 core districts and names them: " + top30.n);
+    ok(top30.ser.f === "#d4694c" && top30.kl.f !== "#d4694c" && /RM 1,000,/.test(top30.ser.t), "the district carrying the most revenue takes the deepest step, and its tooltip gives the figure: " + JSON.stringify([top30.ser, top30.kl.f]));
+    ok(/RM 1,000,/.test(top30.row), "an associate's resale account has no place of its own, so what it sells counts where the associate is: " + top30.row);
+    ok(/CC BY 3\.0/.test(top30.credit) && /CC BY 4\.0/.test(top30.credit) && /ODbL/.test(top30.credit) && /and up/.test(top30.credit), "the credits for all three sources and the legend print under the map");
+    ok(!sec30().includes("Zed Fixture Person"), "no party's name reaches the map, even with the names unlocked");
+
+    w30.eval("mapZoom('seremban');");
+    const ser30 = rd30("(function(){var s=document.querySelector('.sec.on');return {lead:(s.querySelector('.dsclead')||{}).textContent,dots:s.querySelectorAll('.mdot').length,areas:s.querySelectorAll('path.marea').length,back:/Back to the districts/.test(s.textContent),head:(s.querySelector('details.obsec summary')||{}).textContent};})()");
+    ok(/in Seremban/.test(ser30.lead) && ser30.dots >= 2 && ser30.areas > 30 && ser30.back && /Areas in Seremban/.test(ser30.head), "a tap on a district opens its mukim, bandar and pekan with each party a dot, and a way back: " + JSON.stringify(ser30));
+    ok(!sec30().includes("Zed Fixture Person"), "and no dot or row carries a name");
+
+    w30.eval("mapZoom('kuala-lumpur');");
+    const kl30 = rd30("(function(){var s=document.querySelector('.sec.on');var b=[].map.call(s.querySelectorAll('svg text'),function(t){var fz=+t.getAttribute('font-size');if(!(fz>0))return null;var x=+t.getAttribute('x'),y=+t.getAttribute('y'),w=t.textContent.length*fz*0.5;return [x-w/2,y-fz,x+w/2,y+2];}).filter(Boolean);"
+      + "var clash=0;for(var i=0;i<b.length;i++)for(var j=i+1;j<b.length;j++)if(b[i][0]<b[j][2]&&b[i][2]>b[j][0]&&b[i][1]<b[j][3]&&b[i][3]>b[j][1])clash++;return {labels:b.length,clash:clash,table:s.textContent};})()");
+    ok(kl30.labels > 4 && kl30.clash === 0, "no two names on a district opened overlap: " + kl30.labels + " names, " + kl30.clash + " overlapping");
+    ok(/Bandar Baharu Sungai Besi/.test(kl30.table) && !/Bandar Bandar/.test(kl30.table), "an area whose name opens with its kind is not named twice");
+    const bare30 = rd30("(function(){var ids={};[].forEach.call(document.querySelectorAll('.sec.on path.marea'),function(p){ids[p.getAttribute('data-a')]=1;});var m=mapPoints(),n=0,off=0;m.pts.concat(m.far).forEach(function(p){var r=areaOf(p.place.lat,p.place.lng);if(!r.district||r.district.id!=='kuala-lumpur')return;n++;if(!r.area||!ids[r.area.id])off++;});return [n,off];})()");
+    ok(bare30[0] > 10 && bare30[1] === 0, "every party in the district opened stands on an area drawn there, whichever district the area is filed under: " + bare30.join(" parties, ") + " on bare ground");
+
+    w30.eval("mapZoom('*');");
+    ok(rd30("document.querySelectorAll('.sec.on path.marea').length") === 91 && rd30("(document.querySelector('.sec.on .viewsw button.on')||{}).textContent||''") === "Whole peninsula",
+      "the whole peninsula draws all 91 districts, and the switch says which view is on");
+    Object.defineProperty(w30, "innerWidth", { value: 375, configurable: true });
+    w30.eval("mapZoom(null);");
+    ok(rd30("document.querySelector('.sec.on svg').getAttribute('viewBox')") === "0 0 325 390", "on a phone the map is drawn at the width it is shown, taller than wide, so names keep their size");
+    Object.defineProperty(w30, "innerWidth", { value: 1024, configurable: true });
+  } finally { await new Promise((r) => setTimeout(r, 200)); try { w30.close(); } catch (e) { /* best effort */ } }
 }
 
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);

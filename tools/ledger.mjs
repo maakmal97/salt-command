@@ -35,7 +35,7 @@ import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
 import { openMaster } from "./payload.mjs";
-import { LEDGER, LEDGER_KEYS, META_KEYS, reader, pricingSnapshot, openSnapshot, NAME_STOPWORDS, NAME_COLLISIONS, DATA_DIR } from "./book.mjs";
+import { LEDGER, LEDGER_KEYS, META_KEYS, reader, pricingSnapshot, openSnapshot, NAME_STOPWORDS, NAME_COLLISIONS, DATA_DIR, areaNameSet } from "./book.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO = resolve(HERE, "..");
@@ -83,6 +83,7 @@ const NOT_LEDGER = new Set([
   "ORD_WORD" /* v499: the Orders card's state words; the orders themselves live on the statements site */,
   "OBS_CONF", "ACTSEV", "bSevTag", "WB_NO_PROD", "CHART_INK", "DIAMOND",
   "LOCS", "PLACES", "METRO", "NON_PLACE", "PLACEHOLDER", "BASEMAP", "BASEMAP_META", "DOW", "DOW3", "KL_HOLIDAYS", "HOL_MAP",
+  "AREAS", "AREAS_META", "DISTRICTS", "MAPC" /* v630: the areas the map shades, and its steps; geography, not trade */,
   "LEAK_TEST", "BIO_FIELDS", "PROD_META", "builders",
 
   /* transient UI state, not persisted anywhere */
@@ -302,7 +303,12 @@ if (existsSync(BIO)) {
   const PLACEHOLDER = NAME_STOPWORDS;   // one definition, in book.mjs
   /* Names that collide with the desk's own vocabulary are skipped and SAID SO. See book.mjs. */
   const collided = [...new Set(names.filter((n) => NAME_COLLISIONS.has(n.toLowerCase())))];
-  names = [...new Set(names.filter((n) => n.length >= 3 && !PLACEHOLDER.has(n.toLowerCase()) && !NAME_COLLISIONS.has(n.toLowerCase())))];
+  /* v630, HIS DECISION OF 14 SEP 2026: AREA NAMES SHOW ON THE MAP. A directory place that IS an official district, mukim,
+     bandar or pekan name is public geography and is not searched for; one that merely contains an area name still is.
+     Counted and said on every run, like the collisions below. */
+  const areaWords = areaNameSet(JSON.parse(readFileSync(resolve(REPO, "geo", "areas.json"), "utf8")));
+  const asArea = [...new Set(names.filter((n) => areaWords.has(n.toLowerCase())))];
+  names = [...new Set(names.filter((n) => n.length >= 3 && !PLACEHOLDER.has(n.toLowerCase()) && !NAME_COLLISIONS.has(n.toLowerCase()) && !areaWords.has(n.toLowerCase())))];
   /* THE CODES COME OUT FIRST. A party code embeds its own place abbreviation by design, so
      CH6-TBC contains "TBC" and CS6-BS contains "BS". Searching the raw text therefore reports
      every code as a leak, which is the fastest way to teach someone to ignore this check.
@@ -336,6 +342,7 @@ if (existsSync(BIO)) {
   }
   /* Said on every run, pass or fail. A skipped name is a party this gate is NOT checking for,
      and that has to be visible or a pass reads as more than it is. */
+  if (asArea.length) console.log(`  note  ${asArea.length} directory place(s) not checked, because each is an official area name the map shows (his decision, 14 Sep 2026)`);
   if (collided.length) {
     console.log(`  note  ${collided.length} name(s) NOT checked, because they collide with the desk's own`
       + ` vocabulary: ${collided.map((n) => n[0] + "*".repeat(n.length - 1)).join(", ")}.`

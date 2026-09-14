@@ -132,6 +132,12 @@ batch as a re-key wherever the book holds the code (`renamePairs`/`renameInBook`
 and the suite's fixtures. Prose and history keep the old code. The fold refuses a code the master's
 own logic quotes (CJ4-OKR, SA5-BTR, SP7-PUD, and CM6-HCM in a comment): those are hand folds. Everything the
 desk shows, cost and margin included, is served at the public URL.
+**The map** (his decisions of 14 Sep 2026, v630, replacing v293's unnamed heat): the core districts shaded
+by revenue for the product in view, a tap opening that district's mukim, bandar and pekan with each party a
+dot, and the whole peninsula a switch away. **Area names show; a party's name never does**, even unlocked.
+A party is counted in the area its point lies inside, whichever district that area is filed under, because
+the two levels come from different surveys. The leak checks exempt a directory place only when it IS an
+official area name (`areaNameSet` in `tools/book.mjs`); six places on the directory were, on 14 Sep 2026.
 
 ## The chain: tap to deploy
 
@@ -338,7 +344,7 @@ the first row with finite prices; oil is a genuine one-tier book and says so.
 | `tools/changelog.mjs` | Prepends `evolution[0]` to `master/changelog.json`; never rewrites |
 | `tools/renderdiff.mjs` | `--shoot <label>` every part at 1280 and 375, `--compare <a> <b>`; Playwright from `Code\salt-ds\.ds-sync`; by hand |
 | `tools/send-sheet.cmd` | Opens the newest `_send_*.html`; the Desktop shortcut `Send Statement` points here |
-| `geo/*.json`, `tools/geofetch.mjs` | Basemap (geoBoundaries, ODbL) and gazetteer; `geofetch` alone touches the network, by hand; feature names never rendered |
+| `geo/*.json`, `tools/geofetch.mjs`, `tools/areafetch.mjs` | Basemap (four state outlines, ODbL, unnamed), gazetteer, and since v630 `geo/areas.json`: the 91 districts of Peninsular Malaysia (CC BY 3.0) and the 370 mukim, bandar and pekan of the core states (CC BY 4.0), rings as encoded polylines at 2e-4 degrees, pinned geoBoundaries release `9469f09`. The two fetch tools alone touch the network, by hand; geosync inlines all three |
 | `public/sw.js`, `public/_headers`, `manifest.webmanifest`, `icon-*.png` | Shell network-first, `/queue` never cached; CSP; icons from `Code\salt-ds` |
 | `.deployed.json` | `{id,v,at}` of the last successful deploy |
 | `test/verify.mjs` | ~2,130 assertions over 138 sections, no network or browser; add one per behavioural change, and **prove it red by mutation before trusting its green** |
