@@ -1,6 +1,6 @@
 {
- "v": "v628",
- "stamped": "14 Sep 2026, 10:33 KL",
+ "v": "v629",
+ "stamped": "14 Sep 2026, 10:53 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -1188,7 +1188,7 @@
    },
    {
     "date": "2026-07-28",
-    "customer": "CA5-KER",
+    "customer": "CA5-BAN",
     "qty": 1,
     "total": 120,
     "cost": 47,
@@ -1943,7 +1943,7 @@
    },
    {
     "date": "2026-08-15",
-    "customer": "CH5-OUG",
+    "customer": "CM3-OUG",
     "qty": 4,
     "total": 260,
     "cost": 224,
@@ -1981,7 +1981,7 @@
    },
    {
     "date": "2026-08-17",
-    "customer": "CA11-SEN",
+    "customer": "CA2-SEN",
     "qty": 3,
     "total": 180,
     "cost": 168,
@@ -2186,7 +2186,7 @@
    },
    {
     "date": "2026-08-20",
-    "customer": "CH5-OUG",
+    "customer": "CM3-OUG",
     "qty": 12.5,
     "total": 600,
     "cost": 550,
@@ -2366,7 +2366,7 @@
    },
    {
     "date": "2026-08-22",
-    "customer": "CA5-KER",
+    "customer": "CA5-BAN",
     "qty": 1,
     "total": 120,
     "cost": 44,
@@ -2890,7 +2890,7 @@
     "rid": "s124"
    },
    {
-    "customer": "CA7-JTR",
+    "customer": "CA7-AMP",
     "qty": 1,
     "total": 135,
     "cost": 50,
@@ -2924,7 +2924,7 @@
     ]
    },
    {
-    "customer": "CA7-JTR",
+    "customer": "CA7-AMP",
     "product": "oil",
     "qty": 5,
     "total": 65,
@@ -3174,7 +3174,7 @@
     "paidOn": "2026-09-08"
    },
    {
-    "customer": "CH5-OUG",
+    "customer": "CM3-OUG",
     "qty": 12.5,
     "total": 650,
     "cost": 600,
@@ -3202,7 +3202,7 @@
     "rid": "s134"
    },
    {
-    "customer": "CE5-TBC",
+    "customer": "CE5-SA",
     "qty": 1,
     "total": 110,
     "cash": 110,
@@ -3371,7 +3371,7 @@
     "rebate": true
    },
    {
-    "customer": "CA7-JTR",
+    "customer": "CA7-AMP",
     "qty": 50,
     "total": 430,
     "cash": 430,
@@ -3498,7 +3498,7 @@
     "rid": "s144"
    },
    {
-    "customer": "CB7-TBC",
+    "customer": "CB7-BJ",
     "qty": 1,
     "total": 100,
     "cost": 44,
@@ -3739,7 +3739,7 @@
     ]
    },
    {
-    "customer": "CA5-KER",
+    "customer": "CA5-BAN",
     "qty": 2,
     "total": 200,
     "cost": 88,
@@ -3939,7 +3939,7 @@
    },
    {
     "date": "2026-09-08",
-    "party": "CH5-OUG",
+    "party": "CM3-OUG",
     "direction": "in",
     "valueKg": 5.5,
     "valueRM": null,
@@ -3950,7 +3950,7 @@
    },
    {
     "date": "2026-09-08",
-    "party": "CA11-SEN",
+    "party": "CA2-SEN",
     "direction": "in",
     "valueKg": 1.5,
     "valueRM": null,
@@ -4006,7 +4006,7 @@
    "CZ6-WM",
    "CR4-PJ",
    "CD4-CS",
-   "CA5-KER",
+   "CA5-BAN",
    "CE4-AD",
    "SF6-KLC",
    "SA5-BTR",
@@ -4017,18 +4017,18 @@
    "CY2-NIL",
    "CR3-PUD",
    "CH4-MAL",
-   "CH5-OUG",
-   "CA11-SEN",
+   "CM3-OUG",
+   "CA2-SEN",
    "CM6-PJ",
    "CK4-SEN",
    "CZ4-MK",
    "CH6-SET",
    "CD7-SEG",
-   "CA7-JTR",
+   "CA7-AMP",
    "CF5-WM",
-   "CE5-TBC",
+   "CE5-SA",
    "CR3-DAM-R",
-   "CB7-TBC",
+   "CB7-BJ",
    "CJ4-OKR-R",
    "CI4-OKR-R",
    "CE4-AD-R"
@@ -4208,9 +4208,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-14T00:37:00.732Z",
+  "QUEUE_COMMITTED": "2026-09-14T02:50:54.863Z",
   "PRICING": {
-   "takenAt": "2026-09-14T02:45:01.795Z",
+   "takenAt": "2026-09-14T02:53:33.767Z",
    "sizes": [
     0.5,
     1,
@@ -4666,10 +4666,10 @@
      ]
     }
    },
-   "v": "v628"
+   "v": "v629"
   },
   "OPEN": {
-   "at": "2026-09-14T02:45:01.867Z",
+   "at": "2026-09-14T02:53:33.861Z",
    "count": 10,
    "byKey": {
     "CM4-MK|2026-09-13|330": {
@@ -4866,7 +4866,7 @@
     "salt": "2026-09-08",
     "oil": "2026-09-09"
    },
-   "v": "v628"
+   "v": "v629"
   }
  }
 }

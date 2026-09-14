@@ -150,15 +150,14 @@
   "CZ6-WM": "WM",
   "CR4-PJ": "PJ",
   "CD4-CS": "CS",
-  "CA5-KER": "KER",
   "CE4-AD": "AD",
   "CA5-SEN": "SEN",
   "SP7-PUD": "PUD",
   "SM4-KEP": "KEP",
   "CR3-PUD": "PUD",
   "CH4-MAL": "MLR",
-  "CA11-SEN": "SEN",
-  "CM6-PJ": "PJ"
+  "CM6-PJ": "PJ",
+  "CA2-SEN": "SEN"
  },
  "NOTES": {
   "PLACES": [
