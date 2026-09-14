@@ -68,7 +68,7 @@ document.addEventListener('visibilitychange',function(){
    localStorage before it posts anything and the load reads it straight back.
    The same tick retries a held entry, which is what gets a phone write to the cloud
    without waiting for the next open. */
-var SALT_BUILD_ID="5799a4e87b1ef0c7";
+var SALT_BUILD_ID="06e4f1c26d8e83ed";
 var SALT_REV_MS=10000;
 (function(){
   var chip=null,timer=null;
@@ -4040,7 +4040,14 @@ function txCost(s){return s.cost!=null?+s.cost:null;}
 function txUnitCost(s,fallback){return (s.cost!=null&&s.qty>0)?+s.cost/s.qty:(fallback==null?null:fallback);}
 function txPhys(s){return (s.deliveredQty||0);}
 function txEffDeliv(s){return txDeliv(s)+(s.advanceUnits||0);}
-function txAdvance(s){return Math.max(0,(s.deliveredQty||0)*txPrice(s)-txPaid(s));}
+/* v634, HIS INSTRUCTION OF 14 SEP 2026: "Write-off defaulted entries". A DEFAULTED SALE IS WRITTEN OFF, not carried.
+   Since 05 Sep a declared default was provisioned in full and kept as gross owed, so the desk went on chasing it,
+   counting it against the party's credit and offering the party more. What a defaulted sale still has out and unpaid
+   is now written off: txAdvance reads nothing owed on it, as poOwed has read nothing owed on a defaulted lot since
+   v438, and txWrittenOff carries the figure to every reading of what was LOST, so no loss leaves the book. */
+function txUnpaidOut(s){return Math.max(0,(s.deliveredQty||0)*txPrice(s)-txPaid(s));}
+function txAdvance(s){return s.defaulted?0:txUnpaidOut(s);}
+function txWrittenOff(s){return s.defaulted?txUnpaidOut(s):0;}
 /* A CANCELLED ORDER OWES NO SALT. txPendUnits, txPendUnitsRaw and txPendRM, the three lines
    directly below, have opened with this guard since they were written; this one never did, and
    it is the one that turns MONEY into a claim on the shelf. txDeferUnits asks how much salt has
@@ -4216,9 +4223,10 @@ function provRate(days){return days>=21?1:days>=14?0.75:days>=8?0.5:days>=4?0.25
    by how long it has been out; a default is his statement that it will not come at all, and it
    beats the ladder the way the supplier write-off beats it four lines below in the walk. This is
    the ONE reader of that fact for the sale side. Every net-of-ladder figure on the desk goes
-   through it, so gross keeps the number everywhere (the record of what was traded and lost, the
-   numerator of the provision, the reason pxParty penalises the party's next quote) and net goes
-   to zero everywhere (what the desk expects to collect). The supplier readers keep calling
+   through it. SINCE v634 THE DEFAULT IS WRITTEN OFF (his instruction, 14 Sep 2026): txAdvance reads
+   nothing owed on a defaulted sale, so it reaches no receivable at all, and txWrittenOff carries
+   the figure to what was lost (the P&L, the month's charge, the bad-debt rate, the party's quote).
+   The rate still answers 1 for a caller that hands it the row. The supplier readers keep calling
    provRate directly: that side has its own rule and its own record. */
 function saleProvRate(s,days){return (s&&s.defaulted)?1:provRate(days);}
 /* ============ THE WALK (was recompute) ============
@@ -4295,8 +4303,9 @@ function walk(I){
   /* AR = advance only: pending unpaid-and-undelivered is not a receivable */
   W.arList=_S.filter(s=>txAdvance(s)>0.009);
   W.arGross=W.arList.reduce((a,s)=>a+txAdvance(s),0);
-  W.ar=Math.max(0,+W.arList.reduce((a,s)=>a+txAdvance(s)*(1-saleProvRate(s,dage(s.date))),0).toFixed(2)); // net of provisioning; a declared default nets to zero
+  W.ar=Math.max(0,+W.arList.reduce((a,s)=>a+txAdvance(s)*(1-saleProvRate(s,dage(s.date))),0).toFixed(2)); // net of provisioning; a written-off default is not on the list
   W.advTotal=W.arGross;
+  W.writtenOffRM=+_S.reduce((a,s)=>a+txWrittenOff(s),0).toFixed(2);   // v634: off the receivables, still a loss
   W.defUnits=+_S.reduce((a,s)=>a+txDeferUnits(s),0).toFixed(2);
   const _sr=I.isSalt?(I.supplierReceivable||null):null;
   W.supRecovGross=_sr?_sr.amount:0;
@@ -4658,7 +4667,7 @@ function renameInBook(book,pairs){
   walk(book);return n;
 }
 
-return {txPrice:txPrice,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:txEffDeliv,txAdvance:txAdvance,
+return {txPrice:txPrice,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:txEffDeliv,txAdvance:txAdvance,txWrittenOff:txWrittenOff,
         txDeferUnits:txDeferUnits,txPendUnits:txPendUnits,txPendUnitsRaw:txPendUnitsRaw,txPendRM:txPendRM,txStat:txStat,txDates:txDates,txGoods:txGoods,
         poRecvUnits:poRecvUnits,poCash:poCash,poLive:poLive,poOwed:poOwed,poRate:poRate,poOpenUnits:poOpenUnits,poStat:poStat,provRate:provRate,saleProvRate:saleProvRate,
         daysBetween:daysBetween,dayAge:dayAge,walk:walk,coverStats:coverStats,commitments:commitments,
@@ -6853,7 +6862,9 @@ const quoteFor=p=>{const f=QUOTES[p||PROD];return f?f():null;};
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{"v":"v633","d":"14 Sep 2026","t":"A PARTY'S PLACE REACHES THE MAP ON ITS OWN, FROM WHAT IS TYPED AT ADD ID AND AMEND ID","n":["<b>HIS DECISION OF 14 SEP 2026: AUTOMATIC FROM THE TYPED PLACE.</b> Names and IDs never moved the map: a party was drawn where the last letters of their code pointed, and a code whose letters named no known place was not drawn at all. Now the place typed at Add ID or Amend ID is looked up as it is typed, the whole place first, then its parts, then runs of its words, each wording as an official area name and then in a place list built into the desk. A place found is drawn on a map under the form at the point it will file; a place not found, or a name standing for places more than 3 km apart, is tapped on that map, and Record waits for the point. Only the code and the point travel, to 0.01 degrees, about a kilometre. The place typed stays in the vault.","<b>THE PLACE LIST IS GEONAMES, HASHED.</b> tools/gazfetch.mjs reads GeoNames' Malaysia extract (CC BY 4.0) and keeps every populated place and locality in Selangor, Kuala Lumpur, Putrajaya and Negeri Sembilan under each Latin spelling: 5,149 names. The public desk may carry no place from the directory, and a plain list of the core states holds most of them, so each name is kept as seven hex characters of SHA-256 over its placeKey beside a packed point, 55 KB in geo/gazetteer.json, inlined by geosync. It is built from GeoNames alone, never from the directory. A five-letter word on its own counts only as an area name, since the list holds too many short words. Of the 42 places recorded on the directory, 33 are found as typed and 9 will need a tap.","<b>WHERE THE POINT GOES.</b> A registration and a rename carry it as geo. Amend ID keeping the code queues it as the new collection place, and so does the map's <b>Place parties from their recorded places</b>, shown with the names open, which looks up every party with no point from the vault, sends those found to Approve as one entry and lists by code those it could not find. The fold files the point in PLACED on the book, a rename moves it with the code, and placeOf reads it before the letters of a code. migrations/0009 adds place to the draft table's CHECK, applied on its own to the live D1 before this deploy. The map and the form credit GeoNames beside the boundaries.","<b>THE CHECKS.</b> A new section of 41 assertions: the engine's wordings, a fixture GeoNames extract through the real builder and read back by the desk, the drafter's point and its refusals, the fold's filing and a rename's move, the lookup order and the five-letter rule, the Add ID pane found, not found and tapped on a map shown at half size, Amend ID's three roads, the map's one-entry placement, the credits and the Approve card. 38 mutations each turn the assertion they target red. The v528, Add ID and v628 sections now tap a point before Record, as the pane requires.","<b>AND ONE SECTION OF THE SUITE STOPS LEANING ON THE LIVE BOOK.</b> The cloud's run for v631 went red after the phone was live: the v617 section counted the whole queue after the automatic offset had run over the real network, and on that day's book an associate still here held a free unit and an advance, which the desk rightly offered. The section now forces such an associate beside its departed one and reads the queue for the departed party alone, and the other associate's offer shows the offset really ran. Proved red four ways, the old reading among them."]},
+const evolution=[{"v":"v634","d":"14 Sep 2026","t":"A DEFAULTED SALE IS WRITTEN OFF: OFF WHAT IS OWED, STILL IN WHAT WAS LOST","n":["<b>HIS INSTRUCTION OF 14 SEP 2026: WRITE OFF THE DEFAULTED ENTRIES.</b> Since 05 Sep a default was provisioned in full and kept as gross owed, so the desk went on treating the money as live: Today said to chase CA4-DAM for RM 260 and that CA4-DAM broke three rules, the register listed a credit cap breach and two credit age breaches, Advances out read RM 642, and the Customers board and Plans put the party up for an approach and a message. A defaulted sale is now written off. What it had out and unpaid leaves every reading of what is owed: txAdvance reads nothing owed on it, as poOwed has read nothing owed on a defaulted lot since v438, and a written-off sale holds no credit. Advances out and the debtors table read RM 382, and the table says under it what was written off.","<b>NOTHING LOST LEAVES THE BOOK, AND NO PRICE MOVES.</b> txWrittenOff carries the figure wherever the desk reads a loss. The Financials impairment line reads RM 328 as it did, now RM 260 written off and RM 68 loss allowance on open balances, so operating profit is unchanged, and the month's charge, the bad-debt rate in the price stack, the receivables signal and a party's quote adjustment read what they read before. The pricing snapshot, every tier's quote at every size and CA4-DAM's quote were compared against v633 and are identical. The customer's own statement is untouched: a write-off does not forgive the debt.","<b>A PARTY WITH A WRITE-OFF IS NOT WORKED.</b> His word of 09 Sep on CA4-DAM was that they had disappeared, with no more contact. The chase had been the one guard keeping them off the approach lists, so every list that skips a banned or departed party now skips a party with a write-off too: the Customers board, the phone's approach list, Today's reconnect count, and the message Plans suggests, which had never skipped a banned or departed party either. Paid back, the party can be approached again. The Order book card reads the write-offs from the rows that carry them.","<b>THE CHECKS.</b> A new section of 13 assertions on a forced fixture, a customer read before and after an aged advance is defaulted: what is owed moves by the advance on the desk and the phone, credit and rules clear, the chase and every approach go, and operating profit, the bad-debt rate, the month's charge, the signal, the pricing snapshot and the party's quote stay exactly where they were. 22 mutations each turn the assertion they target red. Three older checks encoded the old treatment and are restated: the engine's gross keeps the number, the Order book's claims marked and skipped, and a credit breach that leaned on CA4-DAM's live row, now a fixture."]},
+
+{"v":"v633","d":"14 Sep 2026","t":"A PARTY'S PLACE REACHES THE MAP ON ITS OWN, FROM WHAT IS TYPED AT ADD ID AND AMEND ID","n":["<b>HIS DECISION OF 14 SEP 2026: AUTOMATIC FROM THE TYPED PLACE.</b> Names and IDs never moved the map: a party was drawn where the last letters of their code pointed, and a code whose letters named no known place was not drawn at all. Now the place typed at Add ID or Amend ID is looked up as it is typed, the whole place first, then its parts, then runs of its words, each wording as an official area name and then in a place list built into the desk. A place found is drawn on a map under the form at the point it will file; a place not found, or a name standing for places more than 3 km apart, is tapped on that map, and Record waits for the point. Only the code and the point travel, to 0.01 degrees, about a kilometre. The place typed stays in the vault.","<b>THE PLACE LIST IS GEONAMES, HASHED.</b> tools/gazfetch.mjs reads GeoNames' Malaysia extract (CC BY 4.0) and keeps every populated place and locality in Selangor, Kuala Lumpur, Putrajaya and Negeri Sembilan under each Latin spelling: 5,149 names. The public desk may carry no place from the directory, and a plain list of the core states holds most of them, so each name is kept as seven hex characters of SHA-256 over its placeKey beside a packed point, 55 KB in geo/gazetteer.json, inlined by geosync. It is built from GeoNames alone, never from the directory. A five-letter word on its own counts only as an area name, since the list holds too many short words. Of the 42 places recorded on the directory, 33 are found as typed and 9 will need a tap.","<b>WHERE THE POINT GOES.</b> A registration and a rename carry it as geo. Amend ID keeping the code queues it as the new collection place, and so does the map's <b>Place parties from their recorded places</b>, shown with the names open, which looks up every party with no point from the vault, sends those found to Approve as one entry and lists by code those it could not find. The fold files the point in PLACED on the book, a rename moves it with the code, and placeOf reads it before the letters of a code. migrations/0009 adds place to the draft table's CHECK, applied on its own to the live D1 before this deploy. The map and the form credit GeoNames beside the boundaries.","<b>THE CHECKS.</b> A new section of 41 assertions: the engine's wordings, a fixture GeoNames extract through the real builder and read back by the desk, the drafter's point and its refusals, the fold's filing and a rename's move, the lookup order and the five-letter rule, the Add ID pane found, not found and tapped on a map shown at half size, Amend ID's three roads, the map's one-entry placement, the credits and the Approve card. 38 mutations each turn the assertion they target red. The v528, Add ID and v628 sections now tap a point before Record, as the pane requires.","<b>AND ONE SECTION OF THE SUITE STOPS LEANING ON THE LIVE BOOK.</b> The cloud's run for v631 went red after the phone was live: the v617 section counted the whole queue after the automatic offset had run over the real network, and on that day's book an associate still here held a free unit and an advance, which the desk rightly offered. The section now forces such an associate beside its departed one and reads the queue for the departed party alone, and the other associate's offer shows the offset really ran. Proved red four ways, the old reading among them."]},
 
 {"v":"v632","d":"14 Sep 2026","t":"AN ADVANCE ON THE BOOK SINCE 30 AUG IS SETTLED IN KIND, SO THE ROW NO LONGER READS AS OWED","n":["<b>ONE CORRECTION FOLDED, NO CASH AND NO STOCK BEHIND IT.</b> The fold patches s124, CN6-WM's salt order of 30 Aug, 1 unit for RM110: settledRM from unset to 110, rebate from false to true, rebateKg from unset to 1. It changes only what the row says about itself, so the ledger stands at 76.95 and stock at 8.94 units. The desk decided it on 14 Sep and the drafter raised no flag against it.","<b>WHAT IS UNUSUAL IS THE PARTY, NOT THE PATCH.</b> CN6-WM now carries seven orders at a RM100 median in a RM75 to RM110 range, RM210 outstanding and 2 units on credit against his cap, with nothing defaulted. The RM110 on s124 sits at the top of that range. The inventory did nothing: no lot landed, cost basis holds at RM44 a unit against a RM46 replacement, and the reorder mark of 15 units is untouched."]},
 
@@ -7329,7 +7340,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='14 Sep 2026, 13:03 KL';
+const LAST_UPDATED='14 Sep 2026, 14:31 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -7374,7 +7385,7 @@ const LAST_UPDATED='14 Sep 2026, 13:03 KL';
    above the old mark and the only one folded here. */
 /* QUEUE_COMMITTED: declared in the BOOK block near the top of this script, generated from ledger/book.json (v339). */
 
-var goodwillRM,receivedPO,defaultPO,pricedSales,buyUnits,buyRM,wavgBuy,soldUnits,ledgerStock,currentStock,selfUse,surplus,revTotal,outstandingOf,revCollected,arList,ar,arGross,cogs,grossMargin,marginPct,advTotal,defUnits,supRecovNet,supRecovGross;
+var goodwillRM,receivedPO,defaultPO,pricedSales,buyUnits,buyRM,wavgBuy,soldUnits,ledgerStock,currentStock,selfUse,surplus,revTotal,outstandingOf,revCollected,arList,ar,arGross,cogs,grossMargin,marginPct,advTotal,writtenOffRM,defUnits,supRecovNet,supRecovGross;
 /* ---- three-axis status engine (R1) ---- */
 function txPrice(s){return POSITION_ENGINE.txPrice(s);}
 function txPaid(s){return POSITION_ENGINE.txPaid(s);}          // cash + non-cash settled
@@ -7383,7 +7394,8 @@ function txDeliv(s){return POSITION_ENGINE.txDeliv(s);} // physical + offset ful
 function txCost(s){return POSITION_ENGINE.txCost(s);}                 // v496: the order's cost, RM, absolute
 function txUnitCost(s,f){return POSITION_ENGINE.txUnitCost(s,f);}    // v496: the one derivation of RM per unit
 function txPhys(s){return POSITION_ENGINE.txPhys(s);}                    // physical only -> inventory
-function txAdvance(s){return POSITION_ENGINE.txAdvance(s);}      // delivered-unpaid -> AR
+function txAdvance(s){return POSITION_ENGINE.txAdvance(s);}      // delivered-unpaid -> AR; nothing on a written-off default (v634)
+function txWrittenOff(s){return POSITION_ENGINE.txWrittenOff(s);}   // v634: what a defaulted sale had out and unpaid, written off
 function txEffDeliv(s){return POSITION_ENGINE.txEffDeliv(s);} // physical + offset fulfilment + goods-equivalent of a netted prior advance (valued at the originating orders' rates)
 function txDeferUnits(s){return POSITION_ENGINE.txDeferUnits(s);} // paid ahead of (effective) delivery -> salt you owe
 function txPendUnits(s){return POSITION_ENGINE.txPendUnits(s);} // neither paid nor delivered -> pending order slice
@@ -8773,7 +8785,7 @@ const COST_BOOK={
 function riskRates(){
   const supLost=purchases.filter(p=>p.defaulted||p.writtenOff).reduce((a,p)=>a+poCash(p),0);
   const supSpent=purchases.reduce((a,p)=>a+poCash(p),0);
-  const provision=Math.max(0,+(arGross-ar).toFixed(2));      // what the ladder already discounts
+  const provision=Math.max(0,+(arGross-ar+writtenOffRM).toFixed(2));      // what the ladder already discounts, and what the book wrote off (v634): both are revenue never collected
   return {
     supplierLostRM:+supLost.toFixed(2), supplierSpentRM:+supSpent.toFixed(2),
     supplierPct:supSpent>0?+(supLost/supSpent*100).toFixed(2):null,
@@ -9240,7 +9252,7 @@ const capForParty=(id,prod)=>{try{return creditCapFor(prod,associateIds().indexO
    book row and the Today advances measured units DELIVERED, so a 2 unit sale with RM 35 left to
    pay read "over cap" against a 1 unit cap while the register, rightly, named no breach. Every
    reader now asks these two. */
-function creditOutUnits(s){if(s.cancelled||s.exemptCap)return 0;const p=txPrice(s);return p>0?Math.max(0,(s.deliveredQty||0)-txPaid(s)/p):0;}
+function creditOutUnits(s){if(s.cancelled||s.exemptCap||s.defaulted)return 0;   /* v634: a written-off sale holds no credit */const p=txPrice(s);return p>0?Math.max(0,(s.deliveredQty||0)-txPaid(s)/p):0;}
 function creditOutBy(){const by={};sales.forEach(s=>{const u=creditOutUnits(s);if(u>0.009){const k=s.customer+'|'+prodOf(s);by[k]=+((by[k]||0)+u).toFixed(2);}});return by;}
 function overCap(s){const by=creditOutBy();return (by[s.customer+'|'+prodOf(s)]||0)>capForParty(s.customer,prodOf(s))+0.009;}
 function boundaryScan(){
@@ -9446,7 +9458,7 @@ function recompute(){
   stockCounted=W.stockCounted;currentStock=W.currentStock;selfUse=W.selfUse;surplus=W.surplus;
   revTotal=W.revTotal;revCollected=W.revCollected;
   outstandingOf=txAdvance;                     // AR = advance only (pending unpaid+undelivered is not a receivable)
-  arList=W.arList;arGross=W.arGross;ar=W.ar;advTotal=W.advTotal;defUnits=W.defUnits;
+  arList=W.arList;arGross=W.arGross;ar=W.ar;advTotal=W.advTotal;writtenOffRM=W.writtenOffRM;defUnits=W.defUnits;
   supRecovGross=W.supRecovGross;supRecovNet=W.supRecovNet;
   cogs=W.cogs;grossMargin=W.grossMargin;marginPct=W.marginPct;
   try{buildPriceTiers();}catch(e){}   // the board is derived, so it is rebuilt with everything else
@@ -9590,6 +9602,11 @@ const isBanned=id=>PEOPLE.banned.some(b=>b.id===id&&!b.lifted);   // a lifted ba
 const banOf=id=>PEOPLE.banned.find(b=>b.id===id&&!b.lifted)||null;
 const isDeparted=id=>PEOPLE.departed.some(b=>b.id===id);
 const departOf=id=>PEOPLE.departed.find(b=>b.id===id)||null;
+/* v634: A PARTY WITH A SALE WRITTEN OFF IS NOT WORKED. His word of 09 Sep on CA4-DAM: "Disappeared, MIA. No more contact."
+   The write-off took the debt out of every chase, and with it the one guard that had kept the party off the approach list,
+   so the lists that already skip a banned or departed party skip this one too. Paid back, the party can be approached again. */
+const hasWriteOff=id=>sales.some(s=>s.customer===id&&txWrittenOff(s)>0.009);
+const approachable=id=>!isBanned(id)&&!isDeparted(id)&&!hasWriteOff(id);
 /* CM6-HCM is flagged as a one-off on the trader's own reading. It is 19% of all gross
    margin from a single 12.5 unit order at RM104/unit, nearly 50% above what wholesale
    otherwise commands, so leaving it in the averages flatters every wholesale figure
@@ -12455,7 +12472,7 @@ function finRows(){
   pricedSales.forEach(t=>{if(!t.date){undated.push(t);return;}const mo=t.date.slice(0,7);
     bump(mo,'rev',(t.total||0)-txPendRM(t));bump(mo,'cogs',(t.qty-txPendUnitsRaw(t))*costOf(t));bump(mo,'cash',t.cash||0);bump(mo,'kg',t.qty-txPendUnitsRaw(t));
     bump(mo,'inkind',(t.waived||0)+((t.settle==='barter'||t.rebate)?(t.settledRM||0):0));
-    bump(mo,'provAR',+(txAdvance(t)*saleProvRate(t,dAge(t.date))).toFixed(2));});
+    bump(mo,'provAR',+(txAdvance(t)*saleProvRate(t,dAge(t.date))+txWrittenOff(t)).toFixed(2));});   // v634: a write-off stays charged in its month
   /* v385: THE CLAIM IS SALT'S, SO ONLY SALT'S MONTHS MOVE. supRecovGross is nil on any other
      book by construction, but the bump fired regardless and CREATED the month it was keyed to:
      the oil P&L opened a July column with no oil trade in it, every cell a dash and a gross
@@ -12687,7 +12704,7 @@ function ifrsPanel(){
       ${L('<b>Gross profit</b>',F.gross,{cls:'tot',n:`${F.grossPct==null?'no revenue yet':`${F.grossPct}% of revenue`}${F.freightCos>0.009?`, and ${fmt0(F.freightCos)} under the gross margin above, which charges goods only`:''}`})}
       ${L('Selling and distribution',-F.selling,{neg:true,ref:'IAS 2.16(d)',n:`${F.delAssumed} of ${F.delN} orders delivered at ${fmt0(COST_BASIS.txnPerDelivery.rm)}, the rest collected`})}
       ${L('Non-revenue '+P.name.toLowerCase(),-F.nonRev,{neg:true,ref:'IAS 2.16(a)',n:F.nonRevUnits?`${units(F.nonRevUnits)} out without a sale, at ${fmt(F.unitCost)}`:'none'})}
-      ${L('Impairment &mdash; trade receivables',-F.ecl,{neg:true,ref:'IFRS 9',n:F.ecl?'loss allowance on open balances':'no open balance'})}
+      ${L('Impairment &mdash; trade receivables',-+(F.ecl+F.wOff).toFixed(2),{neg:true,ref:'IFRS 9',n:F.wOff?`${fmt0(F.wOff)} written off${F.ecl?`, ${fmt0(F.ecl)} loss allowance on open balances`:''}`:F.ecl?'loss allowance on open balances':'no open balance'})}
       ${L('Impairment &mdash; supplier prepayment',-F.supImp,{neg:true,ref:'IAS 36',n:F.supImp?`${ID(supplierReceivable.party)}, paid and never delivered`:'none'})}
       ${L('<b>Operating profit</b>',F.opProfit,{cls:'tot',n:F.opPct==null?'no revenue yet':`${F.opPct}% of revenue`})}
     </tbody></table>
@@ -13028,7 +13045,7 @@ function phonePayloadBuild(){
       const out={approach:[],network:[],rewards:[],map:{places:[],unplaced:0,far:0}};
       try{
         const owed={};(arList||[]).forEach(s=>{const g=outstandingOf(s);if(g>0.009)owed[s.customer]=+((owed[s.customer]||0)+g).toFixed(2);});
-        out.approach=byCustomer().map(x=>x.id).filter(id=>!isBanned(id)&&!isDeparted(id)).map(id=>{
+        out.approach=byCustomer().map(x=>x.id).filter(approachable).map(id=>{
           const nb=nextBest(id);if(!nb||!nb.cad)return null;
           return {id:id,q:+(+nb.q).toFixed(2),paid:nb.paid,ask:nb.total==null?null:+(+nb.total).toFixed(2),every:nb.cad.med,since:nb.since,due:nb.due==null?null:nb.due,owed:owed[id]||0};
         }).filter(Boolean).sort((a,b)=>((b.due==null?-1e9:b.due)-(a.due==null?-1e9:a.due)));
@@ -13340,7 +13357,8 @@ function tabReceivables(){
   </div>
   <div class="card" style="margin-top:14px"><div class="cardh">Ageing against the ladder <span class="sub">gross and what it is realistically worth</span></div><div class="chartbox" style="height:190px"><canvas id="rcAgeChart"></canvas></div></div>
   ${sec('Cash owed to you',`advance deliveries &mdash; ${nm} out, payment short; aged &amp; provisioned`,cCash.length,
-    `<table><thead><tr><th class="l">Customer</th><th>Age</th><th>Gross</th><th>Prov.</th><th>Net</th></tr></thead><tbody>${cCashBody}<tr class="tot"><td class="l" colspan="2">Total</td><td>${fmt0(arGross)}</td><td>&mdash;</td><td>${fmt0(ar)}</td></tr></tbody></table>`)}
+    `<table><thead><tr><th class="l">Customer</th><th>Age</th><th>Gross</th><th>Prov.</th><th>Net</th></tr></thead><tbody>${cCashBody}<tr class="tot"><td class="l" colspan="2">Total</td><td>${fmt0(arGross)}</td><td>&mdash;</td><td>${fmt0(ar)}</td></tr></tbody></table>`
+    +(writtenOffRM>0.009?`<div class="wooff" style="margin-top:8px;font-size:12px;color:var(--mut)">Written off, and out of this table: ${fmt0(writtenOffRM)}, ${[...new Set(sales.filter(s=>prodOf(s)===PROD&&txWrittenOff(s)>0.009).map(s=>ID(s.customer)))].join(', ')}.</div>`:''))}
   ${sec(`${NM} you owe them`,'paid ahead of delivery &mdash; goods still to hand over',cSalt.length,
     `<table><thead><tr><th class="l">Customer</th><th class="l">Since</th><th>Unit owed</th><th>Value</th></tr></thead><tbody>${cSaltBody}<tr class="tot"><td class="l" colspan="2">Total</td><td>${units(cSaltUnits)}</td><td>${fmt0(cSaltRm)}</td></tr></tbody></table>${cSaltUnits>currentStock?`<div class="dsc" style="margin-top:8px"><span class="risk">Exceeds ${units(currentStock)} on hand &mdash; restock to cover.</span></div>`:''}`)}
   ${sec(`${NM} you borrowed`,'lent to you, to return unit for unit',bIn.length,
@@ -13868,7 +13886,7 @@ function observations(){
      and a customer who buys monthly are both silent at three weeks and only one of them
      has gone quiet. */
   const late=[];
-  cust.forEach(c=>{
+  cust.filter(approachable).forEach(c=>{   // v634: no message to a party written off, banned or departed, as the approach list
     const rows=D.filter(s=>s.customer===c).sort((a,b)=>{const x=a.date,y=b.date;if(!x||!y)return (!x&&!y)?0:(!x?1:-1);return x<y?-1:x>y?1:0;});
     if(rows.length<3)return;
     const gaps=[];for(let i=1;i<rows.length;i++)gaps.push((new Date(rows[i].date)-new Date(rows[i-1].date))/86400000);
@@ -15165,6 +15183,9 @@ function ifrsPL(p){
      carried against open receivables is the loss allowance. Supplier prepayments that will
      not be recovered are a separate impairment, not a credit loss on a trade receivable. */
   const ecl=(P===PROD)?Math.max(0,+(arGross-ar).toFixed(2)):0;
+  /* v634: a defaulted sale is written off and leaves arGross, so the loss stands here beside the allowance, on the same
+     line, and writing it off moves no operating result */
+  const wOff=(P===PROD)?writtenOffRM:0;
   /* the SF6-KLC write-off is a SALT prepayment for goods never delivered. Guarding on
      P===PROD was wrong: it put a salt loss into oil's statement the moment oil was the
      selected product. It belongs to the book it happened on and to no other. */
@@ -15175,7 +15196,7 @@ function ifrsPL(p){
   /* v531: ONE BUCKET, on his instruction of 08 Sep 2026. Promotion, leakage and his own use are one
      line, non-revenue salt or oil, at cost, inside the operating result; the drawing line is gone. */
   const nonRevUnits=+(sampleUnits+ownUnits+abnUnits).toFixed(2), nonRev=+(marketing+ownUse+abnormal).toFixed(2);
-  const opex=+(selling+nonRev+ecl+supImp).toFixed(2);
+  const opex=+(selling+nonRev+ecl+wOff+supImp).toFixed(2);
   const opProfit=+(gross-opex).toFixed(2);
   // closing inventory at the LOWER OF COST AND NRV (IAS 2.9)
   const closeUnits=(P===PROD)?currentStock:0;
@@ -15191,7 +15212,7 @@ function ifrsPL(p){
   const nrv=nrvRate!=null?+(closeUnits*nrvRate).toFixed(2):null;
   const carrying=(nrv!=null&&nrv<atCost)?nrv:atCost;
   return {rev,goods,freightCos,cos,gross,grossPct:rev>0?+(gross/rev*100).toFixed(1):null,
-    selling,marketing,abnormal,ecl,supImp,opex,opProfit,
+    selling,marketing,abnormal,ecl,wOff,supImp,opex,opProfit,
     opPct:rev>0?+(opProfit/rev*100).toFixed(1):null,
     soldUnits:soldUnitsP,freightPerUnit:+freightPerUnit.toFixed(4),freightTot,lots:lots.length,
     sampleUnits,abnUnits,ownUnits,ownUse,nonRev,nonRevUnits,attributed,unitCost,delN:del.n,delAssumed,
@@ -15261,7 +15282,7 @@ function pxSignals(){
   const sp=cch==null?0:cch>=5?2:cch>=2?1:cch<=-5?-1:cch<=-2?-0.5:0;
   out.push({k:'Purchase cost',v:sp,read:cch==null?'no earlier buying window to compare':`${fmt(c0)}/unit over 30 days against ${fmt(c1)}/unit before, ${cch>=0?'+':''}${cch.toFixed(0)}%`});
   // 4 receivables, as a share of everything ever earned
-  const exposure=+(arGross+supRecovGross).toFixed(2);
+  const exposure=+(arGross+writtenOffRM+supRecovGross).toFixed(2);   // v634: a write-off still counts here, as the supplier's does
   const ep=grossMargin>0?exposure/grossMargin*100:0;
   const sr=ep>30?2:ep>15?1:0;
   out.push({k:'Receivables',v:sr,read:`${fmt0(exposure)} out with others, ${ep.toFixed(0)}% of the ${fmt0(grossMargin)} ever earned`});
@@ -15287,7 +15308,8 @@ function pxParty(id){
   if(brought>=1000)rows.push({k:'Introduced',v:-4,read:`${fmt0(brought)} of business brought in`});
   else if(brought>=250)rows.push({k:'Introduced',v:-2,read:`${fmt0(brought)} of business brought in`});
   const owed=arList.filter(s=>s.customer===id).reduce((a,s)=>a+outstandingOf(s),0);
-  if(owed>0.009)rows.push({k:'Outstanding',v:5,read:`${fmt0(owed)} still owed`});
+  const lost=sales.filter(s=>s.customer===id).reduce((a,s)=>a+txWrittenOff(s),0);   // v634: a write-off weighs on a quote as the debt did
+  if(owed>0.009||lost>0.009)rows.push({k:'Outstanding',v:5,read:owed>0.009?`${fmt0(owed)} still owed`:`${fmt0(lost)} written off`});
   const raw=rows.reduce((a,x)=>a+x.v,0);
   return {rows,raw,net:+Math.max(-PX.partyCap,Math.min(PX.partyCap,raw)).toFixed(2),none:false};
 }
@@ -15608,7 +15630,7 @@ function actions(){
      calendar. A party with one order has no habit and is not counted: the desk has always
      refused to hand him the book average and it is not starting here.
      OUT OF AREA IS COUNTED SEPARATELY AND NAMED, never silently dropped. */
-  const quietAll=custStats().filter(x=>!isBanned(x.id)&&!isDeparted(x.id))
+  const quietAll=custStats().filter(x=>approachable(x.id))
     .map(x=>{const cad=custCadence(x.id);
       return cad?Object.assign({},x,{med:cad.med,late:dbet(x.last)-cad.med}):null;})
     .filter(x=>x&&x.late>0);
@@ -16299,7 +16321,7 @@ function tabConcentration(){
      thing was what it meant. Reversed here: what the book is telling him leads, the
      charts carry the shape, and the table sits at the foot for looking a name up. */
   const approach=c.bc.map(x=>x.id)
-    .filter(id=>!isBanned(id)&&!isDeparted(id))
+    .filter(approachable)
     .map(id=>{const nb=nextBest(id);return nb?Object.assign({id},nb):null;})
     .filter(Boolean)
     .sort((a,b)=>{const ao=a.due==null?-1e9:a.due,bo=b.due==null?-1e9:b.due;
@@ -20104,18 +20126,20 @@ function obClaims(){
      and whose ladder provision is 100%. A claim written off is a loss taken, not a debt to work,
      and naming it as the first call is the desk arguing with its own record. `off` carries that,
      from the same two fields the book already uses: `defaulted` on a sale, `writtenOff` on the
-     supplier receivable, which is how SF6-KLC has stood since 31 Jul. The list keeps them, because
-     gross owed is still gross owed; only the chase skips them. */
-  const row=(who,date,g,pr,off)=>{const d=dAge(date);return {who:who,d:d,g:+(+g).toFixed(2),pr:pr,n:+(g*(1-pr)).toFixed(2),off:!!off};};
-  return sales.filter(s=>txAdvance(s)>0.009).map(s=>row(s.customer,s.date,txAdvance(s),saleProvRate(s,dAge(s.date)),s.defaulted))
-    .concat(sr?[row(sr.party,sr.since,sr.amount,provRate(dAge(sr.since)),sr.status==='writtenOff')]:[])
+     supplier receivable, which is how SF6-KLC has stood since 31 Jul.
+     v634, HIS INSTRUCTION OF 14 SEP 2026: "Write-off defaulted entries". A written-off claim is off this list altogether,
+     since txAdvance reads nothing owed on a defaulted sale, as a written-off supplier receivable already was; the card
+     reads the write-offs from the rows that carry them. */
+  const row=(who,date,g,pr)=>{const d=dAge(date);return {who:who,d:d,g:+(+g).toFixed(2),pr:pr,n:+(g*(1-pr)).toFixed(2)};};
+  return sales.filter(s=>txAdvance(s)>0.009).map(s=>row(s.customer,s.date,txAdvance(s),saleProvRate(s,dAge(s.date))))
+    .concat(sr?[row(sr.party,sr.since,sr.amount,provRate(dAge(sr.since)))]:[])
     .sort((a,b)=>b.d-a.d||b.g-a.g);
 }
 function consoOrderBlock(){
   /* v557: the oldest claim that can still be worked, not the oldest claim. `wo` is what has been
      written off, so the card can say what became of the money rather than printing a dash. */
-  const cl=obClaims(), cf=cashFlow(), o=cl.find(r=>!r.off)||null;
-  const wo=cl.filter(r=>r.off), woG=+wo.reduce((a,r)=>a+r.g,0).toFixed(2);
+  const cl=obClaims(), cf=cashFlow(), o=cl[0]||null;
+  const wo=sales.filter(s=>txWrittenOff(s)>0.009), woG=+wo.reduce((a,s)=>a+txWrittenOff(s),0).toFixed(2);   // v634
   const g=+cl.reduce((a,r)=>a+r.g,0).toFixed(2), n=+cl.reduce((a,r)=>a+r.n,0).toFixed(2);
   const pend=+sales.reduce((a,s)=>a+txPendRM(s),0).toFixed(2);
   const pendB=+purchases.filter(x=>x.pending&&!x.defaulted).reduce((a,x)=>a+(+x.total||0),0).toFixed(2);
@@ -20126,7 +20150,7 @@ function consoOrderBlock(){
     +cell(o&&o.pr>=0.5?'r':'','Chase first',o?ID(o.who):'&mdash;',o
       ? `${o.d} days &middot; ${fmt0(o.g)} gross, ${(o.pr*100).toFixed(0)}% of it already written off by the ladder`
       : wo.length
-        ? `nothing left to chase; ${fmt0(woG)} across ${wo.length} claim${wo.length===1?'':'s'} is written off and the ${wo.length===1?'party is':'parties are'} out of contact`
+        ? `nothing left to chase; ${fmt0(woG)} on ${wo.length} order${wo.length===1?'':'s'} is written off`
         : 'nothing is owed to you')
     +cell('r','You owe, in cash',fmt0(cf.dueOut),cf.dueOut>0.009?`${fmt0(cf.billsOut)} of supplier bills &middot; ${fmt0(cf.refundsOut)} of refunds`:'no bill and no refund outstanding')
     +cell('','Agreed, nothing moved',fmt0(pend),pendB>0.009?`and ${fmt0(pendB)} of buying agreed the same way`:'no buying agreed the same way')
