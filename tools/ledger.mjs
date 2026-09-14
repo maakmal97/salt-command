@@ -85,7 +85,7 @@ const NOT_LEDGER = new Set([
   "LOCS", "PLACES", "METRO", "NON_PLACE", "PLACEHOLDER", "BASEMAP", "BASEMAP_META", "DOW", "DOW3", "KL_HOLIDAYS", "HOL_MAP",
   "AREAS", "AREAS_META", "DISTRICTS", "MAPC" /* v630: the areas the map shades, and its steps; geography, not trade */,
   "GAZ", "GAZ_META" /* v633: the hashed place list; geography, not trade */, "WB_GEO" /* v633: the place being typed on the Enter form */,
-  "MAP_METRICS" /* v635: the names of what the map can shade by */,
+  "MAP_METRICS" /* v635: the names of what the map can shade by */, "MAP_MON" /* v636: month names for the map's period */,
   "LEAK_TEST", "BIO_FIELDS", "PROD_META", "builders",
 
   /* transient UI state, not persisted anywhere */

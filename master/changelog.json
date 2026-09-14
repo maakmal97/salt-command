@@ -1,5 +1,15 @@
 [
  {
+  "v": "v636",
+  "d": "14 Sep 2026",
+  "t": "THE MAP READS A MONTH, A RANGE OR ALL TIME, AND PLAYS THE BOOK MONTH BY MONTH",
+  "n": [
+   "<b>HIS CHOICE OF 14 SEP 2026, THE SECOND MAP LAYER: THE TIME SLIDER.</b> Under the metric switch, a slider picks a whole month, two dates pick a range to the day, each the desk's own date field with Today inside it, and All time takes the period off. Play by month steps from the product's first priced order to this month and stops on the last, or on Stop, and it stops itself when the map is left. The lead line names the period, so a shading always says what it covers.",
+   "<b>THE PERIOD READS THE ORDERS PLACED IN IT.</b> byCustomer takes a row filter now, so revenue, margin, units and customers are the desk's own figures over the period's orders, with one definition for both. Credit owed in a period is what is still owed today on the orders placed in it, not a balance rebuilt as it stood then.",
+   "<b>THE CHECKS.</b> A new section of 13 assertions on fixture customers trading in different months in quiet districts: all time, each month, a range to the day at both ends, credit owed in a period, and the player's start, tick, stop, end and leaving the map, with its timer caught rather than waited on, and Today on the From field moving the period. 16 mutations each turn the assertion they target red. On a phone every control in the row is 44 px tall, with no sideways scroll."
+  ]
+ },
+ {
   "v": "v635",
   "d": "14 Sep 2026",
   "t": "THE MAP SHADES BY REVENUE, MARGIN, UNITS, CUSTOMERS OR CREDIT OWED",

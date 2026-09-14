@@ -11523,5 +11523,73 @@ section("v635: the map shades by revenue, margin, units, customers or credit owe
   } finally { await new Promise((r) => setTimeout(r, 200)); try { w35.close(); } catch (e) { /* best effort */ } }
 }
 
+section("v636: the map reads a month off the slider, a range off two dates, or all time, and plays month by month");
+{
+  /* HIS CHOICE OF 14 SEP 2026, THE TIME SLIDER. Two fixture customers trade in two quiet districts in two different months,
+     and a third owes on an August order, so each period shades a different district. The player's timer is caught rather
+     than waited on, and ticked by hand. The state is forced, never found. Each assertion was proved red by mutation. */
+  const { openMaster: om36 } = await import("../tools/payload.mjs");
+  const { w: w36 } = await om36();
+  const rd36 = (e) => JSON.parse(String(w36.eval("JSON.stringify(" + e + ")")));
+  try {
+    const row36 = (o) => JSON.stringify(Object.assign({ product: "salt", qty: 1, cost: 10, deliveredQty: 1 }, o));
+    w36.eval("(function(){setProd('salt');var at=function(n){var d=DISTRICTS.find(function(x){return x.name===n;});return [d.label[1],d.label[0]];};"
+      + "PLACED['CZ9-TA']=at('Jelebu');PLACED['CZ9-TB']=at('Tampin');PLACED['CZ9-TC']=at('Rembau');roster.push('CZ9-TA','CZ9-TB','CZ9-TC');"
+      + "BASE_SALES.push(" + [
+        row36({ rid: "z636a", customer: "CZ9-TA", date: "2026-07-10", deliveredOn: "2026-07-10", total: 800000, cash: 800000 }),
+        row36({ rid: "z636b", customer: "CZ9-TB", date: "2026-08-10", deliveredOn: "2026-08-10", total: 700000, cash: 700000 }),
+        row36({ rid: "z636c", customer: "CZ9-TC", date: "2026-08-20", deliveredOn: "2026-08-20", total: 60000, cash: 0 }),
+      ].join(",") + ");queue=[];applyOverlay();recompute();MAP_VIEW=null;MAP_METRIC='rev';window.__ticks=[];window.setInterval=function(f){window.__ticks.push(f);return window.__ticks.length;};window.clearInterval=function(){};switchTab('map');})();");
+    const view36 = (call) => rd36("(function(){" + (call || "") + "var s=document.querySelector('.sec.on');"
+      + "var tips={};[].forEach.call(s.querySelectorAll('path.marea'),function(p){var t=(p.querySelector('title')||{}).textContent||'';tips[t.split(':')[0]]={t:t,f:p.getAttribute('fill')};});"
+      + "return {from:MAP_FROM,to:MAP_TO,play:!!MAP_PLAY,lead:(s.querySelector('.dsclead')||{}).textContent,"
+      + "deep:Object.keys(tips).filter(function(k){return tips[k].f==='#d4694c';}),tips:tips,"
+      + "all:(s.querySelector('.mapperiod .viewsw button')||{}).className==='on',btn:(s.querySelector('.mapplay')||{}).textContent,"
+      + "slider:(function(){var r=s.querySelector('.mapmonth');return r?[+r.min,+r.max,+r.value]:null;})(),month:(s.querySelector('.mapmonthname')||{}).textContent,"
+      + "months:mapMonths()};})()");
+    const all = view36("");
+    const iJul = all.months.indexOf("2026-07"), iAug = all.months.indexOf("2026-08");
+    const contiguous = all.months.every((k, i) => i === 0 || (+k.slice(0, 4) * 12 + +k.slice(5, 7)) - (+all.months[i - 1].slice(0, 4) * 12 + +all.months[i - 1].slice(5, 7)) === 1);
+    ok(all.all && !all.from && !all.to && all.deep.includes("Jelebu") && /^Tampin: RM 700,000/.test(all.tips.Tampin.t) && iJul >= 0 && iAug === iJul + 1 && contiguous
+      && all.months[all.months.length - 1] === rd36("TODAY.toISOString().slice(0,7)") && all.slider[1] === all.months.length - 1,
+      "all time shades every month's trade, and the slider runs over every month from the first priced order to this one: " + JSON.stringify([all.months[0], all.months[all.months.length - 1], all.months.length]));
+    const jul = view36("mapMonth(" + iJul + ");");
+    ok(jul.from === "2026-07-01" && jul.to === "2026-07-31" && jul.deep.includes("Jelebu") && jul.tips.Tampin.t === "Tampin: no trade" && /^Revenue by district in Jul 2026,/.test(jul.lead) && jul.month === "Jul 2026" && jul.slider[2] === iJul && !jul.all,
+      "a month off the slider reads that month's orders alone and says which month: " + JSON.stringify([jul.from, jul.to, jul.deep, jul.lead.slice(0, 40)]));
+    const aug = view36("mapMonth(" + iAug + ");");
+    ok(aug.to === "2026-08-31" && aug.deep.includes("Tampin") && aug.tips.Jelebu.t === "Jelebu: no trade" && /in Aug 2026/.test(aug.lead),
+      "and the next month moves the shading with it: " + JSON.stringify([aug.deep, aug.tips.Jelebu.t]));
+    const rng = view36("mapPeriod('2026-07-15','2026-08-15');");
+    ok(rng.deep.includes("Tampin") && rng.tips.Jelebu.t === "Jelebu: no trade" && /by district from 15 Jul 2026 to 15 Aug 2026,/.test(rng.lead) && rng.month.length === 1 && rng.month.charCodeAt(0) === 8212 && /^Rembau: no trade/.test(rng.tips.Rembau.t),
+      "a range off the two dates reads the orders inside it, to the day: " + JSON.stringify([rng.deep, rng.lead.slice(0, 60), rng.tips.Rembau.t]));
+    const day = view36("mapPeriod('2026-07-10','2026-07-10');"), day2 = view36("mapPeriod('2026-08-01','2026-08-10');");
+    ok(day.deep.includes("Jelebu") && /from 10 Jul 2026 to 10 Jul 2026/.test(day.lead) && day2.deep.includes("Tampin") && day2.tips.Jelebu.t === "Jelebu: no trade",
+      "both ends of a range are part of it: an order on the first day and one on the last are read: " + JSON.stringify([day.deep, day2.deep]));
+    const owed = view36("mapMetric('credit');mapMonth(" + iJul + ");"), owedAug = view36("mapMonth(" + iAug + ");");
+    ok(owed.tips.Rembau.t === "Rembau: nothing owed" && /^Rembau: RM 60,000/.test(owedAug.tips.Rembau.t),
+      "credit owed in a period is what is still owed on the orders placed in it: " + JSON.stringify([owed.tips.Rembau.t, owedAug.tips.Rembau.t]));
+    const tod = view36("mapMetric('rev');mapPeriod();var b=document.querySelector('.sec.on .dtoday[data-dt=\"mapFrom\"]');if(b)b.click();");
+    ok(tod.from === rd36("TODAY.toISOString().slice(0,10)") && tod.to === null && /by district since \d+ \w{3} \d{4},/.test(tod.lead),
+      "the From field is the desk's own date field, and its Today button moves the period: " + JSON.stringify([tod.from, tod.lead.slice(0, 45)]));
+    const back = view36("mapMetric('rev');mapPeriod();");
+    ok(back.all && back.from === null && back.to === null && back.deep.includes("Jelebu") && /^Revenue by district, deeper/.test(back.lead), "All time takes the period off again");
+    /* the player: from the first month, a tick a month, stopping itself at the end and when the map is left */
+    const p0 = view36("mapPlay();");
+    const ticks = rd36("window.__ticks.length");
+    ok(p0.play && p0.btn === "Stop" && p0.from === all.months[0] + "-01" && ticks === 1, "Play starts from the first month and offers Stop: " + JSON.stringify([p0.from, p0.btn, ticks]));
+    const p1 = view36("window.__ticks[window.__ticks.length-1]();");
+    ok(p1.from === (all.months[1] || all.months[0]) + "-01" && p1.play, "each tick moves on a month: " + p1.from);
+    const stopped = view36("mapPlay();");
+    ok(!stopped.play && stopped.btn === "Play by month" && stopped.from === p1.from, "Stop halts on the month shown");
+    const again = view36("mapPlay();");
+    const left = rd36("(function(){switchTab('today');window.__ticks[window.__ticks.length-1]();return {play:!!MAP_PLAY,from:MAP_FROM};})()");
+    ok(again.play && !left.play && left.from === again.from, "and the player stops itself when the map is left, without moving the month: " + JSON.stringify(left));
+    w36.eval("switchTab('map');mapPlay();var t=window.__ticks[window.__ticks.length-1];for(var j=0;j<300&&MAP_PLAY;j++)t();");
+    const end = rd36("({play:!!MAP_PLAY,from:MAP_FROM})");
+    ok(!end.play && end.from === all.months[all.months.length - 1] + "-01", "played through, it stops on the last month: " + JSON.stringify(end));
+    w36.eval("MAP_FROM=null;MAP_TO=null;MAP_PLAY=null;");
+  } finally { await new Promise((r) => setTimeout(r, 200)); try { w36.close(); } catch (e) { /* best effort */ } }
+}
+
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
 process.exit(fail ? 1 : 0);
