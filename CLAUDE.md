@@ -67,9 +67,7 @@ The fold routine is `docs/CLOUD_FOLD.md`; statements `docs/STATEMENTS.md`; desig
    an entry, not an omission**, or `ladderFor` hands it salt's. Board prints cheapest first;
    the payload does not. **Nothing clamps the two together and nothing should**: `tier1.over` (v566)
    measures the RM by which Tier 1 exceeds the ask, beside `under`, and the board tags the row and
-   refuses its all-clear; a stated price is quoted anyway. **The customer's suggested price rounds
-   to the nearest five**, never under its floor: `adjustedPrice` and `pbAdjusted`, held together by
-   a 416-point grid in the suite (v566). **Ambassador and five tiers are decided and staged** (his decisions
+   refuses its all-clear; a stated price is quoted anyway. **Ambassador and five tiers are decided and staged** (his decisions
    of 14 and 15 Sep 2026, off his pricing workbook). COGS, purchase plus freight, is the line no price goes
    under; the floor is COGS plus leakage. Ambassador pays the floor, up to the ten, on his word alone and
    earning no free units. The tiers Titanium, Platinum, Gold, Silver and Bronze are columns at multiples
@@ -80,8 +78,9 @@ The fold routine is `docs/CLOUD_FOLD.md`; statements `docs/STATEMENTS.md`; desig
    that. A new customer starts at Bronze; a tier for each product (his instruction of 15 Sep 2026, v646), starting
    nearest what they pay for it. **Each
    customer's tier comes before the switch**, because a switch alone draws every existing price list up
-   toward Bronze (all 36 salt and all 6 oil customers with history, measured 15 Sep 2026). **Quoted nowhere
-   yet** (v641 drew it, v642 named it): `pxPolicy` carries no `tierRule`, and the suite holds it so.
+   toward Bronze (all 36 salt and all 6 oil customers with history, measured 15 Sep 2026). **No quote,
+   board or drafter flag reads the ladder yet** (v641 drew it, v642 named it): `pxPolicy` carries no
+   `tierRule`, and the suite holds it so; the customer's own price list does (below).
    **Each customer's tiers (v643, one for each product since v646)** are `TIER_OF` on the book, code to product
    to level name, set on Customers (the Tiers card: a dropdown for each product with Not set, Set queuing only
    what changed, or Accept for every open proposal) and folded as `tierset`, a null clearing a product; or
@@ -89,7 +88,15 @@ The fold routine is `docs/CLOUD_FOLD.md`; statements `docs/STATEMENTS.md`; desig
    one out, for a customer or either kind of associate, never an end buyer, a bucket or a supplier), which the
    fold files with the registration. A product with none held is proposed the tier nearest what they pay for it
    (`tierProposal`), never Ambassador; one they have never bought is proposed nothing and reads not set, and the
-   card lists customers who have bought nothing yet. Nothing prices off `TIER_OF` yet.
+   card lists customers who have bought nothing yet. **A customer's price is their tier, never above what they
+   pay** (his decisions of 15 Sep 2026, v651): the price of their tier for the product at the size, held or
+   proposed, lowered by their own rate (the median of their last four orders before the week's Monday) to the
+   nearest five, and lifted only to clear the floor, so a long-standing low rate can sit under Ambassador at the
+   smallest sizes. **A product with no tier, held or proposed, is not priced**: their page says price coming soon
+   and offers no order for it, and the desk's printed board prints nothing for it. One rule, the engine's
+   `cardPrice`, called by the customer's price list off the snapshot's `ladder` and `tierOf` (`tools/book.mjs`)
+   and by the desk's printed board (`pbPrices`); the v510 draw toward the ask (`adjustedPrice`, `pbAdjusted`)
+   and its loyalty test retired with it.
 6. **The look is the Salt design system applied as a layer.** Material, type and colour
    are decided in `design/desk.css` over the vendored `design/salt-ds.css`; a colour or
    type change is an edit there, then `--sync`, then build, never a hex in the master's
@@ -317,9 +324,9 @@ losing it re-issues every account. `tools/make_statements.mjs` (the v387 desk's
 statement code, plain node) and `tools/qr.mjs` feed it.
 
 **Behind the password since v499 (06 Sep 2026): statements, prices, order.** The price
-list (`tools/pricelist.mjs`: median of the last four orders before the week's Monday, drawn
-toward the board's ask by `adjustedPrice` (v510), never below the floor; no history means
-the ask) is sealed in by the
+list (`tools/pricelist.mjs`: the customer's tier for each product, never above the median of their last four
+orders before the week's Monday, through the engine's `cardPrice` since v651, rule 5; a product with no tier
+reads price coming soon and cannot be ordered) is sealed in by the
 publish, which opens the master in jsdom for the PRICING inputs. Orders live in the site's
 KV (`stmt/orders.js`) on a session `/open` mints; payment at `ready` only, one QR Command
 link per rail, accounts from `stmt/pay.js` (`tools/paysync.mjs`, no number ships). The desk

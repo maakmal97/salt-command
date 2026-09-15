@@ -185,19 +185,20 @@ the record. Nothing about the statements changed.
 it in the same publish, under the same content key, so the site still holds nothing it can
 read. `tools/pricelist.mjs` is the whole rule: the customer's rate on a product is the median
 unit rate of his last four committed orders of it, read from orders dated before the week's
-Monday in Kuala Lumpur, so the rate he is shown cannot move inside a week; each board size is
-that rate times the size, drawn toward the board (v510): up a quarter of the gap to the ask
-where he sits under it, up half the gap and never under the floor where he sits under the
-floor, down half the gap and never above three times COGS where he sits above a 2x markup,
-down a quarter of the gap where he is loyal (three orders, the last within fourteen days) and
-above the ask, his own rate otherwise; then up to the ringgit. `adjustedPrice` in the module
-and `pbAdjusted` on the desk are the same rule and the suite proves it. One price per size,
-for the goods (v502): delivery is not on the list. It is a figure
+Monday in Kuala Lumpur, so the rate he is shown cannot move inside a week. Since v651 (his
+decisions of 15 Sep 2026) each board size is the price of the customer's tier for that product, the
+tier held on the book or proposed from what they pay for it, never above that rate times the size to
+the nearest five, and lifted only to clear the floor: the engine's `cardPrice`, which the desk's
+printed board calls too, and the suite holds the two equal. The v510 draw toward the ask retired
+with it. **A product with no tier, held or proposed, is not priced**: the list carries it in `soon`,
+the page says its price is coming soon, and the order form does not offer it. One
+price per size, for the goods (v502): delivery is not on the list. It is a figure
 he types when he marks an order ready to deliver, the customer sees goods plus delivery as the
 sum to pay, and the sale carries it as its own field, `delivery`, inside the total. A customer
-with no history on a product sees the board's ask. Nothing outside the engine prices: the
-publish opens the master in jsdom for the desk's PRICING inputs (the same the drafter reads)
-and calls `floorTotal` and `priceLadder`. `node tools/pricelist.mjs --show <CODE>` prints what
+with a tier and no history on a product sees the tier's price. Nothing outside the
+engine prices: the publish opens the master in jsdom for the desk's PRICING inputs (the same the
+drafter reads), which carry each customer's tier and the ladder, and calls `floorTotal` and
+`cardPrice`. `node tools/pricelist.mjs --show <CODE>` prints what
 a customer sees. `--no-prices` on the publish leaves the list out.
 
 **The order lives on the site, in its own store**, as `order:<username>:<id>`, plaintext, and

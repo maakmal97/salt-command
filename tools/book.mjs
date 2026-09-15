@@ -207,7 +207,7 @@ export function pricingSnapshot(w) {
        is set, read, and put back. Restoring it matters: this runs inside the extract, and
        leaving the desk on the wrong book would silently change what is extracted next. */
     const before = call("PROD");
-    let floors = null, repl = null, stockCost = null, inputs = null, sizesHere = sizes;
+    let floors = null, repl = null, stockCost = null, inputs = null, sizesHere = sizes, ladder = null;
     try {
       /* v407, round seven, MATERIAL: PROD was assigned bare and the walk was never re-run, so
          every walk-derived global stayed on the PREVIOUS book and all twenty-four oil floors came
@@ -224,13 +224,15 @@ export function pricingSnapshot(w) {
          carded fallback for a 30 unit oil order read the 12.5 floor. recompute() has just rebuilt
          PRICE_TIERS for this product; read it now, and carry it so the price list can too. */
       sizesHere = call("PRICE_TIERS && PRICE_TIERS.sizes") || sizes;
+      /* v651: Ambassador and the tiers at this book's rungs, the prices the customer's page quotes from */
+      ladder = (call("typeof fiveTiersNow==='function'?fiveTiersNow():null") || []).map((r) => ({ q: r.q, prices: r.prices }));
       floors = {};
       for (const q of sizesHere) {
         floors[q] = { floor: numOrNull(call("floorTotal(" + q + ")")) };   // v502: one floor per size
       }
     } catch (e) { /* a product the desk cannot price yields nulls, which the drafter must handle */ }
     finally { if (before != null) { try { w.eval("PROD=" + JSON.stringify(before) + ";if(typeof recompute==='function')recompute();"); } catch (e) { } } }
-    byProduct[p] = { stockCost, replCost: repl, floors, inputs, sizes: sizesHere };
+    byProduct[p] = { stockCost, replCost: repl, floors, inputs, sizes: sizesHere, ladder };
   }
 
   return {
@@ -240,6 +242,9 @@ export function pricingSnapshot(w) {
     floorPct: call("PRICE && PRICE.floorPct"),   // the OTHER floor, a margin on price. See v300.
     shrinkAttrib: call("SHRINK_ATTRIB"),
     tierNames: call("typeof TIER_NAMES!=='undefined'?TIER_NAMES:null"),   // v643: the levels' names, for the drafter's tier check
+    /* v651: every customer's tier for each product, the one held on the book or, until he sets one, the one proposed from
+       what they pay for it; a product with neither is left out, and their page reads its price as coming soon */
+    tierOf: call("(function(){if(typeof tierBoards!=='function')return null;var b=tierBoards(),o={};tierCustomers().forEach(function(id){PROD_IDS.forEach(function(p){var t=(TIER_OF[id]||{})[p]||tierProposal(id,p,b);if(t){o[id]=o[id]||{};o[id][p]=t;}});});return o;})()"),
     byProduct
   };
 }

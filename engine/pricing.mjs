@@ -500,6 +500,17 @@ function fiveTiers(sizes,C,P){
     return {q:q,rung:rung,cogs:cogs,floor:+fl.toFixed(2),cols:cols,prices:prices};
   });
 }
+/* ============ v651, HIS DECISIONS OF 15 SEP 2026: A CUSTOMER'S PRICE IS THEIR TIER, NEVER ABOVE WHAT THEY PAY ============
+   T is the price of the customer's tier for the product at the size, R what their own recent rate comes to at it (null with
+   no history), F the floor. The tier is a ceiling: their own rate, to the nearest five, can only lower it, and a price that
+   lands under the floor lifts to the first five above it. The one rule the desk's printed board and the customer's page both
+   quote. A product with no tier is never priced at all: the callers leave it out, and the page says its price is coming. */
+function cardPrice(R,F,T){
+  if(R==null)return T;
+  let p=Math.min(T,Math.round(R/5)*5);
+  if(p<F-0.009)p=Math.ceil((F-0.009)/5)*5;
+  return p;
+}
 /* THE BOARD AND THE FLOORS, for quoting at the point of sale: what the phone receives. */
 /* THE CARD IS A COLLECTION PRICE AND DELIVERY IS QUOTED ON TOP, PER ORDER (v352, his instruction).
    v344 charged delivery at its real RM50 and put a `deliverable` flag on every size saying whether
@@ -530,6 +541,6 @@ function board(sizes,C,P){
 return {costStack:costStack,buyTaper:buyTaper,ladderMarkup:ladderMarkup,ladderMargin:ladderMargin,ladderCogs:ladderCogs,
         ladderRound:ladderRound,ladderWalk:ladderWalk,ladderAsk:ladderAsk,lotCost:lotCost,
         tier1Anchors:tier1Anchors,tier1Walk:tier1Walk,tier1Ask:tier1Ask,
-        floorTotal:floorTotal,priceLadder:priceLadder,ladderRow:ladderRow,board:board,fiveTiers:fiveTiers};
+        floorTotal:floorTotal,priceLadder:priceLadder,ladderRow:ladderRow,board:board,fiveTiers:fiveTiers,cardPrice:cardPrice};
 })();
 export default PRICING_ENGINE;

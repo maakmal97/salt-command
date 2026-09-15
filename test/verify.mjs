@@ -3212,28 +3212,8 @@ section("Oil — pinned at both ends and lawful between (round 5, his call 5)");
     ok(invert.cleanAllZero, "as the book stands, Tier 1 is under Tier 2 at every size and its over figure is nil throughout");
     ok(invert.bad.length === 3 && invert.tags === 3 && invert.said === 1 && invert.green === 0,
       `and when a stated RM350 at 5 unit pulls Tier 2 under a frozen Tier 1, the board says so on every affected row and stops claiming all-clear (${invert.bad.length} inverted, ${invert.tags} tagged, ${invert.said} sentence, ${invert.green} all-clear)`);
-    /* THE DESK'S COPY OF THE DRAWING RULE IS THE TOOL'S, over a grid rather than at six points.
-       tools/pricelist.mjs seals the customer's sheet and pbAdjusted prints the board he reads off;
-       the two are the same rule written twice by necessity, and until now nothing compared them
-       directly at all — the printed-board check only ever saw one of them. */
-    {
-      const PLx = await import("../tools/pricelist.mjs");
-      const grid = [];
-      for (const R of [1, 20, 56.21, 97, 100, 102.5, 160, 220, 260, 340, 400, 703, 1200]) {
-        for (const F of [50, 56.21, 110, 281]) for (const A of [70, 140, 220, 1150]) for (const loyal of [true, false]) {
-          grid.push([R, F, A, 3 * F, loyal]);
-        }
-      }
-      const deskSide = JSON.parse(w.eval("JSON.stringify(" + JSON.stringify(grid)
-        + ".map(function(a){return pbAdjusted(a[0],a[1],a[2],a[3],a[4]);}))"));
-      let same = 0, firstBad = null;
-      grid.forEach((a, i) => {
-        const tool = PLx.adjustedPrice(a[0], a[1], a[2], a[3], a[4]);
-        if (tool === deskSide[i]) same++; else if (!firstBad) firstBad = { a, tool, desk: deskSide[i] };
-      });
-      ok(same === grid.length,
-        `the desk's pbAdjusted and tools/pricelist.mjs adjustedPrice agree at all ${grid.length} points of a grid${firstBad ? ", first split at " + JSON.stringify(firstBad) : ""}`);
-    }
+    /* v646: the drawing rule retired with the tier ceiling, and the desk's printed board and the customer's page now quote
+       through the engine's one cardPrice, so there are no two copies left to hold together; v646's section proves they agree. */
     w.eval("setProd(" + JSON.stringify(keepProd) + ");recompute();");   // put the desk back on the book this section was on
   }
   ok(String(w.eval("document.querySelector('.sec.on table.pxboard').textContent")).indexOf("% margin") >= 0,
@@ -7268,21 +7248,19 @@ section("Statements — guest referral links and the tier they are pinned to (v5
    the point is to pin the rule rather than to describe it. */
 section("Pricing — the nearest-five rule is told apart from the one it replaced (v564)");
 {
-  const { adjustedPrice: adj } = await import("../tools/pricelist.mjs");
-  ok(adj(1, 56.21, 140, 168.63, true) === 70,
-    "a rate that rounds DOWN to the nearest five gives 70, where rounding up gave 71");
-  ok(adj(1, 703, 70, 2109, true) === 705,
-    "and one that rounds UP gives 705, where the old rule stopped at 703");
-  ok(adj(1, 56.21, 70, 168.63, true) === 60,
-    "and where the nearest five would sit under break-even the floor guard lifts it to 60, never 55");
-  /* the property behind the three, so a future change cannot satisfy them and still quote a loss */
+  /* v646: the drawing rule retired with the tier ceiling; its rounding and floor guard live on in the engine's cardPrice,
+     and these are the cases that tell nearest-five from rounding up, asked of it with a ceiling out of the way */
+  const PE64 = (await import("../engine/pricing.mjs")).default, adj = (R, F) => PE64.cardPrice(R, F, 1e9);
+  ok(adj(71, 56.21) === 70, "a rate that rounds DOWN to the nearest five gives 70, where rounding up gave 75");
+  ok(adj(703, 50) === 705, "and one that rounds UP gives 705, where the old rule stopped at 703");
+  ok(adj(56.21, 56.21) === 60, "and where the nearest five would sit under break-even the floor guard lifts it to 60, never 55");
   let under = 0;
   for (let F = 20; F <= 800; F += 7.3) {
-    for (const A of [70, 140, 500, 1150]) {
-      for (let R = 1; R <= 900; R += 37) if (adj(R, F, A, 3 * F, true) < F - 0.009) under++;
+    for (const T of [70, 140, 500, 1150]) {
+      for (let R = 1; R <= 900; R += 37) if (PE64.cardPrice(R, F, Math.max(T, F)) < F - 0.009) under++;
     }
   }
-  ok(under === 0, "and across a grid of rates, floors and asks it never returns a price below the floor");
+  ok(under === 0, "and across a grid of rates, floors and tiers it never returns a price below the floor");
 }
 
 /* ---- the statement in the Salt identity, and what the QR carries ----------------- */
@@ -7324,41 +7302,21 @@ section("Statements — the price list, the order book and the desk's relay (v49
     "the last four dated salt orders before the Monday are 100, 110, 120 and 130 a unit, median 115: the RM500 fifth-oldest, the gift, the cancelled, the undated and this week's are all left out");
   ok(PL.ownRate(sales, "CX0-AA", "oil", "2026-08-31").rate === 10 && PL.ownRate(sales, "CX0-ZZ", "salt", "2026-08-31").rate === null,
     "per product, and a customer with no history has no rate");
-  /* v510: HIS RATE IS DRAWN TOWARD THE BOARD. R his rate times the size, F the floor, A the ask,
-     cap three times COGS; slightly is a quarter of the gap, more is half. */
-  ok(PL.adjustedPrice(160, 110, 220, 300, false) === 175, "under the ask: up a quarter of the way, 160 toward 220 is 175");
-  ok(PL.adjustedPrice(100, 110, 220, 300, false) === 160 && PL.adjustedPrice(20, 110, 220, 300, false) === 120,
-    "under the floor: up halfway toward the ask, and never under the floor");
-  ok(PL.adjustedPrice(400, 110, 220, 300, false) === 300 && PL.adjustedPrice(400, 110, 220, 300, true) === 300
-    && PL.adjustedPrice(340, 110, 220, 300, false) === 280,
-    "above the cap: down halfway toward the ask and never above the cap, loyal or not");
-  ok(PL.adjustedPrice(260, 110, 220, 300, true) === 250 && PL.adjustedPrice(260, 110, 220, 300, false) === 260,
-    "above the ask under the cap: down a quarter of the way where loyal, and his rate stands where not");
-  ok(PL.adjustedPrice(220, 110, 220, 300, true) === 220 && PL.adjustedPrice(159.5, 110, 220, 300, false) === 175,
-    "at the ask it is the ask");
-  /* ============ v564, HIS INSTRUCTION OF 10 SEP 2026: TO THE NEAREST FIVE ============
-     It was the whole ringgit UP, which put RM97 and RM416 on a sheet handed to a customer while the
-     board beside it quotes in tens. NEAREST, not up: the four drawing rules above already decide
-     the direction and rounding had no business deciding it again. The cases above all happened to
-     land on fives already, so none of them would have gone red on this change and none of them
-     proves it; these do. */
-  ok(PL.adjustedPrice(97, 50, 97, 300, false) === 95 && PL.adjustedPrice(98, 50, 98, 300, false) === 100,
-    "the nearest five, and it rounds DOWN when down is nearer: 97 to 95, 98 to 100");
-  ok(PL.adjustedPrice(102.5, 50, 102.5, 300, false) === 105,
-    "an exact half-step goes up, which is what Math.round does and is worth pinning");
-  ok([0, 1, 2, 3, 4, 5, 6, 7, 8, 9].every((d) => PL.adjustedPrice(410 + d, 50, 410 + d, 900, false) % 5 === 0),
-    "and every answer across a run of ten ringgit is a multiple of five");
-  /* THE FLOOR IS THE ONE THING ROUNDING MAY NOT CROSS. Nearest-five can land up to RM2.50 under
-     break-even, so a price that does is lifted to the first five ABOVE the floor. The cap is not
-     re-clamped: it is a drawing target at three times COGS, not a refusal line. */
-  ok(PL.adjustedPrice(31, 31, 31, 300, false) === 35 && PL.adjustedPrice(10, 28.11, 28.11, 300, false) === 30,
-    "a five that lands under the floor is lifted to the first five above it, never left there");
-  ok([31, 32, 33, 34, 36, 41, 46.2, 51.7].every((f) => PL.adjustedPrice(f, f, f, 900, false) >= f - 0.009),
-    "and no floor in a sweep of eight is breached by the rounding");
-  ok(PL.loyalFor(sales, "CX0-AA", "salt", new Date("2026-09-10T00:00:00Z")) === true
-    && PL.loyalFor(sales, "CX0-AA", "salt", new Date("2026-10-10T00:00:00Z")) === false
-    && PL.loyalFor([{ date: "2026-09-02", customer: "CX0-BB", qty: 1, total: 100 }], "CX0-BB", "salt", new Date("2026-09-03T00:00:00Z")) === false,
-    "loyal is three or more priced orders with the last within fourteen days, the desk's own badge");
+  /* v646, HIS DECISION OF 15 SEP 2026: THE TIER IS A CEILING. T the tier's price at the size, R his rate times the size, F the
+     floor: no history is the tier's price, his own rate to the nearest five can only lower it, and under the floor it lifts
+     to the first five at or above it. The engine's cardPrice, which the desk's printed board quotes too. */
+  const cp = PE.cardPrice;
+  ok(cp(null, 110, 220) === 220, "no history: the tier's price at the size");
+
+  ok(cp(160, 110, 220) === 160 && cp(163, 110, 220) === 165, "under the tier: his own rate stands, to the nearest five");
+  ok(cp(260, 110, 220) === 220 && cp(220, 110, 220) === 220, "at or over the tier: the tier's price, never more");
+  ok(cp(100, 110, 220) === 110 && cp(20, 111, 220) === 115, "under the floor: lifted to the first five at or above it, never left under");
+  /* v564, HIS INSTRUCTION OF 10 SEP 2026: TO THE NEAREST FIVE, kept by the card rule */
+  ok(cp(97, 50, 900) === 95 && cp(98, 50, 900) === 100, "the nearest five, and it rounds DOWN when down is nearer: 97 to 95, 98 to 100");
+  ok(cp(102.5, 50, 900) === 105, "an exact half-step goes up, which is what Math.round does and is worth pinning");
+  ok([0, 1, 2, 3, 4, 5, 6, 7, 8, 9].every((d) => cp(410 + d, 50, 900) % 5 === 0), "and every answer across a run of ten ringgit is a multiple of five");
+  ok(cp(31, 31, 300) === 35 && cp(10, 28.11, 300) === 30, "a five that lands under the floor is lifted to the first five above it, never left there");
+  ok([31, 32, 33, 34, 36, 41, 46.2, 51.7].every((f) => cp(f, f, 900) >= f - 0.009), "and no floor in a sweep of eight is breached by the rounding");
 
   /* THE LIST AGAINST THE ENGINE, on the real snapshot: never below the collected floor, delivery on top. */
   const { pricingSnapshot } = await import("../tools/book.mjs");
@@ -7367,23 +7325,31 @@ section("Statements — the price list, the order book and the desk's relay (v49
   const snap = pricingSnapshot(wP);
   const bookP = { PRODUCTS: { salt: { name: "Salt", unit: "unit" }, oil: { name: "Oil", unit: "unit" } }, PROD_ORDER: ["salt", "oil"], sales };
   const nowP = new Date("2026-09-03T06:20:00Z");
-  const list = PL.priceList("CX0-AA", bookP, snap, nowP);
+  /* v651: the tiers ride the snapshot, one for each product; these fixture codes are on no roster, so each list is given its own */
+  const tiered = (tierOf) => ({ ...snap, tierOf });
+  const list = PL.priceList("CX0-AA", bookP, tiered({ "CX0-AA": { salt: "Bronze", oil: "Bronze" } }), nowP);
   const saltL = list.products.find(p => p.product === "salt");
-  ok(list.week.monday === "2026-08-31" && list.products.length === 2 && saltL && saltL.basis === "yours" && saltL.rate === 115 && saltL.orders === 4,
+  ok(list.week.monday === "2026-08-31" && list.products.length === 2 && list.soon.length === 0 && saltL && saltL.basis === "yours" && saltL.rate === 115 && saltL.orders === 4,
     "the list is stamped with the week and carries both products, salt on the customer's own rate");
+  /* v651: the customer's tier for the product at each size, off the snapshot's ladder, through the engine's cardPrice */
   const Cs = PE.costStack(snap.byProduct.salt.inputs.cost), Ps = snap.byProduct.salt.inputs.policy;
   const floorC = q => PE.floorTotal(q, Cs, Ps);
-  const askC = q => PE.priceLadder(q, Cs, Ps).ask.total;
-  const loyalAA = PL.loyalFor(sales, "CX0-AA", "salt", nowP);
-  const wrong = saltL.sizes.filter(x => x.price !== PL.adjustedPrice(115 * x.q, floorC(x.q), askC(x.q), 3 * PE.ladderCogs(x.q, Cs), loyalAA) || "delivered" in x);
-  ok(wrong.length === 0 && saltL.sizes.length === snap.sizes.length && !("delivery" in saltL),
-    "every board size is his rate times the size, drawn toward the board's ask by the v510 rule; one price, no delivery on the list");
-  const cheap = PL.priceList("CX0-CH", { ...bookP, sales: [{ date: "2026-07-01", customer: "CX0-CH", qty: 1, total: 1, cash: 1, deliveredQty: 1 }] }, snap, nowP).products[0];
-  ok(cheap.rate === 1 && cheap.sizes.every(x => x.price === PL.adjustedPrice(1 * x.q, floorC(x.q), askC(x.q), 3 * PE.ladderCogs(x.q, Cs), false) && x.price >= floorC(x.q)),
-    "a customer whose old rate is under the floor is lifted halfway to the ask, never under the floor");
-  const board = PL.priceList("CX0-ZZ", bookP, snap, nowP).products[0];
-  ok(board.basis === "board" && board.sizes.every(x => x.price === PE.priceLadder(x.q, Cs, Ps).ask.total),
-    "and a customer with no history is quoted the board's ask, the engine's, at every size");
+  const tierAt = (q, t) => snap.byProduct.salt.ladder.find((r) => Math.abs(r.q - q) < 0.009).prices[t];
+  const bronze = snap.tierNames.indexOf("Bronze"), gold = snap.tierNames.indexOf("Gold");
+  const wrong = saltL.sizes.filter(x => x.price !== PE.cardPrice(115 * x.q, floorC(x.q), tierAt(x.q, bronze)) || "delivered" in x);
+  ok(saltL.tier === "Bronze" && wrong.length === 0 && saltL.sizes.length === snap.sizes.length && !("delivery" in saltL),
+    "a customer holding Bronze is quoted Bronze, never above his own rate, at every board size; one price, no delivery on the list");
+  const goldL = PL.priceList("CX0-AA", bookP, tiered({ "CX0-AA": { salt: "Gold" } }), nowP), goldS = goldL.products.find(p => p.product === "salt");
+  ok(goldS && goldS.tier === "Gold" && goldS.sizes.every(x => x.price === PE.cardPrice(115 * x.q, floorC(x.q), tierAt(x.q, gold)) && x.price <= tierAt(x.q, gold))
+    && goldL.products.length === 1 && goldL.soon.length === 1 && goldL.soon[0].product === "oil",
+    "a customer holding Gold on salt is quoted Gold's price at each size, or his own rate where it is lower, and oil, holding no tier, is not priced");
+  const cheap = PL.priceList("CX0-CH", { ...bookP, sales: [{ date: "2026-07-01", customer: "CX0-CH", qty: 1, total: 1, cash: 1, deliveredQty: 1 }] }, tiered({ "CX0-CH": { salt: "Bronze" } }), nowP).products[0];
+  ok(cheap.rate === 1 && cheap.sizes.every(x => x.price === PE.cardPrice(1 * x.q, floorC(x.q), tierAt(x.q, bronze)) && x.price >= floorC(x.q) - 0.009),
+    "a customer whose old rate is under the floor is lifted to the first five above it, never under the floor");
+  const fresh = PL.priceList("CX0-ZZ", bookP, tiered({ "CX0-ZZ": { salt: "Bronze" } }), nowP), none = PL.priceList("CX0-ZZ", bookP, snap, nowP);
+  ok(fresh.products[0].basis === "tier" && fresh.products[0].sizes.every(x => x.price === tierAt(x.q, bronze))
+    && none.products.length === 0 && JSON.stringify(none.soon.map((s) => s.product)) === '["salt","oil"]',
+    "a customer with no history is quoted the tier set for them, Bronze for a new one, and with no tier at all nothing is priced: both products are coming soon");
 
   /* THE RAILS SHIP WITHOUT A NUMBER. */
   const ship = shipAccounts({ accounts: [
@@ -8656,9 +8622,6 @@ section("08 Sep 2026: the audit fixes");
     && !PL.pricedOrder({ qty: 1, total: 90, cash: 0, deliveredQty: 1, defaulted: true }) && !PL.pricedOrder({ qty: 1, total: 90, cash: 0, settledRM: 90, deliveredQty: 1, rebate: true })
     && PL.pricedOrder({ qty: 1, total: 90, cash: 90, deliveredQty: 1 }) && PL.pricedOrder({ qty: 1, total: 90, cash: 40, settledRM: 50, deliveredQty: 1, rebate: true }),
     "a price paid is a row that moved: pending, cancelled and defaulted rows and awards with no cash are not");
-  const three = ["2026-08-10", "2026-08-17", "2026-08-24"].map((date) => ({ date, customer: "CX0-LY", qty: 1, total: 90, cash: 90, deliveredQty: 1 }));
-  ok(PL.loyalFor(three, "CX0-LY", "salt", new Date("2026-09-06T12:00:00Z")) === true && PL.loyalFor(three, "CX0-LY", "salt", new Date("2026-09-06T20:00:00Z")) === false,
-    "the fourteen days run from Kuala Lumpur midnight: loyal at 20:00 KL on the fourteenth day, not at 04:00 KL on the fifteenth");
   ok(!!checkPlacement({ product: "salt", qty: 1, mode: "collect", total: 0, unit: 0 }, []).error, "an order for RM 0 is not placed");
   const ssrc = readFileSync(join(REPO, "stmt", "worker.js"), "utf8");
   ok(/DUMMY_VERIFIER/.test(ssrc) && /known \? rec\.verifier : DUMMY_VERIFIER/.test(ssrc), "an unknown username runs the same verifier work as a known one, so the refusal cannot be timed");
@@ -8709,7 +8672,8 @@ section("08 Sep 2026: the audit fixes");
     const { pricingSnapshot } = await import("../tools/book.mjs");
     const { w } = await omA();
     const snap = pricingSnapshot(w);
-    const list = PL.priceList("CX0-ZZ", bkR, snap, new Date("2026-09-08T04:00:00Z"));
+    /* v651: a product with no tier is not priced, so the fixture holds one on each book */
+    const list = PL.priceList("CX0-ZZ", bkR, { ...snap, tierOf: { "CX0-ZZ": { salt: "Bronze", oil: "Bronze" } } }, new Date("2026-09-08T04:00:00Z"));
     const oilL = list.products.find((p) => p.product === "oil"), saltL = list.products.find((p) => p.product === "salt");
     ok(oilL && saltL && oilL.sizes.map((x) => x.q).join() === snap.byProduct.oil.sizes.join() && saltL.sizes.map((x) => x.q).join() === snap.byProduct.salt.sizes.join() && oilL.sizes[0].q !== saltL.sizes[0].q,
       `each product's list is drawn on its own board sizes (oil ${oilL && oilL.sizes.map((x) => x.q).join("/")}, salt ${saltL && saltL.sizes.map((x) => x.q).join("/")})`);
@@ -10384,8 +10348,6 @@ section("v609: a bucket is its associate's own, on the statement, the price list
   const fixB = [own, b1, b2];
   ok(PLb.ownRate(fixB, "CX9-AA", "salt", "2026-08-31").rate === 140 && PLb.ownRate(fixB, "CX9-AA", "salt", "2026-08-31").orders === 3,
     "the associate's own rate is the median of their code's and their bucket's orders together: 100, 140 and 160 make 140");
-  ok(PLb.loyalFor(fixB, "CX9-AA", "salt", new Date("2026-08-10T00:00:00Z")) === true,
-    "and three orders across the code and the bucket make them loyal, where their code alone holds one");
 
   /* THE DESK'S TWINS, on the same forced rows pushed into the master's own ledger */
   const { openMaster: omB } = await import("../tools/payload.mjs");
@@ -10396,7 +10358,6 @@ section("v609: a bucket is its associate's own, on the statement, the price list
     wB.eval("sales").push(own, b1, b2,
       fx("sx04", dayB(3), "CX9-BB", 100), fx("sx05", dayB(2), "CX9-BB-R", 120, { rev: "R2" }), fx("sx06", dayB(1), "CX9-BB-R", 130, { rev: "R2" }));
     ok(wB.pbOwnRate("CX9-AA").rate === 140, "the desk's board reads the same own rate off the code and the bucket, 140");
-    ok(wB.pbLoyal("CX9-BB") === true, "and calls the same associate loyal on three orders across the two");
     ok(wB.ordUsual("CX9-AA", "salt") != null && Math.abs(wB.ordUsual("CX9-AA", "salt") - 140) < 0.01,
       "and the order card's usual rate for them is 140 too");
   } finally { wB.close(); }
@@ -12027,6 +11988,87 @@ section("v646: a tier for each product, and a product a customer has never bough
     ok(ref46.length === 3 && /gold is not a product on this book/.test(ref46[0]) && /names no product/.test(ref46[1]) && /gold is not a product on this book/.test(ref46[2]),
       "and refuses a product not on the book, and a tier entry naming no product: " + ref46.join(" | "));
   } finally { await new Promise((r) => setTimeout(r, 200)); try { w46.close(); } catch (e) { /* best effort */ } }
+}
+
+section("v651: a customer's price is their tier for each product, and a product with no tier reads price coming soon and cannot be ordered");
+{
+  /* HIS DECISIONS OF 15 SEP 2026. The tier for the product is a ceiling: its price at each size, held or proposed, lowered by
+     their own recent rate to the nearest five, never under the floor; the desk's printed board and the customer's sealed page
+     both quote it through the engine's cardPrice. A product with no tier, held or proposed, is not priced: the page says its
+     price is coming soon and the order form does not offer it. Each assertion was proved red by mutation. */
+  const { openMaster: om47 } = await import("../tools/payload.mjs");
+  const { pricingSnapshot: ps47 } = await import("../tools/book.mjs");
+  const PL47 = await import("../tools/pricelist.mjs");
+  const { w: w47 } = await om47();
+  const rd47 = (e) => JSON.parse(String(w47.eval("JSON.stringify(" + e + ")")));
+  let page47 = null;
+  try {
+    /* four salt orders at 80, 112, 120 and 110 a unit, the median of the last four 111, and no oil */
+    const sale47 = (rid, date, qty, total) => ({ rid, customer: "CZ9-CD", product: "salt", date, qty, total, cost: 1, cash: total, deliveredQty: qty, deliveredOn: date });
+    const fx47 = [sale47("z647a", "2026-08-01", 0.5, 40), sale47("z647b", "2026-08-02", 12.5, 1400), sale47("z647c", "2026-08-03", 2.5, 300), sale47("z647d", "2026-08-04", 1, 110)];
+    w47.eval("(function(){if(roster.indexOf('CZ9-CD')<0)roster.push('CZ9-CD');BASE_SALES.push.apply(BASE_SALES," + JSON.stringify(fx47) + ");queue=[];applyOverlay();TIER_OF['CZ9-CD']={salt:'Gold'};setProd('salt');recompute();})()");
+    const snap47 = ps47(w47);
+    ok(snap47.tierOf && JSON.stringify(snap47.tierOf["CZ9-CD"]) === '{"salt":"Gold"}' && Object.values(snap47.tierOf).every((t) => Object.values(t).every((n) => snap47.tierNames.includes(n)))
+      && snap47.byProduct.salt.ladder.length === 12 && snap47.byProduct.oil.ladder.length === 7,
+      "the pricing snapshot carries each customer's tier for each product, held or proposed, leaving out a product with neither, and the ladder at each book's rungs: " + JSON.stringify(snap47.tierOf && snap47.tierOf["CZ9-CD"]));
+    ok(JSON.stringify(snap47.byProduct.salt.ladder.map((r) => r.prices)) === JSON.stringify(rd47("(function(){setProd('salt');recompute();return fiveTiersNow().map(function(r){return r.prices;});})()")),
+      "and the ladder it carries is the desk's own");
+    const book47 = { PRODUCTS: { salt: { name: "Salt", unit: "unit" }, oil: { name: "Oil", unit: "unit" } }, PROD_ORDER: ["salt", "oil"], sales: rd47("sales") };
+    const deskOn47 = (p) => rd47("(function(){setProd('" + p + "');recompute();var x=pbPrices('CZ9-CD');setProd('salt');recompute();return x;})()");
+    const list47 = PL47.priceList("CZ9-CD", book47, snap47, new Date()), tool47 = list47.products.find((p) => p.product === "salt"), desk47 = deskOn47("salt");
+    ok(tool47 && tool47.tier === "Gold" && tool47.rate === 111 && JSON.stringify(tool47.sizes.map((r) => r.price)) === JSON.stringify(desk47.map((r) => r.price)),
+      "the desk's printed board and the customer's own page quote the same prices, off the one rule: " + JSON.stringify(desk47.map((r) => r.price)));
+    const gold47 = snap47.tierNames.indexOf("Gold"), T47 = (q) => snap47.byProduct.salt.ladder.find((r) => Math.abs(r.q - q) < 0.009).prices[gold47];
+    ok(tool47.sizes.every((r) => r.price <= T47(r.q)) && tool47.sizes.some((r) => r.price < T47(r.q)) && tool47.sizes.some((r) => r.price === T47(r.q)),
+      "and never above Gold's price at any size: lower where his own rate is, Gold's where it is not");
+    const oilDesk47 = deskOn47("oil");
+    ok(list47.products.length === 1 && list47.soon.length === 1 && list47.soon[0].product === "oil" && oilDesk47.length === 0,
+      "a product with no tier, held or proposed, is not priced: oil is on their list as coming soon, and the printed board has nothing to print for it");
+    page47 = list47;
+    w47.eval("TIER_OF['CZ9-CD']={salt:'Gold',oil:'Silver'};");
+    const snapO47 = ps47(w47), listO47 = PL47.priceList("CZ9-CD", book47, snapO47, new Date()), oilT47 = listO47.products.find((p) => p.product === "oil");
+    const silver47 = snapO47.tierNames.indexOf("Silver"), oilD47 = deskOn47("oil");
+    ok(oilT47 && oilT47.basis === "tier" && listO47.soon.length === 0 && oilT47.sizes.every((r) => r.price === snapO47.byProduct.oil.ladder.find((x) => Math.abs(x.q - r.q) < 0.009).prices[silver47])
+      && JSON.stringify(oilT47.sizes.map((r) => r.price)) === JSON.stringify(oilD47.map((r) => r.price)),
+      "and once a tier is set for it, a product never bought is quoted that tier's price, on their page and the printed board alike: " + JSON.stringify(oilD47.map((r) => r.price)));
+    w47.eval("TIER_OF['CZ9-CD']={oil:'Silver'};");
+    const snapP47 = ps47(w47), prop47 = rd47("tierProposal('CZ9-CD','salt',tierBoards())");
+    const listP47 = PL47.priceList("CZ9-CD", book47, snapP47, new Date()).products.find((p) => p.product === "salt");
+    ok(prop47 && snapP47.tierOf["CZ9-CD"].salt === prop47 && listP47 && listP47.tier === prop47 && JSON.stringify(listP47.sizes.map((r) => r.price)) === JSON.stringify(deskOn47("salt").map((r) => r.price)),
+      "a product holding no tier is quoted the tier proposed from what they pay for it, on the printed board as on their page: " + prop47);
+  } finally { await new Promise((r) => setTimeout(r, 200)); try { w47.close(); } catch (e) { /* best effort */ } }
+
+  /* THE CUSTOMER'S OWN PAGE, driven: the sealed list opened in the page with the real crypto, one product priced and one not */
+  const { landingPage: lp47 } = await import("../stmt/page.js");
+  const C47 = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto: wc47 } = await import("node:crypto");
+  const { JSDOM: JD47 } = await import("jsdom");
+  const openPage47 = async (list) => {
+    const u = "abcd-efgh", pass = "fixture-pass-47", ck = await C47.contentKey("test-secret", u);
+    const body = { ok: true, wrap: await C47.wrapKey(pass, ck), session: "",
+      env: await C47.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
+      prices: await C47.encryptWith(ck, JSON.stringify(list)) };
+    const dom = new JD47(lp47(u, "n47", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: wc47, configurable: true }); } catch (e) { win.crypto = wc47; }
+      if (!win.TextEncoder) win.TextEncoder = TextEncoder;
+      if (!win.TextDecoder) win.TextDecoder = TextDecoder;
+      win.fetch = async (path) => { const open = String(path) === "/open"; return { ok: open, status: open ? 200 : 404, json: async () => (open ? body : { ok: false }) }; };
+    } });
+    const d = dom.window.document;
+    try {
+      d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+      d.getElementById("f").dispatchEvent(new dom.window.Event("submit", { bubbles: true, cancelable: true }));
+      for (let i = 0; i < 150 && !d.getElementById("pPrices").textContent; i++) await new Promise((r) => setTimeout(r, 100));
+      const sel = d.querySelector("#pOrder select");
+      return { prices: d.getElementById("pPrices").textContent, order: d.getElementById("pOrder").textContent, products: sel ? [...sel.options].map((o) => o.value) : [] };
+    } finally { dom.window.close(); }
+  };
+  const one47 = page47 ? await openPage47(page47) : null;
+  ok(one47 && /Salt/.test(one47.prices) && /Oil\s*Price coming soon\./.test(one47.prices) && JSON.stringify(one47.products) === '["salt"]',
+    "the customer's own page draws oil as price coming soon and offers only salt to order: " + JSON.stringify(one47 && { products: one47.products, prices: one47.prices.slice(-60) }));
+  const both47 = page47 ? await openPage47({ ...page47, products: [], soon: [{ product: "salt", name: "Salt" }, { product: "oil", name: "Oil" }] }) : null;
+  ok(both47 && /Salt\s*Price coming soon\./.test(both47.prices) && /Oil\s*Price coming soon\./.test(both47.prices) && /Ordering opens once your prices are set\./.test(both47.order) && both47.products.length === 0,
+    "and with no tier on either product, both read coming soon and ordering waits for the prices to be set: " + JSON.stringify(both47 && both47.order.slice(0, 80)));
 }
 
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);

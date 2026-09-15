@@ -440,7 +440,8 @@ const CLIENT_JS = `
   function drawPrices(){
     pPrices.textContent='';
     var h=el('h2',null,'Your prices'); pPrices.appendChild(h);
-    if(!prices||!prices.products||!prices.products.length){
+    var soon=(prices&&prices.soon)||[];
+    if(!prices||((!prices.products||!prices.products.length)&&!soon.length)){
       pPrices.appendChild(el('p','lead','No price list has been written for your account yet. It is written with the next update and changes weekly.'));
       return;
     }
@@ -448,9 +449,9 @@ const CLIENT_JS = `
     prices.products.forEach(function(p){
       var pane=el('div','pane');
       pane.appendChild(el('h3',null,p.name));
-      pane.appendChild(el('p','sub2', (p.basis==='yours'
+      pane.appendChild(el('p','sub2', p.basis==='yours'
         ? 'Your rate: '+rm(p.rate)+' per '+(p.unit||'unit')+', from your last '+p.orders+' order'+(p.orders===1?'':'s')+'. '
-        : 'The board price; your own rate follows your first order. ')));
+        : 'Your own rate follows your first order. '));
       var t=el('table'), th=el('thead'), tr=el('tr');
       [['Size','l'],['Price','']].forEach(function(c){ var x=el('th',c[1]||null,c[0]); tr.appendChild(x); });
       th.appendChild(tr); t.appendChild(th);
@@ -462,6 +463,13 @@ const CLIENT_JS = `
         tb.appendChild(row);
       });
       t.appendChild(tb); pane.appendChild(t); pPrices.appendChild(pane);
+    });
+    /* his instruction of 15 Sep 2026: a product with no tier set is not priced, and says so */
+    soon.forEach(function(p){
+      var pane=el('div','pane');
+      pane.appendChild(el('h3',null,p.name));
+      pane.appendChild(el('p','sub2','Price coming soon.'));
+      pPrices.appendChild(pane);
     });
   }
 
@@ -486,7 +494,7 @@ const CLIENT_JS = `
     pOrder.textContent='';
     pOrder.appendChild(el('h2',null,'Order'));
     if(!prices||!prices.products||!prices.products.length){
-      pOrder.appendChild(el('p','lead','Ordering opens once your price list is written, with the next update.'));
+      pOrder.appendChild(el('p','lead',prices&&prices.soon&&prices.soon.length?'Ordering opens once your prices are set.':'Ordering opens once your price list is written, with the next update.'));
     } else {
       pOrder.appendChild(el('p','lead','Pick a size off your list. You will see the order acknowledged here, then ready, and payment is offered at that point.'));
       var form=el('div','pane');

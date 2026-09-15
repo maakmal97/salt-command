@@ -5,17 +5,20 @@
  * a price list based on his historical purchase price, changing weekly. This is the whole of
  * that rule, stated once so the page, the deploy and the suite cannot disagree about it.
  *
- * THE RATE IS HIS, NOT THE BOARD'S. A customer who has bought before is quoted the rate he has
- * been paying: the median unit rate of his last four committed orders of that product. Four,
- * not all: a price he moved to in July should be the price he sees in September, and a median
- * so one odd order (a gift, a settlement, a favour) cannot drag the list. A customer with no
- * history on a product sees the board's ask for it, which is the one price the desk quotes to
- * a stranger. The rule is the drafter's own "this party typically pays" test, read forward.
+ * THE TIER IS A CEILING (his decisions of 15 Sep 2026, v651). A customer is quoted the price of their
+ * own tier for each product, held on the book or, until he sets one, proposed from what they pay for
+ * it; and where they have bought before, never more than their own rate: the median unit rate of their
+ * last four committed orders of that product, to the nearest five. Four, not all: a price moved to in
+ * July should be the price seen in September, and a median so one odd order (a gift, a settlement, a
+ * favour) cannot drag the list. A tier and no history, and the tier's price stands. NO TIER FOR A
+ * PRODUCT, HELD OR PROPOSED, AND IT IS NOT PRICED: it goes on the list as coming soon, and the page
+ * offers no order for it. The rule is the engine's cardPrice, the one the desk's printed board quotes too.
  *
  * THE FLOOR STILL HOLDS. A quoted total is never below what the engine says that size costs him
  * to sell; so a customer whose old rate has fallen under a risen floor is lifted to the floor
- * rather than quoted a loss. Nothing here prices: floorTotal, priceLadder and the
- * cost stack are the engine's, fed the same PRICING inputs the desk and the drafter read.
+ * rather than quoted a loss. Nothing here prices: floorTotal, cardPrice and the cost stack are the
+ * engine's, fed the same PRICING inputs the desk and the drafter read, and the tier's prices are the
+ * ladder the desk carried into those inputs.
  *
  * WEEKLY, AND WHAT THAT MEANS. The week runs Monday to Sunday in Kuala Lumpur. His own rate is
  * read from orders dated BEFORE the week's Monday, so an order he places on Wednesday cannot
@@ -81,82 +84,40 @@ export function ownRate(sales, code, product, before) {
   return { rate: +mid.toFixed(2), orders: n };
 }
 
-/* HIS RATE, DRAWN TOWARD THE BOARD (v510, his instruction of 07 Sep 2026). The board's ask is the
-   minimum for anyone, so a list under it is a design fault; but a customer's own history is not
-   thrown away either. At each size, with R his rate times the size, F the floor, A the board's
-   ask and CAP three times COGS (a 2x markup, the ladder's ceiling):
-     below the floor       up more:      halfway from R to A, and never under F
-     under the ask         up slightly:  a quarter of the way from R to A
-     above the cap         down more:    halfway from R back to A, and never above CAP (the ask
-                                         itself stands where it is above the cap: nobody lists under the board)
-     above the ask, loyal  down slightly: a quarter of the way from R back to A
-     above the ask, other  his rate stands
-   then to the nearest five. "Slightly" is a quarter of the gap and "more" is half, stated
-   here once so the desk's printed board (pbPrices in the master) reads the same. Loyal is the
-   desk's own badge: three or more priced orders and the last within fourteen days.
-
-   THE NEAREST FIVE, HIS INSTRUCTION OF 10 SEP 2026 (v564). It was the whole ringgit up, which put
-   RM 97, RM 123 and RM 416 on a sheet handed to a customer; the board itself has been quoted in
-   tens since v326 and in fives where a ten will not fit since v263, and a suggested price is read
-   out of the same mouth as a board price. NEAREST, not up: his word, and the drawing rules above
-   already decide the direction, so rounding had no business deciding it again.
-   THE FLOOR STILL WINS, AND IT IS THE ONE THING THAT DOES. Rounding to the nearest five can land
-   under break-even by up to RM 2.50, so a price that does is lifted to the first five above the
-   floor rather than left there. The cap is NOT re-clamped after rounding: it is a drawing target
-   at three times COGS, not a refusal line, and rounding may pass it by at most RM 2.50 on a price
-   in the hundreds. The floor is a refusal line and gets the guard. */
-const near5 = (v) => Math.round(v / 5) * 5;
-export function adjustedPrice(R, F, A, cap, loyal) {
-  let p;
-  if (R < F) p = Math.max(F, R + 0.5 * (A - R));
-  else if (R < A) p = R + 0.25 * (A - R);
-  else if (R > cap) p = Math.max(A, Math.min(cap, R - 0.5 * (R - A)));
-  else p = loyal ? R - 0.25 * (R - A) : R;
-  p = near5(Math.max(p, F));
-  if (p < F - 0.009) p = Math.ceil((F - 0.009) / 5) * 5;
-  return p;
-}
-export function loyalFor(sales, code, product, now) {
-  const at = now instanceof Date ? now : new Date(now || Date.now());
-  const rows = (sales || []).filter((s) => POSITION_ENGINE.ownsCode(code, s.customer) && prodOf(s) === product && pricedOrder(s) && s.date && isNum(s.total) && s.total > 0);
-  if (rows.length < 3) return false;
-  const last = rows.map((s) => s.date).sort().pop();
-  /* the fourteen days run from Kuala Lumpur midnight, not UTC's, which ended them at 08:00 (08 Sep 2026) */
-  return (at - new Date(last + "T00:00:00+08:00")) / 86400000 <= 14;
-}
 
 /** The list: one block per product, every board size, one price each. */
 export function priceList(code, book, pricing, now) {
   const week = weekOf(now);
   const sizes = (pricing && pricing.sizes) || [];
   const products = book.PROD_ORDER || Object.keys(book.PRODUCTS || { salt: 1 });
-  const out = { at: new Date(now || Date.now()).toISOString(), week, products: [] };
+  const out = { at: new Date(now || Date.now()).toISOString(), week, products: [], soon: [] };
   for (const p of products) {
     const snap = pricing && pricing.byProduct && pricing.byProduct[p];
     const inputs = snap && snap.inputs;
     if (!inputs || !inputs.cost || !inputs.policy) continue;      // a product the desk cannot price is left off
     const C = PRICING_ENGINE.costStack(inputs.cost), P = inputs.policy;
     const own = ownRate(book.sales, code, p, week.monday);
-    const loyal = loyalFor(book.sales, code, p, now);
     /* 08 Sep 2026: THIS BOOK'S SIZES. `pricing.sizes` is the one global grid, salt's 0.5 to 12.5,
        and every customer's oil list was drawn on it: sizes the desk never sells, and none it does.
        The board's own sizes travel in the policy; the snapshot carries them too since today. */
     const sizesHere = (Array.isArray(P.boardSizes) && P.boardSizes.length) ? P.boardSizes
       : ((Array.isArray(snap.sizes) && snap.sizes.length) ? snap.sizes : sizes);
+    /* v651: the customer's tier for this product, held or proposed, priced off the ladder the desk carried into the snapshot */
+    const name = (book.PRODUCTS && book.PRODUCTS[p] && book.PRODUCTS[p].name) || p;
+    const t = (pricing.tierNames || []).indexOf(((pricing.tierOf || {})[code] || {})[p]);
+    if (t < 0) { out.soon.push({ product: p, name }); continue; }
     const rows = sizesHere.slice().sort((a, b) => a - b).map((q) => {
-      const floor = PRICING_ENGINE.floorTotal(q, C, P);
-      const ask = PRICING_ENGINE.priceLadder(q, C, P).ask.total;
-      let price;
-      if (own.rate != null) price = adjustedPrice(own.rate * q, floor, ask, 3 * PRICING_ENGINE.ladderCogs(q, C), loyal);
-      else price = ask;
+      const rung = snap.ladder.find((r) => Math.abs(r.q - q) < 0.009);
+      const price = PRICING_ENGINE.cardPrice(own.rate != null ? own.rate * q : null, PRICING_ENGINE.floorTotal(q, C, P), rung.prices[t]);
       return { q, price: +price.toFixed(2) };
     });
     out.products.push({
       product: p,
-      name: (book.PRODUCTS && book.PRODUCTS[p] && book.PRODUCTS[p].name) || p,
+      name,
       unit: (book.PRODUCTS && book.PRODUCTS[p] && book.PRODUCTS[p].unit) || "unit",
-      basis: own.rate != null ? "yours" : "board",
-      rate: own.rate, orders: own.orders, loyal, sizes: rows
+      basis: own.rate != null ? "yours" : "tier",
+      tier: pricing.tierNames[t],
+      rate: own.rate, orders: own.orders, sizes: rows
     });
   }
   return out;
@@ -227,10 +188,11 @@ async function main() {
   const list = priceList(code, book, pricing, new Date());
   console.log(code + ", week " + list.week.label + " (history before " + list.week.monday + ")");
   for (const p of list.products) {
-    console.log("\n" + p.name + ": " + (p.basis === "yours" ? "your rate RM " + p.rate + "/" + p.unit + " over " + p.orders + " order(s)" : "the board's ask; no history")
+    console.log("\n" + p.name + " at " + p.tier + ": " + (p.basis === "yours" ? "never above your rate RM " + p.rate + "/" + p.unit + " over " + p.orders + " order(s)" : "the tier's prices; no history")
       );
     for (const r of p.sizes) console.log("  " + String(r.q).padStart(5) + " " + p.unit + "  RM " + r.price);
   }
+  for (const p of list.soon) console.log("\n" + p.name + ": no tier, so the price is coming soon");
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
