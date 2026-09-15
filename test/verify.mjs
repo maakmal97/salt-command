@@ -11718,18 +11718,18 @@ section("v641: the five tiers are the floor and the workbook's four columns, gua
       oil: { landed: 7.8355, rows: [[10,78,110,150,190,230],[20,157,210,290,370,440],[30,235,300,420,530,650],[40,313,380,540,690,850],[50,392,460,650,850,1040],[80,627,690,1010,1320,1640],[100,784,830,1220,1610,2000]] },
     };
     /* the engine on a forced cost stack: this landed rate, and a floor of `per` a unit */
-    const walk40 = (p, landed, per, sizes) => rd40("(function(){setProd('" + p + "');var P=Object.assign({},pxPolicy(),{tierRule:TIER_RULE['" + p + "']}),"
+    const walk40 = (p, landed, per, sizes, mults) => rd40("(function(){setProd('" + p + "');var R=Object.assign({},TIER_RULE['" + p + "']" + (mults ? ",{multiples:" + JSON.stringify(mults) + "}" : "") + "),P=Object.assign({},pxPolicy(),{tierRule:R}),"
       + "C=Object.assign({},pxCost(),{landed:" + landed + ",eff:" + per + ",effEx:" + per + "});"
-      + "return PRICING_ENGINE.fiveTiers(" + (sizes ? JSON.stringify(sizes) : "TIER_RULE['" + p + "'].rungs") + ",C,P);})()");
+      + "return PRICING_ENGINE.fiveTiers(" + (sizes ? JSON.stringify(sizes) : "R.rungs") + ",C,P);})()");
     const ten40 = (v) => Math.ceil(v / 10 - 1e-9) * 10;
-    /* v642: the rule carries a fifth multiple, 2.25, that the workbook does not, so its four columns are read by multiple */
-    const RULE40 = rd40("TIER_RULE"), sheet40 = (p, cols) => [1, 1.5, 2, 2.5].map((m) => cols[RULE40[p].multiples.indexOf(m)]);
+    /* v644: the rule's multiples run evenly from 1.0 to 2.5 and no longer carry the workbook's 1.5 and 2.0, so the workbook's
+       own four multiples are handed to the engine, with the master's start, step and rungs, to prove the formula itself */
     const bad1 = [];
     for (const p of ["salt", "oil"]) {
-      const got = walk40(p, SHEET[p].landed, 1);
-      SHEET[p].rows.forEach((r, i) => { const g = got[i]; if (!g || g.q !== r[0] || g.cogs !== r[1] || JSON.stringify(sheet40(p, g.cols)) !== JSON.stringify(r.slice(2))) bad1.push({ p, q: r[0], got: g && [g.cogs, ...g.cols] }); });
+      const got = walk40(p, SHEET[p].landed, 1, null, [1, 1.5, 2, 2.5]);
+      SHEET[p].rows.forEach((r, i) => { const g = got[i]; if (!g || g.q !== r[0] || g.cogs !== r[1] || JSON.stringify(g.cols) !== JSON.stringify(r.slice(2))) bad1.push({ p, q: r[0], got: g && [g.cogs, ...g.cols] }); });
     }
-    ok(bad1.length === 0, "the master's rule reproduces the workbook: every COGS to the ringgit and all 76 column prices, salt and oil " + JSON.stringify(bad1));
+    ok(bad1.length === 0, "the master's rule, at the workbook's own four multiples, reproduces the workbook: every COGS to the ringgit and all 76 column prices, salt and oil " + JSON.stringify(bad1));
     const bad2 = [];
     for (const p of ["salt", "oil"]) walk40(p, SHEET[p].landed, 1).forEach((g) => { if (g.prices[0] !== ten40(g.q) || JSON.stringify(g.prices.slice(1)) !== JSON.stringify(g.cols)) bad2.push(g); });
     ok(bad2.length === 0, "where nothing binds, the lowest level is the floor up to the ten and every tier is its column exactly " + JSON.stringify(bad2.slice(0, 2)));
@@ -11803,10 +11803,11 @@ section("v642: the ladder is Ambassador at the floor and five named tiers, Titan
     for (const [p, landed] of [["salt", 46.72], ["oil", 7.8355]]) walk42(p, landed, 1).forEach((g) => { if (!(g.cols[2] < g.cols[3] && g.cols[3] < g.cols[4])) between.push({ p, q: g.q, cols: g.cols }); });
     ok(between.length === 0, "and Silver, the new column, sits strictly between Gold and Bronze at every size on both books, before any guard " + JSON.stringify(between.slice(0, 2)));
     /* THE BOARD HE APPROVED ON 15 SEP 2026, on the costs it was read at: salt landed at RM46.72 with a floor of RM61.147136 a
-       unit, oil at RM7.8355 with RM8.7285. Oil's Titanium lifts a ten over Ambassador at 80 and 100 unit. */
+       unit, oil at RM7.8355 with RM8.7285. Oil's Titanium lifts a ten over Ambassador at 80 and 100 unit.
+       v644: the multiples run evenly from 1.0 to 2.5, his decision of the same day, and the board moved with them. */
     const DECIDED = {
-      salt: [[40,50,60,70,80,90],[70,100,120,140,150,160],[100,140,170,200,220,230],[130,180,220,260,280,300],[160,220,260,310,330,360],[190,250,300,350,380,410],[220,280,340,400,430,460],[250,310,370,440,470,500],[280,340,400,470,500,530],[310,370,430,500,530,560],[390,440,520,590,630,660],[770,850,980,1110,1180,1250]],
-      oil: [[90,110,150,190,210,230],[180,210,290,370,410,440],[270,300,420,530,590,650],[350,380,540,690,770,850],[440,460,650,850,950,1040],[700,710,1010,1320,1480,1640],[880,890,1220,1610,1810,2000]],
+      salt: [[40,50,60,70,80,90],[70,100,110,130,150,160],[100,140,160,190,210,230],[130,180,210,240,270,300],[160,220,250,290,320,360],[190,250,290,330,370,410],[220,280,330,370,410,460],[250,310,360,400,450,500],[280,340,390,440,480,530],[310,370,420,460,510,560],[390,440,500,550,610,660],[770,850,950,1050,1150,1250]],
+      oil: [[90,110,140,170,200,230],[180,210,270,330,390,440],[270,300,390,470,560,650],[350,380,500,620,730,850],[440,460,600,750,900,1040],[700,710,930,1160,1400,1640],[880,890,1120,1420,1710,2000]],
     };
     const got = { salt: walk42("salt", 46.72, 61.147136).map((g) => g.prices), oil: walk42("oil", 7.8355, 8.7285).map((g) => g.prices) };
     ok(JSON.stringify(got) === JSON.stringify(DECIDED), "on the costs of 14 Sep 2026 the board is the one he approved on 15 Sep, oil's Titanium at 80 and 100 unit included " + JSON.stringify(got.oil.slice(5)));
@@ -11888,6 +11889,24 @@ section("v643: each customer holds one tier, set on the phone and folded, propos
     ok(/Diamond is not a tier/.test(ref43) && /CZ9-GONE is not a customer on the roster/.test(ref43), "the fold refuses a tier the desk does not name, and a code that left the roster: " + ref43);
     ok(/'tierset','label'\)/.test(readFileSync(join(REPO, "migrations", "0010_tier.sql"), "utf8")), "and 0010 rebuilds the draft table once for both the tier and the label to come");
   } finally { await new Promise((r) => setTimeout(r, 200)); try { w43.close(); } catch (e) { /* best effort */ } }
+}
+
+section("v644: the tiers' multiples run evenly from 1.0 to 2.5, so 1 unit of salt reads his RM100, 110, 130, 150 and 160");
+{
+  /* HIS DECISION OF 15 SEP 2026. His prices for 1 unit of salt include RM110 and RM130, which the 1.5 and 2.0 columns never
+     printed; multiples spaced evenly from 1.0 to 2.5 print both, and keep 0.5 unit at RM50 to RM90. Forced costs. Each
+     assertion was proved red by mutation. */
+  const { openMaster: om44 } = await import("../tools/payload.mjs");
+  const { w: w44 } = await om44();
+  const rd44 = (e) => JSON.parse(String(w44.eval("JSON.stringify(" + e + ")")));
+  try {
+    const R44 = rd44("TIER_RULE");
+    const even = (m) => m.length === 5 && m[0] === 1 && m[4] === 2.5 && m.every((x, i) => !i || Math.abs(x - m[i - 1] - 0.375) < 1e-9);
+    ok(even(R44.salt.multiples) && even(R44.oil.multiples), "both books' tiers run evenly from 1.0 to 2.5, a step of 0.375: " + JSON.stringify([R44.salt.multiples, R44.oil.multiples]));
+    const one = rd44("(function(){setProd('salt');var P=Object.assign({},pxPolicy(),{tierRule:TIER_RULE.salt}),C=Object.assign({},pxCost(),{landed:46.72,eff:1,effEx:1});return PRICING_ENGINE.fiveTiers([0.5,1],C,P);})()");
+    ok(one[0].cogs === 23 && JSON.stringify(one[0].cols) === "[50,60,70,80,90]" && one[1].cogs === 47 && JSON.stringify(one[1].cols) === "[100,110,130,150,160]",
+      "on the workbook's COGS, 0.5 unit of salt reads RM50 to RM90 and 1 unit reads his RM100, 110, 130, 150 and 160: " + JSON.stringify(one.map((g) => g.cols)));
+  } finally { await new Promise((r) => setTimeout(r, 200)); try { w44.close(); } catch (e) { /* best effort */ } }
 }
 
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);

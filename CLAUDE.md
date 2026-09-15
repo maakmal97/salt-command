@@ -72,8 +72,9 @@ The fold routine is `docs/CLOUD_FOLD.md`; statements `docs/STATEMENTS.md`; desig
    a 416-point grid in the suite (v566). **Ambassador and five tiers are decided and staged** (his decisions
    of 14 and 15 Sep 2026, off his pricing workbook). COGS, purchase plus freight, is the line no price goes
    under; the floor is COGS plus leakage. Ambassador pays the floor, up to the ten, on his word alone and
-   earning no free units. The tiers Titanium, Platinum, Gold, Silver and Bronze are the workbook's columns at
-   multiples 1.0, 1.5, 2.0, 2.25 and 2.5 (0.5 unit of salt starts them at RM50 to RM90): COGS to the ringgit
+   earning no free units. The tiers Titanium, Platinum, Gold, Silver and Bronze are columns at multiples
+   running evenly from 1.0 to 2.5 (v644: 1.0, 1.375, 1.75, 2.125, 2.5; 0.5 unit of salt starts them at RM50 to
+   RM90 and 1 unit reads his RM100, 110, 130, 150 and 160), priced by the workbook's formula: COGS to the ringgit
    times the multiple less a step a rung, up to the ten (`TIER_RULE` and `TIER_NAMES` in the master,
    `fiveTiers` in the engine), each level at least a ten over the one below and the rate law walked under
    that. A new customer starts at Bronze; one tier per customer, starting nearest what they pay. **Each
