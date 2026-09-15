@@ -1,5 +1,15 @@
 [
  {
+  "v": "v646",
+  "d": "15 Sep 2026",
+  "t": "EACH CUSTOMER HOLDS A TIER FOR EACH PRODUCT, AND A PRODUCT THEY HAVE NEVER BOUGHT IS PROPOSED NOTHING UNTIL HE SETS ONE",
+  "n": [
+   "<b>HIS INSTRUCTION OF 15 SEP 2026: A TIER FOR EACH PRODUCT.</b> A customer can hold Gold on salt and Silver on oil. The Tiers card on Customers carries a dropdown for each product, Not set among them; Set queues only the products whose choice changed, Not set on a tier held queues it cleared, and every change goes to Approve before it is folded. Add ID asks a starting tier for each product, Bronze by default, and leaves one set to not set out.",
+   "<b>NOTHING IS PROPOSED FOR A PRODUCT NEVER BOUGHT.</b> A product with no tier held is proposed the level nearest what the customer pays for it, read off that product alone. One they have never bought is proposed nothing and reads not set, and the card now lists customers who have bought nothing yet, so a tier can be set before they order. Still quoted nowhere: TIER_OF was empty, so nothing on the book changed shape.",
+   "<b>THE CHECKS.</b> The drafter and the fold check each product against the book and each level against the desk's names, and the fold clears a product on a null and drops a customer left with none. The v643 and v645 sections are restated for a tier per product, and a new section of 8 assertions covers the rest. 19 mutations each turn their assertion red."
+  ]
+ },
+ {
   "v": "v645",
   "d": "15 Sep 2026",
   "t": "ADD ID STARTS A NEW CUSTOMER AT THE TIER CHOSEN, AND THE FOLD FILES IT WITH THE REGISTRATION",

@@ -996,10 +996,18 @@ export function draftRow(entry, book) {
     const parent = pay.parent || null;
     if (kind === "bucket" && !parent) return { skip: "a bucket sits under a party, and which party is a judgement" };
     if (pay.geo != null && !geoOf(pay.geo)) return { skip: "the point given for the place is not in Malaysia" };   // v633
-    /* v645: the starting tier chosen at Add ID, checked against the level names the desk's PRICING snapshot carries */
-    if (pay.tier != null) {
+    /* v645: the starting tier chosen at Add ID, for each product since v646, checked against the book's products and the
+       level names the desk's PRICING snapshot carries */
+    const products = (book.state && book.state.PRODUCTS) || {};
+    const tierLine = (t) => Object.keys(t).map((p) => `${(products[p] && products[p].name) || p} ${t[p]}`).join(", ");
+    if (pay.tiers != null) {
       const names = (book.pricing && Array.isArray(book.pricing.tierNames)) ? book.pricing.tierNames : [];
-      if (!names.includes(pay.tier)) return { skip: `${pay.tier} is not a tier` };
+      const ps = (typeof pay.tiers === "object" && !Array.isArray(pay.tiers)) ? Object.keys(pay.tiers) : [];
+      if (!ps.length) return { skip: "a starting tier names no product" };
+      for (const p of ps) {
+        if (!products[p]) return { skip: `${p} is not a product on this book` };
+        if (!names.includes(pay.tiers[p])) return { skip: `${pay.tiers[p]} is not a tier` };
+      }
       if (!["customer", "reseller", "referral"].includes(kind)) return { skip: `a ${kind} holds no tier` };
     }
 
@@ -1034,10 +1042,10 @@ export function draftRow(entry, book) {
       : "";
     return {
       collection: "roster",
-      row: Object.assign({ code, kind, parent, note: pay.note || null }, geoOf(pay.geo) ? { geo: geoOf(pay.geo) } : {}, pay.tier ? { tier: pay.tier } : {}),
+      row: Object.assign({ code, kind, parent, note: pay.note || null }, geoOf(pay.geo) ? { geo: geoOf(pay.geo) } : {}, pay.tiers ? { tiers: { ...pay.tiers } } : {}),
       flags,
       reasoning: `${stream && roster.includes(code) ? "Appoints" : "Registers"} ${code} as a ${kind}${parent ? ` under ${parent}` : ""}.`
-        + (pay.tier ? ` It starts them at ${pay.tier}.` : "")
+        + (pay.tiers ? ` It starts them at ${tierLine(pay.tiers)}.` : "")
         + ` It touches no figure: the fold appends ${roster.includes(code) ? "nothing new" : "the code"} to the roster.`
         + appointBits
         + " THE NAME AND THE PLACE ARE NOT HERE AND MUST NOT BE: the directory is typed at the laptop and never travels.",
@@ -1096,27 +1104,38 @@ export function draftRow(entry, book) {
         + " It moves no cash and no stock. The place that was typed stays in the vault; only the point travels.",
     };
   }
-  /* v643, HIS DECISIONS OF 15 SEP 2026: EACH CUSTOMER'S TIER, one customer or every proposal at once. Codes and level
-     names only, the names checked against the ones the desk's PRICING snapshot carries. */
+  /* v643, HIS DECISIONS OF 15 SEP 2026: EACH CUSTOMER'S TIER, one customer or every proposal at once, and since v646 one for
+     each product, code to product to level, a null clearing a product's tier. Codes, products and level names only, the
+     names checked against the ones the desk's PRICING snapshot carries. */
   if (pay.mode === "tierset") {
-    const tiers = (pay.tiers && typeof pay.tiers === "object" && !Array.isArray(pay.tiers)) ? pay.tiers : {};
+    const isObj = (v) => !!v && typeof v === "object" && !Array.isArray(v);
+    const tiers = isObj(pay.tiers) ? pay.tiers : {};
     const codes = Object.keys(tiers);
     if (!codes.length) return { skip: "a tier entry names no customer" };
     const roster = (book.state && book.state.roster) || [], held = (book.state && book.state.TIER_OF) || {};
+    const products = (book.state && book.state.PRODUCTS) || {};
     const names = (book.pricing && Array.isArray(book.pricing.tierNames)) ? book.pricing.tierNames : [];
-    const row = { tiers: {} };
+    const name = (p) => (products[p] && products[p].name) || p;
+    const row = { tiers: {} }, flags = [];
     for (const c of codes) {
       if (!roster.includes(c)) return { skip: `${c} is not on the roster` };
       if (POSITION_ENGINE.isBucket(c)) return { skip: `${c} is a resale account, and it holds its associate's tier` };
-      if (!names.includes(tiers[c])) return { skip: `${tiers[c]} is not a tier` };
-      row.tiers[c] = tiers[c];
+      const ps = isObj(tiers[c]) ? Object.keys(tiers[c]) : [];
+      if (!ps.length) return { skip: `the tier entry for ${c} names no product` };
+      row.tiers[c] = {};
+      for (const p of ps) {
+        const t = tiers[c][p], was = isObj(held[c]) ? held[c][p] : null;
+        if (!products[p]) return { skip: `${p} is not a product on this book` };
+        if (t !== null && !names.includes(t)) return { skip: `${t} is not a tier` };
+        row.tiers[c][p] = t;
+        if (was && was !== t) flags.push(`${c}'s ${name(p)} moves from ${was} to ${t || "not set"}.`);
+      }
     }
-    const moves = codes.filter((c) => held[c] && held[c] !== row.tiers[c]);
     return {
       collection: "tierset",
       row,
-      flags: moves.map((c) => `${c} moves from ${held[c]} to ${row.tiers[c]}.`),
-      reasoning: `Sets the tier of ${codes.length} ${codes.length === 1 ? "customer" : "customers"}: ${codes.map((c) => c + " " + row.tiers[c]).join(", ")}.`
+      flags,
+      reasoning: `Sets the tiers of ${codes.length} ${codes.length === 1 ? "customer" : "customers"}: ${codes.map((c) => c + " " + Object.keys(row.tiers[c]).map((p) => name(p) + " " + (row.tiers[c][p] || "not set")).join(" and ")).join(", ")}.`
         + " It moves no cash and no stock, and until the quotes switch it moves no price.",
     };
   }

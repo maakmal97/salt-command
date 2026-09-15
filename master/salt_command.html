@@ -6816,7 +6816,9 @@ const quoteFor=p=>{const f=QUOTES[p||PROD];return f?f():null;};
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{"v":"v645","d":"15 Sep 2026","t":"ADD ID STARTS A NEW CUSTOMER AT THE TIER CHOSEN, AND THE FOLD FILES IT WITH THE REGISTRATION","n":["<b>HIS DECISION OF 15 SEP 2026: A NEW CUSTOMER INCLUDES A STARTING TIER.</b> Add ID now asks the starting tier, Bronze unless he picks another, for a customer and for either kind of associate. An end buyer, a bucket and a supplier hold no tier and are not asked, and an appointment of a party already registered keeps the tier they hold.","<b>ONE ROAD.</b> The tier rides the registration: the queue line says where the customer starts and never carries the name, the Tiers card reads it as waiting for approval, the drafter checks it against the level names and refuses one for a supplier or a bucket, and the fold files it in TIER_OF as it adds the code to the roster.","<b>THE CHECKS.</b> A new section of 8 assertions, driven through the Add ID form with the vault and the network stubbed: the picker for the kinds that hold a tier and not the others, Record queuing the tier without the name, the Tiers card reading it, the drafter's row and its two refusals, and the fold filing it and refusing a tier the desk does not name. 9 mutations each turn their assertion red."]},
+const evolution=[{"v":"v646","d":"15 Sep 2026","t":"EACH CUSTOMER HOLDS A TIER FOR EACH PRODUCT, AND A PRODUCT THEY HAVE NEVER BOUGHT IS PROPOSED NOTHING UNTIL HE SETS ONE","n":["<b>HIS INSTRUCTION OF 15 SEP 2026: A TIER FOR EACH PRODUCT.</b> A customer can hold Gold on salt and Silver on oil. The Tiers card on Customers carries a dropdown for each product, Not set among them; Set queues only the products whose choice changed, Not set on a tier held queues it cleared, and every change goes to Approve before it is folded. Add ID asks a starting tier for each product, Bronze by default, and leaves one set to not set out.","<b>NOTHING IS PROPOSED FOR A PRODUCT NEVER BOUGHT.</b> A product with no tier held is proposed the level nearest what the customer pays for it, read off that product alone. One they have never bought is proposed nothing and reads not set, and the card now lists customers who have bought nothing yet, so a tier can be set before they order. Still quoted nowhere: TIER_OF was empty, so nothing on the book changed shape.","<b>THE CHECKS.</b> The drafter and the fold check each product against the book and each level against the desk's names, and the fold clears a product on a null and drops a customer left with none. The v643 and v645 sections are restated for a tier per product, and a new section of 8 assertions covers the rest. 19 mutations each turn their assertion red."]},
+
+{"v":"v645","d":"15 Sep 2026","t":"ADD ID STARTS A NEW CUSTOMER AT THE TIER CHOSEN, AND THE FOLD FILES IT WITH THE REGISTRATION","n":["<b>HIS DECISION OF 15 SEP 2026: A NEW CUSTOMER INCLUDES A STARTING TIER.</b> Add ID now asks the starting tier, Bronze unless he picks another, for a customer and for either kind of associate. An end buyer, a bucket and a supplier hold no tier and are not asked, and an appointment of a party already registered keeps the tier they hold.","<b>ONE ROAD.</b> The tier rides the registration: the queue line says where the customer starts and never carries the name, the Tiers card reads it as waiting for approval, the drafter checks it against the level names and refuses one for a supplier or a bucket, and the fold files it in TIER_OF as it adds the code to the roster.","<b>THE CHECKS.</b> A new section of 8 assertions, driven through the Add ID form with the vault and the network stubbed: the picker for the kinds that hold a tier and not the others, Record queuing the tier without the name, the Tiers card reading it, the drafter's row and its two refusals, and the fold filing it and refusing a tier the desk does not name. 9 mutations each turn their assertion red."]},
 
 {"v":"v644","d":"15 Sep 2026","t":"THE TIERS RUN EVENLY FROM 1.0 TO 2.5, SO 1 UNIT OF SALT READS HIS RM100, 110, 130, 150 AND 160","n":["<b>HIS DECISION OF 15 SEP 2026.</b> His prices for 1 unit of salt include RM110 and RM130, which the 1.5 and 2.0 columns never printed. The five tiers' multiples now run evenly from 1.0 to 2.5, a step of 0.375: Titanium 1.0, Platinum 1.375, Gold 1.75, Silver 2.125 and Bronze 2.5.","<b>WHAT MOVES.</b> 0.5 unit of salt still starts the tiers at RM50, 60, 70, 80 and 90, and 1 unit reads RM100, 110, 130, 150 and 160. The middle tiers ease at the larger sizes: at 12.5 unit Platinum reads RM950, Gold RM1,050 and Silver RM1,150, against RM980, RM1,110 and RM1,180 before. Ambassador and Bronze do not move, and every rule the ladder keeps still holds on both books. Nothing quotes the ladder yet.","<b>THE CHECKS.</b> A new section of 2 assertions: the even spacing on both books, and RM50 to RM90 at 0.5 unit with his 1-unit prices on the workbook's COGS. v641's section now proves the workbook's 76 prices with the workbook's own four multiples, and v642's approved board moved with the multiples. 4 mutations each turn their assertion red."]},
 
@@ -7316,7 +7318,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='15 Sep 2026, 13:48 KL';
+const LAST_UPDATED='15 Sep 2026, 16:15 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -15386,64 +15388,74 @@ function fiveTierCard(){
     <div class="insight">Ambassador pays the floor and a new customer starts at Bronze, with each level at least ${fmt0(10)} over the one below.</div></div>`;
 }
 /* ============ v643, HIS DECISIONS OF 15 SEP 2026: EACH CUSTOMER'S TIER, BEFORE ANY QUOTE READS IT ============
-   One tier per customer, across both books. A tier held is TIER_OF on the book: set on the Customers page, queued,
-   drafted as `tierset`, approved and folded, so it moves only on his word. A customer holding none is PROPOSED the
-   tier nearest what they pay: on the book carrying most of their revenue, the level whose prices sit closest to their
-   own rate (pbOwnRate) across that book's board sizes. Never Ambassador, which is his word alone; Bronze, where a new
-   customer starts, when there is no rate to read. QUOTED NOWHERE YET: nothing that prices reads TIER_OF. */
+   A tier for each product since v646 (his instruction of 15 Sep 2026): a customer can hold Gold on salt and Silver on oil.
+   A tier held is TIER_OF on the book, code to product to level: set on the Customers page, queued, drafted as `tierset`,
+   approved and folded, so it moves only on his word. A product with none held is PROPOSED the tier nearest what they pay
+   for it: the level whose prices sit closest to their own rate (pbOwnRate) across that book's board sizes. Never
+   Ambassador, which is his word alone; and a product they have never bought is proposed nothing and reads not set until he
+   sets it. QUOTED NOWHERE YET: nothing that prices reads TIER_OF. */
 function tierBoards(){
   const keep=PROD,out={};
   try{PROD_IDS.forEach(p=>{if(!TIER_RULE[p])return;PROD=p;recompute();out[p]=fiveTiersNow();});}
   finally{PROD=keep;recompute();}
   return out;
 }
-function tierProposal(code,boards){
-  let best=null;
-  PROD_IDS.forEach(p=>{
-    const B=(boards[p]||[]).filter(r=>sizesFor(p).some(s=>Math.abs(s-r.q)<0.009));
-    const rev=pSales(p).filter(s=>POSITION_ENGINE.ownsCode(code,s.customer)&&txStat(s).order!=='Cancelled'&&s.total>0).reduce((a,s)=>a+s.total,0);
-    const own=pbOwnRate(code,p);
-    if(!B.length||own.rate==null||(best&&best.rev>=rev))return;
-    const gap=t=>B.reduce((a,r)=>a+Math.abs(r.prices[t]-own.rate*r.q),0);
-    let tier=1;for(let t=2;t<TIER_NAMES.length;t++)if(gap(t)<gap(tier)-1e-9)tier=t;
-    best={rev,tier};
-  });
-  return TIER_NAMES[best?best.tier:TIER_NAMES.length-1];
+function tierProposal(code,prod,boards){
+  const B=(boards[prod]||[]).filter(r=>sizesFor(prod).some(s=>Math.abs(s-r.q)<0.009)),own=pbOwnRate(code,prod);
+  if(!B.length||own.rate==null)return null;
+  const gap=t=>B.reduce((a,r)=>a+Math.abs(r.prices[t]-own.rate*r.q),0);
+  let tier=1;for(let t=2;t<TIER_NAMES.length;t++)if(gap(t)<gap(tier)-1e-9)tier=t;
+  return TIER_NAMES[tier];
 }
-/* every customer who has bought, on either book, largest first; a resale account stands with its associate */
+/* every customer on the roster, those who have bought first and largest first; a resale account stands with its associate
+   and a supplier holds no tier. Since v646 one who has not bought yet is listed too, so a tier can be set before they do. */
 function tierCustomers(){
   const rev={};
   sales.forEach(s=>{const o=ownerOf(s.customer);if(!o||!isPerson(o)||!(s.total>0)||txStat(s).order==='Cancelled')return;rev[o]=(rev[o]||0)+s.total;});
-  return Object.keys(rev).sort((a,b)=>rev[b]-rev[a]);
+  const rest=roster.map(ownerOf).filter((id,i,a)=>a.indexOf(id)===i&&isPerson(id)&&!id.startsWith('S')&&!(id in rev));
+  return Object.keys(rev).sort((a,b)=>rev[b]-rev[a]).concat(rest);
 }
-function tierQueued(){const o={};queue.forEach(q=>{if(q&&q.payload&&q.payload.mode==='tierset')Object.assign(o,q.payload.tiers||{});else if(q&&q.payload&&q.payload.mode==='addid'&&q.payload.tier)o[q.payload.code]=q.payload.tier;});return o;}   /* v645: a registration's starting tier waits too */
+/* what waits for approval, code to product to level, a null clearing one; a registration's starting tiers wait too (v645) */
+function tierQueued(){const o={},add=(c,t)=>{o[c]=Object.assign(o[c]||{},t);};
+  queue.forEach(q=>{const p=q&&q.payload;if(!p)return;if(p.mode==='tierset')Object.keys(p.tiers||{}).forEach(c=>add(c,p.tiers[c]));else if(p.mode==='addid'&&p.tiers)add(p.code,p.tiers);});
+  return o;}
+function tierSay(t){return Object.keys(t).map(p=>(PRODUCTS[p]?PRODUCTS[p].name:p)+' '+(t[p]||'not set')).join(', ');}
 function tierQueue(tiers){
   const codes=Object.keys(tiers);if(!codes.length)return;
   queue.push({at:new Date().toISOString(),type:'TIER',party:codes.length===1?codes[0]:null,qty:null,total:null,status:'tierset',
-    raw:codes.length===1?'Set '+codes[0]+' to '+tiers[codes[0]]:'Set '+codes.length+' tiers from their proposals: '+codes.map(c=>c+' '+tiers[c]).join(', '),
+    raw:codes.length===1?'Set '+codes[0]+': '+tierSay(tiers[codes[0]]):'Set '+codes.length+' customers from their proposals: '+codes.map(c=>c+' '+tierSay(tiers[c])).join('; '),
     payload:{mode:'tierset',tiers:tiers}});
   render();
   Promise.resolve(saveQueue()).then(()=>{try{renderQueue();}catch(e){}});
 }
-function tierSet(code){const el=document.getElementById('tierSel_'+code);if(el&&TIER_NAMES.includes(el.value))tierQueue({[code]:el.value});}
+/* Set queues only the products whose choice differs from the tier held or already waiting */
+function tierSet(code){
+  const held=TIER_OF[code]||{},wait=tierQueued()[code]||{},t={};
+  PROD_IDS.forEach(p=>{const el=document.getElementById('tierSel_'+code+'_'+p);if(!el)return;
+    const v=TIER_NAMES.includes(el.value)?el.value:null,now=p in wait?wait[p]:(held[p]||null);
+    if(v!==now)t[p]=v;});
+  if(Object.keys(t).length)tierQueue({[code]:t});
+}
 function tierAcceptAll(){
   const boards=tierBoards(),waiting=tierQueued(),t={};
-  tierCustomers().forEach(id=>{if(!TIER_OF[id]&&!waiting[id])t[id]=tierProposal(id,boards);});
+  tierCustomers().forEach(id=>PROD_IDS.forEach(p=>{
+    if((TIER_OF[id]||{})[p]||(waiting[id]&&p in waiting[id]))return;
+    const pr=tierProposal(id,p,boards);if(pr)(t[id]=t[id]||{})[p]=pr;}));
   tierQueue(t);
 }
 function tierCard(){
   const ids=tierCustomers();if(!ids.length)return '';
-  const boards=tierBoards(),waiting=tierQueued();
-  const rows=ids.map(id=>({id,held:TIER_OF[id]||null,wait:waiting[id]||null,prop:tierProposal(id,boards)}));
-  const open=rows.filter(r=>!r.held&&!r.wait).length,held=rows.filter(r=>r.held).length;
-  const body=rows.map(r=>{const shown=r.wait||r.held||r.prop,state=r.wait?'waiting':r.held?'held':'proposed';
-    return `<tr><td class="l mono">${ID(r.id)}</td><td class="l">${state==='held'?`<b>${shown}</b>`:`<span style="color:var(--dim)">${shown}</span>`} <span class="iref">${state}</span></td>`
-      +`<td><select id="tierSel_${r.id}" aria-label="Tier for ${codeOf(r.id)}" style="min-height:var(--tap)">${TIER_NAMES.map(n=>`<option${n===shown?' selected':''}>${n}</option>`).join('')}</select> `
-      +`<button class="vbtn" style="min-height:var(--tap)" onclick="tierSet('${r.id}')">Set</button></td></tr>`;}).join('');
-  return `<div class="card"><div class="cardh">Tiers <span class="sub">one a customer, quoted nowhere yet</span></div>
-    <table class="tiertab"><thead><tr><th class="l">Customer</th><th class="l">Tier</th><th>Change</th></tr></thead><tbody>${body}</tbody></table>
+  const boards=tierBoards(),waiting=tierQueued();let open=0,held=0;
+  const cell=(id,p)=>{const h=(TIER_OF[id]||{})[p]||null,w=!!waiting[id]&&p in waiting[id],prop=h||w?null:tierProposal(id,p,boards);
+    const shown=w?waiting[id][p]:(h||prop),state=w?'waiting':h?'held':prop?'proposed':'not set';
+    if(h)held++;if(prop)open++;
+    /* one line a product, so a dropdown keeps the width of its longest level on a phone rather than sharing a row with the others */
+    return `<div style="display:flex;align-items:center;gap:8px;margin:3px 0"><div style="min-width:5em;line-height:1.25">${PRODUCTS[p].name}<br><span class="iref">${state}</span></div><select id="tierSel_${id}_${p}" aria-label="${PRODUCTS[p].name} tier for ${codeOf(id)}" style="min-height:var(--tap);width:auto"><option value=""${shown?'':' selected'}>Not set</option>${TIER_NAMES.map(n=>`<option${n===shown?' selected':''}>${n}</option>`).join('')}</select></div>`;};
+  const body=ids.map(id=>`<tr><td class="l mono">${ID(id)}<br><button class="vbtn" style="min-height:var(--tap);margin-top:6px" onclick="tierSet('${id}')">Set</button></td><td class="l">${PROD_IDS.map(p=>cell(id,p)).join('')}</td></tr>`).join('');
+  return `<div class="card"><div class="cardh">Tiers <span class="sub">one for each product, quoted nowhere yet</span></div>
+    <div class="tscroll"><table class="tiertab"><thead><tr><th class="l">Customer</th><th class="l">Tier for each product</th></tr></thead><tbody>${body}</tbody></table></div>
     ${open?`<button class="vbtn" style="min-height:var(--tap);margin-top:8px" onclick="tierAcceptAll()">Accept ${open} proposal${open===1?'':'s'}</button>`:''}
-    <div class="insight">${held} of ${rows.length} customers hold a tier, and a tier moves only when you approve it.</div></div>`;
+    <div class="insight">${held} of ${ids.length*PROD_IDS.length} product tiers are held; a tier moves only when you approve it, and a product a customer has never bought is proposed nothing until you set it.</div></div>`;
 }
 
 /* ---- layer 3: five readings, each worth a few points, summed then clamped ---- */
@@ -17742,7 +17754,7 @@ function tabWorkbench(){
         <div class="qfield" id="wbApParentCell" style="display:none"><label>Under which associate</label><select id="wbApParent"></select></div>
         <div class="qfield" id="wbApNameCell"><label>Name</label><input id="wbApName" type="text" placeholder="as they are known" autocomplete="off"></div>
         <div class="qfield" id="wbApPlaceCell"><label>Place</label><input id="wbApPlace" type="text" placeholder="town or area; blank if to be confirmed" autocomplete="off"></div>
-        <div class="qfield" id="wbApTierCell"><label>Starting tier</label><select id="wbApTier" style="min-height:var(--tap)">${TIER_NAMES.map(n=>`<option${n==='Bronze'?' selected':''}>${n}</option>`).join('')}</select></div>
+        <div class="qfield" id="wbApTierCell"><label>Starting tiers</label>${PROD_IDS.map(p=>`<select id="wbApTier_${p}" aria-label="Starting tier for ${PRODUCTS[p].name}" style="min-height:var(--tap)"><option value="">${PRODUCTS[p].name}: not set</option>${TIER_NAMES.map(n=>`<option value="${n}"${n==='Bronze'?' selected':''}>${PRODUCTS[p].name}: ${n}</option>`).join('')}</select>`).join(' ')}</div>
         <div class="qfield" style="flex:1"><label>Note <span style="color:var(--dim)">optional</span></label><input id="wbApNote" type="text" placeholder="never the name or the place"></div>
       </div>
       <div class="dsc">The code is made from what you type, never typed itself: <b>C</b> for a customer or <b>S</b> for a supplier, the name&rsquo;s first letter and its length, then the place, its initials when it is several words and its first three letters when it is one. So a four-letter name starting with A is <b>CA4</b>, and with its place <b>CA4-DAM</b>; a blank place gives <b>TBC</b>. If the code is taken, it takes one more letter of the name, as <b>CAB4-DAM</b>. The name goes into the vault on this device, encrypted, and never into the queue.<br>To <b>appoint someone already on the roster</b>, pick Associate or Referrer and choose them under <b>Who</b>: it confers the standing rather than registering a second time, asks for no name, and an associate is given their <b>-R</b> resell account with it.</div>
@@ -19527,8 +19539,10 @@ function pickPlace(e){
 /* v645, HIS DECISION OF 15 SEP 2026: A NEW CUSTOMER STARTS AT THE TIER CHOSEN AT ADD ID. A customer and either kind of
    associate hold a tier; an end buyer, a bucket, a supplier and an appointment of a party already registered do not. */
 function wbTierKind(kind,apl){return !(apl&&apl.elevate)&&(kind==='customer'||kind==='reseller'||kind==='referral');}
+/* v646: the starting tier chosen for each product; a product left not set is left out, and none chosen is null */
+function wbTiersChosen(){const t={};PROD_IDS.forEach(p=>{const v=wbVal('wbApTier_'+p);if(TIER_NAMES.includes(v))t[p]=v;});return Object.keys(t).length?t:null;}
 /* v528: the registration itself, shared by the bucket road and the named road */
-function wbAddIdQueue(code,kind,parent,an,geo,tier){
+function wbAddIdQueue(code,kind,parent,an,geo,tiers){
   /* v570: READ THE PLAN BEFORE THE OVERLAY MOVES, or the two pushes below flip `known` and
      `already` under it and the queue line would describe an appointment as a registration. */
   const apl=addIdPlan(code,kind);
@@ -19540,8 +19554,8 @@ function wbAddIdQueue(code,kind,parent,an,geo,tier){
   if(apl.resell&&roster.indexOf(apl.resell)<0)roster.push(apl.resell);
   if(apl.stream&&associates.indexOf(code)<0)associates.push(code);
   queue.push({at:new Date().toISOString(),type:'ADDID',party:code,qty:null,total:null,status:'addid',
-    raw:(apl.elevate?'Appoint '+code+' as: ':'Add '+code+' to the roster as: ')+(ADDID_KIND_LABEL[kind]||kind)+(parent?' (under '+codeOf(parent)+')':'')+(apl.resell?', with '+apl.resell+' as their resell account':'')+(tier?', starting at '+tier:'')+(an?', '+an:''),
-    payload:{mode:'addid',code:code,kind:kind,parent:parent,rev:apl.stream,note:an||null,geo:geo||null,tier:tier&&TIER_NAMES.includes(tier)?tier:null}});
+    raw:(apl.elevate?'Appoint '+code+' as: ':'Add '+code+' to the roster as: ')+(ADDID_KIND_LABEL[kind]||kind)+(parent?' (under '+codeOf(parent)+')':'')+(apl.resell?', with '+apl.resell+' as their resell account':'')+(tiers?', starting at '+tierSay(tiers):'')+(an?', '+an:''),
+    payload:{mode:'addid',code:code,kind:kind,parent:parent,rev:apl.stream,note:an||null,geo:geo||null,tiers:tiers||null}});
   ['wbApWho','wbApNote','wbApName','wbApPlace'].forEach(id=>{const e=wbEl(id);if(e)e.value='';});
   applyOverlay();render();
   Promise.resolve(saveQueue()).then(()=>{try{renderQueue();}catch(e){}});
@@ -19599,11 +19613,11 @@ async function wbAmendIdNamed(ap){
   const o2=wbEl('wbOk');   /* render() rebuilt the tab */
   if(o2){o2.textContent=ap.to===ap.from?'Filed in the vault, encrypted. The code stays '+ap.from+(ap.move?'; its new point on the map is queued for approval.':'.'):'Filed in the vault, encrypted. '+ap.from+' to '+ap.to+' is queued for approval.';o2.style.color='var(--grn)';}
 }
-async function wbAddIdNamed(code,kind,parent,an,nm,pl,geo,tier){
+async function wbAddIdNamed(code,kind,parent,an,nm,pl,geo,tiers){
   const ok=wbEl('wbOk');
   const why=await wbVaultFile(map=>{map[code]=nm+' ('+pl+')';});
   if(why){if(ok){ok.textContent=why+' Nothing registered.';ok.style.color='var(--crim)';}return;}
-  wbAddIdQueue(code,kind,parent,an,geo,tier);
+  wbAddIdQueue(code,kind,parent,an,geo,tiers);
   const o2=wbEl('wbOk')||ok;   /* render() rebuilt the tab, so the status node captured above is detached */
   if(o2){o2.textContent='Registered '+code+'. The name is filed in the vault, encrypted; the ID is queued for approval.';o2.style.color='var(--grn)';}
 }
@@ -19796,7 +19810,7 @@ function wbRecord(){
       const geo=wbGeoPoint(pl);   // v633
       if(!geo&&!/^(to be confirmed|tbc)$/i.test(pl)){ok.textContent='Find the place on the map first: tap where they are.';ok.style.color='var(--crim)';return;}
       ok.textContent='Filing the name into the vault…';ok.style.color='var(--mut)';
-      wbAddIdNamed(code,kind,parent,an,nm,pl,geo,wbTierKind(kind,apl)?wbVal('wbApTier'):null);
+      wbAddIdNamed(code,kind,parent,an,nm,pl,geo,wbTierKind(kind,apl)?wbTiersChosen():null);
       return;
     }
     wbAddIdQueue(code,kind,parent,an);

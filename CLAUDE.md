@@ -77,16 +77,19 @@ The fold routine is `docs/CLOUD_FOLD.md`; statements `docs/STATEMENTS.md`; desig
    RM90 and 1 unit reads his RM100, 110, 130, 150 and 160), priced by the workbook's formula: COGS to the ringgit
    times the multiple less a step a rung, up to the ten (`TIER_RULE` and `TIER_NAMES` in the master,
    `fiveTiers` in the engine), each level at least a ten over the one below and the rate law walked under
-   that. A new customer starts at Bronze; one tier per customer, starting nearest what they pay. **Each
+   that. A new customer starts at Bronze; a tier for each product (his instruction of 15 Sep 2026, v646), starting
+   nearest what they pay for it. **Each
    customer's tier comes before the switch**, because a switch alone draws every existing price list up
    toward Bronze (all 36 salt and all 6 oil customers with history, measured 15 Sep 2026). **Quoted nowhere
    yet** (v641 drew it, v642 named it): `pxPolicy` carries no `tierRule`, and the suite holds it so.
-   **Each customer's tier (v643)** is `TIER_OF` on the book, a level name, set on Customers (the Tiers card:
-   one customer, or Accept for every open proposal) and folded as `tierset`, or chosen at Add ID as a new
-   customer's starting tier (v645: Bronze by default, for a customer or either kind of associate, never an
-   end buyer, a bucket or a supplier), which the fold files with the registration; a customer holding none is
-   proposed the tier nearest what they pay on the book carrying most of their revenue (`tierProposal`),
-   never Ambassador, and Bronze with no rate to read. Nothing prices off `TIER_OF` yet.
+   **Each customer's tiers (v643, one for each product since v646)** are `TIER_OF` on the book, code to product
+   to level name, set on Customers (the Tiers card: a dropdown for each product with Not set, Set queuing only
+   what changed, or Accept for every open proposal) and folded as `tierset`, a null clearing a product; or
+   chosen at Add ID as a new customer's starting tiers (v645: Bronze on each product by default, not set leaving
+   one out, for a customer or either kind of associate, never an end buyer, a bucket or a supplier), which the
+   fold files with the registration. A product with none held is proposed the tier nearest what they pay for it
+   (`tierProposal`), never Ambassador; one they have never bought is proposed nothing and reads not set, and the
+   card lists customers who have bought nothing yet. Nothing prices off `TIER_OF` yet.
 6. **The look is the Salt design system applied as a layer.** Material, type and colour
    are decided in `design/desk.css` over the vendored `design/salt-ds.css`; a colour or
    type change is an edit there, then `--sync`, then build, never a hex in the master's
