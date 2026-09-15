@@ -85,7 +85,8 @@ engines: one copy, wherever it lives.
 node tools/make_statements.mjs statements/<YYYY-MM> <YYYY-MM-DD>
 ```
 
-Plain node, no jsdom, no network, and the master is not an input.
+Plain node, no jsdom, no network, and the master is not an input. It is the v387 desk's
+statement code, and `tools/qr.mjs` feeds it the QR.
 
 **A BACK-DATED SET IS AN ARCHIVE, and it takes `--archive`.**
 
@@ -278,6 +279,28 @@ Every wrangler command for this site takes `-c wrangler.stmt.jsonc`; without it,
 addresses the desk.
 
 `REQUIRE_ACCESS` on the desk does not touch this site, and never will: the two share nothing.
+
+## The owner's list, guest links and printed boards
+
+Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
+
+- **No brand** (his instruction, 10 Sep 2026): nothing a customer holds may point at the
+  ledger, and an eyebrow carrying the name undid that.
+- **`/all`** (v566) serves the customer's own page with the roster where the gate is; a tap
+  fills the username and `STMT_MASTER` into that form and submits it, so everything past the
+  door is the customer's own code. His decision: the gated route hands the master to the page,
+  so nothing is typed, and the trade is that an Access session there reads every account. The
+  Access application is "Salt statements owner" (`67280e0b-…`, one-time PIN, his address,
+  24h). `stmt/access.js` reads the header or the `CF_Authorization` cookie. `roster` (codes
+  beside usernames, never names) is written by the publish.
+- **Guest links `/g/<id>`** (v566) are minted inside `/all`, pinned to Tier 1 or Tier 2 and
+  labelled: a board is what he prints and hands to strangers, and the link exists to say WHICH
+  stranger. `stmt/refs.js` mints, lists, revokes and counts opens; `board:1`/`board:2` are
+  written by the publish from `boardList`, which takes one row off the engine's `ladderRow` and
+  prices nothing itself.
+- **Print a board** (v564) saves HTML, PDF or JPG: crystal, sizes, username, then a QR to
+  `<site>/?u=<username>`. The publish writes KV `stmt-site` and keyed `GET /stmt-users` returns
+  it, so the laptop has no username and no QR.
 
 ## Before committing
 
