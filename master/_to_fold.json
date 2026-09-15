@@ -1,0 +1,54 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-09-15T19:50:35.131Z",
+   "collection": "sales",
+   "row": {
+    "qty": 10,
+    "total": 150,
+    "cash": 0,
+    "date": "2026-09-12",
+    "customer": "CE4-CHE",
+    "product": "oil"
+   },
+   "reasoning": "Fulfilment against CE4-CHE's order of 10 unit for RM 150 agreed 2026-09-12. RM 150 and 0 unit move on 2026-09-16, against RM 150 and 0 unit outstanding. Leaves RM 0 and 0 unit outstanding. The row itself is NOT recomputed here: ovAmend in the master applies it, so there is one definition of what a fulfilment does rather than two.",
+   "flags": [
+    "This SETTLES the order in full: nothing is left outstanding after it."
+   ],
+   "amends": "s154",
+   "amendKind": "Fulfilment",
+   "entry": {
+    "at": "2026-09-15T19:50:35.131Z",
+    "type": "AMEND",
+    "party": "CE4-CHE",
+    "qty": 0,
+    "total": 150,
+    "status": "paid",
+    "raw": "Fulfilment on CE4-CHE s154: RM 150 cash, recorded 2026-09-16",
+    "payload": {
+     "mode": "amend",
+     "direction": "SELL",
+     "party": "CE4-CHE",
+     "rid": "s154",
+     "orderKey": "CE4-CHE|2026-09-12|150",
+     "assoc": null,
+     "downstream": null,
+     "orderCode": null,
+     "linkTo": null,
+     "sameDay": false,
+     "note": null,
+     "kind": "Fulfilment",
+     "date": "2026-09-16",
+     "qty": 0,
+     "total": 150,
+     "cash": 150,
+     "kg": 0
+    }
+   },
+   "decidedAt": "2026-09-15T19:59:42.670Z",
+   "decidedBy": "desk"
+  }
+ ]
+}
