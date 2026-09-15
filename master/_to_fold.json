@@ -1,0 +1,100 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-09-15T00:32:48.670Z",
+   "collection": "sales",
+   "row": {
+    "rid": "s148",
+    "qty": 1,
+    "total": 120,
+    "cash": 0,
+    "date": "2026-09-11",
+    "product": "salt",
+    "changes": [
+     {
+      "field": "total",
+      "from": 120,
+      "to": 100
+     },
+     {
+      "field": "delivery",
+      "from": 10,
+      "to": 0
+     },
+     {
+      "field": "cash",
+      "from": 0,
+      "to": 100
+     },
+     {
+      "field": "deliveredQty",
+      "from": 0,
+      "to": 1
+     },
+     {
+      "field": "handover",
+      "from": "delivered",
+      "to": "collected"
+     },
+     {
+      "field": "paidOn",
+      "from": null,
+      "to": "2026-09-14"
+     },
+     {
+      "field": "deliveredOn",
+      "from": null,
+      "to": "2026-09-14"
+     }
+    ],
+    "customer": "CH6-SET"
+   },
+   "reasoning": "Correction against CH6-SET's order of 1 unit for RM 120 dated 2026-09-11 (s148). Sets total from 120 to 100, delivery from 10 to 0, cash from 0 to 100, deliveredQty from 0 to 1, handover from delivered to collected, paidOn from unset to 2026-09-14, deliveredOn from unset to 2026-09-14. It moves no cash and no stock: it changes what the row says about itself. The row is not rewritten here. The fold applies the patch, so there is one definition of what a correction does rather than two.",
+   "flags": [
+    "CH6-SET typically pays about RM 117.5/unit for salt across 2 orders; this one is RM 100, 14.9% below that."
+   ],
+   "amends": "s148",
+   "amendKind": "Correction",
+   "entry": {
+    "at": "2026-09-15T00:32:48.670Z",
+    "type": "AMEND",
+    "party": "CH6-SET",
+    "qty": 0,
+    "total": 0,
+    "raw": "Correction on CH6-SET s148: total to 100, delivery to 0, cash to 100, deliveredQty to 1, handover to collected, paidOn to 2026-09-14, deliveredOn to 2026-09-14, recorded 2026-09-15",
+    "payload": {
+     "mode": "amend",
+     "direction": "SELL",
+     "party": "CH6-SET",
+     "rid": "s148",
+     "orderKey": "CH6-SET|2026-09-11|120",
+     "kind": "Correction",
+     "date": "2026-09-15",
+     "fields": {
+      "total": 100,
+      "delivery": 0,
+      "cash": 100,
+      "deliveredQty": 1,
+      "handover": "collected",
+      "paidOn": "2026-09-14",
+      "deliveredOn": "2026-09-14"
+     },
+     "assoc": null,
+     "downstream": null,
+     "orderCode": null,
+     "linkTo": null,
+     "sameDay": false,
+     "note": null,
+     "qty": 0,
+     "total": 0,
+     "cash": 0,
+     "kg": 0
+    }
+   },
+   "decidedAt": "2026-09-15T00:34:42.385Z",
+   "decidedBy": "desk"
+  }
+ ]
+}
