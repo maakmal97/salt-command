@@ -80,6 +80,10 @@ The fold routine is `docs/CLOUD_FOLD.md`; statements `docs/STATEMENTS.md`; desig
    customer's tier comes before the switch**, because a switch alone draws every existing price list up
    toward Bronze (all 36 salt and all 6 oil customers with history, measured 15 Sep 2026). **Quoted nowhere
    yet** (v641 drew it, v642 named it): `pxPolicy` carries no `tierRule`, and the suite holds it so.
+   **Each customer's tier (v643)** is `TIER_OF` on the book, a level name, set on Customers (the Tiers card:
+   one customer, or Accept for every open proposal) and folded as `tierset`; a customer holding none is
+   proposed the tier nearest what they pay on the book carrying most of their revenue (`tierProposal`),
+   never Ambassador, and Bronze with no rate to read. Nothing prices off `TIER_OF` yet.
 6. **The look is the Salt design system applied as a layer.** Material, type and colour
    are decided in `design/desk.css` over the vendored `design/salt-ds.css`; a colour or
    type change is an edit there, then `--sync`, then build, never a hex in the master's
@@ -235,7 +239,7 @@ with a write-off is not approached, offered or messaged (`approachable`). The cu
   drafter newly returns needs a migration rebuilding it, applied to the live D1 BEFORE the deploy and
   as that file alone (`wrangler d1 execute salt_ledger --remote --file=...`): re-running an older one
   copies the rows through its narrower CHECK and INSERT OR IGNORE drops them. Missed twice: `priceset`
-  (0007) and `repayment` (0008); the suite now checks the newest CHECK against the drafter. Newest: 0009, `place` (v633).
+  (0007) and `repayment` (0008); the suite now checks the newest CHECK against the drafter. Newest: 0010, `tierset` and `label` (v643).
 - **Cowork:** Salt left Cowork on 20 Aug 2026; root section 6 still lists
   `salt-daily-price-brief`. Settle it from Cowork.
 

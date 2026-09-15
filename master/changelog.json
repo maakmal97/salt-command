@@ -1,5 +1,16 @@
 [
  {
+  "v": "v643",
+  "d": "15 Sep 2026",
+  "t": "EACH CUSTOMER HOLDS ONE TIER, SET ON THE PHONE AND FOLDED, PROPOSED FROM WHAT THEY PAY, QUOTED NOWHERE YET",
+  "n": [
+   "<b>HIS DECISIONS OF 15 SEP 2026: EACH CUSTOMER'S TIER COMES BEFORE THE SWITCH.</b> A customer holds one tier across both books, TIER_OF on the book, a new ledger key. It moves only on his word: the Customers page queues it, the drafter drafts it as tierset, he approves it and the fold files it, and Amend ID's re-key carries it with the code.",
+   "<b>PROPOSED FROM WHAT THEY PAY.</b> A customer holding none is proposed the tier nearest what they pay: on the book carrying most of their revenue, the level whose prices sit closest to their own rate across that book's board sizes. Never Ambassador, which is his word alone, and Bronze where there is no rate to read. On the book of 15 Sep that proposes Titanium 8, Platinum 9, Gold 13, Silver 2 and Bronze 5 of 37 customers.",
+   "<b>THE TIERS CARD.</b> On Customers, every customer who has bought, largest first, with the tier held, the one waiting for approval or the one proposed, a picker to set one, and Accept for every proposal still open, in one entry. A tier set with the names open queues the code and never the name. Migration 0010 rebuilds the draft table once, for the tier and for the label still to be named.",
+   "<b>THE CHECKS.</b> A new section of 16 assertions on fixture customers and forced costs: the proposal against a restatement, never Ambassador, Bronze with no rate, the card's three states, Accept, codes alone in the queue, no price moving, the drafter's entry and its refusals, the fold with a rename, and 0010. The book now holds twenty-nine keys. 16 mutations each turn their assertion red."
+  ]
+ },
+ {
   "v": "v642",
   "d": "15 Sep 2026",
   "t": "THE LADDER IS AMBASSADOR AT THE FLOOR AND FIVE NAMED TIERS, TITANIUM TO BRONZE, STILL QUOTED NOWHERE",

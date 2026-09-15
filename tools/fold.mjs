@@ -37,6 +37,7 @@
  *                     suite's fixtures follow; refused for a code the desk's own logic names
  *   a place (v633)    PLACED[code] set to the point its place was found or tapped at, one party or
  *                     many; a registration and a rename may carry the point too
+ *   a tier (v643)     TIER_OF[code] set to the level named, one customer or every proposal at once
  * then the shelf is ROLLED for what physically moved (a roll, never a count), the watermark
  * moves to the newest id folded, and the book is sorted.
  *
@@ -124,6 +125,7 @@ function describe(item) {
     case "roster": return `${APPOINTS[r.kind] ? "APPOINT" : "REGISTER"} ${r.code} as ${r.kind}${r.parent ? " under " + r.parent : ""}`;
     case "rename": return `RENAME ${r.from} to ${r.to}`;
     case "place": return `PLACE ${Object.keys(r.places || {}).join(", ")} on the map`;
+    case "tierset": return `TIER ${Object.entries(r.tiers || {}).map(([c, t]) => c + " " + t).join(", ")}`;
     case "priceset": return `SET THE BOARD for ${r.product}${Object.keys(r.prices || {}).length ? ": " + Object.entries(r.prices).map(([q, p]) => `${q} unit at RM${p}`).join(", ") : ""}${(r.hide || []).length ? `, hiding ${r.hide.join(", ")} unit` : ""}`;
     default: return `${item.collection}: ${JSON.stringify(r).slice(0, 80)}`;
   }
@@ -356,6 +358,12 @@ export function plan(book, staged, notes) {
       if (!codes.length || off.length) { out.refused.push({ id: it.id, why: codes.length ? `${off.join(" and ")} is not on the roster` : "a place entry names no party" }); continue; }
       entry.place = r.places;
       entry.does.push(`file ${codes.join(", ")} as ${codes.length === 1 ? "a point" : "points"} on the map, about a kilometre each`);
+    } else if (it.collection === "tierset") {
+      /* v643: a customer's tier, checked against the book it folds into and the level names the master states */
+      const codes = Object.keys(r.tiers || {}), off = codes.filter((c) => !(book.roster || []).includes(c) || E.isBucket(c)), bad = codes.filter((c) => !tierNames().includes(r.tiers[c]));
+      if (!codes.length || off.length || bad.length) { out.refused.push({ id: it.id, why: !codes.length ? "a tier entry names no customer" : off.length ? `${off.join(" and ")} is not a customer on the roster` : `${bad.map((c) => r.tiers[c]).join(" and ")} is not a tier` }); continue; }
+      entry.tiers = r.tiers;
+      entry.does.push(`set the tier of ${codes.map((c) => c + " to " + r.tiers[c]).join(", ")}`);
     } else if (it.collection === "rename") {
       /* v628, AMEND ID: checked again against the book it folds into, since a code can be taken or retired
          between the draft and the fold. What moves is the engine's renamePairs, as on the card. */
@@ -381,6 +389,12 @@ export function plan(book, staged, notes) {
    generated blocks and the version history is refused, a comment included, because a refusal costs a hand fold
    and a miss costs a desk that names a party the book no longer has. */
 let masterLines = null;
+/* v643: the level names, read off the master's own TIER_NAMES line, so a fold refuses a tier the desk does not name */
+function tierNames() {
+  masterLines = masterLines || readFileSync(MASTER, "utf8").split("\n");
+  const line = masterLines.find((l) => l.startsWith("const TIER_NAMES=["));
+  return line ? (line.match(/'([^']+)'/g) || []).map((x) => x.slice(1, -1)) : [];
+}
 function pinnedInMaster(code) {
   masterLines = masterLines || readFileSync(MASTER, "utf8").split("\n");
   let generated = false;
@@ -828,6 +842,7 @@ export function apply(book, staged, notes, masterText) {
         book.NOTES.PRICE_SET = [String(n.note).trim()].concat(book.NOTES.PRICE_SET || []);
       }
     } else if (it.place) { book.PLACED = book.PLACED || {}; Object.assign(book.PLACED, it.place); }   // v633
+    else if (it.tiers) { book.TIER_OF = book.TIER_OF || {}; Object.assign(book.TIER_OF, it.tiers); }   // v643
     else if (it.rename) renames.push(it.rename);
     if (it.id > newest) newest = it.id;
     folded.push(it.id);

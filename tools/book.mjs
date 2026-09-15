@@ -45,6 +45,8 @@ export const LEDGER = {
   INTRODUCTIONS: "INTRODUCTIONS",
   /* v633: where each party is on the map, a point to 0.01 degrees filed by Add ID, Amend ID or a place entry; renamed with its code */
   PLACED: "PLACED",
+  /* v643: each customer's tier, a level name from TIER_NAMES in the master, set on the phone and folded; renamed with its code */
+  TIER_OF: "TIER_OF",
   /* v616 and v618: REWARD_OPENING and CUSTOMER_REWARD_OPENING retired; the whole-ledger recounts replaced them. */
   AWARDS: "AWARDS",
   supplierQuote: "supplierQuote", oilQuote: "oilQuote",
@@ -237,6 +239,7 @@ export function pricingSnapshot(w) {
     ref: call("REF"),                       // the markup-on-cost ladder: floor, good, great, ceiling
     floorPct: call("PRICE && PRICE.floorPct"),   // the OTHER floor, a margin on price. See v300.
     shrinkAttrib: call("SHRINK_ATTRIB"),
+    tierNames: call("typeof TIER_NAMES!=='undefined'?TIER_NAMES:null"),   // v643: the levels' names, for the drafter's tier check
     byProduct
   };
 }

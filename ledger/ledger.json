@@ -1,6 +1,6 @@
 {
- "v": "v642",
- "stamped": "15 Sep 2026, 12:28 KL",
+ "v": "v643",
+ "stamped": "15 Sep 2026, 12:56 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -4161,6 +4161,7 @@
    }
   ],
   "PLACED": {},
+  "TIER_OF": {},
   "AWARDS": {
    "CS6-PER": {
     "units": 1,
@@ -4271,7 +4272,7 @@
   ],
   "QUEUE_COMMITTED": "2026-09-15T00:32:48.670Z",
   "PRICING": {
-   "takenAt": "2026-09-15T04:46:07.383Z",
+   "takenAt": "2026-09-15T04:57:00.751Z",
    "sizes": [
     0.5,
     1,
@@ -4295,6 +4296,14 @@
     "wholesale": 20
    },
    "shrinkAttrib": 1,
+   "tierNames": [
+    "Ambassador",
+    "Titanium",
+    "Platinum",
+    "Gold",
+    "Silver",
+    "Bronze"
+   ],
    "byProduct": {
     "salt": {
      "stockCost": 44,
@@ -4727,10 +4736,10 @@
      ]
     }
    },
-   "v": "v642"
+   "v": "v643"
   },
   "OPEN": {
-   "at": "2026-09-15T04:46:07.432Z",
+   "at": "2026-09-15T04:57:00.799Z",
    "count": 8,
    "byKey": {
     "CM4-MK|2026-09-13|330": {
@@ -4891,7 +4900,7 @@
     "salt": "2026-09-14",
     "oil": "2026-09-09"
    },
-   "v": "v642"
+   "v": "v643"
   }
  }
 }

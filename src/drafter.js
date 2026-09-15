@@ -1089,6 +1089,30 @@ export function draftRow(entry, book) {
         + " It moves no cash and no stock. The place that was typed stays in the vault; only the point travels.",
     };
   }
+  /* v643, HIS DECISIONS OF 15 SEP 2026: EACH CUSTOMER'S TIER, one customer or every proposal at once. Codes and level
+     names only, the names checked against the ones the desk's PRICING snapshot carries. */
+  if (pay.mode === "tierset") {
+    const tiers = (pay.tiers && typeof pay.tiers === "object" && !Array.isArray(pay.tiers)) ? pay.tiers : {};
+    const codes = Object.keys(tiers);
+    if (!codes.length) return { skip: "a tier entry names no customer" };
+    const roster = (book.state && book.state.roster) || [], held = (book.state && book.state.TIER_OF) || {};
+    const names = (book.pricing && Array.isArray(book.pricing.tierNames)) ? book.pricing.tierNames : [];
+    const row = { tiers: {} };
+    for (const c of codes) {
+      if (!roster.includes(c)) return { skip: `${c} is not on the roster` };
+      if (POSITION_ENGINE.isBucket(c)) return { skip: `${c} is a resale account, and it holds its associate's tier` };
+      if (!names.includes(tiers[c])) return { skip: `${tiers[c]} is not a tier` };
+      row.tiers[c] = tiers[c];
+    }
+    const moves = codes.filter((c) => held[c] && held[c] !== row.tiers[c]);
+    return {
+      collection: "tierset",
+      row,
+      flags: moves.map((c) => `${c} moves from ${held[c]} to ${row.tiers[c]}.`),
+      reasoning: `Sets the tier of ${codes.length} ${codes.length === 1 ? "customer" : "customers"}: ${codes.map((c) => c + " " + row.tiers[c]).join(", ")}.`
+        + " It moves no cash and no stock, and until the quotes switch it moves no price.",
+    };
+  }
   /* A PRICE EDIT (v354). It moves no stock, no cash and no row: it states what the board asks and
      which sizes it shows. What it CAN do is put a price under its own floor, so that is the flag,
      and it is computed off the PRICING snapshot rather than re-derived here, for the same reason

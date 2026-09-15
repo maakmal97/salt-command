@@ -1944,7 +1944,7 @@ section("Book — ledger/book.json is the source (v339)");
   ok(/ok\s+the master's BOOK block is ledger\/book\.json/.test(chk), "tools/booksync.mjs --check: the master's book block is the file");
   const book = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
   const keys = Object.keys(book).filter((k) => k !== "NOTES");
-  ok(keys.length === 28, "the book holds the twenty-eight ledger keys");   // v633 added PLACED; v353 added PRICE_SET; v504 added COUNTS; v549 retired SOURCING_PLAN; v553 added COST_RULE; v615 added INTRODUCTIONS; v616 retired REWARD_OPENING; v618 retired CUSTOMER_REWARD_OPENING
+  ok(keys.length === 29, "the book holds the twenty-nine ledger keys");   // v643 added TIER_OF; v633 added PLACED; v353 added PRICE_SET; v504 added COUNTS; v549 retired SOURCING_PLAN; v553 added COST_RULE; v615 added INTRODUCTIONS; v616 retired REWARD_OPENING; v618 retired CUSTOMER_REWARD_OPENING
   ok(Array.isArray(book.sales) && book.sales.length > 100 && Array.isArray(book.purchases), "with the rows as records");
   ok(typeof book.QUEUE_COMMITTED === "string" && typeof book.STATED_STOCK === "number", "and the singletons as values");
   ok(book.NOTES && Array.isArray(book.NOTES.STATED_STOCK) && book.NOTES.STATED_STOCK.length > 0, "the stated stock's roll history survived as NOTES");
@@ -11815,6 +11815,79 @@ section("v642: the ladder is Ambassador at the floor and five named tiers, Titan
     const amb = walk42("oil", 7.8355, 8.7285, [10])[0];
     ok(amb.prices[0] === 90 && amb.cogs * 1.2 > amb.floor + 0.009, "Ambassador pays the floor up to the ten, RM90 for 10 unit of oil, not the RM100 that COGS plus 20% would ask " + JSON.stringify(amb));
   } finally { await new Promise((r) => setTimeout(r, 200)); try { w42.close(); } catch (e) { /* best effort */ } }
+}
+
+section("v643: each customer holds one tier, set on the phone and folded, proposed from what they pay and quoted nowhere yet");
+{
+  /* HIS DECISIONS OF 15 SEP 2026. Each customer's tier comes before any quote reads it, one tier across both books, starting
+     nearest what they pay, never Ambassador without his word. Fixture customers and forced costs throughout; the expected
+     proposal is restated here from the boards and the fixture's own rates. Each assertion was proved red by mutation. */
+  const { openMaster: om43 } = await import("../tools/payload.mjs");
+  const { draftRow: dr43 } = await import("../src/drafter.js");
+  const F43 = await import("../tools/fold.mjs");
+  const { w: w43 } = await om43();
+  const rd43 = (e) => JSON.parse(String(w43.eval("JSON.stringify(" + e + ")")));
+  const NAMES43 = ["Ambassador", "Titanium", "Platinum", "Gold", "Silver", "Bronze"];
+  try {
+    const sale43 = (rid, customer, product, date, qty, total) => ({ rid, customer, product, date, qty, total, cost: 1, cash: total, deliveredQty: qty, deliveredOn: date });
+    const fx43 = [
+      sale43("z643g1", "CZ9-TG", "salt", "2026-08-01", 2.5, 300), sale43("z643g2", "CZ9-TG", "salt", "2026-08-02", 2.5, 300), sale43("z643g3", "CZ9-TG", "salt", "2026-08-03", 2.5, 300),
+      sale43("z643a1", "CZ9-TA", "salt", "2026-08-01", 2.5, 155), sale43("z643a2", "CZ9-TA", "salt", "2026-08-02", 2.5, 155), sale43("z643a3", "CZ9-TA", "salt", "2026-08-03", 2.5, 155),
+      sale43("z643o1", "CZ9-TO", "salt", "2026-08-01", 2.5, 360),
+      sale43("z643o2", "CZ9-TO", "oil", "2026-08-01", 10, 150), sale43("z643o3", "CZ9-TO", "oil", "2026-08-02", 10, 150), sale43("z643o4", "CZ9-TO", "oil", "2026-08-03", 10, 150),
+    ];
+    /* the boards on forced costs, salt landed at RM46.72 with a floor of RM61.147136 a unit and oil at RM7.8355 with RM8.7285 */
+    w43.eval("(function(){['CZ9-TG','CZ9-TA','CZ9-TO'].forEach(function(c){if(roster.indexOf(c)<0)roster.push(c);});BASE_SALES.push.apply(BASE_SALES," + JSON.stringify(fx43) + ");queue=[];applyOverlay();"
+      + "window.FB43={};[['salt',46.72,61.147136],['oil',7.8355,8.7285]].forEach(function(x){setProd(x[0]);var P=Object.assign({},pxPolicy(),{tierRule:TIER_RULE[x[0]]}),C=Object.assign({},pxCost(),{landed:x[1],eff:x[2],effEx:x[2]});"
+      + "FB43[x[0]]={board:PRICING_ENGINE.fiveTiers(TIER_RULE[x[0]].rungs,C,P),sizes:sizesFor(x[0])};});setProd('salt');})()");
+    const FB = rd43("FB43");
+    const nearest43 = (p, rate, from) => { const B = FB[p].board.filter((r) => FB[p].sizes.some((s) => Math.abs(s - r.q) < 0.009)); let best = from;
+      for (let t = from + 1; t < NAMES43.length; t++) if (B.reduce((a, r) => a + Math.abs(r.prices[t] - rate * r.q), 0) < B.reduce((a, r) => a + Math.abs(r.prices[best] - rate * r.q), 0) - 1e-9) best = t; return NAMES43[best]; };
+    const prop43 = rd43("(function(){var b={salt:FB43.salt.board,oil:FB43.oil.board};return {TG:tierProposal('CZ9-TG',b),TA:tierProposal('CZ9-TA',b),TO:tierProposal('CZ9-TO',b),NONE:tierProposal('CZ9-NONE',b)};})()");
+    ok(prop43.TG === nearest43("salt", 120, 1) && prop43.TO === nearest43("oil", 15, 1) && nearest43("oil", 15, 1) !== nearest43("salt", 144, 1),
+      `a customer holding no tier is proposed the tier nearest what they pay, on the book carrying most of their revenue: CZ9-TG ${prop43.TG}, CZ9-TO ${prop43.TO} off oil where salt alone reads ${nearest43("salt", 144, 1)}`);
+    ok(prop43.TA === "Titanium" && nearest43("salt", 62, 0) === "Ambassador", `and never Ambassador: CZ9-TA pays at the floor, nearest Ambassador, and is proposed ${prop43.TA}`);
+    ok(prop43.NONE === "Bronze", "and a customer with no rate to read is proposed Bronze, where a new customer starts: " + prop43.NONE);
+    /* THE CARD: a tier held, one waiting in the queue, one proposed */
+    const card43 = rd43("(function(){TIER_OF['CZ9-TG']='Gold';queue=[{at:'2026-09-15T00:00:00.000Z',type:'TIER',status:'tierset',raw:'Set CZ9-TO to Platinum',payload:{mode:'tierset',tiers:{'CZ9-TO':'Platinum'}}}];"
+      + "setProdView('salt');switchTab('people');var t=document.querySelector('.sec.on table.tiertab');if(!t)return null;var row=function(c){var r=[].filter.call(t.tBodies[0].rows,function(x){return x.cells[0].textContent.trim()===c;})[0];"
+      + "return r?{tier:r.cells[1].textContent.replace(/\\s+/g,' ').trim(),sel:r.querySelector('select').value}:null;};return {TG:row('CZ9-TG'),TO:row('CZ9-TO'),TA:row('CZ9-TA')};})()");
+    ok(card43 && card43.TG && card43.TG.tier === "Gold held" && card43.TG.sel === "Gold" && card43.TO && card43.TO.tier === "Platinum waiting" && card43.TA && / proposed$/.test(card43.TA.tier) && !/^Ambassador/.test(card43.TA.tier),
+      "the Customers page lists each customer with the tier held, the one waiting for approval, or the one proposed: " + JSON.stringify(card43));
+    const acc43 = rd43("(function(){tierAcceptAll();var e=queue[queue.length-1];return {n:queue.length,mode:e.payload.mode,tiers:e.payload.tiers};})()");
+    ok(acc43.n === 2 && acc43.mode === "tierset" && "CZ9-TA" in acc43.tiers && !("CZ9-TG" in acc43.tiers) && !("CZ9-TO" in acc43.tiers) && !Object.values(acc43.tiers).includes("Ambassador"),
+      "and Accept queues one entry of every proposal still open, passing over a tier held and one already waiting: " + JSON.stringify(Object.keys(acc43.tiers).filter((c) => /^CZ9-/.test(c))));
+    const nm43 = rd43("(function(){queue=[];vaultNames={'CZ9-TA':'Zed Person (Here)'};revealed=true;render();document.getElementById('tierSel_CZ9-TA').value='Silver';tierSet('CZ9-TA');var q=JSON.stringify(queue);vaultNames={};revealed=false;return q;})()");
+    ok(/CZ9-TA/.test(nm43) && /"tiers":\{"CZ9-TA":"Silver"\}/.test(nm43) && !/Zed Person/.test(nm43), "a tier set with the names open queues the code and never the name: " + nm43.slice(0, 160));
+    const px43 = rd43("(function(){var read=function(){return JSON.stringify([pbPrices('CZ9-TA'),priceLadder(2.5).ask.total,PRICING_ENGINE.board(sizesFor('salt'),pxCost(),pxPolicy())]);};"
+      + "delete TIER_OF['CZ9-TA'];var a=read();TIER_OF['CZ9-TA']='Titanium';var b=read();TIER_OF['CZ9-TA']='Bronze';var c=read();delete TIER_OF['CZ9-TA'];delete TIER_OF['CZ9-TG'];return a===b&&b===c;})()");
+    ok(px43 === true, "and a tier moves no price yet: the customer's own list, the ask and the phone's board read the same with any tier held");
+
+    /* ---- the drafter ---- */
+    const mir43 = { sales: [], purchases: [], state: { roster: ["CZ9-TA", "CZ9-TB", "CZ9-TB-R"], TIER_OF: { "CZ9-TB": "Silver" } }, pricing: { tierNames: NAMES43 } };
+    const en43 = (p) => ({ at: "2026-09-15T09:00:00.000Z", payload: { mode: "tierset", ...p } });
+    const d43 = dr43(en43({ tiers: { "CZ9-TA": "Gold", "CZ9-TB": "Titanium" } }), mir43);
+    ok(!d43.skip && d43.collection === "tierset" && JSON.stringify(d43.row.tiers) === '{"CZ9-TA":"Gold","CZ9-TB":"Titanium"}' && /CZ9-TB moves from Silver to Titanium/.test(d43.flags.join(" ")) && /moves no price/.test(d43.reasoning),
+      "a tier entry drafts as its own collection, flagging a customer it moves: " + (d43.skip || JSON.stringify(d43.row) + " " + d43.flags.join(" ")));
+    for (const [p, why, m] of [[{ tiers: { "CZ9-NOT": "Gold" } }, /CZ9-NOT is not on the roster/], [{ tiers: { "CZ9-TB-R": "Gold" } }, /resale account/], [{ tiers: { "CZ9-TA": "Diamond" } }, /Diamond is not a tier/],
+      [{ tiers: {} }, /names no customer/], [{ tiers: { "CZ9-TA": "Gold" } }, /Gold is not a tier/, { ...mir43, pricing: null }]]) {
+      const s = dr43(en43(p), m || mir43).skip || "";
+      ok(why.test(s), "the drafter refuses the tier entry " + JSON.stringify(p) + (m ? " with no level names on the mirror" : "") + ": " + (s || "drafted"));
+    }
+
+    /* ---- the fold: the tier is filed on the book, and follows a rename ---- */
+    const master43 = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+    const book43 = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+    book43.roster.push("CZ9-TA", "CZ9-TB"); book43.TIER_OF = { "CZ9-TB": "Silver" };
+    const it43 = (n, collection, row) => ({ id: "2099-01-01T00:00:00.00" + n + "Z", collection, row, entry: { at: "2099-01-01T00:00:00.00" + n + "Z", payload: {} } });
+    const res43 = F43.apply(book43, { ok: true, count: 2, approved: [it43(1, "tierset", { tiers: { "CZ9-TA": "Gold" } }), it43(2, "rename", { from: "CZ9-TB", to: "CZ9-TC" })] },
+      { version: "v9998", date: "01 Jan 2099", title: "FIXTURE", notes: ["fixture"], rows: {} }, master43);
+    const T43 = book43.TIER_OF || {};
+    ok(res43.ok && T43["CZ9-TA"] === "Gold" && T43["CZ9-TC"] === "Silver" && !("CZ9-TB" in T43), "the fold files the tier on the book, and a rename takes the tier with the code: " + (res43.ok ? JSON.stringify(T43) : res43.problems));
+    const ref43 = F43.plan(book43, { ok: true, count: 2, approved: [it43(3, "tierset", { tiers: { "CZ9-TA": "Diamond" } }), it43(4, "tierset", { tiers: { "CZ9-GONE": "Gold" } })] }, null).refused.map((x) => x.why).join(" | ");
+    ok(/Diamond is not a tier/.test(ref43) && /CZ9-GONE is not a customer on the roster/.test(ref43), "the fold refuses a tier the desk does not name, and a code that left the roster: " + ref43);
+    ok(/'tierset','label'\)/.test(readFileSync(join(REPO, "migrations", "0010_tier.sql"), "utf8")), "and 0010 rebuilds the draft table once for both the tier and the label to come");
+  } finally { await new Promise((r) => setTimeout(r, 200)); try { w43.close(); } catch (e) { /* best effort */ } }
 }
 
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);

@@ -93,6 +93,7 @@ tool in `tools/`, the test suite, and `master/_to_fold.json` if there was anythi
    to the roster, re-keys a rename (v628, Amend ID) wherever the book holds the code AFTER every other
    row in the batch, with its statement key, place override and the suite's fixtures, files a party's
    point on the map in `PLACED` from a `place` entry or the `geo` a registration or rename carries (v633),
+   files a customer's tier in `TIER_OF` from a `tierset` entry (v643),
    **rolls the stated stock for what physically moved** (a roll and not a count;
    `COUNT_ON` is untouched) and writes the roll sentence into `NOTES`, moves `QUEUE_COMMITTED` to
    the newest id folded, sorts the book, syncs the master, writes the version entry and the stamp,
