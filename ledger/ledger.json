@@ -1,6 +1,6 @@
 {
- "v": "v652",
- "stamped": "16 Sep 2026, 03:37 KL",
+ "v": "v653",
+ "stamped": "16 Sep 2026, 04:01 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -3763,7 +3763,7 @@
     "qty": 10,
     "total": 150,
     "cost": 75.25,
-    "cash": 0,
+    "cash": 150,
     "delivery": 20,
     "handover": "delivered",
     "product": "oil",
@@ -3771,7 +3771,24 @@
     "deliveredQty": 10,
     "deliveredOn": "2026-09-12",
     "note": "<b>OIL SELL DATED 12 SEP, DELIVERED IN FULL, NOT A SEN PAID.</b> SELL to CE4-CHE, 10 unit for RM150, RM20 of that delivery and RM130 goods, RM0 cash in and 10 unit handed over on 12 Sep, so RM150 stays outstanding. The RM130 of goods matches the RM130 ask for 10 unit, clears the RM87.28 floor and sits under the RM240 ceiling. CE4-CHE has 8 orders, a median rate of RM92, a range of RM76.67 to RM107.50, RM0 outstanding before and nothing on credit, none defaulted. Cost on the row is RM75.25, not the inventory's own RM44 a unit. The drafter flagged the advance against the credit cap: 10 unit on credit against a cap of 10 answers it, at the limit. The flag that CE4-CHE has no committed oil order to compare against is not answered here.",
-    "rid": "s154"
+    "rid": "s154",
+    "amend": [
+     {
+      "date": "2026-09-12",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 10,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-09-16",
+      "kind": "Fulfilment",
+      "cash": 150,
+      "kg": 0,
+      "note": "<b>FULFILMENT ON S154, RM150 IN ON 16 SEP AND THE ORDER CLOSES.</b> Booked against CE4-CHE's oil sell of 12 Sep, 10 unit for RM150, RM20 of that delivery and RM130 goods, delivered in full on the day with RM0 paid. RM150 and 0 unit move on 16 Sep against RM150 and 0 unit outstanding, leaving RM0 and 0 unit. Decided at the desk. His median is RM92 a unit across 10 orders in a RM13 to RM107.50 range; he held RM150 outstanding and 10 unit on credit, nothing defaulted. No cost attaches: money only, no goods. <b>The drafter flagged that this settles in full, and the figures answer it.</b> Nothing is left outstanding."
+     }
+    ],
+    "paidOn": "2026-09-16"
    },
    {
     "customer": "CN6-WM-R",
@@ -4346,9 +4363,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-15T12:28:07.501Z",
+  "QUEUE_COMMITTED": "2026-09-15T19:50:35.131Z",
   "PRICING": {
-   "takenAt": "2026-09-15T19:53:33.768Z",
+   "takenAt": "2026-09-15T20:01:32.214Z",
    "sizes": [
     0.5,
     1,
@@ -5141,11 +5158,11 @@
      ]
     }
    },
-   "v": "v652"
+   "v": "v653"
   },
   "OPEN": {
-   "at": "2026-09-15T19:53:33.835Z",
-   "count": 9,
+   "at": "2026-09-15T20:01:32.358Z",
+   "count": 8,
    "byKey": {
     "CR3-DAM|2026-09-15|90": {
      "d": "2026-09-15",
@@ -5180,24 +5197,6 @@
      "key": "CM4-MK|2026-09-13|330",
      "age": 3,
      "exp": 110
-    },
-    "CE4-CHE|2026-09-12|150": {
-     "d": "2026-09-12",
-     "p": "CE4-CHE",
-     "dir": "S",
-     "q": 10,
-     "t": 150,
-     "cash": 0,
-     "mv": 10,
-     "st": "dueMoney",
-     "oweRM": 150,
-     "pr": "oil",
-     "rid": "s154",
-     "deliveredOn": "2026-09-12",
-     "handover": "delivered",
-     "key": "CE4-CHE|2026-09-12|150",
-     "age": 4,
-     "exp": 112.5
     },
     "CC5-OKR|2026-09-11|90": {
      "d": "2026-09-11",
@@ -5313,7 +5312,7 @@
      "owedOut": 0,
      "coverDays": 8,
      "rate": 5,
-     "owedToYou": 150,
+     "owedToYou": 0,
      "promised": 0,
      "short": 0
     }
@@ -5322,7 +5321,7 @@
     "salt": "2026-09-15",
     "oil": "2026-09-09"
    },
-   "v": "v652"
+   "v": "v653"
   }
  }
 }

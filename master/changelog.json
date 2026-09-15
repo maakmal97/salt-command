@@ -1,5 +1,14 @@
 [
  {
+  "v": "v653",
+  "d": "16 Sep 2026",
+  "t": "AN OIL DEBT IS PAID OFF IN FULL: RM150 IN, NOTHING LEFT OPEN",
+  "n": [
+   "<b>ONE AMENDMENT FOLDED, NO GOODS MOVED.</b> The fold carries a single fulfilment against CE4-CHE's oil order s154 of 12 Sep, 10 unit for RM150, which had been delivered in full with not a sen paid. RM150 cash is recorded on 16 Sep and no units move, so the amendment is money only. The row itself is not recomputed here: the master applies the fulfilment, so there is one definition of what a fulfilment does.",
+   "<b>WHAT WAS UNUSUAL AND WHAT THE INVENTORY DID.</b> CE4-CHE had carried RM150 outstanding and 10 unit on credit, the largest open balance on his ten orders, and the drafter flagged that this settles the order in full. The figures answer that flag: RM150 in against RM150 outstanding leaves RM0 and 0 unit. The count stands at 15 Sep for salt and 9 Sep for oil, and the inventory moved nothing on this fold."
+  ]
+ },
+ {
   "v": "v652",
   "d": "16 Sep 2026",
   "t": "EVERY QUOTE TO A NAMED CUSTOMER IS THEIR OWN CARD PRICE, AND THE REWARD COVER'S GAP IS MEASURED AGAINST IT",
