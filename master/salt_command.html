@@ -5059,6 +5059,43 @@ function ladderRow(sizes,C,P){
   });
   return rows;
 }
+/* ============ THE FIVE TIERS, OFF HIS WORKBOOK (his decisions of 14 and 15 Sep 2026) ============
+   Tier I pays the floor, rounded up to the ten. Tiers II to V are the four columns of his pricing
+   workbook: COGS to the ringgit, times the column's multiple less a step a rung, rounded up to the
+   ten. Salt's step grows with the multiple, 1 + m x (1 - 0.05 x rung); oil's is flat,
+   m + 0.35 - 0.05 x rung. P.tierRule states it per book. The rung is a size's row on the board, and
+   a size off the board takes the rung at or below it.
+   TWO GUARDS, IN THIS ORDER. A better tier always pays less: each tier sits at least a ten over the
+   one below, the higher lifting where two meet, which also keeps every tier over the floor, because
+   Tier I is the floor. And the rate may not rise with size (v328): a price steps down to the ten
+   that holds it flat only where that keeps the first.
+   STAGE 1 QUOTES NOTHING: priceLadder, ladderRow and board do not read it. */
+function fiveTiers(sizes,C,P){
+  const R=P.tierRule;
+  if(!R||!Array.isArray(R.multiples)||!R.multiples.length||!Array.isArray(R.rungs)||!R.rungs.length)return null;
+  /* up to the ten as the workbook's CEILING does: a column landing exactly on a ten stays there, where
+     floating point would read RM50 x 2.2 as 110.00000000000001 and round it to RM120 */
+  const to=P.LADDER.round.to, up=v=>Math.ceil(v/to-1e-9)*to;
+  const rungs=R.rungs.map(Number).sort((a,b)=>a-b);
+  const prevRate=R.multiples.map(()=>Infinity);
+  return sizes.map(q=>{
+    let rung=0; rungs.forEach((r,i)=>{if(r<=q+0.009)rung=i;});
+    const fl=floorTotal(q,C,P), cogs=Math.round(ladderCogs(q,C));
+    const cols=R.multiples.map(m=>up(cogs*(m+R.start-R.step*(R.scaled?m:1)*rung)));
+    const prices=[up(fl)];
+    cols.forEach((raw,k)=>{
+      const least=prices[k]+to;
+      let p=Math.max(raw,least);
+      if(q>0&&p/q>prevRate[k]+1e-9){
+        const stepped=Math.floor((prevRate[k]*q+1e-9)/to)*to;
+        if(stepped>=least)p=stepped;
+      }
+      prices.push(p);
+      if(q>0)prevRate[k]=Math.min(prevRate[k],p/q);
+    });
+    return {q:q,rung:rung,cogs:cogs,floor:+fl.toFixed(2),cols:cols,prices:prices};
+  });
+}
 /* THE BOARD AND THE FLOORS, for quoting at the point of sale: what the phone receives. */
 /* THE CARD IS A COLLECTION PRICE AND DELIVERY IS QUOTED ON TOP, PER ORDER (v352, his instruction).
    v344 charged delivery at its real RM50 and put a `deliverable` flag on every size saying whether
@@ -5089,7 +5126,7 @@ function board(sizes,C,P){
 return {costStack:costStack,buyTaper:buyTaper,ladderMarkup:ladderMarkup,ladderMargin:ladderMargin,ladderCogs:ladderCogs,
         ladderRound:ladderRound,ladderWalk:ladderWalk,ladderAsk:ladderAsk,lotCost:lotCost,
         tier1Anchors:tier1Anchors,tier1Walk:tier1Walk,tier1Ask:tier1Ask,
-        floorTotal:floorTotal,priceLadder:priceLadder,ladderRow:ladderRow,board:board};
+        floorTotal:floorTotal,priceLadder:priceLadder,ladderRow:ladderRow,board:board,fiveTiers:fiveTiers};
 })();
 /* ==== END ENGINE pricing ==== */
 /* ==== BOOK: generated from ledger/book.json by tools/booksync.mjs. Edit the JSON, never this block. ==== */
@@ -6778,7 +6815,9 @@ const quoteFor=p=>{const f=QUOTES[p||PROD];return f?f():null;};
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{"v":"v640","d":"15 Sep 2026","t":"A PENDING SALE IS CORRECTED: PAID, COLLECTED AND RM20 LIGHTER","n":["<b>ONE ROW FOLDED, AN AMENDMENT AND NOTHING ELSE.</b> A correction lands on CH6-SET's salt sell s148 of 11 Sep, 1 unit. The total falls from RM120 to RM100, delivery from RM10 to RM0, cash rises from RM0 to RM100, delivered quantity from 0 to 1 unit, handover moves from delivered to collected, and both paidOn and deliveredOn are set to 14 Sep. No cash and no stock move on the fold itself: the row is restated, not rewritten.","<b>THE DRAFTER FLAGGED THE RATE AND THE FIGURES ANSWER IT.</b> CH6-SET has paid about RM117.50 a unit across 2 orders and this row now reads RM100, 14.9% below that, against a median of RM115 in a RM110 to RM120 range. The desk let it stand on his word. Outstanding of RM120 on this party is settled by the RM100 cash and the RM20 reduction in total. The inventory held at 1.5 units, cost unchanged at RM44 a unit.","<b>NOTHING OUTSTANDING ON THE FOLD.</b> No lot landed, no loan opened and no count was taken, salt last counted 14 Sep and oil 9 Sep. Promised stock stays at 11.5 units against 1.5 units stated, with the reorder mark at 15 units and replacement at RM46 a unit. The amended row now carries a paid and collected date of 14 Sep, so it leaves nothing open behind it."]},
+const evolution=[{"v":"v641","d":"15 Sep 2026","t":"THE FIVE TIERS ARE COMPUTED OFF THE PRICING WORKBOOK AND DRAWN BESIDE THE BOARD, QUOTED NOWHERE YET","n":["<b>HIS DECISIONS OF 14 AND 15 SEP 2026, THE FIRST STAGE OF FIVE.</b> Five price tiers from his pricing workbook: Tier I ◆ pays the floor, rounded up to the ten, and Tiers II ★★, III ★, IV ●● and V ● are the workbook's four columns, at multiples 1.0, 1.5, 2.0 and 2.5. A new customer will start at Tier V and climb toward the diamond, paying less at every step. The floor stays what it was, COGS plus leakage.","<b>ONE FORMULA, STATED AS A RULE.</b> Each column is COGS to the ringgit times its multiple less a step a rung, rounded up to the ten: 1 + m × (1 − 0.05 × rung) for salt, m + 0.35 − 0.05 × rung for oil, whose board gains 80 and 100 unit. TIER_RULE states it per book and fiveTiers in the engine computes it under two guards: each tier sits at least a ten over the one below, which also keeps every tier over the floor, and the rate may not rise with size where a step down keeps that.","<b>BESIDE TODAY'S BOARD, AND NOTHING QUOTES IT.</b> The Pricing page draws the five tiers under the board with today's ask alongside, so they read against each other on live costs before any price moves. The phone, the board, the drafter, the price list and the guest boards read nothing new; switching them is the next stage.","<b>THE CHECKS.</b> A new section of 11 assertions: the rule reproduces all 76 of the workbook's prices from its own COGS, the approved board on the costs of 14 Sep, the guards on a grid of 70 forced costs that lifts 474 prices and steps 28, a column landing exactly on a ten, off-board sizes, the card cell by cell, and quoted nowhere. 13 mutations each turn their assertion red. Two Tier 1 checks that read the floor v639's count had lifted now force their own cost."]},
+
+{"v":"v640","d":"15 Sep 2026","t":"A PENDING SALE IS CORRECTED: PAID, COLLECTED AND RM20 LIGHTER","n":["<b>ONE ROW FOLDED, AN AMENDMENT AND NOTHING ELSE.</b> A correction lands on CH6-SET's salt sell s148 of 11 Sep, 1 unit. The total falls from RM120 to RM100, delivery from RM10 to RM0, cash rises from RM0 to RM100, delivered quantity from 0 to 1 unit, handover moves from delivered to collected, and both paidOn and deliveredOn are set to 14 Sep. No cash and no stock move on the fold itself: the row is restated, not rewritten.","<b>THE DRAFTER FLAGGED THE RATE AND THE FIGURES ANSWER IT.</b> CH6-SET has paid about RM117.50 a unit across 2 orders and this row now reads RM100, 14.9% below that, against a median of RM115 in a RM110 to RM120 range. The desk let it stand on his word. Outstanding of RM120 on this party is settled by the RM100 cash and the RM20 reduction in total. The inventory held at 1.5 units, cost unchanged at RM44 a unit.","<b>NOTHING OUTSTANDING ON THE FOLD.</b> No lot landed, no loan opened and no count was taken, salt last counted 14 Sep and oil 9 Sep. Promised stock stays at 11.5 units against 1.5 units stated, with the reorder mark at 15 units and replacement at RM46 a unit. The amended row now carries a paid and collected date of 14 Sep, so it leaves nothing open behind it."]},
 
 {"v":"v639","d":"14 Sep 2026","t":"A HAND COUNT OF SALT CUTS THE BOOK BY 7.44 UNIT: FLOORS LIFT ACROSS EVERY SIZE","n":["<b>ONE COUNT FOLDED, NOTHING SOLD OR BOUGHT.</b> The salt count of 14 Sep stands at 1.5 unit against 8.94 on the book, a drift of -7.44 unit, and the count wins, so the stated inventory is set to 1.5 and COUNT_ON for salt moves from 8 Sep to 14 Sep. The drafter flagged the 7.44 unit as unaccounted for and books it as shrinkage across every unit sold. The dossier gives no reason for the gap and none is offered here.","<b>THE FLOORS MOVE WITH THE SHRINKAGE, AND THE DESK IS UNDER ITS REORDER MARK.</b> The 1 unit floor lifts from RM56.21 to RM61.15, 2 unit from RM112.43 to RM122.29, 12.5 unit from RM702.67 to RM764.34, the ask on 1 unit from RM120 to RM130 and self use from RM68.01 to RM75.45. Stock cost holds at RM44 a unit against RM46 replacement. Nothing is owed out, 11.5 unit stands promised, and the position sits below the RM15 reorder mark."]},
 
@@ -7268,7 +7307,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='15 Sep 2026, 08:35 KL';
+const LAST_UPDATED='15 Sep 2026, 08:48 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -8952,6 +8991,18 @@ const LADDER_BY={
   oil:{anchorQ:10, anchorX:0.62, at:{lo:10, hi:50}, floor:0, anchorG:0.36, gLo:0, tier1:null}   /* v504: 0.36 reproduces RM130 at 10 on the floor basis */
 };
 function ladderFor(p){const o=LADDER_BY[p||PROD];return o?{...LADDER,...o}:LADDER;}
+/* ============ THE FIVE TIERS' RULE, PER BOOK (his decisions of 14 and 15 Sep 2026) ============
+   His pricing workbook as stated rules: its four columns are Tiers II to V, and Tier I is the floor.
+   multiples are the columns' headings; start and step are the adjustment the sheet's formulas make a
+   rung; scaled says whether the step grows with the multiple, which salt's does and oil's does not;
+   rungs are the sheet's rows, oil gaining 80 and 100 unit. fiveTiers in the ENGINE block reads it.
+   Stage 1: drawn beside the board on the Pricing page and quoted nowhere. */
+const TIER_RULE={
+  salt:{multiples:[1,1.5,2,2.5], start:1, step:0.05, scaled:true, rungs:[0.5,1,1.5,2,2.5,3,3.5,4,4.5,5,6.25,12.5]},
+  oil:{multiples:[1,1.5,2,2.5], start:0.35, step:0.05, scaled:false, rungs:[10,20,30,40,50,80,100]}
+};
+/* the tiers' names and marks, cheapest first: the diamond pays least, and a new customer starts at V */
+const TIER_MARKS=[{id:'I',mark:'◆'},{id:'II',mark:'★★'},{id:'III',mark:'★'},{id:'IV',mark:'●●'},{id:'V',mark:'●'}];
 /* THE SUPPLIER'S OWN ELASTICITY, FITTED RATHER THAN TYPED. Least squares of ln(rate) on ln(qty)
    across every tier of the live quote. It returns the exponent and the r-squared, and the r-squared
    is reported on the tab rather than hidden: a ladder that does not actually follow a power law
@@ -15302,6 +15353,26 @@ function pxPolicy(){
     boardSizes:(typeof sizesFor==='function')?sizesFor(PROD):[]};
 }
 function pxCost(){ return PRICING_ENGINE.costStack(pxInputs()); }
+/* the five tiers for the book in view, on its own rungs; null for a book with no rule */
+function fiveTiersNow(){
+  const R=TIER_RULE[PROD];
+  return R?PRICING_ENGINE.fiveTiers(R.rungs,pxCost(),Object.assign({},pxPolicy(),{tierRule:R})):null;
+}
+/* v641, STAGE 1: THE FIVE TIERS BESIDE TODAY'S BOARD. One row a rung: the floor, the five prices, and
+   today's ask where today's board quotes the size, so the two read against each other on live costs
+   before anything quotes the new one. */
+function fiveTierCard(){
+  const rows=fiveTiersNow(); if(!rows)return '';
+  const onBoard=q=>sizesFor(PROD).some(s=>Math.abs(s-q)<0.009);
+  const head=`<tr><th class="l">Size</th><th>Floor</th>${TIER_MARKS.map(t=>`<th>${t.id} ${t.mark}</th>`).join('')}<th>Ask today</th></tr>`;
+  const body=rows.map(r=>{let a=null;if(onBoard(r.q)){try{a=priceLadder(r.q).ask.total;}catch(e){}}
+    return `<tr><td class="l">${units(r.q)}</td><td class="mono" style="color:var(--dim)">${fmt0(r.floor)}</td>`
+      +r.prices.map(p=>`<td class="mono">${fmt0(p)}</td>`).join('')
+      +`<td class="mono" style="color:var(--dim)">${a!=null?fmt0(a):'&mdash;'}</td></tr>`;}).join('');
+  return `<div class="card" style="margin-top:14px"><div class="cardh">The five tiers <span class="sub">from the pricing workbook, not quoted yet</span></div>
+    <div class="tscroll"><table class="fintab fivetier"><thead>${head}</thead><tbody>${body}</tbody></table></div>
+    <div class="insight">Tier I pays the floor and a new customer starts at Tier V, with each tier at least ${fmt0(10)} over the one below.</div></div>`;
+}
 
 /* ---- layer 3: five readings, each worth a few points, summed then clamped ---- */
 function pxSignals(){
@@ -18323,6 +18394,7 @@ function tabPricing(){
     </details>
     </div>`;})()}
 
+  ${fiveTierCard()}
   <!-- ============ THE BOARD COMES BEFORE THE CALCULATOR ============
        Measured on the built desk at 375x812 with the safe insets forced: the board table began
        764px down, so the first screen of a pricing view carried the heading, one tile and a

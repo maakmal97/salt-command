@@ -1,5 +1,16 @@
 [
  {
+  "v": "v641",
+  "d": "15 Sep 2026",
+  "t": "THE FIVE TIERS ARE COMPUTED OFF THE PRICING WORKBOOK AND DRAWN BESIDE THE BOARD, QUOTED NOWHERE YET",
+  "n": [
+   "<b>HIS DECISIONS OF 14 AND 15 SEP 2026, THE FIRST STAGE OF FIVE.</b> Five price tiers from his pricing workbook: Tier I ◆ pays the floor, rounded up to the ten, and Tiers II ★★, III ★, IV ●● and V ● are the workbook's four columns, at multiples 1.0, 1.5, 2.0 and 2.5. A new customer will start at Tier V and climb toward the diamond, paying less at every step. The floor stays what it was, COGS plus leakage.",
+   "<b>ONE FORMULA, STATED AS A RULE.</b> Each column is COGS to the ringgit times its multiple less a step a rung, rounded up to the ten: 1 + m × (1 − 0.05 × rung) for salt, m + 0.35 − 0.05 × rung for oil, whose board gains 80 and 100 unit. TIER_RULE states it per book and fiveTiers in the engine computes it under two guards: each tier sits at least a ten over the one below, which also keeps every tier over the floor, and the rate may not rise with size where a step down keeps that.",
+   "<b>BESIDE TODAY'S BOARD, AND NOTHING QUOTES IT.</b> The Pricing page draws the five tiers under the board with today's ask alongside, so they read against each other on live costs before any price moves. The phone, the board, the drafter, the price list and the guest boards read nothing new; switching them is the next stage.",
+   "<b>THE CHECKS.</b> A new section of 11 assertions: the rule reproduces all 76 of the workbook's prices from its own COGS, the approved board on the costs of 14 Sep, the guards on a grid of 70 forced costs that lifts 474 prices and steps 28, a column landing exactly on a ten, off-board sizes, the card cell by cell, and quoted nowhere. 13 mutations each turn their assertion red. Two Tier 1 checks that read the floor v639's count had lifted now force their own cost."
+  ]
+ },
+ {
   "v": "v640",
   "d": "15 Sep 2026",
   "t": "A PENDING SALE IS CORRECTED: PAID, COLLECTED AND RM20 LIGHTER",

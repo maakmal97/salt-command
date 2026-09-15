@@ -69,7 +69,13 @@ The fold routine is `docs/CLOUD_FOLD.md`; statements `docs/STATEMENTS.md`; desig
    measures the RM by which Tier 1 exceeds the ask, beside `under`, and the board tags the row and
    refuses its all-clear; a stated price is quoted anyway. **The customer's suggested price rounds
    to the nearest five**, never under its floor: `adjustedPrice` and `pbAdjusted`, held together by
-   a 416-point grid in the suite (v566).
+   a 416-point grid in the suite (v566). **Five tiers are decided and staged** (his decisions of 14 and
+   15 Sep 2026, off his pricing workbook): Tier I ◆ pays the floor, up to the ten; Tiers II ★★, III ★,
+   IV ●● and V ● are the workbook's columns, COGS to the ringgit times the column's multiple less a step
+   a rung, up to the ten (`TIER_RULE` per book in the master, `fiveTiers` in the engine), each tier at
+   least a ten over the one below and the rate law walked under that. A new customer starts at Tier V;
+   Tier I earns no free units. **Stage 1 (v641) draws them beside today's board and nothing quotes
+   them**: `pxPolicy` carries no `tierRule`, and the suite holds it so until the switch.
 6. **The look is the Salt design system applied as a layer.** Material, type and colour
    are decided in `design/desk.css` over the vendored `design/salt-ds.css`; a colour or
    type change is an edit there, then `--sync`, then build, never a hex in the master's

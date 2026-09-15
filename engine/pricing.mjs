@@ -463,6 +463,43 @@ function ladderRow(sizes,C,P){
   });
   return rows;
 }
+/* ============ THE FIVE TIERS, OFF HIS WORKBOOK (his decisions of 14 and 15 Sep 2026) ============
+   Tier I pays the floor, rounded up to the ten. Tiers II to V are the four columns of his pricing
+   workbook: COGS to the ringgit, times the column's multiple less a step a rung, rounded up to the
+   ten. Salt's step grows with the multiple, 1 + m x (1 - 0.05 x rung); oil's is flat,
+   m + 0.35 - 0.05 x rung. P.tierRule states it per book. The rung is a size's row on the board, and
+   a size off the board takes the rung at or below it.
+   TWO GUARDS, IN THIS ORDER. A better tier always pays less: each tier sits at least a ten over the
+   one below, the higher lifting where two meet, which also keeps every tier over the floor, because
+   Tier I is the floor. And the rate may not rise with size (v328): a price steps down to the ten
+   that holds it flat only where that keeps the first.
+   STAGE 1 QUOTES NOTHING: priceLadder, ladderRow and board do not read it. */
+function fiveTiers(sizes,C,P){
+  const R=P.tierRule;
+  if(!R||!Array.isArray(R.multiples)||!R.multiples.length||!Array.isArray(R.rungs)||!R.rungs.length)return null;
+  /* up to the ten as the workbook's CEILING does: a column landing exactly on a ten stays there, where
+     floating point would read RM50 x 2.2 as 110.00000000000001 and round it to RM120 */
+  const to=P.LADDER.round.to, up=v=>Math.ceil(v/to-1e-9)*to;
+  const rungs=R.rungs.map(Number).sort((a,b)=>a-b);
+  const prevRate=R.multiples.map(()=>Infinity);
+  return sizes.map(q=>{
+    let rung=0; rungs.forEach((r,i)=>{if(r<=q+0.009)rung=i;});
+    const fl=floorTotal(q,C,P), cogs=Math.round(ladderCogs(q,C));
+    const cols=R.multiples.map(m=>up(cogs*(m+R.start-R.step*(R.scaled?m:1)*rung)));
+    const prices=[up(fl)];
+    cols.forEach((raw,k)=>{
+      const least=prices[k]+to;
+      let p=Math.max(raw,least);
+      if(q>0&&p/q>prevRate[k]+1e-9){
+        const stepped=Math.floor((prevRate[k]*q+1e-9)/to)*to;
+        if(stepped>=least)p=stepped;
+      }
+      prices.push(p);
+      if(q>0)prevRate[k]=Math.min(prevRate[k],p/q);
+    });
+    return {q:q,rung:rung,cogs:cogs,floor:+fl.toFixed(2),cols:cols,prices:prices};
+  });
+}
 /* THE BOARD AND THE FLOORS, for quoting at the point of sale: what the phone receives. */
 /* THE CARD IS A COLLECTION PRICE AND DELIVERY IS QUOTED ON TOP, PER ORDER (v352, his instruction).
    v344 charged delivery at its real RM50 and put a `deliverable` flag on every size saying whether
@@ -493,6 +530,6 @@ function board(sizes,C,P){
 return {costStack:costStack,buyTaper:buyTaper,ladderMarkup:ladderMarkup,ladderMargin:ladderMargin,ladderCogs:ladderCogs,
         ladderRound:ladderRound,ladderWalk:ladderWalk,ladderAsk:ladderAsk,lotCost:lotCost,
         tier1Anchors:tier1Anchors,tier1Walk:tier1Walk,tier1Ask:tier1Ask,
-        floorTotal:floorTotal,priceLadder:priceLadder,ladderRow:ladderRow,board:board};
+        floorTotal:floorTotal,priceLadder:priceLadder,ladderRow:ladderRow,board:board,fiveTiers:fiveTiers};
 })();
 export default PRICING_ENGINE;
