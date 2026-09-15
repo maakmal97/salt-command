@@ -68,7 +68,7 @@ document.addEventListener('visibilitychange',function(){
    localStorage before it posts anything and the load reads it straight back.
    The same tick retries a held entry, which is what gets a phone write to the cloud
    without waiting for the next open. */
-var SALT_BUILD_ID="d234e0d163666301";
+var SALT_BUILD_ID="eed4f8834b30049a";
 var SALT_REV_MS=10000;
 (function(){
   var chip=null,timer=null;
@@ -6902,7 +6902,9 @@ const quoteFor=p=>{const f=QUOTES[p||PROD];return f?f():null;};
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{"v":"v643","d":"15 Sep 2026","t":"EACH CUSTOMER HOLDS ONE TIER, SET ON THE PHONE AND FOLDED, PROPOSED FROM WHAT THEY PAY, QUOTED NOWHERE YET","n":["<b>HIS DECISIONS OF 15 SEP 2026: EACH CUSTOMER'S TIER COMES BEFORE THE SWITCH.</b> A customer holds one tier across both books, TIER_OF on the book, a new ledger key. It moves only on his word: the Customers page queues it, the drafter drafts it as tierset, he approves it and the fold files it, and Amend ID's re-key carries it with the code.","<b>PROPOSED FROM WHAT THEY PAY.</b> A customer holding none is proposed the tier nearest what they pay: on the book carrying most of their revenue, the level whose prices sit closest to their own rate across that book's board sizes. Never Ambassador, which is his word alone, and Bronze where there is no rate to read. On the book of 15 Sep that proposes Titanium 8, Platinum 9, Gold 13, Silver 2 and Bronze 5 of 37 customers.","<b>THE TIERS CARD.</b> On Customers, every customer who has bought, largest first, with the tier held, the one waiting for approval or the one proposed, a picker to set one, and Accept for every proposal still open, in one entry. A tier set with the names open queues the code and never the name. Migration 0010 rebuilds the draft table once, for the tier and for the label still to be named.","<b>THE CHECKS.</b> A new section of 16 assertions on fixture customers and forced costs: the proposal against a restatement, never Ambassador, Bronze with no rate, the card's three states, Accept, codes alone in the queue, no price moving, the drafter's entry and its refusals, the fold with a rename, and 0010. The book now holds twenty-nine keys. 16 mutations each turn their assertion red."]},
+const evolution=[{"v":"v644","d":"15 Sep 2026","t":"THE TIERS RUN EVENLY FROM 1.0 TO 2.5, SO 1 UNIT OF SALT READS HIS RM100, 110, 130, 150 AND 160","n":["<b>HIS DECISION OF 15 SEP 2026.</b> His prices for 1 unit of salt include RM110 and RM130, which the 1.5 and 2.0 columns never printed. The five tiers' multiples now run evenly from 1.0 to 2.5, a step of 0.375: Titanium 1.0, Platinum 1.375, Gold 1.75, Silver 2.125 and Bronze 2.5.","<b>WHAT MOVES.</b> 0.5 unit of salt still starts the tiers at RM50, 60, 70, 80 and 90, and 1 unit reads RM100, 110, 130, 150 and 160. The middle tiers ease at the larger sizes: at 12.5 unit Platinum reads RM950, Gold RM1,050 and Silver RM1,150, against RM980, RM1,110 and RM1,180 before. Ambassador and Bronze do not move, and every rule the ladder keeps still holds on both books. Nothing quotes the ladder yet.","<b>THE CHECKS.</b> A new section of 2 assertions: the even spacing on both books, and RM50 to RM90 at 0.5 unit with his 1-unit prices on the workbook's COGS. v641's section now proves the workbook's 76 prices with the workbook's own four multiples, and v642's approved board moved with the multiples. 4 mutations each turn their assertion red."]},
+
+{"v":"v643","d":"15 Sep 2026","t":"EACH CUSTOMER HOLDS ONE TIER, SET ON THE PHONE AND FOLDED, PROPOSED FROM WHAT THEY PAY, QUOTED NOWHERE YET","n":["<b>HIS DECISIONS OF 15 SEP 2026: EACH CUSTOMER'S TIER COMES BEFORE THE SWITCH.</b> A customer holds one tier across both books, TIER_OF on the book, a new ledger key. It moves only on his word: the Customers page queues it, the drafter drafts it as tierset, he approves it and the fold files it, and Amend ID's re-key carries it with the code.","<b>PROPOSED FROM WHAT THEY PAY.</b> A customer holding none is proposed the tier nearest what they pay: on the book carrying most of their revenue, the level whose prices sit closest to their own rate across that book's board sizes. Never Ambassador, which is his word alone, and Bronze where there is no rate to read. On the book of 15 Sep that proposes Titanium 8, Platinum 9, Gold 13, Silver 2 and Bronze 5 of 37 customers.","<b>THE TIERS CARD.</b> On Customers, every customer who has bought, largest first, with the tier held, the one waiting for approval or the one proposed, a picker to set one, and Accept for every proposal still open, in one entry. A tier set with the names open queues the code and never the name. Migration 0010 rebuilds the draft table once, for the tier and for the label still to be named.","<b>THE CHECKS.</b> A new section of 16 assertions on fixture customers and forced costs: the proposal against a restatement, never Ambassador, Bronze with no rate, the card's three states, Accept, codes alone in the queue, no price moving, the drafter's entry and its refusals, the fold with a rename, and 0010. The book now holds twenty-nine keys. 16 mutations each turn their assertion red."]},
 
 {"v":"v642","d":"15 Sep 2026","t":"THE LADDER IS AMBASSADOR AT THE FLOOR AND FIVE NAMED TIERS, TITANIUM TO BRONZE, STILL QUOTED NOWHERE","n":["<b>HIS RESTRUCTURE OF 15 SEP 2026.</b> COGS, purchase plus freight, is the line no price goes under, and the floor is COGS plus leakage. Ambassador pays the floor itself, rounded up to the ten, on his word alone and earning no free units. Above it sit five named tiers: Titanium, Platinum, Gold, Silver and Bronze, where a new customer starts.","<b>A NEW COLUMN, SO THE TIERS START WHERE HE SAID.</b> The workbook's columns at 1.0, 1.5, 2.0 and 2.5 are Titanium, Platinum, Gold and Bronze, and Silver is a new one at 2.25, halfway between Gold and Bronze, so 0.5 unit of salt starts the five at RM50, 60, 70, 80 and 90. The rule and the guards are v641's: each level at least a ten over the one below, the rate law walked under that.","<b>EACH CUSTOMER'S TIER COMES BEFORE THE SWITCH.</b> Measured on 15 Sep, switching the board's ask to Bronze would draw every existing customer's price list up toward it, all 36 salt customers and all 6 oil customers with history, because a list is drawn toward the ask. So the card stays quoted nowhere, and the next stage gives each customer a tier, starting nearest what they pay, before any quote moves.","<b>THE CHECKS.</b> A new section of 5 assertions: the names in order, the RM50 to RM90 start on the workbook's COGS, Silver strictly between Gold and Bronze at every size on both books, the board he approved on the costs of 14 Sep, and Ambassador at the floor rather than COGS plus 20%. v641's section now reads the workbook's four columns by multiple and the card by name. 8 mutations each turn their assertion red."]},
 
@@ -7398,7 +7400,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='15 Sep 2026, 12:56 KL';
+const LAST_UPDATED='15 Sep 2026, 13:31 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -9084,14 +9086,15 @@ const LADDER_BY={
 function ladderFor(p){const o=LADDER_BY[p||PROD];return o?{...LADDER,...o}:LADDER;}
 /* ============ AMBASSADOR AND THE FIVE TIERS, PER BOOK (his decisions of 14 and 15 Sep 2026) ============
    His pricing workbook as stated rules, as he restructured it on 15 Sep: Ambassador pays the floor, and the
-   five tiers are his columns at 1.0, 1.5, 2.0 and 2.5 with a new one at 2.25, so 0.5 unit of salt starts them
-   at RM50, 60, 70, 80 and 90. multiples are the tiers' columns, Titanium first; start and step are the
+   five tiers are columns at multiples running EVENLY from 1.0 to 2.5 (his decision of 15 Sep, v644), so 0.5
+   unit of salt starts them at RM50, 60, 70, 80 and 90 and 1 unit reads his own RM100, 110, 130, 150 and 160.
+   multiples are the tiers' columns, Titanium first; start and step are the
    adjustment the sheet's formulas make a rung; scaled says whether the step grows with the multiple, which
    salt's does and oil's does not; rungs are the sheet's rows, oil gaining 80 and 100 unit. fiveTiers in the
    ENGINE block reads it. Drawn beside the board on the Pricing page and quoted nowhere yet. */
 const TIER_RULE={
-  salt:{multiples:[1,1.5,2,2.25,2.5], start:1, step:0.05, scaled:true, rungs:[0.5,1,1.5,2,2.5,3,3.5,4,4.5,5,6.25,12.5]},
-  oil:{multiples:[1,1.5,2,2.25,2.5], start:0.35, step:0.05, scaled:false, rungs:[10,20,30,40,50,80,100]}
+  salt:{multiples:[1,1.375,1.75,2.125,2.5], start:1, step:0.05, scaled:true, rungs:[0.5,1,1.5,2,2.5,3,3.5,4,4.5,5,6.25,12.5]},
+  oil:{multiples:[1,1.375,1.75,2.125,2.5], start:0.35, step:0.05, scaled:false, rungs:[10,20,30,40,50,80,100]}
 };
 /* the levels' names, cheapest first: Ambassador pays the floor, on his word alone and earning no free units;
    Titanium to Bronze are the tiers, and a new customer starts at Bronze */
