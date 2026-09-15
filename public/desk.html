@@ -68,7 +68,7 @@ document.addEventListener('visibilitychange',function(){
    localStorage before it posts anything and the load reads it straight back.
    The same tick retries a held entry, which is what gets a phone write to the cloud
    without waiting for the next open. */
-var SALT_BUILD_ID="52e5f12e50345e99";
+var SALT_BUILD_ID="b4a10eb9e16181ed";
 var SALT_REV_MS=10000;
 (function(){
   var chip=null,timer=null;
@@ -5257,6 +5257,7 @@ const PROD_OPENING={
     "stated": 40
   }
 };
+/* COUNTED AT v647 on 2026-09-15: the salt inventory held 0 against 1.5 on the roll, a drift of -1.5. A COUNT AND NOT A ROLL, so COUNT_ON.salt moves to 2026-09-15. <b>SALT COUNTED AT 0 UNIT ON 15 SEP, AGAINST 1.5 ON THE BOOK.</b> Counted by hand on 15 Sep, the previous count being 14 Sep, for a drift of -1.5 unit. A count wins over the ledger, so the stated salt inventory is set to 0 and COUNT_ON for salt moves to 15 Sep. No party, no total and no cash sit on this row, and it carries no cost: the desk's own basis stays RM44 a unit against RM46 replacement, with reorder at 15. The floors lift to RM61.52 for 1 unit, RM123.04 for 2 unit and RM769.01 at 125 unit, the ask for 1 unit holding at RM130 and self use at RM75.95. The drafter flagged the gap as shrinkage across every unit sold and flagged 10.5 unit of promises as unmeetable until a lot lands; the figures bear both out, and the dossier gives no reason for the gap. Those 10.5 unit promised are left outstanding. */
 /* COUNTED AT v639 on 2026-09-14: the salt inventory held 1.5 against 8.94 on the roll, a drift of -7.44. A COUNT AND NOT A ROLL, so COUNT_ON.salt moves to 2026-09-14. <b>SALT COUNT DATED 14 SEP, COUNTED BY HAND AT 1.5 UNIT.</b> The book said 8.94 and 1.5 was counted, a drift of -7.44 unit, so the stated inventory becomes 1.5 and COUNT_ON for salt moves from 8 Sep to 14 Sep. No party, no cash and no cost on this row: stock cost stays the desk's own RM44 a unit against RM46 replacement. <b>The drafter flagged 7.44 unit unaccounted for, a count always winning, the gap booking as shrinkage across every unit sold.</b> The figures fix the size of the gap but not its cause, and the dossier gives none. Floors lift: RM61.15 on 1 unit, RM122.29 on 2, RM764.34 on 12.5, ask RM130, self use RM75.45. The gap stays outstanding as shrinkage. */
 /* ROLLED AT v631: 1 unit to CN6-WM on 2026-09-14, so 9.94 less 1 is 8.94. A ROLL AND NOT A COUNT; COUNT_ON is untouched. The unit moved on the day, and stock stays under the RM15 reorder mark with 11.5 unit promised and nothing owed out. Counts still stand at 08 Sep for salt and 09 Sep for oil. */
 /* ROLLED AT v619: 6.25 unit to CS6-PER on 2026-09-13, so 16.19 less 6.25 is 9.94. A ROLL AND NOT A COUNT; COUNT_ON is untouched. Salt stands at 16.19 unit against a stated 16.19, counted 8 Sep, with 11.5 unit promised and the reorder mark at 15, so the next lot is close. Nothing is owed out and no loan is open. */
@@ -5297,9 +5298,9 @@ const PROD_OPENING={
 /* ROLLED AT v439: 1 unit to CA7-JTR on 2026-09-01, 6 unit to CK4-SEN on 2026-09-01, 1 unit to CR3-DAM on 2026-09-01, so 8.25 less 8 is 0.25. A ROLL AND NOT A COUNT; COUNT_ON is untouched. Eight of the eight and a quarter unit on the shelf went out today across four rows, leaving 0.25 unit against 3 unit already promised: CE4-CHE's half unit owed out and CY2-NIL's 2.5 unit pending. The book is 2.75 unit short of its own commitments and sourcing is now the first decision on it. */
 /* ROLLED AT v404: 5 unit to CE4-AD on 2026-08-29, so 13.25 less 5 is 8.25. A ROLL AND NOT A COUNT; COUNT_ON is untouched. */
 /* ROLLED AT v399: 3 unit to CH4-KS on 2026-08-28, so 16.25 less 3 is 13.25. A ROLL AND NOT A COUNT; COUNT_ON is untouched. */
-const STATED_STOCK=1.5;
+const STATED_STOCK=0;
 const COUNT_ON={
-  "salt": "2026-09-14",
+  "salt": "2026-09-15",
   "oil": "2026-09-09"
 };
 /* EVERY COUNT, AS TAKEN (v504, 07 Sep 2026): product, date, the figure counted, what the roll said and the drift, negative when units are missing. The fold appends one line per count. A count with no drift bounds a cycle and charges nothing; the 24 Aug anchor is one. Seeded from the fold notes of v473 (02 Sep, 10.5 against 18.75), v489 (04 Sep, 9.8 entered net of a rolled sale, no drift) and v498 (06 Sep, 7 against 8.3); the oil count of 23 Aug has no recorded drift. The leak is charged from these: the units missing over the last three cycles, at landed, over the units sold in them. */
@@ -5311,7 +5312,8 @@ const COUNTS=[
   {"product":"oil","date":"2026-08-23","qty":15,"was":null,"drift":null},
   {"product":"salt","date":"2026-09-08","qty":1,"was":6,"drift":-5},
   {"product":"oil","date":"2026-09-09","qty":60,"was":75,"drift":-15},
-  {"product":"salt","date":"2026-09-14","qty":1.5,"was":8.94,"drift":-7.44}
+  {"product":"salt","date":"2026-09-14","qty":1.5,"was":8.94,"drift":-7.44},
+  {"product":"salt","date":"2026-09-15","qty":0,"was":1.5,"drift":-1.5}
 ];
 const purchases=[
   {"date":"2026-06-27","qty":12.5,"total":800,"supplier":"SF6-KLC","status":"paid","rid":"p001"},
@@ -5659,7 +5661,7 @@ const ONE_OFFS=[
   {"id":"CM6-HCM","date":"2026-07-14","note":"One-off; RM104/unit is an outlier."}
 ];
 /* v512, 07 Sep 2026: moved to 06:21:06.691Z past a second entry of the CR3-DAM sale already folded at v510, so the phone stops showing it as provisional; no row folded. */
-const QUEUE_COMMITTED="2026-09-15T00:32:48.670Z";
+const QUEUE_COMMITTED="2026-09-15T09:01:27.621Z";
 /* HIS INSTRUCTION, 09 SEP 2026, AFTER THE v551 OIL COUNT: "The desk quotes to 450, by lowering margin, then for others, quote proportionately." The count read a 23.08 per cent leak from his own figures and lifted the 50 unit oil floor to RM482.20, above the RM450 he had stated, and v353 had the desk lift any stated price that sat under its floor. From v552 it lifts a DERIVED ask only: a price he has set is quoted as set, the gap to break-even is reported beside it rather than hidden, and the 50 unit tier reads 0.93x with RM32.20 under. His other four oil tiers are untouched and already step the margin down proportionately into it: 1.35x, 1.24x, 1.14x, 1.04x, 0.93x. Recorded as his decision, not an error, and the drafter will flag a 50 unit oil sale as under floor for the same reason the board does. */
 const PRICE_SET={
   "salt": {
@@ -6902,7 +6904,9 @@ const quoteFor=p=>{const f=QUOTES[p||PROD];return f?f():null;};
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{"v":"v646","d":"15 Sep 2026","t":"EACH CUSTOMER HOLDS A TIER FOR EACH PRODUCT, AND A PRODUCT THEY HAVE NEVER BOUGHT IS PROPOSED NOTHING UNTIL HE SETS ONE","n":["<b>HIS INSTRUCTION OF 15 SEP 2026: A TIER FOR EACH PRODUCT.</b> A customer can hold Gold on salt and Silver on oil. The Tiers card on Customers carries a dropdown for each product, Not set among them; Set queues only the products whose choice changed, Not set on a tier held queues it cleared, and every change goes to Approve before it is folded. Add ID asks a starting tier for each product, Bronze by default, and leaves one set to not set out.","<b>NOTHING IS PROPOSED FOR A PRODUCT NEVER BOUGHT.</b> A product with no tier held is proposed the level nearest what the customer pays for it, read off that product alone. One they have never bought is proposed nothing and reads not set, and the card now lists customers who have bought nothing yet, so a tier can be set before they order. Still quoted nowhere: TIER_OF was empty, so nothing on the book changed shape.","<b>THE CHECKS.</b> The drafter and the fold check each product against the book and each level against the desk's names, and the fold clears a product on a null and drops a customer left with none. The v643 and v645 sections are restated for a tier per product, and a new section of 8 assertions covers the rest. 19 mutations each turn their assertion red."]},
+const evolution=[{"v":"v647","d":"15 Sep 2026","t":"SALT COUNTED AT ZERO: THE BOOK LOSES 1.5 UNIT AND THE FLOORS LIFT","n":["<b>ONE ROW FOLDED, AND IT IS A COUNT.</b> Salt was counted by hand at 0 unit on 15 Sep against 1.5 stated on the book, a drift of -1.5 unit, with the previous count dated 14 Sep. A count wins over the ledger, so the stated salt inventory is set to 0 and COUNT_ON for salt moves to 15 Sep. No party, no money and no cost attach to this row, and no lot landed.","<b>WHAT THE INVENTORY DID WITH IT.</b> The gap books as shrinkage across every unit sold, and the floors lift accordingly: RM60.83 to RM61.52 for 1 unit, RM121.66 to RM123.04 for 2 unit and RM760.37 to RM769.01 at 125 unit, while the ask for 1 unit holds at RM130 and self use moves from RM74.45 to RM75.95. With 10.5 unit promised against nothing on hand, the drafter's flag that open orders are unmeetable stands answered by the count itself."]},
+
+{"v":"v646","d":"15 Sep 2026","t":"EACH CUSTOMER HOLDS A TIER FOR EACH PRODUCT, AND A PRODUCT THEY HAVE NEVER BOUGHT IS PROPOSED NOTHING UNTIL HE SETS ONE","n":["<b>HIS INSTRUCTION OF 15 SEP 2026: A TIER FOR EACH PRODUCT.</b> A customer can hold Gold on salt and Silver on oil. The Tiers card on Customers carries a dropdown for each product, Not set among them; Set queues only the products whose choice changed, Not set on a tier held queues it cleared, and every change goes to Approve before it is folded. Add ID asks a starting tier for each product, Bronze by default, and leaves one set to not set out.","<b>NOTHING IS PROPOSED FOR A PRODUCT NEVER BOUGHT.</b> A product with no tier held is proposed the level nearest what the customer pays for it, read off that product alone. One they have never bought is proposed nothing and reads not set, and the card now lists customers who have bought nothing yet, so a tier can be set before they order. Still quoted nowhere: TIER_OF was empty, so nothing on the book changed shape.","<b>THE CHECKS.</b> The drafter and the fold check each product against the book and each level against the desk's names, and the fold clears a product on a null and drops a customer left with none. The v643 and v645 sections are restated for a tier per product, and a new section of 8 assertions covers the rest. 19 mutations each turn their assertion red."]},
 
 {"v":"v645","d":"15 Sep 2026","t":"ADD ID STARTS A NEW CUSTOMER AT THE TIER CHOSEN, AND THE FOLD FILES IT WITH THE REGISTRATION","n":["<b>HIS DECISION OF 15 SEP 2026: A NEW CUSTOMER INCLUDES A STARTING TIER.</b> Add ID now asks the starting tier, Bronze unless he picks another, for a customer and for either kind of associate. An end buyer, a bucket and a supplier hold no tier and are not asked, and an appointment of a party already registered keeps the tier they hold.","<b>ONE ROAD.</b> The tier rides the registration: the queue line says where the customer starts and never carries the name, the Tiers card reads it as waiting for approval, the drafter checks it against the level names and refuses one for a supplier or a bucket, and the fold files it in TIER_OF as it adds the code to the roster.","<b>THE CHECKS.</b> A new section of 8 assertions, driven through the Add ID form with the vault and the network stubbed: the picker for the kinds that hold a tier and not the others, Record queuing the tier without the name, the Tiers card reading it, the drafter's row and its two refusals, and the fold filing it and refusing a tier the desk does not name. 9 mutations each turn their assertion red."]},
 
@@ -7404,7 +7408,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='15 Sep 2026, 16:15 KL';
+const LAST_UPDATED='15 Sep 2026, 17:03 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */

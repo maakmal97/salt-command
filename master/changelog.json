@@ -1,5 +1,14 @@
 [
  {
+  "v": "v647",
+  "d": "15 Sep 2026",
+  "t": "SALT COUNTED AT ZERO: THE BOOK LOSES 1.5 UNIT AND THE FLOORS LIFT",
+  "n": [
+   "<b>ONE ROW FOLDED, AND IT IS A COUNT.</b> Salt was counted by hand at 0 unit on 15 Sep against 1.5 stated on the book, a drift of -1.5 unit, with the previous count dated 14 Sep. A count wins over the ledger, so the stated salt inventory is set to 0 and COUNT_ON for salt moves to 15 Sep. No party, no money and no cost attach to this row, and no lot landed.",
+   "<b>WHAT THE INVENTORY DID WITH IT.</b> The gap books as shrinkage across every unit sold, and the floors lift accordingly: RM60.83 to RM61.52 for 1 unit, RM121.66 to RM123.04 for 2 unit and RM760.37 to RM769.01 at 125 unit, while the ask for 1 unit holds at RM130 and self use moves from RM74.45 to RM75.95. With 10.5 unit promised against nothing on hand, the drafter's flag that open orders are unmeetable stands answered by the count itself."
+  ]
+ },
+ {
   "v": "v646",
   "d": "15 Sep 2026",
   "t": "EACH CUSTOMER HOLDS A TIER FOR EACH PRODUCT, AND A PRODUCT THEY HAVE NEVER BOUGHT IS PROPOSED NOTHING UNTIL HE SETS ONE",
