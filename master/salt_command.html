@@ -5059,17 +5059,17 @@ function ladderRow(sizes,C,P){
   });
   return rows;
 }
-/* ============ THE FIVE TIERS, OFF HIS WORKBOOK (his decisions of 14 and 15 Sep 2026) ============
-   Tier I pays the floor, rounded up to the ten. Tiers II to V are the four columns of his pricing
-   workbook: COGS to the ringgit, times the column's multiple less a step a rung, rounded up to the
-   ten. Salt's step grows with the multiple, 1 + m x (1 - 0.05 x rung); oil's is flat,
-   m + 0.35 - 0.05 x rung. P.tierRule states it per book. The rung is a size's row on the board, and
-   a size off the board takes the rung at or below it.
-   TWO GUARDS, IN THIS ORDER. A better tier always pays less: each tier sits at least a ten over the
-   one below, the higher lifting where two meet, which also keeps every tier over the floor, because
-   Tier I is the floor. And the rate may not rise with size (v328): a price steps down to the ten
+/* ============ AMBASSADOR AND THE FIVE TIERS, OFF HIS WORKBOOK (his decisions of 14 and 15 Sep 2026) ============
+   prices[0] is Ambassador: the floor itself, COGS plus leakage, rounded up to the ten. The tiers follow,
+   one for each of P.tierRule's multiples, Titanium to Bronze: COGS to the ringgit, times the multiple less
+   a step a rung, rounded up to the ten. Salt's step grows with the multiple, 1 + m x (1 - 0.05 x rung);
+   oil's is flat, m + 0.35 - 0.05 x rung. The rung is a size's row on the board, and a size off the board
+   takes the rung at or below it.
+   TWO GUARDS, IN THIS ORDER. A better level always pays less: each sits at least a ten over the one
+   below, the higher lifting where two meet, which also keeps every tier over the floor, because
+   Ambassador is the floor. And the rate may not rise with size (v328): a price steps down to the ten
    that holds it flat only where that keeps the first.
-   STAGE 1 QUOTES NOTHING: priceLadder, ladderRow and board do not read it. */
+   QUOTED NOWHERE YET: priceLadder, ladderRow and board do not read it. */
 function fiveTiers(sizes,C,P){
   const R=P.tierRule;
   if(!R||!Array.isArray(R.multiples)||!R.multiples.length||!Array.isArray(R.rungs)||!R.rungs.length)return null;
@@ -6815,7 +6815,9 @@ const quoteFor=p=>{const f=QUOTES[p||PROD];return f?f():null;};
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{"v":"v641","d":"15 Sep 2026","t":"THE FIVE TIERS ARE COMPUTED OFF THE PRICING WORKBOOK AND DRAWN BESIDE THE BOARD, QUOTED NOWHERE YET","n":["<b>HIS DECISIONS OF 14 AND 15 SEP 2026, THE FIRST STAGE OF FIVE.</b> Five price tiers from his pricing workbook: Tier I ◆ pays the floor, rounded up to the ten, and Tiers II ★★, III ★, IV ●● and V ● are the workbook's four columns, at multiples 1.0, 1.5, 2.0 and 2.5. A new customer will start at Tier V and climb toward the diamond, paying less at every step. The floor stays what it was, COGS plus leakage.","<b>ONE FORMULA, STATED AS A RULE.</b> Each column is COGS to the ringgit times its multiple less a step a rung, rounded up to the ten: 1 + m × (1 − 0.05 × rung) for salt, m + 0.35 − 0.05 × rung for oil, whose board gains 80 and 100 unit. TIER_RULE states it per book and fiveTiers in the engine computes it under two guards: each tier sits at least a ten over the one below, which also keeps every tier over the floor, and the rate may not rise with size where a step down keeps that.","<b>BESIDE TODAY'S BOARD, AND NOTHING QUOTES IT.</b> The Pricing page draws the five tiers under the board with today's ask alongside, so they read against each other on live costs before any price moves. The phone, the board, the drafter, the price list and the guest boards read nothing new; switching them is the next stage.","<b>THE CHECKS.</b> A new section of 11 assertions: the rule reproduces all 76 of the workbook's prices from its own COGS, the approved board on the costs of 14 Sep, the guards on a grid of 70 forced costs that lifts 474 prices and steps 28, a column landing exactly on a ten, off-board sizes, the card cell by cell, and quoted nowhere. 13 mutations each turn their assertion red. Two Tier 1 checks that read the floor v639's count had lifted now force their own cost."]},
+const evolution=[{"v":"v642","d":"15 Sep 2026","t":"THE LADDER IS AMBASSADOR AT THE FLOOR AND FIVE NAMED TIERS, TITANIUM TO BRONZE, STILL QUOTED NOWHERE","n":["<b>HIS RESTRUCTURE OF 15 SEP 2026.</b> COGS, purchase plus freight, is the line no price goes under, and the floor is COGS plus leakage. Ambassador pays the floor itself, rounded up to the ten, on his word alone and earning no free units. Above it sit five named tiers: Titanium, Platinum, Gold, Silver and Bronze, where a new customer starts.","<b>A NEW COLUMN, SO THE TIERS START WHERE HE SAID.</b> The workbook's columns at 1.0, 1.5, 2.0 and 2.5 are Titanium, Platinum, Gold and Bronze, and Silver is a new one at 2.25, halfway between Gold and Bronze, so 0.5 unit of salt starts the five at RM50, 60, 70, 80 and 90. The rule and the guards are v641's: each level at least a ten over the one below, the rate law walked under that.","<b>EACH CUSTOMER'S TIER COMES BEFORE THE SWITCH.</b> Measured on 15 Sep, switching the board's ask to Bronze would draw every existing customer's price list up toward it, all 36 salt customers and all 6 oil customers with history, because a list is drawn toward the ask. So the card stays quoted nowhere, and the next stage gives each customer a tier, starting nearest what they pay, before any quote moves.","<b>THE CHECKS.</b> A new section of 5 assertions: the names in order, the RM50 to RM90 start on the workbook's COGS, Silver strictly between Gold and Bronze at every size on both books, the board he approved on the costs of 14 Sep, and Ambassador at the floor rather than COGS plus 20%. v641's section now reads the workbook's four columns by multiple and the card by name. 8 mutations each turn their assertion red."]},
+
+{"v":"v641","d":"15 Sep 2026","t":"THE FIVE TIERS ARE COMPUTED OFF THE PRICING WORKBOOK AND DRAWN BESIDE THE BOARD, QUOTED NOWHERE YET","n":["<b>HIS DECISIONS OF 14 AND 15 SEP 2026, THE FIRST STAGE OF FIVE.</b> Five price tiers from his pricing workbook: Tier I ◆ pays the floor, rounded up to the ten, and Tiers II ★★, III ★, IV ●● and V ● are the workbook's four columns, at multiples 1.0, 1.5, 2.0 and 2.5. A new customer will start at Tier V and climb toward the diamond, paying less at every step. The floor stays what it was, COGS plus leakage.","<b>ONE FORMULA, STATED AS A RULE.</b> Each column is COGS to the ringgit times its multiple less a step a rung, rounded up to the ten: 1 + m × (1 − 0.05 × rung) for salt, m + 0.35 − 0.05 × rung for oil, whose board gains 80 and 100 unit. TIER_RULE states it per book and fiveTiers in the engine computes it under two guards: each tier sits at least a ten over the one below, which also keeps every tier over the floor, and the rate may not rise with size where a step down keeps that.","<b>BESIDE TODAY'S BOARD, AND NOTHING QUOTES IT.</b> The Pricing page draws the five tiers under the board with today's ask alongside, so they read against each other on live costs before any price moves. The phone, the board, the drafter, the price list and the guest boards read nothing new; switching them is the next stage.","<b>THE CHECKS.</b> A new section of 11 assertions: the rule reproduces all 76 of the workbook's prices from its own COGS, the approved board on the costs of 14 Sep, the guards on a grid of 70 forced costs that lifts 474 prices and steps 28, a column landing exactly on a ten, off-board sizes, the card cell by cell, and quoted nowhere. 13 mutations each turn their assertion red. Two Tier 1 checks that read the floor v639's count had lifted now force their own cost."]},
 
 {"v":"v640","d":"15 Sep 2026","t":"A PENDING SALE IS CORRECTED: PAID, COLLECTED AND RM20 LIGHTER","n":["<b>ONE ROW FOLDED, AN AMENDMENT AND NOTHING ELSE.</b> A correction lands on CH6-SET's salt sell s148 of 11 Sep, 1 unit. The total falls from RM120 to RM100, delivery from RM10 to RM0, cash rises from RM0 to RM100, delivered quantity from 0 to 1 unit, handover moves from delivered to collected, and both paidOn and deliveredOn are set to 14 Sep. No cash and no stock move on the fold itself: the row is restated, not rewritten.","<b>THE DRAFTER FLAGGED THE RATE AND THE FIGURES ANSWER IT.</b> CH6-SET has paid about RM117.50 a unit across 2 orders and this row now reads RM100, 14.9% below that, against a median of RM115 in a RM110 to RM120 range. The desk let it stand on his word. Outstanding of RM120 on this party is settled by the RM100 cash and the RM20 reduction in total. The inventory held at 1.5 units, cost unchanged at RM44 a unit.","<b>NOTHING OUTSTANDING ON THE FOLD.</b> No lot landed, no loan opened and no count was taken, salt last counted 14 Sep and oil 9 Sep. Promised stock stays at 11.5 units against 1.5 units stated, with the reorder mark at 15 units and replacement at RM46 a unit. The amended row now carries a paid and collected date of 14 Sep, so it leaves nothing open behind it."]},
 
@@ -7307,7 +7309,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='15 Sep 2026, 08:48 KL';
+const LAST_UPDATED='15 Sep 2026, 12:28 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -8991,18 +8993,20 @@ const LADDER_BY={
   oil:{anchorQ:10, anchorX:0.62, at:{lo:10, hi:50}, floor:0, anchorG:0.36, gLo:0, tier1:null}   /* v504: 0.36 reproduces RM130 at 10 on the floor basis */
 };
 function ladderFor(p){const o=LADDER_BY[p||PROD];return o?{...LADDER,...o}:LADDER;}
-/* ============ THE FIVE TIERS' RULE, PER BOOK (his decisions of 14 and 15 Sep 2026) ============
-   His pricing workbook as stated rules: its four columns are Tiers II to V, and Tier I is the floor.
-   multiples are the columns' headings; start and step are the adjustment the sheet's formulas make a
-   rung; scaled says whether the step grows with the multiple, which salt's does and oil's does not;
-   rungs are the sheet's rows, oil gaining 80 and 100 unit. fiveTiers in the ENGINE block reads it.
-   Stage 1: drawn beside the board on the Pricing page and quoted nowhere. */
+/* ============ AMBASSADOR AND THE FIVE TIERS, PER BOOK (his decisions of 14 and 15 Sep 2026) ============
+   His pricing workbook as stated rules, as he restructured it on 15 Sep: Ambassador pays the floor, and the
+   five tiers are his columns at 1.0, 1.5, 2.0 and 2.5 with a new one at 2.25, so 0.5 unit of salt starts them
+   at RM50, 60, 70, 80 and 90. multiples are the tiers' columns, Titanium first; start and step are the
+   adjustment the sheet's formulas make a rung; scaled says whether the step grows with the multiple, which
+   salt's does and oil's does not; rungs are the sheet's rows, oil gaining 80 and 100 unit. fiveTiers in the
+   ENGINE block reads it. Drawn beside the board on the Pricing page and quoted nowhere yet. */
 const TIER_RULE={
-  salt:{multiples:[1,1.5,2,2.5], start:1, step:0.05, scaled:true, rungs:[0.5,1,1.5,2,2.5,3,3.5,4,4.5,5,6.25,12.5]},
-  oil:{multiples:[1,1.5,2,2.5], start:0.35, step:0.05, scaled:false, rungs:[10,20,30,40,50,80,100]}
+  salt:{multiples:[1,1.5,2,2.25,2.5], start:1, step:0.05, scaled:true, rungs:[0.5,1,1.5,2,2.5,3,3.5,4,4.5,5,6.25,12.5]},
+  oil:{multiples:[1,1.5,2,2.25,2.5], start:0.35, step:0.05, scaled:false, rungs:[10,20,30,40,50,80,100]}
 };
-/* the tiers' names and marks, cheapest first: the diamond pays least, and a new customer starts at V */
-const TIER_MARKS=[{id:'I',mark:'◆'},{id:'II',mark:'★★'},{id:'III',mark:'★'},{id:'IV',mark:'●●'},{id:'V',mark:'●'}];
+/* the levels' names, cheapest first: Ambassador pays the floor, on his word alone and earning no free units;
+   Titanium to Bronze are the tiers, and a new customer starts at Bronze */
+const TIER_NAMES=['Ambassador','Titanium','Platinum','Gold','Silver','Bronze'];
 /* THE SUPPLIER'S OWN ELASTICITY, FITTED RATHER THAN TYPED. Least squares of ln(rate) on ln(qty)
    across every tier of the live quote. It returns the exponent and the r-squared, and the r-squared
    is reported on the tab rather than hidden: a ladder that does not actually follow a power law
@@ -15358,20 +15362,20 @@ function fiveTiersNow(){
   const R=TIER_RULE[PROD];
   return R?PRICING_ENGINE.fiveTiers(R.rungs,pxCost(),Object.assign({},pxPolicy(),{tierRule:R})):null;
 }
-/* v641, STAGE 1: THE FIVE TIERS BESIDE TODAY'S BOARD. One row a rung: the floor, the five prices, and
-   today's ask where today's board quotes the size, so the two read against each other on live costs
-   before anything quotes the new one. */
+/* v641, STAGE 1, NAMED AT v642: AMBASSADOR AND THE FIVE TIERS BESIDE TODAY'S BOARD. One row a rung: the
+   floor, the six levels, and today's ask where today's board quotes the size, so the two read against each
+   other on live costs before anything quotes the new one. */
 function fiveTierCard(){
   const rows=fiveTiersNow(); if(!rows)return '';
   const onBoard=q=>sizesFor(PROD).some(s=>Math.abs(s-q)<0.009);
-  const head=`<tr><th class="l">Size</th><th>Floor</th>${TIER_MARKS.map(t=>`<th>${t.id} ${t.mark}</th>`).join('')}<th>Ask today</th></tr>`;
+  const head=`<tr><th class="l">Size</th><th>Floor</th>${TIER_NAMES.map(n=>`<th>${n}</th>`).join('')}<th>Ask today</th></tr>`;
   const body=rows.map(r=>{let a=null;if(onBoard(r.q)){try{a=priceLadder(r.q).ask.total;}catch(e){}}
     return `<tr><td class="l">${units(r.q)}</td><td class="mono" style="color:var(--dim)">${fmt0(r.floor)}</td>`
       +r.prices.map(p=>`<td class="mono">${fmt0(p)}</td>`).join('')
       +`<td class="mono" style="color:var(--dim)">${a!=null?fmt0(a):'&mdash;'}</td></tr>`;}).join('');
-  return `<div class="card" style="margin-top:14px"><div class="cardh">The five tiers <span class="sub">from the pricing workbook, not quoted yet</span></div>
+  return `<div class="card" style="margin-top:14px"><div class="cardh">Ambassador and the five tiers <span class="sub">from the pricing workbook, not quoted yet</span></div>
     <div class="tscroll"><table class="fintab fivetier"><thead>${head}</thead><tbody>${body}</tbody></table></div>
-    <div class="insight">Tier I pays the floor and a new customer starts at Tier V, with each tier at least ${fmt0(10)} over the one below.</div></div>`;
+    <div class="insight">Ambassador pays the floor and a new customer starts at Bronze, with each level at least ${fmt0(10)} over the one below.</div></div>`;
 }
 
 /* ---- layer 3: five readings, each worth a few points, summed then clamped ---- */

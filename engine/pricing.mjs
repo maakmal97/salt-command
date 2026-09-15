@@ -463,17 +463,17 @@ function ladderRow(sizes,C,P){
   });
   return rows;
 }
-/* ============ THE FIVE TIERS, OFF HIS WORKBOOK (his decisions of 14 and 15 Sep 2026) ============
-   Tier I pays the floor, rounded up to the ten. Tiers II to V are the four columns of his pricing
-   workbook: COGS to the ringgit, times the column's multiple less a step a rung, rounded up to the
-   ten. Salt's step grows with the multiple, 1 + m x (1 - 0.05 x rung); oil's is flat,
-   m + 0.35 - 0.05 x rung. P.tierRule states it per book. The rung is a size's row on the board, and
-   a size off the board takes the rung at or below it.
-   TWO GUARDS, IN THIS ORDER. A better tier always pays less: each tier sits at least a ten over the
-   one below, the higher lifting where two meet, which also keeps every tier over the floor, because
-   Tier I is the floor. And the rate may not rise with size (v328): a price steps down to the ten
+/* ============ AMBASSADOR AND THE FIVE TIERS, OFF HIS WORKBOOK (his decisions of 14 and 15 Sep 2026) ============
+   prices[0] is Ambassador: the floor itself, COGS plus leakage, rounded up to the ten. The tiers follow,
+   one for each of P.tierRule's multiples, Titanium to Bronze: COGS to the ringgit, times the multiple less
+   a step a rung, rounded up to the ten. Salt's step grows with the multiple, 1 + m x (1 - 0.05 x rung);
+   oil's is flat, m + 0.35 - 0.05 x rung. The rung is a size's row on the board, and a size off the board
+   takes the rung at or below it.
+   TWO GUARDS, IN THIS ORDER. A better level always pays less: each sits at least a ten over the one
+   below, the higher lifting where two meet, which also keeps every tier over the floor, because
+   Ambassador is the floor. And the rate may not rise with size (v328): a price steps down to the ten
    that holds it flat only where that keeps the first.
-   STAGE 1 QUOTES NOTHING: priceLadder, ladderRow and board do not read it. */
+   QUOTED NOWHERE YET: priceLadder, ladderRow and board do not read it. */
 function fiveTiers(sizes,C,P){
   const R=P.tierRule;
   if(!R||!Array.isArray(R.multiples)||!R.multiples.length||!Array.isArray(R.rungs)||!R.rungs.length)return null;
