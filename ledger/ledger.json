@@ -1,6 +1,6 @@
 {
- "v": "v651",
- "stamped": "15 Sep 2026, 23:29 KL",
+ "v": "v652",
+ "stamped": "16 Sep 2026, 03:37 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -4348,7 +4348,7 @@
   ],
   "QUEUE_COMMITTED": "2026-09-15T12:28:07.501Z",
   "PRICING": {
-   "takenAt": "2026-09-15T15:37:13.234Z",
+   "takenAt": "2026-09-15T19:53:33.768Z",
    "sizes": [
     0.5,
     1,
@@ -4571,8 +4571,8 @@
          "date": "2026-09-15",
          "sup": "SA5-BTR"
         },
-        "days": 40,
-        "sinceLot": 49
+        "days": 41,
+        "sinceLot": 50
        },
        "lockBase": {
         "lockedOn": "2026-08-06",
@@ -4914,8 +4914,8 @@
          "date": "2026-09-08",
          "sup": "SP7-PUD"
         },
-        "days": 40,
-        "sinceLot": 40
+        "days": 41,
+        "sinceLot": 41
        },
        "lockBase": {
         "lockedOn": "2026-08-06",
@@ -5141,10 +5141,10 @@
      ]
     }
    },
-   "v": "v651"
+   "v": "v652"
   },
   "OPEN": {
-   "at": "2026-09-15T15:37:13.285Z",
+   "at": "2026-09-15T19:53:33.835Z",
    "count": 9,
    "byKey": {
     "CR3-DAM|2026-09-15|90": {
@@ -5161,7 +5161,7 @@
      "deliveredOn": "2026-09-15",
      "handover": "collected",
      "key": "CR3-DAM|2026-09-15|90",
-     "age": 0,
+     "age": 1,
      "exp": 90
     },
     "CM4-MK|2026-09-13|330": {
@@ -5178,7 +5178,7 @@
      "deliveredOn": "2026-09-13",
      "handover": "delivered",
      "key": "CM4-MK|2026-09-13|330",
-     "age": 2,
+     "age": 3,
      "exp": 110
     },
     "CE4-CHE|2026-09-12|150": {
@@ -5196,8 +5196,8 @@
      "deliveredOn": "2026-09-12",
      "handover": "delivered",
      "key": "CE4-CHE|2026-09-12|150",
-     "age": 3,
-     "exp": 150
+     "age": 4,
+     "exp": 112.5
     },
     "CC5-OKR|2026-09-11|90": {
      "d": "2026-09-11",
@@ -5244,7 +5244,7 @@
      "deliveredOn": "2026-09-07",
      "handover": "delivered",
      "key": "CJ4-BJ|2026-09-07|850",
-     "age": 8,
+     "age": 9,
      "exp": 136
     },
     "CA4-DAM|2026-09-02|160": {
@@ -5322,7 +5322,7 @@
     "salt": "2026-09-15",
     "oil": "2026-09-09"
    },
-   "v": "v651"
+   "v": "v652"
   }
  }
 }
