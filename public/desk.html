@@ -68,7 +68,7 @@ document.addEventListener('visibilitychange',function(){
    localStorage before it posts anything and the load reads it straight back.
    The same tick retries a held entry, which is what gets a phone write to the cloud
    without waiting for the next open. */
-var SALT_BUILD_ID="014a46628ca8fad2";
+var SALT_BUILD_ID="5e701bb81e558e24";
 var SALT_REV_MS=10000;
 (function(){
   var chip=null,timer=null;
@@ -5182,6 +5182,17 @@ function fiveTiers(sizes,C,P){
     return {q:q,rung:rung,cogs:cogs,floor:+fl.toFixed(2),cols:cols,prices:prices};
   });
 }
+/* ============ v651, HIS DECISIONS OF 15 SEP 2026: A CUSTOMER'S PRICE IS THEIR TIER, NEVER ABOVE WHAT THEY PAY ============
+   T is the price of the customer's tier for the product at the size, R what their own recent rate comes to at it (null with
+   no history), F the floor. The tier is a ceiling: their own rate, to the nearest five, can only lower it, and a price that
+   lands under the floor lifts to the first five above it. The one rule the desk's printed board and the customer's page both
+   quote. A product with no tier is never priced at all: the callers leave it out, and the page says its price is coming. */
+function cardPrice(R,F,T){
+  if(R==null)return T;
+  let p=Math.min(T,Math.round(R/5)*5);
+  if(p<F-0.009)p=Math.ceil((F-0.009)/5)*5;
+  return p;
+}
 /* THE BOARD AND THE FLOORS, for quoting at the point of sale: what the phone receives. */
 /* THE CARD IS A COLLECTION PRICE AND DELIVERY IS QUOTED ON TOP, PER ORDER (v352, his instruction).
    v344 charged delivery at its real RM50 and put a `deliverable` flag on every size saying whether
@@ -5212,7 +5223,7 @@ function board(sizes,C,P){
 return {costStack:costStack,buyTaper:buyTaper,ladderMarkup:ladderMarkup,ladderMargin:ladderMargin,ladderCogs:ladderCogs,
         ladderRound:ladderRound,ladderWalk:ladderWalk,ladderAsk:ladderAsk,lotCost:lotCost,
         tier1Anchors:tier1Anchors,tier1Walk:tier1Walk,tier1Ask:tier1Ask,
-        floorTotal:floorTotal,priceLadder:priceLadder,ladderRow:ladderRow,board:board,fiveTiers:fiveTiers};
+        floorTotal:floorTotal,priceLadder:priceLadder,ladderRow:ladderRow,board:board,fiveTiers:fiveTiers,cardPrice:cardPrice};
 })();
 /* ==== END ENGINE pricing ==== */
 /* ==== BOOK: generated from ledger/book.json by tools/booksync.mjs. Edit the JSON, never this block. ==== */
@@ -6913,7 +6924,9 @@ const quoteFor=p=>{const f=QUOTES[p||PROD];return f?f():null;};
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{"v":"v650","d":"15 Sep 2026","t":"TWO SALT SELLS ON THE DAY: ONE ADVANCE ABOVE HIS MEDIAN, ONE PAID IN FULL","n":["<b>TWO SALT SELLS FOLDED, BOTH DATED 15 SEP AND BOTH HANDED OVER ON THE DAY.</b> CR3-DAM takes 1 unit for RM90 with nothing paid, and CE4-CHE takes 2.5 unit for RM230 settled in full at the open. Both clear their floors, RM61.26 for 1 unit and RM153.15 for 2.5 unit, and both sit under their asks of RM130 and RM290. Cost on each is the desk's own RM48 a unit, so RM48 and RM120 on the goods.","<b>THE UNUSUAL PART IS THE ADVANCE AND THE CREDIT ALREADY STANDING.</b> The drafter flagged CR3-DAM at RM90 against a RM80 median, 12.5% above, and asked that the unpaid unit be checked against his cap: he held RM25 outstanding and 0.27 unit on credit against a cap of 2 unit, so the figures answer it. CE4-CHE drew no flag but already carries RM150 outstanding and 10 unit on credit against a cap of 1 unit. Salt was counted on 15 Sep at 23 in stock."]},
+const evolution=[{"v":"v651","d":"15 Sep 2026","t":"A CUSTOMER'S PRICE IS THEIR TIER FOR EACH PRODUCT, NEVER ABOVE WHAT THEY PAY, AND A PRODUCT WITH NO TIER READS PRICE COMING SOON","n":["<b>HIS DECISIONS OF 15 SEP 2026: THE TIER IS A CEILING.</b> The customer's own page and the desk's printed board quote the price of their tier for the product at each size, held or proposed, never above their own recent rate to the nearest five and lifted only to clear the floor, through the engine's one cardPrice. The v510 draw toward the ask retired with its loyalty test. Measured against v650 on the book: for customers who have bought, 17 salt prices rise (5 customers, RM30 at most) and 407 fall; 28 prices for five long-standing low-rate customers sit RM5 under Ambassador's, their rate rounded to the five where Ambassador is up to the ten; and the printed board and the page agree on all 74 lists.","<b>NO TIER, NO PRICE.</b> A product a customer holds no tier on and has no rate for is not priced: their page says price coming soon and offers no order for it, and the printed board says there is nothing to print. On the book that is oil for the 31 customers who have never bought it and salt for one, until a tier is set on Customers.","<b>THE CHECKS.</b> A new section of 9 assertions, two of them opening the customer's own page in jsdom with the real crypto, and the Statements price-list checks restated for a tier per product. 12 mutations each turn their assertion red."]},
+
+{"v":"v650","d":"15 Sep 2026","t":"TWO SALT SELLS ON THE DAY: ONE ADVANCE ABOVE HIS MEDIAN, ONE PAID IN FULL","n":["<b>TWO SALT SELLS FOLDED, BOTH DATED 15 SEP AND BOTH HANDED OVER ON THE DAY.</b> CR3-DAM takes 1 unit for RM90 with nothing paid, and CE4-CHE takes 2.5 unit for RM230 settled in full at the open. Both clear their floors, RM61.26 for 1 unit and RM153.15 for 2.5 unit, and both sit under their asks of RM130 and RM290. Cost on each is the desk's own RM48 a unit, so RM48 and RM120 on the goods.","<b>THE UNUSUAL PART IS THE ADVANCE AND THE CREDIT ALREADY STANDING.</b> The drafter flagged CR3-DAM at RM90 against a RM80 median, 12.5% above, and asked that the unpaid unit be checked against his cap: he held RM25 outstanding and 0.27 unit on credit against a cap of 2 unit, so the figures answer it. CE4-CHE drew no flag but already carries RM150 outstanding and 10 unit on credit against a cap of 1 unit. Salt was counted on 15 Sep at 23 in stock."]},
 
 {"v":"v649","d":"15 Sep 2026","t":"TWO UNITS OUT FOR CASH ON THE DAY: BOTH UNDER THE ASK, ONE PARTY STILL CARRYING RM180","n":["<b>FOLDED: TWO SALT SELLS DATED 15 SEP, BOTH PAID AND COLLECTED ON THE DAY.</b> CC5-OKR took 1 unit at RM90 and CZ6-WM took 1 unit at RM100, RM190 cash in and 2 units moved, nothing left pending on either row. Both totals clear the RM61.91 floor for 1 unit and both sit under the RM140 ask and the RM150 ceiling. Each is costed at the desk's own RM48 a unit, so the inventory carries no outside rate on this fold.","<b>UNUSUAL: ONE PARTY IS PRICED AT ITS OWN MEDIAN WHILE STILL CARRYING RM180.</b> CC5-OKR held RM180 outstanding and 1 unit on credit before this row against a cap of 1 unit, with nothing defaulted, and this row was settled in cash so it adds nothing to that balance. CZ6-WM came in clean at RM0 outstanding. The drafter raised no flag on either row. The inventory took 2 units off the shelf at the stated cost and left the floors where they stood."]},
 
@@ -7423,7 +7436,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='15 Sep 2026, 22:53 KL';
+const LAST_UPDATED='15 Sep 2026, 23:29 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -18039,28 +18052,16 @@ function pbOwnRate(code,prod){const before=pbWeekMonday();   /* v643: prod names
     .sort((a,b)=>{const x=a.date,y=b.date;if(!x||!y)return (!x&&!y)?0:(!x?1:-1);return x<y?-1:x>y?1:0;}).slice(-4).map(s=>(s.total-(+s.delivery||0))/s.qty).sort((a,b)=>a-b);
   if(!rows.length)return {rate:null,orders:0};const n=rows.length;
   return {rate:+(n%2?rows[(n-1)/2]:(rows[n/2-1]+rows[n/2])/2).toFixed(2),orders:n};}
-/* v510: HIS RATE, DRAWN TOWARD THE BOARD. The same rule, word for word, as adjustedPrice in
-   tools/pricelist.mjs, which seals the customer's page; the suite proves the two agree.
-   v564, HIS INSTRUCTION OF 10 SEP 2026: TO THE NEAREST FIVE. It was the whole ringgit up, which put
-   RM 97 and RM 416 on a sheet handed to a customer while the board beside it quotes in tens. Nearest
-   rather than up, because the four drawing rules above already decide the direction. The floor still
-   wins: nearest-five can land up to RM 2.50 under break-even, and a price that does is lifted to the
-   first five above the floor. The cap is not re-clamped; it is a target, not a refusal line. The
-   argument in full is in tools/pricelist.mjs, and the suite holds the two together. */
-function pbAdjusted(Rr,F,A,cap,loyal){let x;
-  if(Rr<F)x=Math.max(F,Rr+0.5*(A-Rr));
-  else if(Rr<A)x=Rr+0.25*(A-Rr);
-  else if(Rr>cap)x=Math.max(A,Math.min(cap,Rr-0.5*(Rr-A)));
-  else x=loyal?Rr-0.25*(Rr-A):Rr;
-  let p=Math.round(Math.max(x,F)/5)*5;
-  if(p<F-0.009)p=Math.ceil((F-0.009)/5)*5;
-  return p;}
-function pbLoyal(code){const rows=pSales(PROD).filter(s=>POSITION_ENGINE.ownsCode(code,s.customer)&&pbPriced(s)&&s.date&&s.total>0);
-  if(rows.length<3)return false;const last=rows.map(s=>s.date).sort().pop();
-  return (TODAY-new Date(last+'T00:00:00+08:00'))/86400000<=14;}   /* Kuala Lumpur midnight, as loyalFor (08 Sep 2026) */
-function pbPrices(code){const own=pbOwnRate(code),loyal=pbLoyal(code);
-  return shownSizes(PROD).slice().sort((a,b)=>a-b).map(q=>{const fl=floorTotal(q),L=priceLadder(q);
-    const price=own.rate!=null?pbAdjusted(own.rate*q,fl,L.ask.total,3*L.cogs,loyal):L.ask.total;return {q,price:+price.toFixed(2)};});}
+/* v651, HIS DECISIONS OF 15 SEP 2026: THE TIER IS A CEILING. The price of the customer's tier for the product in view at each
+   size, held or proposed, never above their own recent rate to the nearest five and never under the floor, through the
+   engine's one cardPrice, as tools/pricelist.mjs quotes the customer's own page. No tier for the product, held or proposed,
+   and there is nothing to quote: an empty list, as their page reads the price as coming soon. The drawing rule of v510
+   (pbAdjusted) retired with it. */
+function pbPrices(code){const own=pbOwnRate(code),who=ownerOf(code),ladder=fiveTiersNow();
+  const t=TIER_NAMES.indexOf((TIER_OF[who]||{})[PROD]||tierProposal(who,PROD,{[PROD]:ladder}));
+  if(t<0)return [];
+  return shownSizes(PROD).slice().sort((a,b)=>a-b).map(q=>{const r=ladder.find(x=>Math.abs(x.q-q)<0.009);
+    return {q,price:+PRICING_ENGINE.cardPrice(own.rate!=null?own.rate*q:null,floorTotal(q),r.prices[t]).toFixed(2)};});}
 /* v564: AND THE SITE'S ADDRESS, for the QR. It comes down the same keyed road as the usernames
    and is never in this file: /desk is public by his decision of 11 Aug and the statements site is
    deliberately on its own cryptic name. No site means no QR, said on the card rather than drawn as
@@ -18075,7 +18076,7 @@ function pbCard(){
   const sizes=shownSizes(PROD).slice().sort((a,b)=>a-b);
   return `<div class="card" id="pbCard" style="margin-top:12px">
     <div class="cardh">Print a board <span class="sub">the mark, the figures, the username and a QR to his page</span></div>
-    <div class="dsc">Choose the customer, tick the sizes, then Print, or save it as JPG, PDF or HTML; on the phone the share sheet offers Save Image and Save to Files. The sheet is the crystal, one line per size, his username and a QR that opens his own statements page. The prices are his own rate drawn toward the board: up a quarter of the way to the ask where he sits under it, up further where he sits under the floor, down where he sits above twice the markup, down a quarter of the way where he is loyal and above the ask; the board&rsquo;s ask where he has no history, and to the nearest five since 10 Sep 2026. The same list his statement page shows this week. Copy as text puts the same lines and the link on the clipboard.</div>
+    <div class="dsc">Choose the customer, tick the sizes, then Print, or save it as JPG, PDF or HTML; on the phone the share sheet offers Save Image and Save to Files. The sheet is the crystal, one line per size, his username and a QR that opens his own statements page. The prices are their tier&rsquo;s, the one set on Customers or proposed from what they pay, never above their own recent rate to the nearest five, and lifted only to clear the floor; a product with no tier has no price to print. The same list their statement page shows this week. Copy as text puts the same lines and the link on the clipboard.</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px">
       <select id="pbWho" aria-label="Customer" style="min-height:44px;border:1px solid var(--brd);border-radius:8px;padding:8px 10px;font-size:14px;color:var(--ink);background:var(--wellbg)">${who.map(id=>`<option value="${esc(id)}">${esc(codeOf(id))}</option>`).join('')}</select>
       <button class="vbtn" id="pbPrint" type="button">Print</button>
@@ -18099,14 +18100,17 @@ function pbTicked(){return [...document.querySelectorAll('#pbSizes input:checked
 async function pbSheet(){
   const sel=document.getElementById('pbWho');if(!sel||!sel.value)return null;
   const code=sel.value, ticked=pbTicked();
-  const rows=pbPrices(code).filter(r=>ticked.some(q=>Math.abs(q-r.q)<1e-9));
+  const all=pbPrices(code),rows=all.filter(r=>ticked.some(q=>Math.abs(q-r.q)<1e-9));
   const users=await pbUsers();
   /* v564: the customer's own landing page, the address tools/make_statements.mjs prints on the
      statement itself, built the same way: the site, then ?u= his username. No username or no site
      and there is no url, so every renderer below simply leaves the QR off. */
   const user=users[code]||'';
   const url=(PB_SITE&&user)?(PB_SITE+'/?u='+encodeURIComponent(user)):null;
-  return {code,user,url,rows,product:(PRODUCTS[PROD]&&PRODUCTS[PROD].name)||PROD,week:pbWeekMonday()};}
+  return {code,user,url,rows,soon:!all.length,product:(PRODUCTS[PROD]&&PRODUCTS[PROD].name)||PROD,week:pbWeekMonday()};}
+/* v651: nothing to put on the sheet, and why: no size ticked, or no tier for the product in view */
+function pbEmpty(sh,m){if(sh&&sh.rows.length)return false;
+  if(m)m.textContent=sh&&sh.soon?codeOf(sh.code)+' has no '+sh.product+' tier yet, so there is no price to print: set one on Customers.':'Tick at least one size.';return true;}
 /* v537: THE PRINTED BOARD IS THE LOGO AND THE NUMBERS (his instruction, 08 Sep 2026). v538, his
    two calls the same hour: on the identity's own ground, not white, and NO WORDS AT ALL. The
    crystal alone, the username the list is tagged to, then one line per size carrying two bare
@@ -18146,7 +18150,7 @@ function pbSheetHtml(sh){
 const PB_CSS='.pbl{margin:0 0 18px}.pbl .mark{width:56px;height:56px;display:block}.pbu{font-family:Consolas,monospace;font-size:14px;font-weight:500;letter-spacing:.14em;color:#c5a059;margin:22px 0 0;min-height:17px}.pbq{margin:14px 0 0}.pbq svg{display:block;background:#f2f4f5;padding:0}table{border-collapse:collapse;min-width:300px}td{padding:10px 0 10px 40px;border-bottom:1px solid rgba(197,160,89,.3);font-size:20px;text-align:right;font-family:Consolas,monospace;color:#c5a059}td.l{text-align:left;padding-left:0;font-family:Georgia,serif;color:#f2f4f5}';
 async function pbPrint(){
   const sh=await pbSheet();const m=document.getElementById('pbMsg');
-  if(!sh||!sh.rows.length){if(m)m.textContent='Tick at least one size.';return;}
+  if(pbEmpty(sh,m))return;
   const el=document.getElementById('pbSheet');
   el.innerHTML=pbSheetHtml(sh);
   document.body.classList.add('pbPrinting');
@@ -18157,7 +18161,7 @@ async function pbPrint(){
   if(m)m.textContent='Sent to print: '+sh.rows.length+' size'+(sh.rows.length===1?'':'s')+(sh.user?'.':', no username on this copy.');}
 async function pbCopy(){
   const sh=await pbSheet();const m=document.getElementById('pbMsg');
-  if(!sh||!sh.rows.length){if(m)m.textContent='Tick at least one size.';return;}
+  if(pbEmpty(sh,m))return;
   /* v564: the link goes with it. A message cannot carry a QR, and the QR and the link are the same
      address, so the text form carries the one the customer can tap. */
   const text=['Salt Command',sh.user?'Username '+sh.user:'',sh.product+', week of '+sh.week,'']
@@ -18294,16 +18298,16 @@ async function pbDeliver(blob,name,m){
    message app and every phone gallery takes a JPG without asking, and the PDF embeds the same
    bytes, so one rendering reaches paper, the file and the message. */
 async function pbSaveImage(){const sh=await pbSheet();const m=document.getElementById('pbMsg');
-  if(!sh||!sh.rows.length){if(m)m.textContent='Tick at least one size.';return;}
+  if(pbEmpty(sh,m))return;
   await pbDeliver(await pbImageBlob(sh,'image/jpeg',0.92),'board-'+sh.code+'-'+sh.week+'.jpg',m);}
 async function pbSavePdf(){const sh=await pbSheet();const m=document.getElementById('pbMsg');
-  if(!sh||!sh.rows.length){if(m)m.textContent='Tick at least one size.';return;}
+  if(pbEmpty(sh,m))return;
   if(m)m.textContent='Making the PDF\u2026';
   const b=await pbPdfBlob(sh);
   if(!b){if(m)m.textContent='This browser could not make the PDF; use Print, then Save as PDF.';return;}
   await pbDeliver(b,'board-'+sh.code+'-'+sh.week+'.pdf',m);}
 async function pbSaveHtml(){const sh=await pbSheet();const m=document.getElementById('pbMsg');
-  if(!sh||!sh.rows.length){if(m)m.textContent='Tick at least one size.';return;}
+  if(pbEmpty(sh,m))return;
   await pbDeliver(new Blob([pbHtmlDoc(sh)],{type:'text/html'}),'board-'+sh.code+'-'+sh.week+'.html',m);}
 function pbWire(){const b=document.getElementById('pbPrint'),c=document.getElementById('pbCopy'),i=document.getElementById('pbImage'),h=document.getElementById('pbHtml'),d=document.getElementById('pbPdf');
   if(b)b.onclick=pbPrint;if(c)c.onclick=pbCopy;if(i)i.onclick=pbSaveImage;if(h)h.onclick=pbSaveHtml;if(d)d.onclick=pbSavePdf;if(cloudMode()&&saltWriteKey())pbUsers();}

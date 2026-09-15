@@ -1,6 +1,6 @@
 {
- "v": "v650",
- "stamped": "15 Sep 2026, 22:53 KL",
+ "v": "v651",
+ "stamped": "15 Sep 2026, 23:29 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -4348,7 +4348,7 @@
   ],
   "QUEUE_COMMITTED": "2026-09-15T12:28:07.501Z",
   "PRICING": {
-   "takenAt": "2026-09-15T14:53:13.661Z",
+   "takenAt": "2026-09-15T15:37:13.234Z",
    "sizes": [
     0.5,
     1,
@@ -4380,6 +4380,122 @@
     "Silver",
     "Bronze"
    ],
+   "tierOf": {
+    "CS6-BS": {
+     "salt": "Gold",
+     "oil": "Titanium"
+    },
+    "CJ4-BJ": {
+     "salt": "Titanium"
+    },
+    "CS6-PER": {
+     "salt": "Titanium",
+     "oil": "Titanium"
+    },
+    "CM4-MK": {
+     "salt": "Gold"
+    },
+    "CE4-CHE": {
+     "salt": "Platinum",
+     "oil": "Platinum"
+    },
+    "CN6-WM": {
+     "salt": "Bronze"
+    },
+    "CR3-DAM": {
+     "salt": "Platinum"
+    },
+    "CM3-OUG": {
+     "salt": "Titanium"
+    },
+    "CM6-HCM": {
+     "salt": "Gold"
+    },
+    "CA4-DAM": {
+     "salt": "Gold"
+    },
+    "CZ4-MK": {
+     "salt": "Platinum",
+     "oil": "Platinum"
+    },
+    "CK4-SEN": {
+     "salt": "Titanium"
+    },
+    "CE4-AD": {
+     "salt": "Platinum"
+    },
+    "CR4-PJ": {
+     "salt": "Titanium"
+    },
+    "CM4-SK": {
+     "salt": "Titanium"
+    },
+    "CG5-SB": {
+     "salt": "Gold"
+    },
+    "CY2-NIL": {
+     "salt": "Platinum"
+    },
+    "CI4-OKR": {
+     "salt": "Platinum"
+    },
+    "CA7-AMP": {
+     "salt": "Bronze",
+     "oil": "Titanium"
+    },
+    "CH4-KS": {
+     "salt": "Platinum"
+    },
+    "CC5-OKR": {
+     "salt": "Platinum"
+    },
+    "CH6-SET": {
+     "salt": "Silver"
+    },
+    "CA5-BAN": {
+     "salt": "Bronze"
+    },
+    "CM6-PJ": {
+     "salt": "Gold"
+    },
+    "CF5-WM": {
+     "salt": "Silver"
+    },
+    "CZ6-WM": {
+     "salt": "Gold"
+    },
+    "CA5-SEN": {
+     "salt": "Silver"
+    },
+    "CN5-TAI": {
+     "salt": "Gold"
+    },
+    "CH5-KLC": {
+     "salt": "Bronze"
+    },
+    "CA2-SEN": {
+     "salt": "Titanium"
+    },
+    "CD4-CS": {
+     "salt": "Bronze"
+    },
+    "CH4-MAL": {
+     "salt": "Silver",
+     "oil": "Platinum"
+    },
+    "CR3-PUD": {
+     "salt": "Silver"
+    },
+    "CE5-SA": {
+     "salt": "Silver"
+    },
+    "CD7-SEG": {
+     "salt": "Gold"
+    },
+    "CB7-BJ": {
+     "salt": "Gold"
+    }
+   },
    "byProduct": {
     "salt": {
      "stockCost": 48,
@@ -4609,6 +4725,140 @@
       5,
       6.25,
       12.5
+     ],
+     "ladder": [
+      {
+       "q": 0.5,
+       "prices": [
+        40,
+        50,
+        60,
+        70,
+        80,
+        90
+       ]
+      },
+      {
+       "q": 1,
+       "prices": [
+        70,
+        100,
+        110,
+        130,
+        150,
+        160
+       ]
+      },
+      {
+       "q": 1.5,
+       "prices": [
+        100,
+        140,
+        160,
+        190,
+        210,
+        240
+       ]
+      },
+      {
+       "q": 2,
+       "prices": [
+        130,
+        180,
+        210,
+        240,
+        270,
+        300
+       ]
+      },
+      {
+       "q": 2.5,
+       "prices": [
+        160,
+        220,
+        250,
+        290,
+        320,
+        360
+       ]
+      },
+      {
+       "q": 3,
+       "prices": [
+        190,
+        250,
+        290,
+        330,
+        370,
+        410
+       ]
+      },
+      {
+       "q": 3.5,
+       "prices": [
+        220,
+        290,
+        330,
+        370,
+        420,
+        460
+       ]
+      },
+      {
+       "q": 4,
+       "prices": [
+        250,
+        320,
+        360,
+        410,
+        450,
+        500
+       ]
+      },
+      {
+       "q": 4.5,
+       "prices": [
+        280,
+        340,
+        390,
+        440,
+        490,
+        530
+       ]
+      },
+      {
+       "q": 5,
+       "prices": [
+        310,
+        370,
+        420,
+        470,
+        510,
+        560
+       ]
+      },
+      {
+       "q": 6.25,
+       "prices": [
+        380,
+        450,
+        500,
+        560,
+        610,
+        670
+       ]
+      },
+      {
+       "q": 12.5,
+       "prices": [
+        760,
+        860,
+        960,
+        1060,
+        1160,
+        1250
+       ]
+      }
      ]
     },
     "oil": {
@@ -4809,13 +5059,92 @@
       30,
       40,
       50
+     ],
+     "ladder": [
+      {
+       "q": 10,
+       "prices": [
+        90,
+        110,
+        140,
+        170,
+        200,
+        230
+       ]
+      },
+      {
+       "q": 20,
+       "prices": [
+        180,
+        210,
+        270,
+        330,
+        390,
+        440
+       ]
+      },
+      {
+       "q": 30,
+       "prices": [
+        270,
+        300,
+        390,
+        470,
+        560,
+        650
+       ]
+      },
+      {
+       "q": 40,
+       "prices": [
+        350,
+        380,
+        500,
+        620,
+        730,
+        850
+       ]
+      },
+      {
+       "q": 50,
+       "prices": [
+        440,
+        460,
+        600,
+        750,
+        900,
+        1040
+       ]
+      },
+      {
+       "q": 80,
+       "prices": [
+        700,
+        710,
+        930,
+        1160,
+        1400,
+        1640
+       ]
+      },
+      {
+       "q": 100,
+       "prices": [
+        880,
+        890,
+        1120,
+        1420,
+        1710,
+        2000
+       ]
+      }
      ]
     }
    },
-   "v": "v650"
+   "v": "v651"
   },
   "OPEN": {
-   "at": "2026-09-15T14:53:13.837Z",
+   "at": "2026-09-15T15:37:13.285Z",
    "count": 9,
    "byKey": {
     "CR3-DAM|2026-09-15|90": {
@@ -4993,7 +5322,7 @@
     "salt": "2026-09-15",
     "oil": "2026-09-09"
    },
-   "v": "v650"
+   "v": "v651"
   }
  }
 }
