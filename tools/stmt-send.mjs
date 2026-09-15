@@ -192,9 +192,11 @@ const JS = `
     card.querySelector('.un').textContent = row.user;
     /* THE ADDRESS IS A LINK (06 Sep 2026, his instruction): what the QR opens, opened from here, so
        a card can be checked against the live site without scanning it. Username filled in, as the
-       code does; the password is still the other button. */
+       code does; the password is still the other button. The backslashes are doubled because this
+       script is a template literal: single, they were eaten, and the // that was left commented out
+       the rest of the line, so the whole script failed to parse and no card drew (16 Sep 2026). */
     var site = card.querySelector('.site');
-    site.href = row.url; site.textContent = row.url.replace(/^https?:\/\//, '');
+    site.href = row.url; site.textContent = row.url.replace(/^https?:\\/\\//, '');
     card.querySelector('.tot').textContent = row.tot;
     card.querySelector('pre').textContent = row.msg;
     var cv = card.querySelector('canvas');

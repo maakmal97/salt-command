@@ -7582,6 +7582,10 @@ section("Statements — the price list, the order book and the desk's relay (v49
   const sheet = sendSheet([{ who: "CX0-AA", user: un, pw: pw, url: "https://k7m3p2.example/?u=" + un, t: { n: 1, total: 100, owed: 0 } }], { issue: "2026-09-01", monthName: "September 2026" });
   ok(sheet.includes('<a class="site" target="_blank" rel="noopener"></a>') && sheet.includes("site.href = row.url"),
     "the send sheet draws each card's statement address as a link that opens in a new tab");
+  let sheetParses = true;
+  try { new Function(/<script>([\s\S]*)<\/script>/.exec(sheet)[1]); } catch (e) { sheetParses = false; }
+  ok(sheetParses && sheet.includes("row.url.replace(/^https?:\\/\\//, '')"),
+    "and the send sheet's script parses, its backslashes surviving the template literal");
   ok(existsSync(join(REPO, "tools", "send-sheet.cmd")) && /_send_\*\.html/.test(readFileSync(join(REPO, "tools", "send-sheet.cmd"), "utf8")),
     "and the Desktop shortcut's launcher finds the newest send sheet by name");
 }
