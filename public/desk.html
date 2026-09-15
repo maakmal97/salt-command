@@ -68,7 +68,7 @@ document.addEventListener('visibilitychange',function(){
    localStorage before it posts anything and the load reads it straight back.
    The same tick retries a held entry, which is what gets a phone write to the cloud
    without waiting for the next open. */
-var SALT_BUILD_ID="b1174a157f38314d";
+var SALT_BUILD_ID="d234e0d163666301";
 var SALT_REV_MS=10000;
 (function(){
   var chip=null,timer=null;
@@ -5543,6 +5543,7 @@ const INTRODUCTIONS=[
   {"by":"CS6-BS","customer":"CM4-MK","note":"His ruling of 13 Sep 2026: the first order went through CS6-BS-R on 15 Jul, and every order since has been direct."}
 ];
 const PLACED={};
+const TIER_OF={};
 const PEOPLE={
   "banned": [
     {
@@ -6901,7 +6902,9 @@ const quoteFor=p=>{const f=QUOTES[p||PROD];return f?f():null;};
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{"v":"v642","d":"15 Sep 2026","t":"THE LADDER IS AMBASSADOR AT THE FLOOR AND FIVE NAMED TIERS, TITANIUM TO BRONZE, STILL QUOTED NOWHERE","n":["<b>HIS RESTRUCTURE OF 15 SEP 2026.</b> COGS, purchase plus freight, is the line no price goes under, and the floor is COGS plus leakage. Ambassador pays the floor itself, rounded up to the ten, on his word alone and earning no free units. Above it sit five named tiers: Titanium, Platinum, Gold, Silver and Bronze, where a new customer starts.","<b>A NEW COLUMN, SO THE TIERS START WHERE HE SAID.</b> The workbook's columns at 1.0, 1.5, 2.0 and 2.5 are Titanium, Platinum, Gold and Bronze, and Silver is a new one at 2.25, halfway between Gold and Bronze, so 0.5 unit of salt starts the five at RM50, 60, 70, 80 and 90. The rule and the guards are v641's: each level at least a ten over the one below, the rate law walked under that.","<b>EACH CUSTOMER'S TIER COMES BEFORE THE SWITCH.</b> Measured on 15 Sep, switching the board's ask to Bronze would draw every existing customer's price list up toward it, all 36 salt customers and all 6 oil customers with history, because a list is drawn toward the ask. So the card stays quoted nowhere, and the next stage gives each customer a tier, starting nearest what they pay, before any quote moves.","<b>THE CHECKS.</b> A new section of 5 assertions: the names in order, the RM50 to RM90 start on the workbook's COGS, Silver strictly between Gold and Bronze at every size on both books, the board he approved on the costs of 14 Sep, and Ambassador at the floor rather than COGS plus 20%. v641's section now reads the workbook's four columns by multiple and the card by name. 8 mutations each turn their assertion red."]},
+const evolution=[{"v":"v643","d":"15 Sep 2026","t":"EACH CUSTOMER HOLDS ONE TIER, SET ON THE PHONE AND FOLDED, PROPOSED FROM WHAT THEY PAY, QUOTED NOWHERE YET","n":["<b>HIS DECISIONS OF 15 SEP 2026: EACH CUSTOMER'S TIER COMES BEFORE THE SWITCH.</b> A customer holds one tier across both books, TIER_OF on the book, a new ledger key. It moves only on his word: the Customers page queues it, the drafter drafts it as tierset, he approves it and the fold files it, and Amend ID's re-key carries it with the code.","<b>PROPOSED FROM WHAT THEY PAY.</b> A customer holding none is proposed the tier nearest what they pay: on the book carrying most of their revenue, the level whose prices sit closest to their own rate across that book's board sizes. Never Ambassador, which is his word alone, and Bronze where there is no rate to read. On the book of 15 Sep that proposes Titanium 8, Platinum 9, Gold 13, Silver 2 and Bronze 5 of 37 customers.","<b>THE TIERS CARD.</b> On Customers, every customer who has bought, largest first, with the tier held, the one waiting for approval or the one proposed, a picker to set one, and Accept for every proposal still open, in one entry. A tier set with the names open queues the code and never the name. Migration 0010 rebuilds the draft table once, for the tier and for the label still to be named.","<b>THE CHECKS.</b> A new section of 16 assertions on fixture customers and forced costs: the proposal against a restatement, never Ambassador, Bronze with no rate, the card's three states, Accept, codes alone in the queue, no price moving, the drafter's entry and its refusals, the fold with a rename, and 0010. The book now holds twenty-nine keys. 16 mutations each turn their assertion red."]},
+
+{"v":"v642","d":"15 Sep 2026","t":"THE LADDER IS AMBASSADOR AT THE FLOOR AND FIVE NAMED TIERS, TITANIUM TO BRONZE, STILL QUOTED NOWHERE","n":["<b>HIS RESTRUCTURE OF 15 SEP 2026.</b> COGS, purchase plus freight, is the line no price goes under, and the floor is COGS plus leakage. Ambassador pays the floor itself, rounded up to the ten, on his word alone and earning no free units. Above it sit five named tiers: Titanium, Platinum, Gold, Silver and Bronze, where a new customer starts.","<b>A NEW COLUMN, SO THE TIERS START WHERE HE SAID.</b> The workbook's columns at 1.0, 1.5, 2.0 and 2.5 are Titanium, Platinum, Gold and Bronze, and Silver is a new one at 2.25, halfway between Gold and Bronze, so 0.5 unit of salt starts the five at RM50, 60, 70, 80 and 90. The rule and the guards are v641's: each level at least a ten over the one below, the rate law walked under that.","<b>EACH CUSTOMER'S TIER COMES BEFORE THE SWITCH.</b> Measured on 15 Sep, switching the board's ask to Bronze would draw every existing customer's price list up toward it, all 36 salt customers and all 6 oil customers with history, because a list is drawn toward the ask. So the card stays quoted nowhere, and the next stage gives each customer a tier, starting nearest what they pay, before any quote moves.","<b>THE CHECKS.</b> A new section of 5 assertions: the names in order, the RM50 to RM90 start on the workbook's COGS, Silver strictly between Gold and Bronze at every size on both books, the board he approved on the costs of 14 Sep, and Ambassador at the floor rather than COGS plus 20%. v641's section now reads the workbook's four columns by multiple and the card by name. 8 mutations each turn their assertion red."]},
 
 {"v":"v641","d":"15 Sep 2026","t":"THE FIVE TIERS ARE COMPUTED OFF THE PRICING WORKBOOK AND DRAWN BESIDE THE BOARD, QUOTED NOWHERE YET","n":["<b>HIS DECISIONS OF 14 AND 15 SEP 2026, THE FIRST STAGE OF FIVE.</b> Five price tiers from his pricing workbook: Tier I ◆ pays the floor, rounded up to the ten, and Tiers II ★★, III ★, IV ●● and V ● are the workbook's four columns, at multiples 1.0, 1.5, 2.0 and 2.5. A new customer will start at Tier V and climb toward the diamond, paying less at every step. The floor stays what it was, COGS plus leakage.","<b>ONE FORMULA, STATED AS A RULE.</b> Each column is COGS to the ringgit times its multiple less a step a rung, rounded up to the ten: 1 + m × (1 − 0.05 × rung) for salt, m + 0.35 − 0.05 × rung for oil, whose board gains 80 and 100 unit. TIER_RULE states it per book and fiveTiers in the engine computes it under two guards: each tier sits at least a ten over the one below, which also keeps every tier over the floor, and the rate may not rise with size where a step down keeps that.","<b>BESIDE TODAY'S BOARD, AND NOTHING QUOTES IT.</b> The Pricing page draws the five tiers under the board with today's ask alongside, so they read against each other on live costs before any price moves. The phone, the board, the drafter, the price list and the guest boards read nothing new; switching them is the next stage.","<b>THE CHECKS.</b> A new section of 11 assertions: the rule reproduces all 76 of the workbook's prices from its own COGS, the approved board on the costs of 14 Sep, the guards on a grid of 70 forced costs that lifts 474 prices and steps 28, a column landing exactly on a ten, off-board sizes, the card cell by cell, and quoted nowhere. 13 mutations each turn their assertion red. Two Tier 1 checks that read the floor v639's count had lifted now force their own cost."]},
 
@@ -7395,7 +7398,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='15 Sep 2026, 12:28 KL';
+const LAST_UPDATED='15 Sep 2026, 12:56 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -15463,6 +15466,66 @@ function fiveTierCard(){
     <div class="tscroll"><table class="fintab fivetier"><thead>${head}</thead><tbody>${body}</tbody></table></div>
     <div class="insight">Ambassador pays the floor and a new customer starts at Bronze, with each level at least ${fmt0(10)} over the one below.</div></div>`;
 }
+/* ============ v643, HIS DECISIONS OF 15 SEP 2026: EACH CUSTOMER'S TIER, BEFORE ANY QUOTE READS IT ============
+   One tier per customer, across both books. A tier held is TIER_OF on the book: set on the Customers page, queued,
+   drafted as `tierset`, approved and folded, so it moves only on his word. A customer holding none is PROPOSED the
+   tier nearest what they pay: on the book carrying most of their revenue, the level whose prices sit closest to their
+   own rate (pbOwnRate) across that book's board sizes. Never Ambassador, which is his word alone; Bronze, where a new
+   customer starts, when there is no rate to read. QUOTED NOWHERE YET: nothing that prices reads TIER_OF. */
+function tierBoards(){
+  const keep=PROD,out={};
+  try{PROD_IDS.forEach(p=>{if(!TIER_RULE[p])return;PROD=p;recompute();out[p]=fiveTiersNow();});}
+  finally{PROD=keep;recompute();}
+  return out;
+}
+function tierProposal(code,boards){
+  let best=null;
+  PROD_IDS.forEach(p=>{
+    const B=(boards[p]||[]).filter(r=>sizesFor(p).some(s=>Math.abs(s-r.q)<0.009));
+    const rev=pSales(p).filter(s=>POSITION_ENGINE.ownsCode(code,s.customer)&&txStat(s).order!=='Cancelled'&&s.total>0).reduce((a,s)=>a+s.total,0);
+    const own=pbOwnRate(code,p);
+    if(!B.length||own.rate==null||(best&&best.rev>=rev))return;
+    const gap=t=>B.reduce((a,r)=>a+Math.abs(r.prices[t]-own.rate*r.q),0);
+    let tier=1;for(let t=2;t<TIER_NAMES.length;t++)if(gap(t)<gap(tier)-1e-9)tier=t;
+    best={rev,tier};
+  });
+  return TIER_NAMES[best?best.tier:TIER_NAMES.length-1];
+}
+/* every customer who has bought, on either book, largest first; a resale account stands with its associate */
+function tierCustomers(){
+  const rev={};
+  sales.forEach(s=>{const o=ownerOf(s.customer);if(!o||!isPerson(o)||!(s.total>0)||txStat(s).order==='Cancelled')return;rev[o]=(rev[o]||0)+s.total;});
+  return Object.keys(rev).sort((a,b)=>rev[b]-rev[a]);
+}
+function tierQueued(){const o={};queue.forEach(q=>{if(q&&q.payload&&q.payload.mode==='tierset')Object.assign(o,q.payload.tiers||{});});return o;}
+function tierQueue(tiers){
+  const codes=Object.keys(tiers);if(!codes.length)return;
+  queue.push({at:new Date().toISOString(),type:'TIER',party:codes.length===1?codes[0]:null,qty:null,total:null,status:'tierset',
+    raw:codes.length===1?'Set '+codes[0]+' to '+tiers[codes[0]]:'Set '+codes.length+' tiers from their proposals: '+codes.map(c=>c+' '+tiers[c]).join(', '),
+    payload:{mode:'tierset',tiers:tiers}});
+  render();
+  Promise.resolve(saveQueue()).then(()=>{try{renderQueue();}catch(e){}});
+}
+function tierSet(code){const el=document.getElementById('tierSel_'+code);if(el&&TIER_NAMES.includes(el.value))tierQueue({[code]:el.value});}
+function tierAcceptAll(){
+  const boards=tierBoards(),waiting=tierQueued(),t={};
+  tierCustomers().forEach(id=>{if(!TIER_OF[id]&&!waiting[id])t[id]=tierProposal(id,boards);});
+  tierQueue(t);
+}
+function tierCard(){
+  const ids=tierCustomers();if(!ids.length)return '';
+  const boards=tierBoards(),waiting=tierQueued();
+  const rows=ids.map(id=>({id,held:TIER_OF[id]||null,wait:waiting[id]||null,prop:tierProposal(id,boards)}));
+  const open=rows.filter(r=>!r.held&&!r.wait).length,held=rows.filter(r=>r.held).length;
+  const body=rows.map(r=>{const shown=r.wait||r.held||r.prop,state=r.wait?'waiting':r.held?'held':'proposed';
+    return `<tr><td class="l mono">${ID(r.id)}</td><td class="l">${state==='held'?`<b>${shown}</b>`:`<span style="color:var(--dim)">${shown}</span>`} <span class="iref">${state}</span></td>`
+      +`<td><select id="tierSel_${r.id}" aria-label="Tier for ${codeOf(r.id)}" style="min-height:var(--tap)">${TIER_NAMES.map(n=>`<option${n===shown?' selected':''}>${n}</option>`).join('')}</select> `
+      +`<button class="vbtn" style="min-height:var(--tap)" onclick="tierSet('${r.id}')">Set</button></td></tr>`;}).join('');
+  return `<div class="card"><div class="cardh">Tiers <span class="sub">one a customer, quoted nowhere yet</span></div>
+    <table class="tiertab"><thead><tr><th class="l">Customer</th><th class="l">Tier</th><th>Change</th></tr></thead><tbody>${body}</tbody></table>
+    ${open?`<button class="vbtn" style="min-height:var(--tap);margin-top:8px" onclick="tierAcceptAll()">Accept ${open} proposal${open===1?'':'s'}</button>`:''}
+    <div class="insight">${held} of ${rows.length} customers hold a tier, and a tier moves only when you approve it.</div></div>`;
+}
 
 /* ---- layer 3: five readings, each worth a few points, summed then clamped ---- */
 function pxSignals(){
@@ -16623,6 +16686,9 @@ function tabConcentration(){
     :'<div class="card"><table><tbody><tr><td class="l" style="color:var(--dim)">No customer has two priced orders yet, so there is no habit to read and nothing to place on a calendar.</td></tr></tbody></table></div>'}
 
   <div style="margin-top:16px">${crCard}</div>
+
+  <h2 style="margin-top:18px">Tiers <span class="rule"></span></h2>
+  ${tierCard()}
 
   <h2 style="margin-top:18px">Where the book leans <span class="rule"></span></h2>
   <div class="chartbox" style="height:230px"><canvas id="ccPareto"></canvas></div>
@@ -17931,8 +17997,8 @@ function pbPriced(s){const st=txStat(s).order;
   if(st==='Pending'||st==='Cancelled'||st==='Default')return false;
   if((s.rebate||s.goodwill)&&!((+s.cash||0)>0.009))return false;
   return true;}
-function pbOwnRate(code){const before=pbWeekMonday();
-  const rows=pSales(PROD).filter(s=>POSITION_ENGINE.ownsCode(code,s.customer)&&pbPriced(s)&&s.date&&s.date<before&&s.total>0&&s.qty>0)   /* v609: the bucket is the associate's own */
+function pbOwnRate(code,prod){const before=pbWeekMonday();   /* v643: prod names a book other than the one in view, for a tier proposal */
+  const rows=pSales(prod||PROD).filter(s=>POSITION_ENGINE.ownsCode(code,s.customer)&&pbPriced(s)&&s.date&&s.date<before&&s.total>0&&s.qty>0)   /* v609: the bucket is the associate's own */
     .sort((a,b)=>{const x=a.date,y=b.date;if(!x||!y)return (!x&&!y)?0:(!x?1:-1);return x<y?-1:x>y?1:0;}).slice(-4).map(s=>(s.total-(+s.delivery||0))/s.qty).sort((a,b)=>a-b);
   if(!rows.length)return {rate:null,orders:0};const n=rows.length;
   return {rate:+(n%2?rows[(n-1)/2]:(rows[n/2-1]+rows[n/2])/2).toFixed(2),orders:n};}
