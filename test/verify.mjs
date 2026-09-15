@@ -10689,7 +10689,8 @@ section("v618: a customer earns as an associate does, and a written-off order ea
 
 section("v620: a customer's reward covers a lower margin on a sale he marks, at the salt's cost");
 {
-  /* HIS RULINGS OF 14 SEP 2026. The gap is the board's ask for the size less the goods; what is covered is the gap
+  /* HIS RULINGS OF 14 SEP 2026, and of 16 Sep for the gap (v652). The gap is the customer's own card price for the size less
+     the goods; what is covered is the gap
      or what the balance is worth at cost, whichever is less; the sale records the units and the ringgit; the
      drafter checks what it can and the fold carries both; and every unit spent is netted like a redemption.
      Fixture customers are put on the COMMITTED book (BASE_SALES), because the overlay rebuilds the live list from
@@ -10708,18 +10709,18 @@ section("v620: a customer's reward covers a lower margin on a sale he marks, at 
       row19({ rid: "z619c", customer: "CZ9-LOW", date: "2026-07-02", qty: 1, total: 35.2, cost: 35.2, cash: 0, settledRM: 35.2, deliveredQty: 1, rebate: true, rebateKg: 0.8, goodwill: true }),
       row19({ rid: "z619d", customer: "CZ9-AV", date: "2026-07-01", qty: 2, total: 1100, cost: 100, cash: 1100, deliveredQty: 2 }),
     ].join(",") + ");queue=[];applyOverlay();recompute();");
-    const cost = rd19("stockCostFor('salt')"), ask1 = rd19("priceLadder(1).ask.total");
+    const cost = rd19("stockCostFor('salt')"), ask1 = rd19("cardQuote('CZ9-CV',1)");
     const cv = rd19("customerRewards().find(function(r){return r.id==='CZ9-CV';})||null"), low = rd19("customerRewards().find(function(r){return r.id==='CZ9-LOW';})||null");
     ok(cost > 0 && ask1 > 40 && !!cv && cv.free === 2 && !!low && low.free === 0.2,
-      `the guards: salt costs RM ${cost}, the board asks RM ${ask1} for 1 unit, CZ9-CV holds 2 unit and CZ9-LOW 0.2`);
+      `the guards: salt costs RM ${cost}, CZ9-CV's own price for 1 unit is RM ${ask1}, CZ9-CV holds 2 unit and CZ9-LOW 0.2`);
 
     const plan = (who, total) => rd19(`coverPlan('${who}',1,${total})`);
     const a19 = plan("CZ9-CV", ask1 - 30);
     ok(!!a19 && a19.gap === 30 && a19.rm <= a19.gap && a19.rm > a19.gap - cost / 100 - 0.005 && a19.kg <= a19.free && a19.rm === +(a19.kg * a19.cost).toFixed(2) && a19.cost === cost,
-      "a sale RM 30 under the ask is covered to within a hundredth of a unit, never past the gap, at the salt's cost: " + JSON.stringify(a19));
+      "a sale RM 30 under their price is covered to within a hundredth of a unit, never past the gap, at the salt's cost: " + JSON.stringify(a19));
     const b19 = plan("CZ9-LOW", ask1 - 200);
     ok(!!b19 && b19.kg === 0.2 && b19.rm === +(0.2 * cost).toFixed(2), "where the balance is worth less than the gap, the whole balance covers what it can: " + JSON.stringify(b19));
-    ok(plan("CZ9-CV", ask1) === null && plan("CZ9-CV", ask1 + 10) === null, "a sale at or over the ask has nothing to cover");
+    ok(plan("CZ9-CV", ask1) === null && plan("CZ9-CV", ask1 + 10) === null, "a sale at or over their price has nothing to cover");
     ok(plan("CZ9-AV", ask1 - 30) === null, "an associate's reward covers nothing: theirs is redeemed or offset on their own card");
     w19.eval("setProd('oil');");
     ok(plan("CZ9-CV", 1) === null, "and nothing on the oil book, which has no reward");
@@ -12085,6 +12086,50 @@ section("v651: a customer's price is their tier for each product, and a product 
   const both47 = page47 ? await openPage47({ ...page47, products: [], soon: [{ product: "salt", name: "Salt" }, { product: "oil", name: "Oil" }] }) : null;
   ok(both47 && /Salt\s*Price coming soon\./.test(both47.prices) && /Oil\s*Price coming soon\./.test(both47.prices) && /Ordering opens once your prices are set\./.test(both47.order) && both47.products.length === 0,
     "and with no tier on either product, both read coming soon and ordering waits for the prices to be set: " + JSON.stringify(both47 && both47.order.slice(0, 80)));
+}
+
+section("v652: a named customer is quoted their own card price everywhere the desk quotes them, the reward cover's gap included");
+{
+  /* HIS DECISIONS OF 15 AND 16 SEP 2026. cardQuote is the one rule: the approach offer and Today's worth read it through
+     nextBest, the reward cover measures its gap against it, and the printed board is it at the shown sizes. A size between
+     rungs reads the ladder walked through that size. Fixture customers; each assertion was proved red by mutation. */
+  const PE52 = (await import("../engine/pricing.mjs")).default;
+  const { openMaster: om52 } = await import("../tools/payload.mjs");
+  const { w: w52 } = await om52();
+  const rd52 = (e) => JSON.parse(String(w52.eval("JSON.stringify(" + e + ")")));
+  try {
+    /* THE ENGINE, on forced costs: at every rung the ladder's own row; between rungs the guard holds and the rate never rises */
+    const R52 = rd52("TIER_RULE.salt"), P52 = { ...rd52("(function(){setProd('salt');recompute();return pxPolicy();})()"), tierRule: R52 };
+    const C52 = { ...rd52("pxCost()"), landed: 46.72, eff: 61.147136, effEx: 61.147136 };
+    const lad52 = PE52.fiveTiers(R52.rungs, C52, P52), mid52 = PE52.fiveTierAt(7, C52, P52), below52 = lad52.find((r) => r.q === 6.25);
+    const rungs52 = R52.rungs.every((q) => JSON.stringify(PE52.fiveTierAt(q, C52, P52).prices) === JSON.stringify(lad52.find((r) => r.q === q).prices));
+    ok(rungs52 && mid52 && mid52.q === 7 && mid52.prices.every((p, t) => !t || p >= mid52.prices[t - 1] + 10)
+      && mid52.prices.every((p, t) => p / 7 <= below52.prices[t] / 6.25 + 1e-9 || (t > 0 && p === mid52.prices[t - 1] + 10)),
+      "the ladder at any rung is the ladder's own row, and at 7 unit between rungs each level is a ten over the one below and asks no more a unit than 6.25 does: " + JSON.stringify(mid52.prices));
+
+    /* THE DESK: CZ9-QB has paid RM 100 a unit on two lots of 7 after a lot of 2 at RM 550, and holds a tier other than the
+       one proposed, so the held tier is the one read */
+    const sale52 = (rid, customer, date, qty, total, cost) => ({ rid, customer, product: "salt", date, qty, total, cost, cash: total, deliveredQty: qty, deliveredOn: date });
+    const today52 = rd52("TODAY.toISOString().slice(0,10)");
+    const fx52 = [sale52("z652a", "CZ9-QB", "2026-07-01", 2, 1100, 100), sale52("z652b", "CZ9-QB", "2026-07-10", 7, 700, 350), sale52("z652c", "CZ9-QB", "2026-07-20", 7, 700, 350),
+      sale52("z652d", "CZ9-QN", today52, 2, 240, 100), sale52("z652e", "CZ9-QN", today52, 2, 240, 100)];
+    w52.eval("(function(){['CZ9-QB','CZ9-QN'].forEach(function(c){if(roster.indexOf(c)<0)roster.push(c);});BASE_SALES.push.apply(BASE_SALES," + JSON.stringify(fx52) + ");queue=[];applyOverlay();setProd('salt');recompute();})()");
+    const prop52 = rd52("tierProposal('CZ9-QB','salt',tierBoards())"), held52 = prop52 === "Silver" ? "Platinum" : "Silver";
+    w52.eval("TIER_OF['CZ9-QB']={salt:" + JSON.stringify(held52) + "};recompute();");
+    const card52 = rd52("(function(){var t=cardTier('CZ9-QB'),pol=Object.assign({},pxPolicy(),{tierRule:TIER_RULE.salt}),row=PRICING_ENGINE.fiveTierAt(7,pxCost(),pol);"
+      + "return {t:t,held:TIER_NAMES.indexOf(" + JSON.stringify(held52) + "),seven:cardQuote('CZ9-QB',7),want:+PRICING_ENGINE.cardPrice(pbOwnRate('CZ9-QB').rate*7,floorTotal(7),row.prices[t]).toFixed(2),"
+      + "one:cardQuote('CZ9-QB',1),oneTier:PRICING_ENGINE.fiveTierAt(1,pxCost(),pol).prices[t],"
+      + "board:pbPrices('CZ9-QB').map(function(r){return r.price;}),each:shownSizes('salt').slice().sort(function(a,b){return a-b;}).map(function(q){return cardQuote('CZ9-QB',q);})};})()");
+    ok(card52.t === card52.held && held52 !== prop52 && card52.seven === card52.want && card52.one < card52.oneTier && JSON.stringify(card52.board) === JSON.stringify(card52.each),
+      "a customer's card price at any size is the price of the tier they hold off the ladder walked through it, lowered by their own rate where it is under, and the printed board is that rule at the shown sizes: " + JSON.stringify([held52, card52.seven, card52.one, card52.oneTier]));
+    const nb52 = rd52("(function(){var n=nextBest('CZ9-QB');return {n:n,card:cardQuote('CZ9-QB',n?n.q:0),eff:pxCost().eff,none:nextBest('CZ9-QN'),noneTier:cardTier('CZ9-QN')};})()");
+    ok(nb52.n && nb52.n.q === 7 && nb52.n.total === nb52.card && nb52.n.profit === +(nb52.card - nb52.eff * 7).toFixed(2) && nb52.none === null && nb52.noneTier === -1,
+      "the approach offer is their card price at their usual lot, and what it would earn is struck on it; a customer with no tier for the product is offered nothing: " + JSON.stringify(nb52.n && [nb52.n.q, nb52.n.total, nb52.n.profit]));
+    const cv52 = rd52("(function(){var c1=cardQuote('CZ9-QB',1);return {c1:c1,board:priceLadder(1).ask.total,free:(customerRewards().find(function(r){return r.id==='CZ9-QB';})||{}).free||0,"
+      + "under:coverPlan('CZ9-QB',1,c1-30),at:coverPlan('CZ9-QB',1,c1)};})()");
+    ok(cv52.free > 0 && cv52.c1 !== cv52.board && cv52.under && cv52.under.ask === cv52.c1 && cv52.under.gap === 30 && cv52.at === null,
+      "the reward cover measures its gap against their own price, not the board's ask: " + JSON.stringify({ card: cv52.c1, board: cv52.board, gap: cv52.under && cv52.under.gap }));
+  } finally { await new Promise((r) => setTimeout(r, 200)); try { w52.close(); } catch (e) { /* best effort */ } }
 }
 
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);

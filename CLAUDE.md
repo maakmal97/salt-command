@@ -78,9 +78,9 @@ The fold routine is `docs/CLOUD_FOLD.md`; statements `docs/STATEMENTS.md`; desig
    that. A new customer starts at Bronze; a tier for each product (his instruction of 15 Sep 2026, v646), starting
    nearest what they pay for it. **Each
    customer's tier comes before the switch**, because a switch alone draws every existing price list up
-   toward Bronze (all 36 salt and all 6 oil customers with history, measured 15 Sep 2026). **No quote,
-   board or drafter flag reads the ladder yet** (v641 drew it, v642 named it): `pxPolicy` carries no
-   `tierRule`, and the suite holds it so; the customer's own price list does (below).
+   toward Bronze (all 36 salt and all 6 oil customers with history, measured 15 Sep 2026). **The board, the
+   anonymous quote and the drafter's flags do not read the ladder yet** (v641 drew it, v642 named it):
+   `pxPolicy` carries no `tierRule`, and the suite holds it so; a named customer's quotes do (below).
    **Each customer's tiers (v643, one for each product since v646)** are `TIER_OF` on the book, code to product
    to level name, set on Customers (the Tiers card: a dropdown for each product with Not set, Set queuing only
    what changed, or Accept for every open proposal) and folded as `tierset`, a null clearing a product; or
@@ -95,8 +95,11 @@ The fold routine is `docs/CLOUD_FOLD.md`; statements `docs/STATEMENTS.md`; desig
    smallest sizes. **A product with no tier, held or proposed, is not priced**: their page says price coming soon
    and offers no order for it, and the desk's printed board prints nothing for it. One rule, the engine's
    `cardPrice`, called by the customer's price list off the snapshot's `ladder` and `tierOf` (`tools/book.mjs`)
-   and by the desk's printed board (`pbPrices`); the v510 draw toward the ask (`adjustedPrice`, `pbAdjusted`)
-   and its loyalty test retired with it.
+   and on the desk by `cardQuote` at any size (the ladder walked through it, `fiveTierAt` in the engine), which
+   since v652 every quote to a named customer reads: the printed board (`pbPrices`), the approach offer and
+   Today's worth (`nextBest`, no offer with no tier), and the reward cover, whose gap is to their card price
+   (his decision of 16 Sep 2026, replacing the board's ask of 14 Sep). The v510 draw toward the ask
+   (`adjustedPrice`, `pbAdjusted`) and its loyalty test retired with v651.
 6. **The look is the Salt design system applied as a layer.** Material, type and colour
    are decided in `design/desk.css` over the vendored `design/salt-ds.css`; a colour or
    type change is an edit there, then `--sync`, then build, never a hex in the master's

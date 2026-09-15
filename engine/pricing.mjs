@@ -511,6 +511,13 @@ function cardPrice(R,F,T){
   if(p<F-0.009)p=Math.ceil((F-0.009)/5)*5;
   return p;
 }
+/* v652: THE LADDER AT ANY SIZE. The rungs with the size among them, walked as fiveTiers walks them, and that size's row: at a
+   rung it is the ladder's own row, and between rungs the rate law has walked every smaller size first. */
+function fiveTierAt(q,C,P){
+  const R=P.tierRule;if(!R||!(q>0))return null;
+  const sizes=R.rungs.map(Number).filter(r=>Math.abs(r-q)>0.009).concat([q]).sort((a,b)=>a-b);
+  return fiveTiers(sizes,C,P).find(r=>Math.abs(r.q-q)<0.009);
+}
 /* THE BOARD AND THE FLOORS, for quoting at the point of sale: what the phone receives. */
 /* THE CARD IS A COLLECTION PRICE AND DELIVERY IS QUOTED ON TOP, PER ORDER (v352, his instruction).
    v344 charged delivery at its real RM50 and put a `deliverable` flag on every size saying whether
@@ -541,6 +548,6 @@ function board(sizes,C,P){
 return {costStack:costStack,buyTaper:buyTaper,ladderMarkup:ladderMarkup,ladderMargin:ladderMargin,ladderCogs:ladderCogs,
         ladderRound:ladderRound,ladderWalk:ladderWalk,ladderAsk:ladderAsk,lotCost:lotCost,
         tier1Anchors:tier1Anchors,tier1Walk:tier1Walk,tier1Ask:tier1Ask,
-        floorTotal:floorTotal,priceLadder:priceLadder,ladderRow:ladderRow,board:board,fiveTiers:fiveTiers,cardPrice:cardPrice};
+        floorTotal:floorTotal,priceLadder:priceLadder,ladderRow:ladderRow,board:board,fiveTiers:fiveTiers,fiveTierAt:fiveTierAt,cardPrice:cardPrice};
 })();
 export default PRICING_ENGINE;
