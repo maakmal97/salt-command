@@ -1,5 +1,14 @@
 [
  {
+  "v": "v648",
+  "d": "15 Sep 2026",
+  "t": "A 25 UNIT LOT LANDS AT THE QUOTED RATE: AN EMPTY SHELF REFILLED, COST BASIS RESET",
+  "n": [
+   "<b>ONE PURCHASE ROW FOLDED, PAID AND RECEIVED ON THE DAY.</b> The fold appends a single BUY to purchases: SA5-BTR, 25 unit of salt for RM1,200, RM1,200 cash and all 25 unit moved on 15 Sep, with RM40 freight. The rate matches the 25 unit tier of the 20 Aug quote exactly, RM1,200 on his word of 07 Sep, so there was nothing to reconcile and the drafter raised no flag.",
+   "<b>WHAT WAS UNUSUAL WAS THE SHELF, NOT THE TERMS.</b> The book stood at zero stock on the 15 Sep salt count, under the reorder mark of 15 unit and with 10.5 unit promised out, so this lot is the whole position. The inventory took the 25 unit in at RM48 a unit, above the RM44 that was carried before and above the RM46 replacement mark, and left the ledger and self use figures of 75.95 untouched."
+  ]
+ },
+ {
   "v": "v647",
   "d": "15 Sep 2026",
   "t": "SALT COUNTED AT ZERO: THE BOOK LOSES 1.5 UNIT AND THE FLOORS LIFT",
