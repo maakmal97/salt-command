@@ -1,6 +1,6 @@
 {
- "v": "v649",
- "stamped": "15 Sep 2026, 22:45 KL",
+ "v": "v650",
+ "stamped": "15 Sep 2026, 22:53 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -41,7 +41,7 @@
     "stated": 40
    }
   },
-  "STATED_STOCK": 23,
+  "STATED_STOCK": 19.5,
   "COUNT_ON": {
    "salt": "2026-09-15",
    "oil": "2026-09-09"
@@ -3969,6 +3969,33 @@
     "paidOn": "2026-09-15",
     "note": "<b>SALT SELL DATED 15 SEP, PAID AND COLLECTED IN FULL ON THE DAY.</b> Booked to CZ6-WM, 1 unit for RM100, no delivery or freight, RM100 cash in and 1 unit moved on 15 Sep, so the row closes as it opens. The total clears the RM61.91 floor for 1 unit and sits under the RM140 ask and the RM150 ceiling. Cost is the desk's own RM48 a unit, RM48 on the order. <b>No flag was raised.</b> He held RM0 outstanding and no units on credit before this row against a cap of 1 unit, with nothing defaulted, across 2 orders at a RM100 median in a RM100 to RM100 range. Nothing is left outstanding.",
     "rid": "s164"
+   },
+   {
+    "customer": "CR3-DAM",
+    "qty": 1,
+    "total": 90,
+    "cost": 48,
+    "cash": 0,
+    "handover": "collected",
+    "date": "2026-09-15",
+    "deliveredQty": 1,
+    "deliveredOn": "2026-09-15",
+    "note": "<b>SALT SELL DATED 15 SEP, COLLECTED IN FULL AS AN ADVANCE, NOT A SEN IN.</b> Booked to CR3-DAM, 1 unit for RM90, no delivery or freight, RM0 cash and 1 unit handed over on 15 Sep, so RM90 stays outstanding. The total clears the RM61.26 floor for 1 unit and sits under the RM130 ask and RM150 ceiling. Cost is the desk's own RM48 a unit, RM48 on the order. <b>Two flags.</b> The rate is 12.5% above his RM80 median across 13 orders in a RM80 to RM92.50 range, and the advance was to be checked: he held RM25 outstanding and 0.27 unit on credit against a cap of 2 unit, nothing defaulted. The RM90 is left outstanding.",
+    "rid": "s165"
+   },
+   {
+    "customer": "CE4-CHE",
+    "qty": 2.5,
+    "total": 230,
+    "cost": 120,
+    "cash": 230,
+    "handover": "collected",
+    "date": "2026-09-15",
+    "deliveredQty": 2.5,
+    "deliveredOn": "2026-09-15",
+    "paidOn": "2026-09-15",
+    "note": "<b>SALT SELL DATED 15 SEP, PAID IN FULL AND COLLECTED IN FULL ON THE DAY.</b> Booked to CE4-CHE, 2.5 unit for RM230, all goods with no delivery or freight, RM230 cash in and 2.5 unit handed over on 15 Sep, so the row closes as it opens. The total clears the RM153.15 floor for 2.5 unit and sits under the RM290 ask and RM360 ceiling. Cost is the desk's own RM48 a unit, RM120 on the order. <b>No flag was raised.</b> The rate matches his RM92 median across 9 orders in a RM13 to RM107.50 range. He held RM150 outstanding and 10 unit on credit against a cap of 1 unit, nothing defaulted. That RM150 remains outstanding on its own row.",
+    "rid": "s166"
    }
   ],
   "contacts": [
@@ -4319,9 +4346,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-15T12:27:37.749Z",
+  "QUEUE_COMMITTED": "2026-09-15T12:28:07.501Z",
   "PRICING": {
-   "takenAt": "2026-09-15T14:45:56.979Z",
+   "takenAt": "2026-09-15T14:53:13.661Z",
    "sizes": [
     0.5,
     1,
@@ -4359,40 +4386,40 @@
      "replCost": 46,
      "floors": {
       "1": {
-       "floor": 61.26
+       "floor": 60.25
       },
       "2": {
-       "floor": 122.52
+       "floor": 120.5
       },
       "3": {
-       "floor": 183.77
+       "floor": 180.76
       },
       "4": {
-       "floor": 245.03
+       "floor": 241.01
       },
       "5": {
-       "floor": 306.29
+       "floor": 301.26
       },
       "0.5": {
-       "floor": 30.63
+       "floor": 30.13
       },
       "1.5": {
-       "floor": 91.89
+       "floor": 90.38
       },
       "2.5": {
-       "floor": 153.15
+       "floor": 150.63
       },
       "3.5": {
-       "floor": 214.4
+       "floor": 210.88
       },
       "4.5": {
-       "floor": 275.66
+       "floor": 271.14
       },
       "6.25": {
-       "floor": 382.86
+       "floor": 376.58
       },
       "12.5": {
-       "floor": 765.73
+       "floor": 753.15
       }
      },
      "inputs": {
@@ -4467,9 +4494,9 @@
        "repl": 46,
        "freightRate": 1.0133,
        "leak": {
-        "ratio": 0.303,
+        "ratio": 0.2816,
         "leak": 13.94,
-        "sold": 46,
+        "sold": 49.5,
         "cycles": 3,
         "from": "2026-09-06",
         "to": "2026-09-15"
@@ -4483,15 +4510,15 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0.3783783783783784
+         "v": 0.358974358974359
         }
        },
        "attrib": 1,
        "shrinkRate": 0.08090642957822836,
        "avgDel": {
-        "n": 144,
-        "kg": 362.2,
-        "mean": 2.5153
+        "n": 146,
+        "kg": 365.7,
+        "mean": 2.5048
        }
       },
       "policy": {
@@ -4785,12 +4812,29 @@
      ]
     }
    },
-   "v": "v649"
+   "v": "v650"
   },
   "OPEN": {
-   "at": "2026-09-15T14:45:57.081Z",
-   "count": 8,
+   "at": "2026-09-15T14:53:13.837Z",
+   "count": 9,
    "byKey": {
+    "CR3-DAM|2026-09-15|90": {
+     "d": "2026-09-15",
+     "p": "CR3-DAM",
+     "dir": "S",
+     "q": 1,
+     "t": 90,
+     "cash": 0,
+     "mv": 1,
+     "st": "dueMoney",
+     "oweRM": 90,
+     "rid": "s165",
+     "deliveredOn": "2026-09-15",
+     "handover": "collected",
+     "key": "CR3-DAM|2026-09-15|90",
+     "age": 0,
+     "exp": 90
+    },
     "CM4-MK|2026-09-13|330": {
      "d": "2026-09-13",
      "p": "CM4-MK",
@@ -4924,12 +4968,12 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 23,
-     "free": 23,
+     "onHand": 19.5,
+     "free": 19.5,
      "owedOut": 0,
-     "coverDays": 4.1,
-     "rate": 5.61,
-     "owedToYou": 382,
+     "coverDays": 3.3,
+     "rate": 5.86,
+     "owedToYou": 472,
      "promised": 10.5,
      "short": 0
     },
@@ -4949,7 +4993,7 @@
     "salt": "2026-09-15",
     "oil": "2026-09-09"
    },
-   "v": "v649"
+   "v": "v650"
   }
  }
 }
