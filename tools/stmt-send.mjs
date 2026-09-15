@@ -318,6 +318,19 @@ export function sendSheet(rows, opts) {
 
      node tools/stmt-send.mjs statements/2026-09 2026-09-01
 */
+/* A CODE RE-KEYED SINCE THE ISSUE (Amend ID, v628) still has its card. The statement is filed under the code
+   it was issued to, but _users.json has moved the username to the new code, and _passwords.json is gitignored,
+   so a laptop fold moves its key and a cloud fold cannot. The username never changes, and the statement prints
+   it (make_statements.mjs, "Your username is"), so it is read from there, the current code found from it, and
+   the password looked for under either code. Seven cards were missing from the September sheet (16 Sep 2026). */
+export function sheetParty(code, users, passwords, statementHtml) {
+  const user = users[code] || (/Your username is <code>([^<]+)<\/code>/.exec(statementHtml || "") || [])[1];
+  if (!user) return null;
+  const who = Object.keys(users).find((c) => users[c] === user) || code;
+  const pw = passwords[code] || passwords[who];
+  return pw ? { who, user, pw } : null;
+}
+
 /* AN ASYNC main() CALLED WITHOUT AWAITING IT, and the reason is a deadlock this hit at once.
    make_statements.mjs imports THIS module statically, so when this file is the entry point a
    TOP-LEVEL `await import("./make_statements.mjs")` asks for a module that is waiting for this one
@@ -351,16 +364,18 @@ async function main() {
   const M = await import("./make_statements.mjs");
   const base = M.siteBaseUrl();
   const rows = [], missing = [];
-  for (const who of made.sort()) {
-    if (!users[who] || !passwords[who]) { missing.push(who); continue; }
+  for (const code of made) {
+    const html = readFileSync(join(here, "statement_" + code + "_" + issue + ".html"), "utf8");
+    const p = sheetParty(code, users, passwords, html);
+    if (!p) { missing.push(code); continue; }
     /* the same totals the statement itself foots to, read off the same rows it was built from */
     const o = { from: null, to: issue, completed: true, open: true, pending: true, dates: true };
-    const r = M.stmtRows(who, o);
+    const r = M.stmtRows(p.who, o);
     const t = { n: r.filter((x) => !x.cancelled).length, total: 0, owed: 0 };
     r.forEach((x) => { if (x.cancelled) return; t.total += x.total; t.owed += x.owed; });
-    rows.push({ who, user: users[who], pw: passwords[who], t,
-                url: base + "/?u=" + encodeURIComponent(users[who]) });
+    rows.push({ who: p.who, user: p.user, pw: p.pw, t, url: base + "/?u=" + encodeURIComponent(p.user) });
   }
+  rows.sort((a, b) => (a.who < b.who ? -1 : 1));
   if (missing.length) console.log("::warning::no username or password for: " + missing.join(", "));
   const file = join(here, "_send_" + issue + ".html");
   writeFileSync(file, sendSheet(rows, {

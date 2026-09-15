@@ -7578,7 +7578,19 @@ section("Statements — the price list, the order book and the desk's relay (v49
   }
 
   /* THE SEND SHEET carries the address as a link on every card. */
-  const { sendSheet } = await import("../tools/stmt-send.mjs");
+  const { sendSheet, sheetParty } = await import("../tools/stmt-send.mjs");
+  {
+    /* a code re-keyed after the issue: username moved to the new code, password under either one */
+    const users = { "CX0-NEW": "abcd-efgh", "CX0-KEPT": "hjkm-npqr" };
+    const html = "<p>Your username is <code>abcd-efgh</code>. The password is sent to you separately.</p>";
+    const a = sheetParty("CX0-OLD", users, { "CX0-OLD": "pw-old" }, html);
+    const b = sheetParty("CX0-OLD", users, { "CX0-NEW": "pw-new" }, html);
+    const c = sheetParty("CX0-KEPT", users, { "CX0-KEPT": "pw-kept" }, "");
+    ok(a && a.who === "CX0-NEW" && a.user === "abcd-efgh" && a.pw === "pw-old" && b && b.pw === "pw-new"
+      && c && c.who === "CX0-KEPT" && c.pw === "pw-kept"
+      && sheetParty("CX0-OLD", users, {}, html) === null && sheetParty("CX0-GONE", users, { "CX0-GONE": "x" }, "") === null,
+      "the send sheet finds a re-keyed customer by the username their statement prints, under the new code, the password under either");
+  }
   const sheet = sendSheet([{ who: "CX0-AA", user: un, pw: pw, url: "https://k7m3p2.example/?u=" + un, t: { n: 1, total: 100, owed: 0 } }], { issue: "2026-09-01", monthName: "September 2026" });
   ok(sheet.includes('<a class="site" target="_blank" rel="noopener"></a>') && sheet.includes("site.href = row.url"),
     "the send sheet draws each card's statement address as a link that opens in a new tab");
