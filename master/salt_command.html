@@ -6845,7 +6845,9 @@ const quoteFor=p=>{const f=QUOTES[p||PROD];return f?f():null;};
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{"v":"v653","d":"16 Sep 2026","t":"AN OIL DEBT IS PAID OFF IN FULL: RM150 IN, NOTHING LEFT OPEN","n":["<b>ONE AMENDMENT FOLDED, NO GOODS MOVED.</b> The fold carries a single fulfilment against CE4-CHE's oil order s154 of 12 Sep, 10 unit for RM150, which had been delivered in full with not a sen paid. RM150 cash is recorded on 16 Sep and no units move, so the amendment is money only. The row itself is not recomputed here: the master applies the fulfilment, so there is one definition of what a fulfilment does.","<b>WHAT WAS UNUSUAL AND WHAT THE INVENTORY DID.</b> CE4-CHE had carried RM150 outstanding and 10 unit on credit, the largest open balance on his ten orders, and the drafter flagged that this settles the order in full. The figures answer that flag: RM150 in against RM150 outstanding leaves RM0 and 0 unit. The count stands at 15 Sep for salt and 9 Sep for oil, and the inventory moved nothing on this fold."]},
+const evolution=[{"v":"v654","d":"16 Sep 2026","t":"OIL'S BOARD GAINS 80 AND 100 UNIT, AS HIS PRICING WORKBOOK CARRIES THEM","n":["<b>HIS DECISION OF 15 SEP 2026.</b> The two sizes that left the oil grid on his call of 29 Aug come back, because the workbook's oil board prices them. His five stated sizes are untouched, and the two are derived beside them: RM720 at 80 unit and RM900 at 100 on today's costs, RM9.00 a unit, each clearing its own floor and asking no more a unit than 50 unit does.","<b>WHERE THEY APPEAR.</b> Every reading of oil takes the book's sizes, so the two rows join the board and its floors, the customer's price list and the printed board, and the guest board. A customer holding an oil tier is quoted their own price at them, as at every other size.","<b>TWO PROPOSALS MOVE WITH THE GRID.</b> A tier proposed from what they pay is measured across the board's sizes, so the two new ones count: CS6-BS and CA7-AMP move from Titanium to Platinum, and their oil prices rise to their own rate, 50 unit from RM460 to RM550 and RM535. Neither is quoted above what they pay, and setting their tier on Customers pins it.","<b>THE CHECKS.</b> Oil's section restated: his five stated sizes keep the strict fall a unit, every size stays dearer in total, and the two derived ones keep the rate law and clear their floors. 2 mutations of the grid turn both assertions red."]},
+
+{"v":"v653","d":"16 Sep 2026","t":"AN OIL DEBT IS PAID OFF IN FULL: RM150 IN, NOTHING LEFT OPEN","n":["<b>ONE AMENDMENT FOLDED, NO GOODS MOVED.</b> The fold carries a single fulfilment against CE4-CHE's oil order s154 of 12 Sep, 10 unit for RM150, which had been delivered in full with not a sen paid. RM150 cash is recorded on 16 Sep and no units move, so the amendment is money only. The row itself is not recomputed here: the master applies the fulfilment, so there is one definition of what a fulfilment does.","<b>WHAT WAS UNUSUAL AND WHAT THE INVENTORY DID.</b> CE4-CHE had carried RM150 outstanding and 10 unit on credit, the largest open balance on his ten orders, and the drafter flagged that this settles the order in full. The figures answer that flag: RM150 in against RM150 outstanding leaves RM0 and 0 unit. The count stands at 15 Sep for salt and 9 Sep for oil, and the inventory moved nothing on this fold."]},
 
 {"v":"v652","d":"16 Sep 2026","t":"EVERY QUOTE TO A NAMED CUSTOMER IS THEIR OWN CARD PRICE, AND THE REWARD COVER'S GAP IS MEASURED AGAINST IT","n":["<b>HIS DECISIONS OF 15 AND 16 SEP 2026: A NAMED CUSTOMER IS QUOTED THEIR OWN CARD PRICE.</b> The Customers approach offer and Today's worth read cardQuote: the price of their tier for the product at the size, off the ladder walked through that size, never above their own recent rate to the nearest five and lifted only to clear the floor. A customer with no tier for the product is offered nothing, as their page reads the price as coming soon, and the printed board reads the same rule.","<b>THE REWARD COVER.</b> On his decision of 16 Sep the gap a reward covers is measured against the customer's own card price, where his ruling of 14 Sep measured it against the board's ask: a sale at their price has nothing to cover.","<b>ON THE BOOK.</b> Salt's 39 approach offers fall at 36 and rise at 3 (RM20 at most), from RM14,200 to RM10,775 together; oil's 8 move by RM50 at most; Today's past-cadence worth reads RM342 at their own prices where it read RM627 at the board; no printed board changes. The anonymous quote, the Pricing board and the drafter still read the derived ask until the board itself switches.","<b>THE CHECKS.</b> A new section of 4 assertions, the engine's ladder at any size, the card price, the offer and the cover, and the reward cover's section restated on the card price. 9 mutations each turn their assertion red."]},
 
@@ -7361,7 +7363,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='16 Sep 2026, 04:01 KL';
+const LAST_UPDATED='16 Sep 2026, 06:39 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -8153,10 +8155,13 @@ const PRICE_ENGINE={
      5 unit 470 to 460, 6.25 unit 580 to 570. That is not a discount anyone chose. 3.5 unit asks
      RM340, which is RM97.14 a unit, and a bigger lot may never cost more per unit, so 4 unit may
      not exceed RM388.57 and rounds to RM380. RM390 was only holding because 3.5 was not quoted;
-     the rung exposes the rate law rather than changing it. */
+     the rung exposes the rate law rather than changing it.
+     80 AND 100 UNIT COME BACK ON HIS DECISION OF 15 SEP 2026, because his pricing workbook's oil board carries them:
+     derived beside his five stated sizes, they ask no more a unit than 50 unit does and clear their own floors
+     (RM720 and RM900 on 16 Sep, RM9.00 a unit). */
   sizesBy:{
     salt:[0.5,1,1.5,2,2.5,3,3.5,4,4.5,5,6.25,12.5],
-    oil:[10,20,30,40,50]
+    oil:[10,20,30,40,50,80,100]
   },
   /* which rungs are PRINTED. A product with no entry prints every rung it has. Empty since
      round 5: oil's grid IS its board now, so the mechanism stands and nothing uses it. */

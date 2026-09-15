@@ -2817,8 +2817,8 @@ section("Pricing — each book prices off its own quote (round 5, his call 1)");
   ok(saltB.b != null && Math.abs(oilB.b - saltB.b) > 1e-6,
     "the two books fit different exponents, so the taper is genuinely per book");
   /* his call 4: the board sizes are what he sells, and the ladder anchor is the book's own */
-  ok(JSON.stringify(read("sizesFor('oil')")) === JSON.stringify([10, 20, 30, 40, 50]),
-    "oil's grid is his: 10 to 50 in tens, no fives, no 60 to 100 tail");
+  ok(JSON.stringify(read("sizesFor('oil')")) === JSON.stringify([10, 20, 30, 40, 50, 80, 100]),
+    "oil's grid is his: 10 to 50 in tens, no fives, and 80 and 100 as his workbook carries them (his decision of 15 Sep 2026)");
   ok(JSON.stringify(read("sizesFor('salt')")) === JSON.stringify([0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 6.25, 12.5]),
     "salt's grid is untouched");
   const oilL = read("ladderFor('oil')"), saltL = read("ladderFor('salt')");
@@ -2942,8 +2942,13 @@ section("Oil — pinned at both ends and lawful between (round 5, his call 5)");
   const a10 = rows.find((r) => r.q === 10), a50 = rows.find((r) => r.q === 50);
   ok(a10.ask === 130, "the board asks his RM130 at 10");
   ok(a50.ask === 450, "and his RM450 at 50, quoted whether or not it clears its floor (v552)");
-  ok(JSON.stringify(rows.map((r) => r.ask)) === JSON.stringify([130, 240, 330, 400, 450]),
-    "the whole board is his stated one: 130, 240, 330, 400, 450");
+  ok(JSON.stringify(rows.slice(0, 5).map((r) => r.ask)) === JSON.stringify([130, 240, 330, 400, 450]),
+    "the five sizes he stated are his board: 130, 240, 330, 400, 450");
+  /* HIS DECISION OF 15 SEP 2026: 80 AND 100 UNIT JOIN, as his workbook's oil board carries them. They are derived beside the
+     five he stated, so what is checked is the law they keep, never a figure the cost basis moves. */
+  const tail = rows.slice(5);
+  ok(JSON.stringify(tail.map((r) => r.q)) === "[80,100]" && tail.every((r, i) => r.ask >= r.fl - 0.009 && r.ask / r.q <= rows[4 + i].ask / rows[4 + i].q + 1e-9),
+    "and 80 and 100 unit are derived beside them, each clearing its own floor and asking no more a unit than the size before it: " + JSON.stringify(tail.map((r) => [r.q, r.ask, r.fl])));
   /* v552, 09 Sep 2026: HE DECIDED, AND THE LINE MOVES TO WHAT HE DECIDED. The v551 oil count read a
      23.08% leak from his own figures and lifted the 50 unit floor to RM482.20, so this section went
      red exactly as it was built to: "his stated price needs his decision, not a board that quietly
@@ -3233,11 +3238,11 @@ section("Oil — pinned at both ends and lawful between (round 5, his call 5)");
   w.eval("setProd('oil');recompute();");
   let strict = true, dearer = true;
   for (let i = 1; i < rows.length; i++) {
-    if (!(rows[i].ask / rows[i].q < rows[i - 1].ask / rows[i - 1].q - 1e-9)) strict = false;
+    if (i < 5 && !(rows[i].ask / rows[i].q < rows[i - 1].ask / rows[i - 1].q - 1e-9)) strict = false;   // his five stated sizes
     if (!(rows[i].ask > rows[i - 1].ask + 1e-9)) dearer = false;
   }
-  ok(strict, "every larger oil size is STRICTLY cheaper per unit, 130 at 10 down to 450 at 50");
-  ok(dearer, "and strictly dearer in total, so no lot is beaten by buying smaller");
+  ok(strict, "every larger size he stated is STRICTLY cheaper per unit, 130 at 10 down to 450 at 50");
+  ok(dearer, "and every size, 80 and 100 included, is strictly dearer in total, so no lot is beaten by buying smaller");
   w.eval("setProd('salt');recompute();");
   try { w.close(); } catch (e) { }
 }
