@@ -1,5 +1,15 @@
 [
  {
+  "v": "v640",
+  "d": "15 Sep 2026",
+  "t": "A PENDING SALE IS CORRECTED: PAID, COLLECTED AND RM20 LIGHTER",
+  "n": [
+   "<b>ONE ROW FOLDED, AN AMENDMENT AND NOTHING ELSE.</b> A correction lands on CH6-SET's salt sell s148 of 11 Sep, 1 unit. The total falls from RM120 to RM100, delivery from RM10 to RM0, cash rises from RM0 to RM100, delivered quantity from 0 to 1 unit, handover moves from delivered to collected, and both paidOn and deliveredOn are set to 14 Sep. No cash and no stock move on the fold itself: the row is restated, not rewritten.",
+   "<b>THE DRAFTER FLAGGED THE RATE AND THE FIGURES ANSWER IT.</b> CH6-SET has paid about RM117.50 a unit across 2 orders and this row now reads RM100, 14.9% below that, against a median of RM115 in a RM110 to RM120 range. The desk let it stand on his word. Outstanding of RM120 on this party is settled by the RM100 cash and the RM20 reduction in total. The inventory held at 1.5 units, cost unchanged at RM44 a unit.",
+   "<b>NOTHING OUTSTANDING ON THE FOLD.</b> No lot landed, no loan opened and no count was taken, salt last counted 14 Sep and oil 9 Sep. Promised stock stays at 11.5 units against 1.5 units stated, with the reorder mark at 15 units and replacement at RM46 a unit. The amended row now carries a paid and collected date of 14 Sep, so it leaves nothing open behind it."
+  ]
+ },
+ {
   "v": "v639",
   "d": "14 Sep 2026",
   "t": "A HAND COUNT OF SALT CUTS THE BOOK BY 7.44 UNIT: FLOORS LIFT ACROSS EVERY SIZE",

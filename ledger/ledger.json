@@ -1,6 +1,6 @@
 {
- "v": "v639",
- "stamped": "14 Sep 2026, 17:43 KL",
+ "v": "v640",
+ "stamped": "15 Sep 2026, 08:35 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -3607,14 +3607,33 @@
    {
     "customer": "CH6-SET",
     "qty": 1,
-    "total": 120,
-    "cash": 0,
-    "delivery": 10,
-    "handover": "delivered",
+    "total": 100,
+    "cash": 100,
+    "delivery": 0,
+    "handover": "collected",
     "date": "2026-09-11",
-    "deliveredQty": 0,
-    "note": "<b>PENDING SALT SELL DATED 11 SEP, THE DAY IT WAS AGREED.</b> SELL to CH6-SET, 1 unit for RM120 with RM10 delivery, marked delivered, RM0 cash in and 0 unit moved, so the row draws no stock and books no revenue until something moves. The total clears the RM56.21 floor for 1 unit, sits exactly on the RM120 ask and under the RM150 ceiling. CH6-SET has 2 prior orders, a median rate of RM120 and a range of RM115 to RM120, nothing outstanding before this, no units on credit against a cap of 1 and nothing defaulted. Cost is the inventory's own RM44 a unit. The drafter flagged nothing. The full RM120 and the unit stay outstanding.",
-    "rid": "s148"
+    "deliveredQty": 1,
+    "note": "<b>CORRECTION DATED 15 SEP ON SALT SELL s148 OF 11 SEP, BOOKED TO CH6-SET.</b> The 1 unit order moves from RM120 to RM100, delivery from RM10 to RM0, cash from RM0 to RM100, delivered quantity from 0 to 1 unit and handover from delivered to collected, with paidOn and deliveredOn both set to 14 Sep. Cost is the desk's own RM44 a unit, RM44 on the order. <b>The drafter flagged that CH6-SET typically pays about RM117.50 a unit for salt across 2 orders and this one is RM100, 14.9% below that.</b> The desk let it stand on his word. He held RM120 outstanding and 0 units on credit before this row, across 3 orders at a RM115 median in a RM110 to RM120 range. Nothing is left outstanding. <b>PENDING SALT SELL DATED 11 SEP, THE DAY IT WAS AGREED.</b> SELL to CH6-SET, 1 unit for RM120 with RM10 delivery, marked delivered, RM0 cash in and 0 unit moved, so the row draws no stock and books no revenue until something moves. The total clears the RM56.21 floor for 1 unit, sits exactly on the RM120 ask and under the RM150 ceiling. CH6-SET has 2 prior orders, a median rate of RM120 and a range of RM115 to RM120, nothing outstanding before this, no units on credit against a cap of 1 and nothing defaulted. Cost is the inventory's own RM44 a unit. The drafter flagged nothing. The full RM120 and the unit stay outstanding.",
+    "rid": "s148",
+    "paidOn": "2026-09-14",
+    "deliveredOn": "2026-09-14",
+    "mod": "corrected on 2026-09-15: total 120 to 100; cash 0 to 100; deliveredQty 0 to 1; delivery 10 to 0; paidOn (unset) to 2026-09-14; deliveredOn (unset) to 2026-09-14; handover delivered to collected",
+    "amend": [
+     {
+      "date": "2026-09-11",
+      "kind": "Fulfilment",
+      "cash": 100,
+      "kg": 1,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-09-15",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>CORRECTION DATED 15 SEP ON SALT SELL s148 OF 11 SEP, BOOKED TO CH6-SET.</b> The 1 unit order moves from RM120 to RM100, delivery from RM10 to RM0, cash from RM0 to RM100, delivered quantity from 0 to 1 unit and handover from delivered to collected, with paidOn and deliveredOn both set to 14 Sep. Cost is the desk's own RM44 a unit, RM44 on the order. <b>The drafter flagged that CH6-SET typically pays about RM117.50 a unit for salt across 2 orders and this one is RM100, 14.9% below that.</b> The desk let it stand on his word. He held RM120 outstanding and 0 units on credit before this row, across 3 orders at a RM115 median in a RM110 to RM120 range. Nothing is left outstanding."
+     }
+    ]
    },
    {
     "customer": "CC5-OKR",
@@ -4250,9 +4269,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-14T09:41:29.122Z",
+  "QUEUE_COMMITTED": "2026-09-15T00:32:48.670Z",
   "PRICING": {
-   "takenAt": "2026-09-14T09:43:08.211Z",
+   "takenAt": "2026-09-15T00:35:31.098Z",
    "sizes": [
     0.5,
     1,
@@ -4282,40 +4301,40 @@
      "replCost": 46,
      "floors": {
       "1": {
-       "floor": 61.15
+       "floor": 60.83
       },
       "2": {
-       "floor": 122.29
+       "floor": 121.66
       },
       "3": {
-       "floor": 183.44
+       "floor": 182.49
       },
       "4": {
-       "floor": 244.59
+       "floor": 243.32
       },
       "5": {
-       "floor": 305.74
+       "floor": 304.15
       },
       "0.5": {
-       "floor": 30.57
+       "floor": 30.41
       },
       "1.5": {
-       "floor": 91.72
+       "floor": 91.24
       },
       "2.5": {
-       "floor": 152.87
+       "floor": 152.07
       },
       "3.5": {
-       "floor": 214.01
+       "floor": 212.9
       },
       "4.5": {
-       "floor": 275.16
+       "floor": 273.73
       },
       "6.25": {
-       "floor": 382.17
+       "floor": 380.18
       },
       "12.5": {
-       "floor": 764.34
+       "floor": 760.37
       }
      },
      "inputs": {
@@ -4351,8 +4370,8 @@
          "date": "2026-09-09",
          "sup": "SA5-BTR"
         },
-        "days": 39,
-        "sinceLot": 48
+        "days": 40,
+        "sinceLot": 49
        },
        "lockBase": {
         "lockedOn": "2026-08-06",
@@ -4390,9 +4409,9 @@
        "repl": 46,
        "freightRate": 0.72,
        "leak": {
-        "ratio": 0.3088,
+        "ratio": 0.302,
         "leak": 13.74,
-        "sold": 44.5,
+        "sold": 45.5,
         "cycles": 3,
         "from": "2026-09-04",
         "to": "2026-09-14"
@@ -4406,15 +4425,15 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0.4117647058823529
+         "v": 0.4
         }
        },
        "attrib": 1,
-       "shrinkRate": 0.0843975696434713,
+       "shrinkRate": 0.08210478046543622,
        "avgDel": {
-        "n": 141,
-        "kg": 359.2,
-        "mean": 2.5475
+        "n": 142,
+        "kg": 360.2,
+        "mean": 2.5366
        }
       },
       "policy": {
@@ -4560,8 +4579,8 @@
          "date": "2026-09-08",
          "sup": "SP7-PUD"
         },
-        "days": 39,
-        "sinceLot": 39
+        "days": 40,
+        "sinceLot": 40
        },
        "lockBase": {
         "lockedOn": "2026-08-06",
@@ -4708,11 +4727,11 @@
      ]
     }
    },
-   "v": "v639"
+   "v": "v640"
   },
   "OPEN": {
-   "at": "2026-09-14T09:43:08.370Z",
-   "count": 9,
+   "at": "2026-09-15T00:35:31.190Z",
+   "count": 8,
    "byKey": {
     "CM4-MK|2026-09-13|330": {
      "d": "2026-09-13",
@@ -4728,7 +4747,7 @@
      "deliveredOn": "2026-09-13",
      "handover": "delivered",
      "key": "CM4-MK|2026-09-13|330",
-     "age": 1,
+     "age": 2,
      "exp": 110
     },
     "CE4-CHE|2026-09-12|150": {
@@ -4746,23 +4765,8 @@
      "deliveredOn": "2026-09-12",
      "handover": "delivered",
      "key": "CE4-CHE|2026-09-12|150",
-     "age": 2,
+     "age": 3,
      "exp": 150
-    },
-    "CH6-SET|2026-09-11|120": {
-     "d": "2026-09-11",
-     "p": "CH6-SET",
-     "dir": "S",
-     "q": 1,
-     "t": 120,
-     "cash": 0,
-     "mv": 0,
-     "st": "part",
-     "oweRM": 120,
-     "oweUnits": 1,
-     "rid": "s148",
-     "handover": "delivered",
-     "key": "CH6-SET|2026-09-11|120"
     },
     "CC5-OKR|2026-09-11|90": {
      "d": "2026-09-11",
@@ -4809,8 +4813,8 @@
      "deliveredOn": "2026-09-07",
      "handover": "delivered",
      "key": "CJ4-BJ|2026-09-07|850",
-     "age": 7,
-     "exp": 204
+     "age": 8,
+     "exp": 136
     },
     "CA4-DAM|2026-09-02|160": {
      "d": "2026-09-02",
@@ -4866,18 +4870,18 @@
      "free": 1.5,
      "owedOut": 0,
      "coverDays": 0.3,
-     "rate": 5.96,
+     "rate": 5.46,
      "owedToYou": 382,
-     "promised": 11.5,
-     "short": 10
+     "promised": 10.5,
+     "short": 9
     },
     "oil": {
      "name": "Oil",
      "onHand": 40,
      "free": 40,
      "owedOut": 0,
-     "coverDays": 7.5,
-     "rate": 5.36,
+     "coverDays": 8,
+     "rate": 5,
      "owedToYou": 150,
      "promised": 0,
      "short": 0
@@ -4887,7 +4891,7 @@
     "salt": "2026-09-14",
     "oil": "2026-09-09"
    },
-   "v": "v639"
+   "v": "v640"
   }
  }
 }
