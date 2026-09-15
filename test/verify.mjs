@@ -11909,5 +11909,59 @@ section("v644: the tiers' multiples run evenly from 1.0 to 2.5, so 1 unit of sal
   } finally { await new Promise((r) => setTimeout(r, 200)); try { w44.close(); } catch (e) { /* best effort */ } }
 }
 
+section("v645: Add ID starts a new customer at the tier chosen, and the fold files it");
+{
+  /* HIS DECISION OF 15 SEP 2026: a new customer or Add ID includes a starting tier. A customer and either kind of associate
+     hold one; an end buyer, a bucket and a supplier do not. Driven through the Add ID form with the vault and the network
+     stubbed, as v633's section drives it. Each assertion was proved red by mutation. */
+  const { openMaster: om45 } = await import("../tools/payload.mjs");
+  const { vaultEncrypt: ve45 } = await import("../tools/seed-vault.mjs");
+  const { draftRow: dr45 } = await import("../src/drafter.js");
+  const F45 = await import("../tools/fold.mjs");
+  const { webcrypto: wc45 } = await import("node:crypto");
+  const NAMES45 = ["Ambassador", "Titanium", "Platinum", "Gold", "Silver", "Bronze"];
+  const { w: w45 } = await om45();
+  if (!w45.crypto || !w45.crypto.subtle) { try { Object.defineProperty(w45, "crypto", { value: wc45, configurable: true }); } catch (e) { w45.crypto = wc45; } }
+  const rd45 = (e) => JSON.parse(String(w45.eval("JSON.stringify(" + e + ")")));
+  try {
+    w45.eval("try{cloudMode=function(){return true;};}catch(e){};setProd('salt');recompute();switchTab('add');wbMode='addid';wbApply();WB_GEO={text:null,point:null,how:null};");
+    const cell45 = (kind) => rd45("(function(){var k=document.getElementById('wbApKind');k.value=" + JSON.stringify(kind) + ";wbApply();wbPreview();var c=document.getElementById('wbApTierCell'),s=document.getElementById('wbApTier');"
+      + "return {shown:!!c&&c.style.display!=='none',opts:s?[].map.call(s.options,function(o){return o.value;}):null,val:s?s.value:null};})()");
+    const cu45 = cell45("customer"), rs45 = cell45("reseller"), su45 = cell45("supplier"), bu45 = cell45("bucket"), dn45 = cell45("downstream");
+    ok(cu45.shown && JSON.stringify(cu45.opts) === JSON.stringify(NAMES45) && cu45.val === "Bronze" && rs45.shown && !su45.shown && !bu45.shown && !dn45.shown,
+      "Add ID asks a customer's or an associate's starting tier, Bronze by default, and asks nothing of a supplier, a bucket or an end buyer: " + JSON.stringify({ cu45, su45, bu45, dn45 }));
+    const env45 = JSON.stringify(await ve45("pw", { "CZ1-OTH": "Other (Here)" }));
+    const stub45 = "(function(){queue=[];NAME_VAULT=" + env45 + ";qSyncState='server';window.prompt=function(){return 'pw';};"
+      + "window.fetch=function(u,o){var post=!!(o&&o.method==='POST');return Promise.resolve({ok:true,json:function(){return Promise.resolve(post?{ok:true}:{ok:true,vault:" + env45 + "});}});};})();";
+    const settle45 = async () => { for (let i = 0; i < 60; i++) { await new Promise((r) => setTimeout(r, 100)); const st = String(w45.eval("(document.getElementById('wbOk')||{}).textContent||''")); if (!/Filing the name/.test(st)) return st; } return ""; };
+    w45.eval("(function(){var s=function(i,v){var e=document.getElementById(i);if(e)e.value=v;};s('wbApKind','customer');wbApply();s('wbApWho','');s('wbApName','Zed Tierfixture');s('wbApPlace','tbc');s('wbApTier','Gold');wbPreview();})()");
+    w45.eval(stub45 + "wbRecord();");
+    const st45 = await settle45(), q45 = rd45("queue.map(function(x){return {p:x.payload,raw:x.raw};})"), all45 = JSON.stringify(rd45("queue"));
+    ok(/Registered/.test(st45) && q45.length === 1 && q45[0].p.mode === "addid" && q45[0].p.tier === "Gold" && /starting at Gold/.test(q45[0].raw) && !/Tierfixture/.test(all45),
+      "Record queues the registration with the tier chosen, and never the name: " + st45 + " " + JSON.stringify(q45));
+    ok(q45.length === 1 && rd45("tierQueued()")[q45[0].p.code] === "Gold", "and the Tiers card reads the registration's tier as waiting for approval");
+
+    /* ---- the drafter ---- */
+    const mir45 = { sales: [], purchases: [], state: { roster: [], associates: [] }, pricing: { tierNames: NAMES45 } };
+    const en45 = (p) => ({ at: "2026-09-15T09:00:00.000Z", payload: { mode: "addid", parent: null, ...p } });
+    const d45 = dr45(en45({ code: "CZ9-NEWT", kind: "customer", tier: "Gold" }), mir45);
+    ok(!d45.skip && d45.collection === "roster" && d45.row.tier === "Gold" && /starts them at Gold/.test(d45.reasoning), "a registration drafts with its starting tier: " + (d45.skip || JSON.stringify(d45.row)));
+    for (const [p, why] of [[{ code: "CZ9-NEWT", kind: "customer", tier: "Diamond" }, /Diamond is not a tier/], [{ code: "SZ9-SUP", kind: "supplier", tier: "Gold" }, /a supplier holds no tier/]]) {
+      const s = dr45(en45(p), mir45).skip || "";
+      ok(why.test(s), "the drafter refuses the registration " + JSON.stringify(p) + ": " + (s || "drafted"));
+    }
+
+    /* ---- the fold ---- */
+    const master45 = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+    const book45 = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8")); book45.TIER_OF = {};
+    const it45 = (n, collection, row) => ({ id: "2099-01-01T00:00:00.00" + n + "Z", collection, row, entry: { at: "2099-01-01T00:00:00.00" + n + "Z", payload: {} } });
+    const res45 = F45.apply(book45, { ok: true, count: 1, approved: [it45(1, "roster", { code: "CZ9-NEWT", kind: "customer", parent: null, note: null, tier: "Gold" })] },
+      { version: "v9998", date: "01 Jan 2099", title: "FIXTURE", notes: ["fixture"], rows: {} }, master45);
+    ok(res45.ok && book45.roster.includes("CZ9-NEWT") && book45.TIER_OF["CZ9-NEWT"] === "Gold", "the fold registers the customer and files the starting tier on the book: " + (res45.ok ? JSON.stringify(book45.TIER_OF) : res45.problems));
+    const ref45 = F45.plan(book45, { ok: true, count: 1, approved: [it45(2, "roster", { code: "CZ9-NEWU", kind: "customer", parent: null, note: null, tier: "Diamond" })] }, null).refused.map((x) => x.why).join(" ");
+    ok(/Diamond is not a tier/.test(ref45), "and refuses a registration carrying a tier the desk does not name: " + ref45);
+  } finally { await new Promise((r) => setTimeout(r, 200)); try { w45.close(); } catch (e) { /* best effort */ } }
+}
+
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
 process.exit(fail ? 1 : 0);

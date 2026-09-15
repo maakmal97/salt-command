@@ -122,7 +122,7 @@ function describe(item) {
     case "loan": return `${r.direction === "in" ? "BORROW" : "LEND"} ${r.form === "cash" ? "RM " + r.valueRM + " in cash" : r.valueKg + " unit " + (r.product || "salt")} ${r.direction === "in" ? "from" : "to"} ${r.party} on ${r.date}`;
     case "repayment": return `REPAY ${r.form === "cash" ? "RM " + r.rm : r.kg + " unit " + (r.product || "salt")} ${r.direction === "in" ? "to" : "from"} ${r.party} on loan ${r.loan}, ${r.date}${r.settles ? ", settling it" : ""}`;
     case "lostDemand": return `LOST SALE ${r.kg} unit ${r.product}${r.party ? " to " + r.party : ""} on ${r.date}: ${r.why}`;
-    case "roster": return `${APPOINTS[r.kind] ? "APPOINT" : "REGISTER"} ${r.code} as ${r.kind}${r.parent ? " under " + r.parent : ""}`;
+    case "roster": return `${APPOINTS[r.kind] ? "APPOINT" : "REGISTER"} ${r.code} as ${r.kind}${r.parent ? " under " + r.parent : ""}${r.tier ? " at " + r.tier : ""}`;
     case "rename": return `RENAME ${r.from} to ${r.to}`;
     case "place": return `PLACE ${Object.keys(r.places || {}).join(", ")} on the map`;
     case "tierset": return `TIER ${Object.entries(r.tiers || {}).map(([c, t]) => c + " " + t).join(", ")}`;
@@ -318,7 +318,8 @@ export function plan(book, staged, notes) {
       if (onRoster && !appoints) { out.refused.push({ id: it.id, why: `${r.code} is already on the roster` }); continue; }
       if (appoints && (book.associates || []).includes(r.code)) { out.refused.push({ id: it.id, why: `${r.code} is already an associate` }); continue; }
       const resell = POSITION_ENGINE.appointBucket(r.kind, r.code);
-      entry.roster = { code: r.code, register: !onRoster, appoint: appoints, resell: resell && !(book.roster || []).includes(resell) ? resell : null, geo: r.geo || null };
+      if (r.tier && !tierNames().includes(r.tier)) { out.refused.push({ id: it.id, why: `${r.tier} is not a tier` }); continue; }   // v645
+      entry.roster = { code: r.code, register: !onRoster, appoint: appoints, resell: resell && !(book.roster || []).includes(resell) ? resell : null, geo: r.geo || null, tier: r.tier || null };
       if (entry.roster.register) entry.does.push(`append ${r.code} to the roster (the directory is not touched)`);
       if (r.geo) entry.does.push(`file ${r.code} as a point on the map, about a kilometre, where its place was found`);
       if (STATEMENT_KINDS.includes(r.kind)) entry.does.push(`give ${r.code} a statement username if they have none, kept for life`);
@@ -828,6 +829,7 @@ export function apply(book, staged, notes, masterText) {
       const rr = it.roster;
       if (rr.register && !book.roster.includes(rr.code)) book.roster.push(rr.code);
       if (rr.geo) { book.PLACED = book.PLACED || {}; book.PLACED[rr.code] = rr.geo; }   // v633: the place found at Add ID
+      if (rr.tier) { book.TIER_OF = book.TIER_OF || {}; book.TIER_OF[rr.code] = rr.tier; }   // v645: the starting tier chosen at Add ID
       if (rr.resell && !book.roster.includes(rr.resell)) book.roster.push(rr.resell);
       if (rr.appoint) {
         book.associates = book.associates || [];

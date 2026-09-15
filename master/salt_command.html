@@ -6816,7 +6816,9 @@ const quoteFor=p=>{const f=QUOTES[p||PROD];return f?f():null;};
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{"v":"v644","d":"15 Sep 2026","t":"THE TIERS RUN EVENLY FROM 1.0 TO 2.5, SO 1 UNIT OF SALT READS HIS RM100, 110, 130, 150 AND 160","n":["<b>HIS DECISION OF 15 SEP 2026.</b> His prices for 1 unit of salt include RM110 and RM130, which the 1.5 and 2.0 columns never printed. The five tiers' multiples now run evenly from 1.0 to 2.5, a step of 0.375: Titanium 1.0, Platinum 1.375, Gold 1.75, Silver 2.125 and Bronze 2.5.","<b>WHAT MOVES.</b> 0.5 unit of salt still starts the tiers at RM50, 60, 70, 80 and 90, and 1 unit reads RM100, 110, 130, 150 and 160. The middle tiers ease at the larger sizes: at 12.5 unit Platinum reads RM950, Gold RM1,050 and Silver RM1,150, against RM980, RM1,110 and RM1,180 before. Ambassador and Bronze do not move, and every rule the ladder keeps still holds on both books. Nothing quotes the ladder yet.","<b>THE CHECKS.</b> A new section of 2 assertions: the even spacing on both books, and RM50 to RM90 at 0.5 unit with his 1-unit prices on the workbook's COGS. v641's section now proves the workbook's 76 prices with the workbook's own four multiples, and v642's approved board moved with the multiples. 4 mutations each turn their assertion red."]},
+const evolution=[{"v":"v645","d":"15 Sep 2026","t":"ADD ID STARTS A NEW CUSTOMER AT THE TIER CHOSEN, AND THE FOLD FILES IT WITH THE REGISTRATION","n":["<b>HIS DECISION OF 15 SEP 2026: A NEW CUSTOMER INCLUDES A STARTING TIER.</b> Add ID now asks the starting tier, Bronze unless he picks another, for a customer and for either kind of associate. An end buyer, a bucket and a supplier hold no tier and are not asked, and an appointment of a party already registered keeps the tier they hold.","<b>ONE ROAD.</b> The tier rides the registration: the queue line says where the customer starts and never carries the name, the Tiers card reads it as waiting for approval, the drafter checks it against the level names and refuses one for a supplier or a bucket, and the fold files it in TIER_OF as it adds the code to the roster.","<b>THE CHECKS.</b> A new section of 8 assertions, driven through the Add ID form with the vault and the network stubbed: the picker for the kinds that hold a tier and not the others, Record queuing the tier without the name, the Tiers card reading it, the drafter's row and its two refusals, and the fold filing it and refusing a tier the desk does not name. 9 mutations each turn their assertion red."]},
+
+{"v":"v644","d":"15 Sep 2026","t":"THE TIERS RUN EVENLY FROM 1.0 TO 2.5, SO 1 UNIT OF SALT READS HIS RM100, 110, 130, 150 AND 160","n":["<b>HIS DECISION OF 15 SEP 2026.</b> His prices for 1 unit of salt include RM110 and RM130, which the 1.5 and 2.0 columns never printed. The five tiers' multiples now run evenly from 1.0 to 2.5, a step of 0.375: Titanium 1.0, Platinum 1.375, Gold 1.75, Silver 2.125 and Bronze 2.5.","<b>WHAT MOVES.</b> 0.5 unit of salt still starts the tiers at RM50, 60, 70, 80 and 90, and 1 unit reads RM100, 110, 130, 150 and 160. The middle tiers ease at the larger sizes: at 12.5 unit Platinum reads RM950, Gold RM1,050 and Silver RM1,150, against RM980, RM1,110 and RM1,180 before. Ambassador and Bronze do not move, and every rule the ladder keeps still holds on both books. Nothing quotes the ladder yet.","<b>THE CHECKS.</b> A new section of 2 assertions: the even spacing on both books, and RM50 to RM90 at 0.5 unit with his 1-unit prices on the workbook's COGS. v641's section now proves the workbook's 76 prices with the workbook's own four multiples, and v642's approved board moved with the multiples. 4 mutations each turn their assertion red."]},
 
 {"v":"v643","d":"15 Sep 2026","t":"EACH CUSTOMER HOLDS ONE TIER, SET ON THE PHONE AND FOLDED, PROPOSED FROM WHAT THEY PAY, QUOTED NOWHERE YET","n":["<b>HIS DECISIONS OF 15 SEP 2026: EACH CUSTOMER'S TIER COMES BEFORE THE SWITCH.</b> A customer holds one tier across both books, TIER_OF on the book, a new ledger key. It moves only on his word: the Customers page queues it, the drafter drafts it as tierset, he approves it and the fold files it, and Amend ID's re-key carries it with the code.","<b>PROPOSED FROM WHAT THEY PAY.</b> A customer holding none is proposed the tier nearest what they pay: on the book carrying most of their revenue, the level whose prices sit closest to their own rate across that book's board sizes. Never Ambassador, which is his word alone, and Bronze where there is no rate to read. On the book of 15 Sep that proposes Titanium 8, Platinum 9, Gold 13, Silver 2 and Bronze 5 of 37 customers.","<b>THE TIERS CARD.</b> On Customers, every customer who has bought, largest first, with the tier held, the one waiting for approval or the one proposed, a picker to set one, and Accept for every proposal still open, in one entry. A tier set with the names open queues the code and never the name. Migration 0010 rebuilds the draft table once, for the tier and for the label still to be named.","<b>THE CHECKS.</b> A new section of 16 assertions on fixture customers and forced costs: the proposal against a restatement, never Ambassador, Bronze with no rate, the card's three states, Accept, codes alone in the queue, no price moving, the drafter's entry and its refusals, the fold with a rename, and 0010. The book now holds twenty-nine keys. 16 mutations each turn their assertion red."]},
 
@@ -7314,7 +7316,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='15 Sep 2026, 13:31 KL';
+const LAST_UPDATED='15 Sep 2026, 13:48 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -15414,7 +15416,7 @@ function tierCustomers(){
   sales.forEach(s=>{const o=ownerOf(s.customer);if(!o||!isPerson(o)||!(s.total>0)||txStat(s).order==='Cancelled')return;rev[o]=(rev[o]||0)+s.total;});
   return Object.keys(rev).sort((a,b)=>rev[b]-rev[a]);
 }
-function tierQueued(){const o={};queue.forEach(q=>{if(q&&q.payload&&q.payload.mode==='tierset')Object.assign(o,q.payload.tiers||{});});return o;}
+function tierQueued(){const o={};queue.forEach(q=>{if(q&&q.payload&&q.payload.mode==='tierset')Object.assign(o,q.payload.tiers||{});else if(q&&q.payload&&q.payload.mode==='addid'&&q.payload.tier)o[q.payload.code]=q.payload.tier;});return o;}   /* v645: a registration's starting tier waits too */
 function tierQueue(tiers){
   const codes=Object.keys(tiers);if(!codes.length)return;
   queue.push({at:new Date().toISOString(),type:'TIER',party:codes.length===1?codes[0]:null,qty:null,total:null,status:'tierset',
@@ -17740,6 +17742,7 @@ function tabWorkbench(){
         <div class="qfield" id="wbApParentCell" style="display:none"><label>Under which associate</label><select id="wbApParent"></select></div>
         <div class="qfield" id="wbApNameCell"><label>Name</label><input id="wbApName" type="text" placeholder="as they are known" autocomplete="off"></div>
         <div class="qfield" id="wbApPlaceCell"><label>Place</label><input id="wbApPlace" type="text" placeholder="town or area; blank if to be confirmed" autocomplete="off"></div>
+        <div class="qfield" id="wbApTierCell"><label>Starting tier</label><select id="wbApTier" style="min-height:var(--tap)">${TIER_NAMES.map(n=>`<option${n==='Bronze'?' selected':''}>${n}</option>`).join('')}</select></div>
         <div class="qfield" style="flex:1"><label>Note <span style="color:var(--dim)">optional</span></label><input id="wbApNote" type="text" placeholder="never the name or the place"></div>
       </div>
       <div class="dsc">The code is made from what you type, never typed itself: <b>C</b> for a customer or <b>S</b> for a supplier, the name&rsquo;s first letter and its length, then the place, its initials when it is several words and its first three letters when it is one. So a four-letter name starting with A is <b>CA4</b>, and with its place <b>CA4-DAM</b>; a blank place gives <b>TBC</b>. If the code is taken, it takes one more letter of the name, as <b>CAB4-DAM</b>. The name goes into the vault on this device, encrypted, and never into the queue.<br>To <b>appoint someone already on the roster</b>, pick Associate or Referrer and choose them under <b>Who</b>: it confers the standing rather than registering a second time, asks for no name, and an associate is given their <b>-R</b> resell account with it.</div>
@@ -19411,6 +19414,7 @@ function wbPreview(){
        different spelling of a name already filed. A bucket has no name for its own reason. */
     const hideNm=kind==='bucket'||apl.elevate;
     const nc=wbEl('wbApNameCell'),pc=wbEl('wbApPlaceCell');if(nc)nc.style.display=hideNm?'none':'';if(pc)pc.style.display=hideNm?'none':'';
+    const tc=wbEl('wbApTierCell');if(tc)tc.style.display=wbTierKind(kind,apl)?'':'none';   // v645
     if(!hideNm){
       if(!(wbVal('wbApName')||'').trim())errs.push('Type the name. It is filed into the vault, encrypted, and never into the queue.');
       /* v548, his instruction of 09 Sep 2026: a place still to be confirmed can be entered. Left blank, the
@@ -19520,8 +19524,11 @@ function pickPlace(e){
   WB_GEO={text:WB_GEO.text,point:[Math.round(lat*100)/100,Math.round(lng*100)/100],how:'tap'};
   wbPreview();
 }
+/* v645, HIS DECISION OF 15 SEP 2026: A NEW CUSTOMER STARTS AT THE TIER CHOSEN AT ADD ID. A customer and either kind of
+   associate hold a tier; an end buyer, a bucket, a supplier and an appointment of a party already registered do not. */
+function wbTierKind(kind,apl){return !(apl&&apl.elevate)&&(kind==='customer'||kind==='reseller'||kind==='referral');}
 /* v528: the registration itself, shared by the bucket road and the named road */
-function wbAddIdQueue(code,kind,parent,an,geo){
+function wbAddIdQueue(code,kind,parent,an,geo,tier){
   /* v570: READ THE PLAN BEFORE THE OVERLAY MOVES, or the two pushes below flip `known` and
      `already` under it and the queue line would describe an appointment as a registration. */
   const apl=addIdPlan(code,kind);
@@ -19533,8 +19540,8 @@ function wbAddIdQueue(code,kind,parent,an,geo){
   if(apl.resell&&roster.indexOf(apl.resell)<0)roster.push(apl.resell);
   if(apl.stream&&associates.indexOf(code)<0)associates.push(code);
   queue.push({at:new Date().toISOString(),type:'ADDID',party:code,qty:null,total:null,status:'addid',
-    raw:(apl.elevate?'Appoint '+code+' as: ':'Add '+code+' to the roster as: ')+(ADDID_KIND_LABEL[kind]||kind)+(parent?' (under '+codeOf(parent)+')':'')+(apl.resell?', with '+apl.resell+' as their resell account':'')+(an?', '+an:''),
-    payload:{mode:'addid',code:code,kind:kind,parent:parent,rev:apl.stream,note:an||null,geo:geo||null}});
+    raw:(apl.elevate?'Appoint '+code+' as: ':'Add '+code+' to the roster as: ')+(ADDID_KIND_LABEL[kind]||kind)+(parent?' (under '+codeOf(parent)+')':'')+(apl.resell?', with '+apl.resell+' as their resell account':'')+(tier?', starting at '+tier:'')+(an?', '+an:''),
+    payload:{mode:'addid',code:code,kind:kind,parent:parent,rev:apl.stream,note:an||null,geo:geo||null,tier:tier&&TIER_NAMES.includes(tier)?tier:null}});
   ['wbApWho','wbApNote','wbApName','wbApPlace'].forEach(id=>{const e=wbEl(id);if(e)e.value='';});
   applyOverlay();render();
   Promise.resolve(saveQueue()).then(()=>{try{renderQueue();}catch(e){}});
@@ -19592,11 +19599,11 @@ async function wbAmendIdNamed(ap){
   const o2=wbEl('wbOk');   /* render() rebuilt the tab */
   if(o2){o2.textContent=ap.to===ap.from?'Filed in the vault, encrypted. The code stays '+ap.from+(ap.move?'; its new point on the map is queued for approval.':'.'):'Filed in the vault, encrypted. '+ap.from+' to '+ap.to+' is queued for approval.';o2.style.color='var(--grn)';}
 }
-async function wbAddIdNamed(code,kind,parent,an,nm,pl,geo){
+async function wbAddIdNamed(code,kind,parent,an,nm,pl,geo,tier){
   const ok=wbEl('wbOk');
   const why=await wbVaultFile(map=>{map[code]=nm+' ('+pl+')';});
   if(why){if(ok){ok.textContent=why+' Nothing registered.';ok.style.color='var(--crim)';}return;}
-  wbAddIdQueue(code,kind,parent,an,geo);
+  wbAddIdQueue(code,kind,parent,an,geo,tier);
   const o2=wbEl('wbOk')||ok;   /* render() rebuilt the tab, so the status node captured above is detached */
   if(o2){o2.textContent='Registered '+code+'. The name is filed in the vault, encrypted; the ID is queued for approval.';o2.style.color='var(--grn)';}
 }
@@ -19789,7 +19796,7 @@ function wbRecord(){
       const geo=wbGeoPoint(pl);   // v633
       if(!geo&&!/^(to be confirmed|tbc)$/i.test(pl)){ok.textContent='Find the place on the map first: tap where they are.';ok.style.color='var(--crim)';return;}
       ok.textContent='Filing the name into the vault…';ok.style.color='var(--mut)';
-      wbAddIdNamed(code,kind,parent,an,nm,pl,geo);
+      wbAddIdNamed(code,kind,parent,an,nm,pl,geo,wbTierKind(kind,apl)?wbVal('wbApTier'):null);
       return;
     }
     wbAddIdQueue(code,kind,parent,an);

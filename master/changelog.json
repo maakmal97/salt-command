@@ -1,5 +1,15 @@
 [
  {
+  "v": "v645",
+  "d": "15 Sep 2026",
+  "t": "ADD ID STARTS A NEW CUSTOMER AT THE TIER CHOSEN, AND THE FOLD FILES IT WITH THE REGISTRATION",
+  "n": [
+   "<b>HIS DECISION OF 15 SEP 2026: A NEW CUSTOMER INCLUDES A STARTING TIER.</b> Add ID now asks the starting tier, Bronze unless he picks another, for a customer and for either kind of associate. An end buyer, a bucket and a supplier hold no tier and are not asked, and an appointment of a party already registered keeps the tier they hold.",
+   "<b>ONE ROAD.</b> The tier rides the registration: the queue line says where the customer starts and never carries the name, the Tiers card reads it as waiting for approval, the drafter checks it against the level names and refuses one for a supplier or a bucket, and the fold files it in TIER_OF as it adds the code to the roster.",
+   "<b>THE CHECKS.</b> A new section of 8 assertions, driven through the Add ID form with the vault and the network stubbed: the picker for the kinds that hold a tier and not the others, Record queuing the tier without the name, the Tiers card reading it, the drafter's row and its two refusals, and the fold filing it and refusing a tier the desk does not name. 9 mutations each turn their assertion red."
+  ]
+ },
+ {
   "v": "v644",
   "d": "15 Sep 2026",
   "t": "THE TIERS RUN EVENLY FROM 1.0 TO 2.5, SO 1 UNIT OF SALT READS HIS RM100, 110, 130, 150 AND 160",

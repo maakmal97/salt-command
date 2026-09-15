@@ -82,7 +82,9 @@ The fold routine is `docs/CLOUD_FOLD.md`; statements `docs/STATEMENTS.md`; desig
    toward Bronze (all 36 salt and all 6 oil customers with history, measured 15 Sep 2026). **Quoted nowhere
    yet** (v641 drew it, v642 named it): `pxPolicy` carries no `tierRule`, and the suite holds it so.
    **Each customer's tier (v643)** is `TIER_OF` on the book, a level name, set on Customers (the Tiers card:
-   one customer, or Accept for every open proposal) and folded as `tierset`; a customer holding none is
+   one customer, or Accept for every open proposal) and folded as `tierset`, or chosen at Add ID as a new
+   customer's starting tier (v645: Bronze by default, for a customer or either kind of associate, never an
+   end buyer, a bucket or a supplier), which the fold files with the registration; a customer holding none is
    proposed the tier nearest what they pay on the book carrying most of their revenue (`tierProposal`),
    never Ambassador, and Bronze with no rate to read. Nothing prices off `TIER_OF` yet.
 6. **The look is the Salt design system applied as a layer.** Material, type and colour

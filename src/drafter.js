@@ -996,6 +996,12 @@ export function draftRow(entry, book) {
     const parent = pay.parent || null;
     if (kind === "bucket" && !parent) return { skip: "a bucket sits under a party, and which party is a judgement" };
     if (pay.geo != null && !geoOf(pay.geo)) return { skip: "the point given for the place is not in Malaysia" };   // v633
+    /* v645: the starting tier chosen at Add ID, checked against the level names the desk's PRICING snapshot carries */
+    if (pay.tier != null) {
+      const names = (book.pricing && Array.isArray(book.pricing.tierNames)) ? book.pricing.tierNames : [];
+      if (!names.includes(pay.tier)) return { skip: `${pay.tier} is not a tier` };
+      if (!["customer", "reseller", "referral"].includes(kind)) return { skip: `a ${kind} holds no tier` };
+    }
 
     const roster = (book.state && book.state.roster) || [];
     const associates = (book.state && book.state.associates) || [];
@@ -1028,9 +1034,10 @@ export function draftRow(entry, book) {
       : "";
     return {
       collection: "roster",
-      row: Object.assign({ code, kind, parent, note: pay.note || null }, geoOf(pay.geo) ? { geo: geoOf(pay.geo) } : {}),
+      row: Object.assign({ code, kind, parent, note: pay.note || null }, geoOf(pay.geo) ? { geo: geoOf(pay.geo) } : {}, pay.tier ? { tier: pay.tier } : {}),
       flags,
       reasoning: `${stream && roster.includes(code) ? "Appoints" : "Registers"} ${code} as a ${kind}${parent ? ` under ${parent}` : ""}.`
+        + (pay.tier ? ` It starts them at ${pay.tier}.` : "")
         + ` It touches no figure: the fold appends ${roster.includes(code) ? "nothing new" : "the code"} to the roster.`
         + appointBits
         + " THE NAME AND THE PLACE ARE NOT HERE AND MUST NOT BE: the directory is typed at the laptop and never travels.",
