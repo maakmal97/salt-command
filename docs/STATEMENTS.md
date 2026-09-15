@@ -184,8 +184,9 @@ the record. Nothing about the statements changed.
 
 **The price list is a second sealed document beside the live statement.** The deploy writes
 it in the same publish, under the same content key, so the site still holds nothing it can
-read. `tools/pricelist.mjs` is the whole rule: the customer's rate on a product is the median
-unit rate of his last four committed orders of it, read from orders dated before the week's
+read. `tools/pricelist.mjs` is the whole rule: the customer's rate on a product is the BEST
+unit rate of his last four committed orders of it (v655, his decision of 16 Sep 2026; it was the
+median until then), read from orders dated before the week's
 Monday in Kuala Lumpur, so the rate he is shown cannot move inside a week. Since v651 (his
 decisions of 15 Sep 2026) each board size is the price of the customer's tier for that product, the
 tier held on the book or proposed from what they pay for it, never above that rate times the size to

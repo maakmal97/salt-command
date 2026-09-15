@@ -6845,7 +6845,9 @@ const quoteFor=p=>{const f=QUOTES[p||PROD];return f?f():null;};
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{"v":"v654","d":"16 Sep 2026","t":"OIL'S BOARD GAINS 80 AND 100 UNIT, AS HIS PRICING WORKBOOK CARRIES THEM","n":["<b>HIS DECISION OF 15 SEP 2026.</b> The two sizes that left the oil grid on his call of 29 Aug come back, because the workbook's oil board prices them. His five stated sizes are untouched, and the two are derived beside them: RM720 at 80 unit and RM900 at 100 on today's costs, RM9.00 a unit, each clearing its own floor and asking no more a unit than 50 unit does.","<b>WHERE THEY APPEAR.</b> Every reading of oil takes the book's sizes, so the two rows join the board and its floors, the customer's price list and the printed board, and the guest board. A customer holding an oil tier is quoted their own price at them, as at every other size.","<b>TWO PROPOSALS MOVE WITH THE GRID.</b> A tier proposed from what they pay is measured across the board's sizes, so the two new ones count: CS6-BS and CA7-AMP move from Titanium to Platinum, and their oil prices rise to their own rate, 50 unit from RM460 to RM550 and RM535. Neither is quoted above what they pay, and setting their tier on Customers pins it.","<b>THE CHECKS.</b> Oil's section restated: his five stated sizes keep the strict fall a unit, every size stays dearer in total, and the two derived ones keep the rate law and clear their floors. 2 mutations of the grid turn both assertions red."]},
+const evolution=[{"v":"v655","d":"16 Sep 2026","t":"A CUSTOMER'S OWN RATE IS THE BEST THEY HAVE PAID, AND THEIR TIER IS PROPOSED AT THE SIZES THEY BUY","n":["<b>HIS DECISION OF 16 SEP 2026, OFF THE ORDER BOOK.</b> A sale struck is the best price strikeable with that customer, so the card reads the BEST of their last four priced orders where it read the middle one. The four-order window stands, so a price moved to in July is still the price seen in September and one old high day cannot set a card for good. Measured on the 133 priced salt orders: the rule would have earned RM10,349 over break-even against the RM9,013 they made, and RM9,209 under the middle-rate rule.","<b>AND THE TIER IS READ AT THE SIZES THEY BUY</b>, a unit, so a size a customer never takes cannot decide their level. It was measured across every size on the board, which handed the decision to the biggest rung: adding 80 and 100 unit to oil (v654) moved two customers a level on sizes neither buys. On the book today 24 salt customers and 1 oil customer sit on a different level, their cards rising at 106 sizes and falling at 182, and nobody is quoted above what they have paid.","<b>THE CHECKS.</b> A new section of 4 assertions: the window and the best of it, the tool reading the same four, a proposal that does not move when every rung above 2.5 unit leaves the board, and a card that rises to the best. Ten assertions restated across the statements, the bucket, the proposals and the two card sections. 5 mutations each turn their assertion red."]},
+
+{"v":"v654","d":"16 Sep 2026","t":"OIL'S BOARD GAINS 80 AND 100 UNIT, AS HIS PRICING WORKBOOK CARRIES THEM","n":["<b>HIS DECISION OF 15 SEP 2026.</b> The two sizes that left the oil grid on his call of 29 Aug come back, because the workbook's oil board prices them. His five stated sizes are untouched, and the two are derived beside them: RM720 at 80 unit and RM900 at 100 on today's costs, RM9.00 a unit, each clearing its own floor and asking no more a unit than 50 unit does.","<b>WHERE THEY APPEAR.</b> Every reading of oil takes the book's sizes, so the two rows join the board and its floors, the customer's price list and the printed board, and the guest board. A customer holding an oil tier is quoted their own price at them, as at every other size.","<b>TWO PROPOSALS MOVE WITH THE GRID.</b> A tier proposed from what they pay is measured across the board's sizes, so the two new ones count: CS6-BS and CA7-AMP move from Titanium to Platinum, and their oil prices rise to their own rate, 50 unit from RM460 to RM550 and RM535. Neither is quoted above what they pay, and setting their tier on Customers pins it.","<b>THE CHECKS.</b> Oil's section restated: his five stated sizes keep the strict fall a unit, every size stays dearer in total, and the two derived ones keep the rate law and clear their floors. 2 mutations of the grid turn both assertions red."]},
 
 {"v":"v653","d":"16 Sep 2026","t":"AN OIL DEBT IS PAID OFF IN FULL: RM150 IN, NOTHING LEFT OPEN","n":["<b>ONE AMENDMENT FOLDED, NO GOODS MOVED.</b> The fold carries a single fulfilment against CE4-CHE's oil order s154 of 12 Sep, 10 unit for RM150, which had been delivered in full with not a sen paid. RM150 cash is recorded on 16 Sep and no units move, so the amendment is money only. The row itself is not recomputed here: the master applies the fulfilment, so there is one definition of what a fulfilment does.","<b>WHAT WAS UNUSUAL AND WHAT THE INVENTORY DID.</b> CE4-CHE had carried RM150 outstanding and 10 unit on credit, the largest open balance on his ten orders, and the drafter flagged that this settles the order in full. The figures answer that flag: RM150 in against RM150 outstanding leaves RM0 and 0 unit. The count stands at 15 Sep for salt and 9 Sep for oil, and the inventory moved nothing on this fold."]},
 
@@ -7363,7 +7365,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='16 Sep 2026, 06:39 KL';
+const LAST_UPDATED='16 Sep 2026, 07:45 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -15448,10 +15450,14 @@ function tierBoards(){
   finally{PROD=keep;recompute();}
   return out;
 }
+/* v655, HIS DECISION OF 16 SEP 2026: THE TIER IS PROPOSED AT THE SIZES THEY BUY, and read a unit, so a size they never take
+   cannot decide their level. It was measured across every size on the board, which handed the decision to the biggest rung:
+   adding 80 and 100 unit to oil moved two customers a level on sizes neither of them buys (v654). */
 function tierProposal(code,prod,boards){
   const B=(boards[prod]||[]).filter(r=>sizesFor(prod).some(s=>Math.abs(s-r.q)<0.009)),own=pbOwnRate(code,prod);
   if(!B.length||own.rate==null)return null;
-  const gap=t=>B.reduce((a,r)=>a+Math.abs(r.prices[t]-own.rate*r.q),0);
+  const mine=pbOrders(code,prod).map(s=>B.reduce((best,r)=>Math.abs(r.q-s.qty)<Math.abs(best.q-s.qty)?r:best,B[0]));
+  const gap=t=>mine.reduce((a,r)=>a+Math.abs(r.prices[t]/r.q-own.rate),0);
   let tier=1;for(let t=2;t<TIER_NAMES.length;t++)if(gap(t)<gap(tier)-1e-9)tier=t;
   return TIER_NAMES[tier];
 }
@@ -17980,11 +17986,17 @@ function pbPriced(s){const st=txStat(s).order;
   if(st==='Pending'||st==='Cancelled'||st==='Default')return false;
   if((s.rebate||s.goodwill)&&!((+s.cash||0)>0.009))return false;
   return true;}
-function pbOwnRate(code,prod){const before=pbWeekMonday();   /* v643: prod names a book other than the one in view, for a tier proposal */
-  const rows=pSales(prod||PROD).filter(s=>POSITION_ENGINE.ownsCode(code,s.customer)&&pbPriced(s)&&s.date&&s.date<before&&s.total>0&&s.qty>0)   /* v609: the bucket is the associate's own */
-    .sort((a,b)=>{const x=a.date,y=b.date;if(!x||!y)return (!x&&!y)?0:(!x?1:-1);return x<y?-1:x>y?1:0;}).slice(-4).map(s=>(s.total-(+s.delivery||0))/s.qty).sort((a,b)=>a-b);
-  if(!rows.length)return {rate:null,orders:0};const n=rows.length;
-  return {rate:+(n%2?rows[(n-1)/2]:(rows[n/2-1]+rows[n/2])/2).toFixed(2),orders:n};}
+/* v655, HIS DECISION OF 16 SEP 2026: THEIR OWN RATE IS THE BEST THEY HAVE PAID, of the last four priced orders before the
+   week's Monday, where it was the middle one until now. His reading of the book is that a sale struck is the best price
+   strikeable with that customer, so the best of those four is what they will pay again; the middle one left RM4,170 of
+   margin on 133 salt orders, measured 16 Sep 2026. The four-order window stands: a price moved to in July is the price
+   seen in September, and one old high day cannot set a card for good. */
+function pbOrders(code,prod){const before=pbWeekMonday();   /* v643: prod names a book other than the one in view, for a tier proposal */
+  return pSales(prod||PROD).filter(s=>POSITION_ENGINE.ownsCode(code,s.customer)&&pbPriced(s)&&s.date&&s.date<before&&s.total>0&&s.qty>0)   /* v609: the bucket is the associate's own */
+    .sort((a,b)=>{const x=a.date,y=b.date;if(!x||!y)return (!x&&!y)?0:(!x?1:-1);return x<y?-1:x>y?1:0;}).slice(-4);}
+function pbOwnRate(code,prod){const rows=pbOrders(code,prod).map(s=>(s.total-(+s.delivery||0))/s.qty);
+  if(!rows.length)return {rate:null,orders:0};
+  return {rate:+Math.max.apply(null,rows).toFixed(2),orders:rows.length};}
 /* v652: THE CUSTOMER'S TIER FOR THE PRODUCT IN VIEW, held or proposed, as an index into TIER_NAMES; -1 with neither */
 function cardTier(code){const who=ownerOf(code);return TIER_NAMES.indexOf((TIER_OF[who]||{})[PROD]||tierProposal(who,PROD,{[PROD]:fiveTiersNow()}));}
 /* v651 and v652, HIS DECISIONS OF 15 AND 16 SEP 2026: A NAMED CUSTOMER'S PRICE AT ANY SIZE, the one rule every quote to them

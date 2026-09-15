@@ -31,11 +31,13 @@
   kind of associate, never an end buyer, a bucket or a supplier), which the fold files with the
   registration. A new customer starts at Bronze.
 - **Proposals** (`tierProposal`): a product with none held is proposed the tier nearest what
-  they pay for it, never Ambassador; one they have never bought is proposed nothing and reads
+  they pay for it a unit **at the sizes they buy** (v655, so a size they never take cannot decide
+  their level), never Ambassador; one they have never bought is proposed nothing and reads
   not set, and the card lists customers who have bought nothing yet.
 - **The price** (v651): the price of their tier for the product at the size, held or
-  proposed, lowered by their own rate (the median of their last four orders before the week's
-  Monday) to the nearest five, and lifted only to clear the floor, so a long-standing low rate
+  proposed, lowered by their own rate (**the best of their last four orders** before the week's
+  Monday, v655 on his reading that a sale struck is the best price strikeable; it was the median
+  until then) to the nearest five, and lifted only to clear the floor, so a long-standing low rate
   can sit under Ambassador at the smallest sizes. A product with no tier: their page says price
   coming soon and offers no order for it, and the desk's printed board prints nothing for it.
   `cardPrice` is called by the price list off the snapshot's `ladder` and `tierOf`

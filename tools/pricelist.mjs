@@ -7,10 +7,11 @@
  *
  * THE TIER IS A CEILING (his decisions of 15 Sep 2026, v651). A customer is quoted the price of their
  * own tier for each product, held on the book or, until he sets one, proposed from what they pay for
- * it; and where they have bought before, never more than their own rate: the median unit rate of their
- * last four committed orders of that product, to the nearest five. Four, not all: a price moved to in
- * July should be the price seen in September, and a median so one odd order (a gift, a settlement, a
- * favour) cannot drag the list. A tier and no history, and the tier's price stands. NO TIER FOR A
+ * it; and where they have bought before, never more than their own rate: the BEST unit rate of their
+ * last four committed orders of that product, to the nearest five (his decision of 16 Sep 2026; it was
+ * the median until then). Four, not all: a price moved to in July should be the price seen in September,
+ * and the window is what keeps one old high day from setting a card for good. A tier and no history, and
+ * the tier's price stands. NO TIER FOR A
  * PRODUCT, HELD OR PROPOSED, AND IT IS NOT PRICED: it goes on the list as coming soon, and the page
  * offers no order for it. The rule is the engine's cardPrice, the one the desk's printed board quotes too.
  *
@@ -68,7 +69,7 @@ export function weekOf(now) {
            label: say(mon) + " to " + say(sun) + " " + sun.getFullYear() };
 }
 
-/** The customer's own rate on a product: the median of his last four committed orders before `before`. */
+/** The customer's own rate on a product: the best of his last four committed orders before `before` (v655). */
 export function ownRate(sales, code, product, before) {
   const rows = (sales || [])
     /* v609: the bucket is the associate's own, so what they bought for resale is a price they paid too */
@@ -77,11 +78,9 @@ export function ownRate(sales, code, product, before) {
     /* v502: the rate a customer paid is on the goods, the delivery charge inside the total taken out */
     .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0))
     .slice(-HISTORY_ORDERS)
-    .map((s) => (s.total - (isNum(s.delivery) ? s.delivery : 0)) / s.qty).sort((a, b) => a - b);
+    .map((s) => (s.total - (isNum(s.delivery) ? s.delivery : 0)) / s.qty);
   if (!rows.length) return { rate: null, orders: 0 };
-  const n = rows.length;
-  const mid = n % 2 ? rows[(n - 1) / 2] : (rows[n / 2 - 1] + rows[n / 2]) / 2;
-  return { rate: +mid.toFixed(2), orders: n };
+  return { rate: +Math.max.apply(null, rows).toFixed(2), orders: rows.length };
 }
 
 
