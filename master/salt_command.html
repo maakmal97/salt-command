@@ -6870,7 +6870,9 @@ const quoteFor=p=>{const f=QUOTES[p||PROD];return f?f():null;};
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{"v":"v656","d":"16 Sep 2026","t":"THE BOARD IS THE LADDER: A STRANGER IS QUOTED BRONZE, AND A STATED PRICE DECIDES NOTHING","n":["<b>HIS DECISION OF 15 SEP 2026, OFF THE PRICING WORKBOOK.</b> The ask at every printed size is now the LAST of the five levels, Bronze, the one a new customer starts at, struck on today's COGS by the workbook's own formula. Salt's board rises between RM10 and RM70 a size, from RM130 to RM160 at 1 unit and RM1,230 to RM1,250 at 12.5. Oil's rises further because it was never derived at all: RM130 to RM230 at 10 unit and RM900 to RM2,000 at 100, his five typed prices having been struck in July against a cost that has moved since, with the 50 unit tier sitting RM32.20 UNDER its own floor for a week. Every size on both books now clears break-even.","<b>AND NOT ONE CUSTOMER'S PRICE MOVES WITH IT.</b> Measured over all 50 price lists on the book: every one is unchanged, because a named customer is quoted their own level capped at what they pay, which the board cannot reach. What moves is what a STRANGER is quoted, which is what the board has always been for. Their offers are unchanged too, RM11,265 on salt and RM1,730 on oil.","<b>THREE THINGS RETIRE WITH THE DERIVED ASK.</b> Tier 1's two stated ends, RM60 at half a unit and RM875 at twelve and a half, which were frozen figures where Titanium is now derived on live costs. His five typed oil prices, cleared from the book. And the typing of prices in Set the board, which is the hide list alone now: the drafter refuses a stated price outright, because a phone on an older build can still queue one and a folded figure nothing reads is worse than a refusal. The mechanism stays in the engine for a book with no ladder, and the suite forces one to prove it.","<b>NRV IS TITANIUM, NOT THE ASK.</b> The shelf was valued off the board, so the switch would have lifted the estimated selling price of every unit in stock to what a stranger pays: RM115.78 a unit against RM87.83. IAS 2.6 asks for the price in the ORDINARY COURSE, and the ordinary course is the levels his customers are on, so the basis is the lowest level any of them is quoted. The carrying amount is unchanged at cost either way, RM939.25; what changes is that the lower-of-cost-and-NRV test still means something.","<b>THE CHECKS.</b> A new section of 6 assertions and 6 mutations, each red. Thirteen assertions restated across the oil board, the two-tier rendering, the guest links and the staging check that held the board OFF the ladder, which is now inverted and compares the PRICES rather than the board object: comparing the object passed on the row's NAME alone and stayed green with the ask reverted."]},
+const evolution=[{"v":"v657","d":"16 Sep 2026","t":"THE PRICING PAGE SAYS WHAT IT NOW DOES","n":["<b>THREE LINES OF COPY OUTLIVED WHAT THEY DESCRIBED.</b> The ladder card still read <i>from the pricing workbook, not quoted yet</i> while the board has quoted its last level since v656; the Tiers card on Customers still read <i>quoted nowhere yet</i> though a customer's own price list has read their level since v651; and the board's own heading still called itself <i>one ladder, tapered at the rate the supplier tapers</i>, which is the curve that stopped deciding the ask. All three say what is true now, and the two comments in the master that said the same thing say it too.","<b>AND THE LADDER CARD PRINTED ITS LAST COLUMN TWICE.</b> <i>Ask today</i> was there so the staged ladder could be read against the live board; the board IS the last level now, so the column was the Bronze column under a second name. It is gone, the last level is set in bold as the one the board quotes, and the rows that are not on the board say so, because a size off the board is still priced here. The suite now asserts the head ENDS at the six levels, not merely that it contains them."]},
+
+{"v":"v656","d":"16 Sep 2026","t":"THE BOARD IS THE LADDER: A STRANGER IS QUOTED BRONZE, AND A STATED PRICE DECIDES NOTHING","n":["<b>HIS DECISION OF 15 SEP 2026, OFF THE PRICING WORKBOOK.</b> The ask at every printed size is now the LAST of the five levels, Bronze, the one a new customer starts at, struck on today's COGS by the workbook's own formula. Salt's board rises between RM10 and RM70 a size, from RM130 to RM160 at 1 unit and RM1,230 to RM1,250 at 12.5. Oil's rises further because it was never derived at all: RM130 to RM230 at 10 unit and RM900 to RM2,000 at 100, his five typed prices having been struck in July against a cost that has moved since, with the 50 unit tier sitting RM32.20 UNDER its own floor for a week. Every size on both books now clears break-even.","<b>AND NOT ONE CUSTOMER'S PRICE MOVES WITH IT.</b> Measured over all 50 price lists on the book: every one is unchanged, because a named customer is quoted their own level capped at what they pay, which the board cannot reach. What moves is what a STRANGER is quoted, which is what the board has always been for. Their offers are unchanged too, RM11,265 on salt and RM1,730 on oil.","<b>THREE THINGS RETIRE WITH THE DERIVED ASK.</b> Tier 1's two stated ends, RM60 at half a unit and RM875 at twelve and a half, which were frozen figures where Titanium is now derived on live costs. His five typed oil prices, cleared from the book. And the typing of prices in Set the board, which is the hide list alone now: the drafter refuses a stated price outright, because a phone on an older build can still queue one and a folded figure nothing reads is worse than a refusal. The mechanism stays in the engine for a book with no ladder, and the suite forces one to prove it.","<b>NRV IS TITANIUM, NOT THE ASK.</b> The shelf was valued off the board, so the switch would have lifted the estimated selling price of every unit in stock to what a stranger pays: RM115.78 a unit against RM87.83. IAS 2.6 asks for the price in the ORDINARY COURSE, and the ordinary course is the levels his customers are on, so the basis is the lowest level any of them is quoted. The carrying amount is unchanged at cost either way, RM939.25; what changes is that the lower-of-cost-and-NRV test still means something.","<b>THE CHECKS.</b> A new section of 6 assertions and 6 mutations, each red. Thirteen assertions restated across the oil board, the two-tier rendering, the guest links and the staging check that held the board OFF the ladder, which is now inverted and compares the PRICES rather than the board object: comparing the object passed on the row's NAME alone and stayed green with the ask reverted."]},
 
 {"v":"v655","d":"16 Sep 2026","t":"A CUSTOMER'S OWN RATE IS THE BEST THEY HAVE PAID, AND THEIR TIER IS PROPOSED AT THE SIZES THEY BUY","n":["<b>HIS DECISION OF 16 SEP 2026, OFF THE ORDER BOOK.</b> A sale struck is the best price strikeable with that customer, so the card reads the BEST of their last four priced orders where it read the middle one. The four-order window stands, so a price moved to in July is still the price seen in September and one old high day cannot set a card for good. Measured on the 133 priced salt orders: the rule would have earned RM10,349 over break-even against the RM9,013 they made, and RM9,209 under the middle-rate rule.","<b>AND THE TIER IS READ AT THE SIZES THEY BUY</b>, a unit, so a size a customer never takes cannot decide their level. It was measured across every size on the board, which handed the decision to the biggest rung: adding 80 and 100 unit to oil (v654) moved two customers a level on sizes neither buys. On the book today 24 salt customers and 1 oil customer sit on a different level, their cards rising at 106 sizes and falling at 182, and nobody is quoted above what they have paid.","<b>THE CHECKS.</b> A new section of 4 assertions: the window and the best of it, the tool reading the same four, a proposal that does not move when every rung above 2.5 unit leaves the board, and a card that rises to the best. Ten assertions restated across the statements, the bucket, the proposals and the two card sections. 5 mutations each turn their assertion red."]},
 
@@ -7392,7 +7394,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='16 Sep 2026, 10:06 KL';
+const LAST_UPDATED='16 Sep 2026, 10:37 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -9091,7 +9093,8 @@ function ladderFor(p){const o=LADDER_BY[p||PROD];return o?{...LADDER,...o}:LADDE
    multiples are the tiers' columns, Titanium first; start and step are the
    adjustment the sheet's formulas make a rung; scaled says whether the step grows with the multiple, which
    salt's does and oil's does not; rungs are the sheet's rows, oil gaining 80 and 100 unit. fiveTiers in the
-   ENGINE block reads it. Drawn beside the board on the Pricing page and quoted nowhere yet. */
+   ENGINE block reads it. Drawn on the Pricing page, and QUOTED: since v656 the board's ask is its last
+   level, and since v651 a customer's own price list is the level they hold. */
 const TIER_RULE={
   salt:{multiples:[1,1.375,1.75,2.125,2.5], start:1, step:0.05, scaled:true, rungs:[0.5,1,1.5,2,2.5,3,3.5,4,4.5,5,6.25,12.5]},
   oil:{multiples:[1,1.375,1.75,2.125,2.5], start:0.35, step:0.05, scaled:false, rungs:[10,20,30,40,50,80,100]}
@@ -15476,17 +15479,22 @@ function fiveTiersNow(){
 /* v641, STAGE 1, NAMED AT v642: AMBASSADOR AND THE FIVE TIERS BESIDE TODAY'S BOARD. One row a rung: the
    floor, the six levels, and today's ask where today's board quotes the size, so the two read against each
    other on live costs before anything quotes the new one. */
+/* v657: THE CARD IS THE BOARD'S OWN LEVELS, and says so. It was built at v641 to sit BESIDE the board
+   while the ladder was staged, with an "Ask today" column so the two could be read against each other.
+   The board is the ladder since v656, so that column was the Bronze column printed twice under two
+   names; it is gone, and the sizes the board prints are marked on the rows instead, because a size off
+   the board is still priced here and a reader should be able to tell which is which. */
 function fiveTierCard(){
   const rows=fiveTiersNow(); if(!rows)return '';
   const onBoard=q=>sizesFor(PROD).some(s=>Math.abs(s-q)<0.009);
-  const head=`<tr><th class="l">Size</th><th>Floor</th>${TIER_NAMES.map(n=>`<th>${n}</th>`).join('')}<th>Ask today</th></tr>`;
-  const body=rows.map(r=>{let a=null;if(onBoard(r.q)){try{a=priceLadder(r.q).ask.total;}catch(e){}}
-    return `<tr><td class="l">${units(r.q)}</td><td class="mono" style="color:var(--dim)">${fmt0(r.floor)}</td>`
-      +r.prices.map(p=>`<td class="mono">${fmt0(p)}</td>`).join('')
-      +`<td class="mono" style="color:var(--dim)">${a!=null?fmt0(a):'&mdash;'}</td></tr>`;}).join('');
-  return `<div class="card" style="margin-top:14px"><div class="cardh">Ambassador and the five tiers <span class="sub">from the pricing workbook, not quoted yet</span></div>
+  const head=`<tr><th class="l">Size</th><th>Floor</th>${TIER_NAMES.map(n=>`<th>${n}</th>`).join('')}</tr>`;
+  const body=rows.map(r=>{const on=onBoard(r.q);
+    return `<tr><td class="l">${units(r.q)}${on?'':'<div class="iref">off the board</div>'}</td><td class="mono" style="color:var(--dim)">${fmt0(r.floor)}</td>`
+      +r.prices.map((p,i)=>`<td class="mono"${i===TIER_NAMES.length-1?' style="font-weight:600"':''}>${fmt0(p)}</td>`).join('')
+      +`</tr>`;}).join('');
+  return `<div class="card" style="margin-top:14px"><div class="cardh">Ambassador and the five tiers <span class="sub">every level the desk quotes, on today&rsquo;s cost</span></div>
     <div class="tscroll"><table class="fintab fivetier"><thead>${head}</thead><tbody>${body}</tbody></table></div>
-    <div class="insight">Ambassador pays the floor and a new customer starts at Bronze, with each level at least ${fmt0(10)} over the one below.</div></div>`;
+    <div class="insight">Ambassador pays the floor, each level sits at least ${fmt0(10)} over the one below, and ${TIER_NAMES[TIER_NAMES.length-1]} is the board: it is what a stranger is quoted and where a new customer starts.</div></div>`;
 }
 /* ============ v643, HIS DECISIONS OF 15 SEP 2026: EACH CUSTOMER'S TIER, BEFORE ANY QUOTE READS IT ============
    A tier for each product since v646 (his instruction of 15 Sep 2026): a customer can hold Gold on salt and Silver on oil.
@@ -15494,7 +15502,8 @@ function fiveTierCard(){
    approved and folded, so it moves only on his word. A product with none held is PROPOSED the tier nearest what they pay
    for it: the level whose prices sit closest to their own rate (pbOwnRate) across that book's board sizes. Never
    Ambassador, which is his word alone; and a product they have never bought is proposed nothing and reads not set until he
-   sets it. QUOTED NOWHERE YET: nothing that prices reads TIER_OF. */
+   sets it. QUOTED EVERYWHERE SINCE v651 AND v652: the customer's price list, the printed board and every
+   quote the desk makes to a named customer read TIER_OF through cardQuote. */
 function tierBoards(){
   const keep=PROD,out={};
   try{PROD_IDS.forEach(p=>{if(!TIER_RULE[p])return;PROD=p;recompute();out[p]=fiveTiersNow();});}
@@ -15557,7 +15566,7 @@ function tierCard(){
     /* one line a product, so a dropdown keeps the width of its longest level on a phone rather than sharing a row with the others */
     return `<div style="display:flex;align-items:center;gap:8px;margin:3px 0"><div style="min-width:5em;line-height:1.25">${PRODUCTS[p].name}<br><span class="iref">${state}</span></div><select id="tierSel_${id}_${p}" aria-label="${PRODUCTS[p].name} tier for ${codeOf(id)}" style="min-height:var(--tap);width:auto"><option value=""${shown?'':' selected'}>Not set</option>${TIER_NAMES.map(n=>`<option${n===shown?' selected':''}>${n}</option>`).join('')}</select></div>`;};
   const body=ids.map(id=>`<tr><td class="l mono">${ID(id)}<br><button class="vbtn" style="min-height:var(--tap);margin-top:6px" onclick="tierSet('${id}')">Set</button></td><td class="l">${PROD_IDS.map(p=>cell(id,p)).join('')}</td></tr>`).join('');
-  return `<div class="card"><div class="cardh">Tiers <span class="sub">one for each product, quoted nowhere yet</span></div>
+  return `<div class="card"><div class="cardh">Tiers <span class="sub">one for each product; it is what they are quoted</span></div>
     <div class="tscroll"><table class="tiertab"><thead><tr><th class="l">Customer</th><th class="l">Tier for each product</th></tr></thead><tbody>${body}</tbody></table></div>
     ${open?`<button class="vbtn" style="min-height:var(--tap);margin-top:8px" onclick="tierAcceptAll()">Accept ${open} proposal${open===1?'':'s'}</button>`:''}
     <div class="insight">${held} of ${ids.length*PROD_IDS.length} product tiers are held; a tier moves only when you approve it, and a product a customer has never bought is proposed nothing until you set it.</div></div>`;
@@ -18380,7 +18389,8 @@ function tabPricing(){
   </div>
 
   <h2 style="margin-top:18px">The board <span class="sub" style="font-weight:400">${(()=>{let t1=null;try{t1=priceLadder(shownSizes(PROD)[0]).tier1;}catch(e){}
-    return t1?'two tiers: Tier 1 stated at its ends, Tier 2 derived from cost':'one ladder, tapered at the rate the supplier tapers';})()}</span> <span class="rule"></span></h2>
+    if(t1)return 'two tiers: Tier 1 stated at its ends, Tier 2 derived from cost';
+    return TIER_RULE[PROD]?`the ladder&rsquo;s ${TIER_NAMES[TIER_NAMES.length-1]}, what a stranger is quoted`:'one ladder, tapered at the rate the supplier tapers';})()}</span> <span class="rule"></span></h2>
   ${(()=>{const tb=tierBoard();
     /* ============ THE ASK SAYS WHICH FLOOR IT CLEARS (v381) ============
        THE BOARD HAS BEEN PRINTING ASKS THAT DO NOT CLEAR THEIR OWN FLOOR, IN BLACK, WITH

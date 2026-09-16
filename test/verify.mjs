@@ -11798,8 +11798,12 @@ section("v641: the five tiers are the floor and the workbook's four columns, gua
       + "var num=function(c){var m=c.textContent.replace(/,/g,'').match(/[0-9]+/);return m?+m[0]:null;};"
       + "return {head:[].map.call(t.rows[0].cells,function(c){return c.textContent.trim();}),names:TIER_NAMES,cells:[].map.call(t.tBodies[0].rows,function(r){return [].slice.call(r.cells,2,2+TIER_NAMES.length).map(num);}),"
       + "want:fiveTiersNow().map(function(g){return g.prices;})};})()"));
-    ok(cards.every((c) => c && JSON.stringify(c.head.slice(2, 2 + c.names.length)) === JSON.stringify(c.names) && c.cells.length > 4 && JSON.stringify(c.cells) === JSON.stringify(c.want)),
-      "the Pricing page draws every level for each book, headed by its name, every cell the engine's price " + JSON.stringify(cards.map((c) => c && c.head)));
+    /* v657: AND THE HEAD ENDS THERE. It carried an "Ask today" column while the ladder was staged, so the two could be
+       read against each other; the board IS the last level since v656, so that column printed the Bronze column twice
+       under two names. The length is asserted, not just the slice, or the duplicate could come back unseen. */
+    ok(cards.every((c) => c && JSON.stringify(c.head.slice(2, 2 + c.names.length)) === JSON.stringify(c.names) && c.cells.length > 4 && JSON.stringify(c.cells) === JSON.stringify(c.want)
+      && c.head.length === 2 + c.names.length),
+      "the Pricing page draws every level for each book, headed by its name and nothing after it, every cell the engine's price " + JSON.stringify(cards.map((c) => c && c.head)));
     /* RESTATED AT v656, AND INVERTED. It held the staging: the policy carried no tier rule and adding one moved no cell of
        the board, which was the whole of "quoted nowhere yet". The board IS the ladder now, so the same two facts are asserted
        the other way round, and the second one is the load-bearing half: strip the rule out of the policy and the board must
