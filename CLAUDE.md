@@ -50,17 +50,19 @@ decision of 11 Aug 2026, no sign-in. The fold routine is `docs/CLOUD_FOLD.md`; s
      leakage**, one floor per size, the goods after the leak, with no delivery and no time in
      it. A sale carries `delivery` (inside its total) and a lot `freight` (beside it), typed
      per row; `txGoods` strikes every rate on the goods.
-   - **Two tiers on the ladder.** Tier 2 is the derived ask, a margin on the floor, and is
-     **row zero of `ladderRow`, which is load bearing**: phone, mirror and suite read `[0]`.
-     Tier 1 is stated at its ends in `LADDER.tier1`. A one-tier book needs `tier1:null` in
-     `LADDER_BY` **as an entry, not an omission**, or `ladderFor` hands it salt's. Board prints
-     cheapest first; the payload does not. **Nothing clamps the two together and nothing
-     should**: `tier1.over` flags the row, and a stated price is quoted anyway.
-   - **Ambassador and five tiers** (Titanium, Platinum, Gold, Silver, Bronze) are decided and
-     staged (his decisions of 14 and 15 Sep 2026, off his pricing workbook): `TIER_RULE` and
-     `TIER_NAMES` in the master, `fiveTiers` in the engine. **Each customer's tier comes before
-     the switch.** **The board, the anonymous quote and the drafter's flags do not read the ladder
-     yet**: `pxPolicy` carries no `tierRule`, and the suite holds it so; a named customer's quotes do.
+   - **THE BOARD IS THE LADDER** (v656, his decision of 15 Sep 2026). A stranger is quoted the LAST
+     level, Bronze, the one a new customer starts at: `pxPolicy` carries `tierRule`, `priceLadder`
+     takes the ask from it and keeps the old derived figure beside it as `derived`, and every reader
+     downstream follows from that one line. **Row zero of `ladderRow` is still the ask and is still
+     load bearing**: phone, mirror and suite read `[0]`, so the code stays `T2` while the NAME is the
+     level's. **Retired with it:** Tier 1's stated ends (`LADDER.tier1` is null; the mechanism stays
+     in the engine for a book with no ladder), and the typing of prices in Set the board, which is
+     now the hide list alone. `PRICE_SET` prices are cleared and the drafter refuses a new one.
+   - **Ambassador and five tiers** (Titanium, Platinum, Gold, Silver, Bronze), his decisions of 14 and
+     15 Sep 2026 off his pricing workbook: `TIER_RULE` and `TIER_NAMES` in the master, `fiveTiers` in
+     the engine. **NRV is Titanium**, the lowest level any customer is quoted, never the ask (v656):
+     reading it off Bronze would value the shelf at what a stranger pays and the IAS 2.9 test could
+     never bind. A guest link is a level too: the cheaper one is Titanium, the dearer Bronze.
    - **Each customer holds a tier for each product** (his instruction, 15 Sep 2026): `TIER_OF`
      on the book, code to product to level name, folded as `tierset`, a null clearing a product.
      **A customer's price is their tier, never above what they pay** (his decisions of 15 Sep

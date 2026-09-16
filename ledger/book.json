@@ -463,13 +463,7 @@
       "hide": []
     },
     "oil": {
-      "prices": {
-        "10": 130,
-        "20": 240,
-        "30": 330,
-        "40": 400,
-        "50": 450
-      },
+      "prices": {},
       "hide": []
     }
   },
@@ -483,6 +477,7 @@
   },
   "NOTES": {
     "PRICE_SET": [
+      "RETIRED AT v656 on 2026-09-16, his decision of 15 Sep off the pricing workbook: the board is the ladder, so a stated price no longer decides it and oil's five are cleared rather than left unread. The stranger's ask on oil moves from his RM130, 240, 330, 400 and 450 to Bronze at RM230, 440, 650, 850 and 1,040, with 80 and 100 unit at RM1,640 and RM2,000. The old five sat a hair over break-even (the 50 unit tier read 0.93x, RM32.20 UNDER its floor) because they were typed in July against a cost that has moved since; the ladder is struck on today's COGS and moves with it. No customer's price moves with this: every named customer is quoted their own tier capped at what they pay, and a stranger has no history to cap against. The hide list is untouched and still takes a size off the board.",
       "HIS INSTRUCTION, 09 SEP 2026, AFTER THE v551 OIL COUNT: \"The desk quotes to 450, by lowering margin, then for others, quote proportionately.\" The count read a 23.08 per cent leak from his own figures and lifted the 50 unit oil floor to RM482.20, above the RM450 he had stated, and v353 had the desk lift any stated price that sat under its floor. From v552 it lifts a DERIVED ask only: a price he has set is quoted as set, the gap to break-even is reported beside it rather than hidden, and the 50 unit tier reads 0.93x with RM32.20 under. His other four oil tiers are untouched and already step the margin down proportionately into it: 1.35x, 1.24x, 1.14x, 1.04x, 0.93x. Recorded as his decision, not an error, and the drafter will flag a 50 unit oil sale as under floor for the same reason the board does."
     ],
     "SOURCING_PLAN": [

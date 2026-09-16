@@ -19,6 +19,8 @@
  *      boardSizes  the sizes the board quotes, for walking an off-board size against them
  *      stated      prices HE has set, by size, overriding the derived ask (PRICE_SET[product])
  *      tier1       the second level's two stated ends, by size; absent means this book has one tier
+ *      tierRule    the five-tier rule, {multiples,start,step,scaled,rungs}; a book with one IS its
+ *                  ladder, and the ask is the last level, Bronze (v656)
  * and costStack() takes the input record the desk's pxInputs() gathers (see there).
  *
  * PORTED VERBATIM. The bodies are the desk's, with the globals replaced by C, P and I. Every
@@ -414,6 +416,23 @@ function priceLadder(q,C,P,opts){
      cost of the size, to the ringgit and at every size on both books, so this one multiple is the
      margin the board is actually taking: over 1.00x earns, 1.00x earns nothing, under 1.00x is a
      price he has stated below break-even and `under` says by how much. */
+  /* ============ v656, HIS DECISION OF 15 SEP 2026: THE BOARD IS THE LADDER ============
+     A stranger is quoted BRONZE, the level a new customer starts at, so the ask at every size is
+     the last of the five tiers rather than a margin derived on the floor. Everything downstream
+     follows from this one line, because everything downstream reads this ask: ladderRow's row
+     zero, the board, the printed card, the guest links, enginePrice and every margin struck on
+     the board. The derived figure is kept beside it as `derived`, with its own floorX and under,
+     because the Pricing page shows the two against each other and a reader is owed what the board
+     used to ask. A book with NO tierRule keeps the derived ask: it has no ladder to be. */
+  {const t=P.tierRule?fiveTierAt(q,C,P):null;
+   const b=(t&&t.prices&&t.prices.length)?t.prices[t.prices.length-1]:null;
+   if(b!=null&&isFinite(b)){
+     out.ask.floorX=+(out.ask.total/Math.max(0.01,fl)).toFixed(3);
+     out.ask.under=+Math.max(0,fl-out.ask.total).toFixed(2);
+     out.derived=out.ask;
+     out.ask={total:b,rate:+(b/q).toFixed(2),markup:+((b/cogs-1)*100).toFixed(2),
+              markupX:+(b/cogs-1).toFixed(4),margin:+(((b-lot)/b)*100).toFixed(1),
+              rung:t.rung,fromLadder:true};}}
   out.ask.floorX=+(out.ask.total/Math.max(0.01,fl)).toFixed(3);
   out.ask.under=+Math.max(0,fl-out.ask.total).toFixed(2);
   /* v564: TIER 1 BESIDE THE ASK, on the same cost stack and the same floor, so every surface reads
@@ -448,8 +467,15 @@ function priceLadder(q,C,P,opts){
 function ladderRow(sizes,C,P){
   const col=(k)=>sizes.map(q=>{try{const L=priceLadder(q,C,P);
     return L&&L[k]&&L[k].total!=null?+L[k].total:null;}catch(e){return null;}});
+  /* v656: THE ROW SAYS WHAT IT IS. With a ladder the ask is Bronze, the level a new customer starts
+     at, and a row still headed "Tier 2" would print that name over the ladder's prices on the board,
+     the printed card and a guest link alike. The CODE is untouched: row zero is read by code and by
+     index across the phone, the mirror and the suite, and renaming it would break every one of them
+     to say the same thing the name already says. */
+  const laddered=!!P.tierRule;
   const rows=[{
-    code:'T2', name:'Tier 2', dflt:true, who:'the default ask, graded by size, tapered as the supplier tapers',
+    code:'T2', name:laddered?'Bronze':'Tier 2', dflt:true,
+    who:laddered?'the level a new customer starts at, the last of the five':'the default ask, graded by size, tapered as the supplier tapers',
     prices:col('ask')
   }];
   /* v566: GATED ON tier1Anchors, NOT ON THE RAW FIELD. priceLadder decides whether a book HAS a
@@ -457,7 +483,11 @@ function ladderRow(sizes,C,P){
      was truthy. A book stating one end satisfied the second and not the first, so the payload
      carried a row NAMED "Tier 1" whose every price was null, beside a desk saying the tier is not
      stated on this book. Two gates on one fact is one gate too many. */
-  if(tier1Anchors(P))rows.push({
+  /* v656: AND THE STATED SECOND TIER RETIRES WITH THE DERIVED ASK. Tier 1 was the trade level,
+     stated at its two ends and interpolated between them; the ladder names five levels on live
+     costs and each customer holds one, so a second hand-typed level is a second thing that prices.
+     The machinery stays for a book with no ladder, and salt's two ends are gone from LADDER. */
+  if(!laddered&&tier1Anchors(P))rows.push({
     code:'T1', name:'Tier 1', dflt:false, who:'stated at its two ends, the rate interpolated between them',
     prices:col('tier1')
   });

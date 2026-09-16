@@ -157,10 +157,25 @@ export function boardList(tier, book, pricing, now) {
        one-tier case, oil's, so there is one rule here rather than two. */
     const usable = (r) => r && Array.isArray(r.prices)
       && r.prices.some((x) => x != null && Number.isFinite(+x));
-    const rows = PRICING_ENGINE.ladderRow(sizes, C, P);
-    const asked = rows.find((r) => r.code === want);
-    const row = usable(asked) ? asked : rows.find(usable);
-    if (!row) continue;                        // nothing on this product is priceable; leave it off
+    /* ============ v656: A GUEST LINK IS A LEVEL OF THE LADDER ============
+       The board is the ladder, so both codes would otherwise resolve to the one row and the two links
+       would serve the same prices under two names. They are mapped onto the ladder instead, and the
+       mapping is the one the codes already meant: tier 2 is the ask, which is the last level, the one
+       a new customer starts at; tier 1 was the cheaper trade board, which is now the FIRST of the five,
+       Titanium. A book with no ladder still falls back to ladderRow and still reports `fellBack`. */
+    const rule = (P.tierRule && Array.isArray(P.tierRule.multiples)) ? P.tierRule : null;
+    let row = null;
+    if (rule) {
+      const grid = PRICING_ENGINE.fiveTiers(sizes, C, P);
+      const k = tier === 1 ? 1 : (rule.multiples.length);      // 0 is Ambassador, the floor; never a guest's
+      if (grid && grid.length) row = { code: want, name: null, prices: grid.map((g) => g.prices[k]) };
+    }
+    if (!usable(row)) {
+      const rows = PRICING_ENGINE.ladderRow(sizes, C, P);
+      const asked = rows.find((r) => r.code === want);
+      row = usable(asked) ? asked : rows.find(usable);
+    }
+    if (!usable(row)) continue;                // nothing on this product is priceable; leave it off
     out.products.push({
       product: p,
       name: (book.PRODUCTS && book.PRODUCTS[p] && book.PRODUCTS[p].name) || p,

@@ -1147,9 +1147,12 @@ export function draftRow(entry, book) {
     const product = String(pay.product || "salt");
     const prices = (pay.prices && typeof pay.prices === "object") ? pay.prices : {};
     const hide = Array.isArray(pay.hide) ? pay.hide.map(Number).filter((x) => x > 0) : [];
-    for (const k of Object.keys(prices)) {
-      if (!(+k > 0)) return { skip: `"${k}" is not a size` };
-      if (!(+prices[k] > 0)) return { skip: `the price set at ${k} unit is not a figure` };
+    /* v656: A STATED PRICE IS NOT FOLDED ANY MORE. The board is the ladder, so `stated` cannot reach
+       the ask and a row folding one would write a figure nothing reads, on a key the desk still
+       shows. A phone left on an older build can still queue one, which is exactly why this refuses
+       here rather than trusting the control to be gone. */
+    if (Object.keys(prices).length) {
+      return { skip: "the board is the ladder since v656, so a stated price is not folded: set the customer's tier instead" };
     }
     if (!Object.keys(prices).length && !hide.length && !pay.clearing) {
       return { skip: "the edit sets no price and hides no size, so there is nothing to fold" };
@@ -1173,10 +1176,10 @@ export function draftRow(entry, book) {
       collection: "priceset",
       row: { product, prices, hide },
       flags,
-      reasoning: `Sets the board for ${product}${bits.length ? `: ${bits.join(", ")}` : ""}${hide.length ? `, hiding ${hide.join(", ")} unit` : ""}.`
-        + " It moves no stock, no cash and no ledger row: it states what the board asks."
-        + " A stated price replaces the markup and nothing else, so the rate-may-not-rise walk and the"
-        + " floor guard both still run on it, and setting one price moves every size above it.",
+      reasoning: `Sets which sizes the board prints for ${product}${hide.length ? `, hiding ${hide.join(", ")} unit` : ""}.`
+        + " It moves no stock, no cash and no ledger row, and since v656 it sets no price either:"
+        + " the ask at every size is the ladder's last level. A size taken off stays priceable at the"
+        + " counter and off a quote; it simply stops being printed.",
     };
   }
   /* v584, HIS INSTRUCTION OF 11 SEP 2026: A REDEMPTION GOES THROUGH APPROVE LIKE EVERY OTHER LEDGER WRITE.

@@ -300,8 +300,12 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
 - **Guest links `/g/<id>`** (v566) are minted inside `/all`, pinned to Tier 1 or Tier 2 and
   labelled: a board is what he prints and hands to strangers, and the link exists to say WHICH
   stranger. `stmt/refs.js` mints, lists, revokes and counts opens; `board:1`/`board:2` are
-  written by the publish from `boardList`, which takes one row off the engine's `ladderRow` and
-  prices nothing itself.
+  written by the publish from `boardList`, which prices nothing itself. **Since v656 the two are
+  LEVELS of the ladder**, because the board is the ladder and both codes would otherwise resolve
+  to the one row and serve the same prices under two names: tier 2 is the ask, the last level
+  (Bronze), and tier 1 is the first (Titanium), which is what the cheaper trade board was. A book
+  with no `tierRule` still falls back to `ladderRow` and still reports `fellBack`. The level's
+  NAME is not on the guest page, for the same reason it is not on a customer's.
 - **Print a board** (v564) saves HTML, PDF or JPG: crystal, sizes, username, then a QR to
   `<site>/?u=<username>`. The publish writes KV `stmt-site` and keyed `GET /stmt-users` returns
   it, so the laptop has no username and no QR.

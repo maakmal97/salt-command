@@ -2922,28 +2922,28 @@ section("Boundaries — the caps and the trigger are per book (round 5, his call
   try { w.close(); } catch (e) { }
 }
 
-section("Oil — pinned at both ends and lawful between (round 5, his call 5)");
+section("Oil — the ladder at every size, lawful between (round 5 his call 5, restated at v656)");
 {
-  /* His stated board, 29 Aug in chat: 13, 12, 11, 10 and 9 ringgit a unit down the five
-     sizes, so 130, 240, 330, 400 and 450, with the ends pinned against a 50-unit buy of
-     RM350 on the quote. Every size is stated, none derived. The floor checks read TODAY'S
-     cost basis on purpose: if a dear enough lot ever lifts the 50 unit floor above RM450,
-     or ties two rates, the right outcome is a red line here saying his stated price needs
-     his decision, not a board that quietly moves it. */
+  /* HIS STATED BOARD IS RETIRED. It was 13, 12, 11, 10 and 9 ringgit a unit down the five sizes he
+     named on 29 Aug, so 130, 240, 330, 400 and 450, every size stated and none derived. His decision
+     of 15 Sep off the pricing workbook made the board the ladder, so those five are cleared from the
+     book at v656 and oil is quoted the last of its five levels at every size, on live costs. What is
+     asserted is therefore the LAW the board keeps rather than the figures, which the cost basis
+     moves: each size clears its own floor, no size asks more a unit than the size below it, and the
+     ladder reaches it, not a price anybody typed. */
   const book = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
-  ok(JSON.stringify(book.PRICE_SET.oil.prices) ===
-    JSON.stringify({ "10": 130, "20": 240, "30": 330, "40": 400, "50": 450 }),
-    "the book records his stated oil board, 13 down to 9 ringgit a unit");
+  ok(book.PRICE_SET && book.PRICE_SET.oil && !Object.keys(book.PRICE_SET.oil.prices || {}).length,
+    "the book records no stated oil board any more: his five typed prices retired with the derived ask");
   const { openMaster } = await import("../tools/payload.mjs");
   const { w } = await openMaster();
   const read = (expr) => JSON.parse(w.eval("JSON.stringify(" + expr + ")"));
   w.eval("setProd('oil');recompute();");
-  const rows = read("sizesFor('oil').map(q=>({q,ask:priceLadder(q).ask.total,fl:floorTotal(q)}))");
+  const rows = read("sizesFor('oil').map(q=>({q,ask:priceLadder(q).ask.total,fl:floorTotal(q),lad:!!priceLadder(q).ask.fromLadder,last:(function(){var r=PRICING_ENGINE.fiveTierAt(q,pxCost(),pxPolicy());return r?r.prices[r.prices.length-1]:null;})()}))");
   const a10 = rows.find((r) => r.q === 10), a50 = rows.find((r) => r.q === 50);
-  ok(a10.ask === 130, "the board asks his RM130 at 10");
-  ok(a50.ask === 450, "and his RM450 at 50, quoted whether or not it clears its floor (v552)");
-  ok(JSON.stringify(rows.slice(0, 5).map((r) => r.ask)) === JSON.stringify([130, 240, 330, 400, 450]),
-    "the five sizes he stated are his board: 130, 240, 330, 400, 450");
+  ok(rows.every((r) => r.lad && r.ask === r.last), "every size on oil's board is the ladder's last level: " + JSON.stringify(rows.map((r) => [r.q, r.ask])));
+  ok(rows.every((r) => r.ask >= r.fl - 0.009), "and each clears its own floor: " + JSON.stringify(rows.map((r) => [r.q, r.ask, r.fl])));
+  ok(rows.every((r, i) => i === 0 || r.ask / r.q <= rows[i - 1].ask / rows[i - 1].q + 1e-9),
+    "and no size asks more a unit than the size below it: " + JSON.stringify(rows.map((r) => +(r.ask / r.q).toFixed(2))));
   /* HIS DECISION OF 15 SEP 2026: 80 AND 100 UNIT JOIN, as his workbook's oil board carries them. They are derived beside the
      five he stated, so what is checked is the law they keep, never a figure the cost basis moves. */
   const tail = rows.slice(5);
@@ -2956,12 +2956,15 @@ section("Oil — pinned at both ends and lawful between (round 5, his call 5)");
      longer that RM450 clears its floor; it is that the desk QUOTES what he stated and NAMES the gap,
      which is the thing that must never silently stop being true. */
   const under50 = read("priceLadder(50).ask.under"), fx50 = read("priceLadder(50).ask.floorX");
-  ok(a50.fl > 450 + 0.009 ? under50 > 0.009 : under50 === 0,
-    `where his stated ask sits under break-even the desk says by how much (floor ${a50.fl}, under RM${under50})`);
-  ok(Math.abs(fx50 - +(450 / a50.fl).toFixed(3)) < 0.0011,
+  ok(a50.fl > a50.ask + 0.009 ? under50 > 0.009 : under50 === 0,
+    `where the ask sits under break-even the desk says by how much (floor ${a50.fl}, ask ${a50.ask}, under RM${under50})`);
+  ok(Math.abs(fx50 - +(a50.ask / a50.fl).toFixed(3)) < 0.0011,
     `and reports it as a multiple of break-even (${fx50}x)`);
-  ok(a50.fl <= 450 + 1e-9 || fx50 < 1,
-    "and a stated ask below break-even reads under 1.00x rather than above it");
+  /* RESTATED AT v656 AND STILL THE SAME GUARD. The 50 unit tier read 0.93x for a week because he had
+     stated RM450 under a floor of RM482.20 and the desk quoted it anyway, naming the gap. The ladder
+     cannot land there: Ambassador IS the floor and every level sits a ten over the one below, so this
+     now asserts the clearance rather than the disclosure, and the disclosure is asserted above. */
+  ok(fx50 > 1 && under50 === 0, `and the ladder's ask clears break-even rather than needing the disclosure (${fx50}x)`);
   /* THE GUARD IS NARROWED, NOT REMOVED, and this is the pair that proves it. Same cost stack, same
      size, same policy: the only difference is whether the price was STATED. A stated one stands and
      names its gap; a derived one is still lifted clear of the floor, which is the whole of what
@@ -3013,13 +3016,16 @@ section("Oil — pinned at both ends and lawful between (round 5, his call 5)");
      first cut of this check used and it went red on the book it was right about. One assertion per
      shape, and the COUNT of each shape is asserted too, so a tier1 silently inherited by oil (five
      columns where there should be four) fails here rather than on the phone. */
+  /* RESTATED AT v656: BOTH BOOKS CARRY ONE COLUMN NOW. Tier 1 was salt's alone and retired with the
+     derived ask, so the shape that was salt's two-tier board no longer exists on either, and the
+     single column is headed by the LEVEL a stranger is quoted rather than the word Ask. The count of
+     each shape is still asserted, so a second column reappearing fails here rather than on the phone. */
   const twoTier = heads.filter((h) => h.length === 5), oneTier = heads.filter((h) => h.length === 4);
-  ok(twoTier.length === 1 && oneTier.length === 1 && twoTier.length + oneTier.length === heads.length,
-    `one book carries two tiers and one carries one (${heads.map((h) => h.length + " cols").join(", ")})`);
-  ok(twoTier.every((h) => /^Tier 1/.test(h[3]) && /^Tier 2/.test(h[4])),
-    `the two-tier board ends in Tier 1 then Tier 2, cheapest first (${twoTier.map((h) => h[3] + " | " + h[4]).join(" / ")})`);
-  ok(oneTier.every((h) => /^Ask/.test(h[3])),
-    `and a book with no second tier still ends in Ask (${oneTier.map((h) => h[3]).join(" / ")})`);
+  ok(twoTier.length === 0 && oneTier.length === 2 && oneTier.length === heads.length,
+    `both books carry one tier column (${heads.map((h) => h.length + " cols").join(", ")})`);
+  const lastLevel = String(w.eval("TIER_NAMES[TIER_NAMES.length-1]"));
+  ok(oneTier.every((h) => h[3].indexOf(lastLevel) === 0),
+    `and each board's one column is headed ${lastLevel}, the level a stranger is quoted (${oneTier.map((h) => h[3]).join(" / ")})`);
   ok(heads.every((h) => !h.some((c) => /^Margin/.test(c))), "and no column on the board is headed Margin any more");
   ok(heads.every((h) => !h.some((c) => /^Markup/.test(c))), "and the Markup column is gone from the head, because it moved into the cells");
   {
@@ -3032,8 +3038,8 @@ section("Oil — pinned at both ends and lawful between (round 5, his call 5)");
     const boardTx = String(w.eval(bd + ".textContent"));
     const nRows = Number(w.eval(bd + ".rows.length")) - 1;
     const mult = boardTx.match(/[0-9]+\.[0-9]{2}x eff\./g) || [];
-    ok(nRows > 1 && mult.length === nRows * 2,
-      `every cell on both tiers carries the multiple and says it is of effective cost (${mult.length} over ${nRows} sizes)`);
+    ok(nRows > 1 && mult.length === nRows,
+      `every cell of the one tier carries the multiple and says it is of effective cost (${mult.length} over ${nRows} sizes)`);
     ok(!/[0-9]x markup/i.test(boardTx), "and nowhere on the board is the multiple called a markup without its basis");
   }
   /* ============ v564: TIER 1 IS HIS TWO PRICES, PROVED ON THE BOARD AND IN THE ENGINE ============
@@ -3049,13 +3055,19 @@ section("Oil — pinned at both ends and lawful between (round 5, his call 5)");
        above reads each book's board in turn since v625, when the Price view began drawing the book in view only. */
     const keepProd = String(w.eval("PROD"));
     w.eval("setProd('salt');recompute();");
+    /* RESTATED AT v656. His two ends, RM60 at half a unit and RM875 at twelve and a half, were the
+       whole of Tier 1, and the engine took them verbatim BECAUSE RM875 is not a multiple of ten and
+       a derived curve could only ever print RM880. The ladder replaced the level: Titanium is derived
+       on live costs at both ends and moves with the cost of salt, which his two frozen figures could
+       not. So the assertion is that the ends are GONE from the policy and from the engine, and that
+       the mechanism that read them is still there for a book with no ladder. */
     const P1 = JSON.parse(w.eval("JSON.stringify(pxPolicy())"));
-    ok(P1.tier1 && +P1.tier1["0.5"] === 60 && +P1.tier1["12.5"] === 875,
-      "salt's policy carries his two Tier 1 ends, 0.5 unit at RM60 and 12.5 at RM875");
+    ok(P1.tier1 == null, "salt's policy carries no stated Tier 1 ends any more: " + JSON.stringify(P1.tier1));
     const L05 = JSON.parse(w.eval("JSON.stringify(priceLadder(0.5))"));
     const L125 = JSON.parse(w.eval("JSON.stringify(priceLadder(12.5))"));
-    ok(L05.tier1 && L05.tier1.total === 60 && L125.tier1 && L125.tier1.total === 875,
-      `and the engine prints them verbatim, not rounded up to the ten (${L05.tier1 && L05.tier1.total} and ${L125.tier1 && L125.tier1.total})`);
+    const kept = JSON.parse(w.eval("JSON.stringify(PRICING_ENGINE.tier1Ask(0.5,pxCost(),Object.assign({},pxPolicy(),{tier1:{0.5:60,12.5:875}})))"));
+    ok(L05.tier1 == null && L125.tier1 == null && kept && kept.p === 60,
+      `and the engine prints no second tier, while the mechanism still answers a book that states one (${L05.tier1} and ${L125.tier1}, held ${kept && kept.p})`);
     /* v566: "TIER 2 DOES NOT MOVE" WAS PINNED TO RM70 AND RM1,150, WHICH THE BOOK DERIVES.
        Salt has no stated price, so both come out of today's cost stack: an ordinary lot landing at
        a different rate turns this red while proving nothing, which is the "coupled to live state"
@@ -3069,43 +3081,46 @@ section("Oil — pinned at both ends and lawful between (round 5, his call 5)");
       + " without:PRICING_ENGINE.priceLadder(q,c,p2).ask.total};}))"));
     ok(bothWays.length > 1 && bothWays.every((x) => Math.abs(x.withTier1 - x.without) < 0.009),
       `while TIER 2 DOES NOT MOVE: the ask is the same at all ${bothWays.length} sizes with Tier 1 in the policy and with it stripped out`);
-    ok(L05.tier1.total === 60 && L125.tier1.total === 875 && L05.ask.total > 60 && L125.ask.total > 875,
-      `and his two stated ends sit UNDER the ask they are a tier below (${L05.tier1.total} under ${L05.ask.total}, ${L125.tier1.total} under ${L125.ask.total})`);
-    /* the two-tier board is found by its own five-column head rather than by position, because
-       position depends on which book the view drew first and that is not what is being proved */
+    /* ============ RESTATED AT v656: ONE COLUMN, AND IT IS THE LADDER'S ============
+       Everything from here to the forced walks below proved the LIVE board's Tier 1: that his RM875
+       printed verbatim, that the fourth and fifth columns were the two tiers, and that a swap of the
+       two cells went red. There is one tier column now and no book states a second, so the same
+       three claims are made about the column that exists. The cell-by-cell read is the one that
+       matters and is kept in the same shape: it is the only check that would catch a board printing
+       one level's prices under another's name. */
+    ok(L05.ask.total > 60 && L125.ask.total > 875,
+      `the ask stands above the ends the retired tier stated (${L05.ask.total} over 60, ${L125.ask.total} over 875)`);
     const boardTx = String(w.eval("(function(){var ts=document.querySelectorAll('.sec.on table.pxboard');"
-      + "for(var i=0;i<ts.length;i++)if(ts[i].rows[0].cells.length===5)return ts[i].textContent;return '';})()"));
-    ok(boardTx.indexOf("RM 875") >= 0 && boardTx.indexOf("RM 880") < 0,
-      "the board he reads prints RM 875 and never the RM 880 a rounded curve would give");
-    /* v566: AND EVERY PRINTED CELL IS UNDER THE COLUMN IT BELONGS TO. Everything above reads the
-       HEAD, or the table's whole textContent, so swapping the two tier cells in the row builder
-       left every tier assertion green while the board printed Tier 2's prices under "Tier 1" and
-       Tier 1's under "Tier 2" — the one mistake that would quote a customer the wrong tier, and
-       nothing could see it. Read cell by cell, first figure in each, against the engine. */
+      + "for(var i=0;i<ts.length;i++)if(/^COGS/.test(ts[i].rows[0].cells[1].textContent))return ts[i].textContent;return '';})()"));
+    ok(boardTx.length > 0 && boardTx.indexOf("RM 875") < 0,
+      "and the board he reads no longer prints his RM 875, because the tier it belonged to is gone");
     const cellsBySize = JSON.parse(w.eval("JSON.stringify((function(){"
       + "var ts=document.querySelectorAll('.sec.on table.pxboard'),t=null;"
-      + "for(var i=0;i<ts.length;i++)if(ts[i].rows[0].cells.length===5)t=ts[i];"
+      + "for(var i=0;i<ts.length;i++)if(/^COGS/.test(ts[i].rows[0].cells[1].textContent))t=ts[i];"
       + "if(!t)return null;"
       + "var head=[].map.call(t.rows[0].cells,function(c){return c.textContent.replace(/\\s+/g,' ').trim();});"
       + "var num=function(c){var m=c.textContent.replace(/,/g,'').match(/-?[0-9]+(\\.[0-9]+)?/);return m?+m[0]:null;};"
       + "var rows=[].slice.call(t.tBodies[0].rows).map(function(r){"
-      + "  return {size:r.cells[0].textContent.replace(/\\s+/g,' ').trim(), t1:num(r.cells[3]), t2:num(r.cells[4])};});"
+      + "  return {size:r.cells[0].textContent.replace(/\\s+/g,' ').trim(), ask:num(r.cells[3])};});"
       + "return {head:head, rows:rows};})())"));
     const engineByRow = JSON.parse(w.eval("JSON.stringify(shownSizes('salt').map(function(q){"
-      + "var L=priceLadder(q);return {q:q,t1:L.tier1?L.tier1.total:null,t2:L.ask.total};}))"));
-    ok(cellsBySize && /^Tier 1/.test(cellsBySize.head[3]) && /^Tier 2/.test(cellsBySize.head[4]),
-      `the fourth and fifth columns are headed Tier 1 then Tier 2 (${cellsBySize ? cellsBySize.head.slice(3).join(" | ") : "no board"})`);
+      + "var L=priceLadder(q);return {q:q,ask:L.ask.total};}))"));
+    const lastName = String(w.eval("TIER_NAMES[TIER_NAMES.length-1]"));
+    ok(cellsBySize && cellsBySize.head.length === 4 && cellsBySize.head[3].indexOf(lastName) === 0,
+      `the fourth column is the one tier, headed ${lastName} (${cellsBySize ? cellsBySize.head.slice(3).join(" | ") : "no board"})`);
     {
       const n = Math.min(cellsBySize ? cellsBySize.rows.length : 0, engineByRow.length);
       let placed = n > 0;
-      for (let i = 0; i < n; i++) {
-        if (cellsBySize.rows[i].t1 !== engineByRow[i].t1 || cellsBySize.rows[i].t2 !== engineByRow[i].t2) placed = false;
-      }
-      ok(placed, `and every printed cell is the tier its own column names, at all ${n} sizes: swap the two and this goes red`);
+      for (let i = 0; i < n; i++) if (cellsBySize.rows[i].ask !== engineByRow[i].ask) placed = false;
+      ok(placed, `and every printed cell is the engine's ask for its own size, at all ${n} of them: print any other level here and this goes red`);
     }
-    /* the two laws, over the whole printed tier, and the one relation between the tiers */
+    /* THE TWO LAWS, ON A FORCED PAIR. They were read off the live policy, which no longer states a
+       tier: tier1Walk would answer nothing and all three would pass on an empty array, which is an
+       assertion that cannot fail. The pair is forced here for exactly the reason the forced walks
+       below force theirs, and the mechanism is what is being proved, not the book. */
     const sz = JSON.parse(w.eval("JSON.stringify(shownSizes('salt'))"));
-    const walked = JSON.parse(w.eval("JSON.stringify(PRICING_ENGINE.tier1Walk(" + JSON.stringify(sz) + ", pxCost(), pxPolicy()))"));
+    const POL1 = "Object.assign({},pxPolicy(),{tier1:{0.5:60, 12.5:875}})";
+    const walked = JSON.parse(w.eval("JSON.stringify(PRICING_ENGINE.tier1Walk(" + JSON.stringify(sz) + ", pxCost(), " + POL1 + "))"));
     let fall = true, cheaper = true, clears = true;
     for (let i = 1; i < walked.length; i++) if (walked[i].p / walked[i].q > walked[i - 1].p / walked[i - 1].q + 1e-9) fall = false;
     sz.forEach((q, i) => {
@@ -3113,6 +3128,7 @@ section("Oil — pinned at both ends and lawful between (round 5, his call 5)");
       if (walked[i].p > L.ask.total + 1e-9) cheaper = false;
       if (walked[i].p < L.floor.total - 0.009) clears = false;
     });
+    ok(walked.length === sz.length && walked[0].p === 60, "a book that DOES state two ends is still walked between them: " + JSON.stringify(walked.map((x) => x.p)));
     ok(fall, "Tier 1's rate never rises with size, the same law the ask obeys");
     /* v566: AND THAT ONE CANNOT FAIL ON THESE ANCHORS, SO IT IS NOT THE INSTRUMENT IT LOOKS LIKE.
        His pair falls (RM120 a unit to RM70), so the interpolation is monotone by construction and
@@ -3145,8 +3161,8 @@ section("Oil — pinned at both ends and lawful between (round 5, his call 5)");
       ok(ends.length === 2 && ends[0].rate === 60 && ends[1].rate === 80,
         `while his two stated ends print verbatim through it, the rising one included (${ends.map((e) => e.q + "u at " + e.rate).join(", ")})`);
     }
-    ok(cheaper, "Tier 1 is at or under Tier 2 at every printed size, so the board reads dearer left to right");
-    ok(clears, "and every Tier 1 rung clears break-even on today's cost, so none carries a gap");
+    ok(cheaper, "a stated Tier 1 is at or under the ask at every printed size, so a board carrying both reads dearer left to right");
+    ok(clears, "and every rung of it clears break-even on today's cost, so none carries a gap");
     /* AND A BOOK WITH NO SECOND TIER RETURNS NOTHING RATHER THAN SALT'S. Without the explicit
        tier1:null in LADDER_BY, ladderFor spreads LADDER underneath and oil inherits salt's ends:
        every oil size clamps to 12.5, the rate lands at RM70 a unit, and ten units of oil that
@@ -3156,7 +3172,10 @@ section("Oil — pinned at both ends and lawful between (round 5, his call 5)");
     const Loil = JSON.parse(w.eval("JSON.stringify(priceLadder(10))"));
     ok(!Poil.tier1 && Loil.tier1 === null,
       "oil declares no Tier 1 and is handed none, rather than inheriting salt's RM120 a unit");
-    ok(Loil.ask.total === 130, `and oil's ask is untouched at RM130 for its 10 unit minimum (${Loil.ask.total})`);
+    /* v656: the figure was RM130, which was a price he had typed. It is the ladder's last level now, so what is
+       asserted is that it IS that level rather than any particular ringgit the cost basis moves. */
+    const oilLast = JSON.parse(w.eval("JSON.stringify((function(){var r=PRICING_ENGINE.fiveTierAt(10,pxCost(),pxPolicy());return r?r.prices[r.prices.length-1]:null;})())"));
+    ok(Loil.ask.total === oilLast && Loil.ask.fromLadder, `and oil's ask at its 10 unit minimum is the ladder's last level (${Loil.ask.total})`);
     const rowsOil = JSON.parse(w.eval("JSON.stringify(PRICING_ENGINE.ladderRow(shownSizes('oil'), pxCost(), pxPolicy()))"));
     ok(rowsOil.length === 1 && rowsOil[0].code === "T2" && rowsOil[0].dflt === true,
       "the payload row for a one-tier book is the default ask alone");
@@ -3166,13 +3185,16 @@ section("Oil — pinned at both ends and lawful between (round 5, his call 5)");
        check above all read [0] rather than hunting for a code, on v328's argument that a fallback
        which quietly carries a panel hides a fault. Putting Tier 1 first would have cut every
        quoted price in silence, so the order is asserted by NAME and not taken on trust. */
-    ok(rowsSalt.length === 2 && rowsSalt[0].code === "T2" && rowsSalt[0].dflt === true && rowsSalt[1].code === "T1",
-      `the payload puts Tier 2 at row zero and Tier 1 after it (${rowsSalt.map((r) => r.code).join(", ")})`);
+    /* v656: SALT CARRIES ONE ROW TOO, since its two stated ends retired with the derived ask. Row zero is still
+       T2 and still the default, which is the half that is load bearing; the second row is simply not there. */
+    ok(rowsSalt.length === 1 && rowsSalt[0].code === "T2" && rowsSalt[0].dflt === true,
+      `the payload is the default ask alone, at row zero (${rowsSalt.map((r) => r.code).join(", ")})`);
     /* 14 Sep 2026: against the engine's own two figures at the smallest size, not RM70 and RM60. The ask is derived,
        and v639's count moved it to RM80, which turned this red while row zero went on quoting the ask. */
     const L0 = JSON.parse(w.eval("JSON.stringify(priceLadder(shownSizes('salt')[0]))"));
-    ok(rowsSalt[0].prices[0] === L0.ask.total && rowsSalt[1].prices[0] === L0.tier1.total && L0.ask.total > L0.tier1.total,
-      `so row zero still quotes the ask and not the cheaper tier (${rowsSalt[0].prices[0]} then ${rowsSalt[1].prices[0]})`);
+    const L0t1 = JSON.parse(w.eval("JSON.stringify(PRICING_ENGINE.ladderRow([shownSizes('salt')[0]], pxCost(), Object.assign({},pxPolicy(),{tier1:{0.5:60, 12.5:875},tierRule:null})))"));
+    ok(rowsSalt[0].prices[0] === L0.ask.total && L0t1.length === 2 && L0t1[1].code === "T1" && L0t1[0].prices[0] > L0t1[1].prices[0],
+      `so row zero still quotes the ask and not the cheaper tier, on this book and on one forced to two (${rowsSalt[0].prices[0]}; forced ${L0t1[0].prices[0]} then ${L0t1[1].prices[0]})`);
     /* ============ v566: THE THREE GATES AND THE ONE RELATION ============ */
     /* A TIER STATED AT ONE SIZE IS NOT STATED. {0.5:60,"0.50":60} is two KEYS naming one size: it
        passed the ks.length<2 count, landed hi===lo, and made the exponent Math.log(1)/Math.log(1),
@@ -3194,29 +3216,27 @@ section("Oil — pinned at both ends and lawful between (round 5, his call 5)");
       + " tier1:PRICING_ENGINE.priceLadder(2.5, pxCost(), p2).tier1};})())"));
     ok(oneEnd.n === 1 && oneEnd.codes[0] === "T2" && oneEnd.tier1 === null,
       `a tier stated at one end only is refused by BOTH gates, so no row of nulls reaches the payload (${oneEnd.n} row: ${oneEnd.codes.join(", ")})`);
-    /* AND THE ONE RELATION BETWEEN THE TIERS IS MEASURED, so the board can say when it fails.
-       Tier 2 is derived from a floor that moves; his Tier 1 ends do not move at all, so a stated
-       price or a fall in the lot rate walks Tier 2 down through a frozen Tier 1. */
+    /* AND THE ONE RELATION BETWEEN THE TIERS IS MEASURED, so a board carrying two can say when it fails.
+       Tier 2 is derived from a floor that moves; stated Tier 1 ends do not move at all, so a stated
+       price or a fall in the lot rate walks Tier 2 down through a frozen Tier 1.
+       RESTATED AT v656, IN THE ENGINE ALONE. It drove the LIVE book by writing PRICE_SET and read the
+       rendered board for its tags and its sentence. Neither half survives the switch: no book states a
+       second tier now and the board draws one column, so the rendered half was measuring a shape that
+       cannot occur, and the figures came out null rather than zero. The CLAIM is the engine's and it is
+       asserted there, on a policy forced to the shape the claim is about: a stated pair, no ladder, and
+       a stated price at 5 unit that drags the derived ask under the frozen tier. */
     const invert = JSON.parse(w.eval("JSON.stringify((function(){"
-      + "var keep=JSON.stringify(PRICE_SET.salt||null);"
-      + "var clean=shownSizes('salt').map(function(q){var L=priceLadder(q);return L.tier1?L.tier1.over:null;});"
-      + "PRICE_SET.salt={prices:{'5':350}};recompute();"
-      + "var bad=shownSizes('salt').map(function(q){var L=priceLadder(q);"
+      + "var base=Object.assign({},pxPolicy(),{tier1:{0.5:60, 12.5:875},tierRule:null});"
+      + "var C=pxCost();"
+      + "var clean=shownSizes('salt').map(function(q){var L=PRICING_ENGINE.priceLadder(q,C,base);return L.tier1?L.tier1.over:null;});"
+      + "var p2=Object.assign({},base,{stated:{'5':350}});"
+      + "var bad=shownSizes('salt').map(function(q){var L=PRICING_ENGINE.priceLadder(q,C,p2);"
       + "  return {q:q,over:L.tier1?L.tier1.over:null,t1:L.tier1?L.tier1.total:null,t2:L.ask.total};})"
       + "  .filter(function(x){return x.over>0.009;});"
-      + "var d=document.createElement('div'); d.innerHTML=tabPricing();"
-      + "var tags=[].slice.call(d.querySelectorAll('table.pxboard tbody tr td.l'))"
-      + "  .map(function(td){return td.textContent.replace(/\\s+/g,' ').trim();})"
-      + "  .filter(function(t){return t.indexOf('above Tier 2')>=0;});"
-      + "var ins=[].slice.call(d.querySelectorAll('.insight')).map(function(x){return x.textContent;})"
-      + "  .filter(function(x){return /dearer than Tier 2/.test(x);});"
-      + "var green=[].slice.call(d.querySelectorAll('.insight')).map(function(x){return x.textContent;})"
-      + "  .filter(function(x){return /clears break-even/.test(x)&&!/dearer/.test(x);});"
-      + "PRICE_SET.salt=keep?JSON.parse(keep):{};recompute();"
-      + "return {cleanAllZero:clean.every(function(v){return v===0;}), bad:bad, tags:tags.length, said:ins.length, green:green.length};})())"));
-    ok(invert.cleanAllZero, "as the book stands, Tier 1 is under Tier 2 at every size and its over figure is nil throughout");
-    ok(invert.bad.length === 3 && invert.tags === 3 && invert.said === 1 && invert.green === 0,
-      `and when a stated RM350 at 5 unit pulls Tier 2 under a frozen Tier 1, the board says so on every affected row and stops claiming all-clear (${invert.bad.length} inverted, ${invert.tags} tagged, ${invert.said} sentence, ${invert.green} all-clear)`);
+      + "return {cleanAllZero:clean.length>0&&clean.every(function(v){return v===0;}), bad:bad};})())"));
+    ok(invert.cleanAllZero, "on a book that states two tiers, the cheaper one is under the ask at every size and its over figure is nil throughout");
+    ok(invert.bad.length > 0 && invert.bad.every((x) => x.t1 > x.t2 + 0.009),
+      `and a stated RM350 at 5 unit pulls the derived ask under the frozen tier, which the engine measures ringgit by ringgit (${invert.bad.length} inverted: ${JSON.stringify(invert.bad.map((x) => [x.q, x.t1, x.t2]))})`);
     /* v646: the drawing rule retired with the tier ceiling, and the desk's printed board and the customer's page now quote
        through the engine's one cardPrice, so there are no two copies left to hold together; v646's section proves they agree. */
     w.eval("setProd(" + JSON.stringify(keepProd) + ");recompute();");   // put the desk back on the book this section was on
@@ -7225,13 +7245,24 @@ section("Statements — guest referral links and the tier they are pinned to (v5
       }
       return copy;
     };
-    const oneEnd = bl(1, bk, bend({ 0.5: 60 }), new Date());
-    const sameSize = bl(1, bk, bend({ 0.5: 60, "0.50": 875 }), new Date());
+    /* v656: THE LADDER ANSWERS FIRST, so a broken pair of ends cannot empty a guest board at all: the
+       cheaper link is the ladder's first level and the dearer one its last. The fallback is what
+       answers a book with NO ladder, and that is where the one-stated-end case is now forced, because
+       an assertion aimed at a path the data can no longer reach is an assertion that sleeps. */
+    const noLadder = (tier1) => {
+      const copy = bend(tier1);
+      for (const p of Object.keys(copy.byProduct || {})) {
+        if (copy.byProduct[p].inputs && copy.byProduct[p].inputs.policy) copy.byProduct[p].inputs.policy.tierRule = null;
+      }
+      return copy;
+    };
+    const oneEnd = bl(1, bk, noLadder({ 0.5: 60 }), new Date());
+    const sameSize = bl(1, bk, noLadder({ 0.5: 60, "0.50": 875 }), new Date());
     const healthy = bl(1, bk, px, new Date());
-    ok(healthy.products.length > 0 && healthy.products.every((p) => p.sizes.length > 0),
-      "a book with two usable Tier 1 ends prices every size on the guest board");
+    ok(healthy.products.length > 0 && healthy.products.every((p) => p.sizes.length > 0 && !p.fellBack),
+      "with a ladder, the cheaper guest link prices every size off it and falls back to nothing");
     ok(oneEnd.products.length > 0 && oneEnd.products.every((p) => p.sizes.length > 0 && p.fellBack),
-      "a book with ONE stated end falls back to the tier that has prices rather than an empty table");
+      "and on a book with NO ladder, ONE stated end falls back to the tier that has prices rather than an empty table");
     ok(sameSize.products.length > 0 && sameSize.products.every((p) => p.sizes.length > 0
       && p.sizes.every((r) => Number.isFinite(r.price))),
       "and two anchors naming one size cannot put NaN in front of a stranger");
@@ -11695,7 +11726,7 @@ section("v638: network lines run from each associate to the customers they broug
   } finally { await new Promise((r) => setTimeout(r, 200)); try { w38.close(); } catch (e) { /* best effort */ } }
 }
 
-section("v641: the five tiers are the floor and the workbook's four columns, guarded, drawn beside the board and quoted nowhere");
+section("v641: the five tiers are the floor and the workbook's four columns, guarded, drawn beside the board and quoted by it since v656");
 {
   /* HIS DECISIONS OF 14 AND 15 SEP 2026. Tier I pays the floor, rounded up to the ten; Tiers II to V are his pricing
      workbook's four columns; each tier sits at least a ten over the one below; the rate may not rise with size where a step
@@ -11769,9 +11800,17 @@ section("v641: the five tiers are the floor and the workbook's four columns, gua
       + "want:fiveTiersNow().map(function(g){return g.prices;})};})()"));
     ok(cards.every((c) => c && JSON.stringify(c.head.slice(2, 2 + c.names.length)) === JSON.stringify(c.names) && c.cells.length > 4 && JSON.stringify(c.cells) === JSON.stringify(c.want)),
       "the Pricing page draws every level for each book, headed by its name, every cell the engine's price " + JSON.stringify(cards.map((c) => c && c.head)));
-    const nowhere = ["salt", "oil"].map((p) => rd40("(function(){setProd('" + p + "');var P=pxPolicy(),C=pxCost(),S=sizesFor('" + p + "');"
-      + "return {inPolicy:'tierRule' in P,same:JSON.stringify(PRICING_ENGINE.board(S,C,P))===JSON.stringify(PRICING_ENGINE.board(S,C,Object.assign({},P,{tierRule:TIER_RULE['" + p + "']})))};})()"));
-    ok(nowhere.every((x) => !x.inPolicy && x.same), "and nothing quotes them yet: the policy every quote reads carries no tier rule, and the phone's board is the same with one added " + JSON.stringify(nowhere));
+    /* RESTATED AT v656, AND INVERTED. It held the staging: the policy carried no tier rule and adding one moved no cell of
+       the board, which was the whole of "quoted nowhere yet". The board IS the ladder now, so the same two facts are asserted
+       the other way round, and the second one is the load-bearing half: strip the rule out of the policy and the board must
+       change, or the ask is coming from somewhere else. */
+    const onBoard = ["salt", "oil"].map((p) => rd40("(function(){setProd('" + p + "');var P=pxPolicy(),C=pxCost(),S=sizesFor('" + p + "');"
+      + "var bare=Object.assign({},P);delete bare.tierRule;"
+      /* THE PRICES, NOT THE BOARD OBJECT. Comparing the whole board passed on the row NAME alone, which the rule also
+         decides, so the assertion stayed green with the ask reverted to the derived figure. It is the cells that matter. */
+      + "var px=function(x){return JSON.stringify(PRICING_ENGINE.board(S,C,x).tiers[0].prices);};"
+      + "return {inPolicy:P.tierRule!=null,moves:px(P)!==px(bare),at:PRICING_ENGINE.board(S,C,P).tiers[0].prices[0]};})()"));
+    ok(onBoard.every((x) => x.inPolicy && x.moves), "and the board is the ladder: the policy every quote reads carries the tier rule, and taking it away moves the board " + JSON.stringify(onBoard));
   } finally { await new Promise((r) => setTimeout(r, 200)); try { w40.close(); } catch (e) { /* best effort */ } }
 }
 
@@ -12193,6 +12232,75 @@ section("v655: a customer's own rate is the best of their last four orders, and 
     ok(card55.px === Math.min(card55.tier, card55.best) && card55.px > card55.mid,
       "and their card reads the best they have paid, capped by their tier: " + JSON.stringify(card55));
   } finally { await new Promise((r) => setTimeout(r, 200)); try { w55.close(); } catch (e) { /* best effort */ } }
+}
+
+section("v656: the board is the ladder, so a stranger is quoted Bronze and a stated price decides nothing");
+{
+  /* HIS DECISION OF 15 SEP 2026, off the pricing workbook. The ask at every printed size is the last of the five levels,
+     the one a new customer starts at, on live costs. Tier 1's two stated ends and oil's five typed prices retire with the
+     derived ask, and NRV moves to Titanium, the lowest level any customer is quoted, because reading it off the ask would
+     have valued the shelf at what a stranger pays. Each assertion was proved red by mutation. */
+  const { openMaster: om56 } = await import("../tools/payload.mjs");
+  const { w: w56 } = await om56();
+  const rd56 = (e) => JSON.parse(String(w56.eval("JSON.stringify(" + e + ")")));
+  try {
+    /* 1. THE ASK IS THE LAST LEVEL, at every printed size on both books, and the derived figure it replaced is kept beside it.
+       Read off the ENGINE through the desk's own policy, not off a stub: the claim is about what the desk quotes. */
+    const ask56 = rd56("(function(){var out={};['salt','oil'].forEach(function(p){setProd(p);recompute();"
+      + "var C=pxCost(),P=pxPolicy();out[p]=shownSizes(p).map(function(q){var L=PRICING_ENGINE.priceLadder(q,C,P),"
+      + "f=PRICING_ENGINE.fiveTierAt(q,C,P);return {q:q,ask:L.ask.total,last:f?f.prices[f.prices.length-1]:null,"
+      + "derived:L.derived?L.derived.total:null,fromLadder:!!L.ask.fromLadder};});});setProd('salt');recompute();return out;})()");
+    const every56 = Object.keys(ask56).every((p) => ask56[p].length > 4
+      && ask56[p].every((r) => r.ask === r.last && r.fromLadder && r.derived != null))
+      && Object.keys(ask56).some((p) => ask56[p].some((r) => r.derived !== r.ask));
+    ok(every56, "the ask at every printed size is the ladder's last level, with the derived figure kept beside it: salt at 1 unit "
+      + JSON.stringify(ask56.salt.find((r) => Math.abs(r.q - 1) < 0.009)) + ", oil at 10 " + JSON.stringify(ask56.oil.find((r) => Math.abs(r.q - 10) < 0.009)));
+    /* 2. ONE ROW, NAMED FOR THE LEVEL, AND INDEX ZERO IS STILL THE ASK. The code is load bearing across the phone, the
+       mirror and the guest links, so it may not move; the NAME must, or the board prints "Tier 2" over the ladder. */
+    const row56 = rd56("(function(){setProd('salt');recompute();var R=PRICING_ENGINE.ladderRow(shownSizes('salt'),pxCost(),pxPolicy());"
+      + "return {n:R.length,code:R[0].code,name:R[0].name,dflt:!!R[0].dflt,last:TIER_NAMES[TIER_NAMES.length-1],"
+      + "t1:R.some(function(r){return r.code==='T1';})};})()");
+    ok(row56.n === 1 && row56.code === "T2" && row56.name === row56.last && row56.dflt && !row56.t1,
+      "the board is one row, index zero, still coded T2 and now named for the level: " + JSON.stringify(row56));
+    /* 3. A STATED PRICE DECIDES NOTHING. The strongest form of the claim: put a price on the policy at every printed size,
+       far from the ladder, and the board does not move. PRICE_SET is not merely empty, it is unread. */
+    const stated56 = rd56("(function(){setProd('salt');recompute();var C=pxCost(),P=pxPolicy(),S=shownSizes('salt');"
+      + "var st={};S.forEach(function(q){st[String(q)]=11;});"
+      + "var a=PRICING_ENGINE.ladderRow(S,C,P),b=PRICING_ENGINE.ladderRow(S,C,Object.assign({},P,{stated:st}));"
+      + "return {same:JSON.stringify(a[0].prices)===JSON.stringify(b[0].prices),prices:a[0].prices};})()");
+    ok(stated56.same && stated56.prices.every((x) => x > 11),
+      "a price stated at every size moves no cell of the board: " + JSON.stringify(stated56.prices));
+    /* 4. AND NO CUSTOMER'S PRICE MOVES WITH THE BOARD. Their price is their tier capped at what they pay, so lifting the
+       ask must not reach it: forced by pricing one customer at both, and by the rule the engine states. */
+    const card56 = rd56("(function(){setProd('salt');recompute();"
+      + "var who=roster.filter(function(c){return c.slice(-2)!=='-R'&&cardTier(c)>=0&&pbOwnRate(c).rate!=null;});"
+      + "var rows=who.map(function(c){var q=1,ask=PRICING_ENGINE.priceLadder(q,pxCost(),pxPolicy()).ask.total;"
+      + "return {c:c,card:cardQuote(c,q),ask:ask};}).filter(function(r){return r.card!=null;});"
+      + "return {n:rows.length,under:rows.filter(function(r){return r.card<r.ask-0.009;}).length,"
+      + "over:rows.filter(function(r){return r.card>r.ask+0.009;}).length,one:rows[0]||null};})()");
+    ok(card56.n > 5 && card56.over === 0 && card56.under > 0,
+      "every named customer's own price sits at or under the stranger's ask, " + card56.under + " of " + card56.n + " under it: " + JSON.stringify(card56.one));
+    /* 5. NRV IS TITANIUM, NOT THE ASK. Read off the statement the accounts print, against both levels at the same size, so
+       the assertion fails whichever way the basis drifts. */
+    const nrv56 = rd56("(function(){setProd('salt');recompute();var F=ifrsPL('salt');"
+      + "var q=Math.max(0.5,avgDelivery('salt').mean||1),C=pxCost(),P=pxPolicy();"
+      + "var row=PRICING_ENGINE.fiveTierAt(q,C,P),toSell=(delShare('salt').v*COST_BASIS.txnPerDelivery.rm)/Math.max(0.01,q);"
+      /* guarded so that a policy carrying no rule FAILS here with its figures rather than throwing and taking the rest of the section with it */
+      + "if(!row||!row.prices)return {rate:F.nrvRate,tit:null,bronze:null,tested:!!F.nrvTested,carrying:F.carrying,atCost:F.atCost};"
+      + "return {rate:F.nrvRate,tit:+(row.prices[1]/q-toSell).toFixed(4),bronze:+(row.prices[row.prices.length-1]/q-toSell).toFixed(4),"
+      + "tested:!!F.nrvTested,carrying:F.carrying,atCost:F.atCost};})()");
+    ok(nrv56.tested && Math.abs(nrv56.rate - nrv56.tit) < 0.01 && nrv56.rate < nrv56.bronze - 0.01 && nrv56.carrying === nrv56.atCost,
+      "the shelf is valued at Titanium less costs to sell, not at the stranger's Bronze: " + JSON.stringify(nrv56));
+    /* 6. AND THE DRAFTER REFUSES A PRICE, because a phone left on an older build can still queue one and a folded figure
+       nothing reads is worse than a refusal. */
+    const D56 = await import("../src/drafter.js");
+    const book56 = rd56("(function(){return {PRODUCTS:PRODUCTS,state:{PRICING:{byProduct:{salt:{floors:{}}}}}};})()");
+    const draft56 = D56.draftRow({ at: "2026-09-16T00:00:00.000Z", payload: { mode: "price", product: "salt", prices: { "1": 500 }, hide: [] } }, book56);
+    const hide56 = D56.draftRow({ at: "2026-09-16T00:00:01.000Z", payload: { mode: "price", product: "salt", prices: {}, hide: [3] } }, book56);
+    ok(draft56 && draft56.skip && /stated price is not folded/.test(draft56.skip) && hide56 && hide56.collection === "priceset"
+      && JSON.stringify(hide56.row.hide) === "[3]" && !Object.keys(hide56.row.prices).length,
+      "a queued price is refused and a size taken off the board still folds: " + JSON.stringify([draft56.skip, hide56 && hide56.row]));
+  } finally { await new Promise((r) => setTimeout(r, 200)); try { w56.close(); } catch (e) { /* best effort */ } }
 }
 
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);

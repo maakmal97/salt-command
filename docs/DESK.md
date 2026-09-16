@@ -11,10 +11,23 @@
   those cycles, at landed; **the ask is a margin on the floor** (`ladderMargin`, `anchorG`
   per book), all v504. One floor per size since v502; `delivery` and `freight` typed per row
   since v503.
-- **Tier 1** (v564) is STATED at its ends in `LADDER.tier1` (salt 0.5:60, 12.5:875), the rate
-  interpolated in the log of size between them, clamped outside; the ends print verbatim
-  because RM875 is off the ten grid. `tier1.over` (v566) measures the RM by which Tier 1
-  exceeds the ask, beside `under`, and the board tags the row and refuses its all-clear.
+- **The ask IS the ladder's last level since v656** (his decision of 15 Sep 2026), so the line
+  above describes the DERIVED figure, which is kept beside it as `priceLadder().derived`.
+  `pxPolicy` carries `tierRule`; the override is the one line in `priceLadder`, and row zero of
+  `ladderRow` follows it, still coded `T2` and named for the level. A book with no `tierRule`
+  keeps the derived ask.
+- **Tier 1** (v564) WAS stated at its ends in `LADDER.tier1` (salt 0.5:60, 12.5:875), the rate
+  interpolated in the log of size between them, clamped outside; the ends printed verbatim
+  because RM875 is off the ten grid, and `tier1.over` (v566) measured the RM by which it
+  exceeded the ask. **Retired at v656**: `LADDER.tier1` is null and no book states a second
+  level. `tier1Walk`, `tier1Anchors` and `tier1Ask` stay in the engine and still answer a book
+  that states one, which is what the suite forces to prove them.
+- **Stated prices retired with it.** `PRICE_SET[product].prices` is empty on both books (oil's
+  RM130 to RM450 were his of 09 Sep), the engine's `stated` cannot reach the ask, Set the board
+  is the hide list alone, and `src/drafter.js` refuses a `priceset` row carrying prices.
+- **NRV is Titanium, not the ask** (v656). IAS 2.6 wants the price in the ordinary course, which
+  is the levels his customers are actually on, and the prudent end of that range is the lowest
+  level any of them is quoted. Off Bronze the IAS 2.9 test could never bind.
 - **Ambassador** pays the floor, up to the ten, on his word alone and earning no free units.
 - **The five tiers**, Titanium, Platinum, Gold, Silver and Bronze, are columns at multiples
   running evenly from 1.0 to 2.5 (v644: 1.0, 1.375, 1.75, 2.125, 2.5; 0.5 unit of salt starts

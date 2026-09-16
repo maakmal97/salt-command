@@ -68,7 +68,7 @@ document.addEventListener('visibilitychange',function(){
    localStorage before it posts anything and the load reads it straight back.
    The same tick retries a held entry, which is what gets a phone write to the cloud
    without waiting for the next open. */
-var SALT_BUILD_ID="47cac221988e5d91";
+var SALT_BUILD_ID="1c8bb27f3cf54ad6";
 var SALT_REV_MS=10000;
 (function(){
   var chip=null,timer=null;
@@ -4701,6 +4701,8 @@ return {txPrice:txPrice,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeli
  *      boardSizes  the sizes the board quotes, for walking an off-board size against them
  *      stated      prices HE has set, by size, overriding the derived ask (PRICE_SET[product])
  *      tier1       the second level's two stated ends, by size; absent means this book has one tier
+ *      tierRule    the five-tier rule, {multiples,start,step,scaled,rungs}; a book with one IS its
+ *                  ladder, and the ask is the last level, Bronze (v656)
  * and costStack() takes the input record the desk's pxInputs() gathers (see there).
  *
  * PORTED VERBATIM. The bodies are the desk's, with the globals replaced by C, P and I. Every
@@ -5096,6 +5098,23 @@ function priceLadder(q,C,P,opts){
      cost of the size, to the ringgit and at every size on both books, so this one multiple is the
      margin the board is actually taking: over 1.00x earns, 1.00x earns nothing, under 1.00x is a
      price he has stated below break-even and `under` says by how much. */
+  /* ============ v656, HIS DECISION OF 15 SEP 2026: THE BOARD IS THE LADDER ============
+     A stranger is quoted BRONZE, the level a new customer starts at, so the ask at every size is
+     the last of the five tiers rather than a margin derived on the floor. Everything downstream
+     follows from this one line, because everything downstream reads this ask: ladderRow's row
+     zero, the board, the printed card, the guest links, enginePrice and every margin struck on
+     the board. The derived figure is kept beside it as `derived`, with its own floorX and under,
+     because the Pricing page shows the two against each other and a reader is owed what the board
+     used to ask. A book with NO tierRule keeps the derived ask: it has no ladder to be. */
+  {const t=P.tierRule?fiveTierAt(q,C,P):null;
+   const b=(t&&t.prices&&t.prices.length)?t.prices[t.prices.length-1]:null;
+   if(b!=null&&isFinite(b)){
+     out.ask.floorX=+(out.ask.total/Math.max(0.01,fl)).toFixed(3);
+     out.ask.under=+Math.max(0,fl-out.ask.total).toFixed(2);
+     out.derived=out.ask;
+     out.ask={total:b,rate:+(b/q).toFixed(2),markup:+((b/cogs-1)*100).toFixed(2),
+              markupX:+(b/cogs-1).toFixed(4),margin:+(((b-lot)/b)*100).toFixed(1),
+              rung:t.rung,fromLadder:true};}}
   out.ask.floorX=+(out.ask.total/Math.max(0.01,fl)).toFixed(3);
   out.ask.under=+Math.max(0,fl-out.ask.total).toFixed(2);
   /* v564: TIER 1 BESIDE THE ASK, on the same cost stack and the same floor, so every surface reads
@@ -5130,8 +5149,15 @@ function priceLadder(q,C,P,opts){
 function ladderRow(sizes,C,P){
   const col=(k)=>sizes.map(q=>{try{const L=priceLadder(q,C,P);
     return L&&L[k]&&L[k].total!=null?+L[k].total:null;}catch(e){return null;}});
+  /* v656: THE ROW SAYS WHAT IT IS. With a ladder the ask is Bronze, the level a new customer starts
+     at, and a row still headed "Tier 2" would print that name over the ladder's prices on the board,
+     the printed card and a guest link alike. The CODE is untouched: row zero is read by code and by
+     index across the phone, the mirror and the suite, and renaming it would break every one of them
+     to say the same thing the name already says. */
+  const laddered=!!P.tierRule;
   const rows=[{
-    code:'T2', name:'Tier 2', dflt:true, who:'the default ask, graded by size, tapered as the supplier tapers',
+    code:'T2', name:laddered?'Bronze':'Tier 2', dflt:true,
+    who:laddered?'the level a new customer starts at, the last of the five':'the default ask, graded by size, tapered as the supplier tapers',
     prices:col('ask')
   }];
   /* v566: GATED ON tier1Anchors, NOT ON THE RAW FIELD. priceLadder decides whether a book HAS a
@@ -5139,7 +5165,11 @@ function ladderRow(sizes,C,P){
      was truthy. A book stating one end satisfied the second and not the first, so the payload
      carried a row NAMED "Tier 1" whose every price was null, beside a desk saying the tier is not
      stated on this book. Two gates on one fact is one gate too many. */
-  if(tier1Anchors(P))rows.push({
+  /* v656: AND THE STATED SECOND TIER RETIRES WITH THE DERIVED ASK. Tier 1 was the trade level,
+     stated at its two ends and interpolated between them; the ladder names five levels on live
+     costs and each customer holds one, so a second hand-typed level is a second thing that prices.
+     The machinery stays for a book with no ladder, and salt's two ends are gone from LADDER. */
+  if(!laddered&&tier1Anchors(P))rows.push({
     code:'T1', name:'Tier 1', dflt:false, who:'stated at its two ends, the rate interpolated between them',
     prices:col('tier1')
   });
@@ -5688,6 +5718,7 @@ const ONE_OFFS=[
 ];
 /* v512, 07 Sep 2026: moved to 06:21:06.691Z past a second entry of the CR3-DAM sale already folded at v510, so the phone stops showing it as provisional; no row folded. */
 const QUEUE_COMMITTED="2026-09-15T19:50:35.131Z";
+/* RETIRED AT v656 on 2026-09-16, his decision of 15 Sep off the pricing workbook: the board is the ladder, so a stated price no longer decides it and oil's five are cleared rather than left unread. The stranger's ask on oil moves from his RM130, 240, 330, 400 and 450 to Bronze at RM230, 440, 650, 850 and 1,040, with 80 and 100 unit at RM1,640 and RM2,000. The old five sat a hair over break-even (the 50 unit tier read 0.93x, RM32.20 UNDER its floor) because they were typed in July against a cost that has moved since; the ladder is struck on today's COGS and moves with it. No customer's price moves with this: every named customer is quoted their own tier capped at what they pay, and a stranger has no history to cap against. The hide list is untouched and still takes a size off the board. */
 /* HIS INSTRUCTION, 09 SEP 2026, AFTER THE v551 OIL COUNT: "The desk quotes to 450, by lowering margin, then for others, quote proportionately." The count read a 23.08 per cent leak from his own figures and lifted the 50 unit oil floor to RM482.20, above the RM450 he had stated, and v353 had the desk lift any stated price that sat under its floor. From v552 it lifts a DERIVED ask only: a price he has set is quoted as set, the gap to break-even is reported beside it rather than hidden, and the 50 unit tier reads 0.93x with RM32.20 under. His other four oil tiers are untouched and already step the margin down proportionately into it: 1.35x, 1.24x, 1.14x, 1.04x, 0.93x. Recorded as his decision, not an error, and the drafter will flag a 50 unit oil sale as under floor for the same reason the board does. */
 const PRICE_SET={
   "salt": {
@@ -5695,13 +5726,7 @@ const PRICE_SET={
     "hide": []
   },
   "oil": {
-    "prices": {
-      "10": 130,
-      "20": 240,
-      "30": 330,
-      "40": 400,
-      "50": 450
-    },
+    "prices": {},
     "hide": []
   }
 };
@@ -6931,7 +6956,9 @@ const quoteFor=p=>{const f=QUOTES[p||PROD];return f?f():null;};
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{"v":"v655","d":"16 Sep 2026","t":"A CUSTOMER'S OWN RATE IS THE BEST THEY HAVE PAID, AND THEIR TIER IS PROPOSED AT THE SIZES THEY BUY","n":["<b>HIS DECISION OF 16 SEP 2026, OFF THE ORDER BOOK.</b> A sale struck is the best price strikeable with that customer, so the card reads the BEST of their last four priced orders where it read the middle one. The four-order window stands, so a price moved to in July is still the price seen in September and one old high day cannot set a card for good. Measured on the 133 priced salt orders: the rule would have earned RM10,349 over break-even against the RM9,013 they made, and RM9,209 under the middle-rate rule.","<b>AND THE TIER IS READ AT THE SIZES THEY BUY</b>, a unit, so a size a customer never takes cannot decide their level. It was measured across every size on the board, which handed the decision to the biggest rung: adding 80 and 100 unit to oil (v654) moved two customers a level on sizes neither buys. On the book today 24 salt customers and 1 oil customer sit on a different level, their cards rising at 106 sizes and falling at 182, and nobody is quoted above what they have paid.","<b>THE CHECKS.</b> A new section of 4 assertions: the window and the best of it, the tool reading the same four, a proposal that does not move when every rung above 2.5 unit leaves the board, and a card that rises to the best. Ten assertions restated across the statements, the bucket, the proposals and the two card sections. 5 mutations each turn their assertion red."]},
+const evolution=[{"v":"v656","d":"16 Sep 2026","t":"THE BOARD IS THE LADDER: A STRANGER IS QUOTED BRONZE, AND A STATED PRICE DECIDES NOTHING","n":["<b>HIS DECISION OF 15 SEP 2026, OFF THE PRICING WORKBOOK.</b> The ask at every printed size is now the LAST of the five levels, Bronze, the one a new customer starts at, struck on today's COGS by the workbook's own formula. Salt's board rises between RM10 and RM70 a size, from RM130 to RM160 at 1 unit and RM1,230 to RM1,250 at 12.5. Oil's rises further because it was never derived at all: RM130 to RM230 at 10 unit and RM900 to RM2,000 at 100, his five typed prices having been struck in July against a cost that has moved since, with the 50 unit tier sitting RM32.20 UNDER its own floor for a week. Every size on both books now clears break-even.","<b>AND NOT ONE CUSTOMER'S PRICE MOVES WITH IT.</b> Measured over all 50 price lists on the book: every one is unchanged, because a named customer is quoted their own level capped at what they pay, which the board cannot reach. What moves is what a STRANGER is quoted, which is what the board has always been for. Their offers are unchanged too, RM11,265 on salt and RM1,730 on oil.","<b>THREE THINGS RETIRE WITH THE DERIVED ASK.</b> Tier 1's two stated ends, RM60 at half a unit and RM875 at twelve and a half, which were frozen figures where Titanium is now derived on live costs. His five typed oil prices, cleared from the book. And the typing of prices in Set the board, which is the hide list alone now: the drafter refuses a stated price outright, because a phone on an older build can still queue one and a folded figure nothing reads is worse than a refusal. The mechanism stays in the engine for a book with no ladder, and the suite forces one to prove it.","<b>NRV IS TITANIUM, NOT THE ASK.</b> The shelf was valued off the board, so the switch would have lifted the estimated selling price of every unit in stock to what a stranger pays: RM115.78 a unit against RM87.83. IAS 2.6 asks for the price in the ORDINARY COURSE, and the ordinary course is the levels his customers are on, so the basis is the lowest level any of them is quoted. The carrying amount is unchanged at cost either way, RM939.25; what changes is that the lower-of-cost-and-NRV test still means something.","<b>THE CHECKS.</b> A new section of 6 assertions and 6 mutations, each red. Thirteen assertions restated across the oil board, the two-tier rendering, the guest links and the staging check that held the board OFF the ladder, which is now inverted and compares the PRICES rather than the board object: comparing the object passed on the row's NAME alone and stayed green with the ask reverted."]},
+
+{"v":"v655","d":"16 Sep 2026","t":"A CUSTOMER'S OWN RATE IS THE BEST THEY HAVE PAID, AND THEIR TIER IS PROPOSED AT THE SIZES THEY BUY","n":["<b>HIS DECISION OF 16 SEP 2026, OFF THE ORDER BOOK.</b> A sale struck is the best price strikeable with that customer, so the card reads the BEST of their last four priced orders where it read the middle one. The four-order window stands, so a price moved to in July is still the price seen in September and one old high day cannot set a card for good. Measured on the 133 priced salt orders: the rule would have earned RM10,349 over break-even against the RM9,013 they made, and RM9,209 under the middle-rate rule.","<b>AND THE TIER IS READ AT THE SIZES THEY BUY</b>, a unit, so a size a customer never takes cannot decide their level. It was measured across every size on the board, which handed the decision to the biggest rung: adding 80 and 100 unit to oil (v654) moved two customers a level on sizes neither buys. On the book today 24 salt customers and 1 oil customer sit on a different level, their cards rising at 106 sizes and falling at 182, and nobody is quoted above what they have paid.","<b>THE CHECKS.</b> A new section of 4 assertions: the window and the best of it, the tool reading the same four, a proposal that does not move when every rung above 2.5 unit leaves the board, and a card that rises to the best. Ten assertions restated across the statements, the bucket, the proposals and the two card sections. 5 mutations each turn their assertion red."]},
 
 {"v":"v654","d":"16 Sep 2026","t":"OIL'S BOARD GAINS 80 AND 100 UNIT, AS HIS PRICING WORKBOOK CARRIES THEM","n":["<b>HIS DECISION OF 15 SEP 2026.</b> The two sizes that left the oil grid on his call of 29 Aug come back, because the workbook's oil board prices them. His five stated sizes are untouched, and the two are derived beside them: RM720 at 80 unit and RM900 at 100 on today's costs, RM9.00 a unit, each clearing its own floor and asking no more a unit than 50 unit does.","<b>WHERE THEY APPEAR.</b> Every reading of oil takes the book's sizes, so the two rows join the board and its floors, the customer's price list and the printed board, and the guest board. A customer holding an oil tier is quoted their own price at them, as at every other size.","<b>TWO PROPOSALS MOVE WITH THE GRID.</b> A tier proposed from what they pay is measured across the board's sizes, so the two new ones count: CS6-BS and CA7-AMP move from Titanium to Platinum, and their oil prices rise to their own rate, 50 unit from RM460 to RM550 and RM535. Neither is quoted above what they pay, and setting their tier on Customers pins it.","<b>THE CHECKS.</b> Oil's section restated: his five stated sizes keep the strict fall a unit, every size stays dearer in total, and the two derived ones keep the rate law and clear their floors. 2 mutations of the grid turn both assertions red."]},
 
@@ -7451,7 +7478,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='16 Sep 2026, 07:45 KL';
+const LAST_UPDATED='16 Sep 2026, 10:06 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -9108,8 +9135,13 @@ const LADDER={
      tier1Walk in the ENGINE block for the argument in full.
      RM120 a unit at the small end falling to RM70 at the large: against Tier 2's RM140 and RM92,
      Tier 1 is 86% of the ask at half a unit and 76% of it at twelve and a half. Every rung clears
-     break-even, from 2.13x at half a unit to 1.25x at twelve and a half. */
-  tier1:{0.5:60, 12.5:875}
+     break-even, from 2.13x at half a unit to 1.25x at twelve and a half.
+     RETIRED AT v656, and the two ends are gone rather than left unread. The ladder names five levels
+     on live costs and each customer holds one: Titanium reads RM50 at half a unit and RM860 at twelve
+     and a half, within a ten of the pair above at the top and under it at the bottom, so the trade
+     level he stated is now derived and moves with the cost of salt instead of standing still. A book
+     with no ladder keeps the mechanism, which is why tier1Walk and tier1Anchors stay in the engine. */
+  tier1:null
 };
 /* ============ ROUND 5, his call 1: THE LADDER ANCHOR IS PER BOOK ============
    LADDER above is SALT'S, untouched: anchorQ 2.5 is salt's geometric middle and the 0.5 to
@@ -9210,7 +9242,7 @@ const REF={
    Two orders, each right for its own reader, stated in both places. */
 const REF_POINTS=[
   {k:'tier1', label:'Tier 1', m:null, why:'stated at its two ends, the rate interpolated between them'},
-  {k:'ask',   label:'Tier 2', m:null, why:'the default ask, graded by size, tapered as the supplier tapers'}
+  {k:'ask',   label:'the ask', m:null, why:'the level a new customer starts at, the last of the five'}
 ];
 /* The lot cost a price has to beat: the salt, after the leak, plus ONE delivery for the order. */
 function lotCost(q,opts){ return PRICING_ENGINE.lotCost(q,pxCost(),opts); }
@@ -12959,7 +12991,7 @@ function ifrsPanel(){
     <h3 style="margin-top:16px;font-size:14px">Inventory</h3>
     <table class="fintab istmt" style="margin-top:8px"><tbody>
       ${L('At cost',F.atCost,{ref:'IAS 2.10',n:`${units(F.closeUnits)} at ${fmt(stockCostFor(PROD)+F.freightPerUnit)} landed`})}
-      ${L('Net realisable value',F.nrv,{ref:'IAS 2.6',n:F.nrvTested?`${fmt(F.nrvRate)}/unit less costs to sell`:'no selling price established for this product'})}
+      ${L('Net realisable value',F.nrv,{ref:'IAS 2.6',n:F.nrvTested?`${fmt(F.nrvRate)}/unit less costs to sell, at ${TIER_NAMES[1]}, the lowest level any customer is quoted`:'no selling price established for this product'})}
       ${L('<b>Carrying amount</b>',F.carrying,{cls:'tot',ref:'IAS 2.9',n:F.nrvTested?(F.writeDown>0?`written down by ${fmt0(F.writeDown)}`:'cost is lower, so cost'):'cost, untested against NRV'})}
     </tbody></table>
     <!-- the untested-NRV paragraph went at v401: the NRV row already reads "no selling price
@@ -15453,9 +15485,24 @@ function ifrsPL(p){
      answer is null rather than salt's board applied to a different commodity. IAS 2.9 still
      requires the lower of cost and NRV, so a null is reported as an untested carrying
      amount rather than quietly treated as passing. */
+  /* ============ v656: NRV IS TITANIUM, NOT THE ASK ============
+     The ask became the ladder's BRONZE at v656, and NRV read the ask. Left alone it would have lifted
+     the estimated selling price of every unit in stock to the level a stranger pays, which is not
+     what this inventory sells for: every named customer is quoted their own level capped at what they
+     pay, and on the book today they sit at Titanium and Platinum, with two at Bronze. IAS 2.6 asks for
+     the estimated selling price IN THE ORDINARY COURSE OF BUSINESS, so the ordinary course is the
+     levels his customers are actually on, and the prudent end of that range is TITANIUM, the lowest
+     level any customer is quoted. It is the estimate that keeps the lower-of-cost-and-NRV test worth
+     running: at Bronze the test can never bind and the line would be decoration.
+     Ambassador is deliberately not the basis. It is the floor, it is his word alone, and pricing the
+     whole shelf at it would write inventory down to break-even on a level nobody is on. */
   const hasBoard=(P===DEFAULT_PROD);
-  const nrvRate=hasBoard?(function(){try{const q=pxQuote(Math.max(0.5,del.mean||1),pxSignals().net,0);
-    return q&&q.perUnit?+(q.perUnit-(delShare(P).v*COST_BASIS.txnPerDelivery.rm)/Math.max(0.01,del.mean||1)).toFixed(4):null;}catch(e){return null;}})():null;
+  const nrvRate=hasBoard?(function(){try{
+    const q=Math.max(0.5,del.mean||1), toSell=(delShare(P).v*COST_BASIS.txnPerDelivery.rm)/Math.max(0.01,q);
+    const row=(typeof TIER_RULE!=='undefined'&&TIER_RULE[P])?PRICING_ENGINE.fiveTierAt(q,pxCost(),pxPolicy()):null;
+    if(row&&row.prices&&row.prices.length>1)return +(row.prices[1]/q-toSell).toFixed(4);
+    const x=pxQuote(q,pxSignals().net,0);
+    return x&&x.perUnit?+(x.perUnit-toSell).toFixed(4):null;}catch(e){return null;}})():null;
   const nrv=nrvRate!=null?+(closeUnits*nrvRate).toFixed(2):null;
   const carrying=(nrv!=null&&nrv<atCost)?nrv:atCost;
   return {rev,goods,freightCos,cos,gross,grossPct:rev>0?+(gross/rev*100).toFixed(1):null,
@@ -15496,9 +15543,13 @@ function pxPolicy(){
      first cut declared it and never passed it, so salt rendered with one tier and the derivation
      row said the anchors were not stated. A fallback to P.LADDER.tier1 in the engine would have
      hidden exactly that, which is why there is not one. */
+  /* v656: AND THE FIVE-TIER RULE COMES WITH IT, so the engine's own ask is the ladder's last level.
+     It was deliberately left out while the tiers were staged and quoted nowhere; the board is the
+     ladder now, and this is the one line that makes it so for every reader of pxPolicy at once. */
   return {LADDER:ladderFor(PROD), minPerUnit:PRICE_ENGINE.minPerUnit||0, timePerOrder:PRICE_ENGINE.timePerOrder||0, lotFloor:PRICE.lotFloor||{},
     stated:setPricesFor(PROD),
     tier1:ladderFor(PROD).tier1||null,
+    tierRule:(typeof TIER_RULE!=='undefined'?TIER_RULE[PROD]:null)||null,
     tiers:(pq&&pq.tiers)?pq.tiers:[],
     boardSizes:(typeof sizesFor==='function')?sizesFor(PROD):[]};
 }
@@ -15506,7 +15557,7 @@ function pxCost(){ return PRICING_ENGINE.costStack(pxInputs()); }
 /* the five tiers for the book in view, on its own rungs; null for a book with no rule */
 function fiveTiersNow(){
   const R=TIER_RULE[PROD];
-  return R?PRICING_ENGINE.fiveTiers(R.rungs,pxCost(),Object.assign({},pxPolicy(),{tierRule:R})):null;
+  return R?PRICING_ENGINE.fiveTiers(R.rungs,pxCost(),pxPolicy()):null;   /* v656: the policy carries the rule */
 }
 /* v641, STAGE 1, NAMED AT v642: AMBASSADOR AND THE FIVE TIERS BESIDE TODAY'S BOARD. One row a rung: the
    floor, the six levels, and today's ask where today's board quotes the size, so the two read against each
@@ -18454,7 +18505,7 @@ function tabPricing(){
     const sub=t=>`<div style="font-size:9px;font-weight:400;letter-spacing:0;text-transform:none;color:var(--dim)">${t}</div>`;
     const head=`<tr><th class="l">Size</th><th>COGS</th><th>Eff. cost${sub('break-even, the floor')}</th>`
       +(T1on?`<th>Tier 1${sub('stated at its ends')}</th>`:'')
-      +`<th>${T1on?'Tier 2':'Ask'}${sub(T1on?'the default ask':'rate, margin, &times; eff. cost')}</th></tr>`;
+      +`<th>${T1on?'Tier 2':(TIER_RULE[PROD]?TIER_NAMES[TIER_NAMES.length-1]:'Ask')}${sub(T1on?'the default ask':'rate, margin, &times; eff. cost')}</th></tr>`;
     /* one cell, both tiers, so the two can never be printed by two pieces of code that drift. The
        four lines are the total, the rate, the margin on price and the multiple of break-even; each
        turns crimson on its own test, and a price under break-even is crimson on the total itself. */
@@ -18569,12 +18620,12 @@ function tabPricing(){
          stated prices and an interpolation between them, which the row in the table above states in
          full. Heading a derivation "ask" while the board prints two of them is how a reader comes to
          believe the wrong one was derived. -->
-    <div class="cardh" style="margin-top:14px">From cost to ${T1on?'Tier 2':'the ask'} <span class="sub">COGS, then the leak, is the floor; the floor at the size&rsquo;s margin is the ask${T1on?'. Tier 1 is stated, not derived':''}</span></div>
+    <div class="cardh" style="margin-top:14px">From cost to ${T1on?'Tier 2':'the ask'} <span class="sub">COGS, then the leak, is the floor; ${TIER_RULE[PROD]?`the ask is the ladder&rsquo;s ${TIER_NAMES[TIER_NAMES.length-1]}`:'the floor at the size&rsquo;s margin is the ask'}${T1on?'. Tier 1 is stated, not derived':''}</span></div>
     <div class="tblw"><table class="fintab istmt"><thead><tr><th class="l">Size</th><th>COGS</th><th>Leak</th><th>Floor</th><th>Margin</th><th>Floor &divide; (1 &minus; margin)</th><th>Ask</th></tr></thead><tbody>
       ${sSZ.map(q=>{const L=priceLadder(q);const cogs=L.cogs,fl=L.floor.total,g=L.marginX;const raw=g!=null?fl/(1-g):null;
         return `<tr><td class="l">${units(q)}</td><td class="mono">${fmt(cogs)}</td><td class="mono">+${fmt(fl-cogs)}</td><td class="mono"><b>${fmt(fl)}</b></td><td class="mono">${g!=null?(g*100).toFixed(1)+'%':'&mdash;'}</td><td class="mono">${raw!=null?fmt(raw):'&mdash;'}</td><td class="mono"><b>${fmt0(L.ask.total)}</b>${L.ask.lawStepped?' <span class="iref">stepped</span>':''}</td></tr>`;}).join('')}
     </tbody></table></div>
-    <div class="dsc" style="margin-top:8px">COGS is ${fmt(sC.landed)} a unit landed; the leak adds ${((sC.shrink/(1-sC.shrink))*100).toFixed(1)}% of it, so the floor is ${fmt(sC.effEx)} a unit and earns nothing. The ask is rounded up to the ten, then may step down to keep the rate from rising with size, never below its floor.${T1on?' Tier 1 takes his two stated ends verbatim and rounds only the sizes between them, because RM 875 is not a multiple of ten.':''}</div>
+    <div class="dsc" style="margin-top:8px">COGS is ${fmt(sC.landed)} a unit landed; the leak adds ${((sC.shrink/(1-sC.shrink))*100).toFixed(1)}% of it, so the floor is ${fmt(sC.effEx)} a unit and earns nothing. ${TIER_RULE[PROD]?`The ask is ${TIER_NAMES[TIER_NAMES.length-1]}, the level a new customer starts at: COGS times the level's multiple, less a step a rung, rounded up to the ten, each level at least a ten over the one below and never rising in rate with size.`:'The ask is rounded up to the ten, then may step down to keep the rate from rising with size, never below its floor.'}${T1on?' Tier 1 takes his two stated ends verbatim and rounds only the sizes between them, because RM 875 is not a multiple of ten.':''}</div>
     ${sFlat>=2?`<div class="insight" style="border-left-color:var(--gold)"><b>The taper stops at ${units(LD.at.hi)}, so ${sFlat} of the ${sSZ.length} printed sizes carry the same ${sHi.markupX.toFixed(2)}x.</b></div>`
       :''}`;})()}
     ${pbCard()}
@@ -18582,18 +18633,17 @@ function tabPricing(){
          open inside the board card, which on a 375px phone put the thing he acts on, the
          board, above a screen and a half of controls he touches once a month. It is Do, so
          it stays on this card and one tap away; it is not the Ask, so it is shut. -->
-    <details class="obsec" style="margin-top:12px"><summary>Set the board <span class="q">type a price, or take a size off</span><span class="ct">${tb.length} sizes</span></summary>
+    <details class="obsec" style="margin-top:12px"><summary>Which sizes are on the board <span class="q">take a size off, or put one back</span><span class="ct">${tb.length} sizes</span></summary>
       ${(()=>{
-        /* ============ THE ONE PLACE A PRICE IS TYPED (v356, narrowed with the reseller menu) ============
-           This table came within a line of going out with the menu, because it was built as the SHEET
-           editor and shared that card. What it actually is is the only control on any surface that
-           writes PRICE_SET, the twenty-seventh ledger key: engine/pricing.mjs reads it as `stated`,
-           tools/fold.mjs folds it, and oil's RM130 at its 10 unit minimum IS a stated price rather
-           than a derived one. Delete the table and that figure becomes permanent and unreachable.
-           WHAT WENT WITH THE MENU: the party picker, the watermark, the encrypted download and the
-           QR. A price list for one named customer was a reseller feature. Setting what the desk
-           quotes EVERYONE is not, so the second mode is all that is left, and the copy no longer
-           has to say which of the two modes you are in. */
+        /* ============ IT WAS THE ONE PLACE A PRICE WAS TYPED, AND AT v656 IT IS NOT ============
+           Built at v356 as the only control that writes PRICE_SET, the twenty-seventh ledger key:
+           the engine read it as `stated` and it beat the derived ask at the size it named.
+           THE BOARD IS THE LADDER NOW, so a typed price would be a control that changes nothing,
+           which is worse than no control: the ask comes off the five-tier rule on live costs and
+           `stated` cannot reach it. The price column and its queue path are gone with it, and what
+           the table still does is the half that still works, which is choosing which sizes the
+           board prints. His hand on a single customer has not gone anywhere; it moved to the tier
+           he sets them on the Customers card, which is the level the ladder then prices. */
         const ALL=shSizes();
         const HID=hiddenFor(PROD);
         const rows=ALL.map(qq=>{
@@ -18604,23 +18654,23 @@ function tabPricing(){
           return `<tr>
             <td class="l">${units(qq)}</td>
             <td><label style="display:flex;align-items:center;justify-content:center;min-height:var(--tap);margin:0;cursor:pointer"><input type="checkbox" id="${id}s" ${shown?'checked':''} onchange="shDirty(this)" style="width:20px;height:20px"></label></td>
-            <td><input id="${id}p" type="number" step="10" min="0" value="${ask!=null?ask:''}" style="width:92px;min-height:var(--tap)" oninput="shDirty(this)"></td>
+            <td class="mono">${ask!=null?fmt(ask):'&mdash;'}</td>
             <td class="mono" style="color:var(--dim)">${fmt(fl)}</td></tr>`;
         }).join('');
         /* v385: the id sits on a plain wrapper and the class on the child. stripMethod removes
            every standing .dsc on a part but the first, and this element is the whole feedback
            channel: with the class on it, changing a price said nothing and neither did saving. */
-        return `<table class="pxboard" style="margin-bottom:9px"><thead><tr><th class="l">Size</th><th>On the board</th><th>Price</th><th>Floor</th></tr></thead><tbody>${rows}</tbody></table>
+        return `<table class="pxboard" style="margin-bottom:9px"><thead><tr><th class="l">Size</th><th>On the board</th><th>Ask</th><th>Floor</th></tr></thead><tbody>${rows}</tbody></table>
         <!-- round 5: was "the derived board", which the prefill stopped being the day a stated
              price won: it is priceLadder's ask, stated where he has stated. "As it stands" is
              true on both books; the reset button below still says derived because reset IS. -->
-        <div id="shOut" style="margin-bottom:8px"><div class="insight">Prefilled from the board as it stands; change a price or untick a size, then <b>Make it the house board</b>.</div></div>`;})()}
+        <div id="shOut" style="margin-bottom:8px"><div class="insight">Untick a size to take it off the board, then <b>Make it the house board</b>.</div></div>`;})()}
       <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center">
         <button class="vbtn" style="border-color:var(--acc)" onclick="shQueueHouse(this)">Make it the house board</button>
-        <button class="vbtn" onclick="shReset()">Back to the derived board</button>
+        <button class="vbtn" onclick="shReset()">Put every size back</button>
       </div>
-      <div class="insight" style="border-left-color:var(--gold)"><b>A typed price goes through the queue like a trade: drafted, approved and folded before it is the board.</b></div>
-      <div class="insight">A typed price replaces the markup curve at that size and nothing else; the rate-may-not-rise walk still moves every larger lot down with it.</div>
+      <div class="insight" style="border-left-color:var(--gold)"><b>Taking a size off goes through the queue like a trade: drafted, approved and folded before it is the board.</b></div>
+      <div class="insight">A size taken off stays priceable at the counter and off a quote; it simply stops being printed.</div>
     </details>
     </div>`;})()}
 
@@ -18978,42 +19028,46 @@ function shSizes(){
   const B=(PRICE_ENGINE.boardBy||{})[PROD];
   return (Array.isArray(B)&&B.length)?all.filter(q=>B.some(b=>Math.abs(b-q)<0.009)):all;
 }
+/* v656: THE ROWS ARE THE TICKS. A price is no longer typed here, so a row is a size he has left on
+   the board and `under` is gone with the typing: nothing on this table can put a price under a
+   floor any more. The shape is kept ({rows,under}) because two callers read it. */
 function shRows(prod){
   const p=prod||PROD;
-  const out=[],under=[];
+  const out=[];
   shSizes().forEach(q=>{
     const id='sh'+String(q).replace('.','_');
-    const sh=pxEl(p,id+'s'), px=pxEl(p,id+'p');
+    const sh=pxEl(p,id+'s');
     if(!sh||!sh.checked)return;
-    const v=px&&px.value.trim()!==''?+px.value:null;
-    if(!(v>0))return;
-    if(v<floorTotal(q,null,{collects:true})-0.009)under.push({q:q,p:v});
-    out.push({q:q,p:v});
+    out.push({q:q});
   });
-  return {rows:out,under:under};
+  return {rows:out,under:[]};
 }
 /* v385: .insight, not .dsc, to match the placeholder it replaces. Nothing here is stripped
    (stripMethod runs at render, not after a handler), but the two states must look alike. */
-function shDirty(el){shOut('<div class="insight">Changed. <b>Make it the house board</b> queues these figures; nothing moves until they are approved and folded.</div>',pxProdOf(el));}
+function shDirty(el){shOut('<div class="insight">Changed. <b>Make it the house board</b> queues these sizes; nothing moves until they are approved and folded.</div>',pxProdOf(el));}
 function shOut(html,prod){const el=pxEl(prod||PROD,'shOut');if(el)el.innerHTML=html;}
 function shReset(){render();}
-/* THE ONE CONTROL ON ANY SURFACE THAT WRITES PRICE_SET. The v354 road: queued, drafted, approved,
-   folded, provisional on the board in the meantime. It is kept because a stated house price is how
-   oil sits at RM130, and every other oil price is the rate law ratcheting down from it. */
+/* THE ONE CONTROL THAT WRITES PRICE_SET, WHICH SINCE v656 IS ITS HIDE LIST ALONE. The v354 road is
+   unchanged: queued, drafted, approved, folded, provisional on the board in the meantime. What it no
+   longer carries is prices. Oil sat at RM130 because of a figure typed here; it sits at the ladder's
+   Bronze now, on live costs, and the only price he sets by hand is a customer's tier. */
 function shQueueHouse(btn){
   const prod=pxProdOf(btn);
   const R=pxScope(prod,()=>shRows(prod));
   if(!R.rows.length)return shOut('<div class="dsc" style="color:var(--crim)">Every size is unticked, so there is no board to make.</div>',prod);
-  if(R.under.length)return shOut('<div class="dsc" style="color:var(--crim)">'+R.under.map(u=>units(u.q)+' at '+fmt0(u.p)).join(', ')+' sits under its floor. The board would lift it to the next step rather than quote it, so set it above the floor first.</div>',prod);
-  const prices={},hide=[];
-  const shown={};R.rows.forEach(r=>{prices[String(r.q)]=r.p;shown[String(r.q)]=1;});
+  /* v656: hide alone, and `clearing` so that putting every size back is an edit rather than an
+     empty payload the drafter skips as nothing to fold. */
+  const hide=[];
+  const shown={};R.rows.forEach(r=>{shown[String(r.q)]=1;});
   pxScope(prod,()=>shSizes()).forEach(q=>{if(!shown[String(q)])hide.push(q);});
   queue.push({at:new Date().toISOString(),type:'PRICE',party:null,qty:null,total:null,status:'price',
-    raw:'House board on '+prod+': '+R.rows.map(r=>units(r.q)+' at '+fmt0(r.p)).join('; ')+(hide.length?('; hiding '+hide.map(h=>units(h)).join(', ')):''),
-    payload:{mode:'price',product:prod,prices:prices,hide:hide}});
+    raw:'Board sizes on '+prod+': '+(hide.length?('hiding '+hide.map(h=>units(h)).join(', ')):'every size printed'),
+    payload:{mode:'price',product:prod,prices:{},hide:hide,clearing:true}});
   try{saveQueue();renderQueue();}catch(e){}
   try{applyOverlay();recompute();render();}catch(e){}
   shOut('<div class="insight"><b>Queued as the house board.</b> The board above already shows it, marked provisional. It reaches the ledger when it is approved and folded; withdraw the entry from the queue to undo it.</div>',prod);
+  /* v656: the prices themselves are not queued from here any more; the ladder asks and the tier he
+     sets a customer decides what that customer is quoted. */
   /* v537: render() above rebuilt the part and CLOSED this section, so the confirmation and the
      prices he typed sat inside a folded Set the board; on the phone that read as nothing
      happening. Reopen it and bring the line into view. */
