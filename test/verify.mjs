@@ -1330,6 +1330,15 @@ section("The gate is the only road in");
   ok(/'pending'/.test(d.slice(d.indexOf("async function fromQueue"))), "a laptop entry arrives PENDING, never pre-approved");
   ok(/status='approved' AND committed_at IS NULL/.test(d), "the run is offered only approved, uncommitted rows");
 
+  /* 16 Sep 2026: AND IT READS THE BOOK THROUGH WRANGLER, NOT THE KEYED ENDPOINTS. --from-queue
+     took the book over /ledger, an open read when it was written and keyed since 16 Aug 2026,
+     so with no key in any laptop shell the first GET answered 401 and the road was shut. The
+     mirror is the same D1 the endpoints read, and wrangler's own login opens it. */
+  const fq = d.slice(d.indexOf("async function fromQueue"), d.indexOf("/* ---- approve"));
+  ok(fq.length > 200 && !/fetch\(/.test(fq), "the laptop road reads the book without an HTTP fetch, which would need the write key");
+  ok(/FROM entry WHERE collection=/.test(fq) && /FROM snapshot WHERE one=1/.test(fq) && /FROM state ORDER BY key/.test(fq),
+     "it takes the rows, the version and the state off the mirror the endpoints themselves read");
+
   const drain = readFileSync(join(REPO, "tools", "drain.mjs"), "utf8");
   ok(/NOT A COMMIT SOURCE/.test(drain), "drain.mjs says plainly that it is no longer a commit source");
 
