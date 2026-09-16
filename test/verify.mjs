@@ -8217,11 +8217,13 @@ section("v518: salt borrowed in is a loan the other way");
     w.eval("loans.forEach(function(l){if(l.direction==='in')l.status='settled';});recompute();");
     const without = JSON.parse(w.eval("JSON.stringify(stockHistory())"));
     const i = withIn.findIndex((r) => r.iso === LD);
-    const d0 = withIn[0].lvl - without[0].lvl, dL = (withIn[i].lvl - withIn[i - 1].lvl) - (without[i].lvl - without[i - 1].lvl);
-    /* the shrinkage plug is spread over every day of the walk, so 7 unit in raises the plug by 7 and
-       the loan day shows 7 less one day's share of it; the tolerance is exactly that share */
-    const share = 7 / Math.max(1, withIn.length - 1) + 0.01;
-    ok(i > 0 && Math.abs(d0) < 0.005 && Math.abs(dL - 7) < share, `the history walk lands the 7 unit on ${LD}, not on day 0 (day 0 moved ${d0.toFixed(2)}, the loan day ${dL.toFixed(2)}, plug share ${share.toFixed(2)})`);
+    /* READ `raw`, NOT `lvl` (17 Sep 2026). `lvl` is rounded to 2 dp and this step subtracts four of
+       them, so it could carry up to 0.02 of rounding against a margin of 0.01. Unrounded the
+       arithmetic is exact. The plug is spread evenly over the days after day 0, so 7 unit in raises
+       it by 7: day 0 moves nothing, and the loan day moves 7 less one day's share. */
+    const days7 = withIn.length - 1, want7 = 7 - 7 / Math.max(1, days7);
+    const d0 = withIn[0].raw - without[0].raw, dL = (withIn[i].raw - withIn[i - 1].raw) - (without[i].raw - without[i - 1].raw);
+    ok(i > 0 && Math.abs(d0) < 1e-9 && Math.abs(dL - want7) < 1e-9, `the history walk lands the 7 unit on ${LD}, not on day 0 (day 0 moved ${d0.toFixed(4)}, the loan day ${dL.toFixed(4)}, want ${want7.toFixed(4)})`);
     try { w.close(); } catch (e) { }
   } finally { try { rm7(B7); } catch (e) { } try { rm7(M7); } catch (e) { } }
 }
