@@ -1,5 +1,14 @@
 [
  {
+  "v": "v669",
+  "d": "16 Sep 2026",
+  "t": "A COLLECTED SALE IS CANCELLED: THE CASH, THE HANDOVER AND THE COST ALL COME OFF",
+  "n": [
+   "<b>FOLDED:</b> one correction, against CS6-BS's salt row s169 of 16 Sep, 5 unit for RM420. Cash of RM420 is cleared, deliveredQty of 5 is cleared, handover of collected is cleared, the cost of RM240 is cleared and cancelled moves from false to true, recorded 16 Sep on his word. No cash and no stock move on the fold itself: the row now says nothing happened, and the original note is left standing as written.",
+   "<b>UNUSUAL:</b> a row that read as paid by qr via tng and collected the same day is withdrawn in full within hours, and the drafter's own flag on the rate, CS6-BS paying about RM107.50 a unit across 18 orders against RM84 here, 21.9% below, is answered only by the cancellation, not by any restated figure. The desk kept the position at 9.5 unit stated, count of 15 Sep, with nothing owed out and 8.5 unit promised."
+  ]
+ },
+ {
   "v": "v668",
   "d": "16 Sep 2026",
   "t": "A TIER IS SET FOR CN6-WM: PLATINUM ON SALT, NO CASH AND NO STOCK",

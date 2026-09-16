@@ -1,6 +1,6 @@
 {
-  "v": "v668",
-  "derivedFrom": "5aaf87895fece98c",
+  "v": "v669",
+  "derivedFrom": "57bc3fc72588194b",
   "tables": {
     "sales": {
       "rows": 169,
@@ -14,7 +14,7 @@
           ]
         },
         "amend": {
-          "present": 73,
+          "present": 74,
           "of": 169,
           "optional": true,
           "types": [
@@ -22,7 +22,7 @@
           ]
         },
         "cancelled": {
-          "present": 10,
+          "present": 11,
           "of": 169,
           "optional": true,
           "types": [
@@ -38,15 +38,15 @@
           ]
         },
         "cash": {
-          "present": 169,
+          "present": 168,
           "of": 169,
-          "optional": false,
+          "optional": true,
           "types": [
             "number"
           ]
         },
         "cost": {
-          "present": 160,
+          "present": 159,
           "of": 169,
           "optional": true,
           "types": [
@@ -86,9 +86,9 @@
           ]
         },
         "deliveredQty": {
-          "present": 169,
+          "present": 168,
           "of": 169,
-          "optional": false,
+          "optional": true,
           "types": [
             "number"
           ]
@@ -118,7 +118,7 @@
           ]
         },
         "handover": {
-          "present": 49,
+          "present": 48,
           "of": 169,
           "optional": true,
           "types": [
@@ -126,7 +126,7 @@
           ]
         },
         "mod": {
-          "present": 41,
+          "present": 42,
           "of": 169,
           "optional": true,
           "types": [
