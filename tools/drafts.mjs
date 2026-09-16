@@ -193,9 +193,17 @@ function draft() {
  * approval step something you could walk around without noticing.
  *
  * It uses the SAME draftRow as the Worker, imported rather than reimplemented, because two
- * drafters would disagree the first time either was touched. The book comes from the live
- * /ledger endpoints, which are open reads, and the insert goes through wrangler, so this needs
- * no write key.
+ * drafters would disagree the first time either was touched. The book and the insert both go
+ * through wrangler, so this needs no write key.
+ *
+ * THE BOOK CAME OVER THE KEYED READS AND THE ROAD WAS SHUT (16 Sep 2026). It read the book from
+ * /ledger, /ledger/state, /ledger/sales and /ledger/purchases, which were open reads when this
+ * was written and have needed X-Salt-Key since the gate was armed on 16 Aug 2026. It sent none,
+ * so the first GET answered 401 and every run died on "could not read the book from the mirror",
+ * which is why CLAUDE.md has carried this path as broken. No shell on the laptop holds that key:
+ * d1.mjs and update.mjs hit the same wall and both read the mirror through wrangler's own login
+ * instead. This now does the same, taking the rows the endpoints themselves serve, in the same
+ * shapes, from the same D1 tables, and it follows --local with them.
  */
 async function fromQueue() {
   const { draftRow } = await import("../src/drafter.js");
@@ -207,24 +215,27 @@ async function fromQueue() {
   }
   if (!files.length) { ok("no queue file on disk, so there is nothing to draft"); return; }
 
-  const base = (process.env.SALT_BASE || "https://salt-command.qyts8mh72kyg.workers.dev").replace(/\/+$/, "");
-  const get = async (p) => {
-    const r = await fetch(base + p);
-    if (!r.ok) throw new Error("GET " + p + " -> " + r.status);
-    return r.json();
+  /* The four reads the endpoints make, made here: the version off `snapshot`, the state map off
+     `state` with the __ keys the endpoint hides dropped, and each collection off `entry` in seq
+     order. A null back from query() has already said why, so it returns rather than repeating it. */
+  const docsOf = (c) => {
+    const rs = query("SELECT doc FROM entry WHERE collection='" + c + "' ORDER BY seq");
+    if (!rs) return null;
+    try { return rs.map((r) => JSON.parse(r.doc)); }
+    catch (e) { fail("a " + c + " row in the mirror is not JSON: " + e.message); return null; }
   };
-  let book;
+  const snap = query("SELECT v FROM snapshot WHERE one=1");
+  if (!snap) return;
+  const stRows = query("SELECT key,doc FROM state ORDER BY key");
+  if (!stRows) return;
+  const sales = docsOf("sales"); if (!sales) return;
+  const purchases = docsOf("purchases"); if (!purchases) return;
+  if (!snap.length) { fail("the mirror is empty; run `node tools/ledger.mjs && node tools/d1.mjs --seed` first"); return; }
+  const state = {};
   try {
-    const snap = await get("/ledger");
-    const st = await get("/ledger/state");
-    book = {
-      version: snap.snapshot && snap.snapshot.v,
-      sales: (await get("/ledger/sales")).rows || [],
-      purchases: (await get("/ledger/purchases")).rows || [],
-      state: st.state || {},
-      pricing: (st.state || {}).PRICING || null
-    };
-  } catch (e) { fail("could not read the book from the mirror: " + e.message); return; }
+    for (const r of stRows) { if (String(r.key).startsWith("__")) continue; state[r.key] = JSON.parse(r.doc); }
+  } catch (e) { fail("a state row in the mirror is not JSON: " + e.message); return; }
+  const book = { version: snap[0].v, sales, purchases, state, pricing: state.PRICING || null };
   if (!book.pricing) { fail("the mirror carries no PRICING snapshot; run `node tools/ledger.mjs && node tools/d1.mjs --seed` first"); return; }
 
   const existing = query("SELECT id FROM draft");

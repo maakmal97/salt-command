@@ -1330,6 +1330,15 @@ section("The gate is the only road in");
   ok(/'pending'/.test(d.slice(d.indexOf("async function fromQueue"))), "a laptop entry arrives PENDING, never pre-approved");
   ok(/status='approved' AND committed_at IS NULL/.test(d), "the run is offered only approved, uncommitted rows");
 
+  /* 16 Sep 2026: AND IT READS THE BOOK THROUGH WRANGLER, NOT THE KEYED ENDPOINTS. --from-queue
+     took the book over /ledger, an open read when it was written and keyed since 16 Aug 2026,
+     so with no key in any laptop shell the first GET answered 401 and the road was shut. The
+     mirror is the same D1 the endpoints read, and wrangler's own login opens it. */
+  const fq = d.slice(d.indexOf("async function fromQueue"), d.indexOf("/* ---- approve"));
+  ok(fq.length > 200 && !/fetch\(/.test(fq), "the laptop road reads the book without an HTTP fetch, which would need the write key");
+  ok(/FROM entry WHERE collection=/.test(fq) && /FROM snapshot WHERE one=1/.test(fq) && /FROM state ORDER BY key/.test(fq),
+     "it takes the rows, the version and the state off the mirror the endpoints themselves read");
+
   const drain = readFileSync(join(REPO, "tools", "drain.mjs"), "utf8");
   ok(/NOT A COMMIT SOURCE/.test(drain), "drain.mjs says plainly that it is no longer a commit source");
 
@@ -12769,6 +12778,30 @@ section("v672: the word he banned lives on only in the dated records");
   ok(["engine/pricing.mjs", "src/worker.js", "stmt/page.js", "tools/foldcall.mjs", "docs/DESK.md", "design/desk.css"].every((f) => files.includes(f)),
     `the scan reads the master and the built desk outside their evolution, this file, and every module, doc and stylesheet behind them (${files.length} files)`);
   ok(hits.length === 0, "the word he banned appears nowhere outside the dated records: " + hits.slice(0, 6).join(" | "));
+}
+
+section("v674: the three headings that called the goods stock now call them inventory (hard rule 5)");
+{
+  /* HIS COPY RULE OF 11 SEP 2026. The goods are INVENTORY in copy; STOCK is the rail's
+     destination. Three headings still carried the rail's word for the goods and rule 5 named
+     them: Spent on stock and Stock behind it on Financials, Stock reconciliation on On hand.
+     The evolution array is stripped before the scan because it is history and quotes the old
+     wording, the same exclusion the kg sweep takes. The destination is NOT swept: the rail's
+     tab and the VIEWS row behind it say Stock, and must, so the last assertion holds them. */
+  const fs = await import("node:fs");
+  const lines = fs.readFileSync("master/salt_command.html", "utf8").split("\n");
+  const ev = lines.findIndex((l) => l.startsWith("const evolution=["));
+  let evEnd = ev;
+  while (evEnd < lines.length && !lines[evEnd].trimEnd().endsWith("}];")) evEnd++;
+  const desk = lines.filter((_, i) => i < ev || i > evEnd).join("\n");
+  const once = (s) => desk.split(s).length - 1;
+
+  ok(once("'Inventory reconciliation'") === 1 && once("'Inventory behind it'") === 1 && once("'Spent on inventory'") === 1,
+     "the three read Inventory: reconciliation on On hand, behind it and Spent on on Financials");
+  const stale = ["'Stock reconciliation'", "'Stock behind it'", "'Spent on stock'"].filter((s) => desk.includes(s));
+  ok(stale.length === 0, "and not one of them still says stock" + (stale.length ? ": " + stale.join(", ") : ""));
+  ok(desk.includes('data-s="stock">Stock<') && desk.includes("name:'Stock'"),
+     "while the rail's own destination still reads Stock, which is what the rule asks for");
 }
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
 process.exit(fail ? 1 : 0);
