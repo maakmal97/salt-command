@@ -1942,7 +1942,9 @@ section("Geography — geo/ is the source (v349)");
   ok(/const BASEMAP=\[/.test(desk) && !/const BASEMAP=\[\s*\{name:/.test(desk), "the built desk carries the outlines and no feature name");
   /* v630: beyond a name that is also an official area the map shows, by his decision of 14 Sep 2026 (Kuala Lumpur is a district) */
   const areaWords19 = areaNameSet(JSON.parse(readFileSync(join(REPO, "geo", "areas.json"), "utf8")));
-  ok(bm.features.every((f) => areaWords19.has(f.name.toLowerCase()) || !desk.includes(`"${f.name}"`)), "no basemap feature is named in the public desk, beyond the area names the map shows");
+  /* v679: each district carries its state for the place lookup's "SG" or "Selangor", which the map never draws as a name */
+  const deskNoState19 = desk.replace(/"state":"[^"]*"/g, "");
+  ok(bm.features.every((f) => areaWords19.has(f.name.toLowerCase()) || !deskNoState19.includes(`"${f.name}"`)), "no basemap feature is named in the public desk, beyond the area names the map shows and a district's own state");
   ok(desk.includes(bm.attribution.slice(0, 24)), "the ODbL attribution is on the page, which is what the licence asks");
 }
 
@@ -8571,7 +8573,10 @@ section("v528: the name on the phone, filed encrypted before the ID is queued");
   ok(!B.no && !B.dis && /Registered CT11-SOM/.test(stB) && post && post.body && post.body.vault && post.body.vault.ct, "with a name and place the vault is posted and the ID registered: " + (B.no || stB.slice(0, 90)));
   let opened = null; try { opened = await vdec("pw", post.body.vault); } catch (e) { opened = { err: String(e && e.message) }; }
   ok(opened && opened["CT11-SOM"] === "Test Person (Somewhere)", "the same passphrase opens the envelope to the name and place: " + JSON.stringify(opened && opened["CT11-SOM"]));
-  ok(qB.q.length === 1 && qB.q[0].type === "ADDID" && qB.q[0].payload.code === "CT11-SOM" && !JSON.stringify(qB.q).includes("Test Person") && !JSON.stringify(qB.q).includes("Somewhere") && qB.roster, "the ID is queued with no name and no place on it, and is selectable at once");
+  /* v679: the locality rides on the point, public by his decision of 17 Sep 2026; the name never travels */
+  const geoB = qB.q[0] && qB.q[0].payload.geo, somewhereB = JSON.stringify(qB.q).split("Somewhere").length - 1;
+  ok(qB.q.length === 1 && qB.q[0].type === "ADDID" && qB.q[0].payload.code === "CT11-SOM" && !JSON.stringify(qB.q).includes("Test Person") && somewhereB === (geoB && geoB[2] === "Somewhere" ? 1 : 0) && qB.roster,
+    "the ID is queued with no name on it and the place only as the locality on its point, and is selectable at once: " + JSON.stringify(qB.q[0] && qB.q[0].payload.geo));
   /* a refused passphrase, and a refused save, register nothing */
   forgetCode("CT11-SOM");
   const C = JSON.parse(String(w.eval(DRIVE({ pass: "", name: "Test Person", place: "Somewhere" }))));
@@ -11295,8 +11300,9 @@ section("v628: Amend ID re-keys a party through Approve, and the name moves in t
     const opened28 = async () => { const p = rd28("window.__posts").find((x) => /vault$/.test(x.u) && x.m === "POST"); return p ? vd28("pw", p.body.vault) : {}; };
     w28.eval(stub28 + "WB_GEO={text:'Seg Town',point:[2.7,101.95],how:'tap'};"); aplan("CZ9-TBC", "Zed Zed Z", "Seg Town"); w28.eval("wbRecord();");   // v633: placed by a tap
     const st28 = await settle28(), q28 = rd28("queue.map(function(x){return {type:x.type,raw:x.raw,payload:x.payload};})"), open28 = await opened28();
-    ok(/queued for approval/.test(st28) && q28.length === 1 && q28[0].payload.mode === "rename" && q28[0].payload.from === "CZ9-TBC" && q28[0].payload.to === "CZ9-ST" && !/Zed|Seg Town/.test(JSON.stringify(q28)),
-      "Record files the vault first and queues the rename with codes only: " + st28);
+    ok(/queued for approval/.test(st28) && q28.length === 1 && q28[0].payload.mode === "rename" && q28[0].payload.from === "CZ9-TBC" && q28[0].payload.to === "CZ9-ST" && !/Zed/.test(JSON.stringify(q28))
+      && JSON.stringify(q28).split("Seg Town").length - 1 === 1 && JSON.stringify(q28[0].payload.geo) === '[2.7,101.95,"Seg Town"]',
+      "Record files the vault first and queues the rename with codes, the point and its locality, never the name (v679): " + st28);
     ok(open28["CZ9-ST"] === "Zed Zed Z (Seg Town)" && open28["CZ9-TBC"] === "Zed Zed Z (to be confirmed)" && open28["CZ1-OTH"] === "Other (Here)", "the vault gains the new code's entry and keeps the old one until the fold: " + JSON.stringify(Object.keys(open28)));
     ok(/already has a rename waiting/.test(aplan("CZ9-TBC", "Zed Zed Z", "Other Place").msgs), "a second rename of a party already waiting is refused at the preview");
     w28.eval(stub28); aplan("CZ9-TBC", "Zyx Zyx Z", ""); w28.eval("wbRecord();");
