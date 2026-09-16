@@ -12349,5 +12349,84 @@ section("v656: the board is the ladder, so a stranger is quoted Bronze and a sta
   } finally { await new Promise((r) => setTimeout(r, 200)); try { w56.close(); } catch (e) { /* best effort */ } }
 }
 
+
+section("v659: the label is a subtle mark on their prices, and the greeting is as personal as this site can be");
+{
+  /* HIS INSTRUCTION OF 16 SEP 2026: "The label to them is a very subtle tier level, in symbol and colour (for each tier),
+     marked in the pricing. But each user will be greeted as personally as possible when they log in."
+     A symbol and a colour beside each product, because a level is held per product; the level is NEVER NAMED in the page,
+     which is what makes it subtle. The greeting is the honest limit of "personally": no customer's name exists anywhere
+     this site can reach, by hard rule 2, so it is the hour off their own device and the month their first order falls in.
+     Driven in jsdom against the real page and the real crypto, as v651's checks are. */
+  const PL59 = await import("../tools/pricelist.mjs");
+  const { landingPage: lp59 } = await import("../stmt/page.js");
+  const C59 = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto: wc59 } = await import("node:crypto");
+  const { JSDOM: JD59 } = await import("jsdom");
+  const open59 = async (list) => {
+    const u = "abcd-efgh", pass = "fixture-pass-59", ck = await C59.contentKey("test-secret", u);
+    const body = { ok: true, wrap: await C59.wrapKey(pass, ck), session: "",
+      env: await C59.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
+      prices: await C59.encryptWith(ck, JSON.stringify(list)) };
+    const dom = new JD59(lp59(u, "n59", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: wc59, configurable: true }); } catch (e) { win.crypto = wc59; }
+      if (!win.TextEncoder) win.TextEncoder = TextEncoder;
+      if (!win.TextDecoder) win.TextDecoder = TextDecoder;
+      win.fetch = async (path) => { const open = String(path) === "/open"; return { ok: open, status: open ? 200 : 404, json: async () => (open ? body : { ok: false }) }; };
+    } });
+    const d = dom.window.document;
+    try {
+      d.getElementById("un").value = u; d.getElementById("pw").value = pass;
+      d.getElementById("f").dispatchEvent(new dom.window.Event("submit", { bubbles: true, cancelable: true }));
+      for (let i = 0; i < 150 && !d.getElementById("pPrices").textContent; i++) await new Promise((r) => setTimeout(r, 100));
+      return {
+        text: d.getElementById("pPrices").textContent,
+        marks: [...d.querySelectorAll("#pPrices .mark")].map((m) => ({ ch: m.textContent, colour: m.style.color, hidden: m.getAttribute("aria-hidden") })),
+        heads: [...d.querySelectorAll("#pPrices h3")].map((h) => h.textContent)
+      };
+    } finally { dom.window.close(); }
+  };
+  const list59 = (tSalt, tOil, since) => ({ at: "2026-09-16T00:00:00.000Z", week: { label: "14 Sept to 20 Sept 2026", monday: "2026-09-14" }, since,
+    products: [{ product: "salt", name: "Salt", unit: "unit", basis: "yours", tier: tSalt, rate: 100, orders: 3, sizes: [{ q: 1, price: 100 }] },
+      { product: "oil", name: "Oil", unit: "unit", basis: "tier", tier: tOil, rate: null, orders: 0, sizes: [{ q: 10, price: 230 }] }],
+    soon: [] });
+
+  const a59 = await open59(list59("Gold", "Bronze", "2026-03-04"));
+  /* 1. A MARK FOR EACH PRODUCT, AND THE TWO LEVELS DIFFER IN BOTH SYMBOL AND COLOUR. Both halves are
+     asserted: one map keyed by level with the same glyph twice would pass a check on colour alone. */
+  ok(a59.marks.length === 2 && a59.marks[0].ch !== a59.marks[1].ch && a59.marks[0].colour !== a59.marks[1].colour
+    && a59.marks.every((m) => m.ch && m.colour && m.hidden === "true"),
+    "each product carries its level's own mark, symbol and colour, and the mark is not read out: " + JSON.stringify(a59.marks));
+  /* 2. AND THE LEVEL IS NEVER NAMED. This is the whole of "subtle": the name travels in the sealed list and stays out of
+     the page's text, so two customers comparing pages cannot order themselves by it. */
+  const names59 = ["Ambassador", "Titanium", "Platinum", "Gold", "Silver", "Bronze"];
+  ok(names59.every((n) => a59.text.indexOf(n) < 0),
+    "and no level is named anywhere in the prices they read: " + JSON.stringify(a59.heads));
+  /* 3. THE SAME LEVEL ON BOTH PRODUCTS GIVES THE SAME MARK, which is what makes it a label and not a decoration. */
+  const b59 = await open59(list59("Gold", "Gold", "2026-03-04"));
+  ok(b59.marks.length === 2 && b59.marks[0].ch === b59.marks[1].ch && b59.marks[0].colour === b59.marks[1].colour
+    && b59.marks[0].ch === a59.marks[0].ch,
+    "the same level on both products draws the same mark: " + JSON.stringify(b59.marks));
+  /* 4. THE GREETING, AND THE MONTH THEIR FIRST ORDER FALLS IN. The hour is the device's, so the greeting is checked
+     against the hour this run happens to be at rather than against one of the three words. */
+  const hour59 = new Date().getHours();
+  const want59 = hour59 < 12 ? "Good morning." : (hour59 < 18 ? "Good afternoon." : "Good evening.");
+  ok(a59.text.indexOf(want59) >= 0 && a59.text.indexOf("Buying with us since March 2026.") >= 0,
+    "they are greeted for the hour and told how long they have been buying: " + JSON.stringify(a59.text.slice(0, 90)));
+  /* 5. AND NO NAME IS INVENTED. There is none to use: the rule that keeps plaintext names off the cloud means the page
+     cannot know one, and a greeting that guessed at one would be worse than the hour. */
+  const c59 = await open59(list59("Gold", "Bronze", null));
+  ok(c59.text.indexOf(want59) >= 0 && c59.text.indexOf("Buying with us since") < 0,
+    "and a customer with no first order yet is greeted without it, rather than with a blank month");
+  /* 6. `since` IS THE FIRST PRICED ORDER, on the same rule the rate uses: a cancelled row, a defaulted one and an award
+     with no cash are not orders they placed at a price. */
+  const s59 = [{ customer: "CZ9-SN", product: "salt", date: "2026-01-05", qty: 1, total: 100, cancelled: true },
+    { customer: "CZ9-SN", product: "salt", date: "2026-02-05", qty: 1, total: 100, defaulted: true },
+    { customer: "CZ9-SN", product: "salt", date: "2026-03-05", qty: 1, total: 100, rebate: true, cash: 0 },
+    { customer: "CZ9-SN", product: "salt", date: "2026-04-05", qty: 1, total: 100, cash: 100, deliveredQty: 1, deliveredOn: "2026-04-05" },
+    { customer: "CZ9-SN", product: "oil", date: "2026-05-05", qty: 10, total: 230, cash: 230, deliveredQty: 10, deliveredOn: "2026-05-05" }];
+  ok(PL59.since(s59, "CZ9-SN") === "2026-04-05" && PL59.since(s59, "CZ9-NOBODY") === null,
+    "the month is their first PRICED order, so a cancelled, a defaulted and an award with no cash are not it: " + PL59.since(s59, "CZ9-SN"));
+}
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
 process.exit(fail ? 1 : 0);

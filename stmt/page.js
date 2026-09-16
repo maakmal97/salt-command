@@ -46,6 +46,8 @@ const PAGE_CSS = `
    decision 5 of the identity. Everything else is a hairline or a word. */
 .gate{max-width:440px;margin:10vh auto 0;padding:0 4px}
 .gate h1{font-size:var(--salt-text-xl);margin:0 0 8px}
+/* the level's mark: small, quiet, and never in the way of the price beside it (16 Sep 2026) */
+.mark{margin-left:7px;font-size:0.72em;line-height:1;vertical-align:0.12em;opacity:0.85}
 .gate p.lead{color:var(--salt-text-muted);font-size:var(--salt-text-sm);line-height:1.75;margin:0 0 24px}
 .lbl{display:block;font-size:var(--salt-text-xs);letter-spacing:.2em;text-transform:uppercase;
   color:var(--salt-copper);font-weight:700;margin:14px 0 6px;font-family:var(--salt-font-mono)}
@@ -439,18 +441,53 @@ const CLIENT_JS = `
   }
 
   /* ---- PRICES: the week's list, one block per product ---- */
+  /* HIS INSTRUCTION, 16 SEP 2026: GREETED AS PERSONALLY AS POSSIBLE. As personally as this site can,
+     which is the honest limit: no name of any customer exists anywhere it can reach, by the rule that
+     keeps plaintext names off the cloud, so the greeting is built from what their own sealed record
+     holds. The hour is theirs, off their own device; the month is the one their first order falls in. */
+  function hail(){
+    var h=new Date().getHours();
+    return h<12?'Good morning.':(h<18?'Good afternoon.':'Good evening.');
+  }
+  var MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  function monthOf(d){
+    var m=/^(\\d{4})-(\\d{2})/.exec(String(d||'')); if(!m) return '';
+    return MONTHS[+m[2]-1]+' '+m[1];
+  }
+  /* the mark for each level, symbol then colour; all six shapes come from one Unicode block so they
+     render the same everywhere, and none of them is a count */
+  var MARK={ 'Ambassador':['\\u25C7','#2b2f33'], 'Titanium':['\\u25CF','#6e7b85'], 'Platinum':['\\u25C6','#9aa7b0'],
+             'Gold':['\\u25B2','#c08a3e'], 'Silver':['\\u25A0','#8c97a0'], 'Bronze':['\\u25CB','#b06a3b'] };
   function drawPrices(){
     pPrices.textContent='';
     var h=el('h2',null,'Your prices'); pPrices.appendChild(h);
+    var g=el('p','lead',hail()); g.style.marginTop='0'; pPrices.appendChild(g);
     var soon=(prices&&prices.soon)||[];
     if(!prices||((!prices.products||!prices.products.length)&&!soon.length)){
       pPrices.appendChild(el('p','lead','No price list has been written for your account yet. It is written with the next update and changes weekly.'));
       return;
     }
     pPrices.appendChild(el('p','lead','For the week of '+(prices.week&&prices.week.label||'')+'. The price is for the goods; if you ask for delivery, the charge is added when the order is marked ready and you see it then. The list is written from your own history and changes weekly.'));
+    if(prices.since) pPrices.appendChild(el('p','sub2','Buying with us since '+monthOf(prices.since)+'.'));
     prices.products.forEach(function(p){
       var pane=el('div','pane');
-      pane.appendChild(el('h3',null,p.name));
+      var h3=el('h3',null,p.name);
+      /* ============ HIS INSTRUCTION, 16 SEP 2026: THE LABEL IS A VERY SUBTLE MARK ============
+         A symbol and a colour for each level, beside the product it belongs to, because a customer
+         holds a level per product. THE LEVEL IS NEVER NAMED HERE, which is the whole of "subtle":
+         the mark is theirs to recognise, not a rank to read off, and the shapes deliberately do not
+         count up or down so two customers comparing pages cannot order themselves by it. The name
+         travels in the sealed list, as it has since v651, and stays out of the page's text and out
+         of the mark's own label. */
+      var mk=MARK[p.tier];
+      if(mk){
+        var m=el('span','mark');
+        m.textContent=mk[0];
+        m.style.color=mk[1];
+        m.setAttribute('aria-hidden','true');
+        h3.appendChild(m);
+      }
+      pane.appendChild(h3);
       pane.appendChild(el('p','sub2', p.basis==='yours'
         ? 'Your rate: '+rm(p.rate)+' per '+(p.unit||'unit')+', from your last '+p.orders+' order'+(p.orders===1?'':'s')+'. '
         : 'Your own rate follows your first order. '));

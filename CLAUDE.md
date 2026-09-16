@@ -253,6 +253,11 @@ re-issued. **Behind the password: statements, the price list and the order.** Ev
 including the secrets, the price list and the order relay: `docs/STATEMENTS.md`.
 
 - **The site address is never in the public desk.** No address, no QR drawn.
+- **THE CUSTOMER'S LABEL IS A MARK, NOT A NAME** (v659, his instruction of 16 Sep 2026): a symbol and
+  a colour for each level beside each product on their price list, and **the level is never named in
+  the page**. They are greeted for the hour off their own device and told the month of their first
+  priced order. **No name is used because none exists here** (rule 2); sealing one into a customer's
+  own ciphertext is his decision, not a drift.
 - **NO BRAND ON THE CUSTOMER'S PAGE** (his instruction, 10 Sep 2026). Nothing under `stmt/`
   names Salt Command: not the door, not an order line, not the push banner. The landing lead is
   two sentences and stays two. The statement DOCUMENTS keep it as a letterhead (`brand:` in

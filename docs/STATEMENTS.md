@@ -182,6 +182,24 @@ Three things sit behind the one password since v499: the statements, a **price l
 the week, and an **order**. The page shows them as three tabs once the password has opened
 the record. Nothing about the statements changed.
 
+**THE LABEL IS A MARK, NOT A NAME** (v659, his instruction of 16 Sep 2026: "a very subtle tier level,
+in symbol and colour (for each tier), marked in the pricing"). Each product on the price list carries
+a small glyph in its level's colour beside the product's name: `MARK` in `stmt/page.js`, six shapes
+from one Unicode block so they render the same everywhere, and none of them a count. **The level is
+never named in the page**, which is the whole of subtle: two customers comparing pages cannot order
+themselves by it. The name does travel inside the sealed list, as it has since v651, and stays out of
+the text and out of the mark's own label, which is `aria-hidden` so it is not read out either.
+
+**AND THEY ARE GREETED AS PERSONALLY AS THIS SITE CAN** (v659, the same instruction). The hour is
+theirs, off their own device, so the page opens with Good morning, Good afternoon or Good evening,
+and under the week's line it says the month their first priced order falls in (`since` in
+`tools/pricelist.mjs`, on the same rule the rate uses: a cancelled row, a defaulted one and an award
+with no cash are not orders they placed at a price). **No customer's name is used, because none
+exists anywhere this site can reach**: hard rule 2 keeps plaintext names off the cloud and
+`tools/make_statements.mjs` builds every statement from codes alone. Sealing a name into the
+customer's own ciphertext would be possible and is HIS DECISION TO MAKE, not one to drift into: it
+would put names, encrypted, into the committed `_kv` records, where today there are none at all.
+
 **The price list is a second sealed document beside the live statement.** The deploy writes
 it in the same publish, under the same content key, so the site still holds nothing it can
 read. `tools/pricelist.mjs` is the whole rule: the customer's rate on a product is the BEST

@@ -1,5 +1,15 @@
 [
  {
+  "v": "v659",
+  "d": "16 Sep 2026",
+  "t": "THE LABEL IS A SUBTLE MARK ON THEIR PRICES, AND THE GREETING IS AS PERSONAL AS THE SITE CAN BE",
+  "n": [
+   "<b>HIS INSTRUCTION OF 16 SEP 2026:</b> a very subtle tier level, in symbol and colour for each tier, marked in the pricing. Each product on a customer's price list now carries a small glyph in its level's colour beside the product's name, a level being held per product. The six shapes come from one Unicode block so they render the same on every phone, and <b>none of them is a count</b>: two customers comparing pages can see that their marks differ and cannot order themselves by them. <b>The level is never named in the page</b>, which is the whole of subtle; the name travels inside the sealed list, as it has since v651, and the mark is aria-hidden so it is not read out either.",
+   "<b>AND EACH CUSTOMER IS GREETED AS PERSONALLY AS THIS SITE CAN MANAGE.</b> The hour is theirs, off their own device, so the page opens with Good morning, Good afternoon or Good evening, and under the week's line it says the month their first priced order falls in, on the same rule the rate uses: a cancelled row, a defaulted one and an award with no cash are not orders placed at a price. <b>NO NAME IS USED, BECAUSE NONE EXISTS ANYWHERE THIS SITE CAN REACH:</b> plaintext names are kept off the cloud by rule, and every statement is built from codes alone. Sealing a name into a customer's own ciphertext would work and is HIS DECISION, not one to drift into: it would put names, encrypted, into records that today hold none.",
+   "<b>THE CHECKS.</b> A new section of 6 assertions, driven against the real page and the real crypto in jsdom: a mark for each product differing in both symbol and colour, the same level drawing the same mark on both products, no level named anywhere in the text, the greeting checked against the hour the run happens to be at, a customer with no first order greeted without the month rather than with a blank one, and the month itself. 6 mutations, each red."
+  ]
+ },
+ {
   "v": "v658",
   "d": "16 Sep 2026",
   "t": "A GUEST LINK NAMES ITS INTRODUCER, AND FOLLOWS THEM UP",

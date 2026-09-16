@@ -85,11 +85,23 @@ export function ownRate(sales, code, product, before) {
 
 
 /** The list: one block per product, every board size, one price each. */
+/** The month a customer's first priced order falls in, for the greeting on their own page. Sealed
+ *  with the rest of their list, so it reaches them and nobody else. Null before their first order. */
+export function since(sales, code) {
+  let first = null;
+  for (const s of sales || []) {
+    if (!POSITION_ENGINE.ownsCode(code, s.customer)) continue;
+    if (!pricedOrder(s) || !s.date || !(s.total > 0) || !(s.qty > 0)) continue;
+    if (first == null || String(s.date) < first) first = String(s.date);
+  }
+  return first;
+}
+
 export function priceList(code, book, pricing, now) {
   const week = weekOf(now);
   const sizes = (pricing && pricing.sizes) || [];
   const products = book.PROD_ORDER || Object.keys(book.PRODUCTS || { salt: 1 });
-  const out = { at: new Date(now || Date.now()).toISOString(), week, products: [], soon: [] };
+  const out = { at: new Date(now || Date.now()).toISOString(), week, since: since(book.sales, code), products: [], soon: [] };
   for (const p of products) {
     const snap = pricing && pricing.byProduct && pricing.byProduct[p];
     const inputs = snap && snap.inputs;
