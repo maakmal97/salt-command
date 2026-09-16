@@ -202,16 +202,18 @@ python serve_desk.py</pre>
     <div class="item">
       <div class="itop"><h3>Guest links</h3><span class="who him">him</span></div>
       <p class="when"><em>To mint a board for a stranger a customer introduced</em>, and to revoke
-      it or count its opens later. Minting takes the introducer's username; the guest is quoted two
-      levels above theirs where there is room. Minted inside the owner's list.</p>
-      <a class="go" href="https://k7m3p2.qyts8mh72kyg.workers.dev/all/refs">k7m3p2&hellip;/all/refs</a>
+      it or count its opens later. <em>A panel inside the owner's list, not an address of its
+      own</em>: <code>/all/refs</code> is the JSON behind it and answers nothing a browser can read. What
+      guards a mint is the introducer's username, which must be one the roster holds; the guest's
+      level then follows from their tier, two above where there is room.</p>
+      <a class="go" href="https://k7m3p2.qyts8mh72kyg.workers.dev/all">k7m3p2&hellip;/all &rarr; guest links</a>
     </div>
 
     <div class="item">
       <div class="itop"><h3>A guest board</h3><span class="who guest">stranger</span></div>
       <p class="when"><em>What a stranger is handed.</em> One board and nothing else, no script at
-      all. The id in the path is the whole credential, so there is no fixed address to bookmark:
-      open one from the refs list to check it renders.</p>
+      all. <em>The open one: no Access, no password</em>, because the id in the path is the whole
+      credential. No fixed address to bookmark: open one from the owner's list to check it renders.</p>
       <div class="dead">/g/&lt;id&gt;</div>
     </div>
 
