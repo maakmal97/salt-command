@@ -113,13 +113,22 @@ export function priceList(code, book, pricing, now) {
        The board's own sizes travel in the policy; the snapshot carries them too since today. */
     const sizesHere = (Array.isArray(P.boardSizes) && P.boardSizes.length) ? P.boardSizes
       : ((Array.isArray(snap.sizes) && snap.sizes.length) ? snap.sizes : sizes);
-    /* v651: the customer's tier for this product, held or proposed, priced off the ladder the desk carried into the snapshot */
+    /* v651: the customer's tier for this product, held or proposed, priced off the ladder the desk carried into the snapshot.
+       v670: what is held may be a band set, a level for small, mid and big orders, so each size reads its own level through
+       the engine's levelAt, on the band cuts the desk carried in the snapshot. One level still reads the same at every size. */
     const name = (book.PRODUCTS && book.PRODUCTS[p] && book.PRODUCTS[p].name) || p;
-    const t = (pricing.tierNames || []).indexOf(((pricing.tierOf || {})[code] || {})[p]);
+    const names = pricing.tierNames || [];
+    const held = ((pricing.tierOf || {})[code] || {})[p];
+    const bandCuts = pricing.profileRule || { smallUpTo: 1, bigFrom: 3 };
+    /* their NORMAL level is the one a mid-sized order takes, halfway between the two cuts; it answers "is this priced at all"
+       and it is the mark the page draws, a band set's small and big levels being departures from it */
+    const midQ = (bandCuts.smallUpTo + bandCuts.bigFrom) / 2;
+    const t = names.indexOf(PRICING_ENGINE.levelAt(held, midQ, bandCuts));
     if (t < 0) { out.soon.push({ product: p, name }); continue; }
     const rows = sizesHere.slice().sort((a, b) => a - b).map((q) => {
       const rung = snap.ladder.find((r) => Math.abs(r.q - q) < 0.009);
-      const price = PRICING_ENGINE.cardPrice(own.rate != null ? own.rate * q : null, PRICING_ENGINE.floorTotal(q, C, P), rung.prices[t]);
+      const tq = names.indexOf(PRICING_ENGINE.levelAt(held, q, bandCuts));
+      const price = PRICING_ENGINE.cardPrice(own.rate != null ? own.rate * q : null, PRICING_ENGINE.floorTotal(q, C, P), rung.prices[tq]);
       return { q, price: +price.toFixed(2) };
     });
     out.products.push({
@@ -127,7 +136,10 @@ export function priceList(code, book, pricing, now) {
       name,
       unit: (book.PRODUCTS && book.PRODUCTS[p] && book.PRODUCTS[p].unit) || "unit",
       basis: own.rate != null ? "yours" : "tier",
-      tier: pricing.tierNames[t],
+      /* the page draws ONE mark a product, so `tier` is their normal level, a band set's mid; the set itself travels as
+         `levels` for whatever later reads it, and the page still never names either */
+      tier: names[t],
+      levels: (held && typeof held === "object") ? held : null,
       rate: own.rate, orders: own.orders, sizes: rows
     });
   }

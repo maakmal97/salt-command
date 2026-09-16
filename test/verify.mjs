@@ -12582,5 +12582,69 @@ section("v666: each customer has a profile on each product, read off their own o
       "and the pricing snapshot carries the desk's own profile and rule: " + JSON.stringify(snap61.profileOf && snap61.profileOf["CZ9-OFT"]));
   } finally { await new Promise((r) => setTimeout(r, 200)); try { w61.close(); } catch (e) { /* best effort */ } }
 }
+
+section("v670: a customer's level can differ by the size of the order, read band by band in one place");
+{
+  /* HIS DECISIONS OF 16 SEP 2026. A tier is one level, or a band set {small, mid, big} cut at one unit and three, the book's own
+     quartiles. The engine's levelAt turns a size into a level for the desk, the customer's price list and the fold alike. No
+     band set exists on the book at this version, so every customer is quoted exactly as before; the rules that propose band
+     sets come next. Forced fixtures; each assertion was proved red by mutation. */
+  const PE67 = (await import("../engine/pricing.mjs")).default;
+  const B67 = { smallUpTo: 1, bigFrom: 3 };
+  /* 1. THE BANDS, AND THE FALLBACK. A name is the same at every size; a set gives small up to and including a unit, big from
+     three, mid between; a band left out takes mid. The edges are asserted exactly, because an off-by-one band is a wrong price. */
+  const set67 = { small: "Titanium", mid: "Gold", big: "Silver" };
+  ok(["Gold", "Gold", "Gold"].join() === [0.5, 2, 12.5].map((q) => PE67.levelAt("Gold", q, B67)).join()
+    && [0.5, 1, 1.5, 2.5, 3, 12.5].map((q) => PE67.levelAt(set67, q, B67)).join() === "Titanium,Titanium,Gold,Gold,Silver,Silver"
+    && PE67.levelAt({ small: "Titanium", mid: "Gold" }, 3, B67) === "Gold" && PE67.levelAt(null, 1, B67) === null,
+    "a level reads the same at every size, a band set reads small to one unit, mid between and big from three, and a missing band takes mid");
+  /* 2. THE SHAPES THAT PRICE, AND THE ONES THAT DO NOT, asked of the one check the drafter and the fold both use */
+  const N67 = ["Ambassador", "Titanium", "Platinum", "Gold", "Silver", "Bronze"];
+  ok(PE67.levelShapeOk("Gold", N67) && PE67.levelShapeOk(set67, N67) && PE67.levelShapeOk({ big: "Silver" }, N67)
+    && !PE67.levelShapeOk("Diamond", N67) && !PE67.levelShapeOk({ huge: "Gold" }, N67) && !PE67.levelShapeOk({ small: "Diamond" }, N67)
+    && !PE67.levelShapeOk({}, N67) && !PE67.levelShapeOk(["Gold"], N67),
+    "a level or a band set of real levels is a tier; an unknown level, an unknown band, an empty set and a list are not");
+  const { openMaster: om67 } = await import("../tools/payload.mjs");
+  const { w: w67 } = await om67();
+  const rd67 = (e) => JSON.parse(String(w67.eval("JSON.stringify(" + e + ")")));
+  try {
+    /* CZ9-BND holds a band set and has no orders, so no rate of their own lowers anything and the level's price binds */
+    w67.eval("(function(){if(roster.indexOf('CZ9-BND')<0)roster.push('CZ9-BND');TIER_OF['CZ9-BND']={salt:{small:'Titanium',mid:'Gold',big:'Silver'}};queue=[];setProd('salt');recompute();})()");
+    /* 3. THE DESK QUOTES EACH SIZE AT ITS OWN BAND'S LEVEL, checked against the ladder's own price for that level at that size */
+    const q67 = rd67("(function(){var out=[];[1,2,3,12.5].forEach(function(q){var row=PRICING_ENGINE.fiveTierAt(q,pxCost(),pxPolicy());"
+      + "out.push({q:q,quote:cardQuote('CZ9-BND',q),want:{1:row.prices[1],2:row.prices[3],3:row.prices[4],12.5:row.prices[4]}[q]});});return out;})()");
+    ok(q67.length === 4 && q67.every((r) => r.quote != null && r.quote === r.want),
+      "a customer on a band set is quoted Titanium at a unit, Gold at two and Silver from three: " + JSON.stringify(q67.map((r) => [r.q, r.quote, r.want])));
+    /* 4. AND THE PRINTED BOARD FOLLOWS THE SAME BANDS, size by size */
+    const pb67 = rd67("(function(){return pbPrices('CZ9-BND').map(function(r){return [r.q,r.price,cardQuote('CZ9-BND',r.q)];});})()");
+    ok(pb67.length > 4 && pb67.every((r) => r[1] === r[2]), "the printed board prints each size at its own band's level: " + JSON.stringify(pb67.slice(0, 4)));
+    /* 5. THE CUSTOMER'S OWN PAGE AGREES WITH THE DESK AT EVERY SIZE, through the snapshot, which carries the band set */
+    const PL67 = await import("../tools/pricelist.mjs");
+    const { pricingSnapshot: ps67 } = await import("../tools/book.mjs");
+    const bk67 = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+    const snap67 = ps67(w67);
+    const list67 = PL67.priceList("CZ9-BND", bk67, snap67, new Date()).products.find((p) => p.product === "salt");
+    const desk67 = rd67("(function(){var o={};shownSizes('salt').forEach(function(q){o[q]=cardQuote('CZ9-BND',q);});return o;})()");
+    ok(list67 && list67.sizes.length > 4 && list67.sizes.every((r) => r.price === desk67[r.q]) && list67.tier === "Gold"
+      && list67.levels && list67.levels.big === "Silver",
+      "and the customer's own price list prints the same price at every size, with their normal level the mid band's: "
+      + JSON.stringify({ tier: list67 && list67.tier, first: list67 && list67.sizes.slice(0, 3) }));
+    /* 6. THE DRAFTER TAKES A BAND SET THROUGH APPROVE, AND REFUSES A SHAPE THAT WOULD NOT PRICE */
+    const D67 = await import("../src/drafter.js");
+    const bookD = { state: { roster: ["CZ9-BND"], TIER_OF: {}, PRODUCTS: { salt: { name: "Salt" } } }, pricing: { tierNames: N67 } };
+    const good = D67.draftRow({ at: "2026-09-16T01:00:00.000Z", payload: { mode: "tierset", tiers: { "CZ9-BND": { salt: set67 } } } }, bookD);
+    const bad = D67.draftRow({ at: "2026-09-16T01:00:01.000Z", payload: { mode: "tierset", tiers: { "CZ9-BND": { salt: { huge: "Gold" } } } } }, bookD);
+    ok(good && good.collection === "tierset" && JSON.stringify(good.row.tiers["CZ9-BND"].salt) === JSON.stringify(set67)
+      && !/object Object/.test(good.reasoning) && bad && bad.skip && /huge/.test(bad.skip) && /is not a tier/.test(bad.skip),
+      "the drafter carries a band set through and spells it out, and refuses a band it does not know: " + JSON.stringify([good && (good.reasoning ? good.reasoning.slice(0, 80) : good.skip), bad && (bad.skip || bad.collection)]));
+    /* 7. THE TIERS CARD SHOWS THE BANDS AND OFFERS TO KEEP THEM, and Set on that customer queues nothing: it used to read the
+       dropdown's unmatched value as "not set" and would have queued a clear */
+    const card67 = rd67("(function(){setProdView('salt');switchTab('people');var s=document.getElementById('tierSel_CZ9-BND_salt');"
+      + "if(!s)return null;var before=queue.length;tierSet('CZ9-BND');"
+      + "return {sel:s.value,text:s.parentNode.textContent.replace(/\\s+/g,' '),queued:queue.length-before};})()");
+    ok(card67 && card67.sel === "__bands" && /small Titanium, mid Gold, big Silver/.test(card67.text) && card67.queued === 0,
+      "the Tiers card shows the band set, selects keep the bands, and Set on it queues no clear: " + JSON.stringify(card67));
+  } finally { await new Promise((r) => setTimeout(r, 200)); try { w67.close(); } catch (e) { /* best effort */ } }
+}
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
 process.exit(fail ? 1 : 0);

@@ -5140,6 +5140,31 @@ function fiveTiers(sizes,C,P){
    break-even, so a rate below the floor lifts to the first ten above it; on today's costs that is 18 cells, and it is the
    floor talking, not the rounding. The grid is the ten the ladder itself rounds to, so a card and a board price sit on the
    same grid for the first time. */
+/* ============ v670, HIS DECISIONS OF 16 SEP 2026: A LEVEL MAY DIFFER BY THE SIZE OF THE ORDER ============
+   A customer's tier on a product is either one level name, the same at every size, or a BAND SET {small, mid, big}:
+   small is an order up to and including B.smallUpTo units, big is from B.bigFrom units, mid is between, the cuts being
+   the book's own quartiles of size (1 and 3 units for salt on 16 Sep 2026). It is how the rules he chose will price a
+   habitual small buyer better on half a unit and a unit and a level worse at three, and a loyal bigger buyer better as
+   the order grows. THE ONE PLACE A SIZE IS TURNED INTO A LEVEL, shared by the desk, the customer's price list and the fold,
+   so the band a size falls in cannot be decided twice. A band left out takes mid, and a missing mid takes whichever of
+   small and big is there, so a partly filled set never leaves a size unpriced. null with nothing held. */
+function levelAt(held,q,B){
+  if(held==null)return null;
+  if(typeof held==='string')return held;
+  if(typeof held!=='object'||Array.isArray(held))return null;
+  const b=B||{smallUpTo:1,bigFrom:3};
+  const band=q<=b.smallUpTo+0.0001?'small':(q>=b.bigFrom-0.0001?'big':'mid');
+  return held[band]||held.mid||held.small||held.big||null;
+}
+/* v670: a held tier is well formed if it is a level name, or a band set naming only small, mid and big, each a level
+   name, with at least one band. The drafter and the fold both ask it, so a shape the desk cannot price is refused at the
+   door rather than folded; null, which clears a product, is handled by the callers. */
+function levelShapeOk(v,names){
+  if(typeof v==='string')return names.indexOf(v)>=0;
+  if(!v||typeof v!=='object'||Array.isArray(v))return false;
+  const ks=Object.keys(v);
+  return ks.length>0&&ks.every(k=>(k==='small'||k==='mid'||k==='big')&&names.indexOf(v[k])>=0);
+}
 function cardPrice(R,F,T){
   if(R==null)return T;
   let p=Math.min(T,Math.floor(R/10)*10);
@@ -5183,7 +5208,7 @@ function board(sizes,C,P){
 return {costStack:costStack,buyTaper:buyTaper,ladderMarkup:ladderMarkup,ladderMargin:ladderMargin,ladderCogs:ladderCogs,
         ladderRound:ladderRound,ladderWalk:ladderWalk,ladderAsk:ladderAsk,lotCost:lotCost,
         tier1Anchors:tier1Anchors,tier1Walk:tier1Walk,tier1Ask:tier1Ask,
-        floorTotal:floorTotal,priceLadder:priceLadder,ladderRow:ladderRow,board:board,fiveTiers:fiveTiers,fiveTierAt:fiveTierAt,cardPrice:cardPrice};
+        floorTotal:floorTotal,priceLadder:priceLadder,ladderRow:ladderRow,board:board,fiveTiers:fiveTiers,fiveTierAt:fiveTierAt,cardPrice:cardPrice,levelAt:levelAt,levelShapeOk:levelShapeOk};
 })();
 /* ==== END ENGINE pricing ==== */
 /* ==== BOOK: generated from ledger/book.json by tools/booksync.mjs. Edit the JSON, never this block. ==== */
@@ -6894,7 +6919,9 @@ const quoteFor=p=>{const f=QUOTES[p||PROD];return f?f():null;};
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{"v":"v669","d":"16 Sep 2026","t":"A COLLECTED SALE IS CANCELLED: THE CASH, THE HANDOVER AND THE COST ALL COME OFF","n":["<b>FOLDED:</b> one correction, against CS6-BS's salt row s169 of 16 Sep, 5 unit for RM420. Cash of RM420 is cleared, deliveredQty of 5 is cleared, handover of collected is cleared, the cost of RM240 is cleared and cancelled moves from false to true, recorded 16 Sep on his word. No cash and no stock move on the fold itself: the row now says nothing happened, and the original note is left standing as written.","<b>UNUSUAL:</b> a row that read as paid by qr via tng and collected the same day is withdrawn in full within hours, and the drafter's own flag on the rate, CS6-BS paying about RM107.50 a unit across 18 orders against RM84 here, 21.9% below, is answered only by the cancellation, not by any restated figure. The desk kept the position at 9.5 unit stated, count of 15 Sep, with nothing owed out and 8.5 unit promised."]},
+const evolution=[{"v":"v670","d":"16 Sep 2026","t":"A CUSTOMER'S LEVEL CAN DIFFER BY THE SIZE OF THE ORDER, READ BAND BY BAND IN ONE PLACE","n":["<b>HIS DECISIONS OF 16 SEP 2026.</b> A tier on a product was one level at every size. It can now be a band set: one level for a small order of up to a unit, one for a mid-sized order, and one from three units, the cuts being the book's own quartiles of size. It is the mechanism his rules need, a habitual small buyer better on half a unit and a unit and a level worse from three, and a loyal bigger buyer better as the order grows.","<b>ONE PLACE TURNS A SIZE INTO A LEVEL.</b> The engine's levelAt, read by the desk for every quote and the printed board, and by the customer's own price list at each size, so the band a size falls in is never decided twice. One shape check, read by the drafter and the fold, so a band set travels through Approve and a shape that would not price is refused at the door and names itself. A customer's normal level is a mid-sized order's, and that is the mark their page draws.","<b>AND A TRAP IT HAD TO CLOSE.</b> On the Tiers card a band set cannot select one level name, so its dropdown would have sat on Not set, and Set would have read that as a clear and queued it. A band set is spelled out on the card now, its dropdown selects Keep the bands, and Set leaves it alone.","<b>NOTHING MOVED.</b> No band set exists on the book yet, so all 50 price lists were identical before and after; the rules that propose one come next. <b>THE CHECKS:</b> 7 assertions, the band edges exact, the shapes, the desk quote, the printed board and the customer's own page agreeing size by size, the drafter, and the card's safeguard. 7 mutations, each red."]},
+
+{"v":"v669","d":"16 Sep 2026","t":"A COLLECTED SALE IS CANCELLED: THE CASH, THE HANDOVER AND THE COST ALL COME OFF","n":["<b>FOLDED:</b> one correction, against CS6-BS's salt row s169 of 16 Sep, 5 unit for RM420. Cash of RM420 is cleared, deliveredQty of 5 is cleared, handover of collected is cleared, the cost of RM240 is cleared and cancelled moves from false to true, recorded 16 Sep on his word. No cash and no stock move on the fold itself: the row now says nothing happened, and the original note is left standing as written.","<b>UNUSUAL:</b> a row that read as paid by qr via tng and collected the same day is withdrawn in full within hours, and the drafter's own flag on the rate, CS6-BS paying about RM107.50 a unit across 18 orders against RM84 here, 21.9% below, is answered only by the cancellation, not by any restated figure. The desk kept the position at 9.5 unit stated, count of 15 Sep, with nothing owed out and 8.5 unit promised."]},
 
 {"v":"v668","d":"16 Sep 2026","t":"A TIER IS SET FOR CN6-WM: PLATINUM ON SALT, NO CASH AND NO STOCK","n":["<b>FOLDED:</b> one row, a tier setting only. CN6-WM is set to Platinum on salt, entered as \"Set CN6-WM: Salt Platinum\" and decided at the desk on 16 Sep. No cash moved, no stock moved, and until the quotes switch over no price moves either. The drafter raised no flags against it, so there is nothing on this row for the party record or the desk floors to answer.","<b>INVENTORY:</b> unchanged at 9.5 unit, with the last salt count on 15 Sep and the last oil count on 9 Sep. Cost basis stays the desk's own RM48 a unit against a replacement of RM46, nothing owed out, 8.5 unit promised and the reorder mark still at 15. What is left outstanding is the quote side: the Platinum rate for CN6-WM takes effect only when the quotes are switched."]},
 
@@ -7442,7 +7469,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='16 Sep 2026, 18:21 KL';
+const LAST_UPDATED='16 Sep 2026, 18:28 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -15629,7 +15656,9 @@ function tierCustomers(){
 function tierQueued(){const o={},add=(c,t)=>{o[c]=Object.assign(o[c]||{},t);};
   queue.forEach(q=>{const p=q&&q.payload;if(!p)return;if(p.mode==='tierset')Object.keys(p.tiers||{}).forEach(c=>add(c,p.tiers[c]));else if(p.mode==='addid'&&p.tiers)add(p.code,p.tiers);});
   return o;}
-function tierSay(t){return Object.keys(t).map(p=>(PRODUCTS[p]?PRODUCTS[p].name:p)+' '+(t[p]||'not set')).join(', ');}
+/* v670: a band set is spelled out band by band, so a queued entry never reads [object Object] */
+function levelSay(v){return v==null?'not set':typeof v==='string'?v:(['small','mid','big'].filter(k=>v[k]).map(k=>k+' '+v[k]).join(', ')||JSON.stringify(v));}
+function tierSay(t){return Object.keys(t).map(p=>(PRODUCTS[p]?PRODUCTS[p].name:p)+' '+levelSay(t[p])).join(', ');}
 function tierQueue(tiers){
   const codes=Object.keys(tiers);if(!codes.length)return;
   queue.push({at:new Date().toISOString(),type:'TIER',party:codes.length===1?codes[0]:null,qty:null,total:null,status:'tierset',
@@ -15642,6 +15671,9 @@ function tierQueue(tiers){
 function tierSet(code){
   const held=TIER_OF[code]||{},wait=tierQueued()[code]||{},t={};
   PROD_IDS.forEach(p=>{const el=document.getElementById('tierSel_'+code+'_'+p);if(!el)return;
+    /* v670: a product holding a band set shows "keep the bands" selected, and Set leaves it alone; without this, Set on a
+       banded customer read the unmatched dropdown as "not set" and queued a clear */
+    if(el.value==='__bands')return;
     const v=TIER_NAMES.includes(el.value)?el.value:null,now=p in wait?wait[p]:(held[p]||null);
     if(v!==now)t[p]=v;});
   if(Object.keys(t).length)tierQueue({[code]:t});
@@ -15661,8 +15693,12 @@ function tierCard(){
     /* v666: how they buy sits beside the tier they hold, so the reading a rule will move a level on is in view first */
     const state=(w?'waiting':h?'held':prop?'proposed':'not set')+(pf?' &middot; '+pf.name:'');
     if(h)held++;if(prop)open++;
+    /* v670: A BAND SET IS SHOWN FOR WHAT IT IS, and the dropdown offers to keep it. It cannot select one level name, so it would
+       otherwise sit on "Not set", and Set would have read that as a clear. Choosing a level replaces the bands with it. */
+    const bands=shown&&typeof shown==='object';
+    const bandLine=bands?`<br><span class="iref">${levelSay(shown)}</span>`:'';
     /* one line a product, so a dropdown keeps the width of its longest level on a phone rather than sharing a row with the others */
-    return `<div style="display:flex;align-items:center;gap:8px;margin:3px 0"><div style="min-width:5em;line-height:1.25">${PRODUCTS[p].name}<br><span class="iref">${state}</span></div><select id="tierSel_${id}_${p}" aria-label="${PRODUCTS[p].name} tier for ${codeOf(id)}" style="min-height:var(--tap);width:auto"><option value=""${shown?'':' selected'}>Not set</option>${TIER_NAMES.map(n=>`<option${n===shown?' selected':''}>${n}</option>`).join('')}</select></div>`;};
+    return `<div style="display:flex;align-items:center;gap:8px;margin:3px 0"><div style="min-width:5em;line-height:1.25">${PRODUCTS[p].name}<br><span class="iref">${state}</span>${bandLine}</div><select id="tierSel_${id}_${p}" aria-label="${PRODUCTS[p].name} tier for ${codeOf(id)}" style="min-height:var(--tap);width:auto">${bands?'<option value="__bands" selected>Keep the bands</option>':''}<option value=""${shown?'':' selected'}>Not set</option>${TIER_NAMES.map(n=>`<option${n===shown?' selected':''}>${n}</option>`).join('')}</select></div>`;};
   const body=ids.map(id=>`<tr><td class="l mono">${ID(id)}<br><button class="vbtn" style="min-height:var(--tap);margin-top:6px" onclick="tierSet('${id}')">Set</button></td><td class="l">${PROD_IDS.map(p=>cell(id,p)).join('')}</td></tr>`).join('');
   return `<div class="card"><div class="cardh">Tiers <span class="sub">one for each product; it is what they are quoted</span></div>
     <div class="tscroll"><table class="tiertab"><thead><tr><th class="l">Customer</th><th class="l">Tier for each product</th></tr></thead><tbody>${body}</tbody></table></div>
@@ -18155,18 +18191,24 @@ function pbOrders(code,prod){const before=pbWeekMonday();   /* v643: prod names 
 function pbOwnRate(code,prod){const rows=pbOrders(code,prod).map(s=>(s.total-(+s.delivery||0))/s.qty);
   if(!rows.length)return {rate:null,orders:0};
   return {rate:+Math.max.apply(null,rows).toFixed(2),orders:rows.length};}
-/* v652: THE CUSTOMER'S TIER FOR THE PRODUCT IN VIEW, held or proposed, as an index into TIER_NAMES; -1 with neither */
-function cardTier(code){const who=ownerOf(code);return TIER_NAMES.indexOf((TIER_OF[who]||{})[PROD]||tierProposal(who,PROD,{[PROD]:fiveTiersNow()}));}
+/* v652: THE CUSTOMER'S TIER FOR THE PRODUCT IN VIEW, held or proposed; -1 with neither.
+   v670: what is HELD may be a band set, a level for each size of order, so the held value is read in one place and a size
+   is turned into a level by the engine's levelAt at the size being quoted. cardTier keeps its meaning, "is this product
+   priced for them at all", and reads their NORMAL level, a mid-sized order's, which any held value or proposal answers. */
+function heldLevel(code){const who=ownerOf(code);return (TIER_OF[who]||{})[PROD]||tierProposal(who,PROD,{[PROD]:fiveTiersNow()});}
+function cardTierAt(code,q){return TIER_NAMES.indexOf(PRICING_ENGINE.levelAt(heldLevel(code),q,PROFILE_RULE));}
+function cardTier(code){return cardTierAt(code,(PROFILE_RULE.smallUpTo+PROFILE_RULE.bigFrom)/2);}   /* their normal level: a mid-sized order's */
 /* v651 and v652, HIS DECISIONS OF 15 AND 16 SEP 2026: A NAMED CUSTOMER'S PRICE AT ANY SIZE, the one rule every quote to them
    reads: the printed board, the approach offer, Today's worth and the reward cover's gap. The price of their tier for the
    product in view, off the ladder walked through that size, never above their own recent rate to the nearest five and never
    under the floor, through the engine's one cardPrice, as tools/pricelist.mjs quotes the customer's own page. No tier for the
    product, held or proposed, and there is nothing to quote: null, as their page reads the price as coming soon. */
-function cardQuote(code,q,t){if(t==null)t=cardTier(code);if(t<0||!(q>0))return null;
+function cardQuote(code,q,t){if(t==null)t=cardTierAt(code,q);if(t<0||!(q>0))return null;
   const row=PRICING_ENGINE.fiveTierAt(q,pxCost(),Object.assign({},pxPolicy(),{tierRule:TIER_RULE[PROD]})),own=pbOwnRate(code);
   return +PRICING_ENGINE.cardPrice(own.rate!=null?own.rate*q:null,floorTotal(q),row.prices[t]).toFixed(2);}
-function pbPrices(code){const t=cardTier(code);if(t<0)return [];
-  return shownSizes(PROD).slice().sort((a,b)=>a-b).map(q=>({q,price:cardQuote(code,q,t)}));}
+/* v670: each size reads its own level, so a customer on a band set is printed their small, mid and big levels where they fall */
+function pbPrices(code){if(cardTier(code)<0)return [];
+  return shownSizes(PROD).slice().sort((a,b)=>a-b).map(q=>({q,price:cardQuote(code,q)}));}
 /* v564: AND THE SITE'S ADDRESS, for the QR. It comes down the same keyed road as the usernames
    and is never in this file: /desk is public by his decision of 11 Aug and the statements site is
    deliberately on its own cryptic name. No site means no QR, said on the card rather than drawn as

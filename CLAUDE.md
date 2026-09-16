@@ -68,6 +68,11 @@ decision of 11 Aug 2026, no sign-in. The fold routine is `docs/CLOUD_FOLD.md`; s
      unit or one, loyal 6 orders with the last inside 30 days, buying bigger 4 in 10 at 3 units or more,
      rare under 1 a month or nothing for 60 days, late twice past the credit term). Shown on the Tiers card,
      carried in the snapshot as `profileOf`. **It prices nothing yet**; four rules will move a level on it.
+   - **A tier may differ by the size of the order** (v670, his decisions of 16 Sep 2026): `TIER_OF[code][product]` is one
+     level name, or a BAND SET `{small, mid, big}` cut at 1 and 3 units (`PROFILE_RULE.smallUpTo`, `bigFrom`). **The engine's
+     `levelAt` is the one place a size becomes a level**, read by the desk's `cardQuote`, the customer's price list and the
+     fold; `levelShapeOk` is the one shape check, read by the drafter and the fold. A band left out takes mid. Their NORMAL level
+     is a mid-sized order's, which is also the mark their page draws.
    - **Each customer holds a tier for each product** (his instruction, 15 Sep 2026): `TIER_OF`
      on the book, code to product to level name, folded as `tierset`, a null clearing a product.
      **A customer's price is their tier, never above what they pay** (his decisions of 15 Sep

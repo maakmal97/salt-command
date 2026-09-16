@@ -1116,6 +1116,8 @@ export function draftRow(entry, book) {
     const products = (book.state && book.state.PRODUCTS) || {};
     const names = (book.pricing && Array.isArray(book.pricing.tierNames)) ? book.pricing.tierNames : [];
     const name = (p) => (products[p] && products[p].name) || p;
+    const say = (v) => v == null ? "not set" : typeof v === "string" ? v
+      : isObj(v) ? (["small", "mid", "big"].filter((k) => v[k]).map((k) => k + " " + v[k]).join(", ") || JSON.stringify(v)) : String(v);
     const row = { tiers: {} }, flags = [];
     for (const c of codes) {
       if (!roster.includes(c)) return { skip: `${c} is not on the roster` };
@@ -1126,16 +1128,17 @@ export function draftRow(entry, book) {
       for (const p of ps) {
         const t = tiers[c][p], was = isObj(held[c]) ? held[c][p] : null;
         if (!products[p]) return { skip: `${p} is not a product on this book` };
-        if (t !== null && !names.includes(t)) return { skip: `${t} is not a tier` };
+        /* v670: a tier may be one level or a band set, a level for small, mid and big orders; the engine says which shapes price */
+        if (t !== null && !PRICING_ENGINE.levelShapeOk(t, names)) return { skip: `${say(t)} is not a tier` };
         row.tiers[c][p] = t;
-        if (was && was !== t) flags.push(`${c}'s ${name(p)} moves from ${was} to ${t || "not set"}.`);
+        if (was && JSON.stringify(was) !== JSON.stringify(t)) flags.push(`${c}'s ${name(p)} moves from ${say(was)} to ${say(t)}.`);
       }
     }
     return {
       collection: "tierset",
       row,
       flags,
-      reasoning: `Sets the tiers of ${codes.length} ${codes.length === 1 ? "customer" : "customers"}: ${codes.map((c) => c + " " + Object.keys(row.tiers[c]).map((p) => name(p) + " " + (row.tiers[c][p] || "not set")).join(" and ")).join(", ")}.`
+      reasoning: `Sets the tiers of ${codes.length} ${codes.length === 1 ? "customer" : "customers"}: ${codes.map((c) => c + " " + Object.keys(row.tiers[c]).map((p) => name(p) + " " + say(row.tiers[c][p])).join(" and ")).join(", ")}.`
         + " It moves no cash and no stock, and until the quotes switch it moves no price.",
     };
   }

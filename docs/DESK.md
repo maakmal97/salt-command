@@ -49,6 +49,17 @@
   who pays RM180 a unit for half-units, reads small and RARE, so a rule keyed to frequency does not hand
   a premium buyer the preferential rate. **It prices nothing at v666**; the rules that move a level on it
   come after the level can vary by size.
+- **A level per band** (v670, his decisions of 16 Sep 2026). A held tier is one level name, or a band set
+  `{small, mid, big}`: small is an order up to and including `PROFILE_RULE.smallUpTo` (1 unit), big from
+  `bigFrom` (3), mid between, the cuts being the book's own quartiles of size. `PRICING_ENGINE.levelAt(held, q,
+  bands)` turns a size into a level for the desk (`cardTierAt`, so every `cardQuote` and the printed board read
+  their own size's level), `tools/pricelist.mjs` (each size of the customer's page) and nothing else; a band left
+  out takes mid, a missing mid whichever of small and big is there. `levelShapeOk` is the one shape check, used by
+  the drafter and the fold, and a refused shape names itself. `cardTier` still answers "is this priced at all" and
+  reads the NORMAL level, a mid-sized order's, which is also the mark on the customer's page. On the Tiers card a
+  band set is spelled out, its dropdown selects "Keep the bands", and Set leaves it alone: without that, Set read
+  the unmatched dropdown as not set and queued a clear. **No band set existed on the book at v670**, so all 50 price
+  lists were identical before and after; the rules that propose one come next.
 - **Setting a customer's tiers** (v643; one for each product since v646): on Customers, the
   Tiers card carries a dropdown for each product with Not set, Set queuing only what changed,
   or Accept for every open proposal. Or chosen at Add ID as a new customer's starting tiers

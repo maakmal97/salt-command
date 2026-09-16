@@ -544,6 +544,31 @@ function fiveTiers(sizes,C,P){
    break-even, so a rate below the floor lifts to the first ten above it; on today's costs that is 18 cells, and it is the
    floor talking, not the rounding. The grid is the ten the ladder itself rounds to, so a card and a board price sit on the
    same grid for the first time. */
+/* ============ v670, HIS DECISIONS OF 16 SEP 2026: A LEVEL MAY DIFFER BY THE SIZE OF THE ORDER ============
+   A customer's tier on a product is either one level name, the same at every size, or a BAND SET {small, mid, big}:
+   small is an order up to and including B.smallUpTo units, big is from B.bigFrom units, mid is between, the cuts being
+   the book's own quartiles of size (1 and 3 units for salt on 16 Sep 2026). It is how the rules he chose will price a
+   habitual small buyer better on half a unit and a unit and a level worse at three, and a loyal bigger buyer better as
+   the order grows. THE ONE PLACE A SIZE IS TURNED INTO A LEVEL, shared by the desk, the customer's price list and the fold,
+   so the band a size falls in cannot be decided twice. A band left out takes mid, and a missing mid takes whichever of
+   small and big is there, so a partly filled set never leaves a size unpriced. null with nothing held. */
+function levelAt(held,q,B){
+  if(held==null)return null;
+  if(typeof held==='string')return held;
+  if(typeof held!=='object'||Array.isArray(held))return null;
+  const b=B||{smallUpTo:1,bigFrom:3};
+  const band=q<=b.smallUpTo+0.0001?'small':(q>=b.bigFrom-0.0001?'big':'mid');
+  return held[band]||held.mid||held.small||held.big||null;
+}
+/* v670: a held tier is well formed if it is a level name, or a band set naming only small, mid and big, each a level
+   name, with at least one band. The drafter and the fold both ask it, so a shape the desk cannot price is refused at the
+   door rather than folded; null, which clears a product, is handled by the callers. */
+function levelShapeOk(v,names){
+  if(typeof v==='string')return names.indexOf(v)>=0;
+  if(!v||typeof v!=='object'||Array.isArray(v))return false;
+  const ks=Object.keys(v);
+  return ks.length>0&&ks.every(k=>(k==='small'||k==='mid'||k==='big')&&names.indexOf(v[k])>=0);
+}
 function cardPrice(R,F,T){
   if(R==null)return T;
   let p=Math.min(T,Math.floor(R/10)*10);
@@ -587,6 +612,6 @@ function board(sizes,C,P){
 return {costStack:costStack,buyTaper:buyTaper,ladderMarkup:ladderMarkup,ladderMargin:ladderMargin,ladderCogs:ladderCogs,
         ladderRound:ladderRound,ladderWalk:ladderWalk,ladderAsk:ladderAsk,lotCost:lotCost,
         tier1Anchors:tier1Anchors,tier1Walk:tier1Walk,tier1Ask:tier1Ask,
-        floorTotal:floorTotal,priceLadder:priceLadder,ladderRow:ladderRow,board:board,fiveTiers:fiveTiers,fiveTierAt:fiveTierAt,cardPrice:cardPrice};
+        floorTotal:floorTotal,priceLadder:priceLadder,ladderRow:ladderRow,board:board,fiveTiers:fiveTiers,fiveTierAt:fiveTierAt,cardPrice:cardPrice,levelAt:levelAt,levelShapeOk:levelShapeOk};
 })();
 export default PRICING_ENGINE;

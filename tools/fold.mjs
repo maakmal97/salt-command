@@ -52,6 +52,10 @@ import { resolve, dirname } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { execFileSync } from "node:child_process";
 import { readBookFile, writeBookFile, syncText, BOOK as BOOK_DEFAULT, MASTER as MASTER_DEFAULT } from "./booksync.mjs";
+import PRICING_ENGINE from "../engine/pricing.mjs";   /* v670: the one shape check for a held tier, shared with the drafter */
+/* v670: a tier as words, one level or a band set spelled band by band, so a refusal or a plan line never reads [object Object] */
+const sayLevel = (v) => v == null ? "not set" : typeof v === "string" ? v
+  : (typeof v === "object" ? (["small", "mid", "big"].filter((k) => v[k]).map((k) => k + " " + v[k]).join(", ") || JSON.stringify(v)) : String(v));
 import { sortBook } from "./sort-ledger.mjs";
 import POSITION_ENGINE from "../engine/position.mjs";
 import { nextRid } from "./rid.mjs";
@@ -126,7 +130,7 @@ function describe(item) {
     case "roster": return `${APPOINTS[r.kind] ? "APPOINT" : "REGISTER"} ${r.code} as ${r.kind}${r.parent ? " under " + r.parent : ""}${r.tiers ? " at " + Object.entries(r.tiers).map(([p, t]) => p + " " + t).join(", ") : ""}`;
     case "rename": return `RENAME ${r.from} to ${r.to}`;
     case "place": return `PLACE ${Object.keys(r.places || {}).join(", ")} on the map`;
-    case "tierset": return `TIER ${Object.entries(r.tiers || {}).map(([c, t]) => c + " " + Object.entries(t || {}).map(([p, v]) => p + " " + (v || "not set")).join(" ")).join(", ")}`;
+    case "tierset": return `TIER ${Object.entries(r.tiers || {}).map(([c, t]) => c + " " + Object.entries(t || {}).map(([p, v]) => p + " " + sayLevel(v)).join(" ")).join(", ")}`;
     case "priceset": return `SET THE BOARD for ${r.product}${Object.keys(r.prices || {}).length ? ": " + Object.entries(r.prices).map(([q, p]) => `${q} unit at RM${p}`).join(", ") : ""}${(r.hide || []).length ? `, hiding ${r.hide.join(", ")} unit` : ""}`;
     default: return `${item.collection}: ${JSON.stringify(r).slice(0, 80)}`;
   }
@@ -366,14 +370,15 @@ export function plan(book, staged, notes) {
          master states; a null clears the product's tier */
       const codes = Object.keys(r.tiers || {}), off = codes.filter((c) => !(book.roster || []).includes(c) || E.isBucket(c));
       const pairs = codes.flatMap((c) => Object.entries((r.tiers[c] && typeof r.tiers[c] === "object") ? r.tiers[c] : {}).map(([p, v]) => [c, p, v]));
-      const noProd = codes.filter((c) => !pairs.some((x) => x[0] === c)), offP = pairs.filter((x) => !(book.PRODUCTS || {})[x[1]]), bad = pairs.filter((x) => x[2] !== null && !tierNames().includes(x[2]));
+      /* v670: a tier may be a band set, so the check is the engine's shape rule rather than a name lookup */
+      const noProd = codes.filter((c) => !pairs.some((x) => x[0] === c)), offP = pairs.filter((x) => !(book.PRODUCTS || {})[x[1]]), bad = pairs.filter((x) => x[2] !== null && !PRICING_ENGINE.levelShapeOk(x[2], tierNames()));
       if (!codes.length || off.length || noProd.length || offP.length || bad.length) {
         out.refused.push({ id: it.id, why: !codes.length ? "a tier entry names no customer" : off.length ? `${off.join(" and ")} is not a customer on the roster`
-          : noProd.length ? `the tier entry for ${noProd.join(" and ")} names no product` : offP.length ? `${offP.map((x) => x[1]).join(" and ")} is not a product on this book` : `${bad.map((x) => x[2]).join(" and ")} is not a tier` });
+          : noProd.length ? `the tier entry for ${noProd.join(" and ")} names no product` : offP.length ? `${offP.map((x) => x[1]).join(" and ")} is not a product on this book` : `${bad.map((x) => sayLevel(x[2])).join(" and ")} is not a tier` });
         continue;
       }
       entry.tiers = r.tiers;
-      entry.does.push(`set ${pairs.map(([c, p, v]) => `${c}'s ${p} tier to ${v || "not set"}`).join(", ")}`);
+      entry.does.push(`set ${pairs.map(([c, p, v]) => `${c}'s ${p} tier to ${sayLevel(v)}`).join(", ")}`);
     } else if (it.collection === "rename") {
       /* v628, AMEND ID: checked again against the book it folds into, since a code can be taken or retired
          between the draft and the fold. What moves is the engine's renamePairs, as on the card. */

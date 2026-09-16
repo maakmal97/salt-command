@@ -1,5 +1,16 @@
 [
  {
+  "v": "v670",
+  "d": "16 Sep 2026",
+  "t": "A CUSTOMER'S LEVEL CAN DIFFER BY THE SIZE OF THE ORDER, READ BAND BY BAND IN ONE PLACE",
+  "n": [
+   "<b>HIS DECISIONS OF 16 SEP 2026.</b> A tier on a product was one level at every size. It can now be a band set: one level for a small order of up to a unit, one for a mid-sized order, and one from three units, the cuts being the book's own quartiles of size. It is the mechanism his rules need, a habitual small buyer better on half a unit and a unit and a level worse from three, and a loyal bigger buyer better as the order grows.",
+   "<b>ONE PLACE TURNS A SIZE INTO A LEVEL.</b> The engine's levelAt, read by the desk for every quote and the printed board, and by the customer's own price list at each size, so the band a size falls in is never decided twice. One shape check, read by the drafter and the fold, so a band set travels through Approve and a shape that would not price is refused at the door and names itself. A customer's normal level is a mid-sized order's, and that is the mark their page draws.",
+   "<b>AND A TRAP IT HAD TO CLOSE.</b> On the Tiers card a band set cannot select one level name, so its dropdown would have sat on Not set, and Set would have read that as a clear and queued it. A band set is spelled out on the card now, its dropdown selects Keep the bands, and Set leaves it alone.",
+   "<b>NOTHING MOVED.</b> No band set exists on the book yet, so all 50 price lists were identical before and after; the rules that propose one come next. <b>THE CHECKS:</b> 7 assertions, the band edges exact, the shapes, the desk quote, the printed board and the customer's own page agreeing size by size, the drafter, and the card's safeguard. 7 mutations, each red."
+  ]
+ },
+ {
   "v": "v669",
   "d": "16 Sep 2026",
   "t": "A COLLECTED SALE IS CANCELLED: THE CASH, THE HANDOVER AND THE COST ALL COME OFF",
