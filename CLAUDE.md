@@ -132,10 +132,10 @@ keep the old code. The fold refuses a code the master's own logic quotes (CJ4-OK
 SP7-PUD, and CM6-HCM in a comment): those are hand folds. Everything the desk shows, cost and
 margin included, is served at the public URL.
 
-**The map** (his decisions of 14 Sep 2026): districts shaded by a metric over a period, drilled
-to mukim, bandar and pekan, parties as dots. **Area names show; a party's name never does**,
-even unlocked. A party is counted in the area its point lies inside, whichever district that
-area is filed under. The leak checks exempt a directory place only when it IS an official area
+**Coverage**, the map (his decisions of 14 Sep 2026; named Coverage 17 Sep): districts shaded by a metric over a period, drilled
+to mukim, bandar and pekan, and Kuala Lumpur to its 11 constituencies (MECo, CC0, v678), parties as dots. **Area names show; a party's name never does**,
+even unlocked. A party is counted in its own district's area that holds its point, else in any area
+that does, whichever district that is filed under (v678: two Selangor mukim spill into KL). The leak checks exempt a directory place only when it IS an official area
 name (`areaNameSet` in `tools/book.mjs`). **A party's place reaches the map on its own** (his
 decision of 14 Sep 2026) through `geo/gazetteer.json`, built from GeoNames alone and never from
 the directory; an unresolved place is tapped on the map and Record waits for the point.

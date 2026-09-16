@@ -1,5 +1,16 @@
 [
  {
+  "v": "v678",
+  "d": "17 Sep 2026",
+  "t": "KUALA LUMPUR IS SHADED BY ITS ELEVEN CONSTITUENCIES",
+  "n": [
+   "<b>HIS DECISION OF 17 SEP 2026.</b> Thirty of the thirty-five parties on Coverage stand in Kuala Lumpur, and the survey behind the finer areas gave the territory ten coarse ones, so a tap on it told him nothing. Its areas are now its eleven federal constituencies: Kepong, Batu, Wangsa Maju, Segambut, Setiawangsa, Titiwangsa, Bukit Bintang, Lembah Pantai, Seputeh, Cheras and Bandar Tun Razak, the names his own map of the city prints. The thirty now spread across nine of them.",
+   "<b>THE SOURCE.</b> The 2018 federal delimitation, in force since GE14, from the Malaysian Election Corpus (Thevananthan and Chacko), public domain under CC0, pinned to a commit in tools/areafetch.mjs and credited under the map. Every district and every area outside Kuala Lumpur is byte for byte what it was.",
+   "<b>A POINT IS NAMED BY ITS OWN DISTRICT FIRST.</b> The survey files mukim Petaling under Petaling and mukim Setapak under Gombak, yet 40% and 20% of them lie inside Kuala Lumpur, so twelve KL parties had been counted in a Selangor mukim. A point now takes its own district's area that holds it, then any area that does, then the nearest of its own. An opened district draws its own areas last, over a neighbour's that meet its frame, and its lead says constituency where that is what they are.",
+   "<b>THE CHECKS:</b> a new section reads the eleven seats, names each seat's own point against the rule it replaced, and reads the drawing order with Kuala Lumpur and with Petaling opened; five reverts each turned it red, one of them only after the Petaling check was added, since the seats happen to come last in the data."
+  ]
+ },
+ {
   "v": "v677",
   "d": "17 Sep 2026",
   "t": "CUSTOMERS IS NETWORK, WHO BUYS IS CLIENTS, AND MAP IS COVERAGE",

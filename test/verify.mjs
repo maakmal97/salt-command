@@ -11355,7 +11355,9 @@ section("v630: the map shades named districts, opens a district's mukim, bandar 
     const kl30 = rd30("(function(){var s=document.querySelector('.sec.on');var b=[].map.call(s.querySelectorAll('svg text'),function(t){var fz=+t.getAttribute('font-size');if(!(fz>0))return null;var x=+t.getAttribute('x'),y=+t.getAttribute('y'),w=t.textContent.length*fz*0.5;return [x-w/2,y-fz,x+w/2,y+2];}).filter(Boolean);"
       + "var clash=0;for(var i=0;i<b.length;i++)for(var j=i+1;j<b.length;j++)if(b[i][0]<b[j][2]&&b[i][2]>b[j][0]&&b[i][1]<b[j][3]&&b[i][3]>b[j][1])clash++;return {labels:b.length,clash:clash,table:s.textContent};})()");
     ok(kl30.labels > 4 && kl30.clash === 0, "no two names on a district opened overlap: " + kl30.labels + " names, " + kl30.clash + " overlapping");
-    ok(/Bandar Baharu Sungai Besi/.test(kl30.table) && !/Bandar Bandar/.test(kl30.table), "an area whose name opens with its kind is not named twice");
+    /* v678: Kuala Lumpur's areas are its constituencies, so the one area whose name opened with its kind went with ADM3's */
+    ok(/Lembah Pantai/.test(kl30.table) && !/Bandar Bandar/.test(kl30.table) && w30.eval("areaName({kind:'bandar',short:'Bandar Baharu Sungai Besi'})") === "Bandar Baharu Sungai Besi",
+      "Kuala Lumpur opens by constituency, and an area whose name opens with its kind is still not named twice");
     const bare30 = rd30("(function(){var ids={};[].forEach.call(document.querySelectorAll('.sec.on path.marea'),function(p){ids[p.getAttribute('data-a')]=1;});var m=mapPoints(),n=0,off=0;m.pts.concat(m.far).forEach(function(p){var r=areaOf(p.place.lat,p.place.lng);if(!r.district||r.district.id!=='kuala-lumpur')return;n++;if(!r.area||!ids[r.area.id])off++;});return [n,off];})()");
     ok(bare30[0] > 10 && bare30[1] === 0, "every party in the district opened stands on an area drawn there, whichever district the area is filed under: " + bare30.join(" parties, ") + " on bare ground");
 
@@ -13006,6 +13008,39 @@ section("v677: Customers is Network, Who buys is Clients, Associates stays, and 
     ok(/set on Clients/.test(card) && !/Customers/.test(card) && /set one on Clients\./.test(empty),
       "the board card sends him to Clients to set a tier: " + JSON.stringify(empty));
   } finally { try { w77.close(); } catch (e) { /* best effort */ } }
+}
+section("v678: Kuala Lumpur is shaded by its eleven constituencies, and a point in it is named by them first");
+{
+  /* HIS DECISION OF 17 SEP 2026. ADM3 gave the territory ten coarse areas where thirty of the desk's parties stand; its
+     areas are the federal constituencies of the 2018 delimitation, from MECo (CC0). Read off the desk's own AREAS and
+     areaOf with the real geometry, and off Coverage as drawn with Kuala Lumpur opened. */
+  const { openMaster: om78 } = await import("../tools/payload.mjs");
+  const { w: w78 } = await om78();
+  const rd78 = (e) => JSON.parse(String(w78.eval("JSON.stringify(" + e + ")")));
+  try {
+    const SEATS78 = ["Kepong", "Batu", "Wangsa Maju", "Segambut", "Setiawangsa", "Titiwangsa", "Bukit Bintang", "Lembah Pantai", "Seputeh", "Cheras", "Bandar Tun Razak"];
+    const kl = rd78("AREAS.filter(function(a){return a.district==='kuala-lumpur';}).map(function(a){return a.short;})");
+    ok(JSON.stringify(kl.slice().sort()) === JSON.stringify(SEATS78.slice().sort()), "Kuala Lumpur's areas are its eleven constituencies and nothing else: " + kl.join(", "));
+    /* each seat's own label point, named by areaOf, against the rule it replaced: the first area anywhere that holds it */
+    const at = rd78("AREAS.filter(function(a){return a.district==='kuala-lumpur';}).map(function(a){var pt=[a.label[0],a.label[1]];"
+      + "var first=AREAS.find(function(x){return inShape(pt,areaShape(x));});var got=areaOf(a.label[1],a.label[0]);"
+      + "return {seat:a.short,first:first?first.district+'/'+first.short:null,got:got.area?got.area.short:null,d:got.district?got.district.id:null};})");
+    ok(at.every((x) => x.got === x.seat && x.d === "kuala-lumpur") && at.some((x) => !/^kuala-lumpur\//.test(x.first || "")),
+      "a point in a seat is named by that seat, even where a Selangor mukim spilling into Kuala Lumpur holds it first: " + JSON.stringify(at.filter((x) => !/^kuala-lumpur\//.test(x.first || ""))));
+    w78.eval("switchTab('map');mapZoom('kuala-lumpur');");
+    const drawn = rd78("(function(){var s=document.querySelector('.sec.on');var ps=[].map.call(s.querySelectorAll('path.marea'),function(p){return p.getAttribute('data-a');});"
+      + "return {ids:ps,lead:(s.querySelector('.dsclead')||{}).textContent||'',text:s.textContent};})()");
+    const last = drawn.ids.slice(-11);
+    ok(last.length === 11 && last.every((id) => /^kuala-lumpur\//.test(id)) && drawn.ids.length > 11,
+      "opened, its constituencies are drawn last, over the neighbours' areas that meet its frame: " + drawn.ids.length + " areas drawn");
+    w78.eval("mapZoom('petaling');");
+    const pet = rd78("(function(){var s=document.querySelector('.sec.on');return [].map.call(s.querySelectorAll('path.marea'),function(p){return p.getAttribute('data-a');});})()");
+    const own = pet.filter((id) => /^petaling\//.test(id)).length, tail = pet.slice(-own);
+    ok(own > 0 && tail.every((id) => /^petaling\//.test(id)) && pet.some((id) => /^kuala-lumpur\//.test(id)),
+      "and so are Petaling's own areas when it is opened, over the Kuala Lumpur seats that meet its frame: " + pet.length + " drawn, " + own + " its own");
+    ok(/by constituency in Kuala Lumpur/.test(drawn.lead) && /MECo/.test(drawn.text) && /CC0/.test(drawn.text),
+      "the lead says constituency and the credit names MECo and its licence: " + JSON.stringify(drawn.lead.slice(0, 80)));
+  } finally { try { w78.close(); } catch (e) { /* best effort */ } }
 }
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
 process.exit(fail ? 1 : 0);

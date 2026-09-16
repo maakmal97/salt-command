@@ -6211,12 +6211,13 @@ const PLACEHOLDER={"TBC":"TBC is to be confirmed: nobody has recorded where this
    suffixes and are kept as a typed record rather than as overrides. */
 const LOCS={"CG5-SB":"SB","CJ4-OKR":"OKR","SF6-KLC":"KLC","CJ4-BJ":"BJ","CR3-DAM":"DAM","CN5-TAI":"TAI","CS6-PER":"PER","SA5-BTR":"BTR","CC5-OKR":"OKR","CA4-DAM":"DAM","CS6-BS":"BS","CM4-SK":"SK","CM6-HCM":"HCM","CM4-MK":"MK","CH5-KLC":"KLC","CE4-CHE":"CHE","CI4-OKR":"OKR","CN6-WM":"WM","CZ6-WM":"WM","CR4-PJ":"PJ","CD4-CS":"CS","CE4-AD":"AD","CA5-SEN":"SEN","SP7-PUD":"PUD","SM4-KEP":"KEP","CR3-PUD":"PUD","CH4-MAL":"MLR","CM6-PJ":"PJ","CA2-SEN":"SEN"};
 /* ============ THE AREAS (v630) ============
-   The districts of Peninsular Malaysia, and the mukim, bandar and pekan of the core states, for the desk's Map tab.
+   The districts of Peninsular Malaysia, and the mukim, bandar and pekan of the core states with Kuala Lumpur by its constituencies, for the desk's Coverage page.
    geoBoundaries gbOpen MYS ADM2, from citypopulation.de, CC BY 3.0.
    geoBoundaries gbOpen MYS ADM3, from Wikimedia Commons, CC BY 4.0.
-   Pinned at 9469f09, fetched 2026-09-14; each ring is an encoded polyline at 2e-4 degrees, longitude before latitude. Re-fetch with
+   Malaysian Election Corpus, the 2018 federal delimitation, Kuala Lumpur, CC0 1.0.
+   Pinned at 9469f09, fetched 2026-09-16; each ring is an encoded polyline at 2e-4 degrees, longitude before latitude. Re-fetch with
    `node tools/areafetch.mjs`, by hand; it is never run by CI or by the build. */
-const AREAS_META={"attribution":["Districts: geoBoundaries, citypopulation.de, CC BY 3.0","Mukim, bandar and pekan: geoBoundaries, Wikimedia Commons, CC BY 4.0"],"fetchedOn":"2026-09-14"};
+const AREAS_META={"attribution":["Districts: geoBoundaries, citypopulation.de, CC BY 3.0","Mukim, bandar and pekan: geoBoundaries, Wikimedia Commons, CC BY 4.0","Kuala Lumpur constituencies: MECo, Thevananthan and Chacko, CC0"],"fetchedOn":"2026-09-16"};
 const DISTRICTS=[
   {"id":"tumpat","name":"Tumpat","core":false,"label":[102.1844,6.1632],"rings":["uje^qs{@lD{AxRx@jOiIzElMWzGuCpDaH\\}CjH_MtAm@zCyHvA_GwYdCkJ"]},
   {"id":"kota-bharu","name":"Kota Bharu","core":false,"label":[102.2572,6.0124],"rings":["{fe^umz@OfEpDbEpPr@T|B{HrDgIfM~B~OsGnDaKn@yD_SqCBQmBkIoCmAeIfFgHoGwCBkC|JoHMiByGOt@}IkCmDpa@sLeCjJ~FnY"]},
@@ -6378,10 +6379,8 @@ const AREAS=[
   {"id":"sabak-bernam/5","short":"Parit Baru","kind":"pekan","district":"sabak-bernam","label":[100.8446,3.8108],"rings":["kxw]gjd@?~Ee@??_Fd@?"]},
   {"id":"kuala-langat/6","short":"Tanjong Duabelas","kind":"pekan","district":"kuala-langat","label":[101.5124,2.8606],"rings":["kh~]e}ZLJGJwA|@HXm@D@y@fA}Aj@`@"]},
   {"id":"kuala-langat/7","short":"Telok Panglima Garang","kind":"mukim","district":"kuala-langat","label":[101.4504,2.9284],"rings":["ms}]c_[U^KG{@aBM_AkDiAo@@FbB_B}Ay@\\FVYEGSn@u@\\EIq@{@`@[YqBlCUOOS?iEoDyKTg@jM?KfEz@N`@iFlMRtCxA\\n@K^aCTu@b@s@rANn@fA^zApCKv@w@`AI`AURg@OGkB_@_At@uAKc@iDtAeAEOvB~@`Af@vB","{z}]sj[P@Dn@zBEQm@gAy@UCM`@QAToAf@??g@wC?Dw@]KShCr@v@QxAO@Hp@bBQRe@Q{@","qw}]gv[e@AAf@d@?@e@","s`~]}o[v@RNeAw@UOfA"]},
-  {"id":"kuala-lumpur/1","short":"Batu Caves","kind":"pekan","district":"kuala-lumpur","label":[101.6716,3.2328],"rings":["i{_^kr^TFc@lBCqAPc@"]},
   {"id":"jelebu/8","short":"Kuala Klawang","kind":"pekan","district":"jelebu","label":[102.0574,2.9504],"rings":["qwc^{s[Z_BdA_Ak@A]b@MGo@b@Uk@PIVROHLLnBcAOGAk@j@iAi@]@{ALEHXMXPFO@@`@p@t@AZc@COh@\\BAZZABj@_@E_AVS|@ZL]f@JVUHS["]},
   {"id":"seremban/4","short":"Shah Bandar","kind":"pekan","district":"seremban","label":[101.9658,2.719],"rings":["ovb^kpYu@Bd@[NV"]},
-  {"id":"kuala-lumpur/2","short":"Sungai Penchala","kind":"pekan","district":"kuala-lumpur","label":[101.6296,3.1324],"rings":["}n_^qq]?o@j@BE`Aa@HC_@"]},
   {"id":"kuala-langat/8","short":"Telok","kind":"pekan","district":"kuala-langat","label":[101.4628,2.9076],"rings":["}~}]mm[PAh@z@f@TIZd@HR^Sd@cBPIq@NAPyAs@_A","{z}]sj[B_@P@Tc@tA~@Pl@{BDEo@QA","s`~]}o[NgAv@TOdAw@S"]},
   {"id":"port-dickson/3","short":"Teluk Kemang","kind":"bandar","district":"port-dickson","label":[101.849,2.4944],"rings":["iqa^_hWc@v@@VRGNP?OBZe@TMn@n@D?Zq@?Fb@YC[b@U|APj@e@nAa@]Pm@c@O?q@JBDs@\\WXw@Ky@e@c@i@D{BhCM]fAw@hAgBIOi@DUx@QGIP]eBtA?IVl@ETQBm@b@Jb@vA^UAqAu@}B`AYLWDj@xAt@c@h@En@"]},
   {"id":"ulu-langat/10","short":"Sungai Makau","kind":"pekan","district":"ulu-langat","label":[101.8292,3.115],"rings":["aka^ml]FPwBHf@K[o@`ABN\\PA"]},
@@ -6396,7 +6395,6 @@ const AREAS=[
   {"id":"sepang/4","short":"Bukit Bisa","kind":"pekan","district":"sepang","label":[101.712,2.9686],"rings":["ie`^e~[?Su@??dAWBi@Y?qAj@BlAa@^b@@`@c@L"]},
   {"id":"port-dickson/6","short":"Port Dickson","kind":"mukim","district":"port-dickson","label":[101.8616,2.5538],"rings":["{ba^c{WbAl@nBVRdAw@|BgBbAiBb@yDs@b@[IQLGAVVLGo@x@YfBh@tAUPJVeBS[a@@i@{@BgA","yla^csWiAj@[|@cBa@aBwAGh@sEBDkD_BgAKoFoAB_Ai@YlAw@BAu@kBKU}G|ACm@_A`CA?cEdEA?YbBB^TRv@mAB@tBl@@Xr@h@BDfAbAUfAf@?ZZ??gAbCBT[h@JRfATF[@AO_@t@?d@{@N]O?[U?A`@gA]?^~@HB\\\\HfAbBjAAHj@~APDhAiAB?n@Z?@|AaAb@_@As@o@At@O?A`@hBI?bB"]},
   {"id":"port-dickson/7","short":"Tanah Merah Selatan","kind":"pekan","district":"port-dickson","label":[101.802,2.6156],"rings":["}da^{pXp@@B\\UAOXOw@"]},
-  {"id":"kuala-lumpur/3","short":"Kuala Lumpur","kind":"bandar","district":"kuala-lumpur","label":[101.704,3.1474],"rings":["oq`^g{]fASB{@d@IXX`@?GIREZ^VQPMc@q@c@HWg@b@e@VERf@~B}@Q[f@i@Zn@|CSPRb@BCl@d@PgA~@NJCrAb@A?nCr@HO\\Rt@_@PWn@bBnCQdAm@XLf@a@Ng@QIsAa@m@c@RB^}@w@aAZNXu@r@Ol@aBsB@aA]Te@GW\\SQs@VJcAXAk@YZHCs@l@Wo@eALa@I]_@?CkB}@DSo@"]},
   {"id":"seremban/5","short":"Seremban Jaya","kind":"pekan","district":"seremban","label":[101.9782,2.6706],"rings":["myb^cfYt@IQtDeAn@oAVk@^]t@Wm@?w@l@gAf@USY|Aq@r@y@"]},
   {"id":"sabak-bernam/6","short":"Sekinchan Site A","kind":"pekan","district":"sabak-bernam","label":[101.1422,3.525],"rings":["}tz]mma@[n@WO\\m@TL"]},
   {"id":"ulu-langat/11","short":"Sungai Kembong Beranang","kind":"pekan","district":"ulu-langat","label":[101.8382,2.885],"rings":["{pa^_d[VAAc@t@Y|AJ`@^VWFRLOARh@JBUP@LX[NoAIEWI`@g@e@YNEWm@GHRe@PQ`@IKSd@_@q@VG"]},
@@ -6407,13 +6405,11 @@ const AREAS=[
   {"id":"petaling/6","short":"Penaga","kind":"pekan","district":"petaling","label":[101.6054,3.0548],"rings":["ef_^e{\\TRRpCb@hA?x@S?QwAy@y@m@gBqAu@Ao@|@Aj@t@h@@"]},
   {"id":"klang/2","short":"Batu Empat","kind":"pekan","district":"klang","label":[101.4184,3.0832],"rings":["eh}]}b]Ex@kDB?oCv@??p@lC?]NHN"]},
   {"id":"kuala-pilah/6","short":"Air Mawang","kind":"pekan","district":"kuala-pilah","label":[102.2558,2.5566],"rings":["gre^k_XFZj@Fk@\\k@q@b@O"]},
-  {"id":"kuala-lumpur/4","short":"Bandar Baharu Sungai Besi","kind":"bandar","district":"kuala-lumpur","label":[101.7102,3.065],"rings":["{g`^_|\\Km@x@?Kf@a@D"]},
   {"id":"ulu-langat/12","short":"Bukit Sungai Raya","kind":"pekan","district":"ulu-langat","label":[101.7874,3.0842],"rings":["e_a^yb]OJEOLIFL"]},
   {"id":"kuala-langat/9","short":"Klang","kind":"mukim","district":"kuala-langat","label":[101.2552,3.0556],"rings":["{r{]ew[NfCWz@?lEyADi@]k@Ck@e@a@}AZgLP_AtCzAh@p@VfB","{m}]yx[mMSGPwOB_GuCCbA{BaAVw@gCoAbAPdASzAuC]oAv@k@@}@\\_@iAI_@ZWSHU|@_@WWIZi@Eh@w@\\HCa@tD`B?eBvADPmAh@bAlAcC`@ZfBAG}@fAHjAWOnBXTZ_@G}ATMVL?nAz@uAPAVh@Al@r@DRj@XHHj@h@a@LX?TW??^W@BrAc@Jp@fCvFMNHS`@Ax@jA??Xb@b@dAy@~@BLZ\\Yl@VtAk@bCF`De@vDbAnD`CzBlDpGdNbBbCV~ByAf@Kl@mAeAaBq@}DqEw@_@yAj@{B|B{@KS_@LeAdB_CEo@e@WaA@_@PcAjBaBfAe@Lu@KoAeCOgD_CoCiA{DgAiA_@IaARqAz@u@~@HZ|Ap@l@v@","ko~]cm\\d@TRi@c@SUf@","o~}]sr\\UGE`@XH@c@","_e|]kt\\bBbGpD`HVtAFjCQz@WtKwASc@m@wDyHwAkEgAiBuC}ByBa@DaEd@uD[wDD{AjCs@nBRtAf@nBzF","op{]kg\\VRBpB\\bBOh@o@HiE{EuCoBOaD~BM|EjBVpB","oi}]sn\\b@^YVo@s@d@C","o}{]}l\\?\\M@c@q@DgAj@xA","oi}]sn\\qCgCa@aEb@WbEfCjAI`@PLdAkBbBV|@x@JzBaBd@HX`@S|@kAd@[b@LbBiA|@Hs@t@UWYPsApBsAQe@_@MaCxAy@Ka@e@u@@","ko{]ip\\ZfCq@PqFeByBWyBuAcAmA[{@Fo@v@e@Re@hAg@hDZpCtB`CtE"]},
   {"id":"seremban/6","short":"Dusun Setia","kind":"pekan","district":"seremban","label":[101.963,2.7132],"rings":["gvb^cnYg@UF[x@@Yn@"]},
   {"id":"petaling/7","short":"Merbau Sempak","kind":"pekan","district":"petaling","label":[101.515,3.2176],"rings":["cj~]wl^QN?SPB"]},
   {"id":"kuala-selangor/5","short":"Bukit Rotan","kind":"pekan","district":"kuala-selangor","label":[101.315,3.3116],"rings":["wp|]{h_@CQ`CQJg@OMfARWvAiDQ"]},
-  {"id":"kuala-lumpur/5","short":"Batu","kind":"pekan","district":"kuala-lumpur","label":[101.6766,3.202],"rings":["yj~]ybYLk@BLvA[JLuBj@","}|_^eg^QG`@i@h@Ee@RSb@"]},
   {"id":"kuala-pilah/7","short":"Parit Tinggi","kind":"mukim","district":"kuala-pilah","label":[102.2086,2.8024],"rings":["k~d^qcZuChBSAS}@_@?Qb@gAb@MSMJSOJo@mAMGsCb@E?i@RI_@O^YGi@f@m@}AcBu@Mh@OJqBzAcAGXR\\hFHtBs@NpBa@POvAjBr@p@dAGXe@VATrA^o@~@qBMi@hAZb@","qee^egZ@Lb@EAMc@D"]},
   {"id":"kuala-selangor/6","short":"Parit Mahang","kind":"pekan","district":"kuala-selangor","label":[101.3748,3.2802],"rings":["u~|]y`_@X`@WNWa@TO"]},
   {"id":"seremban/7","short":"Paroi","kind":"pekan","district":"seremban","label":[101.998,2.7256],"rings":["o`c^ysY?x@uAJFk@lAY"]},
@@ -6447,7 +6443,6 @@ const AREAS=[
   {"id":"kuala-selangor/12","short":"Pasir Penambang","kind":"pekan","district":"kuala-selangor","label":[101.2526,3.3544],"rings":["w{{]mr_@dAsB[wAfADd@w@JNx@B{AvBw@dCk@F]["]},
   {"id":"seremban/12","short":"Taman Seremban","kind":"pekan","district":"seremban","label":[101.964,2.7016],"rings":["awb^}iYMWOFMg@nA[Jt@o@\\"]},
   {"id":"seremban/13","short":"Bukit Kepayang","kind":"pekan","district":"seremban","label":[101.9222,2.7132],"rings":["efb^emY?Nm@??rB[??SeA?I[w@l@x@sA_AOJi@c@?Ac@^ALaA_@GHQlASh@Ht@WfABJTv@IPfBkA@?Ve@@?Z"]},
-  {"id":"kuala-lumpur/6","short":"Kuala Pauh","kind":"pekan","district":"kuala-lumpur","label":[101.6746,3.0908],"rings":["m|_^ce]RHUL@W"]},
   {"id":"ulu-langat/15","short":"Kampong Pasir, Batu 14, Semenyih","kind":"pekan","district":"ulu-langat","label":[101.8682,3.0148],"rings":["aza^sg\\g@]ZgAh@g@Su@`@QXRIx@m@dAM`A"]},
   {"id":"tampin/8","short":"Tampin Tengah","kind":"mukim","district":"tampin","label":[102.2556,2.4714],"rings":["_oe^_fWA`DyCZWk@?_Ce@yAaAcApCCZRj@~B`AC","ece^_jWQXj@xAa@CS^WDsCqAl@{@xCG"]},
   {"id":"kuala-langat/10","short":"Kelanang","kind":"mukim","district":"kuala-langat","label":[101.4898,2.7734],"rings":["{u}]}jZd@p@AXc@VT^fAm@Ne@iAeA^Kx@iATD\\YpBj@pABPz@t@Bl@XqArAIfAm@h@gAX@RwBjCkC@_@{@{@@^|@qD`BMWwJ`FgCcGyBA@_E`@?jFiClIkCa@iBt@UrCA?dBjA?Kd@VT","a|}]sbZ~@k@FJn@KC[NISa@i@XIO_DbB^t@~@[BS"]},
@@ -6477,7 +6472,6 @@ const AREAS=[
   {"id":"kuala-langat/11","short":"Sijangkang","kind":"bandar","district":"kuala-langat","label":[101.4746,2.9464],"rings":["{~}]{x[lAA]xE{@OJgE"]},
   {"id":"kuala-pilah/12","short":"Dangi","kind":"pekan","district":"kuala-pilah","label":[102.3172,2.646],"rings":["cgf^iyX~@_@f@NgBN"]},
   {"id":"ulu-selangor/10","short":"Ulu Yam","kind":"mukim","district":"ulu-selangor","label":[101.618,3.4472],"rings":["eq_^sz`@DVp@H^i@NJb@MX[f@V`Ef@n@t@TQj@R\\MCv@z@i@r@`AJAEe@XJF[RHAVf@LDUYQd@FLSQ_@l@CQQp@_A\\CIgArAUHUPRb@{@r@QV\\d@G~@l@@h@r@HN`@VCDf@MHLTyBj@Kd@{IbCEaAqEE?RgDB@jArBABzCiA?}ClAwCTSOUlAW?Ha@MKb@SEqAg@m@}@ZY]v@g@i@yAa@F^MYGVISMY^Oq@g@Rq@bAOMUVY|@N^`@q@Xp@m@`AH^OXXl@V@@o@TSWYTQRTZUNN\\YPPg@h@PLPURh@CdALE@ZN@gAzBaBh@YpA_@g@i@OZe@cA[aAXMUg@LeAIe@r@@Vc@h@EnAzAAx@v@I^JNLM`ADk@hEu@`@QbAs@k@E]y@e@Iq@}@]eAiF_AiCm@E_@PT_Bf@_AzCiAj@eAAeAVm@tBy@z@Jh@gCr@NBq@~@??o@~A?@Yn@?DkAn@K","oy_^qf`@c@IUzAj@RLeB","yw_^ei`@SgA]@Uz@b@\\b@S","gp_^sw`@QKc@VKd@n@@Ps@"]},
-  {"id":"kuala-lumpur/7","short":"Ampang","kind":"mukim","district":"kuala-lumpur","label":[101.7446,3.157],"rings":["c}`^uk]RSX@Nj@lBb@hB`BDh@z@|@El@qIuH","kfa^uw]PGx@\\bAe@JNGH^`@EVj@`@g@XBh@UDVn@b@GPP?`A`@x@kAwBiDqDY{@","sn`^ip]i@^Ql@KQE[z@qBs@oALI[e@HY}@LCg@]g@LGSUVOz@ARn@|@EBjB^?H\\M`@n@dAm@VBr@[I","sp`^m{]@QZ??N]@","eo`^u}]?Ob@ICX_@?","sr`^}_^v@A_@PWO"]},
   {"id":"ulu-selangor/11","short":"Batang Kali","kind":"mukim","district":"ulu-selangor","label":[101.7392,3.4374],"rings":["sq_^oz`@a@FEjAo@?AX_B??n@_A?Cp@s@Oi@fC{@KuBx@Wl@@dAk@dA{ChAg@~@U~Aw@~@}BfA{@Cy@f@sAYEk@s@cAVoBG_@aBW_@{@_@IMm@_Am@i@}@lAaAJkBr@{A@{At@}Br@}@z@Fp@g@l@EjCb@vDC~@[rBOr@TT_@t@U?}@hC]rBRXODV`Ac@Rq@bAo@b@JDb@d@JE`@XBq@xCU?@hAYLb@p@","}g_^mca@ZGYq@hCEv@f@^dAvGtARfAb@?Jj@]Bq@~@PPm@BP^MRe@G^`@s@G@WSIGZYKDd@K@s@aA{@h@Bw@]Lk@SUPo@u@aEg@g@WYZc@LOK_@h@q@IG}AN]bBU`@M@WTFb@m@VJf@SVkA"]},
   {"id":"seremban/16","short":"Sri Sendayan","kind":"bandar","district":"seremban","label":[101.8418,2.673],"rings":["iza^yxXmD?AeFdCK?eA`@w@~Ak@_@q@@gD`B??|AvCA?lBrDA?t@w@\\Tn@SXJLyAlD_Br@iAeGU@QZw@?DZaATYx@u@?iAb@@`@nAQD\\PAPjA"]},
   {"id":"gombak/8","short":"Kepong","kind":"bandar","district":"gombak","label":[101.624,3.2158],"rings":["se_^kg^w@LaBuA_CGe@qAWJ[u@^}@`Bt@h@]n@PEj@~@BH`@X?Dn@r@|A"]},
@@ -6538,7 +6532,6 @@ const AREAS=[
   {"id":"sabak-bernam/11","short":"Sungai Besar","kind":"pekan","district":"sabak-bernam","label":[100.9764,3.6818],"rings":["c}x]a~b@mJ~GyAeAz@_C`G}EhCbC"]},
   {"id":"sabak-bernam/12","short":"Simpang Lima Tambahan","kind":"pekan","district":"sabak-bernam","label":[101.053,3.6248],"rings":["myy]elb@JLe@V[Qh@a@JL"]},
   {"id":"ulu-langat/23","short":"Kacau","kind":"pekan","district":"ulu-langat","label":[101.8722,2.996],"rings":["gza^mg\\JE@TMO"]},
-  {"id":"kuala-lumpur/8","short":"Gombak Setia","kind":"bandar","district":"kuala-lumpur","label":[101.7158,3.2208],"rings":["ck`^wp^vAhBR@Hh@m@`@WYVFGc@[?Em@o@k@Pg@"]},
   {"id":"ulu-langat/24","short":"Simpang Balak","kind":"pekan","district":"ulu-langat","label":[101.7788,3.0184],"rings":["e}`^{k\\MGJq@i@IF]jA@g@~A"]},
   {"id":"jempol/8","short":"Serting Tengah","kind":"pekan","district":"jempol","label":[102.328,2.8532],"rings":["qhf^qwZUe@S?Fk@k@KDQTDH_@TDXkA|@N?d@[GA`Dg@?"]},
   {"id":"port-dickson/11","short":"Linggi","kind":"mukim","district":"port-dickson","label":[101.99,2.5018],"rings":["q|b^alV_HyB_DcE@w@i@oAEqBDkVV??e@W??iBbE??sGrMGkBj@q@~Cz@?If@k@PQKQ`@dL@LPAQrA?AiAUKWcBlAqAlCJ@t@v@CXmA~@h@nACJnF~AfAOpJiBJk@]gAGgDHcA[m@y@w@\\@rGgDCItFWd@NNa@tAo@k@RRE^b@L@TK^i@IRB@Z]IHVY`@HXUB?POcASPMUH[ZCKKXa@Ac@q@POM]pBi@bAQAVeAY@EUj@m@o@RG[LM{@FRLEbBmA[?Xc@Kn@|A\\BCf@bC|AQ|@","_gc^i}VWj@b@PIKRUU[","edc^mhWi@UGTeBKQJ?pBj@i@|AE^aA"]},
@@ -6554,7 +6547,6 @@ const AREAS=[
   {"id":"petaling/20","short":"Shah Alam","kind":"bandar","district":"petaling","label":[101.5242,3.0656],"rings":["ks~]at\\\\}@wA{@BaAw@q@`@_Cu@QRaD`E[hCH?LlHArCxBAz@a@?CpCiBi@BtDgAIF|@gB@e@Yk@dB]Z_@aAM@MhAwAE?dBgD}Av@e@OQX]"]},
   {"id":"petaling/21","short":"Cempaka","kind":"pekan","district":"petaling","label":[101.5964,3.1218],"rings":["}b_^yl]oAFAsBtB?c@jB"]},
   {"id":"ulu-langat/25","short":"Country Height","kind":"bandar","district":"ulu-langat","label":[101.7498,2.9876],"rings":["gw`^mb\\b@a@gA}@`DW`A_@\\L\\g@ZHsAdCi@KOZiCP"]},
-  {"id":"kuala-lumpur/9","short":"Batu","kind":"mukim","district":"kuala-lumpur","label":[101.7056,3.2804],"rings":["oe~]awYhFpKDj@oBpAoUzH{BNyDjBkAWDQQETcK@yUtU@fCbGfB_A","yj~]ybYtBk@KMwAZCMMj@","qx~]a_Y?M}APAx@[NFLn@I?QHNbAG|Ao@IYi@TM_@e@J","qe_^ig^{@LgBsA}AIdBD`BtAx@K","k}~]mr^MX[@g@`AaBV?dAg@@KWc@CCm@OAe@fB_@Q?U_ACDk@o@Qi@\\aBu@]l@XdAVKB`@cAAxAPdAdCv@TIpDXpBgS^BsAOKfA_Ae@QBm@c@CKSu@@Am@RGGaCy@UEyAcA@?s@p@@Aq@x@AtDFB^`@mBUGhAoA|@^Dj@^A@Pd@F`@EBVd@@CU\\EIs@`@Gi@m@f@ICmBO@G{@u@?Ie@k@@ENQq@dCJjB_AvCPtAl@i@rDtIrC","}|_^eg^Rc@d@Si@Da@h@PF","ox~]gp^k@lAd@oAoAa@tAb@","ez_^g__@Gf@mANsGODg@k@{@E{BwHmW|BgAvAqAl@Db@`A`BpH|@\\Hp@x@d@@Vj@j@TDFcAXAnAnB`@vDY`ARrAm@hA\\bB"]},
   {"id":"kuala-langat/23","short":"Jenjarom","kind":"pekan","district":"kuala-langat","label":[101.4898,2.8638],"rings":["wi~]g~Zy@k@rBgCTNpBmCZXz@a@Hp@]Do@t@FRrAr@jAbBsAf@BhAsDICWq@BWQrAiBv@d@lAwAwAcA_DfEMI"]},
   {"id":"sabak-bernam/14","short":"Sungai Nibong","kind":"pekan","district":"sabak-bernam","label":[101.06,3.6044],"rings":["m}y]web@DQdAVKb@eAYDO"]},
   {"id":"petaling/22","short":"Puchong Perdana","kind":"pekan","district":"petaling","label":[101.6066,2.9962],"rings":["yh_^wn\\jACd@v@lAj@Vt@q@F?T^@@rAYH?dAS_@OrAaDAg@_AF_@_@aAV[A_Aj@_@Tq@?{@"]},
@@ -6621,7 +6613,6 @@ const AREAS=[
   {"id":"tampin/14","short":"Repah Permai","kind":"pekan","district":"tampin","label":[102.259,2.5082],"rings":["are^}oWK`Au@YNKMY~@A"]},
   {"id":"gombak/15","short":"Batu Arang","kind":"bandar","district":"gombak","label":[101.4532,3.319],"rings":["{t}]qp_@zC~Gm@?a@n@eF?DyAiCf@}@aEDq@fCaBx@bArCK"]},
   {"id":"sepang/14","short":"Sepang","kind":"mukim","district":"sepang","label":[101.6404,2.6712],"rings":["io_^ksYlJ?B|KUbKPDEPbAVaEjBaERs@\\kEl@uAl@kBTwA`Ag@BdAvADRc@d@iAq@y@^iBHw@MSVDm@nAw@C_AcC}Ae@E}@^EgBn@{AyAqBcC_ANeBn@q@D]k@iAc@QTgAPFCYk@OMk@g@By@[Se@XaKzDfARm@JNi@bAClAn@Zx@k@zFxLn@mBbB?hQoI?[","el`^iyXrA~@UHRn@v@[Pn@x@S[aBkA_AW\\WU{@LAP","kp`^mdYL`@^EMGFQg@A","io`^u`YPE]u@OFZr@"]},
-  {"id":"kuala-lumpur/10","short":"Kuala Lumpur","kind":"mukim","district":"kuala-lumpur","label":[101.6542,3.1456],"rings":["}n_^qq]k@IcC`AiALBx@P??Pk@HL|@M@M~ANjAo@x@s@SG_Aa@@S\\WCEW}@GCT}@@a@v@iAcAc@f@?Si@UQR@t@a@LI\\k@KIVyAC@[{BCERa@?Fa@{@}@Mo@Ri@]]P_@p@UIK`AHVWLs@QSPm@h@_@j@XY@KbAr@WRPV]d@F\\UA`AxApBlA_BOY`A[x@v@?_@b@S`@l@HrAf@P`@OMg@l@YPeAcBoCVo@^QSu@N]s@I?oCbR]RpCi@lAgAb@]x@UC?n@"]},
   {"id":"klang/7","short":"Pandamaran","kind":"pekan","district":"klang","label":[101.4216,3.0084],"rings":["ys}]yh\\PUMc@ZeAlEe@vB`Ci@d@Jj@r@PLb@_ACeAx@c@c@?YkA?N_Bk@MwBP"]},
   {"id":"seremban/33","short":"Seremban 3","kind":"bandar","district":"seremban","label":[101.9384,2.6736],"rings":["ckb^{cY^tAORaEGIa@v@_B`Ar@b@A?[\\H"]},
   {"id":"klang/8","short":"Meru","kind":"pekan","district":"klang","label":[101.4386,3.1362],"rings":["aq}]as]Cd@y@GCb@w@EFy@Z?C]|ABCV"]},
@@ -6680,7 +6671,18 @@ const AREAS=[
   {"id":"ulu-langat/34","short":"Kajang","kind":"pekan","district":"ulu-langat","label":[101.744,3.0112],"rings":["kr`^}p\\|AB`@\\f@Ch@dB^ReAfBo@f@[IQd@i@KaA^aDVfA|@c@`@k@g@YHQ]U@d@O[_@Co@iB\\CSTB`@_@Bg@^IIe@`@o@I[rBM?_@d@QHiA`@ALRr@G"]},
   {"id":"jelebu/16","short":"Sungai Muntoh","kind":"pekan","district":"jelebu","label":[102.0814,3.0206],"rings":["k{c^uo\\P\\U@M\\P}@"]},
   {"id":"tampin/17","short":"Pasir Besar","kind":"pekan","district":"tampin","label":[102.5342,2.6504],"rings":["cih^e|XLSJJ@`@c@`@TNQTGYW|@Q@D_@[Gn@[ZcA"]},
-  {"id":"rembau/25","short":"Merbau Sembilan","kind":"pekan","district":"rembau","label":[102.0452,2.5642],"rings":["wlc^yaXB^}Ax@VXo@d@w@{AVi@pBgA^r@"]}
+  {"id":"rembau/25","short":"Merbau Sembilan","kind":"pekan","district":"rembau","label":[102.0452,2.5642],"rings":["wlc^yaXB^}Ax@VXo@d@w@{AVi@pBgA^r@"]},
+  {"id":"kuala-lumpur/1","short":"Kepong","kind":"","district":"kuala-lumpur","label":[101.65,3.213],"rings":["gn_^wi^sBdB?`BSHKYa@NQw@ODKU?c@_A?]jAa@UTu@k@}@`@_@HwCb@C?[pA@?Sv@BEg@x@Fh@h@_@t@\\|@VM@b@h@r@"]},
+  {"id":"kuala-lumpur/2","short":"Batu","kind":"","district":"kuala-lumpur","label":[101.6792,3.214],"rings":["{u_^qr^?PhA?H~@iCL?Zc@BIvCa@^Xt@c@\\_@a@MTKKc@Rk@nBHr@gCpB@}@g@KOaAUFCg@_@W@Y|@DHiAlADw@k@^{@K_C[eAxFDIq@tAqB|@ZJl@^?"]},
+  {"id":"kuala-lumpur/3","short":"Wangsa Maju","kind":"","district":"kuala-lumpur","label":[101.728,3.2124],"rings":["kc`^eo^Zl@J~B_@z@v@j@mAEMlAy@IAXaDgCe@p@aBe@Mh@i@E_@_@i@PZ_BjA_AIaAm@w@f@u@FLjA@LOr@r@HIv@lA?^Z?Db@UEVTn@_@hACFeAl@??Y"]},
+  {"id":"kuala-lumpur/4","short":"Segambut","kind":"","district":"kuala-lumpur","label":[101.6432,3.1618],"rings":["ks_^mp]uB{Aa@y@}@o@_@\\i@Mk@`@DUWc@a@DwA]My@Rc@UaBfCqBIs@j@oBb@SJJLU^`@b@]PFUt@`@T\\kA~@??b@JTNEPv@`@OJXRI?aBrBeBp@`Bx@RIxDl@~Fq@pA_A\\_@j@@`A}@SeBn@"]},
+  {"id":"kuala-lumpur/5","short":"Setiawangsa","kind":"","district":"kuala-lumpur","label":[101.7218,3.1872],"rings":["ms`^yg^AZh@Q^^h@DLi@`Bd@d@q@`E~CBf@RIDdBiAP_An@eAoAcAf@e@M[u@_CZy@KDOa@QEw@MDM]VyAlAw@"]},
+  {"id":"kuala-lumpur/6","short":"Titiwangsa","kind":"","district":"kuala-lumpur","label":[101.7322,3.1556],"rings":["_n`^o~]d@LbAg@dAnA~@o@hAQKu@~@^A|@c@^?`@i@ZPr@}Ae@cBG]tBx@pDKFKUq@f@CW]DOn@uAq@`@y@u@oANI[e@HW}@JCg@_@g@PEUUnBQ?Yl@?@gAb@G"]},
+  {"id":"kuala-lumpur/7","short":"Bukit Bintang","kind":"","district":"kuala-lumpur","label":[101.7098,3.1474],"rings":["sb`^s}]T`BSb@TtAKhAJX`ANlAlBIjBgBd@{AhAb@bASvA\\J{ArA]e@yAJDg@d@QFaAf@g@?WaBqCXFn@a@CYj@Kz@q@c@[@i@_@w@SPk@?QVKENW{@o@QDWqBZiAbBF|Ad@Qs@h@[?a@b@_@"]},
+  {"id":"kuala-lumpur/8","short":"Lembah Pantai","kind":"","district":"kuala-lumpur","label":[101.6644,3.1254],"rings":["{t_^c~\\yByAKg@c@Dw@i@M}@VSa@iABeCc@@CQLyAmAmBaAOG_CvA\\`@EVb@ETj@a@h@L^]|@n@`@x@tBzAUXn@p@EPu@H_@jAaA[L^KBMzANjAq@z@j@RCh@hCvAo@R"]},
+  {"id":"kuala-lumpur/9","short":"Seputeh","kind":"","district":"kuala-lumpur","label":[101.683,3.0662],"rings":["ef`^yw\\QeCh@cBIk@jBaB]KRwAc@cArBuArB[CdC`@hAWRL|@v@h@b@EJf@xBxAITl@r@U?Jn@g@UIN}@M@~Ax@QVr@qDBBp@eBIqAe@i@TQS_A?B]iAG"]},
+  {"id":"kuala-lumpur/10","short":"Cheras","kind":"","district":"kuala-lumpur","label":[101.7406,3.0972],"rings":["gp`^aq]tAp@No@\\EBVp@g@JTJG_@kBPEz@n@OVJDPWj@?RQ^v@Ah@b@Z{@p@k@JBXo@`@_@QBmAcAh@{@[BvA]bBn@B]z@b@CBt@f@h@oAGAlBYBgCQHmA}@{@Mq@Ri@]Qj@{@l@WDPZA^c@Bg@_@aAVw@"]},
+  {"id":"kuala-lumpur/11","short":"Bandar Tun Razak","kind":"","district":"kuala-lumpur","label":[101.7216,3.0658],"rings":["or`^}a]C\\`DL@mBnAFg@i@Cu@c@B\\{@QKGRYc@`@kACwAz@ZbAi@ClAfBzC?Vg@f@G`Ae@PEf@xAK\\d@o@|CLbDO?[kAg@@IbAc@CObASEIRPr@_Ag@QV?eE}D??qEPATs@"]}
 ];
 /* ============ THE PLACE LIST (v633) ============
    Where a typed place is: GeoNames' populated places and localities in the core states, hashed, for Add ID and Amend ID.
@@ -6928,7 +6930,9 @@ const quoteFor=p=>{const f=QUOTES[p||PROD];return f?f():null;};
    v324 onward, which tabJournal maps in full; master/changelog.json carries every entry
    ever written and is the record. So a bump PREPENDS its entry. Replacing the array,
    which both comments invited, silently drops the whole window. */
-const evolution=[{"v":"v677","d":"17 Sep 2026","t":"CUSTOMERS IS NETWORK, WHO BUYS IS CLIENTS, AND MAP IS COVERAGE","n":["<b>HIS INSTRUCTION OF 17 SEP 2026.</b> The destination that held the people is <b>Network</b>. Its first page, <b>Who buys</b>, is <b>Clients</b>; <b>Associates</b> keeps its name; and <b>Map</b>, which he asked to be called something more fitting, is <b>Coverage</b>, his pick of four.","<b>NAMES ONLY.</b> The ids are the addresses, so #concentration, #network and #map still open the same pages, and nothing a page shows or computes moves. The board card's two lines that send him to set a tier now say Clients. Customers stays wherever it means the people themselves: the receivables heading, the observation family and the Coverage metric.","<b>THE CHECKS:</b> a new section reads the rail, each page's heading and the board card as drawn; each of its eight reverts, a name at a time, turned it red."]},
+const evolution=[{"v":"v678","d":"17 Sep 2026","t":"KUALA LUMPUR IS SHADED BY ITS ELEVEN CONSTITUENCIES","n":["<b>HIS DECISION OF 17 SEP 2026.</b> Thirty of the thirty-five parties on Coverage stand in Kuala Lumpur, and the survey behind the finer areas gave the territory ten coarse ones, so a tap on it told him nothing. Its areas are now its eleven federal constituencies: Kepong, Batu, Wangsa Maju, Segambut, Setiawangsa, Titiwangsa, Bukit Bintang, Lembah Pantai, Seputeh, Cheras and Bandar Tun Razak, the names his own map of the city prints. The thirty now spread across nine of them.","<b>THE SOURCE.</b> The 2018 federal delimitation, in force since GE14, from the Malaysian Election Corpus (Thevananthan and Chacko), public domain under CC0, pinned to a commit in tools/areafetch.mjs and credited under the map. Every district and every area outside Kuala Lumpur is byte for byte what it was.","<b>A POINT IS NAMED BY ITS OWN DISTRICT FIRST.</b> The survey files mukim Petaling under Petaling and mukim Setapak under Gombak, yet 40% and 20% of them lie inside Kuala Lumpur, so twelve KL parties had been counted in a Selangor mukim. A point now takes its own district's area that holds it, then any area that does, then the nearest of its own. An opened district draws its own areas last, over a neighbour's that meet its frame, and its lead says constituency where that is what they are.","<b>THE CHECKS:</b> a new section reads the eleven seats, names each seat's own point against the rule it replaced, and reads the drawing order with Kuala Lumpur and with Petaling opened; five reverts each turned it red, one of them only after the Petaling check was added, since the seats happen to come last in the data."]},
+
+{"v":"v677","d":"17 Sep 2026","t":"CUSTOMERS IS NETWORK, WHO BUYS IS CLIENTS, AND MAP IS COVERAGE","n":["<b>HIS INSTRUCTION OF 17 SEP 2026.</b> The destination that held the people is <b>Network</b>. Its first page, <b>Who buys</b>, is <b>Clients</b>; <b>Associates</b> keeps its name; and <b>Map</b>, which he asked to be called something more fitting, is <b>Coverage</b>, his pick of four.","<b>NAMES ONLY.</b> The ids are the addresses, so #concentration, #network and #map still open the same pages, and nothing a page shows or computes moves. The board card's two lines that send him to set a tier now say Clients. Customers stays wherever it means the people themselves: the receivables heading, the observation family and the Coverage metric.","<b>THE CHECKS:</b> a new section reads the rail, each page's heading and the board card as drawn; each of its eight reverts, a name at a time, turned it red."]},
 
 {"v":"v676","d":"17 Sep 2026","t":"ONE UNIT OUT TO CN6-WM ON ADVANCE: AT THE ASK IT IS NOT, AT THE CAP IT STILL FITS","n":["<b>FOLDED: A SINGLE SALT SALE, GOODS GONE AND NOTHING IN.</b> One row enters the sales book: CN6-WM, 1 unit for RM110 dated 17 Sep, collected on the day with RM0 cash in. The rate clears the RM51 floor for a 1 unit lot but sits well under the RM160 ask, and it matches the top of the party's own range at RM110 against a median of RM100 across 7 orders.","<b>UNUSUAL: THE DRAFTER FLAGGED THE ADVANCE, AND THE CAP ANSWERS IT.</b> RM110 goes out unpaid on top of RM100 outstanding, taking CN6-WM to 2 unit on credit against a cap of 2, so the row is at the limit and not over it. Costed at RM48 a unit, the desk's own inventory rate, leaving RM62 on the goods at 56.4%. The inventory gives up 1 unit and books no cash."]},
 
@@ -7492,7 +7496,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='17 Sep 2026, 01:26 KL';
+const LAST_UPDATED='17 Sep 2026, 01:31 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -10938,13 +10942,20 @@ function inShape(pt,g){
    agree: an area filed under one district can lie partly inside the next. A party takes the district its point sits in
    and the area its point sits in, whichever district that area is filed under, and only a point between areas falls
    back to the nearest label, so a dot is always drawn on the area it is counted in. */
+/* v678: A POINT IS NAMED BY ITS OWN DISTRICT'S AREAS FIRST. The ADM3 survey files mukim Petaling under Petaling and
+   mukim Setapak under Gombak, yet 40% and 20% of them lie inside Kuala Lumpur, so a KL party used to be counted in a
+   Selangor mukim ahead of any KL area. Its own district's area that holds it, then any area that does, then the
+   nearest of its own district's. */
 function areaOf(lat,lng){
   const pt=[lng,lat],district=DISTRICTS.find(d=>inShape(pt,areaShape(d)))||null;
   if(!district||!district.core)return {district:district,area:null};
-  const near=a=>Math.hypot(a.label[0]-lng,a.label[1]-lat);
-  const area=AREAS.find(a=>inShape(pt,areaShape(a)))||AREAS.slice().sort((p,q)=>near(p)-near(q))[0]||null;
+  const near=a=>Math.hypot(a.label[0]-lng,a.label[1]-lat),holds=a=>inShape(pt,areaShape(a));
+  const own=AREAS.filter(a=>a.district===district.id);
+  const area=own.find(holds)||AREAS.find(holds)||own.sort((p,q)=>near(p)-near(q))[0]||null;
   return {district:district,area:area};
 }
+/* what a district's areas are called: Kuala Lumpur's are its constituencies (v678), the rest the survey's kinds */
+const areaWord=d=>AREAS.some(a=>a.district===d.id&&!a.kind)?'constituency':'mukim, bandar and pekan';
 /* the kind and the name, unless the name already opens with the kind, as Bandar Baharu does */
 const areaName=a=>(!a.kind||a.short.toLowerCase().indexOf(a.kind+' ')===0)?a.short:a.kind.charAt(0).toUpperCase()+a.kind.slice(1)+' '+a.short;
 /* five steps on the square root of the share of the largest, so a small area still shows; the heat's own three
@@ -10971,7 +10982,8 @@ function tabMap(){
   /* an opened district draws every area inside its frame, whichever district it is filed under, so no dot stands on
      bare ground where the two surveys disagree */
   const db=dist?areaShape(dist).box:null,meets=b=>b[0]<=db[2]&&b[2]>=db[0]&&b[1]<=db[3]&&b[3]>=db[1];
-  const shown=dist?AREAS.filter(a=>a.district===dist.id||meets(areaShape(a).box)):DISTRICTS.filter(d=>peninsula||d.core);
+  /* its own areas drawn last, over a neighbour's that spill into it (v678) */
+  const shown=dist?AREAS.filter(a=>a.district!==dist.id&&meets(areaShape(a).box)).concat(AREAS.filter(a=>a.district===dist.id)):DISTRICTS.filter(d=>peninsula||d.core);
   const vals=dist?byA:byD,max=Math.max(0,...shown.map(a=>(vals[a.id]||{}).v||0));
   /* THE FRAME: the district opened, the core districts that carry trade, or the peninsula */
   const traded=shown.filter(d=>byD[d.id]);
@@ -11065,7 +11077,7 @@ function tabMap(){
     </div>`;})();
   return `<h1>Coverage</h1>
   <div class="pscope">${prodBadge()}</div>
-  <div class="dsc dsclead" style="margin-bottom:12px">${MAP_METRICS[MAP_METRIC]} by ${dist?'mukim, bandar and pekan in '+esc(dist.name)+periodTxt+', each party a dot with no name':'district'+periodTxt+', deeper where the book is concentrated; tap a district to open its mukim, bandar and pekan'}.</div>
+  <div class="dsc dsclead" style="margin-bottom:12px">${MAP_METRICS[MAP_METRIC]} by ${dist?areaWord(dist)+' in '+esc(dist.name)+periodTxt+', each party a dot with no name':'district'+periodTxt+', deeper where the book is concentrated; tap a district to open its mukim, bandar and pekan'}.</div>
   <div class="kpis k4">
     <div class="kpi"><div class="l">${dist?'Areas':'Districts'} ${MAP_METRIC==='credit'?'owing':'with trade'}</div><div class="v">${rows.length}</div><div class="n">of ${shown.length} drawn</div></div>
     <div class="kpi gold"><div class="l">Deepest</div><div class="v" style="font-size:17px">${top?esc(dist?areaName(top.a):top.a.name):'&mdash;'}</div><div class="n">${top&&total?Math.round(top.t.v/total*100)+'% of the '+word+' drawn':empty+' drawn'}</div></div>

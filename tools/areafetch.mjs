@@ -13,11 +13,17 @@
  * Both licences ask for attribution where the data is shown, and /desk is public, so the credit is
  * printed under the map. The names are kept, on his decision of 14 Sep 2026 that area names show.
  *
+ * KUALA LUMPUR BY ITS ELEVEN CONSTITUENCIES (v678, his decision of 17 Sep 2026). ADM3 gives the territory
+ * ten coarse areas where thirty of the desk's parties stand, so a tap on it said nothing. Its areas are the
+ * federal constituencies of the 2018 delimitation instead, in force since GE14, from the Malaysian Election
+ * Corpus (Thevananthan and Chacko), CC0, pinned to a commit. The same names the city's own map prints.
+ *
  * Run by hand when the source moves; never by CI and never by the build. The desk still loads
  * nothing at runtime: tools/geosync.mjs inlines geo/areas.json into the master.
  *
  *   node tools/areafetch.mjs              fetch the three files and write geo/areas.json
- *   node tools/areafetch.mjs --from DIR   read MYS-ADM1.geojson, MYS-ADM2.geojson, MYS-ADM3.geojson from DIR
+ *   node tools/areafetch.mjs --from DIR   read MYS-ADM1.geojson, MYS-ADM2.geojson, MYS-ADM3.geojson and
+ *                                         peninsular_2018_parlimen.geojson from DIR
  */
 import { readFileSync, writeFileSync } from "node:fs";
 import { resolve, dirname, join } from "node:path";
@@ -26,6 +32,9 @@ import { fileURLToPath } from "node:url";
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const PIN = "9469f09";                                   // the basemap's release, so the levels agree
 const url = (L) => `https://github.com/wmgeolab/geoBoundaries/raw/${PIN}/releaseData/gbOpen/MYS/${L}/geoBoundaries-MYS-${L}.geojson`;
+const SEATS_PIN = "2a720dd0c8839fb58756a4c6028ff42cd7b85734";
+const SEATS = "peninsular_2018_parlimen.geojson";
+const seatsUrl = `https://raw.githubusercontent.com/Thevesh/paper-meco-maps/${SEATS_PIN}/data/geojson/delimitations/${SEATS}`;
 const CORE = ["Selangor", "Kuala Lumpur", "Putrajaya", "Negeri Sembilan"];
 const ISLANDS = ["Sabah", "Sarawak", "Labuan"];          // not Peninsular Malaysia
 const TOL = { core: 0.002, context: 0.006, area: 0.0012 }; // degrees; 0.001 is about 110 m
@@ -33,9 +42,9 @@ const Q = 5e3;                                           // stored to 2e-4 degre
 
 const argv = process.argv.slice(2), from = argv.includes("--from") ? argv[argv.indexOf("--from") + 1] : null;
 async function load(L) {
-  if (from) return JSON.parse(readFileSync(join(from, `MYS-${L}.geojson`), "utf8")).features;
-  const r = await fetch(url(L));
-  if (!r.ok) { console.error(`  FAIL  ${r.status} fetching ${url(L)}`); process.exit(1); }
+  if (from) return JSON.parse(readFileSync(join(from, L === "SEATS" ? SEATS : `MYS-${L}.geojson`), "utf8")).features;
+  const u = L === "SEATS" ? seatsUrl : url(L), r = await fetch(u);
+  if (!r.ok) { console.error(`  FAIL  ${r.status} fetching ${u}`); process.exit(1); }
   return (await r.json()).features;
 }
 
@@ -119,7 +128,7 @@ const slug = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(
 const title = (s) => String(s).toLowerCase().replace(/(^|[\s,(-])([a-z])/g, (m, a, b) => a + b.toUpperCase());
 const KINDS = { mukim: "mukim", bandar: "bandar", pekan: "pekan" };
 
-const [A1, A2, A3] = [await load("ADM1"), await load("ADM2"), await load("ADM3")];
+const [A1, A2, A3, SEAT] = [await load("ADM1"), await load("ADM2"), await load("ADM3"), await load("SEATS")];
 const stateOf = (pt) => { const s = A1.find((f) => inPolys(pt, polys(f))); return s ? s.properties.shapeName : null; };
 const districts = [];
 for (const f of A2) {
@@ -137,19 +146,27 @@ for (const f of A3) {
   if (!coreStates.some((s) => inPolys(c, polys(s)))) continue;
   const d = districts.find((x) => x.core && inPolys(c, polys(x._f)));
   if (!d) { console.error(`  FAIL  no core district holds ${f.properties.shapeName}`); process.exit(1); }
+  if (d.id === "kuala-lumpur") continue;                  // its areas are its constituencies, below
   const raw = String(f.properties.shapeName).trim(), first = raw.split(/\s+/)[0].toLowerCase();
   const kind = KINDS[first] || "", short = KINDS[first] ? title(raw.slice(first.length).trim()) : title(raw);   // the full name is the kind and the short one
   const rs = rings(f, TOL.area, 0.0005);
   if (!rs.length) continue;                               // smaller than a pixel when zoomed in
   areas.push({ id: d.id + "/" + (areas.filter((a) => a.district === d.id).length + 1), short, kind, district: d.id, label: labelPoint(f), rings: rs });
 }
+const kl = SEAT.filter((f) => f.properties.state === "W.P. Kuala Lumpur");
+if (kl.length !== 11) { console.error(`  FAIL  ${kl.length} Kuala Lumpur constituencies in the source, not 11`); process.exit(1); }
+for (const f of kl) {
+  const short = String(f.properties.parlimen).replace(/^P\.\d+\s+/, "").trim();
+  areas.push({ id: "kuala-lumpur/" + (areas.filter((a) => a.district === "kuala-lumpur").length + 1), short, kind: "", district: "kuala-lumpur", label: labelPoint(f), rings: rings(f, TOL.area, 0.0005) });
+}
 for (const d of districts) delete d._f;
 
 const out = {
-  what: "The districts of Peninsular Malaysia, and the mukim, bandar and pekan of the core states, for the desk's Map tab.",
+  what: "The districts of Peninsular Malaysia, and the mukim, bandar and pekan of the core states with Kuala Lumpur by its constituencies, for the desk's Coverage page.",
   sources: [
     { level: "district", source: "geoBoundaries gbOpen MYS ADM2, from citypopulation.de", url: url("ADM2"), licence: "CC BY 3.0", attribution: "Districts: geoBoundaries, citypopulation.de, CC BY 3.0" },
     { level: "area", source: "geoBoundaries gbOpen MYS ADM3, from Wikimedia Commons", url: url("ADM3"), licence: "CC BY 4.0", attribution: "Mukim, bandar and pekan: geoBoundaries, Wikimedia Commons, CC BY 4.0" },
+    { level: "area", source: "Malaysian Election Corpus, the 2018 federal delimitation, Kuala Lumpur", url: seatsUrl, licence: "CC0 1.0", attribution: "Kuala Lumpur constituencies: MECo, Thevananthan and Chacko, CC0" },
   ],
   pinnedRelease: PIN,
   fetchedOn: new Date().toISOString().slice(0, 10),
