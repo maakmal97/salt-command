@@ -66,7 +66,8 @@
   small: one level worse from 3 units, their normal level below that, and NO better level on half a unit or a unit,
   his decision that day, because a card is never above their own rate and these customers pay a keen rate on exactly
   those sizes; on the book the three of them were proposed Titanium, where the only better level is Ambassador, his
-  word alone. (3) Loyal and buying bigger: one level better from 3 units, never past Platinum (his "not Ambassador or
+  word alone. The five-unit monthly cap on that benefit was dropped the same day, on his word: with no better level
+  left to bound, it would have moved RM10 in three months. (3) Loyal and buying bigger: one level better from 3 units, never past Platinum (his "not Ambassador or
   Titanium"), and never a level worse for a customer already above it. A customer who is both (2) and (3) takes (2).
   (4) `slowdown(prod)`: a day is under when the three days ending on it sold under half the typical day of the 28
   ending on it; the under days are counted back from today and the count stops at the latest lot received, so a lot
@@ -75,7 +76,7 @@
   level better, never past Platinum and never worse. Bands that agree return one level. **A held tier is never
   moved**: `heldLevel` reads `TIER_OF` first. A proposal is what an un-held customer is quoted, so the rules move live
   prices: on 16 Sep 2026 four customers, CM4-MK cheaper from 3 units (12.5 units RM1,060 to RM960) and CR3-DAM,
-  CA4-DAM and CC5-OKR dearer from 3 units (RM860 to RM960), 28 prices, net +RM650, with no slowdown on either book.
+  CA4-DAM and CC5-OKR higher from 3 units (RM860 to RM960), 28 prices, net +RM650, with no slowdown on either book.
 - **Setting a customer's tiers** (v643; one for each product since v646): on Customers, the
   Tiers card carries a dropdown for each product with Not set, Set queuing only what changed,
   or Accept for every open proposal. Or chosen at Add ID as a new customer's starting tiers

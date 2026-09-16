@@ -223,7 +223,7 @@ export function boardList(tier, book, pricing, now, pick) {
  *
  * A link is handed out BY somebody: the introducer is a customer of his, named by their username,
  * and the stranger they bring is quoted TWO LEVELS ABOVE them where there is room, else one, capped
- * at the last. Above means dearer, because the introducer's own level is earned and a stranger has
+ * at the last. Above means a higher price, because the introducer's own level is earned and a stranger has
  * earned nothing; the cap means the worst a guest can do is the board every stranger already sees.
  *
  * THE LEVEL IS PER PRODUCT, like every tier since v646: an introducer on Titanium for salt and with

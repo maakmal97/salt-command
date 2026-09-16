@@ -62,20 +62,20 @@ decision of 11 Aug 2026, no sign-in. The fold routine is `docs/CLOUD_FOLD.md`; s
      15 Sep 2026 off his pricing workbook: `TIER_RULE` and `TIER_NAMES` in the master, `fiveTiers` in
      the engine. **NRV is Titanium**, the lowest level any customer is quoted, never the ask (v656):
      reading it off Bronze would value the shelf at what a stranger pays and the IAS 2.9 test could
-     never bind. A guest link is a level too: the cheaper one is Titanium, the dearer Bronze.
+     never bind. A guest link is a level too: the cheaper one is Titanium, the other Bronze.
    - **Each customer has a PROFILE on each product** (v666, his decisions of 16 Sep 2026): `buyerProfile`
      reads their own priced orders against `PROFILE_RULE` in the master (frequent 2 a month, small half a
      unit or one, loyal 6 orders with the last inside 30 days, buying bigger 4 in 10 at 3 units or more,
      rare under 1 a month or nothing for 60 days, late twice past the credit term). Shown on the Tiers card,
-     carried in the snapshot as `profileOf`. **It prices nothing yet**; four rules will move a level on it.
+     carried in the snapshot as `profileOf`. **It prices only through the four rules below**, never directly.
    - **A tier may differ by the size of the order** (v670, his decisions of 16 Sep 2026): `TIER_OF[code][product]` is one
      level name, or a BAND SET `{small, mid, big}` cut at 1 and 3 units (`PROFILE_RULE.smallUpTo`, `bigFrom`). **The engine's
      `levelAt` is the one place a size becomes a level**, read by the desk's `cardQuote`, the customer's price list and the
      fold; `levelShapeOk` is the one shape check, read by the drafter and the fold. A band left out takes mid. Their NORMAL level
      is a mid-sized order's, which is also the mark their page draws.
    - **The proposal moves on four rules** (v671, his rules of 16 Sep 2026), in `ruleProposal` over `tierProposal`:
-     rare and late twice, down a level everywhere; frequent and small, down a level from 3 units and **nothing better below
-     it, their own rate covers that**; loyal and buying bigger, up a level from 3 units, never past Platinum; sales held under
+     rare and late twice, down a level everywhere; frequent and small, down a level from 3 units, **nothing better below
+     it (their own rate covers that) and no monthly cap** (the five-unit month, dropped on his word); loyal and buying bigger, up a level from 3 units, never past Platinum; sales held under
      half the typical for three days running (`slowdown`), every band up a level, never past Platinum, until the next lot,
      which resets the count. **A HELD tier is never moved by a rule**, only offered one; a proposal is what an un-held
      customer is quoted, so these rules move live prices.
