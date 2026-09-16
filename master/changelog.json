@@ -1,5 +1,15 @@
 [
  {
+  "v": "v660",
+  "d": "16 Sep 2026",
+  "t": "A CARD IS ROUNDED DOWN TO THE TEN, SO IT IS NEVER ABOVE WHAT THE CUSTOMER PAYS",
+  "n": [
+   "<b>HIS INSTRUCTION OF 16 SEP 2026, AFTER A MEASUREMENT.</b> The rule has read a customer's own rate to the NEAREST five since v651, and the nearest five rounds UP as often as down: a customer paying RM108 a unit was carded RM110. Across all 432 priced cells on the salt book, <b>63 sat RM1 to RM2 above the rate they actually pay</b>, so the promise of never being above what they pay held only to the nearest five. It is rounded DOWN to the ten now, and never up. It costs RM385 across those cells and moves 93 of them; the biggest single cut is CA5-SEN's unit, RM110 to RM100 against their RM108. Oil does not move at all, because every oil rate already sits on the grid.",
+   "<b>THE FLOOR IS THE ONE THING THAT CAN STILL PUT A CARD OVER A RATE, and it is meant to.</b> A price may not go under break-even, so a rate below the floor lifts to the first ten above it: 22 cells today, every one of them the floor talking rather than the rounding, and the suite counts the two apart so a rounding fault cannot hide inside the floor's allowance. The grid is the same ten the ladder rounds to, so a card and a board price sit on one grid for the first time.",
+   "<b>THE CHECKS.</b> A new section of 5 assertions read off the whole live book rather than a fixture, because the claim is about every card the desk hands out: every card on a ten, none under its floor, none above the level they hold, none above their own rate except where the floor lifted it, and the customer's own page on the ten too across twelve accounts. Six assertions restated where they pinned the old grid. 5 mutations, each red, including one that showed the section could not see the tier cap being lifted out."
+  ]
+ },
+ {
   "v": "v659",
   "d": "16 Sep 2026",
   "t": "THE LABEL IS A SUBTLE MARK ON THEIR PRICES, AND THE GREETING IS AS PERSONAL AS THE SITE CAN BE",

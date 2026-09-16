@@ -7324,14 +7324,15 @@ section("Statements — guest referral links and the introducer they follow (v56
    the nearest five of 56.21 is 55, which is UNDER break-even, so the shipped rule must lift it to 60
    and nothing else in the suite walks that branch. These are exact values, not properties, because
    the point is to pin the rule rather than to describe it. */
-section("Pricing — the nearest-five rule is told apart from the one it replaced (v564)");
+section("Pricing — the down-to-the-ten rule is told apart from the two it replaced (v564, v660)");
 {
-  /* v646: the drawing rule retired with the tier ceiling; its rounding and floor guard live on in the engine's cardPrice,
-     and these are the cases that tell nearest-five from rounding up, asked of it with a ceiling out of the way */
+  /* v646: the drawing rule retired with the tier ceiling; its rounding and floor guard live on in the engine's cardPrice.
+     v660, HIS INSTRUCTION OF 16 SEP 2026: the grid is the TEN and the rounding only ever goes DOWN, so these cases now tell
+     three rules apart, the old round-up, the nearest-five that replaced it, and the floor-to-the-ten that replaced that. */
   const PE64 = (await import("../engine/pricing.mjs")).default, adj = (R, F) => PE64.cardPrice(R, F, 1e9);
-  ok(adj(71, 56.21) === 70, "a rate that rounds DOWN to the nearest five gives 70, where rounding up gave 75");
-  ok(adj(703, 50) === 705, "and one that rounds UP gives 705, where the old rule stopped at 703");
-  ok(adj(56.21, 56.21) === 60, "and where the nearest five would sit under break-even the floor guard lifts it to 60, never 55");
+  ok(adj(71, 56.21) === 70, "a rate of 71 gives 70, where rounding up gave 75 and the nearest five gave 70");
+  ok(adj(703, 50) === 700, "and 703 gives 700, where the nearest five rounded UP to 705 and the old rule stopped at 703");
+  ok(adj(56.21, 56.21) === 60, "and where the rounding would sit under break-even the floor guard lifts it to 60, never 50");
   let under = 0;
   for (let F = 20; F <= 800; F += 7.3) {
     for (const T of [70, 140, 500, 1150]) {
@@ -7381,19 +7382,22 @@ section("Statements — the price list, the order book and the desk's relay (v49
   ok(PL.ownRate(sales, "CX0-AA", "oil", "2026-08-31").rate === 10 && PL.ownRate(sales, "CX0-ZZ", "salt", "2026-08-31").rate === null,
     "per product, and a customer with no history has no rate");
   /* v646, HIS DECISION OF 15 SEP 2026: THE TIER IS A CEILING. T the tier's price at the size, R his rate times the size, F the
-     floor: no history is the tier's price, his own rate to the nearest five can only lower it, and under the floor it lifts
-     to the first five at or above it. The engine's cardPrice, which the desk's printed board quotes too. */
+     floor: no history is the tier's price, his own rate can only lower it, and under the floor it lifts clear.
+     v660, HIS INSTRUCTION OF 16 SEP 2026: DOWN TO THE TEN, NEVER UP. The nearest five rounded up as often as down, so a
+     customer paying RM108 a unit was carded RM110 and "never above what they pay" held only to the nearest five. */
   const cp = PE.cardPrice;
   ok(cp(null, 110, 220) === 220, "no history: the tier's price at the size");
 
-  ok(cp(160, 110, 220) === 160 && cp(163, 110, 220) === 165, "under the tier: his own rate stands, to the nearest five");
+  ok(cp(160, 110, 220) === 160 && cp(163, 110, 220) === 160, "under the tier: his own rate stands, down to the ten");
   ok(cp(260, 110, 220) === 220 && cp(220, 110, 220) === 220, "at or over the tier: the tier's price, never more");
-  ok(cp(100, 110, 220) === 110 && cp(20, 111, 220) === 115, "under the floor: lifted to the first five at or above it, never left under");
-  /* v564, HIS INSTRUCTION OF 10 SEP 2026: TO THE NEAREST FIVE, kept by the card rule */
-  ok(cp(97, 50, 900) === 95 && cp(98, 50, 900) === 100, "the nearest five, and it rounds DOWN when down is nearer: 97 to 95, 98 to 100");
-  ok(cp(102.5, 50, 900) === 105, "an exact half-step goes up, which is what Math.round does and is worth pinning");
-  ok([0, 1, 2, 3, 4, 5, 6, 7, 8, 9].every((d) => cp(410 + d, 50, 900) % 5 === 0), "and every answer across a run of ten ringgit is a multiple of five");
-  ok(cp(31, 31, 300) === 35 && cp(10, 28.11, 300) === 30, "a five that lands under the floor is lifted to the first five above it, never left there");
+  ok(cp(100, 110, 220) === 110 && cp(20, 111, 220) === 120, "under the floor: lifted to the first ten at or above it, never left under");
+  /* THE RULE'S WHOLE POINT, PINNED: the answer is never a ringgit above what was asked for, which is what the nearest five
+     could not promise. 108 is the live case, CA5-SEN's rate at a unit; 102.5 was the half-step the old rule rounded UP. */
+  ok(cp(108, 50, 900) === 100 && cp(102.5, 50, 900) === 100 && cp(110, 50, 900) === 110,
+    "down to the ten and never up: 108 to 100, the old half-step 102.5 to 100, and a rate already on the ten stands");
+  ok([0, 1, 2, 3, 4, 5, 6, 7, 8, 9].every((d) => cp(410 + d, 50, 900) === 410), "every rate across a run of ten ringgit lands on the ten below it");
+  ok([0, 1, 2, 3, 4, 5, 6, 7, 8, 9].every((d) => cp(410 + d, 50, 900) <= 410 + d + 0.009), "and not one of them is above the rate it was asked for");
+  ok(cp(31, 31, 300) === 40 && cp(10, 28.11, 300) === 30, "a ten that lands under the floor is lifted to the first ten above it, never left there");
   ok([31, 32, 33, 34, 36, 41, 46.2, 51.7].every((f) => cp(f, f, 900) >= f - 0.009), "and no floor in a sweep of eight is breached by the rounding");
 
   /* THE LIST AGAINST THE ENGINE, on the real snapshot: never below the collected floor, delivery on top. */
@@ -12427,6 +12431,65 @@ section("v659: the label is a subtle mark on their prices, and the greeting is a
     { customer: "CZ9-SN", product: "oil", date: "2026-05-05", qty: 10, total: 230, cash: 230, deliveredQty: 10, deliveredOn: "2026-05-05" }];
   ok(PL59.since(s59, "CZ9-SN") === "2026-04-05" && PL59.since(s59, "CZ9-NOBODY") === null,
     "the month is their first PRICED order, so a cancelled, a defaulted and an award with no cash are not it: " + PL59.since(s59, "CZ9-SN"));
+}
+
+section("v660: a card is rounded DOWN to the ten, so it is never above what the customer pays");
+{
+  /* HIS INSTRUCTION OF 16 SEP 2026: "round down such that it is as close as possible to their current rate, and never
+     higher, to the nearest 10". The rule read the NEAREST five, which rounds up as often as down: measured over all 432
+     priced cells on the salt book, 63 sat RM1 to RM2 above the customer's own rate. Asserted on the whole live book rather
+     than on a fixture, because the claim is about every card the desk hands out, and the one thing that can still put a
+     card over a rate is the FLOOR, which is separated out here rather than tolerated. */
+  const { openMaster: om60 } = await import("../tools/payload.mjs");
+  const { w: w60 } = await om60();
+  const rd60 = (e) => JSON.parse(String(w60.eval("JSON.stringify(" + e + ")")));
+  try {
+    const cells = rd60("(function(){var res={};['salt','oil'].forEach(function(p){setProd(p);recompute();"
+      + "var n=0,onTen=0,under=0,over=[],tot=0,overTier=0;"
+      + "roster.filter(function(c){return c.slice(-2)!=='-R';}).forEach(function(c){"
+      + "  if(cardTier(c)<0)return; var own=pbOwnRate(c).rate;"
+      + "  var t=cardTier(c);"
+      + "  shownSizes(p).forEach(function(q){ var v=cardQuote(c,q); if(v==null)return; n++; tot+=v;"
+      + "    if(Math.abs(v/10-Math.round(v/10))<1e-9)onTen++;"
+      + "    var row=PRICING_ENGINE.fiveTierAt(q,pxCost(),pxPolicy());"
+      + "    if(row&&v>row.prices[t]+0.009)overTier++;"
+      + "    var F=floorTotal(q); if(v<F-0.009)under++;"
+      + "    if(own!=null&&v>own*q+0.009)over.push({c:c,q:q,card:v,own:+(own*q).toFixed(2),"
+      + "      byFloor:v===Math.ceil((F-0.009)/10)*10});});});"
+      + "res[p]={n:n,onTen:onTen,under:under,overTier:overTier,over:over.length,"
+      + " overByFloor:over.filter(function(x){return x.byFloor;}).length,"
+      + " sample:over.slice(0,2),total:Math.round(tot)};});setProd('salt');recompute();return res;})()");
+    /* 1. EVERY CARD ON THE TEN, on both books. The grid is the one the ladder itself rounds to, so a card and a board
+       price sit on the same grid; a card landing on a five would be the old rule still running somewhere. */
+    ok(Object.keys(cells).every((p) => cells[p].n > 20 && cells[p].onTen === cells[p].n),
+      "every priced card on both books lands on a ten: " + JSON.stringify(Object.keys(cells).map((p) => p + " " + cells[p].onTen + "/" + cells[p].n)));
+    /* 2. AND NONE UNDER ITS FLOOR. The floor is the line no price goes under, and a coarser grid makes it easier to cross. */
+    ok(Object.keys(cells).every((p) => cells[p].under === 0),
+      "and not one of them sits under its own floor: " + JSON.stringify(Object.keys(cells).map((p) => p + " " + cells[p].under)));
+    /* 2b. AND NONE ABOVE THEIR TIER EITHER. The tier is the ceiling and the rate only ever lowers it; without this the cap
+       could be lifted out of cardPrice and every assertion above would stay green, which a mutation showed. */
+    ok(Object.keys(cells).every((p) => cells[p].overTier === 0),
+      "and none above the level they hold: " + JSON.stringify(Object.keys(cells).map((p) => p + " " + cells[p].overTier)));
+    /* 3. THE CLAIM ITSELF: nothing above what they pay, except where the FLOOR lifted it, which is the floor talking and
+       not the rounding. The two are counted apart, so a rounding fault cannot hide inside the floor's allowance. */
+    ok(Object.keys(cells).every((p) => cells[p].over === cells[p].overByFloor),
+      "no card is above the customer's own rate unless the floor lifted it there: "
+      + JSON.stringify(Object.keys(cells).map((p) => p + " " + cells[p].over + " over, " + cells[p].overByFloor + " by the floor"))
+      + " " + JSON.stringify(cells.salt.sample));
+    /* 4. AND THE TOOL THAT WRITES THE CUSTOMER'S PAGE AGREES, because two copies of one rule are two rules. */
+    const PL60 = await import("../tools/pricelist.mjs");
+    const { pricingSnapshot: ps60 } = await import("../tools/book.mjs");
+    const bk60 = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+    const snap60 = ps60(w60);   /* it reads the open master, as every other caller does */
+    const who60 = Object.keys(snap60.tierOf || {}).filter((c) => c.slice(-2) !== "-R");
+    let checked = 0, offTen = 0;
+    for (const c of who60.slice(0, 12)) {
+      const list = PL60.priceList(c, bk60, snap60, new Date());
+      for (const p of list.products) for (const r of p.sizes) { checked++; if (Math.abs(r.price / 10 - Math.round(r.price / 10)) > 1e-9) offTen++; }
+    }
+    ok(checked > 40 && offTen === 0,
+      "and every price on the customer's own page is on the ten too, over " + checked + " of them across twelve accounts");
+  } finally { await new Promise((r) => setTimeout(r, 200)); try { w60.close(); } catch (e) { /* best effort */ } }
 }
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
 process.exit(fail ? 1 : 0);

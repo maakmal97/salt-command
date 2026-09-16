@@ -66,7 +66,10 @@ decision of 11 Aug 2026, no sign-in. The fold routine is `docs/CLOUD_FOLD.md`; s
    - **Each customer holds a tier for each product** (his instruction, 15 Sep 2026): `TIER_OF`
      on the book, code to product to level name, folded as `tierset`, a null clearing a product.
      **A customer's price is their tier, never above what they pay** (his decisions of 15 Sep
-     2026), and **a product with no tier, held or proposed, is not priced**. One rule, the
+     2026), **rounded DOWN to the ten and never up** (v660, his instruction of 16 Sep 2026: the nearest
+     five rounded up as often as down, so 63 of 432 cards sat RM1 to RM2 over the rate). Only the FLOOR
+     can now put a card over a rate, and it lifts to the first ten above. **A product with no tier,
+     held or proposed, is not priced**. One rule, the
      engine's `cardPrice`: the customer's price list, and on the desk `cardQuote`, which every
      quote to a named customer reads since v652, the reward cover's gap included.
 6. **The look is the Salt design system applied as a layer.** Material, type and colour

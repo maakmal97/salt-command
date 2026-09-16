@@ -208,8 +208,8 @@ median until then), read from orders dated before the week's
 Monday in Kuala Lumpur, so the rate he is shown cannot move inside a week. Since v651 (his
 decisions of 15 Sep 2026) each board size is the price of the customer's tier for that product, the
 tier held on the book or proposed from what they pay for it, never above that rate times the size to
-the nearest five, and lifted only to clear the floor: the engine's `cardPrice`, which the desk's
-printed board calls too, and the suite holds the two equal. The v510 draw toward the ask retired
+rounded DOWN to the ten and never up (v660), and lifted only to clear the floor: the engine's
+`cardPrice`, which the desk's printed board calls too, and the suite holds the two equal. The v510 draw toward the ask retired
 with it. **A product with no tier, held or proposed, is not priced**: the list carries it in `soon`,
 the page says its price is coming soon, and the order form does not offer it. One
 price per size, for the goods (v502): delivery is not on the list. It is a figure

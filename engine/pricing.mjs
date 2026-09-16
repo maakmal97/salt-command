@@ -532,13 +532,22 @@ function fiveTiers(sizes,C,P){
 }
 /* ============ v651, HIS DECISIONS OF 15 SEP 2026: A CUSTOMER'S PRICE IS THEIR TIER, NEVER ABOVE WHAT THEY PAY ============
    T is the price of the customer's tier for the product at the size, R what their own recent rate comes to at it (null with
-   no history), F the floor. The tier is a ceiling: their own rate, to the nearest five, can only lower it, and a price that
-   lands under the floor lifts to the first five above it. The one rule the desk's printed board and the customer's page both
-   quote. A product with no tier is never priced at all: the callers leave it out, and the page says its price is coming. */
+   no history), F the floor. The tier is a ceiling: their own rate can only lower it, and a price that lands under the floor
+   lifts clear of it. The one rule the desk's printed board and the customer's page both quote. A product with no tier is
+   never priced at all: the callers leave it out, and the page says its price is coming.
+
+   v660, HIS INSTRUCTION OF 16 SEP 2026: DOWN TO THE TEN, NEVER UP. It rounded their rate to the NEAREST five, which rounds
+   UP as often as down: a customer paying RM108 a unit was carded RM110, so "never above what they pay" held only to the
+   nearest five. Measured over all 432 priced cells on the salt book, 63 of them sat RM1 to RM2 above the customer's own
+   rate. Rounding DOWN to the ten settles it and costs RM385 across those cells.
+   THE FLOOR STILL LIFTS, AND IT IS THE ONE THING THAT CAN STILL PUT A CARD OVER THEIR RATE. A price may not go under
+   break-even, so a rate below the floor lifts to the first ten above it; on today's costs that is 18 cells, and it is the
+   floor talking, not the rounding. The grid is the ten the ladder itself rounds to, so a card and a board price sit on the
+   same grid for the first time. */
 function cardPrice(R,F,T){
   if(R==null)return T;
-  let p=Math.min(T,Math.round(R/5)*5);
-  if(p<F-0.009)p=Math.ceil((F-0.009)/5)*5;
+  let p=Math.min(T,Math.floor(R/10)*10);
+  if(p<F-0.009)p=Math.ceil((F-0.009)/10)*10;
   return p;
 }
 /* v652: THE LADDER AT ANY SIZE. The rungs with the size among them, walked as fiveTiers walks them, and that size's row: at a
