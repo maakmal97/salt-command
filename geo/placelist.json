@@ -1,0 +1,729 @@
+{
+ "what": "Locations to choose from at Add ID and Amend ID: his map of Kuala Lumpur's neighbourhoods and his list of Selangor's sub-districts, each placed from GeoNames inside the district it was listed under.",
+ "sources": [
+  "His map of Kuala Lumpur, shared 17 Sep 2026",
+  "His list of Selangor's sub-districts, 17 Sep 2026",
+  "GeoNames, CC BY 4.0, MY.zip fetched 17 Sep 2026"
+ ],
+ "names": [
+  {
+   "n": "Jinjang",
+   "p": [
+    3.21,
+    101.66
+   ]
+  },
+  {
+   "n": "Taman Wahyu",
+   "p": [
+    3.21,
+    101.67
+   ]
+  },
+  {
+   "n": "Taman Melati",
+   "p": [
+    3.22,
+    101.72
+   ]
+  },
+  {
+   "n": "Setapak",
+   "p": [
+    3.21,
+    101.73
+   ]
+  },
+  {
+   "n": "Semarak",
+   "p": [
+    3.2,
+    101.71
+   ]
+  },
+  {
+   "n": "Sentul",
+   "p": [
+    3.18,
+    101.68
+   ]
+  },
+  {
+   "n": "Mont Kiara",
+   "p": [
+    3.17,
+    101.65
+   ]
+  },
+  {
+   "n": "Sungai Penchala",
+   "p": [
+    3.16,
+    101.63
+   ]
+  },
+  {
+   "n": "Bukit Damansara",
+   "p": [
+    3.15,
+    101.65
+   ]
+  },
+  {
+   "n": "TTDI",
+   "p": [
+    3.15,
+    101.63
+   ]
+  },
+  {
+   "n": "Chow Kit",
+   "p": [
+    3.16,
+    101.7
+   ]
+  },
+  {
+   "n": "Kampung Baru",
+   "p": [
+    3.17,
+    101.7
+   ]
+  },
+  {
+   "n": "Datuk Keramat",
+   "p": [
+    3.17,
+    101.73
+   ]
+  },
+  {
+   "n": "Pudu",
+   "p": [
+    3.13,
+    101.72
+   ]
+  },
+  {
+   "n": "Maluri",
+   "p": [
+    3.13,
+    101.73
+   ]
+  },
+  {
+   "n": "Bangsar",
+   "p": [
+    3.13,
+    101.67
+   ]
+  },
+  {
+   "n": "Brickfields",
+   "p": [
+    3.13,
+    101.68
+   ]
+  },
+  {
+   "n": "Taman Desa",
+   "p": [
+    3.11,
+    101.69
+   ]
+  },
+  {
+   "n": "Kuchai",
+   "p": [
+    3.08,
+    101.69
+   ]
+  },
+  {
+   "n": "Taman Midah",
+   "p": [
+    3.14,
+    101.7
+   ]
+  },
+  {
+   "n": "Sungai Besi",
+   "p": [
+    3.05,
+    101.7
+   ]
+  },
+  {
+   "n": "Alam Damai",
+   "p": [
+    3.06,
+    101.74
+   ]
+  },
+  {
+   "n": "Taman OUG",
+   "p": [
+    3.07,
+    101.68
+   ]
+  },
+  {
+   "n": "Sri Petaling",
+   "p": [
+    3.07,
+    101.69
+   ]
+  },
+  {
+   "n": "Bukit Jalil",
+   "p": [
+    3.05,
+    101.68
+   ]
+  },
+  {
+   "n": "Ulu Klang",
+   "p": [
+    3.18,
+    101.77
+   ]
+  },
+  {
+   "n": "Ampang",
+   "p": [
+    3.15,
+    101.77
+   ]
+  },
+  {
+   "n": "Batu Caves",
+   "p": [
+    3.24,
+    101.68
+   ]
+  },
+  {
+   "n": "Selayang",
+   "p": [
+    3.25,
+    101.67
+   ]
+  },
+  {
+   "n": "Rawang",
+   "p": [
+    3.32,
+    101.58
+   ]
+  },
+  {
+   "n": "Taman Templer",
+   "p": [
+    3.29,
+    101.64
+   ]
+  },
+  {
+   "n": "Sungai Buloh",
+   "p": [
+    3.21,
+    101.56
+   ]
+  },
+  {
+   "n": "Kundang",
+   "p": [
+    3.28,
+    101.51
+   ]
+  },
+  {
+   "n": "Kampung Sungai Pusu",
+   "p": [
+    3.25,
+    101.73
+   ]
+  },
+  {
+   "n": "Kajang",
+   "p": [
+    2.99,
+    101.79
+   ]
+  },
+  {
+   "n": "Beranang",
+   "p": [
+    2.87,
+    101.87
+   ]
+  },
+  {
+   "n": "Cheras",
+   "p": [
+    3.05,
+    101.77
+   ]
+  },
+  {
+   "n": "Hulu Langat",
+   "p": [
+    3.11,
+    101.81
+   ]
+  },
+  {
+   "n": "Kelanang",
+   "p": [
+    2.8,
+    101.44
+   ]
+  },
+  {
+   "n": "Sungai Makau",
+   "p": [
+    3.12,
+    101.83
+   ]
+  },
+  {
+   "n": "Sri Nanding",
+   "p": [
+    3.1,
+    101.81
+   ]
+  },
+  {
+   "n": "Simpang Balak",
+   "p": [
+    3.01,
+    101.77
+   ]
+  },
+  {
+   "n": "Rumah Murah Sungai Lui",
+   "p": [
+    3.16,
+    101.89
+   ]
+  },
+  {
+   "n": "Kampung Sungai Tangkas",
+   "p": [
+    2.93,
+    101.78
+   ]
+  },
+  {
+   "n": "Batu 23",
+   "p": [
+    3.6,
+    101.07
+   ]
+  },
+  {
+   "n": "Kuala Kubu Bharu",
+   "p": [
+    3.56,
+    101.66
+   ]
+  },
+  {
+   "n": "Ulu Yam",
+   "p": [
+    3.45,
+    101.64
+   ]
+  },
+  {
+   "n": "Kerling",
+   "p": [
+    3.59,
+    101.6
+   ]
+  },
+  {
+   "n": "Serendah",
+   "p": [
+    3.36,
+    101.6
+   ]
+  },
+  {
+   "n": "Peretak",
+   "p": [
+    3.58,
+    101.73
+   ]
+  },
+  {
+   "n": "Sungai Choh",
+   "p": [
+    3.35,
+    101.59
+   ]
+  },
+  {
+   "n": "Bukit Beruntung",
+   "p": [
+    3.42,
+    101.56
+   ]
+  },
+  {
+   "n": "Klang",
+   "p": [
+    3.04,
+    101.44
+   ]
+  },
+  {
+   "n": "Kapar",
+   "p": [
+    3.13,
+    101.38
+   ]
+  },
+  {
+   "n": "Bukit Raja",
+   "p": [
+    3.09,
+    101.43
+   ]
+  },
+  {
+   "n": "Port Klang",
+   "p": [
+    3,
+    101.39
+   ]
+  },
+  {
+   "n": "Pandamaran",
+   "p": [
+    3.01,
+    101.42
+   ]
+  },
+  {
+   "n": "Bukit Kemuning",
+   "p": [
+    3.37,
+    101.27
+   ]
+  },
+  {
+   "n": "Jenjarom",
+   "p": [
+    2.87,
+    101.49
+   ]
+  },
+  {
+   "n": "Kanchong Darat",
+   "p": [
+    2.78,
+    101.48
+   ]
+  },
+  {
+   "n": "Sijangkang",
+   "p": [
+    2.94,
+    101.46
+   ]
+  },
+  {
+   "n": "Telok",
+   "p": [
+    2.82,
+    101.52
+   ]
+  },
+  {
+   "n": "Sungai Raba",
+   "p": [
+    2.82,
+    101.45
+   ]
+  },
+  {
+   "n": "Permatang Pasir",
+   "p": [
+    2.84,
+    101.43
+   ]
+  },
+  {
+   "n": "Chodoi",
+   "p": [
+    2.83,
+    101.45
+   ]
+  },
+  {
+   "n": "Bukit Changgang",
+   "p": [
+    2.83,
+    101.63
+   ]
+  },
+  {
+   "n": "Batu",
+   "p": [
+    2.69,
+    101.54
+   ]
+  },
+  {
+   "n": "Jugra",
+   "p": [
+    2.83,
+    101.42
+   ]
+  },
+  {
+   "n": "Kuala Selangor",
+   "p": [
+    3.35,
+    101.25
+   ]
+  },
+  {
+   "n": "Ijok",
+   "p": [
+    3.32,
+    101.4
+   ]
+  },
+  {
+   "n": "Kampung Kuantan",
+   "p": [
+    3.36,
+    101.3
+   ]
+  },
+  {
+   "n": "Sungai Sembilang",
+   "p": [
+    3.2,
+    101.32
+   ]
+  },
+  {
+   "n": "Pasir Penambang",
+   "p": [
+    3.35,
+    101.25
+   ]
+  },
+  {
+   "n": "Bukit Talang",
+   "p": [
+    3.4,
+    101.32
+   ]
+  },
+  {
+   "n": "Bukit Belimbing",
+   "p": [
+    3.38,
+    101.27
+   ]
+  },
+  {
+   "n": "Petaling Jaya",
+   "p": [
+    3.11,
+    101.61
+   ]
+  },
+  {
+   "n": "Subang Jaya",
+   "p": [
+    3.04,
+    101.58
+   ]
+  },
+  {
+   "n": "Shah Alam",
+   "p": [
+    3.09,
+    101.53
+   ]
+  },
+  {
+   "n": "Damansara",
+   "p": [
+    3.07,
+    101.55
+   ]
+  },
+  {
+   "n": "Bandar Sri Damansara",
+   "p": [
+    3.19,
+    101.61
+   ]
+  },
+  {
+   "n": "Puchong",
+   "p": [
+    3,
+    101.62
+   ]
+  },
+  {
+   "n": "Puchong Jaya",
+   "p": [
+    3.05,
+    101.62
+   ]
+  },
+  {
+   "n": "Batu Tiga",
+   "p": [
+    3.08,
+    101.55
+   ]
+  },
+  {
+   "n": "Serdang",
+   "p": [
+    3.03,
+    101.72
+   ]
+  },
+  {
+   "n": "Glenmarie",
+   "p": [
+    3.08,
+    101.58
+   ]
+  },
+  {
+   "n": "Merbau Sempak",
+   "p": [
+    3.22,
+    101.52
+   ]
+  },
+  {
+   "n": "Sabak",
+   "p": [
+    3.77,
+    100.99
+   ]
+  },
+  {
+   "n": "Sungai Besar",
+   "p": [
+    3.67,
+    100.99
+   ]
+  },
+  {
+   "n": "Sekinchan",
+   "p": [
+    3.51,
+    101.1
+   ]
+  },
+  {
+   "n": "16 Sierra",
+   "p": [
+    2.97,
+    101.65
+   ]
+  },
+  {
+   "n": "Cyberjaya",
+   "p": [
+    2.92,
+    101.66
+   ]
+  },
+  {
+   "n": "Dengkil",
+   "p": [
+    2.86,
+    101.68
+   ]
+  },
+  {
+   "n": "Salak Tinggi",
+   "p": [
+    2.81,
+    101.74
+   ]
+  }
+ ],
+ "unresolved": [
+  "Kepong Baru (Kuala Lumpur)",
+  "Batu Muda (Kuala Lumpur)",
+  "Danau Kota (Kuala Lumpur)",
+  "Sri Rampai (Kuala Lumpur)",
+  "Ayer Panas (Kuala Lumpur)",
+  "Kentonmen (Kuala Lumpur)",
+  "Manjalara (Kuala Lumpur)",
+  "Duta (Kuala Lumpur)",
+  "Bukit Tunku (Kuala Lumpur)",
+  "KLCC (Kuala Lumpur)",
+  "Ampang Hilir (Kuala Lumpur)",
+  "Pandan (Kuala Lumpur)",
+  "Shamelin (Kuala Lumpur)",
+  "Bandar Malaysia (Kuala Lumpur)",
+  "Salak (Kuala Lumpur)",
+  "Sri Permaisuri (Kuala Lumpur)",
+  "Connaught (Kuala Lumpur)",
+  "Batu 20 (Gombak)",
+  "Hulu Semenyih (Ulu Langat)",
+  "Tanjong 12 (Ulu Langat)",
+  "Tarun (Ulu Langat)",
+  "Sungai Lui (Ulu Langat, more than one)",
+  "Sungai Kembong Beranang (Ulu Langat)",
+  "Kacau (Ulu Langat)",
+  "Kampung Pasir Batu 14 Semenyih (Ulu Langat)",
+  "Desa Raya (Ulu Langat)",
+  "Sungai Raya (Ulu Langat)",
+  "Batu 26 (Ulu Langat)",
+  "Sungai Chick (Ulu Selangor)",
+  "Ulu Yam Baru (Ulu Selangor)",
+  "Kuala Kalumpang (Ulu Selangor)",
+  "Sungai Gumut (Ulu Selangor, more than one)",
+  "Bukit Sentosa (Ulu Selangor)",
+  "Telok Menegun (Klang)",
+  "Taman Sri Muda (Klang)",
+  "Kota Kemuning (Klang)",
+  "Batu 4 (Klang)",
+  "Bandar Saujana Putra (Kuala Langat)",
+  "Tongkah (Kuala Langat)",
+  "Teluk Datok (Kuala Langat)",
+  "Morib (Kuala Langat)",
+  "Kelanang Batu 6 (Kuala Langat)",
+  "Kanchong (Kuala Langat)",
+  "Api-api (Kuala Selangor)",
+  "Bukit Melawati (Kuala Selangor)",
+  "Kuala Sungai Buloh (Kuala Selangor)",
+  "Pasangan (Kuala Selangor)",
+  "Ulu Tinggi (Kuala Selangor)",
+  "Ujong Permatang (Kuala Selangor)",
+  "Tambak Jawa (Kuala Selangor)",
+  "Taman PKNS (Kuala Selangor)",
+  "Simpang 3 Ijok (Kuala Selangor)",
+  "Simpang 3 (Kuala Selangor)",
+  "Parit Mahang (Kuala Selangor)",
+  "Kg. Baru Hulu Tiram Buruk (Kuala Selangor)",
+  "Country Heights (Petaling)",
+  "Puchong Perdana (Petaling)",
+  "Penaga (Petaling)",
+  "Kayu Ara (Petaling)",
+  "Desa Puchong (Petaling)",
+  "Bukit Puchong 2 (Sepang)",
+  "Taman Putra Prima (Sepang)",
+  "Taman Mas (Sepang)",
+  "Taman Putra Perdana (Sepang)",
+  "Taman Meranti Jaya (Sepang)",
+  "Pulau Meranti (Sepang)"
+ ]
+}

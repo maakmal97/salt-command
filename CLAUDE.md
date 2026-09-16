@@ -146,6 +146,10 @@ the directory; an unresolved place is tapped on the map and Record waits for the
 from the words before the first comma (`placeLocality`), so "Bangsar, KL" keeps BAN; the locality rides
 as the third element of the point (`geoWhere`, checked by the drafter's `geoOf`) and is public by his
 decision, the name never; a comma part naming a district or a state (KL, a lone SG) confines the lookup.
+**The place is chosen from a list at Add ID and Amend ID** (his instruction, 17 Sep 2026, v682): `placePicks` reads his
+KL map's neighbourhoods and Selangor sub-districts (`geo/placelist.json`, placed from GeoNames' MY.txt by
+`tools/placelist.mjs --from`, the file never committed), every filed locality and every constituency, each as `whereOf`
+reads a party; a choice carries its own point, and typing a place not listed still looks it up.
 
 **A defaulted sale is written off** (his instruction, 14 Sep 2026): `txAdvance` reads nothing
 owed on it, as `poOwed` reads nothing on a defaulted lot, so it leaves every reading of what is

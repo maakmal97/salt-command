@@ -13172,5 +13172,47 @@ section("v681: Selangor and Negeri Sembilan are shaded by their constituencies t
       "a Selangor party and a Negeri Sembilan party read their constituency, named once where it is the locality: " + JSON.stringify(where));
   } finally { try { w81.close(); } catch (e) { /* best effort */ } }
 }
+section("v682: at Add ID and Amend ID the location is chosen from a list, and a location chosen carries its own point");
+{
+  /* HIS INSTRUCTION OF 17 SEP 2026: "I want all the location listed as a list, so I can choose the location", holding his
+     own areas. geo/placelist.json is his KL map's neighbourhoods and his Selangor sub-districts at GeoNames' points; the
+     desk adds every filed locality and every constituency, each read as a party's location is. Fixture codes and places
+     for the rules; the list's own entries are read as committed. */
+  const PL82 = JSON.parse(readFileSync(join(REPO, "geo", "placelist.json"), "utf8"));
+  const inCore = (p) => Array.isArray(p) && p.length === 2 && p[0] > 2.5 && p[0] < 3.9 && p[1] > 100.9 && p[1] < 102.1;
+  const once = (n) => PL82.names.filter((x) => x.n === n).length;
+  ok(PL82.names.length >= 90 && PL82.names.every((x) => typeof x.n === "string" && x.n && inCore(x.p)) && once("Setapak") === 1 && once("Puchong") === 1
+    && JSON.stringify(PL82.names.find((x) => x.n === "Bangsar").p) === "[3.13,101.67]" && Array.isArray(PL82.unresolved),
+    "the list places his names inside the core states, each name once, and names what it could not place: " + PL82.names.length + " placed, " + PL82.unresolved.length + " left off");
+
+  const { openMaster: om82 } = await import("../tools/payload.mjs");
+  const { w: w82 } = await om82();
+  const rd82 = (e) => JSON.parse(String(w82.eval("JSON.stringify(" + e + ")")));
+  try {
+    const picks = rd82("[...placePicks().entries()]"), labels = picks.map((x) => x[0]), at = (l) => (picks.find((x) => x[0] === l) || [])[1];
+    ok(labels.includes("Bangsar, Lembah Pantai, Kuala Lumpur") && labels.includes("Setia Alam, Shah Alam, Petaling") && labels.includes("Lembah Pantai, Kuala Lumpur") && labels.includes("Rasah, Seremban"),
+      "his neighbourhoods, the localities filed and the constituencies are all on it, each read as a party's location: " + labels.length);
+    ok(new Set(labels).size === labels.length && JSON.stringify(labels) === JSON.stringify(labels.slice().sort((a, b) => a.localeCompare(b)))
+      && !labels.includes("Petaling, Petaling Jaya") && !labels.includes("Kuala Lumpur, Segambut"),
+      "each once, in order, and no district alone, whose centre would read it before a seat (a seat or a town named for its district still reads as one word)");
+    const rules = rd82("(function(){var list=PLACE_LIST.find(function(x){return x.n==='Jinjang';}).p;PLACED['CZ9-DUP']=[3.2,101.7,'Jinjang'];PLACED['CZ9-NEW']=[3.15,101.7,'Qqqville'];"
+      + "var e=[...placePicks().entries()];delete PLACED['CZ9-DUP'];delete PLACED['CZ9-NEW'];"
+      + "return {jin:e.filter(function(x){return /^Jinjang,/.test(x[0]);}),list:list,qqq:e.filter(function(x){return /^Qqqville,/.test(x[0]);})};})()");
+    ok(rules.jin.length === 1 && JSON.stringify(rules.jin[0][1]) === JSON.stringify(rules.list) && rules.qqq.length === 1 && JSON.stringify(rules.qqq[0][1]) === "[3.15,101.7]",
+      "a name on his list keeps its own point over a party filed there, and a locality newly filed joins the list: " + JSON.stringify(rules));
+
+    /* the form: both place boxes read the one list, and a location chosen is placed without a search or a tap */
+    const form = rd82("(function(){switchTab('add');wbMode='addid';try{wbApply();}catch(e){}var d=document.getElementById('wbPlaces');"
+      + "return {ap:(document.getElementById('wbApPlace')||{}).getAttribute&&document.getElementById('wbApPlace').getAttribute('list'),am:document.getElementById('wbAmPlace')&&document.getElementById('wbAmPlace').getAttribute('list'),n:d?d.options.length:0};})()");
+    ok(form.ap === "wbPlaces" && form.am === "wbPlaces" && form.n === labels.length, "Add ID's and Amend ID's place boxes both offer the list: " + JSON.stringify(form));
+    const chose = rd82("(function(){WB_GEO={text:'',point:null,how:''};var errs=[],goods=[],t='Bangsar, Lembah Pantai, Kuala Lumpur';wbGeoPreview(t,errs,goods);"
+      + "return {how:WB_GEO.how,point:WB_GEO.point,goods:goods,errs:errs,code:deriveCode('Zed Qqq',t,'customer'),geo:geoWhere(WB_GEO.point,t)};})()");
+    ok(chose.how === "pick" && JSON.stringify(chose.point) === JSON.stringify(at("Bangsar, Lembah Pantai, Kuala Lumpur")) && /Chosen from the list/.test(chose.goods.join(" ")) && !chose.errs.length
+      && chose.code === "CZ7-BAN" && JSON.stringify(chose.geo) === '[3.13,101.67,"Bangsar"]',
+      "choosing Bangsar places it at once, codes it BAN and files Bangsar as its locality: " + JSON.stringify(chose));
+    const typed = rd82("(function(){WB_GEO={text:'',point:null,how:''};wbGeoPreview('Zzqx Nowhere',[],[]);return WB_GEO.how;})()");
+    ok(typed === "looking", "a place typed that is not on the list is still looked up as before: " + typed);
+  } finally { await new Promise((r) => setTimeout(r, 200)); try { w82.close(); } catch (e) { /* best effort */ } }
+}
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
 process.exit(fail ? 1 : 0);

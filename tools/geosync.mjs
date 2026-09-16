@@ -87,8 +87,16 @@ function renderGazetteer(g) {
 const GAZ_META=${JSON.stringify({ attribution: g.attribution, fetchedOn: g.fetchedOn, names: g.names })};
 const GAZ=${JSON.stringify(g.packed)};`;
 }
+/* v682: the locations to choose from at Add ID and Amend ID, his names at GeoNames' points */
+function renderPlaceList(p) {
+  return `/* ============ THE LOCATIONS TO CHOOSE FROM (v682) ============
+   ${p.what}
+   ${p.sources.join("; ")}. ${p.names.length} placed, ${p.unresolved.length} left off unplaced.
+   Rebuild with \`node tools/placelist.mjs --from <MY.txt>\`, by hand; it is never run by CI or by the build. */
+const PLACE_LIST=${JSON.stringify(p.names)};`;
+}
 function block() {
-  return [OPEN, renderBasemap(read("geo/basemap.json")), renderPlaces(read("geo/places.json")), renderAreas(read("geo/areas.json")), renderGazetteer(read("geo/gazetteer.json")), SHUT].join("\n");
+  return [OPEN, renderBasemap(read("geo/basemap.json")), renderPlaces(read("geo/places.json")), renderAreas(read("geo/areas.json")), renderGazetteer(read("geo/gazetteer.json")), renderPlaceList(read("geo/placelist.json")), SHUT].join("\n");
 }
 export function checkText(src) {
   const a = src.indexOf(OPEN), b = src.indexOf(SHUT);
