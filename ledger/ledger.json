@@ -1,6 +1,6 @@
 {
- "v": "v661",
- "stamped": "16 Sep 2026, 15:56 KL",
+ "v": "v662",
+ "stamped": "16 Sep 2026, 16:04 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -38,10 +38,10 @@
    "oil": {
     "qty": 5,
     "costPerKg": 7.666666666666667,
-    "stated": 40
+    "stated": 30
    }
   },
-  "STATED_STOCK": 19.5,
+  "STATED_STOCK": 14.5,
   "COUNT_ON": {
    "salt": "2026-09-15",
    "oil": "2026-09-09"
@@ -4013,6 +4013,37 @@
     "paidOn": "2026-09-15",
     "note": "<b>SALT SELL DATED 15 SEP, PAID IN FULL AND COLLECTED IN FULL ON THE DAY.</b> Booked to CE4-CHE, 2.5 unit for RM230, all goods with no delivery or freight, RM230 cash in and 2.5 unit handed over on 15 Sep, so the row closes as it opens. The total clears the RM153.15 floor for 2.5 unit and sits under the RM290 ask and RM360 ceiling. Cost is the desk's own RM48 a unit, RM120 on the order. <b>No flag was raised.</b> The rate matches his RM92 median across 9 orders in a RM13 to RM107.50 range. He held RM150 outstanding and 10 unit on credit against a cap of 1 unit, nothing defaulted. That RM150 remains outstanding on its own row.",
     "rid": "s166"
+   },
+   {
+    "customer": "CS6-BS-R",
+    "qty": 10,
+    "total": 130,
+    "cost": 75.25,
+    "cash": 130,
+    "handover": "collected",
+    "product": "oil",
+    "date": "2026-09-16",
+    "deliveredQty": 10,
+    "deliveredOn": "2026-09-16",
+    "paidOn": "2026-09-16",
+    "rev": "R2",
+    "note": "<b>OIL SELL DATED 16 SEP, PAID IN FULL AND COLLECTED IN FULL ON THE DAY.</b> Booked to CS6-BS-R as R2, CS6-BS buying to sell on, 10 unit for RM130, all goods with no delivery or freight, RM130 cash in and 10 unit handed over on 16 Sep, so the row closes as it opens. The total clears the RM87.28 floor for 10 unit and sits under the RM230 ask and RM240 ceiling. Cost is the desk's own, RM75.25 on the order. <b>Flagged:</b> the R2 booking, and RM13 a unit against the RM11 CS6-BS typically pays for oil across 3 orders, 18.2% above. His own median is RM100 across 12 orders in a RM6 to RM120 range, nothing outstanding, no unit on credit against a cap of 10 and nothing defaulted. Nothing is left outstanding.",
+    "rid": "s167"
+   },
+   {
+    "customer": "CS6-BS-R",
+    "qty": 5,
+    "total": 440,
+    "cost": 240,
+    "cash": 440,
+    "handover": "collected",
+    "date": "2026-09-16",
+    "deliveredQty": 5,
+    "deliveredOn": "2026-09-16",
+    "paidOn": "2026-09-16",
+    "rev": "R2",
+    "note": "<b>SALT SELL DATED 16 SEP, SETTLED AND COLLECTED THE SAME DAY.</b> Booked to CS6-BS-R as R2, CS6-BS buying to sell on, 5 unit for RM440, all goods with no delivery or freight, RM440 cash in and 5 unit handed over on 16 Sep. The total clears the RM301.26 floor for 5 unit and stays under the RM560 ask and RM710 ceiling. Cost is the desk's own RM48 a unit, RM240 on the order. <b>Flagged:</b> the R2 booking, and RM88 a unit against the RM109 CS6-BS typically pays for salt across 16 orders, 19.3% below; the floor is still cleared. He held nothing outstanding and no unit on credit against a cap of 1, nothing defaulted. Nothing remains outstanding.",
+    "rid": "s168"
    }
   ],
   "contacts": [
@@ -4257,7 +4288,7 @@
   "TIER_OF": {
    "CS6-BS": {
     "salt": "Platinum",
-    "oil": "Titanium"
+    "oil": "Platinum"
    }
   },
   "AWARDS": {
@@ -4362,9 +4393,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-16T07:21:32.147Z",
+  "QUEUE_COMMITTED": "2026-09-16T08:02:27.838Z",
   "PRICING": {
-   "takenAt": "2026-09-16T07:56:59.770Z",
+   "takenAt": "2026-09-16T08:04:51.158Z",
    "sizes": [
     0.5,
     1,
@@ -4399,7 +4430,7 @@
    "tierOf": {
     "CS6-BS": {
      "salt": "Platinum",
-     "oil": "Titanium"
+     "oil": "Platinum"
     },
     "CJ4-BJ": {
      "salt": "Titanium"
@@ -4642,15 +4673,15 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0.358974358974359
+         "v": 0.35
         }
        },
        "attrib": 1,
        "shrinkRate": 0.08090642957822836,
        "avgDel": {
-        "n": 146,
-        "kg": 365.7,
-        "mean": 2.5048
+        "n": 147,
+        "kg": 370.7,
+        "mean": 2.5218
        }
       },
       "policy": {
@@ -5016,15 +5047,15 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0.75
+         "v": 0.6
         }
        },
        "attrib": 1,
        "shrinkRate": 0.08897959183673469,
        "avgDel": {
-        "n": 10,
-        "kg": 156,
-        "mean": 15.6
+        "n": 11,
+        "kg": 166,
+        "mean": 15.0909
        }
       },
       "policy": {
@@ -5202,10 +5233,10 @@
      ]
     }
    },
-   "v": "v661"
+   "v": "v662"
   },
   "OPEN": {
-   "at": "2026-09-16T07:56:59.932Z",
+   "at": "2026-09-16T08:04:51.307Z",
    "count": 8,
    "byKey": {
     "CR3-DAM|2026-09-15|90": {
@@ -5340,22 +5371,22 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 19.5,
-     "free": 19.5,
+     "onHand": 14.5,
+     "free": 14.5,
      "owedOut": 0,
-     "coverDays": 3.3,
-     "rate": 5.86,
+     "coverDays": 2.3,
+     "rate": 6.21,
      "owedToYou": 472,
      "promised": 10.5,
      "short": 0
     },
     "oil": {
      "name": "Oil",
-     "onHand": 40,
-     "free": 40,
+     "onHand": 30,
+     "free": 30,
      "owedOut": 0,
-     "coverDays": 8,
-     "rate": 5,
+     "coverDays": 5.3,
+     "rate": 5.71,
      "owedToYou": 0,
      "promised": 0,
      "short": 0
@@ -5365,7 +5396,7 @@
     "salt": "2026-09-15",
     "oil": "2026-09-09"
    },
-   "v": "v661"
+   "v": "v662"
   }
  }
 }
