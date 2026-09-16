@@ -4635,7 +4635,7 @@ const PRICING_ENGINE=(function(){
       pxInputs computes it; pxRecentBuyRate over lots received in the window, falling back
       to the most recent lot's rate when nothing was bought in 30 days, never undefined).
       The old argument above stays because it is the case against this setting: a single
-      cheap lot no longer drops the whole board the day it lands, and a single dear one no
+      cheap lot no longer drops the whole board the day it lands, and a single costly one no
       longer spikes it, which is what the average buys; what it costs is that the board can
       sit under the latest lot for up to a month after a genuine rise. The latest lot's rate
       remains the fallback when no I.repl is supplied, so the stack cannot go undefined;
@@ -6738,8 +6738,8 @@ let NAME_VAULT=null;
    is built on what the inventory DID cost. Nothing here is booked until a lot is recorded as a buy.
 
    AND pxQuoteRate() DOES NOT MOVE EITHER, which is a coincidence worth writing down rather
-   than a bug. It takes the DEAREST tier, because restocking in the size usually bought is the
-   honest read, and the dearest tier is RM56 on both ladders: it was the 12.5 unit step and it
+   than a bug. It takes the MOST EXPENSIVE tier, because restocking in the size usually bought is the
+   honest read, and the most expensive tier is RM56 on both ladders: it was the 12.5 unit step and it
    is now the 6.25 unit step. The ladder got cheaper everywhere while its ceiling stood still.
 
    THE RATE FALLS AT EVERY STEP AND NO TIER IS BEATEN BY SPLITTING IT: 56, 52, 50, 44, 43.
@@ -6919,7 +6919,9 @@ const quoteFor=p=>{const f=QUOTES[p||PROD];return f?f():null;};
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{"v":"v671","d":"16 Sep 2026","t":"THE PROPOSAL MOVES A LEVEL ON HOW A CUSTOMER BUYS: LATE, SMALL, LOYAL, AND SALES SLOWING","n":["<b>HIS RULES OF 16 SEP 2026.</b> The level a customer is proposed, read off what they pay, now moves on how they buy and on the stock. A customer who buys rarely and has been late twice drops a level at every size. A frequent small buyer drops a level from three units. A loyal customer buying bigger rises a level from three units, never past Platinum. And while sales have sat under half the typical for three days running, every level is offered one better, never past Platinum, until the next lot lands. <b>A tier he has set is never moved by a rule</b>, only offered one; but a proposal is what an un-held customer is quoted, so these rules move live prices.","<b>NOTHING BETTER ON HALF A UNIT OR A UNIT, HIS DECISION THAT DAY.</b> The plan gave frequent small buyers a better level on small orders. Measured first, the three of them were already proposed Titanium, where the only better level is Ambassador, his word alone, so the benefit had nowhere to go and the rule's only effect was the drop. He kept the drop and let their own rate carry the small price, which it already does: a card is never above what they pay, and they pay a keen rate on exactly those sizes.","<b>WHAT MOVES TODAY: FOUR CUSTOMERS, 28 PRICES, NET +RM650.</b> CM4-MK, loyal and buying bigger, is cheaper from three units, twelve and a half units RM1,060 to RM960. CR3-DAM, CA4-DAM and CC5-OKR, frequent and small, are dearer from three units, RM860 to RM960, and unchanged below. No slowdown is on for either product: salt last restocked on 15 Sep and oil on 8 Sep.","<b>A RESTOCK ENDS A PROMOTION, AND A FORCED CHECK FOUND IT DID NOT.</b> The slowdown was first counted straight through a lot, so a restock ended a promotion for a day and the next day's reading started it again; while sales stayed flat, no lot ever ended one. The count now stops at the latest lot, so only three quiet days after it start a new promotion. <b>THE CHECKS:</b> 9 assertions, each rule proved on forced inputs, the slowdown on forced sales and lots including a restock mid-slowdown, and a held tier left alone on a live quote. 10 mutations, each red."]},
+const evolution=[{"v":"v672","d":"16 Sep 2026","t":"THE WORD HE BANNED ON 24 AUG IS OUT OF THE DESK AND ITS CODE, AND THE FOLD CAN NO LONGER WRITE IT","n":["<b>HIS RULE OF 24 AUG 2026.</b> One word is banned in every form, on every surface, comments included, and it had come back. The Pricing warning for a board whose Tier 1 costs more than its Tier 2 now says so in those words, and that the board falls to the right where it should rise. Twenty uses in eighteen code comments went the same way, one of them the pricing engine's, and nine lines of the suite. Nothing prices, counts or draws differently.","<b>THE DATED RECORDS KEEP WHAT THEY SAID.</b> The evolution entries, the changelog and the ledger's notes are left as written, as the Journal always is. A new suite section reads the master and the built desk outside their evolution, the engine, the Worker, the statements site, the tools, the design layer, the docs and the suite itself, and fails on the word in any form, capitals included.","<b>AND THE FOLD CANNOT BRING IT BACK.</b> The fold's own check now refuses a note carrying the word, as it refuses an em-dash or kg, and its house style names it, so a new entry is sent back to be rewritten. <b>THE CHECKS:</b> 3 assertions and 10 mutations: 9 turned the suite red, and the word written into an evolution entry left it green, which is the exemption working."]},
+
+{"v":"v671","d":"16 Sep 2026","t":"THE PROPOSAL MOVES A LEVEL ON HOW A CUSTOMER BUYS: LATE, SMALL, LOYAL, AND SALES SLOWING","n":["<b>HIS RULES OF 16 SEP 2026.</b> The level a customer is proposed, read off what they pay, now moves on how they buy and on the stock. A customer who buys rarely and has been late twice drops a level at every size. A frequent small buyer drops a level from three units. A loyal customer buying bigger rises a level from three units, never past Platinum. And while sales have sat under half the typical for three days running, every level is offered one better, never past Platinum, until the next lot lands. <b>A tier he has set is never moved by a rule</b>, only offered one; but a proposal is what an un-held customer is quoted, so these rules move live prices.","<b>NOTHING BETTER ON HALF A UNIT OR A UNIT, HIS DECISION THAT DAY.</b> The plan gave frequent small buyers a better level on small orders. Measured first, the three of them were already proposed Titanium, where the only better level is Ambassador, his word alone, so the benefit had nowhere to go and the rule's only effect was the drop. He kept the drop and let their own rate carry the small price, which it already does: a card is never above what they pay, and they pay a keen rate on exactly those sizes.","<b>WHAT MOVES TODAY: FOUR CUSTOMERS, 28 PRICES, NET +RM650.</b> CM4-MK, loyal and buying bigger, is cheaper from three units, twelve and a half units RM1,060 to RM960. CR3-DAM, CA4-DAM and CC5-OKR, frequent and small, are dearer from three units, RM860 to RM960, and unchanged below. No slowdown is on for either product: salt last restocked on 15 Sep and oil on 8 Sep.","<b>A RESTOCK ENDS A PROMOTION, AND A FORCED CHECK FOUND IT DID NOT.</b> The slowdown was first counted straight through a lot, so a restock ended a promotion for a day and the next day's reading started it again; while sales stayed flat, no lot ever ended one. The count now stops at the latest lot, so only three quiet days after it start a new promotion. <b>THE CHECKS:</b> 9 assertions, each rule proved on forced inputs, the slowdown on forced sales and lots including a restock mid-slowdown, and a held tier left alone on a live quote. 10 mutations, each red."]},
 
 {"v":"v670","d":"16 Sep 2026","t":"A CUSTOMER'S LEVEL CAN DIFFER BY THE SIZE OF THE ORDER, READ BAND BY BAND IN ONE PLACE","n":["<b>HIS DECISIONS OF 16 SEP 2026.</b> A tier on a product was one level at every size. It can now be a band set: one level for a small order of up to a unit, one for a mid-sized order, and one from three units, the cuts being the book's own quartiles of size. It is the mechanism his rules need, a habitual small buyer better on half a unit and a unit and a level worse from three, and a loyal bigger buyer better as the order grows.","<b>ONE PLACE TURNS A SIZE INTO A LEVEL.</b> The engine's levelAt, read by the desk for every quote and the printed board, and by the customer's own price list at each size, so the band a size falls in is never decided twice. One shape check, read by the drafter and the fold, so a band set travels through Approve and a shape that would not price is refused at the door and names itself. A customer's normal level is a mid-sized order's, and that is the mark their page draws.","<b>AND A TRAP IT HAD TO CLOSE.</b> On the Tiers card a band set cannot select one level name, so its dropdown would have sat on Not set, and Set would have read that as a clear and queued it. A band set is spelled out on the card now, its dropdown selects Keep the bands, and Set leaves it alone.","<b>NOTHING MOVED.</b> No band set exists on the book yet, so all 50 price lists were identical before and after; the rules that propose one come next. <b>THE CHECKS:</b> 7 assertions, the band edges exact, the shapes, the desk quote, the printed board and the customer's own page agreeing size by size, the drafter, and the card's safeguard. 7 mutations, each red."]},
 
@@ -7471,7 +7473,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='16 Sep 2026, 19:09 KL';
+const LAST_UPDATED='16 Sep 2026, 21:58 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -8007,7 +8009,7 @@ const PRICE={
      on the 12.5 unit lot, set when effective cost was RM60.93 and the computed floor there
      was RM952. On today's basis the computed floor is RM808.70, so the typed figure was
      RM16 ABOVE it and, at RM66/unit, above the RATE of the 6.25 lot: the cheapest two tiers
-     had to quote a bigger lot dearer per unit than a smaller one. It is not a margin, it is
+     had to quote a bigger lot at a higher rate per unit than a smaller one. It is not a margin, it is
      a leftover, and his rule is that only the margin may move a price. */
   lotFloor:{},
   retailExp:0.25,         // per-unit decay inside retail
@@ -8124,7 +8126,7 @@ const PRICE_ENGINE={
   /* THE MARGIN IS NOT TYPED. It is REGRESSED from what this book has actually achieved,
      size by size, and refits itself as orders accumulate. See marginCurve(). What is typed
      is a single hand on the tiller: a shift applied to the whole fitted curve, at zero
-     until he wants to be dearer or cheaper across the board. */
+     until he wants to be more expensive or cheaper across the board. */
   marginShift:0,
   minPoints:8,          // below this there is not enough trade to fit anything honest
   fallbackMargin:0.42,  // and this is used instead, stated rather than inferred
@@ -8368,7 +8370,7 @@ function marginCurve(){
   let sxy=0,sxx=0;rows.forEach(p=>{sxy+=(p.x-mx)*(p.y-my);sxx+=(p.x-mx)*(p.x-mx);});
   let b=sxx>1e-9?sxy/sxx:0;
   /* margin may not RISE with size. On a thin book one big well-priced order can tilt the
-     line upward, which would quote bulk dearer per unit than retail and invert the ladder. */
+     line upward, which would quote bulk at a higher rate per unit than retail and invert the ladder. */
   if(b>0)b=0;
   const a=my-b*mx;
   let ssr=0,sst=0;rows.forEach(p=>{const f=a+b*p.x;ssr+=(p.y-f)*(p.y-f);sst+=(p.y-my)*(p.y-my);});
@@ -8590,7 +8592,7 @@ function enforceStrict(rows){
   let changed=true,guard=0;
   while(changed&&guard++<12){
     changed=false;
-    /* across the row: each tier strictly dearer than the one before it */
+    /* across the row: each tier strictly more expensive than the one before it */
     rows.forEach(r=>{
       for(let i=r.cells.length-2;i>=0;i--){
         const c=r.cells[i], nx=r.cells[i+1];
@@ -8669,7 +8671,7 @@ function anchorsFor(prod){
      markups can round to the same five, and oil did exactly that at a half unit: Tier I and
      Tier II both came out at RM15. The solver would normally break that tie, but it treats an
      anchor as immovable and these are not his numbers, they are arithmetic. So the ladder is
-     separated here, at derivation, by pushing each dearer tier one grid step clear. */
+     separated here, at derivation, by pushing each more expensive tier one grid step clear. */
   const codes=Object.keys(out);
   const sizes=[...new Set(codes.reduce((a,c)=>a.concat(Object.keys(out[c])),[]))];
   sizes.forEach(k=>{let last=null;
@@ -8779,7 +8781,7 @@ function cappedBoard(){
              way down is through the floor, leave the pair alone and let the board show it. */
           if(cut<b.price&&cut>=rows[i+1].floor-0.009){b.price=cut;changed=true;}}
       }});
-    /* tiers strictly dearer left to right: raise the dearer, or cut the cheaper if pinned */
+    /* tiers rise strictly left to right: raise the higher one, or cut the cheaper if pinned */
     rows.forEach(r=>{
       for(let i=1;i<r.cells.length;i++){
         const lo=r.cells[i-1], hi=r.cells[i];
@@ -8814,7 +8816,7 @@ function buildPriceTiers(){
 
    IT IS A REAL PRICE RISE AND MOSTLY AT THE TOP. R, the only card that leaves his phone,
    is unchanged to 2.5 unit and then rises: 3 unit RM310 to RM320, 4 unit RM390 to RM420,
-   5 unit RM460 to RM520, 6.25 unit RM540 to RM650, a fifth dearer at the biggest size.
+   5 unit RM460 to RM520, 6.25 unit RM540 to RM650, a fifth higher at the biggest size.
    M and P rise further, up to RM240 and RM280 at 6.25 unit. That is the hand-solved taper
    being generous exactly where the band economics said the desk was losing money, so the
    correction lands where the problem was. Small sizes barely move; SS 0.5 unit falls
@@ -8861,7 +8863,7 @@ function deliveryCost(){
    MARGIN is anchored per tier at the 1 unit price he already chose, so at today's cost
    the anchors reproduce his own cards exactly and the model is calibrated rather than
    imposed. DEMAND then moves every tier together through the same live signal the board
-   already computes, capped, so a dear fortnight lifts the ask and a dead one does not.
+   already computes, capped, so a busy fortnight lifts the ask and a dead one does not.
 
    THE LADDER RULES ARE HIS, and the solver enforces them rather than hoping:
      every price a multiple of RM10        rate strictly falling as the lot grows
@@ -9013,7 +9015,7 @@ function solveLadder(){
     }
     out[t.code]=rows;
   });
-  /* R5: tiers strictly ordered at every size they share, cheapest to dearest */
+  /* R5: tiers strictly ordered at every size they share, cheapest to most expensive */
   PRICE_TIERS.sizes.forEach((q,i)=>{
     let last=null;
     PRICE_TIERS.tiers.forEach(t=>{
@@ -9194,7 +9196,7 @@ function ladderMarkup(q){ return PRICING_ENGINE.ladderMarkup(q,pxPolicy()); }
 function ladderCogs(q){ return PRICING_ENGINE.ladderCogs(q,pxCost()); }
 /* the house rounding, and it is UP. A floor is never rounded, because rounding a floor in either
    direction puts it somewhere the policy did not: down puts the floor under itself, and up makes
-   the refusal line dearer than the policy states. */
+   the refusal line higher than the policy states. */
 /* THE MARKUP THIS BOOK WOULD ACTUALLY REALISE, weighted by the salt it really trades.
    The stated average is a point on the curve and not a property of the book: it lands at the
    geometric middle of the range, and this desk's volume sits well above that, so the realised
@@ -10441,7 +10443,7 @@ function tabSourcing(){
   <div class="card" style="margin-top:14px"><div class="cardh">Every lot, at the rate it landed <span class="sub">by landing date, RM/unit; the defaulted lot drawn hollow</span></div><div class="chartbox" style="height:190px"><canvas id="srcLotChart"></canvas></div></div>
   ${(()=>{/* v385: THE PROFIT COLUMN WAS INVERTED, AND THE PROSE UNDER IT CLAIMED THE OPPOSITE.
       It set pxOver.cost to the tier rate and read pxQuote's profit back. But the ladder marks
-      UP FROM COST, so a dearer tier produced a dearer ask and therefore a bigger absolute
+      UP FROM COST, so a more expensive tier produced a higher ask and therefore a bigger absolute
       profit: salt ran 6.25 unit at RM56 showing RM433 against 100 unit at RM43 showing RM324,
       monotonically backwards at every rung, telling the reader the worst rate on the sheet was
       the best buy. The book's own p016 note records the opposite, that taking the 50 tier over
@@ -15014,7 +15016,7 @@ function costBasis(){return +(wavgBuy||54.26).toFixed(2);}
    of 29 Aug makes replacement the TRAILING 30-DAY weighted average purchase rate, per book,
    the same figure the cost stack now prices off, so the coach, the floor line and the board
    cannot carry two different "replacement" numbers again. The old argument stays: an average
-   can flatter a sale filled out of a dearer lot, and that is the price of a board that does
+   can flatter a sale filled out of a more expensive lot, and that is the price of a board that does
    not jump on every single lot. costBasis() remains the book/reporting basis for what was
    earned. Fallbacks, in order, so it is never undefined: trailing average, most recent lot,
    the inventory cost, the all-time weighted average. */
@@ -15099,7 +15101,7 @@ let pxOver={cost:null,shrink:null,party:'',anyQ:'',tier:'T2',cap:''};   // cost/
 
 /* the highest tier on the live quote, because that is what restocking in the size
    usually bought actually costs. Cheaper tiers are chosen deliberately, never assumed.
-   v385: said "dearest", the word retired from this view at v379.
+   v385: its old name used a banned word, retired from this view at v379.
    ROUND 5, his call 1 of 29 Aug: THE BOOK'S OWN QUOTE, through quoteFor(PROD). This read
    was bare supplierQuote, which is salt's, so oil's engine inputs carried RM56 a unit
    from a ladder for a different commodity. Oil reads its own RM10 now. */
@@ -18640,7 +18642,7 @@ function tabPricing(){
       const badT1=!!(L.tier1&&L.tier1.under>0.009), badT2=L.ask.under>0.009;
       /* v566: AND THE ROW SAYS WHEN THE CHEAPER TIER IS NOT THE CHEAPER ONE. The two columns are
          printed cheapest-first in a fixed order, which is v247's rule for reading a board, so an
-         inverted row reads dearer-to-cheaper with nothing saying so. `over` is the RM by which
+         inverted row runs from higher to lower with nothing saying so. `over` is the RM by which
          Tier 1 exceeds the ask at that size, measured in the engine beside `under`.
          The under-floor tag also NAMES Tier 2 now: it printed a bare "under floor" while naming
          Tier 1 in the other branch, which on a two-tier board leaves the reader to guess which
@@ -18671,7 +18673,7 @@ function tabPricing(){
     tb.forEach(r=>{const L=priceLadder(r.q);
       if(L.tier1&&L.tier1.under>0.009)flagged.push({who:'Tier 1',q:r.q,rm:L.tier1.under});
       if(L.ask.under>0.009)flagged.push({who:T1on?'Tier 2':'the ask',q:r.q,rm:L.ask.under});
-      /* v566: this read `under` and nothing else, so a board printing Tier 1 DEARER than Tier 2
+      /* v566: this read `under` and nothing else, so a board printing Tier 1 ABOVE Tier 2
          at half its sizes still ended on "Every price on the board, on both tiers, clears
          break-even" — true, and the wrong question. Both tiers clearing their floor says nothing
          about which of the two is the cheaper one. */
@@ -18694,7 +18696,7 @@ function tabPricing(){
          at the counter", and it was a sub-clause of it. Split, so neither can crowd the other and
          neither can grow into the limit. The definition of the two floors is in the fold below. -->
     ${flagged.length?`<div class="insight" style="border-left-color:var(--crim)"><b>${flagged.length} price${flagged.length===1?'':'s'} on this board sit${flagged.length===1?'s':''} under break-even</b>: ${flagged.map(f=>f.who+' at '+units(f.q)+', short '+fmt(f.rm)).join('; ')}.</div>`:''}
-    ${inverted.length?`<div class="insight" style="border-left-color:var(--crim)"><b>Tier 1 is dearer than Tier 2 at ${inverted.length} of ${tb.length} size${tb.length===1?'':'s'}</b>, so the board reads cheaper to the right where it should read dearer: ${inverted.map(f=>units(f.q)+' by '+fmt(f.rm)).join('; ')}. Tier 2 is derived from a floor that moves with the cost of salt; his two Tier 1 ends do not move at all.</div>`:''}
+    ${inverted.length?`<div class="insight" style="border-left-color:var(--crim)"><b>Tier 1 costs more than Tier 2 at ${inverted.length} of ${tb.length} size${tb.length===1?'':'s'}</b>, so the board falls to the right where it should rise: ${inverted.map(f=>units(f.q)+' by '+fmt(f.rm)).join('; ')}. Tier 2 is derived from a floor that moves with the cost of salt; his two Tier 1 ends do not move at all.</div>`:''}
     ${!flagged.length&&!inverted.length?`<div class="insight" style="border-left-color:var(--grn)">Every price on the board, on ${T1on?'both tiers':'the one tier'}, clears break-even${T1on?', and Tier 1 is under Tier 2 at every size':''}.</div>`:''}
     <!-- v393: THE MARGIN SETUP IS THE BOARD'S DERIVATION, SO IT SITS IN THE BOARD'S CARD.
          It was its own open h2 one section down, restating in prose what these six figures
