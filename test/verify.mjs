@@ -8192,6 +8192,17 @@ section("v522: the gate before the deploy, the suite after the phone is live");
      && already.indexOf("stmt=0") > fetchAt
      && /::warning::.*could not be fetched/.test(already),
      "the publish gate defaults to publishing, fetches the base before diffing it, and lowers stmt only on a diff it read");
+  /* AND THE SITE'S CODE AND ITS CONTENT ARE GATED DIFFERENTLY (16 Sep 2026). That gate belongs to the
+     upload of the site's own source. The publish writes the CONTENT, and the content is the ledger and
+     the master: the sealed price list is computed from the desk's PRICING snapshot, so every version
+     that moves a price makes a published list stale. v652, v654 and v655 each touched no statements
+     path, so each left the customers' pages on the lists sealed at v651 while the desk quoted
+     something else, and the run was green each time. The publish now runs on the deploy alone. */
+  const stmtDeploy = wf.slice(wf.indexOf("- name: Deploy the statements site"), wf.indexOf("- name: Publish the statements, live"));
+  const stmtPub = wf.slice(wf.indexOf("- name: Publish the statements, live"));
+  ok(/if: steps\.plan\.outputs\.deploy == '1' && steps\.already\.outputs\.stmt == '1'/.test(stmtDeploy)
+     && /^- name: Publish the statements, live\n\s+if: steps\.plan\.outputs\.deploy == '1'\n\s+env:/.test(stmtPub),
+     "the site's code deploys on the statements paths, and its content publishes on every deploy");
   /* and every desk write in the publish goes through the one function that reads the key back, so a
      write that reports success and stores nothing is red rather than a line in a log nobody reads */
   const pubSrc = readFileSync(join(REPO, "tools", "stmt-publish.mjs"), "utf8");

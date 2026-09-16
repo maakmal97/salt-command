@@ -242,10 +242,13 @@ exists the page says notifications are not switched on.
 ### Publishing, and the one-time setup
 
 Statements reach the site through the two steps at the foot of the `deploy` job in
-`cloud-commit.yml`, `Deploy the statements site` and `Publish the statements, live`, on every
-push that deploys: every fold, and any push touching `statements/`, `stmt/` or
-`wrangler.stmt.jsonc`. They run after every step the ledger needs, so a fault in the
-statements can never leave a folded row unmarked. The publish is `tools/stmt-publish.mjs`: it
+`cloud-commit.yml`. **`Deploy the statements site` uploads the site's CODE** and runs on a push
+touching `statements/`, `stmt/`, `wrangler.stmt.jsonc` or the two tools, and on every fold.
+**`Publish the statements, live` writes the site's CONTENT and runs on every deploy** (16 Sep
+2026): the content is the ledger and the master, so any version that moves a price makes a
+published list stale, and v652, v654 and v655 each left the customers' pages on the lists sealed
+at v651 while the desk quoted something else. Both run after every step the ledger needs, so a
+fault in the statements can never leave a folded row unmarked. The publish is `tools/stmt-publish.mjs`: it
 seals the live statement into each of the newest issue's records under the content key, puts
 them all in **one bulk call**, retires every record the issue does not carry (so **issuing a
 new set retires last month's**), and clears the attempt counters on a new issue only. Without

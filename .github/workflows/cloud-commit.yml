@@ -415,8 +415,17 @@ jobs:
       # THE STATEMENTS GO INTO THE SITE'S OWN KV, sealed under content keys derived from
       # STMT_KEY, so an approved row reaches the customer's page in the same run that reaches
       # the phone. Without the key the records go up exactly as issued.
+      #
+      # IT PUBLISHES ON EVERY DEPLOY, NOT ONLY WHEN A STATEMENTS PATH MOVED (16 Sep 2026). The step
+      # above deploys the site's CODE and is rightly gated on stmt/, statements/ and the two tools.
+      # This one writes the site's CONTENT, and the content is the ledger and the master: the sealed
+      # price list is computed here from the desk's PRICING snapshot, so every version that moves a
+      # price makes the published list stale. None of v652 (named-customer quotes), v654 (oil 80 and
+      # 100 unit) or v655 (the best-rate rule) touched a statements path, so each left the customers'
+      # pages on the lists sealed at v651 while the desk quoted something else, silently. The cost of
+      # publishing anyway is one bulk call and about ten seconds of jsdom.
       - name: Publish the statements, live
-        if: steps.plan.outputs.deploy == '1' && steps.already.outputs.stmt == '1'
+        if: steps.plan.outputs.deploy == '1'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
