@@ -46,7 +46,7 @@ const SELANGOR = {
   "Kuala Langat": ["Bandar Saujana Putra", "Jenjarom", "Kanchong Darat", "Sijangkang", "Tongkah", "Teluk Datok", "Telok", "Sungai Raba", "Morib", "Permatang Pasir", "Kelanang Batu 6",
     "Kanchong", "Chodoi", "Bukit Changgang", "Batu", "Jugra"],
   "Kuala Selangor": ["Api-api", "Kuala Selangor", "Bukit Melawati", "Ijok", "Kampung Kuantan", "Kuala Sungai Buloh", "Pasangan", "Ulu Tinggi", "Ujong Permatang", "Tambak Jawa", "Taman PKNS",
-    "Sungai Sembilang", "Simpang 3 Ijok", "Pasir Penambang", "Simpang 3", "Parit Mahang", "Kg. Baru Hulu Tiram Buruk", "Bukit Talang", "Bukit Belimbing"],
+    "Sungai Sembilang", "Simpang 3 Ijok", "Pasir Penambang", "Simpang 3", "Parit Mahang", "Kampung Baru Hulu Tiram Buruk", "Bukit Talang", "Bukit Belimbing"],
   Petaling: ["Petaling Jaya", "Subang Jaya", "Shah Alam", "Damansara", "Bandar Sri Damansara", "Country Heights", "Puchong", "Puchong Jaya", "Puchong Perdana", "Batu Tiga", "Sungai Besi",
     "Serdang", "Glenmarie", "Penaga", "Merbau Sempak", "Kayu Ara", "Desa Puchong"],
   "Sabak Bernam": ["Sabak", "Sungai Besar", "Sekinchan"],
