@@ -344,7 +344,12 @@
     {"by":"CS6-BS","customer":"CM4-MK","note":"His ruling of 13 Sep 2026: the first order went through CS6-BS-R on 15 Jul, and every order since has been direct."}
   ],
   "PLACED": {},
-  "TIER_OF": {},
+  "TIER_OF": {
+    "CS6-BS": {
+      "salt": "Platinum",
+      "oil": "Titanium"
+    }
+  },
   "PEOPLE": {
     "banned": [
       {
@@ -456,7 +461,7 @@
   "ONE_OFFS": [
     {"id":"CM6-HCM","date":"2026-07-14","note":"One-off; RM104/unit is an outlier."}
   ],
-  "QUEUE_COMMITTED": "2026-09-15T19:50:35.131Z",
+  "QUEUE_COMMITTED": "2026-09-16T07:21:32.147Z",
   "PRICE_SET": {
     "salt": {
       "prices": {},

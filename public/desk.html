@@ -68,7 +68,7 @@ document.addEventListener('visibilitychange',function(){
    localStorage before it posts anything and the load reads it straight back.
    The same tick retries a held entry, which is what gets a phone write to the cloud
    without waiting for the next open. */
-var SALT_BUILD_ID="ffa747aafa619008";
+var SALT_BUILD_ID="e571b521d6329c4c";
 var SALT_REV_MS=10000;
 (function(){
   var chip=null,timer=null;
@@ -5610,7 +5610,12 @@ const INTRODUCTIONS=[
   {"by":"CS6-BS","customer":"CM4-MK","note":"His ruling of 13 Sep 2026: the first order went through CS6-BS-R on 15 Jul, and every order since has been direct."}
 ];
 const PLACED={};
-const TIER_OF={};
+const TIER_OF={
+  "CS6-BS": {
+    "salt": "Platinum",
+    "oil": "Titanium"
+  }
+};
 const PEOPLE={
   "banned": [
     {
@@ -5726,7 +5731,7 @@ const ONE_OFFS=[
   {"id":"CM6-HCM","date":"2026-07-14","note":"One-off; RM104/unit is an outlier."}
 ];
 /* v512, 07 Sep 2026: moved to 06:21:06.691Z past a second entry of the CR3-DAM sale already folded at v510, so the phone stops showing it as provisional; no row folded. */
-const QUEUE_COMMITTED="2026-09-15T19:50:35.131Z";
+const QUEUE_COMMITTED="2026-09-16T07:21:32.147Z";
 /* RETIRED AT v656 on 2026-09-16, his decision of 15 Sep off the pricing workbook: the board is the ladder, so a stated price no longer decides it and oil's five are cleared rather than left unread. The stranger's ask on oil moves from his RM130, 240, 330, 400 and 450 to Bronze at RM230, 440, 650, 850 and 1,040, with 80 and 100 unit at RM1,640 and RM2,000. The old five sat a hair over break-even (the 50 unit tier read 0.93x, RM32.20 UNDER its floor) because they were typed in July against a cost that has moved since; the ladder is struck on today's COGS and moves with it. No customer's price moves with this: every named customer is quoted their own tier capped at what they pay, and a stranger has no history to cap against. The hide list is untouched and still takes a size off the board. */
 /* HIS INSTRUCTION, 09 SEP 2026, AFTER THE v551 OIL COUNT: "The desk quotes to 450, by lowering margin, then for others, quote proportionately." The count read a 23.08 per cent leak from his own figures and lifted the 50 unit oil floor to RM482.20, above the RM450 he had stated, and v353 had the desk lift any stated price that sat under its floor. From v552 it lifts a DERIVED ask only: a price he has set is quoted as set, the gap to break-even is reported beside it rather than hidden, and the 50 unit tier reads 0.93x with RM32.20 under. His other four oil tiers are untouched and already step the margin down proportionately into it: 1.35x, 1.24x, 1.14x, 1.04x, 0.93x. Recorded as his decision, not an error, and the drafter will flag a 50 unit oil sale as under floor for the same reason the board does. */
 const PRICE_SET={
@@ -6965,7 +6970,9 @@ const quoteFor=p=>{const f=QUOTES[p||PROD];return f?f():null;};
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{"v":"v660","d":"16 Sep 2026","t":"A CARD IS ROUNDED DOWN TO THE TEN, SO IT IS NEVER ABOVE WHAT THE CUSTOMER PAYS","n":["<b>HIS INSTRUCTION OF 16 SEP 2026, AFTER A MEASUREMENT.</b> The rule has read a customer's own rate to the NEAREST five since v651, and the nearest five rounds UP as often as down: a customer paying RM108 a unit was carded RM110. Across all 432 priced cells on the salt book, <b>63 sat RM1 to RM2 above the rate they actually pay</b>, so the promise of never being above what they pay held only to the nearest five. It is rounded DOWN to the ten now, and never up. It costs RM385 across those cells and moves 93 of them; the biggest single cut is CA5-SEN's unit, RM110 to RM100 against their RM108. Oil does not move at all, because every oil rate already sits on the grid.","<b>THE FLOOR IS THE ONE THING THAT CAN STILL PUT A CARD OVER A RATE, and it is meant to.</b> A price may not go under break-even, so a rate below the floor lifts to the first ten above it: 22 cells today, every one of them the floor talking rather than the rounding, and the suite counts the two apart so a rounding fault cannot hide inside the floor's allowance. The grid is the same ten the ladder rounds to, so a card and a board price sit on one grid for the first time.","<b>THE CHECKS.</b> A new section of 5 assertions read off the whole live book rather than a fixture, because the claim is about every card the desk hands out: every card on a ten, none under its floor, none above the level they hold, none above their own rate except where the floor lifted it, and the customer's own page on the ten too across twelve accounts. Six assertions restated where they pinned the old grid. 5 mutations, each red, including one that showed the section could not see the tier cap being lifted out."]},
+const evolution=[{"v":"v661","d":"16 Sep 2026","t":"A TIER SET FOR ONE PARTY: PLATINUM ON SALT, TITANIUM ON OIL, NO CASH AND NO STOCK","n":["<b>FOLDED:</b> one row only, a tier set on CS6-BS, salt to Platinum and oil to Titanium, decided at the desk on 16 Sep. Nothing else was presented with it. The row moves no cash and no goods, and on the drafter's own reading it moves no price either until the quotes switch across to the new tiers. The drafter raised no flag, and there is nothing in the dossier that needs one answered.","<b>INVENTORY:</b> unchanged at 19.5 unit against a ledger of 95.45 and self use of 75.95, with nothing owed out and 10.5 unit promised. Cost basis stays the desk's own RM48 a unit against a replacement of RM46, and the reorder mark holds at 15 unit. The salt count stands at 15 Sep and the oil count at 9 Sep, neither disturbed by this fold."]},
+
+{"v":"v660","d":"16 Sep 2026","t":"A CARD IS ROUNDED DOWN TO THE TEN, SO IT IS NEVER ABOVE WHAT THE CUSTOMER PAYS","n":["<b>HIS INSTRUCTION OF 16 SEP 2026, AFTER A MEASUREMENT.</b> The rule has read a customer's own rate to the NEAREST five since v651, and the nearest five rounds UP as often as down: a customer paying RM108 a unit was carded RM110. Across all 432 priced cells on the salt book, <b>63 sat RM1 to RM2 above the rate they actually pay</b>, so the promise of never being above what they pay held only to the nearest five. It is rounded DOWN to the ten now, and never up. It costs RM385 across those cells and moves 93 of them; the biggest single cut is CA5-SEN's unit, RM110 to RM100 against their RM108. Oil does not move at all, because every oil rate already sits on the grid.","<b>THE FLOOR IS THE ONE THING THAT CAN STILL PUT A CARD OVER A RATE, and it is meant to.</b> A price may not go under break-even, so a rate below the floor lifts to the first ten above it: 22 cells today, every one of them the floor talking rather than the rounding, and the suite counts the two apart so a rounding fault cannot hide inside the floor's allowance. The grid is the same ten the ladder rounds to, so a card and a board price sit on one grid for the first time.","<b>THE CHECKS.</b> A new section of 5 assertions read off the whole live book rather than a fixture, because the claim is about every card the desk hands out: every card on a ten, none under its floor, none above the level they hold, none above their own rate except where the floor lifted it, and the customer's own page on the ten too across twelve accounts. Six assertions restated where they pinned the old grid. 5 mutations, each red, including one that showed the section could not see the tier cap being lifted out."]},
 
 {"v":"v659","d":"16 Sep 2026","t":"THE LABEL IS A SUBTLE MARK ON THEIR PRICES, AND THE GREETING IS AS PERSONAL AS THE SITE CAN BE","n":["<b>HIS INSTRUCTION OF 16 SEP 2026:</b> a very subtle tier level, in symbol and colour for each tier, marked in the pricing. Each product on a customer's price list now carries a small glyph in its level's colour beside the product's name, a level being held per product. The six shapes come from one Unicode block so they render the same on every phone, and <b>none of them is a count</b>: two customers comparing pages can see that their marks differ and cannot order themselves by them. <b>The level is never named in the page</b>, which is the whole of subtle; the name travels inside the sealed list, as it has since v651, and the mark is aria-hidden so it is not read out either.","<b>AND EACH CUSTOMER IS GREETED AS PERSONALLY AS THIS SITE CAN MANAGE.</b> The hour is theirs, off their own device, so the page opens with Good morning, Good afternoon or Good evening, and under the week's line it says the month their first priced order falls in, on the same rule the rate uses: a cancelled row, a defaulted one and an award with no cash are not orders placed at a price. <b>NO NAME IS USED, BECAUSE NONE EXISTS ANYWHERE THIS SITE CAN REACH:</b> plaintext names are kept off the cloud by rule, and every statement is built from codes alone. Sealing a name into a customer's own ciphertext would work and is HIS DECISION, not one to drift into: it would put names, encrypted, into records that today hold none.","<b>THE CHECKS.</b> A new section of 6 assertions, driven against the real page and the real crypto in jsdom: a mark for each product differing in both symbol and colour, the same level drawing the same mark on both products, no level named anywhere in the text, the greeting checked against the hour the run happens to be at, a customer with no first order greeted without the month rather than with a blank one, and the month itself. 6 mutations, each red."]},
 
@@ -7495,7 +7502,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='16 Sep 2026, 14:50 KL';
+const LAST_UPDATED='16 Sep 2026, 15:56 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */

@@ -1,6 +1,6 @@
 {
- "v": "v660",
- "stamped": "16 Sep 2026, 14:50 KL",
+ "v": "v661",
+ "stamped": "16 Sep 2026, 15:56 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -4254,7 +4254,12 @@
    }
   ],
   "PLACED": {},
-  "TIER_OF": {},
+  "TIER_OF": {
+   "CS6-BS": {
+    "salt": "Platinum",
+    "oil": "Titanium"
+   }
+  },
   "AWARDS": {
    "CS6-PER": {
     "units": 1,
@@ -4357,9 +4362,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-15T19:50:35.131Z",
+  "QUEUE_COMMITTED": "2026-09-16T07:21:32.147Z",
   "PRICING": {
-   "takenAt": "2026-09-16T07:01:18.791Z",
+   "takenAt": "2026-09-16T07:56:59.770Z",
    "sizes": [
     0.5,
     1,
@@ -4394,7 +4399,7 @@
    "tierOf": {
     "CS6-BS": {
      "salt": "Platinum",
-     "oil": "Platinum"
+     "oil": "Titanium"
     },
     "CJ4-BJ": {
      "salt": "Titanium"
@@ -5197,10 +5202,10 @@
      ]
     }
    },
-   "v": "v660"
+   "v": "v661"
   },
   "OPEN": {
-   "at": "2026-09-16T07:01:18.857Z",
+   "at": "2026-09-16T07:56:59.932Z",
    "count": 8,
    "byKey": {
     "CR3-DAM|2026-09-15|90": {
@@ -5360,7 +5365,7 @@
     "salt": "2026-09-15",
     "oil": "2026-09-09"
    },
-   "v": "v660"
+   "v": "v661"
   }
  }
 }
