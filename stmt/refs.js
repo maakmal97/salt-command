@@ -1,8 +1,14 @@
 /* stmt/refs.js: THE GUEST REFERRAL LINKS.
  *
  * His instruction of 10 Sep 2026: he hands out links, each carrying a unique referral ID he can
- * tell apart, each pinned to Tier 1 or Tier 2, and each opening a landing page that shows THAT
- * TIER'S BOARD PRICES AND NOTHING ELSE. No statement, no order, no account.
+ * tell apart, and each opening a landing page that shows ONE BOARD'S PRICES AND NOTHING ELSE. No
+ * statement, no order, no account.
+ *
+ * SINCE v658 A LINK NAMES ITS INTRODUCER rather than a tier. The board is the ladder, so a guest's
+ * level is derived: two above the introducer's where there is room, else one, capped at the last.
+ * The level is NOT stored here. It is computed by the publish from the introducer's tier at that
+ * moment and written as the link's own board, so a link follows its introducer up when he moves
+ * them, and a level frozen into a record can never fall out of step with the book.
  *
  * THE ID IS THE CREDENTIAL, and that is the whole gate. There is no password, because there is
  * nothing here worth a password: a board price is a thing he prints and hands to strangers, and the
@@ -61,12 +67,15 @@ export function cleanLabel(s) {
 
 /** Mint one. Collides at about one in 10^11 for forty links, and is checked anyway because the
  *  cost is one read and the failure would silently re-point a link already handed out. */
-export async function mintRef(env, { tier, label, by }) {
+export async function mintRef(env, { introducer, tier, label, by }) {
+  /* v658: `tier` is kept on the record for the links minted before the introducer rule, so an old
+     one still opens; nothing reads it to price any more. A new link carries its introducer instead. */
   const t = Number(tier) === 1 ? 1 : 2;
   for (let i = 0; i < 5; i++) {
     const id = newRef();
     if (await env.STMT.get(RKEY(id))) continue;
-    const rec = { id, tier: t, label: cleanLabel(label), made: new Date().toISOString(),
+    const rec = { id, tier: t, introducer: String(introducer || "").toLowerCase() || null,
+      label: cleanLabel(label), made: new Date().toISOString(),
       by: String(by || ""), opens: 0, first: null, last: null, revoked: false };
     await env.STMT.put(RKEY(id), JSON.stringify(rec));
     return rec;

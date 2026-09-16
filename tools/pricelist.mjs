@@ -136,7 +136,7 @@ export function priceList(code, book, pricing, now) {
  * with `asked` recording that the tier fell back, so the page can say so rather than imply oil is
  * being discounted.
  */
-export function boardList(tier, book, pricing, now) {
+export function boardList(tier, book, pricing, now, pick) {
   const want = "T" + (tier === 1 ? 1 : 2);
   const week = weekOf(now);
   const products = book.PROD_ORDER || Object.keys(book.PRODUCTS || { salt: 1 });
@@ -164,11 +164,12 @@ export function boardList(tier, book, pricing, now) {
        a new customer starts at; tier 1 was the cheaper trade board, which is now the FIRST of the five,
        Titanium. A book with no ladder still falls back to ladderRow and still reports `fellBack`. */
     const rule = (P.tierRule && Array.isArray(P.tierRule.multiples)) ? P.tierRule : null;
-    let row = null;
+    let row = null, level = null;
     if (rule) {
       const grid = PRICING_ENGINE.fiveTiers(sizes, C, P);
-      const k = tier === 1 ? 1 : (rule.multiples.length);      // 0 is Ambassador, the floor; never a guest's
-      if (grid && grid.length) row = { code: want, name: null, prices: grid.map((g) => g.prices[k]) };
+      const last = rule.multiples.length;                     // 0 is Ambassador, the floor; never a guest's
+      const k = pick ? pick(p, last) : (tier === 1 ? 1 : last);
+      if (grid && grid.length) { level = k; row = { code: want, name: null, prices: grid.map((g) => g.prices[k]) }; }
     }
     if (!usable(row)) {
       const rows = PRICING_ENGINE.ladderRow(sizes, C, P);
@@ -185,10 +186,42 @@ export function boardList(tier, book, pricing, now) {
       tierName: row.name,
       /* true when this product could not be shown at the tier asked for, because it has only one */
       fellBack: row.code !== want,
+      /* v658: which level of the ladder this product was priced at, for the desk's own listing */
+      level,
       sizes: sizes.map((q, i) => ({ q, price: Number.isFinite(+row.prices[i]) ? +(+row.prices[i]).toFixed(2) : null }))
         .filter((r) => r.price != null)
     });
   }
+  return out;
+}
+
+/* ============ v658, HIS RULE: A GUEST BOARD FOLLOWS THE INTRODUCER ============
+ *
+ * A link is handed out BY somebody: the introducer is a customer of his, named by their username,
+ * and the stranger they bring is quoted TWO LEVELS ABOVE them where there is room, else one, capped
+ * at the last. Above means dearer, because the introducer's own level is earned and a stranger has
+ * earned nothing; the cap means the worst a guest can do is the board every stranger already sees.
+ *
+ * THE LEVEL IS PER PRODUCT, like every tier since v646: an introducer on Titanium for salt and with
+ * no oil history hands out Gold on salt and the board on oil. A product the introducer holds no tier
+ * on has no anchor, so it falls to the last level, which is what a stranger is quoted anyway.
+ *
+ * IT FOLLOWS: nothing is frozen into the link. The board is written on every publish from the
+ * introducer's level AT THAT MOMENT, so when he moves a customer up, every link they introduced
+ * moves with them on the next deploy.
+ */
+export function guestBoard(code, book, pricing, now) {
+  const names = (pricing && pricing.tierNames) || [];
+  /* tierOf is keyed by CODE; the link stores the introducer as a USERNAME and the publish resolves it */
+  const held = ((pricing && pricing.tierOf) || {})[code] || {};
+  const pick = (product, last) => {
+    const t = names.indexOf(held[product]);
+    return t < 0 ? last : Math.min(t + 2, last);
+  };
+  const out = boardList(2, book, pricing, now, pick);
+  out.introducer = code;
+  out.levels = {};
+  for (const p of out.products) out.levels[p.product] = names[p.level] || null;
   return out;
 }
 

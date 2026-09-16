@@ -7122,7 +7122,7 @@ section("Statements — the owner's list behind Access (v566)");
    tier computes and NONE of the figures that are distinct to the other. The figures are computed
    here rather than written down, because an assertion nailed to today's book passes only while the
    book cooperates; the invariant that tier 1 is the cheaper of the two is asserted separately. */
-section("Statements — guest referral links and the tier they are pinned to (v566)");
+section("Statements — guest referral links and the introducer they follow (v566, v658)");
 {
   const realFetch = globalThis.fetch;
   try {
@@ -7142,62 +7142,104 @@ section("Statements — guest referral links and the tier they are pinned to (v5
         kp.privateKey, new TextEncoder().encode(h + "." + c))));
     };
 
-    /* the two boards, written the way tools/stmt-publish.mjs writes them */
-    const { boardList } = await import("../tools/pricelist.mjs");
+    /* the boards, written the way tools/stmt-publish.mjs writes them. v658: a link's own board comes
+       from its INTRODUCER, so two introducers on different levels are needed to tell two links apart,
+       and they are picked off the live book by their levels rather than named, so the assertion does
+       not go vacuous the day he moves somebody. */
+    const { boardList, guestBoard } = await import("../tools/pricelist.mjs");
     const { readBook } = await import("../tools/book.mjs");
     const gbook = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
     const gpricing = (await readBook()).ledger.PRICING;
     const boards = { 1: boardList(1, gbook, gpricing, new Date()), 2: boardList(2, gbook, gpricing, new Date()) };
+    const gnames = gpricing.tierNames || [];
+    const byLevel = (n) => Object.keys(gpricing.tierOf || {}).find((c) => gnames.indexOf((gpricing.tierOf[c] || {}).salt) === n);
+    const cheapCode = byLevel(1) || byLevel(2), dearCode = byLevel(gnames.length - 1) || byLevel(gnames.length - 2) || byLevel(3);
+    const gRoster = [{ code: cheapCode, username: "introone" }, { code: dearCode, username: "introtwo" }];
 
     const gkv = new KV();
     for (const t of [1, 2]) await gkv.put("board:" + t, JSON.stringify(boards[t]));
+    await gkv.put("roster", JSON.stringify(gRoster));
     const genv = { STMT: gkv, ACCESS_TEAM: TEAM, ACCESS_AUD: AUD };
     const gq = (path, opts = {}) => new Request("https://k7m3p2.example" + path, opts);
-    const mintLink = async (tier, label) => (await (await stmtWorker.fetch(gq("/all/refs", {
+    const mintLink = async (introducer, label) => (await (await stmtWorker.fetch(gq("/all/refs", {
       method: "POST", headers: { "cf-access-jwt-assertion": await token(), "content-type": "application/json" },
-      body: JSON.stringify({ tier, label }) }), genv)).json()).ref;
+      body: JSON.stringify({ introducer, label }) }), genv)).json()).ref;
 
     ok((await stmtWorker.fetch(gq("/all/refs"), genv)).status === 401
       && (await stmtWorker.fetch(gq("/all/refs", { method: "POST",
-        headers: { "content-type": "application/json" }, body: '{"tier":1}' }), genv)).status === 401,
+        headers: { "content-type": "application/json" }, body: '{"introducer":"introone"}' }), genv)).status === 401,
       "a guest link can be neither listed nor minted without passing Access");
 
-    const one = await mintLink(1, "Hardware shop, Ipoh");
-    const two = await mintLink(2, "Market stall, Kajang");
-    ok(one && two && one.id !== two.id && one.tier === 1 && two.tier === 2,
-      "two links mint with different ids, each pinned to the tier it was asked for");
-    ok(one.label === "Hardware shop, Ipoh" && one.url === "https://k7m3p2.example/g/" + one.id,
-      "and each carries its label and its own /g/ address");
+    const one = await mintLink("introone", "Hardware shop, Ipoh");
+    const two = await mintLink("introtwo", "Market stall, Kajang");
+    ok(one && two && one.id !== two.id && one.introducer === "introone" && two.introducer === "introtwo",
+      "two links mint with different ids, each naming the customer who is introducing");
+    /* AND THE LEVEL IS THE RULE'S, per product: two above the introducer where there is room, else
+       one, never past the board a stranger sees. Read off the same function the publish calls. */
+    const gOne = guestBoard(cheapCode, gbook, gpricing, new Date());
+    const gTwo = guestBoard(dearCode, gbook, gpricing, new Date());
+    const heldAt = (code, p) => gnames.indexOf(((gpricing.tierOf || {})[code] || {})[p]);
+    ok(Object.keys(gOne.levels).length > 0
+      && Object.keys(gOne.levels).every((p) => {
+        const t = heldAt(cheapCode, p);
+        return gnames.indexOf(gOne.levels[p]) === (t < 0 ? gnames.length - 1 : Math.min(t + 2, gnames.length - 1));
+      }),
+      "a link is quoted two levels above its introducer where there is room, and the board where they hold none: "
+      + JSON.stringify([gpricing.tierOf[cheapCode], gOne.levels]));
+    ok(gnames.indexOf(gTwo.levels.salt) === gnames.length - 1 && heldAt(dearCode, "salt") >= gnames.length - 3,
+      "and an introducer near the top hands out the board itself, capped rather than running off the end: "
+      + JSON.stringify([gpricing.tierOf[dearCode], gTwo.levels]));
     ok((await (await stmtWorker.fetch(gq("/all/refs", { method: "POST",
       headers: { "cf-access-jwt-assertion": await token(), "content-type": "application/json" },
-      body: JSON.stringify({ tier: 3 }) }), genv))).status === 400,
-      "and a tier that is neither 1 nor 2 is refused rather than defaulted");
+      body: JSON.stringify({ introducer: "nobodyhere", label: "x" }) }), genv)).json()).ok === false,
+      "and a username no customer holds is refused rather than minted onto nobody");
+    ok(one.label === "Hardware shop, Ipoh" && one.url === "https://k7m3p2.example/g/" + one.id,
+      "and each carries its label and its own /g/ address");
+    /* v658: it posted {tier:3} and wanted a 400. The route takes an introducer now, so that body is
+       refused for having NO introducer and the assertion passed while proving nothing about tiers.
+       The claim that matters is the same one in its new shape: a link that names nobody is refused
+       rather than minted onto the board by default. */
+    const noIntro = await (await stmtWorker.fetch(gq("/all/refs", { method: "POST",
+      headers: { "cf-access-jwt-assertion": await token(), "content-type": "application/json" },
+      body: JSON.stringify({ label: "no introducer" }) }), genv)).json();
+    ok(noIntro.ok === false && /introduc/.test(String(noIntro.error)),
+      "a link that names nobody is refused rather than minted onto the board by default: " + JSON.stringify(noIntro));
 
     const svg = decodeURIComponent(one.qr.slice("data:image/svg+xml,".length));
     ok(one.qr.startsWith("data:image/svg+xml,") && /<rect /.test(svg) && !/stroke/.test(svg),
       "the QR travels as a data URI of RECTANGLES, never a stroked path, which does not decode");
 
-    /* THE TIER, FROM BOTH ENDS. Every figure distinct to the other tier must be absent, or a link
-       could be serving the wrong board and still look right on the sizes the two happen to share. */
-    const figs = (t) => boards[t].products.flatMap((p) => p.sizes.map((r) => r.price));
-    const only = (t) => figs(t).filter((x) => !figs(t === 1 ? 2 : 1).includes(x));
+    /* THE LINK'S OWN BOARD, FROM BOTH ENDS. Every figure distinct to the other link must be absent, or
+       a link could be serving the wrong board and still look right on the sizes the two happen to
+       share. v658: the boards are per link and written by the publish, so they are put here the way
+       the publish puts them, under the link's own id. */
+    await gkv.put("gboard:" + one.id, JSON.stringify(gOne));
+    await gkv.put("gboard:" + two.id, JSON.stringify(gTwo));
+    const figs = (b) => b.products.flatMap((p) => p.sizes.map((r) => r.price));
+    const onlyIn = (a, b) => figs(a).filter((x) => !figs(b).includes(x));
     const shown = (html, ns) => ns.every((n) => html.includes(n.toLocaleString("en-MY",
       { minimumFractionDigits: 0, maximumFractionDigits: 2 })));
     const g1 = await stmtWorker.fetch(gq("/g/" + one.id), genv), h1 = await g1.text();
     const h2 = await (await stmtWorker.fetch(gq("/g/" + two.id), genv)).text();
-    ok(g1.status === 200 && only(1).length > 0 && shown(h1, only(1)) && !shown(h1, only(2)),
-      "a tier 1 link shows every figure that is tier 1's alone and none that is tier 2's alone");
-    ok(shown(h2, only(2)) && !shown(h2, only(1)),
-      "and a tier 2 link is the other way round");
+    ok(g1.status === 200 && onlyIn(gOne, gTwo).length > 0 && shown(h1, onlyIn(gOne, gTwo)) && !shown(h1, onlyIn(gTwo, gOne)),
+      "a link shows every figure that is its own board's alone and none that is the other link's alone");
+    ok(shown(h2, onlyIn(gTwo, gOne)) && !shown(h2, onlyIn(gOne, gTwo)),
+      "and the other link is the other way round");
+    /* AND A LINK MINTED SINCE THE LAST PUBLISH HAS NO BOARD OF ITS OWN, so it must fall back to the
+       one every stranger sees rather than to an empty page. */
+    const fresh = await mintLink("introone", "Just minted");
+    const hFresh = await (await stmtWorker.fetch(gq("/g/" + fresh.id), genv)).text();
+    ok(shown(hFresh, onlyIn(boards[2], boards[1])),
+      "a link with no board written yet falls back to the board a stranger sees, never to an empty page");
 
     /* the design invariant, independent of which board the route served */
-    const twoTier = boards[1].products.find((p) => !p.fellBack);
-    const pairs = twoTier ? twoTier.sizes.map((r, i) => [r.price, boards[2].products
+    const twoTier = gOne.products.find((p) => !p.fellBack);
+    const pairs = twoTier ? twoTier.sizes.map((r, i) => [r.price, gTwo.products
       .find((x) => x.product === twoTier.product).sizes[i].price]) : [];
-    ok(pairs.length > 0 && pairs.every(([a, b]) => a < b),
-      "and on a two-tier book tier 1 is cheaper than tier 2 at every size, which is what the tiers are");
+    ok(pairs.length > 0 && pairs.every(([a, b]) => a <= b),
+      "and a link off a cheaper introducer is never dearer than one off a nearer-the-top introducer, at any size");
 
-    ok(/the only price for this product/.test(h1) === boards[1].products.some((p) => p.fellBack),
+    ok(/the only price for this product/.test(h1) === gOne.products.some((p) => p.fellBack),
       "a one-tier product says its price is its only one rather than implying a discount");
     ok(!/<script/.test(h1) && /script-src 'none'/.test(g1.headers.get("content-security-policy") || ""),
       "the guest page carries no script and forbids it outright");

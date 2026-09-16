@@ -360,9 +360,22 @@ async function handleRefs(request, env, p, m, origin) {
     if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
     const b = await readJson(request);
     if (!b) return json({ ok: false, error: "send it as application/json" }, 400);
-    const tier = Number(b.tier);
-    if (tier !== 1 && tier !== 2) return json({ ok: false, error: "a link is pinned to tier 1 or tier 2" }, 400);
-    const rec = await mintRef(env, { tier, label: b.label, by: "" });
+    /* ============ v658, HIS RULE: A LINK NAMES ITS INTRODUCER ============
+       It was pinned to tier 1 or tier 2, which were the two boards the desk had. The board is the
+       ladder now, and a guest's level is derived from the customer who handed the link out: two
+       above them where there is room, else one, capped at the last. So what the route takes is the
+       introducer's USERNAME, checked against the roster the publish writes, and the level itself is
+       never typed and never stored: the publish computes it from the introducer's tier at that
+       moment, so a link follows its introducer up. */
+    const introducer = String(b.introducer || "").toLowerCase().trim();
+    if (!introducer) return json({ ok: false, error: "a link names the customer who is introducing" }, 400);
+    let known = false;
+    try {
+      const roster = await env.STMT.get("roster", "json");
+      known = Array.isArray(roster) && roster.some((x) => String(x.username).toLowerCase() === introducer);
+    } catch (e) { known = false; }
+    if (!known) return json({ ok: false, error: "no customer on the roster has that username" }, 400);
+    const rec = await mintRef(env, { introducer, label: b.label, by: "" });
     if (!rec) return json({ ok: false, error: "could not mint an unused id; try again" }, 500);
     return json({ ok: true, ref: refOut(origin, rec) });
   }
@@ -384,8 +397,12 @@ async function handleGuest(request, env, id) {
   const rec = await readRef(env, id);
   if (!rec || rec.revoked) return notFound();
   await markOpen(env, rec);
+  /* v658: the link's OWN board, written by the publish from its introducer's level. A link minted
+     since the last publish has none yet, and a stranger is never left looking at an empty page, so
+     it falls back to the board every stranger sees, which is the cap a guest board can never pass. */
   let prices = null;
-  try { prices = await env.STMT.get("board:" + (rec.tier === 1 ? 1 : 2), "json"); } catch (e) { prices = null; }
+  try { prices = await env.STMT.get("gboard:" + rec.id, "json"); } catch (e) { prices = null; }
+  if (!prices) { try { prices = await env.STMT.get("board:2", "json"); } catch (e) { prices = null; } }
   const nonce = b64e(crypto.getRandomValues(new Uint8Array(16))).replace(/[^A-Za-z0-9]/g, "");
   return new Response(boardPage({ tier: rec.tier, prices }, nonce), {
     headers: Object.assign({

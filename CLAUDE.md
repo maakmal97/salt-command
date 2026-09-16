@@ -268,11 +268,16 @@ including the secrets, the price list and the order relay: `docs/STATEMENTS.md`.
   because a header check passes a token signed by any key at all. With `ACCESS_TEAM` or
   `ACCESS_AUD` empty the route is 401, so deleting the application closes `/all` rather than
   opening it.
-- **Guest links `/g/<id>`**: one tier's board and nothing else, `script-src 'none'`. **The id
+- **Guest links `/g/<id>`**: one board and nothing else, `script-src 'none'`. **The id
   IS the credential** (rejection sampling, never `byte % 30`) and the boards are NOT sealed,
   both deliberate. Unknown, malformed and withdrawn ids answer the same 404. **A row named
   "Tier 1" may carry no prices** (the engine gates it on bare `if(P.tier1)`), so take the first
   row with finite prices; oil is a genuine one-tier book and says so.
+- **A LINK NAMES ITS INTRODUCER AND FOLLOWS THEM** (v658, his rule): minting takes a customer's
+  username, and the guest is quoted **two levels above theirs where there is room, else one, capped
+  at the last**, per product. The level is never stored on the link; every publish recomputes it and
+  writes `gboard:<id>`, so moving a customer up moves every link they gave out. A link minted since
+  the last publish falls back to `board:2`. Detail: `docs/STATEMENTS.md`.
 
 ## Files that carry a rule
 

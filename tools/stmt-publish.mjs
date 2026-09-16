@@ -101,6 +101,15 @@ export function deskPut(key, file, what) {
   }
   console.log("wrote " + key + " (" + what + ") to the desk's store, and read it back");
 }
+/* v658: the guest links themselves, so a board can be written for each. They live in the site's own
+   store under g:, which this tool already reads through wrangler's login. */
+function refIds() {
+  return listKeys("g:").map((k) => k.slice(2)).filter((x) => /^[a-z0-9]{4}-[a-z0-9]{4}$/.test(x));
+}
+function readRef(id) {
+  try { return JSON.parse(wrangler(["kv", "key", "get", "--remote", "--binding", "STMT", "g:" + id])); }
+  catch (e) { return null; }
+}
 function listKeys(prefix) {
   const t = wrangler(["kv", "key", "list", "--remote", "--binding", "STMT", "--prefix", prefix]);
   const i = t.indexOf("[");
@@ -175,13 +184,30 @@ async function main() {
      link's own id is what decides who gets to read one. tools/pricelist.mjs states that argument.
      No snapshot, no boards, exactly as no snapshot means no price lists. */
   if (pricing) {
-    const { boardList } = await import("./pricelist.mjs");
+    const { boardList, guestBoard } = await import("./pricelist.mjs");
     const bookNow = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
     const madeAt = new Date();
     for (const tier of [1, 2]) {
       plan.puts.push({ key: "board:" + tier, value: JSON.stringify(boardList(tier, bookNow, pricing, madeAt)) });
     }
-    console.log("and both guest boards, tier 1 and tier 2");
+    /* ============ v658: AND ONE BOARD PER LINK, FROM ITS INTRODUCER'S LEVEL ============
+       A guest link is quoted two levels above the customer who handed it out, capped at the last,
+       per product. That level is never stored on the link: it is computed HERE, on every publish,
+       so a link follows its introducer the moment he moves them. A link whose introducer is not on
+       this issue's roster gets none, and the Worker falls back to the board every stranger sees. */
+    const byUser = plan.users || {};
+    let boards = 0, orphans = 0;
+    for (const id of refIds()) {
+      const rec = readRef(id);
+      const user = rec && String(rec.introducer || "").toLowerCase();
+      const code = user ? byUser[user] : null;
+      if (!code) { orphans++; continue; }
+      plan.puts.push({ key: "gboard:" + id, value: JSON.stringify(guestBoard(code, bookNow, pricing, madeAt)) });
+      boards++;
+    }
+    console.log("and both guest boards, tier 1 and tier 2"
+      + (boards ? ", plus " + boards + " link board" + (boards === 1 ? "" : "s") + " from their introducers" : "")
+      + (orphans ? " (" + orphans + " link" + (orphans === 1 ? "" : "s") + " names no customer on this roster and falls back to the board)" : ""));
   }
   const putFile = join(outDir, "put.json"), delFile = join(outDir, "delete.json");
   writeFileSync(putFile, JSON.stringify(plan.puts));

@@ -1,5 +1,15 @@
 [
  {
+  "v": "v658",
+  "d": "16 Sep 2026",
+  "t": "A GUEST LINK NAMES ITS INTRODUCER, AND FOLLOWS THEM UP",
+  "n": [
+   "<b>HIS RULE.</b> A referral link was pinned to Tier 1 or Tier 2, which were the two boards the desk had. It names the customer who is HANDING IT OUT now, by their username, and the stranger they bring is quoted <b>two levels above that customer where there is room, else one, capped at the last</b>. Above means dearer: the introducer's own level is earned and a stranger has earned nothing, and the cap means the worst a guest can do is the board every stranger already sees. Per product, like every tier since v646: an introducer on Titanium for salt with no oil history hands out Gold on salt and the board on oil.",
+   "<b>AND THE LEVEL IS NEVER STORED ON THE LINK.</b> It is computed on every publish from the introducer's tier AT THAT MOMENT and written as the link's own board, so moving a customer up moves every link they gave out on the next deploy, and a level frozen into a record can never fall out of step with the book. A link minted since the last publish has no board of its own yet and falls back to the board a stranger sees, which is also the cap, so nobody is ever shown an empty page. A username no customer holds is refused rather than minted onto nobody.",
+   "<b>THE CHECKS.</b> Four new assertions in the guest-link section and one restated: it posted a tier of 3 and wanted a refusal, which the introducer rule refuses for a different reason entirely, so it was passing while proving nothing about tiers. 7 mutations, each red: the level ignoring the introducer, one above instead of two, the cap removed, the link served the stranger's board, an unknown introducer minted anyway, a link with no introducer minted, and the introducer dropped from the record."
+  ]
+ },
+ {
   "v": "v657",
   "d": "16 Sep 2026",
   "t": "THE PRICING PAGE SAYS WHAT IT NOW DOES",
