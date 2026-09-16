@@ -1,28 +1,32 @@
 #!/usr/bin/env node
-/* tools/areafetch.mjs — FETCH THE DISTRICTS AND THE MUKIM, ONCE, AND COMMIT THEM (v630, 14 Sep 2026).
+/* tools/areafetch.mjs — FETCH THE DISTRICTS AND THE CONSTITUENCIES, ONCE, AND COMMIT THEM (v630, 14 Sep 2026; v681).
  *
  * HIS INSTRUCTION OF 14 SEP 2026: the map shades areas the way a council map does, named, with the
  * districts first and the finer areas a tap away. geofetch.mjs brought four state outlines and no
  * names; this brings the areas a heat map is drawn in.
  *
- * TWO LEVELS FROM THE SAME PINNED geoBoundaries RELEASE AS THE BASEMAP:
- *   districts  ADM2, every district of Peninsular Malaysia (geoBoundaries from citypopulation.de,
- *              CC BY 3.0), thinned hard outside the core states, where they are context.
- *   areas      ADM3 inside the core states: the official mukim, bandar and pekan (Wikimedia Commons
- *              via geoBoundaries, CC BY 4.0), each nested under the district that holds its centre.
- * Both licences ask for attribution where the data is shown, and /desk is public, so the credit is
- * printed under the map. The names are kept, on his decision of 14 Sep 2026 that area names show.
+ * TWO LEVELS:
+ *   districts  ADM2, every district of Peninsular Malaysia, from the basemap's pinned geoBoundaries release
+ *              (from citypopulation.de, CC BY 3.0), thinned hard outside the core states, where they are context.
+ *   areas      the federal constituencies of the core states, below, each nested under the district that holds
+ *              its centre. Until v681 they were ADM3's mukim, bandar and pekan.
+ * The credit is printed under the map, since /desk is public. The names are kept, on his decision of 14 Sep 2026
+ * that area names show.
  *
  * KUALA LUMPUR BY ITS ELEVEN CONSTITUENCIES (v678, his decision of 17 Sep 2026). ADM3 gives the territory
  * ten coarse areas where thirty of the desk's parties stand, so a tap on it said nothing. Its areas are the
  * federal constituencies of the 2018 delimitation instead, in force since GE14, from the Malaysian Election
  * Corpus (Thevananthan and Chacko), CC0, pinned to a commit. The same names the city's own map prints.
+ * SELANGOR AND NEGERI SEMBILAN THE SAME WAY (v681, his instruction of 17 Sep 2026): their areas are their federal
+ * constituencies too, 22 and 8, each filed under the district that holds its centre, as a mukim was. A seat that
+ * crosses a district line is drawn when either district is opened. No core district is left with a survey area, so
+ * ADM3 is no longer fetched.
  *
  * Run by hand when the source moves; never by CI and never by the build. The desk still loads
  * nothing at runtime: tools/geosync.mjs inlines geo/areas.json into the master.
  *
  *   node tools/areafetch.mjs              fetch the three files and write geo/areas.json
- *   node tools/areafetch.mjs --from DIR   read MYS-ADM1.geojson, MYS-ADM2.geojson, MYS-ADM3.geojson and
+ *   node tools/areafetch.mjs --from DIR   read MYS-ADM1.geojson, MYS-ADM2.geojson and
  *                                         peninsular_2018_parlimen.geojson from DIR
  */
 import { readFileSync, writeFileSync } from "node:fs";
@@ -36,6 +40,8 @@ const SEATS_PIN = "2a720dd0c8839fb58756a4c6028ff42cd7b85734";
 const SEATS = "peninsular_2018_parlimen.geojson";
 const seatsUrl = `https://raw.githubusercontent.com/Thevesh/paper-meco-maps/${SEATS_PIN}/data/geojson/delimitations/${SEATS}`;
 const CORE = ["Selangor", "Kuala Lumpur", "Putrajaya", "Negeri Sembilan"];
+/* the states whose areas are their constituencies: MECo's state name, the survey's, and how many seats it must hold */
+const SEATED = [{ meco: "W.P. Kuala Lumpur", state: "Kuala Lumpur", seats: 11 }, { meco: "Selangor", state: "Selangor", seats: 22 }, { meco: "Negeri Sembilan", state: "Negeri Sembilan", seats: 8 }];
 const ISLANDS = ["Sabah", "Sarawak", "Labuan"];          // not Peninsular Malaysia
 const TOL = { core: 0.002, context: 0.006, area: 0.0012 }; // degrees; 0.001 is about 110 m
 const Q = 5e3;                                           // stored to 2e-4 degrees, about 22 m: finer than a pixel at any zoom the desk draws
@@ -125,10 +131,8 @@ function labelPoint(f) {
   return [Math.round(best[0] * Q) / Q, Math.round(best[1] * Q) / Q];
 }
 const slug = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-const title = (s) => String(s).toLowerCase().replace(/(^|[\s,(-])([a-z])/g, (m, a, b) => a + b.toUpperCase());
-const KINDS = { mukim: "mukim", bandar: "bandar", pekan: "pekan" };
 
-const [A1, A2, A3, SEAT] = [await load("ADM1"), await load("ADM2"), await load("ADM3"), await load("SEATS")];
+const [A1, A2, SEAT] = [await load("ADM1"), await load("ADM2"), await load("SEATS")];
 const stateOf = (pt) => { const s = A1.find((f) => inPolys(pt, polys(f))); return s ? s.properties.shapeName : null; };
 const districts = [];
 for (const f of A2) {
@@ -139,34 +143,26 @@ for (const f of A2) {
     rings: rings(f, core ? TOL.core : TOL.context, core ? 0.004 : 0.02), _f: f });
 }
 const ids = new Set(); for (const d of districts) { if (ids.has(d.id)) { console.error(`  FAIL  two districts slug to ${d.id}`); process.exit(1); } ids.add(d.id); }
-const coreStates = A1.filter((f) => CORE.some((x) => f.properties.shapeName.includes(x)));
 const areas = [];
-for (const f of A3) {
-  const c = centroid(largestRing(polys(f)));
-  if (!coreStates.some((s) => inPolys(c, polys(s)))) continue;
-  const d = districts.find((x) => x.core && inPolys(c, polys(x._f)));
-  if (!d) { console.error(`  FAIL  no core district holds ${f.properties.shapeName}`); process.exit(1); }
-  if (d.id === "kuala-lumpur") continue;                  // its areas are its constituencies, below
-  const raw = String(f.properties.shapeName).trim(), first = raw.split(/\s+/)[0].toLowerCase();
-  const kind = KINDS[first] || "", short = KINDS[first] ? title(raw.slice(first.length).trim()) : title(raw);   // the full name is the kind and the short one
-  const rs = rings(f, TOL.area, 0.0005);
-  if (!rs.length) continue;                               // smaller than a pixel when zoomed in
-  areas.push({ id: d.id + "/" + (areas.filter((a) => a.district === d.id).length + 1), short, kind, district: d.id, label: labelPoint(f), rings: rs });
-}
-const kl = SEAT.filter((f) => f.properties.state === "W.P. Kuala Lumpur");
-if (kl.length !== 11) { console.error(`  FAIL  ${kl.length} Kuala Lumpur constituencies in the source, not 11`); process.exit(1); }
-for (const f of kl) {
-  const short = String(f.properties.parlimen).replace(/^P\.\d+\s+/, "").trim();
-  areas.push({ id: "kuala-lumpur/" + (areas.filter((a) => a.district === "kuala-lumpur").length + 1), short, kind: "", district: "kuala-lumpur", label: labelPoint(f), rings: rings(f, TOL.area, 0.0005) });
+for (const st of SEATED) {
+  const seats = SEAT.filter((f) => f.properties.state === st.meco);
+  if (seats.length !== st.seats) { console.error(`  FAIL  ${seats.length} ${st.state} constituencies in the source, not ${st.seats}`); process.exit(1); }
+  const own = districts.filter((x) => x.core && x.state.includes(st.state));
+  for (const f of seats) {
+    const c = centroid(largestRing(polys(f)));
+    const near = (x) => Math.hypot(x.label[0] - c[0], x.label[1] - c[1]);
+    const d = own.find((x) => inPolys(c, polys(x._f))) || own.slice().sort((p, q) => near(p) - near(q))[0];
+    const short = String(f.properties.parlimen).replace(/^P\.\d+\s+/, "").trim();
+    areas.push({ id: d.id + "/" + (areas.filter((a) => a.district === d.id).length + 1), short, kind: "", district: d.id, label: labelPoint(f), rings: rings(f, TOL.area, 0.0005) });
+  }
 }
 for (const d of districts) delete d._f;
 
 const out = {
-  what: "The districts of Peninsular Malaysia, and the mukim, bandar and pekan of the core states with Kuala Lumpur by its constituencies, for the desk's Coverage page.",
+  what: "The districts of Peninsular Malaysia, and the federal constituencies of Kuala Lumpur, Selangor and Negeri Sembilan, for the desk's Coverage page.",
   sources: [
     { level: "district", source: "geoBoundaries gbOpen MYS ADM2, from citypopulation.de", url: url("ADM2"), licence: "CC BY 3.0", attribution: "Districts: geoBoundaries, citypopulation.de, CC BY 3.0" },
-    { level: "area", source: "geoBoundaries gbOpen MYS ADM3, from Wikimedia Commons", url: url("ADM3"), licence: "CC BY 4.0", attribution: "Mukim, bandar and pekan: geoBoundaries, Wikimedia Commons, CC BY 4.0" },
-    { level: "area", source: "Malaysian Election Corpus, the 2018 federal delimitation, Kuala Lumpur", url: seatsUrl, licence: "CC0 1.0", attribution: "Kuala Lumpur constituencies: MECo, Thevananthan and Chacko, CC0" },
+    { level: "area", source: "Malaysian Election Corpus, the 2018 federal delimitation, Kuala Lumpur, Selangor and Negeri Sembilan", url: seatsUrl, licence: "CC0 1.0", attribution: "Constituencies: MECo, Thevananthan and Chacko, CC0" },
   ],
   pinnedRelease: PIN,
   fetchedOn: new Date().toISOString().slice(0, 10),

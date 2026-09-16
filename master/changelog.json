@@ -1,5 +1,16 @@
 [
  {
+  "v": "v681",
+  "d": "17 Sep 2026",
+  "t": "SELANGOR AND NEGERI SEMBILAN ARE SHADED BY THEIR CONSTITUENCIES TOO",
+  "n": [
+   "<b>HIS INSTRUCTION OF 17 SEP 2026:</b> do the same for Selangor and Negeri Sembilan. Their areas on Coverage are their federal constituencies of the 2018 delimitation, 22 and 8, from the same pinned MECo file as Kuala Lumpur's eleven, public domain under CC0. Each is filed under the district holding its centre, so Petaling opens on six, Klang on three, Seremban on Seremban and Rasah, and Sepang, whose seat centres in Kuala Langat, on the seats that meet its frame.",
+   "<b>THE SURVEY'S AREAS ARE RETIRED.</b> No core district is left with a mukim, bandar or pekan, so tools/areafetch.mjs no longer fetches ADM3 and its credit is gone from under the map. The 91 districts are byte for byte what they were, and so are Kuala Lumpur's seats. Coverage offers a district's constituencies, and its lead says constituency wherever one is opened.",
+   "<b>WHERE A PARTY IS NOW READS ITS CONSTITUENCY IN ALL THREE STATES.</b> CE5-SA reads Setia Alam, Shah Alam, Petaling where v680 read Bukit Raja; CY2-NIL reads Nilai, Seremban, the seat and the district named once. A point is still the old kilometre-rounded one until an Amend ID finds it again, so CM6-PJ reads Petaling Jaya, Damansara, Petaling.",
+   "<b>THE CHECKS:</b> a new section reads the two states' seats by name, the leads and two parties' locations, six reverts each turning it red; v630's survey counts and licence, v637's fixture district (Jelebu now holds one seat, so it drills Sabak Bernam's two), v678's spill check and v679's Ampang are restated to the constituencies."
+  ]
+ },
+ {
   "v": "v680",
   "d": "17 Sep 2026",
   "t": "WHERE EACH PARTY IS, IN WORDS, FOR EVERYONE: LOCALITY, AREA, DISTRICT",

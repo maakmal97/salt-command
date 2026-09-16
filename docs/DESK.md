@@ -123,7 +123,8 @@
 ## The map (v630, replacing v293's unnamed heat)
 
 - The core districts shaded by revenue for the product in view, a tap opening that district's
-  mukim, bandar and pekan with each party a dot, and the whole peninsula a switch away.
+  constituencies (v678, v681) with each party a dot, and the whole peninsula a switch away. The party
+  table reads each party's locality, constituency and district (`whereOf`, v680).
 - `MAP_METRIC` (v635) shades by revenue, margin, units, customers or credit owed.
   `MAP_FROM`/`MAP_TO` (v636) set a period: a month off the slider, two dates, or all time,
   played month by month; credit owed in a period is what is still owed on the orders placed
@@ -177,7 +178,7 @@
 | `tools/sort-ledger.mjs` | Date order, undated pending last; asserts a permutation |
 | `tools/renderdiff.mjs` | `--shoot <label>` every part at 1280 and 375, `--compare <a> <b>`; Playwright from `Code\salt-ds\.ds-sync`; by hand |
 | `tools/send-sheet.cmd` | Opens the newest `_send_*.html`; the Desktop shortcut `Send Statement` points here |
-| `geo/*.json`, `tools/geofetch.mjs`, `tools/areafetch.mjs`, `tools/gazfetch.mjs` | Basemap (four state outlines, ODbL, unnamed), `places.json` (the code-tail table), since v630 `geo/areas.json`: the 91 districts of Peninsular Malaysia (CC BY 3.0) and the 360 mukim, bandar and pekan of the core states outside Kuala Lumpur (CC BY 4.0), with Kuala Lumpur by its 11 federal constituencies of the 2018 delimitation since v678 (MECo, CC0, pinned `2a720dd`), rings as encoded polylines at 2e-4 degrees, pinned geoBoundaries release `9469f09`; and since v633 `geo/gazetteer.json`, GeoNames' place names in the core states hashed and packed (CC BY 4.0, 55 KB). The three fetch tools alone touch the network, by hand (`gazfetch --from` reads a saved `MY.zip`); geosync inlines all four |
+| `geo/*.json`, `tools/geofetch.mjs`, `tools/areafetch.mjs`, `tools/gazfetch.mjs` | Basemap (four state outlines, ODbL, unnamed), `places.json` (the code-tail table), since v630 `geo/areas.json`: the 91 districts of Peninsular Malaysia (CC BY 3.0) and the 41 federal constituencies of the 2018 delimitation in Kuala Lumpur (11, v678), Selangor (22) and Negeri Sembilan (8, v681), from MECo (CC0, pinned `2a720dd`), each filed under the district holding its centre; ADM3's mukim, bandar and pekan retired at v681; rings as encoded polylines at 2e-4 degrees, pinned geoBoundaries release `9469f09`; and since v633 `geo/gazetteer.json`, GeoNames' place names in the core states hashed and packed (CC BY 4.0, 55 KB). The three fetch tools alone touch the network, by hand (`gazfetch --from` reads a saved `MY.zip`); geosync inlines all four |
 | `public/sw.js`, `public/_headers`, `manifest.webmanifest`, `icon-*.png` | Shell network-first, `/queue` never cached; CSP; icons from `Code\salt-ds` |
 
 ## First-time Cloudflare, and local work

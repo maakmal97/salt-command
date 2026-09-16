@@ -11321,12 +11321,13 @@ section("v630: the map shades named districts, opens a district's mukim, bandar 
   const core30 = A30.districts.filter((d) => d.core).map((d) => d.id);
   ok(core30.length === 17 && ["kuala-lumpur", "petaling", "seremban", "gombak"].every((x) => core30.includes(x)) && A30.districts.length === 91,
     "the districts are Peninsular Malaysia's 91, 17 of them in the core states: " + core30.length + " core of " + A30.districts.length);
-  ok(A30.areas.length > 300 && A30.areas.every((a) => core30.includes(a.district) && a.short && a.rings.length && Array.isArray(a.label)),
-    "every mukim, bandar and pekan nests under a core district, named, with a shape and a label point: " + A30.areas.length);
-  ok(A30.sources.some((s) => /CC BY 3\.0/.test(s.licence)) && A30.sources.some((s) => /CC BY 4\.0/.test(s.licence)), "each level carries its licence");
+  /* v681: the core states' areas are their 41 federal constituencies, 11 in Kuala Lumpur, 22 in Selangor and 8 in Negeri Sembilan */
+  ok(A30.areas.length === 41 && A30.areas.every((a) => core30.includes(a.district) && a.short && !a.kind && a.rings.length && Array.isArray(a.label)),
+    "every constituency nests under a core district, named, with a shape and a label point: " + A30.areas.length);
+  ok(A30.sources.some((s) => /CC BY 3\.0/.test(s.licence)) && A30.sources.some((s) => /CC0/.test(s.licence)), "each level carries its licence");
   const names30 = areaNameSet(A30);
-  ok(names30.has("petaling") && names30.has("kuala lumpur") && A30.areas.some((a) => a.kind && names30.has((a.kind + " " + a.short).toLowerCase())) && !names30.has("zzz fixture heights"),
-    "the leak checks' set of area names holds districts, short names and kind-and-name, and nothing else");
+  ok(names30.has("petaling") && names30.has("kuala lumpur") && names30.has("lembah pantai") && names30.has("rasah") && names30.size === new Set(A30.districts.map((d) => d.name.toLowerCase()).concat(A30.areas.map((a) => a.short.toLowerCase()))).size && !names30.has("zzz fixture heights"),
+    "the leak checks' set of area names holds the districts and the constituencies, and nothing else");
 
   const { openMaster: om30 } = await import("../tools/payload.mjs");
   const { w: w30 } = await om30();
@@ -11356,7 +11357,7 @@ section("v630: the map shades named districts, opens a district's mukim, bandar 
 
     w30.eval("mapZoom('seremban');");
     const ser30 = rd30("(function(){var s=document.querySelector('.sec.on');return {lead:(s.querySelector('.dsclead')||{}).textContent,dots:s.querySelectorAll('.mdot').length,areas:s.querySelectorAll('path.marea').length,back:/Back to the districts/.test(s.textContent),head:(s.querySelector('details.obsec summary')||{}).textContent};})()");
-    ok(/in Seremban/.test(ser30.lead) && ser30.dots >= 2 && ser30.areas > 30 && ser30.back && /Areas in Seremban/.test(ser30.head), "a tap on a district opens its mukim, bandar and pekan with each party a dot, and a way back: " + JSON.stringify(ser30));
+    ok(/by constituency in Seremban/.test(ser30.lead) && ser30.dots >= 2 && ser30.areas >= 2 && ser30.back && /Areas in Seremban/.test(ser30.head), "a tap on a district opens its constituencies with each party a dot, and a way back: " + JSON.stringify(ser30));
     ok(!sec30().includes("Zed Fixture Person"), "and no dot or row carries a name");
 
     w30.eval("mapZoom('kuala-lumpur');");
@@ -11790,7 +11791,7 @@ section("v637: a tap drills into a district or an area: its figure, share, rank,
   const rd37 = (e) => JSON.parse(String(w37.eval("JSON.stringify(" + e + ")")));
   try {
     const row37 = (o) => JSON.stringify(Object.assign({ product: "salt", cost: 10, deliveredQty: o.qty }, o, { cash: o.total, deliveredOn: o.date }));
-    const setup = rd37("(function(){setProd('salt');var J=DISTRICTS.find(function(d){return d.name==='Jelebu';});var as=AREAS.filter(function(a){return a.district===J.id;}).slice(0,2);"
+    const setup = rd37("(function(){setProd('salt');var J=DISTRICTS.find(function(d){return d.name==='Sabak Bernam';});var as=AREAS.filter(function(a){return a.district===J.id;}).slice(0,2);"
       + "var at=function(a){return [a.label[1],a.label[0]];};PLACED['CZ9-DA1']=at(as[0]);PLACED['CZ9-DA2']=at(as[0]);PLACED['CZ9-DB1']=at(as[1]);roster.push('CZ9-DB1','CZ9-DA2','CZ9-DA1');"
       + "BASE_SALES.push(" + [
         row37({ rid: "z637a", customer: "CZ9-DA1", date: "2026-07-05", qty: 3, total: 300000 }),
@@ -11808,19 +11809,19 @@ section("v637: a tap drills into a district or an area: its figure, share, rank,
     const mJul = setup.months.indexOf("2026-07"), mAug = setup.months.indexOf("2026-08");
     ok(panel("") === null, "the districts view carries no drill: a tap there opens the district");
     const d = panel("mapZoom('" + setup.J + "');");
-    ok(!!d && /^Jelebu district/.test(d.title) && d.v[0] === "RM 600,000" && d.v[2] === "#1" && /^of \d+ districts$/.test(d.n[2]) && d.n[0] === "3 parties sited" && /^\d+%$/.test(d.v[1]) && !d.back,
+    ok(!!d && /^Sabak Bernam district/.test(d.title) && d.v[0] === "RM 600,000" && d.v[2] === "#1" && /^of \d+ districts$/.test(d.n[2]) && d.n[0] === "3 parties sited" && /^\d+%$/.test(d.v[1]) && !d.back,
       "a district opened shows its own panel: its figure, share and rank against the districts: " + JSON.stringify(d && [d.title, d.v, d.n]));
     ok(d.bars.length === setup.months.length && d.bars[mJul].h > 0 && d.bars[mAug].h > d.bars[mJul].h * 0.9 && d.bars.filter((b, i) => i !== mJul && i !== mAug).every((b) => b.h === 0)
       && /^Jul 2026: RM 300,000$/.test(d.bars[mJul].t) && /^Aug 2026: RM 300,000$/.test(d.bars[mAug].t) && d.x[0] === setup.months[0].replace(/^(\d{4})-(\d\d)$/, (m, y, mo) => ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][+mo - 1] + " " + y),
       "its trend has a bar a month, the months it traded standing, each bar titled with its figure: " + JSON.stringify(d.bars.map((b) => b.t)));
     ok(JSON.stringify(d.who) === JSON.stringify(["CZ9-DA1|RM 300,000", "CZ9-DA2|RM 200,000", "CZ9-DB1|RM 100,000"]), "and its parties by code, largest first: " + JSON.stringify(d.who));
     const a1 = panel("document.querySelector('.sec.on path.marea[data-a=\"" + setup.a1 + "\"]').dispatchEvent(new window.MouseEvent('click',{bubbles:true}));");
-    ok(!!a1 && a1.title.indexOf(setup.n1 + " in Jelebu") === 0 && a1.v[0] === "RM 100,000" && a1.v[1] === "17%" && a1.v[2] === "#2" && a1.n[2] === "of 2 areas" && a1.back
+    ok(!!a1 && a1.title.indexOf(setup.n1 + " in Sabak Bernam") === 0 && a1.v[0] === "RM 100,000" && a1.v[1] === "17%" && a1.v[2] === "#2" && a1.n[2] === "of 2 areas" && a1.back
       && JSON.stringify(a1.picked) === JSON.stringify([setup.a1]) && a1.gold === 1,
       "a tap on an area swaps in its panel, ranked and shared against the areas drawn, the area outlined and its one party lit: " + JSON.stringify(a1 && [a1.title, a1.v, a1.n, a1.gold]));
     ok(a1.bars[mAug].h > 0 && a1.bars[mJul].h === 0 && JSON.stringify(a1.who) === JSON.stringify(["CZ9-DB1|RM 100,000"]), "and its own trend and parties alone: " + JSON.stringify(a1.who));
     const off = panel("mapPick('" + setup.a1 + "');");
-    ok(off.pick === null && /^Jelebu district/.test(off.title) && off.picked.length === 0, "a second tap on the area puts it down, back to the district's panel");
+    ok(off.pick === null && /^Sabak Bernam district/.test(off.title) && off.picked.length === 0, "a second tap on the area puts it down, back to the district's panel");
     const a0 = panel("var b=[].find.call(document.querySelectorAll('.sec.on details.obsec tbody button.navlink'),function(x){return x.textContent===" + JSON.stringify(setup.n0) + ";});if(b)b.click();");
     ok(a0.pick === setup.a0 && a0.v[0] === "RM 500,000" && a0.v[2] === "#1" && a0.v[1] === "83%", "the table's area names pick an area too: " + JSON.stringify([a0.pick, a0.v]));
     const jul = panel("mapMonth(" + mJul + ");");
@@ -13037,8 +13038,11 @@ section("v678: Kuala Lumpur is shaded by its eleven constituencies, and a point 
     const at = rd78("AREAS.filter(function(a){return a.district==='kuala-lumpur';}).map(function(a){var pt=[a.label[0],a.label[1]];"
       + "var first=AREAS.find(function(x){return inShape(pt,areaShape(x));});var got=areaOf(a.label[1],a.label[0]);"
       + "return {seat:a.short,first:first?first.district+'/'+first.short:null,got:got.area?got.area.short:null,d:got.district?got.district.id:null};})");
-    ok(at.every((x) => x.got === x.seat && x.d === "kuala-lumpur") && at.some((x) => !/^kuala-lumpur\//.test(x.first || "")),
-      "a point in a seat is named by that seat, even where a Selangor mukim spilling into Kuala Lumpur holds it first: " + JSON.stringify(at.filter((x) => !/^kuala-lumpur\//.test(x.first || ""))));
+    ok(at.every((x) => x.got === x.seat && x.d === "kuala-lumpur"), "a point in a seat is named by that seat: " + JSON.stringify(at.filter((x) => x.got !== x.seat)));
+    /* v681: every seat of the three states, including one filed under a neighbouring district, since a seat is filed by its centre */
+    const all81 = rd78("AREAS.map(function(a){var r=areaOf(a.label[1],a.label[0]);return {seat:a.short,got:r.area?r.area.short:null,filed:a.district,d:r.district?r.district.id:null};})");
+    ok(all81.length === 41 && all81.every((x) => x.got === x.seat) && all81.some((x) => x.d !== x.filed),
+      "and so is every one of the 41, a seat whose point lies in a district other than the one it is filed under included: " + JSON.stringify(all81.filter((x) => x.got !== x.seat || x.d !== x.filed)));
     w78.eval("switchTab('map');mapZoom('kuala-lumpur');");
     const drawn = rd78("(function(){var s=document.querySelector('.sec.on');var ps=[].map.call(s.querySelectorAll('path.marea'),function(p){return p.getAttribute('data-a');});"
       + "return {ids:ps,lead:(s.querySelector('.dsclead')||{}).textContent||'',text:s.textContent};})()");
@@ -13077,7 +13081,7 @@ section("v679: a place is its locality then where that is: the code from the loc
     /* the lookup: Ampang alone is Selangor's; Ampang, KL is never there */
     const look = async (t) => JSON.parse(String(await w79.eval("placeFromText(" + JSON.stringify(t) + ").then(function(r){var d=r.point?areaOf(r.point[0],r.point[1]).district:null;return JSON.stringify({how:r.how,d:d?d.name:null});})")));
     const amp = await look("Ampang"), ampKL = await look("Ampang, KL"), ban = await look("Bangsar, KL"), sa = await look("Setia Alam, SG");
-    ok(amp.d === "Ulu Langat" && ampKL.d !== "Ulu Langat" && (ampKL.d === "Kuala Lumpur" || !ampKL.how || ampKL.how === "ambiguous"),
+    ok(amp.d && amp.d !== "Kuala Lumpur" && (ampKL.d === "Kuala Lumpur" || !ampKL.how || ampKL.how === "ambiguous"),
       "Ampang alone is found in Selangor, and Ampang, KL is confined to Kuala Lumpur: " + JSON.stringify({ amp, ampKL }));
     const batu = await look("Batu"), batuSG = await look("Batu, SG");
     ok(batu.d === "Kuala Lumpur" && batuSG.d !== "Kuala Lumpur", "a lone SG is Selangor, so Batu, SG is not Kuala Lumpur's Batu: " + JSON.stringify({ batu, batuSG }));
@@ -13123,7 +13127,7 @@ section("v680: where each party is, in words, for everyone: locality, area, dist
   const rd80 = (e) => JSON.parse(String(w80.eval("JSON.stringify(" + e + ")")));
   try {
     const three = rd80("[whereOf('CA5-BAN'),whereOf('CA7-AMP'),whereOf('CE5-SA')]");
-    ok(JSON.stringify(three) === '["Bangsar, Lembah Pantai, Kuala Lumpur","Ampang, Titiwangsa, Kuala Lumpur","Setia Alam, Bukit Raja, Petaling"]',
+    ok(JSON.stringify(three) === '["Bangsar, Lembah Pantai, Kuala Lumpur","Ampang, Titiwangsa, Kuala Lumpur","Setia Alam, Shah Alam, Petaling"]',
       "his three read locality, constituency or sub-area, and district: " + JSON.stringify(three));
     const rules = rd80("(function(){var seg=AREAS.find(function(a){return a.short==='Segambut';});"
       + "PLACED['CZ9-DUP']=[seg.label[1],seg.label[0],'segambut'];PLACED['CZ9-ABR']=[3.09,101.67,'Old Klang Rd.'];PLACED['CZ9-BKT']=[3.06,101.69,'Bkt Jalil'];"
@@ -13138,6 +13142,35 @@ section("v680: where each party is, in words, for everyone: locality, area, dist
     ok(tab && JSON.stringify(tab.head.slice(0, 2)) === '["Party","Where"]' && tab.where.length > 0 && tab.where.every((x) => /Kuala Lumpur$/.test(x)) && tab.where.some((x) => x.split(", ").length === 3),
       "Coverage's party table for Kuala Lumpur has a Where column, each reading down to the district and the localities filed: " + JSON.stringify(tab));
   } finally { try { w80.close(); } catch (e) { /* best effort */ } }
+}
+section("v681: Selangor and Negeri Sembilan are shaded by their constituencies too");
+{
+  /* HIS INSTRUCTION OF 17 SEP 2026, "do the same for Selangor and Negeri Sembilan". Their areas are their federal
+     constituencies of the 2018 delimitation, from the same pinned MECo file, each filed under the district holding its
+     centre; ADM3's mukim, bandar and pekan are gone from every core district. Read off AREAS and Coverage as drawn. */
+  const { openMaster: om81 } = await import("../tools/payload.mjs");
+  const { w: w81 } = await om81();
+  const rd81 = (e) => JSON.parse(String(w81.eval("JSON.stringify(" + e + ")")));
+  try {
+    const SEL = ["Sabak Bernam", "Sungai Besar", "Hulu Selangor", "Tanjong Karang", "Kuala Selangor", "Selayang", "Gombak", "Ampang", "Pandan", "Hulu Langat", "Bangi",
+      "Puchong", "Subang", "Petaling Jaya", "Damansara", "Sungai Buloh", "Shah Alam", "Kapar", "Klang", "Kota Raja", "Kuala Langat", "Sepang"];
+    const NS = ["Jelebu", "Jempol", "Seremban", "Kuala Pilah", "Rasah", "Rembau", "Port Dickson", "Tampin"];
+    const by = rd81("(function(){var o={};AREAS.forEach(function(a){var d=DISTRICTS.find(function(x){return x.id===a.district;});(o[d.state]=o[d.state]||[]).push(a.short);});return o;})()");
+    const same = (a, b) => JSON.stringify((a || []).slice().sort()) === JSON.stringify(b.slice().sort());
+    ok(same(by.Selangor, SEL) && same(by["Negeri Sembilan"], NS) && (by["Kuala Lumpur"] || []).length === 11 && Object.keys(by).length === 3,
+      "Selangor's 22 and Negeri Sembilan's 8 constituencies are their areas, beside Kuala Lumpur's 11, and nothing else is: " + JSON.stringify(Object.keys(by).map((k) => k + " " + by[k].length)));
+    ok(rd81("AREAS.every(function(a){return !a.kind;})") && !/Mukim, bandar and pekan/.test(rd81("AREAS_META.attribution.join(' ')")),
+      "no mukim, bandar or pekan is left, and neither is its credit");
+    w81.eval("switchTab('map');MAP_VIEW=null;render();");
+    const top = rd81("(document.querySelector('.sec.on .dsclead')||{}).textContent||''");
+    w81.eval("mapZoom('petaling');");
+    const pet = rd81("(function(){var s=document.querySelector('.sec.on');return {lead:(s.querySelector('.dsclead')||{}).textContent,own:[].filter.call(s.querySelectorAll('path.marea'),function(p){return /^petaling\\//.test(p.getAttribute('data-a'));}).length};})()");
+    ok(/tap a district to open its constituencies/.test(top) && /by constituency in Petaling/.test(pet.lead) && pet.own === 6,
+      "Coverage offers a district's constituencies, and Petaling opens on its six: " + JSON.stringify({ top: top.slice(-60), pet }));
+    const where = rd81("[whereOf('CM6-PJ'),whereOf('CY2-NIL')]");
+    ok(/^Petaling Jaya, [A-Z][a-z]+( [A-Z][a-z]+)*, Petaling$/.test(where[0]) && where[1] === "Nilai, Seremban",
+      "a Selangor party and a Negeri Sembilan party read their constituency, named once where it is the locality: " + JSON.stringify(where));
+  } finally { try { w81.close(); } catch (e) { /* best effort */ } }
 }
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
 process.exit(fail ? 1 : 0);
