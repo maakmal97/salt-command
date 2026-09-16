@@ -12730,5 +12730,28 @@ section("v671: the proposal moves a level on how a customer buys: late, small, l
       "the rule reaches a proposed customer's live quote, Gold at a unit and Silver at twelve and a half, and leaves a held Gold customer at Gold: " + JSON.stringify(live));
   } finally { await new Promise((r) => setTimeout(r, 200)); try { w71.close(); } catch (e) { /* best effort */ } }
 }
+section("v672: the three headings that called the goods stock now call them inventory (hard rule 5)");
+{
+  /* HIS COPY RULE OF 11 SEP 2026. The goods are INVENTORY in copy; STOCK is the rail's
+     destination. Three headings still carried the rail's word for the goods and rule 5 named
+     them: Spent on stock and Stock behind it on Financials, Stock reconciliation on On hand.
+     The evolution array is stripped before the scan because it is history and quotes the old
+     wording, the same exclusion the kg sweep takes. The destination is NOT swept: the rail's
+     tab and the VIEWS row behind it say Stock, and must, so the last assertion holds them. */
+  const fs = await import("node:fs");
+  const lines = fs.readFileSync("master/salt_command.html", "utf8").split("\n");
+  const ev = lines.findIndex((l) => l.startsWith("const evolution=["));
+  let evEnd = ev;
+  while (evEnd < lines.length && !lines[evEnd].trimEnd().endsWith("}];")) evEnd++;
+  const desk = lines.filter((_, i) => i < ev || i > evEnd).join("\n");
+  const once = (s) => desk.split(s).length - 1;
+
+  ok(once("'Inventory reconciliation'") === 1 && once("'Inventory behind it'") === 1 && once("'Spent on inventory'") === 1,
+     "the three read Inventory: reconciliation on On hand, behind it and Spent on on Financials");
+  const stale = ["'Stock reconciliation'", "'Stock behind it'", "'Spent on stock'"].filter((s) => desk.includes(s));
+  ok(stale.length === 0, "and not one of them still says stock" + (stale.length ? ": " + stale.join(", ") : ""));
+  ok(desk.includes('data-s="stock">Stock<') && desk.includes("name:'Stock'"),
+     "while the rail's own destination still reads Stock, which is what the rule asks for");
+}
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
 process.exit(fail ? 1 : 0);
