@@ -1,6 +1,6 @@
 {
- "v": "v666",
- "stamped": "16 Sep 2026, 17:52 KL",
+ "v": "v667",
+ "stamped": "16 Sep 2026, 18:06 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -3665,7 +3665,25 @@
     "date": "2026-09-11",
     "deliveredQty": 0,
     "note": "<b>PENDING SALT SELL DATED 11 SEP, THE DAY IT WAS AGREED.</b> SELL to CC5-OKR, 1 unit for RM90, collected, RM0 cash in and 0 unit moved, so the row draws no stock and books no revenue until something moves. The total clears the RM56.21 floor for 1 unit but sits RM30 under the RM120 ask and well under the RM150 ceiling. CC5-OKR has 6 prior orders, a median rate of RM90 and a range of RM80 to RM90, RM90 outstanding before this, 1 unit on credit against a cap of 1 and nothing defaulted. Cost is the inventory's own RM44 a unit. The drafter flagged nothing. The earlier RM90 and this RM90 both stay outstanding.",
-    "rid": "s149"
+    "rid": "s149",
+    "amend": [
+     {
+      "date": "2026-09-11",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 0,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-09-16",
+      "kind": "Cancellation",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>CANCELLATION RECORDED 16 SEP AGAINST S149, THE CC5-OKR SELL OF 11 SEP.</b> The order was 1 unit for RM90, collected, with RM0 cash in and 0 unit moved, so it had drawn no stock and booked no revenue; the total had cleared the RM56.21 floor for 1. Withdrawn, it counts nowhere and the row is not recomputed here, ovAmend in the master applies it. CC5-OKR runs 8 orders, median RM90, range RM80 to RM90, RM180 outstanding before, 1 unit on credit, nothing defaulted, on the roster. No cost attaches. The drafter flagged nothing and nothing stays open on this row."
+     }
+    ],
+    "cancelled": true,
+    "cancelledOn": "2026-09-16"
    },
    {
     "customer": "CF5-WM",
@@ -3677,7 +3695,25 @@
     "date": "2026-09-11",
     "deliveredQty": 0,
     "note": "<b>PENDING SALT SELL DATED 11 SEP, THE DAY IT WAS AGREED.</b> SELL to CF5-WM, 1 unit for RM110 with RM10 carriage in that total and RM100 of goods, marked delivered but RM0 cash in and 0 unit moved, so the row draws no stock and books no revenue until something moves. The total clears the RM56.21 floor for 1 unit, sits RM10 under the RM120 ask and well under the RM150 ceiling. CF5-WM has 1 prior order, a median rate of RM115 and a range of RM115 to RM115, nothing outstanding before this, no units on credit against a cap of 1 and nothing defaulted. Cost is the inventory's own RM44 a unit. The drafter flagged nothing. The RM110 stays outstanding.",
-    "rid": "s150"
+    "rid": "s150",
+    "amend": [
+     {
+      "date": "2026-09-11",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 0,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-09-16",
+      "kind": "Cancellation",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>CANCELLATION RECORDED 16 SEP AGAINST S150, THE CF5-WM SELL OF 11 SEP.</b> The order was 1 unit for RM110, RM10 of that carriage and RM100 of goods, marked delivered but with RM0 cash in and 0 unit moved, so it had drawn no stock and booked no revenue. Withdrawn, it counts nowhere; the row is not recomputed here, ovAmend in the master applies it. CF5-WM runs 2 orders, median RM115, range RM100 to RM115, RM110 outstanding before, no units on credit, nothing defaulted, on the roster. No cost attaches, the drafter flagged nothing, and the row leaves nothing outstanding."
+     }
+    ],
+    "cancelled": true,
+    "cancelledOn": "2026-09-16"
    },
    {
     "customer": "CS6-BS-R",
@@ -4461,9 +4497,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-16T09:39:17.951Z",
+  "QUEUE_COMMITTED": "2026-09-16T10:04:52.628Z",
   "PRICING": {
-   "takenAt": "2026-09-16T09:56:42.866Z",
+   "takenAt": "2026-09-16T10:06:41.550Z",
    "sizes": [
     0.5,
     1,
@@ -4561,11 +4597,11 @@
     "CH4-KS": {
      "salt": "Platinum"
     },
-    "CC5-OKR": {
-     "salt": "Titanium"
-    },
     "CH6-SET": {
      "salt": "Gold"
+    },
+    "CC5-OKR": {
+     "salt": "Titanium"
     },
     "CA5-BAN": {
      "salt": "Gold"
@@ -4573,14 +4609,14 @@
     "CM6-PJ": {
      "salt": "Platinum"
     },
-    "CF5-WM": {
-     "salt": "Gold"
-    },
     "CZ6-WM": {
      "salt": "Titanium"
     },
     "CA5-SEN": {
      "salt": "Platinum"
+    },
+    "CF5-WM": {
+     "salt": "Gold"
     },
     "CN5-TAI": {
      "salt": "Platinum"
@@ -5052,24 +5088,6 @@
       "lateTwice": false
      }
     },
-    "CC5-OKR": {
-     "salt": {
-      "name": "small and often",
-      "orders": 5,
-      "tenureDays": 69,
-      "sinceLastDays": 1,
-      "perMonth": 2.21,
-      "smallShare": 1,
-      "bigShare": 0,
-      "late": 0,
-      "frequent": true,
-      "small": true,
-      "bigger": false,
-      "loyal": false,
-      "rare": false,
-      "lateTwice": false
-     }
-    },
     "CH6-SET": {
      "salt": {
       "name": "small and rare",
@@ -5081,6 +5099,24 @@
       "bigShare": 0,
       "late": 0,
       "frequent": false,
+      "small": true,
+      "bigger": false,
+      "loyal": false,
+      "rare": false,
+      "lateTwice": false
+     }
+    },
+    "CC5-OKR": {
+     "salt": {
+      "name": "small and often",
+      "orders": 5,
+      "tenureDays": 69,
+      "sinceLastDays": 1,
+      "perMonth": 2.21,
+      "smallShare": 1,
+      "bigShare": 0,
+      "late": 0,
+      "frequent": true,
       "small": true,
       "bigger": false,
       "loyal": false,
@@ -5124,24 +5160,6 @@
       "lateTwice": false
      }
     },
-    "CF5-WM": {
-     "salt": {
-      "name": "one-off",
-      "orders": 1,
-      "tenureDays": 14,
-      "sinceLastDays": 14,
-      "perMonth": 1.01,
-      "smallShare": 0,
-      "bigShare": 0,
-      "late": 0,
-      "frequent": false,
-      "small": false,
-      "bigger": false,
-      "loyal": false,
-      "rare": false,
-      "lateTwice": false
-     }
-    },
     "CZ6-WM": {
      "salt": {
       "name": "small and rare",
@@ -5175,6 +5193,24 @@
       "bigger": false,
       "loyal": false,
       "rare": true,
+      "lateTwice": false
+     }
+    },
+    "CF5-WM": {
+     "salt": {
+      "name": "one-off",
+      "orders": 1,
+      "tenureDays": 14,
+      "sinceLastDays": 14,
+      "perMonth": 1.01,
+      "smallShare": 0,
+      "bigShare": 0,
+      "late": 0,
+      "frequent": false,
+      "small": false,
+      "bigger": false,
+      "loyal": false,
+      "rare": false,
       "lateTwice": false
      }
     },
@@ -6060,11 +6096,11 @@
      ]
     }
    },
-   "v": "v666"
+   "v": "v667"
   },
   "OPEN": {
-   "at": "2026-09-16T09:56:42.942Z",
-   "count": 8,
+   "at": "2026-09-16T10:06:41.699Z",
+   "count": 6,
    "byKey": {
     "CR3-DAM|2026-09-15|90": {
      "d": "2026-09-15",
@@ -6099,36 +6135,6 @@
      "key": "CM4-MK|2026-09-13|330",
      "age": 3,
      "exp": 110
-    },
-    "CC5-OKR|2026-09-11|90": {
-     "d": "2026-09-11",
-     "p": "CC5-OKR",
-     "dir": "S",
-     "q": 1,
-     "t": 90,
-     "cash": 0,
-     "mv": 0,
-     "st": "part",
-     "oweRM": 90,
-     "oweUnits": 1,
-     "rid": "s149",
-     "handover": "collected",
-     "key": "CC5-OKR|2026-09-11|90"
-    },
-    "CF5-WM|2026-09-11|110": {
-     "d": "2026-09-11",
-     "p": "CF5-WM",
-     "dir": "S",
-     "q": 1,
-     "t": 110,
-     "cash": 0,
-     "mv": 0,
-     "st": "part",
-     "oweRM": 110,
-     "oweUnits": 1,
-     "rid": "s150",
-     "handover": "delivered",
-     "key": "CF5-WM|2026-09-11|110"
     },
     "CJ4-BJ|2026-09-07|850": {
      "d": "2026-09-07",
@@ -6204,8 +6210,8 @@
      "coverDays": 1.4,
      "rate": 6.57,
      "owedToYou": 472,
-     "promised": 10.5,
-     "short": 1
+     "promised": 8.5,
+     "short": 0
     },
     "oil": {
      "name": "Oil",
@@ -6223,7 +6229,7 @@
     "salt": "2026-09-15",
     "oil": "2026-09-09"
    },
-   "v": "v666"
+   "v": "v667"
   }
  }
 }
