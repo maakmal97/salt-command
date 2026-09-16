@@ -11121,7 +11121,7 @@ section("v622: the rail is two levels, the destinations and the open one's pages
     ok(price.solo && price.subs === null && price.pills.length === 0, "Pricing, with one page, lists nothing under itself and draws its own block: " + JSON.stringify(price));
     ok(JSON.stringify(price.allSolo) === '["price"]', "and it is the only destination that does: " + JSON.stringify(price.allSolo));
     const people = look("people");
-    ok(!people.solo && JSON.stringify(people.subs) === '["Who buys","Associates","Map"]', "a destination with three pages still lists all three: " + JSON.stringify(people.subs));
+    ok(!people.solo && JSON.stringify(people.subs) === '["Clients","Associates","Coverage"]', "a destination with three pages still lists all three: " + JSON.stringify(people.subs));
   } finally { try { w22.close(); } catch (e) { /* best effort */ } }
 }
 
@@ -12982,6 +12982,30 @@ section("v675: a customer's order wakes the phones that asked for orders, within
     ok(sent.some((x) => x.path === "push/unsubscribe" && x.body.endpoint === "https://push.example/desk") && subN === null && /alerts are off/.test(box.textContent),
       "and Turn off removes it on the Worker and in the browser: " + box.textContent);
   } finally { await new Promise((r) => setTimeout(r, 200)); try { w75.close(); } catch (e) { /* best effort */ } }
+}
+section("v677: Customers is Network, Who buys is Clients, Associates stays, and Map is Coverage");
+{
+  /* HIS INSTRUCTION OF 17 SEP 2026. Names only: the ids are the addresses, so #concentration and #map still open the
+     pages. Read off the desk as drawn: the rail, each page's heading, and the two lines of the board card that send him
+     to where a tier is set. */
+  const { openMaster: om77 } = await import("../tools/payload.mjs");
+  const { w: w77 } = await om77();
+  const rd77 = (e) => JSON.parse(String(w77.eval("JSON.stringify(" + e + ")")));
+  try {
+    const rail = rd77("[].map.call(document.querySelectorAll('.rail .tab'),function(t){return t.dataset.s+':'+t.textContent.trim();})");
+    ok(rail.includes("people:Network") && !rail.some((x) => /Customers/.test(x)), "the rail's destination reads Network: " + rail.join(" "));
+    const page = (id) => rd77("(function(){switchTab('" + id + "');var sec=document.getElementById('sec-people'),h=sec&&sec.querySelector('h1'),"
+      + "t=document.querySelector('.rail .tab[data-s=\"people\"]'),d=t&&t.nextElementSibling;"
+      + "return {h1:h?h.textContent.trim():null,hash:location.hash,subs:d?[].map.call(d.querySelectorAll('.sub'),function(b){return b.textContent.trim();}):null};})()");
+    const cl = page("concentration"), as = page("network"), co = page("map");
+    ok(cl.h1 === "Clients" && JSON.stringify(cl.subs) === '["Clients","Associates","Coverage"]',
+      "the first page is headed Clients, and Network lists Clients, Associates and Coverage: " + JSON.stringify(cl));
+    ok(as.h1 === "Associates" && co.h1 === "Coverage" && co.hash === "#map",
+      "Associates keeps its name, and the map is headed Coverage at its old address: " + JSON.stringify({ as, co }));
+    const card = String(w77.eval("pbCard()")), empty = String(w77.eval("(function(){var m={textContent:''};pbEmpty({rows:[],soon:true,code:'CX0-AA',product:'salt'},m);return m.textContent;})()"));
+    ok(/set on Clients/.test(card) && !/Customers/.test(card) && /set one on Clients\./.test(empty),
+      "the board card sends him to Clients to set a tier: " + JSON.stringify(empty));
+  } finally { try { w77.close(); } catch (e) { /* best effort */ } }
 }
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
 process.exit(fail ? 1 : 0);

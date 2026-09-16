@@ -3486,7 +3486,7 @@ body.dbstuck .deskbar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 va
       <button class="tab" data-s="money">Order book</button>
       <button class="tab" data-s="stock">Stock</button>
       <button class="tab" data-s="price">Pricing</button>
-      <button class="tab" data-s="people">Customers</button>
+      <button class="tab" data-s="people">Network</button>
       <button class="tab" data-s="book">The book</button>
       <button class="tab" data-s="enter">Enter</button>
     </div>
@@ -6928,7 +6928,9 @@ const quoteFor=p=>{const f=QUOTES[p||PROD];return f?f():null;};
    v324 onward, which tabJournal maps in full; master/changelog.json carries every entry
    ever written and is the record. So a bump PREPENDS its entry. Replacing the array,
    which both comments invited, silently drops the whole window. */
-const evolution=[{"v":"v676","d":"17 Sep 2026","t":"ONE UNIT OUT TO CN6-WM ON ADVANCE: AT THE ASK IT IS NOT, AT THE CAP IT STILL FITS","n":["<b>FOLDED: A SINGLE SALT SALE, GOODS GONE AND NOTHING IN.</b> One row enters the sales book: CN6-WM, 1 unit for RM110 dated 17 Sep, collected on the day with RM0 cash in. The rate clears the RM51 floor for a 1 unit lot but sits well under the RM160 ask, and it matches the top of the party's own range at RM110 against a median of RM100 across 7 orders.","<b>UNUSUAL: THE DRAFTER FLAGGED THE ADVANCE, AND THE CAP ANSWERS IT.</b> RM110 goes out unpaid on top of RM100 outstanding, taking CN6-WM to 2 unit on credit against a cap of 2, so the row is at the limit and not over it. Costed at RM48 a unit, the desk's own inventory rate, leaving RM62 on the goods at 56.4%. The inventory gives up 1 unit and books no cash."]},
+const evolution=[{"v":"v677","d":"17 Sep 2026","t":"CUSTOMERS IS NETWORK, WHO BUYS IS CLIENTS, AND MAP IS COVERAGE","n":["<b>HIS INSTRUCTION OF 17 SEP 2026.</b> The destination that held the people is <b>Network</b>. Its first page, <b>Who buys</b>, is <b>Clients</b>; <b>Associates</b> keeps its name; and <b>Map</b>, which he asked to be called something more fitting, is <b>Coverage</b>, his pick of four.","<b>NAMES ONLY.</b> The ids are the addresses, so #concentration, #network and #map still open the same pages, and nothing a page shows or computes moves. The board card's two lines that send him to set a tier now say Clients. Customers stays wherever it means the people themselves: the receivables heading, the observation family and the Coverage metric.","<b>THE CHECKS:</b> a new section reads the rail, each page's heading and the board card as drawn; each of its eight reverts, a name at a time, turned it red."]},
+
+{"v":"v676","d":"17 Sep 2026","t":"ONE UNIT OUT TO CN6-WM ON ADVANCE: AT THE ASK IT IS NOT, AT THE CAP IT STILL FITS","n":["<b>FOLDED: A SINGLE SALT SALE, GOODS GONE AND NOTHING IN.</b> One row enters the sales book: CN6-WM, 1 unit for RM110 dated 17 Sep, collected on the day with RM0 cash in. The rate clears the RM51 floor for a 1 unit lot but sits well under the RM160 ask, and it matches the top of the party's own range at RM110 against a median of RM100 across 7 orders.","<b>UNUSUAL: THE DRAFTER FLAGGED THE ADVANCE, AND THE CAP ANSWERS IT.</b> RM110 goes out unpaid on top of RM100 outstanding, taking CN6-WM to 2 unit on credit against a cap of 2, so the row is at the limit and not over it. Costed at RM48 a unit, the desk's own inventory rate, leaving RM62 on the goods at 56.4%. The inventory gives up 1 unit and books no cash."]},
 
 {"v":"v675","d":"16 Sep 2026","t":"A CUSTOMER'S ORDER WAKES HIS PHONE WITHIN A MINUTE, AND ONLY FOR ORDERS","n":["<b>HIS REPORT OF 16 SEP 2026: AN ORDER CAME IN ON THE STATEMENTS SITE AND NOTHING TOLD HIM.</b> The live store said why. The Worker's nudge had fired and marked the order placed at 22:19 KL, and there was no subscription to wake: the switch that turned alerts on left with the phone app at v387, and the desk never had one.","<b>THE SWITCH IS BACK, ON THE ORDERS CARD, FOR ORDERS ONLY.</b> <b>Alert me to new orders</b> subscribes this device, hands the write key to the service worker so the banner can read what is waiting, and offers <b>Send a test</b> and <b>Turn off</b>. The subscription names its topic, so a row he entered himself, the morning nudge and the fold do not wake him; a subscription naming none still hears everything. The banner reads <b>New customer order</b> and a tap opens Orders. On an iPhone the desk has to be opened from the Home Screen.","<b>WITHIN A MINUTE, NOT A QUARTER-HOUR.</b> A placement writes one marker on the site, and the desk's cron now runs every minute and reads only that marker through the relay, so a minute costs one read on each store rather than a listing of every order ever placed. The drafter's net still runs on the quarter-hour, after the nudge, so neither can swallow the other. The site still has no road to the desk.","<b>THE CHECKS:</b> a new section drives a placement through the schedule to a stubbed push service at 22:07 and 22:15 KL, the banner from the service worker as it ships, and the switch in the master; each of its thirteen claims was proved red by mutation."]},
 
@@ -7490,7 +7492,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='17 Sep 2026, 00:35 KL';
+const LAST_UPDATED='17 Sep 2026, 01:26 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -9738,13 +9740,15 @@ const dAhead=d=>(typeof d==='number'?d:dbet(d))<0;
    headed by the view and lists its parts beneath, so a lead part called what the view is called
    read twice. Each lead is named for what it shows: To do, On hand, The board, Who buys. Ids and
    addresses are unchanged. */
+/* v677, HIS INSTRUCTION OF 17 SEP 2026: the destination is Network, Who buys is Clients, Associates stays, and Map is
+   Coverage. The ids are the addresses and do not move. */
 /* v624, HIS INSTRUCTION OF 14 SEP 2026, RENAME WHERE NECESSARY: a page carries one name, in the rail, across the page
    and in its heading, and a name says what the page is. Overview is the rules and the register of what is breached,
    Forward the next thirty days, Network the associates, Orders the orders placed on the statements site; Pricing's
    one page takes its destination's name. The ids are the addresses and do not move. */
 const TAB_LABEL={today:'To do',forward:'Next 30 days',overview:'Rules',receivables:'Receivables',
-  inventory:'On hand',financials:'Financials',analysis:'Analysis',concentration:'Who buys',
-  network:'Associates',map:'Map',ledger:'Ledger',journal:'Journal',add:'Transaction',sourcing:'Sourcing',
+  inventory:'On hand',financials:'Financials',analysis:'Analysis',concentration:'Clients',
+  network:'Associates',map:'Coverage',ledger:'Ledger',journal:'Journal',add:'Transaction',sourcing:'Sourcing',
   pricing:'Pricing',plans:'Whiteboard',approve:'Approve',orders:'Site orders'};
 const starStr=n=>'★'.repeat(n)+'☆'.repeat(3-n);
 /* v245: THE PRICE TIER LEADS. custBadges() carries a RECENCY badge, Dormant/Loyal/Regular/New,
@@ -11059,7 +11063,7 @@ function tabMap(){
       </tbody></table>
       ${isArea?`<div style="margin-top:10px"><button class="vbtn" onclick="mapPick(null)">Back to ${esc(dist.name)}</button></div>`:''}
     </div>`;})();
-  return `<h1>Map</h1>
+  return `<h1>Coverage</h1>
   <div class="pscope">${prodBadge()}</div>
   <div class="dsc dsclead" style="margin-bottom:12px">${MAP_METRICS[MAP_METRIC]} by ${dist?'mukim, bandar and pekan in '+esc(dist.name)+periodTxt+', each party a dot with no name':'district'+periodTxt+', deeper where the book is concentrated; tap a district to open its mukim, bandar and pekan'}.</div>
   <div class="kpis k4">
@@ -16909,7 +16913,7 @@ function tabConcentration(){
      is the "Carry 80% of revenue" tile, what the scatter's quadrants mean is in its own
      legend and tooltips, and what the calendar carries is in the card that opens on a chip.
      Deleting text that never reached a reader costs a reader nothing. */
-  return `<h1>Who buys</h1>
+  return `<h1>Clients</h1>
   <!-- v401: the caveat that every figure here is observed trade rather than fitted demand or
        a scoring model was half the lead, and it is method prose: it is true of every figure on
        this desk, it never changes, and there is nothing a reader does differently for knowing
@@ -18343,7 +18347,7 @@ function pbCard(){
   const sizes=shownSizes(PROD).slice().sort((a,b)=>a-b);
   return `<div class="card" id="pbCard" style="margin-top:12px">
     <div class="cardh">Print a board <span class="sub">the mark, the figures, the username and a QR to his page</span></div>
-    <div class="dsc">Choose the customer, tick the sizes, then Print, or save it as JPG, PDF or HTML; on the phone the share sheet offers Save Image and Save to Files. The sheet is the crystal, one line per size, his username and a QR that opens his own statements page. The prices are their tier&rsquo;s, the one set on Customers or proposed from what they pay, never above their own recent rate to the nearest five, and lifted only to clear the floor; a product with no tier has no price to print. The same list their statement page shows this week. Copy as text puts the same lines and the link on the clipboard.</div>
+    <div class="dsc">Choose the customer, tick the sizes, then Print, or save it as JPG, PDF or HTML; on the phone the share sheet offers Save Image and Save to Files. The sheet is the crystal, one line per size, his username and a QR that opens his own statements page. The prices are their tier&rsquo;s, the one set on Clients or proposed from what they pay, never above their own recent rate to the nearest five, and lifted only to clear the floor; a product with no tier has no price to print. The same list their statement page shows this week. Copy as text puts the same lines and the link on the clipboard.</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px">
       <select id="pbWho" aria-label="Customer" style="min-height:44px;border:1px solid var(--brd);border-radius:8px;padding:8px 10px;font-size:14px;color:var(--ink);background:var(--wellbg)">${who.map(id=>`<option value="${esc(id)}">${esc(codeOf(id))}</option>`).join('')}</select>
       <button class="vbtn" id="pbPrint" type="button">Print</button>
@@ -18377,7 +18381,7 @@ async function pbSheet(){
   return {code,user,url,rows,soon:!all.length,product:(PRODUCTS[PROD]&&PRODUCTS[PROD].name)||PROD,week:pbWeekMonday()};}
 /* v651: nothing to put on the sheet, and why: no size ticked, or no tier for the product in view */
 function pbEmpty(sh,m){if(sh&&sh.rows.length)return false;
-  if(m)m.textContent=sh&&sh.soon?codeOf(sh.code)+' has no '+sh.product+' tier yet, so there is no price to print: set one on Customers.':'Tick at least one size.';return true;}
+  if(m)m.textContent=sh&&sh.soon?codeOf(sh.code)+' has no '+sh.product+' tier yet, so there is no price to print: set one on Clients.':'Tick at least one size.';return true;}
 /* v537: THE PRINTED BOARD IS THE LOGO AND THE NUMBERS (his instruction, 08 Sep 2026). v538, his
    two calls the same hour: on the identity's own ground, not white, and NO WORDS AT ALL. The
    crystal alone, the username the list is tagged to, then one line per size carrying two bare
@@ -20829,7 +20833,7 @@ const VIEWS=[
   {id:'money', name:'Order book',       lead:'receivables',   parts:['financials']},
   {id:'stock', name:'Stock',            lead:'inventory',     parts:['sourcing']},
   {id:'price', name:'Pricing',          lead:'pricing',       parts:[]},
-  {id:'people',name:'Customers',        lead:'concentration', parts:['network','map']},
+  {id:'people',name:'Network',          lead:'concentration', parts:['network','map']},
   {id:'book',  name:'The book',         lead:'ledger',        parts:['journal','analysis']},
   {id:'enter', name:'Enter',            lead:'add',           parts:['approve','orders','plans']}
 ];
