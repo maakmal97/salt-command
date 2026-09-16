@@ -1,0 +1,61 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-09-16T09:39:17.951Z",
+   "collection": "sales",
+   "row": {
+    "customer": "CS6-BS",
+    "qty": 5,
+    "total": 420,
+    "cost": 240,
+    "cash": 420,
+    "handover": "collected",
+    "date": "2026-09-16",
+    "deliveredQty": 5,
+    "deliveredOn": "2026-09-16",
+    "paidOn": "2026-09-16",
+    "note": "Ordered on the statements site, order 20260916085105-rkoi5a, collected, paid by qr via tng."
+   },
+   "reasoning": "Sold 5 unit of salt to CS6-BS for RM 420, RM 84/unit. Costed at RM 48/unit from the desk's own inventory cost, so RM 180 on the goods at 42.9%. Paid in full and delivered in full on 2026-09-16. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [
+    "CS6-BS typically pays about RM 108/unit for salt across 17 orders; this one is RM 84, 22.2% below that."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-09-16T09:39:17.951Z",
+    "type": "SELL",
+    "party": "CS6-BS",
+    "qty": 5,
+    "total": 420,
+    "status": "Completed",
+    "raw": "SELL CS6-BS 5 salt RM 420, RM 420 cash, 5 moved (order 20260916085105-rkoi5a)",
+    "payload": {
+     "mode": "new",
+     "product": "salt",
+     "direction": "SELL",
+     "party": "CS6-BS",
+     "newId": null,
+     "date": "2026-09-16",
+     "qty": 5,
+     "total": 420,
+     "delivery": 0,
+     "cash": 420,
+     "kg": 5,
+     "assoc": null,
+     "stream": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": "Ordered on the statements site, order 20260916085105-rkoi5a, collected, paid by qr via tng.",
+     "handover": "collected"
+    }
+   },
+   "decidedAt": "2026-09-16T09:39:55.812Z",
+   "decidedBy": "desk"
+  }
+ ]
+}
