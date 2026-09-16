@@ -1,0 +1,321 @@
+<!DOCTYPE html><html lang="en-GB"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Salt Command: the surfaces</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2214%22%20fill%3D%22%2312141f%22/%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2214%22%20fill%3D%22none%22%20stroke%3D%22%232c3350%22%20stroke-width%3D%222%22/%3E%3Crect%20x%3D%2213%22%20y%3D%2217%22%20width%3D%2238%22%20height%3D%227%22%20rx%3D%223.5%22%20fill%3D%22%23e8c66b%22/%3E%3Crect%20x%3D%2213%22%20y%3D%2228.5%22%20width%3D%2227%22%20height%3D%227%22%20rx%3D%223.5%22%20fill%3D%22%237fd7e8%22/%3E%3Crect%20x%3D%2213%22%20y%3D%2240%22%20width%3D%2217%22%20height%3D%227%22%20rx%3D%223.5%22%20fill%3D%22%23b3a6f5%22/%3E%3C/svg%3E">
+<style>
+:root{
+  color-scheme:dark;
+  --glass:rgba(255,255,255,.10); --glass-2:rgba(255,255,255,.16);
+  --brd:rgba(255,255,255,.13);   --brd-2:rgba(255,255,255,.24);
+  --well:rgba(0,0,0,.30);        --veil:rgba(15,14,24,.58);
+  --ink:#f4f5f7; --ink-2:rgba(244,245,247,.66); --ink-3:rgba(244,245,247,.40);
+  --lead:#e8c66b; --counter:#7fd7e8; --bridge:#b3a6f5;
+  --good:#6ee7a8; --warn:#ffcf7a; --bad:#ff7a8a;
+  --r:22px; --r-sm:14px; --pill:999px; --tap:40px;
+  --sh:0 8px 40px rgba(0,0,0,.35); --t:200ms cubic-bezier(.4,0,.2,1);
+  --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+  --mono:'Cascadia Code',Consolas,ui-monospace,Menlo,monospace;
+}
+*{box-sizing:border-box}
+html{font-synthesis:none}
+body{margin:0;color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+  background:
+    radial-gradient(1200px 700px at 8% -10%, #1b2740 0%, rgba(27,39,64,0) 55%),
+    radial-gradient(1000px 800px at 100% 0%, #241b2f 0%, rgba(36,27,47,0) 50%),
+    radial-gradient(1100px 900px at 50% 120%, #0f3a4a 0%, rgba(15,58,74,0) 55%),
+    linear-gradient(160deg,#12141f 0%,#0d1020 60%,#0a0d18 100%);
+  background-attachment:fixed;}
+.orb{position:fixed;border-radius:50%;filter:blur(64px);z-index:0;pointer-events:none;opacity:.32}
+.orb.a{width:420px;height:420px;background:#e8c66b;top:-160px;left:-120px}
+.orb.b{width:380px;height:380px;background:#7fd7e8;top:38%;right:-160px}
+.orb.c{width:440px;height:440px;background:#b3a6f5;bottom:-200px;left:26%}
+.wrap{position:relative;z-index:1;max-width:1120px;margin:0 auto;padding:0 22px 90px}
+.glass{background:var(--glass);-webkit-backdrop-filter:blur(26px) saturate(165%);
+  backdrop-filter:blur(26px) saturate(165%);border:1px solid var(--brd);border-radius:var(--r);
+  box-shadow:var(--sh), inset 0 1px 0 rgba(255,255,255,.16)}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  .glass{background:rgba(28,26,42,.92)}}
+@media (prefers-reduced-transparency:reduce){
+  .glass{background:rgba(28,26,42,.94);backdrop-filter:none;-webkit-backdrop-filter:none}
+  .orb{display:none}}
+
+header.hero{margin:34px 0 26px;padding:30px 30px 26px}
+.kicker{display:block;font-size:11px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;
+  color:var(--lead);margin-bottom:10px}
+h1{margin:0 0 10px;font-size:36px;line-height:1.15;font-weight:700;letter-spacing:-1px}
+h1 .g{color:var(--counter);background:linear-gradient(120deg,var(--lead),var(--bridge) 55%,var(--counter));
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.stand{margin:0;font-size:17px;color:var(--ink-2);max-width:66ch}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.chip{font-size:11.5px;font-weight:700;letter-spacing:.4px;padding:5px 12px;border-radius:var(--pill);
+  background:rgba(255,255,255,.06);border:1px solid var(--brd);color:var(--ink-2)}
+
+.call{display:block;padding:15px 19px;border-radius:var(--r-sm);border:1px solid rgba(255,207,122,.30);
+  background:rgba(255,207,122,.10);font-size:14px;margin:0 0 26px;color:var(--ink)}
+.call b{display:block;font-size:11.5px;text-transform:uppercase;letter-spacing:1px;margin-bottom:3px;
+  color:var(--warn)}
+
+section{margin:0 0 24px;padding:24px 26px}
+h2{margin:0 0 4px;font-size:20px;font-weight:600;letter-spacing:-.3px}
+.seclead{margin:0 0 18px;font-size:13.5px;color:var(--ink-2);max-width:66ch}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px}
+
+.item{background:rgba(255,255,255,.05);border:1px solid var(--brd);border-radius:var(--r-sm);
+  padding:16px 18px;transition:background var(--t),border-color var(--t);display:flex;
+  flex-direction:column;gap:9px}
+.item:hover{background:rgba(255,255,255,.09);border-color:var(--brd-2)}
+.itop{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+h3{margin:0;font-size:15.5px;font-weight:700;letter-spacing:-.2px;overflow-wrap:break-word}
+.who{flex:none;font-size:10.5px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;
+  padding:3px 9px;border-radius:var(--pill);white-space:nowrap}
+.who.him{background:rgba(232,198,107,.16);color:var(--lead)}
+.who.cust{background:rgba(127,215,232,.16);color:var(--counter)}
+.who.guest{background:rgba(179,166,245,.16);color:var(--bridge)}
+.who.paper{background:rgba(110,231,168,.14);color:var(--good)}
+.when{margin:0;font-size:13.5px;color:var(--ink-2);overflow-wrap:break-word}
+.when em{color:var(--ink);font-style:normal;font-weight:600}
+a.go{display:inline-flex;align-items:center;gap:8px;align-self:flex-start;min-height:var(--tap);
+  font-size:12.5px;font-family:var(--mono);font-weight:600;color:var(--counter);text-decoration:none;
+  padding:9px 14px;border-radius:13px;border:1px solid var(--brd-2);background:rgba(255,255,255,.08);
+  transition:var(--t);overflow-wrap:break-word;word-break:break-all}
+a.go:hover{background:rgba(255,255,255,.16);transform:translateY(-1px)}
+a.go::before{content:"\2197";color:var(--lead);font-family:var(--sans);font-size:14px;flex:none}
+a.go.file::before{content:"\2193"}
+a.go.run::before{content:"\25B6";font-size:11px}
+.dead{align-self:flex-start;font-size:12.5px;font-family:var(--mono);color:var(--ink-3);
+  padding:9px 14px;border-radius:13px;border:1px dashed var(--brd);background:var(--well);
+  overflow-wrap:break-word;word-break:break-all}
+.deep{display:flex;flex-wrap:wrap;gap:6px;margin-top:2px}
+.deep a{font-size:12px;font-weight:600;text-decoration:none;color:var(--ink-2);padding:7px 11px;
+  border-radius:var(--pill);background:var(--well);border:1px solid transparent;min-height:34px;
+  display:inline-flex;align-items:center;transition:var(--t)}
+.deep a:hover{color:var(--ink);background:var(--glass-2);border-color:var(--brd-2)}
+.deep a.hot{color:var(--lead)}
+code{font-family:var(--mono);font-size:12.5px;background:var(--well);border:1px solid var(--brd);
+  border-radius:7px;padding:2px 6px;overflow-wrap:break-word;word-break:break-all}
+pre{font-family:var(--mono);font-size:12.5px;background:var(--well);border:1px solid var(--brd);
+  border-radius:var(--r-sm);padding:13px 15px;margin:0;overflow-x:auto;color:var(--ink-2)}
+.note{font-size:12.5px;color:var(--ink-3);margin:0}
+.machine{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
+:where(a,button,summary):focus-visible{outline:2px solid var(--counter);outline-offset:2px;border-radius:6px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+@media (max-width:600px){h1{font-size:28px}header.hero{padding:24px 20px}section{padding:20px 18px}}
+@media print{.orb{display:none!important}body{background:#fff;color:#141821}
+  .glass,.item{background:#fff!important;border-color:#dfe3ec!important;box-shadow:none!important}}
+</style></head>
+<body>
+<div class="orb a"></div><div class="orb b"></div><div class="orb c"></div>
+<div class="wrap">
+
+<header class="hero glass">
+  <span class="kicker">Salt Command &middot; every way in</span>
+  <h1>Thirteen surfaces, and <span class="g">when each one is the right one</span></h1>
+  <p class="stand">Two Workers, one built desk, four things printed on paper and one hand-off.
+  Everything the ledger knows is on the desk; everything a customer holds shows them their own
+  slice and nothing else.</p>
+  <div class="chips">
+    <span class="chip">2 his desk</span><span class="chip">6 the customer's side</span>
+    <span class="chip">4 paper</span><span class="chip">1 hand-off</span>
+  </div>
+</header>
+
+<p class="call"><b>Keep this page off anything shared</b>
+It carries the statements address, which is cryptic on purpose and never appears on the public
+desk. The desk itself is public and needs no sign-in, so it is the screen, not the link, that
+has to be guarded.</p>
+
+<main>
+
+<section class="glass">
+  <h2>His desk</h2>
+  <p class="seclead">One build, two runtimes. The cloud copy is the whole book; the local copy
+  exists for the one thing that must never leave this laptop.</p>
+  <div class="grid">
+
+    <div class="item">
+      <div class="itop"><h3>The cloud desk</h3><span class="who him">him</span></div>
+      <p class="when">Everything day to day: <em>approve what the phone drafted, enter an order,
+      read cost and margin</em>. Seven destinations over eighteen pages, one product in view at a
+      time. Public URL, no sign-in, so guard the screen rather than the link.</p>
+      <a class="go" href="https://salt-command.qyts8mh72kyg.workers.dev/desk">salt-command&hellip;/desk</a>
+      <div class="deep">
+        <a class="hot" href="https://salt-command.qyts8mh72kyg.workers.dev/desk#approve">Approve</a>
+        <a class="hot" href="https://salt-command.qyts8mh72kyg.workers.dev/desk#add">Enter</a>
+        <a class="hot" href="https://salt-command.qyts8mh72kyg.workers.dev/desk#orders">Orders</a>
+        <a href="https://salt-command.qyts8mh72kyg.workers.dev/desk#today">Today</a>
+        <a href="https://salt-command.qyts8mh72kyg.workers.dev/desk#receivables">Order book</a>
+        <a href="https://salt-command.qyts8mh72kyg.workers.dev/desk#inventory">Stock</a>
+        <a href="https://salt-command.qyts8mh72kyg.workers.dev/desk#pricing">Pricing</a>
+        <a href="https://salt-command.qyts8mh72kyg.workers.dev/desk#concentration">Customers</a>
+        <a href="https://salt-command.qyts8mh72kyg.workers.dev/desk#ledger">The book</a>
+      </div>
+    </div>
+
+    <div class="item">
+      <div class="itop"><h3>The laptop desk</h3><span class="who him">him</span></div>
+      <p class="when">One reason only: <em>Names &amp; IDs</em>, putting a real name against a
+      roster code. Plaintext names never reach the cloud, so this panel exists nowhere else. The
+      cloud desk has Add ID and Amend ID instead, which file a name encrypted on the device.</p>
+      <a class="go" href="http://localhost:8765/">localhost:8765</a>
+      <pre>cd "C:\Users\maakm\Claude\Projects\Personal\Commerce\Per-Crm01_Salt Business\30_Published"
+copy "C:\Users\maakm\Claude\Code\salt-command\master\salt_command.html" .
+python serve_desk.py</pre>
+      <p class="note">The copy step is needed because the master moved into the repo on 20 Aug 2026
+      and this server still looks for the file beside itself. Measured 16 Sep 2026: without it the
+      server answers 404. Delete the copy afterwards; the repo file is the only master.</p>
+    </div>
+
+  </div>
+</section>
+
+<section class="glass">
+  <h2>The customer's side</h2>
+  <p class="seclead">A second Worker on its own cryptic address, holding ciphertext and nothing
+  else. No brand anywhere on it, and no real name, because none exists there to use.</p>
+  <div class="grid">
+
+    <div class="item">
+      <div class="itop"><h3>The door</h3><span class="who cust">customer</span></div>
+      <p class="when"><em>To see what a customer sees before you send them the address.</em> One
+      landing page for every account; each opens it with their own password. The lead is two
+      sentences and stays two.</p>
+      <a class="go" href="https://k7m3p2.qyts8mh72kyg.workers.dev/">k7m3p2&hellip;.workers.dev</a>
+    </div>
+
+    <div class="item">
+      <div class="itop"><h3>A customer's page</h3><span class="who cust">customer</span></div>
+      <p class="when">Three tabs behind the password: <em>Statements, Prices, Order</em>. Their
+      level shows as a mark and a colour beside each product, never as a name. Reach it through
+      the owner's list rather than typing a username.</p>
+      <div class="dead">/?u=&lt;username&gt;</div>
+    </div>
+
+    <div class="item">
+      <div class="itop"><h3>The owner's list</h3><span class="who him">him</span></div>
+      <p class="when"><em>To open any account exactly as its holder sees it</em>, and to check a
+      price list is current: a customer's list is sealed at publish time, so it is only as fresh
+      as the last publish. Behind Cloudflare Access, with the token verified again in the Worker.</p>
+      <a class="go" href="https://k7m3p2.qyts8mh72kyg.workers.dev/all">k7m3p2&hellip;/all</a>
+    </div>
+
+    <div class="item">
+      <div class="itop"><h3>Guest links</h3><span class="who him">him</span></div>
+      <p class="when"><em>To mint a board for a stranger a customer introduced</em>, and to revoke
+      it or count its opens later. Minting takes the introducer's username; the guest is quoted two
+      levels above theirs where there is room. Minted inside the owner's list.</p>
+      <a class="go" href="https://k7m3p2.qyts8mh72kyg.workers.dev/all/refs">k7m3p2&hellip;/all/refs</a>
+    </div>
+
+    <div class="item">
+      <div class="itop"><h3>A guest board</h3><span class="who guest">stranger</span></div>
+      <p class="when"><em>What a stranger is handed.</em> One board and nothing else, no script at
+      all. The id in the path is the whole credential, so there is no fixed address to bookmark:
+      open one from the refs list to check it renders.</p>
+      <div class="dead">/g/&lt;id&gt;</div>
+    </div>
+
+    <div class="item">
+      <div class="itop"><h3>The push banner</h3><span class="who cust">customer</span></div>
+      <p class="when"><em>Nothing to open.</em> It fires on its own when a customer's order moves,
+      and says only that there is an update: it holds no session and reads nothing, so it cannot
+      put an amount or a username on a lock screen. Listed so you know it is there.</p>
+      <div class="dead">fires on an order move</div>
+    </div>
+
+  </div>
+</section>
+
+<section class="glass">
+  <h2>Paper</h2>
+  <p class="seclead">Generated, never served. Three are written by the monthly run; the fourth is
+  printed off the desk on the spot.</p>
+  <div class="grid">
+
+    <div class="item">
+      <div class="itop"><h3>Statement of account</h3><span class="who paper">sent</span></div>
+      <p class="when"><em>His copy of what each customer was sent</em>, one per person per issue,
+      named by code. These carry the letterhead deliberately, unlike the site. Folders under older
+      code schemes stay exactly as issued.</p>
+      <a class="go file" href="file:///C:/Users/maakm/Claude/Code/salt-command/statements/2026-09/">statements/2026-09/</a>
+    </div>
+
+    <div class="item">
+      <div class="itop"><h3>Review sheet</h3><span class="who him">him</span></div>
+      <p class="when"><em>To check a whole issue in one pass</em>, every account beside every
+      other. Never send it: putting every account on one page is precisely what a statement must
+      never do.</p>
+      <a class="go file" href="file:///C:/Users/maakm/Claude/Code/salt-command/statements/2026-09/_review_2026-09-01.html">_review_2026-09-01.html</a>
+    </div>
+
+    <div class="item">
+      <div class="itop"><h3>Send sheet</h3><span class="who him">him</span></div>
+      <p class="when"><em>The monthly send</em>: one card per customer with the QR and the
+      password. It holds every password in the issue, so it is gitignored and goes nowhere. The
+      link opens the newest one whatever month it is.</p>
+      <a class="go run" href="skyeopen:///C:/Users/maakm/Claude/Code/salt-command/tools/send-sheet.cmd">open the newest send sheet</a>
+    </div>
+
+    <div class="item">
+      <div class="itop"><h3>Printed board</h3><span class="who guest">stranger</span></div>
+      <p class="when"><em>A price board for someone with no account.</em> Print a board on the
+      Pricing page saves HTML, PDF or JPG: crystal, sizes, username, then a QR back to the site. A
+      stranger is quoted the last level, which is what the board shows.</p>
+      <a class="go" href="https://salt-command.qyts8mh72kyg.workers.dev/desk#pricing">desk#pricing &rarr; Print a board</a>
+    </div>
+
+  </div>
+</section>
+
+<section class="glass">
+  <h2>The hand-off</h2>
+  <p class="seclead">One surface belongs to another book entirely, and a customer still lands on
+  it from here.</p>
+  <div class="grid">
+    <div class="item">
+      <div class="itop"><h3>QR Command, the pay site</h3><span class="who cust">customer</span></div>
+      <p class="when"><em>Where a customer goes when they tap a payment rail on an order.</em> The
+      order page carries the rails and the names only, never an account number. Its own admin page
+      is behind Access, and the switches live there.</p>
+      <a class="go" href="https://jb3zkzyqguu5.qyts8mh72kyg.workers.dev/">jb3zkzyqguu5&hellip;.workers.dev</a>
+      <a class="go" href="https://jb3zkzyqguu5.qyts8mh72kyg.workers.dev/admin/">&hellip;/admin/</a>
+    </div>
+  </div>
+</section>
+
+<section class="glass">
+  <h2>Machinery, not surfaces</h2>
+  <p class="seclead">Nothing here shows the book. They are where you look when something that
+  should have happened by itself did not.</p>
+  <div class="machine">
+
+    <div class="item">
+      <div class="itop"><h3>The command line</h3><span class="who him">him</span></div>
+      <p class="when"><em>The whole ship in one command</em>: drain, build, test, deploy on an id
+      change, commit, push, then prove master, the build, the live site and origin all agree.</p>
+      <pre>cd C:\Users\maakm\Claude\Code\salt-command
+node tools/update.mjs</pre>
+    </div>
+
+    <div class="item">
+      <div class="itop"><h3>Actions</h3><span class="who him">him</span></div>
+      <p class="when"><em>When a phone approval should have folded and did not.</em> Only this job
+      does the whole job: fold, gate, deploy, prove, mark committed, re-seed, publish, suite. Read
+      the step list, because a skipped step is green too.</p>
+      <a class="go" href="https://github.com/maakmal97/salt-command/actions">github.com/maakmal97/salt-command/actions</a>
+    </div>
+
+    <div class="item">
+      <div class="itop"><h3>Workers Builds</h3><span class="who him">him</span></div>
+      <p class="when"><em>When the phone is serving an older build than the repo.</em> It deploys
+      the tip of master and stops: it never folds, never marks a draft committed, never writes D1,
+      and its failure is silent. Read its build logs, not the dashboard summary.</p>
+      <div class="dead">Cloudflare &rarr; salt-command &rarr; Builds</div>
+    </div>
+
+  </div>
+</section>
+
+</main>
+</div>
+</body></html>
