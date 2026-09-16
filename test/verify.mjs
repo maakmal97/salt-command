@@ -2813,12 +2813,12 @@ section("Pricing — each book prices off its own quote (round 5, his call 1)");
   const { w } = await openMaster();
   const read = (expr) => JSON.parse(w.eval("JSON.stringify(" + expr + ")"));
   w.eval("setProd('salt');recompute();");
-  ok(read("pxInputs().quoteRate") === 56, "salt's quoteRate is its own dearest tier, RM56");
+  ok(read("pxInputs().quoteRate") === 56, "salt's quoteRate is its own most expensive tier, RM56");
   ok(JSON.stringify(read("pxPolicy().tiers")) === JSON.stringify(read("supplierQuote.tiers")),
     "salt's policy tiers are the salt quote's");
   const saltB = read("buyTaper()");
   w.eval("setProd('oil');recompute();");
-  ok(read("pxInputs().quoteRate") === 10, "oil's quoteRate is its OWN dearest tier, RM10, not salt's 56");
+  ok(read("pxInputs().quoteRate") === 10, "oil's quoteRate is its OWN most expensive tier, RM10, not salt's 56");
   ok(JSON.stringify(read("pxPolicy().tiers")) === JSON.stringify(read("oilQuote.tiers")),
     "oil's policy tiers are the oil quote's");
   const oilB = read("buyTaper()");
@@ -3170,7 +3170,7 @@ section("Oil — the ladder at every size, lawful between (round 5 his call 5, r
       ok(ends.length === 2 && ends[0].rate === 60 && ends[1].rate === 80,
         `while his two stated ends print verbatim through it, the rising one included (${ends.map((e) => e.q + "u at " + e.rate).join(", ")})`);
     }
-    ok(cheaper, "a stated Tier 1 is at or under the ask at every printed size, so a board carrying both reads dearer left to right");
+    ok(cheaper, "a stated Tier 1 is at or under the ask at every printed size, so a board carrying both rises left to right");
     ok(clears, "and every rung of it clears break-even on today's cost, so none carries a gap");
     /* AND A BOOK WITH NO SECOND TIER RETURNS NOTHING RATHER THAN SALT'S. Without the explicit
        tier1:null in LADDER_BY, ladderFor spreads LADDER underneath and oil inherits salt's ends:
@@ -3199,11 +3199,20 @@ section("Oil — the ladder at every size, lawful between (round 5 his call 5, r
     ok(rowsSalt.length === 1 && rowsSalt[0].code === "T2" && rowsSalt[0].dflt === true,
       `the payload is the default ask alone, at row zero (${rowsSalt.map((r) => r.code).join(", ")})`);
     /* 14 Sep 2026: against the engine's own two figures at the smallest size, not RM70 and RM60. The ask is derived,
-       and v639's count moved it to RM80, which turned this red while row zero went on quoting the ask. */
+       and v639's count moved it to RM80, which turned this red while row zero went on quoting the ask.
+       16 Sep 2026: AND v673's COUNT BROUGHT THE FLOORS DOWN, so the forced book's ask at half a unit met Tier 1's stated
+       RM60 (it meets it at 1 and 2 units too, where Tier 1 is held to the ask), and the smallest size could no longer tell
+       the two rows apart. Each row is now matched by code to the engine's own figure for it at every size, and the two
+       must differ at one size at least, so a row carrying the other's prices shows on any book. */
     const L0 = JSON.parse(w.eval("JSON.stringify(priceLadder(shownSizes('salt')[0]))"));
-    const L0t1 = JSON.parse(w.eval("JSON.stringify(PRICING_ENGINE.ladderRow([shownSizes('salt')[0]], pxCost(), Object.assign({},pxPolicy(),{tier1:{0.5:60, 12.5:875},tierRule:null})))"));
-    ok(rowsSalt[0].prices[0] === L0.ask.total && L0t1.length === 2 && L0t1[1].code === "T1" && L0t1[0].prices[0] > L0t1[1].prices[0],
-      `so row zero still quotes the ask and not the cheaper tier, on this book and on one forced to two (${rowsSalt[0].prices[0]}; forced ${L0t1[0].prices[0]} then ${L0t1[1].prices[0]})`);
+    const forced = JSON.parse(w.eval("JSON.stringify((function(){var C=pxCost(),P=Object.assign({},pxPolicy(),{tier1:{0.5:60, 12.5:875},tierRule:null}),S=shownSizes('salt');"
+      + "var fig=function(k){return S.map(function(q){var L=PRICING_ENGINE.priceLadder(q,C,P);return L&&L[k]&&L[k].total!=null?+L[k].total:null;});};"
+      + "return {rows:PRICING_ENGINE.ladderRow(S,C,P),ask:fig('ask'),t1:fig('tier1')};})())"));
+    const [f0, f1] = forced.rows;
+    ok(rowsSalt[0].prices[0] === L0.ask.total && forced.rows.length === 2 && f0.code === "T2" && f1.code === "T1"
+      && JSON.stringify(f0.prices) === JSON.stringify(forced.ask) && JSON.stringify(f1.prices) === JSON.stringify(forced.t1)
+      && f0.prices.some((x, i) => x > f1.prices[i]),
+      `so row zero still quotes the ask and not the cheaper tier, on this book and on one forced to two (${rowsSalt[0].prices[0]}; forced ${f0.code} ${f0.prices.join(",")} then ${f1.code} ${f1.prices.join(",")})`);
     /* ============ v566: THE THREE GATES AND THE ONE RELATION ============ */
     /* A TIER STATED AT ONE SIZE IS NOT STATED. {0.5:60,"0.50":60} is two KEYS naming one size: it
        passed the ks.length<2 count, landed hi===lo, and made the exponent Math.log(1)/Math.log(1),
@@ -3265,13 +3274,13 @@ section("Oil — the ladder at every size, lawful between (round 5 his call 5, r
   ok(cSalt.rule === null && Math.abs(cSalt.eff - cSalt.effEx) < 0.001 && cSalt.eff > cSalt.landed,
     `and salt carries no rule, so it still prices off the measured leak (${cSalt.eff} on ${cSalt.landed})`);
   w.eval("setProd('oil');recompute();");
-  let strict = true, dearer = true;
+  let strict = true, totalRises = true;
   for (let i = 1; i < rows.length; i++) {
     if (i < 5 && !(rows[i].ask / rows[i].q < rows[i - 1].ask / rows[i - 1].q - 1e-9)) strict = false;   // his five stated sizes
-    if (!(rows[i].ask > rows[i - 1].ask + 1e-9)) dearer = false;
+    if (!(rows[i].ask > rows[i - 1].ask + 1e-9)) totalRises = false;
   }
   ok(strict, "every larger size he stated is STRICTLY cheaper per unit, 130 at 10 down to 450 at 50");
-  ok(dearer, "and every size, 80 and 100 included, is strictly dearer in total, so no lot is beaten by buying smaller");
+  ok(totalRises, "and every size, 80 and 100 included, is strictly higher in total, so no lot is beaten by buying smaller");
   w.eval("setProd('salt');recompute();");
   try { w.close(); } catch (e) { }
 }
@@ -7246,7 +7255,7 @@ section("Statements — guest referral links and the introducer they follow (v56
     const pairs = twoTier ? twoTier.sizes.map((r, i) => [r.price, gTwo.products
       .find((x) => x.product === twoTier.product).sizes[i].price]) : [];
     ok(pairs.length > 0 && pairs.every(([a, b]) => a <= b),
-      "and a link off a cheaper introducer is never dearer than one off a nearer-the-top introducer, at any size");
+      "and a link off a cheaper introducer is never more expensive than one off a nearer-the-top introducer, at any size");
 
     ok(/the only price for this product/.test(h1) === gOne.products.some((p) => p.fellBack),
       "a one-tier product says its price is its only one rather than implying a discount");
@@ -7297,7 +7306,7 @@ section("Statements — guest referral links and the introducer they follow (v56
       return copy;
     };
     /* v656: THE LADDER ANSWERS FIRST, so a broken pair of ends cannot empty a guest board at all: the
-       cheaper link is the ladder's first level and the dearer one its last. The fallback is what
+       cheaper link is the ladder's first level and the other one its last. The fallback is what
        answers a book with NO ladder, and that is where the one-stated-end case is now forced, because
        an assertion aimed at a path the data can no longer reach is an assertion that sleeps. */
     const noLadder = (tier1) => {
@@ -8178,6 +8187,7 @@ section("v521: the fold as one call");
   ok(F.checkNotes({ ...good, rows: { [ids[0]]: { note: "short", rowNote: null, cost: null } } }, "v999", ids).some((x) => /paragraph/.test(x)), "a row note that is not a paragraph is refused");
   ok(F.checkNotes({ ...good, notes: ["<b>ONE ROW.</b> A paragraph with an em-dash \u2014 in it, which the house does not write, at length."] }, "v999", ids).some((x) => /em-dash/.test(x)), "an em-dash is refused");
   ok(F.checkNotes({ ...good, stockNote: "Two kg went out on the day, which is the wrong word." }, "v999", ids).some((x) => /kg/.test(x)), "kg is refused");
+  ok(F.checkNotes({ ...good, stockNote: "The lot came in D\u0065ARER than the last one, which the house does not write." }, "v999", ids).some((x) => /never the word/.test(x)), "the word he banned on 24 Aug 2026 is refused in any form, capitals included (v672)");
   ok(F.checkNotes({ ...good, rows: { ...good.rows, extra: { note: "a paragraph that is long enough to pass the length check on its own merits", rowNote: null, cost: null } } }, "v999", ids).some((x) => /not in the batch/.test(x)), "a row the batch does not carry is refused");
   ok(F.nextVersion("v520") === "v521" && F.nextVersion("junk") === null, "the next version is the master's plus one");
   const sch = F.schemaFor(ids);
@@ -12739,7 +12749,38 @@ section("v671: the proposal moves a level on how a customer buys: late, small, l
       "the rule reaches a proposed customer's live quote, Gold at a unit and Silver at twelve and a half, and leaves a held Gold customer at Gold: " + JSON.stringify(live));
   } finally { await new Promise((r) => setTimeout(r, 200)); try { w71.close(); } catch (e) { /* best effort */ } }
 }
-section("v672: the three headings that called the goods stock now call them inventory (hard rule 5)");
+section("v672: the word he banned lives on only in the dated records");
+{
+  /* v672: HIS RULE OF 24 AUG 2026 BANS ONE WORD IN EVERY FORM, on every surface, comments included, and it had come back: in
+     the Pricing warning for a board whose Tier 1 costs more than its Tier 2, in 20 comments (one of them the pricing engine's),
+     in nine lines of this file and in three of the docs. The master's evolution array, master/changelog.json and the ledger's
+     notes are dated records and keep what they said, as the Journal always has; everything else the desk serves, and every
+     file a session edits, is read here. The pattern is escaped so that this file passes its own scan. */
+  const banned = /(^|[^a-z])d\u0065ar(er|est|ly)?(?![a-z])/i;
+  const notEvolution = (lines) => {
+    const i = lines.findIndex((l) => l.startsWith("const evolution=["));
+    if (i < 0) return lines;
+    let j = i;
+    while (j + 1 < lines.length && !/\];\s*$/.test(lines[j])) j++;
+    return lines.slice(0, i).concat(lines.slice(j + 1));
+  };
+  const files = ["CLAUDE.md", "master/salt_command.html", "public/desk.html", "test/verify.mjs"];
+  for (const [dir, ext] of [["engine", ".mjs"], ["src", ".js"], ["stmt", ".js"], ["tools", ".mjs"], ["docs", ".md"], ["design", ".css"]])
+    for (const f of readdirSync(join(REPO, dir))) if (f.endsWith(ext)) files.push(dir + "/" + f);
+  const hits = [];
+  for (const f of files) {
+    const lines = readFileSync(join(REPO, f), "utf8").split("\n");
+    for (const l of f.endsWith(".html") ? notEvolution(lines) : lines) {
+      const m = l.match(banned);
+      if (m) hits.push(f + ": ..." + l.slice(Math.max(0, m.index - 40), m.index + 40).trim() + "...");
+    }
+  }
+  ok(["engine/pricing.mjs", "src/worker.js", "stmt/page.js", "tools/foldcall.mjs", "docs/DESK.md", "design/desk.css"].every((f) => files.includes(f)),
+    `the scan reads the master and the built desk outside their evolution, this file, and every module, doc and stylesheet behind them (${files.length} files)`);
+  ok(hits.length === 0, "the word he banned appears nowhere outside the dated records: " + hits.slice(0, 6).join(" | "));
+}
+
+section("v674: the three headings that called the goods stock now call them inventory (hard rule 5)");
 {
   /* HIS COPY RULE OF 11 SEP 2026. The goods are INVENTORY in copy; STOCK is the rail's
      destination. Three headings still carried the rail's word for the goods and rule 5 named

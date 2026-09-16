@@ -4635,7 +4635,7 @@ const PRICING_ENGINE=(function(){
       pxInputs computes it; pxRecentBuyRate over lots received in the window, falling back
       to the most recent lot's rate when nothing was bought in 30 days, never undefined).
       The old argument above stays because it is the case against this setting: a single
-      cheap lot no longer drops the whole board the day it lands, and a single dear one no
+      cheap lot no longer drops the whole board the day it lands, and a single costly one no
       longer spikes it, which is what the average buys; what it costs is that the board can
       sit under the latest lot for up to a month after a genuine rise. The latest lot's rate
       remains the fallback when no I.repl is supplied, so the stack cannot go undefined;
@@ -5255,6 +5255,7 @@ const PROD_OPENING={
     "stated": 20
   }
 };
+/* COUNTED AT v673 on 2026-09-16: the salt inventory held 14.5 against 9.5 on the roll, a drift of 5. A COUNT AND NOT A ROLL, so COUNT_ON.salt moves to 2026-09-16. <b>COUNTED: 14.5 UNIT SALT ON HAND, 16 SEP, AGAINST 9.5 ON THE BOOK.</b> A hand count of salt on 16 Sep returns 14.5 unit where the book carried 9.5, a drift of plus 5 unit, and on his word the count sets the stated inventory and moves the salt count date from 15 Sep to 16 Sep. <b>Flagged:</b> the drafter notes the 5 unit are unaccounted for and that a count always wins, the gap booking as shrinkage across every unit sold. The dossier offers no cause, so none is recorded. On the wider base the floors fall: floor1 RM60.25 to RM51, floor2 RM120.50 to RM101.99, floor125 RM753.15 to RM637.44, self use 80.95 to 75.95, ask1 unchanged at RM160. Stock cost holds at RM48 a unit against replacement RM46, reorder at 15. The cause of the drift is left outstanding. */
 /* ROLLED AT v665: 5 unit to CS6-BS on 2026-09-16, so 14.5 less 5 is 9.5. A ROLL AND NOT A COUNT; COUNT_ON is untouched. Salt was last counted on 15 Sep and the position was 14.5 unit, already below the reorder mark of 15, with 10.5 unit promised and nothing owed out. */
 /* ROLLED AT v662: 5 unit to CS6-BS-R on 2026-09-16, so 19.5 less 5 is 14.5. A ROLL AND NOT A COUNT; COUNT_ON is untouched. The oil of 10 unit and the salt of 5 unit are both marked not landed, so nothing has come off the shelf on this fold. The salt count of 15 Sep stands at 19.5 unit against a reorder mark of 15 and 10.5 unit promised. */
 /* ROLLED AT v650: 1 unit to CR3-DAM on 2026-09-15, 2.5 unit to CE4-CHE on 2026-09-15, so 23 less 3.5 is 19.5. A ROLL AND NOT A COUNT; COUNT_ON is untouched. Salt was counted on 15 Sep and stands at 23 in stock, well above the reorder mark of 15, with 10.5 promised and nothing owed out. Neither of the two sells has landed against the count yet. */
@@ -5301,9 +5302,9 @@ const PROD_OPENING={
 /* ROLLED AT v439: 1 unit to CA7-JTR on 2026-09-01, 6 unit to CK4-SEN on 2026-09-01, 1 unit to CR3-DAM on 2026-09-01, so 8.25 less 8 is 0.25. A ROLL AND NOT A COUNT; COUNT_ON is untouched. Eight of the eight and a quarter unit on the shelf went out today across four rows, leaving 0.25 unit against 3 unit already promised: CE4-CHE's half unit owed out and CY2-NIL's 2.5 unit pending. The book is 2.75 unit short of its own commitments and sourcing is now the first decision on it. */
 /* ROLLED AT v404: 5 unit to CE4-AD on 2026-08-29, so 13.25 less 5 is 8.25. A ROLL AND NOT A COUNT; COUNT_ON is untouched. */
 /* ROLLED AT v399: 3 unit to CH4-KS on 2026-08-28, so 16.25 less 3 is 13.25. A ROLL AND NOT A COUNT; COUNT_ON is untouched. */
-const STATED_STOCK=9.5;
+const STATED_STOCK=14.5;
 const COUNT_ON={
-  "salt": "2026-09-15",
+  "salt": "2026-09-16",
   "oil": "2026-09-09"
 };
 /* EVERY COUNT, AS TAKEN (v504, 07 Sep 2026): product, date, the figure counted, what the roll said and the drift, negative when units are missing. The fold appends one line per count. A count with no drift bounds a cycle and charges nothing; the 24 Aug anchor is one. Seeded from the fold notes of v473 (02 Sep, 10.5 against 18.75), v489 (04 Sep, 9.8 entered net of a rolled sale, no drift) and v498 (06 Sep, 7 against 8.3); the oil count of 23 Aug has no recorded drift. The leak is charged from these: the units missing over the last three cycles, at landed, over the units sold in them. */
@@ -5316,7 +5317,8 @@ const COUNTS=[
   {"product":"salt","date":"2026-09-08","qty":1,"was":6,"drift":-5},
   {"product":"oil","date":"2026-09-09","qty":60,"was":75,"drift":-15},
   {"product":"salt","date":"2026-09-14","qty":1.5,"was":8.94,"drift":-7.44},
-  {"product":"salt","date":"2026-09-15","qty":0,"was":1.5,"drift":-1.5}
+  {"product":"salt","date":"2026-09-15","qty":0,"was":1.5,"drift":-1.5},
+  {"product":"salt","date":"2026-09-16","qty":14.5,"was":9.5,"drift":5}
 ];
 const purchases=[
   {"date":"2026-06-27","qty":12.5,"total":800,"supplier":"SF6-KLC","status":"paid","rid":"p001"},
@@ -5680,7 +5682,7 @@ const ONE_OFFS=[
   {"id":"CM6-HCM","date":"2026-07-14","note":"One-off; RM104/unit is an outlier."}
 ];
 /* v512, 07 Sep 2026: moved to 06:21:06.691Z past a second entry of the CR3-DAM sale already folded at v510, so the phone stops showing it as provisional; no row folded. */
-const QUEUE_COMMITTED="2026-09-16T10:18:20.969Z";
+const QUEUE_COMMITTED="2026-09-16T14:03:48.209Z";
 /* RETIRED AT v656 on 2026-09-16, his decision of 15 Sep off the pricing workbook: the board is the ladder, so a stated price no longer decides it and oil's five are cleared rather than left unread. The stranger's ask on oil moves from his RM130, 240, 330, 400 and 450 to Bronze at RM230, 440, 650, 850 and 1,040, with 80 and 100 unit at RM1,640 and RM2,000. The old five sat a hair over break-even (the 50 unit tier read 0.93x, RM32.20 UNDER its floor) because they were typed in July against a cost that has moved since; the ladder is struck on today's COGS and moves with it. No customer's price moves with this: every named customer is quoted their own tier capped at what they pay, and a stranger has no history to cap against. The hide list is untouched and still takes a size off the board. */
 /* HIS INSTRUCTION, 09 SEP 2026, AFTER THE v551 OIL COUNT: "The desk quotes to 450, by lowering margin, then for others, quote proportionately." The count read a 23.08 per cent leak from his own figures and lifted the 50 unit oil floor to RM482.20, above the RM450 he had stated, and v353 had the desk lift any stated price that sat under its floor. From v552 it lifts a DERIVED ask only: a price he has set is quoted as set, the gap to break-even is reported beside it rather than hidden, and the 50 unit tier reads 0.93x with RM32.20 under. His other four oil tiers are untouched and already step the margin down proportionately into it: 1.35x, 1.24x, 1.14x, 1.04x, 0.93x. Recorded as his decision, not an error, and the drafter will flag a 50 unit oil sale as under floor for the same reason the board does. */
 const PRICE_SET={
@@ -6738,8 +6740,8 @@ let NAME_VAULT=null;
    is built on what the inventory DID cost. Nothing here is booked until a lot is recorded as a buy.
 
    AND pxQuoteRate() DOES NOT MOVE EITHER, which is a coincidence worth writing down rather
-   than a bug. It takes the DEAREST tier, because restocking in the size usually bought is the
-   honest read, and the dearest tier is RM56 on both ladders: it was the 12.5 unit step and it
+   than a bug. It takes the MOST EXPENSIVE tier, because restocking in the size usually bought is the
+   honest read, and the most expensive tier is RM56 on both ladders: it was the 12.5 unit step and it
    is now the 6.25 unit step. The ladder got cheaper everywhere while its ceiling stood still.
 
    THE RATE FALLS AT EVERY STEP AND NO TIER IS BEATEN BY SPLITTING IT: 56, 52, 50, 44, 43.
@@ -6924,7 +6926,11 @@ const quoteFor=p=>{const f=QUOTES[p||PROD];return f?f():null;};
    v324 onward, which tabJournal maps in full; master/changelog.json carries every entry
    ever written and is the record. So a bump PREPENDS its entry. Replacing the array,
    which both comments invited, silently drops the whole window. */
-const evolution=[{"v":"v672","d":"16 Sep 2026","t":"THE THREE HEADINGS THAT CALLED THE GOODS STOCK NOW CALL THEM INVENTORY","n":["<b>HIS COPY RULE OF 11 SEP 2026, FINISHED.</b> The goods are <b>inventory</b> in copy and <b>Stock</b> is the rail's destination. Three headings still used the rail's word for the goods, and the rule named all three: <b>Spent on stock</b> and <b>Stock behind it</b> on Financials, and <b>Stock reconciliation</b> on On hand. They now read <b>Spent on inventory</b>, <b>Inventory behind it</b> and <b>Inventory reconciliation</b>, beside the Inventory on hand, Inventory value and Inventory count the desk already carried.","<b>WHAT IT TOUCHES: THREE WORDS.</b> No figure, no total and no rate moves, and no row is read differently. The destination is untouched: the rail's tab and the view behind it still read Stock, which is what the rule asks for.","<b>THE SWEEP, AND WHAT IT LEFT STANDING.</b> Four other uses of the word remain in the desk. The tab and the VIEWS row behind it are the destination. <b>Stock cover</b> on Today is the name of the measure rather than a word for the goods. The Cash and Stock pair on a place's preview, and the <b>Stock count:</b> line a queued count carries, are the two that could go either way: the second is entry data the drafter reads rather than copy on a page, so both are put to him rather than changed here. <b>THE CHECKS:</b> one assertion that the three headings read Inventory and none still reads Stock, one that the destination itself is untouched, and the scan proved red by putting a single heading back."]},
+const evolution=[{"v":"v674","d":"16 Sep 2026","t":"THE THREE HEADINGS THAT CALLED THE GOODS STOCK NOW CALL THEM INVENTORY","n":["<b>HIS COPY RULE OF 11 SEP 2026, FINISHED.</b> The goods are <b>inventory</b> in copy and <b>Stock</b> is the rail's destination. Three headings still used the rail's word for the goods, and the rule named all three: <b>Spent on stock</b> and <b>Stock behind it</b> on Financials, and <b>Stock reconciliation</b> on On hand. They now read <b>Spent on inventory</b>, <b>Inventory behind it</b> and <b>Inventory reconciliation</b>, beside the Inventory on hand, Inventory value and Inventory count the desk already carried.","<b>WHAT IT TOUCHES: THREE WORDS.</b> No figure, no total and no rate moves, and no row is read differently. The destination is untouched: the rail's tab and the view behind it still read Stock, which is what the rule asks for.","<b>THE SWEEP, AND WHAT IT LEFT STANDING.</b> Four other uses of the word remain in the desk. The tab and the VIEWS row behind it are the destination. <b>Stock cover</b> on Today is the name of the measure rather than a word for the goods. The Cash and Stock pair on a place's preview, and the <b>Stock count:</b> line a queued count carries, are the two that could go either way: the second is entry data the drafter reads rather than copy on a page, so both are put to him rather than changed here. <b>THE CHECKS:</b> one assertion that the three headings read Inventory and none still reads Stock, one that the destination itself is untouched, and the scan proved red by putting a single heading back. Built as v672 and re-landed as v674 after v672 and v673 shipped from the laptop under it.","<b>AND THE EVOLUTION ARRAY IS NOT ONE ENTRY.</b> This comment and tools/changelog.mjs both said it was, and this fold believed them and replaced the array to bump the version, dropping 347 entries of the Journal's own window before the diff caught it. The array carries that window from v324; master/changelog.json carries every entry ever written. Both comments now say a bump PREPENDS, and so does hard rule 1."]},
+
+{"v":"v673","d":"16 Sep 2026","t":"A HAND COUNT OF SALT CARRIES: FIVE UNIT MORE ON THE FLOOR, AND THE FLOORS COME DOWN","n":["<b>FOLDED: ONE COUNT, SALT, DATED 16 SEP.</b> The desk counted 14.5 unit of salt by hand against a book figure of 9.5, a drift of plus 5, and on his word the count carries. The stated salt inventory is set to 14.5 and the salt count date moves from 15 Sep to 16 Sep. No party, no cash and no order sits behind this row, so nothing is owed out and nothing is promised against it.","<b>UNUSUAL: A SECOND COUNT INSIDE A DAY, AND THE GAP IS UNEXPLAINED.</b> The previous salt count was only 15 Sep, so the plus 5 drift arises over a single day and the dossier gives no reason for it. The inventory took the count as the ruling figure and reset the floors on the larger base: floor1 from RM60.25 to RM51, floor2 from RM120.50 to RM101.99, floor125 from RM753.15 to RM637.44, self use from 80.95 to 75.95. The ask holds at RM160."]},
+
+{"v":"v672","d":"16 Sep 2026","t":"THE WORD HE BANNED ON 24 AUG IS OUT OF THE DESK AND ITS CODE, AND THE FOLD CAN NO LONGER WRITE IT","n":["<b>HIS RULE OF 24 AUG 2026.</b> One word is banned in every form, on every surface, comments included, and it had come back. The Pricing warning for a board whose Tier 1 costs more than its Tier 2 now says so in those words, and that the board falls to the right where it should rise. Twenty uses in eighteen code comments went the same way, one of them the pricing engine's, and nine lines of the suite. Nothing prices, counts or draws differently.","<b>THE DATED RECORDS KEEP WHAT THEY SAID.</b> The evolution entries, the changelog and the ledger's notes are left as written, as the Journal always is. A new suite section reads the master and the built desk outside their evolution, the engine, the Worker, the statements site, the tools, the design layer, the docs and the suite itself, and fails on the word in any form, capitals included.","<b>AND THE FOLD CANNOT BRING IT BACK.</b> The fold's own check now refuses a note carrying the word, as it refuses an em-dash or kg, and its house style names it, so a new entry is sent back to be rewritten. <b>THE CHECKS:</b> 3 assertions and 10 mutations: 9 turned the suite red, and the word written into an evolution entry left it green, which is the exemption working."]},
 
 {"v":"v671","d":"16 Sep 2026","t":"THE PROPOSAL MOVES A LEVEL ON HOW A CUSTOMER BUYS: LATE, SMALL, LOYAL, AND SALES SLOWING","n":["<b>HIS RULES OF 16 SEP 2026.</b> The level a customer is proposed, read off what they pay, now moves on how they buy and on the stock. A customer who buys rarely and has been late twice drops a level at every size. A frequent small buyer drops a level from three units. A loyal customer buying bigger rises a level from three units, never past Platinum. And while sales have sat under half the typical for three days running, every level is offered one better, never past Platinum, until the next lot lands. <b>A tier he has set is never moved by a rule</b>, only offered one; but a proposal is what an un-held customer is quoted, so these rules move live prices.","<b>NOTHING BETTER ON HALF A UNIT OR A UNIT, HIS DECISION THAT DAY.</b> The plan gave frequent small buyers a better level on small orders. Measured first, the three of them were already proposed Titanium, where the only better level is Ambassador, his word alone, so the benefit had nowhere to go and the rule's only effect was the drop. He kept the drop and let their own rate carry the small price, which it already does: a card is never above what they pay, and they pay a keen rate on exactly those sizes.","<b>WHAT MOVES TODAY: FOUR CUSTOMERS, 28 PRICES, NET +RM650.</b> CM4-MK, loyal and buying bigger, is cheaper from three units, twelve and a half units RM1,060 to RM960. CR3-DAM, CA4-DAM and CC5-OKR, frequent and small, are dearer from three units, RM860 to RM960, and unchanged below. No slowdown is on for either product: salt last restocked on 15 Sep and oil on 8 Sep.","<b>A RESTOCK ENDS A PROMOTION, AND A FORCED CHECK FOUND IT DID NOT.</b> The slowdown was first counted straight through a lot, so a restock ended a promotion for a day and the next day's reading started it again; while sales stayed flat, no lot ever ended one. The count now stops at the latest lot, so only three quiet days after it start a new promotion. <b>THE CHECKS:</b> 9 assertions, each rule proved on forced inputs, the slowdown on forced sales and lots including a restock mid-slowdown, and a held tier left alone on a live quote. 10 mutations, each red."]},
 
@@ -7478,7 +7484,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='16 Sep 2026, 20:55 KL';
+const LAST_UPDATED='16 Sep 2026, 23:10 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -8014,7 +8020,7 @@ const PRICE={
      on the 12.5 unit lot, set when effective cost was RM60.93 and the computed floor there
      was RM952. On today's basis the computed floor is RM808.70, so the typed figure was
      RM16 ABOVE it and, at RM66/unit, above the RATE of the 6.25 lot: the cheapest two tiers
-     had to quote a bigger lot dearer per unit than a smaller one. It is not a margin, it is
+     had to quote a bigger lot at a higher rate per unit than a smaller one. It is not a margin, it is
      a leftover, and his rule is that only the margin may move a price. */
   lotFloor:{},
   retailExp:0.25,         // per-unit decay inside retail
@@ -8131,7 +8137,7 @@ const PRICE_ENGINE={
   /* THE MARGIN IS NOT TYPED. It is REGRESSED from what this book has actually achieved,
      size by size, and refits itself as orders accumulate. See marginCurve(). What is typed
      is a single hand on the tiller: a shift applied to the whole fitted curve, at zero
-     until he wants to be dearer or cheaper across the board. */
+     until he wants to be more expensive or cheaper across the board. */
   marginShift:0,
   minPoints:8,          // below this there is not enough trade to fit anything honest
   fallbackMargin:0.42,  // and this is used instead, stated rather than inferred
@@ -8375,7 +8381,7 @@ function marginCurve(){
   let sxy=0,sxx=0;rows.forEach(p=>{sxy+=(p.x-mx)*(p.y-my);sxx+=(p.x-mx)*(p.x-mx);});
   let b=sxx>1e-9?sxy/sxx:0;
   /* margin may not RISE with size. On a thin book one big well-priced order can tilt the
-     line upward, which would quote bulk dearer per unit than retail and invert the ladder. */
+     line upward, which would quote bulk at a higher rate per unit than retail and invert the ladder. */
   if(b>0)b=0;
   const a=my-b*mx;
   let ssr=0,sst=0;rows.forEach(p=>{const f=a+b*p.x;ssr+=(p.y-f)*(p.y-f);sst+=(p.y-my)*(p.y-my);});
@@ -8597,7 +8603,7 @@ function enforceStrict(rows){
   let changed=true,guard=0;
   while(changed&&guard++<12){
     changed=false;
-    /* across the row: each tier strictly dearer than the one before it */
+    /* across the row: each tier strictly more expensive than the one before it */
     rows.forEach(r=>{
       for(let i=r.cells.length-2;i>=0;i--){
         const c=r.cells[i], nx=r.cells[i+1];
@@ -8676,7 +8682,7 @@ function anchorsFor(prod){
      markups can round to the same five, and oil did exactly that at a half unit: Tier I and
      Tier II both came out at RM15. The solver would normally break that tie, but it treats an
      anchor as immovable and these are not his numbers, they are arithmetic. So the ladder is
-     separated here, at derivation, by pushing each dearer tier one grid step clear. */
+     separated here, at derivation, by pushing each more expensive tier one grid step clear. */
   const codes=Object.keys(out);
   const sizes=[...new Set(codes.reduce((a,c)=>a.concat(Object.keys(out[c])),[]))];
   sizes.forEach(k=>{let last=null;
@@ -8786,7 +8792,7 @@ function cappedBoard(){
              way down is through the floor, leave the pair alone and let the board show it. */
           if(cut<b.price&&cut>=rows[i+1].floor-0.009){b.price=cut;changed=true;}}
       }});
-    /* tiers strictly dearer left to right: raise the dearer, or cut the cheaper if pinned */
+    /* tiers rise strictly left to right: raise the higher one, or cut the cheaper if pinned */
     rows.forEach(r=>{
       for(let i=1;i<r.cells.length;i++){
         const lo=r.cells[i-1], hi=r.cells[i];
@@ -8821,7 +8827,7 @@ function buildPriceTiers(){
 
    IT IS A REAL PRICE RISE AND MOSTLY AT THE TOP. R, the only card that leaves his phone,
    is unchanged to 2.5 unit and then rises: 3 unit RM310 to RM320, 4 unit RM390 to RM420,
-   5 unit RM460 to RM520, 6.25 unit RM540 to RM650, a fifth dearer at the biggest size.
+   5 unit RM460 to RM520, 6.25 unit RM540 to RM650, a fifth higher at the biggest size.
    M and P rise further, up to RM240 and RM280 at 6.25 unit. That is the hand-solved taper
    being generous exactly where the band economics said the desk was losing money, so the
    correction lands where the problem was. Small sizes barely move; SS 0.5 unit falls
@@ -8868,7 +8874,7 @@ function deliveryCost(){
    MARGIN is anchored per tier at the 1 unit price he already chose, so at today's cost
    the anchors reproduce his own cards exactly and the model is calibrated rather than
    imposed. DEMAND then moves every tier together through the same live signal the board
-   already computes, capped, so a dear fortnight lifts the ask and a dead one does not.
+   already computes, capped, so a busy fortnight lifts the ask and a dead one does not.
 
    THE LADDER RULES ARE HIS, and the solver enforces them rather than hoping:
      every price a multiple of RM10        rate strictly falling as the lot grows
@@ -9020,7 +9026,7 @@ function solveLadder(){
     }
     out[t.code]=rows;
   });
-  /* R5: tiers strictly ordered at every size they share, cheapest to dearest */
+  /* R5: tiers strictly ordered at every size they share, cheapest to most expensive */
   PRICE_TIERS.sizes.forEach((q,i)=>{
     let last=null;
     PRICE_TIERS.tiers.forEach(t=>{
@@ -9201,7 +9207,7 @@ function ladderMarkup(q){ return PRICING_ENGINE.ladderMarkup(q,pxPolicy()); }
 function ladderCogs(q){ return PRICING_ENGINE.ladderCogs(q,pxCost()); }
 /* the house rounding, and it is UP. A floor is never rounded, because rounding a floor in either
    direction puts it somewhere the policy did not: down puts the floor under itself, and up makes
-   the refusal line dearer than the policy states. */
+   the refusal line higher than the policy states. */
 /* THE MARKUP THIS BOOK WOULD ACTUALLY REALISE, weighted by the salt it really trades.
    The stated average is a point on the curve and not a property of the book: it lands at the
    geometric middle of the range, and this desk's volume sits well above that, so the realised
@@ -10448,7 +10454,7 @@ function tabSourcing(){
   <div class="card" style="margin-top:14px"><div class="cardh">Every lot, at the rate it landed <span class="sub">by landing date, RM/unit; the defaulted lot drawn hollow</span></div><div class="chartbox" style="height:190px"><canvas id="srcLotChart"></canvas></div></div>
   ${(()=>{/* v385: THE PROFIT COLUMN WAS INVERTED, AND THE PROSE UNDER IT CLAIMED THE OPPOSITE.
       It set pxOver.cost to the tier rate and read pxQuote's profit back. But the ladder marks
-      UP FROM COST, so a dearer tier produced a dearer ask and therefore a bigger absolute
+      UP FROM COST, so a more expensive tier produced a higher ask and therefore a bigger absolute
       profit: salt ran 6.25 unit at RM56 showing RM433 against 100 unit at RM43 showing RM324,
       monotonically backwards at every rung, telling the reader the worst rate on the sheet was
       the best buy. The book's own p016 note records the opposite, that taking the 50 tier over
@@ -15021,7 +15027,7 @@ function costBasis(){return +(wavgBuy||54.26).toFixed(2);}
    of 29 Aug makes replacement the TRAILING 30-DAY weighted average purchase rate, per book,
    the same figure the cost stack now prices off, so the coach, the floor line and the board
    cannot carry two different "replacement" numbers again. The old argument stays: an average
-   can flatter a sale filled out of a dearer lot, and that is the price of a board that does
+   can flatter a sale filled out of a more expensive lot, and that is the price of a board that does
    not jump on every single lot. costBasis() remains the book/reporting basis for what was
    earned. Fallbacks, in order, so it is never undefined: trailing average, most recent lot,
    the inventory cost, the all-time weighted average. */
@@ -15106,7 +15112,7 @@ let pxOver={cost:null,shrink:null,party:'',anyQ:'',tier:'T2',cap:''};   // cost/
 
 /* the highest tier on the live quote, because that is what restocking in the size
    usually bought actually costs. Cheaper tiers are chosen deliberately, never assumed.
-   v385: said "dearest", the word retired from this view at v379.
+   v385: its old name used a banned word, retired from this view at v379.
    ROUND 5, his call 1 of 29 Aug: THE BOOK'S OWN QUOTE, through quoteFor(PROD). This read
    was bare supplierQuote, which is salt's, so oil's engine inputs carried RM56 a unit
    from a ladder for a different commodity. Oil reads its own RM10 now. */
@@ -18647,7 +18653,7 @@ function tabPricing(){
       const badT1=!!(L.tier1&&L.tier1.under>0.009), badT2=L.ask.under>0.009;
       /* v566: AND THE ROW SAYS WHEN THE CHEAPER TIER IS NOT THE CHEAPER ONE. The two columns are
          printed cheapest-first in a fixed order, which is v247's rule for reading a board, so an
-         inverted row reads dearer-to-cheaper with nothing saying so. `over` is the RM by which
+         inverted row runs from higher to lower with nothing saying so. `over` is the RM by which
          Tier 1 exceeds the ask at that size, measured in the engine beside `under`.
          The under-floor tag also NAMES Tier 2 now: it printed a bare "under floor" while naming
          Tier 1 in the other branch, which on a two-tier board leaves the reader to guess which
@@ -18678,7 +18684,7 @@ function tabPricing(){
     tb.forEach(r=>{const L=priceLadder(r.q);
       if(L.tier1&&L.tier1.under>0.009)flagged.push({who:'Tier 1',q:r.q,rm:L.tier1.under});
       if(L.ask.under>0.009)flagged.push({who:T1on?'Tier 2':'the ask',q:r.q,rm:L.ask.under});
-      /* v566: this read `under` and nothing else, so a board printing Tier 1 DEARER than Tier 2
+      /* v566: this read `under` and nothing else, so a board printing Tier 1 ABOVE Tier 2
          at half its sizes still ended on "Every price on the board, on both tiers, clears
          break-even" — true, and the wrong question. Both tiers clearing their floor says nothing
          about which of the two is the cheaper one. */
@@ -18701,7 +18707,7 @@ function tabPricing(){
          at the counter", and it was a sub-clause of it. Split, so neither can crowd the other and
          neither can grow into the limit. The definition of the two floors is in the fold below. -->
     ${flagged.length?`<div class="insight" style="border-left-color:var(--crim)"><b>${flagged.length} price${flagged.length===1?'':'s'} on this board sit${flagged.length===1?'s':''} under break-even</b>: ${flagged.map(f=>f.who+' at '+units(f.q)+', short '+fmt(f.rm)).join('; ')}.</div>`:''}
-    ${inverted.length?`<div class="insight" style="border-left-color:var(--crim)"><b>Tier 1 is dearer than Tier 2 at ${inverted.length} of ${tb.length} size${tb.length===1?'':'s'}</b>, so the board reads cheaper to the right where it should read dearer: ${inverted.map(f=>units(f.q)+' by '+fmt(f.rm)).join('; ')}. Tier 2 is derived from a floor that moves with the cost of salt; his two Tier 1 ends do not move at all.</div>`:''}
+    ${inverted.length?`<div class="insight" style="border-left-color:var(--crim)"><b>Tier 1 costs more than Tier 2 at ${inverted.length} of ${tb.length} size${tb.length===1?'':'s'}</b>, so the board falls to the right where it should rise: ${inverted.map(f=>units(f.q)+' by '+fmt(f.rm)).join('; ')}. Tier 2 is derived from a floor that moves with the cost of salt; his two Tier 1 ends do not move at all.</div>`:''}
     ${!flagged.length&&!inverted.length?`<div class="insight" style="border-left-color:var(--grn)">Every price on the board, on ${T1on?'both tiers':'the one tier'}, clears break-even${T1on?', and Tier 1 is under Tier 2 at every size':''}.</div>`:''}
     <!-- v393: THE MARGIN SETUP IS THE BOARD'S DERIVATION, SO IT SITS IN THE BOARD'S CARD.
          It was its own open h2 one section down, restating in prose what these six figures

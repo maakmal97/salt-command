@@ -39,7 +39,7 @@ const PRICING_ENGINE=(function(){
       pxInputs computes it; pxRecentBuyRate over lots received in the window, falling back
       to the most recent lot's rate when nothing was bought in 30 days, never undefined).
       The old argument above stays because it is the case against this setting: a single
-      cheap lot no longer drops the whole board the day it lands, and a single dear one no
+      cheap lot no longer drops the whole board the day it lands, and a single costly one no
       longer spikes it, which is what the average buys; what it costs is that the board can
       sit under the latest lot for up to a month after a genuine rise. The latest lot's rate
       remains the fallback when no I.repl is supplied, so the stack cannot go undefined;
