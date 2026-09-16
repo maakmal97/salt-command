@@ -27,8 +27,11 @@ decision of 11 Aug 2026, no sign-in. The fold routine is `docs/CLOUD_FOLD.md`; s
    `BOOK` from `ledger/book.json` (`tools/booksync.mjs --sync`), geography from
    `geo/*.json` (`tools/geosync.mjs --sync`), `DESIGN` from `design/salt-ds.css` and
    `design/desk.css` (`tools/designsync.mjs --sync`). Edit the module, sync, build.
-   `evolution` and `LAST_UPDATED` stay in the master. **A fold edits `ledger/book.json`,
-   never rows in the master.** Nothing outside the master may price anything: two
+   `evolution` and `LAST_UPDATED` stay in the master. **A BUMP PREPENDS TO `evolution`, which is
+   NOT a one-entry array** (its own comment and `tools/changelog.mjs` both said so until 16 Sep
+   2026, and a session replaced it): it carries the Journal's window from v324, `master/changelog.json`
+   carries every entry, and `tools/changelog.mjs` copies `evolution[0]` across. **A fold edits
+   `ledger/book.json`, never rows in the master.** Nothing outside the master may price anything: two
    engines drift.
 2. **Plaintext names never reach the cloud; the encrypted vault may.** `/bio` is
    answered but dropped; `/vault` syncs only the AES-GCM envelope `{v,salt,iv,ct}`.
@@ -42,10 +45,11 @@ decision of 11 Aug 2026, no sign-in. The fold routine is `docs/CLOUD_FOLD.md`; s
    Fraunces and JetBrains Mono.
 5. **Copy and price.** Detail in `docs/DESK.md`.
    - **RM and unit only.** The goods are **inventory** in copy, never shelf; the rail's
-     destination is **Stock** (his instruction, 11 Sep 2026). **Unfinished:** `Spent on stock`
-     and `Stock behind it` on Financials, and `Stock reconciliation` on On hand, still say it
-     (measured 11 Sep 2026). **The Journal is exempt and stays so**: a dated record is not
-     corrected in place.
+     destination is **Stock** (his instruction, 11 Sep 2026). The last three headings using the
+     rail's word for the goods read Inventory since v672. What still says Stock is the destination
+     (the tab and its `VIEWS` row), `Stock cover`, the measure's own name, and the `Stock count:`
+     line a queued count carries, which is entry data. **The Journal is exempt and stays so**: a
+     dated record is not corrected in place.
    - **COGS, purchase plus freight, is the line no price goes under; the floor is COGS plus
      leakage**, one floor per size, the goods after the leak, with no delivery and no time in
      it. A sale carries `delivery` (inside its total) and a lot `freight` (beside it), typed
@@ -197,8 +201,10 @@ untouched.
   date not in YYYY-MM-DD. Fulfilment, Cancellation, Modification and Correction go through the
   gate. **An entry stamped before the watermark that the draft table does not know is drafted,
   never dropped** (08 Sep 2026): `at` is minted on the phone.
-- **The laptop's own queue takes the same road:** `node tools/drafts.mjs --from-queue` (broken
-  since the reads were gated). A decided draft keeps its id for good; to re-draft a rejected or
+- **The laptop's own queue takes the same road:** `node tools/drafts.mjs --from-queue`, which
+  reads the book off the D1 mirror through wrangler since 16 Sep 2026, so no shell needs the write
+  key (it took the keyed `/ledger` reads and 401ed from 16 Aug until then). A decided draft keeps
+  its id for good; to re-draft a rejected or
   refused entry he later calls real, mint a new `at`, run `draftRow` against `readBook()`, then
   `drafts.mjs --draft`, `--approve --by`, `--approved > master/_to_fold.json`. A ledger row edit
   (right-click on `/desk`, tap on the phone) queues as a Correction.

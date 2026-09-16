@@ -1,12 +1,14 @@
 #!/usr/bin/env node
 /* changelog.mjs — keep 00_Config/changelog.json in step with the master's evolution[0].
  *
- * `evolution` in the master is a ONE-ENTRY array and has to stay that way, because several
- * places read evolution[0].v for the version chip, the menu payload and the downloaded price
- * sheets. So every entry it has ever held lives in changelog.json instead, and the two are
- * kept in step by hand. That is the drift: the current entry is ~6 KB of prose and copying it
- * across by hand on every bump is exactly how a version ends up recorded in one place and not
- * the other.
+ * evolution[0] in the master is the current version, and several places read evolution[0].v for
+ * the version chip, the menu payload and the downloaded price sheets. THE ARRAY IS NOT ONE ENTRY,
+ * which this header claimed until 16 Sep 2026 and which cost a session every entry in it: it
+ * carries the window the desk's own Journal reads, from v324 onward, so a bump PREPENDS to it and
+ * never replaces it. changelog.json carries every entry ever written and is the record; the two
+ * are kept in step by hand, which is the drift this tool closes, because the current entry is
+ * ~6 KB of prose and copying it across by hand is exactly how a version ends up recorded in one
+ * place and not the other.
  *
  * This reads evolution[0] out of the master and prepends it to changelog.json if that version
  * is not already there. It NEVER rewrites an entry that exists: a changelog whose past can be

@@ -68,7 +68,7 @@ document.addEventListener('visibilitychange',function(){
    localStorage before it posts anything and the load reads it straight back.
    The same tick retries a held entry, which is what gets a phone write to the cloud
    without waiting for the next open. */
-var SALT_BUILD_ID="8b33e213ffa72864";
+var SALT_BUILD_ID="be7e4d0353888469";
 var SALT_REV_MS=10000;
 (function(){
   var chip=null,timer=null;
@@ -7002,9 +7002,14 @@ const quoteFor=p=>{const f=QUOTES[p||PROD];return f?f():null;};
    file with its wording intact, checked entry by entry against the source before this
    array was replaced.
 
-   evolution stays as a one-entry array because several places read evolution[0].v for
-   the version chip, the menu payload and the downloaded price sheets. It is the current
-   version and nothing else. */
+   evolution[0] is the current version, and several places read evolution[0].v for the
+   version chip, the menu payload and the downloaded price sheets.
+
+   IT IS NOT A ONE-ENTRY ARRAY, whatever this comment said until 16 Sep 2026 and whatever
+   tools/changelog.mjs still said with it. It carries the window the Journal reads, from
+   v324 onward, which tabJournal maps in full; master/changelog.json carries every entry
+   ever written and is the record. So a bump PREPENDS its entry. Replacing the array,
+   which both comments invited, silently drops the whole window. */
 const evolution=[{"v":"v672","d":"16 Sep 2026","t":"THE THREE HEADINGS THAT CALLED THE GOODS STOCK NOW CALL THEM INVENTORY","n":["<b>HIS COPY RULE OF 11 SEP 2026, FINISHED.</b> The goods are <b>inventory</b> in copy and <b>Stock</b> is the rail's destination. Three headings still used the rail's word for the goods, and the rule named all three: <b>Spent on stock</b> and <b>Stock behind it</b> on Financials, and <b>Stock reconciliation</b> on On hand. They now read <b>Spent on inventory</b>, <b>Inventory behind it</b> and <b>Inventory reconciliation</b>, beside the Inventory on hand, Inventory value and Inventory count the desk already carried.","<b>WHAT IT TOUCHES: THREE WORDS.</b> No figure, no total and no rate moves, and no row is read differently. The destination is untouched: the rail's tab and the view behind it still read Stock, which is what the rule asks for.","<b>THE SWEEP, AND WHAT IT LEFT STANDING.</b> Four other uses of the word remain in the desk. The tab and the VIEWS row behind it are the destination. <b>Stock cover</b> on Today is the name of the measure rather than a word for the goods. The Cash and Stock pair on a place's preview, and the <b>Stock count:</b> line a queued count carries, are the two that could go either way: the second is entry data the drafter reads rather than copy on a page, so both are put to him rather than changed here. <b>THE CHECKS:</b> one assertion that the three headings read Inventory and none still reads Stock, one that the destination itself is untouched, and the scan proved red by putting a single heading back."]},
 
 {"v":"v671","d":"16 Sep 2026","t":"THE PROPOSAL MOVES A LEVEL ON HOW A CUSTOMER BUYS: LATE, SMALL, LOYAL, AND SALES SLOWING","n":["<b>HIS RULES OF 16 SEP 2026.</b> The level a customer is proposed, read off what they pay, now moves on how they buy and on the stock. A customer who buys rarely and has been late twice drops a level at every size. A frequent small buyer drops a level from three units. A loyal customer buying bigger rises a level from three units, never past Platinum. And while sales have sat under half the typical for three days running, every level is offered one better, never past Platinum, until the next lot lands. <b>A tier he has set is never moved by a rule</b>, only offered one; but a proposal is what an un-held customer is quoted, so these rules move live prices.","<b>NOTHING BETTER ON HALF A UNIT OR A UNIT, HIS DECISION THAT DAY.</b> The plan gave frequent small buyers a better level on small orders. Measured first, the three of them were already proposed Titanium, where the only better level is Ambassador, his word alone, so the benefit had nowhere to go and the rule's only effect was the drop. He kept the drop and let their own rate carry the small price, which it already does: a card is never above what they pay, and they pay a keen rate on exactly those sizes.","<b>WHAT MOVES TODAY: FOUR CUSTOMERS, 28 PRICES, NET +RM650.</b> CM4-MK, loyal and buying bigger, is cheaper from three units, twelve and a half units RM1,060 to RM960. CR3-DAM, CA4-DAM and CC5-OKR, frequent and small, are dearer from three units, RM860 to RM960, and unchanged below. No slowdown is on for either product: salt last restocked on 15 Sep and oil on 8 Sep.","<b>A RESTOCK ENDS A PROMOTION, AND A FORCED CHECK FOUND IT DID NOT.</b> The slowdown was first counted straight through a lot, so a restock ended a promotion for a day and the next day's reading started it again; while sales stayed flat, no lot ever ended one. The count now stops at the latest lot, so only three quiet days after it start a new promotion. <b>THE CHECKS:</b> 9 assertions, each rule proved on forced inputs, the slowdown on forced sales and lots including a restock mid-slowdown, and a held tier left alone on a live quote. 10 mutations, each red."]},
