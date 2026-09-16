@@ -1,6 +1,6 @@
 {
- "v": "v663",
- "stamped": "16 Sep 2026, 17:10 KL",
+ "v": "v664",
+ "stamped": "16 Sep 2026, 17:37 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -38,7 +38,7 @@
    "oil": {
     "qty": 5,
     "costPerKg": 7.666666666666667,
-    "stated": 30
+    "stated": 20
    }
   },
   "STATED_STOCK": 14.5,
@@ -4019,11 +4019,11 @@
     "qty": 10,
     "total": 130,
     "cost": 75.25,
-    "cash": 0,
+    "cash": 130,
     "handover": "collected",
     "product": "oil",
     "date": "2026-09-16",
-    "deliveredQty": 0,
+    "deliveredQty": 10,
     "deliveredOn": "2026-09-16",
     "paidOn": "2026-09-16",
     "note": "<b>UNSETTLED 16 SEP: CASH AND HANDOVER BACK TO ZERO.</b> <b>CORRECTION ON s167 DATED 16 SEP: THE OIL SALE IS TAKEN BACK TO UNSETTLED.</b> CS6-BS-R's order of 16 Sep, 10 unit of oil for RM130, all goods with no delivery or freight, had cash moved from RM130 to 0, delivered quantity from 10 unit to 0, and settled RM and settled unit from unset to 0. It moves no cash and no stock: it changes what the row says about itself. The drafter flagged nothing on this one. CS6-BS-R stands at 14 orders, median RM96.67, range RM6 to RM120, nothing outstanding before, no unit on credit, nothing defaulted, and stays on the roster. Cost is the desk's own RM48 a unit. The RM130 and the 10 unit are now outstanding. <b>OIL SELL DATED 16 SEP, PAID IN FULL AND COLLECTED IN FULL ON THE DAY.</b> Booked to CS6-BS-R as R2, CS6-BS buying to sell on, 10 unit for RM130, all goods with no delivery or freight, RM130 cash in and 10 unit handed over on 16 Sep, so the row closes as it opens. The total clears the RM87.28 floor for 10 unit and sits under the RM230 ask and RM240 ceiling. Cost is the desk's own, RM75.25 on the order. <b>Flagged:</b> the R2 booking, and RM13 a unit against the RM11 CS6-BS typically pays for oil across 3 orders, 18.2% above. His own median is RM100 across 12 orders in a RM6 to RM120 range, nothing outstanding, no unit on credit against a cap of 10 and nothing defaulted. Nothing is left outstanding.",
@@ -4046,26 +4046,33 @@
       "cash": 0,
       "kg": 0,
       "note": "<b>CORRECTION ON s167 DATED 16 SEP: THE OIL SALE IS TAKEN BACK TO UNSETTLED.</b> CS6-BS-R's order of 16 Sep, 10 unit of oil for RM130, all goods with no delivery or freight, had cash moved from RM130 to 0, delivered quantity from 10 unit to 0, and settled RM and settled unit from unset to 0. It moves no cash and no stock: it changes what the row says about itself. The drafter flagged nothing on this one. CS6-BS-R stands at 14 orders, median RM96.67, range RM6 to RM120, nothing outstanding before, no unit on credit, nothing defaulted, and stays on the roster. Cost is the desk's own RM48 a unit. The RM130 and the 10 unit are now outstanding."
+     },
+     {
+      "date": "2026-09-16",
+      "kind": "Fulfilment",
+      "cash": 130,
+      "kg": 10,
+      "cost": 75.25,
+      "note": "<b>FULFILMENT ON s167 DATED 16 SEP: THE OIL ORDER IS PAID AND TAKEN IN FULL.</b> CS6-BS-R's order of 16 Sep, 10 unit of oil for RM130, all goods with no delivery or freight, collected. RM130 and 10 unit move on 16 Sep against RM130 and 10 unit outstanding, leaving RM0 and 0 unit. The row itself is not recomputed here: the master applies the amendment. <b>Flagged:</b> this settles the order in full, nothing left outstanding, and the figures answer that. CS6-BS-R stands at 14 orders, median RM96.67, range RM6 to RM120, RM570 outstanding before, no unit on credit, nothing defaulted. The row carries no cost of the inventory's own."
      }
     ]
    },
    {
     "customer": "CS6-BS-R",
     "qty": 5,
-    "total": 440,
+    "total": 420,
     "cost": 240,
-    "cash": 0,
+    "cash": 420,
     "handover": "collected",
     "date": "2026-09-16",
-    "deliveredQty": 0,
+    "deliveredQty": 5,
     "deliveredOn": "2026-09-16",
     "paidOn": "2026-09-16",
-    "note": "<b>UNSETTLED 16 SEP: CASH AND HANDOVER BACK TO ZERO.</b> <b>CORRECTION ON s168 DATED 16 SEP: THE SALT SALE IS TAKEN BACK TO UNSETTLED.</b> CS6-BS-R's order of 16 Sep, 5 unit of salt for RM440, all goods with no delivery or freight, had cash moved from RM440 to 0, delivered quantity from 5 unit to 0, and settled RM and settled unit from unset to 0. It moves no cash and no stock: it changes what the row says about itself. <b>Flagged:</b> RM88 a unit against about RM108 CS6-BS typically pays across 17 orders, 18.5% below; the figures answer the rate only, not the unsettling. CS6-BS-R stands at 14 orders, median RM96.67, range RM6 to RM120, nothing outstanding before, no unit on credit, nothing defaulted. Cost is the desk's own RM48 a unit. The RM440 and the 5 unit are now outstanding on the row. <b>SALT SELL DATED 16 SEP, SETTLED AND COLLECTED THE SAME DAY.</b> Booked to CS6-BS-R as R2, CS6-BS buying to sell on, 5 unit for RM440, all goods with no delivery or freight, RM440 cash in and 5 unit handed over on 16 Sep. The total clears the RM301.26 floor for 5 unit and stays under the RM560 ask and RM710 ceiling. Cost is the desk's own RM48 a unit, RM240 on the order. <b>Flagged:</b> the R2 booking, and RM88 a unit against the RM109 CS6-BS typically pays for salt across 16 orders, 19.3% below; the floor is still cleared. He held nothing outstanding and no unit on credit against a cap of 1, nothing defaulted. Nothing remains outstanding.",
+    "note": "<b>CORRECTION ON s168 DATED 16 SEP: PRICE CUT, CARRIAGE ZEROED, CASH AND HANDOVER BOOKED.</b> CS6-BS-R's order of 16 Sep, 5 unit of salt, had total moved from RM440 to RM420, delivery from unset to 0, cash from RM0 to RM420 and delivered quantity from 0 to 5 unit. It moves no cash and no stock: it changes what the row says about itself. <b>Flagged:</b> the row carries a trail of two steps, which is not rewritten, so the trail will no longer add up; and RM84 a unit against about RM109 CS6-BS typically pays across 16 orders, 22.9% below. The figures answer the rate only. CS6-BS-R: 14 orders, median RM96.67, range RM6 to RM120, RM570 outstanding before, no unit on credit, nothing defaulted. Cost is the desk's own RM48 a unit. Nothing is left outstanding on the row. <b>UNSETTLED 16 SEP: CASH AND HANDOVER BACK TO ZERO.</b> <b>CORRECTION ON s168 DATED 16 SEP: THE SALT SALE IS TAKEN BACK TO UNSETTLED.</b> CS6-BS-R's order of 16 Sep, 5 unit of salt for RM440, all goods with no delivery or freight, had cash moved from RM440 to 0, delivered quantity from 5 unit to 0, and settled RM and settled unit from unset to 0. It moves no cash and no stock: it changes what the row says about itself. <b>Flagged:</b> RM88 a unit against about RM108 CS6-BS typically pays across 17 orders, 18.5% below; the figures answer the rate only, not the unsettling. CS6-BS-R stands at 14 orders, median RM96.67, range RM6 to RM120, nothing outstanding before, no unit on credit, nothing defaulted. Cost is the desk's own RM48 a unit. The RM440 and the 5 unit are now outstanding on the row. <b>SALT SELL DATED 16 SEP, SETTLED AND COLLECTED THE SAME DAY.</b> Booked to CS6-BS-R as R2, CS6-BS buying to sell on, 5 unit for RM440, all goods with no delivery or freight, RM440 cash in and 5 unit handed over on 16 Sep. The total clears the RM301.26 floor for 5 unit and stays under the RM560 ask and RM710 ceiling. Cost is the desk's own RM48 a unit, RM240 on the order. <b>Flagged:</b> the R2 booking, and RM88 a unit against the RM109 CS6-BS typically pays for salt across 16 orders, 19.3% below; the floor is still cleared. He held nothing outstanding and no unit on credit against a cap of 1, nothing defaulted. Nothing remains outstanding.",
     "rid": "s168",
     "settledRM": 0,
     "settledKg": 0,
-    "rev": "R2",
-    "mod": "corrected on 2026-09-16: cash 440 to 0; deliveredQty 5 to 0; settledRM (unset) to 0; settledKg (unset) to 0",
+    "mod": "corrected on 2026-09-16: cash 440 to 0; deliveredQty 5 to 0; settledRM (unset) to 0; settledKg (unset) to 0, then corrected on 2026-09-16: total 440 to 420; cash 0 to 420; deliveredQty 0 to 5; delivery (unset) to 0",
     "amend": [
      {
       "date": "2026-09-16",
@@ -4080,8 +4087,17 @@
       "cash": 0,
       "kg": 0,
       "note": "<b>CORRECTION ON s168 DATED 16 SEP: THE SALT SALE IS TAKEN BACK TO UNSETTLED.</b> CS6-BS-R's order of 16 Sep, 5 unit of salt for RM440, all goods with no delivery or freight, had cash moved from RM440 to 0, delivered quantity from 5 unit to 0, and settled RM and settled unit from unset to 0. It moves no cash and no stock: it changes what the row says about itself. <b>Flagged:</b> RM88 a unit against about RM108 CS6-BS typically pays across 17 orders, 18.5% below; the figures answer the rate only, not the unsettling. CS6-BS-R stands at 14 orders, median RM96.67, range RM6 to RM120, nothing outstanding before, no unit on credit, nothing defaulted. Cost is the desk's own RM48 a unit. The RM440 and the 5 unit are now outstanding on the row."
+     },
+     {
+      "date": "2026-09-16",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>CORRECTION ON s168 DATED 16 SEP: PRICE CUT, CARRIAGE ZEROED, CASH AND HANDOVER BOOKED.</b> CS6-BS-R's order of 16 Sep, 5 unit of salt, had total moved from RM440 to RM420, delivery from unset to 0, cash from RM0 to RM420 and delivered quantity from 0 to 5 unit. It moves no cash and no stock: it changes what the row says about itself. <b>Flagged:</b> the row carries a trail of two steps, which is not rewritten, so the trail will no longer add up; and RM84 a unit against about RM109 CS6-BS typically pays across 16 orders, 22.9% below. The figures answer the rate only. CS6-BS-R: 14 orders, median RM96.67, range RM6 to RM120, RM570 outstanding before, no unit on credit, nothing defaulted. Cost is the desk's own RM48 a unit. Nothing is left outstanding on the row."
      }
-    ]
+    ],
+    "delivery": 0,
+    "rev": "R2"
    }
   ],
   "contacts": [
@@ -4431,9 +4447,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-16T09:08:32.417Z",
+  "QUEUE_COMMITTED": "2026-09-16T09:35:23.853Z",
   "PRICING": {
-   "takenAt": "2026-09-16T09:10:23.214Z",
+   "takenAt": "2026-09-16T09:37:17.604Z",
    "sizes": [
     0.5,
     1,
@@ -4711,15 +4727,15 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0.358974358974359
+         "v": 0.35
         }
        },
        "attrib": 1,
-       "shrinkRate": 0.09174888864794536,
+       "shrinkRate": 0.08090642957822836,
        "avgDel": {
-        "n": 146,
-        "kg": 365.7,
-        "mean": 2.5048
+        "n": 147,
+        "kg": 370.7,
+        "mean": 2.5218
        }
       },
       "policy": {
@@ -5085,15 +5101,15 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0.75
+         "v": 0.6
         }
        },
        "attrib": 1,
        "shrinkRate": 0.12979591836734694,
        "avgDel": {
-        "n": 10,
-        "kg": 156,
-        "mean": 15.6
+        "n": 11,
+        "kg": 166,
+        "mean": 15.0909
        }
       },
       "policy": {
@@ -5271,55 +5287,12 @@
      ]
     }
    },
-   "v": "v663"
+   "v": "v664"
   },
   "OPEN": {
-   "at": "2026-09-16T09:10:23.381Z",
-   "count": 10,
+   "at": "2026-09-16T09:37:17.757Z",
+   "count": 8,
    "byKey": {
-    "CS6-BS-R|2026-09-16|130": {
-     "d": "2026-09-16",
-     "p": "CS6-BS-R",
-     "dir": "S",
-     "q": 10,
-     "t": 130,
-     "cash": 0,
-     "mv": 0,
-     "st": "part",
-     "oweRM": 130,
-     "oweUnits": 10,
-     "pr": "oil",
-     "rid": "s167",
-     "as": "CS6-BS",
-     "st2": "R2",
-     "paidOn": "2026-09-16",
-     "deliveredOn": "2026-09-16",
-     "handover": "collected",
-     "settledRM": 0,
-     "settledKg": 0,
-     "key": "CS6-BS-R|2026-09-16|130"
-    },
-    "CS6-BS-R|2026-09-16|440": {
-     "d": "2026-09-16",
-     "p": "CS6-BS-R",
-     "dir": "S",
-     "q": 5,
-     "t": 440,
-     "cash": 0,
-     "mv": 0,
-     "st": "part",
-     "oweRM": 440,
-     "oweUnits": 5,
-     "rid": "s168",
-     "as": "CS6-BS",
-     "st2": "R2",
-     "paidOn": "2026-09-16",
-     "deliveredOn": "2026-09-16",
-     "handover": "collected",
-     "settledRM": 0,
-     "settledKg": 0,
-     "key": "CS6-BS-R|2026-09-16|440"
-    },
     "CR3-DAM|2026-09-15|90": {
      "d": "2026-09-15",
      "p": "CR3-DAM",
@@ -5455,21 +5428,21 @@
      "onHand": 14.5,
      "free": 14.5,
      "owedOut": 0,
-     "coverDays": 2.5,
-     "rate": 5.86,
+     "coverDays": 2.3,
+     "rate": 6.21,
      "owedToYou": 472,
-     "promised": 15.5,
-     "short": 1
+     "promised": 10.5,
+     "short": 0
     },
     "oil": {
      "name": "Oil",
-     "onHand": 30,
-     "free": 30,
+     "onHand": 20,
+     "free": 20,
      "owedOut": 0,
-     "coverDays": 6,
-     "rate": 5,
+     "coverDays": 3.5,
+     "rate": 5.71,
      "owedToYou": 0,
-     "promised": 10,
+     "promised": 0,
      "short": 0
     }
    },
@@ -5477,7 +5450,7 @@
     "salt": "2026-09-15",
     "oil": "2026-09-09"
    },
-   "v": "v663"
+   "v": "v664"
   }
  }
 }

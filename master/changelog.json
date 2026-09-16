@@ -1,5 +1,15 @@
 [
  {
+  "v": "v664",
+  "d": "16 Sep 2026",
+  "t": "TWO 16 SEP ROWS PUT RIGHT: ONE OIL ORDER PAID IN FULL, ONE SALT ORDER RESTATED AND SETTLED",
+  "n": [
+   "<b>FOLDED:</b> a fulfilment on s167 and a correction on s168, both CS6-BS-R, both dated 16 Sep, both against rows taken back to unsettled earlier the same day. The fulfilment moves RM130 and 10 unit of oil against RM130 and 10 unit outstanding and closes the order. The correction takes s168 from RM440 to RM420, sets delivery to 0, cash to RM420 and delivered quantity to 5 unit, moving no cash and no stock of itself.",
+   "<b>UNUSUAL:</b> both rows already carry a trail of two steps, a fulfilment and a correction, and setting s168's figures directly does not rewrite them, so the trail no longer adds up to the row; the correction sits beside them saying so. The drafter flagged the salt rate at RM84 a unit against about RM109 CS6-BS typically pays across 16 orders, 22.9% below, and the figures answer the rate only.",
+   "<b>THE INVENTORY DID:</b> released 10 unit of oil to CS6-BS-R on 16 Sep, the oil count standing at 9 Sep. Salt stands at 14.5 unit on the count of 15 Sep against a ledger of 95.45 and self use of 80.95, cost RM48 a unit against replacement RM46, reorder at 15, nothing owed out and 25.5 promised. CS6-BS-R's RM570 outstanding before these rows is worked down by them."
+  ]
+ },
+ {
   "v": "v663",
   "d": "16 Sep 2026",
   "t": "TWO SAME DAY SALES UNSETTLED: CASH AND HANDOVER BACK TO ZERO ON CS6-BS-R",
