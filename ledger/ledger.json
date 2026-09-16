@@ -1,6 +1,6 @@
 {
- "v": "v664",
- "stamped": "16 Sep 2026, 17:37 KL",
+ "v": "v665",
+ "stamped": "16 Sep 2026, 17:45 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -41,7 +41,7 @@
     "stated": 20
    }
   },
-  "STATED_STOCK": 14.5,
+  "STATED_STOCK": 9.5,
   "COUNT_ON": {
    "salt": "2026-09-15",
    "oil": "2026-09-09"
@@ -4098,6 +4098,20 @@
     ],
     "delivery": 0,
     "rev": "R2"
+   },
+   {
+    "customer": "CS6-BS",
+    "qty": 5,
+    "total": 420,
+    "cost": 240,
+    "cash": 420,
+    "handover": "collected",
+    "date": "2026-09-16",
+    "deliveredQty": 5,
+    "deliveredOn": "2026-09-16",
+    "paidOn": "2026-09-16",
+    "note": "<b>SALT SOLD TO CS6-BS, 5 UNIT AT RM420, PAID AND COLLECTED 16 SEP.</b> Ordered on the statements site, order 20260916085105-rkoi5a, collected, paid by qr via tng, RM420 cash in and 5 unit handed over on 16 Sep, so the row leaves nothing outstanding. At RM84 a unit the total clears the desk's floor of RM301.26 at size 5 and falls short of the RM560 ask, well under the RM710 ceiling. <b>Flagged:</b> CS6-BS typically pays about RM108 a unit across 17 orders, 22.2% below. The party record answers the rate only: 10 orders, median RM100, range RM11 to RM126.67, nothing outstanding before, 1 unit on credit against a cap of 2, nothing defaulted. Cost is the desk's own RM48 a unit, RM240 on the order.",
+    "rid": "s169"
    }
   ],
   "contacts": [
@@ -4447,9 +4461,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-16T09:35:23.853Z",
+  "QUEUE_COMMITTED": "2026-09-16T09:39:17.951Z",
   "PRICING": {
-   "takenAt": "2026-09-16T09:37:17.604Z",
+   "takenAt": "2026-09-16T09:45:24.153Z",
    "sizes": [
     0.5,
     1,
@@ -4727,15 +4741,15 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0.35
+         "v": 0.34146341463414637
         }
        },
        "attrib": 1,
        "shrinkRate": 0.08090642957822836,
        "avgDel": {
-        "n": 147,
-        "kg": 370.7,
-        "mean": 2.5218
+        "n": 148,
+        "kg": 375.7,
+        "mean": 2.5385
        }
       },
       "policy": {
@@ -5287,10 +5301,10 @@
      ]
     }
    },
-   "v": "v664"
+   "v": "v665"
   },
   "OPEN": {
-   "at": "2026-09-16T09:37:17.757Z",
+   "at": "2026-09-16T09:45:24.316Z",
    "count": 8,
    "byKey": {
     "CR3-DAM|2026-09-15|90": {
@@ -5425,14 +5439,14 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 14.5,
-     "free": 14.5,
+     "onHand": 9.5,
+     "free": 9.5,
      "owedOut": 0,
-     "coverDays": 2.3,
-     "rate": 6.21,
+     "coverDays": 1.4,
+     "rate": 6.57,
      "owedToYou": 472,
      "promised": 10.5,
-     "short": 0
+     "short": 1
     },
     "oil": {
      "name": "Oil",
@@ -5450,7 +5464,7 @@
     "salt": "2026-09-15",
     "oil": "2026-09-09"
    },
-   "v": "v664"
+   "v": "v665"
   }
  }
 }
