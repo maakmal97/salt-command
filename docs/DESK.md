@@ -144,5 +144,7 @@
 
 `npx wrangler kv namespace create salt_queue`, paste the id over `PLACEHOLDER_KV_ID`, deploy.
 The build adds only a PWA head, a service worker, a device id and cloud-mode copy.
-`/queue/ping` returns `cloud:true`. `serve_desk.py` and `salt_sync.ps1` still exist for local
-work; `npm run dev` does the preview half better.
+`/queue/ping` returns `cloud:true`. The laptop desk is `Open Salt Command.bat` in the project's
+`30_Published`: `serve_desk.py` serves this repo's master on port 8766 for Names & IDs and writes
+`10_Data`, nothing else. Its sync passes were retired on 16 Sep 2026 (a fourth deployer, rule 8);
+`salt_sync.ps1` is dormant. `npm run dev` does the preview half better.
