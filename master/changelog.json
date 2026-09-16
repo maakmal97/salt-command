@@ -1,5 +1,17 @@
 [
  {
+  "v": "v680",
+  "d": "17 Sep 2026",
+  "t": "WHERE EACH PARTY IS, IN WORDS, FOR EVERYONE: LOCALITY, AREA, DISTRICT",
+  "n": [
+   "<b>HIS INSTRUCTION OF 17 SEP 2026:</b> the location of each customer includes the locality and the district, where available, and everyone may see it. Coverage's party table has a <b>Where</b> column: CA5-BAN reads Bangsar, Lembah Pantai, Kuala Lumpur; CA7-AMP Ampang, Titiwangsa, Kuala Lumpur; CE5-SA Setia Alam, Bukit Raja, Petaling.",
+   "<b>WHAT IT READS.</b> The locality filed beside the party's point, with the short forms people write spelled out (Rd, Sg, Bkt, Bdr, Jln, Tmn, Kg); the area the point stands in, a constituency in Kuala Lumpur and elsewhere the sub-area on the survey his Selangor list follows; and the district. Each is named once, and what is not known is left out, so a place abroad reads its locality alone.",
+   "<b>WHAT WAS FILED.</b> Thirty-eight parties carry a locality: thirty-five from the places recorded in the directory, each at the point it already stood at, so nothing moved on the map; and his three at new points, measured inside Lembah Pantai, Titiwangsa and mukim Bukit Raja. CM3-OUG, CA2-SEN and CB7-BJ have no recorded place on the laptop, so theirs come through the vault road on Coverage or an Amend ID.",
+   "<b>THE LEAK CHECKS FOLLOW HIS DECISION.</b> The extract's scan and the suite's public-desk scan pass a directory place that equals a filed locality, through one definition in tools/book.mjs; every name is still searched, and so is every place not filed.",
+   "<b>THE CHECKS:</b> a new section reads his three off the book and through the desk, the rules off fixture codes, and the Where column as drawn; seven reverts each turned it red. v637's panel reader skips the new column, which this section reads."
+  ]
+ },
+ {
   "v": "v679",
   "d": "17 Sep 2026",
   "t": "A PLACE IS ITS LOCALITY, THEN WHERE THAT IS: THE CODE FROM THE LOCALITY, THE LOCALITY WITH THE POINT",

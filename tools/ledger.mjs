@@ -35,7 +35,7 @@ import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
 import { openMaster } from "./payload.mjs";
-import { LEDGER, LEDGER_KEYS, META_KEYS, reader, pricingSnapshot, openSnapshot, NAME_STOPWORDS, NAME_COLLISIONS, DATA_DIR, areaNameSet } from "./book.mjs";
+import { LEDGER, LEDGER_KEYS, META_KEYS, reader, pricingSnapshot, openSnapshot, NAME_STOPWORDS, NAME_COLLISIONS, DATA_DIR, areaNameSet, publishedLocalities } from "./book.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO = resolve(HERE, "..");
@@ -87,7 +87,7 @@ const NOT_LEDGER = new Set([
   "LOCS", "PLACES", "METRO", "NON_PLACE", "PLACEHOLDER", "BASEMAP", "BASEMAP_META", "DOW", "DOW3", "KL_HOLIDAYS", "HOL_MAP",
   "AREAS", "AREAS_META", "DISTRICTS", "MAPC" /* v630: the areas the map shades, and its steps; geography, not trade */,
   "GAZ", "GAZ_META" /* v633: the hashed place list; geography, not trade */, "WB_GEO" /* v633: the place being typed on the Enter form */,
-  "MAP_METRICS" /* v635: the names of what the map can shade by */, "MAP_MON" /* v636: month names for the map's period */,
+  "MAP_METRICS" /* v635: the names of what the map can shade by */, "PLACE_WORDS" /* v680: short forms spelled out in a locality */, "MAP_MON" /* v636: month names for the map's period */,
   "LEAK_TEST", "BIO_FIELDS", "PROD_META", "builders",
 
   /* transient UI state, not persisted anywhere */
@@ -281,14 +281,14 @@ for (const key of ["sales", "purchases", "loans", "contacts"]) {
    and DATA_DIR is the one place that knows where that is. */
 const BIO = resolve(DATA_DIR, "salt_bio.json");
 if (existsSync(BIO)) {
-  let names = [], bioCodes = {};
+  let names = [], places = [], bioCodes = {};
   try {
     const bio = JSON.parse(readFileSync(BIO, "utf8")).bio || {};
     bioCodes = bio;
     for (const code of Object.keys(bio)) {
       const raw = String((bio[code] || {}).raw || "");
       const m = /^([^(]+?)\s*(?:\(([^)]+)\))?$/.exec(raw.trim());
-      if (m) { if (m[1]) names.push(m[1].trim()); if (m[2]) names.push(m[2].trim()); }
+      if (m) { if (m[1]) names.push(m[1].trim()); if (m[2]) places.push(m[2].trim()); }
     }
   } catch (e) { fail("salt_bio.json could not be read, so the name check did not run"); }
   /* "TBC" IS NOT A PLACE. Two parties carry it in the directory as an admission that the
@@ -304,6 +304,9 @@ if (existsSync(BIO)) {
      THE ENTRY ITSELF IS THE REAL ODDITY and it is left alone deliberately: by the v199 rule a
      buyer with no name takes a `-Gen` bucket and NO directory entry at all, so this one is
      probably a placeholder somebody typed. Renaming a party is his call, not this tool's. */
+  /* v680: a place filed as a party's locality is public by his decision of 17 Sep 2026; places only, a name is never exempted */
+  const localities = publishedLocalities(ledger);
+  names = names.concat(places.filter((n) => !localities.has(n.toLowerCase())));
   const PLACEHOLDER = NAME_STOPWORDS;   // one definition, in book.mjs
   /* Names that collide with the desk's own vocabulary are skipped and SAID SO. See book.mjs. */
   const collided = [...new Set(names.filter((n) => NAME_COLLISIONS.has(n.toLowerCase())))];

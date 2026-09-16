@@ -348,7 +348,198 @@
     {"by":"CJ4-OKR","customer":"CS6-PER","note":"Declared network, counted retrospectively on his word of 13 Sep 2026."},
     {"by":"CS6-BS","customer":"CM4-MK","note":"His ruling of 13 Sep 2026: the first order went through CS6-BS-R on 15 Jul, and every order since has been direct."}
   ],
-  "PLACED": {},
+  "PLACED": {
+    "CA4-DAM": [
+      3.15,
+      101.66,
+      "Damansara"
+    ],
+    "CA5-BAN": [
+      3.13,
+      101.67,
+      "Bangsar"
+    ],
+    "CA5-SEN": [
+      3.18,
+      101.68,
+      "Sentul"
+    ],
+    "CA7-AMP": [
+      3.15,
+      101.74,
+      "Ampang"
+    ],
+    "CC5-OKR": [
+      3.09,
+      101.67,
+      "Old Klang Rd"
+    ],
+    "CD4-CS": [
+      3.06,
+      101.75,
+      "Cheras Selatan"
+    ],
+    "CD7-SEG": [
+      3.19,
+      101.66,
+      "Segambut"
+    ],
+    "CE4-AD": [
+      3.06,
+      101.74,
+      "Alam Damai"
+    ],
+    "CE4-CHE": [
+      3.11,
+      101.72,
+      "Cheras"
+    ],
+    "CE5-SA": [
+      3.1,
+      101.46,
+      "Setia Alam"
+    ],
+    "CF5-WM": [
+      3.21,
+      101.74,
+      "Wangsa Maju"
+    ],
+    "CG5-SB": [
+      3.05,
+      101.71,
+      "Sg Besi"
+    ],
+    "CH4-KS": [
+      3.13,
+      101.69,
+      "KL Sentral"
+    ],
+    "CH4-MAL": [
+      3.13,
+      101.73,
+      "Maluri"
+    ],
+    "CH5-KLC": [
+      3.16,
+      101.71,
+      "KLCC"
+    ],
+    "CH6-SET": [
+      3.2,
+      101.72,
+      "Setapak"
+    ],
+    "CI4-OKR": [
+      3.09,
+      101.67,
+      "Old Klang Rd"
+    ],
+    "CJ4-BJ": [
+      3.06,
+      101.69,
+      "Bkt Jalil"
+    ],
+    "CJ4-OKR": [
+      3.09,
+      101.67,
+      "Old Klang Rd"
+    ],
+    "CK4-SEN": [
+      3.18,
+      101.68,
+      "Sentul"
+    ],
+    "CM4-MK": [
+      3.17,
+      101.65,
+      "Mont Kiara"
+    ],
+    "CM4-SK": [
+      3.02,
+      101.7,
+      "Seri Kembangan"
+    ],
+    "CM6-HCM": [
+      10.78,
+      106.7,
+      "Ho Chi Minh"
+    ],
+    "CM6-PJ": [
+      3.11,
+      101.61,
+      "Petaling Jaya"
+    ],
+    "CN5-TAI": [
+      4.85,
+      100.74,
+      "Taiping"
+    ],
+    "CN6-WM": [
+      3.21,
+      101.74,
+      "Wangsa Maju"
+    ],
+    "CR3-DAM": [
+      3.15,
+      101.66,
+      "Damansara"
+    ],
+    "CR3-PUD": [
+      3.14,
+      101.71,
+      "Pudu"
+    ],
+    "CR4-PJ": [
+      3.11,
+      101.61,
+      "Petaling Jaya"
+    ],
+    "CS6-BS": [
+      3.11,
+      101.67,
+      "Bangsar South"
+    ],
+    "CS6-PER": [
+      3.1,
+      101.72,
+      "Permaisuri"
+    ],
+    "CY2-NIL": [
+      2.81,
+      101.8,
+      "Nilai"
+    ],
+    "CZ4-MK": [
+      3.17,
+      101.65,
+      "Mont Kiara"
+    ],
+    "CZ6-WM": [
+      3.21,
+      101.74,
+      "Wangsa Maju"
+    ],
+    "SA5-BTR": [
+      3.09,
+      101.71,
+      "Bdr Tun Razak"
+    ],
+    "SF6-KLC": [
+      3.16,
+      101.71,
+      "KLCC"
+    ],
+    "SM4-KEP": [
+      3.21,
+      101.64,
+      "Kepong"
+    ],
+    "SP7-PUD": [
+      3.14,
+      101.71,
+      "Pudu"
+    ]
+  },
   "TIER_OF": {
     "CS6-BS": {
       "salt": "Platinum",

@@ -147,6 +147,15 @@ export function areaNameSet(areas) {
   return out;
 }
 
+/* v680, HIS DECISION OF 17 SEP 2026: A PARTY'S LOCALITY IS PUBLIC. It is filed as the third element of the party's point in
+ * PLACED and shown on Coverage for everyone, so a directory place that IS a filed locality is not a leak. Lower-cased; a leak
+ * check exempts a word only when it equals one, never when it contains one, and a name is never exempted by it. */
+export function publishedLocalities(book) {
+  const out = new Set();
+  for (const g of Object.values((book && book.PLACED) || {})) if (Array.isArray(g) && typeof g[2] === "string" && g[2].trim()) out.add(g[2].trim().toLowerCase());
+  return out;
+}
+
 /* THE PRICING SNAPSHOT (v303), and it exists so the cloud drafter is never a second engine.
  *
  * A drafter has to answer two things about a proposed row: what the salt cost, and whether the

@@ -5559,7 +5559,198 @@ const INTRODUCTIONS=[
   {"by":"CJ4-OKR","customer":"CS6-PER","note":"Declared network, counted retrospectively on his word of 13 Sep 2026."},
   {"by":"CS6-BS","customer":"CM4-MK","note":"His ruling of 13 Sep 2026: the first order went through CS6-BS-R on 15 Jul, and every order since has been direct."}
 ];
-const PLACED={};
+const PLACED={
+  "CA4-DAM": [
+    3.15,
+    101.66,
+    "Damansara"
+  ],
+  "CA5-BAN": [
+    3.13,
+    101.67,
+    "Bangsar"
+  ],
+  "CA5-SEN": [
+    3.18,
+    101.68,
+    "Sentul"
+  ],
+  "CA7-AMP": [
+    3.15,
+    101.74,
+    "Ampang"
+  ],
+  "CC5-OKR": [
+    3.09,
+    101.67,
+    "Old Klang Rd"
+  ],
+  "CD4-CS": [
+    3.06,
+    101.75,
+    "Cheras Selatan"
+  ],
+  "CD7-SEG": [
+    3.19,
+    101.66,
+    "Segambut"
+  ],
+  "CE4-AD": [
+    3.06,
+    101.74,
+    "Alam Damai"
+  ],
+  "CE4-CHE": [
+    3.11,
+    101.72,
+    "Cheras"
+  ],
+  "CE5-SA": [
+    3.1,
+    101.46,
+    "Setia Alam"
+  ],
+  "CF5-WM": [
+    3.21,
+    101.74,
+    "Wangsa Maju"
+  ],
+  "CG5-SB": [
+    3.05,
+    101.71,
+    "Sg Besi"
+  ],
+  "CH4-KS": [
+    3.13,
+    101.69,
+    "KL Sentral"
+  ],
+  "CH4-MAL": [
+    3.13,
+    101.73,
+    "Maluri"
+  ],
+  "CH5-KLC": [
+    3.16,
+    101.71,
+    "KLCC"
+  ],
+  "CH6-SET": [
+    3.2,
+    101.72,
+    "Setapak"
+  ],
+  "CI4-OKR": [
+    3.09,
+    101.67,
+    "Old Klang Rd"
+  ],
+  "CJ4-BJ": [
+    3.06,
+    101.69,
+    "Bkt Jalil"
+  ],
+  "CJ4-OKR": [
+    3.09,
+    101.67,
+    "Old Klang Rd"
+  ],
+  "CK4-SEN": [
+    3.18,
+    101.68,
+    "Sentul"
+  ],
+  "CM4-MK": [
+    3.17,
+    101.65,
+    "Mont Kiara"
+  ],
+  "CM4-SK": [
+    3.02,
+    101.7,
+    "Seri Kembangan"
+  ],
+  "CM6-HCM": [
+    10.78,
+    106.7,
+    "Ho Chi Minh"
+  ],
+  "CM6-PJ": [
+    3.11,
+    101.61,
+    "Petaling Jaya"
+  ],
+  "CN5-TAI": [
+    4.85,
+    100.74,
+    "Taiping"
+  ],
+  "CN6-WM": [
+    3.21,
+    101.74,
+    "Wangsa Maju"
+  ],
+  "CR3-DAM": [
+    3.15,
+    101.66,
+    "Damansara"
+  ],
+  "CR3-PUD": [
+    3.14,
+    101.71,
+    "Pudu"
+  ],
+  "CR4-PJ": [
+    3.11,
+    101.61,
+    "Petaling Jaya"
+  ],
+  "CS6-BS": [
+    3.11,
+    101.67,
+    "Bangsar South"
+  ],
+  "CS6-PER": [
+    3.1,
+    101.72,
+    "Permaisuri"
+  ],
+  "CY2-NIL": [
+    2.81,
+    101.8,
+    "Nilai"
+  ],
+  "CZ4-MK": [
+    3.17,
+    101.65,
+    "Mont Kiara"
+  ],
+  "CZ6-WM": [
+    3.21,
+    101.74,
+    "Wangsa Maju"
+  ],
+  "SA5-BTR": [
+    3.09,
+    101.71,
+    "Bdr Tun Razak"
+  ],
+  "SF6-KLC": [
+    3.16,
+    101.71,
+    "KLCC"
+  ],
+  "SM4-KEP": [
+    3.21,
+    101.64,
+    "Kepong"
+  ],
+  "SP7-PUD": [
+    3.14,
+    101.71,
+    "Pudu"
+  ]
+};
 const TIER_OF={
   "CS6-BS": {
     "salt": "Platinum",
@@ -6930,7 +7121,9 @@ const quoteFor=p=>{const f=QUOTES[p||PROD];return f?f():null;};
    v324 onward, which tabJournal maps in full; master/changelog.json carries every entry
    ever written and is the record. So a bump PREPENDS its entry. Replacing the array,
    which both comments invited, silently drops the whole window. */
-const evolution=[{"v":"v679","d":"17 Sep 2026","t":"A PLACE IS ITS LOCALITY, THEN WHERE THAT IS: THE CODE FROM THE LOCALITY, THE LOCALITY WITH THE POINT","n":["<b>HIS INSTRUCTION OF 17 SEP 2026:</b> BAN is Bangsar, KL; AMP is Ampang, KL; SA is Setia Alam, SG; and Amend IDs will follow to make every location accurate. A typed place now reads as a locality, then where that is.","<b>THE CODE IS MADE FROM THE LOCALITY</b>, the words before the first comma, where every word used to count. Bangsar, KL keeps BAN where it would have become BK, so writing the district after a place never re-keys a party. A place with no comma codes exactly as before, TBC included.","<b>THE LOCALITY TRAVELS WITH THE POINT</b>, as its third element, through Add ID, Amend ID and the vault road on Coverage; public by his decision of 17 Sep 2026, while the name still never leaves the vault. Amend ID sends a place entry when only the locality changed. The vault road now also takes each party whose point is filed without a locality, keeping the point and adding the locality. The drafter keeps a locality of one to sixty characters with no markup, trimmed, and refuses anything else in its place.","<b>WHAT FOLLOWS THE LOCALITY CONFINES THE LOOKUP.</b> A comma part naming a district or a state, KL for Kuala Lumpur and a lone SG or SGR for Selangor, keeps the search inside it, so Ampang, KL is never Selangor's Ampang. The districts on the desk now carry their state for it, which the map still never names.","<b>THE CHECKS:</b> a new section reads the code rule, the point, the lookup for his three places, the vault road and the drafter, twelve reverts each turning it red; v633's checks that the place never travelled are restated to the locality travelling and the name never, three more reverts proving Add ID and Amend ID carry it."]},
+const evolution=[{"v":"v680","d":"17 Sep 2026","t":"WHERE EACH PARTY IS, IN WORDS, FOR EVERYONE: LOCALITY, AREA, DISTRICT","n":["<b>HIS INSTRUCTION OF 17 SEP 2026:</b> the location of each customer includes the locality and the district, where available, and everyone may see it. Coverage's party table has a <b>Where</b> column: CA5-BAN reads Bangsar, Lembah Pantai, Kuala Lumpur; CA7-AMP Ampang, Titiwangsa, Kuala Lumpur; CE5-SA Setia Alam, Bukit Raja, Petaling.","<b>WHAT IT READS.</b> The locality filed beside the party's point, with the short forms people write spelled out (Rd, Sg, Bkt, Bdr, Jln, Tmn, Kg); the area the point stands in, a constituency in Kuala Lumpur and elsewhere the sub-area on the survey his Selangor list follows; and the district. Each is named once, and what is not known is left out, so a place abroad reads its locality alone.","<b>WHAT WAS FILED.</b> Thirty-eight parties carry a locality: thirty-five from the places recorded in the directory, each at the point it already stood at, so nothing moved on the map; and his three at new points, measured inside Lembah Pantai, Titiwangsa and mukim Bukit Raja. CM3-OUG, CA2-SEN and CB7-BJ have no recorded place on the laptop, so theirs come through the vault road on Coverage or an Amend ID.","<b>THE LEAK CHECKS FOLLOW HIS DECISION.</b> The extract's scan and the suite's public-desk scan pass a directory place that equals a filed locality, through one definition in tools/book.mjs; every name is still searched, and so is every place not filed.","<b>THE CHECKS:</b> a new section reads his three off the book and through the desk, the rules off fixture codes, and the Where column as drawn; seven reverts each turned it red. v637's panel reader skips the new column, which this section reads."]},
+
+{"v":"v679","d":"17 Sep 2026","t":"A PLACE IS ITS LOCALITY, THEN WHERE THAT IS: THE CODE FROM THE LOCALITY, THE LOCALITY WITH THE POINT","n":["<b>HIS INSTRUCTION OF 17 SEP 2026:</b> BAN is Bangsar, KL; AMP is Ampang, KL; SA is Setia Alam, SG; and Amend IDs will follow to make every location accurate. A typed place now reads as a locality, then where that is.","<b>THE CODE IS MADE FROM THE LOCALITY</b>, the words before the first comma, where every word used to count. Bangsar, KL keeps BAN where it would have become BK, so writing the district after a place never re-keys a party. A place with no comma codes exactly as before, TBC included.","<b>THE LOCALITY TRAVELS WITH THE POINT</b>, as its third element, through Add ID, Amend ID and the vault road on Coverage; public by his decision of 17 Sep 2026, while the name still never leaves the vault. Amend ID sends a place entry when only the locality changed. The vault road now also takes each party whose point is filed without a locality, keeping the point and adding the locality. The drafter keeps a locality of one to sixty characters with no markup, trimmed, and refuses anything else in its place.","<b>WHAT FOLLOWS THE LOCALITY CONFINES THE LOOKUP.</b> A comma part naming a district or a state, KL for Kuala Lumpur and a lone SG or SGR for Selangor, keeps the search inside it, so Ampang, KL is never Selangor's Ampang. The districts on the desk now carry their state for it, which the map still never names.","<b>THE CHECKS:</b> a new section reads the code rule, the point, the lookup for his three places, the vault road and the drafter, twelve reverts each turning it red; v633's checks that the place never travelled are restated to the locality travelling and the name never, three more reverts proving Add ID and Amend ID carry it."]},
 
 {"v":"v678","d":"17 Sep 2026","t":"KUALA LUMPUR IS SHADED BY ITS ELEVEN CONSTITUENCIES","n":["<b>HIS DECISION OF 17 SEP 2026.</b> Thirty of the thirty-five parties on Coverage stand in Kuala Lumpur, and the survey behind the finer areas gave the territory ten coarse ones, so a tap on it told him nothing. Its areas are now its eleven federal constituencies: Kepong, Batu, Wangsa Maju, Segambut, Setiawangsa, Titiwangsa, Bukit Bintang, Lembah Pantai, Seputeh, Cheras and Bandar Tun Razak, the names his own map of the city prints. The thirty now spread across nine of them.","<b>THE SOURCE.</b> The 2018 federal delimitation, in force since GE14, from the Malaysian Election Corpus (Thevananthan and Chacko), public domain under CC0, pinned to a commit in tools/areafetch.mjs and credited under the map. Every district and every area outside Kuala Lumpur is byte for byte what it was.","<b>A POINT IS NAMED BY ITS OWN DISTRICT FIRST.</b> The survey files mukim Petaling under Petaling and mukim Setapak under Gombak, yet 40% and 20% of them lie inside Kuala Lumpur, so twelve KL parties had been counted in a Selangor mukim. A point now takes its own district's area that holds it, then any area that does, then the nearest of its own. An opened district draws its own areas last, over a neighbour's that meet its frame, and its lead says constituency where that is what they are.","<b>THE CHECKS:</b> a new section reads the eleven seats, names each seat's own point against the rule it replaced, and reads the drawing order with Kuala Lumpur and with Petaling opened; five reverts each turned it red, one of them only after the Petaling check was added, since the seats happen to come last in the data."]},
 
@@ -7498,7 +7691,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='17 Sep 2026, 01:38 KL';
+const LAST_UPDATED='17 Sep 2026, 01:45 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -10958,6 +11151,17 @@ function areaOf(lat,lng){
   const area=own.find(holds)||AREAS.find(holds)||own.sort((p,q)=>near(p)-near(q))[0]||null;
   return {district:district,area:area};
 }
+/* v680, HIS INSTRUCTION OF 17 SEP 2026: WHERE A PARTY IS, IN WORDS, FOR EVERYONE. Its locality as typed, with the short
+   forms people write spelled out; the area its point stands in, a constituency in Kuala Lumpur and the sub-area on his
+   Selangor list elsewhere; and its district. Each named once, and what is not known left out. */
+const PLACE_WORDS={rd:'Road',jln:'Jalan',sg:'Sungai',bkt:'Bukit',bdr:'Bandar',tmn:'Taman',kg:'Kampung',kpg:'Kampung'};
+const placeTidy=t=>String(t||'').replace(/\b([A-Za-z]+)\b\.?/g,(m,w)=>PLACE_WORDS[w.toLowerCase()]||m);
+function whereOf(id){
+  const g=PLACED[id],pl=placeOf(id),parts=[];
+  if(g&&g[2])parts.push(placeTidy(g[2]));
+  if(pl){const r=areaOf(pl.lat,pl.lng);if(r.area)parts.push(r.area.short);if(r.district)parts.push(r.district.name);}
+  return parts.filter((x,i)=>parts.findIndex(y=>y.toLowerCase()===x.toLowerCase())===i).join(', ');
+}
 /* what a district's areas are called: Kuala Lumpur's are its constituencies (v678), the rest the survey's kinds */
 const areaWord=d=>AREAS.some(a=>a.district===d.id&&!a.kind)?'constituency':'mukim, bandar and pekan';
 /* the kind and the name, unless the name already opens with the kind, as Bandar Baharu does */
@@ -11073,9 +11277,9 @@ function tabMap(){
       <div style="margin-top:12px;font-size:12px;color:var(--mut)">Month by month, the period in gold</div>
       <svg class="maptrend" viewBox="0 0 ${W2} ${H2}" style="width:100%;max-width:${Math.max(W2,280)}px;height:auto;display:block;margin-top:4px" role="img" aria-label="${esc(name)}, ${word} month by month">${bars}</svg>
       ${trend.length?`<div class="maptrendx" style="display:flex;justify-content:space-between;max-width:${Math.max(W2,280)}px;font-size:10px;color:var(--mut)"><span>${MAP_MON[+trend[0].k.slice(5,7)-1]} ${trend[0].k.slice(0,4)}</span><span>${MAP_MON[+trend[trend.length-1].k.slice(5,7)-1]} ${trend[trend.length-1].k.slice(0,4)}</span></div>`:''}
-      <table style="margin-top:10px"><thead><tr><th class="l">Party</th><th>${MAP_METRICS[MAP_METRIC]}</th></tr></thead><tbody>
-        ${shownWho.map(x=>`<tr><td class="l mono">${esc(codeOf(x.id))}</td><td>${Math.abs(x.v)>0.009?mapFmt(x.v):'&mdash;'}</td></tr>`).join('')||`<tr><td class="l" colspan="2" style="color:var(--mut)">No party sited here.</td></tr>`}
-        ${who.length>shownWho.length?`<tr><td class="l" colspan="2" style="color:var(--mut)">and ${who.length-shownWho.length} more</td></tr>`:''}
+      <table style="margin-top:10px"><thead><tr><th class="l">Party</th><th class="l">Where</th><th>${MAP_METRICS[MAP_METRIC]}</th></tr></thead><tbody>
+        ${shownWho.map(x=>`<tr><td class="l mono">${esc(codeOf(x.id))}</td><td class="l mapwhere">${esc(whereOf(x.id))||'&mdash;'}</td><td>${Math.abs(x.v)>0.009?mapFmt(x.v):'&mdash;'}</td></tr>`).join('')||`<tr><td class="l" colspan="3" style="color:var(--mut)">No party sited here.</td></tr>`}
+        ${who.length>shownWho.length?`<tr><td class="l" colspan="3" style="color:var(--mut)">and ${who.length-shownWho.length} more</td></tr>`:''}
       </tbody></table>
       ${isArea?`<div style="margin-top:10px"><button class="vbtn" onclick="mapPick(null)">Back to ${esc(dist.name)}</button></div>`:''}
     </div>`;})();

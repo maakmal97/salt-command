@@ -14,7 +14,7 @@ import { fileURLToPath } from "node:url";
 import worker from "../src/worker.js";
 import stmtWorker, { normUser } from "../stmt/worker.js";
 import { unionByAt, pruneCommitted } from "../tools/drain.mjs";
-import { NAME_STOPWORDS, NAME_COLLISIONS, areaNameSet } from "../tools/book.mjs";
+import { NAME_STOPWORDS, NAME_COLLISIONS, areaNameSet, publishedLocalities } from "../tools/book.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO = resolve(HERE, "..");
@@ -327,9 +327,11 @@ section("The public desk carries no name and no place");
     const desk = readFileSync(join(REPO, "public", "desk.html"), "utf8");
     const bio = JSON.parse(readFileSync(BIO, "utf8"));
     const words = new Set();
+    /* v680, HIS DECISION OF 17 SEP 2026: a place filed as a party's locality is public; a place only, never a name */
+    const localities = publishedLocalities(JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8")));
     for (const v of Object.values(bio.bio || {})) {
       const raw = String(v.raw || ""), o = raw.lastIndexOf("(");
-      if (o > 0) { words.add(raw.slice(0, o).trim()); words.add(raw.slice(o + 1, raw.lastIndexOf(")")).trim()); }
+      if (o > 0) { words.add(raw.slice(0, o).trim()); const pl = raw.slice(o + 1, raw.lastIndexOf(")")).trim(); if (!localities.has(pl.toLowerCase())) words.add(pl); }
     }
     for (const p of Object.values(bio.places || {})) if (p.name) words.add(p.name);
     /* Party codes embed their own place abbreviation by design, so they come out first or
@@ -11794,8 +11796,8 @@ section("v637: a tap drills into a district or an area: its figure, share, rank,
       + "return {title:(p.querySelector('.cardh')||{}).textContent,v:[].map.call(p.querySelectorAll('.kpi .v'),function(x){return x.textContent;}),n:[].map.call(p.querySelectorAll('.kpi .n'),function(x){return x.textContent;}),"
       + "bars:[].map.call(p.querySelectorAll('rect.mtbar'),function(b){return {h:+b.getAttribute('height'),f:b.getAttribute('fill'),t:(b.querySelector('title')||{}).textContent};}),"
       + "x:[].map.call(p.querySelectorAll('.maptrendx span'),function(x){return x.textContent;}),"
-      + "who:[].map.call(p.querySelectorAll('tbody tr'),function(r){return [].map.call(r.cells,function(c){return c.textContent;}).join('|');}),"
-      + "head:(p.querySelector('thead th:nth-child(2)')||{}).textContent,back:!!p.querySelector('button.vbtn'),text:p.textContent,"
+      + "who:[].map.call(p.querySelectorAll('tbody tr'),function(r){return [].filter.call(r.cells,function(c){return !c.classList.contains('mapwhere');}).map(function(c){return c.textContent;}).join('|');}),"   /* v680: the Where column is read in its own section */
+      + "head:(p.querySelector('thead th:last-child')||{}).textContent,back:!!p.querySelector('button.vbtn'),text:p.textContent,"
       + "picked:[].map.call(s.querySelectorAll('path.marea.mpicked'),function(x){return x.getAttribute('data-a');}),gold:s.querySelectorAll('circle.mdotpick').length,pick:MAP_PICK};})()");
     const mJul = setup.months.indexOf("2026-07"), mAug = setup.months.indexOf("2026-08");
     ok(panel("") === null, "the districts view carries no drill: a tap there opens the district");
@@ -13094,6 +13096,42 @@ section("v679: a place is its locality then where that is: the code from the loc
     "a place entry keeps the locality beside its point, trimmed: " + (kept.skip || JSON.stringify(kept.row)));
   const bad = [[3.13, 101.67, "<b>Qqq</b>"], [3.13, 101.67, ""], [3.13, 101.67, "x".repeat(61)], [3.13, 101.67, 7], [3.13, 101.67, "Qqq", "more"]].map((g) => dr79(en79(g), mir79).skip || "");
   ok(bad.every((x) => /not in Malaysia/.test(x)), "markup, an empty or overlong locality, a number there or a fourth element refuses the entry: " + JSON.stringify(bad));
+}
+section("v680: where each party is, in words, for everyone: locality, area, district");
+{
+  /* HIS INSTRUCTION OF 17 SEP 2026: the location of each customer includes the locality and the district, where available,
+     for everyone. The localities are filed beside each point in PLACED (38 from the directory's recorded places at the
+     points the parties already stood at, and his three at new points); Coverage's party table reads them through whereOf.
+     His three are read off the real book; the rules are read off fixture codes. */
+  const book80 = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const P80 = book80.PLACED || {};
+  ok(JSON.stringify(P80["CA5-BAN"]) === '[3.13,101.67,"Bangsar"]' && JSON.stringify(P80["CA7-AMP"]) === '[3.15,101.74,"Ampang"]' && JSON.stringify(P80["CE5-SA"]) === '[3.1,101.46,"Setia Alam"]',
+    "his three are filed: Bangsar, Ampang on the Kuala Lumpur side, and Setia Alam: " + JSON.stringify([P80["CA5-BAN"], P80["CA7-AMP"], P80["CE5-SA"]]));
+  ok(Object.values(P80).length >= 38 && Object.values(P80).every((g) => Array.isArray(g) && g.length === 3 && typeof g[2] === "string" && g[2].length > 0),
+    "every party filed carries a locality beside its point: " + Object.keys(P80).length);
+  const loc80 = publishedLocalities({ PLACED: { A: [3.1, 101.6, " Qqqville "], B: [3.1, 101.6], C: [3.1, 101.6, ""] } });
+  ok(JSON.stringify([...loc80]) === '["qqqville"]', "the localities a leak check may pass are the filed ones, lower-cased, and nothing else: " + JSON.stringify([...loc80]));
+
+  const { openMaster: om80 } = await import("../tools/payload.mjs");
+  const { w: w80 } = await om80();
+  const rd80 = (e) => JSON.parse(String(w80.eval("JSON.stringify(" + e + ")")));
+  try {
+    const three = rd80("[whereOf('CA5-BAN'),whereOf('CA7-AMP'),whereOf('CE5-SA')]");
+    ok(JSON.stringify(three) === '["Bangsar, Lembah Pantai, Kuala Lumpur","Ampang, Titiwangsa, Kuala Lumpur","Setia Alam, Bukit Raja, Petaling"]',
+      "his three read locality, constituency or sub-area, and district: " + JSON.stringify(three));
+    const rules = rd80("(function(){var seg=AREAS.find(function(a){return a.short==='Segambut';});"
+      + "PLACED['CZ9-DUP']=[seg.label[1],seg.label[0],'segambut'];PLACED['CZ9-ABR']=[3.09,101.67,'Old Klang Rd.'];PLACED['CZ9-BKT']=[3.06,101.69,'Bkt Jalil'];"
+      + "PLACED['CZ9-FAR']=[10.78,106.7,'Qqq City'];PLACED['CZ9-PT']=[3.09,101.67];"
+      + "var r=['CZ9-DUP','CZ9-ABR','CZ9-BKT','CZ9-FAR','CZ9-PT'].map(whereOf);['CZ9-DUP','CZ9-ABR','CZ9-BKT','CZ9-FAR','CZ9-PT'].forEach(function(c){delete PLACED[c];});return r;})()");
+    ok(/^segambut, Kuala Lumpur$/.test(rules[0]) && /^Old Klang Road, [A-Z][a-z]+( [A-Z][a-z]+)*, Kuala Lumpur$/.test(rules[1]) && /^Bukit Jalil, [A-Z]/.test(rules[2])
+      && rules[3] === "Qqq City" && !/,.*,/.test(rules[4]) && /Kuala Lumpur$/.test(rules[4]),
+      "each part is named once, short forms are spelled out, a place abroad is its locality alone, and a point with no locality reads its area and district: " + JSON.stringify(rules));
+    w80.eval("switchTab('map');MAP_VIEW='kuala-lumpur';MAP_PICK=null;render();");
+    const tab = rd80("(function(){var t=document.querySelector('.sec.on .mapdrill table');if(!t)return null;return {head:[].map.call(t.querySelectorAll('th'),function(x){return x.textContent;}),"
+      + "where:[].map.call(t.querySelectorAll('td.mapwhere'),function(x){return x.textContent;})};})()");
+    ok(tab && JSON.stringify(tab.head.slice(0, 2)) === '["Party","Where"]' && tab.where.length > 0 && tab.where.every((x) => /Kuala Lumpur$/.test(x)) && tab.where.some((x) => x.split(", ").length === 3),
+      "Coverage's party table for Kuala Lumpur has a Where column, each reading down to the district and the localities filed: " + JSON.stringify(tab));
+  } finally { try { w80.close(); } catch (e) { /* best effort */ } }
 }
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
 process.exit(fail ? 1 : 0);

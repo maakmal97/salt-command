@@ -136,7 +136,9 @@ margin included, is served at the public URL.
 to mukim, bandar and pekan, and Kuala Lumpur to its 11 constituencies (MECo, CC0, v678), parties as dots. **Area names show; a party's name never does**,
 even unlocked. A party is counted in its own district's area that holds its point, else in any area
 that does, whichever district that is filed under (v678: two Selangor mukim spill into KL). The leak checks exempt a directory place only when it IS an official area
-name (`areaNameSet` in `tools/book.mjs`). **A party's place reaches the map on its own** (his
+name (`areaNameSet` in `tools/book.mjs`) or a locality filed in `PLACED` (`publishedLocalities`, v680).
+**Each party's location shows in words, for everyone** (his decision, 17 Sep 2026, v680): `whereOf` reads
+locality, constituency or sub-area, and district, in the Where column of Coverage's party table. **A party's place reaches the map on its own** (his
 decision of 14 Sep 2026) through `geo/gazetteer.json`, built from GeoNames alone and never from
 the directory; an unresolved place is tapped on the map and Record waits for the point.
 **A place is its locality, then where that is** (his instruction, 17 Sep 2026, v679): the code is made
