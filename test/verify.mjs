@@ -11414,7 +11414,7 @@ section("v633: a party's place reaches the map on its own, from what is typed at
   const mir31 = { sales: [], purchases: [], state: { roster: ["CZ9-PLA", "CZ9-PLB", "CZ9-PLA-R", "CZ9-OLD"], associates: [], PLACED: { "CZ9-PLB": [2.5, 101.5] } }, pricing: null };
   const en31 = (p) => ({ at: "2026-09-14T09:00:00.000Z", payload: p });
   const pl31 = dr31(en31({ mode: "place", places: { "CZ9-PLA": [3.1234, 101.5678], "CZ9-PLB": [2.7012, 101.9456] } }), mir31);
-  ok(!pl31.skip && pl31.collection === "place" && JSON.stringify(pl31.row.places) === '{"CZ9-PLA":[3.12,101.57],"CZ9-PLB":[2.7,101.95]}' && /CZ9-PLB is on the map already/.test(pl31.flags.join(" ")) && /only the point travels/.test(pl31.reasoning),
+  ok(!pl31.skip && pl31.collection === "place" && JSON.stringify(pl31.row.places) === '{"CZ9-PLA":[3.12,101.57],"CZ9-PLB":[2.7,101.95]}' && /CZ9-PLB is on the map already/.test(pl31.flags.join(" ")) && /the point travels, with the locality/.test(pl31.reasoning),
     "a place entry drafts as its own collection, each point to 0.01 degrees, flagging a party it moves: " + (pl31.skip || JSON.stringify(pl31.row) + " " + pl31.flags.join(" ")));
   for (const [p, why] of [[{ places: { "CZ9-NOT": [3.1, 101.6] } }, /CZ9-NOT is not on the roster/], [{ places: { "CZ9-PLA-R": [3.1, 101.6] } }, /resale account/],
     [{ places: { "CZ9-PLA": [51.5, -0.12] } }, /not in Malaysia/], [{ places: { "CZ9-PLA": "3.1,101.6" } }, /not in Malaysia/], [{ places: {} }, /names no party/]]) {
@@ -11464,8 +11464,10 @@ section("v633: a party's place reaches the map on its own, from what is typed at
     const sereb31 = await look31("Taman Zzqx, Seremban");
     const at31 = sereb31 && sereb31.point ? rd31("(function(){var r=areaOf(" + sereb31.point[0] + "," + sereb31.point[1] + ");return [r.area?areaName(r.area):null,r.area?r.area.short:null,r.district?r.district.name:null];})()") : [];
     ok(sereb31.how === "area" && at31.includes(sereb31.name) && /seremban/i.test(sereb31.name), "an official area name finds the area's own point, which lies inside the area it names: " + JSON.stringify([sereb31, at31]));
-    const first31 = await look31("Zedville, Seremban");
+    /* v679: what follows the locality confines it, so the broader wording must hold the list's point to be the test it was */
+    const first31 = await look31("Zedville, Petaling"), confined31 = await look31("Zedville, Seremban");
     ok(first31.how === "list" && JSON.stringify(first31.point) === "[3.12,101.57]", "the most specific wording wins over a broader area named after it: " + JSON.stringify(first31));
+    ok(JSON.stringify(confined31.point) !== "[3.12,101.57]", "and a locality the list puts outside the district named after it is not taken: " + JSON.stringify(confined31));
     const five31 = (A31.areas.find((a) => /^[A-Za-z]{5}$/.test(a.short)) || {}).short;
     const f5 = five31 ? await look31("Taman Zzqx " + five31) : null;
     ok(!!five31 && f5.how === "area" && f5.name && f5.name.toLowerCase().includes(five31.toLowerCase()), "a five-letter word alone is found as an official area name: " + JSON.stringify(f5));
@@ -11490,8 +11492,8 @@ section("v633: a party's place reaches the map on its own, from what is typed at
     ok(/Districts: geoBoundaries.*CC BY 3\.0\. Places: GeoNames, CC BY 4\.0\./.test(rd31("document.getElementById('wbPrev').textContent")), "the map under the form credits the districts it draws and the place list it searched");
     w31.eval(stub31 + "wbRecord();");
     const stF31 = await settle31(), qF31 = rd31("queue.map(function(x){return x.payload;})"), rawF31 = JSON.stringify(rd31("queue"));
-    ok(/Registered/.test(stF31) && qF31.length === 1 && JSON.stringify(qF31[0].geo) === "[3.12,101.57]" && !rawF31.includes("Zedville") && !rawF31.includes("Fixture"),
-      "Record queues the code with the point and never the place: " + stF31 + " " + JSON.stringify(qF31));
+    ok(/Registered/.test(stF31) && qF31.length === 1 && JSON.stringify(qF31[0].geo) === '[3.12,101.57,"Zedville"]' && !rawF31.includes("Fixture"),
+      "Record queues the code with the point and its locality (v679), never the name: " + stF31 + " " + JSON.stringify(qF31));
     w31.eval("queue=[];");
     pane31("Zed Other", "Zzqx Nowhere"); await wait31();
     const miss31 = view31();
@@ -11512,7 +11514,7 @@ section("v633: a party's place reaches the map on its own, from what is typed at
     ok(tap31b[1] > tap31.point[1] + 0.02 && Math.abs(tap31b[0] - tap31.point[0]) <= 0.011, "and a tap further right moves it east: " + JSON.stringify(tap31b));
     w31.eval(stub31 + "wbRecord();");
     const stT31 = await settle31(), qT31 = rd31("queue.map(function(x){return x.payload;})");
-    ok(/Registered/.test(stT31) && qT31.length === 1 && JSON.stringify(qT31[0].geo) === JSON.stringify(tap31b), "Record then queues the tapped point: " + stT31 + " " + JSON.stringify(qT31.map((q) => q.geo)));
+    ok(/Registered/.test(stT31) && qT31.length === 1 && JSON.stringify(qT31[0].geo) === JSON.stringify(tap31b.concat(["Zzqx Nowhere"])), "Record then queues the tapped point, with the locality typed: " + stT31 + " " + JSON.stringify(qT31.map((q) => q.geo)));
     w31.eval("queue=[];");
 
     /* Amend ID: the same code with a new place queues the point; the same point queues nothing; a new code carries it */
@@ -11524,9 +11526,11 @@ section("v633: a party's place reaches the map on its own, from what is typed at
     ok(same31.to === code31 && same31.move && /new point on the map goes to Approve/.test(same31.prev), "a party whose code stays but whose place moves is told the new point goes to Approve: " + same31.prev);
     w31.eval(stub31 + "wbRecord();");
     const stS31 = await settle31(), qS31 = rd31("queue.map(function(x){return x.payload;})");
-    ok(/code stays/.test(stS31) && qS31.length === 1 && qS31[0].mode === "place" && JSON.stringify(qS31[0].places) === JSON.stringify({ [code31]: [2.7, 101.95] }),
+    ok(/code stays/.test(stS31) && qS31.length === 1 && qS31[0].mode === "place" && JSON.stringify(qS31[0].places) === JSON.stringify({ [code31]: [2.7, 101.95, "Seg Town"] }),
       "and Record queues a place entry for that code alone: " + stS31 + " " + JSON.stringify(qS31));
     w31.eval("queue=[];PLACED[" + JSON.stringify(code31) + "]=[2.7,101.95];");
+    ok((await am31(code31, "Zed Zed Z", "Seg Town")).move, "the point already filed with no locality beside it is still a move: the locality goes to Approve (v679)");
+    w31.eval("queue=[];PLACED[" + JSON.stringify(code31) + "]=[2.7,101.95,'Seg Town'];");
     const still31 = await am31(code31, "Zed Zed Z", "Seg Town");
     w31.eval(stub31 + "wbRecord();");
     const stN31 = await settle31();
@@ -11536,7 +11540,7 @@ section("v633: a party's place reaches the map on its own, from what is typed at
     w31.eval(stub31 + "wbRecord();");
     await settle31();
     const qM31 = rd31("queue.map(function(x){return x.payload;})");
-    ok(move31.to === code31 && qM31.length === 1 && qM31[0].mode === "rename" && JSON.stringify(qM31[0].geo) === "[2.7,101.95]", "a new code carries the point on its rename, with no second entry: " + JSON.stringify(qM31));
+    ok(move31.to === code31 && qM31.length === 1 && qM31[0].mode === "rename" && JSON.stringify(qM31[0].geo) === '[2.7,101.95,"Seg Town"]', "a new code carries the point on its rename, with no second entry: " + JSON.stringify(qM31));
     w31.eval("queue=[];");
 
     /* the map: the parties on the book placed from the vault in one entry */
@@ -11545,7 +11549,7 @@ section("v633: a party's place reaches the map on its own, from what is typed at
     ok(/Places: GeoNames, CC BY 4\.0\./.test(rd31("document.querySelector('.sec.on').textContent")), "and the map's credits name the place list beside the boundaries");
     await w31.eval("mapPlaceFromVault()");
     const vq31 = rd31("queue.map(function(x){return x.payload;})"), vm31 = rd31("MAP_MSG");
-    ok(vq31.length === 1 && vq31[0].mode === "place" && JSON.stringify(vq31[0].places) === '{"CZ9-VA1":[3.12,101.57]}' && /1 party queued/.test(vm31) && /CZ9-VA2/.test(vm31) && !/CZ9-VA3/.test(vm31) && !/Zed/.test(JSON.stringify(vq31)),
+    ok(vq31.length === 1 && vq31[0].mode === "place" && JSON.stringify(vq31[0].places) === '{"CZ9-VA1":[3.12,101.57,"Zedville"]}' && /1 party queued/.test(vm31) && /CZ9-VA2/.test(vm31) && !/CZ9-VA3/.test(vm31) && !/Zed (One|Two|Three)/.test(JSON.stringify(vq31)),
       "one entry carries every party found, and the message names the codes to tap: " + vm31 + " " + JSON.stringify(vq31));
     await w31.eval("mapPlaceFromVault()");
     ok(rd31("queue.length") === 1 && /Nothing new to place/.test(rd31("MAP_MSG")), "a second run queues nothing twice: " + rd31("MAP_MSG"));
@@ -13041,6 +13045,55 @@ section("v678: Kuala Lumpur is shaded by its eleven constituencies, and a point 
     ok(/by constituency in Kuala Lumpur/.test(drawn.lead) && /MECo/.test(drawn.text) && /CC0/.test(drawn.text),
       "the lead says constituency and the credit names MECo and its licence: " + JSON.stringify(drawn.lead.slice(0, 80)));
   } finally { try { w78.close(); } catch (e) { /* best effort */ } }
+}
+section("v679: a place is its locality then where that is: the code from the locality, the locality with the point");
+{
+  /* HIS INSTRUCTION OF 17 SEP 2026: "BAN is Bangsar, KL. AMP is Ampang, KL. SA is Setia Alam, SG", with Amend IDs to follow.
+     The code is made from the words before the first comma, the locality rides as the third element of a party's point
+     through Add ID, Amend ID and the vault road, the drafter checks it, and a comma part naming a district or a state
+     confines the lookup. Fixture names and codes; the real lookups are the three places he named. */
+  const { draftRow: dr79 } = await import("../src/drafter.js");
+  const { webcrypto: wc79 } = await import("node:crypto");
+  const { openMaster: om79 } = await import("../tools/payload.mjs");
+  const { w: w79 } = await om79();
+  const rd79 = (e) => JSON.parse(String(w79.eval("JSON.stringify(" + e + ")")));
+  if (!w79.crypto || !w79.crypto.subtle) { try { Object.defineProperty(w79, "crypto", { value: wc79, configurable: true }); } catch (e) { w79.crypto = wc79; } }
+  try {
+    const codes = rd79("[deriveCode('Zed Qqq','Bangsar, KL','customer'),deriveCode('Zed Qqq','Bangsar','customer'),deriveCode('Zed Qqq','Setia Alam, SG','customer'),deriveCode('Zed Qqq','Old Klang Rd','customer'),deriveCode('Zed Qqq','TBC','customer')]");
+    ok(JSON.stringify(codes) === '["CZ7-BAN","CZ7-BAN","CZ7-SA","CZ7-OKR","CZ7-TBC"]',
+      "the code is made from the locality, so Bangsar, KL is BAN as Bangsar is, and a place with no comma codes as before: " + JSON.stringify(codes));
+    const gw = rd79("[geoWhere([3.13,101.67],'Bangsar, KL'),geoWhere([3.1,101.46],'  Setia Alam , SG'),geoWhere([3.1,101.6],'to be confirmed'),geoWhere(null,'Bangsar')]");
+    ok(JSON.stringify(gw) === '[[3.13,101.67,"Bangsar"],[3.1,101.46,"Setia Alam"],[3.1,101.6],null]',
+      "the locality rides third on the point, and a place to be confirmed carries none: " + JSON.stringify(gw));
+
+    /* the lookup: Ampang alone is Selangor's; Ampang, KL is never there */
+    const look = async (t) => JSON.parse(String(await w79.eval("placeFromText(" + JSON.stringify(t) + ").then(function(r){var d=r.point?areaOf(r.point[0],r.point[1]).district:null;return JSON.stringify({how:r.how,d:d?d.name:null});})")));
+    const amp = await look("Ampang"), ampKL = await look("Ampang, KL"), ban = await look("Bangsar, KL"), sa = await look("Setia Alam, SG");
+    ok(amp.d === "Ulu Langat" && ampKL.d !== "Ulu Langat" && (ampKL.d === "Kuala Lumpur" || !ampKL.how || ampKL.how === "ambiguous"),
+      "Ampang alone is found in Selangor, and Ampang, KL is confined to Kuala Lumpur: " + JSON.stringify({ amp, ampKL }));
+    const batu = await look("Batu"), batuSG = await look("Batu, SG");
+    ok(batu.d === "Kuala Lumpur" && batuSG.d !== "Kuala Lumpur", "a lone SG is Selangor, so Batu, SG is not Kuala Lumpur's Batu: " + JSON.stringify({ batu, batuSG }));
+    ok(ban.d === "Kuala Lumpur" && ban.how === "list" && sa.d === "Petaling" && sa.how === "list",
+      "Bangsar, KL and Setia Alam, SG are found where they are: " + JSON.stringify({ ban, sa }));
+
+    /* the vault road: a party with a point filed and no locality keeps its point and gains the locality */
+    w79.eval("queue=[];roster.push('CZ9-LOC','CZ9-NEW');PLACED['CZ9-LOC']=[3.15,101.7];PLACED['CZ9-HAS']=[3.15,101.7,'Qqqville'];roster.push('CZ9-HAS');"
+      + "vaultNames={'CZ9-LOC':'Zed Qqq (Qqqville, KL)','CZ9-HAS':'Zed Zzz (Qqqville, KL)'};saveQueue=function(){};");
+    await w79.eval("mapPlaceFromVault()");
+    const q = rd79("queue.filter(function(e){return e.payload&&e.payload.mode==='place';}).map(function(e){return e.payload.places;})");
+    ok(q.length === 1 && JSON.stringify(q[0]["CZ9-LOC"]) === '[3.15,101.7,"Qqqville"]' && !("CZ9-HAS" in q[0]),
+      "the vault road files a missing locality beside the point already filed, and passes a party whose locality is filed: " + JSON.stringify(q));
+    w79.eval("queue=[];vaultNames={};delete PLACED['CZ9-LOC'];delete PLACED['CZ9-HAS'];['CZ9-LOC','CZ9-NEW','CZ9-HAS'].forEach(function(c){roster.splice(roster.indexOf(c),1);});");
+  } finally { await new Promise((r) => setTimeout(r, 200)); try { w79.close(); } catch (e) { /* best effort */ } }
+
+  /* the drafter: the locality is checked and kept; anything else in its place refuses the entry */
+  const mir79 = { sales: [], purchases: [], state: { roster: ["CZ9-PLA"], associates: [], PLACED: {} }, pricing: null };
+  const en79 = (p) => ({ at: "2026-09-17T01:00:00.000Z", payload: { mode: "place", places: { "CZ9-PLA": p } } });
+  const kept = dr79(en79([3.1311, 101.6712, " Qqqville "]), mir79);
+  ok(!kept.skip && JSON.stringify(kept.row.places["CZ9-PLA"]) === '[3.13,101.67,"Qqqville"]' && /with the locality/.test(kept.reasoning),
+    "a place entry keeps the locality beside its point, trimmed: " + (kept.skip || JSON.stringify(kept.row)));
+  const bad = [[3.13, 101.67, "<b>Qqq</b>"], [3.13, 101.67, ""], [3.13, 101.67, "x".repeat(61)], [3.13, 101.67, 7], [3.13, 101.67, "Qqq", "more"]].map((g) => dr79(en79(g), mir79).skip || "");
+  ok(bad.every((x) => /not in Malaysia/.test(x)), "markup, an empty or overlong locality, a number there or a fourth element refuses the entry: " + JSON.stringify(bad));
 }
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
 process.exit(fail ? 1 : 0);

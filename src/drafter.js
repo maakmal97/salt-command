@@ -26,8 +26,10 @@
 const round = (n, dp = 2) => Math.round((n + Number.EPSILON) * 10 ** dp) / 10 ** dp;
 const isNum = (v) => typeof v === "number" && Number.isFinite(v);
 /* v633: a point on the map is two numbers inside Malaysia, kept to 0.01 degrees, about a kilometre; anything else is no point */
-const geoOf = (g) => (Array.isArray(g) && g.length === 2 && isNum(g[0]) && isNum(g[1]) && g[0] > 0.8 && g[0] < 7.5 && g[1] > 99.5 && g[1] < 119.5)
-  ? [Math.round(g[0] * 100) / 100, Math.round(g[1] * 100) / 100] : null;
+/* v679: a point may carry its locality third, the words before the place's first comma, public by his decision of 17 Sep 2026 */
+const geoOf = (g) => (Array.isArray(g) && (g.length === 2 || (g.length === 3 && typeof g[2] === "string" && /^[^<>\u0000-\u001f]{1,60}$/.test(g[2].trim())))
+  && isNum(g[0]) && isNum(g[1]) && g[0] > 0.8 && g[0] < 7.5 && g[1] > 99.5 && g[1] < 119.5)
+  ? [Math.round(g[0] * 100) / 100, Math.round(g[1] * 100) / 100].concat(g.length === 3 ? [g[2].trim()] : []) : null;
 /* v617: whether the book holds a party as departed. PEOPLE reaches the Worker in the mirror's state, as every book key does. */
 const isDepartedIn = (book, id) => !!id && ((book.state && book.state.PEOPLE && book.state.PEOPLE.departed) || []).some((d) => d && d.id === id);
 const prodOf = (r) => (r && r.product) || "salt";
@@ -1101,7 +1103,7 @@ export function draftRow(entry, book) {
       row,
       flags: moves.length ? [`${moves.join(", ")} ${moves.length === 1 ? "is" : "are"} on the map already, and move${moves.length === 1 ? "s" : ""} to the new point.`] : [],
       reasoning: `Files the place of ${codes.length} ${codes.length === 1 ? "party" : "parties"} as a point on the map, each to about a kilometre: ${codes.join(", ")}.`
-        + " It moves no cash and no stock. The place that was typed stays in the vault; only the point travels.",
+        + " It moves no cash and no stock. The name stays in the vault; the point travels, with the locality where one was typed.",
     };
   }
   /* v643, HIS DECISIONS OF 15 SEP 2026: EACH CUSTOMER'S TIER, one customer or every proposal at once, and since v646 one for

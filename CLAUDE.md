@@ -139,6 +139,10 @@ that does, whichever district that is filed under (v678: two Selangor mukim spil
 name (`areaNameSet` in `tools/book.mjs`). **A party's place reaches the map on its own** (his
 decision of 14 Sep 2026) through `geo/gazetteer.json`, built from GeoNames alone and never from
 the directory; an unresolved place is tapped on the map and Record waits for the point.
+**A place is its locality, then where that is** (his instruction, 17 Sep 2026, v679): the code is made
+from the words before the first comma (`placeLocality`), so "Bangsar, KL" keeps BAN; the locality rides
+as the third element of the point (`geoWhere`, checked by the drafter's `geoOf`) and is public by his
+decision, the name never; a comma part naming a district or a state (KL, a lone SG) confines the lookup.
 
 **A defaulted sale is written off** (his instruction, 14 Sep 2026): `txAdvance` reads nothing
 owed on it, as `poOwed` reads nothing on a defaulted lot, so it leaves every reading of what is

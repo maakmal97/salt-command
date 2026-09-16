@@ -70,13 +70,13 @@ function renderAreas(a) {
    \`node tools/areafetch.mjs\`, by hand; it is never run by CI or by the build. */
 const AREAS_META=${JSON.stringify({ attribution: a.sources.map((s) => s.attribution), fetchedOn: a.fetchedOn })};
 const DISTRICTS=[
-${a.districts.map(({ state, ...d }) => "  " + JSON.stringify(d)).join(",\n")}
+${a.districts.map((d) => "  " + JSON.stringify(d)).join(",\n")}
 ];
 const AREAS=[
 ${a.areas.map((x) => "  " + JSON.stringify(x)).join(",\n")}
 ];`;
 }
-/* a district's state stays in geo/areas.json and is not rendered: the map draws the states from BASEMAP and names none */
+/* v679: a district carries its state, which the map still never names: a typed place's "SG" or "Selangor" confines its lookup to it */
 /* v633: the place list, one packed string, HASHED: a plain list of the core states' places would carry most of the directory's */
 function renderGazetteer(g) {
   return `/* ============ THE PLACE LIST (v633) ============
