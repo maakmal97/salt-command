@@ -8098,7 +8098,15 @@ section("v518: salt borrowed in is a loan the other way");
   const { execSync: ex7 } = await import("node:child_process");
   const { join: j7 } = await import("node:path");
   const bk7 = JSON.parse(rf7(j7(REPO, "ledger", "book.json"), "utf8"));
-  const LD = bk7.COUNT_ON.salt;   // a date inside the walk on any book
+  /* A DATE INSIDE THE WALK THAT IS NOT A COUNT DAY (16 Sep 2026). It was COUNT_ON.salt, taken as "a date inside the walk on
+     any book"; since the 15 Sep count it is also a day the walk re-anchors to the counted figure, and a loan dated on that
+     day lands 6.90 against a tolerance of 0.095, so the check went red on the calendar rather than on the walk. Off a count
+     day the same loan lands 6.92 and passes. Chosen from the book's own salt sale days, the median one no count falls on,
+     so it stays inside the walk on any book and never sits on a re-anchor. */
+  const countDays7 = new Set((bk7.counts || []).map((c) => c.date).concat(Object.values(bk7.COUNT_ON || {})));
+  const saleDays7 = [...new Set((bk7.sales || []).filter((r) => r.date && (r.product || "salt") === "salt").map((r) => r.date))]
+    .sort().filter((d) => !countDays7.has(d));
+  const LD = saleDays7[Math.floor(saleDays7.length / 2)];
   bk7.loans = (bk7.loans || []).filter((l) => l.preOpening).concat([
     { date: LD, party: "CM3-OUG", direction: "in", valueKg: 5.5, valueRM: null, status: "open", product: "salt", note: "fixture" },
     { date: LD, party: "CA2-SEN", direction: "in", valueKg: 1.5, valueRM: null, status: "open", product: "salt", note: "fixture" },
