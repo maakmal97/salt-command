@@ -153,7 +153,7 @@ untouched.
 | Step | Where | When |
 |---|---|---|
 | Queue an entry | KV `q:<deviceId>`, `POST /queue` from the phone | on tap; held offline, retried every ten seconds |
-| Draft the row | Worker `src/drafter.js` | on arrival via `waitUntil`, plus a `*/15` cron as the net |
+| Draft the row | Worker `src/drafter.js` | on arrival via `waitUntil`, plus the quarter-hour of an every-minute cron as the net (the other minutes nudge on a customer order, `docs/STATEMENTS.md`) |
 | Approve or reject | D1 `draft`, `POST /drafts/<id>/approve` | on tap; a decided row returns 409; a rejection drops the entry from every queue and the phone offers it back to re-enter |
 | Stage approved rows | Actions `cloud-commit.yml`, one job `chain` | dispatched by every approval (Worker holds `SALT_GITHUB_TOKEN`), hourly as the net |
 | **Fold, bump, build, test, push** | the `Fold` step: `tools/foldcall.mjs`, one Claude call for the notes (`ANTHROPIC_API_KEY`) over `fold.mjs`; or any agent asked, per `docs/CLOUD_FOLD.md` | same job when rows were staged; or on demand |

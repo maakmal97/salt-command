@@ -1,5 +1,16 @@
 [
  {
+  "v": "v675",
+  "d": "16 Sep 2026",
+  "t": "A CUSTOMER'S ORDER WAKES HIS PHONE WITHIN A MINUTE, AND ONLY FOR ORDERS",
+  "n": [
+   "<b>HIS REPORT OF 16 SEP 2026: AN ORDER CAME IN ON THE STATEMENTS SITE AND NOTHING TOLD HIM.</b> The live store said why. The Worker's nudge had fired and marked the order placed at 22:19 KL, and there was no subscription to wake: the switch that turned alerts on left with the phone app at v387, and the desk never had one.",
+   "<b>THE SWITCH IS BACK, ON THE ORDERS CARD, FOR ORDERS ONLY.</b> <b>Alert me to new orders</b> subscribes this device, hands the write key to the service worker so the banner can read what is waiting, and offers <b>Send a test</b> and <b>Turn off</b>. The subscription names its topic, so a row he entered himself, the morning nudge and the fold do not wake him; a subscription naming none still hears everything. The banner reads <b>New customer order</b> and a tap opens Orders. On an iPhone the desk has to be opened from the Home Screen.",
+   "<b>WITHIN A MINUTE, NOT A QUARTER-HOUR.</b> A placement writes one marker on the site, and the desk's cron now runs every minute and reads only that marker through the relay, so a minute costs one read on each store rather than a listing of every order ever placed. The drafter's net still runs on the quarter-hour, after the nudge, so neither can swallow the other. The site still has no road to the desk.",
+   "<b>THE CHECKS:</b> a new section drives a placement through the schedule to a stubbed push service at 22:07 and 22:15 KL, the banner from the service worker as it ships, and the switch in the master; each of its thirteen claims was proved red by mutation."
+  ]
+ },
+ {
   "v": "v674",
   "d": "16 Sep 2026",
   "t": "THE THREE HEADINGS THAT CALLED THE GOODS STOCK NOW CALL THEM INVENTORY",

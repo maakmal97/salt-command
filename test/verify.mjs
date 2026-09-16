@@ -7646,8 +7646,8 @@ section("Statements — the price list, the order book and the desk's relay (v49
   const o3 = (await (await stmtWorker.fetch(sj("/orders", { product: "salt", qty: 1, mode: "collect", unit: 100, total: 100, week: "" }, { "X-Stmt-Session": s2 }), senv)).json()).order;
   ok((await (await deskWorker.fetch(req("/push/summary"), denv)).json()).orders === 1, "a placed order counts as waiting on the phone's summary");
   const n1 = await nudgeOrders(denv), n2 = await nudgeOrders(denv);
-  ok(n1.ok && n1.placed === 1 && (await dkv.get("orders:nudged")) === o3.at && n2.ok && n2.sent === 0 && n2.placed === 1,
-    "the quarter-hour nudge marks the newest placement and does not nudge twice for it");
+  ok(n1.ok && n1.newest === o3.at && (await dkv.get("orders:nudged")) === o3.at && n2.ok && n2.sent === 0 && !n2.newest,
+    "the nudge marks the newest placement and does not nudge twice for it");
   for (const st of ["acknowledged", "ready"]) await deskWorker.fetch(req("/orders/" + unmapped + "/" + o3.id, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ status: st }) }), denv);
   b = await (await deskWorker.fetch(req("/orders/" + unmapped + "/" + o3.id, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ status: "done" }) }), denv)).json();
   ok(b.ok && b.order.status === "done" && !b.queued && /no desk code/.test(b.warn || "") && JSON.parse(await dkv.get("q:orders")).queue.length === 1,
@@ -12802,6 +12802,124 @@ section("v674: the three headings that called the goods stock now call them inve
   ok(stale.length === 0, "and not one of them still says stock" + (stale.length ? ": " + stale.join(", ") : ""));
   ok(desk.includes('data-s="stock">Stock<') && desk.includes("name:'Stock'"),
      "while the rail's own destination still reads Stock, which is what the rule asks for");
+}
+section("v675: a customer's order wakes the phones that asked for orders, within a minute");
+{
+  /* HIS REPORT OF 16 SEP 2026: an order came in on the statements site and nothing told him. The live
+     store showed the nudge HAD fired and marked it, with no subscription to wake: the switch left with
+     the phone app at v387. These drive the chain from a placement to the request at a push service
+     (stubbed), through the schedule itself, then the banner the service worker writes, then the desk's
+     switch. Fixture username and endpoints only. */
+  const { placeOrder, LAST_PLACED } = await import("../stmt/orders.js");
+  const { sendPush } = await import("../src/push.js");
+  const stmtW = (await import("../stmt/worker.js")).default;
+  const deskW = (await import("../src/worker.js")).default;
+  const skv = new KV(), dkv = new KV();
+  const senv = { STMT: skv, STMT_DESK_KEY: "desk-key" };
+  const kp = await crypto.subtle.generateKey({ name: "ECDSA", namedCurve: "P-256" }, true, ["sign", "verify"]);
+  const denv = { SALT_QUEUE: dkv, STMT_DESK_KEY: "desk-key", VAPID_PUBLIC_KEY: "pub",
+    VAPID_PRIVATE_JWK: JSON.stringify(await crypto.subtle.exportKey("jwk", kp.privateKey)),
+    STMT_SITE: { fetch: (url, init) => stmtW.fetch(new Request(url, init), senv) } };
+  const place = async () => (await placeOrder(senv, "abcd-efgh", { product: "salt", qty: 1, mode: "collect", unit: 100, total: 100, week: "" })).order;
+  const siteReq = (p, h) => new Request("https://k7m3p2.example" + p, { headers: h || {} });
+
+  const o1 = await place();
+  const last = await stmtW.fetch(siteReq("/desk/orders/last", { "X-Stmt-Desk": "desk-key" }), senv);
+  ok((await skv.get(LAST_PLACED)) === o1.at && (await last.json()).last === o1.at
+    && (await stmtW.fetch(siteReq("/desk/orders/last"), senv)).status === 401,
+    "a placement writes the site's marker, and only the desk key reads it back");
+
+  const sub = (endpoint, topics) => deskW.fetch(new Request("https://salt-command.example/push/subscribe", { method: "POST",
+    headers: { "content-type": "application/json" }, body: JSON.stringify(topics ? { endpoint, topics } : { endpoint }) }), denv);
+  const r1 = await sub("https://push.example/orders-only", ["orders", "Not A Topic", 7]);
+  await sub("https://push.example/everything");
+  const recs = [...dkv.m.entries()].filter(([k]) => k.startsWith("push:")).map(([, v]) => JSON.parse(v));
+  const oo = recs.find((x) => x.endpoint.endsWith("orders-only")), every = recs.find((x) => x.endpoint.endsWith("everything"));
+  ok(r1.ok && JSON.stringify(oo && oo.topics) === '["orders"]' && every && !("topics" in every),
+    "a subscription may name its topics, and only well-formed ones are kept");
+
+  const realFetch = globalThis.fetch, realLog = console.log, hit = [], logs = [];
+  const tick = async (iso) => { const waits = []; await deskW.scheduled({ cron: "* * * * *", scheduledTime: Date.parse(iso) }, denv, { waitUntil: (pr) => waits.push(pr) }); await Promise.all(waits); };
+  globalThis.fetch = async (url, init) => { hit.push({ url: String(url), topic: init && init.headers && init.headers.Topic }); return new Response(null, { status: 201 }); };
+  let a, o, at7, logs7, at8, at15, logs15, o2;
+  try {
+    await sendPush(denv, { tag: "approve" }); a = hit.splice(0).map((h) => h.url);
+    await sendPush(denv, { tag: "orders" }); o = hit.splice(0).map((h) => h.url);
+    console.log = (...x) => logs.push(x.join(" "));
+    await tick("2026-09-16T14:07:00Z"); at7 = hit.splice(0); logs7 = logs.splice(0);
+    await tick("2026-09-16T14:08:00Z"); at8 = hit.splice(0); logs.splice(0);
+    o2 = await place();
+    await tick("2026-09-16T14:15:00Z"); at15 = hit.splice(0); logs15 = logs.splice(0);
+  } finally { globalThis.fetch = realFetch; console.log = realLog; }
+  ok(JSON.stringify(a) === '["https://push.example/everything"]' && o.length === 2,
+    "a row waiting wakes only the device that asked for everything, and an order wakes both: " + JSON.stringify({ a, o }));
+  ok(at7.some((h) => h.url.endsWith("orders-only") && h.topic === "orders") && !logs7.some((l) => /^drafter:/.test(l)),
+    "at 22:07 KL, off the quarter-hour, the schedule pushes the new order and leaves the drafter alone: " + JSON.stringify({ at7, logs7 }));
+  ok(at8.length === 0, "and the next minute sends nothing for the same order");
+  ok(at15.some((h) => h.url.endsWith("orders-only")) && (await dkv.get("orders:nudged")) === o2.at && logs15.some((l) => /^drafter:/.test(l)),
+    "on the quarter-hour the next order is pushed and the drafter's net runs as before: " + JSON.stringify(logs15));
+  ok(/"crons"\s*:\s*\[\s*"\* \* \* \* \*"\s*,\s*"0 1 \* \* \*"\s*\]/.test(readFileSync(join(REPO, "wrangler.jsonc"), "utf8")),
+    "wrangler.jsonc schedules every minute and the 09:00 KL morning nudge");
+
+  /* THE BANNER, from public/sw.js run as it is, with the summary it reads stubbed */
+  const vm = await import("node:vm");
+  const swSrc = readFileSync(join(REPO, "public", "sw.js"), "utf8");
+  const runSw = (summary) => {
+    const L = {}, shown = [], opened = [];
+    const ctx = { URL, console, caches: {},
+      self: { addEventListener: (t, f) => { L[t] = f; }, location: { origin: "https://salt-command.example" },
+        registration: { scope: "https://salt-command.example/", showNotification: async (t, opt) => { shown.push({ t, opt }); } } },
+      clients: { matchAll: async () => [], openWindow: async (u) => { opened.push(u); } },
+      fetch: async () => ({ ok: true, json: async () => summary }) };
+    vm.createContext(ctx); vm.runInContext(swSrc, ctx);
+    return { L, shown, opened };
+  };
+  const wake = async (summary) => { const sw = runSw(summary), waits = []; sw.L.push({ waitUntil: (pr) => waits.push(pr) }); await Promise.all(waits); return sw.shown[0]; };
+  const bOrd = await wake({ ok: true, pending: 2, refused: 0, countDue: [], orders: 1 });
+  const bRow = await wake({ ok: true, pending: 2, refused: 0, countDue: [], orders: 0 });
+  ok(bOrd && bOrd.t === "New customer order" && /acknowledge/.test(bOrd.opt.body) && bOrd.opt.data.url === "./desk#orders"
+    && bRow && bRow.t === "Salt Command" && /2 rows waiting/.test(bRow.opt.body) && bRow.opt.data.url === "./",
+    "an order waiting is the banner's title and opens Orders; without one the banner is as it was: " + JSON.stringify({ bOrd, bRow }));
+  {
+    const sw = runSw({}), waits = [];
+    sw.L.notificationclick({ notification: { close() {}, data: { url: "./desk#orders" } }, waitUntil: (pr) => waits.push(pr) });
+    await Promise.all(waits);
+    ok(sw.opened[0] === "https://salt-command.example/desk#orders", "and a tap on it opens the desk at Orders: " + sw.opened[0]);
+  }
+
+  /* THE DESK'S SWITCH, in the master, with the browser's push objects stubbed */
+  const { openMaster: om75 } = await import("../tools/payload.mjs");
+  const { w: w75 } = await om75();
+  try {
+    w75.SALT_CLOUD = true;
+    const card = String(w75.eval("tabOrders()"));
+    w75.SALT_CLOUD = false;
+    ok(card.includes('id="ordAlert"'), "the cloud desk's Orders card carries the alert switch");
+    const sent = [], idb = {};
+    let subN = null;
+    w75.localStorage.setItem("saltWriteKey", "k-fixture");
+    const box = w75.document.createElement("div"); box.id = "ordAlert"; w75.document.body.appendChild(box);
+    Object.defineProperty(w75.navigator, "serviceWorker", { configurable: true, value: { ready: Promise.resolve({ pushManager: {
+      getSubscription: async () => subN,
+      subscribe: async () => (subN = { endpoint: "https://push.example/desk", unsubscribe: async () => { subN = null; return true; } }) } }) } });
+    w75.PushManager = function () {};
+    w75.Notification = { permission: "default", requestPermission: async () => "granted" };
+    w75.indexedDB = { open: () => { const rq = {}; setTimeout(() => { rq.result = { createObjectStore() {}, transaction: () => {
+      const tx = { objectStore: () => ({ put: (v, k) => { idb[k] = v; } }) }; setTimeout(() => tx.oncomplete && tx.oncomplete(), 0); return tx; } };
+      if (rq.onsuccess) rq.onsuccess(); }, 0); return rq; } };
+    w75.fetch = async (path, init) => { sent.push({ path: String(path), key: init && init.headers && init.headers["X-Salt-Key"], body: init && init.body ? JSON.parse(init.body) : null });
+      return { ok: true, status: 200, json: async () => (String(path) === "push/key" ? { ok: true, key: "BAAA" } : { ok: true, sent: 1 }) }; };
+    await w75.eval("ordAlertAct('on')");
+    const on = sent.find((x) => x.path === "push/subscribe"), textOn = box.textContent;
+    ok(on && on.key === "k-fixture" && JSON.stringify(on.body) === '{"endpoint":"https://push.example/desk","topics":["orders"]}' && idb.writeKey === "k-fixture" && /Order alerts on/.test(textOn),
+      "Alert me to new orders subscribes this device for orders only, keyed, and hands the service worker the key: " + JSON.stringify({ on, idb, textOn }));
+    await w75.eval("ordAlertAct('test')");
+    const test = sent.find((x) => x.path === "push/send");
+    ok(test && test.body.tag === "orders" && /Test sent/.test(box.textContent), "Send a test wakes it on the orders topic: " + box.textContent);
+    await w75.eval("ordAlertAct('off')");
+    ok(sent.some((x) => x.path === "push/unsubscribe" && x.body.endpoint === "https://push.example/desk") && subN === null && /alerts are off/.test(box.textContent),
+      "and Turn off removes it on the Worker and in the browser: " + box.textContent);
+  } finally { await new Promise((r) => setTimeout(r, 200)); try { w75.close(); } catch (e) { /* best effort */ } }
 }
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
 process.exit(fail ? 1 : 0);

@@ -137,13 +137,22 @@ async function banner() {
   if (!s) {
     return { title: "Salt Command", body: "Something needs a look. Open the desk.", tag: "salt" };
   }
+  /* A CUSTOMER ORDER LEADS (16 Sep 2026): it is the one thing here a customer is waiting on, so it
+     is the title, and a tap opens the Orders card where it is acknowledged. */
+  if (s.orders) {
+    return {
+      title: s.orders === 1 ? "New customer order" : s.orders + " customer orders waiting",
+      body: "Open the desk to acknowledge it.",
+      tag: "salt",
+      url: "./desk#orders",
+    };
+  }
   const bits = [];
   if (s.pending) bits.push(s.pending === 1 ? "1 row waiting for approval" : s.pending + " rows waiting for approval");
   if (s.countDue && s.countDue.length) {
     bits.push(s.countDue.length === 1 ? s.countDue[0] + " not counted today" : "neither shelf counted today");
   }
   if (s.refused) bits.push(s.refused === 1 ? "1 entry the drafter refused" : s.refused + " entries the drafter refused");
-  if (s.orders) bits.push(s.orders === 1 ? "1 customer order waiting" : s.orders + " customer orders waiting");
 
   return {
     title: bits.length ? "Salt Command" : "Salt Command is square",
@@ -159,17 +168,20 @@ self.addEventListener("push", (e) => {
     renotify: true,
     icon: "./icon-192.png",
     badge: "./icon-192.png",
-    data: { url: "./" },
+    data: { url: b.url || "./" },
   })));
 });
 
-/* Focus the desk if it is already open rather than opening a second copy of it. */
+/* Focus the desk if it is already open rather than opening a second copy of it, and take it to
+   the view the banner names. */
 self.addEventListener("notificationclick", (e) => {
   e.notification.close();
-  const want = (e.notification.data && e.notification.data.url) || "./";
+  const want = new URL((e.notification.data && e.notification.data.url) || "./", self.registration.scope).href;
   e.waitUntil(clients.matchAll({ type: "window", includeUncontrolled: true }).then((list) => {
     for (const c of list) {
-      if (c.url.indexOf(self.registration.scope) === 0 && "focus" in c) return c.focus();
+      if (c.url.indexOf(self.registration.scope) === 0 && "focus" in c) {
+        return c.focus().then((w) => (w && w.navigate && w.url !== want ? w.navigate(want).catch(() => w) : w));
+      }
     }
     return clients.openWindow(want);
   }));

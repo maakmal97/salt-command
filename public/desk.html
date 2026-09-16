@@ -68,7 +68,7 @@ document.addEventListener('visibilitychange',function(){
    localStorage before it posts anything and the load reads it straight back.
    The same tick retries a held entry, which is what gets a phone write to the cloud
    without waiting for the next open. */
-var SALT_BUILD_ID="30ce52be8ee6c26a";
+var SALT_BUILD_ID="defea33e6340008f";
 var SALT_REV_MS=10000;
 (function(){
   var chip=null,timer=null;
@@ -7012,7 +7012,9 @@ const quoteFor=p=>{const f=QUOTES[p||PROD];return f?f():null;};
    v324 onward, which tabJournal maps in full; master/changelog.json carries every entry
    ever written and is the record. So a bump PREPENDS its entry. Replacing the array,
    which both comments invited, silently drops the whole window. */
-const evolution=[{"v":"v674","d":"16 Sep 2026","t":"THE THREE HEADINGS THAT CALLED THE GOODS STOCK NOW CALL THEM INVENTORY","n":["<b>HIS COPY RULE OF 11 SEP 2026, FINISHED.</b> The goods are <b>inventory</b> in copy and <b>Stock</b> is the rail's destination. Three headings still used the rail's word for the goods, and the rule named all three: <b>Spent on stock</b> and <b>Stock behind it</b> on Financials, and <b>Stock reconciliation</b> on On hand. They now read <b>Spent on inventory</b>, <b>Inventory behind it</b> and <b>Inventory reconciliation</b>, beside the Inventory on hand, Inventory value and Inventory count the desk already carried.","<b>WHAT IT TOUCHES: THREE WORDS.</b> No figure, no total and no rate moves, and no row is read differently. The destination is untouched: the rail's tab and the view behind it still read Stock, which is what the rule asks for.","<b>THE SWEEP, AND WHAT IT LEFT STANDING.</b> Four other uses of the word remain in the desk. The tab and the VIEWS row behind it are the destination. <b>Stock cover</b> on Today is the name of the measure rather than a word for the goods. The Cash and Stock pair on a place's preview, and the <b>Stock count:</b> line a queued count carries, are the two that could go either way: the second is entry data the drafter reads rather than copy on a page, so both are put to him rather than changed here. <b>THE CHECKS:</b> one assertion that the three headings read Inventory and none still reads Stock, one that the destination itself is untouched, and the scan proved red by putting a single heading back. Built as v672 and re-landed as v674 after v672 and v673 shipped from the laptop under it.","<b>AND THE EVOLUTION ARRAY IS NOT ONE ENTRY.</b> This comment and tools/changelog.mjs both said it was, and this fold believed them and replaced the array to bump the version, dropping 347 entries of the Journal's own window before the diff caught it. The array carries that window from v324; master/changelog.json carries every entry ever written. Both comments now say a bump PREPENDS, and so does hard rule 1."]},
+const evolution=[{"v":"v675","d":"16 Sep 2026","t":"A CUSTOMER'S ORDER WAKES HIS PHONE WITHIN A MINUTE, AND ONLY FOR ORDERS","n":["<b>HIS REPORT OF 16 SEP 2026: AN ORDER CAME IN ON THE STATEMENTS SITE AND NOTHING TOLD HIM.</b> The live store said why. The Worker's nudge had fired and marked the order placed at 22:19 KL, and there was no subscription to wake: the switch that turned alerts on left with the phone app at v387, and the desk never had one.","<b>THE SWITCH IS BACK, ON THE ORDERS CARD, FOR ORDERS ONLY.</b> <b>Alert me to new orders</b> subscribes this device, hands the write key to the service worker so the banner can read what is waiting, and offers <b>Send a test</b> and <b>Turn off</b>. The subscription names its topic, so a row he entered himself, the morning nudge and the fold do not wake him; a subscription naming none still hears everything. The banner reads <b>New customer order</b> and a tap opens Orders. On an iPhone the desk has to be opened from the Home Screen.","<b>WITHIN A MINUTE, NOT A QUARTER-HOUR.</b> A placement writes one marker on the site, and the desk's cron now runs every minute and reads only that marker through the relay, so a minute costs one read on each store rather than a listing of every order ever placed. The drafter's net still runs on the quarter-hour, after the nudge, so neither can swallow the other. The site still has no road to the desk.","<b>THE CHECKS:</b> a new section drives a placement through the schedule to a stubbed push service at 22:07 and 22:15 KL, the banner from the service worker as it ships, and the switch in the master; each of its thirteen claims was proved red by mutation."]},
+
+{"v":"v674","d":"16 Sep 2026","t":"THE THREE HEADINGS THAT CALLED THE GOODS STOCK NOW CALL THEM INVENTORY","n":["<b>HIS COPY RULE OF 11 SEP 2026, FINISHED.</b> The goods are <b>inventory</b> in copy and <b>Stock</b> is the rail's destination. Three headings still used the rail's word for the goods, and the rule named all three: <b>Spent on stock</b> and <b>Stock behind it</b> on Financials, and <b>Stock reconciliation</b> on On hand. They now read <b>Spent on inventory</b>, <b>Inventory behind it</b> and <b>Inventory reconciliation</b>, beside the Inventory on hand, Inventory value and Inventory count the desk already carried.","<b>WHAT IT TOUCHES: THREE WORDS.</b> No figure, no total and no rate moves, and no row is read differently. The destination is untouched: the rail's tab and the view behind it still read Stock, which is what the rule asks for.","<b>THE SWEEP, AND WHAT IT LEFT STANDING.</b> Four other uses of the word remain in the desk. The tab and the VIEWS row behind it are the destination. <b>Stock cover</b> on Today is the name of the measure rather than a word for the goods. The Cash and Stock pair on a place's preview, and the <b>Stock count:</b> line a queued count carries, are the two that could go either way: the second is entry data the drafter reads rather than copy on a page, so both are put to him rather than changed here. <b>THE CHECKS:</b> one assertion that the three headings read Inventory and none still reads Stock, one that the destination itself is untouched, and the scan proved red by putting a single heading back. Built as v672 and re-landed as v674 after v672 and v673 shipped from the laptop under it.","<b>AND THE EVOLUTION ARRAY IS NOT ONE ENTRY.</b> This comment and tools/changelog.mjs both said it was, and this fold believed them and replaced the array to bump the version, dropping 347 entries of the Journal's own window before the diff caught it. The array carries that window from v324; master/changelog.json carries every entry ever written. Both comments now say a bump PREPENDS, and so does hard rule 1."]},
 
 {"v":"v673","d":"16 Sep 2026","t":"A HAND COUNT OF SALT CARRIES: FIVE UNIT MORE ON THE FLOOR, AND THE FLOORS COME DOWN","n":["<b>FOLDED: ONE COUNT, SALT, DATED 16 SEP.</b> The desk counted 14.5 unit of salt by hand against a book figure of 9.5, a drift of plus 5, and on his word the count carries. The stated salt inventory is set to 14.5 and the salt count date moves from 15 Sep to 16 Sep. No party, no cash and no order sits behind this row, so nothing is owed out and nothing is promised against it.","<b>UNUSUAL: A SECOND COUNT INSIDE A DAY, AND THE GAP IS UNEXPLAINED.</b> The previous salt count was only 15 Sep, so the plus 5 drift arises over a single day and the dossier gives no reason for it. The inventory took the count as the ruling figure and reset the floors on the larger base: floor1 from RM60.25 to RM51, floor2 from RM120.50 to RM101.99, floor125 from RM753.15 to RM637.44, self use from 80.95 to 75.95. The ask holds at RM160."]},
 
@@ -7570,7 +7572,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='16 Sep 2026, 23:10 KL';
+const LAST_UPDATED='16 Sep 2026, 23:54 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -17799,6 +17801,7 @@ function tabOrders(){
   return `<h1>Site orders</h1>
   <div class="dsc dsclead">What customers ordered on the statements site, each priced off his own weekly list.</div>
   <div class="insight">Acknowledge, then Ready to collect or Ready to deliver, then Completed once it is handed over and paid; Completed queues the sale for approval.</div>
+  <div id="ordAlert" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0;font-size:12px;color:var(--mut)"></div>
   <div id="ordBox"><div style="font-size:12px;color:var(--dim)">Reading the orders.</div></div>
   <div id="ordMsg" style="margin-top:8px;font-size:12px;color:var(--mut)">${esc(ordMsg)}</div>`;
 }
@@ -17811,8 +17814,58 @@ async function ordLoad(quiet){
     ORD_OPEN=(r.ok&&j&&j.orders)||[];
   }catch(e){ ordUnread=(e&&e.message)||'the request did not complete'; ORD_OPEN=[]; }
   ordDraw();
+  {const a=document.getElementById('ordAlert');if(a&&!a.dataset.drawn)ordAlertDraw();}
   /* the card follows the site while it is on screen, at the phone's own pace */
   if(!ordTimer)ordTimer=setInterval(()=>{if(document.getElementById('ordBox'))ordLoad(true);else{clearInterval(ordTimer);ordTimer=null;}},30000);
+}
+/* ---- Order alerts (v675): THE SWITCH THAT LEFT WITH THE PHONE APP AT v387. Nothing had subscribed since,
+   so the Worker's nudge woke nobody and a customer's order arrived in silence. This device asks for ORDERS
+   ONLY: the Worker asks the site every minute and wakes it on a new placement, and a row he entered himself
+   does not. The service worker reads the write key from IndexedDB, so it is written there too. ---- */
+function ordB64(s){const r=atob((s+'='.repeat((4-s.length%4)%4)).replace(/-/g,'+').replace(/_/g,'/'));const o=new Uint8Array(r.length);for(let i=0;i<r.length;i++)o[i]=r.charCodeAt(i);return o;}
+function ordKeyToSw(k){return new Promise(res=>{let r;try{r=indexedDB.open('salt-push',1);}catch(e){return res(false);}
+  r.onupgradeneeded=()=>{try{r.result.createObjectStore('kv');}catch(e){}};r.onerror=()=>res(false);
+  r.onsuccess=()=>{try{const tx=r.result.transaction('kv','readwrite');tx.objectStore('kv').put(k,'writeKey');tx.oncomplete=()=>res(true);tx.onerror=()=>res(false);}catch(e){res(false);}};});}
+async function ordAlertDraw(note){
+  const box=document.getElementById('ordAlert');if(!box)return;box.dataset.drawn='1';
+  const say=(t,btns)=>{box.innerHTML='<span>'+t+(note?' '+note:'')+'</span>'+(btns||'');
+    box.querySelectorAll('button[data-alert]').forEach(b=>{b.onclick=()=>ordAlertAct(b.dataset.alert);});};
+  if(!('serviceWorker' in navigator)||!('PushManager' in window)||typeof Notification==='undefined')
+    return say('This browser cannot take order alerts. On an iPhone, open the desk from the Home Screen: Share, then Add to Home Screen.');
+  if(Notification.permission==='denied')return say('Order alerts are blocked for this site in the browser settings.');
+  let sub=null;try{sub=await (await navigator.serviceWorker.ready).pushManager.getSubscription();}catch(e){}
+  if(sub){ordKeyToSw(saltWriteKey());return say('<b>Order alerts on</b> for this device.','<button type="button" class="vbtn" data-alert="test">Send a test</button><button type="button" class="vbtn" data-alert="off">Turn off</button>');}
+  say('Order alerts are off on this device.','<button type="button" class="vbtn" data-alert="on">Alert me to new orders</button>');
+}
+async function ordAlertAct(what){
+  const box=document.getElementById('ordAlert');if(box)box.querySelectorAll('button').forEach(b=>b.disabled=true);
+  const post=async(path,body)=>{const go=()=>fetch(path,{method:'POST',headers:qHeaders(),body:JSON.stringify(body)});
+    let r=await go();if(r.status===401&&saltAskWriteKey())r=await go();return r;};
+  let note='';
+  try{
+    const reg=await navigator.serviceWorker.ready, sub=await reg.pushManager.getSubscription();
+    if(what==='off'){
+      if(sub){await post('push/unsubscribe',{endpoint:sub.endpoint});await sub.unsubscribe();}
+      note='Nothing will wake this device.';
+    }else if(what==='test'){
+      const r=await post('push/send',{tag:'orders',urgency:'high'});let j={};try{j=await r.json();}catch(e){}
+      note=!r.ok?'The desk refused to send (http '+r.status+').'
+        :j.sent?'Test sent: a banner should appear within a few seconds.'
+        :'Nothing was sent ('+esc(j.note||j.error||'no subscription on file')+'). Turn alerts off and on again.';
+    }else if(await Notification.requestPermission()!=='granted'){
+      note='Permission was not given, so nothing can be sent.';
+    }else{
+      const kj=await (await fetch('push/key',{cache:'no-store'})).json();
+      if(!kj||!kj.key)note='This desk has no push key, so there is nothing to subscribe to.';
+      else{
+        const s=sub||await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:ordB64(kj.key)});
+        const r=await post('push/subscribe',{endpoint:s.endpoint,topics:['orders']});
+        if(r.ok){await ordKeyToSw(saltWriteKey());note='A new order wakes this device within a minute.';}
+        else{await s.unsubscribe();note='The desk refused the subscription (http '+r.status+').';}
+      }
+    }
+  }catch(e){note='That did not work: '+esc(String((e&&e.message)||e));}
+  await ordAlertDraw(note);
 }
 function ordUsual(code,product){
   const rows=sales.filter(s=>POSITION_ENGINE.ownsCode(code,s.customer)&&((s.product||'salt')===(product||'salt'))&&!s.cancelled&&s.date&&s.total>0&&s.qty>0)   /* v609: the bucket is the associate's own */

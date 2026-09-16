@@ -44,6 +44,9 @@ export const OPEN_STATES = ["placed", "acknowledged", "ready"];
 export const MODES = ["collect", "deliver"];
 export const METHODS = ["cod", "transfer", "qr", "jompay", "tngbiz"];
 const MAX_OPEN = 5;
+/* The newest placement's moment, so the desk can ask "anything new?" with one read a minute rather
+   than listing every order ever placed (16 Sep 2026). Not under order:, so no listing sees it. */
+export const LAST_PLACED = "last-placed";
 
 const isNum = (v) => typeof v === "number" && Number.isFinite(v);
 const OKEY = (u, id) => "order:" + u + ":" + id;
@@ -114,6 +117,7 @@ export async function placeOrder(env, u, body) {
   const id = at.replace(/[-:.TZ]/g, "").slice(0, 14) + "-" + b64url(crypto.getRandomValues(new Uint8Array(4))).toLowerCase().replace(/[^a-z0-9]/g, "x");
   const order = Object.assign({ id, u, at, status: "placed", history: [{ at, status: "placed", by: "customer" }] }, c.order);
   await env.STMT.put(OKEY(u, id), JSON.stringify(order));
+  await env.STMT.put(LAST_PLACED, at);
   return { order };
 }
 

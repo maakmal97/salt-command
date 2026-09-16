@@ -588,8 +588,9 @@ export default {
    * INSERT OR IGNORE keyed on the entry's own `at`, so a re-run is harmless, and the next
    * tick is a better retry than a loop. */
   async scheduled(event, env, ctx) {
-    /* TWO SCHEDULES, AND THEY DO DIFFERENT JOBS. The quarter-hourly one is the drafter's
-       safety net and pushes only when it actually wrote a row. The daily one at 01:00 UTC,
+    /* TWO SCHEDULES, AND THEY DO DIFFERENT JOBS. The every-minute one nudges on a new customer
+       order and, on the quarter-hour, runs the drafter's safety net, which pushes only when it
+       actually wrote a row. The daily one at 01:00 UTC,
        which is 09:00 in Kuala Lumpur, is the morning nudge.
        THE NUDGE ONLY FIRES IF THERE IS SOMETHING. A banner every morning saying the book is
        square is a banner that gets swiped away unread, and then so does the one that mattered. */
@@ -611,11 +612,19 @@ export default {
           if (worth) await sendPush(env, { tag: "salt", urgency: "normal" });
           return;
         }
-        const r = await runDrafter(env);
-        console.log("drafter: " + JSON.stringify(r));
-        await pushIfDrafted(env, r);
-        /* a customer order placed since the last quarter-hour wakes the phone once */
-        console.log("orders nudge: " + JSON.stringify(await nudgeOrders(env)));
+        /* THE EVERY-MINUTE SCHEDULE (16 Sep 2026) exists for the order nudge, one read of the site, and
+           it goes first so a drafter failure cannot swallow it. A customer order placed since the last
+           minute wakes the phones that asked for orders, once. */
+        try {
+          const n = await nudgeOrders(env);
+          if (!n.ok || n.newest) console.log("orders nudge: " + JSON.stringify(n));
+        } catch (e) { console.log("orders nudge FAILED: " + String((e && e.stack) || e)); }
+        /* the drafter's net still runs on the quarter-hour, as it did when this schedule ran every fifteen minutes */
+        if (new Date(event.scheduledTime || Date.now()).getUTCMinutes() % 15 === 0) {
+          const r = await runDrafter(env);
+          console.log("drafter: " + JSON.stringify(r));
+          await pushIfDrafted(env, r);
+        }
       } catch (e) {
         console.log("scheduled FAILED: " + String((e && e.stack) || e));
       }
@@ -779,7 +788,9 @@ export default {
          collide; and the raw endpoint, which is a capability URL, is not in the key name. */
       const h = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(ep));
       const id = [...new Uint8Array(h)].slice(0, 12).map((x) => x.toString(16).padStart(2, "0")).join("");
-      await env.SALT_QUEUE.put("push:" + id, JSON.stringify({ endpoint: ep, at: new Date().toISOString() }));
+      /* topics, when given, narrow what wakes this device: see sendPush */
+      const topics = Array.isArray(b.topics) ? b.topics.filter((t) => typeof t === "string" && /^[a-z]{1,20}$/.test(t)).slice(0, 8) : null;
+      await env.SALT_QUEUE.put("push:" + id, JSON.stringify(Object.assign({ endpoint: ep, at: new Date().toISOString() }, topics ? { topics } : {})));
       return json({ ok: true, id });
     }
     if (p === "/push/unsubscribe") {

@@ -92,17 +92,19 @@ export async function ordersWaiting(env) {
   return r.orders.filter((o) => o.status === "placed" || o.status === "acknowledged").length;
 }
 
-/* THE NUDGE, on the drafter's quarter-hour. The site cannot reach this Worker, so a new order
-   is noticed here, by asking: anything placed since the last nudge wakes the phone, once. The
-   mark is the newest placement seen, so a run with nothing new sends nothing. */
+/* THE NUDGE, every minute (16 Sep 2026; it was the drafter's quarter-hour, and nothing had
+   subscribed since v387, so an order arrived in silence). The site cannot reach this Worker, so a
+   new order is noticed here, by asking the site for the moment of its newest placement: one read,
+   not a listing. Anything newer than the mark wakes the phones that asked for orders, once. */
 export async function nudgeOrders(env) {
-  const r = await listOrders(env, false);
-  if (!r.ok) return { ok: false, error: r.error };
-  const placed = r.orders.filter((o) => o.status === "placed").map((o) => o.at).sort();
-  const newest = placed.length ? placed[placed.length - 1] : null;
+  const r = await site(env, "/desk/orders/last");
+  if (!r) return { ok: false, error: "the order relay is not configured (STMT_SITE binding and STMT_DESK_KEY secret)" };
+  const b = await r.json().catch(() => ({}));
+  if (!r.ok || !b.ok) return { ok: false, error: b.error || ("the statements site answered http " + r.status) };
+  const newest = b.last || null;
   const mark = (await env.SALT_QUEUE.get(MARK)) || "";
-  if (!newest || newest <= mark) return { ok: true, sent: 0, placed: placed.length };
+  if (!newest || newest <= mark) return { ok: true, sent: 0 };
   await env.SALT_QUEUE.put(MARK, newest);
   const p = await sendPush(env, { tag: "orders", urgency: "high" });
-  return { ok: true, sent: p.sent || 0, placed: placed.length };
+  return { ok: true, sent: p.sent || 0, newest };
 }

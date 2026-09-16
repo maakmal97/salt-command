@@ -44,7 +44,7 @@ import { identity } from "./access.js";
 import QR from "./qr.js";
 import { normRef, mintRef, readRef, listRefs, revokeRef, markOpen } from "./refs.js";
 import { endpointId } from "./push.js";
-import { mintSession, sessionUser, ordersOf, allOrders, placeOrder, customerMove, deskMove } from "./orders.js";
+import { mintSession, sessionUser, ordersOf, allOrders, placeOrder, customerMove, deskMove, LAST_PLACED } from "./orders.js";
 
 const UKEY = (u) => "u:" + u;
 const FKEY = (k) => "fail:" + k;          // keyed on address AND username; see handleOpen
@@ -298,7 +298,12 @@ async function handleDesk(request, env, p, m) {
     const all = new URL(request.url).searchParams.get("all") === "1";
     return json({ ok: true, orders: await allOrders(env, all) });
   }
-  const mm = /^\/desk\/orders\/([^/]+)\/([^/]+)$/.exec(p);
+  /* the moment of the newest placement, one read: the desk asks this every minute (16 Sep 2026) */
+  if (p === "/desk/orders/last") {
+    if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
+    return json({ ok: true, last: await env.STMT.get(LAST_PLACED) });
+  }
+  const mm =/^\/desk\/orders\/([^/]+)\/([^/]+)$/.exec(p);
   if (!mm) return notFound();
   const u = normUser(mm[1]);
   if (!u || !OID_RE.test(mm[2])) return notFound();

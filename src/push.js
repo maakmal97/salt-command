@@ -68,8 +68,10 @@ export async function sendPush(env, { tag = "salt", urgency = "normal" } = {}) {
   const pub = env.VAPID_PUBLIC_KEY;
   if (!pub) return { ok: false, error: "no VAPID_PUBLIC_KEY", sent: 0 };
 
-  const subs = await listSubs(env);
-  if (!subs.length) return { ok: true, sent: 0, note: "nobody is subscribed" };
+  /* A subscription naming topics hears only those (16 Sep 2026: the desk's switch asks for orders
+     alone, so a row he entered himself does not wake him). One with none hears everything. */
+  const subs = (await listSubs(env)).filter((s) => !Array.isArray(s.topics) || s.topics.includes(tag));
+  if (!subs.length) return { ok: true, sent: 0, note: "nobody is subscribed to " + tag };
 
   const tokens = new Map();
   let sent = 0, gone = 0, failed = 0;

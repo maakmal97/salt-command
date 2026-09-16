@@ -80,9 +80,10 @@
 	// change: it does not move rev.json's id, so update.mjs compares equal and skips the
 	// deploy. Deploy this by hand.
 	"triggers": {
-		// */15 is the drafter's safety net. 0 1 is 09:00 in Kuala Lumpur: the morning nudge,
-		// which pushes ONLY when something is actually waiting. See scheduled() in src/worker.js.
-		"crons": ["*/15 * * * *", "0 1 * * *"]
+		// Every minute: the customer order nudge, and on the quarter-hour the drafter's safety net.
+		// 0 1 is 09:00 in Kuala Lumpur: the morning nudge, which pushes ONLY when something is
+		// actually waiting. See scheduled() in src/worker.js.
+		"crons": ["* * * * *", "0 1 * * *"]
 	},
 	"vars": {
 		"REQUIRE_ACCESS": "0",

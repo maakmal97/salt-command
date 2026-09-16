@@ -243,8 +243,16 @@ Orders card in Enter (cloud desk) is the taps. **Completed queues the sale** und
 `q:orders` device, shaped as the Workbench shapes an entry, cash and units in full, and the
 drafter drafts it on arrival; it is approved under Approve like every row, and the live
 statement follows the fold. The username-to-code map the relay needs is written to the DESK's
-KV as `stmt-users` by every publish; the site never holds it. A placed order also wakes his
-phone once, on the drafter's quarter-hour.
+KV as `stmt-users` by every publish; the site never holds it.
+
+**HIS ALERT ON A NEW ORDER** (v675, 16 Sep 2026; silent before it, because the switch left with the
+phone app at v387 and nothing had subscribed since). A placement writes `last-placed` in the site's
+store; the desk's every-minute cron reads it through `/desk/orders/last`, one read, and a moment newer
+than `orders:nudged` wakes every desk subscription asking for `orders`, once. The switch is **Alert me
+to new orders** on the cloud desk's Orders card, per device: it subscribes with `topics: ["orders"]`,
+so a row he entered himself does not wake him, and hands the write key to the service worker, whose
+banner then reads New customer order and opens `/desk#orders`. A subscription with no topics hears
+everything, as at v321. On an iPhone the desk has to be opened from the Home Screen.
 
 **Notifications.** The page polls the customer's orders every ten seconds while it is open.
 For a closed page the site has its own Web Push pair: a payload-free wake, and the service
