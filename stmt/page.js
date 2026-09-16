@@ -57,6 +57,9 @@ const PAGE_CSS = `
   color:var(--salt-text);background:var(--salt-well);border:1px solid var(--salt-line);
   border-radius:var(--salt-radius-sm);outline:none}
 .fld::placeholder{color:var(--salt-mist)}
+/* the username in two boxes and the password in four, one group of four symbols each (16 Sep 2026) */
+.seg{display:flex;gap:8px}
+.seg .fld{flex:1 1 0;min-width:0;padding:13px 4px;text-align:center;letter-spacing:.12em}
 .fld:focus{border-color:var(--salt-brass);box-shadow:0 0 0 3px rgba(197,160,89,.16)}
 select.fld{letter-spacing:0;appearance:none;-webkit-appearance:none}
 .btn{margin-top:18px;width:100%;min-height:var(--salt-tap);padding:13px 16px;
@@ -251,12 +254,12 @@ export function landingPage(user, nonce, owner) {
     + '<p class="lead">Sign in with the username and password sent to you. '
     + "The page locks after three minutes; the same password opens it again.</p>"
     + '<form id="f" autocomplete="off">'
-    + '<label class="lbl" for="un">Username</label>'
-    + '<input class="fld" id="un" type="text" inputmode="text" autocapitalize="none" '
-    + 'autocorrect="off" spellcheck="false" placeholder="xxxx-xxxx" aria-label="Username" value="' + u + '">'
-    + '<label class="lbl" for="pw">Password</label>'
-    + '<input class="fld" id="pw" type="password" inputmode="text" autocapitalize="none" '
-    + 'autocorrect="off" spellcheck="false" placeholder="xxxx-xxxx-xxxx-xxxx" aria-label="Password">'
+    + '<span class="lbl" id="unl">Username</span>'
+    + boxes("un", 2, "text", "Username")
+    + '<input type="hidden" id="un" value="' + u + '">'
+    + '<span class="lbl" id="pwl">Password</span>'
+    + boxes("pw", 4, "password", "Password")
+    + '<input type="hidden" id="pw">'
     + '<button class="btn" id="go" type="submit">Open my statements</button>'
     + "</form>"
     + '<p class="msg" id="msg" role="status" aria-live="polite"></p>'
@@ -282,6 +285,16 @@ export function landingPage(user, nonce, owner) {
       .replace("__OWNER__", JSON.stringify(owner || null).replace(/</g, "\\u003c"))
     + "</script>"
     + "</body></html>";
+}
+
+/* One box per group of four symbols, the hidden field beside them carrying the joined value. */
+function boxes(id, n, type, label) {
+  let out = '<div class="seg" data-for="' + id + '" role="group" aria-labelledby="' + id + 'l">';
+  for (let i = 1; i <= n; i++) {
+    out += '<input class="fld" type="' + type + '" inputmode="text" autocapitalize="none" autocorrect="off" '
+      + 'spellcheck="false" autocomplete="off" placeholder="xxxx" aria-label="' + label + ', part ' + i + ' of ' + n + '">';
+  }
+  return out + "</div>";
 }
 
 /* Kept as one string rather than a file so the whole page is a single Worker response with a
@@ -323,26 +336,67 @@ const CLIENT_JS = `
   function norm(s){ s=String(s||'').toLowerCase().replace(/[^a-z0-9]/g,'');
     return s.length===8 ? s.slice(0,4)+'-'+s.slice(4) : ''; }
 
-  /* THE HYPHENS ARE PUT IN FOR HIM (his instruction, 06 Sep 2026). A username is two groups of
-     four and a password four; both are read off a message and typed on a phone, and the hyphen is
-     the character most often left out or put in the wrong place. So the fields group the symbols
-     as they are typed, pasted or autofilled: nothing but the symbols is kept, and a hyphen goes
-     after every fourth. The username field always does this. THE PASSWORD FIELD DOES IT ONLY WHILE
-     WHAT IS TYPED LOOKS LIKE A STATEMENT PASSWORD, sixteen or fewer symbols of the password's own
-     alphabet, because the same field takes the owner's master passphrase: the moment a symbol
-     outside that alphabet arrives, or a seventeenth, the grouping stops for good and the field
-     keeps exactly what is typed from then on. */
-  var ALPHA=/^[23456789abcdefghjkmnpqrstvwxyz]*$/, autoPw=true;
-  function grouped(raw){ var out=''; for(var i=0;i<raw.length;i++){ if(i&&i%4===0)out+='-'; out+=raw.charAt(i); } return out; }
-  function shapeUser(){ un.value=grouped(un.value.toLowerCase().replace(/[^a-z0-9]/g,'').slice(0,8)); }
-  function shapePw(){
-    if(!pw.value){ autoPw=true; return; }          /* an emptied field starts again */
-    if(!autoPw) return;
-    var raw=pw.value.replace(/-/g,'');
-    if(raw.length<=16&&ALPHA.test(raw.toLowerCase())){ pw.value=grouped(raw.toLowerCase()); return; }
-    autoPw=false; pw.value=raw;
+  /* TWO BOXES FOR THE USERNAME AND FOUR FOR THE PASSWORD (his instruction, 16 Sep 2026), one group of
+     four symbols in each, as they are sent. A box that fills moves the cursor to the next, the last
+     username box to the first password box; Backspace in an empty box steps back and takes the symbol
+     before. A paste is spread across the boxes from the one it lands in, or from the first when it is
+     the whole username or password; an autofill or a keyboard suggestion that puts more than four in
+     one box is spread the same way. Only letters and digits are kept, in lower case, so hyphens, spaces
+     and capitals in a pasted value are forgiven as they were. The joined value goes into the hidden #un
+     and #pw the form reads, which is also what the owner's roster fills with the master passphrase; the
+     master can no longer be typed at this door, and /all opens every account. */
+  var SEG=[].slice.call(document.querySelectorAll('.seg input'));
+  function idOf(b){ return b.parentNode.getAttribute('data-for'); }
+  function boxesOf(id){ return SEG.filter(function(x){ return idOf(x)===id; }); }
+  function group(b){ return boxesOf(idOf(b)); }
+  function clean(t){ return String(t||'').toLowerCase().replace(/[^a-z0-9]/g,''); }
+  function sync(b){
+    var parts=group(b).map(function(x){ return x.value; });
+    document.getElementById(idOf(b)).value=parts.join('')?parts.join('-'):'';
   }
-  ['input','change'].forEach(function(ev){ un.addEventListener(ev, shapeUser); pw.addEventListener(ev, shapePw); });
+  function toEnd(b){ try{ b.focus(); var n=b.value.length; b.setSelectionRange(n,n); }catch(e){} }
+  /* raw is laid into the boxes from bs[i] on, four to a box; the box after the last full one takes the cursor */
+  function put(bs, i, raw){
+    for(var k=i;k<bs.length;k++) bs[k].value=raw.slice((k-i)*4,(k-i+1)*4);
+    sync(bs[0]);
+    var last=bs[Math.min(bs.length-1, i+Math.max(0,Math.ceil(raw.length/4)-1))];
+    var nx=last.value.length===4&&SEG[SEG.indexOf(last)+1];
+    toEnd(nx||last);
+  }
+  function typed(ev){
+    var b=ev.target, bs=group(b), i=bs.indexOf(b), raw=clean(b.value);
+    if(raw.length<=4){
+      b.value=raw; sync(b);
+      if(raw.length===4&&ev.type==='input'){ var nx=SEG[SEG.indexOf(b)+1]; if(nx) toEnd(nx); }
+      return;
+    }
+    if(raw.length>=bs.length*4){ put(bs, 0, raw); return; }
+    put(bs, i, raw+bs.slice(i+1).map(function(x){ return x.value; }).join(''));
+  }
+  SEG.forEach(function(b){
+    b.addEventListener('input', typed);
+    b.addEventListener('change', typed);
+    b.addEventListener('paste', function(ev){
+      var cd=ev.clipboardData||window.clipboardData, raw=clean(cd&&cd.getData('text'));
+      if(!raw) return;
+      ev.preventDefault();
+      var bs=group(b);
+      put(bs, raw.length>=bs.length*4?0:bs.indexOf(b), raw);
+    });
+    b.addEventListener('keydown', function(ev){
+      if(ev.key!=='Backspace'||b.value) return;
+      var pv=SEG[SEG.indexOf(b)-1]; if(!pv) return;
+      ev.preventDefault();
+      pv.value=pv.value.slice(0,-1); sync(pv); toEnd(pv);
+    });
+  });
+  function firstEmpty(id){
+    var bs=boxesOf(id);
+    for(var i=0;i<bs.length;i++) if(bs[i].value.length<4) return bs[i];
+    return bs[bs.length-1];
+  }
+  /* a username from the QR arrives in the hidden field; it is shown in its boxes */
+  if(clean(un.value)) put(boxesOf('un'), 0, clean(un.value));
   function el(tag,cls,text){ var e=document.createElement(tag); if(cls)e.className=cls; if(text!=null)e.textContent=text; return e; }
   function rm(n){ return 'RM '+Number(n||0).toLocaleString('en-MY',{minimumFractionDigits:0,maximumFractionDigits:2}); }
   function unitsOf(q,u){ return q+' '+(u||'unit'); }
@@ -381,9 +435,9 @@ const CLIENT_JS = `
     if(OWNER){ roster.hidden=false; gate.hidden=true; if(whoacct) whoacct.textContent=''; }
     else gate.hidden=false;
     showTab('stmt');
-    pw.value=''; autoPw=true;
+    pw.value=''; boxesOf('pw').forEach(function(x){ x.value=''; });
     say(OWNER?'Locked. Tap an account to open it again.':'Locked. Enter the password to open it again.');
-    try{ (OWNER?rq:pw).focus(); }catch(e){}
+    try{ (OWNER?rq:firstEmpty('pw')).focus(); }catch(e){}
   }
   document.getElementById('lock').addEventListener('click', lock);
 
@@ -726,8 +780,8 @@ const CLIENT_JS = `
   document.getElementById('f').addEventListener('submit', async function(ev){
     ev.preventDefault();
     var u=norm(un.value), pass=pw.value.trim();
-    if(!u){ say('Enter your username: two groups of four.','bad'); try{un.focus();}catch(e){} return; }
-    if(!pass){ say('Enter the password sent to you.','bad'); try{pw.focus();}catch(e){} return; }
+    if(!u){ say('Enter your username: two groups of four.','bad'); try{firstEmpty('un').focus();}catch(e){} return; }
+    if(!pass){ say('Enter the password sent to you.','bad'); try{firstEmpty('pw').focus();}catch(e){} return; }
     un.value=u;
     var mine=++ticket;
     var stale=function(){ return mine!==ticket; };
@@ -789,7 +843,7 @@ const CLIENT_JS = `
     if(!OWNER) return;
     if(!OWNER.master){ say('No master passphrase is set on this Worker, so nothing can be opened. Set STMT_MASTER.','bad'); return; }
     if(busy) return;
-    un.value=a.username; pw.value=OWNER.master; autoPw=false;
+    un.value=a.username; pw.value=OWNER.master;
     if(whoacct) whoacct.textContent=(a.code||a.username)+' \\u00b7 ';
     var f=document.getElementById('f');
     if(f.requestSubmit) f.requestSubmit();
@@ -897,7 +951,7 @@ const CLIENT_JS = `
     drawRoster();
     try{ rq.focus(); }catch(e){}
   } else {
-    try{ (un.value?pw:un).focus(); }catch(e){}
+    try{ (un.value?firstEmpty('pw'):firstEmpty('un')).focus(); }catch(e){}
   }
 })();
 `;

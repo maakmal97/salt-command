@@ -6947,9 +6947,71 @@ section("Statements — the password, the username, the envelope and the site's 
       "anything that is not sixteen symbols of the alphabet is left exactly as typed");
     ok((await stmtWorker.fetch(open({ u: un, password: pw.replace(/-/g, "").toUpperCase() }), senv)).status === 200,
       "so a password typed without hyphens and in capitals opens the statement");
-    const pageJs = html.slice(html.indexOf("<script"));
-    ok(/function shapeUser\(\)/.test(pageJs) && /function shapePw\(\)/.test(pageJs) && /addEventListener\(ev, shapeUser\)/.test(pageJs) && /autoPw=false/.test(pageJs),
-      "and the page groups both fields as they are typed, pasted or autofilled, stepping back on the password once it stops looking like one");
+    /* TWO BOXES AND FOUR (his instruction, 16 Sep 2026): the username in two boxes and the password in four,
+       driven in the page as a phone would: one symbol at a time, a paste, an autofill, and Backspace. */
+    const { landingPage: lpB } = await import("../stmt/page.js");
+    const { JSDOM: JDB } = await import("jsdom");
+    const drive = (user) => {
+      const dom = new JDB(lpB(user, "nb", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true });
+      const W = dom.window, d = W.document, box = [...d.querySelectorAll(".seg input")];
+      const fire = (el, type, extra) => { const e = new W.Event(type, { bubbles: true, cancelable: true }); Object.assign(e, extra || {}); el.dispatchEvent(e); return e; };
+      const typeIn = (text) => { for (const ch of text) { const el = d.activeElement; el.value += ch; fire(el, "input"); } };
+      const paste = (el, text) => { el.focus(); const e = new W.Event("paste", { bubbles: true, cancelable: true }); Object.defineProperty(e, "clipboardData", { value: { getData: () => text } }); el.dispatchEvent(e); return e; };
+      const back = (el) => { el.focus(); fire(el, "keydown", { key: "Backspace" }); };
+      const state = () => ({ un: d.getElementById("un").value, pw: d.getElementById("pw").value, boxes: box.map((b) => b.value), at: box.indexOf(d.activeElement) });
+      return { W, d, box, typeIn, paste, back, fire, state };
+    };
+    const P16 = "2345678abcdefghj";
+    {
+      const g = drive("");
+      ok(g.d.querySelectorAll('.seg[data-for="un"] input').length === 2 && g.d.querySelectorAll('.seg[data-for="pw"] input[type="password"]').length === 4
+        && g.d.getElementById("un").type === "hidden" && g.d.getElementById("pw").type === "hidden",
+        "the username is two boxes and the password four masked ones, with the joined values in hidden fields");
+      ok(g.state().at === 0, "a page opened by hand starts in the first username box");
+      g.typeIn("abcdefgh" + P16);
+      const t = g.state();
+      ok(t.un === "abcd-efgh" && t.pw === "2345-678a-bcde-fghj" && JSON.stringify(t.boxes) === JSON.stringify(["abcd", "efgh", "2345", "678a", "bcde", "fghj"]) && t.at === 5,
+        "typed one symbol at a time, each full box hands the cursor to the next, across into the password: " + JSON.stringify(t));
+      g.box[2].value = ""; g.fire(g.box[2], "input");
+      g.back(g.box[2]);
+      const b1 = g.state();
+      ok(b1.at === 1 && b1.boxes[1] === "efg" && b1.un === "abcd-efg", "Backspace in an empty box steps back and takes the symbol before: " + JSON.stringify(b1));
+      g.d.getElementById("lock").click();
+      const lk = g.state();
+      ok(lk.pw === "" && lk.boxes.slice(2).every((v) => v === "") && lk.un === "abcd-efg" && lk.at === 2,
+        "Lock empties the four password boxes, keeps the username and waits in the first password box: " + JSON.stringify(lk));
+      g.W.close();
+    }
+    {
+      const g = drive("");
+      g.box[1].value = "zz"; g.fire(g.box[1], "input");
+      const e = g.paste(g.box[1], " ABCD-efgh ");
+      const pu = g.state();
+      ok(e.defaultPrevented && pu.un === "abcd-efgh" && pu.boxes[0] === "abcd" && pu.boxes[1] === "efgh" && pu.at === 2,
+        "a whole username pasted into its second box, over what was there, fills both from the first and moves on to the password: " + JSON.stringify(pu));
+      g.paste(g.box[4], P16.toUpperCase().replace(/(.{4})/g, "$1 "));
+      const pp = g.state();
+      ok(pp.pw === "2345-678a-bcde-fghj" && pp.at === 5, "a whole password pasted into its third box, in capitals with spaces, fills all four: " + JSON.stringify(pp));
+      g.W.close();
+    }
+    {
+      const g = drive("");
+      g.paste(g.box[3], "2345ab");
+      const part = g.state();
+      ok(JSON.stringify(part.boxes.slice(2)) === JSON.stringify(["", "2345", "ab", ""]) && part.at === 4,
+        "a part pasted into a middle box fills from that box and leaves the cursor where it stops: " + JSON.stringify(part));
+      g.box[3].value = P16; g.fire(g.box[3], "input");
+      const af = g.state();
+      ok(af.pw === "2345-678a-bcde-fghj" && af.at === 5, "an autofill or suggestion of the whole password into its second box is spread across all four from the first: " + JSON.stringify(af));
+      g.W.close();
+    }
+    {
+      const g = drive("abcd-efgh");
+      const q = g.state();
+      ok(q.un === "abcd-efgh" && JSON.stringify(q.boxes.slice(0, 2)) === '["abcd","efgh"]' && q.at === 2,
+        "a username from the QR shows in its two boxes and the cursor waits in the first password box: " + JSON.stringify(q));
+      g.W.close();
+    }
   }
 
   /* ONE ANSWER FOR EVERY REFUSAL. An unknown username must answer byte for byte as a wrong

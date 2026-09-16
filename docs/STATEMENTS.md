@@ -145,9 +145,11 @@ has lost his asks for it again, and it is read back from `_passwords.json`.
 3. Ten failed attempts lock a username for fifteen minutes. A username is random rather than
    a desk code, so it cannot be guessed from a roster, and an unknown username answers byte
    for byte as a wrong password does, so the list cannot be walked.
-4. `STMT_MASTER`, a secret on the statements Worker, is his override. Typed into the page's one
-   password field it opens any account, because each issue carries a second wrap of the key
-   under it, made from the same passphrase in `_secrets.json`.
+4. `STMT_MASTER`, a secret on the statements Worker, is his override. It opens any account,
+   because each issue carries a second wrap of the key under it, made from the same passphrase in
+   `_secrets.json`. Since 16 Sep 2026 the door takes the username in two boxes and the password in
+   four, four symbols each, so the master can no longer be typed there: the owner's list at `/all`
+   fills it in for him.
 
 ### The secrets, and where each one lives
 

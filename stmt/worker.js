@@ -80,9 +80,9 @@ export function normUser(s) {
 /* THE PASSWORD IS FORGIVEN THE SAME WAY (06 Sep 2026): a statement password is sixteen symbols of
    one alphabet in four groups, and one typed without its hyphens, with the wrong ones, or in
    capitals is the same password. Only a value that is exactly sixteen such symbols is reshaped;
-   anything else, the owner's master passphrase included, is compared as typed. The page groups
-   the field as it is typed too; this is the same rule at the door, so a pasted password works
-   whatever the page did. */
+   anything else, the owner's master passphrase included, is compared as typed. The page takes it
+   in four boxes of four and joins them with hyphens; this is the same rule at the door, so a
+   password works whatever the page did. */
 const PASS_RE = /^[23456789abcdefghjkmnpqrstvwxyz]{16}$/;
 export function normPass(s) {
   const t = typeof s === "string" ? s.trim() : "";
