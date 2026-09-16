@@ -1,6 +1,6 @@
 {
- "v": "v670",
- "stamped": "16 Sep 2026, 18:28 KL",
+ "v": "v671",
+ "stamped": "16 Sep 2026, 19:09 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -4516,7 +4516,7 @@
   ],
   "QUEUE_COMMITTED": "2026-09-16T10:18:20.969Z",
   "PRICING": {
-   "takenAt": "2026-09-16T10:32:15.289Z",
+   "takenAt": "2026-09-16T11:18:10.053Z",
    "sizes": [
     0.5,
     1,
@@ -4561,7 +4561,11 @@
      "oil": "Titanium"
     },
     "CM4-MK": {
-     "salt": "Gold"
+     "salt": {
+      "small": "Gold",
+      "mid": "Gold",
+      "big": "Platinum"
+     }
     },
     "CE4-CHE": {
      "salt": "Platinum",
@@ -4571,7 +4575,11 @@
      "salt": "Platinum"
     },
     "CR3-DAM": {
-     "salt": "Titanium"
+     "salt": {
+      "small": "Titanium",
+      "mid": "Titanium",
+      "big": "Platinum"
+     }
     },
     "CM3-OUG": {
      "salt": "Titanium"
@@ -4580,7 +4588,11 @@
      "salt": "Bronze"
     },
     "CA4-DAM": {
-     "salt": "Titanium"
+     "salt": {
+      "small": "Titanium",
+      "mid": "Titanium",
+      "big": "Platinum"
+     }
     },
     "CZ4-MK": {
      "salt": "Platinum",
@@ -4618,7 +4630,11 @@
      "salt": "Gold"
     },
     "CC5-OKR": {
-     "salt": "Titanium"
+     "salt": {
+      "small": "Titanium",
+      "mid": "Titanium",
+      "big": "Platinum"
+     }
     },
     "CA5-BAN": {
      "salt": "Gold"
@@ -6113,10 +6129,10 @@
      ]
     }
    },
-   "v": "v670"
+   "v": "v671"
   },
   "OPEN": {
-   "at": "2026-09-16T10:32:15.364Z",
+   "at": "2026-09-16T11:18:10.139Z",
    "count": 6,
    "byKey": {
     "CR3-DAM|2026-09-15|90": {
@@ -6246,7 +6262,7 @@
     "salt": "2026-09-15",
     "oil": "2026-09-09"
    },
-   "v": "v670"
+   "v": "v671"
   }
  }
 }

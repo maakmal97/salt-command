@@ -238,8 +238,11 @@ export function guestBoard(code, book, pricing, now) {
   const names = (pricing && pricing.tierNames) || [];
   /* tierOf is keyed by CODE; the link stores the introducer as a USERNAME and the publish resolves it */
   const held = ((pricing && pricing.tierOf) || {})[code] || {};
+  /* v671: the introducer may hold, or be proposed, a band set; their NORMAL level is a mid-sized order's, and the link is
+     cut two levels above that */
+  const cuts = (pricing && pricing.profileRule) || { smallUpTo: 1, bigFrom: 3 };
   const pick = (product, last) => {
-    const t = names.indexOf(held[product]);
+    const t = names.indexOf(PRICING_ENGINE.levelAt(held[product], (cuts.smallUpTo + cuts.bigFrom) / 2, cuts));
     return t < 0 ? last : Math.min(t + 2, last);
   };
   const out = boardList(2, book, pricing, now, pick);

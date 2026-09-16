@@ -12147,7 +12147,9 @@ section("v651: a customer's price is their tier for each product, and a product 
     const fx47 = [sale47("z647a", "2026-08-01", 0.5, 40), sale47("z647b", "2026-08-02", 12.5, 1400), sale47("z647c", "2026-08-03", 2.5, 300), sale47("z647d", "2026-08-04", 1, 110)];
     w47.eval("(function(){if(roster.indexOf('CZ9-CD')<0)roster.push('CZ9-CD');BASE_SALES.push.apply(BASE_SALES," + JSON.stringify(fx47) + ");queue=[];applyOverlay();TIER_OF['CZ9-CD']={salt:'Gold'};setProd('salt');recompute();})()");
     const snap47 = ps47(w47);
-    ok(snap47.tierOf && JSON.stringify(snap47.tierOf["CZ9-CD"]) === '{"salt":"Gold"}' && Object.values(snap47.tierOf).every((t) => Object.values(t).every((n) => snap47.tierNames.includes(n)))
+    /* v671: a proposal may now be a band set, so every value is checked for a shape that prices rather than for a bare name */
+    const PE47 = (await import("../engine/pricing.mjs")).default;
+    ok(snap47.tierOf && JSON.stringify(snap47.tierOf["CZ9-CD"]) === '{"salt":"Gold"}' && Object.values(snap47.tierOf).every((t) => Object.values(t).every((n) => PE47.levelShapeOk(n, snap47.tierNames)))
       && snap47.byProduct.salt.ladder.length === 12 && snap47.byProduct.oil.ladder.length === 7,
       "the pricing snapshot carries each customer's tier for each product, held or proposed, leaving out a product with neither, and the ladder at each book's rungs: " + JSON.stringify(snap47.tierOf && snap47.tierOf["CZ9-CD"]));
     ok(JSON.stringify(snap47.byProduct.salt.ladder.map((r) => r.prices)) === JSON.stringify(rd47("(function(){setProd('salt');recompute();return fiveTiersNow().map(function(r){return r.prices;});})()")),
@@ -12464,10 +12466,10 @@ section("v660: a card is rounded DOWN to the ten, so it is never above what the 
       + "var n=0,onTen=0,under=0,over=[],tot=0,overTier=0;"
       + "roster.filter(function(c){return c.slice(-2)!=='-R';}).forEach(function(c){"
       + "  if(cardTier(c)<0)return; var own=pbOwnRate(c).rate;"
-      + "  var t=cardTier(c);"
+      /* v671: the level is read at each size, because a band set holds a different level for a big order than a small one */
       + "  shownSizes(p).forEach(function(q){ var v=cardQuote(c,q); if(v==null)return; n++; tot+=v;"
       + "    if(Math.abs(v/10-Math.round(v/10))<1e-9)onTen++;"
-      + "    var row=PRICING_ENGINE.fiveTierAt(q,pxCost(),pxPolicy());"
+      + "    var row=PRICING_ENGINE.fiveTierAt(q,pxCost(),pxPolicy()), t=cardTierAt(c,q);"
       + "    if(row&&v>row.prices[t]+0.009)overTier++;"
       + "    var F=floorTotal(q); if(v<F-0.009)under++;"
       + "    if(own!=null&&v>own*q+0.009)over.push({c:c,q:q,card:v,own:+(own*q).toFixed(2),"
@@ -12565,11 +12567,14 @@ section("v666: each customer has a profile on each product, read off their own o
        the opposite of everything; a quote that moved would mean a rule is already reading it. */
     const same = rd61("(function(){setProd('salt');recompute();var who=roster.filter(function(c){return cardTier(c)>=0;});"
       + "var read=function(){return who.map(function(c){return shownSizes('salt').map(function(q){return cardQuote(c,q);}).join(',');}).join('|');};"
-      + "var a=read(),keep=buyerProfile;"
+      /* v671: THE PROFILE PRICES NOW, AND ONLY THROUGH THE RULES. So the rules are switched off (ruleProposal reads the plain
+         proposal) and the profile is turned inside out: every card staying put proves it has no other road to a price */
+      + "var keepR=ruleProposal;ruleProposal=function(c,p,b){return tierProposal(c,p,b);};"
+      + "var a,b,keep=buyerProfile;try{a=read();"
       + "buyerProfile=function(){return {name:'large and regular',orders:99,perMonth:99,frequent:true,small:false,bigger:true,loyal:true,rare:true,lateTwice:true,late:9};};"
-      + "var b;try{b=read();}finally{buyerProfile=keep;}"
+      + "try{b=read();}finally{buyerProfile=keep;}}finally{ruleProposal=keepR;}"
       + "return {same:a===b,n:who.length};})()");
-    ok(same.same && same.n > 10, "and it prices nothing: every card on the book is unchanged when the profile reads the opposite of everything (" + same.n + " customers)");
+    ok(same.same && same.n > 10, "and it prices only through the rules: with them set aside, every card on the book is unchanged when the profile reads the opposite of everything (" + same.n + " customers)");
     /* 7. IT IS IN VIEW where the tier is set, beside the tier, per product */
     const card = rd61("(function(){setProdView('salt');switchTab('people');var t=document.querySelector('.sec.on table.tiertab');"
       + "if(!t)return null;return [].slice.call(t.tBodies[0].rows).map(function(r){return r.textContent.replace(/\\s+/g,' ');}).filter(function(x){return x.indexOf('CZ9-OFT')>=0;})[0]||null;})()");
@@ -12645,6 +12650,85 @@ section("v670: a customer's level can differ by the size of the order, read band
     ok(card67 && card67.sel === "__bands" && /small Titanium, mid Gold, big Silver/.test(card67.text) && card67.queued === 0,
       "the Tiers card shows the band set, selects keep the bands, and Set on it queues no clear: " + JSON.stringify(card67));
   } finally { await new Promise((r) => setTimeout(r, 200)); try { w67.close(); } catch (e) { /* best effort */ } }
+}
+
+section("v671: the proposal moves a level on how a customer buys: late, small, loyal, and sales slowing");
+{
+  /* HIS RULES OF 16 SEP 2026. Rare and late twice: down a level everywhere. Frequent and small: down a level from three units, and
+     NOTHING better on half a unit or a unit, because their own rate covers it (his decision that day). Loyal and buying bigger:
+     up a level from three units, never past Platinum. Sales slowed for three days running: every band up a level, never past
+     Platinum, until the next lot lands. A held tier is never moved by a rule. The rule is asked with its inputs forced, the base
+     proposal, the profile and the stock, so each branch is proved on its own; each assertion was proved red by mutation. */
+  const { openMaster: om71 } = await import("../tools/payload.mjs");
+  const { w: w71 } = await om71();
+  const rd71 = (e) => JSON.parse(String(w71.eval("JSON.stringify(" + e + ")")));
+  try {
+    /* a harness in the page: force the base proposal, the profile and the slowdown, ask the rule, then put all three back */
+    w71.eval("window.__ask71=function(base,flags,slow){var kT=tierProposal,kB=buyerProfile,kS=slowdown;"
+      + "tierProposal=function(){return base;};"
+      + "buyerProfile=function(){if(flags===null)return null;var f={name:'fixture',orders:9};['frequent','small','loyal','bigger','rare','lateTwice'].forEach(function(k){f[k]=flags.indexOf(k)>=0;});return f;};"
+      + "slowdown=function(){return {on:!!slow,since:null,endedBy:null};};"
+      + "try{return ruleProposal('CZ9-RUL','salt',{});}finally{tierProposal=kT;buyerProfile=kB;slowdown=kS;}};");
+    const ask = (base, flags, slow) => rd71("__ask71(" + JSON.stringify(base) + "," + JSON.stringify(flags) + "," + !!slow + ")");
+
+    /* 1. RARE AND LATE TWICE: one level down at every size, a plain level; Bronze stays Bronze; and no promotion reaches them */
+    ok(ask("Gold", ["rare", "lateTwice"]) === "Silver" && ask("Bronze", ["rare", "lateTwice"]) === "Bronze"
+      && ask("Gold", ["rare", "lateTwice"], true) === "Silver" && ask("Gold", ["rare"]) === "Gold",
+      "rare and late twice drops a level everywhere, Bronze stays Bronze, a slowdown promotes nobody who is late, and rare alone moves nothing");
+    /* 2. FREQUENT AND SMALL: the drop from three units and nothing better below it, his decision; Bronze has nowhere to drop */
+    const small = ask("Gold", ["frequent", "small"]);
+    ok(JSON.stringify(small) === JSON.stringify({ small: "Gold", mid: "Gold", big: "Silver" }) && ask("Bronze", ["frequent", "small"]) === "Bronze"
+      && JSON.stringify(ask("Titanium", ["frequent", "small"])) === JSON.stringify({ small: "Titanium", mid: "Titanium", big: "Platinum" }),
+      "frequent and small drops a level from three units only, with no better level on the small band, and Bronze stays one level: " + JSON.stringify(small));
+    /* 3. LOYAL AND BUYING BIGGER: a level up from three units, never past Platinum, and never a level down for someone above it */
+    ok(JSON.stringify(ask("Gold", ["loyal", "bigger"])) === JSON.stringify({ small: "Gold", mid: "Gold", big: "Platinum" })
+      && ask("Platinum", ["loyal", "bigger"]) === "Platinum" && ask("Titanium", ["loyal", "bigger"]) === "Titanium" && ask("Gold", ["loyal"]) === "Gold",
+      "loyal and buying bigger lifts the big band a level, stops at Platinum, never lowers a Titanium customer, and loyal alone moves nothing");
+    /* 4. A CUSTOMER WHO IS BOTH takes the small-buyer rule, the one about the sizes they buy most */
+    ok(JSON.stringify(ask("Gold", ["frequent", "small", "loyal", "bigger"])) === JSON.stringify({ small: "Gold", mid: "Gold", big: "Silver" }),
+      "a customer both small-and-frequent and loyal-and-bigger takes the small-buyer rule");
+    /* 5. SALES SLOWING: every band a level better, never past Platinum and never worse than it was */
+    ok(ask("Silver", [], true) === "Gold" && ask("Gold", [], true) === "Platinum" && ask("Platinum", [], true) === "Platinum" && ask("Titanium", [], true) === "Titanium"
+      && JSON.stringify(ask("Gold", ["frequent", "small"], true)) === JSON.stringify({ small: "Platinum", mid: "Platinum", big: "Gold" }),
+      "a slowdown lifts every band a level, stops at Platinum, lowers nobody, and stacks on the small buyer's drop");
+    /* 6. NO PROFILE LEAVES THE PROPOSAL AS IT WAS, AND NO PROPOSAL IS STILL NOTHING */
+    ok(ask("Gold", null) === "Gold" && ask(null, ["rare", "lateTwice"]) === null,
+      "with no profile the proposal is unchanged, and with no proposal there is nothing for a rule to move");
+
+    /* 7. THE SLOWDOWN ITSELF, on forced sales and lots: two units a day for a month and then nothing is a slowdown held for
+       three days, it is off again once a lot lands on or after it began, and two quiet days are not enough */
+    /* sales and purchases are const arrays, so their rows are swapped for the fixture's in place and put back, whatever happens */
+    const slow = rd71("(function(){var D=86400000,ago=function(n){return new Date(TODAY.getTime()-n*D).toISOString().slice(0,10);};"
+      + "var mk=function(quiet){var r=[];for(var n=40;n>quiet;n--)r.push({date:ago(n),qty:2,total:200,cash:200,deliveredQty:2,deliveredOn:ago(n),customer:'CZ9-SLW',product:'salt'});return r;};"
+      + "var keepS=sales.slice(),keepP=purchases.slice();"
+      + "var test=function(quiet,lotAgo){sales.length=0;[].push.apply(sales,mk(quiet));purchases.length=0;"
+      + "  if(lotAgo!=null)purchases.push({receivedOn:ago(lotAgo),receivedQty:10,qty:10,total:100,cash:100,date:ago(lotAgo),supplier:'SZ9-SLW',product:'salt'});"
+      + "  try{return slowdown('salt');}finally{sales.length=0;[].push.apply(sales,keepS);purchases.length=0;[].push.apply(purchases,keepP);}};"
+      + "return {held:test(5,null),lotAfter:test(5,1),lotBefore:test(5,20),twoQuiet:test(2,null),"
+      + " midRestart:test(9,5),midTooSoon:test(9,2),restored:sales.length===keepS.length&&purchases.length===keepP.length};})()");
+    ok(slow.restored && slow.held.on && !slow.lotAfter.on && slow.lotBefore.on && !slow.twoQuiet.on,
+      "five quiet days after a steady month is a slowdown, a lot landing since ends it, a lot before it does not, and two quiet days are not one: "
+      + JSON.stringify(slow));
+    /* AND A LOT IN THE MIDDLE OF A SLOWDOWN RESETS IT. Nine quiet days with a lot five days ago: the count restarts at the lot, the
+       five days since are held, so a new promotion runs from the third of them. With the lot two days ago only two quiet days
+       follow it and there is no promotion. Counting through the lot had let a restock end a promotion for a day and then start
+       it again, so a restock never ended one while sales stayed flat. */
+    ok(slow.midRestart.on && slow.midRestart.lastLot && slow.midRestart.since > slow.midRestart.lastLot && !slow.midTooSoon.on,
+      "a lot in the middle of a slowdown resets the count: three quiet days after it start a new promotion and two do not: "
+      + JSON.stringify([slow.midRestart, slow.midTooSoon]));
+
+    /* 8. IT REACHES THE LIVE QUOTE, AND NEVER A HELD TIER. A customer proposed Gold who buys small and often is quoted Gold at a
+       unit and Silver at twelve and a half; the same profile on a customer HOLDING Gold is quoted Gold at both. No orders, so no
+       rate of their own lowers either price and the level binds. */
+    const live = rd71("(function(){['CZ9-RUL','CZ9-HLD'].forEach(function(c){if(roster.indexOf(c)<0)roster.push(c);});TIER_OF['CZ9-HLD']={salt:'Gold'};setProd('salt');recompute();"
+      + "var kT=tierProposal,kB=buyerProfile;tierProposal=function(){return 'Gold';};"
+      + "buyerProfile=function(){return {name:'small and often',orders:9,frequent:true,small:true,loyal:false,bigger:false,rare:false,lateTwice:false};};"
+      + "try{var row=function(q){return PRICING_ENGINE.fiveTierAt(q,pxCost(),pxPolicy());};"
+      + "return {rul1:cardQuote('CZ9-RUL',1),rul12:cardQuote('CZ9-RUL',12.5),hld12:cardQuote('CZ9-HLD',12.5),gold1:row(1).prices[3],gold12:row(12.5).prices[3],silver12:row(12.5).prices[4]};"
+      + "}finally{tierProposal=kT;buyerProfile=kB;delete TIER_OF['CZ9-HLD'];}})()");
+    ok(live.rul1 === live.gold1 && live.rul12 === live.silver12 && live.hld12 === live.gold12 && live.silver12 > live.gold12,
+      "the rule reaches a proposed customer's live quote, Gold at a unit and Silver at twelve and a half, and leaves a held Gold customer at Gold: " + JSON.stringify(live));
+  } finally { await new Promise((r) => setTimeout(r, 200)); try { w71.close(); } catch (e) { /* best effort */ } }
 }
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
 process.exit(fail ? 1 : 0);

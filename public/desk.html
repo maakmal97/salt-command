@@ -68,7 +68,7 @@ document.addEventListener('visibilitychange',function(){
    localStorage before it posts anything and the load reads it straight back.
    The same tick retries a held entry, which is what gets a phone write to the cloud
    without waiting for the next open. */
-var SALT_BUILD_ID="de9b67f975e2b75c";
+var SALT_BUILD_ID="63b8e252e01982bc";
 var SALT_REV_MS=10000;
 (function(){
   var chip=null,timer=null;
@@ -7005,7 +7005,9 @@ const quoteFor=p=>{const f=QUOTES[p||PROD];return f?f():null;};
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{"v":"v670","d":"16 Sep 2026","t":"A CUSTOMER'S LEVEL CAN DIFFER BY THE SIZE OF THE ORDER, READ BAND BY BAND IN ONE PLACE","n":["<b>HIS DECISIONS OF 16 SEP 2026.</b> A tier on a product was one level at every size. It can now be a band set: one level for a small order of up to a unit, one for a mid-sized order, and one from three units, the cuts being the book's own quartiles of size. It is the mechanism his rules need, a habitual small buyer better on half a unit and a unit and a level worse from three, and a loyal bigger buyer better as the order grows.","<b>ONE PLACE TURNS A SIZE INTO A LEVEL.</b> The engine's levelAt, read by the desk for every quote and the printed board, and by the customer's own price list at each size, so the band a size falls in is never decided twice. One shape check, read by the drafter and the fold, so a band set travels through Approve and a shape that would not price is refused at the door and names itself. A customer's normal level is a mid-sized order's, and that is the mark their page draws.","<b>AND A TRAP IT HAD TO CLOSE.</b> On the Tiers card a band set cannot select one level name, so its dropdown would have sat on Not set, and Set would have read that as a clear and queued it. A band set is spelled out on the card now, its dropdown selects Keep the bands, and Set leaves it alone.","<b>NOTHING MOVED.</b> No band set exists on the book yet, so all 50 price lists were identical before and after; the rules that propose one come next. <b>THE CHECKS:</b> 7 assertions, the band edges exact, the shapes, the desk quote, the printed board and the customer's own page agreeing size by size, the drafter, and the card's safeguard. 7 mutations, each red."]},
+const evolution=[{"v":"v671","d":"16 Sep 2026","t":"THE PROPOSAL MOVES A LEVEL ON HOW A CUSTOMER BUYS: LATE, SMALL, LOYAL, AND SALES SLOWING","n":["<b>HIS RULES OF 16 SEP 2026.</b> The level a customer is proposed, read off what they pay, now moves on how they buy and on the stock. A customer who buys rarely and has been late twice drops a level at every size. A frequent small buyer drops a level from three units. A loyal customer buying bigger rises a level from three units, never past Platinum. And while sales have sat under half the typical for three days running, every level is offered one better, never past Platinum, until the next lot lands. <b>A tier he has set is never moved by a rule</b>, only offered one; but a proposal is what an un-held customer is quoted, so these rules move live prices.","<b>NOTHING BETTER ON HALF A UNIT OR A UNIT, HIS DECISION THAT DAY.</b> The plan gave frequent small buyers a better level on small orders. Measured first, the three of them were already proposed Titanium, where the only better level is Ambassador, his word alone, so the benefit had nowhere to go and the rule's only effect was the drop. He kept the drop and let their own rate carry the small price, which it already does: a card is never above what they pay, and they pay a keen rate on exactly those sizes.","<b>WHAT MOVES TODAY: FOUR CUSTOMERS, 28 PRICES, NET +RM650.</b> CM4-MK, loyal and buying bigger, is cheaper from three units, twelve and a half units RM1,060 to RM960. CR3-DAM, CA4-DAM and CC5-OKR, frequent and small, are dearer from three units, RM860 to RM960, and unchanged below. No slowdown is on for either product: salt last restocked on 15 Sep and oil on 8 Sep.","<b>A RESTOCK ENDS A PROMOTION, AND A FORCED CHECK FOUND IT DID NOT.</b> The slowdown was first counted straight through a lot, so a restock ended a promotion for a day and the next day's reading started it again; while sales stayed flat, no lot ever ended one. The count now stops at the latest lot, so only three quiet days after it start a new promotion. <b>THE CHECKS:</b> 9 assertions, each rule proved on forced inputs, the slowdown on forced sales and lots including a restock mid-slowdown, and a held tier left alone on a live quote. 10 mutations, each red."]},
+
+{"v":"v670","d":"16 Sep 2026","t":"A CUSTOMER'S LEVEL CAN DIFFER BY THE SIZE OF THE ORDER, READ BAND BY BAND IN ONE PLACE","n":["<b>HIS DECISIONS OF 16 SEP 2026.</b> A tier on a product was one level at every size. It can now be a band set: one level for a small order of up to a unit, one for a mid-sized order, and one from three units, the cuts being the book's own quartiles of size. It is the mechanism his rules need, a habitual small buyer better on half a unit and a unit and a level worse from three, and a loyal bigger buyer better as the order grows.","<b>ONE PLACE TURNS A SIZE INTO A LEVEL.</b> The engine's levelAt, read by the desk for every quote and the printed board, and by the customer's own price list at each size, so the band a size falls in is never decided twice. One shape check, read by the drafter and the fold, so a band set travels through Approve and a shape that would not price is refused at the door and names itself. A customer's normal level is a mid-sized order's, and that is the mark their page draws.","<b>AND A TRAP IT HAD TO CLOSE.</b> On the Tiers card a band set cannot select one level name, so its dropdown would have sat on Not set, and Set would have read that as a clear and queued it. A band set is spelled out on the card now, its dropdown selects Keep the bands, and Set leaves it alone.","<b>NOTHING MOVED.</b> No band set exists on the book yet, so all 50 price lists were identical before and after; the rules that propose one come next. <b>THE CHECKS:</b> 7 assertions, the band edges exact, the shapes, the desk quote, the printed board and the customer's own page agreeing size by size, the drafter, and the card's safeguard. 7 mutations, each red."]},
 
 {"v":"v669","d":"16 Sep 2026","t":"A COLLECTED SALE IS CANCELLED: THE CASH, THE HANDOVER AND THE COST ALL COME OFF","n":["<b>FOLDED:</b> one correction, against CS6-BS's salt row s169 of 16 Sep, 5 unit for RM420. Cash of RM420 is cleared, deliveredQty of 5 is cleared, handover of collected is cleared, the cost of RM240 is cleared and cancelled moves from false to true, recorded 16 Sep on his word. No cash and no stock move on the fold itself: the row now says nothing happened, and the original note is left standing as written.","<b>UNUSUAL:</b> a row that read as paid by qr via tng and collected the same day is withdrawn in full within hours, and the drafter's own flag on the rate, CS6-BS paying about RM107.50 a unit across 18 orders against RM84 here, 21.9% below, is answered only by the cancellation, not by any restated figure. The desk kept the position at 9.5 unit stated, count of 15 Sep, with nothing owed out and 8.5 unit promised."]},
 
@@ -7555,7 +7557,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='16 Sep 2026, 18:28 KL';
+const LAST_UPDATED='16 Sep 2026, 19:09 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -15730,6 +15732,54 @@ function tierProposal(code,prod,boards){
   let tier=1;for(let t=2;t<TIER_NAMES.length;t++)if(gap(t)<gap(tier)-1e-9)tier=t;
   return TIER_NAMES[tier];
 }
+/* ============ v671, HIS RULES OF 16 SEP 2026: THE PROPOSAL MOVES A LEVEL ON HOW THEY BUY ============
+   tierProposal reads the level nearest what a customer pays. These rules move it on their profile and the stock, and what
+   they return is still a PROPOSAL: a tier HELD on the book is his word and is never moved by a rule, only offered one.
+   His four, in the order they are applied:
+   1. RARE AND LATE TWICE: down one level at every size. Bronze stays Bronze. A late payer is offered no promotion either.
+   2. FREQUENT AND SMALL: one level worse from three units, Bronze staying Bronze; their normal level below that. A band
+      set. NO BETTER LEVEL ON HALF A UNIT OR A UNIT, his decision of 16 Sep 2026: their own rate already covers it, because a
+      card is never above what they pay and these customers pay a keen rate on exactly those sizes. Measured that day, the
+      three small-and-often customers were all proposed Titanium, where the only better level is Ambassador, his word alone,
+      so a better small band would have had nowhere to go and the rule's one effect is the drop.
+   3. LOYAL AND BUYING BIGGER: one level better from three units, never past Platinum: not Ambassador and not Titanium, his
+      words. A band set. A customer who is both small-and-frequent and loyal-and-bigger takes rule 2, the one about the
+      sizes they actually buy most.
+   4. SALES HAVE SLOWED: while the three-day sale rate has sat under half the typical for three days running and no lot has
+      landed since, every band is offered one level better, never past Platinum and never worse than it already is. It
+      lapses when the next lot is received.
+   A band set whose three bands agree is returned as one level, so a rule that changes nothing leaves nothing to read. */
+const PLATINUM_CAP=2;   /* an index into TIER_NAMES: the best level a promotion reaches, his "not Ambassador or Titanium" */
+function slowdown(prod){
+  const DAY=86400000, P=prod||PROD, today=TODAY.getTime(), byDay={};
+  const iso=t=>new Date(t).toISOString().slice(0,10);
+  pSales(P).filter(s=>pbPriced(s)&&s.date&&s.qty>0).forEach(s=>{byDay[s.date]=(byDay[s.date]||0)+s.qty;});
+  const units=(from,to)=>Object.keys(byDay).reduce((a,k)=>{const t=new Date(k).getTime();return t>=from&&t<=to?a+byDay[k]:a;},0);
+  /* a day is UNDER when the three days ending on it sold, a day, under half the typical day of the twenty-eight ending on it */
+  const under=d=>{const typ=units(d-27*DAY,d)/28;return typ>0&&units(d-2*DAY,d)/3<typ*0.5-1e-9;};
+  const lots=pPurch(P).filter(x=>x.receivedOn&&+x.receivedQty>0).map(x=>new Date(x.receivedOn).getTime()).filter(t=>t<=today);
+  const lastLot=lots.length?Math.max.apply(null,lots):-Infinity;
+  /* THE UNDER DAYS ARE COUNTED BACK FROM TODAY AND THE COUNT STOPS AT THE LATEST LOT. A promotion lasts until the next lot, his
+     words, so a lot ends it; and a slowdown that carries on past the lot has to be held for three days after it to start a new
+     one. Counting through the lot instead let a restock end a promotion for a day and restart it the next, so while sales stayed
+     flat no lot ever ended it, which a forced check caught on 16 Sep 2026. Three days running starts it, his choice that day. */
+  let run=0;
+  for(let d=today;d>lastLot&&run<90&&under(d);d-=DAY)run++;
+  return {on:run>=3,since:run>=3?iso(today-(run-3)*DAY):null,lastLot:isFinite(lastLot)?iso(lastLot):null};
+}
+function ruleProposal(code,prod,boards){
+  const base=tierProposal(code,prod,boards);if(!base)return null;
+  const N=TIER_NAMES,last=N.length-1,i=N.indexOf(base),pf=buyerProfile(code,prod);
+  if(!pf)return base;
+  if(pf.rare&&pf.lateTwice)return N[Math.min(last,i+1)];
+  const better=(k,cap)=>Math.min(k,Math.max(cap,k-1)), worse=k=>Math.min(last,k+1);
+  let set={small:i,mid:i,big:i};
+  if(pf.frequent&&pf.small)set={small:i,mid:i,big:worse(i)};
+  else if(pf.loyal&&pf.bigger)set={small:i,mid:i,big:better(i,PLATINUM_CAP)};
+  if(slowdown(prod).on)Object.keys(set).forEach(k=>{set[k]=better(set[k],PLATINUM_CAP);});
+  if(set.small===set.mid&&set.mid===set.big)return N[set.mid];
+  return {small:N[set.small],mid:N[set.mid],big:N[set.big]};
+}
 /* every customer on the roster, those who have bought first and largest first; a resale account stands with its associate
    and a supplier holds no tier. Since v646 one who has not bought yet is listed too, so a tier can be set before they do. */
 function tierCustomers(){
@@ -15768,13 +15818,13 @@ function tierAcceptAll(){
   const boards=tierBoards(),waiting=tierQueued(),t={};
   tierCustomers().forEach(id=>PROD_IDS.forEach(p=>{
     if((TIER_OF[id]||{})[p]||(waiting[id]&&p in waiting[id]))return;
-    const pr=tierProposal(id,p,boards);if(pr)(t[id]=t[id]||{})[p]=pr;}));
+    const pr=ruleProposal(id,p,boards);if(pr)(t[id]=t[id]||{})[p]=pr;}));   /* v671: the rules' proposal, band set or level */
   tierQueue(t);
 }
 function tierCard(){
   const ids=tierCustomers();if(!ids.length)return '';
   const boards=tierBoards(),waiting=tierQueued();let open=0,held=0;
-  const cell=(id,p)=>{const h=(TIER_OF[id]||{})[p]||null,w=!!waiting[id]&&p in waiting[id],prop=h||w?null:tierProposal(id,p,boards);
+  const cell=(id,p)=>{const h=(TIER_OF[id]||{})[p]||null,w=!!waiting[id]&&p in waiting[id],prop=h||w?null:ruleProposal(id,p,boards);
     const shown=w?waiting[id][p]:(h||prop),pf=buyerProfile(id,p);
     /* v666: how they buy sits beside the tier they hold, so the reading a rule will move a level on is in view first */
     const state=(w?'waiting':h?'held':prop?'proposed':'not set')+(pf?' &middot; '+pf.name:'');
@@ -18281,7 +18331,7 @@ function pbOwnRate(code,prod){const rows=pbOrders(code,prod).map(s=>(s.total-(+s
    v670: what is HELD may be a band set, a level for each size of order, so the held value is read in one place and a size
    is turned into a level by the engine's levelAt at the size being quoted. cardTier keeps its meaning, "is this product
    priced for them at all", and reads their NORMAL level, a mid-sized order's, which any held value or proposal answers. */
-function heldLevel(code){const who=ownerOf(code);return (TIER_OF[who]||{})[PROD]||tierProposal(who,PROD,{[PROD]:fiveTiersNow()});}
+function heldLevel(code){const who=ownerOf(code);return (TIER_OF[who]||{})[PROD]||ruleProposal(who,PROD,{[PROD]:fiveTiersNow()});}
 function cardTierAt(code,q){return TIER_NAMES.indexOf(PRICING_ENGINE.levelAt(heldLevel(code),q,PROFILE_RULE));}
 function cardTier(code){return cardTierAt(code,(PROFILE_RULE.smallUpTo+PROFILE_RULE.bigFrom)/2);}   /* their normal level: a mid-sized order's */
 /* v651 and v652, HIS DECISIONS OF 15 AND 16 SEP 2026: A NAMED CUSTOMER'S PRICE AT ANY SIZE, the one rule every quote to them

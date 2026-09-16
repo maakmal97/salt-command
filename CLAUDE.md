@@ -73,6 +73,12 @@ decision of 11 Aug 2026, no sign-in. The fold routine is `docs/CLOUD_FOLD.md`; s
      `levelAt` is the one place a size becomes a level**, read by the desk's `cardQuote`, the customer's price list and the
      fold; `levelShapeOk` is the one shape check, read by the drafter and the fold. A band left out takes mid. Their NORMAL level
      is a mid-sized order's, which is also the mark their page draws.
+   - **The proposal moves on four rules** (v671, his rules of 16 Sep 2026), in `ruleProposal` over `tierProposal`:
+     rare and late twice, down a level everywhere; frequent and small, down a level from 3 units and **nothing better below
+     it, their own rate covers that**; loyal and buying bigger, up a level from 3 units, never past Platinum; sales held under
+     half the typical for three days running (`slowdown`), every band up a level, never past Platinum, until the next lot,
+     which resets the count. **A HELD tier is never moved by a rule**, only offered one; a proposal is what an un-held
+     customer is quoted, so these rules move live prices.
    - **Each customer holds a tier for each product** (his instruction, 15 Sep 2026): `TIER_OF`
      on the book, code to product to level name, folded as `tierset`, a null clearing a product.
      **A customer's price is their tier, never above what they pay** (his decisions of 15 Sep

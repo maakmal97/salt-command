@@ -244,7 +244,7 @@ export function pricingSnapshot(w) {
     tierNames: call("typeof TIER_NAMES!=='undefined'?TIER_NAMES:null"),   // v643: the levels' names, for the drafter's tier check
     /* v651: every customer's tier for each product, the one held on the book or, until he sets one, the one proposed from
        what they pay for it; a product with neither is left out, and their page reads its price as coming soon */
-    tierOf: call("(function(){if(typeof tierBoards!=='function')return null;var b=tierBoards(),o={};tierCustomers().forEach(function(id){PROD_IDS.forEach(function(p){var t=(TIER_OF[id]||{})[p]||tierProposal(id,p,b);if(t){o[id]=o[id]||{};o[id][p]=t;}});});return o;})()"),
+    tierOf: call("(function(){if(typeof tierBoards!=='function')return null;var b=tierBoards(),o={};tierCustomers().forEach(function(id){PROD_IDS.forEach(function(p){var t=(TIER_OF[id]||{})[p]||(typeof ruleProposal==='function'?ruleProposal(id,p,b):tierProposal(id,p,b));if(t){o[id]=o[id]||{};o[id][p]=t;}});});return o;})()"),
     /* v666: how each customer buys each product, the desk's own reading, so the price list and the drafter read the same
        profile the desk shows rather than working one out of their own. Prices nothing yet. */
     profileOf: call("(function(){if(typeof buyerProfile!=='function')return null;var o={},keep=PROD;try{tierCustomers().forEach(function(id){PROD_IDS.forEach(function(p){var f=buyerProfile(id,p);if(f){o[id]=o[id]||{};o[id][p]=f;}});});}finally{PROD=keep;}return o;})()"),
