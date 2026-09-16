@@ -3190,11 +3190,20 @@ section("Oil — the ladder at every size, lawful between (round 5 his call 5, r
     ok(rowsSalt.length === 1 && rowsSalt[0].code === "T2" && rowsSalt[0].dflt === true,
       `the payload is the default ask alone, at row zero (${rowsSalt.map((r) => r.code).join(", ")})`);
     /* 14 Sep 2026: against the engine's own two figures at the smallest size, not RM70 and RM60. The ask is derived,
-       and v639's count moved it to RM80, which turned this red while row zero went on quoting the ask. */
+       and v639's count moved it to RM80, which turned this red while row zero went on quoting the ask.
+       16 Sep 2026: AND v673's COUNT BROUGHT THE FLOORS DOWN, so the forced book's ask at half a unit met Tier 1's stated
+       RM60 (it meets it at 1 and 2 units too, where Tier 1 is held to the ask), and the smallest size could no longer tell
+       the two rows apart. Each row is now matched by code to the engine's own figure for it at every size, and the two
+       must differ at one size at least, so a row carrying the other's prices shows on any book. */
     const L0 = JSON.parse(w.eval("JSON.stringify(priceLadder(shownSizes('salt')[0]))"));
-    const L0t1 = JSON.parse(w.eval("JSON.stringify(PRICING_ENGINE.ladderRow([shownSizes('salt')[0]], pxCost(), Object.assign({},pxPolicy(),{tier1:{0.5:60, 12.5:875},tierRule:null})))"));
-    ok(rowsSalt[0].prices[0] === L0.ask.total && L0t1.length === 2 && L0t1[1].code === "T1" && L0t1[0].prices[0] > L0t1[1].prices[0],
-      `so row zero still quotes the ask and not the cheaper tier, on this book and on one forced to two (${rowsSalt[0].prices[0]}; forced ${L0t1[0].prices[0]} then ${L0t1[1].prices[0]})`);
+    const forced = JSON.parse(w.eval("JSON.stringify((function(){var C=pxCost(),P=Object.assign({},pxPolicy(),{tier1:{0.5:60, 12.5:875},tierRule:null}),S=shownSizes('salt');"
+      + "var fig=function(k){return S.map(function(q){var L=PRICING_ENGINE.priceLadder(q,C,P);return L&&L[k]&&L[k].total!=null?+L[k].total:null;});};"
+      + "return {rows:PRICING_ENGINE.ladderRow(S,C,P),ask:fig('ask'),t1:fig('tier1')};})())"));
+    const [f0, f1] = forced.rows;
+    ok(rowsSalt[0].prices[0] === L0.ask.total && forced.rows.length === 2 && f0.code === "T2" && f1.code === "T1"
+      && JSON.stringify(f0.prices) === JSON.stringify(forced.ask) && JSON.stringify(f1.prices) === JSON.stringify(forced.t1)
+      && f0.prices.some((x, i) => x > f1.prices[i]),
+      `so row zero still quotes the ask and not the cheaper tier, on this book and on one forced to two (${rowsSalt[0].prices[0]}; forced ${f0.code} ${f0.prices.join(",")} then ${f1.code} ${f1.prices.join(",")})`);
     /* ============ v566: THE THREE GATES AND THE ONE RELATION ============ */
     /* A TIER STATED AT ONE SIZE IS NOT STATED. {0.5:60,"0.50":60} is two KEYS naming one size: it
        passed the ks.length<2 count, landed hi===lo, and made the exponent Math.log(1)/Math.log(1),
