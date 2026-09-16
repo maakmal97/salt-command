@@ -1,6 +1,6 @@
 {
- "v": "v665",
- "stamped": "16 Sep 2026, 17:45 KL",
+ "v": "v666",
+ "stamped": "16 Sep 2026, 17:52 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -4463,7 +4463,7 @@
   ],
   "QUEUE_COMMITTED": "2026-09-16T09:39:17.951Z",
   "PRICING": {
-   "takenAt": "2026-09-16T09:45:24.153Z",
+   "takenAt": "2026-09-16T09:56:42.866Z",
    "sizes": [
     0.5,
     1,
@@ -4610,6 +4610,765 @@
     "CB7-BJ": {
      "salt": "Titanium"
     }
+   },
+   "profileOf": {
+    "CS6-BS": {
+     "salt": {
+      "name": "consistent mid",
+      "orders": 16,
+      "tenureDays": 66,
+      "sinceLastDays": 0,
+      "perMonth": 7.38,
+      "smallShare": 0.5,
+      "bigShare": 0.31,
+      "late": 0,
+      "frequent": true,
+      "small": false,
+      "bigger": false,
+      "loyal": true,
+      "rare": false,
+      "lateTwice": false
+     },
+     "oil": {
+      "name": "large and regular",
+      "orders": 4,
+      "tenureDays": 41,
+      "sinceLastDays": 0,
+      "perMonth": 2.97,
+      "smallShare": 0,
+      "bigShare": 1,
+      "late": 0,
+      "frequent": true,
+      "small": false,
+      "bigger": true,
+      "loyal": false,
+      "rare": false,
+      "lateTwice": false
+     }
+    },
+    "CJ4-BJ": {
+     "salt": {
+      "name": "large and regular",
+      "orders": 6,
+      "tenureDays": 80,
+      "sinceLastDays": 9,
+      "perMonth": 2.28,
+      "smallShare": 0.17,
+      "bigShare": 0.83,
+      "late": 1,
+      "frequent": true,
+      "small": false,
+      "bigger": true,
+      "loyal": true,
+      "rare": false,
+      "lateTwice": false
+     }
+    },
+    "CS6-PER": {
+     "salt": {
+      "name": "large and regular",
+      "orders": 7,
+      "tenureDays": 70,
+      "sinceLastDays": 3,
+      "perMonth": 3.04,
+      "smallShare": 0.14,
+      "bigShare": 0.71,
+      "late": 1,
+      "frequent": true,
+      "small": false,
+      "bigger": true,
+      "loyal": true,
+      "rare": false,
+      "lateTwice": false
+     },
+     "oil": {
+      "name": "rare and large",
+      "orders": 2,
+      "tenureDays": 40,
+      "sinceLastDays": 3,
+      "perMonth": 1.52,
+      "smallShare": 0,
+      "bigShare": 1,
+      "late": 0,
+      "frequent": false,
+      "small": false,
+      "bigger": true,
+      "loyal": false,
+      "rare": false,
+      "lateTwice": false
+     }
+    },
+    "CM4-MK": {
+     "salt": {
+      "name": "large and regular",
+      "orders": 10,
+      "tenureDays": 55,
+      "sinceLastDays": 3,
+      "perMonth": 5.53,
+      "smallShare": 0,
+      "bigShare": 0.4,
+      "late": 0,
+      "frequent": true,
+      "small": false,
+      "bigger": true,
+      "loyal": true,
+      "rare": false,
+      "lateTwice": false
+     }
+    },
+    "CE4-CHE": {
+     "salt": {
+      "name": "consistent mid",
+      "orders": 9,
+      "tenureDays": 58,
+      "sinceLastDays": 1,
+      "perMonth": 4.72,
+      "smallShare": 0,
+      "bigShare": 0.22,
+      "late": 0,
+      "frequent": true,
+      "small": false,
+      "bigger": false,
+      "loyal": true,
+      "rare": false,
+      "lateTwice": false
+     },
+     "oil": {
+      "name": "one-off",
+      "orders": 1,
+      "tenureDays": 4,
+      "sinceLastDays": 4,
+      "perMonth": 1.01,
+      "smallShare": 0,
+      "bigShare": 1,
+      "late": 0,
+      "frequent": false,
+      "small": false,
+      "bigger": true,
+      "loyal": false,
+      "rare": false,
+      "lateTwice": false
+     }
+    },
+    "CN6-WM": {
+     "salt": {
+      "name": "consistent mid",
+      "orders": 9,
+      "tenureDays": 44,
+      "sinceLastDays": 2,
+      "perMonth": 6.23,
+      "smallShare": 0.56,
+      "bigShare": 0.11,
+      "late": 0,
+      "frequent": true,
+      "small": false,
+      "bigger": false,
+      "loyal": true,
+      "rare": false,
+      "lateTwice": false
+     }
+    },
+    "CR3-DAM": {
+     "salt": {
+      "name": "small and often",
+      "orders": 14,
+      "tenureDays": 79,
+      "sinceLastDays": 1,
+      "perMonth": 5.39,
+      "smallShare": 0.86,
+      "bigShare": 0.07,
+      "late": 0,
+      "frequent": true,
+      "small": true,
+      "bigger": false,
+      "loyal": true,
+      "rare": false,
+      "lateTwice": false
+     }
+    },
+    "CM3-OUG": {
+     "salt": {
+      "name": "large and regular",
+      "orders": 3,
+      "tenureDays": 32,
+      "sinceLastDays": 12,
+      "perMonth": 2.85,
+      "smallShare": 0,
+      "bigShare": 1,
+      "late": 0,
+      "frequent": true,
+      "small": false,
+      "bigger": true,
+      "loyal": false,
+      "rare": false,
+      "lateTwice": false
+     }
+    },
+    "CM6-HCM": {
+     "salt": {
+      "name": "one-off",
+      "orders": 1,
+      "tenureDays": 64,
+      "sinceLastDays": 64,
+      "perMonth": 0.48,
+      "smallShare": 0,
+      "bigShare": 1,
+      "late": 0,
+      "frequent": false,
+      "small": false,
+      "bigger": true,
+      "loyal": false,
+      "rare": true,
+      "lateTwice": false
+     }
+    },
+    "CA4-DAM": {
+     "salt": {
+      "name": "small and often",
+      "orders": 12,
+      "tenureDays": 66,
+      "sinceLastDays": 23,
+      "perMonth": 5.53,
+      "smallShare": 0.92,
+      "bigShare": 0,
+      "late": 0,
+      "frequent": true,
+      "small": true,
+      "bigger": false,
+      "loyal": true,
+      "rare": false,
+      "lateTwice": false
+     }
+    },
+    "CZ4-MK": {
+     "salt": {
+      "name": "rare and large",
+      "orders": 2,
+      "tenureDays": 48,
+      "sinceLastDays": 21,
+      "perMonth": 1.27,
+      "smallShare": 0,
+      "bigShare": 1,
+      "late": 0,
+      "frequent": false,
+      "small": false,
+      "bigger": true,
+      "loyal": false,
+      "rare": false,
+      "lateTwice": false
+     },
+     "oil": {
+      "name": "one-off",
+      "orders": 1,
+      "tenureDays": 21,
+      "sinceLastDays": 21,
+      "perMonth": 1.01,
+      "smallShare": 0,
+      "bigShare": 1,
+      "late": 0,
+      "frequent": false,
+      "small": false,
+      "bigger": true,
+      "loyal": false,
+      "rare": false,
+      "lateTwice": false
+     }
+    },
+    "CK4-SEN": {
+     "salt": {
+      "name": "large and regular",
+      "orders": 2,
+      "tenureDays": 16,
+      "sinceLastDays": 7,
+      "perMonth": 2.03,
+      "smallShare": 0,
+      "bigShare": 1,
+      "late": 0,
+      "frequent": true,
+      "small": false,
+      "bigger": true,
+      "loyal": false,
+      "rare": false,
+      "lateTwice": false
+     }
+    },
+    "CE4-AD": {
+     "salt": {
+      "name": "rare and large",
+      "orders": 2,
+      "tenureDays": 50,
+      "sinceLastDays": 27,
+      "perMonth": 1.22,
+      "smallShare": 0,
+      "bigShare": 1,
+      "late": 0,
+      "frequent": false,
+      "small": false,
+      "bigger": true,
+      "loyal": false,
+      "rare": false,
+      "lateTwice": false
+     }
+    },
+    "CR4-PJ": {
+     "salt": {
+      "name": "one-off",
+      "orders": 1,
+      "tenureDays": 56,
+      "sinceLastDays": 56,
+      "perMonth": 0.54,
+      "smallShare": 0,
+      "bigShare": 1,
+      "late": 0,
+      "frequent": false,
+      "small": false,
+      "bigger": true,
+      "loyal": false,
+      "rare": true,
+      "lateTwice": false
+     }
+    },
+    "CM4-SK": {
+     "salt": {
+      "name": "one-off",
+      "orders": 1,
+      "tenureDays": 64,
+      "sinceLastDays": 64,
+      "perMonth": 0.48,
+      "smallShare": 0,
+      "bigShare": 1,
+      "late": 0,
+      "frequent": false,
+      "small": false,
+      "bigger": true,
+      "loyal": false,
+      "rare": true,
+      "lateTwice": false
+     }
+    },
+    "CG5-SB": {
+     "salt": {
+      "name": "rare and large",
+      "orders": 3,
+      "tenureDays": 82,
+      "sinceLastDays": 77,
+      "perMonth": 1.11,
+      "smallShare": 0.33,
+      "bigShare": 0.67,
+      "late": 0,
+      "frequent": false,
+      "small": false,
+      "bigger": true,
+      "loyal": false,
+      "rare": true,
+      "lateTwice": false
+     }
+    },
+    "CY2-NIL": {
+     "salt": {
+      "name": "consistent mid",
+      "orders": 3,
+      "tenureDays": 36,
+      "sinceLastDays": 21,
+      "perMonth": 2.54,
+      "smallShare": 0,
+      "bigShare": 0,
+      "late": 0,
+      "frequent": true,
+      "small": false,
+      "bigger": false,
+      "loyal": false,
+      "rare": false,
+      "lateTwice": false
+     }
+    },
+    "CI4-OKR": {
+     "salt": {
+      "name": "occasional mid",
+      "orders": 3,
+      "tenureDays": 57,
+      "sinceLastDays": 14,
+      "perMonth": 1.6,
+      "smallShare": 0,
+      "bigShare": 0.33,
+      "late": 0,
+      "frequent": false,
+      "small": false,
+      "bigger": false,
+      "loyal": false,
+      "rare": false,
+      "lateTwice": false
+     }
+    },
+    "CA7-AMP": {
+     "salt": {
+      "name": "one-off",
+      "orders": 1,
+      "tenureDays": 16,
+      "sinceLastDays": 16,
+      "perMonth": 1.01,
+      "smallShare": 1,
+      "bigShare": 0,
+      "late": 0,
+      "frequent": false,
+      "small": true,
+      "bigger": false,
+      "loyal": false,
+      "rare": false,
+      "lateTwice": false
+     },
+     "oil": {
+      "name": "large and regular",
+      "orders": 2,
+      "tenureDays": 16,
+      "sinceLastDays": 8,
+      "perMonth": 2.03,
+      "smallShare": 0,
+      "bigShare": 1,
+      "late": 0,
+      "frequent": true,
+      "small": false,
+      "bigger": true,
+      "loyal": false,
+      "rare": false,
+      "lateTwice": false
+     }
+    },
+    "CH4-KS": {
+     "salt": {
+      "name": "rare and large",
+      "orders": 2,
+      "tenureDays": 40,
+      "sinceLastDays": 19,
+      "perMonth": 1.52,
+      "smallShare": 0,
+      "bigShare": 1,
+      "late": 0,
+      "frequent": false,
+      "small": false,
+      "bigger": true,
+      "loyal": false,
+      "rare": false,
+      "lateTwice": false
+     }
+    },
+    "CC5-OKR": {
+     "salt": {
+      "name": "small and often",
+      "orders": 5,
+      "tenureDays": 69,
+      "sinceLastDays": 1,
+      "perMonth": 2.21,
+      "smallShare": 1,
+      "bigShare": 0,
+      "late": 0,
+      "frequent": true,
+      "small": true,
+      "bigger": false,
+      "loyal": false,
+      "rare": false,
+      "lateTwice": false
+     }
+    },
+    "CH6-SET": {
+     "salt": {
+      "name": "small and rare",
+      "orders": 3,
+      "tenureDays": 57,
+      "sinceLastDays": 5,
+      "perMonth": 1.6,
+      "smallShare": 0.67,
+      "bigShare": 0,
+      "late": 0,
+      "frequent": false,
+      "small": true,
+      "bigger": false,
+      "loyal": false,
+      "rare": false,
+      "lateTwice": false
+     }
+    },
+    "CA5-BAN": {
+     "salt": {
+      "name": "small and rare",
+      "orders": 3,
+      "tenureDays": 50,
+      "sinceLastDays": 4,
+      "perMonth": 1.83,
+      "smallShare": 0.67,
+      "bigShare": 0,
+      "late": 0,
+      "frequent": false,
+      "small": true,
+      "bigger": false,
+      "loyal": false,
+      "rare": false,
+      "lateTwice": false
+     }
+    },
+    "CM6-PJ": {
+     "salt": {
+      "name": "large and regular",
+      "orders": 2,
+      "tenureDays": 26,
+      "sinceLastDays": 13,
+      "perMonth": 2.03,
+      "smallShare": 0.5,
+      "bigShare": 0.5,
+      "late": 0,
+      "frequent": true,
+      "small": false,
+      "bigger": true,
+      "loyal": false,
+      "rare": false,
+      "lateTwice": false
+     }
+    },
+    "CF5-WM": {
+     "salt": {
+      "name": "one-off",
+      "orders": 1,
+      "tenureDays": 14,
+      "sinceLastDays": 14,
+      "perMonth": 1.01,
+      "smallShare": 0,
+      "bigShare": 0,
+      "late": 0,
+      "frequent": false,
+      "small": false,
+      "bigger": false,
+      "loyal": false,
+      "rare": false,
+      "lateTwice": false
+     }
+    },
+    "CZ6-WM": {
+     "salt": {
+      "name": "small and rare",
+      "orders": 3,
+      "tenureDays": 57,
+      "sinceLastDays": 1,
+      "perMonth": 1.6,
+      "smallShare": 1,
+      "bigShare": 0,
+      "late": 0,
+      "frequent": false,
+      "small": true,
+      "bigger": false,
+      "loyal": false,
+      "rare": false,
+      "lateTwice": false
+     }
+    },
+    "CA5-SEN": {
+     "salt": {
+      "name": "one-off",
+      "orders": 1,
+      "tenureDays": 47,
+      "sinceLastDays": 47,
+      "perMonth": 0.65,
+      "smallShare": 0,
+      "bigShare": 0,
+      "late": 0,
+      "frequent": false,
+      "small": false,
+      "bigger": false,
+      "loyal": false,
+      "rare": true,
+      "lateTwice": false
+     }
+    },
+    "CN5-TAI": {
+     "salt": {
+      "name": "one-off",
+      "orders": 1,
+      "tenureDays": 76,
+      "sinceLastDays": 76,
+      "perMonth": 0.4,
+      "smallShare": 0,
+      "bigShare": 0,
+      "late": 0,
+      "frequent": false,
+      "small": false,
+      "bigger": false,
+      "loyal": false,
+      "rare": true,
+      "lateTwice": false
+     }
+    },
+    "CH5-KLC": {
+     "salt": {
+      "name": "small and rare",
+      "orders": 2,
+      "tenureDays": 61,
+      "sinceLastDays": 11,
+      "perMonth": 1,
+      "smallShare": 1,
+      "bigShare": 0,
+      "late": 0,
+      "frequent": false,
+      "small": true,
+      "bigger": false,
+      "loyal": false,
+      "rare": true,
+      "lateTwice": false
+     }
+    },
+    "CA2-SEN": {
+     "salt": {
+      "name": "one-off",
+      "orders": 1,
+      "tenureDays": 30,
+      "sinceLastDays": 30,
+      "perMonth": 1.01,
+      "smallShare": 0,
+      "bigShare": 1,
+      "late": 0,
+      "frequent": false,
+      "small": false,
+      "bigger": true,
+      "loyal": false,
+      "rare": false,
+      "lateTwice": false
+     }
+    },
+    "CD4-CS": {
+     "salt": {
+      "name": "one-off",
+      "orders": 1,
+      "tenureDays": 53,
+      "sinceLastDays": 53,
+      "perMonth": 0.57,
+      "smallShare": 1,
+      "bigShare": 0,
+      "late": 1,
+      "frequent": false,
+      "small": true,
+      "bigger": false,
+      "loyal": false,
+      "rare": true,
+      "lateTwice": false
+     }
+    },
+    "CH4-MAL": {
+     "salt": {
+      "name": "one-off",
+      "orders": 1,
+      "tenureDays": 33,
+      "sinceLastDays": 33,
+      "perMonth": 0.92,
+      "smallShare": 1,
+      "bigShare": 0,
+      "late": 0,
+      "frequent": false,
+      "small": true,
+      "bigger": false,
+      "loyal": false,
+      "rare": true,
+      "lateTwice": false
+     },
+     "oil": {
+      "name": "one-off",
+      "orders": 1,
+      "tenureDays": 33,
+      "sinceLastDays": 33,
+      "perMonth": 0.92,
+      "smallShare": 1,
+      "bigShare": 0,
+      "late": 0,
+      "frequent": false,
+      "small": true,
+      "bigger": false,
+      "loyal": false,
+      "rare": true,
+      "lateTwice": false
+     }
+    },
+    "CR3-PUD": {
+     "salt": {
+      "name": "one-off",
+      "orders": 1,
+      "tenureDays": 35,
+      "sinceLastDays": 35,
+      "perMonth": 0.87,
+      "smallShare": 1,
+      "bigShare": 0,
+      "late": 0,
+      "frequent": false,
+      "small": true,
+      "bigger": false,
+      "loyal": false,
+      "rare": true,
+      "lateTwice": false
+     }
+    },
+    "CE5-SA": {
+     "salt": {
+      "name": "one-off",
+      "orders": 1,
+      "tenureDays": 10,
+      "sinceLastDays": 10,
+      "perMonth": 1.01,
+      "smallShare": 1,
+      "bigShare": 0,
+      "late": 0,
+      "frequent": false,
+      "small": true,
+      "bigger": false,
+      "loyal": false,
+      "rare": false,
+      "lateTwice": false
+     }
+    },
+    "CD7-SEG": {
+     "salt": {
+      "name": "one-off",
+      "orders": 1,
+      "tenureDays": 20,
+      "sinceLastDays": 20,
+      "perMonth": 1.01,
+      "smallShare": 1,
+      "bigShare": 0,
+      "late": 0,
+      "frequent": false,
+      "small": true,
+      "bigger": false,
+      "loyal": false,
+      "rare": false,
+      "lateTwice": false
+     }
+    },
+    "CB7-BJ": {
+     "salt": {
+      "name": "one-off",
+      "orders": 1,
+      "tenureDays": 6,
+      "sinceLastDays": 6,
+      "perMonth": 1.01,
+      "smallShare": 1,
+      "bigShare": 0,
+      "late": 0,
+      "frequent": false,
+      "small": true,
+      "bigger": false,
+      "loyal": false,
+      "rare": false,
+      "lateTwice": false
+     }
+    }
+   },
+   "profileRule": {
+    "frequentPerMonth": 2,
+    "smallUpTo": 1,
+    "smallShare": 0.6,
+    "bigFrom": 3,
+    "biggerShare": 0.4,
+    "loyalOrders": 6,
+    "loyalWithinDays": 30,
+    "rarePerMonth": 1,
+    "rareAfterDays": 60,
+    "lateTimes": 2,
+    "spanFloorDays": 30
    },
    "byProduct": {
     "salt": {
@@ -5301,10 +6060,10 @@
      ]
     }
    },
-   "v": "v665"
+   "v": "v666"
   },
   "OPEN": {
-   "at": "2026-09-16T09:45:24.316Z",
+   "at": "2026-09-16T09:56:42.942Z",
    "count": 8,
    "byKey": {
     "CR3-DAM|2026-09-15|90": {
@@ -5464,7 +6223,7 @@
     "salt": "2026-09-15",
     "oil": "2026-09-09"
    },
-   "v": "v665"
+   "v": "v666"
   }
  }
 }

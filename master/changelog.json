@@ -1,5 +1,16 @@
 [
  {
+  "v": "v666",
+  "d": "16 Sep 2026",
+  "t": "EACH CUSTOMER HAS A PROFILE ON EACH PRODUCT, READ OFF THEIR OWN ORDERS, AND IT PRICES NOTHING YET",
+  "n": [
+   "<b>HIS DECISIONS OF 16 SEP 2026, AFTER THE BOOK WAS PROFILED.</b> How a customer buys is now read off their own priced orders: how often, how big, how loyal and how late, one reading for each product. The Tiers card on People shows it beside the tier they hold, and the pricing snapshot carries it so the price list and the drafter read the desk's reading rather than working out one of their own. <b>It prices nothing at this version.</b> Four rules will move a level on it, and a rule is only as good as the reading under it, so it is measured and shown first, the way the five tiers were drawn beside the board before any quote read them.",
+   "<b>THE NUMBERS ARE HIS, CUT FROM THE BOOK.</b> Frequent is two orders a month, against a median customer at 1.83. Small is half a unit or one, his words, with six in ten of their orders that size. Loyal is six orders with the last inside thirty days, because the whole book is under three months old and time cannot measure loyalty yet. Buying bigger is four in ten at three units or more, the book's own upper quartile. Rare is under one order a month or nothing for sixty days. Late is twice past the ten-day credit term, his word. One constant holds them all, so a threshold is one edit.",
+   "<b>WHAT IT READS TODAY.</b> Small and often: CR3-DAM, CA4-DAM and CC5-OKR, the three he had in mind. Loyal: eight. Late twice: nobody, so that rule starts life as a forward-looking one. And CH5-KLC, who pays RM180 a unit for half-units, reads small and RARE, so a rule keyed to frequency will not hand a premium buyer the preferential rate. Orders a month are read over at least thirty days, or every new customer would arrive frequent off a single order.",
+   "<b>THE CHECKS.</b> A new section of 8 assertions on fixture customers dated off the desk's own day, so every boundary is forced: frequency telling the same small orders apart, loyalty needing both its halves, late past the term and not at it, rare on either count, the thirty-day floor, the card, the snapshot, and a proof that every one of the book's cards is unchanged when the profile reads the opposite of everything. 8 mutations, each red."
+  ]
+ },
+ {
   "v": "v665",
   "d": "16 Sep 2026",
   "t": "A FULL SALT SALE TO CS6-BS: PAID AND COLLECTED ON THE DAY, PRICED UNDER THE ASK",

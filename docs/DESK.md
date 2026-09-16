@@ -37,6 +37,18 @@
   v641 drew the ladder, v642 named it.
 - **Why the tiers come before the switch:** a switch alone draws every existing price list up
   toward Bronze (all 36 salt and all 6 oil customers with history, measured 15 Sep 2026).
+- **The profile** (v666, his decisions of 16 Sep 2026). `buyerProfile(code,prod)` reads a customer's own
+  priced orders and returns a name (one-off, small and often, small and rare, large and regular, rare and
+  large, consistent mid, occasional mid) and six flags: `frequent`, `small`, `bigger`, `loyal`, `rare`,
+  `lateTwice`. The thresholds are one constant, `PROFILE_RULE`, cut from the book on 16 Sep 2026: the median
+  customer then bought 1.83 times a month, one and three units were the lower and upper quartiles of size,
+  and the whole book was under three months old, so loyalty is counted in orders rather than time. Orders a
+  month are read over at least 30 days, or every new customer arrives frequent. **Late** is an order paid
+  past `RULES.creditDays` (10) or still owed past it; a write-off is not counted, having its own rule. On
+  the book that day: small and often CR3-DAM, CA4-DAM, CC5-OKR; loyal eight; late twice nobody. CH5-KLC,
+  who pays RM180 a unit for half-units, reads small and RARE, so a rule keyed to frequency does not hand
+  a premium buyer the preferential rate. **It prices nothing at v666**; the rules that move a level on it
+  come after the level can vary by size.
 - **Setting a customer's tiers** (v643; one for each product since v646): on Customers, the
   Tiers card carries a dropdown for each product with Not set, Set queuing only what changed,
   or Accept for every open proposal. Or chosen at Add ID as a new customer's starting tiers

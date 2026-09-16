@@ -73,6 +73,7 @@ const NOT_LEDGER = new Set([
      data-shaped and equally not a fact about any trade. */, "PRICE_TIERS", "PRICE_MODEL", "PRICE_LOCK", "PXBANDS", "PX",
   "REF", "REF_POINTS", "LADDER", "LADDER_BY" /* round 5: the per-book ladder anchors; a rule, like LADDER itself */,
   "TIER_RULE", "TIER_NAMES" /* v641, v642: the tiers' rule per book and the levels' names; a rule and its presentation, like LADDER */,
+  "PROFILE_RULE" /* v666: the thresholds a customer's profile is read against; a rule, not a record, like TIER_RULE */,
   "BAND_LABEL", "BAND_NAME", "COST_BASIS", "COST_BOOK", "SALES_POLICY",
   "RULES", "SHRINK", "R0_NETWORK", "REBATE", "REWARD", "FWD", "PROD_STOCK_COST", "PROD_IDS",
   "TIERS", "SIZES", "PRICES", "BANDS", "HURDLES", "REWARDS", "CADENCE", "THRESHOLDS",

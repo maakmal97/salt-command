@@ -6891,7 +6891,9 @@ const quoteFor=p=>{const f=QUOTES[p||PROD];return f?f():null;};
    evolution stays as a one-entry array because several places read evolution[0].v for
    the version chip, the menu payload and the downloaded price sheets. It is the current
    version and nothing else. */
-const evolution=[{"v":"v665","d":"16 Sep 2026","t":"A FULL SALT SALE TO CS6-BS: PAID AND COLLECTED ON THE DAY, PRICED UNDER THE ASK","n":["<b>FOLDED:</b> one row, a sale of 5 unit of salt to CS6-BS dated 16 Sep for RM420, RM420 cash and the whole 5 unit collected the same day, ordered through the statements site under order 20260916085105-rkoi5a and paid by qr via tng. The row closes on the day it opens: nothing is owed, nothing is held back, and no delivery charge sits inside the total.","<b>UNUSUAL:</b> the drafter flagged the rate, RM84 a unit against about RM108 a unit CS6-BS typically pays across 17 orders, 22.2% below. The party record answers only the pricing question: 10 orders, median RM100, range RM11 to RM126.67. Against the desk's own ladder at size 5 the total sits above the floor of RM301.26 and short of the RM560 ask, so the discount is real but inside the floor.","<b>THE INVENTORY:</b> cost is the desk's own RM48 a unit, RM240 on the order, so no separate cost is booked. Stock was counted on 15 Sep for salt and stands at 14.5 unit, already under the reorder mark of 15, with 10.5 unit promised and nothing owed out. Replacement stands at RM46 a unit against the RM48 carried. No lot landed, so the cost basis is unchanged."]},
+const evolution=[{"v":"v666","d":"16 Sep 2026","t":"EACH CUSTOMER HAS A PROFILE ON EACH PRODUCT, READ OFF THEIR OWN ORDERS, AND IT PRICES NOTHING YET","n":["<b>HIS DECISIONS OF 16 SEP 2026, AFTER THE BOOK WAS PROFILED.</b> How a customer buys is now read off their own priced orders: how often, how big, how loyal and how late, one reading for each product. The Tiers card on People shows it beside the tier they hold, and the pricing snapshot carries it so the price list and the drafter read the desk's reading rather than working out one of their own. <b>It prices nothing at this version.</b> Four rules will move a level on it, and a rule is only as good as the reading under it, so it is measured and shown first, the way the five tiers were drawn beside the board before any quote read them.","<b>THE NUMBERS ARE HIS, CUT FROM THE BOOK.</b> Frequent is two orders a month, against a median customer at 1.83. Small is half a unit or one, his words, with six in ten of their orders that size. Loyal is six orders with the last inside thirty days, because the whole book is under three months old and time cannot measure loyalty yet. Buying bigger is four in ten at three units or more, the book's own upper quartile. Rare is under one order a month or nothing for sixty days. Late is twice past the ten-day credit term, his word. One constant holds them all, so a threshold is one edit.","<b>WHAT IT READS TODAY.</b> Small and often: CR3-DAM, CA4-DAM and CC5-OKR, the three he had in mind. Loyal: eight. Late twice: nobody, so that rule starts life as a forward-looking one. And CH5-KLC, who pays RM180 a unit for half-units, reads small and RARE, so a rule keyed to frequency will not hand a premium buyer the preferential rate. Orders a month are read over at least thirty days, or every new customer would arrive frequent off a single order.","<b>THE CHECKS.</b> A new section of 8 assertions on fixture customers dated off the desk's own day, so every boundary is forced: frequency telling the same small orders apart, loyalty needing both its halves, late past the term and not at it, rare on either count, the thirty-day floor, the card, the snapshot, and a proof that every one of the book's cards is unchanged when the profile reads the opposite of everything. 8 mutations, each red."]},
+
+{"v":"v665","d":"16 Sep 2026","t":"A FULL SALT SALE TO CS6-BS: PAID AND COLLECTED ON THE DAY, PRICED UNDER THE ASK","n":["<b>FOLDED:</b> one row, a sale of 5 unit of salt to CS6-BS dated 16 Sep for RM420, RM420 cash and the whole 5 unit collected the same day, ordered through the statements site under order 20260916085105-rkoi5a and paid by qr via tng. The row closes on the day it opens: nothing is owed, nothing is held back, and no delivery charge sits inside the total.","<b>UNUSUAL:</b> the drafter flagged the rate, RM84 a unit against about RM108 a unit CS6-BS typically pays across 17 orders, 22.2% below. The party record answers only the pricing question: 10 orders, median RM100, range RM11 to RM126.67. Against the desk's own ladder at size 5 the total sits above the floor of RM301.26 and short of the RM560 ask, so the discount is real but inside the floor.","<b>THE INVENTORY:</b> cost is the desk's own RM48 a unit, RM240 on the order, so no separate cost is booked. Stock was counted on 15 Sep for salt and stands at 14.5 unit, already under the reorder mark of 15, with 10.5 unit promised and nothing owed out. Replacement stands at RM46 a unit against the RM48 carried. No lot landed, so the cost basis is unchanged."]},
 
 {"v":"v664","d":"16 Sep 2026","t":"TWO 16 SEP ROWS PUT RIGHT: ONE OIL ORDER PAID IN FULL, ONE SALT ORDER RESTATED AND SETTLED","n":["<b>FOLDED:</b> a fulfilment on s167 and a correction on s168, both CS6-BS-R, both dated 16 Sep, both against rows taken back to unsettled earlier the same day. The fulfilment moves RM130 and 10 unit of oil against RM130 and 10 unit outstanding and closes the order. The correction takes s168 from RM440 to RM420, sets delivery to 0, cash to RM420 and delivered quantity to 5 unit, moving no cash and no stock of itself.","<b>UNUSUAL:</b> both rows already carry a trail of two steps, a fulfilment and a correction, and setting s168's figures directly does not rewrite them, so the trail no longer adds up to the row; the correction sits beside them saying so. The drafter flagged the salt rate at RM84 a unit against about RM109 CS6-BS typically pays across 16 orders, 22.9% below, and the figures answer the rate only.","<b>THE INVENTORY DID:</b> released 10 unit of oil to CS6-BS-R on 16 Sep, the oil count standing at 9 Sep. Salt stands at 14.5 unit on the count of 15 Sep against a ledger of 95.45 and self use of 80.95, cost RM48 a unit against replacement RM46, reorder at 15, nothing owed out and 25.5 promised. CS6-BS-R's RM570 outstanding before these rows is worked down by them."]},
 
@@ -7431,7 +7433,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='16 Sep 2026, 17:45 KL';
+const LAST_UPDATED='16 Sep 2026, 17:52 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -15547,6 +15549,54 @@ function tierBoards(){
   finally{PROD=keep;recompute();}
   return out;
 }
+/* ============ v666, HIS DECISIONS OF 16 SEP 2026: A PROFILE FOR EACH CUSTOMER ON EACH PRODUCT ============
+   How a customer buys, read off their own priced orders: how often, how big, how loyal, how late. It PRICES NOTHING at
+   this version. It is measured and shown first, the way the five tiers were drawn beside the board at v641 before any quote
+   read them, because four rules will move a level on it and each is only as good as the reading under it.
+   THE NUMBERS ARE HIS, cut from the book. On 16 Sep 2026 the 133 priced salt orders put the median customer at 1.83 orders a
+   month, one unit and three units at the lower and upper quartiles of size, and the whole book under three months old, so
+   loyalty is counted in orders and not in time; the ten-day credit term is RULES.creditDays, and nobody had then been late
+   twice. One constant, so a threshold is one edit. */
+const PROFILE_RULE={
+  frequentPerMonth:2,   // "frequent": two or more orders a month
+  smallUpTo:1,          // "small": half a unit and one unit, his words
+  smallShare:0.6,       //   and six in ten of their orders are that small
+  bigFrom:3,            // three units and above, the book's upper quartile and his band
+  biggerShare:0.4,      // "buying bigger": four in ten of their orders at three units or more
+  loyalOrders:6,        // "loyal": six or more priced orders
+  loyalWithinDays:30,   //   and the last within thirty days
+  rarePerMonth:1,       // "rare": under one order a month
+  rareAfterDays:60,     //   or nothing for sixty days
+  lateTimes:2,          // "frequent late payments": twice past the credit term, his word
+  spanFloorDays:30      // orders a month is read over at least thirty days, so one order last week is not four a month
+};
+/* the profile of one customer on one product; null for a product they have never bought at a price */
+function buyerProfile(code,prod){
+  const R=PROFILE_RULE, DAY=86400000, now=TODAY.getTime(), term=(RULES&&RULES.creditDays)||10;
+  const rows=pSales(prod||PROD).filter(s=>POSITION_ENGINE.ownsCode(code,s.customer)&&pbPriced(s)&&s.date&&s.total>0&&s.qty>0);
+  if(!rows.length)return null;
+  const times=rows.map(s=>new Date(s.date).getTime()).sort((a,b)=>a-b);
+  const tenure=(now-times[0])/DAY, sinceLast=(now-times[times.length-1])/DAY;
+  const perMonth=rows.length/(Math.max(tenure,R.spanFloorDays)/30.44);
+  const smallShare=rows.filter(s=>s.qty<=R.smallUpTo+0.0001).length/rows.length;
+  const bigShare=rows.filter(s=>s.qty>=R.bigFrom-0.0001).length/rows.length;
+  /* LATE: an order still owed past the term, or one that was paid, but only after it. A write-off is not counted here;
+     it has its own rule and leaves every reading of what is owed (txAdvance reads nothing on it). */
+  const late=rows.filter(s=>{
+    if(txAdvance(s)>0.009)return (now-new Date(s.date).getTime())/DAY>term;
+    return !!(s.paidOn&&(new Date(s.paidOn).getTime()-new Date(s.date).getTime())/DAY>term);
+  }).length;
+  const frequent=perMonth>=R.frequentPerMonth, small=smallShare>=R.smallShare, bigger=bigShare>=R.biggerShare;
+  const loyal=rows.length>=R.loyalOrders&&sinceLast<=R.loyalWithinDays;
+  const rare=perMonth<R.rarePerMonth||sinceLast>R.rareAfterDays, lateTwice=late>=R.lateTimes;
+  const name=rows.length===1?'one-off'
+    :small?(frequent?'small and often':'small and rare')
+    :bigger?(frequent?'large and regular':'rare and large')
+    :frequent?'consistent mid':'occasional mid';
+  return {name,orders:rows.length,tenureDays:Math.round(tenure),sinceLastDays:Math.round(sinceLast),
+    perMonth:+perMonth.toFixed(2),smallShare:+smallShare.toFixed(2),bigShare:+bigShare.toFixed(2),late,
+    frequent,small,bigger,loyal,rare,lateTwice};
+}
 /* v655, HIS DECISION OF 16 SEP 2026: THE TIER IS PROPOSED AT THE SIZES THEY BUY, and read a unit, so a size they never take
    cannot decide their level. It was measured across every size on the board, which handed the decision to the biggest rung:
    adding 80 and 100 unit to oil moved two customers a level on sizes neither of them buys (v654). */
@@ -15598,7 +15648,9 @@ function tierCard(){
   const ids=tierCustomers();if(!ids.length)return '';
   const boards=tierBoards(),waiting=tierQueued();let open=0,held=0;
   const cell=(id,p)=>{const h=(TIER_OF[id]||{})[p]||null,w=!!waiting[id]&&p in waiting[id],prop=h||w?null:tierProposal(id,p,boards);
-    const shown=w?waiting[id][p]:(h||prop),state=w?'waiting':h?'held':prop?'proposed':'not set';
+    const shown=w?waiting[id][p]:(h||prop),pf=buyerProfile(id,p);
+    /* v666: how they buy sits beside the tier they hold, so the reading a rule will move a level on is in view first */
+    const state=(w?'waiting':h?'held':prop?'proposed':'not set')+(pf?' &middot; '+pf.name:'');
     if(h)held++;if(prop)open++;
     /* one line a product, so a dropdown keeps the width of its longest level on a phone rather than sharing a row with the others */
     return `<div style="display:flex;align-items:center;gap:8px;margin:3px 0"><div style="min-width:5em;line-height:1.25">${PRODUCTS[p].name}<br><span class="iref">${state}</span></div><select id="tierSel_${id}_${p}" aria-label="${PRODUCTS[p].name} tier for ${codeOf(id)}" style="min-height:var(--tap);width:auto"><option value=""${shown?'':' selected'}>Not set</option>${TIER_NAMES.map(n=>`<option${n===shown?' selected':''}>${n}</option>`).join('')}</select></div>`;};

@@ -11523,7 +11523,10 @@ section("v634: a defaulted sale is written off, off every reading of what is owe
       + "claims:obClaims().filter(function(c){return c.who==='CZ9-WO';}).length};})()");
     const recvText34 = () => { w34.eval("switchTab('receivables');document.querySelectorAll('.sec.on details').forEach(function(d){d.open=true;});"); return String(w34.eval("document.querySelector('.sec.on').textContent")).replace(/\s+/g, " "); };
     const approachText34 = () => { w34.eval("switchTab('concentration');"); return JSON.parse(String(w34.eval("JSON.stringify([].map.call(document.querySelectorAll('.sec.on .apchip,.sec.on .apname'),function(e){return e.textContent;}))"))); };
-    const snap34 = () => { const s = ps34(w34); delete s.takenAt; w34.eval("setProd('salt');recompute();"); return JSON.stringify(s); };
+    /* v666: the snapshot also carries each customer's PROFILE, which a write-off rightly moves, because a defaulted order
+       is not a priced order and drops out of how they buy. The claim here is that no PRICE moves, so the profile is taken
+       out of what is compared rather than letting a correct reading turn the price check red. */
+    const snap34 = () => { const s = ps34(w34); delete s.takenAt; delete s.profileOf; delete s.profileRule; w34.eval("setProd('salt');recompute();"); return JSON.stringify(s); };
     const A = read34(), recvA = recvText34(), apprA = approachText34(), snapA = snap34();
     w34.eval("BASE_SALES.find(function(s){return s.rid==='z634d';}).defaulted=true;applyOverlay();recompute();");
     const B = read34(), recvB = recvText34(), apprB = approachText34(), snapB = snap34();
@@ -11945,8 +11948,11 @@ section("v643: each customer holds a tier for each product, set on the phone and
     const cell43 = "var cell=function(c,p){var s=[].filter.call(t.querySelectorAll('select'),function(x){return x.id==='tierSel_'+c+'_'+p;})[0];return s?{sel:s.value,state:s.parentNode.querySelector('.iref').textContent.trim()}:null;};";
     const card43 = rd43("(function(){TIER_OF['CZ9-TG']={salt:'Gold'};queue=[{at:'2026-09-15T00:00:00.000Z',type:'TIER',status:'tierset',raw:'Set CZ9-TO: Oil Platinum',payload:{mode:'tierset',tiers:{'CZ9-TO':{oil:'Platinum'}}}}];"
       + "setProdView('salt');switchTab('people');var t=document.querySelector('.sec.on table.tiertab');if(!t)return null;" + cell43 + "return {TG:cell('CZ9-TG','salt'),TO:cell('CZ9-TO','oil'),TA:cell('CZ9-TA','salt')};})()");
-    ok(card43 && card43.TG && card43.TG.sel === "Gold" && card43.TG.state === "held" && card43.TO && card43.TO.sel === "Platinum" && card43.TO.state === "waiting"
-      && card43.TA && card43.TA.state === "proposed" && card43.TA.sel !== "" && card43.TA.sel !== "Ambassador",
+    /* v666: the state reads the tier's standing first and then how they buy ("held · occasional mid"), so it is read by
+       its leading word; the profile beside it has its own assertions in the v666 section */
+    const lead43 = (x) => x && String(x.state).split(" · ")[0];
+    ok(card43 && card43.TG && card43.TG.sel === "Gold" && lead43(card43.TG) === "held" && card43.TO && card43.TO.sel === "Platinum" && lead43(card43.TO) === "waiting"
+      && card43.TA && lead43(card43.TA) === "proposed" && card43.TA.sel !== "" && card43.TA.sel !== "Ambassador",
       "the Customers page shows each customer's tier for each product, held, waiting for approval, or proposed: " + JSON.stringify(card43));
     const acc43 = rd43("(function(){tierAcceptAll();var e=queue[queue.length-1];return {n:queue.length,mode:e.payload.mode,tiers:e.payload.tiers};})()");
     ok(acc43.n === 2 && acc43.mode === "tierset" && acc43.tiers["CZ9-TA"] && acc43.tiers["CZ9-TA"].salt && !("CZ9-TG" in acc43.tiers) && acc43.tiers["CZ9-TO"] && !("oil" in acc43.tiers["CZ9-TO"])
@@ -12081,7 +12087,9 @@ section("v646: a tier for each product, and a product a customer has never bough
     const card46 = rd46("(function(){switchTab('people');var t=document.querySelector('.sec.on table.tiertab');if(!t)return null;"
       + "var cell=function(c,p){var s=[].filter.call(t.querySelectorAll('select'),function(x){return x.id==='tierSel_'+c+'_'+p;})[0];return s?{sel:s.value,state:s.parentNode.querySelector('.iref').textContent.trim()}:null;};"
       + "return {PSs:cell('CZ9-PS','salt'),PSo:cell('CZ9-PS','oil'),NBs:cell('CZ9-NB','salt'),NBo:cell('CZ9-NB','oil')};})()");
-    ok(card46 && card46.PSs && card46.PSs.state === "proposed" && card46.PSo && card46.PSo.sel === "" && card46.PSo.state === "not set"
+    /* v666: read by the leading word, as above; a product never bought has no profile, so it still reads exactly "not set" */
+    const lead46 = (x) => x && String(x.state).split(" · ")[0];
+    ok(card46 && card46.PSs && lead46(card46.PSs) === "proposed" && card46.PSo && card46.PSo.sel === "" && card46.PSo.state === "not set"
       && card46.NBs && card46.NBs.sel === "" && card46.NBs.state === "not set" && card46.NBo && card46.NBo.state === "not set",
       "the Tiers card lists a customer who has bought nothing yet, and reads not set on every product nobody has bought or set: " + JSON.stringify(card46));
     const acc46 = rd46("(function(){queue=[];tierAcceptAll();var e=queue[queue.length-1];return e?e.payload.tiers:null;})()");
@@ -12498,6 +12506,81 @@ section("v660: a card is rounded DOWN to the ten, so it is never above what the 
     ok(checked > 40 && offTen === 0,
       "and every price on the customer's own page is on the ten too, over " + checked + " of them across twelve accounts");
   } finally { await new Promise((r) => setTimeout(r, 200)); try { w60.close(); } catch (e) { /* best effort */ } }
+}
+
+section("v666: each customer has a profile on each product, read off their own orders, and it prices nothing yet");
+{
+  /* HIS DECISIONS OF 16 SEP 2026. Frequent is two orders a month, small is half a unit or one, loyal is six orders with the
+     last inside thirty days, buying bigger is four in ten at three units or more, rare is under one a month or nothing for
+     sixty days, and late is twice past the ten-day credit term. Fixture customers dated off the desk's own TODAY, so every
+     boundary is forced rather than waited for; each assertion was proved red by mutation. */
+  const { openMaster: om61 } = await import("../tools/payload.mjs");
+  const { w: w61 } = await om61();
+  const rd61 = (e) => JSON.parse(String(w61.eval("JSON.stringify(" + e + ")")));
+  try {
+    /* the fixtures are built in the page so their dates are the desk's own days back from TODAY */
+    w61.eval("(function(){var D=86400000,ago=function(n){return new Date(TODAY.getTime()-n*D).toISOString().slice(0,10);};"
+      + "var s=function(rid,c,n,q,tot,paidAfter){var d=ago(n),r={rid:rid,customer:c,product:'salt',date:d,qty:q,total:tot,cost:1,deliveredQty:q,deliveredOn:d};"
+      + "  if(paidAfter==null){r.cash=tot;r.paidOn=d;}else if(paidAfter<0){r.cash=0;}else{r.cash=tot;r.paidOn=ago(n-paidAfter);} return r;};"
+      + "var fx=[];"
+      /* CZ9-OFT: small and often, eight single units across 40 days */
+      + "for(var i=0;i<8;i++)fx.push(s('z661a'+i,'CZ9-OFT',5+i*5,1,100));"
+      /* CZ9-THN: the same eight single units spread across 285 days, which is under one a month: small, rare */
+      + "for(var j=0;j<8;j++)fx.push(s('z661b'+j,'CZ9-THN',5+j*40,1,100));"
+      /* CZ9-LOY: six orders, last 10 days ago, four of them at 3 units: loyal and buying bigger */
+      + "[10,20,30,40,50,60].forEach(function(n,k){fx.push(s('z661c'+k,'CZ9-LOY',n,k<4?3:1,k<4?300:100));});"
+      /* CZ9-GON: the same six orders but the last 31 days ago: not loyal */
+      + "[31,41,51,61,71,81].forEach(function(n,k){fx.push(s('z661d'+k,'CZ9-GON',n,1,100));});"
+      /* CZ9-LAT: paid on day 10 once (on time) and on day 11 twice (late), plus one still owed 12 days: three late */
+      + "fx.push(s('z661e0','CZ9-LAT',90,1,100,10));fx.push(s('z661e1','CZ9-LAT',80,1,100,11));fx.push(s('z661e2','CZ9-LAT',70,1,100,11));fx.push(s('z661e3','CZ9-LAT',12,1,100,-1));"
+      /* CZ9-ONE: a single unit last week, which is not four a month */
+      + "fx.push(s('z661f0','CZ9-ONE',7,1,100));"
+      + "['CZ9-OFT','CZ9-THN','CZ9-LOY','CZ9-GON','CZ9-LAT','CZ9-ONE'].forEach(function(c){if(roster.indexOf(c)<0)roster.push(c);});"
+      + "BASE_SALES.push.apply(BASE_SALES,fx);queue=[];applyOverlay();setProd('salt');recompute();})()");
+    const pf = rd61("(function(){var o={};['CZ9-OFT','CZ9-THN','CZ9-LOY','CZ9-GON','CZ9-LAT','CZ9-ONE'].forEach(function(c){o[c]=buyerProfile(c,'salt');});return o;})()");
+
+    /* 1. FREQUENCY TELLS THE SAME ORDERS APART. Eight single units in 40 days is small and often; the same eight across 240
+       days is small and rare. Both halves, so a threshold that ignored the calendar would fail one of them. */
+    ok(pf["CZ9-OFT"].name === "small and often" && pf["CZ9-OFT"].frequent && pf["CZ9-OFT"].small
+      && pf["CZ9-THN"].name === "small and rare" && !pf["CZ9-THN"].frequent && pf["CZ9-THN"].small,
+      "the same small orders read small and often when frequent and small and rare when spread thin: "
+      + JSON.stringify([pf["CZ9-OFT"].perMonth, pf["CZ9-THN"].perMonth]));
+    /* 2. LOYAL NEEDS BOTH HALVES: six orders, and still buying. The last order at 10 days is loyal, at 31 days it is not. */
+    ok(pf["CZ9-LOY"].loyal && pf["CZ9-LOY"].bigger && !pf["CZ9-GON"].loyal && pf["CZ9-GON"].orders === 6,
+      "six orders with the last inside thirty days is loyal, and the same six with the last at 31 days is not: "
+      + JSON.stringify({ loy: [pf["CZ9-LOY"].orders, pf["CZ9-LOY"].sinceLastDays, pf["CZ9-LOY"].bigShare], gon: pf["CZ9-GON"].sinceLastDays }));
+    /* 3. LATE IS PAST THE TERM, NOT AT IT, AND TWICE IS THE LINE. Paid on day ten is on time; paid on day eleven is late; an
+       order still owed at twelve days is late. Three late here, so the twice flag is set. */
+    ok(pf["CZ9-LAT"].late === 3 && pf["CZ9-LAT"].lateTwice,
+      "an order paid on the tenth day is on time, on the eleventh it is late, still owed at twelve it is late, and two lates set the flag: "
+      + JSON.stringify({ late: pf["CZ9-LAT"].late, twice: pf["CZ9-LAT"].lateTwice }));
+    /* 4. RARE ON EITHER COUNT: the thin customer buys under once a month, and the customer gone 31 days is not yet rare. */
+    ok(pf["CZ9-THN"].rare && !pf["CZ9-GON"].rare && !pf["CZ9-OFT"].rare,
+      "rare is under one order a month or nothing for sixty days, so the thin buyer is rare and the one gone a month is not yet: "
+      + JSON.stringify({ thin: [pf["CZ9-THN"].perMonth, pf["CZ9-THN"].sinceLastDays], gone: [pf["CZ9-GON"].perMonth, pf["CZ9-GON"].sinceLastDays] }));
+    /* 5. ONE ORDER LAST WEEK IS NOT FOUR A MONTH. Read over a floor of thirty days, or every new customer arrives frequent. */
+    ok(pf["CZ9-ONE"].name === "one-off" && !pf["CZ9-ONE"].frequent && pf["CZ9-ONE"].perMonth < 2,
+      "a single order last week reads one-off and not frequent, because the rate is read over at least thirty days: " + pf["CZ9-ONE"].perMonth);
+    /* 6. IT PRICES NOTHING. Every card on the book is the same with the profile answering as it does and with it answering
+       the opposite of everything; a quote that moved would mean a rule is already reading it. */
+    const same = rd61("(function(){setProd('salt');recompute();var who=roster.filter(function(c){return cardTier(c)>=0;});"
+      + "var read=function(){return who.map(function(c){return shownSizes('salt').map(function(q){return cardQuote(c,q);}).join(',');}).join('|');};"
+      + "var a=read(),keep=buyerProfile;"
+      + "buyerProfile=function(){return {name:'large and regular',orders:99,perMonth:99,frequent:true,small:false,bigger:true,loyal:true,rare:true,lateTwice:true,late:9};};"
+      + "var b;try{b=read();}finally{buyerProfile=keep;}"
+      + "return {same:a===b,n:who.length};})()");
+    ok(same.same && same.n > 10, "and it prices nothing: every card on the book is unchanged when the profile reads the opposite of everything (" + same.n + " customers)");
+    /* 7. IT IS IN VIEW where the tier is set, beside the tier, per product */
+    const card = rd61("(function(){setProdView('salt');switchTab('people');var t=document.querySelector('.sec.on table.tiertab');"
+      + "if(!t)return null;return [].slice.call(t.tBodies[0].rows).map(function(r){return r.textContent.replace(/\\s+/g,' ');}).filter(function(x){return x.indexOf('CZ9-OFT')>=0;})[0]||null;})()");
+    ok(card && /small and often/.test(card), "the Tiers card shows how they buy beside the tier they hold: " + (card || "").slice(0, 90));
+    /* 8. AND THE SNAPSHOT CARRIES THE SAME READING, so the price list and the drafter never work out one of their own */
+    const { pricingSnapshot: ps61 } = await import("../tools/book.mjs");
+    const snap61 = ps61(w61);
+    ok(snap61.profileOf && snap61.profileOf["CZ9-OFT"] && snap61.profileOf["CZ9-OFT"].salt
+      && snap61.profileOf["CZ9-OFT"].salt.name === pf["CZ9-OFT"].name && snap61.profileRule && snap61.profileRule.lateTimes === 2,
+      "and the pricing snapshot carries the desk's own profile and rule: " + JSON.stringify(snap61.profileOf && snap61.profileOf["CZ9-OFT"]));
+  } finally { await new Promise((r) => setTimeout(r, 200)); try { w61.close(); } catch (e) { /* best effort */ } }
 }
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
 process.exit(fail ? 1 : 0);

@@ -63,6 +63,11 @@ decision of 11 Aug 2026, no sign-in. The fold routine is `docs/CLOUD_FOLD.md`; s
      the engine. **NRV is Titanium**, the lowest level any customer is quoted, never the ask (v656):
      reading it off Bronze would value the shelf at what a stranger pays and the IAS 2.9 test could
      never bind. A guest link is a level too: the cheaper one is Titanium, the dearer Bronze.
+   - **Each customer has a PROFILE on each product** (v666, his decisions of 16 Sep 2026): `buyerProfile`
+     reads their own priced orders against `PROFILE_RULE` in the master (frequent 2 a month, small half a
+     unit or one, loyal 6 orders with the last inside 30 days, buying bigger 4 in 10 at 3 units or more,
+     rare under 1 a month or nothing for 60 days, late twice past the credit term). Shown on the Tiers card,
+     carried in the snapshot as `profileOf`. **It prices nothing yet**; four rules will move a level on it.
    - **Each customer holds a tier for each product** (his instruction, 15 Sep 2026): `TIER_OF`
      on the book, code to product to level name, folded as `tierset`, a null clearing a product.
      **A customer's price is their tier, never above what they pay** (his decisions of 15 Sep
