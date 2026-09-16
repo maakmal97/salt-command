@@ -1,5 +1,15 @@
 [
  {
+  "v": "v663",
+  "d": "16 Sep 2026",
+  "t": "TWO SAME DAY SALES UNSETTLED: CASH AND HANDOVER BACK TO ZERO ON CS6-BS-R",
+  "n": [
+   "<b>FOLDED: TWO CORRECTIONS AGAINST CS6-BS-R, BOTH DATED 16 SEP.</b> s168, salt, 5 unit for RM440, and s167, oil, 10 unit for RM130, each had cash and delivered quantity taken to zero and settled RM and settled unit set to zero from unset. Neither correction moves cash or stock: each changes only what its own row says about itself. The underlying rows are not rewritten, the fold applies the patch so a correction has one definition.",
+   "<b>UNUSUAL: A PARTY WITH NO HISTORY OF ARREARS NOW SHOWS TWO ROWS UNSETTLED.</b> CS6-BS-R stands at 14 orders, median rate RM96.67, range RM6 to RM120, nothing outstanding before, no unit on credit, nothing defaulted. The drafter flagged only the salt rate, RM88 a unit against about RM108 across 17 orders, 18.5% below. The dossier gives no reason for the unsettling, so none is recorded here.",
+   "<b>THE INVENTORY DID NOTHING.</b> Stock stays as stated at 14.5 unit, cost basis RM48 a unit against replacement of RM46, reorder at 15, nothing owed out and 10.5 unit promised. The salt count is dated 15 Sep and the oil count 9 Sep, both unchanged by this fold. No loan is open and no lot landed, so floors and ask bands for either size are untouched."
+  ]
+ },
+ {
   "v": "v662",
   "d": "16 Sep 2026",
   "t": "TWO R2 SALES SETTLED SAME DAY AND AN OIL TIER LIFTED",
