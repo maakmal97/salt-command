@@ -1,0 +1,131 @@
+{
+ "ok": true,
+ "count": 2,
+ "approved": [
+  {
+   "id": "2026-09-16T09:34:42.832Z",
+   "collection": "sales",
+   "row": {
+    "qty": 10,
+    "total": 130,
+    "cash": 0,
+    "date": "2026-09-16",
+    "customer": "CS6-BS-R",
+    "product": "oil"
+   },
+   "reasoning": "Fulfilment against CS6-BS-R's order of 10 unit for RM 130 agreed 2026-09-16. RM 130 and 10 unit move on 2026-09-16, against RM 130 and 10 unit outstanding. Leaves RM 0 and 0 unit outstanding. The row itself is NOT recomputed here: ovAmend in the master applies it, so there is one definition of what a fulfilment does rather than two.",
+   "flags": [
+    "This SETTLES the order in full: nothing is left outstanding after it."
+   ],
+   "amends": "s167",
+   "amendKind": "Fulfilment",
+   "entry": {
+    "at": "2026-09-16T09:34:42.832Z",
+    "type": "AMEND",
+    "party": "CS6-BS-R",
+    "qty": 10,
+    "total": 130,
+    "status": "paid",
+    "raw": "Fulfilment on CS6-BS-R s167: RM 130 cash, 10 unit moved, recorded 2026-09-16",
+    "payload": {
+     "mode": "amend",
+     "direction": "SELL",
+     "party": "CS6-BS-R",
+     "rid": "s167",
+     "orderKey": "CS6-BS-R|2026-09-16|130",
+     "assoc": null,
+     "downstream": null,
+     "orderCode": null,
+     "linkTo": null,
+     "sameDay": false,
+     "note": null,
+     "kind": "Fulfilment",
+     "date": "2026-09-16",
+     "qty": 10,
+     "total": 130,
+     "cash": 130,
+     "kg": 10
+    }
+   },
+   "decidedAt": "2026-09-16T09:36:25.277Z",
+   "decidedBy": "desk"
+  },
+  {
+   "id": "2026-09-16T09:35:23.853Z",
+   "collection": "sales",
+   "row": {
+    "rid": "s168",
+    "qty": 5,
+    "total": 440,
+    "cash": 0,
+    "date": "2026-09-16",
+    "product": "salt",
+    "changes": [
+     {
+      "field": "total",
+      "from": 440,
+      "to": 420
+     },
+     {
+      "field": "delivery",
+      "from": null,
+      "to": 0
+     },
+     {
+      "field": "cash",
+      "from": 0,
+      "to": 420
+     },
+     {
+      "field": "deliveredQty",
+      "from": 0,
+      "to": 5
+     }
+    ],
+    "customer": "CS6-BS-R"
+   },
+   "reasoning": "Correction against CS6-BS-R's order of 5 unit for RM 440 dated 2026-09-16 (s168). Sets total from 440 to 420, delivery from unset to 0, cash from 0 to 420, deliveredQty from 0 to 5. It moves no cash and no stock: it changes what the row says about itself. The row is not rewritten here. The fold applies the patch, so there is one definition of what a correction does rather than two.",
+   "flags": [
+    "This row carries a trail of 2 steps. Setting the figure directly does not rewrite them, so the trail will no longer add up to it; the correction is recorded beside them saying so.",
+    "CS6-BS typically pays about RM 109/unit for salt across 16 orders; this one is RM 84, 22.9% below that."
+   ],
+   "amends": "s168",
+   "amendKind": "Correction",
+   "entry": {
+    "at": "2026-09-16T09:35:23.853Z",
+    "type": "AMEND",
+    "party": "CS6-BS-R",
+    "qty": 0,
+    "total": 0,
+    "raw": "Correction on CS6-BS-R s168: total to 420, delivery to 0, cash to 420, deliveredQty to 5, recorded 2026-09-16",
+    "payload": {
+     "mode": "amend",
+     "direction": "SELL",
+     "party": "CS6-BS-R",
+     "rid": "s168",
+     "orderKey": "CS6-BS-R|2026-09-16|440",
+     "kind": "Correction",
+     "date": "2026-09-16",
+     "fields": {
+      "total": 420,
+      "delivery": 0,
+      "cash": 420,
+      "deliveredQty": 5
+     },
+     "assoc": null,
+     "downstream": null,
+     "orderCode": null,
+     "linkTo": null,
+     "sameDay": false,
+     "note": null,
+     "qty": 0,
+     "total": 0,
+     "cash": 0,
+     "kg": 0
+    }
+   },
+   "decidedAt": "2026-09-16T09:36:33.625Z",
+   "decidedBy": "desk"
+  }
+ ]
+}
