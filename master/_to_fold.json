@@ -1,0 +1,66 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-09-16T16:33:54.813Z",
+   "collection": "sales",
+   "row": {
+    "customer": "CN6-WM",
+    "qty": 1,
+    "total": 110,
+    "cost": 48,
+    "cash": 0,
+    "handover": "collected",
+    "delivery": 0,
+    "deliveredOn": "2026-09-17",
+    "date": "2026-09-17",
+    "deliveredQty": 1,
+    "note": "Ordered on the statements site, order 20260916154451-pmorvg, collected, paid by not stated."
+   },
+   "reasoning": "Sold 1 unit of salt to CN6-WM for RM 110, RM 110/unit. Costed at RM 48/unit from the desk's own inventory cost, so RM 62 on the goods at 56.4%. RM 0 of RM 110 paid and delivered in full on 2026-09-17. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [
+    "This is an ADVANCE: 1 unit goes out with RM 110 unpaid. Check it against CN6-WM's credit cap."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-09-16T16:33:54.813Z",
+    "type": "SELL",
+    "party": "CN6-WM",
+    "qty": 1,
+    "total": 110,
+    "raw": "New order: CN6-WM 1 unit for RM 110 on 2026-09-17, recorded 2026-09-17",
+    "payload": {
+     "mode": "new",
+     "product": "salt",
+     "direction": "SELL",
+     "party": "CN6-WM",
+     "newId": null,
+     "date": "2026-09-17",
+     "qty": 1,
+     "total": 110,
+     "delivery": 0,
+     "freight": 0,
+     "cash": 0,
+     "kg": 1,
+     "assoc": null,
+     "stream": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": "Ordered on the statements site, order 20260916154451-pmorvg, collected, paid by not stated.",
+     "handover": "collected",
+     "second": null,
+     "more": {
+      "delivery": 0,
+      "deliveredOn": "2026-09-17"
+     }
+    }
+   },
+   "decidedAt": "2026-09-16T16:34:55.568Z",
+   "decidedBy": "desk"
+  }
+ ]
+}
