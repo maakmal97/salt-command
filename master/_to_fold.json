@@ -1,0 +1,64 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-09-17T15:23:32.747Z",
+   "collection": "sales",
+   "row": {
+    "customer": "CC5-OKR",
+    "qty": 2,
+    "total": 105,
+    "cost": 96,
+    "cash": 105,
+    "handover": "collected",
+    "date": "2026-09-17",
+    "deliveredQty": 2,
+    "deliveredOn": "2026-09-17",
+    "paidOn": "2026-09-17"
+   },
+   "reasoning": "Sold 2 unit of salt to CC5-OKR for RM 105, RM 52.5/unit. Costed at RM 48/unit from the desk's own inventory cost, so RM 9 on the goods at 8.6%. Paid in full and delivered in full on 2026-09-17. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [
+    "CC5-OKR typically pays about RM 90/unit for salt across 5 orders; this one is RM 52.5, 41.7% below that."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-09-17T15:23:32.747Z",
+    "type": "SELL",
+    "party": "CC5-OKR",
+    "qty": 2,
+    "total": 105,
+    "status": "paid",
+    "raw": "Sell 2 unit to CC5-OKR for RM 105 on 2026-09-17, RM 105 cash, 2 unit moved → Completed",
+    "payload": {
+     "mode": "new",
+     "product": "salt",
+     "direction": "SELL",
+     "party": "CC5-OKR",
+     "newId": null,
+     "date": "2026-09-17",
+     "qty": 2,
+     "total": 105,
+     "delivery": 0,
+     "freight": 0,
+     "cash": 105,
+     "kg": 2,
+     "assoc": null,
+     "stream": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": null,
+     "handover": "collected",
+     "second": null,
+     "more": null,
+     "coverFree": null
+    }
+   },
+   "decidedAt": "2026-09-17T15:23:55.180Z",
+   "decidedBy": "desk"
+  }
+ ]
+}
