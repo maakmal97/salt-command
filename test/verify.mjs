@@ -15,6 +15,7 @@ import worker from "../src/worker.js";
 import stmtWorker, { normUser } from "../stmt/worker.js";
 import { unionByAt, pruneCommitted } from "../tools/drain.mjs";
 import { NAME_STOPWORDS, NAME_COLLISIONS, areaNameSet, publishedLocalities } from "../tools/book.mjs";
+import { opened } from "../tools/payload.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO = resolve(HERE, "..");
@@ -44,7 +45,21 @@ const skipOff = (m) => { console.log("  SKIP: " + m); };
    The floor keeps a margin for these, and the margin is not room for a section to fall out. */
 const skipData = (m) => { console.log("  SKIP (no data): " + m); };
 let sections = 0;
-const section = (s) => { sections++; console.log("\n" + s); };
+/* EACH SECTION'S BODY IS ITS OWN ASYNC FUNCTION, `await (async () => { ... })();` (17 Sep 2026). A block at
+   the top level of this module is never freed: the module body is suspended at every await, and V8 keeps what
+   its blocks held for as long as it runs, closed jsdom window or not. So every desk window stayed alive to the
+   end, 4,031 MB of them after a forced GC at v682, and the Linux runner died of heap exhaustion in the v678
+   sections while the laptop scraped through. One wrapper around the whole suite does not help, since that
+   function is suspended just the same; each section has to return. The last section checks the shape.
+   AND EVERY WINDOW openMaster OPENED IS CLOSED HERE, WHEN THE NEXT SECTION STARTS. Most sections never closed
+   theirs, and a window left open is held by its own pending timers. Those timers do not fire between sections:
+   most sections never yield to the event loop, so a timer waits for the next one that does file or crypto work,
+   and a close put on a timer would wait with them. So the close is immediate. */
+const section = (s) => {
+  for (const w of opened) { try { w.close(); } catch (e) { /* closed already */ } }
+  opened.clear();
+  sections++; console.log("\n" + s);
+};
 
 /* ---- KV + env mocks ------------------------------------------------------------- */
 class KV {
@@ -82,7 +97,7 @@ const postQ = (body, extraHeaders = {}) => req("/queue", {
 
 /* ---- 1. Worker: the queue contract --------------------------------------------- */
 section("Worker — queue contract");
-{
+await (async () => {
   const kv = new KV(), env = mkEnv(kv);
 
   let r = await worker.fetch(req("/queue/ping"), env);
@@ -115,11 +130,11 @@ section("Worker — queue contract");
   r = await worker.fetch(postQ({ device: "b a d", queue: [] }), env);
   j = await r.json();
   ok(j.ok && j.device === "anon", "invalid device id falls back to 'anon'");
-}
+})();
 
 /* ---- 1b. Worker: the write gate ------------------------------------------------- */
 section("Worker — the write gate");
-{
+await (async () => {
   const KEY = "a-passphrase-of-some-length";
   const armed = (kv) => ({ ...mkEnv(kv), SALT_WRITE_KEY: KEY });
   const one = [{ at: "2026-08-12T01:00:00Z", raw: "e1" }];
@@ -180,11 +195,11 @@ section("Worker — the write gate");
 
   r = await worker.fetch(req("/vault"), armed(kv));
   ok(r.status === 200, "armed: GET /vault is still open (ciphertext only)");
-}
+})();
 
 /* ---- 1f. The ledger store at /ledger, read only (v294) --------------------------- */
 section("The ledger store at /ledger");
-{
+await (async () => {
   /* A D1 stand-in that answers the five statements handleLedger actually issues. Enough to
      prove the routing, the shapes and the refusals without a network or a database. */
   const mkD1 = (data) => ({
@@ -262,11 +277,11 @@ section("The ledger store at /ledger");
   ok(r.status === 405, "POST /ledger is refused: the store is read-only");
   ok(!readFileSync(join(REPO, "src", "worker.js"), "utf8").includes("INSERT INTO entry"),
      "and the Worker carries no insert of any kind");
-}
+})();
 
 /* ---- 1d. The ledger extract, the first step toward one source of truth ----------- */
 section("Ledger extract");
-{
+await (async () => {
   let out = "";
   try { out = execFileSync("node", ["tools/ledger.mjs", "--check"], { cwd: REPO, encoding: "utf8", stdio: "pipe" }); }
   catch (e) { out = (e.stdout || "") + (e.stderr || ""); }
@@ -306,11 +321,11 @@ section("Ledger extract");
      this repo carrying a real name, and the extract is a committed artefact. */
   ok(/salt_bio\.json/.test(tool), "the extract checks itself against the real directory for names");
   ok(/no real name or place|carries \$\{|carries .* real name/.test(tool), "the name gate reports a verdict either way");
-}
+})();
 
 /* ---- 1e. No directory name or place may reach the public desk (v293) ------------- */
 section("The public desk carries no name and no place");
-{
+await (async () => {
   const BIO = `${DATA_DIR}/salt_bio.json`;
   if (!existsSync(BIO)) {
     /* a SKIP, not a pass: this line must not count as proof. The scan needs the plaintext
@@ -359,11 +374,11 @@ section("The public desk carries no name and no place");
     okOff(!desk.includes("place.name"), "nothing on the map reads a place name");
     okOff(!/PLACES\[[^\]]*\]\.(name|src)/.test(desk), "the gazetteer table carries neither name nor provenance");
   }
-}
+})();
 
 /* ---- 1c. One surface: the desk is the only cloud copy (v387) --------------------- */
 section("One surface — the desk is the only cloud copy (v387)");
-{
+await (async () => {
   const env = mkEnv(new KV());
   let r = await worker.fetch(req("/desk"), env);
   ok(r.status === 200, "GET /desk answers");
@@ -392,9 +407,9 @@ section("One surface — the desk is the only cloud copy (v387)");
   ok(!/data\?\.json/.test(sw), "and no longer excepts a payload that is gone");
   const mf = JSON.parse(readFileSync(join(REPO, "public", "manifest.webmanifest"), "utf8"));
   ok(mf.start_url === "./", "the installable surface is the root, which is the desk");
-}
+})();
 section("Worker — vault syncs ciphertext, plaintext never does");
-{
+await (async () => {
   const kv = new KV(), env = mkEnv(kv);
   let r = await worker.fetch(req("/vault"), env); let j = await r.json();
   ok(j.ok && j.vault === null && !("ids" in j), "GET /vault empty → {vault:null}, no ids key");
@@ -413,11 +428,11 @@ section("Worker — vault syncs ciphertext, plaintext never does");
   ok(j.ok && JSON.stringify(j.bio) === "{}", "GET /bio → empty (plaintext directory never ships)");
   await worker.fetch(req("/bio", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ bio: { A26: { raw: "a real name" } } }) }), env);
   ok(!kv.m.has("bio") && ![...kv.m.values()].join("").includes("a real name"), "POST /bio drops the name; nothing in KV");
-}
+})();
 
 /* ---- 2b. Vault crypto — the seed tool round-trips with the desk ------------------ */
 section("Vault crypto — desk-compatible round trip");
-{
+await (async () => {
   const { vaultEncrypt, vaultDecrypt } = await import("../tools/seed-vault.mjs");
   const map = { A26: "Alvin (Sentul)", G01: "Gavin (Sg Besi)" };
   const e1 = await vaultEncrypt("correct horse", map);
@@ -426,11 +441,11 @@ section("Vault crypto — desk-compatible round trip");
   ok(JSON.stringify(back) === JSON.stringify(map), "decrypt with the right pass → the exact map");
   let threw = false; try { await vaultDecrypt("wrong pass", e1); } catch (e) { threw = true; }
   ok(threw, "decrypt with the wrong pass → throws");
-}
+})();
 
 /* ---- 2c. The route to Cloudflare: IPv4 first, and wrangler's own words (13 Sep 2026) ---- */
 section("Cloudflare route: IPv4 first in every tool that reaches it, and wrangler's error shown");
-{
+await (async () => {
   /* In a fresh node, the way a tool runs: the lookup order is set, and NODE_OPTIONS keeps what was
      there and gains the flag once, so a tool that starts a tool does not stack it. */
   const FLAG = "--dns-result-order=ipv4first";
@@ -458,11 +473,11 @@ section("Cloudflare route: IPv4 first in every tool that reaches it, and wrangle
   const timedOut = Object.assign(new Error("Command failed: npx wrangler kv key put vault\n" + said), { stdout: "\n", stderr: said });
   ok(wranglerSaid(timedOut) === "The request to Cloudflare's API timed out.", "a failed wrangler call reports wrangler's own [ERROR] line, colours stripped, not \"Command failed\"");
   ok(wranglerSaid(new Error("Command failed: npx wrangler kv key list\nno error line")) === "Command failed: npx wrangler kv key list", "…and with no [ERROR] line, the first line of the message, as before");
-}
+})();
 
 /* ---- 3. Worker: access gate + routing ------------------------------------------ */
 section("Worker — access gate and routing");
-{
+await (async () => {
   let kv = new KV();
   let r = await worker.fetch(postQ({ device: "d1", queue: [] }), mkEnv(kv, "1"));
   ok(r.status === 401, "REQUIRE_ACCESS=1 without Access header → 401");
@@ -494,11 +509,11 @@ section("Worker — access gate and routing");
   ok(r.status === 200 && (await r.text()) === "ASSET:/some/page", "static asset served");
   r = await worker.fetch(req("/missing"), env);
   ok(r.status === 200 && (await r.text()) === "ASSET:/desk.html", "a missing path falls back to the desk, the only surface there is");
-}
+})();
 
 /* ---- 4. Drain pure helpers ------------------------------------------------------ */
 section("Drain — union and prune");
-{
+await (async () => {
   const a = [{ at: "2", raw: "b" }, { at: "1", raw: "a" }];
   const b = [{ at: "2", raw: "b2" }, { at: "3", raw: "c" }];
   const u = unionByAt(a, b);
@@ -507,11 +522,11 @@ section("Drain — union and prune");
   ok(u.find(e => e.at === "2").raw === "b2", "later list wins on collision");
   const pruned = pruneCommitted(u, "2");
   ok(pruned.length === 1 && pruned[0].at === "3", "pruneCommitted drops at <= watermark");
-}
+})();
 
 /* ---- 5. Build integrity --------------------------------------------------------- */
 section("Build — patches, scripts, no externals");
-{
+await (async () => {
   let built = true;
   try { execFileSync("node", ["tools/build.mjs"], { cwd: REPO, stdio: "pipe" }); }
   catch (e) { built = false; console.log("  (build failed: " + (e.stderr ? e.stderr.toString().split("\n")[0] : e.message) + ")"); }
@@ -717,11 +732,11 @@ section("Build — patches, scripts, no externals");
       .digest("hex").slice(0, 16);
     ok(recomputed === rev.id, "rev.id reproduces from the build's own inputs by the build's own recipe");
   }
-}
+})();
 
 /* ---- 7. Worker: /rev serves the manifest, uncached ------------------------------- */
 section("Worker — /rev");
-{
+await (async () => {
   const kv = new KV();
   const revAssets = {
     async fetch(request) {
@@ -758,14 +773,14 @@ section("Worker — /rev");
     ok(rx.test("/drafts"), "sw.js never caches /drafts");
     ok(rx.test("/drafts/abc/approve"), "sw.js never caches a decision");
   }
-}
+})();
 
 /* ---- 8. Worker: the approval step ----------------------------------------------- */
 /* The behaviour worth guarding is the REFUSALS, not the happy path: a draft with no row,
    a decision without the key, and a second decision on a row already decided. Each of
    those, if it slipped, would put an unreviewed row into the ledger or undo a decision. */
 section("Worker — drafts and approval");
-{
+await (async () => {
   /* A D1 mock small enough to be honest about what it does: it understands only the
      statements the Worker actually issues, and throws on anything else rather than
      quietly returning nothing, which is how a mock hides a broken query. */
@@ -1041,11 +1056,11 @@ section("Worker — drafts and approval");
   r = await worker.fetch(get("/drafts?status=approved&uncommitted=1", KEY), env);
   j = await r.json();
   ok(!j.refused.length && j.refusedCount === 0, "the commit run's read is never handed a refusal");
-}
+})();
 
 /* ---- 9. The phone app's approval panel ------------------------------------------ */
 section("Drafter — rows, refusals and flags");
-{
+await (async () => {
   const { draftRow, costFor, floorFor, flagsFor } = await import("../src/drafter.js");
 
   /* a small book with the shape the real one has: two products, a lot each, some history */
@@ -1317,7 +1332,7 @@ section("Drafter — rows, refusals and flags");
   const src = readFileSync(join(REPO, "src", "drafter.js"), "utf8");
   ok(!/INSERT[\s\S]{0,40}INTO\s+entry|UPDATE\s+entry|DELETE\s+FROM\s+entry/i.test(src), "the drafter never writes to the mirrored `entry` table");
   ok(/INSERT OR IGNORE INTO draft/.test(src), "it inserts drafts idempotently, so a double tick cannot double a row");
-}
+})();
 
 /* ---- 10b. the approval step is the ONLY road in --------------------------------- */
 /* v305 closed two roads that walked around it: serve_desk.py's 60-second drain, which fed a
@@ -1325,7 +1340,7 @@ section("Drafter — rows, refusals and flags");
    Both now converge on `draft`. These assertions are cheap and they guard a property that is
    invisible at runtime: nothing errors when a gate quietly stops being a gate. */
 section("The gate is the only road in");
-{
+await (async () => {
   const d = readFileSync(join(REPO, "tools", "drafts.mjs"), "utf8");
   ok(/--from-queue/.test(d), "the laptop queue can be routed through the same gate");
   ok(/import\("\.\.\/src\/drafter\.js"\)/.test(d), "and it imports the SAME draftRow, rather than a second copy of the logic");
@@ -1366,7 +1381,7 @@ section("The gate is the only road in");
   } else {
     okOff(true, "serve_desk.py is not on this machine, so its drain could not be checked");
   }
-}
+})();
 
 /* ---- 10c. refused entries are visible, never approvable ------------------------- */
 /* Built after the same CC5-OKR fulfilment was queued twice on 17 Aug, once per device. An
@@ -1374,7 +1389,7 @@ section("The gate is the only road in");
    way to see from the phone that it was already in hand. These assertions guard the two
    properties that matter: it shows up, and it cannot be decided. */
 section("Refused entries — seen, not approvable");
-{
+await (async () => {
   const sql = readFileSync(join(REPO, "migrations", "0003_refused.sql"), "utf8");
   ok(/CREATE TABLE IF NOT EXISTS refused/.test(sql), "there is a refused table");
   ok(!/status/i.test(sql.replace(/--[^\n]*/g, "")), "it carries NO status column, so nothing here can be decided");
@@ -1418,11 +1433,11 @@ section("Refused entries — seen, not approvable");
      needs no surface: the store keeps them and no route can decide one. */
   ok(!/function drawRefused/.test(readFileSync(join(REPO, "master", "salt_command.html"), "utf8")),
     "the desk has no refused panel, so retiring the app left refusals with no surface at all");
-}
+})();
 
 /* ---- 11. the drafter is wired to a schedule ------------------------------------- */
 section("Drafter — wiring");
-{
+await (async () => {
   const w = readFileSync(join(REPO, "src", "worker.js"), "utf8");
   ok(/async scheduled\s*\(/.test(w), "the Worker exports a scheduled() handler");
   ok(/runDrafter/.test(w), "the cron runs the drafter");
@@ -1448,11 +1463,11 @@ section("Drafter — wiring");
   const r = await worker.fetch(postQ({ device: "d1", queue: [{ at: "2026-08-16T01:00:00Z", raw: "e" }] }), mkEnv(kv));
   ok(r.status === 200, "a queue POST with no ctx and no ledger binding still succeeds");
   ok(kv.m.has("q:d1"), "and the entry still reached KV");
-}
+})();
 
 /* ---- 15. The book is in date order, and stays that way (20 Aug 2026) ------------- */
 section("Ledger — the date is superior to the position");
-{
+await (async () => {
   const MASTER = process.env.SALT_MASTER ||
     join(REPO, "master", "salt_command.html");
   if (!existsSync(MASTER)) {
@@ -1506,7 +1521,7 @@ section("Ledger — the date is superior to the position");
         : `${name} is in date order, undated pending rows last`);
     }
   }
-}
+})();
 
 /* ---- EVERY LEDGER ROW CARRIES A DATE, and the check CI runs is what says so ----------------
    His instruction of 04 Sep 2026. The sort has always put an undated row last, which kept the
@@ -1517,7 +1532,7 @@ section("Ledger — the date is superior to the position");
    not a function the suite happens to call. Both directions are asserted against the same tool on
    the same day: the real book passes, and a copy carrying one undated row fails and names it. */
 section("Ledger — the book carries no undated row, and --check is what proves it");
-{
+await (async () => {
   const { undated } = await import("../tools/sort-ledger.mjs");
   const live = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
   for (const name of ["sales", "purchases"]) {
@@ -1551,11 +1566,11 @@ section("Ledger — the book carries no undated row, and --check is what proves 
   const b = run(bad);
   ok(b.code === 1, "and fails on a copy carrying one undated row, which is the guard doing its job");
   ok(/carry no date/.test(b.out), "the failure says the row carries no date, so the fix is obvious from the message");
-}
+})();
 
 /* ---- 16. The phone payload: the ledger, the open orders, the count dates (v319) -- */
 section("Desk — the row editor names only fields CORRECTABLE holds");
-{
+await (async () => {
   const master = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
   const { default: X } = await import("../engine/position.mjs");
 
@@ -1586,11 +1601,11 @@ section("Desk — the row editor names only fields CORRECTABLE holds");
     "through the same message line that refuses an unchanged row, not a silent drop");
   const afterEngine = master.slice(master.indexOf("==== END ENGINE position ===="));
   ok(!afterEngine.includes("const CORRECTABLE="), "and nothing outside the engine block keeps a second copy of the list");
-}
+})();
 
 /* ---- 22. A caveat is a separate block, never a second sentence (v385) ------------- */
 section("Desk — the Whiteboard caveats cannot be cut off");
-{
+await (async () => {
   const master = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
   const NOTE_MIN = Number(master.slice(master.indexOf("NOTE_MIN=") + 9).match(/^[0-9]+/));
   ok(NOTE_MIN > 0, "NOTE_MIN was read from the master rather than assumed, at " + NOTE_MIN);
@@ -1617,11 +1632,11 @@ section("Desk — the Whiteboard caveats cannot be cut off");
   ok(plans.includes("${rhythmCaveat?") && plans.includes("esc(rhythmCaveat)"),
     "and the caveat is its own block rather than a second sentence in the count's");
   ok(!plans.includes("rhythmLine"), "the joined version is gone, so nothing can put them back together");
-}
+})();
 
 /* ---- the engine ------------------------------------------------------------------ */
 section("Engine — one definition, out of the desk (v337)");
-{
+await (async () => {
   const { default: E } = await import("../engine/pricing.mjs");
   /* 1. the copy in the master is the module, to the byte */
   let chk = "";
@@ -1713,11 +1728,11 @@ section("Engine — one definition, out of the desk (v337)");
       `${p}: an off-board size prices the same in both`);
   }
   try { w.close(); } catch (e) { }
-}
+})();
 
 /* ---- the position engine ----------------------------------------------------------- */
 section("Engine — the position, out of the desk (v338)");
-{
+await (async () => {
   const { default: X } = await import("../engine/position.mjs");
   let chk = "";
   try { chk = execFileSync("node", [join(REPO, "tools", "engine.mjs"), "--check"], { encoding: "utf8" }); }
@@ -1915,11 +1930,11 @@ section("Engine — the position, out of the desk (v338)");
     ok(c2.commitUnits === f.commitUnits && c2.shortUnits === f.shortUnits && c2.owedUnits === f.owedUnits && c2.promUnits === f.promUnits, `${p}: the commitments agree with the forecast`);
   }
   try { w.close(); } catch (e) { }
-}
+})();
 
 /* ---- the geography as data ------------------------------------------------------------ */
 section("Geography — geo/ is the source (v349)");
-{
+await (async () => {
   let chk = "";
   try { chk = execFileSync("node", [join(REPO, "tools", "geosync.mjs"), "--check"], { encoding: "utf8" }); }
   catch (e) { chk = String((e && e.stdout) || e); }
@@ -1946,11 +1961,11 @@ section("Geography — geo/ is the source (v349)");
   const deskNoState19 = desk.replace(/"state":"[^"]*"/g, "");
   ok(bm.features.every((f) => areaWords19.has(f.name.toLowerCase()) || !deskNoState19.includes(`"${f.name}"`)), "no basemap feature is named in the public desk, beyond the area names the map shows and a district's own state");
   ok(desk.includes(bm.attribution.slice(0, 24)), "the ODbL attribution is on the page, which is what the licence asks");
-}
+})();
 
 /* ---- the book as data ---------------------------------------------------------------- */
 section("Book — ledger/book.json is the source (v339)");
-{
+await (async () => {
   let chk = "";
   try { chk = execFileSync("node", [join(REPO, "tools", "booksync.mjs"), "--check"], { encoding: "utf8" }); }
   catch (e) { chk = String((e && e.stdout) || e); }
@@ -1968,11 +1983,11 @@ section("Book — ledger/book.json is the source (v339)");
   const master = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
   ok(!/(?:^|\n)const sales=\[\n  \{date:'/.test(master), "the hand-written sales array is gone from the master");
   ok(/const sales=\[\n  \{"date"/.test(master) || /const sales=\[\n  \{"/.test(master), "and the generated one stands in its place");
-}
+})();
 
 /* ---- the fold as a data write ----------------------------------------------------------- */
 section("Fold — an approved batch becomes records in the book (v340)");
-{
+await (async () => {
   const { plan, apply } = await import("../tools/fold.mjs");
   const book = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
   const master = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
@@ -2445,11 +2460,11 @@ section("Fold — an approved batch becomes records in the book (v340)");
       "and the shelf is the rolled figure");
     try { rmSync(tmpMaster); } catch (e) { }
   }
-}
+})();
 
 /* ---- 24. The parts are visible, and the phone carries the people (v343) ------------ */
 section("Views — every part is one tap away (v343)");
-{
+await (async () => {
   const m = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
   ok(/const VIEW_PART=\{\}/.test(m) && /function railSubs\(\)/.test(m), "the master keeps the part each view shows and lists the parts under the rail");
   ok(/class="vnav"/.test(m) && !/details\.vfold/.test(m), "a view names its parts on a strip; the buried folds are gone");
@@ -2464,9 +2479,9 @@ section("Views — every part is one tap away (v343)");
   for (const t of ["today","overview","forward","receivables","financials","inventory","sourcing","pricing","concentration","network","map","ledger","analysis","add","approve","plans"]) {
     ok(new RegExp("(^|\\s)" + t + ":'").test(q), `the strip can say what ${t} is for`);
   }
-}
+})();
 section("Orders and money — whole-book figures sit above the repeat, and once (v385)");
-{
+await (async () => {
   const { openMaster } = await import("../tools/payload.mjs");
   const { w } = await openMaster();
   const read = (expr) => JSON.parse(w.eval("JSON.stringify(" + expr + ")"));
@@ -2535,10 +2550,10 @@ section("Orders and money — whole-book figures sit above the repeat, and once 
   w.eval(`PROD=${JSON.stringify(keep)};recompute();`);
   ok(!/>\s*(undefined|NaN|Infinity)/.test(rec + fin), "neither part renders an undefined, a NaN or an infinity");
   try { w.close(); } catch (e) { }
-}
+})();
 
 section("Orders and money — a book with no month reports zeros, not RM NaN");
-{
+await (async () => {
   /* REACHABLE, and it shipped: a product declared on the book before its first sale.
      finRows() rightly returns no month, the FY reduce was seeded with {}, so every fy field
      came back undefined and fmt0(undefined) is "RM NaN". Twelve of those, beside two
@@ -2559,7 +2574,7 @@ section("Orders and money — a book with no month reports zeros, not RM NaN");
   ok(!/null%/.test(fin), "and says in words that there is no revenue to measure against");
   ok(!/>\s*(undefined|NaN|Infinity)/.test(fin), "and nothing else on the part goes undefined");
   try { w.close(); } catch (e) { }
-}
+})();
 
 /* ---- 26. Orders and money: the basis moved under the figures (v385) ----------------
    v382 halved a trip to RM30 and moved its divisor from the latest lot to the average one,
@@ -2576,7 +2591,7 @@ section("Orders and money — a book with no month reports zeros, not RM NaN");
    kind. The two are asserted equal.
    THE THIRD IS THE WORD. This part is drawn once per book and six labels said "Salt". */
 section("Orders and money — every basis is named where the figure is stated (v385)");
-{
+await (async () => {
   const { openMaster } = await import("../tools/payload.mjs");
   const { w } = await openMaster();
   const read = (expr) => JSON.parse(w.eval("JSON.stringify(" + expr + ")"));
@@ -2728,10 +2743,10 @@ section("Orders and money — every basis is named where the figure is stated (v
   }
   setP(keep);
   try { w.close(); } catch (e) { }
-}
+})();
 
 section("The board — four laws, read off the engine (v387)");
-{
+await (async () => {
   /* THESE ARE ENGINE INVARIANTS AND THEY WERE CHECKED THROUGH THE PHONE PAYLOAD. When the app
      was retired at v387 the whole payload section went with it, and took these four with it:
      they read d.board, so they LOOKED like payload-shape checks and they are nothing of the
@@ -2784,10 +2799,10 @@ section("The board — four laws, read off the engine (v387)");
       `${pid}: every size the board PRINTS is a rung the walk actually priced (${shown.length} of ${P.boardSizes.length})`);
   })(); }
   w.eval("PROD='salt';recompute();");
-}
+})();
 
 section("Pricing — stale is a statement about the lock, not a constant (v403)");
-{
+await (async () => {
   /* While PRICE_LOCK_ON is false there is nothing to be stale AGAINST, and the ungated read
      had been a constant true on this desk since the lock went off: a flag that always fires
      teaches its reader to tap through, which is the drafter's own lesson. Nothing consumes
@@ -2806,10 +2821,10 @@ section("Pricing — stale is a statement about the lock, not a constant (v403)"
     "lock on over a stale lock: stale is true");
   ok(E.costStack({ ...I, lockOn: true, lockState: { state: "none", lock: null, days: null } }).stale === false,
     "lock on and current: stale is false");
-}
+})();
 
 section("Pricing — each book prices off its own quote (round 5, his call 1)");
-{
+await (async () => {
   /* pxQuoteRate and pxPolicy().tiers read bare supplierQuote until this round, so oil's
      engine inputs carried salt's RM 56 rate and oil's taper walked at salt's exponent.
      The owner's answer 1 of 29 Aug scopes every engine input through quoteFor(PROD). */
@@ -2870,10 +2885,10 @@ section("Pricing — each book prices off its own quote (round 5, his call 1)");
   }
   w.eval("setProd('salt');recompute();");
   try { w.close(); } catch (e) { }
-}
+})();
 
 section("Rewards — redemption reads the earning window (round 5, his call 3)");
-{
+await (async () => {
   /* Earnings count from REWARD.since; redemptions counted from the beginning of time, so a
      unit redeemed before the scheme existed was netted against earnings that started after
      it. One window, both sides. The two parties named here are the book's own facts: CS6-BS
@@ -2899,10 +2914,10 @@ section("Rewards — redemption reads the earning window (round 5, his call 3)")
   w.eval("sales.push({customer:'CZ8-RBT-R',rev:'R2',date:'2026-09-02',qty:1,total:100,cash:0,settledRM:100,rebate:true});");
   ok(read("rebateApplied('CZ8-RBT')") === 4.5, "and a unit taken on their -R account is theirs, as the account is");
   try { w.close(); } catch (e) { }
-}
+})();
 
 section("Boundaries — the caps and the trigger are per book (round 5, his call 4)");
-{
+await (async () => {
   const { openMaster } = await import("../tools/payload.mjs");
   const { w } = await openMaster();
   const read = (expr) => JSON.parse(w.eval("JSON.stringify(" + expr + ")"));
@@ -2933,10 +2948,10 @@ section("Boundaries — the caps and the trigger are per book (round 5, his call
     "oil: 3 unit needed is covered by its own 10 unit tier at RM100");
   w.eval("setProd('salt');recompute();");
   try { w.close(); } catch (e) { }
-}
+})();
 
 section("Oil — the ladder at every size, lawful between (round 5 his call 5, restated at v656)");
-{
+await (async () => {
   /* HIS STATED BOARD IS RETIRED. It was 13, 12, 11, 10 and 9 ringgit a unit down the five sizes he
      named on 29 Aug, so 130, 240, 330, 400 and 450, every size stated and none derived. His decision
      of 15 Sep off the pricing workbook made the board the ladder, so those five are cleared from the
@@ -3287,10 +3302,10 @@ section("Oil — the ladder at every size, lawful between (round 5 his call 5, r
   ok(totalRises, "and every size, 80 and 100 included, is strictly higher in total, so no lot is beaten by buying smaller");
   w.eval("setProd('salt');recompute();");
   try { w.close(); } catch (e) { }
-}
+})();
 
 section("iPhone — the dead zones the desk draws under (v392)");
-{
+await (async () => {
   const m = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
   /* THE HEAD ASKS TO DRAW UNDER THE STATUS BAR AND THE ISLAND, AND NOTHING PADDED THE TOP.
      apple-mobile-web-app-status-bar-style:black-translucent plus viewport-fit=cover is an
@@ -3328,10 +3343,10 @@ section("iPhone — the dead zones the desk draws under (v392)");
      prose and not a rule. A CSS use is always "…:100vh" or "…:calc(100vh". */
   ok(!/:\s*(calc\()?100vh/.test(m), "nothing on the desk measures itself against 100vh");
   ok(/100dvh/.test(m), "they use dvh, which is the height that is actually there");
-}
+})();
 
 section("Enter — the tap contract on the one view you type into");
-{
+await (async () => {
   /* THIS SECTION EXISTS BECAUSE THE WIDTH HALF WAS LOST ONCE, IN THE FOLD THAT SHIPPED THE
      HEIGHT HALF. The Enter form's strips got min-height AND min-width at the branch; the
      central .viewsw button rule carries only the height, so absorbing the scoped rule put
@@ -3372,10 +3387,10 @@ section("Enter — the tap contract on the one view you type into");
     "it names the glyph and the place instead, both of which are on the screen");
   ok(/title="Names &amp; IDs"/.test(m),
     "the bar control keeps its title, which is what the copy stopped relying on");
-}
+})();
 
 section("Silence — four things that failed without saying so (v384)");
-{
+await (async () => {
   const m = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
   const eng = readFileSync(join(REPO, "engine", "pricing.mjs"), "utf8");
 
@@ -3419,10 +3434,10 @@ section("Silence — four things that failed without saying so (v384)");
     ok(Math.abs(stated - rate) < 1e-6,
        `oil's shelf cost is the newest received lot's rate, RM${rate.toFixed(4)} (stated RM${stated}). A genuine blend would fail this, which is the point: it should be a decision, not a default`);
   }
-}
+})();
 
 section("Drafter — a lot that has not arrived does not say it has (v385)");
-{
+await (async () => {
   const d = readFileSync(join(REPO, "src", "drafter.js"), "utf8");
   /* An absent receivedQty on a SETTLED lot means received in full, by the book's own
      convention and by poRecvUnits. So a paid-and-unarrived lot drafted with neither
@@ -3433,10 +3448,10 @@ section("Drafter — a lot that has not arrived does not say it has (v385)");
   const f = readFileSync(join(REPO, "tools", "fold.mjs"), "utf8");
   ok(/row\.receivedQty = 0; row\.inTransit = true;/.test(f),
      "and the fold's correction road writes the same pair, so both roads make the same shape");
-}
+})();
 
 section("Refused — shown so they are not entered twice, never so they can be approved (v309)");
-{
+await (async () => {
   const { openMaster } = await import("../tools/payload.mjs");
   const { w } = await openMaster();
   w.SALT_CLOUD = true;                                  // the panel is cloud-mode only
@@ -3479,10 +3494,10 @@ section("Refused — shown so they are not entered twice, never so they can be a
   ok(w.eval("enterCount()") === w.eval("qTx().length + AP_DRAFTS.length"),
      "the Enter badge counts drafts and the local queue, never a refusal");
   ok(w.eval("enterCount()") === 1, "one pending draft and one refusal reads as one waiting");
-}
+})();
 
 section("Orders and money — the sensitivity sentence cannot read over 100% (v401)");
-{
+await (async () => {
   /* THIS SENTENCE HAS BROKEN THREE TIMES, each time because the book moved rather than because
      the code changed, so it is asserted against the whole reachable range and not against
      today's figures. v386 caught a negative share and an infinity; the case left standing was
@@ -3504,10 +3519,10 @@ section("Orders and money — the sensitivity sentence cannot read over 100% (v4
     ok(/times/.test(share(0.5)) && /%/.test(share(2)),
        "under a ringgit it reads as a multiple, at or above one as a percentage");
   }
-}
+})();
 
 section("Orders and money — one heading, and the standing leads are gone (v401)");
-{
+await (async () => {
   /* A heading inside perProduct renders once per book, so financials and receivables each
      carried "Financials"/"Order book" twice, both times under a prodhd already naming the book
      and a view pill already reading the same word. The head belongs above the repeat, where
@@ -3536,10 +3551,10 @@ section("Orders and money — one heading, and the standing leads are gone (v401
       ? `${part}: at most one block the sweep can elect, so it cannot delete one arbitrarily`
       : `${part}: ${bare.length} figure-less blocks and no lead to elect a keeper; the sweep will eat one`);
   }
-}
+})();
 
 section("Orders and money — the ageing tables fit a 375px phone (v401)");
-{
+await (async () => {
   /* /desk IS the phone since v387, and these two tables were the last that did not fit: six
      columns needing 336px inside a 317px card, so the reader scrolled a table sideways to
      reach the Net it exists to state. Since and the code are one fact about one party, so the
@@ -3559,10 +3574,10 @@ section("Orders and money — the ageing tables fit a 375px phone (v401)");
   const rows = [...el.querySelectorAll("table tbody tr")].map((r) => r.textContent);
   ok(rows.some((r) => /\d{4}-\d{2}-\d{2}/.test(r)),
      "and the date is still stated, which is the point of moving it rather than cutting it");
-}
+})();
 
 section("Orders and money — cash is stated in the P&L, once (v401)");
-{
+await (async () => {
   /* The cash table's Invoiced row was byte for byte the P&L's Revenue row, one table below it,
      so the two sat side by side saying the same figure twice. Cash is now three rows under the
      revenue it belongs to and the duplicate is gone. */
@@ -3576,10 +3591,10 @@ section("Orders and money — cash is stated in the P&L, once (v401)");
   }
   ok(!heads.some((t) => /\bInvoiced\b/.test(t)),
      "and states the revenue once, not as Revenue and again as Invoiced");
-}
+})();
 
 section("Monthly statements: one home, and the laws a sent document lives by (29 Aug 2026)");
-{
+await (async () => {
   /* v388 removed the desk's statement panel and all five functions as uncalled, and
      tools/make_statements.cjs called four of them: the monthly statements broke with
      nothing here to say so, exactly the blindness the v388 entry recorded ("no test
@@ -3673,10 +3688,10 @@ section("Monthly statements: one home, and the laws a sent document lives by (29
     const counted = rows.filter(r => !r.cancelled).length;
     ok(html.includes(">" + counted + " order"), "and the footer counts only the orders that stand");
   }
-}
+})();
 
 section("Units — no new kg-named identifier, anywhere (round 5, his call 6)");
-{
+await (async () => {
   /* The desk retired the mass symbol at v161 and sells by the unit, but the code still spoke
      kg internally: the buy, sold and reorder totals, the formatter and ninety more. Round 5
      renamed every internal identifier to unit language. What stays, and MUST stay, is the
@@ -3723,10 +3738,10 @@ section("Units — no new kg-named identifier, anywhere (round 5, his call 6)");
   const masterText = fs.readFileSync("master/salt_command.html", "utf8");
   ok(masterText.includes("const units=n=>") && !masterText.includes("const kg=n=>"),
      "the formatter is units(), and the old kg() declaration is gone");
-}
+})();
 
 section("Round 6 — book integrity");
-{
+await (async () => {
   const book = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
   const allRows = [...(book.sales || []), ...(book.purchases || [])];
   const rids = allRows.map((r) => r.rid).filter(Boolean);
@@ -3737,10 +3752,10 @@ section("Round 6 — book integrity");
   const reg = book.PRODUCTS || {};
   const orphan = allRows.filter((r) => r.product && !reg[r.product]);
   ok(orphan.length === 0, "every row's product is registered in PRODUCTS" + (orphan.length ? " — " + orphan.map((r) => r.rid || r.date).join(", ") : ""));
-}
+})();
 
 section("Every part renders on every book (round 5 fold; content and census, round 6)");
-{
+await (async () => {
   /* Twice now a scope fault has blanked a whole part while the full suite passed: liveQ at
      v403 and LD at round five's own first commit, both on Price, both invisible here because
      nothing rendered the part. So the suite renders every registered part on every book
@@ -3784,11 +3799,11 @@ section("Every part renders on every book (round 5 fold; content and census, rou
     : "zero canvases or details sit outside a .prodblock on the six per-product parts");
   ok(w.eval("units(-0)") === "0 unit" && w.eval("fmt0(-0.4)") === "RM 0" && w.eval("fmt(-0.001)") === "RM 0.00",
     "a figure that displays as zero never carries a minus (units, fmt0, fmt)");
-}
+})();
 
 
 section("v408: the update panel does the arithmetic so a tap cannot overpay");
-{
+await (async () => {
   /* THE BUG THIS SECTION EXISTS FOR. The Ledger's three quick buttons queued the row's FULL
      TOTAL as a Fulfilment, and a Fulfilment is a DELTA the fold ADDS, so tapping Paid on a row
      already carrying RM 50 of RM 100 took it to RM 150. It was reachable on any part-paid row
@@ -3859,11 +3874,11 @@ section("v408: the update panel does the arithmetic so a tap cannot overpay");
       "the chips meet the 44px tap contract");
   }
   for (const f of [M, B]) { try { rm(f); } catch (e) { /* best effort */ } }
-}
+})();
 
 
 section("v409: the Enter sheet is priced against the book it books to");
-{
+await (async () => {
   /* ROUND SEVEN, MATERIAL. The sheet held a product of its own while the margin, the free-stock
      warning and priceCoach all read the ACTIVE book, and its own note said "books to the oil
      book, not where the rail points". So a healthy oil sale was measured against salt's
@@ -3937,11 +3952,11 @@ section("v409: the Enter sheet is priced against the book it books to");
     } else skipData("the two books share a best rate, so this comparison cannot be told apart");
     wc2.eval("setProdView(" + JSON.stringify(prods2[0]) + ");");
   }
-}
+})();
 
 
 section("v410: the P&L says which period each of its three columns covers");
-{
+await (async () => {
   /* ROUND SEVEN. The month columns are last month and this month with no year on them, the FY
      column is the calendar year to date, and the IFRS statement below is the whole book since it
      opened. On 1 January that reads as a contradiction: an empty FY column beside a full December
@@ -3993,11 +4008,11 @@ section("v410: the P&L says which period each of its three columns covers");
     "and it is at least mid-year's (RM " + carriedMid + "), because ageing only adds to it");
   ok(/whole book, not the FY column/.test(jan), "and it states the basis it is on");
   try { rm(T); } catch (e) { /* best effort */ }
-}
+})();
 
 
 section("v411: the Worker's SQL run against the real schema");
-{
+await (async () => {
   /* WHAT THIS ADDS, AND WHAT IT DELIBERATELY DOES NOT. "Worker - drafts and approval" above
      already covers the key gate, created/existed, the listing, the card's contents, the 409 on a
      second decision and the uncommitted filter, against a hand-rolled D1 mock that throws on any
@@ -4079,11 +4094,11 @@ section("v411: the Worker's SQL run against the real schema");
       && (await call("GET", "/drafts?status=all")).j.drafts.find((d) => d.id === ID).liveAt === LIVE,
       "a proof time that is not a date is dropped, and the stored one stands");
   }
-}
+})();
 
 
 section("v413: a lot is not measured like a sale");
-{
+await (async () => {
   /* ROUND EIGHT, MATERIAL, AND MINE. The book's convention for a fully landed lot is an ABSENT
      receivedQty, and for a settled one an absent cash beside status:"paid". poRecvUnits and poCash
      are what read that, and the engine's own walk already says buy?poCash(t):txPaid(t). The v408
@@ -4302,11 +4317,11 @@ section("v413: a lot is not measured like a sale");
       "and folding WHAT THE CHIP QUEUED books no payable (bill RM " + bill(target) + ", total RM " + target.total + ")");
     ok(target.pending === true, "because the chip queued the pending flag itself");
   } else skipData("no settled landed lot to drive the pending chip on");
-}
+})();
 
 
 section("v416: a correction states a figure, it does not un-pay a lot");
-{
+await (async () => {
   /* ROUND NINE, TWIN CLASS 1. v413 taught the Fulfilment path that a lot stored status:"paid"
      with no cash field is SETTLED, and left the Correction and Modification paths reading the raw
      field. So a RM 10 price correction on any of the five lots stored that way rewrote it to
@@ -4364,11 +4379,11 @@ section("v416: a correction states a figure, it does not un-pay a lot");
   const f16 = Object.assign({}, settled16);
   applyAmend(f16, { kind: "Correction", date: "2026-09-01", fields: { total: 900 } }, "BUY", null);
   ok(f16.status === q1.status, `and the fold says the same word (${f16.status} against ${q1.status}), which is the whole reason ovAmend exists`);
-}
+})();
 
 
 section("v417: a cancelled lot counts nowhere in stock, and is not a bill");
-{
+await (async () => {
   /* ROUND NINE, TWIN CLASS 4. The SELL half of the ledger strip filtered !cancelled and the BUY
      half did not, and poRecvUnits, poLive and poOpenUnits had no cancelled test at all, so a
      cancelled lot kept its units in "still to arrive" and its total in bills outstanding while
@@ -4431,11 +4446,11 @@ section("v417: a cancelled lot counts nowhere in stock, and is not a bill");
   ok(E.poOwed(lot({ cancelled: true })) === 0,
     "and cancelling an unpaid lot removes a payable rather than booking one");
   ok(E.poOwed(lot({})) === 1250, "while an open unpaid lot still owes its whole total, so it is not a blanket zero");
-}
+})();
 
 
 section("v419: cancelling a delivered sale is refused everywhere it is offered");
-{
+await (async () => {
   /* ROUND NINE, TWIN CLASS 7. The fold has thrown on this since v407 and v415 gave it the right
      ruler. The DESK had the gate on its BUY branch only, added at v414, so ovAmend replayed a
      cancellation on a delivered SALE happily and previewed a row the book can never hold; and the
@@ -4500,11 +4515,11 @@ section("v419: cancelling a delivered sale is refused everywhere it is offered")
         "the Workbench pane refuses a Cancellation on a delivered order: " + String(drove).slice(0, 90));
     }
   }
-}
+})();
 
 
 section("v420: the desk and the fold leave a row in the same state");
-{
+await (async () => {
   /* ROUND NINE, TWIN CLASS 8. ovAmend is written to BE applyAmend: the repo says in three places
      that a desk and a fold disagreeing about what an edit does is two books. It had drifted. The
      fold makes five writes in its SELL tail and the desk made two, so the overlay previewed an
@@ -4583,11 +4598,11 @@ section("v420: the desk and the fold leave a row in the same state");
   ok(differed.length === 0,
     "the desk and the fold leave every one in the same state -- " + differed.slice(0, 2).join(" || "));
   for (const f of [B5, M5]) { try { rm5(f); } catch (e) { /* best effort */ } }
-}
+})();
 
 
 section("v421: the drafter calls the rule instead of retyping it");
-{
+await (async () => {
   /* ROUND NINE, TWIN CLASS 3. v413 hand-rolled the received-in-full convention inside the drafter
      and dropped its defaulted case, so the drafter refused a DEFAULTED lot's cancellation with a
      message asserting 12.5 unit had arrived from a supplier who delivered nothing. A probe made
@@ -4617,11 +4632,11 @@ section("v421: the drafter calls the rule instead of retyping it");
   ok(!blocked(saleA({}), true), "an untouched sale can be cancelled");
   ok(blocked(saleA({ deliveredQty: 1 }), true), "a part-delivered sale cannot");
   ok(blocked(saleA({ settledKg: 2 }), true), "nor one settled in kind, which a raw deliveredQty read misses");
-}
+})();
 
 
 section("v426: the guard and the divisor cannot be the same sentinel");
-{
+await (async () => {
   /* ROUND NINE, TWIN CLASS 14. concentration() computes tot = revSum || 1 so a share can be taken
      without dividing by zero, and the All row then wrote (c.tot > 0 ? margin / c.tot * 100 : 0).
      c.tot is never zero by construction, so the guard could never be false: with no revenue the
@@ -4661,11 +4676,11 @@ section("v426: the guard and the divisor cannot be the same sentinel");
     "and its margin cell is not a percentage of the sentinel (" + (nil && nil[5]) + ")");
   ok(nil && nil[1] === "RM 0", "while the revenue it printed is still RM 0, not the sentinel");
   for (const f of [B6, M6]) { try { rm6(f); } catch (e) { /* best effort */ } }
-}
+})();
 
 
 section("v429: the reconciliation foots to the total printed beneath it");
-{
+await (async () => {
   /* ROUND NINE. v406 gave the walk a surplus, for a count taken ABOVE the ledger, and gave the
      PROSE a sentence about it. It did not give the reconciliation table a row, so on that state the
      lines summed to less than the counted total printed under them and the reconciliation did not
@@ -4707,11 +4722,11 @@ section("v429: the reconciliation foots to the total printed beneath it");
     "carrying the walk's own figure (" + (row && row[1]) + ")");
   ok(row && /RM/.test(row[2]), "and its ringgit value (" + (row && row[2]) + ")");
   for (const x of [B7, M7]) { try { rm7(x); } catch (e) { /* best effort */ } }
-}
+})();
 
 
 section("v430: the controls the panel offers must exist and must be able to do what they say");
-{
+await (async () => {
   /* ROUND NINE, THREE AFFORDANCE FAULTS IN ONE PASS.
      ONE. v408 gated the Ledger Update control on t.rid, and a purchase card carries its row under
      a _buy wrapper, so t.rid is undefined on every lot and the control rendered on NONE of the
@@ -4770,11 +4785,11 @@ section("v430: the controls the panel offers must exist and must be able to do w
     ok(pc.some((c) => /Paid in full/.test(c)), "while a priced row still offers Paid in full");
   }
   for (const x of [B8, M8]) { try { rm8(x); } catch (e) { /* best effort */ } }
-}
+})();
 
 
 section("v432: the money on a statement is the money on the book");
-{
+await (async () => {
   /* ROUND TEN. The statements section beside this one holds eight assertions and NOT ONE reads a
      ringgit or a unit: round ten proved all eight still pass with every total doubled, Paid forced
      to zero, Outstanding forced to nil and every row turned into a gift. That is how a part-rebated
@@ -4866,11 +4881,11 @@ section("v432: the money on a statement is the money on the book");
     ok(!!r.gift === (cash <= 0.009),
       `${src.rid}: a goodwill row is a gift exactly when no cash was paid on it (cash RM ${cash}, printed as ${r.gift ? "a gift" : "charged"})`);
   }
-}
+})();
 
 
 section("v436: one ruler decides whether a correction is legal, and all four readers read it");
-{
+await (async () => {
   /* ROUND TEN, MATERIAL. FOUR readers decide this and only two ever held a rule. The drafter
      refused at the gate; tools/fold.mjs refused again in --plan with a rule of its own; applyAmend
      wrote whatever it was handed; and the desk's ovAmend PREVIEWED whatever it was handed. So the
@@ -4955,11 +4970,11 @@ section("v436: one ruler decides whether a correction is legal, and all four rea
   }
   ok(seen > 100, `swept ${seen} rows on the live book`);
   ok(walled === 0, `and a note correction is refused on none of them (${walled}), so the gate is a rule and not a wall`);
-}
+})();
 
 
 section("v438: one rule for what a lot owes its supplier, read by every reader of it");
-{
+await (async () => {
   /* ROUND TEN. FIVE readers answered this question and each excluded a DIFFERENT subset of
      {pending, cancelled, defaulted}, so the desk could put three different figures in front of the
      owner for one question:
@@ -5037,11 +5052,11 @@ section("v438: one rule for what a lot owes its supplier, read by every reader o
   const billRM = +bills.reduce((a, c) => a + (+c.rm || 0), 0).toFixed(2);
   ok(billRM === WANT, `the forecast drains RM ${billRM} of supplier bills, which must be RM ${WANT}: it used to drain the cancelled and defaulted lots too`);
   for (const x of [BA, MA]) { try { rmA(x); } catch (e) { /* best effort */ } }
-}
+})();
 
 
 section("v439: the desk restates a row, and every claim it writes is one its own strip can read");
-{
+await (async () => {
   /* ROUND TEN. ovAmend had NO Modification branch and applyAmend has had one since v358. A
      Modification carries newQty and newTotal and moves no cash and no goods, so it fell through to
      the movement path and applied a movement of nothing. On a lot that left the row untouched. On
@@ -5115,11 +5130,11 @@ section("v439: the desk restates a row, and every claim it writes is one its own
   ok(flat.some((c) => c.field === "unpriced"),
     "including the unpriced line the fold writes a reason onto, which is the one that broke the shape");
   for (const x of [BB, MB]) { try { rmB(x); } catch (e) { /* best effort */ } }
-}
+})();
 
 
 section("v441: the same money, settled two ways, reads the same way on a cancelled order");
-{
+await (async () => {
   /* ROUND TEN. txStat measured a cancelled row's money as t.cash ALONE, while the line directly
      beneath it has read cash plus settledRM for every other row since those fields existed, and
      txPaid is the one rule for it. So the identical RM 100, handed over as cash, reported
@@ -5161,11 +5176,11 @@ section("v441: the same money, settled two ways, reads the same way on a cancell
   const deskSays = (o) => wC.eval("txStat(" + JSON.stringify(mk(o)) + ").pay");
   ok(deskSays({ settledRM: 100 }) === "Refund due", `the desk says Refund due on a cancelled order settled in kind (${deskSays({ settledRM: 100 })})`);
   ok(deskSays({}) === "Unpaid", "and Unpaid on one nobody paid for");
-}
+})();
 
 
 section("v443: a cancelled order owes no salt, and the desk does not buy to cover one");
-{
+await (async () => {
   /* ROUND TEN, and it is the most expensive thing this round has found. txDeferUnits asks how much
      salt has been paid for and not yet handed over. The three lines DIRECTLY BELOW IT --
      txPendUnits, txPendUnitsRaw and txPendRM -- have opened with `if(s.cancelled)return 0` since
@@ -5237,11 +5252,11 @@ section("v443: a cancelled order owes no salt, and the desk does not buy to cove
 
     for (const x of [BD, MD]) { try { rmD(x); } catch (e) { /* best effort */ } }
   }
-}
+})();
 
 
 section("v444: a cancelled order that was paid for is a payable, recorded like an overpayment");
-{
+await (async () => {
   /* HIS INSTRUCTION, 02 Sep 2026: record it exactly like an overpayment, cash to be returned to the
      customer as soon as possible. customerRefunds IS that mechanism, and its two existing rows are
      literally overpayments, so this writes the same shape rather than inventing a second one. Six
@@ -5327,11 +5342,11 @@ section("v444: a cancelled order that was paid for is a payable, recorded like a
     ok(LEDGER.customerRefunds === "BASE_REFUNDS",
       `the extract reads the committed refunds (${LEDGER.customerRefunds}), as it does for sales and the board`);
   }
-}
+})();
 
 
 section("v445: one floored ruler for every age, and the engine has it too");
-{
+await (async () => {
   /* ROUND TEN, FOLD 8. The desk has had dAge since v407 and the ENGINE never did, so every age
      computed inside the walk used the raw signed difference. Twenty more raw ages sat on the desk
      itself: seven feeding provRate, which is a monotone ladder with no floor of its own; four
@@ -5428,11 +5443,11 @@ section("v445: one floored ruler for every age, and the engine has it too");
   ok(PEf.dayAge(T, "2027-01-20") === 0, "and zero for a date ahead of the clock, which is the v406 case that printed -16d");
   ok(PEf.dayAge(T, "2026-08-28") === 5, "while a real age is a real age");
   ok(PEf.dayAge(T, -5) === 0 && PEf.dayAge(T, 7) === 7, "and it takes a day count as well as a date, because half the sites hold one");
-}
+})();
 
 
 section("v446: what a lot is, answered beside what a sale is");
-{
+await (async () => {
   /* ROUND TEN, FOLD 9. txStat has been in the engine since v338 and ledgerBuy stayed on the desk,
      which is why v441 fixed the sale's cancelled branch and the lot's never existed. Driven, not
      read: a cancelled lot already paid for read Open - Deferred (the supplier owes you SALT), an
@@ -5501,11 +5516,11 @@ section("v446: what a lot is, answered beside what a sale is");
        reads "Open · Deferred"; what no real lot may read is the two fixtures' states. */
     ok(real.length >= 18 && real.every((o) => /^(Completed|Default|Open)/.test(o)), `the ${real.length} real lots read Completed, Default or Open, never Pending, Unpriced or Cancelled (${[...new Set(real)].join(", ")})`);
   } finally { for (const f of [B6, M6]) { try { rm6(f); } catch (e) { /* best effort */ } } }
-}
+})();
 
 
 section("v447: the figure carries the state");
-{
+await (async () => {
   /* HIS MODEL, 02 Sep 2026. An entry is a date, a party, a product, a quantity and a sum, and
      its state is which of them has happened: grey not yet, white done, white below the agreed
      figure when partly, struck when off; a replaced figure shows the old one struck, grey for a
@@ -5553,11 +5568,11 @@ section("v447: the figure carries the state");
     const hued = +w.eval("document.querySelectorAll('.lfig[style], .lwas[style], .lof[style]').length");
     ok(hued === 0, "the drawing carries no inline colour");
   } finally { for (const f of [B7, M7]) { try { rm7(f); } catch (e) { /* best effort */ } } }
-}
+})();
 
 
 section("v448: the editor opens on the chips, and one button");
-{
+await (async () => {
   /* HIS INSTRUCTION, 02 Sep 2026: the row editor was two forms and three buttons, with a Cancel
      one chip away from Cancel the order. It opens on the six states and Queue the update now; the
      sheet, its own save and its reasons sit behind one fold, shut; the cross is the only way out;
@@ -5587,11 +5602,11 @@ section("v448: the editor opens on the chips, and one button");
   const n = shape();
   ok(n.out.length === 1 && n.out[0] === "Queue the order" && n.summary === null && n.dismiss === 1, `a new order has no fold to hide its sheet in: one button, Queue the order, and the cross (${n.out.join(" / ")}, fold=${n.summary})`);
   w.eval("edClose();");
-}
+})();
 
 
 section("v449: a lot's trail opens with the lot as booked, read with the lot's ruler");
-{
+await (async () => {
   /* Six sites seeded the first step of a trail with txPaid and txDeliv, the sale's rulers, which read
      RM 0 and 0 unit on a lot paid in full and received. p001 is that lot. A Correction is the one
      amendment that reaches the seed on a lot, so one is folded on both engines and the seed read back. */
@@ -5616,11 +5631,11 @@ section("v449: a lot's trail opens with the lot as booked, read with the lot's r
     ok(Math.abs(d9.cash - want.cash) < 0.01 && Math.abs(d9.kg - want.kg) < 0.01 && want.cash > 0.009 && want.kg > 0.009,
       `the desk seeds ${p9} the same way: RM ${d9.cash} of ${want.cash}, ${d9.kg} of ${want.kg} unit`);
   } else skipData("no paid lot without a trail on the book to drive the desk half with");
-}
+})();
 
 
 section("v450: a lot keeps a trail, on the fold and on the desk");
-{
+await (async () => {
   /* Both engines returned from their BUY branches before the seed and the step, so a lot restated
      or fulfilled through the fold carried no trail, and the one lot with a step (p016) had it written
      by hand without a seed. Now: the seed and the step, in the same order as a sale, on both sides,
@@ -5663,11 +5678,11 @@ section("v450: a lot keeps a trail, on the fold and on the desk");
   const T = (p016 && p016.amend) || [];
   ok(T.length >= 2 && T[0].note === "as booked" && Math.abs(sum(T, "cash") - P0.poCash(p016)) < 0.01 && Math.abs(sum(T, "kg") - P0.poRecvUnits(p016)) < 0.01,
     `p016 opens with the lot as booked and its trail sums to the row: RM ${sum(T, "cash")} of ${p016 && P0.poCash(p016)}, ${sum(T, "kg")} of ${p016 && P0.poRecvUnits(p016)} unit`);
-}
+})();
 
 
 section("v451: the Ledger draws a lot's trail");
-{
+await (async () => {
   /* The card map gated steps and corrections to SELL and read them off the wrapper, which has no
      amend, so no lot ever showed a trail or a correction strip. Two lots the fold could now write,
      rendered through booksync into a scratch master and read back off the cards. */
@@ -5713,11 +5728,11 @@ section("v451: the Ledger draws a lot's trail");
     ok(hit[0] && !hit[1], "and the search reads a lot's mod: the corrected lot is found and the other is not");
     w.eval("ledF.q='';");
   } finally { for (const f of [B1, M1]) { try { rm1(f); } catch (e) { /* best effort */ } } }
-}
+})();
 
 
 section("v452: the month chart draws the table");
-{
+await (async () => {
   /* The Financials part draws one block per product, so the stub keys by canvas id AND product.
      drawFinCharts kept its own accumulators over pricedSales: a row partly pending counted its
      whole total and quantity where finRows nets the pending tail, and the labels carried no year.
@@ -5761,11 +5776,11 @@ section("v452: the month chart draws the table");
     ok(ch && years.size === 1 && ch.labels.length === tb.length && ch.labels.every((l) => /^[A-Z][a-z]{2,3}$/.test(l)),
       `within one year the labels are the bare months (${ch && ch.labels.join(", ")})`);
   }
-}
+})();
 
 
 section("v453: a line prints the measure its sum used");
-{
+await (async () => {
   /* Two itemisations printed a whole-row figure beside a sum that used the netted one: the stock
      walk's Received row (and the lot list) printed a lot's ordered quantity where buyUnits sums
      what landed, and the held-out line named an order by its whole total where its headline nets
@@ -5798,11 +5813,11 @@ section("v453: a line prints the measure its sum used");
     ok(/1 order carrying RM 200 of revenue is held out/.test(fin), "the held-out line nets the pending half from its headline");
     ok(/RM 200 of RM 400 ordered./.test(fin), `and names the order by the same measure, with what was ordered beside it (${(fin.match(/held out[^.]*.[^.]*./) || [""])[0].slice(0, 160)})`);
   } finally { for (const f of [B3, M3]) { try { rm3(f); } catch (e) { /* best effort */ } } }
-}
+})();
 
 
 section("v454: a cancelled paid order's money is stated on the statement");
-{
+await (async () => {
   /* v444 books the refund; the statement dropped the row whole, so Paid was short by the money
      the customer had actually handed over, Balance read nil beneath a refund still owed to them,
      the Refunds table called it an overpayment, and the review sheet flagged the account clear.
@@ -5853,11 +5868,11 @@ section("v454: a cancelled paid order's money is stated on the statement");
   const cls4 = at4 < 0 ? null : (rev4.slice(Math.max(0, at4 - 80), at4).match(/class="f-([a-z]+)"/) || [])[1];
   ok(cls4 === "refund" || cls4 === "owes" || cls4 === "goods", `the review sheet flags the account rather than calling it clear (${cls4})`);
   ok(rev4.indexOf("450.00 to them") >= 0 || cls4 === "owes", "and its index shows the money owed to them");
-}
+})();
 
 
 section("v455: the reconciliation reads the shortfall the settlement credited");
-{
+await (async () => {
   /* The walk read a leg's shortfall as billed less cash, and the fold credits an in-kind
      settlement INTO the leg's cash, so every settled leg read Short 0.00 and the table was zeros.
      Three books, each the live CJ4-BJ rows with the 15 Jul order carrying its 2.0588 unit as
@@ -5899,12 +5914,12 @@ section("v455: the reconciliation reads the shortfall the settlement credited");
   const C = await run5("cashed", (l, a, b) => { l.settledKg = 2.0588; a.amend = a.amend.filter((x) => !x.ref); b.amend = b.amend.filter((x) => !x.ref); });
   ok(C.R && C.R.noLegs && C.txt.indexOf("Carried forward") < 0 && C.txt.indexOf("applied to a separate arrangement") >= 0,
     `legs paid in cash explain nothing, so the offset is told plainly rather than tabulated (noLegs ${C.R && C.R.noLegs})`);
-}
+})();
 
 
 
 section("v456: an undated row says so wherever its date is printed");
-{
+await (async () => {
   /* The pending table printed `not dated` for an undated row; the five Order book tables beside
      it printed the raw field, the word undefined under a heading that says Since, and a census of
      every tab found the same on eight more sites. Five undated fixtures, one per table: a sale paid
@@ -5954,11 +5969,11 @@ section("v456: an undated row says so wherever its date is printed");
        cells print a date. The receivables, inventory, pricing, plans and sourcing cells stand. */
     ok(count(seen.today || "", "landed not dated") === (lockOn6 ? 1 : 0) && nd >= 12, `the lock rule on Today ${lockOn6 ? "says so too" : "is gated with the lock off, and stays silent"}, ${nd} cells across the desk`);
   } finally { for (const f of [B6, M6]) { try { rm6(f); } catch (e) { /* best effort */ } } }
-}
+})();
 
 
 section("v457: a cancellation on the whiteboard asks for nothing and previews the refund");
-{
+await (async () => {
   /* The amend pane labelled its two fields Cash returned and Returned on a Cancellation, and
      nothing reads them: the desk, the fold and the drafter each mark the row and return, and the
      refund is what was paid, read off the row. A figure typed there was queued as a movement and
@@ -6010,11 +6025,11 @@ section("v457: a cancellation on the whiteboard asks for nothing and previews th
     ok(!B.no && /Unpaid/.test(B.prev) && /Cancelled/.test(B.prev) && !/refund payable/.test(B.prev),
       `on a pending order the preview reads Unpaid and names no refund: ${B.no || B.prev.replace(/\s+/g, " ").slice(0, 160)}`);
   } finally { for (const f of [B7, M7]) { try { rm7(f); } catch (e) { /* best effort */ } } }
-}
+})();
 
 
 section("v458: the reconciliation's payment list prints only when it sums to the row");
-{
+await (async () => {
   /* The dated list of payments inside a reconciliation is read off the amend trail, and a
      Correction (v363) sets a row's cash directly while the trail stays as written, so the list
      could add up to money the order never carried. The one live offset order, s009, sums exactly,
@@ -6047,11 +6062,11 @@ section("v458: the reconciliation's payment list prints only when it sums to the
   const B = await run8("corrected", (r) => { r.cash = 700; });
   ok(B.indexOf("750.00 on 08 Jul 2026") < 0 && B.indexOf("700.00") >= 0,
     `with the row corrected to 700 beside a step of 750, the row's figure prints and the step does not: ${B.indexOf("750.00 on") >= 0 ? "step printed" : "ok"}`);
-}
+})();
 
 
 section("v459: the editor measures what has moved with the ruler the gate uses");
-{
+await (async () => {
   /* updOut and ovSeed read txDeliv; the cancellation gate, the whiteboard and the engine walk
      read txEffDeliv, which adds advanceUnits. Nothing writes that field today, so the fixture
      is the only row on which the two rulers disagree, and it is what makes this provable. */
@@ -6067,11 +6082,11 @@ section("v459: the editor measures what has moved with the ruler the gate uses")
   ok(r.eff === 1 && r.raw === 0, `the fixture is the row on which the rulers disagree (eff ${r.eff}, raw ${r.raw})`);
   ok(r.moved === 1 && r.left === 1, `updOut reads the unit advanced as moved, one left (moved ${r.moved}, left ${r.left})`);
   ok(r.seed === 1, `and the overlay seed carries the same figure (${r.seed})`);
-}
+})();
 
 
 section("v460: the row shape attaches no debt to a cancelled row");
-{
+await (async () => {
   /* ledgerRow said a cancelled order still owed its whole total and quantity, oweRM and oweUnits
      beside st canc, on every cancelled sale on the book. The three pending rulers and txDeferUnits
      have said a cancelled order owes nothing since v443. Read through the master's inlined engine
@@ -6093,11 +6108,11 @@ section("v460: the row shape attaches no debt to a cancelled row");
   const { w: w10 } = await om10(j10(REPO, "master", "salt_command.html"));
   const viaMaster = JSON.parse(String(w10.eval("JSON.stringify(POSITION_ENGINE.ledgerRow({customer:'F10',product:'salt',date:'2026-08-30',qty:2,total:200,cost:64,cash:0,deliveredQty:0,cancelled:true},'S','salt'))")));
   ok(viaMaster.oweRM == null && viaMaster.oweUnits == null && viaMaster.st === "canc", `and the master's inlined engine says the same (${JSON.stringify(viaMaster)})`);
-}
+})();
 
 
 section("v461: a lot's step is named the way the whiteboard took it");
-{
+await (async () => {
   /* v451 drew a lot's trail through the sale's renderer, and every step kept the sale's word,
      Fulfilment, where the pane that took it offered Payment and Receipt. The one lot with steps
      today has both on its own agreed date, so nothing renders; the fixture is a lot with a
@@ -6131,11 +6146,11 @@ section("v461: a lot's step is named the way the whiteboard took it");
     ok(lot.indexOf("Fulfilment") < 0, "and the sale's word is nowhere on the lot");
     ok(sale.join() === "Agreed,Fulfilment", `while the sale reads Agreed at booking, then Fulfilment (${JSON.stringify(sale)})`);
   } finally { for (const f of [B11, M11]) { try { rm11(f); } catch (e) { /* best effort */ } } }
-}
+})();
 
 
 section("v462: a cancelled-on date needs a cancellation, and cannot precede the order");
-{
+await (async () => {
   /* cancelledOn is a correctable date and correctionFaults never read it, so a Correction could
      stamp one on a live row, revive a cancelled row and leave the date behind, or date the
      cancellation before the order. The engine is asked directly, then the master's inlined copy. */
@@ -6154,11 +6169,11 @@ section("v462: a cancelled-on date needs a cancellation, and cannot precede the 
   const { w: w12 } = await om12(j12(REPO, "master", "salt_command.html"));
   const via = JSON.parse(String(w12.eval("JSON.stringify(POSITION_ENGINE.correctionFaults({customer:'F12',product:'salt',date:'2026-08-01',qty:2,total:200,cost:64,cash:0,deliveredQty:0},{cancelledOn:'2026-08-05'},true))")));
   ok(has(via, /without being cancelled/), "and the master's inlined engine refuses it the same way");
-}
+})();
 
 
 section("v463: the statement row carries no field nothing reads");
-{
+await (async () => {
   /* stmtRows minted a `credit` on every row, the negative of what was owed, and nothing in the
      tool read it: the overpayment it stood for is stmtRefunds' shape. Proved byte-identical on
      all 37 live statements when it went; this keeps the shape honest. */
@@ -6166,11 +6181,11 @@ section("v463: the statement row carries no field nothing reads");
   const o13 = { from: null, to: "2026-09-01", completed: true, open: true, pending: true, dates: true, brand: "Salt Command", issued: "01 Sep 2026" };
   const rows13 = sr13("CJ4-BJ", o13);
   ok(rows13.length > 0 && rows13.every((r) => !Object.prototype.hasOwnProperty.call(r, "credit")), `no row carries credit (${rows13.length} rows)`);
-}
+})();
 
 
 section("v465: the ledger is a table, whole and sortable");
-{
+await (async () => {
   /* His instruction of 02 Sep 2026: first to latest, sortable like a sheet, a table, nothing folded
      or hidden. The three-day window and the "earlier orders" fold go, the interim-steps disclosure
      goes, every line is the same twelve cells, and a heading sorts: once ascending, again descending,
@@ -6229,11 +6244,11 @@ section("v465: the ledger is a table, whole and sortable");
   ok(+w15.eval("document.querySelector('.sec.on .lcard .lrow .lgroup').children.length") === 6 && +w15.eval("document.querySelector('.sec.on .lcard .lrow').children.length") === 6,
     "an order line is six labelled cells, the four figures and its control, the same tracks as the heading");
   w15.eval("ledSort={key:'e',dir:1};");
-}
+})();
 
 
 section("v466: the ledger never scrolls sideways; a narrower screen re-flows the same cells");
-{
+await (async () => {
   /* His instruction of 02 Sep 2026, after v465: no scrollable ledger to the right. The sideways
      scroller goes; every cell names a grid area, and container queries re-flow the thirteen cells
      onto two lines below 936px and four below 600px. jsdom lays nothing out, so what is proved here
@@ -6260,11 +6275,11 @@ section("v466: the ledger never scrolls sideways; a narrower screen re-flows the
     "the wrap is a size container and one width tier, the phone, is declared against it (v495: the 935px tier became the shape at every width above it)");
   ok(!/\.lcard[^{]*\{[^}]*min-width:\s*1\d{3}px/.test(css) && !/overflow-x:\s*auto[^}]*\}[^@]*\.lcards/.test(css), "no card carries a four-figure minimum width any more");
   ok(!/.lheads*{s*display:s*none/.test(css), "and no rule hides the heading at any width: the v307 phone stack that did is retired");
-}
+})();
 
 
 section("v497: a breach is named on its own book's register only");
-{
+await (async () => {
   /* His instruction of 06 Sep 2026: CA4-DAM breaks one rule in salt only, not in oil. Round 5 had
      the register name every book's credit breach on every tab, as salt's, so the oil tab listed a
      salt breach. Driven on a fixture since v634: CA4-DAM's 2.5 unit were written off on 14 Sep, so he holds no credit now. */
@@ -6303,11 +6318,11 @@ section("v497: a breach is named on its own book's register only");
     "on the salt book the party breaks the credit cap (" + salt.join(", ") + ")");
   ok(oil.length === 0, "and on the oil book he breaks none (" + (oil.join(", ") || "none") + ")");
   w21.eval("setProd('salt');recompute();");
-}
+})();
 
 
 section("v495: an entry is two rows, and the act cell ends the second");
-{
+await (async () => {
   /* His instruction of 05 Sep 2026, on a screenshot of the heading: the entry, date, party, product,
      quantity, price, total and state on one row; the step and type on a second, running to the end,
      where a dotted transparent Provisional pill or an Update button sits. Asserted through the
@@ -6372,11 +6387,11 @@ section("v495: an entry is two rows, and the act cell ends the second");
   w19.eval("document.querySelector('.lcard[data-rid=x-fan] button.lpen').click()");
   w19.eval("document.body.click()");
   ok(+w19.eval("document.querySelectorAll('#ledMenu').length") === 0, "and a click anywhere else closes it");
-}
+})();
 
 
 section("v471: the ledger is keyed entries only, and the prose is in the Journal");
-{
+await (async () => {
   /* His instruction of 02 Sep 2026: prose goes into a journal; the ledger should be key in, key
      in, key in, done. The note column, captions, step notes and the correction strip leave the
      sheet; a Journal part beside it carries every one of them, dated, newest first, linked to its
@@ -6408,12 +6423,12 @@ section("v471: the ledger is keyed entries only, and the prose is in the Journal
   ok(hits17.length > 0 && hits17.every((c) => c === first17.code), `the search narrows to one E-number (${hits17.length} entries for ${first17.code})`);
   w17.eval("jrnF.q='';");
   ok(cards17 > 140, `and the sheet still shows every row (${cards17})`);
-}
+})();
 
 /* ---- done ----------------------------------------------------------------------- */
 
 section("Round 7: the states no suite check had ever rendered");
-{
+await (async () => {
   /* ROUND SEVEN'S BIGGEST HOLE WAS NOT A FAULT, IT WAS A BLIND SPOT: every one of the suite's
      openMaster() calls ran the LIVE book, so no assertion had ever seen an empty book, a fresh
      product or a stepped-back clock. A probe reverted a complete v406 guard and the suite still
@@ -6638,10 +6653,10 @@ section("Round 7: the states no suite check had ever rendered");
   }
 
   for (const f of [TMP, TMPB, TMP + ".run.html"]) { try { rm(f); } catch (e) { /* best effort */ } }
-}
+})();
 
 section("v472: the desk in the Salt identity");
-{
+await (async () => {
   /* His instruction of 02 Sep 2026: redesign the desk with the Salt design system. It lands as
      a last-wins layer in two generated blocks at the foot of the stylesheet, and every figure
      here was proved RED against the v471 master before it was trusted. */
@@ -6680,10 +6695,10 @@ section("v472: the desk in the Salt identity");
   ok(JSON.parse(readFileSync(join(REPO, "public", "manifest.webmanifest"), "utf8")).theme_color === "#05080a", "the manifest's theme colour is obsidian");
   const i512 = readFileSync(join(REPO, "public", "icon-512.png")), im = readFileSync(join(REPO, "public", "icon-512-maskable.png"));
   ok(i512.length > 60000 && Buffer.compare(i512, im) === 0, "the home-screen icons are the brand plate, the same bytes for any and maskable");
-}
+})();
 
 section("v479: the retired price lock no longer breaks a rule; a lot that moves the rate is a watch");
-{
+await (async () => {
   /* The v233 breach compared a lock the desk stopped pricing from at v280 against the latest lot,
      so every salt lot since 6 Aug read as a breach. Gated on the lock now; the week after a lot
      lands that moves the rate, a watch says what moved. Expected from the book, not from the desk. */
@@ -6703,7 +6718,7 @@ section("v479: the retired price lock no longer breaks a rule; a lot that moves 
   ok(expect19 ? (!!watch19 && watch19[0] === "watch" && watch19[2].includes("from RM")) : !watch19,
     expect19 ? `a lot that moved the rate landed ${days19} day(s) ago, so the watch names it and what it moved from` : "no lot moved the rate this week, so no watch");
   ok(!rules19.some((r) => r[1] === "Cost basis moved" && r[0] !== "watch"), "and the moved rate is never more than a watch");
-}
+})();
 
 /* ============ THE FLOOR (v431) ============
    Round eight made THIRTY assertions vanish and the suite still read a clean pass, because nothing
@@ -6730,7 +6745,7 @@ section("v479: the retired price lock no longer breaks a rule; a lot that moves 
    identical: the bit stream, the Reed-Solomon, the interleave, the function patterns and the
    format bits. */
 section("QR — proved against an independent encoder");
-{
+await (async () => {
   const { qrMatrix, qrSvg } = await import("../tools/qr.mjs");
   const { createHash } = await import("node:crypto");
   const GOLDEN = [
@@ -6830,11 +6845,11 @@ section("QR — proved against an independent encoder");
       "the quiet zone is drawn light under the code, because the desk's own ground is almost black");
     ok(!/<script|href=|xlink|<image/i.test(rs), "the rects SVG is inert too: no script, nothing external");
   }
-}
+})();
 
 /* ---- the statement password, the envelope and the site's own Worker --------------- */
 section("Statements — the password, the username, the envelope and the site's own Worker");
-{
+await (async () => {
   const C = await import("../tools/stmt-crypto.mjs");
   const pw = C.newPassword();
   ok(/^[23456789abcdefghjkmnpqrstvwxyz]{4}(-[23456789abcdefghjkmnpqrstvwxyz]{4}){3}$/.test(pw),
@@ -7113,7 +7128,7 @@ section("Statements — the password, the username, the envelope and the site's 
     ok(!gone.includes(site) && !gone.includes(new URL(site).hostname),
       "and the page it serves names no address, so an old code cannot be trimmed into the new site");
   }
-}
+})();
 
 /* ---- THE OWNER'S LIST, BEHIND CLOUDFLARE ACCESS (his instruction, 10 Sep 2026) ---------------
    The gate is proved in BOTH directions, and the forged-signature case is the reason it exists at
@@ -7121,7 +7136,7 @@ section("Statements — the password, the username, the envelope and the site's 
    served from a stand-in fetch over a key pair minted here, so nothing touches the network; the
    real fetch is put back afterwards or every later section that uses it breaks. */
 section("Statements — the owner's list behind Access (v566)");
-{
+await (async () => {
   const realFetch = globalThis.fetch;
   try {
     const TEAM = "maakmal", AUD = "aud-under-test", KID = "test-kid";
@@ -7198,7 +7213,7 @@ section("Statements — the owner's list behind Access (v566)");
   } finally {
     globalThis.fetch = realFetch;
   }
-}
+})();
 
 /* ---- THE GUEST REFERRAL LINKS (his instruction, 10 Sep 2026) --------------------------------
    A link is minted behind Access, pinned to a tier, and opens ONE board and nothing else. The tier
@@ -7207,7 +7222,7 @@ section("Statements — the owner's list behind Access (v566)");
    here rather than written down, because an assertion nailed to today's book passes only while the
    book cooperates; the invariant that tier 1 is the cheaper of the two is asserted separately. */
 section("Statements — guest referral links and the introducer they follow (v566, v658)");
-{
+await (async () => {
   const realFetch = globalThis.fetch;
   try {
     const TEAM = "maakmal", AUD = "refs-aud", KID = "refs-kid";
@@ -7397,7 +7412,7 @@ section("Statements — guest referral links and the introducer they follow (v56
   /* the vendored encoder is the one encoder, or the site draws a QR from code nobody is testing */
   const { matches: qrMatches } = await import("../tools/qrsync.mjs");
   ok(qrMatches(), "stmt/qr.js is engine/qr.mjs byte for byte (run tools/qrsync.mjs --sync if this fails)");
-}
+})();
 
 /* ---- THE NEAREST-FIVE RULE, WHICH SHIPPED UNCOVERED (v564, found 10 Sep 2026) ---------------
    adjustedPrice draws a customer's own rate toward the board and then rounds to the NEAREST five,
@@ -7409,7 +7424,7 @@ section("Statements — guest referral links and the introducer they follow (v56
    and nothing else in the suite walks that branch. These are exact values, not properties, because
    the point is to pin the rule rather than to describe it. */
 section("Pricing — the down-to-the-ten rule is told apart from the two it replaced (v564, v660)");
-{
+await (async () => {
   /* v646: the drawing rule retired with the tier ceiling; its rounding and floor guard live on in the engine's cardPrice.
      v660, HIS INSTRUCTION OF 16 SEP 2026: the grid is the TEN and the rounding only ever goes DOWN, so these cases now tell
      three rules apart, the old round-up, the nearest-five that replaced it, and the floor-to-the-ten that replaced that. */
@@ -7424,12 +7439,12 @@ section("Pricing — the down-to-the-ten rule is told apart from the two it repl
     }
   }
   ok(under === 0, "and across a grid of rates, floors and tiers it never returns a price below the floor");
-}
+})();
 
 /* ---- the statement in the Salt identity, and what the QR carries ----------------- */
 /* ---- Statements: the price list, the order book and the desk's relay (06 Sep 2026) ---- */
 section("Statements — the price list, the order book and the desk's relay (v499)");
-{
+await (async () => {
   const PL = await import("../tools/pricelist.mjs");
   const { shipAccounts, renderPayJs, mastersPresent, payJs } = await import("../tools/paysync.mjs");
   const { PAY_SITE, PAY_ACCOUNTS } = await import("../stmt/pay.js");
@@ -7766,10 +7781,10 @@ section("Statements — the price list, the order book and the desk's relay (v49
     "and the send sheet's script parses, its backslashes surviving the template literal");
   ok(existsSync(join(REPO, "tools", "send-sheet.cmd")) && /_send_\*\.html/.test(readFileSync(join(REPO, "tools", "send-sheet.cmd"), "utf8")),
     "and the Desktop shortcut's launcher finds the newest send sheet by name");
-}
+})();
 
 section("v512: a replay batch clears its own handoff");
-{
+await (async () => {
   /* the planner answers the stage's one question: is the whole staged batch a replay? */
   const bookR = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
   const dupRow = bookR.sales.find((x) => x.date && x.customer && +x.total > 0 && +x.qty > 0 && !x.cancelled);
@@ -7791,10 +7806,10 @@ section("v512: a replay batch clears its own handoff");
   ok(/fold\.mjs --replays/.test(yml) && /--refused-note/.test(yml) && /git rm -q master\/_to_fold\.json/.test(yml),
     "and the stage job asks the planner, records the refusals and clears the handoff before standing down");
   ok(/--refused-note/.test(readFileSync(join(REPO, "tools", "drafts.mjs"), "utf8")), "drafts.mjs can record a refusal the fold made");
-}
+})();
 
 section("Statements — the QR, the sort and the Salt identity");
-{
+await (async () => {
   const { statementCss, saltTokens } = await import("../tools/stmt-style.mjs");
   const css = statementCss();
   const dsRoot = saltTokens();
@@ -8168,10 +8183,10 @@ section("Statements — the QR, the sort and the Salt identity");
       "and _passwords.json, the one gitignored file, is where they are");
     rmSync(dirP, { recursive: true, force: true });
   }
-}
+})();
 
 section("v518: salt borrowed in is a loan the other way");
-{
+await (async () => {
   /* HIS ROWS OF 08 SEP 2026: 5.5 unit borrowed from CM3-OUG and 1.5 from CA2-SEN, owed back in
      kind. The loan book only knew salt lent OUT (valueKg drawn off the inventory); a loan IN adds
      to it while open, lands on its own date in the history walk, prints its own line on the
@@ -8226,10 +8241,10 @@ section("v518: salt borrowed in is a loan the other way");
     ok(i > 0 && Math.abs(d0) < 1e-9 && Math.abs(dL - want7) < 1e-9, `the history walk lands the 7 unit on ${LD}, not on day 0 (day 0 moved ${d0.toFixed(4)}, the loan day ${dL.toFixed(4)}, want ${want7.toFixed(4)})`);
     try { w.close(); } catch (e) { }
   } finally { try { rm7(B7); } catch (e) { } try { rm7(M7); } catch (e) { } }
-}
+})();
 
 section("v519: the clock on every approval, as the phone says it");
-{
+await (async () => {
   const { openMaster: om9 } = await import("../tools/payload.mjs");
   const { w } = await om9();
   const read = (c) => String(w.eval("apClock(" + JSON.stringify(c) + ")")).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
@@ -8240,10 +8255,10 @@ section("v519: the clock on every approval, as the phone says it");
   ok(w.eval("apClock(null)") === "" && w.eval("apClock({id:'y'})") === "", "no committed draft yet prints nothing");
   ok(/reached the phone in 9 min/.test(read({ ...c, liveAt: "2026-09-08T04:08:40.000Z" })), "past two minutes it says minutes");
   try { w.close(); } catch (e) { }
-}
+})();
 
 section("v521: the fold as one call");
-{
+await (async () => {
   const F = await import("../tools/foldcall.mjs");
   const ids = ["2099-01-01T00:00:00.001Z"];
   const good = { version: "v999", title: "ONE UNIT TO A REGULAR", notes: ["<b>ONE ROW.</b> A paragraph that says what was folded and what the inventory did, at length enough."],
@@ -8304,10 +8319,10 @@ section("v521: the fold as one call");
   ok(good9.code === 0 && row9 && /RM 130/.test(row9.note) && after9.QUEUE_COMMITTED === id9, "a good reply folds the row into the book with its note and moves the watermark");
   ok(existsSync(FD9) && JSON.parse(rf9(FD9, "utf8")).ids[0] === id9 && new RegExp('const evolution=\\[\\{"v":"' + dd.version.next + '"').test(rf9(M9, "utf8")), "names the id in _folded.json and stamps the master with the next version");
   rm9(dir9, { recursive: true, force: true });
-}
+})();
 
 section("v522: the gate before the deploy, the suite after the phone is live");
-{
+await (async () => {
   const G = await import("../tools/gate.mjs");
   const ci = readFileSync(join(REPO, ".github", "workflows", "ci.yml"), "utf8");
   const ciChecks = [...ci.matchAll(/run: node (tools\/[a-z-]+\.mjs) --check/g)].map((m) => m[1]);
@@ -8383,10 +8398,10 @@ section("v522: the gate before the deploy, the suite after the phone is live");
      && /deskWrangler\(\["kv", "key", "get"/.test(pubSrc), "both desk-store writes in the publish go through deskPut, which reads the key back");
   ok(/if: always\(\) && steps\.suite\.outcome == 'failure'/.test(wf) && /--refused-note "suite:\$v"/.test(wf), "a suite failure is written where the phone shows refusals, under a synthetic id");
   ok(!/\n\s+npm test\n[\s\S]*?- name: Deploy\n/.test(wf.slice(wf.indexOf("- name: Fold\n"))), "and nothing runs the suite between the fold and the deploy");
-}
+})();
 
 section("v524: roster-only parties on the phone");
-{
+await (async () => {
   const { openMaster: omB } = await import("../tools/payload.mjs");
   const bkB = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
   /* v610: EVERY ASSOCIATE HOLDS AN -R ACCOUNT NOW, so the book no longer offers one without. The state
@@ -8433,10 +8448,10 @@ section("v524: roster-only parties on the phone");
   const today = String(w.eval("TODAY.toISOString().slice(0,10)"));
   ok(!D.no && D.pushed && D.q && D.q.party === anyCust && D.q.date === today, "a moved order with a blank date is queued dated today: " + (D.no || JSON.stringify(D.q)));
   try { w.close(); } catch (e) { }
-}
+})();
 
 section("v525: reject means discard, with re-enter, on the phone");
-{
+await (async () => {
   const { openMaster: omC } = await import("../tools/payload.mjs");
   const { w } = await omC();
   const seed = (p) => JSON.parse(String(w.eval("JSON.stringify(apReenterSeed(" + JSON.stringify({ id: "x", entry: { payload: p } }) + "))")));
@@ -8448,10 +8463,10 @@ section("v525: reject means discard, with re-enter, on the phone");
   const gone = JSON.parse(String(w.eval("(function(){queue=[{at:'a1',type:'SELL'},{at:'a2',type:'SELL'},{at:'a3',type:'SELL'}];var n=qForgetAt('a2');return JSON.stringify({n:n,left:queue.map(function(q){return q.at;})});})()")));
   ok(gone.n === 1 && gone.left.join() === "a1,a3", "the device drops its own copy of the rejected entry and keeps the rest");
   try { w.close(); } catch (e) { }
-}
+})();
 
 section("v526: the replay question, asked on the phone");
-{
+await (async () => {
   const { plan: planD } = await import("../tools/fold.mjs");
   const { draftRow: draftD } = await import("../src/drafter.js");
   const bkD = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
@@ -8485,10 +8500,10 @@ section("v526: the replay question, asked on the phone");
   const named = bkD.sales.find((r) => r.rid === yes.second);
   ok(!yes.no && yes.pushed && named && named.customer === real.customer && named.date === real.date && +named.total === +real.total && +named.qty === +real.qty, "with the answer yes it is queued marked second, naming a twin row on the book: " + (yes.no || String(yes.second)));
   try { w.close(); } catch (e) { }
-}
+})();
 
 section("v527: borrow and lend on the phone");
-{
+await (async () => {
   const { draftRow: draftL } = await import("../src/drafter.js");
   const { plan: planL, apply: applyL } = await import("../tools/fold.mjs");
   const bkL = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
@@ -8534,10 +8549,10 @@ section("v527: borrow and lend on the phone");
   ok(!L2.no && L2.pushed && L2.q.type === "LEND" && L2.q.payload.direction === "out" && /Lend/.test(L2.card), "and a lending the other way");
   await new Promise((r) => setTimeout(r, 200));   /* let the record's own save answer before the desk closes */
   try { w.close(); } catch (e) { }
-}
+})();
 
 section("v528: the name on the phone, filed encrypted before the ID is queued");
-{
+await (async () => {
   const { mergeBio } = await import("../tools/pull-vault.mjs");
   const { vaultDecrypt: vdec } = await import("../tools/seed-vault.mjs");
   const m = mergeBio({ bio: { "CA1-X": { raw: "Kept (Here)" }, "CB2-Y": { raw: "" } } }, { "CA1-X": "New (There)", "CB2-Y": "Filled (Now)", "CC3-Z": "Added (Place)", "CD4-W": "" });
@@ -8658,10 +8673,10 @@ section("v528: the name on the phone, filed encrypted before the ID is queued");
   ok(!F.no && qF.q.some((x) => x.payload.code === "CZ5-PAR-Gen" && x.payload.kind === "bucket") && !qF.posts.some((p) => /vault$/.test(p.u)), "a bucket registers without a name and touches no vault, under its associate's -Gen (v587): " + JSON.stringify(qF.q.map((x) => x.payload.code)));
   await new Promise((r) => setTimeout(r, 200));
   try { w.close(); } catch (e) { }
-}
+})();
 
 section("v532: a re-keyed party reads back as the correction it was");
-{
+await (async () => {
   const { openMaster: omK } = await import("../tools/payload.mjs");
   const { w } = await omK();
   const claims = (row, dir) => JSON.parse(String(w.eval("JSON.stringify(modClaims(" + JSON.stringify(row) + "," + JSON.stringify(dir) + "))")));
@@ -8676,7 +8691,7 @@ section("v532: a re-keyed party reads back as the correction it was");
   const odd = claims({ ...sale, mod: "corrected on 2026-08-26: colour red to blue" }, "SELL");
   ok(odd[0].verdict === "unknown", "a field no correction may set is still unknown");
   try { w.close(); } catch (e) { }
-}
+})();
 
 const FLOOR_ASSERTIONS = 1330, FLOOR_SECTIONS = 97;   /* stale records skipped: 1334 everywhere, 1335 here */
 ok(pass + fail - offMachine >= FLOOR_ASSERTIONS,
@@ -8686,7 +8701,7 @@ ok(sections >= FLOOR_SECTIONS,
 
 /* ---- 08 Sep 2026: the audit, one assertion per fix, each proved red on the code it replaced ---- */
 section("08 Sep 2026: the audit fixes");
-{
+await (async () => {
   const { draftRow, costFor, runDrafter } = await import("../src/drafter.js");
   const { plan: planA, apply: applyA, applyAmend: amendA } = await import("../tools/fold.mjs");
   const PE = (await import("../engine/pricing.mjs")).default;
@@ -8949,10 +8964,10 @@ section("08 Sep 2026: the audit fixes");
     }
     try { w.close(); } catch (e) { }
   }
-}
+})();
 
 section("v549: the Sourcing tab describes the lot he has");
-{
+await (async () => {
   /* The section used to be THE NEXT LOT, AS STATED: a hand-typed target date, and a traffic light
      that read `daysToTarget - daysOfCover`, so a date already PAST turned the card green. It went
      green because the plan had failed. currentLot takes the lot outlook's rows as an argument, so
@@ -9009,10 +9024,10 @@ section("v549: the Sourcing tab describes the lot he has");
     ok(/The current lot/.test(txt), "the tab leads on the current lot");
     ok(!/Lands in time|Stated lot|Gap to cover|Pull it forward/.test(txt), "and no card promises a stated next lot");
   } finally { try { w.close(); } catch (e) { } }
-}
+})();
 
 section("v557: a true alarm, and it is scarce enough to mean something");
-{
+await (async () => {
   /* --crim and --rose both pointed at --salt-ember, the identity's third warm accent, so every
      warning was painted in a colour the headings also speak in. And the supplier row lit four
      figures crimson of which none was a fault. Both halves are his instruction of 09 Sep 2026:
@@ -9108,10 +9123,10 @@ section("v557: a true alarm, and it is scarce enough to mean something");
     ok(!off557.claim && !first557(off557.card) && live557.claim && first557(live557.card),
       "a defaulted advance is no claim and never the first call, where the same advance live is the first call: " + JSON.stringify([off557.claim, live557.claim]));
   } finally { try { w.close(); } catch (e) { } }
-}
+})();
 
 section("v567: the tables are warm, the floor is drawn once, and a chart can place its own x");
-{
+await (async () => {
   /* His report of 10 Sep 2026 on three screenshots of the Price view. Each rule below is written
      as the GENERAL claim rather than as a spot-check of the line that was wrong, because the
      twin-series fault is v566's own fix missing its sibling one line down, and a spot-check
@@ -9270,11 +9285,11 @@ section("v567: the tables are warm, the floor is drawn once, and a chart can pla
     ok(cap.indexOf("against its floor and the effective cost") < 0 && /same figure as effective cost/.test(cap),
       "and it stops promising two lines where one is drawn, naming the one figure's three names instead");
   } finally { try { w7.close(); } catch (e) { /* best effort */ } }
-}
+})();
 
 
 section("v570: an associate is appointed from the Enter tab, and the Kind means what it says");
-{
+await (async () => {
   const { plan: plan570, apply: apply570 } = await import("../tools/fold.mjs");
   const { draftRow: draft570 } = await import("../src/drafter.js");
   const { default: PE570 } = await import("../engine/position.mjs");
@@ -9472,11 +9487,11 @@ section("v570: an associate is appointed from the Enter tab, and the Kind means 
       ok(!REC.no && !/vault|name/i.test(JSON.stringify(REC.q)), "and nothing name-shaped rode along with it");
     } finally { try { w570.close(); } catch (e) { /* best effort */ } }
   }
-}
+})();
 
 
 section("11 Sep 2026: the mirror check stops crying wolf, and still catches a real difference");
-{
+await (async () => {
   /* THE FAULT. PRICING.takenAt and OPEN.at are minted by tools/ledger.mjs at the moment it runs,
      so a local extract and CI's re-seed OF THE SAME BOOK differ in them, and `d1.mjs --verify`
      reported D1 INCOMPLETE against every healthy mirror. It is the one tool whose job is to
@@ -9522,10 +9537,10 @@ section("11 Sep 2026: the mirror check stops crying wolf, and still catches a re
   const drafterSrc = readFileSync(join(REPO, "src", "drafter.js"), "utf8");
   ok(/state\s*&&\s*book\.state\.PRICING|state\.PRICING/.test(drafterSrc) && /state\.OPEN/.test(drafterSrc),
      "and the drafter really does read both, so excluding them would have blinded the check");
-}
+})();
 
 section("11 Sep 2026: a rail heading and a rail destination are told apart");
-{
+await (async () => {
   /* HIS REPORT: nothing in the rail said which rows you could tap. .grouplbl and .tab were the
      mono face, uppercase, weight 500 and THE SAME COLOUR, --salt-mist for both, separated by
      1.5px of size and a little tracking. Four axes now carry it, and each is asserted, because
@@ -9568,7 +9583,7 @@ section("11 Sep 2026: a rail heading and a rail destination are told apart");
      && /\{id:'stock',\s*name:'Stock',\s*lead:'inventory'/.test(viewsSrc)
      && /\{id:'price',\s*name:'Pricing',\s*lead:'pricing'/.test(viewsSrc),
      "VIEWS carries the same three names against the same three ids and the same three leads");
-}
+})();
 
 
 /* v618: "11 Sep 2026: the reward hurdles are stated off the board, carry a unit minimum, and oil has none" is retired
@@ -9576,7 +9591,7 @@ section("11 Sep 2026: a rail heading and a rail destination are told apart");
 
 
 section("11 Sep 2026: a count badge counts each thing once, on Today and on Enter");
-{
+await (async () => {
   /* HIS REPORT: the Today badge counted a breach and the rule row naming it as two things, and the
      Enter badge counted one entry twice while it was both queued on the phone and drafted. Both
      states are FORCED here rather than read off the book: whether the live book happens to hold a
@@ -9623,11 +9638,11 @@ section("11 Sep 2026: a count badge counts each thing once, on Today and on Ente
     wB.eval("ORD_OPEN = [{status:'placed'}];");
     ok(rdB("enterCount()") === 3, "and a placed customer order adds one of its own");
   } finally { try { wB.close(); } catch (e) { /* best effort */ } }
-}
+})();
 
 
 section("11 Sep 2026: Self-use or loss, Turned away and Follow-up leave the Enter form");
-{
+await (async () => {
   /* HIS INSTRUCTION OF 11 SEP 2026. Self use and loss are read from the counts; a turned-away sale
      is at most something to derive from a cancelled order; a follow-up is not needed here. The three
      modes go, and every row already on the book and every view that reads one stays. The drafter
@@ -9663,11 +9678,11 @@ section("11 Sep 2026: Self-use or loss, Turned away and Follow-up leave the Ente
       "a follow-up left on the book ten days overdue raises no call on Today");
     wX.eval("contacts.pop();");
   } finally { try { wX.close(); } catch (e) { /* best effort */ } }
-}
+})();
 
 
 section("11 Sep 2026: the Demand you could not serve card leaves Customers");
-{
+await (async () => {
   /* HIS CALL OF 11 SEP 2026. With Turned away gone from the Enter form at v581 the card had no writer,
      and the book holds no rows in it, so it could only ever read "Nothing recorded". It goes, with its
      field in the phone payload. The lostDemand rows stay on the book as data, and the drafter keeps its
@@ -9691,11 +9706,11 @@ section("11 Sep 2026: the Demand you could not serve card leaves Customers");
     const codeD = readFileSync(join(REPO, "master", "salt_command.html"), "utf8").split("\n").filter((l) => !/^(const evolution=\[)?\{"v": ?"v/.test(l)).join("\n");
     ok(!/the demand you could not serve/.test(codeD), "and neither the Customers lead nor its description names it");
   } finally { try { wD.close(); } catch (e) { /* best effort */ } }
-}
+})();
 
 
 section("11 Sep 2026: a redemption and a rebate offset reach Approve, and Redeem is one tap");
-{
+await (async () => {
   /* HIS INSTRUCTION OF 11 SEP 2026, and his ruling on the P&L the same day. The Redeem button queued
      entries with no payload, so the drafter refused every one and the next fold cleaned the refusal away.
      Every state here is FORCED: the live book's rewards are the calendar's business, not the test's. */
@@ -9765,11 +9780,11 @@ section("11 Sep 2026: a redemption and a rebate offset reach Approve, and Redeem
     ok(/Redeem/.test(card) && /free to/.test(card) && /settled by the reward/.test(card), "the Approve card reads a redemption as one, free and settled by the reward");
     ok(!/Margin/.test(card), "and not as a sale with a margin");
   } finally { try { wRd.close(); } catch (e) { /* best effort */ } }
-}
+})();
 
 
 section("11 Sep 2026: an associate's reward is offset against their advance automatically, up to 1 unit");
-{
+await (async () => {
   /* HIS INSTRUCTION OF 11 SEP 2026. Every state FORCED: whether any associate holds a free unit and an advance
      on the live book today is the calendar's business. The hook is proved through apLoad itself, with the
      network stubbed, because a test that called autoOffsets directly would stay green with the hook removed. */
@@ -9824,11 +9839,11 @@ section("11 Sep 2026: an associate's reward is offset against their advance auto
   const mN = { version: "vX", sales: bkN.sales, purchases: bkN.purchases, state: { roster: bkN.roster, loans: bkN.loans }, pricing: null };
   const dn = dN({ at: "2099-05-01T00:00:00.001Z", payload: { mode: "amend", kind: "Correction", direction: "SELL", party: tgt.customer, rid: tgt.rid, fields: { total: tgt.total }, date: "2099-05-01" } }, mN);
   ok(/changes nothing/.test(dn.skip || ""), `a Correction that changes nothing is refused rather than drafted (${dn.skip || "drafted"})`);
-}
+})();
 
 
 section("11 Sep 2026: a refused entry is kept, and can be withdrawn");
-{
+await (async () => {
   /* HIS DECISION OF 11 SEP 2026. A refused entry used to vanish at the next fold: the phone cleared it on the
      watermark, and the drafter cleared its refusal on the same watermark. CR3-DAM's redemption went that way.
      Now the phone keeps it, the cloud keeps its refusal while it is queued, and Withdraw is the way out.
@@ -9969,11 +9984,11 @@ section("11 Sep 2026: a refused entry is kept, and can be withdrawn");
       ok(got.stuck === 0 && got.count === 0, `and the kept one is not called stuck (${got.stuck} flagged, ${got.count} counted)`);
     } finally { try { wB.close(); } catch (e) { /* best effort */ } try { rmSync(dir, { recursive: true, force: true }); } catch (e) { /* best effort */ } }
   }
-}
+})();
 
 
 section("11 Sep 2026: Add ID derives the code, and a clash takes more of the name");
-{
+await (async () => {
   /* HIS INSTRUCTION OF 11 SEP 2026. The phone took a typed code; Names & IDs on the laptop already derived
      one. Both derive it now, the same way: C or S, the name's first letter and length, then the place,
      initials for several words and the first three letters for one, TBC when blank for every kind. A
@@ -10031,11 +10046,11 @@ section("11 Sep 2026: Add ID derives the code, and a clash takes more of the nam
     try { offRoster(FIX); } catch (e) { /* best effort */ }
     try { wD.close(); } catch (e) { /* best effort */ }
   }
-}
+})();
 
 
 section("11 Sep 2026: a customer's statement username is minted at registration");
-{
+await (async () => {
   /* HIS INSTRUCTION OF 11 SEP 2026: every customer has a permanent username for the statement. The fold mints
      it with the registration, by the same userFor the statements run uses, and never replaces one. */
   const { mintUsernames } = await import("../tools/fold.mjs");
@@ -10062,11 +10077,11 @@ section("11 Sep 2026: a customer's statement username is minted at registration"
   const fm = readFileSync(join(REPO, "tools", "fold.mjs"), "utf8");
   ok(/mintUsernames\(users, staged, res\.folded\)/.test(fm) && /writeFileSync\(USERS, usersJson\(users\)\)/.test(fm),
     "and the fold's run mints after a fold that took, and writes the file in the one format");
-}
+})();
 
 
 section("11 Sep 2026: a loan can be cash as well as salt");
-{
+await (async () => {
   /* HIS RULING OF 11 SEP 2026: borrow and lend in salt or in cash, a loan repaid in what was lent. A cash loan is
      ringgit that changed hands: the drafter drafts it with no units, the fold appends it and moves no inventory,
      and while it is open it moves the cash flow and nothing in the profit and loss. */
@@ -10133,11 +10148,11 @@ section("11 Sep 2026: a loan can be cash as well as salt");
     ok(Math.abs(withSettled - withOut) < 0.005, `and a settled one moves it neither way (${withOut} to ${withSettled})`);
     ok(rdC("loanOutUnits()+loanInUnits()") === 0, "and no cash loan counts as units anywhere");
   } finally { try { wC.close(); } catch (e) { /* best effort */ } }
-}
+})();
 
 
 section("12 Sep 2026: a queued loan counts once, however often the desk redraws");
-{
+await (async () => {
   /* THE OVERLAY REBUILT EVERY LIST BUT ONE. Purchases, sales, self-use, lost demand, contacts, the board and the
      refunds are copied back from their snapshots at the start of each pass; loans had no snapshot, so each redraw
      pushed a queued loan again. Found at v589, where a queued cash loan would have grown the cash flow with every
@@ -10153,11 +10168,11 @@ section("12 Sep 2026: a queued loan counts once, however often the desk redraws"
     ok(n.net1 === n.net2, `and the cash flow does not grow with each redraw (${n.net1}, then ${n.net2})`);
     ok(n.a === n.base + 1, `it is the book's own loans and the one queued (${n.base} + 1 = ${n.a})`);
   } finally { try { wO.close(); } catch (e) { /* best effort */ } }
-}
+})();
 
 
 section("12 Sep 2026: a reward offset is priced on the goods, and settles no more than is owed");
-{
+await (async () => {
   /* HIS DIAGNOSIS OF 12 SEP 2026. s139 is one unit at RM 110.00 with a RM 7.50 delivery CS6-BS paid in cash, all on one
      line of RM 117.50. v591's offset priced the unit on the line, took 0.94 of it and settled RM 110.45 against RM 110.00
      owed. offsetFor prices a reward on the goods, as every rate on the desk is struck, and both roads are driven here on
@@ -10189,11 +10204,11 @@ section("12 Sep 2026: a reward offset is priced on the goods, and settles no mor
     const btn = drive("redeemRebate('CZ9-OFF');");
     ok(btn && btn.settledRM === 110 && btn.rebateKg === 1, "and so does the Offset button: " + JSON.stringify(btn));
   } finally { await new Promise((r) => setTimeout(r, 200)); try { wO.close(); } catch (e) { /* best effort */ } }
-}
+})();
 
 
 section("12 Sep 2026: a loan is repaid, in part or in full, in what was lent");
-{
+await (async () => {
   /* HIS RULING OF 11 SEP 2026: a loan is repaid in what was lent. A repayment names its loan by rid; the fold writes
      it on the loan and settles the loan when nothing is left owing; every reader of a loan's size reads what is left.
      Fixture loans throughout, so nothing moves with the real book. */
@@ -10278,14 +10293,14 @@ section("12 Sep 2026: a loan is repaid, in part or in full, in what was lent");
     const cf = rdR("(function(){queue=[];applyOverlay();var base=cashFlow().net;var c=loans.find(function(l){return l.rid==='l902';});c.repaid=[{date:'2099-06-03',rm:150}];return {base:base,after:cashFlow().net};})()");
     ok(Math.abs(cf.after - cf.base - 150) < 0.005, `cash lent out and part repaid takes only what is still owing out of the cash flow (${cf.base} to ${cf.after})`);
   } finally { try { wR.close(); } catch (e) { /* best effort */ } }
-}
+})();
 
 /* ---------------------------------------------------------------------------------------
    HIS COMMENT PASS OF 12 SEP 2026, over the eighteen tab artifacts. Four changes to the desk
    itself, an assertion apiece. Each was proved red against the master and the design layer as
    they stood at 94a2313, before any of the four was made. */
 section("12 Sep 2026: the header redrawn, Today on every date field, the footer and the hand-filed plans gone");
-{
+await (async () => {
   const mH = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
   const cH = readFileSync(join(REPO, "design", "desk.css"), "utf8");
 
@@ -10315,10 +10330,10 @@ section("12 Sep 2026: the header redrawn, Today on every date field, the footer 
   const plansH = mH.slice(mH.indexOf("function tabPlans(){"), mH.indexOf("/* ============ TAB: CHANGELOG"));
   ok(plansH.length > 200 && !/<input/.test(plansH) && !/Filed by hand/.test(plansH),
     "the Whiteboard builder writes no form and nothing to file into");
-}
+})();
 
 section("12 Sep 2026: two Watch cards count only what they say");
-{
+await (async () => {
   /* HIS REPORT OF 12 SEP 2026. "7 recent sales sit under the band floor" listed sales above their floor with a negative
      shortfall, because the filter still used the band formula v280 retired while the evidence printed the ladder's
      floor; and "3 priced sales carry no cost of its own" counted three pending orders, which are not sales and carry
@@ -10358,12 +10373,12 @@ section("12 Sep 2026: two Watch cards count only what they say");
     ok(nc && / no cost of their own$/.test(nc.title), "and says their own of more than one: " + (nc && nc.title));
     ok(nc && !/RM64|RM47/.test(nc.why), "and its reason states no buying rate by hand");
   } finally { try { wW.close(); } catch (e) { /* best effort */ } }
-}
+})();
 
 
 /* ---- The directory never reaches the desk (12 Sep 2026) ----------------------------- */
 section("12 Sep 2026: the leak check reads the master, and can find the directory at all");
-{
+await (async () => {
   const msrc = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
   const led = readFileSync(join(REPO, "tools", "ledger.mjs"), "utf8");
   /* Three real entries were live on the PUBLIC desk: a supplier's name in a script comment
@@ -10402,12 +10417,12 @@ section("12 Sep 2026: the leak check reads the master, and can find the director
   ok(/no real name or place from the directory appears in the extract/.test(planted),
     "while the extract stays green on that same plant, which is exactly why this was missed");
   rmSync(tdir, { recursive: true, force: true });
-}
+})();
 
 
 /* ---- The Enter form's messages read as sentences (12 Sep 2026) --------------------- */
 section("12 Sep 2026: the Enter form's messages are a list, and an empty form carries no status");
-{
+await (async () => {
   const msrc = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
   const dcss = readFileSync(join(REPO, "design", "desk.css"), "utf8");
   /* they borrowed .warnpill, which this layer sets uppercase with letter-spacing */
@@ -10453,12 +10468,12 @@ section("12 Sep 2026: the Enter form's messages are a list, and an empty form ca
     ok(kept === "Recorded something earlier.",
       `but a status on a form with something in it is left alone ("${kept}")`);
   } finally { try { wE.close(); } catch (e) { /* best effort */ } }
-}
+})();
 
 
 /* ---- The delivery is a pass-through, so no figure counts it (12 Sep 2026) ----------- */
 section("12 Sep 2026: a draft's margin is struck on the goods, as its rate already was");
-{
+await (async () => {
   /* His ruling of 12 Sep 2026: the delivery is charged at cost, neither more nor less. It is
      revenue with NO matching cost on the row, so counting it flatters the margin on every
      delivered order, in the one direction these figures exist to catch. s157 is the case: 1
@@ -10493,10 +10508,10 @@ section("12 Sep 2026: a draft's margin is struck on the goods, as its rate alrea
     "and its margin is struck on the goods too");
   ok(/on the goods at \$\{round\(margin, 1\)\}%/.test(dsrc2),
     "and its sentence says so, rather than calling it the order");
-}
+})();
 
 section("v609: a bucket is its associate's own, on the statement, the price list and the site");
-{
+await (async () => {
   /* HIS RULING OF 13 SEP 2026: the bucket is not its own person, but in the account statements it
      appears under the associate. Every check here runs on FORCED state, a fixture associate CX9-AA
      and their bucket CX9-AA-R, so none of it passes merely because the live book cooperates. */
@@ -10568,10 +10583,10 @@ section("v609: a bucket is its associate's own, on the statement, the price list
     ok(wB.ordUsual("CX9-AA", "salt") != null && Math.abs(wB.ordUsual("CX9-AA", "salt") - 140) < 0.01,
       "and the order card's usual rate for them is 140 too");
   } finally { wB.close(); }
-}
+})();
 
 section("v610: every associate is minted with a bucket");
-{
+await (async () => {
   /* HIS RULING OF 13 SEP 2026. The appointment's own road (the plan, the drafter, the preview) is
      held in the v570 section, rewritten there to the new rule; this pins the one answer they read
      and the standing fact on the book. */
@@ -10583,10 +10598,10 @@ section("v610: every associate is minted with a bucket");
   const bare10 = (b10.associates || []).filter((a) => !(b10.roster || []).includes(a + "-R"));
   ok((b10.associates || []).length > 0 && bare10.length === 0,
     "every associate on the book has their bucket on the roster" + (bare10.length ? ", but not " + bare10.join(", ") : ""));
-}
+})();
 
 section("v611: an R2 sale books to the associate's bucket, at entry and on correction");
-{
+await (async () => {
   /* HIS RULING OF 13 SEP 2026: R2 sales are parked under the associate's -R bucket only, and a buyer whose name
      is known is noted, never credited. Every road that books an R2 reads the engine's bookR2: the drafter's
      entry, the fold's correction, the desk's queue branch and its correction preview. Forced fixtures only. */
@@ -10680,10 +10695,10 @@ section("v611: an R2 sale books to the associate's bucket, at entry and on corre
     ok(!!twinB11.fault && /sy612/.test(twinB11.fault) && !twinP11.fault,
       "a resale's replay twin is found in the bucket it books to, where reading the associate's plain code finds nothing");
   } finally { w11.close(); }
-}
+})();
 
 section("v615: who introduced whom is one map, from the row stamps and the book, one level");
-{
+await (async () => {
   /* HIS RULING OF 13 SEP 2026. An introduction is either stamped on the introduced customer's row by an
      R3 entry, or declared in INTRODUCTIONS on the book; introductions() reads both and nothing else may.
      Every check runs on both books, because an introduction is a relationship and not a sale of one
@@ -10718,10 +10733,10 @@ section("v615: who introduced whom is one map, from the row stamps and the book,
     ok(fr15.includes("CX9-ZZ") && !rd15("networkStats().find(function(x){return x.id==='CE4-AD';}).referrals").includes("CX9-ZZ"),
       "a forced declaration reaches the card, and taking it away takes it off");
   } finally { w15.close(); }
-}
+})();
 
 section("v616: an associate earns a whole unit per RM 500 of margin brought, pooled over the whole ledger");
-{
+await (async () => {
   /* HIS RULINGS OF 13 AND 14 SEP 2026. Every state is a FIXTURE: which associate holds how much on the live
      book moves with every fold, and an assertion that read it would pass only while the data cooperated.
      CZ9-AS has an order before 10 Aug, a resale on their -R account, a redemption, an introduced customer
@@ -10778,10 +10793,10 @@ section("v616: an associate earns a whole unit per RM 500 of margin brought, poo
     ok(rq.length === 1 && rq[0].party === "CZ9-AS" && rq[0].qty === 0.5 && rq[0].earned === 1 && rq[0].applied === 0.5,
       "Redeem, unstubbed, offers exactly the balance the rule leaves: " + JSON.stringify(rq));
   } finally { await new Promise((r) => setTimeout(r, 200)); try { w16.close(); } catch (e) { /* best effort */ } }
-}
+})();
 
 section("v617: a departed associate keeps earning, but nothing is redeemed until they return");
-{
+await (async () => {
   /* HIS RULING OF 13 SEP 2026. Every road that hands a reward over asks the same question: the drafter's
      redemption and a correction that would offset a row, and on the desk Redeem, Offset, the automatic
      offset, the card's button and the Today prompt. Fixture parties throughout, and each road is shown
@@ -10833,10 +10848,10 @@ section("v617: a departed associate keeps earning, but nothing is redeemed until
       && /CZ9-GONE/.test(String(w17.eval("JSON.stringify(actions().filter(function(a){return a.kind==='reward';}))"))),
       "once they return, the button, the offset and the Today prompt are all back");
   } finally { await new Promise((r) => setTimeout(r, 200)); try { w17.close(); } catch (e) { /* best effort */ } }
-}
+})();
 
 section("v618: a customer earns as an associate does, and a written-off order earns nobody anything");
-{
+await (async () => {
   /* HIS RULINGS OF 14 SEP 2026. One rule for both sides: a whole unit per RM 500 of margin over the whole
      ledger, the bands, the hurdle and the openings gone; an order never paid counts for no one. Fixture
      parties throughout. CZ9-CU is a customer with an order before 10 Aug, one after, a written-off order and
@@ -10876,10 +10891,10 @@ section("v618: a customer earns as an associate does, and a written-off order ea
     w18.eval("setProd('oil');");
     ok(rd18("customerRewards().length") === 0 && /No reward on this book/.test(String(w18.eval("tabConcentration()"))), "on oil there is no customer table, and the card says why");
   } finally { await new Promise((r) => setTimeout(r, 200)); try { w18.close(); } catch (e) { /* best effort */ } }
-}
+})();
 
 section("v620: a customer's reward covers a lower margin on a sale he marks, at the salt's cost");
-{
+await (async () => {
   /* HIS RULINGS OF 14 SEP 2026, and of 16 Sep for the gap (v652). The gap is the customer's own card price for the size less
      the goods; what is covered is the gap
      or what the balance is worth at cost, whichever is less; the sale records the units and the ringgit; the
@@ -10954,10 +10969,10 @@ section("v620: a customer's reward covers a lower margin on a sale he marks, at 
       && /salt/.test(dR19(e19("CZ9-CV", { coverUnits: 0.5, coverRM: 22 }, "oil"), mir19).skip || ""),
       "and refuses a cover for an associate, a cover missing its ringgit, and one on oil");
   } finally { await new Promise((r) => setTimeout(r, 200)); try { w19.close(); } catch (e) { /* best effort */ } }
-}
+})();
 
 section("v621: a customer holding a whole unit can redeem one, on his word");
-{
+await (async () => {
   /* HIS RULING OF 14 SEP 2026. The Customers card offers a button once a customer holds a whole unit, and a tap takes
      one whole unit: salt through Approve, or an offset against their advance. Under a whole unit there is no button
      and the road refuses. Associates keep their own road, looked for first. Fixtures on the committed book. Each
@@ -10997,10 +11012,10 @@ section("v621: a customer holding a whole unit can redeem one, on his word");
     ok(!d21.skip && d21.row && d21.row.rebate === true && d21.row.qty === 1 && (d21.flags || []).some((f) => /held 2 unit/.test(f)) && !(d21.flags || []).some((f) => /against the/.test(f)),
       "the drafter drafts the customer's redemption as it does an associate's, and raises no over-balance flag: " + (d21.skip || JSON.stringify(d21.flags)));
   } finally { await new Promise((r) => setTimeout(r, 200)); try { w21.close(); } catch (e) { /* best effort */ } }
-}
+})();
 
 section("v623: an associate earns a unit per RM 470, and R3 counts against a hurdle 1.2 times higher");
-{
+await (async () => {
   /* HIS RULINGS OF 14 SEP 2026. The same unit of salt counts once for its customer and again in the R3 of the associate
      who introduced them, so R3 is weighed at 1/1.2 and the associate's figure is RM 470; a customer stays at RM 500.
      Fixture parties on the committed book. Each assertion was proved red by mutation. */
@@ -11035,10 +11050,10 @@ section("v623: an associate earns a unit per RM 470, and R3 counts against a hur
     ok(net23.indexOf("associates " + rd23("rewardRuleTxt('salt','associate')")) >= 0 && net23.indexOf("customers " + rd23("rewardRuleTxt('salt')")) >= 0 && /against a hurdle 1\.2 times higher/.test(net23),
       "What counts states both figures and the R3 hurdle");
   } finally { await new Promise((r) => setTimeout(r, 200)); try { w23.close(); } catch (e) { /* best effort */ } }
-}
+})();
 
 section("v624: every page carries one name, in the rail, across the page and in its heading");
-{
+await (async () => {
   /* HIS INSTRUCTION OF 14 SEP 2026: rename where necessary. A page's label is its name everywhere, no two pages share
      one, and a destination's first page does not repeat the destination's name unless it is the only page. Every page is
      rendered on the running desk and its heading read. Each assertion was proved red by mutation. */
@@ -11060,10 +11075,10 @@ section("v624: every page carries one name, in the rail, across the page and in 
     ok(labels24.overview === "Rules" && labels24.forward === "Next 30 days" && labels24.network === "Associates" && labels24.orders === "Site orders" && labels24.pricing === "Pricing",
       "the five renamed pages carry their new names: " + JSON.stringify({ overview: labels24.overview, forward: labels24.forward, network: labels24.network, orders: labels24.orders, pricing: labels24.pricing }));
   } finally { try { w24.close(); } catch (e) { /* best effort */ } }
-}
+})();
 
 section("v625: a per-product page shows one product's detail, under a switch that carries every product's headline");
-{
+await (async () => {
   /* HIS INSTRUCTION OF 14 SEP 2026: the summary for every product always shows, a switch changes the product, and two
      products' detail never stand on one page. The switch sets the book in view (PROD, through setProdView), the choice
      the single-book pages and the Enter form already share. The rail no longer carries a switch. Each assertion was
@@ -11096,11 +11111,11 @@ section("v625: a per-product page shows one product's detail, under a switch tha
       "a tap on " + other + " shows its detail alone, lights and presses it, and the device remembers it: " + JSON.stringify(after));
     ok(look("pricing").blocks.join() === other, "and the next per-product page opens on " + other + " too, one choice for the desk");
   } finally { try { w25.eval("setProdView('salt');"); } catch (e) { } try { w25.close(); } catch (e) { /* best effort */ } }
-}
+})();
 
 
 section("v622: the rail is two levels, the destinations and the open one's pages");
-{
+await (async () => {
   /* HIS INSTRUCTION OF 14 SEP 2026: two levels at most. The four headings are gone, a destination with one page lists
      nothing under itself and closes its own block, and the Order book opens on a page called Receivables. The rail is
      read in the master's markup, the pages on the running desk, the block in design/desk.css. Each assertion was
@@ -11132,10 +11147,10 @@ section("v622: the rail is two levels, the destinations and the open one's pages
     const people = look("people");
     ok(!people.solo && JSON.stringify(people.subs) === '["Clients","Associates","Coverage"]', "a destination with three pages still lists all three: " + JSON.stringify(people.subs));
   } finally { try { w22.close(); } catch (e) { /* best effort */ } }
-}
+})();
 
 section("v626: the drafter's ADVANCE is the engine's, and a correction is measured as the row will stand");
-{
+await (async () => {
   /* HIS REPORT OF 14 SEP 2026: CS6-BS and CN6-WM each showed a unit on advance. CS6-BS held none and CN6-WM one, on
      30 Aug; the rest was the drafter counting cash alone, on cards built from the row before its correction.
      Fixture rows, no live book. Each assertion was proved red by mutation. */
@@ -11180,10 +11195,10 @@ section("v626: the drafter's ADVANCE is the engine's, and a correction is measur
   ok(!fInKind.some((f) => /SKIP/.test(f)) && paidLine(fInKind).length === 0, "a correction that leaves the quantity alone does not call it the corrected quantity: " + JSON.stringify(fInKind));
   const fLow = fix26({ rid: "z626i", qty: 1, total: 80, cash: 0, settledRM: 80, deliveredQty: 1 }, { total: 70 });
   ok(/under the RM 80 already paid/.test(fLow.join(" ")), "while a total corrected under what was paid in kind is still flagged");
-}
+})();
 
 section("v628: Amend ID re-keys a party through Approve, and the name moves in the vault");
-{
+await (async () => {
   /* HIS INSTRUCTION OF 14 SEP 2026, ON HIS RULINGS OF 11 SEP: a new name or place derives the code again; when it
      differs, the code moves wherever the book holds it, the statement username stays, and history keeps the old
      code. Fixture codes throughout. Each assertion was proved red by mutation. */
@@ -11313,10 +11328,10 @@ section("v628: Amend ID re-keys a party through Approve, and the name moves in t
     const card28 = String(w28.eval("apCard({id:'x',collection:'rename',row:{from:'CZ9-TBC',to:'CZ9-ST',orders:3,lots:0,pairs:[['CZ9-TBC','CZ9-ST'],['CZ9-TBC-R','CZ9-ST-R']]},flags:[],reasoning:''})")).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
     ok(/Amend ID: CZ9-TBC becomes CZ9-ST/.test(card28) && /Orders re-keyed 3/.test(card28) && /CZ9-TBC-R/.test(card28) && /Statement username stays/.test(card28), "the Approve card says what moves: " + card28.slice(0, 160));
   } finally { await new Promise((r) => setTimeout(r, 200)); try { w28.close(); } catch (e) { /* best effort */ } }
-}
+})();
 
 section("v630: the map shades named districts, opens a district's mukim, bandar and pekan, and draws each party as a dot");
-{
+await (async () => {
   /* HIS DECISIONS OF 14 SEP 2026: districts first and the finer areas on a tap, area names shown, each party a dot with no
      name. Fixture parties are forced onto the book so the proof does not lean on today's trade. Proved red by mutation. */
   const A30 = JSON.parse(readFileSync(join(REPO, "geo", "areas.json"), "utf8"));
@@ -11380,10 +11395,10 @@ section("v630: the map shades named districts, opens a district's mukim, bandar 
     ok(rd30("document.querySelector('.sec.on svg').getAttribute('viewBox')") === "0 0 325 390", "on a phone the map is drawn at the width it is shown, taller than wide, so names keep their size");
     Object.defineProperty(w30, "innerWidth", { value: 1024, configurable: true });
   } finally { await new Promise((r) => setTimeout(r, 200)); try { w30.close(); } catch (e) { /* best effort */ } }
-}
+})();
 
 section("v633: a party's place reaches the map on its own, from what is typed at Add ID and Amend ID, or from a tap");
-{
+await (async () => {
   /* HIS DECISION OF 14 SEP 2026: automatic from the typed place. Each wording is tried as an official area name and then in
      GeoNames' hashed place list, a tap placing what neither finds; only codes and points travel. Fixture codes and a fixture
      place list throughout, run through the real tools/gazfetch.mjs; the one real lookup is an official area name, public on
@@ -11575,10 +11590,10 @@ section("v633: a party's place reaches the map on its own, from what is typed at
     await new Promise((r) => setTimeout(r, 200)); try { w31.close(); } catch (e) { /* best effort */ }
     rmSync(tmp31, { recursive: true, force: true });
   }
-}
+})();
 
 section("v634: a defaulted sale is written off, off every reading of what is owed and on every reading of what was lost");
-{
+await (async () => {
   /* HIS INSTRUCTION OF 14 SEP 2026: "Write-off defaulted entries". Since 05 Sep a default was provisioned in full and kept as
      gross owed, so the desk chased it, counted it against the credit cap and offered the party more. A fixture customer with
      three paid orders and one unpaid advance aged past the ladder is read before and after the advance is defaulted: what
@@ -11658,10 +11673,10 @@ section("v634: a defaulted sale is written off, off every reading of what is owe
     const pl34 = String(w34.eval("(function(){switchTab('financials');return document.querySelector('.sec.on').textContent;})()")).replace(/\s+/g, " ");
     ok(/RM [\d,]+ written off, RM [\d,]+ loss allowance on open balances/.test(pl34), "and the Financials line says how much of the impairment is written off: " + (pl34.match(/RM [\d,]+ written off[^I]*/) || [""])[0].slice(0, 90));
   } finally { await new Promise((r) => setTimeout(r, 200)); try { w34.close(); } catch (e) { /* best effort */ } }
-}
+})();
 
 section("v635: the map shades by revenue, margin, units, customers or credit owed, for the product in view");
-{
+await (async () => {
   /* HIS CHOICE OF 14 SEP 2026, THE METRIC SWITCH. Fixture parties are placed in four quiet districts so each metric has a
      different deepest district: revenue in one, margin in another, units and credit in a third, customers counted in a
      fourth. A defaulted advance proves credit owed is what is owed, not what went unpaid. The state is forced, never
@@ -11712,10 +11727,10 @@ section("v635: the map shades by revenue, margin, units, customers or credit owe
       "on credit owed the area owing most takes the step, a written-off advance is owed by nobody, and the switch shows which metric is on: " + JSON.stringify([cre.deep, cre.tips.Rembau.t, cre.tips.Tampin.t, cre.kpi]));
     w35.eval("mapMetric('rev');");
   } finally { await new Promise((r) => setTimeout(r, 200)); try { w35.close(); } catch (e) { /* best effort */ } }
-}
+})();
 
 section("v636: the map reads a month off the slider, a range off two dates, or all time, and plays month by month");
-{
+await (async () => {
   /* HIS CHOICE OF 14 SEP 2026, THE TIME SLIDER. Two fixture customers trade in two quiet districts in two different months,
      and a third owes on an August order, so each period shades a different district. The player's timer is caught rather
      than waited on, and ticked by hand. The state is forced, never found. Each assertion was proved red by mutation. */
@@ -11780,10 +11795,10 @@ section("v636: the map reads a month off the slider, a range off two dates, or a
     ok(!end.play && end.from === all.months[all.months.length - 1] + "-01", "played through, it stops on the last month: " + JSON.stringify(end));
     w36.eval("MAP_FROM=null;MAP_TO=null;MAP_PLAY=null;");
   } finally { await new Promise((r) => setTimeout(r, 200)); try { w36.close(); } catch (e) { /* best effort */ } }
-}
+})();
 
 section("v637: a tap drills into a district or an area: its figure, share, rank, trend by month and parties");
-{
+await (async () => {
   /* HIS CHOICE OF 14 SEP 2026, DRILL AND COMPARE. Three fixture customers are sited in two areas of one quiet district, trading
      in two months, so the district's panel, each area's panel, the ranks, the shares and the trend bars all have known
      answers. The tap is dispatched on the drawn area itself. The state is forced, never found. Each assertion was proved
@@ -11836,10 +11851,10 @@ section("v637: a tap drills into a district or an area: its figure, share, rank,
     const out = panel("vaultNames={};revealed=false;mapMetric('rev');mapPeriod();mapZoom(null);");
     ok(out === null && rd37("MAP_PICK") === null, "and closing the district puts the pick down with it");
   } finally { await new Promise((r) => setTimeout(r, 200)); try { w37.close(); } catch (e) { /* best effort */ } }
-}
+})();
 
 section("v638: network lines run from each associate to the customers they brought in, in every view, by code");
-{
+await (async () => {
   /* HIS CHOICE OF 14 SEP 2026, NETWORK LINES. A fixture associate in one quiet district has four introductions: two declared
      customers placed in two other districts, one stamped on an order in a fourth, and one with no point at all. The lines
      are read off the drawn SVG, their ends against the ring and the dots. The state is forced, never found. Each assertion
@@ -11879,10 +11894,10 @@ section("v638: network lines run from each associate to the customers they broug
     const hide = read38("PEOPLE.banned.pop();recompute();mapNet();");
     ok(!hide.on && hide.lines.length === 0 && hide.btn === "Show network lines", "and Hide takes every line off again");
   } finally { await new Promise((r) => setTimeout(r, 200)); try { w38.close(); } catch (e) { /* best effort */ } }
-}
+})();
 
 section("v641: the five tiers are the floor and the workbook's four columns, guarded, drawn beside the board and quoted by it since v656");
-{
+await (async () => {
   /* HIS DECISIONS OF 14 AND 15 SEP 2026. Tier I pays the floor, rounded up to the ten; Tiers II to V are his pricing
      workbook's four columns; each tier sits at least a ten over the one below; the rate may not rise with size where a step
      down keeps that. Proved on the master's own TIER_RULE and the inlined engine, on FORCED costs, never on today's, because
@@ -11971,10 +11986,10 @@ section("v641: the five tiers are the floor and the workbook's four columns, gua
       + "return {inPolicy:P.tierRule!=null,moves:px(P)!==px(bare),at:PRICING_ENGINE.board(S,C,P).tiers[0].prices[0]};})()"));
     ok(onBoard.every((x) => x.inPolicy && x.moves), "and the board is the ladder: the policy every quote reads carries the tier rule, and taking it away moves the board " + JSON.stringify(onBoard));
   } finally { await new Promise((r) => setTimeout(r, 200)); try { w40.close(); } catch (e) { /* best effort */ } }
-}
+})();
 
 section("v642: the ladder is Ambassador at the floor and five named tiers, Titanium to Bronze, with Silver new at 2.25");
-{
+await (async () => {
   /* HIS RESTRUCTURE OF 15 SEP 2026. Ambassador pays the floor itself, up to the ten, on his word alone; the tiers Titanium,
      Platinum, Gold, Silver and Bronze are the workbook's columns at 1.0, 1.5, 2.0, 2.25 and 2.5, so 0.5 unit of salt starts
      them at RM50, 60, 70, 80 and 90; a new customer starts at Bronze. Forced costs throughout. Each assertion was proved red
@@ -12008,10 +12023,10 @@ section("v642: the ladder is Ambassador at the floor and five named tiers, Titan
     const amb = walk42("oil", 7.8355, 8.7285, [10])[0];
     ok(amb.prices[0] === 90 && amb.cogs * 1.2 > amb.floor + 0.009, "Ambassador pays the floor up to the ten, RM90 for 10 unit of oil, not the RM100 that COGS plus 20% would ask " + JSON.stringify(amb));
   } finally { await new Promise((r) => setTimeout(r, 200)); try { w42.close(); } catch (e) { /* best effort */ } }
-}
+})();
 
 section("v643: each customer holds a tier for each product, set on the phone and folded, proposed from what they pay and quoted nowhere yet");
-{
+await (async () => {
   /* HIS DECISIONS OF 15 SEP 2026. Each customer's tier comes before any quote reads it, starting nearest what they pay, never
      Ambassador without his word; one for each product since v646, whose own section holds what that added. Fixture customers
      and forced costs throughout; the expected proposal is restated here from the boards and the fixture's own rates. Each
@@ -12088,10 +12103,10 @@ section("v643: each customer holds a tier for each product, set on the phone and
     ok(/Diamond is not a tier/.test(ref43) && /CZ9-GONE is not a customer on the roster/.test(ref43), "the fold refuses a tier the desk does not name, and a code that left the roster: " + ref43);
     ok(/'tierset','label'\)/.test(readFileSync(join(REPO, "migrations", "0010_tier.sql"), "utf8")), "and 0010 rebuilds the draft table once for both the tier and the label to come");
   } finally { await new Promise((r) => setTimeout(r, 200)); try { w43.close(); } catch (e) { /* best effort */ } }
-}
+})();
 
 section("v644: the tiers' multiples run evenly from 1.0 to 2.5, so 1 unit of salt reads his RM100, 110, 130, 150 and 160");
-{
+await (async () => {
   /* HIS DECISION OF 15 SEP 2026. His prices for 1 unit of salt include RM110 and RM130, which the 1.5 and 2.0 columns never
      printed; multiples spaced evenly from 1.0 to 2.5 print both, and keep 0.5 unit at RM50 to RM90. Forced costs. Each
      assertion was proved red by mutation. */
@@ -12106,10 +12121,10 @@ section("v644: the tiers' multiples run evenly from 1.0 to 2.5, so 1 unit of sal
     ok(one[0].cogs === 23 && JSON.stringify(one[0].cols) === "[50,60,70,80,90]" && one[1].cogs === 47 && JSON.stringify(one[1].cols) === "[100,110,130,150,160]",
       "on the workbook's COGS, 0.5 unit of salt reads RM50 to RM90 and 1 unit reads his RM100, 110, 130, 150 and 160: " + JSON.stringify(one.map((g) => g.cols)));
   } finally { await new Promise((r) => setTimeout(r, 200)); try { w44.close(); } catch (e) { /* best effort */ } }
-}
+})();
 
 section("v645: Add ID starts a new customer at the tiers chosen, and the fold files them");
-{
+await (async () => {
   /* HIS DECISION OF 15 SEP 2026: a new customer or Add ID includes a starting tier, one for each product since v646. A customer
      and either kind of associate hold them; an end buyer, a bucket and a supplier do not. Driven through the Add ID form with
      the vault and the network stubbed, as v633's section drives it. Each assertion was proved red by mutation. */
@@ -12163,10 +12178,10 @@ section("v645: Add ID starts a new customer at the tiers chosen, and the fold fi
     const ref45 = F45.plan(book45, { ok: true, count: 1, approved: [it45(2, "roster", { code: "CZ9-NEWU", kind: "customer", parent: null, note: null, tiers: { salt: "Diamond" } })] }, null).refused.map((x) => x.why).join(" ");
     ok(/Diamond is not a tier/.test(ref45), "and refuses a registration carrying a tier the desk does not name: " + ref45);
   } finally { await new Promise((r) => setTimeout(r, 200)); try { w45.close(); } catch (e) { /* best effort */ } }
-}
+})();
 
 section("v646: a tier for each product, and a product a customer has never bought is proposed nothing until he sets one");
-{
+await (async () => {
   /* HIS INSTRUCTION OF 15 SEP 2026. Each customer holds a tier for each product, chosen from a dropdown for each and sent
      through Approve. A product they have never bought is proposed nothing and reads not set, and a customer who has bought
      nothing yet is listed so a tier can be set before they do. Fixture customers; each assertion was proved red by mutation. */
@@ -12225,10 +12240,10 @@ section("v646: a tier for each product, and a product a customer has never bough
     ok(ref46.length === 3 && /gold is not a product on this book/.test(ref46[0]) && /names no product/.test(ref46[1]) && /gold is not a product on this book/.test(ref46[2]),
       "and refuses a product not on the book, and a tier entry naming no product: " + ref46.join(" | "));
   } finally { await new Promise((r) => setTimeout(r, 200)); try { w46.close(); } catch (e) { /* best effort */ } }
-}
+})();
 
 section("v651: a customer's price is their tier for each product, and a product with no tier reads price coming soon and cannot be ordered");
-{
+await (async () => {
   /* HIS DECISIONS OF 15 SEP 2026. The tier for the product is a ceiling: its price at each size, held or proposed, lowered by
      their own recent rate to the nearest five, never under the floor; the desk's printed board and the customer's sealed page
      both quote it through the engine's cardPrice. A product with no tier, held or proposed, is not priced: the page says its
@@ -12308,10 +12323,10 @@ section("v651: a customer's price is their tier for each product, and a product 
   const both47 = page47 ? await openPage47({ ...page47, products: [], soon: [{ product: "salt", name: "Salt" }, { product: "oil", name: "Oil" }] }) : null;
   ok(both47 && /Salt\s*Price coming soon\./.test(both47.prices) && /Oil\s*Price coming soon\./.test(both47.prices) && /Ordering opens once your prices are set\./.test(both47.order) && both47.products.length === 0,
     "and with no tier on either product, both read coming soon and ordering waits for the prices to be set: " + JSON.stringify(both47 && both47.order.slice(0, 80)));
-}
+})();
 
 section("v652: a named customer is quoted their own card price everywhere the desk quotes them, the reward cover's gap included");
-{
+await (async () => {
   /* HIS DECISIONS OF 15 AND 16 SEP 2026. cardQuote is the one rule: the approach offer and Today's worth read it through
      nextBest, the reward cover measures its gap against it, and the printed board is it at the shown sizes. A size between
      rungs reads the ladder walked through that size. Fixture customers; each assertion was proved red by mutation. */
@@ -12354,10 +12369,10 @@ section("v652: a named customer is quoted their own card price everywhere the de
     ok(cv52.free > 0 && cv52.c1 !== cv52.board && cv52.under && cv52.under.ask === cv52.c1 && cv52.under.gap === 30 && cv52.at === null,
       "the reward cover measures its gap against their own price, not the board's ask: " + JSON.stringify({ card: cv52.c1, board: cv52.board, gap: cv52.under && cv52.under.gap }));
   } finally { await new Promise((r) => setTimeout(r, 200)); try { w52.close(); } catch (e) { /* best effort */ } }
-}
+})();
 
 section("v655: a customer's own rate is the best of their last four orders, and their tier is proposed at the sizes they buy");
-{
+await (async () => {
   /* HIS DECISIONS OF 16 SEP 2026, off the order book: a sale struck is the best price strikeable with that customer, so their
      card reads the BEST of their last four priced orders where it read the middle one, and the tier proposed is the level
      nearest that rate a unit AT THE SIZES THEY BUY, so a size they never take cannot decide their level. Fixture customers
@@ -12398,10 +12413,10 @@ section("v655: a customer's own rate is the best of their last four orders, and 
     ok(card55.px === Math.min(card55.tier, card55.best) && card55.px > card55.mid,
       "and their card reads the best they have paid, capped by their tier: " + JSON.stringify(card55));
   } finally { await new Promise((r) => setTimeout(r, 200)); try { w55.close(); } catch (e) { /* best effort */ } }
-}
+})();
 
 section("v656: the board is the ladder, so a stranger is quoted Bronze and a stated price decides nothing");
-{
+await (async () => {
   /* HIS DECISION OF 15 SEP 2026, off the pricing workbook. The ask at every printed size is the last of the five levels,
      the one a new customer starts at, on live costs. Tier 1's two stated ends and oil's five typed prices retire with the
      derived ask, and NRV moves to Titanium, the lowest level any customer is quoted, because reading it off the ask would
@@ -12467,11 +12482,11 @@ section("v656: the board is the ladder, so a stranger is quoted Bronze and a sta
       && JSON.stringify(hide56.row.hide) === "[3]" && !Object.keys(hide56.row.prices).length,
       "a queued price is refused and a size taken off the board still folds: " + JSON.stringify([draft56.skip, hide56 && hide56.row]));
   } finally { await new Promise((r) => setTimeout(r, 200)); try { w56.close(); } catch (e) { /* best effort */ } }
-}
+})();
 
 
 section("v659: the label is a subtle mark on their prices, and the greeting is as personal as this site can be");
-{
+await (async () => {
   /* HIS INSTRUCTION OF 16 SEP 2026: "The label to them is a very subtle tier level, in symbol and colour (for each tier),
      marked in the pricing. But each user will be greeted as personally as possible when they log in."
      A symbol and a colour beside each product, because a level is held per product; the level is NEVER NAMED in the page,
@@ -12547,10 +12562,10 @@ section("v659: the label is a subtle mark on their prices, and the greeting is a
     { customer: "CZ9-SN", product: "oil", date: "2026-05-05", qty: 10, total: 230, cash: 230, deliveredQty: 10, deliveredOn: "2026-05-05" }];
   ok(PL59.since(s59, "CZ9-SN") === "2026-04-05" && PL59.since(s59, "CZ9-NOBODY") === null,
     "the month is their first PRICED order, so a cancelled, a defaulted and an award with no cash are not it: " + PL59.since(s59, "CZ9-SN"));
-}
+})();
 
 section("v660: a card is rounded DOWN to the ten, so it is never above what the customer pays");
-{
+await (async () => {
   /* HIS INSTRUCTION OF 16 SEP 2026: "round down such that it is as close as possible to their current rate, and never
      higher, to the nearest 10". The rule read the NEAREST five, which rounds up as often as down: measured over all 432
      priced cells on the salt book, 63 sat RM1 to RM2 above the customer's own rate. Asserted on the whole live book rather
@@ -12606,10 +12621,10 @@ section("v660: a card is rounded DOWN to the ten, so it is never above what the 
     ok(checked > 40 && offTen === 0,
       "and every price on the customer's own page is on the ten too, over " + checked + " of them across twelve accounts");
   } finally { await new Promise((r) => setTimeout(r, 200)); try { w60.close(); } catch (e) { /* best effort */ } }
-}
+})();
 
 section("v666: each customer has a profile on each product, read off their own orders, and it prices nothing yet");
-{
+await (async () => {
   /* HIS DECISIONS OF 16 SEP 2026. Frequent is two orders a month, small is half a unit or one, loyal is six orders with the
      last inside thirty days, buying bigger is four in ten at three units or more, rare is under one a month or nothing for
      sixty days, and late is twice past the ten-day credit term. Fixture customers dated off the desk's own TODAY, so every
@@ -12684,10 +12699,10 @@ section("v666: each customer has a profile on each product, read off their own o
       && snap61.profileOf["CZ9-OFT"].salt.name === pf["CZ9-OFT"].name && snap61.profileRule && snap61.profileRule.lateTimes === 2,
       "and the pricing snapshot carries the desk's own profile and rule: " + JSON.stringify(snap61.profileOf && snap61.profileOf["CZ9-OFT"]));
   } finally { await new Promise((r) => setTimeout(r, 200)); try { w61.close(); } catch (e) { /* best effort */ } }
-}
+})();
 
 section("v670: a customer's level can differ by the size of the order, read band by band in one place");
-{
+await (async () => {
   /* HIS DECISIONS OF 16 SEP 2026. A tier is one level, or a band set {small, mid, big} cut at one unit and three, the book's own
      quartiles. The engine's levelAt turns a size into a level for the desk, the customer's price list and the fold alike. No
      band set exists on the book at this version, so every customer is quoted exactly as before; the rules that propose band
@@ -12748,10 +12763,10 @@ section("v670: a customer's level can differ by the size of the order, read band
     ok(card67 && card67.sel === "__bands" && /small Titanium, mid Gold, big Silver/.test(card67.text) && card67.queued === 0,
       "the Tiers card shows the band set, selects keep the bands, and Set on it queues no clear: " + JSON.stringify(card67));
   } finally { await new Promise((r) => setTimeout(r, 200)); try { w67.close(); } catch (e) { /* best effort */ } }
-}
+})();
 
 section("v671: the proposal moves a level on how a customer buys: late, small, loyal, and sales slowing");
-{
+await (async () => {
   /* HIS RULES OF 16 SEP 2026. Rare and late twice: down a level everywhere. Frequent and small: down a level from three units, and
      NOTHING better on half a unit or a unit, because their own rate covers it (his decision that day). Loyal and buying bigger:
      up a level from three units, never past Platinum. Sales slowed for three days running: every band up a level, never past
@@ -12827,9 +12842,9 @@ section("v671: the proposal moves a level on how a customer buys: late, small, l
     ok(live.rul1 === live.gold1 && live.rul12 === live.silver12 && live.hld12 === live.gold12 && live.silver12 > live.gold12,
       "the rule reaches a proposed customer's live quote, Gold at a unit and Silver at twelve and a half, and leaves a held Gold customer at Gold: " + JSON.stringify(live));
   } finally { await new Promise((r) => setTimeout(r, 200)); try { w71.close(); } catch (e) { /* best effort */ } }
-}
+})();
 section("v672: the word he banned lives on only in the dated records");
-{
+await (async () => {
   /* v672: HIS RULE OF 24 AUG 2026 BANS ONE WORD IN EVERY FORM, on every surface, comments included, and it had come back: in
      the Pricing warning for a board whose Tier 1 costs more than its Tier 2, in 20 comments (one of them the pricing engine's),
      in nine lines of this file and in three of the docs. The master's evolution array, master/changelog.json and the ledger's
@@ -12857,10 +12872,10 @@ section("v672: the word he banned lives on only in the dated records");
   ok(["engine/pricing.mjs", "src/worker.js", "stmt/page.js", "tools/foldcall.mjs", "docs/DESK.md", "design/desk.css"].every((f) => files.includes(f)),
     `the scan reads the master and the built desk outside their evolution, this file, and every module, doc and stylesheet behind them (${files.length} files)`);
   ok(hits.length === 0, "the word he banned appears nowhere outside the dated records: " + hits.slice(0, 6).join(" | "));
-}
+})();
 
 section("v674: the three headings that called the goods stock now call them inventory (hard rule 5)");
-{
+await (async () => {
   /* HIS COPY RULE OF 11 SEP 2026. The goods are INVENTORY in copy; STOCK is the rail's
      destination. Three headings still carried the rail's word for the goods and rule 5 named
      them: Spent on stock and Stock behind it on Financials, Stock reconciliation on On hand.
@@ -12881,9 +12896,9 @@ section("v674: the three headings that called the goods stock now call them inve
   ok(stale.length === 0, "and not one of them still says stock" + (stale.length ? ": " + stale.join(", ") : ""));
   ok(desk.includes('data-s="stock">Stock<') && desk.includes("name:'Stock'"),
      "while the rail's own destination still reads Stock, which is what the rule asks for");
-}
+})();
 section("v675: a customer's order wakes the phones that asked for orders, within a minute");
-{
+await (async () => {
   /* HIS REPORT OF 16 SEP 2026: an order came in on the statements site and nothing told him. The live
      store showed the nudge HAD fired and marked it, with no subscription to wake: the switch left with
      the phone app at v387. These drive the chain from a placement to the request at a push service
@@ -12999,9 +13014,9 @@ section("v675: a customer's order wakes the phones that asked for orders, within
     ok(sent.some((x) => x.path === "push/unsubscribe" && x.body.endpoint === "https://push.example/desk") && subN === null && /alerts are off/.test(box.textContent),
       "and Turn off removes it on the Worker and in the browser: " + box.textContent);
   } finally { await new Promise((r) => setTimeout(r, 200)); try { w75.close(); } catch (e) { /* best effort */ } }
-}
+})();
 section("v677: Customers is Network, Who buys is Clients, Associates stays, and Map is Coverage");
-{
+await (async () => {
   /* HIS INSTRUCTION OF 17 SEP 2026. Names only: the ids are the addresses, so #concentration and #map still open the
      pages. Read off the desk as drawn: the rail, each page's heading, and the two lines of the board card that send him
      to where a tier is set. */
@@ -13023,9 +13038,9 @@ section("v677: Customers is Network, Who buys is Clients, Associates stays, and 
     ok(/set on Clients/.test(card) && !/Customers/.test(card) && /set one on Clients\./.test(empty),
       "the board card sends him to Clients to set a tier: " + JSON.stringify(empty));
   } finally { try { w77.close(); } catch (e) { /* best effort */ } }
-}
+})();
 section("v678: Kuala Lumpur is shaded by its eleven constituencies, and a point in it is named by them first");
-{
+await (async () => {
   /* HIS DECISION OF 17 SEP 2026. ADM3 gave the territory ten coarse areas where thirty of the desk's parties stand; its
      areas are the federal constituencies of the 2018 delimitation, from MECo (CC0). Read off the desk's own AREAS and
      areaOf with the real geometry, and off Coverage as drawn with Kuala Lumpur opened. */
@@ -13059,9 +13074,9 @@ section("v678: Kuala Lumpur is shaded by its eleven constituencies, and a point 
     ok(/by constituency in Kuala Lumpur/.test(drawn.lead) && /MECo/.test(drawn.text) && /CC0/.test(drawn.text),
       "the lead says constituency and the credit names MECo and its licence: " + JSON.stringify(drawn.lead.slice(0, 80)));
   } finally { try { w78.close(); } catch (e) { /* best effort */ } }
-}
+})();
 section("v679: a place is its locality then where that is: the code from the locality, the locality with the point");
-{
+await (async () => {
   /* HIS INSTRUCTION OF 17 SEP 2026: "BAN is Bangsar, KL. AMP is Ampang, KL. SA is Setia Alam, SG", with Amend IDs to follow.
      The code is made from the words before the first comma, the locality rides as the third element of a party's point
      through Add ID, Amend ID and the vault road, the drafter checks it, and a comma part naming a district or a state
@@ -13108,9 +13123,9 @@ section("v679: a place is its locality then where that is: the code from the loc
     "a place entry keeps the locality beside its point, trimmed: " + (kept.skip || JSON.stringify(kept.row)));
   const bad = [[3.13, 101.67, "<b>Qqq</b>"], [3.13, 101.67, ""], [3.13, 101.67, "x".repeat(61)], [3.13, 101.67, 7], [3.13, 101.67, "Qqq", "more"]].map((g) => dr79(en79(g), mir79).skip || "");
   ok(bad.every((x) => /not in Malaysia/.test(x)), "markup, an empty or overlong locality, a number there or a fourth element refuses the entry: " + JSON.stringify(bad));
-}
+})();
 section("v680: where each party is, in words, for everyone: locality, area, district");
-{
+await (async () => {
   /* HIS INSTRUCTION OF 17 SEP 2026: the location of each customer includes the locality and the district, where available,
      for everyone. The localities are filed beside each point in PLACED (38 from the directory's recorded places at the
      points the parties already stood at, and his three at new points); Coverage's party table reads them through whereOf.
@@ -13144,9 +13159,9 @@ section("v680: where each party is, in words, for everyone: locality, area, dist
     ok(tab && JSON.stringify(tab.head.slice(0, 2)) === '["Party","Where"]' && tab.where.length > 0 && tab.where.every((x) => /Kuala Lumpur$/.test(x)) && tab.where.some((x) => x.split(", ").length === 3),
       "Coverage's party table for Kuala Lumpur has a Where column, each reading down to the district and the localities filed: " + JSON.stringify(tab));
   } finally { try { w80.close(); } catch (e) { /* best effort */ } }
-}
+})();
 section("v681: Selangor and Negeri Sembilan are shaded by their constituencies too");
-{
+await (async () => {
   /* HIS INSTRUCTION OF 17 SEP 2026, "do the same for Selangor and Negeri Sembilan". Their areas are their federal
      constituencies of the 2018 delimitation, from the same pinned MECo file, each filed under the district holding its
      centre; ADM3's mukim, bandar and pekan are gone from every core district. Read off AREAS and Coverage as drawn. */
@@ -13173,9 +13188,9 @@ section("v681: Selangor and Negeri Sembilan are shaded by their constituencies t
     ok(/^Petaling Jaya, [A-Z][a-z]+( [A-Z][a-z]+)*, Petaling$/.test(where[0]) && where[1] === "Nilai, Seremban",
       "a Selangor party and a Negeri Sembilan party read their constituency, named once where it is the locality: " + JSON.stringify(where));
   } finally { try { w81.close(); } catch (e) { /* best effort */ } }
-}
+})();
 section("v682: at Add ID and Amend ID the location is chosen from a list, and a location chosen carries its own point");
-{
+await (async () => {
   /* HIS INSTRUCTION OF 17 SEP 2026: "I want all the location listed as a list, so I can choose the location", holding his
      own areas. geo/placelist.json is his KL map's neighbourhoods and his Selangor sub-districts at GeoNames' points; the
      desk adds every filed locality and every constituency, each read as a party's location is. Fixture codes and places
@@ -13215,6 +13230,20 @@ section("v682: at Add ID and Amend ID the location is chosen from a list, and a 
     const typed = rd82("(function(){WB_GEO={text:'',point:null,how:''};wbGeoPreview('Zzqx Nowhere',[],[]);return WB_GEO.how;})()");
     ok(typed === "looking", "a place typed that is not on the list is still looked up as before: " + typed);
   } finally { await new Promise((r) => setTimeout(r, 200)); try { w82.close(); } catch (e) { /* best effort */ } }
-}
+})();
+section("The suite frees its windows: every section's body is its own async function");
+await (async () => {
+  /* the note at section() says why: a bare block at the top level keeps its desk window to the end of the run */
+  const lines = readFileSync(fileURLToPath(import.meta.url), "utf8").split("\n");
+  const heads = lines.map((l, i) => [l, i]).filter(([l]) => l.startsWith("section("));
+  const bare = heads.filter(([, i]) => (lines.slice(i + 1).find((l) => l.trim() !== "") || "") !== "await (async () => {").map(([l]) => l.slice(9, 70));
+  ok(heads.length >= 186 && bare.length === 0 && !lines.some((l) => l === "{"),
+    "every section runs in its own async function, so a closed window can be freed: " + heads.length + " sections, bare: " + JSON.stringify(bare));
+  const { openMaster: omW } = await import("../tools/payload.mjs");
+  const { w: wW } = await omW();
+  const open = !!wW.document;
+  section("The suite closes a section's windows when the next section starts");
+  ok(open && wW.document === undefined, "a desk window the section before left open is closed: " + JSON.stringify({ open, closed: wW.document === undefined }));
+})();
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
 process.exit(fail ? 1 : 0);

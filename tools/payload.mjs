@@ -36,6 +36,7 @@ const MASTER = process.env.SALT_MASTER || DEFAULT_MASTER;
    of the global scope, and the suite renders every part through it. Two copies of this
    harness would drift, and a build that priced a lot against a subtly different DOM is
    exactly the class of fault this repo keeps writing tests about. */
+export const opened = new Set();   // every window opened here; the suite closes a section's when it ends
 export async function openMaster(masterPath = MASTER) {
   const html = readFileSync(masterPath, "utf8");
 
@@ -66,10 +67,13 @@ export async function openMaster(masterPath = MASTER) {
   });
 
   const w = dom.window;
+  opened.add(w);
+  /* resolved with nothing, and the fallback cleared: resolved with the load event, the eight-second
+     timer held the event, the event its window, and so a closed window for eight seconds (17 Sep 2026) */
   await new Promise((r) => {
     if (w.document.readyState === "complete") return r();
-    w.addEventListener("load", r);
-    setTimeout(r, 8000);                                  // never hang a build on a stray listener
+    const t = setTimeout(r, 8000);                        // never hang a build on a stray listener
+    w.addEventListener("load", () => { clearTimeout(t); r(); });
   });
   return { dom, w };
 }
