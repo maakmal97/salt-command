@@ -1,5 +1,16 @@
 [
  {
+  "v": "v685",
+  "d": "17 Sep 2026",
+  "t": "FROM 861 TO 1080PX, THE CHART PAIR, THE CALENDAR AND THE LEDGER FIT BESIDE THE RAIL",
+  "n": [
+   "<b>WHAT WAS WRONG:</b> above 860px the rail takes 232px of the window on every screen, and three parts needed more than the column left them. Measured on v684 in Chromium with a mouse, a fresh load at every width from 861 to 1280px: the Pricing chart pair ran past the page column to 959px, the approach calendar on Network to 1027px, and the ledger on The book from 868 to 1033px; the page itself scrolled sideways to 923, 1009 and 1015px.",
+   "<b>THE CHART PAIR</b> takes two columns that may be narrower than the chart each holds, where a plain share would not go under a 330px chart. <b>THE CALENDAR</b> keeps one column up to 1079px, as it did up to 860px, because its three need 760px. <b>THE LEDGER</b> re-flows the same cells onto its narrow rows below 820px of its own width, where it was 600px: every column is its longest entry and none shrinks, so the two-row shape needed 765px on the book as it stands, and the margin is for the book to grow. Nothing is hidden at any width.",
+   "<b>MEASURED AFTER:</b> from 861 to 1280px, all seven destinations, nothing runs past the page column and nothing scrolls sideways. From 560 to 860px nothing moved. All seventeen parts at 1280 and at 375 as a phone read the same pixels as before.",
+   "<b>THE CHECKS:</b> a new section reads the three rules; three reverts each turned it red. v684's calendar check now holds that the fits start no lower than 860px."
+  ]
+ },
+ {
   "v": "v684",
   "d": "17 Sep 2026",
   "t": "ON A DESKTOP THE RAIL STANDS AT EVERY WIDTH; ONLY A TOUCH SCREEN FOLDS IT INTO THE MENU",

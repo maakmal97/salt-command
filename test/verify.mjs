@@ -13264,8 +13264,10 @@ await (async () => {
   /* a standing rail takes 232px from a desktop window's column, so what fitted a phone's 353px has to fit from 860px */
   ok(JSON.stringify(where("h2{white-space:normal;}")) === '["(max-width:860px)"]',
     "a heading wraps from 860px, where a desktop's column is narrower than its window: " + JSON.stringify(where("h2{white-space:normal;}")));
-  ok(JSON.stringify(where(".apwrap,.apside,.apcal{min-width:0;}")) === '["(max-width:860px)"]',
-    "the approach calendar's panels may shrink from 860px too: " + JSON.stringify(where(".apwrap,.apside,.apcal{min-width:0;}")));
+  /* v685 widened the calendar's rule to 1079px; what v684 holds is that it starts no lower than 860 */
+  const fit84 = where(".apwrap,.apside,.apcal{min-width:0;}");
+  ok(fit84.length === 1 && /^\(max-width:(\d+)px\)$/.test(fit84[0]) && +fit84[0].match(/\d+/)[0] >= 860,
+    "the approach calendar's panels may shrink from 860px or wider: " + JSON.stringify(fit84));
   ok(JSON.stringify(where(".apcal{overflow-x:auto;}")) === '["(max-width:860px)"]',
     "and the week scrolls in its own box from 860px: " + JSON.stringify(where(".apcal{overflow-x:auto;}")));
 
@@ -13292,6 +13294,33 @@ await (async () => {
       + "return open+' '+q.length+' '+document.body.classList.contains('navopen');})()"));
     ok(shut === "true 1 false", "a menu left open when the layout stops being a touch screen's closes itself (opened, listened, closed): " + shut);
   } finally { try { mw84.close(); } catch (e) { /* best effort */ } rmSync(tmp84, { force: true }); }
+})();
+section("v685: beside the standing rail, the chart pair, the approach calendar and the ledger fit their column at every width");
+await (async () => {
+  /* Measured on v684 in Chromium with a mouse, a fresh load at every width from 861 to 1280px: above 860px the rail takes
+     232px of the window on every screen, and the Pricing chart pair ran past the page column to 959px, the approach
+     calendar's side panel to 1027px and the ledger from 868 to 1033px; the page itself scrolled sideways to 923, 1009 and
+     1015px. jsdom lays nothing out, so this reads the three rules; the widths were measured in Chromium. */
+  const m85 = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+  const css85 = m85.slice(m85.indexOf("<style>"), m85.indexOf("</style>")).replace(/\/\*[\s\S]*?\*\//g, "");
+  const blocks85 = [], re85 = /@(?:media|container)([^{]*)\{/g;
+  let top85 = "", from85 = 0, mt85;
+  while ((mt85 = re85.exec(css85))) {
+    let d = 1, i = re85.lastIndex;
+    for (; i < css85.length && d; i++) d += css85[i] === "{" ? 1 : css85[i] === "}" ? -1 : 0;
+    blocks85.push({ q: mt85[1].trim(), body: css85.slice(re85.lastIndex, i - 1) });
+    if (mt85.index >= from85) { top85 += css85.slice(from85, mt85.index); from85 = i; }
+  }
+  top85 += css85.slice(from85);
+  const where85 = (s) => blocks85.filter((b) => b.body.includes(s)).map((b) => b.q);
+
+  ok(/(^|[}\s])\.two\{display:grid;grid-template-columns:repeat\(2,minmax\(0,1fr\)\);/.test(top85),
+    "a chart pair's two columns may be narrower than the chart each holds, so the pair never runs past its column");
+  ok(/(^|[}\s])\.apwrap\{display:grid;grid-template-columns:158px 1fr 158px;/.test(top85) && JSON.stringify(where85(".apwrap{grid-template-columns:1fr;}")) === '["(max-width:1079px)"]',
+    "the approach calendar keeps its three columns only from 1080px, where their 760px fit beside the rail: " + JSON.stringify(where85(".apwrap{grid-template-columns:1fr;}")));
+  const narrow85 = where85(".lrow,.lmove,.lhead{grid-template-columns:56px 74px minmax(60px,1fr) 108px;");
+  ok(JSON.stringify(narrow85) === '["ledger (max-width:819px)"]',
+    "the ledger re-flows its same cells below 820px of its own width, above the 765px its two-row shape needed: " + JSON.stringify(narrow85));
 })();
 section("The suite frees its windows: every section's body is its own async function");
 await (async () => {
