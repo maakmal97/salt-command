@@ -1,6 +1,6 @@
 {
- "v": "v685",
- "stamped": "17 Sep 2026, 13:58 KL",
+ "v": "v686",
+ "stamped": "17 Sep 2026, 23:24 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -41,7 +41,7 @@
     "stated": 20
    }
   },
-  "STATED_STOCK": 12.5,
+  "STATED_STOCK": 10.5,
   "COUNT_ON": {
    "salt": "2026-09-16",
    "oil": "2026-09-09"
@@ -4199,6 +4199,20 @@
     "date": "2026-09-17",
     "note": "<b>SALT REDEEMED FREE BY CS6-BS, 1 UNIT, RM48 SETTLED BY THE REWARD ON 17 SEP.</b> Delivered in full 17 Sep, RM0 cash, RM48 settled by the reward, so the row closes on arrival. It carries rebate and goodwill, so on his ruling of 11 Sep 2026 it is booked as cost and not as revenue. The RM48 falls under the RM51 floor for this size and well under the RM160 ask and RM150 ceiling. Costed at RM48 a unit, the inventory's own rate, RM48 on the goods. <b>Flagged:</b> the 1 unit earned and unredeemed, 5 earned against 4 applied, is the desk's word and unchecked here. CS6-BS shows 11 orders, median RM100, range RM11 to RM126.67, nothing outstanding before, 1 unit on credit against a cap of 2, nothing defaulted. Nothing outstanding.",
     "rid": "s171"
+   },
+   {
+    "customer": "CC5-OKR",
+    "qty": 2,
+    "total": 105,
+    "cost": 96,
+    "cash": 105,
+    "handover": "collected",
+    "date": "2026-09-17",
+    "deliveredQty": 2,
+    "deliveredOn": "2026-09-17",
+    "paidOn": "2026-09-17",
+    "note": "<b>SALT SELL DATED 17 SEP, PAID AND COLLECTED IN FULL ON THE DAY.</b> Booked to CC5-OKR, 2 unit for RM105, RM52.50 a unit, no delivery or freight, RM105 cash in and 2 unit moved 17 Sep, so nothing on this row stays open. The total clears the RM101.99 floor for 2 unit narrowly and runs well under the RM300 ask and RM290 ceiling. Costed at RM48 a unit, the inventory's own rate, RM96 on the goods, RM9 margin at 8.6%. <b>Flagged:</b> CC5-OKR pays about RM90 a unit across 5 orders, this is 41.7% below, and the figures confirm the gap without accounting for it. CC5-OKR shows 8 orders, median RM90, range RM80 to RM90, RM90 outstanding before, 1 unit on credit against a cap of 1, nothing defaulted. Nothing outstanding on this row.",
+    "rid": "s172"
    }
   ],
   "contacts": [
@@ -4742,9 +4756,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-09-17T02:55:42.624Z",
+  "QUEUE_COMMITTED": "2026-09-17T15:23:32.747Z",
   "PRICING": {
-   "takenAt": "2026-09-17T06:06:01.785Z",
+   "takenAt": "2026-09-17T15:24:47.949Z",
    "sizes": [
     0.5,
     1,
@@ -4854,15 +4868,15 @@
     "CH4-KS": {
      "salt": "Platinum"
     },
-    "CH6-SET": {
-     "salt": "Gold"
-    },
     "CC5-OKR": {
      "salt": {
       "small": "Titanium",
       "mid": "Titanium",
       "big": "Platinum"
      }
+    },
+    "CH6-SET": {
+     "salt": "Gold"
     },
     "CA5-BAN": {
      "salt": "Gold"
@@ -5349,6 +5363,24 @@
       "lateTwice": false
      }
     },
+    "CC5-OKR": {
+     "salt": {
+      "name": "small and often",
+      "orders": 6,
+      "tenureDays": 70,
+      "sinceLastDays": 0,
+      "perMonth": 2.61,
+      "smallShare": 0.83,
+      "bigShare": 0,
+      "late": 0,
+      "frequent": true,
+      "small": true,
+      "bigger": false,
+      "loyal": true,
+      "rare": false,
+      "lateTwice": false
+     }
+    },
     "CH6-SET": {
      "salt": {
       "name": "small and rare",
@@ -5360,24 +5392,6 @@
       "bigShare": 0,
       "late": 0,
       "frequent": false,
-      "small": true,
-      "bigger": false,
-      "loyal": false,
-      "rare": false,
-      "lateTwice": false
-     }
-    },
-    "CC5-OKR": {
-     "salt": {
-      "name": "small and often",
-      "orders": 5,
-      "tenureDays": 70,
-      "sinceLastDays": 2,
-      "perMonth": 2.17,
-      "smallShare": 1,
-      "bigShare": 0,
-      "late": 0,
-      "frequent": true,
       "small": true,
       "bigger": false,
       "loyal": false,
@@ -5797,15 +5811,15 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0.34146341463414637
+         "v": 0.3333333333333333
         }
        },
        "attrib": 1,
        "shrinkRate": 0.08090642957822836,
        "avgDel": {
-        "n": 149,
-        "kg": 372.7,
-        "mean": 2.5013
+        "n": 150,
+        "kg": 374.7,
+        "mean": 2.498
        }
       },
       "policy": {
@@ -6357,10 +6371,10 @@
      ]
     }
    },
-   "v": "v685"
+   "v": "v686"
   },
   "OPEN": {
-   "at": "2026-09-17T06:06:01.868Z",
+   "at": "2026-09-17T15:24:48.148Z",
    "count": 7,
    "byKey": {
     "CN6-WM|2026-09-17|110": {
@@ -6482,11 +6496,11 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 12.5,
-     "free": 12.5,
+     "onHand": 10.5,
+     "free": 10.5,
      "owedOut": 0,
-     "coverDays": 2.3,
-     "rate": 5.54,
+     "coverDays": 1.8,
+     "rate": 5.68,
      "owedToYou": 582,
      "promised": 8.5,
      "short": 0
@@ -6507,7 +6521,7 @@
     "salt": "2026-09-16",
     "oil": "2026-09-09"
    },
-   "v": "v685"
+   "v": "v686"
   }
  }
 }
