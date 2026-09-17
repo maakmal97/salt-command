@@ -1,5 +1,16 @@
 [
  {
+  "v": "v684",
+  "d": "17 Sep 2026",
+  "t": "ON A DESKTOP THE RAIL STANDS AT EVERY WIDTH; ONLY A TOUCH SCREEN FOLDS IT INTO THE MENU",
+  "n": [
+   "<b>HIS INSTRUCTION OF 17 SEP 2026:</b> on a desktop browser the navigation bar on the left does not collapse. The menu was keyed on the window's width alone, so any desktop window at 860px or narrower lost the rail behind the menu button. It is keyed on a touch screen as well now: with a mouse the rail stands beside the page at every width, and a phone keeps its menu as before.",
+   "<b>WHAT A NARROW DESKTOP WINDOW NEEDED WITH IT.</b> The rail takes 232px from the page, so two fits the phone already had now start at 860px: a section heading wraps, and the approach calendar's panels may shrink. The week grid scrolls in its own box only when the calendar itself is narrower than the week, so a wider one keeps its pop-ups whole. Measured in Chromium with a mouse, no page scrolls sideways from 580 to 860px, nor at 1024 or 1280. Below 580px The book still does, and at 861px Pricing and Network did before this version and still do.",
+   "<b>NOTHING ELSE MOVED:</b> all seventeen parts, at 1280 and at 375 as a phone, read the same pixels before and after. The pixel instrument was wrong for a phone: a full-page capture under touch emulation turns the touch pointer off, so a phone shot now grows the view to the page instead.",
+   "<b>THE CHECKS:</b> a new section reads every rule that folds the rail into the menu for the touch condition, the standing rail's width and hidden brand, and the three fits; eleven reverts each turned it red. The rail width check reads the new condition."
+  ]
+ },
+ {
   "v": "v683",
   "d": "17 Sep 2026",
   "t": "A REWARD UNIT GOES OUT FREE: COST IN, NO REVENUE",

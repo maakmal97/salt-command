@@ -9560,11 +9560,12 @@ await (async () => {
   ok(/color:var\(--salt-mist-light\)/.test(tab), "the tab rests at mist-light");
   ok(/padding:[^;]*\s12px[;}]/.test(tab), "every destination is inset 12px");
 
-  /* THE WIDTH IS THE WIDE DESK'S ONLY. This layer's bare .rail carries no media query and sits
+  /* THE WIDTH IS THE STANDING RAIL'S ONLY. This layer's bare .rail carries no media query and sits
      after v371's drawer block at the same specificity, so from v472 to 11 Sep it silently held
-     the phone drawer at the desk's rail width instead of min(272px,100vw - 28px). */
-  ok(/@media\(min-width:861px\)\{\.rail\{width:\d+px;flex:0 0 \d+px;\}\}/.test(railCss),
-     "the rail's width is scoped to the wide desk");
+     the phone drawer at the desk's rail width instead of min(272px,100vw - 28px). Since v684 the
+     rail stands on the wide desk and on any screen that is not a touch one. */
+  ok(/@media\(min-width:861px\),not all and \(pointer:coarse\)\{\.rail\{width:\d+px;flex:0 0 \d+px;\}\}/.test(railCss),
+     "the rail's width is scoped to wherever it stands, never the drawer");
   const bare = rule(".rail");
   ok(bare !== null && !/width:/.test(bare), "and the unscoped .rail sets no width, so the drawer keeps its own");
 
@@ -13230,6 +13231,43 @@ await (async () => {
     const typed = rd82("(function(){WB_GEO={text:'',point:null,how:''};wbGeoPreview('Zzqx Nowhere',[],[]);return WB_GEO.how;})()");
     ok(typed === "looking", "a place typed that is not on the list is still looked up as before: " + typed);
   } finally { await new Promise((r) => setTimeout(r, 200)); try { w82.close(); } catch (e) { /* best effort */ } }
+})();
+section("v684: on a desktop the rail stands at every width; only a touch screen at 860px or below folds it into the menu");
+await (async () => {
+  /* HIS INSTRUCTION OF 17 SEP 2026, on the desk in a desktop browser: the navigation bar on the left does not collapse. The
+     menu was keyed on the window's width alone, so a desktop window at 860px or narrower lost the rail. jsdom applies no
+     media query, so this reads the rules as the master carries them, both layers; the widths were measured in Chromium
+     with a mouse at 380 to 1280px and a finger at 375, 820 and 1024px. */
+  const m84 = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+  const css84 = m84.slice(m84.indexOf("<style>"), m84.indexOf("</style>")).replace(/\/\*[\s\S]*?\*\//g, "");
+  const blocks = [], re84 = /@(?:media|container)([^{]*)\{/g;
+  let top84 = "", from = 0, mt;
+  while ((mt = re84.exec(css84))) {
+    let d = 1, i = re84.lastIndex;
+    for (; i < css84.length && d; i++) d += css84[i] === "{" ? 1 : css84[i] === "}" ? -1 : 0;
+    blocks.push({ q: mt[1].trim(), body: css84.slice(re84.lastIndex, i - 1) });
+    if (mt.index >= from) { top84 += css84.slice(from, mt.index); from = i; }
+  }
+  top84 += css84.slice(from);
+  const where = (s) => blocks.filter((b) => b.body.includes(s)).map((b) => b.q);
+
+  const MENU = [".navbtn{display:grid", ".shell{display:block", ".rail{position:fixed", ".rail{right:", ".rail{background:var(--salt-pane)", ".rail{top:calc(var(--safetop) + var(--dbtop)"];
+  const menu = MENU.map((s) => [s, where(s)]);
+  ok(menu.every(([, q]) => q.length >= 1 && q.every((x) => /^\((max-width:(860|560)px)\) and \(pointer:coarse\)$/.test(x))),
+    "every rule that folds the rail into the menu is a touch screen's, at 860px or below: " + JSON.stringify(menu));
+  ok(!MENU.some((s) => top84.includes(s)), "and none of them stands outside a media query, where a desktop would read it");
+  ok(JSON.stringify(where(".railbrand{display:none;}")) === '["(min-width:861px),not all and (pointer:coarse)"]'
+    && JSON.stringify(where(".rail{width:212px;flex:0 0 212px;}")) === '["(min-width:861px),not all and (pointer:coarse)"]',
+    "the rail keeps its 212px column and hides its own brand wherever it stands: wide, or any screen but a touch one: "
+    + JSON.stringify([where(".railbrand{display:none;}"), where(".rail{width:212px;flex:0 0 212px;}")]));
+
+  /* a standing rail takes 232px from a desktop window's column, so what fitted a phone's 353px has to fit from 860px */
+  ok(JSON.stringify(where("h2{white-space:normal;}")) === '["(max-width:860px)"]',
+    "a heading wraps from 860px, where a desktop's column is narrower than its window: " + JSON.stringify(where("h2{white-space:normal;}")));
+  ok(JSON.stringify(where(".apwrap,.apside,.apcal{min-width:0;}")) === '["(max-width:860px)"]',
+    "the approach calendar's panels may shrink from 860px too: " + JSON.stringify(where(".apwrap,.apside,.apcal{min-width:0;}")));
+  ok(/\.apwrap\{container-type:inline-size;container-name:apwrap;\}/.test(top84) && JSON.stringify(where(".apcal{overflow-x:auto;}")) === '["apwrap (max-width:479px)"]',
+    "and the week scrolls in its own box only when the calendar itself is narrower than the week, so a wider one keeps its pop-ups whole: " + JSON.stringify(where(".apcal{overflow-x:auto;}")));
 })();
 section("The suite frees its windows: every section's body is its own async function");
 await (async () => {

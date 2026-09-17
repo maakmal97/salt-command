@@ -80,8 +80,9 @@ h1{margin:2px 0 0;font-size:28px;}
    SO THEY ARE IN IT. The bar is sticky, so they are reachable from any scroll position, which
    is what floating them was for in the first place; and they are in the flow, so nothing can
    sit on top of anything. It is one row at every width and adapts by dropping what the layout
-   already provides: above 860px the rail carries the mark and the tabs, so the bar shows the
-   version and the key alone. Below it the mark and the menu appear. Same markup, same page,
+   already provides: where the rail stands beside the page, the bar shows the version and the key
+   alone; where the rail is a menu, a touch screen at 860px or below since v684, the menu button
+   appears. Same markup, same page,
    one surface since v376.
    THE TWO AT THE BOTTOM STAY FLOATING, because the bottom corners carry no content of their own
    and both controls have to be reachable mid-scroll. */
@@ -119,8 +120,8 @@ body.navopen .deskbar .navbtn .nb3{transform:translateY(-5px) rotate(-45deg);}
 .chip.ver{color:var(--gold);border-color:rgba(197,160,89,.42);font-weight:800;letter-spacing:.6px;
   font-variant-numeric:tabular-nums;flex:0 0 auto;}
 /* v537: the brand rides the bar at every width (his instruction, 08 Sep 2026); the rail's own
-   brand shows only where the rail is a floating menu */
-@media(min-width:861px){.railbrand{display:none;}}
+   brand shows only where the rail is a floating menu, which since v684 is a touch screen at 860px or below */
+@media(min-width:861px),not all and (pointer:coarse){.railbrand{display:none;}}
 /* v333: ON A PHONE THE STRIP WRAPS BETWEEN CHIPS, NEVER INSIDE ONE. Four chips in a 353px row
    were each breaking mid-phrase into three lines, so the date read as a column and the cloud
    badge as a stack. Two lines on a phone, one on a desk. */
@@ -189,7 +190,15 @@ h2 .rule{flex:1;height:1px;background:linear-gradient(90deg,var(--acc) -40%,var(
 .appop td:last-child{text-align:right;color:var(--ink);}
 .appop .apact{font-size:11px;line-height:1.5;margin-top:7px;padding-top:7px;border-top:1px solid var(--line);color:var(--mut);}
 .appop .aphl{font-size:9px;letter-spacing:.8px;text-transform:uppercase;color:var(--dim);margin-top:8px;}
-@media(max-width:860px){.apwrap{grid-template-columns:1fr;}.apday{min-height:52px;}.appop{width:200px;}}
+@media(max-width:860px){.apwrap{grid-template-columns:1fr;}.apday{min-height:52px;}.appop{width:200px;}
+  /* CUSTOMERS OVERFLOWED THE PAGE BY 77px, and it was the one tab that did. The approach
+     calendar's side panel is 158px in a three-column grid; the grid collapses to one column
+     here, but the panel kept sizing to its content and came out at 441px on a 375px screen.
+     A grid or flex child defaults to min-width:auto, which refuses to shrink below its
+     content, and that is what carried the page sideways. v684 moved this from 560px to here,
+     because a desktop window at 640px with the rail standing gives the calendar 372px. */
+  .apwrap,.apside,.apcal{min-width:0;}
+  .apside{overflow-wrap:break-word;}}
 table{width:100%;border-collapse:collapse;font-size:13px;}
 th,td{padding:8px 10px;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;}
 thead th{position:sticky;top:0;background:#0b1215;color:var(--gold);font-size:10px;letter-spacing:.5px;text-transform:uppercase;border-bottom:1px solid var(--line);}
@@ -871,9 +880,8 @@ select{width:100%;border:1px solid var(--line);border-radius:8px;padding:8px 9px
 }
 @media(max-width:860px){.kpis,.kpis.k2,.kpis.k3,.kpis.k4,.kpis.k5,.kpis.k6{grid-template-columns:repeat(2,minmax(0,1fr));}.two,.qrow{grid-template-columns:minmax(0,1fr);}
   .chartbox{height:260px;}.chartbox.tall{height:340px;}
-  .shell{flex-direction:column;gap:12px;}
-  /* THE STRUCTURAL CAP, and it belongs HERE rather than at 560 because this is the line
-     where .shell becomes a column and .main and .rail become flex items that grow to
+  /* THE STRUCTURAL CAP, and it belongs HERE rather than at 560 because this was the line
+     where .shell became a column and .main and .rail flex items that grow to
      their own content. Without it the desk scrolled sideways to 1649px inside a 375px
      screen, and every heading and paragraph below merely filled the width it was handed,
      which is why they all measured wide and none of them was the cause. */
@@ -885,8 +893,8 @@ select{width:100%;border:1px solid var(--line);border-radius:8px;padding:8px 9px
   input,select,textarea{max-width:100%;min-width:0;}
   svg{max-width:100%;height:auto;}
   /* v371: the rail is no longer laid flat here. It stays upright and hides behind a
-     button; everything it needs is in THE RAIL ON A NARROW SCREEN, further down. */
-  .shell{display:block;}}
+     button; everything it needs is in THE RAIL ON A NARROW SCREEN, further down, which
+     since v684 also takes the shell out of flex, and only on a touch screen. */}
 /* ============ v109 - consistent box geometry and vertical rhythm ============ */
 .card,.pend,.quotecard{padding:15px 17px;}
 .kpi{padding:14px 16px;}
@@ -1243,21 +1251,6 @@ details.obshush:hover{opacity:.85;}
   .plbl,.actk,.navct,.sbadge,.iref,.sub,.sub2,.rchip,
   .vbtn,.tag,.rtag,.finpct,.label,.apm{font-size:11px !important;}
 
-  /* CUSTOMERS OVERFLOWED THE PAGE BY 77px, and it was the one tab that did. The approach
-     calendar's side panel is 158px in a three-column grid; the grid collapses to one column
-     here, but the panel kept sizing to its content and came out at 441px on a 375px screen.
-     A grid or flex child defaults to min-width:auto, which refuses to shrink below its
-     content, and that is what carried the page sideways. */
-  .apwrap,.apside,.apcal{min-width:0;}
-  .apside{overflow-wrap:break-word;}
-  /* THE WEEK GRID SCROLLS RATHER THAN SQUEEZES. Seven columns on a 375px screen leave about
-     43px a day once the wrap and card padding are off, and the day chips do not read at that
-     width. A week view is only useful WHOLE, so it keeps its size and scrolls in its own box,
-     which is the same rule the tables here already follow. It was the only tab still carrying
-     the page sideways: 63px of it. */
-  .apcal{overflow-x:auto;}
-  .apgrid{min-width:322px;}
-
   /* A SECONDARY LINE INSIDE A TABLE CELL, which is where the rest of the 10px lived: the
      pricing ladder puts "RM 92.36 - 25% on cost" under each rung in an unclassed div, and
      there were 96 of them on that tab alone. Reached through the cell rather than by class,
@@ -1271,6 +1264,19 @@ details.obshush:hover{opacity:.85;}
 
   /* Wide content scrolls in its own box, never the page. */
   .tscroll,.chartbox{max-width:100%;overflow-x:auto;}
+}
+/* THE WEEK GRID SCROLLS RATHER THAN SQUEEZES. Seven columns on a 375px screen leave about
+   43px a day once the wrap and card padding are off, and the day chips do not read at that
+   width. A week view is only useful WHOLE, so it keeps its size and scrolls in its own box,
+   which is the same rule the tables here already follow. It was the only tab still carrying
+   the page sideways: 63px of it. v684 keys it on the calendar's own width, as the ledger is
+   keyed, because with the rail standing on a desktop the window no longer says: the week
+   needs about 470px, and a scroll box clips the day's pop-up, so it is drawn only below that.
+   Its panels' fits moved up to the 860px calendar rule. */
+.apwrap{container-type:inline-size;container-name:apwrap;}
+@container apwrap (max-width:479px){
+  .apcal{overflow-x:auto;}
+  .apgrid{min-width:322px;}
 }
 /* ============================================================================
    THE RAIL ON A NARROW SCREEN (v371). IT STAYS UPRIGHT AND HIDES.
@@ -1288,6 +1294,11 @@ details.obshush:hover{opacity:.85;}
    being carried alongside. The button sits bottom LEFT: the way out of the desk
    is pinned top left and back-to-top is pinned bottom right, so it is the one
    corner free, and it is the one a thumb reaches.
+
+   v684, HIS INSTRUCTION OF 17 SEP 2026: ONLY ON A TOUCH SCREEN. A desktop browser
+   keeps the rail standing at every width, however narrow its window; the menu
+   is for a finger, so both blocks below and the design layer's rail rules read
+   (pointer:coarse) as well as the width.
    ============================================================================ */
 /* THE BUTTON, THE VEIL AND THE RAIL ARE ALL INSIDE .wrap, AND THAT IS NOT ARBITRARY.
    .wrap is position:relative with a z-index, so it is a stacking context, and z-index on
@@ -1333,8 +1344,9 @@ body.navopen .navbtn .nb3{transform:translateY(-6px) rotate(-45deg);}
   -webkit-backdrop-filter:blur(14px) saturate(.9);backdrop-filter:blur(14px) saturate(.9);
   transition:opacity .2s ease;}
 body.navopen .navveil{opacity:1;pointer-events:auto;}
-@media(max-width:860px){
+@media(max-width:860px) and (pointer:coarse){
   .navbtn{display:grid;}
+  .shell{display:block;}
   /* every rule the upright rail already has is kept; this only takes it out of the flow
      and floats it. visibility, not just opacity, so a closed menu is out of the tab order
      as well as off the screen; the delay lets it fade rather than vanish. */
@@ -1347,7 +1359,7 @@ body.navopen .navveil{opacity:1;pointer-events:auto;}
   body.navopen .rail{opacity:1;visibility:visible;pointer-events:auto;transform:none;
     transition-delay:0s;}
 }
-@media(max-width:560px){
+@media(max-width:560px) and (pointer:coarse){
   .navbtn{left:11px;bottom:max(11px,env(safe-area-inset-bottom));}
   .rail{right:calc(11px + env(safe-area-inset-right));left:auto;top:60px;bottom:auto;
     width:min(268px,calc(100vw - 22px));}
@@ -2865,6 +2877,9 @@ h1,.byecard h1{font-family:var(--salt-font-display);font-weight:300;letter-spaci
 h2{font-size:11.5px;font-weight:500;letter-spacing:.18em;color:var(--salt-copper);margin:30px 0 12px;white-space:nowrap;}
 h2 .rule{min-width:16px;}
 h2 .rule{opacity:1;background:linear-gradient(90deg,var(--salt-line),transparent);}
+/* v684: from 860px, not 560px, because a desktop's rail stands beside the page there and a
+   heading that cannot wrap carried the page sideways at 640px */
+@media(max-width:860px){h2{white-space:normal;}}
 .sevh h2{margin:0;}
 .attn{color:var(--salt-copper);font-weight:500;}
 .risk{color:var(--salt-ember);font-weight:500;}
@@ -2987,8 +3002,9 @@ details.rcard>summary .rname{font-size:16px;font-weight:500;}
   box-shadow:0 0 26px -2px rgba(197,160,89,.5),0 12px 34px -12px rgba(0,0,0,.85),inset 0 1px 0 var(--salt-highlight);}
 .totop:focus-visible{outline-color:var(--salt-brass);}
 .navveil{background:rgba(5,8,10,.55);}
-@media(min-width:861px){.rail{width:212px;flex:0 0 212px;}}
-@media(max-width:860px){.rail{background:var(--salt-pane);}}
+/* v684: the rail stands beside the page everywhere but a touch screen at 860px or below */
+@media(min-width:861px),not all and (pointer:coarse){.rail{width:212px;flex:0 0 212px;}}
+@media(max-width:860px) and (pointer:coarse){.rail{background:var(--salt-pane);}}
 .exitbtn{font-size:10px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;border-color:var(--salt-line-faint);color:var(--salt-mist);}
 .exitbtn:hover{color:var(--salt-ember);border-color:rgba(212,105,76,.55);background:rgba(212,105,76,.08);}
 .exitfix{background:var(--salt-pane);}
@@ -3314,7 +3330,6 @@ details.obs>summary:hover{background:var(--salt-glass);}
 
 /* ---- 13. THE PHONE: the same vocabulary; only the floors the old layer sets stand ---- */
 @media(max-width:560px){
-  h2{white-space:normal;}
   .kick{font-size:11px !important;letter-spacing:.18em;}
   /* the 11px floor is the phone's, not the hierarchy's: at 11px against a 11.5px tab the
      heading and the destination were level again, which is the fault this rail just lost.
@@ -3433,7 +3448,7 @@ body.dbstuck .deskbar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 va
 .deskbar>#provBar:empty{display:none;}
 .deskbar .provbar{margin-top:0;}
 /* the phone's menu opens under the bar rather than over it */
-@media(max-width:860px){.rail{top:calc(var(--safetop) + var(--dbtop) + 72px);}}
+@media(max-width:860px) and (pointer:coarse){.rail{top:calc(var(--safetop) + var(--dbtop) + 72px);}}
 @media(max-width:560px){
   .deskbar{padding:7px 6px 7px 12px;gap:8px;}
   .dhbrand{gap:10px;}
@@ -6797,7 +6812,7 @@ const quoteFor=p=>{const f=QUOTES[p||PROD];return f?f():null;};
    v324 onward, which tabJournal maps in full; master/changelog.json carries every entry
    ever written and is the record. So a bump PREPENDS its entry. Replacing the array,
    which both comments invited, silently drops the whole window. */
-const evolution=[{"v":"v683","d":"17 Sep 2026","t":"A REWARD UNIT GOES OUT FREE: COST IN, NO REVENUE","n":["<b>FOLDED:</b> one row, a redemption of 1 unit of salt to CS6-BS dated 17 Sep, settled by the reward and not in cash. On his ruling of 11 Sep 2026 the row carries both rebate and goodwill, so it stays out of revenue and its RM48 of cost stands as an expense. The unit was delivered the same day, leaving nothing outstanding against the party.","<b>UNUSUAL:</b> the total of RM48 sits under the RM51 floor for this size because nothing was charged, the figure being the shelf cost carried through. The drafter flagged that the reward balance, 5 earned and 4 applied leaving 1, is the desk's word and cannot be checked here. The inventory rolled the stated shelf down by the unit and held the cost basis where it stood."]},
+const evolution=[{"v":"v684","d":"17 Sep 2026","t":"ON A DESKTOP THE RAIL STANDS AT EVERY WIDTH; ONLY A TOUCH SCREEN FOLDS IT INTO THE MENU","n":["<b>HIS INSTRUCTION OF 17 SEP 2026:</b> on a desktop browser the navigation bar on the left does not collapse. The menu was keyed on the window's width alone, so any desktop window at 860px or narrower lost the rail behind the menu button. It is keyed on a touch screen as well now: with a mouse the rail stands beside the page at every width, and a phone keeps its menu as before.","<b>WHAT A NARROW DESKTOP WINDOW NEEDED WITH IT.</b> The rail takes 232px from the page, so two fits the phone already had now start at 860px: a section heading wraps, and the approach calendar's panels may shrink. The week grid scrolls in its own box only when the calendar itself is narrower than the week, so a wider one keeps its pop-ups whole. Measured in Chromium with a mouse, no page scrolls sideways from 580 to 860px, nor at 1024 or 1280. Below 580px The book still does, and at 861px Pricing and Network did before this version and still do.","<b>NOTHING ELSE MOVED:</b> all seventeen parts, at 1280 and at 375 as a phone, read the same pixels before and after. The pixel instrument was wrong for a phone: a full-page capture under touch emulation turns the touch pointer off, so a phone shot now grows the view to the page instead.","<b>THE CHECKS:</b> a new section reads every rule that folds the rail into the menu for the touch condition, the standing rail's width and hidden brand, and the three fits; eleven reverts each turned it red. The rail width check reads the new condition."]},{"v":"v683","d":"17 Sep 2026","t":"A REWARD UNIT GOES OUT FREE: COST IN, NO REVENUE","n":["<b>FOLDED:</b> one row, a redemption of 1 unit of salt to CS6-BS dated 17 Sep, settled by the reward and not in cash. On his ruling of 11 Sep 2026 the row carries both rebate and goodwill, so it stays out of revenue and its RM48 of cost stands as an expense. The unit was delivered the same day, leaving nothing outstanding against the party.","<b>UNUSUAL:</b> the total of RM48 sits under the RM51 floor for this size because nothing was charged, the figure being the shelf cost carried through. The drafter flagged that the reward balance, 5 earned and 4 applied leaving 1, is the desk's word and cannot be checked here. The inventory rolled the stated shelf down by the unit and held the cost basis where it stood."]},
 
 {"v":"v682","d":"17 Sep 2026","t":"AT ADD ID AND AMEND ID THE LOCATION IS CHOSEN FROM A LIST","n":["<b>HIS INSTRUCTION OF 17 SEP 2026:</b> all the locations listed, so he can choose one, holding his own areas. Both place boxes now offer 137 locations, each read as a party's location is: Bangsar, Lembah Pantai, Kuala Lumpur. Type a few letters and choose; a location chosen carries its own point, so it is placed at once with no search and no tap, the code is made from its locality and the locality is filed with it. A place typed that is not on the list is still looked up as before.","<b>WHAT THE LIST HOLDS.</b> The neighbourhoods on his map of Kuala Lumpur and the sub-districts on his Selangor list, 93 of them placed from GeoNames' Malaysia file inside the district he listed each under, the file downloaded on his word and never committed; every locality already filed, so a location he files joins the list; and every constituency. A name on his list keeps its own point over a party filed there. A district alone is too broad a place to choose and is not listed.","<b>WHAT IS NOT ON IT.</b> 66 of his names are not placed by GeoNames at all or stand for more than one place there, among them Kepong Baru, Shamelin, KLCC, Kota Kemuning and Taman Sri Muda; they are left off rather than guessed, and are typed and tapped as before. Setapak and Sungai Besi, on both of his lists, lie in Kuala Lumpur and are listed there once.","<b>THE CHECKS:</b> a new section reads the list as committed, the desk's locations and their order, the rule that his list wins, both place boxes and a choice from the list through to its code and locality; ten reverts each turned it red. Checked in Chromium at phone width: the list is on the form and a choice is placed at once."]},
 
@@ -7373,7 +7388,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='17 Sep 2026, 10:57 KL';
+const LAST_UPDATED='17 Sep 2026, 12:58 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */

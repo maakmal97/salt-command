@@ -65,7 +65,13 @@ async function shoot(label, only) {
         /* the journal lists every version entry; they move on every build, so they are not compared */
         document.querySelectorAll(".jent").forEach((e) => { const k = e.querySelector(".jkind"); if (k && k.textContent === "Version") e.remove(); }); }, part);
       await page.waitForTimeout(700);
-      await page.screenshot({ path: join(dir, `${part}-${w}.png`), fullPage: true, animations: "disabled", timeout: 180000 });
+      /* v684: a full-page capture under touch emulation turns (pointer:coarse) off, during the capture and after it,
+         and the phone's menu keys on it since v684, so every phone shot drew the desktop's standing rail. A phone
+         shot grows the viewport to the page instead, which keeps the pointer. */
+      const touch = w < 600;
+      if (touch) { await page.setViewportSize({ width: w, height: await page.evaluate(() => document.documentElement.scrollHeight) }); await page.waitForTimeout(300); }
+      await page.screenshot({ path: join(dir, `${part}-${w}.png`), fullPage: !touch, animations: "disabled", timeout: 180000 });
+      if (touch) await page.setViewportSize({ width: w, height: h });
     }
     await page.close();
   }

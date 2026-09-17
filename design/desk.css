@@ -102,6 +102,9 @@ h1,.byecard h1{font-family:var(--salt-font-display);font-weight:300;letter-spaci
 h2{font-size:11.5px;font-weight:500;letter-spacing:.18em;color:var(--salt-copper);margin:30px 0 12px;white-space:nowrap;}
 h2 .rule{min-width:16px;}
 h2 .rule{opacity:1;background:linear-gradient(90deg,var(--salt-line),transparent);}
+/* v684: from 860px, not 560px, because a desktop's rail stands beside the page there and a
+   heading that cannot wrap carried the page sideways at 640px */
+@media(max-width:860px){h2{white-space:normal;}}
 .sevh h2{margin:0;}
 .attn{color:var(--salt-copper);font-weight:500;}
 .risk{color:var(--salt-ember);font-weight:500;}
@@ -224,8 +227,9 @@ details.rcard>summary .rname{font-size:16px;font-weight:500;}
   box-shadow:0 0 26px -2px rgba(197,160,89,.5),0 12px 34px -12px rgba(0,0,0,.85),inset 0 1px 0 var(--salt-highlight);}
 .totop:focus-visible{outline-color:var(--salt-brass);}
 .navveil{background:rgba(5,8,10,.55);}
-@media(min-width:861px){.rail{width:212px;flex:0 0 212px;}}
-@media(max-width:860px){.rail{background:var(--salt-pane);}}
+/* v684: the rail stands beside the page everywhere but a touch screen at 860px or below */
+@media(min-width:861px),not all and (pointer:coarse){.rail{width:212px;flex:0 0 212px;}}
+@media(max-width:860px) and (pointer:coarse){.rail{background:var(--salt-pane);}}
 .exitbtn{font-size:10px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;border-color:var(--salt-line-faint);color:var(--salt-mist);}
 .exitbtn:hover{color:var(--salt-ember);border-color:rgba(212,105,76,.55);background:rgba(212,105,76,.08);}
 .exitfix{background:var(--salt-pane);}
@@ -551,7 +555,6 @@ details.obs>summary:hover{background:var(--salt-glass);}
 
 /* ---- 13. THE PHONE: the same vocabulary; only the floors the old layer sets stand ---- */
 @media(max-width:560px){
-  h2{white-space:normal;}
   .kick{font-size:11px !important;letter-spacing:.18em;}
   /* the 11px floor is the phone's, not the hierarchy's: at 11px against a 11.5px tab the
      heading and the destination were level again, which is the fault this rail just lost.
@@ -670,7 +673,7 @@ body.dbstuck .deskbar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 va
 .deskbar>#provBar:empty{display:none;}
 .deskbar .provbar{margin-top:0;}
 /* the phone's menu opens under the bar rather than over it */
-@media(max-width:860px){.rail{top:calc(var(--safetop) + var(--dbtop) + 72px);}}
+@media(max-width:860px) and (pointer:coarse){.rail{top:calc(var(--safetop) + var(--dbtop) + 72px);}}
 @media(max-width:560px){
   .deskbar{padding:7px 6px 7px 12px;gap:8px;}
   .dhbrand{gap:10px;}
