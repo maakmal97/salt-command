@@ -13266,8 +13266,32 @@ await (async () => {
     "a heading wraps from 860px, where a desktop's column is narrower than its window: " + JSON.stringify(where("h2{white-space:normal;}")));
   ok(JSON.stringify(where(".apwrap,.apside,.apcal{min-width:0;}")) === '["(max-width:860px)"]',
     "the approach calendar's panels may shrink from 860px too: " + JSON.stringify(where(".apwrap,.apside,.apcal{min-width:0;}")));
-  ok(/\.apwrap\{container-type:inline-size;container-name:apwrap;\}/.test(top84) && JSON.stringify(where(".apcal{overflow-x:auto;}")) === '["apwrap (max-width:479px)"]',
-    "and the week scrolls in its own box only when the calendar itself is narrower than the week, so a wider one keeps its pop-ups whole: " + JSON.stringify(where(".apcal{overflow-x:auto;}")));
+  ok(JSON.stringify(where(".apcal{overflow-x:auto;}")) === '["(max-width:860px)"]',
+    "and the week scrolls in its own box from 860px: " + JSON.stringify(where(".apcal{overflow-x:auto;}")));
+
+  /* the two drawings sized to the window drew for 232px more than a standing rail leaves them, names at half size */
+  const { openMaster: om84 } = await import("../tools/payload.mjs");
+  const { w: w84 } = await om84();
+  try {
+    Object.defineProperty(w84, "innerWidth", { value: 832, configurable: true });
+    Object.defineProperty(w84.document.querySelector(".main"), "clientWidth", { value: 600, configurable: true });
+    w84.eval("MAP_VIEW=null;switchTab('map');");
+    const drawn = String(w84.eval("(function(){var s=document.querySelector('.sec.on svg[viewBox]');var p=placePicker(null);return (s?s.getAttribute('viewBox'):'none')+' | '+((p.match(/viewBox=\"([^\"]*)\"/)||[])[1]||'none');})()"));
+    ok(/^0 0 572 \d+ \| 0 0 562 \d+$/.test(drawn), "the Coverage map and the place picker are drawn for the page column, not the window, so a desktop's names keep their size: " + drawn);
+  } finally { try { w84.close(); } catch (e) { /* best effort */ } }
+
+  /* the menu closes when its layout ends with it open, or the frost stays over a rail with no button to close it */
+  const tmp84 = join(REPO, "test", "tmp", "v684-menu.html");
+  mkdirSync(dirname(tmp84), { recursive: true });
+  writeFileSync(tmp84, readFileSync(join(REPO, "master", "salt_command.html"), "utf8").replace("<head>", "<head><script>window.__mq=[];window.matchMedia=function(q){var o={media:q,matches:true,l:[],"
+    + "addEventListener:function(t,f){o.l.push(f);},removeEventListener:function(){},addListener:function(f){o.l.push(f);},removeListener:function(){}};window.__mq.push(o);return o;};</script>"));
+  const { w: mw84 } = await om84(tmp84);
+  try {
+    const shut = String(mw84.eval("(function(){document.getElementById('navbtn').click();var open=document.body.classList.contains('navopen');"
+      + "var q=window.__mq.filter(function(o){return o.media==='(max-width:860px) and (pointer:coarse)';});q.forEach(function(o){o.matches=false;o.l.forEach(function(f){f({matches:false,media:o.media});});});"
+      + "return open+' '+q.length+' '+document.body.classList.contains('navopen');})()"));
+    ok(shut === "true 1 false", "a menu left open when the layout stops being a touch screen's closes itself (opened, listened, closed): " + shut);
+  } finally { try { mw84.close(); } catch (e) { /* best effort */ } rmSync(tmp84, { force: true }); }
 })();
 section("The suite frees its windows: every section's body is its own async function");
 await (async () => {
