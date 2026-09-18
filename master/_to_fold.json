@@ -1,0 +1,59 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-09-18T03:05:00.863Z",
+   "collection": "sales",
+   "row": {
+    "customer": "CS6-BS",
+    "qty": 5,
+    "total": 420,
+    "cash": 0,
+    "date": "2026-09-18",
+    "deliveredQty": 0,
+    "note": "Ordered on the statements site, order 20260916085105-rkoi5a, acknowledged, to collect. Nothing paid and nothing handed over yet."
+   },
+   "reasoning": "Sold 5 unit of salt to CS6-BS for RM 420, RM 84/unit. Costed at RM 48/unit from the desk's own inventory cost, so RM 180 on the goods at 42.9%. Nothing was paid and nothing moved, so the row is PENDING, dated 2026-09-18 as the day it was agreed: it draws no stock and books no revenue until something moves. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [
+    "CS6-BS typically pays about RM 107.5/unit for salt across 18 orders; this one is RM 84, 21.9% below that."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-09-18T03:05:00.863Z",
+    "type": "SELL",
+    "party": "CS6-BS",
+    "qty": 5,
+    "total": 420,
+    "status": "Pending",
+    "raw": "SELL CS6-BS 5 salt RM 420, nothing paid, nothing moved (order 20260916085105-rkoi5a)",
+    "orderKey": "CS6-BS|2026-09-18|420",
+    "payload": {
+     "mode": "new",
+     "product": "salt",
+     "direction": "SELL",
+     "party": "CS6-BS",
+     "newId": null,
+     "date": "2026-09-18",
+     "qty": 5,
+     "total": 420,
+     "delivery": 0,
+     "cash": 0,
+     "kg": 0,
+     "assoc": null,
+     "stream": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": "Ordered on the statements site, order 20260916085105-rkoi5a, acknowledged, to collect. Nothing paid and nothing handed over yet.",
+     "handover": null,
+     "second": null
+    }
+   },
+   "decidedAt": "2026-09-18T04:29:41.821Z",
+   "decidedBy": "desk"
+  }
+ ]
+}
