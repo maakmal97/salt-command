@@ -1,0 +1,163 @@
+{
+ "ok": true,
+ "count": 3,
+ "approved": [
+  {
+   "id": "2026-09-18T14:50:48.518Z",
+   "collection": "sales",
+   "row": {
+    "qty": 5,
+    "total": 420,
+    "cash": 0,
+    "date": "2026-09-18",
+    "customer": "CS6-BS"
+   },
+   "reasoning": "Fulfilment against CS6-BS's order of 5 unit for RM 420 agreed 2026-09-18. RM 420 and 5 unit move on 2026-09-18, against RM 420 and 5 unit outstanding. Leaves RM 0 and 0 unit outstanding. The row itself is NOT recomputed here: ovAmend in the master applies it, so there is one definition of what a fulfilment does rather than two.",
+   "flags": [
+    "This SETTLES the order in full: nothing is left outstanding after it."
+   ],
+   "amends": "s173",
+   "amendKind": "Fulfilment",
+   "entry": {
+    "at": "2026-09-18T14:50:48.518Z",
+    "type": "AMEND",
+    "party": "CS6-BS",
+    "qty": 5,
+    "total": 420,
+    "status": "paid",
+    "raw": "Fulfilment on CS6-BS s173: RM 420 cash, 5 unit moved, recorded 2026-09-18",
+    "payload": {
+     "mode": "amend",
+     "direction": "SELL",
+     "party": "CS6-BS",
+     "rid": "s173",
+     "orderKey": "CS6-BS|2026-09-18|420",
+     "assoc": null,
+     "downstream": null,
+     "orderCode": null,
+     "linkTo": null,
+     "sameDay": false,
+     "note": null,
+     "kind": "Fulfilment",
+     "date": "2026-09-18",
+     "qty": 5,
+     "total": 420,
+     "cash": 420,
+     "kg": 5
+    }
+   },
+   "decidedAt": "2026-09-18T14:54:13.886Z",
+   "decidedBy": "desk"
+  },
+  {
+   "id": "2026-09-18T14:51:43.733Z",
+   "collection": "sales",
+   "row": {
+    "rid": "s165",
+    "qty": 1,
+    "total": 90,
+    "cash": 0,
+    "date": "2026-09-15",
+    "product": "salt",
+    "changes": [
+     {
+      "field": "cash",
+      "from": 0,
+      "to": 80
+     },
+     {
+      "field": "paidOn",
+      "from": null,
+      "to": "2026-09-18"
+     }
+    ],
+    "customer": "CR3-DAM"
+   },
+   "reasoning": "Correction against CR3-DAM's order of 1 unit for RM 90 dated 2026-09-15 (s165). Sets cash from 0 to 80, paidOn from unset to 2026-09-18. It moves no cash and no stock: it changes what the row says about itself. The row is not rewritten here. The fold applies the patch, so there is one definition of what a correction does rather than two.",
+   "flags": [
+    "CR3-DAM typically pays about RM 80/unit for salt across 15 orders; this one is RM 90, 12.5% above that.",
+    "This is an ADVANCE: 1 unit goes out with RM 10 unpaid. Check it against CR3-DAM's credit cap."
+   ],
+   "amends": "s165",
+   "amendKind": "Correction",
+   "entry": {
+    "at": "2026-09-18T14:51:43.733Z",
+    "type": "AMEND",
+    "party": "CR3-DAM",
+    "qty": 0,
+    "total": 0,
+    "raw": "Correction on CR3-DAM s165: cash to 80, paidOn to 2026-09-18, recorded 2026-09-18",
+    "payload": {
+     "mode": "amend",
+     "direction": "SELL",
+     "party": "CR3-DAM",
+     "rid": "s165",
+     "orderKey": "CR3-DAM|2026-09-15|90",
+     "kind": "Correction",
+     "date": "2026-09-18",
+     "fields": {
+      "cash": 80,
+      "paidOn": "2026-09-18"
+     },
+     "assoc": null,
+     "downstream": null,
+     "orderCode": null,
+     "linkTo": null,
+     "sameDay": false,
+     "note": null,
+     "qty": 0,
+     "total": 0,
+     "cash": 0,
+     "kg": 0
+    }
+   },
+   "decidedAt": "2026-09-18T14:54:08.749Z",
+   "decidedBy": "desk"
+  },
+  {
+   "id": "2026-09-18T14:52:25.260Z",
+   "collection": "sales",
+   "row": {
+    "qty": 12.5,
+    "total": 850,
+    "cash": 0,
+    "date": "2026-09-07",
+    "customer": "CJ4-BJ"
+   },
+   "reasoning": "Fulfilment against CJ4-BJ's order of 12.5 unit for RM 850 agreed 2026-09-07. RM 650 and 2.25 unit move on 2026-09-18, against RM 850 and 8.5 unit outstanding. Leaves RM 200 and 6.25 unit outstanding. The row itself is NOT recomputed here: ovAmend in the master applies it, so there is one definition of what a fulfilment does rather than two.",
+   "flags": [],
+   "amends": "s137",
+   "amendKind": "Fulfilment",
+   "entry": {
+    "at": "2026-09-18T14:52:25.260Z",
+    "type": "AMEND",
+    "party": "CJ4-BJ",
+    "qty": 2.25,
+    "total": 650,
+    "status": "paid",
+    "raw": "Fulfilment on CJ4-BJ s137: RM 650 cash, 2.25 unit moved, recorded 2026-09-18",
+    "payload": {
+     "mode": "amend",
+     "direction": "SELL",
+     "party": "CJ4-BJ",
+     "rid": "s137",
+     "orderKey": "CJ4-BJ|2026-09-07|850",
+     "assoc": null,
+     "downstream": null,
+     "orderCode": null,
+     "linkTo": null,
+     "sameDay": false,
+     "note": null,
+     "kind": "Fulfilment",
+     "date": "2026-09-18",
+     "qty": 2.25,
+     "total": 650,
+     "cash": 650,
+     "kg": 2.25
+    }
+   },
+   "decidedAt": "2026-09-18T14:53:59.732Z",
+   "decidedBy": "desk"
+  }
+ ]
+}
