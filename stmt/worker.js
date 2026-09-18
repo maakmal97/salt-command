@@ -756,13 +756,15 @@ export default {
     if (p === "/manifest.webmanifest") {
       if (m !== "GET" && m !== "HEAD") return json({ ok: false, error: "method not allowed" }, 405);
       const mf = {
-        /* v697, HIS INSTRUCTION OF 18 SEP 2026: name the app something else, app-worthy. It was
-           Order Salt for one version and carried the product word he had just taken off every other
-           surface. THE COUNTER is the shop counter: where you are served, see what you owe, order
-           and collect. It names no product and no business, it is what the app is FOR, and it fits
-           the twelve characters iOS gives a home screen. It is the one place on this site a name is
-           needed; the desk is Salt Command and that never appears here. */
-        name: "The Counter", short_name: "The Counter", start_url: "./", scope: "./",
+        /* v704, HIS INSTRUCTION OF 18 SEP 2026: the user-facing name is SALT COUNTER. It went
+           Order Salt, then The Counter on his word that it be app-worthy, and now his own name for
+           it, which keeps the counter and puts the trade back in front of it. Twelve characters
+           exactly, which is what iOS gives a home screen.
+           THE PRODUCT WORD IS HIS TO SPEND HERE AND NOWHERE ELSE. Inside the page a product is
+           still a mark and never a word (v695); this is the app's name, the one place on the site
+           where something has to be called something. What never appears is the DESK's name, Salt
+           Command, which is a different rule and still holds. */
+        name: "Salt Counter", short_name: "Salt Counter", start_url: "./", scope: "./",
         display: "standalone", orientation: "portrait", background_color: "#05080a", theme_color: "#05080a",
         icons: [{ src: "icon.png", sizes: ICON_SIZE + "x" + ICON_SIZE, type: "image/png", purpose: "any maskable" }]
       };

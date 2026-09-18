@@ -249,11 +249,11 @@ drawing. A control holding only a mark is named by its **shape** (`PSHAPE`: Cube
 never by its product, so a screen reader is told what is drawn rather than what it is.
 
 **The one name on the site is the app's.** The manifest, the `<title>`, the iPhone app title and the
-install tutorial all say **The Counter** (v697, his instruction of 18 Sep 2026; it was Order Salt for
-one version and carried the product word he had just taken off every other surface). It is the shop
-counter: where you are served, see what you owe, order and collect. The icon on a customer's home
-screen has to say something, it is not the desk's name, and it is not a product's either; eleven
-characters, inside the twelve iOS gives a home screen. The statement's letterhead, the last
+install tutorial all say **Salt Counter** (v704, his instruction of 18 Sep 2026; it went Order Salt,
+then The Counter, then his own name for it). The icon on a customer's home screen has to say
+something: it is the ONE place on this site where something is called something, and the product
+word is his to spend there. Inside the page a product is still a mark and never a word. What never
+appears is the DESK's name. Twelve characters exactly, which is what iOS gives a home screen. The statement's letterhead, the last
 place Salt Command appeared on a customer's page, is gone: `brand` is null for the live statement
 and every new issue, and a statement with no brand carries no eyebrow rather than an empty one.
 Issues already sealed keep the letterhead they were issued with until they are re-issued.

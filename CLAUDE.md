@@ -327,10 +327,12 @@ including the secrets, the price list and the order relay: `docs/STATEMENTS.md`.
   option carries text and no drawing. A control holding only a mark is named by its **shape**
   (`PSHAPE`: Cube, Droplet, Ring), never by its product: an aria-label naming it would put the word
   back for exactly the readers who cannot see it was taken away. **The one name on the site is the
-  app's**: **`The Counter`** (v697, his instruction of 18 Sep 2026; it was `Order Salt` for one
-  version and carried the product word), in the manifest, the title, the iPhone app title and the
-  tutorial. It is the shop counter, it says what the app is FOR, it names no product and no
-  business, and it fits the twelve characters iOS gives a home screen.
+  app's**: **`Salt Counter`** (v704, his instruction of 18 Sep 2026; it went `Order Salt`, then
+  `The Counter`, then his own name for it), in the manifest, the title, the iPhone app title and the
+  tutorial. It is the app's name, the ONE place on this site where something has to be called
+  something, and **the product word is his to spend there**: inside the page a product is still a
+  mark and never a word. What never appears anywhere is the DESK's name. Twelve characters exactly,
+  which is what iOS gives a home screen.
 - **AN ASSOCIATE TICKS AN ORDER AS ON BEHALF OF A FRIEND** (v703, his instruction of 18 Sep 2026:
   their own orders and the ones they place for someone else can no longer be told apart by what they
   buy). A ticked order books to their `<CODE>-R` bucket exactly as a phone-entered downsell does:

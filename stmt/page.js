@@ -365,8 +365,8 @@ export function landingPage(user, nonce, owner) {
     + '<meta name="apple-mobile-web-app-capable" content="yes">'
     + '<meta name="mobile-web-app-capable" content="yes">'
     + '<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">'
-    + '<meta name="apple-mobile-web-app-title" content="The Counter">'
-    + "<title>The Counter</title>"
+    + '<meta name="apple-mobile-web-app-title" content="Salt Counter">'
+    + "<title>Salt Counter</title>"
     + '<style nonce="' + nonce + '">' + STATEMENT_CSS + PAGE_CSS + "</style></head><body>"
     + (owner
       ? '<div id="roster" class="gate">'
@@ -449,7 +449,7 @@ export function landingPage(user, nonce, owner) {
        the page is running as one. Three steps, the two phones, and nothing to tap. */
     + '<div class="inst" id="inst" hidden>'
     + "<h2>Keep it on your phone</h2>"
-    + '<p class="sub2">It is saved as <b>The Counter</b>, and opens straight here.</p>'
+    + '<p class="sub2">It is saved as <b>Salt Counter</b>, and opens straight here.</p>'
     + '<ol><li><b>iPhone:</b> tap Share, then Add to Home Screen, then Add.</li>'
     + "<li><b>Android:</b> tap the three dots, then Install app or Add to Home screen.</li>"
     + "<li>Open it from that icon after this. It signs you in and tells you when an order moves.</li></ol>"
