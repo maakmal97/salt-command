@@ -373,7 +373,10 @@ function stmtDoc(party,rows,o){
     return '<tr>'
       +'<td class="l dt">'+(r.date?e(dLong(r.date)):(moved?'<span class="nodt">'+moved+'</span>':''))+when+'</td>'
       +'<td class="q'+(r.cancelled?' cxr':'')+'">'+n2(r.qty)+'<span class="u">unit</span>'
-        +(r.resale?'<div class="sub2">for resale</div>':'')
+        /* v687, HIS INSTRUCTION OF 18 SEP 2026: the line reads on behalf of a friend, not for
+           resale. The row is the same row and books the same way; what changes is the word the
+           customer reads, which is theirs rather than the trade's. */
+        +(r.resale?'<div class="sub2">on behalf of a friend</div>':'')
         +(r.inKindUnits>0.009?'<div class="sub2">'+n2(r.inKindUnits)+' unit applied '
           +(noLegDates.has(r.date)?'by agreement':'to an earlier balance')+'</div>':'')
         +'</td>'
@@ -617,6 +620,35 @@ function loadSecrets(outDir, opts) {
   return out;
 }
 
+/* ---- WHAT AN ACCOUNT STANDS AT, AND THE ONE WORD FOR IT --------------------------------
+   v687: the review sheet worked these out inline, and the master account needs the same two
+   figures for the same accounts. One rule, three readers: the review sheet, the send sheet and
+   the publish. A cancelled order is not an order for counting, so it is out of n and out of
+   the money, and PENDING IS ITS OWN WORD: an agreed order nobody has acted on is the line most
+   likely to need chasing, not a quiet 'clear'. */
+export function accountTotals(rows, refunds) {
+  const t = { n: rows.filter(r => !r.cancelled).length, qty: 0, total: 0, paid: 0, owed: 0, toGet: 0, pend: 0, cx: 0 };
+  t.refund = (refunds || []).filter(r => !r.paidOn).reduce((a, r) => a + (+r.amount || 0), 0);   // v454: what is owed TO them
+  rows.forEach(r => {
+    if (r.cancelled) { t.cx++; t.paid += r.gift ? 0 : (r.paidCash + r.inKind); return; }
+    t.qty += r.qty; t.total += r.total; t.paid += r.gift ? 0 : (r.paidCash + r.inKind);
+    t.owed += r.owed;
+    t.toGet += (r.toGet > 0 && !r.pendingOrder) ? r.toGet : 0;
+    t.pend += r.pendingOrder ? r.total : 0;
+  });
+  return t;
+}
+export const reviewFlag = t => t.owed > 0.009 ? 'owes' : (t.toGet > 0.009 ? 'goods' : (t.refund > 0.009 ? 'refund' : (t.pend > 0.009 ? 'pend' : 'clear')));
+/* the day in Kuala Lumpur, which is the window every live reading is taken to */
+export const klToday = now => (now instanceof Date ? now : new Date(now || Date.now()))
+  .toLocaleDateString('en-CA', { timeZone: 'Asia/Kuala_Lumpur' });
+/* one party's position to a day, read exactly as their statement reads it */
+export function partyTotals(party, to) {
+  const o = { from: null, to, completed: true, open: true, pending: true, dates: true };
+  const rows = stmtRows(party, o);
+  return accountTotals(rows, stmtRefunds(party, o));
+}
+
 /* ---- the live statement ------------------------------------------------------------
    EVERY ENTRY FROM THE START TO NOW (his instruction, 03 Sep 2026). The same rows, the same
    document and the same laws as an issue, with no cut-off: whatever the book holds when it is
@@ -759,16 +791,9 @@ export async function makeStatements(outDir, issue, opts) {
     o.recon = stmtRecon(p, rows).filter(R => rows.some(x => x.date === R.order.date));
     if (!rows.length && !o.refunds.length) { skipped.push(p); continue; }
     /* the index needs the same totals the statement foots to, so they are taken
-       from the same rows rather than recomputed from the ledger */
-    /* the index must agree with each statement's own footer: a cancelled order is
-       not an order for counting purposes, so it is out of n as well as out of the money */
-    const t = { n: rows.filter(r => !r.cancelled).length, qty: 0, total: 0, paid: 0, owed: 0, toGet: 0, pend: 0, cx: 0 };
-    t.refund = o.refunds.filter(r => !r.paidOn).reduce((a, r) => a + (+r.amount || 0), 0);   // v454: what is owed TO them
-    rows.forEach(r => { if (r.cancelled) { t.cx++; t.paid += r.gift ? 0 : (r.paidCash + r.inKind); return; }
-                        t.qty += r.qty; t.total += r.total; t.paid += r.gift ? 0 : (r.paidCash + r.inKind);
-                        t.owed += r.owed;
-                        t.toGet += (r.toGet > 0 && !r.pendingOrder) ? r.toGet : 0;
-                        t.pend += r.pendingOrder ? r.total : 0; });
+       from the same rows rather than recomputed from the ledger; accountTotals is that
+       one rule, which the master account's Review reads through partyTotals (v687) */
+    const t = accountTotals(rows, o.refunds);
     /* THE QR, THE USERNAME AND THE PASSWORD (03 Sep 2026). The code opens the statements site
        with the username filled in; the site asks for the password, which goes by a different
        channel, and decrypts in the reader's browser. Two channels rather than one secret link:
@@ -846,10 +871,9 @@ export async function makeStatements(outDir, issue, opts) {
        Both now call the same function. */
     const css = statementCss();
     const bodyOf = h => { const m = h.match(/<body>([\s\S]*?)<\/body>/); return m ? m[1] : ''; };
-    /* PENDING IS ITS OWN STATE, not a quiet 'clear'. An agreed order nobody has acted
-       on is the one line most likely to need chasing, so the index says so rather than
-       letting it sit among the finished accounts looking settled. */
-    const flag = t => t.owed > 0.009 ? 'owes' : (t.toGet > 0.009 ? 'goods' : (t.refund > 0.009 ? 'refund' : (t.pend > 0.009 ? 'pend' : 'clear')));
+    /* the word for an account is reviewFlag, stated once above and read here, on the
+       master account's Review, and by the publish (v687) */
+    const flag = reviewFlag;
     const rowsIdx = sheets.map(x => {
       const f = flag(x.t);
       return '<tr class="f-' + f + '"><td class="l"><a href="#s-' + esc(x.who) + '">' + esc(x.who) + '</a></td>'

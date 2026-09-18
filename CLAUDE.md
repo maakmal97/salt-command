@@ -300,15 +300,21 @@ including the secrets, the price list and the order relay: `docs/STATEMENTS.md`.
   `tools/make_statements.mjs`), deliberately: changing that rewrites every archive.
 - **A BUCKET IS NOT ITS OWN PERSON** (his ruling of 13 Sep 2026). An associate's `<CODE>-R`
   account is theirs: their statement (live and issued), price list, printed board and the order
-  card's usual rate read the code and the bucket together, bucket lines marked *for resale*,
+  card's usual rate read the code and the bucket together, bucket lines marked *on behalf of a
+  friend* (v687, his instruction of 18 Sep 2026; it read *for resale* until then),
   through `ownsCode` in `engine/position.mjs`. A bucket has no statement and no published
-  username; its old `_users.json` line is kept but mapped to nothing.
-- **`/all` IS THE OWNER'S LIST, behind Cloudflare Access, with two locks, neither trusted
-  alone:** the Access application covers `/all` and everything under it, and `stmt/access.js`
-  verifies the JWT again, RS256 against the team's keys with issuer, audience and expiry,
-  because a header check passes a token signed by any key at all. With `ACCESS_TEAM` or
-  `ACCESS_AUD` empty the route is 401, so deleting the application closes `/all` rather than
-  opening it.
+  username; its old `_users.json` line is kept but mapped to nothing, and it is never listed as
+  an account of its own on the master account either.
+- **`/all` IS THE MASTER ACCOUNT** (v687, his instruction of 18 Sep 2026), **behind Cloudflare
+  Access, with two locks, neither trusted alone:** the Access application covers `/all` and
+  everything under it, and `stmt/access.js` verifies the JWT again, RS256 against the team's keys
+  with issuer, audience and expiry, because a header check passes a token signed by any key at
+  all. With `ACCESS_TEAM` or `ACCESS_AUD` empty the route is 401, so deleting the application
+  closes `/all` rather than opening it. **One check at the door of the whole prefix**: `/all`
+  answers in plain words, every `/all/*` the same JSON 401 whatever the path, and an unknown path
+  past it the site's usual 404. It opens on its items, never on a list. **THE OWNER'S SCRIPT IS
+  `stmt/owner.js` AND TRAVELS ONLY THERE**: it lived in the page every customer opened until v687.
+  Review reads `sheet`, the publish's account list, merged with the `seen:` opens.
 - **Guest links `/g/<id>`**: one board and nothing else, `script-src 'none'`. **The id
   IS the credential** (rejection sampling, never `byte % 30`) and the boards are NOT sealed,
   both deliberate. Unknown, malformed and withdrawn ids answer the same 404. **A row named
@@ -326,6 +332,7 @@ including the secrets, the price list and the order relay: `docs/STATEMENTS.md`.
 |---|---|
 | `engine/qr.mjs` | The ONE QR encoder and the only place its facts are stated: byte mode, level M, versions 1 to 10; inlined into the master like the pricing engine; `tools/qr.mjs` re-exports it and never copies it; `qrRectSvg` draws RECTANGLES, a stroked symbol does not scan |
 | `stmt/qr.js` | GENERATED from `engine/qr.mjs` by `tools/qrsync.mjs --sync`; gate and CI fail on drift. Never edit it; `stmt/` may import only a sibling |
+| `stmt/owner.js` | The master account's script, spliced into the page on `/all` alone; never in a customer's |
 | `tools/rid.mjs` | Stable `rid` per ledger row; `nextRid` is the one minting place |
 | `tools/changelog.mjs` | Prepends `evolution[0]` to `master/changelog.json`; never rewrites |
 | `test/verify.mjs` | ~2,130 assertions over 138 sections, no network or browser; add one per behavioural change, and **prove it red by mutation before trusting its green** |

@@ -40,7 +40,8 @@ statements/_secrets.json                                  GITIGNORED: the key an
 
 **One statement per person, not per code (v609, his ruling of 13 Sep 2026).** An associate's
 `<CODE>-R` bucket is theirs, so it is never a party: its rows print on the associate's statement
-marked *for resale*, and its price history feeds the associate's price list. From October no issue
+marked *on behalf of a friend* (v687; *for resale* until 18 Sep 2026), and its price history
+feeds the associate's price list. From October no issue
 makes a bucket file; the August and September bucket files stay as sent, and the publish leaves a
 bucket's record out, which retires it from the site.
 
@@ -312,12 +313,19 @@ addresses the desk.
 
 `REQUIRE_ACCESS` on the desk does not touch this site, and never will: the two share nothing.
 
-## The owner's list, guest links and printed boards
+## The master account at `/all`, guest links and printed boards
 
 Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
 
 - **No brand** (his instruction, 10 Sep 2026): nothing a customer holds may point at the
   ledger, and an eyebrow carrying the name undid that.
+- **The master account** (v687, his instruction of 18 Sep 2026) opens on what it can do: Review
+  statement, and the links below it. Review lists every account with where it stands, in one word
+  from `reviewFlag`, and when it was last opened, from the `seen:` keys this Worker has written
+  since v499 and nothing read until now. The list comes from `GET /all/sheet`, which merges those
+  opens into `sheet`, written by `tools/stmt-publish.mjs` from each statement's own rows through
+  `partyTotals`, so the laptop's review sheet and the phone cannot say different things. A bucket
+  is never listed: `usersMap` maps it to nothing.
 - **`/all`** (v566) serves the customer's own page with the roster where the gate is; a tap
   fills the username and `STMT_MASTER` into that form and submits it, so everything past the
   door is the customer's own code. His decision: the gated route hands the master to the page,

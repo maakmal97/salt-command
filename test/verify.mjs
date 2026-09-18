@@ -7988,7 +7988,7 @@ await (async () => {
       "without the key the records go up as issued and no live document is written");
 
     const plan = await planPublish(root, "test-secret", now, ["u:" + u, "u:zzzz-zzzz", "fail:" + u, "fail:aaaa-aaaa"], null);
-    ok(plan.puts.length === sep.made + 1 && plan.puts.some(p => p.key === "u:" + u)
+    ok(plan.puts.length === sep.made + 2 && plan.puts.some(p => p.key === "u:" + u) && plan.puts.some(p => p.key === "sheet")
       && plan.puts.some(p => p.key === "issue" && p.value === "2026-09-01"),
       "the publish plan puts every record and the issue marker, in one bulk file");
     ok(plan.newIssue && plan.deletes.includes("u:zzzz-zzzz") && !plan.deletes.includes("u:" + u)
@@ -8014,7 +8014,7 @@ await (async () => {
     ok(goodK.wrongKey.length === 0 && goodK.live === sep.made,
       "and the right key still seals every one, so the check is not simply refusing everything");
     const planBad = await planPublish(root, "not-the-laptops-key", now, [], null);
-    ok(planBad.wrongKey.length === sep.made && planBad.puts.length === sep.made + 1,
+    ok(planBad.wrongKey.length === sep.made && planBad.puts.length === sep.made + 2,
       "the publish still puts the monthly statements, which open under the customer's own password, and reports the key");
 
     /* AND THE PUBLISH ASSERTS ITS OWN EFFECT rather than reporting one. Every deploy on master was
@@ -8042,7 +8042,7 @@ await (async () => {
     writeFileSync(join(root, "2026-09", "_kv", "CX0-AA.json"),
       JSON.stringify({ code: "CX0-AA", month: "2026-09", issued: "2026-09-01", verifier: {}, env: {} }) + "\n");
     const plan3 = await planPublish(root, "test-secret", now, ["u:zzzz-zzzz"], null);
-    ok(plan3.stale.length === 1 && plan3.stale[0] === "CX0-AA.json" && plan3.puts.length === sep.made + 1
+    ok(plan3.stale.length === 1 && plan3.stale[0] === "CX0-AA.json" && plan3.puts.length === sep.made + 2
       && !plan3.puts.some(p => p.key === "u:undefined"),
       "a record with no username is reported as stale and never becomes a key");
     const old = join(root, "2026-10");
@@ -10541,9 +10541,9 @@ await (async () => {
   const SOb = { from: null, to: "2026-09-01", completed: true, open: true, pending: true, dates: true, brand: "Salt Command", issued: "01 Sep 2026" };
   const rowsB = mB.stmtRows("CX9-AA", SOb);
   ok(rowsB.map(r => r.rid).join() === "sx01,sx02,sx03" && rowsB.filter(r => r.resale).map(r => r.rid).join() === "sx02,sx03",
-    "an associate's statement carries their bucket's orders beside their own, and marks only the bucket's as bought for resale");
+    "an associate's statement carries their bucket's orders beside their own, and marks only the bucket's as on behalf of a friend");
   const docB = mB.stmtDoc("CX9-AA", rowsB, Object.assign({}, SOb, { refunds: [], recon: [] }));
-  ok((docB.match(/<div class="sub2">for resale<\/div>/g) || []).length === 2,
+  ok((docB.match(/<div class="sub2">on behalf of a friend<\/div>/g) || []).length === 2,
     "and the document says so on each of those two lines, and on no other");
 
   /* A BUCKET IS NOT PUBLISHED: its record is left out, so the publish's delete step retires it */
@@ -10559,7 +10559,7 @@ await (async () => {
   ok(lrB.records.length === 1 && lrB.records[0].u === uA && lrB.live === 1,
     "the deploy publishes the associate's record with a live statement and leaves the bucket's out, so it is retired from the store");
   const liveB = mB.liveStatement("CX9-AA", new Date("2026-09-03T06:20:00Z"));
-  ok(liveB && (liveB.body.match(/for resale/g) || []).length === 2, "and that live statement carries the two resale lines");
+  ok(liveB && (liveB.body.match(/on behalf of a friend/g) || []).length === 2, "and that live statement carries the two lines, in the customer's words (v687)");
   const { usersMap: usersMapB } = await import("../tools/stmt-publish.mjs");
   const mapB = usersMapB(tmpB);
   ok(mapB[uA] === "CX9-AA" && !(uB in mapB),
@@ -13321,6 +13321,130 @@ await (async () => {
   const narrow85 = where85(".lrow,.lmove,.lhead{grid-template-columns:56px 74px minmax(60px,1fr) 108px;");
   ok(JSON.stringify(narrow85) === '["ledger (max-width:819px)"]',
     "the ledger re-flows its same cells below 820px of its own width, above the 765px its two-row shape needed: " + JSON.stringify(narrow85));
+})();
+section("v687: the master account opens on its own page, and the owner's script travels only there");
+await (async () => {
+  /* HIS INSTRUCTION OF 18 SEP 2026: a master account that opens on what it can do. /all is that account,
+     behind Access as before. Two things had to be true first: the owner's script must stop travelling in
+     every customer's page, where it has been since v566, and Review must read where each account stands
+     from the same rule the review sheet uses, never a second copy of it. */
+  const { landingPage: lp87 } = await import("../stmt/page.js");
+  const OWNERISH = ["drawRoster(", "openAcct(", "loadSheet(", "'/all/refs'", "'/all/sheet'", "OWNER.master"];
+  const cust87 = lp87("aaaa-bbbb", "n1", null);
+  const own87 = lp87("", "n2", { master: "mp87", accounts: [{ code: "CX0-AA", username: "aaaa-bbbb" }, { code: "CX1-BB", username: "cccc-dddd" }] });
+  ok(OWNERISH.every((t) => !cust87.includes(t)) && OWNERISH.every((t) => own87.includes(t)),
+    "the owner's script is on his page and on no customer's: " + JSON.stringify(OWNERISH.filter((t) => cust87.includes(t))));
+  ok(!cust87.includes("__OWNER_JS__") && !own87.includes("__OWNER_JS__") && !cust87.includes("mp87"),
+    "the splice leaves no marker on either page, and no master on the customer's");
+  ok(/id="mHome"/.test(own87) && own87.includes('data-m="review"') && own87.includes('data-m="links"') && own87.includes("data-back"),
+    "and the master page opens on its items, each with a way back");
+
+  /* ONE RULE FOR WHERE AN ACCOUNT STANDS (v687): the review sheet, the send sheet and the publish read it. */
+  const { reviewFlag, accountTotals, partyTotals, klToday } = await import("../tools/make_statements.mjs");
+  const T87 = (o) => Object.assign({ owed: 0, toGet: 0, refund: 0, pend: 0 }, o);
+  ok(reviewFlag(T87({ owed: 5, toGet: 2, refund: 3, pend: 4 })) === "owes" && reviewFlag(T87({ toGet: 2, refund: 3, pend: 4 })) === "goods"
+    && reviewFlag(T87({ refund: 3, pend: 4 })) === "refund" && reviewFlag(T87({ pend: 4 })) === "pend" && reviewFlag(T87({})) === "clear",
+    "one word per account, in the order owes, goods, refund, pend, clear");
+  const rows87 = [
+    { cancelled: true, gift: false, paidCash: 10, inKind: 0, qty: 5, total: 50, owed: 0, toGet: 0 },
+    { cancelled: false, gift: false, paidCash: 20, inKind: 5, qty: 2, total: 100, owed: 75, toGet: 0 },
+    { cancelled: false, gift: false, paidCash: 0, inKind: 0, qty: 1, total: 40, owed: 0, toGet: 0, pendingOrder: true }
+  ];
+  const t87 = accountTotals(rows87, [{ amount: 9 }, { amount: 4, paidOn: "2026-09-02" }]);
+  ok(t87.n === 2 && t87.cx === 1 && t87.paid === 35 && t87.owed === 75 && t87.pend === 40 && t87.refund === 9,
+    "a cancelled order is out of the count and out of the money, its cash still read, and only an unpaid refund counts: " + JSON.stringify(t87));
+
+  /* THE PUBLISH'S ACCOUNT LIST, over the real book: no bucket, a code each, the flag its own rule gives. */
+  const { planPublish: pp87 } = await import("../tools/stmt-publish.mjs");
+  const PE87 = (await import("../engine/position.mjs")).default;
+  const now87 = new Date("2026-09-18T02:00:00Z");
+  const plan87 = await pp87(join(REPO, "statements"), "", now87, [], null);
+  const sheetPut = plan87.puts.find((p) => p.key === "sheet");
+  const parsed87 = sheetPut ? JSON.parse(sheetPut.value) : null;
+  ok(!!parsed87 && parsed87.accounts.length === plan87.sheet.length && plan87.sheet.length > 10
+    && plan87.sheet.every((a) => a.code && !PE87.isBucket(a.code) && a.username),
+    "the publish writes one row per account, by code, and never a bucket: " + plan87.sheet.length + " accounts");
+  const day87 = klToday(now87);
+  const wrong87 = plan87.sheet.filter((a) => a.flag !== reviewFlag(partyTotals(a.code, day87)));
+  ok(wrong87.length === 0, "and each row's word is what that account's own statement rows give: " + JSON.stringify(wrong87.slice(0, 2)));
+  ok(!JSON.stringify(plan87.sheet).match(/\b(cost|margin|floor|profit)\b/i), "with none of the seller's vocabulary in it");
+  /* A BUCKET IS NOT ITS OWN ACCOUNT (his instruction, 18 Sep 2026): its line stays in _users.json,
+     kept for life, and maps to nothing, so no list on the site can offer it. */
+  const { usersMap: um87 } = await import("../tools/stmt-publish.mjs");
+  const mapped87 = Object.values(um87(join(REPO, "statements")));
+  const bucketLines = Object.keys(JSON.parse(readFileSync(join(REPO, "statements", "_users.json"), "utf8"))).filter((c) => PE87.isBucket(c));
+  ok(bucketLines.length > 0 && bucketLines.every((c) => !mapped87.includes(c)),
+    "a bucket keeps its username line and maps to nothing, so it is never an account of its own: " + bucketLines.join(", "));
+
+  /* THE ROUTE: behind Access with the rest of /all, merged with the opens this Worker has always written. */
+  const realFetch87 = globalThis.fetch;
+  try {
+    const TEAM87 = "maakmal", AUD87 = "aud-87", KID87 = "kid-87";
+    const kp87 = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048,
+      publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
+    const pub87 = await crypto.subtle.exportKey("jwk", kp87.publicKey);
+    globalThis.fetch = async (u) => {
+      if (String(u) === "https://" + TEAM87 + ".cloudflareaccess.com/cdn-cgi/access/certs") return new Response(JSON.stringify({ keys: [{ ...pub87, kid: KID87, kty: "RSA" }] }));
+      throw new Error("the Access gate reached for " + u);
+    };
+    const b64u87 = (b) => Buffer.from(b).toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+    const token87 = async () => {
+      const claims = { iss: "https://" + TEAM87 + ".cloudflareaccess.com", aud: [AUD87], email: "maakmal97@icloud.com", exp: Math.floor(Date.now() / 1000) + 600 };
+      const h = b64u87(JSON.stringify({ alg: "RS256", kid: KID87, typ: "JWT" })), c = b64u87(JSON.stringify(claims));
+      const sig = await crypto.subtle.sign("RSASSA-PKCS1-v1_5", kp87.privateKey, new TextEncoder().encode(h + "." + c));
+      return h + "." + c + "." + b64u87(new Uint8Array(sig));
+    };
+    const kv87 = new KV();
+    await kv87.put("u:aaaa-bbbb", "{}"); await kv87.put("u:cccc-dddd", "{}");
+    await kv87.put("roster", JSON.stringify([{ code: "CX0-AA", username: "aaaa-bbbb" }, { code: "CX1-BB", username: "cccc-dddd" }]));
+    await kv87.put("sheet", JSON.stringify({ at: now87.toISOString(), issue: "2026-09-01",
+      accounts: [{ code: "CX0-AA", username: "aaaa-bbbb", issued: "2026-09-01", t: { owed: 272, toGet: 0, refund: 0, pend: 0 }, flag: "owes" }] }));
+    await kv87.put("seen:aaaa-bbbb", JSON.stringify({ first: "2026-09-02T01:00:00Z", last: "2026-09-14T09:00:00Z", opens: 3, issued: "2026-09-01" }));
+    const env87 = { STMT: kv87, STMT_MASTER: "mp87", ACCESS_TEAM: TEAM87, ACCESS_AUD: AUD87 };
+    const get87 = async (path, tok) => stmtWorker.fetch(new Request("https://k7m3p2.example" + path, tok ? { headers: { "cf-access-jwt-assertion": tok } } : {}), env87);
+
+    const shut = await Promise.all(["/all/sheet", "/all/refs", "/all/nope"].map((p) => get87(p)));
+    const bodies = await Promise.all(shut.map((r) => r.text()));
+    ok(shut.every((r) => r.status === 401) && new Set(bodies).size === 1,
+      "every path under /all refuses the same way without Access, whatever it is: " + JSON.stringify(bodies[0]));
+    const tok87 = await token87();
+    const openSheet = await get87("/all/sheet", tok87);
+    const js87 = await openSheet.json();
+    const a0 = js87.accounts.find((a) => a.username === "aaaa-bbbb"), a1 = js87.accounts.find((a) => a.username === "cccc-dddd");
+    ok(openSheet.status === 200 && js87.accounts.length === 2 && a0.flag === "owes" && a0.t.owed === 272 && a0.code === "CX0-AA"
+      && a0.seen && a0.seen.opens === 3 && a0.seen.last === "2026-09-14T09:00:00Z",
+      "with Access it answers the account list, each with its word and when it was last opened");
+    ok(a1 && a1.t === null && a1.flag === null && a1.seen === null,
+      "an account the publish has no row for is still listed, and says nothing rather than guessing");
+    const nope = await get87("/all/nope", tok87), plain = await get87("/nope");
+    ok(nope.status === 404 && plain.status === 404 && (await nope.text()) === (await plain.text()),
+      "and an unknown path past the check answers the site's usual 404, byte for byte");
+    const custPage = await (await get87("/")).text();
+    ok(!custPage.includes("mp87") && !custPage.includes("/all/sheet") && !custPage.includes("CX0-AA"),
+      "while the customer's door carries no master, no owner route and no code");
+
+    /* the page itself: tap Review, and the list is drawn from that route */
+    const { JSDOM: JD87 } = await import("jsdom");
+    const dom87 = new JD87(lp87("", "n3", { master: "mp87", accounts: [{ code: "CX0-AA", username: "aaaa-bbbb" }, { code: "CX1-BB", username: "cccc-dddd" }] }),
+      { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true });
+    const W87 = dom87.window, D87 = W87.document;
+    W87.fetch = async (path) => (String(path) === "/all/sheet"
+      ? { ok: true, status: 200, json: async () => js87 }
+      : { ok: false, status: 404, json: async () => ({ ok: false, error: "no" }) });
+    try {
+      ok(D87.getElementById("mHome").hidden === false && D87.getElementById("oReview").hidden === true,
+        "the master page opens on its items, with Review closed");
+      D87.querySelector('button[data-m="review"]').dispatchEvent(new W87.Event("click", { bubbles: true }));
+      await new Promise((r) => setTimeout(r, 60));
+      const list87 = D87.getElementById("rlist").textContent;
+      ok(D87.getElementById("oReview").hidden === false && D87.getElementById("mHome").hidden === true
+        && /CX0-AA/.test(list87) && /Owes RM 272/.test(list87) && /Opened 14 Sept? 2026/.test(list87),
+        "a tap on Review draws every account with its word and its last open: " + list87.replace(/\s+/g, " ").slice(0, 120));
+      D87.querySelector("button[data-back]").dispatchEvent(new W87.Event("click", { bubbles: true }));
+      ok(D87.getElementById("mHome").hidden === false && D87.getElementById("oReview").hidden === true,
+        "and Back returns to the items");
+    } finally { try { W87.close(); } catch (e) { /* best effort */ } }
+  } finally { globalThis.fetch = realFetch87; }
 })();
 section("The suite frees its windows: every section's body is its own async function");
 await (async () => {

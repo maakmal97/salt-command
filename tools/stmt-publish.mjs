@@ -22,7 +22,7 @@ import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { dirname, resolve, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { liveRecords, siteBaseUrl } from "./make_statements.mjs";
+import { liveRecords, siteBaseUrl, partyTotals, reviewFlag, klToday } from "./make_statements.mjs";
 import POSITION_ENGINE from "../engine/position.mjs";
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -60,7 +60,27 @@ export async function planPublish(root, key, now, existingKeys, storedIssue, pri
     }
     puts.push({ key: "issue", value: issued });
   }
-  return { latest: r.latest, issued, newIssue, live: r.live, priced: r.priced || 0, unmatched: r.unmatched, stale: r.stale, wrongKey: r.wrongKey || [], puts, deletes, users: usersMap(root) };
+  /* ---- THE ACCOUNT LIST THE MASTER PAGE READS (v687) --------------------------------------
+     His master account reviews every account from his phone, so each one needs the two things
+     the review sheet has always shown: where it stands and one word for it. Both come from the
+     statement's own rows through partyTotals, so the sheet on the laptop and the list on the
+     phone cannot say different things about the same account. Read live, to today in Kuala
+     Lumpur, which is what "Now" on a statement means.
+     A BUCKET IS NOT ITS OWN ACCOUNT (his instruction, 18 Sep 2026): usersMap drops <CODE>-R, so
+     it has no code here and is left out; its rows are already on its associate's statement,
+     marked for resale. CODES, NEVER NAMES, as the roster beside it. */
+  const byUser = usersMap(root);
+  const day = klToday(now);
+  const sheet = r.records.map((rec) => {
+    const code = byUser[rec.u] || null;
+    if (!code) return null;
+    const t = partyTotals(code, day);
+    return { code, username: rec.u, issued: rec.issued || null, t, flag: reviewFlag(t) };
+  }).filter(Boolean).sort((a, b) => a.code.localeCompare(b.code));
+  if (r.records.length) {
+    puts.push({ key: "sheet", value: JSON.stringify({ at: new Date(now || Date.now()).toISOString(), issue: issued, accounts: sheet }) });
+  }
+  return { latest: r.latest, issued, newIssue, live: r.live, priced: r.priced || 0, unmatched: r.unmatched, stale: r.stale, wrongKey: r.wrongKey || [], puts, deletes, sheet, users: usersMap(root) };
 }
 
 /* shell:true, and NOT an npx.cmd branch. Node refuses to spawn a .cmd without a shell on Windows

@@ -356,6 +356,35 @@ function refQr(origin, id) {
 }
 const refOut = (origin, r) => Object.assign({}, r, { url: refUrl(origin, r.id), qr: refQr(origin, r.id) });
 
+/* ---- THE MASTER ACCOUNT (v687, his instruction of 18 Sep 2026) --------------------------------
+ * /all is his account, and it opens on its own page: Review statement, and the links below it.
+ * ONE CHECK AT THE DOOR OF THE WHOLE PREFIX, rather than one per route: a route added under /all
+ * later cannot be reachable by forgetting a line, which is the only way this gate has ever been
+ * got wrong. /all itself keeps the plain-text refusal, because reaching it unauthenticated means
+ * the Access application is gone and that is the one thing he must be told; everything under it
+ * answers the same JSON 401 whatever the path, so a probe learns nothing from the difference. An
+ * unknown path past the check answers the site's usual 404, byte for byte.
+ *
+ * WHAT REVIEW READS is `sheet`, written by tools/stmt-publish.mjs from each statement's own rows,
+ * merged here with `seen:<username>`, which this Worker has written on every customer open since
+ * v499 and nothing has ever read. Codes, never names. */
+async function ownerSheet(env) {
+  const sheet = await env.STMT.get("sheet", "json");
+  const rows = sheet && Array.isArray(sheet.accounts) ? sheet.accounts : [];
+  const byUser = new Map(rows.map((a) => [a.username, a]));
+  const out = [];
+  for (const a of await roster(env)) {
+    const s = byUser.get(a.username) || null;
+    const seen = await env.STMT.get("seen:" + a.username, "json");
+    out.push({
+      code: a.code, username: a.username,
+      issued: s ? s.issued : null, t: s ? s.t : null, flag: s ? s.flag : null,
+      seen: seen ? { first: seen.first || null, last: seen.last || null, opens: +seen.opens || 0 } : null
+    });
+  }
+  return { ok: true, at: sheet ? sheet.at || null : null, issue: sheet ? sheet.issue || null : null, accounts: out };
+}
+
 async function handleRefs(request, env, p, m, origin) {
   if (!env.STMT) return json({ ok: false, error: "no KV binding" }, 500);
   if (!(await identity(request, env))) return json({ ok: false, error: "Access required" }, 401);
@@ -446,20 +475,28 @@ export default {
     const g = /^\/g\/([^/]+)$/.exec(p);
     if (g) return handleGuest(request, env, g[1]);
 
-    /* the referral links, minted and revoked from inside the Access area only */
-    if (p === "/all/refs" || p.startsWith("/all/refs/")) return handleRefs(request, env, p, m, url.origin);
-
-    if (p === "/all") {
-      if (m !== "GET" && m !== "HEAD") return json({ ok: false, error: "method not allowed" }, 405);
+    /* the master account: the page, the account list, and the links, all behind one check */
+    if (p === "/all" || p.startsWith("/all/")) {
       if (!env.STMT) return json({ ok: false, error: "no KV binding" }, 500);
-      /* Said plainly rather than answered with a 404: reaching this unauthenticated means the
-         Access application is gone or misconfigured, and that is the one thing he must be told
-         rather than left to guess at. Nothing is handed over either way. */
       const who = await identity(request, env);
-      if (!who) return new Response("This page is behind Cloudflare Access, and this request did not pass it.", {
-        status: 401, headers: Object.assign({ "content-type": "text/plain; charset=utf-8" }, HEADERS)
-      });
-      return pageResponse("", { master: String(env.STMT_MASTER || ""), accounts: await roster(env) });
+      if (p === "/all") {
+        if (m !== "GET" && m !== "HEAD") return json({ ok: false, error: "method not allowed" }, 405);
+        /* Said plainly rather than answered with a 404: reaching this unauthenticated means the
+           Access application is gone or misconfigured, and that is the one thing he must be told
+           rather than left to guess at. Nothing is handed over either way. */
+        if (!who) return new Response("This page is behind Cloudflare Access, and this request did not pass it.", {
+          status: 401, headers: Object.assign({ "content-type": "text/plain; charset=utf-8" }, HEADERS)
+        });
+        return pageResponse("", { master: String(env.STMT_MASTER || ""), accounts: await roster(env) });
+      }
+      if (!who) return json({ ok: false, error: "Access required" }, 401);
+      /* the referral links, minted and revoked from inside the Access area only */
+      if (p === "/all/refs" || p.startsWith("/all/refs/")) return handleRefs(request, env, p, m, url.origin);
+      if (p === "/all/sheet") {
+        if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
+        return json(await ownerSheet(env));
+      }
+      return notFound();
     }
 
     if (p === "/open") {

@@ -34,6 +34,7 @@
    this file and CI runs --check, so there is still one source. */
 import { STATEMENT_CSS } from "./statement-css.js";
 import { PAY_SITE, PAY_ACCOUNTS } from "./pay.js";
+import { OWNER_JS } from "./owner.js";
 
 export const WINDOW_MS = 180000;
 export const POLL_MS = 10000;
@@ -141,6 +142,26 @@ select.fld{letter-spacing:0;appearance:none;-webkit-appearance:none}
 .rlist button:hover{border-color:var(--salt-brass)}
 .rlist button span{color:var(--salt-mist);font-size:var(--salt-text-xs);letter-spacing:.06em}
 .rnone{color:var(--salt-text-muted);font-size:var(--salt-text-sm);margin:14px 0 0}
+/* THE MASTER ACCOUNT (v687). Its items are the roster's own rows, so the page has one shape; an
+   account's row wraps to two lines, the code and username on the first and where it stands on the
+   second, because the flag is the thing he is reading the list for. The five words take the
+   colours the desk gives the same states: owed in ember, goods in steel, a refund in brass. */
+.rlist button[data-m]{flex-wrap:wrap}
+.rlist button[data-m] span{flex:1 0 100%;margin-top:4px;color:var(--salt-text-muted)}
+#rlist button{flex-wrap:wrap}
+#rlist button .fl{flex:1 0 100%;margin-top:5px;letter-spacing:.04em}
+#rlist button .op{flex:1 0 100%;color:var(--salt-text-muted)}
+#rlist button .f-owes{color:var(--salt-ember)}
+#rlist button .f-goods{color:var(--salt-steel)}
+#rlist button .f-refund{color:var(--salt-brass)}
+#rlist button .f-pend{color:var(--salt-copper)}
+#rlist button .f-clear,#rlist button .f-none{color:var(--salt-mist)}
+#mHome h1,#oReview h1,#oLinks h1{margin-top:0}
+/* the way back is a quiet line, not a second filled control: the page has one of those and it is
+   the one that opens an account */
+button[data-back]{display:inline-flex;align-items:center;min-height:var(--salt-tap);margin:0;padding:0;
+  background:none;border:0;color:var(--salt-brass);cursor:pointer;text-align:left;
+  font-family:var(--salt-font-mono);font-size:var(--salt-text-xs);letter-spacing:.14em;text-transform:uppercase}
 /* A GUEST LINK, as a card: who it is for leads, then the tier, then what it has done. The address
    is selectable text rather than a live link, because the thing he does with it is copy it. */
 .glink{border:1px solid var(--salt-line);border-radius:var(--salt-radius-sm);background:var(--salt-glass);
@@ -222,16 +243,27 @@ export function landingPage(user, nonce, owner) {
     + '<style nonce="' + nonce + '">' + STATEMENT_CSS + PAGE_CSS + "</style></head><body>"
     + (owner
       ? '<div id="roster" class="gate">'
-        + '<div class="tabs" id="otabs"><button type="button" data-o="acct" class="on">Accounts</button>'
-        + '<button type="button" data-o="links">Links</button></div>'
-        + '<div id="oAcct">'
-        + "<h1>Accounts</h1>"
-        + '<p class="lead">' + owner.accounts.length + " on the site. Tap one to open it.</p>"
+        /* v687: the master account opens on what it can do, not on a list. An item is added here
+           only once it works, so nothing on this page is a promise. */
+        + '<div id="mHome">'
+        + "<h1>Master account</h1>"
+        + '<p class="lead">' + owner.accounts.length + " accounts on the site.</p>"
+        + '<div class="rlist" id="mItems">'
+        + '<button type="button" data-m="review">Review statement'
+        + "<span>where every account stands, and when it was last opened</span></button>"
+        + '<button type="button" data-m="links">Links'
+        + "<span>guest price lists, made and withdrawn</span></button>"
+        + "</div></div>"
+        + '<div id="oReview" hidden>'
+        + '<button type="button" data-back>' + "← Back" + "</button>"
+        + "<h1>Review statement</h1>"
+        + '<p class="lead">Tap an account to open it exactly as its own page.</p>'
         + '<input class="fld" id="rq" type="text" autocapitalize="none" autocorrect="off" '
         + 'spellcheck="false" placeholder="filter" aria-label="Filter accounts">'
         + '<div id="rlist" class="rlist"></div>'
         + "</div>"
         + '<div id="oLinks" hidden>'
+        + '<button type="button" data-back>' + "← Back" + "</button>"
         + "<h1>Guest links</h1>"
         + '<p class="lead">A link shows one board and nothing else: no statement, no '
         + "order, no account. The id in the link is what opens it, so it is the key.</p>"
@@ -283,6 +315,9 @@ export function landingPage(user, nonce, owner) {
          string literal ends the block wherever it appears: the browser closes the tag first and
          reads the rest of the passphrase as page text. */
       .replace("__OWNER__", JSON.stringify(owner || null).replace(/</g, "\\u003c"))
+      /* v687: the owner's script travels only on his route. A function replacement, so nothing in
+         it is read as a $ pattern. */
+      .replace("/*__OWNER_JS__*/", () => (owner ? OWNER_JS : ""))
     + "</script>"
     + "</body></html>";
 }
@@ -835,123 +870,11 @@ const CLIENT_JS = `
     if(session){ await loadOrders(); if(stale()) return; if(poll)clearInterval(poll); poll=setInterval(refresh, POLL_MS); }
     drawOrder();
   });
-  /* ---- THE OWNER'S ROSTER (10 Sep 2026) ----------------------------------------------------
-     A tap fills the customer's own form with his username and the master, and submits it. Nothing
-     below the door knows the difference: the Worker answers byMaster, the page unwraps wrapMaster,
-     and the statement, the prices and the lock are the customer's own. */
-  function openAcct(a){
-    if(!OWNER) return;
-    if(!OWNER.master){ say('No master passphrase is set on this Worker, so nothing can be opened. Set STMT_MASTER.','bad'); return; }
-    if(busy) return;
-    un.value=a.username; pw.value=OWNER.master;
-    if(whoacct) whoacct.textContent=(a.code||a.username)+' \\u00b7 ';
-    var f=document.getElementById('f');
-    if(f.requestSubmit) f.requestSubmit();
-    else f.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}));
-  }
-  function drawRoster(){
-    if(!OWNER) return;
-    var q=(rq.value||'').toLowerCase().replace(/\\s+/g,'');
-    rlist.textContent='';
-    var hits=OWNER.accounts.filter(function(a){
-      if(!q) return true;
-      return ((a.code||'')+' '+a.username).toLowerCase().replace(/\\s+/g,'').indexOf(q)>=0;
-    });
-    if(!hits.length){ rlist.appendChild(el('p','rnone','Nothing matches that.')); return; }
-    hits.forEach(function(a){
-      var b=el('button',null,a.code||a.username); b.type='button';
-      if(a.code) b.appendChild(el('span',null,a.username));
-      b.addEventListener('click', function(){ openAcct(a); });
-      rlist.appendChild(b);
-    });
-  }
-  /* ---- THE GUEST LINKS, on the same gated route -------------------------------------------
-     Minted, listed and revoked over /all/refs; the Worker draws the QR and returns it as a data
-     URI, so nothing here encodes anything and the page loads no library to do it. */
-  var links=[];
-  function stampDay(iso){
-    try{ return new Date(iso).toLocaleDateString('en-GB',{timeZone:'Asia/Kuala_Lumpur',
-      day:'2-digit',month:'short',year:'numeric'}); }catch(e){ return ''; }
-  }
-  function drawLinks(){
-    var glist=document.getElementById('glist');
-    glist.textContent='';
-    if(!links.length){ glist.appendChild(el('p','rnone','No links yet.')); return; }
-    links.forEach(function(r){
-      var card=el('div','glink'+(r.revoked?' off':''));
-      card.appendChild(el('p','gt','Tier '+r.tier+(r.revoked?' \\u00b7 withdrawn':'')));
-      card.appendChild(el('h4',null,r.label||'(no label)'));
-      card.appendChild(el('code','gu',r.url));
-      card.appendChild(el('p','gs', r.opens
-        ? 'opened '+r.opens+' time'+(r.opens===1?'':'s')+', last '+stampDay(r.last)
-        : 'never opened \\u00b7 made '+stampDay(r.made)));
-      var img=document.createElement('img');
-      img.src=r.qr; img.alt='QR to the guest price list for '+(r.label||r.id); img.width=180; img.height=180;
-      card.appendChild(img);
-      var row=el('div','grow');
-      var copy=el('button',null,'Copy link'); copy.type='button';
-      copy.addEventListener('click', function(){
-        try{ navigator.clipboard.writeText(r.url); copy.textContent='Copied'; }
-        catch(e){ copy.textContent='Copy failed'; }
-        setTimeout(function(){ copy.textContent='Copy link'; }, 1500);
-      });
-      var rev=el('button',null,r.revoked?'Restore':'Withdraw'); rev.type='button';
-      rev.addEventListener('click', function(){ moveLink(r, r.revoked?'restore':'revoke'); });
-      row.appendChild(copy); row.appendChild(rev); card.appendChild(row);
-      glist.appendChild(card);
-    });
-  }
-  async function refs(path, body){
-    var o = body ? {method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify(body)}
-                 : {};
-    var r = await fetch(path, o);
-    var j = await r.json().catch(function(){ return {}; });
-    if(!r.ok||!j.ok) throw new Error(j.error||'that did not work');
-    return j;
-  }
-  async function loadLinks(){
-    try{ links=(await refs('/all/refs')).refs||[]; drawLinks(); say(''); }
-    catch(e){ say(e.message,'bad'); }
-  }
-  async function moveLink(r, how){
-    try{
-      var j=await refs('/all/refs/'+r.id+'/'+how);
-      for(var i=0;i<links.length;i++) if(links[i].id===j.ref.id) links[i]=j.ref;
-      drawLinks(); say('');
-    }catch(e){ say(e.message,'bad'); }
-  }
-  if(OWNER){
-    document.getElementById('gmake').addEventListener('click', async function(){
-      var b=this, intro=document.getElementById('gintro').value,
-          label=document.getElementById('glabel').value;
-      if(!String(intro||'').trim()){ say('Name the customer introducing them.','bad'); return; }
-      b.disabled=true; say('Making it...','wait');
-      try{
-        var j=await refs('/all/refs', {introducer:intro, label:label});
-        links.unshift(j.ref); drawLinks();
-        document.getElementById('glabel').value='';
-        document.getElementById('gintro').value='';
-        say('Made. The QR opens it.');
-      }catch(e){ say(e.message,'bad'); }
-      b.disabled=false;
-    });
-    document.getElementById('otabs').addEventListener('click', function(ev){
-      var b=ev.target.closest('button[data-o]'); if(!b) return;
-      var which=b.getAttribute('data-o'), bs=this.querySelectorAll('button');
-      for(var i=0;i<bs.length;i++) bs[i].className=(bs[i]===b?'on':'');
-      document.getElementById('oAcct').hidden=(which!=='acct');
-      document.getElementById('oLinks').hidden=(which!=='links');
-      say('');
-      if(which==='links'&&!links.length) loadLinks();
-    });
-  }
+  /* THE OWNER'S OWN SCRIPT IS SPLICED IN HERE, and only on his route (v687). Everything it
+     needs -- say(), el(), stamp(), un, pw, whoacct, busy, OWNER -- is in scope at this point,
+     and a customer's page carries none of it: stmt/owner.js. */
+  /*__OWNER_JS__*/
 
-  if(OWNER){
-    rq.addEventListener('input', drawRoster);
-    drawRoster();
-    try{ rq.focus(); }catch(e){}
-  } else {
-    try{ (un.value?firstEmpty('pw'):firstEmpty('un')).focus(); }catch(e){}
-  }
+  if(!OWNER){ try{ (un.value?firstEmpty('pw'):firstEmpty('un')).focus(); }catch(e){} }
 })();
 `;
