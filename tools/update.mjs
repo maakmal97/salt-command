@@ -36,6 +36,7 @@ import { DATA_DIR } from "./book.mjs";
 import { readSnapshot } from "./d1.mjs";
 import { spawnSync } from "node:child_process";
 import { resolve, dirname, join } from "node:path";
+import { messageFrom } from "./commitmsg.mjs";
 import { fileURLToPath } from "node:url";
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -56,7 +57,9 @@ const DRY = has("--dry");
 const NO_PUSH = has("--no-push") || DRY;
 const NO_DEPLOY = has("--no-deploy") || DRY;
 const NO_DRAIN = has("--no-drain") || DRY;
-const MSG = (() => { const i = argv.indexOf("-m"); return i >= 0 ? argv[i + 1] : null; })();
+/* -m TAKES A MESSAGE OR A FILE HOLDING ONE; tools/commitmsg.mjs says why and is the only part of
+   this tool the suite can drive, since everything else here runs on import. */
+const MSG = messageFrom(argv);
 
 /* ---- plumbing -------------------------------------------------------------------- */
 const problems = [];

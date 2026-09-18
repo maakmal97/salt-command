@@ -15546,6 +15546,43 @@ await (async () => {
     ok((await S10.burnSignin(env10, liveTok)) === null, "and the link itself is spent");
   } finally { try { dom10.window.close(); } catch (e) { /* best effort */ } }
 })();
+section("v710a: -m takes a message or a file holding one, so a note is never committed as a path");
+await (async () => {
+  /* IT HAS GONE WRONG TWICE IN A DAY. v694 to v698 landed as one line each, the note passed through
+     JSON.stringify so every newline was written out as two characters; and v710's own note was
+     handed over as a FILE, because no shell here passes paragraphs without mangling them, and the
+     path was committed as the message. The subject is all `git log --oneline` shows, so both faults
+     were readable and neither was visible. This is the one part of update.mjs that can be driven:
+     the rest of the tool runs its whole chain on import. */
+  const { messageFrom } = await import("../tools/commitmsg.mjs");
+  const dir = join(REPO, "test", "tmp");
+  mkdirSync(dir, { recursive: true });
+  const f = join(dir, "msg710a.txt");
+  const note = "v711: a subject line\n\nA paragraph with an apostrophe in it, a $dollar and a `backtick`.\n\n- a bullet\n";
+  writeFileSync(f, note, "utf8");
+  try {
+    ok(messageFrom(["node", "update.mjs", "-m", f]) === note.trim(),
+      "a file holding the note is READ, paragraphs and all, rather than committed as a path");
+    ok(messageFrom(["node", "update.mjs", "-m", f]).split("\n").length === 5,
+      "and it keeps its real newlines, which is the fault v694 to v698 shipped with");
+    ok(messageFrom(["node", "update.mjs", "-m", "v711: typed straight in"]) === "v711: typed straight in",
+      "a message typed straight in is still just the message");
+    ok(messageFrom(["node", "update.mjs", "--dry"]) === null && messageFrom(["node", "update.mjs", "-m"]) === null,
+      "no -m, and a bare -m at the end, are both no message at all");
+    ok(messageFrom(["node", "update.mjs", "-m", "--no-push"]) === null,
+      "and the next flag is never taken as the message, which would commit a flag as a subject");
+    writeFileSync(f, "   \n\n  \n", "utf8");
+    ok(messageFrom(["node", "update.mjs", "-m", f]) === f,
+      "a file with nothing in it falls back to the argument, so an empty note never commits an empty subject");
+    ok(messageFrom(["node", "update.mjs", "-m", dir]) === dir,
+      "and a directory is not read, it is taken as typed");
+    /* THE WIRING, WHICH NOTHING ELSE HERE CAN SEE. Driving the seam proves nothing about the tool
+       if the tool kept its own copy of the rule, and that is precisely how it stood an hour ago. */
+    const usrcM = readFileSync(join(REPO, "tools", "update.mjs"), "utf8");
+    ok(/const MSG = messageFrom\(argv\);/.test(usrcM) && !/argv\.indexOf\("-m"\)/.test(usrcM),
+      "and update.mjs reads this seam rather than holding a second copy of the rule");
+  } finally { try { rmSync(f, { force: true }); } catch (e) { /* best effort */ } }
+})();
 section("The suite frees its windows: every section's body is its own async function");
 await (async () => {
   /* the note at section() says why: a bare block at the top level keeps its desk window to the end of the run */

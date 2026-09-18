@@ -1,5 +1,17 @@
 [
  {
+  "v": "v711",
+  "d": "18 Sep 2026",
+  "t": "A VERSION NOTE HANDED TO -m AS A FILE IS READ, NOT COMMITTED AS A PATH",
+  "n": [
+   "<b>IT HAS GONE WRONG TWICE IN A DAY, AND BOTH TIMES IT LOOKED FINE.</b> The note was passed as JSON.stringify first, so v694 to v698 each landed as ONE line with backslash-n written out through the middle of it. Then v710's note was handed over as a FILE, because no shell here passes paragraphs without mangling them, and the tool committed the PATH. git log --oneline shows the subject alone and the subject was readable every time, which is the whole reason neither was seen.",
+   "<b>SO -m TAKES EITHER.</b> A message is a message; an argument naming a file that exists and has something in it is the note itself, read off disk with its paragraphs intact. A directory, an empty file and a name that merely looks like a path are all taken as typed, and the next flag is never swallowed as a subject, which would commit --no-push as a version note.",
+   "<b>IT LIVES IN ITS OWN FILE BECAUSE update.mjs CANNOT BE DRIVEN.</b> The tool runs its whole chain on import: drain, build, test, deploy, commit, push and then prove every surface level. There is no way to ask it what it made of an argument without shipping a version. tools/commitmsg.mjs is the one seam, and the suite holds update.mjs to reading it rather than keeping a second copy of the rule, because a seam the tool has stopped using proves nothing about the tool. That is exactly how it stood an hour ago.",
+   "<b>NOTHING ON THE PHONE MOVES.</b> No engine, no book, no page and no route: rev.json's id does not cover tools/ and was never going to.",
+   "<b>THE CHECKS.</b> A new section of 8 assertions: a file read with its paragraphs and its real newlines, a message typed straight in left alone, no -m and a bare -m both no message at all, the next flag never taken, an empty file and a directory both falling back to the argument, and the wiring itself. Six mutations each turned it red, one of them by restoring the v710 fault and one by restoring the v694 one."
+  ]
+ },
+ {
   "v": "v710",
   "d": "18 Sep 2026",
   "t": "THE SHARED LINK SIGNS THEM IN ONCE, SO NO MESSAGE EVER CARRIES A PASSWORD",
