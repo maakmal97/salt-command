@@ -70,11 +70,22 @@ const notFound = () => new Response("Not found", {
   status: 404, headers: Object.assign({ "content-type": "text/plain; charset=utf-8" }, HEADERS)
 });
 
+/* ---- THE TEST ACCOUNT (v689, his instruction of 18 Sep 2026) ---------------------------------
+ * One account he can open anywhere, that counts nowhere, and that he can destroy with one tap.
+ * ITS NAME IS THE POINT: zeros are not in the alphabet a real username is drawn from, so this one
+ * cannot collide with an account and cannot be arrived at by mistyping one. Both are the exception
+ * stated here and nowhere else. It is made by the Worker, with its own random key, so no statement,
+ * no price list and no laptop secret is involved in it. */
+export const TEST_USER = "0000-0000";
+export const TEST_PASS = "0000-0000-0000-0000";
+const TEST_REC = "u:" + TEST_USER;
+
 /** Case and punctuation are forgiven; anything that is not eight symbols of the alphabet is "". */
 export function normUser(s) {
   s = String(s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
   if (s.length !== 8) return "";
   s = s.slice(0, 4) + "-" + s.slice(4);
+  if (s === TEST_USER) return s;
   return USER_RE.test(s) ? s : "";
 }
 
@@ -88,6 +99,8 @@ const PASS_RE = /^[23456789abcdefghjkmnpqrstvwxyz]{16}$/;
 export function normPass(s) {
   const t = typeof s === "string" ? s.trim() : "";
   const raw = t.toLowerCase().replace(/[^a-z0-9]/g, "");
+  /* the test account's password is sixteen zeros, forgiven the same way a real one is (v689) */
+  if (/^0{16}$/.test(raw)) return TEST_PASS;
   if (!PASS_RE.test(raw)) return t;
   return raw.slice(0, 4) + "-" + raw.slice(4, 8) + "-" + raw.slice(8, 12) + "-" + raw.slice(12);
 }
@@ -328,12 +341,18 @@ async function handleDesk(request, env, p, m) {
  * itself and the codes are simply absent. Neither path reads a single sealed document. */
 async function roster(env) {
   const named = await env.STMT.get("roster", "json");
-  if (Array.isArray(named) && named.length) return named;
+  /* v689: the test account is on the list so he can open it, and marked so every count leaves it
+     out. The publish never writes it into `roster`, so it is added here or not at all. */
+  const test = (await env.STMT.get("u:" + TEST_USER)) ? [{ code: "TEST", username: TEST_USER, test: true }] : [];
+  if (Array.isArray(named) && named.length) return named.concat(test);
   const out = [];
   let cursor;
   do {
     const page = await env.STMT.list({ prefix: "u:", cursor });
-    for (const k of page.keys) out.push({ code: null, username: k.name.slice(2) });
+    for (const k of page.keys) {
+      const username = k.name.slice(2);
+      out.push(username === TEST_USER ? { code: "TEST", username, test: true } : { code: null, username });
+    }
     cursor = page.list_complete ? null : page.cursor;
   } while (cursor);
   return out.sort((a, b) => a.username.localeCompare(b.username));
@@ -386,7 +405,7 @@ async function ownerSheet(env, origin) {
        own canvas, because Share carries a PNG and a PNG needs a canvas. */
     const url = origin + "/?u=" + encodeURIComponent(a.username);
     out.push({
-      code: a.code, username: a.username,
+      code: a.code, username: a.username, test: !!a.test,
       issued: s ? s.issued : null, t: s ? s.t : null, flag: s ? s.flag : null,
       url, msg: linkMessage({ url, user: a.username }, month), tot: s ? totalsLine(s.t) : "",
       qr: QR.qrMatrix(url).map((line) => line.join("")),
@@ -404,6 +423,75 @@ async function ownerSheet(env, origin) {
    same. It expires two months on: a tick belongs to an issue, and the next one starts clean. */
 const SENT_KEY = (issue, u) => "sent:" + issue + ":" + u;
 const SENT_TTL = 61 * 24 * 3600;
+
+/* ---- MAKING AND UNMAKING THE TEST ACCOUNT (v689) ---------------------------------------------
+ * The record is built here, with a key made here, so nothing real is behind it: a bundle of one
+ * plain statement, a small price list, and the two wraps a page expects. It opens with the fixed
+ * password like any account, orders like any account, and is deleted with everything it wrote:
+ * its orders, its opens, its ticks and any phone it subscribed. It is marked `test`, which is how
+ * every list leaves it out of a count. */
+async function testStatement() {
+  const at = new Date().toISOString();
+  const body = '<div class="w"><h1>Test account</h1>'
+    + '<p class="lead">This account is for trying the page out. Nothing on it is on the book, '
+    + "and nothing it orders reaches the ledger.</p>"
+    + '<table class="rows"><thead><tr><th class="l">Date</th><th>Quantity</th><th class="r">Amount</th></tr></thead>'
+    + '<tbody><tr><td class="l dt">1 September 2026</td><td class="q">1<span class="u">unit</span></td>'
+    + '<td class="r">RM 100.00</td></tr></tbody></table></div>';
+  return { v: 1, issued: at.slice(0, 10), statements: [{ issued: at.slice(0, 10), label: "Test", body }] };
+}
+function testPrices() {
+  const now = new Date(), day = now.toISOString().slice(0, 10);
+  return { at: now.toISOString(), week: { monday: day, sunday: day, label: "this week" }, since: day,
+    products: [{ product: "salt", name: "Salt", unit: "unit", basis: "tier", tier: "Bronze", levels: 5,
+      rate: null, orders: 0, sizes: [{ q: 1, price: 120 }, { q: 2.5, price: 280 }, { q: 5, price: 540 }] }],
+    soon: [] };
+}
+async function makeTest(env) {
+  const raw = crypto.getRandomValues(new Uint8Array(32));
+  const ck = await crypto.subtle.importKey("raw", raw, { name: "AES-GCM" }, false, ["encrypt", "decrypt"]);
+  const sealed = async (obj) => {
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const ct = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, ck, new TextEncoder().encode(JSON.stringify(obj)));
+    return { v: 2, iv: b64e(iv), ct: b64e(new Uint8Array(ct)) };
+  };
+  const wrapUnder = async (pass) => {
+    const salt = crypto.getRandomValues(new Uint8Array(16));
+    const base = await crypto.subtle.importKey("raw", new TextEncoder().encode(pass), "PBKDF2", false, ["deriveKey"]);
+    const kek = await crypto.subtle.deriveKey({ name: "PBKDF2", salt, iterations: 150000, hash: "SHA-256" },
+      base, { name: "AES-GCM", length: 256 }, false, ["encrypt"]);
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const ct = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, kek, raw);
+    return { v: 2, salt: b64e(salt), iv: b64e(iv), ct: b64e(new Uint8Array(ct)) };
+  };
+  const vsalt = crypto.getRandomValues(new Uint8Array(16));
+  const vbase = await crypto.subtle.importKey("raw", new TextEncoder().encode(TEST_PASS), "PBKDF2", false, ["deriveBits"]);
+  const vbits = await crypto.subtle.deriveBits({ name: "PBKDF2", salt: vsalt, iterations: 10000, hash: "SHA-256" }, vbase, 256);
+  const bundle = await testStatement();
+  const rec = {
+    u: TEST_USER, test: true, issued: bundle.issued, issues: [bundle.issued],
+    verifier: { salt: b64e(vsalt), hash: b64e(new Uint8Array(vbits)), rounds: 10000 },
+    wrap: await wrapUnder(TEST_PASS), env: await sealed(bundle),
+    live: Object.assign({ at: new Date().toISOString() }, await sealed({ at: new Date().toISOString(), body: bundle.statements[0].body })),
+    prices: Object.assign({ at: new Date().toISOString(), week: testPrices().week.monday }, await sealed(testPrices()))
+  };
+  if (env.STMT_MASTER) rec.wrapMaster = await wrapUnder(String(env.STMT_MASTER));
+  await env.STMT.put(TEST_REC, JSON.stringify(rec));
+  return rec;
+}
+async function unmakeTest(env) {
+  const gone = [TEST_REC, "seen:" + TEST_USER];
+  for (const pre of ["order:" + TEST_USER + ":", "push:" + TEST_USER + ":", "sent:"]) {
+    let cursor;
+    do {
+      const page = await env.STMT.list({ prefix: pre, cursor });
+      for (const k of page.keys) if (!pre.startsWith("sent:") || k.name.endsWith(":" + TEST_USER)) gone.push(k.name);
+      cursor = page.list_complete ? null : page.cursor;
+    } while (cursor);
+  }
+  for (const k of gone) await env.STMT.delete(k);
+  return gone.length;
+}
 
 async function handleRefs(request, env, p, m, origin) {
   if (!env.STMT) return json({ ok: false, error: "no KV binding" }, 500);
@@ -515,6 +603,15 @@ export default {
       if (p === "/all/sheet") {
         if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
         return json(await ownerSheet(env, url.origin));
+      }
+      /* the test account: made and unmade with one tap, and counted nowhere (v689) */
+      if (p === "/all/test") {
+        if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+        const b = await readJson(request);
+        if (!b) return json({ ok: false, error: "send JSON" }, 400);
+        if (b.make === false) return json({ ok: true, made: false, removed: await unmakeTest(env) });
+        await makeTest(env);
+        return json({ ok: true, made: true, username: TEST_USER, password: TEST_PASS });
       }
       /* the tick, so both his devices agree on what has gone out */
       const sm = /^\/all\/sent\/([^/]+)$/.exec(p);

@@ -60,9 +60,13 @@ export async function planPublish(root, key, now, existingKeys, storedIssue, pri
   const deletes = [];
   /* NOTHING PUBLISHABLE MEANS NOTHING TOUCHED: an issue of stale records must not retire what
      is already in the store, or a botched regeneration would take every account down. */
+  /* v689: HIS TEST ACCOUNT IS NOT AN ACCOUNT OF THE BOOK'S. The Worker makes it and the Worker
+     unmakes it; the publish neither writes it nor retires it, or every deploy would take away the
+     one account he keeps for trying the page out. stmt/worker.js states the name. */
+  const TEST_REC = "u:0000-0000";
   if (r.records.length) {
     for (const k of existingKeys || []) {
-      if (k.startsWith("u:") && !keep.has(k)) deletes.push(k);
+      if (k.startsWith("u:") && !keep.has(k) && k !== TEST_REC) deletes.push(k);
       if (newIssue && k.startsWith("fail:")) deletes.push(k);
     }
     puts.push({ key: "issue", value: issued });

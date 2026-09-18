@@ -157,6 +157,11 @@ select.fld{letter-spacing:0;appearance:none;-webkit-appearance:none}
 #rlist button .f-pend{color:var(--salt-copper)}
 #rlist button .f-clear,#rlist button .f-none{color:var(--salt-mist)}
 #mHome h1,#oReview h1,#oLinks h1{margin-top:0}
+/* THE TEST ACCOUNT (v689): its own small block under the items, quiet, because it is a thing he
+   makes and unmakes rather than a place he goes. */
+.mtest{margin-top:18px;padding-top:14px;border-top:1px solid var(--salt-line)}
+.mtest p.lead{margin:0 0 10px;color:var(--salt-text-muted);font-size:var(--salt-text-sm);line-height:1.7}
+.mtest .btn{margin-top:0}
 /* SEND STATEMENT (v688): a card an account, in the same material as a guest link's card. The
    password's button is the ember one, because it is the one thing on the page that must not be
    tapped by accident, and a card that has gone out fades rather than leaving the list. */
@@ -268,7 +273,7 @@ export function landingPage(user, nonce, owner) {
            only once it works, so nothing on this page is a promise. */
         + '<div id="mHome">'
         + "<h1>Master account</h1>"
-        + '<p class="lead">' + owner.accounts.length + " accounts on the site.</p>"
+        + '<p class="lead" id="mCount">' + owner.accounts.filter((a) => !a.test).length + " accounts on the site.</p>"
         + '<div class="rlist" id="mItems">'
         + '<button type="button" data-m="send">Send statement'
         + "<span>one card an account: the message, the code and the password</span></button>"
@@ -276,7 +281,9 @@ export function landingPage(user, nonce, owner) {
         + "<span>where every account stands, and when it was last opened</span></button>"
         + '<button type="button" data-m="links">Links'
         + "<span>guest price lists, made and withdrawn</span></button>"
-        + "</div></div>"
+        + "</div>"
+        + '<div id="mTest" class="mtest"></div>'
+        + "</div>"
         + '<div id="oReview" hidden>'
         + '<button type="button" data-back>' + "← Back" + "</button>"
         + "<h1>Review statement</h1>"

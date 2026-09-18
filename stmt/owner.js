@@ -53,7 +53,10 @@ export const OWNER_JS = `
       var j=await refs('/all/sheet');
       sheet={}; sheetAt=j.at||null; sheetRows=j.accounts||[]; sheetIssue=j.issue||null;
       sheetRows.forEach(function(a){ sheet[a.username]=a; });
-      drawRoster(); drawSend();
+      drawRoster(); drawSend(); drawTest();
+      var n=document.getElementById('mCount');
+      /* the count is of accounts on the book: the test account is not one (v689) */
+      if(n) n.textContent=sheetRows.filter(function(a){ return !a.test; }).length+' accounts on the site.';
     }catch(e){ say(e.message,'bad'); }
   }
   /* ---- SEND STATEMENT (v688) ---------------------------------------------------------------
@@ -81,7 +84,7 @@ export const OWNER_JS = `
   function sendCard(a){
     var card=el('div','scard'+(a.sent?' done':''));
     var head=el('div','srow');
-    head.appendChild(el('b',null,a.code||a.username));
+    head.appendChild(el('b',null,a.test?'Test account':(a.code||a.username)));
     head.appendChild(el('span','un',a.username));
     card.appendChild(head);
     card.appendChild(el('p','tot',a.tot||'No statement in this issue.'));
@@ -140,9 +143,11 @@ export const OWNER_JS = `
       if(!q) return true;
       return ((a.code||'')+' '+a.username).toLowerCase().replace(/\\s+/g,'').indexOf(q)>=0;
     });
-    var done=sheetRows.filter(function(a){ return a.sent; }).length;
+    /* the test account is not part of a send, so it is out of both halves of the count (v689) */
+    var real=sheetRows.filter(function(a){ return !a.test; });
+    var done=real.filter(function(a){ return a.sent; }).length;
     var head=document.getElementById('scount');
-    if(head) head.textContent=done+' of '+sheetRows.length+' sent'+(sheetIssue?' this issue':'');
+    if(head) head.textContent=done+' of '+real.length+' sent'+(sheetIssue?' this issue':'');
     if(!hits.length){ wrap.appendChild(el('p','rnone','Nothing matches that.')); return; }
     hits.forEach(function(a){ wrap.appendChild(sendCard(a)); });
   }
@@ -171,9 +176,10 @@ export const OWNER_JS = `
     if(!hits.length){ rlist.appendChild(el('p','rnone','Nothing matches that.')); return; }
     hits.forEach(function(a){
       var s=(sheet&&sheet[a.username])||a;
-      var b=el('button',null,a.code||a.username); b.type='button';
+      var b=el('button',null,a.test?'Test account':(a.code||a.username)); b.type='button';
       if(a.code) b.appendChild(el('span',null,a.username));
-      if(sheet){
+      if(a.test) b.appendChild(el('span','fl f-none','Counts nowhere; open it to try the page.'));
+      else if(sheet){
         b.appendChild(el('span','fl f-'+(s.flag||'none'),flagLine(s)));
         b.appendChild(el('span','op',openedLine(s)));
       }
@@ -250,6 +256,28 @@ export const OWNER_JS = `
     }catch(e){ say(e.message,'bad'); }
     b.disabled=false;
   });
+  /* ---- THE TEST ACCOUNT (v689) --------------------------------------------------------------
+     One tap makes it, one tap takes it away with everything it wrote. It is his own, so the item
+     says what it is for and names the two things he types. */
+  function drawTest(){
+    var box=document.getElementById('mTest'); if(!box) return;
+    var on=sheetRows.some(function(a){ return a.test; });
+    box.textContent='';
+    box.appendChild(el('p','lead', on
+      ? 'A test account is live: username 0000-0000, password 0000-0000-0000-0000. It is on no list that counts and orders nothing onto the book.'
+      : 'No test account. One tap makes an account you can open anywhere, that counts nowhere.'));
+    var b=el('button','btn quiet', on?'Delete the test account':'Make a test account'); b.type='button';
+    b.addEventListener('click', async function(){
+      b.disabled=true; say(on?'Deleting...':'Making...','wait');
+      try{
+        await refs('/all/test', {make:!on});
+        sheet=null; await loadSheet();
+        say(on?'Gone, with everything it wrote.':'Made. Username 0000-0000, password 0000-0000-0000-0000.');
+      }catch(e){ say(e.message,'bad'); }
+      b.disabled=false; drawTest();
+    });
+    box.appendChild(b);
+  }
   mHome.addEventListener('click', function(ev){
     var b=ev.target.closest('button[data-m]'); if(!b) return;
     panel(b.getAttribute('data-m'));
@@ -260,4 +288,6 @@ export const OWNER_JS = `
   rq.addEventListener('input', drawRoster);
   var sq=document.getElementById('sq'); if(sq) sq.addEventListener('input', drawSend);
   panel(null);
+  /* the home itself needs the account list, for the count and for whether a test account is live */
+  loadSheet();
 `;

@@ -13602,6 +13602,97 @@ await (async () => {
     } finally { try { W88.close(); } catch (e) { /* best effort */ } }
   } finally { globalThis.fetch = realFetch88; }
 })();
+section("v689: a test account he makes and unmakes with one tap, that counts nowhere");
+await (async () => {
+  /* HIS INSTRUCTION OF 18 SEP 2026: an account that works everywhere, is counted nowhere, and goes away
+     with one button. Its name is zeros, which no real username can be: the alphabet has none. */
+  const { normUser: nu89, normPass: np89, TEST_USER: TU89, TEST_PASS: TP89 } = await import("../stmt/worker.js");
+  ok(TU89 === "0000-0000" && TP89 === "0000-0000-0000-0000" && nu89("0000-0000") === TU89 && nu89("0000 0000") === TU89
+    && nu89("1111-1111") === "" && nu89("0000-000") === "" && nu89("0123-4567") === "" && nu89("0aaa-bbbb") === ""
+    && np89("0000000000000000") === TP89,
+    "the door takes the test account's zeros, and nothing else that is not of the alphabet");
+
+  const realFetch89 = globalThis.fetch;
+  try {
+    const TEAM89 = "maakmal", AUD89 = "aud-89", KID89 = "kid-89";
+    const kp89 = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048,
+      publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
+    const pub89 = await crypto.subtle.exportKey("jwk", kp89.publicKey);
+    globalThis.fetch = async (u) => {
+      if (String(u) === "https://" + TEAM89 + ".cloudflareaccess.com/cdn-cgi/access/certs") return new Response(JSON.stringify({ keys: [{ ...pub89, kid: KID89, kty: "RSA" }] }));
+      throw new Error("the Access gate reached for " + u);
+    };
+    const b64u89 = (b) => Buffer.from(b).toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+    const tok89 = await (async () => {
+      const claims = { iss: "https://" + TEAM89 + ".cloudflareaccess.com", aud: [AUD89], email: "maakmal97@icloud.com", exp: Math.floor(Date.now() / 1000) + 600 };
+      const h = b64u89(JSON.stringify({ alg: "RS256", kid: KID89, typ: "JWT" })), c = b64u89(JSON.stringify(claims));
+      const sig = await crypto.subtle.sign("RSASSA-PKCS1-v1_5", kp89.privateKey, new TextEncoder().encode(h + "." + c));
+      return h + "." + c + "." + b64u89(new Uint8Array(sig));
+    })();
+    const kv89 = new KV();
+    await kv89.put("u:aaaa-bbbb", "{}");
+    await kv89.put("roster", JSON.stringify([{ code: "CX0-AA", username: "aaaa-bbbb" }]));
+    await kv89.put("issue", "2026-09-01");
+    const env89 = { STMT: kv89, STMT_MASTER: "mp89", ACCESS_TEAM: TEAM89, ACCESS_AUD: AUD89 };
+    const post89 = (path, body, tok = tok89) => stmtWorker.fetch(new Request("https://k7m3p2.example" + path,
+      { method: "POST", headers: Object.assign({ "content-type": "application/json" }, tok ? { "cf-access-jwt-assertion": tok } : {}), body: JSON.stringify(body) }), env89);
+
+    ok((await post89("/all/test", { make: true }, null)).status === 401, "making one needs Access");
+    const made = await (await post89("/all/test", { make: true })).json();
+    const rec89 = await kv89.get("u:0000-0000", "json");
+    ok(made.ok && made.made && made.username === TU89 && made.password === TP89 && rec89 && rec89.test === true
+      && rec89.verifier && rec89.wrap && rec89.wrapMaster && rec89.env && rec89.live && rec89.prices,
+      "one tap makes it, with its own key, its own statement and its own price list");
+
+    /* it opens like any account, and nothing about it came from the laptop */
+    const open89 = await stmtWorker.fetch(new Request("https://k7m3p2.example/open", { method: "POST",
+      headers: { "content-type": "application/json" }, body: JSON.stringify({ u: "0000 0000", password: "0000000000000000" }) }), env89);
+    const body89 = await open89.json();
+    ok(open89.status === 200 && body89.ok && body89.wrap && body89.env && body89.prices && body89.session,
+      "and it signs in with the zeros, typed any way, with a session so it can order");
+    const unwrapped = await (async () => {
+      const b64 = (s) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
+      const base = await crypto.subtle.importKey("raw", new TextEncoder().encode(TP89), "PBKDF2", false, ["deriveKey"]);
+      const kek = await crypto.subtle.deriveKey({ name: "PBKDF2", salt: b64(body89.wrap.salt), iterations: 150000, hash: "SHA-256" }, base, { name: "AES-GCM", length: 256 }, false, ["decrypt"]);
+      const raw = await crypto.subtle.decrypt({ name: "AES-GCM", iv: b64(body89.wrap.iv) }, kek, b64(body89.wrap.ct));
+      const ck = await crypto.subtle.importKey("raw", raw, { name: "AES-GCM" }, false, ["decrypt"]);
+      const pt = await crypto.subtle.decrypt({ name: "AES-GCM", iv: b64(body89.env.iv) }, ck, b64(body89.env.ct));
+      return JSON.parse(new TextDecoder().decode(pt));
+    })();
+    ok(unwrapped.statements.length === 1 && /Test account/.test(unwrapped.statements[0].body) && /nothing it orders reaches the ledger/.test(unwrapped.statements[0].body),
+      "its statement opens in the reader's own browser and says what it is");
+
+    /* counted nowhere */
+    const sheet89 = await (await stmtWorker.fetch(new Request("https://k7m3p2.example/all/sheet", { headers: { "cf-access-jwt-assertion": tok89 } }), env89)).json();
+    const t89 = sheet89.accounts.find((a) => a.username === TU89);
+    ok(!!t89 && t89.test === true && t89.code === "TEST" && sheet89.accounts.filter((a) => !a.test).length === 1,
+      "it is on his list, marked, and out of the count of accounts");
+    const { planPublish: pp89, usersMap: um89 } = await import("../tools/stmt-publish.mjs");
+    const plan89 = await pp89(join(REPO, "statements"), "", new Date("2026-09-18T02:00:00Z"), ["u:0000-0000", "u:zzzz-zzzz"], null);
+    ok(!plan89.deletes.includes("u:0000-0000") && plan89.deletes.includes("u:zzzz-zzzz")
+      && !plan89.puts.some((p) => p.key === "u:0000-0000") && !plan89.sheet.some((a) => a.username === TU89)
+      && !um89(join(REPO, "statements"))[TU89],
+      "a publish neither writes it nor takes it away, it is on no account list of the book's, and no desk code maps to it");
+
+    /* and it goes away with everything it wrote */
+    await kv89.put("order:0000-0000:20260918-aaaa", JSON.stringify({ id: "20260918-aaaa", u: TU89 }));
+    await kv89.put("push:0000-0000:abc", JSON.stringify({ endpoint: "https://x" }));
+    await kv89.put("seen:0000-0000", JSON.stringify({ opens: 2 }));
+    await kv89.put("sent:2026-09-01:0000-0000", JSON.stringify({ at: "2026-09-18T01:00:00Z" }));
+    await kv89.put("order:aaaa-bbbb:20260918-bbbb", JSON.stringify({ id: "20260918-bbbb", u: "aaaa-bbbb" }));
+    await kv89.put("sent:2026-09-01:aaaa-bbbb", JSON.stringify({ at: "2026-09-18T01:00:00Z" }));
+    const gone = await (await post89("/all/test", { make: false })).json();
+    ok(gone.ok && gone.made === false && gone.removed >= 5 && !(await kv89.get("u:0000-0000"))
+      && !(await kv89.get("order:0000-0000:20260918-aaaa")) && !(await kv89.get("push:0000-0000:abc"))
+      && !(await kv89.get("seen:0000-0000")) && !(await kv89.get("sent:2026-09-01:0000-0000"))
+      && !!(await kv89.get("order:aaaa-bbbb:20260918-bbbb")) && !!(await kv89.get("u:aaaa-bbbb"))
+      && !!(await kv89.get("sent:2026-09-01:aaaa-bbbb")),
+      "one tap takes it away with its orders, its opens, its ticks and its phones, and touches no one else's");
+    const after = await stmtWorker.fetch(new Request("https://k7m3p2.example/open", { method: "POST",
+      headers: { "content-type": "application/json" }, body: JSON.stringify({ u: TU89, password: TP89 }) }), env89);
+    ok(after.status === 401, "and the zeros open nothing once it is gone");
+  } finally { globalThis.fetch = realFetch89; }
+})();
 section("The suite frees its windows: every section's body is its own async function");
 await (async () => {
   /* the note at section() says why: a bare block at the top level keeps its desk window to the end of the run */

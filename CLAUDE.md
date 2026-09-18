@@ -323,6 +323,12 @@ including the secrets, the price list and the order relay: `docs/STATEMENTS.md`.
   Access session now also signs in as a customer. **The plain password is still laptop-only**, in
   `_passwords.json`, and no message ever carries it; a tick lives at `sent:<issue>:<username>`, so
   both his devices agree on what has gone out.
+- **THE TEST ACCOUNT** (v689, his instruction of 18 Sep 2026): username `0000-0000`, password
+  `0000-0000-0000-0000`, made and unmade from the master page with one tap. Zeros are not in the
+  username alphabet, so it can collide with nothing; the Worker mints it with its own key, so no
+  statement, price list or laptop secret is behind it. **It counts nowhere**: marked `test` on his
+  list and out of every count, never written or retired by the publish, and no desk code maps to
+  it, so an order it places books nothing. Deleting it takes its orders, opens, ticks and phones.
 - **Guest links `/g/<id>`**: one board and nothing else, `script-src 'none'`. **The id
   IS the credential** (rejection sampling, never `byte % 30`) and the boards are NOT sealed,
   both deliberate. Unknown, malformed and withdrawn ids answer the same 404. **A row named
